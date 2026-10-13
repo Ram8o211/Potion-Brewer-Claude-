@@ -182,7 +182,10 @@ function makeRequirement(key, pred, tier, strict, rng, plan, style) {
       return { key, kind: 'target', target: pred.lab, rgb: pred.color, tol, zero: tol * 3.2, label: describeColor(pred.color) };
     }
     case 'density': {
-      const tol = Math.max(0.025, (0.075 - 0.01 * tier) * s);
+      let tol = Math.max(0.025, (0.075 - 0.01 * tier) * s);
+      // loose grains settle unevenly, so the bottle drawn from the tap varies
+      if (pred.looseSolids > 0.04) tol = Math.max(tol, 0.05 + 0.5 * pred.looseSolids);
+      tol = Math.round(tol * 100) / 100;
       const t = Math.round((pred.density + rng.range(-0.3, 0.3) * tol) * 100) / 100;
       return { key, kind: 'target', target: t, tol, zero: tol * 3, label: `${(t - tol).toFixed(2)}–${(t + tol).toFixed(2)} g/ml` };
     }
@@ -203,6 +206,8 @@ function makeRequirement(key, pred, tier, strict, rng, plan, style) {
       return { key, kind: 'target', target: t, tol, zero: tol * 3, label: `${Math.round(t - tol)}–${Math.round(t + tol)}°C` };
     }
     case 'stability': {
+      // a brew that keeps loose grains by design can never read as stable
+      if (pred.looseSolids > 0.04) return null;
       const min = Math.round(Math.min(85, 50 + 8 * tier) * (s < 1 ? 1.05 : 1));
       return { key, kind: 'min', target: min, tol: 0, zero: 35, label: `at least ${min}` };
     }
@@ -256,7 +261,15 @@ export function generateCommission(ctx, rng, opts = {}) {
     const plan = buildPlan(style, ctx, rng, totalN);
     if (!plan) continue;
     if (plan.coolTo < ctx.cap.minCool - 2 && style !== 'frost') continue;
-    const pred = predictPlan(ctx.world, ctx.lookup, plan);
+    /** @type {ReturnType<typeof predictPlan> & {looseSolids: number}} */
+    const pred = { ...predictPlan(ctx.world, ctx.lookup, plan), looseSolids: 0 };
+    // undissolved grains that no binder holds in a paste settle as sediment
+    let bound = 0;
+    for (const [id, f] of Object.entries(pred.composition)) {
+      const d = ctx.lookup(id);
+      if (d && (d.form === 'powder' || d.form === 'solid') && (d.binder || 0) >= 0.3) bound += f;
+    }
+    pred.looseSolids = Math.max(0, pred.granular - bound);
     // choose required properties
     const want = new Set(STYLE_PROPS[style] || ['color']);
     if (style !== 'salve' && style !== 'heavy' && style !== 'varnish') want.add('color');

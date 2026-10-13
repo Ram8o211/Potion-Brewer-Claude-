@@ -45,3 +45,11 @@ export const TUNE = {
   viscDampMax: 0.45,
   viscDampSlope: 0.22,
 };
+
+/** Initial phase of a material poured in its stored form. @param {string} form */
+export function formPhase(form) {
+  if (form === 'powder') return PHASE.POWDER;
+  if (form === 'solid') return PHASE.SOLID;
+  if (form === 'gas') return PHASE.GAS;
+  return PHASE.LIQUID;
+}

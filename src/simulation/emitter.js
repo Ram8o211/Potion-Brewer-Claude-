@@ -3,9 +3,8 @@
 // puffs. With the lid closed, matter enters through the funnel port just
 // below the lid; with the lid open it falls from above the mouth.
 
-import { PHASE, SIM } from './constants.js';
+import { PHASE, SIM, formPhase } from './constants.js';
 import { COLUMN } from './cauldron.js';
-import { formPhase } from './world.js';
 
 export class Emitter {
   /** @param {import('./world.js').Simulation} sim */

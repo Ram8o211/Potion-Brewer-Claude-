@@ -11,6 +11,7 @@ const name = process.argv[2] || 'water';
 const out = process.argv[3] || 'lab-out';
 fs.mkdirSync(out, { recursive: true });
 
+/** @param {'small'|'medium'|'large'} [size] */
 function mk(size = 'small') {
   return new Simulation({ size, lookup: refLookup });
 }

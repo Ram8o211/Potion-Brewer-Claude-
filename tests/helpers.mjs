@@ -6,6 +6,7 @@ import { REF, refLookup } from '../src/materials/reference.js';
 
 export { REF, refLookup, PHASE, MAX_SPECIES };
 
+/** @param {'small'|'medium'|'large'} [size] @param {any[]} [reactions] */
 export function makeSim(size = 'small', reactions = []) {
   return new Simulation({ size, lookup: refLookup, reactions });
 }
@@ -52,6 +53,7 @@ export function countPhase(sim, ph) {
   return c;
 }
 
+/** @param {import('../src/simulation/world.js').Simulation} sim @param {(i: number) => boolean} [filter] */
 export function meanSpeed(sim, filter = () => true) {
   let s = 0, n = 0;
   for (let i = 0; i < sim.p.count; i++) if (filter(i)) { s += Math.hypot(sim.p.vx[i], sim.p.vy[i]); n++; }

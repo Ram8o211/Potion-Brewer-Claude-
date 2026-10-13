@@ -24,7 +24,7 @@
 // Thermal conduction, phase changes, diffusion/mixing and reactions run on
 // the same neighbour pairs every other step.
 
-import { PHASE, SIM, TUNE } from './constants.js';
+import { PHASE, SIM, TUNE, formPhase } from './constants.js';
 import { Particles } from './particles.js';
 import { NeighborGrid } from './grid.js';
 import { Cauldron, COLUMN } from './cauldron.js';
@@ -978,10 +978,4 @@ function wakeIfAsleep(p, i) {
   if (p.sleep[i] >= SLEEP_STEPS) p.sleep[i] = 0;
 }
 
-/** @param {string} form */
-export function formPhase(form) {
-  if (form === 'powder') return POWDER;
-  if (form === 'solid') return SOLID;
-  if (form === 'gas') return GAS;
-  return LIQUID;
-}
+export { formPhase };
