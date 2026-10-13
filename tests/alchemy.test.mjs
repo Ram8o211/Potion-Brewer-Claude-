@@ -123,7 +123,8 @@ test('effects interact only where the substances meet: fire and frost layers can
 });
 
 test('resonance laws: transmute, catalyse and suppress act per particle and are traced for discovery', () => {
-  const law = (kind, a, b, c = -1) => ({ id: 'L', name: 'L', kind, a: V[a], b: V[b], c: c === -1 ? -1 : V[c], k: 0.6, min: 2, lore: '' });
+  /** @param {'transmute'|'catalyse'|'suppress'} kind @param {string} a @param {string} b @param {string} [c] */
+  const law = (kind, a, b, c) => ({ id: 'L', name: 'L', kind, a: V[a], b: V[b], c: c === undefined ? -1 : V[c], k: 0.6, min: 2, lore: '' });
   const e = new Float64Array(NE);
   e[V.love] = 20; e[V.arcana] = 20;
   const tr = new Float64Array(1);

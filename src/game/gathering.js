@@ -44,7 +44,18 @@ export const REGION_BY_ID = Object.fromEntries(REGIONS.map((r) => [r.id, r]));
  * @property {number} take       ml gathered per harvest
  * @property {number} rank       guild rank needed
  * @property {boolean} rare
+ * @property {string} [place]    a name for the spot
  */
+
+/** Names of spots within each region (so two deposits read apart). */
+const PLACES = {
+  forest: ['by the old oak', 'in the fern hollow', 'under the beeches', 'at the mossy stump', 'by the woodcutter’s path', 'in the deep shade'],
+  meadow: ['by the stile', 'on the sunny slope', 'near the beehives', 'along the hedgerow', 'in the long grass', 'by the well'],
+  river: ['under the willow', 'on the chalk bank', 'by the ford', 'in the reeds', 'at the mill race', 'on the gravel bar'],
+  quarry: ['on the east face', 'in the spoil heap', 'by the cart track', 'in the old cutting', 'under the crane', 'at the seam'],
+  moonfen: ['on the barrow', 'by the will-o’-pool', 'in the drowned grove', 'on the stepping stones'],
+  crags: ['on the ash slope', 'by the steam vent', 'in the lava cave', 'on the black ridge'],
+};
 
 /**
  * Deterministic deposits for a world.
@@ -73,6 +84,7 @@ export function generateDeposits(world, lookup) {
         const rare = !!m.wild.rare;
         out.push({
           id: `${region.id}:${m.wild.key}:${c}`,
+          place: PLACES[region.id][(placed.length - 1) % PLACES[region.id].length],
           region: region.id,
           materialId: m.id,
           x: Math.round(x * 1000) / 1000,

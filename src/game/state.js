@@ -68,7 +68,7 @@ export const ACHIEVEMENTS = [
  * @property {string} title
  * @property {string} text
  * @property {string} kind    ingredient | phase | reaction | mixing | fire | tool
- * @property {number} day
+ * @property {number} [day]
  * @property {string} [material]
  */
 
@@ -95,7 +95,7 @@ export class GameState {
     /** @type {any[]} */ this.history = data.history;
     /** @type {Record<string, number>} */ this.achievements = data.achievements;
     /** @type {any} */ this.current = data.current;
-    /** @type {{served:number, perfect:number, earned:number, spent:number, brews:number, declined:number, bestQuality:number}} */
+    /** @type {{served:number, perfect:number, earned:number, spent:number, brews:number, declined:number, bestQuality:number, gathered?:number, trials?:number}} */
     this.stats = { served: 0, perfect: 0, earned: 0, spent: 0, brews: 0, declined: 0, bestQuality: 0, ...(data.stats || {}) };
     /** @type {{active:boolean, step:number, done:boolean}} */ this.tutorial = { active: false, step: 0, done: true, ...(data.tutorial || {}) };
     /** @type {{event:string, mods:Record<string, number>}} */ this.market = data.market || { event: 'none', mods: {} };
@@ -224,8 +224,8 @@ export class GameState {
     const r = harvest(this, { ...d, take }, opts);
     if (r.ok && !opts.unlimited) {
       this.stats.gathered = (this.stats.gathered || 0) + r.amount;
-      r.events = [...this.unlock('forage1')];
-      if (this.stats.gathered >= 1000) r.events.push(...this.unlock('forage1k'));
+      /** @type {any} */ (r).events = [...this.unlock('forage1')];
+      if (this.stats.gathered >= 1000) /** @type {any} */ (r).events.push(...this.unlock('forage1k'));
     }
     return r;
   }
@@ -255,6 +255,7 @@ export class GameState {
   recordTrial(subjectId, dose, ctx) {
     const rec = runTrial(this.trials, subjectId, dose, { ...ctx, day: this.day, laws: this.world.laws || [] });
     this.stats.trials = (this.stats.trials || 0) + 1;
+    /** @type {any[]} */
     const events = [...this.unlock('trial1')];
     if (this.stats.trials >= 25) events.push(...this.unlock('trial25'));
     for (const id of rec.lawsFound) {

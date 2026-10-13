@@ -78,11 +78,13 @@ function restDensity(spacing) {
 
 export class Simulation {
   /**
-   * @param {{size?: 'small'|'medium'|'large', lookup?: (id:string)=>any, reactions?: any[], laws?: any[], capacity?: number}} [opts]
+   * @param {{size?: string, lookup?: (id:string)=>any, reactions?: any[], laws?: any[], capacity?: number}} [opts]
    */
   constructor(opts = {}) {
-    this.cauldron = new Cauldron(opts.size || 'small');
-    const cap = opts.capacity || this.cauldron.capacity + 400;
+    this.cauldron = new Cauldron(/** @type {any} */ (opts.size || 'small'));
+    // headroom above the fill line: old snapshots from the great vessels can
+    // be larger than a small game pot holds
+    const cap = opts.capacity || Math.max(this.cauldron.capacity + 400, 1800);
     this.capacity = cap;
     this.maxParticles = this.cauldron.capacity;
     this.p = new Particles(cap);

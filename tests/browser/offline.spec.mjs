@@ -25,7 +25,7 @@ test('the built game loads and plays offline after the first visit', async ({ pa
   await page.reload();
   await page.locator('[data-act=new-game]').waitFor();
   await page.click('[data-act=sandbox]');
-  await page.locator('canvas.view').waitFor();
+  await page.locator('canvas.view-canvas').waitFor();
   await page.evaluate(() => { const l = window.__alchemist.screen; l.selectIngredient(l.state.world.roles.water); l.startPour(0, 20); });
   await page.waitForFunction(() => window.__alchemist.screen.sim.p.count > 0, null, { timeout: 15_000 });
   expect(errors.filter((e) => !/ERR_CONNECTION_REFUSED|Failed to fetch|net::/.test(e))).toEqual([]);

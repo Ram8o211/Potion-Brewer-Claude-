@@ -74,6 +74,7 @@ export function processEvent(state, e) {
         material: rule.products[0].id,
       });
       for (const p of rule.products) state.learn(p.id, 'seen', true);
+      if (/^rw_(steep|infuse)/.test(rule.id)) achievements.push(...state.unlock('steep'));
       const after = state.reactionsDiscovered();
       if (after > before) {
         if (after >= 1) achievements.push(...state.unlock('react1'));
@@ -89,6 +90,9 @@ export function processEvent(state, e) {
       achievements.push(...state.unlock('fire'));
       break;
     }
+    case 'spark':
+      add({ key: 'spark', title: 'A galvanic spark', text: 'Charge leapt between touching matter. Conductive brews (brine, metals) carry electric charge; oil and pure spirits insulate. Moving charge warms what it passes through.', kind: 'tool' });
+      break;
     case 'crush':
       achievements.push(...state.unlock('crush'));
       add({ key: 'crush', title: 'Crushing', text: 'The pestle breaks solid blocks and crystals into grains without losing any material.', kind: 'tool' });

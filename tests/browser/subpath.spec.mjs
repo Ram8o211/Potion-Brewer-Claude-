@@ -18,7 +18,7 @@ function watchFailures(page) {
 /** @param {import('@playwright/test').Page} page */
 async function playSandbox(page) {
   await page.locator('[data-act=sandbox]').click();
-  await page.locator('canvas.view').waitFor();
+  await page.locator('canvas.view-canvas').waitFor();
   await page.evaluate(() => { const l = window.__alchemist.screen; l.selectIngredient(l.state.world.roles.water); l.startPour(0, 20); });
   await page.waitForFunction(() => window.__alchemist.screen.sim.p.count > 0, null, { timeout: 15_000 });
 }
@@ -101,13 +101,13 @@ test('a second tab saving the shop makes a stale tab step back instead of overwr
   await page.locator('[data-act=new-game]').click();
   await page.locator('.modal input[type=checkbox]').uncheck();
   await page.click('[data-act=start-game]');
-  await page.locator('canvas.view').waitFor();
+  await page.locator('canvas.view-canvas').waitFor();
   await page.evaluate(() => { const l = window.__alchemist.screen; l.state.coins = 10; l.save(); });
   // the same shop opened in the other copy, played further and saved
   const other = await context.newPage();
   await other.goto('index.html?nosw');
   await other.locator('[data-act=continue]').click();
-  await other.locator('canvas.view').waitFor();
+  await other.locator('canvas.view-canvas').waitFor();
   await other.evaluate(() => { const l = window.__alchemist.screen; l.state.coins = 99; l.save(); });
   // the stale tab notices, goes back to the menu and does not save over it
   await expect(page.locator('.toast', { hasText: 'opened elsewhere' })).toBeVisible();

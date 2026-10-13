@@ -37,6 +37,8 @@ export class ToolState {
     this.speed = 0;
     /** volume removed by the skimmer per species id */
     this.skimmed = /** @type {Record<string, number>} */ ({});
+    /** nearly pure skimmed matter (particles per species id) that can go back on the shelf */
+    this.recovered = /** @type {Record<string, number>} */ ({});
     this._skimAcc = 0;
     this.stirDistance = 0;
   }
@@ -214,9 +216,18 @@ function skim(sim, dt) {
   victims.sort((a, b) => b - a);
   const sp = sim.species;
   for (const i of victims) {
+    let best = -1, bf = 0, tot = 0;
     for (let s = 0; s < sp.count; s++) {
       const f = p.comp[i * MAX_SPECIES + s];
       if (f > 0 && sp.defs[s]) t.skimmed[sp.defs[s].id] = (t.skimmed[sp.defs[s].id] || 0) + f;
+      tot += f;
+      if (f > bf) { bf = f; best = s; }
+    }
+    // a skimmed-off layer of one substance (oil, a floating powder) can be
+    // jarred again; mixtures and anything frozen or burning are waste
+    if (best >= 0 && bf >= 0.92 * tot && p.burn[i] < 0.05 && sp.defs[best]) {
+      const id = sp.defs[best].id;
+      t.recovered[id] = (t.recovered[id] || 0) + 1;
     }
     sim.removeParticle(i);
   }

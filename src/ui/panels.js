@@ -9,7 +9,8 @@ import { EQUIPMENT, RANKS } from '../game/equipment.js';
 import { ACHIEVEMENTS } from '../game/state.js';
 import { PROPERTY_LABELS } from '../game/evaluate.js';
 import { viscosityClass } from '../game/measure.js';
-import { ASPECT_LABELS } from '../materials/schema.js';
+import { EFFECTS, EFFECT_BY_KEY, EFFECT_KEYS, dominantEffect } from '../alchemy/effects.js';
+import { rawSprite } from '../rendering/scenes.js';
 import { compatFactor } from '../reactions/compatibility.js';
 import { describeColor, rgbToHex } from '../core/color.js';
 import { SIM } from '../simulation/constants.js';
@@ -17,12 +18,25 @@ import { exportSave, parseImport, saveGame } from '../game/persistence.js';
 import { audio } from '../audio/audio.js';
 import { archetypeOf } from '../game/customers.js';
 
-const CAT_LABEL = { heat: 'Heating', cold: 'Cooling', vessel: 'Cauldrons', tool: 'Tools', instrument: 'Instruments', storage: 'Storage', guild: 'Guild' };
+const CAT_LABEL = { heat: 'Heating', cold: 'Cooling', vessel: 'Cauldrons', tool: 'Tools', instrument: 'Instruments', trials: 'Trials room', storage: 'Storage & foraging', guild: 'Guild' };
 
 function jarCanvas(m, w = 22, hh = 30) {
+  if (m.wild && m.form === 'solid') {
+    const cv = rawSprite(m.wild.shape, m.look || m.color);
+    cv.style.width = w * 2 + 'px';
+    cv.style.height = w * 2 + 'px';
+    return cv;
+  }
   const cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: String(w), height: String(hh), style: { width: w * 2 + 'px', height: hh * 2 + 'px' } }));
   drawJar(cv.getContext('2d'), 2, 0, w - 4, hh, m.look || m.color, m.form);
   return cv;
+}
+
+/** Effect chips for a known effect record. @param {Record<string, number>} fx */
+export function fxChips(fx, min = 1) {
+  const list = EFFECT_KEYS.map((k) => /** @type {[string, number]} */ ([k, (fx && fx[k]) || 0])).filter(([, v]) => Math.abs(v) >= min).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
+  if (!list.length) return [h('span', { class: 'muted', text: 'none' })];
+  return list.map(([k, v]) => h('span', { class: 'fx-chip', title: EFFECT_BY_KEY[k].label }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(v)}`));
 }
 
 function swatch(rgb) {
@@ -60,10 +74,11 @@ export function openShop(lab, tab = 'reagents') {
 
 function renderReagents(lab, body, rerender) {
   const st = lab.state;
-  body.appendChild(h('div', { class: 'muted small', text: `Prices per 100 ml. Shelf space: ${st.cap.storage} ml per reagent. Water from the well is free.` }));
+  body.appendChild(h('div', { class: 'muted small', text: `Prices per 100 ml. Shelf space: ${st.cap.storage} ml per reagent. Water from the well is free. Wild herbs and minerals are free to gather in the Wilds; the herbalist sells the common ones at a premium.` }));
   const list = h('div', { class: 'list' });
   for (const id of st.world.ingredients) {
     const mt = st.lookup(id);
+    if (mt.wild && mt.wild.gatherOnly) continue; // only found in the wilds
     const locked = mt.tier > st.rank;
     const price = st.priceOf(id);
     const stock = st.stock(id);
@@ -84,7 +99,7 @@ function renderReagents(lab, body, rerender) {
       jarCanvas(mt, 18, 24),
       h('div', {},
         h('div', { class: 'title', text: mt.name }),
-        h('div', { class: 'meta', text: locked ? `Unlocks at the rank of ${RANKS[mt.tier].name}.` : mt.description }),
+        h('div', { class: 'meta', text: locked ? `${mt.wild ? 'The herbalist sells it' : 'Unlocks'} at the rank of ${(RANKS[mt.tier] || RANKS[RANKS.length - 1]).name}.${mt.wild ? ' Until then, gather it in the wilds.' : ''}` : mt.description }),
         h('div', { class: 'meta', text: locked ? '' : `${mt.form} · ${coins(price)} per 100 ml · in stock: ${isFinite(stock) ? Math.round(stock) + ' ml' : 'unlimited'}` }),
       ),
       locked ? icon('lock') : buyRow,
@@ -174,17 +189,20 @@ export function openIngredient(lab, id) {
     h('span', { class: 'k', text: 'Price' }), h('span', { text: `${coins(st.priceOf(id))} / 100 ml` }),
   );
   const asp = h('div', { class: 'aspect-bars' });
-  ASPECT_LABELS.forEach((label, i) => {
-    const v = m.aspects[i];
-    asp.append(h('span', { text: label }), h('div', { class: 'bar' }, h('i', { style: { width: Math.min(100, v) + '%' } })), h('span', { text: has('lens') ? String(Math.round(v)) : v >= 20 ? 'strong' : v >= 6 ? 'faint' : '—' }));
-  });
+  for (const e of EFFECTS) {
+    const v = (m.effects && m.effects[e.key]) || 0;
+    if (Math.abs(v) < 1) continue;
+    asp.append(h('span', {}, icon(e.icon, 'sm'), ' ' + e.label), h('div', { class: 'bar' }, h('i', { style: { width: Math.min(100, Math.abs(v)) + '%', background: `rgb(${e.color.map((c) => Math.round(c * 255)).join(',')})` } })), h('span', { text: e.key === 'acidity' && v < 0 ? `${Math.round(v)} (alkaline)` : String(Math.round(v)) }));
+  }
+  if (!asp.children.length) asp.append(h('span', { class: 'muted', text: 'No magical or chemical effect.' }));
   const reactions = st.world.reactions.filter((r) => (r.a === id || r.b === id) && st.journal['reaction:' + r.id]);
   modal({
     title: m.name,
     body: [
       h('div', { class: 'card parch ing-card' }, jarCanvas(m, 22, 30), h('div', {}, h('div', { text: m.description }), h('div', {}, ...tags.map((t) => h('span', { class: 'tag', text: t }))))),
       h('div', { class: 'card parch' }, facts),
-      h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Magical potency' }), asp),
+      h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: m.product ? 'Effects of this pure substance (as the guild knows it)' : 'Known effects of the pure ingredient (mixtures must be tested)' }), asp,
+        m.wild && m.form === 'solid' ? h('div', { class: 'small', text: 'Supplied whole: crush it in the pot with the pestle, or switch on “Ground” to grind it in the mortar first. Only what dissolves takes effect.' }) : null),
       reactions.length ? h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Known reactions' }), ...reactions.map((r) => h('div', { class: 'small', text: `• ${r.name}: ${r.hint || ''}` }))) : null,
     ],
   });
@@ -197,6 +215,17 @@ export function openHint(lab) {
   if (!com) return;
   const show = () => {
     const ref = com.reference;
+    if (com.effectOrder) {
+      // effect orders: a clue, never the recipe — the player must experiment
+      const main = ref.ingredients.slice().sort((a, b) => b.n - a.n).map((i) => st.lookup(i.id)).find((x) => x && x.effects && Object.values(x.effects).some((v) => Math.abs(v) >= 12));
+      const tips = [];
+      if (main) tips.push(`A guild alchemist would start from ${main.name}${main.wild ? ` (it grows in the ${main.wild.region === 'forest' ? 'Whisperwood' : main.wild.region === 'meadow' ? 'Sunlit Meadow' : main.wild.region === 'river' ? 'Willow Bank' : main.wild.region === 'quarry' ? 'Ironstone Quarry' : main.wild.region === 'moonfen' ? 'Moonfen' : 'Ember Crags'})` : ''}.`);
+      if (ref.ingredients.some((i) => i.ground)) tips.push('Grind what is whole — only what dissolves takes effect.');
+      if ((ref.heatTo ?? 20) > 40) tips.push('Patience and gentle heat draw out more than stirring alone.');
+      tips.push('How much, and with what? That you must find out. Test small doses before you bottle.');
+      modal({ title: 'Guild advice', body: [h('div', { class: 'card parch' }, ...tips.map((t) => h('div', { class: 'small', text: '• ' + t })))] });
+      return;
+    }
     const total = ref.ingredients.reduce((a, b) => a + b.n, 0);
     const rows = ref.ingredients.map((i) => h('div', { class: 'row' }, jarCanvas(st.lookup(i.id), 12, 16), h('span', { text: `${Math.round((i.n / total) * 100)}%  ${st.lookup(i.id).name}` })));
     const steps = [];
@@ -239,7 +268,9 @@ export function showResult(lab, com, meas, ev, recipe, onDone) {
   for (const r of ev.rows) {
     const label = PROPERTY_LABELS[r.req.key] || r.req.key;
     const target = r.req.key === 'color' ? h('span', {}, swatch(r.req.rgb), ' ' + r.req.label) : h('span', { text: r.req.label });
-    const got = r.req.key === 'color' ? h('span', {}, swatch(meas.color), ' ' + r.text) : h('span', { text: r.text });
+    // the customer reports how an effect felt — not a laboratory reading
+    const fxWord = EFFECT_BY_KEY[r.req.key] ? (r.score >= 0.999 ? 'as wanted' : r.req.kind === 'max' ? 'too much!' : r.req.kind === 'min' ? 'too weak' : r.value > r.req.target ? 'too strong' : 'too weak') : null;
+    const got = r.req.key === 'color' ? h('span', {}, swatch(meas.color), ' ' + r.text) : h('span', { text: fxWord || r.text });
     table.appendChild(h('tr', {}, h('td', {}, icon(r.score >= 0.999 ? 'check' : r.score > 0.5 ? 'star' : 'close', 'sm'), ' ' + label), h('td', {}, target), h('td', {}, got), h('td', { class: 'sc', text: Math.round(r.score * 100) + '%' })));
   }
   const nameInput = /** @type {HTMLInputElement} */ (h('input', { type: 'text', value: recipe.name, maxlength: '40', 'aria-label': 'Recipe name' }));
@@ -311,7 +342,7 @@ export function showAnalysis(lab, m, recipe, title = 'Analysis of the brew') {
   const density = has('hydrometer') ? `${m.density.toFixed(3)} g/ml` : `${m.density > 1.3 ? 'heavy' : m.density < 0.9 ? 'light' : 'like water'} (hydrometer for exact)`;
   const visc = has('viscometer') ? `${viscosityClass(m.viscosity)} (${m.viscosity < 100 ? m.viscosity.toFixed(1) : Math.round(m.viscosity)} cP)` : viscosityClass(m.viscosity);
   const assay = (v) => (has('assay') ? String(Math.round(v)) : `${level(v)} (assay kit for exact)`);
-  const aspect = (v) => (has('lens') ? String(Math.round(v)) : v >= 20 ? 'strong' : v >= 6 ? 'faint' : '—');
+  const aura = has('lens') ? EFFECTS.filter((e, k) => Math.abs(m.effects[k]) >= 3).map((e) => e.label).join(', ') || 'no aura' : null;
   modal({
     title,
     body: [
@@ -323,7 +354,9 @@ export function showAnalysis(lab, m, recipe, title = 'Analysis of the brew') {
         h('span', { class: 'k', text: 'Viscosity' }), h('span', { text: visc }),
         h('span', { class: 'k', text: 'Stability' }), h('span', { text: assay(m.stability) }),
         h('span', { class: 'k', text: 'Volatility' }), h('span', { text: assay(m.volatility) }),
-        ...['vitality', 'ardor', 'arcana', 'fortitude'].flatMap((k, i) => [h('span', { class: 'k', text: PROPERTY_LABELS[k] }), h('span', { text: aspect(m.aspects[i]) })]),
+        has('galvanometer') ? h('span', { class: 'k', text: 'Charge' }) : null, has('galvanometer') ? h('span', { text: `${m.charge >= 0 ? '+' : ''}${m.charge.toFixed(2)}` }) : null,
+        h('span', { class: 'k', text: 'Effects' }), h('span', { text: 'unknown — test a dose in the Trials room' }),
+        aura ? h('span', { class: 'k', text: 'Aether aura' }) : null, aura ? h('span', { text: aura }) : null,
       )),
       h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Composition' }), ...comp.map(([id, f]) => h('div', { class: 'small', text: `${(f * 100).toFixed(1)}%  ${st.lookup(id) ? st.lookup(id).name : id}` }))),
       lab.sandbox ? null : h('div', { class: 'row' }, btn('Save as recipe', () => { const ev = st.addRecipe({ ...recipe, name: 'Experiment ' + (st.recipes.length + 1) }); for (const e of ev) lab.announce(e); toast('Recipe saved', '', 'book'); }, { icon: 'book' })),
@@ -333,9 +366,13 @@ export function showAnalysis(lab, m, recipe, title = 'Analysis of the brew') {
 
 // ------------------------------------------------------------------ recipes
 export function openRecipes(lab) {
+  if (lab.showView) { lab.showView('book'); lab.views.book.open('recipes'); return; }
+}
+
+/** Render the recipe book into a container. */
+export function renderRecipes(lab, container, rerender) {
   const st = lab.state;
-  const body = h('div');
-  const m = modal({ title: 'Recipe Book', body, wide: true });
+  const m = { body: container, close: () => {} };
   const render = () => {
     clear(m.body);
     if (!st.recipes.length) {
@@ -352,11 +389,12 @@ export function openRecipes(lab) {
       steps.push(`serve at ${r.serveTemp}°C`);
       const canAfford = r.ingredients.every((i) => lab.sandbox || st.stock(i.id) >= i.ml);
       const actions = h('div', { class: 'row', style: { flexWrap: 'wrap' } },
-        btn('Prepare', () => { prepareRecipe(lab, r); m.close(); }, { icon: 'pour', disabled: !canAfford, title: canAfford ? 'Pour all ingredients' : 'Not enough stock', act: 'prepare' }),
-        st.has('homunculus') ? btn('Homunculus', () => { lab.startHomunculus(r); m.close(); }, { icon: 'homunculus', disabled: !canAfford, act: 'homunculus' }) : null,
+        btn('Prepare', () => { prepareRecipe(lab, r); if (lab.showView) lab.showView('brew'); }, { icon: 'pour', disabled: !canAfford, title: canAfford ? 'Pour all ingredients' : 'Not enough stock', act: 'prepare' }),
+        st.has('homunculus') ? btn('Homunculus', () => { lab.startHomunculus(r); if (lab.showView) lab.showView('brew'); }, { icon: 'homunculus', disabled: !canAfford, act: 'homunculus' }) : null,
         btn('', async () => { const name = prompt('Rename recipe', r.name); if (name) { r.name = name.slice(0, 40); render(); } }, { icon: 'scroll', cls: 'icon', title: 'Rename' }),
         btn('', async () => { if (await confirmDialog('Delete recipe?', r.name, 'Delete', 'danger')) { st.recipes.splice(st.recipes.indexOf(r), 1); render(); } }, { icon: 'trash', cls: 'icon danger', title: 'Delete' }),
       );
+      const verified = r.verified && Object.keys(r.verified).length;
       m.body.appendChild(h('div', { class: 'item parch' },
         swatch(r.result.color),
         h('div', {},
@@ -364,13 +402,14 @@ export function openRecipes(lab) {
           h('div', { class: 'meta', text: ing }),
           h('div', { class: 'meta', text: steps.join(' · ') }),
           h('div', { class: 'meta', text: `Result: ${describeColor(r.result.color)}, ${viscosityClass(r.result.viscosity)}, ${r.result.density.toFixed(2)} g/ml${r.quality !== null && r.quality !== undefined ? ` · sold at ${Math.round(r.quality * 100)}% quality` : ''}` }),
+          h('div', { class: 'meta' }, h('span', { class: verified ? 'ok' : 'muted', text: verified ? 'Tested: ' : 'Untested formula — effects unknown' }), ...(verified ? fxChips(r.verified, 0.5) : [])),
         ),
         actions,
       ));
     }
   };
   render();
-  audio.play('page');
+  void rerender;
 }
 
 /** Pour a recipe's ingredients in order (the player still stirs and heats). */
@@ -384,24 +423,23 @@ function prepareRecipe(lab, r) {
     if (lab.sim.emitter.pouring) { setTimeout(next, 200); return; }
     const i = queue.shift();
     lab.selectIngredient(i.id);
-    lab.startPour(lab.pourX, Math.round(i.ml / SIM.ML_PER_PARTICLE));
+    lab.startPour(lab.pourX, Math.round(i.ml / SIM.ML_PER_PARTICLE), i.ground);
     setTimeout(next, 250);
   };
   next();
 }
 
 // ------------------------------------------------------------------ journal
-export function openJournal(lab, tab = 'discoveries') {
+export function openJournal(lab, tab = 'journal') {
+  if (lab.showView) { lab.showView('book'); lab.views.book.open(tab === 'discoveries' ? 'journal' : tab); }
+}
+
+/** Render a journal tab (journal | achievements | history) into a container. */
+export function renderJournal(lab, container, tab = 'journal') {
   const st = lab.state;
-  const tabs = h('div', { class: 'tabs' });
-  const m = modal({ title: 'Alchemist’s Journal', body: [], wide: true });
-  m.el.insertBefore(tabs, m.body);
-  let current = tab;
+  const m = { body: container };
+  const current = tab === 'journal' ? 'discoveries' : tab;
   const render = () => {
-    clear(tabs);
-    for (const [k, label] of [['discoveries', 'Discoveries'], ['ingredients', 'Encyclopedia'], ['achievements', 'Achievements'], ['history', 'Sales']]) {
-      tabs.appendChild(btn(label, () => { current = k; render(); }, { cls: current === k ? 'active' : '', act: 'journal-tab-' + k }));
-    }
     clear(m.body);
     if (current === 'discoveries') {
       const entries = Object.values(st.journal).filter((e) => e.kind !== 'ingredient').sort((a, b) => b.day - a.day);
@@ -438,7 +476,6 @@ export function openJournal(lab, tab = 'discoveries') {
     }
   };
   render();
-  audio.play('page');
 }
 
 // ------------------------------------------------------------------ pause / settings
@@ -462,7 +499,8 @@ export function openHelp() {
     title: 'How to play',
     wide: true,
     body: [
-      sec('Your shop', ['Customers ask for potions with particular colour, thickness, temperature, potency and more. Their order card shows each requirement and a live meter of how well your brew matches.', 'Bottle when you are happy — the potion is drawn from the tap at the bottom of the cauldron, so the lowest layer comes out first.', 'Better matches earn more coins and reputation. Reputation unlocks ranks, reagents and equipment.']),
+      sec('Your shop', ['Customers ask for potions with particular effects (healing, strength, love, fire…) and physical qualities (colour, thickness, temperature). The order strip shows each requirement and a live meter for what your instruments can measure.', 'You know what each plain ingredient does. You do NOT know what a mixture does: mixing, heat, reactions and hidden laws change things. Test doses in the Trials room to find out — a customer only accepts a potion whose effects you have verified.', 'Bottle when you are happy — the potion is drawn from the tap at the bottom of the cauldron, so the lowest layer comes out first. Then serve it at the Counter.', 'Better matches earn more coins and reputation. Reputation unlocks ranks, regions of the wilds, reagents and equipment.']),
+      sec('Wilds and trials', ['Gather roots, leaves, flowers, mushrooms and minerals in the Wilds. Deposits are finite and regrow over time, even while the game is closed.', 'Whole roots and stones do nothing until crushed (pestle) or ground (mortar, the “Ground” switch on the shelf). Only what dissolves takes effect; hot water dissolves more, and some herbs steep into strong extracts when held warm.', 'Each subject responds to some effects only: a stone shows acid but not love. Choose subjects that cover what the customer cares about.', 'When a trial surprises you, a hidden law may be at work. Confirm it twice and your theory learns it.']),
       sec('Brewing', ['Tap a jar on the shelf, then hold your finger (or the mouse) inside the cauldron to pour. Dose buttons pour exact amounts.', 'Stir with the spoon: drag through the brew. Mixing starts where liquids touch and spreads; stirring speeds it up dramatically.', 'Powders pile up like sand. Knead a binding powder with a watery liquid to make dough; add more liquid to thin it.', 'Slide the fire control right to heat from below, left to cool. Heat spreads through the brew gradually.', 'Keep the lid on to trap vapour; let things cool and the vapour condenses back. Open the lid to let it escape.', 'Freeze liquids into blocks, then crush them with the pestle. Some reagents react when mixed, heated or chilled — discoveries go into your journal.']),
       sec('Controls', ['Keys: 1 pour · 2 spoon · 3 pestle · 4 skimmer · 5 inspect · L lid · B bottle · F time speed · A auto-stir · arrows fire · S shop · R recipes · J journal · Esc menu.', 'Long-press (or right-click) a jar to inspect a reagent.', 'Use the time-speed button to skip waiting while things heat, cool or react.']),
       sec('Tips', ['Ask the guild for advice on a difficult order — it costs a few coins.', 'Instruments like the hydrometer, viscometer, assay kit and aether lens turn rough guesses into exact readings.', 'If you run out of money, the guild will help a struggling apprentice once a day — and water from the well is always free.']),
@@ -483,7 +521,7 @@ export function openSettings(app, lab) {
     inp.addEventListener('change', () => { s[key] = inp.checked; app.applySettings(); after && after(); });
     return h('div', { class: 'toggle-row' }, h('span', { text: label }), inp);
   };
-  const quality = /** @type {HTMLSelectElement} */ (h('select', { 'aria-label': 'Graphics quality', style: { width: '50%' } }, ...['auto', 'high', 'medium', 'low'].map((q) => h('option', { value: q, text: q === 'auto' ? 'automatic' : q }))));
+  const quality = /** @type {HTMLSelectElement} */ (h('select', { 'aria-label': 'Graphics quality', style: { width: '50%' } }, ...[['auto', 'Automatic'], ['high', 'High quality'], ['medium', 'Balanced'], ['low', 'Battery saver']].map(([q, t]) => h('option', { value: q, text: t }))));
   quality.value = s.quality;
   quality.addEventListener('change', () => { s.quality = /** @type {any} */ (quality.value); app.applySettings(); if (lab) lab.resize(true); });
   const fileIn = /** @type {HTMLInputElement} */ (h('input', { type: 'file', accept: '.json,application/json', class: 'hidden' }));
@@ -514,7 +552,9 @@ export function openSettings(app, lab) {
     onClose: () => app.saveSettings(),
     body: [
       h('div', { class: 'card parch' }, h('h3', { text: 'Sound' }), vol('master', 'Master volume'), vol('sfx', 'Effects'), vol('music', 'Music'), check('musicOn', 'Play music', () => audio.music(s.musicOn)), check('muted', 'Mute everything')),
-      h('div', { class: 'card parch' }, h('h3', { text: 'Display' }), h('div', { class: 'toggle-row' }, h('span', { text: 'Graphics quality' }), quality), check('showFps', 'Show performance stats')),
+      h('div', { class: 'card parch' }, h('h3', { text: 'Display' }), h('div', { class: 'toggle-row' }, h('span', { text: 'Graphics' }), quality),
+        h('div', { class: 'small muted', text: 'Battery saver draws at 30 frames per second with coarser pixels and fewer effects; High quality uses the finest pixels and every glow. The physics, quantities and scores are identical in every mode.' }),
+        check('showFps', 'Show performance stats')),
       saveSection,
       h('div', { class: 'card parch small' }, 'The Alchemist’s Shop — all art, sound, font and code made for this game. Runs fully offline.'),
     ],

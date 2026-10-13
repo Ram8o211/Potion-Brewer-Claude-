@@ -45,6 +45,11 @@
  * @property {string} [icon]           jar/bottle icon style
  * @property {number[]} [look]          appearance of the pure material (derived)
  * @property {number} [storeTemp]       temperature it is supplied at (°C)
+ * @property {Record<string, number>} [effects] magical/chemical effect potency of the pure material (alchemy/effects.js)
+ * @property {number} [econd]          electrical conductance 0..1
+ * @property {number} [charge]         intrinsic electric charge per unit volume
+ * @property {{key:string, shape:string, region:string, rank:number, rare:boolean, gatherOnly:boolean}} [wild] gathered raw ingredient
+ * @property {boolean} [crushable]
  */
 
 export const ASPECTS = ['vitality', 'ardor', 'arcana', 'fortitude'];

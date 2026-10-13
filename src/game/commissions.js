@@ -26,6 +26,9 @@ import { compatFactor } from '../reactions/compatibility.js';
  * @property {number} zero       distance at which the score reaches zero
  * @property {number[]} [rgb]    colour swatch
  * @property {string} label
+ * @property {boolean} [effect]   an effect requirement (needs a verified trial)
+ * @property {boolean} [limit]    a safety limit on an unwanted effect
+ * @property {string} [name]
  */
 
 const STYLE_NOUN = {
@@ -351,7 +354,7 @@ function safetyLimits(pred, style, wanted, tier) {
     const v = pred.effects[EFFECT_INDEX[key]];
     if (key !== 'toxicity' && v < 2 && tier < 2) continue;
     const max = Math.max(key === 'acidity' ? 6 : 4, Math.round(Math.max(0, v) + 4));
-    out.push({ key, kind: 'max', target: max, tol: 0, zero: 14, label: `at most ${max}`, effect: true, limit: true });
+    out.push({ key, kind: /** @type {'max'} */ ('max'), target: max, tol: 0, zero: 14, label: `at most ${max}`, effect: true, limit: true });
   }
   return out;
 }
@@ -397,7 +400,8 @@ export function generateCommission(ctx, rng, opts = {}) {
     const style = rng.pick(styles);
     const bottleMl = [100, 150, 200, 250, 300][tier] * (opts.contract ? 1.5 : 1);
     const bottleN = Math.round(bottleMl / SIM.ML_PER_PARTICLE);
-    const totalN = Math.min(Math.round(bottleN * rng.range(1.7, 2.3)), Math.floor(ctx.cap.size === 'small' ? 900 : 1300));
+    const vessel = { pot: 310, copper: 440, grand: 600, small: 1400, medium: 2000, large: 2700 }[ctx.cap.size] || 310;
+    const totalN = Math.min(Math.round(bottleN * rng.range(1.7, 2.3)), Math.floor(vessel * 0.45));
     const plan = EFFECT_STYLES[style] ? buildEffectPlan(style, ctx, rng, totalN, tier) : buildPlan(style, ctx, rng, totalN);
     if (!plan) continue;
     if (plan.coolTo < ctx.cap.minCool - 2 && style !== 'frost') continue;

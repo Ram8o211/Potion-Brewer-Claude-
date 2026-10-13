@@ -7,6 +7,7 @@
 import { MAX_SPECIES } from '../reactions/species.js';
 import { refreshParticle } from './derived.js';
 import { Simulation } from './world.js';
+import { CAULDRON_SIZES } from './cauldron.js';
 
 const F32_FIELDS_V1 = ['x', 'y', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet'];
 /** v2 adds electric charge */
@@ -91,6 +92,7 @@ export function applySnapshot(sim, snap, env) {
     if (def) slotMap[s] = sim.species.assign(s, def, env.lookup);
   });
   const n = Math.min(snap.n, sim.capacity);
+  if (snap.n > sim.capacity) console.warn(`Cauldron snapshot holds ${snap.n} particles; this vessel holds ${sim.capacity}.`);
   const fb = fromBase64(snap.f32);
   const f = new Float32Array(fb.buffer, fb.byteOffset, fb.byteLength / 4);
   const cb = fromBase64(snap.comp);
@@ -103,12 +105,22 @@ export function applySnapshot(sim, snap, env) {
   const p = sim.p;
   const S = MAX_SPECIES;
   const fields = (snap.v || 1) >= 2 ? F32_FIELDS : F32_FIELDS_V1;
+  // a snapshot from a differently shaped vessel (an old save, or a new
+  // cauldron installed) is mapped onto this one; no matter is ever dropped
+  const from = CAULDRON_SIZES[snap.size], to = sim.cauldron.spec;
+  const remap = from && from.key !== to.key && (from.depth > to.depth + 1e-6 || from.belly > to.belly + 1e-6);
+  const sx = remap ? to.belly / from.belly : 1, sy = remap ? to.depth / from.depth : 1;
   p.count = n;
   for (let i = 0; i < n; i++) {
     p.q[i] = 0;
     fields.forEach((name, k) => {
       /** @type {any} */ (p)[name][i] = f[k * snap.n + i];
     });
+    if (remap) {
+      p.x[i] *= sx;
+      if (p.y[i] > 0) p.y[i] *= sy;
+      p.restX[i] *= sx; p.restY[i] *= sy;
+    }
     p.px[i] = p.x[i];
     p.py[i] = p.y[i];
     p.group[i] = group[i];

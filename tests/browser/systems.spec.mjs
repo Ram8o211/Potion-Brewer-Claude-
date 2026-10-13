@@ -40,7 +40,7 @@ test('progress survives a reload and Continue restores the shop', async ({ page 
   await page.waitForSelector('[data-act=continue]');
   await expect(page.locator('[data-act=continue]')).toContainText('Day 3');
   await page.click('[data-act=continue]');
-  await page.waitForSelector('canvas.view');
+  await page.waitForSelector('canvas.view-canvas');
   const st = await lab(page, (l) => ({ coins: l.state.coins, day: l.state.day, seed: l.state.seed }));
   expect(st).toEqual({ coins: 77.5, day: 3, seed: 'persist-test-7' });
   expect(errors).toEqual([]);
@@ -56,7 +56,7 @@ test('the cauldron contents are saved with the game', async ({ page }) => {
   await lab(page, (l) => l.save());
   await page.reload();
   await page.click('[data-act=continue]');
-  await page.waitForSelector('canvas.view');
+  await page.waitForSelector('canvas.view-canvas');
   await page.waitForTimeout(300);
   expect(await lab(page, (l) => l.sim.p.count * 5)).toBe(100);
 });
@@ -80,7 +80,7 @@ test('export and import a save file', async ({ page }, info) => {
   const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.click('.overlay [data-act=import]')]);
   await chooser.setFiles(file);
   await page.locator('.overlay .modal-foot .btn', { hasText: 'Import' }).last().click();
-  await page.waitForSelector('canvas.view');
+  await page.waitForSelector('canvas.view-canvas');
   expect(await lab(page, (l) => l.state.coins)).toBe(321);
   expect(errors).toEqual([]);
 });
@@ -94,7 +94,7 @@ test('a damaged save falls back to the backup instead of crashing', async ({ pag
   await page.evaluate(() => localStorage.setItem('alchemist-shop.save', '{broken'));
   await page.reload();
   await page.click('[data-act=continue]');
-  await page.waitForSelector('canvas.view');
+  await page.waitForSelector('canvas.view-canvas');
   await expect(page.locator('.toast', { hasText: 'damaged' })).toBeVisible();
   expect(await lab(page, (l) => l.state.coins)).toBe(50);
 });

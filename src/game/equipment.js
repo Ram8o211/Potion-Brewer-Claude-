@@ -25,9 +25,9 @@ export const EQUIPMENT = [
   { id: 'frostrune', name: 'Frost Rune Plate', category: 'cold', price: 150, rank: 1, icon: 'rune', requires: ['basin'], desc: 'A carved rune that draws heat out to -30°C. Freezes liquids into solid blocks.', effect: { minCool: -30, coolPower: 6 } },
   { id: 'glacial', name: 'Glacial Sigil', category: 'cold', price: 750, rank: 3, icon: 'snow', requires: ['frostrune'], desc: 'Deep cold to -70°C, fast. Condenses even marsh vapour.', effect: { minCool: -70, coolPower: 9 } },
   // vessels
-  { id: 'pot', name: 'Iron Pot', category: 'vessel', price: 0, rank: 0, icon: 'cauldron', desc: 'Your first cauldron (about 7 litres).', effect: { size: 'small' } },
-  { id: 'copper', name: 'Copper Cauldron', category: 'vessel', price: 320, rank: 2, icon: 'cauldron2', requires: ['pot'], desc: 'A larger vessel (about 10 litres) for big orders and multi-step brews.', effect: { size: 'medium' } },
-  { id: 'grand', name: 'Grand Athanor Vessel', category: 'vessel', price: 1800, rank: 4, icon: 'cauldron3', requires: ['copper'], desc: 'A huge vessel (about 13 litres) for the grandest commissions.', effect: { size: 'large' } },
+  { id: 'pot', name: 'Iron Pot', category: 'vessel', price: 0, rank: 0, icon: 'cauldron', desc: 'Your first cauldron (about 1.5 litres).', effect: { size: 'pot' } },
+  { id: 'copper', name: 'Copper Cauldron', category: 'vessel', price: 320, rank: 2, icon: 'cauldron2', requires: ['pot'], desc: 'A larger vessel (about 2.2 litres) for big orders, spare test doses and multi-step brews.', effect: { size: 'copper' } },
+  { id: 'grand', name: 'Grand Athanor Vessel', category: 'vessel', price: 1800, rank: 4, icon: 'cauldron3', requires: ['copper'], desc: 'A huge vessel (3 litres) for the grandest commissions.', effect: { size: 'grand' } },
   // tools
   { id: 'spoon', name: 'Oak Spoon', category: 'tool', price: 0, rank: 0, icon: 'spoon', desc: 'Stirs, folds and kneads.' },
   { id: 'mortar', name: 'Stone Mortar', category: 'tool', price: 0, rank: 0, icon: 'mortar', desc: 'Grinds roots, leaves and stones into powder before they go into the pot ("Ground" on the shelf).' },
@@ -85,14 +85,14 @@ export function rankIndex(rep) {
  */
 export function capabilities(owned) {
   const has = owned instanceof Set ? owned : new Set(owned);
-  const cap = { maxFlame: 340, heatPower: 3.5, minCool: 4, coolPower: 4, size: 'small', storage: BASE_STORAGE, discount: 0, has: (id) => has.has(id) };
+  const cap = { maxFlame: 340, heatPower: 3.5, minCool: 4, coolPower: 4, size: 'pot', storage: BASE_STORAGE, discount: 0, has: (id) => has.has(id) };
   for (const e of EQUIPMENT) {
     if (!has.has(e.id) || !e.effect) continue;
     const f = /** @type {any} */ (e.effect);
     if (f.maxFlame && f.maxFlame > cap.maxFlame) { cap.maxFlame = f.maxFlame; cap.heatPower = f.heatPower; }
     if (f.minCool !== undefined && f.minCool < cap.minCool) { cap.minCool = f.minCool; cap.coolPower = f.coolPower; }
-    if (f.size === 'medium' && cap.size === 'small') cap.size = 'medium';
-    if (f.size === 'large') cap.size = 'large';
+    if (f.size === 'copper' && cap.size === 'pot') cap.size = 'copper';
+    if (f.size === 'grand') cap.size = 'grand';
     if (f.storage && f.storage > cap.storage) cap.storage = f.storage;
     if (f.discount) cap.discount = Math.max(cap.discount, f.discount);
   }

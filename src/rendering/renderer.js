@@ -7,6 +7,9 @@ import { FluidRenderer } from './fluid.js';
 import { Effects } from './effects.js';
 import { COLUMN } from '../simulation/cauldron.js';
 import { PHASE } from '../simulation/constants.js';
+import { compositionEffects, dominantEffect, EFFECTS, NE } from '../alchemy/effects.js';
+
+const auraScratch = new Float64Array(NE);
 
 /** top of the visible scene (sim units): enough headroom for the pouring jar */
 const VIEW_TOP = -1.25;
@@ -152,6 +155,22 @@ export class Renderer {
         const [fx, fy] = this.toScreen(p.x[i], p.y[i]);
         this.fx.add(0, fx + (this.fx.rand() - 0.5) * s * 0.08, fy - 1, (this.fx.rand() - 0.5) * s * 0.1, -s * (0.4 + this.fx.rand() * 0.6), 0.25 + this.fx.rand() * 0.25, Math.max(1, s * 0.035));
         if (this.fx.rand() < 0.04) this.fx.add(1, fx, fy, (this.fx.rand() - 0.5) * s, -s * (0.8 + this.fx.rand()), 0.6, 1, [255, 220, 120]);
+      }
+    }
+
+    // ---- Aether Lens: a faint aura shimmer in the colour of the strongest
+    // effect where it is present (a clue: which kind, never how strong)
+    if (st.aura && this.quality !== 'low' && p.count) {
+      const tries = this.quality === 'high' ? 4 : 2;
+      for (let k = 0; k < tries; k++) {
+        const i = Math.floor(this.fx.rand() * p.count);
+        if (p.phase[i] === PHASE.GAS || p.phase[i] === PHASE.SOLID) continue;
+        compositionEffects(sim.species, p.comp, i * p.S, p.temp[i], sim.laws || [], auraScratch);
+        const d = dominantEffect(auraScratch, 4);
+        if (d < 0 || this.fx.rand() > 0.35) continue;
+        const [ax, ay] = this.toScreen(p.x[i], p.y[i]);
+        const col = EFFECTS[d].color;
+        this.fx.add(4, ax, ay - 1, 0, -s * 0.15, 0.6, 1, [col[0] * 255, col[1] * 255, col[2] * 255]);
       }
     }
 
@@ -418,6 +437,7 @@ export class Renderer {
         break;
       case 'paste': if (this.fx.rand() < 0.2) this.fx.burst(4, x, y, 2, s * 0.2, [255, 240, 210], 0.3); break;
       case 'dissolve': this.fx.burst(4, x, y, 2, s * 0.15, [220, 240, 255], 0.3); break;
+      case 'spark': this.fx.burst(1, x, y, 5, s * 0.5, [190, 220, 255], 0.8); break;
     }
   }
 }
