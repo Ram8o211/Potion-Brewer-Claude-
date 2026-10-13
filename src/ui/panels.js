@@ -476,7 +476,7 @@ export function openSettings(app, lab) {
     inp.addEventListener('change', () => { s[key] = inp.checked; app.applySettings(); after && after(); });
     return h('div', { class: 'toggle-row' }, h('span', { text: label }), inp);
   };
-  const quality = /** @type {HTMLSelectElement} */ (h('select', { 'aria-label': 'Graphics quality', style: { width: '50%' } }, ...['high', 'medium', 'low'].map((q) => h('option', { value: q, text: q }))));
+  const quality = /** @type {HTMLSelectElement} */ (h('select', { 'aria-label': 'Graphics quality', style: { width: '50%' } }, ...['auto', 'high', 'medium', 'low'].map((q) => h('option', { value: q, text: q === 'auto' ? 'automatic' : q }))));
   quality.value = s.quality;
   quality.addEventListener('change', () => { s.quality = /** @type {any} */ (quality.value); app.applySettings(); if (lab) lab.resize(true); });
   const fileIn = /** @type {HTMLInputElement} */ (h('input', { type: 'file', accept: '.json,application/json', class: 'hidden' }));

@@ -326,7 +326,7 @@ export class Simulation {
   _refreshDerived() {
     const p = this.p, n = p.count;
     // dirty particles every step, plus a rolling refresh for temperature-dependent values
-    const chunk = Math.max(64, Math.ceil(n / 6));
+    const chunk = Math.max(48, Math.ceil(n / 12));
     const start = (this.steps * chunk) % Math.max(1, n);
     for (let k = 0; k < chunk && k < n; k++) p.dirty[(start + k) % n] = 1;
     for (let i = 0; i < n; i++) {
@@ -445,7 +445,8 @@ export class Simulation {
   _invm(i) {
     if (this.p.sleep[i] >= SLEEP_STEPS) return 0;
     if (this.p.phase[i] === GAS) return 1;
-    return Math.pow(this.p.rho[i], -TUNE.massPow);
+    const r = this.p.rho[i];
+    return TUNE.massPow === 2 ? 1 / (r * r) : Math.pow(r, -TUNE.massPow);
   }
 
   _fluidConstraints(iter) {
@@ -457,8 +458,11 @@ export class Simulation {
     const W0 = POLY6 * H2 * H2 * H2;
     const n0 = this.n0, n0g = this.n0Gas;
     const fw = this.fw;
+    const sleep = p.sleep, phase = p.phase, rho = p.rho, mp = TUNE.massPow;
     for (let i = 0; i < n; i++) {
-      fw[i] = this._invm(i);
+      // inverse mass weighting ρ^-massPow (inlined: this runs every iteration)
+      const r = rho[i];
+      fw[i] = sleep[i] >= SLEEP_STEPS ? 0 : phase[i] === GAS ? 1 : mp === 2 ? 1 / (r * r) : Math.pow(r, -mp);
       dens[i] = W0;
       gx[i] = 0; gy[i] = 0; s2[i] = 0;
       if (iter === 0) { nCond[i] = 0; nGas[i] = 0; }

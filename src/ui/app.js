@@ -12,7 +12,7 @@ import { MenuScreen } from './menu.js';
 import { openSettings, openHelp } from './panels.js';
 import { Rng } from '../core/rng.js';
 
-const DEFAULT_SETTINGS = { master: 0.8, sfx: 0.8, music: 0.35, musicOn: true, muted: false, quality: 'high', showFps: false };
+const DEFAULT_SETTINGS = { master: 0.8, sfx: 0.8, music: 0.35, musicOn: true, muted: false, quality: 'auto', showFps: false };
 const SEED_WORDS = ['amber', 'ashen', 'brine', 'copper', 'dusk', 'elder', 'fen', 'gloam', 'hollow', 'iron', 'juniper', 'kelp', 'lantern', 'moon', 'nettle', 'oak', 'pewter', 'quill', 'raven', 'sage', 'thorn', 'umber', 'vale', 'willow', 'wyrm', 'yarrow'];
 
 export class App {
@@ -60,8 +60,9 @@ export class App {
 
   continueGame() {
     const { state, error } = loadGame();
-    if (error) toast('Save problem', error, 'scroll', 6000);
     if (state) this.startGame(state);
+    // after the screen swap, which clears the root (and any toast in it)
+    if (error) toast('Save problem', error, 'scroll', 6000);
   }
 
   /** @param {GameState} state */

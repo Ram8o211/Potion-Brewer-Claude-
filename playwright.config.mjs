@@ -1,0 +1,32 @@
+// Browser test suite. Runs against the dev server (source modules) for the
+// gameplay/layout specs and against the production build for the offline
+// spec. Chromium only; phone layouts are desktop emulation (viewport, touch,
+// device pixel ratio), not physical devices.
+import { defineConfig } from '@playwright/test';
+
+const phone = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true };
+
+export default defineConfig({
+  testDir: 'tests/browser',
+  timeout: 180_000,
+  expect: { timeout: 10_000 },
+  fullyParallel: false,
+  workers: 2,
+  reporter: [['list'], ['json', { outputFile: 'test-results/browser-results.json' }]],
+  use: {
+    baseURL: 'http://localhost:5173',
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+  },
+  webServer: [
+    { command: 'node scripts/serve.mjs --root . --port 5173', url: 'http://localhost:5173/index.html', reuseExistingServer: true },
+    { command: 'node scripts/build.mjs --no-zip && node scripts/serve.mjs --root dist --port 4173', url: 'http://localhost:4173/index.html', reuseExistingServer: true, timeout: 60_000 },
+  ],
+  projects: [
+    { name: 'desktop', use: { viewport: { width: 1440, height: 900 } }, testIgnore: /offline/ },
+    { name: 'phone-portrait', use: { ...phone }, testIgnore: /offline|perf-desktop/ },
+    { name: 'phone-landscape', use: { ...phone, viewport: { width: 844, height: 390 } }, testMatch: /layout|gameplay/ },
+    { name: 'tablet', use: { viewport: { width: 820, height: 1180 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }, testMatch: /layout/ },
+    { name: 'offline-build', use: { baseURL: 'http://localhost:4173', viewport: { width: 1280, height: 800 } }, testMatch: /offline/ },
+  ],
+});

@@ -63,6 +63,8 @@ export class LabScreen {
     this.assay = null;
     this.running = false;
     this.fpsAcc = { t: 0, n: 0, fps: 0 };
+    /** frame timing for the performance overlay and the benchmark (ring of recent frames) */
+    this.perf = { intervals: new Float32Array(600), work: new Float32Array(600), n: 0, physMs: 0, renderMs: 0 };
     this.stirLevel = 0;
     this.lastBoil = 0;
     this._raf = 0;
@@ -86,7 +88,10 @@ export class LabScreen {
     }
     this.buildDom();
     this.renderer = new Renderer(this.canvas);
-    this.renderer.quality = this.app.settings.quality;
+    /** effective render quality: the setting, or — on 'auto' — what this device sustains */
+    this.autoQuality = /** @type {'high'|'medium'|'low'} */ ('high');
+    this.qualityCheck = { t: 0, slow: 0, frames: 0 };
+    this.renderer.quality = this.effectiveQuality();
     this.onResize = () => this.resize();
     window.addEventListener('resize', this.onResize);
     this.resizeObs = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => this.resize()) : null;
@@ -339,7 +344,30 @@ export class LabScreen {
     const st = this.state;
     const jars = st.world.ingredients.slice(0, 14).map((id) => ({ color: st.lookup(id).look || st.lookup(id).color, form: st.lookup(id).form }));
     if (force) this.renderer._key = '';
-    this.renderer.resize(Math.floor(r.width), Math.floor(r.height), this.sim.cauldron, jars, this.app.settings.quality);
+    this.renderer.resize(Math.floor(r.width), Math.floor(r.height), this.sim.cauldron, jars, this.effectiveQuality());
+  }
+
+  /** @returns {'high'|'medium'|'low'} */
+  effectiveQuality() {
+    const q = this.app.settings.quality;
+    return q === 'auto' || !q ? this.autoQuality : q;
+  }
+
+  /**
+   * Automatic quality: if frames keep running over budget, step the
+   * renderer down (high → medium → low). Checked about once a second.
+   * @param {number} dt @param {number} workMs
+   */
+  adaptQuality(dt, workMs) {
+    const qc = this.qualityCheck;
+    qc.t += dt; qc.frames++;
+    if (workMs > 15) qc.slow++;
+    if (qc.t < 1.2) return;
+    const slowShare = qc.slow / Math.max(1, qc.frames);
+    qc.t = 0; qc.slow = 0; qc.frames = 0;
+    if (this.app.settings.quality !== 'auto' || slowShare < 0.5 || this.autoQuality === 'low') return;
+    this.autoQuality = this.autoQuality === 'high' ? 'medium' : 'low';
+    this.resize(true);
   }
 
   // ------------------------------------------------------------------ input
@@ -950,6 +978,9 @@ export class LabScreen {
 
   // ------------------------------------------------------------------ frame loop
   frame(t) {
+    const tw0 = performance.now();
+    const pf = this.perf;
+    pf.intervals[pf.n % 600] = t - this.lastT;
     let dt = (t - this.lastT) / 1000;
     this.lastT = t;
     if (dt > 0.1) dt = 0.1;
@@ -970,9 +1001,16 @@ export class LabScreen {
       }
       this.accountPours();
     } else {
-      sim.advance(dt, this.speed, this.speed > 1 ? 10 : 6);
+      // physics gets what is left of a ~30 fps frame after rendering (8–22 ms):
+      // fast devices run in real time at 60 fps, slow ones keep a playable
+      // frame rate and let the brew run in slow motion rather than stall
+      const cap = this.speed > 1 ? 10 : 6;
+      const budget = Math.max(8, Math.min(22, 30 - this.perf.renderMs));
+      const maxSteps = Math.max(1, Math.min(cap, Math.floor(budget / Math.max(0.3, sim.stats.stepMs || 1))));
+      sim.advance(dt, this.speed, maxSteps);
       this.accountPours();
     }
+    const tw1 = performance.now();
     if (this.alembicOpen) this.collectVapour();
     this.stepBottling(dt);
     this.trackBrew(dt);
@@ -999,6 +1037,7 @@ export class LabScreen {
     if (sim.steps % 30 === 0) { for (let i = 0; i < sim.p.count; i++) if (sim.p.phase[i] === PHASE.GAS && sim.nCond[i] >= 3) boiling++; this.lastBoil = boiling; }
     audio.update({ fire: Math.max(0, sim.furnace.setting), cold: Math.max(0, -sim.furnace.setting), stir: this.stirLevel, pour: sim.emitter.pouring ? 1 : 0, boil: Math.min(1, this.lastBoil / 30) }, dt);
     // render
+    const tw2 = performance.now();
     const em = sim.emitter;
     this.renderer.render({
       sim,
@@ -1015,6 +1054,30 @@ export class LabScreen {
       receiver: this.state.receiver,
       stirrer: this.state.has('stirrer') && this.autoStir,
     });
+    const tw3 = performance.now();
+    pf.work[pf.n % 600] = tw3 - tw0;
+    this.adaptQuality(dt, tw3 - tw0);
+    pf.n++;
+    pf.physMs = pf.physMs * 0.95 + (tw1 - tw0) * 0.05;
+    pf.renderMs = pf.renderMs * 0.95 + (tw3 - tw2) * 0.05;
+  }
+
+  /** Frame-time statistics over the last (up to) 600 frames. */
+  perfReport() {
+    const pf = this.perf;
+    const m = Math.min(pf.n, 600);
+    const iv = Array.from(pf.intervals.slice(0, m)).sort((a, b) => a - b);
+    const wk = Array.from(pf.work.slice(0, m)).sort((a, b) => a - b);
+    const q = (a, f) => (a.length ? a[Math.min(a.length - 1, Math.floor(a.length * f))] : 0);
+    const mean = iv.reduce((a, b) => a + b, 0) / Math.max(1, m);
+    return {
+      frames: m,
+      fps: mean > 0 ? 1000 / mean : 0,
+      intervalP50: q(iv, 0.5), intervalP95: q(iv, 0.95), intervalP99: q(iv, 0.99),
+      workP50: q(wk, 0.5), workP95: q(wk, 0.95),
+      physMs: pf.physMs, renderMs: pf.renderMs, stepMs: this.sim.stats.stepMs,
+      particles: this.sim.p.count,
+    };
   }
 
   handleSimEvent(e) {
