@@ -28,7 +28,7 @@ export default defineConfig({
   projects: [
     { name: 'desktop', use: { viewport: { width: 1440, height: 900 } }, testIgnore: /offline|subpath/ },
     { name: 'phone-portrait', use: { ...phone }, testIgnore: /offline|subpath/ },
-    { name: 'phone-landscape', use: { ...phone, viewport: { width: 844, height: 390 } }, testMatch: /layout|gameplay/ },
+    { name: 'phone-landscape', use: { ...phone, viewport: { width: 844, height: 390 } }, testMatch: /layout|gameplay|rooms/ },
     { name: 'tablet', use: { viewport: { width: 820, height: 1180 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }, testMatch: /layout/ },
     { name: 'offline-build', use: { baseURL: 'http://localhost:4173', viewport: { width: 1280, height: 800 } }, testMatch: /offline/ },
     { name: 'pages-subpath', use: { baseURL: 'http://localhost:4174/Potion-Brewer-Claude-/', viewport: { width: 1280, height: 800 } }, testMatch: /subpath/ },

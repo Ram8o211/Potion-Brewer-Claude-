@@ -1,5 +1,11 @@
 # Completion checklist
 
+> This checklist covers the brief of the game's first version. The later
+> round (hidden effects, trials, wilds, processing, electricity, the
+> mobile shell) is covered item by item in `FEATURE_PARITY.md`, with
+> results in `docs/REPORT.md`. Counts below (tests, equipment) are from
+> the first version.
+
 Each requirement from the brief is listed with where it is implemented and
 how it was verified.
 

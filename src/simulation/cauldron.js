@@ -14,9 +14,15 @@
 import { SIM } from './constants.js';
 
 export const CAULDRON_SIZES = {
-  small: { key: 'small', label: 'Iron Pot', mouth: 1.7, belly: 2.15, neck: 1.1, depth: 3.2, capacity: 1400 },
-  medium: { key: 'medium', label: 'Copper Cauldron', mouth: 1.95, belly: 2.5, neck: 1.25, depth: 3.6, capacity: 2000 },
-  large: { key: 'large', label: 'Grand Athanor', mouth: 2.2, belly: 2.85, neck: 1.35, depth: 4.0, capacity: 2700 },
+  // the game's vessels, sized for the 0.2–1 L brews customers order
+  pot: { key: 'pot', label: 'Iron Pot', mouth: 0.8, belly: 1.0, neck: 0.5, depth: 1.55, capacity: 310 },
+  copper: { key: 'copper', label: 'Copper Cauldron', mouth: 0.95, belly: 1.2, neck: 0.6, depth: 1.8, capacity: 440 },
+  grand: { key: 'grand', label: 'Grand Athanor', mouth: 1.1, belly: 1.4, neck: 0.7, depth: 2.1, capacity: 600 },
+  // larger reference vessels (the original 7–13.5 L pots): the physics test
+  // scenarios and benchmarks are calibrated on these; old saves used them
+  small: { key: 'small', label: 'Great Iron Pot', mouth: 1.7, belly: 2.15, neck: 1.1, depth: 3.2, capacity: 1400 },
+  medium: { key: 'medium', label: 'Great Copper Cauldron', mouth: 1.95, belly: 2.5, neck: 1.25, depth: 3.6, capacity: 2000 },
+  large: { key: 'large', label: 'Great Athanor', mouth: 2.2, belly: 2.85, neck: 1.35, depth: 4.0, capacity: 2700 },
 };
 
 /** Height of the open column above the mouth that catches splashes / pour streams. */

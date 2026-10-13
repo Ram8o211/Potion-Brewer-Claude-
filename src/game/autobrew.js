@@ -15,7 +15,7 @@ export class AutoBrewer {
    * @param {import('../simulation/world.js').Simulation} sim
    * @param {import('./predict.js').BrewPlan} plan
    * @param {(id:string)=>any} lookup
-   * @param {{scale?: number, onPour?: (id:string, n:number)=>boolean}} [opts]
+   * @param {{scale?: number, onPour?: (id:string, n:number)=>boolean, onPoured?: (id:string, n:number, ground:boolean)=>void}} [opts]
    */
   constructor(sim, plan, lookup, opts = {}) {
     this.sim = sim;
@@ -23,6 +23,7 @@ export class AutoBrewer {
     this.lookup = lookup;
     this.scale = opts.scale || 1;
     this.onPour = opts.onPour;
+    this.onPoured = opts.onPoured;
     /** @type {Stage} */
     this.stage = 'pour';
     this.ingIndex = 0;
@@ -95,8 +96,10 @@ export class AutoBrewer {
         const n = Math.max(1, Math.round(ing.n * this.scale));
         if (this.onPour && !this.onPour(ing.id, n)) { this.failed = true; this.finish(); return; }
         const def = this.lookup(ing.id);
-        sim.emitter.start(def, { x: (this.ingIndex % 2 ? -0.35 : 0.35), amount: n, rate: def.form === 'powder' ? 70 : 110 });
-        this.status = `Pouring ${def.name}`;
+        const ground = !!ing.ground && def.form === 'solid';
+        sim.emitter.start(def, { x: (this.ingIndex % 2 ? -0.35 : 0.35), amount: n, rate: def.form === 'powder' || ground ? 70 : 110, ground });
+        this.status = ground ? `Grinding and adding ${def.name}` : `Pouring ${def.name}`;
+        if (this.onPoured) this.onPoured(ing.id, n, ground);
         return;
       }
       case 'crush': {

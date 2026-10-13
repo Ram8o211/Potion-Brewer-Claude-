@@ -37,6 +37,7 @@ import { diffusionStep } from '../reactions/diffusion.js';
 import { ReactionSystem } from '../reactions/reactions.js';
 import { ToolState, toolForces, toolConstraints } from './tools.js';
 import { Emitter } from './emitter.js';
+import { electricStep } from './electric.js';
 
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 export const MODE = Object.freeze({ PBF: 0, GRAN: 1, COH: 2, RIGID: 3, GAS: 4 });
@@ -77,11 +78,13 @@ function restDensity(spacing) {
 
 export class Simulation {
   /**
-   * @param {{size?: 'small'|'medium'|'large', lookup?: (id:string)=>any, reactions?: any[], capacity?: number}} [opts]
+   * @param {{size?: string, lookup?: (id:string)=>any, reactions?: any[], laws?: any[], capacity?: number}} [opts]
    */
   constructor(opts = {}) {
-    this.cauldron = new Cauldron(opts.size || 'small');
-    const cap = opts.capacity || this.cauldron.capacity + 400;
+    this.cauldron = new Cauldron(/** @type {any} */ (opts.size || 'small'));
+    // headroom above the fill line: old snapshots from the great vessels can
+    // be larger than a small game pot holds
+    const cap = opts.capacity || Math.max(this.cauldron.capacity + 400, 1800);
     this.capacity = cap;
     this.maxParticles = this.cauldron.capacity;
     this.p = new Particles(cap);
@@ -139,6 +142,8 @@ export class Simulation {
     this.tool = new ToolState();
     this.emitter = new Emitter(this);
     this.reactions = new ReactionSystem(this, opts.reactions || []);
+    /** this world's hidden resonance laws (alchemy/effects.js) */
+    this.laws = opts.laws || [];
     this.furnace = { setting: 0, maxFlame: 340, heatPower: 3.5, minCool: 4, coolPower: 6 };
     this.oxygen = 1;
     /** @type {any[]} */
@@ -188,6 +193,7 @@ export class Simulation {
     const i = this.p.add(x, y, ph, temp !== undefined ? temp : def.storeTemp ?? SIM.AMBIENT);
     if (i < 0) return -1;
     this.p.comp[i * MAX_SPECIES + slot] = 1;
+    this.p.q[i] = def.charge || 0;
     refreshParticle(this, i);
     this.envRho[i] = this.p.rho[i];
     this.immersion[i] = 0;
@@ -315,6 +321,7 @@ export class Simulation {
     if (this.steps % 2 === 0) {
       const dt2 = dt * 2;
       thermalStep(this, dt2);
+      electricStep(this, dt2);
       diffusionStep(this, dt2);
       this.reactions.step(dt2);
       phaseStep(this, dt2);

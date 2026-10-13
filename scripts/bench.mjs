@@ -24,6 +24,7 @@ import { generateCommission } from '../src/game/commissions.js';
 import { capabilities, EQUIPMENT } from '../src/game/equipment.js';
 import { runPlanHeadless } from '../src/game/autobrew.js';
 import { Rng } from '../src/core/rng.js';
+import { measureParticles, tapSelection } from '../src/game/measure.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = new Set(process.argv.slice(2));
@@ -46,8 +47,17 @@ function timeSteps(sim, seconds) {
 }
 
 function physicsBench() {
-  /** @type {[string, (sim: Simulation) => void, 'small'|'medium'|'large'][]} */
+  /** @type {[string, (sim: Simulation) => void, string][]} */
   const scenarios = [
+    // the game's vessels with typical order-sized brews
+    ['pot: tonic 60', (s) => { pourAll(s, 'water', 30); pourAll(s, 'red', 30); }, 'pot'],
+    ['pot: brew 150', (s) => { pourAll(s, 'water', 100); pourAll(s, 'red', 50); }, 'pot'],
+    ['pot: full 300', (s) => pourAll(s, 'water', 300), 'pot'],
+    ['pot: stirred infusion 200', (s) => { pourAll(s, 'water', 160); pourAll(s, 'sand', 40); s.tool.auto = true; s.tool.autoCenterY = 1.2; s.tool.autoRadius = 0.5; }, 'pot'],
+    ['copper: full 440', (s) => pourAll(s, 'water', 440), 'copper'],
+    ['grand: 3 layers 600', (s) => { pourAll(s, 'honey', 200, -0.3); pourAll(s, 'water', 200); pourAll(s, 'oil', 200, 0.3); }, 'grand'],
+    ['grand: boiling 400 (lid on)', (s) => { pourAll(s, 'water', 400); s.furnace.setting = 1; s.furnace.maxFlame = 520; for (let k = 0; k < 120 * 30; k++) s.step(); }, 'grand'],
+    // the large reference vessels (the original pots)
     ['water 300', (s) => pourAll(s, 'water', 300), 'small'],
     ['water 900', (s) => pourAll(s, 'water', 900), 'medium'],
     ['water 1400', (s) => pourAll(s, 'water', 1400), 'large'],
@@ -65,9 +75,13 @@ function physicsBench() {
     setup(sim);
     for (let k = 0; k < 240; k++) sim.step();
     const ms = timeSteps(sim, 3);
+    // what the HUD pays per assay (tap selection + full measurement with effects)
+    const t1 = performance.now();
+    for (let k = 0; k < 20; k++) measureParticles(sim, tapSelection(sim, Math.min(60, sim.p.count)));
+    const assayMs = (performance.now() - t1) / 20;
     const gas = Array.from(sim.p.phase.slice(0, sim.p.count)).filter((p) => p === 4).length;
-    rows.push({ scenario: name, particles: sim.p.count, gas, msPerStep: +ms.toFixed(3), msPerFrame60: +(ms * 2).toFixed(3) });
-    console.log(`  ${name.padEnd(28)} ${String(sim.p.count).padStart(5)} particles  ${ms.toFixed(2).padStart(6)} ms/step  (${(ms * 2).toFixed(2)} ms per 60 fps frame)`);
+    rows.push({ scenario: name, vessel: size, particles: sim.p.count, gas, msPerStep: +ms.toFixed(3), msPerFrame60: +(ms * 2).toFixed(3), assayMs: +assayMs.toFixed(3) });
+    console.log(`  ${name.padEnd(30)} ${String(sim.p.count).padStart(5)} particles  ${ms.toFixed(2).padStart(6)} ms/step  (${(ms * 2).toFixed(2)} ms per 60 fps frame) · assay ${assayMs.toFixed(2)} ms`);
   }
   // full commissions brewed by the homunculus (wall clock per brew)
   const brews = [];
@@ -75,10 +89,10 @@ function physicsBench() {
     const world = generateWorld('bench-' + k);
     const lookup = makeLookup(world);
     const cap = capabilities(EQUIPMENT.map((e) => e.id));
-    cap.size = 'small';
+    cap.size = 'pot';
     const com = generateCommission({ world, lookup, available: new Set(world.ingredients), cap, rank: 4, priceOf: (id) => lookup(id).price || 1 }, new Rng('bench-c' + k), { tier: k % 5 });
     if (!com) continue;
-    const sim = new Simulation({ size: 'small', lookup, reactions: world.reactions });
+    const sim = new Simulation({ size: 'pot', lookup, reactions: world.reactions, laws: world.laws });
     Object.assign(sim.furnace, { maxFlame: cap.maxFlame, heatPower: cap.heatPower, minCool: cap.minCool, coolPower: cap.coolPower });
     const t0 = performance.now();
     runPlanHeadless(sim, com.reference, lookup);
@@ -109,9 +123,14 @@ async function browserBench() {
     { name: 'phone 390×844 @2x, CPU ×4 throttle', viewport: { width: 390, height: 844 }, dpr: 2, throttle: 4, mobile: true },
   ];
   try {
-    for (const prof of profiles) {
-      for (const n of [60, 300, 800, 1300]) {
+    const runs = [];
+    for (const prof of profiles) for (const n of [60, 150, 300, 600]) runs.push({ prof, n, preset: 'auto' });
+    // graphics presets on the throttled phone: rendering cost only, same physics
+    for (const preset of ['high', 'medium', 'low']) runs.push({ prof: profiles[1], n: 300, preset });
+    for (const { prof, n, preset } of runs) {
+      {
         const ctx = await browser.newContext({ viewport: prof.viewport, deviceScaleFactor: prof.dpr, isMobile: !!prof.mobile, hasTouch: !!prof.mobile });
+        await ctx.addInitScript((q) => { try { const k = 'alchemist-shop.settings'; const s = JSON.parse(localStorage.getItem(k) || '{}'); s.quality = q; s.musicOn = false; localStorage.setItem(k, JSON.stringify(s)); } catch { /* ignore */ } }, preset);
         const page = await ctx.newPage();
         if (prof.throttle > 1) {
           const cdp = await ctx.newCDPSession(page);
@@ -120,14 +139,15 @@ async function browserBench() {
         await page.goto(`http://localhost:${port}/index.html?nosw`);
         await page.waitForSelector('[data-act=sandbox]');
         await page.click('[data-act=sandbox]');
-        await page.waitForSelector('canvas.view');
+        await page.waitForSelector('canvas.view-canvas');
         // fill the cauldron directly (pouring at throttled speed would take minutes)
         await page.evaluate((count) => {
-          const l = window.__alchemist.screen, sim = l.sim, R = l.state.world.roles;
+          const l = window.__alchemist.screen, sim = l.sim, R = l.state.world.roles, c = sim.cauldron;
           const defs = [R.water, R.essenceA, R.oil].map((id) => l.state.lookup(id));
           for (let k = 0; k < count; k++) {
             const d = defs[k % 3 === 2 && k < count * 0.85 ? 0 : k % 3];
-            const x = (Math.random() - 0.5) * 2.4, y = sim.cauldron.depth - 0.2 - Math.random() * Math.min(2.2, count / 500);
+            const y = c.depth - 0.12 - Math.random() * Math.min(c.depth - 0.3, (count / c.capacity) * c.depth * 1.3);
+            const x = (Math.random() - 0.5) * 1.8 * c.halfWidth(y);
             sim.addParticle(d, x, y);
           }
         }, n);
@@ -140,8 +160,8 @@ async function browserBench() {
           const simRate = (l.sim.time - l._bench.sim) / ((performance.now() - l._bench.wall) / 1000);
           return { ...l.perfReport(), simRate, quality: l.effectiveQuality() };
         });
-        results.push({ profile: prof.name, target: n, ...Object.fromEntries(Object.entries(rep).map(([k, v]) => [k, typeof v === 'number' ? +v.toFixed(2) : v])) });
-        console.log(`  ${prof.name.padEnd(36)} ${String(rep.particles).padStart(5)} particles  ${rep.fps.toFixed(1).padStart(5)} fps  frame p50 ${rep.intervalP50.toFixed(1)} / p95 ${rep.intervalP95.toFixed(1)} ms  work p50 ${rep.workP50.toFixed(1)} ms (physics ${rep.physMs.toFixed(1)}, render ${rep.renderMs.toFixed(1)})  sim speed ×${rep.simRate.toFixed(2)}  quality ${rep.quality}`);
+        results.push({ profile: prof.name, preset, target: n, ...Object.fromEntries(Object.entries(rep).map(([k, v]) => [k, typeof v === 'number' ? +v.toFixed(2) : v])) });
+        console.log(`  ${prof.name.padEnd(36)} [${preset.padEnd(6)}] ${String(rep.particles).padStart(5)} particles  ${rep.fps.toFixed(1).padStart(5)} fps  frame p50 ${rep.intervalP50.toFixed(1)} / p95 ${rep.intervalP95.toFixed(1)} ms  work p50 ${rep.workP50.toFixed(1)} ms (physics ${rep.physMs.toFixed(1)}, render ${rep.renderMs.toFixed(1)})  sim speed ×${rep.simRate.toFixed(2)}  quality ${rep.quality}`);
         await ctx.close();
       }
     }
@@ -170,10 +190,10 @@ async function memorySoak(browser, port) {
   };
   await page.goto(`http://localhost:${port}/index.html?nosw`);
   await page.click('[data-act=sandbox]');
-  await page.locator('canvas.view').waitFor();
+  await page.locator('canvas.view-canvas').waitFor();
   await page.evaluate(() => {
-    const l = window.__alchemist.screen, sim = l.sim, R = l.state.world.roles;
-    for (let k = 0; k < 600; k++) sim.addParticle(l.state.lookup(k % 4 ? R.water : R.binder), (Math.random() - 0.5) * 2.4, sim.cauldron.depth - 0.2 - Math.random() * 1.2);
+    const l = window.__alchemist.screen, sim = l.sim, R = l.state.world.roles, c = sim.cauldron;
+    for (let k = 0; k < 450; k++) { const y = c.depth - 0.12 - Math.random() * 1.3; sim.addParticle(l.state.lookup(k % 4 ? R.water : R.binder), (Math.random() - 0.5) * 1.8 * c.halfWidth(y), y); }
   });
   await page.waitForTimeout(2000);
   const samples = [{ t: 0, mb: await heap() }];
@@ -188,7 +208,7 @@ async function memorySoak(browser, port) {
     await page.evaluate(() => window.__alchemist.showMenu());
     await page.locator('[data-act=sandbox]').waitFor();
     await page.click('[data-act=sandbox]');
-    await page.locator('canvas.view').waitFor();
+    await page.locator('canvas.view-canvas').waitFor();
     await page.waitForTimeout(400);
     if (k === 0 || k === 9) trips.push({ trip: k + 1, mb: await heap() });
   }

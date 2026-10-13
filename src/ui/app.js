@@ -11,6 +11,7 @@ import { LabScreen } from './lab.js';
 import { MenuScreen } from './menu.js';
 import { openSettings, openHelp } from './panels.js';
 import { Rng } from '../core/rng.js';
+import { normalizeTrials } from '../game/experiments.js';
 
 const DEFAULT_SETTINGS = { master: 0.8, sfx: 0.8, music: 0.35, musicOn: true, muted: false, quality: 'auto', showFps: false };
 const SEED_WORDS = ['amber', 'ashen', 'brine', 'copper', 'dusk', 'elder', 'fen', 'gloam', 'hollow', 'iron', 'juniper', 'kelp', 'lantern', 'moon', 'nettle', 'oak', 'pewter', 'quill', 'raven', 'sage', 'thorn', 'umber', 'vale', 'willow', 'wyrm', 'yarrow'];
@@ -116,8 +117,10 @@ export class App {
     st.reputation = 99999;
     st.current = null;
     if (saved && saved.seed === seed && saved.cauldron) st.cauldron = saved.cauldron;
+    // the sandbox keeps its own trial history, separate from the shop's
+    if (saved && saved.seed === seed && saved.trials) st.trials = normalizeTrials(saved.trials);
     this._swap(new LabScreen(this, st, { sandbox: true }));
-    toast('Free Experiment', 'Unlimited reagents and every tool. Nothing here affects your shop.', 'flask', 4500);
+    toast('Free Experiment', 'Unlimited reagents, wild ingredients, tools and test subjects. Nothing here affects your shop.', 'flask', 4500);
   }
 
   openSettings() {

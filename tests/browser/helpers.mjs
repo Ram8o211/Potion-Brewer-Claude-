@@ -38,7 +38,7 @@ export async function newGame(page, o = {}) {
     if (await box.isChecked()) await box.uncheck();
   }
   await page.click('[data-act=start-game]');
-  await page.waitForSelector('canvas.view');
+  await page.waitForSelector('canvas.view-canvas');
   await page.waitForTimeout(500);
 }
 
@@ -46,7 +46,7 @@ export async function newGame(page, o = {}) {
 export async function startSandbox(page) {
   await openGame(page);
   await page.click('[data-act=sandbox]');
-  await page.waitForSelector('canvas.view');
+  await page.waitForSelector('canvas.view-canvas');
   await page.waitForTimeout(500);
 }
 
@@ -67,7 +67,7 @@ export async function pourRole(page, role, ml, x = 0) {
 
 /** Canvas-space point (fractions of the cauldron view) → page coordinates. @param {import('@playwright/test').Page} page */
 export async function viewPoint(page, fx, fy) {
-  const box = await page.locator('canvas.view').boundingBox();
+  const box = await page.locator('canvas.view-canvas').boundingBox();
   if (!box) throw new Error('no canvas');
   return { x: box.x + box.width * fx, y: box.y + box.height * fy, box };
 }
@@ -153,4 +153,17 @@ export function precacheReport(page, swUrl) {
     const bundle = assets.find((a) => /^app\..*\.js$/.test(a));
     return { cacheNames: names, assets: assets.length, missing, htmlUsesBundle: html.includes(bundle) };
   }, swUrl);
+}
+
+/**
+ * Pick a jar on the shelf and pour exact doses with the dose buttons,
+ * waiting for each to land.
+ * @param {import('@playwright/test').Page} page @param {string} id @param {number[]} doses
+ */
+export async function pourDose(page, id, doses) {
+  await page.click(`.jar[data-id="${id}"]`);
+  for (const ml of doses) {
+    await page.click(`[data-act=dose-${ml}]`);
+    await page.waitForFunction(() => !(/** @type {any} */ (window).__alchemist.screen.sim.emitter.pouring), null, { timeout: 30_000 });
+  }
 }

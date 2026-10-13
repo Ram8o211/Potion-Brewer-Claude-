@@ -15,6 +15,8 @@
 import { PHASE } from '../simulation/constants.js';
 
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
+/** Interleaved liquid accumulator stride. */
+const LS = 9;
 
 /** Small integer hash → [0,1). */
 function hash01(n) {
@@ -41,25 +43,15 @@ export class FluidRenderer {
     const n = w * h;
     if (n > this.cap) {
       this.cap = n;
-      this.wl = new Float32Array(n); // liquid weight
+      // Accumulators are interleaved per pixel (one cache line instead of
+      // nine separate arrays): liquid = weight, r, g, b, opacity, paste
+      // weight, texture, glow, heat; solid and gas = weight, r, g, b.
+      this.liq = new Float32Array(n * LS);
+      this.sol = new Float32Array(n * 4);
+      this.gas = new Float32Array(n * 4);
+      this.wl = new Float32Array(n); // liquid weight, contiguous (blur, neighbours)
       this.wb = new Float32Array(n); // smoothed liquid weight (surface shape)
       this.wt = new Float32Array(n); // blur scratch
-      this.cr = new Float32Array(n);
-      this.cg = new Float32Array(n);
-      this.cb = new Float32Array(n);
-      this.op = new Float32Array(n); // opacity accum
-      this.pw = new Float32Array(n); // paste weight
-      this.tx = new Float32Array(n); // texture accum
-      this.gl = new Float32Array(n); // glow accum
-      this.ht = new Float32Array(n); // heat accum (temperature-weighted)
-      this.ws = new Float32Array(n); // solid weight
-      this.sr = new Float32Array(n);
-      this.sg = new Float32Array(n);
-      this.sb = new Float32Array(n);
-      this.wg = new Float32Array(n); // gas weight
-      this.gr = new Float32Array(n);
-      this.gg = new Float32Array(n);
-      this.gb = new Float32Array(n);
       this.grain = new Uint32Array(n); // packed grain colour (0 = none)
     }
     if (w !== this.w || h !== this.h || !this.canvas) {
@@ -89,10 +81,13 @@ export class FluidRenderer {
     const s = view.scale;
     // bounding box in screen pixels
     let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+    let anySolid = false, anyGas = false, anyGrain = false;
     for (let i = 0; i < n; i++) {
       const x = p.x[i] * s + view.ox, y = p.y[i] * s + view.oy;
       if (x < minX) minX = x; if (x > maxX) maxX = x;
       if (y < minY) minY = y; if (y > maxY) maxY = y;
+      const ph = p.phase[i];
+      if (ph === SOLID) anySolid = true; else if (ph === GAS) anyGas = true; else if (ph === POWDER) anyGrain = true;
     }
     const pad = Math.ceil(0.16 * s) + 2;
     const bx = Math.floor(minX) - pad, by = Math.floor(minY) - pad;
@@ -100,12 +95,12 @@ export class FluidRenderer {
     if (w <= 0 || h <= 0 || w * h > 4e6) return null;
     this._alloc(w, h);
     const N = w * h;
-    const { wl, cr, cg, cb, op, pw, tx, gl, ht, ws, sr, sg, sb, wg, gr, gg, gb, grain } = this;
-    wl.fill(0, 0, N); cr.fill(0, 0, N); cg.fill(0, 0, N); cb.fill(0, 0, N); op.fill(0, 0, N);
-    pw.fill(0, 0, N); tx.fill(0, 0, N); gl.fill(0, 0, N); ht.fill(0, 0, N);
-    ws.fill(0, 0, N); sr.fill(0, 0, N); sg.fill(0, 0, N); sb.fill(0, 0, N);
-    wg.fill(0, 0, N); gr.fill(0, 0, N); gg.fill(0, 0, N); gb.fill(0, 0, N);
-    grain.fill(0, 0, N);
+    const { liq, sol, gas, grain } = this;
+    // only the fields of phases that are present need clearing and reading
+    liq.fill(0, 0, N * LS);
+    if (anySolid) sol.fill(0, 0, N * 4);
+    if (anyGas) gas.fill(0, 0, N * 4);
+    if (anyGrain) grain.fill(0, 0, N);
 
     const rl = 0.092 * s; // liquid kernel radius (px), ~1.85 particle radii
     const rs = 0.085 * s; // solid
@@ -125,23 +120,27 @@ export class FluidRenderer {
         const tex = hash01(seed) * 2 - 1;
         const o = Math.max(0.35, p.opacity[i]);
         const glow = p.glow[i] + p.burn[i];
-        const cx = fx | 0, cy = fy | 0;
-        const inv = 1 / (rl * rl);
+        const Ti = T[i];
+        const cy = fy | 0;
+        const inv = 1 / (rl * rl), rl2 = rl * rl;
         for (let dy = -RL; dy <= RL; dy++) {
           const yy = cy + dy;
           if (yy < 0 || yy >= h) continue;
           const ddy = yy + 0.5 - fy;
+          const rem = rl2 - ddy * ddy;
+          if (rem <= 0) continue;
+          // only the kernel's chord on this row (one pixel of slack each side)
+          const half = Math.sqrt(rem);
+          const x0 = Math.max(0, Math.floor(fx - 0.5 - half)), x1 = Math.min(w - 1, Math.ceil(fx - 0.5 + half));
           const row = yy * w;
-          for (let dx = -RL; dx <= RL; dx++) {
-            const xx = cx + dx;
-            if (xx < 0 || xx >= w) continue;
+          for (let xx = x0; xx <= x1; xx++) {
             const ddx = xx + 0.5 - fx;
             let q = 1 - (ddx * ddx + ddy * ddy) * inv;
             if (q <= 0) continue;
             q *= q;
-            const k = row + xx;
-            wl[k] += q; cr[k] += q * r; cg[k] += q * g; cb[k] += q * b;
-            op[k] += q * o; pw[k] += q * isPaste; tx[k] += q * tex; gl[k] += q * glow; ht[k] += q * T[i];
+            const k = (row + xx) * LS;
+            liq[k] += q; liq[k + 1] += q * r; liq[k + 2] += q * g; liq[k + 3] += q * b;
+            liq[k + 4] += q * o; liq[k + 5] += q * isPaste; liq[k + 6] += q * tex; liq[k + 7] += q * glow; liq[k + 8] += q * Ti;
           }
         }
       } else if (ph === POWDER) {
@@ -166,7 +165,7 @@ export class FluidRenderer {
         }
         if (p.glow[i] > 0.05 || p.burn[i] > 0.05) {
           const k = Math.min(h - 1, Math.max(0, cy)) * w + Math.min(w - 1, Math.max(0, cx));
-          gl[k] += p.glow[i] + p.burn[i];
+          liq[k * LS + 7] += p.glow[i] + p.burn[i];
         }
       } else if (ph === SOLID) {
         const cx = fx | 0, cy = fy | 0;
@@ -182,28 +181,31 @@ export class FluidRenderer {
             const q = 1 - (ddx * ddx + ddy * ddy) * inv;
             if (q <= 0) continue;
             const k = yy * w + xx;
-            ws[k] += q; sr[k] += q * r; sg[k] += q * g; sb[k] += q * b;
-            gl[k] += q * p.glow[i] * 0.5;
+            const k4 = k * 4;
+            sol[k4] += q; sol[k4 + 1] += q * r; sol[k4 + 2] += q * g; sol[k4 + 3] += q * b;
+            liq[k * LS + 7] += q * p.glow[i] * 0.5;
           }
         }
       } else if (ph === GAS) {
-        const cx = fx | 0, cy = fy | 0;
-        const inv = 1 / (rgas * rgas);
+        const cy = fy | 0;
+        const inv = 1 / (rgas * rgas), rg2 = rgas * rgas;
         // gas is pale: blend its colour toward white
         const gr0 = r * 0.5 + 0.5, gg0 = g * 0.5 + 0.5, gb0 = b * 0.5 + 0.5;
         for (let dy = -RG; dy <= RG; dy++) {
           const yy = cy + dy;
           if (yy < 0 || yy >= h) continue;
           const ddy = yy + 0.5 - fy;
-          for (let dx = -RG; dx <= RG; dx++) {
-            const xx = cx + dx;
-            if (xx < 0 || xx >= w) continue;
+          const rem = rg2 - ddy * ddy;
+          if (rem <= 0) continue;
+          const half = Math.sqrt(rem);
+          const x0 = Math.max(0, Math.floor(fx - 0.5 - half)), x1 = Math.min(w - 1, Math.ceil(fx - 0.5 + half));
+          for (let xx = x0; xx <= x1; xx++) {
             const ddx = xx + 0.5 - fx;
             let q = 1 - (ddx * ddx + ddy * ddy) * inv;
             if (q <= 0) continue;
             q *= q;
-            const k = yy * w + xx;
-            wg[k] += q; gr[k] += q * gr0; gg[k] += q * gg0; gb[k] += q * gb0;
+            const k = (yy * w + xx) * 4;
+            gas[k] += q; gas[k + 1] += q * gr0; gas[k + 2] += q * gg0; gas[k + 3] += q * gb0;
           }
         }
       }
@@ -213,6 +215,9 @@ export class FluidRenderer {
     // The surface is taken from a lightly blurred copy of the liquid field so
     // single particles riding the surface don't read as spikes.
     const wb = this.wb, wt = this.wt;
+    // liquid weight, packed contiguously for the blur and the neighbour reads
+    const wl = this.wl;
+    for (let k = 0; k < N; k++) wl[k] = liq[k * LS];
     for (let y = 0; y < h; y++) {
       const row = y * w;
       for (let x = 0; x < w; x++) {
@@ -252,17 +257,17 @@ export class FluidRenderer {
         const k = row + x;
         let R = 0, G = 0, B = 0, A = 0;
         // grains (opaque)
-        const gp = grain[k];
+        const gp = anyGrain ? grain[k] : 0;
         if (gp) {
           R = (gp & 255) / 255; G = ((gp >>> 8) & 255) / 255; B = ((gp >>> 16) & 255) / 255; A = 1;
         }
         // solid blocks
-        const sw = ws[k];
+        const sw = anySolid ? sol[k * 4] : 0;
         if (sw > 0.45) {
           const inv = 1 / sw;
-          let r = sr[k] * inv, g = sg[k] * inv, b = sb[k] * inv;
+          let r = sol[k * 4 + 1] * inv, g = sol[k * 4 + 2] * inv, b = sol[k * 4 + 3] * inv;
           // frosty, lighter body with a bright rim and a few facets
-          const up = y > 0 ? ws[k - w] : 0, left = x > 0 ? ws[k - 1] : 0, down = y < h - 1 ? ws[k + w] : 0, right = x < w - 1 ? ws[k + 1] : 0;
+          const up = y > 0 ? sol[(k - w) * 4] : 0, left = x > 0 ? sol[(k - 1) * 4] : 0, down = y < h - 1 ? sol[(k + w) * 4] : 0, right = x < w - 1 ? sol[(k + 1) * 4] : 0;
           const edge = up < 0.45 || left < 0.45 || down < 0.45 || right < 0.45;
           let l = 0.78 + 0.22 * Math.min(1, sw / 1.6);
           r = r * 0.55 + 0.42; g = g * 0.55 + 0.45; b = b * 0.55 + 0.5;
@@ -283,10 +288,12 @@ export class FluidRenderer {
             if (lw < 1e-4) continue;
           }
           const inv = 1 / lw;
-          let r = cr[kc] * inv, g = cg[kc] * inv, b = cb[kc] * inv;
-          const paste = pw[kc] * inv;
-          let a = Math.min(0.97, Math.max(0.84, op[kc] * inv + 0.1));
-          const tex = tx[kc] * inv;
+          const c9 = kc * LS;
+          let r = liq[c9 + 1] * inv, g = liq[c9 + 2] * inv, b = liq[c9 + 3] * inv;
+          const paste = liq[c9 + 5] * inv;
+          const opac = liq[c9 + 4] * inv;
+          let a = Math.min(0.97, Math.max(0.84, opac + 0.1));
+          const tex = liq[c9 + 6] * inv;
           const up = y > 0 ? wb[k - w] : 0;
           const down = y < h - 1 ? wb[k + w] : 0;
           let l = 1;
@@ -299,7 +306,7 @@ export class FluidRenderer {
           } else {
             // clear liquids let the dark iron show through: darker, cooler, with
             // the colour carried by what they absorb; opaque ones stay bright
-            const clear = Math.max(0, 1 - op[kc] * inv);
+            const clear = Math.max(0, 1 - opac);
             const ct = clear * 0.45;
             r = r * (1 - ct) + 0.42 * ct; g = g * (1 - ct) + 0.6 * ct; b = b * (1 - ct) + 0.82 * ct;
             l = (0.98 + tex * 0.03) * (1 - clear * 0.55);
@@ -311,7 +318,7 @@ export class FluidRenderer {
             // the lower edge against the iron gets a thin shadow line
             if (down <= thr) l *= 0.78;
           }
-          const temp = ht[kc] * inv;
+          const temp = liq[c9 + 8] * inv;
           if (thermal) {
             const tt = Math.max(0, Math.min(1, (temp + 20) / 140));
             r = tt; g = 0.25 + 0.3 * (1 - Math.abs(tt - 0.5) * 2); b = 1 - tt;
@@ -325,16 +332,16 @@ export class FluidRenderer {
           A = A + (1 - A) * a;
         }
         // gas wisps
-        const gw = wg[k];
+        const gw = anyGas ? gas[k * 4] : 0;
         if (gw > 0.04) {
           const inv = 1 / gw;
           const a = 0.7 * (1 - Math.exp(-gw * 0.55)) * (0.9 + 0.1 * shimmer);
-          const r = gr[k] * inv, g = gg[k] * inv, b = gb[k] * inv;
+          const r = gas[k * 4 + 1] * inv, g = gas[k * 4 + 2] * inv, b = gas[k * 4 + 3] * inv;
           R = R * (1 - a) + r * a; G = G * (1 - a) + g * a; B = B * (1 - a) + b * a;
           A = A + (1 - A) * a;
         }
         // emissive glow & fire
-        const gv = gl[k];
+        const gv = liq[k * LS + 7];
         if (gv > 0.02) {
           const e = Math.min(0.6, gv * 0.25);
           R += e; G += e * 0.85; B += e * 0.55;

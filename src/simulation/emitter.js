@@ -10,7 +10,7 @@ export class Emitter {
   /** @param {import('./world.js').Simulation} sim */
   constructor(sim) {
     this.sim = sim;
-    /** @type {null | {def:any, x:number, rate:number, remaining:number, temp:number|undefined, spawned:number, dose?:boolean}} */
+    /** @type {null | {def:any, x:number, rate:number, remaining:number, temp:number|undefined, spawned:number, dose?:boolean, form:string}} */
     this.active = null;
     this.acc = 0;
     this.chunkTimer = 0;
@@ -21,13 +21,19 @@ export class Emitter {
 
   /**
    * @param {any} def
-   * @param {{x?:number, rate?:number, amount?:number, temp?:number}} [opts]
+   * @param {{x?:number, rate?:number, amount?:number, temp?:number, ground?:boolean}} [opts]
+   *   ground: a solid ingredient already ground in the mortar pours as powder
    */
   start(def, opts = {}) {
+    const form = opts.ground && def.form === 'solid' ? 'powder' : def.form;
+    // a narrower mouth takes a thinner stream (the shop's pots fill in
+    // seconds otherwise); the great vessels pour at the full rate
+    const k = Math.min(1, Math.max(0.5, this.sim.cauldron.mouth / 1.7));
     this.active = {
       def,
+      form,
       x: opts.x ?? 0,
-      rate: opts.rate ?? (def.form === 'powder' ? 55 : def.form === 'gas' ? 30 : 75),
+      rate: opts.rate ?? (form === 'powder' ? 55 : form === 'gas' ? 30 : 75) * k,
       remaining: opts.amount ?? Infinity,
       temp: opts.temp,
       spawned: 0,
@@ -85,7 +91,7 @@ export class Emitter {
       return;
     }
     const mouth = sim.cauldron.mouth;
-    const form = a.def.form;
+    const form = a.form;
     if (form === 'solid') {
       this.chunkTimer -= dt;
       if (this.chunkTimer > 0) return;
@@ -105,7 +111,13 @@ export class Emitter {
       const x = Math.max(-mouth + 0.12, Math.min(mouth - 0.12, a.x + (sim.rand() - 0.5) * spread));
       const y = this.spawnY() + (sim.rand() - 0.5) * 0.04;
       if (!this._free(x, y, 0.078)) {
+        // the brew has risen to the stream: give up rather than hang
         this.blocked += dt;
+        if (this.blocked > 1.2) {
+          sim.emit({ type: 'full' });
+          this.stop();
+          return;
+        }
         break;
       }
       const ph = formPhase(form);

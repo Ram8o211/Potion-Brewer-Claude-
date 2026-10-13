@@ -17,13 +17,13 @@ for (let k = 0; k < count; k++) {
   const world = generateWorld(prefix + k);
   const lookup = makeLookup(world);
   const cap = capabilities(EQUIPMENT.map((e) => e.id));
-  cap.size = 'small';
+  cap.size = 'pot';
   const ctx = { world, lookup, available: new Set(world.ingredients), cap, rank: 4, priceOf: (id) => lookup(id).price || 1 };
   const rng = new Rng(prefix + 'c' + k);
   const tier = k % 5;
   const com = generateCommission(ctx, rng, { tier, style: onlyStyle });
   if (!com) { console.log('no commission'); continue; }
-  const sim = new Simulation({ size: 'small', lookup, reactions: world.reactions });
+  const sim = new Simulation({ size: cap.size, lookup, reactions: world.reactions, laws: world.laws });
   Object.assign(sim.furnace, { maxFlame: cap.maxFlame, heatPower: cap.heatPower, minCool: cap.minCool, coolPower: cap.coolPower });
   const t0 = Date.now();
   const ab = runPlanHeadless(sim, com.reference, lookup);

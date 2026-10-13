@@ -1,342 +1,261 @@
-# Gameplay, balancing and performance report
+# Implementation, balancing and performance report
 
-This report says what was actually run and what came out. All numbers come
-from the scripts in this repository. Raw data:
+This report covers the round that brought hidden magical and chemical
+effects, the trials room, the wilds, material processing, electricity and
+the mobile-first shell to The Alchemist's Shop. It says what was built,
+what was run, and what came out. The feature-by-feature comparison with
+the reference project is in `FEATURE_PARITY.md`.
 
-* `docs/perf-results.json` from `npm run bench`
-* `docs/playtest-results.json` from `node scripts/playtest.mjs`
-* `test-results/browser-results.json` from the Playwright run
+**How the reference was used.** The ideas in `Ram8o211/fluid-pocket-sandbox`
+were re-implemented natively on this game's own engine: 5 ml composition
+particles, °C, latent heat, rule reactions and the SDF cauldron. No code
+was copied. The game's existing mechanics are all preserved: the physics
+scenarios, chemistry, commissions, economy, art and audio. This followed the
+owner's instruction during the work.
 
-**Environment:** a cloud Linux container (Intel Xeon @ 2.8 GHz, 4 cores,
-Node 22). Browser runs used headless Chromium (Playwright 1.56), which
-renders the canvas in software.
+**Environment.** A shared cloud Linux container (Intel Xeon @ 2.8 GHz,
+4 cores, Node 22) and headless Chromium (Playwright 1.56) with software
+canvas rendering. **Phones and tablets were not tested on physical
+devices.** Their results come from Chromium device emulation (viewport,
+touch input, device pixel ratio 2, and 4× CPU throttling for the
+performance profile). Safari/iOS and Firefox were not run.
 
-**Phones and tablets were not tested on physical devices.** Their
-numbers come from Chromium device emulation (viewport, touch events,
-device pixel ratio 2, and 4× CPU throttling for the performance profile).
-Safari/iOS and Firefox were not run.
+Raw data: `docs/perf-results.json` (`npm run bench`) and
+`docs/playtest-results.json` (`node scripts/playtest.mjs`).
 
-## 1. Automated verification: results
+## 1. What was built
+
+| Area | What it is | Where |
+|---|---|---|
+| Effects | A 10-channel effect vector on every material. A potion's effects are computed per particle from what is actually dissolved: extraction, six hidden resonance laws per world, universal oppositions and saturation. Heat, reactions, evaporation and dilution change them through the same law. | `src/alchemy/effects.js`, `src/materials/profiles.js` |
+| Hidden until tested | Effects show as "?" on the order, counter and assay until a trial of this batch reveals them. The brew panel separates **Theory** (naive sum of known ingredient effects plus discovered laws), **Recipe** (what a tested recipe the batch follows did) and **Verified** (a trial of this batch). | `src/ui/lab.js`, `src/ui/views/counter.js` |
+| Trials room | Five subjects (rabbit, beetle, seedling, limestone, and the wisp with the lantern), each revealing only some effects. Doses are real 5/10/25 ml removed from the tap or split from the sealed vial. The room has observations and pixel-art marks, harm, death and paid replacement, a 120-entry trial log with theory against observation, law discovery, and **certification**: a batch id plus revision with a drift tolerance. An effect order cannot be served uncertified. | `src/game/experiments.js`, `src/ui/views/trials.js` |
+| Wilds | Six regions, two of them magical and rank-gated. Deposits come from the seed, with finite stock, lazy timestamp regrowth (also while the game is closed) and half a deposit back each new day. Harvests respect shelf space; the satchel gives +50%. There are painted scenes with tappable deposits. | `src/game/gathering.js`, `src/ui/views/wilds.js`, `src/rendering/scenes.js` |
+| Raw ingredients and processing | 19 wild roots, leaves, petals, mushrooms, minerals and crystals, mostly supplied whole as rigid chunks. The in-pot pestle crushes them; the new mortar ("Ground") pours them as powder. Wet-only steeping reactions turn ground herbs into liquid extracts in hot water. The skimmer returns pure skimmed reagent to its jar, and a vial can be poured back. | `src/materials/wild.js`, `src/simulation/emitter.js`, `src/simulation/tools.js` |
+| Electricity | A conserved per-particle charge conducting between touching matter by conductance, with Joule heating, sparks and a galvanometer. | `src/simulation/electric.js` |
+| Effect commissions | 11 effect styles (healing, strength, love, fire tonic, frost salve, settling, etching, bane, insight, transmutation, antidote). They come from hidden plans predicted with the same effect law, with safety limits on harm the customer did not ask for, and need certification. | `src/game/commissions.js` |
+| Vessels | Shop pots shrank from 7–13.5 L to 1.5 / 2.2 / 3 L so typical orders fill them. Saved cauldrons from the old pots are remapped. | `src/simulation/cauldron.js`, `snapshot.js` |
+| Mobile shell | A bottom tab bar (a rail in landscape and on desktop) over Counter · Brew · Wilds · Trials · Book; bottom sheets; drag jars onto the cauldron; drag the dropper onto subjects; ≥ 44 px targets; safe areas; a multi-touch guard. | `src/ui/lab.js`, `src/ui/views/`, `styles/main.css`, `docs/MOBILE_UX.md` |
+| Saves | Save version 3 migrates v2 saves: progress kept, embedded world upgraded to the seed's effect profiles, pending orders rewritten in effect terms. Damaged and future saves are refused with a message, never reset. | `src/game/state.js` |
+| Presets | High quality / Balanced / Battery saver / Automatic, with physics identical in all of them. | `src/rendering/renderer.js`, `docs/PERFORMANCE.md` |
+
+## 2. Automated verification
 
 | Suite | Command | Result |
 |---|---|---|
 | Type check (src, scripts, tests) | `npm run typecheck` | passes |
-| Physics scenarios (23) | `npm test` | all pass |
-| Game logic (11) | `npm test` | all pass |
-| Browser (43 tests: desktop, phone portrait, phone landscape, tablet, offline build) | `npm run test:browser` | all pass |
-| Production build | `npm run build` | 47 modules bundled; about 112 KB gzipped in total |
+| Headless: physics (23), game rules (11), effects (8), trials and wilds (7), renderer (1) | `npm test` | 50 / 50 pass |
+| Browser: desktop, phone portrait, phone landscape, tablet, offline build, Pages sub-path | `npm run test:browser` | 64 / 64 pass |
+| Production build | `npm run build` | 157 KB gzipped; release ZIP (§7) |
 
-### Physics scenarios (headless, real solver)
+**Headless tests added this round:**
 
-Each scenario sets up a cauldron, runs the simulation and checks measurable
-outcomes:
+* **Effects** (`tests/alchemy.test.mjs`)
+  * Every material carries an effect vector, and old seeds keep their
+    reagents.
+  * Water does nothing; a 1:1 dilution halves potency.
+  * A whole root does nothing, ground and stirred it acts, and hot
+    steeping releases far more.
+  * Fire and frost layers cancel only once stirred together.
+  * Transmute, catalyse and suppress laws act per particle and are traced.
+  * Heat spoils petals.
+  * Boiling water away concentrates a non-volatile extract (≥ 80% retained;
+    some is carried off in the steam).
+  * Charge is conserved, spreads through brine, is blocked by oil, and
+    heats resistive contacts.
+* **Trials and wilds** (`tests/trials.test.mjs`)
+  * A trial consumes a real dose and reveals only the subject's channels.
+  * Certification holds for this batch only and is invalidated by a pour
+    or by drift.
+  * Laws are discovered by repeated trials and then join the theory.
+  * Lethal doses kill, and replacement costs coins.
+  * Deposits are deterministic, with finite stock, timestamp regrowth,
+    rank locks and storage limits.
+  * A genuine v2 save made by the previous release migrates.
+  * Corrupted, partial and future saves are refused or repaired.
+* **Renderer** (`tests/render.test.mjs`): every phase is drawn where its
+  particles are. A deliberately broken renderer fails it.
 
-* **Powders.** A pile forms with an angle of repose and its grains go to
-  sleep. Grains don't rebound. A disturbed pile avalanches and settles
-  again.
-* **Liquids.** Liquids pool calmly and stay contained. Immiscible liquids
-  stratify by density without gaps and never blend even when stirred.
-  Honey levels out measurably slower than water.
-* **Mixing.** Mixing starts at the contact interface and spreads. Stirring
-  speeds it up dramatically. Mixtures converge to a composition-weighted
-  equilibrium colour.
-* **Dough.** Dough forms only with stirring, and extra liquid thins it back.
-  Paste holds its footprint while water and honey level out.
-* **Freezing.** Freezing starts at the cold bottom and forms one rigid
-  block. The pestle crushes it into grains with material conserved.
-* **Heat and gas.** Heat enters through the bottom and conducts outward.
-  Vapour stays under the lid and condenses back when cooled. Gas is
-  buoyant and contained.
-* **Integrity.** Vigorous stirring never pushes matter through the walls.
-  Energy balances (furnace input minus ambient losses). A cauldron
-  snapshot reproduces the state. Neighbour search cost stays linear.
-* **Fire and drying.** Combustion spreads locally and consumes fuel. A
-  wet paste dries: it holds near the boiling point, steams off its water
-  and keeps at least 90% of its solids, with water conserved between pot
-  and vented steam. Glowing iron lights an oil pool, and closing the lid
-  puts the fire out.
+### 2.1 Browser tests (real UI in Chromium)
 
-### Game logic
+* **Layout,** on every device profile:
+  * No horizontal overflow, and every room fits the screen.
+  * Every visible interactive element in every room is at least 44 px.
+  * Panels open, fit and close.
+  * Long-pressing a jar opens the inspector.
+* **The first commission, end to end** (desktop, phone portrait, phone
+  landscape):
+  * Pour by dose buttons, stir by touch (or mouse), and heat with the
+    slider.
+  * Open the Trials room and give the rabbit a dose; the effect is
+    certified.
+  * Bottle into a sealed vial and serve at the Counter.
+  * Save the recipe and prepare it again from the Book, charging stock.
+  * The brew panel then shows the recipe's effects as **Recipe**, not
+    verified.
+* **Certification gate:** an untested effect potion cannot be served;
+  testing the vial certifies it.
+* **Drag and the mortar:** drag a jar onto the cauldron to pour, then
+  grind a root so it arrives as powder grains.
+* **Wilds** (desktop, phone portrait, phone landscape):
+  * Gather by button and by tapping the scene; stock and the deposit
+    change.
+  * A magical region is refused to an apprentice.
+  * The herb reaches the shelf, and the state survives a reload.
+* **Trials room:**
+  * Dragging the dropper onto the beetle doses it and the beetle shows
+    fire.
+  * A spent rabbit is replaced for its price.
+  * The trial log survives a reload.
+* **Unchanged suites:** tools, shop and equipment, saves (continue,
+  export and import, damaged save), settings, sandbox physics, the offline
+  build, and the GitHub Pages sub-path build (worker scope, cache
+  isolation, stale-tab guard, redeploy under max-age caching).
 
-* **Worlds.** Worlds are deterministic per seed and differ between seeds.
-  Over 25 seeds every world starts with at least 6 liquids and 2 powders.
-* **Day one.** In 12 fresh shops, the first order only uses purchasable
-  reagents, reachable temperatures and an affordable shopping list.
-* **Achievability.** 20 generated orders across all tiers (14 styles
-  possible) were brewed from their hidden reference plans in the real
-  simulation. Each reached quality ≥ 0.8 and the mean was ≥ 0.95.
-  Separate runs of `scripts/achievability.mjs`:
-  * 10 orders: 10 perfect.
-  * 40 orders of mixed styles: 38 perfect, plus 0.92 and 0.86.
-  * 30 "heavy" orders: 30 perfect, after the fix in §3.
-* **Economy.** Scoring falls off outside tolerance, and a half-empty bottle
-  is penalised. Buying respects coins and shelf space, and selling back
-  pays 40%. Buy-and-sell loops lose money, and a sale can't be paid twice.
-  The daily stipend prevents soft-locks and water is always free.
-* **Progression and saves.** Perfect sales raise reputation and rank. Saves
-  round-trip, including unlimited water. Version-1 saves migrate, worlds
-  regenerate from the seed, and bad files are rejected with readable
-  messages.
 
-### Browser tests (real UI in Chromium)
+## 3. Balancing
 
-* **Layout (desktop, phone portrait 390×844, phone landscape 844×390,
-  tablet 820×1180).** No horizontal overflow. The cauldron covers more
-  than 22% of the screen. Order card, shelf (8+ jars), tools, bottle and
-  fire control are all on screen. Touch targets are at least 30 CSS px.
-  Shop, recipe book, journal and pause panels open, fit the viewport and
-  close.
-* **Tutorial order end to end (desktop, phone portrait, phone landscape).**
-  Pick jars and pour 150 ml water and 75 ml essence with the dose buttons
-  (exactly 225 ml in the pot, inventory charged 75 ml). Stir with real
-  pointer input: mouse on desktop, touch events through the DevTools
-  protocol on phones. Mixing then evens out (essence spread < 0.35). Heat
-  with the fire control past 44 °C, bottle, read the assessment, and save
-  the recipe. Coins and reputation rise and the next customer arrives.
-  The saved recipe is then prepared again from the recipe book, pouring
-  the same 225 ml and charging the stock again.
-* **Tools.** Switching tools, pouring by holding inside the cauldron, the
-  measuring vial and the lid.
-* **Shop and saves.** Buying reagents (coins down, stock up). Buying the
-  bellows through the confirmation dialog raises the flame limit. Reload
-  then Continue restores day, coins and seed, and the cauldron contents
-  survive. A save file is exported, the game changed, and the file
-  imported back. A damaged save restores the backup and warns the player.
-  Settings (mute, graphics quality) persist.
-* **Free Experiment (desktop, phone portrait).**
-  * Syrup sinks below water and oil floats on top.
-  * Powders pile up and stirring works.
-  * A liquid freezes into a block under the frost plate and the pestle
-    (dragged by pointer or touch) crushes it into grains.
-  * Oil ignites under a strong furnace and closing the lid smothers it.
-  * Three simulated minutes of lid-on boiling with auto-stir: no NaN
-    particles, nothing outside the vessel, and matter conserved to within
-    1 ml (pot plus vented).
-* **Offline build.** The service worker precaches the bundle and font. With
-  the network cut, the game reloads, opens Free Experiment and pours.
+### Achievability
 
-Screenshots from these runs are in `docs/screenshots/`. They were reviewed
-during development, and the review findings are in §3.
+`node scripts/achievability.mjs 30` generates 30 orders across all tiers.
+It brews each from its hidden reference plan in the real simulation, in
+the 1.5 L starting pot: **30 / 30 reached quality 1.00 (5 stars).** The
+styles covered were fire tonic, frost salve, etching, love and strength
+(effect styles) and tonic, salve, syrup, heavy, elixir, frost, fizzy,
+lumen and ardent (physical styles).
 
-## 2. Balancing playthroughs
+### Multi-day careers
 
-`scripts/playtest.mjs` plays complete careers with the real rules: orders
-from the generator, purchases from the market, brewing in the real physics
-simulation, measurement from the tap, payment and reputation, end of day
-and upgrade purchases. The simulated shopkeeper follows each order's hidden
-reference plan but makes skill-dependent mistakes:
+`scripts/playtest.mjs` plays 12-day careers with the real rules:
 
-* reagent amounts off by up to ±45% × (1 − skill)
-* serving temperature off by up to ±18 °C × (1 − skill)
-* reaction holds cut short
+* gathers from the wilds with simulated wall-clock time (so deposits
+  deplete and regrow), or buys;
+* brews in the real simulation, following the hidden plan with
+  skill-dependent mistakes (amounts ±45% × (1 − skill), serving
+  temperature ±18 °C × (1 − skill), shortened holds);
+* tests 10 ml doses on the subjects that reveal the order's effects, and
+  declines an order it cannot certify;
+* sells, ends the day, and buys upgrades.
 
-Two profiles (careful: skill 0.95; casual: skill 0.7) were run over 3 seeds
-for 12 days each.
+| Run | Mean quality | Served (perfect) | Declined | Journeyman | Adept | Expert | Earned | Spent | Coins day 12 | Rep. day 12 | Equipment | Gathered ml | Trials | Subjects replaced | Laws found |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| seed 0 careful | 1.000 | 43 (43) | 0 | day 3 | day 6 | day 10 | 5,685 | 4,649 | 463 | 560 | 28 / 29 | 1,160 | 31 | 0 | 0 |
+| seed 1 careful | 1.000 | 43 (43) | 0 | day 3 | day 6 | day 10 | 6,778 | 5,874 | 1,419 | 571 | 28 / 29 | 880 | 29 | 1 | 1 |
+| seed 2 careful | 1.000 | 42 (42) | 1 | day 3 | day 6 | day 10 | 5,947 | 4,675 | 738 | 553 | 28 / 29 | 1,350 | 38 | 1 | 2 |
+| seed 0 casual | 0.998 | 43 (42) | 0 | day 3 | day 6 | day 10 | 5,663 | 4,646 | 444 | 555 | 28 / 29 | 1,160 | 31 | 0 | 0 |
+| seed 1 casual | 1.000 | 43 (43) | 0 | day 3 | day 6 | day 10 | 6,778 | 5,881 | 1,413 | 571 | 28 / 29 | 940 | 29 | 1 | 1 |
+| seed 2 casual | 0.999 | 41 (40) | 1 | day 3 | day 7 | day 11 | 5,843 | 4,668 | 640 | 533 | 28 / 29 | 1,350 | 38 | 1 | 3 |
 
-| Run | Mean quality | Served (perfect) | Journeyman | Adept | Expert | Earned | Spent* | Coins day 12 | Rep. day 12 | Equipment owned |
-|---|---|---|---|---|---|---|---|---|---|---|
-| seed 0 careful | 0.996 | 43 (40) | day 3 | day 6 | day 10 | 4,624 | 4,232 | 788 | 548 | 22 / 24 |
-| seed 1 careful | 0.985 | 42 (39) | day 3 | day 7 | day 11 | 4,223 | 3,422 | 447 | 515 | 22 / 24 |
-| seed 2 careful | 0.998 | 43 (41) | day 3 | day 6 | day 10 | 5,278 | 4,345 | 229 | 558 | 23 / 24 |
-| seed 0 casual | 0.991 | 42 (41) | day 3 | day 7 | day 11 | 4,591 | 4,211 | 775 | 536 | 22 / 24 |
-| seed 1 casual | 0.984 | 43 (38) | day 3 | day 6 | day 11 | 4,483 | 4,181 | 697 | 543 | 22 / 24 |
-| seed 2 casual | 0.995 | 43 (41) | day 3 | day 6 | day 10 | 5,262 | 4,345 | 213 | 556 | 23 / 24 |
+No run needed the daily stipend.
 
-\* reagents plus upgrades. No run needed the stipend or declined an order.
+**What this shows, and what it does not**
 
-**What this shows**
+* **Every new system takes part in the loop.**
+  * Each career gathered 0.9–1.4 L from the wilds and ran 29–38 trials.
+  * Subjects were spent and replaced in four runs.
+  * Hidden laws were discovered in four of six runs.
+  * Two orders were declined. The simulated shopkeeper declines an order
+    it cannot stock or certify.
+* **The economy and ranks work:** income covers reagents and upgrades,
+  with a new rank every 3–4 days.
+* **Progression runs fast for a player who knows the recipes.** These
+  simulated players follow each order's hidden plan, so they never pay
+  for discovery. They also buy 28 of 29 upgrades by day 12, against 22–23
+  of 24 last round; effect orders pay a little more, and the new
+  trial-room items are cheap. A human must work out ratios, extraction
+  and laws through trials, and spends doses, subjects and coins doing it.
+  Whether the curve is right for humans needs human playtesting, which
+  was not done.
 
-* **The economy works:** income consistently covers reagent costs, and
-  spending heavily on equipment is recoverable. Coins dipped to about 50
-  several times and the next day's sales restored them.
-* **Progression is steady:** a new rank roughly every 3–4 days, with new
-  reagents, customers, styles and equipment at each rank. Master (800
-  reputation), the Grand Athanor vessel (1,800 coins) and the royal
-  commission for Grand Alchemist remain after day 12.
-* **Tolerances are generous to a player who knows the recipe.** Even a
-  "clumsy" profile (skill 0.4: amounts ±27%, temperature ±11 °C) scored
-  about 0.95 over 6 days. This is deliberate: real players don't see the
-  reference plan and must find the ratios from the order card's live
-  meters. The challenge is discovering and executing a recipe, and
-  tolerances tighten with tier and customer strictness. Human playtesting
-  would be the right way to tune this further.
-
-**Balance changes made because of these runs**
-
-* Top-tier equipment was raised (athanor 480 → 700, glacial sigil
-  520 → 750, homunculus 750 → 1,100, grand vessel 950 → 1,800) after the
-  first run showed nearly everything bought by day 12.
-* "Heavy" orders (quicksilver plus crushed crystal) could demand
-  stability that loose grains can never reach. Stability is now only
-  required where predictable, and density gets a wider band where grains
-  settle unevenly (§3).
-
-## 3. Problems found through tests and screenshot review, and fixed
+## 4. Problems found through tests, profiling and screenshots, and fixed
 
 | Found by | Problem | Fix |
 |---|---|---|
-| Sandbox screenshot | A wet flour–water paste heated to 513 °C without boiling (only particles ≥ 80% volatile could boil) | Drying model: wet pastes and syrups hold at the boiling point while water gathers into the hottest particles (equal-volume exchanges, mass conserved) and steams off; trapped steam percolates through paste; vapour leaves its solids behind. New physics test. |
-| Sandbox screenshot | Oil set alight went out within a second | Flames share heat with neighbouring matter, vapour burns, glowing iron ignites fuel, a closed lid uses up the oxygen faster. New physics test. |
-| Headless measurement | Even at full fire, oil levelled off just below its ignition point | Hot-surface ignition (the iron above the liquid line glows first) |
-| Screenshot | Vapour under the lid rendered as a grey maze | Wider, softer gas kernel with saturating opacity: reads as fog |
-| Screenshot | Horizontal bands on the cauldron's back wall | 4×4 ordered dithering |
-| Screenshot | Liquid surface looked spiky (the top row's packing zigzag) | Surface taken from a smoothed copy of the liquid field; colour from the nearest particle |
-| Screenshot | Clear water drawn as an opaque white slab | Clear liquids are darker and cooler (the iron shows through); opaque ones stay bright |
-| Panel review | Shop and journal tabs clipped; prices without a coin symbol; four equipment items without icons; powders listed a "viscosity" | Layout fix, coin price tags, new icons, grain info for powders |
-| Panel review (phone) | Shop descriptions squeezed into a narrow column | Buy buttons wrap below the description on narrow screens |
-| Tablet screenshot | Two shelf jars both labelled "Ichor" | Short labels made unique |
-| Landscape screenshot | Toolbar wider than its column | Compact toolbar in phone landscape |
-| Browser test | The "save damaged" warning was deleted by the screen switch | Toast shown after the switch |
-| Achievability test | A "heavy" order demanded unreachable stability; density drifted from the prediction | Requirement generation fixed (§2) |
-| Benchmark | Frame rate collapsed under load: slow frames caused more catch-up steps (desktop 1,300 particles 25 fps; throttled phone 300 particles 12 fps) | Physics time budget per frame, automatic quality, inlined solver hot path (§4) |
+| Browser test (phones) | A pour into a pot filled to the rim never finished: the stream's spawn point stayed blocked and the dose waited forever | The pour stops after 1.2 s of blocked stream, with a "cauldron is full" message |
+| Browser test (phones) | Hold-to-pour filled a 1.5 L pot in about 4 s | A narrower mouth pours a thinner stream (default rate scales with mouth width; the large reference vessels are unchanged) |
+| Browser test (landscape) | Jars could not be dragged out of the shelf: a sideways drag scrolled it instead | The landscape shelf wraps into a column that scrolls up and down; a jar lifts on a drag *across* the scroll direction |
+| Browser test (phone portrait) | The tutorial's closing note covered the Book's tabs | The note closes when the player moves to another room |
+| Browser test (phone landscape) | The wilds scene scrolled off-screen once the deposit list was used, so a tap on the scene missed | In landscape and on desktop the scene stays beside the list and only the list scrolls |
+| Screenshot review | Right after a trial, the Trials room still said "nothing tested yet" until the next assay (0.4 s) | The assay is re-run as soon as a trial is recorded (browser-tested); the report scrolls into view on phones |
+| Browser test (desktop) | A jar drag never started with a mouse; the first gathered herb did not appear on the shelf | Mouse pointer capture, and leaving the shelf lifts the jar; the shelf is rebuilt when a new reagent arrives |
+| Benchmark | Balanced cost as much as High (same pixel size) | Balanced uses coarser art pixels with full lighting: its render time on the throttled phone fell from 43 to 9 ms (High: 31 ms) |
+| CPU profile | The material renderer took 46% of the throttled phone's CPU at High | Interleaved accumulators, chord-bounded splats, phase-presence checks: −17% render time, pixel-identical output |
+| Pixel comparison | The renderer refactor briefly stopped drawing vapour (a local variable shadowed its buffer) | Fixed before commit; `tests/render.test.mjs` now guards every phase |
+| Audit re-check | No "known recipe" tier between theory and verified | The brew panel shows a tested recipe's effects as **Recipe** (browser-tested) |
+| Screenshot review | Orders were thin puddles in 7–13.5 L pots | Shop vessels resized to 1.5 / 2.2 / 3 L |
+| Screenshot review | Muted text on parchment had low contrast; the pour hint overlapped the HUD chips | Darker ink on parchment; hint moved to the bottom of the stage |
+| Achievability script | Effect orders scored 0.75: the homunculus did not grind | Plans carry "ground", and the controller pours through the mortar |
+| Effect plans | Quicksilver was chosen for a drinkable strength potion | Harm filter on drinkable plans, plus safety limits on unrequested harm |
+| Market | A gather-only wild herb could crash the market listing | Gather-only reagents are never listed |
+| Type check | Missing typedefs for the new requirement, journal and material fields | Typedefs added; type check clean |
 
-## 4. Performance (measured)
+## 5. Performance (summary)
 
-Numbers are from `npm run bench`. Raw data is in `docs/perf-results.json`.
-Run-to-run variation on this shared container is noticeable (about ±20%),
-so treat single figures as indicative.
+Full tables and method: `docs/PERFORMANCE.md`.
 
-### Physics step cost (Node, one thread, fixed 1/120 s step)
+* **Physics:** typical shop brews cost 0.3–1.4 ms per 60 fps frame
+  (Node). The new systems did not slow the solver: the stirred
+  300-particle scenario steps in about 1.0 ms in the old release and in
+  this one.
+* **Desktop (1440×900):** 59–60 fps in real time up to 300 particles at
+  High quality; 54 fps with the full 3 L vessel.
+* **Phone (390×844 @2×, CPU ÷4, emulated):**
+  * Typical orders (60–150 particles) run at 41–50 fps in near real time.
+  * A full 1.5 L pot runs at 30 fps with the brew in 0.65× slow motion.
+  * With 300 particles, the presets measure: High 18 fps, Balanced 27,
+    Battery saver 26 (capped at 30).
+* **Memory:** flat over 90 s of lid-on boiling (3.6 → 4.2 MB), and
+  4.2 → 4.6 MB over ten menu ↔ shop trips.
 
-One particle is 5 ml. The tutorial order is 45 particles, typical orders
-are 50–300, and the largest cauldron holds 2,700. A 60 fps frame needs two
-steps.
+## 6. Answers to the brief's questions
 
-| Scenario | Particles | ms per step | ms per 60 fps frame |
-|---|---|---|---|
-| water | 300 | 0.87 | 1.74 |
-| water | 900 | 3.09 | 6.17 |
-| water | 1,400 | 4.64 | 9.28 |
-| three liquid layers (honey, water, oil) | 900 | 3.33 | 6.66 |
-| sand pile (resting grains sleep) | 600 | 1.08 | 2.16 |
-| dough being stirred | 600 | 2.16 | 4.32 |
-| boiling water under the lid | 600 | 0.84 | 1.68 |
-| frozen block | 500 | 1.41 | 2.81 |
+These answers come from the scripted runs, the browser tests and screenshot
+review, not from human testers.
 
-Cost grows roughly linearly with particle count (uniform-grid neighbour
-search; a physics test enforces a bound at 1,500 particles). The homunculus
-brews a complete order (25–38 simulated seconds) in 0.5–1.4 s of wall time,
-20–50× faster than real time.
+* **Are effects hidden and emergent?** Yes. Nothing reads effects from a
+  recipe. A trial reveals only the subject's channels, the theory is
+  visibly naive, and hidden laws show up as anomalies until repeated
+  trials confirm them.
+* **Is experimenting real?** Yes. Every dose is real matter taken from the
+  tap or the vial. Subjects can die and cost coins to replace. A new pour
+  or drift invalidates earlier results.
+* **Is gathering meaningful?** Deposits are finite and regrow on real
+  time. Rare and magical ones open with rank, and some reagents can only
+  be gathered.
+* **Does preparation matter?** Whole roots do nothing until crushed or
+  ground. Hot steeping extracts far more than cold. Stirring decides
+  whether resonances meet. Boiling concentrates. Overheating spoils
+  petals. All of it is measured in the effect tests.
+* **Is it playable on a phone?** It is designed portrait-first with
+  ≥ 44 px targets, tested on emulated phone, landscape and tablet
+  profiles, and stays responsive on a 4× throttled CPU. Real-device
+  testing is still to be done.
 
-### Frame timing in the browser (headless Chromium, software rendering)
+## 7. Final verification run
 
-Each scenario fills the Free Experiment cauldron (water, essence and oil),
-switches on auto-stir and gentle heat, then reads the game's own
-instrumentation over 6 s (8 s throttled):
+On the final code of this round:
 
-* **fps:** mean over the window.
-* **Frame p50/p95/p99:** intervals between frames, in ms.
-* **Work:** median time spent in the frame callback (physics plus render).
-* **Sim speed:** simulated seconds per wall second (1.00 = real time).
-* **Quality:** what automatic quality settled on.
+| Check | Result |
+|---|---|
+| `npm run typecheck` | clean |
+| `npm test` | 50 / 50 pass |
+| `npm run test:browser` | **64 / 64 pass** in 4.9 min. 2 workers across 6 profiles: desktop 1440×900, phone portrait 390×844, phone landscape 844×390, tablet 820×1180, offline production build, GitHub Pages sub-path |
+| `node scripts/achievability.mjs 30` | 30 / 30 at quality 1.00 |
+| `node scripts/playtest.mjs 12 3` | six careers, see §3 |
+| `npm run bench` | see `docs/PERFORMANCE.md` |
+| `npm run build` | 1.1.0: 58 modules bundled into one script; 541 KB, 157 KB gzipped in total; `release/alchemists-shop-1.1.0-web.zip` (158 KB) |
 
-| Profile | Particles | fps | Frame p50 / p95 / p99 | Work p50 | Physics | Render | Sim speed | Quality |
-|---|---|---|---|---|---|---|---|---|
-| desktop 1440×900 | 60 | 60 | 16.7 / 16.8 / 16.8 | 3.5 | 0.6 | 9.7 | 1.00 | high |
-| desktop 1440×900 | 300 | 59 | 16.7 / 16.8 / 33.3 | 7.7 | 3.6 | 8.0 | 1.00 | high |
-| desktop 1440×900 | 800 | 51 | 16.7 / 33.4 / 50.0 | 11.9 | 9.1 | 3.9 | 0.95 | low |
-| desktop 1440×900 | 1,300 | 48 | 16.7 / 33.4 / 50.1 | 16.4 | 11.3 | 4.5 | 0.88 | low |
-| phone 390×844 @2×, CPU ÷4 | 60 | 28 | 33.3 / 83.4 / 133.3 | 12.9 | 2.4 | 11.6 | 0.83 | low |
-| phone 390×844 @2×, CPU ÷4 | 300 | 33 | 33.3 / 50.0 / 83.4 | 22.3 | 15.5 | 5.6 | 0.73 | low |
-| phone 390×844 @2×, CPU ÷4 | 800 | 21 | 33.4 / 83.4 / 166.7 | 32.9 | 20.0 | 10.9 | 0.18 | low |
-| phone 390×844 @2×, CPU ÷4 | 1,300 | 16 | 50.0 / 133.3 / 150.0 | 43.5 | 26.6 | 13.8 | 0.14 | low |
+## 8. Limitations
 
-**Reading the table**
-
-* **Desktop.** The 60 fps target is met for normal play (60–300
-  particles) in real time at high quality. Large experiments
-  (800–1,300 particles) run at about 50 fps; automatic quality steps the
-  renderer down and the simulation runs at 0.9× real time.
-* **Phone emulation (4× CPU throttle, 2× pixel density).** Typical orders
-  (60–300 particles) run at about 30 fps with the simulation at 0.7–0.8×
-  real time. Very large batches drop to 16–21 fps, and the simulation
-  deliberately slows to 0.14–0.18× so input stays responsive. Some of the
-  frame time outside the game's own work is software compositing of a
-  2× canvas in headless Chromium, which a real phone's GPU would do. This
-  profile is a stand-in and **not a physical-device measurement**.
-* **Before tuning** (same harness): desktop with 1,300 particles ran at
-  25 fps, and the throttled phone ran at 12 fps with 300 particles and
-  5 fps with 800. The cause was a feedback loop: slow frames triggered more
-  physics catch-up steps, which made frames slower. The fix is a physics
-  budget per frame (what remains of a ~30 fps frame after rendering,
-  8–22 ms), automatic graphics quality, and an inlined inverse-mass
-  computation in the fluid solver (about 13% of step time before).
-
-### Memory
-
-`npm run bench` (and `node scripts/bench.mjs --memory`) samples the JS heap
-after a forced garbage collection (DevTools protocol):
-
-* **90 s of lid-on boiling with auto-stir at 4× speed (600 particles):**
-  3.51 → 4.02 → 3.86 → 4.13 MB at 0 / 30 / 60 / 90 s. Flat, and all 600
-  particles were still in the pot, vapour included.
-* **Ten round trips between the main menu and the shop:** 4.22 MB after the
-  first, 4.44 MB after the tenth. Live-object counts confirm old screens,
-  simulations and renderers are released.
-
-  An earlier version of this measurement suggested a leak (+0.5 MB per
-  trip). A heap-snapshot retainer trace showed the old canvases were held
-  by Playwright element handles (`waitForSelector`), not by the game. The
-  harness now uses locators.
-
-Particle storage is typed arrays allocated once per cauldron size, and the
-hot solver loops reuse their buffers instead of allocating each step.
-
-## 5. Answers to the brief's playtest questions
-
-These answers come from the scripted runs and screenshot reviews above,
-not from human testers.
-
-* **Is the tutorial clear?** It is an 11-step guided first order. Each step
-  advances on what actually happens in the cauldron (pouring, stirring
-  until the colour is even, heating to the requested range). It was
-  completed by browser automation on desktop and phones without extra
-  instructions.
-* **Is pouring pleasant, and does stirring matter?** Pouring is a visible
-  stream with dose buttons for exact amounts. Stirring physically moves
-  matter (spoon radius 0.42) and is what makes mixtures even: the
-  stirring scenario measures a dramatic speed-up, and the tutorial cannot
-  reach its colour target without it.
-* **Can players see mixing, and are materials recognisable?** Colour
-  diffuses from contact lines in swirls (Beer–Lambert colour). Powders
-  pile up as grains, dough holds folds, ice is a crisp block, steam is fog,
-  oil floats and syrup sinks (screenshots).
-* **Are orders understandable and assessment fair?** Each requirement
-  shows its target and a live meter. The result dialog lists target,
-  measured value and score per property. Scoring is tolerance-based and
-  never zero for small misses.
-* **Can players earn money through skill?** Yes: in the playthroughs,
-  income exceeds costs from day one. Better quality pays more (payment
-  scales with quality^1.6, plus a 20% bonus for a perfect potion).
-* **Do new reagents and tools create choices?** Each rank unlocks
-  reagents (embers, frost shards, quicksilver, crystals, spores, resins,
-  phoenix cinders) and styles that need them. Upgrades change what is
-  physically possible: higher flames, deep cold, larger vessels, exact
-  instruments, an alembic for vapour, a homunculus for automation.
-* **Frustrating delays?** 2× and 4× time speed for heating and cooling.
-  Slow devices keep a playable frame rate by running the brew in slow
-  motion instead of freezing.
-* **Is experimenting fun without coins?** Free Experiment has every
-  reagent and tool, its own save, and the full physics (fire, freezing,
-  reactions, boiling under the lid).
-* **Is progression rewarding over several sessions?** Six ranks, 24
-  upgrades, 22 achievements, a discovery journal, contracts and a final
-  royal commission. Simulated careers reach Expert around day 10–11 with
-  the top tier still ahead.
-
-## 6. Limitations
-
-1. The supplied starting project was unavailable, so the game was written
-   from scratch to the architecture the brief describes.
-2. No physical-device testing. Phone and tablet results come from Chromium
-   emulation; Safari/iOS and Firefox were not run. All standard APIs
-   used (canvas 2D, pointer events, WebAudio, service workers, ES
-   modules) are supported by current Safari, Chrome and Firefox.
-3. On a slow device with large batches the simulation runs below real
-   time (see §4). Typical shop orders are 50–300 particles.
-4. Headless Chromium renders the canvas in software, so desktop frame times
-   here are likely worse than in a GPU-accelerated browser. Phone figures
-   use CPU throttling as a stand-in for a mid-range phone and are not
-   device measurements.
-5. Balance was tuned with simulated players, not human playtesters.
-6. Audio was checked for errors only; headless tests can't listen.
+1. No physical-device testing. Phone and tablet results come from Chromium
+   emulation; Safari/iOS and Firefox were not run.
+2. Balance was tuned with simulated players who know each order's hidden
+   plan, not with human playtesters (§3).
+3. On a slow device with large batches the simulation runs in slow motion
+   (§5).
+4. Long-range electrostatic forces were left out. Conduction, charge and
+   Joule heating are in (see `FEATURE_PARITY.md` §I).
+5. The skimmer has no tap alternative (`docs/MOBILE_UX.md`).
+6. GitHub Pages deployment could not be verified from this environment:
+   the network policy blocks `*.github.io`.
+7. Audio was checked for errors only; headless tests can't listen.
