@@ -9,7 +9,7 @@
 // generator's predictions so customer targets are consistent with physics.
 
 import { MAX_SPECIES, NO_BOIL } from './species.js';
-import { oklabToRgb } from '../core/color.js';
+import { rgbToOklab, linearToSrgb } from '../core/color.js';
 
 /**
  * Undissolved granular fraction of a composition at temperature T.
@@ -62,7 +62,7 @@ export function suspensionLnMult(g, binder) {
 export function mixtureProps(sp, comp, off, T) {
   const n = sp.count;
   let tot = 0, rho = 0, rhoCp = 0, lnV = 0, lnVw = 0, vT = 0, beta = 0;
-  let L = 0, A = 0, B = 0, wc = 0, op = 0, glow = 0, vol = 0, volat = 0, react = 0;
+  let aR = 0, aG = 0, aB = 0, op = 0, glow = 0, vol = 0, volat = 0, react = 0;
   const asp = [0, 0, 0, 0];
   let tbW = 0, tbSum = 0;
   for (let s = 0; s < n; s++) {
@@ -77,11 +77,9 @@ export function mixtureProps(sp, comp, off, T) {
       vT += f * sp.viscTemp[s];
       lnVw += f;
     }
-    const w = f * sp.tint[s];
-    L += w * sp.labL[s];
-    A += w * sp.labA[s];
-    B += w * sp.labB[s];
-    wc += w;
+    aR += f * sp.absR[s];
+    aG += f * sp.absG[s];
+    aB += f * sp.absB[s];
     op += f * sp.opacity[s];
     glow += f * sp.glow[s];
     volat += f * sp.volatility[s];
@@ -107,7 +105,8 @@ export function mixtureProps(sp, comp, off, T) {
   const lnMu20 = lnVw > 0 ? lnV / lnVw : Math.log(1e5);
   const kT = lnVw > 0 ? vT / lnVw : 0;
   const lnMu = lnMu20 - kT * (T - 20) + suspensionLnMult(g, binder);
-  const rgb = wc > 0 ? oklabToRgb(L / wc, A / wc, B / wc) : [0.5, 0.5, 0.5];
+  const rgb = [linearToSrgb(Math.exp(-aR / tot)), linearToSrgb(Math.exp(-aG / tot)), linearToSrgb(Math.exp(-aB / tot))];
+  const lab = rgbToOklab(rgb[0], rgb[1], rgb[2]);
   return {
     density: (rho / tot) * (1 - (beta / tot) * (T - 20)),
     density20: rho / tot,
@@ -116,7 +115,7 @@ export function mixtureProps(sp, comp, off, T) {
     granular: g,
     binder,
     color: rgb,
-    lab: wc > 0 ? [L / wc, A / wc, B / wc] : [0.5, 0, 0],
+    lab,
     opacity: op / tot,
     glow: glow / tot,
     volatility: volat / tot,

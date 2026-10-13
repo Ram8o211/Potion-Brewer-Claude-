@@ -123,7 +123,7 @@ export function wallStep(sim, dt) {
     const h = lidCell ? (c.lidClosed ? HAMB_LID : 3) : HAMB;
     const loss = h * (amb - Tw[k]);
     sim.energyIn += P * dt;
-    sim.energyOut += loss * dt;
+    sim.energyOut -= loss * dt;
     flow[k] += (P + loss) * dt;
   }
   for (let k = 0; k < M + L; k++) Tw[k] += flow[k] / Cw[k];

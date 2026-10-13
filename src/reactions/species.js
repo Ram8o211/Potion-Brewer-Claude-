@@ -2,7 +2,7 @@
 // fixed number of composition slots used inside one simulation. Every
 // particle carries a volume-fraction vector over these slots.
 
-import { rgbToOklab } from '../core/color.js';
+import { rgbToOklab, srgbToLinear } from '../core/color.js';
 import { volatilityOf } from '../materials/schema.js';
 
 export const MAX_SPECIES = 16;
@@ -47,11 +47,39 @@ export class SpeciesTable {
     this.labL = f();
     this.labA = f();
     this.labB = f();
+    /** linear-light absorbance (Beer–Lambert) per unit concentration */
+    this.absR = f();
+    this.absG = f();
+    this.absB = f();
     this.isPowder = new Uint8Array(S);
     this.aspects = new Float32Array(S * 4);
     /** slot of ash / smoke products for combustion (-1 none) */
     this.ashSlot = new Int16Array(S).fill(-1);
     this.smokeSlot = new Int16Array(S).fill(-1);
+  }
+
+  /**
+   * Place a material in a specific slot (used when restoring saves so that
+   * particle composition vectors keep their meaning).
+   * @param {number} slot
+   * @param {import('../materials/schema.js').MaterialDef} def
+   * @param {(id:string)=>import('../materials/schema.js').MaterialDef|undefined} [lookup]
+   */
+  assign(slot, def, lookup) {
+    if (this.defs[slot]) this.release(slot);
+    const free = [];
+    // temporarily occupy lower empty slots so ensure() lands on `slot`
+    for (let s = 0; s < slot; s++) if (!this.defs[s]) { this.defs[s] = /** @type {any} */ ({ id: '__hold' + s }); free.push(s); }
+    const got = this.ensure(def, undefined);
+    for (const s of free) this.defs[s] = null;
+    let c = 0;
+    for (let s = 0; s < MAX_SPECIES; s++) if (this.defs[s]) c = s + 1;
+    this.count = c;
+    if (lookup) {
+      if (def.ash) { const a = lookup(def.ash); if (a) { const as = this.slotOf.get(a.id); if (as !== undefined) this.ashSlot[got] = as; } }
+      if (def.smoke) { const m = lookup(def.smoke); if (m) { const ms = this.slotOf.get(m.id); if (ms !== undefined) this.smokeSlot[got] = ms; } }
+    }
+    return got;
   }
 
   /**
@@ -93,6 +121,10 @@ export class SpeciesTable {
     this.glow[slot] = def.glow;
     this.tint[slot] = def.tint;
     this.opacity[slot] = def.opacity;
+    const ab = absorbance(def);
+    this.absR[slot] = ab[0];
+    this.absG[slot] = ab[1];
+    this.absB[slot] = ab[2];
     const lab = rgbToOklab(def.color[0], def.color[1], def.color[2]);
     this.labL[slot] = lab[0];
     this.labA[slot] = lab[1];
@@ -135,4 +167,14 @@ export class SpeciesTable {
     for (let s = 0; s < this.count; s++) if (this.defs[s]) out.push({ id: this.defs[s].id, slot: s });
     return out;
   }
+}
+
+/**
+ * Absorbance of a material: its pigment colour at full strength, scaled by
+ * its colouring strength (tint). Mixtures add absorbances in proportion to
+ * concentration, so diluting a dye lightens it (Beer–Lambert).
+ * @param {{color:number[], tint:number}} def
+ */
+export function absorbance(def) {
+  return [0, 1, 2].map((k) => -Math.log(Math.max(0.003, srgbToLinear(def.color[k]))) * def.tint);
 }

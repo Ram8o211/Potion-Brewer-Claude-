@@ -11,7 +11,7 @@ export class Emitter {
   /** @param {import('./world.js').Simulation} sim */
   constructor(sim) {
     this.sim = sim;
-    /** @type {null | {def:any, x:number, rate:number, remaining:number, temp:number|undefined, spawned:number}} */
+    /** @type {null | {def:any, x:number, rate:number, remaining:number, temp:number|undefined, spawned:number, dose?:boolean}} */
     this.active = null;
     this.acc = 0;
     this.chunkTimer = 0;

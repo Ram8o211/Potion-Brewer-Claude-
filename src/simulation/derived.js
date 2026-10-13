@@ -3,7 +3,7 @@
 
 import { MAX_SPECIES, NO_BOIL } from '../reactions/species.js';
 import { granularFraction, suspensionLnMult } from '../reactions/mixture.js';
-import { oklabToRgb } from '../core/color.js';
+import { rgbToOklab, linearToSrgb } from '../core/color.js';
 import { PHASE } from './constants.js';
 
 /** Mass assigned to gas particles for constraint weighting (they yield to condensed matter). */
@@ -20,7 +20,7 @@ export function refreshParticle(sim, i) {
   const T = p.temp[i];
   const n = sp.count;
   let tot = 0, rho = 0, rhoCp = 0, kap = 0, lnV = 0, lnVw = 0, vT = 0, beta = 0;
-  let L = 0, A = 0, B = 0, wc = 0, op = 0, flam = 0, ign = 0, ignW = 0, comb = 0, gasR = 0, glow = 0;
+  let aR = 0, aG = 0, aB = 0, op = 0, flam = 0, ign = 0, ignW = 0, comb = 0, gasR = 0, glow = 0;
   let tbS = 0, tbW = 0, tmS = 0, tmW = 0, pmS = 0, pmW = 0, fricS = 0, hardS = 0, binder = 0, latF = 0, latV = 0;
   let cA = 0, cB = 0;
   for (let s = 0; s < n; s++) {
@@ -39,11 +39,9 @@ export function refreshParticle(sim, i) {
       vT += f * sp.viscTemp[s];
       lnVw += f;
     }
-    const w = f * sp.tint[s];
-    L += w * sp.labL[s];
-    A += w * sp.labA[s];
-    B += w * sp.labB[s];
-    wc += w;
+    aR += f * sp.absR[s];
+    aG += f * sp.absG[s];
+    aB += f * sp.absB[s];
     op += f * sp.opacity[s];
     glow += f * sp.glow[s];
     const fl = sp.flam[s];
@@ -104,11 +102,11 @@ export function refreshParticle(sim, i) {
   p.volFrac[i] = tbW * inv;
   p.latF[i] = latF * inv;
   p.latV[i] = latV * inv;
-  if (wc > 0) {
-    p.colL[i] = L / wc; p.colA[i] = A / wc; p.colB[i] = B / wc;
-  }
-  const rgb = oklabToRgb(p.colL[i], p.colA[i], p.colB[i]);
-  sim.colR[i] = rgb[0]; sim.colG[i] = rgb[1]; sim.colB[i] = rgb[2];
+  // Beer–Lambert colour: absorbances add by concentration
+  const cr = linearToSrgb(Math.exp(-aR * inv)), cg = linearToSrgb(Math.exp(-aG * inv)), cb = linearToSrgb(Math.exp(-aB * inv));
+  sim.colR[i] = cr; sim.colG[i] = cg; sim.colB[i] = cb;
+  const lab = rgbToOklab(cr, cg, cb);
+  p.colL[i] = lab[0]; p.colA[i] = lab[1]; p.colB[i] = lab[2];
   p.opacity[i] = op * inv;
   p.flam[i] = flam * inv;
   p.ign[i] = ignW > 0 ? ign / ignW : 9999;

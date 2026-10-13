@@ -43,6 +43,8 @@
  * @property {boolean} product         true if only obtainable through reactions
  * @property {string} description      flavour + behaviour text
  * @property {string} [icon]           jar/bottle icon style
+ * @property {number[]} [look]          appearance of the pure material (derived)
+ * @property {number} [storeTemp]       temperature it is supplied at (°C)
  */
 
 export const ASPECTS = ['vitality', 'ardor', 'arcana', 'fortitude'];
@@ -91,7 +93,22 @@ export function completeMaterial(def) {
   while (m.aspects.length < 4) m.aspects.push(0);
   m.compat = m.compat.slice(0, 2);
   if (m.boil === null || m.boil === undefined) m.boil = Infinity;
+  m.look = appearance(m);
   return m;
+}
+
+/** sRGB → linear light. @param {number} c */
+const lin = (c) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+/** linear → sRGB. @param {number} c */
+const srgb = (c) => (c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055);
+
+/**
+ * How the pure material actually looks: its pigment colour at its own
+ * colouring strength (weakly tinted liquids like water look nearly clear).
+ * @param {{color:number[], tint:number}} m
+ */
+export function appearance(m) {
+  return m.color.map((c) => Math.round(srgb(Math.pow(Math.max(0.003, lin(c)), m.tint)) * 1000) / 1000);
 }
 
 /** Volatility 0..1 derived from boiling point (lower boil ⇒ more volatile). @param {MaterialDef} m */
