@@ -99,6 +99,7 @@ async function browserBench() {
   await new Promise((r) => setTimeout(r, 600));
   const browser = await chromium.launch();
   const results = [];
+  let memory = null;
   const profiles = [
     { name: 'desktop 1440×900', viewport: { width: 1440, height: 900 }, dpr: 1, throttle: 1 },
     { name: 'phone 390×844 @2x, CPU ×4 throttle', viewport: { width: 390, height: 844 }, dpr: 2, throttle: 4, mobile: true },
@@ -140,11 +141,55 @@ async function browserBench() {
         await ctx.close();
       }
     }
+    memory = await memorySoak(browser, port);
   } finally {
     await browser.close();
     server.kill();
   }
-  return results;
+  return { frames: results, memory };
+}
+
+/**
+ * Long-session memory check: 90 s of boiling and stirring at 4× speed, then
+ * ten trips between the menu and the shop. The JS heap is sampled after a
+ * forced garbage collection (DevTools protocol).
+ */
+async function memorySoak(browser, port) {
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  const page = await ctx.newPage();
+  const cdp = await ctx.newCDPSession(page);
+  const heap = async () => {
+    await cdp.send('HeapProfiler.collectGarbage');
+    const u = await cdp.send('Runtime.getHeapUsage');
+    return +(u.usedSize / 1048576).toFixed(2);
+  };
+  await page.goto(`http://localhost:${port}/index.html?nosw`);
+  await page.click('[data-act=sandbox]');
+  await page.waitForSelector('canvas.view');
+  await page.evaluate(() => {
+    const l = window.__alchemist.screen, sim = l.sim, R = l.state.world.roles;
+    for (let k = 0; k < 600; k++) sim.addParticle(l.state.lookup(k % 4 ? R.water : R.binder), (Math.random() - 0.5) * 2.4, sim.cauldron.depth - 0.2 - Math.random() * 1.2);
+  });
+  await page.waitForTimeout(2000);
+  const samples = [{ t: 0, mb: await heap() }];
+  await page.evaluate(() => { const l = window.__alchemist.screen; l.sim.cauldron.lidClosed = true; l.setFurnace(0.9); l.autoStir = true; l.speed = 4; });
+  for (const t of [30, 60, 90]) {
+    await page.waitForTimeout(30_000);
+    samples.push({ t, mb: await heap() });
+  }
+  const particles = await page.evaluate(() => window.__alchemist.screen.sim.p.count);
+  const trips = [];
+  for (let k = 0; k < 10; k++) {
+    await page.evaluate(() => window.__alchemist.showMenu());
+    await page.waitForSelector('[data-act=sandbox]');
+    await page.click('[data-act=sandbox]');
+    await page.waitForSelector('canvas.view');
+    await page.waitForTimeout(400);
+    if (k === 0 || k === 9) trips.push({ trip: k + 1, mb: await heap() });
+  }
+  await ctx.close();
+  console.log(`  memory: heap ${samples.map((x) => `${x.mb} MB @${x.t}s`).join(', ')} (boiling, ${particles} particles left); after menu↔shop trips ${trips.map((x) => `${x.mb} MB (#${x.trip})`).join(', ')}`);
+  return { soak: samples, particlesAtEnd: particles, screenTrips: trips };
 }
 
 console.log(`Machine: ${out.machine.cpus} × ${out.machine.cores}, Node ${out.machine.node}`);

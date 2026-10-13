@@ -81,17 +81,19 @@ test('generated commissions are achievable: their hidden reference plans brew to
 });
 
 test('scoring rewards accuracy and tolerates small deviations', () => {
+  /** @type {any} */
   const req = { key: 'temperature', kind: 'target', target: 45, tol: 5, zero: 15, label: '40–50°C' };
-  const at = (t) => scoreRequirement(req, { temperature: t, ml: 100 }).score;
+  const at = (t) => scoreRequirement(req, /** @type {any} */ ({ temperature: t, ml: 100 })).score;
   assert.equal(at(45), 1);
   assert.equal(at(49), 1, 'inside the tolerance band scores full marks');
   assert.ok(at(52) < 1 && at(52) > at(58), 'score falls off outside the band');
   assert.equal(at(80), 0, 'far off scores nothing');
   // perfect potion pays the most and earns five stars
+  /** @type {any} */
   const com = { requirements: [req], bottleMl: 100, budget: 40, tier: 0, contract: false };
-  const good = evaluatePotion(com, { temperature: 45, ml: 100 });
-  const short = evaluatePotion(com, { temperature: 45, ml: 50 });
-  const off = evaluatePotion(com, { temperature: 60, ml: 100 });
+  const good = evaluatePotion(com, /** @type {any} */ ({ temperature: 45, ml: 100 }));
+  const short = evaluatePotion(com, /** @type {any} */ ({ temperature: 45, ml: 50 }));
+  const off = evaluatePotion(com, /** @type {any} */ ({ temperature: 60, ml: 100 }));
   assert.equal(good.stars, 5);
   assert.ok(good.payment > off.payment && good.payment > short.payment);
   assert.ok(short.quality < good.quality, 'a half-empty bottle is penalised');
@@ -116,6 +118,21 @@ test('the market: buying, storage limits and selling back', () => {
   assert.ok(st.sellBack(id, 100).ok);
   assert.ok(st.coins > before && st.coins - before <= st.priceOf(id) * 0.41, 'sell-back pays 40%');
   assert.equal(st.buy(st.world.roles.water, 100).ok === false || isFinite(st.stock(st.world.roles.water)) === false, true, 'water is free and unlimited');
+});
+
+test('the economy cannot be farmed: buy-and-sell loses money, and a sale pays once', () => {
+  const st = GameState.create('exploit-1', { tutorial: false });
+  const id = st.world.roles.oil;
+  st.coins = 500;
+  for (let k = 0; k < 5; k++) { st.buy(id, 100); st.sellBack(id, 100); }
+  assert.ok(st.coins < 500, `buying and selling back loses coins (${st.coins})`);
+  const com = st.nextCustomer();
+  const ev = evaluatePotion(com, perfectMeasurement(com));
+  st.completeSale(ev, { ml: com.bottleMl });
+  const after = st.coins;
+  assert.deepEqual(st.completeSale(ev, { ml: com.bottleMl }), [], 'no second payment without a customer');
+  assert.equal(st.coins, after);
+  assert.equal(st.stock(st.world.roles.water), Infinity);
 });
 
 test('no soft-lock: a broke apprentice gets a daily stipend and water stays free', () => {
@@ -151,7 +168,7 @@ test('save → JSON → load round-trips the whole game', () => {
   const st = GameState.create('save-1');
   st.coins = 123.4; st.reputation = 17; st.day = 4;
   st.buy(st.world.roles.salt, 100);
-  st.discover({ key: 'phase:boil', kind: 'phase', title: 'Boiling', text: 'x' });
+  st.discover(/** @type {any} */ ({ key: 'phase:boil', kind: 'phase', title: 'Boiling', text: 'x' }));
   st.addRecipe({ name: 'Test', steps: [] });
   const json = JSON.stringify(st.toJSON());
   const back = parseImport(json);
@@ -183,7 +200,7 @@ test('old saves migrate and bad files are rejected with a readable message', () 
   assert.throws(() => migrate(null), /Not a save/);
 });
 
-/** A measurement that hits every requirement dead centre. */
+/** A measurement that hits every requirement dead centre. @returns {any} */
 function perfectMeasurement(com) {
   const ASP = ['vitality', 'ardor', 'arcana', 'fortitude'];
   const m = { ml: com.bottleMl, lab: [0.7, 0, 0], aspects: [0, 0, 0, 0], density: 1, viscosity: 1, temperature: 20, stability: 100, volatility: 0 };

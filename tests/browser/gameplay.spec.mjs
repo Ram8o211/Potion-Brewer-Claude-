@@ -10,8 +10,8 @@ test('tutorial commission from first pour to payment', async ({ page }, info) =>
   await page.click('[data-act=tutorial-next]');
   await page.waitForTimeout(200);
   await page.click('[data-act=tutorial-next]').catch(() => {});
-  const before = await lab(page, (l) => ({ coins: l.state.coins, rep: l.state.reputation }));
   const roles = await lab(page, (l) => l.state.world.roles);
+  const before = await lab(page, (l, id) => ({ coins: l.state.coins, rep: l.state.reputation, essence: l.state.stock(id) }), roles.essenceA);
   // 150 ml of water
   await page.click(`.jar[data-id="${roles.water}"]`);
   await page.click('[data-act=dose-100]');
@@ -26,6 +26,8 @@ test('tutorial commission from first pour to payment', async ({ page }, info) =>
   await page.waitForFunction(() => !window.__alchemist.screen.sim.emitter.pouring);
   const ml = await lab(page, (l) => l.sim.p.count * 5);
   expect(ml).toBe(225);
+  const essenceLeft = await lab(page, (l, id) => l.state.stock(id), roles.essenceA);
+  expect(essenceLeft, 'poured reagents are charged to the inventory').toBe(before.essence - 75);
   await shot(page, info, 'tutorial-poured');
   // stir with the spoon until the colour is even
   await page.click('[data-act=tool-spoon]');
@@ -52,6 +54,8 @@ test('tutorial commission from first pour to payment', async ({ page }, info) =>
   await page.click('[data-act=bottle]');
   await expect(page.locator('[data-act=result-continue]')).toBeVisible({ timeout: 20_000 });
   await shot(page, info, 'tutorial-result');
+  await page.fill('.overlay input[aria-label="Recipe name"]', 'Mabry\'s tonic');
+  await page.click('[data-act=save-recipe]');
   await page.click('[data-act=result-continue]');
   await page.waitForTimeout(800);
   const result = await lab(page, (l) => ({ coins: l.state.coins, rep: l.state.reputation, served: l.state.stats.served, last: l.state.history[0] }));
@@ -64,6 +68,15 @@ test('tutorial commission from first pour to payment', async ({ page }, info) =>
   await page.waitForTimeout(500);
   const next = await lab(page, (l) => !!l.state.current && !l.state.current.tutorial);
   expect(next, 'the next customer arrives').toBe(true);
+  // the saved recipe is in the book and can be prepared again (charging stock)
+  await lab(page, (l) => l.sim.clear());
+  const stock0 = await lab(page, (l, id) => l.state.stock(id), roles.essenceA);
+  await page.click('[data-act=recipes]');
+  await expect(page.locator('.overlay .modal', { hasText: 'Mabry' })).toBeVisible();
+  await page.locator('.overlay [data-act=prepare]').first().click();
+  await page.waitForFunction(() => window.__alchemist.screen.sim.p.count >= 45 && !window.__alchemist.screen.sim.emitter.pouring, null, { timeout: 30_000 });
+  expect(await lab(page, (l) => l.sim.p.count * 5)).toBe(225);
+  expect(await lab(page, (l, id) => l.state.stock(id), roles.essenceA)).toBe(stock0 - 75);
   expect(errors).toEqual([]);
 });
 
@@ -101,6 +114,10 @@ test('tools switch and act on the brew', async ({ page }) => {
   await page.waitForTimeout(1500);
   const n1 = await lab(page, (l) => l.sim.p.count);
   expect(n1, 'holding in the cauldron pours').toBeGreaterThan(n0);
+  // the measuring vial shows what the tap would draw
+  await page.locator('[data-act=sample]:visible').first().click();
+  await expect(page.locator('.overlay .modal', { hasText: 'Test vial' })).toBeVisible();
+  await page.locator('.overlay .modal-head .btn').first().click();
   // the lid toggles
   const lid0 = await lab(page, (l) => l.sim.cauldron.lidClosed);
   await page.locator('[data-act=lid]:visible').first().click();

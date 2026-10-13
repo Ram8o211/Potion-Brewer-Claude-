@@ -302,21 +302,28 @@ export function showDaySummary(lab, summary, onDone) {
   });
 }
 
-export function showAnalysis(lab, m, recipe) {
+export function showAnalysis(lab, m, recipe, title = 'Analysis of the brew') {
   const st = lab.state;
   const comp = Object.entries(m.composition).sort((a, b) => b[1] - a[1]);
+  // readings are only as precise as the instruments on the bench
+  const has = (e) => lab.sandbox || st.has(e);
+  const level = (v) => (v >= 66 ? 'high' : v >= 33 ? 'moderate' : 'low');
+  const density = has('hydrometer') ? `${m.density.toFixed(3)} g/ml` : `${m.density > 1.3 ? 'heavy' : m.density < 0.9 ? 'light' : 'like water'} (hydrometer for exact)`;
+  const visc = has('viscometer') ? `${viscosityClass(m.viscosity)} (${m.viscosity < 100 ? m.viscosity.toFixed(1) : Math.round(m.viscosity)} cP)` : viscosityClass(m.viscosity);
+  const assay = (v) => (has('assay') ? String(Math.round(v)) : `${level(v)} (assay kit for exact)`);
+  const aspect = (v) => (has('lens') ? String(Math.round(v)) : v >= 20 ? 'strong' : v >= 6 ? 'faint' : '—');
   modal({
-    title: 'Analysis of the brew',
+    title,
     body: [
       h('div', { class: 'card parch' }, h('div', { class: 'kv' },
         h('span', { class: 'k', text: 'Colour' }), h('span', {}, swatch(m.color), ' ' + describeColor(m.color)),
         h('span', { class: 'k', text: 'Volume' }), h('span', { text: `${m.ml} ml` }),
         h('span', { class: 'k', text: 'Temperature' }), h('span', { text: `${Math.round(m.temperature)}°C` }),
-        h('span', { class: 'k', text: 'Density' }), h('span', { text: `${m.density.toFixed(3)} g/ml` }),
-        h('span', { class: 'k', text: 'Viscosity' }), h('span', { text: `${viscosityClass(m.viscosity)} (${m.viscosity < 100 ? m.viscosity.toFixed(1) : Math.round(m.viscosity)} cP)` }),
-        h('span', { class: 'k', text: 'Stability' }), h('span', { text: String(Math.round(m.stability)) }),
-        h('span', { class: 'k', text: 'Volatility' }), h('span', { text: String(Math.round(m.volatility)) }),
-        ...['vitality', 'ardor', 'arcana', 'fortitude'].flatMap((k, i) => [h('span', { class: 'k', text: PROPERTY_LABELS[k] }), h('span', { text: String(Math.round(m.aspects[i])) })]),
+        h('span', { class: 'k', text: 'Density' }), h('span', { text: density }),
+        h('span', { class: 'k', text: 'Viscosity' }), h('span', { text: visc }),
+        h('span', { class: 'k', text: 'Stability' }), h('span', { text: assay(m.stability) }),
+        h('span', { class: 'k', text: 'Volatility' }), h('span', { text: assay(m.volatility) }),
+        ...['vitality', 'ardor', 'arcana', 'fortitude'].flatMap((k, i) => [h('span', { class: 'k', text: PROPERTY_LABELS[k] }), h('span', { text: aspect(m.aspects[i]) })]),
       )),
       h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Composition' }), ...comp.map(([id, f]) => h('div', { class: 'small', text: `${(f * 100).toFixed(1)}%  ${st.lookup(id) ? st.lookup(id).name : id}` }))),
       lab.sandbox ? null : h('div', { class: 'row' }, btn('Save as recipe', () => { const ev = st.addRecipe({ ...recipe, name: 'Experiment ' + (st.recipes.length + 1) }); for (const e of ev) lab.announce(e); toast('Recipe saved', '', 'book'); }, { icon: 'book' })),

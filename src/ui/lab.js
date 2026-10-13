@@ -291,6 +291,7 @@ export class LabScreen {
       this.toolBtns[d.id] = b;
       t.appendChild(b);
     }
+    t.appendChild(btn('Sample', () => this.sampleVial(), { icon: 'jar', title: 'Draw a test vial from the tap and analyse it', act: 'sample' }));
     if (this.sandbox) t.appendChild(btn('Analyse', () => this.analyseAll(), { icon: 'assay', title: 'Analyse the whole brew', act: 'analyse' }));
     t.appendChild(h('div', { class: 'sep' }));
     this.mobileActs = h('div', { class: 'acts' });
@@ -304,13 +305,14 @@ export class LabScreen {
     this.jarEls = {};
     const st = this.state;
     const ids = this.sandbox ? st.world.ingredients : st.world.ingredients.filter((id) => st.lookup(id).tier <= st.rank || st.stock(id) > 0);
-    for (const id of ids) {
+    const labels = shelfLabels(ids.map((id) => st.lookup(id).name));
+    for (const [n, id] of ids.entries()) {
       const m = st.lookup(id);
       const cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: '15', height: '20' }));
       const ctx = cv.getContext('2d');
       drawJar(ctx, 1, 0, 13, 20, m.look || m.color, m.form);
       const stock = h('span', { class: 'jstock' });
-      const el = h('button', { class: 'jar', title: m.name, 'aria-label': m.name, 'data-id': id, role: 'option' }, stock, cv, h('span', { class: 'jname', text: m.name.split(' ').slice(-1)[0] }));
+      const el = h('button', { class: 'jar', title: m.name, 'aria-label': m.name, 'data-id': id, role: 'option' }, stock, cv, h('span', { class: 'jname', text: labels[n] }));
       let pressTimer = 0;
       el.addEventListener('pointerdown', () => { pressTimer = /** @type {any} */ (setTimeout(() => { pressTimer = -1; panels.openIngredient(this, id); }, 550)); });
       const cancel = () => { if (pressTimer > 0) clearTimeout(pressTimer); };
@@ -812,6 +814,15 @@ export class LabScreen {
     if (t.active && t.type === 'spoon' && t.speed > 0.2) s.stir += dt;
   }
 
+  /** Measuring vial: exactly what bottling would draw from the tap right now. */
+  sampleVial() {
+    const n = this.state.current ? this.state.current.bottleN : 20;
+    const m = measureParticles(this.sim, tapSelection(this.sim, n));
+    if (!m) { toast('Nothing to sample', 'The cauldron is empty.', 'flask'); return; }
+    audio.play('glass');
+    panels.showAnalysis(this, m, this.recipeDraft(m, null, null), `Test vial · ${m.ml} ml from the tap`);
+  }
+
   analyseAll() {
     const sel = [];
     for (let i = 0; i < this.sim.p.count; i++) if (this.sim.p.phase[i] !== PHASE.GAS) sel.push(i);
@@ -1196,3 +1207,17 @@ export class LabScreen {
 }
 
 export { describeValue };
+
+/**
+ * Short jar labels: the last word of each name ("Water", "Ichor"), or the
+ * first word where two reagents would otherwise share a label.
+ * @param {string[]} names
+ */
+function shelfLabels(names) {
+  const last = names.map((nm) => nm.split(' ').slice(-1)[0]);
+  return names.map((nm, i) => {
+    if (last.filter((l) => l === last[i]).length < 2) return last[i];
+    const words = nm.split(' ');
+    return words.length > 1 ? words[0] : nm;
+  });
+}

@@ -234,6 +234,8 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
   .customer canvas.portrait { width: 40px; height: 40px; }
   .customer .reqs { grid-template-columns: 1fr; }
   .jar { width: 50px; height: 56px; }
+  .tools, .tools .acts { gap: 3px; }
+  .tools .btn { min-width: 36px; min-height: 38px; }
 }
 
 /* ---------- main menu: show the cauldron, not just the panel ---------- */

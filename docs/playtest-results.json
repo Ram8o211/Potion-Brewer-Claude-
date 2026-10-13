@@ -1,0 +1,1205 @@
+{
+  "date": "2026-10-13T08:40:49.165Z",
+  "days": 12,
+  "runs": [
+    {
+      "seed": "playtest-0",
+      "profile": "careful",
+      "skill": 0.95,
+      "wallSeconds": 43.5,
+      "days": [
+        {
+          "day": 1,
+          "served": 3,
+          "declined": 0,
+          "earned": 94,
+          "spentOnReagents": 4,
+          "meanQuality": 1,
+          "coins": 105,
+          "reputation": 27,
+          "rank": "Apprentice",
+          "upgrades": [
+            "pestle",
+            "hydrometer"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 2,
+          "served": 3,
+          "declined": 0,
+          "earned": 107,
+          "spentOnReagents": 84,
+          "meanQuality": 1,
+          "coins": 289,
+          "reputation": 54,
+          "rank": "Apprentice",
+          "upgrades": [],
+          "relief": 0
+        },
+        {
+          "day": 3,
+          "served": 3,
+          "declined": 0,
+          "earned": 193,
+          "spentOnReagents": 15,
+          "meanQuality": 1,
+          "coins": 96,
+          "reputation": 85,
+          "rank": "Journeyman",
+          "upgrades": [
+            "skimmer",
+            "viscometer",
+            "thermal",
+            "assay",
+            "shelf1"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 4,
+          "served": 3,
+          "declined": 0,
+          "earned": 245,
+          "spentOnReagents": 418,
+          "meanQuality": 1,
+          "coins": 113,
+          "reputation": 118,
+          "rank": "Journeyman",
+          "upgrades": [
+            "stirrer",
+            "bellows"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 5,
+          "served": 3,
+          "declined": 0,
+          "earned": 256,
+          "spentOnReagents": 262,
+          "meanQuality": 1,
+          "coins": 47,
+          "reputation": 153,
+          "rank": "Journeyman",
+          "upgrades": [
+            "lens",
+            "frostrune"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 6,
+          "served": 4,
+          "declined": 0,
+          "earned": 230,
+          "spentOnReagents": 317,
+          "meanQuality": 1,
+          "coins": 290,
+          "reputation": 197,
+          "rank": "Adept",
+          "upgrades": [],
+          "relief": 0
+        },
+        {
+          "day": 7,
+          "served": 4,
+          "declined": 0,
+          "earned": 579,
+          "spentOnReagents": 86,
+          "meanQuality": 1,
+          "coins": 203,
+          "reputation": 249,
+          "rank": "Adept",
+          "upgrades": [
+            "shelf2",
+            "copper"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 8,
+          "served": 4,
+          "declined": 0,
+          "earned": 668,
+          "spentOnReagents": 683,
+          "meanQuality": 0.964,
+          "coins": 408,
+          "reputation": 291,
+          "rank": "Adept",
+          "upgrades": [
+            "alembic"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 9,
+          "served": 4,
+          "declined": 0,
+          "earned": 316,
+          "spentOnReagents": 392,
+          "meanQuality": 1,
+          "coins": 292,
+          "reputation": 343,
+          "rank": "Adept",
+          "upgrades": [
+            "charter"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 10,
+          "served": 4,
+          "declined": 0,
+          "earned": 390,
+          "spentOnReagents": 429,
+          "meanQuality": 1,
+          "coins": 733,
+          "reputation": 408,
+          "rank": "Expert",
+          "upgrades": [],
+          "relief": 0
+        },
+        {
+          "day": 11,
+          "served": 4,
+          "declined": 0,
+          "earned": 968,
+          "spentOnReagents": 49,
+          "meanQuality": 0.993,
+          "coins": 252,
+          "reputation": 475,
+          "rank": "Expert",
+          "upgrades": [
+            "athanor",
+            "glacial"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 12,
+          "served": 4,
+          "declined": 0,
+          "earned": 578,
+          "spentOnReagents": 1493,
+          "meanQuality": 1,
+          "coins": 788,
+          "reputation": 548,
+          "rank": "Expert",
+          "upgrades": [],
+          "relief": 0
+        }
+      ],
+      "final": {
+        "coins": 788,
+        "reputation": 548,
+        "rank": "Expert",
+        "equipment": 22,
+        "served": 43,
+        "perfect": 40,
+        "declined": 0
+      }
+    },
+    {
+      "seed": "playtest-1",
+      "profile": "careful",
+      "skill": 0.95,
+      "wallSeconds": 37.8,
+      "days": [
+        {
+          "day": 1,
+          "served": 3,
+          "declined": 0,
+          "earned": 90,
+          "spentOnReagents": 0,
+          "meanQuality": 0.855,
+          "coins": 105,
+          "reputation": 19,
+          "rank": "Apprentice",
+          "upgrades": [
+            "pestle",
+            "hydrometer"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 2,
+          "served": 3,
+          "declined": 0,
+          "earned": 110,
+          "spentOnReagents": 89,
+          "meanQuality": 1,
+          "coins": 286,
+          "reputation": 46,
+          "rank": "Apprentice",
+          "upgrades": [],
+          "relief": 0
+        },
+        {
+          "day": 3,
+          "served": 3,
+          "declined": 0,
+          "earned": 171,
+          "spentOnReagents": 8,
+          "meanQuality": 1,
+          "coins": 79,
+          "reputation": 75,
+          "rank": "Journeyman",
+          "upgrades": [
+            "skimmer",
+            "viscometer",
+            "thermal",
+            "assay",
+            "shelf1"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 4,
+          "served": 3,
+          "declined": 0,
+          "earned": 185,
+          "spentOnReagents": 398,
+          "meanQuality": 1,
+          "coins": 56,
+          "reputation": 108,
+          "rank": "Journeyman",
+          "upgrades": [
+            "stirrer",
+            "bellows"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 5,
+          "served": 3,
+          "declined": 0,
+          "earned": 282,
+          "spentOnReagents": 259,
+          "meanQuality": 1,
+          "coins": 169,
+          "reputation": 141,
+          "rank": "Journeyman",
+          "upgrades": [
+            "lens"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 6,
+          "served": 3,
+          "declined": 0,
+          "earned": 286,
+          "spentOnReagents": 184,
+          "meanQuality": 1,
+          "coins": 260,
+          "reputation": 178,
+          "rank": "Journeyman",
+          "upgrades": [
+            "frostrune"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 7,
+          "served": 4,
+          "declined": 0,
+          "earned": 377,
+          "spentOnReagents": 199,
+          "meanQuality": 1,
+          "coins": 48,
+          "reputation": 226,
+          "rank": "Adept",
+          "upgrades": [
+            "shelf2",
+            "copper"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 8,
+          "served": 4,
+          "declined": 0,
+          "earned": 321,
+          "spentOnReagents": 606,
+          "meanQuality": 0.988,
+          "coins": 344,
+          "reputation": 272,
+          "rank": "Adept",
+          "upgrades": [],
+          "relief": 0
+        },
+        {
+          "day": 9,
+          "served": 4,
+          "declined": 0,
+          "earned": 515,
+          "spentOnReagents": 76,
+          "meanQuality": 1,
+          "coins": 423,
+          "reputation": 322,
+          "rank": "Adept",
+          "upgrades": [
+            "alembic"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 10,
+          "served": 4,
+          "declined": 0,
+          "earned": 519,
+          "spentOnReagents": 410,
+          "meanQuality": 0.971,
+          "coins": 492,
+          "reputation": 367,
+          "rank": "Adept",
+          "upgrades": [
+            "charter"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 11,
+          "served": 4,
+          "declined": 0,
+          "earned": 727,
+          "spentOnReagents": 456,
+          "meanQuality": 1,
+          "coins": 594,
+          "reputation": 436,
+          "rank": "Expert",
+          "upgrades": [
+            "athanor"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 12,
+          "served": 4,
+          "declined": 0,
+          "earned": 640,
+          "spentOnReagents": 737,
+          "meanQuality": 1,
+          "coins": 447,
+          "reputation": 515,
+          "rank": "Expert",
+          "upgrades": [
+            "glacial"
+          ],
+          "relief": 0
+        }
+      ],
+      "final": {
+        "coins": 447,
+        "reputation": 515,
+        "rank": "Expert",
+        "equipment": 22,
+        "served": 42,
+        "perfect": 39,
+        "declined": 0
+      }
+    },
+    {
+      "seed": "playtest-2",
+      "profile": "careful",
+      "skill": 0.95,
+      "wallSeconds": 43.4,
+      "days": [
+        {
+          "day": 1,
+          "served": 3,
+          "declined": 0,
+          "earned": 110,
+          "spentOnReagents": 0,
+          "meanQuality": 1,
+          "coins": 125,
+          "reputation": 27,
+          "rank": "Apprentice",
+          "upgrades": [
+            "pestle",
+            "hydrometer"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 2,
+          "served": 3,
+          "declined": 0,
+          "earned": 207,
+          "spentOnReagents": 97,
+          "meanQuality": 1,
+          "coins": 396,
+          "reputation": 56,
+          "rank": "Apprentice",
+          "upgrades": [],
+          "relief": 0
+        },
+        {
+          "day": 3,
+          "served": 3,
+          "declined": 0,
+          "earned": 214,
+          "spentOnReagents": 29,
+          "meanQuality": 1,
+          "coins": 100,
+          "reputation": 87,
+          "rank": "Journeyman",
+          "upgrades": [
+            "skimmer",
+            "viscometer",
+            "thermal",
+            "assay",
+            "shelf1",
+            "stirrer"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 4,
+          "served": 3,
+          "declined": 0,
+          "earned": 272,
+          "spentOnReagents": 531,
+          "meanQuality": 1,
+          "coins": 111,
+          "reputation": 120,
+          "rank": "Journeyman",
+          "upgrades": [
+            "bellows",
+            "lens"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 5,
+          "served": 3,
+          "declined": 0,
+          "earned": 175,
+          "spentOnReagents": 275,
+          "meanQuality": 1,
+          "coins": 122,
+          "reputation": 151,
+          "rank": "Journeyman",
+          "upgrades": [
+            "frostrune"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 6,
+          "served": 4,
+          "declined": 0,
+          "earned": 275,
+          "spentOnReagents": 169,
+          "meanQuality": 1,
+          "coins": 158,
+          "reputation": 195,
+          "rank": "Adept",
+          "upgrades": [
+            "shelf2"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 7,
+          "served": 4,
+          "declined": 0,
+          "earned": 556,
+          "spentOnReagents": 336,
+          "meanQuality": 1,
+          "coins": 318,
+          "reputation": 249,
+          "rank": "Adept",
+          "upgrades": [
+            "copper"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 8,
+          "served": 4,
+          "declined": 0,
+          "earned": 484,
+          "spentOnReagents": 391,
+          "meanQuality": 1,
+          "coins": 371,
+          "reputation": 299,
+          "rank": "Adept",
+          "upgrades": [
+            "alembic"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 9,
+          "served": 4,
+          "declined": 0,
+          "earned": 472,
+          "spentOnReagents": 407,
+          "meanQuality": 1,
+          "coins": 396,
+          "reputation": 349,
+          "rank": "Adept",
+          "upgrades": [
+            "charter"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 10,
+          "served": 4,
+          "declined": 0,
+          "earned": 586,
+          "spentOnReagents": 467,
+          "meanQuality": 0.989,
+          "coins": 295,
+          "reputation": 412,
+          "rank": "Expert",
+          "upgrades": [
+            "athanor"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 11,
+          "served": 4,
+          "declined": 0,
+          "earned": 1315,
+          "spentOnReagents": 841,
+          "meanQuality": 0.989,
+          "coins": 769,
+          "reputation": 485,
+          "rank": "Expert",
+          "upgrades": [
+            "glacial"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 12,
+          "served": 4,
+          "declined": 0,
+          "earned": 612,
+          "spentOnReagents": 802,
+          "meanQuality": 1,
+          "coins": 229,
+          "reputation": 558,
+          "rank": "Expert",
+          "upgrades": [
+            "homunculus"
+          ],
+          "relief": 0
+        }
+      ],
+      "final": {
+        "coins": 229,
+        "reputation": 558,
+        "rank": "Expert",
+        "equipment": 23,
+        "served": 43,
+        "perfect": 41,
+        "declined": 0
+      }
+    },
+    {
+      "seed": "playtest-0",
+      "profile": "casual",
+      "skill": 0.7,
+      "wallSeconds": 42.3,
+      "days": [
+        {
+          "day": 1,
+          "served": 3,
+          "declined": 0,
+          "earned": 94,
+          "spentOnReagents": 4,
+          "meanQuality": 1,
+          "coins": 105,
+          "reputation": 27,
+          "rank": "Apprentice",
+          "upgrades": [
+            "pestle",
+            "hydrometer"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 2,
+          "served": 3,
+          "declined": 0,
+          "earned": 107,
+          "spentOnReagents": 84,
+          "meanQuality": 1,
+          "coins": 289,
+          "reputation": 54,
+          "rank": "Apprentice",
+          "upgrades": [],
+          "relief": 0
+        },
+        {
+          "day": 3,
+          "served": 3,
+          "declined": 0,
+          "earned": 193,
+          "spentOnReagents": 11,
+          "meanQuality": 1,
+          "coins": 101,
+          "reputation": 85,
+          "rank": "Journeyman",
+          "upgrades": [
+            "skimmer",
+            "viscometer",
+            "thermal",
+            "assay",
+            "shelf1"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 4,
+          "served": 3,
+          "declined": 0,
+          "earned": 245,
+          "spentOnReagents": 418,
+          "meanQuality": 1,
+          "coins": 117,
+          "reputation": 118,
+          "rank": "Journeyman",
+          "upgrades": [
+            "stirrer",
+            "bellows"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 5,
+          "served": 3,
+          "declined": 0,
+          "earned": 256,
+          "spentOnReagents": 265,
+          "meanQuality": 1,
+          "coins": 48,
+          "reputation": 153,
+          "rank": "Journeyman",
+          "upgrades": [
+            "lens",
+            "frostrune"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 6,
+          "served": 3,
+          "declined": 0,
+          "earned": 156,
+          "spentOnReagents": 317,
+          "meanQuality": 0.895,
+          "coins": 177,
+          "reputation": 177,
+          "rank": "Journeyman",
+          "upgrades": [],
+          "relief": 0
+        },
+        {
+          "day": 7,
+          "served": 4,
+          "declined": 0,
+          "earned": 440,
+          "spentOnReagents": 66,
+          "meanQuality": 1,
+          "coins": 331,
+          "reputation": 227,
+          "rank": "Adept",
+          "upgrades": [
+            "shelf2"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 8,
+          "served": 4,
+          "declined": 0,
+          "earned": 766,
+          "spentOnReagents": 367,
+          "meanQuality": 1,
+          "coins": 309,
+          "reputation": 275,
+          "rank": "Adept",
+          "upgrades": [
+            "copper",
+            "alembic"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 9,
+          "served": 4,
+          "declined": 0,
+          "earned": 316,
+          "spentOnReagents": 715,
+          "meanQuality": 1,
+          "coins": 190,
+          "reputation": 327,
+          "rank": "Adept",
+          "upgrades": [
+            "charter"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 10,
+          "served": 4,
+          "declined": 0,
+          "earned": 390,
+          "spentOnReagents": 429,
+          "meanQuality": 1,
+          "coins": 552,
+          "reputation": 392,
+          "rank": "Adept",
+          "upgrades": [],
+          "relief": 0
+        },
+        {
+          "day": 11,
+          "served": 4,
+          "declined": 0,
+          "earned": 1050,
+          "spentOnReagents": 42,
+          "meanQuality": 1,
+          "coins": 240,
+          "reputation": 463,
+          "rank": "Expert",
+          "upgrades": [
+            "athanor",
+            "glacial"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 12,
+          "served": 4,
+          "declined": 0,
+          "earned": 578,
+          "spentOnReagents": 1493,
+          "meanQuality": 1,
+          "coins": 775,
+          "reputation": 536,
+          "rank": "Expert",
+          "upgrades": [],
+          "relief": 0
+        }
+      ],
+      "final": {
+        "coins": 775,
+        "reputation": 536,
+        "rank": "Expert",
+        "equipment": 22,
+        "served": 42,
+        "perfect": 41,
+        "declined": 0
+      }
+    },
+    {
+      "seed": "playtest-1",
+      "profile": "casual",
+      "skill": 0.7,
+      "wallSeconds": 39.9,
+      "days": [
+        {
+          "day": 1,
+          "served": 3,
+          "declined": 0,
+          "earned": 95,
+          "spentOnReagents": 0,
+          "meanQuality": 0.91,
+          "coins": 110,
+          "reputation": 21,
+          "rank": "Apprentice",
+          "upgrades": [
+            "pestle",
+            "hydrometer"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 2,
+          "served": 3,
+          "declined": 0,
+          "earned": 110,
+          "spentOnReagents": 84,
+          "meanQuality": 1,
+          "coins": 296,
+          "reputation": 48,
+          "rank": "Apprentice",
+          "upgrades": [],
+          "relief": 0
+        },
+        {
+          "day": 3,
+          "served": 3,
+          "declined": 0,
+          "earned": 171,
+          "spentOnReagents": 8,
+          "meanQuality": 1,
+          "coins": 88,
+          "reputation": 77,
+          "rank": "Journeyman",
+          "upgrades": [
+            "skimmer",
+            "viscometer",
+            "thermal",
+            "assay",
+            "shelf1"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 4,
+          "served": 3,
+          "declined": 0,
+          "earned": 185,
+          "spentOnReagents": 403,
+          "meanQuality": 1,
+          "coins": 61,
+          "reputation": 110,
+          "rank": "Journeyman",
+          "upgrades": [
+            "stirrer",
+            "bellows"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 5,
+          "served": 3,
+          "declined": 0,
+          "earned": 282,
+          "spentOnReagents": 259,
+          "meanQuality": 1,
+          "coins": 174,
+          "reputation": 143,
+          "rank": "Journeyman",
+          "upgrades": [
+            "lens"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 6,
+          "served": 4,
+          "declined": 0,
+          "earned": 387,
+          "spentOnReagents": 199,
+          "meanQuality": 1,
+          "coins": 132,
+          "reputation": 195,
+          "rank": "Adept",
+          "upgrades": [
+            "frostrune",
+            "shelf2"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 7,
+          "served": 4,
+          "declined": 0,
+          "earned": 400,
+          "spentOnReagents": 460,
+          "meanQuality": 1,
+          "coins": 162,
+          "reputation": 245,
+          "rank": "Adept",
+          "upgrades": [
+            "copper"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 8,
+          "served": 4,
+          "declined": 0,
+          "earned": 313,
+          "spentOnReagents": 350,
+          "meanQuality": 0.969,
+          "coins": 85,
+          "reputation": 290,
+          "rank": "Adept",
+          "upgrades": [
+            "alembic"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 9,
+          "served": 4,
+          "declined": 0,
+          "earned": 450,
+          "spentOnReagents": 453,
+          "meanQuality": 0.991,
+          "coins": 42,
+          "reputation": 333,
+          "rank": "Adept",
+          "upgrades": [
+            "charter"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 10,
+          "served": 4,
+          "declined": 0,
+          "earned": 708,
+          "spentOnReagents": 437,
+          "meanQuality": 0.932,
+          "coins": 713,
+          "reputation": 391,
+          "rank": "Adept",
+          "upgrades": [],
+          "relief": 0
+        },
+        {
+          "day": 11,
+          "served": 4,
+          "declined": 0,
+          "earned": 742,
+          "spentOnReagents": 44,
+          "meanQuality": 1,
+          "coins": 91,
+          "reputation": 464,
+          "rank": "Expert",
+          "upgrades": [
+            "athanor",
+            "glacial"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 12,
+          "served": 4,
+          "declined": 0,
+          "earned": 640,
+          "spentOnReagents": 1484,
+          "meanQuality": 1,
+          "coins": 697,
+          "reputation": 543,
+          "rank": "Expert",
+          "upgrades": [],
+          "relief": 0
+        }
+      ],
+      "final": {
+        "coins": 697,
+        "reputation": 543,
+        "rank": "Expert",
+        "equipment": 22,
+        "served": 43,
+        "perfect": 38,
+        "declined": 0
+      }
+    },
+    {
+      "seed": "playtest-2",
+      "profile": "casual",
+      "skill": 0.7,
+      "wallSeconds": 45.8,
+      "days": [
+        {
+          "day": 1,
+          "served": 3,
+          "declined": 0,
+          "earned": 110,
+          "spentOnReagents": 0,
+          "meanQuality": 1,
+          "coins": 125,
+          "reputation": 27,
+          "rank": "Apprentice",
+          "upgrades": [
+            "pestle",
+            "hydrometer"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 2,
+          "served": 3,
+          "declined": 0,
+          "earned": 207,
+          "spentOnReagents": 97,
+          "meanQuality": 1,
+          "coins": 396,
+          "reputation": 56,
+          "rank": "Apprentice",
+          "upgrades": [],
+          "relief": 0
+        },
+        {
+          "day": 3,
+          "served": 3,
+          "declined": 0,
+          "earned": 214,
+          "spentOnReagents": 29,
+          "meanQuality": 1,
+          "coins": 100,
+          "reputation": 87,
+          "rank": "Journeyman",
+          "upgrades": [
+            "skimmer",
+            "viscometer",
+            "thermal",
+            "assay",
+            "shelf1",
+            "stirrer"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 4,
+          "served": 3,
+          "declined": 0,
+          "earned": 272,
+          "spentOnReagents": 531,
+          "meanQuality": 1,
+          "coins": 111,
+          "reputation": 120,
+          "rank": "Journeyman",
+          "upgrades": [
+            "bellows",
+            "lens"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 5,
+          "served": 3,
+          "declined": 0,
+          "earned": 175,
+          "spentOnReagents": 275,
+          "meanQuality": 1,
+          "coins": 122,
+          "reputation": 151,
+          "rank": "Journeyman",
+          "upgrades": [
+            "frostrune"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 6,
+          "served": 4,
+          "declined": 0,
+          "earned": 249,
+          "spentOnReagents": 165,
+          "meanQuality": 0.968,
+          "coins": 136,
+          "reputation": 190,
+          "rank": "Adept",
+          "upgrades": [
+            "shelf2"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 7,
+          "served": 4,
+          "declined": 0,
+          "earned": 556,
+          "spentOnReagents": 336,
+          "meanQuality": 1,
+          "coins": 296,
+          "reputation": 244,
+          "rank": "Adept",
+          "upgrades": [
+            "copper"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 8,
+          "served": 4,
+          "declined": 0,
+          "earned": 484,
+          "spentOnReagents": 395,
+          "meanQuality": 1,
+          "coins": 345,
+          "reputation": 294,
+          "rank": "Adept",
+          "upgrades": [
+            "alembic"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 9,
+          "served": 4,
+          "declined": 0,
+          "earned": 472,
+          "spentOnReagents": 411,
+          "meanQuality": 1,
+          "coins": 366,
+          "reputation": 344,
+          "rank": "Adept",
+          "upgrades": [
+            "charter"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 10,
+          "served": 4,
+          "declined": 0,
+          "earned": 602,
+          "spentOnReagents": 475,
+          "meanQuality": 1,
+          "coins": 273,
+          "reputation": 411,
+          "rank": "Expert",
+          "upgrades": [
+            "athanor"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 11,
+          "served": 4,
+          "declined": 0,
+          "earned": 1309,
+          "spentOnReagents": 833,
+          "meanQuality": 0.975,
+          "coins": 749,
+          "reputation": 483,
+          "rank": "Expert",
+          "upgrades": [
+            "glacial"
+          ],
+          "relief": 0
+        },
+        {
+          "day": 12,
+          "served": 4,
+          "declined": 0,
+          "earned": 612,
+          "spentOnReagents": 798,
+          "meanQuality": 1,
+          "coins": 213,
+          "reputation": 556,
+          "rank": "Expert",
+          "upgrades": [
+            "homunculus"
+          ],
+          "relief": 0
+        }
+      ],
+      "final": {
+        "coins": 213,
+        "reputation": 556,
+        "rank": "Expert",
+        "equipment": 23,
+        "served": 43,
+        "perfect": 41,
+        "declined": 0
+      }
+    }
+  ]
+}
