@@ -185,9 +185,14 @@ export class TrialsView {
     } catch (e) {
       toast('Cannot test', String(e && e.message), 'close');
     }
+    // re-measure now so the certificate this trial earned shows at once
+    lab.updateAssay(true);
     this.refresh();
     lab.refreshCustomer();
     lab.views.counter.refresh();
+    lab.updateBadges();
+    // on a phone the report sits below the subjects: bring it into view
+    if (this.report && this.report.scrollIntoView) this.report.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
 
   /** @param {string} id */

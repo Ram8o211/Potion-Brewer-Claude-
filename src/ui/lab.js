@@ -1111,6 +1111,24 @@ export class LabScreen {
     return out;
   }
 
+  /**
+   * A saved recipe this batch follows (same reagents, amounts within 5 ml),
+   * whose effects were verified when it was first brewed — the middle tier
+   * between theory and a trial of this very batch.
+   */
+  knownRecipe() {
+    const parts = this.batchParts();
+    if (!parts.length || this.sandbox) return null;
+    for (const r of this.state.recipes) {
+      if (!r.verified || !Object.keys(r.verified).length || !r.ingredients) continue;
+      const want = new Map();
+      for (const i of r.ingredients) want.set(i.id, (want.get(i.id) || 0) + i.ml);
+      if (want.size !== parts.length) continue;
+      if (parts.every((x) => want.has(x.id) && Math.abs(/** @type {number} */ (want.get(x.id)) - x.ml) <= 5)) return r;
+    }
+    return null;
+  }
+
   /** The guild's naive theory for this batch, with the laws you have found. */
   theory() {
     return theoryOf(this.batchParts(), this.state.lookup, this.sandbox ? this.state.world.laws : this.state.knownLaws);
@@ -1234,6 +1252,7 @@ export class LabScreen {
     const comp = Object.entries(inv).sort((a, b) => b[1] - a[1]).slice(0, 6);
     const theory = this.theory();
     const cert = this.cert;
+    const known = this.knownRecipe();
     /** @type {[import('../alchemy/effects.js').EffectDef, number][]} */
     const thList = EFFECTS.map((e, k) => /** @type {[import('../alchemy/effects.js').EffectDef, number]} */ ([e, theory[k]])).filter(([, v]) => Math.abs(v) >= 1);
     el.append(
@@ -1245,8 +1264,9 @@ export class LabScreen {
         return h('div', { class: 'row small' }, h('span', { class: 'swatch', style: { background: rgbToHex(m ? m.look || m.color : [0.5, 0.5, 0.5]) } }), h('span', { text: `${Math.round((v / tot) * 100)}% ${m ? m.name : id}` }));
       }),
       h('div', { class: 'small know' }, h('b', { text: 'Theory ' }), thList.length ? thList.map(([e, v]) => h('span', { class: 'fx-chip dim', title: e.label }, icon(e.icon, 'sm'), ` ≈${Math.round(v)}`)) : h('span', { class: 'muted', text: 'no effects expected' })),
+      known ? h('div', { class: 'small know' }, h('b', { text: 'Recipe ' }), ...Object.entries(known.verified).map(([k, v]) => h('span', { class: 'fx-chip dim', title: `${EFFECT_BY_KEY[k].label}, as verified when “${known.name}” was first brewed` }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ~${Math.round(/** @type {number} */ (v))}`))) : null,
       h('div', { class: 'small know' }, h('b', { text: 'Verified ' }), Object.keys(cert.values).length ? Object.entries(cert.values).map(([k, v]) => h('span', { class: 'fx-chip', title: EFFECT_BY_KEY[k].label }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(v)}`)) : h('span', { class: 'muted', text: cert.changed ? 'outdated — retest' : 'nothing yet' })),
-      h('div', { class: 'small muted', text: 'Theory adds up what each ingredient is known to do. The real brew can differ: test it.' }),
+      h('div', { class: 'small muted', text: known ? 'Theory adds up what each ingredient is known to do; Recipe is what this recipe did when it was tested. Only a trial of this batch counts as verified.' : 'Theory adds up what each ingredient is known to do. The real brew can differ: test it.' }),
     );
     void force;
   }

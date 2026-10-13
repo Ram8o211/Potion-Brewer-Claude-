@@ -17,6 +17,7 @@ test('gathering in the wilds fills the stores and depletes the deposit', async (
   const node = await lab(page, (l, id) => l.state.gathering.nodes[id], dep.id);
   expect(node.stock).toBeCloseTo(dep.capacity - dep.take, 0);
   // tapping a deposit in the scene gathers too
+  await page.locator('.view-wilds canvas.scene').scrollIntoViewIfNeeded();
   const cv = await page.locator('.view-wilds canvas.scene').boundingBox();
   if (!cv) throw new Error('no scene');
   const deps = await lab(page, (l) => l.state.deposits.filter((d) => d.region === 'forest'));
@@ -61,6 +62,8 @@ test('the dropper doses a subject; a spent subject is replaced for coins; trials
   const rec = await lab(page, (l) => l.state.trials.records[0]);
   expect(rec.subjectId).toBe('beetle');
   expect(rec.values.fire, 'the beetle shows fire').toBeGreaterThan(2);
+  // the room's batch summary updates at once
+  await expect(page.locator('.view-trials')).not.toContainText('nothing tested yet');
   await shot(page, info, 'trial-beetle');
   // a spent rabbit is replaced for its price
   await lab(page, (l) => { l.state.trials.subjects.rabbit.alive = false; l.state.trials.subjects.rabbit.health = 0; l.views.trials.refresh(); });

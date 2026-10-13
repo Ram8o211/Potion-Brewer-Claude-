@@ -31,7 +31,9 @@ export class WildsView {
     this.info = h('div', { class: 'region-info small' });
     this.list = h('div', { class: 'deposits' });
     this.foot = h('div', { class: 'small muted wilds-foot' });
-    el.append(this.tabs, h('div', { class: 'scene-wrap' }, this.canvas), this.info, this.list, this.foot);
+    // the scene and its caption form one column, so a landscape phone can
+    // keep the scene in view beside the deposit list
+    el.append(this.tabs, h('div', { class: 'wilds-scene' }, h('div', { class: 'scene-wrap' }, this.canvas), this.info), h('div', { class: 'wilds-list' }, this.list, this.foot));
     this.refresh();
   }
 

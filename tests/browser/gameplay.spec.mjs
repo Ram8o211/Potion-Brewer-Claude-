@@ -88,6 +88,11 @@ test('first commission: brew, test on a subject, bottle and serve', async ({ pag
   await page.waitForFunction(() => window.__alchemist.screen.sim.p.count >= 50 && !window.__alchemist.screen.sim.emitter.pouring, null, { timeout: 30_000 });
   expect(await lab(page, (l) => l.sim.p.count * 5)).toBe(250);
   expect(await lab(page, (l, id) => l.state.stock(id), roles.essenceA)).toBe(stock0 - 125);
+  // the brew follows a tested recipe: its effects show as "Recipe", not as verified
+  await lab(page, (l) => l.showView('brew'));
+  await page.click('[data-act=brew-info]');
+  await expect(page.locator('.brew-panel')).toContainText('Recipe');
+  await expect(page.locator('.brew-panel')).toContainText('Verified nothing yet');
   expect(errors).toEqual([]);
 });
 

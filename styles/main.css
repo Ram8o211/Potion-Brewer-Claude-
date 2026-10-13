@@ -343,6 +343,12 @@ canvas.scene { display: block; width: 100%; aspect-ratio: 16 / 9; height: auto; 
   .stage .brew-panel { top: 8px; left: 60px; }
   .subjects { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .view-counter > *, .view-wilds > *, .view-trials > *, .view-book > * { max-width: 900px; }
+  /* the wilds: scene beside the deposit list (only the list scrolls) */
+  .lab[data-view=wilds] .view-wilds { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: 0 14px; overflow: hidden; }
+  .view-wilds > * { max-width: none; margin-left: 0; margin-right: 0; }
+  .view-wilds .region-tabs { grid-column: 1 / -1; }
+  .view-wilds .wilds-scene { min-height: 0; overflow-y: auto; }
+  .view-wilds .wilds-list { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 6px; }
 }
 @media (min-width: 1300px) and (min-aspect-ratio: 1/1) {
   .subjects { grid-template-columns: repeat(5, minmax(0, 1fr)); }
@@ -380,6 +386,13 @@ canvas.scene { display: block; width: 100%; aspect-ratio: 16 / 9; height: auto; 
   .jar { width: 54px; height: 58px; }
   .order-strip { margin: 4px 6px 0; }
   .subjects { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  /* the wilds: region tabs on top, the scene stays on the left and only the
+     deposit list scrolls on the right */
+  .lab[data-view=wilds] .view-wilds { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: 0 10px; overflow: hidden; }
+  .view-wilds > * { max-width: none; margin-left: 0; margin-right: 0; }
+  .view-wilds .region-tabs { grid-column: 1 / -1; }
+  .view-wilds .wilds-scene { min-height: 0; overflow-y: auto; }
+  .view-wilds .wilds-list { min-height: 0; overflow-y: auto; touch-action: pan-y; overscroll-behavior: contain; padding-bottom: 6px; }
 }
 /* ---------- main menu: show the cauldron, not just the panel ---------- */
 @media (max-aspect-ratio: 1/1) {
@@ -452,10 +465,10 @@ input[type=checkbox] { width: 22px; height: 22px; accent-color: #6a4b9a; }
 @keyframes toastout { to { transform: translateY(-10px); opacity: 0; } }
 
 /* tutorial */
-.tutor { position: absolute; z-index: 25; max-width: min(340px, 88vw); padding: 10px 12px; font-size: var(--fs-s); line-height: 1.45; pointer-events: auto; }
+.tutor { position: absolute; z-index: 19; /* above every room, below dialogs */ max-width: min(340px, 88vw); padding: 10px 12px; font-size: var(--fs-s); line-height: 1.45; pointer-events: auto; }
 .tutor .tutor-actions { display: flex; justify-content: space-between; margin-top: 8px; gap: 8px; }
 .tutor .btn { min-height: 44px; font-size: var(--fs-s); }
-.highlight { position: relative; z-index: 24; outline: 3px solid var(--brassHi); outline-offset: 2px; animation: pulse 1s infinite alternate; }
+.highlight { position: relative; z-index: 6; outline: 3px solid var(--brassHi); outline-offset: 2px; animation: pulse 1s infinite alternate; }
 @keyframes pulse { from { outline-color: var(--brassHi); } to { outline-color: rgba(255, 227, 154, 0.25); } }
 
 /* inspector cards */
