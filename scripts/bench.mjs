@@ -56,6 +56,8 @@ function physicsBench() {
     ['frozen block 500', (s) => { pourAll(s, 'red', 500); s.furnace.setting = -1; s.furnace.minCool = -40; for (let k = 0; k < 120 * 30; k++) s.step(); }, 'medium'],
   ];
   const rows = [];
+  // warm-up: let the JIT compile the hot paths before anything is timed
+  { const w = new Simulation({ size: 'medium', lookup: refLookup }); pourAll(w, 'water', 400); pourAll(w, 'sand', 200); timeSteps(w, 3); }
   for (const [name, setup, size] of scenarios) {
     const sim = new Simulation({ size, lookup: refLookup });
     setup(sim);
