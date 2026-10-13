@@ -204,10 +204,10 @@ Test files:
 | Requirement | Status | Evidence |
 |---|---|---|
 | Typed arrays, uniform grid, no O(N²), fixed timestep, physics separate from rendering, quality-independent physics | ✔ | `particles.js`, `grid.js`; P: "neighbour search is linear" |
-| About 60 fps on capable desktops | ✔ (measured) | bench: 59 fps at the typical 60–300 particles; 40–44 fps at 800–1300 particles (headless Chromium, software rendering) |
-| 30–60 fps on mid-range phones | ◐ partly | Measured only with 4× CPU-throttled emulation: 32–36 fps at 60–300 particles (simulation at 0.76–0.84 of real time), 16–23 fps at 800–1300 particles. Not measured on a real phone. |
+| About 60 fps on capable desktops | ✔ (measured) | bench: 59–60 fps in real time at the typical 60–300 particles; 48–51 fps at 800–1,300 particles (headless Chromium, software rendering) |
+| 30–60 fps on mid-range phones | ◐ partly | Measured only with 4× CPU-throttled emulation: 28–33 fps at 60–300 particles (simulation at 0.73–0.83× real time), 16–21 fps at 800–1,300 particles (deliberate slow motion, 0.14–0.18×). Not measured on a real phone. |
 | Graceful degradation before correctness | ✔ | Automatic quality steps; physics time budget slows the brew instead of changing results |
-| No major leaks | ✔ (measured) | bench memory soak (see REPORT) |
+| No major leaks | ✔ (measured) | bench memory soak: heap flat at 3.5–4.1 MB over 90 s of boiling; 4.22 → 4.44 MB over 10 menu↔shop trips; old screens are released (REPORT §4) |
 | Web Workers | ✘ not done | Not used: per-step cost is a few ms and the UI reads particle state every frame, so a worker would add synchronisation without a measured benefit. |
 
 ## 20. Architecture

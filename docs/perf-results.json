@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-13T08:22:50.414Z",
+  "date": "2026-10-13T08:55:56.560Z",
   "machine": {
     "cpus": "Intel(R) Xeon(R) Processor @ 2.80GHz",
     "cores": 4,
@@ -12,228 +12,261 @@
         "scenario": "water 300",
         "particles": 300,
         "gas": 0,
-        "msPerStep": 0.967,
-        "msPerFrame60": 1.934
+        "msPerStep": 0.869,
+        "msPerFrame60": 1.739
       },
       {
         "scenario": "water 900",
         "particles": 900,
         "gas": 0,
-        "msPerStep": 2.411,
-        "msPerFrame60": 4.821
+        "msPerStep": 3.087,
+        "msPerFrame60": 6.174
       },
       {
         "scenario": "water 1400",
         "particles": 1400,
         "gas": 0,
-        "msPerStep": 4.495,
-        "msPerFrame60": 8.99
+        "msPerStep": 4.638,
+        "msPerFrame60": 9.275
       },
       {
         "scenario": "3 liquid layers 900",
         "particles": 900,
         "gas": 0,
-        "msPerStep": 3.729,
-        "msPerFrame60": 7.458
+        "msPerStep": 3.329,
+        "msPerFrame60": 6.659
       },
       {
         "scenario": "sand pile 600",
         "particles": 600,
         "gas": 0,
-        "msPerStep": 1.221,
-        "msPerFrame60": 2.443
+        "msPerStep": 1.078,
+        "msPerFrame60": 2.157
       },
       {
         "scenario": "dough 600 (stirred)",
         "particles": 600,
         "gas": 0,
-        "msPerStep": 1.988,
-        "msPerFrame60": 3.976
+        "msPerStep": 2.162,
+        "msPerFrame60": 4.325
       },
       {
         "scenario": "boiling water 600 (lid on)",
         "particles": 600,
         "gas": 586,
-        "msPerStep": 0.695,
-        "msPerFrame60": 1.391
+        "msPerStep": 0.839,
+        "msPerFrame60": 1.678
       },
       {
         "scenario": "frozen block 500",
         "particles": 500,
         "gas": 0,
-        "msPerStep": 1.701,
-        "msPerFrame60": 3.402
+        "msPerStep": 1.405,
+        "msPerFrame60": 2.811
       }
     ],
     "brews": [
       {
         "style": "salve",
         "simSeconds": 28.3,
-        "wallSeconds": 0.51
+        "wallSeconds": 0.55
       },
       {
         "style": "syrup",
         "simSeconds": 28.3,
-        "wallSeconds": 0.74
+        "wallSeconds": 0.75
       },
       {
         "style": "arcane",
         "simSeconds": 38.4,
-        "wallSeconds": 1.08
+        "wallSeconds": 1.33
       },
       {
         "style": "elixir",
         "simSeconds": 31.7,
-        "wallSeconds": 1.34
+        "wallSeconds": 1.35
       },
       {
         "style": "fizzy",
         "simSeconds": 24.9,
-        "wallSeconds": 1
+        "wallSeconds": 1.32
       },
       {
         "style": "syrup",
         "simSeconds": 27.7,
-        "wallSeconds": 0.5
+        "wallSeconds": 0.54
       }
     ]
   },
-  "browser": [
-    {
-      "profile": "desktop 1440×900",
-      "target": 60,
-      "frames": 354,
-      "fps": 59,
-      "intervalP50": 16.7,
-      "intervalP95": 16.8,
-      "intervalP99": 33.2,
-      "workP50": 3.2,
-      "workP95": 13.5,
-      "physMs": 0.54,
-      "renderMs": 8,
-      "stepMs": 0.21,
-      "particles": 60,
-      "simRate": 1,
-      "quality": "high"
-    },
-    {
-      "profile": "desktop 1440×900",
-      "target": 300,
-      "frames": 354,
-      "fps": 59,
-      "intervalP50": 16.7,
-      "intervalP95": 16.8,
-      "intervalP99": 33.2,
-      "workP50": 6.2,
-      "workP95": 15.2,
-      "physMs": 3.37,
-      "renderMs": 9.97,
-      "stepMs": 1.46,
-      "particles": 300,
-      "simRate": 0.99,
-      "quality": "high"
-    },
-    {
-      "profile": "desktop 1440×900",
-      "target": 800,
-      "frames": 262,
-      "fps": 43.67,
-      "intervalP50": 16.7,
-      "intervalP95": 49.9,
-      "intervalP99": 66.6,
-      "workP50": 15.1,
-      "workP95": 37.5,
-      "physMs": 12.68,
-      "renderMs": 8.01,
-      "stepMs": 4.3,
-      "particles": 800,
-      "simRate": 0.93,
-      "quality": "medium"
-    },
-    {
-      "profile": "desktop 1440×900",
-      "target": 1300,
-      "frames": 241,
-      "fps": 40.06,
-      "intervalP50": 16.7,
-      "intervalP95": 33.4,
-      "intervalP99": 50,
-      "workP50": 22.9,
-      "workP95": 33.8,
-      "physMs": 16.22,
-      "renderMs": 6.47,
-      "stepMs": 8.43,
-      "particles": 1300,
-      "simRate": 0.62,
-      "quality": "low"
-    },
-    {
-      "profile": "phone 390×844 @2x, CPU ×4 throttle",
-      "target": 60,
-      "frames": 256,
-      "fps": 31.93,
-      "intervalP50": 16.7,
-      "intervalP95": 83.4,
-      "intervalP99": 116.7,
-      "workP50": 10.6,
-      "workP95": 63.7,
-      "physMs": 1.92,
-      "renderMs": 8.71,
-      "stepMs": 0.7,
-      "particles": 60,
-      "simRate": 0.84,
-      "quality": "low"
-    },
-    {
-      "profile": "phone 390×844 @2x, CPU ×4 throttle",
-      "target": 300,
-      "frames": 293,
-      "fps": 36.47,
-      "intervalP50": 16.8,
-      "intervalP95": 50,
-      "intervalP99": 66.7,
-      "workP50": 19.5,
-      "workP95": 38.8,
-      "physMs": 15.09,
-      "renderMs": 7.97,
-      "stepMs": 5.82,
-      "particles": 300,
-      "simRate": 0.76,
-      "quality": "low"
-    },
-    {
-      "profile": "phone 390×844 @2x, CPU ×4 throttle",
-      "target": 800,
-      "frames": 188,
-      "fps": 23.35,
-      "intervalP50": 33.4,
-      "intervalP95": 83.3,
-      "intervalP99": 133.4,
-      "workP50": 30,
-      "workP95": 61,
-      "physMs": 17.88,
-      "renderMs": 9.58,
-      "stepMs": 17.67,
-      "particles": 800,
-      "simRate": 0.2,
-      "quality": "low"
-    },
-    {
-      "profile": "phone 390×844 @2x, CPU ×4 throttle",
-      "target": 1300,
-      "frames": 131,
-      "fps": 16.17,
-      "intervalP50": 50,
-      "intervalP95": 133.3,
-      "intervalP99": 199.9,
-      "workP50": 44.5,
-      "workP95": 107.5,
-      "physMs": 28.21,
-      "renderMs": 14.05,
-      "stepMs": 28.09,
-      "particles": 1300,
-      "simRate": 0.14,
-      "quality": "low"
+  "browser": {
+    "frames": [
+      {
+        "profile": "desktop 1440×900",
+        "target": 60,
+        "frames": 358,
+        "fps": 59.67,
+        "intervalP50": 16.7,
+        "intervalP95": 16.8,
+        "intervalP99": 16.8,
+        "workP50": 3.5,
+        "workP95": 14.2,
+        "physMs": 0.55,
+        "renderMs": 9.71,
+        "stepMs": 0.23,
+        "particles": 60,
+        "simRate": 1,
+        "quality": "high"
+      },
+      {
+        "profile": "desktop 1440×900",
+        "target": 300,
+        "frames": 352,
+        "fps": 58.67,
+        "intervalP50": 16.7,
+        "intervalP95": 16.8,
+        "intervalP99": 33.3,
+        "workP50": 7.7,
+        "workP95": 14.6,
+        "physMs": 3.58,
+        "renderMs": 7.99,
+        "stepMs": 1.68,
+        "particles": 300,
+        "simRate": 1,
+        "quality": "high"
+      },
+      {
+        "profile": "desktop 1440×900",
+        "target": 800,
+        "frames": 310,
+        "fps": 51.24,
+        "intervalP50": 16.7,
+        "intervalP95": 33.4,
+        "intervalP99": 50,
+        "workP50": 11.9,
+        "workP95": 32.8,
+        "physMs": 9.12,
+        "renderMs": 3.92,
+        "stepMs": 3.86,
+        "particles": 800,
+        "simRate": 0.95,
+        "quality": "low"
+      },
+      {
+        "profile": "desktop 1440×900",
+        "target": 1300,
+        "frames": 289,
+        "fps": 47.9,
+        "intervalP50": 16.7,
+        "intervalP95": 33.4,
+        "intervalP99": 50.1,
+        "workP50": 16.4,
+        "workP95": 35.7,
+        "physMs": 11.35,
+        "renderMs": 4.53,
+        "stepMs": 5.32,
+        "particles": 1300,
+        "simRate": 0.88,
+        "quality": "low"
+      },
+      {
+        "profile": "phone 390×844 @2x, CPU ×4 throttle",
+        "target": 60,
+        "frames": 223,
+        "fps": 27.82,
+        "intervalP50": 33.3,
+        "intervalP95": 83.4,
+        "intervalP99": 133.3,
+        "workP50": 12.9,
+        "workP95": 59.6,
+        "physMs": 2.39,
+        "renderMs": 11.57,
+        "stepMs": 0.76,
+        "particles": 60,
+        "simRate": 0.83,
+        "quality": "low"
+      },
+      {
+        "profile": "phone 390×844 @2x, CPU ×4 throttle",
+        "target": 300,
+        "frames": 265,
+        "fps": 32.78,
+        "intervalP50": 33.3,
+        "intervalP95": 50,
+        "intervalP99": 83.4,
+        "workP50": 22.3,
+        "workP95": 45.8,
+        "physMs": 15.49,
+        "renderMs": 5.59,
+        "stepMs": 5.47,
+        "particles": 300,
+        "simRate": 0.73,
+        "quality": "low"
+      },
+      {
+        "profile": "phone 390×844 @2x, CPU ×4 throttle",
+        "target": 800,
+        "frames": 174,
+        "fps": 21.01,
+        "intervalP50": 33.4,
+        "intervalP95": 83.4,
+        "intervalP99": 166.7,
+        "workP50": 32.9,
+        "workP95": 66.1,
+        "physMs": 20.04,
+        "renderMs": 10.86,
+        "stepMs": 17.74,
+        "particles": 800,
+        "simRate": 0.18,
+        "quality": "low"
+      },
+      {
+        "profile": "phone 390×844 @2x, CPU ×4 throttle",
+        "target": 1300,
+        "frames": 133,
+        "fps": 16.32,
+        "intervalP50": 50,
+        "intervalP95": 133.3,
+        "intervalP99": 150,
+        "workP50": 43.5,
+        "workP95": 99.2,
+        "physMs": 26.58,
+        "renderMs": 13.75,
+        "stepMs": 26.87,
+        "particles": 1300,
+        "simRate": 0.14,
+        "quality": "low"
+      }
+    ],
+    "memory": {
+      "soak": [
+        {
+          "t": 0,
+          "mb": 3.51
+        },
+        {
+          "t": 30,
+          "mb": 4.02
+        },
+        {
+          "t": 60,
+          "mb": 3.86
+        },
+        {
+          "t": 90,
+          "mb": 4.13
+        }
+      ],
+      "particlesAtEnd": 600,
+      "screenTrips": [
+        {
+          "trip": 1,
+          "mb": 4.22
+        },
+        {
+          "trip": 10,
+          "mb": 4.44
+        }
+      ]
     }
-  ]
+  }
 }

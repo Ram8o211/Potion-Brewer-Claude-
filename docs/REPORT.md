@@ -192,7 +192,95 @@ for 12 days each.
 
 ## 4. Performance (measured)
 
-PERFORMANCE_SECTION
+Numbers are from `npm run bench`. Raw data is in `docs/perf-results.json`.
+Run-to-run variation on this shared container is noticeable (about ±20%),
+so treat single figures as indicative.
+
+### Physics step cost (Node, one thread, fixed 1/120 s step)
+
+One particle is 5 ml. The tutorial order is 45 particles, typical orders
+are 50–300, and the largest cauldron holds 2,700. A 60 fps frame needs two
+steps.
+
+| Scenario | Particles | ms per step | ms per 60 fps frame |
+|---|---|---|---|
+| water | 300 | 0.87 | 1.74 |
+| water | 900 | 3.09 | 6.17 |
+| water | 1,400 | 4.64 | 9.28 |
+| three liquid layers (honey, water, oil) | 900 | 3.33 | 6.66 |
+| sand pile (resting grains sleep) | 600 | 1.08 | 2.16 |
+| dough being stirred | 600 | 2.16 | 4.32 |
+| boiling water under the lid | 600 | 0.84 | 1.68 |
+| frozen block | 500 | 1.41 | 2.81 |
+
+Cost grows roughly linearly with particle count (uniform-grid neighbour
+search; a physics test enforces a bound at 1,500 particles). The homunculus
+brews a complete order (25–38 simulated seconds) in 0.5–1.4 s of wall time,
+20–50× faster than real time.
+
+### Frame timing in the browser (headless Chromium, software rendering)
+
+Each scenario fills the Free Experiment cauldron (water, essence and oil),
+switches on auto-stir and gentle heat, then reads the game's own
+instrumentation over 6 s (8 s throttled):
+
+* **fps:** mean over the window.
+* **Frame p50/p95/p99:** intervals between frames, in ms.
+* **Work:** median time spent in the frame callback (physics plus render).
+* **Sim speed:** simulated seconds per wall second (1.00 = real time).
+* **Quality:** what automatic quality settled on.
+
+| Profile | Particles | fps | Frame p50 / p95 / p99 | Work p50 | Physics | Render | Sim speed | Quality |
+|---|---|---|---|---|---|---|---|---|
+| desktop 1440×900 | 60 | 60 | 16.7 / 16.8 / 16.8 | 3.5 | 0.6 | 9.7 | 1.00 | high |
+| desktop 1440×900 | 300 | 59 | 16.7 / 16.8 / 33.3 | 7.7 | 3.6 | 8.0 | 1.00 | high |
+| desktop 1440×900 | 800 | 51 | 16.7 / 33.4 / 50.0 | 11.9 | 9.1 | 3.9 | 0.95 | low |
+| desktop 1440×900 | 1,300 | 48 | 16.7 / 33.4 / 50.1 | 16.4 | 11.3 | 4.5 | 0.88 | low |
+| phone 390×844 @2×, CPU ÷4 | 60 | 28 | 33.3 / 83.4 / 133.3 | 12.9 | 2.4 | 11.6 | 0.83 | low |
+| phone 390×844 @2×, CPU ÷4 | 300 | 33 | 33.3 / 50.0 / 83.4 | 22.3 | 15.5 | 5.6 | 0.73 | low |
+| phone 390×844 @2×, CPU ÷4 | 800 | 21 | 33.4 / 83.4 / 166.7 | 32.9 | 20.0 | 10.9 | 0.18 | low |
+| phone 390×844 @2×, CPU ÷4 | 1,300 | 16 | 50.0 / 133.3 / 150.0 | 43.5 | 26.6 | 13.8 | 0.14 | low |
+
+**Reading the table**
+
+* **Desktop.** The 60 fps target is met for normal play (60–300
+  particles) in real time at high quality. Large experiments
+  (800–1,300 particles) run at about 50 fps; automatic quality steps the
+  renderer down and the simulation runs at 0.9× real time.
+* **Phone emulation (4× CPU throttle, 2× pixel density).** Typical orders
+  (60–300 particles) run at about 30 fps with the simulation at 0.7–0.8×
+  real time. Very large batches drop to 16–21 fps, and the simulation
+  deliberately slows to 0.14–0.18× so input stays responsive. Some of the
+  frame time outside the game's own work is software compositing of a
+  2× canvas in headless Chromium, which a real phone's GPU would do. This
+  profile is a stand-in and **not a physical-device measurement**.
+* **Before tuning** (same harness): desktop with 1,300 particles ran at
+  25 fps, and the throttled phone ran at 12 fps with 300 particles and
+  5 fps with 800. The cause was a feedback loop: slow frames triggered more
+  physics catch-up steps, which made frames slower. The fix is a physics
+  budget per frame (what remains of a ~30 fps frame after rendering,
+  8–22 ms), automatic graphics quality, and an inlined inverse-mass
+  computation in the fluid solver (about 13% of step time before).
+
+### Memory
+
+`npm run bench` (and `node scripts/bench.mjs --memory`) samples the JS heap
+after a forced garbage collection (DevTools protocol):
+
+* **90 s of lid-on boiling with auto-stir at 4× speed (600 particles):**
+  3.51 → 4.02 → 3.86 → 4.13 MB at 0 / 30 / 60 / 90 s. Flat, and all 600
+  particles were still in the pot, vapour included.
+* **Ten round trips between the main menu and the shop:** 4.22 MB after the
+  first, 4.44 MB after the tenth. Live-object counts confirm old screens,
+  simulations and renderers are released.
+
+  An earlier version of this measurement suggested a leak (+0.5 MB per
+  trip). A heap-snapshot retainer trace showed the old canvases were held
+  by Playwright element handles (`waitForSelector`), not by the game. The
+  harness now uses locators.
+
+Particle storage is typed arrays allocated once per cauldron size, and the
+hot solver loops reuse their buffers instead of allocating each step.
 
 ## 5. Answers to the brief's playtest questions
 

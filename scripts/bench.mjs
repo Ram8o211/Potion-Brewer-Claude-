@@ -3,6 +3,7 @@
 //   node scripts/bench.mjs            physics (Node) + browser frame timing
 //   node scripts/bench.mjs --physics  physics only
 //   node scripts/bench.mjs --browser  browser only (builds dist/ if needed)
+//   node scripts/bench.mjs --memory   long-session memory soak only
 //
 // Physics: mean wall-clock time of one 1/120 s simulation step for typical
 // cauldron contents. Browser: frame intervals and per-frame work (physics +
@@ -26,8 +27,9 @@ import { Rng } from '../src/core/rng.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = new Set(process.argv.slice(2));
-const doPhysics = !args.has('--browser') || args.has('--physics');
-const doBrowser = !args.has('--physics') || args.has('--browser');
+const memoryOnly = args.has('--memory');
+const doPhysics = !memoryOnly && (!args.has('--browser') || args.has('--physics'));
+const doBrowser = !memoryOnly && (!args.has('--physics') || args.has('--browser'));
 const out = { date: new Date().toISOString(), machine: { cpus: os.cpus()[0]?.model, cores: os.cpus().length, node: process.version, platform: `${os.platform()} ${os.arch()}` } };
 
 // ------------------------------------------------------------------ physics
@@ -154,7 +156,8 @@ async function browserBench() {
 /**
  * Long-session memory check: 90 s of boiling and stirring at 4× speed, then
  * ten trips between the menu and the shop. The JS heap is sampled after a
- * forced garbage collection (DevTools protocol).
+ * forced garbage collection (DevTools protocol). Locators are used instead
+ * of element handles, which would keep old screens alive and fake a leak.
  */
 async function memorySoak(browser, port) {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
@@ -167,7 +170,7 @@ async function memorySoak(browser, port) {
   };
   await page.goto(`http://localhost:${port}/index.html?nosw`);
   await page.click('[data-act=sandbox]');
-  await page.waitForSelector('canvas.view');
+  await page.locator('canvas.view').waitFor();
   await page.evaluate(() => {
     const l = window.__alchemist.screen, sim = l.sim, R = l.state.world.roles;
     for (let k = 0; k < 600; k++) sim.addParticle(l.state.lookup(k % 4 ? R.water : R.binder), (Math.random() - 0.5) * 2.4, sim.cauldron.depth - 0.2 - Math.random() * 1.2);
@@ -183,9 +186,9 @@ async function memorySoak(browser, port) {
   const trips = [];
   for (let k = 0; k < 10; k++) {
     await page.evaluate(() => window.__alchemist.showMenu());
-    await page.waitForSelector('[data-act=sandbox]');
+    await page.locator('[data-act=sandbox]').waitFor();
     await page.click('[data-act=sandbox]');
-    await page.waitForSelector('canvas.view');
+    await page.locator('canvas.view').waitFor();
     await page.waitForTimeout(400);
     if (k === 0 || k === 9) trips.push({ trip: k + 1, mb: await heap() });
   }
@@ -207,5 +210,18 @@ const file = path.join(ROOT, 'docs', 'perf-results.json');
 fs.mkdirSync(path.dirname(file), { recursive: true });
 let prev = {};
 try { prev = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { /* first run */ }
+if (memoryOnly) {
+  const { chromium } = await import('playwright');
+  if (!fs.existsSync(path.join(ROOT, 'dist', 'index.html'))) execFileSync(process.execPath, [path.join(ROOT, 'scripts', 'build.mjs'), '--no-zip'], { stdio: 'inherit' });
+  const server = spawn(process.execPath, [path.join(ROOT, 'scripts', 'serve.mjs'), '--root', path.join(ROOT, 'dist'), '--port', '4199'], { stdio: 'ignore' });
+  await new Promise((r) => setTimeout(r, 600));
+  const browser = await chromium.launch();
+  try {
+    out.browser = { ...(prev.browser || {}), memory: await memorySoak(browser, 4199) };
+  } finally {
+    await browser.close();
+    server.kill();
+  }
+}
 fs.writeFileSync(file, JSON.stringify({ ...prev, ...out }, null, 2) + '\n');
 console.log('Wrote docs/perf-results.json');
