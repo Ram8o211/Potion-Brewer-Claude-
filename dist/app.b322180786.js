@@ -7524,6 +7524,14 @@ if (document.hidden) this.save();
 document.addEventListener('visibilitychange', this.onVis);
 this.onUnload = () => this.save();
 window.addEventListener('pagehide', this.onUnload);
+this.saveBlocked = false;
+this.onStorage = (/** @type {StorageEvent} */ e) => {
+if (this.sandbox || e.key !== KEYS.save || this.saveBlocked) return;
+this.saveBlocked = true;
+this.app.showMenu();
+toast('Shop opened elsewhere', 'Your shop was saved from another tab, so this one stepped back to keep that progress. Press Continue to carry on here.', 'scroll', 7000);
+};
+window.addEventListener('storage', this.onStorage);
 audio.music(this.app.settings.music > 0 && this.app.settings.musicOn);
 }
 unmount() {
@@ -7534,6 +7542,7 @@ window.removeEventListener('resize', this.onResize);
 window.removeEventListener('keydown', this.onKey);
 document.removeEventListener('visibilitychange', this.onVis);
 window.removeEventListener('pagehide', this.onUnload);
+window.removeEventListener('storage', this.onStorage);
 if (this.resizeObs) this.resizeObs.disconnect();
 if (this.tutorial) this.tutorial.stop();
 audio.update({ fire: 0, stir: 0, pour: 0, boil: 0, cold: 0 }, 0);
@@ -8493,6 +8502,7 @@ return true;
 toast('The homunculus gets to work', recipe.name, 'homunculus');
 }
 save() {
+if (this.saveBlocked) return;
 if (this.sandbox) {
 saveJSON(KEYS.sandbox, { seed: this.state.seed, cauldron: snapshotSim(this.sim, this.cap.size) });
 return;

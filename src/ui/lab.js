@@ -119,6 +119,17 @@ export class LabScreen {
     document.addEventListener('visibilitychange', this.onVis);
     this.onUnload = () => this.save();
     window.addEventListener('pagehide', this.onUnload);
+    // Another tab (or the other copy of the game on the same site) saved the
+    // shop: this tab's state is now stale, so stop saving and go back to the
+    // menu, where Continue loads the newer save instead of overwriting it.
+    this.saveBlocked = false;
+    this.onStorage = (/** @type {StorageEvent} */ e) => {
+      if (this.sandbox || e.key !== KEYS.save || this.saveBlocked) return;
+      this.saveBlocked = true;
+      this.app.showMenu();
+      toast('Shop opened elsewhere', 'Your shop was saved from another tab, so this one stepped back to keep that progress. Press Continue to carry on here.', 'scroll', 7000);
+    };
+    window.addEventListener('storage', this.onStorage);
     audio.music(this.app.settings.music > 0 && this.app.settings.musicOn);
   }
 
@@ -130,6 +141,7 @@ export class LabScreen {
     window.removeEventListener('keydown', this.onKey);
     document.removeEventListener('visibilitychange', this.onVis);
     window.removeEventListener('pagehide', this.onUnload);
+    window.removeEventListener('storage', this.onStorage);
     if (this.resizeObs) this.resizeObs.disconnect();
     if (this.tutorial) this.tutorial.stop();
     audio.update({ fire: 0, stir: 0, pour: 0, boil: 0, cold: 0 }, 0);
@@ -1197,6 +1209,7 @@ export class LabScreen {
   }
 
   save() {
+    if (this.saveBlocked) return;
     if (this.sandbox) {
       saveJSON(KEYS.sandbox, { seed: this.state.seed, cauldron: snapshotSim(this.sim, this.cap.size) });
       return;

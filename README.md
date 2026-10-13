@@ -66,13 +66,42 @@ game then runs offline and can be installed to the home screen. Opening
 `dist/index.html` straight from disk (`file://`) is not supported: browsers
 block ES modules and service workers there.
 
+### Play it on GitHub Pages
+
+The repository is a ready-to-serve static site, so GitHub Pages can host it
+straight from a branch with no build step:
+
+1. On GitHub open **Settings → Pages**.
+2. Under **Build and deployment** choose **Source: Deploy from a branch**,
+   then pick the branch that holds this code (for example `main` once the
+   work is merged, or `ccr-7feac1c1-20xdai`), folder **`/ (root)`**, and
+   press **Save**.
+3. After a minute or two the site is live:
+   * <https://ram8o211.github.io/Potion-Brewer-Claude-/> — the game straight
+     from the source modules;
+   * <https://ram8o211.github.io/Potion-Brewer-Claude-/dist/> — the
+     optimised production build (one bundled script, fully precached for
+     offline play). This is the one to share or install on a phone.
+
+Both copies use the same save on that device. Pages needs a public
+repository on a free account (this one is public). Every push to the chosen
+branch redeploys automatically; Pages caches files for up to 10 minutes, so
+a fresh deploy can take that long to show up.
+
+The browser test project `pages-subpath` serves the repository the same way
+(under `/Potion-Brewer-Claude-/`, with Pages-style 10-minute caching for the
+redeploy check). It plays both copies, checks that each keeps its own
+offline cache, that the build plays with the server stopped, that a
+redeploy reaches returning players, and that a stale second tab cannot
+overwrite a newer save.
+
 ### Verification
 
 ```bash
 npm run typecheck         # TypeScript (checkJs) over src/, scripts/ and tests/
 npm test                  # 34 headless tests: physics scenarios + game logic
 npx playwright install chromium   # once, if no Chromium is available
-npm run test:browser      # 43 browser tests on desktop / phone / tablet emulation + offline build
+npm run test:browser      # 48 browser tests: desktop / phone / tablet emulation, offline build, GitHub Pages sub-path
 npm run bench             # measured physics and frame timings → docs/perf-results.json
 node scripts/playtest.mjs # automated 12-day balancing playthrough → docs/playtest-results.json
 node scripts/achievability.mjs 20   # brew 20 generated commissions in the real simulation

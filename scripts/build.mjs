@@ -161,9 +161,10 @@ if (!html.includes('src="src/main.js"') || !html.includes('href="styles/main.css
 html = html.replace('src="src/main.js"', `src="${jsName}"`).replace('href="styles/main.css"', `href="${cssName}"`);
 fs.writeFileSync(path.join(DIST, 'index.html'), html);
 
-const version = `${pkg.version}-${hash(js + css)}`;
-const precache = ['./', ...listFiles(DIST)];
 let sw = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
+// the worker's own code is part of the version, so a change to it also gets a fresh cache
+const version = `${pkg.version}-${hash(js + css + sw)}`;
+const precache = ['./', ...listFiles(DIST)];
 if (!sw.includes("const VERSION = 'dev';") || !sw.includes('const ASSETS = [];')) throw new Error('sw.js placeholders missing');
 sw = sw.replace("const VERSION = 'dev';", `const VERSION = '${version}';`).replace('const ASSETS = [];', `const ASSETS = ${JSON.stringify(precache)};`);
 fs.writeFileSync(path.join(DIST, 'sw.js'), sw);

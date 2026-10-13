@@ -112,3 +112,45 @@ export async function stirPath(page, turns = 3, steps = 120) {
 export function horizontalOverflow(page) {
   return page.evaluate(() => Math.max(0, document.documentElement.scrollWidth - window.innerWidth));
 }
+
+/**
+ * Start a private static server for one test, so the test can really cut the
+ * network by stopping it (Playwright's setOffline does not stop a service
+ * worker's own requests, and the HTTP cache can mask a broken offline cache).
+ * @param {string[]} args extra serve.mjs arguments, e.g. ['--root', 'dist']
+ * @param {number} port
+ */
+export async function startServer(args, port) {
+  const { spawn } = await import('node:child_process');
+  const proc = spawn(process.execPath, ['scripts/serve.mjs', '--port', String(port), ...args], { stdio: 'ignore' });
+  const base = args.includes('--base') ? args[args.indexOf('--base') + 1] : '/';
+  const url = `http://localhost:${port}${base}`;
+  for (let k = 0; k < 50; k++) {
+    try { if ((await fetch(url + 'index.html')).ok) break; } catch { /* not up yet */ }
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  return {
+    url,
+    stop: () => new Promise((resolve) => { proc.once('exit', resolve); proc.kill(); }),
+  };
+}
+
+/**
+ * Every file the build's service worker lists must be in its cache, and the
+ * cached index.html must point at the current bundle.
+ * @param {import('@playwright/test').Page} page @param {string} swUrl
+ */
+export function precacheReport(page, swUrl) {
+  return page.evaluate(async (sw) => {
+    const text = await (await fetch(sw, { cache: 'no-store' })).text();
+    const assets = JSON.parse(/const ASSETS = (\[.*?\]);/.exec(text)[1]);
+    const base = new URL('.', new URL(sw, location.href)).href;
+    const names = (await caches.keys()).filter((k) => k.includes(base));
+    const cache = await caches.open(names[0]);
+    const missing = [];
+    for (const a of assets) if (!(await cache.match(new URL(a, base).href, { ignoreSearch: true }))) missing.push(a);
+    const html = await (await cache.match(new URL('index.html', base).href)).text();
+    const bundle = assets.find((a) => /^app\..*\.js$/.test(a));
+    return { cacheNames: names, assets: assets.length, missing, htmlUsesBundle: html.includes(bundle) };
+  }, swUrl);
+}
