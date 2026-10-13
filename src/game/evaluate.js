@@ -2,13 +2,17 @@
 
 import { deltaE } from '../core/color.js';
 import { viscosityClass } from './measure.js';
-
-const ASPECTS = ['vitality', 'ardor', 'arcana', 'fortitude'];
+import { EFFECTS, EFFECT_INDEX } from '../alchemy/effects.js';
 
 export const PROPERTY_LABELS = {
-  color: 'Colour', density: 'Density', viscosity: 'Viscosity', temperature: 'Temperature', vitality: 'Vitality', ardor: 'Ardor',
-  arcana: 'Arcana', fortitude: 'Fortitude', stability: 'Stability', volatility: 'Volatility', quantity: 'Quantity',
+  color: 'Colour', density: 'Density', viscosity: 'Viscosity', temperature: 'Temperature', stability: 'Stability', volatility: 'Volatility',
+  charge: 'Charge', quantity: 'Quantity', ...Object.fromEntries(EFFECTS.map((e) => [e.key, e.label])),
 };
+
+/** @param {string} key */
+export function isEffectKey(key) {
+  return EFFECT_INDEX[key] !== undefined;
+}
 
 /**
  * Score a single requirement against a measurement.
@@ -41,9 +45,14 @@ export function scoreRequirement(req, m) {
     case 'volatility':
       value = m.volatility;
       break;
+    case 'charge':
+      value = m.charge || 0;
+      d = Math.abs(value - /** @type {number} */ (req.target));
+      break;
     default: {
-      const k = ASPECTS.indexOf(req.key);
-      value = k >= 0 ? m.aspects[k] : 0;
+      const k = EFFECT_INDEX[req.key];
+      value = k !== undefined && m.effects ? m.effects[k] : 0;
+      if (req.kind === 'target') d = Math.abs(value - /** @type {number} */ (req.target));
     }
   }
   let score;
@@ -72,6 +81,8 @@ export function describeValue(key, value, m) {
       return `${viscosityClass(value)} (${value < 100 ? value.toFixed(1) : Math.round(value)} cP)`;
     case 'temperature':
       return `${Math.round(value)}°C`;
+    case 'charge':
+      return `${value >= 0 ? '+' : ''}${value.toFixed(2)}`;
     default:
       return `${Math.round(value)}`;
   }

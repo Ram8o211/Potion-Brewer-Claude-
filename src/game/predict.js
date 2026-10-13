@@ -7,10 +7,11 @@
 
 import { SpeciesTable, MAX_SPECIES } from '../reactions/species.js';
 import { mixtureProps } from '../reactions/mixture.js';
+import { compositionEffects, NE } from '../alchemy/effects.js';
 
 /**
  * @typedef {Object} BrewPlan
- * @property {{id:string, n:number}[]} ingredients particle counts, in pouring order
+ * @property {{id:string, n:number, ground?:boolean}[]} ingredients particle counts, in pouring order (ground = milled in the mortar first)
  * @property {number} heatTo     hottest temperature reached during the brew (°C)
  * @property {number} coolTo     coldest temperature reached (°C)
  * @property {number} serveTemp  temperature at bottling (°C)
@@ -20,7 +21,7 @@ import { mixtureProps } from '../reactions/mixture.js';
  */
 
 /**
- * @param {{reactions: import('../reactions/reactions.js').ReactionRule[]}} world
+ * @param {{reactions: import('../reactions/reactions.js').ReactionRule[], laws?: any[]}} world
  * @param {(id:string)=>any} lookup
  * @param {BrewPlan} plan
  */
@@ -42,7 +43,10 @@ export function predictPlan(world, lookup, plan) {
       const b = r.b ? vol.get(r.b) || 0 : Infinity;
       if (a <= 0 || b <= 0) continue;
       if (r.maxT < lo || r.minT > hi) continue;
-      const yieldF = r.kind === 'decompose' ? 0.55 : 0.88;
+      // a reaction only happens if the brew is held inside its window
+      const held = (plan.hold ?? 0) >= 8;
+      if (r.wet && !held && r.minT > (plan.serveTemp ?? 20)) continue;
+      const yieldF = r.kind === 'decompose' ? (r.wet ? 0.85 : 0.55) : 0.88;
       const ext = Math.min(a / r.ra, r.b ? b / r.rb : Infinity) * yieldF;
       if (ext <= 0.01) continue;
       vol.set(r.a, a - ext * r.ra);
@@ -70,10 +74,11 @@ export function predictPlan(world, lookup, plan) {
     if (s >= 0) comp[s] += v / total;
   }
   const props = mixtureProps(sp, comp, 0, plan.serveTemp ?? 20);
+  const effects = compositionEffects(sp, comp, 0, plan.serveTemp ?? 20, world.laws || [], new Array(NE).fill(0));
   /** @type {Record<string, number>} */
   const composition = {};
   for (let s = 0; s < sp.count; s++) if (sp.defs[s] && comp[s] > 1e-5) composition[sp.defs[s].id] = comp[s];
-  return { ...props, composition, reactions: fired, totalParticles: total };
+  return { ...props, effects, composition, reactions: fired, totalParticles: total };
 }
 
 /** Total coin cost of a plan's ingredients. */

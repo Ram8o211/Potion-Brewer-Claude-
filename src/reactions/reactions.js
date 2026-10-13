@@ -36,6 +36,7 @@ const { GAS, SOLID } = PHASE;
  * @property {number} stir      agitation boost
  * @property {string} [description]
  * @property {string} [hint]
+ * @property {boolean} [wet]    only proceeds in solution (steeping, acid–base): scaled by the particle's dissolved share
  */
 
 export class ReactionSystem {
@@ -119,6 +120,12 @@ export class ReactionSystem {
       }
       const tf = this._rateT(rule, p.temp[i]);
       if (tf <= 0) continue;
+      if (rule.wet) {
+        // only what is actually dissolved reacts; dry grains and pastes wait
+        const sol = 1 - p.gran[i];
+        if (sol < 0.5) continue;
+        lim *= sol;
+      }
       let ext = rule.rate * dt * tf * lim * (1 + rule.stir * Math.min(3, p.agit[i]));
       if (ext > lim) ext = lim;
       if (ext < 1e-6) continue;
@@ -159,6 +166,8 @@ export class ReactionSystem {
       const T = 0.5 * (p.temp[i] + p.temp[j]);
       const tf = this._rateT(rule, T);
       if (tf <= 0) continue;
+      // acid–base and similar contact chemistry needs a liquid at the interface
+      if (rule.wet && p.gran[i] > 0.7 && p.gran[j] > 0.7) continue;
       const lim = Math.min(fa / rule.ra, fb / rule.rb);
       let ext = rule.rate * dt * tf * lim * (1 + rule.stir * Math.min(3, Math.max(p.agit[i], p.agit[j])));
       if (ext > lim) ext = lim;

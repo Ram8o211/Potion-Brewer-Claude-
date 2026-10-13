@@ -8,8 +8,10 @@ import { MAX_SPECIES } from '../reactions/species.js';
 import { refreshParticle } from './derived.js';
 import { Simulation } from './world.js';
 
-const F32_FIELDS = ['x', 'y', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet'];
-export const SNAPSHOT_VERSION = 1;
+const F32_FIELDS_V1 = ['x', 'y', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet'];
+/** v2 adds electric charge */
+const F32_FIELDS = [...F32_FIELDS_V1, 'q'];
+export const SNAPSHOT_VERSION = 2;
 
 /** @param {ArrayBufferView} view */
 export function toBase64(view) {
@@ -100,9 +102,11 @@ export function applySnapshot(sim, snap, env) {
   const seed = new Uint32Array(sb.buffer, sb.byteOffset, sb.byteLength / 4);
   const p = sim.p;
   const S = MAX_SPECIES;
+  const fields = (snap.v || 1) >= 2 ? F32_FIELDS : F32_FIELDS_V1;
   p.count = n;
   for (let i = 0; i < n; i++) {
-    F32_FIELDS.forEach((name, k) => {
+    p.q[i] = 0;
+    fields.forEach((name, k) => {
       /** @type {any} */ (p)[name][i] = f[k * snap.n + i];
     });
     p.px[i] = p.x[i];

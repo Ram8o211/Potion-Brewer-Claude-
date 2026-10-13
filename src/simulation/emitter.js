@@ -10,7 +10,7 @@ export class Emitter {
   /** @param {import('./world.js').Simulation} sim */
   constructor(sim) {
     this.sim = sim;
-    /** @type {null | {def:any, x:number, rate:number, remaining:number, temp:number|undefined, spawned:number, dose?:boolean}} */
+    /** @type {null | {def:any, x:number, rate:number, remaining:number, temp:number|undefined, spawned:number, dose?:boolean, form:string}} */
     this.active = null;
     this.acc = 0;
     this.chunkTimer = 0;
@@ -21,13 +21,16 @@ export class Emitter {
 
   /**
    * @param {any} def
-   * @param {{x?:number, rate?:number, amount?:number, temp?:number}} [opts]
+   * @param {{x?:number, rate?:number, amount?:number, temp?:number, ground?:boolean}} [opts]
+   *   ground: a solid ingredient already ground in the mortar pours as powder
    */
   start(def, opts = {}) {
+    const form = opts.ground && def.form === 'solid' ? 'powder' : def.form;
     this.active = {
       def,
+      form,
       x: opts.x ?? 0,
-      rate: opts.rate ?? (def.form === 'powder' ? 55 : def.form === 'gas' ? 30 : 75),
+      rate: opts.rate ?? (form === 'powder' ? 55 : form === 'gas' ? 30 : 75),
       remaining: opts.amount ?? Infinity,
       temp: opts.temp,
       spawned: 0,
@@ -85,7 +88,7 @@ export class Emitter {
       return;
     }
     const mouth = sim.cauldron.mouth;
-    const form = a.def.form;
+    const form = a.form;
     if (form === 'solid') {
       this.chunkTimer -= dt;
       if (this.chunkTimer > 0) return;

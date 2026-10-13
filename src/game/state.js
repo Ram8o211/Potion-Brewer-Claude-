@@ -3,14 +3,20 @@
 // Pure data + logic (no DOM), so it is fully testable headlessly.
 
 import { Rng, hashString } from '../core/rng.js';
-import { generateWorld, makeLookup } from '../materials/generator.js';
+import { generateWorld, makeLookup, addAlchemy } from '../materials/generator.js';
 import { serializeMaterial, deserializeMaterial } from '../materials/schema.js';
 import { generateCommission, tutorialCommission } from './commissions.js';
 import { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById } from './equipment.js';
 import { SIM } from '../simulation/constants.js';
+import { createTrials, normalizeTrials, runTrial, resetSubject, SUBJECT_BY_ID, knownLaws } from './experiments.js';
+import { createGathering, normalizeGathering, generateDeposits, harvest, newDayRegrowth } from './gathering.js';
+import { predictPlan } from './predict.js';
+import { EFFECT_INDEX } from '../alchemy/effects.js';
 
-export const SAVE_VERSION = 2;
-export const WORLD_GEN_VERSION = 1;
+export const SAVE_VERSION = 3;
+export const WORLD_GEN_VERSION = 2;
+/** old aspect requirement keys → effect keys (v2 saves) */
+const ASPECT_KEY_MAP = { vitality: 'vitality', ardor: 'fire', arcana: 'arcana', fortitude: 'strength' };
 
 export const MARKET_EVENTS = [
   { key: 'none', name: 'An ordinary day', text: 'Business as usual in the market square.' },
@@ -46,6 +52,14 @@ export const ACHIEVEMENTS = [
   { id: 'recipe', name: 'Written Down', desc: 'Save a recipe to your book.', reward: 10 },
   { id: 'distil', name: 'Spirit Catcher', desc: 'Collect a distillate with the alembic.', reward: 30 },
   { id: 'layers', name: 'Oil and Water', desc: 'Observe immiscible liquids separating into layers.', reward: 10 },
+  { id: 'trial1', name: 'First Trial', desc: 'Test a potion on a subject.', reward: 10 },
+  { id: 'trial25', name: 'Empiricist', desc: 'Run 25 trials.', reward: 60 },
+  { id: 'law1', name: 'Hidden Harmony', desc: 'Discover a resonance law through repeated trials.', reward: 40 },
+  { id: 'law4', name: 'Natural Philosopher of Magic', desc: 'Discover four resonance laws.', reward: 150 },
+  { id: 'forage1', name: 'Into the Wilds', desc: 'Gather your first wild ingredient.', reward: 10 },
+  { id: 'forage1k', name: 'Seasoned Forager', desc: 'Gather 1000 ml of wild ingredients.', reward: 50 },
+  { id: 'certified', name: 'Proven Remedy', desc: 'Serve a potion whose effects you verified by experiment.', reward: 15 },
+  { id: 'steep', name: 'Patience of the Steep', desc: 'Steep a herb into a liquid extract with heat.', reward: 15 },
 ];
 
 /**
@@ -91,7 +105,15 @@ export class GameState {
     /** @type {number} */ this.reliefDay = data.reliefDay || 0;
     /** @type {boolean} */ this.grandDone = !!data.grandDone;
     /** @type {number} */ this.createdAt = data.createdAt || Date.now();
+    /** @type {ReturnType<typeof createTrials>} */ this.trials = normalizeTrials(data.trials);
+    /** @type {ReturnType<typeof createGathering>} */ this.gathering = normalizeGathering(data.gathering);
+    /** the sealed vial waiting to be served (or null) */
+    this.vial = data.vial || null;
+    /** identity of the brew in the cauldron: a new id when it is emptied, rev++ on every addition */
+    this.batch = data.batch && typeof data.batch.id === 'string' ? { id: data.batch.id, rev: data.batch.rev | 0 } : newBatch();
     this.lookup = makeLookup(this.world);
+    /** @type {import('./gathering.js').Deposit[]|null} */
+    this._deposits = null;
   }
 
   /**
@@ -112,6 +134,7 @@ export class GameState {
     inventory[R.spirit] = 200;
     inventory[R.binder] = 300;
     inventory[R.salt] = 200;
+    for (const id of world.wild || []) inventory[id] = 0;
     const st = new GameState({
       version: SAVE_VERSION,
       genVersion: WORLD_GEN_VERSION,
@@ -174,6 +197,94 @@ export class GameState {
     const s = new Set(this.purchasable());
     for (const [id, v] of Object.entries(this.inventory)) if (v > 0) s.add(id);
     return s;
+  }
+
+  // ------------------------------------------------------------ the wilds
+  /** Deposits of this world (deterministic from the seed). */
+  get deposits() {
+    if (!this._deposits) this._deposits = generateDeposits(this.world, this.lookup);
+    return this._deposits;
+  }
+
+  /** Wild ingredient ids with a deposit the player can reach. */
+  gatherableSet() {
+    const s = new Set();
+    for (const d of this.deposits) if (d.rank <= this.rank) s.add(d.materialId);
+    return s;
+  }
+
+  /**
+   * Gather from a deposit into the inventory.
+   * @param {string} depositId @param {{now?:number, unlimited?:boolean}} [opts]
+   */
+  gather(depositId, opts = {}) {
+    const d = this.deposits.find((x) => x.id === depositId);
+    if (!d) return { ok: false, amount: 0, reason: 'unknown' };
+    const take = this.has('satchel') ? Math.round(d.take * 1.5) : d.take;
+    const r = harvest(this, { ...d, take }, opts);
+    if (r.ok && !opts.unlimited) {
+      this.stats.gathered = (this.stats.gathered || 0) + r.amount;
+      r.events = [...this.unlock('forage1')];
+      if (this.stats.gathered >= 1000) r.events.push(...this.unlock('forage1k'));
+    }
+    return r;
+  }
+
+  // ------------------------------------------------------------ trials
+  /** A new batch identity (the cauldron was emptied). */
+  newBatch() {
+    this.batch = newBatch();
+    return this.batch;
+  }
+
+  /** Something was added to the brew: earlier trials no longer describe it. */
+  touchBatch() {
+    this.batch.rev++;
+  }
+
+  /** Resonance laws the player has confirmed by experiment. */
+  get knownLaws() {
+    return knownLaws(this.trials, this.world.laws || []);
+  }
+
+  /**
+   * Record a trial (the caller has already removed the dose from the
+   * cauldron or the vial). Returns the record plus any events.
+   * @param {string} subjectId @param {any} dose @param {any} ctx
+   */
+  recordTrial(subjectId, dose, ctx) {
+    const rec = runTrial(this.trials, subjectId, dose, { ...ctx, day: this.day, laws: this.world.laws || [] });
+    this.stats.trials = (this.stats.trials || 0) + 1;
+    const events = [...this.unlock('trial1')];
+    if (this.stats.trials >= 25) events.push(...this.unlock('trial25'));
+    for (const id of rec.lawsFound) {
+      const L = (this.world.laws || []).find((l) => l.id === id);
+      if (!L) continue;
+      const entry = this.discover({ key: 'law:' + id, title: L.name, text: L.lore, kind: 'law' });
+      if (entry) events.push({ type: 'law', id, name: L.name, lore: L.lore });
+      events.push(...this.unlock('law1'));
+      if (this.knownLaws.length >= 4) events.push(...this.unlock('law4'));
+    }
+    return { record: rec, events };
+  }
+
+  /** Replace a spent test subject (costs coins). @param {string} id */
+  replaceSubject(id, free = false) {
+    const def = SUBJECT_BY_ID[id];
+    if (!def) return { ok: false, reason: 'Unknown subject.' };
+    const cost = free ? 0 : Math.ceil(def.cost * (this.has('kennel') ? 0.5 : 1));
+    if (cost > this.coins + 1e-9) return { ok: false, reason: `A new ${def.name.toLowerCase()} costs ${cost} coins.` };
+    this.coins = round1(this.coins - cost);
+    this.stats.spent += cost;
+    this.daySpending += cost;
+    resetSubject(this.trials, id);
+    return { ok: true, cost };
+  }
+
+  /** Subjects the player can use. */
+  subjectAvailable(id) {
+    const def = SUBJECT_BY_ID[id];
+    return !!def && (!def.needs || this.has(def.needs));
   }
 
   /** Price per 100 ml today. @param {string} id */
@@ -239,10 +350,12 @@ export class GameState {
 
   // ------------------------------------------------------------ customers
   commissionContext() {
+    const available = this.availableSet();
+    for (const id of this.gatherableSet()) available.add(id);
     return {
       world: this.world,
       lookup: this.lookup,
-      available: this.availableSet(),
+      available,
       cap: this.cap,
       rank: this.rank,
       priceOf: (id) => this.priceOf(id),
@@ -349,6 +462,7 @@ export class GameState {
     this.current = null;
     this.customersPerDay = 3 + Math.floor(this.rank / 2);
     this.rollMarket();
+    newDayRegrowth(this.gathering, this.deposits);
     return summary;
   }
 
@@ -434,6 +548,8 @@ export class GameState {
         starting: this.world.starting,
         reactions: this.world.reactions,
         roles: this.world.roles,
+        laws: this.world.laws,
+        wild: this.world.wild,
       },
       coins: this.coins,
       reputation: this.reputation,
@@ -460,6 +576,10 @@ export class GameState {
       reliefDay: this.reliefDay,
       grandDone: this.grandDone,
       createdAt: this.createdAt,
+      trials: this.trials,
+      gathering: this.gathering,
+      vial: this.vial,
+      batch: this.batch,
       savedAt: Date.now(),
     };
   }
@@ -471,9 +591,50 @@ export class GameState {
       ...data.world,
       materials: data.world.materials.map(deserializeMaterial),
     };
+    // effects, wild ingredients, their reactions and the resonance laws
+    // (idempotent; upgrades a v2 world exactly to what its seed now yields)
+    addAlchemy(world);
     const inventory = Object.fromEntries(Object.entries(data.inventory).map(([k, v]) => [k, v === 'inf' ? Infinity : Number(v)]));
-    return new GameState({ ...data, world, inventory });
+    for (const id of world.wild || []) if (!(id in inventory)) inventory[id] = 0;
+    for (const [k, v] of Object.entries(inventory)) if (!Number.isFinite(v) && v !== Infinity) inventory[k] = 0;
+    const st = new GameState({ ...data, world, inventory });
+    if (data._migratedFrom !== undefined && data._migratedFrom < 3) st.genVersion = WORLD_GEN_VERSION;
+    if (st.current) migrateCommission(st.current, st.world, st.lookup);
+    return st;
   }
+}
+
+/** @returns {{id:string, rev:number}} */
+function newBatch() {
+  return { id: 'b' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36), rev: 0 };
+}
+
+/**
+ * Bring an in-progress commission from a v2 save into the effect model:
+ * aspect requirements (vitality, ardor, arcana, fortitude) become effect
+ * requirements with their thresholds rescaled by the same factor the old
+ * one had relative to its plan's predicted outcome, so the order stays as
+ * demanding as it was — and now needs a trial, like every effect order.
+ * @param {any} com @param {any} world @param {(id:string)=>any} lookup
+ */
+export function migrateCommission(com, world, lookup) {
+  if (!com || !Array.isArray(com.requirements)) return com;
+  const old = com.requirements.filter((r) => ASPECT_KEY_MAP[r.key] && r.effect === undefined && com.predicted && com.predicted.aspects);
+  if (!old.length) return com;
+  let pred = null;
+  try { pred = com.reference ? predictPlan(world, lookup, com.reference) : null; } catch { pred = null; }
+  const OLD = ['vitality', 'ardor', 'arcana', 'fortitude'];
+  for (const r of old) {
+    const key = ASPECT_KEY_MAP[r.key];
+    const oldPred = com.predicted.aspects[OLD.indexOf(r.key)] || 0;
+    const newPred = pred ? pred.effects[EFFECT_INDEX[key]] : oldPred;
+    const ratio = oldPred > 0 ? Number(r.target) / oldPred : 0.65;
+    const target = Math.max(3, Math.round(newPred * ratio));
+    Object.assign(r, { key, target, zero: Math.max(8, target * 0.6), label: `at least ${target}`, effect: true });
+  }
+  if (pred) com.predicted.effects = pred.effects;
+  com.effectOrder = true;
+  return com;
 }
 
 /**
@@ -485,6 +646,7 @@ export function migrate(raw) {
   const d = { ...raw };
   if (!d.version) throw new Error('Missing save version');
   if (d.version > SAVE_VERSION) throw new Error('This save comes from a newer version of the game');
+  d._migratedFrom = d.version;
   if (d.version < 2) {
     // v1 had no market, receiver or grand-commission fields
     d.market = d.market || { event: 'none', mods: {} };
@@ -504,6 +666,18 @@ export function migrate(raw) {
   d.history = d.history || [];
   d.brewLog = d.brewLog || [];
   d.equipment = d.equipment && d.equipment.length ? d.equipment : STARTING_EQUIPMENT.slice();
+  if (d.version < 3) {
+    // v3: effects and experiments, the wilds, sealed vials, batch identity.
+    // Everything the player had is kept; the new systems start fresh.
+    if (!d.equipment.includes('mortar')) d.equipment = [...d.equipment, 'mortar'];
+    d.trials = d.trials || null;
+    d.gathering = d.gathering || null;
+    d.vial = null;
+    d.batch = null;
+    d.version = 3;
+  }
+  if (d.world && Array.isArray(d.world.materials) && d.world.materials.length === 0) throw new Error('The save has no reagents');
+  if (!d.inventory || typeof d.inventory !== 'object') throw new Error('The save has no inventory');
   return d;
 }
 

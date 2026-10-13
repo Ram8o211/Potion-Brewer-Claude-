@@ -5,7 +5,7 @@ import { MAX_SPECIES } from '../reactions/species.js';
 import { PHASE } from './constants.js';
 
 /** Per-particle state fields that are persisted & swapped on removal. */
-export const STATE_FIELDS_F32 = ['x', 'y', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet'];
+export const STATE_FIELDS_F32 = ['x', 'y', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet', 'q'];
 export const STATE_FIELDS_I32 = ['group'];
 export const STATE_FIELDS_U8 = ['phase'];
 export const STATE_FIELDS_U32 = ['seed'];
@@ -14,7 +14,7 @@ export const STATE_FIELDS_U32 = ['seed'];
 export const DERIVED_FIELDS = [
   'rho20', 'rho', 'invMass', 'rhoCp', 'kappa', 'lnMu20', 'viscT', 'lnMu', 'gran', 'binder',
   'tm', 'tb', 'volFrac', 'latF', 'latV', 'beta', 'cA', 'cB', 'colL', 'colA', 'colB',
-  'opacity', 'flam', 'ign', 'combHeat', 'gasRho', 'glow', 'friction', 'hardness', 'yieldV',
+  'opacity', 'flam', 'ign', 'combHeat', 'gasRho', 'glow', 'friction', 'hardness', 'yieldV', 'econd',
 ];
 
 export class Particles {
@@ -43,6 +43,8 @@ export class Particles {
     this.burn = new Float32Array(capacity);
     /** recent wetting/mixing activity, for visual feedback */
     this.wet = new Float32Array(capacity);
+    /** electric charge (conserved; see electric.js) */
+    this.q = new Float32Array(capacity);
     this.group = new Int32Array(capacity).fill(-1);
     this.phase = new Uint8Array(capacity);
     this.seed = new Uint32Array(capacity);
@@ -80,6 +82,8 @@ export class Particles {
     this.friction = new Float32Array(capacity);
     this.hardness = new Float32Array(capacity);
     this.yieldV = new Float32Array(capacity);
+    /** electrical conductance of the blend */
+    this.econd = new Float32Array(capacity);
     this._seedCounter = 1;
   }
 
@@ -95,7 +99,7 @@ export class Particles {
     this.temp[i] = temp;
     this.lat[i] = 0; this.eph[i] = 0;
     this.restX[i] = 0; this.restY[i] = 0;
-    this.agit[i] = 0; this.burn[i] = 0; this.wet[i] = 0;
+    this.agit[i] = 0; this.burn[i] = 0; this.wet[i] = 0; this.q[i] = 0;
     this.group[i] = -1;
     this.phase[i] = phase;
     this.seed[i] = (Math.imul(this._seedCounter++, 2654435761) >>> 0) || 1;
@@ -108,7 +112,7 @@ export class Particles {
   /** Copy every field of particle `src` into slot `dst`. @param {number} dst @param {number} src */
   copy(dst, src) {
     const self = /** @type {any} */ (this);
-    for (const f of ['x', 'y', 'px', 'py', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet', 'group', 'phase', 'seed', 'sleep', 'dirty']) {
+    for (const f of ['x', 'y', 'px', 'py', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet', 'q', 'group', 'phase', 'seed', 'sleep', 'dirty']) {
       self[f][dst] = self[f][src];
     }
     for (const f of DERIVED_FIELDS) self[f][dst] = self[f][src];

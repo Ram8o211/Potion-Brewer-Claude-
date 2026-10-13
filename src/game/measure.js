@@ -5,7 +5,9 @@
 //   viscosity   effective rheology (log-mean of particle viscosities, with
 //               paste and grains counted at their real stiffness)
 //   temperature mean particle temperature
-//   aspects     concentration-weighted magical potency
+//   effects     magical & chemical effects of what is actually in solution,
+//               with this world's resonance laws (alchemy/effects.js) —
+//               hidden from the player until a trial measures them
 //   stability   homogeneity of composition, phase compatibility, sediment
 //   volatility  tendency to evaporate / react (volatile species, dissolved gas)
 //   quantity    millilitres actually bottled
@@ -14,8 +16,10 @@ import { MAX_SPECIES } from '../reactions/species.js';
 import { PHASE, SIM } from '../simulation/constants.js';
 import { compatFactor } from '../reactions/compatibility.js';
 import { oklabToRgb } from '../core/color.js';
+import { sampleEffects, EFFECT_KEYS } from '../alchemy/effects.js';
 
-export const PROPERTY_KEYS = ['color', 'density', 'viscosity', 'temperature', 'vitality', 'ardor', 'arcana', 'fortitude', 'stability', 'volatility', 'quantity'];
+export const PHYSICAL_KEYS = ['color', 'density', 'viscosity', 'temperature', 'stability', 'volatility', 'charge', 'quantity'];
+export const PROPERTY_KEYS = [...PHYSICAL_KEYS.slice(0, -1), ...EFFECT_KEYS, 'quantity'];
 
 /**
  * @typedef {Object} Measurement
@@ -27,7 +31,9 @@ export const PROPERTY_KEYS = ['color', 'density', 'viscosity', 'temperature', 'v
  * @property {number} density
  * @property {number} viscosity cP
  * @property {number} temperature
- * @property {number[]} aspects [vitality, ardor, arcana, fortitude]
+ * @property {number[]} effects  NE effect channels (alchemy/effects.js EFFECT_KEYS order)
+ * @property {number[]} resonance how much each world law contributed (for discovery)
+ * @property {number} charge    mean electric charge per particle (galvanometer)
  * @property {number} stability 0..100
  * @property {number} volatility 0..100
  * @property {Record<string, number>} phases fraction of particles per phase name
@@ -46,7 +52,8 @@ export function measureParticles(sim, indices) {
   const p = sim.p, sp = sim.species, S = MAX_SPECIES;
   const ns = sp.count;
   const comp = new Float64Array(ns);
-  let L = 0, A = 0, B = 0, rho = 0, T = 0, lnMu = 0, glow = 0;
+  let L = 0, A = 0, B = 0, rho = 0, T = 0, lnMu = 0, glow = 0, q = 0;
+  const charge = p.q;
   const phases = [0, 0, 0, 0, 0];
   for (const i of indices) {
     let tot = 0;
@@ -57,6 +64,7 @@ export function measureParticles(sim, indices) {
     rho += p.rho[i];
     T += p.temp[i];
     glow += p.glow[i];
+    if (charge) q += charge[i];
     const ph = p.phase[i];
     phases[ph]++;
     // rheology: grains and frozen bits are effectively solid in a potion
@@ -69,13 +77,11 @@ export function measureParticles(sim, indices) {
   for (let s = 0; s < ns; s++) comp[s] /= n;
   /** @type {Record<string, number>} */
   const composition = {};
-  const aspects = [0, 0, 0, 0];
   let volat = 0;
   for (let s = 0; s < ns; s++) {
     const def = sp.defs[s];
     if (!def || comp[s] < 1e-5) continue;
     composition[def.id] = comp[s];
-    for (let k = 0; k < 4; k++) aspects[k] += comp[s] * sp.aspects[s * 4 + k];
     volat += comp[s] * (sp.volatility[s] * 70 + sp.reactivity[s] * 30);
   }
   const lab = [L / n, A / n, B / n];
@@ -105,6 +111,7 @@ export function measureParticles(sim, indices) {
   const gasFrac = phases[PHASE.GAS] / n;
   const stability = clamp(100 - het * 240 - immiscible * 160 - sediment * 70 - gasFrac * 60, 0, 100);
   volat += gasFrac * 40;
+  const fx = sampleEffects(sim, indices);
   return {
     count: n,
     ml: n * SIM.ML_PER_PARTICLE,
@@ -114,7 +121,9 @@ export function measureParticles(sim, indices) {
     density: rho / n,
     viscosity: Math.exp(lnMu / n),
     temperature: T / n,
-    aspects,
+    effects: Array.from(fx.effects, (v) => Math.round(v * 100) / 100),
+    resonance: Array.from(fx.resonance),
+    charge: q / n,
     stability,
     volatility: clamp(volat, 0, 100),
     phases: { liquid: phases[0] / n, powder: phases[1] / n, paste: phases[2] / n, solid: phases[3] / n, gas: phases[4] / n },

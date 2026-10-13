@@ -22,7 +22,7 @@ export function refreshParticle(sim, i) {
   let tot = 0, rho = 0, rhoCp = 0, kap = 0, lnV = 0, lnVw = 0, vT = 0, beta = 0;
   let aR = 0, aG = 0, aB = 0, op = 0, flam = 0, ign = 0, ignW = 0, comb = 0, gasR = 0, glow = 0;
   let tbS = 0, tbW = 0, tmS = 0, tmW = 0, pmS = 0, pmW = 0, fricS = 0, hardS = 0, binder = 0, latF = 0, latV = 0;
-  let cA = 0, cB = 0;
+  let cA = 0, cB = 0, ec = 0;
   for (let s = 0; s < n; s++) {
     const f = comp[off + s];
     if (f <= 0) continue;
@@ -33,6 +33,7 @@ export function refreshParticle(sim, i) {
     beta += f * sp.expansion[s];
     cA += f * sp.compatA[s];
     cB += f * sp.compatB[s];
+    ec += f * sp.econd[s];
     const powder = sp.isPowder[s] === 1;
     if (!powder || T >= sp.melt[s]) {
       lnV += f * sp.lnVisc[s];
@@ -115,6 +116,7 @@ export function refreshParticle(sim, i) {
   p.glow[i] = glow * inv;
   p.friction[i] = pmW > 0 ? fricS / pmW : 0.5;
   p.hardness[i] = hardS * inv;
+  p.econd[i] = ec * inv;
   // paste yield velocity: zero for liquids, rising steeply with solids content
   const s = Math.max(0, Math.min(1, (gran - 0.34) / 0.42));
   p.yieldV[i] = (0.1 + 0.6 * bnd) * Math.pow(s, 1.1);

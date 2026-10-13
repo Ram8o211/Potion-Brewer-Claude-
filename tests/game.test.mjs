@@ -13,6 +13,7 @@ import { evaluatePotion, scoreRequirement } from '../src/game/evaluate.js';
 import { GameState, migrate, SAVE_VERSION } from '../src/game/state.js';
 import { parseImport } from '../src/game/persistence.js';
 import { Rng } from '../src/core/rng.js';
+import { EFFECT_INDEX, NE } from '../src/alchemy/effects.js';
 
 test('worlds are deterministic per seed and differ between seeds', () => {
   const a = generateWorld('alpha-1'), b = generateWorld('alpha-1'), c = generateWorld('beta-2');
@@ -47,10 +48,11 @@ test('a fresh shop only asks for what the apprentice can actually brew', () => {
     const com = st.nextCustomer();
     assert.ok(com, 'a customer arrives');
     const avail = st.availableSet();
-    for (const ing of com.reference.ingredients) assert.ok(avail.has(ing.id), `${ing.id} is purchasable on day one`);
+    const wild = st.gatherableSet();
+    for (const ing of com.reference.ingredients) assert.ok(avail.has(ing.id) || wild.has(ing.id), `${ing.id} is purchasable or gatherable on day one`);
     assert.ok(com.reference.heatTo <= st.cap.maxFlame - 20, 'reachable with the starting hearth');
     assert.ok(com.reference.coolTo >= st.cap.minCool - 2, 'reachable with the starting basin');
-    const cost = com.reference.ingredients.reduce((s, ing) => s + (isFinite(st.stock(ing.id)) && st.stock(ing.id) >= ing.n * 5 ? 0 : st.priceOf(ing.id) * ing.n * 5 / 100), 0);
+    const cost = com.reference.ingredients.reduce((s, ing) => s + (wild.has(ing.id) || (isFinite(st.stock(ing.id)) && st.stock(ing.id) >= ing.n * 5) ? 0 : st.priceOf(ing.id) * ing.n * 5 / 100), 0);
     assert.ok(cost <= st.coins + 1e-6, `ingredients affordable (${cost.toFixed(1)} of ${st.coins} coins)`);
   }
 });
@@ -202,12 +204,11 @@ test('old saves migrate and bad files are rejected with a readable message', () 
 
 /** A measurement that hits every requirement dead centre. @returns {any} */
 function perfectMeasurement(com) {
-  const ASP = ['vitality', 'ardor', 'arcana', 'fortitude'];
-  const m = { ml: com.bottleMl, lab: [0.7, 0, 0], aspects: [0, 0, 0, 0], density: 1, viscosity: 1, temperature: 20, stability: 100, volatility: 0 };
+  const m = { ml: com.bottleMl, lab: [0.7, 0, 0], effects: new Array(NE).fill(0), density: 1, viscosity: 1, temperature: 20, stability: 100, volatility: 0 };
   for (const r of com.requirements) {
     if (r.key === 'color') m.lab = r.target;
     else if (r.key === 'viscosity') m.viscosity = Math.exp(r.target);
-    else if (ASP.includes(r.key)) m.aspects[ASP.indexOf(r.key)] = r.target;
+    else if (EFFECT_INDEX[r.key] !== undefined) m.effects[EFFECT_INDEX[r.key]] = r.target;
     else m[r.key] = r.target;
   }
   return m;

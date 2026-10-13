@@ -13,6 +13,8 @@ import { Rng } from '../core/rng.js';
 import { hslToRgb } from '../core/color.js';
 import { completeMaterial } from './schema.js';
 import { makeName, makeProductName } from './names.js';
+import { applyProfile } from './profiles.js';
+import { generateWild } from './wild.js';
 
 /** @typedef {import('./schema.js').MaterialDef} MaterialDef */
 /** @typedef {import('../reactions/reactions.js').ReactionRule} ReactionRule */
@@ -25,6 +27,8 @@ import { makeName, makeProductName } from './names.js';
  * @property {string[]} starting             ids available from the start
  * @property {ReactionRule[]} reactions
  * @property {Record<string,string>} roles   archetype role → material id
+ * @property {import('../alchemy/effects.js').Resonance[]} laws  hidden resonance laws of this world
+ * @property {string[]} wild                 gatherable raw ingredient ids
  */
 
 const r2 = (v) => Math.round(v * 100) / 100;
@@ -374,7 +378,28 @@ export function generateWorld(seed) {
 
   const ingredients = [water, oil, syrup, spirit, essA, essB, binder, salt, essC, ember, frost, metal, crystal, wax, fizz, spores, resin, starlight, moss, vapor, phoenix, voidInk].map((m) => m.id);
   const starting = [water, oil, syrup, spirit, essA, essB, binder, salt].map((m) => m.id);
-  return { seed: seedStr, materials, ingredients, starting, reactions, roles };
+  return addAlchemy({ seed: seedStr, materials, ingredients, starting, reactions, roles });
+}
+
+/**
+ * Give every material its effects and electrical profile and add the wild
+ * ingredients, their reactions and the hidden resonance laws. Separate RNG
+ * streams: worlds keep the reagents their seed always produced, and an old
+ * save's embedded world is upgraded to exactly what a new world would get.
+ * @param {any} world
+ */
+export function addAlchemy(world) {
+  for (const m of world.materials) applyProfile(m, world.seed);
+  if (!world.wild) {
+    const w = generateWild(world.seed, world);
+    for (const m of w.materials) if (!world.materials.some((x) => x.id === m.id)) world.materials.push(m);
+    for (const r of w.reactions) if (!world.reactions.some((x) => x.id === r.id)) world.reactions.push(r);
+    world.wild = w.materials.filter((m) => !m.product).map((m) => m.id);
+    for (const id of world.wild) if (!world.ingredients.includes(id)) world.ingredients.push(id);
+    world.laws = w.laws;
+  }
+  if (!world.laws) world.laws = generateWild(world.seed, world).laws;
+  return world;
 }
 
 /** Build an id → material lookup for a world (plus optional extra defs). */

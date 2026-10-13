@@ -4,6 +4,7 @@
 
 import { rgbToOklab, srgbToLinear } from '../core/color.js';
 import { volatilityOf } from '../materials/schema.js';
+import { NE, effectVector } from '../alchemy/effects.js';
 
 export const MAX_SPECIES = 16;
 export const NO_BOIL = 1e6;
@@ -53,6 +54,11 @@ export class SpeciesTable {
     this.absB = f();
     this.isPowder = new Uint8Array(S);
     this.aspects = new Float32Array(S * 4);
+    /** magical / chemical effect potency per slot (NE channels, see alchemy/effects.js) */
+    this.eff = new Float32Array(S * NE);
+    /** electrical conductance (0 insulator … 1 metal) and intrinsic charge carried per unit volume */
+    this.econd = f();
+    this.echarge = f();
     /** slot of ash / smoke products for combustion (-1 none) */
     this.ashSlot = new Int16Array(S).fill(-1);
     this.smokeSlot = new Int16Array(S).fill(-1);
@@ -131,6 +137,10 @@ export class SpeciesTable {
     this.labB[slot] = lab[2];
     this.isPowder[slot] = def.form === 'powder' || def.form === 'solid' ? 1 : 0;
     for (let k = 0; k < 4; k++) this.aspects[slot * 4 + k] = def.aspects[k] || 0;
+    const ev = effectVector(def);
+    for (let k = 0; k < NE; k++) this.eff[slot * NE + k] = ev[k];
+    this.econd[slot] = def.econd ?? 0.05;
+    this.echarge[slot] = def.charge ?? 0;
     if (lookup) {
       if (def.ash) {
         const a = lookup(def.ash);
