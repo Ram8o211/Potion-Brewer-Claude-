@@ -44,7 +44,10 @@ export class Renderer {
     // pick an art-pixel size of ~1–2 CSS px so materials read as fine pixels
     const base = Math.min(cssW * 0.85, cssH);
     let artPx = Math.max(1, Math.round(base / 380));
-    if (quality === 'low') artPx += 1;
+    // battery saver: coarser pixels; balanced: coarser pixels too once the
+    // fine canvas is large (a phone or a desktop stage), but it keeps the
+    // lighting, glows and full frame rate
+    if (quality === 'low' || (quality === 'medium' && (cssW / artPx) * (cssH / artPx) > 90000)) artPx += 1;
     const W = Math.max(64, Math.round(cssW / artPx));
     const H = Math.max(64, Math.round(cssH / artPx));
     const key = `${W}x${H}:${cauldron.spec.key}:${jars.length}:${quality}`;
