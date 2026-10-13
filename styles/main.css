@@ -257,7 +257,10 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 .modal-head h2 { margin: 0; font-size: 20px; font-weight: normal; color: var(--brassHi); flex: 1; text-shadow: 2px 2px 0 var(--wood0); }
 .modal-body { overflow-y: auto; padding: 4px 12px 12px; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
 .modal-foot { display: flex; gap: 8px; padding: 8px 12px 12px; justify-content: flex-end; flex-wrap: wrap; }
-.tabs { display: flex; gap: 6px; padding: 0 10px 6px; overflow-x: auto; }
+.tabs { display: flex; flex: none; gap: 6px; padding: 0 10px 6px; overflow-x: auto; }
+.modal > .row { flex: none; }
+.btn .price { display: inline-flex; align-items: center; gap: 2px; margin-left: 6px; color: var(--brassHi); }
+.btn .price .ico { width: 14px; height: 14px; }
 .tabs .btn { min-height: 36px; font-size: var(--fs-s); }
 .card { padding: 8px 10px; margin: 8px 0; }
 .card h3 { margin: 0 0 4px; font-size: 20px; font-weight: normal; }
@@ -321,4 +324,9 @@ input[type=checkbox] { width: 22px; height: 22px; accent-color: #6a4b9a; }
   .lab[data-mode=sandbox] .left-col { margin: 4px 6px 0; }
   .lab[data-mode=sandbox] .brew-card { margin: 0; padding: 4px 8px; }
   .lab[data-mode=sandbox] .brew-card .row.small { display: none; }
+}
+
+/* narrow screens: purchase buttons drop below the reagent description */
+@media (max-width: 600px) {
+  .item > .buy-row { grid-column: 1 / -1; justify-content: flex-start !important; }
 }

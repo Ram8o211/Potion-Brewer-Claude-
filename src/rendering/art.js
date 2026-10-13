@@ -200,6 +200,9 @@ export function drawJar(ctx, x, y, w, h, color, form) {
  * @param {import('../simulation/cauldron.js').Cauldron} c
  * @param {{scale:number, ox:number, oy:number}} v
  */
+/** 4×4 ordered-dither matrix: sixteen levels, so gradients don't step into bands */
+const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+
 export function renderCauldron(c, v) {
   const s = v.scale;
   const wall = 0.16, rim = 0.28;
@@ -226,7 +229,7 @@ export function renderCauldron(c, v) {
         // dark inner back wall of the vessel (seen through the cut-away)
         // a faintly lit back wall: lighter toward the rim, darker in the depths
         const depthT = Math.min(1, wy / c.depth);
-        const bayer = [0, 0.5, 0.75, 0.25][(px & 1) + (py & 1) * 2];
+        const bayer = (BAYER4[(px & 3) + (py & 3) * 4] + 0.5) / 16;
         const shade = 1.1 - depthT * 1.1 + Math.max(0, 0.6 + dist * 6);
         const k2 = Math.max(0, Math.min(2, Math.floor(shade + bayer)));
         const col2 = iron[k2];

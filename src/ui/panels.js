@@ -67,15 +67,17 @@ function renderReagents(lab, body, rerender) {
     const locked = mt.tier > st.rank;
     const price = st.priceOf(id);
     const stock = st.stock(id);
-    const buyRow = h('div', { class: 'row', style: { flexWrap: 'wrap', justifyContent: 'flex-end' } });
+    const buyRow = h('div', { class: 'row buy-row', style: { flexWrap: 'wrap', justifyContent: 'flex-end' } });
     if (!locked && id !== st.world.roles.water) {
       for (const ml of [100, 250, 500]) {
         const cost = Math.round((ml / 100) * price * 10) / 10;
-        buyRow.appendChild(btn(`+${ml} ml (${coins(cost)})`, () => {
+        const b = btn(`+${ml} ml`, () => {
           const r = st.buy(id, ml);
           if (r.ok) { audio.play('purchase'); lab.updateShelf(); } else { audio.play('error'); toast('Cannot buy', r.reason, 'lock'); }
           rerender();
-        }, { cls: 'small', disabled: st.coins < cost || stock >= st.cap.storage, act: `buy-${id}-${ml}` }));
+        }, { cls: 'small', disabled: st.coins < cost || stock >= st.cap.storage, act: `buy-${id}-${ml}`, title: `Buy ${ml} ml for ${coins(cost)} coins` });
+        b.appendChild(h('span', { class: 'price' }, icon('coin'), coins(cost)));
+        buyRow.appendChild(b);
       }
     }
     list.appendChild(h('div', { class: 'item parch' + (locked ? ' locked' : '') },
@@ -154,7 +156,8 @@ export function openIngredient(lab, id) {
   const has = (e) => lab.sandbox || st.has(e);
   const tags = [];
   tags.push(m.form);
-  tags.push(m.viscosity < 3 ? 'thin' : m.viscosity < 300 ? 'syrupy' : 'very thick');
+  if (m.form === 'powder') tags.push(m.friction > 0.68 ? 'piles steeply' : 'pours like sand');
+  else if (m.form === 'liquid') tags.push(m.viscosity < 3 ? 'thin' : m.viscosity < 300 ? 'syrupy' : 'very thick');
   if (m.binder > 0.3) tags.push('forms dough');
   if (m.solubility > 0.05) tags.push('soluble');
   if (k.flammable || m.flammability > 0.3) tags.push(k.flammable ? 'flammable (seen)' : 'smells flammable');
@@ -165,7 +168,7 @@ export function openIngredient(lab, id) {
   const facts = h('div', { class: 'kv' },
     h('span', { class: 'k', text: 'Colour' }), h('span', {}, swatch(m.look || m.color), ' ' + describeColor(m.look || m.color)),
     h('span', { class: 'k', text: 'Density' }), h('span', { text: has('hydrometer') ? `${m.density.toFixed(2)} g/ml` : m.density > 1.3 ? 'heavy' : m.density < 0.9 ? 'light' : 'like water' }),
-    h('span', { class: 'k', text: 'Viscosity' }), h('span', { text: has('viscometer') ? `${m.viscosity} cP` : viscosityClass(m.viscosity) }),
+    h('span', { class: 'k', text: m.form === 'powder' ? 'Grains' : 'Viscosity' }), h('span', { text: m.form === 'powder' ? `piles at ≈${Math.round(Math.atan(m.friction) * 180 / Math.PI)}°` + (m.solubility > 0.05 ? ', dissolves in water' : '') : has('viscometer') ? `${m.viscosity} cP` : viscosityClass(m.viscosity) }),
     h('span', { class: 'k', text: 'Melts' }), h('span', { text: k.melt !== undefined ? `≈${k.melt}°C (observed)` : m.form === 'liquid' ? 'unknown (freeze it to find out)' : 'unknown' }),
     h('span', { class: 'k', text: 'Boils' }), h('span', { text: k.boil !== undefined ? `≈${k.boil}°C (observed)` : isFinite(m.boil) ? 'unknown (heat it to find out)' : 'does not boil' }),
     h('span', { class: 'k', text: 'Price' }), h('span', { text: `${coins(st.priceOf(id))} / 100 ml` }),

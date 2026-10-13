@@ -42,6 +42,8 @@ export class FluidRenderer {
     if (n > this.cap) {
       this.cap = n;
       this.wl = new Float32Array(n); // liquid weight
+      this.wb = new Float32Array(n); // smoothed liquid weight (surface shape)
+      this.wt = new Float32Array(n); // blur scratch
       this.cr = new Float32Array(n);
       this.cg = new Float32Array(n);
       this.cb = new Float32Array(n);
@@ -207,15 +209,38 @@ export class FluidRenderer {
       }
     }
 
+    // ------------------------------------------------------------ smooth surface
+    // The surface is taken from a lightly blurred copy of the liquid field so
+    // single particles riding the surface don't read as spikes.
+    const wb = this.wb, wt = this.wt;
+    for (let y = 0; y < h; y++) {
+      const row = y * w;
+      for (let x = 0; x < w; x++) {
+        const k = row + x;
+        const l = x > 0 ? wl[k - 1] : 0, r = x < w - 1 ? wl[k + 1] : 0;
+        const l2 = x > 1 ? wl[k - 2] : 0, r2 = x < w - 2 ? wl[k + 2] : 0;
+        const l3 = x > 2 ? wl[k - 3] : 0, r3 = x < w - 3 ? wl[k + 3] : 0;
+        wt[k] = (wl[k] * 4 + (l + r) * 3 + (l2 + r2) * 2 + (l3 + r3)) * (1 / 16);
+      }
+    }
+    for (let y = 0; y < h; y++) {
+      const row = y * w;
+      for (let x = 0; x < w; x++) {
+        const k = row + x;
+        const u = y > 0 ? wt[k - w] : 0, d = y < h - 1 ? wt[k + w] : 0;
+        wb[k] = (wt[k] * 2 + u + d) * 0.25;
+      }
+    }
+
     // ------------------------------------------------------------ compose
     const data = this.image.data;
-    const thr = 0.32; // liquid surface threshold
+    const thr = 0.3; // liquid surface threshold
     // first liquid pixel of every column → depth below the surface (Beer–Lambert style darkening)
     if (!this.surf || this.surf.length < w) this.surf = new Int32Array(w);
     const surf = this.surf;
     for (let x = 0; x < w; x++) {
       let y = 0;
-      while (y < h && wl[y * w + x] <= thr) y++;
+      while (y < h && wb[y * w + x] <= thr) y++;
       surf[x] = y;
     }
     const depthScale = 1 / Math.max(6, 0.9 * s);
@@ -246,33 +271,47 @@ export class FluidRenderer {
           R = r * l; G = g * l; B = b * l; A = 0.96;
         }
         // liquid / paste
-        const lw = wl[k];
-        if (lw > thr) {
+        if (wb[k] > thr) {
+          // colour from this pixel, or from the strongest neighbour in the
+          // small gaps the smoothing fills in
+          let kc = k, lw = wl[k];
+          if (lw < 0.06) {
+            if (x > 0 && wl[k - 1] > lw) { kc = k - 1; lw = wl[kc]; }
+            if (x < w - 1 && wl[k + 1] > lw) { kc = k + 1; lw = wl[kc]; }
+            if (y < h - 1 && wl[k + w] > lw) { kc = k + w; lw = wl[kc]; }
+            if (y > 0 && wl[k - w] > lw) { kc = k - w; lw = wl[kc]; }
+            if (lw < 1e-4) continue;
+          }
           const inv = 1 / lw;
-          let r = cr[k] * inv, g = cg[k] * inv, b = cb[k] * inv;
-          const paste = pw[k] * inv;
-          let a = Math.min(0.97, Math.max(0.84, op[k] * inv + 0.1));
-          const tex = tx[k] * inv;
-          const up = y > 0 ? wl[k - w] : 0;
-          const down = y < h - 1 ? wl[k + w] : 0;
+          let r = cr[kc] * inv, g = cg[kc] * inv, b = cb[kc] * inv;
+          const paste = pw[kc] * inv;
+          let a = Math.min(0.97, Math.max(0.84, op[kc] * inv + 0.1));
+          const tex = tx[kc] * inv;
+          const up = y > 0 ? wb[k - w] : 0;
+          const down = y < h - 1 ? wb[k + w] : 0;
           let l = 1;
           if (paste > 0.5) {
             // thick, opaque, grainy paste with a soft dark outline
             a = 1;
             l = 0.9 + tex * 0.09;
             if (up <= thr) l = 1.12;
-            else if (down <= thr || (x > 0 && wl[k - 1] <= thr) || (x < w - 1 && wl[k + 1] <= thr)) l = 0.7;
+            else if (down <= thr || (x > 0 && wb[k - 1] <= thr) || (x < w - 1 && wb[k + 1] <= thr)) l = 0.7;
           } else {
-            l = 0.98 + tex * 0.03;
+            // clear liquids let the dark iron show through: darker, cooler, with
+            // the colour carried by what they absorb; opaque ones stay bright
+            const clear = Math.max(0, 1 - op[kc] * inv);
+            const ct = clear * 0.45;
+            r = r * (1 - ct) + 0.42 * ct; g = g * (1 - ct) + 0.6 * ct; b = b * (1 - ct) + 0.82 * ct;
+            l = (0.98 + tex * 0.03) * (1 - clear * 0.55);
             if (up <= thr) l = 1.28; // meniscus highlight
-            else if (y > 1 && wl[k - 2 * w] <= thr) l = 1.1;
+            else if (y > 1 && wb[k - 2 * w] <= thr) l = 1.1;
             // light is absorbed with depth: deeper liquid is darker and richer
             const depth = (y - surf[x]) * depthScale;
             l *= 1 - Math.min(0.42, depth * 0.16);
             // the lower edge against the iron gets a thin shadow line
             if (down <= thr) l *= 0.78;
           }
-          const temp = ht[k] * inv;
+          const temp = ht[kc] * inv;
           if (thermal) {
             const tt = Math.max(0, Math.min(1, (temp + 20) / 140));
             r = tt; g = 0.25 + 0.3 * (1 - Math.abs(tt - 0.5) * 2); b = 1 - tt;
