@@ -107,7 +107,7 @@ export class FluidRenderer {
 
     const rl = 0.092 * s; // liquid kernel radius (px), ~1.85 particle radii
     const rs = 0.085 * s; // solid
-    const rgas = 0.16 * s; // gas
+    const rgas = 0.23 * s; // gas (wide, soft kernel so packed vapour reads as fog)
     const rgrain = Math.max(1.2, 0.05 * s * 1.02);
     const RL = Math.ceil(rl), RS = Math.ceil(rs), RG = Math.ceil(rgas), RGR = Math.ceil(rgrain);
     const colR = sim.colR, colG = sim.colG, colB = sim.colB;
@@ -153,8 +153,8 @@ export class FluidRenderer {
             const xx = cx + dx, yy = cy + dy;
             if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
             const hv = hash01(seed + (dx + 7) * 31 + (dy + 7) * 977);
-            if (hv < 0.12) continue; // gaps between grains
-            let lum = 0.82 + hv * 0.3;
+            // individual grains: bright facets and darker crevices, no holes
+            let lum = hv < 0.18 ? 0.62 : 0.84 + hv * 0.28;
             if (frozen) lum = 0.95 + hv * 0.12;
             lum *= 1 - damp;
             if (p.burn[i] > 0.1) lum *= 1 + p.burn[i];
@@ -188,7 +188,7 @@ export class FluidRenderer {
         const cx = fx | 0, cy = fy | 0;
         const inv = 1 / (rgas * rgas);
         // gas is pale: blend its colour toward white
-        const gr0 = r * 0.6 + 0.4, gg0 = g * 0.6 + 0.4, gb0 = b * 0.6 + 0.4;
+        const gr0 = r * 0.5 + 0.5, gg0 = g * 0.5 + 0.5, gb0 = b * 0.5 + 0.5;
         for (let dy = -RG; dy <= RG; dy++) {
           const yy = cy + dy;
           if (yy < 0 || yy >= h) continue;
@@ -199,7 +199,7 @@ export class FluidRenderer {
             const ddx = xx + 0.5 - fx;
             let q = 1 - (ddx * ddx + ddy * ddy) * inv;
             if (q <= 0) continue;
-            q *= q * q;
+            q *= q;
             const k = yy * w + xx;
             wg[k] += q; gr[k] += q * gr0; gg[k] += q * gg0; gb[k] += q * gb0;
           }
@@ -210,6 +210,15 @@ export class FluidRenderer {
     // ------------------------------------------------------------ compose
     const data = this.image.data;
     const thr = 0.32; // liquid surface threshold
+    // first liquid pixel of every column → depth below the surface (Beer–Lambert style darkening)
+    if (!this.surf || this.surf.length < w) this.surf = new Int32Array(w);
+    const surf = this.surf;
+    for (let x = 0; x < w; x++) {
+      let y = 0;
+      while (y < h && wl[y * w + x] <= thr) y++;
+      surf[x] = y;
+    }
+    const depthScale = 1 / Math.max(6, 0.9 * s);
     const thermal = this.thermal;
     const shimmer = Math.sin(time * 2.1);
     for (let y = 0; y < h; y++) {
@@ -242,7 +251,7 @@ export class FluidRenderer {
           const inv = 1 / lw;
           let r = cr[k] * inv, g = cg[k] * inv, b = cb[k] * inv;
           const paste = pw[k] * inv;
-          let a = Math.min(0.97, op[k] * inv + 0.08);
+          let a = Math.min(0.97, Math.max(0.84, op[k] * inv + 0.1));
           const tex = tx[k] * inv;
           const up = y > 0 ? wl[k - w] : 0;
           const down = y < h - 1 ? wl[k + w] : 0;
@@ -254,11 +263,14 @@ export class FluidRenderer {
             if (up <= thr) l = 1.12;
             else if (down <= thr || (x > 0 && wl[k - 1] <= thr) || (x < w - 1 && wl[k + 1] <= thr)) l = 0.7;
           } else {
-            l = 0.97 + tex * 0.035;
-            if (up <= thr) l = 1.3; // meniscus highlight
-            else if (y > 1 && wl[k - 2 * w] <= thr) l = 1.12;
-            // deeper liquid slightly darker
-            l *= 1 - Math.min(0.12, (lw - thr) * 0.05);
+            l = 0.98 + tex * 0.03;
+            if (up <= thr) l = 1.28; // meniscus highlight
+            else if (y > 1 && wl[k - 2 * w] <= thr) l = 1.1;
+            // light is absorbed with depth: deeper liquid is darker and richer
+            const depth = (y - surf[x]) * depthScale;
+            l *= 1 - Math.min(0.42, depth * 0.16);
+            // the lower edge against the iron gets a thin shadow line
+            if (down <= thr) l *= 0.78;
           }
           const temp = ht[k] * inv;
           if (thermal) {
@@ -272,17 +284,12 @@ export class FluidRenderer {
           r *= l; g *= l; b *= l;
           R = R * (1 - a) + r * a; G = G * (1 - a) + g * a; B = B * (1 - a) + b * a;
           A = A + (1 - A) * a;
-        } else if (lw > thr * 0.55 && !gp && sw <= 0.45) {
-          // anti-aliased fringe one pixel wide
-          const inv = 1 / lw;
-          const a = 0.35 * (lw - thr * 0.55) / (thr * 0.45);
-          R = cr[k] * inv; G = cg[k] * inv; B = cb[k] * inv; A = a;
         }
         // gas wisps
         const gw = wg[k];
-        if (gw > 0.05) {
+        if (gw > 0.04) {
           const inv = 1 / gw;
-          const a = Math.min(0.5, gw * 0.22) * (0.9 + 0.1 * shimmer);
+          const a = 0.7 * (1 - Math.exp(-gw * 0.55)) * (0.9 + 0.1 * shimmer);
           const r = gr[k] * inv, g = gg[k] * inv, b = gb[k] * inv;
           R = R * (1 - a) + r * a; G = G * (1 - a) + g * a; B = B * (1 - a) + b * a;
           A = A + (1 - A) * a;

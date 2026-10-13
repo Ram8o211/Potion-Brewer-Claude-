@@ -144,6 +144,17 @@ export class Renderer {
     if (tool && (tool.active || st.toolHover) && tool.type !== 'none') this._drawTool(c, tool, st);
     if (st.stirrer) this._drawStirrer(c, st);
 
+    // ---- flames licking up from burning matter
+    const p = sim.p;
+    for (let i = 0; i < p.count; i++) {
+      const b = p.burn[i];
+      if (b > 0.2 && this.fx.rand() < b * 0.5) {
+        const [fx, fy] = this.toScreen(p.x[i], p.y[i]);
+        this.fx.add(0, fx + (this.fx.rand() - 0.5) * s * 0.08, fy - 1, (this.fx.rand() - 0.5) * s * 0.1, -s * (0.4 + this.fx.rand() * 0.6), 0.25 + this.fx.rand() * 0.25, Math.max(1, s * 0.035));
+        if (this.fx.rand() < 0.04) this.fx.add(1, fx, fy, (this.fx.rand() - 0.5) * s, -s * (0.8 + this.fx.rand()), 0.6, 1, [255, 220, 120]);
+      }
+    }
+
     // ---- effects
     this.fx.update(st.dt);
     this.fx.draw(ctx);
@@ -207,13 +218,16 @@ export class Renderer {
       rect(ctx, px - fw / 4, y - Math.round(0.1 * s), fw / 2, Math.round(0.14 * s), PAL.copper2);
       rect(ctx, px - fw / 2, y - Math.round(0.18 * s), fw, 1, PAL.brassHi);
     } else {
-      // lid propped against the hearth on the right
-      const x = Math.round(view.ox + (c.belly + 0.25) * s), y = Math.round(view.oy + (c.depth - 0.2) * s);
+      // lid propped against the cauldron's leg, standing on the hearth
+      const lh = Math.round(lw * 0.42);
+      const x = Math.round(view.ox - (c.belly * 0.62 + 0.2) * s - lh * 0.35), y = Math.round(view.oy + (c.depth + 0.55) * s);
       ctx.save();
       ctx.translate(x, y);
-      ctx.rotate(-1.2);
-      rect(ctx, 0, 0, Math.round(lw * 0.5), Math.max(3, Math.round(0.12 * s)), PAL.iron3);
-      rect(ctx, 0, 0, Math.round(lw * 0.5), 1, PAL.iron5);
+      ctx.rotate(-0.35);
+      const th = Math.max(3, Math.round(0.11 * s));
+      rect(ctx, -th, -lh, th, lh, PAL.iron3);
+      rect(ctx, -th, -lh, 1, lh, PAL.iron5);
+      rect(ctx, 0, -lh * 0.6, Math.max(2, Math.round(th * 0.8)), Math.round(lh * 0.2), PAL.wood4);
       ctx.restore();
     }
   }
@@ -400,7 +414,7 @@ export class Renderer {
       case 'ignite': this.fx.burst(1, x, y, 10, s * 0.8, hex2rgb(PAL.fire3), 1); break;
       case 'phase':
         if (e.to === 'solid') this.fx.burst(5, x, y, 3, s * 0.2, hex2rgb(PAL.frost3), 0.3);
-        else if (e.to === 'gas' && this.fx.rand() < 0.3) this.fx.add(2, x, y, 0, -s * 0.4, 1.2, Math.max(1, s * 0.06), [230, 230, 240]);
+        else if (e.to === 'gas' && this.fx.rand() < 0.5) this.fx.add(6, x, y, (this.fx.rand() - 0.5) * s * 0.4, -s * 0.6, 0.35, 1, [235, 240, 250]);
         break;
       case 'paste': if (this.fx.rand() < 0.2) this.fx.burst(4, x, y, 2, s * 0.2, [255, 240, 210], 0.3); break;
       case 'dissolve': this.fx.burst(4, x, y, 2, s * 0.15, [220, 240, 255], 0.3); break;

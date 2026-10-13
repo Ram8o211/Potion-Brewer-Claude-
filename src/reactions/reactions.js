@@ -10,8 +10,9 @@
 //   contact    A | B → products   (A in one particle touching B in another)
 //   decompose  A → products       (single reactant above a temperature)
 // Combustion is built in: flammable species above their ignition point, at
-// an exposed surface and with oxygen available, burn into ash (solids) or
-// smoke (liquids), releasing heat.
+// an exposed surface (or as vapour) and with oxygen available, burn into ash
+// (solids) or smoke (liquids), releasing heat into the flame and the matter
+// around it.
 
 import { MAX_SPECIES } from './species.js';
 import { PHASE } from '../simulation/constants.js';
@@ -196,14 +197,26 @@ export class ReactionSystem {
     const n = p.count;
     const n0 = sim.n0;
     const lid = sim.cauldron.lidClosed;
+    const c = sim.cauldron;
     for (let i = 0; i < n; i++) {
-      if (p.flam[i] < 0.03 || p.temp[i] < p.ign[i]) continue;
-      if (p.phase[i] === GAS) continue;
-      // fire needs air: only exposed surfaces burn, and only with oxygen left
-      const exposed = sim.dens[i] < 0.78 * n0 || sim.nGas[i] > 0;
+      if (p.flam[i] < 0.03) continue;
+      if (p.temp[i] < p.ign[i]) {
+        // hot-surface ignition: glowing iron above the liquid line lights the
+        // fuel (and its vapour) touching it; the pilot heat comes from the wall
+        if (sim.touchWall[i] !== 1 || sim.oxygen < 0.04 || sim.dens[i] >= 0.78 * n0) continue;
+        const cell = c.wallCellAt(p.x[i], p.y[i]);
+        if (cell < 0 || c.cellT[cell] < p.ign[i] + 60) continue;
+        const Q = (p.ign[i] - p.temp[i]) * p.rhoCp[i];
+        p.temp[i] = p.ign[i];
+        c.cellT[cell] -= Q / c.cellC[cell];
+      }
+      const gas = p.phase[i] === GAS;
+      // fire needs air: only exposed surfaces (or vapour, which is already in
+      // the air) burn, and only while oxygen lasts
+      const exposed = gas || sim.dens[i] < 0.78 * n0 || sim.nGas[i] > 0;
       if (!exposed || sim.oxygen < 0.04) continue;
       const off = i * S;
-      const rate = 0.55 * dt * Math.min(1, sim.oxygen * 1.5) * (1 + (p.temp[i] - p.ign[i]) / 150);
+      const rate = (gas ? 1.6 : 0.28) * dt * Math.min(1, sim.oxygen * 1.5) * (1 + Math.min(1.5, (p.temp[i] - p.ign[i]) / 150));
       let heat = 0, burnt = 0;
       for (let s = 0; s < sp.count; s++) {
         const fl = sp.flam[s];
@@ -219,16 +232,54 @@ export class ReactionSystem {
         burnt += amt;
       }
       if (burnt <= 0) continue;
-      p.temp[i] += heat / p.rhoCp[i];
+      this._flameHeat(i, heat);
       p.burn[i] = Math.min(1, p.burn[i] + 0.35 + burnt * 4);
       p.dirty[i] = 1;
       p.sleep[i] = 0;
       this.burned += burnt;
-      if (lid) sim.oxygen = Math.max(0, sim.oxygen - burnt * 0.012);
+      if (lid) sim.oxygen = Math.max(0, sim.oxygen - burnt * 0.03);
       const last = this.lastEvent.__fire;
       if (last === undefined || sim.time - last > 1.5) {
         this.lastEvent.__fire = sim.time;
         sim.emit({ type: 'ignite', x: p.x[i], y: p.y[i], species: sp.defs[maxFlamSlot(sim, i)]?.id });
+      }
+    }
+  }
+
+  /**
+   * A flame does not keep its heat to itself: part of it radiates onto the
+   * matter around it (most usefully the fuel surface underneath), which is
+   * how a fire creeps across a warm pool instead of flaring and dying.
+   * Energy is conserved — the shares always add up to `heat`.
+   * @param {number} i @param {number} heat
+   */
+  _flameHeat(i, heat) {
+    const sim = this.sim, p = sim.p;
+    const R = 0.16, R2 = R * R;
+    const x = p.x[i], y = p.y[i];
+    let wsum = 0;
+    const nb = this._nb || (this._nb = { idx: new Int32Array(64), w: new Float32Array(64), n: 0 });
+    nb.n = 0;
+    sim.grid.query(x, y, R, (j) => {
+      if (j === i || nb.n >= 64) return;
+      const dx = p.x[j] - x, dy = p.y[j] - y;
+      const d2 = dx * dx + dy * dy;
+      if (d2 >= R2) return;
+      // flames rise, so matter beside and below the flame is reached by radiation
+      // while the hot plume carries the rest upward
+      let w = 1 - Math.sqrt(d2) / R;
+      if (p.phase[j] !== GAS) w *= 1.5;
+      nb.idx[nb.n] = j; nb.w[nb.n] = w; nb.n++;
+      wsum += w;
+    });
+    const share = wsum > 0 ? 0.6 : 0;
+    p.temp[i] += (heat * (1 - share)) / p.rhoCp[i];
+    if (share > 0) {
+      const k = (heat * share) / wsum;
+      for (let a = 0; a < nb.n; a++) {
+        const j = nb.idx[a];
+        p.temp[j] += (k * nb.w[a]) / p.rhoCp[j];
+        if (p.sleep[j]) p.sleep[j] = 0;
       }
     }
   }

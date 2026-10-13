@@ -378,3 +378,42 @@ test('combustion spreads locally from the ignition point and consumes fuel', () 
   const oil1 = sim.inventory().oil || 0;
   assert.ok(oil1 < oil0, 'fuel is consumed');
 });
+
+test('a wet paste dries: it holds near the boiling point, steams off its water and keeps its solids', () => {
+  const sim = makeSim();
+  pour(sim, 'water', 160, 0, 0.5);
+  pour(sim, 'flour', 140, 0, 0.5);
+  stir(sim, 8);
+  sim.cauldron.lidClosed = false;
+  sim.furnace.setting = 1;
+  run(sim, 30);
+  const inv = sim.inventory();
+  // while water remains, the wet mass cannot run away far past 100 °C
+  let wetMax = -1e9;
+  const ws = sim.species.slotOf.get('water');
+  for (let i = 0; i < sim.p.count; i++) {
+    if (sim.p.phase[i] === PHASE.GAS) continue;
+    if (sim.p.comp[i * MAX_SPECIES + ws] > 0.3) wetMax = Math.max(wetMax, sim.p.temp[i]);
+  }
+  assert.ok(wetMax < 112, `wet paste stays near the boiling point (${wetMax.toFixed(1)} °C)`);
+  assert.ok((sim.vented.water || 0) > 40, `water leaves as steam (${(sim.vented.water || 0).toFixed(1)} vented)`);
+  assert.ok((inv.flour || 0) > 140 * 0.9, `solids stay behind (${(inv.flour || 0).toFixed(1)} of 140 flour)`);
+  const total = (inv.water || 0) + (sim.vented.water || 0);
+  assert.ok(Math.abs(total - 160) < 0.5, `water is conserved between pot and vented steam (${total.toFixed(2)})`);
+});
+
+test('glowing iron lights an oil pool, and closing the lid smothers the fire', () => {
+  const sim = makeSim();
+  sim.cauldron.lidClosed = false;
+  pour(sim, 'oil', 300, 0, 1);
+  Object.assign(sim.furnace, { setting: 1, maxFlame: 560, heatPower: 5.5 });
+  const burning = () => { let b = 0; for (let i = 0; i < sim.p.count; i++) if (sim.p.burn[i] > 0.2) b++; return b; };
+  let t = 0;
+  while (burning() < 15 && t < 40) { run(sim, 0.25); t += 0.25; }
+  assert.ok(burning() >= 15, `the pool catches fire under a strong furnace (t=${t}s)`);
+  sim.cauldron.lidClosed = true;
+  sim.furnace.setting = 0;
+  run(sim, 8);
+  assert.equal(burning(), 0, 'no flames remain under the closed lid');
+  assert.ok(sim.p.count > 150, `most of the oil survives (${sim.p.count} particles)`);
+});

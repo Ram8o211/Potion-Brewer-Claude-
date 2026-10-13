@@ -310,6 +310,7 @@ export class Simulation {
     this._viscosity();
     this._viscousSmoothing();
     this._sleepUpdate();
+    this._percolate();
 
     if (this.steps % 2 === 0) {
       const dt2 = dt * 2;
@@ -865,6 +866,35 @@ export class Simulation {
         vx[i] += (sx[i] / Wt - vx[i]) * a;
         vy[i] += (sy[i] / Wt - vy[i]) * a;
       }
+    }
+  }
+
+  /**
+   * Steam and gas caught inside paste or a powder bed work their way up by
+   * trading places with the matter just above them (a yield-stress paste
+   * gives no buoyant path otherwise). Swaps move whole particles, so mass,
+   * composition and heat all travel with them.
+   */
+  _percolate() {
+    const p = this.p, n = p.count, mode = this.mode, nCond = this.nCond;
+    const R = 0.085, R2 = R * R;
+    for (let i = 0; i < n; i++) {
+      if (mode[i] !== M_GAS || nCond[i] < 3 || this.rand() > 0.2) continue;
+      const x = p.x[i], y = p.y[i];
+      let best = -1, by = y - 0.015;
+      this.grid.query(x, y, R, (j) => {
+        const mj = mode[j];
+        if (mj !== M_COH && mj !== M_GRAN) return;
+        if (p.y[j] >= by) return;
+        const dx = p.x[j] - x, dy = p.y[j] - y;
+        if (dx * dx + dy * dy > R2 || Math.abs(dx) > 0.6 * -dy + 0.02) return;
+        best = j; by = p.y[j];
+      });
+      if (best < 0) continue;
+      const j = best;
+      p.x[i] = p.x[j]; p.y[i] = p.y[j];
+      p.x[j] = x; p.y[j] = y;
+      p.sleep[j] = 0;
     }
   }
 

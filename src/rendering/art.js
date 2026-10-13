@@ -224,9 +224,11 @@ export function renderCauldron(c, v) {
       if (wy < -0.02) continue;
       if (dist <= 0 && wy >= 0 && !isRim) {
         // dark inner back wall of the vessel (seen through the cut-away)
+        // a faintly lit back wall: lighter toward the rim, darker in the depths
         const depthT = Math.min(1, wy / c.depth);
-        const dither = (px + py) % 2 === 0 ? 0 : 1;
-        const k2 = dist > -0.05 ? 2 : depthT > 0.6 || dither ? 0 : 1;
+        const bayer = [0, 0.5, 0.75, 0.25][(px & 1) + (py & 1) * 2];
+        const shade = 1.1 - depthT * 1.1 + Math.max(0, 0.6 + dist * 6);
+        const k2 = Math.max(0, Math.min(2, Math.floor(shade + bayer)));
         const col2 = iron[k2];
         const o2 = (py * w + px) * 4;
         d[o2] = col2[0]; d[o2 + 1] = col2[1]; d[o2 + 2] = col2[2]; d[o2 + 3] = 255;

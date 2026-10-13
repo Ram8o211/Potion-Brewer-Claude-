@@ -182,6 +182,8 @@ export class LabScreen {
     );
     // customer panel
     this.custEl = h('section', { class: 'customer parch', 'aria-live': 'polite' });
+    this.brewPanel = h('div', { class: 'brew-panel' });
+    this.leftCol = h('div', { class: 'left-col' }, this.custEl, this.brewPanel);
     if (this.sandbox) this.custEl.classList.add('hidden');
     // stage
     this.canvas = /** @type {HTMLCanvasElement} */ (h('canvas', { class: 'view', 'aria-label': 'Cauldron' }));
@@ -209,7 +211,7 @@ export class LabScreen {
     this.toolbar = h('nav', { class: 'toolbar frame' }, this.toolsEl);
     this.shelfWrap = h('div', { class: 'shelf-wrap frame' }, h('div', { class: 'shelf-title small muted', text: 'Reagent shelf' }), this.shelfEl);
     this.side = h('div', { class: 'side' }, this.shelfWrap, this.controls);
-    this.el.append(this.topbar, this.custEl, this.stageEl, this.side, this.toolbar);
+    this.el.append(this.topbar, this.leftCol, this.stageEl, this.side, this.toolbar);
     this.root.appendChild(this.el);
     this.buildTools();
     this.buildShelf();
@@ -844,6 +846,38 @@ export class LabScreen {
     }
   }
 
+  /** Live overview of the whole cauldron (left column on desktop / in experiments). */
+  updateBrewPanel() {
+    const el = this.brewPanel;
+    if (!el || el.offsetParent === null) return;
+    const sim = this.sim, p = sim.p, st = this.state;
+    const n = p.count;
+    clear(el);
+    const card = h('div', { class: 'card parch brew-card' }, h('div', { class: 'row' }, icon('cauldron'), h('b', { text: 'In the cauldron' })));
+    el.appendChild(card);
+    if (!n) { card.append(h('div', { class: 'small muted', text: 'Empty. Pick a reagent and pour.' })); return; }
+    let tmin = 1e9, tmax = -1e9, tsum = 0, tn = 0;
+    const phases = [0, 0, 0, 0, 0];
+    for (let i = 0; i < n; i++) {
+      phases[p.phase[i]]++;
+      if (p.phase[i] === PHASE.GAS) continue;
+      const T = p.temp[i];
+      tmin = Math.min(tmin, T); tmax = Math.max(tmax, T); tsum += T; tn++;
+    }
+    const inv = sim.inventory();
+    const tot = Object.values(inv).reduce((a, b) => a + b, 0) || 1;
+    const comp = Object.entries(inv).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    card.append(
+      h('div', { class: 'small', text: `${n * SIM.ML_PER_PARTICLE} ml · ${tn ? Math.round(tsum / tn) : '—'}°C${tn ? ` (${Math.round(tmin)}–${Math.round(tmax)})` : ''} · lid ${sim.cauldron.lidClosed ? 'on' : 'off'}` }),
+      h('div', { class: 'phase-bar' }, ...['liquid', 'powder', 'paste', 'solid', 'gas'].map((name, k) => phases[k] ? h('i', { class: 'ph-' + name, title: name, style: { flexGrow: String(phases[k]) } }) : null)),
+      h('div', { class: 'small muted', text: ['liquid', 'powder', 'paste', 'solid', 'vapour'].map((name, k) => (phases[k] ? `${name} ${Math.round((phases[k] / n) * 100)}%` : '')).filter(Boolean).join(' · ') }),
+      ...comp.map(([id, v]) => {
+        const m = st.lookup(id);
+        return h('div', { class: 'row small' }, h('span', { class: 'swatch', style: { background: rgbToHex(m ? m.look || m.color : [0.5, 0.5, 0.5]), display: 'inline-block', width: '12px', height: '10px', boxShadow: '0 0 0 1px #2b1d14' } }), h('span', { text: `${Math.round((v / tot) * 100)}% ${m ? m.name : id}` }));
+      }),
+    );
+  }
+
   updateProbe() {
     if (!this.probe) return;
     const sel = probeSelection(this.sim, this.probe.x, this.probe.y, this.probe.r);
@@ -952,7 +986,7 @@ export class LabScreen {
     this.assayTimer += dt;
     this.saveTimer += dt;
     this.layerTimer += dt;
-    if (this.hudTimer > 0.25) { this.hudTimer = 0; this.refreshHud(); this.updateShelf(); if (this.probe) this.updateProbe(); }
+    if (this.hudTimer > 0.25) { this.hudTimer = 0; this.refreshHud(); this.updateShelf(); if (this.probe) this.updateProbe(); this.updateBrewPanel(); }
     if (this.assayTimer > 0.35 && !this.bottling) { this.assayTimer = 0; this.updateAssay(); }
     if (this.layerTimer > 2) { this.layerTimer = 0; this.detectLayers(); }
     if (this.saveTimer > 15) { this.saveTimer = 0; this.save(); }

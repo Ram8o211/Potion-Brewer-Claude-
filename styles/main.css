@@ -112,7 +112,9 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 .topbar .day .event { color: var(--frost); }
 .topbar .nav-buttons { display: flex; gap: 4px; }
 
-.customer { grid-area: cust; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 8px; padding: 6px 8px; margin: 4px 6px 2px; z-index: 2; position: relative; font-size: var(--fs-s); }
+.left-col { grid-area: cust; display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.brew-panel { display: none; }
+.customer { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 8px; padding: 6px 8px; margin: 4px 6px 2px; z-index: 2; position: relative; font-size: var(--fs-s); }
 .customer canvas.portrait { width: 48px; height: 48px; box-shadow: 0 0 0 var(--px) var(--ink2); cursor: pointer; }
 .customer .cust-head { display: flex; justify-content: space-between; gap: 6px; align-items: baseline; }
 .customer .cust-name { font-size: var(--fs-s); color: var(--ink2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -197,7 +199,10 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
     gap: 0 10px;
   }
   .topbar .rankbox { max-width: 200px; }
-  .customer { margin: 8px 0 8px 10px; grid-template-columns: 1fr; align-content: start; overflow-y: auto; }
+  .left-col { margin: 8px 0 8px 10px; gap: 8px; overflow-y: auto; }
+  .customer { margin: 0; grid-template-columns: 1fr; align-content: start; flex: none; }
+  .brew-panel { display: block; }
+  .brew-card { margin: 0; }
   .customer canvas.portrait { width: 96px; height: 96px; justify-self: center; }
   .customer .reqs { grid-template-columns: 1fr; gap: 4px; }
   .customer.collapsed .dialogue, .customer.collapsed .cust-actions .extra { display: block; }
@@ -307,3 +312,13 @@ input[type=checkbox] { width: 22px; height: 22px; accent-color: #6a4b9a; }
 .aspect-bars .bar { height: 5px; }
 .loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--parch1); }
 .fps { position: absolute; left: 4px; top: calc(var(--safe-top) + 50px); font-size: var(--fs-s); z-index: 40; color: #9f9; background: rgba(0,0,0,.5); padding: 2px 4px; pointer-events: none; }
+
+.phase-bar { display: flex; height: 8px; margin: 4px 0; box-shadow: 0 0 0 1px var(--ink2); }
+.phase-bar i { display: block; min-width: 2px; }
+.ph-liquid { background: #4a8cff; } .ph-powder { background: #d8c08a; } .ph-paste { background: #c9a06a; } .ph-solid { background: #bfe6ff; } .ph-gas { background: #9aa0a8; }
+.lab[data-mode=sandbox] .left-col .brew-panel { display: block; }
+@media (max-width: 959px), (max-aspect-ratio: 1/1) {
+  .lab[data-mode=sandbox] .left-col { margin: 4px 6px 0; }
+  .lab[data-mode=sandbox] .brew-card { margin: 0; padding: 4px 8px; }
+  .lab[data-mode=sandbox] .brew-card .row.small { display: none; }
+}

@@ -16,6 +16,11 @@ import { FRESH } from './rigid.js';
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 /** whole-particle boiling needs a mostly volatile composition */
 const BOIL_VOLATILE = 0.8;
+/** below this volatile fraction the moisture is bound and no longer holds the temperature at the boiling point */
+const DRY_MIN = 0.12;
+/** volatile fraction a drying particle gathers to before it boils off */
+const DRY_TARGET = 0.86;
+const DRY_R = 0.11;
 
 /**
  * Choose liquid / paste / powder for a condensed, non-frozen particle from
@@ -148,11 +153,36 @@ export function phaseStep(sim, dt) {
     const tb = p.tb[i];
     const tm = p.tm[i];
     const volatile = p.volFrac[i];
+    if (volatile >= DRY_MIN && volatile < BOIL_VOLATILE && tb < NO_BOIL && T[i] > tb) {
+      // drying: a wet paste, syrup or damp powder above the boiling point of
+      // its volatile part holds there while the liquid gathers into the
+      // hottest spots and steams off, leaving the solids behind
+      const e = (T[i] - tb) * Ci;
+      lat[i] += e;
+      T[i] = tb;
+      if (lat[i] >= 0.5 * p.latV[i]) {
+        const got = gatherVolatile(sim, i, DRY_TARGET - volatile);
+        refreshParticle(sim, i);
+        classifyFluid(sim, i);
+        if (p.volFrac[i] < BOIL_VOLATILE && got < 0.01) {
+          // nothing left nearby to gather: what remains soaks into the dry
+          // solids around it as bound moisture and the heat goes on rising
+          spreadVolatile(sim, i);
+          refreshParticle(sim, i);
+          classifyFluid(sim, i);
+          T[i] += lat[i] / C[i];
+          lat[i] = 0;
+        }
+      }
+      continue;
+    }
     if (ph !== POWDER && volatile >= BOIL_VOLATILE && tb < NO_BOIL && T[i] > tb) {
       const e = (T[i] - tb) * Ci;
       lat[i] += e;
       T[i] = tb;
       if (lat[i] >= p.latV[i]) {
+        // vapour leaves its dissolved solids behind: trade them to the liquid around
+        if (volatile < 0.999 && gatherVolatile(sim, i, 1 - volatile) > 0) refreshParticle(sim, i);
         lat[i] -= p.latV[i];
         p.eph[i] += p.latV[i];
         T[i] += lat[i] / Ci;
@@ -204,5 +234,108 @@ export function phaseStep(sim, dt) {
         changed(sim, i, ph, GAS);
       }
     }
+  }
+}
+
+/**
+ * Draw volatile species (water, spirits…) into particle i from its condensed
+ * neighbours, giving them an equal volume of i's non-volatile matter in
+ * return. Every particle keeps a full unit of volume and every species keeps
+ * its total mass. Returns the volume gathered.
+ * @param {import('./world.js').Simulation} sim @param {number} i @param {number} need
+ */
+function gatherVolatile(sim, i, need) {
+  if (need <= 0) return 0;
+  const p = sim.p, sp = sim.species, S = MAX_SPECIES, ns = sp.count;
+  const comp = p.comp, oi = i * S;
+  const x = p.x[i], y = p.y[i];
+  let vi = 0;
+  for (let s = 0; s < ns; s++) if (sp.boil[s] < NO_BOIL) vi += comp[oi + s];
+  let got = 0;
+  const touched = gatherTouched;
+  touched.length = 0;
+  sim.grid.query(x, y, DRY_R, (j) => {
+    if (got >= need || j === i) return;
+    const ph = p.phase[j];
+    if (ph === GAS || ph === SOLID || p.group[j] >= 0) return;
+    const dx = p.x[j] - x, dy = p.y[j] - y;
+    if (dx * dx + dy * dy > DRY_R * DRY_R) return;
+    const oj = j * S;
+    let vj = 0;
+    for (let s = 0; s < ns; s++) if (sp.boil[s] < NO_BOIL) vj += comp[oj + s];
+    const ni = 1 - vi;
+    // take at most half of a neighbour's liquid per visit so drying stays gradual
+    const a = Math.min(need - got, vj * 0.5, ni);
+    if (a <= 1e-4 || vj <= 1e-6 || ni <= 1e-6) return;
+    const kv = a / vj, kn = a / ni;
+    for (let s = 0; s < ns; s++) {
+      if (sp.boil[s] < NO_BOIL) {
+        const d = comp[oj + s] * kv;
+        comp[oj + s] -= d;
+        comp[oi + s] += d;
+      } else {
+        const d = comp[oi + s] * kn;
+        comp[oi + s] -= d;
+        comp[oj + s] += d;
+      }
+    }
+    vi += a;
+    got += a;
+    touched.push(j);
+  });
+  for (const j of touched) {
+    p.sleep[j] = 0;
+    refreshParticle(sim, j);
+    classifyFluid(sim, j);
+  }
+  return got;
+}
+/** @type {number[]} */
+const gatherTouched = [];
+
+/**
+ * Share particle i's volatile content evenly with its condensed neighbours
+ * (equal-volume exchange, so mass and volume are conserved).
+ * @param {import('./world.js').Simulation} sim @param {number} i
+ */
+function spreadVolatile(sim, i) {
+  const p = sim.p, sp = sim.species, S = MAX_SPECIES, ns = sp.count;
+  const comp = p.comp, oi = i * S;
+  const x = p.x[i], y = p.y[i];
+  const nb = gatherTouched;
+  nb.length = 0;
+  sim.grid.query(x, y, DRY_R, (j) => {
+    if (j === i || nb.length >= 12) return;
+    const ph = p.phase[j];
+    if (ph === GAS || ph === SOLID || p.group[j] >= 0) return;
+    const dx = p.x[j] - x, dy = p.y[j] - y;
+    if (dx * dx + dy * dy <= DRY_R * DRY_R) nb.push(j);
+  });
+  if (!nb.length) return;
+  let vi = 0;
+  for (let s = 0; s < ns; s++) if (sp.boil[s] < NO_BOIL) vi += comp[oi + s];
+  const share = vi / (nb.length + 1);
+  for (const j of nb) {
+    const oj = j * S;
+    let nj = 0;
+    for (let s = 0; s < ns; s++) if (sp.boil[s] >= NO_BOIL) nj += comp[oj + s];
+    const a = Math.min(share, nj, vi);
+    if (a <= 1e-5) continue;
+    const kv = a / vi, kn = a / nj;
+    for (let s = 0; s < ns; s++) {
+      if (sp.boil[s] < NO_BOIL) {
+        const d = comp[oi + s] * kv;
+        comp[oi + s] -= d;
+        comp[oj + s] += d;
+      } else {
+        const d = comp[oj + s] * kn;
+        comp[oj + s] -= d;
+        comp[oi + s] += d;
+      }
+    }
+    vi -= a;
+    p.sleep[j] = 0;
+    refreshParticle(sim, j);
+    classifyFluid(sim, j);
   }
 }
