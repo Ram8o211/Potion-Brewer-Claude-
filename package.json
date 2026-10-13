@@ -1,6 +1,6 @@
 {
   "name": "alchemists-shop",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "The Alchemist's Shop — a physics-driven potion brewing browser game.",
   "private": true,
   "type": "module",

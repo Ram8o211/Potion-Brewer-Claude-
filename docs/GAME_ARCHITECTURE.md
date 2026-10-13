@@ -1,34 +1,39 @@
 # Game architecture
 
 The Alchemist's Shop is a static web app made of native ES modules (about
-10,400 lines in 48 modules) with no runtime dependencies. In development the
+13,700 lines in 59 modules) with no runtime dependencies. In development the
 browser loads `src/` directly; `scripts/build.mjs` bundles it into one
 fingerprinted script for production.
 
 ```
                 ┌──────────────────────────── ui/ ─────────────────────────────┐
-                │ app (screens, settings) · menu · lab (the shop) · panels ·   │
- input ────────▶│ tutorial · dom helpers · icons                               │
+                │ app (screens, settings) · menu · lab (shell + Brew room) ·   │
+ input ────────▶│ views/ counter · wilds · trials · book · panels · tutorial · │
+                │ dom helpers · icons                                          │
                 └───────┬───────────────────────────┬──────────────────┬───────┘
                         │ actions                   │ frame            │ events
-                ┌───────▼─────────┐        ┌────────▼───────┐   ┌──────▼───────┐
-                │ game/           │        │ rendering/     │   │ audio/       │
-                │ state, economy, │        │ renderer, fluid│   │ WebAudio     │
-                │ commissions,    │        │ art, effects,  │   │ synthesis    │
-                │ measure, scoring│        │ portraits      │   └──────────────┘
-                └───────┬─────────┘        └────────▲───────┘
-                        │ brews in / measures       │ reads particles
+                ┌───────▼──────────┐       ┌────────▼───────┐   ┌──────▼───────┐
+                │ game/            │       │ rendering/     │   │ audio/       │
+                │ state, economy,  │       │ renderer, fluid│   │ WebAudio     │
+                │ commissions,     │       │ art, effects,  │   │ synthesis    │
+                │ measure, scoring,│       │ portraits,     │   └──────────────┘
+                │ experiments,     │       │ scenes         │
+                │ gathering        │       └────────▲───────┘
+                └───────┬──────────┘                │ reads particles
+                        │ brews in / measures       │
                 ┌───────▼───────────────────────────┴───────┐
                 │ simulation/  (the particle world)          │
                 │ world · grid · cauldron · tools · emitter ·│
-                │ thermal · phase · rigid · derived · snapshot│
+                │ thermal · electric · phase · rigid ·       │
+                │ derived · snapshot                         │
                 └───────┬───────────────────────────────────┘
-                        │ composition, mixture laws, reactions
-                ┌───────▼──────────┐   ┌───────────────────┐
-                │ reactions/       │◀──│ materials/        │
-                │ species, mixture,│   │ schema, generator,│
-                │ diffusion, rules │   │ names, reference  │
-                └──────────────────┘   └───────────────────┘
+                        │ composition, mixture laws, reactions, effects
+                ┌───────▼──────────┐   ┌───────────────────┐   ┌──────────────┐
+                │ reactions/       │◀──│ materials/        │──▶│ alchemy/     │
+                │ species, mixture,│   │ schema, generator,│   │ effects:     │
+                │ diffusion, rules │   │ profiles, wild,   │   │ extraction,  │
+                │                  │   │ names, reference  │   │ laws, theory │
+                └──────────────────┘   └───────────────────┘   └──────────────┘
 ```
 
 Dependencies point downward only. The simulation knows nothing about
@@ -44,7 +49,9 @@ balancing tools run the real game rules headlessly in Node.
   points with latent heats, expansion, compatibility coordinates
   (miscibility), friction and binder strength (powders), solubility,
   flammability, ignition point and combustion heat, smoke and ash products,
-  glow, and four magical aspects (vitality, ardor, arcana, fortitude).
+  glow, a 10-channel **effect vector** (vitality, strength, love, arcana,
+  transformation, fire, frost, acidity, toxicity, death), electrical
+  conductivity and an initial charge.
 * **`generator.js`** builds a world from a seed with the project's own
   seeded RNG (`core/rng.js`, so a seed always gives the same world). Fixed
   *roles* (spring water, an oil, a syrup, a spirit, two coloured essences,
@@ -52,6 +59,17 @@ balancing tools run the real game rules headlessly in Node.
   cinders and void ink) keep every world playable. Their properties,
   colours and names vary per seed. It also generates a dozen reactions
   (mix, contact and decompose kinds) between the world's reagents.
+* **`profiles.js`** gives every generated reagent its effect vector and
+  electrical properties from its role, jittered by a hash of the seed and
+  id (not the generator's RNG), so existing seeds keep their reagents and
+  an old save's embedded world upgrades to exactly what a fresh world of
+  that seed gets.
+* **`wild.js`** defines 19 wild raw ingredients (roots, leaves, flowers,
+  mushrooms, minerals, magical crystals and mosses) for six regions, most
+  supplied *whole* as rigid chunks that must be crushed or ground before
+  anything dissolves; their wet-only steeping reactions; and the world's
+  hidden **resonance laws** (below). All of it comes from separate RNG
+  streams so it never changes the base reagents of a seed.
 * **`names.js`** composes themed names ("Frostmere Spring Water",
   "Foxfire Dragon Resin").
 * **`reference.js`** holds a fixed material set used by the physics tests
@@ -96,6 +114,29 @@ material ids to slots and keeps per-slot property arrays).
   ignites. A closed lid stops air coming in and the fire uses up the oxygen
   inside.
 
+### Effects (`src/alchemy/effects.js`)
+
+What a potion *does* is never looked up from a recipe. It is computed from
+the matter actually drunk, particle by particle:
+
+1. **Extraction.** A species acts only in solution. Undissolved grains
+   leach 12% of their potency, dry powder 5%. Solubility rises with heat,
+   so grinding, stirring and hot water all change the result.
+2. **Resonance laws** (hidden; six per world, on distinct effect pairs).
+   Two effects meeting inside one particle can *transmute* into a third,
+   *catalyse* or *suppress* one another above a threshold. A layered brew
+   and a stirred one differ. The amount each law moved is traced so trials
+   can discover it.
+3. **Oppositions** (known to every guild alchemist): fire/frost,
+   vitality/death, vitality neutralises toxicity, acids and alkalis
+   neutralise (acidity is signed).
+4. **Saturation** above 40: diminishing returns.
+
+Reactions, evaporation and dilution change the composition, so they change
+effects through the same function. `theoryOf()` is the player's naive
+prediction (volumes simply add, plus the laws they have confirmed), shown
+next to every observation so surprises point at hidden laws.
+
 ## 3. The particle world (`src/simulation/`)
 
 ### Step order (`world.js`, fixed 1/120 s step)
@@ -119,8 +160,9 @@ material ids to slots and keeps per-slot property arrays).
    resting grains.
 8. Percolation: steam trapped in paste or powder trades places with the
    matter above it.
-9. Every second step: heat transport (`thermal.js`), contact diffusion,
-   reactions and combustion, phase changes (`phase.js`), oxygen exchange.
+9. Every second step: heat transport (`thermal.js`), electric conduction
+   (`electric.js`), contact diffusion, reactions and combustion, phase
+   changes (`phase.js`), oxygen exchange.
 10. Venting: vapour leaving an open cauldron is removed and accounted for.
 
 ### Solver modes
@@ -153,37 +195,67 @@ material ids to slots and keeps per-slot property arrays).
   paste and powder are reclassified from the undissolved-solids fraction,
   with hysteresis.
 
+### Electricity (`electric.js`)
+
+Every particle carries a charge `q`. Charged reagents (embers, starlight,
+phoenix cinders, storm glass carry positive charge; void ink negative)
+bring charge when poured; it flows between touching
+particles in proportion to their conductance (metal ≫ brine ≫ water ≫ oil),
+so a conductive brew spreads it and an oil layer insulates. Exchanges are
+pairwise and antisymmetric (total charge is conserved exactly). Current
+through a resistive contact heats both particles (Joule heating, counted as
+energy input), and a large potential step across a good contact sparks. A
+neutral brew costs one scan per step.
+
 ### Tools (`tools.js`)
 
 The spoon has a velocity-field stirring zone (radius 0.42) and a physical
 bowl collider. The pestle has a heavy head; it crushes rigid frozen bodies
 and crystals into grains when struck hard enough. The skimmer removes
-matter. Tool motion is sub-stepped along the pointer path, so fast strokes
+matter and counts what it lifted: a particle that is at least 92% one
+substance (and not burning) counts as `recovered`, so a skimmed layer of
+a pure reagent goes back into its jar; mixtures are waste. Tool motion is sub-stepped along the pointer path, so fast strokes
 can't jump through the brew. Tools can never push matter through the
 walls (tested).
 
 ### Snapshots (`snapshot.js`)
 
-The full cauldron state (particles, compositions, temperatures, rigid
-bodies, wall temperatures, lid, oxygen) serialises to compact JSON for
-saves; a test checks that the state round-trips.
+The full cauldron state (particles, compositions, temperatures, charges,
+rigid bodies, wall temperatures, lid, oxygen) serialises to compact JSON
+for saves; a test checks that the state round-trips. Snapshot version 2
+adds charge; a version-1 snapshot from a larger old vessel is remapped
+into the new vessel's shape instead of being dropped.
 
 ## 4. Game layer (`src/game/`)
 
 * **`state.js` (`GameState`)** holds the whole save: seed and embedded
   world, coins, reputation and rank, day and customer index, inventory and
   shelf limits, equipment, journal, knowledge, recipes, history,
-  achievements, statistics, market day, tutorial progress and the cauldron
-  snapshot. It handles buying and selling, equipment, sales and
+  achievements, statistics, market day, tutorial progress, the cauldron
+  snapshot, the current batch (id and revision), the sealed vial, the
+  trials state and the wilds' deposit stocks. It handles buying and selling, equipment, sales and
   reputation, rank-ups, end of day, market events and a once-a-day
   stipend that makes a run impossible to lose. `toJSON` / `fromJSON` run
   through `migrate()`, which upgrades older save versions and regenerates
-  a missing embedded world from the seed.
+  a missing embedded world from the seed. Save version 3 adds effects,
+  trials, gathering, batches and the vial; a version-2 save keeps every
+  coin, recipe and journal entry, its embedded world gains the effect
+  profiles a fresh world of that seed would have, and a pending order is
+  rewritten in effect terms (`migrateCommission`). A test loads a genuine
+  v2 save produced by the previous release. A save from a newer version,
+  or a damaged one, is refused with a message, never silently reset.
 * **`commissions.js`** builds each order from a hidden **reference plan**
   (ingredients and amounts, heat-to, cool-to, serving temperature,
-  kneading or crushing, hold time) for one of 14 brewing styles (tonic,
-  syrup, warm draught, salve, elixir, ardent, heavy, fizzy, frost, arcane,
-  lumen, varnish, panacea, phoenix). The plan uses only purchasable
+  kneading or crushing, hold time) for one of 14 physical brewing styles
+  (tonic, syrup, warm draught, salve, elixir, ardent, heavy, fizzy, frost,
+  arcane, lumen, varnish, panacea, phoenix) or 11 **effect styles**
+  (healing, strength, love, fire tonic, frost salve, settling (alkaline),
+  etching (acid), bane, insight, transmutation, antidote). An effect plan
+  picks an ingredient known to carry the effect, a solvent it dissolves in
+  and a preparation (grinding, steeping heat, stirring); higher tiers blend
+  a second ingredient, sometimes one a hidden law acts on. Drinkable
+  potions get safety limits on poison, acid and death they did not ask
+  for. The plan uses only purchasable
   reagents and owned equipment. `predict.js` computes its outcome with the
   same mixture laws and reaction stoichiometry as the simulation, and the
   requirements are placed around that outcome. Tolerances tighten with
@@ -200,23 +272,44 @@ saves; a test checks that the state round-trips.
   closest to the tap at the bottom of the cauldron, so the lowest layer
   comes out first. `measureParticles` computes colour (Beer–Lambert, then
   OKLab), density, viscosity, temperature, magical aspects, stability
-  (composition heterogeneity, immiscible blends, sediment, gas) and
-  volatility.
+  (composition heterogeneity, immiscible blends, sediment, gas),
+  volatility, charge and the hidden effect vector (with the amount each
+  resonance law contributed).
+* **`experiments.js`** is the trials room's rules: five subjects (Moon
+  Rabbit, Copper Beetle, Bean Seedling, Limestone, and the Will-o'-Wisp
+  with the lantern), each responding to only some effects; dose-scaled
+  observations and lasting marks; harm that can spend a subject (replaced
+  for coins, half price with the kennel); trial records with the theory
+  beside the observation; law discovery after two trials show a law at
+  work on a channel the subject reveals; and **certification**. A batch is
+  certified for an effect once a trial of this batch *and revision*
+  revealed it and the brew still matches that reading within
+  max(3, 15%). Pouring anything bumps the revision, so earlier trials stop
+  counting; drift from reactions, settling or heat is caught silently. An
+  order with effect requirements cannot be served uncertified.
+* **`gathering.js`** is the wilds: six regions (four open from the start,
+  two magical ones from Adept and Expert), deposits generated from the
+  seed (never saved), and per-deposit stock plus a timestamp in the save.
+  Stock is resolved lazily from elapsed wall-clock time when a deposit is
+  shown or gathered, so nothing runs per frame and deposits regrow while
+  the game is closed. A new day lets every deposit recover half its
+  capacity. Harvests respect shelf space; the satchel gathers 50% more.
 * **`evaluate.js`** scores each requirement (full marks within tolerance,
   falling linearly to zero), weights them (colour counts more, quantity
   less), caps the score for a short bottle, and turns quality into stars,
   payment and reputation.
-* **`equipment.js`** lists 24 items in heating, cooling, vessels, tools,
-  instruments, storage and guild categories, with ranks and prerequisites.
+* **`equipment.js`** lists 29 items in heating, cooling, vessels, tools,
+  instruments, trials, storage and guild categories (new: stone mortar,
+  galvanometer, subject kennel, wisp lantern, forager's satchel), with ranks and prerequisites.
   `capabilities()` folds owned items into the simulation's limits (flame
   temperature and power, coldest temperature, cauldron size, storage,
   discount).
 * **`journal.js`** turns simulation events (first boil, freeze, dough,
-  crushing, dissolving, each reaction, fire) into journal discoveries,
+  crushing, dissolving, steeping, each reaction, fire, sparks) into journal discoveries,
   ingredient knowledge and achievements.
 * **`autobrew.js`** is a controller that carries out a plan in the real
-  simulation: it pours, stirs, kneads, crushes, heats and cools with
-  feedback, and holds. In the game it is the homunculus upgrade, which
+  simulation: it pours (ground in the mortar where the plan says so),
+  stirs, kneads, crushes, heats and cools with feedback, and holds. In the game it is the homunculus upgrade, which
   brews saved recipes. Tests and tools use it to prove orders achievable
   and to run balancing playthroughs.
 * **`persistence.js`** autosaves to `localStorage` with a rolling backup,
@@ -246,9 +339,17 @@ saves; a test checks that the state round-trips.
   * Vapour is a soft fog.
   * Glowing and burning matter emits light.
 * **`portraits.js`** draws procedural customer portraits.
-* Quality levels (high, medium, low) change the art-pixel size and
-  lighting. **Automatic** quality (the default) steps down when frames
-  keep running over budget.
+* **`scenes.js`** paints the wilds (sky, hills, trees, rocks, water and
+  the deposits' plants and minerals, with a little ambient animation),
+  raw-ingredient sprites for the shelf, and the trial subjects with their
+  marks (growth, glow, frost, etching, love). Static layers are cached and
+  only redrawn when the region or a deposit changes.
+* Effects show in the brew: a potion with a strong effect gets a faint
+  aura of that effect's colour, and charged matter crackles with sparks.
+* Quality presets: **High quality**, **Balanced** and **Battery saver**
+  change the art-pixel size, lighting and effects; Battery saver also
+  draws at 30 fps. **Automatic** (the default) steps down when frames keep
+  running over budget. Physics and scores are identical in every preset.
 
 ## 6. UI (`src/ui/`)
 
@@ -256,15 +357,26 @@ saves; a test checks that the state round-trips.
   free-experiment entry points.
 * **`menu.js`** is the main menu, with a live simulated cauldron behind
   it.
-* **`lab.js`** is the shop and experiment screen. It holds the order card
-  with live per-requirement meters, the cauldron view, the shelf, the dose
-  buttons, the fire and frost control, tools, lid, time speed, emptying,
-  bottling, the brew-analysis panel, the probe and inspector, the thermal
-  view and keyboard shortcuts. It runs the frame loop: physics within a
+* **`lab.js`** is the shop shell and the Brew room: a top bar, a bottom
+  tab bar (a rail in landscape and on desktop) over five rooms, badges,
+  and the Brew room itself: the order strip with live per-requirement
+  meters, the cauldron view, the shelf (tap, long-press to inspect, or
+  drag a jar onto the cauldron), dose buttons and the mortar switch, the
+  fire and frost control, tools, lid, time speed, emptying, bottling into
+  a sealed vial, the brew-analysis panel, the probe and inspector, the
+  thermal view and keyboard shortcuts. It owns batch identity and the
+  vial (serve, discard or pour back). The simulation runs in every room
+  but is drawn only in the Brew room. It runs the frame loop: physics within a
   time budget (what is left of a ~30 fps frame after rendering, 8–22 ms),
   so slow devices run the brew in slow motion instead of dropping frames.
   It also collects frame-timing statistics (`perfReport()`), used by the
   benchmark.
+* **`views/`** holds the other rooms: `counter.js` (customer, full order
+  with verified effects, the vial, serving), `wilds.js` (regions, the
+  painted scene with tappable deposits, the deposit list), `trials.js`
+  (subjects, the draggable dropper, dose size and source, reports with
+  theory vs observation) and `book.js` (recipes, trial log, laws,
+  journal, ingredients, awards, sales).
 * **`panels.js`** contains the market and guild (reagents, equipment,
   selling back), the ingredient inspector, guild advice, the result and
   day-summary dialogs, the analysis panel, the recipe book (prepare or
@@ -272,11 +384,10 @@ saves; a test checks that the state round-trips.
   achievements, sales), pause, help and settings.
 * **`tutorial.js`** is the guided first commission (11 steps, each
   advancing on what actually happens in the cauldron).
-* The layout is CSS grid. Phone portrait puts the order card on top, the
-  cauldron in the middle and controls with a horizontal shelf at the
-  bottom; phone landscape and tablet have their own arrangements; desktop
-  uses three columns. Safe-area insets are respected, and touch targets
-  are at least 30 CSS px (tested).
+* The layout is CSS grid; see `docs/MOBILE_UX.md` for the per-device
+  arrangements, gestures and their tap alternatives. Safe-area insets are
+  respected, and touch targets are at least 44 CSS px (tested in every
+  room on every device profile).
 
 ## 7. Audio (`src/audio/audio.js`)
 
@@ -312,8 +423,10 @@ settings.
 | Layer | Tool | What is checked |
 |---|---|---|
 | Physics | `tests/physics.test.mjs` (23 scenarios) | piles and angle of repose, sleeping, no rebound, avalanches, calm pooling, stratification without gaps, progressive mixing and the stirring speed-up, equilibrium colour, dough only with stirring and thinning, paste yield, freezing into one rigid block, crushing, conduction, boiling and condensing under the lid, gas containment, immiscibility under stirring, wall integrity, energy balance, snapshot round-trip, linear cost, fire spread, drying, hot-iron ignition and smothering |
-| Game rules | `tests/game.test.mjs` (10 tests) | seeded determinism, starting reagents, day-one feasibility and affordability, achievability brewed in the real simulation, scoring, market, the no-softlock stipend, ranks, save round-trip, migration and bad files |
-| Browser | `tests/browser/*.spec.mjs` (43 tests, 5 profiles) | layouts and touch target sizes, the tutorial order through the real UI with touch stirring, tools, shop and equipment, saves (continue, cauldron, export and import, damaged save), settings, sandbox physics (layers, freezing and crushing, fire, a long boiling run with conservation checks), offline build |
+| Game rules | `tests/game.test.mjs` (11 tests) | seeded determinism, starting reagents, day-one feasibility and affordability, achievability brewed in the real simulation, scoring, market, the no-softlock stipend, ranks, save round-trip, migration and bad files |
+| Effects | `tests/alchemy.test.mjs` (8 tests) | effect vectors on every material, dilution, extraction (whole vs ground vs hot steeping), effects interacting only where substances meet, resonance laws, heat-spoiled petals, reduction by boiling, electric charge conservation, conduction, insulation and Joule heating |
+| Trials and wilds | `tests/trials.test.mjs` (7 tests) | real dose consumption, what each subject reveals, certification and its invalidation by pours and drift, law discovery, lethal doses and replacement, deterministic deposits with finite stock, timestamp regrowth, rank locks and storage limits, a genuine v2 save migrating, corrupted, partial and future saves |
+| Browser | `tests/browser/*.spec.mjs` (62 runs over 6 profiles) | layouts and ≥ 44 px touch targets in every room, the first commission end to end (pour, stir by touch, heat, test on a subject, bottle, serve, save and re-prepare the recipe), the certification gate, tools, jar drag-to-pour and the mortar, gathering by tap and list with persistence, dropper trials and subject replacement, shop and equipment, saves (continue, cauldron, export and import, damaged save), settings, sandbox physics, offline build, GitHub Pages sub-path build |
 | Types | `tsc` with `checkJs` | `src/`, `scripts/`, `tests/` |
 | Performance | `scripts/bench.mjs` | physics ms per step; in-browser fps, frame-time percentiles, physics and render split, and simulation speed |
 | Balance | `scripts/playtest.mjs`, `scripts/achievability.mjs` | multi-day economy and progression; order achievability |

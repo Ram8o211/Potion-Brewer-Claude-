@@ -18,10 +18,11 @@ left rail so the cauldron keeps the full height.
 | Trials | `views/trials.js` | test subjects, the dropper, dose size, source (cauldron tap or vial), reports |
 | Book | `views/book.js` | recipes, trial log, laws, journal, ingredients, awards, sales |
 
-The top bar holds the menu (help, settings and saves, tutorial), coins, rank, day
-and the Market & Guild, where reagents, common wild herbs and upgrades
-are bought (spent test subjects are replaced in the Trials room). On phones in portrait every dialog opens as a
-bottom sheet; elsewhere it is a centred panel. The shelf in the Brew room is
+The top bar holds the menu (help, settings and saves, tutorial), coins,
+rank, day and the Market & Guild, where reagents, common wild herbs and
+upgrades are bought (spent test subjects are replaced in the Trials room).
+On phones in portrait every dialog opens as a bottom sheet; elsewhere it is
+a centred panel. The shelf in the Brew room is
 the inventory: each jar shows its stock. Tabs carry badges: the Counter
 shows **1** when a sealed vial is waiting and **!** for a new customer; the
 Trials tab shows **?** while the order still needs effects you have not
@@ -35,9 +36,13 @@ keeps burning), but it is drawn only while the Brew room is visible.
 | Viewport | Arrangement |
 |---|---|
 | Phone portrait (taller than wide) | top bar · order strip · cauldron stage · fire/lid controls · tools · dose chips and a horizontally scrolling shelf · bottom tab bar |
-| Phone landscape (≤ 560 px tall, wider than tall) | icon-only tab rail on the left · cauldron stage · a right column with order strip, shelf, controls and tools |
+| Phone landscape (≤ 560 px tall, wider than tall) | icon-only tab rail on the left · cauldron stage · a right column with order strip, a wrapping shelf, controls and tools |
 | Tablet portrait (≥ 700 px wide, taller than wide) | as phone portrait with larger jars, tool labels, 60 px tabs and three subjects per row |
 | Desktop (≥ 960 px, wider than tall) | labelled tab rail · stage with the order strip above · side panel with the shelf as a wrapping grid · tools and controls below |
+
+In phone landscape and on desktop the Wilds put the scene beside the
+deposit list. The region tabs and the scene stay put, and only the list
+scrolls, so the scene is always there to tap.
 
 Safe-area insets (`env(safe-area-inset-*)`) pad the top bar, the tab bar
 and the sheets, so nothing sits under a notch or the home indicator.
@@ -52,13 +57,15 @@ in every room on every device profile and fails on anything smaller than
 
 ## Gestures and their alternatives
 
-Every gesture has a tap alternative, so nothing depends on precise
-dragging.
+Every gesture except skimming has a tap or hold alternative, so almost
+nothing depends on precise dragging.
 
 | Gesture | Alternative |
 |---|---|
 | Drag a jar from the shelf onto the cauldron (pours where the stream falls) | tap the jar, then tap a dose chip, or hold inside the cauldron |
-| Drag the spoon / pestle / skimmer in the cauldron | auto-stir toggle; the mortar grinds before pouring |
+| Drag the spoon to stir | hold the stir button (or toggle it with the clockwork stirrer upgrade) |
+| Strike with the pestle to crush | switch on "Ground" so the mortar grinds before pouring |
+| Drag the skimmer | none |
 | Drag the dropper onto a subject | the subject's **Test** button |
 | Tap a deposit in the wilds scene | the deposit's **Gather** button in the list |
 | Long-press a jar (or right-click) to inspect it | the ingredient list in the Book |
@@ -71,9 +78,11 @@ Pointer handling rules:
   cauldron (`touch-action: none`, `touchmove` prevented), but scrolling
   works everywhere else (`touch-action: pan-y` / `pan-x` on rooms and the
   shelf).
-* On the phone shelf, a jar is lifted only by an upward drag, so swiping
-  sideways still scrolls the shelf. On desktop, where the shelf is a side
-  panel, leaving the shelf lifts the jar.
+* A jar is lifted by a drag *across* its shelf's scroll direction, so
+  scrolling along the shelf keeps working. The portrait shelf scrolls
+  sideways, so an upward drag lifts the jar. In landscape and on desktop
+  the shelf is a column that scrolls up and down, so a sideways drag lifts
+  it. Dragging out of the shelf always lifts the jar.
 * A mouse is captured explicitly so a drag keeps reporting outside the
   jar; touch pointers keep native scrolling.
 
@@ -85,11 +94,15 @@ bottom of the stage, clear of the order strip and chips.
 
 ## Graphics presets
 
-Settings → Graphics: **Automatic** (default), **High quality**,
-**Balanced** and **Battery saver**. They change only rendering: art-pixel
-size, lighting and glow, effects, and for Battery saver a 30 fps draw cap.
-Physics, quantities and scores are identical in every mode. Measured
-costs are in `docs/PERFORMANCE.md`.
+Settings → Graphics offers **Automatic** (the default), **High quality**,
+**Balanced** and **Battery saver**. They change only rendering:
+* High quality uses the finest art pixels and every glow.
+* Balanced keeps the lighting at full frame rate with coarser pixels on
+  large canvases.
+* Battery saver uses coarser pixels, no lighting and a 30 fps draw cap.
+
+Physics, quantities and scores are identical in every mode. Measured costs
+are in `docs/PERFORMANCE.md`.
 
 ## Offline and installability
 
