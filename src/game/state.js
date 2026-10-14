@@ -4,7 +4,7 @@
 // Pure data + logic (no DOM), so it is fully testable headlessly.
 
 import { Rng, hashString } from '../core/rng.js';
-import { generateWorld, makeLookup } from '../materials/generator.js';
+import { generateWorld, makeLookup, SPEC_BY_ROLE } from '../materials/generator.js';
 import { serializeMaterial, deserializeMaterial } from '../materials/schema.js';
 import { generateCommission, tutorialCommission, meets } from './commissions.js';
 import { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById } from './equipment.js';
@@ -15,16 +15,17 @@ import { startHaggle, ask, acceptOffer, refuse } from './haggle.js';
 import { settleSale, certificationFee, REP } from './sales.js';
 import { archetypeOf } from './customers.js';
 import { PROP_KEYS, toRecord } from '../alchemy/magic.js';
+import { modernizeJournal } from './journal.js';
 
 export const SAVE_VERSION = 4;
 export const WORLD_GEN_VERSION = 3;
 
 export const MARKET_EVENTS = [
   { key: 'none', name: 'An ordinary day', icon: 'sun' },
-  { key: 'winter', name: 'Bitter Frost', icon: 'snow' },
+  { key: 'winter', name: 'Bitter Frost', icon: 'basin' },
   { key: 'plague', name: 'Coughing Sickness', icon: 'leaf' },
   { key: 'festival', name: 'Harvest Festival', icon: 'heart' },
-  { key: 'heatwave', name: 'Heatwave', icon: 'flame' },
+  { key: 'heatwave', name: 'Heatwave', icon: 'sun' },
   { key: 'rain', name: 'Gentle Rain', icon: 'drop' },
   { key: 'eclipse', name: 'Crystal Eclipse', icon: 'gem' },
   { key: 'fair', name: 'Market Fair', icon: 'stall' },
@@ -38,11 +39,11 @@ export const ACHIEVEMENTS = [
   { id: 'sharp_eye', name: 'Sharp Eye', desc: 'Write a Potion ID within 6 points of the truth on every property.', reward: 30 },
   { id: 'super', name: 'Transmutation', desc: 'Push a brew past its super transition.', reward: 30 },
   { id: 'fade', name: 'Too Hot', desc: 'Watch overheated magic fade away.', reward: 5 },
-  { id: 'heatmix', name: 'Warm Embrace', desc: 'Blend two liquids that refuse to mix while cold.', reward: 15 },
+  { id: 'heatmix', name: 'Warm Embrace', desc: 'Bind two magics that will not join while cold.', reward: 15 },
   { id: 'crush', name: 'Stone Breaker', desc: 'Smash a stone with the pestle.', reward: 10 },
-  { id: 'frozen', name: 'Cold Hands', desc: 'Freeze a brew solid.', reward: 10 },
-  { id: 'boil', name: 'Rolling Boil', desc: 'Boil a liquid into vapour.', reward: 10 },
-  { id: 'fire', name: 'Singed Eyebrows', desc: 'Set something alight in the cauldron.', reward: 10 },
+  { id: 'frozen', name: 'Cold Hands', desc: 'Lock a brew in ice.', reward: 10 },
+  { id: 'boil', name: 'Rolling Boil', desc: 'Lose magic to the steam.', reward: 10 },
+  { id: 'fire', name: 'Singed Eyebrows', desc: 'Burn magic in too fierce a fire.', reward: 10 },
   { id: 'harvest1', name: 'Green Fingers', desc: 'Harvest your garden.', reward: 5 },
   { id: 'harvest1k', name: 'Gardener', desc: 'Harvest 1 litre of ingredients.', reward: 40 },
   { id: 'trial1', name: 'First Test', desc: 'Test a potion on a creature.', reward: 5 },
@@ -93,12 +94,13 @@ export class GameState {
     /** @type {Record<string, number>} */ this.achievements = data.achievements || {};
     /** @type {any} */ this.current = data.current || null;
     this.stats = { served: 0, earned: 0, spent: 0, brews: 0, declined: 0, refunds: 0, refunded: 0, bluffsCaught: 0, certified: 0, harvested: 0, trials: 0, ...(data.stats || {}) };
-    /** @type {{active:boolean, step:number, done:boolean}} */ this.tutorial = { active: false, step: 0, done: true, ...(data.tutorial || {}) };
+    /** @type {{active:boolean, step:number, done:boolean, guided?:boolean}} */ this.tutorial = { active: false, step: 0, done: true, ...(data.tutorial || {}) };
     /** @type {{event:string}} */ this.market = data.market && MARKET_EVENTS.some((e) => e.key === data.market.event) ? { event: data.market.event } : { event: 'none' };
     /** @type {any} */ this.cauldron = data.cauldron || null;
     /** @type {any[]} */ this.brewLog = data.brewLog || [];
     /** @type {number} */ this.reliefDay = data.reliefDay || 0;
     /** @type {boolean} */ this.grandDone = !!data.grandDone;
+    /** @type {number} a one-time note for a shop that came over from an older version (the version it came from) */ this.whatsNew = Number(data.whatsNew) || 0;
     /** @type {number} */ this.createdAt = data.createdAt || Date.now();
     this.garden = normalizeGarden(data.garden);
     this.lab = normalizeLab(data.lab);
@@ -270,6 +272,8 @@ export class GameState {
 
   /** Is the batch's Potion ID older than the batch? */
   get idStale() {
+    // a blank ID cannot be out of date
+    if (!PROP_KEYS.some((k) => Number.isFinite(this.idCard.values[k]))) return false;
     return this.idCard.batchId !== this.batch.id || (this.idCard.rev ?? 0) !== this.batch.rev;
   }
 
@@ -385,7 +389,7 @@ export class GameState {
     if (this.customerIndex >= this.customersPerDay) return null;
     const rng = new Rng(hashString(`${this.seed}:${this.day}:${this.customerIndex}`));
     let com;
-    if (this.tutorial.active && !this.tutorial.done && this.stats.served === 0) {
+    if (this.tutorial.active && !this.tutorial.done && (this.stats.served === 0 || this.tutorial.guided)) {
       com = tutorialCommission(this.commissionContext(), rng);
     } else if (this.rank >= 4 && !this.grandDone && this.customerIndex === 0 && this.day % 2 === 0) {
       com = this.grandCommission(rng);
@@ -398,6 +402,17 @@ export class GameState {
     this.visits++;
     this.current = com;
     return com;
+  }
+
+  /**
+   * (Re)start the guided order in a shop that has already sold potions: the
+   * next visitor is the tutorial's customer. A customer still only browsing
+   * steps aside and comes back later.
+   */
+  startGuidedOrder() {
+    this.tutorial = { ...this.tutorial, active: true, done: false, step: 0, guided: true };
+    const c = this.current;
+    if (c && c.type === 'order' && !c.tutorial && !c.haggle) this.current = null;
   }
 
   grandCommission(rng) {
@@ -474,7 +489,7 @@ export class GameState {
     this.servedToday++;
     this.history.unshift({ day: this.day, customer: com.customer.name, title: com.customer.title, potion: com.potionName, paid: price, color: v.m.color, ml: v.ml, certified: !!v.certified });
     if (this.history.length > 60) this.history.length = 60;
-    if (com.tutorial) { this.tutorial.done = true; this.tutorial.active = false; }
+    if (com.tutorial) { this.tutorial.done = true; this.tutorial.active = false; this.tutorial.guided = false; }
     if (com.grand && meets(com, v.m.magic)) { this.grandDone = true; events.push(...this.unlock('grand')); }
     this.vial = null;
     this.current = null;
@@ -653,6 +668,7 @@ export class GameState {
       brewLog: this.brewLog,
       reliefDay: this.reliefDay,
       grandDone: this.grandDone,
+      whatsNew: this.whatsNew,
       createdAt: this.createdAt,
       garden: this.garden,
       lab: this.lab,
@@ -669,10 +685,14 @@ export class GameState {
   static fromJSON(raw) {
     const data = migrate(raw);
     const world = { ...data.world, materials: data.world.materials.map(deserializeMaterial) };
+    // descriptions are the ingredients' magic lore, always the current wording
+    for (const m of world.materials) if (m.archetype && SPEC_BY_ROLE[m.archetype]) m.description = SPEC_BY_ROLE[m.archetype].lore;
     const inventory = Object.fromEntries(Object.entries(data.inventory).map(([k, v]) => [k, v === 'inf' ? Infinity : Number(v)]));
     for (const id of world.ingredients || []) if (!(id in inventory)) inventory[id] = 0;
     for (const [k, v] of Object.entries(inventory)) if (!Number.isFinite(v) && v !== Infinity) inventory[k] = 0;
-    return new GameState({ ...data, world, inventory });
+    const st = new GameState({ ...data, world, inventory });
+    st.journal = modernizeJournal(st.journal, st.lookup);
+    return st;
   }
 }
 
@@ -729,6 +749,7 @@ export function migrate(raw) {
     d.customersPerDay = d.customersPerDay | 0 || 3;
     d.genVersion = WORLD_GEN_VERSION;
     d.tutorial = { active: false, step: 0, done: true };
+    d.whatsNew = d._migratedFrom;
     d.version = 4;
   }
   if (!d.world || !Array.isArray(d.world.materials)) {

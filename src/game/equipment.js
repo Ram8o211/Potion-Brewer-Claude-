@@ -23,7 +23,7 @@ export const EQUIPMENT = [
   // cooling
   { id: 'basin', name: 'Cold-Water Basin', category: 'cold', price: 0, rank: 0, icon: 'basin', desc: 'Cools toward 4°C.', effect: { minCool: 4, coolPower: 4 } },
   { id: 'frostrune', name: 'Frost Rune Plate', category: 'cold', price: 150, rank: 1, icon: 'rune', requires: ['basin'], desc: 'Cold down to -30°C.', effect: { minCool: -30, coolPower: 6 } },
-  { id: 'glacial', name: 'Glacial Sigil', category: 'cold', price: 600, rank: 3, icon: 'snow', requires: ['frostrune'], desc: 'Deep cold to -70°C.', effect: { minCool: -70, coolPower: 9 } },
+  { id: 'glacial', name: 'Glacial Sigil', category: 'cold', price: 600, rank: 3, icon: 'rune', requires: ['frostrune'], desc: 'Deep cold to -70°C.', effect: { minCool: -70, coolPower: 9 } },
   // vessels
   { id: 'pot', name: 'Iron Pot', category: 'vessel', price: 0, rank: 0, icon: 'cauldron', desc: 'Your first cauldron.', effect: { size: 'pot' } },
   { id: 'copper', name: 'Copper Cauldron', category: 'vessel', price: 320, rank: 2, icon: 'cauldron2', requires: ['pot'], desc: 'A larger cauldron.', effect: { size: 'copper' } },

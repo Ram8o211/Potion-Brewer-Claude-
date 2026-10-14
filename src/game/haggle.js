@@ -47,13 +47,14 @@ export function ask(h, ask) {
   ask = Math.max(1, Math.round(ask));
   h.lastAsk = ask;
   h.rounds++;
+  // asking no more than they already offered: they pay their offer, never less
   if (h.state === 'final') {
     // past the final offer, any higher ask ends it
-    if (ask <= h.offer) return deal(h, ask);
+    if (ask <= h.offer) return deal(h, h.offer);
     h.state = 'walked';
     return { result: 'walked', offer: h.offer };
   }
-  if (ask <= h.offer) return deal(h, ask);
+  if (ask <= h.offer) return deal(h, h.offer);
   if (ask > h.max * 2) {
     h.state = 'walked';
     return { result: 'walked', offer: h.offer };

@@ -6,7 +6,6 @@ import { icon } from '../icons.js';
 import { audio } from '../../audio/audio.js';
 import * as panels from '../panels.js';
 import { PROPS, PROP_BY_KEY } from '../../alchemy/magic.js';
-import { rgbToHex } from '../../core/color.js';
 
 const TABS = [
   ['recipes', 'Recipes', 'book'], ['ingredients', 'Ingredients', 'leaf'], ['journal', 'Journal', 'scroll'],
@@ -61,7 +60,7 @@ export class BookView {
       const m = st.lookup(id);
       const seen = lab.sandbox || avail.has(id);
       list.appendChild(h('div', { class: 'item parch' + (seen ? '' : ' locked') },
-        h('span', { class: 'swatch big', style: { background: rgbToHex(m.look || m.color) } }),
+        h('span', { class: 'ing-art' }, panels.jarCanvas(m, 14, 19)),
         h('div', {},
           h('div', { class: 'title', text: m.name }),
           h('div', { class: 'meta' }, ...panels.magicChips(m.magic)),
@@ -83,12 +82,14 @@ export class BookView {
     for (const s of st.sales.slice(0, 40)) {
       const outcome = s.resolved === 'refunded' ? icon('refund') : s.resolved === 'caught' ? icon('seal') : s.complaint ? icon('clock') : icon('check');
       body.appendChild(h('div', { class: 'item parch' },
-        h('span', { class: 'swatch big', style: { background: rgbToHex(s.color || [0.5, 0.5, 0.5]) } }),
+        icon('bottle'),
         h('div', {},
           h('div', { class: 'title', text: s.potion }),
           h('div', { class: 'meta', text: `${s.customer.name} · day ${s.day}` }),
           h('div', { class: 'meta' }, ...s.requirements.map((r) => h('span', { class: 'fx-chip' }, icon(PROP_BY_KEY[r.key].icon, 'sm'), r.kind === 'limit' ? `≤${r.max}` : r.max >= 100 ? `≥${r.min}` : `${r.min}–${r.max}`))),
-          s.certified ? h('div', { class: 'meta' }, icon('seal', 'sm'), ...PROPS.map((p) => h('span', { class: 'fx-chip dim' }, icon(p.icon, 'sm'), ` ${s.certified[p.key]}`))) : null),
+          // what the label promised (or the expert's seal certified)
+          s.certified ? h('div', { class: 'meta' }, icon('seal', 'sm'), ...PROPS.map((p) => h('span', { class: 'fx-chip dim' }, icon(p.icon, 'sm'), ` ${s.certified[p.key]}`)))
+            : s.label && Object.keys(s.label).length ? h('div', { class: 'meta' }, icon('scroll', 'sm'), ...PROPS.filter((p) => Number.isFinite(s.label[p.key])).map((p) => h('span', { class: 'fx-chip dim' }, icon(p.icon, 'sm'), ` ${s.label[p.key]}`))) : null),
         h('span', { class: 'sale-side' }, h('b', { text: coins(s.price) }), outcome)));
     }
   }

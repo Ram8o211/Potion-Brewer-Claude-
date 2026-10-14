@@ -1,7 +1,7 @@
 // Service worker: cache-first offline support. The build script replaces
 // the asset list and version; in development it simply caches as it goes.
-const VERSION = '2.0.0-f91a2d4bb7';
-const ASSETS = ["./","app.af1d04afe4.js","assets/fonts/alchemist-pixel.ttf","assets/icons/icon-192.png","assets/icons/icon-512.png","index.html","manifest.webmanifest","styles/main.753619a56c.css"];
+const VERSION = '2.0.1-e69f1996b3';
+const ASSETS = ["./","app.02234be075.js","assets/fonts/alchemist-pixel.ttf","assets/icons/icon-192.png","assets/icons/icon-512.png","index.html","manifest.webmanifest","styles/main.ae41667edc.css"];
 // The origin may be shared — <owner>.github.io hosts every Pages site of an
 // account, and a branch deploy exposes this game both at the root and at
 // /dist/ — so cache names carry this worker's scope, and each worker only
@@ -17,9 +17,19 @@ self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS.map((u) => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => (k.startsWith(PREFIX) && k !== CACHE) || k.startsWith(LEGACY)).map((k) => caches.delete(k)))).then(() => self.clients.claim()),
-  );
+  e.waitUntil((async () => {
+    const keys = await caches.keys();
+    const old = keys.filter((k) => (k.startsWith(PREFIX) && k !== CACHE) || k.startsWith(LEGACY));
+    await Promise.all(old.map((k) => caches.delete(k)));
+    await self.clients.claim();
+    // an update (an older cache of this copy existed), not a first install:
+    // open pages are still running the old build, so bring them onto the new
+    // one at once (the game saves on pagehide) instead of on the next launch
+    if (old.length && VERSION !== 'dev') {
+      const pages = await self.clients.matchAll({ type: 'window' });
+      for (const c of pages) if ('navigate' in c) c.navigate(c.url).catch(() => {});
+    }
+  })());
 });
 self.addEventListener('fetch', (e) => {
   const req = e.request;

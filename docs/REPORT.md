@@ -1,5 +1,87 @@
 # Implementation, balancing and performance report
 
+## Release 2.0.1: magic-only wording and a reachable haggle
+
+**The report.** After 2.0 the owner wrote that the game "still speaks
+about density and colour" and that "the haggle system seems not
+implemented".
+
+**Cause 1: the live site is still 1.1.0.** GitHub Pages serves `main`.
+The 2.0 work lives on branch `claude/potion-system-overhaul-39iuvd` and
+was never merged. `main` is the 1.1.0 game, whose orders ask for colour,
+density, viscosity and stability, and which has no haggling at all. This
+matches the report word for word.
+
+**Cause 2: the 2.0 build hid haggling.** An audit played the 2.0 build in
+headless Chromium with real taps on a phone, with an independent skeptic
+re-checking every finding. It confirmed that a real player could easily
+never see a haggle:
+* **A Potion ID slider could not be set to 0 by a tap.** An unset slider
+  already rests at 0, so a tap fired no `change` event and nothing was
+  written. Most properties of most potions are 0, so the label stayed
+  incomplete and Offer refused.
+* **The refusal was invisible on phones.** Its only explanation was a
+  top-bar notice clipped to one word ("Label").
+* **On a phone the ID sliders were below the fold,** under five cages.
+* **The tutorial got stuck** at "Set every slider" and never reached the
+  haggle steps.
+* **The haggle panel had no words** (two bare numbers), and the customer
+  never spoke.
+
+**Cause 3: some text in 2.0 was still physical.**
+* Ingredient lore named colours ("pink", "dark red") and floating ("so
+  light it floats").
+* Journal entries gave each ingredient's boiling and freezing point and
+  "layers".
+* Recipes and the sales ledger showed colour squares instead of names
+  or magic.
+* 🔥 and ❄ meant both the Ardor and Frost magic and the heat controls.
+
+### What changed
+
+* **Potion ID.**
+  * Each slider row names its property.
+  * A tap or a key on an unset slider at 0 writes 0, and "? → 0" sets
+    every property the creatures did not show.
+  * Rows update in place, so the keyboard keeps its slider.
+  * On a phone the cages are a swipeable row with the sliders below
+    them, all on one screen.
+* **The counter explains itself.**
+  * The vial card says what stops the sale.
+  * The customer speaks in the speech bubble, naming the missing
+    property on a wrong label.
+  * The haggle panel reads "They offer / You ask / Patience / Final
+    offer". Ask shows the price, and the price cannot go below their
+    offer (the rules also never sell below it). "No deal" is labelled.
+  * A parting card shows the outcome and waits for "Open the door"
+    instead of a new customer appearing on a timer.
+* **Wording.**
+  * Every ingredient's lore is magic-only.
+  * Journal entries for steam, ice and fire are generic magic entries.
+    "Layers" became "Unbound magic / Bound by heat".
+  * Awards, help and settings speak of magic.
+  * "Floating Oil" is now "Lifting Tonic", and the fever customer asks
+    for "frost magic".
+  * Saves from earlier builds are rewritten on load (`modernizeJournal`,
+    lore refreshed).
+* **Icons.** The furnace and temperature tips use the hearth fire, the
+  cold basin and the thermometer, so 🔥 and ❄ only ever mean Ardor and
+  Frost.
+* **Lists.** Recipes list ingredients by name and ml. The ingredient
+  list, brew info and selection show the jar or stone sprite, and the
+  sales ledger shows the label's magic.
+* **Tutorial.**
+  * The ID steps also count the vial's label.
+  * The coach jumps ahead when the player is ahead, and scrolls its
+    target into view.
+  * "Play the guided order" works in any shop.
+  * A 1.x shop is told once what changed.
+* **Deployment.**
+  * The version is shown in the menu and settings.
+  * On an update, the service worker moves open pages onto the new
+    build. Before, the first launch after a deploy still showed the old
+    game.
+
 ## Release 2.0: the magic overhaul
 
 This round rebuilt the game around magic. Customers ask for magical

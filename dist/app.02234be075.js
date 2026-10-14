@@ -1,4 +1,4 @@
-// The Alchemist's Shop 2.0.0 — bundled build
+// The Alchemist's Shop 2.0.1 — bundled build
 // src/ui/icons.js
 const __m3 = (() => {
 const PAL = {
@@ -706,43 +706,43 @@ const { completeMaterial } = __m9;
 const INGREDIENT_SPECS = [
 { role: 'water', kind: 'water', names: ['Well Water'], form: 'liquid', hue: [202, 0.5, 0.84], tint: 0.12, opacity: 0.5,
 density: 1.0, viscosity: 1, compat: [0.85, 0.1], boil: 100, melt: 0, heatCapacity: 4.2, gasDensity: 0.62, latentVapor: 380,
-magic: {}, lore: 'Plain water from your well. It has no magic: it carries and dilutes.' },
+magic: {}, lore: 'Plain water from your well. It has no magic of its own: it carries and dilutes.' },
 { role: 'dew', kind: 'liquid', names: ['Moonwell Dew', 'Dawn Dew', 'Silver Dew', 'Lily Dew'], form: 'liquid', hue: [150, 0.42, 0.74], tint: 0.42, opacity: 0.55,
 density: 1.02, viscosity: 1.6, compat: [0.84, 0.12], boil: 102, melt: -4, heatCapacity: 4.0,
 magic: { vitality: 56, charm: 14, levity: 8 }, fadeT: 72, superT: -520, superKey: 'vitality',
-lore: 'Dew from the moon lilies. It mends and soothes.' },
+lore: 'Dew from the moon lilies. Its magic mends and soothes.' },
 { role: 'sap', kind: 'liquid', names: ['Ember Sap', 'Cinder Sap', 'Hearth Sap'], form: 'liquid', hue: [16, 0.85, 0.42], tint: 0.85, opacity: 0.85,
 density: 1.18, viscosity: 60, viscTemp: 0.04, compat: [0.63, 0.28], boil: 190, melt: -12, heatCapacity: 3.0,
 flammability: 0.4, ignition: 270, combustionHeat: 700,
 magic: { ardor: 62, vitality: 12, bane: 6 }, fadeT: 150, superT: 1300, superKey: 'ardor',
-lore: 'Warm sap of the ember tree. Slow to blend while cold.' },
+lore: 'Sap of the ember tree. Its magic kindles ardor, and gives a little life.' },
 { role: 'frostmilk', kind: 'liquid', names: ['Frostmilk', 'Rime Milk', 'Snowcap Milk'], form: 'liquid', hue: [196, 0.35, 0.9], tint: 0.4, opacity: 0.92,
 density: 1.04, viscosity: 3, compat: [0.85, 0.13], boil: 99, melt: -9, heatCapacity: 4.0,
 magic: { frost: 60, levity: 12, charm: 6 }, fadeT: 46, superT: -46, superKey: 'frost',
-lore: 'Milk of the frost lily. Its magic dies in the smallest heat.' },
+lore: 'Milk of the frost lily. Its frost magic dies in the smallest heat.' },
 { role: 'witchoil', kind: 'liquid', names: ['Witch Oil', 'Nightshade Oil', 'Hexberry Oil'], form: 'liquid', hue: [285, 0.55, 0.3], tint: 0.9, opacity: 0.9,
 density: 0.86, viscosity: 28, viscTemp: 0.03, compat: [0.44, 0.24], boil: 240, melt: -20, heatCapacity: 2.0,
 flammability: 0.7, ignition: 235, combustionHeat: 850,
 magic: { bane: 46, levity: 26, charm: 10 }, fadeT: 125, superT: 94, superKey: 'levity',
-lore: 'Pressed from hexberries. It floats apart from water until both are hot.' },
+lore: 'Pressed from hexberries. Its magic lifts and harms, and will not join water’s magic until both are hot.' },
 { role: 'sunstone', kind: 'stone', shape: 'stone', names: ['Sunstone', 'Daystone', 'Gold Topaz'], hue: [42, 0.85, 0.58], density: 2.2, hardness: 0.6,
 sol: 0.12, solT: 0.0025, glow: 0.35, magic: { ardor: 70, vitality: 20 }, fadeT: 220, superT: 1650, superKey: 'ardor',
-lore: 'A stone that stores the sun. Grind it; hot water draws its warmth.' },
+lore: 'A stone that stores the sun’s ardor. Smash it; a hot steep draws its magic out.' },
 { role: 'glacite', kind: 'stone', shape: 'crystal', names: ['Glacite', 'Rime Crystal', 'Ice Spar'], hue: [190, 0.55, 0.8], density: 1.9, hardness: 0.5,
 sol: 0.15, solT: 0.002, glow: 0.2, magic: { frost: 72, levity: 10 }, fadeT: 58, superT: -1450, superKey: 'frost',
-lore: 'A crystal that never warms. Dissolve it gently.' },
+lore: 'A crystal of deep frost. Smash it; gentle heat draws its magic out.' },
 { role: 'heartstone', kind: 'stone', shape: 'crystal', names: ['Heartstone', 'Rose Quartz', 'Amour Spar'], hue: [335, 0.55, 0.72], density: 2.3, hardness: 0.55,
 sol: 0.12, solT: 0.0025, glow: 0.25, magic: { charm: 68, vitality: 14 }, fadeT: 110, superT: 950, superKey: 'charm',
-lore: 'Pink crystal of affection.' },
+lore: 'A crystal of affection. Its magic charms whoever drinks it.' },
 { role: 'bloodstone', kind: 'stone', shape: 'stone', names: ['Bloodstone', 'Heartwood Garnet', 'Life Jasper'], hue: [356, 0.6, 0.38], density: 2.5, hardness: 0.65,
 sol: 0.1, solT: 0.003, glow: 0, magic: { vitality: 66, ardor: 12, bane: 4 }, fadeT: 100, superT: 2100, superKey: 'vitality',
-lore: 'A dark red stone that beats faintly. It gives life, with a little sting.' },
+lore: 'A stone that beats faintly. Its magic gives life, with a little sting.' },
 { role: 'skystone', kind: 'stone', shape: 'crystal', names: ['Skystone', 'Cloud Pumice', 'Wind Opal'], hue: [245, 0.35, 0.86], density: 0.75, hardness: 0.35,
 sol: 0.14, solT: 0.002, glow: 0.3, magic: { levity: 70, frost: 8 }, fadeT: 160, superT: -950, superKey: 'levity',
-lore: 'So light it floats. It lifts whatever drinks it.' },
+lore: 'A stone of levity. Its magic lifts whatever drinks it.' },
 { role: 'blight', kind: 'stone', shape: 'stone', names: ['Blight Agate', 'Grave Agate', 'Murk Stone'], hue: [95, 0.4, 0.3], density: 2.0, hardness: 0.6,
 sol: 0.11, solT: 0.0025, glow: 0, magic: { bane: 74, frost: 10 }, fadeT: 180, superT: -2250, superKey: 'bane',
-lore: 'A green-black stone. Its magic withers what it touches.' },
+lore: 'A stone of blight. Its magic withers what it touches.' },
 ];
 const SPEC_BY_ROLE = Object.fromEntries(INGREDIENT_SPECS.map((s) => [s.role, s]));
 const r2 = (v) => Math.round(v * 100) / 100;
@@ -1429,12 +1429,12 @@ ardor: [
 { title: 'Forge Kindling', lines: ['My forge will not get hot enough for star-iron.', 'The kiln keeps going out.'], drunk: false, avoid: ['frost'] },
 ],
 frost: [
-{ title: 'Fever Cooler', lines: ['A burning fever. Something cold, but gentle.', 'Dragon-burn on my arm. Cool it!'], drunk: true, avoid: ['ardor'] },
+{ title: 'Fever Cooler', lines: ['A burning fever. Something with frost magic in it, but gentle.', 'Dragon-burn on my arm. Cool it!'], drunk: true, avoid: ['ardor'] },
 { title: 'Larder Frost', lines: ['The summer heat spoils my larder.', 'I must keep the fish fresh to market.'], drunk: false, avoid: ['ardor'] },
 ],
 levity: [
 { title: 'Feather Draught', lines: ['I must cross the gorge where the bridge fell.', 'The bell is too heavy to hoist into the tower.'], drunk: true },
-{ title: 'Floating Oil', lines: ['My barge is stuck on the shoal.', 'Make the cart light enough for the mud road.'], drunk: false },
+{ title: 'Lifting Tonic', lines: ['My barge is stuck on the shoal.', 'Make the cart light enough for the mud road.'], drunk: false },
 ],
 charm: [
 { title: 'Love Philtre', lines: ['There is someone at the mill I hope will notice me…', 'My husband has forgotten how to smile at me.'], drunk: true },
@@ -1680,7 +1680,7 @@ const EQUIPMENT = [
 { id: 'athanor', name: 'Athanor Furnace', category: 'heat', price: 650, rank: 3, icon: 'furnace', requires: ['bellows'], desc: 'The fiercest, finest fire.', effect: { maxFlame: 800, heatPower: 8 } },
 { id: 'basin', name: 'Cold-Water Basin', category: 'cold', price: 0, rank: 0, icon: 'basin', desc: 'Cools toward 4°C.', effect: { minCool: 4, coolPower: 4 } },
 { id: 'frostrune', name: 'Frost Rune Plate', category: 'cold', price: 150, rank: 1, icon: 'rune', requires: ['basin'], desc: 'Cold down to -30°C.', effect: { minCool: -30, coolPower: 6 } },
-{ id: 'glacial', name: 'Glacial Sigil', category: 'cold', price: 600, rank: 3, icon: 'snow', requires: ['frostrune'], desc: 'Deep cold to -70°C.', effect: { minCool: -70, coolPower: 9 } },
+{ id: 'glacial', name: 'Glacial Sigil', category: 'cold', price: 600, rank: 3, icon: 'rune', requires: ['frostrune'], desc: 'Deep cold to -70°C.', effect: { minCool: -70, coolPower: 9 } },
 { id: 'pot', name: 'Iron Pot', category: 'vessel', price: 0, rank: 0, icon: 'cauldron', desc: 'Your first cauldron.', effect: { size: 'pot' } },
 { id: 'copper', name: 'Copper Cauldron', category: 'vessel', price: 320, rank: 2, icon: 'cauldron2', requires: ['pot'], desc: 'A larger cauldron.', effect: { size: 'copper' } },
 { id: 'grand', name: 'Grand Vessel', category: 'vessel', price: 1500, rank: 4, icon: 'cauldron3', requires: ['copper'], desc: 'A huge cauldron.', effect: { size: 'grand' } },
@@ -2016,11 +2016,11 @@ ask = Math.max(1, Math.round(ask));
 h.lastAsk = ask;
 h.rounds++;
 if (h.state === 'final') {
-if (ask <= h.offer) return deal(h, ask);
+if (ask <= h.offer) return deal(h, h.offer);
 h.state = 'walked';
 return { result: 'walked', offer: h.offer };
 }
-if (ask <= h.offer) return deal(h, ask);
+if (ask <= h.offer) return deal(h, h.offer);
 if (ask > h.max * 2) {
 h.state = 'walked';
 return { result: 'walked', offer: h.offer };
@@ -2109,10 +2109,97 @@ bluffCaught: () => 2,
 };
 return { NOTICE, certificationFee, settleSale, REP };
 })();
+// src/game/journal.js
+const __m23 = (() => {
+const JOURNAL = {
+boil: { key: 'boil', title: 'Magic in the steam', text: 'Too much heat sends the brew’s magic up with the steam. The lid keeps it in.', kind: 'phase' },
+freeze: { key: 'freeze', title: 'Ice-locked brew', text: 'Deep frost locks the brew: the spoon cannot move it until it thaws, or the pestle breaks it.', kind: 'phase' },
+fire: { key: 'fire', title: 'Burnt magic', text: 'Too fierce a fire burns magic out of the brew for good. The lid smothers the flame.', kind: 'fire' },
+};
+function unbound(a, b, ida, idb) {
+return { key: `unbound:${ida}:${idb}`, title: 'Unbound magic', text: `${a} and ${b} will not share their magic while cold. Heat binds them.`, kind: 'mixing', material: ida };
+}
+function bound(a, b, ida, idb) {
+return { key: `bound:${ida}:${idb}`, title: 'Bound by heat', text: `Once hot, the magic of ${a} and ${b} joined — and stays joined.`, kind: 'mixing', material: ida };
+}
+function modernizeJournal(journal, lookup) {
+if (!journal || typeof journal !== 'object') return {};
+const name = (id) => (id && lookup(id) ? lookup(id).name : 'a mixture');
+const out = {};
+const keep = (entry, day) => { const old = out[entry.key]; out[entry.key] = { ...entry, day: old ? Math.min(old.day, day) : day }; };
+for (const [key, e] of Object.entries(journal)) {
+const day = e && Number.isFinite(e.day) ? e.day : 1;
+const m = /^(boil|freeze|fire|layers|heatmix):([^:]+)(?::(.+))?$/.exec(key);
+if (!m) { out[key] = e; continue; }
+if (m[1] === 'boil' || m[1] === 'freeze' || m[1] === 'fire') keep(JOURNAL[m[1]], day);
+else if (m[1] === 'layers') keep(unbound(name(m[2]), name(m[3]), m[2], m[3]), day);
+else keep(bound(name(m[2]), name(m[3]), m[2], m[3]), day);
+}
+return out;
+}
+function processEvent(state, e) {
+const entries = [];
+const achievements = [];
+const L = state.lookup;
+const name = (id) => (id && L(id) ? L(id).name : 'a mixture');
+const add = (entry) => {
+const r = state.discover(entry);
+if (r) entries.push(r);
+};
+switch (e.type) {
+case 'pourEnd': {
+const m = L(e.id);
+if (m) state.learn(e.id, 'seen', true);
+break;
+}
+case 'phase': {
+if (!e.species) break;
+if (e.to === 'gas') {
+add(JOURNAL.boil);
+achievements.push(...state.unlock('boil'));
+} else if (e.to === 'solid') {
+add(JOURNAL.freeze);
+achievements.push(...state.unlock('frozen'));
+}
+break;
+}
+case 'transmute': {
+add({ key: 'transmute', title: 'A super transition', text: 'The brew crossed its super-transition temperature: its whole magic poured into a single property and the rest vanished. Blends average the thresholds of their ingredients, weighted by their magic.', kind: 'magic' });
+achievements.push(...state.unlock('super'));
+break;
+}
+case 'fade': {
+add({ key: 'fade', title: 'Fading magic', text: 'Overheated, the brew’s magic began to burn away. Every blend has a fading temperature: the magic-weighted mean of its ingredients’.', kind: 'magic' });
+achievements.push(...state.unlock('fade'));
+break;
+}
+case 'heatmix': {
+add(bound(name(e.a), name(e.b), e.a, e.b));
+achievements.push(...state.unlock('heatmix'));
+break;
+}
+case 'ignite': {
+add(JOURNAL.fire);
+achievements.push(...state.unlock('fire'));
+break;
+}
+case 'crush':
+achievements.push(...state.unlock('crush'));
+add({ key: 'crush', title: 'Smashing stones', text: 'The pestle smashes whole stones into powder without losing any. Only powder dissolves, and hot water draws out far more magic.', kind: 'tool' });
+break;
+case 'layers': {
+add(unbound(name(e.a), name(e.b), e.a, e.b));
+break;
+}
+}
+return { entries, achievements };
+}
+return { JOURNAL, modernizeJournal, processEvent };
+})();
 // src/game/state.js
 const __m5 = (() => {
 const { Rng, hashString } = __m6;
-const { generateWorld, makeLookup } = __m7;
+const { generateWorld, makeLookup, SPEC_BY_ROLE } = __m7;
 const { serializeMaterial, deserializeMaterial } = __m9;
 const { generateCommission, tutorialCommission, meets } = __m10;
 const { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById } = __m18;
@@ -2123,14 +2210,15 @@ const { startHaggle, ask, acceptOffer, refuse } = __m21;
 const { settleSale, certificationFee, REP } = __m22;
 const { archetypeOf } = __m15;
 const { PROP_KEYS, toRecord } = __m13;
+const { modernizeJournal } = __m23;
 const SAVE_VERSION = 4;
 const WORLD_GEN_VERSION = 3;
 const MARKET_EVENTS = [
 { key: 'none', name: 'An ordinary day', icon: 'sun' },
-{ key: 'winter', name: 'Bitter Frost', icon: 'snow' },
+{ key: 'winter', name: 'Bitter Frost', icon: 'basin' },
 { key: 'plague', name: 'Coughing Sickness', icon: 'leaf' },
 { key: 'festival', name: 'Harvest Festival', icon: 'heart' },
-{ key: 'heatwave', name: 'Heatwave', icon: 'flame' },
+{ key: 'heatwave', name: 'Heatwave', icon: 'sun' },
 { key: 'rain', name: 'Gentle Rain', icon: 'drop' },
 { key: 'eclipse', name: 'Crystal Eclipse', icon: 'gem' },
 { key: 'fair', name: 'Market Fair', icon: 'stall' },
@@ -2143,11 +2231,11 @@ const ACHIEVEMENTS = [
 { id: 'sharp_eye', name: 'Sharp Eye', desc: 'Write a Potion ID within 6 points of the truth on every property.', reward: 30 },
 { id: 'super', name: 'Transmutation', desc: 'Push a brew past its super transition.', reward: 30 },
 { id: 'fade', name: 'Too Hot', desc: 'Watch overheated magic fade away.', reward: 5 },
-{ id: 'heatmix', name: 'Warm Embrace', desc: 'Blend two liquids that refuse to mix while cold.', reward: 15 },
+{ id: 'heatmix', name: 'Warm Embrace', desc: 'Bind two magics that will not join while cold.', reward: 15 },
 { id: 'crush', name: 'Stone Breaker', desc: 'Smash a stone with the pestle.', reward: 10 },
-{ id: 'frozen', name: 'Cold Hands', desc: 'Freeze a brew solid.', reward: 10 },
-{ id: 'boil', name: 'Rolling Boil', desc: 'Boil a liquid into vapour.', reward: 10 },
-{ id: 'fire', name: 'Singed Eyebrows', desc: 'Set something alight in the cauldron.', reward: 10 },
+{ id: 'frozen', name: 'Cold Hands', desc: 'Lock a brew in ice.', reward: 10 },
+{ id: 'boil', name: 'Rolling Boil', desc: 'Lose magic to the steam.', reward: 10 },
+{ id: 'fire', name: 'Singed Eyebrows', desc: 'Burn magic in too fierce a fire.', reward: 10 },
 { id: 'harvest1', name: 'Green Fingers', desc: 'Harvest your garden.', reward: 5 },
 { id: 'harvest1k', name: 'Gardener', desc: 'Harvest 1 litre of ingredients.', reward: 40 },
 { id: 'trial1', name: 'First Test', desc: 'Test a potion on a creature.', reward: 5 },
@@ -2186,12 +2274,13 @@ constructor(data) {
 /** @type {Record<string, number>} */ this.achievements = data.achievements || {};
 /** @type {any} */ this.current = data.current || null;
 this.stats = { served: 0, earned: 0, spent: 0, brews: 0, declined: 0, refunds: 0, refunded: 0, bluffsCaught: 0, certified: 0, harvested: 0, trials: 0, ...(data.stats || {}) };
-/** @type {{active:boolean, step:number, done:boolean}} */ this.tutorial = { active: false, step: 0, done: true, ...(data.tutorial || {}) };
+/** @type {{active:boolean, step:number, done:boolean, guided?:boolean}} */ this.tutorial = { active: false, step: 0, done: true, ...(data.tutorial || {}) };
 /** @type {{event:string}} */ this.market = data.market && MARKET_EVENTS.some((e) => e.key === data.market.event) ? { event: data.market.event } : { event: 'none' };
 /** @type {any} */ this.cauldron = data.cauldron || null;
 /** @type {any[]} */ this.brewLog = data.brewLog || [];
 /** @type {number} */ this.reliefDay = data.reliefDay || 0;
 /** @type {boolean} */ this.grandDone = !!data.grandDone;
+/** @type {number} a one-time note for a shop that came over from an older version (the version it came from) */ this.whatsNew = Number(data.whatsNew) || 0;
 /** @type {number} */ this.createdAt = data.createdAt || Date.now();
 this.garden = normalizeGarden(data.garden);
 this.lab = normalizeLab(data.lab);
@@ -2322,6 +2411,7 @@ touchBatch() {
 this.batch.rev++;
 }
 get idStale() {
+if (!PROP_KEYS.some((k) => Number.isFinite(this.idCard.values[k]))) return false;
 return this.idCard.batchId !== this.batch.id || (this.idCard.rev ?? 0) !== this.batch.rev;
 }
 writeId(target, values) {
@@ -2403,7 +2493,7 @@ return this.current;
 if (this.customerIndex >= this.customersPerDay) return null;
 const rng = new Rng(hashString(`${this.seed}:${this.day}:${this.customerIndex}`));
 let com;
-if (this.tutorial.active && !this.tutorial.done && this.stats.served === 0) {
+if (this.tutorial.active && !this.tutorial.done && (this.stats.served === 0 || this.tutorial.guided)) {
 com = tutorialCommission(this.commissionContext(), rng);
 } else if (this.rank >= 4 && !this.grandDone && this.customerIndex === 0 && this.day % 2 === 0) {
 com = this.grandCommission(rng);
@@ -2416,6 +2506,11 @@ if (!com) { this.customerIndex++; return this.nextCustomer(); }
 this.visits++;
 this.current = com;
 return com;
+}
+startGuidedOrder() {
+this.tutorial = { ...this.tutorial, active: true, done: false, step: 0, guided: true };
+const c = this.current;
+if (c && c.type === 'order' && !c.tutorial && !c.haggle) this.current = null;
 }
 grandCommission(rng) {
 const com = generateCommission(this.commissionContext(), rng, { tier: 4, archetype: 'noble', contract: true, super: true }) ||
@@ -2476,7 +2571,7 @@ this.dayEarnings += price;
 this.servedToday++;
 this.history.unshift({ day: this.day, customer: com.customer.name, title: com.customer.title, potion: com.potionName, paid: price, color: v.m.color, ml: v.ml, certified: !!v.certified });
 if (this.history.length > 60) this.history.length = 60;
-if (com.tutorial) { this.tutorial.done = true; this.tutorial.active = false; }
+if (com.tutorial) { this.tutorial.done = true; this.tutorial.active = false; this.tutorial.guided = false; }
 if (com.grand && meets(com, v.m.magic)) { this.grandDone = true; events.push(...this.unlock('grand')); }
 this.vial = null;
 this.current = null;
@@ -2621,6 +2716,7 @@ cauldron: this.cauldron,
 brewLog: this.brewLog,
 reliefDay: this.reliefDay,
 grandDone: this.grandDone,
+whatsNew: this.whatsNew,
 createdAt: this.createdAt,
 garden: this.garden,
 lab: this.lab,
@@ -2635,10 +2731,13 @@ savedAt: Date.now(),
 static fromJSON(raw) {
 const data = migrate(raw);
 const world = { ...data.world, materials: data.world.materials.map(deserializeMaterial) };
+for (const m of world.materials) if (m.archetype && SPEC_BY_ROLE[m.archetype]) m.description = SPEC_BY_ROLE[m.archetype].lore;
 const inventory = Object.fromEntries(Object.entries(data.inventory).map(([k, v]) => [k, v === 'inf' ? Infinity : Number(v)]));
 for (const id of world.ingredients || []) if (!(id in inventory)) inventory[id] = 0;
 for (const [k, v] of Object.entries(inventory)) if (!Number.isFinite(v) && v !== Infinity) inventory[k] = 0;
-return new GameState({ ...data, world, inventory });
+const st = new GameState({ ...data, world, inventory });
+st.journal = modernizeJournal(st.journal, st.lookup);
+return st;
 }
 }
 function newBatch() {
@@ -2681,6 +2780,7 @@ d.customerIndex = Math.min(d.customerIndex | 0, d.customersPerDay | 0 || 3);
 d.customersPerDay = d.customersPerDay | 0 || 3;
 d.genVersion = WORLD_GEN_VERSION;
 d.tutorial = { active: false, step: 0, done: true };
+d.whatsNew = d._migratedFrom;
 d.version = 4;
 }
 if (!d.world || !Array.isArray(d.world.materials)) {
@@ -2705,7 +2805,7 @@ return Math.round(v * 10) / 10;
 return { SAVE_VERSION, WORLD_GEN_VERSION, MARKET_EVENTS, ACHIEVEMENTS, GameState, migrate, EQUIPMENT, SIM, BEDS };
 })();
 // src/game/persistence.js
-const __m23 = (() => {
+const __m24 = (() => {
 const { GameState } = __m5;
 const KEYS = {
 save: 'alchemist-shop.save',
@@ -2829,7 +2929,7 @@ if (s) s.removeItem(key);
 return { KEYS, storageAvailable, saveGame, loadGame, hasSave, deleteSave, exportSave, parseImport, loadJSON, saveJSON, removeKey };
 })();
 // src/simulation/particles.js
-const __m26 = (() => {
+const __m27 = (() => {
 const { MAX_SPECIES } = __m12;
 const { PHASE } = __m16;
 const STATE_FIELDS_F32 = ['x', 'y', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet', 'q', 'vig', 'ss', 'stp'];
@@ -2946,7 +3046,7 @@ return this.phase[i] !== PHASE.GAS;
 return { STATE_FIELDS_F32, STATE_FIELDS_I32, STATE_FIELDS_U8, STATE_FIELDS_U32, DERIVED_FIELDS, Particles };
 })();
 // src/simulation/grid.js
-const __m27 = (() => {
+const __m28 = (() => {
 class NeighborGrid {
 constructor(minX, minY, maxX, maxY, cell, capacity) {
 this.minX = minX;
@@ -3046,7 +3146,7 @@ for (let a = cellStart[c]; a < cellStart[c + 1]; a++) fn(sorted[a]);
 return { NeighborGrid };
 })();
 // src/simulation/cauldron.js
-const __m28 = (() => {
+const __m29 = (() => {
 const { SIM } = __m16;
 const CAULDRON_SIZES = {
 pot: { key: 'pot', label: 'Iron Pot', mouth: 0.8, belly: 1.0, neck: 0.5, depth: 1.55, capacity: 310 },
@@ -3283,7 +3383,7 @@ return s / this.lidCells;
 return { CAULDRON_SIZES, COLUMN, Cauldron };
 })();
 // src/simulation/derived.js
-const __m29 = (() => {
+const __m30 = (() => {
 const { MAX_SPECIES, NO_BOIL } = __m12;
 const { granularFraction, suspensionLnMult } = __m14;
 const { rgbToOklab, linearToSrgb } = __m8;
@@ -3405,7 +3505,7 @@ p.dirty[i] = 0;
 return { GAS_MASS, refreshParticle };
 })();
 // src/simulation/rigid.js
-const __m30 = (() => {
+const __m31 = (() => {
 const { PHASE } = __m16;
 const MAX_GROUPS = 2048;
 const BOND = 0.135;
@@ -3581,7 +3681,7 @@ return this.active.length;
 return { FRESH, RigidBodies };
 })();
 // src/simulation/thermal.js
-const __m31 = (() => {
+const __m32 = (() => {
 const { PHASE, SIM } = __m16;
 const KPP = 34; // particle–particle conductance (game-scaled)
 const KW = 24; // particle–wall conductance
@@ -3698,11 +3798,11 @@ for (let k = 0; k < M + L; k++) Tw[k] += flow[k] / Cw[k];
 return { thermalStep, wallStep };
 })();
 // src/simulation/phase.js
-const __m32 = (() => {
+const __m33 = (() => {
 const { PHASE, PHASE_NAMES } = __m16;
 const { MAX_SPECIES, NO_BOIL } = __m12;
-const { refreshParticle } = __m29;
-const { FRESH } = __m30;
+const { refreshParticle } = __m30;
+const { FRESH } = __m31;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const BOIL_VOLATILE = 0.8;
 const DRY_MIN = 0.12;
@@ -3987,7 +4087,7 @@ classifyFluid(sim, j);
 return { classifyFluid, isFrozenGrain, dominantId, phaseStep };
 })();
 // src/reactions/diffusion.js
-const __m33 = (() => {
+const __m34 = (() => {
 const { PHASE } = __m16;
 const { MAX_SPECIES } = __m12;
 const { compatFactorT } = __m17;
@@ -4112,7 +4212,7 @@ return w > 0 ? s / w : 0;
 return { diffusionStep };
 })();
 // src/reactions/reactions.js
-const __m34 = (() => {
+const __m35 = (() => {
 const { MAX_SPECIES } = __m12;
 const { PHASE } = __m16;
 const { GAS, SOLID } = PHASE;
@@ -4349,7 +4449,7 @@ return best;
 return { ReactionSystem };
 })();
 // src/simulation/tools.js
-const __m35 = (() => {
+const __m36 = (() => {
 const { PHASE, SIM } = __m16;
 const { MAX_SPECIES } = __m12;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
@@ -4543,9 +4643,9 @@ if (victims.length) sim.emit({ type: 'skim', count: victims.length, x: t.x, y: t
 return { TOOL_SPECS, ToolState, clampToInterior, toolForces, toolConstraints, LIQUID };
 })();
 // src/simulation/emitter.js
-const __m36 = (() => {
+const __m37 = (() => {
 const { PHASE, SIM, formPhase } = __m16;
-const { COLUMN } = __m28;
+const { COLUMN } = __m29;
 class Emitter {
 constructor(sim) {
 this.sim = sim;
@@ -4687,7 +4787,7 @@ return idx.length > 0;
 return { Emitter };
 })();
 // src/simulation/electric.js
-const __m37 = (() => {
+const __m38 = (() => {
 const { PHASE } = __m16;
 const KQ = 26; // conduction rate (game scaled)
 const RE = 0.16; // contact distance
@@ -4735,7 +4835,7 @@ return s;
 return { electricStep, totalCharge };
 })();
 // src/simulation/magic.js
-const __m38 = (() => {
+const __m39 = (() => {
 const { PHASE } = __m16;
 const { FADE_RATE, SUPER_RATE, beyondSuper } = __m13;
 const { GAS, LIQUID, PASTE, POWDER } = PHASE;
@@ -4767,22 +4867,22 @@ return transmuted;
 return { magicStep };
 })();
 // src/simulation/world.js
-const __m25 = (() => {
+const __m26 = (() => {
 const { PHASE, SIM, TUNE, formPhase } = __m16;
-const { Particles } = __m26;
-const { NeighborGrid } = __m27;
-const { Cauldron, COLUMN } = __m28;
+const { Particles } = __m27;
+const { NeighborGrid } = __m28;
+const { Cauldron, COLUMN } = __m29;
 const { SpeciesTable, MAX_SPECIES } = __m12;
-const { refreshParticle } = __m29;
-const { RigidBodies } = __m30;
-const { thermalStep } = __m31;
-const { phaseStep, classifyFluid } = __m32;
-const { diffusionStep } = __m33;
-const { ReactionSystem } = __m34;
-const { ToolState, toolForces, toolConstraints } = __m35;
-const { Emitter } = __m36;
-const { electricStep } = __m37;
-const { magicStep } = __m38;
+const { refreshParticle } = __m30;
+const { RigidBodies } = __m31;
+const { thermalStep } = __m32;
+const { phaseStep, classifyFluid } = __m33;
+const { diffusionStep } = __m34;
+const { ReactionSystem } = __m35;
+const { ToolState, toolForces, toolConstraints } = __m36;
+const { Emitter } = __m37;
+const { electricStep } = __m38;
+const { magicStep } = __m39;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const MODE = Object.freeze({ PBF: 0, GRAN: 1, COH: 2, RIGID: 3, GAS: 4 });
 const M_PBF = 0, M_GRAN = 1, M_COH = 2, M_RIGID = 3, M_GAS = 4;
@@ -5598,11 +5698,11 @@ if (p.sleep[i] >= SLEEP_STEPS) p.sleep[i] = 0;
 return { MODE, SLEEP_STEPS, Simulation, formPhase };
 })();
 // src/simulation/snapshot.js
-const __m39 = (() => {
+const __m40 = (() => {
 const { MAX_SPECIES } = __m12;
-const { refreshParticle } = __m29;
-const { Simulation } = __m25;
-const { CAULDRON_SIZES } = __m28;
+const { refreshParticle } = __m30;
+const { Simulation } = __m26;
+const { CAULDRON_SIZES } = __m29;
 const F32_FIELDS_V1 = ['x', 'y', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet'];
 const F32_FIELDS_V2 = [...F32_FIELDS_V1, 'q'];
 const F32_FIELDS = [...F32_FIELDS_V2, 'vig', 'ss', 'stp'];
@@ -5724,7 +5824,7 @@ for (let i = 0; i < n; i++) if (p.group[i] >= 0) sim.rigid.used[p.group[i]] = 1;
 return { SNAPSHOT_VERSION, toBase64, fromBase64, snapshotSim, restoreSim, applySnapshot };
 })();
 // src/rendering/art.js
-const __m41 = (() => {
+const __m42 = (() => {
 const { Rng } = __m6;
 const PAL = {
 night0: '#0d0a10', night1: '#17121c', night2: '#221a28',
@@ -5972,7 +6072,7 @@ R(ctx, left, top, right - left, 1, PAL.stone4);
 return { PAL, hex2rgb, rgbStr, mixHex, paintBackground, drawJar, renderCauldron, makeCanvas, paintHearth, rect: R };
 })();
 // src/rendering/fluid.js
-const __m42 = (() => {
+const __m43 = (() => {
 const { PHASE } = __m16;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const LS = 9;
@@ -6281,8 +6381,8 @@ return v < 0 ? 0 : v > 255 ? 255 : v | 0;
 return { FluidRenderer };
 })();
 // src/rendering/effects.js
-const __m43 = (() => {
-const { PAL, hex2rgb } = __m41;
+const __m44 = (() => {
+const { PAL, hex2rgb } = __m42;
 const MAX = 900;
 const FIRE_RAMP = [PAL.fire5, PAL.fire4, PAL.fire3, PAL.fire2, PAL.fire1, PAL.fire0].map(hex2rgb);
 class Effects {
@@ -6395,11 +6495,11 @@ ctx.globalAlpha = 1;
 return { Effects };
 })();
 // src/rendering/renderer.js
-const __m40 = (() => {
-const { PAL, paintBackground, renderCauldron, paintHearth, makeCanvas, rgbStr, hex2rgb, drawJar, rect } = __m41;
-const { FluidRenderer } = __m42;
-const { Effects } = __m43;
-const { COLUMN } = __m28;
+const __m41 = (() => {
+const { PAL, paintBackground, renderCauldron, paintHearth, makeCanvas, rgbStr, hex2rgb, drawJar, rect } = __m42;
+const { FluidRenderer } = __m43;
+const { Effects } = __m44;
+const { COLUMN } = __m29;
 const { PHASE } = __m16;
 const { PROPS } = __m13;
 const VIEW_TOP = -1.25;
@@ -6768,7 +6868,7 @@ rect(ctx, x, y + h - 1, w, 1, 'rgba(0,0,0,0.4)');
 return { Renderer, drawBottle, PHASE };
 })();
 // src/rendering/portraits.js
-const __m44 = (() => {
+const __m45 = (() => {
 const { Rng } = __m6;
 const S = 32;
 const shade = (c, f) => `rgb(${Math.round(Math.min(255, c[0] * 255 * f))},${Math.round(Math.min(255, c[1] * 255 * f))},${Math.round(Math.min(255, c[2] * 255 * f))})`;
@@ -6886,7 +6986,7 @@ if (rng.chance(0.5)) P(hx - 1, 8, 2, 10, hc);
 return { drawPortrait };
 })();
 // src/rendering/scenes.js
-const __m45 = (() => {
+const __m46 = (() => {
 function R(ctx, x, y, w, h, c) {
 ctx.fillStyle = c;
 ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
@@ -6984,7 +7084,7 @@ return cv;
 return { drawRaw, rawSprite };
 })();
 // src/game/measure.js
-const __m46 = (() => {
+const __m47 = (() => {
 const { MAX_SPECIES } = __m12;
 const { PHASE, SIM } = __m16;
 const { oklabToRgb } = __m8;
@@ -7044,70 +7144,6 @@ cand.sort((a, b) => a[0] - b[0]);
 return cand.slice(0, count).map((c) => c[1]);
 }
 return { measureParticles, tapSelection };
-})();
-// src/game/journal.js
-const __m47 = (() => {
-function processEvent(state, e) {
-const entries = [];
-const achievements = [];
-const L = state.lookup;
-const name = (id) => (id && L(id) ? L(id).name : 'a mixture');
-const add = (entry) => {
-const r = state.discover(entry);
-if (r) entries.push(r);
-};
-switch (e.type) {
-case 'pourEnd': {
-const m = L(e.id);
-if (m) state.learn(e.id, 'seen', true);
-break;
-}
-case 'phase': {
-const id = e.species;
-if (!id) break;
-const T = Math.round(e.temp);
-if (e.to === 'gas') {
-add({ key: `boil:${id}`, title: `${name(id)} boils`, text: `It turned to vapour at about ${T}°C. Magic that boils away is lost unless the lid keeps it in.`, kind: 'phase', material: id });
-achievements.push(...state.unlock('boil'));
-} else if (e.to === 'solid') {
-add({ key: `freeze:${id}`, title: `${name(id)} freezes`, text: `It froze solid at about ${T}°C. A frozen brew cannot be stirred: crush it or let it thaw.`, kind: 'phase', material: id });
-achievements.push(...state.unlock('frozen'));
-}
-break;
-}
-case 'transmute': {
-add({ key: 'transmute', title: 'A super transition', text: 'The brew crossed its super-transition temperature: its whole magic poured into a single property and the rest vanished. Blends average the thresholds of their ingredients, weighted by their magic.', kind: 'magic' });
-achievements.push(...state.unlock('super'));
-break;
-}
-case 'fade': {
-add({ key: 'fade', title: 'Fading magic', text: 'Overheated, the brew’s magic began to burn away. Every blend has a fading temperature: the magic-weighted mean of its ingredients’.', kind: 'magic' });
-achievements.push(...state.unlock('fade'));
-break;
-}
-case 'heatmix': {
-add({ key: `heatmix:${e.a}:${e.b}`, title: 'Blended by heat', text: `${name(e.a)} and ${name(e.b)} kept apart while cold but blended once hot — and stay blended.`, kind: 'mixing', material: e.a });
-achievements.push(...state.unlock('heatmix'));
-break;
-}
-case 'ignite': {
-const id = e.species;
-add({ key: `fire:${id}`, title: `${name(id)} burns`, text: 'It caught fire where it met the air. Burnt magic is gone for good. Closing the lid starves the flame.', kind: 'fire', material: id });
-achievements.push(...state.unlock('fire'));
-break;
-}
-case 'crush':
-achievements.push(...state.unlock('crush'));
-add({ key: 'crush', title: 'Smashing stones', text: 'The pestle smashes whole stones into powder without losing any. Only powder dissolves, and hot water draws out far more magic.', kind: 'tool' });
-break;
-case 'layers': {
-add({ key: `layers:${e.a}:${e.b}`, title: 'Separate layers', text: `${name(e.a)} and ${name(e.b)} refuse to blend while cold and settle into layers. Heat helps them blend.`, kind: 'mixing', material: e.a });
-break;
-}
-}
-return { entries, achievements };
-}
-return { processEvent };
 })();
 // src/game/autobrew.js
 const __m48 = (() => {
@@ -7281,19 +7317,24 @@ return t / Math.max(1, sim.p.count);
 }
 return { AutoBrewer, runPlanHeadless, speciesFraction };
 })();
+// src/version.js
+const __m50 = (() => {
+const VERSION = '2.0.1';
+return { VERSION };
+})();
 // src/ui/panels.js
 const __m49 = (() => {
 const { h, btn, modal, toast, coins, confirmDialog, clear } = __m2;
 const { icon } = __m3;
-const { drawJar } = __m41;
+const { drawJar } = __m42;
 const { EQUIPMENT, RANKS } = __m18;
 const { ACHIEVEMENTS } = __m5;
 const { PROPS, PROP_BY_KEY } = __m13;
 const { reqText } = __m10;
-const { rawSprite } = __m45;
-const { rgbToHex } = __m8;
+const { VERSION } = __m50;
+const { rawSprite } = __m46;
 const { SIM } = __m16;
-const { exportSave, parseImport, saveGame } = __m23;
+const { exportSave, parseImport, saveGame } = __m24;
 const { audio } = __m4;
 const CAT_LABEL = { heat: 'Fire', cold: 'Frost', vessel: 'Cauldrons', tool: 'Tools', instrument: 'Instruments', trials: 'Testing room', garden: 'Garden', storage: 'Shelves', guild: 'Guild' };
 function jarCanvas(m, w = 22, hh = 30) {
@@ -7314,12 +7355,9 @@ return list.map((p) => h('span', { class: 'fx-chip', title: p.label }, icon(p.ic
 }
 function thresholdChips(m) {
 const out = [];
-if (Number.isFinite(m.fadeT)) out.push(h('span', { class: 'fx-chip dim', title: `Its magic fades above ${m.fadeT}°C` }, icon('flame', 'sm'), ` >${m.fadeT}°`));
+if (Number.isFinite(m.fadeT)) out.push(h('span', { class: 'fx-chip dim', title: `Its magic fades above ${m.fadeT}°C` }, icon('thermo', 'sm'), ` >${m.fadeT}°`));
 if (Number.isFinite(m.superT)) out.push(h('span', { class: 'fx-chip dim', title: `Super transition at ${m.superT}°C: all its magic becomes ${PROP_BY_KEY[m.superKey].label}` }, icon('spark', 'sm'), ` ${m.superT}° `, icon(PROP_BY_KEY[m.superKey].icon, 'sm')));
 return out;
-}
-function swatch(rgb) {
-return h('span', { class: 'swatch', style: { background: rgbToHex(rgb) } });
 }
 function openShop(lab) {
 const st = lab.state;
@@ -7402,8 +7440,8 @@ const share = Math.round((i.n / total) * 10) * 10;
 return h('div', { class: 'row' }, jarCanvas(m, 12, 16), h('span', { text: `~${share}%  ${m.name}` }), i.ground ? icon('mortar', 'sm') : null);
 });
 const tips = [];
-if ((ref.heatTo ?? 20) > 30) tips.push(h('div', { class: 'row small' }, icon('flame', 'sm'), ` ~${Math.round(ref.heatTo / 5) * 5}°`));
-if ((ref.coolTo ?? 20) < 12) tips.push(h('div', { class: 'row small' }, icon('snow', 'sm'), ` ~${Math.round(ref.coolTo / 5) * 5}°`));
+if ((ref.heatTo ?? 20) > 30) tips.push(h('div', { class: 'row small', title: 'Heat the brew to about this' }, icon('fire', 'sm'), icon('thermo', 'sm'), ` ~${Math.round(ref.heatTo / 5) * 5}°`));
+if ((ref.coolTo ?? 20) < 12) tips.push(h('div', { class: 'row small', title: 'Chill the brew to about this' }, icon('basin', 'sm'), icon('thermo', 'sm'), ` ~${Math.round(ref.coolTo / 5) * 5}°`));
 if (ref.knead) tips.push(h('div', { class: 'row small' }, icon('spoon', 'sm'), ' stir well'));
 void main;
 modal({ title: 'Guild advice', body: [h('div', { class: 'card parch' }, ...rows, ...tips)] });
@@ -7465,11 +7503,11 @@ for (const r of st.recipes) {
 const total = r.ingredients.reduce((a, i) => a + i.ml, 0) || 1;
 const parts = h('div', { class: 'meta' }, ...r.ingredients.map((i) => {
 const m = st.lookup(i.id);
-return h('span', { class: 'fx-chip' }, swatch(m ? m.look || m.color : [0.5, 0.5, 0.5]), ` ${Math.round(i.ml)}`, i.ground ? icon('mortar', 'sm') : null);
+return h('span', { class: 'fx-chip ing' }, m ? jarCanvas(m, 8, 11) : null, ` ${m ? m.name : '?'} ${Math.round(i.ml)}`, i.ground ? icon('mortar', 'sm') : null);
 }));
 const steps = h('div', { class: 'meta' },
-r.maxTemp > 30 ? h('span', { class: 'fx-chip' }, icon('flame', 'sm'), ` ${r.maxTemp}°`) : null,
-r.minTemp < 12 ? h('span', { class: 'fx-chip' }, icon('snow', 'sm'), ` ${r.minTemp}°`) : null,
+r.maxTemp > 30 ? h('span', { class: 'fx-chip', title: 'Heated to' }, icon('fire', 'sm'), ` ${r.maxTemp}°`) : null,
+r.minTemp < 12 ? h('span', { class: 'fx-chip', title: 'Chilled to' }, icon('basin', 'sm'), ` ${r.minTemp}°`) : null,
 r.stirSeconds ? h('span', { class: 'fx-chip' }, icon('spoon', 'sm'), ` ${r.stirSeconds}s`) : null,
 h('span', { class: 'fx-chip dim' }, icon('flask', 'sm'), ` ${Math.round(total)}`));
 const idChips = r.id ? h('div', { class: 'meta' }, icon('scroll', 'sm'), ...PROPS.filter((p) => Number.isFinite(r.id[p.key])).map((p) => h('span', { class: 'fx-chip dim' }, icon(p.icon, 'sm'), ` ${r.id[p.key]}`))) : null;
@@ -7480,7 +7518,7 @@ st.has('homunculus') ? btn('', () => { lab.startHomunculus(r); lab.showView('bre
 btn('', () => { const name = prompt('Rename recipe', r.name); if (name) { r.name = name.slice(0, 40); render(); } }, { icon: 'scroll', cls: 'icon', title: 'Rename' }),
 btn('', async () => { if (await confirmDialog('Delete recipe?', r.name, 'Delete', 'danger')) { st.recipes.splice(st.recipes.indexOf(r), 1); render(); } }, { icon: 'trash', cls: 'icon danger', title: 'Delete' }));
 container.appendChild(h('div', { class: 'item parch' },
-swatch(r.color || [0.5, 0.5, 0.5]),
+icon('book'),
 h('div', {}, h('div', { class: 'title', text: r.name }), parts, steps, idChips),
 actions));
 }
@@ -7514,7 +7552,7 @@ return;
 const entries = Object.values(st.journal).sort((a, b) => b.day - a.day);
 if (!entries.length) container.appendChild(h('div', { class: 'card parch small muted', text: '—' }));
 for (const e of entries) {
-container.appendChild(h('div', { class: 'card parch' }, h('div', { class: 'row' }, icon(e.kind === 'magic' ? 'spark' : e.kind === 'fire' ? 'flame' : e.kind === 'phase' ? 'thermo' : 'scroll'), h('b', { text: e.title }), h('span', { class: 'spacer' }), h('span', { class: 'small muted', text: `${e.day}` })), h('div', { class: 'small', text: e.text })));
+container.appendChild(h('div', { class: 'card parch' }, h('div', { class: 'row' }, icon(e.kind === 'magic' ? 'spark' : e.kind === 'fire' ? 'fire' : e.kind === 'phase' ? 'thermo' : 'scroll'), h('b', { text: e.title }), h('span', { class: 'spacer' }), h('span', { class: 'small muted', text: `${e.day}` })), h('div', { class: 'small', text: e.text })));
 }
 }
 function openPause(lab) {
@@ -7525,9 +7563,30 @@ btn('Resume', () => m.close(), { cls: 'primary', icon: 'speed', act: 'resume' })
 btn('How to play', () => { m.close(); openHelp(); }, { icon: 'help', act: 'help' }),
 btn('Settings & saves', () => { m.close(); openSettings(app, lab); }, { icon: 'gear', act: 'settings' }),
 ];
-if (!lab.sandbox) items.push(btn('Restart tutorial', () => { m.close(); lab.tutorial && lab.tutorial.start(true); }, { icon: 'bulb' }));
+if (!lab.sandbox) items.push(btn('Play the guided order', () => { m.close(); lab.playGuidedOrder(); }, { icon: 'bulb', act: 'guided-order' }));
 items.push(btn(lab.sandbox ? 'Leave experiment' : 'Save & quit', () => { m.close(); app.showMenu(); }, { icon: 'door', act: 'quit' }));
 m = modal({ title: lab.sandbox ? 'Free Experiment' : 'Paused', body: h('div', { class: 'list' }, items) });
+}
+function openWhatsNew(lab) {
+const st = lab.state;
+const line = (ic, text) => h('div', { class: 'row whatsnew-line' }, icon(ic), h('span', { class: 'small', text }));
+const done = () => { st.whatsNew = 0; lab.save(); };
+const m = modal({
+title: `Your shop, version ${VERSION}`,
+body: [h('div', { class: 'card parch' },
+line('stall', 'Customers now ask only for magic: Vitality, Ardor, Frost, Levity, Charm and Bane.'),
+line('seedling', 'Every ingredient grows in your garden: water, magical liquids and stones to smash.'),
+line('toad', 'Test a dose on your creatures and set the six Potion ID sliders: that is the label.'),
+line('deal', 'Press Offer and haggle: ask for more, or take their price.'),
+line('refund', 'A potion that fails comes back for a refund. Some customers bluff: an expert’s seal proves you right.'),
+h('div', { class: 'small muted', text: 'Your coins, reputation, rank and equipment are kept. The old ingredients and recipes are gone.' }))],
+foot: [
+btn('Got it', () => { done(); m.close(); }, { act: 'whatsnew-ok' }),
+btn('Play the guided order', () => { done(); m.close(); lab.playGuidedOrder(); }, { cls: 'primary', icon: 'bulb', act: 'whatsnew-guided' }),
+],
+onClose: done,
+});
+return m;
 }
 function openHelp() {
 const sec = (ic, title, lines) => h('div', { class: 'card parch' }, h('h3', {}, icon(ic), ' ' + title), ...lines.map((l) => h('div', { class: 'small', text: '• ' + l })));
@@ -7535,10 +7594,10 @@ modal({
 title: 'How to play',
 wide: true,
 body: [
-sec('stall', 'Customers', ['They bring a problem and ask for magic: ranges on six properties (Vitality, Ardor, Frost, Levity, Charm, Bane).', 'They buy on your label — the Potion ID — and haggle: name a price, they counter, until you agree or they lose patience.', 'If what they drink misses their range, they come back for a refund. Some bluff. Only an expert’s certificate (costly) proves a potion was right.']),
+sec('stall', 'Customers', ['They bring a problem and ask only for magic: ranges on six properties (Vitality, Ardor, Frost, Levity, Charm, Bane).', 'They buy on your label, the Potion ID: all six sliders must be set (0 where the creatures showed nothing).', 'Press Offer: they name a price. Ask for more with Ask; they come up part of the way, lose patience, make a final offer, or walk out if you ask far too much. Take their offer whenever you like.', 'If what they drink misses their range, they come back for a refund. Some bluff. Only an expert’s certificate (costly) proves a potion was right.']),
 sec('seedling', 'Garden', ['Everything grows in your garden: water from the well, liquids from plant beds, stones from crystal beds.', 'Plant beds grow only while moist: water them. Harvest takes what has grown; the bed starts again.']),
-sec('cauldron', 'Brewing', ['A potion’s magic is the proportion-weighted blend of its ingredients’ magic. Water dilutes.', 'Smash stones (mortar or pestle): only powder dissolves, and hot water draws out far more of its magic.', 'Heat helps liquids that keep apart when cold to blend.', 'Too hot and magic fades. Every ingredient also has a super-transition temperature, mostly far out of reach — but blends average them (weighted by magic). Cross it and all the magic pours into one property.']),
-sec('toad', 'Testing', ['Give 10 ml to a creature and watch: leaves, flames, ice, floating, hearts and bubbles — measured against the notched post in the cage (one notch = 10), or counted (one = 10).', 'Each creature shows only some properties. Set the Potion ID sliders by what you saw, then bottle.']),
+sec('cauldron', 'Brewing', ['A potion’s magic is the proportion-weighted blend of its ingredients’ magic. Water dilutes.', 'Smash stones (mortar or pestle): only their powder gives its magic, and a hot steep draws out far more.', 'Some magics will not join while cold: heat binds them.', 'Too hot and magic fades. Every ingredient also has a super-transition temperature, mostly far out of reach — but blends average them (weighted by magic). Cross it and all the magic pours into one property.']),
+sec('toad', 'Testing', ['Give 10 ml to a creature and watch: leaves, flames, ice, floating, hearts and bubbles — measured against the notched post in the cage (one notch = 10), or counted (one = 10).', 'Each creature shows only some properties. Set the Potion ID sliders by what you saw (“? → 0” for the rest), then bottle.']),
 sec('help', 'Keys', ['C V G T J rooms · 1 pour · 2 spoon · 3 pestle · 4 skimmer · L lid · B bottle · F speed · A auto-stir · M mortar · arrows fire · S shop · Esc menu.']),
 ],
 });
@@ -7587,7 +7646,8 @@ onClose: () => app.saveSettings(),
 body: [
 h('div', { class: 'card parch' }, h('h3', { text: 'Sound' }), vol('master', 'Master volume'), vol('sfx', 'Effects'), vol('music', 'Music'), check('musicOn', 'Play music', () => audio.music(s.musicOn)), check('muted', 'Mute everything')),
 h('div', { class: 'card parch' }, h('h3', { text: 'Display' }), h('div', { class: 'toggle-row' }, h('span', { text: 'Graphics' }), quality),
-h('div', { class: 'small muted', text: 'Automatic steps down when frames run slow. The physics and magic are identical in every mode.' }),
+h('div', { class: 'small muted', text: 'Automatic steps down when frames run slow. The brewing and magic are identical in every mode.' }),
+h('div', { class: 'small muted version', text: `v${VERSION}` }),
 check('showFps', 'Show performance stats')),
 saveSection,
 h('div', { class: 'card parch small' }, 'The Alchemist’s Shop — all art, sound, font and code made for this game. Runs fully offline.'),
@@ -7595,12 +7655,13 @@ h('div', { class: 'card parch small' }, 'The Alchemist’s Shop — all art, sou
 });
 }
 function reqChips(reqs, cls = '') {
-return h('div', { class: 'req-chips ' + cls }, ...reqs.map((r) => h('span', { class: 'req-chip' + (r.kind === 'limit' ? ' limit' : ''), title: `${PROP_BY_KEY[r.key].label} ${reqText(r)}`, 'data-key': r.key }, icon(PROP_BY_KEY[r.key].icon, 'sm'), h('span', { class: 'tgt', text: reqText(r) }))));
+return h('div', { class: 'req-chips ' + cls }, ...reqs.map((r) => h('span', { class: 'req-chip' + (r.kind === 'limit' ? ' limit' : ''), title: `${PROP_BY_KEY[r.key].label} ${reqText(r)}`, 'data-key': r.key },
+icon(PROP_BY_KEY[r.key].icon, 'sm'), h('span', { class: 'pn', text: PROP_BY_KEY[r.key].label }), h('span', { class: 'tgt', text: reqText(r) }))));
 }
-return { magicChips, thresholdChips, openShop, openIngredient, openHint, showDaySummary, renderRecipes, renderJournal, openPause, openHelp, openSettings, reqChips };
+return { jarCanvas, magicChips, thresholdChips, openShop, openIngredient, openHint, showDaySummary, renderRecipes, renderJournal, openPause, openWhatsNew, openHelp, openSettings, reqChips };
 })();
 // src/ui/tutorial.js
-const __m50 = (() => {
+const __m51 = (() => {
 const { h, btn, clear } = __m2;
 const { icon } = __m3;
 const { MAX_SPECIES } = __m12;
@@ -7629,6 +7690,9 @@ return t * 5;
 const act = (a) => () => /** @type {HTMLElement} */ (lab.el.querySelector(`[data-act="${a}"]`));
 const tab = (id) => () => lab.tabEls[id] && lab.tabEls[id].b;
 const tested = () => st.lab.records.some((r) => r.creature === 'toad' && r.batchId === st.batch.id);
+const label = () => (st.vial && st.vial.label ? st.vial.label : null);
+const idSet = (k) => Number.isFinite(st.idCard.values[k]) || !!(label() && Number.isFinite(label().values[k]));
+const idDone = () => idComplete(st.idCard) || !!(label() && idComplete(label()));
 return [
 { icon: 'stall', text: 'A customer needs a healing potion. Let’s make it!', button: 'Start' },
 { icon: 'seedling', text: 'Everything grows in your garden. Open it.', target: tab('garden'), done: () => lab.view === 'garden' },
@@ -7641,12 +7705,12 @@ return [
 { icon: 'spoon', text: 'Stir: pick the spoon and drag it round the brew.', target: () => lab.toolBtns.spoon, done: () => (lab.sim.tool.stirDistance - (this.flags.stir0 ?? (this.flags.stir0 = lab.sim.tool.stirDistance))) > 8 },
 { icon: 'toad', text: 'What does it do? Only a test can tell. Open the testing room.', target: tab('testing'), done: () => lab.view === 'testing' },
 { icon: 'dropper', text: 'Give the Moss Toad a dose and watch it.', target: act('dose-toad'), done: tested },
-{ icon: 'leaf', text: 'Each leaf on its back is 10 Vitality. Set the Vitality slider.', target: () => lab.el.querySelector('[data-prop="vitality"]'), done: () => Number.isFinite(st.idCard.values.vitality) },
-{ icon: 'scroll', text: 'No hearts or bubbles means 0. Set every slider — that is your Potion ID.', target: () => lab.el.querySelector('.id-panel'), done: () => idComplete(st.idCard) },
+{ icon: 'leaf', text: 'Each leaf on its back is 10 Vitality. Set the Vitality slider.', target: () => lab.el.querySelector('[data-prop="vitality"]'), done: () => idSet('vitality') },
+{ icon: 'scroll', text: 'No hearts or bubbles means 0: press “? → 0”. That is your Potion ID.', target: () => lab.el.querySelector('[data-act="id-rest-zero"]') || lab.el.querySelector('.id-panel'), done: idDone },
 { icon: 'bottle', text: 'Back to the cauldron and Bottle it.', target: () => (lab.view === 'brew' ? lab.bottleFab : lab.tabEls.brew.b), done: () => this.flags.bottled || !!st.vial },
-{ icon: 'deal', text: 'Offer it to the customer.', target: act('sell'), done: () => this.flags.haggle || !!(st.current && st.current.haggle) || this.flags.sold },
-{ icon: 'coin', text: 'Ask a higher price, or take the offer.', target: () => lab.el.querySelector('.haggle'), done: () => this.flags.sold },
-{ icon: 'seal', text: 'Sold! If a potion fails, its buyer comes back for a refund. Some bluff: only an expert’s seal proves you right.', button: 'Finish' },
+{ id: 'offer', icon: 'deal', text: 'Offer it to the customer.', target: act('sell'), done: () => this.flags.haggle || !!(st.current && st.current.haggle) || this.flags.sold },
+{ id: 'haggle', icon: 'coin', text: 'They offer a price. Ask for more, or take it.', target: () => lab.el.querySelector('.haggle'), done: () => this.flags.sold },
+{ id: 'sold', icon: 'seal', text: 'Sold! If a potion fails, its buyer comes back for a refund. Some bluff: only an expert’s seal proves you right.', button: 'Finish' },
 ];
 }
 start(restart = false) {
@@ -7665,6 +7729,7 @@ finish() {
 this.stop();
 this.lab.state.tutorial.active = false;
 this.lab.state.tutorial.done = true;
+this.lab.state.tutorial.guided = false;
 }
 clearUi() {
 const c = this.lab.coach;
@@ -7703,6 +7768,7 @@ if (t === this.target) return;
 if (this.target) this.target.classList.remove('highlight');
 if (t) t.classList.add('highlight');
 this.target = t;
+if (t && t.scrollIntoView && !t.closest('.tabbar')) t.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
 place() {}
 advance() {
@@ -7720,7 +7786,12 @@ if (this.shown === this.index) this.attach(this.steps[this.index]);
 }
 update() {
 if (!this.active) return;
-const s = this.steps[this.index];
+const steps = this.steps;
+const st = this.lab.state;
+const at = (id) => steps.findIndex((x) => x.id === id);
+const ahead = this.flags.sold ? at('sold') : st.current && st.current.haggle ? at('haggle') : st.vial ? at('offer') : -1;
+if (ahead > this.index) { this.index = ahead; this.show(); return; }
+const s = steps[this.index];
 if (!s) return;
 if (s.done && s.done()) this.advance();
 else if (Math.random() < 0.08) this.attach(s); // rooms rebuild their controls
@@ -7729,23 +7800,39 @@ else if (Math.random() < 0.08) this.attach(s); // rooms rebuild their controls
 return { Tutorial };
 })();
 // src/ui/views/counter.js
-const __m51 = (() => {
+const __m52 = (() => {
 const { h, btn, clear, coins, toast, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { drawPortrait } = __m44;
-const { drawBottle } = __m40;
+const { drawPortrait } = __m45;
+const { drawBottle } = __m41;
 const { PROPS, PROP_BY_KEY } = __m13;
-const { idComplete } = __m19;
+const { idComplete, idVector } = __m19;
 const { mood } = __m21;
 const { archetypeOf } = __m15;
+const { failures } = __m10;
 const panels = __m49;
+const pick = (a) => a[Math.floor(Math.random() * a.length)];
 class CounterView {
 constructor(lab) {
 this.lab = lab;
 this.el = h('section', { class: 'view view-counter', 'data-view': 'counter' });
 this.say = '';
+this.sayFor = null;
+this.sayMood = null;
+this.parting = null;
 this.ask = 0;
+}
+speak(line, mo = null) {
+const c = this.lab.state.current;
+this.say = line;
+this.sayMood = mo;
+this.sayFor = c ? c.id || c.saleId || c.customer.name : null;
+}
+part(customer, line, mo, outcome = null) {
+this.parting = { customer, line, mood: mo, outcome };
+this.say = '';
+this.sayFor = null;
 }
 build() {
 this.refresh();
@@ -7758,24 +7845,28 @@ el.append(h('div', { class: 'card parch' }, icon('flask'), ' Free Experiment'));
 return;
 }
 const c = st.current;
+const door = () => (st.dayOver ? btn('Close for the night', () => lab.endDay(), { cls: 'gold', icon: 'sun', act: 'end-day' })
+: btn('Open the door', () => lab.bringCustomer(true), { cls: 'gold', icon: 'door', act: 'next-customer' }));
 if (!c) {
-el.append(h('div', { class: 'card parch counter-empty' },
-st.dayOver ? btn('Close for the night', () => lab.endDay(), { cls: 'gold', icon: 'sun', act: 'end-day' })
-: btn('Open the door', () => lab.bringCustomer(true), { cls: 'gold', icon: 'door', act: 'next-customer' })));
+if (this.parting) el.append(this.partingCard(this.parting, door()));
+else el.append(h('div', { class: 'card parch counter-empty' }, door()));
 this.vialCard(el, null);
 return;
 }
+this.parting = null;
+const who = c.id || c.saleId || c.customer.name;
+if (this.sayFor !== who) { this.say = ''; this.sayMood = null; this.sayFor = who; }
 if (c.type === 'complaint') { this.complaintCard(el, c); return; }
 const h0 = c.haggle;
-const mo = h0 ? (h0.state === 'walked' ? 'unhappy' : mood(h0) > 0.6 ? 'happy' : mood(h0) > 0.25 ? 'neutral' : 'unhappy') : 'neutral';
+const mo = this.sayMood || (h0 ? (h0.state === 'walked' ? 'unhappy' : mood(h0) > 0.6 ? 'happy' : mood(h0) > 0.25 ? 'neutral' : 'unhappy') : 'neutral');
 const portrait = /** @type {HTMLCanvasElement} */ (h('canvas', { class: 'portrait big' }));
 drawPortrait(portrait, c.customer.portrait, mo);
 el.append(h('div', { class: 'card parch customer-card' },
 h('div', { class: 'cust-top' }, portrait, h('div', {},
 h('div', { class: 'cust-name', text: c.customer.name }),
 h('div', { class: 'small muted' }, c.customer.title, c.contract ? h('span', { class: 'tag' }, icon('charter', 'sm')) : null, c.grand ? h('span', { class: 'tag' }, icon('trophy', 'sm')) : null),
-h('div', { class: 'speech', text: '“' + c.dialogue + '”' }))),
-h('div', { class: 'potion-name' }, c.potionName, h('span', { class: 'muted small', text: ` · ${c.bottleMl} ml` })),
+h('div', { class: 'speech' + (this.say ? ' says' : ''), text: '“' + (this.say || c.dialogue) + '”' }))),
+h('div', { class: 'potion-name' }, c.potionName, h('span', { class: 'bottle-size muted small', title: 'Bottle size' }, icon('bottle', 'sm'), ` ${c.bottleMl} ml`)),
 panels.reqChips(c.requirements, 'big'),
 h('div', { class: 'row wrap cust-actions' },
 btn(c.hintCost ? `${c.hintCost}` : '', () => panels.openHint(lab), { icon: 'bulb', title: 'Guild advice', act: 'hint' }),
@@ -7794,26 +7885,38 @@ return;
 const cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: '24', height: '32', class: 'vial-art' }));
 drawBottle(cv.getContext('2d'), 2, 3, 20, 29, v.m.color, Math.min(1, v.ml / Math.max(1, com ? com.bottleMl : v.ml)));
 const label = v.label || { values: {} };
-const match = com ? st.labelMatches(com) : false;
+const order = com && com.type === 'order' ? com : null;
+const match = order ? st.labelMatches(order) : false;
 const complete = !!v.label && idComplete(v.label);
 const chips = h('div', { class: 'id-chips' }, ...PROPS.map((p) => {
 const val = label.values[p.key];
-const bad = com && complete && com.requirements.some((r) => r.key === p.key && (val < r.min || val > r.max));
-return h('span', { class: 'id-chip' + (bad ? ' bad' : '') + (Number.isFinite(val) ? '' : ' unknown'), title: p.label }, icon(p.icon, 'sm'), h('b', { text: Number.isFinite(val) ? String(val) : '?' }));
+const bad = order && complete && order.requirements.some((r) => r.key === p.key && (val < r.min || val > r.max));
+return h('span', { class: 'id-chip' + (bad ? ' bad' : '') + (Number.isFinite(val) ? '' : ' unknown'), title: p.label }, icon(p.icon, 'sm'), h('span', { class: 'pn', text: p.label }), h('b', { text: Number.isFinite(val) ? String(val) : '?' }));
 }));
+const short = order && v.ml < order.bottleMl - 2;
 const head = h('div', { class: 'row' }, cv, h('div', { class: 'vial-head' },
-h('div', { class: 'row' }, h('b', { text: `${Math.round(v.ml)} ml` }), v.certified ? h('span', { class: 'seal', title: 'Certified by an expert' }, icon('seal'), h('span', { class: 'small', text: 'Certified' })) : null,
+h('div', { class: 'row' }, h('b', { class: short ? 'short' : '', title: short ? 'Not a full bottle: they will pay less' : 'In the vial', text: short ? `${Math.round(v.ml)}/${order.bottleMl} ml` : `${Math.round(v.ml)} ml` }), v.certified ? h('span', { class: 'seal', title: 'Certified by an expert' }, icon('seal'), h('span', { class: 'small', text: 'Certified' })) : null,
 v.label && v.label.stale && !v.certified ? h('span', { class: 'warn small', title: 'The ID was written before the last ingredients went in' }, icon('warn', 'sm')) : null),
 chips));
 const card = h('div', { class: 'card parch vial-card' }, head);
-if (com && com.type === 'order') {
-const h0 = com.haggle;
-if (h0 && h0.state !== 'walked') card.append(this.hagglePanel(com, h0));
+if (order) {
+const h0 = order.haggle;
+if (h0 && h0.state !== 'walked') card.append(this.hagglePanel(order, h0));
 else {
-const sell = btn('Offer', () => this.startSale(com), { cls: 'primary', icon: 'deal', act: 'sell', disabled: v.ml < 5 });
+const missing = PROPS.filter((p) => !Number.isFinite(label.values[p.key]));
+if (!complete) {
+card.append(h('div', { class: 'vial-hint', role: 'status' }, icon('toad', 'sm'),
+h('span', { text: missing.length === PROPS.length ? 'No label yet. Test it on the creatures and set its Potion ID.' : 'Set every Potion ID slider (0 where nothing showed):' }),
+missing.length < PROPS.length ? h('span', { class: 'miss' }, ...missing.map((p) => icon(p.icon, 'sm'))) : null));
+} else if (!match) {
+card.append(h('div', { class: 'vial-hint bad', role: 'status' }, icon('close', 'sm'), h('span', { text: 'The label does not promise what they asked for.' })));
+} else {
+card.append(h('div', { class: 'vial-hint ok', role: 'status' }, icon('check', 'sm'), h('span', { text: 'The label promises what they need. Offer it!' })));
+}
+const ready = complete && match;
+const sell = btn('Offer', () => this.startSale(order), { cls: ready ? 'primary' : '', icon: 'deal', act: 'sell', disabled: v.ml < 5 });
 const certify = v.certified ? null : btn(`${st.certifyFee}`, () => this.certify(), { icon: 'seal', title: 'Have an expert alchemist certify it', act: 'certify', disabled: st.coins < st.certifyFee });
-const editId = v.certified ? null : btn('', () => { lab.testSource = 'vial'; lab.showView('testing'); }, { icon: 'toad', cls: 'icon', title: 'Test it and write its ID', act: 'test-vial' });
-if (complete) card.append(h('div', { class: 'match ' + (match ? 'ok' : 'bad') }, icon(match ? 'check' : 'close', 'sm')));
+const editId = v.certified ? null : btn(complete ? '' : 'Potion ID', () => { lab.testSource = 'vial'; lab.showView('testing'); }, { icon: 'toad', cls: complete ? 'icon' : 'primary', title: 'Test it and write its ID', act: 'test-vial' });
 card.append(h('div', { class: 'row wrap' }, sell, certify, editId, h('span', { class: 'spacer' }), this.vialMenu()));
 }
 } else {
@@ -7843,54 +7946,88 @@ startSale(com) {
 const lab = this.lab, st = lab.state;
 const v = st.vial;
 if (!v.label || !idComplete(v.label)) {
-toast('Label it first', 'Test it on the creatures and write its Potion ID.', 'toad');
+this.speak('What is in it? I won’t buy a potion without its label.', 'neutral');
 audio.play('error');
+this.refresh();
+this.shake('.vial-hint');
 return;
 }
 if (!st.labelMatches(com)) {
-this.say = 'That is not what I need.';
+const f = failures(com, idVector(v.label))[0];
+const name = f ? PROP_BY_KEY[f.key].label : '';
+this.speak(!f ? 'That is not what I need.' : f.kind === 'weak' ? `That is not what I need. I need more ${name}.` : f.kind === 'strong' ? `Too much ${name} for me.` : `That much ${name} would harm me.`, 'unhappy');
 audio.play('fail');
-const card = this.el.querySelector('.vial-card');
-if (card) card.classList.add('shake');
-setTimeout(() => this.refresh(), 450);
-toast(com.customer.name.split(' ')[0], 'That is not what I need.', 'close', 2600);
+this.refresh();
+this.shake('.vial-card');
 return;
 }
 const hg = st.beginHaggle();
-this.ask = Math.round(hg.offer * 1.6);
-this.say = `${coins(hg.offer)}?`;
+this.ask = Math.max(hg.offer + 1, Math.round(hg.offer * 1.6));
+this.speak(v.ml < com.bottleMl - 2 ? `Not a full bottle… I can give you ${coins(hg.offer)} coins.` : `I can give you ${coins(hg.offer)} coins for it.`, 'neutral');
 audio.play('coin');
 this.refresh();
+const panel = this.el.querySelector('.haggle');
+if (panel && panel.scrollIntoView) panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 if (lab.tutorial) lab.tutorial.notify('haggle');
 }
+shake(sel) {
+const el = this.el.querySelector(sel);
+if (!el) return;
+el.classList.remove('shake');
+void (/** @type {HTMLElement} */ (el)).offsetWidth;
+el.classList.add('shake');
+if (el.scrollIntoView) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
 hagglePanel(com, hg) {
-const ask = Math.max(1, Math.round(this.ask || hg.offer + 1));
-const askEl = h('b', { class: 'ask-val', text: coins(ask) });
-const set = (v) => { this.ask = Math.max(1, Math.round(v)); askEl.textContent = coins(this.ask); slider.value = String(this.ask); };
-const top = Math.max(hg.offer * 3, ask + 10);
-const slider = /** @type {HTMLInputElement} */ (h('input', { type: 'range', min: String(Math.max(1, hg.offer)), max: String(Math.round(top)), value: String(ask), 'aria-label': 'Your price' }));
-slider.addEventListener('input', () => set(Number(slider.value)));
-const pips = h('span', { class: 'pips', title: 'Patience' }, ...Array.from({ length: hg.patienceMax }, (_, i) => h('i', { class: i < hg.patience ? 'on' : '' })));
 const finalNote = hg.state === 'final';
-return h('div', { class: 'haggle' },
-h('div', { class: 'row offer-row' }, h('span', { class: 'bubble' + (finalNote ? ' final' : '') }, icon('coin', 'sm'), h('b', { text: coins(hg.offer) }), finalNote ? h('span', { class: 'small', text: ' final' }) : null), h('span', { class: 'spacer' }), pips),
-h('div', { class: 'row ask-row' },
-btn('−5', () => set(this.ask - 5), { cls: 'small', act: 'ask-m5' }), btn('−1', () => set(this.ask - 1), { cls: 'small', act: 'ask-m1' }),
+const floor = hg.offer + 1;
+const ask = Math.max(floor, Math.round(this.ask || floor));
+this.ask = ask;
+const offerRow = h('div', { class: 'row offer-row' },
+h('span', { class: 'cap', text: finalNote ? 'Final offer' : 'They offer' }),
+h('span', { class: 'bubble' + (finalNote ? ' final' : '') }, icon('coin', 'sm'), h('b', { text: coins(hg.offer) })),
+h('span', { class: 'spacer' }),
+h('span', { class: 'cap', text: 'Patience' }),
+h('span', { class: 'pips', title: 'Patience' }, ...Array.from({ length: hg.patienceMax }, (_, i) => h('i', { class: i < hg.patience ? 'on' : '' }))));
+const take = btn(`Take ${coins(hg.offer)}`, () => this.doAccept(), { cls: 'primary', icon: 'deal', act: 'take-offer' });
+const noDeal = btn('No deal', () => this.doRefuse(), { icon: 'close', cls: 'danger', title: 'No deal: they leave', act: 'refuse' });
+if (finalNote) return h('div', { class: 'haggle final' }, offerRow, h('div', { class: 'row wrap' }, take, h('span', { class: 'spacer' }), noDeal));
+const askEl = h('b', { class: 'ask-val', text: coins(ask) });
+const askBtn = btn(`Ask ${coins(ask)}`, () => this.doAsk(), { cls: 'gold', icon: 'scales', act: 'ask' });
+const top = Math.max(hg.offer * 3, ask + 10);
+const slider = /** @type {HTMLInputElement} */ (h('input', { type: 'range', min: String(floor), max: String(Math.round(top)), value: String(ask), 'aria-label': 'Your price' }));
+const minus = [btn('−5', () => set(this.ask - 5), { cls: 'small', act: 'ask-m5' }), btn('−1', () => set(this.ask - 1), { cls: 'small', act: 'ask-m1' })];
+const set = (v) => {
+this.ask = Math.max(floor, Math.round(v));
+askEl.textContent = coins(this.ask);
+slider.value = String(this.ask);
+const l = askBtn.querySelector('.lbl');
+if (l) l.textContent = `Ask ${coins(this.ask)}`;
+for (const m of minus) m.disabled = this.ask <= floor;
+};
+slider.addEventListener('input', () => set(Number(slider.value)));
+for (const m of minus) m.disabled = ask <= floor;
+return h('div', { class: 'haggle' }, offerRow,
+h('div', { class: 'row ask-row' }, h('span', { class: 'cap', text: 'You ask' }), ...minus,
 h('span', { class: 'ask-box' }, icon('coin', 'sm'), askEl),
 btn('+1', () => set(this.ask + 1), { cls: 'small', act: 'ask-p1' }), btn('+5', () => set(this.ask + 5), { cls: 'small', act: 'ask-p5' })),
 slider,
-h('div', { class: 'row wrap' },
-finalNote ? null : btn('Ask', () => this.doAsk(), { cls: 'gold', icon: 'scales', act: 'ask' }),
-btn(`Take ${coins(hg.offer)}`, () => this.doAccept(), { cls: 'primary', icon: 'deal', act: 'take-offer' }),
-h('span', { class: 'spacer' }),
-btn('', () => this.doRefuse(), { icon: 'close', cls: 'icon danger', title: 'No deal', act: 'refuse' })));
+h('div', { class: 'row wrap' }, askBtn, take, h('span', { class: 'spacer' }), noDeal));
 }
 doAsk() {
 const st = this.lab.state;
+const com = st.current;
 const r = st.haggleAsk(this.ask);
 if (!r) return;
 if (r.result === 'deal') return this.closeSale();
-if (r.result === 'walked') { audio.play('fail'); toast(st.current.customer.name.split(' ')[0], 'Too much! Good day.', 'door', 2600); this.walkOut(); return; }
+if (r.result === 'walked') {
+audio.play('fail');
+this.walkOut('Too much! Good day.');
+return;
+}
+const arch = archetypeOf(com.customer.archetype);
+if (r.result === 'final') this.speak(`${coins(r.offer)}. Not a coin more.`, 'unhappy');
+else this.speak(`${pick(arch.displeased)} ${coins(r.offer)}, then.`, mood(com.haggle) > 0.5 ? 'neutral' : 'unhappy');
 audio.play(r.result === 'final' ? 'error' : 'coin');
 this.ask = Math.max(r.offer + 1, Math.round((this.ask + r.offer) / 2 + 1));
 this.refresh();
@@ -7901,18 +8038,25 @@ if (r && r.result === 'deal') this.closeSale();
 }
 doRefuse() {
 const st = this.lab.state;
-if (st.current && st.current.tutorial) { toast('Not this one', 'Your first customer needs this potion.', 'heart'); return; }
-st.haggleRefuse();
-this.walkOut();
+if (st.current && st.current.tutorial) {
+st.current.haggle = null;
+this.speak('Please — I really need it! Make me an offer.', 'unhappy');
+this.refresh();
+return;
 }
-walkOut() {
+st.haggleRefuse();
+this.walkOut('Suit yourself. Good day.');
+}
+walkOut(line) {
 const lab = this.lab, st = lab.state;
-if (st.current && st.current.tutorial) { st.current.haggle = null; this.refresh(); return; }
-if (st.current && st.current.haggle && st.current.haggle.state === 'walked') st.declineCustomer();
+const c = st.current;
+if (c && c.tutorial) { c.haggle = null; this.speak('That is too much for me… Make me an offer.', 'unhappy'); this.refresh(); return; }
+if (c && c.haggle && c.haggle.state === 'walked') st.declineCustomer();
+if (c) this.part(c.customer, line, 'unhappy', { kind: 'walked' });
 lab.refreshCustomer();
 this.refresh();
+lab.updateBadges();
 lab.save();
-setTimeout(() => lab.bringCustomer(true), 900);
 }
 closeSale() {
 const lab = this.lab, st = lab.state;
@@ -7921,14 +8065,28 @@ const { sale, events } = st.completeSale();
 if (!sale) return;
 audio.play('coin');
 const arch = archetypeOf(com.customer.archetype);
-toast(`+${coins(sale.price)}`, arch.pleased[Math.floor(Math.random() * arch.pleased.length)], 'coin', 3000);
+this.part(com.customer, pick(arch.pleased), 'happy', { kind: 'sold', price: sale.price });
 for (const e of events) lab.announce(e);
 lab.save();
 lab.refreshCustomer();
 lab.refreshHud(true);
+lab.updateBadges();
 this.refresh();
 if (lab.tutorial) lab.tutorial.notify('sold');
-if (!st.dayOver) setTimeout(() => lab.bringCustomer(true), 1300);
+}
+partingCard(p, door) {
+const portrait = /** @type {HTMLCanvasElement} */ (h('canvas', { class: 'portrait big' }));
+drawPortrait(portrait, p.customer.portrait, p.mood);
+const o = p.outcome || {};
+const result = o.kind === 'sold' ? h('span', { class: 'outcome ok' }, icon('coin'), h('b', { text: `+${coins(o.price)}` }))
+: o.kind === 'refund' ? h('span', { class: 'outcome bad' }, icon('refund'), h('b', { text: `−${coins(o.amount)}` }))
+: o.kind === 'caught' ? h('span', { class: 'outcome ok' }, icon('seal'), h('b', { text: 'Bluff caught' }))
+: h('span', { class: 'outcome' }, icon('door'));
+return h('div', { class: 'card parch customer-card parting' },
+h('div', { class: 'cust-top' }, portrait, h('div', {},
+h('div', { class: 'cust-name', text: p.customer.name }),
+h('div', { class: 'speech says', text: `“${p.line}”` }))),
+h('div', { class: 'row wrap' }, result, h('span', { class: 'spacer' }), door));
 }
 complaintCard(el, c) {
 const lab = this.lab, st = lab.state;
@@ -7949,25 +8107,26 @@ void st;
 }
 resolve(how) {
 const lab = this.lab, st = lab.state;
+const c = st.current;
 const r = st.resolveComplaint(how);
-if (!r.ok) { toast('Cannot', r.reason || '', 'close'); return; }
-if (r.outcome === 'caught') { audio.play('fanfare'); toast('Caught bluffing!', 'They leave red-faced.', 'seal', 3500); }
-else { audio.play('coin'); toast(`−${coins(r.amount)}`, r.outcome === 'proven' ? 'The certificate proves them right.' : 'Refunded.', 'refund', 3000); }
+if (!r.ok) { this.speak(r.reason || 'Hmph.', 'unhappy'); this.refresh(); return; }
+if (r.outcome === 'caught') { audio.play('fanfare'); this.part(c.customer, 'Ah… well… I must have drunk something else. Good day!', 'unhappy', { kind: 'caught' }); }
+else { audio.play('coin'); this.part(c.customer, r.outcome === 'proven' ? 'Your own seal proves it. My money, please.' : 'Thank you. I hope the next one works.', 'neutral', { kind: 'refund', amount: r.amount }); }
 for (const e of r.events || []) lab.announce(e);
 lab.save();
 lab.refreshHud(true);
 lab.refreshCustomer();
+lab.updateBadges();
 this.refresh();
-setTimeout(() => lab.bringCustomer(true), 900);
 }
 }
 return { CounterView };
 })();
 // src/rendering/garden.js
-const __m53 = (() => {
+const __m54 = (() => {
 const { Rng } = __m6;
 const { BEDS } = __m20;
-const { drawRaw } = __m45;
+const { drawRaw } = __m46;
 const GARDEN_W = 192;
 const GARDEN_H = 120;
 function R(ctx, x, y, w, h, c) {
@@ -8082,15 +8241,15 @@ R(ctx, x, y, 2, 2, c2); R(ctx, x, y, 1, 1, c);
 return { GARDEN_W, GARDEN_H, bedRect, bedAt, paintGarden, drawBeds };
 })();
 // src/ui/views/garden.js
-const __m52 = (() => {
+const __m53 = (() => {
 const { h, btn, clear, toast, coins, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
 const { BEDS, BED_BY_ID, WATER_COST, formatWait } = __m20;
 const { RANKS } = __m18;
-const { paintGarden, drawBeds, bedAt, bedRect, GARDEN_W, GARDEN_H } = __m53;
-const { rawSprite } = __m45;
-const { drawJar } = __m41;
+const { paintGarden, drawBeds, bedAt, bedRect, GARDEN_W, GARDEN_H } = __m54;
+const { rawSprite } = __m46;
+const { drawJar } = __m42;
 const { PROPS } = __m13;
 class GardenView {
 constructor(lab) {
@@ -8285,7 +8444,7 @@ return cv;
 return { GardenView };
 })();
 // src/rendering/creatures.js
-const __m55 = (() => {
+const __m56 = (() => {
 const CAGE_W = 64;
 const CAGE_H = 72;
 const FLOOR = 64;
@@ -8498,13 +8657,13 @@ R(ctx, 18, FLOOR - 6, 26, 6, g); R(ctx, 20, FLOOR - 5, 1, 1, k); R(ctx, 24, FLOO
 return { CAGE_W, CAGE_H, levelY, reactionAmount, drawCreature };
 })();
 // src/ui/views/testing.js
-const __m54 = (() => {
+const __m55 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
 const { CREATURES, CREATURE_BY_ID, DOSE_ML, healthNow, lastTrialOf } = __m19;
 const { PROPS } = __m13;
-const { drawCreature, CAGE_W, CAGE_H } = __m55;
+const { drawCreature, CAGE_W, CAGE_H } = __m56;
 class TestingView {
 constructor(lab) {
 this.lab = lab;
@@ -8580,54 +8739,86 @@ const rl = c.replaceB.querySelector('.lbl');
 if (rl) rl.textContent = String(cost);
 else c.replaceB.appendChild(h('span', { class: 'lbl', text: String(cost) }));
 }
-this.renderId();
+if (!this.idRows || this._idKind !== this.idTarget().kind) this.renderId();
+else this.syncId();
 }
 idTarget() {
 const st = this.lab.state;
-if (this.source === 'vial' && st.vial) return { kind: /** @type {'vial'} */ ('vial'), values: st.vial.label ? st.vial.label.values : {}, certified: !!st.vial.certified };
-return { kind: /** @type {'batch'} */ ('batch'), values: st.idCard.batchId === st.batch.id ? st.idCard.values : {}, certified: false, stale: st.idStale && st.idCard.batchId === st.batch.id };
+if (this.source === 'vial' && st.vial) return { kind: /** @type {'vial'} */ ('vial'), values: st.vial.label ? st.vial.label.values : {}, certified: !!st.vial.certified, stale: false };
+const own = st.idCard.batchId === st.batch.id;
+return { kind: /** @type {'batch'} */ ('batch'), values: own ? st.idCard.values : {}, certified: false, stale: own && st.idStale };
 }
 renderId() {
-const lab = this.lab, st = lab.state;
 const el = clear(this.idPanel);
-const tgt = this.idTarget();
-el.append(h('div', { class: 'row id-title' }, icon('scroll'), h('b', { text: 'Potion ID' }), icon(tgt.kind === 'vial' ? 'bottle' : 'cauldron', 'sm'),
-tgt.certified ? h('span', { class: 'seal' }, icon('seal', 'sm')) : null,
-tgt.stale ? h('span', { class: 'warn', title: 'Ingredients were added after this ID was written' }, icon('warn', 'sm')) : null,
-h('span', { class: 'spacer' }),
-tgt.certified ? null : btn('', () => this.clearId(), { icon: 'trash', cls: 'icon', title: 'Clear the ID', act: 'id-clear' })));
+this._idKind = this.idTarget().kind;
+this.idTitle = h('div', { class: 'row id-title' });
+this.idRows = {};
 const rows = h('div', { class: 'id-rows' });
 for (const p of PROPS) {
-const v = tgt.values[p.key];
-const known = Number.isFinite(v);
-const out = h('b', { class: 'id-val', text: known ? String(v) : '?' });
-const inp = /** @type {HTMLInputElement} */ (h('input', { type: 'range', min: '0', max: '100', step: '1', value: String(known ? v : 0), 'aria-label': p.label, 'data-prop': p.key, class: known ? '' : 'unset' }));
-inp.disabled = tgt.certified;
+const out = h('b', { class: 'id-val' });
+const inp = /** @type {HTMLInputElement} */ (h('input', { type: 'range', min: '0', max: '100', step: '1', value: '0', 'aria-label': p.label, 'data-prop': p.key }));
 inp.style.setProperty('--c', `rgb(${p.color.map((x) => Math.round(x * 255)).join(',')})`);
 inp.addEventListener('input', () => { out.textContent = inp.value; inp.classList.remove('unset'); });
 inp.addEventListener('change', () => this.setValue(p.key, Number(inp.value)));
-rows.append(h('div', { class: 'id-row', title: p.label }, icon(p.icon), inp, out));
+const commitUnset = () => { if (inp.classList.contains('unset') || !Number.isFinite(this.idTarget().values[p.key])) this.setValue(p.key, Number(inp.value)); };
+inp.addEventListener('pointerup', commitUnset);
+inp.addEventListener('keyup', (e) => { if (/^(Home|End|Arrow|Page)/.test(e.key)) commitUnset(); });
+const row = h('div', { class: 'id-row' }, icon(p.icon), h('span', { class: 'id-name', text: p.label }), inp, out);
+this.idRows[p.key] = { inp, out, row };
+rows.append(row);
 }
-el.append(rows);
-void st;
+el.append(this.idTitle, rows);
+this.syncId();
+}
+syncId() {
+if (!this.idRows) return;
+const tgt = this.idTarget();
+const unset = PROPS.filter((p) => !Number.isFinite(tgt.values[p.key])).length;
+clear(this.idTitle).append(...[icon('scroll'), h('b', { text: 'Potion ID' }), icon(tgt.kind === 'vial' ? 'bottle' : 'cauldron', 'sm'),
+tgt.certified ? h('span', { class: 'seal' }, icon('seal', 'sm')) : null,
+tgt.stale ? h('span', { class: 'warn', title: 'Ingredients were added after this ID was written' }, icon('warn', 'sm')) : null,
+h('span', { class: 'spacer' }),
+!tgt.certified && unset > 0 && unset < PROPS.length ? btn('? → 0', () => this.zeroRest(), { title: 'Set every property the creatures did not show to 0', act: 'id-rest-zero' }) : null,
+tgt.certified ? null : btn('', () => this.clearId(), { icon: 'trash', cls: 'icon', title: 'Clear the ID', act: 'id-clear' })].filter(Boolean));
+for (const p of PROPS) {
+const r = this.idRows[p.key];
+const v = tgt.values[p.key];
+const known = Number.isFinite(v);
+if (document.activeElement !== r.inp || known) r.inp.value = String(known ? v : 0);
+r.inp.classList.toggle('unset', !known);
+r.inp.disabled = tgt.certified;
+r.out.textContent = known ? String(v) : '?';
+r.row.classList.toggle('unset', !known);
+}
 }
 setValue(key, v) {
 const lab = this.lab, st = lab.state;
 const tgt = this.idTarget();
 if (tgt.certified) return;
 const values = { ...Object.fromEntries(PROPS.map((p) => [p.key, null])), ...tgt.values, [key]: v };
-st.writeId(tgt.kind, values);
+this.writeValues(tgt.kind, values, key);
+}
+zeroRest() {
+const tgt = this.idTarget();
+if (tgt.certified) return;
+const values = Object.fromEntries(PROPS.map((p) => [p.key, Number.isFinite(tgt.values[p.key]) ? tgt.values[p.key] : 0]));
+this.writeValues(tgt.kind, values, null);
+}
+writeValues(kind, values, key) {
+const lab = this.lab, st = lab.state;
+st.writeId(kind, values);
 lab.save();
 lab.views.counter.refresh();
 if (lab.tutorial) lab.tutorial.notify('id', key);
-this.renderId();
+this.syncId();
 }
 clearId() {
 const lab = this.lab, st = lab.state;
 const tgt = this.idTarget();
 st.writeId(tgt.kind, Object.fromEntries(PROPS.map((p) => [p.key, null])));
 lab.save();
-this.renderId();
+lab.views.counter.refresh();
+this.syncId();
 }
 test(id) {
 const lab = this.lab, st = lab.state;
@@ -8733,13 +8924,12 @@ c.hp.style.width = Math.round(hpNow) + '%';
 return { TestingView };
 })();
 // src/ui/views/book.js
-const __m56 = (() => {
+const __m57 = (() => {
 const { h, btn, clear, coins } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
 const panels = __m49;
 const { PROPS, PROP_BY_KEY } = __m13;
-const { rgbToHex } = __m8;
 const TABS = [
 ['recipes', 'Recipes', 'book'], ['ingredients', 'Ingredients', 'leaf'], ['journal', 'Journal', 'scroll'],
 ['achievements', 'Awards', 'trophy'], ['sales', 'Sales', 'coin'],
@@ -8785,7 +8975,7 @@ for (const id of st.world.ingredients) {
 const m = st.lookup(id);
 const seen = lab.sandbox || avail.has(id);
 list.appendChild(h('div', { class: 'item parch' + (seen ? '' : ' locked') },
-h('span', { class: 'swatch big', style: { background: rgbToHex(m.look || m.color) } }),
+h('span', { class: 'ing-art' }, panels.jarCanvas(m, 14, 19)),
 h('div', {},
 h('div', { class: 'title', text: m.name }),
 h('div', { class: 'meta' }, ...panels.magicChips(m.magic)),
@@ -8805,12 +8995,13 @@ if (!st.sales.length) { body.appendChild(h('div', { class: 'card parch small mut
 for (const s of st.sales.slice(0, 40)) {
 const outcome = s.resolved === 'refunded' ? icon('refund') : s.resolved === 'caught' ? icon('seal') : s.complaint ? icon('clock') : icon('check');
 body.appendChild(h('div', { class: 'item parch' },
-h('span', { class: 'swatch big', style: { background: rgbToHex(s.color || [0.5, 0.5, 0.5]) } }),
+icon('bottle'),
 h('div', {},
 h('div', { class: 'title', text: s.potion }),
 h('div', { class: 'meta', text: `${s.customer.name} · day ${s.day}` }),
 h('div', { class: 'meta' }, ...s.requirements.map((r) => h('span', { class: 'fx-chip' }, icon(PROP_BY_KEY[r.key].icon, 'sm'), r.kind === 'limit' ? `≤${r.max}` : r.max >= 100 ? `≥${r.min}` : `${r.min}–${r.max}`))),
-s.certified ? h('div', { class: 'meta' }, icon('seal', 'sm'), ...PROPS.map((p) => h('span', { class: 'fx-chip dim' }, icon(p.icon, 'sm'), ` ${s.certified[p.key]}`))) : null),
+s.certified ? h('div', { class: 'meta' }, icon('seal', 'sm'), ...PROPS.map((p) => h('span', { class: 'fx-chip dim' }, icon(p.icon, 'sm'), ` ${s.certified[p.key]}`)))
+: s.label && Object.keys(s.label).length ? h('div', { class: 'meta' }, icon('scroll', 'sm'), ...PROPS.filter((p) => Number.isFinite(s.label[p.key])).map((p) => h('span', { class: 'fx-chip dim' }, icon(p.icon, 'sm'), ` ${s.label[p.key]}`))) : null),
 h('span', { class: 'sale-side' }, h('b', { text: coins(s.price) }), outcome)));
 }
 }
@@ -8818,33 +9009,32 @@ h('span', { class: 'sale-side' }, h('b', { text: coins(s.price) }), outcome)));
 return { BookView };
 })();
 // src/ui/lab.js
-const __m24 = (() => {
-const { Simulation } = __m25;
+const __m25 = (() => {
+const { Simulation } = __m26;
 const { PHASE, SIM } = __m16;
-const { snapshotSim, applySnapshot } = __m39;
-const { clampToInterior } = __m35;
+const { snapshotSim, applySnapshot } = __m40;
+const { clampToInterior } = __m36;
 const { MAX_SPECIES } = __m12;
 const { compatFactorT } = __m17;
-const { Renderer } = __m40;
-const { drawPortrait } = __m44;
-const { drawJar } = __m41;
-const { rawSprite } = __m45;
-const { measureParticles, tapSelection } = __m46;
-const { processEvent } = __m47;
-const { saveGame, saveJSON, KEYS } = __m23;
+const { Renderer } = __m41;
+const { drawPortrait } = __m45;
+const { drawJar } = __m42;
+const { rawSprite } = __m46;
+const { measureParticles, tapSelection } = __m47;
+const { processEvent } = __m23;
+const { saveGame, saveJSON, KEYS } = __m24;
 const { AutoBrewer } = __m48;
 const { RANKS } = __m18;
-const { PROP_BY_KEY } = __m13;
-const { rgbToHex } = __m8;
+const { PROP_BY_KEY, PROP_KEYS } = __m13;
 const { h, btn, clear, toast, coins, confirmDialog, setNoticeHost } = __m2;
 const { icon, iconUrl } = __m3;
 const { audio } = __m4;
 const panels = __m49;
-const { Tutorial } = __m50;
-const { CounterView } = __m51;
-const { GardenView } = __m52;
-const { TestingView } = __m54;
-const { BookView } = __m56;
+const { Tutorial } = __m51;
+const { CounterView } = __m52;
+const { GardenView } = __m53;
+const { TestingView } = __m55;
+const { BookView } = __m57;
 const TOOL_DEFS = [
 { id: 'spoon', label: 'Spoon', icon: 'spoon', key: '2' },
 { id: 'pestle', label: 'Pestle', icon: 'pestle', key: '3', needs: 'pestle' },
@@ -8920,6 +9110,7 @@ if (!this.sandbox) {
 if (!st.current && !st.dayOver) this.bringCustomer(false);
 this.tutorial = new Tutorial(this);
 if (st.tutorial.active && !st.tutorial.done) this.tutorial.start();
+if (st.whatsNew) requestAnimationFrame(() => panels.openWhatsNew(this));
 }
 this.showView(this.sandbox ? 'brew' : st.vial || (st.current && st.current.type === 'complaint') ? 'counter' : 'brew', true);
 this.refreshHud(true);
@@ -9020,7 +9211,7 @@ const v = Number(this.furnaceInput.value) / 100;
 this.setFurnace(Math.abs(v) < 0.06 ? 0 : v);
 });
 this.furnaceLabel = h('span', { class: 'flabel' });
-this.furnaceIcon = icon('flame');
+this.furnaceIcon = icon('fire');
 this.lidBtn = btn('', () => this.toggleLid(), { icon: 'lid', cls: 'icon', title: 'Lid on/off (L)', act: 'lid' });
 this.controls = h('section', { class: 'controls frame' },
 this.lidBtn,
@@ -9248,7 +9439,7 @@ this.groundBtn.classList.toggle('hidden', !can);
 this.groundBtn.classList.toggle('active', can && this.ground);
 if (this.selIcon) {
 clear(this.selIcon);
-if (m) this.selIcon.append(h('span', { class: 'swatch', style: { background: rgbToHex(m.look || m.color) } }), h('span', { class: 'sel-name', text: m.name }));
+if (m) this.selIcon.append(panels.jarCanvas(m, 8, 11), h('span', { class: 'sel-name', text: m.name }));
 }
 }
 resize(force = false) {
@@ -9523,6 +9714,16 @@ this.refreshCustomer();
 if (this.views) this.views.counter.refresh();
 this.updateBadges();
 }
+playGuidedOrder() {
+if (this.sandbox || !this.tutorial) return;
+this.state.startGuidedOrder();
+this.tutorial.start(true);
+if (!this.state.current && !this.state.dayOver) this.bringCustomer(true);
+this.refreshCustomer();
+this.views.counter.refresh();
+this.showView('counter');
+this.save();
+}
 refreshCustomer() {
 if (this.sandbox) return;
 const st = this.state;
@@ -9544,10 +9745,12 @@ el.append(portrait, h('div', { class: 'strip-main' }, panels.reqChips(com.requir
 async decline() {
 const ok = await confirmDialog('Send the customer away?', '', 'Send away', 'danger');
 if (!ok) return;
+const c = this.state.current;
 this.state.declineCustomer();
+if (c && !this.state.current) this.views.counter.part(c.customer, 'Another time, then.', 'unhappy', { kind: 'walked' });
 this.refreshCustomer();
 this.views.counter.refresh();
-setTimeout(() => this.bringCustomer(true), 700);
+this.updateBadges();
 }
 endDay() {
 const summary = this.state.endDay();
@@ -9595,7 +9798,7 @@ finishBottling() {
 const b = this.bottling;
 this.bottling = null;
 const st = this.state;
-const id = st.idCard && st.idCard.batchId === b.batch.id ? st.idCard : null;
+const id = st.idCard && st.idCard.batchId === b.batch.id && PROP_KEYS.some((k) => Number.isFinite(st.idCard.values[k])) ? st.idCard : null;
 st.vial = {
 id: 'v' + Date.now().toString(36),
 ml: b.measurement.ml,
@@ -9759,7 +9962,7 @@ if (!parts.length) { el.append(h('div', { class: 'small muted', text: '—' }));
 for (const p of parts) {
 const m = st.lookup(p.id);
 if (!m) continue;
-el.append(h('div', { class: 'row small poured' }, h('span', { class: 'swatch', style: { background: rgbToHex(m.look || m.color) } }), h('span', { class: 'pname', text: m.name }), h('span', { class: 'spacer' }), h('b', { text: `${Math.round(p.ml)}` })));
+el.append(h('div', { class: 'row small poured' }, panels.jarCanvas(m, 8, 11), h('span', { class: 'pname', text: m.name }), h('span', { class: 'spacer' }), h('b', { text: `${Math.round(p.ml)}` })));
 }
 }
 refreshHud(full = false) {
@@ -9786,7 +9989,7 @@ const f = this.sim.furnace.setting;
 const c = this.sim.cauldron;
 this.furnaceLabel.textContent = `${Math.round(c.bottomTemperature())}°`;
 this.furnaceLabel.title = f > 0.02 ? `Fire ${Math.round(f * 100)}%` : f < -0.02 ? `Frost ${Math.round(-f * 100)}%` : 'Off';
-const want = iconUrl(f < -0.02 ? 'snow' : 'flame');
+const want = iconUrl(f < -0.02 ? 'basin' : 'fire');
 if (this.furnaceIcon.src !== want) this.furnaceIcon.src = want;
 if (full) this.updateShelf();
 this.updateChips();
@@ -9900,7 +10103,7 @@ for (let i = 0; i < sim.p.count; i++) { if (sim.p.phase[i] === PHASE.GAS) gas++;
 const fading = sim.stats.faded > 3;
 if (burn > 2 || fading || (gas > 6 && sim.furnace.setting > 0.05)) {
 this.awayWarned = this.time;
-toast(burn > 2 ? 'Something is burning!' : fading ? 'The magic is fading!' : 'The cauldron is boiling', 'The fire is still lit.', 'flame', 4000);
+toast(burn > 2 ? 'Something is burning!' : fading ? 'The magic is fading!' : 'The cauldron is boiling', 'The fire is still lit.', 'fire', 4000);
 }
 }
 perfReport() {
@@ -10006,7 +10209,7 @@ return words.length > 1 ? words[0] : nm;
 return { VIEWS, LabScreen };
 })();
 // src/materials/reference.js
-const __m58 = (() => {
+const __m59 = (() => {
 const { completeMaterial } = __m9;
 const REF = {};
 const add = (d) => (REF[d.id] = completeMaterial(d));
@@ -10044,13 +10247,14 @@ const refLookup = (id) => REF[id];
 return { REF, refLookup };
 })();
 // src/ui/menu.js
-const __m57 = (() => {
+const __m58 = (() => {
 const { h, btn } = __m2;
-const { Renderer } = __m40;
-const { Simulation } = __m25;
-const { REF, refLookup } = __m58;
-const { hasSave, loadGame } = __m23;
+const { Renderer } = __m41;
+const { Simulation } = __m26;
+const { REF, refLookup } = __m59;
+const { hasSave, loadGame } = __m24;
 const { audio } = __m4;
+const { VERSION } = __m50;
 class MenuScreen {
 constructor(app) {
 this.app = app;
@@ -10067,7 +10271,7 @@ save ? btn(`Continue — Day ${save.day}, ${save.rankName}`, () => app.continueG
 btn('New Shop', () => app.newGameDialog(), { cls: save ? '' : 'primary', icon: 'plus', act: 'new-game' }),
 btn('Free Experiment', () => app.startSandbox(), { icon: 'flask', act: 'sandbox' }),
 h('div', { class: 'row' }, btn('How to play', () => app.openHelp(), { icon: 'help', act: 'help' }), btn('Settings', () => app.openSettings(), { icon: 'gear', act: 'menu-settings' })),
-h('div', { class: 'footer', text: 'Works offline · progress saves on this device' }),
+h('div', { class: 'footer', text: `Works offline · progress saves on this device · v${VERSION}` }),
 );
 this.el = h('div', { class: 'screen menu' }, this.canvas, panel);
 root.appendChild(this.el);
@@ -10134,9 +10338,9 @@ const { icon } = __m3;
 const { audio } = __m4;
 const { GameState } = __m5;
 const { EQUIPMENT } = __m18;
-const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m23;
-const { LabScreen } = __m24;
-const { MenuScreen } = __m57;
+const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m24;
+const { LabScreen } = __m25;
+const { MenuScreen } = __m58;
 const { openSettings, openHelp } = __m49;
 const { Rng } = __m6;
 const { normalizeLab } = __m19;

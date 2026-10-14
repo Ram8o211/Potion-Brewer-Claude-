@@ -17,9 +17,19 @@ self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS.map((u) => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => (k.startsWith(PREFIX) && k !== CACHE) || k.startsWith(LEGACY)).map((k) => caches.delete(k)))).then(() => self.clients.claim()),
-  );
+  e.waitUntil((async () => {
+    const keys = await caches.keys();
+    const old = keys.filter((k) => (k.startsWith(PREFIX) && k !== CACHE) || k.startsWith(LEGACY));
+    await Promise.all(old.map((k) => caches.delete(k)));
+    await self.clients.claim();
+    // an update (an older cache of this copy existed), not a first install:
+    // open pages are still running the old build, so bring them onto the new
+    // one at once (the game saves on pagehide) instead of on the next launch
+    if (old.length && VERSION !== 'dev') {
+      const pages = await self.clients.matchAll({ type: 'window' });
+      for (const c of pages) if ('navigate' in c) c.navigate(c.url).catch(() => {});
+    }
+  })());
 });
 self.addEventListener('fetch', (e) => {
   const req = e.request;

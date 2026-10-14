@@ -144,11 +144,13 @@ test('a redeploy reaches returning players even with Pages-style caching (max-ag
     expect(await page.title()).toBe("The Alchemist's Shop");
     await server.stop();
     server = await startServer(['--root', v2, '--max-age', '600'], 4179); // the redeploy
-    // the first visit is still served by the old worker while the new one installs
+    // the first visit is served by the old worker while the new one installs;
+    // once it takes over, it moves the open page onto the new version by itself
     await visit(server.url);
-    await page.waitForTimeout(2500);
+    await page.waitForFunction(() => document.title === "The Alchemist's Shop v2", null, { timeout: 15_000 });
+    await page.locator('[data-act=new-game]').waitFor();
     await visit(server.url);
-    expect(await page.title(), 'the second visit after a redeploy shows the new version').toBe("The Alchemist's Shop v2");
+    expect(await page.title(), 'the next visit stays on the new version').toBe("The Alchemist's Shop v2");
     const pre = await precacheReport(page, 'sw.js');
     expect(pre.missing).toEqual([]);
     expect(pre.htmlUsesBundle).toBe(true);

@@ -1,4 +1,46 @@
 // Turns simulation events into discoveries: journal entries and achievements.
+// Entries speak of magic only: what heat, frost and fire do to a brew's
+// magic, never an ingredient's boiling point, colour or weight.
+
+/** Entries that do not depend on the ingredients involved. */
+export const JOURNAL = {
+  boil: { key: 'boil', title: 'Magic in the steam', text: 'Too much heat sends the brew’s magic up with the steam. The lid keeps it in.', kind: 'phase' },
+  freeze: { key: 'freeze', title: 'Ice-locked brew', text: 'Deep frost locks the brew: the spoon cannot move it until it thaws, or the pestle breaks it.', kind: 'phase' },
+  fire: { key: 'fire', title: 'Burnt magic', text: 'Too fierce a fire burns magic out of the brew for good. The lid smothers the flame.', kind: 'fire' },
+};
+
+/** Two ingredients whose magic will not join while cold. */
+function unbound(a, b, ida, idb) {
+  return { key: `unbound:${ida}:${idb}`, title: 'Unbound magic', text: `${a} and ${b} will not share their magic while cold. Heat binds them.`, kind: 'mixing', material: ida };
+}
+
+/** ...and once heated, it did. */
+function bound(a, b, ida, idb) {
+  return { key: `bound:${ida}:${idb}`, title: 'Bound by heat', text: `Once hot, the magic of ${a} and ${b} joined — and stays joined.`, kind: 'mixing', material: ida };
+}
+
+/**
+ * Bring journal entries written by earlier builds up to date (they named
+ * boiling and freezing points, flammable ingredients and layers). Idempotent.
+ * @param {Record<string, any>} journal @param {(id:string)=>any} lookup
+ * @returns {Record<string, any>}
+ */
+export function modernizeJournal(journal, lookup) {
+  if (!journal || typeof journal !== 'object') return {};
+  const name = (id) => (id && lookup(id) ? lookup(id).name : 'a mixture');
+  /** @type {Record<string, any>} */
+  const out = {};
+  const keep = (entry, day) => { const old = out[entry.key]; out[entry.key] = { ...entry, day: old ? Math.min(old.day, day) : day }; };
+  for (const [key, e] of Object.entries(journal)) {
+    const day = e && Number.isFinite(e.day) ? e.day : 1;
+    const m = /^(boil|freeze|fire|layers|heatmix):([^:]+)(?::(.+))?$/.exec(key);
+    if (!m) { out[key] = e; continue; }
+    if (m[1] === 'boil' || m[1] === 'freeze' || m[1] === 'fire') keep(JOURNAL[m[1]], day);
+    else if (m[1] === 'layers') keep(unbound(name(m[2]), name(m[3]), m[2], m[3]), day);
+    else keep(bound(name(m[2]), name(m[3]), m[2], m[3]), day);
+  }
+  return out;
+}
 
 /**
  * @param {import('./state.js').GameState} state
@@ -21,14 +63,12 @@ export function processEvent(state, e) {
       break;
     }
     case 'phase': {
-      const id = e.species;
-      if (!id) break;
-      const T = Math.round(e.temp);
+      if (!e.species) break;
       if (e.to === 'gas') {
-        add({ key: `boil:${id}`, title: `${name(id)} boils`, text: `It turned to vapour at about ${T}°C. Magic that boils away is lost unless the lid keeps it in.`, kind: 'phase', material: id });
+        add(JOURNAL.boil);
         achievements.push(...state.unlock('boil'));
       } else if (e.to === 'solid') {
-        add({ key: `freeze:${id}`, title: `${name(id)} freezes`, text: `It froze solid at about ${T}°C. A frozen brew cannot be stirred: crush it or let it thaw.`, kind: 'phase', material: id });
+        add(JOURNAL.freeze);
         achievements.push(...state.unlock('frozen'));
       }
       break;
@@ -44,13 +84,12 @@ export function processEvent(state, e) {
       break;
     }
     case 'heatmix': {
-      add({ key: `heatmix:${e.a}:${e.b}`, title: 'Blended by heat', text: `${name(e.a)} and ${name(e.b)} kept apart while cold but blended once hot — and stay blended.`, kind: 'mixing', material: e.a });
+      add(bound(name(e.a), name(e.b), e.a, e.b));
       achievements.push(...state.unlock('heatmix'));
       break;
     }
     case 'ignite': {
-      const id = e.species;
-      add({ key: `fire:${id}`, title: `${name(id)} burns`, text: 'It caught fire where it met the air. Burnt magic is gone for good. Closing the lid starves the flame.', kind: 'fire', material: id });
+      add(JOURNAL.fire);
       achievements.push(...state.unlock('fire'));
       break;
     }
@@ -59,7 +98,7 @@ export function processEvent(state, e) {
       add({ key: 'crush', title: 'Smashing stones', text: 'The pestle smashes whole stones into powder without losing any. Only powder dissolves, and hot water draws out far more magic.', kind: 'tool' });
       break;
     case 'layers': {
-      add({ key: `layers:${e.a}:${e.b}`, title: 'Separate layers', text: `${name(e.a)} and ${name(e.b)} refuse to blend while cold and settle into layers. Heat helps them blend.`, kind: 'mixing', material: e.a });
+      add(unbound(name(e.a), name(e.b), e.a, e.b));
       break;
     }
   }

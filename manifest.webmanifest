@@ -1,7 +1,7 @@
 {
   "name": "The Alchemist's Shop",
   "short_name": "Alchemist",
-  "description": "A physics-driven potion brewing game.",
+  "description": "A magical potion shop: grow, brew, test and haggle.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

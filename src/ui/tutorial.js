@@ -34,6 +34,10 @@ export class Tutorial {
     const act = (a) => () => /** @type {HTMLElement} */ (lab.el.querySelector(`[data-act="${a}"]`));
     const tab = (id) => () => lab.tabEls[id] && lab.tabEls[id].b;
     const tested = () => st.lab.records.some((r) => r.creature === 'toad' && r.batchId === st.batch.id);
+    // the ID counts whether it was written for the batch or on the vial's label
+    const label = () => (st.vial && st.vial.label ? st.vial.label : null);
+    const idSet = (k) => Number.isFinite(st.idCard.values[k]) || !!(label() && Number.isFinite(label().values[k]));
+    const idDone = () => idComplete(st.idCard) || !!(label() && idComplete(label()));
     return [
       { icon: 'stall', text: 'A customer needs a healing potion. Let’s make it!', button: 'Start' },
       { icon: 'seedling', text: 'Everything grows in your garden. Open it.', target: tab('garden'), done: () => lab.view === 'garden' },
@@ -46,12 +50,12 @@ export class Tutorial {
       { icon: 'spoon', text: 'Stir: pick the spoon and drag it round the brew.', target: () => lab.toolBtns.spoon, done: () => (lab.sim.tool.stirDistance - (this.flags.stir0 ?? (this.flags.stir0 = lab.sim.tool.stirDistance))) > 8 },
       { icon: 'toad', text: 'What does it do? Only a test can tell. Open the testing room.', target: tab('testing'), done: () => lab.view === 'testing' },
       { icon: 'dropper', text: 'Give the Moss Toad a dose and watch it.', target: act('dose-toad'), done: tested },
-      { icon: 'leaf', text: 'Each leaf on its back is 10 Vitality. Set the Vitality slider.', target: () => lab.el.querySelector('[data-prop="vitality"]'), done: () => Number.isFinite(st.idCard.values.vitality) },
-      { icon: 'scroll', text: 'No hearts or bubbles means 0. Set every slider — that is your Potion ID.', target: () => lab.el.querySelector('.id-panel'), done: () => idComplete(st.idCard) },
+      { icon: 'leaf', text: 'Each leaf on its back is 10 Vitality. Set the Vitality slider.', target: () => lab.el.querySelector('[data-prop="vitality"]'), done: () => idSet('vitality') },
+      { icon: 'scroll', text: 'No hearts or bubbles means 0: press “? → 0”. That is your Potion ID.', target: () => lab.el.querySelector('[data-act="id-rest-zero"]') || lab.el.querySelector('.id-panel'), done: idDone },
       { icon: 'bottle', text: 'Back to the cauldron and Bottle it.', target: () => (lab.view === 'brew' ? lab.bottleFab : lab.tabEls.brew.b), done: () => this.flags.bottled || !!st.vial },
-      { icon: 'deal', text: 'Offer it to the customer.', target: act('sell'), done: () => this.flags.haggle || !!(st.current && st.current.haggle) || this.flags.sold },
-      { icon: 'coin', text: 'Ask a higher price, or take the offer.', target: () => lab.el.querySelector('.haggle'), done: () => this.flags.sold },
-      { icon: 'seal', text: 'Sold! If a potion fails, its buyer comes back for a refund. Some bluff: only an expert’s seal proves you right.', button: 'Finish' },
+      { id: 'offer', icon: 'deal', text: 'Offer it to the customer.', target: act('sell'), done: () => this.flags.haggle || !!(st.current && st.current.haggle) || this.flags.sold },
+      { id: 'haggle', icon: 'coin', text: 'They offer a price. Ask for more, or take it.', target: () => lab.el.querySelector('.haggle'), done: () => this.flags.sold },
+      { id: 'sold', icon: 'seal', text: 'Sold! If a potion fails, its buyer comes back for a refund. Some bluff: only an expert’s seal proves you right.', button: 'Finish' },
     ];
   }
 
@@ -73,6 +77,7 @@ export class Tutorial {
     this.stop();
     this.lab.state.tutorial.active = false;
     this.lab.state.tutorial.done = true;
+    this.lab.state.tutorial.guided = false;
   }
 
   clearUi() {
@@ -116,6 +121,8 @@ export class Tutorial {
     if (this.target) this.target.classList.remove('highlight');
     if (t) t.classList.add('highlight');
     this.target = t;
+    // a target scrolled out of its room (a slider below the cages) is brought into view
+    if (t && t.scrollIntoView && !t.closest('.tabbar')) t.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
 
   /** Kept for layout callers: the coach bar sits in the page flow, nothing to place. */
@@ -139,7 +146,14 @@ export class Tutorial {
 
   update() {
     if (!this.active) return;
-    const s = this.steps[this.index];
+    const steps = this.steps;
+    const st = this.lab.state;
+    // the player may be ahead of the coach (bottled early, opened the haggle,
+    // sold): jump to the step that matches what is on screen
+    const at = (id) => steps.findIndex((x) => x.id === id);
+    const ahead = this.flags.sold ? at('sold') : st.current && st.current.haggle ? at('haggle') : st.vial ? at('offer') : -1;
+    if (ahead > this.index) { this.index = ahead; this.show(); return; }
+    const s = steps[this.index];
     if (!s) return;
     if (s.done && s.done()) this.advance();
     else if (Math.random() < 0.08) this.attach(s); // rooms rebuild their controls

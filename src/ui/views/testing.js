@@ -94,40 +94,71 @@ export class TestingView {
       if (rl) rl.textContent = String(cost);
       else c.replaceB.appendChild(h('span', { class: 'lbl', text: String(cost) }));
     }
-    this.renderId();
+    if (!this.idRows || this._idKind !== this.idTarget().kind) this.renderId();
+    else this.syncId();
   }
 
   /** Where the ID being written goes: the vial's label or the batch's. */
   idTarget() {
     const st = this.lab.state;
-    if (this.source === 'vial' && st.vial) return { kind: /** @type {'vial'} */ ('vial'), values: st.vial.label ? st.vial.label.values : {}, certified: !!st.vial.certified };
-    return { kind: /** @type {'batch'} */ ('batch'), values: st.idCard.batchId === st.batch.id ? st.idCard.values : {}, certified: false, stale: st.idStale && st.idCard.batchId === st.batch.id };
+    if (this.source === 'vial' && st.vial) return { kind: /** @type {'vial'} */ ('vial'), values: st.vial.label ? st.vial.label.values : {}, certified: !!st.vial.certified, stale: false };
+    const own = st.idCard.batchId === st.batch.id;
+    return { kind: /** @type {'batch'} */ ('batch'), values: own ? st.idCard.values : {}, certified: false, stale: own && st.idStale };
   }
 
-  /** The Potion ID: one slider per property, set by eye from the reactions. */
+  /**
+   * The Potion ID: one named slider per property, set by eye from the
+   * reactions. Built once per render; edits update the rows in place so a
+   * slider keeps its focus (keyboard) and its pointer.
+   */
   renderId() {
-    const lab = this.lab, st = lab.state;
     const el = clear(this.idPanel);
-    const tgt = this.idTarget();
-    el.append(h('div', { class: 'row id-title' }, icon('scroll'), h('b', { text: 'Potion ID' }), icon(tgt.kind === 'vial' ? 'bottle' : 'cauldron', 'sm'),
-      tgt.certified ? h('span', { class: 'seal' }, icon('seal', 'sm')) : null,
-      tgt.stale ? h('span', { class: 'warn', title: 'Ingredients were added after this ID was written' }, icon('warn', 'sm')) : null,
-      h('span', { class: 'spacer' }),
-      tgt.certified ? null : btn('', () => this.clearId(), { icon: 'trash', cls: 'icon', title: 'Clear the ID', act: 'id-clear' })));
+    this._idKind = this.idTarget().kind;
+    this.idTitle = h('div', { class: 'row id-title' });
+    /** @type {Record<string, {inp: HTMLInputElement, out: HTMLElement, row: HTMLElement}>} */
+    this.idRows = {};
     const rows = h('div', { class: 'id-rows' });
     for (const p of PROPS) {
-      const v = tgt.values[p.key];
-      const known = Number.isFinite(v);
-      const out = h('b', { class: 'id-val', text: known ? String(v) : '?' });
-      const inp = /** @type {HTMLInputElement} */ (h('input', { type: 'range', min: '0', max: '100', step: '1', value: String(known ? v : 0), 'aria-label': p.label, 'data-prop': p.key, class: known ? '' : 'unset' }));
-      inp.disabled = tgt.certified;
+      const out = h('b', { class: 'id-val' });
+      const inp = /** @type {HTMLInputElement} */ (h('input', { type: 'range', min: '0', max: '100', step: '1', value: '0', 'aria-label': p.label, 'data-prop': p.key }));
       inp.style.setProperty('--c', `rgb(${p.color.map((x) => Math.round(x * 255)).join(',')})`);
       inp.addEventListener('input', () => { out.textContent = inp.value; inp.classList.remove('unset'); });
       inp.addEventListener('change', () => this.setValue(p.key, Number(inp.value)));
-      rows.append(h('div', { class: 'id-row', title: p.label }, icon(p.icon), inp, out));
+      // an unset slider already rests at 0: a tap or a key on it means "0",
+      // even though the value did not change and no 'change' event fires
+      const commitUnset = () => { if (inp.classList.contains('unset') || !Number.isFinite(this.idTarget().values[p.key])) this.setValue(p.key, Number(inp.value)); };
+      inp.addEventListener('pointerup', commitUnset);
+      inp.addEventListener('keyup', (e) => { if (/^(Home|End|Arrow|Page)/.test(e.key)) commitUnset(); });
+      const row = h('div', { class: 'id-row' }, icon(p.icon), h('span', { class: 'id-name', text: p.label }), inp, out);
+      this.idRows[p.key] = { inp, out, row };
+      rows.append(row);
     }
-    el.append(rows);
-    void st;
+    el.append(this.idTitle, rows);
+    this.syncId();
+  }
+
+  /** Show the target's values without rebuilding the sliders. */
+  syncId() {
+    if (!this.idRows) return;
+    const tgt = this.idTarget();
+    const unset = PROPS.filter((p) => !Number.isFinite(tgt.values[p.key])).length;
+    // (append() would write a null as the text "null")
+    clear(this.idTitle).append(...[icon('scroll'), h('b', { text: 'Potion ID' }), icon(tgt.kind === 'vial' ? 'bottle' : 'cauldron', 'sm'),
+      tgt.certified ? h('span', { class: 'seal' }, icon('seal', 'sm')) : null,
+      tgt.stale ? h('span', { class: 'warn', title: 'Ingredients were added after this ID was written' }, icon('warn', 'sm')) : null,
+      h('span', { class: 'spacer' }),
+      !tgt.certified && unset > 0 && unset < PROPS.length ? btn('? → 0', () => this.zeroRest(), { title: 'Set every property the creatures did not show to 0', act: 'id-rest-zero' }) : null,
+      tgt.certified ? null : btn('', () => this.clearId(), { icon: 'trash', cls: 'icon', title: 'Clear the ID', act: 'id-clear' })].filter(Boolean));
+    for (const p of PROPS) {
+      const r = this.idRows[p.key];
+      const v = tgt.values[p.key];
+      const known = Number.isFinite(v);
+      if (document.activeElement !== r.inp || known) r.inp.value = String(known ? v : 0);
+      r.inp.classList.toggle('unset', !known);
+      r.inp.disabled = tgt.certified;
+      r.out.textContent = known ? String(v) : '?';
+      r.row.classList.toggle('unset', !known);
+    }
   }
 
   /** @param {string} key @param {number} v */
@@ -136,11 +167,25 @@ export class TestingView {
     const tgt = this.idTarget();
     if (tgt.certified) return;
     const values = { ...Object.fromEntries(PROPS.map((p) => [p.key, null])), ...tgt.values, [key]: v };
-    st.writeId(tgt.kind, values);
+    this.writeValues(tgt.kind, values, key);
+  }
+
+  /** Every property not yet set becomes 0 ("nothing showed"). */
+  zeroRest() {
+    const tgt = this.idTarget();
+    if (tgt.certified) return;
+    const values = Object.fromEntries(PROPS.map((p) => [p.key, Number.isFinite(tgt.values[p.key]) ? tgt.values[p.key] : 0]));
+    this.writeValues(tgt.kind, values, null);
+  }
+
+  /** @param {'batch'|'vial'} kind @param {Record<string, number|null>} values @param {string|null} key */
+  writeValues(kind, values, key) {
+    const lab = this.lab, st = lab.state;
+    st.writeId(kind, values);
     lab.save();
     lab.views.counter.refresh();
     if (lab.tutorial) lab.tutorial.notify('id', key);
-    this.renderId();
+    this.syncId();
   }
 
   clearId() {
@@ -148,7 +193,8 @@ export class TestingView {
     const tgt = this.idTarget();
     st.writeId(tgt.kind, Object.fromEntries(PROPS.map((p) => [p.key, null])));
     lab.save();
-    this.renderId();
+    lab.views.counter.refresh();
+    this.syncId();
   }
 
   /** @param {string} id */

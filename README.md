@@ -83,10 +83,12 @@ bottle is computed from the particles that actually run out of the tap.
 * **Mobile first, desktop too.**
   * A bottom tab bar over five rooms: Counter, Brew, Garden, Testing and
     Book.
-  * A small HUD. Requests, Potion IDs and labels are icons with numbers.
-    Notifications appear in the top bar's status line, and the tutorial
-    coach has its own row, so neither ever covers a button. The browser
-    tests check this on every layout.
+  * A small HUD. Requests, Potion IDs and labels are property names
+    with icons and numbers. Notifications appear in the top bar's status
+    line, and the tutorial coach has its own row, so neither ever covers a
+    button. The browser tests check this on every layout. Sale feedback
+    (what the label is missing, what the customer says) appears on the
+    counter itself.
   * Drag a jar onto the cauldron or the dropper onto a creature. Every
     gesture except skimming has a tap alternative.
   * Touch targets of at least 44 px, and portrait, landscape, tablet and
@@ -140,6 +142,12 @@ straight from a branch with no build step:
      optimised production build (one bundled script, fully precached for
      offline play). This is the one to share or install on a phone.
 
+Pages serves only the branch picked in step 2. Work on any other branch
+appears there only after it is merged into that branch. The main menu's
+footer shows the version you are playing (for example `v2.0.1`). After a
+new deploy, an open page switches itself to the new version as soon as
+its service worker updates.
+
 Both copies use the same save on that device. Pages needs a public
 repository on a free account (this one is public). Every push to the chosen
 branch redeploys automatically; Pages caches files for up to 10 minutes, so
@@ -171,25 +179,37 @@ Browser screenshots from the test run land in `test-results/screenshots/`
 
 ## How to play
 
-1. **Counter.** A customer explains their problem. The request is a row of
-   icons with targets, for example leaf ≥ 30 and skull ≤ 10. The bulb
-   button buys rough guild advice for a few coins.
+1. **Counter.** A customer explains their problem. The request names the
+   magic they need, for example "Vitality ≥ 30" and "Bane ≤ 10", and the
+   bottle size. The bulb button buys rough guild advice for a few coins.
 2. **Garden.** Harvest ripe beds, water the dry ones (it uses well water)
    and plant new beds as your rank grows. Tap a bed or use its buttons.
 3. **Brew.** Pick a jar and pour with the dose buttons (10, 25, 50,
    100 ml), by holding inside the cauldron, or by dragging the jar onto
    it. Stones need the **mortar** first (or the pestle in the pot). Stir
-   with the spoon. Slide the fire control to heat (blends oily liquids,
-   steeps stones, but fades magic when too hot) or to cool (a cold blend
-   can cross a super transition).
+   with the spoon. Slide the fire control to heat (binds magics that will
+   not join cold, steeps stones, but fades magic when too hot) or to cool
+   (a cold blend can cross a super transition).
 4. **Testing.** Drag the dropper onto a creature or press its dose
-   button. Watch the cage, replay the last reaction if you missed it, and
-   set the Potion ID sliders to what you saw. Pouring anything new makes
-   the ID stale.
-5. **Bottle** the brew. The vial is labelled with your Potion ID. At the
-   Counter, **Offer** it and haggle. If you suspect a bluffer, have the vial
-   **certified** first. Customers whose potion failed come back for their
-   money, so test honestly.
+   button. Watch the cage and replay the last reaction if you missed it.
+   Then set the six Potion ID sliders to what you saw. Press **? → 0**
+   for every property the creatures did not show. Pouring anything new
+   makes the ID stale.
+5. **Bottle** the brew. The vial carries your Potion ID as its label.
+   * At the Counter, the vial card says in words what is still missing
+     before the customer will buy.
+   * Press **Offer**: the customer names a price. Ask for more with the
+     ±1/±5 buttons and **Ask**, or **Take** their offer. They concede part
+     of the way and lose patience, make a final offer, or walk out at an
+     insult. **No deal** sends them away.
+   * Then **Open the door** for the next visitor.
+   * If you suspect a bluffer, have the vial **certified** first.
+     Customers whose potion failed come back for their money, so test
+     honestly.
+
+Continuing a shop from an older version shows what changed once and
+offers the guided order. The guided order can be replayed any time from
+the menu.
 
 Keyboard: `C` `V` `G` `T` `J` rooms, `1`–`4` tools (pour, spoon, pestle,
 skimmer), `M` mortar, `L` lid, `B` bottle, `F` time speed, `A` auto-stir,

@@ -3,23 +3,24 @@
 ## Release 2.0 brief: the magic overhaul
 
 Each requirement of the 2.0 brief, where it is implemented and how it was
-verified. Test files: `A` = `tests/alchemy.test.mjs`, `T` =
+verified (updated for 2.0.1). Test files: `W` = `tests/wording.test.mjs`, `A` = `tests/alchemy.test.mjs`, `T` =
 `tests/testing.test.mjs`, `G` = `tests/game.test.mjs`, `B:<spec>` =
 `tests/browser/<spec>.spec.mjs`, `ach` = `scripts/achievability.mjs`,
 `bench` = `scripts/bench.mjs`, `play` = `scripts/playtest.mjs`.
 
 | Requirement | Status | Evidence |
 |---|---|---|
-| Customers ask for specific magical effects to solve their problems, not composition | ✔ | `commissions.js` (`PROBLEMS`, requirements only on the six properties); G: "worlds are deterministic per seed; requests only ask for magic, never chemistry" |
+| Customers ask for specific magical effects to solve their problems, not composition | ✔ | `commissions.js` (`PROBLEMS`, requirements only on the six properties, shown as named chips such as "Vitality ≥ 30"); G: "worlds are deterministic per seed; requests only ask for magic, never chemistry"; W: "customers ask only for magical effects" (lines, potion names, 120 generated requests) |
 | Basic ingredients with magical properties: plain water as solvent, a few magical liquids, magical stones smashed into powder | ✔ | `generator.js` (water without magic, 4 liquids, 6 stones); A: "the garden world…"; B:gameplay "smash a stone in the mortar"; B:sandbox "sunstone powder" |
 | All gathered in a personal garden where they keep growing with time | ✔ | `garden.js` (timestamp growth, also while closed); T: "the garden grows with real time…", "the well refills slowly…"; B:rooms garden test (harvest by button and by tap, water, plant, reload) |
 | Gathering not too trivial; no abundance | ✔ | Plants grow only while watered (costs well water); a harvest empties the bed; ≥ 20% growth to harvest; shelves cap stock; new beds cost coins and rank. `play`: 7.4–8.6 L harvested over ten days, with occasional shortages |
 | Final magic derives from the proportions of base ingredients whose magic the player knows | ✔ | `magic.js` volume-weighted blend; ingredient cards show the magic; A: "proportions: a 1:1 blend of dew and water carries half the dew’s magic" |
-| Physical/chemical descriptions replaced by magical ones only | ✔ | `panels.openIngredient` (magic bars, fade and transition temperatures); A asserts no physical words in descriptions; B:layout asserts the ingredient sheet has no density/viscosity/boiling words |
+| Physical/chemical descriptions replaced by magical ones only | ✔ | `panels.openIngredient` (magic bars, fade and transition temperatures); W: lore, journal entries and awards contain no colour, weight, floating, thickness, boiling/melting or layer words and no °C, and old saves are rewritten on load; B:layout asserts the ingredient sheet has no density/viscosity/boiling words; recipes and lists show names and sprites, never colour squares |
 | Inspection tool replaced by a testing room with creatures | ✔ | Probe and assay removed; `testing.js`, `views/testing.js`; T: "a test uses a real dose from the cauldron tap…"; B:rooms testing-room test |
 | Player estimates each property from the creatures and compiles a Potion ID | ✔ | Six ID sliders per batch, copied onto the vial's label; T: "the Potion ID: written per batch, outdated by a new pour, copied onto the vial…"; B:gameplay guided order sets the sliders |
 | Effects on creatures completely visual, no text | ✔ | `rendering/creatures.js` draws everything; B:gameplay asserts no digits on any creature card; B:rooms finds flame pixels in the salamander's cage |
-| Selling by customer-proposed prices and seller offers until agreement | ✔ | `haggle.js`; G: "haggling: a low opening offer, counter-offers, lost patience, a final offer, a walk-out on insult"; B:gameplay haggles in the guided order |
+| Selling by customer-proposed prices and seller offers until agreement | ✔ | `haggle.js`; G: "haggling: a low opening offer, counter-offers, lost patience, a final offer, a walk-out on insult"; W: never below their offer; B:gameplay haggles in the guided order and checks the captions, the speech bubble, the offer floor and the parting card |
+| Haggling is reachable by a real player on a phone (2.0.1) | ✔ | A tap on an unset ID slider writes 0, and "? → 0" covers the rest; the counter says what stops a sale; B:rooms taps a slider at 0 with real touch and steps one with the keyboard; the 2.0.1 re-verification played to the haggle with real taps only (`docs/REPORT.md`) |
 | Unsatisfied customers return later to complain about inefficiency or side effects | ✔ | `sales.settleSale` (weak, too strong or side effect, due 1–3 visits later); G: "a potion that fails its buyer comes back…"; B:gameplay "returning customers" |
 | The refund cannot generally be avoided | ✔ | Counter offers only "refund", or "show certificate" for a certified sale; G: same test (refund forced, reputation lost) |
 | Some customers bluff; only an expensive expert certification avoids a bluff refund | ✔ | Archetype bluff probabilities; `certifyVial` (30 + 12 × rank coins); G: "bluffers: without a certificate they get their refund; with one they are caught", "certification costs a lot…"; B:gameplay certificate unmasks a bluff |

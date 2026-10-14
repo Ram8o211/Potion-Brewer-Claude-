@@ -86,6 +86,21 @@ test('the testing room: the dropper doses a creature, it reacts without words, t
     return n;
   });
   expect(flame, 'flame pixels in the cage').toBeGreaterThan(10);
+  // a real tap on an unset slider resting at 0 writes 0 (no 'change' event fires for it)
+  const frost = page.locator('input[data-prop=frost]');
+  await frost.scrollIntoViewIfNeeded();
+  const fb = await frost.boundingBox();
+  if (!fb) throw new Error('no slider');
+  const zero = { x: fb.x + 6, y: fb.y + fb.height / 2 };
+  await drag(page, [zero, zero], 30);
+  expect(await lab(page, (l) => l.state.idCard.values.frost), 'tapped at 0 means 0').toBe(0);
+  await expect(page.locator('.id-row', { has: frost })).toContainText('0');
+  // the keyboard keeps its slider between steps (rows update in place)
+  const lev = page.locator('input[data-prop=levity]');
+  await lev.focus();
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowRight');
+  expect(await lab(page, (l) => l.state.idCard.values.levity)).toBe(2);
   // set the ID with the sliders; it persists
   await page.locator('input[data-prop=ardor]').evaluate((el) => { /** @type {HTMLInputElement} */ (el).value = '30'; el.dispatchEvent(new Event('input')); el.dispatchEvent(new Event('change')); });
   expect(await lab(page, (l) => l.state.idCard.values.ardor)).toBe(30);

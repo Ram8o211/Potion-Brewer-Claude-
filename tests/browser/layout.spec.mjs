@@ -65,6 +65,7 @@ test('every room fits the screen and its controls are touch sized', async ({ pag
     if (!box) throw new Error('no room');
     expect(box.x + box.width).toBeLessThanOrEqual((page.viewportSize()?.width || 0) + 1);
     if (info.project.use.hasTouch) expect(await smallTargets(page), `${room}: controls smaller than 44 CSS px`).toEqual([]);
+    expect(await page.locator(`.view-${room}`).innerText(), `${room}: no programming leftovers on screen`).not.toMatch(/\b(null|undefined|NaN)\b/);
     await shot(page, info, `room-${room}`);
   }
   expect(errors).toEqual([]);

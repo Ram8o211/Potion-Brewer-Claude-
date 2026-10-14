@@ -59,6 +59,14 @@ keeps burning), but it is drawn only while the Brew room is visible.
 In phone landscape and on desktop the Garden puts the scene beside the
 bed list, and the Testing room puts the creatures beside the Potion ID
 panel. Only the lists scroll, so the scene and the sliders stay in reach.
+On a phone in portrait the Testing room shows the cages as a row you
+swipe sideways, with all six Potion ID sliders below them, so the
+creature you just dosed and the sliders fit on one screen.
+
+While a notification shows on a narrow phone, the status line takes the
+room of the day and rank labels and wraps to two lines. Everything about
+a sale, such as what the label is missing or what the customer says, is
+written on the counter itself, never only in a notification.
 
 Safe-area insets (`env(safe-area-inset-*)`) pad the top bar, the tab bar
 and the sheets, so nothing sits under a notch or the home indicator.
@@ -86,6 +94,7 @@ nothing depends on precise dragging.
 | Drag the dropper onto a creature | the creature's dose button |
 | Tap a bed in the garden scene | the bed's harvest or water button in the list |
 | Drag the price slider while haggling | the −5, −1, +1 and +5 buttons |
+| Drag a Potion ID slider | tap anywhere on it (a tap on an unset slider at 0 writes 0), the arrow keys, or “? → 0” for every property not seen |
 | Long-press a jar (or right-click) to inspect it | the ingredient list in the Book |
 
 Pointer handling rules:

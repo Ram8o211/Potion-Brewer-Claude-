@@ -34,12 +34,12 @@ export const PROBLEMS = {
     { title: 'Forge Kindling', lines: ['My forge will not get hot enough for star-iron.', 'The kiln keeps going out.'], drunk: false, avoid: ['frost'] },
   ],
   frost: [
-    { title: 'Fever Cooler', lines: ['A burning fever. Something cold, but gentle.', 'Dragon-burn on my arm. Cool it!'], drunk: true, avoid: ['ardor'] },
+    { title: 'Fever Cooler', lines: ['A burning fever. Something with frost magic in it, but gentle.', 'Dragon-burn on my arm. Cool it!'], drunk: true, avoid: ['ardor'] },
     { title: 'Larder Frost', lines: ['The summer heat spoils my larder.', 'I must keep the fish fresh to market.'], drunk: false, avoid: ['ardor'] },
   ],
   levity: [
     { title: 'Feather Draught', lines: ['I must cross the gorge where the bridge fell.', 'The bell is too heavy to hoist into the tower.'], drunk: true },
-    { title: 'Floating Oil', lines: ['My barge is stuck on the shoal.', 'Make the cart light enough for the mud road.'], drunk: false },
+    { title: 'Lifting Tonic', lines: ['My barge is stuck on the shoal.', 'Make the cart light enough for the mud road.'], drunk: false },
   ],
   charm: [
     { title: 'Love Philtre', lines: ['There is someone at the mill I hope will notice me…', 'My husband has forgotten how to smile at me.'], drunk: true },

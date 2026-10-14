@@ -9,15 +9,15 @@ import { EQUIPMENT, RANKS } from '../game/equipment.js';
 import { ACHIEVEMENTS } from '../game/state.js';
 import { PROPS, PROP_BY_KEY } from '../alchemy/magic.js';
 import { reqText } from '../game/commissions.js';
+import { VERSION } from '../version.js';
 import { rawSprite } from '../rendering/scenes.js';
-import { rgbToHex } from '../core/color.js';
 import { SIM } from '../simulation/constants.js';
 import { exportSave, parseImport, saveGame } from '../game/persistence.js';
 import { audio } from '../audio/audio.js';
 
 const CAT_LABEL = { heat: 'Fire', cold: 'Frost', vessel: 'Cauldrons', tool: 'Tools', instrument: 'Instruments', trials: 'Testing room', garden: 'Garden', storage: 'Shelves', guild: 'Guild' };
 
-function jarCanvas(m, w = 22, hh = 30) {
+export function jarCanvas(m, w = 22, hh = 30) {
   if (m.form === 'solid') {
     const cv = rawSprite(m.shape || 'stone', m.look || m.color);
     cv.style.width = w * 2 + 'px';
@@ -39,14 +39,11 @@ export function magicChips(magic, min = 1) {
 /** An ingredient's two temperatures: where its magic fades, and where it would transmute. @param {any} m */
 export function thresholdChips(m) {
   const out = [];
-  if (Number.isFinite(m.fadeT)) out.push(h('span', { class: 'fx-chip dim', title: `Its magic fades above ${m.fadeT}°C` }, icon('flame', 'sm'), ` >${m.fadeT}°`));
+  if (Number.isFinite(m.fadeT)) out.push(h('span', { class: 'fx-chip dim', title: `Its magic fades above ${m.fadeT}°C` }, icon('thermo', 'sm'), ` >${m.fadeT}°`));
   if (Number.isFinite(m.superT)) out.push(h('span', { class: 'fx-chip dim', title: `Super transition at ${m.superT}°C: all its magic becomes ${PROP_BY_KEY[m.superKey].label}` }, icon('spark', 'sm'), ` ${m.superT}° `, icon(PROP_BY_KEY[m.superKey].icon, 'sm')));
   return out;
 }
 
-function swatch(rgb) {
-  return h('span', { class: 'swatch', style: { background: rgbToHex(rgb) } });
-}
 
 // ------------------------------------------------------------------ the guild shop (equipment)
 export function openShop(lab) {
@@ -135,8 +132,8 @@ export function openHint(lab) {
       return h('div', { class: 'row' }, jarCanvas(m, 12, 16), h('span', { text: `~${share}%  ${m.name}` }), i.ground ? icon('mortar', 'sm') : null);
     });
     const tips = [];
-    if ((ref.heatTo ?? 20) > 30) tips.push(h('div', { class: 'row small' }, icon('flame', 'sm'), ` ~${Math.round(ref.heatTo / 5) * 5}°`));
-    if ((ref.coolTo ?? 20) < 12) tips.push(h('div', { class: 'row small' }, icon('snow', 'sm'), ` ~${Math.round(ref.coolTo / 5) * 5}°`));
+    if ((ref.heatTo ?? 20) > 30) tips.push(h('div', { class: 'row small', title: 'Heat the brew to about this' }, icon('fire', 'sm'), icon('thermo', 'sm'), ` ~${Math.round(ref.heatTo / 5) * 5}°`));
+    if ((ref.coolTo ?? 20) < 12) tips.push(h('div', { class: 'row small', title: 'Chill the brew to about this' }, icon('basin', 'sm'), icon('thermo', 'sm'), ` ~${Math.round(ref.coolTo / 5) * 5}°`));
     if (ref.knead) tips.push(h('div', { class: 'row small' }, icon('spoon', 'sm'), ' stir well'));
     void main;
     modal({ title: 'Guild advice', body: [h('div', { class: 'card parch' }, ...rows, ...tips)] });
@@ -203,11 +200,11 @@ export function renderRecipes(lab, container) {
       const total = r.ingredients.reduce((a, i) => a + i.ml, 0) || 1;
       const parts = h('div', { class: 'meta' }, ...r.ingredients.map((i) => {
         const m = st.lookup(i.id);
-        return h('span', { class: 'fx-chip' }, swatch(m ? m.look || m.color : [0.5, 0.5, 0.5]), ` ${Math.round(i.ml)}`, i.ground ? icon('mortar', 'sm') : null);
+        return h('span', { class: 'fx-chip ing' }, m ? jarCanvas(m, 8, 11) : null, ` ${m ? m.name : '?'} ${Math.round(i.ml)}`, i.ground ? icon('mortar', 'sm') : null);
       }));
       const steps = h('div', { class: 'meta' },
-        r.maxTemp > 30 ? h('span', { class: 'fx-chip' }, icon('flame', 'sm'), ` ${r.maxTemp}°`) : null,
-        r.minTemp < 12 ? h('span', { class: 'fx-chip' }, icon('snow', 'sm'), ` ${r.minTemp}°`) : null,
+        r.maxTemp > 30 ? h('span', { class: 'fx-chip', title: 'Heated to' }, icon('fire', 'sm'), ` ${r.maxTemp}°`) : null,
+        r.minTemp < 12 ? h('span', { class: 'fx-chip', title: 'Chilled to' }, icon('basin', 'sm'), ` ${r.minTemp}°`) : null,
         r.stirSeconds ? h('span', { class: 'fx-chip' }, icon('spoon', 'sm'), ` ${r.stirSeconds}s`) : null,
         h('span', { class: 'fx-chip dim' }, icon('flask', 'sm'), ` ${Math.round(total)}`));
       const idChips = r.id ? h('div', { class: 'meta' }, icon('scroll', 'sm'), ...PROPS.filter((p) => Number.isFinite(r.id[p.key])).map((p) => h('span', { class: 'fx-chip dim' }, icon(p.icon, 'sm'), ` ${r.id[p.key]}`))) : null;
@@ -218,7 +215,7 @@ export function renderRecipes(lab, container) {
         btn('', () => { const name = prompt('Rename recipe', r.name); if (name) { r.name = name.slice(0, 40); render(); } }, { icon: 'scroll', cls: 'icon', title: 'Rename' }),
         btn('', async () => { if (await confirmDialog('Delete recipe?', r.name, 'Delete', 'danger')) { st.recipes.splice(st.recipes.indexOf(r), 1); render(); } }, { icon: 'trash', cls: 'icon danger', title: 'Delete' }));
       container.appendChild(h('div', { class: 'item parch' },
-        swatch(r.color || [0.5, 0.5, 0.5]),
+        icon('book'),
         h('div', {}, h('div', { class: 'title', text: r.name }), parts, steps, idChips),
         actions));
     }
@@ -257,7 +254,7 @@ export function renderJournal(lab, container, tab = 'journal') {
   const entries = Object.values(st.journal).sort((a, b) => b.day - a.day);
   if (!entries.length) container.appendChild(h('div', { class: 'card parch small muted', text: '—' }));
   for (const e of entries) {
-    container.appendChild(h('div', { class: 'card parch' }, h('div', { class: 'row' }, icon(e.kind === 'magic' ? 'spark' : e.kind === 'fire' ? 'flame' : e.kind === 'phase' ? 'thermo' : 'scroll'), h('b', { text: e.title }), h('span', { class: 'spacer' }), h('span', { class: 'small muted', text: `${e.day}` })), h('div', { class: 'small', text: e.text })));
+    container.appendChild(h('div', { class: 'card parch' }, h('div', { class: 'row' }, icon(e.kind === 'magic' ? 'spark' : e.kind === 'fire' ? 'fire' : e.kind === 'phase' ? 'thermo' : 'scroll'), h('b', { text: e.title }), h('span', { class: 'spacer' }), h('span', { class: 'small muted', text: `${e.day}` })), h('div', { class: 'small', text: e.text })));
   }
 }
 
@@ -270,9 +267,32 @@ export function openPause(lab) {
     btn('How to play', () => { m.close(); openHelp(); }, { icon: 'help', act: 'help' }),
     btn('Settings & saves', () => { m.close(); openSettings(app, lab); }, { icon: 'gear', act: 'settings' }),
   ];
-  if (!lab.sandbox) items.push(btn('Restart tutorial', () => { m.close(); lab.tutorial && lab.tutorial.start(true); }, { icon: 'bulb' }));
+  if (!lab.sandbox) items.push(btn('Play the guided order', () => { m.close(); lab.playGuidedOrder(); }, { icon: 'bulb', act: 'guided-order' }));
   items.push(btn(lab.sandbox ? 'Leave experiment' : 'Save & quit', () => { m.close(); app.showMenu(); }, { icon: 'door', act: 'quit' }));
   m = modal({ title: lab.sandbox ? 'Free Experiment' : 'Paused', body: h('div', { class: 'list' }, items) });
+}
+
+/** What changed for a shop that came over from an older version (shown once). */
+export function openWhatsNew(lab) {
+  const st = lab.state;
+  const line = (ic, text) => h('div', { class: 'row whatsnew-line' }, icon(ic), h('span', { class: 'small', text }));
+  const done = () => { st.whatsNew = 0; lab.save(); };
+  const m = modal({
+    title: `Your shop, version ${VERSION}`,
+    body: [h('div', { class: 'card parch' },
+      line('stall', 'Customers now ask only for magic: Vitality, Ardor, Frost, Levity, Charm and Bane.'),
+      line('seedling', 'Every ingredient grows in your garden: water, magical liquids and stones to smash.'),
+      line('toad', 'Test a dose on your creatures and set the six Potion ID sliders: that is the label.'),
+      line('deal', 'Press Offer and haggle: ask for more, or take their price.'),
+      line('refund', 'A potion that fails comes back for a refund. Some customers bluff: an expert’s seal proves you right.'),
+      h('div', { class: 'small muted', text: 'Your coins, reputation, rank and equipment are kept. The old ingredients and recipes are gone.' }))],
+    foot: [
+      btn('Got it', () => { done(); m.close(); }, { act: 'whatsnew-ok' }),
+      btn('Play the guided order', () => { done(); m.close(); lab.playGuidedOrder(); }, { cls: 'primary', icon: 'bulb', act: 'whatsnew-guided' }),
+    ],
+    onClose: done,
+  });
+  return m;
 }
 
 export function openHelp() {
@@ -281,10 +301,10 @@ export function openHelp() {
     title: 'How to play',
     wide: true,
     body: [
-      sec('stall', 'Customers', ['They bring a problem and ask for magic: ranges on six properties (Vitality, Ardor, Frost, Levity, Charm, Bane).', 'They buy on your label — the Potion ID — and haggle: name a price, they counter, until you agree or they lose patience.', 'If what they drink misses their range, they come back for a refund. Some bluff. Only an expert’s certificate (costly) proves a potion was right.']),
+      sec('stall', 'Customers', ['They bring a problem and ask only for magic: ranges on six properties (Vitality, Ardor, Frost, Levity, Charm, Bane).', 'They buy on your label, the Potion ID: all six sliders must be set (0 where the creatures showed nothing).', 'Press Offer: they name a price. Ask for more with Ask; they come up part of the way, lose patience, make a final offer, or walk out if you ask far too much. Take their offer whenever you like.', 'If what they drink misses their range, they come back for a refund. Some bluff. Only an expert’s certificate (costly) proves a potion was right.']),
       sec('seedling', 'Garden', ['Everything grows in your garden: water from the well, liquids from plant beds, stones from crystal beds.', 'Plant beds grow only while moist: water them. Harvest takes what has grown; the bed starts again.']),
-      sec('cauldron', 'Brewing', ['A potion’s magic is the proportion-weighted blend of its ingredients’ magic. Water dilutes.', 'Smash stones (mortar or pestle): only powder dissolves, and hot water draws out far more of its magic.', 'Heat helps liquids that keep apart when cold to blend.', 'Too hot and magic fades. Every ingredient also has a super-transition temperature, mostly far out of reach — but blends average them (weighted by magic). Cross it and all the magic pours into one property.']),
-      sec('toad', 'Testing', ['Give 10 ml to a creature and watch: leaves, flames, ice, floating, hearts and bubbles — measured against the notched post in the cage (one notch = 10), or counted (one = 10).', 'Each creature shows only some properties. Set the Potion ID sliders by what you saw, then bottle.']),
+      sec('cauldron', 'Brewing', ['A potion’s magic is the proportion-weighted blend of its ingredients’ magic. Water dilutes.', 'Smash stones (mortar or pestle): only their powder gives its magic, and a hot steep draws out far more.', 'Some magics will not join while cold: heat binds them.', 'Too hot and magic fades. Every ingredient also has a super-transition temperature, mostly far out of reach — but blends average them (weighted by magic). Cross it and all the magic pours into one property.']),
+      sec('toad', 'Testing', ['Give 10 ml to a creature and watch: leaves, flames, ice, floating, hearts and bubbles — measured against the notched post in the cage (one notch = 10), or counted (one = 10).', 'Each creature shows only some properties. Set the Potion ID sliders by what you saw (“? → 0” for the rest), then bottle.']),
       sec('help', 'Keys', ['C V G T J rooms · 1 pour · 2 spoon · 3 pestle · 4 skimmer · L lid · B bottle · F speed · A auto-stir · M mortar · arrows fire · S shop · Esc menu.']),
     ],
   });
@@ -334,7 +354,8 @@ export function openSettings(app, lab) {
     body: [
       h('div', { class: 'card parch' }, h('h3', { text: 'Sound' }), vol('master', 'Master volume'), vol('sfx', 'Effects'), vol('music', 'Music'), check('musicOn', 'Play music', () => audio.music(s.musicOn)), check('muted', 'Mute everything')),
       h('div', { class: 'card parch' }, h('h3', { text: 'Display' }), h('div', { class: 'toggle-row' }, h('span', { text: 'Graphics' }), quality),
-        h('div', { class: 'small muted', text: 'Automatic steps down when frames run slow. The physics and magic are identical in every mode.' }),
+        h('div', { class: 'small muted', text: 'Automatic steps down when frames run slow. The brewing and magic are identical in every mode.' }),
+        h('div', { class: 'small muted version', text: `v${VERSION}` }),
         check('showFps', 'Show performance stats')),
       saveSection,
       h('div', { class: 'card parch small' }, 'The Alchemist’s Shop — all art, sound, font and code made for this game. Runs fully offline.'),
@@ -344,5 +365,6 @@ export function openSettings(app, lab) {
 
 /** Request chips: an icon and a range per requirement. @param {any[]} reqs */
 export function reqChips(reqs, cls = '') {
-  return h('div', { class: 'req-chips ' + cls }, ...reqs.map((r) => h('span', { class: 'req-chip' + (r.kind === 'limit' ? ' limit' : ''), title: `${PROP_BY_KEY[r.key].label} ${reqText(r)}`, 'data-key': r.key }, icon(PROP_BY_KEY[r.key].icon, 'sm'), h('span', { class: 'tgt', text: reqText(r) }))));
+  return h('div', { class: 'req-chips ' + cls }, ...reqs.map((r) => h('span', { class: 'req-chip' + (r.kind === 'limit' ? ' limit' : ''), title: `${PROP_BY_KEY[r.key].label} ${reqText(r)}`, 'data-key': r.key },
+    icon(PROP_BY_KEY[r.key].icon, 'sm'), h('span', { class: 'pn', text: PROP_BY_KEY[r.key].label }), h('span', { class: 'tgt', text: reqText(r) }))));
 }

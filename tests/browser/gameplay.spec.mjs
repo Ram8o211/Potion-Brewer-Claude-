@@ -53,8 +53,10 @@ test('the guided first order: harvest, brew, test on a creature, write the ID, b
     await page.locator(`input[data-prop=${key}]`).evaluate((el, x) => { /** @type {HTMLInputElement} */ (el).value = String(x); el.dispatchEvent(new Event('input')); el.dispatchEvent(new Event('change')); }, v);
   };
   await set('vitality', Math.round(rec.levels.vitality / 5) * 5);
-  for (const k of ['ardor', 'frost', 'levity', 'bane']) await set(k, 0);
   await set('charm', Math.round(rec.levels.charm / 5) * 5);
+  // everything the toad did not show is 0: one real tap on the coach's target
+  await expect(coach).toContainText('0');
+  await step('[data-act=id-rest-zero]');
   expect(await lab(page, (l) => Object.values(l.state.idCard.values).every((v) => Number.isFinite(v)))).toBe(true);
   await expect(coach).toContainText('Bottle');
   await step('[data-act=tab-brew]');
@@ -79,10 +81,13 @@ test('the guided first order: harvest, brew, test on a creature, write the ID, b
   expect(after.rep).toBeGreaterThan(before.rep);
   expect(after.sale.complaint, 'a genuine healing draught does not come back').toBeNull();
   await expect(coach).toContainText('refund');
+  // the customer leaves happy; what they paid stays on the counter
+  await expect(page.locator('.parting .outcome.ok')).toContainText(String(after.sale.price));
   await shot(page, info, 'guided-sold');
   await step('[data-act=tutorial-next]');
   await expect(page.locator('.coach')).toBeHidden();
-  // the next customer arrives
+  // the player lets the next customer in
+  await step('[data-act=next-customer]');
   await page.waitForFunction(() => { const s = window.__alchemist.screen.state; return !!s.current && !s.current.tutorial; }, null, { timeout: 10_000 });
   expect(errors).toEqual([]);
 });
@@ -103,14 +108,17 @@ test('a customer only haggles over a label that promises what they need; an expe
   await pourDose(page, roles.dew, [50, 25]);
   await page.click('[data-act=bottle]');
   await expect(page.locator('[data-act=sell]')).toBeVisible({ timeout: 20_000 });
-  // no ID yet: nothing to sell on
+  // no ID yet: the counter says so, in words, and the customer will not haggle
+  await expect(page.locator('.vial-hint')).toContainText('Potion ID');
   await page.click('[data-act=sell]');
   await expect(page.locator('.haggle')).toHaveCount(0);
-  // a label promising too little
+  await expect(page.locator('.customer-card .speech')).toContainText('label');
+  // a label promising too little: the customer says what is missing
   await lab(page, (l) => { l.state.writeId('vial', { vitality: 5, ardor: 0, frost: 0, levity: 0, charm: 0, bane: 0 }); l.views.counter.refresh(); });
-  await expect(page.locator('.vial-card .match.bad')).toBeVisible();
+  await expect(page.locator('.vial-hint.bad')).toBeVisible();
   await page.click('[data-act=sell]');
   await expect(page.locator('.haggle')).toHaveCount(0);
+  await expect(page.locator('.customer-card .speech')).toContainText('Vitality');
   // the expert measures it exactly
   await page.click('[data-act=certify]');
   await page.locator('.overlay .modal-foot .btn', { hasText: 'Certify' }).click();
@@ -118,13 +126,35 @@ test('a customer only haggles over a label that promises what they need; an expe
   expect(v.certified).toBeTruthy();
   expect(v.label.values.vitality).toBe(Math.round(v.m.magic[0]));
   await expect(page.locator('.vial-card .seal')).toBeVisible();
-  await expect(page.locator('.vial-card .match.ok')).toBeVisible();
+  await expect(page.locator('.vial-hint.ok')).toBeVisible();
   await shot(page, info, 'certified-vial');
   await page.click('[data-act=sell]');
-  await expect(page.locator('.haggle')).toBeVisible();
-  await page.click('[data-act=take-offer]');
-  await page.waitForTimeout(400);
+  // the haggle: their offer, my price, their patience — in words, and the customer speaks
+  const hg = page.locator('.haggle');
+  await expect(hg).toBeVisible();
+  await expect(hg).toContainText('They offer');
+  await expect(hg).toContainText('You ask');
+  await expect(hg).toContainText('Patience');
+  await expect(page.locator('.customer-card .speech')).toContainText('coins');
+  const offer0 = await lab(page, (l) => l.state.current.haggle.offer);
+  // the price can never go below their own offer
+  for (let k = 0; k < 12; k++) if (await page.locator('[data-act=ask-m5]').isEnabled()) await page.click('[data-act=ask-m5]');
+  await expect(page.locator('[data-act=ask-m5]')).toBeDisabled();
+  await expect(page.locator('[data-act=ask]')).toContainText(String(offer0 + 1));
+  // ask a little more than their offer: they come up, or shake on it
+  await page.click('[data-act=ask-p5]');
+  await page.click('[data-act=ask]');
+  await page.waitForTimeout(300);
+  const after = await lab(page, (l) => ({ h: l.state.current && l.state.current.haggle, sold: l.state.sales.length }));
+  if (!after.sold) {
+    expect(after.h.offer, 'they came up part of the way').toBeGreaterThan(offer0);
+    await shot(page, info, 'haggle-counter');
+    await page.click('[data-act=take-offer]');
+  }
+  await expect(page.locator('.parting')).toBeVisible();
+  await expect(page.locator('[data-act=next-customer], [data-act=end-day]')).toBeVisible();
   const sale = await lab(page, (l) => l.state.sales[0]);
+  expect(sale.price).toBeGreaterThanOrEqual(offer0);
   expect(sale.certified.vitality).toBe(v.label.values.vitality);
   expect(errors).toEqual([]);
 });
@@ -148,11 +178,13 @@ test('returning customers: the refund cannot be avoided, but a certificate unmas
   await shot(page, info, 'complaint');
   await page.click('[data-act=refund]');
   expect(await lab(page, (l) => l.state.coins)).toBe(60);
+  await expect(page.locator('.parting .outcome.bad')).toContainText('40');
   // the bluffer comes next — and is shown the certificate
+  await page.click('[data-act=next-customer]');
   await page.waitForFunction(() => { const c = window.__alchemist.screen.state.current; return c && c.type === 'complaint'; }, null, { timeout: 10_000 });
   await expect(page.locator('[data-act=show-certificate]')).toBeVisible();
   await page.click('[data-act=show-certificate]');
-  await page.waitForTimeout(300);
+  await expect(page.locator('.parting')).toContainText('Bluff caught');
   const st = await lab(page, (l) => ({ coins: l.state.coins, bluff: l.state.sales.find((s) => s.id === 's-bluff').resolved }));
   expect(st.bluff).toBe('caught');
   expect(st.coins, 'no refund (an award may be earned)').toBeGreaterThanOrEqual(60);

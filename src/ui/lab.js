@@ -28,8 +28,7 @@ import { processEvent } from '../game/journal.js';
 import { saveGame, saveJSON, KEYS } from '../game/persistence.js';
 import { AutoBrewer } from '../game/autobrew.js';
 import { RANKS } from '../game/equipment.js';
-import { PROP_BY_KEY } from '../alchemy/magic.js';
-import { rgbToHex } from '../core/color.js';
+import { PROP_BY_KEY, PROP_KEYS } from '../alchemy/magic.js';
 import { h, btn, clear, toast, coins, confirmDialog, setNoticeHost } from './dom.js';
 import { icon, iconUrl } from './icons.js';
 import { audio } from '../audio/audio.js';
@@ -125,6 +124,8 @@ export class LabScreen {
       if (!st.current && !st.dayOver) this.bringCustomer(false);
       this.tutorial = new Tutorial(this);
       if (st.tutorial.active && !st.tutorial.done) this.tutorial.start();
+      // a shop that came over from an older version: say what changed, once
+      if (st.whatsNew) requestAnimationFrame(() => panels.openWhatsNew(this));
     }
     this.showView(this.sandbox ? 'brew' : st.vial || (st.current && st.current.type === 'complaint') ? 'counter' : 'brew', true);
     this.refreshHud(true);
@@ -239,7 +240,7 @@ export class LabScreen {
       this.setFurnace(Math.abs(v) < 0.06 ? 0 : v);
     });
     this.furnaceLabel = h('span', { class: 'flabel' });
-    this.furnaceIcon = icon('flame');
+    this.furnaceIcon = icon('fire');
     this.lidBtn = btn('', () => this.toggleLid(), { icon: 'lid', cls: 'icon', title: 'Lid on/off (L)', act: 'lid' });
     this.controls = h('section', { class: 'controls frame' },
       this.lidBtn,
@@ -492,7 +493,7 @@ export class LabScreen {
     this.groundBtn.classList.toggle('active', can && this.ground);
     if (this.selIcon) {
       clear(this.selIcon);
-      if (m) this.selIcon.append(h('span', { class: 'swatch', style: { background: rgbToHex(m.look || m.color) } }), h('span', { class: 'sel-name', text: m.name }));
+      if (m) this.selIcon.append(panels.jarCanvas(m, 8, 11), h('span', { class: 'sel-name', text: m.name }));
     }
   }
 
@@ -806,6 +807,18 @@ export class LabScreen {
     this.updateBadges();
   }
 
+  /** Play the guided order now (from the menu or the what's-new note). */
+  playGuidedOrder() {
+    if (this.sandbox || !this.tutorial) return;
+    this.state.startGuidedOrder();
+    this.tutorial.start(true);
+    if (!this.state.current && !this.state.dayOver) this.bringCustomer(true);
+    this.refreshCustomer();
+    this.views.counter.refresh();
+    this.showView('counter');
+    this.save();
+  }
+
   /** The request strip above the cauldron: who, and what magic they want. */
   refreshCustomer() {
     if (this.sandbox) return;
@@ -829,10 +842,12 @@ export class LabScreen {
   async decline() {
     const ok = await confirmDialog('Send the customer away?', '', 'Send away', 'danger');
     if (!ok) return;
+    const c = this.state.current;
     this.state.declineCustomer();
+    if (c && !this.state.current) this.views.counter.part(c.customer, 'Another time, then.', 'unhappy', { kind: 'walked' });
     this.refreshCustomer();
     this.views.counter.refresh();
-    setTimeout(() => this.bringCustomer(true), 700);
+    this.updateBadges();
   }
 
   endDay() {
@@ -886,7 +901,7 @@ export class LabScreen {
     this.bottling = null;
     const st = this.state;
     // the label is the Potion ID written for this batch (if any)
-    const id = st.idCard && st.idCard.batchId === b.batch.id ? st.idCard : null;
+    const id = st.idCard && st.idCard.batchId === b.batch.id && PROP_KEYS.some((k) => Number.isFinite(st.idCard.values[k])) ? st.idCard : null;
     st.vial = {
       id: 'v' + Date.now().toString(36),
       ml: b.measurement.ml,
@@ -1063,7 +1078,7 @@ export class LabScreen {
     this.updateBrewPanel(true);
   }
 
-  /** What has gone into the cauldron: swatches and millilitres, nothing more. */
+  /** What has gone into the cauldron: ingredients and millilitres, nothing more. */
   updateBrewPanel(force = false) {
     const el = this.brewPanel;
     if (!el || (el.classList.contains('hidden') && !force)) return;
@@ -1075,7 +1090,7 @@ export class LabScreen {
     for (const p of parts) {
       const m = st.lookup(p.id);
       if (!m) continue;
-      el.append(h('div', { class: 'row small poured' }, h('span', { class: 'swatch', style: { background: rgbToHex(m.look || m.color) } }), h('span', { class: 'pname', text: m.name }), h('span', { class: 'spacer' }), h('b', { text: `${Math.round(p.ml)}` })));
+      el.append(h('div', { class: 'row small poured' }, panels.jarCanvas(m, 8, 11), h('span', { class: 'pname', text: m.name }), h('span', { class: 'spacer' }), h('b', { text: `${Math.round(p.ml)}` })));
     }
   }
 
@@ -1103,7 +1118,7 @@ export class LabScreen {
     const c = this.sim.cauldron;
     this.furnaceLabel.textContent = `${Math.round(c.bottomTemperature())}°`;
     this.furnaceLabel.title = f > 0.02 ? `Fire ${Math.round(f * 100)}%` : f < -0.02 ? `Frost ${Math.round(-f * 100)}%` : 'Off';
-    const want = iconUrl(f < -0.02 ? 'snow' : 'flame');
+    const want = iconUrl(f < -0.02 ? 'basin' : 'fire');
     if (this.furnaceIcon.src !== want) this.furnaceIcon.src = want;
     if (full) this.updateShelf();
     this.updateChips();
@@ -1231,7 +1246,7 @@ export class LabScreen {
     const fading = sim.stats.faded > 3;
     if (burn > 2 || fading || (gas > 6 && sim.furnace.setting > 0.05)) {
       this.awayWarned = this.time;
-      toast(burn > 2 ? 'Something is burning!' : fading ? 'The magic is fading!' : 'The cauldron is boiling', 'The fire is still lit.', 'flame', 4000);
+      toast(burn > 2 ? 'Something is burning!' : fading ? 'The magic is fading!' : 'The cauldron is boiling', 'The fire is still lit.', 'fire', 4000);
     }
   }
 

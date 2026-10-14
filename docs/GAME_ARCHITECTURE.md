@@ -295,8 +295,8 @@ instead of being dropped.
   * Records keep what was shown (`levels`), never a verdict.
 
   The **Potion ID** belongs to a batch. Any new pour bumps the batch
-  revision and marks the ID stale. The ID is copied onto the vial as its
-  label when bottling.
+  revision and marks a written ID stale (a blank one is never stale). A
+  written ID is copied onto the vial as its label when bottling.
 * **`commissions.js`** builds each request from a *problem* that one
   property solves (a fever, a frozen pass, rats in the granary), with
   requirements only on the six properties. Each requirement is *want*
@@ -326,6 +326,8 @@ instead of being dropped.
     Asking far too much costs extra patience. More than twice their
     maximum is an insult, and they walk out.
   * With patience gone they make one final offer.
+  * Asking no more than their offer sells at their offer, never below it
+    (the counter's buttons cannot go below it either).
 * **`sales.js`** settles a sale. The label is what the customer bought,
   and the vial's measured magic is what they drink. If a want falls short
   or a limit is exceeded by more than 1.5 points, a **genuine complaint**
@@ -348,8 +350,13 @@ instead of being dropped.
   replacement and certification discounts).
 * **`journal.js`** turns simulation events into journal discoveries,
   ingredient knowledge and achievements. The events include the first
-  boil and freeze, crushing, heat-assisted mixing, layers that keep
-  apart, a fire, a transmutation and magic fading.
+  boil and freeze, crushing, heat-assisted mixing, magics that will not
+  join while cold, a fire, a transmutation and magic fading. Entries
+  speak of magic only: one generic entry each for steam, ice and fire,
+  never an ingredient's boiling point, colour or weight.
+  `modernizeJournal()` rewrites entries saved by earlier builds when a
+  game is loaded, and `fromJSON` refreshes every ingredient's description
+  from its current lore.
 * **`autobrew.js`** is a controller that carries out a plan in the real
   simulation. It pours (smashing stones in the mortar where the plan says
   so), stirs, heats and cools with feedback, holds, and serves at the
@@ -431,15 +438,30 @@ instead of being dropped.
   dropping frames. Frame-timing statistics (`perfReport()`) feed the
   benchmark.
 * **`views/`** holds the other rooms:
-  * `counter.js`: the customer and their request, the vial with its ID
-    chips and seal, Offer and Certify, the haggling panel (an offer, a
-    price slider with −5/−1/+1/+5, Ask, Take and Refuse, a patience meter),
-    and returning customers (refund, or show the certificate);
+  * `counter.js` covers the customer and everything a sale needs:
+    * the request as named property chips;
+    * the vial with its named ID chips and seal, and an inline hint
+      saying what stops the sale (no label, an incomplete label, a label
+      that does not promise what they need);
+    * Offer and Certify;
+    * the haggle panel. It shows "They offer", "You ask" (−5/−1/+1/+5 and
+      a slider, never below their offer), "Patience", Ask, Take and
+      No deal, and turns into "Final offer" when patience runs out;
+    * the customer's speech bubble, which voices the offer, each
+      counter-offer and every refusal, naming the missing property;
+    * a parting card after a sale, a walk-out, a refund or a caught
+      bluff, with "Open the door" for the next visitor;
+    * returning customers (refund, or show the certificate);
   * `garden.js`: the painted garden and one row per bed with plant, water
     and harvest buttons;
-  * `testing.js`: the dose source (cauldron or vial), the draggable
-    dropper, one card per creature (cage canvas, health, dose, replay,
-    replace) and the Potion ID panel with six sliders;
+  * `testing.js`:
+    * the dose source (cauldron or vial) and the draggable dropper;
+    * one card per creature: cage canvas, health, dose, replay and
+      replace. On a phone in portrait the cards form a swipeable row
+      above the ID panel;
+    * the Potion ID panel: six named sliders, updated in place. A tap or a
+      key on an unset slider resting at 0 writes 0, and "? → 0" sets every
+      property the creatures did not show;
   * `book.js`: recipes, ingredients, journal, achievements and the sales
     ledger.
 * **`panels.js`** contains the guild shop (equipment), the ingredient
@@ -454,7 +476,12 @@ instead of being dropped.
   4. bottle, offer and haggle.
 
   Each step advances on what actually happens. The coach highlights its
-  target, or the target's room tab, and never sits on top of a control.
+  target, or the target's room tab, and scrolls it into view. It never
+  sits on top of a control. It jumps ahead when the player is already
+  further along (bottled early, already haggling, sold). "Play the guided
+  order" in the menu replays it in any shop (`startGuidedOrder`), and a
+  shop carried over from an older version is offered it once, together
+  with a short note on what changed (`openWhatsNew`).
 * The layout is CSS grid; see `docs/MOBILE_UX.md` for the per-device
   arrangements, gestures and their tap alternatives. Safe-area insets are
   respected, and touch targets are at least 44 CSS px (tested in every
@@ -484,7 +511,12 @@ settings.
 * The service worker precaches the build on the first visit. It serves
   from cache first (with background refresh) in release builds and from
   the network first in development, and deletes old caches on activation.
-  The offline browser test cuts the network and plays.
+  When it activates as an update, it navigates the open pages, which
+  may still run the old build, onto the new one. The game saves on
+  `pagehide`. The offline browser test cuts the network and plays. The
+  sub-path test checks that a redeploy reaches an open page by itself.
+  `src/version.js` holds the version shown in the menu footer and in
+  settings, and a test keeps it equal to `package.json`.
 * `manifest.webmanifest` and the icons make the game installable;
   `scripts/make-icons.mjs` generates the icons and `scripts/make-font.py`
   generates the pixel font.
@@ -496,9 +528,10 @@ settings.
 | Physics | `tests/physics.test.mjs` (23 scenarios) | piles and angle of repose, sleeping, no rebound, avalanches, calm pooling, stratification without gaps, progressive mixing and the stirring speed-up, equilibrium colour, dough and paste, freezing into one rigid block, crushing, conduction, boiling and condensing under the lid, gas containment, immiscibility under stirring, wall integrity, energy balance, snapshot round-trip, linear cost, fire spread, drying, hot-iron ignition and smothering |
 | Magic | `tests/alchemy.test.mjs` (8 tests) | the garden world (water without magic, magic-only cards, most transitions out of reach), proportions, extraction and hot steeping, fading, a super transition, thresholds averaged by mixing into reach, heat-assisted mixing that stays mixed, the magic state conserved by stirring |
 | Garden and testing room | `tests/testing.test.mjs` (6 tests) | every property readable on two creatures, honest but imperfect readings, real doses from the tap and harm, the Potion ID per batch and its staleness, real-time growth (plants only while moist), the well, planting costs and rank locks |
+| Wording | `tests/wording.test.mjs` (8 tests) | ingredient lore, customer lines, potion names, journal entries and awards are magic-only; old saves are rewritten on load; the haggle floor; the version label; a blank ID is never stale; the guided order replayed after sales; the what's-new note for 1.x saves |
 | Game rules | `tests/game.test.mjs` (11 tests) | seeded worlds with requests in magic terms only, achievability brewed in the real simulation, haggling, the label gate, unavoidable refunds, bluffs with and without certificates, certification, progress and the stipend, save round-trip, a genuine v3 save migrating, corrupted, partial and future saves |
 | Rendering | `tests/render.test.mjs` (1 test) | every phase drawn where its particles are |
-| Browser | `tests/browser/*.spec.mjs` (71 runs over 6 profiles) | layouts and ≥ 44 px touch targets in every room; the coach row and the status line never covering a control; the guided first order end to end (garden, dose buttons, stirring by touch, a toad test with no numbers on the cage, the ID sliders, bottling, haggling); the label gate and certification; complaints and a caught bluff; the garden by tap and by button with persistence; the dropper, flame pixels in the salamander's cage, ID persistence and replacement; tools, jar drag-to-pour and the mortar; equipment; saves (continue, cauldron, export and import, damaged save); settings; sandbox physics; offline build; GitHub Pages sub-path build |
+| Browser | `tests/browser/*.spec.mjs` (71 runs over 6 profiles) | layouts and ≥ 44 px touch targets in every room; the coach row and the status line never covering a control; the guided first order end to end (garden, dose buttons, stirring by touch, a toad test with no numbers on the cage, the “? → 0” button, bottling, haggling, the parting card); the label gate with the counter's own explanations, haggle captions and the offer floor, certification; complaints and a caught bluff; a real tap writing 0 on an unset ID slider and keyboard steps keeping focus; no “null/undefined/NaN” in any room; the garden by tap and by button with persistence; the dropper, flame pixels in the salamander's cage, ID persistence and replacement; tools, jar drag-to-pour and the mortar; equipment; saves (continue, cauldron, export and import, damaged save); settings; sandbox physics; offline build; GitHub Pages sub-path build |
 | Types | `tsc` with `checkJs` | `src/`, `scripts/`, `tests/` |
 | Performance | `scripts/bench.mjs` | physics ms per step; in-browser fps, frame-time percentiles, physics and render split, simulation speed, memory soak |
 | Balance | `scripts/playtest.mjs`, `scripts/achievability.mjs` | a 10-day economy (garden, tests, haggling, refunds, certification) for two player profiles; normal and super-transition requests brewed in the real simulation |

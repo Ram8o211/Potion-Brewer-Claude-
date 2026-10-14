@@ -6,6 +6,7 @@ import { Simulation } from '../simulation/world.js';
 import { REF, refLookup } from '../materials/reference.js';
 import { hasSave, loadGame } from '../game/persistence.js';
 import { audio } from '../audio/audio.js';
+import { VERSION } from '../version.js';
 
 export class MenuScreen {
   /** @param {import('./app.js').App} app */
@@ -25,7 +26,7 @@ export class MenuScreen {
       btn('New Shop', () => app.newGameDialog(), { cls: save ? '' : 'primary', icon: 'plus', act: 'new-game' }),
       btn('Free Experiment', () => app.startSandbox(), { icon: 'flask', act: 'sandbox' }),
       h('div', { class: 'row' }, btn('How to play', () => app.openHelp(), { icon: 'help', act: 'help' }), btn('Settings', () => app.openSettings(), { icon: 'gear', act: 'menu-settings' })),
-      h('div', { class: 'footer', text: 'Works offline · progress saves on this device' }),
+      h('div', { class: 'footer', text: `Works offline · progress saves on this device · v${VERSION}` }),
     );
     this.el = h('div', { class: 'screen menu' }, this.canvas, panel);
     root.appendChild(this.el);

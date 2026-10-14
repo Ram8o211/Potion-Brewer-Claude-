@@ -8,19 +8,48 @@ import { audio } from '../../audio/audio.js';
 import { drawPortrait } from '../../rendering/portraits.js';
 import { drawBottle } from '../../rendering/renderer.js';
 import { PROPS, PROP_BY_KEY } from '../../alchemy/magic.js';
-import { idComplete } from '../../game/testing.js';
+import { idComplete, idVector } from '../../game/testing.js';
 import { mood } from '../../game/haggle.js';
 import { archetypeOf } from '../../game/customers.js';
+import { failures } from '../../game/commissions.js';
 import * as panels from '../panels.js';
+
+/** @template T @param {T[]} a @returns {T} */
+const pick = (a) => a[Math.floor(Math.random() * a.length)];
 
 export class CounterView {
   /** @param {import('../lab.js').LabScreen} lab */
   constructor(lab) {
     this.lab = lab;
     this.el = h('section', { class: 'view view-counter', 'data-view': 'counter' });
-    /** a line the customer just said (haggling) */
+    /** what the customer just said (shown in their speech bubble) */
     this.say = '';
+    /** @type {string|null} the visitor the line belongs to */
+    this.sayFor = null;
+    /** @type {null|'happy'|'neutral'|'unhappy'} */
+    this.sayMood = null;
+    /** @type {null|{customer:any, line:string, mood:'happy'|'neutral'|'unhappy', outcome:any}} a visitor on their way out */
+    this.parting = null;
     this.ask = 0;
+  }
+
+  /** The current visitor speaks. @param {string} line @param {null|'happy'|'neutral'|'unhappy'} [mo] */
+  speak(line, mo = null) {
+    const c = this.lab.state.current;
+    this.say = line;
+    this.sayMood = mo;
+    this.sayFor = c ? c.id || c.saleId || c.customer.name : null;
+  }
+
+  /**
+   * A visitor leaves: their last words stay on the counter until the player
+   * opens the door for the next one.
+   * @param {any} customer @param {string} line @param {'happy'|'neutral'|'unhappy'} mo @param {any} [outcome]
+   */
+  part(customer, line, mo, outcome = null) {
+    this.parting = { customer, line, mood: mo, outcome };
+    this.say = '';
+    this.sayFor = null;
   }
 
   build() {
@@ -35,24 +64,28 @@ export class CounterView {
       return;
     }
     const c = st.current;
+    const door = () => (st.dayOver ? btn('Close for the night', () => lab.endDay(), { cls: 'gold', icon: 'sun', act: 'end-day' })
+      : btn('Open the door', () => lab.bringCustomer(true), { cls: 'gold', icon: 'door', act: 'next-customer' }));
     if (!c) {
-      el.append(h('div', { class: 'card parch counter-empty' },
-        st.dayOver ? btn('Close for the night', () => lab.endDay(), { cls: 'gold', icon: 'sun', act: 'end-day' })
-          : btn('Open the door', () => lab.bringCustomer(true), { cls: 'gold', icon: 'door', act: 'next-customer' })));
+      if (this.parting) el.append(this.partingCard(this.parting, door()));
+      else el.append(h('div', { class: 'card parch counter-empty' }, door()));
       this.vialCard(el, null);
       return;
     }
+    this.parting = null;
+    const who = c.id || c.saleId || c.customer.name;
+    if (this.sayFor !== who) { this.say = ''; this.sayMood = null; this.sayFor = who; }
     if (c.type === 'complaint') { this.complaintCard(el, c); return; }
     const h0 = c.haggle;
-    const mo = h0 ? (h0.state === 'walked' ? 'unhappy' : mood(h0) > 0.6 ? 'happy' : mood(h0) > 0.25 ? 'neutral' : 'unhappy') : 'neutral';
+    const mo = this.sayMood || (h0 ? (h0.state === 'walked' ? 'unhappy' : mood(h0) > 0.6 ? 'happy' : mood(h0) > 0.25 ? 'neutral' : 'unhappy') : 'neutral');
     const portrait = /** @type {HTMLCanvasElement} */ (h('canvas', { class: 'portrait big' }));
     drawPortrait(portrait, c.customer.portrait, mo);
     el.append(h('div', { class: 'card parch customer-card' },
       h('div', { class: 'cust-top' }, portrait, h('div', {},
         h('div', { class: 'cust-name', text: c.customer.name }),
         h('div', { class: 'small muted' }, c.customer.title, c.contract ? h('span', { class: 'tag' }, icon('charter', 'sm')) : null, c.grand ? h('span', { class: 'tag' }, icon('trophy', 'sm')) : null),
-        h('div', { class: 'speech', text: '“' + c.dialogue + '”' }))),
-      h('div', { class: 'potion-name' }, c.potionName, h('span', { class: 'muted small', text: ` · ${c.bottleMl} ml` })),
+        h('div', { class: 'speech' + (this.say ? ' says' : ''), text: '“' + (this.say || c.dialogue) + '”' }))),
+      h('div', { class: 'potion-name' }, c.potionName, h('span', { class: 'bottle-size muted small', title: 'Bottle size' }, icon('bottle', 'sm'), ` ${c.bottleMl} ml`)),
       panels.reqChips(c.requirements, 'big'),
       h('div', { class: 'row wrap cust-actions' },
         btn(c.hintCost ? `${c.hintCost}` : '', () => panels.openHint(lab), { icon: 'bulb', title: 'Guild advice', act: 'hint' }),
@@ -73,26 +106,39 @@ export class CounterView {
     const cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: '24', height: '32', class: 'vial-art' }));
     drawBottle(cv.getContext('2d'), 2, 3, 20, 29, v.m.color, Math.min(1, v.ml / Math.max(1, com ? com.bottleMl : v.ml)));
     const label = v.label || { values: {} };
-    const match = com ? st.labelMatches(com) : false;
+    const order = com && com.type === 'order' ? com : null;
+    const match = order ? st.labelMatches(order) : false;
     const complete = !!v.label && idComplete(v.label);
     const chips = h('div', { class: 'id-chips' }, ...PROPS.map((p) => {
       const val = label.values[p.key];
-      const bad = com && complete && com.requirements.some((r) => r.key === p.key && (val < r.min || val > r.max));
-      return h('span', { class: 'id-chip' + (bad ? ' bad' : '') + (Number.isFinite(val) ? '' : ' unknown'), title: p.label }, icon(p.icon, 'sm'), h('b', { text: Number.isFinite(val) ? String(val) : '?' }));
+      const bad = order && complete && order.requirements.some((r) => r.key === p.key && (val < r.min || val > r.max));
+      return h('span', { class: 'id-chip' + (bad ? ' bad' : '') + (Number.isFinite(val) ? '' : ' unknown'), title: p.label }, icon(p.icon, 'sm'), h('span', { class: 'pn', text: p.label }), h('b', { text: Number.isFinite(val) ? String(val) : '?' }));
     }));
+    const short = order && v.ml < order.bottleMl - 2;
     const head = h('div', { class: 'row' }, cv, h('div', { class: 'vial-head' },
-      h('div', { class: 'row' }, h('b', { text: `${Math.round(v.ml)} ml` }), v.certified ? h('span', { class: 'seal', title: 'Certified by an expert' }, icon('seal'), h('span', { class: 'small', text: 'Certified' })) : null,
+      h('div', { class: 'row' }, h('b', { class: short ? 'short' : '', title: short ? 'Not a full bottle: they will pay less' : 'In the vial', text: short ? `${Math.round(v.ml)}/${order.bottleMl} ml` : `${Math.round(v.ml)} ml` }), v.certified ? h('span', { class: 'seal', title: 'Certified by an expert' }, icon('seal'), h('span', { class: 'small', text: 'Certified' })) : null,
         v.label && v.label.stale && !v.certified ? h('span', { class: 'warn small', title: 'The ID was written before the last ingredients went in' }, icon('warn', 'sm')) : null),
       chips));
     const card = h('div', { class: 'card parch vial-card' }, head);
-    if (com && com.type === 'order') {
-      const h0 = com.haggle;
-      if (h0 && h0.state !== 'walked') card.append(this.hagglePanel(com, h0));
+    if (order) {
+      const h0 = order.haggle;
+      if (h0 && h0.state !== 'walked') card.append(this.hagglePanel(order, h0));
       else {
-        const sell = btn('Offer', () => this.startSale(com), { cls: 'primary', icon: 'deal', act: 'sell', disabled: v.ml < 5 });
+        // what stands between this vial and a sale, in words
+        const missing = PROPS.filter((p) => !Number.isFinite(label.values[p.key]));
+        if (!complete) {
+          card.append(h('div', { class: 'vial-hint', role: 'status' }, icon('toad', 'sm'),
+            h('span', { text: missing.length === PROPS.length ? 'No label yet. Test it on the creatures and set its Potion ID.' : 'Set every Potion ID slider (0 where nothing showed):' }),
+            missing.length < PROPS.length ? h('span', { class: 'miss' }, ...missing.map((p) => icon(p.icon, 'sm'))) : null));
+        } else if (!match) {
+          card.append(h('div', { class: 'vial-hint bad', role: 'status' }, icon('close', 'sm'), h('span', { text: 'The label does not promise what they asked for.' })));
+        } else {
+          card.append(h('div', { class: 'vial-hint ok', role: 'status' }, icon('check', 'sm'), h('span', { text: 'The label promises what they need. Offer it!' })));
+        }
+        const ready = complete && match;
+        const sell = btn('Offer', () => this.startSale(order), { cls: ready ? 'primary' : '', icon: 'deal', act: 'sell', disabled: v.ml < 5 });
         const certify = v.certified ? null : btn(`${st.certifyFee}`, () => this.certify(), { icon: 'seal', title: 'Have an expert alchemist certify it', act: 'certify', disabled: st.coins < st.certifyFee });
-        const editId = v.certified ? null : btn('', () => { lab.testSource = 'vial'; lab.showView('testing'); }, { icon: 'toad', cls: 'icon', title: 'Test it and write its ID', act: 'test-vial' });
-        if (complete) card.append(h('div', { class: 'match ' + (match ? 'ok' : 'bad') }, icon(match ? 'check' : 'close', 'sm')));
+        const editId = v.certified ? null : btn(complete ? '' : 'Potion ID', () => { lab.testSource = 'vial'; lab.showView('testing'); }, { icon: 'toad', cls: complete ? 'icon' : 'primary', title: 'Test it and write its ID', act: 'test-vial' });
         card.append(h('div', { class: 'row wrap' }, sell, certify, editId, h('span', { class: 'spacer' }), this.vialMenu()));
       }
     } else {
@@ -121,63 +167,100 @@ export class CounterView {
     this.refresh();
   }
 
-  /** Show the vial to the customer: they look at the label, then haggle. */
+  /** Show the vial to the customer: they read the label, then haggle. */
   startSale(com) {
     const lab = this.lab, st = lab.state;
     const v = st.vial;
     if (!v.label || !idComplete(v.label)) {
-      toast('Label it first', 'Test it on the creatures and write its Potion ID.', 'toad');
+      this.speak('What is in it? I won’t buy a potion without its label.', 'neutral');
       audio.play('error');
+      this.refresh();
+      this.shake('.vial-hint');
       return;
     }
     if (!st.labelMatches(com)) {
-      // the label does not promise what they need
-      this.say = 'That is not what I need.';
+      // the label does not promise what they need: they say what is wrong
+      const f = failures(com, idVector(v.label))[0];
+      const name = f ? PROP_BY_KEY[f.key].label : '';
+      this.speak(!f ? 'That is not what I need.' : f.kind === 'weak' ? `That is not what I need. I need more ${name}.` : f.kind === 'strong' ? `Too much ${name} for me.` : `That much ${name} would harm me.`, 'unhappy');
       audio.play('fail');
-      const card = this.el.querySelector('.vial-card');
-      if (card) card.classList.add('shake');
-      setTimeout(() => this.refresh(), 450);
-      toast(com.customer.name.split(' ')[0], 'That is not what I need.', 'close', 2600);
+      this.refresh();
+      this.shake('.vial-card');
       return;
     }
     const hg = st.beginHaggle();
-    this.ask = Math.round(hg.offer * 1.6);
-    this.say = `${coins(hg.offer)}?`;
+    this.ask = Math.max(hg.offer + 1, Math.round(hg.offer * 1.6));
+    this.speak(v.ml < com.bottleMl - 2 ? `Not a full bottle… I can give you ${coins(hg.offer)} coins.` : `I can give you ${coins(hg.offer)} coins for it.`, 'neutral');
     audio.play('coin');
     this.refresh();
+    const panel = this.el.querySelector('.haggle');
+    if (panel && panel.scrollIntoView) panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     if (lab.tutorial) lab.tutorial.notify('haggle');
+  }
+
+  /** @param {string} sel */
+  shake(sel) {
+    const el = this.el.querySelector(sel);
+    if (!el) return;
+    el.classList.remove('shake');
+    void (/** @type {HTMLElement} */ (el)).offsetWidth;
+    el.classList.add('shake');
+    if (el.scrollIntoView) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
 
   /** The haggle: their offer, my price. */
   hagglePanel(com, hg) {
-    const ask = Math.max(1, Math.round(this.ask || hg.offer + 1));
-    const askEl = h('b', { class: 'ask-val', text: coins(ask) });
-    const set = (v) => { this.ask = Math.max(1, Math.round(v)); askEl.textContent = coins(this.ask); slider.value = String(this.ask); };
-    const top = Math.max(hg.offer * 3, ask + 10);
-    const slider = /** @type {HTMLInputElement} */ (h('input', { type: 'range', min: String(Math.max(1, hg.offer)), max: String(Math.round(top)), value: String(ask), 'aria-label': 'Your price' }));
-    slider.addEventListener('input', () => set(Number(slider.value)));
-    const pips = h('span', { class: 'pips', title: 'Patience' }, ...Array.from({ length: hg.patienceMax }, (_, i) => h('i', { class: i < hg.patience ? 'on' : '' })));
     const finalNote = hg.state === 'final';
-    return h('div', { class: 'haggle' },
-      h('div', { class: 'row offer-row' }, h('span', { class: 'bubble' + (finalNote ? ' final' : '') }, icon('coin', 'sm'), h('b', { text: coins(hg.offer) }), finalNote ? h('span', { class: 'small', text: ' final' }) : null), h('span', { class: 'spacer' }), pips),
-      h('div', { class: 'row ask-row' },
-        btn('−5', () => set(this.ask - 5), { cls: 'small', act: 'ask-m5' }), btn('−1', () => set(this.ask - 1), { cls: 'small', act: 'ask-m1' }),
+    const floor = hg.offer + 1;
+    const ask = Math.max(floor, Math.round(this.ask || floor));
+    this.ask = ask;
+    const offerRow = h('div', { class: 'row offer-row' },
+      h('span', { class: 'cap', text: finalNote ? 'Final offer' : 'They offer' }),
+      h('span', { class: 'bubble' + (finalNote ? ' final' : '') }, icon('coin', 'sm'), h('b', { text: coins(hg.offer) })),
+      h('span', { class: 'spacer' }),
+      h('span', { class: 'cap', text: 'Patience' }),
+      h('span', { class: 'pips', title: 'Patience' }, ...Array.from({ length: hg.patienceMax }, (_, i) => h('i', { class: i < hg.patience ? 'on' : '' }))));
+    const take = btn(`Take ${coins(hg.offer)}`, () => this.doAccept(), { cls: 'primary', icon: 'deal', act: 'take-offer' });
+    const noDeal = btn('No deal', () => this.doRefuse(), { icon: 'close', cls: 'danger', title: 'No deal: they leave', act: 'refuse' });
+    if (finalNote) return h('div', { class: 'haggle final' }, offerRow, h('div', { class: 'row wrap' }, take, h('span', { class: 'spacer' }), noDeal));
+    const askEl = h('b', { class: 'ask-val', text: coins(ask) });
+    const askBtn = btn(`Ask ${coins(ask)}`, () => this.doAsk(), { cls: 'gold', icon: 'scales', act: 'ask' });
+    const top = Math.max(hg.offer * 3, ask + 10);
+    const slider = /** @type {HTMLInputElement} */ (h('input', { type: 'range', min: String(floor), max: String(Math.round(top)), value: String(ask), 'aria-label': 'Your price' }));
+    const minus = [btn('−5', () => set(this.ask - 5), { cls: 'small', act: 'ask-m5' }), btn('−1', () => set(this.ask - 1), { cls: 'small', act: 'ask-m1' })];
+    // never below their own offer: asking less would only lose money
+    const set = (v) => {
+      this.ask = Math.max(floor, Math.round(v));
+      askEl.textContent = coins(this.ask);
+      slider.value = String(this.ask);
+      const l = askBtn.querySelector('.lbl');
+      if (l) l.textContent = `Ask ${coins(this.ask)}`;
+      for (const m of minus) m.disabled = this.ask <= floor;
+    };
+    slider.addEventListener('input', () => set(Number(slider.value)));
+    for (const m of minus) m.disabled = ask <= floor;
+    return h('div', { class: 'haggle' }, offerRow,
+      h('div', { class: 'row ask-row' }, h('span', { class: 'cap', text: 'You ask' }), ...minus,
         h('span', { class: 'ask-box' }, icon('coin', 'sm'), askEl),
         btn('+1', () => set(this.ask + 1), { cls: 'small', act: 'ask-p1' }), btn('+5', () => set(this.ask + 5), { cls: 'small', act: 'ask-p5' })),
       slider,
-      h('div', { class: 'row wrap' },
-        finalNote ? null : btn('Ask', () => this.doAsk(), { cls: 'gold', icon: 'scales', act: 'ask' }),
-        btn(`Take ${coins(hg.offer)}`, () => this.doAccept(), { cls: 'primary', icon: 'deal', act: 'take-offer' }),
-        h('span', { class: 'spacer' }),
-        btn('', () => this.doRefuse(), { icon: 'close', cls: 'icon danger', title: 'No deal', act: 'refuse' })));
+      h('div', { class: 'row wrap' }, askBtn, take, h('span', { class: 'spacer' }), noDeal));
   }
 
   doAsk() {
     const st = this.lab.state;
+    const com = st.current;
     const r = st.haggleAsk(this.ask);
     if (!r) return;
     if (r.result === 'deal') return this.closeSale();
-    if (r.result === 'walked') { audio.play('fail'); toast(st.current.customer.name.split(' ')[0], 'Too much! Good day.', 'door', 2600); this.walkOut(); return; }
+    if (r.result === 'walked') {
+      audio.play('fail');
+      this.walkOut('Too much! Good day.');
+      return;
+    }
+    const arch = archetypeOf(com.customer.archetype);
+    if (r.result === 'final') this.speak(`${coins(r.offer)}. Not a coin more.`, 'unhappy');
+    else this.speak(`${pick(arch.displeased)} ${coins(r.offer)}, then.`, mood(com.haggle) > 0.5 ? 'neutral' : 'unhappy');
     audio.play(r.result === 'final' ? 'error' : 'coin');
     this.ask = Math.max(r.offer + 1, Math.round((this.ask + r.offer) / 2 + 1));
     this.refresh();
@@ -190,20 +273,28 @@ export class CounterView {
 
   doRefuse() {
     const st = this.lab.state;
-    if (st.current && st.current.tutorial) { toast('Not this one', 'Your first customer needs this potion.', 'heart'); return; }
+    if (st.current && st.current.tutorial) {
+      // the first customer always comes round again
+      st.current.haggle = null;
+      this.speak('Please — I really need it! Make me an offer.', 'unhappy');
+      this.refresh();
+      return;
+    }
     st.haggleRefuse();
-    this.walkOut();
+    this.walkOut('Suit yourself. Good day.');
   }
 
-  walkOut() {
+  /** The customer leaves without buying. @param {string} line */
+  walkOut(line) {
     const lab = this.lab, st = lab.state;
-    // the first customer always comes round again
-    if (st.current && st.current.tutorial) { st.current.haggle = null; this.refresh(); return; }
-    if (st.current && st.current.haggle && st.current.haggle.state === 'walked') st.declineCustomer();
+    const c = st.current;
+    if (c && c.tutorial) { c.haggle = null; this.speak('That is too much for me… Make me an offer.', 'unhappy'); this.refresh(); return; }
+    if (c && c.haggle && c.haggle.state === 'walked') st.declineCustomer();
+    if (c) this.part(c.customer, line, 'unhappy', { kind: 'walked' });
     lab.refreshCustomer();
     this.refresh();
+    lab.updateBadges();
     lab.save();
-    setTimeout(() => lab.bringCustomer(true), 900);
   }
 
   closeSale() {
@@ -213,14 +304,30 @@ export class CounterView {
     if (!sale) return;
     audio.play('coin');
     const arch = archetypeOf(com.customer.archetype);
-    toast(`+${coins(sale.price)}`, arch.pleased[Math.floor(Math.random() * arch.pleased.length)], 'coin', 3000);
+    this.part(com.customer, pick(arch.pleased), 'happy', { kind: 'sold', price: sale.price });
     for (const e of events) lab.announce(e);
     lab.save();
     lab.refreshCustomer();
     lab.refreshHud(true);
+    lab.updateBadges();
     this.refresh();
     if (lab.tutorial) lab.tutorial.notify('sold');
-    if (!st.dayOver) setTimeout(() => lab.bringCustomer(true), 1300);
+  }
+
+  /** A visitor on their way out: their last words, what came of it, and the door. */
+  partingCard(p, door) {
+    const portrait = /** @type {HTMLCanvasElement} */ (h('canvas', { class: 'portrait big' }));
+    drawPortrait(portrait, p.customer.portrait, p.mood);
+    const o = p.outcome || {};
+    const result = o.kind === 'sold' ? h('span', { class: 'outcome ok' }, icon('coin'), h('b', { text: `+${coins(o.price)}` }))
+      : o.kind === 'refund' ? h('span', { class: 'outcome bad' }, icon('refund'), h('b', { text: `−${coins(o.amount)}` }))
+        : o.kind === 'caught' ? h('span', { class: 'outcome ok' }, icon('seal'), h('b', { text: 'Bluff caught' }))
+          : h('span', { class: 'outcome' }, icon('door'));
+    return h('div', { class: 'card parch customer-card parting' },
+      h('div', { class: 'cust-top' }, portrait, h('div', {},
+        h('div', { class: 'cust-name', text: p.customer.name }),
+        h('div', { class: 'speech says', text: `“${p.line}”` }))),
+      h('div', { class: 'row wrap' }, result, h('span', { class: 'spacer' }), door));
   }
 
   /** A customer is back: the potion failed them (or so they say). */
@@ -244,15 +351,16 @@ export class CounterView {
 
   resolve(how) {
     const lab = this.lab, st = lab.state;
+    const c = st.current;
     const r = st.resolveComplaint(how);
-    if (!r.ok) { toast('Cannot', r.reason || '', 'close'); return; }
-    if (r.outcome === 'caught') { audio.play('fanfare'); toast('Caught bluffing!', 'They leave red-faced.', 'seal', 3500); }
-    else { audio.play('coin'); toast(`−${coins(r.amount)}`, r.outcome === 'proven' ? 'The certificate proves them right.' : 'Refunded.', 'refund', 3000); }
+    if (!r.ok) { this.speak(r.reason || 'Hmph.', 'unhappy'); this.refresh(); return; }
+    if (r.outcome === 'caught') { audio.play('fanfare'); this.part(c.customer, 'Ah… well… I must have drunk something else. Good day!', 'unhappy', { kind: 'caught' }); }
+    else { audio.play('coin'); this.part(c.customer, r.outcome === 'proven' ? 'Your own seal proves it. My money, please.' : 'Thank you. I hope the next one works.', 'neutral', { kind: 'refund', amount: r.amount }); }
     for (const e of r.events || []) lab.announce(e);
     lab.save();
     lab.refreshHud(true);
     lab.refreshCustomer();
+    lab.updateBadges();
     this.refresh();
-    setTimeout(() => lab.bringCustomer(true), 900);
   }
 }
