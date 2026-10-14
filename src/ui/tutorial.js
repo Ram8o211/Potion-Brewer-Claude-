@@ -52,7 +52,7 @@ export class Tutorial {
       { icon: 'dropper', text: 'Give the Moss Toad a dose and watch it.', target: act('dose-toad'), done: tested },
       { icon: 'leaf', text: 'Each leaf on its back is 10 Vitality. Set the Vitality slider.', target: () => lab.el.querySelector('[data-prop="vitality"]'), done: () => idSet('vitality') },
       { icon: 'scroll', text: 'No hearts or bubbles means 0: press “? → 0”. That is your Potion ID.', target: () => lab.el.querySelector('[data-act="id-rest-zero"]') || lab.el.querySelector('.id-panel'), done: idDone },
-      { icon: 'bottle', text: 'Back to the cauldron and Bottle it.', target: () => (lab.view === 'brew' ? lab.bottleFab : lab.tabEls.brew.b), done: () => this.flags.bottled || !!st.vial },
+      { icon: 'bottle', text: 'Back to the cauldron and Bottle it.', target: () => (lab.view === 'brew' ? lab.bottleFab : lab.tabEls.brew.b), done: () => !!st.vial },
       { id: 'offer', icon: 'deal', text: 'Offer it to the customer.', target: act('sell'), done: () => this.flags.haggle || !!(st.current && st.current.haggle) || this.flags.sold },
       { id: 'haggle', icon: 'coin', text: 'They offer a price. Ask for more, or take it.', target: () => lab.el.querySelector('.haggle'), done: () => this.flags.sold },
       { id: 'sold', icon: 'seal', text: 'Sold! If a potion fails, its buyer comes back for a refund. Some bluff: only an expert’s seal proves you right.', button: 'Finish' },
@@ -149,10 +149,18 @@ export class Tutorial {
     const steps = this.steps;
     const st = this.lab.state;
     // the player may be ahead of the coach (bottled early, opened the haggle,
-    // sold): jump to the step that matches what is on screen
+    // sold) — but only with the tutorial's own customer: jump to the step
+    // that matches what is on screen
     const at = (id) => steps.findIndex((x) => x.id === id);
-    const ahead = this.flags.sold ? at('sold') : st.current && st.current.haggle ? at('haggle') : st.vial ? at('offer') : -1;
+    const tut = !!(st.current && st.current.tutorial);
+    const labelled = !!(st.vial && st.vial.label && idComplete(st.vial.label));
+    const ahead = this.flags.sold ? at('sold') : tut && st.current.haggle ? at('haggle') : tut && labelled ? at('offer') : -1;
     if (ahead > this.index) { this.index = ahead; this.show(); return; }
+    // ...or behind it: the vial was emptied, or the customer broke off the haggle
+    if (!this.flags.sold && this.index >= at('offer') && this.index < at('sold')) {
+      if (!st.vial && !this.lab.bottling) { this.flags.haggle = false; this.index = at('offer') - 1; this.show(); return; }
+      if (this.index === at('haggle') && tut && !st.current.haggle) { this.flags.haggle = false; this.index = at('offer'); this.show(); return; }
+    }
     const s = steps[this.index];
     if (!s) return;
     if (s.done && s.done()) this.advance();

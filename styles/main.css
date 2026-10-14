@@ -255,7 +255,8 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 .haggle .pips i.on { background: #4c8a2a; }
 .haggle .ask-row { justify-content: center; gap: 6px; }
 .haggle .ask-box { display: inline-flex; align-items: center; gap: 4px; min-width: 70px; justify-content: center; font-size: 24px; }
-.haggle input[type=range] { width: 100%; height: 44px; }
+.haggle input[type=range] { width: 100%; height: 44px; touch-action: pan-y; }
+.haggle .haggle-say { display: none; font-size: 13px; color: var(--ink2); line-height: 1.25; }
 .complaint .complaint-issue { gap: 8px; padding: 6px 0; }
 .price-big { font-size: 26px; }
 .shake { animation: shake .4s; }
@@ -455,8 +456,13 @@ canvas.garden-scene { aspect-ratio: 192 / 120; }
   .view-testing .test-head { grid-column: 1 / -1; margin: 0 0 4px; }
   .view-testing .creatures { grid-template-columns: repeat(3, minmax(0, 1fr)); min-height: 0; overflow-y: auto; align-content: start; touch-action: pan-y; }
   .view-testing .id-panel { min-height: 0; overflow-y: auto; margin-top: 0; padding: 4px 8px; }
-  .id-row { grid-template-columns: 24px minmax(0, 1fr) 34px; }
-  .id-row .id-name, .id-chip .pn { display: none; }
+  .id-row { grid-template-columns: 22px 52px minmax(0, 1fr) 30px; gap: 4px; }
+  .id-row .id-name { font-size: 11px; }
+  .id-chip .pn { display: none; }
+  .dose.collapsed { display: flex; opacity: 0.5; pointer-events: none; }
+  .dose { flex-wrap: nowrap; }
+  /* the customer's bubble scrolls away above the haggle: their reply sits by the numbers */
+  .haggle .haggle-say { display: block; }
 }
 /* ---------- phones in portrait: the cages in a row you swipe, the Potion ID always below them ---------- */
 @media (max-width: 699px) and (max-aspect-ratio: 1/1) {
@@ -464,12 +470,6 @@ canvas.garden-scene { aspect-ratio: 192 / 120; }
   .view-testing .creature { flex: 0 0 42%; scroll-snap-align: start; }
   .view-testing .creature.locked { flex-basis: 30%; min-height: 0; }
   .view-testing .id-panel { margin-top: 4px; }
-}
-/* ---------- narrow top bars: while a notice shows it gets the room of the day and rank, on two lines ---------- */
-@media (max-width: 599px) {
-  .topbar:has(.notice.on) .day, .topbar:has(.notice.on) .rankrow { display: none; }
-  .notice .notice-msg { white-space: normal; line-height: 1.15; font-size: 13px; max-height: 38px; padding: 2px 6px; }
-  .notice .notice-msg span { text-overflow: clip; }
 }
 /* ---------- main menu: show the cauldron, not just the panel ---------- */
 @media (max-aspect-ratio: 1/1) {
@@ -566,6 +566,14 @@ input[type=checkbox] { width: 22px; height: 22px; accent-color: #6a4b9a; }
 .notice .notice-msg b { font-weight: normal; flex: none; }
 .notice .notice-msg span { color: var(--ink2); overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .notice .notice-msg img.ico { width: 14px; height: 14px; }
+/* narrow top bars: while a notice shows it takes the room of the day and rank, as one wrapping paragraph */
+@media (max-width: 599px) {
+  .topbar:has(.notice.on) .day, .topbar:has(.notice.on) .rankrow { display: none; }
+  .topbar .notice .notice-msg { display: block; white-space: normal; font-size: 12px; line-height: 1.12; max-height: 38px; padding: 2px 6px; text-align: left; }
+  .topbar .notice .notice-msg > * { display: inline; }
+  .topbar .notice .notice-msg img.ico { vertical-align: -2px; margin-right: 4px; }
+  .topbar .notice .notice-msg span { overflow: visible; text-overflow: clip; margin-left: 4px; }
+}
 @keyframes noticein { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 
 /* ingredient sprites in chips and lists (never a bare colour square) */

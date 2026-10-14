@@ -477,7 +477,7 @@ export class LabScreen {
 
   buildDose() {
     const d = clear(this.doseEl);
-    this.groundBtn = btn('', () => { this.ground = !this.ground; this.syncGround(); audio.play('select'); }, { icon: 'mortar', cls: 'icon', title: 'Smash it to powder in the mortar first (G)', act: 'ground' });
+    this.groundBtn = btn('', () => { this.ground = !this.ground; this.syncGround(); audio.play('select'); }, { icon: 'mortar', cls: 'icon', title: 'Smash it to powder in the mortar first (M)', act: 'ground' });
     this.selIcon = h('span', { class: 'sel-ico' });
     d.append(this.selIcon);
     for (const ml of [10, 25, 50, 100]) d.append(btn(`${ml}`, () => this.pourDose(ml), { title: `Pour exactly ${ml} ml`, act: 'dose-' + ml }));
@@ -718,6 +718,15 @@ export class LabScreen {
   }
 
   /** Charge inventory for particles the emitter actually spawned. */
+  /**
+   * Everything poured so far has been paid for: the emitter's running totals
+   * become the new baseline (resetting it to zero would charge every earlier
+   * pour again on the next frame).
+   */
+  settlePours() {
+    this.lastPoured = { ...this.sim.emitter.poured };
+  }
+
   accountPours() {
     const em = this.sim.emitter;
     for (const [id, total] of Object.entries(em.poured)) {
@@ -789,7 +798,7 @@ export class LabScreen {
     this.sim.clear();
     this.state.brewLog = [];
     this.state.newBatch();
-    this.lastPoured = {};
+    this.settlePours();
     audio.play('splash');
     this.views.testing.refresh();
     this.save();
@@ -914,7 +923,7 @@ export class LabScreen {
       day: st.day,
       recipe: this.recipeDraft(b.measurement),
     };
-    if (this.sim.p.count === 0) { st.brewLog = []; st.newBatch(); this.lastPoured = {}; }
+    if (this.sim.p.count === 0) { st.brewLog = []; st.newBatch(); this.settlePours(); }
     audio.play('glass');
     this.save();
     this.showView('counter');
@@ -1053,7 +1062,7 @@ export class LabScreen {
     if (!sel.length) return null;
     const m = measureParticles(this.sim, sel);
     for (const i of sel.slice().sort((a, b) => b - a)) this.sim.removeParticle(i);
-    if (this.sim.p.count === 0) { this.state.brewLog = []; this.lastPoured = {}; }
+    if (this.sim.p.count === 0) { this.state.brewLog = []; this.settlePours(); }
     audio.play('glass');
     return { dose: m, ml: sel.length * SIM.ML_PER_PARTICLE };
   }
@@ -1246,7 +1255,7 @@ export class LabScreen {
     const fading = sim.stats.faded > 3;
     if (burn > 2 || fading || (gas > 6 && sim.furnace.setting > 0.05)) {
       this.awayWarned = this.time;
-      toast(burn > 2 ? 'Something is burning!' : fading ? 'The magic is fading!' : 'The cauldron is boiling', 'The fire is still lit.', 'fire', 4000);
+      toast(burn > 2 ? 'Something is burning!' : fading ? 'The magic is fading!' : 'Magic is rising with the steam!', 'The fire is still lit.', 'fire', 4000);
     }
   }
 

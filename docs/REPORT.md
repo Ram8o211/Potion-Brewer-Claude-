@@ -82,6 +82,72 @@ never see a haggle:
     build. Before, the first launch after a deploy still showed the old
     game.
 
+### Re-verification
+
+A second, independent pass played the 2.0.1 build with real taps only.
+Each finding was again re-checked by a skeptic.
+
+**Phone portrait.** The checker played through a full sale:
+* harvested, brewed with jars and dose buttons, stirred, and dosed
+  creatures;
+* read the cages by eye and set the ID with taps and "? → 0";
+* pressed Offer, haggled with −5, +5 and Ask, took the offer, and opened
+  the door.
+
+It also covered a walk-out at an insulting price and a refusal that named
+the missing property ("I need more Vitality").
+
+**Tutorial.** All 17 coach steps advanced by tapping the highlighted
+control.
+
+**Phone landscape.** The haggle worked.
+
+**Text sweep.** No colour, density, viscosity, layer, melting or boiling
+wording was left anywhere, and no "null", "undefined" or "NaN" appeared.
+
+It found these problems, now fixed:
+* **Ingredients were charged twice** (older than 2.0). Emptying the
+  cauldron, by bottling all of it, drawing the last dose or Empty, reset
+  the pour baseline to zero. The next frame then charged every earlier
+  pour again, and logged phantom pours into the new batch and its
+  recipe. Now the baseline is the emitter's running total
+  (`settlePours`).
+* **A swipe over a slider wrote a value.** On touch screens, a scroll
+  that began on a Potion ID slider wrote a value into the ID, because
+  Chrome jumps the slider to the finger and still fires `change` after
+  cancelling the pointer. The same swipe on the price slider changed the
+  ask. Both now undo the value on `pointercancel`.
+* **"No deal" left no farewell.** The customer was gone from the state
+  before the card was drawn.
+* **The guided order skipped ahead.** Started from the menu, it jumped
+  ahead, or finished, on another customer's haggle or sale. It now
+  follows only its own customer, and steps back if the vial or haggle
+  goes away.
+* **The customer's refusal outlived the label it answered.** A line is
+  now tied to the vial and label as well as the visitor.
+* **Phone notices still showed one clipped line** (a CSS specificity
+  slip). They now wrap.
+* **Phone landscape had three layout gaps.** The ID rows had no names,
+  the dose bar pushed the jars under the finger, and the customer's
+  reply was scrolled out of view during the haggle. Each is fixed: the
+  rows have names, the dose bar keeps its space, and the reply is
+  repeated in the haggle panel.
+* **Saved recipes lost their Potion ID** (older than 2.0). The recipe's
+  own key overwrote it.
+* **Small fixes:**
+  * The Ask button's accessible name now changes with the price.
+  * The mortar hint said "G"; it now says "M".
+  * The "Rolling Boil" award is now "Lost to the Steam".
+
+New regression tests cover each of these. For the slider swipe, the test
+was confirmed to fail without the fix.
+
+**Final 2.0.1 run.**
+* `npm run typecheck`: clean.
+* `npm test`: 57 passed. This includes the 8 new wording tests.
+* `npm run test:browser`: 77 passed over desktop, phone portrait, phone
+  landscape, tablet, the offline build and the GitHub Pages sub-path.
+
 ## Release 2.0: the magic overhaul
 
 This round rebuilt the game around magic. Customers ask for magical

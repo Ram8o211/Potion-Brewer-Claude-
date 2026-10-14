@@ -19,7 +19,7 @@ import { PROP_KEYS } from '../src/alchemy/magic.js';
 import { VERSION } from '../src/version.js';
 
 /** Physical or chemical description of a material. */
-const PHYSICAL = /\b(densit\w*|dense|colou?rs?|viscos\w*|thick\w*|thin|floats?|floating|light|heavy|syrup\w*|opaque|cloudy|clear|clarity|stabil\w*|vapou?r|melts?|melting|boiling point|g\/ml|cP|layers?|pink|red|green|black|blue|white|purple|golden|yellow)\b/i;
+const PHYSICAL = /\b(boil\w*|densit\w*|dense|colou?rs?|viscos\w*|thick\w*|thin|floats?|floating|light|heavy|syrup\w*|opaque|cloudy|clear|clarity|stabil\w*|vapou?r|melts?|melting|boiling point|g\/ml|cP|layers?|pink|red|green|black|blue|white|purple|golden|yellow)\b/i;
 /** What a customer must never ask for: a trait of the potion that is not magic. */
 const ASKS_PHYSICAL = /\b(colou?r\w*|densit\w*|viscos\w*|thick\w*|clear|cloudy|syrup\w*|stabil\w*|pink|red|blue|green|golden)\b|\bsomething (cold|hot|warm)\b/i;
 
@@ -69,7 +69,8 @@ test('journal entries and awards speak of magic, never of an ingredient’s boil
     assert.ok(!/°C/.test(e.text), e.text);
     assert.ok(!PHYSICAL.test(e.title) && !PHYSICAL.test(e.text), `${e.title} — ${e.text}`);
   }
-  for (const a of ACHIEVEMENTS) assert.ok(!PHYSICAL.test(a.desc), a.desc);
+  // (award names may be idioms about the player, like 'Green Fingers', but no boiling or phase talk)
+  for (const a of ACHIEVEMENTS) assert.ok(!PHYSICAL.test(a.desc) && !/\b(boil\w*|vapou?r|melt\w*|densit\w*|viscos\w*)\b/i.test(a.name), `${a.name}: ${a.desc}`);
 });
 
 test('a save written by an earlier build is brought up to date: old lore and old journal wording are replaced', () => {

@@ -127,6 +127,8 @@ test('a customer only haggles over a label that promises what they need; an expe
   expect(v.label.values.vitality).toBe(Math.round(v.m.magic[0]));
   await expect(page.locator('.vial-card .seal')).toBeVisible();
   await expect(page.locator('.vial-hint.ok')).toBeVisible();
+  // the refusal answered the old label: it does not linger under the new one
+  await expect(page.locator('.customer-card .speech')).not.toContainText('Vitality');
   await shot(page, info, 'certified-vial');
   await page.click('[data-act=sell]');
   // the haggle: their offer, my price, their patience — in words, and the customer speaks
@@ -255,5 +257,70 @@ test('drag a jar onto the cauldron to pour; smash a stone in the mortar', async 
   expect(grains.g, 'smashed stone arrives as powder').toBe(5);
   expect(grains.solid).toBe(0);
   expect(await lab(page, (l, id) => l.state.brewLog.some((e) => e.type === 'pour' && e.id === id && e.ground), stone)).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test('No deal: the customer leaves with a word, and each pour is paid for once even when bottling empties the cauldron', async ({ page }) => {
+  const errors = watchErrors(page);
+  await newGame(page, { tutorial: false, seed: 'no-deal-1' });
+  const roles = await lab(page, (l) => l.state.world.roles);
+  await lab(page, (l) => {
+    const st = l.state;
+    st.current = { ...st.current, requirements: [{ key: 'vitality', min: 10, max: 100, kind: 'want' }], bottleMl: 200, bottleN: 40, haggle: null };
+    st.inventory[st.world.roles.dew] = 200;
+    l.buildShelf(); l.refreshCustomer(); l.views.counter.refresh();
+  });
+  await pourDose(page, roles.dew, [50]);
+  await pourDose(page, roles.water, [50]);
+  const stock0 = await lab(page, (l, r) => ({ dew: l.state.stock(r.dew), water: l.state.stock(r.water) }), roles);
+  // the order is bigger than the brew: bottling takes everything
+  await page.click('[data-act=bottle]');
+  await expect(page.locator('[data-act=sell]')).toBeVisible({ timeout: 20_000 });
+  await page.waitForTimeout(800);
+  const after = await lab(page, (l, r) => ({ n: l.sim.p.count, dew: l.state.stock(r.dew), water: l.state.stock(r.water), pours: l.state.brewLog.filter((e) => e.type === 'pour').length }), roles);
+  expect(after.n).toBe(0);
+  expect({ dew: after.dew, water: after.water }, 'nothing is charged again after the cauldron empties').toEqual(stock0);
+  expect(after.pours, 'the new batch starts with no pours').toBe(0);
+  // label it to match, offer, then turn the customer down
+  await lab(page, (l) => { l.state.writeId('vial', { vitality: 40, ardor: 0, frost: 0, levity: 0, charm: 0, bane: 0 }); l.views.counter.refresh(); });
+  await page.click('[data-act=sell]');
+  await expect(page.locator('.haggle')).toBeVisible();
+  await page.click('[data-act=refuse]');
+  await expect(page.locator('.parting')).toContainText('Suit yourself');
+  await expect(page.locator('[data-act=next-customer], [data-act=end-day]')).toBeVisible();
+  expect(await lab(page, (l) => !!l.state.vial), 'the vial stays unsold on the counter').toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test('the guided order started from the menu mid-haggle waits for its own customer', async ({ page }) => {
+  const errors = watchErrors(page);
+  await newGame(page, { tutorial: false, seed: 'guided-late-1' });
+  const roles = await lab(page, (l) => l.state.world.roles);
+  await lab(page, (l) => {
+    const st = l.state;
+    st.stats.served = 5;
+    st.current = { ...st.current, requirements: [{ key: 'vitality', min: 10, max: 100, kind: 'want' }], bottleMl: 50, bottleN: 10, haggle: null };
+    st.inventory[st.world.roles.dew] = 200;
+    l.buildShelf(); l.refreshCustomer(); l.views.counter.refresh();
+  });
+  await pourDose(page, roles.dew, [50]);
+  await page.click('[data-act=bottle]');
+  await expect(page.locator('[data-act=sell]')).toBeVisible({ timeout: 20_000 });
+  await lab(page, (l) => { l.state.writeId('vial', { vitality: 40, ardor: 0, frost: 0, levity: 0, charm: 0, bane: 0 }); l.views.counter.refresh(); });
+  await page.click('[data-act=sell]');
+  await expect(page.locator('.haggle')).toBeVisible();
+  // the regular customer is mid-haggle when the player asks for the guided order
+  await page.click('[data-act=menu]');
+  await page.click('[data-act=guided-order]');
+  const coach = page.locator('.coach-text');
+  await expect(coach).toContainText('healing');
+  await page.waitForTimeout(400);
+  await expect(coach, 'the coach does not jump ahead on someone else’s haggle').toContainText('healing');
+  await page.click('[data-act=take-offer]');
+  await page.waitForTimeout(400);
+  await expect(coach, 'nor finish on someone else’s sale').not.toContainText('Sold!');
+  // the tutorial's own customer is the next to come in
+  await page.click('[data-act=next-customer]');
+  expect(await lab(page, (l) => !!(l.state.current && l.state.current.tutorial))).toBe(true);
   expect(errors).toEqual([]);
 });

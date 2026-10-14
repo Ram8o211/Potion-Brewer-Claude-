@@ -95,6 +95,18 @@ test('the testing room: the dropper doses a creature, it reacts without words, t
   await drag(page, [zero, zero], 30);
   expect(await lab(page, (l) => l.state.idCard.values.frost), 'tapped at 0 means 0').toBe(0);
   await expect(page.locator('.id-row', { has: frost })).toContainText('0');
+  // a swipe that starts on a slider and scrolls the room writes nothing (touch only)
+  if (info.project.use.hasTouch) {
+    const bane = page.locator('input[data-prop=bane]');
+    const bb = await bane.boundingBox();
+    if (!bb) throw new Error('no slider');
+    const from = { x: bb.x + bb.width * 0.7, y: bb.y + bb.height / 2 };
+    const pts = [];
+    for (let k = 0; k <= 12; k++) pts.push({ x: from.x + k * 0.3, y: from.y - k * 10 });
+    await drag(page, pts, 16);
+    expect(await lab(page, (l) => l.state.idCard.values.bane), 'a scroll is not an edit').toBeNull();
+    await expect(page.locator('.id-row', { has: bane })).toContainText('?');
+  }
   // the keyboard keeps its slider between steps (rows update in place)
   const lev = page.locator('input[data-prop=levity]');
   await lev.focus();
@@ -105,6 +117,13 @@ test('the testing room: the dropper doses a creature, it reacts without words, t
   await page.locator('input[data-prop=ardor]').evaluate((el) => { /** @type {HTMLInputElement} */ (el).value = '30'; el.dispatchEvent(new Event('input')); el.dispatchEvent(new Event('change')); });
   expect(await lab(page, (l) => l.state.idCard.values.ardor)).toBe(30);
   await expect(page.locator('.id-row', { has: page.locator('input[data-prop=ardor]') })).toContainText('30');
+  // a recipe saved now keeps the Potion ID written for the brew
+  await page.click('[data-act=tab-book]');
+  await page.click('[data-act=book-recipes]');
+  await page.click('[data-act=save-recipe]');
+  expect(await lab(page, (l) => l.state.recipes[0].potionId && l.state.recipes[0].potionId.ardor)).toBe(30);
+  await expect(page.locator('.book-body .item').first()).toContainText('30');
+  await page.click('[data-act=tab-testing]');
   // a dead toad is replaced for its price
   await lab(page, (l) => { l.state.lab.creatures.toad.alive = false; l.state.lab.creatures.toad.health = 0; l.views.testing.refresh(); });
   await expect(page.locator('[data-act=dose-toad]')).toBeHidden();

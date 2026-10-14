@@ -122,8 +122,21 @@ export class TestingView {
       const out = h('b', { class: 'id-val' });
       const inp = /** @type {HTMLInputElement} */ (h('input', { type: 'range', min: '0', max: '100', step: '1', value: '0', 'aria-label': p.label, 'data-prop': p.key }));
       inp.style.setProperty('--c', `rgb(${p.color.map((x) => Math.round(x * 255)).join(',')})`);
-      inp.addEventListener('input', () => { out.textContent = inp.value; inp.classList.remove('unset'); });
-      inp.addEventListener('change', () => this.setValue(p.key, Number(inp.value)));
+      // a swipe that starts on a slider and turns into a scroll is not an edit:
+      // the browser jumps the value to the finger on touchstart and still fires
+      // 'change' after cancelling the pointer, so undo it and ignore that change
+      let panned = false;
+      const restore = () => {
+        const v = this.idTarget().values[p.key];
+        const known = Number.isFinite(v);
+        inp.value = String(known ? v : 0);
+        out.textContent = known ? String(v) : '?';
+        inp.classList.toggle('unset', !known);
+      };
+      inp.addEventListener('pointerdown', () => { panned = false; });
+      inp.addEventListener('pointercancel', () => { panned = true; restore(); });
+      inp.addEventListener('input', () => { if (panned) return; out.textContent = inp.value; inp.classList.remove('unset'); });
+      inp.addEventListener('change', () => { if (panned) { panned = false; restore(); return; } this.setValue(p.key, Number(inp.value)); });
       // an unset slider already rests at 0: a tap or a key on it means "0",
       // even though the value did not change and no 'change' event fires
       const commitUnset = () => { if (inp.classList.contains('unset') || !Number.isFinite(this.idTarget().values[p.key])) this.setValue(p.key, Number(inp.value)); };

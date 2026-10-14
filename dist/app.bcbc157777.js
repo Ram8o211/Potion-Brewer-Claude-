@@ -2234,7 +2234,7 @@ const ACHIEVEMENTS = [
 { id: 'heatmix', name: 'Warm Embrace', desc: 'Bind two magics that will not join while cold.', reward: 15 },
 { id: 'crush', name: 'Stone Breaker', desc: 'Smash a stone with the pestle.', reward: 10 },
 { id: 'frozen', name: 'Cold Hands', desc: 'Lock a brew in ice.', reward: 10 },
-{ id: 'boil', name: 'Rolling Boil', desc: 'Lose magic to the steam.', reward: 10 },
+{ id: 'boil', name: 'Lost to the Steam', desc: 'Lose magic to the steam.', reward: 10 },
 { id: 'fire', name: 'Singed Eyebrows', desc: 'Burn magic in too fierce a fire.', reward: 10 },
 { id: 'harvest1', name: 'Green Fingers', desc: 'Harvest your garden.', reward: 5 },
 { id: 'harvest1k', name: 'Gardener', desc: 'Harvest 1 litre of ingredients.', reward: 40 },
@@ -7484,12 +7484,12 @@ const render = () => {
 clear(container);
 const save = btn('Save the brew', () => {
 const parts = lab.batchParts();
-if (!parts.length) { toast('The cauldron is empty', '', 'cauldron'); return; }
+if (!parts.length || lab.sim.p.count === 0) { toast('The cauldron is empty', '', 'cauldron'); return; }
 const p = lab.sim.p;
 let T = 0, n = 0;
 for (let i = 0; i < p.count; i++) { T += p.temp[i]; n++; }
 const draft = lab.recipeDraft({ temperature: n ? T / n : 20, color: [0.5, 0.5, 0.5] });
-const evs = st.addRecipe({ ...draft, name: `Recipe ${st.recipes.length + 1}`, id: st.idStale ? null : { ...st.idCard.values } });
+const evs = st.addRecipe({ ...draft, name: `Recipe ${st.recipes.length + 1}`, potionId: st.idStale ? null : { ...st.idCard.values } });
 for (const e of evs) lab.announce(e);
 toast('Recipe saved', '', 'book');
 render();
@@ -7510,7 +7510,8 @@ r.maxTemp > 30 ? h('span', { class: 'fx-chip', title: 'Heated to' }, icon('fire'
 r.minTemp < 12 ? h('span', { class: 'fx-chip', title: 'Chilled to' }, icon('basin', 'sm'), ` ${r.minTemp}°`) : null,
 r.stirSeconds ? h('span', { class: 'fx-chip' }, icon('spoon', 'sm'), ` ${r.stirSeconds}s`) : null,
 h('span', { class: 'fx-chip dim' }, icon('flask', 'sm'), ` ${Math.round(total)}`));
-const idChips = r.id ? h('div', { class: 'meta' }, icon('scroll', 'sm'), ...PROPS.filter((p) => Number.isFinite(r.id[p.key])).map((p) => h('span', { class: 'fx-chip dim' }, icon(p.icon, 'sm'), ` ${r.id[p.key]}`))) : null;
+const pid = r.potionId && PROPS.some((p) => Number.isFinite(r.potionId[p.key])) ? r.potionId : null;
+const idChips = pid ? h('div', { class: 'meta' }, icon('scroll', 'sm'), ...PROPS.filter((p) => Number.isFinite(pid[p.key])).map((p) => h('span', { class: 'fx-chip dim' }, icon(p.icon, 'sm'), ` ${pid[p.key]}`))) : null;
 const canAfford = r.ingredients.every((i) => lab.sandbox || st.stock(i.id) >= i.ml);
 const actions = h('div', { class: 'row wrap' },
 btn('', () => { prepareRecipe(lab, r); lab.showView('brew'); }, { icon: 'pour', cls: 'icon', disabled: !canAfford, title: canAfford ? 'Pour it all in' : 'Not enough in store', act: 'prepare' }),
@@ -7707,7 +7708,7 @@ return [
 { icon: 'dropper', text: 'Give the Moss Toad a dose and watch it.', target: act('dose-toad'), done: tested },
 { icon: 'leaf', text: 'Each leaf on its back is 10 Vitality. Set the Vitality slider.', target: () => lab.el.querySelector('[data-prop="vitality"]'), done: () => idSet('vitality') },
 { icon: 'scroll', text: 'No hearts or bubbles means 0: press “? → 0”. That is your Potion ID.', target: () => lab.el.querySelector('[data-act="id-rest-zero"]') || lab.el.querySelector('.id-panel'), done: idDone },
-{ icon: 'bottle', text: 'Back to the cauldron and Bottle it.', target: () => (lab.view === 'brew' ? lab.bottleFab : lab.tabEls.brew.b), done: () => this.flags.bottled || !!st.vial },
+{ icon: 'bottle', text: 'Back to the cauldron and Bottle it.', target: () => (lab.view === 'brew' ? lab.bottleFab : lab.tabEls.brew.b), done: () => !!st.vial },
 { id: 'offer', icon: 'deal', text: 'Offer it to the customer.', target: act('sell'), done: () => this.flags.haggle || !!(st.current && st.current.haggle) || this.flags.sold },
 { id: 'haggle', icon: 'coin', text: 'They offer a price. Ask for more, or take it.', target: () => lab.el.querySelector('.haggle'), done: () => this.flags.sold },
 { id: 'sold', icon: 'seal', text: 'Sold! If a potion fails, its buyer comes back for a refund. Some bluff: only an expert’s seal proves you right.', button: 'Finish' },
@@ -7789,8 +7790,14 @@ if (!this.active) return;
 const steps = this.steps;
 const st = this.lab.state;
 const at = (id) => steps.findIndex((x) => x.id === id);
-const ahead = this.flags.sold ? at('sold') : st.current && st.current.haggle ? at('haggle') : st.vial ? at('offer') : -1;
+const tut = !!(st.current && st.current.tutorial);
+const labelled = !!(st.vial && st.vial.label && idComplete(st.vial.label));
+const ahead = this.flags.sold ? at('sold') : tut && st.current.haggle ? at('haggle') : tut && labelled ? at('offer') : -1;
 if (ahead > this.index) { this.index = ahead; this.show(); return; }
+if (!this.flags.sold && this.index >= at('offer') && this.index < at('sold')) {
+if (!st.vial && !this.lab.bottling) { this.flags.haggle = false; this.index = at('offer') - 1; this.show(); return; }
+if (this.index === at('haggle') && tut && !st.current.haggle) { this.flags.haggle = false; this.index = at('offer'); this.show(); return; }
+}
 const s = steps[this.index];
 if (!s) return;
 if (s.done && s.done()) this.advance();
@@ -7828,6 +7835,11 @@ const c = this.lab.state.current;
 this.say = line;
 this.sayMood = mo;
 this.sayFor = c ? c.id || c.saleId || c.customer.name : null;
+this.sayVial = this.vialKey();
+}
+vialKey() {
+const v = this.lab.state.vial;
+return v ? `${v.id}:${JSON.stringify(v.label ? v.label.values : null)}:${v.certified ? 1 : 0}` : '';
 }
 part(customer, line, mo, outcome = null) {
 this.parting = { customer, line, mood: mo, outcome };
@@ -7855,7 +7867,7 @@ return;
 }
 this.parting = null;
 const who = c.id || c.saleId || c.customer.name;
-if (this.sayFor !== who) { this.say = ''; this.sayMood = null; this.sayFor = who; }
+if (this.sayFor !== who || (this.say && this.sayVial !== this.vialKey())) { this.say = ''; this.sayMood = null; this.sayFor = who; }
 if (c.type === 'complaint') { this.complaintCard(el, c); return; }
 const h0 = c.haggle;
 const mo = this.sayMood || (h0 ? (h0.state === 'walked' ? 'unhappy' : mood(h0) > 0.6 ? 'happy' : mood(h0) > 0.25 ? 'neutral' : 'unhappy') : 'neutral');
@@ -7968,7 +7980,7 @@ audio.play('coin');
 this.refresh();
 const panel = this.el.querySelector('.haggle');
 if (panel && panel.scrollIntoView) panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-if (lab.tutorial) lab.tutorial.notify('haggle');
+if (lab.tutorial && com.tutorial) lab.tutorial.notify('haggle');
 }
 shake(sel) {
 const el = this.el.querySelector(sel);
@@ -7989,9 +8001,10 @@ h('span', { class: 'bubble' + (finalNote ? ' final' : '') }, icon('coin', 'sm'),
 h('span', { class: 'spacer' }),
 h('span', { class: 'cap', text: 'Patience' }),
 h('span', { class: 'pips', title: 'Patience' }, ...Array.from({ length: hg.patienceMax }, (_, i) => h('i', { class: i < hg.patience ? 'on' : '' }))));
+const reply = this.say ? h('div', { class: 'haggle-say', text: `“${this.say}”` }) : null;
 const take = btn(`Take ${coins(hg.offer)}`, () => this.doAccept(), { cls: 'primary', icon: 'deal', act: 'take-offer' });
 const noDeal = btn('No deal', () => this.doRefuse(), { icon: 'close', cls: 'danger', title: 'No deal: they leave', act: 'refuse' });
-if (finalNote) return h('div', { class: 'haggle final' }, offerRow, h('div', { class: 'row wrap' }, take, h('span', { class: 'spacer' }), noDeal));
+if (finalNote) return h('div', { class: 'haggle final' }, offerRow, reply, h('div', { class: 'row wrap' }, take, h('span', { class: 'spacer' }), noDeal));
 const askEl = h('b', { class: 'ask-val', text: coins(ask) });
 const askBtn = btn(`Ask ${coins(ask)}`, () => this.doAsk(), { cls: 'gold', icon: 'scales', act: 'ask' });
 const top = Math.max(hg.offer * 3, ask + 10);
@@ -8001,13 +8014,20 @@ const set = (v) => {
 this.ask = Math.max(floor, Math.round(v));
 askEl.textContent = coins(this.ask);
 slider.value = String(this.ask);
+const t = `Ask ${coins(this.ask)}`;
 const l = askBtn.querySelector('.lbl');
-if (l) l.textContent = `Ask ${coins(this.ask)}`;
+if (l) l.textContent = t;
+askBtn.title = t;
+askBtn.setAttribute('aria-label', t);
+slider.setAttribute('aria-valuetext', `${coins(this.ask)} coins`);
 for (const m of minus) m.disabled = this.ask <= floor;
 };
 slider.addEventListener('input', () => set(Number(slider.value)));
+let prev = this.ask;
+slider.addEventListener('pointerdown', () => { prev = this.ask; });
+slider.addEventListener('pointercancel', () => set(prev));
 for (const m of minus) m.disabled = ask <= floor;
-return h('div', { class: 'haggle' }, offerRow,
+return h('div', { class: 'haggle' }, offerRow, reply,
 h('div', { class: 'row ask-row' }, h('span', { class: 'cap', text: 'You ask' }), ...minus,
 h('span', { class: 'ask-box' }, icon('coin', 'sm'), askEl),
 btn('+1', () => set(this.ask + 1), { cls: 'small', act: 'ask-p1' }), btn('+5', () => set(this.ask + 5), { cls: 'small', act: 'ask-p5' })),
@@ -8038,20 +8058,20 @@ if (r && r.result === 'deal') this.closeSale();
 }
 doRefuse() {
 const st = this.lab.state;
-if (st.current && st.current.tutorial) {
-st.current.haggle = null;
+const c = st.current;
+if (c && c.tutorial) {
+c.haggle = null;
 this.speak('Please — I really need it! Make me an offer.', 'unhappy');
 this.refresh();
 return;
 }
 st.haggleRefuse();
-this.walkOut('Suit yourself. Good day.');
+this.walkOut('Suit yourself. Good day.', c);
 }
-walkOut(line) {
+walkOut(line, c = this.lab.state.current) {
 const lab = this.lab, st = lab.state;
-const c = st.current;
 if (c && c.tutorial) { c.haggle = null; this.speak('That is too much for me… Make me an offer.', 'unhappy'); this.refresh(); return; }
-if (c && c.haggle && c.haggle.state === 'walked') st.declineCustomer();
+if (c && st.current === c && c.haggle && c.haggle.state === 'walked') st.declineCustomer();
 if (c) this.part(c.customer, line, 'unhappy', { kind: 'walked' });
 lab.refreshCustomer();
 this.refresh();
@@ -8072,7 +8092,7 @@ lab.refreshCustomer();
 lab.refreshHud(true);
 lab.updateBadges();
 this.refresh();
-if (lab.tutorial) lab.tutorial.notify('sold');
+if (lab.tutorial && com.tutorial) lab.tutorial.notify('sold');
 }
 partingCard(p, door) {
 const portrait = /** @type {HTMLCanvasElement} */ (h('canvas', { class: 'portrait big' }));
@@ -8758,8 +8778,18 @@ for (const p of PROPS) {
 const out = h('b', { class: 'id-val' });
 const inp = /** @type {HTMLInputElement} */ (h('input', { type: 'range', min: '0', max: '100', step: '1', value: '0', 'aria-label': p.label, 'data-prop': p.key }));
 inp.style.setProperty('--c', `rgb(${p.color.map((x) => Math.round(x * 255)).join(',')})`);
-inp.addEventListener('input', () => { out.textContent = inp.value; inp.classList.remove('unset'); });
-inp.addEventListener('change', () => this.setValue(p.key, Number(inp.value)));
+let panned = false;
+const restore = () => {
+const v = this.idTarget().values[p.key];
+const known = Number.isFinite(v);
+inp.value = String(known ? v : 0);
+out.textContent = known ? String(v) : '?';
+inp.classList.toggle('unset', !known);
+};
+inp.addEventListener('pointerdown', () => { panned = false; });
+inp.addEventListener('pointercancel', () => { panned = true; restore(); });
+inp.addEventListener('input', () => { if (panned) return; out.textContent = inp.value; inp.classList.remove('unset'); });
+inp.addEventListener('change', () => { if (panned) { panned = false; restore(); return; } this.setValue(p.key, Number(inp.value)); });
 const commitUnset = () => { if (inp.classList.contains('unset') || !Number.isFinite(this.idTarget().values[p.key])) this.setValue(p.key, Number(inp.value)); };
 inp.addEventListener('pointerup', commitUnset);
 inp.addEventListener('keyup', (e) => { if (/^(Home|End|Arrow|Page)/.test(e.key)) commitUnset(); });
@@ -9424,7 +9454,7 @@ el.addEventListener('contextmenu', (e) => { e.preventDefault(); panels.openIngre
 }
 buildDose() {
 const d = clear(this.doseEl);
-this.groundBtn = btn('', () => { this.ground = !this.ground; this.syncGround(); audio.play('select'); }, { icon: 'mortar', cls: 'icon', title: 'Smash it to powder in the mortar first (G)', act: 'ground' });
+this.groundBtn = btn('', () => { this.ground = !this.ground; this.syncGround(); audio.play('select'); }, { icon: 'mortar', cls: 'icon', title: 'Smash it to powder in the mortar first (M)', act: 'ground' });
 this.selIcon = h('span', { class: 'sel-ico' });
 d.append(this.selIcon);
 for (const ml of [10, 25, 50, 100]) d.append(btn(`${ml}`, () => this.pourDose(ml), { title: `Pour exactly ${ml} ml`, act: 'dose-' + ml }));
@@ -9635,6 +9665,9 @@ if (!this.selected) { toast('Pick an ingredient', '', 'jar'); return; }
 if (this.tool !== 'pour') this.selectTool('pour', true);
 this.startPour(this.pourX, Math.round(ml / SIM.ML_PER_PARTICLE));
 }
+settlePours() {
+this.lastPoured = { ...this.sim.emitter.poured };
+}
 accountPours() {
 const em = this.sim.emitter;
 for (const [id, total] of Object.entries(em.poured)) {
@@ -9699,7 +9732,7 @@ if (!ok) return;
 this.sim.clear();
 this.state.brewLog = [];
 this.state.newBatch();
-this.lastPoured = {};
+this.settlePours();
 audio.play('splash');
 this.views.testing.refresh();
 this.save();
@@ -9811,7 +9844,7 @@ parts: this.batchParts(),
 day: st.day,
 recipe: this.recipeDraft(b.measurement),
 };
-if (this.sim.p.count === 0) { st.brewLog = []; st.newBatch(); this.lastPoured = {}; }
+if (this.sim.p.count === 0) { st.brewLog = []; st.newBatch(); this.settlePours(); }
 audio.play('glass');
 this.save();
 this.showView('counter');
@@ -9931,7 +9964,7 @@ const sel = tapSelection(this.sim, n);
 if (!sel.length) return null;
 const m = measureParticles(this.sim, sel);
 for (const i of sel.slice().sort((a, b) => b - a)) this.sim.removeParticle(i);
-if (this.sim.p.count === 0) { this.state.brewLog = []; this.lastPoured = {}; }
+if (this.sim.p.count === 0) { this.state.brewLog = []; this.settlePours(); }
 audio.play('glass');
 return { dose: m, ml: sel.length * SIM.ML_PER_PARTICLE };
 }
@@ -10103,7 +10136,7 @@ for (let i = 0; i < sim.p.count; i++) { if (sim.p.phase[i] === PHASE.GAS) gas++;
 const fading = sim.stats.faded > 3;
 if (burn > 2 || fading || (gas > 6 && sim.furnace.setting > 0.05)) {
 this.awayWarned = this.time;
-toast(burn > 2 ? 'Something is burning!' : fading ? 'The magic is fading!' : 'The cauldron is boiling', 'The fire is still lit.', 'fire', 4000);
+toast(burn > 2 ? 'Something is burning!' : fading ? 'The magic is fading!' : 'Magic is rising with the steam!', 'The fire is still lit.', 'fire', 4000);
 }
 }
 perfReport() {

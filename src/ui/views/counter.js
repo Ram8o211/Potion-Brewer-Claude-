@@ -39,6 +39,13 @@ export class CounterView {
     this.say = line;
     this.sayMood = mo;
     this.sayFor = c ? c.id || c.saleId || c.customer.name : null;
+    this.sayVial = this.vialKey();
+  }
+
+  /** The vial and its label, as the customer last saw them. */
+  vialKey() {
+    const v = this.lab.state.vial;
+    return v ? `${v.id}:${JSON.stringify(v.label ? v.label.values : null)}:${v.certified ? 1 : 0}` : '';
   }
 
   /**
@@ -74,7 +81,8 @@ export class CounterView {
     }
     this.parting = null;
     const who = c.id || c.saleId || c.customer.name;
-    if (this.sayFor !== who) { this.say = ''; this.sayMood = null; this.sayFor = who; }
+    // a line answers this visitor and this vial: a new label, vial or visitor clears it
+    if (this.sayFor !== who || (this.say && this.sayVial !== this.vialKey())) { this.say = ''; this.sayMood = null; this.sayFor = who; }
     if (c.type === 'complaint') { this.complaintCard(el, c); return; }
     const h0 = c.haggle;
     const mo = this.sayMood || (h0 ? (h0.state === 'walked' ? 'unhappy' : mood(h0) > 0.6 ? 'happy' : mood(h0) > 0.25 ? 'neutral' : 'unhappy') : 'neutral');
@@ -195,7 +203,7 @@ export class CounterView {
     this.refresh();
     const panel = this.el.querySelector('.haggle');
     if (panel && panel.scrollIntoView) panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    if (lab.tutorial) lab.tutorial.notify('haggle');
+    if (lab.tutorial && com.tutorial) lab.tutorial.notify('haggle');
   }
 
   /** @param {string} sel */
@@ -220,9 +228,10 @@ export class CounterView {
       h('span', { class: 'spacer' }),
       h('span', { class: 'cap', text: 'Patience' }),
       h('span', { class: 'pips', title: 'Patience' }, ...Array.from({ length: hg.patienceMax }, (_, i) => h('i', { class: i < hg.patience ? 'on' : '' }))));
+    const reply = this.say ? h('div', { class: 'haggle-say', text: `“${this.say}”` }) : null;
     const take = btn(`Take ${coins(hg.offer)}`, () => this.doAccept(), { cls: 'primary', icon: 'deal', act: 'take-offer' });
     const noDeal = btn('No deal', () => this.doRefuse(), { icon: 'close', cls: 'danger', title: 'No deal: they leave', act: 'refuse' });
-    if (finalNote) return h('div', { class: 'haggle final' }, offerRow, h('div', { class: 'row wrap' }, take, h('span', { class: 'spacer' }), noDeal));
+    if (finalNote) return h('div', { class: 'haggle final' }, offerRow, reply, h('div', { class: 'row wrap' }, take, h('span', { class: 'spacer' }), noDeal));
     const askEl = h('b', { class: 'ask-val', text: coins(ask) });
     const askBtn = btn(`Ask ${coins(ask)}`, () => this.doAsk(), { cls: 'gold', icon: 'scales', act: 'ask' });
     const top = Math.max(hg.offer * 3, ask + 10);
@@ -233,13 +242,21 @@ export class CounterView {
       this.ask = Math.max(floor, Math.round(v));
       askEl.textContent = coins(this.ask);
       slider.value = String(this.ask);
+      const t = `Ask ${coins(this.ask)}`;
       const l = askBtn.querySelector('.lbl');
-      if (l) l.textContent = `Ask ${coins(this.ask)}`;
+      if (l) l.textContent = t;
+      askBtn.title = t;
+      askBtn.setAttribute('aria-label', t);
+      slider.setAttribute('aria-valuetext', `${coins(this.ask)} coins`);
       for (const m of minus) m.disabled = this.ask <= floor;
     };
     slider.addEventListener('input', () => set(Number(slider.value)));
+    // a swipe that starts on the slider and scrolls the counter keeps the price
+    let prev = this.ask;
+    slider.addEventListener('pointerdown', () => { prev = this.ask; });
+    slider.addEventListener('pointercancel', () => set(prev));
     for (const m of minus) m.disabled = ask <= floor;
-    return h('div', { class: 'haggle' }, offerRow,
+    return h('div', { class: 'haggle' }, offerRow, reply,
       h('div', { class: 'row ask-row' }, h('span', { class: 'cap', text: 'You ask' }), ...minus,
         h('span', { class: 'ask-box' }, icon('coin', 'sm'), askEl),
         btn('+1', () => set(this.ask + 1), { cls: 'small', act: 'ask-p1' }), btn('+5', () => set(this.ask + 5), { cls: 'small', act: 'ask-p5' })),
@@ -273,23 +290,24 @@ export class CounterView {
 
   doRefuse() {
     const st = this.lab.state;
-    if (st.current && st.current.tutorial) {
+    const c = st.current;
+    if (c && c.tutorial) {
       // the first customer always comes round again
-      st.current.haggle = null;
+      c.haggle = null;
       this.speak('Please — I really need it! Make me an offer.', 'unhappy');
       this.refresh();
       return;
     }
+    // (refusing drops the customer from the state: keep hold of them for the farewell)
     st.haggleRefuse();
-    this.walkOut('Suit yourself. Good day.');
+    this.walkOut('Suit yourself. Good day.', c);
   }
 
-  /** The customer leaves without buying. @param {string} line */
-  walkOut(line) {
+  /** The customer leaves without buying. @param {string} line @param {any} [c] */
+  walkOut(line, c = this.lab.state.current) {
     const lab = this.lab, st = lab.state;
-    const c = st.current;
     if (c && c.tutorial) { c.haggle = null; this.speak('That is too much for me… Make me an offer.', 'unhappy'); this.refresh(); return; }
-    if (c && c.haggle && c.haggle.state === 'walked') st.declineCustomer();
+    if (c && st.current === c && c.haggle && c.haggle.state === 'walked') st.declineCustomer();
     if (c) this.part(c.customer, line, 'unhappy', { kind: 'walked' });
     lab.refreshCustomer();
     this.refresh();
@@ -311,7 +329,7 @@ export class CounterView {
     lab.refreshHud(true);
     lab.updateBadges();
     this.refresh();
-    if (lab.tutorial) lab.tutorial.notify('sold');
+    if (lab.tutorial && com.tutorial) lab.tutorial.notify('sold');
   }
 
   /** A visitor on their way out: their last words, what came of it, and the door. */

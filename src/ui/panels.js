@@ -181,12 +181,12 @@ export function renderRecipes(lab, container) {
     clear(container);
     const save = btn('Save the brew', () => {
       const parts = lab.batchParts();
-      if (!parts.length) { toast('The cauldron is empty', '', 'cauldron'); return; }
+      if (!parts.length || lab.sim.p.count === 0) { toast('The cauldron is empty', '', 'cauldron'); return; }
       const p = lab.sim.p;
       let T = 0, n = 0;
       for (let i = 0; i < p.count; i++) { T += p.temp[i]; n++; }
       const draft = lab.recipeDraft({ temperature: n ? T / n : 20, color: [0.5, 0.5, 0.5] });
-      const evs = st.addRecipe({ ...draft, name: `Recipe ${st.recipes.length + 1}`, id: st.idStale ? null : { ...st.idCard.values } });
+      const evs = st.addRecipe({ ...draft, name: `Recipe ${st.recipes.length + 1}`, potionId: st.idStale ? null : { ...st.idCard.values } });
       for (const e of evs) lab.announce(e);
       toast('Recipe saved', '', 'book');
       render();
@@ -207,7 +207,9 @@ export function renderRecipes(lab, container) {
         r.minTemp < 12 ? h('span', { class: 'fx-chip', title: 'Chilled to' }, icon('basin', 'sm'), ` ${r.minTemp}°`) : null,
         r.stirSeconds ? h('span', { class: 'fx-chip' }, icon('spoon', 'sm'), ` ${r.stirSeconds}s`) : null,
         h('span', { class: 'fx-chip dim' }, icon('flask', 'sm'), ` ${Math.round(total)}`));
-      const idChips = r.id ? h('div', { class: 'meta' }, icon('scroll', 'sm'), ...PROPS.filter((p) => Number.isFinite(r.id[p.key])).map((p) => h('span', { class: 'fx-chip dim' }, icon(p.icon, 'sm'), ` ${r.id[p.key]}`))) : null;
+      // the Potion ID written for the brew when it was saved (r.id is the recipe's own key)
+      const pid = r.potionId && PROPS.some((p) => Number.isFinite(r.potionId[p.key])) ? r.potionId : null;
+      const idChips = pid ? h('div', { class: 'meta' }, icon('scroll', 'sm'), ...PROPS.filter((p) => Number.isFinite(pid[p.key])).map((p) => h('span', { class: 'fx-chip dim' }, icon(p.icon, 'sm'), ` ${pid[p.key]}`))) : null;
       const canAfford = r.ingredients.every((i) => lab.sandbox || st.stock(i.id) >= i.ml);
       const actions = h('div', { class: 'row wrap' },
         btn('', () => { prepareRecipe(lab, r); lab.showView('brew'); }, { icon: 'pour', cls: 'icon', disabled: !canAfford, title: canAfford ? 'Pour it all in' : 'Not enough in store', act: 'prepare' }),

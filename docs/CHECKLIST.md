@@ -29,7 +29,7 @@ verified (updated for 2.0.1). Test files: `W` = `tests/wording.test.mjs`, `A` = 
 | A super-transition temperature per material, anywhere relative to its phase points, transforming the magic into one extremely high property and the rest extremely low | ✔ | `superT`/`superKey` on every ingredient; A: "the super transition: past its threshold, witch oil’s whole magic pours into one property" |
 | For most materials the threshold is at unreachable extremes; mixing averages thresholds into a normal range | ✔ | A: "the garden world… most transitions are out of reach", "mixing averages the thresholds (by magic): two unreachable transitions make a reachable one"; `ach … super`: 25 of 25 super requests brewed |
 | Simplify the HUD; less text; no text over game buttons, especially during the tutorial | ✔ | Icon chips; status line in the top bar; coach row; B:layout "notifications and the tutorial never cover a control" on every profile; B:gameplay checks before every tutorial click |
-| Each system complete and functional | ✔ | `play` ten-day careers use every system; 49 headless and 71 browser tests pass |
+| Each system complete and functional | ✔ | `play` ten-day careers use every system; 57 headless and 77 browser tests pass (2.0.1) |
 | Performance kept at the top | ✔ | `bench`: physics as fast or faster than the previous release, phone ÷4 at 48–52 fps for typical brews, flat memory (`docs/PERFORMANCE.md`) |
 | Earlier saves keep working | ◐ partly | G: a genuine v3 save migrates and keeps coins, reputation, rank, equipment, awards and sales history. Its ingredients, recipes and journal are reset, because the old reagents do not exist in the garden world. |
 

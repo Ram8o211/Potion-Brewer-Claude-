@@ -42,7 +42,7 @@ export const ACHIEVEMENTS = [
   { id: 'heatmix', name: 'Warm Embrace', desc: 'Bind two magics that will not join while cold.', reward: 15 },
   { id: 'crush', name: 'Stone Breaker', desc: 'Smash a stone with the pestle.', reward: 10 },
   { id: 'frozen', name: 'Cold Hands', desc: 'Lock a brew in ice.', reward: 10 },
-  { id: 'boil', name: 'Rolling Boil', desc: 'Lose magic to the steam.', reward: 10 },
+  { id: 'boil', name: 'Lost to the Steam', desc: 'Lose magic to the steam.', reward: 10 },
   { id: 'fire', name: 'Singed Eyebrows', desc: 'Burn magic in too fierce a fire.', reward: 10 },
   { id: 'harvest1', name: 'Green Fingers', desc: 'Harvest your garden.', reward: 5 },
   { id: 'harvest1k', name: 'Gardener', desc: 'Harvest 1 litre of ingredients.', reward: 40 },
