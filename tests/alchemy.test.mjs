@@ -1,225 +1,225 @@
-// Effects, extraction, interactions, reactions and electricity — measured on
-// the real simulation, never on labels.
+// Magic — measured on the real simulation, never on labels: proportions,
+// extraction and steeping, fading, super transitions and their averaged
+// thresholds, heat-assisted mixing.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { generateWorld, makeLookup } from '../src/materials/generator.js';
+import { generateWorld, makeLookup, INGREDIENT_SPECS } from '../src/materials/generator.js';
 import { Simulation } from '../src/simulation/world.js';
 import { PHASE } from '../src/simulation/constants.js';
 import { tapSelection, measureParticles } from '../src/game/measure.js';
-import { EFFECT_INDEX, interact, NE, theoryOf, effectVector } from '../src/alchemy/effects.js';
-import { generateLaws } from '../src/materials/wild.js';
-import { totalCharge } from '../src/simulation/electric.js';
-import { MAX_SPECIES } from '../src/reactions/species.js';
+import { PROP_INDEX, NP, magicVector, magicWeight, thresholds, SUPER_GAIN } from '../src/alchemy/magic.js';
+import { SpeciesTable, MAX_SPECIES } from '../src/reactions/species.js';
+import { runPlanHeadless } from '../src/game/autobrew.js';
+import { compatFactorT, fullMixTemperature } from '../src/reactions/compatibility.js';
+import { predictPlan } from '../src/game/predict.js';
 
-const SEED = 'alchemy-tests-1';
+const SEED = 'magic-tests-1';
 const world = generateWorld(SEED);
 const lookup = makeLookup(world);
-const R = world.roles;
-const V = EFFECT_INDEX;
+const P = PROP_INDEX;
 
-function sim(laws = world.laws) {
-  return new Simulation({ size: 'small', lookup, reactions: world.reactions, laws });
+function sim() {
+  const s = new Simulation({ size: 'pot', lookup });
+  Object.assign(s.furnace, { maxFlame: 520, heatPower: 5.5, minCool: -70, coolPower: 9 });
+  return s;
 }
 function pour(s, id, n, opts = {}) {
   s.emitter.start(lookup(id), { x: opts.x ?? 0, amount: n, ground: opts.ground });
   let g = 0;
   while (s.emitter.pouring && g++ < 20000) s.step();
 }
-function run(s, sec) { for (let k = 0; k < Math.round(sec * 120); k++) s.step(); }
-function stir(s, sec, cy = 2.6) {
+function stir(s, sec) {
   const t = s.tool; t.type = 'spoon';
+  const c = s.cauldron, cy = c.depth - 0.45;
   for (let k = 0; k < Math.round(sec * 120); k++) {
     const a = (k / 120) * 2.6;
-    t.setTarget(Math.cos(a) * 0.9, cy + Math.sin(a) * 0.35, true);
+    t.setTarget(Math.cos(a) * c.halfWidth(cy) * 0.6, cy + Math.sin(a) * 0.25, true);
     s.advance(1 / 120, 1, 2);
   }
   t.setTarget(0, cy, false);
+  s.advance(1 / 120, 1, 2);
 }
-function fx(s, n = 40) {
-  const sel = tapSelection(s, n);
-  return measureParticles(s, sel);
+function meanT(s) {
+  let T = 0, n = 0;
+  for (let i = 0; i < s.p.count; i++) if (s.p.phase[i] !== PHASE.GAS) { T += s.p.temp[i]; n++; }
+  return n ? T / n : 20;
 }
-function allParticles(s) {
-  const out = [];
-  for (let i = 0; i < s.p.count; i++) if (s.p.phase[i] !== PHASE.GAS && s.p.phase[i] !== PHASE.SOLID) out.push(i);
-  return out;
+/**
+ * Heat (or chill) while stirring until the brew's mean temperature reaches a
+ * target. Like a careful alchemist, the flame is kept near the target so the
+ * iron at the bottom does not scorch the brew.
+ */
+function bring(s, target, maxSec = 90) {
+  for (let t = 0; t < maxSec; t += 1) {
+    const T = meanT(s);
+    if (Math.abs(T - target) < 2) break;
+    let set = Math.max(-1, Math.min(1, (target - T) / 12));
+    if (set > 0) set = Math.min(set, Math.max(0.05, (target + 40 - 20) / (s.furnace.maxFlame - 20)));
+    s.furnace.setting = set;
+    stir(s, 1);
+  }
+  s.furnace.setting = 0;
+}
+function tap(s, n = 30) {
+  return measureParticles(s, tapSelection(s, n));
 }
 
-test('every material carries an effect vector; worlds keep their old reagents and gain wild ones deterministically', () => {
-  const again = generateWorld(SEED);
-  assert.equal(JSON.stringify(again.laws), JSON.stringify(world.laws));
-  assert.ok(world.wild.length >= 15, 'wild ingredients');
-  for (const m of world.materials) assert.ok(m.effects && typeof m.effects === 'object', `${m.name} has effects`);
-  assert.equal(world.laws.length, 6, 'six resonance laws');
-  assert.notEqual(JSON.stringify(generateLaws('other-seed')), JSON.stringify(world.laws), 'laws differ between worlds');
-  // a different seed still has the same roles but other names/laws
-  const other = generateWorld('alchemy-tests-2');
-  assert.equal(other.wild.length, world.wild.length);
+test('the garden world: water has no magic, every other ingredient has a magic vector and two thresholds; most transitions are out of reach', () => {
+  assert.equal(world.ingredients.length, INGREDIENT_SPECS.length);
+  const water = lookup(world.roles.water);
+  assert.equal(magicWeight(water), 0);
+  assert.equal(water.form, 'liquid');
+  const liquids = world.ingredients.map(lookup).filter((m) => m.kind === 'liquid');
+  const stones = world.ingredients.map(lookup).filter((m) => m.kind === 'stone');
+  assert.ok(liquids.length >= 3 && stones.length >= 5, 'a few magical liquids and several stones');
+  for (const m of [...liquids, ...stones]) {
+    assert.ok(magicWeight(m) > 40, `${m.name} carries magic`);
+    assert.ok(Number.isFinite(m.fadeT) && Number.isFinite(m.superT) && P[m.superKey] !== undefined, `${m.name} has its thresholds`);
+    // the description is magic, not chemistry
+    assert.ok(!/densit|viscos|boil|melt|g\/ml|cP/i.test(m.description), m.description);
+  }
+  for (const s of stones) assert.ok(s.form === 'solid' && s.crushable, 'stones are gathered whole');
+  const reachable = [...liquids, ...stones].filter((m) => m.superT > -75 && m.superT < 130);
+  assert.ok(reachable.length >= 1 && reachable.length <= 3, 'only a few transitions are reachable alone');
+  // same seed, same world; another seed, other numbers
+  assert.deepEqual(generateWorld(SEED), world);
+  assert.notDeepEqual(generateWorld('other-seed').materials.map((m) => m.magic), world.materials.map((m) => m.magic));
 });
 
-test('plain water has no effect; an essence diluted 1:1 has half its potency', () => {
+test('proportions: a 1:1 blend of dew and water carries half the dew’s magic', () => {
   const s = sim();
-  pour(s, R.water, 30);
-  run(s, 1);
-  assert.ok(fx(s).effects.every((v) => Math.abs(v) < 0.01), 'water is inert');
-  const s2 = sim();
-  pour(s2, R.essenceA, 30);
-  run(s2, 1);
-  const pure = fx(s2).effects[V.vitality];
-  const s3 = sim();
-  pour(s3, R.water, 30, { x: -0.6 });
-  pour(s3, R.essenceA, 30, { x: 0.6 });
-  stir(s3, 10);
-  run(s3, 4);
-  const half = measureParticles(s3, allParticles(s3)).effects[V.vitality];
-  assert.ok(pure > 10, `pure essence vitality ${pure}`);
-  assert.ok(Math.abs(half - pure / 2) < 0.06 * pure, `diluted ${half.toFixed(2)} ≈ ${(pure / 2).toFixed(2)}`);
+  pour(s, world.roles.water, 30);
+  pour(s, world.roles.dew, 30);
+  stir(s, 8);
+  const m = tap(s, 40);
+  const dew = magicVector(lookup(world.roles.dew));
+  for (let k = 0; k < NP; k++) assert.ok(Math.abs(m.magic[k] - dew[k] / 2) <= Math.max(1.5, dew[k] * 0.08), `property ${k}: ${m.magic[k]} vs ${dew[k] / 2}`);
 });
 
-test('extraction: a whole root does nothing; ground and stirred it releases its effect; hot steeping releases far more', () => {
+test('extraction: a whole stone does nothing, powder gives a little, a hot steep draws much more — and keeps it once cooled', () => {
+  const sun = lookup(world.roles.sunstone);
   const whole = sim();
-  pour(whole, R.water, 36);
-  pour(whole, 'wild-ironroot', 8);
-  run(whole, 3);
-  const wholeStr = fx(whole).effects[V.strength];
+  pour(whole, world.roles.water, 45);
+  pour(whole, sun.id, 12);
+  stir(whole, 6);
+  const w = tap(whole, 40);
+  assert.ok(w.magic[P.ardor] < 1, `a whole stone stays in its chunk (${w.magic[P.ardor]})`);
   const ground = sim();
-  pour(ground, R.water, 36);
-  pour(ground, 'wild-ironroot', 8, { ground: true });
-  run(ground, 1);
-  const unstirred = fx(ground).effects[V.strength];
+  pour(ground, world.roles.water, 45);
+  pour(ground, sun.id, 12, { ground: true });
   stir(ground, 8);
-  run(ground, 2);
-  const stirred = fx(ground).effects[V.strength];
-  ground.furnace.setting = 0.45;
-  run(ground, 25);
-  stir(ground, 6);
-  ground.furnace.setting = -0.6;
-  run(ground, 30);
-  ground.furnace.setting = 0;
-  run(ground, 3);
-  const steeped = fx(ground).effects[V.strength];
-  const steepId = 'wild-p-steeped-ironroot';
-  const slot = ground.species.slotOf.get(steepId);
-  assert.ok(slot !== undefined, 'the steeping reaction produced a liquid extract');
-  assert.ok(wholeStr < 0.5, `whole chunks inert (${wholeStr.toFixed(2)})`);
-  assert.ok(stirred > unstirred, `stirring extracts more (${unstirred.toFixed(1)} → ${stirred.toFixed(1)})`);
-  assert.ok(steeped > stirred * 1.2, `steeping hot extracts more (${stirred.toFixed(1)} → ${steeped.toFixed(1)})`);
+  const cold = tap(ground, 40).magic[P.ardor];
+  bring(ground, 85);
+  bring(ground, 22);
+  const steeped = tap(ground, 40);
+  const full = (12 / 57) * sun.magic.ardor;
+  assert.ok(cold > 1 && cold < full * 0.75, `cold powder gives some (${cold.toFixed(1)} of ${full.toFixed(1)})`);
+  assert.ok(steeped.magic[P.ardor] > cold * 1.4, `a hot steep draws more (${steeped.magic[P.ardor].toFixed(1)} vs ${cold.toFixed(1)})`);
+  assert.ok(steeped.temperature < 30, 'measured after cooling');
 });
 
-test('effects interact only where the substances meet: fire and frost layers cancel once stirred together', () => {
-  const s = sim([]);
-  pour(s, R.essenceB, 24, { x: -0.8 }); // fire essence
-  pour(s, 'wild-frostcap', 6, { ground: true, x: 0.8 });
-  pour(s, R.water, 20, { x: 0.8 });
-  run(s, 2);
-  // effect per particle averaged, before mixing
-  const before = measureParticles(s, allParticles(s)).effects;
+test('overheating fades magic; the same brew kept below its fading point keeps it', () => {
+  const dew = lookup(world.roles.dew);
+  const make = () => { const s = sim(); s.cauldron.lidClosed = true; pour(s, world.roles.water, 25); pour(s, dew.id, 25); stir(s, 6); return s; };
+  const safe = make();
+  bring(safe, dew.fadeT - 15);
+  bring(safe, 25);
+  const hot = make();
+  hot.furnace.maxFlame = 340;
+  bring(hot, 96, 120);
+  stir(hot, 12);
+  bring(hot, 25);
+  const a = tap(safe, 30), b = tap(hot, 30);
+  assert.ok(a.vig > 0.97, `kept below its fading point (${a.vig.toFixed(3)})`);
+  assert.ok(b.vig < 0.85 && b.magic[P.vitality] < a.magic[P.vitality] * 0.9, `overheated: ${b.magic[P.vitality].toFixed(1)} vs ${a.magic[P.vitality].toFixed(1)} (vigour ${b.vig.toFixed(2)})`);
+});
+
+test('the super transition: past its threshold, witch oil’s whole magic pours into one property', () => {
+  const oil = lookup(world.roles.witchoil);
+  assert.ok(oil.superT > 50 && oil.superT < 110);
+  const s = sim();
+  s.cauldron.lidClosed = true;
+  pour(s, oil.id, 30);
+  stir(s, 4);
+  const before = tap(s, 25);
+  assert.ok(before.magic[P.bane] > 20 && before.ss < 0.01);
+  bring(s, oil.superT + 8, 120);
+  stir(s, 10);
+  bring(s, 25, 120);
+  const after = tap(s, 25);
+  const key = P[oil.superKey];
+  const sum = magicWeight(oil);
+  assert.ok(after.ss > 0.9, `transmuted (${after.ss.toFixed(2)})`);
+  assert.ok(after.magic[key] > Math.min(95, sum * SUPER_GAIN) * 0.85, `${oil.superKey} soars: ${after.magic[key].toFixed(1)}`);
+  for (let k = 0; k < NP; k++) if (k !== key) assert.ok(after.magic[k] < 4, `property ${k} emptied (${after.magic[k].toFixed(1)})`);
+});
+
+test('mixing averages the thresholds (by magic): two unreachable transitions make a reachable one', () => {
+  const dew = lookup(world.roles.dew), heart = lookup(world.roles.heartstone);
+  assert.ok(dew.superT < -300 && heart.superT > 500, 'neither can transmute alone');
+  // the share of heartstone magic that puts the blend's threshold at -12°C
+  const target = -12;
+  const wd = magicWeight(dew), wh = magicWeight(heart);
+  const x = (target - dew.superT) / (heart.superT - dew.superT); // heart's share of the magic weight
+  const nTotal = 36;
+  const nHeart = Math.round((x / wh) / (x / wh + (1 - x) / wd) * nTotal);
+  const plan = { ingredients: [{ id: dew.id, n: nTotal - nHeart }, { id: heart.id, n: nHeart, ground: true }], heatTo: 55, coolTo: target - 10, serveTemp: 20, knead: true, stir: 16, hold: 30 };
+  const sp = new SpeciesTable();
+  const comp = new Float32Array(MAX_SPECIES);
+  comp[sp.ensure(dew)] = (nTotal - nHeart) / nTotal;
+  comp[sp.ensure(heart)] = nHeart / nTotal;
+  const thr = thresholds(sp, comp, 0);
+  assert.ok(Math.abs(thr.super - target) < 6, `the blend's threshold is ${thr.super.toFixed(1)}°C`);
+  const s = sim();
+  runPlanHeadless(s, plan, lookup);
+  const m = tap(s, 25);
+  const key = thr.key;
+  assert.ok(m.ss > 0.6, `the blend transmuted when chilled (${m.ss.toFixed(2)})`);
+  const others = m.magic.reduce((a, v, k) => (k === key ? a : a + v), 0);
+  assert.ok(m.magic[key] > others * 2, `${m.magic.map((v) => v.toFixed(0))} concentrates in property ${key}`);
+  // and the prediction agrees on what it becomes
+  const pred = predictPlan(world, lookup, plan);
+  assert.equal(pred.magic.indexOf(Math.max(...pred.magic)), key);
+});
+
+test('heat helps mixing: witch oil keeps apart from water while cold, blends when hot, and stays blended', () => {
+  const oil = lookup(world.roles.witchoil), water = lookup(world.roles.water);
+  assert.equal(compatFactorT(oil.compat[0], oil.compat[1], water.compat[0], water.compat[1], 20), 0, 'immiscible at room temperature');
+  const tMix = fullMixTemperature(oil.compat, water.compat);
+  assert.ok(tMix > 40 && tMix < oil.superT, `blends fully at ${tMix.toFixed(0)}°C, below its transition`);
+  const blended = (s) => {
+    const sw = s.species.slotOf.get(water.id), so = s.species.slotOf.get(oil.id);
+    let both = 0;
+    for (let i = 0; i < s.p.count; i++) if (s.p.comp[i * MAX_SPECIES + sw] > 0.2 && s.p.comp[i * MAX_SPECIES + so] > 0.2) both++;
+    return both / s.p.count;
+  };
+  const s = sim();
+  s.cauldron.lidClosed = true;
+  pour(s, water.id, 30);
+  pour(s, oil.id, 30);
+  stir(s, 12);
+  const cold = blended(s);
+  bring(s, Math.min(oil.superT - 6, tMix + 4), 120);
   stir(s, 14);
-  run(s, 3);
-  const after = measureParticles(s, allParticles(s)).effects;
-  const sumBefore = before[V.fire] + before[V.frost];
-  const sumAfter = after[V.fire] + after[V.frost];
-  assert.ok(sumAfter < sumBefore * 0.8, `fire+frost cancel where mixed (${sumBefore.toFixed(1)} → ${sumAfter.toFixed(1)})`);
+  bring(s, 22, 120);
+  stir(s, 4);
+  const after = blended(s);
+  assert.ok(cold < 0.15, `cold and stirred, they keep apart (${cold.toFixed(2)})`);
+  assert.ok(after > 0.5, `heated, they blend — and stay blended once cooled (${after.toFixed(2)})`);
 });
 
-test('resonance laws: transmute, catalyse and suppress act per particle and are traced for discovery', () => {
-  /** @param {'transmute'|'catalyse'|'suppress'} kind @param {string} a @param {string} b @param {string} [c] */
-  const law = (kind, a, b, c) => ({ id: 'L', name: 'L', kind, a: V[a], b: V[b], c: c === undefined ? -1 : V[c], k: 0.6, min: 2, lore: '' });
-  const e = new Float64Array(NE);
-  e[V.love] = 20; e[V.arcana] = 20;
-  const tr = new Float64Array(1);
-  interact(e, [law('transmute', 'love', 'arcana', 'transformation')], tr);
-  assert.ok(e[V.transformation] > 5 && e[V.love] < 20 && tr[0] > 0, 'love + arcana → transformation');
-  const c = new Float64Array(NE);
-  c[V.strength] = 20; c[V.fire] = 10;
-  interact(c, [law('catalyse', 'strength', 'fire')]);
-  assert.ok(c[V.strength] > 25, `fire catalyses strength (${c[V.strength].toFixed(1)})`);
-  const u = new Float64Array(NE);
-  u[V.love] = 20; u[V.toxicity] = 8;
-  interact(u, [law('suppress', 'love', 'toxicity')]);
-  assert.ok(u[V.love] < 16, 'toxicity suppresses love');
-  // universal laws: vitality neutralises toxicity, acid + alkali cancel (signed)
-  const v = new Float64Array(NE);
-  v[V.vitality] = 30; v[V.toxicity] = 10;
-  interact(v, []);
-  assert.ok(v[V.toxicity] < 0.01 && Math.abs(v[V.vitality] - 10) < 0.01);
-  // the naive theory ignores extraction but applies the laws you know
-  const theory = theoryOf([{ id: R.essenceA, ml: 50 }, { id: R.water, ml: 50 }], lookup);
-  assert.ok(Math.abs(theory[V.vitality] - effectVector(lookup(R.essenceA))[V.vitality] / 2) < 0.01);
-});
-
-test('heat spoils delicate petals: love falls and toxicity appears (reaction products carry effects)', () => {
-  const s = sim([]);
-  pour(s, R.water, 30);
-  pour(s, 'wild-heartpetal', 8, { ground: true });
-  stir(s, 8);
-  run(s, 2);
-  const cool = fx(s).effects;
-  s.furnace.setting = 0.7;
-  run(s, 45);
-  s.furnace.setting = -0.8;
-  run(s, 40);
-  s.furnace.setting = 0;
-  run(s, 2);
-  const spoiled = fx(s).effects;
-  assert.ok(spoiled[V.love] < cool[V.love] * 0.8, `love ${cool[V.love].toFixed(1)} → ${spoiled[V.love].toFixed(1)}`);
-  assert.ok(spoiled[V.toxicity] > cool[V.toxicity] + 0.5, `toxicity ${cool[V.toxicity].toFixed(1)} → ${spoiled[V.toxicity].toFixed(1)}`);
-});
-
-test('reduction: boiling water away with the lid open concentrates a non-volatile extract', () => {
-  const s = sim([]);
-  pour(s, R.water, 40);
-  pour(s, 'wild-silverleaf', 8, { ground: true });
+test('the magic state travels with the matter: stirring evens out a partly faded brew without creating magic', () => {
+  const s = sim();
+  pour(s, world.roles.water, 20);
+  pour(s, world.roles.dew, 30);
   stir(s, 6);
-  s.furnace.setting = 0.4;
-  run(s, 30);
-  s.furnace.setting = -0.6;
-  run(s, 30);
-  s.furnace.setting = 0;
-  const before = measureParticles(s, allParticles(s));
-  const slot = s.species.slotOf.get('wild-p-silver-infusion');
-  const extract = () => { let t = 0; for (let i = 0; i < s.p.count; i++) t += s.p.comp[i * MAX_SPECIES + slot]; return t; };
-  const ex0 = extract();
-  s.cauldron.lidClosed = false;
-  s.furnace.setting = 1;
-  s.furnace.maxFlame = 520; s.furnace.heatPower = 5.5;
-  run(s, 40);
-  s.furnace.setting = -1;
-  run(s, 25);
-  s.furnace.setting = 0;
-  run(s, 3);
-  const after = measureParticles(s, allParticles(s));
-  assert.ok(after.count < before.count, `water boiled away (${before.count} → ${after.count} particles)`);
-  // a little extract is entrained in the steam, most stays behind
-  assert.ok(extract() > 0.8 * ex0, `the extract stays in the pot (${ex0.toFixed(2)} → ${extract().toFixed(2)})`);
-  assert.ok(after.effects[V.vitality] > before.effects[V.vitality] * 1.1, `vitality concentrated ${before.effects[V.vitality].toFixed(1)} → ${after.effects[V.vitality].toFixed(1)}`);
-});
-
-test('electric charge: conserved, spreads through brine, blocked by oil, and heats resistive contacts', () => {
-  const s = sim([]);
-  pour(s, R.salt, 6);
-  pour(s, R.water, 30);
-  stir(s, 8);
-  run(s, 2);
-  pour(s, 'wild-stormglass', 6, { ground: true });
-  const q0 = totalCharge(s);
-  assert.ok(q0 > 5, `storm glass brings its charge (${q0.toFixed(2)})`);
-  const e0 = s.energyIn;
-  stir(s, 6);
-  run(s, 4);
-  assert.ok(Math.abs(totalCharge(s) - q0) < 1e-3 * Math.max(1, q0), 'charge conserved');
-  let liquidQ = 0, n = 0;
-  for (let i = 0; i < s.p.count; i++) if (s.p.phase[i] === PHASE.LIQUID) { liquidQ += s.p.q[i]; n++; }
-  assert.ok(liquidQ / n > 0.02, `charge spread into the brine (${(liquidQ / n).toFixed(3)} per particle)`);
-  assert.ok(s.energyIn > e0, 'Joule heating');
-  // oil insulates
-  const o = sim([]);
-  pour(o, R.oil, 30);
-  pour(o, 'wild-stormglass', 6, { ground: true });
-  run(o, 4);
-  let oilQ = 0, on = 0;
-  for (let i = 0; i < o.p.count; i++) if (o.p.phase[i] === PHASE.LIQUID) { oilQ += Math.abs(o.p.q[i]); on++; }
-  assert.ok(oilQ / on < 0.01, `oil stays neutral (${(oilQ / on).toFixed(4)})`);
-  // measurement reads it
-  assert.ok(measureParticles(s, allParticles(s)).charge > 0.02);
+  // fade half of the particles by hand, then stir
+  const p = s.p;
+  let before = 0;
+  for (let i = 0; i < p.count; i++) { if (i % 2) p.vig[i] = 0.4; before += p.vig[i] * p.mw[i]; }
+  stir(s, 10);
+  let after = 0, lo = 1, hi = 0;
+  for (let i = 0; i < p.count; i++) { after += p.vig[i] * p.mw[i]; if (p.phase[i] !== PHASE.GAS) { lo = Math.min(lo, p.vig[i]); hi = Math.max(hi, p.vig[i]); } }
+  assert.ok(Math.abs(after - before) / before < 0.03, `faded magic is conserved (${before.toFixed(2)} → ${after.toFixed(2)})`);
+  assert.ok(hi - lo < 0.25, `and evened out (${lo.toFixed(2)}–${hi.toFixed(2)})`);
 });

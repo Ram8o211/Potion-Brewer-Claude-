@@ -1,5 +1,4 @@
-// Turns simulation events into discoveries: journal entries, learned
-// material facts (revealed in the ingredient inspector) and achievements.
+// Turns simulation events into discoveries: journal entries and achievements.
 
 /**
  * @param {import('./state.js').GameState} state
@@ -18,10 +17,7 @@ export function processEvent(state, e) {
   switch (e.type) {
     case 'pourEnd': {
       const m = L(e.id);
-      if (m) {
-        state.learn(e.id, 'seen', true);
-        add({ key: 'ing:' + e.id, title: m.name, text: m.description, kind: 'ingredient', material: e.id });
-      }
+      if (m) state.learn(e.id, 'seen', true);
       break;
     }
     case 'phase': {
@@ -29,78 +25,41 @@ export function processEvent(state, e) {
       if (!id) break;
       const T = Math.round(e.temp);
       if (e.to === 'gas') {
-        state.learn(id, 'boil', T);
-        add({ key: `boil:${id}`, title: `${name(id)} boils`, text: `${name(id)} turned to vapour at about ${T}°C. With the lid on, the vapour gathers under it and can condense again.`, kind: 'phase', material: id });
+        add({ key: `boil:${id}`, title: `${name(id)} boils`, text: `It turned to vapour at about ${T}°C. Magic that boils away is lost unless the lid keeps it in.`, kind: 'phase', material: id });
         achievements.push(...state.unlock('boil'));
-      } else if (e.from === 'gas') {
-        add({ key: `condense:${id}`, title: `${name(id)} condenses`, text: `Vapour of ${name(id)} condensed back into droplets on a cool surface.`, kind: 'phase', material: id });
-        achievements.push(...state.unlock('condense'));
       } else if (e.to === 'solid') {
-        state.learn(id, 'melt', T);
-        add({ key: `freeze:${id}`, title: `${name(id)} freezes`, text: `${name(id)} froze solid at about ${T}°C, forming a block shaped like the liquid. The pestle can crush it.`, kind: 'phase', material: id });
+        add({ key: `freeze:${id}`, title: `${name(id)} freezes`, text: `It froze solid at about ${T}°C. A frozen brew cannot be stirred: crush it or let it thaw.`, kind: 'phase', material: id });
         achievements.push(...state.unlock('frozen'));
-      } else if (e.from === 'solid' || (e.from === 'powder' && e.to !== 'powder')) {
-        state.learn(id, 'melt', T);
-        add({ key: `melt:${id}`, title: `${name(id)} melts`, text: `${name(id)} melted at about ${T}°C.`, kind: 'phase', material: id });
       }
       break;
     }
-    case 'paste': {
-      const id = e.species;
-      if (e.binder > 0.4) {
-        add({ key: `dough:${id}`, title: 'A dough forms', text: `Kneading the powder with liquid turned it into a thick, cohesive dough. More liquid thins it into a paste and eventually a liquid.`, kind: 'mixing', material: id });
-        achievements.push(...state.unlock('dough'));
-      }
+    case 'transmute': {
+      add({ key: 'transmute', title: 'A super transition', text: 'The brew crossed its super-transition temperature: its whole magic poured into a single property and the rest vanished. Blends average the thresholds of their ingredients, weighted by their magic.', kind: 'magic' });
+      achievements.push(...state.unlock('super'));
       break;
     }
-    case 'dissolve': {
-      const id = e.species;
-      if (id) {
-        state.learn(id, 'soluble', true);
-        add({ key: `dissolve:${id}`, title: `${name(id)} dissolves`, text: `${name(id)} dissolved into the liquid. Heat and stirring make it dissolve faster.`, kind: 'mixing', material: id });
-      }
+    case 'fade': {
+      add({ key: 'fade', title: 'Fading magic', text: 'Overheated, the brew’s magic began to burn away. Every blend has a fading temperature: the magic-weighted mean of its ingredients’.', kind: 'magic' });
+      achievements.push(...state.unlock('fade'));
       break;
     }
-    case 'reaction': {
-      const rule = state.world.reactions.find((r) => r.id === e.rule);
-      if (!rule) break;
-      const prods = rule.products.map((p) => name(p.id)).join(' and ');
-      const before = state.reactionsDiscovered();
-      add({
-        key: `reaction:${rule.id}`,
-        title: `Reaction: ${rule.name}`,
-        text: `${name(rule.a)}${rule.b ? ' + ' + name(rule.b) : ''} → ${prods}. ${rule.minT > -20 ? `Needs at least ${rule.minT}°C` : `Needs cold below ${rule.maxT}°C`}${rule.maxT < 200 && rule.minT > -20 ? ` and stops above ${rule.maxT}°C` : ''}. ${rule.heat > 50 ? 'It releases a lot of heat!' : rule.heat < 0 ? 'It draws heat in.' : ''} ${rule.hint || ''}`,
-        kind: 'reaction',
-        material: rule.products[0].id,
-      });
-      for (const p of rule.products) state.learn(p.id, 'seen', true);
-      if (/^rw_(steep|infuse)/.test(rule.id)) achievements.push(...state.unlock('steep'));
-      const after = state.reactionsDiscovered();
-      if (after > before) {
-        if (after >= 1) achievements.push(...state.unlock('react1'));
-        if (after >= 5) achievements.push(...state.unlock('react5'));
-        if (after >= 10) achievements.push(...state.unlock('react10'));
-      }
+    case 'heatmix': {
+      add({ key: `heatmix:${e.a}:${e.b}`, title: 'Blended by heat', text: `${name(e.a)} and ${name(e.b)} kept apart while cold but blended once hot — and stay blended.`, kind: 'mixing', material: e.a });
+      achievements.push(...state.unlock('heatmix'));
       break;
     }
     case 'ignite': {
       const id = e.species;
-      add({ key: `fire:${id}`, title: `${name(id)} burns`, text: `${name(id)} caught fire where it met the air. Fire needs oxygen — closing the lid starves it.`, kind: 'fire', material: id });
-      if (id) state.learn(id, 'flammable', true);
+      add({ key: `fire:${id}`, title: `${name(id)} burns`, text: 'It caught fire where it met the air. Burnt magic is gone for good. Closing the lid starves the flame.', kind: 'fire', material: id });
       achievements.push(...state.unlock('fire'));
       break;
     }
-    case 'spark':
-      add({ key: 'spark', title: 'A galvanic spark', text: 'Charge leapt between touching matter. Conductive brews (brine, metals) carry electric charge; oil and pure spirits insulate. Moving charge warms what it passes through.', kind: 'tool' });
-      break;
     case 'crush':
       achievements.push(...state.unlock('crush'));
-      add({ key: 'crush', title: 'Crushing', text: 'The pestle breaks solid blocks and crystals into grains without losing any material.', kind: 'tool' });
+      add({ key: 'crush', title: 'Smashing stones', text: 'The pestle smashes whole stones into powder without losing any. Only powder dissolves, and hot water draws out far more magic.', kind: 'tool' });
       break;
     case 'layers': {
-      add({ key: `layers:${e.a}:${e.b}`, title: 'Immiscible layers', text: `${name(e.a)} and ${name(e.b)} refuse to mix and separate into layers by density.`, kind: 'mixing', material: e.a });
-      state.learn(e.a, 'immiscible', true);
-      achievements.push(...state.unlock('layers'));
+      add({ key: `layers:${e.a}:${e.b}`, title: 'Separate layers', text: `${name(e.a)} and ${name(e.b)} refuse to blend while cold and settle into layers. Heat helps them blend.`, kind: 'mixing', material: e.a });
       break;
     }
   }

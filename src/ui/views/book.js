@@ -1,19 +1,16 @@
-// The alchemist's book: recipes, the trial log, the laws of magic (the
-// universal ones every guild alchemist knows and the hidden ones you have
-// confirmed by experiment), the journal, the ingredient encyclopedia with
-// each plain ingredient's known effects, achievements and sales.
+// The alchemist's book: recipes, the ingredients and their magic, the
+// journal, awards and the sales ledger (with refunds).
 
-import { h, btn, clear } from '../dom.js';
+import { h, btn, clear, coins } from '../dom.js';
 import { icon } from '../icons.js';
 import { audio } from '../../audio/audio.js';
 import * as panels from '../panels.js';
-import { SUBJECT_BY_ID } from '../../game/experiments.js';
-import { EFFECTS, EFFECT_BY_KEY, EFFECT_KEYS } from '../../alchemy/effects.js';
+import { PROPS, PROP_BY_KEY } from '../../alchemy/magic.js';
 import { rgbToHex } from '../../core/color.js';
 
 const TABS = [
-  ['recipes', 'Recipes', 'book'], ['trials', 'Trials', 'dropper'], ['laws', 'Laws', 'eye'], ['ingredients', 'Ingredients', 'leaf'],
-  ['journal', 'Journal', 'scroll'], ['achievements', 'Awards', 'trophy'], ['history', 'Sales', 'coin'],
+  ['recipes', 'Recipes', 'book'], ['ingredients', 'Ingredients', 'leaf'], ['journal', 'Journal', 'scroll'],
+  ['achievements', 'Awards', 'trophy'], ['sales', 'Sales', 'coin'],
 ];
 
 export class BookView {
@@ -42,77 +39,57 @@ export class BookView {
     if (!this.tabs) return;
     const tabs = clear(this.tabs);
     for (const [k, label, ic] of TABS) {
-      if (this.lab.sandbox && (k === 'history' || k === 'achievements')) continue;
+      if (this.lab.sandbox && (k === 'sales' || k === 'achievements')) continue;
       tabs.appendChild(btn(label, () => { this.tab = k; audio.play('page'); this.refresh(); }, { icon: ic, cls: this.tab === k ? 'active' : '', act: 'book-' + k }));
     }
     const body = clear(this.body);
     const lab = this.lab;
     switch (this.tab) {
-      case 'recipes': panels.renderRecipes(lab, body, () => this.refresh()); break;
-      case 'trials': this.renderTrials(body); break;
-      case 'laws': this.renderLaws(body); break;
+      case 'recipes': panels.renderRecipes(lab, body); break;
       case 'ingredients': this.renderIngredients(body); break;
+      case 'sales': this.renderSales(body); break;
       default: panels.renderJournal(lab, body, this.tab);
     }
   }
 
-  /** @param {HTMLElement} body */
-  renderTrials(body) {
-    const st = this.lab.state;
-    const recs = st.trials.records;
-    body.appendChild(h('div', { class: 'small muted', text: `${st.stats.trials || 0} trials run. Each records exactly what it revealed and what the guild theory expected.` }));
-    if (!recs.length) { body.appendChild(h('div', { class: 'card parch', text: 'No trials yet. In the Trials room, give a measured dose to a subject.' })); return; }
-    for (const r of recs.slice(0, 40)) {
-      const s = SUBJECT_BY_ID[r.subjectId];
-      body.appendChild(h('div', { class: 'item parch' },
-        h('span', { class: 'swatch big', style: { background: rgbToHex(r.look.color) } }),
-        h('div', {},
-          h('div', { class: 'title', text: `#${r.serial} ${s ? s.name : r.subjectId} · ${r.ml} ml` }),
-          h('div', { class: 'meta' }, ...r.revealed.map((k) => h('span', { class: 'fx-chip' + (r.anomalies.includes(k) ? ' anomaly' : ''), title: `${EFFECT_BY_KEY[k].label}: observed ${r.values[k]}, theory ${r.theory[k]}` }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(r.values[k])}`))),
-          h('div', { class: 'meta', text: r.observations.map((o) => o.text).join(' ') }),
-          r.parts && r.parts.length ? h('div', { class: 'meta muted', text: 'Batch: ' + r.parts.map((p) => `${p.ml} ml ${st.lookup(p.id) ? st.lookup(p.id).name : '?'}`).join(', ') }) : null),
-        h('span', { class: 'small muted', text: `Day ${r.day}` })));
-    }
-  }
-
-  /** @param {HTMLElement} body */
-  renderLaws(body) {
-    const st = this.lab.state;
-    body.appendChild(h('div', { class: 'card parch' }, h('h3', { text: 'The Guild Primer' }),
-      ...['Fire and frost cancel each other where they meet.', 'Life (vitality) and death cancel each other.', 'Vitality neutralises toxicity: two parts of healing cure one part of poison.', 'Acids and alkalis neutralise. Acidity below zero means alkaline.', 'Only what dissolves takes effect: whole roots and stones do nothing until crushed or ground, and grains beyond what the liquid can hold barely count. Heat helps many things dissolve.', 'Effects act where substances meet. Layers that never mix never interact — stir!', 'Strong effects show diminishing returns.']
-        .map((t) => h('div', { class: 'small', text: '• ' + t }))));
-    const laws = st.world.laws || [];
-    const found = laws.filter((L) => st.trials.laws[L.id] && st.trials.laws[L.id].found !== null);
-    const hinted = laws.filter((L) => st.trials.laws[L.id] && st.trials.laws[L.id].found === null);
-    body.appendChild(h('div', { class: 'small muted', text: `This world hides ${laws.length} laws of resonance between effects. Discovered: ${found.length}. A law shows itself in trials where its effects meet; two observations confirm it.` }));
-    for (const L of found) {
-      body.appendChild(h('div', { class: 'item parch' }, icon('star'),
-        h('div', {}, h('div', { class: 'title', text: L.name }), h('div', { class: 'meta', text: L.lore }),
-          h('div', { class: 'meta muted', text: `${EFFECTS[L.a].label} with ${EFFECTS[L.b].label}${L.c >= 0 ? ` → ${EFFECTS[L.c].label}` : ''} · confirmed on day ${st.trials.laws[L.id].found}` }))));
-    }
-    for (const L of hinted) {
-      body.appendChild(h('div', { class: 'item parch locked' }, icon('help'),
-        h('div', {}, h('div', { class: 'title', text: 'An unexplained anomaly' }), h('div', { class: 'meta', text: `Something changed ${EFFECTS[L.a].label.toLowerCase()} in one of your trials. Repeat similar mixtures to confirm what.` }))));
-    }
-  }
-
-  /** @param {HTMLElement} body */
+  /** Every ingredient's magic, as the player knows it. @param {HTMLElement} body */
   renderIngredients(body) {
     const lab = this.lab, st = lab.state;
-    body.appendChild(h('div', { class: 'small muted', text: 'The effects of every plain ingredient are known to the guild. Mixtures are not — that is what the trials are for.' }));
+    const avail = st.availableSet();
     const list = h('div', { class: 'list' });
     for (const id of st.world.ingredients) {
       const m = st.lookup(id);
-      const seen = lab.sandbox || m.tier <= st.rank || st.stock(id) > 0 || (m.wild && st.gatherableSet().has(id));
-      const fx = EFFECT_KEYS.map((k) => [k, (m.effects && m.effects[k]) || 0]).filter(([, v]) => Math.abs(v) >= 1).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
+      const seen = lab.sandbox || avail.has(id);
       list.appendChild(h('div', { class: 'item parch' + (seen ? '' : ' locked') },
         h('span', { class: 'swatch big', style: { background: rgbToHex(m.look || m.color) } }),
         h('div', {},
-          h('div', { class: 'title', text: seen ? m.name : '???' }),
-          seen ? h('div', { class: 'meta' }, fx.length ? fx.map(([k, v]) => h('span', { class: 'fx-chip', title: EFFECT_BY_KEY[k].label }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(v)}`)) : h('span', { class: 'muted', text: 'no magical effect' })) : h('div', { class: 'meta', text: 'Not yet available.' }),
-          seen ? h('div', { class: 'meta muted', text: `${m.wild ? `wild · ${m.wild.region}` : m.form}${m.solubility > 0.03 ? ' · dissolves' : ''}${m.binder > 0.3 ? ' · forms dough' : ''}` }) : null),
-        seen ? btn('', () => panels.openIngredient(lab, id), { icon: 'lens', cls: 'icon', title: 'Inspect', act: 'inspect-' + id }) : icon('lock')));
+          h('div', { class: 'title', text: m.name }),
+          h('div', { class: 'meta' }, ...panels.magicChips(m.magic)),
+          h('div', { class: 'meta' }, ...panels.thresholdChips(m))),
+        btn('', () => panels.openIngredient(lab, id), { icon: 'eye', cls: 'icon', title: 'Its magic', act: 'inspect-' + id })));
     }
     body.appendChild(list);
+  }
+
+  /** The ledger: every sale, and what became of it. @param {HTMLElement} body */
+  renderSales(body) {
+    const st = this.lab.state;
+    body.appendChild(h('div', { class: 'row small ledger-sum' },
+      icon('coin', 'sm'), ` ${coins(st.stats.earned)}`, h('span', { class: 'spacer' }),
+      icon('refund', 'sm'), ` ${coins(st.stats.refunded)}`, h('span', { class: 'spacer' }),
+      icon('seal', 'sm'), ` ${st.stats.certified}`, h('span', { class: 'spacer' }),
+      icon('deal', 'sm'), ` ${st.stats.served}`));
+    if (!st.sales.length) { body.appendChild(h('div', { class: 'card parch small muted', text: '—' })); return; }
+    for (const s of st.sales.slice(0, 40)) {
+      const outcome = s.resolved === 'refunded' ? icon('refund') : s.resolved === 'caught' ? icon('seal') : s.complaint ? icon('clock') : icon('check');
+      body.appendChild(h('div', { class: 'item parch' },
+        h('span', { class: 'swatch big', style: { background: rgbToHex(s.color || [0.5, 0.5, 0.5]) } }),
+        h('div', {},
+          h('div', { class: 'title', text: s.potion }),
+          h('div', { class: 'meta', text: `${s.customer.name} · day ${s.day}` }),
+          h('div', { class: 'meta' }, ...s.requirements.map((r) => h('span', { class: 'fx-chip' }, icon(PROP_BY_KEY[r.key].icon, 'sm'), r.kind === 'limit' ? `≤${r.max}` : r.max >= 100 ? `≥${r.min}` : `${r.min}–${r.max}`))),
+          s.certified ? h('div', { class: 'meta' }, icon('seal', 'sm'), ...PROPS.map((p) => h('span', { class: 'fx-chip dim' }, icon(p.icon, 'sm'), ` ${s.certified[p.key]}`))) : null),
+        h('span', { class: 'sale-side' }, h('b', { text: coins(s.price) }), outcome)));
+    }
   }
 }

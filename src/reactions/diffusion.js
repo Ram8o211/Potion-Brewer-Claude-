@@ -16,10 +16,16 @@
 //   damp powder ↔ powder        : moisture spreads only when kneaded
 //   gas ↔ gas                   : fast diffusion
 //   anything else (solids, gas↔condensed) : no exchange
+//
+// Miscibility depends on temperature (compatibility.js): heat helps liquids
+// that stay apart when cold to blend. The carried magic state (vigour,
+// transmuted share, steeping temperature, see alchemy/magic.js) travels with
+// the matter: each exchange is a swap of a fraction kx of each particle's
+// content, so the state is averaged weighted by the magic each side holds.
 
 import { PHASE } from '../simulation/constants.js';
 import { MAX_SPECIES } from './species.js';
-import { compatFactor } from './compatibility.js';
+import { compatFactorT } from './compatibility.js';
 
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const RD = 0.16;
@@ -35,25 +41,27 @@ export function diffusionStep(sim, dt) {
   const n = p.count;
   for (let i = 0; i < n; i++) chg[i] = 0;
   const ph = p.phase;
+  const vig = p.vig, ss = p.ss, stp = p.stp, magW = sp.magW;
   for (let k = 0; k < pairCount; k++) {
     const i = pairI[k], j = pairJ[k];
     const pi = ph[i], pj = ph[j];
     if (pi === SOLID || pj === SOLID) continue;
     const gi = pi === GAS, gj = pj === GAS;
     if (gi !== gj) continue;
-    // identical compositions → nothing to exchange (cheap proxy test)
+    // identical compositions and magic state → nothing to exchange (cheap proxy test)
     if (
       Math.abs(p.rho20[i] - p.rho20[j]) < 1e-5 &&
       Math.abs(p.colL[i] - p.colL[j]) < 1e-5 &&
       Math.abs(p.colA[i] - p.colA[j]) < 1e-5 &&
       Math.abs(p.colB[i] - p.colB[j]) < 1e-5 &&
       Math.abs(p.cA[i] - p.cA[j]) < 1e-5 &&
-      Math.abs(p.gran[i] - p.gran[j]) < 1e-5
+      Math.abs(p.gran[i] - p.gran[j]) < 1e-5 &&
+      (p.mw[i] <= 0 || (Math.abs(vig[i] - vig[j]) < 1e-3 && Math.abs(ss[i] - ss[j]) < 1e-3 && Math.abs(stp[i] - stp[j]) < 0.5))
     ) continue;
     const dx = p.x[i] - p.x[j], dy = p.y[i] - p.y[j];
     const r2 = dx * dx + dy * dy;
     if (r2 >= RD2) continue;
-    const c = compatFactor(p.cA[i], p.cB[i], p.cA[j], p.cB[j]);
+    const c = compatFactorT(p.cA[i], p.cB[i], p.cA[j], p.cB[j], 0.5 * (p.temp[i] + p.temp[j]));
     if (c <= 0) continue;
     const w = 1 - Math.sqrt(r2) / RD;
     const agit = Math.max(p.agit[i], p.agit[j]);
@@ -91,14 +99,33 @@ export function diffusionStep(sim, dt) {
     if (kx > 0.45) kx = 0.45;
     if (kx < 1e-5) continue;
     const oi = i * S, oj = j * S;
-    let m = 0;
+    let m = 0, wi = 0, wj = 0;
     for (let s = 0; s < ns; s++) {
       const a = comp[oi + s], b = comp[oj + s];
+      const mws = magW[s];
+      if (mws > 0) { wi += a * mws; wj += b * mws; }
       if (a === b) continue;
       const d = (b - a) * kx;
       comp[oi + s] = a + d;
       comp[oj + s] = b - d;
       m += d < 0 ? -d : d;
+    }
+    if (wi + wj > 1e-6) {
+      // each side keeps (1-kx) of its own magic and receives kx of the other's
+      const ki = 1 - kx;
+      const ni = ki * wi + kx * wj, nj = ki * wj + kx * wi;
+      const vi = vig[i], vj = vig[j], si = ss[i], sj = ss[j];
+      const ti = stp[i] > -273 ? stp[i] : p.temp[i], tj = stp[j] > -273 ? stp[j] : p.temp[j];
+      if (ni > 1e-9) {
+        vig[i] = (ki * wi * vi + kx * wj * vj) / ni;
+        ss[i] = (ki * wi * si + kx * wj * sj) / ni;
+        stp[i] = (ki * wi * ti + kx * wj * tj) / ni;
+      }
+      if (nj > 1e-9) {
+        vig[j] = (ki * wj * vj + kx * wi * vi) / nj;
+        ss[j] = (ki * wj * sj + kx * wi * si) / nj;
+        stp[j] = (ki * wj * tj + kx * wi * ti) / nj;
+      }
     }
     chg[i] += m;
     chg[j] += m;

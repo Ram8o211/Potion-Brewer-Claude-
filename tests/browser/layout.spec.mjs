@@ -1,7 +1,7 @@
 // Layout on every viewport: nothing overflows, the cauldron dominates the
 // brew room, every room fits, and controls are large enough to touch.
 import { test, expect } from '@playwright/test';
-import { watchErrors, shot, openGame, newGame, startSandbox, horizontalOverflow } from './helpers.mjs';
+import { watchErrors, shot, openGame, newGame, startSandbox, horizontalOverflow, coveredControls } from './helpers.mjs';
 
 /** Visible interactive elements smaller than `min` CSS px. @param {import('@playwright/test').Page} page */
 function smallTargets(page, min = 44) {
@@ -13,7 +13,7 @@ function smallTargets(page, min = 44) {
       if (r.width === 0 || r.height === 0 || st.visibility === 'hidden' || st.display === 'none') continue;
       if (r.bottom <= 0 || r.top >= innerHeight || r.right <= 0 || r.left >= innerWidth) continue;
       // partly scrolled out of a strip: judge only fully visible controls
-      const parent = el.closest('.tools, .shelf, .region-tabs, .book-tabs, .dose, .req-chips');
+      const parent = el.closest('.tools, .shelf, .book-tabs, .dose, .req-chips');
       if (parent) { const pr = parent.getBoundingClientRect(); if (r.left < pr.left - 1 || r.right > pr.right + 1) continue; }
       if (Math.min(r.width, r.height) < m) out.push(`${el.getAttribute('data-act') || el.className} ${Math.round(r.width)}×${Math.round(r.height)}`);
     }
@@ -37,11 +37,11 @@ test('brew room: cauldron, order, shelf, tools and tabs are all on screen', asyn
   const vw = page.viewportSize();
   if (!vw) throw new Error('no viewport');
   expect(await horizontalOverflow(page)).toBe(0);
-  for (const sel of ['canvas.view-canvas', '.order-strip', '[data-act=tool-spoon]', '[data-act=bottle]', 'input[aria-label="Fire and frost control"]', '[data-act=lid]', '[data-act=tab-trials]', '[data-act=tab-wilds]', '[data-act=tab-counter]', '[data-act=tab-book]']) {
+  for (const sel of ['canvas.view-canvas', '.order-strip', '[data-act=tool-spoon]', '[data-act=bottle]', 'input[aria-label="Fire and frost control"]', '[data-act=lid]', '[data-act=tab-testing]', '[data-act=tab-garden]', '[data-act=tab-counter]', '[data-act=tab-book]']) {
     await expect(page.locator(sel).first(), sel).toBeInViewport();
   }
   const jars = page.locator('.jar');
-  expect(await jars.count()).toBeGreaterThanOrEqual(8);
+  expect(await jars.count()).toBeGreaterThanOrEqual(5);
   await expect(jars.first()).toBeInViewport();
   // the cauldron is the centre of the screen
   const cv = await page.locator('canvas.view-canvas').boundingBox();
@@ -56,7 +56,7 @@ test('brew room: cauldron, order, shelf, tools and tabs are all on screen', asyn
 test('every room fits the screen and its controls are touch sized', async ({ page }, info) => {
   const errors = watchErrors(page);
   await newGame(page, { tutorial: false, seed: 'rooms-fit-1' });
-  for (const room of ['counter', 'wilds', 'trials', 'book']) {
+  for (const room of ['counter', 'garden', 'testing', 'book']) {
     await page.click(`[data-act=tab-${room}]`);
     await expect(page.locator(`.view-${room}`)).toBeVisible();
     await page.waitForTimeout(250);
@@ -99,12 +99,28 @@ test('panels open, fit and close', async ({ page }, info) => {
     await page.locator('.overlay .modal-head .btn').first().click();
     await expect(page.locator('.overlay')).toHaveCount(0);
   }
-  // long-press a jar: the ingredient sheet shows its known effects
+  // long-press a jar: the ingredient sheet shows its magic — and nothing else
   const roles = await page.evaluate(() => window.__alchemist.screen.state.world.roles);
-  const jar = page.locator(`.jar[data-id="${roles.essenceA}"]`);
+  const jar = page.locator(`.jar[data-id="${roles.dew}"]`);
   await jar.click({ button: 'right' });
-  await expect(page.locator('.overlay .modal')).toContainText('Vitality');
+  await expect(page.locator('.overlay .modal .aspect-bars')).toBeVisible();
+  await expect(page.locator('.overlay .modal')).not.toContainText(/density|viscosity|g\/ml|boils|melts/i);
   await shot(page, info, 'ingredient-panel');
   await page.locator('.overlay .modal-head .btn').first().click();
+  expect(errors).toEqual([]);
+});
+
+test('notifications and the tutorial never cover a control', async ({ page }, info) => {
+  const errors = watchErrors(page);
+  await newGame(page, { tutorial: true });
+  for (const room of ['brew', 'counter', 'garden', 'testing', 'book']) {
+    await page.click(`[data-act=tab-${room}]`);
+    await page.waitForTimeout(200);
+    await page.evaluate(() => window.__alchemist.screen.announce({ type: 'achievement', name: 'A rather long notification title', desc: '', reward: 10 }));
+    await page.waitForTimeout(150);
+    expect(await coveredControls(page, '.coach'), `${room}: the coach bar`).toEqual([]);
+    expect(await coveredControls(page, '.notice'), `${room}: the status line`).toEqual([]);
+    if (room === 'garden') await shot(page, info, 'coach-garden');
+  }
   expect(errors).toEqual([]);
 });

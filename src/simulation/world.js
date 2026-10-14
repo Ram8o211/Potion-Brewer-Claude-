@@ -38,6 +38,7 @@ import { ReactionSystem } from '../reactions/reactions.js';
 import { ToolState, toolForces, toolConstraints } from './tools.js';
 import { Emitter } from './emitter.js';
 import { electricStep } from './electric.js';
+import { magicStep } from './magic.js';
 
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 export const MODE = Object.freeze({ PBF: 0, GRAN: 1, COH: 2, RIGID: 3, GAS: 4 });
@@ -78,7 +79,7 @@ function restDensity(spacing) {
 
 export class Simulation {
   /**
-   * @param {{size?: string, lookup?: (id:string)=>any, reactions?: any[], laws?: any[], capacity?: number}} [opts]
+   * @param {{size?: string, lookup?: (id:string)=>any, reactions?: any[], capacity?: number}} [opts]
    */
   constructor(opts = {}) {
     this.cauldron = new Cauldron(/** @type {any} */ (opts.size || 'small'));
@@ -142,8 +143,6 @@ export class Simulation {
     this.tool = new ToolState();
     this.emitter = new Emitter(this);
     this.reactions = new ReactionSystem(this, opts.reactions || []);
-    /** this world's hidden resonance laws (alchemy/effects.js) */
-    this.laws = opts.laws || [];
     this.furnace = { setting: 0, maxFlame: 340, heatPower: 3.5, minCool: 4, coolPower: 6 };
     this.oxygen = 1;
     /** @type {any[]} */
@@ -156,7 +155,7 @@ export class Simulation {
     /** volume (particles) of each material vented through an open lid */
     this.vented = /** @type {Record<string, number>} */ ({});
     this._rng = 12345;
-    this.stats = { stepMs: 0, steps: 0, pairs: 0, awake: 0 };
+    this.stats = { stepMs: 0, steps: 0, pairs: 0, awake: 0, faded: 0 };
     this.paused = false;
   }
 
@@ -325,6 +324,7 @@ export class Simulation {
       diffusionStep(this, dt2);
       this.reactions.step(dt2);
       phaseStep(this, dt2);
+      magicStep(this, dt2);
       this._oxygen(dt2);
     }
     this._vent();

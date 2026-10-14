@@ -5,6 +5,9 @@ import { MAX_SPECIES, NO_BOIL } from '../reactions/species.js';
 import { granularFraction, suspensionLnMult } from '../reactions/mixture.js';
 import { rgbToOklab, linearToSrgb } from '../core/color.js';
 import { PHASE } from './constants.js';
+import { thresholds } from '../alchemy/magic.js';
+
+const thr = { fade: 0, super: 0, key: -1, weight: 0 };
 
 /** Mass assigned to gas particles for constraint weighting (they yield to condensed matter). */
 export const GAS_MASS = 0.05;
@@ -117,6 +120,12 @@ export function refreshParticle(sim, i) {
   p.friction[i] = pmW > 0 ? fricS / pmW : 0.5;
   p.hardness[i] = hardS * inv;
   p.econd[i] = ec * inv;
+  // magic thresholds are the magic-weighted means of the ingredients' own
+  thresholds(sp, comp, off, thr);
+  p.mw[i] = thr.weight * inv;
+  p.tf[i] = thr.fade;
+  p.ts[i] = thr.super;
+  p.sk[i] = thr.key;
   // paste yield velocity: zero for liquids, rising steeply with solids content
   const s = Math.max(0, Math.min(1, (gran - 0.34) / 0.42));
   p.yieldV[i] = (0.1 + 0.6 * bnd) * Math.pow(s, 1.1);

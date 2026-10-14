@@ -1,72 +1,94 @@
 # The Alchemist's Shop
 
 A physics-driven potion-brewing game for the browser, designed for phones
-first. You run a small medieval apothecary. Customers walk in with orders
-("a healing tonic, at least moderately strong, served warm"). You fill them
-by gathering herbs and minerals in the wilds, grinding them, and then
-pouring, stirring, steeping, heating, freezing and crushing simulated
-materials in a cauldron. You test what you made on live subjects before
-anyone drinks it.
+first. You run a small medieval apothecary. Customers walk in with a
+problem ("my son caught a fever: something that mends, and nothing that
+harms") and ask for **magical effects**: at least so much vitality, no more
+than so much bane. You grow every ingredient in your own garden, blend them
+in a simulated cauldron, find out what you actually made by testing it on
+creatures, write the potion's ID on the label, and haggle over the price.
 
-Nothing is faked with recipes or lookup tables. The colour, density,
-thickness, temperature and magical effects of the potion you bottle are
-computed from the particles that actually run out of the tap. What a
-*mixture* does stays hidden until you test it.
+Nothing is faked with recipes or lookup tables. The magic of the potion you
+bottle is computed from the particles that actually run out of the tap.
 
-* **Real simulation at the centre.** Liquids pool, layer by density and
-  never leave gaps. Powders pile up at an angle of repose and settle to
-  sleep. Dough forms only when a binding powder is kneaded into a liquid,
-  and more liquid thins it back to a paste. Frozen liquid becomes one rigid
-  block that the pestle crushes into grains. Vapour rises, collects under
-  the lid and condenses back on the cooler iron. Mixing starts where two
-  liquids touch and spreads; stirring speeds it up dramatically. Heat comes
-  in through the bottom and conducts outward. Water boils at its boiling
-  point, wet pastes dry out, oil catches fire on glowing iron and the lid
-  smothers it.
-* **Hidden, emergent effects.** Ten effects: vitality, strength, love,
-  arcana, transformation, fire, frost, acidity, toxicity and death. They
-  come from what is actually dissolved in each particle:
-  * a whole root does nothing until it is crushed or ground;
-  * hot steeping extracts more than cold;
-  * fire and frost cancel where they meet;
-  * each world has six hidden laws that transmute, amplify or suppress
-    effects that meet inside the brew;
-  * heat, reactions, boiling and dilution change the result.
-* **The trials room.** You give real, measured doses (5, 10 or 25 ml from
-  the tap or the sealed vial) to a moon rabbit, a copper beetle, a bean
-  seedling, a limestone block or a captive wisp. Each shows only some
-  effects. Subjects can be harmed or killed and cost coins to replace.
-  Repeated trials uncover the hidden laws. A customer only accepts a potion
-  whose effects were verified on that very batch; pouring anything new
-  invalidates the test.
-* **The wilds.** Six regions, two of them magical and opened by rank. Their
-  deposits are finite and regrow with real time, even while the game is
-  closed. Some reagents can only be gathered.
-* **Electricity.** Charged reagents carry a conserved charge that flows
-  through conductive brews. Oil insulates, and current heats what it
-  passes through.
-* **A procedural world per seed.** Every new shop generates its own
-  reagents (names, colours, densities, viscosities, melting and boiling
-  points, effects), reactions, wild deposits, hidden laws and customers.
-* **Achievable orders.** Every commission, physical or effect-based, is
-  derived from a hidden reference plan made only from what you can buy or
-  gather. It is checked with the same mixture and effect laws the
-  simulation uses. The automated tests brew samples of these plans in the
-  real simulation.
+* **Six magical properties and nothing else.** Vitality, ardor, frost,
+  levity, charm and bane. Every ingredient's card shows only its magic
+  (bars for the six properties) and how heat treats it. There are no
+  densities or boiling points to read: the player thinks in magic.
+* **Proportions make the potion.** A potion's magic is the
+  volume-weighted blend of what is in it: plain water dilutes, and a 1:1
+  blend of two ingredients sits halfway between them. Stones act once
+  smashed and dissolved; steeping them hot draws their magic out.
+* **Heat is a tool and a danger.**
+  * Liquids that keep apart at room temperature (witch oil floats on
+    water) blend once both are hot.
+  * Every ingredient has a **fading** temperature: overheated, its magic
+    burns away.
+  * Every ingredient has a **super-transition** temperature, somewhere
+    unrelated to where it melts or boils. Crossing it transmutes the magic:
+    one property becomes extremely high and the rest drop to almost
+    nothing. For most ingredients it lies at impossible extremes
+    (+1300 °C, −1450 °C), but mixing averages the thresholds, weighted by
+    magic. A hot ingredient blended with a cold one can bring the
+    transition into an ordinary cauldron's range.
+* **The garden is the only source.** It has a well of plain water, plant
+  beds that give magical liquids (dew, ember sap, frostmilk, witch oil),
+  and crystal beds that grow magical stones. Stones are gathered whole and
+  smashed into powder in the mortar or with the pestle. Beds grow with
+  real time, even while the game is closed. Plants grow only while
+  watered, and watering costs well water. A harvest empties the bed, so
+  waiting pays but never piles up.
+* **The testing room.** You keep a moss toad, a salamander, a moon moth, a
+  mandrake sprout and, later, a wisp. A real 10 ml dose from the tap or the
+  vial makes a creature *show* what the potion does, with no words or
+  numbers:
+  * leaves sprout and hearts float;
+  * flames rise or ice creeps up a notched post;
+  * the moth lifts off;
+  * toxic bubbles rise.
+
+  Each creature shows only some properties, a little imprecisely. Bane and
+  extreme heat or cold hurt them, they rest to recover, and a dead one
+  costs coins to replace. From what you saw you set the six sliders of the
+  **Potion ID**, which becomes the vial's label.
+* **Selling is haggling.**
+  * The customer reads the label and opens low. You ask a price, and they
+    meet you partway, lose patience, or walk out at an insult.
+  * What they drink is the truth. If it falls short, or a side effect goes
+    over their limit, they **come back later and the refund cannot be
+    refused**.
+  * Some customers **bluff**: they claim a good potion failed. Only a
+    certificate from an expert alchemist proves them wrong, and
+    certification is expensive.
+* **A procedural world per seed.** Every new shop has its own ingredient
+  names, colours, and exact magic and thresholds (within each role's
+  range), plus its own customers and market days.
+* **Achievable orders.** Every request is derived from a hidden reference
+  plan made only from ingredients your garden can grow, and checked with
+  the same magic laws the simulation uses. The automated tests brew these
+  plans in the real simulation, including ones that need a super
+  transition.
 * **A shop to grow.**
   * Coins, reputation and six guild ranks.
-  * 29 pieces of equipment: furnaces, frost plates, bigger cauldrons, a
-    mortar, instruments, a galvanometer, a clockwork stirrer, an alembic, a
-    wisp lantern, a forager's satchel, and a homunculus that brews your
-    saved recipes.
-  * A recipe book, a trial log, the laws you have found, a discovery
-    journal, achievements, market days and guild contracts.
-* **Free Experiment mode** with every reagent, tool, subject and region
+  * New garden beds to plant.
+  * 26 pieces of equipment: furnaces and frost plates, bigger cauldrons, a
+    pestle, a skimmer, a clockwork stirrer, a thermal monocle, a creature
+    kennel, a wisp lantern, a rain barrel, a greenhouse, a crystal lamp, a
+    sprinkler, shelves, a guild charter that makes certification cheaper,
+    and a homunculus that brews your saved recipes.
+  * A recipe book, an ingredient compendium, a discovery journal,
+    achievements, a sales ledger, market days and guild contracts.
+* **Free Experiment mode** with every ingredient, tool and creature
   unlocked.
 * **Mobile first, desktop too.**
-  * A bottom tab bar over five rooms (Counter, Brew, Wilds, Trials, Book).
-  * Drag a jar onto the cauldron, or drag the dropper onto a subject.
-    Every gesture except skimming has a tap alternative.
+  * A bottom tab bar over five rooms: Counter, Brew, Garden, Testing and
+    Book.
+  * A small HUD. Requests, Potion IDs and labels are icons with numbers.
+    Notifications appear in the top bar's status line, and the tutorial
+    coach has its own row, so neither ever covers a button. The browser
+    tests check this on every layout.
+  * Drag a jar onto the cauldron or the dropper onto a creature. Every
+    gesture except skimming has a tap alternative.
   * Touch targets of at least 44 px, and portrait, landscape, tablet and
     desktop layouts.
   * Installable and fully offline, with saves on the device and
@@ -134,52 +156,61 @@ overwrite a newer save.
 
 ```bash
 npm run typecheck         # TypeScript (checkJs) over src/, scripts/ and tests/
-npm test                  # 50 headless tests: physics, game rules, effects, trials & wilds, renderer
+npm test                  # headless tests: physics, magic, garden, testing room, sales, saves, renderer
 npx playwright install chromium   # once, if no Chromium is available
-npm run test:browser      # 64 browser tests: desktop / phone / tablet emulation, offline build, GitHub Pages sub-path
+npm run test:browser      # browser tests: desktop / phone / tablet emulation, offline build, GitHub Pages sub-path
 npm run bench             # measured physics and frame timings → docs/perf-results.json
-node scripts/playtest.mjs # automated 12-day balancing playthrough → docs/playtest-results.json
-node scripts/achievability.mjs 30   # brew 30 generated commissions in the real simulation
+node scripts/playtest.mjs # automated 10-day balancing playthrough → docs/playtest-results.json
+node scripts/achievability.mjs 25   # brew 25 generated requests (and 25 super-transition ones) in the real simulation
 npm run check             # typecheck + tests + build
 ```
 
-Browser screenshots from the test run land in `test-results/screenshots/`.
+Browser screenshots from the test run land in `test-results/screenshots/`
+(`node scripts/curate-screenshots.mjs` copies a selection to
+`docs/screenshots/`).
 
 ## How to play
 
-1. **Counter.** Read the order. Each requirement shows its target; effects
-   show "?" until you have tested them.
-2. **Wilds.** Gather what the order needs by tapping a deposit, or buy
-   reagents at the Market (bag icon).
-3. **Brew.** Pour in one of three ways: tap a jar and hold inside the
-   cauldron, tap a jar and use the dose buttons, or drag the jar onto the
-   cauldron. Switch on **Ground** to grind roots and stones in the mortar
-   first. Stir with the spoon, and slide the fire control to heat or cool.
-4. **Trials.** Drag the dropper onto a subject, or press its **Test**
-   button. The report compares what happened with the guild's theory.
-   Surprises point at hidden laws.
-5. **Bottle** into a sealed vial and **serve** it at the Counter. Payment
-   follows how well it matches. Save good brews as recipes in the Book.
+1. **Counter.** A customer explains their problem. The request is a row of
+   icons with targets, for example leaf ≥ 30 and skull ≤ 10. The bulb
+   button buys rough guild advice for a few coins.
+2. **Garden.** Harvest ripe beds, water the dry ones (it uses well water)
+   and plant new beds as your rank grows. Tap a bed or use its buttons.
+3. **Brew.** Pick a jar and pour with the dose buttons (10, 25, 50,
+   100 ml), by holding inside the cauldron, or by dragging the jar onto
+   it. Stones need the **mortar** first (or the pestle in the pot). Stir
+   with the spoon. Slide the fire control to heat (blends oily liquids,
+   steeps stones, but fades magic when too hot) or to cool (a cold blend
+   can cross a super transition).
+4. **Testing.** Drag the dropper onto a creature or press its dose
+   button. Watch the cage, replay the last reaction if you missed it, and
+   set the Potion ID sliders to what you saw. Pouring anything new makes
+   the ID stale.
+5. **Bottle** the brew. The vial is labelled with your Potion ID. At the
+   Counter, **Offer** it and haggle. If you suspect a bluffer, have the vial
+   **certified** first. Customers whose potion failed come back for their
+   money, so test honestly.
 
-Keyboard: `C` `V` `W` `T` `J` rooms, `1`–`5` tools, `G` ground, `L` lid,
-`B` bottle, `F` time speed, `A` auto-stir, `H` thermal view, arrows fire,
-`0` fire off, `S` market, `R` recipes, `Esc` menu.
+Keyboard: `C` `V` `G` `T` `J` rooms, `1`–`4` tools (pour, spoon, pestle,
+skimmer), `M` mortar, `L` lid, `B` bottle, `F` time speed, `A` auto-stir,
+`H` thermal view, arrows fire, `0` fire off, `S` guild shop, `R` recipes,
+`Esc` menu.
 
 ## Project layout
 
 ```
 index.html, styles/, assets/     page shell, stylesheet, pixel font, icons
 src/core/                        seeded RNG, colour science (Beer–Lambert, OKLab), maths
-src/alchemy/                     effects: extraction, hidden resonance laws, oppositions, theory
-src/materials/                   material schema, procedural world generator, effect profiles, wild ingredients, names
-src/reactions/                   species table, mixture laws, diffusion, reactions & combustion
-src/simulation/                  particle world: solver, grid, cauldron, thermal, electricity, phases, rigid blocks, tools
-src/game/                        world state, commissions, prediction, measurement, scoring, trials, gathering, economy, saves
-src/rendering/                   fine-pixel fluid renderer, procedural pixel art, effects, portraits, wilds and subjects
-src/ui/                          shell and Brew room, views/ (counter, wilds, trials, book), panels, tutorial, input
+src/alchemy/                     magic: the six properties, proportions, extraction, fading, super transitions
+src/materials/                   material schema, the garden ingredient world generator, reference materials
+src/reactions/                   species table, mixture laws, heat-assisted miscibility, diffusion, combustion
+src/simulation/                  particle world: solver, grid, cauldron, thermal, phases, rigid blocks, magic, tools
+src/game/                        state, garden, testing room, requests, haggling, sales & refunds, prediction, saves
+src/rendering/                   fine-pixel fluid renderer, procedural pixel art, creatures, garden, portraits
+src/ui/                          shell and Brew room, views/ (counter, garden, testing, book), panels, tutorial
 src/audio/                       synthesised sound effects and music (WebAudio)
 sw.js, manifest.webmanifest      offline support / installable app
-scripts/                         dev server, build, benchmarks, playtest, asset generators
+scripts/                         dev server, build, benchmarks, playtest, achievability, asset generators
 tests/                           headless tests (node --test) and browser tests (Playwright)
 docs/                            architecture, report, checklist, measured results
 ```
@@ -189,7 +220,8 @@ docs/                            architecture, report, checklist, measured resul
 * [FEATURE_PARITY.md](FEATURE_PARITY.md): feature-by-feature comparison
   with `Ram8o211/fluid-pocket-sandbox`, and how each idea was integrated.
 * [docs/GAME_ARCHITECTURE.md](docs/GAME_ARCHITECTURE.md): how the
-  simulation, effects, game rules, rendering and UI fit together.
+  simulation, magic, garden, testing room, selling, rendering and UI fit
+  together.
 * [docs/MOBILE_UX.md](docs/MOBILE_UX.md): rooms, layouts, gestures and
   their alternatives, touch targets.
 * [docs/PERFORMANCE.md](docs/PERFORMANCE.md): measured physics and frame
@@ -211,6 +243,13 @@ then re-implemented natively on this game's own engine: hidden effects,
 experiment subjects, gathering, grinding, conductivity and the mobile
 navigation. No code was copied, and the game's original mechanics were
 kept. `FEATURE_PARITY.md` documents each feature.
+
+Release 2.0 rebuilt the game around magic. The six magical properties
+replace the earlier ten hidden effects and the world's hidden laws. The
+garden replaces the wilds and the market. The testing room's creatures and
+the hand-written Potion ID replace the trials room's written reports.
+Haggling, complaints, refunds, bluffs and certification replace fixed
+payment. The particle physics underneath is the same engine.
 
 Phone and tablet behaviour was verified in desktop Chromium emulation
 (viewport, touch events, device pixel ratio, CPU throttling), not on

@@ -63,7 +63,6 @@ export function mixtureProps(sp, comp, off, T) {
   const n = sp.count;
   let tot = 0, rho = 0, rhoCp = 0, lnV = 0, lnVw = 0, vT = 0, beta = 0;
   let aR = 0, aG = 0, aB = 0, op = 0, glow = 0, vol = 0, volat = 0, react = 0;
-  const asp = [0, 0, 0, 0];
   let tbW = 0, tbSum = 0;
   for (let s = 0; s < n; s++) {
     const f = comp[off + s];
@@ -84,7 +83,6 @@ export function mixtureProps(sp, comp, off, T) {
     glow += f * sp.glow[s];
     volat += f * sp.volatility[s];
     react += f * sp.reactivity[s];
-    for (let k = 0; k < 4; k++) asp[k] += f * sp.aspects[s * 4 + k];
     if (sp.boil[s] < NO_BOIL) {
       tbSum += f * sp.boil[s];
       tbW += f;
@@ -120,7 +118,6 @@ export function mixtureProps(sp, comp, off, T) {
     glow: glow / tot,
     volatility: volat / tot,
     reactivity: react / tot,
-    aspects: asp.map((v) => v / tot),
     boil: tbW > 0 ? tbSum / tbW : Infinity,
     volatileFraction: vol / tot,
   };

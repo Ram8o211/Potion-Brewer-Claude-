@@ -36,24 +36,24 @@
  * @property {number} binder           powders: 0..1 tendency to form dough/paste with compatible liquid
  * @property {number} friction         granular friction coefficient (tan of repose angle)
  * @property {number} hardness         solids: resistance to crushing 0..1
- * @property {number[]} aspects        magical potency [vitality, ardor, arcana, fortitude] 0..100
  * @property {number} glow             emissive glow 0..1
  * @property {number} price            coins per 100 ml
  * @property {number} tier             progression tier at which it becomes purchasable
  * @property {boolean} product         true if only obtainable through reactions
- * @property {string} description      flavour + behaviour text
+ * @property {string} description      magical lore shown to the player
  * @property {string} [icon]           jar/bottle icon style
  * @property {number[]} [look]          appearance of the pure material (derived)
  * @property {number} [storeTemp]       temperature it is supplied at (°C)
- * @property {Record<string, number>} [effects] magical/chemical effect potency of the pure material (alchemy/effects.js)
+ * @property {Record<string, number>} [magic] magical properties of the pure material, 0..100 (alchemy/magic.js)
+ * @property {number} [fadeT]          above this temperature its magic fades (°C)
+ * @property {number} [superT]         super-transition temperature (°C): crossing it (away from room temperature) transmutes its magic
+ * @property {string} [superKey]       the property its magic transmutes into
+ * @property {string} [shape]          sprite of a whole (garden) ingredient: stone, crystal…
+ * @property {'water'|'liquid'|'stone'} [kind] garden ingredient kind
  * @property {number} [econd]          electrical conductance 0..1
  * @property {number} [charge]         intrinsic electric charge per unit volume
- * @property {{key:string, shape:string, region:string, rank:number, rare:boolean, gatherOnly:boolean}} [wild] gathered raw ingredient
  * @property {boolean} [crushable]
  */
-
-export const ASPECTS = ['vitality', 'ardor', 'arcana', 'fortitude'];
-export const ASPECT_LABELS = ['Vitality', 'Ardor', 'Arcana', 'Fortitude'];
 
 /** @type {Omit<MaterialDef,'id'|'name'|'archetype'|'form'|'color'|'description'>} */
 export const MATERIAL_DEFAULTS = {
@@ -80,7 +80,6 @@ export const MATERIAL_DEFAULTS = {
   binder: 0,
   friction: 0.62,
   hardness: 0.5,
-  aspects: [0, 0, 0, 0],
   glow: 0,
   price: 4,
   tier: 0,
@@ -94,8 +93,6 @@ export const MATERIAL_DEFAULTS = {
  */
 export function completeMaterial(def) {
   const m = /** @type {MaterialDef} */ ({ archetype: 'custom', description: '', ...MATERIAL_DEFAULTS, ...def });
-  m.aspects = (m.aspects || [0, 0, 0, 0]).slice(0, 4);
-  while (m.aspects.length < 4) m.aspects.push(0);
   m.compat = m.compat.slice(0, 2);
   if (m.boil === null || m.boil === undefined) m.boil = Infinity;
   m.look = appearance(m);

@@ -6,28 +6,21 @@ import { watchErrors, shot, newGame, openGame, lab } from './helpers.mjs';
 
 test.describe.configure({ mode: 'serial' });
 
-test('buying reagents and equipment', async ({ page }, info) => {
+test('buying equipment from the guild', async ({ page }, info) => {
   const errors = watchErrors(page);
   await newGame(page, { tutorial: false });
   await page.click('[data-act=shop]');
-  const buy = page.locator('.overlay [data-act^=buy-]:not([disabled])').first();
-  const act = await buy.getAttribute('data-act');
-  if (!act) throw new Error('no buy button');
-  const [, id, ml] = /^buy-(.+)-(\d+)$/.exec(act) || [];
-  const before = await lab(page, (l, a) => ({ coins: l.state.coins, stock: l.state.stock(a) }), id);
-  await buy.click();
-  const after = await lab(page, (l, a) => ({ coins: l.state.coins, stock: l.state.stock(a) }), id);
-  expect(after.stock).toBe(before.stock + Number(ml));
-  expect(after.coins).toBeLessThan(before.coins);
-  await shot(page, info, 'shop-bought');
-  // equipment: give enough coins, then buy the bellows through the dialog
+  await expect(page.locator('.overlay [data-act^=buy-]')).toHaveCount(0);
+  // give enough coins, then buy the bellows through the dialog
   await lab(page, (l) => { l.state.coins = 500; l.state.reputation = 70; });
-  await page.click('[data-act=shop-tab-equipment]');
+  await page.locator('.overlay .modal-head .btn').first().click();
+  await page.click('[data-act=shop]');
   await page.click('[data-act=equip-bellows]');
   await page.locator('.overlay .modal-foot .btn', { hasText: 'Buy' }).last().click();
   await expect.poll(() => lab(page, (l) => l.state.has('bellows'))).toBe(true);
   const furnace = await lab(page, (l) => l.sim.furnace.maxFlame);
   expect(furnace, 'the new furnace raises the flame limit').toBeGreaterThan(400);
+  expect(await lab(page, (l) => l.state.coins)).toBe(380);
   await shot(page, info, 'shop-equipment');
   expect(errors).toEqual([]);
 });
@@ -95,7 +88,7 @@ test('a damaged save falls back to the backup instead of crashing', async ({ pag
   await page.reload();
   await page.click('[data-act=continue]');
   await page.waitForSelector('canvas.view-canvas');
-  await expect(page.locator('.toast', { hasText: 'damaged' })).toBeVisible();
+  await expect(page.locator('.notice', { hasText: 'Save problem' })).toBeVisible();
   expect(await lab(page, (l) => l.state.coins)).toBe(50);
 });
 

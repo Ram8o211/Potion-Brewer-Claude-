@@ -15,6 +15,21 @@ target's own data model. Reference code was not copied, and nothing was
 pasted across. This was the owner's explicit instruction during the work:
 "take the ideas of the new implementations but preserve the original mechanics".
 
+> **Release 2.0 note.** This comparison describes the 1.x integration
+> round. Release 2.0 later replaced several of the systems listed here.
+> * The ten hidden effects and the world's resonance laws became six
+>   magical properties with fading and super-transition thresholds.
+> * The trials room's subjects and written reports became the testing
+>   room's creatures, with visual-only reactions and a hand-written Potion
+>   ID.
+> * The wilds, wild ingredients and the market became the personal
+>   garden.
+> * Fixed payment became haggling, complaints and certification.
+>
+> The engine-level items (sections 0, E, F and H) still apply. See
+> `docs/GAME_ARCHITECTURE.md` and the release 2.0 section of
+> `docs/REPORT.md`.
+
 Status legend: **equivalent** · **better in target** · **better in reference** ·
 **partial** (one side has part of it) · **missing** (absent in target) ·
 **incompatible** (does not fit the mobile potion game as is).

@@ -1,68 +1,39 @@
-// Analytic prediction of a brewing plan's outcome, using exactly the same
-// mixture laws and reaction stoichiometry as the live simulation. The
-// commission generator uses it to set achievable targets; the recipe book
-// uses it to describe recipes. It assumes the brewer actually performs the
-// plan (mixing thoroughly, reaching the temperatures) — the real result
-// still comes from the simulation.
+// Analytic prediction of a brewing plan's outcome, using the same mixture and
+// magic laws as the live simulation (extraction at the steeping temperature,
+// fading above the blend's fading threshold, the super transition when the
+// plan's heat or cold crosses the blend's threshold). The commission
+// generator uses it to set achievable requests. It assumes the brewer
+// actually performs the plan (stirring thoroughly, reaching the
+// temperatures) — the real result still comes from the simulation.
 
 import { SpeciesTable, MAX_SPECIES } from '../reactions/species.js';
 import { mixtureProps } from '../reactions/mixture.js';
-import { compositionEffects, NE } from '../alchemy/effects.js';
+import { particleMagic, thresholds, beyondSuper, FADE_RATE, NP } from '../alchemy/magic.js';
 
 /**
  * @typedef {Object} BrewPlan
- * @property {{id:string, n:number, ground?:boolean}[]} ingredients particle counts, in pouring order (ground = milled in the mortar first)
+ * @property {{id:string, n:number, ground?:boolean}[]} ingredients particle counts, in pouring order (ground = smashed in the mortar first)
  * @property {number} heatTo     hottest temperature reached during the brew (°C)
  * @property {number} coolTo     coldest temperature reached (°C)
  * @property {number} serveTemp  temperature at bottling (°C)
- * @property {boolean} [knead]   needs thorough stirring/kneading (doughs)
- * @property {boolean} [crush]   solid ingredients must be crushed first
- * @property {number} [hold]     seconds held at the reaction temperature
+ * @property {boolean} [knead]   needs thorough stirring
+ * @property {boolean} [crush]   whole stones must be crushed in the pot
+ * @property {number} [hold]     seconds held at the hottest (or coldest) temperature
+ * @property {number} [stir]     seconds of stirring before heating or chilling
  */
 
 /**
- * @param {{reactions: import('../reactions/reactions.js').ReactionRule[], laws?: any[]}} world
+ * @param {any} world
  * @param {(id:string)=>any} lookup
  * @param {BrewPlan} plan
  */
 export function predictPlan(world, lookup, plan) {
-  // totals per species id
   /** @type {Map<string, number>} */
   const vol = new Map();
   let total = 0;
   for (const ing of plan.ingredients) {
     vol.set(ing.id, (vol.get(ing.id) || 0) + ing.n);
     total += ing.n;
-  }
-  const fired = [];
-  const lo = Math.min(20, plan.coolTo ?? 20, plan.serveTemp ?? 20);
-  const hi = Math.max(20, plan.heatTo ?? 20, plan.serveTemp ?? 20);
-  for (let pass = 0; pass < 3; pass++) {
-    for (const r of world.reactions) {
-      const a = vol.get(r.a) || 0;
-      const b = r.b ? vol.get(r.b) || 0 : Infinity;
-      if (a <= 0 || b <= 0) continue;
-      if (r.maxT < lo || r.minT > hi) continue;
-      // a reaction only happens if the brew is held inside its window
-      const held = (plan.hold ?? 0) >= 8;
-      if (r.wet && !held && r.minT > (plan.serveTemp ?? 20)) continue;
-      const yieldF = r.kind === 'decompose' ? (r.wet ? 0.85 : 0.55) : 0.88;
-      const ext = Math.min(a / r.ra, r.b ? b / r.rb : Infinity) * yieldF;
-      if (ext <= 0.01) continue;
-      vol.set(r.a, a - ext * r.ra);
-      if (r.b) vol.set(r.b, b - ext * r.rb);
-      const used = ext * (r.ra + (r.b ? r.rb : 0));
-      for (const pr of r.products) vol.set(pr.id, (vol.get(pr.id) || 0) + used * pr.frac);
-      fired.push(r.id);
-    }
-  }
-  // gaseous products escape the liquid (they bubble out)
-  for (const [id, v] of vol) {
-    const d = lookup(id);
-    if (d && d.form === 'gas' && d.boil < (plan.serveTemp ?? 20)) {
-      total -= v;
-      vol.set(id, 0);
-    }
   }
   const sp = new SpeciesTable();
   const comp = new Float32Array(MAX_SPECIES);
@@ -73,17 +44,20 @@ export function predictPlan(world, lookup, plan) {
     const s = sp.ensure(def);
     if (s >= 0) comp[s] += v / total;
   }
-  const props = mixtureProps(sp, comp, 0, plan.serveTemp ?? 20);
-  const effects = compositionEffects(sp, comp, 0, plan.serveTemp ?? 20, world.laws || [], new Array(NE).fill(0));
+  const serve = plan.serveTemp ?? 20;
+  const hi = Math.max(20, plan.heatTo ?? 20, serve);
+  const lo = Math.min(20, plan.coolTo ?? 20, serve);
+  const thr = thresholds(sp, comp, 0);
+  // seconds spent near the hottest temperature (ramp + hold, as the homunculus brews)
+  const hot = (plan.hold ?? 6) + 10;
+  const vig = thr.fade < hi ? Math.exp(-FADE_RATE * (hi - thr.fade) * hot) : 1;
+  const ss = beyondSuper(hi, thr.super) || beyondSuper(lo, thr.super) ? 1 : 0;
+  const steep = (plan.hold ?? 0) >= 6 ? hi : Math.max(serve, Math.min(hi, 40));
+  const magic = particleMagic(sp, comp, 0, serve, steep, vig, ss, thr.key, new Array(NP).fill(0));
+  const props = mixtureProps(sp, comp, 0, serve);
   /** @type {Record<string, number>} */
   const composition = {};
   for (let s = 0; s < sp.count; s++) if (sp.defs[s] && comp[s] > 1e-5) composition[sp.defs[s].id] = comp[s];
-  return { ...props, effects, composition, reactions: fired, totalParticles: total };
-}
-
-/** Total coin cost of a plan's ingredients. */
-export function planCost(plan, priceOf) {
-  let c = 0;
-  for (const ing of plan.ingredients) c += (ing.n * 5 / 100) * priceOf(ing.id);
-  return c;
+  void world;
+  return { ...props, magic, composition, totalParticles: total, thresholds: { ...thr }, vig, ss };
 }

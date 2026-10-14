@@ -167,3 +167,32 @@ export async function pourDose(page, id, doses) {
     await page.waitForFunction(() => !(/** @type {any} */ (window).__alchemist.screen.sim.emitter.pouring), null, { timeout: 30_000 });
   }
 }
+
+/**
+ * Visible controls that an overlay element (the coach bar, the status line)
+ * sits on top of. Each control is first clipped to its scrolling ancestors,
+ * so a button scrolled out of its own panel does not count.
+ * @param {import('@playwright/test').Page} page @param {string} sel
+ */
+export function coveredControls(page, sel) {
+  return page.evaluate((s) => {
+    const host = document.querySelector(s);
+    if (!host || host.classList.contains('hidden')) return [];
+    const c = host.getBoundingClientRect();
+    const out = [];
+    for (const el of document.querySelectorAll('button, .jar, input, [role=button]')) {
+      if (host.contains(el) || getComputedStyle(el).visibility === 'hidden') continue;
+      const r = el.getBoundingClientRect();
+      let l = r.left, t = r.top, rt = r.right, b = r.bottom;
+      for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
+        const o = getComputedStyle(a);
+        if (o.overflowX === 'visible' && o.overflowY === 'visible') continue;
+        const ar = a.getBoundingClientRect();
+        l = Math.max(l, ar.left); t = Math.max(t, ar.top); rt = Math.min(rt, ar.right); b = Math.min(b, ar.bottom);
+      }
+      if (rt - l < 1 || b - t < 1) continue;
+      if (rt > c.left + 1 && l < c.right - 1 && b > c.top + 1 && t < c.bottom - 1) out.push(el.getAttribute('data-act') || el.className);
+    }
+    return out;
+  }, sel);
+}

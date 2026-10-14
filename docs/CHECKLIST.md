@@ -1,10 +1,45 @@
 # Completion checklist
 
-> This checklist covers the brief of the game's first version. The later
-> round (hidden effects, trials, wilds, processing, electricity, the
-> mobile shell) is covered item by item in `FEATURE_PARITY.md`, with
-> results in `docs/REPORT.md`. Counts below (tests, equipment) are from
-> the first version.
+## Release 2.0 brief: the magic overhaul
+
+Each requirement of the 2.0 brief, where it is implemented and how it was
+verified. Test files: `A` = `tests/alchemy.test.mjs`, `T` =
+`tests/testing.test.mjs`, `G` = `tests/game.test.mjs`, `B:<spec>` =
+`tests/browser/<spec>.spec.mjs`, `ach` = `scripts/achievability.mjs`,
+`bench` = `scripts/bench.mjs`, `play` = `scripts/playtest.mjs`.
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| Customers ask for specific magical effects to solve their problems, not composition | ✔ | `commissions.js` (`PROBLEMS`, requirements only on the six properties); G: "worlds are deterministic per seed; requests only ask for magic, never chemistry" |
+| Basic ingredients with magical properties: plain water as solvent, a few magical liquids, magical stones smashed into powder | ✔ | `generator.js` (water without magic, 4 liquids, 6 stones); A: "the garden world…"; B:gameplay "smash a stone in the mortar"; B:sandbox "sunstone powder" |
+| All gathered in a personal garden where they keep growing with time | ✔ | `garden.js` (timestamp growth, also while closed); T: "the garden grows with real time…", "the well refills slowly…"; B:rooms garden test (harvest by button and by tap, water, plant, reload) |
+| Gathering not too trivial; no abundance | ✔ | Plants grow only while watered (costs well water); a harvest empties the bed; ≥ 20% growth to harvest; shelves cap stock; new beds cost coins and rank. `play`: 7.4–8.6 L harvested over ten days, with occasional shortages |
+| Final magic derives from the proportions of base ingredients whose magic the player knows | ✔ | `magic.js` volume-weighted blend; ingredient cards show the magic; A: "proportions: a 1:1 blend of dew and water carries half the dew’s magic" |
+| Physical/chemical descriptions replaced by magical ones only | ✔ | `panels.openIngredient` (magic bars, fade and transition temperatures); A asserts no physical words in descriptions; B:layout asserts the ingredient sheet has no density/viscosity/boiling words |
+| Inspection tool replaced by a testing room with creatures | ✔ | Probe and assay removed; `testing.js`, `views/testing.js`; T: "a test uses a real dose from the cauldron tap…"; B:rooms testing-room test |
+| Player estimates each property from the creatures and compiles a Potion ID | ✔ | Six ID sliders per batch, copied onto the vial's label; T: "the Potion ID: written per batch, outdated by a new pour, copied onto the vial…"; B:gameplay guided order sets the sliders |
+| Effects on creatures completely visual, no text | ✔ | `rendering/creatures.js` draws everything; B:gameplay asserts no digits on any creature card; B:rooms finds flame pixels in the salamander's cage |
+| Selling by customer-proposed prices and seller offers until agreement | ✔ | `haggle.js`; G: "haggling: a low opening offer, counter-offers, lost patience, a final offer, a walk-out on insult"; B:gameplay haggles in the guided order |
+| Unsatisfied customers return later to complain about inefficiency or side effects | ✔ | `sales.settleSale` (weak, too strong or side effect, due 1–3 visits later); G: "a potion that fails its buyer comes back…"; B:gameplay "returning customers" |
+| The refund cannot generally be avoided | ✔ | Counter offers only "refund", or "show certificate" for a certified sale; G: same test (refund forced, reputation lost) |
+| Some customers bluff; only an expensive expert certification avoids a bluff refund | ✔ | Archetype bluff probabilities; `certifyVial` (30 + 12 × rank coins); G: "bluffers: without a certificate they get their refund; with one they are caught", "certification costs a lot…"; B:gameplay certificate unmasks a bluff |
+| Heat helps mixing materials that stay separate at room temperature | ✔ | `compatFactorT`; A: "heat helps mixing: witch oil keeps apart from water while cold, blends when hot, and stays blended"; B:sandbox witch oil layers on cold water |
+| Overheated materials lose magic | ✔ | `magicStep` fading; A: "overheating fades magic; the same brew kept below its fading point keeps it" |
+| A super-transition temperature per material, anywhere relative to its phase points, transforming the magic into one extremely high property and the rest extremely low | ✔ | `superT`/`superKey` on every ingredient; A: "the super transition: past its threshold, witch oil’s whole magic pours into one property" |
+| For most materials the threshold is at unreachable extremes; mixing averages thresholds into a normal range | ✔ | A: "the garden world… most transitions are out of reach", "mixing averages the thresholds (by magic): two unreachable transitions make a reachable one"; `ach … super`: 25 of 25 super requests brewed |
+| Simplify the HUD; less text; no text over game buttons, especially during the tutorial | ✔ | Icon chips; status line in the top bar; coach row; B:layout "notifications and the tutorial never cover a control" on every profile; B:gameplay checks before every tutorial click |
+| Each system complete and functional | ✔ | `play` ten-day careers use every system; 49 headless and 71 browser tests pass |
+| Performance kept at the top | ✔ | `bench`: physics as fast or faster than the previous release, phone ÷4 at 48–52 fps for typical brews, flat memory (`docs/PERFORMANCE.md`) |
+| Earlier saves keep working | ◐ partly | G: a genuine v3 save migrates and keeps coins, reputation, rank, equipment, awards and sales history. Its ingredients, recipes and journal are reset, because the old reagents do not exist in the garden world. |
+
+## First version brief
+
+> The tables below cover the brief of the game's first version. The
+> second round (hidden effects, trials, wilds, processing, electricity,
+> the mobile shell) is covered in `FEATURE_PARITY.md`, with results in
+> `docs/REPORT.md`. Counts and mechanics below are from those versions;
+> release 2.0 replaced the effects, trials, wilds and market with the
+> systems above.
 
 Each requirement from the brief is listed with where it is implemented and
 how it was verified.

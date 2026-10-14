@@ -1,215 +1,281 @@
-// Game-logic tests: procedural worlds, commission achievability (brewed in
-// the real simulation), scoring, economy, the no-softlock safety net and
-// save / load / migration.
+// Shop rules: requests for magic (achievable, brewed in the real simulation),
+// haggling, certification, complaints, refunds and bluffs, progression,
+// saves and migration.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { GameState, SAVE_VERSION, migrate } from '../src/game/state.js';
 import { generateWorld, makeLookup } from '../src/materials/generator.js';
-import { generateCommission } from '../src/game/commissions.js';
+import { generateCommission, meets, failures } from '../src/game/commissions.js';
 import { capabilities, EQUIPMENT } from '../src/game/equipment.js';
 import { Simulation } from '../src/simulation/world.js';
+import { applySnapshot } from '../src/simulation/snapshot.js';
 import { runPlanHeadless } from '../src/game/autobrew.js';
 import { tapSelection, measureParticles } from '../src/game/measure.js';
-import { evaluatePotion, scoreRequirement } from '../src/game/evaluate.js';
-import { GameState, migrate, SAVE_VERSION } from '../src/game/state.js';
+import { startHaggle, ask, acceptOffer } from '../src/game/haggle.js';
+import { archetypeOf } from '../src/game/customers.js';
 import { parseImport } from '../src/game/persistence.js';
 import { Rng } from '../src/core/rng.js';
-import { EFFECT_INDEX, NE } from '../src/alchemy/effects.js';
+import { PROP_KEYS, PROP_INDEX, NP } from '../src/alchemy/magic.js';
 
-test('worlds are deterministic per seed and differ between seeds', () => {
-  const a = generateWorld('alpha-1'), b = generateWorld('alpha-1'), c = generateWorld('beta-2');
-  assert.deepEqual(JSON.stringify(a), JSON.stringify(b), 'same seed → identical world');
-  const names = (w) => w.ingredients.map((id) => makeLookup(w)(id).name).join('|');
-  assert.notEqual(names(a), names(c), 'different seeds → different reagents');
-  assert.notDeepEqual(a.reactions.map((r) => r.name), c.reactions.map((r) => r.name));
-});
+/** A vial whose (hidden) truth is `magic`, labelled with `label`. */
+function vialOf(magic, label = magic, ml = 150) {
+  return {
+    id: 'v', ml, m: { magic: magic.slice(), color: [0.5, 0.6, 0.4], composition: {}, temperature: 20, vig: 1, ss: 0, steep: 20 },
+    label: { values: Object.fromEntries(PROP_KEYS.map((k, i) => [k, Math.round(label[i])])) }, certified: null,
+  };
+}
+/** A magic vector in the middle of every range of a request. */
+function centre(com) {
+  const v = new Array(NP).fill(0);
+  for (const r of com.requirements) v[PROP_INDEX[r.key]] = r.kind === 'limit' ? 0 : r.max >= 100 ? r.min + 10 : (r.min + r.max) / 2;
+  return v;
+}
+/** Haggle to a deal at the customer's best price. */
+function sellAtBest(st) {
+  const h = st.beginHaggle();
+  ask(h, h.max);
+  if (h.state !== 'deal') acceptOffer(h);
+  return st.completeSale();
+}
 
-test('every world starts with at least six liquids and two powders', () => {
-  for (let k = 0; k < 25; k++) {
-    const w = generateWorld('start-' + k);
-    const lk = makeLookup(w);
-    const start = w.ingredients.map(lk).filter((m) => m.tier === 0);
-    const liquids = start.filter((m) => m.form === 'liquid').length;
-    const powders = start.filter((m) => m.form === 'powder').length;
-    assert.ok(liquids >= 6, `seed start-${k}: ${liquids} starting liquids`);
-    assert.ok(powders >= 2, `seed start-${k}: ${powders} starting powders`);
-    // names are unique and every material has sane physical properties
-    assert.equal(new Set(w.ingredients.map((id) => lk(id).name)).size, w.ingredients.length);
-    for (const id of w.ingredients) {
-      const m = lk(id);
-      assert.ok(m.density > 0.3 && m.density < 15, `${m.name} density ${m.density}`);
-      assert.ok(m.price > 0);
+test('worlds are deterministic per seed; requests only ask for magic, never chemistry', () => {
+  const a = GameState.create('det-1'), b = GameState.create('det-1'), c = GameState.create('det-2');
+  assert.deepEqual(a.world, b.world);
+  assert.notDeepEqual(a.world.materials.map((m) => m.name), c.world.materials.map((m) => m.name));
+  const st = GameState.create('reqs-1', { tutorial: false });
+  for (let k = 0; k < 6; k++) {
+    const com = generateCommission(st.commissionContext(), new Rng('r' + k), { tier: k % 3 });
+    assert.ok(com, 'a request');
+    for (const r of com.requirements) {
+      assert.ok(PROP_KEYS.includes(r.key), `only magical properties (${r.key})`);
+      assert.ok(r.min >= 0 && r.max <= 100 && r.min < r.max);
     }
-  }
-});
-
-test('a fresh shop only asks for what the apprentice can actually brew', () => {
-  for (let k = 0; k < 12; k++) {
-    const st = GameState.create('fresh-' + k, { tutorial: k % 2 === 0 });
-    const com = st.nextCustomer();
-    assert.ok(com, 'a customer arrives');
+    assert.ok(com.dialogue.length > 10 && com.potionName, 'a problem to solve');
+    // only what the starting garden grows
     const avail = st.availableSet();
-    const wild = st.gatherableSet();
-    for (const ing of com.reference.ingredients) assert.ok(avail.has(ing.id) || wild.has(ing.id), `${ing.id} is purchasable or gatherable on day one`);
-    assert.ok(com.reference.heatTo <= st.cap.maxFlame - 20, 'reachable with the starting hearth');
-    assert.ok(com.reference.coolTo >= st.cap.minCool - 2, 'reachable with the starting basin');
-    const cost = com.reference.ingredients.reduce((s, ing) => s + (wild.has(ing.id) || (isFinite(st.stock(ing.id)) && st.stock(ing.id) >= ing.n * 5) ? 0 : st.priceOf(ing.id) * ing.n * 5 / 100), 0);
-    assert.ok(cost <= st.coins + 1e-6, `ingredients affordable (${cost.toFixed(1)} of ${st.coins} coins)`);
+    for (const i of com.reference.ingredients) assert.ok(avail.has(i.id), `${i.id} grows in the starting garden`);
   }
 });
 
-test('generated commissions are achievable: their hidden reference plans brew to high quality in the real simulation', () => {
-  const qualities = [];
-  const styles = new Set();
-  for (let k = 0; k < 20; k++) {
-    const world = generateWorld('achv-' + k);
+test('requests are achievable: their hidden plans, brewed in the real simulation, land inside every range', () => {
+  const failed = [];
+  for (let k = 0; k < 14; k++) {
+    const world = generateWorld('ach-' + k);
     const lookup = makeLookup(world);
     const cap = capabilities(EQUIPMENT.map((e) => e.id));
-    cap.size = 'small';
-    const ctx = { world, lookup, available: new Set(world.ingredients), cap, rank: 4, priceOf: (id) => lookup(id).price || 1 };
-    const com = generateCommission(ctx, new Rng('achv-c' + k), { tier: k % 5 });
-    assert.ok(com, 'commission generated');
-    styles.add(com.style);
-    const sim = new Simulation({ size: 'small', lookup, reactions: world.reactions });
+    cap.size = 'pot';
+    const ctx = { world, lookup, available: new Set(world.ingredients), cap, rank: 4 };
+    const com = generateCommission(ctx, new Rng('c' + k), { tier: k % 5, super: k % 3 === 2 });
+    assert.ok(com, `request ${k}`);
+    const sim = new Simulation({ size: 'pot', lookup });
     Object.assign(sim.furnace, { maxFlame: cap.maxFlame, heatPower: cap.heatPower, minCool: cap.minCool, coolPower: cap.coolPower });
-    const ab = runPlanHeadless(sim, com.reference, lookup);
-    assert.ok(!ab.failed, `reference plan for ${com.style} completes`);
-    const ev = evaluatePotion(com, measureParticles(sim, tapSelection(sim, com.bottleN)));
-    qualities.push(ev.quality);
-    assert.ok(ev.quality >= 0.8, `${com.style} (tier ${com.tier}) brewed to quality ${ev.quality.toFixed(2)}`);
+    runPlanHeadless(sim, com.reference, lookup);
+    const m = measureParticles(sim, tapSelection(sim, com.bottleN));
+    if (!meets(com, m.magic)) failed.push(`${k} ${com.super ? 'super ' : ''}${JSON.stringify(failures(com, m.magic))} got ${m.magic.map(Math.round)}`);
   }
-  const mean = qualities.reduce((a, b) => a + b, 0) / qualities.length;
-  assert.ok(mean >= 0.95, `mean quality ${mean.toFixed(3)}`);
-  assert.ok(styles.size >= 5, `variety of styles covered (${[...styles].join(', ')})`);
+  assert.deepEqual(failed, []);
 });
 
-test('scoring rewards accuracy and tolerates small deviations', () => {
-  /** @type {any} */
-  const req = { key: 'temperature', kind: 'target', target: 45, tol: 5, zero: 15, label: '40–50°C' };
-  const at = (t) => scoreRequirement(req, /** @type {any} */ ({ temperature: t, ml: 100 })).score;
-  assert.equal(at(45), 1);
-  assert.equal(at(49), 1, 'inside the tolerance band scores full marks');
-  assert.ok(at(52) < 1 && at(52) > at(58), 'score falls off outside the band');
-  assert.equal(at(80), 0, 'far off scores nothing');
-  // perfect potion pays the most and earns five stars
-  /** @type {any} */
-  const com = { requirements: [req], bottleMl: 100, budget: 40, tier: 0, contract: false };
-  const good = evaluatePotion(com, /** @type {any} */ ({ temperature: 45, ml: 100 }));
-  const short = evaluatePotion(com, /** @type {any} */ ({ temperature: 45, ml: 50 }));
-  const off = evaluatePotion(com, /** @type {any} */ ({ temperature: 60, ml: 100 }));
-  assert.equal(good.stars, 5);
-  assert.ok(good.payment > off.payment && good.payment > short.payment);
-  assert.ok(short.quality < good.quality, 'a half-empty bottle is penalised');
-  assert.ok(off.repDelta < good.repDelta, 'a poor potion costs reputation relative to a good one');
+test('haggling: a low opening offer, counter-offers, lost patience, a final offer, a walk-out on insult', () => {
+  const arch = archetypeOf('farmer');
+  const h = startHaggle({ value: 50 }, arch);
+  assert.ok(h.opening < h.max && h.opening >= h.max * 0.4);
+  const r1 = ask(h, h.max);
+  assert.equal(r1.result, 'counter');
+  assert.ok(r1.offer > h.opening && r1.offer <= h.max, 'they come up part of the way');
+  // asking the same keeps narrowing the gap until they shake on it or run out of patience
+  let r = r1;
+  while (r.result === 'counter') r = ask(h, h.max);
+  assert.ok(r.result === 'deal' || r.result === 'final');
+  if (r.result === 'final') { const d = acceptOffer(h); assert.equal(d.result, 'deal'); assert.ok(d.price <= h.max); }
+  else assert.ok(r.price <= h.max);
+  // too much costs patience faster; an insult ends it
+  const g = startHaggle({ value: 50 }, arch);
+  const p0 = g.patience;
+  ask(g, g.max * 1.5);
+  assert.equal(g.patience, p0 - 2);
+  const w = startHaggle({ value: 50 }, arch);
+  assert.equal(ask(w, w.max * 2.5).result, 'walked');
+  // a certificate makes the potion worth more to them
+  assert.ok(startHaggle({ value: 50 }, arch, { certified: true }).max > startHaggle({ value: 50 }, arch).max);
+  // a short bottle is worth less
+  assert.ok(startHaggle({ value: 50 }, arch, { short: 0.5 }).max < startHaggle({ value: 50 }, arch).max);
 });
 
-test('the market: buying, storage limits and selling back', () => {
-  const st = GameState.create('market-1', { tutorial: false });
-  const id = st.world.roles.binder;
-  const c0 = st.coins, s0 = st.stock(id);
-  const r = st.buy(id, 100);
-  assert.ok(r.ok);
-  assert.equal(st.stock(id), s0 + 100);
-  assert.ok(Math.abs(st.coins - (c0 - st.priceOf(id))) < 0.11, 'price deducted');
-  st.coins = 0;
-  assert.equal(st.buy(id, 100).ok, false, 'cannot buy without coins');
-  st.coins = 10000;
-  let guard = 0;
-  while (st.buy(id, 500).ok && guard++ < 50);
-  assert.ok(st.stock(id) <= st.cap.storage, 'storage limit holds');
-  const before = st.coins;
-  assert.ok(st.sellBack(id, 100).ok);
-  assert.ok(st.coins > before && st.coins - before <= st.priceOf(id) * 0.41, 'sell-back pays 40%');
-  assert.equal(st.buy(st.world.roles.water, 100).ok === false || isFinite(st.stock(st.world.roles.water)) === false, true, 'water is free and unlimited');
-});
-
-test('the economy cannot be farmed: buy-and-sell loses money, and a sale pays once', () => {
-  const st = GameState.create('exploit-1', { tutorial: false });
-  const id = st.world.roles.oil;
-  st.coins = 500;
-  for (let k = 0; k < 5; k++) { st.buy(id, 100); st.sellBack(id, 100); }
-  assert.ok(st.coins < 500, `buying and selling back loses coins (${st.coins})`);
+test('a customer only haggles over a label that promises what they need', () => {
+  const st = GameState.create('label-1', { tutorial: false });
   const com = st.nextCustomer();
-  const ev = evaluatePotion(com, perfectMeasurement(com));
-  st.completeSale(ev, { ml: com.bottleMl });
-  const after = st.coins;
-  assert.deepEqual(st.completeSale(ev, { ml: com.bottleMl }), [], 'no second payment without a customer');
-  assert.equal(st.coins, after);
-  assert.equal(st.stock(st.world.roles.water), Infinity);
+  const good = centre(com);
+  st.vial = vialOf(good);
+  assert.ok(st.labelMatches());
+  const want = com.requirements.find((r) => r.kind !== 'limit');
+  const weak = good.slice(); weak[PROP_INDEX[want.key]] = 0;
+  st.vial = vialOf(good, weak);
+  assert.equal(st.labelMatches(), false);
+  st.vial.label = { values: { vitality: 30 } };
+  assert.equal(st.labelMatches(), false, 'an incomplete ID promises nothing');
 });
 
-test('no soft-lock: a broke apprentice gets a daily stipend and water stays free', () => {
-  const st = GameState.create('broke-1', { tutorial: false });
-  for (const k of Object.keys(st.inventory)) if (isFinite(st.inventory[k])) st.inventory[k] = 0;
-  st.coins = 0;
-  const g = st.claimRelief();
-  assert.ok(g > 0, 'stipend granted');
-  assert.equal(st.claimRelief(), 0, 'only once per day');
-  const cheapest = Math.min(...st.purchasable().filter((id) => id !== st.world.roles.water).map((id) => st.priceOf(id)));
-  assert.ok(st.coins >= cheapest * 2, 'enough to buy reagents for a simple brew');
-  assert.equal(st.stock(st.world.roles.water), Infinity);
-  st.endDay();
-  st.coins = 0;
-  assert.ok(st.claimRelief() > 0, 'available again the next day');
+test('a potion that fails its buyer comes back: the refund cannot be avoided and costs reputation', () => {
+  const st = GameState.create('refund-1', { tutorial: false });
+  const com = st.nextCustomer();
+  const truth = centre(com);
+  const want = com.requirements.find((r) => r.kind !== 'limit');
+  truth[PROP_INDEX[want.key]] = Math.max(0, want.min - 10);
+  st.vial = vialOf(truth, centre(com)); // labelled as if it worked
+  const { sale } = sellAtBest(st);
+  assert.ok(sale && sale.complaint && sale.complaint.kind === 'genuine' && sale.complaint.key === want.key && sale.complaint.how === 'weak');
+  const coins = st.coins, rep = st.reputation;
+  // they come back after a few more visits
+  let visitor = null;
+  for (let k = 0; k < 6 && !visitor; k++) {
+    const c = st.nextCustomer();
+    if (c && c.type === 'complaint') visitor = c;
+    else if (c) st.declineCustomer();
+    else st.endDay();
+  }
+  assert.ok(visitor, 'the customer came back');
+  assert.equal(st.resolveComplaint('certificate').ok, false, 'there is no certificate to show');
+  const r = st.resolveComplaint('refund');
+  assert.ok(r.ok && r.amount === sale.price);
+  assert.equal(st.coins, Math.round((coins - sale.price) * 10) / 10);
+  assert.ok(st.reputation < rep);
+  assert.equal(sale.resolved, 'refunded');
 });
 
-test('sales, reputation and ranks progress', () => {
+test('bluffers: without a certificate they get their refund; with one they are caught', () => {
+  const find = (certify) => {
+    for (let s = 0; s < 400; s++) {
+      const st = GameState.create('bluff-' + s, { tutorial: false });
+      st.reputation = 200; // nobles and witches (the keenest bluffers) visit
+      const com = st.nextCustomer();
+      st.vial = vialOf(centre(com));
+      st.coins = 500;
+      if (certify) st.certifyVial();
+      const { sale } = sellAtBest(st);
+      if (sale.complaint && sale.complaint.kind === 'bluff') return { st, sale };
+    }
+    return null;
+  };
+  const a = find(false);
+  assert.ok(a, 'some customer bluffs');
+  assert.equal(a.sale.certified, null);
+  let c = null;
+  for (let k = 0; k < 8 && !(c && c.type === 'complaint'); k++) { c = a.st.nextCustomer(); if (c && c.type !== 'complaint') { a.st.declineCustomer(); c = null; } else if (!c) a.st.endDay(); }
+  const r = a.st.resolveComplaint('refund');
+  assert.ok(r.ok && r.amount === a.sale.price, 'no proof: refunded');
+  const b = find(true);
+  assert.ok(b && b.sale.certified);
+  c = null;
+  for (let k = 0; k < 8 && !(c && c.type === 'complaint'); k++) { c = b.st.nextCustomer(); if (c && c.type !== 'complaint') { b.st.declineCustomer(); c = null; } else if (!c) b.st.endDay(); }
+  const coins = b.st.coins;
+  const r2 = b.st.resolveComplaint('certificate');
+  assert.ok(r2.ok && r2.outcome === 'caught');
+  assert.equal(b.st.coins, coins + (r2.events.length ? r2.events.reduce((s, e) => s + e.reward, 0) : 0), 'no refund');
+  assert.equal(b.sale.resolved, 'caught');
+});
+
+test('certification costs a lot, replaces the label with the truth and rewards a sharp eye', () => {
+  const st = GameState.create('cert-1', { tutorial: false });
+  st.nextCustomer();
+  const truth = [31.2, 0, 0, 4.1, 7.7, 0.4];
+  st.vial = vialOf(truth, [30, 0, 0, 5, 9, 0]);
+  const fee = st.certifyFee;
+  assert.ok(fee >= 30, `a lot of money (${fee})`);
+  st.coins = fee - 1;
+  assert.equal(st.certifyVial().ok, false);
+  st.coins = fee + 100;
+  const r = st.certifyVial();
+  assert.ok(r.ok);
+  assert.ok(r.events.some((e) => e.id === 'sharp_eye'), 'the estimate was within 6 of the truth');
+  assert.equal(st.vial.label.values.vitality, 31);
+  assert.equal(st.vial.certified.charm, 8);
+  assert.equal(st.writeId('vial', { vitality: 90 }), false, 'a certified label cannot be rewritten');
+  st.equipment.push('charter');
+  assert.ok(st.certifyFee < fee, 'the guild charter makes it cheaper');
+});
+
+test('progress: sales raise reputation and rank; a broke alchemist gets a stipend', () => {
   const st = GameState.create('rank-1', { tutorial: false });
   const events = [];
-  for (let k = 0; k < 40 && st.rank < 2; k++) {
-    const com = st.nextCustomer() || (st.endDay(), st.nextCustomer());
-    assert.ok(com);
-    events.push(...st.completeSale(evaluatePotion(com, perfectMeasurement(com)), { ml: com.bottleMl }));
+  for (let k = 0; k < 120 && st.rank < 2; k++) {
+    let com = st.nextCustomer();
+    if (!com) { st.endDay(); com = st.nextCustomer(); }
+    if (!com || com.type !== 'order') { if (com) st.resolveComplaint('refund'); continue; }
+    st.vial = vialOf(centre(com));
+    events.push(...sellAtBest(st).events);
   }
-  assert.ok(st.rank >= 2, `rank ${st.rank} after perfect sales`);
+  assert.ok(st.rank >= 2, `rank ${st.rank}`);
   assert.ok(events.some((e) => e.type === 'rank'));
-  assert.ok(events.some((e) => e.type === 'achievement' && e.id === 'first_sale'));
-  assert.ok(st.stats.perfect > 0 && st.stats.served === st.history.length || st.history.length === 60);
+  assert.ok(events.some((e) => e.id === 'first_sale'));
+  st.coins = 2;
+  assert.ok(st.claimRelief() > 0);
+  assert.equal(st.claimRelief(), 0, 'once a day');
 });
 
-test('save → JSON → load round-trips the whole game', () => {
-  const st = GameState.create('save-1');
+test('save → JSON → load round-trips the whole shop', () => {
+  const st = GameState.create('save-1', { tutorial: false });
   st.coins = 123.4; st.reputation = 17; st.day = 4;
-  st.buy(st.world.roles.salt, 100);
-  st.discover(/** @type {any} */ ({ key: 'phase:boil', kind: 'phase', title: 'Boiling', text: 'x' }));
-  st.addRecipe({ name: 'Test', steps: [] });
-  const json = JSON.stringify(st.toJSON());
-  const back = parseImport(json);
+  st.harvest('dew-a'); st.plant('glacite-a');
+  st.writeId('batch', { vitality: 20, ardor: 0, frost: 0, levity: 0, charm: 5, bane: 0 });
+  const com = st.nextCustomer();
+  st.vial = vialOf(centre(com));
+  sellAtBest(st);
+  st.addRecipe({ name: 'Test', ingredients: [] });
+  const back = parseImport(JSON.stringify(st.toJSON()));
   assert.equal(back.coins, st.coins);
   assert.equal(back.day, 4);
-  assert.equal(back.stock(st.world.roles.water), Infinity, 'unlimited water survives JSON');
-  assert.equal(back.stock(st.world.roles.salt), st.stock(st.world.roles.salt));
-  assert.deepEqual(back.world.ingredients, st.world.ingredients);
-  assert.equal(back.lookup(st.world.roles.oil).name, st.lookup(st.world.roles.oil).name);
-  assert.ok(back.journal['phase:boil']);
+  assert.equal(back.stock(st.world.roles.dew), st.stock(st.world.roles.dew));
+  assert.deepEqual(back.garden, st.garden);
+  assert.deepEqual(back.idCard, st.idCard);
+  assert.equal(back.sales.length, 1);
+  assert.deepEqual(back.sales[0], st.sales[0]);
   assert.equal(back.recipes.length, 1);
+  assert.deepEqual(back.world.ingredients, st.world.ingredients);
 });
 
-test('old saves migrate and bad files are rejected with a readable message', () => {
-  const st = GameState.create('mig-1');
-  const v1 = st.toJSON();
-  v1.version = 1;
-  delete v1.market; delete v1.receiver; delete v1.grandDone; delete v1.reliefDay; delete v1.knowledge;
-  const up = GameState.fromJSON(JSON.parse(JSON.stringify(v1)));
-  assert.equal(up.version, SAVE_VERSION);
-  assert.ok(up.market && up.knowledge);
-  // a save with no embedded world regenerates it from the seed
-  const bare = JSON.parse(JSON.stringify(st.toJSON()));
-  delete bare.world;
-  const regen = GameState.fromJSON(bare);
-  assert.deepEqual(regen.world.ingredients, st.world.ingredients);
+test('a genuine save from the previous release migrates: the shop survives, the world regrows as a garden', () => {
+  const raw = JSON.parse(fs.readFileSync(new URL('./fixtures/save-v3.json', import.meta.url), 'utf8'));
+  assert.equal(raw.version, 3);
+  const st = GameState.fromJSON(raw);
+  assert.equal(st.version, SAVE_VERSION);
+  assert.equal(st.coins, raw.coins);
+  assert.equal(st.reputation, raw.reputation);
+  assert.equal(st.day, raw.day);
+  assert.ok(st.has('pestle') && st.has('kennel'), 'equipment that still exists is kept');
+  assert.ok(!st.has('hydrometer') && !st.has('satchel'), 'retired instruments are dropped');
+  assert.ok(st.achievements.first_sale && st.achievements.trial1);
+  assert.equal(st.history.length, raw.history.length);
+  assert.ok(st.lookup(st.world.roles.dew) && st.world.ingredients.length === 11, 'the new garden world');
+  assert.equal(st.current, null);
+  assert.equal(st.cauldron, null, 'the old brew is gone with its reagents');
+  // and it plays
+  const com = st.nextCustomer();
+  assert.ok(com && com.type === 'order');
+  const sim = new Simulation({ size: 'pot', lookup: st.lookup });
+  if (st.cauldron) applySnapshot(sim, st.cauldron, { lookup: st.lookup });
+  const again = GameState.fromJSON(JSON.parse(JSON.stringify(st.toJSON())));
+  assert.equal(again.coins, st.coins);
+  // the even older v2 save also comes through
+  const v2 = GameState.fromJSON(JSON.parse(fs.readFileSync(new URL('./fixtures/save-v2.json', import.meta.url), 'utf8')));
+  assert.equal(v2.version, SAVE_VERSION);
+});
+
+test('corrupted, partial and future saves are repaired or refused with a readable message, never silently reset', () => {
+  const st = GameState.create('robust-1', { tutorial: false });
+  const good = JSON.parse(JSON.stringify(st.toJSON()));
+  const partial = { ...good, lab: { creatures: { toad: { health: 'x' } }, records: [null, 5, { creature: 'moth', levels: { levity: 3 } }] }, garden: { beds: { 'dew-a': { g: 'nan', at: 3 }, nope: {} }, well: 'x' } };
+  const p = GameState.fromJSON(JSON.parse(JSON.stringify(partial)));
+  assert.equal(p.lab.creatures.toad.health, 100);
+  assert.equal(p.lab.records.length, 1);
+  assert.equal(p.garden.beds['dew-a'].g, 0);
+  assert.ok(!p.garden.beds.nope);
+  assert.throws(() => GameState.fromJSON({ ...good, version: SAVE_VERSION + 1 }), /newer version/);
+  assert.throws(() => GameState.fromJSON({ ...good, inventory: null }), /inventory/);
+  assert.throws(() => GameState.fromJSON(null));
   assert.throws(() => parseImport('not json'), /not a valid save/);
-  assert.throws(() => migrate({ version: SAVE_VERSION + 1 }), /newer version/);
-  assert.throws(() => migrate(null), /Not a save/);
+  assert.throws(() => migrate({ version: 2 }), /seed/);
+  const noWorld = { ...good, world: undefined };
+  assert.equal(GameState.fromJSON(noWorld).world.seed, 'robust-1');
 });
-
-/** A measurement that hits every requirement dead centre. @returns {any} */
-function perfectMeasurement(com) {
-  const m = { ml: com.bottleMl, lab: [0.7, 0, 0], effects: new Array(NE).fill(0), density: 1, viscosity: 1, temperature: 20, stability: 100, volatility: 0 };
-  for (const r of com.requirements) {
-    if (r.key === 'color') m.lab = r.target;
-    else if (r.key === 'viscosity') m.viscosity = Math.exp(r.target);
-    else if (EFFECT_INDEX[r.key] !== undefined) m.effects[EFFECT_INDEX[r.key]] = r.target;
-    else m[r.key] = r.target;
-  }
-  return m;
-}

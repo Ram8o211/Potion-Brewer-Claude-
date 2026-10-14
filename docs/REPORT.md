@@ -1,5 +1,138 @@
 # Implementation, balancing and performance report
 
+## Release 2.0: the magic overhaul
+
+This round rebuilt the game around magic. Customers ask for magical
+effects. Every ingredient grows in a personal garden. A potion's magic
+follows the proportions of what is in it, with heat as a tool and a
+danger. Potions are identified by watching creatures, and sales are
+haggled, with complaints, refunds, bluffs and certification. The HUD was
+simplified so that no text sits on a control. The earlier round's report
+follows below, unchanged, for the record.
+
+**Environment.** As before: a shared cloud Linux container (Intel Xeon @
+2.1 GHz, 4 cores, Node 22), headless Chromium (Playwright 1.56) with
+software rendering, and phones and tablets in device emulation only.
+
+### What was built
+
+| Brief | What it is | Where |
+|---|---|---|
+| Customers ask for magical effects | Requests are ranges on six magical properties (vitality, ardor, frost, levity, charm, bane), born from a problem the property solves. No colour, thickness or chemistry. | `src/game/commissions.js`, `src/alchemy/magic.js` |
+| Water, magical liquids, magical stones | Plain water (no magic) is the solvent. There are four magical liquids, one of which floats apart from water until hot, and six magical stones gathered whole and smashed into powder in the mortar or with the pestle. | `src/materials/generator.js` |
+| A personal garden that grows with time, not abundance | A well that refills slowly. Plant beds grow only while watered, and watering costs well water. Crystal beds grow slowly. A harvest empties the bed. Five beds to start and eleven to plant for coins and rank. Shelves cap stock. Growth is resolved from wall-clock timestamps, also while the game is closed. | `src/game/garden.js`, `src/ui/views/garden.js`, `src/rendering/garden.js` |
+| Magic from proportions; magic-only descriptions | A particle's magic is the volume-weighted blend of its ingredients' magic vectors. Ingredient cards show only magic bars and the fading and transition temperatures. Physical words are absent (tested). | `src/alchemy/magic.js`, `src/ui/panels.js` |
+| Testing room with creatures, visual only, and a Potion ID | Five creatures, each showing some properties as pictures against a notched post (leaves, hearts, flames, ice, lift, toxic bubbles), with no text or numbers (tested). Readings wobble a little and faint magic does not show. Bane hurts, creatures rest, and dead ones are replaced. The player sets six ID sliders, which become the vial's label. | `src/game/testing.js`, `src/rendering/creatures.js`, `src/ui/views/testing.js` |
+| Haggling | The customer opens low. The seller asks, and the customer concedes part of the gap, loses patience, makes a final offer, or walks out at an insult. | `src/game/haggle.js`, `src/ui/views/counter.js` |
+| Complaints and unavoidable refunds | A potion that misses a want or exceeds a limit brings its buyer back one to three visits later. The refund is forced and costs reputation. | `src/game/sales.js`, `src/game/state.js` |
+| Bluffs and expensive certification | Customers bluff with their archetype's probability. Only a vial certified before the sale (30 + 12 × rank coins) unmasks them. Certification also replaces the label with the truth. | `src/game/sales.js`, `src/game/state.js` |
+| Heat helps mixing; overheating fades magic | Miscibility rises with temperature (0.28% per °C) and blends stay blended when cooled. Above a particle's magic-weighted fading point, its magic decays exponentially. | `src/reactions/compatibility.js`, `src/simulation/magic.js` |
+| Super transitions, averaged by mixing | Every ingredient has a transition temperature, independent of its melting and boiling, and most are unreachable alone (+1300 °C, −2250 °C). Mixing averages them by magic, so blends can transmute in an ordinary cauldron: one property very high, the rest near zero. | `src/alchemy/magic.js`, `src/simulation/magic.js` |
+| Simpler HUD, no text over buttons | Requests, labels and IDs are icon chips. Notifications appear in the top bar's status line. The tutorial coach has its own row. Browser tests fail on any overlap. | `src/ui/lab.js`, `src/ui/tutorial.js`, `styles/main.css` |
+| Saves | Save version 4. A genuine v3 save from the previous release migrates (`tests/fixtures/save-v3.json`). Snapshot version 3 carries the magic state. | `src/game/state.js`, `src/simulation/snapshot.js` |
+
+### Automated verification (final run)
+
+| Suite | Command | Result |
+|---|---|---|
+| Types | `npm run typecheck` | 0 errors |
+| Headless | `npm test` | 49 passed (physics 23, game 11, magic 8, garden and testing room 6, renderer 1) |
+| Browser | `npm run test:browser` | 71 passed over desktop, phone portrait, phone landscape, tablet, offline build and GitHub Pages sub-path |
+| Achievability | `node scripts/achievability.mjs 25` / `… 25 ach super` | 25 of 25 normal and 25 of 25 super-transition requests brewed in the real simulation inside every range |
+| Benchmark | `npm run bench` | see below and `docs/PERFORMANCE.md` |
+| Build | `npm run build` | 461 KB (131 KB gzipped), offline-ready |
+
+### Balancing
+
+`node scripts/playtest.mjs` plays ten days on three seeds with two
+profiles. Each day it:
+* tends the garden on a simulated clock;
+* brews each request's plan in the real simulation, with skill-dependent
+  mistakes;
+* tests on creatures that show the requested properties and writes the ID
+  from what they showed;
+* haggles, deals with returning customers, and buys beds and equipment in
+  the evening.
+
+| Profile | Final coins | Reputation | Rank | Served / declined | Tests | Certified | Sales kept / refunded / bluffs caught |
+|---|---|---|---|---|---|---|---|
+| careful (certifies, haggles hard) | 184 / 223 / 278 | 92–94 | Journeyman (day 5–6) | 27 / 3–4 | 68–74 | 8–12 | 24–25 / 1–2 / 0–1 |
+| casual (no certification) | 64 / 97 / 139 | 91–92 | Journeyman (day 5–6) | 27 / 3–4 | 68–71 | 0 | 24–25 / 2 / 0 |
+
+* Daily earnings grow from about 50–95 coins on day 1 to 130–260 by day
+  10. Both profiles spend most of it on 8 garden beds and 15 pieces of
+  equipment.
+* Refunds are occasional (19–99 coins on 1–2 days of 10). Careful sellers
+  catch some bluffs with certificates; casual sellers pay every bluff.
+* Gathering stays scarce. A ten-day run harvests 7.4–8.6 L in total, and
+  one seed has a day where three customers wanted what the garden had run
+  out of, so it earned nothing that day. The daily stipend keeps such a
+  run alive.
+
+### Performance
+
+The same benchmark as before (`docs/PERFORMANCE.md`), on a slower host
+than the previous release's run:
+* every physics scenario is as fast or faster (full pot 0.81 → 0.49
+  ms/step);
+* the throttled phone renders typical brews at 51–52 fps in (near) real
+  time, and a full pot at 48 fps and 0.94× speed (previously 30 fps and
+  0.65×);
+* the heap stays flat at about 3.8 MB through 90 s of boiling.
+
+The magic systems add one pass every second step and a few
+multiply-adds per diffusing pair. The garden and the creatures cost
+nothing outside their rooms.
+
+### Problems found through tests, profiling and screenshots, and fixed
+
+* **Cold stones gave too little.** Ground stones barely leached in cold
+  water, so stone requests were weak. Extraction now follows the hottest
+  steep each particle has seen, and a hot steep keeps its strength when
+  cooled.
+* **Brushing past a threshold transmuted a brew.** Briefly crossing a
+  threshold while stirring transmuted it outright. Transmutation now
+  builds up over a few seconds beyond the threshold.
+* **Cold super plans failed.** The brew froze into a block, the
+  controller overshot, and a warm-up scorched the magic. The autobrewer
+  now caps its flame below the target, steeps warm, then chills and holds,
+  and serves gently. Frostmilk's transition moved to −46 °C, closer to
+  what the frost plates reach.
+* **The production build broke** on an import cycle (counter ↔ shell).
+  The shared request chips moved to `panels.js`.
+* **Notifications and the coach covered buttons.** Floating toasts sat on
+  the tutorial's targets. Notifications moved into the top bar's status
+  line, and the coach got its own grid row.
+* **On phones, the stir step needed too many turns.** A touch stir on a
+  narrow screen covers less distance in the cauldron, so the step now
+  needs about one and a half turns.
+* **The reputation bar was invisible** in the top bar (0 px wide, present
+  before this round). It now stretches.
+* **The day label read "11/3".** The day and the customer count ran
+  together, so a customer icon now separates them.
+* **Text artefacts.** `null` showed in the top bar and on the counter;
+  the toad's leaves overlapped. Both fixed.
+* **Day-one shortages.** The first playtests ran out of ingredients on
+  day one. Plans are smaller and the starting stock covers the first
+  orders.
+* **Dead code removed:** 19 unused icons and 36 CSS rules of the old
+  rooms.
+
+### Limitations
+
+* Phones and tablets were verified in Chromium emulation only, not on
+  devices, Safari or Firefox.
+* A save from the previous release keeps the shop (coins, reputation,
+  rank, equipment, awards, sales history) but not its ingredients,
+  recipes or journal: the old reagents do not exist in the garden world.
+* Electricity remains in the engine, but no garden ingredient is charged.
+* Certification must happen before the sale; a bluff against an
+  uncertified sale is always refunded, as the brief asks.
+
+---
+
+# Earlier round: hidden effects, trials and wilds
+
 This report covers the round that brought hidden magical and chemical
 effects, the trials room, the wilds, material processing, electricity and
 the mobile-first shell to The Alchemist's Shop. It says what was built,

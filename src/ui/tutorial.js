@@ -1,9 +1,12 @@
-// Guided first brew. Each step highlights the relevant control and waits for
-// the player to actually perform the action in the simulation.
+// Guided first order. Each step is one short line in the coach bar — a row
+// of the shop's own layout between the top bar and the rooms, so it never
+// covers a control — and a pulsing outline on the control to use. Steps
+// advance on what actually happens (a harvest, a pour, a dose, a sale).
 
-import { h, btn } from './dom.js';
-import { PHASE } from '../simulation/constants.js';
+import { h, btn, clear } from './dom.js';
+import { icon } from './icons.js';
 import { MAX_SPECIES } from '../reactions/species.js';
+import { idComplete } from '../game/testing.js';
 
 export class Tutorial {
   /** @param {import('./lab.js').LabScreen} lab */
@@ -11,16 +14,16 @@ export class Tutorial {
     this.lab = lab;
     this.active = false;
     this.index = 0;
-    this.box = null;
     this.target = null;
     this.flags = {};
+    this.shown = -1;
   }
 
   get steps() {
     const lab = this.lab;
     const st = lab.state;
     const R = st.world.roles;
-    const water = st.lookup(R.water), ess = st.lookup(R.essenceA);
+    const water = st.lookup(R.water), dew = st.lookup(R.dew);
     const volumeOf = (id) => {
       const s = lab.sim.species.slotOf.get(id);
       if (s === undefined) return 0;
@@ -28,42 +31,32 @@ export class Tutorial {
       for (let i = 0; i < lab.sim.p.count; i++) t += lab.sim.p.comp[i * MAX_SPECIES + s];
       return t * 5;
     };
-    const brewT = () => {
-      const p = lab.sim.p;
-      let T = 0, n = 0;
-      for (let i = 0; i < p.count; i++) if (p.phase[i] !== PHASE.GAS) { T += p.temp[i]; n++; }
-      return n ? T / n : 20;
-    };
+    const act = (a) => () => /** @type {HTMLElement} */ (lab.el.querySelector(`[data-act="${a}"]`));
     const tab = (id) => () => lab.tabEls[id] && lab.tabEls[id].b;
-    const rabbitTested = () => st.trials.records.some((r) => r.subjectId === 'rabbit' && r.batchId === st.batch.id);
+    const tested = () => st.lab.records.some((r) => r.creature === 'toad' && r.batchId === st.batch.id);
     return [
-      { text: `Welcome to your shop, alchemist! Your very first customer is here. Let’s brew their order together — it only takes a few minutes.`, button: 'Let’s begin' },
-      { text: 'This strip is the order. Colour and temperature meters fill as your brew matches. The heart (healing) shows “?”: what a mixture really does stays unknown until you test it.', target: () => lab.strip, button: 'Got it' },
-      { text: `Tap the jar of ${water.name} on the shelf to pick it up.`, target: () => lab.jarEls[R.water] && lab.jarEls[R.water].el, done: () => lab.selected === R.water },
-      { text: 'Pour about 110 ml: tap the dose buttons (100, then 25) or hold your finger in the cauldron. You can also drag a jar straight onto the cauldron.', target: () => lab.doseEl, done: () => volumeOf(R.water) >= 95 },
-      { text: `Now pick up the ${ess.name}. Long-press any jar to see what the plain ingredient is known to do.`, target: () => lab.jarEls[R.essenceA] && lab.jarEls[R.essenceA].el, done: () => lab.selected === R.essenceA },
-      { text: 'Pour about 110 ml of it. The colour stays where it lands at first — mixing starts where liquids touch.', target: () => lab.doseEl, done: () => volumeOf(R.essenceA) >= 95 && !lab.sim.emitter.pouring },
-      { text: 'Pick the spoon and drag it in circles through the brew. Stirring spreads colour — and magic — far faster than waiting.', target: () => lab.toolBtns.spoon, done: () => (lab.sim.tool.stirDistance - (this.flags.stir0 ?? (this.flags.stir0 = lab.sim.tool.stirDistance))) > 18 || this.colourScore() > 0.95 },
-      { text: 'The customer wants it served warm. Slide the fire control to the right — heat enters through the bottom and spreads.', target: () => lab.furnaceInput.parentElement, done: () => brewT() >= 36 },
-      { text: 'Is it really a healing tonic? Nobody knows until it is tested. Open the Trials room.', target: tab('trials'), done: () => lab.view === 'trials' },
-      { text: 'Give the Moon Rabbit a dose: drag the dropper onto it, or press its Test button. The dose is real potion from the tap.', target: () => lab.views.trials.cards.rabbit && lab.views.trials.cards.rabbit.card, done: rabbitTested },
-      { text: 'The rabbit shows how much vitality (and poison) this batch carries. Verified effects now count on the order. Back to the cauldron!', target: tab('brew'), done: () => lab.view === 'brew' },
-      { text: 'When the meters are full and the brew is warm, press Bottle. (Turn the fire down once it is warm enough.)', target: () => lab.bottleFab, done: () => this.flags.bottled },
-      { text: 'Your sealed vial waits at the Counter. Serve it to the customer.', target: () => document.querySelector('[data-act=serve]') || tab('counter')(), done: () => this.flags.sold },
-      { text: 'Splendid — your first sale! New orders ask for strength, love, fire… Gather wild herbs in the Wilds, grind them, test every new mixture in the Trials room, and save good recipes in your Book.', button: 'Run my shop!' },
+      { icon: 'stall', text: 'A customer needs a healing potion. Let’s make it!', button: 'Start' },
+      { icon: 'seedling', text: 'Everything grows in your garden. Open it.', target: tab('garden'), done: () => lab.view === 'garden' },
+      { icon: 'well', text: 'Draw water from the well.', target: act('harvest-well'), done: () => this.flags.harvest_water || st.stock(R.water) >= 280 },
+      { icon: 'leaf', text: `Harvest the ${dew.name}.`, target: act('harvest-dew-a'), done: () => st.stock(R.dew) > 0 },
+      { icon: 'cauldron', text: 'Back to the cauldron.', target: tab('brew'), done: () => lab.view === 'brew' },
+      { icon: 'jar', text: `Tap the ${water.name} jar.`, target: () => lab.jarEls[R.water] && lab.jarEls[R.water].el, done: () => lab.selected === R.water || volumeOf(R.water) >= 45 },
+      { icon: 'pour', text: 'Pour 50 ml.', target: act('dose-50'), done: () => volumeOf(R.water) >= 45 },
+      { icon: 'jar', text: `Now the ${dew.name}: pour 50 ml of it.`, target: () => (lab.selected === R.dew ? lab.el.querySelector('[data-act="dose-50"]') : lab.jarEls[R.dew] && lab.jarEls[R.dew].el), done: () => volumeOf(R.dew) >= 45 && !lab.sim.emitter.pouring },
+      { icon: 'spoon', text: 'Stir: pick the spoon and drag it round the brew.', target: () => lab.toolBtns.spoon, done: () => (lab.sim.tool.stirDistance - (this.flags.stir0 ?? (this.flags.stir0 = lab.sim.tool.stirDistance))) > 8 },
+      { icon: 'toad', text: 'What does it do? Only a test can tell. Open the testing room.', target: tab('testing'), done: () => lab.view === 'testing' },
+      { icon: 'dropper', text: 'Give the Moss Toad a dose and watch it.', target: act('dose-toad'), done: tested },
+      { icon: 'leaf', text: 'Each leaf on its back is 10 Vitality. Set the Vitality slider.', target: () => lab.el.querySelector('[data-prop="vitality"]'), done: () => Number.isFinite(st.idCard.values.vitality) },
+      { icon: 'scroll', text: 'No hearts or bubbles means 0. Set every slider — that is your Potion ID.', target: () => lab.el.querySelector('.id-panel'), done: () => idComplete(st.idCard) },
+      { icon: 'bottle', text: 'Back to the cauldron and Bottle it.', target: () => (lab.view === 'brew' ? lab.bottleFab : lab.tabEls.brew.b), done: () => this.flags.bottled || !!st.vial },
+      { icon: 'deal', text: 'Offer it to the customer.', target: act('sell'), done: () => this.flags.haggle || !!(st.current && st.current.haggle) || this.flags.sold },
+      { icon: 'coin', text: 'Ask a higher price, or take the offer.', target: () => lab.el.querySelector('.haggle'), done: () => this.flags.sold },
+      { icon: 'seal', text: 'Sold! If a potion fails, its buyer comes back for a refund. Some bluff: only an expert’s seal proves you right.', button: 'Finish' },
     ];
   }
 
-  colourScore() {
-    const r = this.lab.reqEls && this.lab.reqEls.find((x) => x.req.key === 'color');
-    return r ? parseFloat(r.meter.style.width) / 100 : 0;
-  }
-
-
   start(restart = false) {
-    if (restart) {
-      this.lab.state.tutorial.done = false;
-    }
+    if (restart) this.lab.state.tutorial.done = false;
     this.active = true;
     this.index = 0;
     this.flags = {};
@@ -83,44 +76,50 @@ export class Tutorial {
   }
 
   clearUi() {
-    if (this.box) this.box.remove();
-    this.box = null;
+    const c = this.lab.coach;
+    if (c) { clear(c); c.classList.add('hidden'); }
     if (this.target) this.target.classList.remove('highlight');
     this.target = null;
+    this.shown = -1;
+    if (this.lab.resize) requestAnimationFrame(() => this.lab.resize());
   }
 
   show() {
-    this.clearUi();
     const steps = this.steps;
     const s = steps[this.index];
     if (!s) { this.finish(); return; }
-    if (s.hidden) return;
     const lab = this.lab;
-    const actions = h('div', { class: 'tutor-actions' },
-      btn('Skip tutorial', () => this.finish(), { act: 'tutorial-skip' }),
-      s.button ? btn(s.button, () => this.advance(), { cls: 'primary', act: 'tutorial-next' }) : h('span', { class: 'small muted', text: `Step ${this.index + 1} of ${steps.length}` }),
-    );
-    this.box = h('div', { class: 'tutor parch', role: 'note' }, h('div', { text: s.text }), actions);
-    lab.el.appendChild(this.box);
-    const t = s.target ? s.target() : null;
-    if (t) { t.classList.add('highlight'); this.target = t; }
-    this.place();
+    const c = clear(lab.coach);
+    c.classList.remove('hidden');
+    c.append(
+      h('span', { class: 'coach-step', text: `${this.index + 1}/${steps.length}` }),
+      icon(s.icon || 'bulb'),
+      h('span', { class: 'coach-text', text: s.text }),
+      h('span', { class: 'coach-actions' },
+        s.button ? btn(s.button, () => this.advance(), { cls: 'primary', act: 'tutorial-next' }) : null,
+        btn('', () => this.finish(), { icon: 'close', cls: 'icon', title: 'Skip the tutorial', act: 'tutorial-skip' })));
+    this.shown = this.index;
+    this.attach(s);
+    // the coach bar changed the layout of the room under it
+    requestAnimationFrame(() => lab.resize());
   }
 
-  place() {
-    if (!this.box) return;
-    const lab = this.lab;
-    const area = lab.view === 'brew' ? lab.stageEl : lab.viewsEl;
-    const sr = area.getBoundingClientRect();
-    const lr = lab.el.getBoundingClientRect();
-    const bw = this.box.offsetWidth;
-    // keep the box over the top of the current room, clear of the controls
-    this.box.style.left = Math.max(8, Math.min(lr.width - bw - 8, sr.left - lr.left + (sr.width - bw) / 2)) + 'px';
-    const t = this.target && this.target.getBoundingClientRect();
-    const top = sr.top - lr.top + 8;
-    // never cover the highlighted control
-    this.box.style.top = (t && t.top - lr.top < top + this.box.offsetHeight + 8 && t.bottom - lr.top > top ? Math.max(8, t.bottom - lr.top + 8) : Math.max(8, top)) + 'px';
+  /** Outline the control to use (or the tab of the room it is in). */
+  attach(s) {
+    let t = s.target ? s.target() : null;
+    if (t && !t.offsetParent) {
+      const view = t.closest && t.closest('[data-view]');
+      const id = view && view.getAttribute('data-view');
+      t = id && this.lab.tabEls[id] ? this.lab.tabEls[id].b : null;
+    }
+    if (t === this.target) return;
+    if (this.target) this.target.classList.remove('highlight');
+    if (t) t.classList.add('highlight');
+    this.target = t;
   }
+
+  /** Kept for layout callers: the coach bar sits in the page flow, nothing to place. */
+  place() {}
 
   advance() {
     this.index++;
@@ -131,13 +130,11 @@ export class Tutorial {
   notify(kind, data) {
     if (!this.active) return;
     if (kind === 'bottle') this.flags.bottled = true;
-    if (kind === 'view') {
-      // the closing note never blocks a room the player has moved on to
-      if (this.index === this.steps.length - 1) { this.finish(); return; }
-      this.show();
-    }
-    if (kind === 'sold') { this.flags.sold = true; }
-    void data;
+    if (kind === 'sold') this.flags.sold = true;
+    if (kind === 'haggle') this.flags.haggle = true;
+    if (kind === 'harvest' && data === this.lab.state.world.roles.water) this.flags.harvest_water = true;
+    if (kind === 'view' && this.index === this.steps.length - 1 && this.flags.sold) { this.finish(); return; }
+    if (this.shown === this.index) this.attach(this.steps[this.index]);
   }
 
   update() {
@@ -145,11 +142,6 @@ export class Tutorial {
     const s = this.steps[this.index];
     if (!s) return;
     if (s.done && s.done()) this.advance();
-    else if (this.box && Math.random() < 0.05) {
-      // targets can be rebuilt (room refreshes): re-attach the highlight
-      const t = s.target ? s.target() : null;
-      if (t && t !== this.target) { if (this.target) this.target.classList.remove('highlight'); t.classList.add('highlight'); this.target = t; }
-      this.place();
-    }
+    else if (Math.random() < 0.08) this.attach(s); // rooms rebuild their controls
   }
 }

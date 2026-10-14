@@ -96,6 +96,38 @@ let toastBox = null;
 export function setToastRoot(root) {
   toastBox = h('div', { class: 'toasts', 'aria-live': 'polite' });
   root.appendChild(toastBox);
+  noticeHost = null;
+  notices.length = 0;
+}
+
+/**
+ * In the shop, notifications appear in a fixed status line of the top bar
+ * instead of floating over the rooms: they never cover a button.
+ * @type {HTMLElement|null}
+ */
+let noticeHost = null;
+/** @type {{title:string, text:string, icon:string, ms:number}[]} */
+const notices = [];
+let noticeTimer = 0;
+/** @param {HTMLElement|null} el */
+export function setNoticeHost(el) {
+  noticeHost = el;
+  notices.length = 0;
+  if (noticeTimer) clearTimeout(noticeTimer);
+  noticeTimer = 0;
+}
+
+function nextNotice() {
+  noticeTimer = 0;
+  if (!noticeHost || !noticeHost.isConnected) return;
+  const n = notices.shift();
+  clear(noticeHost);
+  if (!n) { noticeHost.classList.remove('on'); return; }
+  noticeHost.classList.add('on');
+  noticeHost.title = n.text ? `${n.title} — ${n.text}` : n.title;
+  noticeHost.append(h('div', { class: 'notice-msg' }, icon(n.icon, 'sm'), h('b', { text: n.title }), n.text ? h('span', { text: n.text }) : null));
+  // a queue moves along faster
+  noticeTimer = /** @type {any} */ (setTimeout(nextNotice, notices.length ? Math.min(n.ms, 1600) : n.ms));
 }
 
 /**
@@ -103,6 +135,12 @@ export function setToastRoot(root) {
  * @param {string} title @param {string} [text] @param {string} [iconName] @param {number} [ms]
  */
 export function toast(title, text = '', iconName = 'star', ms = 3200) {
+  if (noticeHost && noticeHost.isConnected) {
+    notices.push({ title, text, icon: iconName, ms });
+    while (notices.length > 4) notices.shift();
+    if (!noticeTimer) nextNotice();
+    return;
+  }
   if (!toastBox) return;
   const t = h('div', { class: 'toast parch' }, icon(iconName), h('div', {}, h('b', { text: title }), text));
   toastBox.appendChild(t);

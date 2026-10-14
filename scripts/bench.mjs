@@ -90,13 +90,13 @@ function physicsBench() {
     const lookup = makeLookup(world);
     const cap = capabilities(EQUIPMENT.map((e) => e.id));
     cap.size = 'pot';
-    const com = generateCommission({ world, lookup, available: new Set(world.ingredients), cap, rank: 4, priceOf: (id) => lookup(id).price || 1 }, new Rng('bench-c' + k), { tier: k % 5 });
+    const com = generateCommission({ world, lookup, available: new Set(world.ingredients), cap, rank: 4 }, new Rng('bench-c' + k), { tier: k % 5 });
     if (!com) continue;
-    const sim = new Simulation({ size: 'pot', lookup, reactions: world.reactions, laws: world.laws });
+    const sim = new Simulation({ size: 'pot', lookup });
     Object.assign(sim.furnace, { maxFlame: cap.maxFlame, heatPower: cap.heatPower, minCool: cap.minCool, coolPower: cap.coolPower });
     const t0 = performance.now();
     runPlanHeadless(sim, com.reference, lookup);
-    brews.push({ style: com.style, simSeconds: +sim.time.toFixed(1), wallSeconds: +((performance.now() - t0) / 1000).toFixed(2) });
+    brews.push({ style: com.potionName, simSeconds: +sim.time.toFixed(1), wallSeconds: +((performance.now() - t0) / 1000).toFixed(2) });
   }
   console.log('  homunculus brews:', brews.map((b) => `${b.style} ${b.simSeconds}s sim in ${b.wallSeconds}s`).join(', '));
   return { steps: rows, brews };
@@ -143,7 +143,7 @@ async function browserBench() {
         // fill the cauldron directly (pouring at throttled speed would take minutes)
         await page.evaluate((count) => {
           const l = window.__alchemist.screen, sim = l.sim, R = l.state.world.roles, c = sim.cauldron;
-          const defs = [R.water, R.essenceA, R.oil].map((id) => l.state.lookup(id));
+          const defs = [R.water, R.dew, R.witchoil].map((id) => l.state.lookup(id));
           for (let k = 0; k < count; k++) {
             const d = defs[k % 3 === 2 && k < count * 0.85 ? 0 : k % 3];
             const y = c.depth - 0.12 - Math.random() * Math.min(c.depth - 0.3, (count / c.capacity) * c.depth * 1.3);
@@ -193,7 +193,7 @@ async function memorySoak(browser, port) {
   await page.locator('canvas.view-canvas').waitFor();
   await page.evaluate(() => {
     const l = window.__alchemist.screen, sim = l.sim, R = l.state.world.roles, c = sim.cauldron;
-    for (let k = 0; k < 450; k++) { const y = c.depth - 0.12 - Math.random() * 1.3; sim.addParticle(l.state.lookup(k % 4 ? R.water : R.binder), (Math.random() - 0.5) * 1.8 * c.halfWidth(y), y); }
+    for (let k = 0; k < 450; k++) { const y = c.depth - 0.12 - Math.random() * 1.3; sim.addParticle(l.state.lookup(k % 4 ? R.water : R.sap), (Math.random() - 0.5) * 1.8 * c.halfWidth(y), y); }
   });
   await page.waitForTimeout(2000);
   const samples = [{ t: 0, mb: await heap() }];

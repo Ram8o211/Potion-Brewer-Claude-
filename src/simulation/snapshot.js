@@ -11,8 +11,10 @@ import { CAULDRON_SIZES } from './cauldron.js';
 
 const F32_FIELDS_V1 = ['x', 'y', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet'];
 /** v2 adds electric charge */
-const F32_FIELDS = [...F32_FIELDS_V1, 'q'];
-export const SNAPSHOT_VERSION = 2;
+const F32_FIELDS_V2 = [...F32_FIELDS_V1, 'q'];
+/** v3 adds the carried magic state (vigour, transmuted share, steeping temperature) */
+const F32_FIELDS = [...F32_FIELDS_V2, 'vig', 'ss', 'stp'];
+export const SNAPSHOT_VERSION = 3;
 
 /** @param {ArrayBufferView} view */
 export function toBase64(view) {
@@ -104,7 +106,8 @@ export function applySnapshot(sim, snap, env) {
   const seed = new Uint32Array(sb.buffer, sb.byteOffset, sb.byteLength / 4);
   const p = sim.p;
   const S = MAX_SPECIES;
-  const fields = (snap.v || 1) >= 2 ? F32_FIELDS : F32_FIELDS_V1;
+  const v = snap.v || 1;
+  const fields = v >= 3 ? F32_FIELDS : v >= 2 ? F32_FIELDS_V2 : F32_FIELDS_V1;
   // a snapshot from a differently shaped vessel (an old save, or a new
   // cauldron installed) is mapped onto this one; no matter is ever dropped
   const from = CAULDRON_SIZES[snap.size], to = sim.cauldron.spec;
@@ -112,7 +115,7 @@ export function applySnapshot(sim, snap, env) {
   const sx = remap ? to.belly / from.belly : 1, sy = remap ? to.depth / from.depth : 1;
   p.count = n;
   for (let i = 0; i < n; i++) {
-    p.q[i] = 0;
+    p.q[i] = 0; p.vig[i] = 1; p.ss[i] = 0; p.stp[i] = -300;
     fields.forEach((name, k) => {
       /** @type {any} */ (p)[name][i] = f[k * snap.n + i];
     });

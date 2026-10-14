@@ -1,84 +1,106 @@
-// The Wilds and the Trials room through real input: gathering fills the
-// stores and depletes a deposit, a dragged dropper doses a subject, a spent
-// subject is replaced for coins, and all of it survives a reload.
+// The garden and the testing room through real input: harvesting fills the
+// stores and empties the bed, watering costs well water, a dragged dropper
+// doses a creature, a dead creature is replaced for coins, the Potion ID
+// sliders persist — and all of it survives a reload.
 import { test, expect } from '@playwright/test';
 import { watchErrors, shot, newGame, lab, drag, pourDose } from './helpers.mjs';
 
-test('gathering in the wilds fills the stores and depletes the deposit', async ({ page }, info) => {
+test('the garden: harvest by button and by tapping the bed, water, plant, and keep it all after a reload', async ({ page }, info) => {
   const errors = watchErrors(page);
-  await newGame(page, { tutorial: false, seed: 'gather-seed-1' });
-  await page.click('[data-act=tab-wilds]');
-  await expect(page.locator('.view-wilds canvas.scene')).toBeVisible();
-  const dep = await lab(page, (l) => l.state.deposits.find((d) => d.region === 'forest' && d.rank === 0));
-  const before = await lab(page, (l, id) => l.state.stock(id), dep.materialId);
-  await page.click(`[data-act="gather-${dep.id}"]`);
-  const after = await lab(page, (l, id) => l.state.stock(id), dep.materialId);
-  expect(after, 'gathered into the inventory').toBe(before + dep.take);
-  const node = await lab(page, (l, id) => l.state.gathering.nodes[id], dep.id);
-  expect(node.stock).toBeCloseTo(dep.capacity - dep.take, 0);
-  // tapping a deposit in the scene gathers too
-  await page.locator('.view-wilds canvas.scene').scrollIntoViewIfNeeded();
-  const cv = await page.locator('.view-wilds canvas.scene').boundingBox();
+  await newGame(page, { tutorial: false, seed: 'garden-ui-1' });
+  await page.click('[data-act=tab-garden]');
+  await expect(page.locator('.view-garden canvas.scene')).toBeVisible();
+  const roles = await lab(page, (l) => l.state.world.roles);
+  const before = await lab(page, (l, id) => l.state.stock(id), roles.dew);
+  await page.click('[data-act="harvest-dew-a"]');
+  const after = await lab(page, (l, id) => l.state.stock(id), roles.dew);
+  expect(after, 'harvested into the stores').toBeGreaterThan(before + 50);
+  expect(await lab(page, (l) => l.state.bed('dew-a').growth)).toBeLessThan(0.05);
+  await expect(page.locator('[data-act="harvest-dew-a"]')).toBeDisabled();
+  // tapping a ripe bed in the scene harvests it
+  const cv = await page.locator('.view-garden canvas.scene').boundingBox();
   if (!cv) throw new Error('no scene');
-  const deps = await lab(page, (l) => l.state.deposits.filter((d) => d.region === 'forest'));
-  const d2 = deps[1];
-  const s0 = await lab(page, (l, id) => l.state.stock(id), d2.materialId);
-  const pt = { x: cv.x + d2.x * cv.width, y: cv.y + (d2.y * 108 - 6) / 108 * cv.height };
+  const rect = await page.evaluate(async () => {
+    const url = '/src/rendering/garden.js';
+    const { bedRect, GARDEN_W, GARDEN_H } = await import(url);
+    const r = bedRect('sap-a');
+    return { x: (r.x + r.w / 2) / GARDEN_W, y: (r.y + r.h - 8) / GARDEN_H };
+  });
+  const s0 = await lab(page, (l, id) => l.state.stock(id), roles.sap);
+  const pt = { x: cv.x + rect.x * cv.width, y: cv.y + rect.y * cv.height };
   await drag(page, [pt, pt], 30);
-  expect(await lab(page, (l, id) => l.state.stock(id), d2.materialId), 'tapping the deposit gathered').toBeGreaterThan(s0);
-  await shot(page, info, 'wilds-gathered');
-  // a magical region is closed to an apprentice
-  await page.click('[data-act=region-moonfen]');
-  await expect(page.locator('.toast', { hasText: 'Moonfen' })).toBeVisible();
-  // the gathered herb is on the shelf
+  expect(await lab(page, (l, id) => l.state.stock(id), roles.sap), 'tapping the bed harvested it').toBeGreaterThan(s0);
+  await shot(page, info, 'garden-harvested');
+  // a dry plant bed is watered with well water
+  await lab(page, (l) => { l.state.garden.beds['dew-a'].wetUntil = Date.now() - 1000; l.views.garden.refresh(); });
+  const w0 = await lab(page, (l, id) => l.state.stock(id), roles.water);
+  await page.click('[data-act="water-dew-a"]');
+  expect(await lab(page, (l, id) => l.state.stock(id), roles.water)).toBe(w0 - 40);
+  expect(await lab(page, (l) => l.state.bed('dew-a').moist)).toBe(true);
+  // plant a new bed for coins
+  await lab(page, (l) => { l.state.coins = 200; l.views.garden.refresh(); });
+  await page.click('[data-act="plant-glacite-a"]');
+  await page.locator('.overlay .modal-foot .btn', { hasText: 'Plant' }).click();
+  expect(await lab(page, (l) => l.state.garden.beds['glacite-a'] && l.state.garden.beds['glacite-a'].owned)).toBe(true);
+  // the new ingredient has its place on the shelf
   await page.click('[data-act=tab-brew]');
-  await expect(page.locator(`.jar[data-id="${dep.materialId}"]`)).toBeVisible();
-  // and the deposit state survives a reload
+  await expect(page.locator(`.jar[data-id="${roles.glacite}"]`)).toBeVisible();
+  // and the garden survives a reload
   await lab(page, (l) => l.save());
   await page.reload();
   await page.click('[data-act=continue]');
   await page.waitForSelector('canvas.view-canvas');
-  const back = await lab(page, (l, id) => l.state.gathering.nodes[id], dep.id);
-  expect(back.stock).toBeCloseTo(node.stock, 0);
+  expect(await lab(page, (l) => l.state.garden.beds['glacite-a'].owned)).toBe(true);
+  expect(await lab(page, (l) => l.state.bed('dew-a').growth)).toBeLessThan(0.2);
   expect(errors).toEqual([]);
 });
 
-test('the dropper doses a subject; a spent subject is replaced for coins; trials persist', async ({ page }, info) => {
+test('the testing room: the dropper doses a creature, it reacts without words, the ID sticks, a dead one is replaced', async ({ page }, info) => {
   const errors = watchErrors(page);
-  await newGame(page, { tutorial: false, seed: 'trial-room-1' });
+  await newGame(page, { tutorial: false, seed: 'test-room-1' });
   const roles = await lab(page, (l) => l.state.world.roles);
-  await pourDose(page, roles.water, [100]);
-  await pourDose(page, roles.essenceB, [100]);
-  await page.click('[data-act=tab-trials]');
-  await expect(page.locator('[data-subject=beetle]')).toBeVisible();
-  // drag the dropper onto the beetle
+  await lab(page, (l) => { l.state.inventory[l.state.world.roles.sap] = 200; l.updateShelf(); });
+  await pourDose(page, roles.water, [50]);
+  await pourDose(page, roles.sap, [50]);
+  await page.click('[data-act=tab-testing]');
+  await expect(page.locator('[data-creature=salamander]')).toBeVisible();
+  // drag the dropper onto the salamander
   const from = await page.locator('.dropper').boundingBox();
-  const to = await page.locator('[data-subject=beetle] canvas').boundingBox();
+  const to = await page.locator('[data-creature=salamander] canvas').boundingBox();
   if (!from || !to) throw new Error('no boxes');
   const pts = [];
   for (let k = 0; k <= 20; k++) pts.push({ x: from.x + 20 + (to.x + to.width / 2 - from.x - 20) * (k / 20), y: from.y + 20 + (to.y + to.height / 2 - from.y - 20) * (k / 20) });
   await drag(page, pts, 20);
-  await expect(page.locator('.trial-report .report')).toContainText('Copper Beetle');
-  const rec = await lab(page, (l) => l.state.trials.records[0]);
-  expect(rec.subjectId).toBe('beetle');
-  expect(rec.values.fire, 'the beetle shows fire').toBeGreaterThan(2);
-  // the room's batch summary updates at once
-  await expect(page.locator('.view-trials')).not.toContainText('nothing tested yet');
-  await shot(page, info, 'trial-beetle');
-  // a spent rabbit is replaced for its price
-  await lab(page, (l) => { l.state.trials.subjects.rabbit.alive = false; l.state.trials.subjects.rabbit.health = 0; l.views.trials.refresh(); });
-  await expect(page.locator('[data-act=test-rabbit]')).toBeDisabled();
+  const rec = await lab(page, (l) => l.state.lab.records[0]);
+  expect(rec.creature).toBe('salamander');
+  expect(rec.levels.ardor, 'its flame rises with the sap’s ardor').toBeGreaterThan(10);
+  await page.waitForTimeout(2000);
+  await shot(page, info, 'salamander-flame');
+  // the reaction is drawn, not written: the cage shows flame colours above the salamander
+  const flame = await page.locator('[data-creature=salamander] canvas').evaluate((el) => {
+    const cv = /** @type {HTMLCanvasElement} */ (el);
+    const ctx = cv.getContext('2d');
+    const d = ctx.getImageData(0, 0, cv.width, 60).data;
+    let n = 0;
+    for (let i = 0; i < d.length; i += 4) if (d[i] > 230 && d[i + 1] > 100 && d[i + 1] < 200 && d[i + 2] < 90) n++;
+    return n;
+  });
+  expect(flame, 'flame pixels in the cage').toBeGreaterThan(10);
+  // set the ID with the sliders; it persists
+  await page.locator('input[data-prop=ardor]').evaluate((el) => { /** @type {HTMLInputElement} */ (el).value = '30'; el.dispatchEvent(new Event('input')); el.dispatchEvent(new Event('change')); });
+  expect(await lab(page, (l) => l.state.idCard.values.ardor)).toBe(30);
+  await expect(page.locator('.id-row', { has: page.locator('input[data-prop=ardor]') })).toContainText('30');
+  // a dead toad is replaced for its price
+  await lab(page, (l) => { l.state.lab.creatures.toad.alive = false; l.state.lab.creatures.toad.health = 0; l.views.testing.refresh(); });
+  await expect(page.locator('[data-act=dose-toad]')).toBeHidden();
   const c0 = await lab(page, (l) => l.state.coins);
-  await page.click('[data-act=replace-rabbit]');
+  await page.click('[data-act=replace-toad]');
   expect(await lab(page, (l) => l.state.coins)).toBe(c0 - 6);
-  await expect(page.locator('[data-act=test-rabbit]')).toBeEnabled();
-  // the trial log is in the book and survives a reload
+  await expect(page.locator('[data-act=dose-toad]')).toBeVisible();
   await lab(page, (l) => l.save());
   await page.reload();
   await page.click('[data-act=continue]');
   await page.waitForSelector('canvas.view-canvas');
-  await page.click('[data-act=tab-book]');
-  await page.click('[data-act=book-trials]');
-  await expect(page.locator('.view-book .item', { hasText: 'Copper Beetle' })).toBeVisible();
+  expect(await lab(page, (l) => ({ id: l.state.idCard.values.ardor, n: l.state.lab.records.length }))).toEqual({ id: 30, n: 1 });
   expect(errors).toEqual([]);
 });

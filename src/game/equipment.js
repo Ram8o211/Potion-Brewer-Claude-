@@ -5,7 +5,7 @@
  * @typedef {Object} Equipment
  * @property {string} id
  * @property {string} name
- * @property {string} category  heat | cold | vessel | tool | instrument | trials | storage | guild
+ * @property {string} category  heat | cold | vessel | tool | instrument | trials | garden | storage | guild
  * @property {number} price
  * @property {number} rank      minimum reputation rank index
  * @property {string} desc
@@ -17,46 +17,43 @@
 /** @type {Equipment[]} */
 export const EQUIPMENT = [
   // heating
-  { id: 'hearth', name: 'Stone Hearth', category: 'heat', price: 0, rank: 0, icon: 'fire', desc: 'A modest wood fire under the cauldron. Flame up to ~340°C.', effect: { maxFlame: 340, heatPower: 3.5 } },
-  { id: 'bellows', name: 'Bellows & Coal', category: 'heat', price: 120, rank: 1, icon: 'bellows', requires: ['hearth'], desc: 'A hotter, faster fire (up to ~520°C). Boil quickly and reach caramelising heat.', effect: { maxFlame: 520, heatPower: 5.5 } },
-  { id: 'athanor', name: 'Athanor Furnace', category: 'heat', price: 700, rank: 3, icon: 'furnace', requires: ['bellows'], desc: 'The alchemist’s self-feeding furnace (up to ~800°C) with fine control.', effect: { maxFlame: 800, heatPower: 8 } },
+  { id: 'hearth', name: 'Stone Hearth', category: 'heat', price: 0, rank: 0, icon: 'fire', desc: 'A wood fire under the cauldron.', effect: { maxFlame: 340, heatPower: 3.5 } },
+  { id: 'bellows', name: 'Bellows & Coal', category: 'heat', price: 120, rank: 1, icon: 'bellows', requires: ['hearth'], desc: 'A hotter, faster fire.', effect: { maxFlame: 520, heatPower: 5.5 } },
+  { id: 'athanor', name: 'Athanor Furnace', category: 'heat', price: 650, rank: 3, icon: 'furnace', requires: ['bellows'], desc: 'The fiercest, finest fire.', effect: { maxFlame: 800, heatPower: 8 } },
   // cooling
-  { id: 'basin', name: 'Cold-Water Basin', category: 'cold', price: 0, rank: 0, icon: 'basin', desc: 'Cool well water under the cauldron. Chills toward ~4°C but cannot freeze water.', effect: { minCool: 4, coolPower: 4 } },
-  { id: 'frostrune', name: 'Frost Rune Plate', category: 'cold', price: 150, rank: 1, icon: 'rune', requires: ['basin'], desc: 'A carved rune that draws heat out to -30°C. Freezes liquids into solid blocks.', effect: { minCool: -30, coolPower: 6 } },
-  { id: 'glacial', name: 'Glacial Sigil', category: 'cold', price: 750, rank: 3, icon: 'snow', requires: ['frostrune'], desc: 'Deep cold to -70°C, fast. Condenses even marsh vapour.', effect: { minCool: -70, coolPower: 9 } },
+  { id: 'basin', name: 'Cold-Water Basin', category: 'cold', price: 0, rank: 0, icon: 'basin', desc: 'Cools toward 4°C.', effect: { minCool: 4, coolPower: 4 } },
+  { id: 'frostrune', name: 'Frost Rune Plate', category: 'cold', price: 150, rank: 1, icon: 'rune', requires: ['basin'], desc: 'Cold down to -30°C.', effect: { minCool: -30, coolPower: 6 } },
+  { id: 'glacial', name: 'Glacial Sigil', category: 'cold', price: 600, rank: 3, icon: 'snow', requires: ['frostrune'], desc: 'Deep cold to -70°C.', effect: { minCool: -70, coolPower: 9 } },
   // vessels
-  { id: 'pot', name: 'Iron Pot', category: 'vessel', price: 0, rank: 0, icon: 'cauldron', desc: 'Your first cauldron (about 1.5 litres).', effect: { size: 'pot' } },
-  { id: 'copper', name: 'Copper Cauldron', category: 'vessel', price: 320, rank: 2, icon: 'cauldron2', requires: ['pot'], desc: 'A larger vessel (about 2.2 litres) for big orders, spare test doses and multi-step brews.', effect: { size: 'copper' } },
-  { id: 'grand', name: 'Grand Athanor Vessel', category: 'vessel', price: 1800, rank: 4, icon: 'cauldron3', requires: ['copper'], desc: 'A huge vessel (3 litres) for the grandest commissions.', effect: { size: 'grand' } },
+  { id: 'pot', name: 'Iron Pot', category: 'vessel', price: 0, rank: 0, icon: 'cauldron', desc: 'Your first cauldron.', effect: { size: 'pot' } },
+  { id: 'copper', name: 'Copper Cauldron', category: 'vessel', price: 320, rank: 2, icon: 'cauldron2', requires: ['pot'], desc: 'A larger cauldron.', effect: { size: 'copper' } },
+  { id: 'grand', name: 'Grand Vessel', category: 'vessel', price: 1500, rank: 4, icon: 'cauldron3', requires: ['copper'], desc: 'A huge cauldron.', effect: { size: 'grand' } },
   // tools
-  { id: 'spoon', name: 'Oak Spoon', category: 'tool', price: 0, rank: 0, icon: 'spoon', desc: 'Stirs, folds and kneads.' },
-  { id: 'mortar', name: 'Stone Mortar', category: 'tool', price: 0, rank: 0, icon: 'mortar', desc: 'Grinds roots, leaves and stones into powder before they go into the pot ("Ground" on the shelf).' },
-  { id: 'pestle', name: 'Granite Pestle', category: 'tool', price: 35, rank: 0, icon: 'pestle', desc: 'Crushes frozen blocks and crystal chunks into grains.' },
-  { id: 'skimmer', name: 'Brass Skimmer', category: 'tool', price: 60, rank: 1, icon: 'skimmer', desc: 'Scoops matter out of the cauldron — remove a floating layer or unwanted grains.' },
-  { id: 'stirrer', name: 'Clockwork Stirrer', category: 'tool', price: 110, rank: 1, icon: 'gear', desc: 'A wind-up paddle that stirs in wide circles while you do other things.' },
-  { id: 'alembic', name: 'Copper Alembic', category: 'tool', price: 360, rank: 2, icon: 'alembic', desc: 'Captures vapour from under the lid into a receiver flask — distil volatile reagents and pour them back later.' },
-  { id: 'homunculus', name: 'Brass Homunculus', category: 'tool', price: 1100, rank: 3, icon: 'homunculus', desc: 'A clockwork assistant that pours, stirs and heats a saved recipe for you — in the real cauldron, at full ingredient cost.' },
+  { id: 'spoon', name: 'Oak Spoon', category: 'tool', price: 0, rank: 0, icon: 'spoon', desc: 'Stirs and blends.' },
+  { id: 'mortar', name: 'Stone Mortar', category: 'tool', price: 0, rank: 0, icon: 'mortar', desc: 'Smashes stones to powder before they go in.' },
+  { id: 'pestle', name: 'Granite Pestle', category: 'tool', price: 35, rank: 0, icon: 'pestle', desc: 'Smashes stones and ice inside the pot.' },
+  { id: 'skimmer', name: 'Brass Skimmer', category: 'tool', price: 60, rank: 1, icon: 'skimmer', desc: 'Lifts matter out of the pot.' },
+  { id: 'stirrer', name: 'Clockwork Stirrer', category: 'tool', price: 110, rank: 1, icon: 'gear', desc: 'Stirs on its own.' },
+  { id: 'homunculus', name: 'Brass Homunculus', category: 'tool', price: 900, rank: 3, icon: 'homunculus', desc: 'Brews a saved recipe for you.' },
   // instruments
-  { id: 'thermometer', name: 'Mercury Thermometer', category: 'instrument', price: 0, rank: 0, icon: 'thermo', desc: 'Reads temperatures anywhere in the brew.' },
-  { id: 'hydrometer', name: 'Glass Hydrometer', category: 'instrument', price: 45, rank: 0, icon: 'hydro', desc: 'Measures density precisely (g/ml).' },
-  { id: 'viscometer', name: 'Falling-Ball Viscometer', category: 'instrument', price: 70, rank: 1, icon: 'visco', desc: 'Measures viscosity precisely instead of by eye.' },
-  { id: 'assay', name: 'Assay Kit', category: 'instrument', price: 90, rank: 1, icon: 'assay', desc: 'Measures stability and volatility precisely.' },
-  { id: 'lens', name: 'Aether Lens', category: 'instrument', price: 140, rank: 1, icon: 'lens', desc: 'Lets you see the aura of magic in the brew: which kinds of effect are present, never how strong. Mixtures still need a trial.' },
-  { id: 'galvanometer', name: 'Galvanometer', category: 'instrument', price: 120, rank: 2, icon: 'galvo', desc: 'Reads the electric charge carried by the brew.' },
-  { id: 'thermal', name: 'Thermal Monocle', category: 'instrument', price: 80, rank: 1, icon: 'monocle', desc: 'Shows the temperature field of the whole cauldron as a heat map.' },
-  // experiments
-  { id: 'kennel', name: 'Subject Kennel', category: 'trials', price: 60, rank: 1, icon: 'rabbit', desc: 'Spare cages and pots: replacing a spent test subject costs half.' },
-  { id: 'lantern', name: 'Wisp Lantern', category: 'trials', price: 220, rank: 2, icon: 'wisp', desc: 'A captive will-o’-wisp joins the trials room. It responds to arcana, change, love, life and death.' },
-  // gathering
-  { id: 'satchel', name: 'Forager’s Satchel', category: 'storage', price: 80, rank: 1, icon: 'satchel', desc: 'Carry more from the wilds: each harvest gathers half as much again.' },
+  { id: 'thermometer', name: 'Thermometer', category: 'instrument', price: 0, rank: 0, icon: 'thermo', desc: 'Shows the brew’s temperature.' },
+  { id: 'thermal', name: 'Thermal Monocle', category: 'instrument', price: 80, rank: 1, icon: 'monocle', desc: 'A heat map of the whole cauldron.' },
+  // testing room
+  { id: 'kennel', name: 'Creature Kennel', category: 'trials', price: 60, rank: 1, icon: 'toad', desc: 'Replacing a creature costs half.' },
+  { id: 'lantern', name: 'Wisp Lantern', category: 'trials', price: 200, rank: 2, icon: 'wisp', desc: 'A wisp joins the testing room.' },
+  // garden
+  { id: 'barrel', name: 'Rain Barrel', category: 'garden', price: 70, rank: 0, icon: 'drop', desc: 'The well holds twice as much.', effect: { wellCap: 2 } },
+  { id: 'greenhouse', name: 'Greenhouse', category: 'garden', price: 240, rank: 1, icon: 'leaf', desc: 'Plants grow half again as fast.' },
+  { id: 'lamp', name: 'Crystal Lamp', category: 'garden', price: 260, rank: 2, icon: 'gem', desc: 'Stones grow half again as fast.' },
+  { id: 'sprinkler', name: 'Sprinkler', category: 'garden', price: 380, rank: 2, icon: 'can', desc: 'Plant beds never dry out.' },
   // storage & guild
-  { id: 'shelf1', name: 'Oak Shelves', category: 'storage', price: 90, rank: 1, icon: 'shelf', desc: 'Store up to 2.5 L of each reagent.', effect: { storage: 2500 } },
-  { id: 'shelf2', name: 'Cellar Racks', category: 'storage', price: 260, rank: 2, icon: 'shelf2', requires: ['shelf1'], desc: 'Store up to 6 L of each reagent.', effect: { storage: 6000 } },
-  { id: 'charter', name: 'Guild Charter', category: 'guild', price: 400, rank: 2, icon: 'charter', desc: 'Guild membership: 15% off all reagents and access to guild contracts.', effect: { discount: 0.15 } },
+  { id: 'shelf1', name: 'Oak Shelves', category: 'storage', price: 90, rank: 1, icon: 'shelf', desc: 'Keep up to 2 L of each ingredient.', effect: { storage: 2000 } },
+  { id: 'shelf2', name: 'Cellar Racks', category: 'storage', price: 260, rank: 2, icon: 'shelf2', requires: ['shelf1'], desc: 'Keep up to 5 L of each ingredient.', effect: { storage: 5000 } },
+  { id: 'charter', name: 'Guild Charter', category: 'guild', price: 400, rank: 2, icon: 'charter', desc: 'Certification costs 30% less; guild contracts.', effect: { certDiscount: 0.3 } },
 ];
 
 export const STARTING_EQUIPMENT = ['hearth', 'basin', 'pot', 'spoon', 'mortar', 'thermometer'];
-export const BASE_STORAGE = 1000;
+export const BASE_STORAGE = 800;
 
 /** @param {string} id */
 export function equipmentById(id) {
@@ -65,11 +62,11 @@ export function equipmentById(id) {
 
 export const RANKS = [
   { name: 'Apprentice', rep: 0 },
-  { name: 'Journeyman', rep: 60 },
-  { name: 'Adept', rep: 180 },
-  { name: 'Expert', rep: 400 },
-  { name: 'Master', rep: 800 },
-  { name: 'Grand Alchemist', rep: 1500 },
+  { name: 'Journeyman', rep: 40 },
+  { name: 'Adept', rep: 130 },
+  { name: 'Expert', rep: 300 },
+  { name: 'Master', rep: 600 },
+  { name: 'Grand Alchemist', rep: 1100 },
 ];
 
 /** @param {number} rep */
@@ -85,7 +82,7 @@ export function rankIndex(rep) {
  */
 export function capabilities(owned) {
   const has = owned instanceof Set ? owned : new Set(owned);
-  const cap = { maxFlame: 340, heatPower: 3.5, minCool: 4, coolPower: 4, size: 'pot', storage: BASE_STORAGE, discount: 0, has: (id) => has.has(id) };
+  const cap = { maxFlame: 340, heatPower: 3.5, minCool: 4, coolPower: 4, size: 'pot', storage: BASE_STORAGE, certDiscount: 0, has: (id) => has.has(id) };
   for (const e of EQUIPMENT) {
     if (!has.has(e.id) || !e.effect) continue;
     const f = /** @type {any} */ (e.effect);
@@ -94,7 +91,7 @@ export function capabilities(owned) {
     if (f.size === 'copper' && cap.size === 'pot') cap.size = 'copper';
     if (f.size === 'grand') cap.size = 'grand';
     if (f.storage && f.storage > cap.storage) cap.storage = f.storage;
-    if (f.discount) cap.discount = Math.max(cap.discount, f.discount);
+    if (f.certDiscount) cap.certDiscount = Math.max(cap.certDiscount, f.certDiscount);
   }
   return cap;
 }

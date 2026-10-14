@@ -8,21 +8,27 @@ import { execFileSync } from 'node:child_process';
 
 const SRC = path.resolve('test-results', 'screenshots');
 const DST = path.resolve('docs', 'screenshots');
-const PICK = [
-  'desktop-menu', 'desktop-shop', 'desktop-tutorial-poured', 'desktop-tutorial-stirred', 'desktop-tutorial-heated', 'desktop-tutorial-result',
-  'desktop-layers', 'desktop-powder', 'desktop-stirred', 'desktop-frozen', 'desktop-crushed', 'desktop-fire', 'desktop-long-run',
-  'desktop-shop-panel', 'desktop-shop-equipment', 'desktop-journal-panel', 'desktop-recipes-panel', 'desktop-sandbox',
-  'phone-portrait-menu', 'phone-portrait-shop', 'phone-portrait-tutorial-stirred', 'phone-portrait-tutorial-result', 'phone-portrait-layers',
-  'phone-portrait-crushed', 'phone-portrait-fire', 'phone-portrait-shop-panel', 'phone-portrait-journal-panel',
-  'phone-landscape-shop', 'phone-landscape-tutorial-stirred', 'tablet-shop',
-];
+const PROFILES = ['desktop', 'phone-portrait', 'phone-landscape', 'tablet'];
+const ROOMS = ['counter', 'garden', 'testing', 'book'];
+/** source name → published name */
+const PICK = {
+  ...Object.fromEntries(PROFILES.flatMap((p) => [[`${p}-shop`, `room-${p}-brew`], ...ROOMS.map((r) => [`${p}-room-${r}`, `room-${p}-${r}`])])),
+  ...Object.fromEntries([
+    'desktop-menu', 'desktop-guided-garden', 'desktop-guided-toad', 'desktop-guided-vial', 'desktop-guided-haggle', 'desktop-guided-sold',
+    'desktop-certified-vial', 'desktop-complaint', 'desktop-salamander-flame', 'desktop-garden-harvested',
+    'desktop-layers', 'desktop-powder', 'desktop-frozen', 'desktop-crushed', 'desktop-fire', 'desktop-long-run', 'desktop-shop-equipment',
+    'phone-portrait-menu', 'phone-portrait-guided-toad', 'phone-portrait-guided-haggle', 'phone-portrait-coach-garden', 'phone-portrait-complaint',
+    'phone-portrait-salamander-flame', 'phone-portrait-ingredient-panel', 'phone-portrait-layers', 'phone-portrait-crushed', 'phone-portrait-fire',
+    'phone-landscape-guided-haggle', 'phone-landscape-salamander-flame',
+  ].map((n) => [n, n])),
+};
 
 fs.mkdirSync(DST, { recursive: true });
 let n = 0;
-for (const name of PICK) {
+for (const [name, out] of Object.entries(PICK)) {
   const from = path.join(SRC, name + '.png');
   if (!fs.existsSync(from)) { console.log('missing', name); continue; }
-  const to = path.join(DST, name + '.png');
+  const to = path.join(DST, out + '.png');
   const big = !name.startsWith('desktop');
   try {
     // Pillow is optional: fall back to a plain copy without it

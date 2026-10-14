@@ -32,6 +32,7 @@ export class AutoBrewer {
     this.phase = 0;
     this.status = 'Preparing';
     this.failed = false;
+    this.chilling = false;
   }
 
   get done() {
@@ -45,13 +46,28 @@ export class AutoBrewer {
     return n ? s / n : SIM.AMBIENT;
   }
 
-  /** Proportional furnace control toward a temperature. */
-  control(target) {
+  /**
+   * Proportional furnace control toward a temperature. The flame is never
+   * set more than `margin` degrees above the target, so the iron at the
+   * bottom does not scorch (and fade) the magic while the brew warms.
+   */
+  control(target, margin = 60) {
     const T = this.meanTemp();
     const f = this.sim.furnace;
     const err = target - T;
-    f.setting = Math.max(-1, Math.min(1, err / 12));
+    // cold never scorches: chill hard, warm gently
+    let s = Math.max(-1, Math.min(1, err / (err < 0 ? 4 : 12)));
+    if (s > 0) s = Math.min(s, Math.max(0.04, (target + margin - 20) / Math.max(1, f.maxFlame - 20)));
+    f.setting = s;
     return Math.abs(err);
+  }
+
+  /** The temperature the current heating stage aims for. */
+  goal() {
+    const plan = this.plan;
+    const hot = (plan.heatTo ?? 20) > 25, cold = (plan.coolTo ?? 20) < 15;
+    if (this.chilling || (cold && !hot)) return plan.coolTo;
+    return plan.heatTo ?? 20;
   }
 
   /** Spoon stirring along a wide ellipse through the brew. */
@@ -84,7 +100,7 @@ export class AutoBrewer {
     this.t += dt;
     this.stageT += dt;
     const sim = this.sim, plan = this.plan;
-    if (this.t > 300) { this.failed = true; this.finish(); return; }
+    if (this.t > 420) { this.failed = true; this.finish(); return; }
     switch (this.stage) {
       case 'pour': {
         if (sim.emitter.pouring) { this.stir(0.6); return; }
@@ -121,36 +137,45 @@ export class AutoBrewer {
         this.status = 'Stirring';
         this.stir(1);
         this.control(Math.min(plan.heatTo ?? 20, 60));
-        const need = plan.knead ? 14 : 7;
+        const need = plan.stir ?? (plan.knead ? 14 : 7);
         if (this.stageT > need) this.next('heat');
         return;
       }
       case 'heat': {
-        const target = plan.heatTo ?? 20;
-        const cold = (plan.coolTo ?? 20) < 15 && target <= 25;
-        const goal = cold ? plan.coolTo : target;
-        this.status = cold ? 'Chilling' : `Heating to ${Math.round(goal)}°C`;
+        const goal = this.goal();
+        this.status = goal < 15 ? 'Chilling' : `Heating to ${Math.round(goal)}°C`;
         const err = this.control(goal);
         if (this.stageT % 3 < 1.5) this.stir(0.8); else this.release();
         if (err < 4 || this.stageT > 70) this.next('hold');
         return;
       }
       case 'hold': {
-        const cold = (plan.coolTo ?? 20) < 15 && (plan.heatTo ?? 20) <= 25;
-        this.control(cold ? plan.coolTo : plan.heatTo ?? 20);
-        this.status = 'Letting it react';
+        this.control(this.goal());
+        this.status = 'Holding';
         if (this.stageT % 2.5 < 1.5) this.stir(0.9); else this.release();
-        if (this.stageT > (plan.hold ?? 6) + 4) this.next('serve');
+        if (this.stageT > (plan.hold ?? 6) + 4) {
+          // a hot steep first, then the chill
+          if (!this.chilling && (plan.heatTo ?? 20) > 25 && (plan.coolTo ?? 20) < 15) { this.chilling = true; this.next('heat'); }
+          else this.next('serve');
+        }
         return;
       }
       case 'serve': {
-        const err = this.control(plan.serveTemp ?? 20);
+        // warm a chilled brew gently: a scorching pot bottom would fade delicate magic
+        const err = this.control(plan.serveTemp ?? 20, (plan.coolTo ?? 20) < 0 ? 25 : 60);
         this.status = `Bringing to ${Math.round(plan.serveTemp ?? 20)}°C`;
         if (this.stageT % 2 < 1.2) this.stir(0.8); else this.release();
-        if ((err < 3 && this.stageT > 3) || this.stageT > 60) this.finish();
+        if ((err < 3 && this.stageT > 3 && !this.frozen()) || this.stageT > 120) this.finish();
         return;
       }
     }
+  }
+
+  /** Is part of the brew still frozen solid? */
+  frozen() {
+    const p = this.sim.p;
+    for (let i = 0; i < p.count; i++) if (p.phase[i] === PHASE.SOLID) return true;
+    return false;
   }
 
   /** @param {Stage} s */

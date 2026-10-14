@@ -4,7 +4,7 @@
 
 import { rgbToOklab, srgbToLinear } from '../core/color.js';
 import { volatilityOf } from '../materials/schema.js';
-import { NE, effectVector } from '../alchemy/effects.js';
+import { NP, magicVector, NO_THRESHOLD, PROP_INDEX } from '../alchemy/magic.js';
 
 export const MAX_SPECIES = 16;
 export const NO_BOIL = 1e6;
@@ -53,9 +53,14 @@ export class SpeciesTable {
     this.absG = f();
     this.absB = f();
     this.isPowder = new Uint8Array(S);
-    this.aspects = new Float32Array(S * 4);
-    /** magical / chemical effect potency per slot (NE channels, see alchemy/effects.js) */
-    this.eff = new Float32Array(S * NE);
+    /** magic per slot (NP properties, see alchemy/magic.js) */
+    this.mag = new Float32Array(S * NP);
+    /** total magic (weight when thresholds are averaged) */
+    this.magW = f();
+    /** fading and super-transition temperatures, and the property it transmutes into */
+    this.fadeT = f();
+    this.superT = f();
+    this.superK = new Int8Array(S).fill(-1);
     /** electrical conductance (0 insulator … 1 metal) and intrinsic charge carried per unit volume */
     this.econd = f();
     this.echarge = f();
@@ -136,9 +141,13 @@ export class SpeciesTable {
     this.labA[slot] = lab[1];
     this.labB[slot] = lab[2];
     this.isPowder[slot] = def.form === 'powder' || def.form === 'solid' ? 1 : 0;
-    for (let k = 0; k < 4; k++) this.aspects[slot * 4 + k] = def.aspects[k] || 0;
-    const ev = effectVector(def);
-    for (let k = 0; k < NE; k++) this.eff[slot * NE + k] = ev[k];
+    const mv = magicVector(def);
+    let mw = 0;
+    for (let k = 0; k < NP; k++) { this.mag[slot * NP + k] = mv[k]; mw += Math.max(0, mv[k]); }
+    this.magW[slot] = mw;
+    this.fadeT[slot] = Number.isFinite(def.fadeT) ? def.fadeT : NO_THRESHOLD;
+    this.superT[slot] = Number.isFinite(def.superT) ? def.superT : NO_THRESHOLD;
+    this.superK[slot] = def.superKey && PROP_INDEX[def.superKey] !== undefined ? PROP_INDEX[def.superKey] : -1;
     this.econd[slot] = def.econd ?? 0.05;
     this.echarge[slot] = def.charge ?? 0;
     if (lookup) {

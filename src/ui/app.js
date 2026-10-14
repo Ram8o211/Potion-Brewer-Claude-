@@ -11,7 +11,7 @@ import { LabScreen } from './lab.js';
 import { MenuScreen } from './menu.js';
 import { openSettings, openHelp } from './panels.js';
 import { Rng } from '../core/rng.js';
-import { normalizeTrials } from '../game/experiments.js';
+import { normalizeLab } from '../game/testing.js';
 
 const DEFAULT_SETTINGS = { master: 0.8, sfx: 0.8, music: 0.35, musicOn: true, muted: false, quality: 'auto', showFps: false };
 const SEED_WORDS = ['amber', 'ashen', 'brine', 'copper', 'dusk', 'elder', 'fen', 'gloam', 'hollow', 'iron', 'juniper', 'kelp', 'lantern', 'moon', 'nettle', 'oak', 'pewter', 'quill', 'raven', 'sage', 'thorn', 'umber', 'vale', 'willow', 'wyrm', 'yarrow'];
@@ -99,9 +99,9 @@ export class App {
       title: 'A New Shop',
       body: [
         h('div', { class: 'card parch' },
-          h('div', { class: 'small', text: 'Every world has its own reagents, reactions and customers, generated from its seed. Share a seed to share a world.' }),
+          h('div', { class: 'small', text: 'Every world grows its own ingredients and customers from its seed. Share a seed to share a world.' }),
           h('label', { class: 'field' }, 'World seed', seedIn),
-          h('div', { class: 'toggle-row' }, h('span', { text: 'Guided first brew (recommended)' }), tut)),
+          h('div', { class: 'toggle-row' }, h('span', { text: 'Guided first order (recommended)' }), tut)),
       ],
       foot: [btn('Open my shop', go, { cls: 'primary', icon: 'door', act: 'start-game' })],
     });
@@ -117,10 +117,10 @@ export class App {
     st.reputation = 99999;
     st.current = null;
     if (saved && saved.seed === seed && saved.cauldron) st.cauldron = saved.cauldron;
-    // the sandbox keeps its own trial history, separate from the shop's
-    if (saved && saved.seed === seed && saved.trials) st.trials = normalizeTrials(saved.trials);
+    // the sandbox keeps its own creatures, separate from the shop's
+    if (saved && saved.seed === seed && saved.lab) st.lab = normalizeLab(saved.lab);
     this._swap(new LabScreen(this, st, { sandbox: true }));
-    toast('Free Experiment', 'Unlimited reagents, wild ingredients, tools and test subjects. Nothing here affects your shop.', 'flask', 4500);
+    toast('Free Experiment', 'Every ingredient, tool and creature. Nothing here affects your shop.', 'flask', 4500);
   }
 
   openSettings() {
