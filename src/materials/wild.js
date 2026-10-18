@@ -37,8 +37,8 @@ export const WILD_SPECS = [
     fx: { transformation: 32, strength: 10, toxicity: 3 }, arc: [420, 3], price: 30, gather: 'dig', lore: 'A rare screaming root of transformation. Old grimoires say it wakes fully only in warm spirits.' },
   // Sunlit Meadow
   { key: 'heartpetal', noun: 'Heartpetal', shape: 'petal', region: 'meadow', rank: 0, buy: 1, hue: [335, 0.6, 0.72], form: 'solid', density: 0.6, hardness: 0.15, sol: 0.2, solT: 0.001,
-    fx: { love: 26, vitality: 2 }, arc: [-200, 3], price: 10, gather: 'pick',
-    steep: { name: 'Heartpetal Infusion', into: 'water', lo: [30, 35], hi: [60, 65], fx: { love: 28, vitality: 2 } },
+    fx: { love: 26, vitality: 1 }, arc: [-200, 3], price: 10, gather: 'pick',
+    steep: { name: 'Heartpetal Infusion', into: 'water', lo: [30, 35], hi: [60, 65], fx: { love: 28, vitality: 1 } },
     lore: 'Soft meadow petals carrying affection. Warm water draws their love into an infusion; strong heat spoils them.' },
   { key: 'sunthistle', noun: 'Sunthistle', shape: 'flower', region: 'meadow', rank: 0, buy: 1, hue: [45, 0.8, 0.55], form: 'solid', density: 0.8, hardness: 0.3, sol: 0.15, solT: 0.0015,
     fx: { fire: 15, vitality: 5, strength: 2 }, arc: [650, 2.8], price: 9, gather: 'pick',
@@ -50,8 +50,8 @@ export const WILD_SPECS = [
     lore: 'A rare blue clover, open only at dawn, that brings vivid dreams and clear insight.' },
   // Willow Riverbank
   { key: 'riverchalk', noun: 'River Chalk', shape: 'stone', region: 'river', rank: 0, buy: 1, hue: [48, 0.22, 0.82], form: 'solid', density: 1.32, hardness: 0.35, sol: 0.06, solT: 0.0005, binder: 0.55, friction: 0.7,
-    fx: { acidity: -24, strength: 3 }, arc: [150, 2.5], price: 6, gather: 'dig',
-    steep: { name: 'Chalk Milk', into: 'water', lo: [15, 20], hi: [60, 65], fx: { acidity: -26, strength: 3 } },
+    fx: { acidity: -24, strength: 1 }, arc: [150, 2.5], price: 6, gather: 'dig',
+    steep: { name: 'Chalk Milk', into: 'water', lo: [15, 20], hi: [60, 65], fx: { acidity: -26, strength: 1 } },
     lore: 'Soft alkaline chalk from the bank. It neutralises acids. Ground and stirred into water it clouds into chalk milk; a little water kneads it into a paste.' },
   { key: 'frostcap', noun: 'Frostcap', shape: 'cap', region: 'river', rank: 0, buy: 1, hue: [196, 0.5, 0.72], form: 'solid', density: 0.95, hardness: 0.25, sol: 0.17, solT: 0.0012,
     fx: { frost: 24, transformation: 5 }, arc: [-450, 2.8], price: 10, gather: 'pick',
@@ -67,8 +67,8 @@ export const WILD_SPECS = [
     steep: { name: 'Flint Fire-Water', into: 'water', lo: [85, 90], hi: [160, 170], fx: { fire: 28, acidity: 12, strength: 3 } },
     lore: 'A warm flint that releases fire when ground. It barely dissolves unless the water is near boiling.' },
   { key: 'mica', noun: 'Mica Dust', shape: 'powder', region: 'quarry', rank: 0, buy: 1, hue: [270, 0.25, 0.75], form: 'powder', density: 1.22, hardness: 0.3, sol: 0.16, solT: 0.001, binder: 0.4, friction: 0.66,
-    fx: { transformation: 14, love: 2 }, arc: [300, 3], price: 7, gather: 'sweep',
-    steep: { name: 'Mica Shimmer', into: 'water', lo: [40, 45], hi: [90, 95], fx: { transformation: 15, love: 2 } },
+    fx: { transformation: 14 }, arc: [300, 3], price: 7, gather: 'sweep',
+    steep: { name: 'Mica Shimmer', into: 'water', lo: [40, 45], hi: [90, 95], fx: { transformation: 15 } },
     lore: 'Naturally loose glittering grains. Knead with a little water for dough; warm plenty of water with it for a shimmering infusion.' },
   { key: 'sulfur', noun: 'Sulphur Crust', shape: 'powder', region: 'quarry', rank: 1, buy: 2, hue: [56, 0.85, 0.6], form: 'powder', density: 1.4, hardness: 0.3, sol: 0.22, solT: 0.0015, friction: 0.6,
     fx: { acidity: 26, fire: 7, toxicity: 4 }, arc: [500, 2.5], price: 10, gather: 'mine',
@@ -104,7 +104,7 @@ const PREFIX = ['Moss', 'Moon', 'Dusk', 'Ember', 'Witch', 'Frost', 'Star', 'Thor
 const r2 = (v) => Math.round(v * 100) / 100;
 
 /** Version of the wild profiles (effects, thresholds, extracts). */
-export const WILD_FX_VERSION = 2;
+export const WILD_FX_VERSION = 3;
 
 /**
  * Generate this world's wild materials, their reactions and the resonance laws.

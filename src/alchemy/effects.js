@@ -62,6 +62,8 @@ export const E = Object.freeze({ VIT: 0, STR: 1, LOVE: 2, ARC: 3, TRANS: 4, FIRE
 /** Old four-aspect model → effect channels (save migration and generator). */
 export const ASPECT_TO_EFFECT = ['vitality', 'fire', 'arcana', 'strength'];
 
+import { compatFactor } from '../reactions/compatibility.js';
+
 /** Leaching from undissolved grains that sit in liquid, and from dry powder. */
 const LEACH_WET = 0.12;
 const LEACH_DRY = 0.05;
@@ -108,24 +110,29 @@ export function fromRecord(rec) {
 export function extractedEffects(sp, comp, off, T, out) {
   for (let k = 0; k < NE; k++) out[k] = 0;
   const n = sp.count;
-  let tot = 0, liquid = 0;
+  let tot = 0, liquid = 0, nl = 0;
   for (let s = 0; s < n; s++) {
     const f = comp[off + s];
     if (f <= 0) continue;
     tot += f;
-    if (!sp.isPowder[s] || T >= sp.melt[s]) liquid += f;
+    if (!sp.isPowder[s] || T >= sp.melt[s]) { liquid += f; liqIdx[nl++] = s; }
   }
   if (tot <= 1e-9) return 0;
-  const wet = liquid / tot > 0.05;
-  const leach = wet ? LEACH_WET : LEACH_DRY;
   for (let s = 0; s < n; s++) {
     const f = comp[off + s];
     if (f <= 0) continue;
     let avail = f;
     if (sp.isPowder[s] && T < sp.melt[s]) {
+      // grains dissolve only into liquid they can mix with (oil does not
+      // take up salt, liquid metal does not take up crystal)
+      let solvent = 0;
+      for (let q = 0; q < nl; q++) {
+        const l = liqIdx[q];
+        if (compatFactor(sp.compatA[s], sp.compatB[s], sp.compatA[l], sp.compatB[l]) > 0.5) solvent += comp[off + l];
+      }
       const sol = Math.min(0.9, Math.max(0, sp.solubility[s] + sp.solTemp[s] * (T - 20)));
-      const dissolved = Math.min(f, sol * liquid * 1.2);
-      avail = dissolved + leach * (f - dissolved);
+      const dissolved = Math.min(f, sol * solvent * 1.2);
+      avail = dissolved + (solvent / tot > 0.05 ? LEACH_WET : LEACH_DRY) * (f - dissolved);
     }
     const base = s * NE;
     for (let k = 0; k < NE; k++) {
@@ -137,6 +144,8 @@ export function extractedEffects(sp, comp, off, T, out) {
   for (let k = 0; k < NE; k++) out[k] *= inv;
   return liquid / tot;
 }
+/** scratch: liquid slots of the composition being extracted */
+const liqIdx = new Int16Array(64);
 
 /**
  * @typedef {Object} Resonance

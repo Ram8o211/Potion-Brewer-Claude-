@@ -23,6 +23,7 @@ export const ACTIVATION_MARGIN = 6;
  * @property {boolean} [crush]   solid ingredients must be crushed first
  * @property {number} [hold]     seconds held at the reaction temperature
  * @property {boolean} [activate] the plan means to awaken its magic (alchemy/arcane.js)
+ * @property {{T:number, hold:number}} [steep] an extraction stage before anything else (°C, seconds)
  */
 
 /**
@@ -40,8 +41,9 @@ export function predictPlan(world, lookup, plan) {
     total += ing.n;
   }
   const fired = [];
-  const lo = Math.min(20, plan.coolTo ?? 20, plan.serveTemp ?? 20);
-  const hi = Math.max(20, plan.heatTo ?? 20, plan.serveTemp ?? 20);
+  const st = plan.steep ? plan.steep.T : 20;
+  const lo = Math.min(20, plan.coolTo ?? 20, plan.serveTemp ?? 20, st);
+  const hi = Math.max(20, plan.heatTo ?? 20, plan.serveTemp ?? 20, st);
   for (let pass = 0; pass < 3; pass++) {
     for (const r of world.reactions) {
       const a = vol.get(r.a) || 0;
@@ -49,7 +51,7 @@ export function predictPlan(world, lookup, plan) {
       if (a <= 0 || b <= 0) continue;
       if (r.maxT < lo || r.minT > hi) continue;
       // a reaction only happens if the brew is held inside its window
-      const held = (plan.hold ?? 0) >= 8;
+      const held = (plan.hold ?? 0) >= 8 || (!!plan.steep && plan.steep.hold >= 8 && plan.steep.T >= r.minT && plan.steep.T <= r.maxT);
       if (r.wet && !held && r.minT > (plan.serveTemp ?? 20)) continue;
       const yieldF = r.kind === 'decompose' ? (r.wet ? 0.85 : 0.55) : 0.88;
       const ext = Math.min(a / r.ra, r.b ? b / r.rb : Infinity) * yieldF;
@@ -106,6 +108,38 @@ export function predictPlan(world, lookup, plan) {
   const composition = {};
   for (let s = 0; s < sp.count; s++) if (sp.defs[s] && comp[s] > 1e-5) composition[sp.defs[s].id] = comp[s];
   return { ...props, effects, composition, reactions: fired, totalParticles: total, threshold, awakened };
+}
+
+/**
+ * Can these temperatures awaken any part of a brew made of these materials,
+ * however well or badly it is mixed? Local mixtures have thresholds anywhere
+ * between those of their magical ingredients.
+ *   'quiet' — no local mixture can awaken;
+ *   'full'  — every local mixture awakens;
+ *   'mixed' — it depends on how mixed the brew is (ambiguous).
+ * Ingredients of both signs blend toward threshold 0 (≈20 °C), so such a
+ * brew is quiet only at room temperature.
+ * @param {string[]} ids @param {(id:string)=>any} lookup @param {number[]} temps °C
+ */
+export function arcaneRegime(ids, lookup, temps) {
+  const ths = [];
+  for (const id of ids) {
+    const d = lookup(id);
+    if (isMagical(d)) ths.push(d.arcane.thr);
+  }
+  if (!ths.length) return 'quiet';
+  const hi = Math.max(20, ...temps), lo = Math.min(20, ...temps);
+  const M = ACTIVATION_MARGIN;
+  const pos = ths.filter((t) => t >= 0), neg = ths.filter((t) => t < 0);
+  if (pos.length && neg.length) return hi <= 21 && lo >= 19 ? 'quiet' : 'mixed';
+  if (pos.length) {
+    if (hi <= thresholdToCelsius(Math.min(...pos)) - M) return 'quiet';
+    if (hi >= thresholdToCelsius(Math.max(...pos)) + M) return 'full';
+    return 'mixed';
+  }
+  if (lo >= thresholdToCelsius(Math.max(...neg)) + M) return 'quiet';
+  if (lo <= thresholdToCelsius(Math.min(...neg)) - M) return 'full';
+  return 'mixed';
 }
 
 /**

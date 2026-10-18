@@ -60,8 +60,6 @@ a later session can continue from it.
 
 ## 3. Work order and status
 
-Note: until D1 lands, `generated commissions are achievable` fails because
-commissions are still generated on the old potency scale.
 
 
 - [x] A1 MAX_SPECIES 16 → 24 (tests use `p.S`)
@@ -78,7 +76,7 @@ commissions are still generated on the old potency scale.
 - [ ] C2 remains recovery → new ingredients
 - [ ] C3 rabbit renderer + enclosure behaviour
 - [ ] C4 trials UI: colony, selection, records, replay
-- [ ] D1 narrative request templates, concentration tiers, 1.2 % rule, activation orders
+- [x] D1 narrative request templates, concentration tiers, 1.2 % rule, activation orders
 - [ ] D2 identification record
 - [ ] D3 negotiation
 - [ ] D4 delivery consequences, complaints, disputes, refunds
