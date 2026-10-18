@@ -21,8 +21,8 @@
 //   GAS    weak purely repulsive pressure, buoyancy against air, thermal
 //          jitter and drag; contained by the lid.
 //
-// Thermal conduction, phase changes, diffusion/mixing and reactions run on
-// the same neighbour pairs every other step.
+// Thermal conduction, phase changes, diffusion/mixing, reactions and arcane
+// awakening run on the same neighbour pairs every other step.
 
 import { PHASE, SIM, TUNE, formPhase } from './constants.js';
 import { Particles } from './particles.js';
@@ -38,6 +38,7 @@ import { ReactionSystem } from '../reactions/reactions.js';
 import { ToolState, toolForces, toolConstraints } from './tools.js';
 import { Emitter } from './emitter.js';
 import { electricStep } from './electric.js';
+import { arcaneStep } from './arcane.js';
 
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 export const MODE = Object.freeze({ PBF: 0, GRAN: 1, COH: 2, RIGID: 3, GAS: 4 });
@@ -153,6 +154,9 @@ export class Simulation {
     this.accumulator = 0;
     this.energyIn = 0;
     this.energyOut = 0;
+    /** volume of magical matter awakened so far (alchemy/arcane.js) */
+    this.awakened = 0;
+    this._lastAwakenEvent = -99;
     /** volume (particles) of each material vented through an open lid */
     this.vented = /** @type {Record<string, number>} */ ({});
     this._rng = 12345;
@@ -324,6 +328,7 @@ export class Simulation {
       electricStep(this, dt2);
       diffusionStep(this, dt2);
       this.reactions.step(dt2);
+      arcaneStep(this, dt2);
       phaseStep(this, dt2);
       this._oxygen(dt2);
     }

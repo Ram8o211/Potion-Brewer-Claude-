@@ -26,7 +26,7 @@ test('first commission: brew, test on a subject, bottle and serve', async ({ pag
   const spread = await lab(page, (l) => {
     const p = l.sim.p, sp = l.sim.species, s = sp.slotOf.get(l.state.world.roles.essenceA);
     let mn = 1, mx = 0;
-    for (let i = 0; i < p.count; i++) { const f = p.comp[i * 16 + s]; mn = Math.min(mn, f); mx = Math.max(mx, f); }
+    for (let i = 0; i < p.count; i++) { const f = p.comp[i * p.S + s]; mn = Math.min(mn, f); mx = Math.max(mx, f); }
     return mx - mn;
   });
   expect(spread, 'stirring evens out the essence').toBeLessThan(0.35);
@@ -192,7 +192,7 @@ test('drag a jar from the shelf onto the cauldron to pour; grind a root in the m
   await expect(page.locator('[data-act=ground]')).toHaveClass(/active/);
   await page.click('[data-act=dose-25]');
   await page.waitForFunction(() => !window.__alchemist.screen.sim.emitter.pouring);
-  const grains = await lab(page, (l) => { const sp = l.sim.species, s = sp.slotOf.get('wild-ironroot'); let g = 0, solid = 0; for (let i = 0; i < l.sim.p.count; i++) if (l.sim.p.comp[i * 16 + s] > 0.5) { if (l.sim.p.phase[i] === 1) g++; if (l.sim.p.phase[i] === 3) solid++; } return { g, solid }; });
+  const grains = await lab(page, (l) => { const sp = l.sim.species, s = sp.slotOf.get('wild-ironroot'); let g = 0, solid = 0; for (let i = 0; i < l.sim.p.count; i++) if (l.sim.p.comp[i * l.sim.p.S + s] > 0.5) { if (l.sim.p.phase[i] === 1) g++; if (l.sim.p.phase[i] === 3) solid++; } return { g, solid }; });
   expect(grains.g, 'ground root arrives as powder').toBe(5);
   expect(grains.solid).toBe(0);
   expect(await lab(page, (l) => l.state.brewLog.some((e) => e.type === 'pour' && e.id === 'wild-ironroot' && e.ground))).toBe(true);

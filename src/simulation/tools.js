@@ -174,29 +174,96 @@ export function toolConstraints(sim, dt) {
 }
 
 /**
- * Pestle crushing: frozen blocks and solid chunks break into grains.
- * Material and its properties are conserved — only the phase changes.
+ * Pestle crushing. Blows build up damage in the particles they actually hit,
+ * scaled by the material's hardness. A body cracks first: a chip breaks off
+ * where it was struck (or a blow to the middle splits it in two), and the
+ * pieces are rigid bodies of their own. Further blows break small pieces
+ * and badly damaged particles down to grains. Only the contacted parts are
+ * affected; material and its properties are always conserved (only the
+ * phase and body membership change).
  */
 function crush(sim, i, pen, speed, dt) {
   const p = sim.p;
   if (p.phase[i] !== SOLID) return;
-  const hard = 0.25 + p.hardness[i] * 1.5;
+  const hard = p.hardness[i];
+  const crackAt = 0.16 + hard * 0.85;
+  const grindAt = 0.25 + hard * 1.5;
   sim.dmg[i] += (pen * 40 + speed * 1.2) * dt * 3;
-  if (sim.dmg[i] < hard) return;
-  sim.dmg[i] = 0;
   const g = p.group[i];
+  const size = g >= 0 ? bodySize(sim, g) : 1;
+  if (size >= 3 && sim.dmg[i] >= crackAt) {
+    crack(sim, i, g);
+    sim.dmg[i] = crackAt * 0.5;
+    return;
+  }
+  if (sim.dmg[i] < (size <= 2 ? crackAt : grindAt)) return;
+  // ground to grains
+  sim.dmg[i] = 0;
   if (g >= 0) sim.rigid.markDirty(g);
   p.group[i] = -1;
   p.phase[i] = POWDER;
   p.sleep[i] = 0;
   p.dirty[i] = 1;
-  p.vx[i] += (sim.rand() - 0.5) * 0.8;
-  p.vy[i] -= sim.rand() * 0.6;
+  p.vx[i] += (sim.rand() - 0.5) * 0.6;
+  p.vy[i] -= sim.rand() * 0.4;
   sim.emit({ type: 'crush', x: p.x[i], y: p.y[i] });
-  // the crack propagates a little: weaken bonded neighbours
+  // the blow bruises the particles bonded to it
   sim.grid.query(p.x[i], p.y[i], 0.14, (j) => {
-    if (p.phase[j] === SOLID && p.group[j] === g) sim.dmg[j] += hard * 0.35;
+    if (p.phase[j] === SOLID && p.group[j] === g && g >= 0) sim.dmg[j] += grindAt * 0.25;
   });
+}
+
+/** Particles in a rigid body (counted over the particle list). */
+function bodySize(sim, g) {
+  const p = sim.p;
+  let c = 0;
+  for (let k = 0; k < p.count; k++) if (p.group[k] === g) c++;
+  return c;
+}
+
+/**
+ * Split a body where particle i was struck. Near an end a chip breaks off;
+ * a blow near the middle splits it along the direction of the stroke.
+ */
+function crack(sim, i, g) {
+  const p = sim.p, t = sim.tool;
+  const idx = [];
+  let cx = 0, cy = 0;
+  for (let k = 0; k < p.count; k++) if (p.group[k] === g) { idx.push(k); cx += p.x[k]; cy += p.y[k]; }
+  if (idx.length < 3) return;
+  cx /= idx.length; cy /= idx.length;
+  let rad = 0;
+  for (const k of idx) rad = Math.max(rad, Math.hypot(p.x[k] - cx, p.y[k] - cy));
+  let dx = p.x[i] - cx, dy = p.y[i] - cy;
+  const d = Math.hypot(dx, dy);
+  let cut;
+  if (d > 0.45 * rad && d > 0.06) {
+    // chip off the struck end
+    dx /= d; dy /= d;
+    cut = d - 0.11;
+  } else {
+    // split across the middle, along the stroke
+    const vl = Math.hypot(t.vx, t.vy) || 1;
+    dx = -t.vy / vl; dy = t.vx / vl;
+    cut = 0;
+  }
+  const piece = [], rest = [];
+  for (const k of idx) ((p.x[k] - cx) * dx + (p.y[k] - cy) * dy >= cut ? piece : rest).push(k);
+  if (!piece.length || !rest.length) return;
+  const ng = sim.rigid.alloc();
+  if (ng < 0) return;
+  sim.rigid.angle[ng] = sim.rigid.angle[g];
+  for (const k of piece) {
+    p.group[k] = ng;
+    p.sleep[k] = 0;
+    // the pieces part gently — a crack, not an explosion
+    p.vx[k] += dx * 0.35;
+    p.vy[k] += dy * 0.35 - 0.1;
+  }
+  for (const k of rest) p.sleep[k] = 0;
+  sim.rigid.markDirty(g);
+  sim.rigid.markDirty(ng);
+  sim.emit({ type: 'crack', x: p.x[i], y: p.y[i], pieces: 2 });
 }
 
 /** Skimmer: scoop surface material out of the cauldron. */

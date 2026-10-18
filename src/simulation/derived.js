@@ -5,6 +5,13 @@ import { MAX_SPECIES, NO_BOIL } from '../reactions/species.js';
 import { granularFraction, suspensionLnMult } from '../reactions/mixture.js';
 import { rgbToOklab, linearToSrgb } from '../core/color.js';
 import { PHASE } from './constants.js';
+import { compositionEffects, EFFECTS, NE } from '../alchemy/effects.js';
+import { ARC_NONE } from './particles.js';
+
+/** emission weight per effect channel: magic shines, chemistry glows faintly */
+const AURA_W = EFFECTS.map((e) => (e.kind === 'magic' ? 1 : 0.55));
+const AURA_COL = EFFECTS.map((e) => e.color);
+const auraFx = new Float64Array(NE);
 
 /** Mass assigned to gas particles for constraint weighting (they yield to condensed matter). */
 export const GAS_MASS = 0.05;
@@ -22,7 +29,7 @@ export function refreshParticle(sim, i) {
   let tot = 0, rho = 0, rhoCp = 0, kap = 0, lnV = 0, lnVw = 0, vT = 0, beta = 0;
   let aR = 0, aG = 0, aB = 0, op = 0, flam = 0, ign = 0, ignW = 0, comb = 0, gasR = 0, glow = 0;
   let tbS = 0, tbW = 0, tmS = 0, tmW = 0, pmS = 0, pmW = 0, fricS = 0, hardS = 0, binder = 0, latF = 0, latV = 0;
-  let cA = 0, cB = 0, ec = 0;
+  let cA = 0, cB = 0, ec = 0, arcW = 0, arcS = 0, whole = 0, lookF = 0, look = 0;
   for (let s = 0; s < n; s++) {
     const f = comp[off + s];
     if (f <= 0) continue;
@@ -69,6 +76,11 @@ export function refreshParticle(sim, i) {
     hardS += f * sp.hardness[s];
     latF += f * sp.latF[s];
     latV += f * sp.latV[s];
+    if (sp.arcMag[s]) { arcW += f; arcS += f * sp.arcThr[s]; }
+    if (sp.isWhole[s]) {
+      whole += f;
+      if (f > lookF) { lookF = f; look = sp.look[s]; }
+    }
   }
   if (tot <= 1e-6) {
     tot = 1;
@@ -120,5 +132,32 @@ export function refreshParticle(sim, i) {
   // paste yield velocity: zero for liquids, rising steeply with solids content
   const s = Math.max(0, Math.min(1, (gran - 0.34) / 0.42));
   p.yieldV[i] = (0.1 + 0.6 * bnd) * Math.pow(s, 1.1);
+  p.arcT[i] = arcW > 1e-4 ? arcS / arcW : ARC_NONE;
+  p.whole[i] = whole * inv;
+  p.look[i] = look;
+  refreshAura(sim, i);
   p.dirty[i] = 0;
+}
+
+/**
+ * Magical emission of a particle: the colours of the effects it actually
+ * carries (extracted, after resonance laws and oppositions — the same
+ * function a bottle is measured with), weighted by their concentration.
+ * @param {import('./world.js').Simulation} sim @param {number} i
+ */
+export function refreshAura(sim, i) {
+  const p = sim.p;
+  if (sim.species.count === 0) { p.auraI[i] = 0; return; }
+  compositionEffects(sim.species, p.comp, i * MAX_SPECIES, p.temp[i], sim.laws || [], auraFx);
+  let I = 0, r = 0, g = 0, b = 0;
+  for (let k = 0; k < NE; k++) {
+    const v = Math.abs(auraFx[k]) * AURA_W[k];
+    if (v < 0.05) continue;
+    const c = AURA_COL[k];
+    I += v; r += v * c[0]; g += v * c[1]; b += v * c[2];
+  }
+  if (I > 0) {
+    p.auraR[i] = r / I; p.auraG[i] = g / I; p.auraB[i] = b / I;
+  }
+  p.auraI[i] = I / 100;
 }

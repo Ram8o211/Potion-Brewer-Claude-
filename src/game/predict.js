@@ -8,6 +8,10 @@
 import { SpeciesTable, MAX_SPECIES } from '../reactions/species.js';
 import { mixtureProps } from '../reactions/mixture.js';
 import { compositionEffects, NE } from '../alchemy/effects.js';
+import { isMagical, awakenedId, thresholdToCelsius } from '../alchemy/arcane.js';
+
+/** degrees past (or short of) a threshold a plan keeps, so the brew is unambiguous */
+export const ACTIVATION_MARGIN = 6;
 
 /**
  * @typedef {Object} BrewPlan
@@ -18,6 +22,7 @@ import { compositionEffects, NE } from '../alchemy/effects.js';
  * @property {boolean} [knead]   needs thorough stirring/kneading (doughs)
  * @property {boolean} [crush]   solid ingredients must be crushed first
  * @property {number} [hold]     seconds held at the reaction temperature
+ * @property {boolean} [activate] the plan means to awaken its magic (alchemy/arcane.js)
  */
 
 /**
@@ -56,6 +61,28 @@ export function predictPlan(world, lookup, plan) {
       fired.push(r.id);
     }
   }
+  // arcane activation: the well-mixed blend has one threshold; if the plan's
+  // heat (or cold) passes it, all its magic awakens — in the simulation the
+  // same happens particle by particle (simulation/arcane.js)
+  let wMag = 0, tMag = 0;
+  for (const [id, v] of vol) {
+    const d = lookup(id);
+    if (v > 1e-6 && isMagical(d)) { wMag += v; tMag += v * d.arcane.thr; }
+  }
+  const threshold = wMag > 0 ? tMag / wMag : null;
+  let awakened = false;
+  if (threshold !== null) {
+    const Ta = thresholdToCelsius(threshold);
+    awakened = threshold >= 0 ? hi >= Ta : lo <= Ta;
+    if (awakened) {
+      for (const [id, v] of [...vol]) {
+        const d = lookup(id);
+        if (v <= 1e-6 || !isMagical(d) || !lookup(awakenedId(id))) continue;
+        vol.set(id, 0);
+        vol.set(awakenedId(id), (vol.get(awakenedId(id)) || 0) + v);
+      }
+    }
+  }
   // gaseous products escape the liquid (they bubble out)
   for (const [id, v] of vol) {
     const d = lookup(id);
@@ -78,7 +105,20 @@ export function predictPlan(world, lookup, plan) {
   /** @type {Record<string, number>} */
   const composition = {};
   for (let s = 0; s < sp.count; s++) if (sp.defs[s] && comp[s] > 1e-5) composition[sp.defs[s].id] = comp[s];
-  return { ...props, effects, composition, reactions: fired, totalParticles: total };
+  return { ...props, effects, composition, reactions: fired, totalParticles: total, threshold, awakened };
+}
+
+/**
+ * How far the plan's extreme temperatures are from the blend's threshold
+ * (positive = past it, negative = short of it), in °C; null without magic.
+ * @param {BrewPlan} plan @param {number|null} threshold
+ */
+export function activationMargin(plan, threshold) {
+  if (threshold === null) return null;
+  const Ta = thresholdToCelsius(threshold);
+  const lo = Math.min(20, plan.coolTo ?? 20, plan.serveTemp ?? 20);
+  const hi = Math.max(20, plan.heatTo ?? 20, plan.serveTemp ?? 20);
+  return threshold >= 0 ? hi - Ta : Ta - lo;
 }
 
 /** Total coin cost of a plan's ingredients. */

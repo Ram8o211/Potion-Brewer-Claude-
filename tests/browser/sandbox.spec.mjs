@@ -14,7 +14,7 @@ test('layers, powders and stirring', async ({ page }, info) => {
   // syrup sinks below water, oil floats on top
   const layers = await lab(page, (l) => {
     const p = l.sim.p, R = l.state.world.roles, sp = l.sim.species;
-    const mean = (id) => { const s = sp.slotOf.get(id); let y = 0, n = 0; for (let i = 0; i < p.count; i++) if (p.comp[i * 16 + s] > 0.6) { y += p.y[i]; n++; } return y / n; };
+    const mean = (id) => { const s = sp.slotOf.get(id); let y = 0, n = 0; for (let i = 0; i < p.count; i++) if (p.comp[i * p.S + s] > 0.6) { y += p.y[i]; n++; } return y / n; };
     return { oil: mean(R.oil), water: mean(R.water), syrup: mean(R.syrup) };
   });
   expect(layers.oil).toBeLessThan(layers.water);

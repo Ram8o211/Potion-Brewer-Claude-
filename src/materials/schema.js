@@ -50,6 +50,10 @@
  * @property {number} [charge]         intrinsic electric charge per unit volume
  * @property {{key:string, shape:string, region:string, rank:number, rare:boolean, gatherOnly:boolean}} [wild] gathered raw ingredient
  * @property {boolean} [crushable]
+ * @property {{thr:number, gain:number, awake?:boolean}} [arcane] arcane activation threshold (−1000…1000, see alchemy/arcane.js) and gain
+ * @property {boolean} [awakened]      the awakened form of a magical material
+ * @property {string} [base]           base material id of an awakened form
+ * @property {number} [fxv]            version of the effect profile it carries
  */
 
 export const ASPECTS = ['vitality', 'ardor', 'arcana', 'fortitude'];

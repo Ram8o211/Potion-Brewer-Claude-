@@ -48,7 +48,9 @@ export function diffusionStep(sim, dt) {
       Math.abs(p.colA[i] - p.colA[j]) < 1e-5 &&
       Math.abs(p.colB[i] - p.colB[j]) < 1e-5 &&
       Math.abs(p.cA[i] - p.cA[j]) < 1e-5 &&
-      Math.abs(p.gran[i] - p.gran[j]) < 1e-5
+      Math.abs(p.gran[i] - p.gran[j]) < 1e-5 &&
+      Math.abs(p.auraI[i] - p.auraI[j]) < 1e-5 &&
+      Math.abs(p.arcT[i] - p.arcT[j]) < 1e-3
     ) continue;
     const dx = p.x[i] - p.x[j], dy = p.y[i] - p.y[j];
     const r2 = dx * dx + dy * dy;

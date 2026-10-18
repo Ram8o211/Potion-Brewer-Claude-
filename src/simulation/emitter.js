@@ -1,10 +1,12 @@
 // Pouring and dosing. Liquids leave the flask as a stream, powders as a
-// scattered trickle of grains, solid ingredients as rigid chunks, gases as
+// scattered trickle of grains, whole solid ingredients as recognisable rigid
+// objects (materials/shapes.js: a forked root, a pebble, a crystal), gases as
 // puffs. With the lid closed, matter enters through the funnel port just
 // below the lid; with the lid open it falls from above the mouth.
 
 import { PHASE, SIM, formPhase } from './constants.js';
 import { COLUMN } from './cauldron.js';
+import { chunkTemplate, chunkSize } from '../materials/shapes.js';
 
 export class Emitter {
   /** @param {import('./world.js').Simulation} sim */
@@ -95,8 +97,8 @@ export class Emitter {
     if (form === 'solid') {
       this.chunkTimer -= dt;
       if (this.chunkTimer > 0) return;
-      this.chunkTimer = 0.32;
-      const size = Math.min(a.remaining, a.remaining >= 12 ? 12 : 7);
+      this.chunkTimer = 0.36;
+      const size = Math.min(a.remaining, chunkSize(a.def));
       if (this._spawnChunk(a, size)) {
         a.remaining -= size;
         a.spawned += size;
@@ -135,22 +137,21 @@ export class Emitter {
     if (this.acc > 3) this.acc = 3;
   }
 
-  /** Spawn a rigid chunk of hex-packed particles. */
+  /** Spawn one whole object of a solid ingredient, shaped by its template. */
   _spawnChunk(a, size) {
     const sim = this.sim;
-    const offs = [[0, 0]];
     const s = SIM.SPACING;
-    for (let k = 0; k < 6; k++) offs.push([Math.cos((k * Math.PI) / 3) * s, Math.sin((k * Math.PI) / 3) * s]);
-    if (size > 7) {
-      for (let k = 0; k < 6; k++) offs.push([Math.cos((k * Math.PI) / 3 + Math.PI / 6) * s * 1.732, Math.sin((k * Math.PI) / 3 + Math.PI / 6) * s * 1.732]);
-    }
-    offs.length = Math.min(offs.length, size);
+    const offs = chunkTemplate(a.def, size);
+    let ext = 0;
+    for (const [ox, oy] of offs) ext = Math.max(ext, Math.hypot(ox, oy) * s);
     const mouth = sim.cauldron.mouth;
-    const cx = Math.max(-mouth + 0.3, Math.min(mouth - 0.3, a.x + (sim.rand() - 0.5) * 0.3));
+    const room = Math.max(0.05, mouth - ext - 0.12);
+    const cx = Math.max(-room, Math.min(room, a.x + (sim.rand() - 0.5) * 0.3));
     const cy = this.spawnY() + 0.12;
-    const ang = sim.rand() * Math.PI * 2;
+    // tumble in at a random angle, but long objects lie roughly flat so they fit the mouth
+    const ang = (sim.rand() - 0.5) * (ext > 0.25 ? 0.8 : Math.PI * 2);
     const ca = Math.cos(ang), sa = Math.sin(ang);
-    const pts = offs.map(([ox, oy]) => [cx + ca * ox - sa * oy, cy + sa * ox + ca * oy]);
+    const pts = offs.map(([ox, oy]) => [cx + (ca * ox - sa * oy) * s, cy + (sa * ox + ca * oy) * s]);
     for (const [x, y] of pts) if (!this._free(x, y, 0.085)) return false;
     const g = sim.rigid.alloc();
     if (g < 0) return false;
@@ -162,7 +163,7 @@ export class Emitter {
       sim.p.vy[i] = 1.2;
       idx.push(i);
     }
-    sim.rigid.setRest(idx);
+    sim.rigid.setRest(idx, g);
     sim.rigid.markDirty(g);
     return idx.length > 0;
   }
