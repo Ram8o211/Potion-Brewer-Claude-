@@ -19,7 +19,7 @@ const R = st.world.roles;
 
 function brew() {
   const sim = new Simulation({ size: 'pot', lookup: st.lookup, reactions: st.world.reactions, laws: st.world.laws });
-  for (const [id, n] of [[R.water, 30], [R.essenceA, 30]]) {
+  for (const [id, n] of /** @type {[string, number][]} */ ([[R.water, 30], [R.essenceA, 30]])) {
     sim.emitter.start(st.lookup(id), { amount: n });
     let g = 0;
     while (sim.emitter.pouring && g++ < 20000) sim.step();
