@@ -81,6 +81,13 @@ export class TrialsView {
     const doses = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Dose' }, h('span', { class: 'small muted', text: 'Dose' }),
       ...DOSES.map((ml) => btn(`${ml} ml`, () => { lab.trialDose = ml; this.refresh(); }, { cls: lab.trialDose === ml ? 'active' : '', act: 'dose-' + ml })));
     head.append(h('div', { class: 'row wrap' }, seg), h('div', { class: 'row wrap' }, doses));
+    if (st.vial) {
+      // the iterate loop: test the vial, pour the rest back, improve, bottle again
+      head.append(h('div', { class: 'row wrap vial-row' },
+        h('span', { class: 'small muted', text: `Vial: ${Math.round(st.vial.ml)} ml of ${Math.round(st.vial.bottledMl || st.vial.ml)} ml bottled` }),
+        btn('Pour back', () => lab.pourBackVial(), { icon: 'pour', act: 'trials-pour-back', title: 'Return the rest of the vial to the cauldron' }),
+        btn('Discard', () => { lab.discardVial(); this.refresh(); }, { icon: 'trash', cls: 'danger', act: 'trials-discard' })));
+    }
     // ---- what this batch is known to do
     const status = clear(this.status);
     const cert = src === 'vial' ? { values: st.vial.cert || {}, stale: [], changed: false } : lab.currentCert();

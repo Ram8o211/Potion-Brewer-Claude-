@@ -80,7 +80,7 @@ a later session can continue from it.
 - [ ] D2 identification record
 - [ ] D3 negotiation
 - [ ] D4 delivery consequences, complaints, disputes, refunds
-- [ ] E1 particle-exact vials, measured bottling, provenance, invalidation
+- [x] E1 particle-exact vials, measured bottling, provenance, invalidation
 - [ ] F1 gathering activities, availability, new equipment
 - [ ] G1 audio
 - [ ] G2 UI polish, tutorial/onboarding update

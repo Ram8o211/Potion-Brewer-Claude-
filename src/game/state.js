@@ -12,6 +12,7 @@ import { createTrials, normalizeTrials, runTrial, resetSubject, SUBJECT_BY_ID, k
 import { createGathering, normalizeGathering, generateDeposits, harvest, newDayRegrowth } from './gathering.js';
 import { predictPlan } from './predict.js';
 import { EFFECT_INDEX } from '../alchemy/effects.js';
+import { migrateVial } from './vial.js';
 
 export const SAVE_VERSION = 3;
 export const WORLD_GEN_VERSION = 2;
@@ -107,8 +108,8 @@ export class GameState {
     /** @type {number} */ this.createdAt = data.createdAt || Date.now();
     /** @type {ReturnType<typeof createTrials>} */ this.trials = normalizeTrials(data.trials);
     /** @type {ReturnType<typeof createGathering>} */ this.gathering = normalizeGathering(data.gathering);
-    /** the sealed vial waiting to be served (or null) */
-    this.vial = data.vial || null;
+    /** the sealed vial (game/vial.js): exact bottled particles, or null */
+    this.vial = migrateVial(data.vial);
     /** identity of the brew in the cauldron: a new id when it is emptied, rev++ on every addition */
     this.batch = data.batch && typeof data.batch.id === 'string' ? { id: data.batch.id, rev: data.batch.rev | 0 } : newBatch();
     this.lookup = makeLookup(this.world);

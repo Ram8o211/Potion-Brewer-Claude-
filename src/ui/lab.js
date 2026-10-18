@@ -29,6 +29,7 @@ import { saveGame, saveJSON, KEYS } from '../game/persistence.js';
 import { AutoBrewer } from '../game/autobrew.js';
 import { RANKS } from '../game/equipment.js';
 import { certification, missingEffects } from '../game/experiments.js';
+import { makeVial, appendParticles, updateVial, takeDose, pourBack, relaxVial } from '../game/vial.js';
 import { theoryOf, EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, dominantEffect, NE } from '../alchemy/effects.js';
 import { describeColor, rgbToHex } from '../core/color.js';
 import { h, btn, clear, toast, coins, confirmDialog } from './dom.js';
@@ -238,7 +239,7 @@ export class LabScreen {
     this.bottleFab = btn('Bottle', () => this.startBottling(), { icon: 'bottle', cls: 'fab primary', title: 'Bottle the potion (B)', act: 'bottle' });
     this.infoFab = btn('', () => this.toggleBrewInfo(), { icon: 'scroll', cls: 'fab-mini icon', title: 'What is in the cauldron', act: 'brew-info' });
     this.brewPanel = h('div', { class: 'brew-panel parch hidden' });
-    this.stageEl = h('main', { class: 'stage' }, this.canvas, this.readout, this.chips, this.pourHint, this.brewPanel, this.infoFab, this.sandbox ? null : this.bottleFab);
+    this.stageEl = h('main', { class: 'stage' }, this.canvas, this.readout, this.chips, this.pourHint, this.brewPanel, this.infoFab, this.bottleFab);
     this.furnaceInput = /** @type {HTMLInputElement} */ (h('input', { type: 'range', min: '-100', max: '100', step: '1', value: '0', 'aria-label': 'Fire and frost control' }));
     this.furnaceInput.addEventListener('input', () => {
       const v = Number(this.furnaceInput.value) / 100;
@@ -649,7 +650,7 @@ export class LabScreen {
     if (def && (this.toolBtns[def.id] || def.id === 'pour')) { if (def.id === 'pour' && !this.selected) return; this.selectTool(def.id); return; }
     if (k === 'l') this.toggleLid();
     else if (k === 'f') this.cycleSpeed();
-    else if (k === 'b' && !this.sandbox) this.startBottling();
+    else if (k === 'b') this.startBottling();
     else if (k === 's' && !this.sandbox) panels.openShop(this);
     else if (k === 'r' && !this.sandbox) { this.showView('book'); this.views.book.open('recipes'); }
     else if (k === 'g') { this.ground = !this.ground; this.syncGround(); }
@@ -897,20 +898,32 @@ export class LabScreen {
   }
 
   // ------------------------------------------------------------------ bottling → vial → serving
+  /** Choose how much to bottle, then bottle it into a sealed vial. */
   startBottling() {
-    if (this.sandbox || this.bottling) return;
+    if (this.bottling) return;
     const st = this.state;
-    const com = st.current;
-    if (!com) { toast('No order', 'Wait for a customer before bottling.', 'door'); return; }
     if (st.vial) { toast('A vial is waiting', 'Serve, pour back or discard the sealed vial at the Counter first.', 'bottle'); this.showView('counter'); return; }
-    const sel = tapSelection(this.sim, com.bottleN);
-    if (sel.length < 1) { toast('Nothing to bottle', 'There is no liquid at the tap.', 'flask'); audio.play('error'); return; }
+    const avail = Math.floor(this.tapAvailable() / SIM.ML_PER_PARTICLE);
+    if (avail < 1) { toast('Nothing to bottle', 'There is no liquid at the tap.', 'flask'); audio.play('error'); return; }
+    panels.openBottleSize(this, avail, (n) => this.beginBottling(n));
+  }
+
+  /** Draw `n` particles from the tap into a new vial (animated). @param {number} n */
+  beginBottling(n) {
+    if (this.bottling) return;
+    const st = this.state;
+    const sel = tapSelection(this.sim, n);
+    if (sel.length < 1) return;
     const m = measureParticles(this.sim, sel);
     this.sim.emitter.stop();
     this.setAutoStir(false);
     // the trials of this batch that still describe exactly what is bottled
     const cert = certification(st.trials, st.batch, m.effects);
-    this.bottling = { total: sel.length, removed: 0, progress: 0, color: m.color, measurement: m, commission: com, t: 0, cert: cert.values, batch: { ...st.batch } };
+    const vial = makeVial(this.sim, [], {
+      batchId: st.batch.id, rev: st.batch.rev, cert: cert.values, certRecords: cert.records, parts: this.batchParts(),
+      day: st.day, commissionId: st.current ? st.current.id : null,
+    });
+    this.bottling = { total: sel.length, removed: 0, progress: 0, color: m.color, t: 0, vial };
     audio.play('glass');
     if (this.tutorial) this.tutorial.notify('bottle');
   }
@@ -922,11 +935,14 @@ export class LabScreen {
     const target = Math.min(b.total, Math.ceil(b.total * Math.min(1, b.t / 1.4)));
     const k = target - b.removed;
     if (k > 0) {
+      // the particles that run out of the tap go into the vial, exactly
       const sel = tapSelection(this.sim, k).sort((a, c) => c - a);
+      appendParticles(b.vial, this.sim, sel);
       for (const i of sel) this.sim.removeParticle(i);
-      b.removed += k;
+      b.removed += sel.length;
+      if (!sel.length) b.total = b.removed;
     }
-    b.progress = b.removed / Math.max(1, b.commission.bottleN);
+    b.progress = b.removed / Math.max(1, b.total);
     if (b.t > 1.8) this.finishBottling();
   }
 
@@ -934,22 +950,15 @@ export class LabScreen {
     const b = this.bottling;
     this.bottling = null;
     const st = this.state;
-    st.vial = {
-      id: 'v' + Date.now().toString(36),
-      ml: b.measurement.ml,
-      m: b.measurement,
-      batchId: b.batch.id,
-      rev: b.batch.rev,
-      cert: b.cert,
-      parts: this.batchParts(),
-      commissionId: b.commission.id,
-      day: st.day,
-      recipe: this.recipeDraft(b.measurement, null, b.commission),
-    };
+    const vial = b.vial;
+    updateVial(vial, st.lookup, st.world.laws);
+    vial.recipe = this.recipeDraft(vial.m, null, st.current);
+    st.vial = vial;
     if (this.sim.p.count === 0) { st.brewLog = []; st.newBatch(); this.lastPoured = {}; }
     audio.play('glass');
     this.save();
-    this.showView('counter');
+    if (this.sandbox || !st.current) toast('Vial sealed', `${vial.ml} ml bottled. Test it in the Trials room, or pour it back to keep working on it.`, 'bottle', 3600);
+    this.showView(this.sandbox ? 'trials' : 'counter');
     this.updateBadges();
   }
 
@@ -986,38 +995,22 @@ export class LabScreen {
     this.updateBadges();
   }
 
-  /** Return the vial's potion to the cauldron (as liquid of its composition). */
+  /** Return the vial's potion to the cauldron: exactly the matter it holds. */
   pourBackVial() {
     const st = this.state;
     const v = st.vial;
     if (!v) return;
-    const sim = this.sim;
-    const n = Math.floor(v.ml / SIM.ML_PER_PARTICLE);
-    const ids = Object.keys(v.m.composition);
-    const total = Object.values(v.m.composition).reduce((a, b) => a + b, 0) || 1;
-    if (sim.p.count + n > sim.maxParticles) { toast('No room', 'The cauldron is too full to pour the vial back.', 'cauldron'); return; }
-    let made = 0;
-    for (let k = 0; k < n; k++) {
-      const x = (sim.rand() - 0.5) * sim.cauldron.mouth;
-      const i = sim.addParticle(st.lookup(ids[0]), x, 0.15 + sim.rand() * 0.25, PHASE.LIQUID, v.m.temperature);
-      if (i < 0) break;
-      sim.p.comp.fill(0, i * MAX_SPECIES, (i + 1) * MAX_SPECIES);
-      for (const id of ids) {
-        const def = st.lookup(id);
-        if (!def) continue;
-        const s = sim.slotFor(def);
-        if (s >= 0) sim.p.comp[i * MAX_SPECIES + s] += v.m.composition[id] / total;
-      }
-      sim.p.q[i] = v.m.charge || 0;
-      sim.p.dirty[i] = 1;
-      made++;
-    }
+    const made = pourBack(v, this.sim);
+    if (!made) { toast('No room', 'The cauldron is too full to pour the vial back.', 'cauldron'); return; }
+    // provenance: the batch now also holds what that vial was made of
+    const share = v.bottledMl > 0 ? (made * SIM.ML_PER_PARTICLE) / v.bottledMl : 0;
+    st.brewLog.push({ type: 'vial', ml: made * SIM.ML_PER_PARTICLE, t: Math.round(this.sim.time), parts: (v.parts || []).map((p) => ({ id: p.id, ml: Math.round(p.ml * share * 10) / 10 })), from: v.id });
     // it is the same batch only if the cauldron still holds that batch
     if (st.batch.id !== v.batchId) st.newBatch();
     st.touchBatch();
     st.vial = null;
     audio.play('splash');
-    toast('Poured back', `${made * SIM.ML_PER_PARTICLE} ml returned to the cauldron.`, 'pour');
+    toast('Poured back', `${made * SIM.ML_PER_PARTICLE} ml returned to the cauldron. Earlier trials no longer describe the brew.`, 'pour');
     this.save();
     this.views.counter.refresh();
     this.showView('brew');
@@ -1104,9 +1097,13 @@ export class LabScreen {
   /** What has been poured into this batch. */
   batchParts() {
     const out = [];
-    for (const e of this.state.brewLog) if (e.type === 'pour') {
-      const last = out.find((x) => x.id === e.id);
-      if (last) last.ml += e.ml; else out.push({ id: e.id, ml: e.ml });
+    const add = (id, ml) => {
+      const last = out.find((x) => x.id === id);
+      if (last) last.ml += ml; else out.push({ id, ml });
+    };
+    for (const e of this.state.brewLog) {
+      if (e.type === 'pour') add(e.id, e.ml);
+      else if (e.type === 'vial') for (const p of e.parts || []) add(p.id, p.ml);
     }
     return out;
   }
@@ -1149,18 +1146,19 @@ export class LabScreen {
     return { dose: m, ml: sel.length * SIM.ML_PER_PARTICLE };
   }
 
-  /** Split a dose off the sealed vial (its contents are uniform). @param {number} ml */
+  /** Take a dose out of the sealed vial: real particles that never return. @param {number} ml */
   vialDose(ml) {
-    const v = this.state.vial;
-    if (!v || v.ml < 1) return null;
-    const take = Math.min(ml, v.ml);
-    v.ml -= take;
-    const r = { dose: v.m, ml: take, batchId: v.batchId, rev: v.rev, theory: theoryOf(v.parts || [], this.state.lookup, this.state.knownLaws), parts: v.parts || [] };
-    if (v.ml < 1) {
-      this.state.vial = null;
+    const st = this.state;
+    const v = st.vial;
+    if (!v || v.particles.length < 1) return null;
+    const r = takeDose(v, ml, st.lookup, st.world.laws, st.day);
+    if (!r) return null;
+    const out = { dose: r.dose, ml: r.ml, batchId: v.batchId, rev: v.rev, theory: theoryOf(v.parts || [], st.lookup, this.sandbox ? st.world.laws : st.knownLaws), parts: v.parts || [] };
+    if (v.particles.length < 1) {
+      st.vial = null;
       toast('The vial is empty', 'All of it went to the trials.', 'bottle');
     }
-    return r;
+    return out;
   }
 
   /** Certification of the batch as it would be bottled now (cached each assay). */
@@ -1384,6 +1382,7 @@ export class LabScreen {
     const tw1 = performance.now();
     if (this.alembicOpen) this.collectVapour();
     this.stepBottling(dt);
+    this.stepVial(dt);
     this.trackBrew(dt);
     // events
     if (sim.events.length) {
@@ -1420,7 +1419,7 @@ export class LabScreen {
         tool: { type: tool.type, x: tool.x, y: tool.y, active: tool.active },
         toolHover: this.hover && (this.tool === 'spoon' || this.tool === 'pestle' || this.tool === 'skimmer'),
         bottling: this.bottling ? { progress: this.bottling.progress, color: this.bottling.color } : null,
-        showBottle: !!this.state.current && !this.sandbox,
+        showBottle: true,
         probe: this.tool === 'probe' ? this.probe : null,
         thermal: this.thermal,
         alembic: this.state.has('alembic'),
@@ -1437,6 +1436,20 @@ export class LabScreen {
     pf.n++;
     pf.physMs = pf.physMs * 0.95 + (tw1 - tw0) * 0.05;
     if (brewing) pf.renderMs = pf.renderMs * 0.95 + (tw3 - tw2) * 0.05;
+  }
+
+  /** The sealed vial drifts toward room temperature; re-measure it now and then. @param {number} dt */
+  stepVial(dt) {
+    const v = this.state.vial;
+    if (!v) return;
+    this._vialDrift = (this._vialDrift || 0) + relaxVial(v, dt * this.speed);
+    this._vialT = (this._vialT || 0) + dt;
+    if (this._vialT > 2 && this._vialDrift > 0.5) {
+      this._vialT = 0;
+      this._vialDrift = 0;
+      updateVial(v, this.state.lookup, this.state.world.laws);
+      if (this.view === 'counter') this.views.counter.refresh();
+    }
   }
 
   /** Warn when the brew boils or burns while the player is in another room. */

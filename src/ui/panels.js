@@ -256,6 +256,34 @@ export function openHint(lab) {
   });
 }
 
+// ------------------------------------------------------------------ bottling
+/**
+ * Choose a measured quantity to bottle into a sealed vial.
+ * @param {any} lab @param {number} avail particles at the tap @param {(n:number)=>void} onPick
+ */
+export function openBottleSize(lab, avail, onPick) {
+  const st = lab.state;
+  const com = lab.sandbox ? null : st.current;
+  const per = SIM.ML_PER_PARTICLE;
+  const sizes = new Set([25, 50, 100, 150, 200, 300]);
+  if (com) sizes.add(com.bottleMl);
+  const list = [...sizes].sort((a, b) => a - b);
+  let m;
+  const pick = (ml) => { m.close(); onPick(Math.max(1, Math.round(ml / per))); };
+  const btns = list.map((ml) => btn(`${ml} ml${com && ml === com.bottleMl ? ' · the order' : ''}`, () => pick(ml), {
+    cls: com && ml === com.bottleMl ? 'primary' : '', disabled: ml / per > avail, act: 'bottle-' + ml,
+  }));
+  btns.push(btn(`All at the tap · ${avail * per} ml`, () => pick(avail * per), { act: 'bottle-all' }));
+  m = modal({
+    title: 'Bottle a measured quantity',
+    body: [h('div', { class: 'card parch' },
+      h('div', { class: 'small', text: `The vial takes what runs out of the tap — the lowest layer first. ${avail * per} ml can be drawn now.` }),
+      h('div', { class: 'small muted', text: 'A sealed vial keeps its exact contents. You can test doses from it, pour it back to keep working, or serve it.' }),
+      h('div', { class: 'row wrap bottle-sizes' }, ...btns))],
+  });
+  return m;
+}
+
 // ------------------------------------------------------------------ results
 export function showResult(lab, com, meas, ev, recipe, onDone) {
   const st = lab.state;
