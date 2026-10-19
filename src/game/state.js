@@ -14,8 +14,10 @@ import { predictPlan } from './predict.js';
 import { EFFECT_INDEX } from '../alchemy/effects.js';
 import { migrateVial } from './vial.js';
 import { recordSale, resolveFollowUp } from './commerce.js';
+import { colonyDay, livingRabbits, findRabbit, addBoughtRabbit, retireRabbit, remainsSource } from './colony.js';
+import { remainsMaterials, remainsPlan, isRemains } from '../materials/remains.js';
 
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 export const WORLD_GEN_VERSION = 2;
 /** old aspect requirement keys → effect keys (v2 saves) */
 const ASPECT_KEY_MAP = { vitality: 'vitality', ardor: 'fire', arcana: 'arcana', fortitude: 'strength' };
@@ -66,6 +68,10 @@ export const ACHIEVEMENTS = [
   { id: 'deal', name: 'Silver Tongue', desc: 'Sell a potion for more than the customer first offered.', reward: 15 },
   { id: 'dispute', name: 'The Records Speak', desc: 'Win a dispute with trial records of the batch.', reward: 30 },
   { id: 'referral', name: 'Word of Mouth', desc: 'Serve a customer sent by a satisfied one.', reward: 25 },
+  { id: 'kit1', name: 'New Arrivals', desc: 'Kits are born in your hutch.', reward: 15 },
+  { id: 'colony8', name: 'Thriving Warren', desc: 'Keep eight living rabbits.', reward: 40 },
+  { id: 'survivor', name: 'Iron Constitution', desc: 'A rabbit survives ten trials.', reward: 30 },
+  { id: 'remains1', name: 'Nothing Wasted', desc: 'Recover the remains of a rabbit as ingredients.', reward: 15 },
 ];
 
 /**
@@ -126,6 +132,9 @@ export class GameState {
     this.lookup = makeLookup(this.world);
     /** @type {import('./gathering.js').Deposit[]|null} */
     this._deposits = null;
+    const col = this.trials.colony;
+    if (!col.seed) col.seed = String(this.seed);
+    if (!col.day) col.day = this.day;
   }
 
   /**
@@ -201,7 +210,7 @@ export class GameState {
 
   /** Ingredients the player may buy now (unlocked by rank). */
   purchasable() {
-    return this.world.ingredients.filter((id) => (this.lookup(id).tier || 0) <= this.rank);
+    return this.world.ingredients.filter((id) => { const m = this.lookup(id); return m && !isRemains(m) && (m.tier || 0) <= this.rank; });
   }
 
   /** Ingredient ids that are buyable or in stock. */
@@ -279,13 +288,157 @@ export class GameState {
       events.push(...this.unlock('law1'));
       if (this.knownLaws.length >= 4) events.push(...this.unlock('law4'));
     }
+    if (rec.rabbitId) {
+      const r = findRabbit(this.trials.colony, rec.rabbitId);
+      if (r && !r.alive) events.push({ type: 'rabbit-died', id: r.id, name: r.name, cause: r.cause });
+      if (r && r.alive && r.trials >= 10) events.push(...this.unlock('survivor'));
+    }
     return { record: rec, events };
+  }
+
+  // ------------------------------------------------------------ the rabbit colony
+  get colony() {
+    return this.trials.colony;
+  }
+
+  /** What a new rabbit costs (half with the kennel). */
+  rabbitPrice() {
+    return Math.ceil(SUBJECT_BY_ID.rabbit.cost * (this.has('kennel') ? 0.5 : 1));
+  }
+
+  /**
+   * Buy an adult rabbit from the breeder (selected at once). The hutch must
+   * have room.
+   * @param {boolean} [free]
+   */
+  buyRabbit(free = false) {
+    const c = this.colony;
+    const cap = this.cap.hutch;
+    if (livingRabbits(c).length >= cap) return { ok: false, reason: `The hutch is full (${cap} places). Upgrade it at the guild.` };
+    const cost = free ? 0 : this.rabbitPrice();
+    if (cost > this.coins + 1e-9) return { ok: false, reason: `A new rabbit costs ${cost} coins.` };
+    this.coins = round1(this.coins - cost);
+    this.stats.spent += cost;
+    this.daySpending += cost;
+    const rabbit = addBoughtRabbit(c, { day: this.day });
+    c.focus = rabbit.id;
+    return { ok: true, cost, rabbit };
+  }
+
+  /** Choose the rabbit the next dose goes to. @param {string} id */
+  selectRabbit(id) {
+    if (!findRabbit(this.colony, id)) return false;
+    this.colony.focus = id;
+    return true;
+  }
+
+  /** The cost of a day's hay and greens for the hutch. */
+  feedCost() {
+    return livingRabbits(this.colony).length ? 1 : 0;
+  }
+
+  /**
+   * Feed the hutch for today: everyone perks up, poison eases, and tonight
+   * they recover faster and pair up more readily.
+   */
+  feedRabbits() {
+    const c = this.colony;
+    const live = livingRabbits(c);
+    if (!live.length) return { ok: false, reason: 'There is nobody to feed.' };
+    if (c.fedDay === this.day) return { ok: false, reason: 'They have eaten today.' };
+    const cost = this.feedCost();
+    if (cost > this.coins + 1e-9) return { ok: false, reason: `Hay and greens cost ${cost} coin.` };
+    this.coins = round1(this.coins - cost);
+    this.stats.spent += cost;
+    this.daySpending += cost;
+    c.fedDay = this.day;
+    for (const r of live) {
+      r.health = round1(Math.min(Math.max(20, 100 - r.scar), r.health + 6));
+      r.marks.toxicity = Math.max(0, round1(r.marks.toxicity - 5));
+    }
+    return { ok: true, cost };
+  }
+
+  /** Let healthy pairs breed overnight, or not. @param {boolean} on */
+  setBreeding(on) {
+    this.colony.breed = !!on;
+  }
+
+  /**
+   * Make a material known to this world (remains): in the material list and
+   * on the shelf, once.
+   * @param {any} def
+   */
+  registerMaterial(def) {
+    if (!this.world.materials.some((m) => m.id === def.id)) this.world.materials.push(def);
+    if (!this.world.ingredients.includes(def.id)) this.world.ingredients.push(def.id);
+    return this.lookup(def.id);
+  }
+
+  /**
+   * Recover a dead rabbit's remains — once. Its bones, pelt or ash and any
+   * residue become ingredients whose effects come from its life; the body
+   * goes to the memorial.
+   * @param {string} id
+   */
+  processRemains(id) {
+    const c = this.colony;
+    const r = findRabbit(c, id);
+    if (!r) return { ok: false, reason: 'There is no such body in the hutch.' };
+    if (r.alive) return { ok: false, reason: `${r.name} is alive.` };
+    const src = remainsSource(r, this.day);
+    const defs = remainsMaterials(src, this.world);
+    const plan = remainsPlan(src);
+    const parts = [];
+    for (const d of defs) {
+      this.registerMaterial(d);
+      const ml = (plan.find((p) => p.part === d.remains.part) || { ml: 0 }).ml;
+      const have = this.inventory[d.id] || 0;
+      this.inventory[d.id] = Math.min(this.cap.storage, have + ml);
+      parts.push({ id: d.id, name: d.name, ml });
+    }
+    retireRabbit(c, id, 'processed', defs.map((d) => d.id), this.day);
+    this.stats.recovered = (this.stats.recovered || 0) + 1;
+    /** @type {any[]} */
+    const events = [];
+    const entry = this.discover({ key: 'remains:' + id, title: `The remains of ${r.name}`, text: `You recovered ${parts.map((p) => p.name.split('’s ')[1] || p.name).join(', ')} from ${r.name}. What ${r.sex === 'f' ? 'she' : 'he'} absorbed in life may linger in them — only trials will tell.`, kind: 'colony' });
+    if (entry) events.push({ type: 'journal', entry });
+    events.push(...this.unlock('remains1'));
+    return { ok: true, parts, events };
+  }
+
+  /** Bury a body (nothing is recovered). @param {string} id */
+  buryRabbit(id) {
+    const r = findRabbit(this.colony, id);
+    if (!r || r.alive) return { ok: false, reason: r ? `${r.name} is alive.` : 'There is no such body.' };
+    retireRabbit(this.colony, id, 'buried', [], this.day);
+    return { ok: true };
+  }
+
+  /**
+   * Re-register the remains materials of processed rabbits that this world
+   * does not hold (the sandbox's world is not saved), with no stock.
+   */
+  restoreRemains() {
+    for (const m of this.colony.memorial) {
+      if (m.how !== 'processed' || !m.parts.length) continue;
+      if (m.parts.every((id) => this.world.materials.some((x) => x.id === id))) continue;
+      for (const d of remainsMaterials(remainsSource(/** @type {any} */ (m), this.day), this.world)) this.registerMaterial(d);
+    }
   }
 
   /** Replace a spent test subject (costs coins). @param {string} id */
   replaceSubject(id, free = false) {
     const def = SUBJECT_BY_ID[id];
     if (!def) return { ok: false, reason: 'Unknown subject.' };
+    if (id === 'rabbit') {
+      // a new rabbit for the hutch — or, when it is full, the next living one
+      const r = this.buyRabbit(free);
+      if (r.ok) return r;
+      const alive = livingRabbits(this.colony)[0];
+      if (alive && livingRabbits(this.colony).length >= this.cap.hutch) { this.colony.focus = alive.id; return { ok: true, cost: 0, reselected: true }; }
+      return r;
+    }
     const cost = free ? 0 : Math.ceil(def.cost * (this.has('kennel') ? 0.5 : 1));
     if (cost > this.coins + 1e-9) return { ok: false, reason: `A new ${def.name.toLowerCase()} costs ${cost} coins.` };
     this.coins = round1(this.coins - cost);
@@ -366,6 +519,8 @@ export class GameState {
   commissionContext() {
     const available = this.availableSet();
     for (const id of this.gatherableSet()) available.add(id);
+    // orders are never planned around a rabbit's remains (their effects are unknown)
+    for (const id of [...available]) if (isRemains(this.lookup(id))) available.delete(id);
     return {
       world: this.world,
       lookup: this.lookup,
@@ -559,7 +714,14 @@ export class GameState {
     this.rollMarket();
     newDayRegrowth(this.gathering, this.deposits);
     weatherRegrowth(this.gathering, this.deposits, weatherOn(this.seed, this.day), this.lookup);
-    return summary;
+    // a night in the hutch: marks fade, the sick get worse or better, kits are born
+    const colony = colonyDay(this.colony, { seed: this.seed, day: this.day, cap: this.cap.hutch });
+    /** @type {any[]} */
+    const events = [];
+    this.stats.bred = (this.stats.bred || 0) + colony.born.length;
+    if (colony.born.length) events.push(...this.unlock('kit1'));
+    if (livingRabbits(this.colony).length >= 8) events.push(...this.unlock('colony8'));
+    return { ...summary, colony: { ...colony, events } };
   }
 
   rollMarket() {
@@ -782,6 +944,16 @@ export function migrate(raw) {
     d.vial = null;
     d.batch = null;
     d.version = 3;
+  }
+  if (d.version < 4) {
+    // v4: the Moon Rabbit becomes the founder of a colony (normalizeTrials
+    // converts the old single rabbit by its shape, as it does for the
+    // sandbox). Fields that arrived during version 3 get their defaults.
+    d.trials = d.trials || null;
+    d.sales = Array.isArray(d.sales) ? d.sales : [];
+    d.followUps = Array.isArray(d.followUps) ? d.followUps : [];
+    d.referrals = d.referrals | 0;
+    d.version = 4;
   }
   if (d.world && Array.isArray(d.world.materials) && d.world.materials.length === 0) throw new Error('The save has no reagents');
   if (!d.inventory || typeof d.inventory !== 'object') throw new Error('The save has no inventory');

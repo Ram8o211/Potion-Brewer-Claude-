@@ -14,6 +14,10 @@
 // (checked silently against the brew that would actually be bottled).
 
 import { EFFECTS, EFFECT_KEYS, EFFECT_INDEX, NE, potencyWord } from '../alchemy/effects.js';
+import {
+  createColony, normalizeColony, installRabbitAlias, rabbitResponse, findRabbit, focusRabbit, recordDose,
+  rabbitSnap, encodeSnap, stageOf, addBoughtRabbit, STAGE_ERR,
+} from './colony.js';
 
 /**
  * @typedef {Object} SubjectDef
@@ -55,6 +59,8 @@ export function driftTolerance(v) {
  * @property {boolean} alive
  * @property {number} trials
  * @property {Record<string, number>} marks  visible states 0..100: glow, burn, frost, love, change, vigor, growth, etch, sick
+ * @property {string} [id]     (the rabbit handle: the selected colony rabbit, colony.js)
+ * @property {string} [name]
  */
 
 /** @param {SubjectDef} def @returns {SubjectState} */
@@ -62,11 +68,18 @@ function freshSubject(def) {
   return { health: 100, alive: true, trials: 0, marks: { glow: 0, burn: 0, frost: 0, love: 0, change: 0, vigor: 0, growth: def.kind === 'plant' ? 20 : 0, etch: 0, sick: 0 } };
 }
 
+/**
+ * Fresh trials state. The Moon Rabbits live in `colony` (colony.js);
+ * `subjects.rabbit` is a non-enumerable handle on the selected rabbit, so
+ * code written for one rabbit keeps working and saves never hold it twice.
+ */
 export function createTrials() {
   /** @type {Record<string, SubjectState>} */
   const subjects = {};
-  for (const d of SUBJECTS) subjects[d.id] = freshSubject(d);
-  return { subjects, records: /** @type {TrialRecord[]} */ ([]), serial: 0, laws: /** @type {Record<string, {evidence:number, found:number|null}>} */ ({}) };
+  for (const d of SUBJECTS) if (d.id !== 'rabbit') subjects[d.id] = freshSubject(d);
+  const t = { subjects, records: /** @type {TrialRecord[]} */ ([]), serial: 0, laws: /** @type {Record<string, {evidence:number, found:number|null}>} */ ({}), colony: createColony() };
+  installRabbitAlias(t);
+  return t;
 }
 
 /**
@@ -77,6 +90,7 @@ export function normalizeTrials(t) {
   const out = createTrials();
   if (!t || typeof t !== 'object') return out;
   for (const d of SUBJECTS) {
+    if (d.id === 'rabbit') continue;
     const s = t.subjects && t.subjects[d.id];
     if (s && typeof s === 'object') {
       const marks = { ...out.subjects[d.id].marks };
@@ -87,6 +101,9 @@ export function normalizeTrials(t) {
   if (Array.isArray(t.records)) out.records = t.records.filter((r) => r && typeof r === 'object' && typeof r.subjectId === 'string' && r.values).slice(0, RECORD_LIMIT);
   out.serial = Math.max(t.serial | 0, ...out.records.map((r) => r.serial | 0), 0);
   if (t.laws && typeof t.laws === 'object') for (const [k, v] of Object.entries(t.laws)) if (v && typeof v === 'object') out.laws[k] = { evidence: v.evidence | 0, found: v.found ?? null };
+  // the colony (an old save's single rabbit becomes its founder, by shape)
+  out.colony = normalizeColony(t.colony, t.subjects && t.subjects.rabbit, out.records);
+  installRabbitAlias(out);
   return out;
 }
 
@@ -97,6 +114,11 @@ export function normalizeTrials(t) {
  * @param {number} ml dose
  */
 export function subjectResponse(def, before, effects, ml) {
+  if (def.id === 'rabbit') {
+    // a Moon Rabbit is an individual of the colony: every channel acts on it
+    const r = rabbitResponse(before, effects, ml, {});
+    return { after: /** @type {any} */ (r.after), observations: r.observations, harm: r.harm };
+  }
   const x = Math.min(2.5, Math.max(0, ml) / 10); // exposure relative to a 10 ml dose
   const v = (key) => effects[EFFECT_INDEX[key]] * x;
   const after = { ...before, marks: { ...before.marks } };
@@ -192,6 +214,10 @@ export function subjectResponse(def, before, effects, ml) {
  * @property {{color:number[], temperature:number}} look
  * @property {{id:string, ml:number}[]} parts   what the batch was made of
  * @property {boolean} died
+ * @property {string} [rabbitId]      the colony rabbit that was dosed
+ * @property {string} [rabbitName]
+ * @property {Record<string, number>} [err]  reading uncertainty (±) per revealed effect
+ * @property {{b:string, a:string, rx:string}} [replay]  the rabbit's look before and after (encoded snapshots) and the channels that acted
  */
 
 /**
@@ -200,15 +226,29 @@ export function subjectResponse(def, before, effects, ml) {
  * @param {string} subjectId
  * @param {{effects:ArrayLike<number>, resonance?:ArrayLike<number>, color?:number[], temperature?:number}} dose measured dose
  * @param {{ml:number, source:'cauldron'|'vial', batchId:string, rev:number, day:number, now?:number,
- *          theory:ArrayLike<number>, laws:import('../alchemy/effects.js').Resonance[], parts?:{id:string, ml:number}[]}} ctx
+ *          theory:ArrayLike<number>, laws:import('../alchemy/effects.js').Resonance[], parts?:{id:string, ml:number}[], rabbitId?:string}} ctx
  */
 export function runTrial(trials, subjectId, dose, ctx) {
   const def = SUBJECT_BY_ID[subjectId];
   if (!def) throw new Error('Choose a test subject.');
-  const st = trials.subjects[subjectId] || (trials.subjects[subjectId] = freshSubject(def));
-  if (!st.alive) throw new Error(`The ${def.name.toLowerCase()} is spent — replace it first.`);
+  const isRabbit = subjectId === 'rabbit';
+  /** @type {any} */
+  let st;
+  if (isRabbit) {
+    st = ctx.rabbitId ? findRabbit(trials.colony, ctx.rabbitId) : focusRabbit(trials.colony);
+    if (!st) throw new Error('Choose a rabbit.');
+    if (!st.alive) throw new Error(`${st.name} is dead — choose or buy another rabbit.`);
+  } else {
+    st = trials.subjects[subjectId] || (trials.subjects[subjectId] = freshSubject(def));
+    if (!st.alive) throw new Error(`The ${def.name.toLowerCase()} is spent — replace it first.`);
+  }
   if (!(ctx.ml > 0)) throw new Error('Choose a positive dose.');
-  const res = subjectResponse(def, st, dose.effects, ctx.ml);
+  const rr = isRabbit ? rabbitResponse(st, dose.effects, ctx.ml, { day: ctx.day }) : null;
+  const res = rr || subjectResponse(def, st, dose.effects, ctx.ml);
+  // how sure a reading is: small doses, kits and the old read less precisely
+  const errK = Math.sqrt(10 / ctx.ml) * (isRabbit ? STAGE_ERR[stageOf(st, ctx.day)] || 1 : 1);
+  /** @type {Record<string, number>} */
+  const err = {};
   /** @type {Record<string, number>} */
   const values = {};
   /** @type {Record<string, number>} */
@@ -218,6 +258,7 @@ export function runTrial(trials, subjectId, dose, ctx) {
     const k = EFFECT_INDEX[key];
     const val = Math.round(dose.effects[k] * 10) / 10;
     values[key] = Math.abs(val) < 0.5 ? 0 : val;
+    err[key] = Math.round((0.6 + 0.04 * Math.abs(values[key])) * errK * 10) / 10;
     theory[key] = Math.round((ctx.theory?.[k] ?? 0) * 10) / 10;
     if (Math.abs(values[key] - theory[key]) > Math.max(4, 0.3 * Math.abs(theory[key]))) anomalies.push(key);
   }
@@ -241,9 +282,19 @@ export function runTrial(trials, subjectId, dose, ctx) {
     batchId: ctx.batchId, rev: ctx.rev, revealed: def.reveals.slice(), values, theory,
     observations: res.observations, anomalies, lawsFound,
     look: { color: (dose.color || [0.5, 0.5, 0.5]).map((c) => Math.round(c * 1000) / 1000), temperature: Math.round(dose.temperature ?? 20) },
-    parts: (ctx.parts || []).map((p) => ({ id: p.id, ml: Math.round(p.ml) })), died: !res.after.alive,
+    parts: (ctx.parts || []).map((p) => ({ id: p.id, ml: Math.round(p.ml) })), died: !res.after.alive, err,
   };
-  trials.subjects[subjectId] = res.after;
+  if (isRabbit) {
+    // the dosed individual: its own log, and a replay of how it looked
+    const after = rr.after;
+    record.rabbitId = st.id;
+    record.rabbitName = st.name;
+    record.replay = { b: encodeSnap(rabbitSnap(st, ctx.day)), a: encodeSnap(rabbitSnap(after, ctx.day)), rx: rr.react.join(',') };
+    recordDose(after, { rec: record.id, day: ctx.day, ml: ctx.ml, src: ctx.source === 'vial' ? 'vial' : 'cauldron',
+      obs: rr.observations.filter((o) => o.key).map((o) => o.key + (o.tone === 'good' ? '+' : o.tone === 'bad' ? '-' : '')).join(','), ...(after.alive ? {} : { died: 1 }) });
+    const i = trials.colony.rabbits.indexOf(st);
+    if (i >= 0) trials.colony.rabbits[i] = after;
+  } else trials.subjects[subjectId] = res.after;
   trials.records.unshift(record);
   if (trials.records.length > RECORD_LIMIT) trials.records.length = RECORD_LIMIT;
   return record;
@@ -253,6 +304,12 @@ export function runTrial(trials, subjectId, dose, ctx) {
 export function resetSubject(trials, id) {
   const def = SUBJECT_BY_ID[id];
   if (!def) throw new Error('Unknown subject.');
+  if (id === 'rabbit') {
+    // a rabbit is not reset: a new one joins the hutch and is selected
+    const r = addBoughtRabbit(trials.colony, { day: trials.colony.day || 1 });
+    trials.colony.focus = r.id;
+    return r;
+  }
   trials.subjects[id] = { ...freshSubject(def), trials: trials.subjects[id]?.trials || 0 };
   return trials.subjects[id];
 }

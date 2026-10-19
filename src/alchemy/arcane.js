@@ -107,7 +107,8 @@ export function withAwakened(lookup) {
     if (d === undefined) {
       const base = lookup(baseIdOf(id));
       d = isMagical(base) ? awakenedDef(base) : null;
-      cache.set(id, d);
+      // a base that does not exist yet (remains registered later) is asked again
+      if (base) cache.set(id, d);
     }
     return d || undefined;
   };

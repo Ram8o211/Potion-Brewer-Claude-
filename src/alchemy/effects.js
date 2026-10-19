@@ -251,7 +251,8 @@ export function theoryOf(parts, lookup, knownLaws = []) {
   if (tot <= 0) return v;
   for (const p of parts) {
     const d = lookup(p.id);
-    if (!d) continue;
+    // a rabbit's remains are unknown to the guild: they only dilute the theory
+    if (!d || d.remains) continue;
     const ev = effectVector(d);
     for (let k = 0; k < NE; k++) v[k] += (ev[k] * p.ml) / tot;
   }

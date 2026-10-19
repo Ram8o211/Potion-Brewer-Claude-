@@ -422,7 +422,17 @@ export function addAlchemy(world) {
  */
 export function makeLookup(world, extra = []) {
   const map = new Map();
-  for (const m of world.materials) map.set(m.id, m);
-  for (const m of extra) map.set(m.id, m);
-  return withAwakened((id) => map.get(id));
+  // materials added during play (a rabbit's remains) are indexed when they appear
+  let n = -1;
+  const index = () => {
+    map.clear();
+    for (const m of world.materials) map.set(m.id, m);
+    for (const m of extra) map.set(m.id, m);
+    n = world.materials.length;
+  };
+  index();
+  return withAwakened((id) => {
+    if (n !== world.materials.length) index();
+    return map.get(id);
+  });
 }

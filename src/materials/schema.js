@@ -54,6 +54,8 @@
  * @property {boolean} [awakened]      the awakened form of a magical material
  * @property {string} [base]           base material id of an awakened form
  * @property {number} [fxv]            version of the effect profile it carries
+ * @property {string} [shape]          solid template name (shapes.js) for materials without a wild shape
+ * @property {{rabbitId:string, rabbitName:string, part:string, day:number|null, cause:string|null, short:string}} [remains] recovered from a colony rabbit (remains.js)
  */
 
 export const ASPECTS = ['vitality', 'ardor', 'arcana', 'fortitude'];

@@ -46,7 +46,8 @@ export const EQUIPMENT = [
   { id: 'arcanometer', name: 'Arcanometer', category: 'instrument', price: 260, rank: 2, icon: 'awaken', desc: 'A needle of lodestone in a glass of wisp-light: the probe reads the arcane threshold of the brew under it (to the nearest 50), and whether it has awakened.' },
   { id: 'thermal', name: 'Thermal Monocle', category: 'instrument', price: 80, rank: 1, icon: 'monocle', desc: 'Shows the temperature field of the whole cauldron as a heat map.' },
   // experiments
-  { id: 'kennel', name: 'Subject Kennel', category: 'trials', price: 60, rank: 1, icon: 'rabbit', desc: 'Spare cages and pots: replacing a spent test subject costs half.' },
+  { id: 'kennel', name: 'Subject Kennel', category: 'trials', price: 60, rank: 1, icon: 'rabbit', desc: 'Spare cages and pots: the hutch holds six rabbits, and new test subjects cost half.', effect: { hutch: 6 } },
+  { id: 'warren', name: 'Rabbit Warren', category: 'trials', price: 180, rank: 2, icon: 'nest', requires: ['kennel'], desc: 'A walled run with burrows and a nest box: room for ten rabbits.', effect: { hutch: 10 } },
   { id: 'lantern', name: 'Wisp Lantern', category: 'trials', price: 220, rank: 2, icon: 'wisp', desc: 'A captive will-o’-wisp joins the trials room. It responds to arcana, change, love, life and death.' },
   // gathering: each method has its tool; by hand a harvest brings half as much
   { id: 'satchel', name: 'Forager’s Satchel', category: 'storage', price: 80, rank: 1, icon: 'satchel', desc: 'Carry more from the wilds: each harvest gathers half as much again.' },
@@ -62,6 +63,8 @@ export const EQUIPMENT = [
 
 export const STARTING_EQUIPMENT = ['hearth', 'basin', 'pot', 'spoon', 'mortar', 'thermometer'];
 export const BASE_STORAGE = 1000;
+/** Rabbits the starting hutch holds. */
+export const BASE_HUTCH = 4;
 
 /** @param {string} id */
 export function equipmentById(id) {
@@ -90,7 +93,7 @@ export function rankIndex(rep) {
  */
 export function capabilities(owned) {
   const has = owned instanceof Set ? owned : new Set(owned);
-  const cap = { maxFlame: 340, heatPower: 3.5, minCool: 4, coolPower: 4, size: 'pot', storage: BASE_STORAGE, discount: 0, has: (id) => has.has(id) };
+  const cap = { maxFlame: 340, heatPower: 3.5, minCool: 4, coolPower: 4, size: 'pot', storage: BASE_STORAGE, discount: 0, hutch: BASE_HUTCH, has: (id) => has.has(id) };
   for (const e of EQUIPMENT) {
     if (!has.has(e.id) || !e.effect) continue;
     const f = /** @type {any} */ (e.effect);
@@ -100,6 +103,7 @@ export function capabilities(owned) {
     if (f.size === 'grand') cap.size = 'grand';
     if (f.storage && f.storage > cap.storage) cap.storage = f.storage;
     if (f.discount) cap.discount = Math.max(cap.discount, f.discount);
+    if (f.hutch && f.hutch > cap.hutch) cap.hutch = f.hutch;
   }
   return cap;
 }

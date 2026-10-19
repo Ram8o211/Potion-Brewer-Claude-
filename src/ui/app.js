@@ -118,7 +118,14 @@ export class App {
     st.current = null;
     if (saved && saved.seed === seed && saved.cauldron) st.cauldron = saved.cauldron;
     // the sandbox keeps its own trial history, separate from the shop's
-    if (saved && saved.seed === seed && saved.trials) st.trials = normalizeTrials(saved.trials);
+    if (saved && saved.seed === seed && saved.trials) {
+      st.trials = normalizeTrials(saved.trials);
+      // the sandbox's hutch keeps its own days; its rabbits' remains are rebuilt
+      st.day = Math.max(st.day, st.colony.day || 1);
+      st.colony.seed = st.colony.seed || String(seed);
+      st.restoreRemains();
+      for (const id of st.world.ingredients) st.inventory[id] = Infinity;
+    }
     this._swap(new LabScreen(this, st, { sandbox: true }));
     toast('Free Experiment', 'Unlimited reagents, wild ingredients, tools and test subjects. Nothing here affects your shop.', 'flask', 4500);
   }
