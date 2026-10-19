@@ -31,18 +31,21 @@ import { RANKS } from '../game/equipment.js';
 import { certification, missingEffects } from '../game/experiments.js';
 import { makeVial, appendParticles, updateVial, takeDose, pourBack, relaxVial } from '../game/vial.js';
 import { theoryOf, EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, dominantEffect, NE } from '../alchemy/effects.js';
+import { awakenParts } from '../alchemy/arcane.js';
 import { describeColor, rgbToHex } from '../core/color.js';
 import { h, btn, clear, toast, coins, confirmDialog } from './dom.js';
 import { icon, iconUrl } from './icons.js';
 import { audio } from '../audio/audio.js';
 import * as panels from './panels.js';
+import * as trade from './trade.js';
+import { unprovenWanted } from '../game/commerce.js';
 import { Tutorial } from './tutorial.js';
 import { CounterView } from './views/counter.js';
 import { WildsView } from './views/wilds.js';
 import { TrialsView } from './views/trials.js';
 import { BookView } from './views/book.js';
 
-const REQ_ICON = { color: 'palette', density: 'weight', viscosity: 'drop', temperature: 'thermo', stability: 'scales', volatility: 'bubbles', charge: 'spark', quantity: 'flask' };
+const REQ_ICON = { color: 'palette', density: 'weight', viscosity: 'drop', temperature: 'thermo', stability: 'scales', volatility: 'bubbles', charge: 'spark', quantity: 'flask', purity: 'pure' };
 const TOOL_DEFS = [
   { id: 'spoon', label: 'Spoon', icon: 'spoon', key: '2' },
   { id: 'pestle', label: 'Pestle', icon: 'pestle', key: '3', needs: 'pestle' },
@@ -858,7 +861,7 @@ export class LabScreen {
     for (const req of com.requirements) {
       const now = h('span', { class: 'now' });
       const meter = h('i');
-      const fx = !!EFFECT_BY_KEY[req.key];
+      const fx = !!EFFECT_BY_KEY[req.key] || req.key === 'purity';
       const li = h('div', { class: 'req-chip' + (fx ? ' fx' : '') + (req.limit ? ' limit' : ''), title: `${req.limit ? 'Limit — ' : ''}${PROPERTY_LABELS[req.key]}: ${req.label}` },
         icon(this.reqIcon(req.key), 'sm'),
         req.key === 'color' ? h('span', { class: 'swatch', style: { background: rgbToHex(req.rgb) } }) : h('span', { class: 'tgt', text: shortTarget(req) }),
@@ -962,29 +965,71 @@ export class LabScreen {
     this.updateBadges();
   }
 
-  /** Serve the sealed vial to the customer (only when its effects are verified). */
+  /**
+   * Offer the sealed vial to the customer: label it (if not yet), then
+   * bargain. The agreed price is paid; the customer's verdict on the real
+   * potion comes back the next day.
+   */
   serveVial() {
     const st = this.state;
     const v = st.vial, com = st.current;
     if (!v || !com) return;
-    const need = missingEffects(com, v.cert || {});
-    if (need.length) { toast('Untested effects', `Test ${need.map((k) => EFFECT_BY_KEY[k].label).join(', ')} first.`, 'dropper'); return; }
-    const m = { ...v.m, ml: Math.floor(v.ml / SIM.ML_PER_PARTICLE) * SIM.ML_PER_PARTICLE };
-    const ev = evaluatePotion(com, m);
-    audio.play(ev.quality >= 0.7 ? 'coin' : 'fail');
-    const recipe = { ...(v.recipe || this.recipeDraft(m, ev, com)), quality: ev.quality, verified: v.cert || {} };
-    st.vial = null;
-    panels.showResult(this, com, m, ev, recipe, () => {
-      const events = st.completeSale(ev, m);
-      if (com.effectOrder) events.push(...st.unlock('certified'));
-      for (const e of events) this.announce(e);
+    if (!v.label) { this.identifyVial(() => this.serveVial()); return; }
+    const missing = unprovenWanted(com, v.label);
+    if (missing.length) {
+      toast(`${com.customer.name.split(' ')[0]} wants proof`, `This customer only buys on trial evidence of this batch: test ${missing.map((k) => EFFECT_BY_KEY[k].label).join(', ')} first.`, 'dropper', 5000);
+      return;
+    }
+    trade.openNegotiation(this, com, v, (n) => {
+      if (!n) return;
+      if (n.state === 'left') { this.customerLeft(); return; }
+      if (n.state === 'deal') this.completeDeal(n.price, n.log.find((l) => l.who === 'them' && l.coins)?.coins || 0);
+    });
+  }
+
+  /** Write or revise the vial's label. @param {()=>void} [after] */
+  identifyVial(after) {
+    const v = this.state.vial;
+    if (!v) return;
+    trade.openIdentify(this, v, (label) => {
+      v.label = label;
       this.save();
+      this.views.counter.refresh();
+      if (after) after();
+    });
+  }
+
+  /** @param {number} price @param {number} firstOffer */
+  completeDeal(price, firstOffer) {
+    const st = this.state;
+    const v = st.vial, com = st.current;
+    if (!v || !com) return;
+    const truth = { ...v.m, ml: Math.floor(v.ml / SIM.ML_PER_PARTICLE) * SIM.ML_PER_PARTICLE };
+    const recipe = { ...(v.recipe || this.recipeDraft(truth, null, com)), verified: v.cert || {} };
+    const { events, sale } = st.completeDeal(v, v.label, price, truth, firstOffer);
+    st.vial = null;
+    if (com.effectOrder && Object.values(v.label.claims).some((c) => c.source === 'trial')) events.push(...st.unlock('certified'));
+    for (const e of events) this.announce(e);
+    this.save();
+    trade.showDeal(this, com, sale, recipe, () => {
       this.refreshCustomer();
       this.views.counter.refresh();
       this.refreshHud(true);
       if (this.tutorial) this.tutorial.notify('sold');
       if (!st.dayOver) setTimeout(() => this.bringCustomer(true), 1400);
     });
+  }
+
+  /** The customer would not agree on a price and left; the vial stays. */
+  customerLeft() {
+    const st = this.state;
+    toast('The customer left', 'No sale. Your vial is still on the counter.', 'door');
+    if (st.current && st.current.tutorial) return;
+    st.declineCustomer();
+    this.save();
+    this.refreshCustomer();
+    this.views.counter.refresh();
+    setTimeout(() => this.bringCustomer(true), 1200);
   }
 
   discardVial() {
@@ -1126,9 +1171,16 @@ export class LabScreen {
     return null;
   }
 
-  /** The guild's naive theory for this batch, with the laws you have found. */
+  /** The guild's naive theory for this batch, with the laws you have found (and the awakening you can see). */
   theory() {
-    return theoryOf(this.batchParts(), this.state.lookup, this.sandbox ? this.state.world.laws : this.state.knownLaws);
+    const parts = awakenParts(this.batchParts(), this.sim.inventory(), this.state.lookup);
+    return theoryOf(parts, this.state.lookup, this.sandbox ? this.state.world.laws : this.state.knownLaws);
+  }
+
+  /** Theory for the sealed vial (its provenance, with its visible awakening). @param {any} v */
+  vialTheory(v) {
+    const comp = v && v.m ? v.m.composition : {};
+    return theoryOf(awakenParts(v.parts || [], comp, this.state.lookup), this.state.lookup, this.sandbox ? this.state.world.laws : this.state.knownLaws);
   }
 
   /**
@@ -1153,7 +1205,7 @@ export class LabScreen {
     if (!v || v.particles.length < 1) return null;
     const r = takeDose(v, ml, st.lookup, st.world.laws, st.day);
     if (!r) return null;
-    const out = { dose: r.dose, ml: r.ml, batchId: v.batchId, rev: v.rev, theory: theoryOf(v.parts || [], st.lookup, this.sandbox ? st.world.laws : st.knownLaws), parts: v.parts || [] };
+    const out = { dose: r.dose, ml: r.ml, batchId: v.batchId, rev: v.rev, theory: this.vialTheory(v), parts: v.parts || [] };
     if (v.particles.length < 1) {
       st.vial = null;
       toast('The vial is empty', 'All of it went to the trials.', 'bottle');
@@ -1183,6 +1235,16 @@ export class LabScreen {
           const f = Math.min(1, m.ml / com.bottleMl);
           score = f >= 0.98 ? 1 : f * f;
           text = `${m.ml}`;
+        } else if (r.req.key === 'purity') {
+          // never read from the brew: only trials of this batch can show it
+          const keys = EFFECTS.map((e) => e.key).filter((k) => !(r.req.exclude || []).includes(k));
+          const known = keys.filter((k) => this.cert.values[k] !== undefined);
+          if (known.length < keys.length) { unknown = true; text = known.length ? `${known.length}/${keys.length}` : '?'; score = 0; }
+          else {
+            const worst = Math.max(...known.map((k) => Math.abs(this.cert.values[k])));
+            score = worst <= r.req.target ? 1 : Math.max(0, 1 - (worst - r.req.target) / r.req.zero);
+            text = worst < 0.05 ? '✓pure' : `✓${worst.toFixed(1)}`;
+          }
         } else if (EFFECT_BY_KEY[r.req.key]) {
           // effects are never read from the brew: only what a trial verified
           const v = this.cert.values[r.req.key];
@@ -1489,6 +1551,8 @@ export class LabScreen {
       case 'reaction': audio.play('reaction'); break;
       case 'crush': if (Math.random() < 0.5) audio.play('crush'); break;
       case 'ignite': audio.play('ignite'); break;
+      case 'awaken': audio.play('awaken'); break;
+      case 'crack': audio.play('crack'); break;
       case 'spark': if (Math.random() < 0.3) audio.play('crush'); break;
       case 'phase': if (e.to === 'solid' && Math.random() < 0.15) audio.play('freeze'); break;
       case 'full': toast('The cauldron is full', 'Bottle, skim or empty it before adding more.', 'cauldron'); break;
@@ -1497,7 +1561,7 @@ export class LabScreen {
     const r = processEvent(this.state, e);
     for (const entry of r.entries) {
       if (entry.kind === 'ingredient') continue;
-      toast(entry.kind === 'reaction' ? 'New reaction discovered!' : 'Discovery', entry.title, entry.kind === 'reaction' ? 'eye' : 'scroll', 3800);
+      toast(entry.kind === 'reaction' ? 'New reaction discovered!' : entry.kind === 'arcane' ? 'Arcane awakening!' : 'Discovery', entry.title, entry.kind === 'reaction' ? 'eye' : entry.kind === 'arcane' ? 'awaken' : 'scroll', 3800);
       audio.play('discover');
     }
     for (const a of r.achievements) this.announce(a);
@@ -1627,6 +1691,7 @@ export { describeValue };
 
 /** A requirement's target in a few characters (order strip). @param {any} req */
 function shortTarget(req) {
+  if (req.key === 'purity') return `<${req.target}`;
   if (req.key === 'temperature') return `${Math.round(req.target)}°`;
   if (req.kind === 'min') return `≥${Math.round(req.target)}`;
   if (req.kind === 'max') return `≤${Math.round(req.target)}`;

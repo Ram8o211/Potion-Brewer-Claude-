@@ -157,6 +157,8 @@ export class Simulation {
     /** volume of magical matter awakened so far (alchemy/arcane.js) */
     this.awakened = 0;
     this._lastAwakenEvent = -99;
+    /** @type {Float64Array|null} scratch: volume awakened per species this step */
+    this._awokeBy = null;
     /** volume (particles) of each material vented through an open lid */
     this.vented = /** @type {Record<string, number>} */ ({});
     this._rng = 12345;

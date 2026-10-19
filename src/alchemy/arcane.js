@@ -144,3 +144,31 @@ export function describeThreshold(thr) {
   const sign = thr > 0 ? '+' : '';
   return `${sign}${Math.round(thr)} (${thr >= 0 ? 'heat past' : 'chill below'} ${T}°C)`;
 }
+
+/**
+ * Split poured parts into plain and awakened shares, using the awakened
+ * share of the magic actually in the brew (which the alchemist can see: the
+ * glow, and the awakened substances in the cauldron's contents). The guild's
+ * theory then predicts with the stronger, awakened effects for that share.
+ * @param {{id:string, ml:number}[]} parts
+ * @param {Record<string, number>} composition species id → amount in the brew
+ * @param {(id:string)=>any} lookup
+ */
+export function awakenParts(parts, composition, lookup) {
+  let awake = 0, magic = 0;
+  for (const [id, v] of Object.entries(composition)) {
+    const d = lookup(id);
+    if (!d) continue;
+    if (d.awakened) { awake += v; magic += v; } else if (isMagical(d)) magic += v;
+  }
+  const share = magic > 0 ? awake / magic : 0;
+  if (share < 0.01) return parts;
+  const out = [];
+  for (const p of parts) {
+    const d = lookup(p.id);
+    if (!isMagical(d)) { out.push(p); continue; }
+    if (share < 0.99) out.push({ id: p.id, ml: p.ml * (1 - share) });
+    out.push({ id: awakenedId(p.id), ml: p.ml * share });
+  }
+  return out;
+}

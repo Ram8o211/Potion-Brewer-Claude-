@@ -8,6 +8,14 @@ c: '#8fe0ff', g: '#7dc24a', G: '#3a6e24', n: '#a8743f', N: '#5a3a20', p: '#a678f
 m: '#ff5aa8', l: '#fff0b0', t: '#5fd4b4',
 };
 const ICONS = {
+tag: ['......kkkk..', '.....kllllk.', '....klllkllk', '...kllllllk.', '..klllllllk.', '.kllNlllllk.', 'kllNNllllk..', 'klllNlllk...', '.kllllllk...', '..kllllk....', '...kllk.....', '....kk......'],
+deal: ['............', '............', 'kk........kk', 'knk..kk..knk', 'knnkkllkknnk', 'kNnklllllnNk', '.kNlllkllNk.', '..kllkllkk..', '...klllk....', '....kkk.....', '............', '............'],
+pure: ['.....kk.....', '....kcck....', '....kcck....', '...kcwcck...', '...kcwcck...', '..kcwccccK..', '..kcccccck..', '.kccccccccK.', '.kcccccccck.', '.kcccccccBk.', '..kccccBBk..', '...kkkkkk...'],
+talk: ['.kkkkkkkkkk.', 'kwwwwwwwwwwk', 'kwwwwrrwwwwk', 'kwwwwrrwwwwk', 'kwwwwrrwwwwk', 'kwwwwrrwwwwk', 'kwwwwwwwwwwk', 'kwwwwrrwwwwk', 'kWwwwwwwwwWk', '.kkkkwwkkkk.', '.....kwk....', '......kk....'],
+awaken: ['.....k......', '....kpk.....', '.k..kpk..k..', '.kpkkwkkpk..', '..kpwwwpk...', 'kppwwlwwppk.', '..kpwwwpk...', '.kpkkwkkpk..', '.k..kpk..k..', '....kpk.....', '.....k......', '............'],
+bone: ['............', '.kk.......kk', 'kwwk.....kwk', 'kwWwk...kwwk', '.kwWwkkkwWk.', '..kwWwwwWk..', '..kWwwwWwk..', '.kWwkkkwWwk.', 'kwwk...kwWwk', 'kwk.....kwwk', 'kk.......kk.', '............'],
+fur: ['............', '..k...k...k.', '.kWk.kWk.kWk', '.kwWkkwWkkwk', 'kwwwWwwwWwwk', 'kwwwwwwwwwWk', 'kWwwwWwwwWWk', 'kWWwwWWwWWWk', '.kWWWWWWWWk.', '..kkkkkkkk..', '............', '............'],
+nest: ['............', '...kkkkkk...', '..kwwwwwWk..', '.kwwlwwwwWk.', '.kwwwwwwwWk.', '..kwwwwwWk..', 'knknkkkknknk', 'kNnNnnNnNnNk', '.kNnNnNnNnk.', '..kkkkkkkk..', '............', '............'],
 coin: ['....kkkk....', '..kkyyyykk..', '.kyyllyyyyk.', '.kylyyyyYyk.', 'kyylyyyyyYyk', 'kyyyyyyyyYyk', 'kyyyyyyyyYyk', 'kyyyyyyyYYyk', '.kyyyyyYYyk.', '.kyYYYYYyyk.', '..kkyyyykk..', '....kkkk....'],
 star: ['.....kk.....', '....kyyk....', '....kyyk....', 'kkkkyyyykkkk', 'kyyyyyyyyyYk', '.kyyyyyyyYk.', '..kyyyyyYk..', '..kyyyyyYk..', '.kyyYkkYYyk.', '.kyYk..kYyk.', 'kyYk....kYyk', 'kkk......kkk'],
 sun: ['.....kk.....', '..k..yy..k..', '...k....k...', '....kkkk....', '.k.kyyyyk.k.', 'kyykyllyykyy', 'yykyyyyyYkyk', '.k.kyyyYk.k.', '....kkkk....', '...k....k...', '..k..yy..k..', '.....kk.....'],
@@ -320,6 +328,57 @@ this._noiseBurst(t, 0.07, 0.12, 'bandpass', 2500, 0.8);
 break;
 case 'fail':
 [392, 330, 262].forEach((f, k) => this._tone(f, 'triangle', t + k * 0.12, 0.06, 0.25));
+break;
+case 'awaken': {
+const o = this._tone(220, 'sine', t, 0.07, 1.3, this.sfx, 0.25);
+o.frequency.exponentialRampToValueAtTime(330, t + 1.2);
+[659, 831, 988, 1319, 1661].forEach((f, k) => this._tone(f, 'sine', t + 0.08 + k * 0.07, 0.035, 0.9));
+this._noiseBurst(t + 0.05, 0.03, 0.8, 'highpass', 6000);
+break;
+}
+case 'crack':
+this._noiseBurst(t, 0.22, 0.05, 'highpass', 1800, 1.5);
+this._tone(300 + Math.random() * 160, 'square', t, 0.05, 0.04);
+break;
+case 'talk':
+for (let k = 0; k < 3 + (Math.random() * 3 | 0); k++) this._tone(170 + Math.random() * 90, 'triangle', t + k * 0.09, 0.035, 0.07);
+break;
+case 'deal':
+this._tone(392, 'triangle', t, 0.07, 0.12);
+this._tone(523, 'triangle', t + 0.1, 0.07, 0.12);
+[988, 1319, 1976].forEach((f, k) => this._tone(f, 'square', t + 0.22 + k * 0.07, 0.04, 0.12));
+break;
+case 'complaint':
+[262, 247, 233].forEach((f, k) => { const o = this._tone(f, 'sawtooth', t + k * 0.14, 0.03, 0.16); o.frequency.exponentialRampToValueAtTime(f * 0.85, t + k * 0.14 + 0.15); });
+break;
+case 'praise':
+[523, 659, 784].forEach((f, k) => this._tone(f, 'triangle', t + k * 0.08, 0.06, 0.35));
+break;
+case 'squeak': {
+const o = this._tone(1700 + Math.random() * 600, 'sine', t, 0.04, 0.09);
+o.frequency.exponentialRampToValueAtTime(2600 + Math.random() * 500, t + 0.07);
+break;
+}
+case 'thump':
+this._tone(70 + Math.random() * 20, 'sine', t, 0.12, 0.08);
+this._noiseBurst(t, 0.04, 0.05, 'lowpass', 400);
+break;
+case 'munch':
+for (let k = 0; k < 3; k++) this._noiseBurst(t + k * 0.08, 0.05, 0.03, 'bandpass', 2200 + Math.random() * 800, 2);
+break;
+case 'birth':
+[1319, 1568, 1976].forEach((f, k) => this._tone(f, 'sine', t + k * 0.06, 0.04, 0.2));
+break;
+case 'toll':
+[1, 2.4, 3.9].forEach((m, k) => this._tone(196 * m, 'sine', t + k * 0.004, 0.08 / (k + 1), 2.2 / (k + 1)));
+break;
+case 'dig':
+this._noiseBurst(t, 0.14, 0.12, 'lowpass', 600);
+this._noiseBurst(t + 0.12, 0.08, 0.1, 'lowpass', 900);
+break;
+case 'snip':
+this._noiseBurst(t, 0.12, 0.03, 'highpass', 4000);
+this._tone(2400, 'square', t, 0.02, 0.02);
 break;
 }
 void opts;
@@ -771,44 +830,55 @@ return { NOUNS, makeName, PRODUCT_WORDS, makeProductName };
 const __m11 = (() => {
 const { hashString } = __m6;
 const ROLE_EFFECTS = {
-soot: { toxicity: 6, death: 4, acidity: -14 },
-smoke: { toxicity: 14 },
+soot: { toxicity: 3, acidity: -6 },
+smoke: { toxicity: 8 },
 water: {},
-oil: { fire: 5, strength: 4 },
-syrup: { vitality: 10, strength: 6, love: 5 },
-spirit: { fire: 5, arcana: 8, toxicity: 7 },
-essenceA: { vitality: 17 },
-essenceB: { fire: 16, love: 5 },
-essenceC: { arcana: 17, transformation: 3 },
-binder: { strength: 9, vitality: 2 },
-salt: { strength: 3, vitality: 4, frost: 2 },
-ember: { fire: 42, acidity: 10, strength: 4 },
-frost: { frost: 46, strength: 6, arcana: 2 },
-metal: { strength: 14, toxicity: 34, arcana: 4 },
-crystal: { arcana: 32, strength: 6, transformation: 6 },
-wax: { strength: 7, fire: 2 },
-fizz: { acidity: 32, transformation: 10, arcana: 4 },
-spores: { arcana: 22, transformation: 12, toxicity: 6, vitality: 4 },
-resin: { fire: 20, strength: 16 },
-starlight: { arcana: 45, love: 8, vitality: 6 },
-moss: { strength: 34, vitality: 6 },
-vapor: { arcana: 12, toxicity: 22 },
-phoenix: { vitality: 24, fire: 55, transformation: 16 },
-void: { arcana: 40, death: 34, transformation: 14 },
-p_elixir: { vitality: 70, strength: 4, arcana: 4 },
-p_ardent: { fire: 64, love: 10, strength: 6 },
-p_arcane: { arcana: 72, transformation: 8 },
-p_salve: { strength: 64, vitality: 12 },
-p_fizzgas: { transformation: 8, acidity: 6 },
-p_spent: { acidity: 10, strength: 4 },
-p_caramel: { vitality: 14, fire: 14, love: 12, strength: 8 },
-p_panacea: { vitality: 82, arcana: 58, strength: 8 },
-p_amalgam: { strength: 58, arcana: 28, toxicity: 18 },
-p_phoenix: { vitality: 58, fire: 66, transformation: 22 },
-p_varnish: { strength: 54, fire: 20, toxicity: 14 },
-p_frostbloom: { frost: 44, arcana: 30, transformation: 10 },
-p_lumen: { arcana: 84, vitality: 6, love: 6 },
+oil: {},
+syrup: { vitality: 4 },
+spirit: {},
+essenceA: { vitality: 18 },
+essenceB: { fire: 17 },
+essenceC: { arcana: 18 },
+binder: { strength: 6 },
+salt: {},
+ember: { fire: 30, acidity: 8 },
+frost: { frost: 30 },
+metal: { strength: 10, toxicity: 24 },
+crystal: { arcana: 28, transformation: 4 },
+wax: { strength: 5 },
+fizz: { acidity: 24, transformation: 5 },
+spores: { arcana: 14, transformation: 10, vitality: 3 },
+resin: { fire: 14, strength: 12 },
+starlight: { arcana: 32, love: 6 },
+moss: { strength: 26, vitality: 3 },
+vapor: { arcana: 8, toxicity: 16 },
+phoenix: { fire: 36, vitality: 16, transformation: 10 },
+void: { death: 28, arcana: 22, transformation: 10 },
+p_elixir: { vitality: 40, strength: 2 },
+p_ardent: { fire: 42, love: 4 },
+p_arcane: { arcana: 44, transformation: 4 },
+p_salve: { strength: 38, vitality: 6 },
+p_fizzgas: { transformation: 6, acidity: 4 },
+p_spent: { acidity: 6 },
+p_caramel: { vitality: 8, fire: 8, love: 8, strength: 5 },
+p_panacea: { vitality: 48, arcana: 34, strength: 4 },
+p_amalgam: { strength: 36, arcana: 16, toxicity: 10 },
+p_phoenix: { vitality: 36, fire: 40, transformation: 12 },
+p_varnish: { strength: 34, fire: 12, toxicity: 8 },
+p_frostbloom: { frost: 30, arcana: 18, transformation: 6 },
+p_lumen: { arcana: 50, vitality: 4, love: 4 },
 };
+const ROLE_ARCANE = {
+soot: [800, 2], smoke: [100, 2], syrup: [380, 2.4],
+essenceA: [300, 3.2], essenceB: [450, 3], essenceC: [-150, 3], binder: [200, 2.5],
+ember: [600, 2.5], frost: [-650, 2.6], metal: [700, 2.4], crystal: [500, 3], wax: [350, 2.2], fizz: [-100, 2.5],
+spores: [250, 3], resin: [900, 2.8], starlight: [-400, 2.8], moss: [550, 3], vapor: [-300, 2.5],
+phoenix: [950, 2.4], void: [-900, 2.6],
+p_elixir: [260, 2.2], p_ardent: [500, 2], p_arcane: [450, 2], p_salve: [250, 2], p_fizzgas: [-100, 2], p_spent: [-100, 2],
+p_caramel: [400, 2], p_panacea: [350, 1.8], p_amalgam: [650, 2], p_phoenix: [900, 2], p_varnish: [700, 2],
+p_frostbloom: [-500, 2.2], p_lumen: [100, 1.8],
+};
+const FX_VERSION = 2;
 const ROLE_ELECTRIC = {
 water: [0.08, 0], oil: [0, 0], syrup: [0.04, 0], spirit: [0.03, 0], essenceA: [0.1, 0], essenceB: [0.1, 0], essenceC: [0.12, 0],
 binder: [0.02, 0], salt: [0.6, 0], ember: [0.35, 0.25], frost: [0.06, 0], metal: [1, 0], crystal: [0.2, 0], wax: [0, 0], fizz: [0.3, 0],
@@ -826,16 +896,25 @@ return 1 - amp + ((h % 10007) / 10006) * 2 * amp;
 }
 function applyProfile(m, seed) {
 const role = roleOf(m.id);
-if (!m.effects) {
-const base = ROLE_EFFECTS[role];
+const known = ROLE_EFFECTS[role];
+if (!m.effects || (known && m.fxv !== FX_VERSION && !m.wild && !role.startsWith('wild-'))) {
 const fx = {};
-if (base) {
-for (const [k, v] of Object.entries(base)) fx[k] = Math.round(v * jitter(seed, m.id, k, 0.1) * 10) / 10;
+if (known) {
+for (const [k, v] of Object.entries(known)) fx[k] = Math.round(v * jitter(seed, m.id, k, 0.1) * 10) / 10;
 } else if (m.aspects) {
 const keys = ['vitality', 'fire', 'arcana', 'strength'];
 m.aspects.forEach((v, i) => { if (v) fx[keys[i]] = v; });
 }
 m.effects = fx;
+if (known) {
+const arc = ROLE_ARCANE[role];
+m.arcane = arc ? arcaneProfile(seed, m.id, arc[0], arc[1]) : undefined;
+if (!arc) delete m.arcane;
+m.fxv = FX_VERSION;
+}
+}
+if (!m.arcane && m.effects && Object.values(m.effects).some((v) => Math.abs(Number(v)) >= 1) && !role.startsWith('wild-')) {
+m.arcane = arcaneProfile(seed, m.id, 400, 2.2);
 }
 if (m.econd === undefined) {
 const el = ROLE_ELECTRIC[role] || [m.form === 'liquid' ? 0.06 : 0.03, 0];
@@ -844,7 +923,26 @@ m.charge = el[1];
 }
 return m;
 }
-return { ROLE_EFFECTS, ROLE_ELECTRIC, roleOf, applyProfile };
+function arcaneProfile(seed, id, thr, gain) {
+const t = Math.round((thr + (jitter(seed, id, 'arc', 1) - 1) * 60) / 5) * 5;
+return { thr: Math.max(-1000, Math.min(1000, t)), gain: Math.round(gain * jitter(seed, id, 'gain', 0.08) * 100) / 100 };
+}
+return { ROLE_EFFECTS, ROLE_ARCANE, FX_VERSION, ROLE_ELECTRIC, roleOf, jitter, applyProfile, arcaneProfile };
+})();
+// src/reactions/compatibility.js
+const __m14 = (() => {
+const COMPAT_FULL = 0.26;
+const COMPAT_NONE = 0.4;
+function compatFactor(a1, b1, a2, b2) {
+const d = Math.hypot(a1 - a2, b1 - b2);
+if (d <= COMPAT_FULL) return 1;
+if (d >= COMPAT_NONE) return 0;
+return 1 - (d - COMPAT_FULL) / (COMPAT_NONE - COMPAT_FULL);
+}
+function miscible(m1, m2) {
+return compatFactor(m1.compat[0], m1.compat[1], m2.compat[0], m2.compat[1]) > 0.5;
+}
+return { COMPAT_FULL, COMPAT_NONE, compatFactor, miscible };
 })();
 // src/alchemy/effects.js
 const __m13 = (() => {
@@ -866,6 +964,7 @@ const EFFECT_INDEX = Object.fromEntries(EFFECT_KEYS.map((k, i) => [k, i]));
 const EFFECT_BY_KEY = Object.fromEntries(EFFECTS.map((e) => [e.key, e]));
 const E = Object.freeze({ VIT: 0, STR: 1, LOVE: 2, ARC: 3, TRANS: 4, FIRE: 5, FROST: 6, ACID: 7, TOX: 8, DEATH: 9 });
 const ASPECT_TO_EFFECT = ['vitality', 'fire', 'arcana', 'strength'];
+const { compatFactor } = __m14;
 const LEACH_WET = 0.12;
 const LEACH_DRY = 0.05;
 const KNEE = 40;
@@ -891,24 +990,27 @@ return v;
 function extractedEffects(sp, comp, off, T, out) {
 for (let k = 0; k < NE; k++) out[k] = 0;
 const n = sp.count;
-let tot = 0, liquid = 0;
+let tot = 0, liquid = 0, nl = 0;
 for (let s = 0; s < n; s++) {
 const f = comp[off + s];
 if (f <= 0) continue;
 tot += f;
-if (!sp.isPowder[s] || T >= sp.melt[s]) liquid += f;
+if (!sp.isPowder[s] || T >= sp.melt[s]) { liquid += f; liqIdx[nl++] = s; }
 }
 if (tot <= 1e-9) return 0;
-const wet = liquid / tot > 0.05;
-const leach = wet ? LEACH_WET : LEACH_DRY;
 for (let s = 0; s < n; s++) {
 const f = comp[off + s];
 if (f <= 0) continue;
 let avail = f;
 if (sp.isPowder[s] && T < sp.melt[s]) {
+let solvent = 0;
+for (let q = 0; q < nl; q++) {
+const l = liqIdx[q];
+if (compatFactor(sp.compatA[s], sp.compatB[s], sp.compatA[l], sp.compatB[l]) > 0.5) solvent += comp[off + l];
+}
 const sol = Math.min(0.9, Math.max(0, sp.solubility[s] + sp.solTemp[s] * (T - 20)));
-const dissolved = Math.min(f, sol * liquid * 1.2);
-avail = dissolved + leach * (f - dissolved);
+const dissolved = Math.min(f, sol * solvent * 1.2);
+avail = dissolved + (solvent / tot > 0.05 ? LEACH_WET : LEACH_DRY) * (f - dissolved);
 }
 const base = s * NE;
 for (let k = 0; k < NE; k++) {
@@ -920,6 +1022,7 @@ const inv = 1 / tot;
 for (let k = 0; k < NE; k++) out[k] *= inv;
 return liquid / tot;
 }
+const liqIdx = new Int16Array(64);
 const contrib = new Float64Array(32);
 function interact(e, laws, trace) {
 const nl = Math.min(laws ? laws.length : 0, contrib.length);
@@ -1028,52 +1131,80 @@ const { Rng } = __m6;
 const { hslToRgb } = __m8;
 const { completeMaterial } = __m9;
 const { EFFECT_INDEX } = __m13;
+const { arcaneProfile } = __m11;
 const WILD_SPECS = [
 { key: 'ironroot', noun: 'Ironroot', shape: 'root', region: 'forest', rank: 0, buy: 1, hue: [28, 0.45, 0.42], form: 'solid', density: 1.05, hardness: 0.5, sol: 0.12, solT: 0.0022,
-fx: { strength: 72, acidity: 6 }, price: 9, lore: 'A knotted woodland root that carries strength. Crush or grind it; it gives up far more when steeped in hot water.' },
+fx: { strength: 28 }, arc: [750, 3], price: 9, gather: 'dig', lore: 'A knotted woodland root that carries strength. Crush or grind it; it gives up far more when steeped in hot water.' },
 { key: 'silverleaf', noun: 'Silverleaf', shape: 'leaf', region: 'forest', rank: 0, buy: 1, hue: [150, 0.25, 0.7], form: 'solid', density: 0.72, hardness: 0.22, sol: 0.18, solT: 0.0015,
-fx: { vitality: 66, frost: 8 }, price: 9, lore: 'Soft silvery leaves prized by healers. Grind them into water; gentle warmth draws out their healing.' },
+fx: { vitality: 24, frost: 2 }, arc: [550, 3], price: 9, gather: 'pick', lore: 'Soft silvery leaves prized by healers. Grind them into water; gentle warmth draws out their healing.' },
 { key: 'nightshade', noun: 'Nightshade', shape: 'leaf', region: 'forest', rank: 0, buy: null, hue: [285, 0.45, 0.42], form: 'solid', density: 1.12, hardness: 0.25, sol: 0.16, solT: 0.001, compat: [0.55, 0.22],
-fx: { toxicity: 70, death: 32, acidity: 12 }, price: 12, lore: 'A poisonous leaf. Its oily extract dissolves in spirits rather than water. Test tiny doses before you trust it.' },
+fx: { toxicity: 28, death: 12, acidity: 4 }, arc: [-350, 2.5], price: 12, gather: 'pick', dusk: true,
+steep: { name: 'Nightshade Tincture', into: 'spirit', lo: [20, 25], hi: [60, 65], fx: { toxicity: 30, death: 13, acidity: 3 } },
+lore: 'A poisonous leaf, gathered at dusk. Its oily extract dissolves in spirits rather than water. Test tiny doses before you trust it.' },
 { key: 'mandrake', noun: 'Mandrake', shape: 'root', region: 'forest', rank: 2, buy: null, hue: [38, 0.5, 0.6], form: 'solid', density: 1.15, hardness: 0.45, sol: 0.12, solT: 0.0015, rare: true,
-fx: { transformation: 78, strength: 28, toxicity: 10 }, price: 30, lore: 'A rare screaming root of transformation. Old grimoires say it wakes fully only in warm spirits.' },
+fx: { transformation: 32, strength: 10, toxicity: 3 }, arc: [420, 3], price: 30, gather: 'dig', lore: 'A rare screaming root of transformation. Old grimoires say it wakes fully only in warm spirits.' },
 { key: 'heartpetal', noun: 'Heartpetal', shape: 'petal', region: 'meadow', rank: 0, buy: 1, hue: [335, 0.6, 0.72], form: 'solid', density: 0.6, hardness: 0.15, sol: 0.2, solT: 0.001,
-fx: { love: 74, vitality: 10, acidity: 8 }, price: 10, lore: 'Soft meadow petals carrying affection. Delicate: strong heat spoils them.' },
+fx: { love: 26, vitality: 1 }, arc: [-200, 3], price: 10, gather: 'pick',
+steep: { name: 'Heartpetal Infusion', into: 'water', lo: [30, 35], hi: [60, 65], fx: { love: 28, vitality: 1 } },
+lore: 'Soft meadow petals carrying affection. Warm water draws their love into an infusion; strong heat spoils them.' },
 { key: 'sunthistle', noun: 'Sunthistle', shape: 'flower', region: 'meadow', rank: 0, buy: 1, hue: [45, 0.8, 0.55], form: 'solid', density: 0.8, hardness: 0.3, sol: 0.15, solT: 0.0015,
-fx: { fire: 38, vitality: 18, strength: 6 }, price: 9, lore: 'A prickly golden flower that warms the blood.' },
+fx: { fire: 15, vitality: 5, strength: 2 }, arc: [650, 2.8], price: 9, gather: 'pick',
+steep: { name: 'Sunthistle Tea', into: 'water', lo: [50, 55], hi: [90, 95], fx: { fire: 16, vitality: 5, strength: 2 } },
+lore: 'A prickly golden flower that warms the blood. It brews into a fiery tea.' },
 { key: 'dreamclover', noun: 'Dreamclover', shape: 'clover', region: 'meadow', rank: 1, buy: null, hue: [205, 0.45, 0.62], form: 'solid', density: 0.7, hardness: 0.18, sol: 0.16, solT: 0.0012, rare: true,
-fx: { arcana: 34, love: 14, transformation: 8 }, price: 18, lore: 'A rare blue clover that brings vivid dreams and clear insight.' },
+fx: { arcana: 14, love: 5, transformation: 3 }, arc: [-50, 3], price: 18, gather: 'pick', dawn: true,
+steep: { name: 'Dreamclover Tea', into: 'water', lo: [35, 40], hi: [70, 75], fx: { arcana: 15, love: 5, transformation: 3 } },
+lore: 'A rare blue clover, open only at dawn, that brings vivid dreams and clear insight.' },
 { key: 'riverchalk', noun: 'River Chalk', shape: 'stone', region: 'river', rank: 0, buy: 1, hue: [48, 0.22, 0.82], form: 'solid', density: 1.32, hardness: 0.35, sol: 0.06, solT: 0.0005, binder: 0.55, friction: 0.7,
-fx: { acidity: -55, strength: 10, frost: 6 }, price: 6, lore: 'Soft alkaline chalk from the bank. It neutralises acids. A little water and stirring knead it into a paste.' },
+fx: { acidity: -24, strength: 1 }, arc: [150, 2.5], price: 6, gather: 'dig',
+steep: { name: 'Chalk Milk', into: 'water', lo: [15, 20], hi: [60, 65], fx: { acidity: -26, strength: 1 } },
+lore: 'Soft alkaline chalk from the bank. It neutralises acids. Ground and stirred into water it clouds into chalk milk; a little water kneads it into a paste.' },
 { key: 'frostcap', noun: 'Frostcap', shape: 'cap', region: 'river', rank: 0, buy: 1, hue: [196, 0.5, 0.72], form: 'solid', density: 0.95, hardness: 0.25, sol: 0.17, solT: 0.0012,
-fx: { frost: 68, transformation: 18 }, price: 10, lore: 'A cool mushroom growing beneath the willows. Its essence freezes and subtly changes things.' },
+fx: { frost: 24, transformation: 5 }, arc: [-450, 2.8], price: 10, gather: 'pick',
+steep: { name: 'Frostcap Brine', into: 'water', lo: [1, 2], hi: [12, 14], fx: { frost: 26, transformation: 5 } },
+lore: 'A cool mushroom growing beneath the willows. It steeps only in ice-cold water, giving a freezing brine.' },
 { key: 'bogbean', noun: 'Bogbean', shape: 'bean', region: 'river', rank: 0, buy: null, hue: [95, 0.4, 0.42], form: 'solid', density: 1.0, hardness: 0.3, sol: 0.2, solT: 0.0015,
-fx: { vitality: 30, toxicity: 14 }, price: 7, lore: 'A marsh bean: restorative, though a little poisonous unless something cancels its bite.' },
+fx: { vitality: 12, toxicity: 6 }, arc: [200, 2.5], price: 7, gather: 'pick',
+steep: { name: 'Bogbean Broth', into: 'water', lo: [40, 45], hi: [80, 85], fx: { vitality: 13, toxicity: 6 } },
+lore: 'A marsh bean: restorative, though a little poisonous unless something cancels its bite.' },
 { key: 'emberflint', noun: 'Ember Flint', shape: 'stone', region: 'quarry', rank: 0, buy: 1, hue: [16, 0.62, 0.55], form: 'solid', density: 1.6, hardness: 0.7, sol: 0.05, solT: 0.003,
-fx: { fire: 72, acidity: 34, strength: 10 }, price: 11, lore: 'A warm flint that releases fire when ground. It barely dissolves unless the water is hot.' },
-{ key: 'mica', noun: 'Mica Dust', shape: 'powder', region: 'quarry', rank: 0, buy: 1, hue: [270, 0.25, 0.75], form: 'powder', density: 1.22, hardness: 0.3, sol: 0.05, solT: 0.001, binder: 0.6, friction: 0.66,
-fx: { transformation: 26, love: 10, arcana: 6 }, price: 7, lore: 'Naturally loose glittering grains. Knead with a little water for dough; plenty of water makes a shimmering infusion.' },
+fx: { fire: 26, acidity: 12, strength: 3 }, arc: [800, 2.5], price: 11, gather: 'mine',
+steep: { name: 'Flint Fire-Water', into: 'water', lo: [85, 90], hi: [160, 170], fx: { fire: 28, acidity: 12, strength: 3 } },
+lore: 'A warm flint that releases fire when ground. It barely dissolves unless the water is near boiling.' },
+{ key: 'mica', noun: 'Mica Dust', shape: 'powder', region: 'quarry', rank: 0, buy: 1, hue: [270, 0.25, 0.75], form: 'powder', density: 1.22, hardness: 0.3, sol: 0.16, solT: 0.001, binder: 0.4, friction: 0.66,
+fx: { transformation: 14 }, arc: [300, 3], price: 7, gather: 'sweep',
+steep: { name: 'Mica Shimmer', into: 'water', lo: [40, 45], hi: [90, 95], fx: { transformation: 15 } },
+lore: 'Naturally loose glittering grains. Knead with a little water for dough; warm plenty of water with it for a shimmering infusion.' },
 { key: 'sulfur', noun: 'Sulphur Crust', shape: 'powder', region: 'quarry', rank: 1, buy: 2, hue: [56, 0.85, 0.6], form: 'powder', density: 1.4, hardness: 0.3, sol: 0.22, solT: 0.0015, friction: 0.6,
-fx: { acidity: 68, fire: 22, toxicity: 14 }, price: 10, lore: 'A crumbly yellow crust. Strongly acidic, it etches stone and stings flesh.' },
+fx: { acidity: 26, fire: 7, toxicity: 4 }, arc: [500, 2.5], price: 10, gather: 'mine',
+steep: { name: 'Sulphur Water', into: 'water', lo: [50, 55], hi: [100, 110], fx: { acidity: 28, fire: 6, toxicity: 4 } },
+lore: 'A crumbly yellow crust. Strongly acidic, it etches stone and stings flesh. Hot water dissolves it into a biting acid.' },
 { key: 'stormglass', noun: 'Storm Glass', shape: 'crystal', region: 'quarry', rank: 2, buy: null, hue: [222, 0.55, 0.7], form: 'solid', density: 1.9, hardness: 0.65, sol: 0.08, solT: 0.0015, rare: true,
-fx: { arcana: 22, transformation: 12 }, econd: 0.6, charge: 1, glow: 0.3, price: 28, lore: 'Glass struck by lightning. It still holds a charge that flows into anything that conducts.' },
+fx: { arcana: 10, transformation: 6 }, arc: [-600, 3], econd: 0.6, charge: 1, glow: 0.3, price: 28, gather: 'mine', lore: 'Glass struck by lightning. It still holds a charge that flows into anything that conducts.' },
 { key: 'gravemoss', noun: 'Grave Moss', shape: 'moss', region: 'moonfen', rank: 2, buy: null, hue: [150, 0.12, 0.45], form: 'solid', density: 0.85, hardness: 0.2, sol: 0.16, solT: 0.0012,
-fx: { death: 84, frost: 18, toxicity: 44 }, price: 26, lore: 'Moss from old barrows, heavy with death magic. Dilute generously and test carefully.' },
+fx: { death: 32, frost: 7, toxicity: 16 }, arc: [-700, 2.5], price: 26, gather: 'scrape', dusk: true,
+steep: { name: 'Barrow Draught', into: 'water', lo: [-5, 0], hi: [10, 12], fx: { death: 34, frost: 7, toxicity: 16 } },
+lore: 'Moss from old barrows, heavy with death magic, scraped at dusk. It steeps only in near-freezing water. Dilute generously and test carefully.' },
 { key: 'starquartz', noun: 'Star Quartz', shape: 'crystal', region: 'moonfen', rank: 2, buy: null, hue: [280, 0.45, 0.78], form: 'solid', density: 1.5, hardness: 0.65, sol: 0.1, solT: 0.002, glow: 0.5,
-fx: { arcana: 52, love: 36, transformation: 24 }, price: 30, lore: 'A luminous crystal of love and insight. Crush it, then warm it in spirits.' },
+fx: { arcana: 20, love: 14, transformation: 8 }, arc: [600, 3], price: 30, gather: 'mine', lore: 'A luminous crystal of love and insight. Crush it, then warm it in spirits.' },
 { key: 'wisplichen', noun: 'Wisp Lichen', shape: 'moss', region: 'moonfen', rank: 2, buy: null, hue: [172, 0.6, 0.6], form: 'solid', density: 0.7, hardness: 0.15, sol: 0.18, solT: 0.001, glow: 0.7,
-fx: { arcana: 58, transformation: 18 }, price: 24, lore: 'A faintly glowing lichen that the wisps feed on.' },
+fx: { arcana: 22, transformation: 7 }, arc: [-250, 3], price: 24, gather: 'scrape',
+steep: { name: 'Lichen Glow', into: 'water', lo: [20, 25], hi: [50, 55], fx: { arcana: 24, transformation: 7 } },
+lore: 'A faintly glowing lichen that the wisps feed on. Lukewarm water draws out its light.' },
 { key: 'dragonpepper', noun: 'Dragon Pepper', shape: 'pepper', region: 'crags', rank: 3, buy: null, hue: [4, 0.8, 0.5], form: 'solid', density: 0.9, hardness: 0.3, sol: 0.18, solT: 0.0015,
-fx: { fire: 84, strength: 36, toxicity: 6 }, price: 32, lore: 'A furious red pepper from the crags. Its fire loves oil.' },
+fx: { fire: 32, strength: 14, toxicity: 2 }, arc: [850, 2.6], price: 32, gather: 'pick', lore: 'A furious red pepper from the crags. Its fire loves oil.' },
 { key: 'cinderscale', noun: 'Cinder Scale', shape: 'scale', region: 'crags', rank: 3, buy: null, hue: [24, 0.7, 0.4], form: 'solid', density: 1.45, hardness: 0.6, sol: 0.07, solT: 0.003, rare: true,
-fx: { fire: 48, transformation: 42, vitality: 12 }, econd: 0.3, charge: 0.4, price: 40, lore: 'A shed salamander scale, warm to the touch. Only fierce heat dissolves it.' },
+fx: { fire: 18, transformation: 16, vitality: 5 }, arc: [1000, 2.6], econd: 0.3, charge: 0.4, price: 40, gather: 'mine',
+steep: { name: 'Salamander Essence', into: 'oil', lo: [140, 150], hi: [300, 320], fx: { fire: 20, transformation: 17, vitality: 5 } },
+lore: 'A shed salamander scale, warm to the touch. Only fierce heat — hot oil, not water — dissolves it.' },
 ];
 const WILD_BY_KEY = Object.fromEntries(WILD_SPECS.map((s) => [s.key, s]));
 const PREFIX = ['Moss', 'Moon', 'Dusk', 'Ember', 'Witch', 'Frost', 'Star', 'Thorn', 'Dew', 'Raven', 'Old', 'Hollow'];
 const r2 = (v) => Math.round(v * 100) / 100;
+const WILD_FX_VERSION = 3;
 function generateWild(seed, base) {
 const rng = new Rng('wild:' + seed);
-const used = new Set(base.materials.map((m) => m.name));
+const used = new Set(base.materials.filter((m) => !m.id.startsWith('wild-')).map((m) => m.name));
 const materials = [];
 const ids = {};
 for (const s of WILD_SPECS) {
@@ -1098,60 +1229,79 @@ price: s.price, tier: s.buy === null ? 99 : s.buy, product: false, description: 
 });
 const mm = /** @type {any} */ (m);
 mm.effects = fx;
+mm.arcane = arcaneProfile(seed, id, s.arc[0], s.arc[1]);
+mm.fxv = WILD_FX_VERSION;
 mm.econd = s.econd ?? 0.04;
 mm.charge = s.charge ?? 0;
-mm.wild = { key: s.key, shape: s.shape, region: s.region, rank: s.rank, rare: !!s.rare, gatherOnly: s.buy === null };
+mm.wild = { key: s.key, shape: s.shape, region: s.region, rank: s.rank, rare: !!s.rare, gatherOnly: s.buy === null, gather: s.gather || 'pick', dusk: !!s.dusk, dawn: !!s.dawn };
 if (s.form === 'solid') mm.crushable = true;
 materials.push(m);
 ids[s.key] = id;
 }
 const reactions = [];
 const t5 = (lo, hi) => Math.round(rng.range(lo, hi) / 5) * 5;
-const product = (key, from, props) => {
+const product = (key, from, props, fx) => {
 const src = materials.find((m) => m.id === ids[from]);
 const m = completeMaterial({
 id: 'wild-p-' + key, archetype: 'product', tint: 0.85, opacity: 0.85, heatCapacity: 3.6, boil: Infinity, melt: -20,
 viscosity: 2.5, compat: src.compat.slice(), price: 0, tier: 99, product: true, density: src.density,
 form: 'liquid', color: src.color.map((c) => r2(c * 0.85)), ...props,
 });
-/** @type {any} */ (m).econd = 0.12;
-/** @type {any} */ (m).charge = 0;
+const mm = /** @type {any} */ (m);
+mm.econd = 0.12;
+mm.charge = 0;
+mm.effects = fx;
+mm.arcane = { ...(/** @type {any} */ (src).arcane) };
+mm.fxv = WILD_FX_VERSION;
 materials.push(m);
 return m;
 };
 const water = base.roles.water, spirit = base.roles.spirit, oil = base.roles.oil;
 const nm = (k) => materials.find((m) => m.id === ids[k]).name;
-const steepedRoot = product('steeped-ironroot', 'ironroot', { name: `Steeped ${nm('ironroot')}`, description: 'A dark root extract: all of the root’s strength, fully in solution.' });
-/** @type {any} */ (steepedRoot).effects = { strength: 74, acidity: 4 };
+const short = (k) => nm(k).split(' ').slice(-1)[0];
+const steepedRoot = product('steeped-ironroot', 'ironroot', { name: `Steeped ${nm('ironroot')}`, description: 'A dark root extract: all of the root’s strength, fully in solution.' }, { strength: 30 });
 reactions.push({ id: 'rw_steep_root', name: steepedRoot.name, kind: 'decompose', a: ids.ironroot, b: null, ra: 1, rb: 0, products: [{ id: steepedRoot.id, frac: 1 }],
 minT: t5(60, 70), maxT: 160, rate: 0.09, heat: -5, stir: 0.3, wet: true, hint: `Ground ${nm('ironroot')} steeps into a liquid extract in hot water.` });
-const infusion = product('silver-infusion', 'silverleaf', { name: `${nm('silverleaf')} Infusion`, description: 'A pale, fragrant healing infusion.' });
-/** @type {any} */ (infusion).effects = { vitality: 70, frost: 6 };
+const infusion = product('silver-infusion', 'silverleaf', { name: `${nm('silverleaf')} Infusion`, description: 'A pale, fragrant healing infusion.' }, { vitality: 26, frost: 2 });
 reactions.push({ id: 'rw_infuse_leaf', name: infusion.name, kind: 'decompose', a: ids.silverleaf, b: null, ra: 1, rb: 0, products: [{ id: infusion.id, frac: 1 }],
 minT: t5(45, 55), maxT: t5(85, 95), rate: 0.1, heat: -5, stir: 0.3, wet: true, hint: `${nm('silverleaf')} infuses in warm (not boiling) water.` });
-const wilted = product('wilted-petal', 'heartpetal', { name: `Wilted ${nm('heartpetal')}`, color: [0.45, 0.32, 0.3], description: 'Scorched petals: the love is gone and bitterness remains.' });
-/** @type {any} */ (wilted).effects = { love: 14, toxicity: 22 };
+const wilted = product('wilted-petal', 'heartpetal', { name: `Wilted ${nm('heartpetal')}`, color: [0.45, 0.32, 0.3], description: 'Scorched petals: the love is gone and bitterness remains.' }, { love: 6, toxicity: 9 });
 reactions.push({ id: 'rw_wilt_petal', name: wilted.name, kind: 'decompose', a: ids.heartpetal, b: null, ra: 1, rb: 0, products: [{ id: wilted.id, frac: 1 }],
 minT: t5(78, 88), maxT: 400, rate: 0.12, heat: 0, stir: 0.2, hint: `Strong heat spoils ${nm('heartpetal')}.` });
-const mandrakeT = product('mandrake-tincture', 'mandrake', { name: `${nm('mandrake')} Tincture`, compat: [0.62, 0.16], description: 'The waking root dissolved in warm spirit.' });
-/** @type {any} */ (mandrakeT).effects = { transformation: 92, strength: 20 };
+const mandrakeT = product('mandrake-tincture', 'mandrake', { name: `${nm('mandrake')} Tincture`, compat: [0.62, 0.16], description: 'The waking root dissolved in warm spirit.' }, { transformation: 36, strength: 8 });
 reactions.push({ id: 'rw_mandrake', name: mandrakeT.name, kind: 'mix', a: ids.mandrake, b: spirit, ra: 1, rb: 2, products: [{ id: mandrakeT.id, frac: 1 }],
 minT: t5(35, 45), maxT: t5(70, 75), rate: 0.25, heat: 10, stir: 0.8, hint: `${nm('mandrake')} wakes in warm spirit.` });
-const starT = product('starlit-tincture', 'starquartz', { name: `Starlit ${nm('starquartz').split(' ').slice(-1)[0]} Tincture`, compat: [0.62, 0.16], glow: 0.7, description: 'Crushed quartz dissolved in warm spirit; it glimmers.' });
-/** @type {any} */ (starT).effects = { arcana: 68, love: 34, transformation: 14 };
+const starT = product('starlit-tincture', 'starquartz', { name: `Starlit ${short('starquartz')} Tincture`, compat: [0.62, 0.16], glow: 0.7, description: 'Crushed quartz dissolved in warm spirit; it glimmers.' }, { arcana: 26, love: 13, transformation: 6 });
 reactions.push({ id: 'rw_starquartz', name: starT.name, kind: 'mix', a: ids.starquartz, b: spirit, ra: 1, rb: 2, products: [{ id: starT.id, frac: 1 }],
 minT: t5(35, 45), maxT: t5(70, 80), rate: 0.25, heat: 8, stir: 0.8, hint: `Crushed ${nm('starquartz')} dissolves in warm spirit.` });
 const dragonOil = product('dragonfire-oil', 'dragonpepper', { name: 'Dragonfire Oil', compat: [0.16, 0.11], color: [0.85, 0.25, 0.08], flammability: 0.7, ignition: 240, combustionHeat: 900,
-ash: base.roles.soot, smoke: base.roles.smoke, description: 'Pepper fire carried in oil.' });
-/** @type {any} */ (dragonOil).effects = { fire: 92, strength: 30 };
+ash: base.roles.soot, smoke: base.roles.smoke, description: 'Pepper fire carried in oil.' }, { fire: 36, strength: 12 });
 reactions.push({ id: 'rw_dragonoil', name: dragonOil.name, kind: 'contact', a: ids.dragonpepper, b: oil, ra: 1, rb: 1, products: [{ id: dragonOil.id, frac: 1 }],
 minT: t5(30, 40), maxT: 220, rate: 0.4, heat: 20, stir: 1, hint: `Ground ${nm('dragonpepper')} pours its fire into warm oil.` });
 const gypsum = product('gypsum', 'riverchalk', { name: 'Gypsum Grit', form: 'powder', color: [0.9, 0.88, 0.82], friction: 0.68, solubility: 0.02, melt: 1500, viscosity: 1,
-description: 'The neutral grit left where acid met chalk.' });
-/** @type {any} */ (gypsum).effects = { strength: 8 };
+description: 'The neutral grit left where acid met chalk.' }, { strength: 3 });
 reactions.push({ id: 'rw_neutralise', name: 'Neutralisation', kind: 'contact', a: ids.riverchalk, b: ids.sulfur, ra: 1, rb: 1, products: [{ id: gypsum.id, frac: 1 }],
 minT: -10, maxT: 400, rate: 0.5, heat: 60, stir: 1, wet: true, hint: `${nm('riverchalk')} fizzes where it meets ${nm('sulfur')} and both turn to neutral grit.` });
-void water;
+for (const s of WILD_SPECS) {
+if (!s.steep) continue;
+const st = s.steep;
+const solvent = st.into === 'spirit' ? spirit : st.into === 'oil' ? oil : water;
+const solv = base.materials.find((m) => m.id === solvent);
+const ext = product(`extract-${s.key}`, s.key, {
+name: st.name, ...(solv ? { compat: solv.compat.slice() } : {}),
+description: `The magic of ${nm(s.key)} drawn into ${st.into === 'water' ? 'water' : st.into}.`,
+}, Object.fromEntries(Object.entries(st.fx).map(([k, v]) => [k, Math.round(v * rng.range(0.95, 1.05) * 10) / 10])));
+const lo = t5(st.lo[0], st.lo[1]), hi = t5(st.hi[0], st.hi[1]);
+const where = st.into === 'water' ? '' : ` in ${st.into}`;
+const window = lo <= 15 ? `only when chilled below ${hi}°C` : `between about ${lo} and ${hi}°C`;
+if (st.into === 'water') {
+reactions.push({ id: `rw_extract_${s.key}`, name: ext.name, kind: 'decompose', a: ids[s.key], b: null, ra: 1, rb: 0, products: [{ id: ext.id, frac: 1 }],
+minT: lo, maxT: hi, rate: 0.1, heat: -4, stir: 0.4, wet: true, hint: `Ground ${nm(s.key)} steeps into water ${window}.` });
+} else {
+reactions.push({ id: `rw_extract_${s.key}`, name: ext.name, kind: st.into === 'oil' ? 'contact' : 'mix', a: ids[s.key], b: solvent, ra: 1, rb: 1, products: [{ id: ext.id, frac: 1 }],
+minT: lo, maxT: hi, rate: 0.25, heat: 4, stir: 0.8, hint: `${nm(s.key)} dissolves${where} ${window}.` });
+}
+}
 return { materials, reactions, ids, laws: generateLaws(seed) };
 }
 const LAW_TEMPLATES = [
@@ -1189,7 +1339,107 @@ lore: t.lore,
 }
 return out;
 }
-return { WILD_SPECS, WILD_BY_KEY, generateWild, generateLaws };
+return { WILD_SPECS, WILD_BY_KEY, WILD_FX_VERSION, generateWild, generateLaws };
+})();
+// src/alchemy/arcane.js
+const __m15 = (() => {
+const { EFFECT_KEYS } = __m13;
+const ARCANE_SCALE = 0.1;
+const ARCANE_ZERO = 20;
+const AWAKE_SUFFIX = '~a';
+function thresholdToCelsius(thr) {
+return ARCANE_ZERO + ARCANE_SCALE * thr;
+}
+function celsiusToThreshold(T) {
+return (T - ARCANE_ZERO) / ARCANE_SCALE;
+}
+function isAwakenedId(id) {
+return typeof id === 'string' && id.endsWith(AWAKE_SUFFIX);
+}
+function awakenedId(id) {
+return isAwakenedId(id) ? id : id + AWAKE_SUFFIX;
+}
+function baseIdOf(id) {
+return isAwakenedId(id) ? id.slice(0, -AWAKE_SUFFIX.length) : id;
+}
+function isMagical(def) {
+return !!(def && def.arcane && Number.isFinite(def.arcane.thr) && !def.awakened);
+}
+function awakenedDef(base) {
+const gain = base.arcane && base.arcane.gain > 0 ? base.arcane.gain : 3;
+const effects = {};
+for (const k of EFFECT_KEYS) {
+const v = base.effects ? Number(base.effects[k]) || 0 : 0;
+if (v) effects[k] = Math.round(Math.max(-100, Math.min(100, v * gain)) * 10) / 10;
+}
+return {
+...base,
+id: awakenedId(base.id),
+name: `Awakened ${base.name}`,
+effects,
+awakened: true,
+base: base.id,
+arcane: { thr: base.arcane ? base.arcane.thr : 0, gain, awake: true },
+glow: Math.min(1, (base.glow || 0) * 0.5 + 0.35),
+product: true,
+tier: 99,
+price: 0,
+wild: undefined,
+crushable: base.crushable,
+description: `${base.name}, awakened past its arcane threshold. Its magic runs ${gain.toFixed(1)}× stronger and no longer fades with temperature.`,
+};
+}
+function withAwakened(lookup) {
+const cache = new Map();
+return (id) => {
+if (!isAwakenedId(id)) return lookup(id);
+let d = cache.get(id);
+if (d === undefined) {
+const base = lookup(baseIdOf(id));
+d = isMagical(base) ? awakenedDef(base) : null;
+cache.set(id, d);
+}
+return d || undefined;
+};
+}
+function blendThreshold(parts, lookup) {
+let w = 0, t = 0;
+for (const p of parts) {
+const d = lookup(p.id);
+if (!isMagical(d) || !(p.ml > 0)) continue;
+w += p.ml;
+t += p.ml * d.arcane.thr;
+}
+return w > 0 ? t / w : null;
+}
+function pastThreshold(thr, T) {
+const Ta = thresholdToCelsius(thr);
+return thr >= 0 ? T >= Ta : T <= Ta;
+}
+function describeThreshold(thr) {
+const T = Math.round(thresholdToCelsius(thr));
+const sign = thr > 0 ? '+' : '';
+return `${sign}${Math.round(thr)} (${thr >= 0 ? 'heat past' : 'chill below'} ${T}°C)`;
+}
+function awakenParts(parts, composition, lookup) {
+let awake = 0, magic = 0;
+for (const [id, v] of Object.entries(composition)) {
+const d = lookup(id);
+if (!d) continue;
+if (d.awakened) { awake += v; magic += v; } else if (isMagical(d)) magic += v;
+}
+const share = magic > 0 ? awake / magic : 0;
+if (share < 0.01) return parts;
+const out = [];
+for (const p of parts) {
+const d = lookup(p.id);
+if (!isMagical(d)) { out.push(p); continue; }
+if (share < 0.99) out.push({ id: p.id, ml: p.ml * (1 - share) });
+out.push({ id: awakenedId(p.id), ml: p.ml * share });
+}
+return out;
+}
+return { ARCANE_SCALE, ARCANE_ZERO, AWAKE_SUFFIX, thresholdToCelsius, celsiusToThreshold, isAwakenedId, awakenedId, baseIdOf, isMagical, awakenedDef, withAwakened, blendThreshold, pastThreshold, describeThreshold, awakenParts };
 })();
 // src/materials/generator.js
 const __m7 = (() => {
@@ -1198,7 +1448,8 @@ const { hslToRgb } = __m8;
 const { completeMaterial } = __m9;
 const { makeName, makeProductName } = __m10;
 const { applyProfile } = __m11;
-const { generateWild } = __m12;
+const { generateWild, generateLaws, WILD_FX_VERSION } = __m12;
+const { withAwakened } = __m15;
 const r2 = (v) => Math.round(v * 100) / 100;
 function generateWorld(seed) {
 const seedStr = String(seed);
@@ -1507,31 +1758,94 @@ return addAlchemy({ seed: seedStr, materials, ingredients, starting, reactions, 
 }
 function addAlchemy(world) {
 for (const m of world.materials) applyProfile(m, world.seed);
-if (!world.wild) {
+const stale = !world.wild || world.materials.some((m) => m.id.startsWith('wild-') && m.fxv !== WILD_FX_VERSION);
+if (stale) {
 const w = generateWild(world.seed, world);
-for (const m of w.materials) if (!world.materials.some((x) => x.id === m.id)) world.materials.push(m);
-for (const r of w.reactions) if (!world.reactions.some((x) => x.id === r.id)) world.reactions.push(r);
+for (const m of w.materials) {
+const old = world.materials.find((x) => x.id === m.id);
+if (!old) { world.materials.push(m); continue; }
+const mm = /** @type {any} */ (m);
+Object.assign(old, { effects: mm.effects, arcane: mm.arcane, fxv: mm.fxv, solubility: m.solubility, binder: m.binder, description: m.description });
+if (mm.wild) old.wild = { ...mm.wild };
+}
+for (const r of w.reactions) {
+const k = world.reactions.findIndex((x) => x.id === r.id);
+if (k < 0) world.reactions.push(r);
+else world.reactions[k] = r;
+}
 world.wild = w.materials.filter((m) => !m.product).map((m) => m.id);
 for (const id of world.wild) if (!world.ingredients.includes(id)) world.ingredients.push(id);
-world.laws = w.laws;
+if (!world.laws) world.laws = w.laws;
 }
-if (!world.laws) world.laws = generateWild(world.seed, world).laws;
+if (!world.laws) world.laws = generateLaws(world.seed);
 return world;
 }
 function makeLookup(world, extra = []) {
 const map = new Map();
 for (const m of world.materials) map.set(m.id, m);
 for (const m of extra) map.set(m.id, m);
-return (id) => map.get(id);
+return withAwakened((id) => map.get(id));
 }
 return { generateWorld, addAlchemy, makeLookup };
 })();
+// src/materials/shapes.js
+const __m19 = (() => {
+const LOOK = Object.freeze({ ICE: 0, FIBRE: 1, LEAF: 2, STONE: 3, CRYSTAL: 4, CAP: 5, GLOSSY: 6, BONE: 7, FUR: 8, LUMP: 9 });
+const SHAPE_LOOK = {
+root: LOOK.FIBRE, pepper: LOOK.FIBRE, leaf: LOOK.LEAF, petal: LOOK.LEAF, flower: LOOK.LEAF, clover: LOOK.LEAF, moss: LOOK.LEAF,
+stone: LOOK.STONE, crystal: LOOK.CRYSTAL, cap: LOOK.CAP, bean: LOOK.GLOSSY, scale: LOOK.GLOSSY, bone: LOOK.BONE, fur: LOOK.FUR, lump: LOOK.LUMP,
+};
+function shapeOf(def) {
+if (!def) return 'stone';
+if (def.shape) return def.shape;
+if (def.wild && def.wild.shape) return def.wild.shape;
+switch (def.archetype) {
+case 'crystal': case 'frost': return 'crystal';
+case 'resin': return 'lump';
+default: return 'stone';
+}
+}
+function solidLook(def) {
+if (!def || def.form !== 'solid') return LOOK.ICE;
+if (def.archetype === 'frost') return LOOK.CRYSTAL;
+return SHAPE_LOOK[shapeOf(def)] ?? LOOK.STONE;
+}
+const hex = (a, b) => [a + (b & 1) * 0.5, b * 0.866];
+const TEMPLATES = {
+root: [[0, 0], [1, 0.2], [-1, -0.1], [2, 0.35], [-2, -0.15], [3, 0.6], [-3, -0.1], [0.5, 0.9], [-1.5, 0.75], [4, 0.95], [2.4, -0.7], [-3.9, 0.4]],
+pepper: [[0, 0], [1, 0.1], [-1, 0], [2, 0.3], [0.5, 0.86], [-0.5, 0.86], [3, 0.6], [1.5, 0.95], [-2, -0.3]],
+leaf: [[0, 0], [1, 0], [-1, 0], [0.5, 0.86], [-0.5, 0.86], [0.5, -0.86], [-0.5, -0.86], [2, 0], [-2, 0.1], [1.5, 0.7], [1.5, -0.7]],
+petal: [[0, 0], [1, 0], [0.5, 0.86], [-0.5, 0.86], [-1, 0], [-0.5, -0.86], [0.5, -0.86]],
+flower: [[0, 0], [1, 0], [0.5, 0.86], [-0.5, 0.86], [-1, 0], [-0.5, -0.86], [0.5, -0.86], [0, 1.73], [0, 2.6]],
+clover: [[0, 0], [0.8, -0.6], [-0.8, -0.6], [0, 0.9], [1.6, -0.5], [-1.6, -0.5], [0, 1.8]],
+moss: [[0, 0], [1, 0], [-1, 0], [0.5, 0.86], [-0.5, 0.86], [1.5, 0.86], [-1.5, 0.86], [0, -0.86], [2, 0.2]],
+stone: [[0, 0], ...[0, 1, 2, 3, 4, 5].map((k) => [Math.cos((k * Math.PI) / 3), Math.sin((k * Math.PI) / 3)]),
+...[0, 1, 2, 3, 4, 5].map((k) => [1.732 * Math.cos((k * Math.PI) / 3 + Math.PI / 6), 1.732 * Math.sin((k * Math.PI) / 3 + Math.PI / 6)])],
+crystal: [[0, 0], [0, 1], [0.866, 0.5], [0.866, -0.5], [0, -1], [0, 2], [0.866, 1.5], [0.866, -1.5], [0.43, -2.25], [0.43, 2.75]],
+cap: [[0, 0], [1, 0], [-1, 0], [2, 0.25], [-2, 0.25], [0.5, -0.8], [-0.5, -0.8], [0, 1], [0, 2]],
+bean: [[0, 0], [1, 0.15], [-1, 0.15], [0.5, -0.8], [-0.5, -0.8], [2, 0.5], [-2, 0.5]],
+scale: [[0, 0], [1, 0], [-1, 0], ...[hex(0, 1), hex(-1, 1), hex(0, -1), hex(-1, -1)].map(([x, y]) => [x, y]), [0, 1.73]],
+bone: [[0, 0], [1, 0], [-1, 0], [2, 0], [-2, 0], [3, 0.5], [3, -0.5], [-3, 0.5], [-3, -0.5], [3.8, 0], [-3.8, 0]],
+fur: [[0, 0], [1, 0.2], [-1, 0.1], [0.4, 0.9], [-0.6, 0.9], [0.5, -0.85], [-0.4, -0.8], [1.5, -0.6]],
+lump: [[0, 0], [1, 0], [-1, 0.1], [0.5, 0.86], [-0.5, 0.9], [0.4, -0.85], [-0.6, -0.8], [1.6, 0.6]],
+};
+function chunkTemplate(def, max) {
+const t = TEMPLATES[shapeOf(def)] || TEMPLATES.stone;
+return t.slice(0, Math.max(1, Math.min(max, t.length)));
+}
+function chunkSize(def) {
+return (TEMPLATES[shapeOf(def)] || TEMPLATES.stone).length;
+}
+return { LOOK, shapeOf, solidLook, chunkTemplate, chunkSize };
+})();
 // src/reactions/species.js
-const __m16 = (() => {
+const __m18 = (() => {
 const { rgbToOklab, srgbToLinear } = __m8;
 const { volatilityOf } = __m9;
 const { NE, effectVector } = __m13;
-const MAX_SPECIES = 16;
+const { isMagical, awakenedId } = __m15;
+const { solidLook } = __m19;
+const MAX_SPECIES = 24;
 const NO_BOIL = 1e6;
 class SpeciesTable {
 constructor() {
@@ -1579,6 +1893,13 @@ this.econd = f();
 this.echarge = f();
 this.ashSlot = new Int16Array(S).fill(-1);
 this.smokeSlot = new Int16Array(S).fill(-1);
+this.arcThr = f();
+this.arcMag = new Uint8Array(S);
+this.isAwake = new Uint8Array(S);
+this.awakeSlot = new Int16Array(S).fill(-1);
+this.isWhole = new Uint8Array(S);
+this.look = new Uint8Array(S);
+this.magicCount = 0;
 }
 assign(slot, def, lookup) {
 if (this.defs[slot]) this.release(slot);
@@ -1643,6 +1964,21 @@ const ev = effectVector(def);
 for (let k = 0; k < NE; k++) this.eff[slot * NE + k] = ev[k];
 this.econd[slot] = def.econd ?? 0.05;
 this.echarge[slot] = def.charge ?? 0;
+const mag = isMagical(def);
+this.arcMag[slot] = mag ? 1 : 0;
+this.arcThr[slot] = mag ? def.arcane.thr : 0;
+this.isAwake[slot] = def.awakened ? 1 : 0;
+this.awakeSlot[slot] = -1;
+this.isWhole[slot] = def.form === 'solid' ? 1 : 0;
+this.look[slot] = solidLook(def);
+if (mag) this.magicCount++;
+if (def.awakened && def.base) {
+const b = this.slotOf.get(def.base);
+if (b !== undefined) this.awakeSlot[b] = slot;
+} else if (mag) {
+const a = this.slotOf.get(awakenedId(def.id));
+if (a !== undefined) this.awakeSlot[slot] = a;
+}
 if (lookup) {
 if (def.ash) {
 const a = lookup(def.ash);
@@ -1662,9 +1998,14 @@ this.slotOf.delete(def.id);
 this.defs[slot] = null;
 this.ashSlot[slot] = -1;
 this.smokeSlot[slot] = -1;
+if (this.arcMag[slot]) this.magicCount--;
+this.arcMag[slot] = 0;
+this.isAwake[slot] = 0;
+this.awakeSlot[slot] = -1;
 for (let s = 0; s < MAX_SPECIES; s++) {
 if (this.ashSlot[s] === slot) this.ashSlot[s] = -1;
 if (this.smokeSlot[s] === slot) this.smokeSlot[s] = -1;
+if (this.awakeSlot[s] === slot) this.awakeSlot[s] = -1;
 }
 let c = 0;
 for (let s = 0; s < MAX_SPECIES; s++) if (this.defs[s]) c = s + 1;
@@ -1682,8 +2023,8 @@ return [0, 1, 2].map((k) => -Math.log(Math.max(0.003, srgbToLinear(def.color[k])
 return { MAX_SPECIES, NO_BOIL, SpeciesTable, absorbance };
 })();
 // src/reactions/mixture.js
-const __m17 = (() => {
-const { MAX_SPECIES, NO_BOIL } = __m16;
+const __m20 = (() => {
+const { MAX_SPECIES, NO_BOIL } = __m18;
 const { rgbToOklab, linearToSrgb } = __m8;
 function granularFraction(sp, comp, off, T) {
 let liquidPart = 0;
@@ -1781,10 +2122,12 @@ return new Float32Array(n);
 return { granularFraction, suspensionLnMult, mixtureProps, zeroComposition };
 })();
 // src/game/predict.js
-const __m15 = (() => {
-const { SpeciesTable, MAX_SPECIES } = __m16;
-const { mixtureProps } = __m17;
+const __m17 = (() => {
+const { SpeciesTable, MAX_SPECIES } = __m18;
+const { mixtureProps } = __m20;
 const { compositionEffects, NE } = __m13;
+const { isMagical, awakenedId, thresholdToCelsius } = __m15;
+const ACTIVATION_MARGIN = 6;
 function predictPlan(world, lookup, plan) {
 const vol = new Map();
 let total = 0;
@@ -1793,15 +2136,16 @@ vol.set(ing.id, (vol.get(ing.id) || 0) + ing.n);
 total += ing.n;
 }
 const fired = [];
-const lo = Math.min(20, plan.coolTo ?? 20, plan.serveTemp ?? 20);
-const hi = Math.max(20, plan.heatTo ?? 20, plan.serveTemp ?? 20);
+const st = plan.steep ? plan.steep.T : 20;
+const lo = Math.min(20, plan.coolTo ?? 20, plan.serveTemp ?? 20, st);
+const hi = Math.max(20, plan.heatTo ?? 20, plan.serveTemp ?? 20, st);
 for (let pass = 0; pass < 3; pass++) {
 for (const r of world.reactions) {
 const a = vol.get(r.a) || 0;
 const b = r.b ? vol.get(r.b) || 0 : Infinity;
 if (a <= 0 || b <= 0) continue;
 if (r.maxT < lo || r.minT > hi) continue;
-const held = (plan.hold ?? 0) >= 8;
+const held = (plan.hold ?? 0) >= 8 || (!!plan.steep && plan.steep.hold >= 8 && plan.steep.T >= r.minT && plan.steep.T <= r.maxT);
 if (r.wet && !held && r.minT > (plan.serveTemp ?? 20)) continue;
 const yieldF = r.kind === 'decompose' ? (r.wet ? 0.85 : 0.55) : 0.88;
 const ext = Math.min(a / r.ra, r.b ? b / r.rb : Infinity) * yieldF;
@@ -1811,6 +2155,25 @@ if (r.b) vol.set(r.b, b - ext * r.rb);
 const used = ext * (r.ra + (r.b ? r.rb : 0));
 for (const pr of r.products) vol.set(pr.id, (vol.get(pr.id) || 0) + used * pr.frac);
 fired.push(r.id);
+}
+}
+let wMag = 0, tMag = 0;
+for (const [id, v] of vol) {
+const d = lookup(id);
+if (v > 1e-6 && isMagical(d)) { wMag += v; tMag += v * d.arcane.thr; }
+}
+const threshold = wMag > 0 ? tMag / wMag : null;
+let awakened = false;
+if (threshold !== null) {
+const Ta = thresholdToCelsius(threshold);
+awakened = threshold >= 0 ? hi >= Ta : lo <= Ta;
+if (awakened) {
+for (const [id, v] of [...vol]) {
+const d = lookup(id);
+if (v <= 1e-6 || !isMagical(d) || !lookup(awakenedId(id))) continue;
+vol.set(id, 0);
+vol.set(awakenedId(id), (vol.get(awakenedId(id)) || 0) + v);
+}
 }
 }
 for (const [id, v] of vol) {
@@ -1833,17 +2196,44 @@ const props = mixtureProps(sp, comp, 0, plan.serveTemp ?? 20);
 const effects = compositionEffects(sp, comp, 0, plan.serveTemp ?? 20, world.laws || [], new Array(NE).fill(0));
 const composition = {};
 for (let s = 0; s < sp.count; s++) if (sp.defs[s] && comp[s] > 1e-5) composition[sp.defs[s].id] = comp[s];
-return { ...props, effects, composition, reactions: fired, totalParticles: total };
+return { ...props, effects, composition, reactions: fired, totalParticles: total, threshold, awakened };
+}
+function arcaneRegime(ids, lookup, temps) {
+const ths = [];
+for (const id of ids) {
+const d = lookup(id);
+if (isMagical(d)) ths.push(d.arcane.thr);
+}
+if (!ths.length) return 'quiet';
+const hi = Math.max(20, ...temps), lo = Math.min(20, ...temps);
+const M = ACTIVATION_MARGIN;
+const pos = ths.filter((t) => t >= 0), neg = ths.filter((t) => t < 0);
+if (pos.length && neg.length) return hi <= 21 && lo >= 19 ? 'quiet' : 'mixed';
+if (pos.length) {
+if (hi <= thresholdToCelsius(Math.min(...pos)) - M) return 'quiet';
+if (hi >= thresholdToCelsius(Math.max(...pos)) + M) return 'full';
+return 'mixed';
+}
+if (lo >= thresholdToCelsius(Math.max(...neg)) + M) return 'quiet';
+if (lo <= thresholdToCelsius(Math.min(...neg)) - M) return 'full';
+return 'mixed';
+}
+function activationMargin(plan, threshold) {
+if (threshold === null) return null;
+const Ta = thresholdToCelsius(threshold);
+const lo = Math.min(20, plan.coolTo ?? 20, plan.serveTemp ?? 20);
+const hi = Math.max(20, plan.heatTo ?? 20, plan.serveTemp ?? 20);
+return threshold >= 0 ? hi - Ta : Ta - lo;
 }
 function planCost(plan, priceOf) {
 let c = 0;
 for (const ing of plan.ingredients) c += (ing.n * 5 / 100) * priceOf(ing.id);
 return c;
 }
-return { predictPlan, planCost };
+return { ACTIVATION_MARGIN, predictPlan, arcaneRegime, activationMargin, planCost };
 })();
 // src/game/customers.js
-const __m18 = (() => {
+const __m21 = (() => {
 const { Rng } = __m6;
 const ARCHETYPES = [
 {
@@ -1923,9 +2313,26 @@ const FIRST = ['Aldric', 'Bryn', 'Cedric', 'Dagna', 'Edda', 'Fenwick', 'Gwen', '
 const LAST = ['Ashdown', 'Brightwater', 'Copperpot', 'Dunmore', 'Elderberry', 'Fairweather', 'Greaves', 'Hollins', 'Ironside', 'Juniper', 'Kettleby', 'Larkspur', 'Millward', 'Nettlefold', 'Oakhart', 'Pennywhistle', 'Quarrel', 'Ravensby', 'Stonebridge', 'Thistlewood', 'Underhill', 'Vane', 'Whitlock', 'Yarrow'];
 const SKIN = [[0.96, 0.8, 0.66], [0.87, 0.66, 0.5], [0.72, 0.52, 0.36], [0.55, 0.38, 0.26], [0.4, 0.27, 0.18], [0.98, 0.86, 0.76]];
 const HAIR = [[0.15, 0.1, 0.07], [0.35, 0.22, 0.12], [0.62, 0.38, 0.18], [0.85, 0.7, 0.4], [0.55, 0.55, 0.55], [0.9, 0.9, 0.88], [0.55, 0.2, 0.1]];
+const PERSONA = {
+farmer: [0.45, 3, 0.92, 0.5], innkeeper: [0.6, 3, 0.85, 0.5], bard: [0.3, 2, 0.75, 0.3], healer: [0.25, 2, 0.95, 0.95],
+knight: [0.3, 2, 0.9, 0.6], traveler: [0.5, 3, 0.78, 0.5], scholar: [0.4, 3, 0.9, 0.9], witch: [0.7, 4, 0.6, 0.4],
+blacksmith: [0.55, 3, 0.88, 0.5], noble: [0.2, 2, 0.62, 0.85], wizard: [0.4, 3, 0.82, 0.8], hunter: [0.5, 3, 0.8, 0.55],
+};
+function makePersona(rng, arch) {
+const [haggle, rounds, honesty, proof] = PERSONA[arch.key] || [0.5, 3, 0.85, 0.5];
+const j = (v, a) => Math.max(0, Math.min(1, v + rng.range(-a, a)));
+return {
+haggle: Math.round(j(haggle, 0.15) * 100) / 100,
+patience: Math.max(2, rounds + rng.int(-1, 1)),
+honesty: Math.round(j(honesty, 0.12) * 100) / 100,
+proof: Math.round(j(proof, 0.1) * 100) / 100,
+};
+}
 function makeCustomer(rng, arch) {
 const name = `${rng.pick(FIRST)} ${rng.pick(LAST)}`;
+const persona = makePersona(rng.fork('persona'), arch);
 return {
+persona,
 id: 'c' + Math.floor(rng.next() * 1e9).toString(36),
 archetype: arch.key,
 title: arch.title,
@@ -1950,7 +2357,7 @@ return ARCHETYPES.find((a) => a.key === key) || ARCHETYPES[0];
 return { ARCHETYPES, makeCustomer, archetypeOf, Rng };
 })();
 // src/simulation/constants.js
-const __m20 = (() => {
+const __m23 = (() => {
 const PHASE = Object.freeze({ LIQUID: 0, POWDER: 1, PASTE: 2, SOLID: 3, GAS: 4 });
 const PHASE_NAMES = ['liquid', 'powder', 'paste', 'solid', 'gas'];
 const SIM = Object.freeze({
@@ -1990,26 +2397,11 @@ return PHASE.LIQUID;
 }
 return { PHASE, PHASE_NAMES, SIM, TUNE, formPhase };
 })();
-// src/reactions/compatibility.js
-const __m21 = (() => {
-const COMPAT_FULL = 0.26;
-const COMPAT_NONE = 0.4;
-function compatFactor(a1, b1, a2, b2) {
-const d = Math.hypot(a1 - a2, b1 - b2);
-if (d <= COMPAT_FULL) return 1;
-if (d >= COMPAT_NONE) return 0;
-return 1 - (d - COMPAT_FULL) / (COMPAT_NONE - COMPAT_FULL);
-}
-function miscible(m1, m2) {
-return compatFactor(m1.compat[0], m1.compat[1], m2.compat[0], m2.compat[1]) > 0.5;
-}
-return { COMPAT_FULL, COMPAT_NONE, compatFactor, miscible };
-})();
 // src/game/measure.js
-const __m19 = (() => {
-const { MAX_SPECIES } = __m16;
-const { PHASE, SIM } = __m20;
-const { compatFactor } = __m21;
+const __m22 = (() => {
+const { MAX_SPECIES } = __m18;
+const { PHASE, SIM } = __m23;
+const { compatFactor } = __m14;
 const { oklabToRgb } = __m8;
 const { sampleEffects, EFFECT_KEYS } = __m13;
 const PHYSICAL_KEYS = ['color', 'density', 'viscosity', 'temperature', 'stability', 'volatility', 'charge', 'quantity'];
@@ -2131,16 +2523,194 @@ const VISCOSITY_CLASSES = [
 ];
 return { PHYSICAL_KEYS, PROPERTY_KEYS, measureParticles, tapSelection, probeSelection, viscosityClass, VISCOSITY_CLASSES };
 })();
+// src/game/evaluate.js
+const __m24 = (() => {
+const { deltaE } = __m8;
+const { viscosityClass } = __m22;
+const { EFFECTS, EFFECT_INDEX, EFFECT_KEYS, NE } = __m13;
+const PROPERTY_LABELS = {
+color: 'Colour', density: 'Density', viscosity: 'Viscosity', temperature: 'Temperature', stability: 'Stability', volatility: 'Volatility',
+charge: 'Charge', quantity: 'Quantity', purity: 'Purity', ...Object.fromEntries(EFFECTS.map((e) => [e.key, e.label])),
+};
+function strongestUnwanted(effects, exclude = []) {
+let m = 0, key = '';
+if (!effects) return { value: 0, key };
+for (let k = 0; k < NE; k++) {
+if (exclude.includes(EFFECT_KEYS[k])) continue;
+const v = Math.abs(effects[k] || 0);
+if (v > m) { m = v; key = EFFECT_KEYS[k]; }
+}
+return { value: m, key };
+}
+function isEffectKey(key) {
+return EFFECT_INDEX[key] !== undefined;
+}
+function scoreRequirement(req, m) {
+let value, d;
+switch (req.key) {
+case 'color':
+d = deltaE(m.lab, /** @type {number[]} */ (req.target));
+value = d;
+break;
+case 'density':
+value = m.density;
+d = Math.abs(value - /** @type {number} */ (req.target));
+break;
+case 'viscosity':
+value = m.viscosity;
+d = Math.abs(Math.log(Math.max(1e-3, value)) - /** @type {number} */ (req.target));
+break;
+case 'temperature':
+value = m.temperature;
+d = Math.abs(value - /** @type {number} */ (req.target));
+break;
+case 'stability':
+value = m.stability;
+break;
+case 'volatility':
+value = m.volatility;
+break;
+case 'charge':
+value = m.charge || 0;
+d = Math.abs(value - /** @type {number} */ (req.target));
+break;
+case 'purity':
+value = strongestUnwanted(m.effects, req.exclude || []).value;
+break;
+default: {
+const k = EFFECT_INDEX[req.key];
+value = k !== undefined && m.effects ? m.effects[k] : 0;
+if (req.kind === 'target') d = Math.abs(value - /** @type {number} */ (req.target));
+}
+}
+let score;
+if (req.kind === 'target') {
+score = d <= req.tol ? 1 : Math.max(0, 1 - (d - req.tol) / Math.max(1e-6, req.zero - req.tol));
+} else if (req.kind === 'min') {
+const t = /** @type {number} */ (req.target);
+score = value >= t ? 1 : Math.max(0, 1 - (t - value) / req.zero);
+d = Math.max(0, t - value);
+} else {
+const t = /** @type {number} */ (req.target);
+score = value <= t ? 1 : Math.max(0, 1 - (value - t) / req.zero);
+d = Math.max(0, value - t);
+}
+return { score, value, distance: d, text: describeValue(req.key, value, m) };
+}
+function describeValue(key, value, m) {
+switch (key) {
+case 'color':
+return `ΔE ${value.toFixed(1)}`;
+case 'density':
+return `${value.toFixed(2)} g/ml`;
+case 'viscosity':
+return `${viscosityClass(value)} (${value < 100 ? value.toFixed(1) : Math.round(value)} cP)`;
+case 'temperature':
+return `${Math.round(value)}°C`;
+case 'charge':
+return `${value >= 0 ? '+' : ''}${value.toFixed(2)}`;
+case 'purity':
+return value < 0.05 ? 'pure' : `${value.toFixed(1)}% other magic`;
+default:
+return `${Math.round(value)}`;
+}
+}
+function evaluatePotion(commission, m) {
+const rows = commission.requirements.map((req) => {
+const r = scoreRequirement(req, m);
+return { req, ...r };
+});
+const fill = Math.min(1, m.ml / commission.bottleMl);
+const qScore = fill >= 0.98 ? 1 : fill * fill;
+rows.push({
+req: { key: 'quantity', kind: 'min', target: commission.bottleMl, tol: 0, zero: commission.bottleMl, label: `${commission.bottleMl} ml` },
+score: qScore,
+value: m.ml,
+distance: commission.bottleMl - m.ml,
+text: `${m.ml} ml`,
+});
+let wsum = 0, s = 0;
+for (const r of rows) {
+const w = r.req.key === 'quantity' ? 0.8 : r.req.key === 'color' ? 1.2 : 1;
+wsum += w;
+s += w * r.score;
+}
+let quality = s / wsum;
+quality *= 0.5 + 0.5 * qScore;
+const perfect = rows.every((r) => r.score >= 0.999);
+if (perfect) quality = 1;
+const stars = perfect ? 5 : quality >= 0.86 ? 4 : quality >= 0.7 ? 3 : quality >= 0.5 ? 2 : quality >= 0.28 ? 1 : 0;
+let payment = Math.round(commission.budget * (0.12 + 0.88 * Math.pow(quality, 1.6)) * (perfect ? 1.2 : 1));
+if (quality < 0.2) payment = Math.round(commission.budget * 0.05);
+const repDelta = Math.round((quality - 0.45) * (10 + commission.tier * 4)) + (perfect ? 3 : 0) + (commission.contract ? Math.round(quality * 15) : 0);
+return { rows, quality, stars, perfect, payment, repDelta };
+}
+return { PROPERTY_LABELS, strongestUnwanted, isEffectKey, scoreRequirement, describeValue, evaluatePotion };
+})();
+// src/game/requests.js
+const __m25 = (() => {
+const REQUESTS = [
+{ id: 'healing', title: 'Healing Draught', fx: [{ key: 'vitality' }], who: ['healer', 'farmer', 'innkeeper', 'knight', 'hunter'], minTier: 0,
+story: ['My patients are wasting with fever. I need something that truly heals — and nothing else in it.', 'The goats are poorly and so is my back. A healing draught, plain and honest.', 'A traveller collapsed in my common room. Something to bring the colour back to his face.'] },
+{ id: 'strength', title: 'Draught of Might', fx: [{ key: 'strength' }], who: ['knight', 'blacksmith', 'hunter', 'farmer', 'traveler'], minTier: 0,
+story: ['The new anvil arrives tomorrow and it takes four men to lift. I want to be one of them.', 'Harvest is in and the carts are heavy. Strength in my arms, nothing more.', 'A tourney at the castle. My lance arm must not tire.'] },
+{ id: 'love', title: 'Love Philtre', fx: [{ key: 'love' }], who: ['bard', 'innkeeper', 'noble', 'farmer'], minTier: 0,
+story: ['There is someone I sing to every night, and she has not once looked up. Just a little warmth in her heart.', 'For a betrothal feast — it should warm every heart at the table, and do nothing else.', 'My husband has grown cold as a cellar. Remind him why he married me.'] },
+{ id: 'warming', title: 'Warming Draught', fx: [{ key: 'fire' }], who: ['traveler', 'blacksmith', 'hunter', 'farmer'], minTier: 0, serve: 'warm',
+story: ['The mountain pass is all ice. Something with real fire in it, against the cold.', 'My forge-hands work through the winter nights. Fire in the belly, nothing more.', 'The well froze and so did I. A warming draught, served hot, please.'] },
+{ id: 'cooling', title: 'Cooling Draught', fx: [{ key: 'frost' }], who: ['healer', 'hunter', 'blacksmith', 'traveler'], minTier: 1, serve: 'cold',
+story: ['A child with a burning fever. It must be properly cold-natured.', 'I crossed the salt flats and my blood is still boiling. Something icy.', 'A dragon-bite on my forearm. Frost, and plenty of it.'] },
+{ id: 'insight', title: 'Draught of Insight', fx: [{ key: 'arcana' }], who: ['scholar', 'wizard', 'noble'], minTier: 1,
+story: ['My treatise is stuck on the same page for a month. Sharpen my mind — and only my mind.', 'The stars align tonight. I need clear arcane sight for the reading.', 'Examinations at the academy. True arcana, if you please.'] },
+{ id: 'change', title: 'Transmutation Elixir', fx: [{ key: 'transformation' }], who: ['witch', 'wizard', 'noble', 'bard'], minTier: 2,
+story: ['A masquerade at the duke’s. I wish to arrive as someone — something — else.', 'My garden grows too plainly. I want to coax it into stranger shapes.', 'The coven’s rite needs a draught of pure change.'] },
+{ id: 'settling', title: 'Settling Draught', fx: [{ key: 'acidity', sign: -1 }], who: ['innkeeper', 'healer', 'noble', 'farmer'], minTier: 1,
+story: ['Too much feasting. My stomach burns with acid — something chalky and alkaline to settle it.', 'Heartburn, every night since the harvest supper. An alkaline draught, nothing else.'] },
+{ id: 'etching', title: 'Etching Acid', fx: [{ key: 'acidity' }], who: ['blacksmith', 'scholar', 'witch'], minTier: 1, drunk: false, tolerate: ['toxicity', 'fire'],
+story: ['I etch my maker’s mark into blades. A strong acid that bites steel.', 'Copper plates for my engravings. It must bite cleanly.'] },
+{ id: 'bane', title: 'Pest Bane', fx: [{ key: 'toxicity' }], who: ['farmer', 'hunter', 'innkeeper'], minTier: 1, drunk: false, tolerate: ['death', 'acidity'],
+story: ['Rats in the granary, bold as cats. It has to be poisonous to them.', 'Slugs have eaten half my cabbages. Deadly to pests, please.'] },
+{ id: 'expedition', title: 'Expedition Draught', fx: [{ key: 'strength' }, { key: 'transformation', share: 0.6 }], who: ['knight', 'hunter', 'traveler'], minTier: 2,
+story: ['We ride into the Thornwastes. I must be strong enough to carry the wounded, and able to change shape to slip past the wardens.', 'A long patrol beyond the border. Strength for the march, and a change of form for the night watch.'] },
+{ id: 'hearth', title: 'Hearth-and-Heart Cordial', fx: [{ key: 'fire' }, { key: 'love', share: 0.7 }], who: ['innkeeper', 'farmer', 'bard'], minTier: 2, serve: 'warm',
+story: ['Our cottage is cold and so is my marriage. Fire for the hearth and love for the heart, in one cup.', 'A winter wedding in a draughty barn. Warm them through, and warm them to each other.'] },
+{ id: 'recovery', title: 'Soldier’s Recovery', fx: [{ key: 'vitality' }, { key: 'strength', share: 0.6 }], who: ['knight', 'healer', 'hunter'], minTier: 2,
+story: ['My company limps home from the siege. Heal the wounds and put the strength back in their legs.', 'Back from a bear hunt with three broken ribs. Mend me, and make me strong enough to try again.'] },
+{ id: 'meditation', title: 'Glacial Meditation', fx: [{ key: 'arcana' }, { key: 'frost', share: 0.6 }], who: ['wizard', 'scholar'], minTier: 2, serve: 'cold',
+story: ['A week of meditation on the glacier. A cold, clear mind — frost to endure, arcana to see.', 'I study the ice-runes of the north. I must think clearly and feel no cold.'] },
+{ id: 'forgefire', title: 'Forge-Fire Tonic', fx: [{ key: 'strength' }, { key: 'fire', share: 0.6 }], who: ['blacksmith', 'knight'], minTier: 2, serve: 'warm',
+story: ['The great bell must be cast tonight. Strength to swing the hammer, fire to stand the heat.', 'A duel at dawn in the frozen yard. Strength, and fire against the cold.'] },
+{ id: 'blessing', title: 'Wedding Blessing', fx: [{ key: 'love' }, { key: 'vitality', share: 0.6 }], who: ['noble', 'bard', 'healer'], minTier: 2,
+story: ['My daughter weds the baron’s son. A toast for long life and true affection.', 'A blessing for the newlyweds: health to them, and love between them.'] },
+{ id: 'shapeshift', title: 'Shapeshifter’s Study', fx: [{ key: 'transformation' }, { key: 'arcana', share: 0.6 }], who: ['wizard', 'witch', 'scholar'], minTier: 3,
+story: ['I study the old shapeshifters. I need to change, and understand the change while it happens.', 'The coven elders want a true shifting draught: change of form, guided by arcane sight.'] },
+{ id: 'fevercure', title: 'Fever Cure', fx: [{ key: 'vitality' }, { key: 'frost', share: 0.5 }], who: ['healer', 'noble'], minTier: 3, serve: 'cold',
+story: ['The marsh fever: it burns them up from inside. It must heal, and it must cool.', 'The prince is burning with fever. Healing, and cold to break the heat.'] },
+{ id: 'warpath', title: 'War-Path Draught', fx: [{ key: 'strength' }, { key: 'fire', share: 0.5 }, { key: 'vitality', share: 0.5 }], who: ['knight'], minTier: 4,
+story: ['The northern campaign. Strength, fire against the frost and healing for the march — the general’s own order.'] },
+{ id: 'starseer', title: 'Star-Seer’s Elixir', fx: [{ key: 'arcana' }, { key: 'transformation', share: 0.5 }, { key: 'love', share: 0.4 }], who: ['wizard', 'noble'], minTier: 4,
+story: ['A rite under the comet: sight, change and the bond between the casters — all three, in measure.'] },
+];
+const TIER_TARGET = [[8, 15], [10, 18], [14, 26], [24, 40], [34, 55]];
+const PURITY_LIMIT = 1.2;
+function requestById(id) {
+return REQUESTS.find((r) => r.id === id);
+}
+return { REQUESTS, TIER_TARGET, PURITY_LIMIT, requestById };
+})();
 // src/game/commissions.js
-const __m14 = (() => {
+const __m16 = (() => {
 const { Rng } = __m6;
 const { describeColor } = __m8;
-const { predictPlan, planCost } = __m15;
-const { ARCHETYPES, makeCustomer, archetypeOf } = __m18;
-const { viscosityClass } = __m19;
-const { SIM } = __m20;
-const { EFFECT_INDEX, EFFECT_BY_KEY } = __m13;
-const { compatFactor } = __m21;
+const { predictPlan, planCost, arcaneRegime, ACTIVATION_MARGIN } = __m17;
+const { ARCHETYPES, makeCustomer, archetypeOf } = __m21;
+const { viscosityClass } = __m22;
+const { evaluatePotion } = __m24;
+const { SIM } = __m23;
+const { EFFECT_INDEX, EFFECT_BY_KEY, EFFECT_KEYS, NE } = __m13;
+const { thresholdToCelsius, isMagical } = __m15;
+const { compatFactor } = __m14;
+const { REQUESTS, TIER_TARGET, PURITY_LIMIT, requestById } = __m25;
 const STYLE_NOUN = {
 healing: 'Healing Draught', strength: 'Strength Tonic', love: 'Love Philtre', firetonic: 'Fire Tonic', frostsalve: 'Frost Draught',
 settling: 'Settling Draught', etching: 'Etching Acid', bane: 'Pest Bane', insight: 'Draught of Insight', transmute: 'Transmutation Elixir',
@@ -2261,81 +2831,12 @@ return { ingredients: parts(w), heatTo: 60, coolTo: room, serveTemp: Math.round(
 }
 return null;
 }
-const EFFECT_STYLES = {
-healing: { key: 'vitality', sign: 1 }, strength: { key: 'strength', sign: 1 }, love: { key: 'love', sign: 1 }, firetonic: { key: 'fire', sign: 1 },
-frostsalve: { key: 'frost', sign: 1 }, settling: { key: 'acidity', sign: -1 }, etching: { key: 'acidity', sign: 1 }, bane: { key: 'toxicity', sign: 1 },
-insight: { key: 'arcana', sign: 1 }, transmute: { key: 'transformation', sign: 1 }, antidote: { key: 'vitality', sign: 1 },
-};
-const NOT_DRUNK = new Set(['etching', 'bane']);
-function buildEffectPlan(style, ctx, rng, n, tier = 0) {
-const spec = EFFECT_STYLES[style];
-const k = EFFECT_INDEX[spec.key];
-const R = ctx.world.roles;
-const potency = (m) => spec.sign * ((m.effects && m.effects[spec.key]) || 0);
-const drunk = !NOT_DRUNK.has(style);
-const harm = (m) => {
-const e = m.effects || {};
-return (spec.key === 'toxicity' ? 0 : e.toxicity || 0) + (e.death || 0) + (spec.key === 'acidity' ? 0 : Math.max(0, e.acidity || 0));
-};
-const usable = (m) => m && m.form !== 'gas' && !(m.form === 'powder' && (m.solubility || 0) < 0.03 && (m.binder || 0) < 0.3);
-const ids = [...ctx.available].filter((id) => {
-const m = ctx.lookup(id);
-return usable(m) && potency(m) >= 12 && (!drunk || harm(m) <= 0.35 * potency(m));
-});
-if (!ids.length) return null;
-const main = ctx.lookup(rng.weighted(ids, ids.map((id) => Math.sqrt(Math.max(1, potency(ctx.lookup(id)) - harm(ctx.lookup(id)))))));
-const liquids = [R.water, R.spirit, R.oil].filter((id) => id && ctx.available.has(id)).map(ctx.lookup);
-const solid = main.form !== 'liquid';
-let solvent = null;
-for (const l of liquids) if (compatFactor(main.compat[0], main.compat[1], l.compat[0], l.compat[1]) > 0.6) { solvent = l; break; }
-if (solid && !solvent) return null;
-const p = potency(main);
-const share = p >= 50 ? rng.range(0.18, 0.3) : p >= 25 ? rng.range(0.3, 0.55) : rng.range(0.6, 1);
-const ingredients = [];
-const nMain = Math.max(2, Math.round(n * share));
-if (solvent && nMain < n) ingredients.push({ id: solvent.id, n: n - nMain });
-ingredients.push({ id: main.id, n: nMain, ground: main.form === 'solid' && ctx.cap.has('mortar') ? true : undefined });
-if (tier >= 2 && style !== 'antidote' && rng.chance(0.6)) {
-const laws = (ctx.world.laws || []).filter((L) => L.a === k || L.b === k || L.c === k);
-const partnerKeys = new Set();
-for (const L of laws) for (const x of [L.a, L.b]) if (x !== k) partnerKeys.add(x);
-const others = [...ctx.available].map(ctx.lookup).filter((m) => usable(m) && m.id !== main.id && (!drunk || harm(m) <= 6) &&
-Object.entries(m.effects || {}).some(([key, v]) => key !== spec.key && v >= 12 && (!partnerKeys.size || partnerKeys.has(EFFECT_INDEX[key]))));
-const second = others.length ? rng.pick(others) : null;
-if (second && (second.form === 'liquid' || solvent)) {
-const n2 = Math.max(2, Math.round(n * rng.range(0.1, 0.2)));
-ingredients[0].n = Math.max(2, ingredients[0].n - n2);
-ingredients.push({ id: second.id, n: n2, ground: second.form === 'solid' && ctx.cap.has('mortar') ? true : undefined });
-}
-}
-if (style === 'antidote') {
-const tox = [...ctx.available].map(ctx.lookup).find((m) => m && m.effects && (m.effects.toxicity || 0) >= 10 && (m.effects.vitality || 0) >= 20);
-if (tox && tox.id !== main.id) ingredients.push({ id: tox.id, n: Math.max(2, Math.round(n * 0.12)), ground: tox.form === 'solid' ? true : undefined });
-}
-const rx = ctx.world.reactions.filter((r) => r.a === main.id && r.kind === 'decompose');
-const steep = rx.find((r) => r.wet && r.minT + 12 < ctx.cap.maxFlame - 30);
-const spoil = rx.filter((r) => !r.wet).reduce((lo, r) => Math.min(lo, r.minT), Infinity);
-const room = 20;
-let heatTo = room, hold = 6;
-if (steep && rng.chance(0.85)) {
-heatTo = Math.min(steep.maxT - 8, spoil - 8, steep.minT + rng.range(8, 16));
-if (heatTo < steep.minT + 3) heatTo = room; else hold = rng.range(18, 26);
-} else if (solid && rng.chance(0.4)) {
-heatTo = Math.min(spoil - 10, rng.range(45, 70));
-}
-let serve = room;
-if (style === 'firetonic' && rng.chance(0.6)) serve = Math.round(rng.range(45, 60));
-if (style === 'frostsalve' && ctx.cap.minCool <= 2 && rng.chance(0.5)) serve = Math.round(rng.range(4, 10));
-const coolTo = Math.min(room, serve);
-return { ingredients, heatTo: Math.round(Math.max(heatTo, serve)), coolTo, serveTemp: serve, knead: solid, hold: Math.round(hold) };
-}
 const STYLE_PROPS = {
-healing: ['vitality'], strength: ['strength'], love: ['love'], firetonic: ['fire'], frostsalve: ['frost'], settling: ['acidity'], etching: ['acidity'],
-bane: ['toxicity'], insight: ['arcana'], transmute: ['transformation'], antidote: ['vitality'],
 tonic: ['color'], warm: ['color', 'temperature'], syrup: ['viscosity', 'density'], salve: ['viscosity'],
-elixir: ['vitality'], ardent: ['fire'], arcane: ['arcana'], fizzy: ['volatility'], frost: ['temperature', 'frost'],
-heavy: ['density'], lumen: ['arcana'], varnish: ['strength', 'viscosity'], panacea: ['vitality', 'arcana'], phoenix: ['vitality', 'fire'],
+elixir: ['color'], ardent: ['color', 'temperature'], arcane: ['color', 'stability'], fizzy: ['volatility'], frost: ['temperature'],
+heavy: ['density'], lumen: ['color'], varnish: ['viscosity'], panacea: ['color', 'stability'], phoenix: ['color', 'temperature'],
 };
+const PHYSICAL = new Set(Object.keys(STYLE_PROPS));
 function makeRequirement(key, pred, tier, strict, rng, plan, style) {
 const s = strict;
 switch (key) {
@@ -2377,59 +2878,213 @@ return { key, kind: 'min', target: min, tol: 0, zero: Math.max(10, min * 0.6), l
 const max = Math.round(Math.max(15, v + 12));
 return { key, kind: 'max', target: max, tol: 0, zero: 30, label: `at most ${max}` };
 }
-default: {
-const k = EFFECT_INDEX[key];
-if (k === undefined) return null;
-const v = pred.effects[k];
-const name = EFFECT_BY_KEY[key].label.toLowerCase();
-if (key === 'acidity' && style === 'settling') {
-if (v > -6) return null;
-const max = Math.round(v * (0.62 + 0.04 * tier));
-return { key, kind: 'max', target: max, tol: 0, zero: 14, label: `alkaline, ${max} or lower`, effect: true };
 }
-if (v < 5) return null;
-if (tier >= 2 && strict < 1 && rng.chance(0.5)) {
-const tol = Math.max(4, Math.round(v * 0.22));
-const t = Math.round(v);
-return { key, kind: 'target', target: t, tol, zero: tol * 3, label: `${Math.max(0, t - tol)}–${t + tol}`, effect: true };
+return null;
 }
-const min = Math.max(4, Math.round(v * (0.6 + 0.04 * tier)));
-return { key, kind: 'min', target: min, tol: 0, zero: Math.max(8, min * 0.6), label: `at least ${min}`, effect: true, name };
+function effectRequirement(key, sign, min) {
+if (sign < 0) {
+const max = -Math.max(3, Math.round(min));
+return { key, kind: /** @type {'max'} */ ('max'), target: max, tol: 0, zero: 14, label: `alkaline, ${max} or lower`, effect: true };
 }
+const t = Math.max(3, Math.round(min));
+return { key, kind: /** @type {'min'} */ ('min'), target: t, tol: 0, zero: Math.max(6, t * 0.6), label: `at least ${t}%`, effect: true, name: EFFECT_BY_KEY[key].label.toLowerCase() };
 }
+function purityRequirement(exclude, limit = PURITY_LIMIT) {
+return { key: 'purity', kind: /** @type {'max'} */ ('max'), target: limit, tol: 0, zero: 2.5, exclude: exclude.slice(), label: `no other effect above ${limit}%`, effect: true };
 }
-function safetyLimits(pred, style, wanted, tier) {
-if (NOT_DRUNK.has(style)) return [];
-const out = [];
-for (const key of ['toxicity', 'death', 'acidity']) {
-if (wanted.has(key)) continue;
-const v = pred.effects[EFFECT_INDEX[key]];
-if (key !== 'toxicity' && v < 2 && tier < 2) continue;
-const max = Math.max(key === 'acidity' ? 6 : 4, Math.round(Math.max(0, v) + 4));
-out.push({ key, kind: /** @type {'max'} */ ('max'), target: max, tol: 0, zero: 14, label: `at most ${max}`, effect: true, limit: true });
+function unwantedMax(effects, exclude) {
+let m = 0, key = '';
+for (let k = 0; k < NE; k++) {
+if (exclude.includes(EFFECT_KEYS[k])) continue;
+const v = Math.abs(effects[k]);
+if (v > m) { m = v; key = EFFECT_KEYS[k]; }
 }
-return out;
+return { value: m, key };
 }
-const EFFECT_PURPOSE = {
-healing: ['It must truly heal — and nothing poisonous, please.', 'Something to mend a wound and bring the colour back to a pale face.'],
-strength: ['I need strength in my arms by tomorrow.', 'It must make a body strong as an ox.'],
-love: ['There is someone I hope will notice me…', 'For a betrothal feast — it should warm every heart.'],
-firetonic: ['Something with real fire in it, against the cold.', 'It should burn pleasantly all the way down.'],
-frostsalve: ['For burns and fevers — it must be properly cold-natured.', 'To cool a dragon-bite. Frost, and plenty.'],
-settling: ['My stomach burns with acid. I need something alkaline to settle it.', 'Too much feasting. A chalky, settling draught, please.'],
-etching: ['A strong acid to etch my designs into steel.', 'It must bite into stone.'],
-bane: ['Rats in the granary. It has to be poisonous to them.', 'For the slugs in my garden. Deadly to pests, please.'],
-insight: ['To see clearly through a hard problem.', 'For my studies — it must sharpen the mind with true arcana.'],
-transmute: ['I wish to become… someone else, for a while.', 'To coax my garden into stranger shapes.'],
-antidote: ['I was bitten by something venomous! It must heal and carry no poison.', 'An antidote: strong healing, no toxicity at all.'],
+function solventsOf(ctx) {
+const R = ctx.world.roles;
+return [R.water, R.spirit, R.oil].filter((id) => id && ctx.available.has(id)).map(ctx.lookup);
+}
+function prepFor(m, ctx, solvents) {
+const water = solvents.find((x) => x.id === ctx.world.roles.water) || solvents[0];
+if (m.form === 'liquid') {
+const compat = solvents.find((l) => compatFactor(m.compat[0], m.compat[1], l.compat[0], l.compat[1]) > 0.6);
+return { solvent: compat || null, heatTo: 20, coolTo: 20, hold: 6 };
+}
+if (m.form === 'gas') return null;
+if (m.form === 'solid' && m.melt < 15 && m.boil > 60) {
+const compat = solvents.find((l) => compatFactor(m.compat[0], m.compat[1], l.compat[0], l.compat[1]) > 0.6);
+return { solvent: compat || null, heatTo: 20, coolTo: 20, hold: 12 };
+}
+const ground = m.form === 'solid' ? (ctx.cap.has('mortar') ? true : null) : false;
+if (ground === null) return null;
+const rx = ctx.world.reactions.find((r) => r.a === m.id && (r.wet || r.kind === 'mix' || r.kind === 'contact') && r.products.length === 1 && /^rw_(extract|steep|infuse|mandrake|starquartz|dragonoil)/.test(r.id));
+if (rx) {
+const solvent = rx.b ? solvents.find((l) => l.id === rx.b) : water;
+if (!solvent) return null;
+const boil = isFinite(solvent.boil) ? solvent.boil : 400;
+const lo = rx.minT + 4, hi = Math.min(rx.maxT - 4, boil - 8, ctx.cap.maxFlame - 40);
+if (hi < lo) return null;
+if (lo <= 15) {
+const T = Math.max(lo, Math.min(hi, ctx.cap.minCool + 3));
+if (T > hi || T < ctx.cap.minCool + 2) return null;
+return { solvent, heatTo: 20, coolTo: T, hold: 22, ground };
+}
+return { solvent, heatTo: Math.round((lo + hi) / 2), coolTo: 20, hold: 22, ground, lo, hi };
+}
+const compat = solvents.find((l) => compatFactor(m.compat[0], m.compat[1], l.compat[0], l.compat[1]) > 0.6);
+if (!compat || (m.solubility || 0) < 0.03) return null;
+return { solvent: compat, heatTo: 20, coolTo: 20, hold: 10, ground };
+}
+function searchPlan(wanted, exclude, ctx, rng, n, o) {
+const solvents = solventsOf(ctx);
+if (!solvents.length) return null;
+const pot = (m, w) => w.sign * (((m.effects || {})[w.key]) || 0);
+const all = [...ctx.available].map(ctx.lookup).filter((m) => m && m.effects && m.form !== 'gas' && !m.awakened);
+const carriers = wanted.map((w) => all.filter((m) => pot(m, w) >= 4)
+.map((m) => {
+let side = 0;
+for (const [k, v] of Object.entries(m.effects)) if (!exclude.includes(k)) side += Math.abs(Number(v) || 0);
+return { m, score: pot(m, w) / (1 + side * 1.5) * (0.85 + 0.3 * rng.next()) };
+})
+.sort((a, b) => b.score - a.score).slice(0, 4).map((c) => c.m));
+if (carriers.some((c) => !c.length)) return null;
+const tries = [];
+for (let a = 0; a < 3; a++) tries.push(wanted.map((w, k) => carriers[k][Math.min(carriers[k].length - 1, a === 0 ? 0 : rng.int(0, carriers[k].length - 1))]));
+for (const pick of tries) {
+const plan = composePlan(pick, wanted, exclude, ctx, solvents, n, o);
+if (plan) return plan;
+}
+return null;
+}
+function composePlan(pick, wanted, exclude, ctx, solvents, n, o) {
+const uniq = [...new Set(pick)];
+const preps = uniq.map((m) => prepFor(m, ctx, solvents));
+if (preps.some((p) => !p)) return null;
+const solvent = preps.find((p) => p.solvent)?.solvent || solvents[0];
+if (preps.some((p) => p.solvent && p.solvent.id !== solvent.id)) return null;
+const warm = preps.filter((p) => p.lo !== undefined), cold = preps.filter((p) => p.coolTo < 20);
+if (warm.length && cold.length) return null;
+let win = null;
+if (warm.length) win = [Math.max(...warm.map((p) => p.lo)), Math.min(...warm.map((p) => p.hi))];
+else if (cold.length) win = [Math.max(ctx.cap.minCool + 2, ...cold.map((p) => p.coolTo - 3)), Math.min(...cold.map((p) => p.coolTo + 3))];
+if (win && win[0] > win[1]) return null;
+const hold = Math.max(...preps.map((p) => p.hold));
+const x = new Map(uniq.map((m) => [m.id, 0.25]));
+let extra = [];
+const build = () => {
+const ing = [];
+let used = 0;
+for (const m of uniq) used += x.get(m.id);
+for (const [, f] of extra) used += f;
+if (used > 0.97) return null;
+let solids = 0;
+for (const m of uniq) if (m.form !== 'liquid') solids += x.get(m.id);
+for (const [id, f] of extra) if (ctx.lookup(id).form !== 'liquid') solids += f;
+if (solids > 0.5) return null;
+const ns = Math.round(n * (1 - used));
+if (ns >= 2) ing.push({ id: solvent.id, n: ns });
+uniq.forEach((m, k) => ing.push({ id: m.id, n: Math.max(2, Math.round(n * x.get(m.id))), ground: preps[k].ground || undefined }));
+for (const [id, f] of extra) ing.push({ id, n: Math.max(1, Math.round(n * f)), ground: ctx.lookup(id).form === 'solid' && ctx.cap.has('mortar') ? true : undefined });
+return /** @type {import('./predict.js').BrewPlan} */ ({ ingredients: ing, heatTo: Math.max(20, o.serve), coolTo: Math.min(20, o.serve), serveTemp: o.serve, knead: uniq.some((m) => m.form !== 'liquid'), hold: 8 });
 };
-function stylesFor(arch, tier, event) {
-let styles = arch.styles.filter((s) => STYLE_TIER[s] <= tier);
-if (event === 'winter') styles = styles.concat(['warm', 'ardent', 'firetonic']).filter((s) => STYLE_TIER[s] <= tier);
-if (event === 'plague') styles = styles.concat(['elixir', 'salve', 'healing', 'antidote']).filter((s) => STYLE_TIER[s] <= tier);
-if (event === 'conclave') styles = styles.concat(['arcane', 'lumen', 'insight']).filter((s) => STYLE_TIER[s] <= tier);
-if (event === 'festival') styles = styles.concat(['tonic', 'fizzy', 'love']).filter((s) => STYLE_TIER[s] <= tier);
-if (!styles.length) styles = ['tonic'];
+const finish = (plan) => {
+const ids = plan.ingredients.map((i) => i.id);
+const pre = predictPlan(ctx.world, ctx.lookup, { ...plan, steep: win ? { T: (win[0] + win[1]) / 2, hold } : undefined });
+const all = [...ids, ...Object.keys(pre.composition)];
+const quietServe = o.activation ? [] : [o.serve];
+if (win) {
+const mid = (win[0] + win[1]) / 2;
+let best = null;
+for (let T = Math.ceil(win[0]); T <= win[1]; T++) {
+if (arcaneRegime(all, ctx.lookup, [T, ...quietServe]) !== 'quiet') continue;
+if (best === null || Math.abs(T - mid) < Math.abs(best - mid)) best = T;
+}
+if (best === null) return null;
+plan.steep = { T: best, hold };
+plan.heatTo = Math.max(plan.heatTo, best);
+plan.coolTo = Math.min(plan.coolTo, best);
+} else if (arcaneRegime(all, ctx.lookup, quietServe) !== 'quiet') return null;
+if (plan.heatTo > ctx.cap.maxFlame - 40 || plan.coolTo < ctx.cap.minCool + 2) return null;
+let pred = predictPlan(ctx.world, ctx.lookup, plan);
+if (!o.activation) return pred.awakened ? null : pred;
+if (pred.threshold === null) return null;
+const Ta = thresholdToCelsius(pred.threshold);
+if (pred.threshold >= 0) {
+const T = Math.ceil(Ta + ACTIVATION_MARGIN + 4);
+const boil = Math.min(...plan.ingredients.map((i) => ctx.lookup(i.id).boil).filter((b) => isFinite(b)), 400);
+if (T > Math.min(ctx.cap.maxFlame - 40, boil - 6)) return null;
+plan.heatTo = Math.max(plan.heatTo, T);
+} else {
+const T = Math.floor(Ta - ACTIVATION_MARGIN - 4);
+if (T < 20 + 0.55 * (ctx.cap.minCool - 20)) return null;
+plan.coolTo = Math.min(plan.coolTo, T);
+}
+plan.hold = 18;
+plan.activate = true;
+pred = predictPlan(ctx.world, ctx.lookup, plan);
+return pred.awakened ? pred : null;
+};
+let plan = null, pred = null;
+for (let it = 0; it < 6; it++) {
+plan = build();
+if (!plan) return null;
+pred = finish(plan);
+if (!pred) return null;
+let ok = true;
+const scale = new Map(uniq.map((m) => [m.id, 1]));
+wanted.forEach((w, k) => {
+const v = w.sign * pred.effects[EFFECT_INDEX[w.key]];
+const want = w.target * 1.15;
+if (v < w.target * 1.02 || v > w.target * 1.6) ok = false;
+const r = v > 0.2 ? want / v : 2.5;
+const id = pick[k].id;
+scale.set(id, Math.min(scale.get(id) === 1 ? r : Math.max(scale.get(id), r), 2.5));
+});
+const dirty = unwantedMax(pred.effects, exclude);
+if (ok && dirty.value <= PURITY_LIMIT * 0.6) return { plan, pred };
+if (!ok) {
+for (const m of uniq) x.set(m.id, Math.max(0.04, Math.min(m.form === 'liquid' ? 0.92 : 0.5, x.get(m.id) * scale.get(m.id))));
+continue;
+}
+const c = canceller(dirty.key, pred.effects[EFFECT_INDEX[dirty.key]], exclude, ctx);
+if (!c) return null;
+const have = extra.find((e) => e[0] === c.id);
+const add = Math.min(0.3, dirty.value / Math.max(2, c.potency) * 1.05);
+if (have) have[1] = Math.min(0.35, have[1] + add);
+else extra = [...extra, [c.id, add]];
+}
+return null;
+}
+const CANCELS = { fire: ['frost'], frost: ['fire'], death: ['vitality'], toxicity: ['vitality'], acidity: ['acidity'] };
+function canceller(key, value, exclude, ctx) {
+const opp = CANCELS[key];
+if (!opp) return null;
+let best = null;
+for (const id of ctx.available) {
+const m = ctx.lookup(id);
+if (!m || !m.effects || m.form === 'gas' || m.awakened) continue;
+let potency;
+if (key === 'acidity') potency = -Math.sign(value) * (m.effects.acidity || 0);
+else potency = m.effects[opp[0]] || 0;
+if (potency < 6) continue;
+let side = 0;
+for (const [k, v] of Object.entries(m.effects)) if (k !== opp[0] && k !== key && !exclude.includes(k)) side += Math.abs(Number(v) || 0);
+if (side > potency * 0.08) continue;
+if (!best || potency - side > best.potency) best = { id, potency };
+}
+return best;
+}
+function requestsFor(arch, tier, event) {
+let list = REQUESTS.filter((r) => r.minTier <= tier && r.who.includes(arch.key));
+const bonus = { winter: ['warming', 'hearth', 'forgefire'], plague: ['healing', 'recovery', 'fevercure'], conclave: ['insight', 'meditation', 'shapeshift'], festival: ['love', 'blessing', 'hearth'] }[event];
+if (bonus) list = list.concat(REQUESTS.filter((r) => bonus.includes(r.id) && r.minTier <= tier));
+return list;
+}
+function physicalFor(arch, tier, event) {
+let styles = arch.styles.filter((s) => PHYSICAL.has(s) && STYLE_TIER[s] <= tier);
+if (event === 'winter') styles = styles.concat(['warm', 'ardent']).filter((s) => STYLE_TIER[s] <= tier);
+if (event === 'festival') styles = styles.concat(['tonic', 'fizzy']).filter((s) => STYLE_TIER[s] <= tier);
 return styles;
 }
 function generateCommission(ctx, rng, opts = {}) {
@@ -2437,16 +3092,60 @@ const tier = Math.max(0, Math.min(4, opts.tier ?? Math.min(4, ctx.rank)));
 const archetypes = ARCHETYPES.filter((a) => a.minRank <= ctx.rank);
 for (let attempt = 0; attempt < 40; attempt++) {
 const arch = opts.archetype ? archetypeOf(opts.archetype) : rng.pick(archetypes);
-const styles = opts.style ? [opts.style] : stylesFor(arch, tier, ctx.event);
-const style = rng.pick(styles);
 const bottleMl = [100, 150, 200, 250, 300][tier] * (opts.contract ? 1.5 : 1);
 const bottleN = Math.round(bottleMl / SIM.ML_PER_PARTICLE);
 const vessel = { pot: 310, copper: 440, grand: 600, small: 1400, medium: 2000, large: 2700 }[ctx.cap.size] || 310;
 const totalN = Math.min(Math.round(bottleN * rng.range(1.7, 2.3)), Math.floor(vessel * 0.45));
-const plan = EFFECT_STYLES[style] ? buildEffectPlan(style, ctx, rng, totalN, tier) : buildPlan(style, ctx, rng, totalN);
-if (!plan) continue;
-if (plan.coolTo < ctx.cap.minCool - 2 && style !== 'frost') continue;
+let com = null;
+const physical = opts.style ? [opts.style] : opts.request ? [] : physicalFor(arch, tier, ctx.event);
+const requests = opts.request ? [requestById(opts.request)].filter(Boolean) : opts.style ? [] : requestsFor(arch, tier, ctx.event);
+const usePhysical = physical.length && (!requests.length || rng.chance(opts.style ? 1 : 0.3));
+if (usePhysical) com = physicalCommission(rng.pick(physical), arch, tier, ctx, rng, totalN, bottleMl, bottleN, opts);
+else if (requests.length) com = effectCommission(rng.pick(requests), arch, tier, ctx, rng, totalN, bottleMl, bottleN, opts);
+if (com) return com;
+}
+return null;
+}
+function effectCommission(req, arch, tier, ctx, rng, totalN, bottleMl, bottleN, opts) {
+const [lo, hi] = TIER_TARGET[tier];
+const serve = req.serve === 'warm' ? Math.round(rng.range(45, 58)) : req.serve === 'cold' && ctx.cap.minCool <= 6 ? Math.round(rng.range(6, 10)) : 20;
+let found = null, activation = false, wanted = [], exclude = [];
+for (const main of [Math.round(rng.range(lo, hi)), lo]) {
+wanted = req.fx.map((f, k) => ({ key: f.key, sign: f.sign || 1, target: k === 0 ? main : Math.max(4, Math.round(main * (f.share || 0.6) * rng.range(0.9, 1.1))) }));
+exclude = [...wanted.map((w) => w.key), ...(req.tolerate || [])];
+found = searchPlan(wanted, exclude, ctx, rng, totalN, { activation: false, serve });
+if (!found && tier >= 2) {
+found = searchPlan(wanted, exclude, ctx, rng, totalN, { activation: true, serve });
+activation = !!found;
+}
+if (found) break;
+}
+if (!found) return null;
+const { plan, pred } = found;
+const strict = arch.strict * (opts.contract ? 0.8 : 1);
+const reqs = [];
+for (const w of wanted) {
+const v = w.sign * pred.effects[EFFECT_INDEX[w.key]];
+reqs.push(effectRequirement(w.key, w.sign, Math.min(w.target, v * 0.88)));
+}
+if (tier >= 3 && strict < 1 && rng.chance(0.4)) {
+const r0 = reqs[0], v = wanted[0].sign * pred.effects[EFFECT_INDEX[wanted[0].key]];
+if (wanted[0].sign > 0) {
+const tol = Math.max(3, Math.round(v * 0.2));
+Object.assign(r0, { kind: 'target', target: Math.round(v), tol, zero: tol * 3, label: `${Math.round(v) - tol}–${Math.round(v) + tol}%` });
+}
+}
+if (req.drunk !== false || (req.tolerate && req.tolerate.length < 9)) reqs.push(purityRequirement(exclude));
+if (serve !== 20) reqs.push(/** @type {Requirement} */ (makeRequirement('temperature', pred, tier, strict, rng, plan, req.id)));
+return finalize({ style: req.id, request: req, title: req.title, arch, tier, ctx, rng, plan, pred, reqs, bottleMl, bottleN, opts, activation });
+}
+function physicalCommission(style, arch, tier, ctx, rng, totalN, bottleMl, bottleN, opts) {
+const plan = buildPlan(style, ctx, rng, totalN);
+if (!plan) return null;
+if (plan.coolTo < ctx.cap.minCool - 2 && style !== 'frost') return null;
 const pred = { ...predictPlan(ctx.world, ctx.lookup, plan), looseSolids: 0 };
+const regime = arcaneRegime([...plan.ingredients.map((i) => i.id), ...Object.keys(pred.composition)], ctx.lookup, [plan.heatTo, plan.coolTo, plan.serveTemp]);
+if (regime === 'mixed') return null;
 let bound = 0;
 for (const [id, f] of Object.entries(pred.composition)) {
 const d = ctx.lookup(id);
@@ -2456,69 +3155,67 @@ pred.looseSolids = Math.max(0, pred.granular - bound);
 const want = new Set(STYLE_PROPS[style] || ['color']);
 if (style !== 'salve' && style !== 'heavy' && style !== 'varnish') want.add('color');
 const nReq = [2, 3, 3, 4, 4][tier] + (opts.contract ? 1 : 0);
-const extras = arch.props.filter((p) => !want.has(p));
-const shuffled = rng.shuffle(extras);
-for (const p of shuffled) {
+for (const p of rng.shuffle(arch.props.filter((p) => !want.has(p) && !EFFECT_BY_KEY[p]))) {
 if (want.size >= nReq) break;
 if (p === 'quantity' || p === 'color') continue;
-if (tier === 0 && (p === 'stability' || p === 'volatility' || EFFECT_INDEX[p] !== undefined)) continue;
+if (tier === 0 && (p === 'stability' || p === 'volatility')) continue;
 want.add(p);
 }
 if (tier >= 1 && want.size < nReq && !want.has('stability')) want.add('stability');
-const reqs = [];
 const strict = arch.strict * (opts.contract ? 0.8 : 1);
+const reqs = [];
 for (const key of want) {
 if (key === 'temperature' && Math.abs((plan.serveTemp ?? 20) - 20) < 6 && style !== 'warm' && style !== 'frost') continue;
 const r = makeRequirement(key, pred, tier, strict, rng, plan, style);
 if (r) reqs.push(r);
 }
-if (reqs.length < 1) continue;
-if (EFFECT_STYLES[style] && !reqs.some((r) => r.key === EFFECT_STYLES[style].key)) continue;
-if (EFFECT_STYLES[style] && tier >= 2 && reqs.length < nReq + 1) {
-const main = EFFECT_STYLES[style].key;
-const cand = ['vitality', 'strength', 'love', 'arcana', 'transformation', 'fire', 'frost'].filter((k) => k !== main && !reqs.some((r) => r.key === k))
-.sort((a, b) => pred.effects[EFFECT_INDEX[b]] - pred.effects[EFFECT_INDEX[a]]);
-if (cand.length && pred.effects[EFFECT_INDEX[cand[0]]] >= 6) {
-const r2 = makeRequirement(cand[0], pred, tier, strict, rng, plan, style);
-if (r2) reqs.push(r2);
+const fx = [];
+for (let k = 0; k < NE; k++) {
+const v = pred.effects[k];
+if (Math.abs(v) >= 2.5) fx.push({ key: EFFECT_KEYS[k], v });
+else if (Math.abs(v) > PURITY_LIMIT * 0.6) return null;
 }
+for (const f of fx) reqs.push(effectRequirement(f.key, Math.sign(f.v), Math.abs(f.v) * 0.75));
+reqs.push(purityRequirement(fx.map((f) => f.key)));
+if (reqs.length < 2) return null;
+return finalize({ style, request: null, title: null, arch, tier, ctx, rng, plan, pred, reqs, bottleMl, bottleN, opts, activation: false });
 }
-const wantedFx = new Set(reqs.filter((r) => r.effect).map((r) => r.key));
-if (wantedFx.size) reqs.push(...safetyLimits(pred, style, wantedFx, tier));
-const customer = makeCustomer(rng, arch);
-const cost = planCost(plan, ctx.priceOf) * (bottleN / pred.totalParticles) * 1.6;
-const eventBonus = ctx.event && styles.includes(style) && ['winter', 'plague', 'conclave', 'festival'].includes(ctx.event) ? 1.25 : 1;
-const effectOrder = wantedFx.size > 0;
-const budget = Math.round((14 + cost * (2.6 + 0.45 * tier) + 9 * tier + reqs.length * 5 + (effectOrder ? 10 : 0)) * arch.budget * eventBonus * (opts.contract ? 2.2 : 1));
-const colorWord = pred.color ? describeColor(pred.color) : '';
-const potionName = `${style === 'salve' || style === 'heavy' || EFFECT_STYLES[style] ? '' : capitalize(colorWord) + ' '}${STYLE_NOUN[style]}`.trim();
-let greet = rng.pick(arch.greet).replace('{potion}', aOrAn(potionName.toLowerCase()) + ' ' + potionName.toLowerCase());
-if (EFFECT_STYLES[style] && EFFECT_PURPOSE[style]) greet += ' ' + rng.pick(EFFECT_PURPOSE[style]);
+function predictedMeasurement(pred, plan, ml) {
 return {
-id: 'q' + Math.floor(rng.next() * 1e9).toString(36),
-tier,
-style,
-contract: !!opts.contract,
-potionName,
-customer,
-dialogue: greet,
-requirements: reqs,
-bottleMl,
-bottleN,
-budget: Math.max(12, budget),
-reference: plan,
-predicted: { density: pred.density, viscosity: pred.viscosity, effects: pred.effects, color: pred.color, reactions: pred.reactions },
-effectOrder,
-hintCost: Math.max(3, Math.round(budget * 0.12)),
+ml, count: Math.round(ml / SIM.ML_PER_PARTICLE), lab: pred.lab, color: pred.color, density: pred.density, viscosity: pred.viscosity,
+temperature: plan.serveTemp ?? 20, effects: Array.from(pred.effects), stability: 100, volatility: (pred.volatility || 0) * 100,
 };
 }
-return null;
+function finalize({ style, request, title, arch, tier, ctx, rng, plan, pred, reqs, bottleMl, bottleN, opts, activation }) {
+const com = {
+id: 'q' + Math.floor(rng.next() * 1e9).toString(36),
+tier, style, request: request ? request.id : null, contract: !!opts.contract, potionName: '', customer: null, dialogue: '',
+requirements: reqs, bottleMl, bottleN, budget: 0, reference: plan,
+predicted: { density: pred.density, viscosity: pred.viscosity, effects: Array.from(pred.effects), color: pred.color, reactions: pred.reactions, threshold: pred.threshold, awakened: pred.awakened },
+effectOrder: reqs.some((r) => r.effect), activation, hintCost: 0,
+};
+const check = evaluatePotion({ ...com, requirements: reqs.filter((r) => r.key !== 'stability' && r.key !== 'volatility') }, /** @type {any} */ (predictedMeasurement(pred, plan, bottleMl)));
+if (check.quality < 0.999) return null;
+const customer = makeCustomer(rng, arch);
+const cost = planCost(plan, ctx.priceOf) * (bottleN / pred.totalParticles) * 1.6;
+const eventBonus = ctx.event && ['winter', 'plague', 'conclave', 'festival'].includes(ctx.event) ? 1.15 : 1;
+const budget = Math.round((14 + cost * (2.6 + 0.45 * tier) + 9 * tier + reqs.length * 5 + (com.effectOrder ? 10 : 0) + (activation ? 30 + 12 * tier : 0)) * arch.budget * eventBonus * (opts.contract ? 2.2 : 1));
+const colorWord = pred.color ? describeColor(pred.color) : '';
+const potionName = title || `${style === 'salve' || style === 'heavy' ? '' : capitalize(colorWord) + ' '}${STYLE_NOUN[style]}`.trim();
+let greet = rng.pick(arch.greet).replace('{potion}', aOrAn(potionName.toLowerCase()) + ' ' + potionName.toLowerCase());
+if (request) greet = rng.pick(request.story);
+else {
+const fx = reqs.filter((r) => r.effect && r.key !== 'purity').map((r) => EFFECT_BY_KEY[r.key].label.toLowerCase());
+if (fx.length) greet += ` It should carry a little ${fx.join(' and ')} — and nothing else magical.`;
+}
+Object.assign(com, { potionName, customer, dialogue: greet, budget: Math.max(12, budget), hintCost: Math.max(3, Math.round(budget * 0.12)) });
+return com;
 }
 function tutorialCommission(ctx, rng) {
 const R = ctx.world.roles;
 const plan = { ingredients: [{ id: R.water, n: 22 }, { id: R.essenceA, n: 22 }], heatTo: 45, coolTo: 20, serveTemp: 45 };
 const pred = predictPlan(ctx.world, ctx.lookup, plan);
-const vit = Math.max(4, Math.round(pred.effects[EFFECT_INDEX.vitality] * 0.6));
+const vit = Math.max(4, Math.round(pred.effects[EFFECT_INDEX.vitality] * 0.8));
 const arch = archetypeOf('farmer');
 const customer = makeCustomer(rng, arch);
 customer.name = 'Old Mabry Hollins';
@@ -2531,18 +3228,20 @@ contract: false,
 tutorial: true,
 potionName: `${capitalize(colorWord)} Tonic`,
 customer,
-dialogue: `Ah, a new alchemist! My old joints ache. Could you brew me a warm, healing ${colorWord} tonic? ${ctx.lookup(R.essenceA).name} thinned with ${ctx.lookup(R.water).name} ought to do — but test that it truly heals!`,
+dialogue: `Ah, a new alchemist! My old joints ache. Could you brew me a warm, healing ${colorWord} tonic? ${ctx.lookup(R.essenceA).name} thinned with ${ctx.lookup(R.water).name} ought to do — but test that it truly heals, and that nothing else is in it!`,
 requirements: [
 { key: 'color', kind: 'target', target: pred.lab, rgb: pred.color, tol: 14, zero: 44, label: colorWord },
 { key: 'temperature', kind: 'target', target: 45, tol: 12, zero: 36, label: '33–57°C' },
-{ key: 'vitality', kind: 'min', target: vit, tol: 0, zero: Math.max(8, vit * 0.6), label: `at least ${vit}`, effect: true },
+{ key: 'vitality', kind: 'min', target: vit, tol: 0, zero: Math.max(6, vit * 0.6), label: `at least ${vit}%`, effect: true },
+purityRequirement(['vitality']),
 ],
 bottleMl: 100,
 bottleN: 20,
 budget: 30,
 reference: plan,
-predicted: { density: pred.density, viscosity: pred.viscosity, effects: pred.effects, color: pred.color, reactions: [] },
+predicted: { density: pred.density, viscosity: pred.viscosity, effects: Array.from(pred.effects), color: pred.color, reactions: [], threshold: pred.threshold, awakened: pred.awakened },
 effectOrder: true,
+activation: false,
 hintCost: 0,
 };
 }
@@ -2552,10 +3251,11 @@ return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 function aOrAn(w) {
 return /^[aeiou]/i.test(w) ? 'an' : 'a';
 }
-return { EFFECT_STYLES, generateCommission, tutorialCommission, STYLE_NOUN, STYLE_TIER };
+void isMagical;
+return { purityRequirement, generateCommission, tutorialCommission, STYLE_NOUN, STYLE_TIER, unwantedMax };
 })();
 // src/game/equipment.js
-const __m22 = (() => {
+const __m26 = (() => {
 const EQUIPMENT = [
 { id: 'hearth', name: 'Stone Hearth', category: 'heat', price: 0, rank: 0, icon: 'fire', desc: 'A modest wood fire under the cauldron. Flame up to ~340°C.', effect: { maxFlame: 340, heatPower: 3.5 } },
 { id: 'bellows', name: 'Bellows & Coal', category: 'heat', price: 120, rank: 1, icon: 'bellows', requires: ['hearth'], desc: 'A hotter, faster fire (up to ~520°C). Boil quickly and reach caramelising heat.', effect: { maxFlame: 520, heatPower: 5.5 } },
@@ -2623,7 +3323,7 @@ return cap;
 return { EQUIPMENT, STARTING_EQUIPMENT, BASE_STORAGE, equipmentById, RANKS, rankIndex, capabilities };
 })();
 // src/game/experiments.js
-const __m23 = (() => {
+const __m27 = (() => {
 const { EFFECTS, EFFECT_KEYS, EFFECT_INDEX, NE, potencyWord } = __m13;
 const SUBJECTS = [
 { id: 'rabbit', name: 'Moon Rabbit', kind: 'animal', reveals: ['vitality', 'strength', 'love', 'toxicity', 'death'], cost: 6,
@@ -2844,7 +3544,7 @@ return v < a ? a : v > b ? b : v;
 return { SUBJECTS, SUBJECT_BY_ID, RECORD_LIMIT, DOSES, driftTolerance, createTrials, normalizeTrials, subjectResponse, runTrial, resetSubject, certification, requiredEffects, missingEffects, suggestSubjects, knownLaws, describeReading };
 })();
 // src/game/gathering.js
-const __m24 = (() => {
+const __m28 = (() => {
 const { Rng } = __m6;
 const REGIONS = [
 { id: 'forest', name: 'Whisperwood', rank: 0, magical: false, desc: 'Old oaks and ferns. Roots and leaves grow in the shade.', sky: [0.36, 0.52, 0.42] },
@@ -2961,685 +3661,10 @@ return `${Math.floor(m / 60)} h ${m % 60} min`;
 }
 return { REGIONS, REGION_BY_ID, generateDeposits, createGathering, normalizeGathering, depositStatus, harvest, newDayRegrowth, formatWait };
 })();
-// src/game/state.js
-const __m5 = (() => {
-const { Rng, hashString } = __m6;
-const { generateWorld, makeLookup, addAlchemy } = __m7;
-const { serializeMaterial, deserializeMaterial } = __m9;
-const { generateCommission, tutorialCommission } = __m14;
-const { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById } = __m22;
-const { SIM } = __m20;
-const { createTrials, normalizeTrials, runTrial, resetSubject, SUBJECT_BY_ID, knownLaws } = __m23;
-const { createGathering, normalizeGathering, generateDeposits, harvest, newDayRegrowth } = __m24;
-const { predictPlan } = __m15;
-const { EFFECT_INDEX } = __m13;
-const SAVE_VERSION = 3;
-const WORLD_GEN_VERSION = 2;
-const ASPECT_KEY_MAP = { vitality: 'vitality', ardor: 'fire', arcana: 'arcana', fortitude: 'strength' };
-const MARKET_EVENTS = [
-{ key: 'none', name: 'An ordinary day', text: 'Business as usual in the market square.' },
-{ key: 'winter', name: 'Bitter Frost', text: 'A cold snap grips the valley — warming draughts pay extra.' },
-{ key: 'plague', name: 'Coughing Sickness', text: 'Healers buy restoratives and salves at a premium.' },
-{ key: 'conclave', name: 'Mages’ Conclave', text: 'Wizards fill the inns, hungry for arcane brews.' },
-{ key: 'festival', name: 'Harvest Festival', text: 'Revellers want colourful tonics and fizzing brews.' },
-{ key: 'caravan', name: 'Spice Caravan', text: 'A caravan floods the market — reagents are cheaper today.' },
-{ key: 'shortage', name: 'Road Bandits', text: 'Supply wagons were raided — reagents cost more today.' },
-];
-const ACHIEVEMENTS = [
-{ id: 'first_sale', name: 'Open for Business', desc: 'Sell your first potion.', reward: 10 },
-{ id: 'perfect', name: 'Flawless', desc: 'Brew a perfect five-star potion.', reward: 25 },
-{ id: 'perfect5', name: 'Master of Precision', desc: 'Brew five perfect potions.', reward: 80 },
-{ id: 'dough', name: 'Kneaded It', desc: 'Knead a dough from powder and liquid.', reward: 10 },
-{ id: 'frozen', name: 'Cold Hands', desc: 'Freeze a liquid solid.', reward: 15 },
-{ id: 'crush', name: 'Grind Stone', desc: 'Crush a solid into grains with the pestle.', reward: 10 },
-{ id: 'boil', name: 'Rolling Boil', desc: 'Boil a liquid into vapour.', reward: 10 },
-{ id: 'condense', name: 'What Goes Up', desc: 'Condense vapour back into liquid.', reward: 15 },
-{ id: 'fire', name: 'Singed Eyebrows', desc: 'Set something alight in the cauldron.', reward: 10 },
-{ id: 'react1', name: 'Transmutation', desc: 'Discover your first reaction.', reward: 15 },
-{ id: 'react5', name: 'Natural Philosopher', desc: 'Discover five reactions.', reward: 60 },
-{ id: 'react10', name: 'Chymist Supreme', desc: 'Discover ten reactions.', reward: 150 },
-{ id: 'served10', name: 'Regulars', desc: 'Serve ten customers.', reward: 30 },
-{ id: 'served50', name: 'Talk of the Town', desc: 'Serve fifty customers.', reward: 120 },
-{ id: 'rich', name: 'Gold in the Coffers', desc: 'Hold 1000 coins at once.', reward: 50 },
-{ id: 'journeyman', name: 'Journeyman', desc: 'Reach the rank of Journeyman.', reward: 20 },
-{ id: 'adept', name: 'Adept', desc: 'Reach the rank of Adept.', reward: 40 },
-{ id: 'expert', name: 'Expert', desc: 'Reach the rank of Expert.', reward: 80 },
-{ id: 'master', name: 'Master Alchemist', desc: 'Reach the rank of Master.', reward: 150 },
-{ id: 'grand', name: 'Grand Alchemist', desc: 'Complete the Grand Commission.', reward: 500 },
-{ id: 'recipe', name: 'Written Down', desc: 'Save a recipe to your book.', reward: 10 },
-{ id: 'distil', name: 'Spirit Catcher', desc: 'Collect a distillate with the alembic.', reward: 30 },
-{ id: 'layers', name: 'Oil and Water', desc: 'Observe immiscible liquids separating into layers.', reward: 10 },
-{ id: 'trial1', name: 'First Trial', desc: 'Test a potion on a subject.', reward: 10 },
-{ id: 'trial25', name: 'Empiricist', desc: 'Run 25 trials.', reward: 60 },
-{ id: 'law1', name: 'Hidden Harmony', desc: 'Discover a resonance law through repeated trials.', reward: 40 },
-{ id: 'law4', name: 'Natural Philosopher of Magic', desc: 'Discover four resonance laws.', reward: 150 },
-{ id: 'forage1', name: 'Into the Wilds', desc: 'Gather your first wild ingredient.', reward: 10 },
-{ id: 'forage1k', name: 'Seasoned Forager', desc: 'Gather 1000 ml of wild ingredients.', reward: 50 },
-{ id: 'certified', name: 'Proven Remedy', desc: 'Serve a potion whose effects you verified by experiment.', reward: 15 },
-{ id: 'steep', name: 'Patience of the Steep', desc: 'Steep a herb into a liquid extract with heat.', reward: 15 },
-];
-class GameState {
-constructor(data) {
-/** @type {number} */ this.version = data.version;
-/** @type {number} */ this.genVersion = data.genVersion;
-/** @type {string} */ this.seed = data.seed;
-/** @type {import('../materials/generator.js').World} */ this.world = data.world;
-/** @type {number} */ this.coins = data.coins;
-/** @type {number} */ this.reputation = data.reputation;
-/** @type {number} */ this.day = data.day;
-/** @type {number} */ this.customerIndex = data.customerIndex;
-/** @type {number} */ this.customersPerDay = data.customersPerDay;
-/** @type {number} */ this.servedToday = data.servedToday;
-/** @type {number} */ this.dayEarnings = data.dayEarnings;
-/** @type {number} */ this.daySpending = data.daySpending;
-/** @type {Record<string, number>} */ this.inventory = data.inventory;
-/** @type {string[]} */ this.equipment = data.equipment;
-/** @type {Record<string, JournalEntry>} */ this.journal = data.journal;
-/** @type {Record<string, any>} */ this.knowledge = data.knowledge;
-/** @type {any[]} */ this.recipes = data.recipes;
-/** @type {any[]} */ this.history = data.history;
-/** @type {Record<string, number>} */ this.achievements = data.achievements;
-/** @type {any} */ this.current = data.current;
-this.stats = { served: 0, perfect: 0, earned: 0, spent: 0, brews: 0, declined: 0, bestQuality: 0, ...(data.stats || {}) };
-/** @type {{active:boolean, step:number, done:boolean}} */ this.tutorial = { active: false, step: 0, done: true, ...(data.tutorial || {}) };
-/** @type {{event:string, mods:Record<string, number>}} */ this.market = data.market || { event: 'none', mods: {} };
-/** @type {any} */ this.cauldron = data.cauldron || null;
-/** @type {any} */ this.receiver = data.receiver || null;
-/** @type {any[]} */ this.brewLog = data.brewLog || [];
-/** @type {number} */ this.reliefDay = data.reliefDay || 0;
-/** @type {boolean} */ this.grandDone = !!data.grandDone;
-/** @type {number} */ this.createdAt = data.createdAt || Date.now();
-/** @type {ReturnType<typeof createTrials>} */ this.trials = normalizeTrials(data.trials);
-/** @type {ReturnType<typeof createGathering>} */ this.gathering = normalizeGathering(data.gathering);
-this.vial = data.vial || null;
-this.batch = data.batch && typeof data.batch.id === 'string' ? { id: data.batch.id, rev: data.batch.rev | 0 } : newBatch();
-this.lookup = makeLookup(this.world);
-this._deposits = null;
-}
-static create(seed, opts = {}) {
-const world = generateWorld(seed);
-const inventory = {};
-for (const id of world.starting) inventory[id] = 0;
-const R = world.roles;
-inventory[R.water] = Infinity;
-inventory[R.essenceA] = 300;
-inventory[R.essenceB] = 200;
-inventory[R.oil] = 200;
-inventory[R.syrup] = 200;
-inventory[R.spirit] = 200;
-inventory[R.binder] = 300;
-inventory[R.salt] = 200;
-for (const id of world.wild || []) inventory[id] = 0;
-const st = new GameState({
-version: SAVE_VERSION,
-genVersion: WORLD_GEN_VERSION,
-seed,
-world,
-coins: 60,
-reputation: 0,
-day: 1,
-customerIndex: 0,
-customersPerDay: 3,
-servedToday: 0,
-dayEarnings: 0,
-daySpending: 0,
-inventory,
-equipment: STARTING_EQUIPMENT.slice(),
-journal: /** @type {Record<string, JournalEntry>} */ ({}),
-knowledge: /** @type {Record<string, any>} */ ({}),
-recipes: [],
-history: [],
-achievements: {},
-current: null,
-stats: { served: 0, perfect: 0, earned: 0, spent: 0, brews: 0, declined: 0, bestQuality: 0 },
-tutorial: { active: opts.tutorial !== false, step: 0, done: opts.tutorial === false },
-market: { event: 'none', mods: {} },
-cauldron: null,
-receiver: null,
-brewLog: [],
-reliefDay: 0,
-grandDone: false,
-createdAt: Date.now(),
-});
-st.rollMarket();
-return st;
-}
-get rank() {
-return rankIndex(this.reputation);
-}
-get rankName() {
-return RANKS[this.rank].name;
-}
-nextRank() {
-return RANKS[this.rank + 1] || null;
-}
-get cap() {
-return capabilities(this.equipment);
-}
-has(id) {
-return this.equipment.includes(id);
-}
-purchasable() {
-return this.world.ingredients.filter((id) => (this.lookup(id).tier || 0) <= this.rank);
-}
-availableSet() {
-const s = new Set(this.purchasable());
-for (const [id, v] of Object.entries(this.inventory)) if (v > 0) s.add(id);
-return s;
-}
-get deposits() {
-if (!this._deposits) this._deposits = generateDeposits(this.world, this.lookup);
-return this._deposits;
-}
-gatherableSet() {
-const s = new Set();
-for (const d of this.deposits) if (d.rank <= this.rank) s.add(d.materialId);
-return s;
-}
-gather(depositId, opts = {}) {
-const d = this.deposits.find((x) => x.id === depositId);
-if (!d) return { ok: false, amount: 0, reason: 'unknown' };
-const take = this.has('satchel') ? Math.round(d.take * 1.5) : d.take;
-const r = harvest(this, { ...d, take }, opts);
-if (r.ok && !opts.unlimited) {
-this.stats.gathered = (this.stats.gathered || 0) + r.amount;
-/** @type {any} */ (r).events = [...this.unlock('forage1')];
-if (this.stats.gathered >= 1000) /** @type {any} */ (r).events.push(...this.unlock('forage1k'));
-}
-return r;
-}
-newBatch() {
-this.batch = newBatch();
-return this.batch;
-}
-touchBatch() {
-this.batch.rev++;
-}
-get knownLaws() {
-return knownLaws(this.trials, this.world.laws || []);
-}
-recordTrial(subjectId, dose, ctx) {
-const rec = runTrial(this.trials, subjectId, dose, { ...ctx, day: this.day, laws: this.world.laws || [] });
-this.stats.trials = (this.stats.trials || 0) + 1;
-const events = [...this.unlock('trial1')];
-if (this.stats.trials >= 25) events.push(...this.unlock('trial25'));
-for (const id of rec.lawsFound) {
-const L = (this.world.laws || []).find((l) => l.id === id);
-if (!L) continue;
-const entry = this.discover({ key: 'law:' + id, title: L.name, text: L.lore, kind: 'law' });
-if (entry) events.push({ type: 'law', id, name: L.name, lore: L.lore });
-events.push(...this.unlock('law1'));
-if (this.knownLaws.length >= 4) events.push(...this.unlock('law4'));
-}
-return { record: rec, events };
-}
-replaceSubject(id, free = false) {
-const def = SUBJECT_BY_ID[id];
-if (!def) return { ok: false, reason: 'Unknown subject.' };
-const cost = free ? 0 : Math.ceil(def.cost * (this.has('kennel') ? 0.5 : 1));
-if (cost > this.coins + 1e-9) return { ok: false, reason: `A new ${def.name.toLowerCase()} costs ${cost} coins.` };
-this.coins = round1(this.coins - cost);
-this.stats.spent += cost;
-this.daySpending += cost;
-resetSubject(this.trials, id);
-return { ok: true, cost };
-}
-subjectAvailable(id) {
-const def = SUBJECT_BY_ID[id];
-return !!def && (!def.needs || this.has(def.needs));
-}
-priceOf(id) {
-const m = this.lookup(id);
-if (!m) return 0;
-if (id === this.world.roles.water) return 0;
-const mod = this.market.mods[id] ?? 1;
-const ev = this.market.event === 'caravan' ? 0.8 : this.market.event === 'shortage' ? 1.3 : 1;
-return Math.max(1, Math.round(m.price * mod * ev * (1 - this.cap.discount) * 10) / 10);
-}
-stock(id) {
-return this.inventory[id] ?? 0;
-}
-buy(id, ml) {
-const room = this.cap.storage - this.stock(id);
-const amount = Math.min(ml, room);
-if (amount <= 0) return { ok: false, reason: 'Your shelves are full for that reagent.' };
-const cost = Math.round((amount / 100) * this.priceOf(id) * 10) / 10;
-if (cost > this.coins + 1e-9) return { ok: false, reason: 'Not enough coins.' };
-this.coins = round1(this.coins - cost);
-this.inventory[id] = this.stock(id) + amount;
-this.stats.spent += cost;
-this.daySpending += cost;
-return { ok: true, amount, cost };
-}
-sellBack(id, ml) {
-const amount = Math.min(ml, this.stock(id));
-if (amount <= 0 || !isFinite(this.stock(id))) return { ok: false };
-const value = Math.round((amount / 100) * this.priceOf(id) * 0.4 * 10) / 10;
-this.inventory[id] -= amount;
-this.coins = round1(this.coins + value);
-return { ok: true, value };
-}
-consume(id, ml) {
-const s = this.stock(id);
-if (!isFinite(s)) return true;
-if (s + 1e-6 < ml) return false;
-this.inventory[id] = round1(s - ml);
-return true;
-}
-buyEquipment(id) {
-const e = equipmentById(id);
-if (!e) return { ok: false, reason: 'Unknown item.' };
-if (this.has(id)) return { ok: false, reason: 'Already owned.' };
-if (e.rank > this.rank) return { ok: false, reason: `Requires the rank of ${RANKS[e.rank].name}.` };
-if (e.requires && !e.requires.every((r) => this.has(r))) return { ok: false, reason: 'Requires the previous upgrade.' };
-if (this.coins < e.price) return { ok: false, reason: 'Not enough coins.' };
-this.coins = round1(this.coins - e.price);
-this.equipment.push(id);
-this.stats.spent += e.price;
-this.daySpending += e.price;
-return { ok: true, item: e };
-}
-commissionContext() {
-const available = this.availableSet();
-for (const id of this.gatherableSet()) available.add(id);
-return {
-world: this.world,
-lookup: this.lookup,
-available,
-cap: this.cap,
-rank: this.rank,
-priceOf: (id) => this.priceOf(id),
-event: this.market.event,
-};
-}
-nextCustomer() {
-if (this.current) return this.current;
-if (this.customerIndex >= this.customersPerDay) return null;
-const rng = new Rng(hashString(`${this.seed}:${this.day}:${this.customerIndex}`));
-let com;
-if (this.tutorial.active && !this.tutorial.done && this.stats.served === 0) {
-com = tutorialCommission(this.commissionContext(), rng);
-} else if (this.rank >= 4 && !this.grandDone && this.customerIndex === 0 && this.day % 2 === 0) {
-com = this.grandCommission(rng);
-} else {
-const contract = this.has('charter') && this.rank >= 2 && this.customerIndex === this.customersPerDay - 1;
-const tier = Math.max(0, Math.min(4, this.rank + (rng.chance(0.25) ? -1 : 0) + (rng.chance(0.15) ? 1 : 0)));
-com = generateCommission(this.commissionContext(), rng, { tier: Math.min(tier, this.rank + 1), contract });
-}
-this.current = com;
-return com;
-}
-grandCommission(rng) {
-const com = generateCommission(this.commissionContext(), rng, { tier: 4, style: 'panacea', archetype: 'noble', contract: true }) ||
-generateCommission(this.commissionContext(), rng, { tier: 4, contract: true });
-if (com) {
-com.grand = true;
-com.customer.name = 'Queen Isolde’s Herald';
-com.dialogue = 'By royal decree: the Queen requires a masterwork. Brew it, and the guild shall name you Grand Alchemist.';
-com.budget = Math.round(com.budget * 2.5);
-}
-return com;
-}
-declineCustomer() {
-if (!this.current) return;
-if (this.current.tutorial) return;
-this.current = null;
-this.customerIndex++;
-this.stats.declined++;
-}
-completeSale(ev, measurement) {
-const com = this.current;
-const events = [];
-if (!com) return events;
-const oldRank = this.rank;
-this.coins = round1(this.coins + ev.payment);
-this.reputation = Math.max(0, this.reputation + ev.repDelta);
-this.stats.served++;
-this.stats.earned += ev.payment;
-this.dayEarnings += ev.payment;
-this.stats.bestQuality = Math.max(this.stats.bestQuality, ev.quality);
-if (ev.perfect) this.stats.perfect++;
-this.servedToday++;
-this.history.unshift({
-day: this.day, customer: com.customer.name, title: com.customer.title, potion: com.potionName, quality: ev.quality, stars: ev.stars,
-paid: ev.payment, color: measurement?.color, ml: measurement?.ml,
-});
-if (this.history.length > 60) this.history.length = 60;
-if (com.tutorial) { this.tutorial.done = true; this.tutorial.active = false; }
-if (com.grand && ev.quality >= 0.85) { this.grandDone = true; events.push(...this.unlock('grand')); }
-this.current = null;
-this.customerIndex++;
-events.push(...this.unlock('first_sale'));
-if (ev.perfect) events.push(...this.unlock('perfect'));
-if (this.stats.perfect >= 5) events.push(...this.unlock('perfect5'));
-if (this.stats.served >= 10) events.push(...this.unlock('served10'));
-if (this.stats.served >= 50) events.push(...this.unlock('served50'));
-if (this.coins >= 1000) events.push(...this.unlock('rich'));
-const nr = this.rank;
-if (nr > oldRank) {
-events.push({ type: 'rank', rank: nr, name: RANKS[nr].name });
-const ach = ['', 'journeyman', 'adept', 'expert', 'master'][nr];
-if (ach) events.push(...this.unlock(ach));
-this.customersPerDay = 3 + Math.floor(nr / 2);
-}
-return events;
-}
-get dayOver() {
-return !this.current && this.customerIndex >= this.customersPerDay;
-}
-endDay() {
-const summary = { day: this.day, earned: this.dayEarnings, spent: this.daySpending, served: this.servedToday };
-this.day++;
-this.customerIndex = 0;
-this.servedToday = 0;
-this.dayEarnings = 0;
-this.daySpending = 0;
-this.current = null;
-this.customersPerDay = 3 + Math.floor(this.rank / 2);
-this.rollMarket();
-newDayRegrowth(this.gathering, this.deposits);
-return summary;
-}
-rollMarket() {
-const rng = new Rng(hashString(`${this.seed}:market:${this.day}`));
-const ev = this.day <= 2 ? MARKET_EVENTS[0] : rng.weighted(MARKET_EVENTS, [5, 1, 1, 1, 1, 1, 1]);
-const mods = {};
-for (const id of this.world.ingredients) mods[id] = Math.round(rng.range(0.88, 1.12) * 100) / 100;
-this.market = { event: ev.key, mods };
-}
-get marketEvent() {
-return MARKET_EVENTS.find((e) => e.key === this.market.event) || MARKET_EVENTS[0];
-}
-claimRelief() {
-if (this.reliefDay === this.day) return 0;
-const cheapest = Math.min(...this.purchasable().filter((id) => id !== this.world.roles.water).map((id) => this.priceOf(id)));
-if (this.coins >= cheapest * 2) return 0;
-this.reliefDay = this.day;
-const grant = 25;
-this.coins = round1(this.coins + grant);
-return grant;
-}
-discover(e) {
-if (this.journal[e.key]) return null;
-const entry = { ...e, day: this.day };
-this.journal[e.key] = entry;
-this.reputation += 1;
-return entry;
-}
-learn(id, fact, value) {
-const k = (this.knowledge[id] ||= {});
-if (k[fact] !== undefined) return false;
-k[fact] = value;
-return true;
-}
-reactionsDiscovered() {
-return Object.values(this.journal).filter((e) => e.kind === 'reaction').length;
-}
-unlock(id) {
-if (this.achievements[id]) return [];
-const a = ACHIEVEMENTS.find((x) => x.id === id);
-if (!a) return [];
-this.achievements[id] = Date.now();
-this.coins = round1(this.coins + a.reward);
-return [{ type: 'achievement', id, name: a.name, desc: a.desc, reward: a.reward }];
-}
-addRecipe(recipe) {
-this.recipes.unshift({ ...recipe, id: 'r' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36) });
-return this.unlock('recipe');
-}
-toJSON() {
-return {
-version: SAVE_VERSION,
-genVersion: this.genVersion,
-seed: this.seed,
-world: {
-seed: this.world.seed,
-materials: this.world.materials.map(serializeMaterial),
-ingredients: this.world.ingredients,
-starting: this.world.starting,
-reactions: this.world.reactions,
-roles: this.world.roles,
-laws: this.world.laws,
-wild: this.world.wild,
-},
-coins: this.coins,
-reputation: this.reputation,
-day: this.day,
-customerIndex: this.customerIndex,
-customersPerDay: this.customersPerDay,
-servedToday: this.servedToday,
-dayEarnings: this.dayEarnings,
-daySpending: this.daySpending,
-inventory: Object.fromEntries(Object.entries(this.inventory).map(([k, v]) => [k, isFinite(v) ? v : 'inf'])),
-equipment: this.equipment,
-journal: this.journal,
-knowledge: this.knowledge,
-recipes: this.recipes,
-history: this.history,
-achievements: this.achievements,
-current: this.current,
-stats: this.stats,
-tutorial: this.tutorial,
-market: this.market,
-cauldron: this.cauldron,
-receiver: this.receiver,
-brewLog: this.brewLog,
-reliefDay: this.reliefDay,
-grandDone: this.grandDone,
-createdAt: this.createdAt,
-trials: this.trials,
-gathering: this.gathering,
-vial: this.vial,
-batch: this.batch,
-savedAt: Date.now(),
-};
-}
-static fromJSON(raw) {
-const data = migrate(raw);
-const world = {
-...data.world,
-materials: data.world.materials.map(deserializeMaterial),
-};
-addAlchemy(world);
-const inventory = Object.fromEntries(Object.entries(data.inventory).map(([k, v]) => [k, v === 'inf' ? Infinity : Number(v)]));
-for (const id of world.wild || []) if (!(id in inventory)) inventory[id] = 0;
-for (const [k, v] of Object.entries(inventory)) if (!Number.isFinite(v) && v !== Infinity) inventory[k] = 0;
-const st = new GameState({ ...data, world, inventory });
-if (data._migratedFrom !== undefined && data._migratedFrom < 3) st.genVersion = WORLD_GEN_VERSION;
-if (st.current) migrateCommission(st.current, st.world, st.lookup);
-return st;
-}
-}
-function newBatch() {
-return { id: 'b' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36), rev: 0 };
-}
-function migrateCommission(com, world, lookup) {
-if (!com || !Array.isArray(com.requirements)) return com;
-const old = com.requirements.filter((r) => ASPECT_KEY_MAP[r.key] && r.effect === undefined && com.predicted && com.predicted.aspects);
-if (!old.length) return com;
-let pred = null;
-try { pred = com.reference ? predictPlan(world, lookup, com.reference) : null; } catch { pred = null; }
-const OLD = ['vitality', 'ardor', 'arcana', 'fortitude'];
-for (const r of old) {
-const key = ASPECT_KEY_MAP[r.key];
-const oldPred = com.predicted.aspects[OLD.indexOf(r.key)] || 0;
-const newPred = pred ? pred.effects[EFFECT_INDEX[key]] : oldPred;
-const ratio = oldPred > 0 ? Number(r.target) / oldPred : 0.65;
-const target = Math.max(3, Math.round(newPred * ratio));
-Object.assign(r, { key, target, zero: Math.max(8, target * 0.6), label: `at least ${target}`, effect: true });
-}
-if (pred) com.predicted.effects = pred.effects;
-com.effectOrder = true;
-return com;
-}
-function migrate(raw) {
-if (!raw || typeof raw !== 'object') throw new Error('Not a save file');
-const d = { ...raw };
-if (!d.version) throw new Error('Missing save version');
-if (d.version > SAVE_VERSION) throw new Error('This save comes from a newer version of the game');
-d._migratedFrom = d.version;
-if (d.version < 2) {
-d.market = d.market || { event: 'none', mods: {} };
-d.receiver = d.receiver || null;
-d.grandDone = !!d.grandDone;
-d.reliefDay = d.reliefDay || 0;
-d.knowledge = d.knowledge || {};
-d.version = 2;
-}
-if (!d.world || !Array.isArray(d.world.materials)) {
-const w = generateWorld(d.seed);
-d.world = { ...w, materials: w.materials.map(serializeMaterial) };
-}
-for (const k of ['journal', 'achievements', 'stats', 'tutorial']) d[k] = d[k] || {};
-d.recipes = d.recipes || [];
-d.history = d.history || [];
-d.brewLog = d.brewLog || [];
-d.equipment = d.equipment && d.equipment.length ? d.equipment : STARTING_EQUIPMENT.slice();
-if (d.version < 3) {
-if (!d.equipment.includes('mortar')) d.equipment = [...d.equipment, 'mortar'];
-d.trials = d.trials || null;
-d.gathering = d.gathering || null;
-d.vial = null;
-d.batch = null;
-d.version = 3;
-}
-if (d.world && Array.isArray(d.world.materials) && d.world.materials.length === 0) throw new Error('The save has no reagents');
-if (!d.inventory || typeof d.inventory !== 'object') throw new Error('The save has no inventory');
-return d;
-}
-function round1(v) {
-return Math.round(v * 10) / 10;
-}
-return { SAVE_VERSION, WORLD_GEN_VERSION, MARKET_EVENTS, ACHIEVEMENTS, GameState, migrateCommission, migrate, EQUIPMENT, SIM };
-})();
-// src/game/persistence.js
-const __m25 = (() => {
-const { GameState } = __m5;
-const KEYS = {
-save: 'alchemist-shop.save',
-backup: 'alchemist-shop.save.backup',
-settings: 'alchemist-shop.settings',
-sandbox: 'alchemist-shop.sandbox',
-};
-function store() {
-try {
-const s = globalThis.localStorage;
-const k = '__t';
-s.setItem(k, '1');
-s.removeItem(k);
-return s;
-} catch {
-return null;
-}
-}
-function storageAvailable() {
-return !!store();
-}
-function saveGame(state) {
-const s = store();
-if (!s) return false;
-try {
-const json = JSON.stringify(state.toJSON());
-const prev = s.getItem(KEYS.save);
-if (prev) {
-try {
-JSON.parse(prev); // only keep a valid previous save as backup
-s.setItem(KEYS.backup, prev);
-} catch {
-}
-}
-s.setItem(KEYS.save, json);
-return true;
-} catch (e) {
-try {
-const data = state.toJSON();
-data.cauldron = null;
-s.setItem(KEYS.save, JSON.stringify(data));
-return true;
-} catch {
-return false;
-}
-}
-}
-function loadGame() {
-const s = store();
-if (!s) return { state: null, error: 'Local storage is unavailable in this browser mode.' };
-const raw = s.getItem(KEYS.save);
-if (!raw) return { state: null, error: null };
-try {
-return { state: GameState.fromJSON(JSON.parse(raw)), error: null };
-} catch (e) {
-const bak = s.getItem(KEYS.backup);
-if (bak) {
-try {
-return { state: GameState.fromJSON(JSON.parse(bak)), error: 'Your save was damaged; the previous autosave was restored.', recovered: true };
-} catch {
-}
-}
-return { state: null, error: 'Your save could not be read (' + (e && e.message ? e.message : 'unknown error') + ').' };
-}
-}
-function hasSave() {
-const s = store();
-return !!(s && s.getItem(KEYS.save));
-}
-function deleteSave() {
-const s = store();
-if (!s) return;
-s.removeItem(KEYS.save);
-s.removeItem(KEYS.backup);
-}
-function exportSave(state) {
-const json = JSON.stringify(state.toJSON(), null, 0);
-const blob = new Blob([json], { type: 'application/json' });
-const url = URL.createObjectURL(blob);
-const a = document.createElement('a');
-a.href = url;
-a.download = `alchemists-shop-${state.seed}-day${state.day}.json`;
-document.body.appendChild(a);
-a.click();
-a.remove();
-setTimeout(() => URL.revokeObjectURL(url), 2000);
-}
-function parseImport(text) {
-let raw;
-try {
-raw = JSON.parse(text);
-} catch {
-throw new Error('That file is not a valid save (not JSON).');
-}
-return GameState.fromJSON(raw);
-}
-function loadJSON(key, fallback) {
-const s = store();
-if (!s) return fallback;
-try {
-const v = s.getItem(key);
-return v ? { ...fallback, ...JSON.parse(v) } : fallback;
-} catch {
-return fallback;
-}
-}
-function saveJSON(key, value) {
-const s = store();
-if (!s) return false;
-try {
-s.setItem(key, JSON.stringify(value));
-return true;
-} catch {
-return false;
-}
-}
-function removeKey(key) {
-const s = store();
-if (s) s.removeItem(key);
-}
-return { KEYS, storageAvailable, saveGame, loadGame, hasSave, deleteSave, exportSave, parseImport, loadJSON, saveJSON, removeKey };
-})();
 // src/simulation/particles.js
-const __m28 = (() => {
-const { MAX_SPECIES } = __m16;
-const { PHASE } = __m20;
+const __m31 = (() => {
+const { MAX_SPECIES } = __m18;
+const { PHASE } = __m23;
 const STATE_FIELDS_F32 = ['x', 'y', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet', 'q'];
 const STATE_FIELDS_I32 = ['group'];
 const STATE_FIELDS_U8 = ['phase'];
@@ -3648,7 +3673,9 @@ const DERIVED_FIELDS = [
 'rho20', 'rho', 'invMass', 'rhoCp', 'kappa', 'lnMu20', 'viscT', 'lnMu', 'gran', 'binder',
 'tm', 'tb', 'volFrac', 'latF', 'latV', 'beta', 'cA', 'cB', 'colL', 'colA', 'colB',
 'opacity', 'flam', 'ign', 'combHeat', 'gasRho', 'glow', 'friction', 'hardness', 'yieldV', 'econd',
+'auraR', 'auraG', 'auraB', 'auraI', 'arcT', 'whole', 'look',
 ];
+const ARC_NONE = 1e9;
 class Particles {
 constructor(capacity) {
 this.capacity = capacity;
@@ -3706,6 +3733,13 @@ this.friction = new Float32Array(capacity);
 this.hardness = new Float32Array(capacity);
 this.yieldV = new Float32Array(capacity);
 this.econd = new Float32Array(capacity);
+this.auraR = new Float32Array(capacity);
+this.auraG = new Float32Array(capacity);
+this.auraB = new Float32Array(capacity);
+this.auraI = new Float32Array(capacity);
+this.arcT = new Float32Array(capacity).fill(ARC_NONE);
+this.whole = new Float32Array(capacity);
+this.look = new Uint8Array(capacity);
 this._seedCounter = 1;
 }
 add(x, y, phase, temp) {
@@ -3742,10 +3776,10 @@ isCondensed(i) {
 return this.phase[i] !== PHASE.GAS;
 }
 }
-return { STATE_FIELDS_F32, STATE_FIELDS_I32, STATE_FIELDS_U8, STATE_FIELDS_U32, DERIVED_FIELDS, Particles };
+return { STATE_FIELDS_F32, STATE_FIELDS_I32, STATE_FIELDS_U8, STATE_FIELDS_U32, DERIVED_FIELDS, ARC_NONE, Particles };
 })();
 // src/simulation/grid.js
-const __m29 = (() => {
+const __m32 = (() => {
 class NeighborGrid {
 constructor(minX, minY, maxX, maxY, cell, capacity) {
 this.minX = minX;
@@ -3845,8 +3879,8 @@ for (let a = cellStart[c]; a < cellStart[c + 1]; a++) fn(sorted[a]);
 return { NeighborGrid };
 })();
 // src/simulation/cauldron.js
-const __m30 = (() => {
-const { SIM } = __m20;
+const __m33 = (() => {
+const { SIM } = __m23;
 const CAULDRON_SIZES = {
 pot: { key: 'pot', label: 'Iron Pot', mouth: 0.8, belly: 1.0, neck: 0.5, depth: 1.55, capacity: 310 },
 copper: { key: 'copper', label: 'Copper Cauldron', mouth: 0.95, belly: 1.2, neck: 0.6, depth: 1.8, capacity: 440 },
@@ -4082,11 +4116,16 @@ return s / this.lidCells;
 return { CAULDRON_SIZES, COLUMN, Cauldron };
 })();
 // src/simulation/derived.js
-const __m31 = (() => {
-const { MAX_SPECIES, NO_BOIL } = __m16;
-const { granularFraction, suspensionLnMult } = __m17;
+const __m34 = (() => {
+const { MAX_SPECIES, NO_BOIL } = __m18;
+const { granularFraction, suspensionLnMult } = __m20;
 const { rgbToOklab, linearToSrgb } = __m8;
-const { PHASE } = __m20;
+const { PHASE } = __m23;
+const { compositionEffects, EFFECTS, NE } = __m13;
+const { ARC_NONE } = __m31;
+const AURA_W = EFFECTS.map((e) => (e.kind === 'magic' ? 1 : 0.55));
+const AURA_COL = EFFECTS.map((e) => e.color);
+const auraFx = new Float64Array(NE);
 const GAS_MASS = 0.05;
 function refreshParticle(sim, i) {
 const p = sim.p, sp = sim.species;
@@ -4097,7 +4136,7 @@ const n = sp.count;
 let tot = 0, rho = 0, rhoCp = 0, kap = 0, lnV = 0, lnVw = 0, vT = 0, beta = 0;
 let aR = 0, aG = 0, aB = 0, op = 0, flam = 0, ign = 0, ignW = 0, comb = 0, gasR = 0, glow = 0;
 let tbS = 0, tbW = 0, tmS = 0, tmW = 0, pmS = 0, pmW = 0, fricS = 0, hardS = 0, binder = 0, latF = 0, latV = 0;
-let cA = 0, cB = 0, ec = 0;
+let cA = 0, cB = 0, ec = 0, arcW = 0, arcS = 0, whole = 0, lookF = 0, look = 0;
 for (let s = 0; s < n; s++) {
 const f = comp[off + s];
 if (f <= 0) continue;
@@ -4144,6 +4183,11 @@ tmW += f;
 hardS += f * sp.hardness[s];
 latF += f * sp.latF[s];
 latV += f * sp.latV[s];
+if (sp.arcMag[s]) { arcW += f; arcS += f * sp.arcThr[s]; }
+if (sp.isWhole[s]) {
+whole += f;
+if (f > lookF) { lookF = f; look = sp.look[s]; }
+}
 }
 if (tot <= 1e-6) {
 tot = 1;
@@ -4192,13 +4236,33 @@ p.hardness[i] = hardS * inv;
 p.econd[i] = ec * inv;
 const s = Math.max(0, Math.min(1, (gran - 0.34) / 0.42));
 p.yieldV[i] = (0.1 + 0.6 * bnd) * Math.pow(s, 1.1);
+p.arcT[i] = arcW > 1e-4 ? arcS / arcW : ARC_NONE;
+p.whole[i] = whole * inv;
+p.look[i] = look;
+refreshAura(sim, i);
 p.dirty[i] = 0;
 }
-return { GAS_MASS, refreshParticle };
+function refreshAura(sim, i) {
+const p = sim.p;
+if (sim.species.count === 0) { p.auraI[i] = 0; return; }
+compositionEffects(sim.species, p.comp, i * MAX_SPECIES, p.temp[i], sim.laws || [], auraFx);
+let I = 0, r = 0, g = 0, b = 0;
+for (let k = 0; k < NE; k++) {
+const v = Math.abs(auraFx[k]) * AURA_W[k];
+if (v < 0.05) continue;
+const c = AURA_COL[k];
+I += v; r += v * c[0]; g += v * c[1]; b += v * c[2];
+}
+if (I > 0) {
+p.auraR[i] = r / I; p.auraG[i] = g / I; p.auraB[i] = b / I;
+}
+p.auraI[i] = I / 100;
+}
+return { GAS_MASS, refreshParticle, refreshAura };
 })();
 // src/simulation/rigid.js
-const __m32 = (() => {
-const { PHASE } = __m20;
+const __m35 = (() => {
+const { PHASE } = __m23;
 const MAX_GROUPS = 2048;
 const BOND = 0.135;
 const FRESH = -2;
@@ -4212,6 +4276,7 @@ this.used = new Uint8Array(MAX_GROUPS);
 this.anyDirty = false;
 this.parent = new Int32Array(sim.capacity);
 this.active = /** @type {number[]} */ ([]);
+this.angle = new Float32Array(MAX_GROUPS);
 }
 reset() {
 this.dirty.fill(0);
@@ -4232,7 +4297,8 @@ return g;
 }
 return -1;
 }
-setRest(idx) {
+setRest(idx, g = -1) {
+if (g >= 0 && g < MAX_GROUPS) this.angle[g] = 0;
 const p = this.sim.p;
 let cx = 0, cy = 0, m = 0;
 for (const i of idx) {
@@ -4243,6 +4309,19 @@ cx /= m; cy /= m;
 for (const i of idx) {
 p.restX[i] = p.x[i] - cx;
 p.restY[i] = p.y[i] - cy;
+}
+}
+_keepRest(idx, g) {
+const p = this.sim.p;
+const th = this.angle[g] || 0;
+let cx = 0, cy = 0, m = 0;
+for (const i of idx) { const w = p.rho[i]; cx += p.x[i] * w; cy += p.y[i] * w; m += w; }
+cx /= m; cy /= m;
+const c = Math.cos(th), s = Math.sin(th);
+for (const i of idx) {
+const dx = p.x[i] - cx, dy = p.y[i] - cy;
+p.restX[i] = c * dx + s * dy;
+p.restY[i] = -s * dx + c * dy;
 }
 }
 update() {
@@ -4322,7 +4401,7 @@ claimed[best] = 1;
 const changed = hasFresh || counts.size !== 1 || bc !== arr.length || this.dirty[best];
 if (changed) {
 for (const i of arr) p.group[i] = best;
-this.setRest(arr);
+this._keepRest(arr, best);
 }
 }
 let nextFree = 0;
@@ -4330,8 +4409,10 @@ for (const arr of pending) {
 while (nextFree < MAX_GROUPS && claimed[nextFree]) nextFree++;
 if (nextFree >= MAX_GROUPS) break;
 claimed[nextFree] = 1;
+const from = p.group[arr[0]];
 for (const i of arr) p.group[i] = nextFree;
-this.setRest(arr);
+this.angle[nextFree] = from >= 0 && from < MAX_GROUPS ? this.angle[from] : 0;
+this._keepRest(arr, nextFree);
 }
 this.dirty.fill(0);
 this.anyDirty = false;
@@ -4358,6 +4439,7 @@ a00 += w * qx * rx[i]; a01 += w * qx * ry[i];
 a10 += w * qy * rx[i]; a11 += w * qy * ry[i];
 }
 const th = Math.atan2(a10 - a01, a00 + a11);
+this.angle[g] = th;
 const c = Math.cos(th), s = Math.sin(th);
 for (let k = s0; k < s1; k++) {
 const i = mem[k];
@@ -4373,8 +4455,8 @@ return this.active.length;
 return { FRESH, RigidBodies };
 })();
 // src/simulation/thermal.js
-const __m33 = (() => {
-const { PHASE, SIM } = __m20;
+const __m36 = (() => {
+const { PHASE, SIM } = __m23;
 const KPP = 34; // particle–particle conductance (game-scaled)
 const KW = 24; // particle–wall conductance
 const KA = 0.35; // free-surface loss to air
@@ -4490,11 +4572,11 @@ for (let k = 0; k < M + L; k++) Tw[k] += flow[k] / Cw[k];
 return { thermalStep, wallStep };
 })();
 // src/simulation/phase.js
-const __m34 = (() => {
-const { PHASE, PHASE_NAMES } = __m20;
-const { MAX_SPECIES, NO_BOIL } = __m16;
-const { refreshParticle } = __m31;
-const { FRESH } = __m32;
+const __m37 = (() => {
+const { PHASE, PHASE_NAMES } = __m23;
+const { MAX_SPECIES, NO_BOIL } = __m18;
+const { refreshParticle } = __m34;
+const { FRESH } = __m35;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const BOIL_VOLATILE = 0.8;
 const DRY_MIN = 0.12;
@@ -4779,10 +4861,10 @@ classifyFluid(sim, j);
 return { classifyFluid, isFrozenGrain, dominantId, phaseStep };
 })();
 // src/reactions/diffusion.js
-const __m35 = (() => {
-const { PHASE } = __m20;
-const { MAX_SPECIES } = __m16;
-const { compatFactor } = __m21;
+const __m38 = (() => {
+const { PHASE } = __m23;
+const { MAX_SPECIES } = __m18;
+const { compatFactor } = __m14;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const RD = 0.16;
 function diffusionStep(sim, dt) {
@@ -4807,7 +4889,9 @@ Math.abs(p.colL[i] - p.colL[j]) < 1e-5 &&
 Math.abs(p.colA[i] - p.colA[j]) < 1e-5 &&
 Math.abs(p.colB[i] - p.colB[j]) < 1e-5 &&
 Math.abs(p.cA[i] - p.cA[j]) < 1e-5 &&
-Math.abs(p.gran[i] - p.gran[j]) < 1e-5
+Math.abs(p.gran[i] - p.gran[j]) < 1e-5 &&
+Math.abs(p.auraI[i] - p.auraI[j]) < 1e-5 &&
+Math.abs(p.arcT[i] - p.arcT[j]) < 1e-3
 ) continue;
 const dx = p.x[i] - p.x[j], dy = p.y[i] - p.y[j];
 const r2 = dx * dx + dy * dy;
@@ -4883,10 +4967,94 @@ return w > 0 ? s / w : 0;
 }
 return { diffusionStep };
 })();
+// src/simulation/arcane.js
+const __m40 = (() => {
+const { MAX_SPECIES } = __m18;
+const { ARCANE_SCALE, ARCANE_ZERO, awakenedId } = __m15;
+const { ARC_NONE } = __m31;
+const RATE = 0.55;
+const HEAT = 24;
+const TAIL = 0.002;
+function arcaneStep(sim, dt) {
+const sp = sim.species;
+if (sp.magicCount <= 0) return;
+const p = sim.p, n = p.count, S = MAX_SPECIES, ns = sp.count;
+const comp = p.comp, T = p.temp;
+let woke = 0, wx = 0, wy = 0, wt = 0;
+const by = sim._awokeBy || (sim._awokeBy = new Float64Array(S));
+by.fill(0);
+for (let i = 0; i < n; i++) {
+const off = i * S;
+let w = 0, tw = 0;
+for (let s = 0; s < ns; s++) {
+if (!sp.arcMag[s]) continue;
+const f = comp[off + s];
+if (f <= 1e-6) continue;
+w += f;
+tw += f * sp.arcThr[s];
+}
+if (w <= 1e-4) { p.arcT[i] = ARC_NONE; continue; }
+const thr = tw / w;
+p.arcT[i] = thr;
+const Ta = ARCANE_ZERO + ARCANE_SCALE * thr;
+const past = thr >= 0 ? T[i] - Ta : Ta - T[i];
+if (past <= 0) continue;
+const k = RATE * Math.min(1.6, 0.2 + past / 6);
+let frac = 1 - Math.exp(-k * dt);
+if (w * (1 - frac) < TAIL) frac = 1;
+let moved = 0;
+for (let s = 0; s < ns; s++) {
+if (!sp.arcMag[s]) continue;
+const f = comp[off + s];
+if (f <= 1e-7) continue;
+const a = awakeSlot(sim, s);
+if (a < 0) continue;
+const amt = frac >= 1 ? f : f * frac;
+comp[off + s] = f - amt;
+comp[off + a] += amt;
+moved += amt;
+by[s] += amt;
+}
+if (moved <= 0) continue;
+const Q = moved * HEAT * (thr >= 0 ? 1 : -1);
+T[i] -= Q / p.rhoCp[i];
+p.eph[i] += Q;
+p.dirty[i] = 1;
+p.wet[i] = Math.min(1, p.wet[i] + 0.25);
+woke += moved; wx += p.x[i] * moved; wy += p.y[i] * moved; wt += T[i] * moved;
+}
+if (woke > 0) {
+sim.awakened += woke;
+const last = sim._lastAwakenEvent ?? -99;
+if (sim.time - last > 1.5) {
+sim._lastAwakenEvent = sim.time;
+let best = 0;
+for (let s = 1; s < S; s++) if (by[s] > by[best]) best = s;
+const def = sp.defs[best];
+sim.emit({ type: 'awaken', x: wx / woke, y: wy / woke, amount: woke, species: def ? def.id : null, temp: wt / woke });
+}
+}
+}
+function awakeSlot(sim, s) {
+const sp = sim.species;
+let a = sp.awakeSlot[s];
+if (a >= 0) return a;
+const def = sp.defs[s];
+if (!def) return -1;
+const ad = sim.lookup(awakenedId(def.id));
+if (!ad) return -1;
+a = sim.slotFor(ad);
+if (a >= 0) sp.awakeSlot[s] = a;
+return a;
+}
+return { arcaneStep, awakeSlot };
+})();
 // src/reactions/reactions.js
-const __m36 = (() => {
-const { MAX_SPECIES } = __m16;
-const { PHASE } = __m20;
+const __m39 = (() => {
+const { MAX_SPECIES } = __m18;
+const { PHASE } = __m23;
+const { awakenedId } = __m15;
+const { awakeSlot } = __m40;
 const { GAS, SOLID } = PHASE;
 class ReactionSystem {
 constructor(sim, rules) {
@@ -4896,6 +5064,7 @@ this.lastEvent = {};
 this.progress = /** @type {Record<string, number>} */ ({});
 this.burned = 0;
 this._acc = new Float32Array(MAX_SPECIES);
+this._pools = { sa: -1, saw: -1, sb: -1, sbw: -1, magA: false, magB: false };
 }
 setRules(rules) {
 this.rules = rules;
@@ -4905,23 +5074,26 @@ void id;
 return false;
 }
 step(dt) {
-const sim = this.sim, p = sim.p, sp = sim.species, S = MAX_SPECIES;
+const sim = this.sim, p = sim.p, sp = sim.species;
 const n = p.count;
 for (const rule of this.rules) {
-const sa = sp.slotOf.get(rule.a);
-if (sa === undefined) continue;
-let sb = -1;
+const sa = slot(sp, rule.a), saw = slot(sp, awakenedId(rule.a));
+if (sa < 0 && saw < 0) continue;
+let sb = -1, sbw = -1;
 if (rule.b) {
-const t = sp.slotOf.get(rule.b);
-if (t === undefined) continue;
-sb = t;
+sb = slot(sp, rule.b);
+sbw = slot(sp, awakenedId(rule.b));
+if (sb < 0 && sbw < 0) continue;
 }
-if (rule.kind === 'contact') this._contact(rule, sa, sb, dt);
-else this._local(rule, sa, sb, dt);
+const pools = this._pools;
+pools.sa = sa; pools.saw = saw; pools.sb = sb; pools.sbw = sbw;
+pools.magA = saw >= 0 || (sa >= 0 && sp.arcMag[sa] === 1);
+pools.magB = sbw >= 0 || (sb >= 0 && sp.arcMag[sb] === 1);
+if (rule.kind === 'contact') this._contact(rule, dt);
+else this._local(rule, dt);
 }
 this._combustion(dt);
 for (let i = 0; i < n; i++) if (p.burn[i] > 0) p.burn[i] *= 0.93;
-void S;
 }
 _productSlots(rule) {
 const sim = this.sim;
@@ -4935,22 +5107,36 @@ out.push([s, pr.frac]);
 }
 return out;
 }
+_yield(prods, off, used, q) {
+const p = this.sim.p;
+for (const [s, f] of prods) {
+const v = used * f;
+const a = q > 0 ? awakeSlot(this.sim, s) : -1;
+if (a >= 0) {
+p.comp[off + s] += v * (1 - q);
+p.comp[off + a] += v * q;
+} else p.comp[off + s] += v;
+}
+}
 _rateT(rule, T) {
 if (T < rule.minT || T > rule.maxT) return 0;
 return 1 + Math.min(3, (T - rule.minT) / 40);
 }
-_local(rule, sa, sb, dt) {
-const sim = this.sim, p = sim.p, S = MAX_SPECIES;
+_local(rule, dt) {
+const sim = this.sim, p = sim.p, S = MAX_SPECIES, comp = p.comp;
+const { sa, saw, sb, sbw, magA, magB } = this._pools;
+const hasB = sb >= 0 || sbw >= 0;
 let prods = null;
 const n = p.count;
 for (let i = 0; i < n; i++) {
 if (p.phase[i] === SOLID) continue;
 const off = i * S;
-const fa = p.comp[off + sa];
+const fa = pool(comp, off, sa, saw);
 if (fa < 0.004) continue;
 let lim = fa / rule.ra;
-if (sb >= 0) {
-const fb = p.comp[off + sb];
+let fb = 0;
+if (hasB) {
+fb = pool(comp, off, sb, sbw);
 if (fb < 0.004) continue;
 lim = Math.min(lim, fb / rule.rb);
 }
@@ -4968,10 +5154,11 @@ if (!prods) {
 prods = this._productSlots(rule);
 if (!prods) return;
 }
-const used = ext * (rule.ra + (sb >= 0 ? rule.rb : 0));
-p.comp[off + sa] -= ext * rule.ra;
-if (sb >= 0) p.comp[off + sb] -= ext * rule.rb;
-for (const [s, f] of prods) p.comp[off + s] += used * f;
+const ua = ext * rule.ra, ub = hasB ? ext * rule.rb : 0;
+const qa = take(comp, off, sa, saw, ua);
+const qb = hasB ? take(comp, off, sb, sbw, ub) : 0;
+const used = ua + ub;
+this._yield(prods, off, used, awakeShare(ua, qa, magA, ub, qb, magB));
 p.temp[i] += (rule.heat * used) / p.rhoCp[i];
 p.dirty[i] = 1;
 p.wet[i] = Math.min(1, p.wet[i] + 0.3);
@@ -4979,16 +5166,17 @@ this.progress[rule.id] = (this.progress[rule.id] || 0) + used;
 this._event(rule, i);
 }
 }
-_contact(rule, sa, sb, dt) {
-const sim = this.sim, p = sim.p, S = MAX_SPECIES;
+_contact(rule, dt) {
+const sim = this.sim, p = sim.p, S = MAX_SPECIES, comp = p.comp;
+const { sa, saw, sb, sbw, magA, magB } = this._pools;
 const { pairI, pairJ, pairCount } = sim.grid;
 let prods = null;
 for (let k = 0; k < pairCount; k++) {
 let i = pairI[k], j = pairJ[k];
 if (p.phase[i] === GAS || p.phase[j] === GAS) continue;
-let fa = p.comp[i * S + sa], fb = p.comp[j * S + sb];
+let fa = pool(comp, i * S, sa, saw), fb = pool(comp, j * S, sb, sbw);
 if (fa < 0.004 || fb < 0.004) {
-const fa2 = p.comp[j * S + sa], fb2 = p.comp[i * S + sb];
+const fa2 = pool(comp, j * S, sa, saw), fb2 = pool(comp, i * S, sb, sbw);
 if (fa2 < 0.004 || fb2 < 0.004) continue;
 const t = i; i = j; j = t;
 fa = fa2; fb = fb2;
@@ -5009,12 +5197,11 @@ prods = this._productSlots(rule);
 if (!prods) return;
 }
 const ua = ext * rule.ra, ub = ext * rule.rb;
-p.comp[i * S + sa] -= ua;
-p.comp[j * S + sb] -= ub;
-for (const [s, f] of prods) {
-p.comp[i * S + s] += ua * f;
-p.comp[j * S + s] += ub * f;
-}
+const qa = take(comp, i * S, sa, saw, ua);
+const qb = take(comp, j * S, sb, sbw, ub);
+const q = awakeShare(ua, qa, magA, ub, qb, magB);
+this._yield(prods, i * S, ua, q);
+this._yield(prods, j * S, ub, q);
 p.temp[i] += (rule.heat * ua) / p.rhoCp[i];
 p.temp[j] += (rule.heat * ub) / p.rhoCp[j];
 p.dirty[i] = 1; p.dirty[j] = 1;
@@ -5109,6 +5296,27 @@ if (p.sleep[j]) p.sleep[j] = 0;
 }
 }
 }
+function slot(sp, id) {
+const s = sp.slotOf.get(id);
+return s === undefined ? -1 : s;
+}
+function pool(comp, off, s, sw) {
+return (s >= 0 ? comp[off + s] : 0) + (sw >= 0 ? comp[off + sw] : 0);
+}
+function take(comp, off, s, sw, amt) {
+const a = s >= 0 ? comp[off + s] : 0, w = sw >= 0 ? comp[off + sw] : 0;
+const tot = a + w;
+if (tot <= 0) return 0;
+const q = w / tot;
+if (s >= 0) comp[off + s] = Math.max(0, a - amt * (1 - q));
+if (sw >= 0) comp[off + sw] = Math.max(0, w - amt * q);
+return q;
+}
+function awakeShare(ua, qa, magA, ub, qb, magB) {
+const tot = (magA ? ua : 0) + (magB ? ub : 0);
+if (tot <= 0) return 0;
+return ((magA ? ua * qa : 0) + (magB ? ub * qb : 0)) / tot;
+}
 function maxFlamSlot(sim, i) {
 const sp = sim.species, off = i * MAX_SPECIES;
 let best = 0, bf = -1;
@@ -5121,9 +5329,9 @@ return best;
 return { ReactionSystem };
 })();
 // src/simulation/tools.js
-const __m37 = (() => {
-const { PHASE, SIM } = __m20;
-const { MAX_SPECIES } = __m16;
+const __m41 = (() => {
+const { PHASE, SIM } = __m23;
+const { MAX_SPECIES } = __m18;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const TOOL_SPECS = {
 spoon: { core: SIM.SPOON_CORE, reach: SIM.SPOON_RADIUS, entrain: [0.2, 0.09, 0.3, 0.035, 0.12], drag: 0.55 },
@@ -5264,22 +5472,73 @@ if (pestle && (ph === SOLID || ph === POWDER)) crush(sim, i, pen, t.speed, dt);
 function crush(sim, i, pen, speed, dt) {
 const p = sim.p;
 if (p.phase[i] !== SOLID) return;
-const hard = 0.25 + p.hardness[i] * 1.5;
+const hard = p.hardness[i];
+const crackAt = 0.16 + hard * 0.85;
+const grindAt = 0.25 + hard * 1.5;
 sim.dmg[i] += (pen * 40 + speed * 1.2) * dt * 3;
-if (sim.dmg[i] < hard) return;
-sim.dmg[i] = 0;
 const g = p.group[i];
+const size = g >= 0 ? bodySize(sim, g) : 1;
+if (size >= 3 && sim.dmg[i] >= crackAt) {
+crack(sim, i, g);
+sim.dmg[i] = crackAt * 0.5;
+return;
+}
+if (sim.dmg[i] < (size <= 2 ? crackAt : grindAt)) return;
+sim.dmg[i] = 0;
 if (g >= 0) sim.rigid.markDirty(g);
 p.group[i] = -1;
 p.phase[i] = POWDER;
 p.sleep[i] = 0;
 p.dirty[i] = 1;
-p.vx[i] += (sim.rand() - 0.5) * 0.8;
-p.vy[i] -= sim.rand() * 0.6;
+p.vx[i] += (sim.rand() - 0.5) * 0.6;
+p.vy[i] -= sim.rand() * 0.4;
 sim.emit({ type: 'crush', x: p.x[i], y: p.y[i] });
 sim.grid.query(p.x[i], p.y[i], 0.14, (j) => {
-if (p.phase[j] === SOLID && p.group[j] === g) sim.dmg[j] += hard * 0.35;
+if (p.phase[j] === SOLID && p.group[j] === g && g >= 0) sim.dmg[j] += grindAt * 0.25;
 });
+}
+function bodySize(sim, g) {
+const p = sim.p;
+let c = 0;
+for (let k = 0; k < p.count; k++) if (p.group[k] === g) c++;
+return c;
+}
+function crack(sim, i, g) {
+const p = sim.p, t = sim.tool;
+const idx = [];
+let cx = 0, cy = 0;
+for (let k = 0; k < p.count; k++) if (p.group[k] === g) { idx.push(k); cx += p.x[k]; cy += p.y[k]; }
+if (idx.length < 3) return;
+cx /= idx.length; cy /= idx.length;
+let rad = 0;
+for (const k of idx) rad = Math.max(rad, Math.hypot(p.x[k] - cx, p.y[k] - cy));
+let dx = p.x[i] - cx, dy = p.y[i] - cy;
+const d = Math.hypot(dx, dy);
+let cut;
+if (d > 0.45 * rad && d > 0.06) {
+dx /= d; dy /= d;
+cut = d - 0.11;
+} else {
+const vl = Math.hypot(t.vx, t.vy) || 1;
+dx = -t.vy / vl; dy = t.vx / vl;
+cut = 0;
+}
+const piece = [], rest = [];
+for (const k of idx) ((p.x[k] - cx) * dx + (p.y[k] - cy) * dy >= cut ? piece : rest).push(k);
+if (!piece.length || !rest.length) return;
+const ng = sim.rigid.alloc();
+if (ng < 0) return;
+sim.rigid.angle[ng] = sim.rigid.angle[g];
+for (const k of piece) {
+p.group[k] = ng;
+p.sleep[k] = 0;
+p.vx[k] += dx * 0.35;
+p.vy[k] += dy * 0.35 - 0.1;
+}
+for (const k of rest) p.sleep[k] = 0;
+sim.rigid.markDirty(g);
+sim.rigid.markDirty(ng);
+sim.emit({ type: 'crack', x: p.x[i], y: p.y[i], pieces: 2 });
 }
 function skim(sim, dt) {
 const t = sim.tool, p = sim.p;
@@ -5315,9 +5574,10 @@ if (victims.length) sim.emit({ type: 'skim', count: victims.length, x: t.x, y: t
 return { TOOL_SPECS, ToolState, clampToInterior, toolForces, toolConstraints, LIQUID };
 })();
 // src/simulation/emitter.js
-const __m38 = (() => {
-const { PHASE, SIM, formPhase } = __m20;
-const { COLUMN } = __m30;
+const __m42 = (() => {
+const { PHASE, SIM, formPhase } = __m23;
+const { COLUMN } = __m33;
+const { chunkTemplate, chunkSize } = __m19;
 class Emitter {
 constructor(sim) {
 this.sim = sim;
@@ -5387,8 +5647,8 @@ const form = a.form;
 if (form === 'solid') {
 this.chunkTimer -= dt;
 if (this.chunkTimer > 0) return;
-this.chunkTimer = 0.32;
-const size = Math.min(a.remaining, a.remaining >= 12 ? 12 : 7);
+this.chunkTimer = 0.36;
+const size = Math.min(a.remaining, chunkSize(a.def));
 if (this._spawnChunk(a, size)) {
 a.remaining -= size;
 a.spawned += size;
@@ -5427,19 +5687,17 @@ if (this.acc > 3) this.acc = 3;
 }
 _spawnChunk(a, size) {
 const sim = this.sim;
-const offs = [[0, 0]];
 const s = SIM.SPACING;
-for (let k = 0; k < 6; k++) offs.push([Math.cos((k * Math.PI) / 3) * s, Math.sin((k * Math.PI) / 3) * s]);
-if (size > 7) {
-for (let k = 0; k < 6; k++) offs.push([Math.cos((k * Math.PI) / 3 + Math.PI / 6) * s * 1.732, Math.sin((k * Math.PI) / 3 + Math.PI / 6) * s * 1.732]);
-}
-offs.length = Math.min(offs.length, size);
+const offs = chunkTemplate(a.def, size);
+let ext = 0;
+for (const [ox, oy] of offs) ext = Math.max(ext, Math.hypot(ox, oy) * s);
 const mouth = sim.cauldron.mouth;
-const cx = Math.max(-mouth + 0.3, Math.min(mouth - 0.3, a.x + (sim.rand() - 0.5) * 0.3));
+const room = Math.max(0.05, mouth - ext - 0.12);
+const cx = Math.max(-room, Math.min(room, a.x + (sim.rand() - 0.5) * 0.3));
 const cy = this.spawnY() + 0.12;
-const ang = sim.rand() * Math.PI * 2;
+const ang = (sim.rand() - 0.5) * (ext > 0.25 ? 0.8 : Math.PI * 2);
 const ca = Math.cos(ang), sa = Math.sin(ang);
-const pts = offs.map(([ox, oy]) => [cx + ca * ox - sa * oy, cy + sa * ox + ca * oy]);
+const pts = offs.map(([ox, oy]) => [cx + (ca * ox - sa * oy) * s, cy + (sa * ox + ca * oy) * s]);
 for (const [x, y] of pts) if (!this._free(x, y, 0.085)) return false;
 const g = sim.rigid.alloc();
 if (g < 0) return false;
@@ -5451,7 +5709,7 @@ sim.p.group[i] = g;
 sim.p.vy[i] = 1.2;
 idx.push(i);
 }
-sim.rigid.setRest(idx);
+sim.rigid.setRest(idx, g);
 sim.rigid.markDirty(g);
 return idx.length > 0;
 }
@@ -5459,8 +5717,8 @@ return idx.length > 0;
 return { Emitter };
 })();
 // src/simulation/electric.js
-const __m39 = (() => {
-const { PHASE } = __m20;
+const __m43 = (() => {
+const { PHASE } = __m23;
 const KQ = 26; // conduction rate (game scaled)
 const RE = 0.16; // contact distance
 const JOULE = 140; // heat per unit of charge moved per unit of potential difference
@@ -5507,21 +5765,22 @@ return s;
 return { electricStep, totalCharge };
 })();
 // src/simulation/world.js
-const __m27 = (() => {
-const { PHASE, SIM, TUNE, formPhase } = __m20;
-const { Particles } = __m28;
-const { NeighborGrid } = __m29;
-const { Cauldron, COLUMN } = __m30;
-const { SpeciesTable, MAX_SPECIES } = __m16;
-const { refreshParticle } = __m31;
-const { RigidBodies } = __m32;
-const { thermalStep } = __m33;
-const { phaseStep, classifyFluid } = __m34;
-const { diffusionStep } = __m35;
-const { ReactionSystem } = __m36;
-const { ToolState, toolForces, toolConstraints } = __m37;
-const { Emitter } = __m38;
-const { electricStep } = __m39;
+const __m30 = (() => {
+const { PHASE, SIM, TUNE, formPhase } = __m23;
+const { Particles } = __m31;
+const { NeighborGrid } = __m32;
+const { Cauldron, COLUMN } = __m33;
+const { SpeciesTable, MAX_SPECIES } = __m18;
+const { refreshParticle } = __m34;
+const { RigidBodies } = __m35;
+const { thermalStep } = __m36;
+const { phaseStep, classifyFluid } = __m37;
+const { diffusionStep } = __m38;
+const { ReactionSystem } = __m39;
+const { ToolState, toolForces, toolConstraints } = __m41;
+const { Emitter } = __m42;
+const { electricStep } = __m43;
+const { arcaneStep } = __m40;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const MODE = Object.freeze({ PBF: 0, GRAN: 1, COH: 2, RIGID: 3, GAS: 4 });
 const M_PBF = 0, M_GRAN = 1, M_COH = 2, M_RIGID = 3, M_GAS = 4;
@@ -5614,6 +5873,9 @@ this.steps = 0;
 this.accumulator = 0;
 this.energyIn = 0;
 this.energyOut = 0;
+this.awakened = 0;
+this._lastAwakenEvent = -99;
+this._awokeBy = null;
 this.vented = /** @type {Record<string, number>} */ ({});
 this._rng = 12345;
 this.stats = { stepMs: 0, steps: 0, pairs: 0, awake: 0 };
@@ -5744,6 +6006,7 @@ thermalStep(this, dt2);
 electricStep(this, dt2);
 diffusionStep(this, dt2);
 this.reactions.step(dt2);
+arcaneStep(this, dt2);
 phaseStep(this, dt2);
 this._oxygen(dt2);
 }
@@ -6336,12 +6599,1125 @@ if (p.sleep[i] >= SLEEP_STEPS) p.sleep[i] = 0;
 }
 return { MODE, SLEEP_STEPS, Simulation, formPhase };
 })();
+// src/game/vial.js
+const __m29 = (() => {
+const { Simulation } = __m30;
+const { PHASE, SIM } = __m23;
+const { MAX_SPECIES } = __m18;
+const { measureParticles } = __m22;
+const { refreshParticle } = __m34;
+const ROOM = SIM.AMBIENT;
+const COOL_TAU = 480;
+function makeVial(sim, indices, meta) {
+const sp = sim.species, p = sim.p, S = MAX_SPECIES;
+const used = [];
+for (let s = 0; s < sp.count; s++) {
+if (!sp.defs[s]) continue;
+let any = false;
+for (const i of indices) if (p.comp[i * S + s] > 1e-6) { any = true; break; }
+if (any) used.push(s);
+}
+const particles = indices.map((i) => ({
+c: used.map((s) => Math.round(p.comp[i * S + s] * 1e6) / 1e6),
+t: Math.round(p.temp[i] * 100) / 100,
+q: Math.round(p.q[i] * 1e4) / 1e4 || undefined,
+ph: p.phase[i] === PHASE.SOLID || p.phase[i] === PHASE.GAS ? PHASE.LIQUID : p.phase[i],
+}));
+const vial = /** @type {Vial} */ ({
+id: 'v' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36),
+species: used.map((s) => sp.defs[s].id),
+particles,
+ml: particles.length * SIM.ML_PER_PARTICLE,
+bottledMl: particles.length * SIM.ML_PER_PARTICLE,
+m: null,
+batchId: '', rev: 0, cert: {}, parts: [], day: 0, log: [],
+...meta,
+});
+vial.log = [...(vial.log || []), { type: 'bottled', ml: vial.ml, day: vial.day }];
+return vial;
+}
+function appendParticles(vial, sim, indices) {
+if (!indices.length) return vial;
+const part = makeVial(sim, indices, {});
+const map = part.species.map((id) => {
+let j = vial.species.indexOf(id);
+if (j < 0) {
+j = vial.species.length;
+vial.species.push(id);
+for (const vp of vial.particles) vp.c.push(0);
+}
+return j;
+});
+for (const vp of part.particles) {
+const c = new Array(vial.species.length).fill(0);
+vp.c.forEach((f, k) => { c[map[k]] = f; });
+vial.particles.push({ ...vp, c });
+}
+vial.ml = vial.particles.length * SIM.ML_PER_PARTICLE;
+vial.bottledMl = vial.ml;
+return vial;
+}
+const scratch = new WeakMap();
+function scratchSim(lookup, laws) {
+let s = scratch.get(lookup);
+if (!s) {
+s = new Simulation({ size: 'pot', lookup, reactions: [], laws, capacity: 900 });
+s.maxParticles = s.capacity;
+scratch.set(lookup, s);
+}
+s.laws = laws || [];
+return s;
+}
+function load(vial, lookup, laws, which) {
+const sim = scratchSim(lookup, laws);
+sim.clear();
+const defs = vial.species.map((id) => lookup(id));
+const slots = defs.map((d) => (d ? sim.slotFor(d) : -1));
+const S = MAX_SPECIES;
+const list = which || vial.particles.map((_, k) => k);
+const idx = [];
+for (const k of list) {
+const vp = vial.particles[k];
+let first = vp.c.findIndex((f, j) => f > 0 && defs[j]);
+if (first < 0) first = 0;
+const i = sim.addParticle(defs[first] || defs.find(Boolean), 0, 1, vp.ph, vp.t);
+if (i < 0) break;
+sim.p.comp.fill(0, i * S, (i + 1) * S);
+vp.c.forEach((f, j) => { if (f > 0 && slots[j] >= 0) sim.p.comp[i * S + slots[j]] += f; });
+sim.p.q[i] = vp.q || 0;
+sim.p.phase[i] = vp.ph;
+sim.p.dirty[i] = 1;
+idx.push(i);
+}
+for (const i of idx) refreshParticle(sim, i);
+return { sim, idx };
+}
+function measureVial(vial, lookup, laws, which) {
+if (!vial.particles.length) return null;
+const { sim, idx } = load(vial, lookup, laws, which);
+return measureParticles(sim, idx);
+}
+function updateVial(vial, lookup, laws) {
+vial.ml = vial.particles.length * SIM.ML_PER_PARTICLE;
+vial.m = measureVial(vial, lookup, laws);
+return vial;
+}
+function takeDose(vial, ml, lookup, laws, day) {
+const N = vial.particles.length;
+const k = Math.min(N, Math.max(1, Math.round(ml / SIM.ML_PER_PARTICLE)));
+if (!N) return null;
+const which = [];
+for (let j = 0; j < k; j++) which.push(Math.min(N - 1, Math.floor(((j + 0.5) * N) / k)));
+const uniq = [...new Set(which)];
+const dose = measureVial(vial, lookup, laws, uniq);
+const take = new Set(uniq);
+vial.particles = vial.particles.filter((_, i) => !take.has(i));
+vial.log.push({ type: 'dose', ml: uniq.length * SIM.ML_PER_PARTICLE, day });
+updateVial(vial, lookup, laws);
+return { dose, ml: uniq.length * SIM.ML_PER_PARTICLE };
+}
+function pourBack(vial, sim) {
+const n = vial.particles.length;
+if (sim.p.count + n > sim.maxParticles) return 0;
+const S = MAX_SPECIES;
+const defs = vial.species.map((id) => sim.lookup(id));
+let made = 0;
+const mouth = sim.cauldron.mouth;
+for (let k = 0; k < n; k++) {
+const vp = vial.particles[k];
+const col = k % 9, row = Math.floor(k / 9);
+const x = (-0.8 + (col / 8) * 1.6) * (mouth - 0.12) + (sim.rand() - 0.5) * 0.02;
+const y = 0.14 + row * 0.1 + (col % 2) * 0.05;
+let first = vp.c.findIndex((f, j) => f > 0 && defs[j]);
+if (first < 0) first = 0;
+const i = sim.addParticle(defs[first], x, Math.min(y, sim.cauldron.depth - 0.2), vp.ph, vp.t);
+if (i < 0) break;
+sim.p.comp.fill(0, i * S, (i + 1) * S);
+vp.c.forEach((f, j) => {
+if (f <= 0 || !defs[j]) return;
+const s = sim.slotFor(defs[j]);
+if (s >= 0) sim.p.comp[i * S + s] += f;
+});
+sim.p.q[i] = vp.q || 0;
+sim.p.vy[i] = 0.8;
+sim.p.dirty[i] = 1;
+made++;
+}
+return made;
+}
+function relaxVial(vial, dt) {
+const k = 1 - Math.exp(-dt / COOL_TAU);
+let moved = 0;
+for (const vp of vial.particles) {
+const d = (ROOM - vp.t) * k;
+vp.t += d;
+moved = Math.max(moved, Math.abs(d));
+}
+return moved;
+}
+function vialInventory(vial) {
+const out = {};
+for (const vp of vial.particles) vp.c.forEach((f, j) => { if (f > 0) out[vial.species[j]] = (out[vial.species[j]] || 0) + f; });
+return out;
+}
+function migrateVial(v) {
+if (!v || typeof v !== 'object') return null;
+if (Array.isArray(v.particles) && Array.isArray(v.species)) return v;
+const m = v.m || {};
+const comp = m.composition || {};
+const species = Object.keys(comp);
+const tot = species.reduce((a, id) => a + comp[id], 0) || 1;
+const n = Math.max(0, Math.floor((v.ml || 0) / SIM.ML_PER_PARTICLE));
+const c = species.map((id) => comp[id] / tot);
+const particles = [];
+for (let k = 0; k < n; k++) particles.push({ c: c.slice(), t: m.temperature ?? ROOM, q: m.charge || undefined, ph: PHASE.LIQUID });
+return { ...v, species, particles, ml: n * SIM.ML_PER_PARTICLE, bottledMl: v.bottledMl ?? n * SIM.ML_PER_PARTICLE, log: v.log || [], cert: v.cert || {} };
+}
+return { makeVial, appendParticles, measureVial, updateVial, takeDose, pourBack, relaxVial, vialInventory, migrateVial };
+})();
+// src/game/commerce.js
+const __m44 = (() => {
+const { Rng, hashString } = __m6;
+const { EFFECT_KEYS, EFFECT_INDEX, NE, EFFECT_BY_KEY } = __m13;
+const { evaluatePotion, strongestUnwanted } = __m24;
+const { PURITY_LIMIT } = __m25;
+function draftLabel(vial, theory, day) {
+const claims = {};
+const cert = vial.cert || {}, recs = vial.certRecords || {};
+for (let k = 0; k < NE; k++) {
+const key = EFFECT_KEYS[k];
+if (cert[key] !== undefined) {
+const v = cert[key];
+claims[key] = Math.abs(v) < PURITY_LIMIT ? { kind: 'none', source: 'trial', record: recs[key] } : { kind: 'value', value: Math.round(v * 10) / 10, source: 'trial', record: recs[key] };
+} else if (theory) {
+const v = theory[k];
+claims[key] = Math.abs(v) < 0.6 ? { kind: 'none', source: 'estimate', spread: 1 } : { kind: 'value', value: Math.round(v), source: 'estimate', spread: Math.round(2 + 0.3 * Math.abs(v)) };
+} else claims[key] = { kind: 'unknown', source: 'estimate' };
+}
+return { claims, day };
+}
+function applyTrials(label, values, record) {
+for (const [key, v] of Object.entries(values)) {
+const c = label.claims[key];
+if (c && c.source === 'player') continue;
+label.claims[key] = Math.abs(v) < PURITY_LIMIT ? { kind: 'none', source: 'trial', record } : { kind: 'value', value: Math.round(v * 10) / 10, source: 'trial', record };
+}
+return label;
+}
+function claimedEffects(label) {
+const e = new Array(NE).fill(0);
+for (let k = 0; k < NE; k++) {
+const c = label.claims[EFFECT_KEYS[k]];
+if (c && c.kind === 'value') e[k] = c.value || 0;
+}
+return e;
+}
+function relevantEffects(com) {
+const keys = new Set();
+for (const r of com.requirements) {
+if (EFFECT_INDEX[r.key] !== undefined) keys.add(r.key);
+if (r.key === 'purity') for (const k of EFFECT_KEYS) if (!(r.exclude || []).includes(k)) keys.add(k);
+}
+return [...keys];
+}
+function labelTrust(com, label, rank) {
+const keys = relevantEffects(com);
+if (!keys.length) return Math.min(1.05, 0.85 + 0.04 * rank);
+let proven = 0, unknown = 0;
+for (const k of keys) {
+const c = label.claims[k];
+if (!c || c.kind === 'unknown') unknown++;
+else if (c.source === 'trial') proven++;
+}
+const proof = com.customer.persona ? com.customer.persona.proof : 0.5;
+const evidence = proven / keys.length;
+const t = 0.5 + 0.05 * rank + evidence * (0.25 + 0.3 * proof) - (unknown / keys.length) * (0.2 + 0.4 * proof) - (1 - evidence) * 0.15 * proof;
+return Math.max(0.3, Math.min(1.05, t));
+}
+function unprovenWanted(com, label) {
+const proof = com.customer.persona ? com.customer.persona.proof : 0.5;
+if (proof < 0.8) return [];
+return com.requirements.filter((r) => r.effect && r.key !== 'purity').map((r) => r.key).filter((k) => !label.claims[k] || label.claims[k].source !== 'trial');
+}
+function claimedMeasurement(m, label) {
+return { ...m, effects: claimedEffects(label) };
+}
+function openNegotiation(com, vial, label, rank) {
+const persona = com.customer.persona || { haggle: 0.5, patience: 3, honesty: 0.85, proof: 0.5 };
+const rng = new Rng(hashString(`${com.id}:${vial.id}:haggle`));
+const fit = evaluatePotion(com, /** @type {any} */ (claimedMeasurement({ ...vial.m, ml: vial.ml }, label))).quality;
+const trust = labelTrust(com, label, rank);
+const qty = Math.min(1, vial.ml / com.bottleMl);
+const reservation = Math.round(com.budget * Math.pow(fit, 1.3) * trust * Math.pow(qty, 1.4) * rng.range(0.92, 1.08) * 10) / 10;
+const offer = Math.round(reservation * (0.58 + 0.27 * (1 - persona.haggle)) * 10) / 10;
+const n = { round: 0, patience: persona.patience, reservation, offer, fit, trust, state: /** @type {'open'} */ ('open'), log: [] };
+const opening = fit < 0.35 ? 'That is not what I asked for.' : trust < 0.55 ? 'How do I know it does what your label says?' : fit < 0.8 ? 'Not quite what I wanted, but let’s talk.' : 'This looks right.';
+n.log.push({ who: 'them', text: `${opening} I can offer ${fmt(offer)} coins.`, coins: offer });
+return n;
+}
+function proposePrice(n, com, ask) {
+if (n.state !== 'open') return n;
+const persona = com.customer.persona || { haggle: 0.5 };
+ask = Math.max(0, Math.round(ask * 10) / 10);
+n.round++;
+n.log.push({ who: 'you', text: `I want ${fmt(ask)} coins.`, coins: ask });
+if (ask <= n.offer + 0.05) return close(n, ask, 'Done! A fair price.');
+if (ask <= n.reservation * (1 - 0.12 * persona.haggle)) return close(n, ask, 'Very well — agreed.');
+n.patience -= ask > n.reservation * 1.4 ? 2 : 1;
+if (n.patience <= 0) {
+n.state = 'left';
+n.log.push({ who: 'them', text: ask > n.reservation * 1.4 ? 'That is robbery! Good day.' : 'We will not agree. I will find another alchemist.' });
+return n;
+}
+const step = (0.3 + 0.35 * (1 - persona.haggle)) * (n.reservation - n.offer);
+n.offer = Math.round(Math.min(n.reservation, Math.max(n.offer, n.offer + step)) * 10) / 10;
+const mood = ask > n.reservation * 1.4 ? 'Absurd.' : persona.haggle > 0.6 ? 'Hah! No.' : 'Too much for me.';
+n.log.push({ who: 'them', text: `${mood} ${fmt(n.offer)} coins, and that is generous.${n.patience <= 1 ? ' Last offer.' : ''}`, coins: n.offer });
+return n;
+}
+function acceptOffer(n) {
+if (n.state !== 'open') return n;
+n.log.push({ who: 'you', text: `Agreed: ${fmt(n.offer)} coins.` });
+return close(n, n.offer, 'Pleasure doing business.');
+}
+function close(n, price, text) {
+n.state = 'deal';
+n.price = price;
+n.log.push({ who: 'them', text });
+return n;
+}
+function recordSale(st, com, vial, label, price, truth) {
+const ev = evaluatePotion(com, truth);
+const rng = new Rng(hashString(`${com.id}:${vial.id}:after`));
+const persona = com.customer.persona || { honesty: 0.85 };
+const wrong = [];
+for (const k of EFFECT_KEYS) {
+const c = label.claims[k];
+const v = truth.effects[EFFECT_INDEX[k]];
+if (!c || c.kind === 'unknown') continue;
+if (c.kind === 'none' && Math.abs(v) >= PURITY_LIMIT) wrong.push(k);
+if (c.kind === 'value' && Math.abs(v - (c.value || 0)) > Math.max(3, 0.25 * Math.abs(c.value || 0))) wrong.push(k);
+}
+const purity = com.requirements.find((r) => r.key === 'purity');
+const side = purity ? strongestUnwanted(truth.effects, purity.exclude || []) : { value: 0, key: '' };
+const harmful = side.value >= 3 && ['toxicity', 'death', 'acidity'].includes(side.key);
+const failed = ev.rows.filter((r) => r.score < 0.7 && r.req.key !== 'quantity').map((r) => r.req.key);
+const evidence = Object.values(label.claims).filter((c) => c.source === 'trial' && c.record).map((c) => c.record);
+const sale = {
+id: 's' + hashString(`${com.id}:${vial.id}`).toString(36), day: st.day, customer: { name: com.customer.name, title: com.customer.title, archetype: com.customer.archetype, portrait: com.customer.portrait },
+potion: com.potionName, price, quality: Math.round(ev.quality * 1000) / 1000, repDelta: ev.repDelta, wrong, failed, side: side.value >= PURITY_LIMIT ? side : null,
+claims: label.claims, truth: Array.from(truth.effects, (v) => Math.round(v * 10) / 10), evidence, batchId: vial.batchId, rev: vial.rev, ml: vial.ml,
+};
+let follow = null;
+const due = st.day + 1;
+if (ev.quality >= 0.85 && !wrong.length) {
+if (rng.next() > persona.honesty) {
+const key = rng.pick(com.requirements.filter((r) => r.effect && r.key !== 'purity').map((r) => r.key).concat(['quality']));
+follow = { kind: 'complaint', legit: false, demand: Math.round(price * rng.range(0.5, 1) * 10) / 10, cites: [key],
+text: key === 'quality' ? 'It did nothing at all. I want my money back.' : `The ${EFFECT_BY_KEY[key] ? EFFECT_BY_KEY[key].label.toLowerCase() : key} was much weaker than you claimed. Refund me.` };
+} else {
+const referral = rng.chance(0.35);
+follow = { kind: 'praise', legit: true, tip: Math.round(price * rng.range(0.05, 0.15) * 10) / 10, referral,
+text: referral ? 'It worked wonders! I told a friend about your shop — expect them.' : 'It worked exactly as promised. Thank you!' };
+}
+} else if (ev.quality < 0.6 || wrong.length || harmful) {
+const share = harmful ? 1 : wrong.length ? Math.max(0.5, 1 - ev.quality) : Math.max(0.3, 1 - ev.quality);
+const cites = [...new Set([...wrong, ...failed])];
+follow = { kind: 'complaint', legit: true, demand: Math.round(price * share * 10) / 10, cites, harmful,
+text: harmful ? `Your potion made me ill — ${EFFECT_BY_KEY[side.key].label.toLowerCase()}! You never said.` : wrong.length ? `Your label lied: ${wrong.map((k) => EFFECT_BY_KEY[k].label.toLowerCase()).join(', ')} was nothing like you wrote.` : 'It barely worked. I paid for a proper potion.' };
+} else {
+follow = { kind: 'quiet', legit: true, text: 'Seemed content enough.' };
+}
+follow = { id: 'f' + sale.id.slice(1), saleId: sale.id, day: due, customer: sale.customer, ...follow, resolved: false };
+return { sale, follow, ev };
+}
+function resolveFollowUp(st, f, action) {
+const sale = (st.sales || []).find((s) => s.id === f.saleId);
+const rng = new Rng(hashString(`${f.id}:${action}`));
+let coins = 0, rep = 0, text = '';
+const base = sale ? sale.repDelta : 0;
+if (f.kind === 'praise') {
+coins = f.tip || 0;
+rep = Math.max(2, base);
+text = f.referral ? 'They leave a tip and promise to send a friend.' : 'They leave a small tip.';
+} else if (f.kind === 'quiet') {
+rep = base;
+text = 'No news is good news.';
+} else if (action === 'refund') {
+coins = -Math.min(f.demand, st.coins);
+rep = f.legit ? Math.min(-1, Math.round(base / 2)) : 1;
+text = f.legit ? 'You refund them. They leave mollified.' : 'You refund them. They leave smirking — but people saw you were fair.';
+} else if (action === 'dispute') {
+const covered = sale && (f.cites || []).every((k) => k === 'quality' ? sale.evidence.length > 0 : sale.claims[k] && sale.claims[k].source === 'trial');
+if (f.legit) {
+coins = -Math.min(f.demand, st.coins);
+rep = Math.min(-6, base - 4);
+text = 'Your records do not hold up: the complaint was fair. You refund them, and the story spreads.';
+} else if (covered || rng.chance(0.35 + 0.08 * st.rank)) {
+rep = 2;
+text = covered ? 'You show the trial records of that very batch. They mumble and leave empty-handed.' : 'You stand your ground and they back down.';
+} else {
+coins = -Math.min(Math.round(f.demand * 0.5 * 10) / 10, st.coins);
+rep = -3;
+text = 'With no trial records to show, you settle for half.';
+}
+} else {
+rep = f.legit ? Math.min(-6, base - 3) : -2;
+text = 'You turn them away. They grumble to everyone in the square.';
+}
+return { coins, rep, text };
+}
+function fmt(v) {
+return (Math.round(v * 10) / 10).toLocaleString('en-US', { maximumFractionDigits: 1 });
+}
+return { draftLabel, applyTrials, claimedEffects, relevantEffects, labelTrust, unprovenWanted, claimedMeasurement, openNegotiation, proposePrice, acceptOffer, recordSale, resolveFollowUp };
+})();
+// src/game/state.js
+const __m5 = (() => {
+const { Rng, hashString } = __m6;
+const { generateWorld, makeLookup, addAlchemy } = __m7;
+const { serializeMaterial, deserializeMaterial } = __m9;
+const { generateCommission, tutorialCommission } = __m16;
+const { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById } = __m26;
+const { SIM } = __m23;
+const { createTrials, normalizeTrials, runTrial, resetSubject, SUBJECT_BY_ID, knownLaws } = __m27;
+const { createGathering, normalizeGathering, generateDeposits, harvest, newDayRegrowth } = __m28;
+const { predictPlan } = __m17;
+const { EFFECT_INDEX } = __m13;
+const { migrateVial } = __m29;
+const { recordSale, resolveFollowUp } = __m44;
+const SAVE_VERSION = 3;
+const WORLD_GEN_VERSION = 2;
+const ASPECT_KEY_MAP = { vitality: 'vitality', ardor: 'fire', arcana: 'arcana', fortitude: 'strength' };
+const MARKET_EVENTS = [
+{ key: 'none', name: 'An ordinary day', text: 'Business as usual in the market square.' },
+{ key: 'winter', name: 'Bitter Frost', text: 'A cold snap grips the valley — warming draughts pay extra.' },
+{ key: 'plague', name: 'Coughing Sickness', text: 'Healers buy restoratives and salves at a premium.' },
+{ key: 'conclave', name: 'Mages’ Conclave', text: 'Wizards fill the inns, hungry for arcane brews.' },
+{ key: 'festival', name: 'Harvest Festival', text: 'Revellers want colourful tonics and fizzing brews.' },
+{ key: 'caravan', name: 'Spice Caravan', text: 'A caravan floods the market — reagents are cheaper today.' },
+{ key: 'shortage', name: 'Road Bandits', text: 'Supply wagons were raided — reagents cost more today.' },
+];
+const ACHIEVEMENTS = [
+{ id: 'first_sale', name: 'Open for Business', desc: 'Sell your first potion.', reward: 10 },
+{ id: 'perfect', name: 'Flawless', desc: 'Brew a perfect five-star potion.', reward: 25 },
+{ id: 'perfect5', name: 'Master of Precision', desc: 'Brew five perfect potions.', reward: 80 },
+{ id: 'dough', name: 'Kneaded It', desc: 'Knead a dough from powder and liquid.', reward: 10 },
+{ id: 'frozen', name: 'Cold Hands', desc: 'Freeze a liquid solid.', reward: 15 },
+{ id: 'crush', name: 'Grind Stone', desc: 'Crush a solid into grains with the pestle.', reward: 10 },
+{ id: 'boil', name: 'Rolling Boil', desc: 'Boil a liquid into vapour.', reward: 10 },
+{ id: 'condense', name: 'What Goes Up', desc: 'Condense vapour back into liquid.', reward: 15 },
+{ id: 'fire', name: 'Singed Eyebrows', desc: 'Set something alight in the cauldron.', reward: 10 },
+{ id: 'react1', name: 'Transmutation', desc: 'Discover your first reaction.', reward: 15 },
+{ id: 'react5', name: 'Natural Philosopher', desc: 'Discover five reactions.', reward: 60 },
+{ id: 'react10', name: 'Chymist Supreme', desc: 'Discover ten reactions.', reward: 150 },
+{ id: 'served10', name: 'Regulars', desc: 'Serve ten customers.', reward: 30 },
+{ id: 'served50', name: 'Talk of the Town', desc: 'Serve fifty customers.', reward: 120 },
+{ id: 'rich', name: 'Gold in the Coffers', desc: 'Hold 1000 coins at once.', reward: 50 },
+{ id: 'journeyman', name: 'Journeyman', desc: 'Reach the rank of Journeyman.', reward: 20 },
+{ id: 'adept', name: 'Adept', desc: 'Reach the rank of Adept.', reward: 40 },
+{ id: 'expert', name: 'Expert', desc: 'Reach the rank of Expert.', reward: 80 },
+{ id: 'master', name: 'Master Alchemist', desc: 'Reach the rank of Master.', reward: 150 },
+{ id: 'grand', name: 'Grand Alchemist', desc: 'Complete the Grand Commission.', reward: 500 },
+{ id: 'recipe', name: 'Written Down', desc: 'Save a recipe to your book.', reward: 10 },
+{ id: 'distil', name: 'Spirit Catcher', desc: 'Collect a distillate with the alembic.', reward: 30 },
+{ id: 'layers', name: 'Oil and Water', desc: 'Observe immiscible liquids separating into layers.', reward: 10 },
+{ id: 'trial1', name: 'First Trial', desc: 'Test a potion on a subject.', reward: 10 },
+{ id: 'trial25', name: 'Empiricist', desc: 'Run 25 trials.', reward: 60 },
+{ id: 'law1', name: 'Hidden Harmony', desc: 'Discover a resonance law through repeated trials.', reward: 40 },
+{ id: 'law4', name: 'Natural Philosopher of Magic', desc: 'Discover four resonance laws.', reward: 150 },
+{ id: 'forage1', name: 'Into the Wilds', desc: 'Gather your first wild ingredient.', reward: 10 },
+{ id: 'forage1k', name: 'Seasoned Forager', desc: 'Gather 1000 ml of wild ingredients.', reward: 50 },
+{ id: 'certified', name: 'Proven Remedy', desc: 'Serve a potion whose effects you verified by experiment.', reward: 15 },
+{ id: 'steep', name: 'Patience of the Steep', desc: 'Steep a herb into a liquid extract with heat.', reward: 15 },
+{ id: 'awaken', name: 'Awakening', desc: 'Awaken a magical ingredient past its arcane threshold.', reward: 20 },
+{ id: 'deal', name: 'Silver Tongue', desc: 'Sell a potion for more than the customer first offered.', reward: 15 },
+{ id: 'dispute', name: 'The Records Speak', desc: 'Win a dispute with trial records of the batch.', reward: 30 },
+{ id: 'referral', name: 'Word of Mouth', desc: 'Serve a customer sent by a satisfied one.', reward: 25 },
+];
+class GameState {
+constructor(data) {
+/** @type {number} */ this.version = data.version;
+/** @type {number} */ this.genVersion = data.genVersion;
+/** @type {string} */ this.seed = data.seed;
+/** @type {import('../materials/generator.js').World} */ this.world = data.world;
+/** @type {number} */ this.coins = data.coins;
+/** @type {number} */ this.reputation = data.reputation;
+/** @type {number} */ this.day = data.day;
+/** @type {number} */ this.customerIndex = data.customerIndex;
+/** @type {number} */ this.customersPerDay = data.customersPerDay;
+/** @type {number} */ this.servedToday = data.servedToday;
+/** @type {number} */ this.dayEarnings = data.dayEarnings;
+/** @type {number} */ this.daySpending = data.daySpending;
+/** @type {Record<string, number>} */ this.inventory = data.inventory;
+/** @type {string[]} */ this.equipment = data.equipment;
+/** @type {Record<string, JournalEntry>} */ this.journal = data.journal;
+/** @type {Record<string, any>} */ this.knowledge = data.knowledge;
+/** @type {any[]} */ this.recipes = data.recipes;
+/** @type {any[]} */ this.history = data.history;
+/** @type {Record<string, number>} */ this.achievements = data.achievements;
+/** @type {any} */ this.current = data.current;
+this.stats = { served: 0, perfect: 0, earned: 0, spent: 0, brews: 0, declined: 0, bestQuality: 0, ...(data.stats || {}) };
+/** @type {{active:boolean, step:number, done:boolean}} */ this.tutorial = { active: false, step: 0, done: true, ...(data.tutorial || {}) };
+/** @type {{event:string, mods:Record<string, number>}} */ this.market = data.market || { event: 'none', mods: {} };
+/** @type {any} */ this.cauldron = data.cauldron || null;
+/** @type {any} */ this.receiver = data.receiver || null;
+/** @type {any[]} */ this.brewLog = data.brewLog || [];
+/** @type {number} */ this.reliefDay = data.reliefDay || 0;
+/** @type {boolean} */ this.grandDone = !!data.grandDone;
+/** @type {number} */ this.createdAt = data.createdAt || Date.now();
+/** @type {ReturnType<typeof createTrials>} */ this.trials = normalizeTrials(data.trials);
+/** @type {ReturnType<typeof createGathering>} */ this.gathering = normalizeGathering(data.gathering);
+this.vial = migrateVial(data.vial);
+/** @type {any[]} */ this.sales = Array.isArray(data.sales) ? data.sales : [];
+/** @type {any[]} */ this.followUps = Array.isArray(data.followUps) ? data.followUps : [];
+/** @type {number} */ this.referrals = data.referrals | 0;
+this.batch = data.batch && typeof data.batch.id === 'string' ? { id: data.batch.id, rev: data.batch.rev | 0 } : newBatch();
+this.lookup = makeLookup(this.world);
+this._deposits = null;
+}
+static create(seed, opts = {}) {
+const world = generateWorld(seed);
+const inventory = {};
+for (const id of world.starting) inventory[id] = 0;
+const R = world.roles;
+inventory[R.water] = Infinity;
+inventory[R.essenceA] = 300;
+inventory[R.essenceB] = 200;
+inventory[R.oil] = 200;
+inventory[R.syrup] = 200;
+inventory[R.spirit] = 200;
+inventory[R.binder] = 300;
+inventory[R.salt] = 200;
+for (const id of world.wild || []) inventory[id] = 0;
+const st = new GameState({
+version: SAVE_VERSION,
+genVersion: WORLD_GEN_VERSION,
+seed,
+world,
+coins: 60,
+reputation: 0,
+day: 1,
+customerIndex: 0,
+customersPerDay: 3,
+servedToday: 0,
+dayEarnings: 0,
+daySpending: 0,
+inventory,
+equipment: STARTING_EQUIPMENT.slice(),
+journal: /** @type {Record<string, JournalEntry>} */ ({}),
+knowledge: /** @type {Record<string, any>} */ ({}),
+recipes: [],
+history: [],
+achievements: {},
+current: null,
+stats: { served: 0, perfect: 0, earned: 0, spent: 0, brews: 0, declined: 0, bestQuality: 0 },
+tutorial: { active: opts.tutorial !== false, step: 0, done: opts.tutorial === false },
+market: { event: 'none', mods: {} },
+cauldron: null,
+receiver: null,
+brewLog: [],
+reliefDay: 0,
+grandDone: false,
+createdAt: Date.now(),
+});
+st.rollMarket();
+return st;
+}
+get rank() {
+return rankIndex(this.reputation);
+}
+get rankName() {
+return RANKS[this.rank].name;
+}
+nextRank() {
+return RANKS[this.rank + 1] || null;
+}
+get cap() {
+return capabilities(this.equipment);
+}
+has(id) {
+return this.equipment.includes(id);
+}
+purchasable() {
+return this.world.ingredients.filter((id) => (this.lookup(id).tier || 0) <= this.rank);
+}
+availableSet() {
+const s = new Set(this.purchasable());
+for (const [id, v] of Object.entries(this.inventory)) if (v > 0) s.add(id);
+return s;
+}
+get deposits() {
+if (!this._deposits) this._deposits = generateDeposits(this.world, this.lookup);
+return this._deposits;
+}
+gatherableSet() {
+const s = new Set();
+for (const d of this.deposits) if (d.rank <= this.rank) s.add(d.materialId);
+return s;
+}
+gather(depositId, opts = {}) {
+const d = this.deposits.find((x) => x.id === depositId);
+if (!d) return { ok: false, amount: 0, reason: 'unknown' };
+const take = this.has('satchel') ? Math.round(d.take * 1.5) : d.take;
+const r = harvest(this, { ...d, take }, opts);
+if (r.ok && !opts.unlimited) {
+this.stats.gathered = (this.stats.gathered || 0) + r.amount;
+/** @type {any} */ (r).events = [...this.unlock('forage1')];
+if (this.stats.gathered >= 1000) /** @type {any} */ (r).events.push(...this.unlock('forage1k'));
+}
+return r;
+}
+newBatch() {
+this.batch = newBatch();
+return this.batch;
+}
+touchBatch() {
+this.batch.rev++;
+}
+get knownLaws() {
+return knownLaws(this.trials, this.world.laws || []);
+}
+recordTrial(subjectId, dose, ctx) {
+const rec = runTrial(this.trials, subjectId, dose, { ...ctx, day: this.day, laws: this.world.laws || [] });
+this.stats.trials = (this.stats.trials || 0) + 1;
+const events = [...this.unlock('trial1')];
+if (this.stats.trials >= 25) events.push(...this.unlock('trial25'));
+for (const id of rec.lawsFound) {
+const L = (this.world.laws || []).find((l) => l.id === id);
+if (!L) continue;
+const entry = this.discover({ key: 'law:' + id, title: L.name, text: L.lore, kind: 'law' });
+if (entry) events.push({ type: 'law', id, name: L.name, lore: L.lore });
+events.push(...this.unlock('law1'));
+if (this.knownLaws.length >= 4) events.push(...this.unlock('law4'));
+}
+return { record: rec, events };
+}
+replaceSubject(id, free = false) {
+const def = SUBJECT_BY_ID[id];
+if (!def) return { ok: false, reason: 'Unknown subject.' };
+const cost = free ? 0 : Math.ceil(def.cost * (this.has('kennel') ? 0.5 : 1));
+if (cost > this.coins + 1e-9) return { ok: false, reason: `A new ${def.name.toLowerCase()} costs ${cost} coins.` };
+this.coins = round1(this.coins - cost);
+this.stats.spent += cost;
+this.daySpending += cost;
+resetSubject(this.trials, id);
+return { ok: true, cost };
+}
+subjectAvailable(id) {
+const def = SUBJECT_BY_ID[id];
+return !!def && (!def.needs || this.has(def.needs));
+}
+priceOf(id) {
+const m = this.lookup(id);
+if (!m) return 0;
+if (id === this.world.roles.water) return 0;
+const mod = this.market.mods[id] ?? 1;
+const ev = this.market.event === 'caravan' ? 0.8 : this.market.event === 'shortage' ? 1.3 : 1;
+return Math.max(1, Math.round(m.price * mod * ev * (1 - this.cap.discount) * 10) / 10);
+}
+stock(id) {
+return this.inventory[id] ?? 0;
+}
+buy(id, ml) {
+const room = this.cap.storage - this.stock(id);
+const amount = Math.min(ml, room);
+if (amount <= 0) return { ok: false, reason: 'Your shelves are full for that reagent.' };
+const cost = Math.round((amount / 100) * this.priceOf(id) * 10) / 10;
+if (cost > this.coins + 1e-9) return { ok: false, reason: 'Not enough coins.' };
+this.coins = round1(this.coins - cost);
+this.inventory[id] = this.stock(id) + amount;
+this.stats.spent += cost;
+this.daySpending += cost;
+return { ok: true, amount, cost };
+}
+sellBack(id, ml) {
+const amount = Math.min(ml, this.stock(id));
+if (amount <= 0 || !isFinite(this.stock(id))) return { ok: false };
+const value = Math.round((amount / 100) * this.priceOf(id) * 0.4 * 10) / 10;
+this.inventory[id] -= amount;
+this.coins = round1(this.coins + value);
+return { ok: true, value };
+}
+consume(id, ml) {
+const s = this.stock(id);
+if (!isFinite(s)) return true;
+if (s + 1e-6 < ml) return false;
+this.inventory[id] = round1(s - ml);
+return true;
+}
+buyEquipment(id) {
+const e = equipmentById(id);
+if (!e) return { ok: false, reason: 'Unknown item.' };
+if (this.has(id)) return { ok: false, reason: 'Already owned.' };
+if (e.rank > this.rank) return { ok: false, reason: `Requires the rank of ${RANKS[e.rank].name}.` };
+if (e.requires && !e.requires.every((r) => this.has(r))) return { ok: false, reason: 'Requires the previous upgrade.' };
+if (this.coins < e.price) return { ok: false, reason: 'Not enough coins.' };
+this.coins = round1(this.coins - e.price);
+this.equipment.push(id);
+this.stats.spent += e.price;
+this.daySpending += e.price;
+return { ok: true, item: e };
+}
+commissionContext() {
+const available = this.availableSet();
+for (const id of this.gatherableSet()) available.add(id);
+return {
+world: this.world,
+lookup: this.lookup,
+available,
+cap: this.cap,
+rank: this.rank,
+priceOf: (id) => this.priceOf(id),
+event: this.market.event,
+};
+}
+nextCustomer() {
+if (this.current) return this.current;
+if (this.customerIndex >= this.customersPerDay) return null;
+const rng = new Rng(hashString(`${this.seed}:${this.day}:${this.customerIndex}`));
+let com;
+if (this.tutorial.active && !this.tutorial.done && this.stats.served === 0) {
+com = tutorialCommission(this.commissionContext(), rng);
+} else if (this.rank >= 4 && !this.grandDone && this.customerIndex === 0 && this.day % 2 === 0) {
+com = this.grandCommission(rng);
+} else {
+const contract = this.has('charter') && this.rank >= 2 && this.customerIndex === this.customersPerDay - 1;
+const tier = Math.max(0, Math.min(4, this.rank + (rng.chance(0.25) ? -1 : 0) + (rng.chance(0.15) ? 1 : 0)));
+com = generateCommission(this.commissionContext(), rng, { tier: Math.min(tier, this.rank + 1), contract });
+if (com && this.referrals > 0) {
+this.referrals--;
+com.referral = true;
+com.budget = Math.round(com.budget * 1.3);
+com.dialogue = `A friend told me your potions really work. ${com.dialogue}`;
+}
+}
+this.current = com;
+return com;
+}
+grandCommission(rng) {
+const com = generateCommission(this.commissionContext(), rng, { tier: 4, style: 'panacea', archetype: 'noble', contract: true }) ||
+generateCommission(this.commissionContext(), rng, { tier: 4, contract: true });
+if (com) {
+com.grand = true;
+com.customer.name = 'Queen Isolde’s Herald';
+com.dialogue = 'By royal decree: the Queen requires a masterwork. Brew it, and the guild shall name you Grand Alchemist.';
+com.budget = Math.round(com.budget * 2.5);
+}
+return com;
+}
+declineCustomer() {
+if (!this.current) return;
+if (this.current.tutorial) return;
+this.current = null;
+this.customerIndex++;
+this.stats.declined++;
+}
+completeSale(ev, measurement) {
+const com = this.current;
+if (!com) return [];
+return this._bookSale(com, ev, measurement, ev.payment, ev.repDelta);
+}
+_bookSale(com, ev, measurement, paid, rep) {
+const events = [];
+this.coins = round1(this.coins + paid);
+events.push(...this.adjustReputation(rep));
+this.stats.served++;
+this.stats.earned += paid;
+this.dayEarnings += paid;
+this.stats.bestQuality = Math.max(this.stats.bestQuality, ev.quality);
+if (ev.perfect) this.stats.perfect++;
+this.servedToday++;
+this.history.unshift({
+day: this.day, customer: com.customer.name, title: com.customer.title, potion: com.potionName, quality: ev.quality, stars: ev.stars,
+paid, color: measurement?.color, ml: measurement?.ml,
+});
+if (this.history.length > 60) this.history.length = 60;
+if (com.tutorial) { this.tutorial.done = true; this.tutorial.active = false; }
+if (com.grand && ev.quality >= 0.85) { this.grandDone = true; events.push(...this.unlock('grand')); }
+this.current = null;
+this.customerIndex++;
+events.push(...this.unlock('first_sale'));
+if (ev.perfect) events.push(...this.unlock('perfect'));
+if (this.stats.perfect >= 5) events.push(...this.unlock('perfect5'));
+if (this.stats.served >= 10) events.push(...this.unlock('served10'));
+if (this.stats.served >= 50) events.push(...this.unlock('served50'));
+if (this.coins >= 1000) events.push(...this.unlock('rich'));
+return events;
+}
+completeDeal(vial, label, price, truth, firstOffer = 0) {
+const com = this.current;
+if (!com) return { events: [], sale: null, follow: null, ev: null };
+const { sale, follow, ev } = recordSale(this, com, vial, label, price, truth);
+const events = this._bookSale(com, ev, truth, price, 1);
+this.sales.unshift(sale);
+if (this.sales.length > 80) this.sales.length = 80;
+this.followUps.push(follow);
+if (price > firstOffer + 0.5 && firstOffer > 0) events.push(...this.unlock('deal'));
+if (com.referral) events.push(...this.unlock('referral'));
+return { events, sale, follow, ev };
+}
+dueFollowUps() {
+return this.followUps.filter((f) => !f.resolved && f.day <= this.day && f.kind !== 'quiet');
+}
+settleFollowUp(id, action) {
+const f = this.followUps.find((x) => x.id === id);
+if (!f || f.resolved) return null;
+const r = resolveFollowUp(this, f, action);
+f.resolved = true;
+f.action = action;
+f.outcome = r;
+this.coins = round1(this.coins + r.coins);
+if (r.coins < 0) { this.stats.refunds = (this.stats.refunds || 0) + 1; this.daySpending -= r.coins; }
+else this.dayEarnings += r.coins;
+if (f.kind === 'praise' && f.referral) this.referrals++;
+const events = this.adjustReputation(r.rep);
+if (action === 'dispute' && r.rep > 0) { this.stats.disputesWon = (this.stats.disputesWon || 0) + 1; events.push(...this.unlock('dispute')); }
+const sale = this.sales.find((s) => s.id === f.saleId);
+if (sale) sale.outcome = { kind: f.kind, action, ...r };
+return { ...r, events };
+}
+adjustReputation(delta) {
+const oldRank = this.rank;
+this.reputation = Math.max(0, this.reputation + delta);
+const events = [];
+const nr = this.rank;
+if (nr > oldRank) {
+events.push({ type: 'rank', rank: nr, name: RANKS[nr].name });
+const ach = ['', 'journeyman', 'adept', 'expert', 'master'][nr];
+if (ach) events.push(...this.unlock(ach));
+this.customersPerDay = 3 + Math.floor(nr / 2);
+}
+return events;
+}
+get dayOver() {
+return !this.current && this.customerIndex >= this.customersPerDay;
+}
+endDay() {
+const settled = [];
+for (const f of this.followUps) {
+if (f.resolved || f.day > this.day) continue;
+if (f.kind === 'quiet') { this.settleFollowUp(f.id, 'thank'); continue; }
+if (f.day < this.day) settled.push({ f, r: this.settleFollowUp(f.id, f.kind === 'praise' ? 'thank' : 'dismiss') });
+}
+this.followUps = this.followUps.filter((f) => !f.resolved || f.day >= this.day - 6);
+const summary = { day: this.day, earned: this.dayEarnings, spent: this.daySpending, served: this.servedToday, settled: settled.length };
+this.day++;
+this.customerIndex = 0;
+this.servedToday = 0;
+this.dayEarnings = 0;
+this.daySpending = 0;
+this.current = null;
+this.customersPerDay = 3 + Math.floor(this.rank / 2);
+this.rollMarket();
+newDayRegrowth(this.gathering, this.deposits);
+return summary;
+}
+rollMarket() {
+const rng = new Rng(hashString(`${this.seed}:market:${this.day}`));
+const ev = this.day <= 2 ? MARKET_EVENTS[0] : rng.weighted(MARKET_EVENTS, [5, 1, 1, 1, 1, 1, 1]);
+const mods = {};
+for (const id of this.world.ingredients) mods[id] = Math.round(rng.range(0.88, 1.12) * 100) / 100;
+this.market = { event: ev.key, mods };
+}
+get marketEvent() {
+return MARKET_EVENTS.find((e) => e.key === this.market.event) || MARKET_EVENTS[0];
+}
+claimRelief() {
+if (this.reliefDay === this.day) return 0;
+const cheapest = Math.min(...this.purchasable().filter((id) => id !== this.world.roles.water).map((id) => this.priceOf(id)));
+if (this.coins >= cheapest * 2) return 0;
+this.reliefDay = this.day;
+const grant = 25;
+this.coins = round1(this.coins + grant);
+return grant;
+}
+discover(e) {
+if (this.journal[e.key]) return null;
+const entry = { ...e, day: this.day };
+this.journal[e.key] = entry;
+this.reputation += 1;
+return entry;
+}
+learn(id, fact, value) {
+const k = (this.knowledge[id] ||= {});
+if (k[fact] !== undefined) return false;
+k[fact] = value;
+return true;
+}
+reactionsDiscovered() {
+return Object.values(this.journal).filter((e) => e.kind === 'reaction').length;
+}
+unlock(id) {
+if (this.achievements[id]) return [];
+const a = ACHIEVEMENTS.find((x) => x.id === id);
+if (!a) return [];
+this.achievements[id] = Date.now();
+this.coins = round1(this.coins + a.reward);
+return [{ type: 'achievement', id, name: a.name, desc: a.desc, reward: a.reward }];
+}
+addRecipe(recipe) {
+this.recipes.unshift({ ...recipe, id: 'r' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36) });
+return this.unlock('recipe');
+}
+toJSON() {
+return {
+version: SAVE_VERSION,
+genVersion: this.genVersion,
+seed: this.seed,
+world: {
+seed: this.world.seed,
+materials: this.world.materials.map(serializeMaterial),
+ingredients: this.world.ingredients,
+starting: this.world.starting,
+reactions: this.world.reactions,
+roles: this.world.roles,
+laws: this.world.laws,
+wild: this.world.wild,
+},
+coins: this.coins,
+reputation: this.reputation,
+day: this.day,
+customerIndex: this.customerIndex,
+customersPerDay: this.customersPerDay,
+servedToday: this.servedToday,
+dayEarnings: this.dayEarnings,
+daySpending: this.daySpending,
+inventory: Object.fromEntries(Object.entries(this.inventory).map(([k, v]) => [k, isFinite(v) ? v : 'inf'])),
+equipment: this.equipment,
+journal: this.journal,
+knowledge: this.knowledge,
+recipes: this.recipes,
+history: this.history,
+achievements: this.achievements,
+current: this.current,
+stats: this.stats,
+tutorial: this.tutorial,
+market: this.market,
+cauldron: this.cauldron,
+receiver: this.receiver,
+brewLog: this.brewLog,
+reliefDay: this.reliefDay,
+grandDone: this.grandDone,
+createdAt: this.createdAt,
+trials: this.trials,
+gathering: this.gathering,
+vial: this.vial,
+batch: this.batch,
+sales: this.sales,
+followUps: this.followUps,
+referrals: this.referrals,
+savedAt: Date.now(),
+};
+}
+static fromJSON(raw) {
+const data = migrate(raw);
+const world = {
+...data.world,
+materials: data.world.materials.map(deserializeMaterial),
+};
+addAlchemy(world);
+const inventory = Object.fromEntries(Object.entries(data.inventory).map(([k, v]) => [k, v === 'inf' ? Infinity : Number(v)]));
+for (const id of world.wild || []) if (!(id in inventory)) inventory[id] = 0;
+for (const [k, v] of Object.entries(inventory)) if (!Number.isFinite(v) && v !== Infinity) inventory[k] = 0;
+const st = new GameState({ ...data, world, inventory });
+if (data._migratedFrom !== undefined && data._migratedFrom < 3) st.genVersion = WORLD_GEN_VERSION;
+if (st.current) migrateCommission(st.current, st.world, st.lookup);
+return st;
+}
+}
+function newBatch() {
+return { id: 'b' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36), rev: 0 };
+}
+function migrateCommission(com, world, lookup) {
+if (!com || !Array.isArray(com.requirements)) return com;
+const old = com.requirements.filter((r) => ASPECT_KEY_MAP[r.key] && r.effect === undefined && com.predicted && com.predicted.aspects);
+if (!old.length) return com;
+let pred = null;
+try { pred = com.reference ? predictPlan(world, lookup, com.reference) : null; } catch { pred = null; }
+const OLD = ['vitality', 'ardor', 'arcana', 'fortitude'];
+for (const r of old) {
+const key = ASPECT_KEY_MAP[r.key];
+const oldPred = com.predicted.aspects[OLD.indexOf(r.key)] || 0;
+const newPred = pred ? pred.effects[EFFECT_INDEX[key]] : oldPred;
+const ratio = oldPred > 0 ? Number(r.target) / oldPred : 0.65;
+const target = Math.max(3, Math.round(newPred * ratio));
+Object.assign(r, { key, target, zero: Math.max(8, target * 0.6), label: `at least ${target}`, effect: true });
+}
+if (pred) com.predicted.effects = pred.effects;
+com.effectOrder = true;
+return com;
+}
+function migrate(raw) {
+if (!raw || typeof raw !== 'object') throw new Error('Not a save file');
+const d = { ...raw };
+if (!d.version) throw new Error('Missing save version');
+if (d.version > SAVE_VERSION) throw new Error('This save comes from a newer version of the game');
+d._migratedFrom = d.version;
+if (d.version < 2) {
+d.market = d.market || { event: 'none', mods: {} };
+d.receiver = d.receiver || null;
+d.grandDone = !!d.grandDone;
+d.reliefDay = d.reliefDay || 0;
+d.knowledge = d.knowledge || {};
+d.version = 2;
+}
+if (!d.world || !Array.isArray(d.world.materials)) {
+const w = generateWorld(d.seed);
+d.world = { ...w, materials: w.materials.map(serializeMaterial) };
+}
+for (const k of ['journal', 'achievements', 'stats', 'tutorial']) d[k] = d[k] || {};
+d.recipes = d.recipes || [];
+d.history = d.history || [];
+d.brewLog = d.brewLog || [];
+d.equipment = d.equipment && d.equipment.length ? d.equipment : STARTING_EQUIPMENT.slice();
+if (d.version < 3) {
+if (!d.equipment.includes('mortar')) d.equipment = [...d.equipment, 'mortar'];
+d.trials = d.trials || null;
+d.gathering = d.gathering || null;
+d.vial = null;
+d.batch = null;
+d.version = 3;
+}
+if (d.world && Array.isArray(d.world.materials) && d.world.materials.length === 0) throw new Error('The save has no reagents');
+if (!d.inventory || typeof d.inventory !== 'object') throw new Error('The save has no inventory');
+return d;
+}
+function round1(v) {
+return Math.round(v * 10) / 10;
+}
+return { SAVE_VERSION, WORLD_GEN_VERSION, MARKET_EVENTS, ACHIEVEMENTS, GameState, migrateCommission, migrate, EQUIPMENT, SIM };
+})();
+// src/game/persistence.js
+const __m45 = (() => {
+const { GameState } = __m5;
+const KEYS = {
+save: 'alchemist-shop.save',
+backup: 'alchemist-shop.save.backup',
+settings: 'alchemist-shop.settings',
+sandbox: 'alchemist-shop.sandbox',
+};
+function store() {
+try {
+const s = globalThis.localStorage;
+const k = '__t';
+s.setItem(k, '1');
+s.removeItem(k);
+return s;
+} catch {
+return null;
+}
+}
+function storageAvailable() {
+return !!store();
+}
+function saveGame(state) {
+const s = store();
+if (!s) return false;
+try {
+const json = JSON.stringify(state.toJSON());
+const prev = s.getItem(KEYS.save);
+if (prev) {
+try {
+JSON.parse(prev); // only keep a valid previous save as backup
+s.setItem(KEYS.backup, prev);
+} catch {
+}
+}
+s.setItem(KEYS.save, json);
+return true;
+} catch (e) {
+try {
+const data = state.toJSON();
+data.cauldron = null;
+s.setItem(KEYS.save, JSON.stringify(data));
+return true;
+} catch {
+return false;
+}
+}
+}
+function loadGame() {
+const s = store();
+if (!s) return { state: null, error: 'Local storage is unavailable in this browser mode.' };
+const raw = s.getItem(KEYS.save);
+if (!raw) return { state: null, error: null };
+try {
+return { state: GameState.fromJSON(JSON.parse(raw)), error: null };
+} catch (e) {
+const bak = s.getItem(KEYS.backup);
+if (bak) {
+try {
+return { state: GameState.fromJSON(JSON.parse(bak)), error: 'Your save was damaged; the previous autosave was restored.', recovered: true };
+} catch {
+}
+}
+return { state: null, error: 'Your save could not be read (' + (e && e.message ? e.message : 'unknown error') + ').' };
+}
+}
+function hasSave() {
+const s = store();
+return !!(s && s.getItem(KEYS.save));
+}
+function deleteSave() {
+const s = store();
+if (!s) return;
+s.removeItem(KEYS.save);
+s.removeItem(KEYS.backup);
+}
+function exportSave(state) {
+const json = JSON.stringify(state.toJSON(), null, 0);
+const blob = new Blob([json], { type: 'application/json' });
+const url = URL.createObjectURL(blob);
+const a = document.createElement('a');
+a.href = url;
+a.download = `alchemists-shop-${state.seed}-day${state.day}.json`;
+document.body.appendChild(a);
+a.click();
+a.remove();
+setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+function parseImport(text) {
+let raw;
+try {
+raw = JSON.parse(text);
+} catch {
+throw new Error('That file is not a valid save (not JSON).');
+}
+return GameState.fromJSON(raw);
+}
+function loadJSON(key, fallback) {
+const s = store();
+if (!s) return fallback;
+try {
+const v = s.getItem(key);
+return v ? { ...fallback, ...JSON.parse(v) } : fallback;
+} catch {
+return fallback;
+}
+}
+function saveJSON(key, value) {
+const s = store();
+if (!s) return false;
+try {
+s.setItem(key, JSON.stringify(value));
+return true;
+} catch {
+return false;
+}
+}
+function removeKey(key) {
+const s = store();
+if (s) s.removeItem(key);
+}
+return { KEYS, storageAvailable, saveGame, loadGame, hasSave, deleteSave, exportSave, parseImport, loadJSON, saveJSON, removeKey };
+})();
 // src/simulation/snapshot.js
-const __m40 = (() => {
-const { MAX_SPECIES } = __m16;
-const { refreshParticle } = __m31;
-const { Simulation } = __m27;
-const { CAULDRON_SIZES } = __m30;
+const __m47 = (() => {
+const { MAX_SPECIES } = __m18;
+const { refreshParticle } = __m34;
+const { Simulation } = __m30;
+const { CAULDRON_SIZES } = __m33;
 const F32_FIELDS_V1 = ['x', 'y', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet'];
 const F32_FIELDS = [...F32_FIELDS_V1, 'q'];
 const SNAPSHOT_VERSION = 2;
@@ -6461,7 +7837,7 @@ for (let i = 0; i < n; i++) if (p.group[i] >= 0) sim.rigid.used[p.group[i]] = 1;
 return { SNAPSHOT_VERSION, toBase64, fromBase64, snapshotSim, restoreSim, applySnapshot };
 })();
 // src/rendering/art.js
-const __m42 = (() => {
+const __m49 = (() => {
 const { Rng } = __m6;
 const PAL = {
 night0: '#0d0a10', night1: '#17121c', night2: '#221a28',
@@ -6709,8 +8085,9 @@ R(ctx, left, top, right - left, 1, PAL.stone4);
 return { PAL, hex2rgb, rgbStr, mixHex, paintBackground, drawJar, renderCauldron, makeCanvas, paintHearth, rect: R };
 })();
 // src/rendering/fluid.js
-const __m43 = (() => {
-const { PHASE } = __m20;
+const __m50 = (() => {
+const { PHASE } = __m23;
+const { LOOK } = __m19;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const LS = 9;
 function hash01(n) {
@@ -6718,6 +8095,16 @@ n = Math.imul(n ^ (n >>> 15), 0x2c1b3c6d);
 n = Math.imul(n ^ (n >>> 12), 0x297a2d39);
 n ^= n >>> 15;
 return (n >>> 0) / 4294967296;
+}
+const em = [0, 0, 0];
+function emission(p, i, r, g, b) {
+const a = p.auraI[i];
+const s = a > 0.002 ? (1 - Math.exp(-Math.pow(a, 1.4) * 6)) * 0.75 : 0;
+const gl = p.glow[i] * 0.42, bu = p.burn[i];
+em[0] = p.auraR[i] * s + gl * (0.45 + r * 0.55) + bu;
+em[1] = p.auraG[i] * s + gl * (0.45 + g * 0.55) + bu * 0.55;
+em[2] = p.auraB[i] * s + gl * (0.45 + b * 0.55) + bu * 0.18;
+return em[0] + em[1] + em[2];
 }
 class FluidRenderer {
 constructor() {
@@ -6728,6 +8115,12 @@ this.canvas = null;
 this.ctx = null;
 this.image = null;
 this.thermal = false;
+this.halo = true;
+this.haloCanvas = null;
+this.haloCtx = null;
+this.haloImage = null;
+this.hw = 0;
+this.hh = 0;
 }
 _alloc(w, h) {
 const n = w * h;
@@ -6735,7 +8128,9 @@ if (n > this.cap) {
 this.cap = n;
 this.liq = new Float32Array(n * LS);
 this.sol = new Float32Array(n * 4);
-this.gas = new Float32Array(n * 4);
+this.emit = new Float32Array(n * 4); // emitted light r, g, b and kernel weight
+this.solBest = new Float32Array(n); // strongest solid particle at a pixel…
+this.solIdx = new Int32Array(n); // …and its index
 this.wl = new Float32Array(n); // liquid weight, contiguous (blur, neighbours)
 this.wb = new Float32Array(n); // smoothed liquid weight (surface shape)
 this.wt = new Float32Array(n); // blur scratch
@@ -6744,14 +8139,18 @@ this.grain = new Uint32Array(n); // packed grain colour (0 = none)
 if (w !== this.w || h !== this.h || !this.canvas) {
 this.w = w;
 this.h = h;
-if (typeof OffscreenCanvas !== 'undefined') this.canvas = new OffscreenCanvas(w, h);
-else {
-this.canvas = document.createElement('canvas');
-this.canvas.width = w;
-this.canvas.height = h;
-}
+this.canvas = makeCanvas(w, h);
 this.ctx = /** @type {any} */ (this.canvas).getContext('2d');
 this.image = this.ctx.createImageData(w, h);
+const hw = Math.ceil(w / 2), hh = Math.ceil(h / 2);
+this.hw = hw; this.hh = hh;
+this.haloCanvas = makeCanvas(hw, hh);
+this.haloCtx = /** @type {any} */ (this.haloCanvas).getContext('2d');
+this.haloImage = this.haloCtx.createImageData(hw, hh);
+this.haloAcc = new Float32Array(hw * hh * 3);
+this.haloTmp = new Float32Array(hw * hh * 3);
+this.gas = new Float32Array(hw * hh * 4); // vapour weight + colour at half resolution
+this.gasTmp = new Float32Array(hw * hh * 4);
 }
 }
 render(sim, view, time) {
@@ -6759,28 +8158,30 @@ const p = sim.p, n = p.count;
 if (n === 0) return null;
 const s = view.scale;
 let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
-let anySolid = false, anyGas = false, anyGrain = false;
+let anySolid = false, anyGas = false, anyGrain = false, anyLight = false;
 for (let i = 0; i < n; i++) {
 const x = p.x[i] * s + view.ox, y = p.y[i] * s + view.oy;
 if (x < minX) minX = x; if (x > maxX) maxX = x;
 if (y < minY) minY = y; if (y > maxY) maxY = y;
 const ph = p.phase[i];
 if (ph === SOLID) anySolid = true; else if (ph === GAS) anyGas = true; else if (ph === POWDER) anyGrain = true;
+if (p.auraI[i] > 0.002 || p.glow[i] > 0.02 || p.burn[i] > 0.02) anyLight = true;
 }
-const pad = Math.ceil(0.16 * s) + 2;
+const pad = Math.ceil(0.16 * s) + 8;
 const bx = Math.floor(minX) - pad, by = Math.floor(minY) - pad;
 const w = Math.ceil(maxX) + pad - bx, h = Math.ceil(maxY) + pad - by;
 if (w <= 0 || h <= 0 || w * h > 4e6) return null;
 this._alloc(w, h);
 const N = w * h;
-const { liq, sol, gas, grain } = this;
+const { liq, sol, gas, grain, emit, solBest, solIdx } = this;
 liq.fill(0, 0, N * LS);
-if (anySolid) sol.fill(0, 0, N * 4);
-if (anyGas) gas.fill(0, 0, N * 4);
+if (anySolid) { sol.fill(0, 0, N * 4); solBest.fill(0, 0, N); }
+if (anyGas) gas.fill(0, 0, this.hw * this.hh * 4);
 if (anyGrain) grain.fill(0, 0, N);
+if (anyLight) emit.fill(0, 0, N * 4);
 const rl = 0.092 * s; // liquid kernel radius (px), ~1.85 particle radii
 const rs = 0.085 * s; // solid
-const rgas = 0.23 * s; // gas (wide, soft kernel so packed vapour reads as fog)
+const rgas = 0.13 * s; // gas, in half-resolution pixels (wide, soft kernel so vapour reads as fog)
 const rgrain = Math.max(1.2, 0.05 * s * 1.02);
 const RL = Math.ceil(rl), RS = Math.ceil(rs), RG = Math.ceil(rgas), RGR = Math.ceil(rgrain);
 const colR = sim.colR, colG = sim.colG, colB = sim.colB;
@@ -6790,12 +8191,14 @@ const ph = p.phase[i];
 const fx = p.x[i] * s + view.ox - bx, fy = p.y[i] * s + view.oy - by;
 const r = colR[i], g = colG[i], b = colB[i];
 const seed = p.seed[i];
+const lit = anyLight && emission(p, i, r, g, b) > 0.004;
+const eR = em[0], eG = em[1], eB = em[2];
 if (ph === LIQUID || ph === PASTE) {
 const isPaste = ph === PASTE ? 1 : 0;
 const tex = hash01(seed) * 2 - 1;
 const o = Math.max(0.35, p.opacity[i]);
-const glow = p.glow[i] + p.burn[i];
 const Ti = T[i];
+const slush = p.lat[i] < 0 && p.latF[i] > 0 ? Math.min(1, -p.lat[i] / p.latF[i]) : 0;
 const cy = fy | 0;
 const inv = 1 / (rl * rl), rl2 = rl * rl;
 for (let dy = -RL; dy <= RL; dy++) {
@@ -6814,7 +8217,8 @@ if (q <= 0) continue;
 q *= q;
 const k = (row + xx) * LS;
 liq[k] += q; liq[k + 1] += q * r; liq[k + 2] += q * g; liq[k + 3] += q * b;
-liq[k + 4] += q * o; liq[k + 5] += q * isPaste; liq[k + 6] += q * tex; liq[k + 7] += q * glow; liq[k + 8] += q * Ti;
+liq[k + 4] += q * o; liq[k + 5] += q * isPaste; liq[k + 6] += q * tex; liq[k + 7] += q * Ti; liq[k + 8] += q * slush;
+if (lit) { const e = (row + xx) * 4; emit[e] += q * eR; emit[e + 1] += q * eG; emit[e + 2] += q * eB; emit[e + 3] += q; }
 }
 }
 } else if (ph === POWDER) {
@@ -6833,11 +8237,8 @@ lum *= 1 - damp;
 if (p.burn[i] > 0.1) lum *= 1 + p.burn[i];
 const R8 = clamp255(r * lum * 255), G8 = clamp255(g * lum * 255), B8 = clamp255(b * lum * 255);
 grain[yy * w + xx] = 0xff000000 | (B8 << 16) | (G8 << 8) | R8;
+if (lit) { const e = (yy * w + xx) * 4; emit[e] += eR; emit[e + 1] += eG; emit[e + 2] += eB; emit[e + 3] += 1; }
 }
-}
-if (p.glow[i] > 0.05 || p.burn[i] > 0.05) {
-const k = Math.min(h - 1, Math.max(0, cy)) * w + Math.min(w - 1, Math.max(0, cx));
-liq[k * LS + 7] += p.glow[i] + p.burn[i];
 }
 } else if (ph === SOLID) {
 const cx = fx | 0, cy = fy | 0;
@@ -6855,32 +8256,40 @@ if (q <= 0) continue;
 const k = yy * w + xx;
 const k4 = k * 4;
 sol[k4] += q; sol[k4 + 1] += q * r; sol[k4 + 2] += q * g; sol[k4 + 3] += q * b;
-liq[k * LS + 7] += q * p.glow[i] * 0.5;
+if (q > solBest[k]) { solBest[k] = q; solIdx[k] = i; }
+if (lit) { emit[k4] += q * eR; emit[k4 + 1] += q * eG; emit[k4 + 2] += q * eB; emit[k4 + 3] += q; }
 }
 }
 } else if (ph === GAS) {
-const cy = fy | 0;
+const hx = fx * 0.5, hy = fy * 0.5;
+const cy = hy | 0;
 const inv = 1 / (rgas * rgas), rg2 = rgas * rgas;
+const hw = this.hw, hh = this.hh, gas = this.gas;
 const gr0 = r * 0.5 + 0.5, gg0 = g * 0.5 + 0.5, gb0 = b * 0.5 + 0.5;
 for (let dy = -RG; dy <= RG; dy++) {
 const yy = cy + dy;
-if (yy < 0 || yy >= h) continue;
-const ddy = yy + 0.5 - fy;
+if (yy < 0 || yy >= hh) continue;
+const ddy = yy + 0.5 - hy;
 const rem = rg2 - ddy * ddy;
 if (rem <= 0) continue;
 const half = Math.sqrt(rem);
-const x0 = Math.max(0, Math.floor(fx - 0.5 - half)), x1 = Math.min(w - 1, Math.ceil(fx - 0.5 + half));
+const x0 = Math.max(0, Math.floor(hx - 0.5 - half)), x1 = Math.min(hw - 1, Math.ceil(hx - 0.5 + half));
 for (let xx = x0; xx <= x1; xx++) {
-const ddx = xx + 0.5 - fx;
+const ddx = xx + 0.5 - hx;
 let q = 1 - (ddx * ddx + ddy * ddy) * inv;
 if (q <= 0) continue;
 q *= q;
-const k = (yy * w + xx) * 4;
+const k = (yy * hw + xx) * 4;
 gas[k] += q; gas[k + 1] += q * gr0; gas[k + 2] += q * gg0; gas[k + 3] += q * gb0;
 }
 }
+if (lit) {
+const k = (Math.min(h - 1, Math.max(0, fy | 0)) * w + Math.min(w - 1, Math.max(0, fx | 0))) * 4;
+emit[k] += eR * 0.35; emit[k + 1] += eG * 0.35; emit[k + 2] += eB * 0.35; emit[k + 3] += 0.35;
 }
 }
+}
+if (anyGas) this._blurGas();
 const wb = this.wb, wt = this.wt;
 const wl = this.wl;
 for (let k = 0; k < N; k++) wl[k] = liq[k * LS];
@@ -6914,6 +8323,7 @@ surf[x] = y;
 const depthScale = 1 / Math.max(6, 0.9 * s);
 const thermal = this.thermal;
 const shimmer = Math.sin(time * 2.1);
+const twinkle = time * 3.1;
 for (let y = 0; y < h; y++) {
 const row = y * w;
 for (let x = 0; x < w; x++) {
@@ -6925,15 +8335,60 @@ R = (gp & 255) / 255; G = ((gp >>> 8) & 255) / 255; B = ((gp >>> 16) & 255) / 25
 }
 const sw = anySolid ? sol[k * 4] : 0;
 if (sw > 0.45) {
+const bi = solIdx[k];
+const up = y > 0 ? sol[(k - w) * 4] : 0, left = x > 0 ? sol[(k - 1) * 4] : 0, down = y < h - 1 ? sol[(k + w) * 4] : 0, right = x < w - 1 ? sol[(k + 1) * 4] : 0;
+const edgeHi = up < 0.45 || left < 0.45, edgeLo = down < 0.45 || right < 0.45;
 const inv = 1 / sw;
 let r = sol[k * 4 + 1] * inv, g = sol[k * 4 + 2] * inv, b = sol[k * 4 + 3] * inv;
-const up = y > 0 ? sol[(k - w) * 4] : 0, left = x > 0 ? sol[(k - 1) * 4] : 0, down = y < h - 1 ? sol[(k + w) * 4] : 0, right = x < w - 1 ? sol[(k + 1) * 4] : 0;
-const edge = up < 0.45 || left < 0.45 || down < 0.45 || right < 0.45;
-let l = 0.78 + 0.22 * Math.min(1, sw / 1.6);
-r = r * 0.55 + 0.42; g = g * 0.55 + 0.45; b = b * 0.55 + 0.5;
-if (edge) l = up < 0.45 || left < 0.45 ? 1.18 : 0.72;
+let l = 1, a = 0.97;
+if (p.whole[bi] > 0.5) {
+const gi = p.group[bi];
+const th = gi >= 0 ? sim.rigid.angle[gi] : 0;
+const ddx = (x + 0.5 - (p.x[bi] * s + view.ox - bx)) / s, ddy = (y + 0.5 - (p.y[bi] * s + view.oy - by)) / s;
+const ct = Math.cos(th), st = Math.sin(th);
+const lx = p.restX[bi] + ct * ddx + st * ddy, ly = p.restY[bi] - st * ddx + ct * ddy;
+const u = Math.floor(lx * s * 0.75), v = Math.floor(ly * s * 0.75);
+const sd = gi >= 0 ? gi * 7919 + 13 : p.seed[bi];
+const hv = hash01(sd + (u + 4096) * 37 + (v + 4096) * 1013);
+switch (p.look[bi]) {
+case LOOK.FIBRE: { // fibres along the root, the odd knot
+const band = Math.floor(ly * s * 0.55);
+l = (band & 1) ? 0.8 + hv * 0.08 : 0.97 + hv * 0.08;
+if (hash01(sd + Math.floor(lx * s * 0.25) * 53 + band * 7) < 0.05) l = 0.66;
+break;
+}
+case LOOK.LEAF: { // a bright midrib and paired veins
+const av = Math.abs(ly * s);
+l = av < 0.7 ? 1.16 : ((Math.floor(Math.abs(lx) * s * 0.5) + Math.floor(av * 0.5)) % 3 === 0 ? 1.06 : 0.9 + hv * 0.06);
+break;
+}
+case LOOK.STONE: l = hv < 0.13 ? 0.7 : hv > 0.93 ? 1.16 : 0.9 + hv * 0.1; break;
+case LOOK.CRYSTAL: { // long facets down the prism
+const f = Math.floor((ly * 0.9 - lx * 0.35) * s * 0.4);
+l = (f % 3 + 3) % 3 === 0 ? 1.14 : (f % 3 + 3) % 3 === 1 ? 0.84 : 0.97;
+a = 0.9;
+break;
+}
+case LOOK.CAP: l = (ly < 0 && hv < 0.08) ? 1.45 : ly > 0.05 ? 1.08 : 0.94 + hv * 0.06; break;
+case LOOK.GLOSSY: l = Math.abs(lx * 0.7 + ly * 0.7 + 0.06) * s < 0.6 ? 1.3 : 0.92 + hv * 0.06; break;
+case LOOK.BONE: l = hv < 0.05 ? 0.8 : Math.abs(ly * s) < 0.6 ? 0.96 : 1.04; break;
+case LOOK.FUR: l = 0.78 + hash01(sd + (u + 4096) * 37 + Math.floor(ly * s * 0.4 + 4096) * 1013) * 0.42; break;
+case LOOK.LUMP: l = Math.abs(lx * 0.7 + ly * 0.7 + 0.05) * s < 0.6 ? 1.32 : 0.88 + hv * 0.06; a = 0.94; break;
+default: l = 0.92 + hv * 0.1;
+}
+if (edgeHi) l *= 1.16; else if (edgeLo) l *= 0.64;
+const dmg = sim.dmg[bi] / (0.25 + p.hardness[bi] * 1.5);
+if (dmg > 0.12 && hash01(p.seed[bi] * 3 + (u + 4096) * 7 + (v + 4096) * 131) < dmg * 0.4) l *= 0.42;
+} else {
+const melt = p.lat[bi] > 0 && p.latF[bi] > 0 ? Math.min(1, p.lat[bi] / p.latF[bi]) : 0;
+const frost = 1 - melt * 0.8;
+r = r * (1 - 0.45 * frost) + 0.42 * frost; g = g * (1 - 0.45 * frost) + 0.45 * frost; b = b * (1 - 0.45 * frost) + 0.5 * frost;
+l = 0.78 + 0.22 * Math.min(1, sw / 1.6);
+if (edgeHi) l = 1.18 - 0.2 * melt; else if (edgeLo) l = 0.72;
 else if (((x * 7 + y * 13) % 23) === 0) l = 1.12;
-R = r * l; G = g * l; B = b * l; A = 0.96;
+a = 0.92 - 0.12 * melt;
+}
+R = R * (1 - a) + r * l * a; G = G * (1 - a) + g * l * a; B = B * (1 - a) + b * l * a; A = A + (1 - A) * a;
 }
 if (wb[k] > thr) {
 let kc = k, lw = wl[k];
@@ -6949,7 +8404,7 @@ const c9 = kc * LS;
 let r = liq[c9 + 1] * inv, g = liq[c9 + 2] * inv, b = liq[c9 + 3] * inv;
 const paste = liq[c9 + 5] * inv;
 const opac = liq[c9 + 4] * inv;
-let a = Math.min(0.97, Math.max(0.84, opac + 0.1));
+let a = Math.min(0.96, 0.7 + 0.3 * opac);
 const tex = liq[c9 + 6] * inv;
 const up = y > 0 ? wb[k - w] : 0;
 const down = y < h - 1 ? wb[k + w] : 0;
@@ -6970,7 +8425,14 @@ const depth = (y - surf[x]) * depthScale;
 l *= 1 - Math.min(0.42, depth * 0.16);
 if (down <= thr) l *= 0.78;
 }
-const temp = liq[c9 + 8] * inv;
+const slush = liq[c9 + 8] * inv;
+if (slush > 0.04) {
+const f = Math.min(0.75, slush * 0.85);
+r = r * (1 - f) + 0.82 * f; g = g * (1 - f) + 0.9 * f; b = b * (1 - f) + 0.98 * f;
+if (((x * 5 + y * 3) % 7) === 0 && slush > 0.3) l *= 1.15;
+a = Math.max(a, 0.9);
+}
+const temp = liq[c9 + 7] * inv;
 if (thermal) {
 const tt = Math.max(0, Math.min(1, (temp + 20) / 140));
 r = tt; g = 0.25 + 0.3 * (1 - Math.abs(tt - 0.5) * 2); b = 1 - tt;
@@ -6983,19 +8445,32 @@ r *= l; g *= l; b *= l;
 R = R * (1 - a) + r * a; G = G * (1 - a) + g * a; B = B * (1 - a) + b * a;
 A = A + (1 - A) * a;
 }
-const gw = anyGas ? gas[k * 4] : 0;
-if (gw > 0.04) {
+if (anyGas) {
+const hw = this.hw, hh = this.hh, gas = this.gas;
+const gx = Math.max(0, Math.min(hw - 1.001, x * 0.5 - 0.25)), gy = Math.max(0, Math.min(hh - 1.001, y * 0.5 - 0.25));
+const ix = gx | 0, iy = gy | 0, tx = gx - ix, ty = gy - iy;
+const k00 = (iy * hw + ix) * 4, k10 = k00 + 4, k01 = k00 + hw * 4, k11 = k01 + 4;
+const w00 = (1 - tx) * (1 - ty), w10 = tx * (1 - ty), w01 = (1 - tx) * ty, w11 = tx * ty;
+const gw = gas[k00] * w00 + gas[k10] * w10 + gas[k01] * w01 + gas[k11] * w11;
+if (gw > 0.03) {
 const inv = 1 / gw;
-const a = 0.7 * (1 - Math.exp(-gw * 0.55)) * (0.9 + 0.1 * shimmer);
-const r = gas[k * 4 + 1] * inv, g = gas[k * 4 + 2] * inv, b = gas[k * 4 + 3] * inv;
+const bill = 0.88 + 0.12 * Math.sin(x * 0.21 + y * 0.17 + shimmer * 2 + Math.sin(y * 0.11 - time));
+const a = Math.min(0.78, 0.82 * (1 - Math.exp(-gw * 0.65))) * bill;
+const r = (gas[k00 + 1] * w00 + gas[k10 + 1] * w10 + gas[k01 + 1] * w01 + gas[k11 + 1] * w11) * inv;
+const g = (gas[k00 + 2] * w00 + gas[k10 + 2] * w10 + gas[k01 + 2] * w01 + gas[k11 + 2] * w11) * inv;
+const b = (gas[k00 + 3] * w00 + gas[k10 + 3] * w10 + gas[k01 + 3] * w01 + gas[k11 + 3] * w11) * inv;
 R = R * (1 - a) + r * a; G = G * (1 - a) + g * a; B = B * (1 - a) + b * a;
 A = A + (1 - A) * a;
 }
-const gv = liq[k * LS + 7];
-if (gv > 0.02) {
-const e = Math.min(0.6, gv * 0.25);
-R += e; G += e * 0.85; B += e * 0.55;
-A = Math.max(A, Math.min(0.8, e * 1.2));
+}
+if (anyLight && !thermal) {
+const e4 = k * 4, ew = emit[e4 + 3];
+if (ew > 0.02 && A > 0.05) {
+const inv = 1 / Math.max(ew, 0.6);
+const sp = ((x * 13 + y * 7) % 31 === 0) ? 1.6 + 0.8 * Math.max(0, Math.sin(twinkle + x * 0.7 + y)) : 1;
+const er = Math.min(1, emit[e4] * inv * sp * 0.8), eg = Math.min(1, emit[e4 + 1] * inv * sp * 0.8), eb = Math.min(1, emit[e4 + 2] * inv * sp * 0.8);
+R = 1 - (1 - R) * (1 - er); G = 1 - (1 - G) * (1 - eg); B = 1 - (1 - B) * (1 - eb);
+}
 }
 const o = k * 4;
 if (A <= 0.003) {
@@ -7009,8 +8484,96 @@ data[o + 3] = clamp255(A * 255);
 }
 }
 this.ctx.putImageData(this.image, 0, 0);
-return { canvas: this.canvas, x: bx, y: by };
+const halo = anyLight && this.halo && !thermal ? this._halo(w, h) : null;
+return { canvas: this.canvas, x: bx, y: by, halo };
 }
+_blurGas() {
+const hw = this.hw, hh = this.hh, a = this.gas, t = this.gasTmp;
+for (let y = 0; y < hh; y++) {
+for (let x = 0; x < hw; x++) {
+let s0 = 0, s1 = 0, s2 = 0, s3 = 0;
+for (let d = -2; d <= 2; d++) {
+const xx = x + d;
+if (xx < 0 || xx >= hw) continue;
+const k = (y * hw + xx) * 4;
+s0 += a[k]; s1 += a[k + 1]; s2 += a[k + 2]; s3 += a[k + 3];
+}
+const o = (y * hw + x) * 4;
+t[o] = s0 * 0.2; t[o + 1] = s1 * 0.2; t[o + 2] = s2 * 0.2; t[o + 3] = s3 * 0.2;
+}
+}
+for (let y = 0; y < hh; y++) {
+for (let x = 0; x < hw; x++) {
+let s0 = 0, s1 = 0, s2 = 0, s3 = 0;
+for (let d = -2; d <= 2; d++) {
+const yy = y + d;
+if (yy < 0 || yy >= hh) continue;
+const k = (yy * hw + x) * 4;
+s0 += t[k]; s1 += t[k + 1]; s2 += t[k + 2]; s3 += t[k + 3];
+}
+const o = (y * hw + x) * 4;
+a[o] = s0 * 0.2; a[o + 1] = s1 * 0.2; a[o + 2] = s2 * 0.2; a[o + 3] = s3 * 0.2;
+}
+}
+}
+_halo(w, h) {
+const hw = this.hw, hh = this.hh, acc = this.haloAcc, tmp = this.haloTmp, emit = this.emit;
+acc.fill(0);
+for (let y = 0; y < h; y++) {
+const hy = (y >> 1) * hw;
+for (let x = 0; x < w; x++) {
+const e4 = (y * w + x) * 4;
+if (emit[e4 + 3] <= 0.01) continue;
+const k = (hy + (x >> 1)) * 3;
+acc[k] += emit[e4]; acc[k + 1] += emit[e4 + 1]; acc[k + 2] += emit[e4 + 2];
+}
+}
+for (let pass = 0; pass < 2; pass++) {
+for (let y = 0; y < hh; y++) {
+for (let x = 0; x < hw; x++) {
+let r = 0, g = 0, b = 0;
+for (let d = -2; d <= 2; d++) {
+const xx = x + d;
+if (xx < 0 || xx >= hw) continue;
+const k = (y * hw + xx) * 3;
+r += acc[k]; g += acc[k + 1]; b += acc[k + 2];
+}
+const o = (y * hw + x) * 3;
+tmp[o] = r * 0.2; tmp[o + 1] = g * 0.2; tmp[o + 2] = b * 0.2;
+}
+}
+for (let y = 0; y < hh; y++) {
+for (let x = 0; x < hw; x++) {
+let r = 0, g = 0, b = 0;
+for (let d = -2; d <= 2; d++) {
+const yy = y + d;
+if (yy < 0 || yy >= hh) continue;
+const k = (yy * hw + x) * 3;
+r += tmp[k]; g += tmp[k + 1]; b += tmp[k + 2];
+}
+const o = (y * hw + x) * 3;
+acc[o] = r * 0.2; acc[o + 1] = g * 0.2; acc[o + 2] = b * 0.2;
+}
+}
+}
+const d = this.haloImage.data;
+for (let k = 0, o = 0; k < hw * hh; k++, o += 4) {
+const a = k * 3;
+d[o] = clamp255(Math.round(acc[a] * 0.09 * 16) * 16);
+d[o + 1] = clamp255(Math.round(acc[a + 1] * 0.09 * 16) * 16);
+d[o + 2] = clamp255(Math.round(acc[a + 2] * 0.09 * 16) * 16);
+d[o + 3] = 255;
+}
+this.haloCtx.putImageData(this.haloImage, 0, 0);
+return this.haloCanvas;
+}
+}
+function makeCanvas(w, h) {
+if (typeof OffscreenCanvas !== 'undefined') return new OffscreenCanvas(w, h);
+const c = document.createElement('canvas');
+c.width = w;
+c.height = h;
+return c;
 }
 function clamp255(v) {
 return v < 0 ? 0 : v > 255 ? 255 : v | 0;
@@ -7018,8 +8581,8 @@ return v < 0 ? 0 : v > 255 ? 255 : v | 0;
 return { FluidRenderer };
 })();
 // src/rendering/effects.js
-const __m44 = (() => {
-const { PAL, hex2rgb } = __m42;
+const __m51 = (() => {
+const { PAL, hex2rgb } = __m49;
 const MAX = 900;
 const FIRE_RAMP = [PAL.fire5, PAL.fire4, PAL.fire3, PAL.fire2, PAL.fire1, PAL.fire0].map(hex2rgb);
 class Effects {
@@ -7132,12 +8695,12 @@ ctx.globalAlpha = 1;
 return { Effects };
 })();
 // src/rendering/renderer.js
-const __m41 = (() => {
-const { PAL, paintBackground, renderCauldron, paintHearth, makeCanvas, rgbStr, hex2rgb, drawJar, rect } = __m42;
-const { FluidRenderer } = __m43;
-const { Effects } = __m44;
-const { COLUMN } = __m30;
-const { PHASE } = __m20;
+const __m48 = (() => {
+const { PAL, paintBackground, renderCauldron, paintHearth, makeCanvas, rgbStr, hex2rgb, drawJar, rect } = __m49;
+const { FluidRenderer } = __m50;
+const { Effects } = __m51;
+const { COLUMN } = __m33;
+const { PHASE } = __m23;
 const { compositionEffects, dominantEffect, EFFECTS, NE } = __m13;
 const auraScratch = new Float64Array(NE);
 const VIEW_TOP = -1.25;
@@ -7231,8 +8794,16 @@ ctx.drawImage(ca.canvas, ca.x, ca.y);
 if (this.frame % 4 === 0) this._updateHeat(c);
 ctx.drawImage(this.heatCanvas, ca.x, ca.y);
 this.fluid.thermal = !!st.thermal;
+this.fluid.halo = this.quality !== 'low';
 const fr = this.fluid.render(sim, view, st.time);
-if (fr) ctx.drawImage(fr.canvas, fr.x, fr.y);
+if (fr) {
+ctx.drawImage(fr.canvas, fr.x, fr.y);
+if (fr.halo) {
+ctx.globalCompositeOperation = 'lighter';
+ctx.drawImage(fr.halo, fr.x, fr.y, fr.halo.width * 2, fr.halo.height * 2);
+ctx.globalCompositeOperation = 'source-over';
+}
+}
 this._drawLid(c, st);
 if (st.alembic) this._drawAlembic(c, st);
 this._drawTap(c, st);
@@ -7472,12 +9043,18 @@ const p = st.sim.p;
 let glow = 0, gr = 0, gg = 0, gb = 0;
 const step = Math.max(1, Math.floor(p.count / 300));
 for (let i = 0; i < p.count; i += step) {
-const e = p.glow[i] + p.burn[i] * 1.5;
-if (e > 0.05) { glow += e; gr += st.sim.colR[i] * e; gg += st.sim.colG[i] * e; gb += st.sim.colB[i] * e; }
+const sI = p.auraI[i] > 0.002 ? 1 - Math.exp(-p.auraI[i] * 3.2) : 0;
+const e = p.glow[i] * 0.6 + p.burn[i] * 1.5 + sI;
+if (e > 0.05) {
+glow += e;
+gr += (p.auraR[i] * sI + (st.sim.colR[i] * p.glow[i] * 0.6) + p.burn[i] * 1.5) ;
+gg += (p.auraG[i] * sI + (st.sim.colG[i] * p.glow[i] * 0.6) + p.burn[i] * 0.8);
+gb += (p.auraB[i] * sI + (st.sim.colB[i] * p.glow[i] * 0.6) + p.burn[i] * 0.3);
+}
 }
 if (glow > 0.5) {
 const a = Math.min(0.35, glow * step * 0.002);
-const col = `${Math.round(gr / glow * 255)},${Math.round(gg / glow * 255)},${Math.round(gb / glow * 255)}`;
+const col = `${Math.round(Math.min(1, gr / glow) * 255)},${Math.round(Math.min(1, gg / glow) * 255)},${Math.round(Math.min(1, gb / glow) * 255)}`;
 const g = ctx.createRadialGradient(view.ox, view.oy + c.depth * 0.6 * s, 0, view.ox, view.oy + c.depth * 0.6 * s, s * 3);
 g.addColorStop(0, `rgba(${col},${a})`);
 g.addColorStop(1, `rgba(${col},0)`);
@@ -7500,6 +9077,8 @@ break;
 case 'paste': if (this.fx.rand() < 0.2) this.fx.burst(4, x, y, 2, s * 0.2, [255, 240, 210], 0.3); break;
 case 'dissolve': this.fx.burst(4, x, y, 2, s * 0.15, [220, 240, 255], 0.3); break;
 case 'spark': this.fx.burst(1, x, y, 5, s * 0.5, [190, 220, 255], 0.8); break;
+case 'awaken': this.fx.burst(4, x, y, 18, s * 0.9, [235, 215, 255], 1.2); break;
+case 'crack': this.fx.burst(3, x, y, 6, s * 0.45, [225, 215, 200], 0.6); break;
 }
 }
 }
@@ -7522,7 +9101,7 @@ rect(ctx, x, y + h - 1, w, 1, 'rgba(0,0,0,0.4)');
 return { Renderer, drawBottle, PHASE };
 })();
 // src/rendering/portraits.js
-const __m45 = (() => {
+const __m52 = (() => {
 const { Rng } = __m6;
 const S = 32;
 const shade = (c, f) => `rgb(${Math.round(Math.min(255, c[0] * 255 * f))},${Math.round(Math.min(255, c[1] * 255 * f))},${Math.round(Math.min(255, c[2] * 255 * f))})`;
@@ -7640,9 +9219,9 @@ if (rng.chance(0.5)) P(hx - 1, 8, 2, 10, hc);
 return { drawPortrait };
 })();
 // src/rendering/scenes.js
-const __m46 = (() => {
+const __m53 = (() => {
 const { Rng } = __m6;
-const { PAL } = __m42;
+const { PAL } = __m49;
 function R(ctx, x, y, w, h, c) {
 ctx.fillStyle = c;
 ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
@@ -7953,117 +9532,8 @@ void PAL;
 }
 return { drawRaw, rawSprite, SCENE_W, SCENE_H, paintRegion, animateRegion, SUBJECT_W, SUBJECT_H, drawSubject };
 })();
-// src/game/evaluate.js
-const __m47 = (() => {
-const { deltaE } = __m8;
-const { viscosityClass } = __m19;
-const { EFFECTS, EFFECT_INDEX } = __m13;
-const PROPERTY_LABELS = {
-color: 'Colour', density: 'Density', viscosity: 'Viscosity', temperature: 'Temperature', stability: 'Stability', volatility: 'Volatility',
-charge: 'Charge', quantity: 'Quantity', ...Object.fromEntries(EFFECTS.map((e) => [e.key, e.label])),
-};
-function isEffectKey(key) {
-return EFFECT_INDEX[key] !== undefined;
-}
-function scoreRequirement(req, m) {
-let value, d;
-switch (req.key) {
-case 'color':
-d = deltaE(m.lab, /** @type {number[]} */ (req.target));
-value = d;
-break;
-case 'density':
-value = m.density;
-d = Math.abs(value - /** @type {number} */ (req.target));
-break;
-case 'viscosity':
-value = m.viscosity;
-d = Math.abs(Math.log(Math.max(1e-3, value)) - /** @type {number} */ (req.target));
-break;
-case 'temperature':
-value = m.temperature;
-d = Math.abs(value - /** @type {number} */ (req.target));
-break;
-case 'stability':
-value = m.stability;
-break;
-case 'volatility':
-value = m.volatility;
-break;
-case 'charge':
-value = m.charge || 0;
-d = Math.abs(value - /** @type {number} */ (req.target));
-break;
-default: {
-const k = EFFECT_INDEX[req.key];
-value = k !== undefined && m.effects ? m.effects[k] : 0;
-if (req.kind === 'target') d = Math.abs(value - /** @type {number} */ (req.target));
-}
-}
-let score;
-if (req.kind === 'target') {
-score = d <= req.tol ? 1 : Math.max(0, 1 - (d - req.tol) / Math.max(1e-6, req.zero - req.tol));
-} else if (req.kind === 'min') {
-const t = /** @type {number} */ (req.target);
-score = value >= t ? 1 : Math.max(0, 1 - (t - value) / req.zero);
-d = Math.max(0, t - value);
-} else {
-const t = /** @type {number} */ (req.target);
-score = value <= t ? 1 : Math.max(0, 1 - (value - t) / req.zero);
-d = Math.max(0, value - t);
-}
-return { score, value, distance: d, text: describeValue(req.key, value, m) };
-}
-function describeValue(key, value, m) {
-switch (key) {
-case 'color':
-return `ΔE ${value.toFixed(1)}`;
-case 'density':
-return `${value.toFixed(2)} g/ml`;
-case 'viscosity':
-return `${viscosityClass(value)} (${value < 100 ? value.toFixed(1) : Math.round(value)} cP)`;
-case 'temperature':
-return `${Math.round(value)}°C`;
-case 'charge':
-return `${value >= 0 ? '+' : ''}${value.toFixed(2)}`;
-default:
-return `${Math.round(value)}`;
-}
-}
-function evaluatePotion(commission, m) {
-const rows = commission.requirements.map((req) => {
-const r = scoreRequirement(req, m);
-return { req, ...r };
-});
-const fill = Math.min(1, m.ml / commission.bottleMl);
-const qScore = fill >= 0.98 ? 1 : fill * fill;
-rows.push({
-req: { key: 'quantity', kind: 'min', target: commission.bottleMl, tol: 0, zero: commission.bottleMl, label: `${commission.bottleMl} ml` },
-score: qScore,
-value: m.ml,
-distance: commission.bottleMl - m.ml,
-text: `${m.ml} ml`,
-});
-let wsum = 0, s = 0;
-for (const r of rows) {
-const w = r.req.key === 'quantity' ? 0.8 : r.req.key === 'color' ? 1.2 : 1;
-wsum += w;
-s += w * r.score;
-}
-let quality = s / wsum;
-quality *= 0.5 + 0.5 * qScore;
-const perfect = rows.every((r) => r.score >= 0.999);
-if (perfect) quality = 1;
-const stars = perfect ? 5 : quality >= 0.86 ? 4 : quality >= 0.7 ? 3 : quality >= 0.5 ? 2 : quality >= 0.28 ? 1 : 0;
-let payment = Math.round(commission.budget * (0.12 + 0.88 * Math.pow(quality, 1.6)) * (perfect ? 1.2 : 1));
-if (quality < 0.2) payment = Math.round(commission.budget * 0.05);
-const repDelta = Math.round((quality - 0.45) * (10 + commission.tier * 4)) + (perfect ? 3 : 0) + (commission.contract ? Math.round(quality * 15) : 0);
-return { rows, quality, stars, perfect, payment, repDelta };
-}
-return { PROPERTY_LABELS, isEffectKey, scoreRequirement, describeValue, evaluatePotion };
-})();
 // src/game/journal.js
-const __m48 = (() => {
+const __m54 = (() => {
 function processEvent(state, e) {
 const entries = [];
 const achievements = [];
@@ -8101,6 +9571,14 @@ achievements.push(...state.unlock('frozen'));
 state.learn(id, 'melt', T);
 add({ key: `melt:${id}`, title: `${name(id)} melts`, text: `${name(id)} melted at about ${T}°C.`, kind: 'phase', material: id });
 }
+break;
+}
+case 'awaken': {
+const id = e.species;
+if (!id || !L(id)) break;
+const d = L(id);
+add({ key: `awaken:${id}`, title: `${d.name} awakens`, text: `Near ${Math.round(e.temp)}°C a glow ran through the ${d.name.toLowerCase()}: it passed its arcane threshold and its magic woke, far stronger than before. Awakened matter stays awake when it cools, is bottled or kept — only dilution or reactions undo it.`, kind: 'arcane', material: id });
+achievements.push(...state.unlock('awaken'));
 break;
 }
 case 'paste': {
@@ -8167,9 +9645,15 @@ return { entries, achievements };
 return { processEvent };
 })();
 // src/game/autobrew.js
-const __m49 = (() => {
-const { PHASE, SIM } = __m20;
-const { MAX_SPECIES } = __m16;
+const __m55 = (() => {
+const { PHASE, SIM } = __m23;
+const { MAX_SPECIES } = __m18;
+function stageGoal(plan) {
+const st = plan.steep ? plan.steep.T : null;
+const cool = plan.coolTo ?? 20, heat = plan.heatTo ?? 20;
+const cold = cool < Math.min(15, st ?? 99) - 1 && heat <= Math.max(25, st ?? 0) + 1;
+return cold ? cool : heat;
+}
 class AutoBrewer {
 constructor(sim, plan, lookup, opts = {}) {
 this.sim = sim;
@@ -8185,6 +9669,7 @@ this.stageT = 0;
 this.phase = 0;
 this.status = 'Preparing';
 this.failed = false;
+this.held = 0;
 }
 get done() {
 return this.stage === 'done';
@@ -8263,25 +9748,31 @@ return;
 case 'stir': {
 this.status = 'Stirring';
 this.stir(1);
-this.control(Math.min(plan.heatTo ?? 20, 60));
-const need = plan.knead ? 14 : 7;
-if (this.stageT > need) this.next('heat');
+this.control(20);
+const need = plan.knead ? 14 : plan.activate ? 10 : 7;
+if (this.stageT > need) this.next(plan.steep ? 'steep' : 'heat');
+return;
+}
+case 'steep': {
+const T = plan.steep.T;
+this.status = `Steeping at ${Math.round(T)}°C`;
+const err = this.control(T);
+if (this.stageT % 3 < 1.6) this.stir(0.8); else this.release();
+if (err < 4) this.held = (this.held || 0) + dt;
+if (this.held >= plan.steep.hold || this.stageT > 90) { this.held = 0; this.next('heat'); }
 return;
 }
 case 'heat': {
-const target = plan.heatTo ?? 20;
-const cold = (plan.coolTo ?? 20) < 15 && target <= 25;
-const goal = cold ? plan.coolTo : target;
-this.status = cold ? 'Chilling' : `Heating to ${Math.round(goal)}°C`;
+const goal = stageGoal(plan);
+this.status = goal < 15 ? `Chilling to ${Math.round(goal)}°C` : `Heating to ${Math.round(goal)}°C`;
 const err = this.control(goal);
 if (this.stageT % 3 < 1.5) this.stir(0.8); else this.release();
-if (err < 4 || this.stageT > 70) this.next('hold');
+if (err < 4 || this.stageT > (goal < 15 ? 120 : 70)) this.next('hold');
 return;
 }
 case 'hold': {
-const cold = (plan.coolTo ?? 20) < 15 && (plan.heatTo ?? 20) <= 25;
-this.control(cold ? plan.coolTo : plan.heatTo ?? 20);
-this.status = 'Letting it react';
+this.control(stageGoal(plan));
+this.status = plan.activate ? 'Letting it awaken' : 'Letting it react';
 if (this.stageT % 2.5 < 1.5) this.stir(0.9); else this.release();
 if (this.stageT > (plan.hold ?? 6) + 4) this.next('serve');
 return;
@@ -8322,26 +9813,26 @@ let t = 0;
 for (let i = 0; i < sim.p.count; i++) t += sim.p.comp[i * MAX_SPECIES + s];
 return t / Math.max(1, sim.p.count);
 }
-return { AutoBrewer, runPlanHeadless, speciesFraction };
+return { stageGoal, AutoBrewer, runPlanHeadless, speciesFraction };
 })();
 // src/ui/panels.js
-const __m50 = (() => {
+const __m56 = (() => {
 const { h, btn, modal, toast, coins, starsText, confirmDialog, clear } = __m2;
 const { icon } = __m3;
-const { drawPortrait } = __m45;
-const { drawJar } = __m42;
-const { EQUIPMENT, RANKS } = __m22;
+const { drawPortrait } = __m52;
+const { drawJar } = __m49;
+const { EQUIPMENT, RANKS } = __m26;
 const { ACHIEVEMENTS } = __m5;
-const { PROPERTY_LABELS } = __m47;
-const { viscosityClass } = __m19;
+const { PROPERTY_LABELS } = __m24;
+const { viscosityClass } = __m22;
 const { EFFECTS, EFFECT_BY_KEY, EFFECT_KEYS, dominantEffect } = __m13;
-const { rawSprite } = __m46;
-const { compatFactor } = __m21;
+const { rawSprite } = __m53;
+const { compatFactor } = __m14;
 const { describeColor, rgbToHex } = __m8;
-const { SIM } = __m20;
-const { exportSave, parseImport, saveGame } = __m25;
+const { SIM } = __m23;
+const { exportSave, parseImport, saveGame } = __m45;
 const { audio } = __m4;
-const { archetypeOf } = __m18;
+const { archetypeOf } = __m21;
 const CAT_LABEL = { heat: 'Heating', cold: 'Cooling', vessel: 'Cauldrons', tool: 'Tools', instrument: 'Instruments', trials: 'Trials room', storage: 'Storage & foraging', guild: 'Guild' };
 function jarCanvas(m, w = 22, hh = 30) {
 if (m.wild && m.form === 'solid') {
@@ -8565,6 +10056,28 @@ lab.refreshHud();
 show();
 });
 }
+function openBottleSize(lab, avail, onPick) {
+const st = lab.state;
+const com = lab.sandbox ? null : st.current;
+const per = SIM.ML_PER_PARTICLE;
+const sizes = new Set([25, 50, 100, 150, 200, 300]);
+if (com) sizes.add(com.bottleMl);
+const list = [...sizes].sort((a, b) => a - b);
+let m;
+const pick = (ml) => { m.close(); onPick(Math.max(1, Math.round(ml / per))); };
+const btns = list.map((ml) => btn(`${ml} ml${com && ml === com.bottleMl ? ' · the order' : ''}`, () => pick(ml), {
+cls: com && ml === com.bottleMl ? 'primary' : '', disabled: ml / per > avail, act: 'bottle-' + ml,
+}));
+btns.push(btn(`All at the tap · ${avail * per} ml`, () => pick(avail * per), { act: 'bottle-all' }));
+m = modal({
+title: 'Bottle a measured quantity',
+body: [h('div', { class: 'card parch' },
+h('div', { class: 'small', text: `The vial takes what runs out of the tap — the lowest layer first. ${avail * per} ml can be drawn now.` }),
+h('div', { class: 'small muted', text: 'A sealed vial keeps its exact contents. You can test doses from it, pour it back to keep working, or serve it.' }),
+h('div', { class: 'row wrap bottle-sizes' }, ...btns))],
+});
+return m;
+}
 function showResult(lab, com, meas, ev, recipe, onDone) {
 const st = lab.state;
 const mood = ev.quality >= 0.7 ? 'happy' : ev.quality >= 0.4 ? 'neutral' : 'unhappy';
@@ -8740,7 +10253,7 @@ const total = st.world.reactions.length;
 m.body.appendChild(h('div', { class: 'small muted', text: `Reactions discovered: ${st.reactionsDiscovered()} of ${total}. Keep experimenting — heat, cold, stirring and new combinations all reveal secrets.` }));
 if (!entries.length) m.body.appendChild(h('div', { class: 'card parch', text: 'Nothing recorded yet. Watch closely as you brew: boiling, freezing, dough, dissolving and reactions are all noted here.' }));
 for (const e of entries) {
-m.body.appendChild(h('div', { class: 'card parch' }, h('div', { class: 'row' }, icon(e.kind === 'reaction' ? 'eye' : e.kind === 'fire' ? 'flame' : e.kind === 'phase' ? 'thermo' : 'scroll'), h('b', { text: e.title }), h('span', { class: 'spacer' }), h('span', { class: 'small muted', text: `Day ${e.day}` })), h('div', { class: 'small', text: e.text })));
+m.body.appendChild(h('div', { class: 'card parch' }, h('div', { class: 'row' }, icon(e.kind === 'reaction' ? 'eye' : e.kind === 'fire' ? 'flame' : e.kind === 'phase' ? 'thermo' : e.kind === 'arcane' ? 'awaken' : 'scroll'), h('b', { text: e.title }), h('span', { class: 'spacer' }), h('span', { class: 'small muted', text: `Day ${e.day}` })), h('div', { class: 'small', text: e.text })));
 }
 } else if (current === 'ingredients') {
 const list = h('div', { class: 'list' });
@@ -8849,13 +10362,190 @@ h('div', { class: 'card parch small' }, 'The Alchemist’s Shop — all art, sou
 ],
 });
 }
-return { fxChips, openShop, openIngredient, openHint, showResult, showDaySummary, showAnalysis, openRecipes, renderRecipes, openJournal, renderJournal, openPause, openHelp, openSettings };
+return { fxChips, openShop, openIngredient, openHint, openBottleSize, showResult, showDaySummary, showAnalysis, openRecipes, renderRecipes, openJournal, renderJournal, openPause, openHelp, openSettings };
+})();
+// src/ui/trade.js
+const __m57 = (() => {
+const { h, btn, modal, toast, coins, clear } = __m2;
+const { icon } = __m3;
+const { drawPortrait } = __m52;
+const { audio } = __m4;
+const { EFFECTS, EFFECT_BY_KEY } = __m13;
+const { draftLabel, openNegotiation: beginNegotiation, proposePrice, acceptOffer, relevantEffects, labelTrust } = __m44;
+const { PURITY_LIMIT } = __m25;
+function openIdentify(lab, vial, onDone) {
+const st = lab.state;
+const draft = vial.label ? JSON.parse(JSON.stringify(vial.label)) : draftLabel(vial, lab.vialTheory(vial), st.day);
+const com = st.current;
+const relevant = com ? new Set(relevantEffects(com)) : new Set(EFFECTS.map((e) => e.key));
+const rows = h('div', { class: 'label-rows' });
+const render = () => {
+clear(rows);
+for (const e of EFFECTS) {
+const c = draft.claims[e.key];
+const src = c.source === 'trial' ? h('span', { class: 'src trial', title: 'Measured in a trial of this batch' }, icon('dropper', 'sm'), ' tested')
+: c.kind === 'unknown' ? h('span', { class: 'src unknown', text: 'unknown' })
+: c.source === 'estimate' ? h('span', { class: 'src est', text: `theory${c.spread ? ' ±' + c.spread : ''}` }) : h('span', { class: 'src you', text: 'your claim' });
+const val = c.kind === 'value' ? `${Math.round((c.value || 0) * 10) / 10}%` : c.kind === 'none' ? `none (< ${PURITY_LIMIT}%)` : '?';
+const step = (d) => () => {
+const v = c.kind === 'value' ? (c.value || 0) : 0;
+const nv = Math.round((v + d) * 10) / 10;
+draft.claims[e.key] = Math.abs(nv) < PURITY_LIMIT ? { kind: 'none', source: 'player' } : { kind: 'value', value: nv, source: c.source === 'trial' && Math.abs(nv - (c.value || 0)) < 0.05 ? 'trial' : 'player', record: c.record };
+render();
+};
+rows.appendChild(h('div', { class: 'label-row' + (relevant.has(e.key) ? ' relevant' : '') + (c.kind === 'unknown' ? ' unknown' : '') },
+icon(e.icon, 'sm'), h('span', { class: 'lk', text: e.label }), src, h('b', { class: 'lv', text: val }),
+h('span', { class: 'lctl' },
+btn('−', step(e.key === 'acidity' && (c.value || 0) <= 0 ? -1 : -1), { cls: 'small', title: `Claim less ${e.label.toLowerCase()}`, act: `claim-dn-${e.key}` }),
+btn('+', step(1), { cls: 'small', title: `Claim more ${e.label.toLowerCase()}`, act: `claim-up-${e.key}` }),
+btn('none', () => { draft.claims[e.key] = { kind: 'none', source: c.source === 'trial' && Math.abs(c.value || 0) < PURITY_LIMIT ? 'trial' : 'player', record: c.record }; render(); }, { cls: 'small', act: `claim-none-${e.key}` }),
+btn('?', () => { draft.claims[e.key] = { kind: 'unknown', source: 'player' }; render(); }, { cls: 'small', title: 'Make no claim', act: `claim-unknown-${e.key}` }))));
+}
+if (com) {
+const t = labelTrust(com, draft, st.rank);
+trustEl.textContent = `${com.customer.name.split(' ')[0]} will trust this label ${t >= 0.9 ? 'fully' : t >= 0.7 ? 'well' : t >= 0.5 ? 'somewhat' : 'barely'}.`;
+}
+};
+const trustEl = h('div', { class: 'small' });
+let m;
+m = modal({
+title: 'Label the potion',
+wide: true,
+body: [
+h('div', { class: 'card parch' },
+h('div', { class: 'small', text: 'Write down what this potion does. Tested values come from trials of this very batch; the rest are the guild theory’s estimates, or unknown. Customers pay for what you claim — and come back if it is not true.' }),
+h('div', { class: 'small muted', text: com ? 'Highlighted: the effects this order cares about (with a purity rule, all of them).' : '' }),
+trustEl),
+h('div', { class: 'card parch' }, rows),
+],
+foot: [btn('Seal the label', () => { m.close(); audio.play('page'); onDone(draft); }, { cls: 'primary', icon: 'tag', act: 'label-seal' })],
+});
+render();
+return m;
+}
+function openNegotiation(lab, com, vial, onEnd) {
+const st = lab.state;
+const n = beginNegotiation(com, vial, vial.label, st.rank);
+const persona = com.customer.persona || { haggle: 0.5 };
+const portrait = /** @type {HTMLCanvasElement} */ (h('canvas', { class: 'portrait big' }));
+drawPortrait(portrait, com.customer.portrait, n.fit >= 0.7 ? 'happy' : n.fit >= 0.4 ? 'neutral' : 'unhappy');
+const log = h('div', { class: 'haggle-log' });
+let ask = Math.round(Math.max(n.offer * 1.25, com.budget * 0.9));
+const askEl = h('b', { class: 'ask' });
+const offerEl = h('div', { class: 'offer' });
+const roundsEl = h('div', { class: 'small muted' });
+let ended = false;
+const finish = () => { if (ended) return; ended = true; m.close(); onEnd(n.state === 'open' ? null : n); };
+const render = () => {
+clear(log);
+for (const l of n.log.slice(-6)) log.appendChild(h('div', { class: 'line ' + l.who }, h('b', { text: l.who === 'you' ? 'You: ' : `${com.customer.name.split(' ')[0]}: ` }), l.text));
+askEl.textContent = `${coins(ask)} coins`;
+offerEl.textContent = `Their offer: ${coins(n.offer)} coins`;
+roundsEl.textContent = n.state === 'open' ? `${persona.haggle > 0.6 ? 'A hard bargainer.' : persona.haggle < 0.3 ? 'An easy-going buyer.' : 'A fair trader.'} ${n.patience <= 1 ? 'Their patience is nearly gone.' : ''}` : '';
+for (const b of [askBtn, takeBtn, minus, plus]) b.disabled = n.state !== 'open';
+if (n.state !== 'open') {
+const l = walk.querySelector('.lbl');
+if (l) l.textContent = 'Continue';
+walk.setAttribute('data-act', 'haggle-done');
+audio.play(n.state === 'deal' ? 'deal' : 'complaint');
+}
+};
+const minus = btn('−5', () => { ask = Math.max(1, ask - 5); render(); }, { cls: 'small', act: 'ask-down' });
+const plus = btn('+5', () => { ask += 5; render(); }, { cls: 'small', act: 'ask-up' });
+const askBtn = btn('Ask', () => { proposePrice(n, com, ask); if (n.state === 'open') audio.play('talk'); render(); }, { cls: 'primary', icon: 'coin', act: 'ask-price' });
+const takeBtn = btn('Accept their offer', () => { acceptOffer(n); render(); }, { icon: 'deal', act: 'accept-offer' });
+const walk = btn('Not today', () => finish(), { icon: 'door', act: 'walk-away' });
+let m;
+m = modal({
+title: `Bargaining with ${com.customer.name}`,
+wide: true,
+onClose: () => { if (!ended) { ended = true; onEnd(n.state === 'open' ? null : n); } },
+body: [h('div', { class: 'card parch haggle' },
+h('div', { class: 'cust-top' }, portrait, h('div', {},
+h('div', { class: 'cust-name', text: com.customer.name }),
+h('div', { class: 'small muted', text: `${com.customer.title} · wants ${com.potionName.toLowerCase()} · ${vial.ml} ml on offer` }),
+offerEl, roundsEl)),
+log,
+h('div', { class: 'row wrap haggle-ctl' }, h('span', { class: 'small', text: 'Your price:' }), minus, askEl, plus, askBtn, takeBtn))],
+foot: [walk],
+});
+render();
+return m;
+}
+function showDeal(lab, com, sale, recipe, onDone) {
+const st = lab.state;
+const portrait = /** @type {HTMLCanvasElement} */ (h('canvas'));
+drawPortrait(portrait, com.customer.portrait, 'happy');
+const nameInput = /** @type {HTMLInputElement} */ (h('input', { type: 'text', value: recipe.name, maxlength: '40', 'aria-label': 'Recipe name' }));
+let saved = false;
+const saveBtn = btn('Save recipe', () => {
+if (saved) return;
+saved = true;
+for (const e of st.addRecipe({ ...recipe, name: nameInput.value.trim() || recipe.name })) lab.announce(e);
+toast('Recipe saved', nameInput.value, 'book');
+saveBtn.disabled = true;
+}, { icon: 'book', act: 'save-recipe' });
+let m;
+m = modal({
+title: 'Sold!',
+onClose: onDone,
+body: [h('div', { class: 'card parch' },
+h('div', { class: 'result-head' }, portrait, h('div', {},
+h('div', { class: 'small muted', text: `${com.customer.name} · ${com.customer.title}` }),
+h('div', { text: '“I’ll let you know how it works.”' }))),
+h('div', { class: 'pay', text: `+${coins(sale.price)} coins` }),
+h('div', { class: 'small', style: { textAlign: 'center' }, text: 'They will drink it and come back tomorrow to tell you how it went.' })),
+h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Save this brew to your recipe book:' }), h('div', { class: 'row' }, nameInput, saveBtn))],
+foot: [btn('Continue', () => m.close(), { cls: 'primary', act: 'result-continue' })],
+});
+return m;
+}
+function followUpCard(lab, f) {
+const st = lab.state;
+const sale = st.sales.find((s) => s.id === f.saleId);
+const portrait = /** @type {HTMLCanvasElement} */ (h('canvas', { class: 'portrait' }));
+drawPortrait(portrait, f.customer.portrait, f.kind === 'praise' ? 'happy' : 'unhappy');
+const act = (a) => () => {
+const r = st.settleFollowUp(f.id, a);
+if (!r) return;
+audio.play(f.kind === 'praise' ? 'praise' : r.coins < 0 || r.rep < 0 ? 'complaint' : 'coin');
+toast(f.kind === 'praise' ? 'A happy customer' : 'Complaint settled', `${r.text} ${r.coins ? (r.coins > 0 ? '+' : '') + coins(r.coins) + ' coins. ' : ''}${r.rep ? 'Reputation ' + (r.rep > 0 ? '+' : '') + r.rep + '.' : ''}`, f.kind === 'praise' ? 'heart' : 'talk', 5200);
+for (const e of r.events) lab.announce(e);
+lab.save();
+lab.refreshHud(true);
+lab.views.counter.refresh();
+lab.updateBadges();
+};
+const evidence = sale ? sale.evidence.length : 0;
+const actions = f.kind === 'praise'
+? [btn('Thank them', act('thank'), { cls: 'primary', icon: 'heart', act: 'fu-thank' })]
+: [btn(`Refund ${coins(f.demand)}`, act('refund'), { icon: 'coin', act: 'fu-refund' }),
+btn(evidence ? `Dispute (${evidence} trial record${evidence > 1 ? 's' : ''})` : 'Dispute', act('dispute'), { icon: 'scroll', act: 'fu-dispute' }),
+btn('Turn them away', act('dismiss'), { icon: 'door', cls: 'danger', act: 'fu-dismiss' })];
+return h('div', { class: 'card parch followup ' + f.kind, 'data-followup': f.id },
+h('div', { class: 'row' }, portrait, h('div', {},
+h('b', { text: `${f.customer.name} is back` }),
+h('div', { class: 'small muted', text: sale ? `Bought ${sale.potion.toLowerCase()} on day ${sale.day} for ${coins(sale.price)} coins` : '' }))),
+h('div', { class: 'speech', text: '“' + f.text + '”' }),
+f.kind === 'complaint' && sale ? h('div', { class: 'small muted', text: `Your label for that batch: ${claimSummary(sale.claims)}` }) : null,
+h('div', { class: 'row wrap' }, ...actions));
+}
+function claimSummary(claims) {
+const parts = [];
+for (const e of EFFECTS) {
+const c = claims[e.key];
+if (!c || c.kind === 'none') continue;
+parts.push(c.kind === 'unknown' ? `${e.label} ?` : `${e.label} ${Math.round(c.value)}%${c.source === 'trial' ? ' (tested)' : ''}`);
+}
+return parts.length ? parts.join(', ') + '; nothing else' : 'no magical effect';
+}
+return { openIdentify, openNegotiation, showDeal, followUpCard, claimSummary, EFFECT_BY_KEY };
 })();
 // src/ui/tutorial.js
-const __m51 = (() => {
+const __m58 = (() => {
 const { h, btn } = __m2;
-const { PHASE } = __m20;
-const { MAX_SPECIES } = __m16;
+const { PHASE } = __m23;
+const { MAX_SPECIES } = __m18;
 class Tutorial {
 constructor(lab) {
 this.lab = lab;
@@ -8898,7 +10588,7 @@ return [
 { text: 'Give the Moon Rabbit a dose: drag the dropper onto it, or press its Test button. The dose is real potion from the tap.', target: () => lab.views.trials.cards.rabbit && lab.views.trials.cards.rabbit.card, done: rabbitTested },
 { text: 'The rabbit shows how much vitality (and poison) this batch carries. Verified effects now count on the order. Back to the cauldron!', target: tab('brew'), done: () => lab.view === 'brew' },
 { text: 'When the meters are full and the brew is warm, press Bottle. (Turn the fire down once it is warm enough.)', target: () => lab.bottleFab, done: () => this.flags.bottled },
-{ text: 'Your sealed vial waits at the Counter. Serve it to the customer.', target: () => document.querySelector('[data-act=serve]') || tab('counter')(), done: () => this.flags.sold },
+{ text: 'Your sealed vial waits at the Counter. Offer it to the customer: seal its label (your trial reading is already written in), then agree on a price.', target: () => document.querySelector('[data-act=serve]') || tab('counter')(), done: () => this.flags.sold },
 { text: 'Splendid — your first sale! New orders ask for strength, love, fire… Gather wild herbs in the Wilds, grind them, test every new mixture in the Trials room, and save good recipes in your Book.', button: 'Run my shop!' },
 ];
 }
@@ -8989,17 +10679,19 @@ this.place();
 return { Tutorial };
 })();
 // src/ui/views/counter.js
-const __m52 = (() => {
-const { h, btn, clear, coins, toast, confirmDialog } = __m2;
+const __m59 = (() => {
+const { h, btn, clear, coins, confirmDialog } = __m2;
 const { icon } = __m3;
-const { drawPortrait } = __m45;
-const { drawBottle } = __m41;
-const { PROPERTY_LABELS } = __m47;
+const { drawPortrait } = __m52;
+const { drawBottle } = __m48;
+const { PROPERTY_LABELS } = __m24;
 const { EFFECT_BY_KEY } = __m13;
-const { missingEffects, requiredEffects } = __m23;
+const { missingEffects } = __m27;
+const { relevantEffects } = __m44;
+const trade = __m57;
 const { describeColor, rgbToHex } = __m8;
-const { viscosityClass } = __m19;
-const panels = __m50;
+const { viscosityClass } = __m22;
+const panels = __m56;
 class CounterView {
 constructor(lab) {
 this.lab = lab;
@@ -9012,9 +10704,11 @@ refresh() {
 const lab = this.lab, st = lab.state;
 const el = clear(this.el);
 if (lab.sandbox) {
-el.append(h('div', { class: 'card parch' }, h('h3', { text: 'Free Experiment' }), h('div', { class: 'small', text: 'No customers here: every reagent, tool and subject is yours to play with. Bottle nothing, test everything.' })));
+el.append(h('div', { class: 'card parch' }, h('h3', { text: 'Free Experiment' }), h('div', { class: 'small', text: 'No customers here: every reagent, tool and subject is yours to play with. Bottle what you like, test everything.' })));
+this.vialCard(el);
 return;
 }
+for (const f of st.dueFollowUps()) el.append(trade.followUpCard(lab, f));
 const com = st.current;
 if (!com) {
 el.append(h('div', { class: 'card parch counter-empty' },
@@ -9030,16 +10724,23 @@ drawPortrait(portrait, com.customer.portrait, 'neutral');
 const cert = lab.currentCert();
 const vialCert = st.vial ? st.vial.cert || {} : null;
 const list = h('ul', { class: 'reqs full' });
+const known = (k) => (vialCert && vialCert[k] !== undefined ? vialCert[k] : cert.values[k]);
 for (const req of com.requirements) {
 const isFx = !!EFFECT_BY_KEY[req.key];
 const label = PROPERTY_LABELS[req.key] || req.key;
 let status = null;
 if (isFx) {
-const v = vialCert && vialCert[req.key] !== undefined ? vialCert[req.key] : cert.values[req.key];
+const v = known(req.key);
 status = v === undefined ? h('span', { class: 'fx-status unknown', text: '? untested' }) : h('span', { class: 'fx-status known', text: `✓ ${Math.round(v)}` });
+} else if (req.key === 'purity') {
+const others = relevantEffects({ requirements: [req] });
+const vals = others.map(known);
+const open = vals.filter((v) => v === undefined).length;
+const worst = Math.max(0, ...vals.filter((v) => v !== undefined).map((v) => Math.abs(v)));
+status = open ? h('span', { class: 'fx-status unknown', text: `? ${open} untested` }) : h('span', { class: 'fx-status known', text: `✓ ${worst.toFixed(1)}` });
 }
 const target = req.key === 'color' ? h('span', {}, h('span', { class: 'swatch', style: { background: rgbToHex(req.rgb) } }), req.label) : h('span', { text: req.label });
-list.appendChild(h('li', { class: 'req' + (req.limit ? ' limit' : '') }, icon(isFx ? EFFECT_BY_KEY[req.key].icon : lab.reqIcon(req.key)), h('span', {}, h('span', { class: 'lbl-k', text: (req.limit ? 'Limit: ' : '') + label + ' ' }), target), status));
+list.appendChild(h('li', { class: 'req' + (req.limit || req.key === 'purity' ? ' limit' : '') }, icon(isFx ? EFFECT_BY_KEY[req.key].icon : lab.reqIcon(req.key)), h('span', {}, h('span', { class: 'lbl-k', text: (req.limit ? 'Limit: ' : '') + label + ' ' }), target), status));
 }
 list.appendChild(h('li', { class: 'req' }, icon('flask'), h('span', {}, h('span', { class: 'lbl-k', text: 'Quantity ' }), `${com.bottleMl} ml`)));
 el.append(h('div', { class: 'card parch customer-card' },
@@ -9050,13 +10751,12 @@ h('div', { class: 'budget' }, icon('coin', 'sm'), ` up to ${coins(com.budget)}`)
 h('div', { class: 'speech', text: '“' + com.dialogue + '”' }),
 h('div', { class: 'potion-name', text: com.potionName }),
 list,
-com.effectOrder ? h('div', { class: 'small muted', text: 'Effects can only be known by testing this batch in the Trials room. Unwanted effects must stay below the limits.' }) : null,
+com.effectOrder ? h('div', { class: 'small muted', text: 'Effects can only be known by testing this batch in the Trials room. Customers pay for what your label claims — and come back tomorrow if it was not true.' }) : null,
 h('div', { class: 'row wrap cust-actions' },
 btn(com.hintCost ? `Advice (${com.hintCost})` : 'Advice', () => panels.openHint(lab), { icon: 'bulb', act: 'hint' }),
 com.tutorial ? null : btn('Decline', () => lab.decline(), { icon: 'door', act: 'decline' }),
 btn('To the cauldron', () => lab.showView('brew'), { icon: 'cauldron', cls: 'primary', act: 'go-brew' }))));
 this.vialCard(el);
-void requiredEffects;
 }
 vialCard(el) {
 const lab = this.lab, st = lab.state;
@@ -9072,8 +10772,9 @@ const ctx = cv.getContext('2d');
 drawBottle(ctx, 2, 3, 20, 29, m.color, Math.min(1, v.ml / Math.max(1, com ? com.bottleMl : v.ml)));
 const has = (e) => lab.sandbox || st.has(e);
 const need = com ? missingEffects(com, v.cert || {}) : [];
-const ok = com && v.ml >= 5 && need.length === 0;
-const serve = btn(com ? `Serve ${com.customer.name.split(' ')[0]}` : 'No customer', () => lab.serveVial(), { cls: 'primary', icon: 'coin', disabled: !ok, act: 'serve' });
+const first = com ? com.customer.name.split(' ')[0] : '';
+const serve = com ? btn(`Offer to ${first}`, () => lab.serveVial(), { cls: 'primary', icon: 'deal', disabled: v.ml < 5, act: 'serve' }) : null;
+const labelB = btn(v.label ? 'Revise label' : 'Label', () => lab.identifyVial(), { icon: 'tag', act: 'label' });
 const testB = btn('Test a dose', () => { lab.trialSource = 'vial'; lab.showView('trials'); }, { icon: 'dropper', act: 'test-vial' });
 const back = btn('Pour back', () => lab.pourBackVial(), { icon: 'pour', act: 'pour-back' });
 const discard = btn('Discard', async () => { if (await confirmDialog('Discard the vial?', 'The potion is poured away. Ingredients are not refunded.', 'Discard', 'danger')) lab.discardVial(); }, { icon: 'trash', cls: 'danger', act: 'discard' });
@@ -9081,23 +10782,23 @@ el.append(h('div', { class: 'card parch vial-card' },
 h('div', { class: 'row' }, cv, h('div', {},
 h('b', { text: `Sealed vial · ${Math.round(v.ml)} ml` }),
 h('div', { class: 'small' }, h('span', { class: 'swatch', style: { background: rgbToHex(m.color) } }), ` ${describeColor(m.color)} · ${Math.round(m.temperature)}°C · ${has('viscometer') ? `${m.viscosity < 100 ? m.viscosity.toFixed(1) : Math.round(m.viscosity)} cP` : viscosityClass(m.viscosity)}${has('hydrometer') ? ` · ${m.density.toFixed(2)} g/ml` : ''}`),
-h('div', { class: 'small' }, 'Verified: ', Object.keys(v.cert || {}).length ? Object.entries(v.cert).map(([k, x]) => h('span', { class: 'fx-chip' }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(x)}`)) : h('span', { class: 'muted', text: 'nothing — effects unknown' })))),
-need.length ? h('div', { class: 'warn small', text: `Not yet verified: ${need.map((k) => EFFECT_BY_KEY[k].label).join(', ')}. A customer will not drink a potion of unknown effect — test a dose first.` }) : null,
+h('div', { class: 'small' }, 'Verified: ', Object.keys(v.cert || {}).length ? Object.entries(v.cert).map(([k, x]) => h('span', { class: 'fx-chip' }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(x)}`)) : h('span', { class: 'muted', text: 'nothing — effects unknown' })),
+v.label ? h('div', { class: 'small label-line' }, icon('tag', 'sm'), ` ${trade.claimSummary(v.label.claims)}`) : null)),
+need.length && com ? h('div', { class: 'warn small', text: `Not yet tested: ${need.map((k) => EFFECT_BY_KEY[k].label).join(', ')}. You may still sell on the guild's theory, but ${first} will trust an untested label less${com.customer.persona && com.customer.persona.proof >= 0.8 ? ' — and this customer insists on proof' : ''}.` }) : null,
 com && v.ml < com.bottleMl ? h('div', { class: 'small muted', text: `Short of the ${com.bottleMl} ml ordered; the customer pays less.` }) : null,
-h('div', { class: 'row wrap' }, serve, testB, back, discard)));
-void toast;
+h('div', { class: 'row wrap' }, serve, labelB, testB, back, discard)));
 }
 }
 return { CounterView };
 })();
 // src/ui/views/wilds.js
-const __m53 = (() => {
+const __m60 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { REGIONS, depositStatus, formatWait } = __m24;
-const { RANKS } = __m22;
-const { paintRegion, animateRegion, drawRaw, rawSprite, SCENE_W, SCENE_H } = __m46;
+const { REGIONS, depositStatus, formatWait } = __m28;
+const { RANKS } = __m26;
+const { paintRegion, animateRegion, drawRaw, rawSprite, SCENE_W, SCENE_H } = __m53;
 const { EFFECT_BY_KEY } = __m13;
 class WildsView {
 constructor(lab) {
@@ -9262,14 +10963,15 @@ row.g.disabled = row.locked || s.available < 5;
 return { WildsView };
 })();
 // src/ui/views/trials.js
-const __m54 = (() => {
+const __m61 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { SUBJECTS, SUBJECT_BY_ID, DOSES, missingEffects, suggestSubjects } = __m23;
+const { SUBJECTS, SUBJECT_BY_ID, DOSES, missingEffects, suggestSubjects } = __m27;
 const { EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, potencyWord } = __m13;
-const { drawSubject, SUBJECT_W, SUBJECT_H } = __m46;
-const { SIM } = __m20;
+const { drawSubject, SUBJECT_W, SUBJECT_H } = __m53;
+const { SIM } = __m23;
+const { applyTrials } = __m44;
 class TrialsView {
 constructor(lab) {
 this.lab = lab;
@@ -9333,6 +11035,12 @@ st.vial ? btn(`Sealed vial · ${Math.round(st.vial.ml)} ml`, () => { lab.trialSo
 const doses = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Dose' }, h('span', { class: 'small muted', text: 'Dose' }),
 ...DOSES.map((ml) => btn(`${ml} ml`, () => { lab.trialDose = ml; this.refresh(); }, { cls: lab.trialDose === ml ? 'active' : '', act: 'dose-' + ml })));
 head.append(h('div', { class: 'row wrap' }, seg), h('div', { class: 'row wrap' }, doses));
+if (st.vial) {
+head.append(h('div', { class: 'row wrap vial-row' },
+h('span', { class: 'small muted', text: `Vial: ${Math.round(st.vial.ml)} ml of ${Math.round(st.vial.bottledMl || st.vial.ml)} ml bottled` }),
+btn('Pour back', () => lab.pourBackVial(), { icon: 'pour', act: 'trials-pour-back', title: 'Return the rest of the vial to the cauldron' }),
+btn('Discard', () => { lab.discardVial(); this.refresh(); }, { icon: 'trash', cls: 'danger', act: 'trials-discard' })));
+}
 const status = clear(this.status);
 const cert = src === 'vial' ? { values: st.vial.cert || {}, stale: [], changed: false } : lab.currentCert();
 const known = Object.entries(cert.values);
@@ -9418,6 +11126,8 @@ ctx = { ml, source: 'cauldron', batchId: st.batch.id, rev: st.batch.rev, theory:
 const { record, events } = st.recordTrial(id, dose, ctx);
 if (this.source === 'vial' && st.vial) {
 st.vial.cert = { ...(st.vial.cert || {}), ...record.values };
+st.vial.certRecords = { ...(st.vial.certRecords || {}), ...Object.fromEntries(Object.keys(record.values).map((k) => [k, record.id])) };
+if (st.vial.label) applyTrials(st.vial.label, record.values, record.id);
 }
 this.last = record;
 this.react[id] = 1;
@@ -9499,12 +11209,12 @@ return `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2
 return { TrialsView, EFFECTS, EFFECT_INDEX };
 })();
 // src/ui/views/book.js
-const __m55 = (() => {
+const __m62 = (() => {
 const { h, btn, clear } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const panels = __m50;
-const { SUBJECT_BY_ID } = __m23;
+const panels = __m56;
+const { SUBJECT_BY_ID } = __m27;
 const { EFFECTS, EFFECT_BY_KEY, EFFECT_KEYS } = __m13;
 const { rgbToHex } = __m8;
 const TABS = [
@@ -9603,36 +11313,40 @@ body.appendChild(list);
 return { BookView };
 })();
 // src/ui/lab.js
-const __m26 = (() => {
-const { Simulation } = __m27;
-const { PHASE, SIM } = __m20;
-const { snapshotSim, applySnapshot } = __m40;
-const { clampToInterior } = __m37;
-const { MAX_SPECIES } = __m16;
-const { compatFactor } = __m21;
-const { Renderer } = __m41;
-const { drawPortrait } = __m45;
-const { drawJar } = __m42;
-const { rawSprite } = __m46;
-const { measureParticles, tapSelection, probeSelection, viscosityClass } = __m19;
-const { evaluatePotion, scoreRequirement, PROPERTY_LABELS, describeValue } = __m47;
-const { processEvent } = __m48;
-const { saveGame, saveJSON, KEYS } = __m25;
-const { AutoBrewer } = __m49;
-const { RANKS } = __m22;
-const { certification, missingEffects } = __m23;
+const __m46 = (() => {
+const { Simulation } = __m30;
+const { PHASE, SIM } = __m23;
+const { snapshotSim, applySnapshot } = __m47;
+const { clampToInterior } = __m41;
+const { MAX_SPECIES } = __m18;
+const { compatFactor } = __m14;
+const { Renderer } = __m48;
+const { drawPortrait } = __m52;
+const { drawJar } = __m49;
+const { rawSprite } = __m53;
+const { measureParticles, tapSelection, probeSelection, viscosityClass } = __m22;
+const { evaluatePotion, scoreRequirement, PROPERTY_LABELS, describeValue } = __m24;
+const { processEvent } = __m54;
+const { saveGame, saveJSON, KEYS } = __m45;
+const { AutoBrewer } = __m55;
+const { RANKS } = __m26;
+const { certification, missingEffects } = __m27;
+const { makeVial, appendParticles, updateVial, takeDose, pourBack, relaxVial } = __m29;
 const { theoryOf, EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, dominantEffect, NE } = __m13;
+const { awakenParts } = __m15;
 const { describeColor, rgbToHex } = __m8;
 const { h, btn, clear, toast, coins, confirmDialog } = __m2;
 const { icon, iconUrl } = __m3;
 const { audio } = __m4;
-const panels = __m50;
-const { Tutorial } = __m51;
-const { CounterView } = __m52;
-const { WildsView } = __m53;
-const { TrialsView } = __m54;
-const { BookView } = __m55;
-const REQ_ICON = { color: 'palette', density: 'weight', viscosity: 'drop', temperature: 'thermo', stability: 'scales', volatility: 'bubbles', charge: 'spark', quantity: 'flask' };
+const panels = __m56;
+const trade = __m57;
+const { unprovenWanted } = __m44;
+const { Tutorial } = __m58;
+const { CounterView } = __m59;
+const { WildsView } = __m60;
+const { TrialsView } = __m61;
+const { BookView } = __m62;
+const REQ_ICON = { color: 'palette', density: 'weight', viscosity: 'drop', temperature: 'thermo', stability: 'scales', volatility: 'bubbles', charge: 'spark', quantity: 'flask', purity: 'pure' };
 const TOOL_DEFS = [
 { id: 'spoon', label: 'Spoon', icon: 'spoon', key: '2' },
 { id: 'pestle', label: 'Pestle', icon: 'pestle', key: '3', needs: 'pestle' },
@@ -9806,7 +11520,7 @@ this.pourHint = h('div', { class: 'pour-hint chip hidden' });
 this.bottleFab = btn('Bottle', () => this.startBottling(), { icon: 'bottle', cls: 'fab primary', title: 'Bottle the potion (B)', act: 'bottle' });
 this.infoFab = btn('', () => this.toggleBrewInfo(), { icon: 'scroll', cls: 'fab-mini icon', title: 'What is in the cauldron', act: 'brew-info' });
 this.brewPanel = h('div', { class: 'brew-panel parch hidden' });
-this.stageEl = h('main', { class: 'stage' }, this.canvas, this.readout, this.chips, this.pourHint, this.brewPanel, this.infoFab, this.sandbox ? null : this.bottleFab);
+this.stageEl = h('main', { class: 'stage' }, this.canvas, this.readout, this.chips, this.pourHint, this.brewPanel, this.infoFab, this.bottleFab);
 this.furnaceInput = /** @type {HTMLInputElement} */ (h('input', { type: 'range', min: '-100', max: '100', step: '1', value: '0', 'aria-label': 'Fire and frost control' }));
 this.furnaceInput.addEventListener('input', () => {
 const v = Number(this.furnaceInput.value) / 100;
@@ -10168,7 +11882,7 @@ const def = TOOL_DEFS.find((d) => d.key === k);
 if (def && (this.toolBtns[def.id] || def.id === 'pour')) { if (def.id === 'pour' && !this.selected) return; this.selectTool(def.id); return; }
 if (k === 'l') this.toggleLid();
 else if (k === 'f') this.cycleSpeed();
-else if (k === 'b' && !this.sandbox) this.startBottling();
+else if (k === 'b') this.startBottling();
 else if (k === 's' && !this.sandbox) panels.openShop(this);
 else if (k === 'r' && !this.sandbox) { this.showView('book'); this.views.book.open('recipes'); }
 else if (k === 'g') { this.ground = !this.ground; this.syncGround(); }
@@ -10353,7 +12067,7 @@ const chips = h('div', { class: 'req-chips' });
 for (const req of com.requirements) {
 const now = h('span', { class: 'now' });
 const meter = h('i');
-const fx = !!EFFECT_BY_KEY[req.key];
+const fx = !!EFFECT_BY_KEY[req.key] || req.key === 'purity';
 const li = h('div', { class: 'req-chip' + (fx ? ' fx' : '') + (req.limit ? ' limit' : ''), title: `${req.limit ? 'Limit — ' : ''}${PROPERTY_LABELS[req.key]}: ${req.label}` },
 icon(this.reqIcon(req.key), 'sm'),
 req.key === 'color' ? h('span', { class: 'swatch', style: { background: rgbToHex(req.rgb) } }) : h('span', { class: 'tgt', text: shortTarget(req) }),
@@ -10390,18 +12104,27 @@ this.views.wilds.refresh();
 });
 }
 startBottling() {
-if (this.sandbox || this.bottling) return;
+if (this.bottling) return;
 const st = this.state;
-const com = st.current;
-if (!com) { toast('No order', 'Wait for a customer before bottling.', 'door'); return; }
 if (st.vial) { toast('A vial is waiting', 'Serve, pour back or discard the sealed vial at the Counter first.', 'bottle'); this.showView('counter'); return; }
-const sel = tapSelection(this.sim, com.bottleN);
-if (sel.length < 1) { toast('Nothing to bottle', 'There is no liquid at the tap.', 'flask'); audio.play('error'); return; }
+const avail = Math.floor(this.tapAvailable() / SIM.ML_PER_PARTICLE);
+if (avail < 1) { toast('Nothing to bottle', 'There is no liquid at the tap.', 'flask'); audio.play('error'); return; }
+panels.openBottleSize(this, avail, (n) => this.beginBottling(n));
+}
+beginBottling(n) {
+if (this.bottling) return;
+const st = this.state;
+const sel = tapSelection(this.sim, n);
+if (sel.length < 1) return;
 const m = measureParticles(this.sim, sel);
 this.sim.emitter.stop();
 this.setAutoStir(false);
 const cert = certification(st.trials, st.batch, m.effects);
-this.bottling = { total: sel.length, removed: 0, progress: 0, color: m.color, measurement: m, commission: com, t: 0, cert: cert.values, batch: { ...st.batch } };
+const vial = makeVial(this.sim, [], {
+batchId: st.batch.id, rev: st.batch.rev, cert: cert.values, certRecords: cert.records, parts: this.batchParts(),
+day: st.day, commissionId: st.current ? st.current.id : null,
+});
+this.bottling = { total: sel.length, removed: 0, progress: 0, color: m.color, t: 0, vial };
 audio.play('glass');
 if (this.tutorial) this.tutorial.notify('bottle');
 }
@@ -10413,56 +12136,83 @@ const target = Math.min(b.total, Math.ceil(b.total * Math.min(1, b.t / 1.4)));
 const k = target - b.removed;
 if (k > 0) {
 const sel = tapSelection(this.sim, k).sort((a, c) => c - a);
+appendParticles(b.vial, this.sim, sel);
 for (const i of sel) this.sim.removeParticle(i);
-b.removed += k;
+b.removed += sel.length;
+if (!sel.length) b.total = b.removed;
 }
-b.progress = b.removed / Math.max(1, b.commission.bottleN);
+b.progress = b.removed / Math.max(1, b.total);
 if (b.t > 1.8) this.finishBottling();
 }
 finishBottling() {
 const b = this.bottling;
 this.bottling = null;
 const st = this.state;
-st.vial = {
-id: 'v' + Date.now().toString(36),
-ml: b.measurement.ml,
-m: b.measurement,
-batchId: b.batch.id,
-rev: b.batch.rev,
-cert: b.cert,
-parts: this.batchParts(),
-commissionId: b.commission.id,
-day: st.day,
-recipe: this.recipeDraft(b.measurement, null, b.commission),
-};
+const vial = b.vial;
+updateVial(vial, st.lookup, st.world.laws);
+vial.recipe = this.recipeDraft(vial.m, null, st.current);
+st.vial = vial;
 if (this.sim.p.count === 0) { st.brewLog = []; st.newBatch(); this.lastPoured = {}; }
 audio.play('glass');
 this.save();
-this.showView('counter');
+if (this.sandbox || !st.current) toast('Vial sealed', `${vial.ml} ml bottled. Test it in the Trials room, or pour it back to keep working on it.`, 'bottle', 3600);
+this.showView(this.sandbox ? 'trials' : 'counter');
 this.updateBadges();
 }
 serveVial() {
 const st = this.state;
 const v = st.vial, com = st.current;
 if (!v || !com) return;
-const need = missingEffects(com, v.cert || {});
-if (need.length) { toast('Untested effects', `Test ${need.map((k) => EFFECT_BY_KEY[k].label).join(', ')} first.`, 'dropper'); return; }
-const m = { ...v.m, ml: Math.floor(v.ml / SIM.ML_PER_PARTICLE) * SIM.ML_PER_PARTICLE };
-const ev = evaluatePotion(com, m);
-audio.play(ev.quality >= 0.7 ? 'coin' : 'fail');
-const recipe = { ...(v.recipe || this.recipeDraft(m, ev, com)), quality: ev.quality, verified: v.cert || {} };
+if (!v.label) { this.identifyVial(() => this.serveVial()); return; }
+const missing = unprovenWanted(com, v.label);
+if (missing.length) {
+toast(`${com.customer.name.split(' ')[0]} wants proof`, `This customer only buys on trial evidence of this batch: test ${missing.map((k) => EFFECT_BY_KEY[k].label).join(', ')} first.`, 'dropper', 5000);
+return;
+}
+trade.openNegotiation(this, com, v, (n) => {
+if (!n) return;
+if (n.state === 'left') { this.customerLeft(); return; }
+if (n.state === 'deal') this.completeDeal(n.price, n.log.find((l) => l.who === 'them' && l.coins)?.coins || 0);
+});
+}
+identifyVial(after) {
+const v = this.state.vial;
+if (!v) return;
+trade.openIdentify(this, v, (label) => {
+v.label = label;
+this.save();
+this.views.counter.refresh();
+if (after) after();
+});
+}
+completeDeal(price, firstOffer) {
+const st = this.state;
+const v = st.vial, com = st.current;
+if (!v || !com) return;
+const truth = { ...v.m, ml: Math.floor(v.ml / SIM.ML_PER_PARTICLE) * SIM.ML_PER_PARTICLE };
+const recipe = { ...(v.recipe || this.recipeDraft(truth, null, com)), verified: v.cert || {} };
+const { events, sale } = st.completeDeal(v, v.label, price, truth, firstOffer);
 st.vial = null;
-panels.showResult(this, com, m, ev, recipe, () => {
-const events = st.completeSale(ev, m);
-if (com.effectOrder) events.push(...st.unlock('certified'));
+if (com.effectOrder && Object.values(v.label.claims).some((c) => c.source === 'trial')) events.push(...st.unlock('certified'));
 for (const e of events) this.announce(e);
 this.save();
+trade.showDeal(this, com, sale, recipe, () => {
 this.refreshCustomer();
 this.views.counter.refresh();
 this.refreshHud(true);
 if (this.tutorial) this.tutorial.notify('sold');
 if (!st.dayOver) setTimeout(() => this.bringCustomer(true), 1400);
 });
+}
+customerLeft() {
+const st = this.state;
+toast('The customer left', 'No sale. Your vial is still on the counter.', 'door');
+if (st.current && st.current.tutorial) return;
+st.declineCustomer();
+this.save();
+this.refreshCustomer();
+this.views.counter.refresh();
+setTimeout(() => this.bringCustomer(true), 1200);
 }
 discardVial() {
 this.state.vial = null;
@@ -10475,32 +12225,15 @@ pourBackVial() {
 const st = this.state;
 const v = st.vial;
 if (!v) return;
-const sim = this.sim;
-const n = Math.floor(v.ml / SIM.ML_PER_PARTICLE);
-const ids = Object.keys(v.m.composition);
-const total = Object.values(v.m.composition).reduce((a, b) => a + b, 0) || 1;
-if (sim.p.count + n > sim.maxParticles) { toast('No room', 'The cauldron is too full to pour the vial back.', 'cauldron'); return; }
-let made = 0;
-for (let k = 0; k < n; k++) {
-const x = (sim.rand() - 0.5) * sim.cauldron.mouth;
-const i = sim.addParticle(st.lookup(ids[0]), x, 0.15 + sim.rand() * 0.25, PHASE.LIQUID, v.m.temperature);
-if (i < 0) break;
-sim.p.comp.fill(0, i * MAX_SPECIES, (i + 1) * MAX_SPECIES);
-for (const id of ids) {
-const def = st.lookup(id);
-if (!def) continue;
-const s = sim.slotFor(def);
-if (s >= 0) sim.p.comp[i * MAX_SPECIES + s] += v.m.composition[id] / total;
-}
-sim.p.q[i] = v.m.charge || 0;
-sim.p.dirty[i] = 1;
-made++;
-}
+const made = pourBack(v, this.sim);
+if (!made) { toast('No room', 'The cauldron is too full to pour the vial back.', 'cauldron'); return; }
+const share = v.bottledMl > 0 ? (made * SIM.ML_PER_PARTICLE) / v.bottledMl : 0;
+st.brewLog.push({ type: 'vial', ml: made * SIM.ML_PER_PARTICLE, t: Math.round(this.sim.time), parts: (v.parts || []).map((p) => ({ id: p.id, ml: Math.round(p.ml * share * 10) / 10 })), from: v.id });
 if (st.batch.id !== v.batchId) st.newBatch();
 st.touchBatch();
 st.vial = null;
 audio.play('splash');
-toast('Poured back', `${made * SIM.ML_PER_PARTICLE} ml returned to the cauldron.`, 'pour');
+toast('Poured back', `${made * SIM.ML_PER_PARTICLE} ml returned to the cauldron. Earlier trials no longer describe the brew.`, 'pour');
 this.save();
 this.views.counter.refresh();
 this.showView('brew');
@@ -10575,9 +12308,13 @@ return n * SIM.ML_PER_PARTICLE;
 }
 batchParts() {
 const out = [];
-for (const e of this.state.brewLog) if (e.type === 'pour') {
-const last = out.find((x) => x.id === e.id);
-if (last) last.ml += e.ml; else out.push({ id: e.id, ml: e.ml });
+const add = (id, ml) => {
+const last = out.find((x) => x.id === id);
+if (last) last.ml += ml; else out.push({ id, ml });
+};
+for (const e of this.state.brewLog) {
+if (e.type === 'pour') add(e.id, e.ml);
+else if (e.type === 'vial') for (const p of e.parts || []) add(p.id, p.ml);
 }
 return out;
 }
@@ -10594,7 +12331,12 @@ if (parts.every((x) => want.has(x.id) && Math.abs(/** @type {number} */ (want.ge
 return null;
 }
 theory() {
-return theoryOf(this.batchParts(), this.state.lookup, this.sandbox ? this.state.world.laws : this.state.knownLaws);
+const parts = awakenParts(this.batchParts(), this.sim.inventory(), this.state.lookup);
+return theoryOf(parts, this.state.lookup, this.sandbox ? this.state.world.laws : this.state.knownLaws);
+}
+vialTheory(v) {
+const comp = v && v.m ? v.m.composition : {};
+return theoryOf(awakenParts(v.parts || [], comp, this.state.lookup), this.state.lookup, this.sandbox ? this.state.world.laws : this.state.knownLaws);
 }
 drawDose(ml) {
 const n = Math.max(1, Math.round(ml / SIM.ML_PER_PARTICLE));
@@ -10607,16 +12349,17 @@ audio.play('glass');
 return { dose: m, ml: sel.length * SIM.ML_PER_PARTICLE };
 }
 vialDose(ml) {
-const v = this.state.vial;
-if (!v || v.ml < 1) return null;
-const take = Math.min(ml, v.ml);
-v.ml -= take;
-const r = { dose: v.m, ml: take, batchId: v.batchId, rev: v.rev, theory: theoryOf(v.parts || [], this.state.lookup, this.state.knownLaws), parts: v.parts || [] };
-if (v.ml < 1) {
-this.state.vial = null;
+const st = this.state;
+const v = st.vial;
+if (!v || v.particles.length < 1) return null;
+const r = takeDose(v, ml, st.lookup, st.world.laws, st.day);
+if (!r) return null;
+const out = { dose: r.dose, ml: r.ml, batchId: v.batchId, rev: v.rev, theory: this.vialTheory(v), parts: v.parts || [] };
+if (v.particles.length < 1) {
+st.vial = null;
 toast('The vial is empty', 'All of it went to the trials.', 'bottle');
 }
-return r;
+return out;
 }
 currentCert() {
 return this.cert;
@@ -10637,6 +12380,15 @@ if (r.req.key === 'quantity') {
 const f = Math.min(1, m.ml / com.bottleMl);
 score = f >= 0.98 ? 1 : f * f;
 text = `${m.ml}`;
+} else if (r.req.key === 'purity') {
+const keys = EFFECTS.map((e) => e.key).filter((k) => !(r.req.exclude || []).includes(k));
+const known = keys.filter((k) => this.cert.values[k] !== undefined);
+if (known.length < keys.length) { unknown = true; text = known.length ? `${known.length}/${keys.length}` : '?'; score = 0; }
+else {
+const worst = Math.max(...known.map((k) => Math.abs(this.cert.values[k])));
+score = worst <= r.req.target ? 1 : Math.max(0, 1 - (worst - r.req.target) / r.req.zero);
+text = worst < 0.05 ? '✓pure' : `✓${worst.toFixed(1)}`;
+}
 } else if (EFFECT_BY_KEY[r.req.key]) {
 const v = this.cert.values[r.req.key];
 if (v === undefined) { unknown = true; text = '?'; score = 0; }
@@ -10816,6 +12568,7 @@ this.accountPours();
 const tw1 = performance.now();
 if (this.alembicOpen) this.collectVapour();
 this.stepBottling(dt);
+this.stepVial(dt);
 this.trackBrew(dt);
 if (sim.events.length) {
 const evs = sim.events.splice(0);
@@ -10848,7 +12601,7 @@ pour: { active: em.pouring, x: em.active ? em.active.x : this.pourX, def: em.act
 tool: { type: tool.type, x: tool.x, y: tool.y, active: tool.active },
 toolHover: this.hover && (this.tool === 'spoon' || this.tool === 'pestle' || this.tool === 'skimmer'),
 bottling: this.bottling ? { progress: this.bottling.progress, color: this.bottling.color } : null,
-showBottle: !!this.state.current && !this.sandbox,
+showBottle: true,
 probe: this.tool === 'probe' ? this.probe : null,
 thermal: this.thermal,
 alembic: this.state.has('alembic'),
@@ -10865,6 +12618,18 @@ if (brewing) this.adaptQuality(dt, tw3 - tw0);
 pf.n++;
 pf.physMs = pf.physMs * 0.95 + (tw1 - tw0) * 0.05;
 if (brewing) pf.renderMs = pf.renderMs * 0.95 + (tw3 - tw2) * 0.05;
+}
+stepVial(dt) {
+const v = this.state.vial;
+if (!v) return;
+this._vialDrift = (this._vialDrift || 0) + relaxVial(v, dt * this.speed);
+this._vialT = (this._vialT || 0) + dt;
+if (this._vialT > 2 && this._vialDrift > 0.5) {
+this._vialT = 0;
+this._vialDrift = 0;
+updateVial(v, this.state.lookup, this.state.world.laws);
+if (this.view === 'counter') this.views.counter.refresh();
+}
 }
 checkAway() {
 if (this.view === 'brew') return;
@@ -10899,6 +12664,8 @@ switch (e.type) {
 case 'reaction': audio.play('reaction'); break;
 case 'crush': if (Math.random() < 0.5) audio.play('crush'); break;
 case 'ignite': audio.play('ignite'); break;
+case 'awaken': audio.play('awaken'); break;
+case 'crack': audio.play('crack'); break;
 case 'spark': if (Math.random() < 0.3) audio.play('crush'); break;
 case 'phase': if (e.to === 'solid' && Math.random() < 0.15) audio.play('freeze'); break;
 case 'full': toast('The cauldron is full', 'Bottle, skim or empty it before adding more.', 'cauldron'); break;
@@ -10907,7 +12674,7 @@ if (this.sandbox) return;
 const r = processEvent(this.state, e);
 for (const entry of r.entries) {
 if (entry.kind === 'ingredient') continue;
-toast(entry.kind === 'reaction' ? 'New reaction discovered!' : 'Discovery', entry.title, entry.kind === 'reaction' ? 'eye' : 'scroll', 3800);
+toast(entry.kind === 'reaction' ? 'New reaction discovered!' : entry.kind === 'arcane' ? 'Arcane awakening!' : 'Discovery', entry.title, entry.kind === 'reaction' ? 'eye' : entry.kind === 'arcane' ? 'awaken' : 'scroll', 3800);
 audio.play('discover');
 }
 for (const a of r.achievements) this.announce(a);
@@ -11021,6 +12788,7 @@ saveGame(this.state);
 }
 }
 function shortTarget(req) {
+if (req.key === 'purity') return `<${req.target}`;
 if (req.key === 'temperature') return `${Math.round(req.target)}°`;
 if (req.kind === 'min') return `≥${Math.round(req.target)}`;
 if (req.kind === 'max') return `≤${Math.round(req.target)}`;
@@ -11044,7 +12812,7 @@ void dominantEffect;
 return { VIEWS, LabScreen, describeValue };
 })();
 // src/materials/reference.js
-const __m57 = (() => {
+const __m64 = (() => {
 const { completeMaterial } = __m9;
 const REF = {};
 const add = (d) => (REF[d.id] = completeMaterial(d));
@@ -11082,12 +12850,12 @@ const refLookup = (id) => REF[id];
 return { REF, refLookup };
 })();
 // src/ui/menu.js
-const __m56 = (() => {
+const __m63 = (() => {
 const { h, btn } = __m2;
-const { Renderer } = __m41;
-const { Simulation } = __m27;
-const { REF, refLookup } = __m57;
-const { hasSave, loadGame } = __m25;
+const { Renderer } = __m48;
+const { Simulation } = __m30;
+const { REF, refLookup } = __m64;
+const { hasSave, loadGame } = __m45;
 const { audio } = __m4;
 class MenuScreen {
 constructor(app) {
@@ -11171,13 +12939,13 @@ const { h, btn, modal, toast, setOverlayRoot, setToastRoot, confirmDialog, clear
 const { icon } = __m3;
 const { audio } = __m4;
 const { GameState } = __m5;
-const { EQUIPMENT } = __m22;
-const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m25;
-const { LabScreen } = __m26;
-const { MenuScreen } = __m56;
-const { openSettings, openHelp } = __m50;
+const { EQUIPMENT } = __m26;
+const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m45;
+const { LabScreen } = __m46;
+const { MenuScreen } = __m63;
+const { openSettings, openHelp } = __m56;
 const { Rng } = __m6;
-const { normalizeTrials } = __m23;
+const { normalizeTrials } = __m27;
 const DEFAULT_SETTINGS = { master: 0.8, sfx: 0.8, music: 0.35, musicOn: true, muted: false, quality: 'auto', showFps: false };
 const SEED_WORDS = ['amber', 'ashen', 'brine', 'copper', 'dusk', 'elder', 'fen', 'gloam', 'hollow', 'iron', 'juniper', 'kelp', 'lantern', 'moon', 'nettle', 'oak', 'pewter', 'quill', 'raven', 'sage', 'thorn', 'umber', 'vale', 'willow', 'wyrm', 'yarrow'];
 class App {

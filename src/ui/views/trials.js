@@ -11,6 +11,7 @@ import { SUBJECTS, SUBJECT_BY_ID, DOSES, missingEffects, suggestSubjects } from 
 import { EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, potencyWord } from '../../alchemy/effects.js';
 import { drawSubject, SUBJECT_W, SUBJECT_H } from '../../rendering/scenes.js';
 import { SIM } from '../../simulation/constants.js';
+import { applyTrials } from '../../game/commerce.js';
 
 export class TrialsView {
   /** @param {import('../lab.js').LabScreen} lab */
@@ -179,6 +180,8 @@ export class TrialsView {
       if (this.source === 'vial' && st.vial) {
         // the vial is sealed: its certificate grows with every trial of it
         st.vial.cert = { ...(st.vial.cert || {}), ...record.values };
+        st.vial.certRecords = { ...(st.vial.certRecords || {}), ...Object.fromEntries(Object.keys(record.values).map((k) => [k, record.id])) };
+        if (st.vial.label) applyTrials(st.vial.label, record.values, record.id);
       }
       this.last = record;
       this.react[id] = 1;

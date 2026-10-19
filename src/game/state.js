@@ -13,6 +13,7 @@ import { createGathering, normalizeGathering, generateDeposits, harvest, newDayR
 import { predictPlan } from './predict.js';
 import { EFFECT_INDEX } from '../alchemy/effects.js';
 import { migrateVial } from './vial.js';
+import { recordSale, resolveFollowUp } from './commerce.js';
 
 export const SAVE_VERSION = 3;
 export const WORLD_GEN_VERSION = 2;
@@ -61,6 +62,10 @@ export const ACHIEVEMENTS = [
   { id: 'forage1k', name: 'Seasoned Forager', desc: 'Gather 1000 ml of wild ingredients.', reward: 50 },
   { id: 'certified', name: 'Proven Remedy', desc: 'Serve a potion whose effects you verified by experiment.', reward: 15 },
   { id: 'steep', name: 'Patience of the Steep', desc: 'Steep a herb into a liquid extract with heat.', reward: 15 },
+  { id: 'awaken', name: 'Awakening', desc: 'Awaken a magical ingredient past its arcane threshold.', reward: 20 },
+  { id: 'deal', name: 'Silver Tongue', desc: 'Sell a potion for more than the customer first offered.', reward: 15 },
+  { id: 'dispute', name: 'The Records Speak', desc: 'Win a dispute with trial records of the batch.', reward: 30 },
+  { id: 'referral', name: 'Word of Mouth', desc: 'Serve a customer sent by a satisfied one.', reward: 25 },
 ];
 
 /**
@@ -96,7 +101,7 @@ export class GameState {
     /** @type {any[]} */ this.history = data.history;
     /** @type {Record<string, number>} */ this.achievements = data.achievements;
     /** @type {any} */ this.current = data.current;
-    /** @type {{served:number, perfect:number, earned:number, spent:number, brews:number, declined:number, bestQuality:number, gathered?:number, trials?:number}} */
+    /** @type {{served:number, perfect:number, earned:number, spent:number, brews:number, declined:number, bestQuality:number, gathered?:number, trials?:number, refunds?:number, disputesWon?:number, bred?:number, recovered?:number}} */
     this.stats = { served: 0, perfect: 0, earned: 0, spent: 0, brews: 0, declined: 0, bestQuality: 0, ...(data.stats || {}) };
     /** @type {{active:boolean, step:number, done:boolean}} */ this.tutorial = { active: false, step: 0, done: true, ...(data.tutorial || {}) };
     /** @type {{event:string, mods:Record<string, number>}} */ this.market = data.market || { event: 'none', mods: {} };
@@ -110,6 +115,12 @@ export class GameState {
     /** @type {ReturnType<typeof createGathering>} */ this.gathering = normalizeGathering(data.gathering);
     /** the sealed vial (game/vial.js): exact bottled particles, or null */
     this.vial = migrateVial(data.vial);
+    /** sales ledger (commerce.js): price, label, the true potion and the evidence */
+    /** @type {any[]} */ this.sales = Array.isArray(data.sales) ? data.sales : [];
+    /** customers coming back after drinking (praise, complaints) */
+    /** @type {any[]} */ this.followUps = Array.isArray(data.followUps) ? data.followUps : [];
+    /** friends sent by satisfied customers, still to arrive */
+    /** @type {number} */ this.referrals = data.referrals | 0;
     /** identity of the brew in the cauldron: a new id when it is emptied, rev++ on every addition */
     this.batch = data.batch && typeof data.batch.id === 'string' ? { id: data.batch.id, rev: data.batch.rev | 0 } : newBatch();
     this.lookup = makeLookup(this.world);
@@ -380,6 +391,13 @@ export class GameState {
       // difficulty follows rank, with some easier and harder requests mixed in
       const tier = Math.max(0, Math.min(4, this.rank + (rng.chance(0.25) ? -1 : 0) + (rng.chance(0.15) ? 1 : 0)));
       com = generateCommission(this.commissionContext(), rng, { tier: Math.min(tier, this.rank + 1), contract });
+      if (com && this.referrals > 0) {
+        // a friend of a satisfied customer: they come with a better budget
+        this.referrals--;
+        com.referral = true;
+        com.budget = Math.round(com.budget * 1.3);
+        com.dialogue = `A friend told me your potions really work. ${com.dialogue}`;
+      }
     }
     this.current = com;
     return com;
@@ -413,20 +431,28 @@ export class GameState {
    */
   completeSale(ev, measurement) {
     const com = this.current;
+    if (!com) return [];
+    return this._bookSale(com, ev, measurement, ev.payment, ev.repDelta);
+  }
+
+  /**
+   * Shared bookkeeping of a sale: coins, history, statistics, achievements.
+   * @param {any} com @param {any} ev true evaluation @param {any} measurement @param {number} paid @param {number} rep reputation now
+   */
+  _bookSale(com, ev, measurement, paid, rep) {
+    /** @type {any[]} */
     const events = [];
-    if (!com) return events;
-    const oldRank = this.rank;
-    this.coins = round1(this.coins + ev.payment);
-    this.reputation = Math.max(0, this.reputation + ev.repDelta);
+    this.coins = round1(this.coins + paid);
+    events.push(...this.adjustReputation(rep));
     this.stats.served++;
-    this.stats.earned += ev.payment;
-    this.dayEarnings += ev.payment;
+    this.stats.earned += paid;
+    this.dayEarnings += paid;
     this.stats.bestQuality = Math.max(this.stats.bestQuality, ev.quality);
     if (ev.perfect) this.stats.perfect++;
     this.servedToday++;
     this.history.unshift({
       day: this.day, customer: com.customer.name, title: com.customer.title, potion: com.potionName, quality: ev.quality, stars: ev.stars,
-      paid: ev.payment, color: measurement?.color, ml: measurement?.ml,
+      paid, color: measurement?.color, ml: measurement?.ml,
     });
     if (this.history.length > 60) this.history.length = 60;
     if (com.tutorial) { this.tutorial.done = true; this.tutorial.active = false; }
@@ -439,6 +465,64 @@ export class GameState {
     if (this.stats.served >= 10) events.push(...this.unlock('served10'));
     if (this.stats.served >= 50) events.push(...this.unlock('served50'));
     if (this.coins >= 1000) events.push(...this.unlock('rich'));
+    return events;
+  }
+
+  /**
+   * A deal struck at the counter: the agreed price is paid now, and the
+   * customer's verdict on the real potion arrives the next day.
+   * @param {any} vial @param {any} label @param {number} price @param {any} truth measurement of the bottled potion
+   * @param {number} [firstOffer] what the customer opened with
+   */
+  completeDeal(vial, label, price, truth, firstOffer = 0) {
+    const com = this.current;
+    if (!com) return { events: [], sale: null, follow: null, ev: null };
+    const { sale, follow, ev } = recordSale(this, com, vial, label, price, truth);
+    const events = this._bookSale(com, ev, truth, price, 1);
+    this.sales.unshift(sale);
+    if (this.sales.length > 80) this.sales.length = 80;
+    this.followUps.push(follow);
+    if (price > firstOffer + 0.5 && firstOffer > 0) events.push(...this.unlock('deal'));
+    if (com.referral) events.push(...this.unlock('referral'));
+    return { events, sale, follow, ev };
+  }
+
+  /** Follow-up visits waiting at the counter today. */
+  dueFollowUps() {
+    return this.followUps.filter((f) => !f.resolved && f.day <= this.day && f.kind !== 'quiet');
+  }
+
+  /**
+   * Settle a follow-up visit (thank, refund, dispute or dismiss).
+   * @param {string} id @param {'thank'|'refund'|'dispute'|'dismiss'} action
+   */
+  settleFollowUp(id, action) {
+    const f = this.followUps.find((x) => x.id === id);
+    if (!f || f.resolved) return null;
+    const r = resolveFollowUp(this, f, action);
+    f.resolved = true;
+    f.action = action;
+    f.outcome = r;
+    this.coins = round1(this.coins + r.coins);
+    if (r.coins < 0) { this.stats.refunds = (this.stats.refunds || 0) + 1; this.daySpending -= r.coins; }
+    else this.dayEarnings += r.coins;
+    if (f.kind === 'praise' && f.referral) this.referrals++;
+    const events = this.adjustReputation(r.rep);
+    if (action === 'dispute' && r.rep > 0) { this.stats.disputesWon = (this.stats.disputesWon || 0) + 1; events.push(...this.unlock('dispute')); }
+    const sale = this.sales.find((s) => s.id === f.saleId);
+    if (sale) sale.outcome = { kind: f.kind, action, ...r };
+    return { ...r, events };
+  }
+
+  /**
+   * Change reputation; returns rank-up events (and their achievements).
+   * @param {number} delta
+   */
+  adjustReputation(delta) {
+    const oldRank = this.rank;
+    this.reputation = Math.max(0, this.reputation + delta);
+    /** @type {any[]} */
+    const events = [];
     const nr = this.rank;
     if (nr > oldRank) {
       events.push({ type: 'rank', rank: nr, name: RANKS[nr].name });
@@ -455,7 +539,15 @@ export class GameState {
 
   /** Advance to the next day. Returns a summary of the finished day. */
   endDay() {
-    const summary = { day: this.day, earned: this.dayEarnings, spent: this.daySpending, served: this.servedToday };
+    // quiet customers simply carry on; visitors left waiting a whole day go away unhappy
+    const settled = [];
+    for (const f of this.followUps) {
+      if (f.resolved || f.day > this.day) continue;
+      if (f.kind === 'quiet') { this.settleFollowUp(f.id, 'thank'); continue; }
+      if (f.day < this.day) settled.push({ f, r: this.settleFollowUp(f.id, f.kind === 'praise' ? 'thank' : 'dismiss') });
+    }
+    this.followUps = this.followUps.filter((f) => !f.resolved || f.day >= this.day - 6);
+    const summary = { day: this.day, earned: this.dayEarnings, spent: this.daySpending, served: this.servedToday, settled: settled.length };
     this.day++;
     this.customerIndex = 0;
     this.servedToday = 0;
@@ -582,6 +674,9 @@ export class GameState {
       gathering: this.gathering,
       vial: this.vial,
       batch: this.batch,
+      sales: this.sales,
+      followUps: this.followUps,
+      referrals: this.referrals,
       savedAt: Date.now(),
     };
   }

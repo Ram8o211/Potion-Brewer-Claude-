@@ -230,6 +230,44 @@ canvas.portrait.big { width: 88px; height: 88px; box-shadow: 0 0 0 var(--px) var
 .cust-actions { margin-top: 6px; gap: 6px; }
 .vial-card canvas.vial-art { width: 48px; height: 64px; flex: none; }
 .counter-empty { text-align: center; }
+.vial-card .label-line { color: var(--ink2); margin-top: 2px; line-height: 1.3; }
+.vial-card .label-line img.ico, .followup img.ico.sm { width: 12px; height: 12px; }
+.bottle-sizes { gap: 6px; margin-top: 8px; }
+.bottle-sizes .btn { min-width: 72px; }
+.vial-row { gap: 6px; align-items: center; margin: 2px 0; }
+.vial-row .btn { min-height: 44px; font-size: var(--fs-s); }
+
+/* ---------- trade: labels, bargaining, verdicts ---------- */
+.label-rows { display: grid; gap: 3px; }
+.label-row { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto auto; grid-template-areas: 'i k s v' 'c c c c'; gap: 2px 6px; align-items: center; padding: 3px 4px; font-size: var(--fs-s); box-shadow: 0 1px 0 rgba(43, 29, 20, 0.15); }
+.label-row > img.ico { grid-area: i; width: 14px; height: 14px; }
+.label-row .lk { grid-area: k; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.label-row .src { grid-area: s; }
+.label-row .lv { grid-area: v; font-weight: normal; min-width: 64px; text-align: right; }
+.label-row .lctl { grid-area: c; display: flex; gap: 4px; justify-content: flex-end; }
+.label-row .lctl .btn { min-height: 36px; min-width: 40px; padding: 0 6px; font-size: var(--fs-s); }
+.label-row.relevant { background: rgba(232, 180, 92, 0.22); }
+.label-row.unknown .lv { color: #7a2a22; }
+.src { font-size: 13px; padding: 0 4px; white-space: nowrap; box-shadow: 0 0 0 1px rgba(43, 29, 20, 0.35); }
+.src.trial { color: #2f6a1a; }
+.src.est { color: #5a4330; font-style: italic; }
+.src.unknown { color: #7a2a22; }
+.src.you { color: #4a2a7a; }
+@media (min-width: 720px) {
+  .label-row { grid-template-columns: 14px minmax(0, 1fr) auto auto auto; grid-template-areas: 'i k s v c'; }
+}
+.haggle .offer { font-size: 18px; color: var(--ink); margin-top: 4px; }
+.haggle-log { margin: 8px 0; padding: 6px 8px; background: var(--parch3); box-shadow: 0 0 0 1px var(--ink2); min-height: 72px; max-height: 180px; overflow-y: auto; font-size: var(--fs-s); line-height: 1.4; }
+.haggle-log .line.you { color: #4a2a7a; }
+.haggle-log .line.them { color: var(--ink2); }
+.haggle-log .line b { font-weight: normal; color: var(--ink); }
+.haggle-ctl { gap: 6px; align-items: center; }
+.haggle-ctl .ask { font-weight: normal; font-size: 20px; min-width: 96px; text-align: center; }
+.followup { border-left: 4px solid var(--good); }
+.followup.complaint { border-left-color: var(--bad); }
+.followup canvas.portrait { width: 56px; height: 56px; flex: none; box-shadow: 0 0 0 var(--px) var(--ink2); margin-right: 8px; }
+.followup .speech { margin: 6px 0; padding: 6px 8px; background: var(--parch3); box-shadow: 0 0 0 1px var(--ink2); font-size: var(--fs-s); line-height: 1.4; color: var(--ink2); }
+.followup .row.wrap { gap: 6px; }
 .row.wrap { flex-wrap: wrap; }
 .parch .muted, .parch.muted, .parch .small.muted { color: var(--ink2); opacity: 0.85; }
 .warn { color: #8a4a10; margin: 4px 0; }

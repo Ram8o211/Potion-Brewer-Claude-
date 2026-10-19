@@ -31,7 +31,9 @@ export function arcaneStep(sim, dt) {
   if (sp.magicCount <= 0) return;
   const p = sim.p, n = p.count, S = MAX_SPECIES, ns = sp.count;
   const comp = p.comp, T = p.temp;
-  let woke = 0, wx = 0, wy = 0;
+  let woke = 0, wx = 0, wy = 0, wt = 0;
+  const by = sim._awokeBy || (sim._awokeBy = new Float64Array(S));
+  by.fill(0);
   for (let i = 0; i < n; i++) {
     const off = i * S;
     let w = 0, tw = 0;
@@ -62,6 +64,7 @@ export function arcaneStep(sim, dt) {
       comp[off + s] = f - amt;
       comp[off + a] += amt;
       moved += amt;
+      by[s] += amt;
     }
     if (moved <= 0) continue;
     // heating-driven awakening draws heat in, cold-driven gives heat back
@@ -70,14 +73,17 @@ export function arcaneStep(sim, dt) {
     p.eph[i] += Q;
     p.dirty[i] = 1;
     p.wet[i] = Math.min(1, p.wet[i] + 0.25);
-    woke += moved; wx += p.x[i] * moved; wy += p.y[i] * moved;
+    woke += moved; wx += p.x[i] * moved; wy += p.y[i] * moved; wt += T[i] * moved;
   }
   if (woke > 0) {
     sim.awakened += woke;
     const last = sim._lastAwakenEvent ?? -99;
     if (sim.time - last > 1.5) {
       sim._lastAwakenEvent = sim.time;
-      sim.emit({ type: 'awaken', x: wx / woke, y: wy / woke, amount: woke });
+      let best = 0;
+      for (let s = 1; s < S; s++) if (by[s] > by[best]) best = s;
+      const def = sp.defs[best];
+      sim.emit({ type: 'awaken', x: wx / woke, y: wy / woke, amount: woke, species: def ? def.id : null, temp: wt / woke });
     }
   }
 }
