@@ -22,6 +22,8 @@ export function openIdentify(lab, vial, onDone) {
   const com = st.current;
   const relevant = com ? new Set(relevantEffects(com)) : new Set(EFFECTS.map((e) => e.key));
   const rows = h('div', { class: 'label-rows' });
+  // on a phone only one row shows its controls at a time (tap a row to edit it)
+  let open = '';
   const render = () => {
     clear(rows);
     for (const e of EFFECTS) {
@@ -36,13 +38,19 @@ export function openIdentify(lab, vial, onDone) {
         draft.claims[e.key] = Math.abs(nv) < PURITY_LIMIT ? { kind: 'none', source: 'player' } : { kind: 'value', value: nv, source: c.source === 'trial' && Math.abs(nv - (c.value || 0)) < 0.05 ? 'trial' : 'player', record: c.record };
         render();
       };
-      rows.appendChild(h('div', { class: 'label-row' + (relevant.has(e.key) ? ' relevant' : '') + (c.kind === 'unknown' ? ' unknown' : '') },
+      const row = h('div', { class: 'label-row' + (relevant.has(e.key) ? ' relevant' : '') + (c.kind === 'unknown' ? ' unknown' : '') + (open === e.key ? ' open' : ''), 'data-claim': e.key },
         icon(e.icon, 'sm'), h('span', { class: 'lk', text: e.label }), src, h('b', { class: 'lv', text: val }),
         h('span', { class: 'lctl' },
           btn('−', step(e.key === 'acidity' && (c.value || 0) <= 0 ? -1 : -1), { cls: 'small', title: `Claim less ${e.label.toLowerCase()}`, act: `claim-dn-${e.key}` }),
           btn('+', step(1), { cls: 'small', title: `Claim more ${e.label.toLowerCase()}`, act: `claim-up-${e.key}` }),
           btn('none', () => { draft.claims[e.key] = { kind: 'none', source: c.source === 'trial' && Math.abs(c.value || 0) < PURITY_LIMIT ? 'trial' : 'player', record: c.record }; render(); }, { cls: 'small', act: `claim-none-${e.key}` }),
-          btn('?', () => { draft.claims[e.key] = { kind: 'unknown', source: 'player' }; render(); }, { cls: 'small', title: 'Make no claim', act: `claim-unknown-${e.key}` }))));
+          btn('?', () => { draft.claims[e.key] = { kind: 'unknown', source: 'player' }; render(); }, { cls: 'small', title: 'Make no claim', act: `claim-unknown-${e.key}` })));
+      row.addEventListener('click', (ev) => {
+        if (/** @type {HTMLElement} */ (ev.target).closest('.lctl')) return;
+        open = open === e.key ? '' : e.key;
+        render();
+      });
+      rows.appendChild(row);
     }
     if (com) {
       const t = labelTrust(com, draft, st.rank);
