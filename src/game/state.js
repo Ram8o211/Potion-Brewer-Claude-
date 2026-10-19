@@ -9,7 +9,7 @@ import { generateCommission, tutorialCommission } from './commissions.js';
 import { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById } from './equipment.js';
 import { SIM } from '../simulation/constants.js';
 import { createTrials, normalizeTrials, runTrial, resetSubject, SUBJECT_BY_ID, knownLaws } from './experiments.js';
-import { createGathering, normalizeGathering, generateDeposits, harvest, newDayRegrowth } from './gathering.js';
+import { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth } from './gathering.js';
 import { predictPlan } from './predict.js';
 import { EFFECT_INDEX } from '../alchemy/effects.js';
 import { migrateVial } from './vial.js';
@@ -226,13 +226,14 @@ export class GameState {
   }
 
   /**
-   * Gather from a deposit into the inventory.
-   * @param {string} depositId @param {{now?:number, unlimited?:boolean}} [opts]
+   * Gather from a deposit into the inventory. The yield follows the method
+   * and tool, the hour, the weather and the care taken (gathering.js).
+   * @param {string} depositId @param {{now?:number, unlimited?:boolean, thorough?:boolean}} [opts]
    */
   gather(depositId, opts = {}) {
     const d = this.deposits.find((x) => x.id === depositId);
     if (!d) return { ok: false, amount: 0, reason: 'unknown' };
-    const take = this.has('satchel') ? Math.round(d.take * 1.5) : d.take;
+    const { take } = gatherPlan(this, d, this.lookup(d.materialId), { thorough: opts.thorough });
     const r = harvest(this, { ...d, take }, opts);
     if (r.ok && !opts.unlimited) {
       this.stats.gathered = (this.stats.gathered || 0) + r.amount;
@@ -557,6 +558,7 @@ export class GameState {
     this.customersPerDay = 3 + Math.floor(this.rank / 2);
     this.rollMarket();
     newDayRegrowth(this.gathering, this.deposits);
+    weatherRegrowth(this.gathering, this.deposits, weatherOn(this.seed, this.day), this.lookup);
     return summary;
   }
 

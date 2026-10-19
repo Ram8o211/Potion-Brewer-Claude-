@@ -77,11 +77,11 @@ a later session can continue from it.
 - [ ] C3 rabbit renderer + enclosure behaviour
 - [ ] C4 trials UI: colony, selection, records, replay
 - [x] D1 narrative request templates, concentration tiers, 1.2 % rule, activation orders
-- [ ] D2 identification record
-- [ ] D3 negotiation
-- [ ] D4 delivery consequences, complaints, disputes, refunds
+- [x] D2 identification record (labels: trial / estimate / none / unknown)
+- [x] D3 negotiation (persona, trust, multi-round, walk-outs)
+- [x] D4 delivery consequences, complaints, disputes, refunds (next-day follow-ups, saved)
 - [x] E1 particle-exact vials, measured bottling, provenance, invalidation
-- [ ] F1 gathering activities, availability, new equipment
+- [x] F1 gathering activities (methods + tools), availability (dawn/dusk by customer, weather), careful/thorough harvests, arcanometer
 - [ ] G1 audio
 - [ ] G2 UI polish, tutorial/onboarding update
 - [ ] G3 tests (unit, browser), feasibility simulation, bench

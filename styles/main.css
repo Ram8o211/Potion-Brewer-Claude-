@@ -332,6 +332,13 @@ canvas.scene { display: block; width: 100%; aspect-ratio: 16 / 9; height: auto; 
 .deposit.locked { opacity: 0.6; }
 .tag.rare { background: rgba(166, 120, 255, 0.25); }
 .wilds-foot { margin: 8px 2px; line-height: 1.35; }
+.tag.hour { background: rgba(255, 170, 90, 0.3); }
+.deposit .meta.note { color: #8a4a10; }
+.deposit.scarred .bar > i { background: linear-gradient(#d0b06a, #7a5a31); }
+.wilds-sky { margin: 0 0 6px; padding: 4px 6px; color: var(--parch2); line-height: 1.35; }
+.wilds-sky .sky-row { gap: 6px; align-items: center; }
+.wilds-sky .harvest-mode { margin-top: 4px; }
+.wilds-sky .harvest-mode .btn { min-height: 40px; }
 
 /* ---------- book ---------- */
 .book-tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; padding: 2px 0 6px; }

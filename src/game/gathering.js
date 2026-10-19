@@ -7,8 +7,20 @@
 // or gathered — there are no timers and nothing runs per frame, so the wilds
 // cost nothing while the player brews (and regrow while the game is closed).
 // A new shop day also lets every deposit recover half of its capacity.
+//
+// How much one harvest brings depends on what the player does and when:
+//   • the method each ingredient needs (pick, dig, chip, scrape, sweep) and
+//     whether the right tool is in the satchel — by hand, half as much;
+//   • the part of the day: some plants open only at dawn or dusk (the first
+//     and the last customer of a shop day); out of their hour only a few
+//     sprigs are worth taking, so nothing is ever completely out of reach;
+//   • the day's weather (from the world seed and the day number): rain makes
+//     plants regrow overnight, frost closes the meadow flowers, a storm
+//     recharges the crystal seams, fog keeps the twilight plants open;
+//   • careful or thorough harvesting: thorough takes twice as much but scars
+//     the deposit, which then regrows at half speed until it is full again.
 
-import { Rng } from '../core/rng.js';
+import { Rng, hashString } from '../core/rng.js';
 
 /**
  * @typedef {Object} Region
@@ -103,7 +115,7 @@ export function generateDeposits(world, lookup) {
 
 /** Fresh gathering state: every deposit full. */
 export function createGathering(now = Date.now()) {
-  return { nodes: /** @type {Record<string, {stock:number, at:number}>} */ ({}), total: 0, trips: 0, created: now };
+  return { nodes: /** @type {Record<string, {stock:number, at:number, scar?:boolean}>} */ ({}), total: 0, trips: 0, created: now };
 }
 
 /** @param {any} g */
@@ -114,7 +126,7 @@ export function normalizeGathering(g, now = Date.now()) {
     for (const [id, v] of Object.entries(g.nodes)) {
       if (!v || typeof v !== 'object') continue;
       const stock = Number(v.stock), at = Number(v.at);
-      if (Number.isFinite(stock) && Number.isFinite(at)) out.nodes[id] = { stock: Math.max(0, stock), at: Math.min(at, now) };
+      if (Number.isFinite(stock) && Number.isFinite(at)) out.nodes[id] = { stock: Math.max(0, stock), at: Math.min(at, now), ...(/** @type {any} */ (v).scar ? { scar: true } : {}) };
     }
   }
   out.total = Number.isFinite(g.total) ? g.total : 0;
@@ -129,14 +141,127 @@ export function normalizeGathering(g, now = Date.now()) {
 export function depositStatus(g, d, now = Date.now()) {
   const saved = g.nodes[d.id];
   let stock = d.capacity;
+  const scarred = !!(saved && saved.scar);
+  const regrow = d.regrowMs * (scarred ? SCAR_SLOWDOWN : 1);
   if (saved) {
     const dt = Math.max(0, now - saved.at);
-    stock = Math.min(d.capacity, saved.stock + (dt / d.regrowMs) * d.capacity);
+    stock = Math.min(d.capacity, saved.stock + (dt / regrow) * d.capacity);
   }
   const available = Math.floor(stock + 1e-6);
-  const fullIn = stock >= d.capacity ? 0 : ((d.capacity - stock) / d.capacity) * d.regrowMs;
-  const nextIn = available >= Math.min(d.take, d.capacity) ? 0 : ((Math.min(d.take, d.capacity) - stock) / d.capacity) * d.regrowMs;
-  return { stock, available, fraction: stock / d.capacity, fullIn, nextIn };
+  const fullIn = stock >= d.capacity ? 0 : ((d.capacity - stock) / d.capacity) * regrow;
+  const nextIn = available >= Math.min(d.take, d.capacity) ? 0 : ((Math.min(d.take, d.capacity) - stock) / d.capacity) * regrow;
+  return { stock, available, fraction: stock / d.capacity, fullIn, nextIn, scarred: scarred && stock < d.capacity };
+}
+
+/** A thoroughly stripped deposit regrows this many times slower until full. */
+export const SCAR_SLOWDOWN = 2;
+
+// ------------------------------------------------------------------ methods, tools, hours and weather
+
+/**
+ * How each kind of ingredient is gathered, and the tool that does it well.
+ * @type {Record<string, {verb:string, tool:string|null, sound:string, icon:string, hand:string}>}
+ */
+export const METHODS = {
+  pick: { verb: 'Pick', tool: null, sound: 'snip', icon: 'rose', hand: '' },
+  dig: { verb: 'Dig up', tool: 'trowel', sound: 'dig', icon: 'trowel', hand: 'by hand, half as much — a trowel digs it out whole' },
+  mine: { verb: 'Chip out', tool: 'rockhammer', sound: 'crack', icon: 'pick', hand: 'prised out by hand, half as much — a rock hammer would split the seam' },
+  scrape: { verb: 'Scrape', tool: 'sickle', sound: 'snip', icon: 'sickle', hand: 'torn off by hand, half as much — a sickle cuts it clean' },
+  sweep: { verb: 'Sweep up', tool: 'brush', sound: 'dig', icon: 'brush', hand: 'scooped by hand, half as much — a brush gathers the fine dust' },
+};
+
+/** The method an ingredient needs. @param {any} m material */
+export function methodOf(m) {
+  return METHODS[(m && m.wild && m.wild.gather) || 'pick'] || METHODS.pick;
+}
+
+/**
+ * The part of the shop day: dawn while the first customer of the day is in
+ * the shop, dusk with the last one (and after closing), day in between.
+ * @param {{customerIndex:number, customersPerDay:number, dayOver?:boolean}} st
+ * @returns {'dawn'|'day'|'dusk'}
+ */
+export function dayPart(st) {
+  if (st.dayOver || st.customerIndex >= st.customersPerDay - 1) return 'dusk';
+  return st.customerIndex <= 0 ? 'dawn' : 'day';
+}
+
+export const DAY_PART_NAME = { dawn: 'Dawn', day: 'Midday', dusk: 'Dusk' };
+
+/**
+ * @typedef {Object} Weather
+ * @property {string} id
+ * @property {string} name
+ * @property {string} icon
+ * @property {string} desc
+ */
+
+/** @type {Weather[]} */
+export const WEATHERS = [
+  { id: 'clear', name: 'Clear skies', icon: 'sun', desc: 'A fair day for foraging.' },
+  { id: 'rain', name: 'Soft rain', icon: 'drop', desc: 'Plants drink deep: tonight every herb, root and moss grows back in full.' },
+  { id: 'frost', name: 'Hoarfrost', icon: 'snow', desc: 'The meadow flowers stay shut (half the harvest); frost-loving caps swell (half again).' },
+  { id: 'storm', name: 'Thunderstorm', icon: 'bolt', desc: 'Lightning recharges the crystal seams — they are full again tonight. Wind scatters a quarter of every outdoor harvest.' },
+  { id: 'fog', name: 'Fog', icon: 'wisp', desc: 'Twilight lingers all day: dawn and dusk plants stay open from morning to night.' },
+  { id: 'heat', name: 'Heatwave', icon: 'flame', desc: 'Sun-loving flowers are lush (a quarter more); mosses dry out (half as much).' },
+];
+
+/** The weather of a day (deterministic from the world seed). @param {string} seed @param {number} day */
+export function weatherOn(seed, day) {
+  if (day <= 1) return WEATHERS[0];
+  const r = new Rng(hashString(`weather:${seed}:${day}`)).next();
+  // clear 40 %, rain 18 %, fog 12 %, frost 10 %, storm 10 %, heat 10 %
+  const cut = [0.4, 0.58, 0.7, 0.8, 0.9, 1];
+  const ids = ['clear', 'rain', 'fog', 'frost', 'storm', 'heat'];
+  const id = ids[cut.findIndex((c) => r < c)];
+  return WEATHERS.find((w) => w.id === id) || WEATHERS[0];
+}
+
+const PLANT_SHAPES = new Set(['root', 'leaf', 'petal', 'flower', 'clover', 'moss', 'cap', 'bean', 'pepper']);
+const FLOWER_SHAPES = new Set(['petal', 'flower', 'clover']);
+
+/**
+ * Everything that decides one harvest of a deposit right now: the method,
+ * the tool, the hour, the weather and the chosen care. Pure.
+ * @param {{has:(id:string)=>boolean, customerIndex:number, customersPerDay:number, dayOver?:boolean, seed:string, day:number}} st
+ * @param {Deposit} d @param {any} m material @param {{thorough?:boolean}} [opts]
+ */
+export function gatherPlan(st, d, m, opts = {}) {
+  const method = methodOf(m);
+  const hasTool = !method.tool || st.has(method.tool);
+  const part = dayPart(st);
+  const weather = weatherOn(st.seed, st.day);
+  const w = m && m.wild ? m.wild : {};
+  const hour = w.dawn ? 'dawn' : w.dusk ? 'dusk' : null;
+  const open = !hour || hour === part || weather.id === 'fog';
+  /** @type {{why:string, f:number}[]} */
+  const factors = [];
+  if (st.has('satchel')) factors.push({ why: 'satchel', f: 1.5 });
+  if (!hasTool) factors.push({ why: method.hand, f: 0.5 });
+  if (!open) factors.push({ why: `closed until ${hour} — only a few sprigs`, f: 0.25 });
+  const shape = w.shape || '';
+  if (weather.id === 'frost' && FLOWER_SHAPES.has(shape)) factors.push({ why: 'shut by the frost', f: 0.5 });
+  if (weather.id === 'frost' && shape === 'cap') factors.push({ why: 'swollen in the frost', f: 1.5 });
+  if (weather.id === 'heat' && (FLOWER_SHAPES.has(shape))) factors.push({ why: 'lush in the heat', f: 1.25 });
+  if (weather.id === 'heat' && shape === 'moss') factors.push({ why: 'dried out in the heat', f: 0.5 });
+  if (weather.id === 'storm') factors.push({ why: 'wind scatters it', f: 0.75 });
+  if (opts.thorough) factors.push({ why: 'thorough: the deposit will regrow slowly', f: 2 });
+  const f = factors.reduce((a, x) => a * x.f, 1);
+  const take = Math.max(5, Math.floor((d.take * f) / 5) * 5);
+  return { method, hasTool, part, weather, hour, open, factors, take, thorough: !!opts.thorough };
+}
+
+/**
+ * A new day's weather acts on the deposits: rain refills the plants, a storm
+ * the crystal seams.
+ * @param {ReturnType<typeof createGathering>} g @param {Deposit[]} deposits @param {Weather} weather @param {(id:string)=>any} lookup
+ */
+export function weatherRegrowth(g, deposits, weather, lookup) {
+  for (const d of deposits) {
+    const m = lookup(d.materialId);
+    const shape = m && m.wild ? m.wild.shape : '';
+    if ((weather.id === 'rain' && PLANT_SHAPES.has(shape)) || (weather.id === 'storm' && shape === 'crystal')) delete g.nodes[d.id];
+  }
 }
 
 /**
@@ -144,7 +269,7 @@ export function depositStatus(g, d, now = Date.now()) {
  * deposit's stock; returns what was gathered (0 if nothing could be).
  * @param {{rank:number, inventory:Record<string,number>, cap:{storage:number}, gathering:any}} st
  * @param {Deposit} d
- * @param {{now?:number, unlimited?:boolean}} [opts]
+ * @param {{now?:number, unlimited?:boolean, thorough?:boolean}} [opts]
  */
 export function harvest(st, d, opts = {}) {
   const now = opts.now ?? Date.now();
@@ -156,7 +281,9 @@ export function harvest(st, d, opts = {}) {
   if (opts.unlimited) return { ok: true, amount: d.take, remaining: d.capacity };
   const amount = Math.floor(Math.min(d.take, s.available, room) / 5) * 5;
   if (amount <= 0) return { ok: false, amount: 0, reason: room <= 0 ? 'full' : 'depleted', nextIn: s.nextIn };
-  g.nodes[d.id] = { stock: s.stock - amount, at: now };
+  // a scar stays until the deposit has grown back in full
+  const scar = opts.thorough || (s.scarred && s.stock - amount < d.capacity);
+  g.nodes[d.id] = { stock: s.stock - amount, at: now, ...(scar ? { scar: true } : {}) };
   st.inventory[d.materialId] = have + amount;
   g.total += amount;
   return { ok: true, amount, remaining: Math.floor(s.stock - amount) };
@@ -172,9 +299,9 @@ export function newDayRegrowth(g, deposits, now = Date.now()) {
     const saved = g.nodes[d.id];
     if (!saved) continue;
     const s = depositStatus(g, d, now);
-    const stock = Math.min(d.capacity, s.stock + d.capacity * 0.5);
+    const stock = Math.min(d.capacity, s.stock + d.capacity * (saved.scar ? 0.25 : 0.5));
     if (stock >= d.capacity - 1e-6) delete g.nodes[d.id];
-    else g.nodes[d.id] = { stock, at: now };
+    else g.nodes[d.id] = { stock, at: now, ...(saved.scar ? { scar: true } : {}) };
   }
 }
 

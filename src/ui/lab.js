@@ -31,7 +31,8 @@ import { RANKS } from '../game/equipment.js';
 import { certification, missingEffects } from '../game/experiments.js';
 import { makeVial, appendParticles, updateVial, takeDose, pourBack, relaxVial } from '../game/vial.js';
 import { theoryOf, EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, dominantEffect, NE } from '../alchemy/effects.js';
-import { awakenParts } from '../alchemy/arcane.js';
+import { awakenParts, describeThreshold } from '../alchemy/arcane.js';
+import { ARC_NONE } from '../simulation/particles.js';
 import { describeColor, rgbToHex } from '../core/color.js';
 import { h, btn, clear, toast, coins, confirmDialog } from './dom.js';
 import { icon, iconUrl } from './icons.js';
@@ -1355,6 +1356,28 @@ export class LabScreen {
       ...comp.map(([id, f]) => h('div', { text: `${Math.round(f * 100)}% ${st.lookup(id) ? st.lookup(id).name : id}` })),
       lens ? h('div', { class: 'aura' }, h('span', { text: 'Aura: ' }), aura.length ? aura.map((e) => icon(e.icon, 'sm')) : h('span', { text: 'none' })) : h('div', { class: 'muted', text: 'Effects: unknown (test in Trials)' }),
     );
+    if (this.sandbox || st.has('arcanometer')) el.append(this.arcaneReading(sel, m));
+  }
+
+  /**
+   * The arcanometer: the mean arcane threshold of the probed matter, read to
+   * the nearest 50, and how much of its magic has awakened.
+   * @param {number[]} sel @param {any} m
+   */
+  arcaneReading(sel, m) {
+    const p = this.sim.p;
+    let w = 0, t = 0;
+    for (const i of sel) if (p.arcT[i] < ARC_NONE) { w++; t += p.arcT[i]; }
+    let awake = 0, magic = 0;
+    for (const [id, f] of Object.entries(m.composition)) {
+      const d = this.state.lookup(id);
+      if (!d) continue;
+      if (d.awakened) { awake += f; magic += f; } else if (d.arcane && Number.isFinite(d.arcane.thr)) magic += f;
+    }
+    if (!magic) return h('div', { class: 'muted', text: 'Arcanometer: no magic here' });
+    const share = Math.round((awake / magic) * 100);
+    const thr = w ? Math.round(t / w / 50) * 50 : null;
+    return h('div', { class: 'arcane-read' }, icon('awaken', 'sm'), ` ${thr === null ? 'all awakened' : 'threshold ' + describeThreshold(thr)}${share ? ` · ${share}% awake` : ''}`);
   }
 
   // ------------------------------------------------------------------ HUD
