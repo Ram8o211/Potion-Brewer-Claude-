@@ -103,7 +103,7 @@ export class GameState {
     /** @type {any} */ this.current = data.current;
     /** @type {{served:number, perfect:number, earned:number, spent:number, brews:number, declined:number, bestQuality:number, gathered?:number, trials?:number, refunds?:number, disputesWon?:number, bred?:number, recovered?:number}} */
     this.stats = { served: 0, perfect: 0, earned: 0, spent: 0, brews: 0, declined: 0, bestQuality: 0, ...(data.stats || {}) };
-    /** @type {{active:boolean, step:number, done:boolean}} */ this.tutorial = { active: false, step: 0, done: true, ...(data.tutorial || {}) };
+    /** @type {{active:boolean, step:number, done:boolean, tips?:Record<string, boolean>}} */ this.tutorial = { active: false, step: 0, done: true, ...(data.tutorial || {}) };
     /** @type {{event:string, mods:Record<string, number>}} */ this.market = data.market || { event: 'none', mods: {} };
     /** @type {any} */ this.cauldron = data.cauldron || null;
     /** @type {any} */ this.receiver = data.receiver || null;
@@ -603,6 +603,14 @@ export class GameState {
   }
 
   /** @param {string} id @param {string} fact @param {any} value */
+  /** Show a one-time explanation? (true the first time only) @param {string} key */
+  firstTip(key) {
+    const t = (this.tutorial.tips ||= {});
+    if (t[key]) return false;
+    t[key] = true;
+    return true;
+  }
+
   learn(id, fact, value) {
     const k = (this.knowledge[id] ||= {});
     if (k[fact] !== undefined) return false;

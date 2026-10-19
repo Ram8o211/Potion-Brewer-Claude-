@@ -837,6 +837,11 @@ export class LabScreen {
     if (this.sandbox) return;
     const c = st.nextCustomer();
     if (c && withSound) audio.play('bell');
+    if (c && !c.tutorial) {
+      // the first order of a new kind explains itself once
+      if (c.activation && st.firstTip('activation')) toast('Awakened magic wanted', 'This order is stronger than sleeping magic can reach: the brew must be awakened past its arcane threshold. See How to play → Arcane awakening, or ask the guild.', 'awaken', 8000);
+      else if (c.requirements.some((r) => r.key === 'purity') && st.firstTip('purity')) toast('A pure potion', '“No other effect above 1.2 %”: every effect the customer did not ask for must stay that faint. Test for them too.', 'pure', 7000);
+    }
     this._seenCustomer = false;
     this.refreshCustomer();
     if (this.views) this.views.counter.refresh();
