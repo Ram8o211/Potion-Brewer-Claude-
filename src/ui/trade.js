@@ -9,6 +9,7 @@ import { audio } from '../audio/audio.js';
 import { EFFECTS, EFFECT_BY_KEY } from '../alchemy/effects.js';
 import { draftLabel, openNegotiation as beginNegotiation, proposePrice, acceptOffer, relevantEffects, labelTrust } from '../game/commerce.js';
 import { PURITY_LIMIT } from '../game/requests.js';
+import { shortName } from '../game/customers.js';
 
 /**
  * Write (or revise) the vial's label. Trial readings of this batch fill it
@@ -45,7 +46,7 @@ export function openIdentify(lab, vial, onDone) {
     }
     if (com) {
       const t = labelTrust(com, draft, st.rank);
-      trustEl.textContent = `${com.customer.name.split(' ')[0]} will trust this label ${t >= 0.9 ? 'fully' : t >= 0.7 ? 'well' : t >= 0.5 ? 'somewhat' : 'barely'}.`;
+      trustEl.textContent = `${shortName(com.customer.name)} will trust this label ${t >= 0.9 ? 'fully' : t >= 0.7 ? 'well' : t >= 0.5 ? 'somewhat' : 'barely'}.`;
     }
   };
   const trustEl = h('div', { class: 'small' });
@@ -86,7 +87,7 @@ export function openNegotiation(lab, com, vial, onEnd) {
   const finish = () => { if (ended) return; ended = true; m.close(); onEnd(n.state === 'open' ? null : n); };
   const render = () => {
     clear(log);
-    for (const l of n.log.slice(-6)) log.appendChild(h('div', { class: 'line ' + l.who }, h('b', { text: l.who === 'you' ? 'You: ' : `${com.customer.name.split(' ')[0]}: ` }), l.text));
+    for (const l of n.log.slice(-6)) log.appendChild(h('div', { class: 'line ' + l.who }, h('b', { text: l.who === 'you' ? 'You: ' : `${shortName(com.customer.name)}: ` }), l.text));
     askEl.textContent = `${coins(ask)} coins`;
     offerEl.textContent = `Their offer: ${coins(n.offer)} coins`;
     roundsEl.textContent = n.state === 'open' ? `${persona.haggle > 0.6 ? 'A hard bargainer.' : persona.haggle < 0.3 ? 'An easy-going buyer.' : 'A fair trader.'} ${n.patience <= 1 ? 'Their patience is nearly gone.' : ''}` : '';

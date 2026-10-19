@@ -14,6 +14,7 @@ import * as trade from '../trade.js';
 import { describeColor, rgbToHex } from '../../core/color.js';
 import { viscosityClass } from '../../game/measure.js';
 import * as panels from '../panels.js';
+import { shortName } from '../../game/customers.js';
 
 export class CounterView {
   /** @param {import('../lab.js').LabScreen} lab */
@@ -101,7 +102,7 @@ export class CounterView {
     drawBottle(ctx, 2, 3, 20, 29, m.color, Math.min(1, v.ml / Math.max(1, com ? com.bottleMl : v.ml)));
     const has = (e) => lab.sandbox || st.has(e);
     const need = com ? missingEffects(com, v.cert || {}) : [];
-    const first = com ? com.customer.name.split(' ')[0] : '';
+    const first = com ? shortName(com.customer.name) : '';
     const serve = com ? btn(`Offer to ${first}`, () => lab.serveVial(), { cls: 'primary', icon: 'deal', disabled: v.ml < 5, act: 'serve' }) : null;
     const labelB = btn(v.label ? 'Revise label' : 'Label', () => lab.identifyVial(), { icon: 'tag', act: 'label' });
     const testB = btn('Test a dose', () => { lab.trialSource = 'vial'; lab.showView('trials'); }, { icon: 'dropper', act: 'test-vial' });

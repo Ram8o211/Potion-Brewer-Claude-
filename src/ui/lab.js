@@ -45,6 +45,7 @@ import { CounterView } from './views/counter.js';
 import { WildsView } from './views/wilds.js';
 import { TrialsView } from './views/trials.js';
 import { BookView } from './views/book.js';
+import { shortName } from '../game/customers.js';
 
 const REQ_ICON = { color: 'palette', density: 'weight', viscosity: 'drop', temperature: 'thermo', stability: 'scales', volatility: 'bubbles', charge: 'spark', quantity: 'flask', purity: 'pure' };
 const TOOL_DEFS = [
@@ -983,7 +984,7 @@ export class LabScreen {
     if (!v.label) { this.identifyVial(() => this.serveVial()); return; }
     const missing = unprovenWanted(com, v.label);
     if (missing.length) {
-      toast(`${com.customer.name.split(' ')[0]} wants proof`, `This customer only buys on trial evidence of this batch: test ${missing.map((k) => EFFECT_BY_KEY[k].label).join(', ')} first.`, 'dropper', 5000);
+      toast(`${shortName(com.customer.name)} wants proof`, `This customer only buys on trial evidence of this batch: test ${missing.map((k) => EFFECT_BY_KEY[k].label).join(', ')} first.`, 'dropper', 5000);
       return;
     }
     trade.openNegotiation(this, com, v, (n) => {
