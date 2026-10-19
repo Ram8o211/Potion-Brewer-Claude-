@@ -18,12 +18,13 @@ import { exportSave, parseImport, saveGame } from '../game/persistence.js';
 import { audio } from '../audio/audio.js';
 import { archetypeOf } from '../game/customers.js';
 import { isMagical } from '../alchemy/arcane.js';
+import { causeWord } from '../game/colony.js';
 
 const CAT_LABEL = { heat: 'Heating', cold: 'Cooling', vessel: 'Cauldrons', tool: 'Tools', instrument: 'Instruments', trials: 'Trials room', storage: 'Storage & foraging', guild: 'Guild' };
 
 function jarCanvas(m, w = 22, hh = 30) {
-  if (m.wild && m.form === 'solid') {
-    const cv = rawSprite(m.wild.shape, m.look || m.color);
+  if ((m.wild || m.remains) && m.form === 'solid') {
+    const cv = rawSprite(m.wild ? m.wild.shape : m.shape || 'stone', m.look || m.color);
     cv.style.width = w * 2 + 'px';
     cv.style.height = w * 2 + 'px';
     return cv;
@@ -80,6 +81,7 @@ function renderReagents(lab, body, rerender) {
   for (const id of st.world.ingredients) {
     const mt = st.lookup(id);
     if (mt.wild && mt.wild.gatherOnly) continue; // only found in the wilds
+    if (mt.remains) continue; // recovered from a rabbit, never sold
     const locked = mt.tier > st.rank;
     const price = st.priceOf(id);
     const stock = st.stock(id);
@@ -191,20 +193,21 @@ export function openIngredient(lab, id) {
     h('span', { class: 'k', text: 'Price' }), h('span', { text: `${coins(st.priceOf(id))} / 100 ml` }),
   );
   const asp = h('div', { class: 'aspect-bars' });
-  for (const e of EFFECTS) {
+  for (const e of m.remains ? [] : EFFECTS) {
     const v = (m.effects && m.effects[e.key]) || 0;
     if (Math.abs(v) < 1) continue;
     asp.append(h('span', {}, icon(e.icon, 'sm'), ' ' + e.label), h('div', { class: 'bar' }, h('i', { style: { width: Math.min(100, Math.abs(v)) + '%', background: `rgb(${e.color.map((c) => Math.round(c * 255)).join(',')})` } })), h('span', { text: e.key === 'acidity' && v < 0 ? `${Math.round(v)} (alkaline)` : String(Math.round(v)) }));
   }
-  if (!asp.children.length) asp.append(h('span', { class: 'muted', text: 'No magical or chemical effect.' }));
+  if (m.remains) asp.append(h('span', { class: 'muted', text: `Unknown: recovered from ${m.remains.rabbitName}. Whatever it absorbed in life may linger — test it in the Trials room.` }));
+  else if (!asp.children.length) asp.append(h('span', { class: 'muted', text: 'No magical or chemical effect.' }));
   const reactions = st.world.reactions.filter((r) => (r.a === id || r.b === id) && st.journal['reaction:' + r.id]);
   modal({
     title: m.name,
     body: [
       h('div', { class: 'card parch ing-card' }, jarCanvas(m, 22, 30), h('div', {}, h('div', { text: m.description }), h('div', {}, ...tags.map((t) => h('span', { class: 'tag', text: t }))))),
       h('div', { class: 'card parch' }, facts),
-      h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: m.product ? 'Effects of this pure substance (as the guild knows it)' : 'Known effects of the pure ingredient (mixtures must be tested)' }), asp,
-        m.wild && m.form === 'solid' ? h('div', { class: 'small', text: 'Supplied whole: crush it in the pot with the pestle, or switch on “Ground” to grind it in the mortar first. Only what dissolves takes effect.' }) : null),
+      h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: m.remains ? 'Effects' : m.product ? 'Effects of this pure substance (as the guild knows it)' : 'Known effects of the pure ingredient (mixtures must be tested)' }), asp,
+        (m.wild || m.remains) && m.form === 'solid' ? h('div', { class: 'small', text: 'Supplied whole: crush it in the pot with the pestle, or switch on “Ground” to grind it in the mortar first. Only what dissolves takes effect.' }) : null),
       reactions.length ? h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Known reactions' }), ...reactions.map((r) => h('div', { class: 'small', text: `• ${r.name}: ${r.hint || ''}` }))) : null,
     ],
   });
@@ -361,11 +364,26 @@ export function showDaySummary(lab, summary, onDone) {
           h('span', { class: 'k', text: 'Net' }), h('span', { text: (net >= 0 ? '+' : '') + coins(net) }),
           h('span', { class: 'k', text: 'Rank' }), h('span', { text: `${st.rankName} (${st.reputation} rep)` }),
         )),
+      hutchSummary(summary.colony),
       h('div', { class: 'card parch' }, h('b', { text: `Tomorrow: ${st.marketEvent.name}` }), h('div', { class: 'small', text: st.marketEvent.text })),
       st.nextRank() ? h('div', { class: 'small muted', text: `Next rank: ${st.nextRank().name} at ${st.nextRank().rep} reputation.` }) : null,
     ],
     foot: [btn('Open the shop', () => document.querySelector('.overlay .modal-head .btn').dispatchEvent(new MouseEvent('click')), { cls: 'primary', act: 'next-day' })],
   });
+}
+
+/** The night in the hutch, for the day summary. @param {any} col colony day report */
+function hutchSummary(col) {
+  if (!col || !(col.born.length || col.grown.length || col.died.length || col.lost || col.conceived)) return null;
+  const rows = [];
+  if (col.born.length) rows.push(h('span', { class: 'k', text: 'Kits born' }), h('span', { text: `${col.born.length} (${[...new Set(col.born.map((b) => b.mother))].join(', ')})` }));
+  if (col.grown.length) rows.push(h('span', { class: 'k', text: 'Grown up' }), h('span', { text: col.grown.map((g) => g.name).join(', ') }));
+  if (col.died.length) rows.push(h('span', { class: 'k', text: 'Died' }), h('span', { text: col.died.map((d) => `${d.name} (${causeWord(d.cause)})`).join(', ') }));
+  if (col.conceived) rows.push(h('span', { class: 'k', text: 'Expecting' }), h('span', { text: `${col.conceived} doe${col.conceived > 1 ? 's' : ''}` }));
+  return h('div', { class: 'card parch hutch-summary', 'data-summary': 'hutch' },
+    h('div', { class: 'row' }, icon('rabbit'), h('b', { text: 'The hutch' })),
+    h('div', { class: 'kv' }, ...rows),
+    col.lost ? h('div', { class: 'small muted', text: `The hutch was too full for ${col.lost} more kit${col.lost > 1 ? 's' : ''}; the breeder took them.` }) : null);
 }
 
 export function showAnalysis(lab, m, recipe, title = 'Analysis of the brew') {

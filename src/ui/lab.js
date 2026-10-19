@@ -408,15 +408,15 @@ export class LabScreen {
     for (const [n, id] of ids.entries()) {
       const m = st.lookup(id);
       let cv;
-      if (m.wild && m.form === 'solid') {
-        cv = rawSprite(m.wild.shape, m.look || m.color);
+      if ((m.wild || m.remains) && m.form === 'solid') {
+        cv = rawSprite(m.wild ? m.wild.shape : m.shape || 'stone', m.look || m.color);
         cv.classList.add('raw');
       } else {
         cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: '15', height: '20' }));
         drawJar(cv.getContext('2d'), 1, 0, 13, 20, m.look || m.color, m.form);
       }
       const stock = h('span', { class: 'jstock' });
-      const el = h('button', { class: 'jar' + (m.wild ? ' wild' : ''), title: m.name, 'aria-label': m.name, 'data-id': id, role: 'option' }, stock, cv, h('span', { class: 'jname', text: labels[n] }));
+      const el = h('button', { class: 'jar' + (m.wild ? ' wild' : '') + (m.remains ? ' remains' : ''), title: m.name, 'aria-label': m.name, 'data-id': id, role: 'option' }, stock, cv, h('span', { class: 'jname', text: m.remains ? m.remains.short : labels[n] }));
       this.bindJar(el, id);
       this.jarEls[id] = { el, stock };
       sh.appendChild(el);
@@ -687,7 +687,7 @@ export class LabScreen {
   }
 
   selectIngredient(id) {
-    if (this.selected !== id) this.ground = !!(this.state.lookup(id).form === 'solid' && (this.sandbox || this.state.has('mortar')) && this.state.lookup(id).wild);
+    if (this.selected !== id) this.ground = !!(this.state.lookup(id).form === 'solid' && (this.sandbox || this.state.has('mortar')) && (this.state.lookup(id).wild || this.state.lookup(id).remains));
     this.selected = id;
     this.selectTool('pour', true);
     this.selected = id;
@@ -723,7 +723,7 @@ export class LabScreen {
     if (avail <= 0) {
       audio.play('error');
       const m = this.state.lookup(id);
-      toast('Out of stock', m.wild && m.tier > this.state.rank ? `Gather more ${m.name} in the Wilds.` : `Buy more ${m.name} at the market${m.wild ? ' or gather it in the Wilds' : ''}.`, m.wild ? 'tree' : 'bag');
+      toast('Out of stock', m.remains ? 'A rabbit’s remains are recovered only once.' : m.wild && m.tier > this.state.rank ? `Gather more ${m.name} in the Wilds.` : `Buy more ${m.name} at the market${m.wild ? ' or gather it in the Wilds' : ''}.`, m.remains ? 'bone' : m.wild ? 'tree' : 'bag');
       return;
     }
     if (this.sim.p.count >= this.sim.maxParticles - 2) {
@@ -897,7 +897,14 @@ export class LabScreen {
   endDay() {
     const summary = this.state.endDay();
     this.save();
+    const col = summary.colony;
+    if (col) {
+      if (col.born.length) setTimeout(() => audio.play('birth'), 600);
+      else if (col.died.length) setTimeout(() => audio.play('toll'), 600);
+      for (const e of col.events || []) this.announce(e);
+    }
     panels.showDaySummary(this, summary, () => {
+      this.views.trials.build();
       const relief = this.state.claimRelief();
       if (relief) toast('Guild stipend', `The guild lends a struggling apprentice ${relief} coins.`, 'coin', 4000);
       this.buildShelf();

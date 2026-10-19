@@ -302,6 +302,36 @@ canvas.portrait.big { width: 88px; height: 88px; box-shadow: 0 0 0 var(--px) var
 .subject .subject-actions { display: flex; flex-direction: column; gap: 4px; width: 100%; }
 .subject .subject-actions .btn { width: 100%; min-height: 44px; font-size: var(--fs-s); }
 .subject.spent canvas { filter: grayscale(0.7); }
+.subject[data-subject=rabbit].spent canvas { filter: none; }
+.subject .subject-sub { color: var(--ink2); line-height: 1.2; }
+
+/* ---------- the hutch ---------- */
+.hutch { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; padding: 8px; }
+.hutch-head { align-items: center; gap: 6px; }
+.hutch-head .btn { min-height: 44px; font-size: var(--fs-s); }
+.hutch-scene-wrap { width: 100%; }
+canvas.hutch-scene { display: block; width: 100%; height: auto; aspect-ratio: 192 / 72; image-rendering: pixelated; box-shadow: 0 0 0 var(--px) var(--ink2); touch-action: manipulation; cursor: pointer; }
+.rabbit-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 6px; }
+.rabbit-tile { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 44px; min-height: 44px; padding: 4px; border: none; cursor: pointer; font-family: inherit; color: var(--ink); background: var(--parch1); box-shadow: 0 0 0 1px var(--ink2); }
+.rabbit-tile canvas { width: 100%; max-width: 96px; aspect-ratio: 48 / 40; height: auto; image-rendering: pixelated; background: radial-gradient(ellipse at 50% 80%, rgba(255, 240, 210, 0.9), rgba(194, 166, 120, 0.5)); }
+.rabbit-tile.selected, .rabbit-tile.drop-hover { outline: 3px solid var(--brassHi); outline-offset: 0; background: var(--parch3); }
+.rabbit-tile.dead { background: #b9aa8c; }
+.rabbit-tile .rt-name { font-size: var(--fs-s); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rabbit-tile .rt-tags { display: flex; gap: 2px; min-height: 12px; }
+.rabbit-detail { display: flex; flex-direction: column; gap: 3px; padding: 6px; background: var(--parch3); box-shadow: 0 0 0 1px var(--ink2); }
+.rabbit-detail .rd-actions { gap: 6px; margin-top: 2px; }
+.rabbit-detail .rd-actions .btn { min-height: 44px; font-size: var(--fs-s); }
+.hutch .memorial { margin-top: 2px; }
+.history .history-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: center; padding: 4px 0; box-shadow: 0 1px 0 rgba(43, 29, 20, 0.15); }
+.history .history-row.died b { color: #8a1f1a; }
+.obs-list.replaying li { animation: obs-in 0.45s both; }
+.obs-list.replaying li:nth-child(2) { animation-delay: 0.35s; }
+.obs-list.replaying li:nth-child(3) { animation-delay: 0.7s; }
+.obs-list.replaying li:nth-child(4) { animation-delay: 1.05s; }
+.obs-list.replaying li:nth-child(n+5) { animation-delay: 1.4s; }
+@keyframes obs-in { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .obs-list.replaying li { animation: none; } }
+.jar.remains { background: #4a3a34; box-shadow: 0 0 0 var(--px) var(--wood0), inset 0 var(--px) 0 #7a6258; }
 .subject.drop-hover { outline: 3px solid var(--brassHi); }
 .subject.locked { justify-content: center; opacity: 0.7; min-height: 120px; }
 .report .obs-list { margin: 6px 0; padding-left: 18px; font-size: var(--fs-s); line-height: 1.4; }

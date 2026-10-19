@@ -283,7 +283,12 @@ into the new vessel's shape instead of being dropped.
   reputation, rank-ups, end of day, market events and a once-a-day
   stipend that makes a run impossible to lose. `toJSON` / `fromJSON` run
   through `migrate()`, which upgrades older save versions and regenerates
-  a missing embedded world from the seed. Save version 3 adds effects,
+  a missing embedded world from the seed. Save version 4 turns the single
+  Moon Rabbit into the founder of a colony (its health, marks, death and
+  trial history kept; a companion joins) and defaults the commerce fields;
+  the conversion is driven by the data's shape inside `normalizeTrials`, so
+  the unversioned sandbox store is repaired the same way, and a genuine v3
+  save is part of the tests. Save version 3 adds effects,
   trials, gathering, batches and the vial; a version-2 save keeps every
   coin, recipe and journal entry, its embedded world gains the effect
   profiles a fresh world of that seed would have, and a pending order is
@@ -377,7 +382,7 @@ into the new vessel's shape instead of being dropped.
   volatility, charge and the hidden effect vector (with the amount each
   resonance law contributed).
 * **`experiments.js`** is the trials room's rules: five subjects (Moon
-  Rabbit, Copper Beetle, Bean Seedling, Limestone, and the Will-o'-Wisp
+  Rabbits from the colony, Copper Beetle, Bean Seedling, Limestone, and the Will-o'-Wisp
   with the lantern), each responding to only some effects; dose-scaled
   observations and lasting marks; harm that can spend a subject (replaced
   for coins, half price with the kennel); trial records with the theory
@@ -390,6 +395,39 @@ into the new vessel's shape instead of being dropped.
   Certified values become the tested claims on a label (`commerce.js`); an
   untested potion can still be offered, but customers trust it less and
   some refuse it.
+* **`colony.js`** is the hutch of Moon Rabbits (it lives in
+  `trials.colony`; the other four subjects keep the single-subject model).
+  Each rabbit is an individual: id, name, sex, an inherited **look** (coat
+  and pattern colours, ears, size, eyes, tail, a seed), birth day and stage
+  (kit → youngster → adult → elder), health capped by permanent **scar**,
+  transient **marks** on eleven channels (the ten effects, acidity split
+  into acid and alkali) that fade nightly by per-channel factors, hidden
+  lifetime **exposure** per channel, up to five permanent **traits** grown
+  when lifetime transformation crosses thresholds (ears, horns, antlers,
+  a spiral horn, scales, spines, lizard or plumed tail, giant or tiny body,
+  a third eye, wings — weighted by what else was in that dose), its own
+  dose log and a pregnancy. `rabbitResponse` is pure: every channel acts on
+  the body (opposites cancel: fire/frost, acid/alkali, vitality eases poison
+  and pallor), harm by channel kills with a cause, and the young and old
+  feel doses more. A trial still *reads* only the rabbit's five channels,
+  with an uncertainty that grows for small doses and young or old animals.
+  `colonyDay` runs at the end of each shop day: fading, lingering poison,
+  recovery (faster when fed), growth, old age, births and pairing of
+  healthy, unrelated adults, never beyond the hutch's room (4; kennel 6;
+  Rabbit Warren 10), deterministic per seed and day. `rabbitSnap` quantises
+  what can be seen (levels 0–3, scars, traits, pose) — the renderer and the
+  trial replays use only that, and `rabbitCondition` describes a rabbit in
+  words, so no hidden number reaches the screen. `trials.subjects.rabbit`
+  stays a non-enumerable handle on the selected rabbit for older code.
+* **`materials/remains.js`** turns a dead rabbit into ingredients, once:
+  bones always, a pelt unless it burned (then ash), a residue if it carried
+  poison, acid, lye or change. Each part is a full material (a crushable
+  11-particle bone, a light flammable pelt, ash and residue powders) whose
+  hidden effects saturate toward caps from the rabbit's exposure and whose
+  arcane threshold follows what it carries. They join `world.materials`
+  (the lookup re-indexes itself), are saved with the world, and are masked
+  from the guild theory, the shop, the inspector, the book and order
+  planning: only trials reveal them.
 * **`gathering.js`** is the wilds: six regions (four open from the start,
   two magical ones from Adept and Expert), deposits generated from the
   seed (never saved), and per-deposit stock plus a timestamp in the save.

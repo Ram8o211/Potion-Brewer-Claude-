@@ -72,8 +72,8 @@ a later session can continue from it.
 - [x] B1 intact solid shapes and rendering
 - [x] B2 crack → fragment → powder crushing with damage visuals
 - [x] B3 freezing slush transition, translucency polish
-- [ ] C1 colony model, exposure, mortality, breeding, growth, migration
-- [ ] C2 remains recovery → new ingredients
+- [x] C1 colony model, exposure, mortality, breeding, growth, migration (game/colony.js, save v4)
+- [x] C2 remains recovery → new ingredients (materials/remains.js)
 - [ ] C3 rabbit renderer + enclosure behaviour
 - [ ] C4 trials UI: colony, selection, records, replay
 - [x] D1 narrative request templates, concentration tiers, 1.2 % rule, activation orders
@@ -82,7 +82,7 @@ a later session can continue from it.
 - [x] D4 delivery consequences, complaints, disputes, refunds (next-day follow-ups, saved)
 - [x] E1 particle-exact vials, measured bottling, provenance, invalidation
 - [x] F1 gathering activities (methods + tools), availability (dawn/dusk by customer, weather), careful/thorough harvests, arcanometer
-- [ ] G1 audio
+- [x] G1 audio (awakening, cracking, bargaining, deals, complaints, praise, rabbits, births, deaths, digging, snipping)
 - [ ] G2 UI polish, tutorial/onboarding update
 - [ ] G3 tests (unit, browser), feasibility simulation, bench
 - [ ] G4 docs, screenshots, build, PR
