@@ -602,7 +602,6 @@ export class GameState {
     return entry;
   }
 
-  /** @param {string} id @param {string} fact @param {any} value */
   /** Show a one-time explanation? (true the first time only) @param {string} key */
   firstTip(key) {
     const t = (this.tutorial.tips ||= {});
@@ -611,6 +610,7 @@ export class GameState {
     return true;
   }
 
+  /** @param {string} id @param {string} fact @param {any} value */
   learn(id, fact, value) {
     const k = (this.knowledge[id] ||= {});
     if (k[fact] !== undefined) return false;
