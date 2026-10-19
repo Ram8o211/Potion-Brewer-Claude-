@@ -132,10 +132,56 @@ the matter actually drunk, particle by particle:
    neutralise (acidity is signed).
 4. **Saturation** above 40: diminishing returns.
 
+Effect values are **percent effective concentration** (0–100, acidity
+signed): 100 would be a pure, fully extracted, fully potent reagent.
+Sleeping (unawakened) magic is weak — most native potencies are 6–30 — so
+everyday orders sit around 8–15 % and the strongest ones need awakening.
+Extraction only counts liquids that mix with the solvent (an oil does not
+dissolve a crystal sitting in a water brew).
+
 Reactions, evaporation and dilution change the composition, so they change
 effects through the same function. `theoryOf()` is the player's naive
 prediction (volumes simply add, plus the laws they have confirmed), shown
 next to every observation so surprises point at hidden laws.
+
+### Arcane activation (`src/alchemy/arcane.js`, `src/simulation/arcane.js`)
+
+Every magical material carries a hidden **arcane threshold** on an
+abstract −1000…+1000 scale and a **gain**. The scale maps linearly onto
+the simulation's temperatures, `T = 20 °C + 0.1 · threshold` (+800 → 100 °C,
+−1000 → −80 °C). The threshold of a mixture is the volume-weighted mean of
+the thresholds of the unawakened magical substances in it, so −1000 × 1
+part with +800 × 2 parts gives +200 → 40 °C; hot-waking and cold-waking
+ingredients pull each other toward room temperature.
+
+Awakening is chemistry, not a flag. The awakened form of `X` is its own
+species `X~a` — the same physical substance with effects × gain and a
+brighter glow — resolved on demand by the world lookup (`withAwakened`).
+Every other step, each particle holding unawakened magic compares its
+temperature with its *own* effective threshold; past it, the magical slots
+convert into their awakened slots at a first-order rate that grows with how
+far past the threshold the particle is. Heating-driven awakening draws a
+little heat in and cold-driven awakening gives some back (booked in `eph`,
+so the energy balance still closes). Because it is composition, mixing,
+reactions (which treat `X~a` as `X` and yield awakened products in
+proportion), measurement, bottling, vials, snapshots and saves carry it
+with no special cases, and it never reverts by itself. The amount
+activated is proportional to the magical matter present; a half-mixed
+brew awakens unevenly.
+
+Each particle's **glow** is an emission colour computed in `derived.js`
+from the effects it carries (magic weighs more than chemistry), splatted by
+`fluid.js` as coloured light (screen-blended emission plus a half-resolution
+halo), so concentration and awakening are visible. Thresholds never appear
+in the UI: the journal records the temperature where an ingredient was
+seen to awaken, and the Arcanometer instrument reads a brew's threshold to
+the nearest 50.
+
+`predict.js` models activation for the guild theory and for commission
+planning: `arcaneRegime` tells whether a set of stage temperatures keeps
+every local mixture asleep ("quiet"), wakes it fully, or would wake part
+of it; preparation stages must be quiet and activation is a separate stage
+after mixing.
 
 ## 3. The particle world (`src/simulation/`)
 
@@ -244,6 +290,15 @@ into the new vessel's shape instead of being dropped.
   rewritten in effect terms (`migrateCommission`). A test loads a genuine
   v2 save produced by the previous release. A save from a newer version,
   or a damaged one, is refused with a message, never silently reset.
+* **`requests.js`** holds 20 narrative request templates (healing,
+  strength, love, warming, cooling, insight, change, settling, etching,
+  bane, expedition, hearth, recovery, meditation, forgefire, blessing,
+  shapeshift, fever cure, warpath, starseer), each with the effects it
+  wants, the stories customers tell, the tier where it appears, and the
+  tier targets: beginner orders want about 8–15 % effective
+  concentration, rising with tier, and advanced ones can only be met with
+  awakened magic. `PURITY_LIMIT = 1.2`: an order with a purity rule
+  allows no unwanted effect above 1.2 %.
 * **`commissions.js`** builds each order from a hidden **reference plan**
   (ingredients and amounts, heat-to, cool-to, serving temperature,
   kneading or crushing, hold time) for one of 14 physical brewing styles
@@ -263,11 +318,57 @@ into the new vessel's shape instead of being dropped.
   is predictable: no viscosity target for undissolved slurries, no
   stability target for brews that keep loose grains, and a wider density
   band where grains settle unevenly.
+
+  Effect orders now come from the request templates. The plan search
+  (`searchPlan`) tries ingredient sets, amounts, preparations and — when
+  the target needs it — an **activation stage**, predicts each candidate
+  with `predict.js`, and keeps only plans whose predicted potion scores
+  above the acceptance line with `evaluatePotion` itself (the same function
+  the counter uses), including the purity rule planned with a 0.6× margin.
+  `scripts/achievability.mjs` then brews generated orders' plans in the real
+  simulation with the rank's equipment (`autobrew.js`, stages pour → crush
+  → stir → steep → heat/chill → hold → serve) and reports the quality the
+  counter would award.
 * **`customers.js`** has 12 archetypes (farmer, innkeeper, bard, healer,
   knight, traveller, scholar, hedge witch, blacksmith, noble, wizard,
   hunter), each with preferred styles, properties they care about, budget,
   strictness, the rank at which they start visiting, a procedural pixel
-  portrait and dialogue.
+  portrait and dialogue. Each customer also has a **persona**: how hard
+  they haggle, how many rounds of bargaining they tolerate, how honest they
+  are afterwards, and how much proof they need before trusting a label.
+* **`commerce.js`** is the trade around a bottle:
+  * *Identification.* Before selling, the player writes the label: for each
+    effect a value measured in a trial of this very batch, an estimate from
+    the guild theory (marked as such, with its spread), "none" (below
+    1.2 %) or unknown. The game never fills in hidden truth; trials of the
+    vial fill in tested values, and claims the player wrote stay theirs.
+  * *Negotiation.* The customer scores the label against the order with
+    `evaluatePotion` (what they can see — colour, temperature, thickness —
+    is real; the effects are the label's), weighs trust (trial evidence,
+    reputation, unknowns, how much proof they need), the volume and their
+    temperament, and bargains over several rounds toward a hidden limit:
+    counter-offers concede part of the gap, greed costs patience and can
+    end the talks, and a demanding customer will not buy an untested
+    label at all. The agreed price is paid.
+  * *Delivery.* `recordSale` evaluates the *real* potion. The next day the
+    customer comes back: pleased (reputation, a tip, sometimes a referral
+    who brings a better-paying order), with a **legitimate complaint** (the
+    potion failed the order, the label was wrong beyond reading noise, or
+    an undeclared harmful side effect), or — depending on their honesty —
+    a **dishonest** one about a good potion. The player refunds, disputes
+    (trial records of the batch are the evidence: a fair complaint
+    disputed backfires) or turns them away. Unanswered visitors resolve
+    at the end of the day. Sales, follow-ups and outcomes are saved.
+* **`vial.js`** keeps a sealed vial as the exact particles that ran out
+  of the tap — each one's composition by species id (reaction products and
+  awakened forms included), temperature, charge and phase. Bottling draws
+  a measured quantity; a trial dose removes real particles spread through
+  the vial; pouring back returns exactly that matter (matter is conserved
+  at every step, and the batch revision bumps, so earlier certification
+  stops counting); a sealed vial does not react or awaken and only drifts
+  toward room temperature. Its measurement is computed from what is left
+  with the same function as the tap. Older saves' vials become particles
+  of their mean composition.
 * **`measure.js`** measures the bottle. `tapSelection` takes the particles
   closest to the tap at the bottom of the cauldron, so the lowest layer
   comes out first. `measureParticles` computes colour (Beer–Lambert, then
@@ -285,8 +386,10 @@ into the new vessel's shape instead of being dropped.
   certified for an effect once a trial of this batch *and revision*
   revealed it and the brew still matches that reading within
   max(3, 15%). Pouring anything bumps the revision, so earlier trials stop
-  counting; drift from reactions, settling or heat is caught silently. An
-  order with effect requirements cannot be served uncertified.
+  counting; drift from reactions, settling or heat is caught silently.
+  Certified values become the tested claims on a label (`commerce.js`); an
+  untested potion can still be offered, but customers trust it less and
+  some refuse it.
 * **`gathering.js`** is the wilds: six regions (four open from the start,
   two magical ones from Adept and Expert), deposits generated from the
   seed (never saved), and per-deposit stock plus a timestamp in the save.
@@ -294,6 +397,16 @@ into the new vessel's shape instead of being dropped.
   shown or gathered, so nothing runs per frame and deposits regrow while
   the game is closed. A new day lets every deposit recover half its
   capacity. Harvests respect shelf space; the satchel gathers 50% more.
+  `gatherPlan` decides one harvest: the ingredient's method (pick, dig,
+  chip, scrape, sweep) and whether its tool is owned (trowel, rock hammer,
+  badger brush, silver sickle — by hand, half as much); the part of the day
+  (dawn while the first customer of the day is in the shop, dusk with the
+  last; twilight plants out of their hour give a quarter); the day's
+  weather, deterministic from seed and day (rain regrows plants overnight,
+  frost shuts meadow flowers, a storm recharges crystal seams, fog keeps
+  twilight plants open, a heatwave favours flowers over mosses); and care —
+  a thorough harvest takes twice as much and scars the deposit, which then
+  regrows at half speed until full (the scar is saved).
 * **`evaluate.js`** scores each requirement (full marks within tolerance,
   falling linearly to zero), weights them (colour counts more, quantity
   less), caps the score for a short bottle, and turns quality into stars,
@@ -305,7 +418,7 @@ into the new vessel's shape instead of being dropped.
   temperature and power, coldest temperature, cauldron size, storage,
   discount).
 * **`journal.js`** turns simulation events (first boil, freeze, dough,
-  crushing, dissolving, steeping, each reaction, fire, sparks) into journal discoveries,
+  crushing, dissolving, steeping, each reaction, fire, sparks, awakening) into journal discoveries,
   ingredient knowledge and achievements.
 * **`autobrew.js`** is a controller that carries out a plan in the real
   simulation: it pours (ground in the mortar where the plan says so),
