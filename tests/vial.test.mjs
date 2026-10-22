@@ -97,7 +97,7 @@ test('modifying the brew after a trial invalidates the old certification', () =>
   const s2 = GameState.create('vial-tests-2', { tutorial: false });
   const sim = brew();
   const dose = measureParticles(sim, tapSelection(sim, 2));
-  s2.recordTrial('stone', dose, { ml: 10, source: 'cauldron', batchId: s2.batch.id, rev: s2.batch.rev, theory: new Array(10).fill(0), parts: [] });
+  s2.recordTrial('rabbit', dose, { ml: 10, source: 'cauldron', batchId: s2.batch.id, rev: s2.batch.rev, theory: new Array(10).fill(0), parts: [] });
   const now = measureParticles(sim, tapSelection(sim, 20)).effects;
   assert.ok(Object.keys(certification(s2.trials, s2.batch, now).values).length > 0, 'certified');
   // the vial goes back in (the shop bumps the batch revision)

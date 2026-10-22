@@ -160,6 +160,9 @@ export class HutchScene {
     /** @type {any} */
     this.bg = null;
     this.bgKey = '';
+    /** claw marks where a feral rabbit struck: art pixels and age (s) */
+    /** @type {{x:number, y:number, t:number}[]} */
+    this.clashes = [];
   }
 
   /**
@@ -207,6 +210,26 @@ export class HutchScene {
       if (a.react > 0) a.react = Math.max(0, a.react - d * 1.25);
       if (a.alive) this._tick(a, d);
     }
+    for (const c of this.clashes) c.t += d;
+    this.clashes = this.clashes.filter((c) => c.t < 0.9);
+  }
+
+  /**
+   * A feral rabbit lunges at another: it dashes over, the victim flinches
+   * and claw marks flash where it was struck.
+   * @param {string} fromId @param {string} toId
+   */
+  attack(fromId, toId) {
+    const a = this.actors.get(String(fromId)), v = this.actors.get(String(toId));
+    if (!v || v.hidden) return;
+    v.react = 1;
+    v.reactCh = [];
+    const b = this._box(v);
+    this.clashes.push({ x: Math.round((b.x0 + b.x1) / 2), y: Math.round((b.y0 + b.y1) / 2), t: 0 });
+    if (a && a.alive && !a.hidden && a.act !== 'collapse' && a.act !== 'frozen') {
+      const side = a.x < v.x ? -1 : 1;
+      this._hopTo(a, this._roam(v.x + side * 10, v.y), 3, true);
+    }
   }
 
   /**
@@ -240,6 +263,20 @@ export class HutchScene {
         quality: low ? 'low' : 'high', clear: false, floor: false, clip: false, flash: false, hop: false,
         cache: this.sprites, factory: this.factory || undefined,
       });
+    }
+    // feral rabbits: a red glare over the head; claw marks where they struck
+    for (const a of list) {
+      if (!a.alive || !a.snap.ag) continue;
+      const f = this._frame(a), hx = f.mirror ? f.x + RABBIT_W - 1 - f.an.head.cx : f.x + f.an.head.cx;
+      const y = Math.max(2, f.y + f.an.top - f.lift - 3);
+      const on = Math.floor(t * 6 + a.phase) % 2 === 0;
+      R(ctx, hx - 4, y, 2, 1, on ? '#ff3a2a' : '#a8241a'); R(ctx, hx + 3, y, 2, 1, on ? '#ff3a2a' : '#a8241a');
+      R(ctx, hx - 3, y - 1, 1, 1, '#ff3a2a'); R(ctx, hx + 3, y - 1, 1, 1, '#ff3a2a');
+    }
+    for (const c of this.clashes) {
+      const k = c.t < 0.45 ? '#ff3a2a' : '#a8241a';
+      for (let i = 0; i < 3; i++) for (let j = 0; j < 5; j++) R(ctx, c.x - 4 + i * 3 + j, c.y - 3 + j, 1, 1, j === 2 ? '#fff0e0' : k);
+      if (c.t < 0.3) for (let i = 0; i < 6; i++) R(ctx, c.x + Math.round(Math.cos(i) * (4 + c.t * 20)), c.y + Math.round(Math.sin(i * 1.7) * (3 + c.t * 10)), 1, 1, '#f6ead0');
     }
     const hov = o.hover != null ? this.actors.get(String(o.hover)) : null;
     if (hov && !hov.hidden) {
@@ -338,6 +375,11 @@ export class HutchScene {
     const L = a.L, kit = a.snap.stage === 'kit';
     const sick = L.toxicity >= 2 || a.snap.hp >= 2;
     a.next = null;
+    if (a.snap.ag && r.chance(0.6)) {
+      // feral: stalk another rabbit
+      const others = [...this.actors.values()].filter((o) => o !== a && o.alive && !o.hidden);
+      if (others.length) { const o = r.pick(others); return this._hopTo(a, this._roam(o.x - 9 * Math.sign(o.x - a.x || 1), o.y), 3, true); }
+    }
     if (sick && r.chance(0.8)) return this._begin(a, 'loaf', r.range(3, 6));
     if (L.arcana === 3 && r.chance(0.45)) {
       const g = this._goal(a, r, 26);

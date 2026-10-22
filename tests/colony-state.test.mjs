@@ -27,8 +27,8 @@ test('a trial doses the chosen rabbit only, and records who, how sure, and a rep
   assert.equal(record.rabbitName, 'Bramble');
   assert.equal(r2.doses[r2.doses.length - 1].rec, record.id);
   assert.deepEqual(decodeSnap(record.replay.a), rabbitSnap(r2, st.day));
-  assert.equal(record.values.acidity, undefined, 'the rabbit still reads only its five channels');
-  assert.ok(r2.marks.acid > 0, '…but the acid did act on it');
+  assert.ok(record.values.acidity > 0, 'a rabbit shows acid too');
+  assert.ok(r2.marks.acid > 0, 'and the acid acted on it');
   assert.ok(record.err.vitality > 0);
   // no rabbit named: the selected one
   st.selectRabbit('r1');
@@ -98,7 +98,7 @@ test('remains: once per body, real materials with hidden effects, never in theor
   assert.equal(st.processRemains('r1').ok, false, 'not while alive');
   // Clover lives a hard life, then dies in fire
   st.recordTrial('rabbit', dose({ strength: 20, love: 15 }), ctx(st, { rabbitId: 'r1' }));
-  st.recordTrial('rabbit', dose({ fire: 60 }), ctx(st, { rabbitId: 'r1', ml: 25 }));
+  st.recordTrial('rabbit', dose({ fire: 90 }), ctx(st, { rabbitId: 'r1', ml: 25 }));
   const r1 = findRabbit(st.colony, 'r1');
   assert.equal(r1.alive, false);
   assert.equal(r1.cause, 'fire');
