@@ -8,6 +8,9 @@ c: '#8fe0ff', g: '#7dc24a', G: '#3a6e24', n: '#a8743f', N: '#5a3a20', p: '#a678f
 m: '#ff5aa8', l: '#fff0b0', t: '#5fd4b4',
 };
 const ICONS = {
+purge: ['.....kk..l..', '....kWWk.l..', '....kwck.l..', '...kkwckk...', '..kwcccccK..', '.kwcccwcccK.', 'kwcccwwwcccK', 'kwccccwcccBk', 'kwcccccccBBk', '.kwccccccBk.', '..kkkkkkkk..', '............'],
+knife: ['..........kk', '.........kWk', '........kWsk', '.......kWsk.', '......kWsk..', '.....kWsk...', '....kWsk....', '..kkkkk.....', '..kNnk......', '.kNnk.......', 'kNnk........', 'kkk.........'],
+claw: ['k...k...k...', 'rk..rk..rk..', '.rk..rk..rk.', '.rrk.rrk.rrk', '..rk..rk..rk', '..rrk.rrk.rr', '...rk..rk..r', '...rrk.rrk..', '....rk..rk..', '....Rk..Rk..', '.....k...k..', '............'],
 tag: ['......kkkk..', '.....kllllk.', '....klllkllk', '...kllllllk.', '..klllllllk.', '.kllNlllllk.', 'kllNNllllk..', 'klllNlllk...', '.kllllllk...', '..kllllk....', '...kllk.....', '....kk......'],
 deal: ['............', '............', 'kk........kk', 'knk..kk..knk', 'knnkkllkknnk', 'kNnklllllnNk', '.kNlllkllNk.', '..kllkllkk..', '...klllk....', '....kkk.....', '............', '............'],
 pure: ['.....kk.....', '....kcck....', '....kcck....', '...kcwcck...', '...kcwcck...', '..kcwccccK..', '..kcccccck..', '.kccccccccK.', '.kcccccccck.', '.kcccccccBk.', '..kccccBBk..', '...kkkkkk...'],
@@ -3301,7 +3304,7 @@ const EQUIPMENT = [
 { id: 'thermal', name: 'Thermal Monocle', category: 'instrument', price: 80, rank: 1, icon: 'monocle', desc: 'Shows the temperature field of the whole cauldron as a heat map.' },
 { id: 'kennel', name: 'Subject Kennel', category: 'trials', price: 60, rank: 1, icon: 'rabbit', desc: 'Spare cages and pots: the hutch holds six rabbits, and new test subjects cost half.', effect: { hutch: 6 } },
 { id: 'warren', name: 'Rabbit Warren', category: 'trials', price: 180, rank: 2, icon: 'nest', requires: ['kennel'], desc: 'A walled run with burrows and a nest box: room for ten rabbits.', effect: { hutch: 10 } },
-{ id: 'lantern', name: 'Wisp Lantern', category: 'trials', price: 220, rank: 2, icon: 'wisp', desc: 'A captive will-o’-wisp joins the trials room. It responds to arcana, change, love, life and death.' },
+{ id: 'still', name: 'Purging Still', category: 'trials', price: 150, rank: 1, icon: 'alembic', desc: 'The guild’s recipe for the purging draught and a little still to brew it: a draught costs 1 coin of salts and a short wait instead of 8 coins at the apothecary. A purge washes every potion effect out of a rabbit and stops any degeneration.' },
 { id: 'satchel', name: 'Forager’s Satchel', category: 'storage', price: 80, rank: 1, icon: 'satchel', desc: 'Carry more from the wilds: each harvest gathers half as much again.' },
 { id: 'trowel', name: 'Digging Trowel', category: 'storage', price: 20, rank: 0, icon: 'trowel', desc: 'Digs roots and river chalk out whole. Without it you scrabble up half as much.' },
 { id: 'rockhammer', name: 'Rock Hammer', category: 'storage', price: 35, rank: 0, icon: 'pick', desc: 'Splits mineral seams and crystal: full harvests of flint, sulfur and quartz.' },
@@ -3364,6 +3367,13 @@ const DOSE_LIMIT = 40;
 const MEMORIAL_LIMIT = 24;
 const LEVEL_AT = [8, 30, 60];
 const TRAIT_AT = [20, 50, 90, 140, 200];
+const DEGEN_AT = 70;
+const LETHAL = ['toxicity', 'death', 'acid', 'alkali', 'fire', 'frost'];
+const FERAL = ['vitality', 'strength', 'love', 'arcana', 'transformation'];
+const MARK_TAU = 600;
+const MAX_BONUS = 150;
+const DEGEN_RISE = 0.6;
+const ATTACK_EVERY = [9, 4];
 const TRAITS = ['ears2', 'horns', 'antlers', 'unihorn', 'scales', 'spines', 'tail-lizard', 'tail-plume', 'giant', 'tiny', 'eye3', 'wings'];
 const TRAIT_EXCLUSIVE = [['giant', 'tiny'], ['horns', 'antlers', 'unihorn'], ['tail-lizard', 'tail-plume']];
 const TRAIT_WORDS = {
@@ -3432,6 +3442,20 @@ const age = day - (r.born ?? FOUNDER_BORN);
 return age < KIT_DAYS ? 'kit' : age < ADULT_DAYS ? 'young' : age < ELDER_DAYS ? 'adult' : 'elder';
 }
 const hpBand = (h) => (h >= 75 ? 0 : h >= 40 ? 1 : h >= 10 ? 2 : 3);
+function maxHealthOf(r, day) {
+const base = Math.max(20, 100 + (r.bonus || 0) - (r.scar || 0));
+return Math.round(base * (stageOf(r, day) === 'elder' && Number.isFinite(day) ? 0.9 : 1) * 10) / 10;
+}
+function degenOf(r) {
+return Array.isArray(r && r.degen) ? r.degen : [];
+}
+function isFeral(r) {
+return !!r && r.alive !== false && degenOf(r).some((k) => FERAL.includes(k));
+}
+function rabbitSensitivity(r, key) {
+const rng = new Rng(hashString(`sens:${r.id}:${r.look ? r.look.seed : 0}:${key}`));
+return Math.round(clamp(Math.exp(0.18 * rng.gauss()), 0.6, 1.6) * 1000) / 1000;
+}
 function rabbitSnap(r, day) {
 const mk = r.marks || {}, ex = r.exposure || {};
 const lv = RABBIT_MARKS.map((k) => {
@@ -3442,23 +3466,27 @@ const sc = [
 q3(ex.fire || 0, 30, 80, 150), q3(ex.acid || 0, 25, 60, 120), q3(ex.frost || 0, 30, 80, 150),
 Math.max(q3(ex.death || 0, 15, 40, 80), stageOf(r, day) === 'elder' ? 1 : 0), q3(ex.arcana || 0, 40, 100, 180),
 ];
+const alive = r.alive !== false;
+const dg = alive ? degenOf(r).filter((k) => MARK_INDEX[k] !== undefined) : [];
 return {
 stage: r.stage || stageOf(r, day),
-hp: r.alive === false ? 3 : /** @type {0|1|2|3} */ (hpBand(r.health ?? 100)),
-alive: r.alive !== false,
-preg: !!r.pregnant && r.alive !== false,
+hp: !alive ? 3 : /** @type {0|1|2|3} */ (hpBand(100 * (r.health ?? 100) / Math.max(1, maxHealthOf(r, day)))),
+alive,
+preg: !!r.pregnant && alive,
 lv, sc,
 traits: Array.isArray(r.traits) ? r.traits.slice() : [],
-cause: r.alive === false ? (r.cause || 'unknown') : null,
+cause: !alive ? (r.cause || 'unknown') : null,
+dg, ag: dg.some((k) => FERAL.includes(k)),
 };
 }
 const STAGE_CH = { kit: 'k', young: 'y', adult: 'a', elder: 'e' };
 const CH_STAGE = { k: 'kit', y: 'young', a: 'adult', e: 'elder' };
 function encodeSnap(s) {
-return `${STAGE_CH[s.stage] || 'a'}${s.hp}${s.alive ? 1 : 0}${s.preg ? 1 : 0}|${s.lv.join('')}|${s.sc.join('')}|${s.traits.join(',')}|${s.cause || ''}`;
+const dg = s.dg && s.dg.length ? `|${s.dg.join(',')}` : '';
+return `${STAGE_CH[s.stage] || 'a'}${s.hp}${s.alive ? 1 : 0}${s.preg ? 1 : 0}|${s.lv.join('')}|${s.sc.join('')}|${s.traits.join(',')}|${s.cause || ''}${dg}`;
 }
 function defaultSnap() {
-return { stage: 'adult', hp: 0, alive: true, preg: false, lv: new Array(RABBIT_MARKS.length).fill(0), sc: [0, 0, 0, 0, 0], traits: [], cause: null };
+return { stage: 'adult', hp: 0, alive: true, preg: false, lv: new Array(RABBIT_MARKS.length).fill(0), sc: [0, 0, 0, 0, 0], traits: [], cause: null, dg: [], ag: false };
 }
 function decodeSnap(str) {
 if (typeof str !== 'string') return defaultSnap();
@@ -3470,9 +3498,11 @@ const sc = p[2].split('').map(Number);
 if (!stage || lv.length !== RABBIT_MARKS.length || lv.some((v) => !(v >= 0 && v <= 3)) || sc.some((v) => !(v >= 0 && v <= 3))) return defaultSnap();
 while (sc.length < 5) sc.push(0);
 const hp = Number(p[0][1]);
+const dg = p[5] ? p[5].split(',').filter((k) => MARK_INDEX[k] !== undefined) : [];
 return {
 stage, hp: /** @type {0|1|2|3} */ (hp >= 0 && hp <= 3 ? hp : 0), alive: p[0][2] === '1', preg: p[0][3] === '1', lv, sc: sc.slice(0, 5),
 traits: p[3] ? p[3].split(',').filter((t) => TRAITS.includes(t)) : [], cause: p[4] || null,
+dg, ag: dg.some((k) => FERAL.includes(k)),
 };
 }
 const NAMES = ['Clover', 'Bramble', 'Hazel', 'Juniper', 'Pip', 'Thistle', 'Willow', 'Sorrel', 'Barley', 'Fennel', 'Nettle', 'Poppy', 'Rowan', 'Sage',
@@ -3493,12 +3523,12 @@ newRabbit({ id: 'r2', name: 'Bramble', sex: 'm', born: FOUNDER_BORN, look: bramb
 function newRabbit(o) {
 return {
 id: o.id, name: o.name, sex: o.sex, born: o.born, look: o.look, parents: o.parents || null,
-health: 100, alive: true, trials: 0, marks: emptyMarks(), exposure: emptyMarks(), scar: 0, traits: [],
+health: 100, bonus: 0, alive: true, trials: 0, marks: emptyMarks(), exposure: emptyMarks(), scar: 0, traits: [], degen: [], cd: 0,
 doses: [], dosesDropped: 0, pregnant: null, diedDay: null, cause: null,
 };
 }
 function createColony(seed = '') {
-return { seed, serial: 2, focus: 'r1', breed: true, fedDay: 0, day: 0, rabbits: founders(), memorial: [] };
+return { seed, serial: 2, focus: 'r1', breed: true, fedDay: 0, day: 0, rabbits: founders(), memorial: [], purges: 2, still: null, ticks: 0, clock: 0 };
 }
 function findRabbit(c, id) {
 return c.rabbits.find((r) => r.id === id) || null;
@@ -3562,6 +3592,19 @@ unihorn: 'A single spiral horn grows from its forehead!', scales: 'Its haunches 
 tiny: 'It shrinks to the size of a kitten!', eye3: 'A third eye opens on its forehead!', wings: 'Little membrane wings unfold from its shoulders!',
 };
 const CAUSE_OF = { toxicity: 'poison', death: 'death', fire: 'fire', frost: 'frost', acid: 'acid', alkali: 'alkali', transformation: 'change', arcana: 'arcana' };
+const DEGEN_LINES = {
+toxicity: 'The poison has taken hold: it is spreading through its blood on its own!',
+death: 'The grey pallor deepens by itself — death magic is eating it from within!',
+acid: 'The burns keep spreading: its own body is turning to acid!',
+alkali: 'The lye crust keeps growing, cracking deeper into its skin!',
+fire: 'It is smouldering from the inside — the heat keeps rising!',
+frost: 'The cold has reached its heart and keeps spreading!',
+vitality: 'Wild growth: it swells, ravenous and restless — and bares its teeth at the others!',
+strength: 'Its muscles keep swelling; it starts shoving and biting the others!',
+love: 'Its devotion curdles into jealous fury — it goes for the other rabbits!',
+arcana: 'The magic in it runs wild: sparks lash out at the colony!',
+transformation: 'The change will not stop — it twists into something feral and attacks!',
+};
 const partners = (t) => TRAIT_EXCLUSIVE.filter((g) => g.includes(t)).flat().filter((x) => x !== t);
 function growTraits(r, e0, e1, applied) {
 const grown = [];
@@ -3616,13 +3659,20 @@ acid: a.acid > 12 ? (a.acid - 12) * 0.8 : 0, alkali: a.alkali > 20 ? (a.alkali -
 transformation: a.transformation > 30 ? (a.transformation - 30) * 0.3 : 0, arcana: a.arcana > 40 ? (a.arcana - 40) * 0.3 : 0,
 };
 const harm = Object.values(hurt).reduce((p, v) => p + v, 0);
-const heal = 0.7 * a.vitality;
 r.scar = Math.min(80, round1(r.scar + 0.2 * Math.max(0, harm - 5)));
-const maxHealth = Math.max(20, 100 - r.scar);
-r.health = round1(clamp(r.health + 0.5 * heal - harm, 0, maxHealth));
+const heal = 0.9 * a.vitality;
+let maxHealth = maxHealthOf(r, o.day);
+let health = r.health - harm;
+const room = Math.max(0, maxHealth - health);
+const grow = Math.max(0, heal - room) * 0.5;
+if (grow > 0 && health > 0.5) {
+r.bonus = round1(Math.min(MAX_BONUS, (r.bonus || 0) + grow));
+maxHealth = maxHealthOf(r, o.day);
+}
+r.health = round1(clamp(health + heal, 0, maxHealth));
 r.alive = r.health > 0.5;
 const big = (v) => v > 20;
-if (a.vitality > 1) say('vitality', 'good', big(a.vitality) ? 'Its coat gleams; it bounds about full of life.' : 'It looks refreshed.');
+if (a.vitality > 1) say('vitality', 'good', grow > 0.5 ? 'Already in full health, it grows hardier still.' : big(a.vitality) ? 'Its coat gleams; it bounds about full of life.' : 'It looks refreshed.');
 if (a.strength > 1) say('strength', 'good', big(a.strength) ? 'Its haunches swell with muscle; it shoves at the bars.' : 'It moves with new strength.');
 if (a.love > 1) say('love', 'good', big(a.love) ? 'It nuzzles your hand, utterly devoted; little hearts seem to hang in the air.' : 'It nuzzles your hand.');
 if (a.arcana > 1) say('arcana', 'neutral', big(a.arcana) ? 'Violet sparks crawl through its fur; faint runes glimmer.' : 'Its eyes catch a strange glimmer.');
@@ -3635,6 +3685,8 @@ if (a.toxicity > 1) say('toxicity', 'bad', a.toxicity > 15 ? 'It staggers, sick 
 if (a.death > 1) say('death', 'bad', a.death > 15 ? 'A grey pallor creeps over it.' : 'It grows still and cold for a moment.');
 const newTraits = growTraits(r, e0, r.exposure.transformation, a);
 for (const t of newTraits) say('transformation', 'neutral', TRAIT_LINES[t]);
+const degen = r.alive ? startDegeneration(r) : [];
+for (const k of degen) say(k === 'acid' || k === 'alkali' ? 'acidity' : k, 'bad', DEGEN_LINES[k]);
 if (!r.alive) {
 const worst = Object.entries(hurt).sort((p, q) => q[1] - p[1])[0];
 r.cause = worst && worst[1] > 0 ? CAUSE_OF[worst[0]] : 'frail';
@@ -3645,7 +3697,87 @@ say('', 'bad', r.cause === 'fire' ? 'It collapses in a smouldering heap.' : r.ca
 if (!obs.length) say('', 'neutral', 'No visible change.');
 r.trials++;
 const react = RABBIT_MARKS.filter((k) => a[k] > 1);
-return { after: r, observations: obs, harm, applied: a, react, newTraits, cause: r.alive ? null : r.cause };
+return { after: r, observations: obs, harm, applied: a, react, newTraits, degen, cause: r.alive ? null : r.cause };
+}
+function startDegeneration(r) {
+const out = [];
+for (const k of RABBIT_MARKS) {
+if (r.marks[k] >= DEGEN_AT && !r.degen.includes(k)) { r.degen.push(k); out.push(k); }
+}
+if (out.some((k) => FERAL.includes(k)) && !(r.cd > 0)) r.cd = 3;
+return out;
+}
+function colonyTick(c, dt, o = {}) {
+const rep = { died: [], attacks: [], degen: [], traits: [] };
+if (!(dt > 0)) return rep;
+const rng = new Rng(hashString(`${o.seed ?? c.seed}:tick:${c.ticks || 0}`));
+c.ticks = (c.ticks || 0) + 1;
+const day = o.day;
+const fade = Math.exp(-dt / MARK_TAU);
+const die = (r, cause, by) => {
+r.alive = false; r.health = 0; r.cause = cause; r.diedDay = Number.isFinite(day) ? day : null; r.pregnant = null; r.degen = [];
+rep.died.push({ id: r.id, name: r.name, cause, ...(by ? { by } : {}) });
+};
+for (const r of c.rabbits) {
+if (!r.alive) continue;
+const dg = degenOf(r);
+let drain = 0;
+for (const k of RABBIT_MARKS) {
+if (dg.includes(k)) {
+r.marks[k] = round1(Math.min(100, r.marks[k] + DEGEN_RISE * dt));
+if (LETHAL.includes(k)) drain += (0.4 + 1.6 * r.marks[k] / 100) * dt;
+} else {
+const v = r.marks[k] * fade;
+r.marks[k] = v < 0.3 ? 0 : Math.round(v * 100) / 100;
+}
+}
+if (dg.includes('vitality')) r.bonus = round1(Math.min(MAX_BONUS, (r.bonus || 0) + 0.25 * dt));
+if (dg.includes('transformation')) {
+const e0 = r.exposure.transformation;
+r.exposure.transformation = round1(e0 + 0.8 * dt);
+for (const t of growTraits(r, e0, r.exposure.transformation, r.marks)) rep.traits.push({ id: r.id, name: r.name, trait: t });
+}
+const max = maxHealthOf(r, day);
+if (drain > 0) {
+r.health = round1(r.health - drain);
+if (r.health <= 0.5) {
+const worst = dg.filter((k) => LETHAL.includes(k)).sort((p, q) => r.marks[q] - r.marks[p])[0];
+die(r, CAUSE_OF[worst] || 'poison');
+continue;
+}
+} else r.health = round1(Math.min(max, r.health + 0.05 * dt));
+if (r.health > max) r.health = max;
+}
+for (const r of c.rabbits) {
+if (!isFeral(r)) continue;
+r.cd = (r.cd || 0) - dt;
+if (r.cd > 0) continue;
+const fury = Math.max(...degenOf(r).filter((k) => FERAL.includes(k)).map((k) => r.marks[k]));
+const t = clamp((fury - DEGEN_AT) / (100 - DEGEN_AT), 0, 1);
+r.cd = round1((ATTACK_EVERY[0] + (ATTACK_EVERY[1] - ATTACK_EVERY[0]) * t) * rng.range(0.8, 1.25));
+const prey = c.rabbits.filter((x) => x.alive && x.id !== r.id);
+if (!prey.length) continue;
+const v = rng.pick(prey);
+const dmg = round1((8 + 14 * fury / 100 + 0.1 * (r.marks.strength || 0)) * rng.range(0.8, 1.2) * (r.traits.includes('giant') ? 1.3 : 1));
+v.health = round1(v.health - dmg);
+v.scar = Math.min(80, round1((v.scar || 0) + 0.15 * dmg));
+const killed = v.health <= 0.5;
+rep.attacks.push({ from: r.id, to: v.id, fromName: r.name, toName: v.name, dmg, killed });
+if (killed) die(v, 'mauled', r.name);
+}
+return rep;
+}
+function purgeRabbit(r) {
+if (!r || !r.alive) return false;
+for (const k of RABBIT_MARKS) r.marks[k] = 0;
+r.degen = [];
+r.cd = 0;
+return true;
+}
+function cullRabbit(r, day) {
+if (!r || !r.alive) return false;
+r.alive = false; r.health = 0; r.cause = 'culled'; r.diedDay = Number.isFinite(day) ? day : null; r.pregnant = null; r.degen = []; r.cd = 0;
+return true;
 }
 function colonyDay(c, o) {
 const day = o.day;
@@ -3659,6 +3791,7 @@ rep.died.push({ id: r.id, name: r.name, cause });
 for (const r of c.rabbits) {
 if (!r.alive) continue;
 for (const k of RABBIT_MARKS) {
+if (degenOf(r).includes(k)) continue;
 const v = r.marks[k] * MARK_DECAY[k];
 r.marks[k] = v < 0.5 ? 0 : round1(v);
 }
@@ -3670,8 +3803,8 @@ r.scar = Math.min(80, round1(r.scar + 0.2 * poison));
 if (r.health <= 0.5) { die(r, r.marks.death > r.marks.toxicity ? 'death' : 'poison'); continue; }
 const age = day - r.born;
 if (age > LIFESPAN_DAYS && rng.chance(Math.min(0.5, (age - LIFESPAN_DAYS) / 24))) { die(r, 'age'); continue; }
-const maxHealth = Math.max(20, 100 - r.scar) * (stageOf(r, day) === 'elder' ? 0.9 : 1);
-r.health = round1(Math.min(maxHealth, r.health + 10 + (fed ? 6 : 0)));
+const maxHealth = maxHealthOf(r, day);
+if (!degenOf(r).some((k) => LETHAL.includes(k))) r.health = round1(Math.min(maxHealth, r.health + 10 + (fed ? 6 : 0)));
 if (stageOf(r, day - 1) !== 'adult' && stageOf(r, day - 1) !== 'elder' && stageOf(r, day) === 'adult') rep.grown.push({ id: r.id, name: r.name });
 }
 let living = c.rabbits.filter((r) => r.alive).length;
@@ -3692,7 +3825,7 @@ living++;
 doe.pregnant = null;
 }
 if (c.breed !== false) {
-const eligible = (r) => r.alive && stageOf(r, day) === 'adult' && r.health >= 60 && r.marks.toxicity < 30 && r.marks.death < 20;
+const eligible = (r) => r.alive && stageOf(r, day) === 'adult' && r.health >= 60 && r.marks.toxicity < 30 && r.marks.death < 20 && !degenOf(r).length;
 const bucks = c.rabbits.filter((r) => r.sex === 'm' && eligible(r)).sort((p, q) => q.marks.love - p.marks.love || (p.id < q.id ? -1 : 1));
 let pending = 2 * c.rabbits.filter((r) => r.alive && r.pregnant).length;
 for (const doe of c.rabbits) {
@@ -3735,7 +3868,7 @@ id: r.id, name: r.name, sex: r.sex, look: r.look, exposure: { ...r.exposure }, c
 stage: /** @type {any} */ (r).stage || stageOf(r, r.diedDay ?? day), traits: r.traits.slice(), diedDay: r.diedDay ?? null,
 };
 }
-const CAUSE_WORDS = { poison: 'poisoned', death: 'withered by death magic', fire: 'burned', frost: 'frozen', acid: 'eaten by acid', alkali: 'scalded by lye', change: 'torn apart by change', arcana: 'overwhelmed by magic', age: 'died of old age', frail: 'too frail', unknown: 'died' };
+const CAUSE_WORDS = { culled: 'put down', mauled: 'mauled by a feral rabbit', poison: 'poisoned', death: 'withered by death magic', fire: 'burned', frost: 'frozen', acid: 'eaten by acid', alkali: 'scalded by lye', change: 'torn apart by change', arcana: 'overwhelmed by magic', age: 'died of old age', frail: 'too frail', unknown: 'died' };
 function causeWord(cause) {
 return CAUSE_WORDS[cause || 'unknown'] || 'died';
 }
@@ -3744,8 +3877,11 @@ const w = [];
 if (!r.alive) {
 w.push(`dead — ${causeWord(r.cause)}${Number.isFinite(r.diedDay) ? ` (day ${r.diedDay})` : ''}`);
 } else {
-const h = r.health;
+const h = 100 * r.health / Math.max(1, maxHealthOf(r, day));
 w.push(h >= 75 ? 'healthy' : h >= 40 ? 'weakened' : h >= 10 ? 'very weak' : 'near death');
+if (isFeral(r)) w.push('FERAL');
+else if (degenOf(r).length) w.push('degenerating');
+if ((r.bonus || 0) >= 10) w.push(r.bonus >= 60 ? 'hale beyond nature' : 'extra hardy');
 if (r.scar >= 20) w.push(r.scar >= 50 ? 'badly scarred' : 'scarred');
 }
 const s = rabbitSnap(r, day);
@@ -3798,8 +3934,9 @@ const alive = d.alive !== false;
 const rb = /** @type {Rabbit} */ ({
 id, name: typeof d.name === 'string' && d.name ? d.name : 'Clover', sex: d.sex === 'm' ? 'm' : 'f',
 born: fin(d.born, FOUNDER_BORN), look: normalizeLook(d.look, id), parents: Array.isArray(d.parents) ? d.parents.filter((p) => typeof p === 'string').slice(0, 2) : null,
-health: clamp(fin(d.health, 100), 0, 100), alive, trials: Math.max(0, fin(d.trials, 0) | 0),
+health: clamp(fin(d.health, 100), 0, 100 + MAX_BONUS), bonus: clamp(fin(d.bonus, 0), 0, MAX_BONUS), alive, trials: Math.max(0, fin(d.trials, 0) | 0),
 marks: normalizeMarks(d.marks), exposure: normalizeMarks(d.exposure), scar, traits,
+degen: alive && Array.isArray(d.degen) ? [...new Set(d.degen.filter((k) => MARK_INDEX[k] !== undefined))] : [], cd: Math.max(0, fin(d.cd, 0)),
 doses: (Array.isArray(d.doses) ? d.doses : []).filter((x) => x && typeof x.rec === 'string').map((x) => ({
 rec: x.rec, day: fin(x.day, 0) | 0, ml: Math.max(0, fin(x.ml, 0)), src: x.src === 'vial' ? 'vial' : 'cauldron', obs: typeof x.obs === 'string' ? x.obs : '', ...(x.died ? { died: 1 } : {}),
 })).slice(-DOSE_LIMIT),
@@ -3831,6 +3968,8 @@ const nums = [...rabbits, ...memorial].map((r) => Number(String(r.id).replace(/^
 const out = /** @type {Colony} */ ({
 seed: typeof c.seed === 'string' ? c.seed : '', serial: Math.max(fin(c.serial, 0) | 0, ...nums, 0),
 focus: null, breed: c.breed !== false, fedDay: fin(c.fedDay, 0) | 0, day: fin(c.day, 0) | 0, rabbits, memorial,
+purges: Math.max(0, fin(c.purges, 2) | 0), still: Number.isFinite(c.still) && c.still > 0 ? c.still : null,
+ticks: Math.max(0, fin(c.ticks, 0) | 0), clock: Math.max(0, fin(c.clock, 0)),
 });
 out.focus = typeof c.focus === 'string' && findRabbit(out, c.focus) ? c.focus : (focusRabbit(out) || { id: null }).id;
 return out;
@@ -3891,36 +4030,32 @@ if (!f.alive) { f.pregnant = null; f.cause = f.cause || 'unknown'; if (f.diedDay
 });
 return trials;
 }
-return { RABBIT_MARKS, MARK_INDEX, KIT_DAYS, ADULT_DAYS, ELDER_DAYS, LIFESPAN_DAYS, FOUNDER_BORN, GESTATION_DAYS, DOSE_LIMIT, MEMORIAL_LIMIT, LEVEL_AT, TRAIT_AT, TRAITS, TRAIT_EXCLUSIVE, TRAIT_WORDS, COATS, rollLook, inheritLook, lookFromSeed, visibleLevel, stageOf, rabbitSnap, encodeSnap, defaultSnap, decodeSnap, NAMES, createColony, findRabbit, livingRabbits, bodies, focusRabbit, pickName, makeRabbit, addBoughtRabbit, recordDose, related, STAGE_ERR, MARK_DECAY, rabbitResponse, colonyDay, retireRabbit, trimMemorial, remainsSource, causeWord, rabbitCondition, normalizeRabbit, normalizeColony, installRabbitAlias };
+return { RABBIT_MARKS, MARK_INDEX, KIT_DAYS, ADULT_DAYS, ELDER_DAYS, LIFESPAN_DAYS, FOUNDER_BORN, GESTATION_DAYS, DOSE_LIMIT, MEMORIAL_LIMIT, LEVEL_AT, TRAIT_AT, DEGEN_AT, LETHAL, FERAL, MARK_TAU, MAX_BONUS, DEGEN_RISE, ATTACK_EVERY, TRAITS, TRAIT_EXCLUSIVE, TRAIT_WORDS, COATS, rollLook, inheritLook, lookFromSeed, visibleLevel, stageOf, maxHealthOf, degenOf, isFeral, rabbitSensitivity, rabbitSnap, encodeSnap, defaultSnap, decodeSnap, NAMES, createColony, findRabbit, livingRabbits, bodies, focusRabbit, pickName, makeRabbit, addBoughtRabbit, recordDose, related, STAGE_ERR, MARK_DECAY, rabbitResponse, colonyTick, purgeRabbit, cullRabbit, colonyDay, retireRabbit, trimMemorial, remainsSource, causeWord, rabbitCondition, normalizeRabbit, normalizeColony, installRabbitAlias };
 })();
 // src/game/experiments.js
 const __m27 = (() => {
 const { EFFECTS, EFFECT_KEYS, EFFECT_INDEX, NE, potencyWord } = __m13;
-const { createColony, normalizeColony, installRabbitAlias, rabbitResponse, findRabbit, focusRabbit, recordDose, rabbitSnap, encodeSnap, stageOf, addBoughtRabbit, STAGE_ERR } = __m28;
+const { Rng, hashString } = __m6;
+const { createColony, normalizeColony, installRabbitAlias, rabbitResponse, findRabbit, focusRabbit, recordDose, rabbitSnap, encodeSnap, stageOf, addBoughtRabbit, STAGE_ERR, rabbitSensitivity } = __m28;
 const SUBJECTS = [
-{ id: 'rabbit', name: 'Moon Rabbit', kind: 'animal', reveals: ['vitality', 'strength', 'love', 'toxicity', 'death'], cost: 6,
-desc: 'A gentle animal. Shows healing, strength, affection, poison and death.' },
-{ id: 'beetle', name: 'Copper Beetle', kind: 'animal', reveals: ['strength', 'transformation', 'fire', 'frost', 'toxicity'], cost: 3,
-desc: 'A hardy beetle. Shows strength, transformation, fire, frost and poison.' },
-{ id: 'seedling', name: 'Bean Seedling', kind: 'plant', reveals: ['vitality', 'love', 'fire', 'frost', 'acidity', 'toxicity'], cost: 2,
-desc: 'A young plant. Shows growth, blooming, heat, cold, acid and poison.' },
-{ id: 'stone', name: 'Limestone', kind: 'mineral', reveals: ['acidity', 'strength', 'fire', 'frost', 'arcana', 'transformation'], cost: 1,
-desc: 'An inert stone. Acid etches it; it hardens, glows, frosts or recrystallises.' },
-{ id: 'wisp', name: 'Will-o’-Wisp', kind: 'spirit', reveals: ['arcana', 'transformation', 'love', 'death', 'vitality'], cost: 14, needs: 'lantern',
-desc: 'A captive marsh light that feeds on magic. Shows arcana, change, love, life and death.' },
+{ id: 'rabbit', name: 'Moon Rabbit', kind: 'animal', reveals: EFFECT_KEYS.slice(), cost: 6,
+desc: 'A Moon Rabbit of your colony. It shows every effect — each one a little differently.' },
 ];
-const SUBJECT_BY_ID = Object.fromEntries(SUBJECTS.map((s) => [s.id, s]));
-const RECORD_LIMIT = 120;
+const RETIRED = [
+{ id: 'beetle', name: 'Copper Beetle', kind: 'animal', reveals: ['strength', 'transformation', 'fire', 'frost', 'toxicity'], cost: 3, desc: '', legacy: true },
+{ id: 'seedling', name: 'Bean Seedling', kind: 'plant', reveals: ['vitality', 'love', 'fire', 'frost', 'acidity', 'toxicity'], cost: 2, desc: '', legacy: true },
+{ id: 'stone', name: 'Limestone', kind: 'mineral', reveals: ['acidity', 'strength', 'fire', 'frost', 'arcana', 'transformation'], cost: 1, desc: '', legacy: true },
+{ id: 'wisp', name: 'Will-o’-Wisp', kind: 'spirit', reveals: ['arcana', 'transformation', 'love', 'death', 'vitality'], cost: 14, desc: '', legacy: true },
+];
+const SUBJECT_BY_ID = Object.fromEntries([...SUBJECTS, ...RETIRED].map((s) => [s.id, s]));
+const RECORD_LIMIT = 160;
 const DOSES = [5, 10, 25];
+const DOSE_NOISE = 0.1;
 function driftTolerance(v) {
 return Math.max(3, 0.15 * Math.abs(v));
 }
-function freshSubject(def) {
-return { health: 100, alive: true, trials: 0, marks: { glow: 0, burn: 0, frost: 0, love: 0, change: 0, vigor: 0, growth: def.kind === 'plant' ? 20 : 0, etch: 0, sick: 0 } };
-}
 function createTrials() {
 const subjects = {};
-for (const d of SUBJECTS) if (d.id !== 'rabbit') subjects[d.id] = freshSubject(d);
 const t = { subjects, records: /** @type {TrialRecord[]} */ ([]), serial: 0, laws: /** @type {Record<string, {evidence:number, found:number|null}>} */ ({}), colony: createColony() };
 installRabbitAlias(t);
 return t;
@@ -3928,15 +4063,6 @@ return t;
 function normalizeTrials(t) {
 const out = createTrials();
 if (!t || typeof t !== 'object') return out;
-for (const d of SUBJECTS) {
-if (d.id === 'rabbit') continue;
-const s = t.subjects && t.subjects[d.id];
-if (s && typeof s === 'object') {
-const marks = { ...out.subjects[d.id].marks };
-for (const k of Object.keys(marks)) if (Number.isFinite(s.marks?.[k])) marks[k] = clamp(s.marks[k], 0, 100);
-out.subjects[d.id] = { health: Number.isFinite(s.health) ? clamp(s.health, 0, 100) : 100, alive: s.alive !== false, trials: s.trials | 0, marks };
-}
-}
 if (Array.isArray(t.records)) out.records = t.records.filter((r) => r && typeof r === 'object' && typeof r.subjectId === 'string' && r.values).slice(0, RECORD_LIMIT);
 out.serial = Math.max(t.serial | 0, ...out.records.map((r) => r.serial | 0), 0);
 if (t.laws && typeof t.laws === 'object') for (const [k, v] of Object.entries(t.laws)) if (v && typeof v === 'object') out.laws[k] = { evidence: v.evidence | 0, found: v.found ?? null };
@@ -3944,112 +4070,71 @@ out.colony = normalizeColony(t.colony, t.subjects && t.subjects.rabbit, out.reco
 installRabbitAlias(out);
 return out;
 }
-function subjectResponse(def, before, effects, ml) {
-if (def.id === 'rabbit') {
-const r = rabbitResponse(before, effects, ml, {});
-return { after: /** @type {any} */ (r.after), observations: r.observations, harm: r.harm };
+function rabbitReading(rabbit, effects, o) {
+const rng = new Rng(hashString(`reading:${o.salt}:${rabbit.id}`));
+const errK = Math.sqrt(10 / Math.max(1, o.ml)) * (STAGE_ERR[stageOf(rabbit, o.day)] || 1);
+const out = new Array(NE).fill(0);
+for (let k = 0; k < NE; k++) {
+const v = Number(effects[k]) || 0;
+const g1 = rng.gauss(), g2 = rng.gauss();
+if (Math.abs(v) < 0.3) continue;
+const f = rabbitSensitivity(rabbit, EFFECT_KEYS[k]) * Math.max(0.3, 1 + DOSE_NOISE * errK * g1);
+out[k] = v * f + 0.4 * errK * g2;
+if (Math.sign(out[k]) !== Math.sign(v)) out[k] = 0;
 }
-const x = Math.min(2.5, Math.max(0, ml) / 10); // exposure relative to a 10 ml dose
-const v = (key) => effects[EFFECT_INDEX[key]] * x;
-const after = { ...before, marks: { ...before.marks } };
-const mk = after.marks;
-const obs = [];
-const say = (key, tone, text) => obs.push({ key, tone, text });
-if (!before.alive) return { after, observations: [{ key: '', tone: /** @type {'neutral'} */ ('neutral'), text: 'The subject is spent. Replace it for a fresh trial.' }], harm: 0 };
-const kind = def.kind;
-let harm = 0, heal = 0;
-const vit = v('vitality'), str = v('strength'), love = v('love'), arc = v('arcana'), tr = v('transformation');
-const fire = v('fire'), frost = v('frost'), acid = v('acidity'), tox = v('toxicity'), death = v('death');
-const shows = (k) => def.reveals.includes(k);
-if (shows('vitality') && vit > 1) {
-heal += vit * 0.7;
-if (kind === 'plant') { mk.growth = clamp(mk.growth + vit * 0.9, 0, 100); say('vitality', 'good', vit > 20 ? 'The seedling shoots up, leaves unfurling.' : 'New leaves appear.'); }
-else if (kind === 'spirit') { mk.glow = clamp(mk.glow + vit * 0.4, 0, 100); say('vitality', 'good', 'The wisp brightens to a warm, living gold.'); }
-else { mk.vigor = clamp(mk.vigor + vit * 0.8, 0, 100); say('vitality', 'good', vit > 20 ? 'Its coat gleams; it bounds about full of life.' : 'It looks refreshed.'); }
+return out;
 }
-if (shows('strength') && str > 1) {
-if (kind === 'mineral') { mk.etch = clamp(mk.etch - str * 0.5, 0, 100); say('strength', 'good', str > 20 ? 'The stone turns hard as iron; a knife skids off it.' : 'The stone seems a little harder.'); }
-else { mk.vigor = clamp(mk.vigor + str, 0, 100); say('strength', 'good', str > 20 ? (kind === 'animal' && def.id === 'beetle' ? 'The beetle lifts a pebble twice its size.' : 'It grows visibly stronger and pushes at the cage.') : 'It moves with new strength.'); }
+function summarize(samples) {
+/** @type {Record<string, number>} */ const values = {};
+/** @type {Record<string, number>} */ const spread = {};
+/** @type {Record<string, number>} */ const n = {};
+/** @type {Record<string, number>} */ const rabbits = {};
+/** @type {Record<string, string>} */ const records = {};
+for (const [key, list] of Object.entries(samples || {})) {
+if (!Array.isArray(list) || !list.length) continue;
+const mean = list.reduce((a, s) => a + s.v, 0) / list.length;
+const nr = new Set(list.map((s) => s.r)).size;
+const sd = list.length > 1 ? Math.sqrt(list.reduce((a, s) => a + (s.v - mean) ** 2, 0) / (list.length - 1)) : 0;
+const model = (0.18 * Math.abs(mean)) / Math.sqrt(nr) + (0.1 * Math.abs(mean) + 0.5) / Math.sqrt(list.length);
+const m = Math.round(mean * 10) / 10;
+values[key] = Math.abs(m) < 0.5 ? 0 : m;
+spread[key] = Math.round(Math.max(0.5, model, sd / Math.sqrt(list.length)) * 10) / 10;
+n[key] = list.length;
+rabbits[key] = nr;
+records[key] = list[list.length - 1].rec;
 }
-if (shows('love') && love > 1) {
-mk.love = clamp(mk.love + love * 1.2, 0, 100);
-say('love', 'good', kind === 'plant' ? 'Pink buds open and lean towards you.' : kind === 'spirit' ? 'The wisp drifts close and circles your hand.' : 'It nuzzles your hand, utterly devoted.');
+return { values, spread, n, rabbits, records };
 }
-if (shows('arcana') && arc > 1) {
-mk.glow = clamp(mk.glow + arc * 1.2, 0, 100);
-say('arcana', 'neutral', kind === 'mineral' ? (arc > 20 ? 'Runes of light crawl across the stone.' : 'The stone glimmers faintly.') : 'It shimmers with arcane light.');
+function addSamples(samples, rec) {
+for (const key of rec.revealed || []) {
+if (rec.values[key] === undefined) continue;
+(samples[key] ||= []).push({ v: rec.values[key], r: rec.rabbitId || rec.subjectId, rec: rec.id });
 }
-if (shows('transformation') && tr > 1) {
-mk.change = clamp(mk.change + tr * 1.3, 0, 100);
-say('transformation', 'neutral', kind === 'mineral' ? 'Crystals sprout over the stone’s surface.' : kind === 'spirit' ? 'The wisp twists into new shapes and colours.' : 'Its colours shift and its shape subtly changes.');
-}
-const netFire = fire, netFrost = frost;
-if (shows('fire') && netFire > 1) {
-mk.burn = clamp(mk.burn + netFire * 1.2, 0, 100);
-if (netFire > 18 && kind !== 'mineral') harm += (netFire - 18) * (kind === 'plant' ? 1.4 : 0.8);
-say('fire', netFire > 18 && kind !== 'mineral' ? 'bad' : 'neutral', kind === 'mineral' ? 'The stone glows hot.' : kind === 'plant' ? (netFire > 18 ? 'The leaves scorch.' : 'The leaves warm and redden.') : (netFire > 18 ? 'It yelps; its fur smoulders.' : 'A warm glow surrounds it.'));
-}
-if (shows('frost') && netFrost > 1) {
-mk.frost = clamp(mk.frost + netFrost * 1.2, 0, 100);
-if (netFrost > 18 && kind !== 'mineral') harm += (netFrost - 18) * (kind === 'plant' ? 1.1 : 0.7);
-say('frost', netFrost > 18 && kind !== 'mineral' ? 'bad' : 'neutral', kind === 'mineral' ? 'A crust of rime grows on the stone.' : kind === 'plant' ? 'Frost feathers the leaves.' : 'Frost rimes its whiskers; it shivers.');
-}
-if (shows('acidity') && Math.abs(acid) > 1) {
-if (acid > 1) {
-mk.etch = clamp(mk.etch + acid * (kind === 'mineral' ? 1.5 : 0.8), 0, 100);
-if (kind === 'plant') harm += acid * 0.8;
-say('acidity', 'bad', kind === 'mineral' ? (acid > 15 ? 'The stone fizzes violently and pits deeply.' : 'The stone fizzes where the drops land.') : 'The leaves blister where the drops land.');
-} else {
-say('acidity', 'neutral', kind === 'mineral' ? 'A chalky alkaline film dries on the stone; no fizzing.' : 'The soil turns chalky; the leaves pale slightly.');
-if (kind === 'plant') harm += -acid * 0.3;
-}
-}
-if (shows('toxicity') && tox > 1) {
-const sens = def.id === 'beetle' ? 0.45 : kind === 'plant' ? 0.9 : 1.1;
-harm += tox * sens;
-mk.sick = clamp(mk.sick + tox, 0, 100);
-say('toxicity', 'bad', kind === 'plant' ? 'The leaves yellow and droop.' : tox > 15 ? 'It staggers, sick and trembling.' : 'It looks queasy.');
-}
-if (shows('death') && death > 1) {
-harm += death * (kind === 'spirit' ? 0.8 : 1.8);
-say('death', 'bad', kind === 'spirit' ? 'The wisp dims and gutters.' : death > 15 ? 'A grey pallor creeps over it.' : 'It grows still and cold for a moment.');
-}
-after.health = clamp(before.health + heal * 0.5 - harm, 0, 100);
-if (kind === 'mineral') after.health = clamp(100 - mk.etch, 0, 100);
-after.alive = after.health > 0.5;
-if (!after.alive) say('', 'bad', kind === 'mineral' ? 'The stone crumbles to wet grit.' : kind === 'spirit' ? 'The wisp goes out.' : kind === 'plant' ? 'The seedling withers and dies.' : 'It collapses and does not get up.');
-if (!obs.length) say('', 'neutral', 'No visible change.');
-after.trials = before.trials + 1;
-return { after, observations: obs, harm };
+return samples;
 }
 function runTrial(trials, subjectId, dose, ctx) {
 const def = SUBJECT_BY_ID[subjectId];
-if (!def) throw new Error('Choose a test subject.');
-const isRabbit = subjectId === 'rabbit';
-let st;
-if (isRabbit) {
-st = ctx.rabbitId ? findRabbit(trials.colony, ctx.rabbitId) : focusRabbit(trials.colony);
+if (!def || def.legacy) throw new Error('Only the rabbits of the colony can be tested.');
+const st = ctx.rabbitId ? findRabbit(trials.colony, ctx.rabbitId) : focusRabbit(trials.colony);
 if (!st) throw new Error('Choose a rabbit.');
 if (!st.alive) throw new Error(`${st.name} is dead — choose or buy another rabbit.`);
-} else {
-st = trials.subjects[subjectId] || (trials.subjects[subjectId] = freshSubject(def));
-if (!st.alive) throw new Error(`The ${def.name.toLowerCase()} is spent — replace it first.`);
-}
 if (!(ctx.ml > 0)) throw new Error('Choose a positive dose.');
-const rr = isRabbit ? rabbitResponse(st, dose.effects, ctx.ml, { day: ctx.day }) : null;
-const res = rr || subjectResponse(def, st, dose.effects, ctx.ml);
-const errK = Math.sqrt(10 / ctx.ml) * (isRabbit ? STAGE_ERR[stageOf(st, ctx.day)] || 1 : 1);
-const err = {};
-const values = {};
-const theory = {};
+const felt = rabbitReading(st, dose.effects, { ml: ctx.ml, day: ctx.day, salt: `${trials.serial + 1}:${ctx.batchId}:${ctx.rev}` });
+const rr = rabbitResponse(st, felt, ctx.ml, { day: ctx.day });
+const errK = Math.sqrt(10 / ctx.ml) * (STAGE_ERR[stageOf(st, ctx.day)] || 1);
+/** @type {Record<string, number>} */ const err = {};
+/** @type {Record<string, number>} */ const values = {};
+/** @type {Record<string, number>} */ const theory = {};
+/** @type {Record<string, number>} */ const tv = {};
 const anomalies = [];
 for (const key of def.reveals) {
 const k = EFFECT_INDEX[key];
-const val = Math.round(dose.effects[k] * 10) / 10;
+const val = Math.round(felt[k] * 10) / 10;
 values[key] = Math.abs(val) < 0.5 ? 0 : val;
-err[key] = Math.round((0.6 + 0.04 * Math.abs(values[key])) * errK * 10) / 10;
+tv[key] = Math.round((Number(dose.effects[k]) || 0) * 10) / 10;
+err[key] = Math.round(Math.sqrt((0.2 * Math.abs(values[key])) ** 2 + (DOSE_NOISE * errK * Math.abs(values[key])) ** 2 + (0.4 * errK) ** 2) * 10) / 10;
 theory[key] = Math.round((ctx.theory?.[k] ?? 0) * 10) / 10;
-if (Math.abs(values[key] - theory[key]) > Math.max(4, 0.3 * Math.abs(theory[key]))) anomalies.push(key);
+if (Math.abs(values[key] - theory[key]) > Math.max(4, 0.35 * Math.abs(theory[key]))) anomalies.push(key);
 }
 const lawsFound = [];
 const laws = ctx.laws || [];
@@ -4057,62 +4142,52 @@ for (let r = 0; r < laws.length; r++) {
 const amt = dose.resonance ? dose.resonance[r] || 0 : 0;
 if (amt < 1.5) continue;
 const L = laws[r];
-const seen = [L.a, L.c].filter((x) => x >= 0).map((x) => EFFECT_KEYS[x]).some((key) => def.reveals.includes(key));
-if (!seen) continue;
 const rec = (trials.laws[L.id] ||= { evidence: 0, found: null });
 rec.evidence++;
 if (rec.found === null && rec.evidence >= 2) { rec.found = ctx.day; lawsFound.push(L.id); }
 }
 trials.serial++;
-const record = {
-id: 't' + trials.serial, serial: trials.serial, at: ctx.now ?? Date.now(), day: ctx.day, subjectId, ml: ctx.ml, source: ctx.source,
-batchId: ctx.batchId, rev: ctx.rev, revealed: def.reveals.slice(), values, theory,
-observations: res.observations, anomalies, lawsFound,
-look: { color: (dose.color || [0.5, 0.5, 0.5]).map((c) => Math.round(c * 1000) / 1000), temperature: Math.round(dose.temperature ?? 20) },
-parts: (ctx.parts || []).map((p) => ({ id: p.id, ml: Math.round(p.ml) })), died: !res.after.alive, err,
-};
-if (isRabbit) {
 const after = rr.after;
-record.rabbitId = st.id;
-record.rabbitName = st.name;
-record.replay = { b: encodeSnap(rabbitSnap(st, ctx.day)), a: encodeSnap(rabbitSnap(after, ctx.day)), rx: rr.react.join(',') };
+const record = {
+id: 't' + trials.serial, serial: trials.serial, at: ctx.now ?? Date.now(), day: ctx.day, subjectId: 'rabbit', ml: ctx.ml, source: ctx.source,
+batchId: ctx.batchId, rev: ctx.rev, revealed: def.reveals.slice(), values, theory, tv,
+observations: rr.observations, anomalies, lawsFound,
+look: { color: (dose.color || [0.5, 0.5, 0.5]).map((c) => Math.round(c * 1000) / 1000), temperature: Math.round(dose.temperature ?? 20) },
+parts: (ctx.parts || []).map((p) => ({ id: p.id, ml: Math.round(p.ml) })), died: !after.alive, err,
+rabbitId: st.id, rabbitName: st.name,
+replay: { b: encodeSnap(rabbitSnap(st, ctx.day)), a: encodeSnap(rabbitSnap(after, ctx.day)), rx: rr.react.join(',') },
+degen: rr.degen,
+};
 recordDose(after, { rec: record.id, day: ctx.day, ml: ctx.ml, src: ctx.source === 'vial' ? 'vial' : 'cauldron',
 obs: rr.observations.filter((o) => o.key).map((o) => o.key + (o.tone === 'good' ? '+' : o.tone === 'bad' ? '-' : '')).join(','), ...(after.alive ? {} : { died: 1 }) });
 const i = trials.colony.rabbits.indexOf(st);
 if (i >= 0) trials.colony.rabbits[i] = after;
-} else trials.subjects[subjectId] = res.after;
 trials.records.unshift(record);
 if (trials.records.length > RECORD_LIMIT) trials.records.length = RECORD_LIMIT;
 return record;
 }
 function resetSubject(trials, id) {
-const def = SUBJECT_BY_ID[id];
-if (!def) throw new Error('Unknown subject.');
-if (id === 'rabbit') {
+if (id !== 'rabbit') throw new Error('Unknown subject.');
 const r = addBoughtRabbit(trials.colony, { day: trials.colony.day || 1 });
 trials.colony.focus = r.id;
 return r;
 }
-trials.subjects[id] = { ...freshSubject(def), trials: trials.subjects[id]?.trials || 0 };
-return trials.subjects[id];
-}
 function certification(trials, batch, current) {
-const values = {};
-const records = {};
+const samples = {};
 const stale = new Set();
 let changed = false;
-for (const r of trials.records) {
+for (const r of trials.records.slice().reverse()) {
 if (r.batchId !== batch.id) continue;
 if (r.rev !== batch.rev) { changed = true; continue; }
 for (const key of r.revealed) {
-if (values[key] !== undefined || stale.has(key)) continue;
-const v = r.values[key];
-if (current && Math.abs(current[EFFECT_INDEX[key]] - v) > driftTolerance(v)) { stale.add(key); continue; }
-values[key] = v;
-records[key] = r.id;
+if (r.values[key] === undefined) continue;
+const ref = r.tv && r.tv[key] !== undefined ? r.tv[key] : r.values[key];
+if (current && Math.abs(current[EFFECT_INDEX[key]] - ref) > driftTolerance(ref)) { stale.add(key); continue; }
+(samples[key] ||= []).push({ v: r.values[key], r: r.rabbitId || r.subjectId, rec: r.id });
 }
 }
-return { values, records, stale: [...stale], changed };
+for (const k of Object.keys(samples)) stale.delete(k);
+return { ...summarize(samples), samples, stale: [...stale], changed };
 }
 function requiredEffects(commission) {
 if (!commission) return [];
@@ -4121,21 +4196,8 @@ return commission.requirements.map((r) => r.key).filter((k) => EFFECT_INDEX[k] !
 function missingEffects(commission, values) {
 return requiredEffects(commission).filter((k) => values[k] === undefined);
 }
-function suggestSubjects(keys, avail = () => true) {
-const left = new Set(keys);
-const out = [];
-while (left.size) {
-let best = null, bc = 0;
-for (const s of SUBJECTS) {
-if (!avail(s.id)) continue;
-const c = s.reveals.filter((k) => left.has(k)).length;
-if (c > bc) { bc = c; best = s; }
-}
-if (!best) break;
-out.push(best.id);
-for (const k of best.reveals) left.delete(k);
-}
-return out;
+function suggestSubjects(keys) {
+return keys.length ? ['rabbit'] : [];
 }
 function knownLaws(trials, laws) {
 return (laws || []).filter((L) => trials.laws[L.id] && trials.laws[L.id].found !== null);
@@ -4144,11 +4206,7 @@ function describeReading(key, v) {
 const e = EFFECTS[EFFECT_INDEX[key]];
 return `${e.label} ${Math.round(v)} (${potencyWord(v, key)})`;
 }
-void NE;
-function clamp(v, a, b) {
-return v < a ? a : v > b ? b : v;
-}
-return { SUBJECTS, SUBJECT_BY_ID, RECORD_LIMIT, DOSES, driftTolerance, createTrials, normalizeTrials, subjectResponse, runTrial, resetSubject, certification, requiredEffects, missingEffects, suggestSubjects, knownLaws, describeReading };
+return { SUBJECTS, SUBJECT_BY_ID, RECORD_LIMIT, DOSES, DOSE_NOISE, driftTolerance, createTrials, normalizeTrials, rabbitReading, summarize, addSamples, runTrial, resetSubject, certification, requiredEffects, missingEffects, suggestSubjects, knownLaws, describeReading };
 })();
 // src/game/gathering.js
 const __m29 = (() => {
@@ -7800,15 +7858,18 @@ const { serializeMaterial, deserializeMaterial } = __m9;
 const { generateCommission, tutorialCommission } = __m16;
 const { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById } = __m26;
 const { SIM } = __m23;
-const { createTrials, normalizeTrials, runTrial, resetSubject, SUBJECT_BY_ID, knownLaws } = __m27;
+const { createTrials, normalizeTrials, runTrial, SUBJECT_BY_ID, knownLaws } = __m27;
 const { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth } = __m29;
 const { predictPlan } = __m17;
 const { EFFECT_INDEX } = __m13;
 const { migrateVial } = __m30;
 const { recordSale, resolveFollowUp } = __m45;
-const { colonyDay, livingRabbits, findRabbit, addBoughtRabbit, retireRabbit, remainsSource, FOUNDER_BORN } = __m28;
+const { colonyDay, colonyTick, livingRabbits, findRabbit, addBoughtRabbit, retireRabbit, remainsSource, purgeRabbit, cullRabbit, maxHealthOf, FOUNDER_BORN } = __m28;
 const { remainsMaterials, remainsPlan, isRemains } = __m46;
 const SAVE_VERSION = 4;
+const PURGE_PRICE = 8;
+const PURGE_BREW_COST = 1;
+const PURGE_BREW_TIME = 40;
 const WORLD_GEN_VERSION = 2;
 const ASPECT_KEY_MAP = { vitality: 'vitality', ardor: 'fire', arcana: 'arcana', fortitude: 'strength' };
 const MARKET_EVENTS = [
@@ -8069,7 +8130,7 @@ this.stats.spent += cost;
 this.daySpending += cost;
 c.fedDay = this.day;
 for (const r of live) {
-r.health = round1(Math.min(Math.max(20, 100 - r.scar), r.health + 6));
+r.health = round1(Math.min(maxHealthOf(r, this.day), r.health + 6));
 r.marks.toxicity = Math.max(0, round1(r.marks.toxicity - 5));
 }
 return { ok: true, cost };
@@ -8120,26 +8181,66 @@ for (const d of remainsMaterials(remainsSource(/** @type {any} */ (m), this.day)
 }
 }
 replaceSubject(id, free = false) {
-const def = SUBJECT_BY_ID[id];
-if (!def) return { ok: false, reason: 'Unknown subject.' };
-if (id === 'rabbit') {
+if (id !== 'rabbit') return { ok: false, reason: 'Only rabbits are tested now.' };
 const r = this.buyRabbit(free);
 if (r.ok) return r;
 const alive = livingRabbits(this.colony)[0];
 if (alive && livingRabbits(this.colony).length >= this.cap.hutch) { this.colony.focus = alive.id; return { ok: true, cost: 0, reselected: true }; }
 return r;
 }
-const cost = free ? 0 : Math.ceil(def.cost * (this.has('kennel') ? 0.5 : 1));
-if (cost > this.coins + 1e-9) return { ok: false, reason: `A new ${def.name.toLowerCase()} costs ${cost} coins.` };
+subjectAvailable(id) {
+return id === 'rabbit';
+}
+purgePrice() {
+return PURGE_PRICE;
+}
+buyPurge(free = false) {
+const cost = free ? 0 : this.purgePrice();
+if (cost > this.coins + 1e-9) return { ok: false, reason: `A purging draught costs ${cost} coins.` };
 this.coins = round1(this.coins - cost);
 this.stats.spent += cost;
 this.daySpending += cost;
-resetSubject(this.trials, id);
+this.colony.purges = (this.colony.purges || 0) + 1;
 return { ok: true, cost };
 }
-subjectAvailable(id) {
-const def = SUBJECT_BY_ID[id];
-return !!def && (!def.needs || this.has(def.needs));
+brewPurge(free = false) {
+if (!free && !this.has('still')) return { ok: false, reason: 'Buy the Purging Still at the guild to brew your own.' };
+if (this.colony.still) return { ok: false, reason: 'The still is already working.' };
+const cost = free ? 0 : PURGE_BREW_COST;
+if (cost > this.coins + 1e-9) return { ok: false, reason: `The salts cost ${cost} coin.` };
+this.coins = round1(this.coins - cost);
+this.stats.spent += cost;
+this.daySpending += cost;
+this.colony.still = PURGE_BREW_TIME;
+return { ok: true, cost };
+}
+purgeRabbit(id, free = false) {
+const r = findRabbit(this.colony, id);
+if (!r || !r.alive) return { ok: false, reason: 'Choose a living rabbit.' };
+if (!free && !(this.colony.purges > 0)) return { ok: false, reason: 'You have no purging draught: buy one, or brew it in the still.' };
+if (!free) this.colony.purges--;
+purgeRabbit(r);
+return { ok: true, rabbit: r };
+}
+cullRabbit(id) {
+const r = findRabbit(this.colony, id);
+if (!r || !r.alive) return { ok: false, reason: 'Choose a living rabbit.' };
+cullRabbit(r, this.day);
+this.stats.culled = (this.stats.culled || 0) + 1;
+return { ok: true, rabbit: r };
+}
+tickColony(dt) {
+const c = this.colony;
+const events = [];
+if (c.still) {
+c.still = round1(c.still - dt);
+if (c.still <= 0) { c.still = null; c.purges = (c.purges || 0) + 1; events.push({ type: 'purge-brewed' }); }
+}
+const rep = colonyTick(c, dt, { day: this.day, seed: this.seed });
+for (const d of rep.died) events.push({ type: 'rabbit-died', ...d });
+for (const a of rep.attacks) events.push({ type: 'attack', ...a });
+for (const t of rep.traits) events.push({ type: 'trait', ...t });
+return { rep, events };
 }
 priceOf(id) {
 const m = this.lookup(id);
@@ -8513,6 +8614,7 @@ const d = { ...raw };
 if (!d.version) throw new Error('Missing save version');
 if (d.version > SAVE_VERSION) throw new Error('This save comes from a newer version of the game');
 d._migratedFrom = d.version;
+if (Array.isArray(d.equipment) && d.equipment.includes('lantern')) d.equipment = [...new Set(d.equipment.map((id) => (id === 'lantern' ? 'still' : id)))];
 if (d.version < 2) {
 d.market = d.market || { event: 'none', mods: {} };
 d.receiver = d.receiver || null;
@@ -8552,7 +8654,7 @@ return d;
 function round1(v) {
 return Math.round(v * 10) / 10;
 }
-return { SAVE_VERSION, WORLD_GEN_VERSION, MARKET_EVENTS, ACHIEVEMENTS, GameState, migrateCommission, migrate, EQUIPMENT, SIM };
+return { SAVE_VERSION, PURGE_PRICE, PURGE_BREW_COST, PURGE_BREW_TIME, WORLD_GEN_VERSION, MARKET_EVENTS, ACHIEVEMENTS, GameState, migrateCommission, migrate, EQUIPMENT, SIM };
 })();
 // src/game/persistence.js
 const __m47 = (() => {
@@ -8834,112 +8936,194 @@ ctx.fillStyle = c;
 ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
 }
 function paintBackground(ctx, W, H, L) {
-const rng = new Rng('backdrop');
-R(ctx, 0, 0, W, H, PAL.stone1);
-const bh = Math.max(4, Math.round(L.scale * 0.17));
-const bw = bh * 2 + 2;
-for (let y = 0, row = 0; y < L.floorY; y += bh, row++) {
+const u = L.scale >= 70 ? 3 : L.scale >= 34 ? 2 : 1;
+const w = Math.ceil(W / u), h = Math.ceil(H / u);
+const cv = makeCanvas(w, h);
+const g = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
+paintWorkshop(g, w, h, {
+cx: L.cx / u, floorY: Math.round(L.floorY / u), s: L.scale / u,
+half: (L.half ?? L.scale * 3.1) / u, top: (L.top ?? L.floorY - L.scale * 4) / u, jars: L.jars,
+});
+ctx.imageSmoothingEnabled = false;
+ctx.drawImage(cv, 0, 0, w * u, h * u);
+}
+const DK = '#140e12';
+function paintWorkshop(g, W, H, L) {
+const rng = new Rng('backdrop-2');
+const s = L.s, cx = L.cx, fy = L.floorY;
+R(g, 0, 0, W, fy, '#1e1a22');
+const bh = Math.max(4, Math.round(s * 0.2)), bw = bh * 2 + 3;
+const bricks = ['#2c2632', '#332c3a', '#3a3341', '#2a2430', '#403848'];
+for (let y = 0, row = 0; y < fy; y += bh, row++) {
 const off = row % 2 ? Math.round(bw / 2) : 0;
 for (let x = -off; x < W; x += bw) {
-const shade = rng.next();
-const c = shade < 0.15 ? PAL.stone0 : shade < 0.55 ? PAL.stone1 : shade < 0.9 ? PAL.stone2 : PAL.stone3;
-R(ctx, x + 1, y + 1, bw - 1, bh - 1, c);
-R(ctx, x + 1, y + 1, bw - 2, 1, mixHex(c === PAL.stone0 ? PAL.stone0 : PAL.stone2, PAL.stone4, 0.35));
-if (rng.chance(0.25)) R(ctx, x + 2 + rng.int(0, bw - 5), y + 2 + rng.int(0, Math.max(0, bh - 4)), 1, 1, PAL.stone0);
+const c = rng.pick(bricks);
+R(g, x + 1, y + 1, bw - 1, bh - 1, c);
+R(g, x + 1, y + 1, bw - 2, 1, mixHex(c, '#6a6070', 0.35));
+R(g, x + 1, y + bh - 1, bw - 1, 1, mixHex(c, '#0a080c', 0.4));
+R(g, x + 1, y + 1, 1, bh - 2, mixHex(c, '#6a6070', 0.2));
+if (rng.chance(0.3)) R(g, x + 2 + rng.int(0, bw - 5), y + 2 + rng.int(0, Math.max(0, bh - 4)), rng.int(1, 2), 1, mixHex(c, '#0a080c', 0.5));
+if (rng.chance(0.06)) R(g, x + rng.int(1, bw - 3), y + bh - 2, rng.int(2, 4), 1, '#3f5a2a');
 }
-R(ctx, 0, y, W, 1, PAL.mortar);
 }
-const g = ctx.createRadialGradient(L.cx, L.floorY * 0.75, L.scale * 1.5, L.cx, L.floorY * 0.6, Math.max(W, H) * 0.85);
-g.addColorStop(0, 'rgba(0,0,0,0)');
-g.addColorStop(1, 'rgba(6,4,10,0.62)');
-ctx.fillStyle = g;
-ctx.fillRect(0, 0, W, H);
-const beamH = Math.max(5, Math.round(L.scale * 0.22));
-R(ctx, 0, Math.round(L.scale * 0.15), W, beamH, PAL.wood1);
-R(ctx, 0, Math.round(L.scale * 0.15), W, 1, PAL.wood3);
-R(ctx, 0, Math.round(L.scale * 0.15) + beamH - 1, W, 1, PAL.wood0);
-for (let x = 6; x < W; x += Math.round(L.scale * 1.7)) {
-R(ctx, x, Math.round(L.scale * 0.15) + 2, 2, 2, PAL.iron3);
+for (let y = 0; y < fy; y++) {
+const a = 0.35 * Math.max(0, 1 - y / (fy * 0.4));
+if (a > 0.01) R(g, 0, y, W, 1, `rgba(8,6,10,${a.toFixed(3)})`);
 }
-const side = (W - L.scale * 6) / 2;
-if (side > L.scale * 0.6 || W > H) {
-const ww = Math.round(L.scale * 0.95), wh = Math.round(L.scale * 1.25);
-const wx = Math.round(Math.max(4, L.cx - L.scale * 3.8 - ww / 2)), wy = Math.round(L.scale * 0.65);
-R(ctx, wx - 2, wy - 2, ww + 4, wh + 4, PAL.wood1);
-const sky = ctx.createLinearGradient(0, wy, 0, wy + wh);
-sky.addColorStop(0, '#1c2350');
-sky.addColorStop(1, '#3a3166');
-ctx.fillStyle = sky;
-ctx.fillRect(wx, wy, ww, wh);
-for (let k = 0; k < 9; k++) R(ctx, wx + rng.int(1, ww - 2), wy + rng.int(1, wh - 2), 1, 1, '#d8d6ff');
-const mr = Math.max(2, Math.round(ww * 0.17));
-ctx.fillStyle = '#f2ecc8';
-ctx.beginPath();
-ctx.arc(wx + ww * 0.68, wy + wh * 0.28, mr, 0, Math.PI * 2);
-ctx.fill();
-R(ctx, wx + ww / 2 - 1, wy, 2, wh, PAL.wood2);
-R(ctx, wx, wy + wh / 2 - 1, ww, 2, PAL.wood2);
-R(ctx, wx - 3, wy + wh + 2, ww + 6, 3, PAL.wood3);
+const by = Math.round(s * 0.12), bth = Math.max(3, Math.round(s * 0.2));
+R(g, 0, by - 1, W, bth + 2, DK);
+R(g, 0, by, W, bth, PAL.wood2); R(g, 0, by, W, 1, PAL.wood4); R(g, 0, by + bth - 1, W, 1, PAL.wood1);
+for (let x = rng.int(0, 12); x < W; x += rng.int(10, 24)) R(g, x, by + 1 + rng.int(0, bth - 3), rng.int(4, 9), 1, PAL.wood1);
+const clear = (x, pad = 0) => Math.abs(x - cx) > L.half * 0.62 + pad;
+for (let k = 0; k < 9; k++) {
+const hx = Math.round((k + 0.5) * (W / 9) + rng.range(-4, 4));
+if (!clear(hx, 2)) continue;
+herbBundle(g, rng, hx, by + bth, Math.round(s * rng.range(0.45, 0.75)), rng.pick([['#2f5a24', '#4f8a32', '#7da447'], ['#4a3a6a', '#7a5aa8', '#a88ad8'], ['#5a6a24', '#8a9a32', '#b8c84a']]));
 }
-const shelfY = [Math.round(L.scale * 1.05), Math.round(L.scale * 2.15)];
-const shelfSpan = Math.round(L.scale * 1.55);
-const sides = W > L.scale * 6.2 ? [L.cx + L.scale * 3.0, L.cx - L.scale * 3.0 - shelfSpan] : [W - shelfSpan - 2, 2];
-let jarIndex = 0;
-for (const sx0 of sides) {
-const sx = Math.round(sx0);
-if (sx + shelfSpan < 0 || sx > W) continue;
-for (const sy of shelfY) {
-R(ctx, sx + 2, sy, 2, 4, PAL.iron3);
-R(ctx, sx + shelfSpan - 4, sy, 2, 4, PAL.iron3);
-R(ctx, sx, sy - 2, shelfSpan, 3, PAL.wood3);
-R(ctx, sx, sy - 2, shelfSpan, 1, PAL.wood5);
-R(ctx, sx, sy + 1, shelfSpan, 1, PAL.wood0);
-let x = sx + 3;
-while (x < sx + shelfSpan - 6) {
+for (const side of [-1, 1]) {
+const x0 = side < 0 ? rng.int(1, 4) : W - rng.int(2, 5);
+ivy(g, rng, x0, by + bth, Math.round(s * 1.6));
+}
+const shelves = [];
+const gap = Math.max(s * 0.55, 6);
+const up = by + bth + Math.round(s * 0.5);
+if (up < L.top - s * 0.15) {
+shelves.push([2, up, Math.round(cx - gap - 2), -1], [Math.round(cx + gap), up, Math.round(W - 2 - cx - gap), 1]);
+}
+const room = Math.max(0, cx - L.half * 0.95);
+const shelfW = Math.min(Math.round(s * 1.9), Math.round(room - 2));
+if (shelfW > s * 0.5) {
+for (const sy of [Math.round(s * 1.05), Math.round(s * 2.3)]) {
+if (sy > fy - s * 0.6 || (shelves.length && sy < up + s * 0.7)) continue;
+shelves.push([Math.round(Math.max(2, cx - L.half * 0.95 - shelfW)), sy, shelfW, -1], [Math.round(Math.min(W - shelfW - 2, cx + L.half * 0.95)), sy, shelfW, 1]);
+}
+}
+let ji = 0;
+for (const [sx, sy, sw, side] of shelves) {
+if (sw < 8) continue;
+shelf(g, sx, sy, sw);
+let x = sx + 2;
+while (x < sx + sw - 4) {
 const kind = rng.next();
-if (kind < 0.62 && L.jars.length) {
-const jar = L.jars[jarIndex++ % L.jars.length];
-const jw = Math.max(4, Math.round(L.scale * (0.16 + rng.next() * 0.06)));
-const jh = Math.max(6, Math.round(L.scale * (0.22 + rng.next() * 0.12)));
-drawJar(ctx, x, sy - 2 - jh, jw, jh, jar.color, jar.form);
-x += jw + 2;
-} else if (kind < 0.85) {
-const n = rng.int(2, 4);
-for (let b = 0; b < n; b++) {
-const bh2 = Math.round(L.scale * (0.24 + rng.next() * 0.08));
-const c = rng.pick([PAL.copper1, PAL.leaf1, PAL.frost0, PAL.wood2, '#5a2340']);
-R(ctx, x, sy - 2 - bh2, 3, bh2, c);
-R(ctx, x, sy - 2 - bh2 + 2, 3, 1, PAL.brass);
-x += 3;
+const jar = L.jars.length ? L.jars[ji++ % L.jars.length] : { color: [0.5, 0.6, 0.8], form: 'liquid' };
+if (kind < 0.55) { const jw = Math.max(4, Math.round(s * rng.range(0.16, 0.24))), jh = Math.max(5, Math.round(s * rng.range(0.24, 0.36))); if (x + jw > sx + sw - 2) break; drawJar(g, x, sy - 1 - jh, jw, jh, jar.color, jar.form); x += jw + 1 + rng.int(0, 1); }
+else if (kind < 0.7) { const bw2 = Math.max(4, Math.round(s * 0.2)); if (x + bw2 > sx + sw - 2) break; bottle(g, x, sy - 1, bw2, Math.round(s * rng.range(0.38, 0.5)), jar.color); x += bw2 + 2; }
+else if (kind < 0.85) { const n = rng.int(2, 4); for (let b = 0; b < n && x < sx + sw - 5; b++) { const bh2 = Math.round(s * rng.range(0.24, 0.32)); const c = rng.pick([PAL.copper1, PAL.leaf1, PAL.frost0, '#5a2340', PAL.wood2]); R(g, x - 1, sy - 2 - bh2, 4, bh2 + 1, DK); R(g, x, sy - 1 - bh2, 2, bh2, c); R(g, x, sy - bh2 + 1, 2, 1, PAL.brass); x += 3; } x += 2; }
+else { const pw = Math.max(5, Math.round(s * 0.26)); if (x + pw > sx + sw - 2) break; pottedPlant(g, rng, x, sy - 1, pw); x += pw + 2; }
 }
-x += 2;
-} else {
-const mw = Math.round(L.scale * 0.2);
-R(ctx, x, sy - 2 - mw * 0.6, mw, mw * 0.6, PAL.stone3);
-R(ctx, x + 1, sy - 2 - mw * 0.6, mw - 2, 1, PAL.stone4);
-x += mw + 3;
+ivy(g, rng, side < 0 ? sx + 1 : sx + sw - 2, sy + 2, Math.round(s * rng.range(0.4, 0.9)));
+}
+R(g, 0, fy, W, H - fy, '#2a2430');
+const fh = Math.max(3, Math.round(s * 0.18));
+for (let y = fy, row = 0; y < H; y += fh, row++) {
+const fw = fh * 3 + row;
+for (let x = -(row * 7) % fw; x < W; x += fw) {
+const c = rng.pick(['#3d3844', '#4a4252', '#433b4a', '#38323f']);
+R(g, x + 1, y + 1, fw - 1, fh - 1, c);
+R(g, x + 1, y + 1, fw - 2, 1, mixHex(c, '#8a8296', 0.3));
 }
 }
+R(g, 0, fy, W, 1, '#0d0a10'); R(g, 0, fy + 1, W, 1, 'rgba(0,0,0,0.4)');
+const lx = cx - L.half * 0.95, rx = cx + L.half * 0.95;
+if (lx > s * 0.7) barrel(g, Math.round(lx - s * 0.75), fy + 1, Math.round(s * 0.62), Math.round(s * 0.8));
+if (lx > s * 1.6) { stoneBlock(g, Math.round(lx - s * 1.5), fy + 1, Math.round(s * 0.55), Math.round(s * 0.36)); mortar(g, Math.round(lx - s * 1.38), fy + 1 - Math.round(s * 0.36), Math.round(s * 0.3)); }
+if (W - rx > s * 0.8) sack(g, rng, Math.round(rx + s * 0.25), fy + 1, Math.round(s * 0.62), Math.round(s * 0.66));
+if (W - rx > s * 1.6) pottedPlant(g, rng, Math.round(rx + s * 1.05), fy + 1, Math.round(s * 0.4));
+const gl = g.createRadialGradient(cx, fy, s * 0.2, cx, fy, s * 4.2);
+gl.addColorStop(0, 'rgba(255,150,60,0.22)');
+gl.addColorStop(0.5, 'rgba(255,120,40,0.08)');
+gl.addColorStop(1, 'rgba(255,120,40,0)');
+g.fillStyle = gl;
+g.fillRect(0, 0, W, H);
+const vg = g.createRadialGradient(cx, fy * 0.7, s * 1.8, cx, fy * 0.6, Math.max(W, H) * 0.9);
+vg.addColorStop(0, 'rgba(0,0,0,0)');
+vg.addColorStop(1, 'rgba(6,4,10,0.4)');
+g.fillStyle = vg;
+g.fillRect(0, 0, W, H);
+}
+function shelf(g, x, y, w) {
+R(g, x - 1, y - 1, w + 2, 4, DK);
+R(g, x, y, w, 2, PAL.wood4); R(g, x, y, w, 1, PAL.wood5); R(g, x, y + 2, w, 1, PAL.wood1);
+for (const bx of [x + 2, x + w - 4]) { R(g, bx, y + 3, 2, 3, PAL.iron3); R(g, bx + 1, y + 6, 1, 1, PAL.iron3); }
+R(g, x, y + 3, w, 1, 'rgba(0,0,0,0.35)');
+}
+function herbBundle(g, rng, x, y, len, pal) {
+R(g, x, y, 1, 2, PAL.parch1);
+R(g, x - 1, y + 2, 3, 2, PAL.wood3);
+for (let i = 0; i < len; i++) {
+const t = i / len, wd = Math.max(1, Math.round((0.4 + Math.sin(t * Math.PI) * 0.9) * 3));
+R(g, x - wd, y + 4 + i, wd * 2 + 1, 1, DK);
+for (let k = -wd + 1; k < wd; k++) R(g, x + k, y + 4 + i, 1, 1, pal[(k + i + 9) % 3 === 0 ? 2 : (k + i) % 2 ? 1 : 0]);
+}
+for (let k = 0; k < 4; k++) R(g, x + rng.int(-3, 3), y + 4 + rng.int(len - 3, len + 1), 1, 1, pal[1]);
+}
+function ivy(g, rng, x, y, len) {
+let px = x;
+for (let i = 0; i < len; i++) {
+px += rng.int(-1, 1) * (i % 3 === 0 ? 1 : 0);
+R(g, px, y + i, 1, 1, '#2a4a1f');
+if (i % 3 === 0) { const sd = rng.chance(0.5) ? -1 : 1; R(g, px + sd, y + i, 2 * sd > 0 ? 2 : 1, 2, '#4f8a32'); R(g, px + sd * 2, y + i, 1, 1, '#7da447'); }
 }
 }
-for (let k = 0; k < 6; k++) {
-const hx = Math.round((k + 0.5) * (W / 6) + rng.range(-8, 8));
-if (Math.abs(hx - L.cx) < L.scale * 1.6) continue;
-const top = Math.round(L.scale * 0.15) + beamH;
-const len = Math.round(L.scale * rng.range(0.35, 0.6));
-R(ctx, hx, top, 1, 3, PAL.parch0);
-for (let y = 0; y < len; y++) {
-const wdt = Math.max(1, Math.round((1 - Math.abs(y / len - 0.45)) * 4));
-R(ctx, hx - Math.floor(wdt / 2), top + 3 + y, wdt, 1, y % 3 === 0 ? PAL.leaf3 : y % 2 ? PAL.leaf1 : PAL.leaf2);
+function bottle(g, x, base, w, h, color) {
+const nw = Math.max(2, Math.round(w / 3)), nh = Math.round(h * 0.35), bh = h - nh;
+const nx = x + Math.round((w - nw) / 2);
+R(g, x - 1, base - bh - 1, w + 2, bh + 1, DK);
+R(g, nx - 1, base - h - 1, nw + 2, nh + 1, DK);
+R(g, x, base - bh, w, bh, 'rgba(160,210,230,0.25)');
+const fill = Math.round(bh * 0.65);
+R(g, x, base - fill, w, fill, rgbStr(color, 0.9));
+R(g, x, base - fill, w, 1, rgbStr(color, 1.3));
+R(g, nx, base - h, nw, nh, 'rgba(160,210,230,0.3)');
+R(g, nx, base - h - 1, nw, 2, PAL.wood5);
+R(g, x, base - bh + 1, 1, bh - 2, 'rgba(255,255,255,0.45)');
 }
+function pottedPlant(g, rng, x, base, w) {
+const ph = Math.max(3, Math.round(w * 0.7));
+R(g, x - 1, base - ph - 1, w + 2, ph + 1, DK);
+R(g, x, base - ph, w, ph, PAL.copper2); R(g, x, base - ph, w, 1, PAL.copper3); R(g, x + w - 2, base - ph + 1, 2, ph - 1, PAL.copper1);
+R(g, x - 1, base - ph - 1, w + 2, 2, PAL.copper3);
+const top = base - ph - 1;
+for (let i = 0; i < w * 2.2; i++) {
+const lx = x + rng.int(-1, w), ly = top - rng.int(0, Math.round(w * 1.2));
+R(g, lx, ly, 2, 1, DK);
+R(g, lx, ly, 1, 1, rng.pick(['#3f7a2a', '#5a9a34', '#7da447', '#2f5a24']));
 }
-R(ctx, 0, L.floorY, W, H - L.floorY, PAL.wood1);
-const ph = Math.max(3, Math.round(L.scale * 0.12));
-for (let y = L.floorY; y < H; y += ph) {
-R(ctx, 0, y, W, 1, PAL.wood0);
-for (let x = rng.int(0, 30); x < W; x += rng.int(18, 40)) R(ctx, x, y, 1, ph, PAL.wood0);
+for (let i = 0; i < 3; i++) R(g, x + Math.round(w / 2) + rng.int(-1, 1), top - i * 2, 1, 2, '#2f5a24');
 }
-R(ctx, 0, L.floorY, W, 2, PAL.wood3);
+function barrel(g, x, base, w, h) {
+for (let yy = 0; yy < h; yy++) {
+const t = yy / h, bulge = Math.round(Math.sin(t * Math.PI) * w * 0.08);
+R(g, x - bulge - 1, base - h + yy, w + bulge * 2 + 2, 1, DK);
+R(g, x - bulge, base - h + yy, w + bulge * 2, 1, PAL.wood3);
+for (let k = 3; k < w; k += 4) R(g, x - bulge + k, base - h + yy, 1, 1, PAL.wood2);
+R(g, x - bulge, base - h + yy, 2, 1, PAL.wood4);
+R(g, x + w + bulge - 3, base - h + yy, 3, 1, PAL.wood1);
+}
+for (const t of [0.15, 0.5, 0.85]) { const yy = Math.round(base - h + t * h); R(g, x - 1, yy, w + 2, 2, PAL.iron2); R(g, x - 1, yy, w + 2, 1, PAL.iron4); }
+R(g, x, base - h - 1, w, 2, PAL.wood4); R(g, x + 1, base - h - 1, w - 2, 1, PAL.wood5);
+}
+function sack(g, rng, x, base, w, h) {
+for (let yy = 0; yy < h; yy++) {
+const t = yy / h, wd = Math.round(w * (0.55 + 0.45 * Math.sin(Math.min(1, t * 1.3) * Math.PI / 2)));
+const ox = Math.round((w - wd) / 2);
+R(g, x + ox - 1, base - h + yy, wd + 2, 1, DK);
+R(g, x + ox, base - h + yy, wd, 1, t < 0.15 ? '#a8885a' : '#8a6a42');
+R(g, x + ox, base - h + yy, 2, 1, '#b89868');
+R(g, x + ox + wd - 2, base - h + yy, 2, 1, '#6a5032');
+}
+R(g, x + Math.round(w * 0.3), base - Math.round(h * 0.82), Math.round(w * 0.4), 1, '#4a3420');
+for (let i = 0; i < w; i++) R(g, x + rng.int(2, w - 3), base - rng.int(2, h - 3), 1, 1, '#7a5a38');
+}
+function stoneBlock(g, x, base, w, h) {
+R(g, x - 1, base - h - 1, w + 2, h + 1, DK);
+R(g, x, base - h, w, h, PAL.stone2); R(g, x, base - h, w, 1, PAL.stone4); R(g, x, base - h, 1, h, PAL.stone3); R(g, x + w - 2, base - h + 1, 2, h - 1, PAL.stone1);
+}
+function mortar(g, x, base, w) {
+const h = Math.max(3, Math.round(w * 0.6));
+R(g, x - 1, base - h - 1, w + 2, h + 1, DK);
+R(g, x, base - h, w, h, PAL.stone3); R(g, x, base - h, w, 1, PAL.stone4); R(g, x + 1, base - h + 1, w - 2, 1, PAL.stone1);
+for (let i = 0; i < h + 2; i++) R(g, x + w - 2 + Math.round(i * 0.5), base - h - i, 2, 1, i ? PAL.wood4 : PAL.wood5);
 }
 function drawJar(ctx, x, y, w, h, color, form) {
 const c = color;
@@ -8991,6 +9175,7 @@ continue;
 if (!(dist > 0 && dist < wall) && !isRim) continue;
 const nx = c.nx, ny = c.ny;
 let lum = 2.2 - nx * 1.4 - ny * 1.1;
+lum += Math.pow(Math.max(0, -nx * 0.66 - ny * 0.75), 8) * 2.4; // a sheen on the upper left of the belly
 lum += (rng.next() - 0.5) * 0.6; // hammered texture
 if (isRim) lum = wy < -0.06 ? 4.3 : wy < 0.03 ? 3.4 : 1.8;
 if (dist < 0.03 && !isRim) lum -= 0.8; // inner edge shadow
@@ -9008,11 +9193,15 @@ ctx.putImageData(img, 0, 0);
 const legW = Math.max(3, Math.round(0.18 * s));
 for (const lx of [-c.belly * 0.62, c.belly * 0.62]) {
 const px = Math.round(v.ox + lx * s - x0 - legW / 2);
-const top = Math.round(v.oy + (c.depth - 0.45) * s - y0);
+const top = Math.round(v.oy + (c.depth - 0.05) * s - y0);
 const bot = Math.round(v.oy + (c.depth + 0.7) * s - y0);
+R(ctx, px - 1, top, legW + 2, bot - top, PAL.iron0);
 R(ctx, px, top, legW, bot - top, PAL.iron2);
 R(ctx, px, top, 1, bot - top, PAL.iron4);
-R(ctx, px - 1, bot - 2, legW + 2, 2, PAL.iron3);
+R(ctx, px + legW - 1, top, 1, bot - top, PAL.iron1);
+R(ctx, px - 2, bot - 3, legW + 4, 3, PAL.iron0);
+R(ctx, px - 1, bot - 3, legW + 2, 2, PAL.iron3);
+R(ctx, px - 1, bot - 3, legW + 2, 1, PAL.iron5);
 }
 const hy = Math.round(v.oy + 0.55 * s - y0);
 for (const sgn of [-1, 1]) {
@@ -9047,6 +9236,16 @@ R(ctx, x + 1, y + 1, sw - 2, 1, PAL.stone4);
 }
 }
 R(ctx, left, top, right - left, 1, PAL.stone4);
+const fy = Math.round(v.oy + (c.depth + 0.5) * s), lw = Math.round(c.belly * 0.5 * s), lh = Math.max(3, Math.round(s * 0.11));
+for (const [dx, dy, ww] of [[-0.55, 0, 1], [0.05, 0, 1], [-0.25, -1, 0.9]]) {
+const x = Math.round(v.ox + dx * c.belly * s), y = fy + Math.round(dy * lh * 0.8);
+const w2 = Math.round(lw * ww);
+R(ctx, x - 1, y - 1, w2 + 2, lh + 2, PAL.wood0);
+R(ctx, x, y, w2, lh, PAL.wood2); R(ctx, x, y, w2, 1, PAL.wood4); R(ctx, x, y + lh - 1, w2, 1, PAL.wood1);
+for (let k = 3; k < w2 - 3; k += 5) R(ctx, x + k, y + 1 + (k % 2), 3, 1, PAL.wood1);
+R(ctx, x + w2 - lh, y, lh, lh, PAL.parch1); R(ctx, x + w2 - lh + 1, y + 1, Math.max(1, lh - 2), Math.max(1, lh - 2), PAL.parch0);
+}
+for (let k = 0; k < 14; k++) R(ctx, Math.round(v.ox + rng.range(-0.6, 0.6) * c.belly * s), fy + lh + rng.int(-1, 1), 2, 1, rng.pick([PAL.fire0, PAL.iron1, PAL.copper0]));
 }
 return { PAL, hex2rgb, rgbStr, mixHex, paintBackground, drawJar, renderCauldron, makeCanvas, paintHearth, rect: R };
 })();
@@ -9719,7 +9918,7 @@ this.bg = makeCanvas(W, H);
 const bctx = this.bg.getContext('2d');
 bctx.imageSmoothingEnabled = false;
 const floorY = Math.round(this.view.oy + (c.depth + 0.72) * s);
-paintBackground(bctx, W, H, { cx: this.view.ox, floorY, scale: s, jars });
+paintBackground(bctx, W, H, { cx: this.view.ox, floorY, scale: s, half: (c.belly + 0.6) * s, top: this.view.oy - 0.25 * s, jars });
 paintHearth(bctx, c, this.view);
 this.cauldronArt = renderCauldron(c, this.view);
 this.heatCanvas = makeCanvas(this.cauldronArt.canvas.width, this.cauldronArt.canvas.height);
@@ -10186,8 +10385,6 @@ return { drawPortrait };
 })();
 // src/rendering/scenes.js
 const __m55 = (() => {
-const { Rng } = __m6;
-const { PAL } = __m51;
 function R(ctx, x, y, w, h, c) {
 ctx.fillStyle = c;
 ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
@@ -10302,221 +10499,7 @@ const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
 drawRaw(ctx, 0, 0, shape, color, fill);
 return cv;
 }
-const SCENE_W = 192;
-const SCENE_H = 108;
-function paintRegion(ctx, region, seed) {
-const W = SCENE_W, H = SCENE_H;
-const rng = new Rng(`scene:${seed}:${region}`);
-const sky = {
-forest: [[0.36, 0.52, 0.42], [0.2, 0.32, 0.26]], meadow: [[0.55, 0.72, 0.92], [0.78, 0.86, 0.95]], river: [[0.5, 0.66, 0.8], [0.72, 0.8, 0.86]],
-quarry: [[0.66, 0.62, 0.58], [0.82, 0.76, 0.66]], moonfen: [[0.07, 0.07, 0.16], [0.16, 0.18, 0.32]], crags: [[0.3, 0.12, 0.1], [0.62, 0.3, 0.16]],
-}[region] || [[0.5, 0.6, 0.7], [0.7, 0.8, 0.9]];
-for (let y = 0; y < H * 0.55; y++) R(ctx, 0, y, W, 1, css(mix(sky[0], sky[1], y / (H * 0.55))));
-const ground = {
-forest: [[0.18, 0.3, 0.14], [0.11, 0.2, 0.09]], meadow: [[0.42, 0.62, 0.26], [0.3, 0.5, 0.2]], river: [[0.48, 0.52, 0.3], [0.36, 0.42, 0.24]],
-quarry: [[0.52, 0.46, 0.4], [0.4, 0.35, 0.31]], moonfen: [[0.12, 0.18, 0.16], [0.07, 0.11, 0.1]], crags: [[0.24, 0.14, 0.12], [0.15, 0.08, 0.07]],
-}[region] || [[0.4, 0.5, 0.3], [0.3, 0.4, 0.2]];
-const hillC = css(mix(sky[1], ground[0], 0.55));
-let hy = H * 0.45;
-for (let x = 0; x < W; x++) {
-hy += (rng.next() - 0.5) * 1.6;
-hy = Math.max(H * 0.34, Math.min(H * 0.52, hy));
-R(ctx, x, hy, 1, H * 0.6 - hy, hillC);
-}
-for (let y = Math.floor(H * 0.5); y < H; y++) R(ctx, 0, y, W, 1, css(mix(ground[0], ground[1], (y - H * 0.5) / (H * 0.5))));
-for (let i = 0; i < 420; i++) {
-const x = rng.int(0, W - 1), y = rng.int(Math.floor(H * 0.52), H - 1);
-R(ctx, x, y, 1, 1, css(ground[0], 0.75 + rng.next() * 0.5));
-}
-if (region === 'forest' || region === 'moonfen') {
-for (let i = 0; i < 9; i++) {
-const x = rng.int(-6, W), h = rng.int(28, 46), top = H * 0.55 - h;
-const trunk = region === 'moonfen' ? '#2a2422' : '#3a2416';
-R(ctx, x + 4, top + 10, 4, h, trunk);
-const leaf = region === 'moonfen' ? [0.12, 0.2, 0.2] : [0.16, 0.32, 0.14];
-for (let r = 0; r < 4; r++) R(ctx, x - 4 + r, top + r * 3, 20 - r * 2, 9, css(leaf, 0.8 + r * 0.12));
-}
-}
-if (region === 'meadow') {
-for (let i = 0; i < 70; i++) {
-const x = rng.int(0, W - 1), y = rng.int(Math.floor(H * 0.58), H - 1);
-R(ctx, x, y, 1, 2, '#335224');
-R(ctx, x, y - 1, 1, 1, rng.pick(['#ffe58a', '#ff9fc7', '#ffffff', '#c9b7ff']));
-}
-R(ctx, W * 0.8, H * 0.12, 9, 9, '#fff3b0');
-}
-if (region === 'river' || region === 'moonfen') {
-let rx = W * 0.35;
-for (let y = Math.floor(H * 0.5); y < H; y++) {
-rx += Math.sin(y * 0.15) * 0.9;
-const w = 10 + (y - H * 0.5) * 0.35;
-R(ctx, rx - w / 2, y, w, 1, region === 'moonfen' ? '#1e3a40' : '#4c86c4');
-if (y % 3 === 0) R(ctx, rx - w / 4 + (y % 7), y, 3, 1, region === 'moonfen' ? '#3f7f7a' : '#8fc7f2');
-}
-if (region === 'river') for (let i = 0; i < 4; i++) {
-const x = rng.int(0, W - 20);
-R(ctx, x + 8, H * 0.3, 2, H * 0.25, '#4a3a20');
-for (let k = 0; k < 7; k++) R(ctx, x + k * 3, H * 0.28 + k, 1, 14 - k, '#7da447');
-}
-}
-if (region === 'quarry' || region === 'crags') {
-for (let i = 0; i < 6; i++) {
-const x = rng.int(-10, W), w = rng.int(24, 44), h = rng.int(16, 34), top = H * 0.56 - h;
-const rock = region === 'crags' ? [0.28, 0.18, 0.16] : [0.55, 0.5, 0.46];
-R(ctx, x, top, w, h, css(rock));
-R(ctx, x, top, w, 2, css(rock, 1.25));
-for (let k = 0; k < 5; k++) R(ctx, x + rng.int(2, w - 4), top + rng.int(3, h - 2), 3, 1, css(rock, 0.75));
-}
-if (region === 'crags') for (let i = 0; i < 4; i++) {
-const x = rng.int(0, W - 10);
-R(ctx, x, H * 0.62, 8, 2, '#ff7a1c'); R(ctx, x + 2, H * 0.62 - 1, 4, 1, '#ffe58a');
-}
-}
-if (region === 'moonfen') {
-R(ctx, W * 0.15, H * 0.1, 7, 7, '#e9fbff'); R(ctx, W * 0.15 + 2, H * 0.1, 5, 5, '#9fb4d8');
-for (let i = 0; i < 30; i++) R(ctx, rng.int(0, W - 1), rng.int(0, Math.floor(H * 0.4)), 1, 1, '#c9b7ff');
-}
-}
-function animateRegion(ctx, region, t) {
-const W = SCENE_W, H = SCENE_H;
-if (region === 'moonfen') {
-for (let i = 0; i < 5; i++) {
-const x = (W * (0.15 + i * 0.18) + Math.sin(t * 0.7 + i * 2) * 8) | 0, y = (H * 0.55 + Math.sin(t * 1.3 + i) * 5) | 0;
-R(ctx, x, y, 2, 2, '#8fe0ff'); R(ctx, x - 1, y, 1, 1, '#2a4f7a'); R(ctx, x + 2, y + 1, 1, 1, '#2a4f7a');
-}
-} else if (region === 'meadow' || region === 'forest') {
-for (let i = 0; i < 3; i++) {
-const x = ((t * (8 + i * 3) + i * 60) % (W + 20)) - 10, y = H * (0.15 + i * 0.07) + Math.sin(t * 3 + i) * 2;
-R(ctx, x, y, 1, 1, '#24160f'); R(ctx, x - 1, y - (Math.sin(t * 10 + i) > 0 ? 1 : 0), 1, 1, '#24160f'); R(ctx, x + 1, y - (Math.sin(t * 10 + i) > 0 ? 1 : 0), 1, 1, '#24160f');
-}
-} else if (region === 'crags') {
-for (let i = 0; i < 6; i++) {
-const y = H * 0.6 - ((t * 10 + i * 13) % 30), x = W * (0.1 + i * 0.15) + Math.sin(t + i) * 3;
-R(ctx, x, y, 1, 1, i % 2 ? '#ffb444' : '#73697b');
-}
-} else if (region === 'river') {
-for (let i = 0; i < 4; i++) {
-const y = H * 0.55 + ((t * 6 + i * 11) % (H * 0.45)), x = W * 0.35 + Math.sin(y * 0.15) * 6 + Math.sin(t * 2 + i) * 2;
-R(ctx, x, y, 2, 1, '#dff4ff');
-}
-}
-}
-const SUBJECT_W = 48;
-const SUBJECT_H = 40;
-function drawSubject(ctx, id, st, t, react = 0) {
-const W = SUBJECT_W, H = SUBJECT_H;
-const m = st.marks || {};
-ctx.clearRect(0, 0, W, H);
-if (id === 'stone') { R(ctx, 8, 34, 32, 4, '#4a4252'); R(ctx, 8, 34, 32, 1, '#73697b'); }
-else if (id === 'seedling') { R(ctx, 14, 28, 20, 10, '#7a3c1f'); R(ctx, 13, 28, 22, 2, '#a8582a'); R(ctx, 15, 29, 18, 1, '#3a2416'); }
-else if (id === 'wisp') { R(ctx, 12, 6, 24, 32, 'rgba(159,212,232,0.18)'); R(ctx, 12, 6, 1, 32, 'rgba(233,251,255,0.5)'); R(ctx, 35, 6, 1, 32, 'rgba(233,251,255,0.3)'); R(ctx, 11, 4, 26, 3, '#545060'); R(ctx, 11, 37, 26, 2, '#545060'); }
-else { R(ctx, 4, 35, 40, 3, '#8b5a31'); for (let x = 5; x < 44; x += 3) R(ctx, x, 34, 2, 1, '#c2a678'); }
-if (!st.alive) {
-if (id === 'stone') { for (let i = 0; i < 9; i++) R(ctx, 12 + i * 3, 31 + (i % 3), 3, 2, '#8a8296'); }
-else if (id === 'seedling') { R(ctx, 23, 22, 2, 6, '#5a4330'); R(ctx, 18, 26, 6, 1, '#5a4330'); R(ctx, 25, 25, 5, 1, '#5a4330'); }
-else if (id === 'wisp') { R(ctx, 22, 30, 4, 2, '#3a3341'); }
-else if (id === 'rabbit') { R(ctx, 12, 29, 24, 6, '#8a8296'); R(ctx, 10, 31, 5, 3, '#8a8296'); R(ctx, 13, 30, 1, 1, '#1a1218'); }
-else { R(ctx, 16, 30, 16, 5, '#5a3a20'); for (let k = 0; k < 3; k++) R(ctx, 17 + k * 5, 35, 1, 2, '#1a1218'); }
-return;
-}
-const bob = Math.round(Math.sin(t * 2.2) * 0.8);
-const shake = react > 0 ? Math.round(Math.sin(t * 40) * react * 1.5) : 0;
-const vig = (m.vigor || 0) / 100, love = (m.love || 0) / 100, glow = (m.glow || 0) / 100, burn = (m.burn || 0) / 100, frost = (m.frost || 0) / 100;
-const change = (m.change || 0) / 100, sick = (m.sick || 0) / 100, etch = (m.etch || 0) / 100, growth = (m.growth || 0) / 100;
-if (glow > 0.05) { ctx.fillStyle = `rgba(166,120,255,${Math.min(0.55, glow * 0.7)})`; ctx.fillRect(6, 4, 36, 32); }
-if (burn > 0.05) { ctx.fillStyle = `rgba(255,122,28,${Math.min(0.5, burn * 0.6)})`; ctx.fillRect(8, 10, 32, 26); }
-const tint = (base) => {
-let c = base;
-if (change > 0.05) c = mix(c, [0.4, 0.9, 0.79], Math.min(0.7, change));
-if (sick > 0.05) c = mix(c, [0.55, 0.62, 0.3], Math.min(0.6, sick * 0.8));
-if (frost > 0.05) c = mix(c, [0.75, 0.9, 1], Math.min(0.6, frost));
-return c;
-};
-const x0 = shake;
-if (id === 'rabbit') {
-const fur = tint([0.93, 0.89, 0.82]), k = '#1a1218';
-const body = css(fur), shade = css(fur, 0.82), dark = css(fur, 0.68), belly = css(mix(fur, [1, 1, 1], 0.4));
-const g = 1 + vig * 0.12;
-const ox = 10 + x0, oy = 34 + bob;
-const ell = (cx, cy, rx, ry, col) => { for (let yy = -ry; yy <= ry; yy++) { const w = Math.round(rx * Math.sqrt(Math.max(0, 1 - (yy * yy) / (ry * ry)))); R(ctx, cx - w, cy + yy, w * 2 + 1, 1, col); } };
-ell(ox + 9, oy - 6, Math.round(10 * g) + 1, Math.round(6 * g) + 1, k);
-ell(ox + 19, oy - 8, Math.round(6 * g) + 1, Math.round(5 * g) + 1, k);
-ell(ox + 24, oy - 13, 5, 4, k);
-ell(ox + 9, oy - 6, Math.round(10 * g), Math.round(6 * g), body);
-ell(ox + 19, oy - 8, Math.round(6 * g), Math.round(5 * g), body);
-ell(ox + 9, oy - 3, Math.round(8 * g), 2, shade);
-ell(ox + 20, oy - 5, 3, 2, belly);
-ell(ox + 24, oy - 13, 4, 3, body);
-R(ctx, ox + 26, oy - 14, 1, 1, k);
-R(ctx, ox + 28, oy - 12, 1, 1, '#ff5aa8');
-const droop = st.health < 50 || frost > 0.3 ? 3 : 0;
-R(ctx, ox + 21, oy - 23 + droop, 3, 9 - droop, k); R(ctx, ox + 22, oy - 22 + droop, 1, 8 - droop, body);
-R(ctx, ox + 24, oy - 24 + droop, 3, 10 - droop, k); R(ctx, ox + 25, oy - 23 + droop, 1, 9 - droop, '#ffc7dd');
-ell(ox - 1, oy - 8, 2, 2, k); ell(ox - 1, oy - 8, 1, 1, '#fff6e0');
-R(ctx, ox + 14, oy - 1, 5, 1, dark); R(ctx, ox + 3, oy - 1, 6, 1, dark);
-} else if (id === 'beetle') {
-const shell = tint([0.36, 0.62, 0.42]), k = '#1a1218';
-const g = 1 + vig * 0.18;
-const cx = 24 + x0, cy = 22 + bob;
-const rx = Math.round(8 * g), ry = Math.round(9 * g);
-const ell = (x, y, ax, ay, col) => { for (let yy = -ay; yy <= ay; yy++) { const w = Math.round(ax * Math.sqrt(Math.max(0, 1 - (yy * yy) / (ay * ay)))); R(ctx, x - w, y + yy, w * 2 + 1, 1, col); } };
-const leg = Math.round(Math.sin(t * 8) * (react > 0 ? 1 : 0.4));
-for (let l = -1; l <= 1; l++) {
-R(ctx, cx - rx - 4, cy + l * 5 + leg, 5, 1, k); R(ctx, cx - rx - 5, cy + l * 5 + 1 + leg, 1, 2, k);
-R(ctx, cx + rx, cy + l * 5 - leg, 5, 1, k); R(ctx, cx + rx + 4, cy + l * 5 + 1 - leg, 1, 2, k);
-}
-ell(cx, cy, rx + 1, ry + 1, k);
-ell(cx, cy, rx, ry, css(shell));
-R(ctx, cx, cy - ry, 1, ry * 2, css(shell, 0.55));
-ell(cx - 3, cy - 3, 2, 3, css(mix(shell, [1, 1, 1], 0.35)));
-ell(cx + 4, cy + 2, 1, 2, css(shell, 0.75));
-ell(cx, cy - ry - 2, 4, 2, k);
-ell(cx, cy - ry - 2, 3, 1, '#d27f3e');
-R(ctx, cx - 4, cy - ry - 7, 1, 4, k); R(ctx, cx - 5, cy - ry - 8, 1, 1, k);
-R(ctx, cx + 4, cy - ry - 7, 1, 4, k); R(ctx, cx + 5, cy - ry - 8, 1, 1, k);
-} else if (id === 'seedling') {
-const leaf = css(tint([0.42, 0.72, 0.3])), stem = '#335224';
-const h = Math.round(8 + growth * 14);
-const sway = Math.round(Math.sin(t * 1.5) * 1) + x0;
-R(ctx, 23 + sway, 28 - h, 2, h, stem);
-const leaves = 1 + Math.floor(growth * 3);
-for (let i = 0; i < leaves; i++) {
-const ly = 28 - h + 2 + i * 4, side = i % 2 ? 1 : -1;
-R(ctx, 24 + sway + side * 1 + (side < 0 ? -6 : 1), ly, 6, 3, leaf);
-R(ctx, 24 + sway + side * 1 + (side < 0 ? -5 : 2), ly, 3, 1, css(tint([0.66, 0.88, 0.5])));
-}
-if (love > 0.05) { R(ctx, 21 + sway, 28 - h - 4, 6, 4, '#ff5aa8'); R(ctx, 23 + sway, 28 - h - 3, 2, 2, '#ffe58a'); }
-} else if (id === 'stone') {
-const base = tint([0.66, 0.64, 0.6]);
-const w = 26, bx = 11 + x0, by = 20;
-R(ctx, bx - 1, by - 1, w + 2, 15, '#1a1218'); R(ctx, bx, by, w, 14, css(base)); R(ctx, bx, by, w, 2, css(base, 1.2)); R(ctx, bx, by + 11, w, 3, css(base, 0.8));
-const pits = Math.round(etch * 12);
-for (let i = 0; i < pits; i++) R(ctx, bx + 2 + ((i * 7) % (w - 4)), by + 3 + ((i * 5) % 8), 2, 1, css(base, 0.55));
-if (change > 0.05) for (let i = 0; i < Math.round(change * 6); i++) { R(ctx, bx + 3 + i * 4, by - 3 - (i % 2) * 2, 2, 4, '#5fd4b4'); R(ctx, bx + 3 + i * 4, by - 3 - (i % 2) * 2, 1, 1, '#dff4ff'); }
-if (glow > 0.1) for (let i = 0; i < 4; i++) R(ctx, bx + 4 + i * 5, by + 5 + (i % 2) * 2, 2, 1, '#c9b7ff');
-if (vig > 0.05) R(ctx, bx, by, w, 1, '#e8b45c');
-} else if (id === 'wisp') {
-const pulse = 0.7 + 0.3 * Math.sin(t * 3);
-const col = change > 0.1 ? mix([0.55, 0.88, 1], [0.4, 0.9, 0.79], change) : love > 0.1 ? [1, 0.6, 0.8] : [0.55, 0.88, 1];
-const cx = 24 + x0 + Math.round(Math.sin(t * 1.1) * 3), cy = 20 + bob;
-ctx.fillStyle = css(col, 0.6 * pulse); ctx.fillRect(cx - 6, cy - 6, 12, 12);
-R(ctx, cx - 4, cy - 4, 8, 8, css(col, pulse));
-R(ctx, cx - 2, cy - 2, 4, 4, '#ffffff');
-}
-if (love > 0.05 && id !== 'seedling') for (let i = 0; i < 1 + Math.round(love * 3); i++) {
-const hx = 10 + ((i * 13 + Math.floor(t * 4)) % 28), hy = 10 - ((t * 6 + i * 7) % 10);
-R(ctx, hx, hy, 1, 1, '#ff5aa8'); R(ctx, hx + 2, hy, 1, 1, '#ff5aa8'); R(ctx, hx, hy + 1, 3, 1, '#ff5aa8'); R(ctx, hx + 1, hy + 2, 1, 1, '#ff5aa8');
-}
-if (frost > 0.1) for (let i = 0; i < Math.round(frost * 10); i++) R(ctx, 8 + ((i * 11) % 32), 18 + ((i * 7) % 16), 1, 1, '#dff4ff');
-if (burn > 0.1) for (let i = 0; i < Math.round(burn * 6); i++) {
-const fx = 10 + ((i * 9 + Math.floor(t * 8)) % 28), fy = 24 - ((t * 14 + i * 5) % 12);
-R(ctx, fx, fy, 1, 2, i % 2 ? '#ffb444' : '#ff7a1c');
-}
-if (sick > 0.1) for (let i = 0; i < Math.round(sick * 4); i++) { const bx2 = 14 + i * 6, by2 = 14 - ((t * 5 + i * 4) % 8); R(ctx, bx2, by2, 2, 2, '#92cc71'); }
-if (react > 0) { ctx.fillStyle = `rgba(255,255,255,${react * 0.35})`; ctx.fillRect(0, 0, W, H); }
-void PAL;
-}
-return { drawRaw, rawSprite, SCENE_W, SCENE_H, paintRegion, animateRegion, SUBJECT_W, SUBJECT_H, drawSubject };
+return { drawRaw, rawSprite };
 })();
 // src/game/journal.js
 const __m56 = (() => {
@@ -11620,7 +11603,7 @@ return [
 { text: 'Pick the spoon and drag it in circles through the brew. Stirring spreads colour — and magic — far faster than waiting.', target: () => lab.toolBtns.spoon, done: () => (lab.sim.tool.stirDistance - (this.flags.stir0 ?? (this.flags.stir0 = lab.sim.tool.stirDistance))) > 18 || this.colourScore() > 0.95 },
 { text: 'The customer wants it served warm. Slide the fire control to the right — heat enters through the bottom and spreads.', target: () => lab.furnaceInput.parentElement, done: () => brewT() >= 36 },
 { text: 'Is it really a healing tonic? Nobody knows until it is tested. Open the Trials room.', target: tab('trials'), done: () => lab.view === 'trials' },
-{ text: 'Give the Moon Rabbit a dose: drag the dropper onto it, or press its Test button. The dose is real potion from the tap.', target: () => lab.views.trials.cards.rabbit && lab.views.trials.cards.rabbit.card, done: rabbitTested },
+{ text: 'Choose a rabbit in the hutch and give it a dose: press Give, or drag the dropper onto it. The dose is real potion from the tap. Each rabbit reads a potion a little differently — later, test several.', target: () => document.querySelector('[data-act=test-rabbit]') || lab.views.trials.hutch.el, done: rabbitTested },
 { text: 'The rabbit shows how much vitality (and poison) this batch carries. Verified effects now count on the order. Back to the cauldron!', target: tab('brew'), done: () => lab.view === 'brew' },
 { text: 'When the meters are full and the brew is warm, press Bottle. (Turn the fire down once it is warm enough.)', target: () => lab.bottleFab, done: () => this.flags.bottled },
 { text: 'Your sealed vial waits at the Counter. Offer it to the customer: seal its label (your trial reading is already written in), then agree on a price.', target: () => document.querySelector('[data-act=serve]') || tab('counter')(), done: () => this.flags.sold },
@@ -11827,6 +11810,331 @@ h('div', { class: 'row wrap' }, serve, labelB, testB, back, discard)));
 }
 return { CounterView };
 })();
+// src/rendering/regions.js
+const __m63 = (() => {
+const { Rng } = __m6;
+const SCENE_W = 256;
+const SCENE_H = 144;
+const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+const bayer = (x, y) => (BAYER4[(x & 3) + (y & 3) * 4] + 0.5) / 16;
+const K = '#1a1218';
+function R(ctx, x, y, w, h, c) {
+ctx.fillStyle = c;
+ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
+}
+function rgbOf(hex) {
+const v = parseInt(hex.slice(1), 16);
+return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
+}
+const css = (c) => `rgb(${Math.round(c[0])},${Math.round(c[1])},${Math.round(c[2])})`;
+const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+function gradient(ctx, x0, y0, w, h, stops, steps = 10) {
+const cols = stops.map(rgbOf);
+const at = (t) => {
+const f = Math.min(cols.length - 1.0001, t * (cols.length - 1)), i = Math.floor(f);
+return mix(cols[i], cols[i + 1], f - i);
+};
+for (let y = 0; y < h; y++) {
+const t = h > 1 ? y / (h - 1) : 0;
+const band = t * steps, lo = Math.floor(band), frac = band - lo;
+const cA = css(at(lo / steps)), cB = css(at(Math.min(1, (lo + 1) / steps)));
+let run = 0, cur = '';
+for (let x = 0; x <= w; x++) {
+const c = x === w ? '' : frac > bayer(x0 + x, y0 + y) ? cB : cA;
+if (c !== cur) { if (cur) R(ctx, x0 + x - run, y0 + y, run, 1, cur); cur = c; run = 0; }
+run++;
+}
+}
+}
+function disc(ctx, cx, cy, rx, ry, c) {
+for (let yy = -ry; yy <= ry; yy++) {
+const w = Math.round(rx * Math.sqrt(Math.max(0, 1 - (yy * yy) / (ry * ry || 1))));
+R(ctx, cx - w, cy + yy, w * 2 + 1, 1, c);
+}
+}
+function ridge(ctx, rng, y, amp, rough, bottom, c, W = SCENE_W) {
+let h = y + rng.range(-amp, amp), v = 0;
+for (let x = 0; x < W; x++) {
+v += rng.range(-rough, rough); v *= 0.9;
+h = Math.max(y - amp, Math.min(y + amp, h + v));
+R(ctx, x, h, 1, bottom - h, c);
+}
+}
+function treeLine(ctx, rng, y, size, c, cHi) {
+for (let x = -size; x < SCENE_W + size; x += rng.int(Math.round(size * 0.6), size)) {
+const r = rng.int(Math.round(size * 0.55), size), cy = y - rng.int(0, Math.round(size * 0.6));
+disc(ctx, x, cy, r, Math.round(r * 1.15), c);
+if (cHi) disc(ctx, x - Math.round(r / 3), cy - Math.round(r / 2), Math.max(1, Math.round(r / 3)), Math.max(1, Math.round(r / 3)), cHi);
+R(ctx, x, cy, Math.max(2, r * 2 / 3), y + 30 - cy, c);
+}
+}
+function canopy(ctx, rng, cx, cy, r, pal) {
+const blobs = [];
+for (let i = 0; i < 9; i++) blobs.push([cx + rng.range(-r * 0.8, r * 0.8), cy + rng.range(-r * 0.5, r * 0.45), rng.range(r * 0.4, r * 0.62)]);
+for (const [x, y, br] of blobs) disc(ctx, Math.round(x), Math.round(y), Math.round(br) + 1, Math.round(br * 0.85) + 1, pal[0]);
+for (const [x, y, br] of blobs) disc(ctx, Math.round(x), Math.round(y), Math.round(br), Math.round(br * 0.85), pal[1]);
+for (const [x, y, br] of blobs) disc(ctx, Math.round(x - br * 0.15), Math.round(y - br * 0.2), Math.round(br * 0.75), Math.round(br * 0.62), pal[2]);
+for (const [x, y, br] of blobs) if (x < cx + r * 0.3 && y < cy + r * 0.1) disc(ctx, Math.round(x - br * 0.3), Math.round(y - br * 0.35), Math.round(br * 0.42), Math.round(br * 0.34), pal[3]);
+for (let i = 0; i < r * 1.2; i++) R(ctx, cx + rng.range(-r, r * 0.5), cy + rng.range(-r * 0.7, r * 0.1), 1, 1, pal[4]);
+for (let i = 0; i < r * 2; i++) {
+const a = rng.range(0, Math.PI * 2), d = r * rng.range(0.85, 1.05);
+R(ctx, cx + Math.cos(a) * d, cy + Math.sin(a) * d * 0.75, 1, 1, pal[rng.int(0, 1)]);
+}
+}
+function trunk(ctx, rng, x, top, bot, w, pal) {
+R(ctx, x - 1, top, w + 2, bot - top, pal[0]);
+R(ctx, x, top, w, bot - top, pal[2]);
+R(ctx, x, top, Math.max(1, Math.round(w / 4)), bot - top, pal[3]);
+R(ctx, x + w - Math.max(1, Math.round(w / 3)), top, Math.max(1, Math.round(w / 3)), bot - top, pal[1]);
+for (let y = top + 2; y < bot - 2; y += rng.int(2, 4)) R(ctx, x + rng.int(1, Math.max(1, w - 2)), y, 1, rng.int(2, 4), pal[1]);
+R(ctx, x - 3, bot - 2, w + 6, 2, pal[0]); R(ctx, x - 2, bot - 2, w + 4, 1, pal[2]);
+R(ctx, x - 4, bot - 1, 3, 1, pal[1]); R(ctx, x + w + 1, bot - 1, 3, 1, pal[1]);
+}
+function fern(ctx, rng, x, y, size, dark, light) {
+for (let f = 0; f < 5; f++) {
+const ang = -Math.PI / 2 + (f - 2) * 0.55 + rng.range(-0.15, 0.15);
+for (let i = 0; i < size; i++) {
+const t = i / size, bend = t * t * 0.9 * Math.sign(f - 2 || 1);
+const px = x + Math.cos(ang + bend) * i, py = y + Math.sin(ang + bend) * i * 0.8;
+R(ctx, px, py, 1, 1, dark);
+if (i % 2 === 0 && i > 1) { R(ctx, px - 1, py + 1, 1, 1, light); R(ctx, px + 1, py + 1, 1, 1, dark); }
+}
+}
+}
+function tuft(ctx, x, y, h, dark, light) {
+R(ctx, x, y - h, 1, h, dark); R(ctx, x - 1, y - h + 2, 1, h - 2, light); R(ctx, x + 1, y - h + 1, 1, h - 1, dark); R(ctx, x + 2, y - h + 3, 1, h - 3, light);
+}
+function flower(ctx, x, y, c, stem) {
+R(ctx, x, y, 1, 3, stem);
+R(ctx, x - 1, y - 1, 3, 1, c); R(ctx, x, y - 2, 1, 3, c); R(ctx, x, y - 1, 1, 1, '#fff3b0');
+}
+function rock(ctx, rng, x, y, w, h, pal, moss) {
+for (let yy = 0; yy < h; yy++) {
+const t = yy / h, inset = Math.round((1 - Math.sqrt(Math.min(1, t * 2.2))) * w * 0.3);
+R(ctx, x + inset - 1, y + yy, w - inset * 2 + 2, 1, pal[0]);
+R(ctx, x + inset, y + yy, w - inset * 2, 1, t < 0.3 ? pal[3] : t < 0.7 ? pal[2] : pal[1]);
+R(ctx, x + inset, y + yy, Math.max(1, Math.round((w - inset * 2) * 0.25)), 1, t < 0.5 ? pal[4] : pal[3]);
+}
+R(ctx, x, y + h, w, 1, pal[0]);
+for (let i = 0; i < w / 4; i++) R(ctx, x + rng.int(2, w - 3), y + rng.int(2, h - 1), rng.int(1, 3), 1, pal[1]);
+if (moss) for (let i = 0; i < w; i++) R(ctx, x + rng.int(Math.round(w * 0.15), Math.round(w * 0.85)), y + rng.int(0, Math.round(h * 0.3)), 1, 1, rng.chance(0.5) ? moss[0] : moss[1]);
+}
+function speckle(ctx, rng, y0, y1, n, cols, len = 2) {
+for (let i = 0; i < n; i++) R(ctx, rng.int(0, SCENE_W - 1), rng.int(y0, y1), rng.int(1, len), 1, rng.pick(cols));
+}
+function rays(ctx, rng, n, a) {
+for (let i = 0; i < n; i++) {
+const x0 = rng.int(10, SCENE_W * 0.7), w = rng.int(6, 14), len = rng.int(70, 120);
+for (let y = 0; y < len; y++) R(ctx, x0 + y * 0.55, y, w, 1, `rgba(255,248,200,${(a * (1 - y / len)).toFixed(3)})`);
+}
+}
+function cloud(ctx, x, y, s, c, shade) {
+disc(ctx, x, y, 6 * s, 3 * s, shade);
+disc(ctx, x - 7 * s, y + s, 5 * s, 2 * s, shade);
+disc(ctx, x + 8 * s, y + s, 5 * s, 2 * s, shade);
+disc(ctx, x, y - s, 6 * s, 3 * s, c);
+disc(ctx, x - 7 * s, y, 4 * s, 2 * s, c);
+disc(ctx, x + 7 * s, y, 4 * s, 2 * s, c);
+}
+const OAK = ['#0f1f10', '#1f3a1a', '#2f5a24', '#4f8a32', '#9fd060'];
+const BARK = ['#1a1008', '#3a2414', '#5a3a20', '#7a5230'];
+const STONE = ['#1a1820', '#3d3a44', '#5d5a64', '#7d7a84', '#a8a4ac'];
+const MOSS = ['#4f7a31', '#7da447'];
+function forest(ctx, rng) {
+const W = SCENE_W, H = SCENE_H;
+gradient(ctx, 0, 0, W, 70, ['#cfe0a8', '#8fb880', '#4a7a5a'], 8);
+treeLine(ctx, rng, 52, 14, '#5a8a6a', '#6f9e78');
+treeLine(ctx, rng, 60, 16, '#3f6a4a', '#4f7a56');
+gradient(ctx, 0, 62, W, H - 62, ['#3f6a2a', '#2f5a1f', '#24481a'], 6);
+rays(ctx, rng, 4, 0.2);
+const trees = [[22, 9], [92, 7], [160, 8], [228, 9]];
+for (const [x, w] of trees) trunk(ctx, rng, x + rng.int(-6, 6), 30, 74 + rng.int(-2, 4), w, BARK);
+for (const [x] of trees) canopy(ctx, rng, x + 4 + rng.int(-4, 4), rng.int(14, 24), rng.int(22, 28), OAK);
+for (let i = 0; i < 14; i++) { const x = rng.int(0, W), y = rng.int(66, 80); canopy(ctx, rng, x, y, rng.int(6, 10), ['#14280f', '#24481a', '#3a6a24', '#5a9a34', '#a8e070']); }
+speckle(ctx, rng, 74, H - 1, 600, ['#3a6a24', '#4f8a32', '#2a5018', '#5a9a34'], 3);
+for (let i = 0; i < 14; i++) fern(ctx, rng, rng.int(0, W), rng.int(80, H - 4), rng.int(7, 11), '#2f5a24', '#6aaa3a');
+for (let i = 0; i < 70; i++) tuft(ctx, rng.int(0, W), rng.int(78, H), rng.int(3, 6), '#2f5a24', '#6aaa3a');
+for (let i = 0; i < 30; i++) flower(ctx, rng.int(0, W), rng.int(80, H - 3), rng.pick(['#ffffff', '#c9b7ff', '#ffe58a']), '#2f5a24');
+rock(ctx, rng, 2, 104, 30, 16, STONE, MOSS);
+rock(ctx, rng, 214, 112, 36, 18, STONE, MOSS);
+}
+function meadow(ctx, rng) {
+const W = SCENE_W, H = SCENE_H;
+gradient(ctx, 0, 0, W, 70, ['#5a96e0', '#8cc0f0', '#d8eef8'], 9);
+disc(ctx, 214, 20, 9, 9, '#fff6c8'); disc(ctx, 214, 20, 7, 7, '#fffbe6');
+for (let i = 0; i < 4; i++) cloud(ctx, rng.int(10, W - 30), rng.int(10, 34), rng.pick([1, 1, 2]), '#ffffff', '#d4e4f4');
+ridge(ctx, rng, 56, 6, 0.6, 72, '#7aa8b8');
+ridge(ctx, rng, 62, 5, 0.5, 80, '#5a9a5a');
+treeLine(ctx, rng, 66, 8, '#3f7a3a', '#5a9a4a');
+gradient(ctx, 0, 68, W, H - 68, ['#7ac04a', '#5aa83a', '#3f8a2a'], 6);
+speckle(ctx, rng, 70, H - 1, 700, ['#8ad05a', '#4f9a32', '#9ade6a', '#3f8a2a'], 3);
+for (let x = 6; x < W; x += 22) { R(ctx, x - 1, 70, 4, 14, K); R(ctx, x, 71, 2, 13, '#8a5c33'); R(ctx, x, 71, 1, 13, '#a8763f'); }
+for (const y of [73, 78]) { R(ctx, 0, y - 1, W, 3, K); R(ctx, 0, y, W, 1, '#a8763f'); }
+for (let i = 0; i < 90; i++) tuft(ctx, rng.int(0, W), rng.int(82, H), rng.int(3, 6), '#3f8a2a', '#8ad05a');
+for (let i = 0; i < 120; i++) flower(ctx, rng.int(0, W), rng.int(84, H - 2), rng.pick(['#ff9fc7', '#ffe58a', '#ffffff', '#c9b7ff', '#ff6a8a']), '#3f8a2a');
+canopy(ctx, rng, 26, 44, 18, OAK); trunk(ctx, rng, 24, 52, 72, 5, BARK);
+}
+function river(ctx, rng) {
+const W = SCENE_W, H = SCENE_H;
+gradient(ctx, 0, 0, W, 66, ['#7aaad8', '#a8cce8', '#e0ecf0'], 8);
+for (let i = 0; i < 3; i++) cloud(ctx, rng.int(10, W - 30), rng.int(8, 28), 1, '#ffffff', '#c8dcec');
+treeLine(ctx, rng, 56, 12, '#5a8a7a', '#6f9e88');
+gradient(ctx, 0, 60, W, H - 60, ['#8aaa4a', '#6a8f3a', '#4f7a2a'], 6);
+speckle(ctx, rng, 62, H - 1, 500, ['#9aba5a', '#5a8a32', '#7aa045'], 3);
+for (let y = 62; y < H; y++) {
+const t = (y - 62) / (H - 62), cx = 70 + t * 110 + Math.sin(y * 0.11) * 8, w = 10 + t * 46;
+R(ctx, cx - w / 2 - 3, y, w + 6, 1, '#d8d0b0');
+R(ctx, cx - w / 2 - 1, y, w + 2, 1, '#a89a70');
+for (let x = 0; x < w; x++) R(ctx, cx - w / 2 + x, y, 1, 1, (x + y) % 9 === 0 ? '#9fd4f0' : t < 0.3 ? '#5a9ad0' : bayer(x, y) < t ? '#2f6aa8' : '#4a86c4');
+}
+for (const [x, cy] of [[28, 30], [214, 26]]) {
+trunk(ctx, rng, x, cy, 84, 7, BARK);
+canopy(ctx, rng, x + 3, cy, 20, ['#14280f', '#2f5a24', '#4f8a32', '#7aba4a', '#c0e890']);
+for (let i = 0; i < 26; i++) { const vx = x + 3 + rng.int(-22, 22), vy = cy + rng.int(0, 10), len = rng.int(12, 34); for (let k = 0; k < len; k++) R(ctx, vx + Math.round(Math.sin(k * 0.3) * 0.6), vy + k, 1, 1, k % 3 ? '#4f8a32' : '#7aba4a'); }
+}
+for (let i = 0; i < 26; i++) {
+const x = rng.int(0, W), y = rng.int(80, H), h = rng.int(8, 16);
+R(ctx, x, y - h, 1, h, '#5a7a2a'); if (rng.chance(0.5)) { R(ctx, x - 1, y - h - 1, 3, 4, '#5a3a20'); R(ctx, x - 1, y - h - 1, 1, 4, '#7a5230'); }
+}
+for (let i = 0; i < 6; i++) { const x = rng.int(110, 200), y = rng.int(100, H - 6); disc(ctx, x, y, 3, 1, '#3a7a2a'); R(ctx, x - 1, y - 1, 2, 1, '#6aaa3a'); }
+rock(ctx, rng, 150, 120, 14, 7, STONE, MOSS); rock(ctx, rng, 170, 128, 12, 6, STONE, MOSS);
+}
+function quarry(ctx, rng) {
+const W = SCENE_W, H = SCENE_H;
+gradient(ctx, 0, 0, W, 50, ['#7aa8d8', '#a8c8e8', '#e8e0d0'], 8);
+for (let i = 0; i < 4; i++) cloud(ctx, rng.int(0, W), rng.int(6, 22), rng.pick([1, 2]), '#ffffff', '#d8dce8');
+const tiers = [[18, 30, ['#5d5a64', '#7d7a84', '#9d9aa4']], [34, 30, ['#55525c', '#75727c', '#95929c']], [52, 28, ['#4d4a54', '#6d6a74', '#8d8a94']]];
+for (const [y, h, c] of /** @type {[number, number, string[]][]} */ (tiers)) {
+let x = -rng.int(0, 20);
+while (x < W) {
+const bw = rng.int(14, 30), top = y + rng.int(-4, 4);
+R(ctx, x, top, bw, h + 20, K);
+R(ctx, x + 1, top + 1, bw - 2, h + 20, c[1]);
+R(ctx, x + 1, top + 1, bw - 2, 2, c[2]);
+R(ctx, x + 1, top + 3, 2, h + 18, c[2]);
+R(ctx, x + bw - 4, top + 3, 3, h + 18, c[0]);
+for (let k = 0; k < 4; k++) R(ctx, x + rng.int(3, bw - 4), top + rng.int(5, h), rng.int(2, 6), 1, c[0]);
+if (rng.chance(0.4)) R(ctx, x + rng.int(3, bw - 6), top + rng.int(6, h - 4), 1, rng.int(4, 9), c[0]);
+x += bw - 1;
+}
+}
+gradient(ctx, 0, 74, W, H - 74, ['#a8885a', '#8a6a42', '#6a5032'], 6);
+speckle(ctx, rng, 76, H - 1, 600, ['#c0a070', '#7a5a38', '#5a4228', '#9a7a52'], 2);
+for (let i = 0; i < 70; i++) { const x = rng.int(0, W), y = rng.int(78, H - 2); R(ctx, x, y, 2, 1, '#4a4252'); R(ctx, x, y - 1, 1, 1, '#8a8296'); }
+const wood = ['#24160f', '#5a3a20', '#8a5c33', '#a8763f'];
+const beam = (x, y, w, h) => { R(ctx, x - 1, y - 1, w + 2, h + 2, wood[0]); R(ctx, x, y, w, h, wood[2]); R(ctx, x, y, w, 1, wood[3]); };
+beam(204, 16, 4, 60); beam(170, 14, 50, 4);
+R(ctx, 176, 18, 1, 22, '#3a2a20'); R(ctx, 174, 40, 5, 3, '#545060'); R(ctx, 176, 43, 2, 3, '#716c7c');
+beam(196, 30, 18, 3);
+for (const [x, y, h] of [[90, 44, 30], [136, 50, 26]]) { beam(x, y, 3, h); beam(x + 14, y, 3, h); beam(x - 2, y, 21, 3); for (let r = y + 6; r < y + h; r += 5) R(ctx, x + 3, r, 11, 1, wood[3]); }
+beam(16, 50, 3, 34); beam(16, 50, 10, 3);
+R(ctx, 22, 54, 7, 9, K); R(ctx, 23, 55, 5, 7, '#ffb444'); R(ctx, 24, 56, 3, 5, '#fff3b0'); R(ctx, 22, 53, 7, 1, '#545060');
+for (let r = 14; r > 0; r -= 2) disc(ctx, 25, 58, r, r, `rgba(255,190,90,${(0.05).toFixed(3)})`);
+for (let i = 0; i < 40; i++) { const x = rng.int(0, 44), y = rng.int(100, H); R(ctx, x, y, rng.int(3, 6), rng.int(2, 4), rng.pick(['#1e1b22', '#2c2831', '#3d3844'])); R(ctx, x, y, 1, 1, '#716c7c'); }
+R(ctx, 226, 104, 26, 14, K); R(ctx, 227, 105, 24, 11, '#6d4527'); R(ctx, 227, 105, 24, 2, '#a9743f');
+for (let i = 0; i < 4; i++) R(ctx, 229 + i * 6, 107, 1, 9, '#3a2416');
+disc(ctx, 232, 119, 3, 3, K); disc(ctx, 246, 119, 3, 3, K); R(ctx, 232, 119, 1, 1, '#716c7c'); R(ctx, 246, 119, 1, 1, '#716c7c');
+for (let i = 0; i < 8; i++) R(ctx, 228 + rng.int(0, 20), 102 + rng.int(0, 2), 3, 2, rng.pick(['#3d3844', '#545060']));
+rock(ctx, rng, 60, 118, 22, 12, STONE);
+rock(ctx, rng, 190, 126, 18, 10, STONE);
+}
+function moonfen(ctx, rng) {
+const W = SCENE_W, H = SCENE_H;
+gradient(ctx, 0, 0, W, 76, ['#070a1a', '#121a3a', '#2a2a5a', '#3a3a6a'], 10);
+for (let i = 0; i < 70; i++) R(ctx, rng.int(0, W), rng.int(0, 56), 1, 1, rng.pick(['#c9b7ff', '#ffffff', '#8fa8e0']));
+for (let i = 0; i < 5; i++) { const x = rng.int(0, W), y = rng.int(0, 40); R(ctx, x - 1, y, 3, 1, '#c9d8ff'); R(ctx, x, y - 1, 1, 3, '#c9d8ff'); }
+disc(ctx, 50, 20, 9, 9, 'rgba(200,220,255,0.12)'); R(ctx, 44, 14, 12, 12, '#e8f0ff'); R(ctx, 44, 14, 12, 1, '#ffffff'); R(ctx, 50, 18, 3, 3, '#c0d0f0'); R(ctx, 46, 22, 2, 2, '#c0d0f0');
+treeLine(ctx, rng, 62, 14, '#141c34', null);
+treeLine(ctx, rng, 70, 12, '#0f1828', null);
+gradient(ctx, 0, 70, W, H - 70, ['#16261e', '#0f1c16', '#0a140f'], 5);
+for (let k = 0; k < 3; k++) {
+let cx = rng.int(30, W - 30);
+for (let y = 76 + k * 22; y < H; y++) {
+cx += Math.sin(y * 0.2 + k) * 1.2;
+const w = 14 + (y - 76) * 0.4;
+R(ctx, cx - w / 2, y, w, 1, '#0a1a2a');
+if (rng.chance(0.35)) R(ctx, cx - w / 2 + rng.int(0, w), y, rng.int(1, 4), 1, rng.pick(['#2f8aa8', '#5fd4e8', '#1a4a6a']));
+}
+}
+for (const [x, cy] of [[20, 30], [104, 36], [196, 28], [244, 40]]) {
+trunk(ctx, rng, x, cy, 86, 6, ['#05080a', '#1a1612', '#2a221a', '#3a3024']);
+canopy(ctx, rng, x + 3, cy, 18, ['#050a08', '#0f2018', '#1a3a28', '#2a5a3a', '#5fd4b4']);
+for (let i = 0; i < 20; i++) { const vx = x + 3 + rng.int(-18, 18), vy = cy + rng.int(0, 8), len = rng.int(10, 30); for (let k = 0; k < len; k++) R(ctx, vx, vy + k, 1, 1, k % 4 ? '#1f4a34' : '#3f8a5a'); }
+}
+for (let i = 0; i < 8; i++) { const x = rng.int(0, W), y = rng.int(84, H - 4); disc(ctx, x, y, rng.int(8, 14), 3, '#1f3a24'); speckle(ctx, rng, y - 2, y + 1, 10, ['#3f7a3a', '#2a5a2a']); }
+for (const [x, y] of [[66, 88], [150, 98], [222, 92]]) {
+for (let j = 0; j < 3; j++) { R(ctx, x - 5 + j, y - j * 4 - 4, 10 - j * 2, 4, K); R(ctx, x - 4 + j, y - j * 4 - 3, 8 - j * 2, 3, '#4a4a5a'); R(ctx, x - 4 + j, y - j * 4 - 3, 8 - j * 2, 1, '#6a6a7a'); }
+R(ctx, x - 5, y, 10, 1, '#5fd4e8');
+}
+for (const [x, y] of [[36, 98], [180, 86], [128, 120]]) for (let j = 0; j < 3; j++) { const h = rng.int(6, 14), cx = x + j * 4 - 4; R(ctx, cx - 1, y - h, 3, h, '#3a2a6a'); R(ctx, cx, y - h, 1, h, '#c9b7ff'); R(ctx, cx + 1, y - h + 2, 1, h - 2, '#8c6cff'); }
+for (let i = 0; i < 30; i++) { const x = rng.int(0, W), y = rng.int(84, H), h = rng.int(6, 12); R(ctx, x, y - h, 1, h, '#2a4a2a'); if (rng.chance(0.3)) { R(ctx, x - 1, y - h, 3, 2, '#8c6cff'); R(ctx, x, y - h - 1, 1, 1, '#c9b7ff'); } }
+}
+function crags(ctx, rng) {
+const W = SCENE_W, H = SCENE_H;
+gradient(ctx, 0, 0, W, 72, ['#2a0f12', '#6a2418', '#c0501f', '#e88a3a'], 10);
+for (let i = 0; i < 5; i++) { const x = rng.int(0, W), y = rng.int(4, 30); disc(ctx, x, y, rng.int(10, 20), rng.int(3, 6), 'rgba(40,20,20,0.35)'); }
+ridge(ctx, rng, 40, 14, 1.4, 90, '#3a1a18');
+ridge(ctx, rng, 56, 10, 1.1, 96, '#2a1210');
+for (let k = 0; k < 4; k++) {
+let x = rng.int(20, W - 20);
+for (let y = rng.int(40, 56); y < 96; y++) { x += rng.range(-1, 1); R(ctx, x, y, 2, 1, y % 3 ? '#ff7a1c' : '#ffb444'); }
+}
+gradient(ctx, 0, 78, W, H - 78, ['#3a1c16', '#2a1210', '#1a0a08'], 5);
+speckle(ctx, rng, 80, H - 1, 500, ['#4a2a20', '#1a0a08', '#5a3226'], 3);
+for (let i = 0; i < 4; i++) { const x = rng.int(20, W - 20), y = rng.int(96, H - 8); disc(ctx, x, y, rng.int(8, 16), 3, '#c2410f'); disc(ctx, x, y, rng.int(4, 8), 1, '#ffb444'); }
+for (let i = 0; i < 10; i++) { let x = rng.int(0, W), y = rng.int(84, H); for (let k = 0; k < 12; k++) { R(ctx, x, y, 1, 1, '#ff7a1c'); x += rng.int(-1, 1); y += 1; } }
+for (let i = 0; i < 6; i++) rock(ctx, rng, rng.int(-6, W - 20), rng.int(88, H - 14), rng.int(14, 26), rng.int(8, 14), ['#05030a', '#140c18', '#241828', '#3a2a3e', '#6a4a7a']);
+}
+const PAINTERS = { forest, meadow, river, quarry, moonfen, crags };
+function paintRegion(ctx, region, seed) {
+const rng = new Rng(`scene2:${seed}:${region}`);
+(PAINTERS[region] || forest)(ctx, rng);
+R(ctx, 0, 0, SCENE_W, 1, 'rgba(0,0,0,0.35)');
+R(ctx, 0, SCENE_H - 1, SCENE_W, 1, 'rgba(0,0,0,0.35)');
+}
+function animateRegion(ctx, region, t) {
+const W = SCENE_W, H = SCENE_H;
+if (region === 'moonfen') {
+for (let i = 0; i < 7; i++) {
+const x = Math.round(W * (0.08 + i * 0.13) + Math.sin(t * 0.7 + i * 2) * 10), y = Math.round(H * (0.5 + 0.06 * (i % 3)) + Math.sin(t * 1.3 + i) * 6);
+for (let r = 6; r > 0; r -= 2) disc(ctx, x, y, r, r, 'rgba(95,212,232,0.06)');
+R(ctx, x - 1, y - 2, 2, 4, '#8fe0ff'); R(ctx, x - 1, y, 2, 2, '#e9fbff'); R(ctx, x, y - 4 + Math.round(Math.sin(t * 8 + i)), 1, 2, '#5fd4e8');
+}
+} else if (region === 'forest' || region === 'meadow' || region === 'river') {
+for (let i = 0; i < 3; i++) {
+const x = ((t * (8 + i * 3) + i * 80) % (W + 20)) - 10, y = H * (0.12 + i * 0.06) + Math.sin(t * 3 + i) * 2;
+const up = Math.sin(t * 10 + i) > 0 ? 1 : 0;
+R(ctx, x, y, 1, 1, '#24160f'); R(ctx, x - 1, y - up, 1, 1, '#24160f'); R(ctx, x + 1, y - up, 1, 1, '#24160f'); R(ctx, x - 2, y - up * 2 + 1, 1, 1, '#24160f'); R(ctx, x + 2, y - up * 2 + 1, 1, 1, '#24160f');
+}
+if (region === 'meadow') for (let i = 0; i < 4; i++) {
+const x = W * (0.2 + i * 0.2) + Math.sin(t * 0.9 + i * 3) * 18, y = H * 0.66 + Math.sin(t * 1.7 + i) * 8, open = Math.sin(t * 14 + i) > 0;
+const c = ['#ffe58a', '#ff9fc7', '#ffffff', '#c9b7ff'][i];
+R(ctx, x - (open ? 2 : 1), y, open ? 2 : 1, 2, c); R(ctx, x + 1, y, open ? 2 : 1, 2, c); R(ctx, x, y, 1, 2, K);
+}
+if (region === 'forest') for (let i = 0; i < 10; i++) {
+const x = (i * 37 + Math.sin(t * 0.5 + i) * 6) % W, y = 40 + ((i * 29 + t * 4) % 60);
+if (Math.sin(t * 2 + i * 1.7) > 0.3) R(ctx, x, y, 1, 1, '#fff6c0');
+}
+if (region === 'river') for (let i = 0; i < 8; i++) {
+const y = 70 + ((t * 8 + i * 9) % (H - 70)), tt = (y - 62) / (H - 62), x = 70 + tt * 110 + Math.sin(y * 0.11) * 8 + Math.sin(t * 2 + i) * 6;
+R(ctx, x, y, 3, 1, '#dff4ff');
+}
+} else if (region === 'crags') {
+for (let i = 0; i < 12; i++) {
+const y = H * 0.75 - ((t * 12 + i * 11) % 60), x = W * (0.05 + i * 0.08) + Math.sin(t + i) * 4;
+R(ctx, x, y, 1, 1, i % 3 ? '#ffb444' : '#ff7a1c');
+}
+} else if (region === 'quarry') {
+for (let i = 0; i < 6; i++) {
+const x = (i * 47 + t * 6) % W, y = 60 + Math.sin(t * 0.8 + i) * 10 + i * 6;
+R(ctx, x, y, 1, 1, 'rgba(255,240,210,0.6)');
+}
+const flick = 0.7 + 0.3 * Math.sin(t * 9);
+R(ctx, 24, 56, 3, 5, `rgba(255,243,176,${flick.toFixed(2)})`);
+}
+}
+return { SCENE_W, SCENE_H, paintRegion, animateRegion };
+})();
 // src/ui/views/wilds.js
 const __m62 = (() => {
 const { h, btn, clear, toast } = __m2;
@@ -11835,7 +12143,8 @@ const { audio } = __m4;
 const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, DAY_PART_NAME } = __m29;
 const { equipmentById } = __m26;
 const { RANKS } = __m26;
-const { paintRegion, animateRegion, drawRaw, rawSprite, SCENE_W, SCENE_H } = __m55;
+const { drawRaw, rawSprite } = __m55;
+const { paintRegion, animateRegion, SCENE_W, SCENE_H } = __m63;
 const { EFFECT_BY_KEY } = __m13;
 class WildsView {
 constructor(lab) {
@@ -12060,7 +12369,7 @@ row.g.disabled = row.locked || can < 5;
 return { WildsView };
 })();
 // src/rendering/rabbit.js
-const __m64 = (() => {
+const __m65 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m51;
 const { RABBIT_MARKS } = __m28;
@@ -12357,6 +12666,7 @@ farLayer(S);
 for (const e of a.parts) ell(P, e, 1, K); // outline pass
 fillLayer(S);
 patternLayer(S);
+shadeLayer(S);
 strengthMarks(S);
 if (S.tr.has('scales')) scaleMarks(S);
 coatMarks(S);
@@ -12486,6 +12796,22 @@ if (!a.lying) {
 const foot = S.pattern === 'points' ? C2.body : C.dark, fw = Math.round(5 * a.g), hw = Math.round(6 * a.g);
 P(a.chest.cx - fw, a.feetY, fw, 1, foot);
 P(h.cx - hw, a.feetY, hw, 1, foot);
+}
+}
+function shadeLayer(S) {
+const { P, a } = S;
+const lit = 'rgba(255,250,235,0.28)', fur = 'rgba(40,24,16,0.14)', shade = 'rgba(40,22,12,0.22)', deep = 'rgba(30,16,8,0.32)';
+for (const e of [a.haunch, a.chest, a.head]) {
+for (let yy = -e.ry; yy <= e.ry; yy++) {
+const w = half(e, yy), y = e.cy + yy, t = (yy + e.ry) / Math.max(1, 2 * e.ry);
+for (let x = e.cx - w; x <= e.cx + w; x++) {
+const b = bayer(x, y), u = (x - (e.cx - w)) / Math.max(1, 2 * w);
+if (t < 0.32 && u > 0.25 && u < 0.8 && b < 9 - t * 20) P(x, y, 1, 1, lit);
+else if (t > 0.72 && b < (t - 0.62) * 34) P(x, y, 1, 1, t > 0.88 ? deep : shade);
+else if (u < 0.12 && b < 8) P(x, y, 1, 1, shade);
+else if (b === 3 && (y & 1)) P(x, y, 1, 1, fur);
+}
+}
 }
 }
 function patternLayer(S) {
@@ -12637,7 +12963,7 @@ if (y !== null) stamp(P, SPIKE, x - 1, y - 3 - (i & 1), { k: K, i: C_RIME, I: C_
 if (tr.has('wings')) wingArt(S, false);
 }
 function faceLayer(S) {
-const { P, a, L, sc, dead, C, C2 } = S, e = a.eye, n = a.nose, big = a.hs >= 1.1;
+const { P, a, L, sc, dead, C, C2 } = S, e = a.eye, n = a.nose, big = a.hs >= 0.95;
 if (S.pattern === 'points') P(n.x - 2, n.y - 1, 3, 3, C2.body);
 if (sc[3] >= 1) P(n.x - 2, n.y - 1, 3, 2, C_GREY);
 if (!dead && L.death >= 1) P(e.x - 1, e.y + 1, 3, 1, L.death >= 2 ? PAL.stone2 : C.dark);
@@ -12939,69 +13265,120 @@ ctx.fillRect(fx, fy, RABBIT_W, RABBIT_H);
 return { RABBIT_W, RABBIT_H, rabbitLevels, rabbitPose, rabbitPace, rabbitAnchors, rabbitSpriteKey, drawRabbitSprite, clearRabbitSprites, drawRabbit };
 })();
 // src/rendering/hutch-scene.js
-const __m66 = (() => {
+const __m67 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m51;
-const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m64;
-const HUTCH_W = 192;
-const HUTCH_H = 72;
+const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m65;
+const HUTCH_W = 224;
+const HUTCH_H = 88;
 const HUTCH_BODIES = 3;
-const FLOOR_Y = 44;
-const ROAM = { x0: 18, x1: 132, y0: 50, y1: 66 };
-const RACK = { x: 30, y: 51 };
-const SLOTS = [[154, 62], [174, 65], [160, 69]];
+const FLOOR_Y = 48;
+const ROAM = { x0: 30, x1: 160, y0: 57, y1: 76 };
+const RACK = { x: 40, y: 58 };
+const SLOTS = [[180, 70], [200, 74], [186, 78]];
+const RAIL_Y = 79;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 function R(ctx, x, y, w, h, c) {
 ctx.fillStyle = c;
 ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
 }
+const HW = { k: '#1a1218', p0: '#2a170c', p1: '#3a2212', p2: '#4a2c17', p3: '#5a371d', p4: '#6d4626', p5: '#8a5c33', p6: '#a8763f' };
+const STRAW = ['#7a5a24', '#9a7630', '#b8923c', '#d2ae52', '#e8cc74', '#f6e2a0'];
+function post(ctx, x, y, w, h) {
+R(ctx, x - 1, y - 1, w + 2, h + 1, HW.k);
+R(ctx, x, y, w, h, HW.p4);
+R(ctx, x, y, 1, h, HW.p6);
+R(ctx, x + w - 1, y, 1, h, HW.p2);
+R(ctx, x - 1, y - 2, w + 2, 2, HW.p5); R(ctx, x - 1, y - 2, w + 2, 1, HW.p6);
+for (let yy = y + 3; yy < y + h - 1; yy += 4) R(ctx, x + 1 + (yy % 3), yy, 1, 2, HW.p3);
+}
 function paintHutch(ctx, o = {}) {
-const W = HUTCH_W, H = HUTCH_H, rng = new Rng('hutch-bg');
-for (let y = 0, i = 0; y < FLOOR_Y; y += 7, i++) {
-const base = i % 2 ? PAL.wood2 : PAL.wood3, grain = i % 2 ? PAL.wood1 : PAL.wood2;
-R(ctx, 0, y, W, 7, base);
-R(ctx, 0, y, W, 1, i % 2 ? PAL.wood3 : PAL.wood4);
-R(ctx, 0, y + 6, W, 1, PAL.wood0);
-for (let k = 0; k < 7; k++) R(ctx, rng.int(0, W - 12), y + rng.int(2, 4), rng.int(5, 16), 1, grain);
-for (let x = (i % 2) * 23 + rng.int(4, 12); x < W; x += rng.int(38, 58)) {
-R(ctx, x, y + 1, 1, 5, PAL.wood0);
-R(ctx, x - 2, y + 3, 1, 1, PAL.iron4); R(ctx, x + 2, y + 3, 1, 1, PAL.iron4);
+const W = HUTCH_W, H = HUTCH_H, rng = new Rng('hutch-bg-2');
+for (let y = 0, i = 0; y < FLOOR_Y; y += 8, i++) {
+const tone = [HW.p2, HW.p3, HW.p2, HW.p1, HW.p3, HW.p2][i % 6];
+R(ctx, 0, y, W, 8, tone);
+R(ctx, 0, y, W, 1, i % 2 ? HW.p4 : HW.p3);
+R(ctx, 0, y + 7, W, 1, HW.p0);
+for (let k = 0; k < 16; k++) R(ctx, rng.int(0, W - 10), y + rng.int(2, 6), rng.int(6, 22), 1, rng.chance(0.5) ? HW.p1 : HW.p4);
+for (let k = 0; k < 2; k++) { const kx = rng.int(8, W - 8), ky = y + rng.int(3, 5); R(ctx, kx - 1, ky, 3, 1, HW.p1); R(ctx, kx, ky - 1, 1, 3, HW.p1); R(ctx, kx, ky, 1, 1, HW.p0); }
+for (let x = (i % 2) * 31 + rng.int(10, 30); x < W; x += rng.int(52, 84)) {
+R(ctx, x, y + 1, 1, 6, HW.p0); R(ctx, x + 1, y + 1, 1, 6, HW.p4);
+R(ctx, x - 3, y + 3, 1, 1, '#8a8296'); R(ctx, x + 3, y + 3, 1, 1, '#8a8296');
 }
 }
-R(ctx, 0, FLOOR_Y, W, H - FLOOR_Y, PAL.parch0);
-R(ctx, 0, FLOOR_Y, W, 1, PAL.wood0);
-R(ctx, 0, FLOOR_Y + 1, W, 2, 'rgba(0,0,0,0.18)');
-for (let k = 0; k < 260; k++) {
-const x = rng.int(0, W - 1), y = rng.int(FLOOR_Y + 2, H - 5), len = rng.int(2, 4);
-const c = rng.pick([PAL.parch1, PAL.parch1, PAL.parch2, '#6d5a3a']);
-if (rng.chance(0.5)) R(ctx, x, y, len, 1, c);
-else { R(ctx, x, y, 1, 1, c); R(ctx, x + 1, y - 1, 1, 1, c); R(ctx, x + 2, y - 2, 1, 1, c); }
+for (let y = 0; y < FLOOR_Y; y++) {
+const a = y < 16 ? 0.32 * (1 - y / 16) : 0;
+if (a > 0.01) R(ctx, 0, y, W, 1, `rgba(10,6,4,${a.toFixed(3)})`);
+if (y > 34) R(ctx, 0, y, W, 1, `rgba(255,190,90,${(0.05 * (y - 34) / 14).toFixed(3)})`);
 }
-R(ctx, 3, 14, 19, 2, PAL.wood1); R(ctx, 3, 14, 19, 1, PAL.wood4);
-for (let x = 6; x < 20; x += 3) R(ctx, x, 16, 1, 22, PAL.iron3);
-for (let k = 0; k < 46; k++) R(ctx, rng.int(5, 19), rng.int(9, 34), rng.int(1, 3), 1, rng.pick(['#d8c46a', '#b8a24a', '#e8d88a', '#8f8a3a']));
-R(ctx, 3, 38, 19, 3, PAL.wood1); R(ctx, 3, 38, 19, 1, PAL.wood4);
-R(ctx, 3, 14, 2, 27, PAL.wood2); R(ctx, 20, 14, 2, 27, PAL.wood2);
-for (let k = 0; k < 22; k++) R(ctx, rng.int(4, 26), rng.int(FLOOR_Y + 1, FLOOR_Y + 6), rng.int(2, 4), 1, rng.pick(['#d8c46a', '#b8a24a']));
-const bx = 40, by = 61;
-for (const [rx, ry, c] of /** @type {[number, number, string][]} */ ([[7, 3, '#1a1218'], [6, 2, PAL.stone4], [4, 1, PAL.frost1]])) {
-for (let yy = -ry; yy <= ry; yy++) { const w = Math.round(rx * Math.sqrt(Math.max(0, 1 - (yy * yy) / (ry * ry)))); R(ctx, bx - w, by + yy, w * 2 + 1, 1, c); }
+post(ctx, 0, 0, 5, FLOOR_Y);
+post(ctx, W - 5, 0, 5, FLOOR_Y);
+R(ctx, 0, 0, W, 4, HW.p1); R(ctx, 0, 3, W, 1, HW.p0); R(ctx, 0, 0, W, 1, HW.p3);
+for (let y = FLOOR_Y; y < H; y++) R(ctx, 0, y, W, 1, y < FLOOR_Y + 3 ? STRAW[0] : STRAW[1 + ((y >> 2) % 2)]);
+for (let k = 0; k < 900; k++) {
+const x = rng.int(-2, W), y = rng.int(FLOOR_Y + 2, H - 1), len = rng.int(2, 5);
+const c = STRAW[rng.weighted([0, 1, 2, 3, 4, 5], [1.2, 1.6, 2, 2, 1.4, 0.6])];
+const dir = rng.pick([-1, 1, 0]);
+for (let j = 0; j < len; j++) R(ctx, x + j, y + (dir ? Math.round(j * dir * 0.5) : 0), 1, 1, c);
 }
-R(ctx, bx - 2, by - 1, 2, 1, PAL.frost2); R(ctx, bx - 6, by + 1, 13, 1, PAL.stone2);
-if (o.nest) {
-R(ctx, 157, 27, 32, 23, '#1a1218'); R(ctx, 158, 28, 30, 21, PAL.wood3); R(ctx, 158, 28, 30, 2, PAL.wood5);
-R(ctx, 158, 38, 30, 1, PAL.wood2);
-R(ctx, 167, 36, 12, 13, PAL.wood0); R(ctx, 168, 34, 10, 2, PAL.wood0); R(ctx, 170, 33, 6, 1, PAL.wood0);
-for (let k = 0; k < 12; k++) R(ctx, rng.int(166, 179), rng.int(44, 49), rng.int(2, 3), 1, rng.pick([PAL.parch2, PAL.parch1]));
-for (let k = 0; k < 8; k++) R(ctx, rng.int(158, 186), 27 - rng.int(0, 2), rng.int(2, 3), 1, PAL.parch2);
+R(ctx, 0, FLOOR_Y, W, 1, HW.p0);
+R(ctx, 0, FLOOR_Y + 1, W, 2, 'rgba(20,10,0,0.35)');
+R(ctx, 0, FLOOR_Y + 3, W, 2, 'rgba(20,10,0,0.15)');
+const rx = 8, ry = 8, rw = 26, rh = 38;
+for (let k = 0; k < 140; k++) R(ctx, rng.int(rx + 2, rx + rw - 3), rng.int(ry + 2, ry + rh - 4), rng.int(1, 4), 1, rng.pick([STRAW[2], STRAW[3], STRAW[4], STRAW[5], '#a89a40']));
+for (let x = rx + 3; x < rx + rw - 2; x += 5) { R(ctx, x, ry + 2, 1, rh - 4, HW.p1); R(ctx, x + 1, ry + 2, 1, rh - 4, HW.p5); }
+for (let y = ry + 6; y < ry + rh - 3; y += 7) { R(ctx, rx + 2, y, rw - 4, 1, HW.p1); R(ctx, rx + 2, y - 1, rw - 4, 1, HW.p5); }
+post(ctx, rx, ry, 3, rh); post(ctx, rx + rw - 3, ry, 3, rh);
+R(ctx, rx - 1, ry, rw + 2, 3, HW.k); R(ctx, rx, ry, rw, 2, HW.p5); R(ctx, rx, ry, rw, 1, HW.p6);
+for (let k = 0; k < 26; k++) { const x = rng.int(rx + 1, rx + rw - 2); R(ctx, x, ry - rng.int(1, 4), 1, rng.int(2, 4), rng.pick([STRAW[3], STRAW[4], STRAW[5]])); }
+for (let k = 0; k < 40; k++) R(ctx, rng.int(rx - 4, rx + rw + 8), rng.int(FLOOR_Y + 1, FLOOR_Y + 9), rng.int(2, 5), 1, rng.pick([STRAW[3], STRAW[4], STRAW[5]]));
+const bx = 176, by = 22, bw = 42, bh = 32;
+R(ctx, bx - 1, by - 1, bw + 2, bh + 2, HW.k);
+for (let y = by, i = 0; y < by + bh; y += 6, i++) {
+R(ctx, bx, y, bw, 6, i % 2 ? HW.p4 : HW.p3);
+R(ctx, bx, y, bw, 1, HW.p5); R(ctx, bx, y + 5, bw, 1, HW.p1);
+for (let k = 0; k < 3; k++) R(ctx, bx + rng.int(1, bw - 8), y + rng.int(2, 4), rng.int(3, 7), 1, HW.p2);
 }
+R(ctx, bx, by, 2, bh, HW.p6); R(ctx, bx + bw - 2, by, 2, bh, HW.p2);
+const dx = bx + 13, dw = 16, dy = by + 10;
+for (let y = dy; y < by + bh; y++) {
+const t = y - dy, half = t < 6 ? Math.round(Math.sqrt(Math.max(0, 36 - (6 - t) * (6 - t))) * (dw / 12)) : dw / 2;
+R(ctx, dx + dw / 2 - half - 1, y, half * 2 + 2, 1, HW.p1);
+R(ctx, dx + dw / 2 - half, y, half * 2, 1, y < dy + 3 ? '#140c08' : '#0d0806');
+}
+if (o.nest) for (let k = 0; k < 22; k++) R(ctx, rng.int(dx, dx + dw - 2), rng.int(by + bh - 6, by + bh - 1), rng.int(2, 3), 1, rng.pick([STRAW[4], STRAW[5], '#f6ead0', '#e6d3a5']));
+for (let y = 0; y < 8; y++) {
+const w = bw + 8 - y;
+R(ctx, bx - 4 + Math.round(y / 2), by - 8 + y, w, 1, STRAW[y < 2 ? 4 : y < 5 ? 3 : 2]);
+}
+for (let k = 0; k < 60; k++) R(ctx, rng.int(bx - 4, bx + bw + 3), rng.int(by - 9, by - 1), 1, rng.int(1, 3), rng.pick([STRAW[1], STRAW[2], STRAW[5]]));
+R(ctx, bx - 4, by - 1, bw + 8, 1, STRAW[0]);
+R(ctx, bx, by + bh + 1, bw, 2, 'rgba(20,10,0,0.35)');
+bowl(ctx, 86, 70, 9, 3, '#2a3a8a', '#4a6ad0', '#8aa8ff', (x, y) => { for (let k = 0; k < 12; k++) R(ctx, x + rng.int(-6, 6), y + rng.int(-1, 0), 1, 1, rng.pick(['#c8782a', '#e8a040', '#8a4a1a'])); });
+bowl(ctx, 58, 64, 7, 2, '#3d3844', '#73697b', '#a8a2b0', (x, y) => { R(ctx, x - 5, y - 1, 11, 2, PAL.frost1); R(ctx, x - 3, y - 1, 3, 1, PAL.frost3); });
 if (o.cloth) {
-R(ctx, 138, 57, 53, 14, PAL.parch0); R(ctx, 139, 57, 51, 12, PAL.parch1); R(ctx, 139, 57, 51, 1, PAL.parch2);
-for (let x = 146; x < 188; x += 9) { R(ctx, x, 59, 1, 4, PAL.parch0); R(ctx, x + 1, 63, 1, 4, PAL.parch0); }
-for (let x = 139; x < 190; x += 2) R(ctx, x, 69, 1, 1, PAL.parch2);
+R(ctx, 166, 64, 56, 18, PAL.parch0); R(ctx, 167, 64, 54, 16, PAL.parch1); R(ctx, 167, 64, 54, 1, PAL.parch2);
+for (let x = 174; x < 220; x += 9) { R(ctx, x, 66, 1, 5, PAL.parch0); R(ctx, x + 1, 71, 1, 5, PAL.parch0); }
+for (let x = 167; x < 221; x += 2) R(ctx, x, 79, 1, 1, PAL.parch2);
 }
-R(ctx, 0, H - 4, W, 4, PAL.wood3); R(ctx, 0, H - 4, W, 1, PAL.wood5); R(ctx, 0, H - 1, W, 1, PAL.wood1);
-for (let x = 10; x < W; x += 46) R(ctx, x, H - 3, 1, 1, PAL.iron4);
+for (let x = 0; x < 10; x++) { const a = (0.28 * (1 - x / 10)).toFixed(3); R(ctx, x, 0, 1, H, `rgba(8,4,2,${a})`); R(ctx, W - 1 - x, 0, 1, H, `rgba(8,4,2,${a})`); }
+}
+function bowl(ctx, x, y, rx, ry, dark, mid, hi, fill) {
+R(ctx, x - rx - 1, y - ry - 1, rx * 2 + 3, ry * 2 + 5, 'rgba(20,10,0,0.25)');
+for (let yy = -ry; yy <= ry; yy++) { const w = Math.round(rx * Math.sqrt(Math.max(0, 1 - (yy * yy) / (ry * ry)))); R(ctx, x - w - 1, y + yy, w * 2 + 3, 1, HW.k); }
+R(ctx, x - rx, y, rx * 2 + 1, 4, HW.k);
+R(ctx, x - rx + 1, y, rx * 2 - 1, 3, mid); R(ctx, x - rx + 1, y + 2, rx * 2 - 1, 1, dark); R(ctx, x - rx + 2, y, 2, 2, hi);
+for (let yy = -ry + 1; yy < 1; yy++) { const w = Math.round((rx - 1) * Math.sqrt(Math.max(0, 1 - (yy * yy) / (ry * ry)))); R(ctx, x - w, y + yy, w * 2 + 1, 1, dark); }
+fill(x, y);
+}
+function paintHutchFront(ctx) {
+const W = HUTCH_W, H = HUTCH_H;
+R(ctx, 0, RAIL_Y - 1, W, H - RAIL_Y + 1, HW.k);
+R(ctx, 0, RAIL_Y, W, H - RAIL_Y, HW.p3);
+R(ctx, 0, RAIL_Y, W, 1, HW.p6); R(ctx, 0, RAIL_Y + 1, W, 1, HW.p5);
+R(ctx, 0, H - 2, W, 2, HW.p1);
+for (let x = 6; x < W; x += 13) R(ctx, x, RAIL_Y + 3 + (x % 3), 7, 1, HW.p2);
+for (const x of [2, 56, 112, 168, W - 8]) post(ctx, x, RAIL_Y - 7, 6, H - RAIL_Y + 7);
 }
 class HutchScene {
 constructor(opts = {}) {
@@ -13013,6 +13390,8 @@ this.nest = false;
 this.cloth = false;
 this.bg = null;
 this.bgKey = '';
+this.fg = null;
+this.clashes = [];
 }
 sync(entries) {
 const seen = new Set();
@@ -13052,6 +13431,20 @@ for (const a of this.actors.values()) {
 if (a.react > 0) a.react = Math.max(0, a.react - d * 1.25);
 if (a.alive) this._tick(a, d);
 }
+for (const c of this.clashes) c.t += d;
+this.clashes = this.clashes.filter((c) => c.t < 0.9);
+}
+attack(fromId, toId) {
+const a = this.actors.get(String(fromId)), v = this.actors.get(String(toId));
+if (!v || v.hidden) return;
+v.react = 1;
+v.reactCh = [];
+const b = this._box(v);
+this.clashes.push({ x: Math.round((b.x0 + b.x1) / 2), y: Math.round((b.y0 + b.y1) / 2), t: 0 });
+if (a && a.alive && !a.hidden && a.act !== 'collapse' && a.act !== 'frozen') {
+const side = a.x < v.x ? -1 : 1;
+this._hopTo(a, this._roam(v.x + side * 10, v.y), 3, true);
+}
 }
 poke(id, channels = []) {
 const a = this.actors.get(String(id));
@@ -13073,6 +13466,20 @@ quality: low ? 'low' : 'high', clear: false, floor: false, clip: false, flash: f
 cache: this.sprites, factory: this.factory || undefined,
 });
 }
+for (const a of list) {
+if (!a.alive || !a.snap.ag) continue;
+const f = this._frame(a), hx = f.mirror ? f.x + RABBIT_W - 1 - f.an.head.cx : f.x + f.an.head.cx;
+const y = Math.max(2, f.y + f.an.top - f.lift - 3);
+const on = Math.floor(t * 6 + a.phase) % 2 === 0;
+R(ctx, hx - 4, y, 2, 1, on ? '#ff3a2a' : '#a8241a'); R(ctx, hx + 3, y, 2, 1, on ? '#ff3a2a' : '#a8241a');
+R(ctx, hx - 3, y - 1, 1, 1, '#ff3a2a'); R(ctx, hx + 3, y - 1, 1, 1, '#ff3a2a');
+}
+for (const c of this.clashes) {
+const k = c.t < 0.45 ? '#ff3a2a' : '#a8241a';
+for (let i = 0; i < 3; i++) for (let j = 0; j < 5; j++) R(ctx, c.x - 4 + i * 3 + j, c.y - 3 + j, 1, 1, j === 2 ? '#fff0e0' : k);
+if (c.t < 0.3) for (let i = 0; i < 6; i++) R(ctx, c.x + Math.round(Math.cos(i) * (4 + c.t * 20)), c.y + Math.round(Math.sin(i * 1.7) * (3 + c.t * 10)), 1, 1, '#f6ead0');
+}
+this._front(ctx);
 const hov = o.hover != null ? this.actors.get(String(o.hover)) : null;
 if (hov && !hov.hidden) {
 const b = this._box(hov), rx = Math.max(6, Math.round((b.x1 - b.x0) / 2) - 3);
@@ -13148,6 +13555,10 @@ const r = new Rng(hashString(`${a.id}:${a.look.seed}:${a.n++}`));
 const L = a.L, kit = a.snap.stage === 'kit';
 const sick = L.toxicity >= 2 || a.snap.hp >= 2;
 a.next = null;
+if (a.snap.ag && r.chance(0.6)) {
+const others = [...this.actors.values()].filter((o) => o !== a && o.alive && !o.hidden);
+if (others.length) { const o = r.pick(others); return this._hopTo(a, this._roam(o.x - 9 * Math.sign(o.x - a.x || 1), o.y), 3, true); }
+}
 if (sick && r.chance(0.8)) return this._begin(a, 'loaf', r.range(3, 6));
 if (L.arcana === 3 && r.chance(0.45)) {
 const g = this._goal(a, r, 26);
@@ -13235,6 +13646,12 @@ return { x0: x0 - pad, y0: f.y + b.y0 - f.lift - pad, x1: x1 + pad, y1: f.y + b.
 _visible() {
 return [...this.actors.values()].filter((a) => !a.hidden).sort((p, q) => p.y - q.y || (p.id < q.id ? -1 : p.id > q.id ? 1 : 0));
 }
+_front(ctx) {
+const factory = this.factory || (typeof document !== 'undefined' ? makeCanvas : null);
+if (!factory) { paintHutchFront(ctx); return; }
+if (!this.fg) { this.fg = factory(HUTCH_W, HUTCH_H); paintHutchFront(this.fg.getContext('2d')); }
+ctx.drawImage(this.fg, 0, 0);
+}
 _background(ctx) {
 const o = { nest: this.nest, cloth: this.cloth };
 const factory = this.factory || (typeof document !== 'undefined' ? makeCanvas : null);
@@ -13248,17 +13665,24 @@ this.bgKey = key;
 ctx.drawImage(this.bg, 0, 0);
 }
 }
-return { HUTCH_W, HUTCH_H, HUTCH_BODIES, paintHutch, HutchScene };
+return { HUTCH_W, HUTCH_H, HUTCH_BODIES, paintHutch, paintHutchFront, HutchScene };
 })();
 // src/ui/views/hutch.js
-const __m65 = (() => {
+const __m66 = (() => {
 const { h, btn, clear, toast, modal, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { drawRabbit, RABBIT_W, RABBIT_H } = __m64;
-const { HutchScene, HUTCH_W, HUTCH_H } = __m66;
-const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, TRAIT_WORDS } = __m28;
+const { drawRabbit, RABBIT_W, RABBIT_H } = __m65;
+const { HutchScene, HUTCH_W, HUTCH_H } = __m67;
+const { EFFECT_BY_KEY } = __m13;
+const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral, RABBIT_MARKS, DEGEN_AT, LETHAL, TRAIT_WORDS } = __m28;
+const { PURGE_BREW_TIME } = __m5;
 const STAGE_WORD = { kit: 'kit', young: 'youngster', adult: 'adult', elder: 'elder' };
+const CHANNELS = RABBIT_MARKS.map((k) => {
+const e = EFFECT_BY_KEY[k === 'acid' || k === 'alkali' ? 'acidity' : k];
+return { key: k, label: k === 'acid' ? 'Acid' : k === 'alkali' ? 'Lye' : e.label, icon: e.icon, color: k === 'alkali' ? [0.78, 0.76, 0.66] : e.color };
+});
+const rgb = (c) => `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2] * 255)})`;
 class HutchPanel {
 constructor(view) {
 this.view = view;
@@ -13268,6 +13692,8 @@ this.scene = new HutchScene();
 this.tiles = {};
 this.hover = null;
 this._acc = 0;
+this._live = 0;
+this.d = {};
 }
 get st() {
 return this.lab.state;
@@ -13280,13 +13706,25 @@ const cap = st.cap.hutch;
 const price = lab.sandbox ? 0 : st.rabbitPrice();
 const full = live.length >= cap;
 const fed = c.fedDay === st.day;
+const feral = live.filter((r) => isFeral(r));
 el.append(h('div', { class: 'row wrap hutch-head' },
 icon('rabbit'), h('b', { text: 'The hutch' }), h('span', { class: 'small muted', text: `${live.length} of ${cap} places` }),
-h('span', { class: 'spacer' }),
+feral.length ? h('span', { class: 'feral-warn small' }, icon('claw', 'sm'), ` ${feral.map((r) => r.name).join(', ')} gone feral!`) : null));
+el.append(h('div', { class: 'hutch-actions' },
 btn(price ? `Buy · ${price}` : 'Buy', () => this.buy(), { icon: 'plus', act: 'colony-buy', disabled: full || (!lab.sandbox && st.coins < price), title: full ? `The hutch is full (${cap} places): upgrade it at the guild.` : 'Buy an adult rabbit from the breeder' }),
 btn(fed ? 'Fed' : lab.sandbox ? 'Feed' : `Feed · ${st.feedCost()}`, () => this.feed(), { icon: 'leaf', act: 'colony-feed', disabled: fed || !live.length, title: 'Hay and greens: they recover faster and pair up more readily tonight' }),
 btn(c.breed ? 'Breeding on' : 'Breeding off', () => this.toggleBreed(), { icon: 'nest', cls: c.breed ? 'active' : '', act: 'colony-breed', title: 'Let healthy, unrelated adults pair up overnight' }),
 lab.sandbox ? btn('Next day', () => this.nextDay(), { icon: 'clock', act: 'colony-day', title: 'Let a night pass in the hutch' }) : null));
+const brewing = c.still != null;
+this.d.still = h('span', { class: 'small muted still-state', text: '' });
+el.append(h('div', { class: 'purge-row' },
+icon('purge'), h('b', { class: 'small', text: lab.sandbox ? 'Purges: unlimited' : `Purges: ${c.purges || 0}` }),
+h('span', { class: 'spacer' }),
+lab.sandbox ? null : btn(`Buy · ${st.purgePrice()}`, () => this.buyPurge(), { icon: 'coin', act: 'purge-buy', disabled: st.coins < st.purgePrice(), title: 'A purging draught from the apothecary: washes every potion effect out of a rabbit and stops degeneration' }),
+lab.sandbox ? null : (st.has('still')
+? btn(brewing ? 'Brewing…' : 'Brew · 1', () => this.brewPurge(), { icon: 'alembic', act: 'purge-brew', disabled: brewing || st.coins < 1, title: 'Brew a purging draught in your still' })
+: h('span', { class: 'small muted', text: 'Brew your own with the Purging Still (guild)' })),
+this.d.still));
 this.canvas = /** @type {HTMLCanvasElement} */ (h('canvas', { width: String(HUTCH_W), height: String(HUTCH_H), class: 'hutch-scene', role: 'img', 'aria-label': `The hutch: ${live.length} rabbits${bodies(c).length ? ` and ${bodies(c).length} bodies` : ''}. Tap a rabbit to choose it.` }));
 this.ctx = /** @type {CanvasRenderingContext2D} */ (this.canvas.getContext('2d'));
 this.canvas.addEventListener('pointerdown', (e) => this.tapScene(e));
@@ -13304,41 +13742,105 @@ const sel = r.id === c.focus;
 const tags = [];
 if (!r.alive) tags.push(icon('skull', 'sm'));
 else {
+if (isFeral(r)) tags.push(icon('claw', 'sm'));
+else if (degenOf(r).length) tags.push(icon('skull', 'sm'));
 if (r.pregnant) tags.push(icon('nest', 'sm'));
 if (r.marks.love >= 8) tags.push(icon('heart', 'sm'));
 }
+const hp = h('i');
 const tile = h('button', {
-class: 'rabbit-tile' + (sel ? ' selected' : '') + (r.alive ? '' : ' dead') + (stageOf(r, st.day) === 'kit' ? ' kit' : ''),
+class: 'rabbit-tile' + (sel ? ' selected' : '') + (r.alive ? '' : ' dead') + (stageOf(r, st.day) === 'kit' ? ' kit' : '') + (isFeral(r) ? ' feral' : degenOf(r).length ? ' degen' : ''),
 'data-rabbit': r.id, 'data-subject': 'rabbit', role: 'option', 'aria-selected': sel ? 'true' : 'false',
 'aria-label': `${r.name}, ${r.sex === 'f' ? 'doe' : 'buck'}: ${rabbitCondition(r, st.day).join(', ')}`,
-}, cv, h('span', { class: 'rt-name', text: r.name }), h('span', { class: 'rt-tags' }, ...tags));
+}, cv, h('span', { class: 'rt-name', text: r.name }), r.alive ? h('span', { class: 'bar hp rt-hp' }, hp) : null, h('span', { class: 'rt-tags' }, ...tags));
 tile.addEventListener('click', () => this.view.select(r.id));
-this.tiles[r.id] = { tile, cv, ctx: /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')), key: '' };
+this.tiles[r.id] = { tile, cv, ctx: /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')), key: '', hp };
 tiles.appendChild(tile);
 }
 if (!c.rabbits.length) tiles.appendChild(h('div', { class: 'small muted', text: 'The hutch is empty. Buy a rabbit to test potions on.' }));
 el.append(tiles);
 const f = findRabbit(c, c.focus);
+this.d = { still: this.d.still };
 if (f) el.append(this.detail(f));
 if (c.memorial.length) el.append(h('div', { class: 'small muted memorial', text: `Remembered: ${c.memorial.slice(0, 6).map((m) => m.name).join(', ')}${c.memorial.length > 6 ? '…' : ''}` }));
 this.drawTiles(0, true);
+this.live();
 }
 detail(r) {
-const st = this.st;
+const lab = this.lab, st = this.st;
 const stage = stageOf(r, st.day);
 const age = st.day - r.born;
 const parents = (r.parents || []).map((id) => (findRabbit(st.colony, id) || st.colony.memorial.find((m) => m.id === id) || { name: '' }).name).filter(Boolean);
 const words = rabbitCondition(r, st.day);
-const actions = [btn('History', () => this.history(r), { icon: 'scroll', act: 'rabbit-history', disabled: !r.doses.length })];
-if (!r.alive) {
+const portrait = /** @type {HTMLCanvasElement} */ (h('canvas', { width: String(RABBIT_W), height: String(RABBIT_H), class: 'rd-portrait', 'aria-hidden': 'true' }));
+this.d.portrait = /** @type {CanvasRenderingContext2D} */ (portrait.getContext('2d'));
+this.d.id = r.id;
+const view = this.view;
+const avail = view.available();
+const dose = view.doseMl();
+const actions = [];
+if (r.alive) {
+const give = btn(`Give ${dose} ml`, () => view.test('rabbit'), { cls: 'primary', icon: 'dropper', act: 'test-rabbit', disabled: dose <= 0 || avail <= 0, title: `Give ${r.name} ${dose} ml from the ${view.source === 'vial' ? 'sealed vial' : 'cauldron tap'}` });
+actions.push(give);
+actions.push(btn(lab.sandbox ? 'Purge' : `Purge (${st.colony.purges || 0})`, () => this.purge(r), { icon: 'purge', act: 'rabbit-purge', disabled: !lab.sandbox && !(st.colony.purges > 0), title: 'Give a purging draught: every effect washes out, degeneration stops' }));
+actions.push(btn('Put down', () => this.cull(r), { icon: 'knife', cls: 'danger', act: 'rabbit-cull', title: 'End its life now (the body stays for remains or burial)' }));
+} else {
+actions.push(btn('New rabbit', () => view.replace('rabbit'), { icon: 'plus', act: 'replace-rabbit' }));
 actions.push(btn('Recover remains', () => this.remains(r), { icon: 'bone', cls: 'gold', act: 'rabbit-remains' }));
 actions.push(btn('Bury', () => this.bury(r), { icon: 'trash', cls: 'danger', act: 'rabbit-bury' }));
 }
-return h('div', { class: 'rabbit-detail' },
+actions.push(btn('History', () => this.history(r), { icon: 'scroll', act: 'rabbit-history', disabled: !r.doses.length }));
+const hpFill = h('i'), hpText = h('span', { class: 'small hp-text' });
+this.d.hp = hpFill; this.d.hpText = hpText;
+const bars = {};
+const grid = h('div', { class: 'status-bars', role: 'list', 'aria-label': 'What the potions have left in it' });
+for (const ch of CHANNELS) {
+const fill = h('i', { style: { background: rgb(ch.color) } });
+const row = h('div', { class: 'sb', role: 'listitem', title: `${ch.label}: past the tick it degenerates` },
+icon(ch.icon, 'sm'), h('span', { class: 'sb-k', text: ch.label }), h('span', { class: 'sb-bar' }, fill, h('b', { class: 'sb-tick', style: { left: DEGEN_AT + '%' } })));
+bars[ch.key] = { fill, row };
+grid.append(row);
+}
+this.d.bars = bars;
+const out = h('div', { class: 'rabbit-detail' + (isFeral(r) ? ' feral' : '') },
+h('div', { class: 'rd-top' },
+portrait,
+h('div', { class: 'rd-info' },
 h('div', { class: 'rd-title' }, h('b', { text: r.name }), h('span', { class: 'small muted', text: ` ${r.sex === 'f' ? 'doe' : 'buck'} · ${STAGE_WORD[stage]}${r.alive ? ` · ${age >= 0 ? `${age} day${age === 1 ? '' : 's'} old` : 'grown'}` : ''}` })),
 h('div', { class: 'small', text: words.join(' · ') }),
-h('div', { class: 'small muted', text: `${r.trials} trial${r.trials === 1 ? '' : 's'}${parents.length ? ` · child of ${parents.join(' and ')}` : ''}` }),
+r.alive ? h('div', { class: 'rd-hp' }, icon('heart', 'sm'), h('span', { class: 'bar hp big' }, hpFill), hpText) : null,
+h('div', { class: 'small muted', text: `${r.trials} trial${r.trials === 1 ? '' : 's'}${parents.length ? ` · child of ${parents.join(' and ')}` : ''}` }))),
+r.alive ? grid : null,
 h('div', { class: 'row wrap rd-actions' }, ...actions));
+return out;
+}
+live() {
+const st = this.st, c = st.colony;
+for (const [id, t] of Object.entries(this.tiles)) {
+const r = findRabbit(c, id);
+if (!r || !r.alive || !t.hp) continue;
+const f = r.health / Math.max(1, maxHealthOf(r, st.day));
+t.hp.style.width = Math.round(100 * Math.max(0, Math.min(1, f))) + '%';
+t.hp.style.background = f > 0.6 ? '#7dc24a' : f > 0.25 ? '#f0b84a' : '#e0402c';
+}
+if (this.d.still) this.d.still.textContent = c.still != null ? `still: ${Math.ceil(c.still)} s` : '';
+const r = this.d.id ? findRabbit(c, this.d.id) : null;
+if (!r || !r.alive || !this.d.bars) return;
+const max = maxHealthOf(r, st.day), f = r.health / Math.max(1, max);
+if (this.d.hp) {
+this.d.hp.style.width = Math.round(100 * Math.max(0, Math.min(1, f))) + '%';
+this.d.hp.style.background = f > 0.6 ? '#7dc24a' : f > 0.25 ? '#f0b84a' : '#e0402c';
+}
+if (this.d.hpText) this.d.hpText.textContent = `${Math.max(0, Math.round(r.health))} / ${Math.round(max)}`;
+const dg = degenOf(r);
+for (const [k, b] of Object.entries(this.d.bars)) {
+const v = Math.max(0, Math.min(100, r.marks[k] || 0));
+b.fill.style.width = v.toFixed(1) + '%';
+b.row.classList.toggle('degen', dg.includes(k));
+b.row.classList.toggle('lethal', dg.includes(k) && LETHAL.includes(k));
+b.row.classList.toggle('near', !dg.includes(k) && v >= DEGEN_AT * 0.75);
+b.row.classList.toggle('zero', v < 0.5);
+}
 }
 syncScene() {
 const st = this.st;
@@ -13374,6 +13876,35 @@ this.after();
 toggleBreed() {
 this.st.setBreeding(!this.st.colony.breed);
 audio.play('click');
+this.after();
+}
+buyPurge() {
+const r = this.st.buyPurge(this.lab.sandbox);
+if (!r.ok) { toast('No purge', r.reason, 'purge'); audio.play('error'); return; }
+audio.play('coin');
+this.after();
+}
+brewPurge() {
+const r = this.st.brewPurge(this.lab.sandbox);
+if (!r.ok) { toast('The still', r.reason, 'alembic'); audio.play('error'); return; }
+audio.play('pour');
+toast('The still is working', `A purging draught will be ready in ${PURGE_BREW_TIME} seconds.`, 'alembic', 2500);
+this.after();
+}
+purge(r) {
+const res = this.st.purgeRabbit(r.id, this.lab.sandbox);
+if (!res.ok) { toast('No purge', res.reason, 'purge'); audio.play('error'); return; }
+audio.play('glass');
+this.view.rreact[r.id] = 1;
+toast(`${r.name} is purged`, 'Every potion effect washes out of it; anything degenerating has stopped. What grew for good stays.', 'purge', 3500);
+this.after();
+}
+async cull(r) {
+const feral = isFeral(r);
+if (!await confirmDialog(`Put ${r.name} down?`, feral ? `${r.name} has gone feral and is attacking the colony. The body stays: recover its remains or bury it.` : 'It dies at once. The body stays: recover its remains or bury it.', 'Put down', 'danger')) return;
+const res = this.st.cullRabbit(r.id);
+if (!res.ok) { toast('Cannot', res.reason, 'knife'); return; }
+audio.play('toll');
 this.after();
 }
 nextDay() {
@@ -13447,37 +13978,37 @@ this.scene.update(dt);
 this.scene.draw(this.ctx, t, { selected: this.st.colony.focus, hover: this.hover, low });
 this._acc += dt;
 if (this._acc >= (low ? 0.2 : 0.1)) { this._acc = 0; this.drawTiles(t); }
+this._live += dt;
+if (this._live >= 0.25) { this._live = 0; this.live(); }
 }
 }
-return { HutchPanel };
+return { CHANNELS, HutchPanel };
 })();
 // src/ui/views/trials.js
-const __m63 = (() => {
+const __m64 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { SUBJECTS, SUBJECT_BY_ID, DOSES, missingEffects, suggestSubjects } = __m27;
-const { EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, potencyWord } = __m13;
-const { drawSubject, SUBJECT_W, SUBJECT_H } = __m55;
+const { SUBJECT_BY_ID, DOSES, missingEffects } = __m27;
+const { EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, EFFECT_KEYS, potencyWord } = __m13;
 const { SIM } = __m23;
 const { applyTrials } = __m45;
-const { drawRabbit } = __m64;
-const { focusRabbit, findRabbit, rabbitSnap, decodeSnap, stageOf, lookFromSeed, RABBIT_MARKS } = __m28;
-const { HutchPanel } = __m65;
-const STAGE_WORD = { kit: 'kit', young: 'youngster', adult: 'adult', elder: 'elder' };
+const { summarize, addSamples } = __m27;
+const { drawRabbit } = __m65;
+const { focusRabbit, findRabbit, rabbitSnap, decodeSnap, lookFromSeed, RABBIT_MARKS } = __m28;
+const { HutchPanel } = __m66;
 const REPLAY_T = 3.2;
 class TrialsView {
 constructor(lab) {
 this.lab = lab;
 this.el = h('section', { class: 'view view-trials', 'data-view': 'trials' });
-this.cards = {};
-this.react = {};
 this.time = 0;
 this.last = null;
 this.drag = null;
 this.rreact = {};
 this.replay = null;
 this.hutch = new HutchPanel(this);
+this.cards = {};
 }
 get source() {
 const lab = this.lab;
@@ -13489,39 +14020,21 @@ const lab = this.lab;
 if (this.source === 'vial') return lab.state.vial ? lab.state.vial.ml : 0;
 return lab.tapAvailable();
 }
+doseMl() {
+const d = Math.min(this.lab.trialDose, this.available());
+return d < SIM.ML_PER_PARTICLE ? this.lab.trialDose : Math.floor(d / SIM.ML_PER_PARTICLE) * SIM.ML_PER_PARTICLE;
+}
 build() {
 const lab = this.lab, st = lab.state;
 const el = clear(this.el);
 this.head = h('div', { class: 'trials-head card parch' });
 this.status = h('div', { class: 'trials-status small' });
-this.dropper = h('div', { class: 'dropper', role: 'button', tabindex: '0', 'aria-label': 'Dropper: drag onto a subject to give it the dose' }, icon('dropper', 'lg'), h('span', { class: 'small', text: 'Drag onto a subject' }));
+this.dropper = h('div', { class: 'dropper', role: 'button', tabindex: '0', 'aria-label': 'Dropper: drag onto a rabbit to give it the dose' }, icon('dropper', 'lg'), h('span', { class: 'small', text: 'Drag onto a rabbit' }));
 this.bindDropper();
-const grid = h('div', { class: 'subjects' });
-this.cards = {};
-for (const s of SUBJECTS) {
-if (!lab.sandbox && !st.subjectAvailable(s.id)) {
-grid.appendChild(h('div', { class: 'subject locked parch' }, icon('lock'), h('div', { class: 'small', text: `${s.name}: buy the ${s.needs === 'lantern' ? 'Wisp Lantern' : s.needs} at the guild` })));
-continue;
-}
-const cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: String(SUBJECT_W), height: String(SUBJECT_H), class: 'subject-art', 'aria-hidden': 'true' }));
-const hp = h('i');
-const btnTest = btn('Test', () => this.test(s.id), { cls: 'primary', icon: 'dropper', act: 'test-' + s.id });
-const btnReplace = btn('Replace', () => this.replace(s.id), { icon: 'plus', act: 'replace-' + s.id });
-const reveals = h('div', { class: 'reveals', title: 'Responds to' }, ...s.reveals.map((k) => icon(EFFECT_BY_KEY[k].icon, 'sm')));
-const sub = s.id === 'rabbit' ? h('div', { class: 'subject-sub small' }) : null;
-const card = h('div', { class: 'subject parch', 'data-subject': s.id },
-cv,
-h('div', { class: 'subject-name', text: s.name }),
-sub,
-h('div', { class: 'bar hp' }, hp),
-reveals,
-h('div', { class: 'subject-actions' }, btnTest, btnReplace));
-this.cards[s.id] = { card, cv, ctx: cv.getContext('2d'), hp, btnTest, btnReplace, sub };
-grid.appendChild(card);
-}
 this.report = h('div', { class: 'trial-report' });
-el.append(this.head, this.status, h('div', { class: 'dropper-row' }, this.dropper, h('div', { class: 'small muted', text: 'or press Test on a subject' })), grid, this.hutch.el, this.report);
-if (!lab.sandbox && st.firstTip('colony')) toast('The rabbit hutch', 'Your Moon Rabbits are a colony now: choose one to dose, keep them fed, and healthy pairs have kits overnight.', 'rabbit', 6500);
+el.append(this.head, this.status, this.hutch.el, this.report);
+this.cards = { rabbit: { card: this.hutch.el } };
+if (!lab.sandbox && st.firstTip('farm')) toast('The rabbit farm', 'Test on several different rabbits: each one feels a potion a little differently. Too much in one rabbit and the effect runs out of control.', 'rabbit', 7000);
 this.refresh();
 }
 select(id) {
@@ -13535,14 +14048,18 @@ this.refresh();
 }
 startReplay(rec) {
 if (!rec || !rec.replay) return;
+if (rec.rabbitId && findRabbit(this.lab.state.colony, rec.rabbitId)) {
+this.lab.state.selectRabbit(rec.rabbitId);
+this.refresh();
+}
 this.replay = { rec, t: 0 };
 this.last = rec;
 this.renderReport();
 const ol = this.report.querySelector('.obs-list');
 if (ol) ol.classList.add('replaying');
 audio.play(rec.died ? 'toll' : 'squeak');
-const card = this.cards.rabbit && this.cards.rabbit.card;
-if (card && card.scrollIntoView) card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+const p = this.hutch.el.querySelector('.rabbit-detail');
+if (p && p.scrollIntoView) p.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
 refresh() {
 const lab = this.lab, st = lab.state;
@@ -13554,7 +14071,7 @@ btn(`Cauldron tap · ${Math.round(lab.tapAvailable())} ml`, () => { lab.trialSou
 st.vial ? btn(`Sealed vial · ${Math.round(st.vial.ml)} ml`, () => { lab.trialSource = 'vial'; this.refresh(); }, { cls: src === 'vial' ? 'active' : '', act: 'src-vial' }) : null);
 const doses = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Dose' }, h('span', { class: 'small muted', text: 'Dose' }),
 ...DOSES.map((ml) => btn(`${ml} ml`, () => { lab.trialDose = ml; this.refresh(); }, { cls: lab.trialDose === ml ? 'active' : '', act: 'dose-' + ml })));
-head.append(h('div', { class: 'row wrap' }, seg), h('div', { class: 'row wrap' }, doses));
+head.append(h('div', { class: 'row wrap' }, seg), h('div', { class: 'row wrap' }, doses, h('span', { class: 'spacer' }), this.dropper));
 if (st.vial) {
 head.append(h('div', { class: 'row wrap vial-row' },
 h('span', { class: 'small muted', text: `Vial: ${Math.round(st.vial.ml)} ml of ${Math.round(st.vial.bottledMl || st.vial.ml)} ml bottled` }),
@@ -13562,86 +14079,94 @@ btn('Pour back', () => lab.pourBackVial(), { icon: 'pour', act: 'trials-pour-bac
 btn('Discard', () => { lab.discardVial(); this.refresh(); }, { icon: 'trash', cls: 'danger', act: 'trials-discard' })));
 }
 const status = clear(this.status);
-const cert = src === 'vial' ? { values: st.vial.cert || {}, stale: [], changed: false } : lab.currentCert();
+const cert = this.estimate();
 const known = Object.entries(cert.values);
 const com = st.current;
 const need = com ? missingEffects(com, cert.values) : [];
 status.append(h('div', { class: 'row wrap' },
 h('b', { text: src === 'vial' ? 'This vial: ' : 'This batch: ' }),
-known.length ? known.map(([k, v]) => h('span', { class: 'fx-chip', title: EFFECT_BY_KEY[k].label }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(v)}`)) : h('span', { class: 'muted', text: 'effects unknown — nothing tested yet' })));
+known.length ? known.filter(([, v]) => v !== 0).map(([k, v]) => h('span', { class: 'fx-chip', title: `${EFFECT_BY_KEY[k].label}: ${cert.n[k]} reading${cert.n[k] === 1 ? '' : 's'} on ${cert.rabbits[k]} rabbit${cert.rabbits[k] === 1 ? '' : 's'}` }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(v)} ±${Math.max(1, Math.round(cert.spread[k] || 0))}`)) : h('span', { class: 'muted', text: 'effects unknown — nothing tested yet' }),
+known.length && known.every(([, v]) => v === 0) ? h('span', { class: 'muted', text: 'no effect seen' }) : null));
+if (known.length) {
+const nr = Math.max(...Object.values(cert.rabbits));
+status.append(h('div', { class: nr >= 3 ? 'ok small' : 'warn small', text: nr >= 3 ? `Estimated from ${nr} different rabbits.` : `Only ${nr} rabbit${nr === 1 ? '' : 's'} tested: each one reads a potion a little differently — test on others before you trust it.` }));
+}
 if (cert.changed && src === 'cauldron') status.append(h('div', { class: 'warn small', text: 'Earlier trials of this batch are outdated: you added ingredients since.' }));
 if (cert.stale.length) status.append(h('div', { class: 'warn small', text: `The brew has changed since it was tested (${cert.stale.map((k) => EFFECT_BY_KEY[k].label).join(', ')}): reactions, heat or settling. Test again.` }));
 if (com && need.length) {
-const sugg = suggestSubjects(need, (id) => lab.sandbox || st.subjectAvailable(id)).map((id) => SUBJECT_BY_ID[id].name);
-status.append(h('div', { class: 'small' }, h('span', { text: `The order still needs: ` }), ...need.map((k) => h('span', { class: 'fx-chip need' }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ' ' + EFFECT_BY_KEY[k].label)), sugg.length ? h('span', { class: 'muted', text: ` · try the ${sugg.join(' and the ')}` }) : null));
+status.append(h('div', { class: 'small' }, h('span', { text: 'The order still needs: ' }), ...need.map((k) => h('span', { class: 'fx-chip need' }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ' ' + EFFECT_BY_KEY[k].label))));
 } else if (com && com.effectOrder) {
-status.append(h('div', { class: 'ok small', text: 'Every effect the order asks about has been verified for this ' + (src === 'vial' ? 'vial.' : 'batch.') }));
-}
-const avail = this.available();
-const dose = Math.min(lab.trialDose, avail);
-for (const [id, c] of Object.entries(this.cards)) {
-const s = st.trials.subjects[id];
-const band = id === 'rabbit' ? rabbitSnap(s, st.day).hp : -1;
-const hp = band >= 0 ? [100, 60, 30, 8][band] : s.health;
-c.hp.style.width = Math.round(s.alive ? hp : 0) + '%';
-c.hp.style.background = hp > 60 ? '#7dc24a' : hp > 25 ? '#f0b84a' : '#e0402c';
-c.card.classList.toggle('spent', !s.alive);
-c.btnTest.disabled = !s.alive || dose < SIM.ML_PER_PARTICLE;
-const lbl = c.btnTest.querySelector('.lbl');
-if (lbl) lbl.textContent = `Test ${Math.max(SIM.ML_PER_PARTICLE, Math.floor(dose / SIM.ML_PER_PARTICLE) * SIM.ML_PER_PARTICLE)} ml`;
-const cost = lab.sandbox ? 0 : Math.ceil(SUBJECT_BY_ID[id].cost * (st.has('kennel') ? 0.5 : 1));
-c.btnReplace.classList.toggle('hidden', s.alive);
-const rl = c.btnReplace.querySelector('.lbl');
-if (rl) rl.textContent = id === 'rabbit' ? (cost ? `New rabbit · ${cost}` : 'New rabbit') : cost ? `Replace · ${cost}` : 'Replace';
-if (id === 'rabbit' && c.sub) {
-const r = focusRabbit(st.colony);
-c.sub.textContent = r ? `${r.name} · ${r.sex === 'f' ? 'doe' : 'buck'} · ${r.alive ? STAGE_WORD[stageOf(r, st.day)] : 'dead'}` : 'no rabbit';
-c.card.classList.toggle('rabbit-dead', !!r && !r.alive);
-}
+status.append(h('div', { class: 'ok small', text: 'Every effect the order asks about has been tested for this ' + (src === 'vial' ? 'vial.' : 'batch.') }));
 }
 this.hutch.render();
 this.renderReport();
+}
+estimate() {
+const lab = this.lab, st = lab.state;
+if (this.source === 'vial' && st.vial) return { ...summarize(st.vial.samples || {}), ...vialFallback(st.vial), stale: [], changed: false };
+return { spread: {}, n: {}, rabbits: {}, ...lab.currentCert() };
 }
 renderReport() {
 const lab = this.lab, st = lab.state;
 const r = this.last || st.trials.records[0];
 const el = clear(this.report);
 if (!r) {
-el.append(h('div', { class: 'card parch small', text: 'A mixture’s effects are unknown until you test it. You know what each plain ingredient does — but mixing, heat and reactions change things. Give a dose to a subject that responds to the effects you care about.' }));
+el.append(h('div', { class: 'card parch small', text: 'A mixture’s effects are unknown until you test it. You know what each plain ingredient does — but mixing, heat and reactions change things. Choose a rabbit and give it a dose; then test other rabbits too, because each one reads a potion a little differently.' }));
 return;
 }
-const subj = SUBJECT_BY_ID[r.subjectId];
+const subj = SUBJECT_BY_ID[r.subjectId] || SUBJECT_BY_ID.rabbit;
 const rows = h('div', { class: 'reading-rows' });
+const quiet = [];
 for (const key of r.revealed) {
 const e = EFFECT_BY_KEY[key];
 const v = r.values[key], th = r.theory[key] ?? 0;
+if (v === 0 && Math.abs(th) < 0.5 && !r.anomalies.includes(key)) { quiet.push(e); continue; }
 const anomaly = r.anomalies.includes(key);
 const width = (x) => Math.min(100, Math.abs(x)) + '%';
 const err = r.err && r.err[key] !== undefined ? Math.max(1, Math.round(r.err[key])) : 0;
 rows.appendChild(h('div', { class: 'reading' + (anomaly ? ' anomaly' : ''), title: e.desc },
 icon(e.icon, 'sm'), h('span', { class: 'rk', text: e.label }),
 h('div', { class: 'rbar' }, h('i', { class: 'obs', style: { width: width(v), background: rgb(e.color) } }), h('i', { class: 'th', style: { left: width(th) } })),
-h('span', { class: 'rv', text: v === 0 ? (err ? `none · ±${err}` : 'none') : `${Math.round(v)}${err ? ` ±${err}` : ''} · ${potencyWord(v, key)}` })));
+h('span', { class: 'rv', text: v === 0 ? 'none' : `${Math.round(v)}${err ? ` ±${err}` : ''} · ${potencyWord(v, key)}` })));
 }
 const laws = r.lawsFound.map((id) => (st.world.laws || []).find((l) => l.id === id)).filter(Boolean);
-const who = r.rabbitName ? `${r.rabbitName} (${subj.name})` : subj.name;
+const who = r.rabbitName ? r.rabbitName : subj.name;
 const body = r.rabbitId ? findRabbit(st.colony, r.rabbitId) : null;
 el.append(h('div', { class: 'card parch report' },
 h('div', { class: 'row' }, icon('dropper'), h('b', { text: `Trial ${r.serial}: ${who}` }), h('span', { class: 'spacer' }), h('span', { class: 'small muted', text: `${r.ml} ml from the ${r.source === 'vial' ? 'vial' : 'tap'}` })),
 h('ul', { class: 'obs-list' }, ...r.observations.map((o) => h('li', { class: 'tone-' + o.tone, text: o.text }))),
 rows,
-h('div', { class: 'small muted', text: `Bar: observed${r.err ? ' (± how sure the reading is: small doses and young or old animals read less precisely)' : ''}. Tick: what the guild’s theory predicts from the known ingredients.` }),
+quiet.length ? h('div', { class: 'small muted quiet' }, 'Nothing seen: ', ...quiet.map((e) => icon(e.icon, 'sm'))) : null,
+h('div', { class: 'small muted', text: 'Bar: what this rabbit showed (± how far one reading can be off). Tick: what the guild’s theory predicts. One rabbit’s reading is biased by its own nature: average several rabbits.' }),
 r.anomalies.length ? h('div', { class: 'warn small', text: `Unexpected: ${r.anomalies.map((k) => EFFECT_BY_KEY[k].label).join(', ')} differs from theory. Something in this mixture interacts — repeat with variations to find out what.` }) : null,
 ...laws.map((L) => h('div', { class: 'law-found' }, icon('star'), h('div', {}, h('b', { text: `Law discovered: ${L.name}` }), h('div', { class: 'small', text: L.lore + ' Your theory now accounts for it.' })))),
-r.died ? h('div', { class: 'bad small', text: r.rabbitName ? `${r.rabbitName} did not survive. ${body ? 'The body stays in the hutch: recover its remains or bury it.' : ''} A potion that kills a rabbit should not be sold as a remedy.` : 'The subject did not survive. A potion that kills a rabbit should not be sold as a remedy.' }) : null,
+r.died ? h('div', { class: 'bad small', text: `${who} did not survive. ${body ? 'The body stays in the hutch: recover its remains or bury it.' : ''} A potion that kills a rabbit should not be sold as a remedy.` }) : null,
 r.replay ? h('div', { class: 'row' }, btn('Replay', () => this.startReplay(r), { icon: 'eye', act: 'replay-trial', title: 'Watch this trial again — nothing is used up' })) : null,
 ));
+const cert = this.estimate();
+const keys = EFFECT_KEYS.filter((k) => cert.values[k] !== undefined && (cert.values[k] !== 0 || (cert.spread[k] || 0) > 1));
+if (keys.length) {
+const est = h('div', { class: 'reading-rows' });
+for (const k of keys) {
+const e = EFFECT_BY_KEY[k], v = cert.values[k], s = cert.spread[k] || 0;
+const lo = Math.max(0, Math.abs(v) - s), hi = Math.min(100, Math.abs(v) + s);
+est.appendChild(h('div', { class: 'reading', title: `${cert.n[k]} reading${cert.n[k] === 1 ? '' : 's'} on ${cert.rabbits[k]} rabbit${cert.rabbits[k] === 1 ? '' : 's'}` },
+icon(e.icon, 'sm'), h('span', { class: 'rk', text: e.label }),
+h('div', { class: 'rbar' }, h('i', { class: 'range', style: { left: lo + '%', width: Math.max(1, hi - lo) + '%', background: rgb(e.color) } }), h('i', { class: 'th mean', style: { left: Math.min(100, Math.abs(v)) + '%' } })),
+h('span', { class: 'rv', text: `${Math.round(v)} ±${Math.max(1, Math.round(s))} · ${cert.rabbits[k]} rabbit${cert.rabbits[k] === 1 ? '' : 's'}` })));
 }
-test(id) {
+el.append(h('div', { class: 'card parch report estimate' },
+h('div', { class: 'row' }, icon('scales'), h('b', { text: this.source === 'vial' ? 'Vial estimate' : 'Batch estimate' })),
+est,
+h('div', { class: 'small muted', text: 'The mean of every trial of this brew. The band narrows as you test more different rabbits; the label you sell with uses this mean.' })));
+}
+}
+test(id = 'rabbit') {
+void id;
 const lab = this.lab, st = lab.state;
-const s = st.trials.subjects[id];
-if (!s || !s.alive) {
-toast(id === 'rabbit' ? 'Choose a living rabbit' : 'This subject is spent', id === 'rabbit' ? 'The chosen rabbit is dead: pick another in the hutch, or buy one.' : 'Replace it for a fresh trial.', id === 'rabbit' ? 'rabbit' : 'close');
+const rabbit = focusRabbit(st.colony);
+if (!rabbit || !rabbit.alive) {
+toast('Choose a living rabbit', 'The chosen rabbit is dead: pick another in the hutch, or buy one.', 'rabbit');
 this.refresh();
 return;
 }
@@ -13652,35 +14177,35 @@ if (this.source === 'vial') {
 const r = lab.vialDose(want);
 if (!r) { toast('Not enough potion', 'The vial is empty.', 'bottle'); return; }
 ({ dose, ml } = r);
-ctx = { ml, source: 'vial', batchId: st.vial ? st.vial.batchId : r.batchId, rev: st.vial ? st.vial.rev : r.rev, theory: r.theory, parts: r.parts };
+ctx = { ml, source: 'vial', batchId: r.batchId, rev: r.rev, theory: r.theory, parts: r.parts };
 } else {
 const r = lab.drawDose(want);
 if (!r) { toast('Nothing to test', 'Pour and mix a brew first; the dose is drawn from the tap at the bottom.', 'flask'); return; }
 ({ dose, ml } = r);
 ctx = { ml, source: 'cauldron', batchId: st.batch.id, rev: st.batch.rev, theory: lab.theory(), parts: lab.batchParts() };
 }
-const rabbit = id === 'rabbit' ? focusRabbit(st.colony) : null;
-if (rabbit) /** @type {any} */ (ctx).rabbitId = rabbit.id;
-const { record, events } = st.recordTrial(id, dose, ctx);
-if (this.source === 'vial' && st.vial) {
-st.vial.cert = { ...(st.vial.cert || {}), ...record.values };
-st.vial.certRecords = { ...(st.vial.certRecords || {}), ...Object.fromEntries(Object.keys(record.values).map((k) => [k, record.id])) };
-if (st.vial.label) applyTrials(st.vial.label, record.values, record.id);
+/** @type {any} */ (ctx).rabbitId = rabbit.id;
+const vial = this.source === 'vial' ? st.vial : null;
+const { record, events } = st.recordTrial('rabbit', dose, ctx);
+if (vial) {
+vial.samples = addSamples(vial.samples || seedSamples(vial), record);
+const sum = summarize(vial.samples);
+vial.cert = sum.values;
+vial.certRecords = sum.records;
+if (vial.label) applyTrials(vial.label, Object.fromEntries(Object.keys(record.values).map((k) => [k, sum.values[k]])), record.id);
 }
 this.last = record;
 this.replay = null;
-this.react[id] = 1;
-if (rabbit) {
 this.rreact[rabbit.id] = 1;
 this.hutch.poke(rabbit.id, record.replay && record.replay.rx ? record.replay.rx.split(',') : []);
 audio.play(record.died ? 'toll' : record.observations.some((o) => o.tone === 'bad') ? 'thump' : 'squeak');
-} else audio.play(record.died ? 'fail' : record.observations.some((o) => o.tone === 'bad') ? 'crush' : 'discover');
+if (record.degen && record.degen.length && !record.died) toast(`${rabbit.name} is degenerating!`, 'An effect has piled up past what its body can hold and is running out of control. Purge it — or put it down before it is too late.', 'claw', 6000);
 for (const e of events) {
 if (e.type === 'law') { toast(`Law discovered: ${e.name}`, e.lore, 'star', 6000); audio.play('fanfare'); }
 else if (e.type === 'rabbit-died') toast(`${e.name} died`, 'The body stays in the hutch. Recover its remains — once — or bury it.', 'skull', 5000);
 else lab.announce(e);
 }
-if (lab.tutorial) lab.tutorial.notify('trial', id);
+if (lab.tutorial) lab.tutorial.notify('trial', 'rabbit');
 lab.save();
 } catch (e) {
 toast('Cannot test', String(e && e.message), 'close');
@@ -13690,7 +14215,6 @@ this.refresh();
 lab.refreshCustomer();
 lab.views.counter.refresh();
 lab.updateBadges();
-if (this.report && this.report.scrollIntoView) this.report.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
 replace(id) {
 const lab = this.lab;
@@ -13701,6 +14225,25 @@ lab.refreshHud();
 lab.save();
 this.refresh();
 }
+colonyEvents(events) {
+if (!events.length) return;
+let rebuild = false;
+for (const e of events) {
+if (e.type === 'attack') {
+this.hutch.scene.attack && this.hutch.scene.attack(e.from, e.to);
+this.rreact[e.to] = 1;
+if (this.lab.view === 'trials') audio.play('thump');
+if (e.killed) rebuild = true;
+} else if (e.type === 'rabbit-died') {
+rebuild = true;
+toast(`${e.name} died`, e.by ? `${e.by} mauled ${e.name} to death. Put the feral rabbit down or purge it before it kills again.` : `The degeneration ran its course. The body stays in the hutch.`, 'skull', 5000);
+audio.play('toll');
+} else if (e.type === 'trait') rebuild = true;
+else if (e.type === 'purge-brewed') { toast('A purging draught is ready', 'The still has finished brewing.', 'purge', 2500); rebuild = true; }
+}
+if (rebuild && this.head) this.refresh();
+else if (this.head) this.hutch.syncScene();
+}
 bindDropper() {
 const d = this.dropper;
 let ghost = null;
@@ -13708,13 +14251,14 @@ const target = (x, y) => {
 const el = document.elementFromPoint(x, y);
 if (el && el === this.hutch.canvas) {
 const id = this.hutch.hitAt(/** @type {any} */ ({ clientX: x, clientY: y }));
-return id ? 'rabbit:' + id : null;
+return id || null;
 }
-const card = el && /** @type {HTMLElement} */ (el).closest ? /** @type {HTMLElement} */ (el).closest('[data-subject]') : null;
-if (card && card.hasAttribute('data-rabbit')) return 'rabbit:' + card.getAttribute('data-rabbit');
-return card ? card.getAttribute('data-subject') : null;
+const tile = el && /** @type {HTMLElement} */ (el).closest ? /** @type {HTMLElement} */ (el).closest('[data-rabbit]') : null;
+if (tile) return tile.getAttribute('data-rabbit');
+const det = el && /** @type {HTMLElement} */ (el).closest ? /** @type {HTMLElement} */ (el).closest('.rabbit-detail') : null;
+return det ? this.lab.state.colony.focus : null;
 };
-const targets = () => [...Object.entries(this.cards).map(([k, c]) => /** @type {[string, HTMLElement]} */ ([k, c.card])), ...Object.entries(this.hutch.tiles).map(([k, t]) => /** @type {[string, HTMLElement]} */ (['rabbit:' + k, t.tile]))];
+const targets = () => Object.entries(this.hutch.tiles).map(([k, t]) => /** @type {[string, HTMLElement]} */ ([k, t.tile]));
 d.addEventListener('pointerdown', (e) => {
 e.preventDefault();
 d.setPointerCapture(e.pointerId);
@@ -13728,7 +14272,7 @@ if (!this.drag || !ghost) return;
 ghost.style.transform = `translate(${e.clientX - 18}px, ${e.clientY - 34}px)`;
 const id = target(e.clientX, e.clientY);
 for (const [k, el] of targets()) el.classList.toggle('drop-hover', k === id);
-this.hutch.hover = id && id.startsWith('rabbit:') ? id.slice(7) : null;
+this.hutch.hover = id;
 };
 const end = (e) => {
 if (!this.drag) return;
@@ -13737,32 +14281,27 @@ if (ghost) ghost.remove();
 ghost = null;
 for (const [, el] of targets()) el.classList.remove('drop-hover');
 const id = target(e.clientX, e.clientY);
-if (id && id.startsWith('rabbit:')) {
-const r = findRabbit(this.lab.state.colony, id.slice(7));
+if (!id) return;
+const r = findRabbit(this.lab.state.colony, id);
 if (r && !r.alive) { this.select(r.id); toast(`${r.name} is dead`, 'Choose a living rabbit to dose.', 'skull'); return; }
-this.lab.state.selectRabbit(id.slice(7));
+this.lab.state.selectRabbit(id);
 this.test('rabbit');
-} else if (id) this.test(id);
 };
 d.addEventListener('pointermove', move);
 d.addEventListener('pointerup', end);
 d.addEventListener('pointercancel', () => { this.drag = null; if (ghost) ghost.remove(); ghost = null; });
-d.addEventListener('keydown', (e) => { if (e.key === 'Enter') toast('Dropper', 'Use the Test buttons on the subjects.', 'dropper'); });
+d.addEventListener('keydown', (e) => { if (e.key === 'Enter') this.test('rabbit'); });
 }
 frame(dt) {
 this.time += dt;
-const st = this.lab.state;
 const low = this.lab.effectiveQuality() === 'low';
-for (const [id, c] of Object.entries(this.cards)) {
-const r = this.react[id] || 0;
-if (id === 'rabbit') this.drawRabbitCard(c, dt, low);
-else drawSubject(c.ctx, id, st.trials.subjects[id], this.time, r);
-if (r > 0) this.react[id] = Math.max(0, r - dt * 1.4);
-}
 for (const [rid, r] of Object.entries(this.rreact)) if (r > 0) this.rreact[rid] = Math.max(0, r - dt * 1.4);
 this.hutch.frame(dt, this.time);
+this.drawPortrait(dt, low);
 }
-drawRabbitCard(c, dt, low) {
+drawPortrait(dt, low) {
+const ctx = this.hutch.d.portrait;
+if (!ctx) return;
 const st = this.lab.state;
 const quality = low ? 'low' : 'high';
 if (this.replay) {
@@ -13773,11 +14312,11 @@ const who = findRabbit(st.colony, rec.rabbitId) || st.colony.memorial.find((m) =
 const look = who ? who.look : lookFromSeed(rec.rabbitId || 'x');
 const before = decodeSnap(rec.replay.b), after = decodeSnap(rec.replay.a);
 const react = rec.replay.rx ? rec.replay.rx.split(',').filter((k) => RABBIT_MARKS.includes(k)) : [];
-if (rp.t < 0.6) drawRabbit(c.ctx, look, before, this.time, 0, { quality });
+if (rp.t < 0.6) drawRabbit(ctx, look, before, this.time, 0, { quality });
 else {
 const dying = before.alive && !after.alive && rp.t < 1.3;
 const snap = dying ? { ...after, alive: true, hp: /** @type {3} */ (3) } : after;
-drawRabbit(c.ctx, look, snap, this.time, Math.max(0, 1 - (rp.t - 0.6) * 1.2), { quality, react });
+drawRabbit(ctx, look, snap, this.time, Math.max(0, 1 - (rp.t - 0.6) * 1.2), { quality, react });
 }
 if (rp.t > REPLAY_T) {
 this.replay = null;
@@ -13786,12 +14325,21 @@ if (ol) ol.classList.remove('replaying');
 }
 return;
 }
-const r = focusRabbit(st.colony);
-if (!r) { c.ctx.clearRect(0, 0, c.cv.width, c.cv.height); return; }
+const r = this.hutch.d.id ? findRabbit(st.colony, this.hutch.d.id) : focusRabbit(st.colony);
+if (!r) { ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); return; }
 const react = this.rreact[r.id] || 0;
 const last = react > 0 && this.last && this.last.rabbitId === r.id && this.last.replay ? this.last.replay.rx.split(',').filter((k) => RABBIT_MARKS.includes(k)) : [];
-drawRabbit(c.ctx, r.look, rabbitSnap(r, st.day), this.time, react, { quality, react: last });
+drawRabbit(ctx, r.look, rabbitSnap(r, st.day), this.time, react, { quality, react: last });
 }
+}
+function seedSamples(v) {
+const s = {};
+for (const [k, x] of Object.entries(v.cert || {})) s[k] = [{ v: Number(x) || 0, r: 'bottled', rec: (v.certRecords || {})[k] || '' }];
+return s;
+}
+function vialFallback(v) {
+if (v.samples) return {};
+return summarize(seedSamples(v));
 }
 function rgb(c) {
 return `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2] * 255)})`;
@@ -13799,7 +14347,7 @@ return `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2
 return { TrialsView, EFFECTS, EFFECT_INDEX };
 })();
 // src/ui/views/book.js
-const __m67 = (() => {
+const __m68 = (() => {
 const { h, btn, clear } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
@@ -13849,14 +14397,14 @@ renderTrials(body) {
 const st = this.lab.state;
 const recs = st.trials.records;
 body.appendChild(h('div', { class: 'small muted', text: `${st.stats.trials || 0} trials run. Each records exactly what it revealed and what the guild theory expected.` }));
-if (!recs.length) { body.appendChild(h('div', { class: 'card parch', text: 'No trials yet. In the Trials room, give a measured dose to a subject.' })); return; }
+if (!recs.length) { body.appendChild(h('div', { class: 'card parch', text: 'No trials yet. In the Trials room, give a measured dose to one of your rabbits.' })); return; }
 for (const r of recs.slice(0, 40)) {
 const s = SUBJECT_BY_ID[r.subjectId];
 body.appendChild(h('div', { class: 'item parch' },
 h('span', { class: 'swatch big', style: { background: rgbToHex(r.look.color) } }),
 h('div', {},
 h('div', { class: 'title', text: `#${r.serial} ${r.rabbitName ? `${r.rabbitName} the ${s ? s.name : 'rabbit'}` : s ? s.name : r.subjectId} · ${r.ml} ml` }),
-h('div', { class: 'meta' }, ...r.revealed.map((k) => h('span', { class: 'fx-chip' + (r.anomalies.includes(k) ? ' anomaly' : ''), title: `${EFFECT_BY_KEY[k].label}: observed ${r.values[k]}${r.err && r.err[k] !== undefined ? ` ±${r.err[k]}` : ''}, theory ${r.theory[k]}` }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(r.values[k])}`))),
+h('div', { class: 'meta' }, ...r.revealed.filter((k) => r.values[k] !== 0 || r.anomalies.includes(k)).map((k) => h('span', { class: 'fx-chip' + (r.anomalies.includes(k) ? ' anomaly' : ''), title: `${EFFECT_BY_KEY[k].label}: observed ${r.values[k]}${r.err && r.err[k] !== undefined ? ` ±${r.err[k]}` : ''}, theory ${r.theory[k]}` }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(r.values[k])}`))),
 h('div', { class: 'meta', text: r.observations.map((o) => o.text).join(' ') }),
 r.parts && r.parts.length ? h('div', { class: 'meta muted', text: 'Batch: ' + r.parts.map((p) => `${p.ml} ml ${st.lookup(p.id) ? st.lookup(p.id).name : '?'}`).join(', ') }) : null),
 h('span', { class: 'small muted', text: `Day ${r.day}` })));
@@ -13935,8 +14483,8 @@ const { unprovenWanted } = __m45;
 const { Tutorial } = __m60;
 const { CounterView } = __m61;
 const { WildsView } = __m62;
-const { TrialsView } = __m63;
-const { BookView } = __m67;
+const { TrialsView } = __m64;
+const { BookView } = __m68;
 const { shortName } = __m21;
 const REQ_ICON = { color: 'palette', density: 'weight', viscosity: 'drop', temperature: 'thermo', stability: 'scales', volatility: 'bubbles', charge: 'spark', quantity: 'flask', purity: 'pure' };
 const TOOL_DEFS = [
@@ -14724,7 +15272,7 @@ this.sim.emitter.stop();
 this.setAutoStir(false);
 const cert = certification(st.trials, st.batch, m.effects);
 const vial = makeVial(this.sim, [], {
-batchId: st.batch.id, rev: st.batch.rev, cert: cert.values, certRecords: cert.records, parts: this.batchParts(),
+batchId: st.batch.id, rev: st.batch.rev, cert: cert.values, certRecords: cert.records, samples: cert.samples, parts: this.batchParts(),
 day: st.day, commissionId: st.current ? st.current.id : null,
 });
 this.bottling = { total: sel.length, removed: 0, progress: 0, color: m.color, t: 0, vial };
@@ -15172,6 +15720,8 @@ if (fa.t >= 1) { fa.fps = Math.round(fa.n / fa.t); fa.t = 0; fa.n = 0; }
 const modalOpen = !!document.querySelector('.overlay');
 const sim = this.sim;
 const brewing = this.view === 'brew';
+this._colonyAcc = (this._colonyAcc || 0) + dt;
+if (this._colonyAcc >= 0.5) { this.tickColony(this._colonyAcc); this._colonyAcc = 0; }
 if (this.autoBrewer) {
 const n = Math.min(12, Math.round((dt * this.speed) / SIM.DT));
 for (let k = 0; k < n; k++) {
@@ -15240,6 +15790,27 @@ if (brewing) this.adaptQuality(dt, tw3 - tw0);
 pf.n++;
 pf.physMs = pf.physMs * 0.95 + (tw1 - tw0) * 0.05;
 if (brewing) pf.renderMs = pf.renderMs * 0.95 + (tw3 - tw2) * 0.05;
+}
+tickColony(dt) {
+const c = this.state.colony;
+const now = Date.now();
+const away = c.clock > 0 ? Math.min(600, Math.max(0, (now - c.clock) / 1000 - dt)) : 0;
+c.clock = now;
+const events = [];
+let left = away > 2 ? away + dt : dt;
+while (left > 1e-6) {
+const step = Math.min(1, left);
+left -= step;
+events.push(...this.state.tickColony(step).events);
+}
+if (events.length) {
+this.views.trials.colonyEvents(events);
+this.updateBadges();
+if (this.view !== 'trials') {
+const att = events.filter((e) => e.type === 'attack');
+if (att.length && this.time - (this._feralWarned || -99) > 20) { this._feralWarned = this.time; toast('Trouble in the hutch', `${att[0].fromName} has gone feral and is attacking ${att[0].toName}!`, 'claw', 4500); }
+}
+}
 }
 stepVial(dt) {
 const v = this.state.vial;
@@ -15434,7 +16005,7 @@ void dominantEffect;
 return { VIEWS, LabScreen, describeValue };
 })();
 // src/materials/reference.js
-const __m69 = (() => {
+const __m70 = (() => {
 const { completeMaterial } = __m9;
 const REF = {};
 const add = (d) => (REF[d.id] = completeMaterial(d));
@@ -15472,11 +16043,11 @@ const refLookup = (id) => REF[id];
 return { REF, refLookup };
 })();
 // src/ui/menu.js
-const __m68 = (() => {
+const __m69 = (() => {
 const { h, btn } = __m2;
 const { Renderer } = __m50;
 const { Simulation } = __m31;
-const { REF, refLookup } = __m69;
+const { REF, refLookup } = __m70;
 const { hasSave, loadGame } = __m47;
 const { audio } = __m4;
 class MenuScreen {
@@ -15564,7 +16135,7 @@ const { GameState } = __m5;
 const { EQUIPMENT } = __m26;
 const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m47;
 const { LabScreen } = __m48;
-const { MenuScreen } = __m68;
+const { MenuScreen } = __m69;
 const { openSettings, openHelp } = __m58;
 const { Rng } = __m6;
 const { normalizeTrials } = __m27;
@@ -15678,9 +16249,53 @@ openHelp();
 }
 return { App, icon };
 })();
+// src/ui/textures.js
+const __m71 = (() => {
+const { Rng } = __m6;
+function texture(w, h, paint) {
+const cv = document.createElement('canvas');
+cv.width = w; cv.height = h;
+const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
+paint(ctx, (x, y, ww, hh, c) => { ctx.fillStyle = c; ctx.fillRect(x, y, ww, hh); });
+return `url(${cv.toDataURL()})`;
+}
+function installTextures() {
+if (typeof document === 'undefined' || document.documentElement.dataset.tex) return;
+const rng = new Rng('ui-textures');
+const wood = texture(64, 32, (_, R) => {
+for (let y = 0; y < 32; y++) {
+for (let x = 0; x < 64;) {
+const len = rng.int(3, 14), dark = rng.chance(0.5);
+if (rng.chance(0.55)) R(x, y, len, 1, dark ? 'rgba(20,10,4,0.16)' : 'rgba(255,220,170,0.07)');
+x += len;
+}
+}
+for (let k = 0; k < 2; k++) {
+const kx = rng.int(4, 58), ky = rng.int(4, 28);
+R(kx - 2, ky, 5, 1, 'rgba(20,10,4,0.22)'); R(kx - 1, ky - 1, 3, 3, 'rgba(20,10,4,0.18)'); R(kx, ky, 1, 1, 'rgba(20,10,4,0.35)');
+}
+});
+const parch = texture(64, 64, (_, R) => {
+for (let k = 0; k < 220; k++) R(rng.int(0, 63), rng.int(0, 63), rng.int(1, 3), 1, rng.chance(0.6) ? 'rgba(120,90,50,0.07)' : 'rgba(255,255,240,0.18)');
+for (let k = 0; k < 18; k++) R(rng.int(0, 63), rng.int(0, 63), 1, 1, 'rgba(90,60,30,0.16)');
+});
+const nail = texture(4, 4, (_, R) => {
+R(1, 0, 2, 4, 'rgba(18,12,10,0.85)'); R(0, 1, 4, 2, 'rgba(18,12,10,0.85)');
+R(1, 1, 2, 2, '#8a8296'); R(1, 1, 1, 1, '#d8d2e0');
+});
+const root = document.documentElement;
+root.style.setProperty('--tex-wood', wood);
+root.style.setProperty('--tex-parch', parch);
+root.style.setProperty('--nail', nail);
+root.dataset.tex = '1';
+}
+return { installTextures };
+})();
 // src/main.js
 const __m0 = (() => {
 const { App } = __m1;
+const { installTextures } = __m71;
+installTextures();
 const root = document.getElementById('app');
 const app = new App(root);
 /** @type {any} */ (window).__alchemist = app;

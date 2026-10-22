@@ -48,7 +48,7 @@ test('a hutch of changed rabbits, and a body that keeps its changes', async ({ p
     st.recordTrial('rabbit', fx({ fire: 9, toxicity: 6 }), ctx(ids[2]));
     st.recordTrial('rabbit', fx({ love: 22 }), ctx(ids[3]));
     st.recordTrial('rabbit', fx({ transformation: 14, strength: 12 }), ctx(ids[4]));
-    st.recordTrial('rabbit', fx({ fire: 70 }), ctx(ids[4]));
+    st.recordTrial('rabbit', fx({ fire: 120 }), ctx(ids[4]));
     st.selectRabbit(ids[1]);
     l.showView('trials');
     l.views.trials.refresh();

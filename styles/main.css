@@ -76,6 +76,18 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 .btn.active { background: #5a3a7a; box-shadow: 0 0 0 var(--px) #1a0f26, inset 0 var(--px) 0 0 #9a6ad0, inset 0 calc(var(--px) * -2) 0 0 #2e1a44; }
 .btn .lbl { font-size: var(--fs-s); }
 
+/* wood grain, parchment fibre and corner nails (textures.js) */
+.btn, .tab, .frame, .jar, .dropper, .parch { position: relative; isolation: isolate; }
+.btn::before, .tab::before, .frame::before, .jar::before, .dropper::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; image-rendering: pixelated;
+  background: var(--nail) no-repeat left 3px top 3px, var(--nail) no-repeat right 3px top 3px, var(--nail) no-repeat left 3px bottom 4px, var(--nail) no-repeat right 3px bottom 4px, var(--tex-wood) repeat;
+  background-size: 4px 4px, 4px 4px, 4px 4px, 4px 4px, 128px 64px;
+}
+.tools .btn::before, .btn.icon::before, .jar::before { background: var(--tex-wood) repeat; background-size: 128px 64px; }
+.parch::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; image-rendering: pixelated; background: var(--tex-parch) repeat; background-size: 128px 128px; }
+.card.parch::before { background: var(--nail) no-repeat left 4px top 4px, var(--nail) no-repeat right 4px top 4px, var(--nail) no-repeat left 4px bottom 5px, var(--nail) no-repeat right 4px bottom 5px, var(--tex-parch) repeat; background-size: 4px 4px, 4px 4px, 4px 4px, 4px 4px, 128px 128px; }
+.btn:disabled::before { opacity: .6; }
+
 /* ---------- screens ---------- */
 .screen { position: absolute; inset: 0; overflow: hidden; }
 
@@ -123,7 +135,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 .tabbar { grid-area: tabs; display: flex; align-items: stretch; gap: 2px; padding: 3px 4px calc(3px + var(--safe-bottom)); z-index: 4; }
 .tab { position: relative; flex: 1 1 0; min-width: 0; min-height: 52px; border: none; background: var(--wood2); color: var(--parch2); font-family: inherit; font-size: var(--fs-s); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer; touch-action: manipulation;
   box-shadow: 0 0 0 var(--px) var(--wood0), inset 0 var(--px) 0 var(--wood4); }
-.tab img.ico { width: 24px; height: 24px; }
+.tab img.ico { width: 30px; height: 30px; }
 .tab.active { background: #5a3a7a; color: var(--brassHi); box-shadow: 0 0 0 var(--px) #1a0f26, inset 0 var(--px) 0 #9a6ad0, inset 0 calc(var(--px) * -2) 0 var(--brass); }
 .tab .tab-lbl { line-height: 1; white-space: nowrap; }
 .tab .badge { position: absolute; top: 3px; right: calc(50% - 22px); min-width: 16px; height: 16px; padding: 0 3px; background: var(--bad); color: #fff; font-size: 13px; line-height: 16px; text-align: center; box-shadow: 0 0 0 1px #000; }
@@ -310,8 +322,8 @@ canvas.portrait.big { width: 88px; height: 88px; box-shadow: 0 0 0 var(--px) var
 .hutch { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; padding: 8px; }
 .hutch-head { align-items: center; gap: 6px; }
 .hutch-head .btn { min-height: 44px; font-size: var(--fs-s); }
-.hutch-scene-wrap { width: 100%; max-width: 576px; align-self: center; }
-canvas.hutch-scene { display: block; width: 100%; height: auto; aspect-ratio: 192 / 72; image-rendering: pixelated; box-shadow: 0 0 0 var(--px) var(--ink2); touch-action: manipulation; cursor: pointer; }
+.hutch-scene-wrap { width: 100%; max-width: 760px; align-self: center; }
+canvas.hutch-scene { display: block; width: 100%; height: auto; aspect-ratio: 224 / 88; image-rendering: pixelated; box-shadow: 0 0 0 var(--px) var(--ink2); touch-action: manipulation; cursor: pointer; }
 .rabbit-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 6px; }
 .rabbit-tile { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 44px; min-height: 44px; padding: 4px; border: none; cursor: pointer; font-family: inherit; color: var(--ink); background: var(--parch1); box-shadow: 0 0 0 1px var(--ink2); }
 .rabbit-tile canvas { width: 100%; max-width: 96px; aspect-ratio: 48 / 40; height: auto; image-rendering: pixelated; background: radial-gradient(ellipse at 50% 80%, rgba(255, 240, 210, 0.9), rgba(194, 166, 120, 0.5)); }
@@ -346,7 +358,7 @@ canvas.hutch-scene { display: block; width: 100%; height: auto; aspect-ratio: 19
 .hutch-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 6px; }
 .hutch-actions .btn { min-height: 46px; font-size: var(--fs-s); }
 .purge-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 4px 6px; background: rgba(76, 134, 196, 0.14); box-shadow: 0 0 0 1px rgba(43, 29, 20, 0.35); }
-.purge-row .btn { min-height: 40px; font-size: var(--fs-s); }
+.purge-row .btn { min-height: 44px; font-size: var(--fs-s); }
 .feral-warn { color: #a8241a; display: inline-flex; align-items: center; gap: 3px; animation: blink 1s steps(2) infinite; }
 @keyframes blink { 50% { opacity: .45; } }
 .rabbit-tile .rt-hp { width: 86%; height: 5px; }

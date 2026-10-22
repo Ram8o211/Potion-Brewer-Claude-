@@ -61,14 +61,14 @@ export class BookView {
     const st = this.lab.state;
     const recs = st.trials.records;
     body.appendChild(h('div', { class: 'small muted', text: `${st.stats.trials || 0} trials run. Each records exactly what it revealed and what the guild theory expected.` }));
-    if (!recs.length) { body.appendChild(h('div', { class: 'card parch', text: 'No trials yet. In the Trials room, give a measured dose to a subject.' })); return; }
+    if (!recs.length) { body.appendChild(h('div', { class: 'card parch', text: 'No trials yet. In the Trials room, give a measured dose to one of your rabbits.' })); return; }
     for (const r of recs.slice(0, 40)) {
       const s = SUBJECT_BY_ID[r.subjectId];
       body.appendChild(h('div', { class: 'item parch' },
         h('span', { class: 'swatch big', style: { background: rgbToHex(r.look.color) } }),
         h('div', {},
           h('div', { class: 'title', text: `#${r.serial} ${r.rabbitName ? `${r.rabbitName} the ${s ? s.name : 'rabbit'}` : s ? s.name : r.subjectId} · ${r.ml} ml` }),
-          h('div', { class: 'meta' }, ...r.revealed.map((k) => h('span', { class: 'fx-chip' + (r.anomalies.includes(k) ? ' anomaly' : ''), title: `${EFFECT_BY_KEY[k].label}: observed ${r.values[k]}${r.err && r.err[k] !== undefined ? ` ±${r.err[k]}` : ''}, theory ${r.theory[k]}` }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(r.values[k])}`))),
+          h('div', { class: 'meta' }, ...r.revealed.filter((k) => r.values[k] !== 0 || r.anomalies.includes(k)).map((k) => h('span', { class: 'fx-chip' + (r.anomalies.includes(k) ? ' anomaly' : ''), title: `${EFFECT_BY_KEY[k].label}: observed ${r.values[k]}${r.err && r.err[k] !== undefined ? ` ±${r.err[k]}` : ''}, theory ${r.theory[k]}` }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(r.values[k])}`))),
           h('div', { class: 'meta', text: r.observations.map((o) => o.text).join(' ') }),
           r.parts && r.parts.length ? h('div', { class: 'meta muted', text: 'Batch: ' + r.parts.map((p) => `${p.ml} ml ${st.lookup(p.id) ? st.lookup(p.id).name : '?'}`).join(', ') }) : null),
         h('span', { class: 'small muted', text: `Day ${r.day}` })));

@@ -23,7 +23,8 @@ import { runPlanHeadless } from '../src/game/autobrew.js';
 import { tapSelection, measureParticles } from '../src/game/measure.js';
 import { evaluatePotion } from '../src/game/evaluate.js';
 import { Rng } from '../src/core/rng.js';
-import { certification, missingEffects, suggestSubjects } from '../src/game/experiments.js';
+import { certification, missingEffects } from '../src/game/experiments.js';
+import { livingRabbits } from '../src/game/colony.js';
 import { theoryOf } from '../src/alchemy/effects.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -91,14 +92,18 @@ function playRun(seed, profile) {
       // trials: 10 ml doses from the tap on subjects that show what the order asks about
       const parts = plan.ingredients.map((i) => ({ id: i.id, ml: i.n * 5 }));
       const theory = theoryOf(parts, st.lookup, st.knownLaws);
-      for (const sid of suggestSubjects(missingEffects(com, {}), (id) => st.subjectAvailable(id))) {
-        if (!st.trials.subjects[sid].alive) { const r = st.replaceSubject(sid); if (!r.ok) continue; replaced++; }
-        const sel = tapSelection(sim, 2);
-        if (sel.length < 2 || sim.p.count - 2 < com.bottleN) break;
-        const dose = measureParticles(sim, sel);
-        for (const i of sel.sort((a, b) => b - a)) sim.removeParticle(i);
-        st.recordTrial(sid, dose, { ml: 10, source: 'cauldron', batchId: st.batch.id, rev: st.batch.rev, theory, parts, now: clock });
-        trials++;
+      // trials: 10 ml doses from the tap on up to three different rabbits (readings vary rabbit to rabbit)
+      if (missingEffects(com, {}).length) {
+        if (!livingRabbits(st.colony).length) { const r = st.replaceSubject('rabbit'); if (r.ok) replaced++; }
+        for (const rb of livingRabbits(st.colony).slice(0, 3)) {
+          const sel = tapSelection(sim, 2);
+          if (sel.length < 2 || sim.p.count - 2 < com.bottleN) break;
+          const dose = measureParticles(sim, sel);
+          for (const i of sel.sort((a, b) => b - a)) sim.removeParticle(i);
+          st.recordTrial('rabbit', dose, { ml: 10, source: 'cauldron', batchId: st.batch.id, rev: st.batch.rev, theory, parts, now: clock, rabbitId: rb.id });
+          if (rb.degen && rb.degen.length) st.purgeRabbit(rb.id, true);
+          trials++;
+        }
       }
       const m = measureParticles(sim, tapSelection(sim, com.bottleN));
       const cert = certification(st.trials, st.batch, m.effects);

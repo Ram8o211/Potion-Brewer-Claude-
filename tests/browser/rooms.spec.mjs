@@ -61,31 +61,34 @@ test('gathering in the wilds fills the stores and depletes the deposit', async (
   expect(errors).toEqual([]);
 });
 
-test('the dropper doses a subject; a spent subject is replaced for coins; trials persist', async ({ page }, info) => {
+test('the dropper doses a rabbit on the farm; a dead one is replaced for coins; trials persist', async ({ page }, info) => {
   const errors = watchErrors(page);
   await newGame(page, { tutorial: false, seed: 'trial-room-1' });
   const roles = await lab(page, (l) => l.state.world.roles);
   await pourDose(page, roles.water, [100]);
   await pourDose(page, roles.essenceB, [100]);
   await page.click('[data-act=tab-trials]');
-  await expect(page.locator('[data-subject=beetle]')).toBeVisible();
-  // drag the dropper onto the beetle
+  await expect(page.locator('[data-subject=beetle]')).toHaveCount(0);
+  await expect(page.locator('.status-bars .sb')).toHaveCount(11);
+  // drag the dropper onto Bramble's tile
   const from = await page.locator('.dropper').boundingBox();
-  const to = await page.locator('[data-subject=beetle] canvas').boundingBox();
+  const to = await page.locator('.rabbit-tile[data-rabbit=r2] canvas').boundingBox();
   if (!from || !to) throw new Error('no boxes');
   const pts = [];
   for (let k = 0; k <= 20; k++) pts.push({ x: from.x + 20 + (to.x + to.width / 2 - from.x - 20) * (k / 20), y: from.y + 20 + (to.y + to.height / 2 - from.y - 20) * (k / 20) });
   await drag(page, pts, 20);
-  await expect(page.locator('.trial-report .report')).toContainText('Copper Beetle');
+  await expect(page.locator('.trial-report .report').first()).toContainText('Bramble');
   const rec = await lab(page, (l) => l.state.trials.records[0]);
-  expect(rec.subjectId).toBe('beetle');
-  expect(rec.values.fire, 'the beetle shows fire').toBeGreaterThan(2);
-  // the room's batch summary updates at once
+  expect(rec.subjectId).toBe('rabbit');
+  expect(rec.revealed.length, 'a rabbit shows every effect').toBe(10);
+  expect(rec.values.fire, 'the rabbit shows fire').toBeGreaterThan(2);
+  // the room's batch estimate updates at once
   await expect(page.locator('.view-trials')).not.toContainText('nothing tested yet');
-  await shot(page, info, 'trial-beetle');
-  // a spent rabbit is replaced for its price
+  await expect(page.locator('.trial-report .estimate')).toBeVisible();
+  await shot(page, info, 'trial-farm');
+  // a dead rabbit is replaced for its price
   await lab(page, (l) => { l.state.trials.subjects.rabbit.alive = false; l.state.trials.subjects.rabbit.health = 0; l.views.trials.refresh(); });
-  await expect(page.locator('[data-act=test-rabbit]')).toBeDisabled();
+  await expect(page.locator('[data-act=test-rabbit]')).toHaveCount(0);
   const c0 = await lab(page, (l) => l.state.coins);
   await page.click('[data-act=replace-rabbit]');
   expect(await lab(page, (l) => l.state.coins)).toBe(c0 - 6);
@@ -97,6 +100,6 @@ test('the dropper doses a subject; a spent subject is replaced for coins; trials
   await page.waitForSelector('canvas.view-canvas');
   await page.click('[data-act=tab-book]');
   await page.click('[data-act=book-trials]');
-  await expect(page.locator('.view-book .item', { hasText: 'Copper Beetle' })).toBeVisible();
+  await expect(page.locator('.view-book .item', { hasText: 'Bramble' })).toBeVisible();
   expect(errors).toEqual([]);
 });

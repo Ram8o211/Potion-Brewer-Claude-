@@ -11,7 +11,8 @@ import { audio } from '../../audio/audio.js';
 import { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, DAY_PART_NAME } from '../../game/gathering.js';
 import { equipmentById } from '../../game/equipment.js';
 import { RANKS } from '../../game/equipment.js';
-import { paintRegion, animateRegion, drawRaw, rawSprite, SCENE_W, SCENE_H } from '../../rendering/scenes.js';
+import { drawRaw, rawSprite } from '../../rendering/scenes.js';
+import { paintRegion, animateRegion, SCENE_W, SCENE_H } from '../../rendering/regions.js';
 import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
 
 export class WildsView {

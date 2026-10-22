@@ -474,6 +474,7 @@ function drawBody(P, look, snap, a, low) {
   for (const e of a.parts) ell(P, e, 1, K); // outline pass
   fillLayer(S);
   patternLayer(S);
+  shadeLayer(S);
   strengthMarks(S);
   if (S.tr.has('scales')) scaleMarks(S);
   coatMarks(S);
@@ -628,6 +629,29 @@ function fillLayer(S) {
     const foot = S.pattern === 'points' ? C2.body : C.dark, fw = Math.round(5 * a.g), hw = Math.round(6 * a.g);
     P(a.chest.cx - fw, a.feetY, fw, 1, foot);
     P(h.cx - hw, a.feetY, hw, 1, foot);
+  }
+}
+
+/**
+ * Volume and fur: each body part lit from the upper left — a dithered
+ * sheen on its crown, shade on its underside and rim, and a sparse fur
+ * texture — laid as translucent rects over coat and pattern alike.
+ * @param {Paint} S
+ */
+function shadeLayer(S) {
+  const { P, a } = S;
+  const lit = 'rgba(255,250,235,0.28)', fur = 'rgba(40,24,16,0.14)', shade = 'rgba(40,22,12,0.22)', deep = 'rgba(30,16,8,0.32)';
+  for (const e of [a.haunch, a.chest, a.head]) {
+    for (let yy = -e.ry; yy <= e.ry; yy++) {
+      const w = half(e, yy), y = e.cy + yy, t = (yy + e.ry) / Math.max(1, 2 * e.ry);
+      for (let x = e.cx - w; x <= e.cx + w; x++) {
+        const b = bayer(x, y), u = (x - (e.cx - w)) / Math.max(1, 2 * w);
+        if (t < 0.32 && u > 0.25 && u < 0.8 && b < 9 - t * 20) P(x, y, 1, 1, lit);
+        else if (t > 0.72 && b < (t - 0.62) * 34) P(x, y, 1, 1, t > 0.88 ? deep : shade);
+        else if (u < 0.12 && b < 8) P(x, y, 1, 1, shade);
+        else if (b === 3 && (y & 1)) P(x, y, 1, 1, fur);
+      }
+    }
   }
 }
 
@@ -803,7 +827,7 @@ function nearLayer(S) {
 
 /** Eyes, nose, muzzle, blush, drool, whiskers and the third eye. @param {Paint} S */
 function faceLayer(S) {
-  const { P, a, L, sc, dead, C, C2 } = S, e = a.eye, n = a.nose, big = a.hs >= 1.1;
+  const { P, a, L, sc, dead, C, C2 } = S, e = a.eye, n = a.nose, big = a.hs >= 0.95;
   if (S.pattern === 'points') P(n.x - 2, n.y - 1, 3, 3, C2.body);
   if (sc[3] >= 1) P(n.x - 2, n.y - 1, 3, 2, C_GREY);
   if (!dead && L.death >= 1) P(e.x - 1, e.y + 1, 3, 1, L.death >= 2 ? PAL.stone2 : C.dark);
@@ -1111,7 +1135,7 @@ function spriteFor(look, snap, pose, low, factory) {
   return cv;
 }
 
-/** The straw floor of a subject card (the same rects as drawSubject). @param {CanvasRenderingContext2D} ctx @param {number} fx @param {number} fy */
+/** The straw floor of a subject card (a straw strip). @param {CanvasRenderingContext2D} ctx @param {number} fx @param {number} fy */
 function drawFloor(ctx, fx, fy) {
   ctx.fillStyle = '#8b5a31';
   ctx.fillRect(fx + 4, fy + 35, 40, 3);

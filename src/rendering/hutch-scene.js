@@ -1,4 +1,4 @@
-// The hutch: the colony's pen as a 192×72 pixel-art scene. A plank wall,
+// The hutch: the colony's pen as a 224×88 pixel-art scene. A plank wall,
 // straw, a hay rack and a water bowl make a cached background (a nest box
 // joins it while a doe is expecting, a linen cloth while there are bodies);
 // each living rabbit runs a small behaviour machine — idling, hopping,
@@ -19,18 +19,20 @@ import { Rng, hashString } from '../core/rng.js';
 import { PAL, makeCanvas } from './art.js';
 import { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } from './rabbit.js';
 
-export const HUTCH_W = 192;
-export const HUTCH_H = 72;
+export const HUTCH_W = 224;
+export const HUTCH_H = 88;
 /** Bodies shown on the cloth; the UI counts any beyond. */
 export const HUTCH_BODIES = 3;
 
-const FLOOR_Y = 44;
+const FLOOR_Y = 48;
 /** Where living rabbits' feet may go. */
-const ROAM = { x0: 18, x1: 132, y0: 50, y1: 66 };
+const ROAM = { x0: 30, x1: 160, y0: 57, y1: 76 };
 /** Where an eating rabbit stands, facing the hay rack. */
-const RACK = { x: 30, y: 51 };
+const RACK = { x: 40, y: 58 };
 /** Feet positions of the bodies on the cloth. */
-const SLOTS = [[154, 62], [174, 65], [160, 69]];
+const SLOTS = [[180, 70], [200, 74], [186, 78]];
+/** Top of the front rail (drawn over the rabbits). */
+const RAIL_Y = 79;
 
 /** @param {number} v @param {number} lo @param {number} hi */
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -77,64 +79,129 @@ function R(ctx, x, y, w, h, c) {
  * @property {any} an
  */
 
+// hutch palette: dark oiled planks, golden straw, weathered posts
+const HW = { k: '#1a1218', p0: '#2a170c', p1: '#3a2212', p2: '#4a2c17', p3: '#5a371d', p4: '#6d4626', p5: '#8a5c33', p6: '#a8763f' };
+const STRAW = ['#7a5a24', '#9a7630', '#b8923c', '#d2ae52', '#e8cc74', '#f6e2a0'];
+
+/** A wooden post with its cap, lit from the left. @param {CanvasRenderingContext2D} ctx */
+function post(ctx, x, y, w, h) {
+  R(ctx, x - 1, y - 1, w + 2, h + 1, HW.k);
+  R(ctx, x, y, w, h, HW.p4);
+  R(ctx, x, y, 1, h, HW.p6);
+  R(ctx, x + w - 1, y, 1, h, HW.p2);
+  R(ctx, x - 1, y - 2, w + 2, 2, HW.p5); R(ctx, x - 1, y - 2, w + 2, 1, HW.p6);
+  for (let yy = y + 3; yy < y + h - 1; yy += 4) R(ctx, x + 1 + (yy % 3), yy, 1, 2, HW.p3);
+}
+
 /**
- * Paint the hutch background into a 192×72 context.
+ * Paint the hutch background into a 224×88 context.
  * @param {CanvasRenderingContext2D} ctx @param {{nest?:boolean, cloth?:boolean}} [o]
  */
 export function paintHutch(ctx, o = {}) {
-  const W = HUTCH_W, H = HUTCH_H, rng = new Rng('hutch-bg');
-  // plank back wall: alternating boards with grain, butt joints and nails
-  for (let y = 0, i = 0; y < FLOOR_Y; y += 7, i++) {
-    const base = i % 2 ? PAL.wood2 : PAL.wood3, grain = i % 2 ? PAL.wood1 : PAL.wood2;
-    R(ctx, 0, y, W, 7, base);
-    R(ctx, 0, y, W, 1, i % 2 ? PAL.wood3 : PAL.wood4);
-    R(ctx, 0, y + 6, W, 1, PAL.wood0);
-    for (let k = 0; k < 7; k++) R(ctx, rng.int(0, W - 12), y + rng.int(2, 4), rng.int(5, 16), 1, grain);
-    for (let x = (i % 2) * 23 + rng.int(4, 12); x < W; x += rng.int(38, 58)) {
-      R(ctx, x, y + 1, 1, 5, PAL.wood0);
-      R(ctx, x - 2, y + 3, 1, 1, PAL.iron4); R(ctx, x + 2, y + 3, 1, 1, PAL.iron4);
+  const W = HUTCH_W, H = HUTCH_H, rng = new Rng('hutch-bg-2');
+  // ---- plank back wall: long boards of uneven tone, grain, knots, butt joints and nails
+  for (let y = 0, i = 0; y < FLOOR_Y; y += 8, i++) {
+    const tone = [HW.p2, HW.p3, HW.p2, HW.p1, HW.p3, HW.p2][i % 6];
+    R(ctx, 0, y, W, 8, tone);
+    R(ctx, 0, y, W, 1, i % 2 ? HW.p4 : HW.p3);
+    R(ctx, 0, y + 7, W, 1, HW.p0);
+    for (let k = 0; k < 16; k++) R(ctx, rng.int(0, W - 10), y + rng.int(2, 6), rng.int(6, 22), 1, rng.chance(0.5) ? HW.p1 : HW.p4);
+    for (let k = 0; k < 2; k++) { const kx = rng.int(8, W - 8), ky = y + rng.int(3, 5); R(ctx, kx - 1, ky, 3, 1, HW.p1); R(ctx, kx, ky - 1, 1, 3, HW.p1); R(ctx, kx, ky, 1, 1, HW.p0); }
+    for (let x = (i % 2) * 31 + rng.int(10, 30); x < W; x += rng.int(52, 84)) {
+      R(ctx, x, y + 1, 1, 6, HW.p0); R(ctx, x + 1, y + 1, 1, 6, HW.p4);
+      R(ctx, x - 3, y + 3, 1, 1, '#8a8296'); R(ctx, x + 3, y + 3, 1, 1, '#8a8296');
     }
   }
-  // straw floor
-  R(ctx, 0, FLOOR_Y, W, H - FLOOR_Y, PAL.parch0);
-  R(ctx, 0, FLOOR_Y, W, 1, PAL.wood0);
-  R(ctx, 0, FLOOR_Y + 1, W, 2, 'rgba(0,0,0,0.18)');
-  for (let k = 0; k < 260; k++) {
-    const x = rng.int(0, W - 1), y = rng.int(FLOOR_Y + 2, H - 5), len = rng.int(2, 4);
-    const c = rng.pick([PAL.parch1, PAL.parch1, PAL.parch2, '#6d5a3a']);
-    if (rng.chance(0.5)) R(ctx, x, y, len, 1, c);
-    else { R(ctx, x, y, 1, 1, c); R(ctx, x + 1, y - 1, 1, 1, c); R(ctx, x + 2, y - 2, 1, 1, c); }
+  // shade toward the top of the wall, warm light toward the floor
+  for (let y = 0; y < FLOOR_Y; y++) {
+    const a = y < 16 ? 0.32 * (1 - y / 16) : 0;
+    if (a > 0.01) R(ctx, 0, y, W, 1, `rgba(10,6,4,${a.toFixed(3)})`);
+    if (y > 34) R(ctx, 0, y, W, 1, `rgba(255,190,90,${(0.05 * (y - 34) / 14).toFixed(3)})`);
   }
-  // hay rack on the wall at the left, hay spilling onto the floor
-  R(ctx, 3, 14, 19, 2, PAL.wood1); R(ctx, 3, 14, 19, 1, PAL.wood4);
-  for (let x = 6; x < 20; x += 3) R(ctx, x, 16, 1, 22, PAL.iron3);
-  for (let k = 0; k < 46; k++) R(ctx, rng.int(5, 19), rng.int(9, 34), rng.int(1, 3), 1, rng.pick(['#d8c46a', '#b8a24a', '#e8d88a', '#8f8a3a']));
-  R(ctx, 3, 38, 19, 3, PAL.wood1); R(ctx, 3, 38, 19, 1, PAL.wood4);
-  R(ctx, 3, 14, 2, 27, PAL.wood2); R(ctx, 20, 14, 2, 27, PAL.wood2);
-  for (let k = 0; k < 22; k++) R(ctx, rng.int(4, 26), rng.int(FLOOR_Y + 1, FLOOR_Y + 6), rng.int(2, 4), 1, rng.pick(['#d8c46a', '#b8a24a']));
-  // water bowl
-  const bx = 40, by = 61;
-  for (const [rx, ry, c] of /** @type {[number, number, string][]} */ ([[7, 3, '#1a1218'], [6, 2, PAL.stone4], [4, 1, PAL.frost1]])) {
-    for (let yy = -ry; yy <= ry; yy++) { const w = Math.round(rx * Math.sqrt(Math.max(0, 1 - (yy * yy) / (ry * ry)))); R(ctx, bx - w, by + yy, w * 2 + 1, 1, c); }
+  // corner posts and a cross beam
+  post(ctx, 0, 0, 5, FLOOR_Y);
+  post(ctx, W - 5, 0, 5, FLOOR_Y);
+  R(ctx, 0, 0, W, 4, HW.p1); R(ctx, 0, 3, W, 1, HW.p0); R(ctx, 0, 0, W, 1, HW.p3);
+  // ---- straw floor: a golden bed of crossing strands
+  for (let y = FLOOR_Y; y < H; y++) R(ctx, 0, y, W, 1, y < FLOOR_Y + 3 ? STRAW[0] : STRAW[1 + ((y >> 2) % 2)]);
+  for (let k = 0; k < 900; k++) {
+    const x = rng.int(-2, W), y = rng.int(FLOOR_Y + 2, H - 1), len = rng.int(2, 5);
+    const c = STRAW[rng.weighted([0, 1, 2, 3, 4, 5], [1.2, 1.6, 2, 2, 1.4, 0.6])];
+    const dir = rng.pick([-1, 1, 0]);
+    for (let j = 0; j < len; j++) R(ctx, x + j, y + (dir ? Math.round(j * dir * 0.5) : 0), 1, 1, c);
   }
-  R(ctx, bx - 2, by - 1, 2, 1, PAL.frost2); R(ctx, bx - 6, by + 1, 13, 1, PAL.stone2);
-  // nest box at the back right while a doe is expecting
-  if (o.nest) {
-    R(ctx, 157, 27, 32, 23, '#1a1218'); R(ctx, 158, 28, 30, 21, PAL.wood3); R(ctx, 158, 28, 30, 2, PAL.wood5);
-    R(ctx, 158, 38, 30, 1, PAL.wood2);
-    R(ctx, 167, 36, 12, 13, PAL.wood0); R(ctx, 168, 34, 10, 2, PAL.wood0); R(ctx, 170, 33, 6, 1, PAL.wood0);
-    for (let k = 0; k < 12; k++) R(ctx, rng.int(166, 179), rng.int(44, 49), rng.int(2, 3), 1, rng.pick([PAL.parch2, PAL.parch1]));
-    for (let k = 0; k < 8; k++) R(ctx, rng.int(158, 186), 27 - rng.int(0, 2), rng.int(2, 3), 1, PAL.parch2);
+  R(ctx, 0, FLOOR_Y, W, 1, HW.p0);
+  R(ctx, 0, FLOOR_Y + 1, W, 2, 'rgba(20,10,0,0.35)');
+  R(ctx, 0, FLOOR_Y + 3, W, 2, 'rgba(20,10,0,0.15)');
+  // ---- hay rack at the left: a wooden frame and lattice stuffed with hay
+  const rx = 8, ry = 8, rw = 26, rh = 38;
+  for (let k = 0; k < 140; k++) R(ctx, rng.int(rx + 2, rx + rw - 3), rng.int(ry + 2, ry + rh - 4), rng.int(1, 4), 1, rng.pick([STRAW[2], STRAW[3], STRAW[4], STRAW[5], '#a89a40']));
+  for (let x = rx + 3; x < rx + rw - 2; x += 5) { R(ctx, x, ry + 2, 1, rh - 4, HW.p1); R(ctx, x + 1, ry + 2, 1, rh - 4, HW.p5); }
+  for (let y = ry + 6; y < ry + rh - 3; y += 7) { R(ctx, rx + 2, y, rw - 4, 1, HW.p1); R(ctx, rx + 2, y - 1, rw - 4, 1, HW.p5); }
+  post(ctx, rx, ry, 3, rh); post(ctx, rx + rw - 3, ry, 3, rh);
+  R(ctx, rx - 1, ry, rw + 2, 3, HW.k); R(ctx, rx, ry, rw, 2, HW.p5); R(ctx, rx, ry, rw, 1, HW.p6);
+  for (let k = 0; k < 26; k++) { const x = rng.int(rx + 1, rx + rw - 2); R(ctx, x, ry - rng.int(1, 4), 1, rng.int(2, 4), rng.pick([STRAW[3], STRAW[4], STRAW[5]])); }
+  for (let k = 0; k < 40; k++) R(ctx, rng.int(rx - 4, rx + rw + 8), rng.int(FLOOR_Y + 1, FLOOR_Y + 9), rng.int(2, 5), 1, rng.pick([STRAW[3], STRAW[4], STRAW[5]]));
+  // ---- the hide box at the right: planks, a hay-thatched roof, an arched door
+  const bx = 176, by = 22, bw = 42, bh = 32;
+  R(ctx, bx - 1, by - 1, bw + 2, bh + 2, HW.k);
+  for (let y = by, i = 0; y < by + bh; y += 6, i++) {
+    R(ctx, bx, y, bw, 6, i % 2 ? HW.p4 : HW.p3);
+    R(ctx, bx, y, bw, 1, HW.p5); R(ctx, bx, y + 5, bw, 1, HW.p1);
+    for (let k = 0; k < 3; k++) R(ctx, bx + rng.int(1, bw - 8), y + rng.int(2, 4), rng.int(3, 7), 1, HW.p2);
   }
-  // linen cloth at the right where the bodies are laid
+  R(ctx, bx, by, 2, bh, HW.p6); R(ctx, bx + bw - 2, by, 2, bh, HW.p2);
+  // the door: a dark arch with a lip of worn wood
+  const dx = bx + 13, dw = 16, dy = by + 10;
+  for (let y = dy; y < by + bh; y++) {
+    const t = y - dy, half = t < 6 ? Math.round(Math.sqrt(Math.max(0, 36 - (6 - t) * (6 - t))) * (dw / 12)) : dw / 2;
+    R(ctx, dx + dw / 2 - half - 1, y, half * 2 + 2, 1, HW.p1);
+    R(ctx, dx + dw / 2 - half, y, half * 2, 1, y < dy + 3 ? '#140c08' : '#0d0806');
+  }
+  if (o.nest) for (let k = 0; k < 22; k++) R(ctx, rng.int(dx, dx + dw - 2), rng.int(by + bh - 6, by + bh - 1), rng.int(2, 3), 1, rng.pick([STRAW[4], STRAW[5], '#f6ead0', '#e6d3a5']));
+  // thatch roof
+  for (let y = 0; y < 8; y++) {
+    const w = bw + 8 - y;
+    R(ctx, bx - 4 + Math.round(y / 2), by - 8 + y, w, 1, STRAW[y < 2 ? 4 : y < 5 ? 3 : 2]);
+  }
+  for (let k = 0; k < 60; k++) R(ctx, rng.int(bx - 4, bx + bw + 3), rng.int(by - 9, by - 1), 1, rng.int(1, 3), rng.pick([STRAW[1], STRAW[2], STRAW[5]]));
+  R(ctx, bx - 4, by - 1, bw + 8, 1, STRAW[0]);
+  R(ctx, bx, by + bh + 1, bw, 2, 'rgba(20,10,0,0.35)');
+  // ---- food bowl (pellets) and water bowl
+  bowl(ctx, 86, 70, 9, 3, '#2a3a8a', '#4a6ad0', '#8aa8ff', (x, y) => { for (let k = 0; k < 12; k++) R(ctx, x + rng.int(-6, 6), y + rng.int(-1, 0), 1, 1, rng.pick(['#c8782a', '#e8a040', '#8a4a1a'])); });
+  bowl(ctx, 58, 64, 7, 2, '#3d3844', '#73697b', '#a8a2b0', (x, y) => { R(ctx, x - 5, y - 1, 11, 2, PAL.frost1); R(ctx, x - 3, y - 1, 3, 1, PAL.frost3); });
+  // ---- linen cloth at the right where the bodies are laid
   if (o.cloth) {
-    R(ctx, 138, 57, 53, 14, PAL.parch0); R(ctx, 139, 57, 51, 12, PAL.parch1); R(ctx, 139, 57, 51, 1, PAL.parch2);
-    for (let x = 146; x < 188; x += 9) { R(ctx, x, 59, 1, 4, PAL.parch0); R(ctx, x + 1, 63, 1, 4, PAL.parch0); }
-    for (let x = 139; x < 190; x += 2) R(ctx, x, 69, 1, 1, PAL.parch2);
+    R(ctx, 166, 64, 56, 18, PAL.parch0); R(ctx, 167, 64, 54, 16, PAL.parch1); R(ctx, 167, 64, 54, 1, PAL.parch2);
+    for (let x = 174; x < 220; x += 9) { R(ctx, x, 66, 1, 5, PAL.parch0); R(ctx, x + 1, 71, 1, 5, PAL.parch0); }
+    for (let x = 167; x < 221; x += 2) R(ctx, x, 79, 1, 1, PAL.parch2);
   }
-  // front board of the pen
-  R(ctx, 0, H - 4, W, 4, PAL.wood3); R(ctx, 0, H - 4, W, 1, PAL.wood5); R(ctx, 0, H - 1, W, 1, PAL.wood1);
-  for (let x = 10; x < W; x += 46) R(ctx, x, H - 3, 1, 1, PAL.iron4);
+  // soft vignette
+  for (let x = 0; x < 10; x++) { const a = (0.28 * (1 - x / 10)).toFixed(3); R(ctx, x, 0, 1, H, `rgba(8,4,2,${a})`); R(ctx, W - 1 - x, 0, 1, H, `rgba(8,4,2,${a})`); }
+}
+
+/** A round bowl seen from the front, with its contents. @param {CanvasRenderingContext2D} ctx */
+function bowl(ctx, x, y, rx, ry, dark, mid, hi, fill) {
+  R(ctx, x - rx - 1, y - ry - 1, rx * 2 + 3, ry * 2 + 5, 'rgba(20,10,0,0.25)');
+  for (let yy = -ry; yy <= ry; yy++) { const w = Math.round(rx * Math.sqrt(Math.max(0, 1 - (yy * yy) / (ry * ry)))); R(ctx, x - w - 1, y + yy, w * 2 + 3, 1, HW.k); }
+  R(ctx, x - rx, y, rx * 2 + 1, 4, HW.k);
+  R(ctx, x - rx + 1, y, rx * 2 - 1, 3, mid); R(ctx, x - rx + 1, y + 2, rx * 2 - 1, 1, dark); R(ctx, x - rx + 2, y, 2, 2, hi);
+  for (let yy = -ry + 1; yy < 1; yy++) { const w = Math.round((rx - 1) * Math.sqrt(Math.max(0, 1 - (yy * yy) / (ry * ry)))); R(ctx, x - w, y + yy, w * 2 + 1, 1, dark); }
+  fill(x, y);
+}
+
+/**
+ * The front rail of the pen, drawn over the rabbits.
+ * @param {CanvasRenderingContext2D} ctx
+ */
+export function paintHutchFront(ctx) {
+  const W = HUTCH_W, H = HUTCH_H;
+  R(ctx, 0, RAIL_Y - 1, W, H - RAIL_Y + 1, HW.k);
+  R(ctx, 0, RAIL_Y, W, H - RAIL_Y, HW.p3);
+  R(ctx, 0, RAIL_Y, W, 1, HW.p6); R(ctx, 0, RAIL_Y + 1, W, 1, HW.p5);
+  R(ctx, 0, H - 2, W, 2, HW.p1);
+  for (let x = 6; x < W; x += 13) R(ctx, x, RAIL_Y + 3 + (x % 3), 7, 1, HW.p2);
+  for (const x of [2, 56, 112, 168, W - 8]) post(ctx, x, RAIL_Y - 7, 6, H - RAIL_Y + 7);
 }
 
 /**
@@ -160,6 +227,8 @@ export class HutchScene {
     /** @type {any} */
     this.bg = null;
     this.bgKey = '';
+    /** @type {any} */
+    this.fg = null;
     /** claw marks where a feral rabbit struck: art pixels and age (s) */
     /** @type {{x:number, y:number, t:number}[]} */
     this.clashes = [];
@@ -278,6 +347,7 @@ export class HutchScene {
       for (let i = 0; i < 3; i++) for (let j = 0; j < 5; j++) R(ctx, c.x - 4 + i * 3 + j, c.y - 3 + j, 1, 1, j === 2 ? '#fff0e0' : k);
       if (c.t < 0.3) for (let i = 0; i < 6; i++) R(ctx, c.x + Math.round(Math.cos(i) * (4 + c.t * 20)), c.y + Math.round(Math.sin(i * 1.7) * (3 + c.t * 10)), 1, 1, '#f6ead0');
     }
+    this._front(ctx);
     const hov = o.hover != null ? this.actors.get(String(o.hover)) : null;
     if (hov && !hov.hidden) {
       const b = this._box(hov), rx = Math.max(6, Math.round((b.x1 - b.x0) / 2) - 3);
@@ -484,6 +554,14 @@ export class HutchScene {
   /** Drawn rabbits in depth order (feet y, then id). */
   _visible() {
     return [...this.actors.values()].filter((a) => !a.hidden).sort((p, q) => p.y - q.y || (p.id < q.id ? -1 : p.id > q.id ? 1 : 0));
+  }
+
+  /** @param {CanvasRenderingContext2D} ctx */
+  _front(ctx) {
+    const factory = this.factory || (typeof document !== 'undefined' ? makeCanvas : null);
+    if (!factory) { paintHutchFront(ctx); return; }
+    if (!this.fg) { this.fg = factory(HUTCH_W, HUTCH_H); paintHutchFront(this.fg.getContext('2d')); }
+    ctx.drawImage(this.fg, 0, 0);
   }
 
   /** @param {CanvasRenderingContext2D} ctx */
