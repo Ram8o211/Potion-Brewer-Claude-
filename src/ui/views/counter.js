@@ -51,7 +51,8 @@ export class CounterView {
     const cert = lab.currentCert();
     const vialCert = st.vial ? st.vial.cert || {} : null;
     const list = h('ul', { class: 'reqs full' });
-    const known = (k) => (vialCert && vialCert[k] !== undefined ? vialCert[k] : cert.values[k]);
+    // with a vial waiting, only its own trials count: that is what will be sold
+    const known = (k) => (vialCert ? vialCert[k] : cert.values[k]);
     for (const req of com.requirements) {
       const isFx = !!EFFECT_BY_KEY[req.key];
       const label = PROPERTY_LABELS[req.key] || req.key;

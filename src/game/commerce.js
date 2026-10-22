@@ -32,6 +32,7 @@ import { PURITY_LIMIT } from './requests.js';
  * @property {'trial'|'estimate'|'player'} source
  * @property {number} [spread]     uncertainty of an estimate (plus or minus)
  * @property {string} [record]     the trial record backing it
+ * @property {number} [measured]   the tested reading of this batch, kept when the player edits the claim
  */
 
 /**
@@ -56,8 +57,7 @@ export function draftLabel(vial, theory, day) {
   for (let k = 0; k < NE; k++) {
     const key = EFFECT_KEYS[k];
     if (cert[key] !== undefined) {
-      const v = cert[key];
-      claims[key] = Math.abs(v) < PURITY_LIMIT ? { kind: 'none', source: 'trial', record: recs[key] } : { kind: 'value', value: Math.round(v * 10) / 10, source: 'trial', record: recs[key] };
+      claims[key] = trialClaim(cert[key], recs[key]);
     } else if (theory) {
       const v = theory[k];
       claims[key] = Math.abs(v) < 0.6 ? { kind: 'none', source: 'estimate', spread: 1 } : { kind: 'value', value: Math.round(v), source: 'estimate', spread: Math.round(2 + 0.3 * Math.abs(v)) };
@@ -74,10 +74,55 @@ export function draftLabel(vial, theory, day) {
 export function applyTrials(label, values, record) {
   for (const [key, v] of Object.entries(values)) {
     const c = label.claims[key];
-    if (c && c.source === 'player') continue;
-    label.claims[key] = Math.abs(v) < PURITY_LIMIT ? { kind: 'none', source: 'trial', record } : { kind: 'value', value: Math.round(v * 10) / 10, source: 'trial', record };
+    const t = trialClaim(v, record);
+    if (c && c.source === 'player' && !sameClaim(c, t)) {
+      // the player's own claim stays, but the label now knows the reading
+      c.measured = t.measured;
+      c.record = record;
+      continue;
+    }
+    label.claims[key] = t;
   }
   return label;
+}
+
+/** A claim made from a trial reading. @param {number} v @param {string} [record] @returns {Claim} */
+export function trialClaim(v, record) {
+  const measured = Math.round(v * 10) / 10;
+  return Math.abs(v) < PURITY_LIMIT ? { kind: 'none', source: 'trial', record, measured } : { kind: 'value', value: measured, source: 'trial', record, measured };
+}
+
+/** Do two claims say the same thing? @param {Claim} a @param {Claim} b */
+export function sameClaim(a, b) {
+  if (a.kind !== b.kind) return false;
+  return a.kind !== 'value' || Math.abs((a.value || 0) - (b.value || 0)) < 0.05;
+}
+
+/**
+ * The player edits a claim: step it up or down, declare it absent, or make
+ * no claim. A claim that ends where this batch was measured is a tested
+ * claim again. Stepping up from "none" jumps past the purity line; only
+ * acidity can be claimed below zero (alkaline).
+ * @param {Claim} c @param {string} key @param {'up'|'down'|'none'|'unknown'|'tested'} op
+ * @returns {Claim}
+ */
+export function editClaim(c, key, op) {
+  const keep = { record: c.record, measured: c.measured };
+  const tested = c.measured !== undefined ? trialClaim(c.measured, c.record) : null;
+  if (op === 'tested') return tested || c;
+  if (op === 'unknown') return { kind: 'unknown', source: 'player', ...keep };
+  /** @type {Claim} */
+  let next;
+  if (op === 'none') next = { kind: 'none', source: 'player', ...keep };
+  else {
+    const d = op === 'up' ? 1 : -1;
+    const signed = key === 'acidity';
+    let nv = Math.round(((c.kind === 'value' ? c.value || 0 : 0) + d) * 10) / 10;
+    if (c.kind !== 'value' && Math.abs(nv) < PURITY_LIMIT) nv = d > 0 ? 2 : signed ? -2 : 0;
+    if (!signed) nv = Math.max(0, nv);
+    next = Math.abs(nv) < PURITY_LIMIT ? { kind: 'none', source: 'player', ...keep } : { kind: 'value', value: nv, source: 'player', ...keep };
+  }
+  return tested && sameClaim(next, tested) ? tested : next;
 }
 
 /** The effects a label claims (unknown counts as nothing claimed). @param {Label} label */
@@ -154,6 +199,8 @@ export function claimedMeasurement(m, label) {
  * @property {'open'|'deal'|'left'} state
  * @property {number} [price]
  * @property {{who:'you'|'them', text:string, coins?:number}[]} log
+ * @property {string} [vialId]     the bottle being bargained over (talks resume on it)
+ * @property {string} [labelKey]   the label it was offered with
  */
 
 /**
@@ -240,7 +287,7 @@ export function recordSale(st, com, vial, label, price, truth) {
   const side = purity ? strongestUnwanted(truth.effects, purity.exclude || []) : { value: 0, key: '' };
   const harmful = side.value >= 3 && ['toxicity', 'death', 'acidity'].includes(side.key);
   const failed = ev.rows.filter((r) => r.score < 0.7 && r.req.key !== 'quantity').map((r) => r.req.key);
-  const evidence = Object.values(label.claims).filter((c) => c.source === 'trial' && c.record).map((c) => c.record);
+  const evidence = [...new Set(Object.values(label.claims).filter((c) => c.source === 'trial' && c.record).map((c) => c.record))];
   const sale = {
     id: 's' + hashString(`${com.id}:${vial.id}`).toString(36), day: st.day, customer: { name: com.customer.name, title: com.customer.title, archetype: com.customer.archetype, portrait: com.customer.portrait },
     potion: com.potionName, price, quality: Math.round(ev.quality * 1000) / 1000, repDelta: ev.repDelta, wrong, failed, side: side.value >= PURITY_LIMIT ? side : null,
@@ -249,7 +296,7 @@ export function recordSale(st, com, vial, label, price, truth) {
   /** @type {any} */
   let follow = null;
   const due = st.day + 1;
-  if (ev.quality >= 0.85 && !wrong.length) {
+  if (ev.quality >= 0.85 && !wrong.length && !harmful) {
     if (rng.next() > persona.honesty) {
       // a satisfied customer who wants their money back anyway
       const key = rng.pick(com.requirements.filter((r) => r.effect && r.key !== 'purity').map((r) => r.key).concat(['quality']));
@@ -291,22 +338,25 @@ export function resolveFollowUp(st, f, action) {
     rep = base;
     text = 'No news is good news.';
   } else if (action === 'refund') {
-    coins = -Math.min(f.demand, st.coins);
+    coins = -f.demand; // the state refuses a refund the shop cannot pay in full
     rep = f.legit ? Math.min(-1, Math.round(base / 2)) : 1;
     text = f.legit ? 'You refund them. They leave mollified.' : 'You refund them. They leave smirking — but people saw you were fair.';
   } else if (action === 'dispute') {
     // the evidence: trials of the very batch that back the disputed claims
     const covered = sale && (f.cites || []).every((k) => k === 'quality' ? sale.evidence.length > 0 : sale.claims[k] && sale.claims[k].source === 'trial');
     if (f.legit) {
-      coins = -Math.min(f.demand, st.coins);
-      rep = Math.min(-6, base - 4);
-      text = 'Your records do not hold up: the complaint was fair. You refund them, and the story spreads.';
+      const paid = Math.min(f.demand, st.coins);
+      coins = -paid || 0; // never "-0"
+      rep = Math.min(-6, base - 4) - Math.round(6 * (1 - paid / Math.max(1e-9, f.demand)));
+      text = paid + 1e-9 >= f.demand ? 'Your records do not hold up: the complaint was fair. You refund them, and the story spreads.' : 'Your records do not hold up, and you cannot pay them back in full. The story spreads.';
     } else if (covered || rng.chance(0.35 + 0.08 * st.rank)) {
       rep = 2;
       text = covered ? 'You show the trial records of that very batch. They mumble and leave empty-handed.' : 'You stand your ground and they back down.';
     } else {
-      coins = -Math.min(Math.round(f.demand * 0.5 * 10) / 10, st.coins);
-      rep = -3;
+      const half = Math.round(f.demand * 0.5 * 10) / 10;
+      const paid = Math.min(half, st.coins);
+      coins = -paid || 0; // never "-0"
+      rep = -3 - Math.round(3 * (1 - paid / Math.max(1e-9, half)));
       text = 'With no trial records to show, you settle for half.';
     }
   } else {

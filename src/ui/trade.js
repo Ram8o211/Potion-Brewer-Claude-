@@ -7,7 +7,7 @@ import { icon } from './icons.js';
 import { drawPortrait } from '../rendering/portraits.js';
 import { audio } from '../audio/audio.js';
 import { EFFECTS, EFFECT_BY_KEY } from '../alchemy/effects.js';
-import { draftLabel, openNegotiation as beginNegotiation, proposePrice, acceptOffer, relevantEffects, labelTrust } from '../game/commerce.js';
+import { draftLabel, openNegotiation as beginNegotiation, proposePrice, acceptOffer, relevantEffects, labelTrust, editClaim } from '../game/commerce.js';
 import { PURITY_LIMIT } from '../game/requests.js';
 import { shortName } from '../game/customers.js';
 
@@ -32,19 +32,15 @@ export function openIdentify(lab, vial, onDone) {
         : c.kind === 'unknown' ? h('span', { class: 'src unknown', text: 'unknown' })
           : c.source === 'estimate' ? h('span', { class: 'src est', text: `theory${c.spread ? ' ±' + c.spread : ''}` }) : h('span', { class: 'src you', text: 'your claim' });
       const val = c.kind === 'value' ? `${Math.round((c.value || 0) * 10) / 10}%` : c.kind === 'none' ? `none (< ${PURITY_LIMIT}%)` : '?';
-      const step = (d) => () => {
-        const v = c.kind === 'value' ? (c.value || 0) : 0;
-        const nv = Math.round((v + d) * 10) / 10;
-        draft.claims[e.key] = Math.abs(nv) < PURITY_LIMIT ? { kind: 'none', source: 'player' } : { kind: 'value', value: nv, source: c.source === 'trial' && Math.abs(nv - (c.value || 0)) < 0.05 ? 'trial' : 'player', record: c.record };
-        render();
-      };
+      const edit = (op) => () => { draft.claims[e.key] = editClaim(c, e.key, op); render(); };
       const row = h('div', { class: 'label-row' + (relevant.has(e.key) ? ' relevant' : '') + (c.kind === 'unknown' ? ' unknown' : '') + (open === e.key ? ' open' : ''), 'data-claim': e.key },
         icon(e.icon, 'sm'), h('span', { class: 'lk', text: e.label }), src, h('b', { class: 'lv', text: val }),
         h('span', { class: 'lctl' },
-          btn('−', step(e.key === 'acidity' && (c.value || 0) <= 0 ? -1 : -1), { cls: 'small', title: `Claim less ${e.label.toLowerCase()}`, act: `claim-dn-${e.key}` }),
-          btn('+', step(1), { cls: 'small', title: `Claim more ${e.label.toLowerCase()}`, act: `claim-up-${e.key}` }),
-          btn('none', () => { draft.claims[e.key] = { kind: 'none', source: c.source === 'trial' && Math.abs(c.value || 0) < PURITY_LIMIT ? 'trial' : 'player', record: c.record }; render(); }, { cls: 'small', act: `claim-none-${e.key}` }),
-          btn('?', () => { draft.claims[e.key] = { kind: 'unknown', source: 'player' }; render(); }, { cls: 'small', title: 'Make no claim', act: `claim-unknown-${e.key}` })));
+          btn('−', edit('down'), { cls: 'small', title: `Claim less ${e.label.toLowerCase()}`, act: `claim-dn-${e.key}` }),
+          btn('+', edit('up'), { cls: 'small', title: `Claim more ${e.label.toLowerCase()}`, act: `claim-up-${e.key}` }),
+          btn('none', edit('none'), { cls: 'small', act: `claim-none-${e.key}` }),
+          btn('?', edit('unknown'), { cls: 'small', title: 'Make no claim', act: `claim-unknown-${e.key}` }),
+          c.measured !== undefined && c.source !== 'trial' ? btn('✓', edit('tested'), { cls: 'small', title: 'Use the tested reading', act: `claim-tested-${e.key}` }) : null));
       row.addEventListener('click', (ev) => {
         if (/** @type {HTMLElement} */ (ev.target).closest('.lctl')) return;
         open = open === e.key ? '' : e.key;
@@ -82,7 +78,24 @@ export function openIdentify(lab, vial, onDone) {
  */
 export function openNegotiation(lab, com, vial, onEnd) {
   const st = lab.state;
-  const n = beginNegotiation(com, vial, vial.label, st.rank);
+  // the same bottle offered again resumes the talks: patience spent stays spent
+  const key = JSON.stringify(vial.label.claims);
+  const prev = com.haggle && com.haggle.vialId === vial.id && com.haggle.state === 'open' ? com.haggle : null;
+  /** @type {any} */
+  let n;
+  if (prev && prev.labelKey === key) n = prev;
+  else {
+    n = beginNegotiation(com, vial, vial.label, st.rank);
+    if (prev) {
+      // a new label re-prices the bottle, but the customer remembers the haggling
+      n.patience = Math.min(n.patience, prev.patience);
+      n.round = prev.round;
+      n.log.unshift({ who: 'them', text: 'You again — with a new label.' });
+    }
+  }
+  n.vialId = vial.id;
+  n.labelKey = key;
+  com.haggle = n;
   const persona = com.customer.persona || { haggle: 0.5 };
   const portrait = /** @type {HTMLCanvasElement} */ (h('canvas', { class: 'portrait big' }));
   drawPortrait(portrait, com.customer.portrait, n.fit >= 0.7 ? 'happy' : n.fit >= 0.4 ? 'neutral' : 'unhappy');
@@ -92,7 +105,13 @@ export function openNegotiation(lab, com, vial, onEnd) {
   const offerEl = h('div', { class: 'offer' });
   const roundsEl = h('div', { class: 'small muted' });
   let ended = false;
-  const finish = () => { if (ended) return; ended = true; m.close(); onEnd(n.state === 'open' ? null : n); };
+  /** Walking away from open talks costs the customer's patience; at the end of it they leave. */
+  const walkAway = () => {
+    if (n.state !== 'open' || n.round === 0) return;
+    n.patience -= 1;
+    if (n.patience <= 0) { n.state = 'left'; n.log.push({ who: 'them', text: 'I have wasted enough of my day. Good day to you.' }); }
+  };
+  const finish = () => { if (ended) return; ended = true; walkAway(); m.close(); onEnd(n.state === 'open' ? null : n); };
   const render = () => {
     clear(log);
     for (const l of n.log.slice(-6)) log.appendChild(h('div', { class: 'line ' + l.who }, h('b', { text: l.who === 'you' ? 'You: ' : `${shortName(com.customer.name)}: ` }), l.text));
@@ -117,7 +136,7 @@ export function openNegotiation(lab, com, vial, onEnd) {
   m = modal({
     title: `Bargaining with ${com.customer.name}`,
     wide: true,
-    onClose: () => { if (!ended) { ended = true; onEnd(n.state === 'open' ? null : n); } },
+    onClose: () => { if (!ended) { ended = true; walkAway(); onEnd(n.state === 'open' ? null : n); } },
     body: [h('div', { class: 'card parch haggle' },
       h('div', { class: 'cust-top' }, portrait, h('div', {},
         h('div', { class: 'cust-name', text: com.customer.name }),
@@ -177,6 +196,7 @@ export function followUpCard(lab, f) {
   const act = (a) => () => {
     const r = st.settleFollowUp(f.id, a);
     if (!r) return;
+    if (r.refused) { audio.play('error'); toast('Not enough coins', r.text, 'coin'); return; }
     audio.play(f.kind === 'praise' ? 'praise' : r.coins < 0 || r.rep < 0 ? 'complaint' : 'coin');
     toast(f.kind === 'praise' ? 'A happy customer' : 'Complaint settled', `${r.text} ${r.coins ? (r.coins > 0 ? '+' : '') + coins(r.coins) + ' coins. ' : ''}${r.rep ? 'Reputation ' + (r.rep > 0 ? '+' : '') + r.rep + '.' : ''}`, f.kind === 'praise' ? 'heart' : 'talk', 5200);
     for (const e of r.events) lab.announce(e);
@@ -188,7 +208,7 @@ export function followUpCard(lab, f) {
   const evidence = sale ? sale.evidence.length : 0;
   const actions = f.kind === 'praise'
     ? [btn('Thank them', act('thank'), { cls: 'primary', icon: 'heart', act: 'fu-thank' })]
-    : [btn(`Refund ${coins(f.demand)}`, act('refund'), { icon: 'coin', act: 'fu-refund' }),
+    : [btn(`Refund ${coins(f.demand)}`, act('refund'), { icon: 'coin', act: 'fu-refund', disabled: st.coins + 1e-9 < f.demand, title: st.coins + 1e-9 < f.demand ? `You need ${coins(f.demand)} coins to refund in full` : 'Pay the money back' }),
       btn(evidence ? `Dispute (${evidence} trial record${evidence > 1 ? 's' : ''})` : 'Dispute', act('dispute'), { icon: 'scroll', act: 'fu-dispute' }),
       btn('Turn them away', act('dismiss'), { icon: 'door', cls: 'danger', act: 'fu-dismiss' })];
   return h('div', { class: 'card parch followup ' + f.kind, 'data-followup': f.id },

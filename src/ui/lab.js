@@ -991,10 +991,14 @@ export class LabScreen {
     if (!v.label) { this.identifyVial(() => this.serveVial()); return; }
     const missing = unprovenWanted(com, v.label);
     if (missing.length) {
-      toast(`${shortName(com.customer.name)} wants proof`, `This customer only buys on trial evidence of this batch: test ${missing.map((k) => EFFECT_BY_KEY[k].label).join(', ')} first.`, 'dropper', 5000);
+      const tested = missing.filter((k) => v.label.claims[k] && v.label.claims[k].measured !== undefined);
+      toast(`${shortName(com.customer.name)} wants proof`, tested.length
+        ? `This customer only buys on trial evidence of this batch: put the tested reading of ${tested.map((k) => EFFECT_BY_KEY[k].label).join(', ')} back on the label (✓).`
+        : `This customer only buys on trial evidence of this batch: test ${missing.map((k) => EFFECT_BY_KEY[k].label).join(', ')} first.`, 'dropper', 5000);
       return;
     }
     trade.openNegotiation(this, com, v, (n) => {
+      this.save();
       if (!n) return;
       if (n.state === 'left') { this.customerLeft(); return; }
       if (n.state === 'deal') this.completeDeal(n.price, n.log.find((l) => l.who === 'them' && l.coins)?.coins || 0);
@@ -1061,8 +1065,10 @@ export class LabScreen {
     if (!v) return;
     const made = pourBack(v, this.sim);
     if (!made) { toast('No room', 'The cauldron is too full to pour the vial back.', 'cauldron'); return; }
-    // provenance: the batch now also holds what that vial was made of
-    const share = v.bottledMl > 0 ? (made * SIM.ML_PER_PARTICLE) / v.bottledMl : 0;
+    // provenance: the batch now also holds what that vial was made of —
+    // its share of the batch it was drawn from, not of the whole batch
+    const batchMl = (v.parts || []).reduce((a, p) => a + p.ml, 0);
+    const share = batchMl > 0 ? (made * SIM.ML_PER_PARTICLE) / batchMl : 0;
     st.brewLog.push({ type: 'vial', ml: made * SIM.ML_PER_PARTICLE, t: Math.round(this.sim.time), parts: (v.parts || []).map((p) => ({ id: p.id, ml: Math.round(p.ml * share * 10) / 10 })), from: v.id });
     // it is the same batch only if the cauldron still holds that batch
     if (st.batch.id !== v.batchId) st.newBatch();
@@ -1329,7 +1335,7 @@ export class LabScreen {
     const known = this.knownRecipe();
     /** @type {[import('../alchemy/effects.js').EffectDef, number][]} */
     const thList = EFFECTS.map((e, k) => /** @type {[import('../alchemy/effects.js').EffectDef, number]} */ ([e, theory[k]])).filter(([, v]) => Math.abs(v) >= 1);
-    el.append(
+    el.append(...[
       h('div', { class: 'small', text: `${n * SIM.ML_PER_PARTICLE} ml · ${tn ? Math.round(tsum / tn) : '—'}°C${tn ? ` (${Math.round(tmin)}–${Math.round(tmax)})` : ''} · lid ${sim.cauldron.lidClosed ? 'on' : 'off'}` }),
       h('div', { class: 'phase-bar' }, ...['liquid', 'powder', 'paste', 'solid', 'gas'].map((name, k) => phases[k] ? h('i', { class: 'ph-' + name, title: name, style: { flexGrow: String(phases[k]) } }) : null)),
       h('div', { class: 'small muted', text: ['liquid', 'powder', 'paste', 'solid', 'vapour'].map((name, k) => (phases[k] ? `${name} ${Math.round((phases[k] / n) * 100)}%` : '')).filter(Boolean).join(' · ') }),
@@ -1341,7 +1347,7 @@ export class LabScreen {
       known ? h('div', { class: 'small know' }, h('b', { text: 'Recipe ' }), ...Object.entries(known.verified).map(([k, v]) => h('span', { class: 'fx-chip dim', title: `${EFFECT_BY_KEY[k].label}, as verified when “${known.name}” was first brewed` }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ~${Math.round(/** @type {number} */ (v))}`))) : null,
       h('div', { class: 'small know' }, h('b', { text: 'Verified ' }), Object.keys(cert.values).length ? Object.entries(cert.values).map(([k, v]) => h('span', { class: 'fx-chip', title: EFFECT_BY_KEY[k].label }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(v)}`)) : h('span', { class: 'muted', text: cert.changed ? 'outdated — retest' : 'nothing yet' })),
       h('div', { class: 'small muted', text: known ? 'Theory adds up what each ingredient is known to do; Recipe is what this recipe did when it was tested. Only a trial of this batch counts as verified.' : 'Theory adds up what each ingredient is known to do. The real brew can differ: test it.' }),
-    );
+    ].filter(Boolean));
     void force;
   }
 
@@ -1401,7 +1407,7 @@ export class LabScreen {
       const r = st.rank, next = RANKS[r + 1];
       this.rankName.textContent = RANKS[r].name;
       const prog = next ? (st.reputation - RANKS[r].rep) / (next.rep - RANKS[r].rep) : 1;
-      this.rankBar.style.width = Math.round(Math.min(1, prog) * 100) + '%';
+      this.rankBar.style.width = Math.round(Math.max(0, Math.min(1, prog)) * 100) + '%';
       this.rankBar.parentElement.title = `Reputation ${st.reputation}${next ? ' / ' + next.rep : ''}`;
       clear(this.dayEl).append(h('span', { text: `Day ${st.day} · ${Math.min(st.customerIndex + (st.current ? 1 : 0), st.customersPerDay)}/${st.customersPerDay}` }), h('span', { class: 'event', text: st.marketEvent.key !== 'none' ? st.marketEvent.name : '' }));
     }

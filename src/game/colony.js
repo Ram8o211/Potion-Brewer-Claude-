@@ -36,6 +36,7 @@ export const LIFESPAN_DAYS = 56;
 export const FOUNDER_BORN = -9;
 export const GESTATION_DAYS = 3;
 export const DOSE_LIMIT = 40;
+/** Buried bodies remembered (processed ones are always kept). */
 export const MEMORIAL_LIMIT = 24;
 /** Transient-mark levels (0..3) start at these values. */
 export const LEVEL_AT = [8, 30, 60];
@@ -625,9 +626,20 @@ export function retireRabbit(c, id, how, parts, day) {
   };
   c.rabbits.splice(i, 1);
   c.memorial.unshift(entry);
-  if (c.memorial.length > MEMORIAL_LIMIT) c.memorial.length = MEMORIAL_LIMIT;
+  c.memorial = trimMemorial(c.memorial);
   if (c.focus === id) { const f = c.rabbits.find((x) => x.alive) || c.rabbits[0]; c.focus = f ? f.id : null; }
   return entry;
+}
+
+/**
+ * The memorial keeps every processed body (its remains are materials of the
+ * world, rebuilt from it in the sandbox, and its name must not be reused),
+ * but only the newest MEMORIAL_LIMIT buried ones. Newest first.
+ * @param {MemorialEntry[]} list
+ */
+export function trimMemorial(list) {
+  let buried = 0;
+  return list.filter((m) => m.how === 'processed' || ++buried <= MEMORIAL_LIMIT);
 }
 
 /**
@@ -766,13 +778,13 @@ export function normalizeColony(c, legacy, records = []) {
       seen.add(r.id);
       rabbits.push(normalizeRabbit(r));
     }
-    const memorial = (Array.isArray(c.memorial) ? c.memorial : []).filter((m) => m && typeof m.id === 'string' && !seen.has(m.id)).slice(0, MEMORIAL_LIMIT).map((m) => ({
+    const memorial = trimMemorial((Array.isArray(c.memorial) ? c.memorial : []).filter((m) => m && typeof m.id === 'string' && !seen.has(m.id)).map((m) => ({
       id: m.id, name: typeof m.name === 'string' ? m.name : 'Rabbit', sex: m.sex === 'm' ? 'm' : 'f', look: normalizeLook(m.look, m.id), born: fin(m.born, FOUNDER_BORN),
       diedDay: Number.isFinite(m.diedDay) ? m.diedDay : null, cause: typeof m.cause === 'string' ? m.cause : 'unknown',
       stage: ['kit', 'young', 'adult', 'elder'].includes(m.stage) ? m.stage : 'adult', traits: (Array.isArray(m.traits) ? m.traits : []).filter((t) => TRAITS.includes(t)).slice(0, 5),
       exposure: normalizeMarks(m.exposure), how: m.how === 'buried' ? 'buried' : 'processed', parts: (Array.isArray(m.parts) ? m.parts : []).filter((p) => typeof p === 'string'),
       parents: Array.isArray(m.parents) ? m.parents.filter((p) => typeof p === 'string').slice(0, 2) : null,
-    }));
+    })));
     const nums = [...rabbits, ...memorial].map((r) => Number(String(r.id).replace(/^r/, ''))).filter(Number.isFinite);
     const out = /** @type {Colony} */ ({
       seed: typeof c.seed === 'string' ? c.seed : '', serial: Math.max(fin(c.serial, 0) | 0, ...nums, 0),

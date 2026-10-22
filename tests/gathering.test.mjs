@@ -3,7 +3,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { GameState } from '../src/game/state.js';
-import { gatherPlan, dayPart, weatherOn, WEATHERS, depositStatus, normalizeGathering, SCAR_SLOWDOWN, weatherRegrowth } from '../src/game/gathering.js';
+import { gatherPlan, dayPart, weatherOn, WEATHERS, depositStatus, normalizeGathering, SCAR_SLOWDOWN, weatherRegrowth, harvestable, CAREFUL_RESERVE } from '../src/game/gathering.js';
 
 const fresh = (seed = 'gather-1') => GameState.create(seed, { tutorial: false });
 const depositOf = (st, key) => st.deposits.find((d) => st.lookup(d.materialId).wild.key === key);
@@ -78,4 +78,49 @@ test('a thorough harvest takes twice as much and scars the deposit until it is f
   assert.equal(g.nodes[root.id].scar, true);
   // fully regrown, the scar is gone
   assert.equal(depositStatus(st.gathering, root, now + root.regrowMs * SCAR_SLOWDOWN * 2).scarred, false);
+});
+
+test('what spoils is cut all the same, and careful hands leave a reserve to regrow', () => {
+  const st = fresh('gather-2');
+  st.customerIndex = 1;
+  const chalk = depositOf(st, 'riverchalk');
+  const now = 2_000_000;
+  const plan = gatherPlan(st, chalk, st.lookup(chalk.materialId));
+  assert.equal(plan.eff, 0.5, 'by hand, half of what is dug is lost');
+  assert.equal(plan.reserve, Math.round(chalk.capacity * CAREFUL_RESERVE));
+  let got = 0, last;
+  for (let k = 0; k < 50; k++) {
+    st.inventory[chalk.materialId] = 0; // shelf room is not what is tested
+    const can = harvestable(st.gathering, chalk, plan, now);
+    last = st.gather(chalk.id, { now });
+    if (!last.ok) { assert.equal(can, 0, 'the button agreed nothing was left'); break; }
+    assert.equal(last.amount, can, 'the button promised what was gathered');
+    got += last.amount;
+  }
+  assert.equal(last.ok, false);
+  assert.equal(last.reason, 'reserve');
+  const left = depositStatus(st.gathering, chalk, now).stock;
+  assert.ok(left >= plan.reserve - 1e-6, 'the reserve stands');
+  assert.ok(got <= (chalk.capacity - plan.reserve) * plan.eff + 1e-6, 'no more than the deposit gave, after spoilage');
+  // a thorough harvest may take the reserve
+  const r = st.gather(chalk.id, { now, thorough: true });
+  assert.ok(r.ok);
+  // with the trowel, nothing is spoiled
+  const st2 = fresh('gather-2');
+  st2.customerIndex = 1;
+  st2.equipment.push('trowel');
+  assert.equal(gatherPlan(st2, chalk, st2.lookup(chalk.materialId)).eff, 1);
+});
+
+test('the night after a rainy day regrows the plants', () => {
+  const st = fresh('gather-rain');
+  let day = 1;
+  while (day < 200 && weatherOn(st.seed, day).id !== 'rain') day++;
+  assert.ok(day < 200);
+  st.day = day;
+  const leaf = depositOf(st, 'silverleaf');
+  st.gathering.nodes[leaf.id] = { stock: 0, at: Date.now() };
+  st.current = null;
+  st.endDay();
+  assert.equal(st.gathering.nodes[leaf.id], undefined, 'the rain that fell today fills the plants tonight');
 });

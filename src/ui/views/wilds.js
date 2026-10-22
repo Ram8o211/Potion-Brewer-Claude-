@@ -8,7 +8,7 @@
 import { h, btn, clear, toast } from '../dom.js';
 import { icon } from '../icons.js';
 import { audio } from '../../audio/audio.js';
-import { REGIONS, depositStatus, formatWait, gatherPlan, dayPart, weatherOn, DAY_PART_NAME } from '../../game/gathering.js';
+import { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, DAY_PART_NAME } from '../../game/gathering.js';
 import { equipmentById } from '../../game/equipment.js';
 import { RANKS } from '../../game/equipment.js';
 import { paintRegion, animateRegion, drawRaw, rawSprite, SCENE_W, SCENE_H } from '../../rendering/scenes.js';
@@ -81,11 +81,12 @@ export class WildsView {
       const s = depositStatus(st.gathering, d, now);
       const locked = !lab.sandbox && d.rank > st.rank;
       const plan = gatherPlan(st, d, m, { thorough: this.thorough });
-      const take = lab.sandbox ? d.take : plan.take;
+      const can = lab.sandbox ? d.take : harvestable(st.gathering, d, plan, now);
+      const take = lab.sandbox ? d.take : can || plan.take;
       const fx = Object.entries(m.effects || {}).filter(([, v]) => Math.abs(v) >= 5).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 3);
       const stock = lab.sandbox ? '∞' : `${Math.floor(s.stock)} / ${d.capacity} ml`;
-      const when = lab.sandbox ? 'never runs out' : s.fraction >= 0.999 ? 'fully grown' : s.available >= Math.min(take, d.capacity) ? `regrowing${s.scarred ? ' slowly' : ''} · full in ${formatWait(s.fullIn)}` : `resting · ready in ${formatWait(s.nextIn)}`;
-      const g = btn(locked ? RANKS[d.rank].name : `${plan.method.verb} +${take} ml`, () => this.gather(d), { cls: 'gold', icon: locked ? 'lock' : plan.method.icon, disabled: locked || (!lab.sandbox && s.available < 5), act: 'gather-' + d.id });
+      const when = lab.sandbox ? 'never runs out' : this.when(s, can, plan);
+      const g = btn(locked ? RANKS[d.rank].name : `${plan.method.verb} +${take} ml`, () => this.gather(d), { cls: 'gold', icon: locked ? 'lock' : plan.method.icon, disabled: locked || (!lab.sandbox && can < 5), act: 'gather-' + d.id });
       const barI = h('i', { style: { width: Math.round((lab.sandbox ? 1 : s.fraction) * 100) + '%' } });
       const meta = h('div', { class: 'meta', text: `${stock} · ${when}` });
       this.rows[d.id] = { barI, meta, g, locked, take };
@@ -129,7 +130,7 @@ export class WildsView {
     const r = lab.sandbox ? { ok: true, amount: d.take, events: [] } : st.gather(d.id, { thorough: this.thorough });
     if (!r.ok) {
       audio.play('error');
-      const why = r.reason === 'full' ? `Your shelves are full of ${m.name}.` : r.reason === 'locked' ? 'You may not gather here yet.' : `Picked clean. It regrows in ${formatWait(r.nextIn || 60000)}.`;
+      const why = r.reason === 'full' ? `Your shelves are full of ${m.name}.` : r.reason === 'locked' ? 'You may not gather here yet.' : r.reason === 'reserve' ? 'Careful hands leave the rest to regrow. A thorough harvest would strip it — and it would regrow slowly.' : `Picked clean. It regrows in ${formatWait(r.nextIn || 60000)}.`;
       toast('Nothing to gather', why, 'satchel');
       return;
     }
@@ -232,6 +233,14 @@ export class WildsView {
     }
   }
 
+  /** How a deposit is doing, in words. @param {any} s status @param {number} can @param {any} plan */
+  when(s, can, plan) {
+    if (s.fraction >= 0.999) return 'fully grown';
+    const growing = `regrowing${s.scarred ? ' slowly' : ''} · full in ${formatWait(s.fullIn)}`;
+    if (can >= 5) return growing;
+    return s.stock > plan.reserve ? `left to regrow · ${growing}` : `resting · full in ${formatWait(s.fullIn)}`;
+  }
+
   tick() {
     const lab = this.lab, st = lab.state;
     if (lab.sandbox || !this.rows) return;
@@ -240,10 +249,11 @@ export class WildsView {
       const row = this.rows[d.id];
       if (!row) continue;
       const s = depositStatus(st.gathering, d, now);
+      const plan = gatherPlan(st, d, st.lookup(d.materialId), { thorough: this.thorough });
+      const can = harvestable(st.gathering, d, plan, now);
       row.barI.style.width = Math.round(s.fraction * 100) + '%';
-      const when = s.fraction >= 0.999 ? 'fully grown' : s.available >= Math.min(row.take, d.capacity) ? `regrowing${s.scarred ? ' slowly' : ''} · full in ${formatWait(s.fullIn)}` : `resting · ready in ${formatWait(s.nextIn)}`;
-      row.meta.textContent = `${Math.floor(s.stock)} / ${d.capacity} ml · ${when}`;
-      row.g.disabled = row.locked || s.available < 5;
+      row.meta.textContent = `${Math.floor(s.stock)} / ${d.capacity} ml · ${this.when(s, can, plan)}`;
+      row.g.disabled = row.locked || can < 5;
     }
   }
 }

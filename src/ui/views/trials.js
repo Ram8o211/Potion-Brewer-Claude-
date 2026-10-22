@@ -154,8 +154,11 @@ export class TrialsView {
     const dose = Math.min(lab.trialDose, avail);
     for (const [id, c] of Object.entries(this.cards)) {
       const s = st.trials.subjects[id];
-      c.hp.style.width = Math.round(s.health) + '%';
-      c.hp.style.background = s.health > 60 ? '#7dc24a' : s.health > 25 ? '#f0b84a' : '#e0402c';
+      // a rabbit's health shows only as a coarse band (rabbits are described, not measured)
+      const band = id === 'rabbit' ? rabbitSnap(s, st.day).hp : -1;
+      const hp = band >= 0 ? [100, 60, 30, 8][band] : s.health;
+      c.hp.style.width = Math.round(s.alive ? hp : 0) + '%';
+      c.hp.style.background = hp > 60 ? '#7dc24a' : hp > 25 ? '#f0b84a' : '#e0402c';
       c.card.classList.toggle('spent', !s.alive);
       c.btnTest.disabled = !s.alive || dose < SIM.ML_PER_PARTICLE;
       const lbl = c.btnTest.querySelector('.lbl');
@@ -214,7 +217,11 @@ export class TrialsView {
   test(id) {
     const lab = this.lab, st = lab.state;
     const s = st.trials.subjects[id];
-    if (!s || !s.alive) return;
+    if (!s || !s.alive) {
+      toast(id === 'rabbit' ? 'Choose a living rabbit' : 'This subject is spent', id === 'rabbit' ? 'The chosen rabbit is dead: pick another in the hutch, or buy one.' : 'Replace it for a fresh trial.', id === 'rabbit' ? 'rabbit' : 'close');
+      this.refresh();
+      return;
+    }
     const want = lab.trialDose;
     let dose, ml, ctx;
     try {
@@ -316,6 +323,8 @@ export class TrialsView {
       const id = target(e.clientX, e.clientY);
       if (id && id.startsWith('rabbit:')) {
         // dropped on a rabbit in the roster: choose it, then dose it
+        const r = findRabbit(this.lab.state.colony, id.slice(7));
+        if (r && !r.alive) { this.select(r.id); toast(`${r.name} is dead`, 'Choose a living rabbit to dose.', 'skull'); return; }
         this.lab.state.selectRabbit(id.slice(7));
         this.test('rabbit');
       } else if (id) this.test(id);

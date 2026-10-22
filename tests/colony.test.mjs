@@ -7,7 +7,7 @@ import { NE, EFFECT_INDEX, EFFECT_KEYS } from '../src/alchemy/effects.js';
 import {
   createColony, normalizeColony, rabbitResponse, colonyDay, rabbitSnap, encodeSnap, decodeSnap, defaultSnap, stageOf, rabbitCondition,
   RABBIT_MARKS, MARK_INDEX, MARK_DECAY, TRAIT_AT, TRAIT_EXCLUSIVE, livingRabbits, findRabbit, makeRabbit, rollLook, addBoughtRabbit, retireRabbit,
-  installRabbitAlias, related,
+  installRabbitAlias, related, trimMemorial, pickName, NAMES, MEMORIAL_LIMIT,
 } from '../src/game/colony.js';
 import { createTrials } from '../src/game/experiments.js';
 import { Rng } from '../src/core/rng.js';
@@ -206,4 +206,20 @@ test('the condition of a rabbit is words, never numbers', () => {
   const words = rabbitCondition(dead, 8);
   assert.ok(words[0].startsWith('dead'));
   assert.ok(words.slice(1).every((w) => !/\d/.test(w)));
+});
+
+test('the memorial forgets old graves, never processed bodies, and their names stay taken', () => {
+  /** @type {any[]} */
+  const list = [];
+  for (let k = 0; k < MEMORIAL_LIMIT + 10; k++) list.push({ id: 'b' + k, name: 'B' + k, how: k % 5 === 0 ? 'processed' : 'buried' });
+  const kept = trimMemorial(list);
+  const processed = list.filter((m) => m.how === 'processed');
+  assert.ok(processed.every((m) => kept.includes(m)), 'remains must stay resolvable');
+  assert.equal(kept.filter((m) => m.how === 'buried').length, MEMORIAL_LIMIT);
+  // a processed rabbit's name is not given to a newcomer
+  const c = createColony('names');
+  c.memorial = /** @type {any[]} */ (NAMES.slice(0, NAMES.length - 1).map((name, i) => ({ id: 'm' + i, name, how: 'processed' })));
+  const rng = new Rng(7);
+  const n = pickName(c, rng);
+  assert.ok(!c.memorial.some((m) => m.name === n) && !c.rabbits.some((r) => r.name === n));
 });

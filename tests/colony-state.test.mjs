@@ -8,7 +8,7 @@ import { GameState, SAVE_VERSION, migrate } from '../src/game/state.js';
 import { capabilities } from '../src/game/equipment.js';
 import { normalizeTrials } from '../src/game/experiments.js';
 import { NE, EFFECT_INDEX, theoryOf } from '../src/alchemy/effects.js';
-import { decodeSnap, rabbitSnap, findRabbit, livingRabbits, encodeSnap } from '../src/game/colony.js';
+import { decodeSnap, rabbitSnap, findRabbit, livingRabbits, encodeSnap, stageOf } from '../src/game/colony.js';
 import { remainsId } from '../src/materials/remains.js';
 import { Simulation } from '../src/simulation/world.js';
 import { solidLook, chunkSize, LOOK } from '../src/materials/shapes.js';
@@ -196,4 +196,15 @@ test('an old version-3 save becomes a colony: the rabbit, its trials, sales and 
   assert.equal(findRabbit(blob.colony, 'r1').health, 50);
   assert.equal(migrate({ ...raw }).version, SAVE_VERSION);
   void encodeSnap;
+});
+
+test('founders of a colony made from a late save are young adults, not elders', () => {
+  const raw = JSON.parse(fs.readFileSync(new URL('./fixtures/save-v3.json', import.meta.url), 'utf8'));
+  raw.day = 60;
+  const st = GameState.fromJSON(raw);
+  assert.deepEqual(livingRabbits(st.colony).map((r) => stageOf(r, st.day)), ['adult', 'adult']);
+  const born = livingRabbits(st.colony).map((r) => r.born);
+  // and their birthdays stay put once saved
+  const again = GameState.fromJSON(JSON.parse(JSON.stringify(st.toJSON())));
+  assert.deepEqual(livingRabbits(again.colony).map((r) => r.born), born);
 });

@@ -248,7 +248,25 @@ export function gatherPlan(st, d, m, opts = {}) {
   if (opts.thorough) factors.push({ why: 'thorough: the deposit will regrow slowly', f: 2 });
   const f = factors.reduce((a, x) => a * x.f, 1);
   const take = Math.max(5, Math.floor((d.take * f) / 5) * 5);
-  return { method, hasTool, part, weather, hour, open, factors, take, thorough: !!opts.thorough };
+  // how much of what is cut becomes usable (the rest is spoiled by hand, out
+  // of hours or by the weather); the satchel and a thorough harvest change how
+  // much is taken per trip, not how well
+  const eff = factors.filter((x) => x.why !== 'satchel' && !x.why.startsWith('thorough')).reduce((a, x) => a * x.f, 1);
+  // careful hands leave part of every deposit to regrow
+  const reserve = opts.thorough ? 0 : Math.round(d.capacity * CAREFUL_RESERVE);
+  return { method, hasTool, part, weather, hour, open, factors, take, eff, reserve, thorough: !!opts.thorough };
+}
+
+/** The share of a deposit a careful harvest leaves standing. */
+export const CAREFUL_RESERVE = 0.3;
+
+/**
+ * How much one harvest can bring right now (ignoring shelf space).
+ * @param {ReturnType<typeof createGathering>} g @param {Deposit} d @param {{take:number, eff:number, reserve:number}} plan @param {number} [now]
+ */
+export function harvestable(g, d, plan, now = Date.now()) {
+  const s = depositStatus(g, d, now);
+  return Math.floor(Math.min(plan.take, Math.max(0, s.stock - plan.reserve) * plan.eff) / 5) * 5;
 }
 
 /**
@@ -269,7 +287,10 @@ export function weatherRegrowth(g, deposits, weather, lookup) {
  * deposit's stock; returns what was gathered (0 if nothing could be).
  * @param {{rank:number, inventory:Record<string,number>, cap:{storage:number}, gathering:any}} st
  * @param {Deposit} d
- * @param {{now?:number, unlimited?:boolean, thorough?:boolean}} [opts]
+ * Each harvest draws on the deposit by what it really takes from the plant:
+ * `eff` is the usable share (the rest is spoiled), and a careful harvest
+ * never cuts into the `reserve` it leaves to regrow.
+ * @param {{now?:number, unlimited?:boolean, thorough?:boolean, eff?:number, reserve?:number}} [opts]
  */
 export function harvest(st, d, opts = {}) {
   const now = opts.now ?? Date.now();
@@ -279,14 +300,16 @@ export function harvest(st, d, opts = {}) {
   const have = st.inventory[d.materialId] ?? 0;
   const room = isFinite(have) ? Math.max(0, st.cap.storage - have) : 0;
   if (opts.unlimited) return { ok: true, amount: d.take, remaining: d.capacity };
-  const amount = Math.floor(Math.min(d.take, s.available, room) / 5) * 5;
-  if (amount <= 0) return { ok: false, amount: 0, reason: room <= 0 ? 'full' : 'depleted', nextIn: s.nextIn };
+  const eff = opts.eff > 0 ? opts.eff : 1, reserve = Math.max(0, opts.reserve || 0);
+  const amount = Math.floor(Math.min(d.take, Math.max(0, s.stock - reserve) * eff, room) / 5) * 5;
+  if (amount <= 0) return { ok: false, amount: 0, reason: room <= 0 ? 'full' : reserve > 0 && Math.min(d.take, s.stock * eff) >= 5 ? 'reserve' : 'depleted', nextIn: s.nextIn };
+  const drawn = Math.min(s.stock, amount / eff);
   // a scar stays until the deposit has grown back in full
-  const scar = opts.thorough || (s.scarred && s.stock - amount < d.capacity);
-  g.nodes[d.id] = { stock: s.stock - amount, at: now, ...(scar ? { scar: true } : {}) };
+  const scar = opts.thorough || (s.scarred && s.stock - drawn < d.capacity);
+  g.nodes[d.id] = { stock: s.stock - drawn, at: now, ...(scar ? { scar: true } : {}) };
   st.inventory[d.materialId] = have + amount;
   g.total += amount;
-  return { ok: true, amount, remaining: Math.floor(s.stock - amount) };
+  return { ok: true, amount, remaining: Math.floor(s.stock - drawn) };
 }
 
 /**

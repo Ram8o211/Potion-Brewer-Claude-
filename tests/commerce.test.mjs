@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { GameState } from '../src/game/state.js';
 import { EFFECT_INDEX, NE } from '../src/alchemy/effects.js';
-import { draftLabel, labelTrust, unprovenWanted, openNegotiation, proposePrice, acceptOffer, recordSale, resolveFollowUp, relevantEffects } from '../src/game/commerce.js';
+import { draftLabel, labelTrust, unprovenWanted, openNegotiation, proposePrice, acceptOffer, recordSale, resolveFollowUp, relevantEffects, editClaim, applyTrials } from '../src/game/commerce.js';
 import { purityRequirement } from '../src/game/commissions.js';
 
 /** A measurement with the given effects (everything else a plain potion). */
@@ -37,7 +37,7 @@ test('a label never discloses untested truth: unknown without theory, estimates 
   assert.equal(est.claims.vitality.source, 'estimate');
   assert.ok(est.claims.vitality.spread > 0, 'estimates carry their uncertainty');
   const tested = draftLabel({ cert: { vitality: 12.34, fire: 0.4 }, certRecords: { vitality: 't1', fire: 't1' } }, theory, 3);
-  assert.deepEqual(tested.claims.vitality, { kind: 'value', value: 12.3, source: 'trial', record: 't1' });
+  assert.deepEqual(tested.claims.vitality, { kind: 'value', value: 12.3, source: 'trial', record: 't1', measured: 12.3 });
   assert.equal(tested.claims.fire.kind, 'none');
   assert.equal(tested.claims.fire.source, 'trial');
 });
@@ -145,4 +145,84 @@ test('sales and follow-ups persist; the counter settles them by day', () => {
     assert.equal(loaded.dueFollowUps().length, 0);
     assert.ok(loaded.sales[0].outcome, 'the ledger records how it ended');
   }
+});
+
+test('editing a claim: a player value keeps the reading, and stepping back to it is a tested claim again', () => {
+  const label = draftLabel({ cert: { vitality: 12.34 }, certRecords: { vitality: 't1' } }, new Array(NE).fill(0), 1);
+  const t = label.claims.vitality;
+  const up = editClaim(t, 'vitality', 'up');
+  assert.equal(up.source, 'player');
+  assert.equal(up.value, 13.3);
+  assert.equal(up.measured, 12.3, 'the reading is not forgotten');
+  assert.deepEqual(editClaim(up, 'vitality', 'down'), t, 'back where it was measured: tested again');
+  assert.deepEqual(editClaim(editClaim(t, 'vitality', 'unknown'), 'vitality', 'tested'), t, 'the ✓ restores the reading');
+  // a new trial does not overwrite what the player wrote, but the label learns the reading
+  applyTrials(label, { vitality: 12.34 }, 't1');
+  label.claims.vitality = up;
+  applyTrials(label, { vitality: 9 }, 't2');
+  assert.equal(label.claims.vitality.value, 13.3);
+  assert.equal(label.claims.vitality.measured, 9);
+  assert.equal(label.claims.vitality.record, 't2');
+  // a player claim that agrees with the reading becomes the tested claim
+  label.claims.vitality = { kind: 'value', value: 9, source: 'player' };
+  applyTrials(label, { vitality: 9 }, 't3');
+  assert.equal(label.claims.vitality.source, 'trial');
+});
+
+test('a harmful potion is never praised, and evidence lists each trial once', () => {
+  const st = GameState.create('commerce-4', { tutorial: false });
+  const com = order({ haggle: 0.2, patience: 3, honesty: 1, proof: 0.3 });
+  // a label that admits "unknown" for everything but the healing
+  const label = draftLabel({ cert: { vitality: 14, love: 0 }, certRecords: { vitality: 't7', love: 't7' } }, null, 1);
+  const { follow, sale, ev } = recordSale(st, com, { id: 'h', ml: 100 }, label, 50, meas({ vitality: 14, toxicity: 3.5 }));
+  assert.ok(ev.quality < 0.85 || follow.kind === 'complaint');
+  assert.notEqual(follow.kind, 'praise', 'poison is not praised, whatever the label said');
+  assert.deepEqual(sale.evidence, ['t7'], 'one trial backs two claims: one piece of evidence');
+});
+
+test('the verdict waits for the customer: quality, stars and perfection are counted when they report back', () => {
+  const st = GameState.create('commerce-5', { tutorial: false });
+  st.current = /** @type {any} */ (order(easy));
+  const label = draftLabel({ cert: { vitality: 14 }, certRecords: { vitality: 't' } }, new Array(NE).fill(0), st.day);
+  const best0 = st.stats.bestQuality, perfect0 = st.stats.perfect;
+  const { follow, sale } = st.completeDeal({ id: 'p', ml: 100, batchId: 'b', rev: 0 }, label, 40, meas({ vitality: 14 }), 30);
+  assert.equal(st.history[0].quality, null, 'not known at the counter');
+  assert.equal(st.history[0].stars, null);
+  assert.equal(st.stats.bestQuality, best0);
+  assert.equal(st.stats.perfect, perfect0);
+  st.current = null;
+  st.endDay();
+  const due = st.dueFollowUps().find((f) => f.id === follow.id);
+  st.settleFollowUp(follow.id, due && due.kind === 'praise' ? 'thank' : 'dismiss');
+  assert.equal(st.history[0].quality, sale.quality, 'the verdict is in');
+  assert.ok(st.stats.bestQuality >= sale.quality);
+  if (sale.perfect) assert.equal(st.stats.perfect, perfect0 + 1);
+});
+
+test('a refund is paid in full or not at all; a lost dispute costs more name when the shop is broke', () => {
+  const st = GameState.create('commerce-6', { tutorial: false });
+  st.current = /** @type {any} */ (order(easy));
+  const label = draftLabel({ cert: { vitality: 14 }, certRecords: { vitality: 't' } }, new Array(NE).fill(0), st.day);
+  // the label lied: a fair complaint for most of the price
+  const { follow } = st.completeDeal({ id: 'q', ml: 100, batchId: 'b', rev: 0 }, label, 50, meas({ vitality: 3 }), 30);
+  assert.equal(follow.kind, 'complaint');
+  assert.ok(follow.legit);
+  st.coins = follow.demand - 1;
+  const coins0 = st.coins;
+  const r = st.settleFollowUp(follow.id, 'refund');
+  assert.ok(r && r.refused, 'refused');
+  assert.equal(st.coins, coins0, 'no coins taken');
+  assert.equal(st.followUps.find((f) => f.id === follow.id).resolved, false, 'the customer is still waiting');
+  // disputing a fair complaint while broke: pay what there is, lose more name
+  const rich = resolveFollowUp({ ...st, coins: 1000 }, follow, 'dispute');
+  const broke = resolveFollowUp({ ...st, coins: 0 }, follow, 'dispute');
+  assert.equal(rich.coins, -follow.demand);
+  assert.equal(broke.coins, 0);
+  assert.ok(broke.rep < rich.rep, 'the unpaid share costs reputation');
+  // reputation can go below zero, to a floor
+  st.reputation = 0;
+  st.adjustReputation(-20);
+  assert.equal(st.reputation, -20);
+  st.adjustReputation(-500);
+  assert.equal(st.reputation, -100);
 });
