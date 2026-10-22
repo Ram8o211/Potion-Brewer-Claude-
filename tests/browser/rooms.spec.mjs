@@ -11,11 +11,29 @@ test('gathering in the wilds fills the stores and depletes the deposit', async (
   await expect(page.locator('.view-wilds canvas.scene')).toBeVisible();
   const dep = await lab(page, (l) => l.state.deposits.find((d) => d.region === 'forest' && d.rank === 0));
   const before = await lab(page, (l, id) => l.state.stock(id), dep.materialId);
+  // the button names the method and the yield (which depends on tool, hour and weather)
+  const label = await page.locator(`[data-act="gather-${dep.id}"]`).innerText();
+  const promised = Number(/\+(\d+) ml/.exec(label)?.[1]);
+  expect(promised).toBeGreaterThan(0);
   await page.click(`[data-act="gather-${dep.id}"]`);
   const after = await lab(page, (l, id) => l.state.stock(id), dep.materialId);
-  expect(after, 'gathered into the inventory').toBe(before + dep.take);
+  expect(after, 'gathered what the button promised').toBe(before + promised);
   const node = await lab(page, (l, id) => l.state.gathering.nodes[id], dep.id);
-  expect(node.stock).toBeCloseTo(dep.capacity - dep.take, 0);
+  // what spoils by hand, out of hours or in the weather is cut all the same
+  const drawn = dep.capacity - node.stock;
+  expect(drawn, 'the deposit gave at least what was gathered').toBeGreaterThanOrEqual(promised - 0.5);
+  expect(drawn, 'and no more than a quarter of a careful harvest spoils').toBeLessThanOrEqual(dep.capacity * 0.7 + 0.5);
+  // buying the right tool raises the yield
+  const tool = await lab(page, (l, id) => { const m = l.state.lookup(id); return m.wild.gather; }, dep.materialId);
+  if (tool === 'dig') {
+    await lab(page, (l) => { l.state.coins += 50; l.state.buyEquipment('trowel'); l.views.wilds.refresh(); });
+    const label2 = await page.locator(`[data-act="gather-${dep.id}"]`).innerText();
+    expect(Number(/\+(\d+) ml/.exec(label2)?.[1])).toBe(promised * 2);
+  }
+  // careful or thorough
+  await page.click('[data-act=harvest-thorough]');
+  await expect(page.locator('[data-act=harvest-thorough]')).toHaveClass(/active/);
+  await page.click('[data-act=harvest-careful]');
   // tapping a deposit in the scene gathers too
   await page.locator('.view-wilds canvas.scene').scrollIntoViewIfNeeded();
   const cv = await page.locator('.view-wilds canvas.scene').boundingBox();

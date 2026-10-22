@@ -2,12 +2,28 @@
 
 import { deltaE } from '../core/color.js';
 import { viscosityClass } from './measure.js';
-import { EFFECTS, EFFECT_INDEX } from '../alchemy/effects.js';
+import { EFFECTS, EFFECT_INDEX, EFFECT_KEYS, NE } from '../alchemy/effects.js';
 
 export const PROPERTY_LABELS = {
   color: 'Colour', density: 'Density', viscosity: 'Viscosity', temperature: 'Temperature', stability: 'Stability', volatility: 'Volatility',
-  charge: 'Charge', quantity: 'Quantity', ...Object.fromEntries(EFFECTS.map((e) => [e.key, e.label])),
+  charge: 'Charge', quantity: 'Quantity', purity: 'Purity', ...Object.fromEntries(EFFECTS.map((e) => [e.key, e.label])),
 };
+
+/**
+ * The strongest effect a potion carries that the customer did not ask for
+ * (alkaline counts as much as acid).
+ * @param {ArrayLike<number>} effects @param {string[]} [exclude]
+ */
+export function strongestUnwanted(effects, exclude = []) {
+  let m = 0, key = '';
+  if (!effects) return { value: 0, key };
+  for (let k = 0; k < NE; k++) {
+    if (exclude.includes(EFFECT_KEYS[k])) continue;
+    const v = Math.abs(effects[k] || 0);
+    if (v > m) { m = v; key = EFFECT_KEYS[k]; }
+  }
+  return { value: m, key };
+}
 
 /** @param {string} key */
 export function isEffectKey(key) {
@@ -49,6 +65,9 @@ export function scoreRequirement(req, m) {
       value = m.charge || 0;
       d = Math.abs(value - /** @type {number} */ (req.target));
       break;
+    case 'purity':
+      value = strongestUnwanted(m.effects, req.exclude || []).value;
+      break;
     default: {
       const k = EFFECT_INDEX[req.key];
       value = k !== undefined && m.effects ? m.effects[k] : 0;
@@ -83,6 +102,8 @@ export function describeValue(key, value, m) {
       return `${Math.round(value)}°C`;
     case 'charge':
       return `${value >= 0 ? '+' : ''}${value.toFixed(2)}`;
+    case 'purity':
+      return value < 0.05 ? 'pure' : `${value.toFixed(1)}% other magic`;
     default:
       return `${Math.round(value)}`;
   }

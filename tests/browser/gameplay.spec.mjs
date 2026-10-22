@@ -26,7 +26,7 @@ test('first commission: brew, test on a subject, bottle and serve', async ({ pag
   const spread = await lab(page, (l) => {
     const p = l.sim.p, sp = l.sim.species, s = sp.slotOf.get(l.state.world.roles.essenceA);
     let mn = 1, mx = 0;
-    for (let i = 0; i < p.count; i++) { const f = p.comp[i * 16 + s]; mn = Math.min(mn, f); mx = Math.max(mx, f); }
+    for (let i = 0; i < p.count; i++) { const f = p.comp[i * p.S + s]; mn = Math.min(mn, f); mx = Math.max(mx, f); }
     return mx - mn;
   });
   expect(spread, 'stirring evens out the essence').toBeLessThan(0.35);
@@ -57,24 +57,38 @@ test('first commission: brew, test on a subject, bottle and serve', async ({ pag
   // back at the cauldron the healing requirement is verified
   await page.click('[data-act=tab-brew]');
   await expect(page.locator('.req-chip.fx').first()).toContainText('✓', { timeout: 5000 });
-  // bottle: the sealed vial goes to the counter
+  // bottle the ordered quantity: the sealed vial goes to the counter
   await page.click('[data-act=bottle]');
+  const orderMl = await lab(page, (l) => l.state.current.bottleMl);
+  await page.click(`[data-act=bottle-${orderMl}]`);
   await expect(page.locator('[data-act=serve]')).toBeVisible({ timeout: 20_000 });
   await expect(page.locator('[data-act=serve]')).toBeEnabled();
   await shot(page, info, 'vial');
+  // offer it: the label is drafted from the trial (vitality tested), then the bargaining
   await page.click('[data-act=serve]');
+  await expect(page.locator('.label-rows')).toBeVisible();
+  await expect(page.locator('.label-row.relevant .src.trial').first()).toBeVisible();
+  await shot(page, info, 'label');
+  await page.click('[data-act=label-seal]');
+  await expect(page.locator('.haggle-log')).toBeVisible();
+  await shot(page, info, 'bargain');
+  await page.click('[data-act=accept-offer]');
+  await page.click('[data-act=haggle-done]');
   await expect(page.locator('[data-act=result-continue]')).toBeVisible({ timeout: 10_000 });
   await shot(page, info, 'tutorial-result');
   await page.fill('.overlay input[aria-label="Recipe name"]', 'Mabry\'s tonic');
   await page.click('[data-act=save-recipe]');
   await page.click('[data-act=result-continue]');
   await page.waitForTimeout(800);
-  const result = await lab(page, (l) => ({ coins: l.state.coins, rep: l.state.reputation, served: l.state.stats.served, last: l.state.history[0], vial: l.state.vial }));
+  const result = await lab(page, (l) => ({ coins: l.state.coins, rep: l.state.reputation, served: l.state.stats.served, last: l.state.history[0], sale: l.state.sales[0], vial: l.state.vial }));
   expect(result.served).toBe(1);
   expect(result.vial).toBeNull();
-  expect(result.last.stars).toBeGreaterThanOrEqual(3);
+  // how good it really was is known once the customer reports back
+  expect(result.last.stars).toBeNull();
+  expect(result.sale.stars).toBeGreaterThanOrEqual(3);
   expect(result.coins).toBeGreaterThan(before.coins);
   expect(result.rep).toBeGreaterThan(before.rep);
+  expect(await lab(page, (l) => l.state.followUps.length), 'the customer will report back tomorrow').toBe(1);
   // the next customer arrives
   await page.waitForFunction(() => { const s = window.__alchemist.screen.state; return !!s.current && !s.current.tutorial; }, null, { timeout: 10_000 });
   // the saved recipe is in the book, marked tested, and can be prepared again (charging stock)
@@ -96,35 +110,58 @@ test('first commission: brew, test on a subject, bottle and serve', async ({ pag
   expect(errors).toEqual([]);
 });
 
-test('an effect potion cannot be served until its effects are verified; testing the vial certifies it', async ({ page }, info) => {
+test('a customer who insists on proof will not buy until the vial is tested; testing fills in the label', async ({ page }, info) => {
   const errors = watchErrors(page);
   await newGame(page, { tutorial: false, seed: 'untested-serve-1' });
-  // make the current order a simple healing order, as the generator would
+  // a simple healing order from a customer who wants trial evidence
   await lab(page, (l) => {
-    const st = l.state, R = st.world.roles;
-    st.current = { ...st.current, requirements: [{ key: 'vitality', kind: 'min', target: 3, tol: 0, zero: 8, label: 'at least 3', effect: true }], effectOrder: true, bottleMl: 50, bottleN: 10 };
+    const st = l.state;
+    st.current = { ...st.current, requirements: [{ key: 'vitality', kind: 'min', target: 3, tol: 0, zero: 8, label: 'at least 3', effect: true }], effectOrder: true, bottleMl: 50, bottleN: 10,
+      customer: { ...st.current.customer, persona: { haggle: 0.4, patience: 3, honesty: 1, proof: 0.95 } } };
     l.refreshCustomer();
     l.views.counter.refresh();
-    void R;
   });
   await pourDose(page, await lab(page, (l) => l.state.world.roles.essenceA), [100]);
   await page.click('[data-act=bottle]');
+  await page.click('[data-act=bottle-50]');
   await expect(page.locator('[data-act=serve]')).toBeVisible({ timeout: 20_000 });
-  await expect(page.locator('[data-act=serve]'), 'unknown effects: the customer will not drink it').toBeDisabled();
-  await expect(page.locator('.vial-card')).toContainText('Not yet verified');
+  await expect(page.locator('.vial-card')).toContainText('Not yet tested');
+  await expect(page.locator('.vial-card')).toContainText('insists on proof');
+  // label it on theory alone: the guild's estimate, never a hidden truth
+  await page.click('[data-act=label]');
+  await expect(page.locator('.label-row.relevant .src.est').first()).toBeVisible();
+  expect(await page.locator('.label-row .src.trial').count(), 'nothing is marked tested before a trial').toBe(0);
+  await page.click('[data-act=label-seal]');
+  await page.click('[data-act=serve]');
+  await expect(page.locator('.toast').last()).toContainText('wants proof');
+  await expect(page.locator('.haggle-log')).toHaveCount(0);
   // test a dose of the sealed vial itself
   await page.click('[data-act=test-vial]');
   await expect(page.locator('[data-act=src-vial]')).toHaveClass(/active/);
   const ml0 = await lab(page, (l) => l.state.vial.ml);
   await page.click('[data-act=test-rabbit]');
   expect(await lab(page, (l) => l.state.vial.ml), 'the dose came out of the vial').toBe(ml0 - 10);
+  expect(await lab(page, (l) => l.state.vial.label.claims.vitality.source), 'the reading fills in the label').toBe('trial');
   await page.click('[data-act=tab-counter]');
-  await expect(page.locator('[data-act=serve]')).toBeEnabled();
   await shot(page, info, 'vial-certified');
   await page.click('[data-act=serve]');
+  await expect(page.locator('.haggle-log')).toBeVisible();
+  // bargain one round, then take their improved offer
+  await page.click('[data-act=ask-up]');
+  await page.click('[data-act=ask-price]');
+  await expect(page.locator('.haggle-log .line.you')).toHaveCount(1);
+  if (await page.locator('[data-act=accept-offer]').isEnabled()) await page.click('[data-act=accept-offer]');
+  await page.click('[data-act=haggle-done]');
   await expect(page.locator('[data-act=result-continue]')).toBeVisible({ timeout: 10_000 });
   await page.click('[data-act=result-continue]');
   expect(await lab(page, (l) => l.state.stats.served)).toBe(1);
+  // the next day the customer comes back with their verdict
+  const fu = await lab(page, (l) => { const st = l.state; st.current = null; st.customerIndex = st.customersPerDay; st.endDay(); l.views.counter.refresh(); return st.dueFollowUps().map((f) => f.kind); });
+  if (fu.length) {
+    await page.click('[data-act=tab-counter]');
+    await expect(page.locator('.followup')).toBeVisible();
+    await shot(page, info, 'follow-up');
+  }
   expect(errors).toEqual([]);
 });
 
@@ -192,7 +229,7 @@ test('drag a jar from the shelf onto the cauldron to pour; grind a root in the m
   await expect(page.locator('[data-act=ground]')).toHaveClass(/active/);
   await page.click('[data-act=dose-25]');
   await page.waitForFunction(() => !window.__alchemist.screen.sim.emitter.pouring);
-  const grains = await lab(page, (l) => { const sp = l.sim.species, s = sp.slotOf.get('wild-ironroot'); let g = 0, solid = 0; for (let i = 0; i < l.sim.p.count; i++) if (l.sim.p.comp[i * 16 + s] > 0.5) { if (l.sim.p.phase[i] === 1) g++; if (l.sim.p.phase[i] === 3) solid++; } return { g, solid }; });
+  const grains = await lab(page, (l) => { const sp = l.sim.species, s = sp.slotOf.get('wild-ironroot'); let g = 0, solid = 0; for (let i = 0; i < l.sim.p.count; i++) if (l.sim.p.comp[i * l.sim.p.S + s] > 0.5) { if (l.sim.p.phase[i] === 1) g++; if (l.sim.p.phase[i] === 3) solid++; } return { g, solid }; });
   expect(grains.g, 'ground root arrives as powder').toBe(5);
   expect(grains.solid).toBe(0);
   expect(await lab(page, (l) => l.state.brewLog.some((e) => e.type === 'pour' && e.id === 'wild-ironroot' && e.ground))).toBe(true);

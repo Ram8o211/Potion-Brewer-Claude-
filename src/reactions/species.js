@@ -5,8 +5,10 @@
 import { rgbToOklab, srgbToLinear } from '../core/color.js';
 import { volatilityOf } from '../materials/schema.js';
 import { NE, effectVector } from '../alchemy/effects.js';
+import { isMagical, awakenedId } from '../alchemy/arcane.js';
+import { solidLook } from '../materials/shapes.js';
 
-export const MAX_SPECIES = 16;
+export const MAX_SPECIES = 24;
 export const NO_BOIL = 1e6;
 
 /** Property arrays indexed by slot. */
@@ -62,6 +64,20 @@ export class SpeciesTable {
     /** slot of ash / smoke products for combustion (-1 none) */
     this.ashSlot = new Int16Array(S).fill(-1);
     this.smokeSlot = new Int16Array(S).fill(-1);
+    /** arcane activation (alchemy/arcane.js): threshold of an unawakened magical slot */
+    this.arcThr = f();
+    /** 1 = magical and not yet awakened (takes part in a particle's threshold) */
+    this.arcMag = new Uint8Array(S);
+    /** 1 = an awakened form */
+    this.isAwake = new Uint8Array(S);
+    /** slot of the awakened form of a magical slot (-1 until first needed) */
+    this.awakeSlot = new Int16Array(S).fill(-1);
+    /** a supplied-whole solid ingredient (roots, stones…), as opposed to a powder */
+    this.isWhole = new Uint8Array(S);
+    /** surface look of the solid (materials/shapes.js LOOK) */
+    this.look = new Uint8Array(S);
+    /** number of magical (awakenable) slots in use */
+    this.magicCount = 0;
   }
 
   /**
@@ -141,6 +157,22 @@ export class SpeciesTable {
     for (let k = 0; k < NE; k++) this.eff[slot * NE + k] = ev[k];
     this.econd[slot] = def.econd ?? 0.05;
     this.echarge[slot] = def.charge ?? 0;
+    const mag = isMagical(def);
+    this.arcMag[slot] = mag ? 1 : 0;
+    this.arcThr[slot] = mag ? def.arcane.thr : 0;
+    this.isAwake[slot] = def.awakened ? 1 : 0;
+    this.awakeSlot[slot] = -1;
+    this.isWhole[slot] = def.form === 'solid' ? 1 : 0;
+    this.look[slot] = solidLook(def);
+    if (mag) this.magicCount++;
+    // a magical slot whose awakened form is already present links to it (and back)
+    if (def.awakened && def.base) {
+      const b = this.slotOf.get(def.base);
+      if (b !== undefined) this.awakeSlot[b] = slot;
+    } else if (mag) {
+      const a = this.slotOf.get(awakenedId(def.id));
+      if (a !== undefined) this.awakeSlot[slot] = a;
+    }
     if (lookup) {
       if (def.ash) {
         const a = lookup(def.ash);
@@ -162,9 +194,14 @@ export class SpeciesTable {
     this.defs[slot] = null;
     this.ashSlot[slot] = -1;
     this.smokeSlot[slot] = -1;
+    if (this.arcMag[slot]) this.magicCount--;
+    this.arcMag[slot] = 0;
+    this.isAwake[slot] = 0;
+    this.awakeSlot[slot] = -1;
     for (let s = 0; s < MAX_SPECIES; s++) {
       if (this.ashSlot[s] === slot) this.ashSlot[s] = -1;
       if (this.smokeSlot[s] === slot) this.smokeSlot[s] = -1;
+      if (this.awakeSlot[s] === slot) this.awakeSlot[s] = -1;
     }
     let c = 0;
     for (let s = 0; s < MAX_SPECIES; s++) if (this.defs[s]) c = s + 1;

@@ -27,6 +27,8 @@ export class RigidBodies {
     this.anyDirty = false;
     this.parent = new Int32Array(sim.capacity);
     this.active = /** @type {number[]} */ ([]);
+    /** current rotation of each body relative to its rest shape (rendering) */
+    this.angle = new Float32Array(MAX_GROUPS);
   }
 
   reset() {
@@ -52,8 +54,9 @@ export class RigidBodies {
     return -1;
   }
 
-  /** Recompute rest offsets of a group from current positions. @param {number[]} idx */
-  setRest(idx) {
+  /** Recompute rest offsets of a group from current positions. @param {number[]} idx @param {number} [g] */
+  setRest(idx, g = -1) {
+    if (g >= 0 && g < MAX_GROUPS) this.angle[g] = 0;
     const p = this.sim.p;
     let cx = 0, cy = 0, m = 0;
     for (const i of idx) {
@@ -64,6 +67,26 @@ export class RigidBodies {
     for (const i of idx) {
       p.restX[i] = p.x[i] - cx;
       p.restY[i] = p.y[i] - cy;
+    }
+  }
+
+  /**
+   * New rest shape for a re-formed body, expressed in its current rotation
+   * frame so the body keeps its orientation (and its surface pattern does
+   * not jump) when pieces break off or fresh ice joins it.
+   * @param {number[]} idx @param {number} g
+   */
+  _keepRest(idx, g) {
+    const p = this.sim.p;
+    const th = this.angle[g] || 0;
+    let cx = 0, cy = 0, m = 0;
+    for (const i of idx) { const w = p.rho[i]; cx += p.x[i] * w; cy += p.y[i] * w; m += w; }
+    cx /= m; cy /= m;
+    const c = Math.cos(th), s = Math.sin(th);
+    for (const i of idx) {
+      const dx = p.x[i] - cx, dy = p.y[i] - cy;
+      p.restX[i] = c * dx + s * dy;
+      p.restY[i] = -s * dx + c * dy;
     }
   }
 
@@ -152,7 +175,7 @@ export class RigidBodies {
       const changed = hasFresh || counts.size !== 1 || bc !== arr.length || this.dirty[best];
       if (changed) {
         for (const i of arr) p.group[i] = best;
-        this.setRest(arr);
+        this._keepRest(arr, best);
       }
     }
     let nextFree = 0;
@@ -160,8 +183,11 @@ export class RigidBodies {
       while (nextFree < MAX_GROUPS && claimed[nextFree]) nextFree++;
       if (nextFree >= MAX_GROUPS) break;
       claimed[nextFree] = 1;
+      // a piece broken off keeps its orientation (and so its surface pattern)
+      const from = p.group[arr[0]];
       for (const i of arr) p.group[i] = nextFree;
-      this.setRest(arr);
+      this.angle[nextFree] = from >= 0 && from < MAX_GROUPS ? this.angle[from] : 0;
+      this._keepRest(arr, nextFree);
     }
     this.dirty.fill(0);
     this.anyDirty = false;
@@ -190,6 +216,7 @@ export class RigidBodies {
         a10 += w * qy * rx[i]; a11 += w * qy * ry[i];
       }
       const th = Math.atan2(a10 - a01, a00 + a11);
+      this.angle[g] = th;
       const c = Math.cos(th), s = Math.sin(th);
       for (let k = s0; k < s1; k++) {
         const i = mem[k];

@@ -6,16 +6,24 @@
 //     thresholded, so pools look continuous and diffusion shows as smooth
 //     colour gradients; each particle also carries a texture value so pastes
 //     look grainy and the texture moves with the material (no screen-space
-//     "swimming" noise);
+//     "swimming" noise); liquid on its way to freezing turns to slush;
 //   • powders are drawn as speckled grain clusters (darker when damp);
-//   • frozen blocks get a compact, crisp body with a frosty rim;
-//   • gases are soft translucent wisps; glowing and burning matter emits light.
+//   • frozen blocks get a compact, crisp icy body with a frosty rim that
+//     clears as they melt;
+//   • whole solid ingredients (roots, stones, crystals…) are drawn as their
+//     own material — fibres, speckles, facets, veins — with cracks where the
+//     pestle has damaged them, so they break down as the simulation does;
+//   • gases are soft translucent wisps;
+//   • magic shines: every particle emits light in the colours of the effects
+//     it actually carries (derived.js), as bright as their concentration, and
+//     the light spills into a soft pixel halo around the brew.
 // Rendering resolution is independent of the physics resolution.
 
 import { PHASE } from '../simulation/constants.js';
+import { LOOK } from '../materials/shapes.js';
 
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
-/** Interleaved liquid accumulator stride. */
+/** Interleaved liquid accumulator stride: weight, r, g, b, opacity, paste, texture, temperature, slush. */
 const LS = 9;
 
 /** Small integer hash → [0,1). */
@@ -24,6 +32,19 @@ function hash01(n) {
   n = Math.imul(n ^ (n >>> 12), 0x297a2d39);
   n ^= n >>> 15;
   return (n >>> 0) / 4294967296;
+}
+
+/** Light emitted by one particle: magic (effect colours), its own glow, flames. */
+const em = [0, 0, 0];
+function emission(p, i, r, g, b) {
+  const a = p.auraI[i];
+  // faint for plain ingredients, radiant once awakened (strongly non-linear)
+  const s = a > 0.002 ? (1 - Math.exp(-Math.pow(a, 1.4) * 6)) * 0.75 : 0;
+  const gl = p.glow[i] * 0.42, bu = p.burn[i];
+  em[0] = p.auraR[i] * s + gl * (0.45 + r * 0.55) + bu;
+  em[1] = p.auraG[i] * s + gl * (0.45 + g * 0.55) + bu * 0.55;
+  em[2] = p.auraB[i] * s + gl * (0.45 + b * 0.55) + bu * 0.18;
+  return em[0] + em[1] + em[2];
 }
 
 export class FluidRenderer {
@@ -36,6 +57,13 @@ export class FluidRenderer {
     this.ctx = null;
     this.image = null;
     this.thermal = false;
+    /** draw the light halo around glowing matter */
+    this.halo = true;
+    this.haloCanvas = null;
+    this.haloCtx = null;
+    this.haloImage = null;
+    this.hw = 0;
+    this.hh = 0;
   }
 
   /** (Re)allocate buffers for a pixel region. */
@@ -44,11 +72,12 @@ export class FluidRenderer {
     if (n > this.cap) {
       this.cap = n;
       // Accumulators are interleaved per pixel (one cache line instead of
-      // nine separate arrays): liquid = weight, r, g, b, opacity, paste
-      // weight, texture, glow, heat; solid and gas = weight, r, g, b.
+      // separate arrays).
       this.liq = new Float32Array(n * LS);
       this.sol = new Float32Array(n * 4);
-      this.gas = new Float32Array(n * 4);
+      this.emit = new Float32Array(n * 4); // emitted light r, g, b and kernel weight
+      this.solBest = new Float32Array(n); // strongest solid particle at a pixel…
+      this.solIdx = new Int32Array(n); // …and its index
       this.wl = new Float32Array(n); // liquid weight, contiguous (blur, neighbours)
       this.wb = new Float32Array(n); // smoothed liquid weight (surface shape)
       this.wt = new Float32Array(n); // blur scratch
@@ -57,14 +86,18 @@ export class FluidRenderer {
     if (w !== this.w || h !== this.h || !this.canvas) {
       this.w = w;
       this.h = h;
-      if (typeof OffscreenCanvas !== 'undefined') this.canvas = new OffscreenCanvas(w, h);
-      else {
-        this.canvas = document.createElement('canvas');
-        this.canvas.width = w;
-        this.canvas.height = h;
-      }
+      this.canvas = makeCanvas(w, h);
       this.ctx = /** @type {any} */ (this.canvas).getContext('2d');
       this.image = this.ctx.createImageData(w, h);
+      const hw = Math.ceil(w / 2), hh = Math.ceil(h / 2);
+      this.hw = hw; this.hh = hh;
+      this.haloCanvas = makeCanvas(hw, hh);
+      this.haloCtx = /** @type {any} */ (this.haloCanvas).getContext('2d');
+      this.haloImage = this.haloCtx.createImageData(hw, hh);
+      this.haloAcc = new Float32Array(hw * hh * 3);
+      this.haloTmp = new Float32Array(hw * hh * 3);
+      this.gas = new Float32Array(hw * hh * 4); // vapour weight + colour at half resolution
+      this.gasTmp = new Float32Array(hw * hh * 4);
     }
   }
 
@@ -73,7 +106,7 @@ export class FluidRenderer {
    * @param {import('../simulation/world.js').Simulation} sim
    * @param {{scale:number, ox:number, oy:number}} view  screen = world*scale + offset
    * @param {number} time seconds (for subtle animation)
-   * @returns {{canvas:any, x:number, y:number}|null}
+   * @returns {{canvas:any, x:number, y:number, halo:any}|null}
    */
   render(sim, view, time) {
     const p = sim.p, n = p.count;
@@ -81,30 +114,32 @@ export class FluidRenderer {
     const s = view.scale;
     // bounding box in screen pixels
     let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
-    let anySolid = false, anyGas = false, anyGrain = false;
+    let anySolid = false, anyGas = false, anyGrain = false, anyLight = false;
     for (let i = 0; i < n; i++) {
       const x = p.x[i] * s + view.ox, y = p.y[i] * s + view.oy;
       if (x < minX) minX = x; if (x > maxX) maxX = x;
       if (y < minY) minY = y; if (y > maxY) maxY = y;
       const ph = p.phase[i];
       if (ph === SOLID) anySolid = true; else if (ph === GAS) anyGas = true; else if (ph === POWDER) anyGrain = true;
+      if (p.auraI[i] > 0.002 || p.glow[i] > 0.02 || p.burn[i] > 0.02) anyLight = true;
     }
-    const pad = Math.ceil(0.16 * s) + 2;
+    const pad = Math.ceil(0.16 * s) + 8;
     const bx = Math.floor(minX) - pad, by = Math.floor(minY) - pad;
     const w = Math.ceil(maxX) + pad - bx, h = Math.ceil(maxY) + pad - by;
     if (w <= 0 || h <= 0 || w * h > 4e6) return null;
     this._alloc(w, h);
     const N = w * h;
-    const { liq, sol, gas, grain } = this;
+    const { liq, sol, gas, grain, emit, solBest, solIdx } = this;
     // only the fields of phases that are present need clearing and reading
     liq.fill(0, 0, N * LS);
-    if (anySolid) sol.fill(0, 0, N * 4);
-    if (anyGas) gas.fill(0, 0, N * 4);
+    if (anySolid) { sol.fill(0, 0, N * 4); solBest.fill(0, 0, N); }
+    if (anyGas) gas.fill(0, 0, this.hw * this.hh * 4);
     if (anyGrain) grain.fill(0, 0, N);
+    if (anyLight) emit.fill(0, 0, N * 4);
 
     const rl = 0.092 * s; // liquid kernel radius (px), ~1.85 particle radii
     const rs = 0.085 * s; // solid
-    const rgas = 0.23 * s; // gas (wide, soft kernel so packed vapour reads as fog)
+    const rgas = 0.13 * s; // gas, in half-resolution pixels (wide, soft kernel so vapour reads as fog)
     const rgrain = Math.max(1.2, 0.05 * s * 1.02);
     const RL = Math.ceil(rl), RS = Math.ceil(rs), RG = Math.ceil(rgas), RGR = Math.ceil(rgrain);
     const colR = sim.colR, colG = sim.colG, colB = sim.colB;
@@ -115,12 +150,15 @@ export class FluidRenderer {
       const fx = p.x[i] * s + view.ox - bx, fy = p.y[i] * s + view.oy - by;
       const r = colR[i], g = colG[i], b = colB[i];
       const seed = p.seed[i];
+      const lit = anyLight && emission(p, i, r, g, b) > 0.004;
+      const eR = em[0], eG = em[1], eB = em[2];
       if (ph === LIQUID || ph === PASTE) {
         const isPaste = ph === PASTE ? 1 : 0;
         const tex = hash01(seed) * 2 - 1;
         const o = Math.max(0.35, p.opacity[i]);
-        const glow = p.glow[i] + p.burn[i];
         const Ti = T[i];
+        // progress toward freezing (latent heat already given up)
+        const slush = p.lat[i] < 0 && p.latF[i] > 0 ? Math.min(1, -p.lat[i] / p.latF[i]) : 0;
         const cy = fy | 0;
         const inv = 1 / (rl * rl), rl2 = rl * rl;
         for (let dy = -RL; dy <= RL; dy++) {
@@ -140,7 +178,8 @@ export class FluidRenderer {
             q *= q;
             const k = (row + xx) * LS;
             liq[k] += q; liq[k + 1] += q * r; liq[k + 2] += q * g; liq[k + 3] += q * b;
-            liq[k + 4] += q * o; liq[k + 5] += q * isPaste; liq[k + 6] += q * tex; liq[k + 7] += q * glow; liq[k + 8] += q * Ti;
+            liq[k + 4] += q * o; liq[k + 5] += q * isPaste; liq[k + 6] += q * tex; liq[k + 7] += q * Ti; liq[k + 8] += q * slush;
+            if (lit) { const e = (row + xx) * 4; emit[e] += q * eR; emit[e + 1] += q * eG; emit[e + 2] += q * eB; emit[e + 3] += q; }
           }
         }
       } else if (ph === POWDER) {
@@ -161,11 +200,8 @@ export class FluidRenderer {
             if (p.burn[i] > 0.1) lum *= 1 + p.burn[i];
             const R8 = clamp255(r * lum * 255), G8 = clamp255(g * lum * 255), B8 = clamp255(b * lum * 255);
             grain[yy * w + xx] = 0xff000000 | (B8 << 16) | (G8 << 8) | R8;
+            if (lit) { const e = (yy * w + xx) * 4; emit[e] += eR; emit[e + 1] += eG; emit[e + 2] += eB; emit[e + 3] += 1; }
           }
-        }
-        if (p.glow[i] > 0.05 || p.burn[i] > 0.05) {
-          const k = Math.min(h - 1, Math.max(0, cy)) * w + Math.min(w - 1, Math.max(0, cx));
-          liq[k * LS + 7] += p.glow[i] + p.burn[i];
         }
       } else if (ph === SOLID) {
         const cx = fx | 0, cy = fy | 0;
@@ -183,33 +219,43 @@ export class FluidRenderer {
             const k = yy * w + xx;
             const k4 = k * 4;
             sol[k4] += q; sol[k4 + 1] += q * r; sol[k4 + 2] += q * g; sol[k4 + 3] += q * b;
-            liq[k * LS + 7] += q * p.glow[i] * 0.5;
+            if (q > solBest[k]) { solBest[k] = q; solIdx[k] = i; }
+            if (lit) { emit[k4] += q * eR; emit[k4 + 1] += q * eG; emit[k4 + 2] += q * eB; emit[k4 + 3] += q; }
           }
         }
       } else if (ph === GAS) {
-        const cy = fy | 0;
+        // vapour is splatted at half resolution with a wide kernel and then
+        // blurred, so it reads as one continuous cloud, not separate puffs
+        const hx = fx * 0.5, hy = fy * 0.5;
+        const cy = hy | 0;
         const inv = 1 / (rgas * rgas), rg2 = rgas * rgas;
+        const hw = this.hw, hh = this.hh, gas = this.gas;
         // gas is pale: blend its colour toward white
         const gr0 = r * 0.5 + 0.5, gg0 = g * 0.5 + 0.5, gb0 = b * 0.5 + 0.5;
         for (let dy = -RG; dy <= RG; dy++) {
           const yy = cy + dy;
-          if (yy < 0 || yy >= h) continue;
-          const ddy = yy + 0.5 - fy;
+          if (yy < 0 || yy >= hh) continue;
+          const ddy = yy + 0.5 - hy;
           const rem = rg2 - ddy * ddy;
           if (rem <= 0) continue;
           const half = Math.sqrt(rem);
-          const x0 = Math.max(0, Math.floor(fx - 0.5 - half)), x1 = Math.min(w - 1, Math.ceil(fx - 0.5 + half));
+          const x0 = Math.max(0, Math.floor(hx - 0.5 - half)), x1 = Math.min(hw - 1, Math.ceil(hx - 0.5 + half));
           for (let xx = x0; xx <= x1; xx++) {
-            const ddx = xx + 0.5 - fx;
+            const ddx = xx + 0.5 - hx;
             let q = 1 - (ddx * ddx + ddy * ddy) * inv;
             if (q <= 0) continue;
             q *= q;
-            const k = (yy * w + xx) * 4;
+            const k = (yy * hw + xx) * 4;
             gas[k] += q; gas[k + 1] += q * gr0; gas[k + 2] += q * gg0; gas[k + 3] += q * gb0;
           }
         }
+        if (lit) {
+          const k = (Math.min(h - 1, Math.max(0, fy | 0)) * w + Math.min(w - 1, Math.max(0, fx | 0))) * 4;
+          emit[k] += eR * 0.35; emit[k + 1] += eG * 0.35; emit[k + 2] += eB * 0.35; emit[k + 3] += 0.35;
+        }
       }
     }
+    if (anyGas) this._blurGas();
 
     // ------------------------------------------------------------ smooth surface
     // The surface is taken from a lightly blurred copy of the liquid field so
@@ -251,6 +297,7 @@ export class FluidRenderer {
     const depthScale = 1 / Math.max(6, 0.9 * s);
     const thermal = this.thermal;
     const shimmer = Math.sin(time * 2.1);
+    const twinkle = time * 3.1;
     for (let y = 0; y < h; y++) {
       const row = y * w;
       for (let x = 0; x < w; x++) {
@@ -261,19 +308,70 @@ export class FluidRenderer {
         if (gp) {
           R = (gp & 255) / 255; G = ((gp >>> 8) & 255) / 255; B = ((gp >>> 16) & 255) / 255; A = 1;
         }
-        // solid blocks
+        // solid bodies: frozen ice or a whole ingredient
         const sw = anySolid ? sol[k * 4] : 0;
         if (sw > 0.45) {
+          const bi = solIdx[k];
+          const up = y > 0 ? sol[(k - w) * 4] : 0, left = x > 0 ? sol[(k - 1) * 4] : 0, down = y < h - 1 ? sol[(k + w) * 4] : 0, right = x < w - 1 ? sol[(k + 1) * 4] : 0;
+          const edgeHi = up < 0.45 || left < 0.45, edgeLo = down < 0.45 || right < 0.45;
           const inv = 1 / sw;
           let r = sol[k * 4 + 1] * inv, g = sol[k * 4 + 2] * inv, b = sol[k * 4 + 3] * inv;
-          // frosty, lighter body with a bright rim and a few facets
-          const up = y > 0 ? sol[(k - w) * 4] : 0, left = x > 0 ? sol[(k - 1) * 4] : 0, down = y < h - 1 ? sol[(k + w) * 4] : 0, right = x < w - 1 ? sol[(k + 1) * 4] : 0;
-          const edge = up < 0.45 || left < 0.45 || down < 0.45 || right < 0.45;
-          let l = 0.78 + 0.22 * Math.min(1, sw / 1.6);
-          r = r * 0.55 + 0.42; g = g * 0.55 + 0.45; b = b * 0.55 + 0.5;
-          if (edge) l = up < 0.45 || left < 0.45 ? 1.18 : 0.72;
-          else if (((x * 7 + y * 13) % 23) === 0) l = 1.12;
-          R = r * l; G = g * l; B = b * l; A = 0.96;
+          let l = 1, a = 0.97;
+          if (p.whole[bi] > 0.5) {
+            // a whole ingredient: its own surface, shaded, with pestle cracks.
+            // The pattern is laid out in the body's own frame (rest shape and
+            // rotation), so it is continuous across the object and tumbles
+            // with it; a loose fragment carries the piece it broke off with.
+            const gi = p.group[bi];
+            const th = gi >= 0 ? sim.rigid.angle[gi] : 0;
+            const ddx = (x + 0.5 - (p.x[bi] * s + view.ox - bx)) / s, ddy = (y + 0.5 - (p.y[bi] * s + view.oy - by)) / s;
+            const ct = Math.cos(th), st = Math.sin(th);
+            const lx = p.restX[bi] + ct * ddx + st * ddy, ly = p.restY[bi] - st * ddx + ct * ddy;
+            const u = Math.floor(lx * s * 0.75), v = Math.floor(ly * s * 0.75);
+            const sd = gi >= 0 ? gi * 7919 + 13 : p.seed[bi];
+            const hv = hash01(sd + (u + 4096) * 37 + (v + 4096) * 1013);
+            switch (p.look[bi]) {
+              case LOOK.FIBRE: { // fibres along the root, the odd knot
+                const band = Math.floor(ly * s * 0.55);
+                l = (band & 1) ? 0.8 + hv * 0.08 : 0.97 + hv * 0.08;
+                if (hash01(sd + Math.floor(lx * s * 0.25) * 53 + band * 7) < 0.05) l = 0.66;
+                break;
+              }
+              case LOOK.LEAF: { // a bright midrib and paired veins
+                const av = Math.abs(ly * s);
+                l = av < 0.7 ? 1.16 : ((Math.floor(Math.abs(lx) * s * 0.5) + Math.floor(av * 0.5)) % 3 === 0 ? 1.06 : 0.9 + hv * 0.06);
+                break;
+              }
+              case LOOK.STONE: l = hv < 0.13 ? 0.7 : hv > 0.93 ? 1.16 : 0.9 + hv * 0.1; break;
+              case LOOK.CRYSTAL: { // long facets down the prism
+                const f = Math.floor((ly * 0.9 - lx * 0.35) * s * 0.4);
+                l = (f % 3 + 3) % 3 === 0 ? 1.14 : (f % 3 + 3) % 3 === 1 ? 0.84 : 0.97;
+                a = 0.9;
+                break;
+              }
+              case LOOK.CAP: l = (ly < 0 && hv < 0.08) ? 1.45 : ly > 0.05 ? 1.08 : 0.94 + hv * 0.06; break;
+              case LOOK.GLOSSY: l = Math.abs(lx * 0.7 + ly * 0.7 + 0.06) * s < 0.6 ? 1.3 : 0.92 + hv * 0.06; break;
+              case LOOK.BONE: l = hv < 0.05 ? 0.8 : Math.abs(ly * s) < 0.6 ? 0.96 : 1.04; break;
+              case LOOK.FUR: l = 0.78 + hash01(sd + (u + 4096) * 37 + Math.floor(ly * s * 0.4 + 4096) * 1013) * 0.42; break;
+              case LOOK.LUMP: l = Math.abs(lx * 0.7 + ly * 0.7 + 0.05) * s < 0.6 ? 1.32 : 0.88 + hv * 0.06; a = 0.94; break;
+              default: l = 0.92 + hv * 0.1;
+            }
+            if (edgeHi) l *= 1.16; else if (edgeLo) l *= 0.64;
+            // cracks open up as the pestle damages it
+            const dmg = sim.dmg[bi] / (0.25 + p.hardness[bi] * 1.5);
+            if (dmg > 0.12 && hash01(p.seed[bi] * 3 + (u + 4096) * 7 + (v + 4096) * 131) < dmg * 0.4) l *= 0.42;
+          } else {
+            // frozen liquid: frosty, lighter body with a bright rim and a few
+            // facets; melting clears the frost back toward the liquid colour
+            const melt = p.lat[bi] > 0 && p.latF[bi] > 0 ? Math.min(1, p.lat[bi] / p.latF[bi]) : 0;
+            const frost = 1 - melt * 0.8;
+            r = r * (1 - 0.45 * frost) + 0.42 * frost; g = g * (1 - 0.45 * frost) + 0.45 * frost; b = b * (1 - 0.45 * frost) + 0.5 * frost;
+            l = 0.78 + 0.22 * Math.min(1, sw / 1.6);
+            if (edgeHi) l = 1.18 - 0.2 * melt; else if (edgeLo) l = 0.72;
+            else if (((x * 7 + y * 13) % 23) === 0) l = 1.12;
+            a = 0.92 - 0.12 * melt;
+          }
+          R = R * (1 - a) + r * l * a; G = G * (1 - a) + g * l * a; B = B * (1 - a) + b * l * a; A = A + (1 - A) * a;
         }
         // liquid / paste
         if (wb[k] > thr) {
@@ -292,7 +390,7 @@ export class FluidRenderer {
           let r = liq[c9 + 1] * inv, g = liq[c9 + 2] * inv, b = liq[c9 + 3] * inv;
           const paste = liq[c9 + 5] * inv;
           const opac = liq[c9 + 4] * inv;
-          let a = Math.min(0.97, Math.max(0.84, opac + 0.1));
+          let a = Math.min(0.96, 0.7 + 0.3 * opac);
           const tex = liq[c9 + 6] * inv;
           const up = y > 0 ? wb[k - w] : 0;
           const down = y < h - 1 ? wb[k + w] : 0;
@@ -318,7 +416,15 @@ export class FluidRenderer {
             // the lower edge against the iron gets a thin shadow line
             if (down <= thr) l *= 0.78;
           }
-          const temp = liq[c9 + 8] * inv;
+          // slush: liquid giving up its latent heat clouds over with ice crystals
+          const slush = liq[c9 + 8] * inv;
+          if (slush > 0.04) {
+            const f = Math.min(0.75, slush * 0.85);
+            r = r * (1 - f) + 0.82 * f; g = g * (1 - f) + 0.9 * f; b = b * (1 - f) + 0.98 * f;
+            if (((x * 5 + y * 3) % 7) === 0 && slush > 0.3) l *= 1.15;
+            a = Math.max(a, 0.9);
+          }
+          const temp = liq[c9 + 7] * inv;
           if (thermal) {
             const tt = Math.max(0, Math.min(1, (temp + 20) / 140));
             r = tt; g = 0.25 + 0.3 * (1 - Math.abs(tt - 0.5) * 2); b = 1 - tt;
@@ -331,21 +437,37 @@ export class FluidRenderer {
           R = R * (1 - a) + r * a; G = G * (1 - a) + g * a; B = B * (1 - a) + b * a;
           A = A + (1 - A) * a;
         }
-        // gas wisps
-        const gw = anyGas ? gas[k * 4] : 0;
-        if (gw > 0.04) {
-          const inv = 1 / gw;
-          const a = 0.7 * (1 - Math.exp(-gw * 0.55)) * (0.9 + 0.1 * shimmer);
-          const r = gas[k * 4 + 1] * inv, g = gas[k * 4 + 2] * inv, b = gas[k * 4 + 3] * inv;
-          R = R * (1 - a) + r * a; G = G * (1 - a) + g * a; B = B * (1 - a) + b * a;
-          A = A + (1 - A) * a;
+        // vapour: the blurred half-resolution cloud, sampled smoothly
+        if (anyGas) {
+          const hw = this.hw, hh = this.hh, gas = this.gas;
+          const gx = Math.max(0, Math.min(hw - 1.001, x * 0.5 - 0.25)), gy = Math.max(0, Math.min(hh - 1.001, y * 0.5 - 0.25));
+          const ix = gx | 0, iy = gy | 0, tx = gx - ix, ty = gy - iy;
+          const k00 = (iy * hw + ix) * 4, k10 = k00 + 4, k01 = k00 + hw * 4, k11 = k01 + 4;
+          const w00 = (1 - tx) * (1 - ty), w10 = tx * (1 - ty), w01 = (1 - tx) * ty, w11 = tx * ty;
+          const gw = gas[k00] * w00 + gas[k10] * w10 + gas[k01] * w01 + gas[k11] * w11;
+          if (gw > 0.03) {
+            const inv = 1 / gw;
+            // slow internal billowing keeps the cloud alive without per-particle blobs
+            const bill = 0.88 + 0.12 * Math.sin(x * 0.21 + y * 0.17 + shimmer * 2 + Math.sin(y * 0.11 - time));
+            const a = Math.min(0.78, 0.82 * (1 - Math.exp(-gw * 0.65))) * bill;
+            const r = (gas[k00 + 1] * w00 + gas[k10 + 1] * w10 + gas[k01 + 1] * w01 + gas[k11 + 1] * w11) * inv;
+            const g = (gas[k00 + 2] * w00 + gas[k10 + 2] * w10 + gas[k01 + 2] * w01 + gas[k11 + 2] * w11) * inv;
+            const b = (gas[k00 + 3] * w00 + gas[k10 + 3] * w10 + gas[k01 + 3] * w01 + gas[k11 + 3] * w11) * inv;
+            R = R * (1 - a) + r * a; G = G * (1 - a) + g * a; B = B * (1 - a) + b * a;
+            A = A + (1 - A) * a;
+          }
         }
-        // emissive glow & fire
-        const gv = liq[k * LS + 7];
-        if (gv > 0.02) {
-          const e = Math.min(0.6, gv * 0.25);
-          R += e; G += e * 0.85; B += e * 0.55;
-          A = Math.max(A, Math.min(0.8, e * 1.2));
+        // emitted light: the colours of the magic (and flames) in the matter here
+        if (anyLight && !thermal) {
+          const e4 = k * 4, ew = emit[e4 + 3];
+          if (ew > 0.02 && A > 0.05) {
+            const inv = 1 / Math.max(ew, 0.6);
+            // a few sparkling pixels where it is strong
+            const sp = ((x * 13 + y * 7) % 31 === 0) ? 1.6 + 0.8 * Math.max(0, Math.sin(twinkle + x * 0.7 + y)) : 1;
+            // screen blend: the matter takes on the light's colour without washing out
+            const er = Math.min(1, emit[e4] * inv * sp * 0.8), eg = Math.min(1, emit[e4 + 1] * inv * sp * 0.8), eb = Math.min(1, emit[e4 + 2] * inv * sp * 0.8);
+            R = 1 - (1 - R) * (1 - er); G = 1 - (1 - G) * (1 - eg); B = 1 - (1 - B) * (1 - eb);
+          }
         }
         const o = k * 4;
         if (A <= 0.003) {
@@ -359,8 +481,108 @@ export class FluidRenderer {
       }
     }
     this.ctx.putImageData(this.image, 0, 0);
-    return { canvas: this.canvas, x: bx, y: by };
+    const halo = anyLight && this.halo && !thermal ? this._halo(w, h) : null;
+    return { canvas: this.canvas, x: bx, y: by, halo };
   }
+
+  /** Separable box blur (radius 2) of the half-resolution vapour field. */
+  _blurGas() {
+    const hw = this.hw, hh = this.hh, a = this.gas, t = this.gasTmp;
+    for (let y = 0; y < hh; y++) {
+      for (let x = 0; x < hw; x++) {
+        let s0 = 0, s1 = 0, s2 = 0, s3 = 0;
+        for (let d = -2; d <= 2; d++) {
+          const xx = x + d;
+          if (xx < 0 || xx >= hw) continue;
+          const k = (y * hw + xx) * 4;
+          s0 += a[k]; s1 += a[k + 1]; s2 += a[k + 2]; s3 += a[k + 3];
+        }
+        const o = (y * hw + x) * 4;
+        t[o] = s0 * 0.2; t[o + 1] = s1 * 0.2; t[o + 2] = s2 * 0.2; t[o + 3] = s3 * 0.2;
+      }
+    }
+    for (let y = 0; y < hh; y++) {
+      for (let x = 0; x < hw; x++) {
+        let s0 = 0, s1 = 0, s2 = 0, s3 = 0;
+        for (let d = -2; d <= 2; d++) {
+          const yy = y + d;
+          if (yy < 0 || yy >= hh) continue;
+          const k = (yy * hw + x) * 4;
+          s0 += t[k]; s1 += t[k + 1]; s2 += t[k + 2]; s3 += t[k + 3];
+        }
+        const o = (y * hw + x) * 4;
+        a[o] = s0 * 0.2; a[o + 1] = s1 * 0.2; a[o + 2] = s2 * 0.2; a[o + 3] = s3 * 0.2;
+      }
+    }
+  }
+
+  /**
+   * Soft light around glowing matter: the emission field at half resolution,
+   * blurred and drawn additively in 2-pixel blocks (it stays pixel art).
+   * @param {number} w @param {number} h
+   */
+  _halo(w, h) {
+    const hw = this.hw, hh = this.hh, acc = this.haloAcc, tmp = this.haloTmp, emit = this.emit;
+    acc.fill(0);
+    for (let y = 0; y < h; y++) {
+      const hy = (y >> 1) * hw;
+      for (let x = 0; x < w; x++) {
+        const e4 = (y * w + x) * 4;
+        if (emit[e4 + 3] <= 0.01) continue;
+        const k = (hy + (x >> 1)) * 3;
+        acc[k] += emit[e4]; acc[k + 1] += emit[e4 + 1]; acc[k + 2] += emit[e4 + 2];
+      }
+    }
+    // two box blurs (separable, radius 2) ≈ a soft falloff
+    for (let pass = 0; pass < 2; pass++) {
+      for (let y = 0; y < hh; y++) {
+        for (let x = 0; x < hw; x++) {
+          let r = 0, g = 0, b = 0;
+          for (let d = -2; d <= 2; d++) {
+            const xx = x + d;
+            if (xx < 0 || xx >= hw) continue;
+            const k = (y * hw + xx) * 3;
+            r += acc[k]; g += acc[k + 1]; b += acc[k + 2];
+          }
+          const o = (y * hw + x) * 3;
+          tmp[o] = r * 0.2; tmp[o + 1] = g * 0.2; tmp[o + 2] = b * 0.2;
+        }
+      }
+      for (let y = 0; y < hh; y++) {
+        for (let x = 0; x < hw; x++) {
+          let r = 0, g = 0, b = 0;
+          for (let d = -2; d <= 2; d++) {
+            const yy = y + d;
+            if (yy < 0 || yy >= hh) continue;
+            const k = (yy * hw + x) * 3;
+            r += tmp[k]; g += tmp[k + 1]; b += tmp[k + 2];
+          }
+          const o = (y * hw + x) * 3;
+          acc[o] = r * 0.2; acc[o + 1] = g * 0.2; acc[o + 2] = b * 0.2;
+        }
+      }
+    }
+    const d = this.haloImage.data;
+    for (let k = 0, o = 0; k < hw * hh; k++, o += 4) {
+      const a = k * 3;
+      // quantised levels keep the light banded like the rest of the pixel art
+      d[o] = clamp255(Math.round(acc[a] * 0.09 * 16) * 16);
+      d[o + 1] = clamp255(Math.round(acc[a + 1] * 0.09 * 16) * 16);
+      d[o + 2] = clamp255(Math.round(acc[a + 2] * 0.09 * 16) * 16);
+      d[o + 3] = 255;
+    }
+    this.haloCtx.putImageData(this.haloImage, 0, 0);
+    return this.haloCanvas;
+  }
+}
+
+/** @param {number} w @param {number} h */
+function makeCanvas(w, h) {
+  if (typeof OffscreenCanvas !== 'undefined') return new OffscreenCanvas(w, h);
+  const c = document.createElement('canvas');
+  c.width = w;
+  c.height = h;
+  return c;
 }
 
 /** @param {number} v */

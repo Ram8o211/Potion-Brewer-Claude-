@@ -16,6 +16,11 @@ export function watchErrors(page) {
 /** @param {import('@playwright/test').Page} page @param {import('@playwright/test').TestInfo} info @param {string} name */
 export async function shot(page, info, name) {
   fs.mkdirSync(SHOT_DIR, { recursive: true });
+  // let opening sheets and pop-ins finish (never wait on looping animations)
+  await page.evaluate(() => Promise.race([
+    Promise.all(document.getAnimations().filter((a) => a.effect && a.effect.getTiming().iterations !== Infinity).map((a) => a.finished.catch(() => {}))),
+    new Promise((r) => setTimeout(r, 1500)),
+  ])).catch(() => {});
   const file = path.join(SHOT_DIR, `${info.project.name}-${name}.png`);
   await page.screenshot({ path: file });
   await info.attach(name, { path: file, contentType: 'image/png' });

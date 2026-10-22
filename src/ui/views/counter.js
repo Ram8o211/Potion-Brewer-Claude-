@@ -1,16 +1,20 @@
-// The shop counter: the customer, their full order (with which effects you
-// have verified), the sealed vial waiting to be served, and the day.
+// The shop counter: yesterday's customers coming back with their verdict,
+// the current customer and their full order (with which effects you have
+// verified), and the sealed vial — labelled, then bargained over.
 
-import { h, btn, clear, coins, toast, confirmDialog } from '../dom.js';
+import { h, btn, clear, coins, confirmDialog } from '../dom.js';
 import { icon } from '../icons.js';
 import { drawPortrait } from '../../rendering/portraits.js';
 import { drawBottle } from '../../rendering/renderer.js';
 import { PROPERTY_LABELS } from '../../game/evaluate.js';
 import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
-import { missingEffects, requiredEffects } from '../../game/experiments.js';
+import { missingEffects } from '../../game/experiments.js';
+import { relevantEffects } from '../../game/commerce.js';
+import * as trade from '../trade.js';
 import { describeColor, rgbToHex } from '../../core/color.js';
 import { viscosityClass } from '../../game/measure.js';
 import * as panels from '../panels.js';
+import { shortName } from '../../game/customers.js';
 
 export class CounterView {
   /** @param {import('../lab.js').LabScreen} lab */
@@ -27,9 +31,11 @@ export class CounterView {
     const lab = this.lab, st = lab.state;
     const el = clear(this.el);
     if (lab.sandbox) {
-      el.append(h('div', { class: 'card parch' }, h('h3', { text: 'Free Experiment' }), h('div', { class: 'small', text: 'No customers here: every reagent, tool and subject is yours to play with. Bottle nothing, test everything.' })));
+      el.append(h('div', { class: 'card parch' }, h('h3', { text: 'Free Experiment' }), h('div', { class: 'small', text: 'No customers here: every reagent, tool and subject is yours to play with. Bottle what you like, test everything.' })));
+      this.vialCard(el);
       return;
     }
+    for (const f of st.dueFollowUps()) el.append(trade.followUpCard(lab, f));
     const com = st.current;
     if (!com) {
       el.append(h('div', { class: 'card parch counter-empty' },
@@ -45,16 +51,25 @@ export class CounterView {
     const cert = lab.currentCert();
     const vialCert = st.vial ? st.vial.cert || {} : null;
     const list = h('ul', { class: 'reqs full' });
+    // with a vial waiting, only its own trials count: that is what will be sold
+    const known = (k) => (vialCert ? vialCert[k] : cert.values[k]);
     for (const req of com.requirements) {
       const isFx = !!EFFECT_BY_KEY[req.key];
       const label = PROPERTY_LABELS[req.key] || req.key;
       let status = null;
       if (isFx) {
-        const v = vialCert && vialCert[req.key] !== undefined ? vialCert[req.key] : cert.values[req.key];
+        const v = known(req.key);
         status = v === undefined ? h('span', { class: 'fx-status unknown', text: '? untested' }) : h('span', { class: 'fx-status known', text: `✓ ${Math.round(v)}` });
+      } else if (req.key === 'purity') {
+        // purity is known only once every other channel has been measured
+        const others = relevantEffects({ requirements: [req] });
+        const vals = others.map(known);
+        const open = vals.filter((v) => v === undefined).length;
+        const worst = Math.max(0, ...vals.filter((v) => v !== undefined).map((v) => Math.abs(v)));
+        status = open ? h('span', { class: 'fx-status unknown', text: `? ${open} untested` }) : h('span', { class: 'fx-status known', text: `✓ ${worst.toFixed(1)}` });
       }
       const target = req.key === 'color' ? h('span', {}, h('span', { class: 'swatch', style: { background: rgbToHex(req.rgb) } }), req.label) : h('span', { text: req.label });
-      list.appendChild(h('li', { class: 'req' + (req.limit ? ' limit' : '') }, icon(isFx ? EFFECT_BY_KEY[req.key].icon : lab.reqIcon(req.key)), h('span', {}, h('span', { class: 'lbl-k', text: (req.limit ? 'Limit: ' : '') + label + ' ' }), target), status));
+      list.appendChild(h('li', { class: 'req' + (req.limit || req.key === 'purity' ? ' limit' : '') }, icon(isFx ? EFFECT_BY_KEY[req.key].icon : lab.reqIcon(req.key)), h('span', {}, h('span', { class: 'lbl-k', text: (req.limit ? 'Limit: ' : '') + label + ' ' }), target), status));
     }
     list.appendChild(h('li', { class: 'req' }, icon('flask'), h('span', {}, h('span', { class: 'lbl-k', text: 'Quantity ' }), `${com.bottleMl} ml`)));
     el.append(h('div', { class: 'card parch customer-card' },
@@ -65,13 +80,12 @@ export class CounterView {
       h('div', { class: 'speech', text: '“' + com.dialogue + '”' }),
       h('div', { class: 'potion-name', text: com.potionName }),
       list,
-      com.effectOrder ? h('div', { class: 'small muted', text: 'Effects can only be known by testing this batch in the Trials room. Unwanted effects must stay below the limits.' }) : null,
+      com.effectOrder ? h('div', { class: 'small muted', text: 'Effects can only be known by testing this batch in the Trials room. Customers pay for what your label claims — and come back tomorrow if it was not true.' }) : null,
       h('div', { class: 'row wrap cust-actions' },
         btn(com.hintCost ? `Advice (${com.hintCost})` : 'Advice', () => panels.openHint(lab), { icon: 'bulb', act: 'hint' }),
         com.tutorial ? null : btn('Decline', () => lab.decline(), { icon: 'door', act: 'decline' }),
         btn('To the cauldron', () => lab.showView('brew'), { icon: 'cauldron', cls: 'primary', act: 'go-brew' }))));
     this.vialCard(el);
-    void requiredEffects;
   }
 
   /** @param {HTMLElement} el */
@@ -89,8 +103,9 @@ export class CounterView {
     drawBottle(ctx, 2, 3, 20, 29, m.color, Math.min(1, v.ml / Math.max(1, com ? com.bottleMl : v.ml)));
     const has = (e) => lab.sandbox || st.has(e);
     const need = com ? missingEffects(com, v.cert || {}) : [];
-    const ok = com && v.ml >= 5 && need.length === 0;
-    const serve = btn(com ? `Serve ${com.customer.name.split(' ')[0]}` : 'No customer', () => lab.serveVial(), { cls: 'primary', icon: 'coin', disabled: !ok, act: 'serve' });
+    const first = com ? shortName(com.customer.name) : '';
+    const serve = com ? btn(`Offer to ${first}`, () => lab.serveVial(), { cls: 'primary', icon: 'deal', disabled: v.ml < 5, act: 'serve' }) : null;
+    const labelB = btn(v.label ? 'Revise label' : 'Label', () => lab.identifyVial(), { icon: 'tag', act: 'label' });
     const testB = btn('Test a dose', () => { lab.trialSource = 'vial'; lab.showView('trials'); }, { icon: 'dropper', act: 'test-vial' });
     const back = btn('Pour back', () => lab.pourBackVial(), { icon: 'pour', act: 'pour-back' });
     const discard = btn('Discard', async () => { if (await confirmDialog('Discard the vial?', 'The potion is poured away. Ingredients are not refunded.', 'Discard', 'danger')) lab.discardVial(); }, { icon: 'trash', cls: 'danger', act: 'discard' });
@@ -98,10 +113,10 @@ export class CounterView {
       h('div', { class: 'row' }, cv, h('div', {},
         h('b', { text: `Sealed vial · ${Math.round(v.ml)} ml` }),
         h('div', { class: 'small' }, h('span', { class: 'swatch', style: { background: rgbToHex(m.color) } }), ` ${describeColor(m.color)} · ${Math.round(m.temperature)}°C · ${has('viscometer') ? `${m.viscosity < 100 ? m.viscosity.toFixed(1) : Math.round(m.viscosity)} cP` : viscosityClass(m.viscosity)}${has('hydrometer') ? ` · ${m.density.toFixed(2)} g/ml` : ''}`),
-        h('div', { class: 'small' }, 'Verified: ', Object.keys(v.cert || {}).length ? Object.entries(v.cert).map(([k, x]) => h('span', { class: 'fx-chip' }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(x)}`)) : h('span', { class: 'muted', text: 'nothing — effects unknown' })))),
-      need.length ? h('div', { class: 'warn small', text: `Not yet verified: ${need.map((k) => EFFECT_BY_KEY[k].label).join(', ')}. A customer will not drink a potion of unknown effect — test a dose first.` }) : null,
+        h('div', { class: 'small' }, 'Verified: ', Object.keys(v.cert || {}).length ? Object.entries(v.cert).map(([k, x]) => h('span', { class: 'fx-chip' }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(x)}`)) : h('span', { class: 'muted', text: 'nothing — effects unknown' })),
+        v.label ? h('div', { class: 'small label-line' }, icon('tag', 'sm'), ` ${trade.claimSummary(v.label.claims)}`) : null)),
+      need.length && com ? h('div', { class: 'warn small', text: `Not yet tested: ${need.map((k) => EFFECT_BY_KEY[k].label).join(', ')}. You may still sell on the guild's theory, but ${first} will trust an untested label less${com.customer.persona && com.customer.persona.proof >= 0.8 ? ' — and this customer insists on proof' : ''}.` }) : null,
       com && v.ml < com.bottleMl ? h('div', { class: 'small muted', text: `Short of the ${com.bottleMl} ml ordered; the customer pays less.` }) : null,
-      h('div', { class: 'row wrap' }, serve, testB, back, discard)));
-    void toast;
+      h('div', { class: 'row wrap' }, serve, labelB, testB, back, discard)));
   }
 }

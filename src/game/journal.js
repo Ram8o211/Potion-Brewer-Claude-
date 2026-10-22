@@ -45,6 +45,15 @@ export function processEvent(state, e) {
       }
       break;
     }
+    case 'awaken': {
+      const id = e.species;
+      if (!id || !L(id)) break;
+      const d = L(id);
+      state.learn(id, 'awaken', Math.round(e.temp));
+      add({ key: `awaken:${id}`, title: `${d.name} awakens`, text: `Near ${Math.round(e.temp)}°C a glow ran through the ${d.name.toLowerCase()}: it passed its arcane threshold and its magic woke, far stronger than before. Awakened matter stays awake when it cools, is bottled or kept — only dilution or reactions undo it.`, kind: 'arcane', material: id });
+      achievements.push(...state.unlock('awaken'));
+      break;
+    }
     case 'paste': {
       const id = e.species;
       if (e.binder > 0.4) {

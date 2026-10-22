@@ -7,8 +7,20 @@ import { PHASE, SIM } from '../simulation/constants.js';
 import { MAX_SPECIES } from '../reactions/species.js';
 
 /**
- * @typedef {'pour'|'crush'|'stir'|'heat'|'hold'|'serve'|'done'} Stage
+ * @typedef {'pour'|'crush'|'stir'|'steep'|'heat'|'hold'|'serve'|'done'} Stage
  */
+
+/**
+ * The temperature of a plan's main stage (reaction or awakening): the cold
+ * extreme for a chilling plan, otherwise the hot one.
+ * @param {import('./predict.js').BrewPlan} plan
+ */
+export function stageGoal(plan) {
+  const st = plan.steep ? plan.steep.T : null;
+  const cool = plan.coolTo ?? 20, heat = plan.heatTo ?? 20;
+  const cold = cool < Math.min(15, st ?? 99) - 1 && heat <= Math.max(25, st ?? 0) + 1;
+  return cold ? cool : heat;
+}
 
 export class AutoBrewer {
   /**
@@ -32,6 +44,7 @@ export class AutoBrewer {
     this.phase = 0;
     this.status = 'Preparing';
     this.failed = false;
+    this.held = 0;
   }
 
   get done() {
@@ -118,27 +131,35 @@ export class AutoBrewer {
         return;
       }
       case 'stir': {
+        // mix at room temperature first, so nothing awakens or reacts in
+        // unmixed pockets before the brew is even
         this.status = 'Stirring';
         this.stir(1);
-        this.control(Math.min(plan.heatTo ?? 20, 60));
-        const need = plan.knead ? 14 : 7;
-        if (this.stageT > need) this.next('heat');
+        this.control(20);
+        const need = plan.knead ? 14 : plan.activate ? 10 : 7;
+        if (this.stageT > need) this.next(plan.steep ? 'steep' : 'heat');
+        return;
+      }
+      case 'steep': {
+        const T = plan.steep.T;
+        this.status = `Steeping at ${Math.round(T)}°C`;
+        const err = this.control(T);
+        if (this.stageT % 3 < 1.6) this.stir(0.8); else this.release();
+        if (err < 4) this.held = (this.held || 0) + dt;
+        if (this.held >= plan.steep.hold || this.stageT > 90) { this.held = 0; this.next('heat'); }
         return;
       }
       case 'heat': {
-        const target = plan.heatTo ?? 20;
-        const cold = (plan.coolTo ?? 20) < 15 && target <= 25;
-        const goal = cold ? plan.coolTo : target;
-        this.status = cold ? 'Chilling' : `Heating to ${Math.round(goal)}°C`;
+        const goal = stageGoal(plan);
+        this.status = goal < 15 ? `Chilling to ${Math.round(goal)}°C` : `Heating to ${Math.round(goal)}°C`;
         const err = this.control(goal);
         if (this.stageT % 3 < 1.5) this.stir(0.8); else this.release();
-        if (err < 4 || this.stageT > 70) this.next('hold');
+        if (err < 4 || this.stageT > (goal < 15 ? 120 : 70)) this.next('hold');
         return;
       }
       case 'hold': {
-        const cold = (plan.coolTo ?? 20) < 15 && (plan.heatTo ?? 20) <= 25;
-        this.control(cold ? plan.coolTo : plan.heatTo ?? 20);
-        this.status = 'Letting it react';
+        this.control(stageGoal(plan));
+        this.status = plan.activate ? 'Letting it awaken' : 'Letting it react';
         if (this.stageT % 2.5 < 1.5) this.stir(0.9); else this.release();
         if (this.stageT > (plan.hold ?? 6) + 4) this.next('serve');
         return;

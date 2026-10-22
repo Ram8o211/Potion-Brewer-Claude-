@@ -219,6 +219,59 @@ export class AudioEngine {
       case 'fail':
         [392, 330, 262].forEach((f, k) => this._tone(f, 'triangle', t + k * 0.12, 0.06, 0.25));
         break;
+      case 'awaken': {
+        // a rising shimmer over a soft hum
+        const o = this._tone(220, 'sine', t, 0.07, 1.3, this.sfx, 0.25);
+        o.frequency.exponentialRampToValueAtTime(330, t + 1.2);
+        [659, 831, 988, 1319, 1661].forEach((f, k) => this._tone(f, 'sine', t + 0.08 + k * 0.07, 0.035, 0.9));
+        this._noiseBurst(t + 0.05, 0.03, 0.8, 'highpass', 6000);
+        break;
+      }
+      case 'crack':
+        this._noiseBurst(t, 0.22, 0.05, 'highpass', 1800, 1.5);
+        this._tone(300 + Math.random() * 160, 'square', t, 0.05, 0.04);
+        break;
+      case 'talk':
+        // murmured syllables
+        for (let k = 0; k < 3 + (Math.random() * 3 | 0); k++) this._tone(170 + Math.random() * 90, 'triangle', t + k * 0.09, 0.035, 0.07);
+        break;
+      case 'deal':
+        this._tone(392, 'triangle', t, 0.07, 0.12);
+        this._tone(523, 'triangle', t + 0.1, 0.07, 0.12);
+        [988, 1319, 1976].forEach((f, k) => this._tone(f, 'square', t + 0.22 + k * 0.07, 0.04, 0.12));
+        break;
+      case 'complaint':
+        [262, 247, 233].forEach((f, k) => { const o = this._tone(f, 'sawtooth', t + k * 0.14, 0.03, 0.16); o.frequency.exponentialRampToValueAtTime(f * 0.85, t + k * 0.14 + 0.15); });
+        break;
+      case 'praise':
+        [523, 659, 784].forEach((f, k) => this._tone(f, 'triangle', t + k * 0.08, 0.06, 0.35));
+        break;
+      case 'squeak': {
+        const o = this._tone(1700 + Math.random() * 600, 'sine', t, 0.04, 0.09);
+        o.frequency.exponentialRampToValueAtTime(2600 + Math.random() * 500, t + 0.07);
+        break;
+      }
+      case 'thump':
+        this._tone(70 + Math.random() * 20, 'sine', t, 0.12, 0.08);
+        this._noiseBurst(t, 0.04, 0.05, 'lowpass', 400);
+        break;
+      case 'munch':
+        for (let k = 0; k < 3; k++) this._noiseBurst(t + k * 0.08, 0.05, 0.03, 'bandpass', 2200 + Math.random() * 800, 2);
+        break;
+      case 'birth':
+        [1319, 1568, 1976].forEach((f, k) => this._tone(f, 'sine', t + k * 0.06, 0.04, 0.2));
+        break;
+      case 'toll':
+        [1, 2.4, 3.9].forEach((m, k) => this._tone(196 * m, 'sine', t + k * 0.004, 0.08 / (k + 1), 2.2 / (k + 1)));
+        break;
+      case 'dig':
+        this._noiseBurst(t, 0.14, 0.12, 'lowpass', 600);
+        this._noiseBurst(t + 0.12, 0.08, 0.1, 'lowpass', 900);
+        break;
+      case 'snip':
+        this._noiseBurst(t, 0.12, 0.03, 'highpass', 4000);
+        this._tone(2400, 'square', t, 0.02, 0.02);
+        break;
     }
     void opts;
   }

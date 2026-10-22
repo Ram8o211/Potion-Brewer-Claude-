@@ -15,7 +15,10 @@ export const DERIVED_FIELDS = [
   'rho20', 'rho', 'invMass', 'rhoCp', 'kappa', 'lnMu20', 'viscT', 'lnMu', 'gran', 'binder',
   'tm', 'tb', 'volFrac', 'latF', 'latV', 'beta', 'cA', 'cB', 'colL', 'colA', 'colB',
   'opacity', 'flam', 'ign', 'combHeat', 'gasRho', 'glow', 'friction', 'hardness', 'yieldV', 'econd',
+  'auraR', 'auraG', 'auraB', 'auraI', 'arcT', 'whole', 'look',
 ];
+/** arcT value of a particle with nothing left to awaken */
+export const ARC_NONE = 1e9;
 
 export class Particles {
   /** @param {number} capacity */
@@ -84,6 +87,17 @@ export class Particles {
     this.yieldV = new Float32Array(capacity);
     /** electrical conductance of the blend */
     this.econd = new Float32Array(capacity);
+    /** magical emission: colour (0..1) and intensity (effective concentration / 100) */
+    this.auraR = new Float32Array(capacity);
+    this.auraG = new Float32Array(capacity);
+    this.auraB = new Float32Array(capacity);
+    this.auraI = new Float32Array(capacity);
+    /** effective arcane threshold of the unawakened magic in the particle (ARC_NONE if none) */
+    this.arcT = new Float32Array(capacity).fill(ARC_NONE);
+    /** share of supplied-whole solid ingredient (roots, stones) in the particle */
+    this.whole = new Float32Array(capacity);
+    /** surface look of its main whole ingredient (materials/shapes.js LOOK) */
+    this.look = new Uint8Array(capacity);
     this._seedCounter = 1;
   }
 

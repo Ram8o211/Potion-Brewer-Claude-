@@ -177,8 +177,10 @@ test('reduction: boiling water away with the lid open concentrates a non-volatil
   run(s, 30);
   s.furnace.setting = 0;
   const before = measureParticles(s, allParticles(s));
-  const slot = s.species.slotOf.get('wild-p-silver-infusion');
-  const extract = () => { let t = 0; for (let i = 0; i < s.p.count; i++) t += s.p.comp[i * MAX_SPECIES + slot]; return t; };
+  // the extract in either form (hot enough, it also awakens)
+  const slots = ['wild-p-silver-infusion', 'wild-p-silver-infusion~a'].map((id) => s.species.slotOf.get(id)).filter((x) => x !== undefined);
+  assert.ok(slots.length > 0, 'the leaf infused');
+  const extract = () => { let t = 0; for (let i = 0; i < s.p.count; i++) for (const slot of slots) t += s.p.comp[i * MAX_SPECIES + slot]; return t; };
   const ex0 = extract();
   s.cauldron.lidClosed = false;
   s.furnace.setting = 1;

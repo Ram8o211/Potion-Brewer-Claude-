@@ -1,25 +1,36 @@
 // Commission generation.
 //
 // Each request is derived from a hidden *reference plan* assembled only from
-// reagents the player can currently buy and equipment they own. The plan's
-// outcome is predicted with the simulation's own mixture laws and reaction
-// stoichiometry, and the customer's targets are placed around that outcome
-// with tolerances that tighten with difficulty — so every commission is
-// achievable by construction (and the test-suite verifies this by actually
-// brewing reference plans in the simulation).
+// reagents the player can currently buy or gather and equipment they own.
+// The plan's outcome is predicted with the simulation's own mixture laws,
+// extraction, reaction stoichiometry, arcane activation and effect laws
+// (predict.js), the customer's targets are placed just below that outcome,
+// and the predicted bottle must score full marks under the very evaluation
+// used at the counter (evaluate.js) before the customer may ask. Every
+// commission is therefore achievable by construction; the test-suite brews
+// samples of these plans in the real simulation.
+//
+// Effect requests come from narrative templates (requests.js). Their wanted
+// effects follow concentration targets that rise with tier (8–15 % for an
+// apprentice, beyond what plain ingredients can reach for a master, which
+// needs arcane activation), and every effect the customer did not ask for
+// must stay below 1.2 %.
 
 import { Rng } from '../core/rng.js';
 import { describeColor } from '../core/color.js';
-import { predictPlan, planCost } from './predict.js';
+import { predictPlan, planCost, arcaneRegime, ACTIVATION_MARGIN } from './predict.js';
 import { ARCHETYPES, makeCustomer, archetypeOf } from './customers.js';
 import { viscosityClass } from './measure.js';
+import { evaluatePotion } from './evaluate.js';
 import { SIM } from '../simulation/constants.js';
-import { EFFECT_INDEX, EFFECT_BY_KEY } from '../alchemy/effects.js';
+import { EFFECT_INDEX, EFFECT_BY_KEY, EFFECT_KEYS, NE } from '../alchemy/effects.js';
+import { thresholdToCelsius, isMagical } from '../alchemy/arcane.js';
 import { compatFactor } from '../reactions/compatibility.js';
+import { REQUESTS, TIER_TARGET, PURITY_LIMIT, requestById } from './requests.js';
 
 /**
  * @typedef {Object} Requirement
- * @property {string} key        color | density | viscosity | temperature | stability | volatility | an effect key (alchemy/effects.js)
+ * @property {string} key        color | density | viscosity | temperature | stability | volatility | purity | an effect key (alchemy/effects.js)
  * @property {'target'|'min'|'max'} kind
  * @property {number|number[]} target   number, or OKLab triple for colour
  * @property {number} tol        perfect-match tolerance
@@ -28,6 +39,7 @@ import { compatFactor } from '../reactions/compatibility.js';
  * @property {string} label
  * @property {boolean} [effect]   an effect requirement (needs a verified trial)
  * @property {boolean} [limit]    a safety limit on an unwanted effect
+ * @property {string[]} [exclude] purity: the effects that are wanted (or tolerated)
  * @property {string} [name]
  */
 
@@ -170,104 +182,16 @@ function buildPlan(style, ctx, rng, n) {
   return null;
 }
 
-/** Which effect an effect style is about (sign −1: wants the negative side, e.g. alkaline). */
-export const EFFECT_STYLES = {
-  healing: { key: 'vitality', sign: 1 }, strength: { key: 'strength', sign: 1 }, love: { key: 'love', sign: 1 }, firetonic: { key: 'fire', sign: 1 },
-  frostsalve: { key: 'frost', sign: 1 }, settling: { key: 'acidity', sign: -1 }, etching: { key: 'acidity', sign: 1 }, bane: { key: 'toxicity', sign: 1 },
-  insight: { key: 'arcana', sign: 1 }, transmute: { key: 'transformation', sign: 1 }, antidote: { key: 'vitality', sign: 1 },
-};
-/** Styles whose potion is not drunk (no safety limits on poison or acid). */
-const NOT_DRUNK = new Set(['etching', 'bane']);
-
-/**
- * Hidden plan for an effect commission: choose an ingredient that is known
- * to carry the wanted effect, a solvent it dissolves in, and a preparation
- * (milling, steeping heat that stays below anything that would spoil it).
- * Uses shop reagents *and* wild ingredients the player can reach.
- * @param {string} style @param {CommissionContext} ctx @param {Rng} rng @param {number} n
- * @returns {import('./predict.js').BrewPlan|null}
- */
-function buildEffectPlan(style, ctx, rng, n, tier = 0) {
-  const spec = EFFECT_STYLES[style];
-  const k = EFFECT_INDEX[spec.key];
-  const R = ctx.world.roles;
-  const potency = (m) => spec.sign * ((m.effects && m.effects[spec.key]) || 0);
-  const drunk = !NOT_DRUNK.has(style);
-  const harm = (m) => {
-    const e = m.effects || {};
-    return (spec.key === 'toxicity' ? 0 : e.toxicity || 0) + (e.death || 0) + (spec.key === 'acidity' ? 0 : Math.max(0, e.acidity || 0));
-  };
-  const usable = (m) => m && m.form !== 'gas' && !(m.form === 'powder' && (m.solubility || 0) < 0.03 && (m.binder || 0) < 0.3);
-  const ids = [...ctx.available].filter((id) => {
-    const m = ctx.lookup(id);
-    // nobody drinks a strength tonic made from quicksilver
-    return usable(m) && potency(m) >= 12 && (!drunk || harm(m) <= 0.35 * potency(m));
-  });
-  if (!ids.length) return null;
-  // strong, clean carriers are likelier, but weaker ones keep orders varied
-  const main = ctx.lookup(rng.weighted(ids, ids.map((id) => Math.sqrt(Math.max(1, potency(ctx.lookup(id)) - harm(ctx.lookup(id)))))));
-  const liquids = [R.water, R.spirit, R.oil].filter((id) => id && ctx.available.has(id)).map(ctx.lookup);
-  const solid = main.form !== 'liquid';
-  let solvent = null;
-  for (const l of liquids) if (compatFactor(main.compat[0], main.compat[1], l.compat[0], l.compat[1]) > 0.6) { solvent = l; break; }
-  if (solid && !solvent) return null;
-  const p = potency(main);
-  const share = p >= 50 ? rng.range(0.18, 0.3) : p >= 25 ? rng.range(0.3, 0.55) : rng.range(0.6, 1);
-  /** @type {{id:string, n:number, ground?:boolean}[]} */
-  const ingredients = [];
-  const nMain = Math.max(2, Math.round(n * share));
-  if (solvent && nMain < n) ingredients.push({ id: solvent.id, n: n - nMain });
-  ingredients.push({ id: main.id, n: nMain, ground: main.form === 'solid' && ctx.cap.has('mortar') ? true : undefined });
-  // higher tiers blend a second ingredient — often one whose effect meets
-  // the first in one of this world's hidden resonance laws
-  if (tier >= 2 && style !== 'antidote' && rng.chance(0.6)) {
-    const laws = (ctx.world.laws || []).filter((L) => L.a === k || L.b === k || L.c === k);
-    const partnerKeys = new Set();
-    for (const L of laws) for (const x of [L.a, L.b]) if (x !== k) partnerKeys.add(x);
-    const others = [...ctx.available].map(ctx.lookup).filter((m) => usable(m) && m.id !== main.id && (!drunk || harm(m) <= 6) &&
-      Object.entries(m.effects || {}).some(([key, v]) => key !== spec.key && v >= 12 && (!partnerKeys.size || partnerKeys.has(EFFECT_INDEX[key]))));
-    const second = others.length ? rng.pick(others) : null;
-    if (second && (second.form === 'liquid' || solvent)) {
-      const n2 = Math.max(2, Math.round(n * rng.range(0.1, 0.2)));
-      ingredients[0].n = Math.max(2, ingredients[0].n - n2);
-      ingredients.push({ id: second.id, n: n2, ground: second.form === 'solid' && ctx.cap.has('mortar') ? true : undefined });
-    }
-  }
-  if (style === 'antidote') {
-    // a restorative that carries poison, cancelled by enough vitality
-    const tox = [...ctx.available].map(ctx.lookup).find((m) => m && m.effects && (m.effects.toxicity || 0) >= 10 && (m.effects.vitality || 0) >= 20);
-    if (tox && tox.id !== main.id) ingredients.push({ id: tox.id, n: Math.max(2, Math.round(n * 0.12)), ground: tox.form === 'solid' ? true : undefined });
-  }
-  // reactions of the main ingredient: steep when it helps, avoid what spoils it
-  const rx = ctx.world.reactions.filter((r) => r.a === main.id && r.kind === 'decompose');
-  const steep = rx.find((r) => r.wet && r.minT + 12 < ctx.cap.maxFlame - 30);
-  const spoil = rx.filter((r) => !r.wet).reduce((lo, r) => Math.min(lo, r.minT), Infinity);
-  const room = 20;
-  let heatTo = room, hold = 6;
-  if (steep && rng.chance(0.85)) {
-    heatTo = Math.min(steep.maxT - 8, spoil - 8, steep.minT + rng.range(8, 16));
-    if (heatTo < steep.minT + 3) heatTo = room; else hold = rng.range(18, 26);
-  } else if (solid && rng.chance(0.4)) {
-    heatTo = Math.min(spoil - 10, rng.range(45, 70));
-  }
-  let serve = room;
-  if (style === 'firetonic' && rng.chance(0.6)) serve = Math.round(rng.range(45, 60));
-  if (style === 'frostsalve' && ctx.cap.minCool <= 2 && rng.chance(0.5)) serve = Math.round(rng.range(4, 10));
-  const coolTo = Math.min(room, serve);
-  return { ingredients, heatTo: Math.round(Math.max(heatTo, serve)), coolTo, serveTemp: serve, knead: solid, hold: Math.round(hold) };
-}
-
-/** Main property a style is about. */
+/** Physical properties a style is about. */
 const STYLE_PROPS = {
-  healing: ['vitality'], strength: ['strength'], love: ['love'], firetonic: ['fire'], frostsalve: ['frost'], settling: ['acidity'], etching: ['acidity'],
-  bane: ['toxicity'], insight: ['arcana'], transmute: ['transformation'], antidote: ['vitality'],
   tonic: ['color'], warm: ['color', 'temperature'], syrup: ['viscosity', 'density'], salve: ['viscosity'],
-  elixir: ['vitality'], ardent: ['fire'], arcane: ['arcana'], fizzy: ['volatility'], frost: ['temperature', 'frost'],
-  heavy: ['density'], lumen: ['arcana'], varnish: ['strength', 'viscosity'], panacea: ['vitality', 'arcana'], phoenix: ['vitality', 'fire'],
+  elixir: ['color'], ardent: ['color', 'temperature'], arcane: ['color', 'stability'], fizzy: ['volatility'], frost: ['temperature'],
+  heavy: ['density'], lumen: ['color'], varnish: ['viscosity'], panacea: ['color', 'stability'], phoenix: ['color', 'temperature'],
 };
+const PHYSICAL = new Set(Object.keys(STYLE_PROPS));
 
 /**
- * Turn a predicted property into a requirement around it.
+ * Turn a predicted physical property into a requirement around it.
  * @param {string} key @param {any} pred @param {number} tier @param {number} strict @param {Rng} rng @param {import('./predict.js').BrewPlan} plan
  * @returns {Requirement|null}
  */
@@ -317,71 +241,285 @@ function makeRequirement(key, pred, tier, strict, rng, plan, style) {
       const max = Math.round(Math.max(15, v + 12));
       return { key, kind: 'max', target: max, tol: 0, zero: 30, label: `at most ${max}` };
     }
-    default: {
-      const k = EFFECT_INDEX[key];
-      if (k === undefined) return null;
-      const v = pred.effects[k];
-      const name = EFFECT_BY_KEY[key].label.toLowerCase();
-      if (key === 'acidity' && style === 'settling') {
-        // an alkaline draught: acidity must stay below a negative limit
-        if (v > -6) return null;
-        const max = Math.round(v * (0.62 + 0.04 * tier));
-        return { key, kind: 'max', target: max, tol: 0, zero: 14, label: `alkaline, ${max} or lower`, effect: true };
-      }
-      if (v < 5) return null;
-      if (tier >= 2 && strict < 1 && rng.chance(0.5)) {
-        // a measured dose: neither too weak nor too strong
-        const tol = Math.max(4, Math.round(v * 0.22));
-        const t = Math.round(v);
-        return { key, kind: 'target', target: t, tol, zero: tol * 3, label: `${Math.max(0, t - tol)}–${t + tol}`, effect: true };
-      }
-      const min = Math.max(4, Math.round(v * (0.6 + 0.04 * tier)));
-      return { key, kind: 'min', target: min, tol: 0, zero: Math.max(8, min * 0.6), label: `at least ${min}`, effect: true, name };
-    }
   }
+  return null;
 }
 
 /**
- * Safety limits on harmful effects the customer did not ask for, placed
- * above what the hidden plan yields so they are always achievable.
- * @param {any} pred @param {string} style @param {Set<string>} wanted @param {number} tier
+ * Requirement on a wanted effect: at least `min` percent (or, for some
+ * advanced customers, a measured band around it).
+ * @param {string} key @param {number} sign @param {number} min
  */
-function safetyLimits(pred, style, wanted, tier) {
-  if (NOT_DRUNK.has(style)) return [];
-  const out = [];
-  for (const key of ['toxicity', 'death', 'acidity']) {
-    if (wanted.has(key)) continue;
-    const v = pred.effects[EFFECT_INDEX[key]];
-    if (key !== 'toxicity' && v < 2 && tier < 2) continue;
-    const max = Math.max(key === 'acidity' ? 6 : 4, Math.round(Math.max(0, v) + 4));
-    out.push({ key, kind: /** @type {'max'} */ ('max'), target: max, tol: 0, zero: 14, label: `at most ${max}`, effect: true, limit: true });
+function effectRequirement(key, sign, min) {
+  if (sign < 0) {
+    const max = -Math.max(3, Math.round(min));
+    return { key, kind: /** @type {'max'} */ ('max'), target: max, tol: 0, zero: 14, label: `alkaline, ${max} or lower`, effect: true };
   }
-  return out;
+  const t = Math.max(3, Math.round(min));
+  return { key, kind: /** @type {'min'} */ ('min'), target: t, tol: 0, zero: Math.max(6, t * 0.6), label: `at least ${t}%`, effect: true, name: EFFECT_BY_KEY[key].label.toLowerCase() };
 }
 
-/** Why customers want an effect (said after the greeting; never the recipe). */
-const EFFECT_PURPOSE = {
-  healing: ['It must truly heal — and nothing poisonous, please.', 'Something to mend a wound and bring the colour back to a pale face.'],
-  strength: ['I need strength in my arms by tomorrow.', 'It must make a body strong as an ox.'],
-  love: ['There is someone I hope will notice me…', 'For a betrothal feast — it should warm every heart.'],
-  firetonic: ['Something with real fire in it, against the cold.', 'It should burn pleasantly all the way down.'],
-  frostsalve: ['For burns and fevers — it must be properly cold-natured.', 'To cool a dragon-bite. Frost, and plenty.'],
-  settling: ['My stomach burns with acid. I need something alkaline to settle it.', 'Too much feasting. A chalky, settling draught, please.'],
-  etching: ['A strong acid to etch my designs into steel.', 'It must bite into stone.'],
-  bane: ['Rats in the granary. It has to be poisonous to them.', 'For the slugs in my garden. Deadly to pests, please.'],
-  insight: ['To see clearly through a hard problem.', 'For my studies — it must sharpen the mind with true arcana.'],
-  transmute: ['I wish to become… someone else, for a while.', 'To coax my garden into stranger shapes.'],
-  antidote: ['I was bitten by something venomous! It must heal and carry no poison.', 'An antidote: strong healing, no toxicity at all.'],
-};
+/** The purity rule: nothing the customer did not ask for above the limit. @param {string[]} exclude */
+export function purityRequirement(exclude, limit = PURITY_LIMIT) {
+  return { key: 'purity', kind: /** @type {'max'} */ ('max'), target: limit, tol: 0, zero: 2.5, exclude: exclude.slice(), label: `no other effect above ${limit}%`, effect: true };
+}
 
-/** Which styles a tier may request. */
-function stylesFor(arch, tier, event) {
-  let styles = arch.styles.filter((s) => STYLE_TIER[s] <= tier);
-  if (event === 'winter') styles = styles.concat(['warm', 'ardent', 'firetonic']).filter((s) => STYLE_TIER[s] <= tier);
-  if (event === 'plague') styles = styles.concat(['elixir', 'salve', 'healing', 'antidote']).filter((s) => STYLE_TIER[s] <= tier);
-  if (event === 'conclave') styles = styles.concat(['arcane', 'lumen', 'insight']).filter((s) => STYLE_TIER[s] <= tier);
-  if (event === 'festival') styles = styles.concat(['tonic', 'fizzy', 'love']).filter((s) => STYLE_TIER[s] <= tier);
-  if (!styles.length) styles = ['tonic'];
+/** Effects that must count as unwanted for a set of wanted keys. @param {string[]} exclude */
+function unwantedMax(effects, exclude) {
+  let m = 0, key = '';
+  for (let k = 0; k < NE; k++) {
+    if (exclude.includes(EFFECT_KEYS[k])) continue;
+    const v = Math.abs(effects[k]);
+    if (v > m) { m = v; key = EFFECT_KEYS[k]; }
+  }
+  return { value: m, key };
+}
+
+// ------------------------------------------------------------------ effect requests: the feasibility search
+
+/** Liquids that dissolve or carry other reagents. */
+function solventsOf(ctx) {
+  const R = ctx.world.roles;
+  return [R.water, R.spirit, R.oil].filter((id) => id && ctx.available.has(id)).map(ctx.lookup);
+}
+
+/**
+ * Preparation for one reagent: how hot (or cold) and how long to brew so
+ * that its magic reaches the liquid. Uses the reagent's own extraction
+ * reaction where it has one.
+ * @returns {{solvent:any, heatTo:number, coolTo:number, hold:number, ground?:boolean, lo?:number, hi?:number}|null}
+ */
+function prepFor(m, ctx, solvents) {
+  const water = solvents.find((x) => x.id === ctx.world.roles.water) || solvents[0];
+  if (m.form === 'liquid') {
+    const compat = solvents.find((l) => compatFactor(m.compat[0], m.compat[1], l.compat[0], l.compat[1]) > 0.6);
+    return { solvent: compat || null, heatTo: 20, coolTo: 20, hold: 6 };
+  }
+  if (m.form === 'gas') return null;
+  if (m.form === 'solid' && m.melt < 15 && m.boil > 60) {
+    // frozen stock (rime chunks): it simply melts into the brew
+    const compat = solvents.find((l) => compatFactor(m.compat[0], m.compat[1], l.compat[0], l.compat[1]) > 0.6);
+    return { solvent: compat || null, heatTo: 20, coolTo: 20, hold: 12 };
+  }
+  const ground = m.form === 'solid' ? (ctx.cap.has('mortar') ? true : null) : false;
+  if (ground === null) return null;
+  // its own extraction (steeping, infusing, a tincture in spirit, fire into oil)
+  const rx = ctx.world.reactions.find((r) => r.a === m.id && (r.wet || r.kind === 'mix' || r.kind === 'contact') && r.products.length === 1 && /^rw_(extract|steep|infuse|mandrake|starquartz|dragonoil)/.test(r.id));
+  if (rx) {
+    const solvent = rx.b ? solvents.find((l) => l.id === rx.b) : water;
+    if (!solvent) return null;
+    const boil = isFinite(solvent.boil) ? solvent.boil : 400;
+    const lo = rx.minT + 4, hi = Math.min(rx.maxT - 4, boil - 8, ctx.cap.maxFlame - 40);
+    if (hi < lo) return null;
+    if (lo <= 15) {
+      // a cold steep (below room temperature)
+      const T = Math.max(lo, Math.min(hi, ctx.cap.minCool + 3));
+      if (T > hi || T < ctx.cap.minCool + 2) return null;
+      return { solvent, heatTo: 20, coolTo: T, hold: 22, ground };
+    }
+    return { solvent, heatTo: Math.round((lo + hi) / 2), coolTo: 20, hold: 22, ground, lo, hi };
+  }
+  // no extraction: it dissolves only as far as its solubility allows
+  const compat = solvents.find((l) => compatFactor(m.compat[0], m.compat[1], l.compat[0], l.compat[1]) > 0.6);
+  if (!compat || (m.solubility || 0) < 0.03) return null;
+  return { solvent: compat, heatTo: 20, coolTo: 20, hold: 10, ground };
+}
+
+/**
+ * Search for a hidden plan that delivers the wanted effects at (at least)
+ * the targets, with every other effect under the purity limit.
+ * @param {{key:string, sign:number, target:number}[]} wanted
+ * @param {string[]} exclude  effects that may be present (wanted + tolerated)
+ * @param {CommissionContext} ctx @param {Rng} rng @param {number} n total particles
+ * @param {{activation:boolean, serve:number}} o
+ */
+function searchPlan(wanted, exclude, ctx, rng, n, o) {
+  const solvents = solventsOf(ctx);
+  if (!solvents.length) return null;
+  const pot = (m, w) => w.sign * (((m.effects || {})[w.key]) || 0);
+  const all = [...ctx.available].map(ctx.lookup).filter((m) => m && m.effects && m.form !== 'gas' && !m.awakened);
+  /** carriers for each wanted effect, cleanest first (with some variety) */
+  const carriers = wanted.map((w) => all.filter((m) => pot(m, w) >= 4)
+    .map((m) => {
+      let side = 0;
+      for (const [k, v] of Object.entries(m.effects)) if (!exclude.includes(k)) side += Math.abs(Number(v) || 0);
+      return { m, score: pot(m, w) / (1 + side * 1.5) * (0.85 + 0.3 * rng.next()) };
+    })
+    .sort((a, b) => b.score - a.score).slice(0, 4).map((c) => c.m));
+  if (carriers.some((c) => !c.length)) return null;
+  const tries = [];
+  for (let a = 0; a < 3; a++) tries.push(wanted.map((w, k) => carriers[k][Math.min(carriers[k].length - 1, a === 0 ? 0 : rng.int(0, carriers[k].length - 1))]));
+  for (const pick of tries) {
+    const plan = composePlan(pick, wanted, exclude, ctx, solvents, n, o);
+    if (plan) return plan;
+  }
+  return null;
+}
+
+/**
+ * Proportion a set of carriers (one per wanted effect, possibly repeated),
+ * prepare them, optionally awaken the blend, cancel unwanted traces and
+ * check the result with the predictor.
+ */
+function composePlan(pick, wanted, exclude, ctx, solvents, n, o) {
+  const uniq = [...new Set(pick)];
+  const preps = uniq.map((m) => prepFor(m, ctx, solvents));
+  if (preps.some((p) => !p)) return null;
+  // one solvent for the whole brew
+  const solvent = preps.find((p) => p.solvent)?.solvent || solvents[0];
+  if (preps.some((p) => p.solvent && p.solvent.id !== solvent.id)) return null;
+  // the extraction stage: one temperature inside every reagent's window
+  const warm = preps.filter((p) => p.lo !== undefined), cold = preps.filter((p) => p.coolTo < 20);
+  if (warm.length && cold.length) return null;
+  let win = null;
+  if (warm.length) win = [Math.max(...warm.map((p) => p.lo)), Math.min(...warm.map((p) => p.hi))];
+  else if (cold.length) win = [Math.max(ctx.cap.minCool + 2, ...cold.map((p) => p.coolTo - 3)), Math.min(...cold.map((p) => p.coolTo + 3))];
+  if (win && win[0] > win[1]) return null;
+  const hold = Math.max(...preps.map((p) => p.hold));
+  /** @type {Map<string, number>} share of the brew per reagent */
+  const x = new Map(uniq.map((m) => [m.id, 0.25]));
+  /** @type {[string, number][]} cancellers */
+  let extra = [];
+  const build = () => {
+    const ing = [];
+    let used = 0;
+    for (const m of uniq) used += x.get(m.id);
+    for (const [, f] of extra) used += f;
+    if (used > 0.97) return null;
+    // at least half of the brew must be liquid, or the grains form a paste that cannot steep
+    let solids = 0;
+    for (const m of uniq) if (m.form !== 'liquid') solids += x.get(m.id);
+    for (const [id, f] of extra) if (ctx.lookup(id).form !== 'liquid') solids += f;
+    if (solids > 0.5) return null;
+    const ns = Math.round(n * (1 - used));
+    if (ns >= 2) ing.push({ id: solvent.id, n: ns });
+    uniq.forEach((m, k) => ing.push({ id: m.id, n: Math.max(2, Math.round(n * x.get(m.id))), ground: preps[k].ground || undefined }));
+    for (const [id, f] of extra) ing.push({ id, n: Math.max(1, Math.round(n * f)), ground: ctx.lookup(id).form === 'solid' && ctx.cap.has('mortar') ? true : undefined });
+    return /** @type {import('./predict.js').BrewPlan} */ ({ ingredients: ing, heatTo: Math.max(20, o.serve), coolTo: Math.min(20, o.serve), serveTemp: o.serve, knead: uniq.some((m) => m.form !== 'liquid'), hold: 8 });
+  };
+  /**
+   * Stage temperatures. Preparation (mixing, steeping, serving a plain
+   * brew) must be arcane-quiet for every local mixture; an activation plan
+   * then awakens the well-mixed blend in a stage of its own.
+   * @param {import('./predict.js').BrewPlan} plan
+   */
+  const finish = (plan) => {
+    const ids = plan.ingredients.map((i) => i.id);
+    const pre = predictPlan(ctx.world, ctx.lookup, { ...plan, steep: win ? { T: (win[0] + win[1]) / 2, hold } : undefined });
+    const all = [...ids, ...Object.keys(pre.composition)];
+    const quietServe = o.activation ? [] : [o.serve];
+    if (win) {
+      // the steep temperature nearest the middle of the window that wakes nothing
+      const mid = (win[0] + win[1]) / 2;
+      let best = null;
+      for (let T = Math.ceil(win[0]); T <= win[1]; T++) {
+        if (arcaneRegime(all, ctx.lookup, [T, ...quietServe]) !== 'quiet') continue;
+        if (best === null || Math.abs(T - mid) < Math.abs(best - mid)) best = T;
+      }
+      if (best === null) return null;
+      plan.steep = { T: best, hold };
+      plan.heatTo = Math.max(plan.heatTo, best);
+      plan.coolTo = Math.min(plan.coolTo, best);
+    } else if (arcaneRegime(all, ctx.lookup, quietServe) !== 'quiet') return null;
+    if (plan.heatTo > ctx.cap.maxFlame - 40 || plan.coolTo < ctx.cap.minCool + 2) return null;
+    let pred = predictPlan(ctx.world, ctx.lookup, plan);
+    if (!o.activation) return pred.awakened ? null : pred;
+    // activation stage: past the threshold of the mixed blend, reachable both ways
+    if (pred.threshold === null) return null;
+    const Ta = thresholdToCelsius(pred.threshold);
+    if (pred.threshold >= 0) {
+      const T = Math.ceil(Ta + ACTIVATION_MARGIN + 4);
+      const boil = Math.min(...plan.ingredients.map((i) => ctx.lookup(i.id).boil).filter((b) => isFinite(b)), 400);
+      if (T > Math.min(ctx.cap.maxFlame - 40, boil - 6)) return null;
+      plan.heatTo = Math.max(plan.heatTo, T);
+    } else {
+      const T = Math.floor(Ta - ACTIVATION_MARGIN - 4);
+      // the bulk of a brew lags far behind the frost plate (freezing water
+      // gives up a lot of latent heat), so stay well inside its reach
+      if (T < 20 + 0.55 * (ctx.cap.minCool - 20)) return null;
+      plan.coolTo = Math.min(plan.coolTo, T);
+    }
+    plan.hold = 18;
+    plan.activate = true;
+    pred = predictPlan(ctx.world, ctx.lookup, plan);
+    return pred.awakened ? pred : null;
+  };
+  let plan = null, pred = null;
+  for (let it = 0; it < 6; it++) {
+    plan = build();
+    if (!plan) return null;
+    pred = finish(plan);
+    if (!pred) return null;
+    // proportion the carriers toward 1.15 × each target
+    let ok = true;
+    const scale = new Map(uniq.map((m) => [m.id, 1]));
+    wanted.forEach((w, k) => {
+      const v = w.sign * pred.effects[EFFECT_INDEX[w.key]];
+      const want = w.target * 1.15;
+      if (v < w.target * 1.02 || v > w.target * 1.6) ok = false;
+      const r = v > 0.2 ? want / v : 2.5;
+      const id = pick[k].id;
+      scale.set(id, Math.min(scale.get(id) === 1 ? r : Math.max(scale.get(id), r), 2.5));
+    });
+    const dirty = unwantedMax(pred.effects, exclude);
+    if (ok && dirty.value <= PURITY_LIMIT * 0.6) return { plan, pred };
+    if (!ok) {
+      // a brew that is mostly grains turns to paste and stops steeping
+      for (const m of uniq) x.set(m.id, Math.max(0.04, Math.min(m.form === 'liquid' ? 0.92 : 0.5, x.get(m.id) * scale.get(m.id))));
+      continue;
+    }
+    // too dirty: add (or grow) something that cancels the strongest unwanted effect
+    const c = canceller(dirty.key, pred.effects[EFFECT_INDEX[dirty.key]], exclude, ctx);
+    if (!c) return null;
+    const have = extra.find((e) => e[0] === c.id);
+    const add = Math.min(0.3, dirty.value / Math.max(2, c.potency) * 1.05);
+    if (have) have[1] = Math.min(0.35, have[1] + add);
+    else extra = [...extra, [c.id, add]];
+  }
+  return null;
+}
+
+/** Opposing effect that cancels an unwanted one (the guild primer's laws). */
+const CANCELS = { fire: ['frost'], frost: ['fire'], death: ['vitality'], toxicity: ['vitality'], acidity: ['acidity'] };
+
+/**
+ * A reagent that cancels an unwanted effect without bringing new ones.
+ * @param {string} key @param {number} value signed amount to cancel
+ */
+function canceller(key, value, exclude, ctx) {
+  const opp = CANCELS[key];
+  if (!opp) return null;
+  let best = null;
+  for (const id of ctx.available) {
+    const m = ctx.lookup(id);
+    if (!m || !m.effects || m.form === 'gas' || m.awakened) continue;
+    let potency;
+    if (key === 'acidity') potency = -Math.sign(value) * (m.effects.acidity || 0);
+    else potency = m.effects[opp[0]] || 0;
+    if (potency < 6) continue;
+    let side = 0;
+    for (const [k, v] of Object.entries(m.effects)) if (k !== opp[0] && k !== key && !exclude.includes(k)) side += Math.abs(Number(v) || 0);
+    if (side > potency * 0.08) continue;
+    if (!best || potency - side > best.potency) best = { id, potency };
+  }
+  return best;
+}
+
+// ------------------------------------------------------------------ generation
+
+/** Requests a customer may bring at a tier. */
+function requestsFor(arch, tier, event) {
+  let list = REQUESTS.filter((r) => r.minTier <= tier && r.who.includes(arch.key));
+  const bonus = { winter: ['warming', 'hearth', 'forgefire'], plague: ['healing', 'recovery', 'fevercure'], conclave: ['insight', 'meditation', 'shapeshift'], festival: ['love', 'blessing', 'hearth'] }[event];
+  if (bonus) list = list.concat(REQUESTS.filter((r) => bonus.includes(r.id) && r.minTier <= tier));
+  return list;
+}
+
+/** Physical brewing styles a tier may request. */
+function physicalFor(arch, tier, event) {
+  let styles = arch.styles.filter((s) => PHYSICAL.has(s) && STYLE_TIER[s] <= tier);
+  if (event === 'winter') styles = styles.concat(['warm', 'ardent']).filter((s) => STYLE_TIER[s] <= tier);
+  if (event === 'festival') styles = styles.concat(['tonic', 'fizzy']).filter((s) => STYLE_TIER[s] <= tier);
   return styles;
 }
 
@@ -389,95 +527,155 @@ function stylesFor(arch, tier, event) {
  * Generate a commission.
  * @param {CommissionContext} ctx
  * @param {Rng} rng
- * @param {{tier?: number, archetype?: string, style?: string, contract?: boolean}} [opts]
+ * @param {{tier?: number, archetype?: string, style?: string, request?: string, contract?: boolean}} [opts]
  */
 export function generateCommission(ctx, rng, opts = {}) {
   const tier = Math.max(0, Math.min(4, opts.tier ?? Math.min(4, ctx.rank)));
   const archetypes = ARCHETYPES.filter((a) => a.minRank <= ctx.rank);
   for (let attempt = 0; attempt < 40; attempt++) {
     const arch = opts.archetype ? archetypeOf(opts.archetype) : rng.pick(archetypes);
-    const styles = opts.style ? [opts.style] : stylesFor(arch, tier, ctx.event);
-    const style = rng.pick(styles);
     const bottleMl = [100, 150, 200, 250, 300][tier] * (opts.contract ? 1.5 : 1);
     const bottleN = Math.round(bottleMl / SIM.ML_PER_PARTICLE);
     const vessel = { pot: 310, copper: 440, grand: 600, small: 1400, medium: 2000, large: 2700 }[ctx.cap.size] || 310;
     const totalN = Math.min(Math.round(bottleN * rng.range(1.7, 2.3)), Math.floor(vessel * 0.45));
-    const plan = EFFECT_STYLES[style] ? buildEffectPlan(style, ctx, rng, totalN, tier) : buildPlan(style, ctx, rng, totalN);
-    if (!plan) continue;
-    if (plan.coolTo < ctx.cap.minCool - 2 && style !== 'frost') continue;
-    /** @type {ReturnType<typeof predictPlan> & {looseSolids: number}} */
-    const pred = { ...predictPlan(ctx.world, ctx.lookup, plan), looseSolids: 0 };
-    // undissolved grains that no binder holds in a paste settle as sediment
-    let bound = 0;
-    for (const [id, f] of Object.entries(pred.composition)) {
-      const d = ctx.lookup(id);
-      if (d && (d.form === 'powder' || d.form === 'solid') && (d.binder || 0) >= 0.3) bound += f;
-    }
-    pred.looseSolids = Math.max(0, pred.granular - bound);
-    // choose required properties
-    const want = new Set(STYLE_PROPS[style] || ['color']);
-    if (style !== 'salve' && style !== 'heavy' && style !== 'varnish') want.add('color');
-    const nReq = [2, 3, 3, 4, 4][tier] + (opts.contract ? 1 : 0);
-    const extras = arch.props.filter((p) => !want.has(p));
-    const shuffled = rng.shuffle(extras);
-    for (const p of shuffled) {
-      if (want.size >= nReq) break;
-      if (p === 'quantity' || p === 'color') continue;
-      if (tier === 0 && (p === 'stability' || p === 'volatility' || EFFECT_INDEX[p] !== undefined)) continue;
-      want.add(p);
-    }
-    if (tier >= 1 && want.size < nReq && !want.has('stability')) want.add('stability');
-    /** @type {Requirement[]} */
-    const reqs = [];
-    const strict = arch.strict * (opts.contract ? 0.8 : 1);
-    for (const key of want) {
-      if (key === 'temperature' && Math.abs((plan.serveTemp ?? 20) - 20) < 6 && style !== 'warm' && style !== 'frost') continue;
-      const r = makeRequirement(key, pred, tier, strict, rng, plan, style);
-      if (r) reqs.push(r);
-    }
-    if (reqs.length < 1) continue;
-    // an effect style must actually ask for its effect
-    if (EFFECT_STYLES[style] && !reqs.some((r) => r.key === EFFECT_STYLES[style].key)) continue;
-    if (EFFECT_STYLES[style] && tier >= 2 && reqs.length < nReq + 1) {
-      // a blend: ask for its second strongest beneficial effect too
-      const main = EFFECT_STYLES[style].key;
-      const cand = ['vitality', 'strength', 'love', 'arcana', 'transformation', 'fire', 'frost'].filter((k) => k !== main && !reqs.some((r) => r.key === k))
-        .sort((a, b) => pred.effects[EFFECT_INDEX[b]] - pred.effects[EFFECT_INDEX[a]]);
-      if (cand.length && pred.effects[EFFECT_INDEX[cand[0]]] >= 6) {
-        const r2 = makeRequirement(cand[0], pred, tier, strict, rng, plan, style);
-        if (r2) reqs.push(r2);
-      }
-    }
-    const wantedFx = new Set(reqs.filter((r) => r.effect).map((r) => r.key));
-    if (wantedFx.size) reqs.push(...safetyLimits(pred, style, wantedFx, tier));
-    const customer = makeCustomer(rng, arch);
-    const cost = planCost(plan, ctx.priceOf) * (bottleN / pred.totalParticles) * 1.6;
-    const eventBonus = ctx.event && styles.includes(style) && ['winter', 'plague', 'conclave', 'festival'].includes(ctx.event) ? 1.25 : 1;
-    const effectOrder = wantedFx.size > 0;
-    const budget = Math.round((14 + cost * (2.6 + 0.45 * tier) + 9 * tier + reqs.length * 5 + (effectOrder ? 10 : 0)) * arch.budget * eventBonus * (opts.contract ? 2.2 : 1));
-    const colorWord = pred.color ? describeColor(pred.color) : '';
-    const potionName = `${style === 'salve' || style === 'heavy' || EFFECT_STYLES[style] ? '' : capitalize(colorWord) + ' '}${STYLE_NOUN[style]}`.trim();
-    let greet = rng.pick(arch.greet).replace('{potion}', aOrAn(potionName.toLowerCase()) + ' ' + potionName.toLowerCase());
-    if (EFFECT_STYLES[style] && EFFECT_PURPOSE[style]) greet += ' ' + rng.pick(EFFECT_PURPOSE[style]);
-    return {
-      id: 'q' + Math.floor(rng.next() * 1e9).toString(36),
-      tier,
-      style,
-      contract: !!opts.contract,
-      potionName,
-      customer,
-      dialogue: greet,
-      requirements: reqs,
-      bottleMl,
-      bottleN,
-      budget: Math.max(12, budget),
-      reference: plan,
-      predicted: { density: pred.density, viscosity: pred.viscosity, effects: pred.effects, color: pred.color, reactions: pred.reactions },
-      effectOrder,
-      hintCost: Math.max(3, Math.round(budget * 0.12)),
-    };
+    let com = null;
+    const physical = opts.style ? [opts.style] : opts.request ? [] : physicalFor(arch, tier, ctx.event);
+    const requests = opts.request ? [requestById(opts.request)].filter(Boolean) : opts.style ? [] : requestsFor(arch, tier, ctx.event);
+    const usePhysical = physical.length && (!requests.length || rng.chance(opts.style ? 1 : 0.3));
+    if (usePhysical) com = physicalCommission(rng.pick(physical), arch, tier, ctx, rng, totalN, bottleMl, bottleN, opts);
+    else if (requests.length) com = effectCommission(rng.pick(requests), arch, tier, ctx, rng, totalN, bottleMl, bottleN, opts);
+    if (com) return com;
   }
   return null;
+}
+
+/**
+ * An effect request: pick targets for the tier, find a feasible hidden plan
+ * (plain at low tiers; awakened when the targets are beyond what plain
+ * ingredients reach), then verify the predicted bottle earns full marks.
+ */
+function effectCommission(req, arch, tier, ctx, rng, totalN, bottleMl, bottleN, opts) {
+  const [lo, hi] = TIER_TARGET[tier];
+  const serve = req.serve === 'warm' ? Math.round(rng.range(45, 58)) : req.serve === 'cold' && ctx.cap.minCool <= 6 ? Math.round(rng.range(6, 10)) : 20;
+  let found = null, activation = false, wanted = [], exclude = [];
+  // the sampled strength first, then the tier's mildest, before giving up
+  for (const main of [Math.round(rng.range(lo, hi)), lo]) {
+    wanted = req.fx.map((f, k) => ({ key: f.key, sign: f.sign || 1, target: k === 0 ? main : Math.max(4, Math.round(main * (f.share || 0.6) * rng.range(0.9, 1.1))) }));
+    exclude = [...wanted.map((w) => w.key), ...(req.tolerate || [])];
+    // plain first; awakening only when plain cannot reach it (never for apprentices)
+    found = searchPlan(wanted, exclude, ctx, rng, totalN, { activation: false, serve });
+    if (!found && tier >= 2) {
+      found = searchPlan(wanted, exclude, ctx, rng, totalN, { activation: true, serve });
+      activation = !!found;
+    }
+    if (found) break;
+  }
+  if (!found) return null;
+  const { plan, pred } = found;
+  const strict = arch.strict * (opts.contract ? 0.8 : 1);
+  /** @type {Requirement[]} */
+  const reqs = [];
+  for (const w of wanted) {
+    const v = w.sign * pred.effects[EFFECT_INDEX[w.key]];
+    reqs.push(effectRequirement(w.key, w.sign, Math.min(w.target, v * 0.88)));
+  }
+  // an exacting master sometimes wants a measured dose, not just "enough"
+  if (tier >= 3 && strict < 1 && rng.chance(0.4)) {
+    const r0 = reqs[0], v = wanted[0].sign * pred.effects[EFFECT_INDEX[wanted[0].key]];
+    if (wanted[0].sign > 0) {
+      const tol = Math.max(3, Math.round(v * 0.2));
+      Object.assign(r0, { kind: 'target', target: Math.round(v), tol, zero: tol * 3, label: `${Math.round(v) - tol}–${Math.round(v) + tol}%` });
+    }
+  }
+  if (req.drunk !== false || (req.tolerate && req.tolerate.length < 9)) reqs.push(purityRequirement(exclude));
+  if (serve !== 20) reqs.push(/** @type {Requirement} */ (makeRequirement('temperature', pred, tier, strict, rng, plan, req.id)));
+  return finalize({ style: req.id, request: req, title: req.title, arch, tier, ctx, rng, plan, pred, reqs, bottleMl, bottleN, opts, activation });
+}
+
+/** A physical style (colour, thickness, temperature…) with any effects it carries made explicit. */
+function physicalCommission(style, arch, tier, ctx, rng, totalN, bottleMl, bottleN, opts) {
+  const plan = buildPlan(style, ctx, rng, totalN);
+  if (!plan) return null;
+  if (plan.coolTo < ctx.cap.minCool - 2 && style !== 'frost') return null;
+  /** @type {ReturnType<typeof predictPlan> & {looseSolids: number}} */
+  const pred = { ...predictPlan(ctx.world, ctx.lookup, plan), looseSolids: 0 };
+  // either nothing can awaken at its temperatures, or everything surely does
+  const regime = arcaneRegime([...plan.ingredients.map((i) => i.id), ...Object.keys(pred.composition)], ctx.lookup, [plan.heatTo, plan.coolTo, plan.serveTemp]);
+  if (regime === 'mixed') return null;
+  // undissolved grains that no binder holds in a paste settle as sediment
+  let bound = 0;
+  for (const [id, f] of Object.entries(pred.composition)) {
+    const d = ctx.lookup(id);
+    if (d && (d.form === 'powder' || d.form === 'solid') && (d.binder || 0) >= 0.3) bound += f;
+  }
+  pred.looseSolids = Math.max(0, pred.granular - bound);
+  const want = new Set(STYLE_PROPS[style] || ['color']);
+  if (style !== 'salve' && style !== 'heavy' && style !== 'varnish') want.add('color');
+  const nReq = [2, 3, 3, 4, 4][tier] + (opts.contract ? 1 : 0);
+  for (const p of rng.shuffle(arch.props.filter((p) => !want.has(p) && !EFFECT_BY_KEY[p]))) {
+    if (want.size >= nReq) break;
+    if (p === 'quantity' || p === 'color') continue;
+    if (tier === 0 && (p === 'stability' || p === 'volatility')) continue;
+    want.add(p);
+  }
+  if (tier >= 1 && want.size < nReq && !want.has('stability')) want.add('stability');
+  const strict = arch.strict * (opts.contract ? 0.8 : 1);
+  /** @type {Requirement[]} */
+  const reqs = [];
+  for (const key of want) {
+    if (key === 'temperature' && Math.abs((plan.serveTemp ?? 20) - 20) < 6 && style !== 'warm' && style !== 'frost') continue;
+    const r = makeRequirement(key, pred, tier, strict, rng, plan, style);
+    if (r) reqs.push(r);
+  }
+  // whatever magic the brew carries is part of the order; nothing may hover
+  // just above the purity limit, so a sloppy brew cannot pass by luck
+  const fx = [];
+  for (let k = 0; k < NE; k++) {
+    const v = pred.effects[k];
+    if (Math.abs(v) >= 2.5) fx.push({ key: EFFECT_KEYS[k], v });
+    else if (Math.abs(v) > PURITY_LIMIT * 0.6) return null;
+  }
+  for (const f of fx) reqs.push(effectRequirement(f.key, Math.sign(f.v), Math.abs(f.v) * 0.75));
+  reqs.push(purityRequirement(fx.map((f) => f.key)));
+  if (reqs.length < 2) return null;
+  return finalize({ style, request: null, title: null, arch, tier, ctx, rng, plan, pred, reqs, bottleMl, bottleN, opts, activation: false });
+}
+
+/** The predicted bottle as the counter would measure it. */
+function predictedMeasurement(pred, plan, ml) {
+  return {
+    ml, count: Math.round(ml / SIM.ML_PER_PARTICLE), lab: pred.lab, color: pred.color, density: pred.density, viscosity: pred.viscosity,
+    temperature: plan.serveTemp ?? 20, effects: Array.from(pred.effects), stability: 100, volatility: (pred.volatility || 0) * 100,
+  };
+}
+
+/** Assemble, verify and price a commission. */
+function finalize({ style, request, title, arch, tier, ctx, rng, plan, pred, reqs, bottleMl, bottleN, opts, activation }) {
+  const com = {
+    id: 'q' + Math.floor(rng.next() * 1e9).toString(36),
+    tier, style, request: request ? request.id : null, contract: !!opts.contract, potionName: '', customer: null, dialogue: '',
+    requirements: reqs, bottleMl, bottleN, budget: 0, reference: plan,
+    predicted: { density: pred.density, viscosity: pred.viscosity, effects: Array.from(pred.effects), color: pred.color, reactions: pred.reactions, threshold: pred.threshold, awakened: pred.awakened },
+    effectOrder: reqs.some((r) => r.effect), activation, hintCost: 0,
+  };
+  // the hidden plan must satisfy the customer by the counter's own rules
+  // (stability and volatility are not predicted, so they are left out here)
+  const check = evaluatePotion({ ...com, requirements: reqs.filter((r) => r.key !== 'stability' && r.key !== 'volatility') }, /** @type {any} */ (predictedMeasurement(pred, plan, bottleMl)));
+  if (check.quality < 0.999) return null;
+  const customer = makeCustomer(rng, arch);
+  const cost = planCost(plan, ctx.priceOf) * (bottleN / pred.totalParticles) * 1.6;
+  const eventBonus = ctx.event && ['winter', 'plague', 'conclave', 'festival'].includes(ctx.event) ? 1.15 : 1;
+  const budget = Math.round((14 + cost * (2.6 + 0.45 * tier) + 9 * tier + reqs.length * 5 + (com.effectOrder ? 10 : 0) + (activation ? 30 + 12 * tier : 0)) * arch.budget * eventBonus * (opts.contract ? 2.2 : 1));
+  const colorWord = pred.color ? describeColor(pred.color) : '';
+  const potionName = title || `${style === 'salve' || style === 'heavy' ? '' : capitalize(colorWord) + ' '}${STYLE_NOUN[style]}`.trim();
+  let greet = rng.pick(arch.greet).replace('{potion}', aOrAn(potionName.toLowerCase()) + ' ' + potionName.toLowerCase());
+  if (request) greet = rng.pick(request.story);
+  else {
+    const fx = reqs.filter((r) => r.effect && r.key !== 'purity').map((r) => EFFECT_BY_KEY[r.key].label.toLowerCase());
+    if (fx.length) greet += ` It should carry a little ${fx.join(' and ')} — and nothing else magical.`;
+  }
+  Object.assign(com, { potionName, customer, dialogue: greet, budget: Math.max(12, budget), hintCost: Math.max(3, Math.round(budget * 0.12)) });
+  return com;
 }
 
 /** Fixed, gentle first commission used by the tutorial. */
@@ -485,7 +683,7 @@ export function tutorialCommission(ctx, rng) {
   const R = ctx.world.roles;
   const plan = { ingredients: [{ id: R.water, n: 22 }, { id: R.essenceA, n: 22 }], heatTo: 45, coolTo: 20, serveTemp: 45 };
   const pred = predictPlan(ctx.world, ctx.lookup, plan);
-  const vit = Math.max(4, Math.round(pred.effects[EFFECT_INDEX.vitality] * 0.6));
+  const vit = Math.max(4, Math.round(pred.effects[EFFECT_INDEX.vitality] * 0.8));
   const arch = archetypeOf('farmer');
   const customer = makeCustomer(rng, arch);
   customer.name = 'Old Mabry Hollins';
@@ -498,18 +696,20 @@ export function tutorialCommission(ctx, rng) {
     tutorial: true,
     potionName: `${capitalize(colorWord)} Tonic`,
     customer,
-    dialogue: `Ah, a new alchemist! My old joints ache. Could you brew me a warm, healing ${colorWord} tonic? ${ctx.lookup(R.essenceA).name} thinned with ${ctx.lookup(R.water).name} ought to do — but test that it truly heals!`,
+    dialogue: `Ah, a new alchemist! My old joints ache. Could you brew me a warm, healing ${colorWord} tonic? ${ctx.lookup(R.essenceA).name} thinned with ${ctx.lookup(R.water).name} ought to do — but test that it truly heals, and that nothing else is in it!`,
     requirements: [
       { key: 'color', kind: 'target', target: pred.lab, rgb: pred.color, tol: 14, zero: 44, label: colorWord },
       { key: 'temperature', kind: 'target', target: 45, tol: 12, zero: 36, label: '33–57°C' },
-      { key: 'vitality', kind: 'min', target: vit, tol: 0, zero: Math.max(8, vit * 0.6), label: `at least ${vit}`, effect: true },
+      { key: 'vitality', kind: 'min', target: vit, tol: 0, zero: Math.max(6, vit * 0.6), label: `at least ${vit}%`, effect: true },
+      purityRequirement(['vitality']),
     ],
     bottleMl: 100,
     bottleN: 20,
     budget: 30,
     reference: plan,
-    predicted: { density: pred.density, viscosity: pred.viscosity, effects: pred.effects, color: pred.color, reactions: [] },
+    predicted: { density: pred.density, viscosity: pred.viscosity, effects: Array.from(pred.effects), color: pred.color, reactions: [], threshold: pred.threshold, awakened: pred.awakened },
     effectOrder: true,
+    activation: false,
     hintCost: 0,
   };
 }
@@ -523,4 +723,5 @@ function aOrAn(w) {
   return /^[aeiou]/i.test(w) ? 'an' : 'a';
 }
 
-export { STYLE_NOUN, STYLE_TIER };
+export { STYLE_NOUN, STYLE_TIER, unwantedMax };
+void isMagical;

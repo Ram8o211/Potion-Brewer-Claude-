@@ -16,6 +16,8 @@
 
 import { MAX_SPECIES } from './species.js';
 import { PHASE } from '../simulation/constants.js';
+import { awakenedId } from '../alchemy/arcane.js';
+import { awakeSlot } from '../simulation/arcane.js';
 
 const { GAS, SOLID } = PHASE;
 
@@ -50,6 +52,8 @@ export class ReactionSystem {
     this.progress = /** @type {Record<string, number>} */ ({});
     this.burned = 0;
     this._acc = new Float32Array(MAX_SPECIES);
+    /** reagent slots of the rule being run (base and awakened forms) */
+    this._pools = { sa: -1, saw: -1, sb: -1, sbw: -1, magA: false, magB: false };
   }
 
   /** @param {ReactionRule[]} rules */
@@ -65,23 +69,27 @@ export class ReactionSystem {
 
   /** @param {number} dt */
   step(dt) {
-    const sim = this.sim, p = sim.p, sp = sim.species, S = MAX_SPECIES;
+    const sim = this.sim, p = sim.p, sp = sim.species;
     const n = p.count;
     for (const rule of this.rules) {
-      const sa = sp.slotOf.get(rule.a);
-      if (sa === undefined) continue;
-      let sb = -1;
+      // a reagent's awakened form (alchemy/arcane.js) reacts like the reagent
+      const sa = slot(sp, rule.a), saw = slot(sp, awakenedId(rule.a));
+      if (sa < 0 && saw < 0) continue;
+      let sb = -1, sbw = -1;
       if (rule.b) {
-        const t = sp.slotOf.get(rule.b);
-        if (t === undefined) continue;
-        sb = t;
+        sb = slot(sp, rule.b);
+        sbw = slot(sp, awakenedId(rule.b));
+        if (sb < 0 && sbw < 0) continue;
       }
-      if (rule.kind === 'contact') this._contact(rule, sa, sb, dt);
-      else this._local(rule, sa, sb, dt);
+      const pools = this._pools;
+      pools.sa = sa; pools.saw = saw; pools.sb = sb; pools.sbw = sbw;
+      pools.magA = saw >= 0 || (sa >= 0 && sp.arcMag[sa] === 1);
+      pools.magB = sbw >= 0 || (sb >= 0 && sp.arcMag[sb] === 1);
+      if (rule.kind === 'contact') this._contact(rule, dt);
+      else this._local(rule, dt);
     }
     this._combustion(dt);
     for (let i = 0; i < n; i++) if (p.burn[i] > 0) p.burn[i] *= 0.93;
-    void S;
   }
 
   /** Resolve product slots, ensuring they exist. Returns null if table full. */
@@ -98,23 +106,43 @@ export class ReactionSystem {
     return out;
   }
 
+  /**
+   * Add `used` volume of products to particle offset `off`; the share `q`
+   * that came from awakened magic is produced in awakened form.
+   * @param {number[][]} prods @param {number} off @param {number} used @param {number} q
+   */
+  _yield(prods, off, used, q) {
+    const p = this.sim.p;
+    for (const [s, f] of prods) {
+      const v = used * f;
+      const a = q > 0 ? awakeSlot(this.sim, s) : -1;
+      if (a >= 0) {
+        p.comp[off + s] += v * (1 - q);
+        p.comp[off + a] += v * q;
+      } else p.comp[off + s] += v;
+    }
+  }
+
   _rateT(rule, T) {
     if (T < rule.minT || T > rule.maxT) return 0;
     return 1 + Math.min(3, (T - rule.minT) / 40);
   }
 
-  _local(rule, sa, sb, dt) {
-    const sim = this.sim, p = sim.p, S = MAX_SPECIES;
+  _local(rule, dt) {
+    const sim = this.sim, p = sim.p, S = MAX_SPECIES, comp = p.comp;
+    const { sa, saw, sb, sbw, magA, magB } = this._pools;
+    const hasB = sb >= 0 || sbw >= 0;
     let prods = null;
     const n = p.count;
     for (let i = 0; i < n; i++) {
       if (p.phase[i] === SOLID) continue;
       const off = i * S;
-      const fa = p.comp[off + sa];
+      const fa = pool(comp, off, sa, saw);
       if (fa < 0.004) continue;
       let lim = fa / rule.ra;
-      if (sb >= 0) {
-        const fb = p.comp[off + sb];
+      let fb = 0;
+      if (hasB) {
+        fb = pool(comp, off, sb, sbw);
         if (fb < 0.004) continue;
         lim = Math.min(lim, fb / rule.rb);
       }
@@ -133,10 +161,11 @@ export class ReactionSystem {
         prods = this._productSlots(rule);
         if (!prods) return;
       }
-      const used = ext * (rule.ra + (sb >= 0 ? rule.rb : 0));
-      p.comp[off + sa] -= ext * rule.ra;
-      if (sb >= 0) p.comp[off + sb] -= ext * rule.rb;
-      for (const [s, f] of prods) p.comp[off + s] += used * f;
+      const ua = ext * rule.ra, ub = hasB ? ext * rule.rb : 0;
+      const qa = take(comp, off, sa, saw, ua);
+      const qb = hasB ? take(comp, off, sb, sbw, ub) : 0;
+      const used = ua + ub;
+      this._yield(prods, off, used, awakeShare(ua, qa, magA, ub, qb, magB));
       p.temp[i] += (rule.heat * used) / p.rhoCp[i];
       p.dirty[i] = 1;
       p.wet[i] = Math.min(1, p.wet[i] + 0.3);
@@ -145,17 +174,18 @@ export class ReactionSystem {
     }
   }
 
-  _contact(rule, sa, sb, dt) {
-    const sim = this.sim, p = sim.p, S = MAX_SPECIES;
+  _contact(rule, dt) {
+    const sim = this.sim, p = sim.p, S = MAX_SPECIES, comp = p.comp;
+    const { sa, saw, sb, sbw, magA, magB } = this._pools;
     const { pairI, pairJ, pairCount } = sim.grid;
     let prods = null;
     for (let k = 0; k < pairCount; k++) {
       let i = pairI[k], j = pairJ[k];
       if (p.phase[i] === GAS || p.phase[j] === GAS) continue;
-      let fa = p.comp[i * S + sa], fb = p.comp[j * S + sb];
+      let fa = pool(comp, i * S, sa, saw), fb = pool(comp, j * S, sb, sbw);
       if (fa < 0.004 || fb < 0.004) {
         // try the other orientation
-        const fa2 = p.comp[j * S + sa], fb2 = p.comp[i * S + sb];
+        const fa2 = pool(comp, j * S, sa, saw), fb2 = pool(comp, i * S, sb, sbw);
         if (fa2 < 0.004 || fb2 < 0.004) continue;
         const t = i; i = j; j = t;
         fa = fa2; fb = fb2;
@@ -177,12 +207,11 @@ export class ReactionSystem {
         if (!prods) return;
       }
       const ua = ext * rule.ra, ub = ext * rule.rb;
-      p.comp[i * S + sa] -= ua;
-      p.comp[j * S + sb] -= ub;
-      for (const [s, f] of prods) {
-        p.comp[i * S + s] += ua * f;
-        p.comp[j * S + s] += ub * f;
-      }
+      const qa = take(comp, i * S, sa, saw, ua);
+      const qb = take(comp, j * S, sb, sbw, ub);
+      const q = awakeShare(ua, qa, magA, ub, qb, magB);
+      this._yield(prods, i * S, ua, q);
+      this._yield(prods, j * S, ub, q);
       p.temp[i] += (rule.heat * ua) / p.rhoCp[i];
       p.temp[j] += (rule.heat * ub) / p.rhoCp[j];
       p.dirty[i] = 1; p.dirty[j] = 1;
@@ -292,6 +321,38 @@ export class ReactionSystem {
       }
     }
   }
+}
+
+/** Slot of a species id, or -1. @param {import('./species.js').SpeciesTable} sp @param {string} id */
+function slot(sp, id) {
+  const s = sp.slotOf.get(id);
+  return s === undefined ? -1 : s;
+}
+
+/** Volume of a reagent in a particle, counting its awakened form. */
+function pool(comp, off, s, sw) {
+  return (s >= 0 ? comp[off + s] : 0) + (sw >= 0 ? comp[off + sw] : 0);
+}
+
+/**
+ * Consume `amt` of a reagent from a particle, from its plain and awakened
+ * forms in proportion. Returns the awakened share consumed.
+ */
+function take(comp, off, s, sw, amt) {
+  const a = s >= 0 ? comp[off + s] : 0, w = sw >= 0 ? comp[off + sw] : 0;
+  const tot = a + w;
+  if (tot <= 0) return 0;
+  const q = w / tot;
+  if (s >= 0) comp[off + s] = Math.max(0, a - amt * (1 - q));
+  if (sw >= 0) comp[off + sw] = Math.max(0, w - amt * q);
+  return q;
+}
+
+/** Share of the magical reagents consumed that was awakened. */
+function awakeShare(ua, qa, magA, ub, qb, magB) {
+  const tot = (magA ? ua : 0) + (magB ? ub : 0);
+  if (tot <= 0) return 0;
+  return ((magA ? ua * qa : 0) + (magB ? ub * qb : 0)) / tot;
 }
 
 function maxFlamSlot(sim, i) {

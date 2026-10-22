@@ -12,46 +12,72 @@ import { hashString } from '../core/rng.js';
 
 /** @typedef {Record<string, number>} Fx */
 
-/** Base effect potencies (pure material, 0..100) by role. @type {Record<string, Fx>} */
+/**
+ * Native effect potencies by role: percent effective concentration of the
+ * pure, fully extracted, *unawakened* material (alchemy/arcane.js). Plain
+ * ingredients are deliberately weak; awakening multiplies them by the gain
+ * in ROLE_ARCANE. Solvents carry nothing so they can carry anything.
+ * @type {Record<string, Fx>}
+ */
 export const ROLE_EFFECTS = {
-  soot: { toxicity: 6, death: 4, acidity: -14 },
-  smoke: { toxicity: 14 },
+  soot: { toxicity: 3, acidity: -6 },
+  smoke: { toxicity: 8 },
   water: {},
-  oil: { fire: 5, strength: 4 },
-  syrup: { vitality: 10, strength: 6, love: 5 },
-  spirit: { fire: 5, arcana: 8, toxicity: 7 },
-  essenceA: { vitality: 17 },
-  essenceB: { fire: 16, love: 5 },
-  essenceC: { arcana: 17, transformation: 3 },
-  binder: { strength: 9, vitality: 2 },
-  salt: { strength: 3, vitality: 4, frost: 2 },
-  ember: { fire: 42, acidity: 10, strength: 4 },
-  frost: { frost: 46, strength: 6, arcana: 2 },
-  metal: { strength: 14, toxicity: 34, arcana: 4 },
-  crystal: { arcana: 32, strength: 6, transformation: 6 },
-  wax: { strength: 7, fire: 2 },
-  fizz: { acidity: 32, transformation: 10, arcana: 4 },
-  spores: { arcana: 22, transformation: 12, toxicity: 6, vitality: 4 },
-  resin: { fire: 20, strength: 16 },
-  starlight: { arcana: 45, love: 8, vitality: 6 },
-  moss: { strength: 34, vitality: 6 },
-  vapor: { arcana: 12, toxicity: 22 },
-  phoenix: { vitality: 24, fire: 55, transformation: 16 },
-  void: { arcana: 40, death: 34, transformation: 14 },
-  p_elixir: { vitality: 70, strength: 4, arcana: 4 },
-  p_ardent: { fire: 64, love: 10, strength: 6 },
-  p_arcane: { arcana: 72, transformation: 8 },
-  p_salve: { strength: 64, vitality: 12 },
-  p_fizzgas: { transformation: 8, acidity: 6 },
-  p_spent: { acidity: 10, strength: 4 },
-  p_caramel: { vitality: 14, fire: 14, love: 12, strength: 8 },
-  p_panacea: { vitality: 82, arcana: 58, strength: 8 },
-  p_amalgam: { strength: 58, arcana: 28, toxicity: 18 },
-  p_phoenix: { vitality: 58, fire: 66, transformation: 22 },
-  p_varnish: { strength: 54, fire: 20, toxicity: 14 },
-  p_frostbloom: { frost: 44, arcana: 30, transformation: 10 },
-  p_lumen: { arcana: 84, vitality: 6, love: 6 },
+  oil: {},
+  syrup: { vitality: 4 },
+  spirit: {},
+  essenceA: { vitality: 18 },
+  essenceB: { fire: 17 },
+  essenceC: { arcana: 18 },
+  binder: { strength: 6 },
+  salt: {},
+  ember: { fire: 30, acidity: 8 },
+  frost: { frost: 30 },
+  metal: { strength: 10, toxicity: 24 },
+  crystal: { arcana: 28, transformation: 4 },
+  wax: { strength: 5 },
+  fizz: { acidity: 24, transformation: 5 },
+  spores: { arcana: 14, transformation: 10, vitality: 3 },
+  resin: { fire: 14, strength: 12 },
+  starlight: { arcana: 32, love: 6 },
+  moss: { strength: 26, vitality: 3 },
+  vapor: { arcana: 8, toxicity: 16 },
+  phoenix: { fire: 36, vitality: 16, transformation: 10 },
+  void: { death: 28, arcana: 22, transformation: 10 },
+  p_elixir: { vitality: 40, strength: 2 },
+  p_ardent: { fire: 42, love: 4 },
+  p_arcane: { arcana: 44, transformation: 4 },
+  p_salve: { strength: 38, vitality: 6 },
+  p_fizzgas: { transformation: 6, acidity: 4 },
+  p_spent: { acidity: 6 },
+  p_caramel: { vitality: 8, fire: 8, love: 8, strength: 5 },
+  p_panacea: { vitality: 48, arcana: 34, strength: 4 },
+  p_amalgam: { strength: 36, arcana: 16, toxicity: 10 },
+  p_phoenix: { vitality: 36, fire: 40, transformation: 12 },
+  p_varnish: { strength: 34, fire: 12, toxicity: 8 },
+  p_frostbloom: { frost: 30, arcana: 18, transformation: 6 },
+  p_lumen: { arcana: 50, vitality: 4, love: 4 },
 };
+
+/**
+ * Arcane threshold (−1000…+1000; T = 20 °C + 0.1·thr) and awakening gain by
+ * role. Thresholds sit away from each material's natural preparation
+ * temperatures, so awakening is a deliberate extra step.
+ * @type {Record<string, [number, number]>}
+ */
+export const ROLE_ARCANE = {
+  soot: [800, 2], smoke: [100, 2], syrup: [380, 2.4],
+  essenceA: [300, 3.2], essenceB: [450, 3], essenceC: [-150, 3], binder: [200, 2.5],
+  ember: [600, 2.5], frost: [-650, 2.6], metal: [700, 2.4], crystal: [500, 3], wax: [350, 2.2], fizz: [-100, 2.5],
+  spores: [250, 3], resin: [900, 2.8], starlight: [-400, 2.8], moss: [550, 3], vapor: [-300, 2.5],
+  phoenix: [950, 2.4], void: [-900, 2.6],
+  p_elixir: [260, 2.2], p_ardent: [500, 2], p_arcane: [450, 2], p_salve: [250, 2], p_fizzgas: [-100, 2], p_spent: [-100, 2],
+  p_caramel: [400, 2], p_panacea: [350, 1.8], p_amalgam: [650, 2], p_phoenix: [900, 2], p_varnish: [700, 2],
+  p_frostbloom: [-500, 2.2], p_lumen: [100, 1.8],
+};
+
+/** Version of the effect / arcane profiles. Older embedded worlds are upgraded to it. */
+export const FX_VERSION = 2;
 
 /** Electrical conductance (0..1) and intrinsic charge per unit volume (−1..1). */
 export const ROLE_ELECTRIC = {
@@ -69,31 +95,43 @@ export function roleOf(id) {
 }
 
 /** Deterministic jitter in [1-amp, 1+amp] from seed and id. */
-function jitter(seed, id, salt, amp) {
+export function jitter(seed, id, salt, amp) {
   const h = hashString(`${seed}|${id}|${salt}`);
   return 1 - amp + ((h % 10007) / 10006) * 2 * amp;
 }
 
 /**
- * Give a material its effect vector and electrical properties (in place) if
- * it has none. Wild materials carry their own and are left untouched.
+ * Give a material its effect vector, arcane profile and electrical
+ * properties (in place). A material from an older profile version is
+ * upgraded to exactly what a fresh world of the same seed gets. Wild
+ * materials carry their own profiles (materials/wild.js).
  * @param {any} m material definition
  * @param {string} seed
  */
 export function applyProfile(m, seed) {
   const role = roleOf(m.id);
-  if (!m.effects) {
-    const base = ROLE_EFFECTS[role];
+  const known = ROLE_EFFECTS[role];
+  if (!m.effects || (known && m.fxv !== FX_VERSION && !m.wild && !role.startsWith('wild-'))) {
     /** @type {Fx} */
     const fx = {};
-    if (base) {
-      for (const [k, v] of Object.entries(base)) fx[k] = Math.round(v * jitter(seed, m.id, k, 0.1) * 10) / 10;
+    if (known) {
+      for (const [k, v] of Object.entries(known)) fx[k] = Math.round(v * jitter(seed, m.id, k, 0.1) * 10) / 10;
     } else if (m.aspects) {
       // unknown role (e.g. a custom material): map the old aspects
       const keys = ['vitality', 'fire', 'arcana', 'strength'];
       m.aspects.forEach((v, i) => { if (v) fx[keys[i]] = v; });
     }
     m.effects = fx;
+    if (known) {
+      const arc = ROLE_ARCANE[role];
+      m.arcane = arc ? arcaneProfile(seed, m.id, arc[0], arc[1]) : undefined;
+      if (!arc) delete m.arcane;
+      m.fxv = FX_VERSION;
+    }
+  }
+  if (!m.arcane && m.effects && Object.values(m.effects).some((v) => Math.abs(Number(v)) >= 1) && !role.startsWith('wild-')) {
+    // any other effectful material gets a mild default threshold
+    m.arcane = arcaneProfile(seed, m.id, 400, 2.2);
   }
   if (m.econd === undefined) {
     const el = ROLE_ELECTRIC[role] || [m.form === 'liquid' ? 0.06 : 0.03, 0];
@@ -101,4 +139,14 @@ export function applyProfile(m, seed) {
     m.charge = el[1];
   }
   return m;
+}
+
+/**
+ * A material's arcane threshold and gain, jittered per world (±60 units,
+ * ±8 % gain) so every world has to be learned afresh.
+ * @param {string} seed @param {string} id @param {number} thr @param {number} gain
+ */
+export function arcaneProfile(seed, id, thr, gain) {
+  const t = Math.round((thr + (jitter(seed, id, 'arc', 1) - 1) * 60) / 5) * 5;
+  return { thr: Math.max(-1000, Math.min(1000, t)), gain: Math.round(gain * jitter(seed, id, 'gain', 0.08) * 100) / 100 };
 }

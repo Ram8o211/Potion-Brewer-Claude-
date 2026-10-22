@@ -9,11 +9,15 @@ import { generateCommission, tutorialCommission } from './commissions.js';
 import { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById } from './equipment.js';
 import { SIM } from '../simulation/constants.js';
 import { createTrials, normalizeTrials, runTrial, resetSubject, SUBJECT_BY_ID, knownLaws } from './experiments.js';
-import { createGathering, normalizeGathering, generateDeposits, harvest, newDayRegrowth } from './gathering.js';
+import { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth } from './gathering.js';
 import { predictPlan } from './predict.js';
 import { EFFECT_INDEX } from '../alchemy/effects.js';
+import { migrateVial } from './vial.js';
+import { recordSale, resolveFollowUp } from './commerce.js';
+import { colonyDay, livingRabbits, findRabbit, addBoughtRabbit, retireRabbit, remainsSource, FOUNDER_BORN } from './colony.js';
+import { remainsMaterials, remainsPlan, isRemains } from '../materials/remains.js';
 
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 export const WORLD_GEN_VERSION = 2;
 /** old aspect requirement keys → effect keys (v2 saves) */
 const ASPECT_KEY_MAP = { vitality: 'vitality', ardor: 'fire', arcana: 'arcana', fortitude: 'strength' };
@@ -60,6 +64,14 @@ export const ACHIEVEMENTS = [
   { id: 'forage1k', name: 'Seasoned Forager', desc: 'Gather 1000 ml of wild ingredients.', reward: 50 },
   { id: 'certified', name: 'Proven Remedy', desc: 'Serve a potion whose effects you verified by experiment.', reward: 15 },
   { id: 'steep', name: 'Patience of the Steep', desc: 'Steep a herb into a liquid extract with heat.', reward: 15 },
+  { id: 'awaken', name: 'Awakening', desc: 'Awaken a magical ingredient past its arcane threshold.', reward: 20 },
+  { id: 'deal', name: 'Silver Tongue', desc: 'Sell a potion for more than the customer first offered.', reward: 15 },
+  { id: 'dispute', name: 'The Records Speak', desc: 'Win a dispute with trial records of the batch.', reward: 30 },
+  { id: 'referral', name: 'Word of Mouth', desc: 'Serve a customer sent by a satisfied one.', reward: 25 },
+  { id: 'kit1', name: 'New Arrivals', desc: 'Kits are born in your hutch.', reward: 15 },
+  { id: 'colony8', name: 'Thriving Warren', desc: 'Keep eight living rabbits.', reward: 40 },
+  { id: 'survivor', name: 'Iron Constitution', desc: 'A rabbit survives ten trials.', reward: 30 },
+  { id: 'remains1', name: 'Nothing Wasted', desc: 'Recover the remains of a rabbit as ingredients.', reward: 15 },
 ];
 
 /**
@@ -95,9 +107,9 @@ export class GameState {
     /** @type {any[]} */ this.history = data.history;
     /** @type {Record<string, number>} */ this.achievements = data.achievements;
     /** @type {any} */ this.current = data.current;
-    /** @type {{served:number, perfect:number, earned:number, spent:number, brews:number, declined:number, bestQuality:number, gathered?:number, trials?:number}} */
+    /** @type {{served:number, perfect:number, earned:number, spent:number, brews:number, declined:number, bestQuality:number, gathered?:number, trials?:number, refunds?:number, disputesWon?:number, bred?:number, recovered?:number}} */
     this.stats = { served: 0, perfect: 0, earned: 0, spent: 0, brews: 0, declined: 0, bestQuality: 0, ...(data.stats || {}) };
-    /** @type {{active:boolean, step:number, done:boolean}} */ this.tutorial = { active: false, step: 0, done: true, ...(data.tutorial || {}) };
+    /** @type {{active:boolean, step:number, done:boolean, tips?:Record<string, boolean>}} */ this.tutorial = { active: false, step: 0, done: true, ...(data.tutorial || {}) };
     /** @type {{event:string, mods:Record<string, number>}} */ this.market = data.market || { event: 'none', mods: {} };
     /** @type {any} */ this.cauldron = data.cauldron || null;
     /** @type {any} */ this.receiver = data.receiver || null;
@@ -107,13 +119,27 @@ export class GameState {
     /** @type {number} */ this.createdAt = data.createdAt || Date.now();
     /** @type {ReturnType<typeof createTrials>} */ this.trials = normalizeTrials(data.trials);
     /** @type {ReturnType<typeof createGathering>} */ this.gathering = normalizeGathering(data.gathering);
-    /** the sealed vial waiting to be served (or null) */
-    this.vial = data.vial || null;
+    /** the sealed vial (game/vial.js): exact bottled particles, or null */
+    this.vial = migrateVial(data.vial);
+    /** sales ledger (commerce.js): price, label, the true potion and the evidence */
+    /** @type {any[]} */ this.sales = Array.isArray(data.sales) ? data.sales : [];
+    /** customers coming back after drinking (praise, complaints) */
+    /** @type {any[]} */ this.followUps = Array.isArray(data.followUps) ? data.followUps : [];
+    /** friends sent by satisfied customers, still to arrive */
+    /** @type {number} */ this.referrals = data.referrals | 0;
     /** identity of the brew in the cauldron: a new id when it is emptied, rev++ on every addition */
     this.batch = data.batch && typeof data.batch.id === 'string' ? { id: data.batch.id, rev: data.batch.rev | 0 } : newBatch();
     this.lookup = makeLookup(this.world);
     /** @type {import('./gathering.js').Deposit[]|null} */
     this._deposits = null;
+    const col = this.trials.colony;
+    if (!col.seed) col.seed = String(this.seed);
+    if (!col.day) {
+      // a hutch just made (a new game, or an older save's rabbit turned
+      // founder): its founders are young adults on today's date
+      for (const r of col.rabbits) if (r.born === FOUNDER_BORN && !r.parents) r.born = this.day - 1 + FOUNDER_BORN;
+      col.day = this.day;
+    }
   }
 
   /**
@@ -189,7 +215,7 @@ export class GameState {
 
   /** Ingredients the player may buy now (unlocked by rank). */
   purchasable() {
-    return this.world.ingredients.filter((id) => (this.lookup(id).tier || 0) <= this.rank);
+    return this.world.ingredients.filter((id) => { const m = this.lookup(id); return m && !isRemains(m) && (m.tier || 0) <= this.rank; });
   }
 
   /** Ingredient ids that are buyable or in stock. */
@@ -214,14 +240,15 @@ export class GameState {
   }
 
   /**
-   * Gather from a deposit into the inventory.
-   * @param {string} depositId @param {{now?:number, unlimited?:boolean}} [opts]
+   * Gather from a deposit into the inventory. The yield follows the method
+   * and tool, the hour, the weather and the care taken (gathering.js).
+   * @param {string} depositId @param {{now?:number, unlimited?:boolean, thorough?:boolean}} [opts]
    */
   gather(depositId, opts = {}) {
     const d = this.deposits.find((x) => x.id === depositId);
     if (!d) return { ok: false, amount: 0, reason: 'unknown' };
-    const take = this.has('satchel') ? Math.round(d.take * 1.5) : d.take;
-    const r = harvest(this, { ...d, take }, opts);
+    const { take, eff, reserve } = gatherPlan(this, d, this.lookup(d.materialId), { thorough: opts.thorough });
+    const r = harvest(this, { ...d, take }, { ...opts, eff, reserve });
     if (r.ok && !opts.unlimited) {
       this.stats.gathered = (this.stats.gathered || 0) + r.amount;
       /** @type {any} */ (r).events = [...this.unlock('forage1')];
@@ -266,13 +293,157 @@ export class GameState {
       events.push(...this.unlock('law1'));
       if (this.knownLaws.length >= 4) events.push(...this.unlock('law4'));
     }
+    if (rec.rabbitId) {
+      const r = findRabbit(this.trials.colony, rec.rabbitId);
+      if (r && !r.alive) events.push({ type: 'rabbit-died', id: r.id, name: r.name, cause: r.cause });
+      if (r && r.alive && r.trials >= 10) events.push(...this.unlock('survivor'));
+    }
     return { record: rec, events };
+  }
+
+  // ------------------------------------------------------------ the rabbit colony
+  get colony() {
+    return this.trials.colony;
+  }
+
+  /** What a new rabbit costs (half with the kennel). */
+  rabbitPrice() {
+    return Math.ceil(SUBJECT_BY_ID.rabbit.cost * (this.has('kennel') ? 0.5 : 1));
+  }
+
+  /**
+   * Buy an adult rabbit from the breeder (selected at once). The hutch must
+   * have room.
+   * @param {boolean} [free]
+   */
+  buyRabbit(free = false) {
+    const c = this.colony;
+    const cap = this.cap.hutch;
+    if (livingRabbits(c).length >= cap) return { ok: false, reason: `The hutch is full (${cap} places). Upgrade it at the guild.` };
+    const cost = free ? 0 : this.rabbitPrice();
+    if (cost > this.coins + 1e-9) return { ok: false, reason: `A new rabbit costs ${cost} coins.` };
+    this.coins = round1(this.coins - cost);
+    this.stats.spent += cost;
+    this.daySpending += cost;
+    const rabbit = addBoughtRabbit(c, { day: this.day });
+    c.focus = rabbit.id;
+    return { ok: true, cost, rabbit };
+  }
+
+  /** Choose the rabbit the next dose goes to. @param {string} id */
+  selectRabbit(id) {
+    if (!findRabbit(this.colony, id)) return false;
+    this.colony.focus = id;
+    return true;
+  }
+
+  /** The cost of a day's hay and greens for the hutch. */
+  feedCost() {
+    return livingRabbits(this.colony).length ? 1 : 0;
+  }
+
+  /**
+   * Feed the hutch for today: everyone perks up, poison eases, and tonight
+   * they recover faster and pair up more readily.
+   */
+  feedRabbits() {
+    const c = this.colony;
+    const live = livingRabbits(c);
+    if (!live.length) return { ok: false, reason: 'There is nobody to feed.' };
+    if (c.fedDay === this.day) return { ok: false, reason: 'They have eaten today.' };
+    const cost = this.feedCost();
+    if (cost > this.coins + 1e-9) return { ok: false, reason: `Hay and greens cost ${cost} coin.` };
+    this.coins = round1(this.coins - cost);
+    this.stats.spent += cost;
+    this.daySpending += cost;
+    c.fedDay = this.day;
+    for (const r of live) {
+      r.health = round1(Math.min(Math.max(20, 100 - r.scar), r.health + 6));
+      r.marks.toxicity = Math.max(0, round1(r.marks.toxicity - 5));
+    }
+    return { ok: true, cost };
+  }
+
+  /** Let healthy pairs breed overnight, or not. @param {boolean} on */
+  setBreeding(on) {
+    this.colony.breed = !!on;
+  }
+
+  /**
+   * Make a material known to this world (remains): in the material list and
+   * on the shelf, once.
+   * @param {any} def
+   */
+  registerMaterial(def) {
+    if (!this.world.materials.some((m) => m.id === def.id)) this.world.materials.push(def);
+    if (!this.world.ingredients.includes(def.id)) this.world.ingredients.push(def.id);
+    return this.lookup(def.id);
+  }
+
+  /**
+   * Recover a dead rabbit's remains — once. Its bones, pelt or ash and any
+   * residue become ingredients whose effects come from its life; the body
+   * goes to the memorial.
+   * @param {string} id
+   */
+  processRemains(id) {
+    const c = this.colony;
+    const r = findRabbit(c, id);
+    if (!r) return { ok: false, reason: 'There is no such body in the hutch.' };
+    if (r.alive) return { ok: false, reason: `${r.name} is alive.` };
+    const src = remainsSource(r, this.day);
+    const defs = remainsMaterials(src, this.world);
+    const plan = remainsPlan(src);
+    const parts = [];
+    for (const d of defs) {
+      this.registerMaterial(d);
+      const ml = (plan.find((p) => p.part === d.remains.part) || { ml: 0 }).ml;
+      const have = this.inventory[d.id] || 0;
+      this.inventory[d.id] = Math.min(this.cap.storage, have + ml);
+      parts.push({ id: d.id, name: d.name, ml });
+    }
+    retireRabbit(c, id, 'processed', defs.map((d) => d.id), this.day);
+    this.stats.recovered = (this.stats.recovered || 0) + 1;
+    /** @type {any[]} */
+    const events = [];
+    const entry = this.discover({ key: 'remains:' + id, title: `The remains of ${r.name}`, text: `You recovered ${parts.map((p) => p.name.split('’s ')[1] || p.name).join(', ')} from ${r.name}. What ${r.sex === 'f' ? 'she' : 'he'} absorbed in life may linger in them — only trials will tell.`, kind: 'colony' });
+    if (entry) events.push({ type: 'journal', entry });
+    events.push(...this.unlock('remains1'));
+    return { ok: true, parts, events };
+  }
+
+  /** Bury a body (nothing is recovered). @param {string} id */
+  buryRabbit(id) {
+    const r = findRabbit(this.colony, id);
+    if (!r || r.alive) return { ok: false, reason: r ? `${r.name} is alive.` : 'There is no such body.' };
+    retireRabbit(this.colony, id, 'buried', [], this.day);
+    return { ok: true };
+  }
+
+  /**
+   * Re-register the remains materials of processed rabbits that this world
+   * does not hold (the sandbox's world is not saved), with no stock.
+   */
+  restoreRemains() {
+    for (const m of this.colony.memorial) {
+      if (m.how !== 'processed' || !m.parts.length) continue;
+      if (m.parts.every((id) => this.world.materials.some((x) => x.id === id))) continue;
+      for (const d of remainsMaterials(remainsSource(/** @type {any} */ (m), this.day), this.world)) this.registerMaterial(d);
+    }
   }
 
   /** Replace a spent test subject (costs coins). @param {string} id */
   replaceSubject(id, free = false) {
     const def = SUBJECT_BY_ID[id];
     if (!def) return { ok: false, reason: 'Unknown subject.' };
+    if (id === 'rabbit') {
+      // a new rabbit for the hutch — or, when it is full, the next living one
+      const r = this.buyRabbit(free);
+      if (r.ok) return r;
+      const alive = livingRabbits(this.colony)[0];
+      if (alive && livingRabbits(this.colony).length >= this.cap.hutch) { this.colony.focus = alive.id; return { ok: true, cost: 0, reselected: true }; }
+      return r;
+    }
     const cost = free ? 0 : Math.ceil(def.cost * (this.has('kennel') ? 0.5 : 1));
     if (cost > this.coins + 1e-9) return { ok: false, reason: `A new ${def.name.toLowerCase()} costs ${cost} coins.` };
     this.coins = round1(this.coins - cost);
@@ -353,6 +524,8 @@ export class GameState {
   commissionContext() {
     const available = this.availableSet();
     for (const id of this.gatherableSet()) available.add(id);
+    // orders are never planned around a rabbit's remains (their effects are unknown)
+    for (const id of [...available]) if (isRemains(this.lookup(id))) available.delete(id);
     return {
       world: this.world,
       lookup: this.lookup,
@@ -379,6 +552,13 @@ export class GameState {
       // difficulty follows rank, with some easier and harder requests mixed in
       const tier = Math.max(0, Math.min(4, this.rank + (rng.chance(0.25) ? -1 : 0) + (rng.chance(0.15) ? 1 : 0)));
       com = generateCommission(this.commissionContext(), rng, { tier: Math.min(tier, this.rank + 1), contract });
+      if (com && this.referrals > 0) {
+        // a friend of a satisfied customer: they come with a better budget
+        this.referrals--;
+        com.referral = true;
+        com.budget = Math.round(com.budget * 1.3);
+        com.dialogue = `A friend told me your potions really work. ${com.dialogue}`;
+      }
     }
     this.current = com;
     return com;
@@ -412,32 +592,122 @@ export class GameState {
    */
   completeSale(ev, measurement) {
     const com = this.current;
+    if (!com) return [];
+    return this._bookSale(com, ev, measurement, ev.payment, ev.repDelta);
+  }
+
+  /**
+   * Shared bookkeeping of a sale: coins, history, statistics, achievements.
+   * @param {any} com @param {any} ev true evaluation @param {any} measurement @param {number} paid @param {number} rep reputation now
+   */
+  _bookSale(com, ev, measurement, paid, rep, saleId = null) {
+    /** @type {any[]} */
     const events = [];
-    if (!com) return events;
-    const oldRank = this.rank;
-    this.coins = round1(this.coins + ev.payment);
-    this.reputation = Math.max(0, this.reputation + ev.repDelta);
+    this.coins = round1(this.coins + paid);
+    events.push(...this.adjustReputation(rep));
     this.stats.served++;
-    this.stats.earned += ev.payment;
-    this.dayEarnings += ev.payment;
-    this.stats.bestQuality = Math.max(this.stats.bestQuality, ev.quality);
-    if (ev.perfect) this.stats.perfect++;
+    this.stats.earned += paid;
+    this.dayEarnings += paid;
     this.servedToday++;
+    // a labelled sale's true quality is only known once the customer reports back
     this.history.unshift({
-      day: this.day, customer: com.customer.name, title: com.customer.title, potion: com.potionName, quality: ev.quality, stars: ev.stars,
-      paid: ev.payment, color: measurement?.color, ml: measurement?.ml,
+      day: this.day, customer: com.customer.name, title: com.customer.title, potion: com.potionName, quality: saleId ? null : ev.quality, stars: saleId ? null : ev.stars,
+      paid, color: measurement?.color, ml: measurement?.ml, ...(saleId ? { saleId } : {}),
     });
     if (this.history.length > 60) this.history.length = 60;
     if (com.tutorial) { this.tutorial.done = true; this.tutorial.active = false; }
-    if (com.grand && ev.quality >= 0.85) { this.grandDone = true; events.push(...this.unlock('grand')); }
+    if (!saleId) events.push(...this._verdict(ev.quality, ev.perfect, !!com.grand));
     this.current = null;
     this.customerIndex++;
     events.push(...this.unlock('first_sale'));
-    if (ev.perfect) events.push(...this.unlock('perfect'));
-    if (this.stats.perfect >= 5) events.push(...this.unlock('perfect5'));
     if (this.stats.served >= 10) events.push(...this.unlock('served10'));
     if (this.stats.served >= 50) events.push(...this.unlock('served50'));
     if (this.coins >= 1000) events.push(...this.unlock('rich'));
+    return events;
+  }
+
+  /**
+   * A deal struck at the counter: the agreed price is paid now, and the
+   * customer's verdict on the real potion arrives the next day.
+   * @param {any} vial @param {any} label @param {number} price @param {any} truth measurement of the bottled potion
+   * @param {number} [firstOffer] what the customer opened with
+   */
+  /**
+   * What a potion's true quality earns, once it is known: best quality,
+   * perfect potions and the grand commission.
+   * @param {number} quality @param {boolean} perfect @param {boolean} grand
+   */
+  _verdict(quality, perfect, grand) {
+    /** @type {any[]} */
+    const events = [];
+    this.stats.bestQuality = Math.max(this.stats.bestQuality, quality);
+    if (perfect) { this.stats.perfect++; events.push(...this.unlock('perfect')); }
+    if (this.stats.perfect >= 5) events.push(...this.unlock('perfect5'));
+    if (grand && quality >= 0.85) { this.grandDone = true; events.push(...this.unlock('grand')); }
+    return events;
+  }
+
+  completeDeal(vial, label, price, truth, firstOffer = 0) {
+    const com = this.current;
+    if (!com) return { events: [], sale: null, follow: null, ev: null };
+    const { sale, follow, ev } = recordSale(this, com, vial, label, price, truth);
+    sale.perfect = ev.perfect;
+    sale.stars = ev.stars;
+    sale.grand = !!com.grand;
+    const events = this._bookSale(com, ev, truth, price, 1, sale.id);
+    this.sales.unshift(sale);
+    if (this.sales.length > 80) this.sales.length = 80;
+    this.followUps.push(follow);
+    if (price > firstOffer + 0.5 && firstOffer > 0) events.push(...this.unlock('deal'));
+    if (com.referral) events.push(...this.unlock('referral'));
+    return { events, sale, follow, ev };
+  }
+
+  /** Follow-up visits waiting at the counter today. */
+  dueFollowUps() {
+    return this.followUps.filter((f) => !f.resolved && f.day <= this.day && f.kind !== 'quiet');
+  }
+
+  /**
+   * Settle a follow-up visit (thank, refund, dispute or dismiss).
+   * @param {string} id @param {'thank'|'refund'|'dispute'|'dismiss'} action
+   */
+  settleFollowUp(id, action) {
+    const f = this.followUps.find((x) => x.id === id);
+    if (!f || f.resolved) return null;
+    // a refund is paid in full or not at all
+    if (action === 'refund' && f.kind === 'complaint' && this.coins + 1e-9 < (f.demand || 0)) return { refused: true, coins: 0, rep: 0, text: `You do not have ${f.demand} coins to refund.`, events: [] };
+    const r = resolveFollowUp(this, f, action);
+    f.resolved = true;
+    f.action = action;
+    f.outcome = r;
+    this.coins = round1(this.coins + r.coins);
+    if (r.coins < 0) { this.stats.refunds = (this.stats.refunds || 0) + 1; this.daySpending -= r.coins; }
+    else this.dayEarnings += r.coins;
+    if (f.kind === 'praise' && f.referral) this.referrals++;
+    const events = this.adjustReputation(r.rep);
+    if (action === 'dispute' && r.rep > 0) { this.stats.disputesWon = (this.stats.disputesWon || 0) + 1; events.push(...this.unlock('dispute')); }
+    const sale = this.sales.find((s) => s.id === f.saleId);
+    if (sale) {
+      sale.outcome = { kind: f.kind, action, ...r };
+      // the verdict is in: the sale's true quality joins the history
+      const hist = this.history.find((x) => x.saleId === sale.id);
+      if (hist && hist.quality === null) { hist.quality = sale.quality; hist.stars = sale.stars ?? null; }
+      events.push(...this._verdict(sale.quality, !!sale.perfect, !!sale.grand));
+    }
+    return { ...r, events };
+  }
+
+  /**
+   * Change reputation; returns rank-up events (and their achievements).
+   * @param {number} delta
+   */
+  adjustReputation(delta) {
+    const oldRank = this.rank;
+    // a bad name is not forgotten at zero: lies cost even an apprentice
+    this.reputation = Math.max(-100, this.reputation + delta);
+    /** @type {any[]} */
+    const events = [];
     const nr = this.rank;
     if (nr > oldRank) {
       events.push({ type: 'rank', rank: nr, name: RANKS[nr].name });
@@ -454,7 +724,17 @@ export class GameState {
 
   /** Advance to the next day. Returns a summary of the finished day. */
   endDay() {
-    const summary = { day: this.day, earned: this.dayEarnings, spent: this.daySpending, served: this.servedToday };
+    // quiet customers simply carry on; visitors left waiting a whole day go away unhappy
+    const settled = [];
+    for (const f of this.followUps) {
+      if (f.resolved || f.day > this.day) continue;
+      if (f.kind === 'quiet') { this.settleFollowUp(f.id, 'thank'); continue; }
+      if (f.day < this.day) settled.push({ f, r: this.settleFollowUp(f.id, f.kind === 'praise' ? 'thank' : 'dismiss') });
+    }
+    this.followUps = this.followUps.filter((f) => !f.resolved || f.day >= this.day - 6);
+    const summary = { day: this.day, earned: this.dayEarnings, spent: this.daySpending, served: this.servedToday, settled: settled.length };
+    // tonight's weather is the weather of the day now ending (as forecast)
+    weatherRegrowth(this.gathering, this.deposits, weatherOn(this.seed, this.day), this.lookup);
     this.day++;
     this.customerIndex = 0;
     this.servedToday = 0;
@@ -464,7 +744,14 @@ export class GameState {
     this.customersPerDay = 3 + Math.floor(this.rank / 2);
     this.rollMarket();
     newDayRegrowth(this.gathering, this.deposits);
-    return summary;
+    // a night in the hutch: marks fade, the sick get worse or better, kits are born
+    const colony = colonyDay(this.colony, { seed: this.seed, day: this.day, cap: this.cap.hutch });
+    /** @type {any[]} */
+    const events = [];
+    this.stats.bred = (this.stats.bred || 0) + colony.born.length;
+    if (colony.born.length) events.push(...this.unlock('kit1'));
+    if (livingRabbits(this.colony).length >= 8) events.push(...this.unlock('colony8'));
+    return { ...summary, colony: { ...colony, events } };
   }
 
   rollMarket() {
@@ -505,6 +792,14 @@ export class GameState {
     this.journal[e.key] = entry;
     this.reputation += 1;
     return entry;
+  }
+
+  /** Show a one-time explanation? (true the first time only) @param {string} key */
+  firstTip(key) {
+    const t = (this.tutorial.tips ||= {});
+    if (t[key]) return false;
+    t[key] = true;
+    return true;
   }
 
   /** @param {string} id @param {string} fact @param {any} value */
@@ -581,6 +876,9 @@ export class GameState {
       gathering: this.gathering,
       vial: this.vial,
       batch: this.batch,
+      sales: this.sales,
+      followUps: this.followUps,
+      referrals: this.referrals,
       savedAt: Date.now(),
     };
   }
@@ -676,6 +974,16 @@ export function migrate(raw) {
     d.vial = null;
     d.batch = null;
     d.version = 3;
+  }
+  if (d.version < 4) {
+    // v4: the Moon Rabbit becomes the founder of a colony (normalizeTrials
+    // converts the old single rabbit by its shape, as it does for the
+    // sandbox). Fields that arrived during version 3 get their defaults.
+    d.trials = d.trials || null;
+    d.sales = Array.isArray(d.sales) ? d.sales : [];
+    d.followUps = Array.isArray(d.followUps) ? d.followUps : [];
+    d.referrals = d.referrals | 0;
+    d.version = 4;
   }
   if (d.world && Array.isArray(d.world.materials) && d.world.materials.length === 0) throw new Error('The save has no reagents');
   if (!d.inventory || typeof d.inventory !== 'object') throw new Error('The save has no inventory');

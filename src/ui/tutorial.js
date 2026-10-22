@@ -49,7 +49,7 @@ export class Tutorial {
       { text: 'Give the Moon Rabbit a dose: drag the dropper onto it, or press its Test button. The dose is real potion from the tap.', target: () => lab.views.trials.cards.rabbit && lab.views.trials.cards.rabbit.card, done: rabbitTested },
       { text: 'The rabbit shows how much vitality (and poison) this batch carries. Verified effects now count on the order. Back to the cauldron!', target: tab('brew'), done: () => lab.view === 'brew' },
       { text: 'When the meters are full and the brew is warm, press Bottle. (Turn the fire down once it is warm enough.)', target: () => lab.bottleFab, done: () => this.flags.bottled },
-      { text: 'Your sealed vial waits at the Counter. Serve it to the customer.', target: () => document.querySelector('[data-act=serve]') || tab('counter')(), done: () => this.flags.sold },
+      { text: 'Your sealed vial waits at the Counter. Offer it to the customer: seal its label (your trial reading is already written in), then agree on a price.', target: () => document.querySelector('[data-act=serve]') || tab('counter')(), done: () => this.flags.sold },
       { text: 'Splendid — your first sale! New orders ask for strength, love, fire… Gather wild herbs in the Wilds, grind them, test every new mixture in the Trials room, and save good recipes in your Book.', button: 'Run my shop!' },
     ];
   }

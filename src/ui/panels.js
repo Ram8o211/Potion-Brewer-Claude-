@@ -17,12 +17,14 @@ import { SIM } from '../simulation/constants.js';
 import { exportSave, parseImport, saveGame } from '../game/persistence.js';
 import { audio } from '../audio/audio.js';
 import { archetypeOf } from '../game/customers.js';
+import { isMagical } from '../alchemy/arcane.js';
+import { causeWord } from '../game/colony.js';
 
 const CAT_LABEL = { heat: 'Heating', cold: 'Cooling', vessel: 'Cauldrons', tool: 'Tools', instrument: 'Instruments', trials: 'Trials room', storage: 'Storage & foraging', guild: 'Guild' };
 
 function jarCanvas(m, w = 22, hh = 30) {
-  if (m.wild && m.form === 'solid') {
-    const cv = rawSprite(m.wild.shape, m.look || m.color);
+  if ((m.wild || m.remains) && m.form === 'solid') {
+    const cv = rawSprite(m.wild ? m.wild.shape : m.shape || 'stone', m.look || m.color);
     cv.style.width = w * 2 + 'px';
     cv.style.height = w * 2 + 'px';
     return cv;
@@ -79,6 +81,7 @@ function renderReagents(lab, body, rerender) {
   for (const id of st.world.ingredients) {
     const mt = st.lookup(id);
     if (mt.wild && mt.wild.gatherOnly) continue; // only found in the wilds
+    if (mt.remains) continue; // recovered from a rabbit, never sold
     const locked = mt.tier > st.rank;
     const price = st.priceOf(id);
     const stock = st.stock(id);
@@ -186,23 +189,25 @@ export function openIngredient(lab, id) {
     h('span', { class: 'k', text: m.form === 'powder' ? 'Grains' : 'Viscosity' }), h('span', { text: m.form === 'powder' ? `piles at ≈${Math.round(Math.atan(m.friction) * 180 / Math.PI)}°` + (m.solubility > 0.05 ? ', dissolves in water' : '') : has('viscometer') ? `${m.viscosity} cP` : viscosityClass(m.viscosity) }),
     h('span', { class: 'k', text: 'Melts' }), h('span', { text: k.melt !== undefined ? `≈${k.melt}°C (observed)` : m.form === 'liquid' ? 'unknown (freeze it to find out)' : 'unknown' }),
     h('span', { class: 'k', text: 'Boils' }), h('span', { text: k.boil !== undefined ? `≈${k.boil}°C (observed)` : isFinite(m.boil) ? 'unknown (heat it to find out)' : 'does not boil' }),
+    h('span', { class: 'k', text: 'Magic' }), h('span', { text: !isMagical(m) ? 'none to awaken' : k.awaken !== undefined ? `awoke near ${k.awaken}°C in your brew (observed)` : 'can awaken — its threshold is unknown (heat or chill it to find out)' }),
     h('span', { class: 'k', text: 'Price' }), h('span', { text: `${coins(st.priceOf(id))} / 100 ml` }),
   );
   const asp = h('div', { class: 'aspect-bars' });
-  for (const e of EFFECTS) {
+  for (const e of m.remains ? [] : EFFECTS) {
     const v = (m.effects && m.effects[e.key]) || 0;
     if (Math.abs(v) < 1) continue;
     asp.append(h('span', {}, icon(e.icon, 'sm'), ' ' + e.label), h('div', { class: 'bar' }, h('i', { style: { width: Math.min(100, Math.abs(v)) + '%', background: `rgb(${e.color.map((c) => Math.round(c * 255)).join(',')})` } })), h('span', { text: e.key === 'acidity' && v < 0 ? `${Math.round(v)} (alkaline)` : String(Math.round(v)) }));
   }
-  if (!asp.children.length) asp.append(h('span', { class: 'muted', text: 'No magical or chemical effect.' }));
+  if (m.remains) asp.append(h('span', { class: 'muted', text: `Unknown: recovered from ${m.remains.rabbitName}. Whatever it absorbed in life may linger — test it in the Trials room.` }));
+  else if (!asp.children.length) asp.append(h('span', { class: 'muted', text: 'No magical or chemical effect.' }));
   const reactions = st.world.reactions.filter((r) => (r.a === id || r.b === id) && st.journal['reaction:' + r.id]);
   modal({
     title: m.name,
     body: [
       h('div', { class: 'card parch ing-card' }, jarCanvas(m, 22, 30), h('div', {}, h('div', { text: m.description }), h('div', {}, ...tags.map((t) => h('span', { class: 'tag', text: t }))))),
       h('div', { class: 'card parch' }, facts),
-      h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: m.product ? 'Effects of this pure substance (as the guild knows it)' : 'Known effects of the pure ingredient (mixtures must be tested)' }), asp,
-        m.wild && m.form === 'solid' ? h('div', { class: 'small', text: 'Supplied whole: crush it in the pot with the pestle, or switch on “Ground” to grind it in the mortar first. Only what dissolves takes effect.' }) : null),
+      h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: m.remains ? 'Effects' : m.product ? 'Effects of this pure substance (as the guild knows it)' : 'Known effects of the pure ingredient (mixtures must be tested)' }), asp,
+        (m.wild || m.remains) && m.form === 'solid' ? h('div', { class: 'small', text: 'Supplied whole: crush it in the pot with the pestle, or switch on “Ground” to grind it in the mortar first. Only what dissolves takes effect.' }) : null),
       reactions.length ? h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Known reactions' }), ...reactions.map((r) => h('div', { class: 'small', text: `• ${r.name}: ${r.hint || ''}` }))) : null,
     ],
   });
@@ -221,7 +226,12 @@ export function openHint(lab) {
       const tips = [];
       if (main) tips.push(`A guild alchemist would start from ${main.name}${main.wild ? ` (it grows in the ${main.wild.region === 'forest' ? 'Whisperwood' : main.wild.region === 'meadow' ? 'Sunlit Meadow' : main.wild.region === 'river' ? 'Willow Bank' : main.wild.region === 'quarry' ? 'Ironstone Quarry' : main.wild.region === 'moonfen' ? 'Moonfen' : 'Ember Crags'})` : ''}.`);
       if (ref.ingredients.some((i) => i.ground)) tips.push('Grind what is whole — only what dissolves takes effect.');
-      if ((ref.heatTo ?? 20) > 40) tips.push('Patience and gentle heat draw out more than stirring alone.');
+      if ((ref.heatTo ?? 20) > 40 && !com.activation) tips.push('Patience and gentle heat draw out more than stirring alone.');
+      if (com.activation) {
+        const cold = com.predicted && com.predicted.threshold !== null && com.predicted.threshold < 0;
+        tips.push(`This strength is out of reach for sleeping magic: it must be awakened. Mix everything first at room temperature, then ${cold ? 'chill' : 'heat'} the whole brew until it glows — and hold it there until the glow is even.`);
+      }
+      if (com.requirements.some((r) => r.key === 'purity')) tips.push('“No other effect above 1.2 %” is strict. Choose ingredients that do one thing, and test for the effects you did not ask for, too.');
       tips.push('How much, and with what? That you must find out. Test small doses before you bottle.');
       modal({ title: 'Guild advice', body: [h('div', { class: 'card parch' }, ...tips.map((t) => h('div', { class: 'small', text: '• ' + t })))] });
       return;
@@ -254,6 +264,34 @@ export function openHint(lab) {
     lab.refreshHud();
     show();
   });
+}
+
+// ------------------------------------------------------------------ bottling
+/**
+ * Choose a measured quantity to bottle into a sealed vial.
+ * @param {any} lab @param {number} avail particles at the tap @param {(n:number)=>void} onPick
+ */
+export function openBottleSize(lab, avail, onPick) {
+  const st = lab.state;
+  const com = lab.sandbox ? null : st.current;
+  const per = SIM.ML_PER_PARTICLE;
+  const sizes = new Set([25, 50, 100, 150, 200, 300]);
+  if (com) sizes.add(com.bottleMl);
+  const list = [...sizes].sort((a, b) => a - b);
+  let m;
+  const pick = (ml) => { m.close(); onPick(Math.max(1, Math.round(ml / per))); };
+  const btns = list.map((ml) => btn(`${ml} ml${com && ml === com.bottleMl ? ' · the order' : ''}`, () => pick(ml), {
+    cls: com && ml === com.bottleMl ? 'primary' : '', disabled: ml / per > avail, act: 'bottle-' + ml,
+  }));
+  btns.push(btn(`All at the tap · ${avail * per} ml`, () => pick(avail * per), { act: 'bottle-all' }));
+  m = modal({
+    title: 'Bottle a measured quantity',
+    body: [h('div', { class: 'card parch' },
+      h('div', { class: 'small', text: `The vial takes what runs out of the tap — the lowest layer first. ${avail * per} ml can be drawn now.` }),
+      h('div', { class: 'small muted', text: 'A sealed vial keeps its exact contents. You can test doses from it, pour it back to keep working, or serve it.' }),
+      h('div', { class: 'row wrap bottle-sizes' }, ...btns))],
+  });
+  return m;
 }
 
 // ------------------------------------------------------------------ results
@@ -326,11 +364,26 @@ export function showDaySummary(lab, summary, onDone) {
           h('span', { class: 'k', text: 'Net' }), h('span', { text: (net >= 0 ? '+' : '') + coins(net) }),
           h('span', { class: 'k', text: 'Rank' }), h('span', { text: `${st.rankName} (${st.reputation} rep)` }),
         )),
+      hutchSummary(summary.colony),
       h('div', { class: 'card parch' }, h('b', { text: `Tomorrow: ${st.marketEvent.name}` }), h('div', { class: 'small', text: st.marketEvent.text })),
       st.nextRank() ? h('div', { class: 'small muted', text: `Next rank: ${st.nextRank().name} at ${st.nextRank().rep} reputation.` }) : null,
     ],
     foot: [btn('Open the shop', () => document.querySelector('.overlay .modal-head .btn').dispatchEvent(new MouseEvent('click')), { cls: 'primary', act: 'next-day' })],
   });
+}
+
+/** The night in the hutch, for the day summary. @param {any} col colony day report */
+function hutchSummary(col) {
+  if (!col || !(col.born.length || col.grown.length || col.died.length || col.lost || col.conceived)) return null;
+  const rows = [];
+  if (col.born.length) rows.push(h('span', { class: 'k', text: 'Kits born' }), h('span', { text: `${col.born.length} (${[...new Set(col.born.map((b) => b.mother))].join(', ')})` }));
+  if (col.grown.length) rows.push(h('span', { class: 'k', text: 'Grown up' }), h('span', { text: col.grown.map((g) => g.name).join(', ') }));
+  if (col.died.length) rows.push(h('span', { class: 'k', text: 'Died' }), h('span', { text: col.died.map((d) => `${d.name} (${causeWord(d.cause)})`).join(', ') }));
+  if (col.conceived) rows.push(h('span', { class: 'k', text: 'Expecting' }), h('span', { text: `${col.conceived} doe${col.conceived > 1 ? 's' : ''}` }));
+  return h('div', { class: 'card parch hutch-summary', 'data-summary': 'hutch' },
+    h('div', { class: 'row' }, icon('rabbit'), h('b', { text: 'The hutch' })),
+    h('div', { class: 'kv' }, ...rows),
+    col.lost ? h('div', { class: 'small muted', text: `The hutch was too full for ${col.lost} more kit${col.lost > 1 ? 's' : ''}; the breeder took them.` }) : null);
 }
 
 export function showAnalysis(lab, m, recipe, title = 'Analysis of the brew') {
@@ -447,7 +500,7 @@ export function renderJournal(lab, container, tab = 'journal') {
       m.body.appendChild(h('div', { class: 'small muted', text: `Reactions discovered: ${st.reactionsDiscovered()} of ${total}. Keep experimenting — heat, cold, stirring and new combinations all reveal secrets.` }));
       if (!entries.length) m.body.appendChild(h('div', { class: 'card parch', text: 'Nothing recorded yet. Watch closely as you brew: boiling, freezing, dough, dissolving and reactions are all noted here.' }));
       for (const e of entries) {
-        m.body.appendChild(h('div', { class: 'card parch' }, h('div', { class: 'row' }, icon(e.kind === 'reaction' ? 'eye' : e.kind === 'fire' ? 'flame' : e.kind === 'phase' ? 'thermo' : 'scroll'), h('b', { text: e.title }), h('span', { class: 'spacer' }), h('span', { class: 'small muted', text: `Day ${e.day}` })), h('div', { class: 'small', text: e.text })));
+        m.body.appendChild(h('div', { class: 'card parch' }, h('div', { class: 'row' }, icon(e.kind === 'reaction' ? 'eye' : e.kind === 'fire' ? 'flame' : e.kind === 'phase' ? 'thermo' : e.kind === 'arcane' ? 'awaken' : 'scroll'), h('b', { text: e.title }), h('span', { class: 'spacer' }), h('span', { class: 'small muted', text: `Day ${e.day}` })), h('div', { class: 'small', text: e.text })));
       }
     } else if (current === 'ingredients') {
       const list = h('div', { class: 'list' });
@@ -471,7 +524,7 @@ export function renderJournal(lab, container, tab = 'journal') {
     } else {
       if (!st.history.length) m.body.appendChild(h('div', { class: 'card parch', text: 'No sales yet.' }));
       for (const s of st.history) {
-        m.body.appendChild(h('div', { class: 'item parch' }, s.color ? swatch(s.color) : icon('flask'), h('div', {}, h('div', { class: 'title', text: s.potion }), h('div', { class: 'meta', text: `Day ${s.day} · ${s.customer} (${s.title}) · ${Math.round(s.quality * 100)}%` })), h('span', {}, h('span', { class: 'stars', text: starsText(s.stars) }), h('div', { class: 'small', text: `+${coins(s.paid)}` }))));
+        m.body.appendChild(h('div', { class: 'item parch' }, s.color ? swatch(s.color) : icon('flask'), h('div', {}, h('div', { class: 'title', text: s.potion }), h('div', { class: 'meta', text: `Day ${s.day} · ${s.customer} (${s.title}) · ${s.quality === null || s.quality === undefined ? 'awaiting their verdict' : Math.round(s.quality * 100) + '%'}` })), h('span', {}, h('span', { class: 'stars', text: s.stars === null || s.stars === undefined ? '…' : starsText(s.stars) }), h('div', { class: 'small', text: `+${coins(s.paid)}` }))));
       }
     }
   };
@@ -499,8 +552,9 @@ export function openHelp() {
     title: 'How to play',
     wide: true,
     body: [
-      sec('Your shop', ['Customers ask for potions with particular effects (healing, strength, love, fire…) and physical qualities (colour, thickness, temperature). The order strip shows each requirement and a live meter for what your instruments can measure.', 'You know what each plain ingredient does. You do NOT know what a mixture does: mixing, heat, reactions and hidden laws change things. Test doses in the Trials room to find out — a customer only accepts a potion whose effects you have verified.', 'Bottle when you are happy — the potion is drawn from the tap at the bottom of the cauldron, so the lowest layer comes out first. Then serve it at the Counter.', 'Better matches earn more coins and reputation. Reputation unlocks ranks, regions of the wilds, reagents and equipment.']),
-      sec('Wilds and trials', ['Gather roots, leaves, flowers, mushrooms and minerals in the Wilds. Deposits are finite and regrow over time, even while the game is closed.', 'Whole roots and stones do nothing until crushed (pestle) or ground (mortar, the “Ground” switch on the shelf). Only what dissolves takes effect; hot water dissolves more, and some herbs steep into strong extracts when held warm.', 'Each subject responds to some effects only: a stone shows acid but not love. Choose subjects that cover what the customer cares about.', 'When a trial surprises you, a hidden law may be at work. Confirm it twice and your theory learns it.']),
+      sec('Your shop', ['Customers ask for potions with effects at a strength — healing, strength, love, fire… — and physical qualities such as colour, thickness and temperature. Strength is the effective concentration in percent: everyday orders want about 8–15 %, master commissions far more.', 'Many orders forbid side effects: “no other effect above 1.2 %”. Every other kind of magic in the bottle must stay that faint.', 'You know what each plain ingredient does. You do NOT know what a mixture does: mixing, heat, reactions and hidden laws change things. Test doses in the Trials room to find out.', 'Bottle a measured quantity from the tap at the bottom of the cauldron (the lowest layer comes out first). A sealed vial keeps its exact contents: test doses from it, pour it back to keep working, or offer it at the Counter.', 'Before a sale you write the label — tested values, the guild theory’s estimates, “none” or unknown — and bargain over the price. The customer pays what you agree, drinks the real potion and comes back the next day: pleased, or with a complaint. Refund them, dispute it with your trial records, or turn them away.', 'Honest, well-tested potions earn reputation. Reputation unlocks ranks, regions of the wilds, reagents and equipment.']),
+      sec('Arcane awakening', ['Magical ingredients carry a hidden arcane threshold. Heat the brew past it (or, for cold magic, chill it below) and the magic awakens: it glows in the colour of its effect and acts several times stronger.', 'In a blend the threshold is the mix of its magical ingredients’ thresholds, by volume — a hot-waking and a cold-waking ingredient pull each other toward room temperature.', 'Mix first, at room temperature; then heat or chill to awaken. A half-mixed brew awakens unevenly.', 'Awakened magic stays awake when it cools, is bottled or kept. Only dilution and reactions undo it.', 'Your journal notes where each ingredient awoke; the Arcanometer reads a brew’s threshold directly.']),
+      sec('Wilds and trials', ['Gather roots, leaves, flowers, mushrooms and minerals in the Wilds. Deposits are finite and regrow over time, even while the game is closed.', 'Each ingredient has its method — pick, dig, chip, scrape or sweep — and the right tool doubles the harvest. Twilight plants open only at dawn (your first customer of the day) or dusk (your last). The weather changes daily. A thorough harvest takes twice as much but the deposit regrows slowly.', 'Whole roots and stones do nothing until crushed (pestle) or ground (mortar, the “Ground” switch on the shelf). Only what dissolves takes effect; hot water dissolves more, and some herbs steep into strong extracts when held warm.', 'Each subject responds to some effects only: a stone shows acid but not love. Choose subjects that cover what the customer cares about.', 'When a trial surprises you, a hidden law may be at work. Confirm it twice and your theory learns it.']),
       sec('Brewing', ['Tap a jar on the shelf, then hold your finger (or the mouse) inside the cauldron to pour. Dose buttons pour exact amounts.', 'Stir with the spoon: drag through the brew. Mixing starts where liquids touch and spreads; stirring speeds it up dramatically.', 'Powders pile up like sand. Knead a binding powder with a watery liquid to make dough; add more liquid to thin it.', 'Slide the fire control right to heat from below, left to cool. Heat spreads through the brew gradually.', 'Keep the lid on to trap vapour; let things cool and the vapour condenses back. Open the lid to let it escape.', 'Freeze liquids into blocks, then crush them with the pestle. Some reagents react when mixed, heated or chilled — discoveries go into your journal.']),
       sec('Controls', ['Keys: 1 pour · 2 spoon · 3 pestle · 4 skimmer · 5 inspect · L lid · B bottle · F time speed · A auto-stir · arrows fire · S shop · R recipes · J journal · Esc menu.', 'Long-press (or right-click) a jar to inspect a reagent.', 'Use the time-speed button to skip waiting while things heat, cool or react.']),
       sec('Tips', ['Ask the guild for advice on a difficult order — it costs a few coins.', 'Instruments like the hydrometer, viscometer, assay kit and aether lens turn rough guesses into exact readings.', 'If you run out of money, the guild will help a struggling apprentice once a day — and water from the well is always free.']),

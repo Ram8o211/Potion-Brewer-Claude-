@@ -10,6 +10,14 @@ const PAL = {
 
 /** @type {Record<string, string[]>} */
 const ICONS = {
+  tag: ['......kkkk..', '.....kllllk.', '....klllkllk', '...kllllllk.', '..klllllllk.', '.kllNlllllk.', 'kllNNllllk..', 'klllNlllk...', '.kllllllk...', '..kllllk....', '...kllk.....', '....kk......'],
+  deal: ['............', '............', 'kk........kk', 'knk..kk..knk', 'knnkkllkknnk', 'kNnklllllnNk', '.kNlllkllNk.', '..kllkllkk..', '...klllk....', '....kkk.....', '............', '............'],
+  pure: ['.....kk.....', '....kcck....', '....kcck....', '...kcwcck...', '...kcwcck...', '..kcwccccK..', '..kcccccck..', '.kccccccccK.', '.kcccccccck.', '.kcccccccBk.', '..kccccBBk..', '...kkkkkk...'],
+  talk: ['.kkkkkkkkkk.', 'kwwwwwwwwwwk', 'kwwwwrrwwwwk', 'kwwwwrrwwwwk', 'kwwwwrrwwwwk', 'kwwwwrrwwwwk', 'kwwwwwwwwwwk', 'kwwwwrrwwwwk', 'kWwwwwwwwwWk', '.kkkkwwkkkk.', '.....kwk....', '......kk....'],
+  awaken: ['.....k......', '....kpk.....', '.k..kpk..k..', '.kpkkwkkpk..', '..kpwwwpk...', 'kppwwlwwppk.', '..kpwwwpk...', '.kpkkwkkpk..', '.k..kpk..k..', '....kpk.....', '.....k......', '............'],
+  bone: ['............', '.kk.......kk', 'kwwk.....kwk', 'kwWwk...kwwk', '.kwWwkkkwWk.', '..kwWwwwWk..', '..kWwwwWwk..', '.kWwkkkwWwk.', 'kwwk...kwWwk', 'kwk.....kwwk', 'kk.......kk.', '............'],
+  fur: ['............', '..k...k...k.', '.kWk.kWk.kWk', '.kwWkkwWkkwk', 'kwwwWwwwWwwk', 'kwwwwwwwwwWk', 'kWwwwWwwwWWk', 'kWWwwWWwWWWk', '.kWWWWWWWWk.', '..kkkkkkkk..', '............', '............'],
+  nest: ['............', '...kkkkkk...', '..kwwwwwWk..', '.kwwlwwwwWk.', '.kwwwwwwwWk.', '..kwwwwwWk..', 'knknkkkknknk', 'kNnNnnNnNnNk', '.kNnNnNnNnk.', '..kkkkkkkk..', '............', '............'],
   coin: ['....kkkk....', '..kkyyyykk..', '.kyyllyyyyk.', '.kylyyyyYyk.', 'kyylyyyyyYyk', 'kyyyyyyyyYyk', 'kyyyyyyyyYyk', 'kyyyyyyyYYyk', '.kyyyyyYYyk.', '.kyYYYYYyyk.', '..kkyyyykk..', '....kkkk....'],
   star: ['.....kk.....', '....kyyk....', '....kyyk....', 'kkkkyyyykkkk', 'kyyyyyyyyyYk', '.kyyyyyyyYk.', '..kyyyyyYk..', '..kyyyyyYk..', '.kyyYkkYYyk.', '.kyYk..kYyk.', 'kyYk....kYyk', 'kkk......kkk'],
   sun: ['.....kk.....', '..k..yy..k..', '...k....k...', '....kkkk....', '.k.kyyyyk.k.', 'kyykyllyykyy', 'yykyyyyyYkyk', '.k.kyyyYk.k.', '....kkkk....', '...k....k...', '..k..yy..k..', '.....kk.....'],
@@ -85,6 +93,10 @@ const ICONS = {
   leaf: ['..........kk', '........kkgk', '......kkgggk', '....kkgggGgk', '...kgggGgggk', '..kggGgggggk', '..kgGgggggk.', '.kgGgggggk..', '.kGgggGkk...', 'kGgkkkk.....', 'kk..........', '............'],
   gem: ['............', '...kkkkkk...', '..kpwppPPk..', '.kpwpppPPPk.', 'kkkkkkkkkkkk', '.kpwpppPPk..', '..kpwppPk...', '...kpwPk....', '....kpk.....', '.....k......', '............', '............'],
   pick: ['..kkkk......', '.kWWWWkk....', 'kWSSSSWWk...', '.kk..kSWk...', '......kNnk..', '.......kNnk.', '........kNnk', '.........kNk', '..........kk', '............', '............', '............'],
+  trowel: ['.........kk.', '........knNk', '.......knNk.', '......knNk..', '.....kkkk...', '....kWWsk...', '...kWwWsk...', '..kWwWWsk...', '.kWwWWsSk...', '.kWWWsSk....', 'kWsSSkk.....', 'kkkk........'],
+  sickle: ['....kkkk....', '..kkWWWWk...', '.kWWkkkWWk..', 'kWWk...kWk..', 'kWk.....kk..', 'kWk.........', 'kWk.........', '.kWk....kk..', '..kWkk.knk..', '...kkWkNk...', '......kNk...', '.......kk...'],
+  brush: ['........kk..', '.......knk..', '......knk...', '.....knk....', '....knk.....', '...kNNk.....', '..kYYYYk....', '.kyyyyyk....', 'kWkWkWkWk...', 'kWkWkWkWk...', '.kkkkkkk....', '............'],
+  bolt: ['......kkkk..', '.....kyyyk..', '....kyyyk...', '...kyyyk....', '..kyyyykkk..', '.kyyyyyyyk..', '..kkkyyyk...', '....kyyk....', '...kyyk.....', '..kyyk......', '..kyk.......', '..kk........'],
   spark: ['.....k......', '....kyk.....', '....kyk..k..', '.k..kyk.kyk.', 'kyk.kyykyk..', '.kyykyyyk...', '..kyyllyyk..', '...kyyykyyk.', '..kyk.kyk.k.', '.kyk..kyk...', '..k....k....', '............'],
   bottle: ['....kkkk....', '....knnk....', '....kWWk....', '...kwwWWk...', '..kwmmmmWk..', '.kwmmlmmmWk.', '.kwmmmmmmWk.', '.kwmmmmmmPk.', '.kwmmmmmPWk.', '..kwmmmPWk..', '...kkkkkk...', '............'],
   trophy: ['.kkkkkkkkkk.', 'kykyyyyyykyk', 'kyykyyyykyyk', '.kyyyyyyyyk.', '..kyyyyyYk..', '...kyyyYk...', '....kyYk....', '.....kk.....', '....kyYk....', '...kkkkkk...', '..kyyyyyYk..', '..kkkkkkkk..'],

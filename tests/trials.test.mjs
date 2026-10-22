@@ -8,7 +8,7 @@ import { applySnapshot } from '../src/simulation/snapshot.js';
 import { tapSelection, measureParticles } from '../src/game/measure.js';
 import { theoryOf, EFFECT_INDEX, NE } from '../src/alchemy/effects.js';
 import { SUBJECTS, SUBJECT_BY_ID, certification, missingEffects, suggestSubjects, subjectResponse, createTrials } from '../src/game/experiments.js';
-import { depositStatus, generateDeposits } from '../src/game/gathering.js';
+import { depositStatus, generateDeposits, SCAR_SLOWDOWN } from '../src/game/gathering.js';
 import { PHASE } from '../src/simulation/constants.js';
 
 const V = EFFECT_INDEX;
@@ -130,13 +130,16 @@ test('the wilds: deterministic deposits, finite stock, timestamp regrowth, rank 
   const t0 = 1_000_000_000_000;
   const inv0 = st.stock(d.materialId);
   let got = 0, n = 0;
-  while (n++ < 100) { const r = st.gather(d.id, { now: t0 }); if (!r.ok) break; got += r.amount; }
+  // careful harvests stop at the reserve; a thorough one strips the rest
+  while (n++ < 100) { const r = st.gather(d.id, { now: t0 }); if (!r.ok) { assert.equal(r.reason, 'reserve'); break; } got += r.amount; }
+  while (n++ < 200) { const r = st.gather(d.id, { now: t0, thorough: true }); if (!r.ok) break; got += r.amount; }
   assert.ok(got > 0 && got <= d.capacity, `gathered ${got} of ${d.capacity}`);
   assert.equal(st.stock(d.materialId), inv0 + got, 'everything gathered is in the inventory');
-  assert.equal(st.gather(d.id, { now: t0 }).reason, 'depleted');
+  assert.equal(st.gather(d.id, { now: t0, thorough: true }).reason, 'depleted');
+  // a stripped deposit is scarred and regrows at a slower pace
   const half = depositStatus(st.gathering, d, t0 + d.regrowMs / 2);
-  assert.ok(Math.abs(half.stock - d.capacity / 2) < 2, 'regrows with elapsed time');
-  assert.ok(depositStatus(st.gathering, d, t0 + d.regrowMs * 2).stock === d.capacity, 'never above capacity');
+  assert.ok(Math.abs(half.stock - d.capacity / 2 / SCAR_SLOWDOWN) < 2, 'regrows with elapsed time');
+  assert.ok(depositStatus(st.gathering, d, t0 + d.regrowMs * SCAR_SLOWDOWN * 2).stock === d.capacity, 'never above capacity');
   const locked = st.deposits.find((x) => x.rank > 0);
   assert.equal(st.gather(locked.id, { now: t0 }).reason, 'locked');
   // shelves cap what can be carried home

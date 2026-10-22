@@ -24,24 +24,46 @@ computed from the particles that actually run out of the tap. What a
   point, wet pastes dry out, oil catches fire on glowing iron and the lid
   smothers it.
 * **Hidden, emergent effects.** Ten effects: vitality, strength, love,
-  arcana, transformation, fire, frost, acidity, toxicity and death. They
-  come from what is actually dissolved in each particle:
+  arcana, transformation, fire, frost, acidity, toxicity and death,
+  measured as percent effective concentration (everyday orders want about
+  8–15 %). They come from what is actually dissolved in each particle:
   * a whole root does nothing until it is crushed or ground;
   * hot steeping extracts more than cold;
   * fire and frost cancel where they meet;
   * each world has six hidden laws that transmute, amplify or suppress
     effects that meet inside the brew;
   * heat, reactions, boiling and dilution change the result.
+* **Arcane awakening.** Magical ingredients carry a hidden activation
+  threshold (−1000…+1000, mapped onto temperature). Heat or chill a
+  well-mixed brew past the volume-weighted threshold of its magic and that
+  magic awakens — glowing in the colour of its effect, several times
+  stronger, and it stays awake through cooling, bottling and saving.
+* **A living rabbit colony.** Your Moon Rabbits are individuals with
+  names, inherited coats, ages and family trees. Every dose acts on the
+  rabbit's body and shows — muscles, hearts, frost, flames, acid burns, a
+  green pallor, sparkling runes — and transformation magic grows horns,
+  antlers, wings, scales or a third eye that stay for life. Rabbits can
+  die; their bodies keep every change, and their bones, pelt or ashes can
+  be recovered once as new ingredients that carry what they absorbed.
+  Healthy pairs have kits overnight; buy, feed and house them (the kennel
+  and warren make room). Any trial can be replayed without spending a drop.
 * **The trials room.** You give real, measured doses (5, 10 or 25 ml from
-  the tap or the sealed vial) to a moon rabbit, a copper beetle, a bean
+  the tap or the sealed vial) to a rabbit, a copper beetle, a bean
   seedling, a limestone block or a captive wisp. Each shows only some
-  effects. Subjects can be harmed or killed and cost coins to replace.
-  Repeated trials uncover the hidden laws. A customer only accepts a potion
-  whose effects were verified on that very batch; pouring anything new
-  invalidates the test.
-* **The wilds.** Six regions, two of them magical and opened by rank. Their
-  deposits are finite and regrow with real time, even while the game is
-  closed. Some reagents can only be gathered.
+  effects, read with an honest uncertainty. Repeated trials uncover the
+  hidden laws. Pouring anything new invalidates earlier tests of the batch.
+* **Trade.** Label the bottle with what you know — tested values, the
+  guild's estimates, "none" or unknown — and bargain with customers who
+  each haggle, trust and need proof differently. They pay the agreed
+  price, drink the real potion and come back the next day: pleased, with a
+  fair complaint, or a dishonest one you can dispute with your trial
+  records. Many orders forbid any side effect above 1.2 %.
+* **The wilds.** Six regions, two of them magical and opened by rank. Each
+  ingredient is picked, dug, chipped, scraped or swept (without the right
+  tool half of what you cut is spoiled), some only open at dawn or dusk,
+  the weather changes daily, careful hands leave part of every deposit to
+  regrow, and a thorough harvest strips it and scars it. Deposits are
+  finite and regrow with real time, even while the game is closed.
 * **Electricity.** Charged reagents carry a conserved charge that flows
   through conductive brews. Oil insulates, and current heats what it
   passes through.
@@ -50,15 +72,17 @@ computed from the particles that actually run out of the tap. What a
   points, effects), reactions, wild deposits, hidden laws and customers.
 * **Achievable orders.** Every commission, physical or effect-based, is
   derived from a hidden reference plan made only from what you can buy or
-  gather. It is checked with the same mixture and effect laws the
-  simulation uses. The automated tests brew samples of these plans in the
-  real simulation.
+  gather, and accepted only if the predicted potion passes the counter's
+  own scoring — including awakening stages and the purity rule. A
+  feasibility run brews generated orders in the real simulation (latest:
+  100 orders, mean quality 0.999, none below 0.8).
 * **A shop to grow.**
   * Coins, reputation and six guild ranks.
-  * 29 pieces of equipment: furnaces, frost plates, bigger cauldrons, a
-    mortar, instruments, a galvanometer, a clockwork stirrer, an alembic, a
-    wisp lantern, a forager's satchel, and a homunculus that brews your
-    saved recipes.
+  * 35 pieces of equipment: furnaces, frost plates, bigger cauldrons, a
+    mortar, instruments (an arcanometer reads a brew's activation
+    threshold), a galvanometer, a clockwork stirrer, an alembic, a wisp
+    lantern, a kennel and a rabbit warren, foraging tools and a satchel, and
+    a homunculus that brews your saved recipes.
   * A recipe book, a trial log, the laws you have found, a discovery
     journal, achievements, market days and guild contracts.
 * **Free Experiment mode** with every reagent, tool, subject and region

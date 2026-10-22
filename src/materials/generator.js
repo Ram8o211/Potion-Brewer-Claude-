@@ -14,7 +14,8 @@ import { hslToRgb } from '../core/color.js';
 import { completeMaterial } from './schema.js';
 import { makeName, makeProductName } from './names.js';
 import { applyProfile } from './profiles.js';
-import { generateWild } from './wild.js';
+import { generateWild, generateLaws, WILD_FX_VERSION } from './wild.js';
+import { withAwakened } from '../alchemy/arcane.js';
 
 /** @typedef {import('./schema.js').MaterialDef} MaterialDef */
 /** @typedef {import('../reactions/reactions.js').ReactionRule} ReactionRule */
@@ -382,30 +383,56 @@ export function generateWorld(seed) {
 }
 
 /**
- * Give every material its effects and electrical profile and add the wild
- * ingredients, their reactions and the hidden resonance laws. Separate RNG
- * streams: worlds keep the reagents their seed always produced, and an old
- * save's embedded world is upgraded to exactly what a new world would get.
+ * Give every material its effects, arcane and electrical profile and add the
+ * wild ingredients, their reactions and the hidden resonance laws. Separate
+ * RNG streams: worlds keep the reagents their seed always produced, and an
+ * old save's embedded world is upgraded to exactly what a new world of that
+ * seed gets (effects, thresholds, extraction reactions); its names, colours
+ * and physical reagents never change.
  * @param {any} world
  */
 export function addAlchemy(world) {
   for (const m of world.materials) applyProfile(m, world.seed);
-  if (!world.wild) {
+  const stale = !world.wild || world.materials.some((m) => m.id.startsWith('wild-') && m.fxv !== WILD_FX_VERSION);
+  if (stale) {
     const w = generateWild(world.seed, world);
-    for (const m of w.materials) if (!world.materials.some((x) => x.id === m.id)) world.materials.push(m);
-    for (const r of w.reactions) if (!world.reactions.some((x) => x.id === r.id)) world.reactions.push(r);
+    for (const m of w.materials) {
+      const old = world.materials.find((x) => x.id === m.id);
+      if (!old) { world.materials.push(m); continue; }
+      const mm = /** @type {any} */ (m);
+      Object.assign(old, { effects: mm.effects, arcane: mm.arcane, fxv: mm.fxv, solubility: m.solubility, binder: m.binder, description: m.description });
+      if (mm.wild) old.wild = { ...mm.wild };
+    }
+    for (const r of w.reactions) {
+      const k = world.reactions.findIndex((x) => x.id === r.id);
+      if (k < 0) world.reactions.push(r);
+      else world.reactions[k] = r;
+    }
     world.wild = w.materials.filter((m) => !m.product).map((m) => m.id);
     for (const id of world.wild) if (!world.ingredients.includes(id)) world.ingredients.push(id);
-    world.laws = w.laws;
+    if (!world.laws) world.laws = w.laws;
   }
-  if (!world.laws) world.laws = generateWild(world.seed, world).laws;
+  if (!world.laws) world.laws = generateLaws(world.seed);
   return world;
 }
 
-/** Build an id → material lookup for a world (plus optional extra defs). */
+/**
+ * Build an id → material lookup for a world (plus optional extra defs). The
+ * awakened form of any magical material (`id~a`) resolves too.
+ */
 export function makeLookup(world, extra = []) {
   const map = new Map();
-  for (const m of world.materials) map.set(m.id, m);
-  for (const m of extra) map.set(m.id, m);
-  return (id) => map.get(id);
+  // materials added during play (a rabbit's remains) are indexed when they appear
+  let n = -1;
+  const index = () => {
+    map.clear();
+    for (const m of world.materials) map.set(m.id, m);
+    for (const m of extra) map.set(m.id, m);
+    n = world.materials.length;
+  };
+  index();
+  return withAwakened((id) => {
+    if (n !== world.materials.length) index();
+    return map.get(id);
+  });
 }

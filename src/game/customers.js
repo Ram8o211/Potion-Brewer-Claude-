@@ -97,8 +97,41 @@ export const ARCHETYPES = [
 const FIRST = ['Aldric', 'Bryn', 'Cedric', 'Dagna', 'Edda', 'Fenwick', 'Gwen', 'Hob', 'Isolde', 'Jory', 'Kestrel', 'Liesl', 'Mabry', 'Nell', 'Osric', 'Perrin', 'Quill', 'Rowena', 'Sabine', 'Tamsin', 'Ulric', 'Vesna', 'Wynn', 'Yara', 'Zebedee', 'Agnes', 'Bertram', 'Cora', 'Dunstan', 'Elowen', 'Godric', 'Hilda', 'Ivo', 'Maud', 'Piers', 'Rosalind', 'Tobias', 'Wilda'];
 const LAST = ['Ashdown', 'Brightwater', 'Copperpot', 'Dunmore', 'Elderberry', 'Fairweather', 'Greaves', 'Hollins', 'Ironside', 'Juniper', 'Kettleby', 'Larkspur', 'Millward', 'Nettlefold', 'Oakhart', 'Pennywhistle', 'Quarrel', 'Ravensby', 'Stonebridge', 'Thistlewood', 'Underhill', 'Vane', 'Whitlock', 'Yarrow'];
 
+/** Honorifics that are not the name a customer goes by. */
+const TITLES = new Set(['Old', 'Young', 'Sir', 'Dame', 'Lady', 'Lord', 'Master', 'Mistress', 'Brother', 'Sister', 'Mother', 'Father', 'Granny', 'Gaffer', 'Widow', 'Captain']);
+
+/** The name a customer goes by ("Old Mabry Hollins" → "Mabry"). @param {string} name */
+export function shortName(name) {
+  const parts = String(name || '').split(' ').filter(Boolean);
+  return (parts.length > 1 && TITLES.has(parts[0]) ? parts[1] : parts[0]) || '';
+}
+
 const SKIN = [[0.96, 0.8, 0.66], [0.87, 0.66, 0.5], [0.72, 0.52, 0.36], [0.55, 0.38, 0.26], [0.4, 0.27, 0.18], [0.98, 0.86, 0.76]];
 const HAIR = [[0.15, 0.1, 0.07], [0.35, 0.22, 0.12], [0.62, 0.38, 0.18], [0.85, 0.7, 0.4], [0.55, 0.55, 0.55], [0.9, 0.9, 0.88], [0.55, 0.2, 0.1]];
+
+/**
+ * How each kind of customer trades: how hard they bargain (0 generous … 1
+ * relentless), how many rounds they will haggle, how honest they are about
+ * a potion afterwards (a dishonest one may complain about a good potion to
+ * get money back) and how much they need proof before they trust a label.
+ */
+const PERSONA = {
+  farmer: [0.45, 3, 0.92, 0.5], innkeeper: [0.6, 3, 0.85, 0.5], bard: [0.3, 2, 0.75, 0.3], healer: [0.25, 2, 0.95, 0.95],
+  knight: [0.3, 2, 0.9, 0.6], traveler: [0.5, 3, 0.78, 0.5], scholar: [0.4, 3, 0.9, 0.9], witch: [0.7, 4, 0.6, 0.4],
+  blacksmith: [0.55, 3, 0.88, 0.5], noble: [0.2, 2, 0.62, 0.85], wizard: [0.4, 3, 0.82, 0.8], hunter: [0.5, 3, 0.8, 0.55],
+};
+
+/** @param {Rng} rng @param {Archetype} arch */
+function makePersona(rng, arch) {
+  const [haggle, rounds, honesty, proof] = PERSONA[arch.key] || [0.5, 3, 0.85, 0.5];
+  const j = (v, a) => Math.max(0, Math.min(1, v + rng.range(-a, a)));
+  return {
+    haggle: Math.round(j(haggle, 0.15) * 100) / 100,
+    patience: Math.max(2, rounds + rng.int(-1, 1)),
+    honesty: Math.round(j(honesty, 0.12) * 100) / 100,
+    proof: Math.round(j(proof, 0.1) * 100) / 100,
+  };
+}
 
 /**
  * Create a concrete customer from an archetype.
@@ -106,7 +139,9 @@ const HAIR = [[0.15, 0.1, 0.07], [0.35, 0.22, 0.12], [0.62, 0.38, 0.18], [0.85, 
  */
 export function makeCustomer(rng, arch) {
   const name = `${rng.pick(FIRST)} ${rng.pick(LAST)}`;
+  const persona = makePersona(rng.fork('persona'), arch);
   return {
+    persona,
     id: 'c' + Math.floor(rng.next() * 1e9).toString(36),
     archetype: arch.key,
     title: arch.title,

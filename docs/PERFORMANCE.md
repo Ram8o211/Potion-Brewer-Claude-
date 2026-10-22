@@ -3,7 +3,7 @@
 Every number here comes from `npm run bench` (`scripts/bench.mjs`) and was
 measured on this repository's code. Raw data: `docs/perf-results.json`.
 
-**Machine:** a shared cloud container, Intel Xeon @ 2.8 GHz, 4 cores,
+**Machine:** a shared cloud container, Intel Xeon @ 2.1 GHz, 4 cores,
 Node 22, headless Chromium 1.56 (Playwright) with **software** canvas
 rendering. Repeated runs on this container vary by roughly ±20–30%, so
 treat single figures as indicative.
@@ -23,22 +23,22 @@ frame needs two steps. *Assay* is what the HUD pays to measure the bottle
 
 | Scenario | Vessel | Particles | ms / step | ms / 60 fps frame | assay ms |
 |---|---|---|---|---|---|
-| tonic (water + essence) | pot | 60 | 0.26 | 0.52 | 0.42 |
-| typical brew | pot | 150 | 0.56 | 1.12 | 0.38 |
-| stirred infusion with powder | pot | 200 | 0.71 | 1.41 | 0.55 |
-| full pot | pot | 293 | 0.81 | 1.62 | 0.23 |
-| full copper cauldron | copper | 413 | 1.23 | 2.45 | 0.33 |
-| three liquid layers | grand | 546 | 1.78 | 3.55 | 0.19 |
-| boiling under the lid | grand | 400 | 0.68 | 1.35 | 0.02 |
-| water (reference vessels) | small / medium / large | 300 / 900 / 1,400 | 0.81 / 2.90 / 3.96 | 1.61 / 5.80 / 7.92 | — |
-| three liquid layers | medium | 900 | 3.05 | 6.10 | 0.30 |
-| sand pile | medium | 600 | 1.04 | 2.08 | 0.28 |
-| dough, stirred | medium | 600 | 1.71 | 3.41 | 0.30 |
-| frozen block | medium | 500 | 1.47 | 2.95 | 0.19 |
+| tonic (water + essence) | pot | 60 | 0.14 | 0.27 | 0.27 |
+| typical brew | pot | 150 | 0.30 | 0.61 | 0.17 |
+| stirred infusion with powder | pot | 200 | 0.50 | 0.99 | 0.29 |
+| full pot | pot | 293 | 0.61 | 1.21 | 0.16 |
+| full copper cauldron | copper | 413 | 0.96 | 1.91 | 0.21 |
+| three liquid layers | grand | 546 | 1.34 | 2.69 | 0.11 |
+| boiling under the lid | grand | 400 | 0.73 | 1.46 | 0.01 |
+| water (reference vessels) | small / medium / large | 300 / 900 / 1,400 | 0.60 / 2.42 / 3.35 | 1.19 / 4.83 / 6.70 | — |
+| three liquid layers | medium | 900 | 2.26 | 4.52 | 0.23 |
+| sand pile | medium | 600 | 0.70 | 1.41 | 0.17 |
+| dough, stirred | medium | 600 | 1.40 | 2.79 | 0.22 |
+| frozen block | medium | 500 | 0.89 | 1.78 | 0.14 |
 
-Typical shop brews cost 0.3–1.4 ms of physics per 60 fps frame. The
-homunculus brews a complete order (21–37 simulated seconds) in
-0.4–1.7 s of wall time.
+Typical shop brews cost 0.3–1.2 ms of physics per 60 fps frame. The
+homunculus brews a complete order (23–62 simulated seconds) in
+0.3–2.3 s of wall time.
 
 The new systems add little to the step:
 
@@ -63,33 +63,74 @@ The Free Experiment cauldron (3 L) is filled with water, essence and oil,
 with auto-stir and gentle heat. The game's own instrumentation is then
 read over 6 s (8 s throttled).
 
-* **Frame p50 / p95 / p99:** intervals between frames, in ms.
+* **Frame p50 / p95:** intervals between frames, in ms.
 * **Work:** median time inside the frame callback.
 * **Physics / render:** smoothed ms per frame.
 * **Sim speed:** simulated seconds per wall second (1.00 = real time).
 
-| Profile | Preset | Particles | fps | Frame p50 / p95 / p99 | Work p50 | Physics | Render | Sim speed | Quality used |
+| Profile | Preset | Particles | fps | Frame p50 / p95 | Work p50 | Physics | Render | Sim speed | Quality used |
 |---|---|---|---|---|---|---|---|---|---|
-| desktop 1440×900 | auto | 60 | 60 | 16.7 / 16.8 / 16.8 | 3.9 | 0.6 | 5.4 | 1.00 | high |
-| desktop 1440×900 | auto | 150 | 59 | 16.7 / 16.8 / 33.3 | 4.7 | 2.0 | 6.9 | 1.00 | high |
-| desktop 1440×900 | auto | 300 | 59 | 16.7 / 16.8 / 16.8 | 6.9 | 2.7 | 4.9 | 1.00 | high |
-| desktop 1440×900 | auto | 600 | 54 | 16.7 / 33.3 / 50.0 | 12.1 | 6.4 | 8.8 | 0.97 | high |
-| phone ÷4 | auto | 60 | 50 | 16.7 / 33.4 / 50.0 | 10.6 | 2.5 | 8.8 | 1.00 | medium |
-| phone ÷4 | auto | 150 | 41 | 16.7 / 50.0 / 66.8 | 15.6 | 6.9 | 10.4 | 0.97 | low |
-| phone ÷4 | auto | 300 | 30 | 33.3 / 50.1 / 83.3 | 25.2 | 16.0 | 11.3 | 0.65 | low |
-| phone ÷4 | auto | 600 | 29 | 33.3 / 50.1 / 83.3 | 24.5 | 11.3 | 10.6 | 0.24 | low |
+| desktop 1440×900 | auto | 60 | 60 | 16.7 / 16.7 | 6.5 | 0.5 | 9.2 | 1.00 | high |
+| desktop 1440×900 | auto | 150 | 59 | 16.7 / 16.8 | 6.3 | 1.4 | 9.1 | 0.99 | high |
+| desktop 1440×900 | auto | 300 | 55 | 16.7 / 33.3 | 10.0 | 2.6 | 9.6 | 0.98 | high |
+| desktop 1440×900 | auto | 600 | 49 | 16.7 / 33.4 | 13.8 | 4.5 | 10.8 | 0.93 | high |
+| phone ÷4 | auto | 60 | 49 | 16.7 / 33.4 | 11.6 | 2.0 | 12.8 | 0.98 | low |
+| phone ÷4 | auto | 150 | 44 | 16.7 / 50.0 | 14.6 | 7.0 | 12.7 | 0.93 | low |
+| phone ÷4 | auto | 300 | 38 | 16.7 / 50.0 | 19.3 | 13.8 | 12.3 | 0.83 | low |
+| phone ÷4 | auto | 600 | 31 | 33.3 / 50.1 | 22.7 | 14.3 | 10.4 | 0.29 | low |
 
 **Reading it**
 
-* **Desktop** holds 59–60 fps in real time up to 300 particles at High
-  quality, and 54 fps at 600 particles (the full 3 L vessel).
-* **Phone ÷4.** Typical orders (60–150 particles) run at 41–50 fps in
-  (near) real time. A full pot (300 particles) runs at 30 fps, with the
-  brew in 0.65× slow motion. At 600 particles it holds 29 fps and the brew
-  slows to 0.24×. The frame loop gives physics only what is left of a
-  ~30 fps frame after rendering (8–22 ms), so a slow device keeps
-  responding to input and runs the brew in slow motion instead of
-  stuttering.
+* **Desktop** holds 55–60 fps in (near) real time up to 300 particles at
+  High quality, and 49 fps at 600 particles (the full 3 L vessel) with the
+  brew at 0.93×.
+* **Phone ÷4.** The automatic preset steps down to Battery saver on this
+  profile. Typical orders (60–150 particles) run at 44–49 fps in near real
+  time. A full pot (300 particles) runs at 38 fps, with the brew at 0.83×.
+  At 600 particles it holds 31 fps and the brew slows to 0.29×. The frame
+  loop gives physics only what is left of a ~30 fps frame after rendering
+  (8–22 ms), so a slow device keeps responding to input and runs the brew
+  in slow motion instead of stuttering.
+* Render times here include the new per-channel glow of awakened magic
+  and the slush and translucency stages; they are within the run-to-run
+  spread of the earlier release.
+
+## 2a. The new systems
+
+**Arcane awakening** (Node, a 1.5 L pot of water and essence, 150
+particles, stirred). The per-particle threshold check runs every step for
+particles that carry magic; the conversion only where a particle is past
+its blend's threshold.
+
+| State | ms / step |
+|---|---|
+| cold (magic present, nothing past its threshold) | 0.34 |
+| heated, awakening under way (73 particle volumes awakened) | 0.40 |
+| afterwards (awakened species in the brew, still hot) | 0.47 |
+
+The "afterwards" figure includes the hotter, more agitated brew, not just
+the extra species.
+
+**A year in the hutch** (Node, `GameState` itself). A full warren (10
+places), breeding on, two strong doses a day, every death processed or
+buried in turn, for 365 nights: 730 doses at 0.08 ms each, 33 kits born,
+21 bodies processed into remains and 21 buried. A whole `endDay` (follow-
+ups, market, regrowth and the night in the hutch) costs 0.07 ms. The save
+grows from 84 KB to 277 KB, almost all of it the 84 remains materials
+(about 4 KB per processed body; trial records are capped at 120). Writing
+it takes 4 ms and loading it 9 ms.
+
+**The hutch scene** (browser, the trials room with ten changed rabbits —
+several horned, winged or scaled — hopping about; the cauldron empty):
+
+| Profile | fps | Frame p50 / p95 | Work p50 / p95 |
+|---|---|---|---|
+| desktop 1440×900 | 60 | 16.7 / 16.7 | 0.5 / 0.9 ms |
+| phone ÷4 | 59 | 16.7 / 16.8 | 2.5 / 5.2 ms |
+
+Each rabbit's static body is cached per visible state and pose (an LRU
+keyed by the quantised snapshot), so a frame blits it and draws only the
+animated effects — flames, frost breath, sparkles, hearts — on top.
 
 ## 3. Graphics presets
 
@@ -105,13 +146,13 @@ preset; only drawing changes.
 
 Measured on the throttled phone with 300 particles:
 
-| Preset | fps | Frame p50 / p95 / p99 | Render ms | Physics ms | Sim speed |
+| Preset | fps | Frame p50 / p95 | Render ms | Physics ms | Sim speed |
 |---|---|---|---|---|---|
-| High quality | 18 | 50.0 / 83.4 / 116.6 | 31.4 | 7.4 | 0.15 |
-| Balanced | 27 | 33.3 / 66.7 / 83.3 | 9.0 | 15.8 | 0.55 |
-| Battery saver | 26 | 33.4 / 50.1 / 83.4 | 11.4 | 16.8 | 0.61 |
+| High quality | 18 | 50.0 / 83.3 | 32.8 | 7.1 | 0.15 |
+| Balanced | 29 | 33.3 / 50.0 | 16.8 | 15.0 | 0.73 |
+| Battery saver | 27 | 33.3 / 50.1 | 9.4 | 18.2 | 0.74 |
 
-Balanced costs about a third of High's render time while keeping the
+Balanced costs about half of High's render time while keeping the
 lighting. Battery saver's advantage is the 30 fps cap: it draws half as
 many frames as an uncapped preset would on a fast phone, which is where
 the battery saving comes from. On this throttled profile neither reaches
@@ -155,10 +196,10 @@ but each frame simulates far fewer particles than before.
 Heap after forced garbage collection (DevTools protocol):
 
 * **90 s of lid-on boiling with auto-stir at 4× speed (450 particles):**
-  3.60 → 4.61 → 4.31 → 4.24 MB at 0 / 30 / 60 / 90 s. Flat, with all 450
+  4.15 → 4.85 → 4.77 → 4.86 MB at 0 / 30 / 60 / 90 s. Flat, with all 450
   particles still in the vessel.
-* **Ten round trips between the main menu and the shop:** 4.16 MB after
-  the first, 4.63 MB after the tenth.
+* **Ten round trips between the main menu and the shop:** 4.88 MB after
+  the first, 5.40 MB after the tenth.
 
 Particle storage is typed arrays allocated once per cauldron, and the
 renderer's buffers grow only when the drawn region does.
@@ -168,6 +209,6 @@ renderer's buffers grow only when the drawn region does.
 * No physical-device measurements; the phone profile is throttled
   emulation in software rendering.
 * With large batches on a slow device the simulation runs in slow motion
-  (0.24× at 600 particles on the throttled profile). A full 1.5 L pot runs
-  at 0.65×.
+  (0.29× at 600 particles on the throttled profile). A full 1.5 L pot runs
+  at 0.83×.
 * Numbers move ±20–30% between runs on this shared container.

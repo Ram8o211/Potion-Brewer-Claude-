@@ -132,8 +132,17 @@ export class Renderer {
 
     // ---- materials
     this.fluid.thermal = !!st.thermal;
+    this.fluid.halo = this.quality !== 'low';
     const fr = this.fluid.render(sim, view, st.time);
-    if (fr) ctx.drawImage(fr.canvas, fr.x, fr.y);
+    if (fr) {
+      ctx.drawImage(fr.canvas, fr.x, fr.y);
+      if (fr.halo) {
+        // magic light spills over the brew and the iron around it
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.drawImage(fr.halo, fr.x, fr.y, fr.halo.width * 2, fr.halo.height * 2);
+        ctx.globalCompositeOperation = 'source-over';
+      }
+    }
 
     // ---- lid
     this._drawLid(c, st);
@@ -406,17 +415,23 @@ export class Renderer {
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, this.W, this.H);
     }
-    // glowing brews light the mouth of the cauldron
+    // glowing brews light the mouth of the cauldron in the colours of their magic
     const p = st.sim.p;
     let glow = 0, gr = 0, gg = 0, gb = 0;
     const step = Math.max(1, Math.floor(p.count / 300));
     for (let i = 0; i < p.count; i += step) {
-      const e = p.glow[i] + p.burn[i] * 1.5;
-      if (e > 0.05) { glow += e; gr += st.sim.colR[i] * e; gg += st.sim.colG[i] * e; gb += st.sim.colB[i] * e; }
+      const sI = p.auraI[i] > 0.002 ? 1 - Math.exp(-p.auraI[i] * 3.2) : 0;
+      const e = p.glow[i] * 0.6 + p.burn[i] * 1.5 + sI;
+      if (e > 0.05) {
+        glow += e;
+        gr += (p.auraR[i] * sI + (st.sim.colR[i] * p.glow[i] * 0.6) + p.burn[i] * 1.5) ;
+        gg += (p.auraG[i] * sI + (st.sim.colG[i] * p.glow[i] * 0.6) + p.burn[i] * 0.8);
+        gb += (p.auraB[i] * sI + (st.sim.colB[i] * p.glow[i] * 0.6) + p.burn[i] * 0.3);
+      }
     }
     if (glow > 0.5) {
       const a = Math.min(0.35, glow * step * 0.002);
-      const col = `${Math.round(gr / glow * 255)},${Math.round(gg / glow * 255)},${Math.round(gb / glow * 255)}`;
+      const col = `${Math.round(Math.min(1, gr / glow) * 255)},${Math.round(Math.min(1, gg / glow) * 255)},${Math.round(Math.min(1, gb / glow) * 255)}`;
       const g = ctx.createRadialGradient(view.ox, view.oy + c.depth * 0.6 * s, 0, view.ox, view.oy + c.depth * 0.6 * s, s * 3);
       g.addColorStop(0, `rgba(${col},${a})`);
       g.addColorStop(1, `rgba(${col},0)`);
@@ -441,6 +456,8 @@ export class Renderer {
       case 'paste': if (this.fx.rand() < 0.2) this.fx.burst(4, x, y, 2, s * 0.2, [255, 240, 210], 0.3); break;
       case 'dissolve': this.fx.burst(4, x, y, 2, s * 0.15, [220, 240, 255], 0.3); break;
       case 'spark': this.fx.burst(1, x, y, 5, s * 0.5, [190, 220, 255], 0.8); break;
+      case 'awaken': this.fx.burst(4, x, y, 18, s * 0.9, [235, 215, 255], 1.2); break;
+      case 'crack': this.fx.burst(3, x, y, 6, s * 0.45, [225, 215, 200], 0.6); break;
     }
   }
 }

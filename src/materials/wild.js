@@ -14,6 +14,7 @@ import { Rng } from '../core/rng.js';
 import { hslToRgb } from '../core/color.js';
 import { completeMaterial } from './schema.js';
 import { EFFECT_INDEX } from '../alchemy/effects.js';
+import { arcaneProfile } from './profiles.js';
 
 /** @typedef {import('./schema.js').MaterialDef} MaterialDef */
 
@@ -25,48 +26,74 @@ import { EFFECT_INDEX } from '../alchemy/effects.js';
 export const WILD_SPECS = [
   // Whisperwood (forest)
   { key: 'ironroot', noun: 'Ironroot', shape: 'root', region: 'forest', rank: 0, buy: 1, hue: [28, 0.45, 0.42], form: 'solid', density: 1.05, hardness: 0.5, sol: 0.12, solT: 0.0022,
-    fx: { strength: 72, acidity: 6 }, price: 9, lore: 'A knotted woodland root that carries strength. Crush or grind it; it gives up far more when steeped in hot water.' },
+    fx: { strength: 28 }, arc: [750, 3], price: 9, gather: 'dig', lore: 'A knotted woodland root that carries strength. Crush or grind it; it gives up far more when steeped in hot water.' },
   { key: 'silverleaf', noun: 'Silverleaf', shape: 'leaf', region: 'forest', rank: 0, buy: 1, hue: [150, 0.25, 0.7], form: 'solid', density: 0.72, hardness: 0.22, sol: 0.18, solT: 0.0015,
-    fx: { vitality: 66, frost: 8 }, price: 9, lore: 'Soft silvery leaves prized by healers. Grind them into water; gentle warmth draws out their healing.' },
+    fx: { vitality: 24, frost: 2 }, arc: [550, 3], price: 9, gather: 'pick', lore: 'Soft silvery leaves prized by healers. Grind them into water; gentle warmth draws out their healing.' },
   { key: 'nightshade', noun: 'Nightshade', shape: 'leaf', region: 'forest', rank: 0, buy: null, hue: [285, 0.45, 0.42], form: 'solid', density: 1.12, hardness: 0.25, sol: 0.16, solT: 0.001, compat: [0.55, 0.22],
-    fx: { toxicity: 70, death: 32, acidity: 12 }, price: 12, lore: 'A poisonous leaf. Its oily extract dissolves in spirits rather than water. Test tiny doses before you trust it.' },
+    fx: { toxicity: 28, death: 12, acidity: 4 }, arc: [-350, 2.5], price: 12, gather: 'pick', dusk: true,
+    steep: { name: 'Nightshade Tincture', into: 'spirit', lo: [20, 25], hi: [60, 65], fx: { toxicity: 30, death: 13, acidity: 3 } },
+    lore: 'A poisonous leaf, gathered at dusk. Its oily extract dissolves in spirits rather than water. Test tiny doses before you trust it.' },
   { key: 'mandrake', noun: 'Mandrake', shape: 'root', region: 'forest', rank: 2, buy: null, hue: [38, 0.5, 0.6], form: 'solid', density: 1.15, hardness: 0.45, sol: 0.12, solT: 0.0015, rare: true,
-    fx: { transformation: 78, strength: 28, toxicity: 10 }, price: 30, lore: 'A rare screaming root of transformation. Old grimoires say it wakes fully only in warm spirits.' },
+    fx: { transformation: 32, strength: 10, toxicity: 3 }, arc: [420, 3], price: 30, gather: 'dig', lore: 'A rare screaming root of transformation. Old grimoires say it wakes fully only in warm spirits.' },
   // Sunlit Meadow
   { key: 'heartpetal', noun: 'Heartpetal', shape: 'petal', region: 'meadow', rank: 0, buy: 1, hue: [335, 0.6, 0.72], form: 'solid', density: 0.6, hardness: 0.15, sol: 0.2, solT: 0.001,
-    fx: { love: 74, vitality: 10, acidity: 8 }, price: 10, lore: 'Soft meadow petals carrying affection. Delicate: strong heat spoils them.' },
+    fx: { love: 26, vitality: 1 }, arc: [-200, 3], price: 10, gather: 'pick',
+    steep: { name: 'Heartpetal Infusion', into: 'water', lo: [30, 35], hi: [60, 65], fx: { love: 28, vitality: 1 } },
+    lore: 'Soft meadow petals carrying affection. Warm water draws their love into an infusion; strong heat spoils them.' },
   { key: 'sunthistle', noun: 'Sunthistle', shape: 'flower', region: 'meadow', rank: 0, buy: 1, hue: [45, 0.8, 0.55], form: 'solid', density: 0.8, hardness: 0.3, sol: 0.15, solT: 0.0015,
-    fx: { fire: 38, vitality: 18, strength: 6 }, price: 9, lore: 'A prickly golden flower that warms the blood.' },
+    fx: { fire: 15, vitality: 5, strength: 2 }, arc: [650, 2.8], price: 9, gather: 'pick',
+    steep: { name: 'Sunthistle Tea', into: 'water', lo: [50, 55], hi: [90, 95], fx: { fire: 16, vitality: 5, strength: 2 } },
+    lore: 'A prickly golden flower that warms the blood. It brews into a fiery tea.' },
   { key: 'dreamclover', noun: 'Dreamclover', shape: 'clover', region: 'meadow', rank: 1, buy: null, hue: [205, 0.45, 0.62], form: 'solid', density: 0.7, hardness: 0.18, sol: 0.16, solT: 0.0012, rare: true,
-    fx: { arcana: 34, love: 14, transformation: 8 }, price: 18, lore: 'A rare blue clover that brings vivid dreams and clear insight.' },
+    fx: { arcana: 14, love: 5, transformation: 3 }, arc: [-50, 3], price: 18, gather: 'pick', dawn: true,
+    steep: { name: 'Dreamclover Tea', into: 'water', lo: [35, 40], hi: [70, 75], fx: { arcana: 15, love: 5, transformation: 3 } },
+    lore: 'A rare blue clover, open only at dawn, that brings vivid dreams and clear insight.' },
   // Willow Riverbank
   { key: 'riverchalk', noun: 'River Chalk', shape: 'stone', region: 'river', rank: 0, buy: 1, hue: [48, 0.22, 0.82], form: 'solid', density: 1.32, hardness: 0.35, sol: 0.06, solT: 0.0005, binder: 0.55, friction: 0.7,
-    fx: { acidity: -55, strength: 10, frost: 6 }, price: 6, lore: 'Soft alkaline chalk from the bank. It neutralises acids. A little water and stirring knead it into a paste.' },
+    fx: { acidity: -24, strength: 1 }, arc: [150, 2.5], price: 6, gather: 'dig',
+    steep: { name: 'Chalk Milk', into: 'water', lo: [15, 20], hi: [60, 65], fx: { acidity: -26, strength: 1 } },
+    lore: 'Soft alkaline chalk from the bank. It neutralises acids. Ground and stirred into water it clouds into chalk milk; a little water kneads it into a paste.' },
   { key: 'frostcap', noun: 'Frostcap', shape: 'cap', region: 'river', rank: 0, buy: 1, hue: [196, 0.5, 0.72], form: 'solid', density: 0.95, hardness: 0.25, sol: 0.17, solT: 0.0012,
-    fx: { frost: 68, transformation: 18 }, price: 10, lore: 'A cool mushroom growing beneath the willows. Its essence freezes and subtly changes things.' },
+    fx: { frost: 24, transformation: 5 }, arc: [-450, 2.8], price: 10, gather: 'pick',
+    steep: { name: 'Frostcap Brine', into: 'water', lo: [1, 2], hi: [12, 14], fx: { frost: 26, transformation: 5 } },
+    lore: 'A cool mushroom growing beneath the willows. It steeps only in ice-cold water, giving a freezing brine.' },
   { key: 'bogbean', noun: 'Bogbean', shape: 'bean', region: 'river', rank: 0, buy: null, hue: [95, 0.4, 0.42], form: 'solid', density: 1.0, hardness: 0.3, sol: 0.2, solT: 0.0015,
-    fx: { vitality: 30, toxicity: 14 }, price: 7, lore: 'A marsh bean: restorative, though a little poisonous unless something cancels its bite.' },
+    fx: { vitality: 12, toxicity: 6 }, arc: [200, 2.5], price: 7, gather: 'pick',
+    steep: { name: 'Bogbean Broth', into: 'water', lo: [40, 45], hi: [80, 85], fx: { vitality: 13, toxicity: 6 } },
+    lore: 'A marsh bean: restorative, though a little poisonous unless something cancels its bite.' },
   // Ironstone Quarry (minerals)
   { key: 'emberflint', noun: 'Ember Flint', shape: 'stone', region: 'quarry', rank: 0, buy: 1, hue: [16, 0.62, 0.55], form: 'solid', density: 1.6, hardness: 0.7, sol: 0.05, solT: 0.003,
-    fx: { fire: 72, acidity: 34, strength: 10 }, price: 11, lore: 'A warm flint that releases fire when ground. It barely dissolves unless the water is hot.' },
-  { key: 'mica', noun: 'Mica Dust', shape: 'powder', region: 'quarry', rank: 0, buy: 1, hue: [270, 0.25, 0.75], form: 'powder', density: 1.22, hardness: 0.3, sol: 0.05, solT: 0.001, binder: 0.6, friction: 0.66,
-    fx: { transformation: 26, love: 10, arcana: 6 }, price: 7, lore: 'Naturally loose glittering grains. Knead with a little water for dough; plenty of water makes a shimmering infusion.' },
+    fx: { fire: 26, acidity: 12, strength: 3 }, arc: [800, 2.5], price: 11, gather: 'mine',
+    steep: { name: 'Flint Fire-Water', into: 'water', lo: [85, 90], hi: [160, 170], fx: { fire: 28, acidity: 12, strength: 3 } },
+    lore: 'A warm flint that releases fire when ground. It barely dissolves unless the water is near boiling.' },
+  { key: 'mica', noun: 'Mica Dust', shape: 'powder', region: 'quarry', rank: 0, buy: 1, hue: [270, 0.25, 0.75], form: 'powder', density: 1.22, hardness: 0.3, sol: 0.16, solT: 0.001, binder: 0.4, friction: 0.66,
+    fx: { transformation: 14 }, arc: [300, 3], price: 7, gather: 'sweep',
+    steep: { name: 'Mica Shimmer', into: 'water', lo: [40, 45], hi: [90, 95], fx: { transformation: 15 } },
+    lore: 'Naturally loose glittering grains. Knead with a little water for dough; warm plenty of water with it for a shimmering infusion.' },
   { key: 'sulfur', noun: 'Sulphur Crust', shape: 'powder', region: 'quarry', rank: 1, buy: 2, hue: [56, 0.85, 0.6], form: 'powder', density: 1.4, hardness: 0.3, sol: 0.22, solT: 0.0015, friction: 0.6,
-    fx: { acidity: 68, fire: 22, toxicity: 14 }, price: 10, lore: 'A crumbly yellow crust. Strongly acidic, it etches stone and stings flesh.' },
+    fx: { acidity: 26, fire: 7, toxicity: 4 }, arc: [500, 2.5], price: 10, gather: 'mine',
+    steep: { name: 'Sulphur Water', into: 'water', lo: [50, 55], hi: [100, 110], fx: { acidity: 28, fire: 6, toxicity: 4 } },
+    lore: 'A crumbly yellow crust. Strongly acidic, it etches stone and stings flesh. Hot water dissolves it into a biting acid.' },
   { key: 'stormglass', noun: 'Storm Glass', shape: 'crystal', region: 'quarry', rank: 2, buy: null, hue: [222, 0.55, 0.7], form: 'solid', density: 1.9, hardness: 0.65, sol: 0.08, solT: 0.0015, rare: true,
-    fx: { arcana: 22, transformation: 12 }, econd: 0.6, charge: 1, glow: 0.3, price: 28, lore: 'Glass struck by lightning. It still holds a charge that flows into anything that conducts.' },
+    fx: { arcana: 10, transformation: 6 }, arc: [-600, 3], econd: 0.6, charge: 1, glow: 0.3, price: 28, gather: 'mine', lore: 'Glass struck by lightning. It still holds a charge that flows into anything that conducts.' },
   // Moonfen (magical bog, guild rank 2)
   { key: 'gravemoss', noun: 'Grave Moss', shape: 'moss', region: 'moonfen', rank: 2, buy: null, hue: [150, 0.12, 0.45], form: 'solid', density: 0.85, hardness: 0.2, sol: 0.16, solT: 0.0012,
-    fx: { death: 84, frost: 18, toxicity: 44 }, price: 26, lore: 'Moss from old barrows, heavy with death magic. Dilute generously and test carefully.' },
+    fx: { death: 32, frost: 7, toxicity: 16 }, arc: [-700, 2.5], price: 26, gather: 'scrape', dusk: true,
+    steep: { name: 'Barrow Draught', into: 'water', lo: [-5, 0], hi: [10, 12], fx: { death: 34, frost: 7, toxicity: 16 } },
+    lore: 'Moss from old barrows, heavy with death magic, scraped at dusk. It steeps only in near-freezing water. Dilute generously and test carefully.' },
   { key: 'starquartz', noun: 'Star Quartz', shape: 'crystal', region: 'moonfen', rank: 2, buy: null, hue: [280, 0.45, 0.78], form: 'solid', density: 1.5, hardness: 0.65, sol: 0.1, solT: 0.002, glow: 0.5,
-    fx: { arcana: 52, love: 36, transformation: 24 }, price: 30, lore: 'A luminous crystal of love and insight. Crush it, then warm it in spirits.' },
+    fx: { arcana: 20, love: 14, transformation: 8 }, arc: [600, 3], price: 30, gather: 'mine', lore: 'A luminous crystal of love and insight. Crush it, then warm it in spirits.' },
   { key: 'wisplichen', noun: 'Wisp Lichen', shape: 'moss', region: 'moonfen', rank: 2, buy: null, hue: [172, 0.6, 0.6], form: 'solid', density: 0.7, hardness: 0.15, sol: 0.18, solT: 0.001, glow: 0.7,
-    fx: { arcana: 58, transformation: 18 }, price: 24, lore: 'A faintly glowing lichen that the wisps feed on.' },
+    fx: { arcana: 22, transformation: 7 }, arc: [-250, 3], price: 24, gather: 'scrape',
+    steep: { name: 'Lichen Glow', into: 'water', lo: [20, 25], hi: [50, 55], fx: { arcana: 24, transformation: 7 } },
+    lore: 'A faintly glowing lichen that the wisps feed on. Lukewarm water draws out its light.' },
   // Ember Crags (volcanic, guild rank 3)
   { key: 'dragonpepper', noun: 'Dragon Pepper', shape: 'pepper', region: 'crags', rank: 3, buy: null, hue: [4, 0.8, 0.5], form: 'solid', density: 0.9, hardness: 0.3, sol: 0.18, solT: 0.0015,
-    fx: { fire: 84, strength: 36, toxicity: 6 }, price: 32, lore: 'A furious red pepper from the crags. Its fire loves oil.' },
+    fx: { fire: 32, strength: 14, toxicity: 2 }, arc: [850, 2.6], price: 32, gather: 'pick', lore: 'A furious red pepper from the crags. Its fire loves oil.' },
   { key: 'cinderscale', noun: 'Cinder Scale', shape: 'scale', region: 'crags', rank: 3, buy: null, hue: [24, 0.7, 0.4], form: 'solid', density: 1.45, hardness: 0.6, sol: 0.07, solT: 0.003, rare: true,
-    fx: { fire: 48, transformation: 42, vitality: 12 }, econd: 0.3, charge: 0.4, price: 40, lore: 'A shed salamander scale, warm to the touch. Only fierce heat dissolves it.' },
+    fx: { fire: 18, transformation: 16, vitality: 5 }, arc: [1000, 2.6], econd: 0.3, charge: 0.4, price: 40, gather: 'mine',
+    steep: { name: 'Salamander Essence', into: 'oil', lo: [140, 150], hi: [300, 320], fx: { fire: 20, transformation: 17, vitality: 5 } },
+    lore: 'A shed salamander scale, warm to the touch. Only fierce heat — hot oil, not water — dissolves it.' },
 ];
 
 /** @type {Record<string, typeof WILD_SPECS[number]>} */
@@ -76,6 +103,9 @@ const PREFIX = ['Moss', 'Moon', 'Dusk', 'Ember', 'Witch', 'Frost', 'Star', 'Thor
 
 const r2 = (v) => Math.round(v * 100) / 100;
 
+/** Version of the wild profiles (effects, thresholds, extracts). */
+export const WILD_FX_VERSION = 3;
+
 /**
  * Generate this world's wild materials, their reactions and the resonance laws.
  * @param {string} seed
@@ -83,7 +113,9 @@ const r2 = (v) => Math.round(v * 100) / 100;
  */
 export function generateWild(seed, base) {
   const rng = new Rng('wild:' + seed);
-  const used = new Set(base.materials.map((m) => m.name));
+  // names never depend on wild materials already in the world, so an old
+  // save regenerates exactly the names a fresh world of its seed gets
+  const used = new Set(base.materials.filter((m) => !m.id.startsWith('wild-')).map((m) => m.name));
   /** @type {MaterialDef[]} */
   const materials = [];
   /** @type {Record<string, string>} */
@@ -111,9 +143,11 @@ export function generateWild(seed, base) {
     });
     const mm = /** @type {any} */ (m);
     mm.effects = fx;
+    mm.arcane = arcaneProfile(seed, id, s.arc[0], s.arc[1]);
+    mm.fxv = WILD_FX_VERSION;
     mm.econd = s.econd ?? 0.04;
     mm.charge = s.charge ?? 0;
-    mm.wild = { key: s.key, shape: s.shape, region: s.region, rank: s.rank, rare: !!s.rare, gatherOnly: s.buy === null };
+    mm.wild = { key: s.key, shape: s.shape, region: s.region, rank: s.rank, rare: !!s.rare, gatherOnly: s.buy === null, gather: s.gather || 'pick', dusk: !!s.dusk, dawn: !!s.dawn };
     if (s.form === 'solid') mm.crushable = true;
     materials.push(m);
     ids[s.key] = id;
@@ -123,58 +157,79 @@ export function generateWild(seed, base) {
   /** @type {import('../reactions/reactions.js').ReactionRule[]} */
   const reactions = [];
   const t5 = (lo, hi) => Math.round(rng.range(lo, hi) / 5) * 5;
-  const product = (key, from, props) => {
+  /** a product of a wild ingredient: its awakening profile follows its source */
+  const product = (key, from, props, fx) => {
     const src = materials.find((m) => m.id === ids[from]);
     const m = completeMaterial({
       id: 'wild-p-' + key, archetype: 'product', tint: 0.85, opacity: 0.85, heatCapacity: 3.6, boil: Infinity, melt: -20,
       viscosity: 2.5, compat: src.compat.slice(), price: 0, tier: 99, product: true, density: src.density,
       form: 'liquid', color: src.color.map((c) => r2(c * 0.85)), ...props,
     });
-    /** @type {any} */ (m).econd = 0.12;
-    /** @type {any} */ (m).charge = 0;
+    const mm = /** @type {any} */ (m);
+    mm.econd = 0.12;
+    mm.charge = 0;
+    mm.effects = fx;
+    mm.arcane = { ...(/** @type {any} */ (src).arcane) };
+    mm.fxv = WILD_FX_VERSION;
     materials.push(m);
     return m;
   };
   const water = base.roles.water, spirit = base.roles.spirit, oil = base.roles.oil;
   const nm = (k) => materials.find((m) => m.id === ids[k]).name;
+  const short = (k) => nm(k).split(' ').slice(-1)[0];
 
   // steeping: hot water turns ground root/leaf into a true liquid extract
-  const steepedRoot = product('steeped-ironroot', 'ironroot', { name: `Steeped ${nm('ironroot')}`, description: 'A dark root extract: all of the root’s strength, fully in solution.' });
-  /** @type {any} */ (steepedRoot).effects = { strength: 74, acidity: 4 };
+  const steepedRoot = product('steeped-ironroot', 'ironroot', { name: `Steeped ${nm('ironroot')}`, description: 'A dark root extract: all of the root’s strength, fully in solution.' }, { strength: 30 });
   reactions.push({ id: 'rw_steep_root', name: steepedRoot.name, kind: 'decompose', a: ids.ironroot, b: null, ra: 1, rb: 0, products: [{ id: steepedRoot.id, frac: 1 }],
     minT: t5(60, 70), maxT: 160, rate: 0.09, heat: -5, stir: 0.3, wet: true, hint: `Ground ${nm('ironroot')} steeps into a liquid extract in hot water.` });
-  const infusion = product('silver-infusion', 'silverleaf', { name: `${nm('silverleaf')} Infusion`, description: 'A pale, fragrant healing infusion.' });
-  /** @type {any} */ (infusion).effects = { vitality: 70, frost: 6 };
+  const infusion = product('silver-infusion', 'silverleaf', { name: `${nm('silverleaf')} Infusion`, description: 'A pale, fragrant healing infusion.' }, { vitality: 26, frost: 2 });
   reactions.push({ id: 'rw_infuse_leaf', name: infusion.name, kind: 'decompose', a: ids.silverleaf, b: null, ra: 1, rb: 0, products: [{ id: infusion.id, frac: 1 }],
     minT: t5(45, 55), maxT: t5(85, 95), rate: 0.1, heat: -5, stir: 0.3, wet: true, hint: `${nm('silverleaf')} infuses in warm (not boiling) water.` });
   // heat spoils delicate petals into something bitter
-  const wilted = product('wilted-petal', 'heartpetal', { name: `Wilted ${nm('heartpetal')}`, color: [0.45, 0.32, 0.3], description: 'Scorched petals: the love is gone and bitterness remains.' });
-  /** @type {any} */ (wilted).effects = { love: 14, toxicity: 22 };
+  const wilted = product('wilted-petal', 'heartpetal', { name: `Wilted ${nm('heartpetal')}`, color: [0.45, 0.32, 0.3], description: 'Scorched petals: the love is gone and bitterness remains.' }, { love: 6, toxicity: 9 });
   reactions.push({ id: 'rw_wilt_petal', name: wilted.name, kind: 'decompose', a: ids.heartpetal, b: null, ra: 1, rb: 0, products: [{ id: wilted.id, frac: 1 }],
     minT: t5(78, 88), maxT: 400, rate: 0.12, heat: 0, stir: 0.2, hint: `Strong heat spoils ${nm('heartpetal')}.` });
   // warm spirit wakes mandrake and quartz
-  const mandrakeT = product('mandrake-tincture', 'mandrake', { name: `${nm('mandrake')} Tincture`, compat: [0.62, 0.16], description: 'The waking root dissolved in warm spirit.' });
-  /** @type {any} */ (mandrakeT).effects = { transformation: 92, strength: 20 };
+  const mandrakeT = product('mandrake-tincture', 'mandrake', { name: `${nm('mandrake')} Tincture`, compat: [0.62, 0.16], description: 'The waking root dissolved in warm spirit.' }, { transformation: 36, strength: 8 });
   reactions.push({ id: 'rw_mandrake', name: mandrakeT.name, kind: 'mix', a: ids.mandrake, b: spirit, ra: 1, rb: 2, products: [{ id: mandrakeT.id, frac: 1 }],
     minT: t5(35, 45), maxT: t5(70, 75), rate: 0.25, heat: 10, stir: 0.8, hint: `${nm('mandrake')} wakes in warm spirit.` });
-  const starT = product('starlit-tincture', 'starquartz', { name: `Starlit ${nm('starquartz').split(' ').slice(-1)[0]} Tincture`, compat: [0.62, 0.16], glow: 0.7, description: 'Crushed quartz dissolved in warm spirit; it glimmers.' });
-  /** @type {any} */ (starT).effects = { arcana: 68, love: 34, transformation: 14 };
+  const starT = product('starlit-tincture', 'starquartz', { name: `Starlit ${short('starquartz')} Tincture`, compat: [0.62, 0.16], glow: 0.7, description: 'Crushed quartz dissolved in warm spirit; it glimmers.' }, { arcana: 26, love: 13, transformation: 6 });
   reactions.push({ id: 'rw_starquartz', name: starT.name, kind: 'mix', a: ids.starquartz, b: spirit, ra: 1, rb: 2, products: [{ id: starT.id, frac: 1 }],
     minT: t5(35, 45), maxT: t5(70, 80), rate: 0.25, heat: 8, stir: 0.8, hint: `Crushed ${nm('starquartz')} dissolves in warm spirit.` });
   // fire loves oil
   const dragonOil = product('dragonfire-oil', 'dragonpepper', { name: 'Dragonfire Oil', compat: [0.16, 0.11], color: [0.85, 0.25, 0.08], flammability: 0.7, ignition: 240, combustionHeat: 900,
-    ash: base.roles.soot, smoke: base.roles.smoke, description: 'Pepper fire carried in oil.' });
-  /** @type {any} */ (dragonOil).effects = { fire: 92, strength: 30 };
+    ash: base.roles.soot, smoke: base.roles.smoke, description: 'Pepper fire carried in oil.' }, { fire: 36, strength: 12 });
   reactions.push({ id: 'rw_dragonoil', name: dragonOil.name, kind: 'contact', a: ids.dragonpepper, b: oil, ra: 1, rb: 1, products: [{ id: dragonOil.id, frac: 1 }],
     minT: t5(30, 40), maxT: 220, rate: 0.4, heat: 20, stir: 1, hint: `Ground ${nm('dragonpepper')} pours its fire into warm oil.` });
   // acid meets alkali: neutral gypsum and heat
   const gypsum = product('gypsum', 'riverchalk', { name: 'Gypsum Grit', form: 'powder', color: [0.9, 0.88, 0.82], friction: 0.68, solubility: 0.02, melt: 1500, viscosity: 1,
-    description: 'The neutral grit left where acid met chalk.' });
-  /** @type {any} */ (gypsum).effects = { strength: 8 };
+    description: 'The neutral grit left where acid met chalk.' }, { strength: 3 });
   reactions.push({ id: 'rw_neutralise', name: 'Neutralisation', kind: 'contact', a: ids.riverchalk, b: ids.sulfur, ra: 1, rb: 1, products: [{ id: gypsum.id, frac: 1 }],
     minT: -10, maxT: 400, rate: 0.5, heat: 60, stir: 1, wet: true, hint: `${nm('riverchalk')} fizzes where it meets ${nm('sulfur')} and both turn to neutral grit.` });
-  // frostcap freezes water into a slush of transformation when chilled
-  void water;
+
+  // generic extraction: each remaining herb or mineral gives up its magic to
+  // the right solvent inside its own temperature window
+  for (const s of WILD_SPECS) {
+    if (!s.steep) continue;
+    const st = s.steep;
+    const solvent = st.into === 'spirit' ? spirit : st.into === 'oil' ? oil : water;
+    const solv = base.materials.find((m) => m.id === solvent);
+    const ext = product(`extract-${s.key}`, s.key, {
+      name: st.name, ...(solv ? { compat: solv.compat.slice() } : {}),
+      description: `The magic of ${nm(s.key)} drawn into ${st.into === 'water' ? 'water' : st.into}.`,
+    }, Object.fromEntries(Object.entries(st.fx).map(([k, v]) => [k, Math.round(v * rng.range(0.95, 1.05) * 10) / 10])));
+    const lo = t5(st.lo[0], st.lo[1]), hi = t5(st.hi[0], st.hi[1]);
+    const where = st.into === 'water' ? '' : ` in ${st.into}`;
+    const window = lo <= 15 ? `only when chilled below ${hi}°C` : `between about ${lo} and ${hi}°C`;
+    if (st.into === 'water') {
+      reactions.push({ id: `rw_extract_${s.key}`, name: ext.name, kind: 'decompose', a: ids[s.key], b: null, ra: 1, rb: 0, products: [{ id: ext.id, frac: 1 }],
+        minT: lo, maxT: hi, rate: 0.1, heat: -4, stir: 0.4, wet: true, hint: `Ground ${nm(s.key)} steeps into water ${window}.` });
+    } else {
+      // oil never blends with watery matter: it extracts where the grains touch it
+      reactions.push({ id: `rw_extract_${s.key}`, name: ext.name, kind: st.into === 'oil' ? 'contact' : 'mix', a: ids[s.key], b: solvent, ra: 1, rb: 1, products: [{ id: ext.id, frac: 1 }],
+        minT: lo, maxT: hi, rate: 0.25, heat: 4, stir: 0.8, hint: `${nm(s.key)} dissolves${where} ${window}.` });
+    }
+  }
 
   return { materials, reactions, ids, laws: generateLaws(seed) };
 }
