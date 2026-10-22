@@ -59,10 +59,11 @@ computed from the particles that actually run out of the tap. What a
   fair complaint, or a dishonest one you can dispute with your trial
   records. Many orders forbid any side effect above 1.2 %.
 * **The wilds.** Six regions, two of them magical and opened by rank. Each
-  ingredient is picked, dug, chipped, scraped or swept (the right tool
-  doubles the harvest), some only open at dawn or dusk, the weather changes
-  daily, and a thorough harvest strips a deposit. Deposits are finite and
-  regrow with real time, even while the game is closed.
+  ingredient is picked, dug, chipped, scraped or swept (without the right
+  tool half of what you cut is spoiled), some only open at dawn or dusk,
+  the weather changes daily, careful hands leave part of every deposit to
+  regrow, and a thorough harvest strips it and scars it. Deposits are
+  finite and regrow with real time, even while the game is closed.
 * **Electricity.** Charged reagents carry a conserved charge that flows
   through conductive brews. Oil insulates, and current heats what it
   passes through.

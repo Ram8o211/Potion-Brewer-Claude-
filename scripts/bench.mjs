@@ -4,6 +4,7 @@
 //   node scripts/bench.mjs --physics  physics only
 //   node scripts/bench.mjs --browser  browser only (builds dist/ if needed)
 //   node scripts/bench.mjs --memory   long-session memory soak only
+//   node scripts/bench.mjs --colony   arcane awakening and the colony only
 //
 // Physics: mean wall-clock time of one 1/120 s simulation step for typical
 // cauldron contents. Browser: frame intervals and per-frame work (physics +
@@ -25,12 +26,17 @@ import { capabilities, EQUIPMENT } from '../src/game/equipment.js';
 import { runPlanHeadless } from '../src/game/autobrew.js';
 import { Rng } from '../src/core/rng.js';
 import { measureParticles, tapSelection } from '../src/game/measure.js';
+import { GameState } from '../src/game/state.js';
+import { NE, EFFECT_KEYS } from '../src/alchemy/effects.js';
+import { livingRabbits } from '../src/game/colony.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = new Set(process.argv.slice(2));
 const memoryOnly = args.has('--memory');
-const doPhysics = !memoryOnly && (!args.has('--browser') || args.has('--physics'));
-const doBrowser = !memoryOnly && (!args.has('--physics') || args.has('--browser'));
+const colonyOnly = args.has('--colony');
+const doPhysics = !memoryOnly && !colonyOnly && (!args.has('--browser') || args.has('--physics'));
+const doBrowser = !memoryOnly && !colonyOnly && (!args.has('--physics') || args.has('--browser'));
+const doColony = !memoryOnly && (colonyOnly || doPhysics);
 const out = { date: new Date().toISOString(), machine: { cpus: os.cpus()[0]?.model, cores: os.cpus().length, node: process.version, platform: `${os.platform()} ${os.arch()}` } };
 
 // ------------------------------------------------------------------ physics
@@ -102,6 +108,87 @@ function physicsBench() {
   return { steps: rows, brews };
 }
 
+// ------------------------------------------------------- new systems (Node)
+/** A random strong dose for a rabbit trial. @param {Rng} rng */
+function randomDose(rng) {
+  const e = new Array(NE).fill(0);
+  for (let k = 0; k < 2; k++) e[rng.int(0, NE - 1)] += rng.range(4, 18);
+  return { effects: e, resonance: [], color: [0.5, 0.4, 0.5], temperature: 20 };
+}
+
+/**
+ * Arcane awakening in the step (the per-particle threshold check and the
+ * conversion), and a long career in the hutch: nights of fading marks,
+ * breeding and ageing, doses, deaths, remains, and what it does to the save.
+ */
+function newSystemsBench() {
+  // awakening: water + the world's first essence heated past its blend threshold
+  const st0 = GameState.create('bench-arcane', { tutorial: false });
+  const R = st0.world.roles;
+  const sim = new Simulation({ size: 'pot', lookup: st0.lookup, reactions: st0.world.reactions, laws: st0.world.laws });
+  const pour = (id, n) => { sim.emitter.start(st0.lookup(id), { x: 0, amount: n, rate: 600 }); let g = 0; while (sim.emitter.pouring && g++ < 20000) sim.step(); };
+  pour(R.water, 75);
+  pour(R.essenceA, 75);
+  sim.tool.auto = true;
+  for (let k = 0; k < 120 * 3; k++) sim.step();
+  const cold = timeSteps(sim, 2);
+  Object.assign(sim.furnace, { maxFlame: 900, heatPower: 2 });
+  sim.furnace.setting = 1;
+  // heat until the first particles awaken, then time five seconds of awakening
+  let steps = 0;
+  while (sim.awakened <= 0 && steps < 120 * 240) { sim.step(); steps++; }
+  const onset = sim.time;
+  const during = timeSteps(sim, 5);
+  sim.furnace.setting = 0;
+  const after = timeSteps(sim, 2);
+  // sim.awakened counts particle volumes of magic converted
+  const arcane = { particles: sim.p.count, awakenedParticleVolumes: +sim.awakened.toFixed(1), onsetSimSeconds: +onset.toFixed(1), msPerStepBefore: +cold.toFixed(3), msPerStepAwakening: +during.toFixed(3), msPerStepAfter: +after.toFixed(3) };
+  console.log(`  awakening (pot, ${arcane.particles} particles): ${arcane.msPerStepBefore} ms/step cold, ${arcane.msPerStepAwakening} while awakening (from ${arcane.onsetSimSeconds} s; ${arcane.awakenedParticleVolumes} particle volumes awakened), ${arcane.msPerStepAfter} after`);
+
+  // a year in the hutch: the warren full, breeding on, a dose a day, the dead processed or buried
+  const st = GameState.create('bench-colony', { tutorial: false });
+  st.equipment.push('kennel', 'warren');
+  st.coins = 1e6;
+  while (st.buyRabbit().ok);
+  const rng = new Rng('bench-colony-doses');
+  const json0 = JSON.stringify(st.toJSON()).length;
+  let nightMs = 0, doseMs = 0, doses = 0, processed = 0, buried = 0, born = 0, maxAlive = 0;
+  for (let day = 0; day < 365; day++) {
+    const living = livingRabbits(st.colony);
+    for (let k = 0; k < 2 && living.length; k++) {
+      const r = living[rng.int(0, living.length - 1)];
+      const t1 = performance.now();
+      st.recordTrial('rabbit', randomDose(rng), { ml: 10, source: 'cauldron', batchId: st.batch.id, rev: st.batch.rev, theory: new Array(NE).fill(0), parts: [], rabbitId: r.id });
+      doseMs += performance.now() - t1;
+      doses++;
+    }
+    for (const r of st.colony.rabbits.filter((x) => !x.alive)) {
+      if (processed <= buried) { st.processRemains(r.id); processed++; } else { st.buryRabbit(r.id); buried++; }
+    }
+    if (livingRabbits(st.colony).length < 2) st.buyRabbit();
+    st.current = null;
+    st.customerIndex = st.customersPerDay;
+    const t2 = performance.now();
+    const sum = st.endDay();
+    nightMs += performance.now() - t2;
+    born += sum.colony.born.length;
+    maxAlive = Math.max(maxAlive, livingRabbits(st.colony).length);
+  }
+  const t3 = performance.now();
+  const json = JSON.stringify(st.toJSON());
+  const saveMs = performance.now() - t3;
+  const t4 = performance.now();
+  GameState.fromJSON(JSON.parse(json));
+  const loadMs = performance.now() - t4;
+  const colony = {
+    days: 365, doses, born, processed, buried, maxAlive, living: livingRabbits(st.colony).length, memorial: st.colony.memorial.length,
+    materials: st.world.materials.length, msPerNight: +(nightMs / 365).toFixed(3), msPerDose: +(doseMs / Math.max(1, doses)).toFixed(3),
+    saveBytesStart: json0, saveBytesEnd: json.length, saveMs: +saveMs.toFixed(1), loadMs: +loadMs.toFixed(1),
+  };
+  console.log(`  a year in the hutch: ${doses} doses (${colony.msPerDose} ms each), ${born} born, ${processed} processed, ${buried} buried, up to ${maxAlive} alive; ${colony.msPerNight} ms per night (whole endDay); save ${(json0 / 1024).toFixed(1)} → ${(json.length / 1024).toFixed(1)} KB, written in ${colony.saveMs} ms, loaded in ${colony.loadMs} ms`);
+  return { arcane, colony };
+}
+
 // ------------------------------------------------------------------ browser
 async function browserBench() {
   let chromium;
@@ -165,12 +252,55 @@ async function browserBench() {
         await ctx.close();
       }
     }
+    for (const prof of profiles) results.push(await hutchFrames(browser, port, prof));
     memory = await memorySoak(browser, port);
   } finally {
     await browser.close();
     server.kill();
   }
   return { frames: results, memory };
+}
+
+/**
+ * The trials room with a full warren of changed rabbits hopping about: the
+ * hutch scene's frame cost (the cauldron is empty, so this is the scene).
+ */
+async function hutchFrames(browser, port, prof) {
+  const ctx = await browser.newContext({ viewport: prof.viewport, deviceScaleFactor: prof.dpr, isMobile: !!prof.mobile, hasTouch: !!prof.mobile });
+  await ctx.addInitScript(() => { try { const k = 'alchemist-shop.settings'; const s = JSON.parse(localStorage.getItem(k) || '{}'); s.quality = 'auto'; s.musicOn = false; localStorage.setItem(k, JSON.stringify(s)); } catch { /* ignore */ } });
+  const page = await ctx.newPage();
+  if (prof.throttle > 1) {
+    const cdp = await ctx.newCDPSession(page);
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate: prof.throttle });
+  }
+  await page.goto(`http://localhost:${port}/index.html?nosw`);
+  await page.click('[data-act=sandbox]');
+  await page.waitForSelector('canvas.view-canvas');
+  const n = await page.evaluate(() => {
+    const l = window.__alchemist.screen, st = l.state;
+    st.coins = 1e6;
+    for (const id of ['kennel', 'warren']) if (!st.has(id)) st.equipment.push(id);
+    while (st.buyRabbit().ok);
+    const keys = ['vitality', 'strength', 'love', 'arcana', 'transformation', 'fire', 'frost', 'acidity', 'toxicity', 'death'];
+    let k = 0;
+    for (const r of st.colony.rabbits) {
+      const e = new Array(keys.length).fill(0);
+      e[k % 7] = 14; e[(k * 3 + 2) % 7] = 10; e[4] += 8; // every rabbit changed, several transformed
+      st.recordTrial('rabbit', { effects: e, resonance: [], color: [0.5, 0.4, 0.5], temperature: 20 }, { ml: 10, source: 'cauldron', batchId: st.batch.id, rev: st.batch.rev, theory: new Array(keys.length).fill(0), parts: [], rabbitId: r.id });
+      k++;
+    }
+    l.showView('trials');
+    l.views.trials.refresh();
+    return st.colony.rabbits.filter((r) => r.alive).length;
+  });
+  await page.waitForTimeout(2500);
+  await page.evaluate(() => { window.__alchemist.screen.perf.n = 0; });
+  await page.waitForTimeout(prof.throttle > 1 ? 8000 : 6000);
+  const rep = await page.evaluate(() => window.__alchemist.screen.perfReport());
+  await ctx.close();
+  const row = { profile: prof.name, preset: 'auto', target: 0, scene: `hutch, ${n} rabbits`, ...Object.fromEntries(Object.entries(rep).map(([k, v]) => [k, typeof v === 'number' ? +v.toFixed(2) : v])) };
+  console.log(`  ${prof.name.padEnd(36)} [hutch ] ${String(n).padStart(5)} rabbits    ${rep.fps.toFixed(1).padStart(5)} fps  frame p50 ${rep.intervalP50.toFixed(1)} / p95 ${rep.intervalP95.toFixed(1)} ms  work p50 ${rep.workP50.toFixed(1)} / p95 ${rep.workP95.toFixed(1)} ms`);
+  return row;
 }
 
 /**
@@ -221,6 +351,10 @@ console.log(`Machine: ${out.machine.cpus} × ${out.machine.cores}, Node ${out.ma
 if (doPhysics) {
   console.log('Physics (Node, single thread):');
   out.physics = physicsBench();
+}
+if (doColony) {
+  console.log('Arcane awakening and the colony (Node, single thread):');
+  out.systems = newSystemsBench();
 }
 if (doBrowser) {
   console.log('Browser (headless Chromium, software rendering):');

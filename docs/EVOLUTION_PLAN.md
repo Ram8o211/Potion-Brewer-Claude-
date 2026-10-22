@@ -83,6 +83,6 @@ a later session can continue from it.
 - [x] E1 particle-exact vials, measured bottling, provenance, invalidation
 - [x] F1 gathering activities (methods + tools), availability (dawn/dusk by customer, weather), careful/thorough harvests, arcanometer
 - [x] G1 audio (awakening, cracking, bargaining, deals, complaints, praise, rabbits, births, deaths, digging, snipping)
-- [ ] G2 UI polish, tutorial/onboarding update
+- [x] G2 UI polish, tutorial/onboarding update (onboarding tips, "Arcane awakening" help, 44 px touch targets, review fixes)
 - [ ] G3 tests (unit, browser), feasibility simulation, bench
 - [ ] G4 docs, screenshots, build, PR

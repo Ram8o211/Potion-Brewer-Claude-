@@ -80,10 +80,12 @@ test('first commission: brew, test on a subject, bottle and serve', async ({ pag
   await page.click('[data-act=save-recipe]');
   await page.click('[data-act=result-continue]');
   await page.waitForTimeout(800);
-  const result = await lab(page, (l) => ({ coins: l.state.coins, rep: l.state.reputation, served: l.state.stats.served, last: l.state.history[0], vial: l.state.vial }));
+  const result = await lab(page, (l) => ({ coins: l.state.coins, rep: l.state.reputation, served: l.state.stats.served, last: l.state.history[0], sale: l.state.sales[0], vial: l.state.vial }));
   expect(result.served).toBe(1);
   expect(result.vial).toBeNull();
-  expect(result.last.stars).toBeGreaterThanOrEqual(3);
+  // how good it really was is known once the customer reports back
+  expect(result.last.stars).toBeNull();
+  expect(result.sale.stars).toBeGreaterThanOrEqual(3);
   expect(result.coins).toBeGreaterThan(before.coins);
   expect(result.rep).toBeGreaterThan(before.rep);
   expect(await lab(page, (l) => l.state.followUps.length), 'the customer will report back tomorrow').toBe(1);

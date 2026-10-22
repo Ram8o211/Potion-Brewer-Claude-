@@ -354,15 +354,21 @@ into the new vessel's shape instead of being dropped.
     temperament, and bargains over several rounds toward a hidden limit:
     counter-offers concede part of the gap, greed costs patience and can
     end the talks, and a demanding customer will not buy an untested
-    label at all. The agreed price is paid.
+    label at all. Stepping away keeps the talks for that bottle and label
+    (and costs patience); a new label re-prices it without a fresh start.
+    The agreed price is paid; how good the potion really was (its stars,
+    a perfect potion, the grand commission) counts only once the customer
+    reports back.
   * *Delivery.* `recordSale` evaluates the *real* potion. The next day the
     customer comes back: pleased (reputation, a tip, sometimes a referral
     who brings a better-paying order), with a **legitimate complaint** (the
     potion failed the order, the label was wrong beyond reading noise, or
     an undeclared harmful side effect), or — depending on their honesty —
-    a **dishonest** one about a good potion. The player refunds, disputes
-    (trial records of the batch are the evidence: a fair complaint
-    disputed backfires) or turns them away. Unanswered visitors resolve
+    a **dishonest** one about a good potion. A harmful potion is never
+    praised. The player refunds (in full, or not at all when the till is
+    short), disputes (trial records of the batch are the evidence: a fair
+    complaint disputed backfires, and costs more name when the shop
+    cannot pay) or turns them away. Reputation can fall below zero. Unanswered visitors resolve
     at the end of the day. Sales, follow-ups and outcomes are saved.
 * **`vial.js`** keeps a sealed vial as the exact particles that ran out
   of the tap — each one's composition by species id (reaction products and
@@ -437,14 +443,19 @@ into the new vessel's shape instead of being dropped.
   capacity. Harvests respect shelf space; the satchel gathers 50% more.
   `gatherPlan` decides one harvest: the ingredient's method (pick, dig,
   chip, scrape, sweep) and whether its tool is owned (trowel, rock hammer,
-  badger brush, silver sickle — by hand, half as much); the part of the day
+  badger brush, silver sickle — by hand, half of what is cut is spoiled);
+  the part of the day
   (dawn while the first customer of the day is in the shop, dusk with the
   last; twilight plants out of their hour give a quarter); the day's
   weather, deterministic from seed and day (rain regrows plants overnight,
   frost shuts meadow flowers, a storm recharges crystal seams, fog keeps
   twilight plants open, a heatwave favours flowers over mosses); and care —
-  a thorough harvest takes twice as much and scars the deposit, which then
-  regrows at half speed until full (the scar is saved).
+  a careful harvest leaves 30 % of the deposit standing, a thorough one
+  takes twice as much, may strip it bare and scars it, so it regrows at
+  half speed until full (the scar is saved). The plan's `eff` is the
+  usable share of what is cut: a harvest draws `amount / eff` from the
+  deposit, so spoiled material is gone from it too, and `harvestable`
+  tells the button exactly what the next harvest will bring.
 * **`evaluate.js`** scores each requirement (full marks within tolerance,
   falling linearly to zero), weights them (colour counts more, quantity
   less), caps the score for a short bottle, and turns quality into stars,
