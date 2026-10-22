@@ -7,7 +7,8 @@ import { Simulation } from '../src/simulation/world.js';
 import { applySnapshot } from '../src/simulation/snapshot.js';
 import { tapSelection, measureParticles } from '../src/game/measure.js';
 import { theoryOf, EFFECT_INDEX, NE } from '../src/alchemy/effects.js';
-import { SUBJECTS, SUBJECT_BY_ID, certification, missingEffects, suggestSubjects, subjectResponse, createTrials } from '../src/game/experiments.js';
+import { SUBJECTS, SUBJECT_BY_ID, certification, missingEffects, suggestSubjects } from '../src/game/experiments.js';
+import { rabbitResponse, findRabbit } from '../src/game/colony.js';
 import { depositStatus, generateDeposits, SCAR_SLOWDOWN } from '../src/game/gathering.js';
 import { PHASE } from '../src/simulation/constants.js';
 
@@ -36,7 +37,7 @@ function drawDose(sim, ml) {
   return m;
 }
 
-test('a trial consumes a real dose and reveals only what the subject responds to', () => {
+test('a trial consumes a real dose; a rabbit shows every effect, read with an individual bias', () => {
   const st = GameState.create('trial-seed-1', { tutorial: false });
   const R = st.world.roles;
   const stock0 = st.stock(R.essenceA);
@@ -46,14 +47,16 @@ test('a trial consumes a real dose and reveals only what the subject responds to
   assert.equal(sim.p.count, before - 2, 'two 5 ml particles left the cauldron');
   assert.equal(st.stock(R.essenceA), stock0, 'no ingredient was duplicated or refunded');
   const theory = theoryOf([{ id: R.water, ml: 150 }, { id: R.essenceA, ml: 150 }], st.lookup);
-  const { record } = st.recordTrial('stone', dose, { ml: 10, source: 'cauldron', batchId: st.batch.id, rev: st.batch.rev, theory, parts: [] });
-  assert.deepEqual(record.revealed, SUBJECT_BY_ID.stone.reveals);
-  assert.equal(record.values.vitality, undefined, 'a stone cannot show healing');
-  const { record: r2 } = st.recordTrial('rabbit', drawDose(sim, 10), { ml: 10, source: 'cauldron', batchId: st.batch.id, rev: st.batch.rev, theory, parts: [] });
-  assert.ok(r2.values.vitality > 5, `the rabbit shows vitality ${r2.values.vitality}`);
-  assert.ok(r2.observations.some((o) => o.key === 'vitality'));
-  assert.equal(st.trials.records.length, 2);
-  assert.equal(st.stats.trials, 2);
+  assert.deepEqual(SUBJECTS.map((s) => s.id), ['rabbit'], 'rabbits are the only subjects');
+  const { record } = st.recordTrial('rabbit', dose, { ml: 10, source: 'cauldron', batchId: st.batch.id, rev: st.batch.rev, theory, parts: [] });
+  assert.equal(record.revealed.length, NE, 'a rabbit shows every effect');
+  assert.ok(record.values.vitality > 3, `the rabbit shows vitality ${record.values.vitality}`);
+  assert.notEqual(record.values.vitality, record.tv.vitality, 'a reading is not the exact truth');
+  assert.ok(Math.abs(record.values.vitality - record.tv.vitality) < 0.6 * record.tv.vitality, 'but it is close');
+  assert.ok(record.observations.some((o) => o.key === 'vitality'));
+  assert.throws(() => st.recordTrial('stone', dose, { ml: 10, source: 'cauldron', batchId: st.batch.id, rev: st.batch.rev, theory, parts: [] }), /rabbits/);
+  assert.equal(st.trials.records.length, 1);
+  assert.equal(st.stats.trials, 1);
   assert.ok(st.achievements.trial1);
 });
 
@@ -65,10 +68,11 @@ test('certification: valid for this batch only, invalidated by a new pour or by 
   st.recordTrial('rabbit', drawDose(sim, 10), { ml: 10, source: 'cauldron', batchId: st.batch.id, rev: st.batch.rev, theory, parts: [] });
   const now = measureParticles(sim, tapSelection(sim, 20)).effects;
   const cert = certification(st.trials, st.batch, now);
-  assert.ok(cert.values.vitality > 5 && cert.values.toxicity !== undefined, 'vitality and toxicity verified');
+  assert.ok(cert.values.vitality > 3 && cert.values.toxicity !== undefined && cert.values.fire !== undefined, 'every effect estimated');
+  assert.equal(cert.rabbits.vitality, 1);
   const order = { requirements: [{ key: 'vitality' }, { key: 'toxicity' }, { key: 'color' }, { key: 'fire' }] };
-  assert.deepEqual(missingEffects(order, cert.values), ['fire'], 'fire still needs a subject that shows it');
-  assert.ok(suggestSubjects(['fire']).length === 1);
+  assert.deepEqual(missingEffects(order, cert.values), [], 'one rabbit reads them all');
+  assert.deepEqual(suggestSubjects(['fire']), ['rabbit']);
   // a different measurement (drift) invalidates silently
   const drifted = now.slice(); drifted[V.vitality] += 20;
   assert.equal(certification(st.trials, st.batch, drifted).values.vitality, undefined, 'drift invalidates');
@@ -88,36 +92,27 @@ test('resonance laws are discovered by repeated trials where they act, then join
   const dose = { effects: new Float64Array(NE), resonance: new Float64Array(st.world.laws.length) };
   dose.resonance[0] = 6;
   dose.effects[L.a] = 15;
-  const subj = SUBJECTS.find((s) => s.reveals.includes(['vitality', 'strength', 'love', 'arcana', 'transformation', 'fire', 'frost', 'acidity', 'toxicity', 'death'][L.a]) && !s.needs);
   const ctx = { ml: 10, source: 'cauldron', batchId: 'x', rev: 0, theory: new Float64Array(NE), parts: [] };
-  st.recordTrial(subj.id, dose, ctx);
+  st.recordTrial('rabbit', dose, { ...ctx, rabbitId: 'r1' });
   assert.equal(st.knownLaws.length, 0, 'one anomaly is not yet a law');
-  if (!st.trials.subjects[subj.id].alive) st.replaceSubject(subj.id, true);
-  const { events } = st.recordTrial(subj.id, dose, ctx);
+  const { events } = st.recordTrial('rabbit', dose, { ...ctx, rabbitId: 'r2' });
   assert.equal(st.knownLaws.length, 1, 'confirmed on the second trial');
   assert.ok(events.some((e) => e.type === 'law'));
   assert.ok(st.journal['law:' + L.id]);
 });
 
-test('subjects respond differently; lethal doses kill and replacement costs coins', () => {
+test('lethal doses kill a rabbit; a dead one cannot be dosed and a new one costs coins', () => {
   const tox = new Float64Array(NE); tox[V.toxicity] = 40; tox[V.death] = 30;
-  const rabbit = subjectResponse(SUBJECT_BY_ID.rabbit, createTrials().subjects.rabbit, tox, 25);
-  assert.equal(rabbit.after.alive, false, 'poison and death kill the rabbit');
-  const stone = subjectResponse(SUBJECT_BY_ID.stone, createTrials().subjects.stone, tox, 25);
-  assert.equal(stone.after.alive, true, 'a stone does not die of poison');
-  const acid = new Float64Array(NE); acid[V.acidity] = 30;
-  const etched = subjectResponse(SUBJECT_BY_ID.stone, createTrials().subjects.stone, acid, 10);
-  assert.ok(etched.after.marks.etch > 20 && etched.observations.some((o) => o.key === 'acidity'));
-  const alk = new Float64Array(NE); alk[V.acidity] = -30;
-  assert.ok(subjectResponse(SUBJECT_BY_ID.stone, createTrials().subjects.stone, alk, 10).observations[0].text.includes('alkaline'));
   const st = GameState.create('trial-seed-4', { tutorial: false });
-  st.trials.subjects.rabbit = rabbit.after;
+  const dead = rabbitResponse(findRabbit(st.colony, 'r1'), tox, 25, { day: st.day });
+  assert.equal(dead.after.alive, false, 'poison and death kill the rabbit');
+  st.trials.subjects.rabbit = dead.after;
   assert.throws(() => st.recordTrial('rabbit', { effects: tox }, { ml: 10, source: 'cauldron', batchId: 'b', rev: 0, theory: [], parts: [] }));
   const c0 = st.coins;
   assert.ok(st.replaceSubject('rabbit').ok);
   assert.equal(st.coins, c0 - SUBJECT_BY_ID.rabbit.cost);
   assert.equal(st.trials.subjects.rabbit.alive, true);
-  assert.equal(st.subjectAvailable('wisp'), false, 'the wisp needs its lantern');
+  assert.equal(st.subjectAvailable('wisp'), false, 'the old subjects are gone');
 });
 
 test('the wilds: deterministic deposits, finite stock, timestamp regrowth, rank locks and storage limits', () => {

@@ -36,6 +36,7 @@ import { refreshParticle } from '../simulation/derived.js';
  * @property {number} rev
  * @property {Record<string, number>} cert   effect values verified for this vial
  * @property {Record<string, string>} [certRecords] trial record per verified effect
+ * @property {Record<string, {v:number, r:string, rec:string}[]>} [samples] every reading behind the estimate (experiments.js summarize)
  * @property {{id:string, ml:number}[]} parts  ingredients the batch was made of (provenance)
  * @property {number} bottledMl
  * @property {number} day

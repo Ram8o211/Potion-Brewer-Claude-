@@ -1,22 +1,26 @@
-// The experimentation room: test subjects, measured doses, observations,
-// trial records, batch certification and the discovery of resonance laws.
+// The experimentation room: the Moon Rabbits of the colony are the only
+// test subjects. A mixture's effects are hidden; the way to learn them is to
+// give a real dose — drawn from the cauldron tap or split off a sealed
+// vial — to a rabbit and read what it does. A rabbit shows every effect, but
+// no reading is exact: each rabbit feels each effect a little more or less
+// than the next (colony.js rabbitSensitivity, a hidden lifelong bias) and
+// every dose varies a little too. One reading is a rough guess; several
+// rabbits averaged make an estimate worth selling on. Dosing the same
+// rabbit again does not remove its bias — and piles the effect up in it
+// until it degenerates.
 //
-// A mixture's effects are hidden. The only way to learn them is to give a
-// real dose — drawn from the cauldron tap or split off a sealed vial — to a
-// subject and watch what happens. Each subject responds only to some
-// effects (a stone does not fall in love), so characterising a potion means
-// choosing subjects sensibly. Every trial records exactly what it revealed.
-//
-// Certification: a batch (one filling of the cauldron) is certified for an
-// effect once a trial of *this batch, unchanged since* revealed it, and the
-// brew still matches that reading. Pouring anything new invalidates every
-// earlier trial of the batch; so does drift from reactions, settling or heat
-// (checked silently against the brew that would actually be bottled).
+// Certification: a batch (one filling of the cauldron) is known for an
+// effect once trials of *this batch, unchanged since* read it; the estimate
+// is the mean of those readings with its uncertainty. Pouring anything new
+// invalidates every earlier trial of the batch; so does drift from
+// reactions, settling or heat (checked silently against the brew that would
+// actually be bottled).
 
 import { EFFECTS, EFFECT_KEYS, EFFECT_INDEX, NE, potencyWord } from '../alchemy/effects.js';
+import { Rng, hashString } from '../core/rng.js';
 import {
   createColony, normalizeColony, installRabbitAlias, rabbitResponse, findRabbit, focusRabbit, recordDose,
-  rabbitSnap, encodeSnap, stageOf, addBoughtRabbit, STAGE_ERR,
+  rabbitSnap, encodeSnap, stageOf, addBoughtRabbit, STAGE_ERR, rabbitSensitivity,
 } from './colony.js';
 
 /**
@@ -27,45 +31,31 @@ import {
  * @property {string[]} reveals  effect keys this subject visibly responds to
  * @property {number} cost       coins for a replacement
  * @property {string} desc
- * @property {string} [needs]    equipment id required
+ * @property {boolean} [legacy]  retired subject (only old trial records name it)
  */
 
 /** @type {SubjectDef[]} */
 export const SUBJECTS = [
-  { id: 'rabbit', name: 'Moon Rabbit', kind: 'animal', reveals: ['vitality', 'strength', 'love', 'toxicity', 'death'], cost: 6,
-    desc: 'A gentle animal. Shows healing, strength, affection, poison and death.' },
-  { id: 'beetle', name: 'Copper Beetle', kind: 'animal', reveals: ['strength', 'transformation', 'fire', 'frost', 'toxicity'], cost: 3,
-    desc: 'A hardy beetle. Shows strength, transformation, fire, frost and poison.' },
-  { id: 'seedling', name: 'Bean Seedling', kind: 'plant', reveals: ['vitality', 'love', 'fire', 'frost', 'acidity', 'toxicity'], cost: 2,
-    desc: 'A young plant. Shows growth, blooming, heat, cold, acid and poison.' },
-  { id: 'stone', name: 'Limestone', kind: 'mineral', reveals: ['acidity', 'strength', 'fire', 'frost', 'arcana', 'transformation'], cost: 1,
-    desc: 'An inert stone. Acid etches it; it hardens, glows, frosts or recrystallises.' },
-  { id: 'wisp', name: 'Will-o’-Wisp', kind: 'spirit', reveals: ['arcana', 'transformation', 'love', 'death', 'vitality'], cost: 14, needs: 'lantern',
-    desc: 'A captive marsh light that feeds on magic. Shows arcana, change, love, life and death.' },
+  { id: 'rabbit', name: 'Moon Rabbit', kind: 'animal', reveals: EFFECT_KEYS.slice(), cost: 6,
+    desc: 'A Moon Rabbit of your colony. It shows every effect — each one a little differently.' },
+];
+/** Subjects of older saves: their records stay readable. @type {SubjectDef[]} */
+const RETIRED = [
+  { id: 'beetle', name: 'Copper Beetle', kind: 'animal', reveals: ['strength', 'transformation', 'fire', 'frost', 'toxicity'], cost: 3, desc: '', legacy: true },
+  { id: 'seedling', name: 'Bean Seedling', kind: 'plant', reveals: ['vitality', 'love', 'fire', 'frost', 'acidity', 'toxicity'], cost: 2, desc: '', legacy: true },
+  { id: 'stone', name: 'Limestone', kind: 'mineral', reveals: ['acidity', 'strength', 'fire', 'frost', 'arcana', 'transformation'], cost: 1, desc: '', legacy: true },
+  { id: 'wisp', name: 'Will-o’-Wisp', kind: 'spirit', reveals: ['arcana', 'transformation', 'love', 'death', 'vitality'], cost: 14, desc: '', legacy: true },
 ];
 /** @type {Record<string, SubjectDef>} */
-export const SUBJECT_BY_ID = Object.fromEntries(SUBJECTS.map((s) => [s.id, s]));
-export const RECORD_LIMIT = 120;
+export const SUBJECT_BY_ID = Object.fromEntries([...SUBJECTS, ...RETIRED].map((s) => [s.id, s]));
+export const RECORD_LIMIT = 160;
 export const DOSES = [5, 10, 25];
+/** Per-dose variation of a reading (relative, one sigma, for an adult and 10 ml). */
+export const DOSE_NOISE = 0.1;
 
 /** Absolute/relative tolerance for "the brew still matches the trial". */
 export function driftTolerance(v) {
   return Math.max(3, 0.15 * Math.abs(v));
-}
-
-/**
- * @typedef {Object} SubjectState
- * @property {number} health 0..100
- * @property {boolean} alive
- * @property {number} trials
- * @property {Record<string, number>} marks  visible states 0..100: glow, burn, frost, love, change, vigor, growth, etch, sick
- * @property {string} [id]     (the rabbit handle: the selected colony rabbit, colony.js)
- * @property {string} [name]
- */
-
-/** @param {SubjectDef} def @returns {SubjectState} */
-function freshSubject(def) {
-  return { health: 100, alive: true, trials: 0, marks: { glow: 0, burn: 0, frost: 0, love: 0, change: 0, vigor: 0, growth: def.kind === 'plant' ? 20 : 0, etch: 0, sick: 0 } };
 }
 
 /**
@@ -74,30 +64,21 @@ function freshSubject(def) {
  * code written for one rabbit keeps working and saves never hold it twice.
  */
 export function createTrials() {
-  /** @type {Record<string, SubjectState>} */
+  /** @type {Record<string, any>} */
   const subjects = {};
-  for (const d of SUBJECTS) if (d.id !== 'rabbit') subjects[d.id] = freshSubject(d);
   const t = { subjects, records: /** @type {TrialRecord[]} */ ([]), serial: 0, laws: /** @type {Record<string, {evidence:number, found:number|null}>} */ ({}), colony: createColony() };
   installRabbitAlias(t);
   return t;
 }
 
 /**
- * Bring a saved trials object up to date (missing subjects, bad numbers).
+ * Bring a saved trials object up to date (retired subjects are dropped,
+ * their records kept).
  * @param {any} t
  */
 export function normalizeTrials(t) {
   const out = createTrials();
   if (!t || typeof t !== 'object') return out;
-  for (const d of SUBJECTS) {
-    if (d.id === 'rabbit') continue;
-    const s = t.subjects && t.subjects[d.id];
-    if (s && typeof s === 'object') {
-      const marks = { ...out.subjects[d.id].marks };
-      for (const k of Object.keys(marks)) if (Number.isFinite(s.marks?.[k])) marks[k] = clamp(s.marks[k], 0, 100);
-      out.subjects[d.id] = { health: Number.isFinite(s.health) ? clamp(s.health, 0, 100) : 100, alive: s.alive !== false, trials: s.trials | 0, marks };
-    }
-  }
   if (Array.isArray(t.records)) out.records = t.records.filter((r) => r && typeof r === 'object' && typeof r.subjectId === 'string' && r.values).slice(0, RECORD_LIMIT);
   out.serial = Math.max(t.serial | 0, ...out.records.map((r) => r.serial | 0), 0);
   if (t.laws && typeof t.laws === 'object') for (const [k, v] of Object.entries(t.laws)) if (v && typeof v === 'object') out.laws[k] = { evidence: v.evidence | 0, found: v.found ?? null };
@@ -108,90 +89,64 @@ export function normalizeTrials(t) {
 }
 
 /**
- * How a subject responds to a dose. Pure and deterministic.
- * @param {SubjectDef} def @param {SubjectState} before
- * @param {ArrayLike<number>} effects dose effect vector (NE)
- * @param {number} ml dose
+ * What one rabbit reads for one dose: the real effects, scaled by the
+ * rabbit's own sensitivity and by this dose's variation. Effects that are
+ * absent read as absent. Pure.
+ * @param {any} rabbit @param {ArrayLike<number>} effects @param {{ml:number, day?:number, salt:string}} o
+ * @returns {number[]}
  */
-export function subjectResponse(def, before, effects, ml) {
-  if (def.id === 'rabbit') {
-    // a Moon Rabbit is an individual of the colony: every channel acts on it
-    const r = rabbitResponse(before, effects, ml, {});
-    return { after: /** @type {any} */ (r.after), observations: r.observations, harm: r.harm };
+export function rabbitReading(rabbit, effects, o) {
+  const rng = new Rng(hashString(`reading:${o.salt}:${rabbit.id}`));
+  const errK = Math.sqrt(10 / Math.max(1, o.ml)) * (STAGE_ERR[stageOf(rabbit, o.day)] || 1);
+  const out = new Array(NE).fill(0);
+  for (let k = 0; k < NE; k++) {
+    const v = Number(effects[k]) || 0;
+    const g1 = rng.gauss(), g2 = rng.gauss();
+    if (Math.abs(v) < 0.3) continue;
+    const f = rabbitSensitivity(rabbit, EFFECT_KEYS[k]) * Math.max(0.3, 1 + DOSE_NOISE * errK * g1);
+    out[k] = v * f + 0.4 * errK * g2;
+    if (Math.sign(out[k]) !== Math.sign(v)) out[k] = 0;
   }
-  const x = Math.min(2.5, Math.max(0, ml) / 10); // exposure relative to a 10 ml dose
-  const v = (key) => effects[EFFECT_INDEX[key]] * x;
-  const after = { ...before, marks: { ...before.marks } };
-  const mk = after.marks;
-  /** @type {{text:string, key:string, tone:'good'|'bad'|'neutral'}[]} */
-  const obs = [];
-  const say = (key, tone, text) => obs.push({ key, tone, text });
-  if (!before.alive) return { after, observations: [{ key: '', tone: /** @type {'neutral'} */ ('neutral'), text: 'The subject is spent. Replace it for a fresh trial.' }], harm: 0 };
-  const kind = def.kind;
-  let harm = 0, heal = 0;
-  const vit = v('vitality'), str = v('strength'), love = v('love'), arc = v('arcana'), tr = v('transformation');
-  const fire = v('fire'), frost = v('frost'), acid = v('acidity'), tox = v('toxicity'), death = v('death');
-  const shows = (k) => def.reveals.includes(k);
-  if (shows('vitality') && vit > 1) {
-    heal += vit * 0.7;
-    if (kind === 'plant') { mk.growth = clamp(mk.growth + vit * 0.9, 0, 100); say('vitality', 'good', vit > 20 ? 'The seedling shoots up, leaves unfurling.' : 'New leaves appear.'); }
-    else if (kind === 'spirit') { mk.glow = clamp(mk.glow + vit * 0.4, 0, 100); say('vitality', 'good', 'The wisp brightens to a warm, living gold.'); }
-    else { mk.vigor = clamp(mk.vigor + vit * 0.8, 0, 100); say('vitality', 'good', vit > 20 ? 'Its coat gleams; it bounds about full of life.' : 'It looks refreshed.'); }
+  return out;
+}
+
+/** @typedef {{v:number, r:string, rec:string}} Sample one reading: value, rabbit id, record id */
+
+/**
+ * Pool readings into an estimate per effect: the mean, how sure it is (±,
+ * shrinking with more readings and, above all, more different rabbits), the
+ * number of readings and of rabbits, and the newest record behind it.
+ * @param {Record<string, Sample[]>} samples
+ */
+export function summarize(samples) {
+  /** @type {Record<string, number>} */ const values = {};
+  /** @type {Record<string, number>} */ const spread = {};
+  /** @type {Record<string, number>} */ const n = {};
+  /** @type {Record<string, number>} */ const rabbits = {};
+  /** @type {Record<string, string>} */ const records = {};
+  for (const [key, list] of Object.entries(samples || {})) {
+    if (!Array.isArray(list) || !list.length) continue;
+    const mean = list.reduce((a, s) => a + s.v, 0) / list.length;
+    const nr = new Set(list.map((s) => s.r)).size;
+    const sd = list.length > 1 ? Math.sqrt(list.reduce((a, s) => a + (s.v - mean) ** 2, 0) / (list.length - 1)) : 0;
+    const model = (0.18 * Math.abs(mean)) / Math.sqrt(nr) + (0.1 * Math.abs(mean) + 0.5) / Math.sqrt(list.length);
+    const m = Math.round(mean * 10) / 10;
+    values[key] = Math.abs(m) < 0.5 ? 0 : m;
+    spread[key] = Math.round(Math.max(0.5, model, sd / Math.sqrt(list.length)) * 10) / 10;
+    n[key] = list.length;
+    rabbits[key] = nr;
+    records[key] = list[list.length - 1].rec;
   }
-  if (shows('strength') && str > 1) {
-    if (kind === 'mineral') { mk.etch = clamp(mk.etch - str * 0.5, 0, 100); say('strength', 'good', str > 20 ? 'The stone turns hard as iron; a knife skids off it.' : 'The stone seems a little harder.'); }
-    else { mk.vigor = clamp(mk.vigor + str, 0, 100); say('strength', 'good', str > 20 ? (kind === 'animal' && def.id === 'beetle' ? 'The beetle lifts a pebble twice its size.' : 'It grows visibly stronger and pushes at the cage.') : 'It moves with new strength.'); }
+  return { values, spread, n, rabbits, records };
+}
+
+/** Add one record's readings to a sample set (newest last). @param {Record<string, Sample[]>} samples @param {any} rec */
+export function addSamples(samples, rec) {
+  for (const key of rec.revealed || []) {
+    if (rec.values[key] === undefined) continue;
+    (samples[key] ||= []).push({ v: rec.values[key], r: rec.rabbitId || rec.subjectId, rec: rec.id });
   }
-  if (shows('love') && love > 1) {
-    mk.love = clamp(mk.love + love * 1.2, 0, 100);
-    say('love', 'good', kind === 'plant' ? 'Pink buds open and lean towards you.' : kind === 'spirit' ? 'The wisp drifts close and circles your hand.' : 'It nuzzles your hand, utterly devoted.');
-  }
-  if (shows('arcana') && arc > 1) {
-    mk.glow = clamp(mk.glow + arc * 1.2, 0, 100);
-    say('arcana', 'neutral', kind === 'mineral' ? (arc > 20 ? 'Runes of light crawl across the stone.' : 'The stone glimmers faintly.') : 'It shimmers with arcane light.');
-  }
-  if (shows('transformation') && tr > 1) {
-    mk.change = clamp(mk.change + tr * 1.3, 0, 100);
-    say('transformation', 'neutral', kind === 'mineral' ? 'Crystals sprout over the stone’s surface.' : kind === 'spirit' ? 'The wisp twists into new shapes and colours.' : 'Its colours shift and its shape subtly changes.');
-  }
-  const netFire = fire, netFrost = frost;
-  if (shows('fire') && netFire > 1) {
-    mk.burn = clamp(mk.burn + netFire * 1.2, 0, 100);
-    if (netFire > 18 && kind !== 'mineral') harm += (netFire - 18) * (kind === 'plant' ? 1.4 : 0.8);
-    say('fire', netFire > 18 && kind !== 'mineral' ? 'bad' : 'neutral', kind === 'mineral' ? 'The stone glows hot.' : kind === 'plant' ? (netFire > 18 ? 'The leaves scorch.' : 'The leaves warm and redden.') : (netFire > 18 ? 'It yelps; its fur smoulders.' : 'A warm glow surrounds it.'));
-  }
-  if (shows('frost') && netFrost > 1) {
-    mk.frost = clamp(mk.frost + netFrost * 1.2, 0, 100);
-    if (netFrost > 18 && kind !== 'mineral') harm += (netFrost - 18) * (kind === 'plant' ? 1.1 : 0.7);
-    say('frost', netFrost > 18 && kind !== 'mineral' ? 'bad' : 'neutral', kind === 'mineral' ? 'A crust of rime grows on the stone.' : kind === 'plant' ? 'Frost feathers the leaves.' : 'Frost rimes its whiskers; it shivers.');
-  }
-  if (shows('acidity') && Math.abs(acid) > 1) {
-    if (acid > 1) {
-      mk.etch = clamp(mk.etch + acid * (kind === 'mineral' ? 1.5 : 0.8), 0, 100);
-      if (kind === 'plant') harm += acid * 0.8;
-      say('acidity', 'bad', kind === 'mineral' ? (acid > 15 ? 'The stone fizzes violently and pits deeply.' : 'The stone fizzes where the drops land.') : 'The leaves blister where the drops land.');
-    } else {
-      say('acidity', 'neutral', kind === 'mineral' ? 'A chalky alkaline film dries on the stone; no fizzing.' : 'The soil turns chalky; the leaves pale slightly.');
-      if (kind === 'plant') harm += -acid * 0.3;
-    }
-  }
-  if (shows('toxicity') && tox > 1) {
-    const sens = def.id === 'beetle' ? 0.45 : kind === 'plant' ? 0.9 : 1.1;
-    harm += tox * sens;
-    mk.sick = clamp(mk.sick + tox, 0, 100);
-    say('toxicity', 'bad', kind === 'plant' ? 'The leaves yellow and droop.' : tox > 15 ? 'It staggers, sick and trembling.' : 'It looks queasy.');
-  }
-  if (shows('death') && death > 1) {
-    harm += death * (kind === 'spirit' ? 0.8 : 1.8);
-    say('death', 'bad', kind === 'spirit' ? 'The wisp dims and gutters.' : death > 15 ? 'A grey pallor creeps over it.' : 'It grows still and cold for a moment.');
-  }
-  after.health = clamp(before.health + heal * 0.5 - harm, 0, 100);
-  if (kind === 'mineral') after.health = clamp(100 - mk.etch, 0, 100);
-  after.alive = after.health > 0.5;
-  if (!after.alive) say('', 'bad', kind === 'mineral' ? 'The stone crumbles to wet grit.' : kind === 'spirit' ? 'The wisp goes out.' : kind === 'plant' ? 'The seedling withers and dies.' : 'It collapses and does not get up.');
-  if (!obs.length) say('', 'neutral', 'No visible change.');
-  after.trials = before.trials + 1;
-  return { after, observations: obs, harm };
+  return samples;
 }
 
 /**
@@ -218,83 +173,71 @@ export function subjectResponse(def, before, effects, ml) {
  * @property {string} [rabbitName]
  * @property {Record<string, number>} [err]  reading uncertainty (±) per revealed effect
  * @property {{b:string, a:string, rx:string}} [replay]  the rabbit's look before and after (encoded snapshots) and the channels that acted
+ * @property {Record<string, number>} [tv]   the dose's real effects (hidden: only the drift check reads them)
+ * @property {string[]} [degen]   channels that started degenerating with this dose
  */
 
 /**
- * Give a dose to a subject and record what it revealed.
+ * Give a dose to a rabbit and record what it revealed.
  * @param {ReturnType<typeof createTrials>} trials
- * @param {string} subjectId
+ * @param {string} subjectId always 'rabbit'
  * @param {{effects:ArrayLike<number>, resonance?:ArrayLike<number>, color?:number[], temperature?:number}} dose measured dose
  * @param {{ml:number, source:'cauldron'|'vial', batchId:string, rev:number, day:number, now?:number,
  *          theory:ArrayLike<number>, laws:import('../alchemy/effects.js').Resonance[], parts?:{id:string, ml:number}[], rabbitId?:string}} ctx
  */
 export function runTrial(trials, subjectId, dose, ctx) {
   const def = SUBJECT_BY_ID[subjectId];
-  if (!def) throw new Error('Choose a test subject.');
-  const isRabbit = subjectId === 'rabbit';
-  /** @type {any} */
-  let st;
-  if (isRabbit) {
-    st = ctx.rabbitId ? findRabbit(trials.colony, ctx.rabbitId) : focusRabbit(trials.colony);
-    if (!st) throw new Error('Choose a rabbit.');
-    if (!st.alive) throw new Error(`${st.name} is dead — choose or buy another rabbit.`);
-  } else {
-    st = trials.subjects[subjectId] || (trials.subjects[subjectId] = freshSubject(def));
-    if (!st.alive) throw new Error(`The ${def.name.toLowerCase()} is spent — replace it first.`);
-  }
+  if (!def || def.legacy) throw new Error('Only the rabbits of the colony can be tested.');
+  const st = ctx.rabbitId ? findRabbit(trials.colony, ctx.rabbitId) : focusRabbit(trials.colony);
+  if (!st) throw new Error('Choose a rabbit.');
+  if (!st.alive) throw new Error(`${st.name} is dead — choose or buy another rabbit.`);
   if (!(ctx.ml > 0)) throw new Error('Choose a positive dose.');
-  const rr = isRabbit ? rabbitResponse(st, dose.effects, ctx.ml, { day: ctx.day }) : null;
-  const res = rr || subjectResponse(def, st, dose.effects, ctx.ml);
-  // how sure a reading is: small doses, kits and the old read less precisely
-  const errK = Math.sqrt(10 / ctx.ml) * (isRabbit ? STAGE_ERR[stageOf(st, ctx.day)] || 1 : 1);
-  /** @type {Record<string, number>} */
-  const err = {};
-  /** @type {Record<string, number>} */
-  const values = {};
-  /** @type {Record<string, number>} */
-  const theory = {};
+  // what this rabbit actually feels (and shows) of this dose
+  const felt = rabbitReading(st, dose.effects, { ml: ctx.ml, day: ctx.day, salt: `${trials.serial + 1}:${ctx.batchId}:${ctx.rev}` });
+  const rr = rabbitResponse(st, felt, ctx.ml, { day: ctx.day });
+  const errK = Math.sqrt(10 / ctx.ml) * (STAGE_ERR[stageOf(st, ctx.day)] || 1);
+  /** @type {Record<string, number>} */ const err = {};
+  /** @type {Record<string, number>} */ const values = {};
+  /** @type {Record<string, number>} */ const theory = {};
+  /** @type {Record<string, number>} */ const tv = {};
   const anomalies = [];
   for (const key of def.reveals) {
     const k = EFFECT_INDEX[key];
-    const val = Math.round(dose.effects[k] * 10) / 10;
+    const val = Math.round(felt[k] * 10) / 10;
     values[key] = Math.abs(val) < 0.5 ? 0 : val;
-    err[key] = Math.round((0.6 + 0.04 * Math.abs(values[key])) * errK * 10) / 10;
+    tv[key] = Math.round((Number(dose.effects[k]) || 0) * 10) / 10;
+    err[key] = Math.round(Math.sqrt((0.2 * Math.abs(values[key])) ** 2 + (DOSE_NOISE * errK * Math.abs(values[key])) ** 2 + (0.4 * errK) ** 2) * 10) / 10;
     theory[key] = Math.round((ctx.theory?.[k] ?? 0) * 10) / 10;
-    if (Math.abs(values[key] - theory[key]) > Math.max(4, 0.3 * Math.abs(theory[key]))) anomalies.push(key);
+    if (Math.abs(values[key] - theory[key]) > Math.max(4, 0.35 * Math.abs(theory[key]))) anomalies.push(key);
   }
-  // resonance laws at work in this dose, visible on a channel this subject shows
+  // resonance laws at work in this dose (a rabbit shows every channel)
   const lawsFound = [];
   const laws = ctx.laws || [];
   for (let r = 0; r < laws.length; r++) {
     const amt = dose.resonance ? dose.resonance[r] || 0 : 0;
     if (amt < 1.5) continue;
     const L = laws[r];
-    const seen = [L.a, L.c].filter((x) => x >= 0).map((x) => EFFECT_KEYS[x]).some((key) => def.reveals.includes(key));
-    if (!seen) continue;
     const rec = (trials.laws[L.id] ||= { evidence: 0, found: null });
     rec.evidence++;
     if (rec.found === null && rec.evidence >= 2) { rec.found = ctx.day; lawsFound.push(L.id); }
   }
   trials.serial++;
+  const after = rr.after;
   /** @type {TrialRecord} */
   const record = {
-    id: 't' + trials.serial, serial: trials.serial, at: ctx.now ?? Date.now(), day: ctx.day, subjectId, ml: ctx.ml, source: ctx.source,
-    batchId: ctx.batchId, rev: ctx.rev, revealed: def.reveals.slice(), values, theory,
-    observations: res.observations, anomalies, lawsFound,
+    id: 't' + trials.serial, serial: trials.serial, at: ctx.now ?? Date.now(), day: ctx.day, subjectId: 'rabbit', ml: ctx.ml, source: ctx.source,
+    batchId: ctx.batchId, rev: ctx.rev, revealed: def.reveals.slice(), values, theory, tv,
+    observations: rr.observations, anomalies, lawsFound,
     look: { color: (dose.color || [0.5, 0.5, 0.5]).map((c) => Math.round(c * 1000) / 1000), temperature: Math.round(dose.temperature ?? 20) },
-    parts: (ctx.parts || []).map((p) => ({ id: p.id, ml: Math.round(p.ml) })), died: !res.after.alive, err,
+    parts: (ctx.parts || []).map((p) => ({ id: p.id, ml: Math.round(p.ml) })), died: !after.alive, err,
+    rabbitId: st.id, rabbitName: st.name,
+    replay: { b: encodeSnap(rabbitSnap(st, ctx.day)), a: encodeSnap(rabbitSnap(after, ctx.day)), rx: rr.react.join(',') },
+    degen: rr.degen,
   };
-  if (isRabbit) {
-    // the dosed individual: its own log, and a replay of how it looked
-    const after = rr.after;
-    record.rabbitId = st.id;
-    record.rabbitName = st.name;
-    record.replay = { b: encodeSnap(rabbitSnap(st, ctx.day)), a: encodeSnap(rabbitSnap(after, ctx.day)), rx: rr.react.join(',') };
-    recordDose(after, { rec: record.id, day: ctx.day, ml: ctx.ml, src: ctx.source === 'vial' ? 'vial' : 'cauldron',
-      obs: rr.observations.filter((o) => o.key).map((o) => o.key + (o.tone === 'good' ? '+' : o.tone === 'bad' ? '-' : '')).join(','), ...(after.alive ? {} : { died: 1 }) });
-    const i = trials.colony.rabbits.indexOf(st);
-    if (i >= 0) trials.colony.rabbits[i] = after;
-  } else trials.subjects[subjectId] = res.after;
+  recordDose(after, { rec: record.id, day: ctx.day, ml: ctx.ml, src: ctx.source === 'vial' ? 'vial' : 'cauldron',
+    obs: rr.observations.filter((o) => o.key).map((o) => o.key + (o.tone === 'good' ? '+' : o.tone === 'bad' ? '-' : '')).join(','), ...(after.alive ? {} : { died: 1 }) });
+  const i = trials.colony.rabbits.indexOf(st);
+  if (i >= 0) trials.colony.rabbits[i] = after;
   trials.records.unshift(record);
   if (trials.records.length > RECORD_LIMIT) trials.records.length = RECORD_LIMIT;
   return record;
@@ -302,46 +245,38 @@ export function runTrial(trials, subjectId, dose, ctx) {
 
 /** @param {ReturnType<typeof createTrials>} trials @param {string} id */
 export function resetSubject(trials, id) {
-  const def = SUBJECT_BY_ID[id];
-  if (!def) throw new Error('Unknown subject.');
-  if (id === 'rabbit') {
-    // a rabbit is not reset: a new one joins the hutch and is selected
-    const r = addBoughtRabbit(trials.colony, { day: trials.colony.day || 1 });
-    trials.colony.focus = r.id;
-    return r;
-  }
-  trials.subjects[id] = { ...freshSubject(def), trials: trials.subjects[id]?.trials || 0 };
-  return trials.subjects[id];
+  if (id !== 'rabbit') throw new Error('Unknown subject.');
+  // a rabbit is not reset: a new one joins the hutch and is selected
+  const r = addBoughtRabbit(trials.colony, { day: trials.colony.day || 1 });
+  trials.colony.focus = r.id;
+  return r;
 }
 
 /**
- * Verified effect readings for the current batch: the newest trial of this
- * batch and revision that revealed each effect and still agrees with the
- * brew as it would be bottled now.
+ * What the trials of the current batch say: every trial of this batch and
+ * revision that still agrees with the brew as it would be bottled now,
+ * pooled into an estimate per effect (summarize).
  * @param {ReturnType<typeof createTrials>} trials
  * @param {{id:string, rev:number}} batch
  * @param {ArrayLike<number>|null} current effects of what would be bottled (hidden truth)
- * @returns {{values: Record<string, number>, records: Record<string, string>, stale: string[], changed: boolean}}
  */
 export function certification(trials, batch, current) {
-  /** @type {Record<string, number>} */
-  const values = {};
-  /** @type {Record<string, string>} */
-  const records = {};
+  /** @type {Record<string, Sample[]>} */
+  const samples = {};
   const stale = new Set();
   let changed = false;
-  for (const r of trials.records) {
+  for (const r of trials.records.slice().reverse()) {
     if (r.batchId !== batch.id) continue;
     if (r.rev !== batch.rev) { changed = true; continue; }
     for (const key of r.revealed) {
-      if (values[key] !== undefined || stale.has(key)) continue;
-      const v = r.values[key];
-      if (current && Math.abs(current[EFFECT_INDEX[key]] - v) > driftTolerance(v)) { stale.add(key); continue; }
-      values[key] = v;
-      records[key] = r.id;
+      if (r.values[key] === undefined) continue;
+      const ref = r.tv && r.tv[key] !== undefined ? r.tv[key] : r.values[key];
+      if (current && Math.abs(current[EFFECT_INDEX[key]] - ref) > driftTolerance(ref)) { stale.add(key); continue; }
+      (samples[key] ||= []).push({ v: r.values[key], r: r.rabbitId || r.subjectId, rec: r.id });
     }
   }
-  return { values, records, stale: [...stale], changed };
+  for (const k of Object.keys(samples)) stale.delete(k);
+  return { ...summarize(samples), samples, stale: [...stale], changed };
 }
 
 /** Effect keys an order needs verified. @param {any} commission */
@@ -355,22 +290,9 @@ export function missingEffects(commission, values) {
   return requiredEffects(commission).filter((k) => values[k] === undefined);
 }
 
-/** Which subjects together cover a set of effects (greedy). @param {string[]} keys @param {(id:string)=>boolean} [avail] */
-export function suggestSubjects(keys, avail = () => true) {
-  const left = new Set(keys);
-  const out = [];
-  while (left.size) {
-    let best = null, bc = 0;
-    for (const s of SUBJECTS) {
-      if (!avail(s.id)) continue;
-      const c = s.reveals.filter((k) => left.has(k)).length;
-      if (c > bc) { bc = c; best = s; }
-    }
-    if (!best) break;
-    out.push(best.id);
-    for (const k of best.reveals) left.delete(k);
-  }
-  return out;
+/** Which subjects cover a set of effects: a rabbit shows them all. @param {string[]} keys */
+export function suggestSubjects(keys) {
+  return keys.length ? ['rabbit'] : [];
 }
 
 /** Laws the player has confirmed. @param {ReturnType<typeof createTrials>} trials @param {import('../alchemy/effects.js').Resonance[]} laws */
@@ -384,9 +306,3 @@ export function describeReading(key, v) {
   return `${e.label} ${Math.round(v)} (${potencyWord(v, key)})`;
 }
 
-void NE;
-
-/** @param {number} v @param {number} a @param {number} b */
-function clamp(v, a, b) {
-  return v < a ? a : v > b ? b : v;
-}

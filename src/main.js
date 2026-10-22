@@ -1,5 +1,8 @@
 // Entry point.
 import { App } from './ui/app.js';
+import { installTextures } from './ui/textures.js';
+
+installTextures();
 
 const root = document.getElementById('app');
 const app = new App(root);

@@ -937,7 +937,7 @@ export class LabScreen {
     // the trials of this batch that still describe exactly what is bottled
     const cert = certification(st.trials, st.batch, m.effects);
     const vial = makeVial(this.sim, [], {
-      batchId: st.batch.id, rev: st.batch.rev, cert: cert.values, certRecords: cert.records, parts: this.batchParts(),
+      batchId: st.batch.id, rev: st.batch.rev, cert: cert.values, certRecords: cert.records, samples: cert.samples, parts: this.batchParts(),
       day: st.day, commissionId: st.current ? st.current.id : null,
     });
     this.bottling = { total: sel.length, removed: 0, progress: 0, color: m.color, t: 0, vial };
@@ -1460,6 +1460,9 @@ export class LabScreen {
     const modalOpen = !!document.querySelector('.overlay');
     const sim = this.sim;
     const brewing = this.view === 'brew';
+    // the hutch lives in real time, whichever room is open
+    this._colonyAcc = (this._colonyAcc || 0) + dt;
+    if (this._colonyAcc >= 0.5) { this.tickColony(this._colonyAcc); this._colonyAcc = 0; }
     // physics (keeps running in every room so brews keep evolving)
     if (this.autoBrewer) {
       // the homunculus decides once per physics step
@@ -1537,6 +1540,34 @@ export class LabScreen {
     pf.n++;
     pf.physMs = pf.physMs * 0.95 + (tw1 - tw0) * 0.05;
     if (brewing) pf.renderMs = pf.renderMs * 0.95 + (tw3 - tw2) * 0.05;
+  }
+
+  /**
+   * Let the rabbits live `dt` seconds; after a break (the game was closed or
+   * hidden) catch up on up to ten minutes of what happened meanwhile.
+   * @param {number} dt
+   */
+  tickColony(dt) {
+    const c = this.state.colony;
+    const now = Date.now();
+    const away = c.clock > 0 ? Math.min(600, Math.max(0, (now - c.clock) / 1000 - dt)) : 0;
+    c.clock = now;
+    /** @type {any[]} */
+    const events = [];
+    let left = away > 2 ? away + dt : dt;
+    while (left > 1e-6) {
+      const step = Math.min(1, left);
+      left -= step;
+      events.push(...this.state.tickColony(step).events);
+    }
+    if (events.length) {
+      this.views.trials.colonyEvents(events);
+      this.updateBadges();
+      if (this.view !== 'trials') {
+        const att = events.filter((e) => e.type === 'attack');
+        if (att.length && this.time - (this._feralWarned || -99) > 20) { this._feralWarned = this.time; toast('Trouble in the hutch', `${att[0].fromName} has gone feral and is attacking ${att[0].toName}!`, 'claw', 4500); }
+      }
+    }
   }
 
   /** The sealed vial drifts toward room temperature; re-measure it now and then. @param {number} dt */

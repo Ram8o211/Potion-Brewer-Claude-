@@ -10,15 +10,26 @@
 //                shape scars, muscle, transformations and, after death,
 //                what its remains carry);
 //   • scar       permanent harm that lowers the health it can recover to;
-//   • traits     permanent anatomy grown from transformation magic.
+//   • traits     permanent anatomy grown from transformation magic;
+//   • bonus      extra maximum health grown from vitality given to a rabbit
+//                that was already at full health;
+//   • degen      channels that went past DEGEN_AT and now run out of
+//                control: a lethal one (poison, death, acid, lye, fire,
+//                frost) climbs until the rabbit dies, a feral one
+//                (vitality, strength, love, arcana, transformation) turns
+//                it on the rest of the colony. Only a purging draught (or
+//                the knife) stops it.
 // Several effects show at once, each at one of four levels, and a dead
 // rabbit keeps its body, traits and scars until the alchemist recovers its
 // remains (once) or buries it.
 //
-// The model is pure and deterministic (Rng streams seeded by the world seed,
-// the rabbit and the day), and stores no number the player could read: the
-// UI shows qualitative words and art built from quantised levels
-// (RabbitSnap). Exact effect values come only from trial readings.
+// Between days the hutch lives in real time (colonyTick): marks fade slowly,
+// health creeps back, degenerations climb and feral rabbits attack. The
+// model is pure and deterministic (Rng streams seeded by the world seed, the
+// rabbit, the day and the tick counter). The player sees every channel's
+// accumulated level as a status bar; a dose's exact effect comes only from
+// trial readings, which differ a little from rabbit to rabbit
+// (rabbitSensitivity) and from dose to dose.
 
 import { EFFECT_INDEX } from '../alchemy/effects.js';
 import { Rng, hashString } from '../core/rng.js';
@@ -42,6 +53,19 @@ export const MEMORIAL_LIMIT = 24;
 export const LEVEL_AT = [8, 30, 60];
 /** Lifetime transformation exposure at which each new trait grows. */
 export const TRAIT_AT = [20, 50, 90, 140, 200];
+/** A mark at or above this runs out of control (degeneration). */
+export const DEGEN_AT = 70;
+/** Channels whose degeneration kills the rabbit. */
+export const LETHAL = ['toxicity', 'death', 'acid', 'alkali', 'fire', 'frost'];
+/** Channels whose degeneration turns the rabbit against the colony. */
+export const FERAL = ['vitality', 'strength', 'love', 'arcana', 'transformation'];
+/** Seconds for an ordinary mark to fade to 1/e in real time (≈7 min half-life). */
+export const MARK_TAU = 600;
+/** Most extra maximum health vitality can grow. */
+export const MAX_BONUS = 150;
+/** How fast a degenerating mark climbs (per second) and how often a feral rabbit strikes. */
+export const DEGEN_RISE = 0.6;
+export const ATTACK_EVERY = [9, 4];
 export const TRAITS = ['ears2', 'horns', 'antlers', 'unihorn', 'scales', 'spines', 'tail-lizard', 'tail-plume', 'giant', 'tiny', 'eye3', 'wings'];
 /** Traits that cannot grow together. */
 export const TRAIT_EXCLUSIVE = [['giant', 'tiny'], ['horns', 'antlers', 'unihorn'], ['tail-lizard', 'tail-plume']];
@@ -81,6 +105,8 @@ export const TRAIT_WORDS = {
  * @property {number[]} sc      0..3 permanent marks [singe, acid burns, frostbite, grey, rune]
  * @property {string[]} traits
  * @property {string|null} cause  cause of death (dead rabbits)
+ * @property {string[]} [dg]   degenerating channels
+ * @property {boolean} [ag]    feral: attacking the colony
  */
 
 // ------------------------------------------------------------------ looks
@@ -165,8 +191,35 @@ export function stageOf(r, day) {
   return age < KIT_DAYS ? 'kit' : age < ADULT_DAYS ? 'young' : age < ELDER_DAYS ? 'adult' : 'elder';
 }
 
-/** Health band 0 (healthy) … 3 (near death). @param {number} h */
+/** Health band 0 (healthy) … 3 (near death). @param {number} h percent of the maximum */
 const hpBand = (h) => (h >= 75 ? 0 : h >= 40 ? 1 : h >= 10 ? 2 : 3);
+
+/** The health a rabbit can recover to. @param {any} r @param {number} [day] */
+export function maxHealthOf(r, day) {
+  const base = Math.max(20, 100 + (r.bonus || 0) - (r.scar || 0));
+  return Math.round(base * (stageOf(r, day) === 'elder' && Number.isFinite(day) ? 0.9 : 1) * 10) / 10;
+}
+
+/** Degenerating channels of a rabbit. @param {any} r @returns {string[]} */
+export function degenOf(r) {
+  return Array.isArray(r && r.degen) ? r.degen : [];
+}
+
+/** Is a rabbit feral (a degenerating feral channel)? @param {any} r */
+export function isFeral(r) {
+  return !!r && r.alive !== false && degenOf(r).some((k) => FERAL.includes(k));
+}
+
+/**
+ * How strongly one rabbit shows one effect, relative to the potion's real
+ * strength: a hidden, lifelong trait of the individual (about ±18 %), so a
+ * single rabbit's readings are biased and only several rabbits average out.
+ * @param {{id:string, look:{seed:number}}} r @param {string} key effect key
+ */
+export function rabbitSensitivity(r, key) {
+  const rng = new Rng(hashString(`sens:${r.id}:${r.look ? r.look.seed : 0}:${key}`));
+  return Math.round(clamp(Math.exp(0.18 * rng.gauss()), 0.6, 1.6) * 1000) / 1000;
+}
 
 /**
  * The quantised visible state of a rabbit.
@@ -182,14 +235,17 @@ export function rabbitSnap(r, day) {
     q3(ex.fire || 0, 30, 80, 150), q3(ex.acid || 0, 25, 60, 120), q3(ex.frost || 0, 30, 80, 150),
     Math.max(q3(ex.death || 0, 15, 40, 80), stageOf(r, day) === 'elder' ? 1 : 0), q3(ex.arcana || 0, 40, 100, 180),
   ];
+  const alive = r.alive !== false;
+  const dg = alive ? degenOf(r).filter((k) => MARK_INDEX[k] !== undefined) : [];
   return {
     stage: r.stage || stageOf(r, day),
-    hp: r.alive === false ? 3 : /** @type {0|1|2|3} */ (hpBand(r.health ?? 100)),
-    alive: r.alive !== false,
-    preg: !!r.pregnant && r.alive !== false,
+    hp: !alive ? 3 : /** @type {0|1|2|3} */ (hpBand(100 * (r.health ?? 100) / Math.max(1, maxHealthOf(r, day)))),
+    alive,
+    preg: !!r.pregnant && alive,
     lv, sc,
     traits: Array.isArray(r.traits) ? r.traits.slice() : [],
-    cause: r.alive === false ? (r.cause || 'unknown') : null,
+    cause: !alive ? (r.cause || 'unknown') : null,
+    dg, ag: dg.some((k) => FERAL.includes(k)),
   };
 }
 
@@ -198,12 +254,13 @@ const CH_STAGE = { k: 'kit', y: 'young', a: 'adult', e: 'elder' };
 
 /** Compact string form of a snapshot (cache keys, replays in trial records). @param {RabbitSnap} s */
 export function encodeSnap(s) {
-  return `${STAGE_CH[s.stage] || 'a'}${s.hp}${s.alive ? 1 : 0}${s.preg ? 1 : 0}|${s.lv.join('')}|${s.sc.join('')}|${s.traits.join(',')}|${s.cause || ''}`;
+  const dg = s.dg && s.dg.length ? `|${s.dg.join(',')}` : '';
+  return `${STAGE_CH[s.stage] || 'a'}${s.hp}${s.alive ? 1 : 0}${s.preg ? 1 : 0}|${s.lv.join('')}|${s.sc.join('')}|${s.traits.join(',')}|${s.cause || ''}${dg}`;
 }
 
 /** @returns {RabbitSnap} */
 export function defaultSnap() {
-  return { stage: 'adult', hp: 0, alive: true, preg: false, lv: new Array(RABBIT_MARKS.length).fill(0), sc: [0, 0, 0, 0, 0], traits: [], cause: null };
+  return { stage: 'adult', hp: 0, alive: true, preg: false, lv: new Array(RABBIT_MARKS.length).fill(0), sc: [0, 0, 0, 0, 0], traits: [], cause: null, dg: [], ag: false };
 }
 
 /** Inverse of encodeSnap; anything malformed gives a healthy adult. @param {any} str @returns {RabbitSnap} */
@@ -217,9 +274,11 @@ export function decodeSnap(str) {
   if (!stage || lv.length !== RABBIT_MARKS.length || lv.some((v) => !(v >= 0 && v <= 3)) || sc.some((v) => !(v >= 0 && v <= 3))) return defaultSnap();
   while (sc.length < 5) sc.push(0);
   const hp = Number(p[0][1]);
+  const dg = p[5] ? p[5].split(',').filter((k) => MARK_INDEX[k] !== undefined) : [];
   return {
     stage, hp: /** @type {0|1|2|3} */ (hp >= 0 && hp <= 3 ? hp : 0), alive: p[0][2] === '1', preg: p[0][3] === '1', lv, sc: sc.slice(0, 5),
     traits: p[3] ? p[3].split(',').filter((t) => TRAITS.includes(t)) : [], cause: p[4] || null,
+    dg, ag: dg.some((k) => FERAL.includes(k)),
   };
 }
 
@@ -244,13 +303,16 @@ export function decodeSnap(str) {
  * @property {number} born          game day
  * @property {RabbitLook} look
  * @property {string[]|null} parents [mother, father]
- * @property {number} health        0..max(20, 100 − scar)
+ * @property {number} health        0..maxHealthOf (max(20, 100 + bonus − scar))
+ * @property {number} bonus         0..MAX_BONUS extra maximum health from vitality
  * @property {boolean} alive
  * @property {number} trials        lifetime doses
  * @property {Record<string, number>} marks     transient visible states 0..100 (fade daily)
  * @property {Record<string, number>} exposure  lifetime totals (hidden; never fade)
  * @property {number} scar          0..80 permanent harm
  * @property {string[]} traits      permanent anatomy, in the order grown (≤ 5)
+ * @property {string[]} degen       channels running out of control
+ * @property {number} cd            seconds until a feral rabbit strikes again
  * @property {DoseEntry[]} doses    oldest first, ≤ DOSE_LIMIT
  * @property {number} dosesDropped
  * @property {{sire:string, due:number}|null} pregnant
@@ -286,6 +348,10 @@ export function decodeSnap(str) {
  * @property {number} day          last day the colony ticked
  * @property {Rabbit[]} rabbits    living rabbits and unprocessed bodies, in hutch order
  * @property {MemorialEntry[]} memorial newest first
+ * @property {number} purges       purging draughts on the shelf
+ * @property {number|null} still   seconds left on the purge brewing in the still
+ * @property {number} ticks        real-time ticks run (seeds their Rng)
+ * @property {number} clock        wall-clock ms of the last tick (catch-up after a break)
  */
 
 export const NAMES = ['Clover', 'Bramble', 'Hazel', 'Juniper', 'Pip', 'Thistle', 'Willow', 'Sorrel', 'Barley', 'Fennel', 'Nettle', 'Poppy', 'Rowan', 'Sage',
@@ -313,14 +379,14 @@ function founders() {
 function newRabbit(o) {
   return {
     id: o.id, name: o.name, sex: o.sex, born: o.born, look: o.look, parents: o.parents || null,
-    health: 100, alive: true, trials: 0, marks: emptyMarks(), exposure: emptyMarks(), scar: 0, traits: [],
+    health: 100, bonus: 0, alive: true, trials: 0, marks: emptyMarks(), exposure: emptyMarks(), scar: 0, traits: [], degen: [], cd: 0,
     doses: [], dosesDropped: 0, pregnant: null, diedDay: null, cause: null,
   };
 }
 
 /** A fresh hutch. @param {string} [seed] @returns {Colony} */
 export function createColony(seed = '') {
-  return { seed, serial: 2, focus: 'r1', breed: true, fedDay: 0, day: 0, rabbits: founders(), memorial: [] };
+  return { seed, serial: 2, focus: 'r1', breed: true, fedDay: 0, day: 0, rabbits: founders(), memorial: [], purges: 2, still: null, ticks: 0, clock: 0 };
 }
 
 /** @param {Colony} c @param {string} id */
@@ -416,6 +482,20 @@ const TRAIT_LINES = {
   tiny: 'It shrinks to the size of a kitten!', eye3: 'A third eye opens on its forehead!', wings: 'Little membrane wings unfold from its shoulders!',
 };
 const CAUSE_OF = { toxicity: 'poison', death: 'death', fire: 'fire', frost: 'frost', acid: 'acid', alkali: 'alkali', transformation: 'change', arcana: 'arcana' };
+/** What the player sees when a channel goes out of control. */
+const DEGEN_LINES = {
+  toxicity: 'The poison has taken hold: it is spreading through its blood on its own!',
+  death: 'The grey pallor deepens by itself — death magic is eating it from within!',
+  acid: 'The burns keep spreading: its own body is turning to acid!',
+  alkali: 'The lye crust keeps growing, cracking deeper into its skin!',
+  fire: 'It is smouldering from the inside — the heat keeps rising!',
+  frost: 'The cold has reached its heart and keeps spreading!',
+  vitality: 'Wild growth: it swells, ravenous and restless — and bares its teeth at the others!',
+  strength: 'Its muscles keep swelling; it starts shoving and biting the others!',
+  love: 'Its devotion curdles into jealous fury — it goes for the other rabbits!',
+  arcana: 'The magic in it runs wild: sparks lash out at the colony!',
+  transformation: 'The change will not stop — it twists into something feral and attacks!',
+};
 
 /** Exclusive partners of a trait. @param {string} t */
 const partners = (t) => TRAIT_EXCLUSIVE.filter((g) => g.includes(t)).flat().filter((x) => x !== t);
@@ -493,14 +573,22 @@ export function rabbitResponse(before, effects, ml, o = {}) {
     transformation: a.transformation > 30 ? (a.transformation - 30) * 0.3 : 0, arcana: a.arcana > 40 ? (a.arcana - 40) * 0.3 : 0,
   };
   const harm = Object.values(hurt).reduce((p, v) => p + v, 0);
-  const heal = 0.7 * a.vitality;
   r.scar = Math.min(80, round1(r.scar + 0.2 * Math.max(0, harm - 5)));
-  const maxHealth = Math.max(20, 100 - r.scar);
-  r.health = round1(clamp(r.health + 0.5 * heal - harm, 0, maxHealth));
+  // vitality heals what is missing; at full health it raises the maximum
+  const heal = 0.9 * a.vitality;
+  let maxHealth = maxHealthOf(r, o.day);
+  let health = r.health - harm;
+  const room = Math.max(0, maxHealth - health);
+  const grow = Math.max(0, heal - room) * 0.5;
+  if (grow > 0 && health > 0.5) {
+    r.bonus = round1(Math.min(MAX_BONUS, (r.bonus || 0) + grow));
+    maxHealth = maxHealthOf(r, o.day);
+  }
+  r.health = round1(clamp(health + heal, 0, maxHealth));
   r.alive = r.health > 0.5;
   // what it looks like (all channels; intensity words)
   const big = (v) => v > 20;
-  if (a.vitality > 1) say('vitality', 'good', big(a.vitality) ? 'Its coat gleams; it bounds about full of life.' : 'It looks refreshed.');
+  if (a.vitality > 1) say('vitality', 'good', grow > 0.5 ? 'Already in full health, it grows hardier still.' : big(a.vitality) ? 'Its coat gleams; it bounds about full of life.' : 'It looks refreshed.');
   if (a.strength > 1) say('strength', 'good', big(a.strength) ? 'Its haunches swell with muscle; it shoves at the bars.' : 'It moves with new strength.');
   if (a.love > 1) say('love', 'good', big(a.love) ? 'It nuzzles your hand, utterly devoted; little hearts seem to hang in the air.' : 'It nuzzles your hand.');
   if (a.arcana > 1) say('arcana', 'neutral', big(a.arcana) ? 'Violet sparks crawl through its fur; faint runes glimmer.' : 'Its eyes catch a strange glimmer.');
@@ -513,6 +601,8 @@ export function rabbitResponse(before, effects, ml, o = {}) {
   if (a.death > 1) say('death', 'bad', a.death > 15 ? 'A grey pallor creeps over it.' : 'It grows still and cold for a moment.');
   const newTraits = growTraits(r, e0, r.exposure.transformation, a);
   for (const t of newTraits) say('transformation', 'neutral', TRAIT_LINES[t]);
+  const degen = r.alive ? startDegeneration(r) : [];
+  for (const k of degen) say(k === 'acid' || k === 'alkali' ? 'acidity' : k, 'bad', DEGEN_LINES[k]);
   if (!r.alive) {
     const worst = Object.entries(hurt).sort((p, q) => q[1] - p[1])[0];
     r.cause = worst && worst[1] > 0 ? CAUSE_OF[worst[0]] : 'frail';
@@ -523,7 +613,120 @@ export function rabbitResponse(before, effects, ml, o = {}) {
   if (!obs.length) say('', 'neutral', 'No visible change.');
   r.trials++;
   const react = RABBIT_MARKS.filter((k) => a[k] > 1);
-  return { after: r, observations: obs, harm, applied: a, react, newTraits, cause: r.alive ? null : r.cause };
+  return { after: r, observations: obs, harm, applied: a, react, newTraits, degen, cause: r.alive ? null : r.cause };
+}
+
+/** Channels that crossed DEGEN_AT start degenerating. @param {Rabbit} r @returns {string[]} new ones */
+function startDegeneration(r) {
+  const out = [];
+  for (const k of RABBIT_MARKS) {
+    if (r.marks[k] >= DEGEN_AT && !r.degen.includes(k)) { r.degen.push(k); out.push(k); }
+  }
+  if (out.some((k) => FERAL.includes(k)) && !(r.cd > 0)) r.cd = 3;
+  return out;
+}
+
+// ------------------------------------------------------------------ real time
+
+/**
+ * @typedef {{died:{id:string, name:string, cause:string, by?:string}[], attacks:{from:string, to:string, fromName:string, toName:string, dmg:number, killed:boolean}[],
+ *   degen:{id:string, name:string, key:string}[], traits:{id:string, name:string, trait:string}[]}} TickReport
+ */
+
+/**
+ * The hutch in real time, `dt` seconds (call with steps of a second or so):
+ * ordinary marks fade slowly and health creeps back; degenerating marks
+ * climb, lethal ones eat away the rabbit's health, feral ones make it
+ * strike the others (vitality keeps swelling it, transformation keeps
+ * changing it). Deterministic for the same colony and calls.
+ * @param {Colony} c @param {number} dt @param {{day?:number, seed?:string}} [o]
+ * @returns {TickReport}
+ */
+export function colonyTick(c, dt, o = {}) {
+  /** @type {TickReport} */
+  const rep = { died: [], attacks: [], degen: [], traits: [] };
+  if (!(dt > 0)) return rep;
+  const rng = new Rng(hashString(`${o.seed ?? c.seed}:tick:${c.ticks || 0}`));
+  c.ticks = (c.ticks || 0) + 1;
+  const day = o.day;
+  const fade = Math.exp(-dt / MARK_TAU);
+  const die = (r, cause, by) => {
+    r.alive = false; r.health = 0; r.cause = cause; r.diedDay = Number.isFinite(day) ? day : null; r.pregnant = null; r.degen = [];
+    rep.died.push({ id: r.id, name: r.name, cause, ...(by ? { by } : {}) });
+  };
+  for (const r of c.rabbits) {
+    if (!r.alive) continue;
+    const dg = degenOf(r);
+    let drain = 0;
+    for (const k of RABBIT_MARKS) {
+      if (dg.includes(k)) {
+        r.marks[k] = round1(Math.min(100, r.marks[k] + DEGEN_RISE * dt));
+        if (LETHAL.includes(k)) drain += (0.4 + 1.6 * r.marks[k] / 100) * dt;
+      } else {
+        const v = r.marks[k] * fade;
+        r.marks[k] = v < 0.3 ? 0 : Math.round(v * 100) / 100;
+      }
+    }
+    if (dg.includes('vitality')) r.bonus = round1(Math.min(MAX_BONUS, (r.bonus || 0) + 0.25 * dt));
+    if (dg.includes('transformation')) {
+      const e0 = r.exposure.transformation;
+      r.exposure.transformation = round1(e0 + 0.8 * dt);
+      for (const t of growTraits(r, e0, r.exposure.transformation, r.marks)) rep.traits.push({ id: r.id, name: r.name, trait: t });
+    }
+    const max = maxHealthOf(r, day);
+    if (drain > 0) {
+      r.health = round1(r.health - drain);
+      if (r.health <= 0.5) {
+        const worst = dg.filter((k) => LETHAL.includes(k)).sort((p, q) => r.marks[q] - r.marks[p])[0];
+        die(r, CAUSE_OF[worst] || 'poison');
+        continue;
+      }
+    } else r.health = round1(Math.min(max, r.health + 0.05 * dt));
+    if (r.health > max) r.health = max;
+  }
+  // feral rabbits strike
+  for (const r of c.rabbits) {
+    if (!isFeral(r)) continue;
+    r.cd = (r.cd || 0) - dt;
+    if (r.cd > 0) continue;
+    const fury = Math.max(...degenOf(r).filter((k) => FERAL.includes(k)).map((k) => r.marks[k]));
+    const t = clamp((fury - DEGEN_AT) / (100 - DEGEN_AT), 0, 1);
+    r.cd = round1((ATTACK_EVERY[0] + (ATTACK_EVERY[1] - ATTACK_EVERY[0]) * t) * rng.range(0.8, 1.25));
+    const prey = c.rabbits.filter((x) => x.alive && x.id !== r.id);
+    if (!prey.length) continue;
+    const v = rng.pick(prey);
+    const dmg = round1((8 + 14 * fury / 100 + 0.1 * (r.marks.strength || 0)) * rng.range(0.8, 1.2) * (r.traits.includes('giant') ? 1.3 : 1));
+    v.health = round1(v.health - dmg);
+    v.scar = Math.min(80, round1((v.scar || 0) + 0.15 * dmg));
+    const killed = v.health <= 0.5;
+    rep.attacks.push({ from: r.id, to: v.id, fromName: r.name, toName: v.name, dmg, killed });
+    if (killed) die(v, 'mauled', r.name);
+  }
+  return rep;
+}
+
+/**
+ * A purging draught: every mark is washed out and any degeneration stops.
+ * What is permanent stays (traits, scars, grown health, lifetime exposure).
+ * @param {Rabbit} r
+ */
+export function purgeRabbit(r) {
+  if (!r || !r.alive) return false;
+  for (const k of RABBIT_MARKS) r.marks[k] = 0;
+  r.degen = [];
+  r.cd = 0;
+  return true;
+}
+
+/**
+ * The alchemist ends a rabbit's life on purpose (a feral one, or one past
+ * saving). The body stays for remains or burial.
+ * @param {Rabbit} r @param {number} [day]
+ */
+export function cullRabbit(r, day) {
+  if (!r || !r.alive) return false;
+  r.alive = false; r.health = 0; r.cause = 'culled'; r.diedDay = Number.isFinite(day) ? day : null; r.pregnant = null; r.degen = []; r.cd = 0;
+  return true;
 }
 
 // ------------------------------------------------------------------ the day
@@ -554,6 +757,7 @@ export function colonyDay(c, o) {
   for (const r of c.rabbits) {
     if (!r.alive) continue;
     for (const k of RABBIT_MARKS) {
+      if (degenOf(r).includes(k)) continue;
       const v = r.marks[k] * MARK_DECAY[k];
       r.marks[k] = v < 0.5 ? 0 : round1(v);
     }
@@ -565,8 +769,8 @@ export function colonyDay(c, o) {
     if (r.health <= 0.5) { die(r, r.marks.death > r.marks.toxicity ? 'death' : 'poison'); continue; }
     const age = day - r.born;
     if (age > LIFESPAN_DAYS && rng.chance(Math.min(0.5, (age - LIFESPAN_DAYS) / 24))) { die(r, 'age'); continue; }
-    const maxHealth = Math.max(20, 100 - r.scar) * (stageOf(r, day) === 'elder' ? 0.9 : 1);
-    r.health = round1(Math.min(maxHealth, r.health + 10 + (fed ? 6 : 0)));
+    const maxHealth = maxHealthOf(r, day);
+    if (!degenOf(r).some((k) => LETHAL.includes(k))) r.health = round1(Math.min(maxHealth, r.health + 10 + (fed ? 6 : 0)));
     if (stageOf(r, day - 1) !== 'adult' && stageOf(r, day - 1) !== 'elder' && stageOf(r, day) === 'adult') rep.grown.push({ id: r.id, name: r.name });
   }
   let living = c.rabbits.filter((r) => r.alive).length;
@@ -589,7 +793,7 @@ export function colonyDay(c, o) {
   }
   // 3. pairing
   if (c.breed !== false) {
-    const eligible = (r) => r.alive && stageOf(r, day) === 'adult' && r.health >= 60 && r.marks.toxicity < 30 && r.marks.death < 20;
+    const eligible = (r) => r.alive && stageOf(r, day) === 'adult' && r.health >= 60 && r.marks.toxicity < 30 && r.marks.death < 20 && !degenOf(r).length;
     const bucks = c.rabbits.filter((r) => r.sex === 'm' && eligible(r)).sort((p, q) => q.marks.love - p.marks.love || (p.id < q.id ? -1 : 1));
     let pending = 2 * c.rabbits.filter((r) => r.alive && r.pregnant).length;
     for (const doe of c.rabbits) {
@@ -665,7 +869,7 @@ export function remainsSource(r, day) {
 
 // ------------------------------------------------------------------ words (never numbers)
 
-const CAUSE_WORDS = { poison: 'poisoned', death: 'withered by death magic', fire: 'burned', frost: 'frozen', acid: 'eaten by acid', alkali: 'scalded by lye', change: 'torn apart by change', arcana: 'overwhelmed by magic', age: 'died of old age', frail: 'too frail', unknown: 'died' };
+const CAUSE_WORDS = { culled: 'put down', mauled: 'mauled by a feral rabbit', poison: 'poisoned', death: 'withered by death magic', fire: 'burned', frost: 'frozen', acid: 'eaten by acid', alkali: 'scalded by lye', change: 'torn apart by change', arcana: 'overwhelmed by magic', age: 'died of old age', frail: 'too frail', unknown: 'died' };
 
 /** @param {string|null} cause */
 export function causeWord(cause) {
@@ -682,8 +886,11 @@ export function rabbitCondition(r, day) {
   if (!r.alive) {
     w.push(`dead — ${causeWord(r.cause)}${Number.isFinite(r.diedDay) ? ` (day ${r.diedDay})` : ''}`);
   } else {
-    const h = r.health;
+    const h = 100 * r.health / Math.max(1, maxHealthOf(r, day));
     w.push(h >= 75 ? 'healthy' : h >= 40 ? 'weakened' : h >= 10 ? 'very weak' : 'near death');
+    if (isFeral(r)) w.push('FERAL');
+    else if (degenOf(r).length) w.push('degenerating');
+    if ((r.bonus || 0) >= 10) w.push(r.bonus >= 60 ? 'hale beyond nature' : 'extra hardy');
     if (r.scar >= 20) w.push(r.scar >= 50 ? 'badly scarred' : 'scarred');
   }
   const s = rabbitSnap(r, day);
@@ -745,8 +952,9 @@ export function normalizeRabbit(r, fallbackId) {
   const rb = /** @type {Rabbit} */ ({
     id, name: typeof d.name === 'string' && d.name ? d.name : 'Clover', sex: d.sex === 'm' ? 'm' : 'f',
     born: fin(d.born, FOUNDER_BORN), look: normalizeLook(d.look, id), parents: Array.isArray(d.parents) ? d.parents.filter((p) => typeof p === 'string').slice(0, 2) : null,
-    health: clamp(fin(d.health, 100), 0, 100), alive, trials: Math.max(0, fin(d.trials, 0) | 0),
+    health: clamp(fin(d.health, 100), 0, 100 + MAX_BONUS), bonus: clamp(fin(d.bonus, 0), 0, MAX_BONUS), alive, trials: Math.max(0, fin(d.trials, 0) | 0),
     marks: normalizeMarks(d.marks), exposure: normalizeMarks(d.exposure), scar, traits,
+    degen: alive && Array.isArray(d.degen) ? [...new Set(d.degen.filter((k) => MARK_INDEX[k] !== undefined))] : [], cd: Math.max(0, fin(d.cd, 0)),
     doses: (Array.isArray(d.doses) ? d.doses : []).filter((x) => x && typeof x.rec === 'string').map((x) => ({
       rec: x.rec, day: fin(x.day, 0) | 0, ml: Math.max(0, fin(x.ml, 0)), src: x.src === 'vial' ? 'vial' : 'cauldron', obs: typeof x.obs === 'string' ? x.obs : '', ...(x.died ? { died: 1 } : {}),
     })).slice(-DOSE_LIMIT),
@@ -789,6 +997,8 @@ export function normalizeColony(c, legacy, records = []) {
     const out = /** @type {Colony} */ ({
       seed: typeof c.seed === 'string' ? c.seed : '', serial: Math.max(fin(c.serial, 0) | 0, ...nums, 0),
       focus: null, breed: c.breed !== false, fedDay: fin(c.fedDay, 0) | 0, day: fin(c.day, 0) | 0, rabbits, memorial,
+      purges: Math.max(0, fin(c.purges, 2) | 0), still: Number.isFinite(c.still) && c.still > 0 ? c.still : null,
+      ticks: Math.max(0, fin(c.ticks, 0) | 0), clock: Math.max(0, fin(c.clock, 0)),
     });
     out.focus = typeof c.focus === 'string' && findRabbit(out, c.focus) ? c.focus : (focusRabbit(out) || { id: null }).id;
     return out;

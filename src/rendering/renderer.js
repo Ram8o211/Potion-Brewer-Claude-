@@ -75,7 +75,7 @@ export class Renderer {
     const bctx = this.bg.getContext('2d');
     bctx.imageSmoothingEnabled = false;
     const floorY = Math.round(this.view.oy + (c.depth + 0.72) * s);
-    paintBackground(bctx, W, H, { cx: this.view.ox, floorY, scale: s, jars });
+    paintBackground(bctx, W, H, { cx: this.view.ox, floorY, scale: s, half: (c.belly + 0.6) * s, top: this.view.oy - 0.25 * s, jars });
     paintHearth(bctx, c, this.view);
     this.cauldronArt = renderCauldron(c, this.view);
     this.heatCanvas = makeCanvas(this.cauldronArt.canvas.width, this.cauldronArt.canvas.height);

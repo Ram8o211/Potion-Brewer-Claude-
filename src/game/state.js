@@ -8,16 +8,20 @@ import { serializeMaterial, deserializeMaterial } from '../materials/schema.js';
 import { generateCommission, tutorialCommission } from './commissions.js';
 import { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById } from './equipment.js';
 import { SIM } from '../simulation/constants.js';
-import { createTrials, normalizeTrials, runTrial, resetSubject, SUBJECT_BY_ID, knownLaws } from './experiments.js';
+import { createTrials, normalizeTrials, runTrial, SUBJECT_BY_ID, knownLaws } from './experiments.js';
 import { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth } from './gathering.js';
 import { predictPlan } from './predict.js';
 import { EFFECT_INDEX } from '../alchemy/effects.js';
 import { migrateVial } from './vial.js';
 import { recordSale, resolveFollowUp } from './commerce.js';
-import { colonyDay, livingRabbits, findRabbit, addBoughtRabbit, retireRabbit, remainsSource, FOUNDER_BORN } from './colony.js';
+import { colonyDay, colonyTick, livingRabbits, findRabbit, addBoughtRabbit, retireRabbit, remainsSource, purgeRabbit, cullRabbit, maxHealthOf, FOUNDER_BORN } from './colony.js';
 import { remainsMaterials, remainsPlan, isRemains } from '../materials/remains.js';
 
 export const SAVE_VERSION = 4;
+/** A purging draught at the apothecary, and brewed in the still. */
+export const PURGE_PRICE = 8;
+export const PURGE_BREW_COST = 1;
+export const PURGE_BREW_TIME = 40;
 export const WORLD_GEN_VERSION = 2;
 /** old aspect requirement keys → effect keys (v2 saves) */
 const ASPECT_KEY_MAP = { vitality: 'vitality', ardor: 'fire', arcana: 'arcana', fortitude: 'strength' };
@@ -107,7 +111,7 @@ export class GameState {
     /** @type {any[]} */ this.history = data.history;
     /** @type {Record<string, number>} */ this.achievements = data.achievements;
     /** @type {any} */ this.current = data.current;
-    /** @type {{served:number, perfect:number, earned:number, spent:number, brews:number, declined:number, bestQuality:number, gathered?:number, trials?:number, refunds?:number, disputesWon?:number, bred?:number, recovered?:number}} */
+    /** @type {{served:number, perfect:number, earned:number, spent:number, brews:number, declined:number, bestQuality:number, gathered?:number, trials?:number, refunds?:number, disputesWon?:number, bred?:number, recovered?:number, culled?:number}} */
     this.stats = { served: 0, perfect: 0, earned: 0, spent: 0, brews: 0, declined: 0, bestQuality: 0, ...(data.stats || {}) };
     /** @type {{active:boolean, step:number, done:boolean, tips?:Record<string, boolean>}} */ this.tutorial = { active: false, step: 0, done: true, ...(data.tutorial || {}) };
     /** @type {{event:string, mods:Record<string, number>}} */ this.market = data.market || { event: 'none', mods: {} };
@@ -358,7 +362,7 @@ export class GameState {
     this.daySpending += cost;
     c.fedDay = this.day;
     for (const r of live) {
-      r.health = round1(Math.min(Math.max(20, 100 - r.scar), r.health + 6));
+      r.health = round1(Math.min(maxHealthOf(r, this.day), r.health + 6));
       r.marks.toxicity = Math.max(0, round1(r.marks.toxicity - 5));
     }
     return { ok: true, cost };
@@ -432,31 +436,87 @@ export class GameState {
     }
   }
 
-  /** Replace a spent test subject (costs coins). @param {string} id */
+  /** A new rabbit when the chosen one is dead (or, with a full hutch, the next living one). @param {string} id */
   replaceSubject(id, free = false) {
-    const def = SUBJECT_BY_ID[id];
-    if (!def) return { ok: false, reason: 'Unknown subject.' };
-    if (id === 'rabbit') {
-      // a new rabbit for the hutch — or, when it is full, the next living one
-      const r = this.buyRabbit(free);
-      if (r.ok) return r;
-      const alive = livingRabbits(this.colony)[0];
-      if (alive && livingRabbits(this.colony).length >= this.cap.hutch) { this.colony.focus = alive.id; return { ok: true, cost: 0, reselected: true }; }
-      return r;
-    }
-    const cost = free ? 0 : Math.ceil(def.cost * (this.has('kennel') ? 0.5 : 1));
-    if (cost > this.coins + 1e-9) return { ok: false, reason: `A new ${def.name.toLowerCase()} costs ${cost} coins.` };
+    if (id !== 'rabbit') return { ok: false, reason: 'Only rabbits are tested now.' };
+    const r = this.buyRabbit(free);
+    if (r.ok) return r;
+    const alive = livingRabbits(this.colony)[0];
+    if (alive && livingRabbits(this.colony).length >= this.cap.hutch) { this.colony.focus = alive.id; return { ok: true, cost: 0, reselected: true }; }
+    return r;
+  }
+
+  /** Subjects the player can use: the rabbits. */
+  subjectAvailable(id) {
+    return id === 'rabbit';
+  }
+
+  // ------------------------------------------------------------ purging draughts, culling, the hutch in real time
+  /** A purging draught at the apothecary. */
+  purgePrice() {
+    return PURGE_PRICE;
+  }
+
+  /** @param {boolean} [free] */
+  buyPurge(free = false) {
+    const cost = free ? 0 : this.purgePrice();
+    if (cost > this.coins + 1e-9) return { ok: false, reason: `A purging draught costs ${cost} coins.` };
     this.coins = round1(this.coins - cost);
     this.stats.spent += cost;
     this.daySpending += cost;
-    resetSubject(this.trials, id);
+    this.colony.purges = (this.colony.purges || 0) + 1;
     return { ok: true, cost };
   }
 
-  /** Subjects the player can use. */
-  subjectAvailable(id) {
-    const def = SUBJECT_BY_ID[id];
-    return !!def && (!def.needs || this.has(def.needs));
+  /** Start brewing a purging draught in the still (needs the Purging Still). @param {boolean} [free] */
+  brewPurge(free = false) {
+    if (!free && !this.has('still')) return { ok: false, reason: 'Buy the Purging Still at the guild to brew your own.' };
+    if (this.colony.still) return { ok: false, reason: 'The still is already working.' };
+    const cost = free ? 0 : PURGE_BREW_COST;
+    if (cost > this.coins + 1e-9) return { ok: false, reason: `The salts cost ${cost} coin.` };
+    this.coins = round1(this.coins - cost);
+    this.stats.spent += cost;
+    this.daySpending += cost;
+    this.colony.still = PURGE_BREW_TIME;
+    return { ok: true, cost };
+  }
+
+  /** Give a rabbit a purging draught. @param {string} id @param {boolean} [free] */
+  purgeRabbit(id, free = false) {
+    const r = findRabbit(this.colony, id);
+    if (!r || !r.alive) return { ok: false, reason: 'Choose a living rabbit.' };
+    if (!free && !(this.colony.purges > 0)) return { ok: false, reason: 'You have no purging draught: buy one, or brew it in the still.' };
+    if (!free) this.colony.purges--;
+    purgeRabbit(r);
+    return { ok: true, rabbit: r };
+  }
+
+  /** Put a rabbit down (the body stays). @param {string} id */
+  cullRabbit(id) {
+    const r = findRabbit(this.colony, id);
+    if (!r || !r.alive) return { ok: false, reason: 'Choose a living rabbit.' };
+    cullRabbit(r, this.day);
+    this.stats.culled = (this.stats.culled || 0) + 1;
+    return { ok: true, rabbit: r };
+  }
+
+  /**
+   * Let the hutch live for `dt` seconds of real time (the still brews too).
+   * @param {number} dt
+   */
+  tickColony(dt) {
+    const c = this.colony;
+    /** @type {any[]} */
+    const events = [];
+    if (c.still) {
+      c.still = round1(c.still - dt);
+      if (c.still <= 0) { c.still = null; c.purges = (c.purges || 0) + 1; events.push({ type: 'purge-brewed' }); }
+    }
+    const rep = colonyTick(c, dt, { day: this.day, seed: this.seed });
+    for (const d of rep.died) events.push({ type: 'rabbit-died', ...d });
+    for (const a of rep.attacks) events.push({ type: 'attack', ...a });
+    for (const t of rep.traits) events.push({ type: 'trait', ...t });
+    return { rep, events };
   }
 
   /** Price per 100 ml today. @param {string} id */
@@ -946,6 +1006,8 @@ export function migrate(raw) {
   if (!d.version) throw new Error('Missing save version');
   if (d.version > SAVE_VERSION) throw new Error('This save comes from a newer version of the game');
   d._migratedFrom = d.version;
+  // the Wisp Lantern left with the wisp (rabbits are the only subjects): its owners get the Purging Still
+  if (Array.isArray(d.equipment) && d.equipment.includes('lantern')) d.equipment = [...new Set(d.equipment.map((id) => (id === 'lantern' ? 'still' : id)))];
   if (d.version < 2) {
     // v1 had no market, receiver or grand-commission fields
     d.market = d.market || { event: 'none', mods: {} };

@@ -15,12 +15,12 @@ left rail so the cauldron keeps the full height.
 | Counter | `views/counter.js` | the customer, the full order with which effects are already verified, the sealed vial, serving, the day summary |
 | Brew | the cauldron | live simulation, shelf, dose buttons, fire/frost slider, tools (pour, spoon, pestle, skimmer, probe), lid, mortar, bottling |
 | Wilds | `views/wilds.js` | regions, a painted scene with tappable deposits and the same deposits as a list |
-| Trials | `views/trials.js` | test subjects, the dropper, dose size, source (cauldron tap or vial), reports |
+| Trials | `views/trials.js`, `views/hutch.js` | the rabbit farm: the hutch scene, a Give button and the dropper right under it, the roster, the chosen rabbit's health and status bars, purge / put down, dose size, source (cauldron tap or vial), reports and the batch estimate |
 | Book | `views/book.js` | recipes, trial log, laws, journal, ingredients, awards, sales |
 
 The top bar holds the menu (help, settings and saves, tutorial), coins,
 rank, day and the Market & Guild, where reagents, common wild herbs and
-upgrades are bought (spent test subjects are replaced in the Trials room).
+upgrades are bought (dead rabbits are replaced in the Trials room).
 On phones in portrait every dialog opens as a bottom sheet; elsewhere it is
 a centred panel. The shelf in the Brew room is
 the inventory: each jar shows its stock. Tabs carry badges: the Counter
@@ -66,7 +66,7 @@ nothing depends on precise dragging.
 | Drag the spoon to stir | hold the stir button (or toggle it with the clockwork stirrer upgrade) |
 | Strike with the pestle to crush | switch on "Ground" so the mortar grinds before pouring |
 | Drag the skimmer | none |
-| Drag the dropper onto a subject | the subject's **Test** button |
+| Drag the dropper onto a rabbit | tap the rabbit, then **Give** |
 | Tap a deposit in the wilds scene | the deposit's **Gather** button in the list |
 | Long-press a jar (or right-click) to inspect it | the ingredient list in the Book |
 

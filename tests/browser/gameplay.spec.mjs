@@ -52,7 +52,7 @@ test('first commission: brew, test on a subject, bottle and serve', async ({ pag
   expect(rec.subjectId).toBe('rabbit');
   expect(rec.values.vitality).toBeGreaterThan(4);
   expect(rec.values.love, 'the rabbit reports love too').toBeDefined();
-  expect(rec.values.acidity, 'but not acidity').toBeUndefined();
+  expect(rec.values.acidity, 'and acidity: a rabbit shows every effect').toBeDefined();
   await shot(page, info, 'trial');
   // back at the cauldron the healing requirement is verified
   await page.click('[data-act=tab-brew]');

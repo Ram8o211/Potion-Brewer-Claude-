@@ -16,13 +16,13 @@ test('choose a rabbit, dose it, replay the trial for free', async ({ page }, inf
   await expect(page.locator('canvas.hutch-scene')).toBeVisible();
   await page.click('.rabbit-tile[data-rabbit=r2]');
   await expect(page.locator('.rabbit-tile[data-rabbit=r2]')).toHaveAttribute('aria-selected', 'true');
-  await expect(page.locator('[data-subject=rabbit] .subject-sub')).toContainText('Bramble');
+  await expect(page.locator('.rabbit-detail .rd-title')).toContainText('Bramble');
   const n0 = await lab(page, (l) => l.sim.p.count);
   await page.click('[data-act=test-rabbit]');
   expect(await lab(page, (l) => l.sim.p.count), 'a real 10 ml dose').toBe(n0 - 2);
   const rec = await lab(page, (l) => l.state.trials.records[0]);
   expect(rec.rabbitId).toBe('r2');
-  await expect(page.locator('.trial-report .report')).toContainText('Bramble');
+  await expect(page.locator('.trial-report .report').first()).toContainText('Bramble');
   await expect(page.locator('.trial-report .rv').first()).toContainText('±');
   await shot(page, info, 'colony-dosed');
   // the dropper onto a rabbit in the roster doses that rabbit (a tall
@@ -39,12 +39,13 @@ test('choose a rabbit, dose it, replay the trial for free', async ({ page }, inf
   await drag(page, pts, 20);
   expect(await lab(page, (l) => l.state.trials.records[0].rabbitId)).toBe('r1');
   // replay: nothing is consumed or changed
-  const before = await lab(page, (l) => ({ n: l.sim.p.count, recs: l.state.trials.records.length, coins: l.state.coins, colony: JSON.stringify(l.state.colony) }));
+  // (the hutch lives in real time — marks fade, health creeps back — so compare what a dose would change)
+  const before = await lab(page, (l) => ({ n: l.sim.p.count, recs: l.state.trials.records.length, coins: l.state.coins, colony: JSON.stringify(l.state.colony.rabbits.map((r) => [r.id, r.trials, r.doses.length, r.alive, r.traits])) }));
   await page.click('[data-act=replay-trial]');
   await page.waitForTimeout(900);
   await shot(page, info, 'colony-replay');
   await page.waitForTimeout(2600);
-  const after = await lab(page, (l) => ({ n: l.sim.p.count, recs: l.state.trials.records.length, coins: l.state.coins, colony: JSON.stringify(l.state.colony) }));
+  const after = await lab(page, (l) => ({ n: l.sim.p.count, recs: l.state.trials.records.length, coins: l.state.coins, colony: JSON.stringify(l.state.colony.rabbits.map((r) => [r.id, r.trials, r.doses.length, r.alive, r.traits])) }));
   expect(after).toEqual(before);
   expect(errors).toEqual([]);
 });
@@ -58,7 +59,7 @@ test('a rabbit dies; its body keeps its look; its remains go to the shelf once a
     const dose = (o) => { const e = new Array(NE).fill(0); for (const [k, v] of Object.entries(o)) e[['vitality', 'strength', 'love', 'arcana', 'transformation', 'fire', 'frost', 'acidity', 'toxicity', 'death'].indexOf(k)] = v; return { effects: e, resonance: [], color: [0.6, 0.2, 0.2], temperature: 20 }; };
     const ctx = { ml: 25, source: 'cauldron', batchId: st.batch.id, rev: st.batch.rev, theory: new Array(NE).fill(0), parts: [], rabbitId: 'r1' };
     st.recordTrial('rabbit', dose({ love: 16, transformation: 12, arcana: 10 }), ctx);
-    st.recordTrial('rabbit', dose({ fire: 60 }), ctx);
+    st.recordTrial('rabbit', dose({ fire: 120 }), ctx);
     l.showView('trials');
     l.views.trials.refresh();
   });
