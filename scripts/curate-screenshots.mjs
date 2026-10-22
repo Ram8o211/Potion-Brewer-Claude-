@@ -11,9 +11,9 @@ const DST = path.resolve('docs', 'screenshots');
 const PICK = [
   'desktop-menu', 'desktop-shop', 'desktop-tutorial-poured', 'desktop-tutorial-stirred', 'desktop-tutorial-heated', 'desktop-tutorial-result',
   'desktop-layers', 'desktop-powder', 'desktop-stirred', 'desktop-frozen', 'desktop-crushed', 'desktop-fire', 'desktop-long-run',
-  'desktop-shop-panel', 'desktop-shop-equipment', 'desktop-journal-panel', 'desktop-recipes-panel', 'desktop-sandbox',
+  'desktop-shop-panel', 'desktop-shop-equipment', 'desktop-sandbox',
   'phone-portrait-menu', 'phone-portrait-shop', 'phone-portrait-tutorial-stirred', 'phone-portrait-tutorial-result', 'phone-portrait-layers',
-  'phone-portrait-crushed', 'phone-portrait-fire', 'phone-portrait-shop-panel', 'phone-portrait-journal-panel',
+  'phone-portrait-crushed', 'phone-portrait-fire', 'phone-portrait-shop-panel',
   'phone-landscape-shop', 'phone-landscape-tutorial-stirred', 'tablet-shop',
   // the evolution: awakening, the colony, trade, gathering
   'desktop-showcase-awakened', 'phone-portrait-showcase-awakened', 'desktop-showcase-hutch', 'phone-portrait-showcase-hutch', 'phone-landscape-showcase-hutch',

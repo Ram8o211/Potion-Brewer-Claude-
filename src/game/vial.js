@@ -228,6 +228,20 @@ export function pourBack(vial, sim) {
   return made;
 }
 
+/**
+ * What `ml` poured back from a vial adds to the cauldron's provenance: that
+ * share of the batch the vial was drawn from (its parts describe the whole
+ * batch, not the bottle).
+ * @param {Vial} vial @param {number} ml
+ * @returns {{id:string, ml:number}[]}
+ */
+export function pourBackParts(vial, ml) {
+  const parts = vial.parts || [];
+  const batchMl = parts.reduce((a, p) => a + p.ml, 0);
+  const share = batchMl > 0 ? Math.min(1, ml / batchMl) : 0;
+  return parts.map((p) => ({ id: p.id, ml: Math.round(p.ml * share * 10) / 10 }));
+}
+
 /** A sealed vial drifts toward room temperature. @param {Vial} vial @param {number} dt seconds */
 export function relaxVial(vial, dt) {
   const k = 1 - Math.exp(-dt / COOL_TAU);

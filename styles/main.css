@@ -271,6 +271,7 @@ canvas.portrait.big { width: 88px; height: 88px; box-shadow: 0 0 0 var(--px) var
 .followup canvas.portrait { width: 56px; height: 56px; flex: none; box-shadow: 0 0 0 var(--px) var(--ink2); margin-right: 8px; }
 .followup .speech { margin: 6px 0; padding: 6px 8px; background: var(--parch3); box-shadow: 0 0 0 1px var(--ink2); font-size: var(--fs-s); line-height: 1.4; color: var(--ink2); }
 .followup .row.wrap { gap: 6px; }
+.followup .fu-label { margin: 0 0 8px; }
 .row.wrap { flex-wrap: wrap; }
 .parch .muted, .parch.muted, .parch .small.muted { color: var(--ink2); opacity: 0.85; }
 .warn { color: #8a4a10; margin: 4px 0; }

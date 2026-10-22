@@ -1,4 +1,4 @@
-// The Alchemist's Shop 1.1.0 — bundled build
+// The Alchemist's Shop 2.0.0 — bundled build
 // src/ui/icons.js
 const __m3 = (() => {
 const PAL = {
@@ -91,6 +91,10 @@ dropper: ['..........kk', '.........kmk', '........kmmk', '.......kmmk.', '.....
 leaf: ['..........kk', '........kkgk', '......kkgggk', '....kkgggGgk', '...kgggGgggk', '..kggGgggggk', '..kgGgggggk.', '.kgGgggggk..', '.kGgggGkk...', 'kGgkkkk.....', 'kk..........', '............'],
 gem: ['............', '...kkkkkk...', '..kpwppPPk..', '.kpwpppPPPk.', 'kkkkkkkkkkkk', '.kpwpppPPk..', '..kpwppPk...', '...kpwPk....', '....kpk.....', '.....k......', '............', '............'],
 pick: ['..kkkk......', '.kWWWWkk....', 'kWSSSSWWk...', '.kk..kSWk...', '......kNnk..', '.......kNnk.', '........kNnk', '.........kNk', '..........kk', '............', '............', '............'],
+trowel: ['.........kk.', '........knNk', '.......knNk.', '......knNk..', '.....kkkk...', '....kWWsk...', '...kWwWsk...', '..kWwWWsk...', '.kWwWWsSk...', '.kWWWsSk....', 'kWsSSkk.....', 'kkkk........'],
+sickle: ['....kkkk....', '..kkWWWWk...', '.kWWkkkWWk..', 'kWWk...kWk..', 'kWk.....kk..', 'kWk.........', 'kWk.........', '.kWk....kk..', '..kWkk.knk..', '...kkWkNk...', '......kNk...', '.......kk...'],
+brush: ['........kk..', '.......knk..', '......knk...', '.....knk....', '....knk.....', '...kNNk.....', '..kYYYYk....', '.kyyyyyk....', 'kWkWkWkWk...', 'kWkWkWkWk...', '.kkkkkkk....', '............'],
+bolt: ['......kkkk..', '.....kyyyk..', '....kyyyk...', '...kyyyk....', '..kyyyykkk..', '.kyyyyyyyk..', '..kkkyyyk...', '....kyyk....', '...kyyk.....', '..kyyk......', '..kyk.......', '..kk........'],
 spark: ['.....k......', '....kyk.....', '....kyk..k..', '.k..kyk.kyk.', 'kyk.kyykyk..', '.kyykyyyk...', '..kyyllyyk..', '...kyyykyyk.', '..kyk.kyk.k.', '.kyk..kyk...', '..k....k....', '............'],
 bottle: ['....kkkk....', '....knnk....', '....kWWk....', '...kwwWWk...', '..kwmmmmWk..', '.kwmmlmmmWk.', '.kwmmmmmmWk.', '.kwmmmmmmPk.', '.kwmmmmmPWk.', '..kwmmmPWk..', '...kkkkkk...', '............'],
 trophy: ['.kkkkkkkkkk.', 'kykyyyyyykyk', 'kyykyyyykyyk', '.kyyyyyyyyk.', '..kyyyyyYk..', '...kyyyYk...', '....kyYk....', '.....kk.....', '....kyYk....', '...kkkkkk...', '..kyyyyyYk..', '..kkkkkkkk..'],
@@ -1083,7 +1087,7 @@ for (const p of parts) tot += p.ml;
 if (tot <= 0) return v;
 for (const p of parts) {
 const d = lookup(p.id);
-if (!d) continue;
+if (!d || d.remains) continue;
 const ev = effectVector(d);
 for (let k = 0; k < NE; k++) v[k] += (ev[k] * p.ml) / tot;
 }
@@ -1397,7 +1401,7 @@ let d = cache.get(id);
 if (d === undefined) {
 const base = lookup(baseIdOf(id));
 d = isMagical(base) ? awakenedDef(base) : null;
-cache.set(id, d);
+if (base) cache.set(id, d);
 }
 return d || undefined;
 };
@@ -1782,9 +1786,18 @@ return world;
 }
 function makeLookup(world, extra = []) {
 const map = new Map();
+let n = -1;
+const index = () => {
+map.clear();
 for (const m of world.materials) map.set(m.id, m);
 for (const m of extra) map.set(m.id, m);
-return withAwakened((id) => map.get(id));
+n = world.materials.length;
+};
+index();
+return withAwakened((id) => {
+if (n !== world.materials.length) index();
+return map.get(id);
+});
 }
 return { generateWorld, addAlchemy, makeLookup };
 })();
@@ -2311,6 +2324,11 @@ pleased: ['Good. Steady as a held breath.', 'That’ll keep.'], displeased: ['It
 ];
 const FIRST = ['Aldric', 'Bryn', 'Cedric', 'Dagna', 'Edda', 'Fenwick', 'Gwen', 'Hob', 'Isolde', 'Jory', 'Kestrel', 'Liesl', 'Mabry', 'Nell', 'Osric', 'Perrin', 'Quill', 'Rowena', 'Sabine', 'Tamsin', 'Ulric', 'Vesna', 'Wynn', 'Yara', 'Zebedee', 'Agnes', 'Bertram', 'Cora', 'Dunstan', 'Elowen', 'Godric', 'Hilda', 'Ivo', 'Maud', 'Piers', 'Rosalind', 'Tobias', 'Wilda'];
 const LAST = ['Ashdown', 'Brightwater', 'Copperpot', 'Dunmore', 'Elderberry', 'Fairweather', 'Greaves', 'Hollins', 'Ironside', 'Juniper', 'Kettleby', 'Larkspur', 'Millward', 'Nettlefold', 'Oakhart', 'Pennywhistle', 'Quarrel', 'Ravensby', 'Stonebridge', 'Thistlewood', 'Underhill', 'Vane', 'Whitlock', 'Yarrow'];
+const TITLES = new Set(['Old', 'Young', 'Sir', 'Dame', 'Lady', 'Lord', 'Master', 'Mistress', 'Brother', 'Sister', 'Mother', 'Father', 'Granny', 'Gaffer', 'Widow', 'Captain']);
+function shortName(name) {
+const parts = String(name || '').split(' ').filter(Boolean);
+return (parts.length > 1 && TITLES.has(parts[0]) ? parts[1] : parts[0]) || '';
+}
 const SKIN = [[0.96, 0.8, 0.66], [0.87, 0.66, 0.5], [0.72, 0.52, 0.36], [0.55, 0.38, 0.26], [0.4, 0.27, 0.18], [0.98, 0.86, 0.76]];
 const HAIR = [[0.15, 0.1, 0.07], [0.35, 0.22, 0.12], [0.62, 0.38, 0.18], [0.85, 0.7, 0.4], [0.55, 0.55, 0.55], [0.9, 0.9, 0.88], [0.55, 0.2, 0.1]];
 const PERSONA = {
@@ -2354,7 +2372,7 @@ age: rng.range(0, 1),
 function archetypeOf(key) {
 return ARCHETYPES.find((a) => a.key === key) || ARCHETYPES[0];
 }
-return { ARCHETYPES, makeCustomer, archetypeOf, Rng };
+return { ARCHETYPES, shortName, makeCustomer, archetypeOf, Rng };
 })();
 // src/simulation/constants.js
 const __m23 = (() => {
@@ -3279,16 +3297,23 @@ const EQUIPMENT = [
 { id: 'assay', name: 'Assay Kit', category: 'instrument', price: 90, rank: 1, icon: 'assay', desc: 'Measures stability and volatility precisely.' },
 { id: 'lens', name: 'Aether Lens', category: 'instrument', price: 140, rank: 1, icon: 'lens', desc: 'Lets you see the aura of magic in the brew: which kinds of effect are present, never how strong. Mixtures still need a trial.' },
 { id: 'galvanometer', name: 'Galvanometer', category: 'instrument', price: 120, rank: 2, icon: 'galvo', desc: 'Reads the electric charge carried by the brew.' },
+{ id: 'arcanometer', name: 'Arcanometer', category: 'instrument', price: 260, rank: 2, icon: 'awaken', desc: 'A needle of lodestone in a glass of wisp-light: the probe reads the arcane threshold of the brew under it (to the nearest 50), and whether it has awakened.' },
 { id: 'thermal', name: 'Thermal Monocle', category: 'instrument', price: 80, rank: 1, icon: 'monocle', desc: 'Shows the temperature field of the whole cauldron as a heat map.' },
-{ id: 'kennel', name: 'Subject Kennel', category: 'trials', price: 60, rank: 1, icon: 'rabbit', desc: 'Spare cages and pots: replacing a spent test subject costs half.' },
+{ id: 'kennel', name: 'Subject Kennel', category: 'trials', price: 60, rank: 1, icon: 'rabbit', desc: 'Spare cages and pots: the hutch holds six rabbits, and new test subjects cost half.', effect: { hutch: 6 } },
+{ id: 'warren', name: 'Rabbit Warren', category: 'trials', price: 180, rank: 2, icon: 'nest', requires: ['kennel'], desc: 'A walled run with burrows and a nest box: room for ten rabbits.', effect: { hutch: 10 } },
 { id: 'lantern', name: 'Wisp Lantern', category: 'trials', price: 220, rank: 2, icon: 'wisp', desc: 'A captive will-o’-wisp joins the trials room. It responds to arcana, change, love, life and death.' },
 { id: 'satchel', name: 'Forager’s Satchel', category: 'storage', price: 80, rank: 1, icon: 'satchel', desc: 'Carry more from the wilds: each harvest gathers half as much again.' },
+{ id: 'trowel', name: 'Digging Trowel', category: 'storage', price: 20, rank: 0, icon: 'trowel', desc: 'Digs roots and river chalk out whole. Without it you scrabble up half as much.' },
+{ id: 'rockhammer', name: 'Rock Hammer', category: 'storage', price: 35, rank: 0, icon: 'pick', desc: 'Splits mineral seams and crystal: full harvests of flint, sulfur and quartz.' },
+{ id: 'brush', name: 'Badger Brush', category: 'storage', price: 15, rank: 0, icon: 'brush', desc: 'Sweeps up fine mineral dust like mica without losing half to the wind.' },
+{ id: 'sickle', name: 'Silver Sickle', category: 'storage', price: 45, rank: 1, icon: 'sickle', desc: 'Cuts mosses and lichens clean from stone and barrow.' },
 { id: 'shelf1', name: 'Oak Shelves', category: 'storage', price: 90, rank: 1, icon: 'shelf', desc: 'Store up to 2.5 L of each reagent.', effect: { storage: 2500 } },
 { id: 'shelf2', name: 'Cellar Racks', category: 'storage', price: 260, rank: 2, icon: 'shelf2', requires: ['shelf1'], desc: 'Store up to 6 L of each reagent.', effect: { storage: 6000 } },
 { id: 'charter', name: 'Guild Charter', category: 'guild', price: 400, rank: 2, icon: 'charter', desc: 'Guild membership: 15% off all reagents and access to guild contracts.', effect: { discount: 0.15 } },
 ];
 const STARTING_EQUIPMENT = ['hearth', 'basin', 'pot', 'spoon', 'mortar', 'thermometer'];
 const BASE_STORAGE = 1000;
+const BASE_HUTCH = 4;
 function equipmentById(id) {
 return EQUIPMENT.find((e) => e.id === id);
 }
@@ -3307,7 +3332,7 @@ return r;
 }
 function capabilities(owned) {
 const has = owned instanceof Set ? owned : new Set(owned);
-const cap = { maxFlame: 340, heatPower: 3.5, minCool: 4, coolPower: 4, size: 'pot', storage: BASE_STORAGE, discount: 0, has: (id) => has.has(id) };
+const cap = { maxFlame: 340, heatPower: 3.5, minCool: 4, coolPower: 4, size: 'pot', storage: BASE_STORAGE, discount: 0, hutch: BASE_HUTCH, has: (id) => has.has(id) };
 for (const e of EQUIPMENT) {
 if (!has.has(e.id) || !e.effect) continue;
 const f = /** @type {any} */ (e.effect);
@@ -3317,14 +3342,561 @@ if (f.size === 'copper' && cap.size === 'pot') cap.size = 'copper';
 if (f.size === 'grand') cap.size = 'grand';
 if (f.storage && f.storage > cap.storage) cap.storage = f.storage;
 if (f.discount) cap.discount = Math.max(cap.discount, f.discount);
+if (f.hutch && f.hutch > cap.hutch) cap.hutch = f.hutch;
 }
 return cap;
 }
-return { EQUIPMENT, STARTING_EQUIPMENT, BASE_STORAGE, equipmentById, RANKS, rankIndex, capabilities };
+return { EQUIPMENT, STARTING_EQUIPMENT, BASE_STORAGE, BASE_HUTCH, equipmentById, RANKS, rankIndex, capabilities };
+})();
+// src/game/colony.js
+const __m28 = (() => {
+const { EFFECT_INDEX } = __m13;
+const { Rng, hashString } = __m6;
+const RABBIT_MARKS = ['vitality', 'strength', 'love', 'arcana', 'transformation', 'fire', 'frost', 'acid', 'alkali', 'toxicity', 'death'];
+const MARK_INDEX = Object.fromEntries(RABBIT_MARKS.map((k, i) => [k, i]));
+const KIT_DAYS = 4;
+const ADULT_DAYS = 8;
+const ELDER_DAYS = 40;
+const LIFESPAN_DAYS = 56;
+const FOUNDER_BORN = -9;
+const GESTATION_DAYS = 3;
+const DOSE_LIMIT = 40;
+const MEMORIAL_LIMIT = 24;
+const LEVEL_AT = [8, 30, 60];
+const TRAIT_AT = [20, 50, 90, 140, 200];
+const TRAITS = ['ears2', 'horns', 'antlers', 'unihorn', 'scales', 'spines', 'tail-lizard', 'tail-plume', 'giant', 'tiny', 'eye3', 'wings'];
+const TRAIT_EXCLUSIVE = [['giant', 'tiny'], ['horns', 'antlers', 'unihorn'], ['tail-lizard', 'tail-plume']];
+const TRAIT_WORDS = {
+ears2: 'a second pair of ears', horns: 'two curling horns', antlers: 'small antlers', unihorn: 'a single spiral horn',
+scales: 'scaly haunches', spines: 'icy spines along its back', 'tail-lizard': 'a scaly lizard tail', 'tail-plume': 'a plumed tail',
+giant: 'a giant frame', tiny: 'a shrunken body', eye3: 'a third eye', wings: 'little membrane wings',
+};
+const COATS = [
+[[0.93, 0.89, 0.82], 3], // cream
+[[0.97, 0.96, 0.94], 2], // white
+[[0.6, 0.58, 0.62], 2], // grey
+[[0.55, 0.42, 0.3], 3], // agouti brown
+[[0.36, 0.24, 0.18], 1], // chocolate
+[[0.2, 0.18, 0.2], 1], // black
+[[0.82, 0.55, 0.3], 2], // ginger
+[[0.78, 0.78, 0.8], 1], // silver
+];
+const PATTERNS = /** @type {const} */ (['solid', 'dutch', 'spotted', 'hooded', 'points', 'agouti']);
+const PATTERN_W = [4, 2, 2, 1, 1, 2];
+const EARS = /** @type {const} */ (['upright', 'lop', 'half', 'short']);
+const EAR_W = [5, 2, 1, 1];
+const WHITE = [0.97, 0.96, 0.94], CREAM = [0.93, 0.89, 0.82], CHOC = [0.36, 0.24, 0.18], BLACK = [0.2, 0.18, 0.2];
+const lum = (c) => 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2];
+const r2 = (v) => Math.round(v * 100) / 100;
+function rollLook(rng) {
+const coat = COATS[rng.weighted(COATS.map((_, i) => i), COATS.map((c) => c[1]))][0].slice();
+const dark = lum(coat) < 0.5;
+const coat2 = (dark ? (rng.chance(0.5) ? WHITE : CREAM) : (rng.chance(0.5) ? CHOC : BLACK)).slice();
+const white = coat[0] > 0.95;
+return {
+coat, coat2,
+pattern: PATTERNS[rng.weighted([0, 1, 2, 3, 4, 5], PATTERN_W)],
+ear: EARS[rng.weighted([0, 1, 2, 3], EAR_W)],
+size: r2(Math.max(0.85, Math.min(1.15, 1 + 0.06 * rng.gauss()))),
+eye: /** @type {'dark'|'ruby'} */ (white && rng.chance(0.5) ? 'ruby' : 'dark'),
+tail: /** @type {0|1|2} */ (rng.int(0, 2)),
+seed: 1 + rng.int(0, 2147483000),
+};
+}
+function inheritLook(a, b, rng) {
+const from = rng.chance(0.5) ? a : b;
+const fresh = rollLook(rng);
+const coatFrom = rng.chance(0.1) ? fresh : from;
+const pick = (k) => (rng.chance(0.08) ? fresh[k] : (rng.chance(0.5) ? a[k] : b[k]));
+const coat = coatFrom.coat.slice();
+const white = coat[0] > 0.95;
+return {
+coat, coat2: coatFrom.coat2.slice(),
+pattern: pick('pattern'), ear: pick('ear'),
+size: r2(Math.max(0.85, Math.min(1.15, (a.size + b.size) / 2 + rng.range(-0.05, 0.05)))),
+eye: /** @type {'dark'|'ruby'} */ (white && (a.eye === 'ruby' || b.eye === 'ruby' || rng.chance(0.25)) ? 'ruby' : 'dark'),
+tail: pick('tail'),
+seed: 1 + rng.int(0, 2147483000),
+};
+}
+function lookFromSeed(str) {
+return rollLook(new Rng(hashString('look:' + str)));
+}
+function visibleLevel(v) {
+return v >= LEVEL_AT[2] ? 3 : v >= LEVEL_AT[1] ? 2 : v >= LEVEL_AT[0] ? 1 : 0;
+}
+const q3 = (v, a, b, c) => (v >= c ? 3 : v >= b ? 2 : v >= a ? 1 : 0);
+function stageOf(r, day) {
+if (day === undefined || !Number.isFinite(day)) return 'adult';
+const age = day - (r.born ?? FOUNDER_BORN);
+return age < KIT_DAYS ? 'kit' : age < ADULT_DAYS ? 'young' : age < ELDER_DAYS ? 'adult' : 'elder';
+}
+const hpBand = (h) => (h >= 75 ? 0 : h >= 40 ? 1 : h >= 10 ? 2 : 3);
+function rabbitSnap(r, day) {
+const mk = r.marks || {}, ex = r.exposure || {};
+const lv = RABBIT_MARKS.map((k) => {
+if (k === 'strength') return visibleLevel(Math.min(100, (mk.strength || 0) + 0.2 * (ex.strength || 0)));
+return visibleLevel(mk[k] || 0);
+});
+const sc = [
+q3(ex.fire || 0, 30, 80, 150), q3(ex.acid || 0, 25, 60, 120), q3(ex.frost || 0, 30, 80, 150),
+Math.max(q3(ex.death || 0, 15, 40, 80), stageOf(r, day) === 'elder' ? 1 : 0), q3(ex.arcana || 0, 40, 100, 180),
+];
+return {
+stage: r.stage || stageOf(r, day),
+hp: r.alive === false ? 3 : /** @type {0|1|2|3} */ (hpBand(r.health ?? 100)),
+alive: r.alive !== false,
+preg: !!r.pregnant && r.alive !== false,
+lv, sc,
+traits: Array.isArray(r.traits) ? r.traits.slice() : [],
+cause: r.alive === false ? (r.cause || 'unknown') : null,
+};
+}
+const STAGE_CH = { kit: 'k', young: 'y', adult: 'a', elder: 'e' };
+const CH_STAGE = { k: 'kit', y: 'young', a: 'adult', e: 'elder' };
+function encodeSnap(s) {
+return `${STAGE_CH[s.stage] || 'a'}${s.hp}${s.alive ? 1 : 0}${s.preg ? 1 : 0}|${s.lv.join('')}|${s.sc.join('')}|${s.traits.join(',')}|${s.cause || ''}`;
+}
+function defaultSnap() {
+return { stage: 'adult', hp: 0, alive: true, preg: false, lv: new Array(RABBIT_MARKS.length).fill(0), sc: [0, 0, 0, 0, 0], traits: [], cause: null };
+}
+function decodeSnap(str) {
+if (typeof str !== 'string') return defaultSnap();
+const p = str.split('|');
+if (p.length < 5 || p[0].length !== 4) return defaultSnap();
+const stage = CH_STAGE[p[0][0]];
+const lv = p[1].split('').map(Number);
+const sc = p[2].split('').map(Number);
+if (!stage || lv.length !== RABBIT_MARKS.length || lv.some((v) => !(v >= 0 && v <= 3)) || sc.some((v) => !(v >= 0 && v <= 3))) return defaultSnap();
+while (sc.length < 5) sc.push(0);
+const hp = Number(p[0][1]);
+return {
+stage, hp: /** @type {0|1|2|3} */ (hp >= 0 && hp <= 3 ? hp : 0), alive: p[0][2] === '1', preg: p[0][3] === '1', lv, sc: sc.slice(0, 5),
+traits: p[3] ? p[3].split(',').filter((t) => TRAITS.includes(t)) : [], cause: p[4] || null,
+};
+}
+const NAMES = ['Clover', 'Bramble', 'Hazel', 'Juniper', 'Pip', 'Thistle', 'Willow', 'Sorrel', 'Barley', 'Fennel', 'Nettle', 'Poppy', 'Rowan', 'Sage',
+'Tansy', 'Teasel', 'Bryony', 'Campion', 'Dill', 'Elder', 'Flax', 'Gorse', 'Heather', 'Ivy', 'Kale', 'Lovage', 'Mallow', 'Nutmeg', 'Oats', 'Parsley', 'Quince',
+'Radish', 'Saffron', 'Tarragon', 'Umber', 'Vetch', 'Wren', 'Yarrow', 'Acorn', 'Basil', 'Cobnut', 'Dandelion', 'Eyebright', 'Foxglove', 'Ginger', 'Hops', 'Iris', 'Jasmine'];
+const emptyMarks = () => Object.fromEntries(RABBIT_MARKS.map((k) => [k, 0]));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const fin = (v, d) => (Number.isFinite(Number(v)) ? Number(v) : d);
+const round1 = (v) => Math.round(v * 10) / 10;
+function founders() {
+const clover = { coat: [0.93, 0.89, 0.82], coat2: [0.36, 0.24, 0.18], pattern: 'solid', ear: 'upright', size: 1, eye: 'dark', tail: 1, seed: 1 };
+const bramble = { coat: [0.55, 0.42, 0.3], coat2: [0.93, 0.89, 0.82], pattern: 'agouti', ear: 'lop', size: 1.05, eye: 'dark', tail: 1, seed: 2 };
+return [
+newRabbit({ id: 'r1', name: 'Clover', sex: 'f', born: FOUNDER_BORN, look: clover }),
+newRabbit({ id: 'r2', name: 'Bramble', sex: 'm', born: FOUNDER_BORN, look: bramble }),
+];
+}
+function newRabbit(o) {
+return {
+id: o.id, name: o.name, sex: o.sex, born: o.born, look: o.look, parents: o.parents || null,
+health: 100, alive: true, trials: 0, marks: emptyMarks(), exposure: emptyMarks(), scar: 0, traits: [],
+doses: [], dosesDropped: 0, pregnant: null, diedDay: null, cause: null,
+};
+}
+function createColony(seed = '') {
+return { seed, serial: 2, focus: 'r1', breed: true, fedDay: 0, day: 0, rabbits: founders(), memorial: [] };
+}
+function findRabbit(c, id) {
+return c.rabbits.find((r) => r.id === id) || null;
+}
+function livingRabbits(c) {
+return c.rabbits.filter((r) => r.alive);
+}
+function bodies(c) {
+return c.rabbits.filter((r) => !r.alive);
+}
+function focusRabbit(c) {
+return (c.focus && findRabbit(c, c.focus)) || c.rabbits.find((r) => r.alive) || c.rabbits[0] || null;
+}
+function pickName(c, rng) {
+const used = new Set([...c.rabbits.map((r) => r.name), ...c.memorial.map((m) => m.name)]);
+const free = NAMES.filter((n) => !used.has(n));
+if (free.length) return rng.pick(free);
+const base = rng.pick(NAMES);
+for (let k = 2; ; k++) {
+const n = `${base} ${['', '', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'][k] || k}`;
+if (!used.has(n)) return n;
+}
+}
+function makeRabbit(c, o, rng) {
+c.serial++;
+const r = newRabbit({ id: 'r' + c.serial, name: o.name || pickName(c, rng), sex: o.sex, born: o.born, look: o.look, parents: o.parents || null });
+c.rabbits.push(r);
+return r;
+}
+function addBoughtRabbit(c, o) {
+const rng = new Rng(hashString(`${c.seed}:buy:${c.serial}`));
+const live = livingRabbits(c);
+const does = live.filter((r) => r.sex === 'f').length, bucks = live.length - does;
+const sex = does === bucks ? (rng.chance(0.5) ? 'f' : 'm') : does < bucks ? 'f' : 'm';
+return makeRabbit(c, { born: o.day - (ADULT_DAYS + 2), sex, look: rollLook(rng) }, rng);
+}
+function recordDose(r, d) {
+r.doses.push(d);
+if (r.doses.length > DOSE_LIMIT) {
+r.dosesDropped += r.doses.length - DOSE_LIMIT;
+r.doses.splice(0, r.doses.length - DOSE_LIMIT);
+}
+}
+function related(a, b) {
+const pa = a.parents || [], pb = b.parents || [];
+if (pa.includes(b.id) || pb.includes(a.id)) return true;
+return pa.some((p) => p && pb.includes(p));
+}
+const STAGE_SENS = { kit: 1.6, young: 1.25, adult: 1, elder: 1.15 };
+const STAGE_ERR = { kit: 1.4, young: 1.15, adult: 1, elder: 1.1 };
+const MARK_DECAY = { vitality: 0.5, strength: 0.8, love: 0.6, arcana: 0.7, transformation: 0.75, fire: 0.4, frost: 0.4, acid: 0.7, alkali: 0.6, toxicity: 0.75, death: 0.85 };
+const TRAIT_AFF = {
+ears2: { love: 1 }, horns: { fire: 1, strength: 1 }, antlers: { vitality: 1, arcana: 0.5 }, unihorn: { vitality: 0.8, arcana: 1 },
+scales: { frost: 0.6, acid: 0.7, toxicity: 0.5 }, spines: { frost: 1.2, toxicity: 0.3 }, 'tail-lizard': { toxicity: 1, fire: 0.5 },
+'tail-plume': { love: 0.7, vitality: 0.7 }, giant: { strength: 1.2, vitality: 0.5 }, tiny: { death: 1, frost: 0.6 }, eye3: { arcana: 1.5 }, wings: { arcana: 0.8, love: 0.6 },
+};
+const TRAIT_LINES = {
+ears2: 'A second pair of ears unfurls behind the first!', horns: 'Two little horns push up between its ears!', antlers: 'Tiny velvet antlers sprout from its brow!',
+unihorn: 'A single spiral horn grows from its forehead!', scales: 'Its haunches harden into glinting scales!', spines: 'Icy spines rise along its back!',
+'tail-lizard': 'Its tail stretches into a scaly lizard tail!', 'tail-plume': 'Its tail blooms into a long feathery plume!', giant: 'It swells to twice its size!',
+tiny: 'It shrinks to the size of a kitten!', eye3: 'A third eye opens on its forehead!', wings: 'Little membrane wings unfold from its shoulders!',
+};
+const CAUSE_OF = { toxicity: 'poison', death: 'death', fire: 'fire', frost: 'frost', acid: 'acid', alkali: 'alkali', transformation: 'change', arcana: 'arcana' };
+const partners = (t) => TRAIT_EXCLUSIVE.filter((g) => g.includes(t)).flat().filter((x) => x !== t);
+function growTraits(r, e0, e1, applied) {
+const grown = [];
+for (let n = 0; n < TRAIT_AT.length && r.traits.length < 5; n++) {
+const T = TRAIT_AT[n];
+if (!(e0 < T && T <= e1)) continue;
+const banned = new Set(r.traits.flatMap((t) => [t, ...partners(t)]));
+const cands = TRAITS.filter((t) => !banned.has(t));
+if (!cands.length) break;
+const rng = new Rng(hashString(`${r.id}:${r.look.seed}:trait:${n}`));
+const w = cands.map((t) => 1 + Object.entries(TRAIT_AFF[t] || {}).reduce((a, [k, f]) => a + f * Math.min(40, applied[k] || 0) / 10, 0));
+const t = rng.weighted(cands, w);
+r.traits.push(t);
+grown.push(t);
+}
+return grown;
+}
+function rabbitResponse(before, effects, ml, o = {}) {
+const r = normalizeRabbit(JSON.parse(JSON.stringify(before || {})), before && before.id);
+const obs = [];
+const say = (key, tone, text) => obs.push({ key, tone, text });
+if (!r.alive) return { after: r, observations: [{ key: '', tone: /** @type {'neutral'} */ ('neutral'), text: `${r.name || 'The rabbit'} is dead. Choose or buy another rabbit.` }], harm: 0, applied: {}, react: [], newTraits: [], cause: r.cause };
+const stage = stageOf(r, o.day);
+const x = Math.min(2.5, Math.max(0, ml) / 10);
+const s = (STAGE_SENS[stage] || 1) / (r.look.size || 1) * (r.traits.includes('giant') ? 0.85 : 1) * (r.traits.includes('tiny') ? 1.2 : 1);
+const e = (k) => (Number(effects[EFFECT_INDEX[k]]) || 0) * x * s;
+const acidity = e('acidity');
+const a = {
+vitality: Math.max(0, e('vitality')), strength: Math.max(0, e('strength')), love: Math.max(0, e('love')), arcana: Math.max(0, e('arcana')),
+transformation: Math.max(0, e('transformation')), fire: Math.max(0, e('fire')), frost: Math.max(0, e('frost')),
+acid: Math.max(0, acidity), alkali: Math.max(0, -acidity), toxicity: Math.max(0, e('toxicity')), death: Math.max(0, e('death')),
+};
+const m = r.marks;
+const add = (k, v) => { m[k] = clamp(m[k] + v, 0, 100); };
+add('vitality', 0.8 * a.vitality);
+add('strength', a.strength);
+add('love', 1.2 * a.love);
+add('arcana', 1.2 * a.arcana);
+add('transformation', 1.3 * a.transformation);
+add('fire', 1.2 * a.fire - 0.6 * a.frost);
+add('frost', 1.2 * a.frost - 0.6 * a.fire);
+add('acid', 0.9 * a.acid - 0.5 * a.alkali);
+add('alkali', 0.9 * a.alkali - 0.5 * a.acid);
+add('toxicity', a.toxicity - 0.5 * a.vitality);
+add('death', 1.5 * a.death - 0.3 * a.vitality);
+const e0 = r.exposure.transformation;
+for (const k of RABBIT_MARKS) r.exposure[k] = round1(r.exposure[k] + a[k]);
+const hurt = {
+toxicity: a.toxicity * 1.1, death: a.death * 1.8,
+fire: a.fire > 18 ? (a.fire - 18) * 0.8 : 0, frost: a.frost > 18 ? (a.frost - 18) * 0.7 : 0,
+acid: a.acid > 12 ? (a.acid - 12) * 0.8 : 0, alkali: a.alkali > 20 ? (a.alkali - 20) * 0.5 : 0,
+transformation: a.transformation > 30 ? (a.transformation - 30) * 0.3 : 0, arcana: a.arcana > 40 ? (a.arcana - 40) * 0.3 : 0,
+};
+const harm = Object.values(hurt).reduce((p, v) => p + v, 0);
+const heal = 0.7 * a.vitality;
+r.scar = Math.min(80, round1(r.scar + 0.2 * Math.max(0, harm - 5)));
+const maxHealth = Math.max(20, 100 - r.scar);
+r.health = round1(clamp(r.health + 0.5 * heal - harm, 0, maxHealth));
+r.alive = r.health > 0.5;
+const big = (v) => v > 20;
+if (a.vitality > 1) say('vitality', 'good', big(a.vitality) ? 'Its coat gleams; it bounds about full of life.' : 'It looks refreshed.');
+if (a.strength > 1) say('strength', 'good', big(a.strength) ? 'Its haunches swell with muscle; it shoves at the bars.' : 'It moves with new strength.');
+if (a.love > 1) say('love', 'good', big(a.love) ? 'It nuzzles your hand, utterly devoted; little hearts seem to hang in the air.' : 'It nuzzles your hand.');
+if (a.arcana > 1) say('arcana', 'neutral', big(a.arcana) ? 'Violet sparks crawl through its fur; faint runes glimmer.' : 'Its eyes catch a strange glimmer.');
+if (a.transformation > 1) say('transformation', 'neutral', 'Its fur ripples and its shape shifts.');
+if (a.fire > 1) say('fire', a.fire > 18 ? 'bad' : 'neutral', a.fire > 18 ? 'It yelps; its fur smoulders and singes.' : 'It pants in a warm glow.');
+if (a.frost > 1) say('frost', a.frost > 18 ? 'bad' : 'neutral', a.frost > 18 ? 'Frost rimes its whiskers; icicles hang from its chin and it shivers.' : 'It shivers; frost feathers its whiskers.');
+if (a.acid > 1) say('acidity', a.acid > 12 ? 'bad' : 'neutral', a.acid > 12 ? 'It squeals: the fur burns away in raw patches.' : 'It scratches at a stinging patch of fur.');
+if (a.alkali > 1) say('acidity', a.alkali > 20 ? 'bad' : 'neutral', a.alkali > 20 ? 'A chalky crust cakes its fur and cracks its skin.' : 'A chalky film dulls its coat.');
+if (a.toxicity > 1) say('toxicity', 'bad', a.toxicity > 15 ? 'It staggers, sick and trembling.' : 'It looks queasy.');
+if (a.death > 1) say('death', 'bad', a.death > 15 ? 'A grey pallor creeps over it.' : 'It grows still and cold for a moment.');
+const newTraits = growTraits(r, e0, r.exposure.transformation, a);
+for (const t of newTraits) say('transformation', 'neutral', TRAIT_LINES[t]);
+if (!r.alive) {
+const worst = Object.entries(hurt).sort((p, q) => q[1] - p[1])[0];
+r.cause = worst && worst[1] > 0 ? CAUSE_OF[worst[0]] : 'frail';
+r.diedDay = Number.isFinite(o.day) ? o.day : null;
+r.pregnant = null;
+say('', 'bad', r.cause === 'fire' ? 'It collapses in a smouldering heap.' : r.cause === 'frost' ? 'It freezes stiff and topples over.' : r.cause === 'poison' ? 'It convulses, then lies still.' : 'It collapses and does not get up.');
+}
+if (!obs.length) say('', 'neutral', 'No visible change.');
+r.trials++;
+const react = RABBIT_MARKS.filter((k) => a[k] > 1);
+return { after: r, observations: obs, harm, applied: a, react, newTraits, cause: r.alive ? null : r.cause };
+}
+function colonyDay(c, o) {
+const day = o.day;
+const rng = new Rng(hashString(`${o.seed ?? c.seed}:colony:${day}`));
+const rep = { day, born: [], grown: [], died: [], lost: 0, conceived: 0 };
+const fed = c.fedDay === day - 1;
+const die = (r, cause) => {
+r.alive = false; r.health = 0; r.cause = cause; r.diedDay = day; r.pregnant = null;
+rep.died.push({ id: r.id, name: r.name, cause });
+};
+for (const r of c.rabbits) {
+if (!r.alive) continue;
+for (const k of RABBIT_MARKS) {
+const v = r.marks[k] * MARK_DECAY[k];
+r.marks[k] = v < 0.5 ? 0 : round1(v);
+}
+const poison = Math.max(0, r.marks.toxicity - 40) * 0.5 + Math.max(0, r.marks.death - 40) * 0.4;
+if (poison > 0) {
+r.health = round1(r.health - poison);
+r.scar = Math.min(80, round1(r.scar + 0.2 * poison));
+}
+if (r.health <= 0.5) { die(r, r.marks.death > r.marks.toxicity ? 'death' : 'poison'); continue; }
+const age = day - r.born;
+if (age > LIFESPAN_DAYS && rng.chance(Math.min(0.5, (age - LIFESPAN_DAYS) / 24))) { die(r, 'age'); continue; }
+const maxHealth = Math.max(20, 100 - r.scar) * (stageOf(r, day) === 'elder' ? 0.9 : 1);
+r.health = round1(Math.min(maxHealth, r.health + 10 + (fed ? 6 : 0)));
+if (stageOf(r, day - 1) !== 'adult' && stageOf(r, day - 1) !== 'elder' && stageOf(r, day) === 'adult') rep.grown.push({ id: r.id, name: r.name });
+}
+let living = c.rabbits.filter((r) => r.alive).length;
+for (const doe of c.rabbits.slice()) {
+if (!doe.pregnant) continue;
+if (!doe.alive) { doe.pregnant = null; continue; }
+if (doe.pregnant.due > day) continue;
+const sireId = doe.pregnant.sire;
+const sire = findRabbit(c, sireId) || c.memorial.find((x) => x.id === sireId) || doe;
+const litter = rng.int(1, 3);
+const n = Math.max(0, Math.min(litter, o.cap - living));
+rep.lost += litter - n;
+for (let k = 0; k < n; k++) {
+const kit = makeRabbit(c, { born: day, sex: rng.chance(0.5) ? 'f' : 'm', look: inheritLook(doe.look, sire.look, rng), parents: [doe.id, sireId] }, rng);
+rep.born.push({ id: kit.id, name: kit.name, mother: doe.name });
+living++;
+}
+doe.pregnant = null;
+}
+if (c.breed !== false) {
+const eligible = (r) => r.alive && stageOf(r, day) === 'adult' && r.health >= 60 && r.marks.toxicity < 30 && r.marks.death < 20;
+const bucks = c.rabbits.filter((r) => r.sex === 'm' && eligible(r)).sort((p, q) => q.marks.love - p.marks.love || (p.id < q.id ? -1 : 1));
+let pending = 2 * c.rabbits.filter((r) => r.alive && r.pregnant).length;
+for (const doe of c.rabbits) {
+if (doe.sex !== 'f' || doe.pregnant || !eligible(doe)) continue;
+if (living + pending >= o.cap) break;
+const buck = bucks.find((b) => !related(doe, b));
+if (!buck) continue;
+const p = 0.3 + 0.4 * Math.min(1, Math.max(doe.marks.love, buck.marks.love) / 50) + (fed ? 0.1 : 0);
+if (rng.chance(p)) {
+doe.pregnant = { sire: buck.id, due: day + GESTATION_DAYS };
+pending += 2;
+rep.conceived++;
+}
+}
+}
+c.day = day;
+return rep;
+}
+function retireRabbit(c, id, how, parts, day) {
+const i = c.rabbits.findIndex((r) => r.id === id);
+if (i < 0) return null;
+const r = c.rabbits[i];
+const entry = {
+id: r.id, name: r.name, sex: r.sex, look: r.look, born: r.born, diedDay: r.diedDay, cause: r.cause, stage: stageOf(r, r.diedDay ?? day),
+traits: r.traits.slice(), exposure: Object.fromEntries(RABBIT_MARKS.map((k) => [k, round1(r.exposure[k] || 0)])), how, parts: parts.slice(), parents: r.parents,
+};
+c.rabbits.splice(i, 1);
+c.memorial.unshift(entry);
+c.memorial = trimMemorial(c.memorial);
+if (c.focus === id) { const f = c.rabbits.find((x) => x.alive) || c.rabbits[0]; c.focus = f ? f.id : null; }
+return entry;
+}
+function trimMemorial(list) {
+let buried = 0;
+return list.filter((m) => m.how === 'processed' || ++buried <= MEMORIAL_LIMIT);
+}
+function remainsSource(r, day) {
+return {
+id: r.id, name: r.name, sex: r.sex, look: r.look, exposure: { ...r.exposure }, cause: r.cause || null,
+stage: /** @type {any} */ (r).stage || stageOf(r, r.diedDay ?? day), traits: r.traits.slice(), diedDay: r.diedDay ?? null,
+};
+}
+const CAUSE_WORDS = { poison: 'poisoned', death: 'withered by death magic', fire: 'burned', frost: 'frozen', acid: 'eaten by acid', alkali: 'scalded by lye', change: 'torn apart by change', arcana: 'overwhelmed by magic', age: 'died of old age', frail: 'too frail', unknown: 'died' };
+function causeWord(cause) {
+return CAUSE_WORDS[cause || 'unknown'] || 'died';
+}
+function rabbitCondition(r, day) {
+const w = [];
+if (!r.alive) {
+w.push(`dead — ${causeWord(r.cause)}${Number.isFinite(r.diedDay) ? ` (day ${r.diedDay})` : ''}`);
+} else {
+const h = r.health;
+w.push(h >= 75 ? 'healthy' : h >= 40 ? 'weakened' : h >= 10 ? 'very weak' : 'near death');
+if (r.scar >= 20) w.push(r.scar >= 50 ? 'badly scarred' : 'scarred');
+}
+const s = rabbitSnap(r, day);
+const L = (k) => s.lv[MARK_INDEX[k]];
+const pick = (k, words) => { const l = L(k); if (l && r.alive) w.push(words[l - 1]); };
+pick('vitality', ['bright-eyed', 'glowing with health', 'radiant']);
+pick('strength', ['sturdy', 'muscular', 'hulking']);
+pick('love', ['affectionate', 'lovestruck', 'besotted']);
+pick('arcana', ['glimmering', 'sparkling', 'crackling with magic']);
+pick('transformation', ['shimmering', 'shifting', 'changing before your eyes']);
+pick('fire', ['warm', 'smouldering', 'aflame']);
+pick('frost', ['chilly', 'frosted', 'frozen stiff']);
+pick('acid', ['itchy', 'burned in patches', 'raw with acid burns']);
+pick('alkali', ['dusty', 'crusted', 'caked in lye']);
+pick('toxicity', ['queasy', 'sick', 'poisoned']);
+pick('death', ['pale', 'grey and cold', 'barely clinging on']);
+if (r.alive && r.pregnant) w.push('expecting kits');
+if (r.traits.length) w.push(r.traits.map((t) => TRAIT_WORDS[t] || t).join(', '));
+return w;
+}
+function normalizeLook(d, id) {
+const fb = lookFromSeed(String(id || 'x'));
+if (!d || typeof d !== 'object') return fb;
+const col = (v, f) => (Array.isArray(v) && v.length === 3 && v.every((x) => Number.isFinite(x)) ? v.map((x) => clamp(x, 0, 1)) : f);
+return {
+coat: col(d.coat, fb.coat), coat2: col(d.coat2, fb.coat2),
+pattern: PATTERNS.includes(d.pattern) ? d.pattern : fb.pattern,
+ear: EARS.includes(d.ear) ? d.ear : fb.ear,
+size: clamp(fin(d.size, 1), 0.85, 1.15),
+eye: /** @type {'dark'|'ruby'} */ (d.eye === 'ruby' ? 'ruby' : 'dark'),
+tail: /** @type {0|1|2} */ ([0, 1, 2].includes(d.tail) ? d.tail : 1),
+seed: Number.isFinite(d.seed) && d.seed > 0 ? Math.floor(d.seed) : fb.seed,
+};
+}
+function normalizeMarks(m) {
+const out = emptyMarks();
+if (m && typeof m === 'object') for (const k of RABBIT_MARKS) out[k] = Math.max(0, fin(m[k], 0));
+return out;
+}
+function normalizeRabbit(r, fallbackId) {
+const d = r && typeof r === 'object' ? r : {};
+const id = typeof d.id === 'string' && d.id ? d.id : fallbackId || 'r1';
+const traits = [];
+for (const t of Array.isArray(d.traits) ? d.traits : []) {
+if (!TRAITS.includes(t) || traits.includes(t) || traits.some((x) => partners(x).includes(t))) continue;
+if (traits.length < 5) traits.push(t);
+}
+const scar = clamp(fin(d.scar, 0), 0, 80);
+const alive = d.alive !== false;
+const rb = /** @type {Rabbit} */ ({
+id, name: typeof d.name === 'string' && d.name ? d.name : 'Clover', sex: d.sex === 'm' ? 'm' : 'f',
+born: fin(d.born, FOUNDER_BORN), look: normalizeLook(d.look, id), parents: Array.isArray(d.parents) ? d.parents.filter((p) => typeof p === 'string').slice(0, 2) : null,
+health: clamp(fin(d.health, 100), 0, 100), alive, trials: Math.max(0, fin(d.trials, 0) | 0),
+marks: normalizeMarks(d.marks), exposure: normalizeMarks(d.exposure), scar, traits,
+doses: (Array.isArray(d.doses) ? d.doses : []).filter((x) => x && typeof x.rec === 'string').map((x) => ({
+rec: x.rec, day: fin(x.day, 0) | 0, ml: Math.max(0, fin(x.ml, 0)), src: x.src === 'vial' ? 'vial' : 'cauldron', obs: typeof x.obs === 'string' ? x.obs : '', ...(x.died ? { died: 1 } : {}),
+})).slice(-DOSE_LIMIT),
+dosesDropped: Math.max(0, fin(d.dosesDropped, 0) | 0),
+pregnant: alive && d.pregnant && typeof d.pregnant.sire === 'string' && Number.isFinite(d.pregnant.due) ? { sire: d.pregnant.sire, due: d.pregnant.due } : null,
+diedDay: alive ? null : Number.isFinite(d.diedDay) ? d.diedDay : null,
+cause: alive ? null : typeof d.cause === 'string' && d.cause ? d.cause : 'unknown',
+});
+return rb;
+}
+const LEGACY_MARKS = { glow: 'arcana', burn: 'fire', frost: 'frost', love: 'love', change: 'transformation', sick: 'toxicity', etch: 'acid' };
+function normalizeColony(c, legacy, records = []) {
+if (c && typeof c === 'object' && Array.isArray(c.rabbits)) {
+const seen = new Set();
+const rabbits = [];
+for (const r of c.rabbits) {
+if (!r || typeof r !== 'object' || typeof r.id !== 'string' || seen.has(r.id)) continue;
+seen.add(r.id);
+rabbits.push(normalizeRabbit(r));
+}
+const memorial = trimMemorial((Array.isArray(c.memorial) ? c.memorial : []).filter((m) => m && typeof m.id === 'string' && !seen.has(m.id)).map((m) => ({
+id: m.id, name: typeof m.name === 'string' ? m.name : 'Rabbit', sex: m.sex === 'm' ? 'm' : 'f', look: normalizeLook(m.look, m.id), born: fin(m.born, FOUNDER_BORN),
+diedDay: Number.isFinite(m.diedDay) ? m.diedDay : null, cause: typeof m.cause === 'string' ? m.cause : 'unknown',
+stage: ['kit', 'young', 'adult', 'elder'].includes(m.stage) ? m.stage : 'adult', traits: (Array.isArray(m.traits) ? m.traits : []).filter((t) => TRAITS.includes(t)).slice(0, 5),
+exposure: normalizeMarks(m.exposure), how: m.how === 'buried' ? 'buried' : 'processed', parts: (Array.isArray(m.parts) ? m.parts : []).filter((p) => typeof p === 'string'),
+parents: Array.isArray(m.parents) ? m.parents.filter((p) => typeof p === 'string').slice(0, 2) : null,
+})));
+const nums = [...rabbits, ...memorial].map((r) => Number(String(r.id).replace(/^r/, ''))).filter(Number.isFinite);
+const out = /** @type {Colony} */ ({
+seed: typeof c.seed === 'string' ? c.seed : '', serial: Math.max(fin(c.serial, 0) | 0, ...nums, 0),
+focus: null, breed: c.breed !== false, fedDay: fin(c.fedDay, 0) | 0, day: fin(c.day, 0) | 0, rabbits, memorial,
+});
+out.focus = typeof c.focus === 'string' && findRabbit(out, c.focus) ? c.focus : (focusRabbit(out) || { id: null }).id;
+return out;
+}
+const col = createColony();
+if (legacy && typeof legacy === 'object') {
+const f = col.rabbits[0];
+const h = Number(legacy.health);
+f.health = Number.isFinite(h) ? clamp(h, 0, 100) : 100;
+f.alive = legacy.alive !== false;
+f.trials = Math.max(0, fin(legacy.trials, 0) | 0);
+const lm = legacy.marks && typeof legacy.marks === 'object' ? legacy.marks : {};
+for (const [old, k] of Object.entries(LEGACY_MARKS)) f.marks[k] = clamp(Math.max(f.marks[k], fin(lm[old], 0)), 0, 100);
+const vig = clamp(fin(lm.vigor, 0), 0, 100);
+f.marks.strength = Math.max(f.marks.strength, vig);
+f.marks.vitality = Math.max(f.marks.vitality, 0.5 * vig);
+const mine = (records || []).filter((r) => r && r.subjectId === 'rabbit' && !r.rabbitId).slice().reverse();
+for (const r of mine) {
+r.rabbitId = f.id;
+r.rabbitName = f.name;
+const k = Math.min(2.5, (Number(r.ml) || 0) / 10);
+for (const [key, v] of Object.entries(r.values || {})) {
+const ch = key === 'acidity' ? (v >= 0 ? 'acid' : 'alkali') : key;
+if (MARK_INDEX[ch] !== undefined) f.exposure[ch] = round1(f.exposure[ch] + Math.abs(Number(v) || 0) * k);
+}
+recordDose(f, { rec: r.id, day: fin(r.day, 0) | 0, ml: fin(r.ml, 0), src: r.source === 'vial' ? 'vial' : 'cauldron',
+obs: (r.observations || []).filter((x) => x && x.key).map((x) => x.key + (x.tone === 'good' ? '+' : x.tone === 'bad' ? '-' : '')).join(','), ...(r.died ? { died: 1 } : {}) });
+}
+for (const k of RABBIT_MARKS) f.exposure[k] = Math.max(f.exposure[k], f.marks[k]);
+growTraits(f, 0, f.exposure.transformation, {});
+if (!f.alive) { f.health = 0; f.cause = 'unknown'; f.diedDay = null; }
+col.focus = f.alive ? f.id : 'r2';
+}
+return col;
+}
+function installRabbitAlias(trials) {
+Object.defineProperty(trials.subjects, 'rabbit', {
+enumerable: false,
+configurable: true,
+get() {
+return focusRabbit(trials.colony) || { id: '', name: '', health: 0, alive: false, trials: 0, marks: emptyMarks() };
+},
+set(v) {
+const f = focusRabbit(trials.colony);
+if (!f || !v || typeof v !== 'object') return;
+if (v.id === f.id) { Object.assign(f, normalizeRabbit(v, f.id)); return; }
+if (Number.isFinite(Number(v.health))) f.health = clamp(Number(v.health), 0, 100);
+if (typeof v.alive === 'boolean') f.alive = v.alive;
+if (Number.isFinite(v.trials)) f.trials = v.trials;
+if (v.marks && typeof v.marks === 'object') {
+for (const [k, x] of Object.entries(v.marks)) {
+const ch = LEGACY_MARKS[k] || (MARK_INDEX[k] !== undefined ? k : k === 'vigor' ? 'strength' : null);
+if (ch && Number.isFinite(x)) f.marks[ch] = clamp(x, 0, 100);
+}
+}
+if (!f.alive) { f.pregnant = null; f.cause = f.cause || 'unknown'; if (f.diedDay === undefined) f.diedDay = null; }
+},
+});
+return trials;
+}
+return { RABBIT_MARKS, MARK_INDEX, KIT_DAYS, ADULT_DAYS, ELDER_DAYS, LIFESPAN_DAYS, FOUNDER_BORN, GESTATION_DAYS, DOSE_LIMIT, MEMORIAL_LIMIT, LEVEL_AT, TRAIT_AT, TRAITS, TRAIT_EXCLUSIVE, TRAIT_WORDS, COATS, rollLook, inheritLook, lookFromSeed, visibleLevel, stageOf, rabbitSnap, encodeSnap, defaultSnap, decodeSnap, NAMES, createColony, findRabbit, livingRabbits, bodies, focusRabbit, pickName, makeRabbit, addBoughtRabbit, recordDose, related, STAGE_ERR, MARK_DECAY, rabbitResponse, colonyDay, retireRabbit, trimMemorial, remainsSource, causeWord, rabbitCondition, normalizeRabbit, normalizeColony, installRabbitAlias };
 })();
 // src/game/experiments.js
 const __m27 = (() => {
 const { EFFECTS, EFFECT_KEYS, EFFECT_INDEX, NE, potencyWord } = __m13;
+const { createColony, normalizeColony, installRabbitAlias, rabbitResponse, findRabbit, focusRabbit, recordDose, rabbitSnap, encodeSnap, stageOf, addBoughtRabbit, STAGE_ERR } = __m28;
 const SUBJECTS = [
 { id: 'rabbit', name: 'Moon Rabbit', kind: 'animal', reveals: ['vitality', 'strength', 'love', 'toxicity', 'death'], cost: 6,
 desc: 'A gentle animal. Shows healing, strength, affection, poison and death.' },
@@ -3348,13 +3920,16 @@ return { health: 100, alive: true, trials: 0, marks: { glow: 0, burn: 0, frost: 
 }
 function createTrials() {
 const subjects = {};
-for (const d of SUBJECTS) subjects[d.id] = freshSubject(d);
-return { subjects, records: /** @type {TrialRecord[]} */ ([]), serial: 0, laws: /** @type {Record<string, {evidence:number, found:number|null}>} */ ({}) };
+for (const d of SUBJECTS) if (d.id !== 'rabbit') subjects[d.id] = freshSubject(d);
+const t = { subjects, records: /** @type {TrialRecord[]} */ ([]), serial: 0, laws: /** @type {Record<string, {evidence:number, found:number|null}>} */ ({}), colony: createColony() };
+installRabbitAlias(t);
+return t;
 }
 function normalizeTrials(t) {
 const out = createTrials();
 if (!t || typeof t !== 'object') return out;
 for (const d of SUBJECTS) {
+if (d.id === 'rabbit') continue;
 const s = t.subjects && t.subjects[d.id];
 if (s && typeof s === 'object') {
 const marks = { ...out.subjects[d.id].marks };
@@ -3365,9 +3940,15 @@ out.subjects[d.id] = { health: Number.isFinite(s.health) ? clamp(s.health, 0, 10
 if (Array.isArray(t.records)) out.records = t.records.filter((r) => r && typeof r === 'object' && typeof r.subjectId === 'string' && r.values).slice(0, RECORD_LIMIT);
 out.serial = Math.max(t.serial | 0, ...out.records.map((r) => r.serial | 0), 0);
 if (t.laws && typeof t.laws === 'object') for (const [k, v] of Object.entries(t.laws)) if (v && typeof v === 'object') out.laws[k] = { evidence: v.evidence | 0, found: v.found ?? null };
+out.colony = normalizeColony(t.colony, t.subjects && t.subjects.rabbit, out.records);
+installRabbitAlias(out);
 return out;
 }
 function subjectResponse(def, before, effects, ml) {
+if (def.id === 'rabbit') {
+const r = rabbitResponse(before, effects, ml, {});
+return { after: /** @type {any} */ (r.after), observations: r.observations, harm: r.harm };
+}
 const x = Math.min(2.5, Math.max(0, ml) / 10); // exposure relative to a 10 ml dose
 const v = (key) => effects[EFFECT_INDEX[key]] * x;
 const after = { ...before, marks: { ...before.marks } };
@@ -3444,10 +4025,21 @@ return { after, observations: obs, harm };
 function runTrial(trials, subjectId, dose, ctx) {
 const def = SUBJECT_BY_ID[subjectId];
 if (!def) throw new Error('Choose a test subject.');
-const st = trials.subjects[subjectId] || (trials.subjects[subjectId] = freshSubject(def));
+const isRabbit = subjectId === 'rabbit';
+let st;
+if (isRabbit) {
+st = ctx.rabbitId ? findRabbit(trials.colony, ctx.rabbitId) : focusRabbit(trials.colony);
+if (!st) throw new Error('Choose a rabbit.');
+if (!st.alive) throw new Error(`${st.name} is dead — choose or buy another rabbit.`);
+} else {
+st = trials.subjects[subjectId] || (trials.subjects[subjectId] = freshSubject(def));
 if (!st.alive) throw new Error(`The ${def.name.toLowerCase()} is spent — replace it first.`);
+}
 if (!(ctx.ml > 0)) throw new Error('Choose a positive dose.');
-const res = subjectResponse(def, st, dose.effects, ctx.ml);
+const rr = isRabbit ? rabbitResponse(st, dose.effects, ctx.ml, { day: ctx.day }) : null;
+const res = rr || subjectResponse(def, st, dose.effects, ctx.ml);
+const errK = Math.sqrt(10 / ctx.ml) * (isRabbit ? STAGE_ERR[stageOf(st, ctx.day)] || 1 : 1);
+const err = {};
 const values = {};
 const theory = {};
 const anomalies = [];
@@ -3455,6 +4047,7 @@ for (const key of def.reveals) {
 const k = EFFECT_INDEX[key];
 const val = Math.round(dose.effects[k] * 10) / 10;
 values[key] = Math.abs(val) < 0.5 ? 0 : val;
+err[key] = Math.round((0.6 + 0.04 * Math.abs(values[key])) * errK * 10) / 10;
 theory[key] = Math.round((ctx.theory?.[k] ?? 0) * 10) / 10;
 if (Math.abs(values[key] - theory[key]) > Math.max(4, 0.3 * Math.abs(theory[key]))) anomalies.push(key);
 }
@@ -3476,9 +4069,18 @@ id: 't' + trials.serial, serial: trials.serial, at: ctx.now ?? Date.now(), day: 
 batchId: ctx.batchId, rev: ctx.rev, revealed: def.reveals.slice(), values, theory,
 observations: res.observations, anomalies, lawsFound,
 look: { color: (dose.color || [0.5, 0.5, 0.5]).map((c) => Math.round(c * 1000) / 1000), temperature: Math.round(dose.temperature ?? 20) },
-parts: (ctx.parts || []).map((p) => ({ id: p.id, ml: Math.round(p.ml) })), died: !res.after.alive,
+parts: (ctx.parts || []).map((p) => ({ id: p.id, ml: Math.round(p.ml) })), died: !res.after.alive, err,
 };
-trials.subjects[subjectId] = res.after;
+if (isRabbit) {
+const after = rr.after;
+record.rabbitId = st.id;
+record.rabbitName = st.name;
+record.replay = { b: encodeSnap(rabbitSnap(st, ctx.day)), a: encodeSnap(rabbitSnap(after, ctx.day)), rx: rr.react.join(',') };
+recordDose(after, { rec: record.id, day: ctx.day, ml: ctx.ml, src: ctx.source === 'vial' ? 'vial' : 'cauldron',
+obs: rr.observations.filter((o) => o.key).map((o) => o.key + (o.tone === 'good' ? '+' : o.tone === 'bad' ? '-' : '')).join(','), ...(after.alive ? {} : { died: 1 }) });
+const i = trials.colony.rabbits.indexOf(st);
+if (i >= 0) trials.colony.rabbits[i] = after;
+} else trials.subjects[subjectId] = res.after;
 trials.records.unshift(record);
 if (trials.records.length > RECORD_LIMIT) trials.records.length = RECORD_LIMIT;
 return record;
@@ -3486,6 +4088,11 @@ return record;
 function resetSubject(trials, id) {
 const def = SUBJECT_BY_ID[id];
 if (!def) throw new Error('Unknown subject.');
+if (id === 'rabbit') {
+const r = addBoughtRabbit(trials.colony, { day: trials.colony.day || 1 });
+trials.colony.focus = r.id;
+return r;
+}
 trials.subjects[id] = { ...freshSubject(def), trials: trials.subjects[id]?.trials || 0 };
 return trials.subjects[id];
 }
@@ -3544,8 +4151,8 @@ return v < a ? a : v > b ? b : v;
 return { SUBJECTS, SUBJECT_BY_ID, RECORD_LIMIT, DOSES, driftTolerance, createTrials, normalizeTrials, subjectResponse, runTrial, resetSubject, certification, requiredEffects, missingEffects, suggestSubjects, knownLaws, describeReading };
 })();
 // src/game/gathering.js
-const __m28 = (() => {
-const { Rng } = __m6;
+const __m29 = (() => {
+const { Rng, hashString } = __m6;
 const REGIONS = [
 { id: 'forest', name: 'Whisperwood', rank: 0, magical: false, desc: 'Old oaks and ferns. Roots and leaves grow in the shade.', sky: [0.36, 0.52, 0.42] },
 { id: 'meadow', name: 'Sunlit Meadow', rank: 0, magical: false, desc: 'Flowers and clover under an open sky.', sky: [0.55, 0.72, 0.9] },
@@ -3599,7 +4206,7 @@ rare,
 return out;
 }
 function createGathering(now = Date.now()) {
-return { nodes: /** @type {Record<string, {stock:number, at:number}>} */ ({}), total: 0, trips: 0, created: now };
+return { nodes: /** @type {Record<string, {stock:number, at:number, scar?:boolean}>} */ ({}), total: 0, trips: 0, created: now };
 }
 function normalizeGathering(g, now = Date.now()) {
 const out = createGathering(now);
@@ -3608,7 +4215,7 @@ if (g.nodes && typeof g.nodes === 'object') {
 for (const [id, v] of Object.entries(g.nodes)) {
 if (!v || typeof v !== 'object') continue;
 const stock = Number(v.stock), at = Number(v.at);
-if (Number.isFinite(stock) && Number.isFinite(at)) out.nodes[id] = { stock: Math.max(0, stock), at: Math.min(at, now) };
+if (Number.isFinite(stock) && Number.isFinite(at)) out.nodes[id] = { stock: Math.max(0, stock), at: Math.min(at, now), ...(/** @type {any} */ (v).scar ? { scar: true } : {}) };
 }
 }
 out.total = Number.isFinite(g.total) ? g.total : 0;
@@ -3618,14 +4225,87 @@ return out;
 function depositStatus(g, d, now = Date.now()) {
 const saved = g.nodes[d.id];
 let stock = d.capacity;
+const scarred = !!(saved && saved.scar);
+const regrow = d.regrowMs * (scarred ? SCAR_SLOWDOWN : 1);
 if (saved) {
 const dt = Math.max(0, now - saved.at);
-stock = Math.min(d.capacity, saved.stock + (dt / d.regrowMs) * d.capacity);
+stock = Math.min(d.capacity, saved.stock + (dt / regrow) * d.capacity);
 }
 const available = Math.floor(stock + 1e-6);
-const fullIn = stock >= d.capacity ? 0 : ((d.capacity - stock) / d.capacity) * d.regrowMs;
-const nextIn = available >= Math.min(d.take, d.capacity) ? 0 : ((Math.min(d.take, d.capacity) - stock) / d.capacity) * d.regrowMs;
-return { stock, available, fraction: stock / d.capacity, fullIn, nextIn };
+const fullIn = stock >= d.capacity ? 0 : ((d.capacity - stock) / d.capacity) * regrow;
+const nextIn = available >= Math.min(d.take, d.capacity) ? 0 : ((Math.min(d.take, d.capacity) - stock) / d.capacity) * regrow;
+return { stock, available, fraction: stock / d.capacity, fullIn, nextIn, scarred: scarred && stock < d.capacity };
+}
+const SCAR_SLOWDOWN = 2;
+const METHODS = {
+pick: { verb: 'Pick', tool: null, sound: 'snip', icon: 'rose', hand: '' },
+dig: { verb: 'Dig up', tool: 'trowel', sound: 'dig', icon: 'trowel', hand: 'by hand, half as much — a trowel digs it out whole' },
+mine: { verb: 'Chip out', tool: 'rockhammer', sound: 'crack', icon: 'pick', hand: 'prised out by hand, half as much — a rock hammer would split the seam' },
+scrape: { verb: 'Scrape', tool: 'sickle', sound: 'snip', icon: 'sickle', hand: 'torn off by hand, half as much — a sickle cuts it clean' },
+sweep: { verb: 'Sweep up', tool: 'brush', sound: 'dig', icon: 'brush', hand: 'scooped by hand, half as much — a brush gathers the fine dust' },
+};
+function methodOf(m) {
+return METHODS[(m && m.wild && m.wild.gather) || 'pick'] || METHODS.pick;
+}
+function dayPart(st) {
+if (st.dayOver || st.customerIndex >= st.customersPerDay - 1) return 'dusk';
+return st.customerIndex <= 0 ? 'dawn' : 'day';
+}
+const DAY_PART_NAME = { dawn: 'Dawn', day: 'Midday', dusk: 'Dusk' };
+const WEATHERS = [
+{ id: 'clear', name: 'Clear skies', icon: 'sun', desc: 'A fair day for foraging.' },
+{ id: 'rain', name: 'Soft rain', icon: 'drop', desc: 'Plants drink deep: tonight every herb, root and moss grows back in full.' },
+{ id: 'frost', name: 'Hoarfrost', icon: 'snow', desc: 'The meadow flowers stay shut (half the harvest); frost-loving caps swell (half again).' },
+{ id: 'storm', name: 'Thunderstorm', icon: 'bolt', desc: 'Lightning recharges the crystal seams — they are full again tonight. Wind scatters a quarter of every outdoor harvest.' },
+{ id: 'fog', name: 'Fog', icon: 'wisp', desc: 'Twilight lingers all day: dawn and dusk plants stay open from morning to night.' },
+{ id: 'heat', name: 'Heatwave', icon: 'flame', desc: 'Sun-loving flowers are lush (a quarter more); mosses dry out (half as much).' },
+];
+function weatherOn(seed, day) {
+if (day <= 1) return WEATHERS[0];
+const r = new Rng(hashString(`weather:${seed}:${day}`)).next();
+const cut = [0.4, 0.58, 0.7, 0.8, 0.9, 1];
+const ids = ['clear', 'rain', 'fog', 'frost', 'storm', 'heat'];
+const id = ids[cut.findIndex((c) => r < c)];
+return WEATHERS.find((w) => w.id === id) || WEATHERS[0];
+}
+const PLANT_SHAPES = new Set(['root', 'leaf', 'petal', 'flower', 'clover', 'moss', 'cap', 'bean', 'pepper']);
+const FLOWER_SHAPES = new Set(['petal', 'flower', 'clover']);
+function gatherPlan(st, d, m, opts = {}) {
+const method = methodOf(m);
+const hasTool = !method.tool || st.has(method.tool);
+const part = dayPart(st);
+const weather = weatherOn(st.seed, st.day);
+const w = m && m.wild ? m.wild : {};
+const hour = w.dawn ? 'dawn' : w.dusk ? 'dusk' : null;
+const open = !hour || hour === part || weather.id === 'fog';
+const factors = [];
+if (st.has('satchel')) factors.push({ why: 'satchel', f: 1.5 });
+if (!hasTool) factors.push({ why: method.hand, f: 0.5 });
+if (!open) factors.push({ why: `closed until ${hour} — only a few sprigs`, f: 0.25 });
+const shape = w.shape || '';
+if (weather.id === 'frost' && FLOWER_SHAPES.has(shape)) factors.push({ why: 'shut by the frost', f: 0.5 });
+if (weather.id === 'frost' && shape === 'cap') factors.push({ why: 'swollen in the frost', f: 1.5 });
+if (weather.id === 'heat' && (FLOWER_SHAPES.has(shape))) factors.push({ why: 'lush in the heat', f: 1.25 });
+if (weather.id === 'heat' && shape === 'moss') factors.push({ why: 'dried out in the heat', f: 0.5 });
+if (weather.id === 'storm') factors.push({ why: 'wind scatters it', f: 0.75 });
+if (opts.thorough) factors.push({ why: 'thorough: the deposit will regrow slowly', f: 2 });
+const f = factors.reduce((a, x) => a * x.f, 1);
+const take = Math.max(5, Math.floor((d.take * f) / 5) * 5);
+const eff = factors.filter((x) => x.why !== 'satchel' && !x.why.startsWith('thorough')).reduce((a, x) => a * x.f, 1);
+const reserve = opts.thorough ? 0 : Math.round(d.capacity * CAREFUL_RESERVE);
+return { method, hasTool, part, weather, hour, open, factors, take, eff, reserve, thorough: !!opts.thorough };
+}
+const CAREFUL_RESERVE = 0.3;
+function harvestable(g, d, plan, now = Date.now()) {
+const s = depositStatus(g, d, now);
+return Math.floor(Math.min(plan.take, Math.max(0, s.stock - plan.reserve) * plan.eff) / 5) * 5;
+}
+function weatherRegrowth(g, deposits, weather, lookup) {
+for (const d of deposits) {
+const m = lookup(d.materialId);
+const shape = m && m.wild ? m.wild.shape : '';
+if ((weather.id === 'rain' && PLANT_SHAPES.has(shape)) || (weather.id === 'storm' && shape === 'crystal')) delete g.nodes[d.id];
+}
 }
 function harvest(st, d, opts = {}) {
 const now = opts.now ?? Date.now();
@@ -3635,21 +4315,24 @@ const s = depositStatus(g, d, now);
 const have = st.inventory[d.materialId] ?? 0;
 const room = isFinite(have) ? Math.max(0, st.cap.storage - have) : 0;
 if (opts.unlimited) return { ok: true, amount: d.take, remaining: d.capacity };
-const amount = Math.floor(Math.min(d.take, s.available, room) / 5) * 5;
-if (amount <= 0) return { ok: false, amount: 0, reason: room <= 0 ? 'full' : 'depleted', nextIn: s.nextIn };
-g.nodes[d.id] = { stock: s.stock - amount, at: now };
+const eff = opts.eff > 0 ? opts.eff : 1, reserve = Math.max(0, opts.reserve || 0);
+const amount = Math.floor(Math.min(d.take, Math.max(0, s.stock - reserve) * eff, room) / 5) * 5;
+if (amount <= 0) return { ok: false, amount: 0, reason: room <= 0 ? 'full' : reserve > 0 && Math.min(d.take, s.stock * eff) >= 5 ? 'reserve' : 'depleted', nextIn: s.nextIn };
+const drawn = Math.min(s.stock, amount / eff);
+const scar = opts.thorough || (s.scarred && s.stock - drawn < d.capacity);
+g.nodes[d.id] = { stock: s.stock - drawn, at: now, ...(scar ? { scar: true } : {}) };
 st.inventory[d.materialId] = have + amount;
 g.total += amount;
-return { ok: true, amount, remaining: Math.floor(s.stock - amount) };
+return { ok: true, amount, remaining: Math.floor(s.stock - drawn) };
 }
 function newDayRegrowth(g, deposits, now = Date.now()) {
 for (const d of deposits) {
 const saved = g.nodes[d.id];
 if (!saved) continue;
 const s = depositStatus(g, d, now);
-const stock = Math.min(d.capacity, s.stock + d.capacity * 0.5);
+const stock = Math.min(d.capacity, s.stock + d.capacity * (saved.scar ? 0.25 : 0.5));
 if (stock >= d.capacity - 1e-6) delete g.nodes[d.id];
-else g.nodes[d.id] = { stock, at: now };
+else g.nodes[d.id] = { stock, at: now, ...(saved.scar ? { scar: true } : {}) };
 }
 }
 function formatWait(ms) {
@@ -3659,10 +4342,10 @@ const m = Math.ceil(s / 60);
 if (m < 60) return `${m} min`;
 return `${Math.floor(m / 60)} h ${m % 60} min`;
 }
-return { REGIONS, REGION_BY_ID, generateDeposits, createGathering, normalizeGathering, depositStatus, harvest, newDayRegrowth, formatWait };
+return { REGIONS, REGION_BY_ID, generateDeposits, createGathering, normalizeGathering, depositStatus, SCAR_SLOWDOWN, METHODS, methodOf, dayPart, DAY_PART_NAME, WEATHERS, weatherOn, gatherPlan, CAREFUL_RESERVE, harvestable, weatherRegrowth, harvest, newDayRegrowth, formatWait };
 })();
 // src/simulation/particles.js
-const __m31 = (() => {
+const __m32 = (() => {
 const { MAX_SPECIES } = __m18;
 const { PHASE } = __m23;
 const STATE_FIELDS_F32 = ['x', 'y', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet', 'q'];
@@ -3779,7 +4462,7 @@ return this.phase[i] !== PHASE.GAS;
 return { STATE_FIELDS_F32, STATE_FIELDS_I32, STATE_FIELDS_U8, STATE_FIELDS_U32, DERIVED_FIELDS, ARC_NONE, Particles };
 })();
 // src/simulation/grid.js
-const __m32 = (() => {
+const __m33 = (() => {
 class NeighborGrid {
 constructor(minX, minY, maxX, maxY, cell, capacity) {
 this.minX = minX;
@@ -3879,7 +4562,7 @@ for (let a = cellStart[c]; a < cellStart[c + 1]; a++) fn(sorted[a]);
 return { NeighborGrid };
 })();
 // src/simulation/cauldron.js
-const __m33 = (() => {
+const __m34 = (() => {
 const { SIM } = __m23;
 const CAULDRON_SIZES = {
 pot: { key: 'pot', label: 'Iron Pot', mouth: 0.8, belly: 1.0, neck: 0.5, depth: 1.55, capacity: 310 },
@@ -4116,13 +4799,13 @@ return s / this.lidCells;
 return { CAULDRON_SIZES, COLUMN, Cauldron };
 })();
 // src/simulation/derived.js
-const __m34 = (() => {
+const __m35 = (() => {
 const { MAX_SPECIES, NO_BOIL } = __m18;
 const { granularFraction, suspensionLnMult } = __m20;
 const { rgbToOklab, linearToSrgb } = __m8;
 const { PHASE } = __m23;
 const { compositionEffects, EFFECTS, NE } = __m13;
-const { ARC_NONE } = __m31;
+const { ARC_NONE } = __m32;
 const AURA_W = EFFECTS.map((e) => (e.kind === 'magic' ? 1 : 0.55));
 const AURA_COL = EFFECTS.map((e) => e.color);
 const auraFx = new Float64Array(NE);
@@ -4261,7 +4944,7 @@ p.auraI[i] = I / 100;
 return { GAS_MASS, refreshParticle, refreshAura };
 })();
 // src/simulation/rigid.js
-const __m35 = (() => {
+const __m36 = (() => {
 const { PHASE } = __m23;
 const MAX_GROUPS = 2048;
 const BOND = 0.135;
@@ -4455,7 +5138,7 @@ return this.active.length;
 return { FRESH, RigidBodies };
 })();
 // src/simulation/thermal.js
-const __m36 = (() => {
+const __m37 = (() => {
 const { PHASE, SIM } = __m23;
 const KPP = 34; // particle–particle conductance (game-scaled)
 const KW = 24; // particle–wall conductance
@@ -4572,11 +5255,11 @@ for (let k = 0; k < M + L; k++) Tw[k] += flow[k] / Cw[k];
 return { thermalStep, wallStep };
 })();
 // src/simulation/phase.js
-const __m37 = (() => {
+const __m38 = (() => {
 const { PHASE, PHASE_NAMES } = __m23;
 const { MAX_SPECIES, NO_BOIL } = __m18;
-const { refreshParticle } = __m34;
-const { FRESH } = __m35;
+const { refreshParticle } = __m35;
+const { FRESH } = __m36;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const BOIL_VOLATILE = 0.8;
 const DRY_MIN = 0.12;
@@ -4861,7 +5544,7 @@ classifyFluid(sim, j);
 return { classifyFluid, isFrozenGrain, dominantId, phaseStep };
 })();
 // src/reactions/diffusion.js
-const __m38 = (() => {
+const __m39 = (() => {
 const { PHASE } = __m23;
 const { MAX_SPECIES } = __m18;
 const { compatFactor } = __m14;
@@ -4968,10 +5651,10 @@ return w > 0 ? s / w : 0;
 return { diffusionStep };
 })();
 // src/simulation/arcane.js
-const __m40 = (() => {
+const __m41 = (() => {
 const { MAX_SPECIES } = __m18;
 const { ARCANE_SCALE, ARCANE_ZERO, awakenedId } = __m15;
-const { ARC_NONE } = __m31;
+const { ARC_NONE } = __m32;
 const RATE = 0.55;
 const HEAT = 24;
 const TAIL = 0.002;
@@ -5050,11 +5733,11 @@ return a;
 return { arcaneStep, awakeSlot };
 })();
 // src/reactions/reactions.js
-const __m39 = (() => {
+const __m40 = (() => {
 const { MAX_SPECIES } = __m18;
 const { PHASE } = __m23;
 const { awakenedId } = __m15;
-const { awakeSlot } = __m40;
+const { awakeSlot } = __m41;
 const { GAS, SOLID } = PHASE;
 class ReactionSystem {
 constructor(sim, rules) {
@@ -5329,7 +6012,7 @@ return best;
 return { ReactionSystem };
 })();
 // src/simulation/tools.js
-const __m41 = (() => {
+const __m42 = (() => {
 const { PHASE, SIM } = __m23;
 const { MAX_SPECIES } = __m18;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
@@ -5574,9 +6257,9 @@ if (victims.length) sim.emit({ type: 'skim', count: victims.length, x: t.x, y: t
 return { TOOL_SPECS, ToolState, clampToInterior, toolForces, toolConstraints, LIQUID };
 })();
 // src/simulation/emitter.js
-const __m42 = (() => {
+const __m43 = (() => {
 const { PHASE, SIM, formPhase } = __m23;
-const { COLUMN } = __m33;
+const { COLUMN } = __m34;
 const { chunkTemplate, chunkSize } = __m19;
 class Emitter {
 constructor(sim) {
@@ -5717,7 +6400,7 @@ return idx.length > 0;
 return { Emitter };
 })();
 // src/simulation/electric.js
-const __m43 = (() => {
+const __m44 = (() => {
 const { PHASE } = __m23;
 const KQ = 26; // conduction rate (game scaled)
 const RE = 0.16; // contact distance
@@ -5765,22 +6448,22 @@ return s;
 return { electricStep, totalCharge };
 })();
 // src/simulation/world.js
-const __m30 = (() => {
+const __m31 = (() => {
 const { PHASE, SIM, TUNE, formPhase } = __m23;
-const { Particles } = __m31;
-const { NeighborGrid } = __m32;
-const { Cauldron, COLUMN } = __m33;
+const { Particles } = __m32;
+const { NeighborGrid } = __m33;
+const { Cauldron, COLUMN } = __m34;
 const { SpeciesTable, MAX_SPECIES } = __m18;
-const { refreshParticle } = __m34;
-const { RigidBodies } = __m35;
-const { thermalStep } = __m36;
-const { phaseStep, classifyFluid } = __m37;
-const { diffusionStep } = __m38;
-const { ReactionSystem } = __m39;
-const { ToolState, toolForces, toolConstraints } = __m41;
-const { Emitter } = __m42;
-const { electricStep } = __m43;
-const { arcaneStep } = __m40;
+const { refreshParticle } = __m35;
+const { RigidBodies } = __m36;
+const { thermalStep } = __m37;
+const { phaseStep, classifyFluid } = __m38;
+const { diffusionStep } = __m39;
+const { ReactionSystem } = __m40;
+const { ToolState, toolForces, toolConstraints } = __m42;
+const { Emitter } = __m43;
+const { electricStep } = __m44;
+const { arcaneStep } = __m41;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const MODE = Object.freeze({ PBF: 0, GRAN: 1, COH: 2, RIGID: 3, GAS: 4 });
 const M_PBF = 0, M_GRAN = 1, M_COH = 2, M_RIGID = 3, M_GAS = 4;
@@ -6600,12 +7283,12 @@ if (p.sleep[i] >= SLEEP_STEPS) p.sleep[i] = 0;
 return { MODE, SLEEP_STEPS, Simulation, formPhase };
 })();
 // src/game/vial.js
-const __m29 = (() => {
-const { Simulation } = __m30;
+const __m30 = (() => {
+const { Simulation } = __m31;
 const { PHASE, SIM } = __m23;
 const { MAX_SPECIES } = __m18;
 const { measureParticles } = __m22;
-const { refreshParticle } = __m34;
+const { refreshParticle } = __m35;
 const ROOM = SIM.AMBIENT;
 const COOL_TAU = 480;
 function makeVial(sim, indices, meta) {
@@ -6745,6 +7428,12 @@ made++;
 }
 return made;
 }
+function pourBackParts(vial, ml) {
+const parts = vial.parts || [];
+const batchMl = parts.reduce((a, p) => a + p.ml, 0);
+const share = batchMl > 0 ? Math.min(1, ml / batchMl) : 0;
+return parts.map((p) => ({ id: p.id, ml: Math.round(p.ml * share * 10) / 10 }));
+}
 function relaxVial(vial, dt) {
 const k = 1 - Math.exp(-dt / COOL_TAU);
 let moved = 0;
@@ -6773,10 +7462,10 @@ const particles = [];
 for (let k = 0; k < n; k++) particles.push({ c: c.slice(), t: m.temperature ?? ROOM, q: m.charge || undefined, ph: PHASE.LIQUID });
 return { ...v, species, particles, ml: n * SIM.ML_PER_PARTICLE, bottledMl: v.bottledMl ?? n * SIM.ML_PER_PARTICLE, log: v.log || [], cert: v.cert || {} };
 }
-return { makeVial, appendParticles, measureVial, updateVial, takeDose, pourBack, relaxVial, vialInventory, migrateVial };
+return { makeVial, appendParticles, measureVial, updateVial, takeDose, pourBack, pourBackParts, relaxVial, vialInventory, migrateVial };
 })();
 // src/game/commerce.js
-const __m44 = (() => {
+const __m45 = (() => {
 const { Rng, hashString } = __m6;
 const { EFFECT_KEYS, EFFECT_INDEX, NE, EFFECT_BY_KEY } = __m13;
 const { evaluatePotion, strongestUnwanted } = __m24;
@@ -6787,8 +7476,7 @@ const cert = vial.cert || {}, recs = vial.certRecords || {};
 for (let k = 0; k < NE; k++) {
 const key = EFFECT_KEYS[k];
 if (cert[key] !== undefined) {
-const v = cert[key];
-claims[key] = Math.abs(v) < PURITY_LIMIT ? { kind: 'none', source: 'trial', record: recs[key] } : { kind: 'value', value: Math.round(v * 10) / 10, source: 'trial', record: recs[key] };
+claims[key] = trialClaim(cert[key], recs[key]);
 } else if (theory) {
 const v = theory[k];
 claims[key] = Math.abs(v) < 0.6 ? { kind: 'none', source: 'estimate', spread: 1 } : { kind: 'value', value: Math.round(v), source: 'estimate', spread: Math.round(2 + 0.3 * Math.abs(v)) };
@@ -6799,10 +7487,40 @@ return { claims, day };
 function applyTrials(label, values, record) {
 for (const [key, v] of Object.entries(values)) {
 const c = label.claims[key];
-if (c && c.source === 'player') continue;
-label.claims[key] = Math.abs(v) < PURITY_LIMIT ? { kind: 'none', source: 'trial', record } : { kind: 'value', value: Math.round(v * 10) / 10, source: 'trial', record };
+const t = trialClaim(v, record);
+if (c && c.source === 'player' && !sameClaim(c, t)) {
+c.measured = t.measured;
+c.record = record;
+continue;
+}
+label.claims[key] = t;
 }
 return label;
+}
+function trialClaim(v, record) {
+const measured = Math.round(v * 10) / 10;
+return Math.abs(v) < PURITY_LIMIT ? { kind: 'none', source: 'trial', record, measured } : { kind: 'value', value: measured, source: 'trial', record, measured };
+}
+function sameClaim(a, b) {
+if (a.kind !== b.kind) return false;
+return a.kind !== 'value' || Math.abs((a.value || 0) - (b.value || 0)) < 0.05;
+}
+function editClaim(c, key, op) {
+const keep = { record: c.record, measured: c.measured };
+const tested = c.measured !== undefined ? trialClaim(c.measured, c.record) : null;
+if (op === 'tested') return tested || c;
+if (op === 'unknown') return { kind: 'unknown', source: 'player', ...keep };
+let next;
+if (op === 'none') next = { kind: 'none', source: 'player', ...keep };
+else {
+const d = op === 'up' ? 1 : -1;
+const signed = key === 'acidity';
+let nv = Math.round(((c.kind === 'value' ? c.value || 0 : 0) + d) * 10) / 10;
+if (c.kind !== 'value' && Math.abs(nv) < PURITY_LIMIT) nv = d > 0 ? 2 : signed ? -2 : 0;
+if (!signed) nv = Math.max(0, nv);
+next = Math.abs(nv) < PURITY_LIMIT ? { kind: 'none', source: 'player', ...keep } : { kind: 'value', value: nv, source: 'player', ...keep };
+}
+return tested && sameClaim(next, tested) ? tested : next;
 }
 function claimedEffects(label) {
 const e = new Array(NE).fill(0);
@@ -6902,7 +7620,7 @@ const purity = com.requirements.find((r) => r.key === 'purity');
 const side = purity ? strongestUnwanted(truth.effects, purity.exclude || []) : { value: 0, key: '' };
 const harmful = side.value >= 3 && ['toxicity', 'death', 'acidity'].includes(side.key);
 const failed = ev.rows.filter((r) => r.score < 0.7 && r.req.key !== 'quantity').map((r) => r.req.key);
-const evidence = Object.values(label.claims).filter((c) => c.source === 'trial' && c.record).map((c) => c.record);
+const evidence = [...new Set(Object.values(label.claims).filter((c) => c.source === 'trial' && c.record).map((c) => c.record))];
 const sale = {
 id: 's' + hashString(`${com.id}:${vial.id}`).toString(36), day: st.day, customer: { name: com.customer.name, title: com.customer.title, archetype: com.customer.archetype, portrait: com.customer.portrait },
 potion: com.potionName, price, quality: Math.round(ev.quality * 1000) / 1000, repDelta: ev.repDelta, wrong, failed, side: side.value >= PURITY_LIMIT ? side : null,
@@ -6910,7 +7628,7 @@ claims: label.claims, truth: Array.from(truth.effects, (v) => Math.round(v * 10)
 };
 let follow = null;
 const due = st.day + 1;
-if (ev.quality >= 0.85 && !wrong.length) {
+if (ev.quality >= 0.85 && !wrong.length && !harmful) {
 if (rng.next() > persona.honesty) {
 const key = rng.pick(com.requirements.filter((r) => r.effect && r.key !== 'purity').map((r) => r.key).concat(['quality']));
 follow = { kind: 'complaint', legit: false, demand: Math.round(price * rng.range(0.5, 1) * 10) / 10, cites: [key],
@@ -6944,21 +7662,24 @@ text = f.referral ? 'They leave a tip and promise to send a friend.' : 'They lea
 rep = base;
 text = 'No news is good news.';
 } else if (action === 'refund') {
-coins = -Math.min(f.demand, st.coins);
+coins = -f.demand; // the state refuses a refund the shop cannot pay in full
 rep = f.legit ? Math.min(-1, Math.round(base / 2)) : 1;
 text = f.legit ? 'You refund them. They leave mollified.' : 'You refund them. They leave smirking — but people saw you were fair.';
 } else if (action === 'dispute') {
 const covered = sale && (f.cites || []).every((k) => k === 'quality' ? sale.evidence.length > 0 : sale.claims[k] && sale.claims[k].source === 'trial');
 if (f.legit) {
-coins = -Math.min(f.demand, st.coins);
-rep = Math.min(-6, base - 4);
-text = 'Your records do not hold up: the complaint was fair. You refund them, and the story spreads.';
+const paid = Math.min(f.demand, st.coins);
+coins = -paid || 0; // never "-0"
+rep = Math.min(-6, base - 4) - Math.round(6 * (1 - paid / Math.max(1e-9, f.demand)));
+text = paid + 1e-9 >= f.demand ? 'Your records do not hold up: the complaint was fair. You refund them, and the story spreads.' : 'Your records do not hold up, and you cannot pay them back in full. The story spreads.';
 } else if (covered || rng.chance(0.35 + 0.08 * st.rank)) {
 rep = 2;
 text = covered ? 'You show the trial records of that very batch. They mumble and leave empty-handed.' : 'You stand your ground and they back down.';
 } else {
-coins = -Math.min(Math.round(f.demand * 0.5 * 10) / 10, st.coins);
-rep = -3;
+const half = Math.round(f.demand * 0.5 * 10) / 10;
+const paid = Math.min(half, st.coins);
+coins = -paid || 0; // never "-0"
+rep = -3 - Math.round(3 * (1 - paid / Math.max(1e-9, half)));
 text = 'With no trial records to show, you settle for half.';
 }
 } else {
@@ -6970,7 +7691,106 @@ return { coins, rep, text };
 function fmt(v) {
 return (Math.round(v * 10) / 10).toLocaleString('en-US', { maximumFractionDigits: 1 });
 }
-return { draftLabel, applyTrials, claimedEffects, relevantEffects, labelTrust, unprovenWanted, claimedMeasurement, openNegotiation, proposePrice, acceptOffer, recordSale, resolveFollowUp };
+return { draftLabel, applyTrials, trialClaim, sameClaim, editClaim, claimedEffects, relevantEffects, labelTrust, unprovenWanted, claimedMeasurement, openNegotiation, proposePrice, acceptOffer, recordSale, resolveFollowUp };
+})();
+// src/materials/remains.js
+const __m46 = (() => {
+const { completeMaterial } = __m9;
+const { arcaneProfile, jitter } = __m11;
+function remainsId(rabbitId, part) {
+return `rem-${rabbitId}-${part}`;
+}
+function isRemains(m) {
+return !!(m && m.remains);
+}
+const burned = (src) => src.cause === 'fire' || (src.exposure.fire || 0) >= 60;
+function remainsPlan(src) {
+const big = src.stage === 'adult' || src.stage === 'elder';
+const k = big ? 1 : 0.5;
+const ex = src.exposure;
+const out = [{ part: 'bone', ml: big ? 110 : 55 }];
+if (burned(src)) out.push({ part: 'ash', ml: big ? 50 : 25 });
+else out.push({ part: 'fur', ml: Math.round((80 * k) / 5) * 5 });
+if ((ex.toxicity || 0) + (ex.acid || 0) + (ex.alkali || 0) + (ex.transformation || 0) >= 30) out.push({ part: 'residue', ml: big ? 40 : 20 });
+return out;
+}
+const FX = {
+bone: { base: { strength: 3, death: 3 }, ch: { strength: [30, 1], death: [28, 1], transformation: [24, 0.8], arcana: [22, 0.8], frost: [12, 0.5] } },
+fur: { base: { love: 2 }, ch: { love: [30, 1], vitality: [24, 0.8], fire: [26, 0.9], frost: [26, 0.9], toxicity: [20, 0.7], arcana: [10, 0.4] } },
+ash: { base: { acidity: -8, fire: 4 }, ch: { fire: [32, 1], death: [20, 0.8] } },
+residue: { base: { toxicity: 2 }, ch: { toxicity: [34, 1], acidity: [30, 0.9], transformation: [26, 0.9], vitality: [14, 0.5], death: [14, 0.5] } },
+};
+const ARC_BASE = { bone: 600, fur: -250, ash: 900, residue: -500 };
+const PART_NOUN = { bone: 'bones', fur: 'pelt', ash: 'ashes', residue: 'residue' };
+const PART_SHORT = { bone: 'bone', fur: 'pelt', ash: 'ash', residue: 'residue' };
+const mix = (a, b, t) => a.map((x, i) => Math.round((x + (b[i] - x) * t) * 1000) / 1000);
+const r1 = (v) => Math.round(v * 10) / 10;
+function partEffects(part, ex, seed, id) {
+const t = FX[part];
+const fx = { ...t.base };
+for (const [k, [cap, take]] of Object.entries(t.ch)) {
+const E = k === 'acidity' ? (ex.acid || 0) - (ex.alkali || 0) : ex[k] || 0;
+if (!E) continue;
+const v = Math.sign(E) * r1(cap * (1 - Math.exp((-take * Math.abs(E)) / 60)) * jitter(seed, id, k, 0.08));
+fx[k] = r1(Math.max(-40, Math.min(40, (fx[k] || 0) + v)));
+}
+for (const k of Object.keys(fx)) if (Math.abs(fx[k]) < 0.5) delete fx[k];
+return fx;
+}
+function partColor(part, src) {
+const ex = src.exposure;
+if (part === 'bone') return mix(mix([0.9, 0.86, 0.76], [0.6, 0.58, 0.62], Math.min(0.5, (ex.death || 0) / 120)), [0.4, 0.9, 0.79], Math.min(0.3, (ex.transformation || 0) / 300));
+if (part === 'fur') {
+let c = src.look.coat.slice();
+c = mix(c, [0.3, 0.2, 0.14], Math.min(0.5, (ex.fire || 0) / 150));
+c = mix(c, [0.55, 0.62, 0.3], Math.min(0.3, (ex.toxicity || 0) / 200));
+return mix(c, [0.75, 0.9, 1], Math.min(0.3, (ex.frost || 0) / 200));
+}
+if (part === 'ash') return mix([0.42, 0.4, 0.4], [0.55, 0.3, 0.2], Math.min(0.3, (ex.fire || 0) / 300));
+const parts = [[[0.55, 0.62, 0.3], ex.toxicity || 0], [[0.85, 0.8, 0.3], ex.acid || 0], [[0.85, 0.82, 0.74], ex.alkali || 0], [[0.4, 0.9, 0.79], ex.transformation || 0], [[0.5, 0.48, 0.46], 10]];
+const w = parts.reduce((a, p) => a + /** @type {number} */ (p[1]), 0);
+return [0, 1, 2].map((i) => Math.round((parts.reduce((a, p) => a + /** @type {number[]} */ (p[0])[i] * /** @type {number} */ (p[1]), 0) / w) * 1000) / 1000);
+}
+function describe(part, src) {
+const she = src.sex === 'f' ? 'she' : 'he';
+const kind = src.sex === 'f' ? 'a doe' : 'a buck';
+const how = src.cause && src.cause !== 'unknown' ? ` that died ${{ poison: 'of poison', death: 'of death magic', fire: 'in fire', frost: 'of cold', acid: 'of acid burns', alkali: 'of lye burns', change: 'of a violent change', arcana: 'of a magical surfeit', age: 'of old age', frail: 'of weakness' }[src.cause] || ''}` : '';
+const when = Number.isFinite(src.diedDay) ? ` on day ${src.diedDay}` : '';
+const what = { bone: 'The cleaned bones', fur: 'The pelt', ash: 'The ashes', residue: 'A residue scraped from the remains' }[part];
+const traits = part === 'bone' && src.traits.some((t) => ['horns', 'antlers', 'unihorn'].includes(t)) ? ' The skull bears its horns.' : part === 'bone' && src.traits.includes('wings') ? ' Fine wing bones are among them.' : '';
+return `${what} of ${src.name}, ${kind}${how}${when}. Whatever ${she} absorbed in life may linger in them.${traits}${part === 'bone' || part === 'fur' ? ' Crush or grind it; only what dissolves takes effect.' : ''}`;
+}
+function remainsMaterials(src, world) {
+return remainsPlan(src).map(({ part }) => {
+const id = remainsId(src.id, part);
+const fx = partEffects(part, src.exposure, world.seed, id);
+const solid = part === 'bone' || part === 'fur';
+const color = partColor(part, src);
+const phys = {
+bone: { form: 'solid', archetype: 'remains', density: 1.85, hardness: 0.7, solubility: 0.05, solubilityTemp: 0.0025, compat: [0.82, 0.14], friction: 0.68, heatCapacity: 1.4, conductivity: 0.4, flammability: 0, tint: 0.6, price: 8 },
+fur: { form: 'solid', archetype: 'remains', density: 0.62, hardness: 0.15, solubility: 0.14, solubilityTemp: 0.002, compat: [0.55, 0.22], friction: 0.7, heatCapacity: 1.5, conductivity: 0.2, flammability: 0.6, ignition: 280, combustionHeat: 500, ash: world.roles.soot, smoke: world.roles.smoke, tint: 0.75, price: 6 },
+ash: { form: 'powder', archetype: 'ash', density: 0.8, friction: 0.72, solubility: 0.18, solubilityTemp: 0.002, compat: [0.84, 0.12], heatCapacity: 0.9, conductivity: 0.3, flammability: 0, tint: 0.7, price: 4 },
+residue: { form: 'powder', archetype: 'remains', density: 1.3, solubility: 0.24, solubilityTemp: 0.003, binder: 0.2, friction: 0.6, compat: [0.82, 0.15], heatCapacity: 1.2, conductivity: 0.35, flammability: 0.1, ignition: 300, combustionHeat: 300, ash: world.roles.soot, tint: 0.7, price: 5 },
+}[part];
+const m = completeMaterial(/** @type {any} */ ({
+id, name: `${src.name}’s ${PART_NOUN[part]}`, color, opacity: 1, melt: 1500, boil: Infinity, reactivity: 0.2,
+tier: 99, product: false, description: describe(part, src), ...phys,
+glow: (src.exposure.arcana || 0) > 40 ? Math.min(0.6, ((src.exposure.arcana || 0) - 40) / 150) : 0,
+}));
+const mm = /** @type {any} */ (m);
+mm.effects = fx;
+const arc = fx.arcana || 0;
+const thr = ARC_BASE[part] * (1 - Math.min(0.8, Math.max(0, arc) / 30)) + 10 * ((fx.fire || 0) - (fx.frost || 0));
+mm.arcane = arcaneProfile(world.seed, id, thr, 1.8 + 0.04 * Math.min(30, Math.max(0, arc)));
+mm.econd = 0.03;
+mm.charge = 0;
+mm.shape = part === 'bone' ? 'bone' : part === 'fur' ? 'fur' : undefined;
+if (solid) mm.crushable = true;
+mm.remains = { rabbitId: src.id, rabbitName: src.name, part, day: src.diedDay, cause: src.cause, short: `${src.name.split(' ')[0]} ${PART_SHORT[part]}` };
+return m;
+});
+}
+return { remainsId, isRemains, remainsPlan, remainsMaterials };
 })();
 // src/game/state.js
 const __m5 = (() => {
@@ -6981,12 +7801,14 @@ const { generateCommission, tutorialCommission } = __m16;
 const { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById } = __m26;
 const { SIM } = __m23;
 const { createTrials, normalizeTrials, runTrial, resetSubject, SUBJECT_BY_ID, knownLaws } = __m27;
-const { createGathering, normalizeGathering, generateDeposits, harvest, newDayRegrowth } = __m28;
+const { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth } = __m29;
 const { predictPlan } = __m17;
 const { EFFECT_INDEX } = __m13;
-const { migrateVial } = __m29;
-const { recordSale, resolveFollowUp } = __m44;
-const SAVE_VERSION = 3;
+const { migrateVial } = __m30;
+const { recordSale, resolveFollowUp } = __m45;
+const { colonyDay, livingRabbits, findRabbit, addBoughtRabbit, retireRabbit, remainsSource, FOUNDER_BORN } = __m28;
+const { remainsMaterials, remainsPlan, isRemains } = __m46;
+const SAVE_VERSION = 4;
 const WORLD_GEN_VERSION = 2;
 const ASPECT_KEY_MAP = { vitality: 'vitality', ardor: 'fire', arcana: 'arcana', fortitude: 'strength' };
 const MARKET_EVENTS = [
@@ -7034,6 +7856,10 @@ const ACHIEVEMENTS = [
 { id: 'deal', name: 'Silver Tongue', desc: 'Sell a potion for more than the customer first offered.', reward: 15 },
 { id: 'dispute', name: 'The Records Speak', desc: 'Win a dispute with trial records of the batch.', reward: 30 },
 { id: 'referral', name: 'Word of Mouth', desc: 'Serve a customer sent by a satisfied one.', reward: 25 },
+{ id: 'kit1', name: 'New Arrivals', desc: 'Kits are born in your hutch.', reward: 15 },
+{ id: 'colony8', name: 'Thriving Warren', desc: 'Keep eight living rabbits.', reward: 40 },
+{ id: 'survivor', name: 'Iron Constitution', desc: 'A rabbit survives ten trials.', reward: 30 },
+{ id: 'remains1', name: 'Nothing Wasted', desc: 'Recover the remains of a rabbit as ingredients.', reward: 15 },
 ];
 class GameState {
 constructor(data) {
@@ -7058,7 +7884,7 @@ constructor(data) {
 /** @type {Record<string, number>} */ this.achievements = data.achievements;
 /** @type {any} */ this.current = data.current;
 this.stats = { served: 0, perfect: 0, earned: 0, spent: 0, brews: 0, declined: 0, bestQuality: 0, ...(data.stats || {}) };
-/** @type {{active:boolean, step:number, done:boolean}} */ this.tutorial = { active: false, step: 0, done: true, ...(data.tutorial || {}) };
+/** @type {{active:boolean, step:number, done:boolean, tips?:Record<string, boolean>}} */ this.tutorial = { active: false, step: 0, done: true, ...(data.tutorial || {}) };
 /** @type {{event:string, mods:Record<string, number>}} */ this.market = data.market || { event: 'none', mods: {} };
 /** @type {any} */ this.cauldron = data.cauldron || null;
 /** @type {any} */ this.receiver = data.receiver || null;
@@ -7075,6 +7901,12 @@ this.vial = migrateVial(data.vial);
 this.batch = data.batch && typeof data.batch.id === 'string' ? { id: data.batch.id, rev: data.batch.rev | 0 } : newBatch();
 this.lookup = makeLookup(this.world);
 this._deposits = null;
+const col = this.trials.colony;
+if (!col.seed) col.seed = String(this.seed);
+if (!col.day) {
+for (const r of col.rabbits) if (r.born === FOUNDER_BORN && !r.parents) r.born = this.day - 1 + FOUNDER_BORN;
+col.day = this.day;
+}
 }
 static create(seed, opts = {}) {
 const world = generateWorld(seed);
@@ -7140,7 +7972,7 @@ has(id) {
 return this.equipment.includes(id);
 }
 purchasable() {
-return this.world.ingredients.filter((id) => (this.lookup(id).tier || 0) <= this.rank);
+return this.world.ingredients.filter((id) => { const m = this.lookup(id); return m && !isRemains(m) && (m.tier || 0) <= this.rank; });
 }
 availableSet() {
 const s = new Set(this.purchasable());
@@ -7159,8 +7991,8 @@ return s;
 gather(depositId, opts = {}) {
 const d = this.deposits.find((x) => x.id === depositId);
 if (!d) return { ok: false, amount: 0, reason: 'unknown' };
-const take = this.has('satchel') ? Math.round(d.take * 1.5) : d.take;
-const r = harvest(this, { ...d, take }, opts);
+const { take, eff, reserve } = gatherPlan(this, d, this.lookup(d.materialId), { thorough: opts.thorough });
+const r = harvest(this, { ...d, take }, { ...opts, eff, reserve });
 if (r.ok && !opts.unlimited) {
 this.stats.gathered = (this.stats.gathered || 0) + r.amount;
 /** @type {any} */ (r).events = [...this.unlock('forage1')];
@@ -7191,11 +8023,112 @@ if (entry) events.push({ type: 'law', id, name: L.name, lore: L.lore });
 events.push(...this.unlock('law1'));
 if (this.knownLaws.length >= 4) events.push(...this.unlock('law4'));
 }
+if (rec.rabbitId) {
+const r = findRabbit(this.trials.colony, rec.rabbitId);
+if (r && !r.alive) events.push({ type: 'rabbit-died', id: r.id, name: r.name, cause: r.cause });
+if (r && r.alive && r.trials >= 10) events.push(...this.unlock('survivor'));
+}
 return { record: rec, events };
+}
+get colony() {
+return this.trials.colony;
+}
+rabbitPrice() {
+return Math.ceil(SUBJECT_BY_ID.rabbit.cost * (this.has('kennel') ? 0.5 : 1));
+}
+buyRabbit(free = false) {
+const c = this.colony;
+const cap = this.cap.hutch;
+if (livingRabbits(c).length >= cap) return { ok: false, reason: `The hutch is full (${cap} places). Upgrade it at the guild.` };
+const cost = free ? 0 : this.rabbitPrice();
+if (cost > this.coins + 1e-9) return { ok: false, reason: `A new rabbit costs ${cost} coins.` };
+this.coins = round1(this.coins - cost);
+this.stats.spent += cost;
+this.daySpending += cost;
+const rabbit = addBoughtRabbit(c, { day: this.day });
+c.focus = rabbit.id;
+return { ok: true, cost, rabbit };
+}
+selectRabbit(id) {
+if (!findRabbit(this.colony, id)) return false;
+this.colony.focus = id;
+return true;
+}
+feedCost() {
+return livingRabbits(this.colony).length ? 1 : 0;
+}
+feedRabbits() {
+const c = this.colony;
+const live = livingRabbits(c);
+if (!live.length) return { ok: false, reason: 'There is nobody to feed.' };
+if (c.fedDay === this.day) return { ok: false, reason: 'They have eaten today.' };
+const cost = this.feedCost();
+if (cost > this.coins + 1e-9) return { ok: false, reason: `Hay and greens cost ${cost} coin.` };
+this.coins = round1(this.coins - cost);
+this.stats.spent += cost;
+this.daySpending += cost;
+c.fedDay = this.day;
+for (const r of live) {
+r.health = round1(Math.min(Math.max(20, 100 - r.scar), r.health + 6));
+r.marks.toxicity = Math.max(0, round1(r.marks.toxicity - 5));
+}
+return { ok: true, cost };
+}
+setBreeding(on) {
+this.colony.breed = !!on;
+}
+registerMaterial(def) {
+if (!this.world.materials.some((m) => m.id === def.id)) this.world.materials.push(def);
+if (!this.world.ingredients.includes(def.id)) this.world.ingredients.push(def.id);
+return this.lookup(def.id);
+}
+processRemains(id) {
+const c = this.colony;
+const r = findRabbit(c, id);
+if (!r) return { ok: false, reason: 'There is no such body in the hutch.' };
+if (r.alive) return { ok: false, reason: `${r.name} is alive.` };
+const src = remainsSource(r, this.day);
+const defs = remainsMaterials(src, this.world);
+const plan = remainsPlan(src);
+const parts = [];
+for (const d of defs) {
+this.registerMaterial(d);
+const ml = (plan.find((p) => p.part === d.remains.part) || { ml: 0 }).ml;
+const have = this.inventory[d.id] || 0;
+this.inventory[d.id] = Math.min(this.cap.storage, have + ml);
+parts.push({ id: d.id, name: d.name, ml });
+}
+retireRabbit(c, id, 'processed', defs.map((d) => d.id), this.day);
+this.stats.recovered = (this.stats.recovered || 0) + 1;
+const events = [];
+const entry = this.discover({ key: 'remains:' + id, title: `The remains of ${r.name}`, text: `You recovered ${parts.map((p) => p.name.split('’s ')[1] || p.name).join(', ')} from ${r.name}. What ${r.sex === 'f' ? 'she' : 'he'} absorbed in life may linger in them — only trials will tell.`, kind: 'colony' });
+if (entry) events.push({ type: 'journal', entry });
+events.push(...this.unlock('remains1'));
+return { ok: true, parts, events };
+}
+buryRabbit(id) {
+const r = findRabbit(this.colony, id);
+if (!r || r.alive) return { ok: false, reason: r ? `${r.name} is alive.` : 'There is no such body.' };
+retireRabbit(this.colony, id, 'buried', [], this.day);
+return { ok: true };
+}
+restoreRemains() {
+for (const m of this.colony.memorial) {
+if (m.how !== 'processed' || !m.parts.length) continue;
+if (m.parts.every((id) => this.world.materials.some((x) => x.id === id))) continue;
+for (const d of remainsMaterials(remainsSource(/** @type {any} */ (m), this.day), this.world)) this.registerMaterial(d);
+}
 }
 replaceSubject(id, free = false) {
 const def = SUBJECT_BY_ID[id];
 if (!def) return { ok: false, reason: 'Unknown subject.' };
+if (id === 'rabbit') {
+const r = this.buyRabbit(free);
+if (r.ok) return r;
+const alive = livingRabbits(this.colony)[0];
+if (alive && livingRabbits(this.colony).length >= this.cap.hutch) { this.colony.focus = alive.id; return { ok: true, cost: 0, reselected: true }; }
+return r;
+}
 const cost = free ? 0 : Math.ceil(def.cost * (this.has('kennel') ? 0.5 : 1));
 if (cost > this.coins + 1e-9) return { ok: false, reason: `A new ${def.name.toLowerCase()} costs ${cost} coins.` };
 this.coins = round1(this.coins - cost);
@@ -7262,6 +8195,7 @@ return { ok: true, item: e };
 commissionContext() {
 const available = this.availableSet();
 for (const id of this.gatherableSet()) available.add(id);
+for (const id of [...available]) if (isRemains(this.lookup(id))) available.delete(id);
 return {
 world: this.world,
 lookup: this.lookup,
@@ -7318,38 +8252,45 @@ const com = this.current;
 if (!com) return [];
 return this._bookSale(com, ev, measurement, ev.payment, ev.repDelta);
 }
-_bookSale(com, ev, measurement, paid, rep) {
+_bookSale(com, ev, measurement, paid, rep, saleId = null) {
 const events = [];
 this.coins = round1(this.coins + paid);
 events.push(...this.adjustReputation(rep));
 this.stats.served++;
 this.stats.earned += paid;
 this.dayEarnings += paid;
-this.stats.bestQuality = Math.max(this.stats.bestQuality, ev.quality);
-if (ev.perfect) this.stats.perfect++;
 this.servedToday++;
 this.history.unshift({
-day: this.day, customer: com.customer.name, title: com.customer.title, potion: com.potionName, quality: ev.quality, stars: ev.stars,
-paid, color: measurement?.color, ml: measurement?.ml,
+day: this.day, customer: com.customer.name, title: com.customer.title, potion: com.potionName, quality: saleId ? null : ev.quality, stars: saleId ? null : ev.stars,
+paid, color: measurement?.color, ml: measurement?.ml, ...(saleId ? { saleId } : {}),
 });
 if (this.history.length > 60) this.history.length = 60;
 if (com.tutorial) { this.tutorial.done = true; this.tutorial.active = false; }
-if (com.grand && ev.quality >= 0.85) { this.grandDone = true; events.push(...this.unlock('grand')); }
+if (!saleId) events.push(...this._verdict(ev.quality, ev.perfect, !!com.grand));
 this.current = null;
 this.customerIndex++;
 events.push(...this.unlock('first_sale'));
-if (ev.perfect) events.push(...this.unlock('perfect'));
-if (this.stats.perfect >= 5) events.push(...this.unlock('perfect5'));
 if (this.stats.served >= 10) events.push(...this.unlock('served10'));
 if (this.stats.served >= 50) events.push(...this.unlock('served50'));
 if (this.coins >= 1000) events.push(...this.unlock('rich'));
+return events;
+}
+_verdict(quality, perfect, grand) {
+const events = [];
+this.stats.bestQuality = Math.max(this.stats.bestQuality, quality);
+if (perfect) { this.stats.perfect++; events.push(...this.unlock('perfect')); }
+if (this.stats.perfect >= 5) events.push(...this.unlock('perfect5'));
+if (grand && quality >= 0.85) { this.grandDone = true; events.push(...this.unlock('grand')); }
 return events;
 }
 completeDeal(vial, label, price, truth, firstOffer = 0) {
 const com = this.current;
 if (!com) return { events: [], sale: null, follow: null, ev: null };
 const { sale, follow, ev } = recordSale(this, com, vial, label, price, truth);
-const events = this._bookSale(com, ev, truth, price, 1);
+sale.perfect = ev.perfect;
+sale.stars = ev.stars;
+sale.grand = !!com.grand;
+const events = this._bookSale(com, ev, truth, price, 1, sale.id);
 this.sales.unshift(sale);
 if (this.sales.length > 80) this.sales.length = 80;
 this.followUps.push(follow);
@@ -7363,6 +8304,7 @@ return this.followUps.filter((f) => !f.resolved && f.day <= this.day && f.kind !
 settleFollowUp(id, action) {
 const f = this.followUps.find((x) => x.id === id);
 if (!f || f.resolved) return null;
+if (action === 'refund' && f.kind === 'complaint' && this.coins + 1e-9 < (f.demand || 0)) return { refused: true, coins: 0, rep: 0, text: `You do not have ${f.demand} coins to refund.`, events: [] };
 const r = resolveFollowUp(this, f, action);
 f.resolved = true;
 f.action = action;
@@ -7374,12 +8316,17 @@ if (f.kind === 'praise' && f.referral) this.referrals++;
 const events = this.adjustReputation(r.rep);
 if (action === 'dispute' && r.rep > 0) { this.stats.disputesWon = (this.stats.disputesWon || 0) + 1; events.push(...this.unlock('dispute')); }
 const sale = this.sales.find((s) => s.id === f.saleId);
-if (sale) sale.outcome = { kind: f.kind, action, ...r };
+if (sale) {
+sale.outcome = { kind: f.kind, action, ...r };
+const hist = this.history.find((x) => x.saleId === sale.id);
+if (hist && hist.quality === null) { hist.quality = sale.quality; hist.stars = sale.stars ?? null; }
+events.push(...this._verdict(sale.quality, !!sale.perfect, !!sale.grand));
+}
 return { ...r, events };
 }
 adjustReputation(delta) {
 const oldRank = this.rank;
-this.reputation = Math.max(0, this.reputation + delta);
+this.reputation = Math.max(-100, this.reputation + delta);
 const events = [];
 const nr = this.rank;
 if (nr > oldRank) {
@@ -7402,6 +8349,7 @@ if (f.day < this.day) settled.push({ f, r: this.settleFollowUp(f.id, f.kind === 
 }
 this.followUps = this.followUps.filter((f) => !f.resolved || f.day >= this.day - 6);
 const summary = { day: this.day, earned: this.dayEarnings, spent: this.daySpending, served: this.servedToday, settled: settled.length };
+weatherRegrowth(this.gathering, this.deposits, weatherOn(this.seed, this.day), this.lookup);
 this.day++;
 this.customerIndex = 0;
 this.servedToday = 0;
@@ -7411,7 +8359,12 @@ this.current = null;
 this.customersPerDay = 3 + Math.floor(this.rank / 2);
 this.rollMarket();
 newDayRegrowth(this.gathering, this.deposits);
-return summary;
+const colony = colonyDay(this.colony, { seed: this.seed, day: this.day, cap: this.cap.hutch });
+const events = [];
+this.stats.bred = (this.stats.bred || 0) + colony.born.length;
+if (colony.born.length) events.push(...this.unlock('kit1'));
+if (livingRabbits(this.colony).length >= 8) events.push(...this.unlock('colony8'));
+return { ...summary, colony: { ...colony, events } };
 }
 rollMarket() {
 const rng = new Rng(hashString(`${this.seed}:market:${this.day}`));
@@ -7438,6 +8391,12 @@ const entry = { ...e, day: this.day };
 this.journal[e.key] = entry;
 this.reputation += 1;
 return entry;
+}
+firstTip(key) {
+const t = (this.tutorial.tips ||= {});
+if (t[key]) return false;
+t[key] = true;
+return true;
 }
 learn(id, fact, value) {
 const k = (this.knowledge[id] ||= {});
@@ -7579,6 +8538,13 @@ d.vial = null;
 d.batch = null;
 d.version = 3;
 }
+if (d.version < 4) {
+d.trials = d.trials || null;
+d.sales = Array.isArray(d.sales) ? d.sales : [];
+d.followUps = Array.isArray(d.followUps) ? d.followUps : [];
+d.referrals = d.referrals | 0;
+d.version = 4;
+}
 if (d.world && Array.isArray(d.world.materials) && d.world.materials.length === 0) throw new Error('The save has no reagents');
 if (!d.inventory || typeof d.inventory !== 'object') throw new Error('The save has no inventory');
 return d;
@@ -7589,7 +8555,7 @@ return Math.round(v * 10) / 10;
 return { SAVE_VERSION, WORLD_GEN_VERSION, MARKET_EVENTS, ACHIEVEMENTS, GameState, migrateCommission, migrate, EQUIPMENT, SIM };
 })();
 // src/game/persistence.js
-const __m45 = (() => {
+const __m47 = (() => {
 const { GameState } = __m5;
 const KEYS = {
 save: 'alchemist-shop.save',
@@ -7713,11 +8679,11 @@ if (s) s.removeItem(key);
 return { KEYS, storageAvailable, saveGame, loadGame, hasSave, deleteSave, exportSave, parseImport, loadJSON, saveJSON, removeKey };
 })();
 // src/simulation/snapshot.js
-const __m47 = (() => {
+const __m49 = (() => {
 const { MAX_SPECIES } = __m18;
-const { refreshParticle } = __m34;
-const { Simulation } = __m30;
-const { CAULDRON_SIZES } = __m33;
+const { refreshParticle } = __m35;
+const { Simulation } = __m31;
+const { CAULDRON_SIZES } = __m34;
 const F32_FIELDS_V1 = ['x', 'y', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet'];
 const F32_FIELDS = [...F32_FIELDS_V1, 'q'];
 const SNAPSHOT_VERSION = 2;
@@ -7837,7 +8803,7 @@ for (let i = 0; i < n; i++) if (p.group[i] >= 0) sim.rigid.used[p.group[i]] = 1;
 return { SNAPSHOT_VERSION, toBase64, fromBase64, snapshotSim, restoreSim, applySnapshot };
 })();
 // src/rendering/art.js
-const __m49 = (() => {
+const __m51 = (() => {
 const { Rng } = __m6;
 const PAL = {
 night0: '#0d0a10', night1: '#17121c', night2: '#221a28',
@@ -8085,7 +9051,7 @@ R(ctx, left, top, right - left, 1, PAL.stone4);
 return { PAL, hex2rgb, rgbStr, mixHex, paintBackground, drawJar, renderCauldron, makeCanvas, paintHearth, rect: R };
 })();
 // src/rendering/fluid.js
-const __m50 = (() => {
+const __m52 = (() => {
 const { PHASE } = __m23;
 const { LOOK } = __m19;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
@@ -8581,8 +9547,8 @@ return v < 0 ? 0 : v > 255 ? 255 : v | 0;
 return { FluidRenderer };
 })();
 // src/rendering/effects.js
-const __m51 = (() => {
-const { PAL, hex2rgb } = __m49;
+const __m53 = (() => {
+const { PAL, hex2rgb } = __m51;
 const MAX = 900;
 const FIRE_RAMP = [PAL.fire5, PAL.fire4, PAL.fire3, PAL.fire2, PAL.fire1, PAL.fire0].map(hex2rgb);
 class Effects {
@@ -8695,11 +9661,11 @@ ctx.globalAlpha = 1;
 return { Effects };
 })();
 // src/rendering/renderer.js
-const __m48 = (() => {
-const { PAL, paintBackground, renderCauldron, paintHearth, makeCanvas, rgbStr, hex2rgb, drawJar, rect } = __m49;
-const { FluidRenderer } = __m50;
-const { Effects } = __m51;
-const { COLUMN } = __m33;
+const __m50 = (() => {
+const { PAL, paintBackground, renderCauldron, paintHearth, makeCanvas, rgbStr, hex2rgb, drawJar, rect } = __m51;
+const { FluidRenderer } = __m52;
+const { Effects } = __m53;
+const { COLUMN } = __m34;
 const { PHASE } = __m23;
 const { compositionEffects, dominantEffect, EFFECTS, NE } = __m13;
 const auraScratch = new Float64Array(NE);
@@ -9101,7 +10067,7 @@ rect(ctx, x, y + h - 1, w, 1, 'rgba(0,0,0,0.4)');
 return { Renderer, drawBottle, PHASE };
 })();
 // src/rendering/portraits.js
-const __m52 = (() => {
+const __m54 = (() => {
 const { Rng } = __m6;
 const S = 32;
 const shade = (c, f) => `rgb(${Math.round(Math.min(255, c[0] * 255 * f))},${Math.round(Math.min(255, c[1] * 255 * f))},${Math.round(Math.min(255, c[2] * 255 * f))})`;
@@ -9219,9 +10185,9 @@ if (rng.chance(0.5)) P(hx - 1, 8, 2, 10, hc);
 return { drawPortrait };
 })();
 // src/rendering/scenes.js
-const __m53 = (() => {
+const __m55 = (() => {
 const { Rng } = __m6;
-const { PAL } = __m49;
+const { PAL } = __m51;
 function R(ctx, x, y, w, h, c) {
 ctx.fillStyle = c;
 ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
@@ -9301,6 +10267,26 @@ case 'powder': {
 const w = Math.round(6 + 6 * s);
 P(8 - w / 2, 12, w, 3, k); P(9 - w / 2, 11, w - 2, 3, c); P(10 - w / 2, 10, w - 4, 2, c); P(10 - w / 2, 10, 2, 1, hi);
 P(9, 13, 1, 1, d); P(6, 12, 1, 1, d);
+break;
+}
+case 'bone': {
+const hl = Math.max(1, Math.round(4 * s)), l = 8 - hl, r = 8 + hl;
+P(l - 1, 6, r - l + 2, 4, k);
+for (const kx of [l - 2, r - 1]) { P(kx - 1, 4, 5, 5, k); P(kx - 1, 7, 5, 5, k); }
+P(l, 7, r - l, 2, c); P(l, 8, r - l, 1, d);
+for (const kx of [l - 2, r - 1]) { P(kx, 5, 3, 3, c); P(kx, 8, 3, 3, c); P(kx, 10, 3, 1, d); P(kx, 5, 1, 1, hi); }
+P(l + 1, 7, Math.max(1, r - l - 2), 1, hi);
+break;
+}
+case 'fur': {
+const hw = Math.max(3, Math.round(6 * s)), x0 = 8 - hw, x1 = 8 + hw;
+P(x0 - 1, 6, x1 - x0 + 2, 7, k);
+P(x0 - 2, 5, 3, 2, k); P(x1 - 1, 5, 3, 2, k); P(x0 - 2, 12, 3, 2, k); P(x1 - 1, 12, 3, 2, k);
+P(x0, 6, x1 - x0, 6, c);
+P(x0 - 1, 6, 2, 1, c); P(x1 - 1, 6, 2, 1, c); P(x0 - 1, 12, 2, 1, d); P(x1 - 1, 12, 2, 1, d);
+for (let x = x0; x < x1; x += 2) P(x, 5, 1, 1, (x & 2) ? k : c);
+for (let y = 7; y < 12; y++) for (let x = x0 + ((y & 1) ? 1 : 0); x < x1; x += 3) P(x, y, 1, 1, y < 9 ? hi : d);
+P(x0, 11, x1 - x0, 1, d);
 break;
 }
 default: { // stone
@@ -9533,7 +10519,7 @@ void PAL;
 return { drawRaw, rawSprite, SCENE_W, SCENE_H, paintRegion, animateRegion, SUBJECT_W, SUBJECT_H, drawSubject };
 })();
 // src/game/journal.js
-const __m54 = (() => {
+const __m56 = (() => {
 function processEvent(state, e) {
 const entries = [];
 const achievements = [];
@@ -9577,6 +10563,7 @@ case 'awaken': {
 const id = e.species;
 if (!id || !L(id)) break;
 const d = L(id);
+state.learn(id, 'awaken', Math.round(e.temp));
 add({ key: `awaken:${id}`, title: `${d.name} awakens`, text: `Near ${Math.round(e.temp)}°C a glow ran through the ${d.name.toLowerCase()}: it passed its arcane threshold and its magic woke, far stronger than before. Awakened matter stays awake when it cools, is bottled or kept — only dilution or reactions undo it.`, kind: 'arcane', material: id });
 achievements.push(...state.unlock('awaken'));
 break;
@@ -9645,7 +10632,7 @@ return { entries, achievements };
 return { processEvent };
 })();
 // src/game/autobrew.js
-const __m55 = (() => {
+const __m57 = (() => {
 const { PHASE, SIM } = __m23;
 const { MAX_SPECIES } = __m18;
 function stageGoal(plan) {
@@ -9816,27 +10803,29 @@ return t / Math.max(1, sim.p.count);
 return { stageGoal, AutoBrewer, runPlanHeadless, speciesFraction };
 })();
 // src/ui/panels.js
-const __m56 = (() => {
+const __m58 = (() => {
 const { h, btn, modal, toast, coins, starsText, confirmDialog, clear } = __m2;
 const { icon } = __m3;
-const { drawPortrait } = __m52;
-const { drawJar } = __m49;
+const { drawPortrait } = __m54;
+const { drawJar } = __m51;
 const { EQUIPMENT, RANKS } = __m26;
 const { ACHIEVEMENTS } = __m5;
 const { PROPERTY_LABELS } = __m24;
 const { viscosityClass } = __m22;
 const { EFFECTS, EFFECT_BY_KEY, EFFECT_KEYS, dominantEffect } = __m13;
-const { rawSprite } = __m53;
+const { rawSprite } = __m55;
 const { compatFactor } = __m14;
 const { describeColor, rgbToHex } = __m8;
 const { SIM } = __m23;
-const { exportSave, parseImport, saveGame } = __m45;
+const { exportSave, parseImport, saveGame } = __m47;
 const { audio } = __m4;
 const { archetypeOf } = __m21;
+const { isMagical } = __m15;
+const { causeWord } = __m28;
 const CAT_LABEL = { heat: 'Heating', cold: 'Cooling', vessel: 'Cauldrons', tool: 'Tools', instrument: 'Instruments', trials: 'Trials room', storage: 'Storage & foraging', guild: 'Guild' };
 function jarCanvas(m, w = 22, hh = 30) {
-if (m.wild && m.form === 'solid') {
-const cv = rawSprite(m.wild.shape, m.look || m.color);
+if ((m.wild || m.remains) && m.form === 'solid') {
+const cv = rawSprite(m.wild ? m.wild.shape : m.shape || 'stone', m.look || m.color);
 cv.style.width = w * 2 + 'px';
 cv.style.height = w * 2 + 'px';
 return cv;
@@ -9887,6 +10876,7 @@ const list = h('div', { class: 'list' });
 for (const id of st.world.ingredients) {
 const mt = st.lookup(id);
 if (mt.wild && mt.wild.gatherOnly) continue; // only found in the wilds
+if (mt.remains) continue; // recovered from a rabbit, never sold
 const locked = mt.tier > st.rank;
 const price = st.priceOf(id);
 const stock = st.stock(id);
@@ -9990,23 +10980,25 @@ h('span', { class: 'k', text: 'Density' }), h('span', { text: has('hydrometer') 
 h('span', { class: 'k', text: m.form === 'powder' ? 'Grains' : 'Viscosity' }), h('span', { text: m.form === 'powder' ? `piles at ≈${Math.round(Math.atan(m.friction) * 180 / Math.PI)}°` + (m.solubility > 0.05 ? ', dissolves in water' : '') : has('viscometer') ? `${m.viscosity} cP` : viscosityClass(m.viscosity) }),
 h('span', { class: 'k', text: 'Melts' }), h('span', { text: k.melt !== undefined ? `≈${k.melt}°C (observed)` : m.form === 'liquid' ? 'unknown (freeze it to find out)' : 'unknown' }),
 h('span', { class: 'k', text: 'Boils' }), h('span', { text: k.boil !== undefined ? `≈${k.boil}°C (observed)` : isFinite(m.boil) ? 'unknown (heat it to find out)' : 'does not boil' }),
+h('span', { class: 'k', text: 'Magic' }), h('span', { text: !isMagical(m) ? 'none to awaken' : k.awaken !== undefined ? `awoke near ${k.awaken}°C in your brew (observed)` : 'can awaken — its threshold is unknown (heat or chill it to find out)' }),
 h('span', { class: 'k', text: 'Price' }), h('span', { text: `${coins(st.priceOf(id))} / 100 ml` }),
 );
 const asp = h('div', { class: 'aspect-bars' });
-for (const e of EFFECTS) {
+for (const e of m.remains ? [] : EFFECTS) {
 const v = (m.effects && m.effects[e.key]) || 0;
 if (Math.abs(v) < 1) continue;
 asp.append(h('span', {}, icon(e.icon, 'sm'), ' ' + e.label), h('div', { class: 'bar' }, h('i', { style: { width: Math.min(100, Math.abs(v)) + '%', background: `rgb(${e.color.map((c) => Math.round(c * 255)).join(',')})` } })), h('span', { text: e.key === 'acidity' && v < 0 ? `${Math.round(v)} (alkaline)` : String(Math.round(v)) }));
 }
-if (!asp.children.length) asp.append(h('span', { class: 'muted', text: 'No magical or chemical effect.' }));
+if (m.remains) asp.append(h('span', { class: 'muted', text: `Unknown: recovered from ${m.remains.rabbitName}. Whatever it absorbed in life may linger — test it in the Trials room.` }));
+else if (!asp.children.length) asp.append(h('span', { class: 'muted', text: 'No magical or chemical effect.' }));
 const reactions = st.world.reactions.filter((r) => (r.a === id || r.b === id) && st.journal['reaction:' + r.id]);
 modal({
 title: m.name,
 body: [
 h('div', { class: 'card parch ing-card' }, jarCanvas(m, 22, 30), h('div', {}, h('div', { text: m.description }), h('div', {}, ...tags.map((t) => h('span', { class: 'tag', text: t }))))),
 h('div', { class: 'card parch' }, facts),
-h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: m.product ? 'Effects of this pure substance (as the guild knows it)' : 'Known effects of the pure ingredient (mixtures must be tested)' }), asp,
-m.wild && m.form === 'solid' ? h('div', { class: 'small', text: 'Supplied whole: crush it in the pot with the pestle, or switch on “Ground” to grind it in the mortar first. Only what dissolves takes effect.' }) : null),
+h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: m.remains ? 'Effects' : m.product ? 'Effects of this pure substance (as the guild knows it)' : 'Known effects of the pure ingredient (mixtures must be tested)' }), asp,
+(m.wild || m.remains) && m.form === 'solid' ? h('div', { class: 'small', text: 'Supplied whole: crush it in the pot with the pestle, or switch on “Ground” to grind it in the mortar first. Only what dissolves takes effect.' }) : null),
 reactions.length ? h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Known reactions' }), ...reactions.map((r) => h('div', { class: 'small', text: `• ${r.name}: ${r.hint || ''}` }))) : null,
 ],
 });
@@ -10022,7 +11014,12 @@ const main = ref.ingredients.slice().sort((a, b) => b.n - a.n).map((i) => st.loo
 const tips = [];
 if (main) tips.push(`A guild alchemist would start from ${main.name}${main.wild ? ` (it grows in the ${main.wild.region === 'forest' ? 'Whisperwood' : main.wild.region === 'meadow' ? 'Sunlit Meadow' : main.wild.region === 'river' ? 'Willow Bank' : main.wild.region === 'quarry' ? 'Ironstone Quarry' : main.wild.region === 'moonfen' ? 'Moonfen' : 'Ember Crags'})` : ''}.`);
 if (ref.ingredients.some((i) => i.ground)) tips.push('Grind what is whole — only what dissolves takes effect.');
-if ((ref.heatTo ?? 20) > 40) tips.push('Patience and gentle heat draw out more than stirring alone.');
+if ((ref.heatTo ?? 20) > 40 && !com.activation) tips.push('Patience and gentle heat draw out more than stirring alone.');
+if (com.activation) {
+const cold = com.predicted && com.predicted.threshold !== null && com.predicted.threshold < 0;
+tips.push(`This strength is out of reach for sleeping magic: it must be awakened. Mix everything first at room temperature, then ${cold ? 'chill' : 'heat'} the whole brew until it glows — and hold it there until the glow is even.`);
+}
+if (com.requirements.some((r) => r.key === 'purity')) tips.push('“No other effect above 1.2 %” is strict. Choose ingredients that do one thing, and test for the effects you did not ask for, too.');
 tips.push('How much, and with what? That you must find out. Test small doses before you bottle.');
 modal({ title: 'Guild advice', body: [h('div', { class: 'card parch' }, ...tips.map((t) => h('div', { class: 'small', text: '• ' + t })))] });
 return;
@@ -10144,11 +11141,24 @@ h('span', { class: 'k', text: 'Spent' }), h('span', { text: coins(summary.spent)
 h('span', { class: 'k', text: 'Net' }), h('span', { text: (net >= 0 ? '+' : '') + coins(net) }),
 h('span', { class: 'k', text: 'Rank' }), h('span', { text: `${st.rankName} (${st.reputation} rep)` }),
 )),
+hutchSummary(summary.colony),
 h('div', { class: 'card parch' }, h('b', { text: `Tomorrow: ${st.marketEvent.name}` }), h('div', { class: 'small', text: st.marketEvent.text })),
 st.nextRank() ? h('div', { class: 'small muted', text: `Next rank: ${st.nextRank().name} at ${st.nextRank().rep} reputation.` }) : null,
 ],
 foot: [btn('Open the shop', () => document.querySelector('.overlay .modal-head .btn').dispatchEvent(new MouseEvent('click')), { cls: 'primary', act: 'next-day' })],
 });
+}
+function hutchSummary(col) {
+if (!col || !(col.born.length || col.grown.length || col.died.length || col.lost || col.conceived)) return null;
+const rows = [];
+if (col.born.length) rows.push(h('span', { class: 'k', text: 'Kits born' }), h('span', { text: `${col.born.length} (${[...new Set(col.born.map((b) => b.mother))].join(', ')})` }));
+if (col.grown.length) rows.push(h('span', { class: 'k', text: 'Grown up' }), h('span', { text: col.grown.map((g) => g.name).join(', ') }));
+if (col.died.length) rows.push(h('span', { class: 'k', text: 'Died' }), h('span', { text: col.died.map((d) => `${d.name} (${causeWord(d.cause)})`).join(', ') }));
+if (col.conceived) rows.push(h('span', { class: 'k', text: 'Expecting' }), h('span', { text: `${col.conceived} doe${col.conceived > 1 ? 's' : ''}` }));
+return h('div', { class: 'card parch hutch-summary', 'data-summary': 'hutch' },
+h('div', { class: 'row' }, icon('rabbit'), h('b', { text: 'The hutch' })),
+h('div', { class: 'kv' }, ...rows),
+col.lost ? h('div', { class: 'small muted', text: `The hutch was too full for ${col.lost} more kit${col.lost > 1 ? 's' : ''}; the breeder took them.` }) : null);
 }
 function showAnalysis(lab, m, recipe, title = 'Analysis of the brew') {
 const st = lab.state;
@@ -10277,7 +11287,7 @@ m.body.appendChild(list);
 } else {
 if (!st.history.length) m.body.appendChild(h('div', { class: 'card parch', text: 'No sales yet.' }));
 for (const s of st.history) {
-m.body.appendChild(h('div', { class: 'item parch' }, s.color ? swatch(s.color) : icon('flask'), h('div', {}, h('div', { class: 'title', text: s.potion }), h('div', { class: 'meta', text: `Day ${s.day} · ${s.customer} (${s.title}) · ${Math.round(s.quality * 100)}%` })), h('span', {}, h('span', { class: 'stars', text: starsText(s.stars) }), h('div', { class: 'small', text: `+${coins(s.paid)}` }))));
+m.body.appendChild(h('div', { class: 'item parch' }, s.color ? swatch(s.color) : icon('flask'), h('div', {}, h('div', { class: 'title', text: s.potion }), h('div', { class: 'meta', text: `Day ${s.day} · ${s.customer} (${s.title}) · ${s.quality === null || s.quality === undefined ? 'awaiting their verdict' : Math.round(s.quality * 100) + '%'}` })), h('span', {}, h('span', { class: 'stars', text: s.stars === null || s.stars === undefined ? '…' : starsText(s.stars) }), h('div', { class: 'small', text: `+${coins(s.paid)}` }))));
 }
 }
 };
@@ -10302,8 +11312,9 @@ modal({
 title: 'How to play',
 wide: true,
 body: [
-sec('Your shop', ['Customers ask for potions with particular effects (healing, strength, love, fire…) and physical qualities (colour, thickness, temperature). The order strip shows each requirement and a live meter for what your instruments can measure.', 'You know what each plain ingredient does. You do NOT know what a mixture does: mixing, heat, reactions and hidden laws change things. Test doses in the Trials room to find out — a customer only accepts a potion whose effects you have verified.', 'Bottle when you are happy — the potion is drawn from the tap at the bottom of the cauldron, so the lowest layer comes out first. Then serve it at the Counter.', 'Better matches earn more coins and reputation. Reputation unlocks ranks, regions of the wilds, reagents and equipment.']),
-sec('Wilds and trials', ['Gather roots, leaves, flowers, mushrooms and minerals in the Wilds. Deposits are finite and regrow over time, even while the game is closed.', 'Whole roots and stones do nothing until crushed (pestle) or ground (mortar, the “Ground” switch on the shelf). Only what dissolves takes effect; hot water dissolves more, and some herbs steep into strong extracts when held warm.', 'Each subject responds to some effects only: a stone shows acid but not love. Choose subjects that cover what the customer cares about.', 'When a trial surprises you, a hidden law may be at work. Confirm it twice and your theory learns it.']),
+sec('Your shop', ['Customers ask for potions with effects at a strength — healing, strength, love, fire… — and physical qualities such as colour, thickness and temperature. Strength is the effective concentration in percent: everyday orders want about 8–15 %, master commissions far more.', 'Many orders forbid side effects: “no other effect above 1.2 %”. Every other kind of magic in the bottle must stay that faint.', 'You know what each plain ingredient does. You do NOT know what a mixture does: mixing, heat, reactions and hidden laws change things. Test doses in the Trials room to find out.', 'Bottle a measured quantity from the tap at the bottom of the cauldron (the lowest layer comes out first). A sealed vial keeps its exact contents: test doses from it, pour it back to keep working, or offer it at the Counter.', 'Before a sale you write the label — tested values, the guild theory’s estimates, “none” or unknown — and bargain over the price. The customer pays what you agree, drinks the real potion and comes back the next day: pleased, or with a complaint. Refund them, dispute it with your trial records, or turn them away.', 'Honest, well-tested potions earn reputation. Reputation unlocks ranks, regions of the wilds, reagents and equipment.']),
+sec('Arcane awakening', ['Magical ingredients carry a hidden arcane threshold. Heat the brew past it (or, for cold magic, chill it below) and the magic awakens: it glows in the colour of its effect and acts several times stronger.', 'In a blend the threshold is the mix of its magical ingredients’ thresholds, by volume — a hot-waking and a cold-waking ingredient pull each other toward room temperature.', 'Mix first, at room temperature; then heat or chill to awaken. A half-mixed brew awakens unevenly.', 'Awakened magic stays awake when it cools, is bottled or kept. Only dilution and reactions undo it.', 'Your journal notes where each ingredient awoke; the Arcanometer reads a brew’s threshold directly.']),
+sec('Wilds and trials', ['Gather roots, leaves, flowers, mushrooms and minerals in the Wilds. Deposits are finite and regrow over time, even while the game is closed.', 'Each ingredient has its method — pick, dig, chip, scrape or sweep — and the right tool doubles the harvest. Twilight plants open only at dawn (your first customer of the day) or dusk (your last). The weather changes daily. A thorough harvest takes twice as much but the deposit regrows slowly.', 'Whole roots and stones do nothing until crushed (pestle) or ground (mortar, the “Ground” switch on the shelf). Only what dissolves takes effect; hot water dissolves more, and some herbs steep into strong extracts when held warm.', 'Each subject responds to some effects only: a stone shows acid but not love. Choose subjects that cover what the customer cares about.', 'When a trial surprises you, a hidden law may be at work. Confirm it twice and your theory learns it.']),
 sec('Brewing', ['Tap a jar on the shelf, then hold your finger (or the mouse) inside the cauldron to pour. Dose buttons pour exact amounts.', 'Stir with the spoon: drag through the brew. Mixing starts where liquids touch and spreads; stirring speeds it up dramatically.', 'Powders pile up like sand. Knead a binding powder with a watery liquid to make dough; add more liquid to thin it.', 'Slide the fire control right to heat from below, left to cool. Heat spreads through the brew gradually.', 'Keep the lid on to trap vapour; let things cool and the vapour condenses back. Open the lid to let it escape.', 'Freeze liquids into blocks, then crush them with the pestle. Some reagents react when mixed, heated or chilled — discoveries go into your journal.']),
 sec('Controls', ['Keys: 1 pour · 2 spoon · 3 pestle · 4 skimmer · 5 inspect · L lid · B bottle · F time speed · A auto-stir · arrows fire · S shop · R recipes · J journal · Esc menu.', 'Long-press (or right-click) a jar to inspect a reagent.', 'Use the time-speed button to skip waiting while things heat, cool or react.']),
 sec('Tips', ['Ask the guild for advice on a difficult order — it costs a few coins.', 'Instruments like the hydrometer, viscometer, assay kit and aether lens turn rough guesses into exact readings.', 'If you run out of money, the guild will help a struggling apprentice once a day — and water from the well is always free.']),
@@ -10365,20 +11376,22 @@ h('div', { class: 'card parch small' }, 'The Alchemist’s Shop — all art, sou
 return { fxChips, openShop, openIngredient, openHint, openBottleSize, showResult, showDaySummary, showAnalysis, openRecipes, renderRecipes, openJournal, renderJournal, openPause, openHelp, openSettings };
 })();
 // src/ui/trade.js
-const __m57 = (() => {
+const __m59 = (() => {
 const { h, btn, modal, toast, coins, clear } = __m2;
 const { icon } = __m3;
-const { drawPortrait } = __m52;
+const { drawPortrait } = __m54;
 const { audio } = __m4;
 const { EFFECTS, EFFECT_BY_KEY } = __m13;
-const { draftLabel, openNegotiation: beginNegotiation, proposePrice, acceptOffer, relevantEffects, labelTrust } = __m44;
+const { draftLabel, openNegotiation: beginNegotiation, proposePrice, acceptOffer, relevantEffects, labelTrust, editClaim } = __m45;
 const { PURITY_LIMIT } = __m25;
+const { shortName } = __m21;
 function openIdentify(lab, vial, onDone) {
 const st = lab.state;
 const draft = vial.label ? JSON.parse(JSON.stringify(vial.label)) : draftLabel(vial, lab.vialTheory(vial), st.day);
 const com = st.current;
 const relevant = com ? new Set(relevantEffects(com)) : new Set(EFFECTS.map((e) => e.key));
 const rows = h('div', { class: 'label-rows' });
+let open = '';
 const render = () => {
 clear(rows);
 for (const e of EFFECTS) {
@@ -10387,23 +11400,25 @@ const src = c.source === 'trial' ? h('span', { class: 'src trial', title: 'Measu
 : c.kind === 'unknown' ? h('span', { class: 'src unknown', text: 'unknown' })
 : c.source === 'estimate' ? h('span', { class: 'src est', text: `theory${c.spread ? ' ±' + c.spread : ''}` }) : h('span', { class: 'src you', text: 'your claim' });
 const val = c.kind === 'value' ? `${Math.round((c.value || 0) * 10) / 10}%` : c.kind === 'none' ? `none (< ${PURITY_LIMIT}%)` : '?';
-const step = (d) => () => {
-const v = c.kind === 'value' ? (c.value || 0) : 0;
-const nv = Math.round((v + d) * 10) / 10;
-draft.claims[e.key] = Math.abs(nv) < PURITY_LIMIT ? { kind: 'none', source: 'player' } : { kind: 'value', value: nv, source: c.source === 'trial' && Math.abs(nv - (c.value || 0)) < 0.05 ? 'trial' : 'player', record: c.record };
-render();
-};
-rows.appendChild(h('div', { class: 'label-row' + (relevant.has(e.key) ? ' relevant' : '') + (c.kind === 'unknown' ? ' unknown' : '') },
+const edit = (op) => () => { draft.claims[e.key] = editClaim(c, e.key, op); render(); };
+const row = h('div', { class: 'label-row' + (relevant.has(e.key) ? ' relevant' : '') + (c.kind === 'unknown' ? ' unknown' : '') + (open === e.key ? ' open' : ''), 'data-claim': e.key },
 icon(e.icon, 'sm'), h('span', { class: 'lk', text: e.label }), src, h('b', { class: 'lv', text: val }),
 h('span', { class: 'lctl' },
-btn('−', step(e.key === 'acidity' && (c.value || 0) <= 0 ? -1 : -1), { cls: 'small', title: `Claim less ${e.label.toLowerCase()}`, act: `claim-dn-${e.key}` }),
-btn('+', step(1), { cls: 'small', title: `Claim more ${e.label.toLowerCase()}`, act: `claim-up-${e.key}` }),
-btn('none', () => { draft.claims[e.key] = { kind: 'none', source: c.source === 'trial' && Math.abs(c.value || 0) < PURITY_LIMIT ? 'trial' : 'player', record: c.record }; render(); }, { cls: 'small', act: `claim-none-${e.key}` }),
-btn('?', () => { draft.claims[e.key] = { kind: 'unknown', source: 'player' }; render(); }, { cls: 'small', title: 'Make no claim', act: `claim-unknown-${e.key}` }))));
+btn('−', edit('down'), { cls: 'small', title: `Claim less ${e.label.toLowerCase()}`, act: `claim-dn-${e.key}` }),
+btn('+', edit('up'), { cls: 'small', title: `Claim more ${e.label.toLowerCase()}`, act: `claim-up-${e.key}` }),
+btn('none', edit('none'), { cls: 'small', act: `claim-none-${e.key}` }),
+btn('?', edit('unknown'), { cls: 'small', title: 'Make no claim', act: `claim-unknown-${e.key}` }),
+c.measured !== undefined && c.source !== 'trial' ? btn('✓', edit('tested'), { cls: 'small', title: 'Use the tested reading', act: `claim-tested-${e.key}` }) : null));
+row.addEventListener('click', (ev) => {
+if (/** @type {HTMLElement} */ (ev.target).closest('.lctl')) return;
+open = open === e.key ? '' : e.key;
+render();
+});
+rows.appendChild(row);
 }
 if (com) {
 const t = labelTrust(com, draft, st.rank);
-trustEl.textContent = `${com.customer.name.split(' ')[0]} will trust this label ${t >= 0.9 ? 'fully' : t >= 0.7 ? 'well' : t >= 0.5 ? 'somewhat' : 'barely'}.`;
+trustEl.textContent = `${shortName(com.customer.name)} will trust this label ${t >= 0.9 ? 'fully' : t >= 0.7 ? 'well' : t >= 0.5 ? 'somewhat' : 'barely'}.`;
 }
 };
 const trustEl = h('div', { class: 'small' });
@@ -10425,7 +11440,21 @@ return m;
 }
 function openNegotiation(lab, com, vial, onEnd) {
 const st = lab.state;
-const n = beginNegotiation(com, vial, vial.label, st.rank);
+const key = JSON.stringify(vial.label.claims);
+const prev = com.haggle && com.haggle.vialId === vial.id && com.haggle.state === 'open' ? com.haggle : null;
+let n;
+if (prev && prev.labelKey === key) n = prev;
+else {
+n = beginNegotiation(com, vial, vial.label, st.rank);
+if (prev) {
+n.patience = Math.min(n.patience, prev.patience);
+n.round = prev.round;
+n.log.unshift({ who: 'them', text: 'You again — with a new label.' });
+}
+}
+n.vialId = vial.id;
+n.labelKey = key;
+com.haggle = n;
 const persona = com.customer.persona || { haggle: 0.5 };
 const portrait = /** @type {HTMLCanvasElement} */ (h('canvas', { class: 'portrait big' }));
 drawPortrait(portrait, com.customer.portrait, n.fit >= 0.7 ? 'happy' : n.fit >= 0.4 ? 'neutral' : 'unhappy');
@@ -10435,10 +11464,15 @@ const askEl = h('b', { class: 'ask' });
 const offerEl = h('div', { class: 'offer' });
 const roundsEl = h('div', { class: 'small muted' });
 let ended = false;
-const finish = () => { if (ended) return; ended = true; m.close(); onEnd(n.state === 'open' ? null : n); };
+const walkAway = () => {
+if (n.state !== 'open' || n.round === 0) return;
+n.patience -= 1;
+if (n.patience <= 0) { n.state = 'left'; n.log.push({ who: 'them', text: 'I have wasted enough of my day. Good day to you.' }); }
+};
+const finish = () => { if (ended) return; ended = true; walkAway(); m.close(); onEnd(n.state === 'open' ? null : n); };
 const render = () => {
 clear(log);
-for (const l of n.log.slice(-6)) log.appendChild(h('div', { class: 'line ' + l.who }, h('b', { text: l.who === 'you' ? 'You: ' : `${com.customer.name.split(' ')[0]}: ` }), l.text));
+for (const l of n.log.slice(-6)) log.appendChild(h('div', { class: 'line ' + l.who }, h('b', { text: l.who === 'you' ? 'You: ' : `${shortName(com.customer.name)}: ` }), l.text));
 askEl.textContent = `${coins(ask)} coins`;
 offerEl.textContent = `Their offer: ${coins(n.offer)} coins`;
 roundsEl.textContent = n.state === 'open' ? `${persona.haggle > 0.6 ? 'A hard bargainer.' : persona.haggle < 0.3 ? 'An easy-going buyer.' : 'A fair trader.'} ${n.patience <= 1 ? 'Their patience is nearly gone.' : ''}` : '';
@@ -10459,7 +11493,7 @@ let m;
 m = modal({
 title: `Bargaining with ${com.customer.name}`,
 wide: true,
-onClose: () => { if (!ended) { ended = true; onEnd(n.state === 'open' ? null : n); } },
+onClose: () => { if (!ended) { ended = true; walkAway(); onEnd(n.state === 'open' ? null : n); } },
 body: [h('div', { class: 'card parch haggle' },
 h('div', { class: 'cust-top' }, portrait, h('div', {},
 h('div', { class: 'cust-name', text: com.customer.name }),
@@ -10508,6 +11542,7 @@ drawPortrait(portrait, f.customer.portrait, f.kind === 'praise' ? 'happy' : 'unh
 const act = (a) => () => {
 const r = st.settleFollowUp(f.id, a);
 if (!r) return;
+if (r.refused) { audio.play('error'); toast('Not enough coins', r.text, 'coin'); return; }
 audio.play(f.kind === 'praise' ? 'praise' : r.coins < 0 || r.rep < 0 ? 'complaint' : 'coin');
 toast(f.kind === 'praise' ? 'A happy customer' : 'Complaint settled', `${r.text} ${r.coins ? (r.coins > 0 ? '+' : '') + coins(r.coins) + ' coins. ' : ''}${r.rep ? 'Reputation ' + (r.rep > 0 ? '+' : '') + r.rep + '.' : ''}`, f.kind === 'praise' ? 'heart' : 'talk', 5200);
 for (const e of r.events) lab.announce(e);
@@ -10519,7 +11554,7 @@ lab.updateBadges();
 const evidence = sale ? sale.evidence.length : 0;
 const actions = f.kind === 'praise'
 ? [btn('Thank them', act('thank'), { cls: 'primary', icon: 'heart', act: 'fu-thank' })]
-: [btn(`Refund ${coins(f.demand)}`, act('refund'), { icon: 'coin', act: 'fu-refund' }),
+: [btn(`Refund ${coins(f.demand)}`, act('refund'), { icon: 'coin', act: 'fu-refund', disabled: st.coins + 1e-9 < f.demand, title: st.coins + 1e-9 < f.demand ? `You need ${coins(f.demand)} coins to refund in full` : 'Pay the money back' }),
 btn(evidence ? `Dispute (${evidence} trial record${evidence > 1 ? 's' : ''})` : 'Dispute', act('dispute'), { icon: 'scroll', act: 'fu-dispute' }),
 btn('Turn them away', act('dismiss'), { icon: 'door', cls: 'danger', act: 'fu-dismiss' })];
 return h('div', { class: 'card parch followup ' + f.kind, 'data-followup': f.id },
@@ -10527,7 +11562,7 @@ h('div', { class: 'row' }, portrait, h('div', {},
 h('b', { text: `${f.customer.name} is back` }),
 h('div', { class: 'small muted', text: sale ? `Bought ${sale.potion.toLowerCase()} on day ${sale.day} for ${coins(sale.price)} coins` : '' }))),
 h('div', { class: 'speech', text: '“' + f.text + '”' }),
-f.kind === 'complaint' && sale ? h('div', { class: 'small muted', text: `Your label for that batch: ${claimSummary(sale.claims)}` }) : null,
+f.kind === 'complaint' && sale ? h('div', { class: 'small muted fu-label', text: `Your label for that batch: ${claimSummary(sale.claims)}` }) : null,
 h('div', { class: 'row wrap' }, ...actions));
 }
 function claimSummary(claims) {
@@ -10542,7 +11577,7 @@ return parts.length ? parts.join(', ') + '; nothing else' : 'no magical effect';
 return { openIdentify, openNegotiation, showDeal, followUpCard, claimSummary, EFFECT_BY_KEY };
 })();
 // src/ui/tutorial.js
-const __m58 = (() => {
+const __m60 = (() => {
 const { h, btn } = __m2;
 const { PHASE } = __m23;
 const { MAX_SPECIES } = __m18;
@@ -10679,19 +11714,20 @@ this.place();
 return { Tutorial };
 })();
 // src/ui/views/counter.js
-const __m59 = (() => {
+const __m61 = (() => {
 const { h, btn, clear, coins, confirmDialog } = __m2;
 const { icon } = __m3;
-const { drawPortrait } = __m52;
-const { drawBottle } = __m48;
+const { drawPortrait } = __m54;
+const { drawBottle } = __m50;
 const { PROPERTY_LABELS } = __m24;
 const { EFFECT_BY_KEY } = __m13;
 const { missingEffects } = __m27;
-const { relevantEffects } = __m44;
-const trade = __m57;
+const { relevantEffects } = __m45;
+const trade = __m59;
 const { describeColor, rgbToHex } = __m8;
 const { viscosityClass } = __m22;
-const panels = __m56;
+const panels = __m58;
+const { shortName } = __m21;
 class CounterView {
 constructor(lab) {
 this.lab = lab;
@@ -10724,7 +11760,7 @@ drawPortrait(portrait, com.customer.portrait, 'neutral');
 const cert = lab.currentCert();
 const vialCert = st.vial ? st.vial.cert || {} : null;
 const list = h('ul', { class: 'reqs full' });
-const known = (k) => (vialCert && vialCert[k] !== undefined ? vialCert[k] : cert.values[k]);
+const known = (k) => (vialCert ? vialCert[k] : cert.values[k]);
 for (const req of com.requirements) {
 const isFx = !!EFFECT_BY_KEY[req.key];
 const label = PROPERTY_LABELS[req.key] || req.key;
@@ -10772,7 +11808,7 @@ const ctx = cv.getContext('2d');
 drawBottle(ctx, 2, 3, 20, 29, m.color, Math.min(1, v.ml / Math.max(1, com ? com.bottleMl : v.ml)));
 const has = (e) => lab.sandbox || st.has(e);
 const need = com ? missingEffects(com, v.cert || {}) : [];
-const first = com ? com.customer.name.split(' ')[0] : '';
+const first = com ? shortName(com.customer.name) : '';
 const serve = com ? btn(`Offer to ${first}`, () => lab.serveVial(), { cls: 'primary', icon: 'deal', disabled: v.ml < 5, act: 'serve' }) : null;
 const labelB = btn(v.label ? 'Revise label' : 'Label', () => lab.identifyVial(), { icon: 'tag', act: 'label' });
 const testB = btn('Test a dose', () => { lab.trialSource = 'vial'; lab.showView('trials'); }, { icon: 'dropper', act: 'test-vial' });
@@ -10792,13 +11828,14 @@ h('div', { class: 'row wrap' }, serve, labelB, testB, back, discard)));
 return { CounterView };
 })();
 // src/ui/views/wilds.js
-const __m60 = (() => {
+const __m62 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { REGIONS, depositStatus, formatWait } = __m28;
+const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, DAY_PART_NAME } = __m29;
+const { equipmentById } = __m26;
 const { RANKS } = __m26;
-const { paintRegion, animateRegion, drawRaw, rawSprite, SCENE_W, SCENE_H } = __m53;
+const { paintRegion, animateRegion, drawRaw, rawSprite, SCENE_W, SCENE_H } = __m55;
 const { EFFECT_BY_KEY } = __m13;
 class WildsView {
 constructor(lab) {
@@ -10809,17 +11846,20 @@ this.time = 0;
 this.floaters = [];
 this.bg = null;
 this.bgKey = '';
+this.thorough = false;
+this.rain = [];
 }
 build() {
 const el = clear(this.el);
 this.tabs = h('div', { class: 'region-tabs', role: 'tablist' });
+this.sky = h('div', { class: 'wilds-sky small' });
 this.canvas = /** @type {HTMLCanvasElement} */ (h('canvas', { width: String(SCENE_W), height: String(SCENE_H), class: 'scene', 'aria-label': 'Region scene: tap a deposit to gather' }));
 this.ctx = /** @type {CanvasRenderingContext2D} */ (this.canvas.getContext('2d'));
 this.canvas.addEventListener('pointerdown', (e) => this.tapScene(e));
 this.info = h('div', { class: 'region-info small' });
 this.list = h('div', { class: 'deposits' });
 this.foot = h('div', { class: 'small muted wilds-foot' });
-el.append(this.tabs, h('div', { class: 'wilds-scene' }, h('div', { class: 'scene-wrap' }, this.canvas), this.info), h('div', { class: 'wilds-list' }, this.list, this.foot));
+el.append(this.tabs, h('div', { class: 'wilds-scene' }, h('div', { class: 'scene-wrap' }, this.canvas), this.info), h('div', { class: 'wilds-list' }, this.sky, this.list, this.foot));
 this.refresh();
 }
 unlocked(r) {
@@ -10840,31 +11880,47 @@ const region = REGIONS.find((r) => r.id === this.region);
 clear(this.info).append(h('b', { text: region.name }), ' — ' + region.desc);
 const list = clear(this.list);
 const now = Date.now();
+const weather = weatherOn(st.seed, st.day), part = dayPart(st);
+const mode = (t, on, act) => btn(t, () => { this.thorough = on; audio.play('click'); this.refresh(); }, { cls: 'small' + (this.thorough === on ? ' active' : ''), act });
+clear(this.sky).append(...[
+h('div', { class: 'row wrap sky-row' },
+icon(part === 'dawn' ? 'sun' : part === 'dusk' ? 'wisp' : 'sun', 'sm'), h('b', { text: lab.sandbox ? 'Any hour' : DAY_PART_NAME[part] }),
+lab.sandbox ? null : h('span', { class: 'muted', text: part === 'dawn' ? '(the first customer of the day)' : part === 'dusk' ? '(the last customer, and after closing)' : '' }),
+h('span', { class: 'spacer' }), icon(weather.icon, 'sm'), h('b', { text: lab.sandbox ? '' : weather.name })),
+lab.sandbox || weather.id === 'clear' ? null : h('div', { class: 'muted', text: weather.desc }),
+h('div', { class: 'row wrap seg harvest-mode' }, h('span', { text: 'Harvest:' }), mode('Careful', false, 'harvest-careful'), mode('Thorough ×2', true, 'harvest-thorough'),
+this.thorough ? h('span', { class: 'muted', text: 'strips the deposit: it regrows at half speed' }) : null)].filter(Boolean));
 this.rows = {};
 for (const d of this.deposits()) {
 const m = st.lookup(d.materialId);
 const s = depositStatus(st.gathering, d, now);
 const locked = !lab.sandbox && d.rank > st.rank;
-const take = st.has('satchel') ? Math.round(d.take * 1.5) : d.take;
+const plan = gatherPlan(st, d, m, { thorough: this.thorough });
+const can = lab.sandbox ? d.take : harvestable(st.gathering, d, plan, now);
+const take = lab.sandbox ? d.take : can || plan.take;
 const fx = Object.entries(m.effects || {}).filter(([, v]) => Math.abs(v) >= 5).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 3);
 const stock = lab.sandbox ? '∞' : `${Math.floor(s.stock)} / ${d.capacity} ml`;
-const when = lab.sandbox ? 'never runs out' : s.fraction >= 0.999 ? 'fully grown' : s.available >= Math.min(take, d.capacity) ? `regrowing · full in ${formatWait(s.fullIn)}` : `resting · ready in ${formatWait(s.nextIn)}`;
-const g = btn(locked ? RANKS[d.rank].name : `+${take} ml`, () => this.gather(d), { cls: 'gold', icon: locked ? 'lock' : 'satchel', disabled: locked || (!lab.sandbox && s.available < 5), act: 'gather-' + d.id });
+const when = lab.sandbox ? 'never runs out' : this.when(s, can, plan);
+const g = btn(locked ? RANKS[d.rank].name : `${plan.method.verb} +${take} ml`, () => this.gather(d), { cls: 'gold', icon: locked ? 'lock' : plan.method.icon, disabled: locked || (!lab.sandbox && can < 5), act: 'gather-' + d.id });
 const barI = h('i', { style: { width: Math.round((lab.sandbox ? 1 : s.fraction) * 100) + '%' } });
 const meta = h('div', { class: 'meta', text: `${stock} · ${when}` });
 this.rows[d.id] = { barI, meta, g, locked, take };
-list.appendChild(h('div', { class: 'deposit parch' + (locked ? ' locked' : '') },
+const notes = lab.sandbox ? [] : plan.factors.filter((f) => f.why !== 'satchel' && !f.why.startsWith('thorough')).map((f) => f.why);
+const tool = plan.method.tool ? equipmentById(plan.method.tool) : null;
+list.appendChild(h('div', { class: 'deposit parch' + (locked ? ' locked' : '') + (s.scarred ? ' scarred' : '') },
 rawSprite(m.wild ? m.wild.shape : 'stone', m.look || m.color, lab.sandbox ? 1 : s.fraction),
 h('div', { class: 'dep-info' },
-h('div', { class: 'title' }, m.name, d.rare ? h('span', { class: 'tag rare', text: 'rare' }) : null),
+h('div', { class: 'title' }, m.name, d.rare ? h('span', { class: 'tag rare', text: 'rare' }) : null, plan.hour ? h('span', { class: 'tag hour', text: plan.hour }) : null),
 d.place ? h('div', { class: 'meta place', text: d.place }) : null,
 h('div', { class: 'bar' }, barI),
 meta,
+notes.length ? h('div', { class: 'meta note', text: notes.join(' · ') }) : null,
+!lab.sandbox && tool && !plan.hasTool ? h('div', { class: 'meta muted', text: `${tool.name}: ${tool.price} coins at the shop` }) : null,
 h('div', { class: 'meta fx' }, ...fx.map(([k, v]) => h('span', { class: 'fx-chip', title: EFFECT_BY_KEY[k].label }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(v)}`)),
 h('span', { class: 'muted', text: ` · in stores: ${Math.round(st.stock(m.id))} ml` }))),
 g));
 }
-clear(this.foot).append(`Shelf space ${st.cap.storage} ml per ingredient. ${st.has('satchel') ? 'Your satchel carries half as much again. ' : ''}Deposits regrow with time — even while the shop is closed — and recover half their stock each new day.`);
+clear(this.foot).append(`Shelf space ${st.cap.storage} ml per ingredient. ${st.has('satchel') ? 'Your satchel carries half as much again. ' : ''}Deposits regrow with time — even while the shop is closed — and recover half their stock each new day (a stripped one, a quarter). Dawn and dusk follow your customers: the first of the day comes at dawn, the last at dusk.`);
 this.paintBg();
 }
 deposits() {
@@ -10881,15 +11937,16 @@ paintRegion(/** @type {CanvasRenderingContext2D} */ (this.bg.getContext('2d')), 
 gather(d) {
 const lab = this.lab, st = lab.state;
 const m = st.lookup(d.materialId);
-const r = lab.sandbox ? { ok: true, amount: d.take, events: [] } : st.gather(d.id);
+const plan = gatherPlan(st, d, m, { thorough: this.thorough });
+const r = lab.sandbox ? { ok: true, amount: d.take, events: [] } : st.gather(d.id, { thorough: this.thorough });
 if (!r.ok) {
 audio.play('error');
-const why = r.reason === 'full' ? `Your shelves are full of ${m.name}.` : r.reason === 'locked' ? 'You may not gather here yet.' : `Picked clean. It regrows in ${formatWait(r.nextIn || 60000)}.`;
+const why = r.reason === 'full' ? `Your shelves are full of ${m.name}.` : r.reason === 'locked' ? 'You may not gather here yet.' : r.reason === 'reserve' ? 'Careful hands leave the rest to regrow. A thorough harvest would strip it — and it would regrow slowly.' : `Picked clean. It regrows in ${formatWait(r.nextIn || 60000)}.`;
 toast('Nothing to gather', why, 'satchel');
 return;
 }
-audio.play('pour');
-setTimeout(() => audio.play('select'), 120);
+audio.play(plan.method.sound);
+setTimeout(() => audio.play('select'), 140);
 this.floaters.push({ x: d.x * SCENE_W, y: d.y * SCENE_H, t: 0, text: `+${r.amount}`, color: m.look || m.color, shape: m.wild ? m.wild.shape : 'stone' });
 for (const e of r.events || []) lab.announce(e);
 if (lab.tutorial) lab.tutorial.notify('gather', d.materialId);
@@ -10927,6 +11984,7 @@ drawRaw(ctx, x, y, m.wild ? m.wild.shape : 'stone', m.look || m.color, s.fractio
 ctx.globalAlpha = 1;
 if (!locked && s.fraction >= 0.999 && Math.sin(this.time * 3 + d.x * 20) > 0.92) { ctx.fillStyle = '#fff6e0'; ctx.fillRect(x + 12, y + 1, 1, 1); }
 }
+this.paintSky(ctx, dt);
 for (const f of this.floaters) {
 f.t += dt;
 const a = Math.max(0, 1 - f.t / 1.2);
@@ -10945,6 +12003,44 @@ this.floaters = this.floaters.filter((f) => f.t < 1.2);
 this._acc = (this._acc || 0) + dt;
 if (this._acc > 1) { this._acc = 0; this.tick(); }
 }
+paintSky(ctx, dt) {
+const st = this.lab.state;
+if (this.lab.sandbox) return;
+const part = dayPart(st), weather = weatherOn(st.seed, st.day);
+if (part !== 'day') {
+ctx.fillStyle = part === 'dawn' ? 'rgba(255,170,190,0.16)' : 'rgba(90,50,120,0.28)';
+ctx.fillRect(0, 0, SCENE_W, SCENE_H);
+if (part === 'dusk') { ctx.fillStyle = 'rgba(255,140,60,0.12)'; ctx.fillRect(0, Math.round(SCENE_H * 0.35), SCENE_W, Math.round(SCENE_H * 0.2)); }
+}
+if (weather.id === 'fog') {
+for (let k = 0; k < 4; k++) {
+ctx.fillStyle = `rgba(225,225,235,${0.12 + 0.04 * k})`;
+const y = Math.round(SCENE_H * (0.45 + 0.12 * k) + Math.sin(this.time * 0.4 + k) * 2);
+ctx.fillRect(0, y, SCENE_W, 5 + k);
+}
+} else if (weather.id === 'rain' || weather.id === 'storm' || weather.id === 'frost') {
+const snow = weather.id === 'frost';
+while (this.rain.length < (snow ? 40 : 70)) this.rain.push({ x: Math.random() * SCENE_W, y: Math.random() * SCENE_H, v: 0.6 + Math.random() * 0.4 });
+ctx.fillStyle = snow ? 'rgba(245,250,255,0.85)' : 'rgba(170,200,235,0.55)';
+for (const r of this.rain) {
+r.y += dt * (snow ? 14 : weather.id === 'storm' ? 150 : 110) * r.v;
+r.x += dt * (snow ? Math.sin(this.time + r.v * 9) * 6 : weather.id === 'storm' ? -40 : -8);
+if (r.y > SCENE_H) { r.y -= SCENE_H; r.x = Math.random() * SCENE_W; }
+if (r.x < 0) r.x += SCENE_W;
+ctx.fillRect(Math.round(r.x), Math.round(r.y), 1, snow ? 1 : 3);
+}
+if (weather.id === 'storm' && Math.sin(this.time * 0.9) > 0.995) { ctx.fillStyle = 'rgba(255,255,240,0.35)'; ctx.fillRect(0, 0, SCENE_W, SCENE_H); }
+} else if (weather.id === 'heat') {
+ctx.fillStyle = 'rgba(255,200,90,0.1)';
+ctx.fillRect(0, 0, SCENE_W, SCENE_H);
+}
+}
+when(s, can, plan) {
+if (s.fraction >= 0.999) return 'fully grown';
+const growing = `regrowing${s.scarred ? ' slowly' : ''} · full in ${formatWait(s.fullIn)}`;
+if (can >= 5) return growing;
+return s.stock > plan.reserve ? `left to regrow · ${growing}` : `resting · full in ${formatWait(s.fullIn)}`;
+}
 tick() {
 const lab = this.lab, st = lab.state;
 if (lab.sandbox || !this.rows) return;
@@ -10953,25 +12049,1423 @@ for (const d of this.deposits()) {
 const row = this.rows[d.id];
 if (!row) continue;
 const s = depositStatus(st.gathering, d, now);
+const plan = gatherPlan(st, d, st.lookup(d.materialId), { thorough: this.thorough });
+const can = harvestable(st.gathering, d, plan, now);
 row.barI.style.width = Math.round(s.fraction * 100) + '%';
-const when = s.fraction >= 0.999 ? 'fully grown' : s.available >= Math.min(row.take, d.capacity) ? `regrowing · full in ${formatWait(s.fullIn)}` : `resting · ready in ${formatWait(s.nextIn)}`;
-row.meta.textContent = `${Math.floor(s.stock)} / ${d.capacity} ml · ${when}`;
-row.g.disabled = row.locked || s.available < 5;
+row.meta.textContent = `${Math.floor(s.stock)} / ${d.capacity} ml · ${this.when(s, can, plan)}`;
+row.g.disabled = row.locked || can < 5;
 }
 }
 }
 return { WildsView };
 })();
+// src/rendering/rabbit.js
+const __m64 = (() => {
+const { Rng, hashString } = __m6;
+const { PAL, makeCanvas } = __m51;
+const { RABBIT_MARKS } = __m28;
+const RABBIT_W = 48;
+const RABBIT_H = 40;
+const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+const bayer = (x, y) => BAYER4[(x & 3) + (y & 3) * 4];
+const K = '#1a1218';
+const WHITE = [1, 1, 1];
+const TEAL = [0.4, 0.9, 0.79], SICK = [0.55, 0.62, 0.3], ICE = [0.75, 0.9, 1], ASH = [0.54, 0.51, 0.59];
+const EMBER = [1, 0.6, 0.3], CHAR = [0.23, 0.14, 0.09], GREY = [0.66, 0.64, 0.68];
+const C_PINK = '#ffc7dd', C_NOSE = '#ff5aa8', C_HEART = '#ff5aa8', C_BLUSH = '#ff9fc7', C_RUBY = '#e0402c';
+const C_RIME = PAL.frost3, C_ICE = '#8fd0ff';
+const C_CHALK = '#e6dcc8', C_CHALK2 = '#c9c0b0', C_CRUST = '#a8a090';
+const C_SINGE = '#3a2416', C_SINGE2 = '#5a3a20', C_SOOT = '#2a1a12';
+const C_BURN = '#ffc7dd', C_BURN_RIM = '#c0506a', C_RAW = '#ff8fa0', C_ACID = '#d8e86a';
+const C_SLIME = '#92cc71', C_SLIME2 = '#6f8a3a', C_DRIP = '#b6e08a';
+const C_GOLD = PAL.brassHi, C_GLEAM = '#fff0b0', C_CREAM = '#fff6e0';
+const C_RUNE = PAL.magic, C_RUNE_HI = PAL.magicHi, C_SHIM = '#5fd4b4', C_GREY = '#a8a2b0';
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const mod = (v, m) => ((v % m) + m) % m;
+const lvl = (v) => (v >= 3 ? 3 : v >= 2 ? 2 : v >= 1 ? 1 : 0);
+function css(rgb, k = 1) {
+return `rgb(${Math.round(clamp(rgb[0] * 255 * k, 0, 255))},${Math.round(clamp(rgb[1] * 255 * k, 0, 255))},${Math.round(clamp(rgb[2] * 255 * k, 0, 255))})`;
+}
+function mix(a, b, t) {
+return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+}
+function rgbOf(v, fallback) {
+return Array.isArray(v) && v.length >= 3 ? [clamp(+v[0] || 0, 0, 1), clamp(+v[1] || 0, 0, 1), clamp(+v[2] || 0, 0, 1)] : fallback;
+}
+function pen(ctx, fx, fy, dx, dy, mirror, clip = true) {
+return (x, y, w, h, c) => {
+let X = Math.round(x) + dx, Y = Math.round(y) + dy;
+let W = Math.max(1, Math.round(w)), H = Math.max(1, Math.round(h));
+if (clip) {
+if (X < 0) { W += X; X = 0; }
+if (Y < 0) { H += Y; Y = 0; }
+if (X + W > RABBIT_W) W = RABBIT_W - X;
+if (Y + H > RABBIT_H) H = RABBIT_H - Y;
+if (W <= 0 || H <= 0) return;
+}
+ctx.fillStyle = c;
+ctx.fillRect(fx + (mirror ? RABBIT_W - X - W : X), fy + Y, W, H);
+};
+}
+const E = (cx, cy, rx, ry) => ({ cx: Math.round(cx), cy: Math.round(cy), rx: Math.max(1, Math.round(rx)), ry: Math.max(1, Math.round(ry)) });
+const half = (e, dy) => Math.round(e.rx * Math.sqrt(Math.max(0, 1 - (dy * dy) / (e.ry * e.ry))));
+function ell(P, e, grow, col) {
+const g = { rx: e.rx + grow, ry: e.ry + grow };
+for (let yy = -g.ry; yy <= g.ry; yy++) {
+const w = half(g, yy);
+P(e.cx - w, e.cy + yy, w * 2 + 1, 1, col);
+}
+}
+function spanOf(e, y, grow = 0) {
+const g = { rx: e.rx + grow, ry: e.ry + grow }, yy = y - e.cy;
+if (yy < -g.ry || yy > g.ry) return null;
+const w = half(g, yy);
+return [e.cx - w, e.cx + w];
+}
+function rowsOf(parts, grow = 0) {
+let y0 = Infinity, y1 = -Infinity;
+for (const e of parts) { y0 = Math.min(y0, e.cy - e.ry - grow); y1 = Math.max(y1, e.cy + e.ry + grow); }
+const out = [];
+for (let y = y0; y <= y1; y++) {
+let x0 = Infinity, x1 = -Infinity;
+for (const e of parts) {
+const s = spanOf(e, y, grow);
+if (s) { x0 = Math.min(x0, s[0]); x1 = Math.max(x1, s[1]); }
+}
+if (x1 >= x0) out.push([y, x0, x1]);
+}
+return out;
+}
+function colEdge(parts, x, dir = -1) {
+let best = null;
+for (const e of parts) {
+const dx = Math.abs(x - e.cx);
+if (dx > e.rx) continue;
+for (let i = 0; i <= e.ry; i++) {
+const yy = dir < 0 ? i - e.ry : e.ry - i;
+if (half(e, yy) >= dx) { const y = e.cy + yy; if (best === null || (dir < 0 ? y < best : y > best)) best = y; break; }
+}
+}
+return best;
+}
+function xRange(parts) {
+let x0 = Infinity, x1 = -Infinity;
+for (const e of parts) { x0 = Math.min(x0, e.cx - e.rx); x1 = Math.max(x1, e.cx + e.rx); }
+return [x0, x1];
+}
+function stamp(P, grid, x, y, pal) {
+for (let r = 0; r < grid.length; r++) {
+const row = grid[r];
+for (let i = 0; i < row.length;) {
+const ch = row[i];
+let j = i + 1;
+while (j < row.length && row[j] === ch) j++;
+const col = pal[ch];
+if (col) P(x + i, y + r, j - i, 1, col);
+i = j;
+}
+}
+}
+const HORNS = ['kk...', 'khk..', '.khk.', '.khHk', '..kHk'];
+const ANTLERS = ['.k...k.', 'kak.kak', 'kak.kak', '.kakak.', '..kak..', '..kAk..', '..kAk..'];
+const UNIHORN = ['..k..', '.kwk.', '.kyk.', '.kwk.', 'kyywk', 'kwyyk'];
+const WING = ['k.....', 'kk....', 'kmk...', 'kmmkk.', 'kmMmmk', '.kkkkk'];
+const WING_FOLD = ['kkkkk.', 'kmmMmk', '.kkkkk'];
+const SPIKE = ['.k.', 'kik', 'kIk'];
+const CRYSTAL = ['.k.', 'kik', 'ktk', 'kTk'];
+const RUNES = [['x.x', '.x.', 'x.x'], ['xxx', '.x.', '.x.'], ['x..', 'xxx', '..x'], ['.x.', 'x.x', '.x.']];
+const HORN_H = { horns: 5, antlers: 7, unihorn: 6 };
+function heart(P, x, y, c) {
+P(x, y, 1, 1, c); P(x + 2, y, 1, 1, c); P(x, y + 1, 3, 1, c); P(x + 1, y + 2, 1, 1, c);
+}
+function plus(P, x, y, c) {
+P(x - 1, y, 3, 1, c); P(x, y - 1, 1, 3, c);
+}
+function rabbitLevels(snap) {
+const lv = (snap && snap.lv) || [];
+const o = {};
+for (let i = 0; i < RABBIT_MARKS.length; i++) o[RABBIT_MARKS[i]] = lvl(lv[i]);
+return o;
+}
+const scarsOf = (snap) => { const s = (snap && snap.sc) || []; return [lvl(s[0]), lvl(s[1]), lvl(s[2]), lvl(s[3]), lvl(s[4])]; };
+const traitsOf = (snap) => new Set(snap && Array.isArray(snap.traits) ? snap.traits : []);
+function rabbitPose(snap, want) {
+if (!snap || snap.alive === false) return 'dead';
+const L = rabbitLevels(snap);
+if (L.death === 3 || snap.hp >= 3) return 'collapse';
+if (want === 'loaf' || want === 'rear' || want === 'flop') return want;
+if (L.toxicity >= 2 || snap.hp >= 2) return 'sick';
+return 'idle';
+}
+function rabbitPace(snap) {
+const L = rabbitLevels(snap);
+return (L.death >= 2 ? 0.5 : L.death === 1 ? 0.8 : 1) * (L.toxicity === 3 ? 0.6 : 1) * (snap && snap.stage === 'elder' ? 0.7 : 1) * (L.vitality === 3 || L.fire === 3 ? 1.6 : 1);
+}
+const STAGE_G = { kit: 0.62, young: 0.82, adult: 1, elder: 0.97 };
+function rabbitAnchors(look, snap, want) {
+look = look || {};
+const L = rabbitLevels(snap), tr = traitsOf(snap);
+const pose = rabbitPose(snap, want);
+const stage = snap && STAGE_G[snap.stage] ? snap.stage : 'adult';
+const kit = stage === 'kit', elder = stage === 'elder';
+const mus = L.strength;
+const size = clamp(Number(look.size) || 1, 0.85, 1.15);
+const g = clamp(size * STAGE_G[stage] * (1 + 0.04 * mus) * (tr.has('giant') ? 1.18 : tr.has('tiny') ? 0.8 : 1), 0.5, 1.3);
+const hs = kit ? 0.95 * Math.max(g, 0.8) : 0.25 + 0.75 * g;
+const lying = pose === 'dead' || pose === 'collapse' || pose === 'flop';
+const preg = snap && snap.preg ? 1 : 0;
+const oy = 34;
+const ox = Math.round(24 - (lying ? 15 : 14) * g);
+const bulk = [0, 1, 1, 2][mus];
+const earK = (look.ear === 'short' ? 0.6 : 1) * (kit ? 0.7 : 1);
+const hornH = tr.has('antlers') ? HORN_H.antlers : tr.has('unihorn') ? HORN_H.unihorn : tr.has('horns') ? HORN_H.horns : 0;
+const headRy = Math.round(3.3 * hs);
+let haunch, chest, head;
+if (lying) {
+const hry = Math.round(4.2 * g) + preg, cry = Math.round(3.6 * g + bulk * 0.5);
+haunch = E(ox + 11 * g, oy - hry, 11 * g, hry);
+chest = E(ox + 21 * g, oy - cry, 5 * g + bulk, cry);
+head = E(ox + 27 * g, oy - headRy, 4.2 * hs, headRy);
+} else {
+let hrx = 10 * g, hry = 6 * g + preg, ccx = ox + 19 * g, ccy = oy - 8 * g, crx = 6 * g + bulk, cry = 5 * g + bulk * 0.5;
+let hcx = ox + 24 * g, hcy = oy - 13 * g;
+if (pose === 'sick') { hrx -= 1; hry += 1; hcy += 2; } // hunched, head hanging
+else if (pose === 'loaf') { hrx -= 1; hry -= 1; ccx -= 1; ccy += 1; hcx -= 1; hcy += 2; } // tucked into a loaf
+if (elder) { hry += 1; hcy += 1; } // a rounder back, the head a little lower
+if (pose === 'rear') {
+const earLen = look.ear === 'lop' ? 0 : Math.round(10 * hs * earK);
+const room = Math.round(hcy) - headRy - 1 - Math.max(Math.ceil(earLen * 0.7), hornH);
+const lift = clamp(Math.min(Math.round(5 * g), room), 0, 6);
+ccx += g; ccy -= Math.min(3 * g, lift); cry += 1; hcx -= g; hcy -= lift;
+}
+haunch = E(ox + 9 * g, 0, hrx, hry);
+haunch.cy = oy - haunch.ry;
+chest = E(ccx, ccy, crx, cry);
+head = E(hcx, hcy, 4.2 * hs, headRy);
+}
+const bulges = [];
+if (mus >= 2) bulges.push(E(chest.cx + chest.rx - 1, chest.cy + chest.ry - 2, 2 * g + 0.4, 2 * g + 0.4)); // forearm
+if (mus >= 3) {
+bulges.push(E(chest.cx - 1, chest.cy - chest.ry + 2, 3.2 * g, 2.2 * g)); // shoulder
+bulges.push(E(haunch.cx + 3 * g, haunch.cy - haunch.ry + 2.5 * g, 4.2 * g, 3 * g)); // thigh
+bulges.push(E((chest.cx + head.cx) / 2, (chest.cy - chest.ry + head.cy + head.ry) / 2 + 1, 2.4 * g, 2 * g)); // neck
+}
+const parts = [haunch, chest, ...bulges, head];
+const top = head.cy - head.ry;
+const ew = hs >= 1.1 ? 4 : 3;
+const droop = lying ? 0 : pose === 'sick' || (snap && snap.hp >= 2) || L.frost === 2 ? 3 : pose === 'loaf' ? 2 : 0;
+const shift = tr.has('eye3') ? 1 : 0;
+const ears = [];
+if (lying) {
+const len = Math.max(3, Math.round(8 * hs * earK));
+ears.push({ kind: 'flat', far: true, x: head.cx - 2 - len, y: top - 1, len, w: 2, lean: 0 });
+ears.push({ kind: 'flat', far: false, x: head.cx - 1 - len, y: top + 1, len, w: 2, lean: 0 });
+} else {
+const kinds = look.ear === 'lop' ? ['lop', 'lop'] : look.ear === 'half' ? ['lop', 'up'] : ['up', 'up'];
+for (let i = 0; i < 2; i++) {
+const far = i === 0;
+if (kinds[i] === 'lop') {
+const y = top - 1;
+ears.push({ kind: 'lop', far, x: head.cx - (far ? 5 : 3) - shift, y, len: head.cy + 4 - y, w: ew, lean: 0 });
+} else {
+const base = top + 1;
+const len = clamp(Math.round((far ? 9 : 10) * hs * earK) - droop, 2, base);
+ears.push({ kind: 'up', far, x: head.cx - (far ? 3 : 0) - shift, y: base, len, w: ew, lean: droop ? 2 : 4 });
+}
+}
+}
+const legs = [];
+if (pose === 'dead') {
+const lh = Math.max(2, Math.round(3 * g));
+for (const x of [chest.cx - 1, haunch.cx + Math.round(haunch.rx * 0.35)]) {
+const y = colEdge([haunch, chest], x, -1) ?? haunch.cy;
+legs.push({ x, y: y - lh, w: 2, h: lh + 1 });
+}
+} else if (pose === 'flop') legs.push({ x: haunch.cx - haunch.rx - 2, y: oy - 3, w: Math.max(3, Math.round(5 * g)), h: 2 });
+const eye = { x: head.cx + Math.max(1, Math.round(2 * hs)), y: head.cy - 1 };
+const nose = { x: head.cx + half(head, 1), y: head.cy + 1 };
+const tailR = Math.max(1, Math.round([1, 2, 3][look.tail === 0 || look.tail === 2 ? look.tail : 1] * Math.min(1, g + 0.25)));
+const tx = haunch.cx - haunch.rx;
+const tail = { x: tx, y: haunch.cy - (lying ? 1 : 2), r: tailR, len: clamp(Math.round(9 * g), 3, tx - 1) };
+const prx = Math.max(2, Math.round(3 * Math.min(g, 1.1)));
+const plume = E(Math.max(prx + 2, tx - 1), tail.y - Math.max(2, Math.round(2.5 * g)), prx, Math.max(2, Math.round(2.2 * Math.min(g, 1.1))));
+const wing = lying ? { x: haunch.cx - 2, y: haunch.cy - haunch.ry - 2 } : { x: chest.cx - chest.rx - 3, y: chest.cy - chest.ry - 4 };
+let x0 = Math.min(haunch.cx - haunch.rx, tx - tailR) - 1;
+if (tr.has('tail-lizard')) x0 = Math.min(x0, tx - tail.len - 1);
+if (tr.has('tail-plume')) x0 = Math.min(x0, plume.cx - plume.rx - 1);
+if (legs.length && pose === 'flop') x0 = Math.min(x0, legs[0].x - 1);
+let x1 = 0;
+for (const e of parts) x1 = Math.max(x1, e.cx + e.rx + 1);
+let y0 = top - 1;
+for (const e of ears) y0 = Math.min(y0, e.kind === 'up' ? e.y - e.len + 1 : e.y - 1);
+if (tr.has('ears2')) y0 = Math.min(y0, ...ears.map((e) => (e.kind === 'flat' ? e.y - 3 : y0)));
+if (hornH) y0 = Math.min(y0, top + 1 - hornH);
+if (tr.has('wings')) y0 = Math.min(y0, wing.y - 1);
+for (const l of legs) y0 = Math.min(y0, l.y - 1);
+if (tr.has('spines')) y0 = Math.min(y0, Math.min(haunch.cy - haunch.ry, chest.cy - chest.ry) - 5);
+return {
+pose, lying, g, hs, haunch, chest, head, bulges, parts, ears, legs,
+eye, eye3: { x: head.cx + 1, y: top + 1 }, nose, cheek: { x: head.cx + 1, y: head.cy + 1 },
+brow: { x: head.cx - 1 - shift, y: top }, tail, plume, wing,
+back: { x0: haunch.cx - haunch.rx + 2, x1: chest.cx, y: haunch.cy - haunch.ry },
+belly: { x: chest.cx + 1, y: chest.cy + chest.ry - 2 },
+feetY: oy - 1,
+cx: Math.round((haunch.cx - haunch.rx + head.cx + head.rx) / 2),
+top: Math.max(0, y0 + 1),
+box: { x0, y0, x1, y1: oy + 1 },
+};
+}
+const shades = (c) => ({ body: css(c), shade: css(c, 0.82), dark: css(c, 0.68), hi: css(mix(c, WHITE, 0.4)), rgb: c });
+function tintCoat(c, L, sc, dead, cause) {
+let o = mix(c, TEAL, [0, 0.12, 0.25, 0.4][L.transformation]);
+o = mix(o, SICK, [0, 0.22, 0.4, 0.58][L.toxicity]);
+o = mix(o, ICE, [0, 0.15, 0.35, 0.55][L.frost]);
+o = mix(o, ASH, Math.min(0.85, [0, 0.22, 0.45, 0.7][L.death] + [0, 0.1, 0.2, 0.35][sc[3]]));
+const v = [1, 1.04, 1.08, 1.12][L.vitality];
+o = [Math.min(1, o[0] * v), Math.min(1, o[1] * v), Math.min(1, o[2] * v)];
+if (L.fire === 3) o = mix(o, EMBER, 0.15);
+if (dead) {
+o = mix(o, ASH, 0.3).map((x) => x * 0.9);
+if (cause === 'fire') o = mix(o, CHAR, 0.65);
+}
+return o;
+}
+function spotsOn(a, seed, label, n, upper = false) {
+const r = new Rng(hashString(`${seed}:${label}`));
+const out = [];
+for (let i = 0; i < n; i++) {
+const e = r.next() < 0.68 ? a.haunch : a.chest;
+const ang = upper ? r.range(Math.PI * 1.08, Math.PI * 1.92) : r.range(0, Math.PI * 2), rad = Math.sqrt(r.next()) * 0.72;
+out.push({ x: Math.round(e.cx + Math.cos(ang) * (e.rx - 1) * rad), y: Math.round(e.cy + Math.sin(ang) * (e.ry - 1) * rad) });
+}
+return out;
+}
+function drawBody(P, look, snap, a, low) {
+const L = rabbitLevels(snap), sc = scarsOf(snap);
+const dead = !snap || snap.alive === false, cause = dead ? (snap && snap.cause) || 'unknown' : null;
+const coat = rgbOf(look.coat, [0.93, 0.89, 0.82]);
+const coat2 = rgbOf(look.coat2, [0.36, 0.24, 0.18]);
+const kit = snap && snap.stage === 'kit';
+const fur = tintCoat(coat, L, sc, dead, cause);
+const fur2 = tintCoat(kit ? mix(coat2, coat, 0.5) : coat2, L, sc, dead, cause);
+const S = {
+P, a, L, sc, tr: traitsOf(snap), dead, cause, pattern: look.pattern || 'solid', eyeCol: look.eye || 'dark',
+seed: (look.seed >>> 0) || 1, fur, C: shades(fur), C2: shades(fur2),
+};
+if (!low && !dead) auraLayer(S);
+farLayer(S);
+for (const e of a.parts) ell(P, e, 1, K); // outline pass
+fillLayer(S);
+patternLayer(S);
+strengthMarks(S);
+if (S.tr.has('scales')) scaleMarks(S);
+coatMarks(S);
+burnMarks(S);
+acidMarks(S);
+alkaliMarks(S);
+frostMarks(S);
+sickMarks(S);
+nearLayer(S);
+faceLayer(S);
+if (dead) causeLayer(S);
+}
+const AURAS = /** @type {[string, string, number[], number][]} */ ([
+['vitality', '255,214,120', [0, 0.12, 0.22, 0.32], 2],
+['arcana', '166,120,255', [0, 0.15, 0.3, 0.45], 1],
+['fire', '255,122,28', [0, 0.1, 0.2, 0.35], 0],
+]);
+function auraLayer(S) {
+for (const [ch, rgb, alpha, grow] of AURAS) {
+const v = S.L[ch];
+if (!v) continue;
+const col = `rgba(${rgb},${alpha[v]})`;
+for (const [y, x0, x1] of rowsOf(S.a.parts, grow + v + 1)) S.P(x0, y, x1 - x0 + 1, 1, col);
+}
+}
+function farLayer(S) {
+const { P, a, tr, C, C2 } = S;
+for (const l of a.legs) {
+P(l.x - 1, l.y - 1, l.w + 2, l.h + 2, K);
+P(l.x, l.y, l.w, l.h, S.pattern === 'points' ? C2.body : C.body);
+if (a.pose === 'dead') P(l.x, l.y, l.w, 1, C.hi);
+}
+if (tr.has('wings')) wingArt(S, true);
+tailLayer(S);
+if (tr.has('ears2')) for (const e of a.ears) {
+const x = { ...e, x: e.kind === 'flat' ? e.x + 1 : e.x - 2, y: e.kind === 'flat' ? e.y - 2 : e.y, len: Math.max(2, e.len - 2) };
+earArt(S, x, 'extra');
+}
+for (const e of a.ears) if (e.far) earArt(S, e, 'far');
+hornArt(S, true);
+}
+function tailLayer(S) {
+const { P, a, tr, C2 } = S, t = a.tail;
+if (tr.has('tail-lizard')) {
+const n = t.len, drop = Math.max(0, a.feetY - 2 - t.y);
+const body = css(mix(S.fur, [0.42, 0.58, 0.38], 0.45), 0.8), dark = css(mix(S.fur, [0.42, 0.58, 0.38], 0.45), 0.6);
+const cols = [];
+for (let i = 0; i < n; i++) cols.push([t.x - i, t.y - 1 + Math.round((drop * i) / n), i < n / 3 ? 3 : i < (2 * n) / 3 ? 2 : 1]);
+for (const [x, y, th] of cols) P(x, y - 1, 1, th + 2, K);
+P(t.x - n, cols[n - 1][1], 1, 1, K);
+for (const [x, y, th] of cols) { P(x, y, 1, th, body); if ((x + y) & 1) P(x, y + th - 1, 1, 1, dark); }
+return;
+}
+if (tr.has('tail-plume')) {
+const e = a.plume;
+ell(P, e, 1, K);
+ell(P, e, 0, C2.body);
+P(e.cx - e.rx + 1, e.cy - e.ry, 2, 1, C_CREAM); P(e.cx - e.rx, e.cy - 1, 1, 2, C_CREAM); P(e.cx, e.cy - e.ry, 1, 1, C2.hi);
+return;
+}
+const e = { cx: t.x, cy: t.y, rx: t.r, ry: t.r };
+ell(P, e, 1, K);
+ell(P, e, 0, S.pattern === 'points' ? C2.body : css(mix(S.fur, WHITE, 0.6)));
+}
+function earArt(S, e, side) {
+const { P, L, sc } = S;
+const base = S.pattern === 'hooded' || S.pattern === 'points' ? S.C2 : S.C;
+const rgb = sc[3] >= 2 ? mix(base.rgb, GREY, 0.5) : base.rgb;
+const fill = css(rgb, side === 'near' ? 1 : side === 'far' ? 0.82 : 0.68);
+const inner = side !== 'near' ? null : S.dead ? '#c8a0b0' : C_PINK;
+const tips = [];
+if (!S.dead) for (let i = 0; i < L.frost; i++) tips.push(C_RIME);
+const markN = sc[0] >= 2 ? sc[0] : sc[2];
+for (let i = 0; i < markN; i++) tips.push(sc[0] >= 2 ? C_SOOT : PAL.frost0);
+if (e.kind === 'up') {
+for (let i = 0; i < e.len; i++) {
+const y = e.y - i, x = e.x - Math.floor(i / e.lean), fromTip = e.len - 1 - i;
+if (fromTip === 0) { P(x + 1, y, e.w - 2, 1, K); continue; }
+P(x, y, e.w, 1, K);
+const tip = tips[fromTip - 1];
+P(x + 1, y, e.w - 2, 1, tip || fill);
+if (inner && !tip && i > 0) P(x + e.w - 2, y, 1, 1, inner);
+}
+} else if (e.kind === 'lop') {
+P(e.x, e.y, e.w, e.len - 1, K);
+P(e.x + 1, e.y + e.len - 1, e.w - 2, 1, K);
+P(e.x + 1, e.y + 1, e.w - 2, e.len - 2, fill);
+if (side === 'near') P(e.x + 1, e.y + 1, 1, Math.max(1, e.len - 3), base.shade);
+for (let i = 0; i < tips.length && i < e.len - 2; i++) P(e.x + 1, e.y + e.len - 2 - i, e.w - 2, 1, tips[i]);
+} else {
+P(e.x + 1, e.y - 1, e.len, 1, K);
+P(e.x, e.y, 1, e.w, K);
+P(e.x - 1, e.y + e.w - 1, 1, 1, K);
+P(e.x, e.y + e.w, e.len + 1, 1, K);
+P(e.x + 1, e.y, e.len, e.w, fill);
+P(e.x + 1, e.y, 1, 1, css(rgb, 0.68));
+if (inner && e.len > 4) P(e.x + 3, e.y + e.w - 1, Math.max(1, e.len - 6), 1, inner);
+for (let i = 0; i < tips.length && i < e.len - 1; i++) P(e.x + 1 + i, e.y, 1, e.w, tips[i]);
+}
+}
+function hornArt(S, far) {
+const { P, a, tr } = S;
+if (tr.has('unihorn')) {
+if (!far) stamp(P, UNIHORN, a.head.cx - 1, a.brow.y + 2 - UNIHORN.length, { k: K, w: C_CREAM, y: C_GOLD });
+return;
+}
+const grid = tr.has('antlers') ? ANTLERS : tr.has('horns') ? HORNS : null;
+if (!grid) return;
+const pal = grid === ANTLERS
+? (far ? { k: K, a: '#a8743f', A: '#6d4527' } : { k: K, a: '#c48a5c', A: '#8a5a31' })
+: (far ? { k: K, h: PAL.parch1, H: PAL.parch0 } : { k: K, h: PAL.parch2, H: '#a8743f' });
+stamp(P, grid, a.brow.x - 3 - (far ? 3 : 0), a.brow.y + (far ? 1 : 2) - grid.length, pal);
+}
+function wingArt(S, far) {
+const pal = far ? { k: K, m: '#7a5ac8', M: '#5a3aa8' } : { k: K, m: '#b491ee', M: PAL.magic };
+stamp(S.P, S.a.lying ? WING_FOLD : WING, S.a.wing.x - (far ? 2 : 0), S.a.wing.y - (far ? 1 : 0), pal);
+}
+function fillLayer(S) {
+const { P, a, C, C2 } = S, h = a.haunch;
+ell(P, h, 0, C.body);
+ell(P, a.chest, 0, C.body);
+for (const b of a.bulges) ell(P, b, 0, C.body);
+ell(P, { cx: h.cx, cy: h.cy + Math.round(h.ry / 2), rx: Math.max(1, h.rx - 2), ry: Math.max(1, Math.round(h.ry / 3)) }, 0, C.shade);
+ell(P, { cx: a.belly.x, cy: a.belly.y, rx: Math.max(1, Math.round(3 * a.g)), ry: Math.max(1, Math.round(2 * a.g)) }, 0, C.hi);
+ell(P, a.head, 0, S.pattern === 'hooded' ? C2.body : C.body);
+if (!a.lying) {
+const foot = S.pattern === 'points' ? C2.body : C.dark, fw = Math.round(5 * a.g), hw = Math.round(6 * a.g);
+P(a.chest.cx - fw, a.feetY, fw, 1, foot);
+P(h.cx - hw, a.feetY, hw, 1, foot);
+}
+}
+function patternLayer(S) {
+const { P, a, C2 } = S, body = [a.haunch, a.chest];
+if (S.pattern === 'dutch') {
+const seam = a.chest.cx - a.chest.rx + 1, bw = Math.max(2, Math.round(2.5 * a.g));
+for (const [y, x0, x1] of rowsOf(body)) {
+const l = Math.max(x0, seam - bw), r = Math.min(x1, seam + bw);
+if (r >= l) P(l, y, r - l + 1, 1, C2.body);
+}
+} else if (S.pattern === 'spotted') {
+const r = new Rng(hashString(`${S.seed}:spots`)), n = 3 + r.int(0, 2);
+for (let i = 0; i < n; i++) {
+const e = i === 0 ? a.chest : a.haunch;
+const ang = r.range(0, Math.PI * 2), rad = Math.sqrt(r.next()) * 0.6;
+const px = Math.round(e.cx + Math.cos(ang) * e.rx * rad), py = Math.round(e.cy + Math.sin(ang) * e.ry * rad);
+const b = { rx: Math.max(1, Math.round(r.range(1.5, 3) * a.g)), ry: Math.max(1, Math.round(r.range(1, 2) * a.g)) };
+for (let yy = -b.ry; yy <= b.ry; yy++) {
+const s = spanOf(e, py + yy);
+if (!s) continue;
+const w = half(b, yy), l = Math.max(s[0], px - w), rr = Math.min(s[1], px + w);
+if (rr >= l) P(l, py + yy, rr - l + 1, 1, C2.body);
+}
+}
+} else if (S.pattern === 'agouti') {
+const tick = css(S.fur, 1.15), dark = css(S.fur, 0.8);
+const [x0, x1] = xRange(body);
+for (let x = x0; x <= x1; x++) {
+const y0 = colEdge(body, x, -1);
+if (y0 === null) continue;
+for (let y = y0; y < y0 + 3; y++) { const b = bayer(x, y); if (b < 5) P(x, y, 1, 1, tick); else if (b > 13) P(x, y, 1, 1, dark); }
+}
+}
+}
+function strengthMarks(S) {
+const { P, a, C } = S, s = S.L.strength, h = a.haunch, c = a.chest;
+if (!s) return;
+const ry = Math.max(2, h.ry - 1), rx = Math.max(2, h.rx - 3);
+for (let yy = -ry + 1; yy <= ry - 2; yy++) P(h.cx + Math.round(rx * 0.6 * Math.sqrt(1 - (yy * yy) / (ry * ry))), h.cy + yy, 1, 1, C.dark);
+if (s < 2) return;
+for (let i = 0; i < 3; i++) { P(h.cx - 4 + i, h.cy - 1 + i, 1, 1, C.dark); P(h.cx - 1 + i, h.cy - 3 + i, 1, 1, C.dark); }
+P(c.cx - 2, c.cy - c.ry + 1, 4, 1, C.hi);
+const f = a.bulges[0];
+if (f) P(f.cx, f.cy - f.ry + 1, 1, 1, C.hi);
+if (s < 3) return;
+const vein = css(S.fur, 0.6);
+P(c.cx + 1, c.cy, 1, 2, vein); P(c.cx + 2, c.cy + 2, 1, 1, vein);
+for (let i = 0; i < 3; i++) P(h.cx - 5 + i * 3, h.cy - h.ry + 2, 1, 2, C.dark);
+if (a.bulges[1]) P(a.bulges[1].cx - 1, a.bulges[1].cy - a.bulges[1].ry + 1, 3, 1, C.hi);
+}
+function scaleMarks(S) {
+const { P, a } = S, h = a.haunch;
+const dk = css(mix(S.fur, [0.35, 0.55, 0.4], 0.35), 0.72), hi = css(mix(S.fur, [0.6, 0.85, 0.6], 0.3), 1.12);
+for (let y = h.cy - h.ry + 2, row = 0; y <= h.cy + h.ry - 2; y += 2, row++) {
+const s = spanOf(h, y);
+if (!s) continue;
+for (let x = s[0] + 1 + (row & 1) * 2; x <= Math.min(s[1] - 2, h.cx + Math.round(h.rx / 2)); x += 4) { P(x, y, 2, 1, dk); P(x, y - 1, 1, 1, hi); }
+}
+}
+function coatMarks(S) {
+const { P, a, L, sc } = S, body = [a.haunch, a.chest];
+if (!S.dead && L.vitality >= 1) for (let x = a.back.x0 + 1; x < a.back.x1; x++) {
+const y = colEdge(body, x, -1);
+if (y !== null) P(x, y + 1, 1, 1, S.C.hi);
+}
+if (!S.dead && L.vitality >= 3) for (const [y, , x1] of rowsOf([a.haunch, a.chest, ...a.bulges])) {
+const hs = spanOf(a.head, y, 1);
+if (!hs || x1 < hs[0]) P(x1, y, 1, 1, C_GOLD);
+}
+if (L.transformation >= 2) for (const p of spotsOn(a, S.seed, 'teal', L.transformation === 3 ? 6 : 3)) P(p.x, p.y, 1, 1, C_SHIM);
+if (sc[4] >= 1) {
+const r = new Rng(hashString(`${S.seed}:rune`)), h = a.haunch;
+stamp(P, RUNES[r.int(0, 3)], h.cx - 1 - Math.round(h.rx / 3), h.cy - 1, { x: C_RUNE });
+if (sc[4] >= 2) stamp(P, RUNES[r.int(0, 3)], a.chest.cx - 2, a.chest.cy - 1, { x: C_RUNE });
+if (sc[4] >= 3) for (const p of spotsOn(a, S.seed, 'stars', 5)) P(p.x, p.y, 1, 1, C_RUNE_HI);
+}
+if (sc[3] >= 3) for (const p of spotsOn(a, S.seed, 'grey', 6, true)) P(p.x, p.y, 2, 1, '#c8c2cc');
+}
+function burnMarks(S) {
+const { P, a, sc } = S;
+for (const p of spotsOn(a, S.seed, 'singe', [0, 3, 7, 12][sc[0]], true)) { P(p.x, p.y, 1, 1, C_SINGE); P(p.x + 1, p.y, 1, 1, C_SINGE2); }
+if (sc[0] >= 3) { const h = a.haunch; P(h.cx - 2, h.cy - h.ry + 1, 4, 3, C_SOOT); P(h.cx - 2, h.cy - h.ry + 1, 4, 1, C_SINGE); }
+const f = S.dead ? 0 : S.L.fire;
+if (f >= 2) for (const p of spotsOn(a, S.seed, 'embers', f === 3 ? 5 : 3, true)) { P(p.x, p.y, 1, 1, '#ff7a1c'); if (f === 3) P(p.x, p.y - 1, 1, 1, '#ffb444'); }
+}
+const acidSpots = (seed, a) => spotsOn(a, seed, 'acid', 5);
+function acidMarks(S) {
+const { P, a } = S;
+for (const p of spotsOn(a, S.seed, 'burns', [0, 2, 4, 7][S.sc[1]])) { const w = 2 + (p.x & 1); P(p.x, p.y, w + 1, 3, C_BURN_RIM); P(p.x, p.y, w, 2, C_BURN); }
+const v = S.dead ? 0 : S.L.acid;
+for (const p of acidSpots(S.seed, a).slice(0, [0, 1, 3, 5][v])) {
+P(p.x - 1, p.y - 1, 3, 3, C_BURN_RIM); P(p.x, p.y, 1, 1, v === 3 ? C_RUBY : C_RAW); P(p.x - 1, p.y - 1, 1, 1, C_ACID);
+}
+}
+function alkaliMarks(S) {
+const { P, a } = S, v = S.dead ? 0 : S.L.alkali, body = [a.haunch, a.chest];
+if (!v) return;
+for (const p of spotsOn(a, S.seed, 'chalk', 4)) P(p.x, p.y, 1, 1, C_CHALK);
+if (v >= 2) {
+const [x0, x1] = xRange(body);
+for (let x = x0; x <= x1; x++) {
+const y0 = colEdge(body, x, -1);
+if (y0 === null) continue;
+for (let y = y0; y < y0 + 3; y++) { const b = bayer(x, y); if (b < 3) P(x, y, 1, 1, C_CHALK); else if (b > 13) P(x, y, 1, 1, C_CHALK2); }
+}
+if (!a.lying) { P(a.chest.cx - Math.round(5 * a.g), a.feetY, 3, 1, C_CHALK); P(a.haunch.cx - Math.round(6 * a.g), a.feetY, 3, 1, C_CHALK); }
+}
+if (v >= 3) for (const p of spotsOn(a, S.seed, 'crust', 4, true)) { P(p.x, p.y, 2, 2, C_CHALK); P(p.x, p.y + 2, 2, 1, C_CRUST); }
+}
+function frostMarks(S) {
+const { P, a } = S, v = S.dead ? 0 : S.L.frost, parts = a.parts;
+if (!v) return;
+const [x0, x1] = xRange(parts);
+for (let x = x0; x <= x1; x++) {
+if (v === 1 && (x & 1)) continue;
+const y = colEdge(parts, x, -1);
+if (y !== null) P(x, y, 1, 1, C_RIME);
+}
+if (v < 2) return;
+const icicle = (x, len) => { const y = colEdge(parts, x, 1); if (y !== null) { P(x, y + 1, 1, len, C_ICE); P(x, y + 1, 1, 1, C_RIME); } };
+icicle(a.nose.x - 1, 2); icicle(a.nose.x - 2, 3); icicle(a.chest.cx + 1, 2);
+if (v < 3) return;
+icicle(a.chest.cx + 3, 2); icicle(a.nose.x - 3, 2);
+for (let i = 0; i < 3; i++) {
+const x = a.back.x0 + 3 + Math.round((i * (a.back.x1 - a.back.x0)) / 3), y = colEdge(parts, x, -1);
+if (y === null) continue;
+P(x, y - 1, 1, 1, C_RIME); P(x - 1, y - 2, 1, 1, C_RIME); P(x - 2, y - 3, 1, 1, '#ffffff');
+}
+const rows = rowsOf(parts), lim = rows[0][0] + Math.round(rows.length * 0.4);
+for (const [y, rx0, rx1] of rows) if (y <= lim) P(rx0, y, rx1 - rx0 + 1, 1, 'rgba(223,244,255,0.3)');
+}
+function sickMarks(S) {
+const { P, a, L } = S;
+if (S.dead) return;
+if (L.toxicity >= 2) for (const p of spotsOn(a, S.seed, 'blotch', L.toxicity === 3 ? 3 : 2)) { P(p.x, p.y, 2, 1, C_SLIME2); P(p.x, p.y + 1, 1, 1, C_SLIME2); }
+if (L.death >= 3) for (let i = 0; i < 3; i++) P(a.chest.cx - 3 + i * 2, a.chest.cy - 1, 1, 2, S.C.dark);
+}
+function nearLayer(S) {
+const { P, a, tr } = S;
+for (const e of a.ears) if (!e.far) earArt(S, e, 'near');
+hornArt(S, false);
+if (tr.has('spines')) {
+const body = [a.haunch, a.chest];
+for (let i = 0; i < 5; i++) {
+const x = a.back.x0 + 1 + Math.round((i * (a.back.x1 - a.back.x0 - 1)) / 4), y = colEdge(body, x, -1);
+if (y !== null) stamp(P, SPIKE, x - 1, y - 3 - (i & 1), { k: K, i: C_RIME, I: C_ICE });
+}
+}
+if (tr.has('wings')) wingArt(S, false);
+}
+function faceLayer(S) {
+const { P, a, L, sc, dead, C, C2 } = S, e = a.eye, n = a.nose, big = a.hs >= 1.1;
+if (S.pattern === 'points') P(n.x - 2, n.y - 1, 3, 3, C2.body);
+if (sc[3] >= 1) P(n.x - 2, n.y - 1, 3, 2, C_GREY);
+if (!dead && L.death >= 1) P(e.x - 1, e.y + 1, 3, 1, L.death >= 2 ? PAL.stone2 : C.dark);
+if (!dead && L.death >= 2) { P(e.x - 1, e.y - 1, 3, 1, PAL.stone2); P(e.x - 1, e.y + 2, 2, 1, C.dark); }
+if (dead) {
+P(e.x - 1, e.y, 3, 1, K);
+P(e.x - 1, e.y + 1, 1, 1, C.dark); P(e.x + 1, e.y + 1, 1, 1, C.dark);
+} else if (a.pose === 'flop') { P(e.x - 1, e.y - 1, 1, 1, K); P(e.x, e.y, 1, 1, K); P(e.x + 1, e.y - 1, 1, 1, K); }
+else if (L.love === 3) heart(P, e.x - 1, e.y - 1, C_HEART);
+else if (a.pose === 'collapse' || a.pose === 'loaf' || L.toxicity === 3) { P(e.x - 1, e.y - 1, 3, 1, C.dark); P(e.x - 1, e.y, 2, 1, K); }
+else if (L.love === 2) { P(e.x - 1, e.y, 1, 1, K); P(e.x, e.y - 1, 1, 1, K); P(e.x + 1, e.y, 1, 1, K); }
+else {
+const arc = L.arcana >= 2 || sc[4] >= 2;
+P(e.x, e.y, big ? 2 : 1, big ? 2 : 1, arc ? C_RUNE_HI : S.eyeCol === 'ruby' ? C_RUBY : K);
+if (big) P(e.x, e.y, 1, 1, arc ? '#ffffff' : C_CREAM);
+if (arc) P(e.x - 1, e.y, 1, 1, C_RUNE);
+else if (L.arcana === 1) P(e.x, e.y - 1, 1, 1, C_RUNE);
+}
+P(n.x, n.y, 1, 1, dead ? '#b07890' : C_NOSE);
+if (dead) { if (S.tr.has('eye3')) P(a.eye3.x, a.eye3.y, 2, 1, K); return; }
+if (L.vitality >= 2) P(n.x - 1, n.y, 1, 1, '#ff8fb8');
+if (L.love >= 1) P(a.cheek.x, a.cheek.y, L.love === 3 ? 3 : 2, 1, C_BLUSH);
+if (L.toxicity === 3) { P(n.x - 1, n.y + 1, 1, 1, C_BLUSH); P(n.x, n.y + 1, 1, 2, C_SLIME); }
+if (L.alkali === 3) { P(n.x + 1, n.y - 1, 2, 1, C_CREAM); P(n.x + 1, n.y + 1, 2, 1, C_CREAM); }
+if (S.tr.has('eye3')) { P(a.eye3.x, a.eye3.y, 2, 1, C_RUNE); P(a.eye3.x + 1, a.eye3.y, 1, 1, C_RUNE_HI); }
+}
+function causeLayer(S) {
+const { P, a } = S;
+switch (S.cause) {
+case 'frost': { // frozen into a block of ice
+const rows = rowsOf(a.parts, 2);
+for (const [y, x0, x1] of rows) P(x0, y, x1 - x0 + 1, 1, 'rgba(223,244,255,0.35)');
+P(rows[0][1], rows[0][0], rows[0][2] - rows[0][1] + 1, 1, C_RIME);
+for (const [y, x0] of rows) P(x0, y, 1, 1, C_RIME);
+const h = a.haunch;
+P(h.cx - 2, h.cy - 2, 1, 1, '#ffffff'); P(h.cx - 1, h.cy - 1, 2, 1, '#ffffff'); P(a.chest.cx, a.chest.cy - 1, 1, 2, '#ffffff');
+break;
+}
+case 'fire':
+for (const p of spotsOn(a, S.seed, 'char', 3, true)) { P(p.x, p.y, 2, 1, '#c2410f'); P(p.x, p.y, 1, 1, '#ff7a1c'); }
+break;
+case 'poison':
+P(a.nose.x - 1, a.nose.y + 1, 1, 1, C_BLUSH);
+P(a.nose.x - 3, a.feetY + 1, 5, 1, 'rgba(146,204,113,0.7)');
+break;
+case 'acid':
+for (const p of spotsOn(a, S.seed, 'acid-death', 3)) { P(p.x - 1, p.y - 1, 3, 3, C_BURN_RIM); P(p.x, p.y, 1, 1, C_RUBY); }
+P(a.cx - 3, a.feetY + 1, 6, 1, 'rgba(216,232,106,0.6)');
+break;
+case 'alkali':
+for (const p of spotsOn(a, S.seed, 'crust-death', 4, true)) { P(p.x, p.y, 2, 2, C_CHALK); P(p.x, p.y + 2, 2, 1, C_CRUST); }
+break;
+case 'change': { // crystals grown out of the back
+const body = [a.haunch, a.chest];
+for (let i = 0; i < 3; i++) {
+const x = a.back.x0 + 2 + Math.round((i * (a.back.x1 - a.back.x0)) / 3), y = colEdge(body, x, -1);
+if (y !== null) stamp(P, CRYSTAL, x - 1, y - 3, { k: K, i: C_RIME, t: C_SHIM, T: '#2f8a78' });
+}
+break;
+}
+case 'arcana':
+stamp(P, RUNES[S.seed & 3], a.haunch.cx - 1, a.haunch.cy - 1, { x: C_RUNE_HI });
+stamp(P, RUNES[(S.seed + 1) & 3], a.chest.cx - 1, a.chest.cy - 1, { x: C_RUNE_HI });
+break;
+case 'death':
+for (const [y, x0, x1] of rowsOf(a.parts)) P(x0, y, x1 - x0 + 1, 1, 'rgba(180,145,238,0.18)');
+break;
+default: // age, frailty, unknown: nothing more to see
+}
+}
+function drawFx(P, look, snap, a, t, react, acted, low) {
+const L = rabbitLevels(snap);
+const seed = (look.seed >>> 0) % 997, tt = t + seed * 0.37;
+if (!snap.alive) { deadFx(P, a, snap.cause, tt); return; }
+const q = low ? 0.5 : 1;
+const lv = (ch) => (acted.includes(ch) ? Math.max(1, L[ch]) : L[ch]);
+const cnt = (ch, base) => (base > 0 ? Math.max(1, Math.round(base * q * (acted.includes(ch) ? 1 + react : 1))) : 0);
+const body = [a.haunch, a.chest, ...a.bulges];
+const [bx0, bx1] = xRange(a.parts);
+const headTop = a.head.cy - a.head.ry, midY = Math.round((a.haunch.cy + a.head.cy) / 2);
+const backTop = (x) => colEdge(body, x, -1) ?? a.back.y;
+let v = lv('vitality');
+if (v) { // a twinkle running along the back, rising gold pluses, a gleam
+const x = a.back.x0 + Math.floor(mod(tt * 9, Math.max(1, a.back.x1 - a.back.x0)));
+P(x, backTop(x), 1, 1, C_CREAM);
+if (v >= 2) for (let i = 0, n = cnt('vitality', 2); i < n; i++) {
+const age = mod(tt + i * 0.7, 1.4);
+if (age > 1.2) continue;
+const k = Math.floor((tt + i * 0.7) / 1.4);
+const px = a.cx - 8 + ((k * 7 + i * 5) & 15), py = headTop + 2 - Math.round((age / 1.2) * 8);
+plus(P, px, py, C_GOLD); P(px, py, 1, 1, C_CREAM);
+}
+if (v >= 3 && Math.sin(tt * 3.1) > 0.3) plus(P, a.chest.cx - 2, a.chest.cy - 2, C_GLEAM);
+}
+v = lv('strength');
+if (v >= 2 && mod(tt, 2.2) < 0.25) { // a flex, kicking up dust at level 3
+P(a.chest.cx - 2, a.chest.cy - a.chest.ry, 4, 1, 'rgba(255,240,200,0.75)');
+if (v >= 3) for (let i = 0; i < 3; i++) P(a.haunch.cx - 6 + i * 4, a.feetY + (i & 1) - 1, 1, 1, PAL.parch1);
+}
+v = lv('love');
+if (v) for (let i = 0, n = cnt('love', [0, 1, 2, 3][v]); i < n; i++) { // hearts drifting up in front of the ears
+const p = mod(tt / 1.6 + i / n, 1);
+heart(P, a.head.cx + 2 + ((i * 5) % 7) - 2 + Math.round(Math.sin(tt * 3 + i * 2)), headTop - 3 - Math.round(p * 10), v === 3 && i & 1 ? C_PINK : C_HEART);
+}
+v = lv('arcana');
+if (v) { // twinkling stars, orbiting runes, a ring on the floor and a glowing eye
+for (let i = 0, n = cnt('arcana', 2); i < n; i++) {
+if (Math.sin(tt * 3 + i * 2.1) < 0) continue;
+const sx = a.cx + [-12, 11, -5, 15][i & 3], sy = headTop + [3, -2, -4, 7][i & 3];
+plus(P, sx, sy, C_RUNE_HI); P(sx, sy, 1, 1, '#ffffff');
+}
+if (v >= 2) for (let i = 0, n = cnt('arcana', 3); i < n; i++) {
+const ang = tt * 1.2 + i * 2.09;
+stamp(P, RUNES[(i + seed) & 3], a.cx - 1 + Math.round(Math.cos(ang) * 14), midY - 1 + Math.round(Math.sin(ang) * 5), { x: Math.sin(ang) > 0 ? C_RUNE_HI : C_RUNE });
+}
+if (v >= 3) {
+for (let i = 0, n = Math.round(6 * q); i < n; i++) { const ang = tt * 1.5 + (i * Math.PI * 2) / n; P(a.cx + Math.round(Math.cos(ang) * 12), a.feetY + 2 + Math.round(Math.sin(ang) * 2), 1, 1, C_RUNE); }
+if (Math.sin(tt * 4) > 0) P(a.eye.x, a.eye.y - 1, 1, 1, '#ffffff');
+}
+}
+v = lv('transformation');
+if (v) { // a teal shimmer sweeping the coat, motes spiralling in, a glitch
+const p = mod(tt, 3);
+if (p < 0.9) {
+const rows = rowsOf(a.parts), y0 = rows[0][0], sx = bx0 - 6 + Math.round((p / 0.9) * (bx1 - bx0 + 12));
+for (let i = 0; i < rows.length; i += 2) {
+const [y, x0, x1] = rows[i], x = sx - ((y - y0) >> 1);
+if (x >= x0 && x <= x1 - 1) P(x, y, 2, 1, 'rgba(95,212,180,0.55)');
+}
+}
+if (v >= 2) for (let i = 0, n = cnt('transformation', 4); i < n; i++) {
+const r = 14 - mod(tt * 6 + i * 3, 12), ang = tt * 3 + i * (Math.PI / 2);
+P(a.cx + Math.round(Math.cos(ang) * r), midY + Math.round(Math.sin(ang) * r * 0.5), 1, 1, C_SHIM);
+}
+if (v >= 3 && mod(tt, 2.5) < 0.12) for (let i = 0; i < 3; i++) P(bx0 + ((seed + i * 11) % Math.max(1, bx1 - bx0 - 4)), headTop + 4 + i * 4, 5, 1, C_SHIM);
+}
+v = lv('fire');
+if (v) { // smoulder (1), flames along the back (2), more flames, sparks and burning ear tips (3)
+if (v === 1 && Math.sin(tt * 5) > -0.2) P(a.back.x0 + 4, backTop(a.back.x0 + 4) + 1, 1, 1, '#ffb444');
+const nf = cnt('fire', [0, 0, 3, 6][v]), span = a.back.x1 + 2 - a.back.x0;
+for (let i = 0; i < nf; i++) {
+const x = a.back.x0 + Math.round(((i + 0.5) * span) / nf), y = backTop(x);
+const h = 2 + (((tt * 10 + i * 3) | 0) % 3) + (v === 3 ? 1 : 0);
+P(x, y - h, 1, h, '#ff7a1c'); P(x, y - 2, 1, 2, '#ffb444');
+if (v === 3 && i & 1) P(x, y - 1, 1, 1, PAL.fire5);
+}
+for (let i = 0, n = cnt('fire', 1); i < n; i++) {
+const age = mod(tt * 0.8 + i * 0.5, 1);
+P(a.back.x0 + 3 + i * 6 + Math.round(Math.sin(tt * 2 + i) * 1.5), a.back.y - 2 - Math.round(age * 10), 1, 1, '#8a8296');
+}
+if (v === 3) {
+for (let i = 0, n = cnt('fire', 2); i < n; i++) P(a.back.x0 + 5 + ((i * 9 + seed) % 14) + Math.round(Math.sin(tt * 6 + i)), a.back.y - 3 - Math.round(mod(tt * 1.7 + i * 0.5, 1) * 14), 1, 1, '#ffd75a');
+const e = a.ears[a.ears.length - 1];
+if (e && e.kind === 'up') { const tx = e.x + 1 - Math.floor((e.len - 1) / e.lean), ty = e.y - e.len; P(tx, ty - 1 - (((tt * 8) | 0) & 1), 1, 2, '#ff7a1c'); }
+}
+}
+v = lv('frost');
+if (v) { // breath puffs (1-2), falling snow (2), frozen still with glints on the ice (3)
+if (v < 3 && mod(tt, 1.6) < 0.45) P(a.nose.x + 1 + Math.round(mod(tt, 1.6) * 6), a.nose.y - 1, 2, 1, 'rgba(223,244,255,0.8)');
+if (v >= 2) for (let i = 0, n = cnt('frost', v === 3 ? 5 : 2); i < n; i++) {
+P(bx0 - 2 + ((i * 13 + seed) % (bx1 - bx0 + 4)) + Math.round(Math.sin(tt * 1.3 + i) * 1.5), 2 + Math.round(mod(tt * 5 + i * 9, 32)), 1, 1, C_RIME);
+}
+if (v === 3) for (let i = 0; i < 2; i++) if (Math.sin(tt * 5 + i * 2.5) > 0.6) { const x = a.back.x0 + 2 + i * 7; P(x, backTop(x) + 1, 1, 1, '#ffffff'); }
+}
+v = lv('acid');
+if (v) { // a droplet on a raw spot and steam rising from them
+const pts = acidSpots(look.seed >>> 0 || 1, a);
+if (Math.sin(tt * 4) > 0) P(pts[0].x, pts[0].y + 1, 1, 1, C_ACID);
+for (let i = 0, n = cnt('acid', v); i < n; i++) {
+const p = pts[i % pts.length];
+P(p.x + Math.round(Math.sin(tt * 3 + i)), p.y - 2 - Math.round(mod(tt * 0.9 + i * 0.37, 1) * 7), 1, 1, 'rgba(230,240,220,0.7)');
+}
+}
+v = lv('alkali');
+if (v) { // chalk dust drifting down, a sneeze at level 3
+for (let i = 0, n = cnt('alkali', v === 1 ? 1 : 2); i < n; i++) {
+const x = bx0 + 2 + ((i * 11 + seed) % Math.max(1, bx1 - bx0 - 4));
+P(x, backTop(x) + Math.round(mod(tt * 4 + i * 5, 12)), 1, 1, C_CHALK);
+}
+if (v === 3 && mod(tt, 4) > 3.8) P(a.nose.x + 1, a.nose.y - 1, 3, 2, C_CREAM);
+}
+v = lv('toxicity');
+if (v) { // bubbles off the back, then a drool drip and a purple bubble
+for (let i = 0, n = cnt('toxicity', v); i < n; i++) {
+const p = mod(tt / 2 + i / n, 1);
+P(a.back.x0 + 3 + i * 4 + Math.round(Math.sin(tt * 2 + i)), a.back.y - 2 - Math.round(p * 8), 2, 2, v === 3 && i === 2 ? '#a678ff' : C_SLIME);
+}
+if (v === 3) P(a.nose.x - 1, a.nose.y + 3 + Math.round(mod(tt / 1.5, 1) * Math.max(0, a.feetY - a.nose.y - 3)), 1, 1, C_DRIP);
+}
+v = lv('death');
+if (v) for (let i = 0, n = cnt('death', [0, 1, 1, 3][v]); i < n; i++) { // slow violet-grey wisps
+if (v === 2 && i === 0 && mod(tt, 4) > 2.6) continue;
+const x = bx0 + 4 + ((i * 9 + seed) % Math.max(1, bx1 - bx0 - 8)) + Math.round(Math.sin(tt * 1.4 + i * 2) * 2);
+const y = a.back.y - 1 - Math.round(mod(tt * 0.35 + i * 0.33, 1) * 12), c = v === 1 ? 'rgba(180,145,238,0.35)' : 'rgba(180,145,238,0.6)';
+P(x, y, 1, 2, c); P(x + (Math.sin(tt * 2 + i) > 0 ? 1 : -1), y - 1, 1, 1, c);
+}
+}
+function deadFx(P, a, cause, t) {
+if (cause === 'fire') {
+const x = a.cx - 2 + Math.round(Math.sin(t * 1.1) * 2), y = a.back.y - 2 - Math.round(mod(t * 0.3, 1) * 12);
+P(x, y, 1, 2, 'rgba(138,130,150,0.7)'); P(x + 1, y - 2, 1, 1, 'rgba(138,130,150,0.45)');
+} else if (cause === 'frost') {
+if (Math.sin(t * 2.3) > 0.7) P(a.haunch.cx - 3, a.haunch.cy - a.haunch.ry - 2, 1, 1, '#ffffff');
+if (Math.sin(t * 1.7 + 2) > 0.7) P(a.head.cx, a.head.cy - a.head.ry - 2, 1, 1, '#ffffff');
+} else if (cause === 'poison') {
+for (let i = 0; i < 2; i++) {
+const x = a.cx + Math.round(Math.cos(t * 6.3 + i * 2.8) * 7), y = a.back.y - 4 + Math.round(Math.sin(t * 9.1 + i * 1.3) * 2);
+P(x, y, 1, 1, K); P(x, y - 1, 1, 1, 'rgba(255,255,255,0.6)');
+}
+}
+}
+function motion(look, snap, a, t, react, hop) {
+const shake = react > 0 ? Math.round(Math.sin(t * 40) * react * 1.5) : 0;
+const L = rabbitLevels(snap);
+if (a.lying || L.frost === 3) return { dx: shake, dy: 0 };
+const seed = (look.seed >>> 0) || 1, ts = t * rabbitPace(snap);
+const slumped = a.pose === 'sick' || a.pose === 'loaf';
+let dx = 0, dy = 0;
+if (hop && a.pose === 'idle') {
+const per = (4 + (seed % 300) / 100) * (snap.stage === 'kit' ? 0.6 : 1), ph = mod(ts + (seed % 7), per);
+if (ph < 0.4) dy = -Math.round(Math.min(4, Math.max(1, a.top)) * Math.sin((Math.PI * ph) / 0.4));
+}
+if (dy === 0) dy = Math.round(Math.sin(ts * 2.2 + (seed % 11)) * (slumped ? 0.5 : L.vitality === 3 ? 1.5 : 0.8));
+if (L.frost) { const per = L.frost === 2 ? 1.3 : 2.6; if (mod(t, per) < (L.frost === 2 ? 0.35 : 0.2)) dx += Math.sin(t * 88) > 0 ? 1 : -1; }
+if (L.toxicity >= 2) dx += Math.round(Math.sin(t * 1.6));
+if (L.acid === 3 && mod(t, 3.1) < 0.1) dx -= 1;
+if (L.alkali === 3 && mod(t, 4) > 3.8) dx -= 1;
+if (L.transformation === 3 && mod(t, 2.5) < 0.12) dx += 1;
+if (L.love === 3) dx += Math.round(Math.sin(t * 0.9) * 0.6);
+if (L.arcana === 3) dy -= 2 + (Math.sin(t * 1.5) > 0 ? 1 : 0);
+return { dx: dx + shake, dy };
+}
+const SPRITES = new Map();
+const SPRITE_MAX = 64;
+function rabbitSpriteKey(look, snap, want) {
+const c = (v) => (Array.isArray(v) ? v.map((x) => Math.round(x * 255)).join(',') : '');
+const s = snap || {};
+const lv = Array.isArray(s.lv) ? s.lv.join('') : '', sc = Array.isArray(s.sc) ? s.sc.join('') : '';
+const tr = Array.isArray(s.traits) ? s.traits.join(',') : '';
+return `${c(look.coat)}|${c(look.coat2)}|${look.pattern}|${look.ear}|${look.size}|${look.eye}|${look.tail}|${look.seed}|${s.stage}${s.hp}${s.alive === false ? 0 : 1}${s.preg ? 1 : 0}|${lv}|${sc}|${tr}|${s.cause || ''}|${rabbitPose(snap, want)}`;
+}
+function drawRabbitSprite(look, snap, factory = makeCanvas, opts = {}) {
+const cv = factory(RABBIT_W, RABBIT_H);
+const ctx = cv.getContext('2d');
+drawBody(pen(ctx, 0, 0, 0, 0, false), look, snap, rabbitAnchors(look, snap, opts.pose), opts.quality === 'low');
+return cv;
+}
+function clearRabbitSprites() {
+SPRITES.clear();
+}
+function spriteFor(look, snap, pose, low, factory) {
+const key = rabbitSpriteKey(look, snap, pose) + (low ? '|lo' : '');
+let cv = SPRITES.get(key);
+if (cv) { SPRITES.delete(key); SPRITES.set(key, cv); return cv; }
+cv = drawRabbitSprite(look, snap, factory, { pose, quality: low ? 'low' : 'high' });
+SPRITES.set(key, cv);
+if (SPRITES.size > SPRITE_MAX) SPRITES.delete(SPRITES.keys().next().value);
+return cv;
+}
+function drawFloor(ctx, fx, fy) {
+ctx.fillStyle = '#8b5a31';
+ctx.fillRect(fx + 4, fy + 35, 40, 3);
+ctx.fillStyle = '#c2a678';
+for (let x = 5; x < 44; x += 3) ctx.fillRect(fx + x, fy + 34, 2, 1);
+}
+function drawRabbit(ctx, look, snap, t, react = 0, opts = {}) {
+const fx = Math.round(opts.x || 0), fy = Math.round(opts.y || 0);
+if (opts.clear !== false) ctx.clearRect(fx, fy, RABBIT_W, RABBIT_H);
+if (opts.floor !== false) drawFloor(ctx, fx, fy);
+if (!look || !snap) return;
+const low = opts.quality === 'low', mirror = !!opts.mirror, clip = opts.clip !== false;
+const a = rabbitAnchors(look, snap, opts.pose);
+const rx = clamp(Number(react) || 0, 0, 1);
+const acted = rx > 0 && Array.isArray(opts.react) ? opts.react : [];
+const time = Number(t) || 0;
+const m = motion(look, snap, a, time, rx, opts.hop !== false);
+const dy = m.dy - Math.round(opts.lift || 0);
+const shadowP = pen(ctx, fx, fy, m.dx, 0, mirror, clip);
+const sx0 = a.haunch.cx - a.haunch.rx + 1, sx1 = Math.max(a.chest.cx + a.chest.rx, a.lying ? a.head.cx + a.head.rx : 0);
+shadowP(sx0, a.feetY + 1, sx1 - sx0, 1, 'rgba(0,0,0,0.18)');
+shadowP(sx0 + 2, a.feetY + 2, sx1 - sx0 - 4, 1, 'rgba(0,0,0,0.12)');
+const factory = opts.factory || (typeof document !== 'undefined' ? makeCanvas : null);
+if (opts.cache !== false && factory) {
+const sprite = spriteFor(look, snap, a.pose, low, factory);
+if (mirror) {
+ctx.save();
+ctx.translate(fx + RABBIT_W - m.dx, fy + dy);
+ctx.scale(-1, 1);
+ctx.drawImage(sprite, 0, 0);
+ctx.restore();
+} else ctx.drawImage(sprite, fx + m.dx, fy + dy);
+} else drawBody(pen(ctx, fx, fy, m.dx, dy, mirror, clip), look, snap, a, low);
+drawFx(pen(ctx, fx, fy, m.dx, dy, mirror, clip), look, snap, a, time, rx, acted, low);
+if (rx > 0 && opts.flash !== false) {
+ctx.fillStyle = `rgba(255,255,255,${(rx * 0.35).toFixed(3)})`;
+ctx.fillRect(fx, fy, RABBIT_W, RABBIT_H);
+}
+}
+return { RABBIT_W, RABBIT_H, rabbitLevels, rabbitPose, rabbitPace, rabbitAnchors, rabbitSpriteKey, drawRabbitSprite, clearRabbitSprites, drawRabbit };
+})();
+// src/rendering/hutch-scene.js
+const __m66 = (() => {
+const { Rng, hashString } = __m6;
+const { PAL, makeCanvas } = __m51;
+const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m64;
+const HUTCH_W = 192;
+const HUTCH_H = 72;
+const HUTCH_BODIES = 3;
+const FLOOR_Y = 44;
+const ROAM = { x0: 18, x1: 132, y0: 50, y1: 66 };
+const RACK = { x: 30, y: 51 };
+const SLOTS = [[154, 62], [174, 65], [160, 69]];
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+function R(ctx, x, y, w, h, c) {
+ctx.fillStyle = c;
+ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
+}
+function paintHutch(ctx, o = {}) {
+const W = HUTCH_W, H = HUTCH_H, rng = new Rng('hutch-bg');
+for (let y = 0, i = 0; y < FLOOR_Y; y += 7, i++) {
+const base = i % 2 ? PAL.wood2 : PAL.wood3, grain = i % 2 ? PAL.wood1 : PAL.wood2;
+R(ctx, 0, y, W, 7, base);
+R(ctx, 0, y, W, 1, i % 2 ? PAL.wood3 : PAL.wood4);
+R(ctx, 0, y + 6, W, 1, PAL.wood0);
+for (let k = 0; k < 7; k++) R(ctx, rng.int(0, W - 12), y + rng.int(2, 4), rng.int(5, 16), 1, grain);
+for (let x = (i % 2) * 23 + rng.int(4, 12); x < W; x += rng.int(38, 58)) {
+R(ctx, x, y + 1, 1, 5, PAL.wood0);
+R(ctx, x - 2, y + 3, 1, 1, PAL.iron4); R(ctx, x + 2, y + 3, 1, 1, PAL.iron4);
+}
+}
+R(ctx, 0, FLOOR_Y, W, H - FLOOR_Y, PAL.parch0);
+R(ctx, 0, FLOOR_Y, W, 1, PAL.wood0);
+R(ctx, 0, FLOOR_Y + 1, W, 2, 'rgba(0,0,0,0.18)');
+for (let k = 0; k < 260; k++) {
+const x = rng.int(0, W - 1), y = rng.int(FLOOR_Y + 2, H - 5), len = rng.int(2, 4);
+const c = rng.pick([PAL.parch1, PAL.parch1, PAL.parch2, '#6d5a3a']);
+if (rng.chance(0.5)) R(ctx, x, y, len, 1, c);
+else { R(ctx, x, y, 1, 1, c); R(ctx, x + 1, y - 1, 1, 1, c); R(ctx, x + 2, y - 2, 1, 1, c); }
+}
+R(ctx, 3, 14, 19, 2, PAL.wood1); R(ctx, 3, 14, 19, 1, PAL.wood4);
+for (let x = 6; x < 20; x += 3) R(ctx, x, 16, 1, 22, PAL.iron3);
+for (let k = 0; k < 46; k++) R(ctx, rng.int(5, 19), rng.int(9, 34), rng.int(1, 3), 1, rng.pick(['#d8c46a', '#b8a24a', '#e8d88a', '#8f8a3a']));
+R(ctx, 3, 38, 19, 3, PAL.wood1); R(ctx, 3, 38, 19, 1, PAL.wood4);
+R(ctx, 3, 14, 2, 27, PAL.wood2); R(ctx, 20, 14, 2, 27, PAL.wood2);
+for (let k = 0; k < 22; k++) R(ctx, rng.int(4, 26), rng.int(FLOOR_Y + 1, FLOOR_Y + 6), rng.int(2, 4), 1, rng.pick(['#d8c46a', '#b8a24a']));
+const bx = 40, by = 61;
+for (const [rx, ry, c] of /** @type {[number, number, string][]} */ ([[7, 3, '#1a1218'], [6, 2, PAL.stone4], [4, 1, PAL.frost1]])) {
+for (let yy = -ry; yy <= ry; yy++) { const w = Math.round(rx * Math.sqrt(Math.max(0, 1 - (yy * yy) / (ry * ry)))); R(ctx, bx - w, by + yy, w * 2 + 1, 1, c); }
+}
+R(ctx, bx - 2, by - 1, 2, 1, PAL.frost2); R(ctx, bx - 6, by + 1, 13, 1, PAL.stone2);
+if (o.nest) {
+R(ctx, 157, 27, 32, 23, '#1a1218'); R(ctx, 158, 28, 30, 21, PAL.wood3); R(ctx, 158, 28, 30, 2, PAL.wood5);
+R(ctx, 158, 38, 30, 1, PAL.wood2);
+R(ctx, 167, 36, 12, 13, PAL.wood0); R(ctx, 168, 34, 10, 2, PAL.wood0); R(ctx, 170, 33, 6, 1, PAL.wood0);
+for (let k = 0; k < 12; k++) R(ctx, rng.int(166, 179), rng.int(44, 49), rng.int(2, 3), 1, rng.pick([PAL.parch2, PAL.parch1]));
+for (let k = 0; k < 8; k++) R(ctx, rng.int(158, 186), 27 - rng.int(0, 2), rng.int(2, 3), 1, PAL.parch2);
+}
+if (o.cloth) {
+R(ctx, 138, 57, 53, 14, PAL.parch0); R(ctx, 139, 57, 51, 12, PAL.parch1); R(ctx, 139, 57, 51, 1, PAL.parch2);
+for (let x = 146; x < 188; x += 9) { R(ctx, x, 59, 1, 4, PAL.parch0); R(ctx, x + 1, 63, 1, 4, PAL.parch0); }
+for (let x = 139; x < 190; x += 2) R(ctx, x, 69, 1, 1, PAL.parch2);
+}
+R(ctx, 0, H - 4, W, 4, PAL.wood3); R(ctx, 0, H - 4, W, 1, PAL.wood5); R(ctx, 0, H - 1, W, 1, PAL.wood1);
+for (let x = 10; x < W; x += 46) R(ctx, x, H - 3, 1, 1, PAL.iron4);
+}
+class HutchScene {
+constructor(opts = {}) {
+this.factory = opts.canvas || null;
+this.sprites = opts.sprites !== false;
+this.actors = new Map();
+this.steps = 0;
+this.nest = false;
+this.cloth = false;
+this.bg = null;
+this.bgKey = '';
+}
+sync(entries) {
+const seen = new Set();
+let bodies = 0, nest = false;
+for (const e of Array.isArray(entries) ? entries : []) {
+if (!e || e.id == null || !e.look || !e.snap) continue;
+const id = String(e.id);
+if (seen.has(id)) continue;
+seen.add(id);
+let a = this.actors.get(id);
+if (!a) { a = this._spawn(id, e); this.actors.set(id, a); }
+a.look = e.look;
+a.snap = e.snap;
+a.L = rabbitLevels(e.snap);
+a.mother = e.mother != null ? String(e.mother) : Array.isArray(e.parents) && e.parents[0] ? String(e.parents[0]) : null;
+const alive = e.snap.alive !== false;
+if (!alive) {
+const slot = SLOTS[bodies++];
+a.hidden = !slot;
+if (slot) { a.x = slot[0]; a.y = slot[1]; }
+a.act = 'dead'; a.pose = null; a.face = 1; a.hops = 0;
+} else {
+if (!a.alive) this._place(a);
+a.hidden = false;
+if (e.snap.preg) nest = true;
+}
+a.alive = alive;
+}
+for (const id of [...this.actors.keys()]) if (!seen.has(id)) this.actors.delete(id);
+this.nest = nest;
+this.cloth = bodies > 0;
+}
+update(dt) {
+const d = Number.isFinite(dt) ? clamp(dt, 0, 0.1) : 0;
+this.steps++;
+for (const a of this.actors.values()) {
+if (a.react > 0) a.react = Math.max(0, a.react - d * 1.25);
+if (a.alive) this._tick(a, d);
+}
+}
+poke(id, channels = []) {
+const a = this.actors.get(String(id));
+if (!a || !a.alive || a.act === 'collapse' || a.act === 'frozen') return;
+a.react = 1;
+a.reactCh = channels.slice();
+a.next = null;
+this._hopTo(a, { x: a.x + a.face * 2, y: a.y }, 1, false);
+}
+draw(ctx, t, o = {}) {
+const low = !!o.low;
+this._background(ctx);
+const list = this._visible();
+for (const a of list) {
+const f = this._frame(a);
+drawRabbit(ctx, a.look, a.snap, t + a.phase, a.react, {
+x: f.x, y: f.y, lift: f.lift, mirror: f.mirror, pose: a.pose || undefined, react: a.reactCh,
+quality: low ? 'low' : 'high', clear: false, floor: false, clip: false, flash: false, hop: false,
+cache: this.sprites, factory: this.factory || undefined,
+});
+}
+const hov = o.hover != null ? this.actors.get(String(o.hover)) : null;
+if (hov && !hov.hidden) {
+const b = this._box(hov), rx = Math.max(6, Math.round((b.x1 - b.x0) / 2) - 3);
+for (let i = 0; i < 12; i++) {
+const ang = (i * Math.PI) / 6;
+R(ctx, Math.round(hov.x + Math.cos(ang) * rx), Math.round(hov.y + 1 + Math.sin(ang) * 2), 1, 1, PAL.brassHi);
+}
+}
+const sel = o.selected != null ? this.actors.get(String(o.selected)) : null;
+if (sel && !sel.hidden) {
+const f = this._frame(sel), hx = f.mirror ? f.x + RABBIT_W - 1 - f.an.head.cx : f.x + f.an.head.cx;
+const y = Math.max(4, f.y + f.an.top - f.lift - 5 + Math.round(Math.sin(t * 4)));
+R(ctx, hx - 3, y - 1, 7, 2, '#1a1218'); R(ctx, hx - 2, y + 1, 5, 1, '#1a1218'); R(ctx, hx - 1, y + 2, 3, 1, '#1a1218'); R(ctx, hx, y + 3, 1, 1, '#1a1218');
+R(ctx, hx - 2, y, 5, 1, PAL.brass); R(ctx, hx - 1, y + 1, 3, 1, PAL.brass); R(ctx, hx, y + 2, 1, 1, PAL.brass); R(ctx, hx - 2, y, 2, 1, PAL.brassHi);
+}
+}
+hit(x, y) {
+const list = this._visible();
+for (let i = list.length - 1; i >= 0; i--) {
+const b = this._box(list[i]);
+if (x >= b.x0 && x <= b.x1 && y >= b.y0 && y <= b.y1) return list[i].id;
+}
+return null;
+}
+boxOf(id) {
+const a = this.actors.get(String(id));
+return a && !a.hidden ? this._box(a) : null;
+}
+where(id) {
+const a = this.actors.get(String(id));
+return a ? { x: Math.round(a.x), y: Math.round(a.y), face: a.face, act: a.act, hidden: a.hidden } : null;
+}
+_spawn(id, e) {
+const r = new Rng(hashString(`hutch:${id}:${e.look.seed}`));
+const a = {
+id, look: e.look, snap: e.snap, L: rabbitLevels(e.snap), mother: null, alive: e.snap.alive !== false, hidden: false,
+x: 0, y: 0, face: r.chance(0.5) ? 1 : -1, act: 'idle', at: 0, dur: r.range(0.3, 2), pose: null,
+hops: 0, hopT: 0.34, hopH: 4, step: 8, sx: 0, sy: 0, tx: 0, ty: 0, gx: 0, gy: 0, next: null,
+n: 0, phase: r.range(0, 10), react: 0, reactCh: [], anSnap: null, anPose: null, an: null,
+};
+a.x = r.int(ROAM.x0, ROAM.x1);
+a.y = r.int(ROAM.y0, ROAM.y1);
+return a;
+}
+_place(a) {
+const r = new Rng(hashString(`hutch:place:${a.id}:${a.n++}`));
+a.x = r.int(ROAM.x0, ROAM.x1); a.y = r.int(ROAM.y0, ROAM.y1);
+a.act = 'idle'; a.at = 0; a.dur = 1; a.pose = null; a.hops = 0;
+}
+_tick(a, dt) {
+const L = a.L, snap = a.snap;
+if (L.death === 3 || snap.hp >= 3) { a.act = 'collapse'; a.pose = null; return; } // too weak to move
+if (L.frost === 3) { a.act = 'frozen'; a.pose = null; return; } // frozen stiff
+if (a.act === 'collapse' || a.act === 'frozen') this._begin(a, 'idle', 0.5);
+a.at += dt * rabbitPace(snap);
+if (a.act === 'hop' || a.act === 'zoom') {
+const p = Math.min(1, a.at / a.hopT);
+a.x = a.sx + (a.tx - a.sx) * p;
+a.y = a.sy + (a.ty - a.sy) * p;
+if (p < 1) return;
+if (--a.hops > 0 && this._nextHop(a)) return;
+if (a.next === 'eat') { a.next = null; this._begin(a, 'eat', 2.6); } else this._decide(a);
+return;
+}
+if (a.act === 'float') {
+const dx = a.gx - a.x, dy = a.gy - a.y, d = Math.hypot(dx, dy), s = Math.min(d, 6 * dt);
+if (d > 0.5) { a.x += (dx / d) * s; a.y += (dy / d) * s; if (Math.abs(dx) > 1) a.face = dx > 0 ? 1 : -1; }
+}
+if (a.at >= a.dur) this._decide(a);
+}
+_decide(a) {
+const r = new Rng(hashString(`${a.id}:${a.look.seed}:${a.n++}`));
+const L = a.L, kit = a.snap.stage === 'kit';
+const sick = L.toxicity >= 2 || a.snap.hp >= 2;
+a.next = null;
+if (sick && r.chance(0.8)) return this._begin(a, 'loaf', r.range(3, 6));
+if (L.arcana === 3 && r.chance(0.45)) {
+const g = this._goal(a, r, 26);
+a.gx = g.x; a.gy = g.y;
+return this._begin(a, 'float', r.range(2.5, 4));
+}
+if ((L.fire === 3 || L.vitality === 3) && r.chance(0.4)) return this._hopTo(a, this._goal(a, r, 60), 4, true);
+if (L.strength >= 2 && r.chance(0.3)) return this._begin(a, 'flex', r.range(1.2, 2));
+if ((L.love >= 2 || L.vitality >= 2) && a.snap.hp === 0 && r.chance(0.25)) return this._begin(a, 'flop', r.range(2.5, 4.5));
+const pick = r.weighted(['idle', 'hop', 'groom', 'eat', 'sniff'], [3, 3, 1.5, 1.2, 1.5]);
+if (pick === 'hop') return this._hopTo(a, this._goal(a, r, 30), kit ? 2 : r.int(1, 3), false);
+if (pick === 'eat') {
+const dx = RACK.x - a.x, dy = RACK.y - a.y;
+if (Math.hypot(dx, dy) <= 4) return this._begin(a, 'eat', r.range(2, 3.5));
+a.next = 'eat';
+return this._hopTo(a, { x: RACK.x + r.int(-3, 3), y: RACK.y + r.int(0, 3) }, 16, false);
+}
+const dur = pick === 'idle' ? r.range(1.2, 3.5) * (kit ? 0.6 : 1) : pick === 'groom' ? r.range(1.5, 2.5) : r.range(0.8, 1.4);
+return this._begin(a, pick, dur);
+}
+_begin(a, act, dur) {
+a.act = act; a.at = 0; a.dur = dur; a.hops = 0;
+a.pose = act === 'loaf' ? 'loaf' : act === 'flex' ? 'rear' : act === 'flop' ? 'flop' : null;
+if (act === 'eat') a.face = -1;
+}
+_goal(a, r, range) {
+const mom = a.snap.stage === 'kit' && a.mother ? this.actors.get(a.mother) : null;
+if (mom && mom.alive && !mom.hidden) return this._roam(mom.x - mom.face * 9 + r.int(-3, 3), mom.y + r.int(0, 3));
+if (a.L.love >= 2 && r.chance(0.5)) {
+let best = null, bd = Infinity;
+for (const o of this.actors.values()) {
+if (o === a || !o.alive || o.hidden) continue;
+const d = Math.hypot(o.x - a.x, o.y - a.y);
+if (d < bd) { bd = d; best = o; }
+}
+if (best) return this._roam(best.x - 9 * Math.sign(best.x - a.x || 1), best.y + r.int(-2, 2));
+}
+return this._roam(a.x + r.range(-range, range), a.y + r.range(-range / 3, range / 3));
+}
+_roam(x, y) {
+return { x: clamp(x, ROAM.x0, ROAM.x1), y: clamp(y, ROAM.y0, ROAM.y1) };
+}
+_hopTo(a, goal, n, zoom) {
+const kit = a.snap.stage === 'kit';
+a.act = zoom ? 'zoom' : 'hop'; a.pose = null;
+a.gx = goal.x; a.gy = goal.y; a.hops = n;
+a.hopT = zoom ? 0.17 : 0.34; a.hopH = kit ? 2 : zoom ? 5 : 4;
+a.step = (kit ? 5 : 8) * (zoom ? 1.7 : 1);
+if (!this._nextHop(a)) this._begin(a, 'idle', 0.6);
+}
+_nextHop(a) {
+const dx = a.gx - a.x, dy = a.gy - a.y, d = Math.hypot(dx, dy);
+if (d < 0.5 && a.hops <= 0) return false;
+const len = Math.min(a.step, d);
+a.sx = a.x; a.sy = a.y;
+a.tx = d > 0 ? a.x + (dx / d) * len : a.x;
+a.ty = d > 0 ? a.y + (dy / d) * len : a.y;
+if (Math.abs(dx) > 0.5) a.face = dx > 0 ? 1 : -1;
+a.at = 0;
+if (d < 0.5) a.hops = 1; // a hop on the spot (a poke), then stop
+return true;
+}
+_anchors(a) {
+if (a.an && a.anSnap === a.snap && a.anPose === a.pose) return a.an;
+a.an = rabbitAnchors(a.look, a.snap, a.pose || undefined);
+a.anSnap = a.snap; a.anPose = a.pose;
+return a.an;
+}
+_frame(a) {
+const an = this._anchors(a), mirror = a.face < 0;
+let lift = 0, nx = 0, ny = 0;
+if (a.act === 'hop' || a.act === 'zoom') lift = Math.round(a.hopH * Math.sin(Math.PI * Math.min(1, a.at / a.hopT)));
+else if (a.act === 'groom') ny = Math.floor(a.at * 5) & 1;
+else if (a.act === 'eat') ny = Math.floor(a.at * 4) & 1;
+else if (a.act === 'sniff') nx = (Math.floor(a.at * 8) & 1) * a.face;
+const x = Math.round(a.x) - (mirror ? RABBIT_W - 1 - an.cx : an.cx) + nx;
+const y = Math.round(a.y) - an.feetY + ny;
+return { x, y, lift, mirror, an };
+}
+_box(a) {
+const f = this._frame(a), b = f.an.box, pad = a.snap.stage === 'kit' ? 6 : 3;
+const x0 = f.mirror ? f.x + RABBIT_W - 1 - b.x1 : f.x + b.x0, x1 = f.mirror ? f.x + RABBIT_W - 1 - b.x0 : f.x + b.x1;
+return { x0: x0 - pad, y0: f.y + b.y0 - f.lift - pad, x1: x1 + pad, y1: f.y + b.y1 + pad };
+}
+_visible() {
+return [...this.actors.values()].filter((a) => !a.hidden).sort((p, q) => p.y - q.y || (p.id < q.id ? -1 : p.id > q.id ? 1 : 0));
+}
+_background(ctx) {
+const o = { nest: this.nest, cloth: this.cloth };
+const factory = this.factory || (typeof document !== 'undefined' ? makeCanvas : null);
+if (!factory) { paintHutch(ctx, o); return; }
+const key = `${o.nest ? 1 : 0}${o.cloth ? 1 : 0}`;
+if (!this.bg || this.bgKey !== key) {
+this.bg = factory(HUTCH_W, HUTCH_H);
+paintHutch(this.bg.getContext('2d'), o);
+this.bgKey = key;
+}
+ctx.drawImage(this.bg, 0, 0);
+}
+}
+return { HUTCH_W, HUTCH_H, HUTCH_BODIES, paintHutch, HutchScene };
+})();
+// src/ui/views/hutch.js
+const __m65 = (() => {
+const { h, btn, clear, toast, modal, confirmDialog } = __m2;
+const { icon } = __m3;
+const { audio } = __m4;
+const { drawRabbit, RABBIT_W, RABBIT_H } = __m64;
+const { HutchScene, HUTCH_W, HUTCH_H } = __m66;
+const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, TRAIT_WORDS } = __m28;
+const STAGE_WORD = { kit: 'kit', young: 'youngster', adult: 'adult', elder: 'elder' };
+class HutchPanel {
+constructor(view) {
+this.view = view;
+this.lab = view.lab;
+this.el = h('div', { class: 'card parch hutch' });
+this.scene = new HutchScene();
+this.tiles = {};
+this.hover = null;
+this._acc = 0;
+}
+get st() {
+return this.lab.state;
+}
+render() {
+const lab = this.lab, st = this.st, c = st.colony;
+const el = clear(this.el);
+const live = livingRabbits(c);
+const cap = st.cap.hutch;
+const price = lab.sandbox ? 0 : st.rabbitPrice();
+const full = live.length >= cap;
+const fed = c.fedDay === st.day;
+el.append(h('div', { class: 'row wrap hutch-head' },
+icon('rabbit'), h('b', { text: 'The hutch' }), h('span', { class: 'small muted', text: `${live.length} of ${cap} places` }),
+h('span', { class: 'spacer' }),
+btn(price ? `Buy · ${price}` : 'Buy', () => this.buy(), { icon: 'plus', act: 'colony-buy', disabled: full || (!lab.sandbox && st.coins < price), title: full ? `The hutch is full (${cap} places): upgrade it at the guild.` : 'Buy an adult rabbit from the breeder' }),
+btn(fed ? 'Fed' : lab.sandbox ? 'Feed' : `Feed · ${st.feedCost()}`, () => this.feed(), { icon: 'leaf', act: 'colony-feed', disabled: fed || !live.length, title: 'Hay and greens: they recover faster and pair up more readily tonight' }),
+btn(c.breed ? 'Breeding on' : 'Breeding off', () => this.toggleBreed(), { icon: 'nest', cls: c.breed ? 'active' : '', act: 'colony-breed', title: 'Let healthy, unrelated adults pair up overnight' }),
+lab.sandbox ? btn('Next day', () => this.nextDay(), { icon: 'clock', act: 'colony-day', title: 'Let a night pass in the hutch' }) : null));
+this.canvas = /** @type {HTMLCanvasElement} */ (h('canvas', { width: String(HUTCH_W), height: String(HUTCH_H), class: 'hutch-scene', role: 'img', 'aria-label': `The hutch: ${live.length} rabbits${bodies(c).length ? ` and ${bodies(c).length} bodies` : ''}. Tap a rabbit to choose it.` }));
+this.ctx = /** @type {CanvasRenderingContext2D} */ (this.canvas.getContext('2d'));
+this.canvas.addEventListener('pointerdown', (e) => this.tapScene(e));
+this.canvas.addEventListener('pointermove', (e) => { this.hover = this.hitAt(e); });
+this.canvas.addEventListener('pointerleave', () => { this.hover = null; });
+el.append(h('div', { class: 'hutch-scene-wrap' }, this.canvas));
+this.syncScene();
+const tiles = h('div', { class: 'rabbit-tiles', role: 'listbox', 'aria-label': 'Rabbits' });
+this.tiles = {};
+const order = { adult: 0, elder: 1, young: 2, kit: 3 };
+const list = c.rabbits.slice().sort((a, b) => (a.alive === b.alive ? 0 : a.alive ? -1 : 1) || order[stageOf(a, st.day)] - order[stageOf(b, st.day)]);
+for (const r of list) {
+const cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: String(RABBIT_W), height: String(RABBIT_H), class: 'rabbit-art', 'aria-hidden': 'true' }));
+const sel = r.id === c.focus;
+const tags = [];
+if (!r.alive) tags.push(icon('skull', 'sm'));
+else {
+if (r.pregnant) tags.push(icon('nest', 'sm'));
+if (r.marks.love >= 8) tags.push(icon('heart', 'sm'));
+}
+const tile = h('button', {
+class: 'rabbit-tile' + (sel ? ' selected' : '') + (r.alive ? '' : ' dead') + (stageOf(r, st.day) === 'kit' ? ' kit' : ''),
+'data-rabbit': r.id, 'data-subject': 'rabbit', role: 'option', 'aria-selected': sel ? 'true' : 'false',
+'aria-label': `${r.name}, ${r.sex === 'f' ? 'doe' : 'buck'}: ${rabbitCondition(r, st.day).join(', ')}`,
+}, cv, h('span', { class: 'rt-name', text: r.name }), h('span', { class: 'rt-tags' }, ...tags));
+tile.addEventListener('click', () => this.view.select(r.id));
+this.tiles[r.id] = { tile, cv, ctx: /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')), key: '' };
+tiles.appendChild(tile);
+}
+if (!c.rabbits.length) tiles.appendChild(h('div', { class: 'small muted', text: 'The hutch is empty. Buy a rabbit to test potions on.' }));
+el.append(tiles);
+const f = findRabbit(c, c.focus);
+if (f) el.append(this.detail(f));
+if (c.memorial.length) el.append(h('div', { class: 'small muted memorial', text: `Remembered: ${c.memorial.slice(0, 6).map((m) => m.name).join(', ')}${c.memorial.length > 6 ? '…' : ''}` }));
+this.drawTiles(0, true);
+}
+detail(r) {
+const st = this.st;
+const stage = stageOf(r, st.day);
+const age = st.day - r.born;
+const parents = (r.parents || []).map((id) => (findRabbit(st.colony, id) || st.colony.memorial.find((m) => m.id === id) || { name: '' }).name).filter(Boolean);
+const words = rabbitCondition(r, st.day);
+const actions = [btn('History', () => this.history(r), { icon: 'scroll', act: 'rabbit-history', disabled: !r.doses.length })];
+if (!r.alive) {
+actions.push(btn('Recover remains', () => this.remains(r), { icon: 'bone', cls: 'gold', act: 'rabbit-remains' }));
+actions.push(btn('Bury', () => this.bury(r), { icon: 'trash', cls: 'danger', act: 'rabbit-bury' }));
+}
+return h('div', { class: 'rabbit-detail' },
+h('div', { class: 'rd-title' }, h('b', { text: r.name }), h('span', { class: 'small muted', text: ` ${r.sex === 'f' ? 'doe' : 'buck'} · ${STAGE_WORD[stage]}${r.alive ? ` · ${age >= 0 ? `${age} day${age === 1 ? '' : 's'} old` : 'grown'}` : ''}` })),
+h('div', { class: 'small', text: words.join(' · ') }),
+h('div', { class: 'small muted', text: `${r.trials} trial${r.trials === 1 ? '' : 's'}${parents.length ? ` · child of ${parents.join(' and ')}` : ''}` }),
+h('div', { class: 'row wrap rd-actions' }, ...actions));
+}
+syncScene() {
+const st = this.st;
+this.scene.sync(st.colony.rabbits.map((r) => ({ id: r.id, look: r.look, snap: rabbitSnap(r, st.day), mother: r.parents ? r.parents[0] : undefined })));
+}
+poke(id, channels) {
+this.syncScene();
+this.scene.poke(id, channels);
+}
+hitAt(e) {
+if (!this.canvas) return null;
+const b = this.canvas.getBoundingClientRect();
+return this.scene.hit(((e.clientX - b.left) / b.width) * HUTCH_W, ((e.clientY - b.top) / b.height) * HUTCH_H);
+}
+tapScene(e) {
+const id = this.hitAt(e);
+if (id) this.view.select(id);
+}
+buy() {
+const lab = this.lab;
+const r = this.st.buyRabbit(lab.sandbox);
+if (!r.ok) { toast('No new rabbit', r.reason, 'rabbit'); audio.play('error'); return; }
+audio.play(r.cost ? 'coin' : 'squeak');
+this.after();
+}
+feed() {
+const lab = this.lab;
+const r = lab.sandbox ? (this.st.colony.fedDay = this.st.day, { ok: true, cost: 0 }) : this.st.feedRabbits();
+if (!r.ok) { toast('Not now', r.reason, 'leaf'); audio.play('error'); return; }
+audio.play('munch');
+this.after();
+}
+toggleBreed() {
+this.st.setBreeding(!this.st.colony.breed);
+audio.play('click');
+this.after();
+}
+nextDay() {
+const st = this.st;
+st.day++;
+const rep = colonyDay(st.colony, { seed: st.seed, day: st.day, cap: st.cap.hutch });
+audio.play(rep.born.length ? 'birth' : rep.died.length ? 'toll' : 'page');
+const parts = [];
+if (rep.born.length) parts.push(`${rep.born.length} kit${rep.born.length > 1 ? 's' : ''} born`);
+if (rep.grown.length) parts.push(`${rep.grown.map((g) => g.name).join(', ')} grown up`);
+if (rep.died.length) parts.push(`${rep.died.map((d) => d.name).join(', ')} died`);
+toast(`Day ${st.day}`, parts.length ? parts.join(' · ') + '.' : 'A quiet night in the hutch.', 'clock', 3000);
+this.after();
+}
+history(r) {
+const st = this.st;
+const rows = r.doses.slice().reverse().map((d) => {
+const rec = st.trials.records.find((x) => x.id === d.rec);
+const text = rec ? rec.observations.map((o) => o.text).join(' ') : d.obs ? `Showed: ${d.obs.replace(/[+-]/g, '').split(',').join(', ')}.` : 'No visible change.';
+return h('div', { class: 'history-row' + (d.died ? ' died' : '') },
+h('div', {}, h('b', { text: `Day ${d.day} · ${d.ml} ml from the ${d.src === 'vial' ? 'vial' : 'tap'}` }), h('div', { class: 'small', text })),
+rec && rec.replay ? btn('Replay', () => { m.close(); this.view.startReplay(rec); }, { icon: 'eye', act: 'replay-' + rec.id }) : null);
+});
+let m;
+m = modal({
+title: `${r.name}’s trials`,
+body: [h('div', { class: 'card parch history' }, ...(rows.length ? rows : [h('div', { class: 'small muted', text: 'No trials yet.' })]),
+r.dosesDropped ? h('div', { class: 'small muted', text: `…and ${r.dosesDropped} earlier.` }) : null)],
+});
+}
+async remains(r) {
+const lab = this.lab;
+const traits = r.traits.length ? ` Its body still bears ${r.traits.map((t) => TRAIT_WORDS[t]).join(', ')}.` : '';
+if (!await confirmDialog(`Recover ${r.name}’s remains?`, `Bones, pelt or ash, and whatever residue is left become ingredients on your shelf — once. What ${r.sex === 'f' ? 'she' : 'he'} absorbed in life may linger in them; only trials will tell.${traits}`, 'Recover', 'gold')) return;
+const res = this.st.processRemains(r.id);
+if (!res.ok) { toast('Cannot', res.reason, 'bone'); return; }
+audio.play('crush');
+toast('Remains recovered', res.parts.map((p) => `${p.name} (${p.ml} ml)`).join(', '), 'bone', 5000);
+for (const e of res.events) if (e.type !== 'journal') lab.announce(e);
+lab.buildShelf();
+this.after();
+}
+async bury(r) {
+if (!await confirmDialog(`Bury ${r.name}?`, 'Nothing is recovered.', 'Bury', 'danger')) return;
+this.st.buryRabbit(r.id);
+audio.play('toll');
+this.after();
+}
+after() {
+const lab = this.lab;
+lab.refreshHud();
+lab.save();
+this.view.refresh();
+}
+drawTiles(t, force = false) {
+const st = this.st;
+for (const [id, tl] of Object.entries(this.tiles)) {
+const r = findRabbit(st.colony, id);
+if (!r) continue;
+const snap = rabbitSnap(r, st.day);
+const key = JSON.stringify(snap);
+if (!force && !r.alive && key === tl.key) continue;
+tl.key = key;
+drawRabbit(tl.ctx, r.look, snap, r.alive ? t : 0, this.view.rreact[id] || 0, { quality: this.lab.effectiveQuality() === 'low' ? 'low' : 'high' });
+}
+}
+frame(dt, t) {
+if (!this.ctx) return;
+const low = this.lab.effectiveQuality() === 'low';
+this.scene.update(dt);
+this.scene.draw(this.ctx, t, { selected: this.st.colony.focus, hover: this.hover, low });
+this._acc += dt;
+if (this._acc >= (low ? 0.2 : 0.1)) { this._acc = 0; this.drawTiles(t); }
+}
+}
+return { HutchPanel };
+})();
 // src/ui/views/trials.js
-const __m61 = (() => {
+const __m63 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
 const { SUBJECTS, SUBJECT_BY_ID, DOSES, missingEffects, suggestSubjects } = __m27;
 const { EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, potencyWord } = __m13;
-const { drawSubject, SUBJECT_W, SUBJECT_H } = __m53;
+const { drawSubject, SUBJECT_W, SUBJECT_H } = __m55;
 const { SIM } = __m23;
-const { applyTrials } = __m44;
+const { applyTrials } = __m45;
+const { drawRabbit } = __m64;
+const { focusRabbit, findRabbit, rabbitSnap, decodeSnap, stageOf, lookFromSeed, RABBIT_MARKS } = __m28;
+const { HutchPanel } = __m65;
+const STAGE_WORD = { kit: 'kit', young: 'youngster', adult: 'adult', elder: 'elder' };
+const REPLAY_T = 3.2;
 class TrialsView {
 constructor(lab) {
 this.lab = lab;
@@ -10981,6 +13475,9 @@ this.react = {};
 this.time = 0;
 this.last = null;
 this.drag = null;
+this.rreact = {};
+this.replay = null;
+this.hutch = new HutchPanel(this);
 }
 get source() {
 const lab = this.lab;
@@ -11011,18 +13508,41 @@ const hp = h('i');
 const btnTest = btn('Test', () => this.test(s.id), { cls: 'primary', icon: 'dropper', act: 'test-' + s.id });
 const btnReplace = btn('Replace', () => this.replace(s.id), { icon: 'plus', act: 'replace-' + s.id });
 const reveals = h('div', { class: 'reveals', title: 'Responds to' }, ...s.reveals.map((k) => icon(EFFECT_BY_KEY[k].icon, 'sm')));
+const sub = s.id === 'rabbit' ? h('div', { class: 'subject-sub small' }) : null;
 const card = h('div', { class: 'subject parch', 'data-subject': s.id },
 cv,
 h('div', { class: 'subject-name', text: s.name }),
+sub,
 h('div', { class: 'bar hp' }, hp),
 reveals,
 h('div', { class: 'subject-actions' }, btnTest, btnReplace));
-this.cards[s.id] = { card, cv, ctx: cv.getContext('2d'), hp, btnTest, btnReplace };
+this.cards[s.id] = { card, cv, ctx: cv.getContext('2d'), hp, btnTest, btnReplace, sub };
 grid.appendChild(card);
 }
 this.report = h('div', { class: 'trial-report' });
-el.append(this.head, this.status, h('div', { class: 'dropper-row' }, this.dropper, h('div', { class: 'small muted', text: 'or press Test on a subject' })), grid, this.report);
+el.append(this.head, this.status, h('div', { class: 'dropper-row' }, this.dropper, h('div', { class: 'small muted', text: 'or press Test on a subject' })), grid, this.hutch.el, this.report);
+if (!lab.sandbox && st.firstTip('colony')) toast('The rabbit hutch', 'Your Moon Rabbits are a colony now: choose one to dose, keep them fed, and healthy pairs have kits overnight.', 'rabbit', 6500);
 this.refresh();
+}
+select(id) {
+const st = this.lab.state;
+if (!st.selectRabbit(id)) return;
+const r = findRabbit(st.colony, id);
+audio.play(r && r.alive ? 'squeak' : 'click');
+this.replay = null;
+this.lab.save();
+this.refresh();
+}
+startReplay(rec) {
+if (!rec || !rec.replay) return;
+this.replay = { rec, t: 0 };
+this.last = rec;
+this.renderReport();
+const ol = this.report.querySelector('.obs-list');
+if (ol) ol.classList.add('replaying');
+audio.play(rec.died ? 'toll' : 'squeak');
+const card = this.cards.rabbit && this.cards.rabbit.card;
+if (card && card.scrollIntoView) card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
 refresh() {
 const lab = this.lab, st = lab.state;
@@ -11061,8 +13581,10 @@ const avail = this.available();
 const dose = Math.min(lab.trialDose, avail);
 for (const [id, c] of Object.entries(this.cards)) {
 const s = st.trials.subjects[id];
-c.hp.style.width = Math.round(s.health) + '%';
-c.hp.style.background = s.health > 60 ? '#7dc24a' : s.health > 25 ? '#f0b84a' : '#e0402c';
+const band = id === 'rabbit' ? rabbitSnap(s, st.day).hp : -1;
+const hp = band >= 0 ? [100, 60, 30, 8][band] : s.health;
+c.hp.style.width = Math.round(s.alive ? hp : 0) + '%';
+c.hp.style.background = hp > 60 ? '#7dc24a' : hp > 25 ? '#f0b84a' : '#e0402c';
 c.card.classList.toggle('spent', !s.alive);
 c.btnTest.disabled = !s.alive || dose < SIM.ML_PER_PARTICLE;
 const lbl = c.btnTest.querySelector('.lbl');
@@ -11070,8 +13592,14 @@ if (lbl) lbl.textContent = `Test ${Math.max(SIM.ML_PER_PARTICLE, Math.floor(dose
 const cost = lab.sandbox ? 0 : Math.ceil(SUBJECT_BY_ID[id].cost * (st.has('kennel') ? 0.5 : 1));
 c.btnReplace.classList.toggle('hidden', s.alive);
 const rl = c.btnReplace.querySelector('.lbl');
-if (rl) rl.textContent = cost ? `Replace · ${cost}` : 'Replace';
+if (rl) rl.textContent = id === 'rabbit' ? (cost ? `New rabbit · ${cost}` : 'New rabbit') : cost ? `Replace · ${cost}` : 'Replace';
+if (id === 'rabbit' && c.sub) {
+const r = focusRabbit(st.colony);
+c.sub.textContent = r ? `${r.name} · ${r.sex === 'f' ? 'doe' : 'buck'} · ${r.alive ? STAGE_WORD[stageOf(r, st.day)] : 'dead'}` : 'no rabbit';
+c.card.classList.toggle('rabbit-dead', !!r && !r.alive);
 }
+}
+this.hutch.render();
 this.renderReport();
 }
 renderReport() {
@@ -11089,26 +13617,34 @@ const e = EFFECT_BY_KEY[key];
 const v = r.values[key], th = r.theory[key] ?? 0;
 const anomaly = r.anomalies.includes(key);
 const width = (x) => Math.min(100, Math.abs(x)) + '%';
+const err = r.err && r.err[key] !== undefined ? Math.max(1, Math.round(r.err[key])) : 0;
 rows.appendChild(h('div', { class: 'reading' + (anomaly ? ' anomaly' : ''), title: e.desc },
 icon(e.icon, 'sm'), h('span', { class: 'rk', text: e.label }),
 h('div', { class: 'rbar' }, h('i', { class: 'obs', style: { width: width(v), background: rgb(e.color) } }), h('i', { class: 'th', style: { left: width(th) } })),
-h('span', { class: 'rv', text: v === 0 ? 'none' : `${Math.round(v)} · ${potencyWord(v, key)}` })));
+h('span', { class: 'rv', text: v === 0 ? (err ? `none · ±${err}` : 'none') : `${Math.round(v)}${err ? ` ±${err}` : ''} · ${potencyWord(v, key)}` })));
 }
 const laws = r.lawsFound.map((id) => (st.world.laws || []).find((l) => l.id === id)).filter(Boolean);
+const who = r.rabbitName ? `${r.rabbitName} (${subj.name})` : subj.name;
+const body = r.rabbitId ? findRabbit(st.colony, r.rabbitId) : null;
 el.append(h('div', { class: 'card parch report' },
-h('div', { class: 'row' }, icon('dropper'), h('b', { text: `Trial ${r.serial}: ${subj.name}` }), h('span', { class: 'spacer' }), h('span', { class: 'small muted', text: `${r.ml} ml from the ${r.source === 'vial' ? 'vial' : 'tap'}` })),
+h('div', { class: 'row' }, icon('dropper'), h('b', { text: `Trial ${r.serial}: ${who}` }), h('span', { class: 'spacer' }), h('span', { class: 'small muted', text: `${r.ml} ml from the ${r.source === 'vial' ? 'vial' : 'tap'}` })),
 h('ul', { class: 'obs-list' }, ...r.observations.map((o) => h('li', { class: 'tone-' + o.tone, text: o.text }))),
 rows,
-h('div', { class: 'small muted', text: 'Bar: observed. Tick: what the guild’s theory predicts from the known ingredients.' }),
+h('div', { class: 'small muted', text: `Bar: observed${r.err ? ' (± how sure the reading is: small doses and young or old animals read less precisely)' : ''}. Tick: what the guild’s theory predicts from the known ingredients.` }),
 r.anomalies.length ? h('div', { class: 'warn small', text: `Unexpected: ${r.anomalies.map((k) => EFFECT_BY_KEY[k].label).join(', ')} differs from theory. Something in this mixture interacts — repeat with variations to find out what.` }) : null,
 ...laws.map((L) => h('div', { class: 'law-found' }, icon('star'), h('div', {}, h('b', { text: `Law discovered: ${L.name}` }), h('div', { class: 'small', text: L.lore + ' Your theory now accounts for it.' })))),
-r.died ? h('div', { class: 'bad small', text: 'The subject did not survive. A potion that kills a rabbit should not be sold as a remedy.' }) : null,
+r.died ? h('div', { class: 'bad small', text: r.rabbitName ? `${r.rabbitName} did not survive. ${body ? 'The body stays in the hutch: recover its remains or bury it.' : ''} A potion that kills a rabbit should not be sold as a remedy.` : 'The subject did not survive. A potion that kills a rabbit should not be sold as a remedy.' }) : null,
+r.replay ? h('div', { class: 'row' }, btn('Replay', () => this.startReplay(r), { icon: 'eye', act: 'replay-trial', title: 'Watch this trial again — nothing is used up' })) : null,
 ));
 }
 test(id) {
 const lab = this.lab, st = lab.state;
 const s = st.trials.subjects[id];
-if (!s || !s.alive) return;
+if (!s || !s.alive) {
+toast(id === 'rabbit' ? 'Choose a living rabbit' : 'This subject is spent', id === 'rabbit' ? 'The chosen rabbit is dead: pick another in the hutch, or buy one.' : 'Replace it for a fresh trial.', id === 'rabbit' ? 'rabbit' : 'close');
+this.refresh();
+return;
+}
 const want = lab.trialDose;
 let dose, ml, ctx;
 try {
@@ -11123,6 +13659,8 @@ if (!r) { toast('Nothing to test', 'Pour and mix a brew first; the dose is drawn
 ({ dose, ml } = r);
 ctx = { ml, source: 'cauldron', batchId: st.batch.id, rev: st.batch.rev, theory: lab.theory(), parts: lab.batchParts() };
 }
+const rabbit = id === 'rabbit' ? focusRabbit(st.colony) : null;
+if (rabbit) /** @type {any} */ (ctx).rabbitId = rabbit.id;
 const { record, events } = st.recordTrial(id, dose, ctx);
 if (this.source === 'vial' && st.vial) {
 st.vial.cert = { ...(st.vial.cert || {}), ...record.values };
@@ -11130,10 +13668,16 @@ st.vial.certRecords = { ...(st.vial.certRecords || {}), ...Object.fromEntries(Ob
 if (st.vial.label) applyTrials(st.vial.label, record.values, record.id);
 }
 this.last = record;
+this.replay = null;
 this.react[id] = 1;
-audio.play(record.died ? 'fail' : record.observations.some((o) => o.tone === 'bad') ? 'crush' : 'discover');
+if (rabbit) {
+this.rreact[rabbit.id] = 1;
+this.hutch.poke(rabbit.id, record.replay && record.replay.rx ? record.replay.rx.split(',') : []);
+audio.play(record.died ? 'toll' : record.observations.some((o) => o.tone === 'bad') ? 'thump' : 'squeak');
+} else audio.play(record.died ? 'fail' : record.observations.some((o) => o.tone === 'bad') ? 'crush' : 'discover');
 for (const e of events) {
 if (e.type === 'law') { toast(`Law discovered: ${e.name}`, e.lore, 'star', 6000); audio.play('fanfare'); }
+else if (e.type === 'rabbit-died') toast(`${e.name} died`, 'The body stays in the hutch. Recover its remains — once — or bury it.', 'skull', 5000);
 else lab.announce(e);
 }
 if (lab.tutorial) lab.tutorial.notify('trial', id);
@@ -11162,9 +13706,15 @@ const d = this.dropper;
 let ghost = null;
 const target = (x, y) => {
 const el = document.elementFromPoint(x, y);
+if (el && el === this.hutch.canvas) {
+const id = this.hutch.hitAt(/** @type {any} */ ({ clientX: x, clientY: y }));
+return id ? 'rabbit:' + id : null;
+}
 const card = el && /** @type {HTMLElement} */ (el).closest ? /** @type {HTMLElement} */ (el).closest('[data-subject]') : null;
+if (card && card.hasAttribute('data-rabbit')) return 'rabbit:' + card.getAttribute('data-rabbit');
 return card ? card.getAttribute('data-subject') : null;
 };
+const targets = () => [...Object.entries(this.cards).map(([k, c]) => /** @type {[string, HTMLElement]} */ ([k, c.card])), ...Object.entries(this.hutch.tiles).map(([k, t]) => /** @type {[string, HTMLElement]} */ (['rabbit:' + k, t.tile]))];
 d.addEventListener('pointerdown', (e) => {
 e.preventDefault();
 d.setPointerCapture(e.pointerId);
@@ -11177,16 +13727,22 @@ const move = (e) => {
 if (!this.drag || !ghost) return;
 ghost.style.transform = `translate(${e.clientX - 18}px, ${e.clientY - 34}px)`;
 const id = target(e.clientX, e.clientY);
-for (const [k, c] of Object.entries(this.cards)) c.card.classList.toggle('drop-hover', k === id);
+for (const [k, el] of targets()) el.classList.toggle('drop-hover', k === id);
+this.hutch.hover = id && id.startsWith('rabbit:') ? id.slice(7) : null;
 };
 const end = (e) => {
 if (!this.drag) return;
 this.drag = null;
 if (ghost) ghost.remove();
 ghost = null;
-for (const c of Object.values(this.cards)) c.card.classList.remove('drop-hover');
+for (const [, el] of targets()) el.classList.remove('drop-hover');
 const id = target(e.clientX, e.clientY);
-if (id) this.test(id);
+if (id && id.startsWith('rabbit:')) {
+const r = findRabbit(this.lab.state.colony, id.slice(7));
+if (r && !r.alive) { this.select(r.id); toast(`${r.name} is dead`, 'Choose a living rabbit to dose.', 'skull'); return; }
+this.lab.state.selectRabbit(id.slice(7));
+this.test('rabbit');
+} else if (id) this.test(id);
 };
 d.addEventListener('pointermove', move);
 d.addEventListener('pointerup', end);
@@ -11196,11 +13752,45 @@ d.addEventListener('keydown', (e) => { if (e.key === 'Enter') toast('Dropper', '
 frame(dt) {
 this.time += dt;
 const st = this.lab.state;
+const low = this.lab.effectiveQuality() === 'low';
 for (const [id, c] of Object.entries(this.cards)) {
 const r = this.react[id] || 0;
-drawSubject(c.ctx, id, st.trials.subjects[id], this.time, r);
+if (id === 'rabbit') this.drawRabbitCard(c, dt, low);
+else drawSubject(c.ctx, id, st.trials.subjects[id], this.time, r);
 if (r > 0) this.react[id] = Math.max(0, r - dt * 1.4);
 }
+for (const [rid, r] of Object.entries(this.rreact)) if (r > 0) this.rreact[rid] = Math.max(0, r - dt * 1.4);
+this.hutch.frame(dt, this.time);
+}
+drawRabbitCard(c, dt, low) {
+const st = this.lab.state;
+const quality = low ? 'low' : 'high';
+if (this.replay) {
+const rp = this.replay;
+rp.t += dt;
+const rec = rp.rec;
+const who = findRabbit(st.colony, rec.rabbitId) || st.colony.memorial.find((m) => m.id === rec.rabbitId);
+const look = who ? who.look : lookFromSeed(rec.rabbitId || 'x');
+const before = decodeSnap(rec.replay.b), after = decodeSnap(rec.replay.a);
+const react = rec.replay.rx ? rec.replay.rx.split(',').filter((k) => RABBIT_MARKS.includes(k)) : [];
+if (rp.t < 0.6) drawRabbit(c.ctx, look, before, this.time, 0, { quality });
+else {
+const dying = before.alive && !after.alive && rp.t < 1.3;
+const snap = dying ? { ...after, alive: true, hp: /** @type {3} */ (3) } : after;
+drawRabbit(c.ctx, look, snap, this.time, Math.max(0, 1 - (rp.t - 0.6) * 1.2), { quality, react });
+}
+if (rp.t > REPLAY_T) {
+this.replay = null;
+const ol = this.report && this.report.querySelector('.obs-list');
+if (ol) ol.classList.remove('replaying');
+}
+return;
+}
+const r = focusRabbit(st.colony);
+if (!r) { c.ctx.clearRect(0, 0, c.cv.width, c.cv.height); return; }
+const react = this.rreact[r.id] || 0;
+const last = react > 0 && this.last && this.last.rabbitId === r.id && this.last.replay ? this.last.replay.rx.split(',').filter((k) => RABBIT_MARKS.includes(k)) : [];
+drawRabbit(c.ctx, r.look, rabbitSnap(r, st.day), this.time, react, { quality, react: last });
 }
 }
 function rgb(c) {
@@ -11209,11 +13799,11 @@ return `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2
 return { TrialsView, EFFECTS, EFFECT_INDEX };
 })();
 // src/ui/views/book.js
-const __m62 = (() => {
+const __m67 = (() => {
 const { h, btn, clear } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const panels = __m56;
+const panels = __m58;
 const { SUBJECT_BY_ID } = __m27;
 const { EFFECTS, EFFECT_BY_KEY, EFFECT_KEYS } = __m13;
 const { rgbToHex } = __m8;
@@ -11265,8 +13855,8 @@ const s = SUBJECT_BY_ID[r.subjectId];
 body.appendChild(h('div', { class: 'item parch' },
 h('span', { class: 'swatch big', style: { background: rgbToHex(r.look.color) } }),
 h('div', {},
-h('div', { class: 'title', text: `#${r.serial} ${s ? s.name : r.subjectId} · ${r.ml} ml` }),
-h('div', { class: 'meta' }, ...r.revealed.map((k) => h('span', { class: 'fx-chip' + (r.anomalies.includes(k) ? ' anomaly' : ''), title: `${EFFECT_BY_KEY[k].label}: observed ${r.values[k]}, theory ${r.theory[k]}` }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(r.values[k])}`))),
+h('div', { class: 'title', text: `#${r.serial} ${r.rabbitName ? `${r.rabbitName} the ${s ? s.name : 'rabbit'}` : s ? s.name : r.subjectId} · ${r.ml} ml` }),
+h('div', { class: 'meta' }, ...r.revealed.map((k) => h('span', { class: 'fx-chip' + (r.anomalies.includes(k) ? ' anomaly' : ''), title: `${EFFECT_BY_KEY[k].label}: observed ${r.values[k]}${r.err && r.err[k] !== undefined ? ` ±${r.err[k]}` : ''}, theory ${r.theory[k]}` }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(r.values[k])}`))),
 h('div', { class: 'meta', text: r.observations.map((o) => o.text).join(' ') }),
 r.parts && r.parts.length ? h('div', { class: 'meta muted', text: 'Batch: ' + r.parts.map((p) => `${p.ml} ml ${st.lookup(p.id) ? st.lookup(p.id).name : '?'}`).join(', ') }) : null),
 h('span', { class: 'small muted', text: `Day ${r.day}` })));
@@ -11298,13 +13888,13 @@ const list = h('div', { class: 'list' });
 for (const id of st.world.ingredients) {
 const m = st.lookup(id);
 const seen = lab.sandbox || m.tier <= st.rank || st.stock(id) > 0 || (m.wild && st.gatherableSet().has(id));
-const fx = EFFECT_KEYS.map((k) => [k, (m.effects && m.effects[k]) || 0]).filter(([, v]) => Math.abs(v) >= 1).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
+const fx = m.remains ? [] : EFFECT_KEYS.map((k) => [k, (m.effects && m.effects[k]) || 0]).filter(([, v]) => Math.abs(v) >= 1).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
 list.appendChild(h('div', { class: 'item parch' + (seen ? '' : ' locked') },
 h('span', { class: 'swatch big', style: { background: rgbToHex(m.look || m.color) } }),
 h('div', {},
 h('div', { class: 'title', text: seen ? m.name : '???' }),
-seen ? h('div', { class: 'meta' }, fx.length ? fx.map(([k, v]) => h('span', { class: 'fx-chip', title: EFFECT_BY_KEY[k].label }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(v)}`)) : h('span', { class: 'muted', text: 'no magical effect' })) : h('div', { class: 'meta', text: 'Not yet available.' }),
-seen ? h('div', { class: 'meta muted', text: `${m.wild ? `wild · ${m.wild.region}` : m.form}${m.solubility > 0.03 ? ' · dissolves' : ''}${m.binder > 0.3 ? ' · forms dough' : ''}` }) : null),
+seen ? h('div', { class: 'meta' }, m.remains ? h('span', { class: 'muted', text: 'effects unknown — test it' }) : fx.length ? fx.map(([k, v]) => h('span', { class: 'fx-chip', title: EFFECT_BY_KEY[k].label }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(v)}`)) : h('span', { class: 'muted', text: 'no magical effect' })) : h('div', { class: 'meta', text: 'Not yet available.' }),
+seen ? h('div', { class: 'meta muted', text: `${m.remains ? `remains of ${m.remains.rabbitName}` : m.wild ? `wild · ${m.wild.region}` : m.form}${m.solubility > 0.03 ? ' · dissolves' : ''}${m.binder > 0.3 ? ' · forms dough' : ''}` }) : null),
 seen ? btn('', () => panels.openIngredient(lab, id), { icon: 'lens', cls: 'icon', title: 'Inspect', act: 'inspect-' + id }) : icon('lock')));
 }
 body.appendChild(list);
@@ -11313,39 +13903,41 @@ body.appendChild(list);
 return { BookView };
 })();
 // src/ui/lab.js
-const __m46 = (() => {
-const { Simulation } = __m30;
+const __m48 = (() => {
+const { Simulation } = __m31;
 const { PHASE, SIM } = __m23;
-const { snapshotSim, applySnapshot } = __m47;
-const { clampToInterior } = __m41;
+const { snapshotSim, applySnapshot } = __m49;
+const { clampToInterior } = __m42;
 const { MAX_SPECIES } = __m18;
 const { compatFactor } = __m14;
-const { Renderer } = __m48;
-const { drawPortrait } = __m52;
-const { drawJar } = __m49;
-const { rawSprite } = __m53;
+const { Renderer } = __m50;
+const { drawPortrait } = __m54;
+const { drawJar } = __m51;
+const { rawSprite } = __m55;
 const { measureParticles, tapSelection, probeSelection, viscosityClass } = __m22;
 const { evaluatePotion, scoreRequirement, PROPERTY_LABELS, describeValue } = __m24;
-const { processEvent } = __m54;
-const { saveGame, saveJSON, KEYS } = __m45;
-const { AutoBrewer } = __m55;
+const { processEvent } = __m56;
+const { saveGame, saveJSON, KEYS } = __m47;
+const { AutoBrewer } = __m57;
 const { RANKS } = __m26;
 const { certification, missingEffects } = __m27;
-const { makeVial, appendParticles, updateVial, takeDose, pourBack, relaxVial } = __m29;
+const { makeVial, appendParticles, updateVial, takeDose, pourBack, pourBackParts, relaxVial } = __m30;
 const { theoryOf, EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, dominantEffect, NE } = __m13;
-const { awakenParts } = __m15;
+const { awakenParts, describeThreshold } = __m15;
+const { ARC_NONE } = __m32;
 const { describeColor, rgbToHex } = __m8;
 const { h, btn, clear, toast, coins, confirmDialog } = __m2;
 const { icon, iconUrl } = __m3;
 const { audio } = __m4;
-const panels = __m56;
-const trade = __m57;
-const { unprovenWanted } = __m44;
-const { Tutorial } = __m58;
-const { CounterView } = __m59;
-const { WildsView } = __m60;
-const { TrialsView } = __m61;
-const { BookView } = __m62;
+const panels = __m58;
+const trade = __m59;
+const { unprovenWanted } = __m45;
+const { Tutorial } = __m60;
+const { CounterView } = __m61;
+const { WildsView } = __m62;
+const { TrialsView } = __m63;
+const { BookView } = __m67;
+const { shortName } = __m21;
 const REQ_ICON = { color: 'palette', density: 'weight', viscosity: 'drop', temperature: 'thermo', stability: 'scales', volatility: 'bubbles', charge: 'spark', quantity: 'flask', purity: 'pure' };
 const TOOL_DEFS = [
 { id: 'spoon', label: 'Spoon', icon: 'spoon', key: '2' },
@@ -11669,15 +14261,15 @@ const labels = shelfLabels(ids.map((id) => st.lookup(id).name));
 for (const [n, id] of ids.entries()) {
 const m = st.lookup(id);
 let cv;
-if (m.wild && m.form === 'solid') {
-cv = rawSprite(m.wild.shape, m.look || m.color);
+if ((m.wild || m.remains) && m.form === 'solid') {
+cv = rawSprite(m.wild ? m.wild.shape : m.shape || 'stone', m.look || m.color);
 cv.classList.add('raw');
 } else {
 cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: '15', height: '20' }));
 drawJar(cv.getContext('2d'), 1, 0, 13, 20, m.look || m.color, m.form);
 }
 const stock = h('span', { class: 'jstock' });
-const el = h('button', { class: 'jar' + (m.wild ? ' wild' : ''), title: m.name, 'aria-label': m.name, 'data-id': id, role: 'option' }, stock, cv, h('span', { class: 'jname', text: labels[n] }));
+const el = h('button', { class: 'jar' + (m.wild ? ' wild' : '') + (m.remains ? ' remains' : ''), title: m.name, 'aria-label': m.name, 'data-id': id, role: 'option' }, stock, cv, h('span', { class: 'jname', text: m.remains ? m.remains.short : labels[n] }));
 this.bindJar(el, id);
 this.jarEls[id] = { el, stock };
 sh.appendChild(el);
@@ -11911,7 +14503,7 @@ if (!silent) audio.play('select');
 if (this.tutorial) this.tutorial.notify('tool', id);
 }
 selectIngredient(id) {
-if (this.selected !== id) this.ground = !!(this.state.lookup(id).form === 'solid' && (this.sandbox || this.state.has('mortar')) && this.state.lookup(id).wild);
+if (this.selected !== id) this.ground = !!(this.state.lookup(id).form === 'solid' && (this.sandbox || this.state.has('mortar')) && (this.state.lookup(id).wild || this.state.lookup(id).remains));
 this.selected = id;
 this.selectTool('pour', true);
 this.selected = id;
@@ -11942,7 +14534,7 @@ const avail = this.canPour(id);
 if (avail <= 0) {
 audio.play('error');
 const m = this.state.lookup(id);
-toast('Out of stock', m.wild && m.tier > this.state.rank ? `Gather more ${m.name} in the Wilds.` : `Buy more ${m.name} at the market${m.wild ? ' or gather it in the Wilds' : ''}.`, m.wild ? 'tree' : 'bag');
+toast('Out of stock', m.remains ? 'A rabbit’s remains are recovered only once.' : m.wild && m.tier > this.state.rank ? `Gather more ${m.name} in the Wilds.` : `Buy more ${m.name} at the market${m.wild ? ' or gather it in the Wilds' : ''}.`, m.remains ? 'bone' : m.wild ? 'tree' : 'bag');
 return;
 }
 if (this.sim.p.count >= this.sim.maxParticles - 2) {
@@ -12044,6 +14636,10 @@ const st = this.state;
 if (this.sandbox) return;
 const c = st.nextCustomer();
 if (c && withSound) audio.play('bell');
+if (c && !c.tutorial) {
+if (c.activation && st.firstTip('activation')) toast('Awakened magic wanted', 'This order is stronger than sleeping magic can reach: the brew must be awakened past its arcane threshold. See How to play → Arcane awakening, or ask the guild.', 'awaken', 8000);
+else if (c.requirements.some((r) => r.key === 'purity') && st.firstTip('purity')) toast('A pure potion', '“No other effect above 1.2 %”: every effect the customer did not ask for must stay that faint. Test for them too.', 'pure', 7000);
+}
 this._seenCustomer = false;
 this.refreshCustomer();
 if (this.views) this.views.counter.refresh();
@@ -12094,7 +14690,14 @@ setTimeout(() => this.bringCustomer(true), 900);
 endDay() {
 const summary = this.state.endDay();
 this.save();
+const col = summary.colony;
+if (col) {
+if (col.born.length) setTimeout(() => audio.play('birth'), 600);
+else if (col.died.length) setTimeout(() => audio.play('toll'), 600);
+for (const e of col.events || []) this.announce(e);
+}
 panels.showDaySummary(this, summary, () => {
+this.views.trials.build();
 const relief = this.state.claimRelief();
 if (relief) toast('Guild stipend', `The guild lends a struggling apprentice ${relief} coins.`, 'coin', 4000);
 this.buildShelf();
@@ -12166,10 +14769,14 @@ if (!v || !com) return;
 if (!v.label) { this.identifyVial(() => this.serveVial()); return; }
 const missing = unprovenWanted(com, v.label);
 if (missing.length) {
-toast(`${com.customer.name.split(' ')[0]} wants proof`, `This customer only buys on trial evidence of this batch: test ${missing.map((k) => EFFECT_BY_KEY[k].label).join(', ')} first.`, 'dropper', 5000);
+const tested = missing.filter((k) => v.label.claims[k] && v.label.claims[k].measured !== undefined);
+toast(`${shortName(com.customer.name)} wants proof`, tested.length
+? `This customer only buys on trial evidence of this batch: put the tested reading of ${tested.map((k) => EFFECT_BY_KEY[k].label).join(', ')} back on the label (✓).`
+: `This customer only buys on trial evidence of this batch: test ${missing.map((k) => EFFECT_BY_KEY[k].label).join(', ')} first.`, 'dropper', 5000);
 return;
 }
 trade.openNegotiation(this, com, v, (n) => {
+this.save();
 if (!n) return;
 if (n.state === 'left') { this.customerLeft(); return; }
 if (n.state === 'deal') this.completeDeal(n.price, n.log.find((l) => l.who === 'them' && l.coins)?.coins || 0);
@@ -12227,8 +14834,7 @@ const v = st.vial;
 if (!v) return;
 const made = pourBack(v, this.sim);
 if (!made) { toast('No room', 'The cauldron is too full to pour the vial back.', 'cauldron'); return; }
-const share = v.bottledMl > 0 ? (made * SIM.ML_PER_PARTICLE) / v.bottledMl : 0;
-st.brewLog.push({ type: 'vial', ml: made * SIM.ML_PER_PARTICLE, t: Math.round(this.sim.time), parts: (v.parts || []).map((p) => ({ id: p.id, ml: Math.round(p.ml * share * 10) / 10 })), from: v.id });
+st.brewLog.push({ type: 'vial', ml: made * SIM.ML_PER_PARTICLE, t: Math.round(this.sim.time), parts: pourBackParts(v, made * SIM.ML_PER_PARTICLE), from: v.id });
 if (st.batch.id !== v.batchId) st.newBatch();
 st.touchBatch();
 st.vial = null;
@@ -12452,7 +15058,7 @@ const theory = this.theory();
 const cert = this.cert;
 const known = this.knownRecipe();
 const thList = EFFECTS.map((e, k) => /** @type {[import('../alchemy/effects.js').EffectDef, number]} */ ([e, theory[k]])).filter(([, v]) => Math.abs(v) >= 1);
-el.append(
+el.append(...[
 h('div', { class: 'small', text: `${n * SIM.ML_PER_PARTICLE} ml · ${tn ? Math.round(tsum / tn) : '—'}°C${tn ? ` (${Math.round(tmin)}–${Math.round(tmax)})` : ''} · lid ${sim.cauldron.lidClosed ? 'on' : 'off'}` }),
 h('div', { class: 'phase-bar' }, ...['liquid', 'powder', 'paste', 'solid', 'gas'].map((name, k) => phases[k] ? h('i', { class: 'ph-' + name, title: name, style: { flexGrow: String(phases[k]) } }) : null)),
 h('div', { class: 'small muted', text: ['liquid', 'powder', 'paste', 'solid', 'vapour'].map((name, k) => (phases[k] ? `${name} ${Math.round((phases[k] / n) * 100)}%` : '')).filter(Boolean).join(' · ') }),
@@ -12464,7 +15070,7 @@ h('div', { class: 'small know' }, h('b', { text: 'Theory ' }), thList.length ? t
 known ? h('div', { class: 'small know' }, h('b', { text: 'Recipe ' }), ...Object.entries(known.verified).map(([k, v]) => h('span', { class: 'fx-chip dim', title: `${EFFECT_BY_KEY[k].label}, as verified when “${known.name}” was first brewed` }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ~${Math.round(/** @type {number} */ (v))}`))) : null,
 h('div', { class: 'small know' }, h('b', { text: 'Verified ' }), Object.keys(cert.values).length ? Object.entries(cert.values).map(([k, v]) => h('span', { class: 'fx-chip', title: EFFECT_BY_KEY[k].label }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(v)}`)) : h('span', { class: 'muted', text: cert.changed ? 'outdated — retest' : 'nothing yet' })),
 h('div', { class: 'small muted', text: known ? 'Theory adds up what each ingredient is known to do; Recipe is what this recipe did when it was tested. Only a trial of this batch counts as verified.' : 'Theory adds up what each ingredient is known to do. The real brew can differ: test it.' }),
-);
+].filter(Boolean));
 void force;
 }
 updateProbe() {
@@ -12491,6 +15097,22 @@ h('div', { text: `Density ${this.readable('density', m.density, m, st)}${st.has(
 ...comp.map(([id, f]) => h('div', { text: `${Math.round(f * 100)}% ${st.lookup(id) ? st.lookup(id).name : id}` })),
 lens ? h('div', { class: 'aura' }, h('span', { text: 'Aura: ' }), aura.length ? aura.map((e) => icon(e.icon, 'sm')) : h('span', { text: 'none' })) : h('div', { class: 'muted', text: 'Effects: unknown (test in Trials)' }),
 );
+if (this.sandbox || st.has('arcanometer')) el.append(this.arcaneReading(sel, m));
+}
+arcaneReading(sel, m) {
+const p = this.sim.p;
+let w = 0, t = 0;
+for (const i of sel) if (p.arcT[i] < ARC_NONE) { w++; t += p.arcT[i]; }
+let awake = 0, magic = 0;
+for (const [id, f] of Object.entries(m.composition)) {
+const d = this.state.lookup(id);
+if (!d) continue;
+if (d.awakened) { awake += f; magic += f; } else if (d.arcane && Number.isFinite(d.arcane.thr)) magic += f;
+}
+if (!magic) return h('div', { class: 'muted', text: 'Arcanometer: no magic here' });
+const share = Math.round((awake / magic) * 100);
+const thr = w ? Math.round(t / w / 50) * 50 : null;
+return h('div', { class: 'arcane-read' }, icon('awaken', 'sm'), ` ${thr === null ? 'all awakened' : 'threshold ' + describeThreshold(thr)}${share ? ` · ${share}% awake` : ''}`);
 }
 refreshHud(full = false) {
 const st = this.state;
@@ -12499,7 +15121,7 @@ this.coinEl.textContent = coins(st.coins);
 const r = st.rank, next = RANKS[r + 1];
 this.rankName.textContent = RANKS[r].name;
 const prog = next ? (st.reputation - RANKS[r].rep) / (next.rep - RANKS[r].rep) : 1;
-this.rankBar.style.width = Math.round(Math.min(1, prog) * 100) + '%';
+this.rankBar.style.width = Math.round(Math.max(0, Math.min(1, prog)) * 100) + '%';
 this.rankBar.parentElement.title = `Reputation ${st.reputation}${next ? ' / ' + next.rep : ''}`;
 clear(this.dayEl).append(h('span', { text: `Day ${st.day} · ${Math.min(st.customerIndex + (st.current ? 1 : 0), st.customersPerDay)}/${st.customersPerDay}` }), h('span', { class: 'event', text: st.marketEvent.key !== 'none' ? st.marketEvent.name : '' }));
 }
@@ -12812,7 +15434,7 @@ void dominantEffect;
 return { VIEWS, LabScreen, describeValue };
 })();
 // src/materials/reference.js
-const __m64 = (() => {
+const __m69 = (() => {
 const { completeMaterial } = __m9;
 const REF = {};
 const add = (d) => (REF[d.id] = completeMaterial(d));
@@ -12850,12 +15472,12 @@ const refLookup = (id) => REF[id];
 return { REF, refLookup };
 })();
 // src/ui/menu.js
-const __m63 = (() => {
+const __m68 = (() => {
 const { h, btn } = __m2;
-const { Renderer } = __m48;
-const { Simulation } = __m30;
-const { REF, refLookup } = __m64;
-const { hasSave, loadGame } = __m45;
+const { Renderer } = __m50;
+const { Simulation } = __m31;
+const { REF, refLookup } = __m69;
+const { hasSave, loadGame } = __m47;
 const { audio } = __m4;
 class MenuScreen {
 constructor(app) {
@@ -12940,10 +15562,10 @@ const { icon } = __m3;
 const { audio } = __m4;
 const { GameState } = __m5;
 const { EQUIPMENT } = __m26;
-const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m45;
-const { LabScreen } = __m46;
-const { MenuScreen } = __m63;
-const { openSettings, openHelp } = __m56;
+const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m47;
+const { LabScreen } = __m48;
+const { MenuScreen } = __m68;
+const { openSettings, openHelp } = __m58;
 const { Rng } = __m6;
 const { normalizeTrials } = __m27;
 const DEFAULT_SETTINGS = { master: 0.8, sfx: 0.8, music: 0.35, musicOn: true, muted: false, quality: 'auto', showFps: false };
@@ -13037,7 +15659,13 @@ st.equipment = EQUIPMENT.map((e) => e.id);
 st.reputation = 99999;
 st.current = null;
 if (saved && saved.seed === seed && saved.cauldron) st.cauldron = saved.cauldron;
-if (saved && saved.seed === seed && saved.trials) st.trials = normalizeTrials(saved.trials);
+if (saved && saved.seed === seed && saved.trials) {
+st.trials = normalizeTrials(saved.trials);
+st.day = Math.max(st.day, st.colony.day || 1);
+st.colony.seed = st.colony.seed || String(seed);
+st.restoreRemains();
+for (const id of st.world.ingredients) st.inventory[id] = Infinity;
+}
 this._swap(new LabScreen(this, st, { sandbox: true }));
 toast('Free Experiment', 'Unlimited reagents, wild ingredients, tools and test subjects. Nothing here affects your shop.', 'flask', 4500);
 }

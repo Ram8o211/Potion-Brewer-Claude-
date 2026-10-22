@@ -29,7 +29,7 @@ import { saveGame, saveJSON, KEYS } from '../game/persistence.js';
 import { AutoBrewer } from '../game/autobrew.js';
 import { RANKS } from '../game/equipment.js';
 import { certification, missingEffects } from '../game/experiments.js';
-import { makeVial, appendParticles, updateVial, takeDose, pourBack, relaxVial } from '../game/vial.js';
+import { makeVial, appendParticles, updateVial, takeDose, pourBack, pourBackParts, relaxVial } from '../game/vial.js';
 import { theoryOf, EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, dominantEffect, NE } from '../alchemy/effects.js';
 import { awakenParts, describeThreshold } from '../alchemy/arcane.js';
 import { ARC_NONE } from '../simulation/particles.js';
@@ -1065,11 +1065,8 @@ export class LabScreen {
     if (!v) return;
     const made = pourBack(v, this.sim);
     if (!made) { toast('No room', 'The cauldron is too full to pour the vial back.', 'cauldron'); return; }
-    // provenance: the batch now also holds what that vial was made of —
-    // its share of the batch it was drawn from, not of the whole batch
-    const batchMl = (v.parts || []).reduce((a, p) => a + p.ml, 0);
-    const share = batchMl > 0 ? (made * SIM.ML_PER_PARTICLE) / batchMl : 0;
-    st.brewLog.push({ type: 'vial', ml: made * SIM.ML_PER_PARTICLE, t: Math.round(this.sim.time), parts: (v.parts || []).map((p) => ({ id: p.id, ml: Math.round(p.ml * share * 10) / 10 })), from: v.id });
+    // provenance: the batch now also holds its share of what the vial's batch was made of
+    st.brewLog.push({ type: 'vial', ml: made * SIM.ML_PER_PARTICLE, t: Math.round(this.sim.time), parts: pourBackParts(v, made * SIM.ML_PER_PARTICLE), from: v.id });
     // it is the same batch only if the cauldron still holds that batch
     if (st.batch.id !== v.batchId) st.newBatch();
     st.touchBatch();

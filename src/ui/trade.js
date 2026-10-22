@@ -216,7 +216,7 @@ export function followUpCard(lab, f) {
       h('b', { text: `${f.customer.name} is back` }),
       h('div', { class: 'small muted', text: sale ? `Bought ${sale.potion.toLowerCase()} on day ${sale.day} for ${coins(sale.price)} coins` : '' }))),
     h('div', { class: 'speech', text: '“' + f.text + '”' }),
-    f.kind === 'complaint' && sale ? h('div', { class: 'small muted', text: `Your label for that batch: ${claimSummary(sale.claims)}` }) : null,
+    f.kind === 'complaint' && sale ? h('div', { class: 'small muted fu-label', text: `Your label for that batch: ${claimSummary(sale.claims)}` }) : null,
     h('div', { class: 'row wrap' }, ...actions));
 }
 

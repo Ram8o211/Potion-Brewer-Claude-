@@ -104,7 +104,32 @@ for the performance profile), not on physical devices.
 
 ## 4. Performance
 
-PERF_PLACEHOLDER
+All figures are from `npm run bench` on the machine above; full tables in
+[`PERFORMANCE.md`](PERFORMANCE.md), raw data in
+[`perf-results.json`](perf-results.json). Runs vary by ±20–30 % on this
+shared container.
+
+* **Physics.** Typical shop brews (60–300 particles in the 1.5 L pot) cost
+  0.14–0.61 ms per 1/120 s step, 0.3–1.2 ms per 60 fps frame; the full 3 L
+  cauldron with three liquid layers 2.7 ms. The homunculus brews a whole
+  order (23–62 simulated seconds) in 0.3–2.3 s.
+* **Awakening.** In a stirred pot of water and essence (150 particles) a
+  step costs 0.34 ms cold and 0.40 ms while the magic awakens.
+* **The colony.** A simulated year with a full warren — 730 strong doses,
+  33 births, 42 deaths, half of them processed into remains — costs
+  0.08 ms per dose and 0.07 ms per night (the whole end of day). The save
+  grows from 84 KB to 277 KB, almost all of it the remains' materials;
+  it is written in 4 ms and loaded in 9 ms.
+* **Frames.** Desktop (1440×900) holds 55–60 fps in real time up to 300
+  particles and 49 fps at 600. The phone profile (390×844 at 2×, CPU
+  throttled 4×) runs typical orders at 44–49 fps and a full pot at 38 fps
+  with the brew in 0.83× slow motion; a 600-particle cauldron slows to
+  0.29×. The trials room with ten changed rabbits hopping in the hutch
+  runs at 60 fps on desktop (0.5 ms of work per frame) and 59 fps on the
+  throttled phone (2.5 ms median, 5.2 ms p95).
+* **Memory.** 90 s of lid-on boiling with auto-stir at 4× speed keeps the
+  heap flat at 4.2–4.9 MB; ten trips between the menu and the shop end at
+  5.4 MB.
 
 ## 5. Balance and feasibility
 
@@ -112,15 +137,62 @@ PERF_PLACEHOLDER
   [`achievability-results.txt`](achievability-results.txt)): 100 generated
   commissions across tiers 0–4 brewed in the real simulation with each
   rank's equipment — mean quality 0.999, worst 0.90, none below 0.8;
-  awakening stages appear in roughly a third of commissions from tier 2.
+  29 of the 100 require awakening.
 * **Multi-day playtest** (`node scripts/playtest.mjs`,
-  [`playtest-results.json`](playtest-results.json)): twelve days of a
-  scripted shopkeeper reach the Expert rank, buying the new tools, the
+  [`playtest-results.json`](playtest-results.json)): a scripted
+  shopkeeper plays twelve days in three worlds, carefully and casually —
+  gathering (with the new spoilage and careful reserve), brewing in the
+  real simulation, testing, selling and upgrading. Every run reaches
+  Expert by day 10–11, buying the four gathering tools, the kennel, the
   warren and the arcanometer along the way.
 
 ## 6. Tests
 
-TESTS_PLACEHOLDER
+Every command below was run on the final code; all passed.
+
+| Check | Result |
+|---|---|
+| `npm run typecheck` (TypeScript over JSDoc, app and Node configs) | no errors |
+| `npm test` (Node test runner, 14 files) | **108 / 108** passed |
+| `npx playwright test` (6 projects) | **92 / 92** passed: desktop 31, phone portrait 31, phone landscape 19, tablet 5, offline production build 1, GitHub Pages sub-path 5 |
+| `node scripts/achievability.mjs 20 final` | 100 / 100 commissions brewed; mean quality 0.999, worst 0.90, none below 0.8 |
+| `node scripts/playtest.mjs` | 6 runs × 12 days (3 worlds, careful and casual players): every run reaches Expert (day 10–11) |
+| `npm run bench` | §4 |
+| `npm run build` | 70 modules, 767 KB (227 KB gzipped); `release/alchemists-shop-2.0.0-web.zip` |
+
+New unit coverage: `arcane` (6 tests), `solids` (3), `vial` (5),
+`commerce` (10), `gathering` (6), `colony` (12), `colony-state` (7),
+`rabbit-render` (4), plus additions to `commissions`, `trials` and
+`physics`. They include regressions for every finding of the final
+adversarial review: claims that keep their reading and become tested
+again, verdicts that wait for the customer, refunds refused when the till
+is short, reputation below zero, harmful potions never praised, evidence
+counted once, spoilage drawn from the deposit and the careful reserve,
+the night's weather, founders' ages after a late migration, and the
+memorial keeping processed bodies and their names, and pouring part of
+a vial back returning only its share of the batch's provenance.
+
+New browser specs: `colony` (choosing and dosing rabbits, the dropper onto
+a rabbit, replay without consumption, death and remains across a reload,
+buying to capacity, births overnight, the sandbox night), `bargain`
+(walking away and resuming), `pourback` (bottle, dose from the vial,
+pour the rest back: matter, provenance and the batch revision), `showcase` (the documentation scenes, each
+with assertions), and additions to `gameplay`, `rooms`, `layout` and
+`systems` (labels, proof, bargaining, follow-ups, harvest modes, 44 px
+touch targets).
+
+**Screenshots** ([`screenshots/`](screenshots/)), captured by the specs:
+
+| | |
+|---|---|
+| Awakened magic glowing in the brew | [desktop](screenshots/desktop-showcase-awakened.png) · [phone](screenshots/phone-portrait-showcase-awakened.png) |
+| A hutch of changed rabbits | [desktop](screenshots/desktop-showcase-hutch.png) · [phone](screenshots/phone-portrait-showcase-hutch.png) · [landscape](screenshots/phone-landscape-showcase-hutch.png) |
+| A body that keeps its changes | [desktop](screenshots/desktop-showcase-body.png) · [phone](screenshots/phone-portrait-showcase-body.png) |
+| Dosing, replay, a night, remains on the shelf | [dosed](screenshots/phone-portrait-colony-dosed.png) · [replay](screenshots/desktop-colony-replay.png) · [night](screenshots/desktop-colony-night.png) · [remains](screenshots/desktop-colony-remains-shelf.png) |
+| Labelling and bargaining | [label](screenshots/phone-portrait-showcase-label.png) · [bargain](screenshots/desktop-showcase-bargain.png) |
+| A complaint the next day | [desktop](screenshots/desktop-showcase-complaint.png) · [phone](screenshots/phone-portrait-showcase-complaint.png) |
+| The wilds at dusk in a storm | [desktop](screenshots/desktop-showcase-wilds-storm.png) · [phone](screenshots/phone-portrait-showcase-wilds-storm.png) |
+| Physics: layers, freezing, crushing, fire | [layers](screenshots/desktop-layers.png) · [frozen](screenshots/desktop-frozen.png) · [crushed](screenshots/desktop-crushed.png) · [fire](screenshots/desktop-fire.png) |
 
 ## 7. Limitations
 
@@ -135,3 +207,13 @@ TESTS_PLACEHOLDER
   career grows the save by a few kilobytes per processed body.
 * An older cached build refuses version-4 saves with a clear "newer
   version" message until the service worker updates.
+* The multi-day playtest sells through the counter's direct sale, not the
+  label-and-bargain loop; labels, bargaining and the next-day verdicts are
+  covered by unit and browser tests, but their long-run economy is not
+  simulated over many days.
+* The new sound cues are synthesised at run time. The browser specs run
+  the code paths that play them and fail on any page error, but the
+  sounds were not judged by ear in this headless environment.
+* Ten round trips between the menu and the shop leave the heap about
+  0.5 MB larger than after the first (as in the previous release); the
+  brewing session itself stays flat.

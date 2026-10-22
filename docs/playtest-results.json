@@ -1,12 +1,12 @@
 {
-  "date": "2026-10-19T15:07:46.406Z",
+  "date": "2026-10-22T16:15:53.770Z",
   "days": 12,
   "runs": [
     {
       "seed": "playtest-0",
       "profile": "careful",
       "skill": 0.95,
-      "wallSeconds": 74,
+      "wallSeconds": 64.4,
       "days": [
         {
           "day": 1,
@@ -212,7 +212,7 @@
         "served": 42,
         "perfect": 42,
         "declined": 1,
-        "gatheredMl": 1725,
+        "gatheredMl": 1730,
         "trials": 45,
         "subjectsReplaced": 1,
         "lawsFound": 0
@@ -222,7 +222,7 @@
       "seed": "playtest-1",
       "profile": "careful",
       "skill": 0.95,
-      "wallSeconds": 66.4,
+      "wallSeconds": 57.4,
       "days": [
         {
           "day": 1,
@@ -317,7 +317,7 @@
           "earned": 636,
           "spent": 327,
           "meanQuality": 1,
-          "coins": 237,
+          "coins": 287,
           "reputation": 201,
           "rank": "Adept",
           "upgrades": [
@@ -428,7 +428,7 @@
         "served": 43,
         "perfect": 43,
         "declined": 0,
-        "gatheredMl": 2135,
+        "gatheredMl": 2185,
         "trials": 41,
         "subjectsReplaced": 0,
         "lawsFound": 0
@@ -438,7 +438,7 @@
       "seed": "playtest-2",
       "profile": "careful",
       "skill": 0.95,
-      "wallSeconds": 69.9,
+      "wallSeconds": 65.6,
       "days": [
         {
           "day": 1,
@@ -644,7 +644,7 @@
         "served": 43,
         "perfect": 43,
         "declined": 0,
-        "gatheredMl": 1920,
+        "gatheredMl": 1870,
         "trials": 43,
         "subjectsReplaced": 0,
         "lawsFound": 0
@@ -654,7 +654,7 @@
       "seed": "playtest-0",
       "profile": "casual",
       "skill": 0.7,
-      "wallSeconds": 70.5,
+      "wallSeconds": 62.9,
       "days": [
         {
           "day": 1,
@@ -860,7 +860,7 @@
         "served": 43,
         "perfect": 42,
         "declined": 0,
-        "gatheredMl": 1725,
+        "gatheredMl": 1730,
         "trials": 45,
         "subjectsReplaced": 1,
         "lawsFound": 0
@@ -870,7 +870,7 @@
       "seed": "playtest-1",
       "profile": "casual",
       "skill": 0.7,
-      "wallSeconds": 62,
+      "wallSeconds": 54,
       "days": [
         {
           "day": 1,
@@ -1075,7 +1075,7 @@
         "served": 43,
         "perfect": 41,
         "declined": 0,
-        "gatheredMl": 1990,
+        "gatheredMl": 2010,
         "trials": 41,
         "subjectsReplaced": 0,
         "lawsFound": 0
@@ -1085,7 +1085,7 @@
       "seed": "playtest-2",
       "profile": "casual",
       "skill": 0.7,
-      "wallSeconds": 61.7,
+      "wallSeconds": 58.2,
       "days": [
         {
           "day": 1,
@@ -1180,7 +1180,7 @@
           "earned": 233,
           "spent": 290,
           "meanQuality": 0.997,
-          "coins": 301,
+          "coins": 351,
           "reputation": 178,
           "rank": "Journeyman",
           "upgrades": [],
@@ -1193,7 +1193,7 @@
           "earned": 519,
           "spent": 40,
           "meanQuality": 1,
-          "coins": 70,
+          "coins": 120,
           "reputation": 230,
           "rank": "Adept",
           "upgrades": [
@@ -1288,7 +1288,7 @@
         "served": 42,
         "perfect": 39,
         "declined": 0,
-        "gatheredMl": 1520,
+        "gatheredMl": 1535,
         "trials": 43,
         "subjectsReplaced": 0,
         "lawsFound": 0

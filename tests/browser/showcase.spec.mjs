@@ -99,7 +99,7 @@ test('label, bargain, and the customer comes back with a complaint', async ({ pa
   await page.click('[data-act=haggle-done]');
   await page.click('[data-act=result-continue]');
   // the next day: the label lied, and the customer is back
-  await lab(page, (l) => { const st = l.state; st.current = null; st.customerIndex = st.customersPerDay; st.endDay(); l.showView('counter'); l.views.counter.refresh(); });
+  await lab(page, (l) => { const st = l.state; st.current = null; st.customerIndex = st.customersPerDay; st.endDay(); l.refreshHud(true); l.showView('counter'); l.views.counter.refresh(); });
   await expect(page.locator('.followup.complaint')).toBeVisible();
   await clean(page);
   await shot(page, info, 'showcase-complaint');

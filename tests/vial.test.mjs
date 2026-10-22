@@ -9,7 +9,7 @@ import { GameState } from '../src/game/state.js';
 import { Simulation } from '../src/simulation/world.js';
 import { PHASE } from '../src/simulation/constants.js';
 import { tapSelection, measureParticles } from '../src/game/measure.js';
-import { makeVial, appendParticles, updateVial, takeDose, pourBack, vialInventory, migrateVial, relaxVial } from '../src/game/vial.js';
+import { makeVial, appendParticles, updateVial, takeDose, pourBack, pourBackParts, vialInventory, migrateVial, relaxVial } from '../src/game/vial.js';
 import { certification } from '../src/game/experiments.js';
 import { awakenedId, thresholdToCelsius } from '../src/alchemy/arcane.js';
 import { EFFECT_INDEX } from '../src/alchemy/effects.js';
@@ -113,4 +113,15 @@ test('a vial from an older save becomes particles of its mean composition', () =
   assert.equal(v.cert.vitality, 9);
   updateVial(v, st.lookup, st.world.laws);
   assert.ok(Math.abs(v.m.temperature - 40) < 0.5);
+});
+
+test('pouring part of a batch back returns its share of the batch’s provenance, never the whole batch', () => {
+  // a 50 ml vial drawn from a 200 ml batch of 150 ml water and 50 ml essence
+  const v = /** @type {any} */ ({ parts: [{ id: 'water', ml: 150 }, { id: 'essence', ml: 50 }] });
+  assert.deepEqual(pourBackParts(v, 50), [{ id: 'water', ml: 37.5 }, { id: 'essence', ml: 12.5 }]);
+  // after a 10 ml dose, 40 ml go back
+  assert.deepEqual(pourBackParts(v, 40), [{ id: 'water', ml: 30 }, { id: 'essence', ml: 10 }]);
+  // never more than the batch, and nothing from a vial without provenance
+  assert.deepEqual(pourBackParts(v, 500), v.parts);
+  assert.deepEqual(pourBackParts(/** @type {any} */ ({}), 20), []);
 });

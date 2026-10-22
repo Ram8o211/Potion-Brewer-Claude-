@@ -84,5 +84,5 @@ a later session can continue from it.
 - [x] F1 gathering activities (methods + tools), availability (dawn/dusk by customer, weather), careful/thorough harvests, arcanometer
 - [x] G1 audio (awakening, cracking, bargaining, deals, complaints, praise, rabbits, births, deaths, digging, snipping)
 - [x] G2 UI polish, tutorial/onboarding update (onboarding tips, "Arcane awakening" help, 44 px touch targets, review fixes)
-- [ ] G3 tests (unit, browser), feasibility simulation, bench
-- [ ] G4 docs, screenshots, build, PR
+- [x] G3 tests (unit 108, browser 92), feasibility simulation (100/100), playtest, bench
+- [x] G4 docs, screenshots, build 2.0.0, PR
