@@ -809,8 +809,9 @@ function faceLayer(S) {
   if (!dead && L.death >= 1) P(e.x - 1, e.y + 1, 3, 1, L.death >= 2 ? PAL.stone2 : C.dark);
   if (!dead && L.death >= 2) { P(e.x - 1, e.y - 1, 3, 1, PAL.stone2); P(e.x - 1, e.y + 2, 2, 1, C.dark); }
   if (dead) {
-    if (S.cause === 'age') P(e.x - 1, e.y, 3, 1, K); // eyes closed in peace
-    else { P(e.x - 1, e.y - 1, 1, 1, K); P(e.x + 1, e.y - 1, 1, 1, K); P(e.x, e.y, 1, 1, K); P(e.x - 1, e.y + 1, 1, 1, K); P(e.x + 1, e.y + 1, 1, 1, K); }
+    // eyes closed: a lid line, the lashes a shade lower
+    P(e.x - 1, e.y, 3, 1, K);
+    P(e.x - 1, e.y + 1, 1, 1, C.dark); P(e.x + 1, e.y + 1, 1, 1, C.dark);
   } else if (a.pose === 'flop') { P(e.x - 1, e.y - 1, 1, 1, K); P(e.x, e.y, 1, 1, K); P(e.x + 1, e.y - 1, 1, 1, K); }
   else if (L.love === 3) heart(P, e.x - 1, e.y - 1, C_HEART);
   else if (a.pose === 'collapse' || a.pose === 'loaf' || L.toxicity === 3) { P(e.x - 1, e.y - 1, 3, 1, C.dark); P(e.x - 1, e.y, 2, 1, K); }

@@ -15,6 +15,12 @@ const PICK = [
   'phone-portrait-menu', 'phone-portrait-shop', 'phone-portrait-tutorial-stirred', 'phone-portrait-tutorial-result', 'phone-portrait-layers',
   'phone-portrait-crushed', 'phone-portrait-fire', 'phone-portrait-shop-panel', 'phone-portrait-journal-panel',
   'phone-landscape-shop', 'phone-landscape-tutorial-stirred', 'tablet-shop',
+  // the evolution: awakening, the colony, trade, gathering
+  'desktop-showcase-awakened', 'phone-portrait-showcase-awakened', 'desktop-showcase-hutch', 'phone-portrait-showcase-hutch', 'phone-landscape-showcase-hutch',
+  'desktop-showcase-body', 'phone-portrait-showcase-body', 'desktop-colony-replay', 'phone-portrait-colony-dosed', 'desktop-colony-night',
+  'desktop-colony-remains-shelf', 'desktop-showcase-label', 'phone-portrait-showcase-label', 'desktop-showcase-bargain', 'phone-portrait-showcase-bargain',
+  'desktop-showcase-complaint', 'phone-portrait-showcase-complaint', 'desktop-showcase-wilds-storm', 'phone-portrait-showcase-wilds-storm',
+  'desktop-wilds-gathered',
 ];
 
 fs.mkdirSync(DST, { recursive: true });
