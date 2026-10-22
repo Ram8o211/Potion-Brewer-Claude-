@@ -5,6 +5,7 @@
 // dusk in bad weather. Each scene also checks what it shows.
 import { test, expect } from '@playwright/test';
 import { watchErrors, shot, newGame, lab, pourRole } from './helpers.mjs';
+import { weatherOn } from '../../src/game/gathering.js';
 
 const NE = 10;
 /** Documentation shots show the scene, not the pile of toasts above it. */
@@ -111,12 +112,9 @@ test('the wilds at dusk in a thunderstorm', async ({ page }, info) => {
   const errors = watchErrors(page);
   await newGame(page, { tutorial: false, seed: 'showcase-wilds' });
   // find a stormy day for this world, and make it dusk
-  const day = await page.evaluate(async () => {
-    const g = await import('/src/game/gathering.js');
-    const st = (/** @type {any} */ (window)).__alchemist.screen.state;
-    for (let d = 2; d < 80; d++) if (g.weatherOn(st.seed, d).id === 'storm') return d;
-    return 2;
-  });
+  const seed = await lab(page, (l) => l.state.seed);
+  let day = 2;
+  while (day < 80 && weatherOn(seed, day).id !== 'storm') day++;
   await lab(page, (l, d) => { const st = l.state; st.day = d; st.customerIndex = st.customersPerDay - 1; l.showView('wilds'); l.views.wilds.refresh(); }, day);
   await expect(page.locator('.wilds-sky')).toContainText('Dusk');
   await expect(page.locator('.wilds-sky')).toContainText('Thunderstorm');
