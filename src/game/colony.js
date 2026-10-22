@@ -676,7 +676,8 @@ export function rabbitCondition(r, day) {
   }
   const s = rabbitSnap(r, day);
   const L = (k) => s.lv[MARK_INDEX[k]];
-  const pick = (k, words) => { const l = L(k); if (l) w.push(words[l - 1]); };
+  // a body is described by how it died and what it bore for good, not by passing moods
+  const pick = (k, words) => { const l = L(k); if (l && r.alive) w.push(words[l - 1]); };
   pick('vitality', ['bright-eyed', 'glowing with health', 'radiant']);
   pick('strength', ['sturdy', 'muscular', 'hulking']);
   pick('love', ['affectionate', 'lovestruck', 'besotted']);

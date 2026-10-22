@@ -74,8 +74,8 @@ a later session can continue from it.
 - [x] B3 freezing slush transition, translucency polish
 - [x] C1 colony model, exposure, mortality, breeding, growth, migration (game/colony.js, save v4)
 - [x] C2 remains recovery → new ingredients (materials/remains.js)
-- [ ] C3 rabbit renderer + enclosure behaviour
-- [ ] C4 trials UI: colony, selection, records, replay
+- [x] C3 rabbit renderer + enclosure behaviour (rendering/rabbit.js, rendering/hutch-scene.js)
+- [x] C4 trials UI: colony, selection, records, replay (ui/views/hutch.js, trials.js)
 - [x] D1 narrative request templates, concentration tiers, 1.2 % rule, activation orders
 - [x] D2 identification record (labels: trial / estimate / none / unknown)
 - [x] D3 negotiation (persona, trust, multi-round, walk-outs)
