@@ -1,4 +1,4 @@
-// The Alchemist's Shop 2.0.0 — bundled build
+// The Alchemist's Shop 2.1.0 — bundled build
 // src/ui/icons.js
 const __m3 = (() => {
 const PAL = {
@@ -13710,14 +13710,14 @@ const feral = live.filter((r) => isFeral(r));
 el.append(h('div', { class: 'row wrap hutch-head' },
 icon('rabbit'), h('b', { text: 'The hutch' }), h('span', { class: 'small muted', text: `${live.length} of ${cap} places` }),
 feral.length ? h('span', { class: 'feral-warn small' }, icon('claw', 'sm'), ` ${feral.map((r) => r.name).join(', ')} gone feral!`) : null));
-el.append(h('div', { class: 'hutch-actions' },
+const manage = [h('div', { class: 'hutch-actions' },
 btn(price ? `Buy · ${price}` : 'Buy', () => this.buy(), { icon: 'plus', act: 'colony-buy', disabled: full || (!lab.sandbox && st.coins < price), title: full ? `The hutch is full (${cap} places): upgrade it at the guild.` : 'Buy an adult rabbit from the breeder' }),
 btn(fed ? 'Fed' : lab.sandbox ? 'Feed' : `Feed · ${st.feedCost()}`, () => this.feed(), { icon: 'leaf', act: 'colony-feed', disabled: fed || !live.length, title: 'Hay and greens: they recover faster and pair up more readily tonight' }),
 btn(c.breed ? 'Breeding on' : 'Breeding off', () => this.toggleBreed(), { icon: 'nest', cls: c.breed ? 'active' : '', act: 'colony-breed', title: 'Let healthy, unrelated adults pair up overnight' }),
-lab.sandbox ? btn('Next day', () => this.nextDay(), { icon: 'clock', act: 'colony-day', title: 'Let a night pass in the hutch' }) : null));
+lab.sandbox ? btn('Next day', () => this.nextDay(), { icon: 'clock', act: 'colony-day', title: 'Let a night pass in the hutch' }) : null)];
 const brewing = c.still != null;
 this.d.still = h('span', { class: 'small muted still-state', text: '' });
-el.append(h('div', { class: 'purge-row' },
+manage.push(h('div', { class: 'purge-row' },
 icon('purge'), h('b', { class: 'small', text: lab.sandbox ? 'Purges: unlimited' : `Purges: ${c.purges || 0}` }),
 h('span', { class: 'spacer' }),
 lab.sandbox ? null : btn(`Buy · ${st.purgePrice()}`, () => this.buyPurge(), { icon: 'coin', act: 'purge-buy', disabled: st.coins < st.purgePrice(), title: 'A purging draught from the apothecary: washes every potion effect out of a rabbit and stops degeneration' }),
@@ -13732,6 +13732,15 @@ this.canvas.addEventListener('pointermove', (e) => { this.hover = this.hitAt(e);
 this.canvas.addEventListener('pointerleave', () => { this.hover = null; });
 el.append(h('div', { class: 'hutch-scene-wrap' }, this.canvas));
 this.syncScene();
+const chosen = findRabbit(c, c.focus);
+const view = this.view, dose = view.doseMl(), avail = view.available();
+if (chosen && chosen.alive) {
+el.append(h('div', { class: 'dose-bar' },
+view.dropper,
+btn(`Give ${dose} ml to ${chosen.name}`, () => view.test('rabbit'), { cls: 'primary', icon: 'dropper', act: 'test-rabbit', disabled: dose <= 0 || avail <= 0, title: `Give ${chosen.name} ${dose} ml from the ${view.source === 'vial' ? 'sealed vial' : 'cauldron tap'}` })));
+} else if (chosen) {
+el.append(h('div', { class: 'dose-bar' }, h('span', { class: 'small', text: `${chosen.name} is dead: choose a living rabbit to dose.` })));
+}
 const tiles = h('div', { class: 'rabbit-tiles', role: 'listbox', 'aria-label': 'Rabbits' });
 this.tiles = {};
 const order = { adult: 0, elder: 1, young: 2, kit: 3 };
@@ -13762,6 +13771,7 @@ el.append(tiles);
 const f = findRabbit(c, c.focus);
 this.d = { still: this.d.still };
 if (f) el.append(this.detail(f));
+el.append(h('div', { class: 'hutch-manage' }, ...manage));
 if (c.memorial.length) el.append(h('div', { class: 'small muted memorial', text: `Remembered: ${c.memorial.slice(0, 6).map((m) => m.name).join(', ')}${c.memorial.length > 6 ? '…' : ''}` }));
 this.drawTiles(0, true);
 this.live();
@@ -13776,12 +13786,8 @@ const portrait = /** @type {HTMLCanvasElement} */ (h('canvas', { width: String(R
 this.d.portrait = /** @type {CanvasRenderingContext2D} */ (portrait.getContext('2d'));
 this.d.id = r.id;
 const view = this.view;
-const avail = view.available();
-const dose = view.doseMl();
 const actions = [];
 if (r.alive) {
-const give = btn(`Give ${dose} ml`, () => view.test('rabbit'), { cls: 'primary', icon: 'dropper', act: 'test-rabbit', disabled: dose <= 0 || avail <= 0, title: `Give ${r.name} ${dose} ml from the ${view.source === 'vial' ? 'sealed vial' : 'cauldron tap'}` });
-actions.push(give);
 actions.push(btn(lab.sandbox ? 'Purge' : `Purge (${st.colony.purges || 0})`, () => this.purge(r), { icon: 'purge', act: 'rabbit-purge', disabled: !lab.sandbox && !(st.colony.purges > 0), title: 'Give a purging draught: every effect washes out, degeneration stops' }));
 actions.push(btn('Put down', () => this.cull(r), { icon: 'knife', cls: 'danger', act: 'rabbit-cull', title: 'End its life now (the body stays for remains or burial)' }));
 } else {
@@ -14029,7 +14035,7 @@ const lab = this.lab, st = lab.state;
 const el = clear(this.el);
 this.head = h('div', { class: 'trials-head card parch' });
 this.status = h('div', { class: 'trials-status small' });
-this.dropper = h('div', { class: 'dropper', role: 'button', tabindex: '0', 'aria-label': 'Dropper: drag onto a rabbit to give it the dose' }, icon('dropper', 'lg'), h('span', { class: 'small', text: 'Drag onto a rabbit' }));
+this.dropper = h('div', { class: 'dropper', role: 'button', tabindex: '0', 'aria-label': 'Dropper: drag onto a rabbit to give it the dose' }, icon('dropper', 'lg'), h('span', { class: 'small', text: 'Drag' }));
 this.bindDropper();
 this.report = h('div', { class: 'trial-report' });
 el.append(this.head, this.status, this.hutch.el, this.report);
@@ -14071,7 +14077,7 @@ btn(`Cauldron tap · ${Math.round(lab.tapAvailable())} ml`, () => { lab.trialSou
 st.vial ? btn(`Sealed vial · ${Math.round(st.vial.ml)} ml`, () => { lab.trialSource = 'vial'; this.refresh(); }, { cls: src === 'vial' ? 'active' : '', act: 'src-vial' }) : null);
 const doses = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Dose' }, h('span', { class: 'small muted', text: 'Dose' }),
 ...DOSES.map((ml) => btn(`${ml} ml`, () => { lab.trialDose = ml; this.refresh(); }, { cls: lab.trialDose === ml ? 'active' : '', act: 'dose-' + ml })));
-head.append(h('div', { class: 'row wrap' }, seg), h('div', { class: 'row wrap' }, doses, h('span', { class: 'spacer' }), this.dropper));
+head.append(h('div', { class: 'row wrap' }, seg), h('div', { class: 'row wrap' }, doses));
 if (st.vial) {
 head.append(h('div', { class: 'row wrap vial-row' },
 h('span', { class: 'small muted', text: `Vial: ${Math.round(st.vial.ml)} ml of ${Math.round(st.vial.bottledMl || st.vial.ml)} ml bottled` }),
@@ -14155,7 +14161,7 @@ icon(e.icon, 'sm'), h('span', { class: 'rk', text: e.label }),
 h('div', { class: 'rbar' }, h('i', { class: 'range', style: { left: lo + '%', width: Math.max(1, hi - lo) + '%', background: rgb(e.color) } }), h('i', { class: 'th mean', style: { left: Math.min(100, Math.abs(v)) + '%' } })),
 h('span', { class: 'rv', text: `${Math.round(v)} ±${Math.max(1, Math.round(s))} · ${cert.rabbits[k]} rabbit${cert.rabbits[k] === 1 ? '' : 's'}` })));
 }
-el.append(h('div', { class: 'card parch report estimate' },
+el.append(h('div', { class: 'card parch estimate' },
 h('div', { class: 'row' }, icon('scales'), h('b', { text: this.source === 'vial' ? 'Vial estimate' : 'Batch estimate' })),
 est,
 h('div', { class: 'small muted', text: 'The mean of every trial of this brew. The band narrows as you test more different rabbits; the label you sell with uses this mean.' })));

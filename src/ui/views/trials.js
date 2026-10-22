@@ -65,7 +65,7 @@ export class TrialsView {
     const el = clear(this.el);
     this.head = h('div', { class: 'trials-head card parch' });
     this.status = h('div', { class: 'trials-status small' });
-    this.dropper = h('div', { class: 'dropper', role: 'button', tabindex: '0', 'aria-label': 'Dropper: drag onto a rabbit to give it the dose' }, icon('dropper', 'lg'), h('span', { class: 'small', text: 'Drag onto a rabbit' }));
+    this.dropper = h('div', { class: 'dropper', role: 'button', tabindex: '0', 'aria-label': 'Dropper: drag onto a rabbit to give it the dose' }, icon('dropper', 'lg'), h('span', { class: 'small', text: 'Drag' }));
     this.bindDropper();
     this.report = h('div', { class: 'trial-report' });
     el.append(this.head, this.status, this.hutch.el, this.report);
@@ -113,7 +113,7 @@ export class TrialsView {
       st.vial ? btn(`Sealed vial · ${Math.round(st.vial.ml)} ml`, () => { lab.trialSource = 'vial'; this.refresh(); }, { cls: src === 'vial' ? 'active' : '', act: 'src-vial' }) : null);
     const doses = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Dose' }, h('span', { class: 'small muted', text: 'Dose' }),
       ...DOSES.map((ml) => btn(`${ml} ml`, () => { lab.trialDose = ml; this.refresh(); }, { cls: lab.trialDose === ml ? 'active' : '', act: 'dose-' + ml })));
-    head.append(h('div', { class: 'row wrap' }, seg), h('div', { class: 'row wrap' }, doses, h('span', { class: 'spacer' }), this.dropper));
+    head.append(h('div', { class: 'row wrap' }, seg), h('div', { class: 'row wrap' }, doses));
     if (st.vial) {
       // the iterate loop: test the vial, pour the rest back, improve, bottle again
       head.append(h('div', { class: 'row wrap vial-row' },
@@ -203,7 +203,7 @@ export class TrialsView {
           h('div', { class: 'rbar' }, h('i', { class: 'range', style: { left: lo + '%', width: Math.max(1, hi - lo) + '%', background: rgb(e.color) } }), h('i', { class: 'th mean', style: { left: Math.min(100, Math.abs(v)) + '%' } })),
           h('span', { class: 'rv', text: `${Math.round(v)} ±${Math.max(1, Math.round(s))} · ${cert.rabbits[k]} rabbit${cert.rabbits[k] === 1 ? '' : 's'}` })));
       }
-      el.append(h('div', { class: 'card parch report estimate' },
+      el.append(h('div', { class: 'card parch estimate' },
         h('div', { class: 'row' }, icon('scales'), h('b', { text: this.source === 'vial' ? 'Vial estimate' : 'Batch estimate' })),
         est,
         h('div', { class: 'small muted', text: 'The mean of every trial of this brew. The band narrows as you test more different rabbits; the label you sell with uses this mean.' })));

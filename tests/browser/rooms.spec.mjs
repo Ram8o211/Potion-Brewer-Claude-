@@ -70,7 +70,8 @@ test('the dropper doses a rabbit on the farm; a dead one is replaced for coins; 
   await page.click('[data-act=tab-trials]');
   await expect(page.locator('[data-subject=beetle]')).toHaveCount(0);
   await expect(page.locator('.status-bars .sb')).toHaveCount(11);
-  // drag the dropper onto Bramble's tile
+  // drag the dropper onto Bramble's tile (the dose bar sits right above the roster)
+  await page.locator('.dose-bar').evaluate((el) => el.scrollIntoView({ block: 'start' }));
   const from = await page.locator('.dropper').boundingBox();
   const to = await page.locator('.rabbit-tile[data-rabbit=r2] canvas').boundingBox();
   if (!from || !to) throw new Error('no boxes');

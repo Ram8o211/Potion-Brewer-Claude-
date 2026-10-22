@@ -5,8 +5,8 @@ first. You run a small medieval apothecary. Customers walk in with orders
 ("a healing tonic, at least moderately strong, served warm"). You fill them
 by gathering herbs and minerals in the wilds, grinding them, and then
 pouring, stirring, steeping, heating, freezing and crushing simulated
-materials in a cauldron. You test what you made on live subjects before
-anyone drinks it.
+materials in a cauldron. You test what you made on the Moon Rabbits of
+your own farm before anyone drinks it.
 
 Nothing is faked with recipes or lookup tables. The colour, density,
 thickness, temperature and magical effects of the potion you bottle are
@@ -47,11 +47,37 @@ computed from the particles that actually run out of the tap. What a
   be recovered once as new ingredients that carry what they absorbed.
   Healthy pairs have kits overnight; buy, feed and house them (the kennel
   and warren make room). Any trial can be replayed without spending a drop.
-* **The trials room.** You give real, measured doses (5, 10 or 25 ml from
-  the tap or the sealed vial) to a rabbit, a copper beetle, a bean
-  seedling, a limestone block or a captive wisp. Each shows only some
-  effects, read with an honest uncertainty. Repeated trials uncover the
-  hidden laws. Pouring anything new invalidates earlier tests of the batch.
+* **The rabbit farm (the Trials room).** Rabbits are the only test
+  subjects, and you test them right in the hutch: tap a rabbit (or drag
+  the dropper onto it) and give it a real, measured dose (5, 10 or 25 ml
+  from the tap or the sealed vial).
+  * A rabbit shows every effect, but never exactly: each rabbit feels each
+    effect a little more or less than the next (a hidden, lifelong bias of
+    about ±18 %), and every dose varies a little too. The batch estimate
+    pools every trial of the brew (mean ± uncertainty, with how many
+    readings and how many different rabbits) and narrows as you test more
+    *different* rabbits; dosing one rabbit again and again never removes its
+    bias. Your label sells on that estimate, and a customer complains when
+    the real potion is far from it.
+  * Every rabbit has live status bars: its health (current / maximum) and
+    one bar per effect channel (acid and lye apart) showing what potions
+    have piled up in it. Doses are cumulative and fade slowly in real time
+    (about a seven-minute half-life, faster overnight).
+  * Past the tick at 70 an effect **degenerates** and runs out of control:
+    poison, death, acid, lye, fire and frost keep climbing and kill the
+    rabbit; vitality, strength, love, arcana and transformation turn it
+    **feral** — it attacks the rest of the colony (transformation keeps
+    changing it, vitality keeps swelling it) until you stop it.
+  * A **purging draught** washes every effect out of a rabbit and stops any
+    degeneration (what grew for good stays). You start with two, buy more
+    from the apothecary (8 coins), and once you can afford the guild's
+    **Purging Still** you brew your own (1 coin and 40 seconds each).
+  * **Put down** any rabbit at any time — a feral one before it kills
+    again; the body stays for its remains or burial.
+  * Vitality heals what a rabbit is missing; given to a rabbit already at
+    full health it raises its maximum health instead.
+  * Repeated trials uncover the hidden laws. Pouring anything new
+    invalidates earlier tests of the batch.
 * **Trade.** Label the bottle with what you know — tested values, the
   guild's estimates, "none" or unknown — and bargain with customers who
   each haggle, trust and need proof differently. They pay the agreed
@@ -80,21 +106,28 @@ computed from the particles that actually run out of the tap. What a
   * Coins, reputation and six guild ranks.
   * 35 pieces of equipment: furnaces, frost plates, bigger cauldrons, a
     mortar, instruments (an arcanometer reads a brew's activation
-    threshold), a galvanometer, a clockwork stirrer, an alembic, a wisp
-    lantern, a kennel and a rabbit warren, foraging tools and a satchel, and
-    a homunculus that brews your saved recipes.
+    threshold), a galvanometer, a clockwork stirrer, an alembic, a
+    kennel, a rabbit warren and a purging still, foraging tools and a
+    satchel, and a homunculus that brews your saved recipes.
   * A recipe book, a trial log, the laws you have found, a discovery
     journal, achievements, market days and guild contracts.
-* **Free Experiment mode** with every reagent, tool, subject and region
+* **Free Experiment mode** with every reagent, tool, rabbit and region
   unlocked.
 * **Mobile first, desktop too.**
   * A bottom tab bar over five rooms (Counter, Brew, Wilds, Trials, Book).
-  * Drag a jar onto the cauldron, or drag the dropper onto a subject.
+  * Drag a jar onto the cauldron, or drag the dropper onto a rabbit.
     Every gesture except skimming has a tap alternative.
   * Touch targets of at least 44 px, and portrait, landscape, tablet and
     desktop layouts.
   * Installable and fully offline, with saves on the device and
     export/import.
+* **Pixel art painted in code:** layered wilds panoramas (lit oak
+  canopies and light shafts, a willow river, terraced quarry faces with a
+  crane and lantern, a moonlit bog of willows, crystals and wisps, smoking
+  volcanic crags), a furnished workshop (brick wall, shelves of jars and
+  plants, drying herbs, ivy, barrel, sack, firewood under the cauldron), a
+  hutch with a hay rack, a thatched hide box and a fence, shaded rabbits,
+  and wood-grain, parchment and nail textures on the interface.
 * **Everything is original and bundled:** pixel art drawn in code, a
   pixel font, synthesised sound effects and music. No third-party runtime
   code, no CDNs, no network calls.
@@ -158,9 +191,9 @@ overwrite a newer save.
 
 ```bash
 npm run typecheck         # TypeScript (checkJs) over src/, scripts/ and tests/
-npm test                  # 50 headless tests: physics, game rules, effects, trials & wilds, renderer
+npm test                  # headless tests: physics, game rules, effects, the rabbit farm, wilds, renderer
 npx playwright install chromium   # once, if no Chromium is available
-npm run test:browser      # 64 browser tests: desktop / phone / tablet emulation, offline build, GitHub Pages sub-path
+npm run test:browser      # browser tests: desktop / phone / tablet emulation, offline build, GitHub Pages sub-path
 npm run bench             # measured physics and frame timings → docs/perf-results.json
 node scripts/playtest.mjs # automated 12-day balancing playthrough → docs/playtest-results.json
 node scripts/achievability.mjs 30   # brew 30 generated commissions in the real simulation
@@ -179,8 +212,10 @@ Browser screenshots from the test run land in `test-results/screenshots/`.
    cauldron, tap a jar and use the dose buttons, or drag the jar onto the
    cauldron. Switch on **Ground** to grind roots and stones in the mortar
    first. Stir with the spoon, and slide the fire control to heat or cool.
-4. **Trials.** Drag the dropper onto a subject, or press its **Test**
-   button. The report compares what happened with the guild's theory.
+4. **Trials.** Tap a rabbit in the hutch and press **Give**, or drag the
+   dropper onto it. Test several different rabbits before you trust the
+   estimate, and watch their status bars: purge or rest a rabbit before an
+   effect passes the tick and degenerates. The report compares what happened with the guild's theory.
    Surprises point at hidden laws.
 5. **Bottle** into a sealed vial and **serve** it at the Counter. Payment
    follows how well it matches. Save good brews as recipes in the Book.
@@ -199,7 +234,7 @@ src/materials/                   material schema, procedural world generator, ef
 src/reactions/                   species table, mixture laws, diffusion, reactions & combustion
 src/simulation/                  particle world: solver, grid, cauldron, thermal, electricity, phases, rigid blocks, tools
 src/game/                        world state, commissions, prediction, measurement, scoring, trials, gathering, economy, saves
-src/rendering/                   fine-pixel fluid renderer, procedural pixel art, effects, portraits, wilds and subjects
+src/rendering/                   fine-pixel fluid renderer, procedural pixel art, effects, portraits, wilds panoramas, the hutch and its rabbits
 src/ui/                          shell and Brew room, views/ (counter, wilds, trials, book), panels, tutorial, input
 src/audio/                       synthesised sound effects and music (WebAudio)
 sw.js, manifest.webmanifest      offline support / installable app

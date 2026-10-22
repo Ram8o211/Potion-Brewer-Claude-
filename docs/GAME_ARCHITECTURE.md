@@ -387,20 +387,33 @@ into the new vessel's shape instead of being dropped.
   (composition heterogeneity, immiscible blends, sediment, gas),
   volatility, charge and the hidden effect vector (with the amount each
   resonance law contributed).
-* **`experiments.js`** is the trials room's rules: five subjects (Moon
-  Rabbits from the colony, Copper Beetle, Bean Seedling, Limestone, and the Will-o'-Wisp
-  with the lantern), each responding to only some effects; dose-scaled
-  observations and lasting marks; harm that can spend a subject (replaced
-  for coins, half price with the kennel); trial records with the theory
-  beside the observation; law discovery after two trials show a law at
-  work on a channel the subject reveals; and **certification**. A batch is
-  certified for an effect once a trial of this batch *and revision*
-  revealed it and the brew still matches that reading within
-  max(3, 15%). Pouring anything bumps the revision, so earlier trials stop
-  counting; drift from reactions, settling or heat is caught silently.
-  Certified values become the tested claims on a label (`commerce.js`); an
-  untested potion can still be offered, but customers trust it less and
-  some refuse it.
+* **`experiments.js`** is the trials room's rules. The Moon Rabbits of
+  the colony are the only subjects (old records naming the retired beetle,
+  seedling, limestone and wisp stay readable) and a rabbit shows every
+  effect. `rabbitReading` turns the dose's real effects into what one
+  rabbit feels and shows: scaled by that rabbit's hidden, lifelong
+  sensitivity per effect (`colony.js rabbitSensitivity`, about ±18 %) and
+  by a per-dose variation (wider for small doses, kits and elders); absent
+  effects read as absent. Trial records keep the reading, its ± and the
+  dose's real values (`tv`, read only by the drift check), the theory
+  beside it, and a replay. Law discovery needs two trials where a law is
+  at work. **Certification** pools every trial of this batch *and
+  revision* whose real values still match the brew within max(3, 15%)
+  (`summarize`: the mean, a ± that shrinks with more readings and above
+  all more different rabbits, the counts, the newest record); a sealed
+  vial keeps its own samples. Pouring anything bumps the revision, so
+  earlier trials stop counting; drift from reactions, settling or heat is
+  caught silently. The estimates become the tested claims on a label
+  (`commerce.js`); an untested potion can still be offered, but customers
+  trust it less and some refuse it.
+* **`colony.js`** also runs the hutch in real time (`colonyTick`, called
+  by the lab every half second in any room and caught up after a break):
+  marks fade with a ten-minute time constant; a mark past `DEGEN_AT` (70)
+  degenerates — lethal channels climb and drain health until death, feral
+  channels make the rabbit strike other rabbits (`mauled`); a purging
+  draught (`purgeRabbit`) clears marks and degeneration, `cullRabbit` ends
+  a life on purpose, and vitality at full health raises `bonus` (the
+  maximum health).
 * **`colony.js`** is the hutch of Moon Rabbits (it lives in
   `trials.colony`; the other four subjects keep the single-subject model).
   Each rabbit is an individual: id, name, sex, an inherited **look** (coat

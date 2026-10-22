@@ -333,7 +333,7 @@ canvas.hutch-scene { display: block; width: 100%; height: auto; aspect-ratio: 22
 .rabbit-tile .rt-tags { display: flex; gap: 2px; min-height: 12px; }
 .rabbit-detail { display: flex; flex-direction: column; gap: 6px; padding: 8px; background: var(--parch3); box-shadow: 0 0 0 var(--px) var(--ink2), inset 0 0 0 var(--px) #fffaf0; }
 .rabbit-detail.feral { background: #f3d6c8; box-shadow: 0 0 0 var(--px) #7a2a22, inset 0 0 0 var(--px) #ffb4a0; }
-.rabbit-detail .rd-top { display: grid; grid-template-columns: minmax(96px, 38%) minmax(0, 1fr); gap: 8px; align-items: start; }
+.rabbit-detail .rd-top { display: grid; grid-template-columns: minmax(96px, min(38%, 220px)) minmax(0, 1fr); gap: 8px; align-items: start; }
 .rabbit-detail canvas.rd-portrait { width: 100%; aspect-ratio: 48 / 40; height: auto; image-rendering: pixelated; background: radial-gradient(ellipse at 50% 78%, #fff6dc, #d9bf8c 70%, #b89a64); box-shadow: 0 0 0 var(--px) var(--ink2), inset 0 0 0 2px #e8d5a8; }
 .rabbit-detail .rd-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; line-height: 1.25; }
 .rabbit-detail .rd-title b { font-size: 22px; }
@@ -364,7 +364,10 @@ canvas.hutch-scene { display: block; width: 100%; height: auto; aspect-ratio: 22
 .rabbit-tile .rt-hp { width: 86%; height: 5px; }
 .rabbit-tile.feral { background: #e8b8a8; box-shadow: 0 0 0 2px #a8241a; }
 .rabbit-tile.degen { background: #e0cfa0; box-shadow: 0 0 0 2px #c06a20; }
-.trials-head .dropper { min-height: 44px; }
+.dose-bar { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px; align-items: stretch; }
+.dose-bar .btn.primary { min-height: 52px; font-size: 18px; }
+.dose-bar .dropper { min-height: 52px; padding: 4px 10px; }
+.hutch-manage { display: flex; flex-direction: column; gap: 6px; margin-top: 2px; }
 .reading-rows .rbar > i.range { position: absolute; top: 0; bottom: 0; opacity: .85; }
 .trial-report .quiet { display: flex; gap: 3px; align-items: center; flex-wrap: wrap; }
 .trial-report .estimate { margin-top: 8px; }
