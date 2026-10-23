@@ -29,9 +29,9 @@ import { saveGame, saveJSON, KEYS } from '../game/persistence.js';
 import { AutoBrewer } from '../game/autobrew.js';
 import { equipmentById } from '../game/equipment.js';
 import { traceSample, buildProcedure, procedureLimits, matchRecipe, checkReproduction, TRACE_DT } from '../game/recipes.js';
-import { proofGaps, evidenceOf, applyTrials } from '../game/commerce.js';
+import { proofGaps } from '../game/commerce.js';
 import { RANKS } from '../game/equipment.js';
-import { certification, missingEffects, summarize } from '../game/experiments.js';
+import { certification, missingEffects } from '../game/experiments.js';
 import { sandboxIngredients } from '../materials/generator.js';
 import { makeVial, appendParticles, updateVial, takeDose, pourBack, pourBackParts, relaxVial } from '../game/vial.js';
 import { theoryOf, EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, dominantEffect, NE } from '../alchemy/effects.js';
@@ -1752,24 +1752,8 @@ export class LabScreen {
    * @param {string} [batchId] only bottles of this batch
    */
   shareEvidence(batchId) {
-    const st = this.state;
     if (this.sandbox) return;
-    for (const v of [st.vial, ...st.bottles]) {
-      if (!v || !v.batchId || (batchId && v.batchId !== batchId) || !v.m) continue;
-      const cert = certification(st.trials, { id: v.batchId, rev: v.rev }, v.m.effects);
-      /** @type {Record<string, any[]>} */
-      const merged = {};
-      const known = new Set(st.trials.records.map((r) => r.id));
-      for (const [k, list] of Object.entries(v.samples || {})) merged[k] = list.filter((x) => !known.has(x.rec) || (cert.samples[k] || []).some((y) => y.rec === x.rec));
-      for (const [k, list] of Object.entries(cert.samples)) for (const x of list) if (!(merged[k] ||= []).some((y) => y.rec === x.rec)) merged[k].push(x);
-      for (const k of Object.keys(merged)) if (!merged[k].length) delete merged[k];
-      const sum = summarize(merged);
-      const changed = JSON.stringify(sum.values) !== JSON.stringify(v.cert || {}) || Object.values(merged).reduce((a, l) => a + l.length, 0) !== Object.values(v.samples || {}).reduce((a, l) => a + l.length, 0);
-      v.samples = merged;
-      v.cert = sum.values;
-      v.certRecords = sum.records;
-      if (changed && v.label) applyTrials(v.label, sum.values, Object.values(sum.records)[0] || '', evidenceOf(v));
-    }
+    this.state.shareEvidence(batchId);
   }
 
   /** Re-measure the shelved bottles if they have cooled noticeably since last shown. */

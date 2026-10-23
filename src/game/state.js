@@ -8,12 +8,12 @@ import { serializeMaterial, deserializeMaterial } from '../materials/schema.js';
 import { generateCommission, tutorialCommission } from './commissions.js';
 import { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById } from './equipment.js';
 import { SIM } from '../simulation/constants.js';
-import { createTrials, normalizeTrials, runTrial, SUBJECT_BY_ID, knownLaws } from './experiments.js';
+import { createTrials, normalizeTrials, runTrial, SUBJECT_BY_ID, knownLaws, certification, summarize } from './experiments.js';
 import { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth, depositStatus } from './gathering.js';
 import { predictPlan } from './predict.js';
 import { EFFECT_INDEX } from '../alchemy/effects.js';
 import { migrateVial } from './vial.js';
-import { recordSale, resolveFollowUp } from './commerce.js';
+import { recordSale, resolveFollowUp, applyTrials, evidenceOf } from './commerce.js';
 import { colonyDay, colonyTick, livingRabbits, findRabbit, addBoughtRabbit, retireRabbit, remainsSource, purgeRabbit, cullRabbit, maxHealthOf, FOUNDER_BORN } from './colony.js';
 import { remainsMaterials, remainsPlan, isRemains } from '../materials/remains.js';
 import { returningPatron, welcomePatron, recentStyles, notePatron, patronVerdict, noveltyFactor } from './patrons.js';
@@ -671,6 +671,34 @@ export class GameState {
     else this.bottles.splice(k, 1);
     this.vial = b;
     return { ok: true, bottle: b };
+  }
+
+  /**
+   * Bottles of one batch share its evidence: every trial of that batch and
+   * revision — from the cauldron, the counter's vial or any shelved bottle —
+   * counts for each of them, checked against each bottle's own contents (a
+   * bottle drawn from a different layer reads stale instead). Readings a
+   * bottle already held stay, even once the trial log has forgotten them.
+   * @param {string} [batchId] only bottles of this batch
+   */
+  shareEvidence(batchId) {
+    const known = new Set(this.trials.records.map((r) => r.id));
+    for (const v of [this.vial, ...this.bottles]) {
+      if (!v || !v.batchId || (batchId && v.batchId !== batchId) || !v.m) continue;
+      const cert = certification(this.trials, { id: v.batchId, rev: v.rev }, v.m.effects);
+      /** @type {Record<string, any[]>} */
+      const merged = {};
+      for (const [k, list] of Object.entries(v.samples || {})) merged[k] = list.filter((x) => !known.has(x.rec) || (cert.samples[k] || []).some((y) => y.rec === x.rec));
+      for (const [k, list] of Object.entries(cert.samples)) for (const x of list) if (!(merged[k] ||= []).some((y) => y.rec === x.rec)) merged[k].push(x);
+      for (const k of Object.keys(merged)) if (!merged[k].length) delete merged[k];
+      const count = (o) => Object.values(o || {}).reduce((a, l) => a + l.length, 0);
+      const sum = summarize(merged);
+      const changed = JSON.stringify(sum.values) !== JSON.stringify(v.cert || {}) || count(merged) !== count(v.samples);
+      v.samples = merged;
+      v.cert = sum.values;
+      v.certRecords = sum.records;
+      if (changed && v.label) applyTrials(v.label, sum.values, Object.values(sum.records)[0] || '', evidenceOf(v));
+    }
   }
 
   /** Remove a bottle from the shelves (it is poured away or back). @param {string} id */
