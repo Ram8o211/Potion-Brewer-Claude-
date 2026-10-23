@@ -34,6 +34,8 @@ export class ToolState {
     this.autoCenterX = 0;
     this.autoCenterY = 2.2;
     this.autoRadius = 0.9;
+    /** vertical sweep of the clockwork paddle (0: a circle at one depth) */
+    this.autoSpan = 0;
     this.speed = 0;
     /** volume removed by the skimmer per species id */
     this.skimmed = /** @type {Record<string, number>} */ ({});
@@ -65,7 +67,8 @@ export class ToolState {
       this.active = true;
       this.autoPhase += SIM.DT * 2.1;
       this.tx = this.autoCenterX + Math.cos(this.autoPhase) * this.autoRadius;
-      this.ty = this.autoCenterY + Math.sin(this.autoPhase) * this.autoRadius * 0.45;
+      // the clockwork paddle also travels slowly up and down through the whole brew
+      this.ty = this.autoCenterY + Math.sin(this.autoPhase) * this.autoRadius * 0.45 + Math.sin(this.autoPhase * 0.31) * (this.autoSpan || 0);
       this.fsx = this.x; this.fsy = this.y;
       k = 0; n = 1;
     }

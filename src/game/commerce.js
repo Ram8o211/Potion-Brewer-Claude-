@@ -21,8 +21,9 @@
 
 import { Rng, hashString } from '../core/rng.js';
 import { EFFECT_KEYS, EFFECT_INDEX, NE, EFFECT_BY_KEY } from '../alchemy/effects.js';
-import { evaluatePotion, strongestUnwanted } from './evaluate.js';
+import { evaluatePotion, strongestUnwanted, PROPERTY_LABELS } from './evaluate.js';
 import { PURITY_LIMIT } from './requests.js';
+import { summarize, evidenceRank, EVIDENCE_TEXT } from './experiments.js';
 
 /**
  * A claim about one effect.
@@ -33,6 +34,7 @@ import { PURITY_LIMIT } from './requests.js';
  * @property {number} [spread]     uncertainty of an estimate (plus or minus)
  * @property {string} [record]     the trial record backing it
  * @property {number} [measured]   the tested reading of this batch, kept when the player edits the claim
+ * @property {{level:string, n:number, r:number, u:number}} [evidence] how well the trials back it (experiments.js summarize)
  */
 
 /**
@@ -45,7 +47,7 @@ import { PURITY_LIMIT } from './requests.js';
  * Draft a label from what the player knows: trial readings of this vial or
  * batch where there are any, the guild theory elsewhere (marked as an
  * estimate), unknown where neither exists.
- * @param {{cert?:Record<string, number>, certRecords?:Record<string, string>}} vial
+ * @param {{cert?:Record<string, number>, certRecords?:Record<string, string>, samples?:Record<string, any[]>}} vial
  * @param {ArrayLike<number>|null} theory naive theory for the batch (alchemy/effects.js theoryOf)
  * @param {number} day
  * @returns {Label}
@@ -54,10 +56,11 @@ export function draftLabel(vial, theory, day) {
   /** @type {Record<string, Claim>} */
   const claims = {};
   const cert = vial.cert || {}, recs = vial.certRecords || {};
+  const ev = evidenceOf(vial);
   for (let k = 0; k < NE; k++) {
     const key = EFFECT_KEYS[k];
     if (cert[key] !== undefined) {
-      claims[key] = trialClaim(cert[key], recs[key]);
+      claims[key] = trialClaim(cert[key], recs[key], ev[key]);
     } else if (theory) {
       const v = theory[k];
       claims[key] = Math.abs(v) < 0.6 ? { kind: 'none', source: 'estimate', spread: 1 } : { kind: 'value', value: Math.round(v), source: 'estimate', spread: Math.round(2 + 0.3 * Math.abs(v)) };
@@ -71,14 +74,15 @@ export function draftLabel(vial, theory, day) {
  * did not write themselves takes the measured value.
  * @param {Label} label @param {Record<string, number>} values @param {string} record trial record id
  */
-export function applyTrials(label, values, record) {
+export function applyTrials(label, values, record, evidence = {}) {
   for (const [key, v] of Object.entries(values)) {
     const c = label.claims[key];
-    const t = trialClaim(v, record);
+    const t = trialClaim(v, record, evidence[key]);
     if (c && c.source === 'player' && !sameClaim(c, t)) {
       // the player's own claim stays, but the label now knows the reading
       c.measured = t.measured;
       c.record = record;
+      if (t.evidence) c.evidence = t.evidence;
       continue;
     }
     label.claims[key] = t;
@@ -86,10 +90,29 @@ export function applyTrials(label, values, record) {
   return label;
 }
 
-/** A claim made from a trial reading. @param {number} v @param {string} [record] @returns {Claim} */
-export function trialClaim(v, record) {
+/**
+ * The evidence behind each tested effect of a vial (or bottle): level,
+ * readings, rabbits and margin, from its own samples.
+ * @param {{samples?:Record<string, any[]>, cert?:Record<string, number>}} vial
+ * @returns {Record<string, {level:string, n:number, r:number, u:number}>}
+ */
+export function evidenceOf(vial) {
+  /** @type {Record<string, {level:string, n:number, r:number, u:number}>} */
+  const out = {};
+  if (!vial || !vial.samples) {
+    for (const k of Object.keys((vial && vial.cert) || {})) out[k] = { level: 'preliminary', n: 1, r: 1, u: 0 };
+    return out;
+  }
+  const s = summarize(vial.samples);
+  for (const k of Object.keys(s.values)) out[k] = { level: s.level[k], n: s.n[k], r: s.rabbits[k], u: s.unc[k] };
+  return out;
+}
+
+/** A claim made from a trial reading. @param {number} v @param {string} [record] @param {{level:string, n:number, r:number, u:number}} [evidence] @returns {Claim} */
+export function trialClaim(v, record, evidence) {
   const measured = Math.round(v * 10) / 10;
-  return Math.abs(v) < PURITY_LIMIT ? { kind: 'none', source: 'trial', record, measured } : { kind: 'value', value: measured, source: 'trial', record, measured };
+  const ev = evidence ? { evidence } : {};
+  return Math.abs(v) < PURITY_LIMIT ? { kind: 'none', source: 'trial', record, measured, ...ev } : { kind: 'value', value: measured, source: 'trial', record, measured, ...ev };
 }
 
 /** Do two claims say the same thing? @param {Claim} a @param {Claim} b */
@@ -107,8 +130,8 @@ export function sameClaim(a, b) {
  * @returns {Claim}
  */
 export function editClaim(c, key, op) {
-  const keep = { record: c.record, measured: c.measured };
-  const tested = c.measured !== undefined ? trialClaim(c.measured, c.record) : null;
+  const keep = { record: c.record, measured: c.measured, ...(c.evidence ? { evidence: c.evidence } : {}) };
+  const tested = c.measured !== undefined ? trialClaim(c.measured, c.record, c.evidence) : null;
   if (op === 'tested') return tested || c;
   if (op === 'unknown') return { kind: 'unknown', source: 'player', ...keep };
   /** @type {Claim} */
@@ -149,35 +172,94 @@ export function relevantEffects(com) {
   return [...keys];
 }
 
+/** How much a tested claim is worth to a customer, by the evidence behind it (an untested one is worth nothing). */
+export const EVIDENCE_WEIGHT = { preliminary: 0.45, repeated: 0.7, corroborated: 0.9, certified: 1 };
+
+/** @param {Claim|undefined} c */
+function claimWeight(c) {
+  if (!c || c.source !== 'trial') return 0;
+  return EVIDENCE_WEIGHT[(c.evidence && c.evidence.level) || 'preliminary'] ?? 0.45;
+}
+
 /**
- * How far a customer trusts a label for their order (0.3…1.05).
+ * How far a customer trusts a label for their order (0.3…1.05), and why.
+ * Tested claims count by the evidence behind them: a single reading is
+ * worth less than readings repeated, and those less than readings
+ * corroborated on several rabbits.
  * @param {any} com @param {Label} label @param {number} rank
  */
-export function labelTrust(com, label, rank) {
+export function trustReport(com, label, rank) {
   const keys = relevantEffects(com);
-  if (!keys.length) return Math.min(1.05, 0.85 + 0.04 * rank);
-  let proven = 0, unknown = 0;
+  const proof = com.customer.persona ? com.customer.persona.proof : 0.5;
+  if (!keys.length) return { trust: Math.min(1.05, 0.85 + 0.04 * rank), evidence: 1, unknown: 0, proof, reasons: ['nothing magical to prove'] };
+  let proven = 0, unknown = 0, weak = 0;
   for (const k of keys) {
     const c = label.claims[k];
     if (!c || c.kind === 'unknown') unknown++;
-    else if (c.source === 'trial') proven++;
+    const w = claimWeight(c);
+    proven += w;
+    if (w > 0 && w < 0.7) weak++;
   }
-  const proof = com.customer.persona ? com.customer.persona.proof : 0.5;
   const evidence = proven / keys.length;
   const t = 0.5 + 0.05 * rank + evidence * (0.25 + 0.3 * proof) - (unknown / keys.length) * (0.2 + 0.4 * proof) - (1 - evidence) * 0.15 * proof;
-  return Math.max(0.3, Math.min(1.05, t));
+  const reasons = [];
+  if (evidence >= 0.85) reasons.push('your trials back the label well');
+  else if (evidence > 0) reasons.push(weak ? `${weak} of the claims rest on a single reading` : 'only part of the label is tested');
+  else reasons.push('nothing on the label is tested');
+  if (unknown) reasons.push(`${unknown} effect${unknown > 1 ? 's' : ''} left unknown`);
+  if (proof >= 0.8) reasons.push('this customer wants proof');
+  if (rank >= 2) reasons.push('your guild rank speaks for you');
+  return { trust: Math.max(0.3, Math.min(1.05, t)), evidence, unknown, proof, reasons };
+}
+
+/** @param {any} com @param {Label} label @param {number} rank */
+export function labelTrust(com, label, rank) {
+  return trustReport(com, label, rank).trust;
 }
 
 /**
  * The order's wanted effects that a demanding customer will only take on
- * trial evidence of this batch.
+ * trial evidence of this batch — strong enough evidence: a customer who
+ * insists on proof wants readings repeated (not one dose), and the most
+ * exacting want them corroborated on more than one rabbit. With a purity
+ * rule they also want the absence of everything else tested (one trial on
+ * a rabbit reads every effect at once).
  * @param {any} com @param {Label} label
+ * @returns {string[]}
  */
 export function unprovenWanted(com, label) {
+  return proofGaps(com, label).map((g) => g.key);
+}
+
+/**
+ * What a demanding customer still lacks, effect by effect, with what would
+ * satisfy them.
+ * @param {any} com @param {Label} label
+ * @returns {{key:string, need:string, have:string}[]}
+ */
+export function proofGaps(com, label) {
   const proof = com.customer.persona ? com.customer.persona.proof : 0.5;
   if (proof < 0.8) return [];
-  return com.requirements.filter((r) => r.effect && r.key !== 'purity').map((r) => r.key).filter((k) => !label.claims[k] || label.claims[k].source !== 'trial');
+  const need = proof >= 0.92 ? 'corroborated' : 'repeated';
+  const out = [];
+  for (const r of com.requirements) {
+    if (!r.effect || r.key === 'purity') continue;
+    const c = label.claims[r.key];
+    const have = c && c.source === 'trial' ? (c.evidence && c.evidence.level) || 'preliminary' : 'untested';
+    if (have === 'untested' || evidenceRank(have) < evidenceRank(need)) out.push({ key: r.key, need, have });
+  }
+  const purity = com.requirements.find((r) => r.key === 'purity');
+  if (purity) {
+    for (const k of EFFECT_KEYS) {
+      if ((purity.exclude || []).includes(k)) continue;
+      const c = label.claims[k];
+      if (!c || c.source !== 'trial') { out.push({ key: k, need: 'preliminary', have: 'untested' }); }
+    }
+  }
+  return out;
 }
+
+export { EVIDENCE_TEXT };
 
 /**
  * The bottle as the customer understands it: what they can see, taste and
@@ -196,6 +278,7 @@ export function claimedMeasurement(m, label) {
  * @property {number} offer        their current offer
  * @property {number} fit          how well the claims meet the order (0..1)
  * @property {number} trust
+ * @property {{k:string, v:number, text:string}[]} [reasons]  what their valuation rests on (shown to the player)
  * @property {'open'|'deal'|'left'} state
  * @property {number} [price]
  * @property {{who:'you'|'them', text:string, coins?:number}[]} log
@@ -211,12 +294,23 @@ export function claimedMeasurement(m, label) {
 export function openNegotiation(com, vial, label, rank) {
   const persona = com.customer.persona || { haggle: 0.5, patience: 3, honesty: 0.85, proof: 0.5 };
   const rng = new Rng(hashString(`${com.id}:${vial.id}:haggle`));
-  const fit = evaluatePotion(com, /** @type {any} */ (claimedMeasurement({ ...vial.m, ml: vial.ml }, label))).quality;
-  const trust = labelTrust(com, label, rank);
+  const fitEv = evaluatePotion(com, /** @type {any} */ (claimedMeasurement({ ...vial.m, ml: vial.ml }, label)));
+  const fit = fitEv.quality;
+  const tr = trustReport(com, label, rank);
+  const trust = tr.trust;
   const qty = Math.min(1, vial.ml / com.bottleMl);
   const reservation = Math.round(com.budget * Math.pow(fit, 1.3) * trust * Math.pow(qty, 1.4) * rng.range(0.92, 1.08) * 10) / 10;
   const offer = Math.round(reservation * (0.58 + 0.27 * (1 - persona.haggle)) * 10) / 10;
-  const n = { round: 0, patience: persona.patience, reservation, offer, fit, trust, state: /** @type {'open'} */ ('open'), log: [] };
+  // why they value it as they do, in their terms (never the hidden price)
+  const misses = fitEv.rows.filter((r) => r.score < 0.999).map((r) => r.req.key);
+  const reasons = [
+    { k: 'fit', v: Math.round(fit * 100), text: fit >= 0.999 ? 'the label and what they see meet the whole order' : `short on ${misses.map((m) => String(PROPERTY_LABELS[m] || m).toLowerCase()).join(', ')}` },
+    { k: 'trust', v: Math.round(trust * 100), text: tr.reasons.join('; ') },
+    { k: 'quantity', v: Math.round(qty * 100), text: qty >= 0.98 ? 'the full measure' : `only ${vial.ml} of ${com.bottleMl} ml` },
+    { k: 'temper', v: Math.round((1 - persona.haggle) * 100), text: persona.haggle > 0.6 ? 'a hard bargainer' : persona.haggle < 0.3 ? 'easy-going' : 'a fair trader' },
+  ];
+  if (com.patron) reasons.push({ k: 'history', v: Math.round(50 + 50 * com.patron.trust), text: com.patron.trust > 0.2 ? 'they trust you from past visits' : com.patron.trust < -0.2 ? 'they remember being let down' : 'they have been here before' });
+  const n = { round: 0, patience: persona.patience, reservation, offer, fit, trust, reasons, state: /** @type {'open'} */ ('open'), log: [] };
   const opening = fit < 0.35 ? 'That is not what I asked for.' : trust < 0.55 ? 'How do I know it does what your label says?' : fit < 0.8 ? 'Not quite what I wanted, but let’s talk.' : 'This looks right.';
   n.log.push({ who: 'them', text: `${opening} I can offer ${fmt(offer)} coins.`, coins: offer });
   return n;
@@ -281,7 +375,9 @@ export function recordSale(st, com, vial, label, price, truth) {
     const v = truth.effects[EFFECT_INDEX[k]];
     if (!c || c.kind === 'unknown') continue;
     if (c.kind === 'none' && Math.abs(v) >= PURITY_LIMIT) wrong.push(k);
-    if (c.kind === 'value' && Math.abs(v - (c.value || 0)) > Math.max(3, 0.25 * Math.abs(c.value || 0))) wrong.push(k);
+    // a tested claim states its margin: a fair customer forgives what lies within it
+    const margin = c.source === 'trial' && c.evidence ? c.evidence.u || 0 : 0;
+    if (c.kind === 'value' && Math.abs(v - (c.value || 0)) > Math.max(3, 0.25 * Math.abs(c.value || 0), margin)) wrong.push(k);
   }
   const purity = com.requirements.find((r) => r.key === 'purity');
   const side = purity ? strongestUnwanted(truth.effects, purity.exclude || []) : { value: 0, key: '' };

@@ -7,8 +7,16 @@ import { PHASE, SIM } from '../simulation/constants.js';
 import { MAX_SPECIES } from '../reactions/species.js';
 
 /**
- * @typedef {'pour'|'crush'|'stir'|'steep'|'heat'|'hold'|'serve'|'done'} Stage
+ * @typedef {'pour'|'crush'|'stir'|'steep'|'heat'|'hold'|'reduce'|'serve'|'late'|'steps'|'done'} Stage
  */
+
+/** Liquid (non-vapour) particles in the cauldron. @param {import('../simulation/world.js').Simulation} sim */
+export function condensedCount(sim) {
+  const p = sim.p;
+  let n = 0;
+  for (let i = 0; i < p.count; i++) if (p.phase[i] !== PHASE.GAS) n++;
+  return n;
+}
 
 /**
  * The temperature of a plan's main stage (reaction or awakening): the cold
@@ -45,6 +53,14 @@ export class AutoBrewer {
     this.status = 'Preparing';
     this.failed = false;
     this.held = 0;
+    /** recorded procedure (recipes.js): replayed step by step instead of the plan's stages */
+    this.steps = /** @type {any[]|null} */ (/** @type {any} */ (plan).steps || null);
+    this.stepIndex = 0;
+    this.target = 20;
+    this.reduceFrom = 0;
+    this.venting = 0;
+    this.lateDone = false;
+    if (this.steps) this.stage = 'steps';
   }
 
   get done() {
@@ -97,8 +113,9 @@ export class AutoBrewer {
     this.t += dt;
     this.stageT += dt;
     const sim = this.sim, plan = this.plan;
-    if (this.t > 300) { this.failed = true; this.finish(); return; }
+    if (this.t > (this.steps ? 900 : 360)) { this.failed = true; this.finish(); return; }
     switch (this.stage) {
+      case 'steps': this.tickStep(); return;
       case 'pour': {
         if (sim.emitter.pouring) { this.stir(0.6); return; }
         if (this.ingIndex >= plan.ingredients.length) {
@@ -106,13 +123,7 @@ export class AutoBrewer {
           return;
         }
         const ing = plan.ingredients[this.ingIndex++];
-        const n = Math.max(1, Math.round(ing.n * this.scale));
-        if (this.onPour && !this.onPour(ing.id, n)) { this.failed = true; this.finish(); return; }
-        const def = this.lookup(ing.id);
-        const ground = !!ing.ground && def.form === 'solid';
-        sim.emitter.start(def, { x: (this.ingIndex % 2 ? -0.35 : 0.35), amount: n, rate: def.form === 'powder' || ground ? 70 : 110, ground });
-        this.status = ground ? `Grinding and adding ${def.name}` : `Pouring ${def.name}`;
-        if (this.onPoured) this.onPoured(ing.id, n, ground);
+        this.pourOne(ing);
         return;
       }
       case 'crush': {
@@ -161,16 +172,142 @@ export class AutoBrewer {
         this.control(stageGoal(plan));
         this.status = plan.activate ? 'Letting it awaken' : 'Letting it react';
         if (this.stageT % 2.5 < 1.5) this.stir(0.9); else this.release();
-        if (this.stageT > (plan.hold ?? 6) + 4) this.next('serve');
+        if (this.stageT > (plan.hold ?? 6) + 4) this.next(plan.reduce ? 'reduce' : 'serve');
+        return;
+      }
+      case 'reduce': {
+        // lid off, a steady boil, until the brew has lost its share of volume
+        const c = sim.cauldron;
+        if (this.stageT <= dt + 1e-9) { this.reduceFrom = condensedCount(sim); this.lidWas = c.lidClosed; c.lidClosed = false; }
+        const goal = Math.round(this.reduceFrom * (1 - (plan.reduce ? plan.reduce.frac : 0)));
+        if (!this.venting) {
+          this.status = `Boiling down (${condensedCount(sim)} → ${goal})`;
+          this.control(130);
+          sim.furnace.setting = Math.min(sim.furnace.setting, 0.7);
+          if (this.stageT % 3 < 1.2) this.stir(0.7); else this.release();
+          if (condensedCount(sim) <= goal || this.stageT > 160) { this.venting = this.stageT; sim.furnace.setting = 0; this.release(); }
+          return;
+        }
+        // fire out, lid still off: let the steam leave before the lid goes back on
+        // (steam that falls back as rain is boiled off again)
+        this.status = 'Letting the steam out';
+        sim.furnace.setting = 0;
+        const gas = sim.p.count - condensedCount(sim);
+        if (gas <= 0 && condensedCount(sim) > goal && this.stageT < 200) { this.venting = 0; return; }
+        if (gas <= 0 || this.stageT - this.venting > 20) { c.lidClosed = this.lidWas ?? true; this.venting = 0; this.next('serve'); }
         return;
       }
       case 'serve': {
         const err = this.control(plan.serveTemp ?? 20);
         this.status = `Bringing to ${Math.round(plan.serveTemp ?? 20)}°C`;
         if (this.stageT % 2 < 1.2) this.stir(0.8); else this.release();
-        if ((err < 3 && this.stageT > 3) || this.stageT > 60) this.finish();
+        if ((err < 3 && this.stageT > 3) || this.stageT > 60) {
+          if (plan.late && plan.late.length && !this.lateDone) { this.next('late'); return; }
+          this.finish();
+        }
         return;
       }
+      case 'late': {
+        // cold additions after the stages: poured at serving temperature, then worked in
+        this.control(plan.serveTemp ?? 20);
+        if (sim.emitter.pouring) { this.stir(0.6); return; }
+        const late = plan.late || [];
+        if (this.ingIndex < plan.ingredients.length + late.length) {
+          const ing = late[this.ingIndex - plan.ingredients.length];
+          this.ingIndex++;
+          if (!this.pourOne(ing)) return;
+          return;
+        }
+        this.lateDone = true;
+        this.status = 'Working it in';
+        this.stir(1);
+        if (this.stageT > (plan.knead ? 14 : 8)) this.finish();
+        return;
+      }
+    }
+  }
+
+  /**
+   * Start pouring one ingredient (n particles, or ml in a recorded step).
+   * Returns false (and stops) if the stock does not allow it.
+   * @param {{id:string, n?:number, ml?:number, ground?:boolean}} ing
+   */
+  pourOne(ing) {
+    const n = Math.max(1, Math.round((ing.n ?? (ing.ml || 0) / SIM.ML_PER_PARTICLE) * this.scale));
+    if (this.onPour && !this.onPour(ing.id, n)) { this.failed = true; this.finish(); return false; }
+    const def = this.lookup(ing.id);
+    if (!def) { this.failed = true; this.finish(); return false; }
+    const ground = !!ing.ground && def.form === 'solid';
+    this.sim.emitter.start(def, { x: (this.ingIndex % 2 ? -0.35 : 0.35), amount: n, rate: def.form === 'powder' || ground ? 70 : 110, ground });
+    this.status = ground ? `Grinding and adding ${def.name}` : `Pouring ${def.name}`;
+    if (this.onPoured) this.onPoured(ing.id, n, ground);
+    return true;
+  }
+
+  /**
+   * One physics step of a recorded procedure (recipes.js): every step is
+   * done for real, in order — pours wait for the stream, holds wait for the
+   * temperature, then count their seconds. Between steps the furnace keeps
+   * the last temperature asked for.
+   */
+  tickStep() {
+    const sim = this.sim, dt = SIM.DT;
+    const steps = /** @type {any[]} */ (this.steps);
+    if (sim.emitter.pouring) { this.control(this.target); return; }
+    const s = steps[this.stepIndex];
+    if (!s) { this.finish(); return; }
+    const done = () => { this.release(); this.stepIndex++; this.stageT = 0; this.held = 0; };
+    switch (s.op) {
+      case 'pour':
+        if (this.stageT <= dt + 1e-9) { if (this.pourOne(s)) this.stageT = dt * 2; return; }
+        done();
+        return;
+      case 'stir':
+        this.status = 'Stirring';
+        this.control(this.target);
+        this.stir(1);
+        if (this.stageT >= s.s) done();
+        return;
+      case 'crush': {
+        this.status = 'Grinding solids';
+        this.control(this.target);
+        const p = sim.p;
+        let solids = 0, sx = 0, sy = 0;
+        for (let i = 0; i < p.count; i++) if (p.phase[i] === PHASE.SOLID) { solids++; sx += p.x[i]; sy += p.y[i]; }
+        if (!solids || this.stageT >= s.s) { done(); return; }
+        const t = sim.tool;
+        t.type = 'pestle';
+        this.phase += dt * 9;
+        t.setTarget(sx / solids + Math.sin(this.phase * 0.6) * 0.35, sy / solids + Math.abs(Math.sin(this.phase)) * 0.3 - 0.05, true);
+        t.beginFrame();
+        t.substep(0, 1);
+        return;
+      }
+      case 'temp': {
+        this.target = s.T;
+        this.status = `${s.T < 20 ? 'Chilling' : 'Heating'} to ${s.T}°C`;
+        const err = this.control(s.T);
+        const duty = s.stir ?? 0.5;
+        if (duty > 0.05 && (this.stageT % 3) < 3 * duty) this.stir(0.8); else this.release();
+        if (err < 4) this.held += dt;
+        if (this.held >= s.hold || this.stageT > s.hold + 120) done();
+        return;
+      }
+      case 'lid':
+        sim.cauldron.lidClosed = !!s.closed;
+        done();
+        return;
+      case 'serve': {
+        this.target = s.T;
+        this.status = `Bringing to ${s.T}°C`;
+        const err = this.control(s.T);
+        if (this.stageT % 2 < 1.2) this.stir(0.6); else this.release();
+        if ((err < 3 && this.stageT > 2) || this.stageT > 60) done();
+        return;
+      }
+      default:
+        // skimming and distilling are left to the alchemist: the step is skipped
+        done();
     }
   }
 

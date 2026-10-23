@@ -283,11 +283,26 @@ into the new vessel's shape instead of being dropped.
   particles, at most `cap.bottles` of them — 3, then 6, 12 and 24 with the
   Bottle Shelf, Potion Cabinet and Bottle Cellar; `shelveBottle`,
   `takeBottle` swaps a shelved bottle with the counter's vial,
-  `removeBottle`), the trials state and the wilds' deposit stocks. It handles buying and selling, equipment, sales and
+  `removeBottle`), the trials state, the wilds' deposit stocks, whether the
+  shop door has been opened today (`opened`, the day's clock) and the
+  returning customers (`patrons`). It handles buying and selling — `buy`
+  goes through `canBuy`, which refuses gather-only finds, rabbit remains,
+  reaction products, the retired prepared reagents and herbs above the
+  shop's rank, exactly as the market panel does — equipment, sales and
   reputation, rank-ups, end of day, market events and a once-a-day
   stipend that makes a run impossible to lose. `toJSON` / `fromJSON` run
   through `migrate()`, which upgrades older save versions and regenerates
-  a missing embedded world from the seed. Save version 4 turns the single
+  a missing embedded world from the seed. Save version 5 adds the day
+  clock (a save with a customer waiting counts as open), the patrons, and
+  turns saved recipes into procedures (older ones become approximate steps,
+  marked as such). `shareEvidence` lets every bottle of one batch and
+  revision carry that batch's trials, each checked against the bottle's own
+  contents. `supplyOf` is what the shop can lay hands on today without
+  buying (shelf plus careful harvests of reachable deposits, by method,
+  tool, hour and weather), and `nextCustomer` never stalls the day: an
+  order that cannot be generated falls back to easier tiers and the
+  plainest single-effect order, and a customer the shop could not serve at
+  all simply does not come in. Save version 4 turns the single
   Moon Rabbit into the founder of a colony (its health, marks, death and
   trial history kept; a companion joins) and defaults the commerce fields;
   the conversion is driven by the data's shape inside `normalizeTrials`, so
@@ -321,46 +336,82 @@ into the new vessel's shape instead of being dropped.
   opposite does. A few delicate ingredients (Heartpetal) cannot awaken, and
   spoiled matter loses its magic.
 * **`commissions.js`** builds each order from a hidden **reference plan**
-  (ingredients and amounts, heat-to, cool-to, serving temperature,
-  kneading or crushing, hold time) for one of 14 physical brewing styles
-  (tonic, syrup, warm draught, salve, elixir, ardent, heavy, fizzy, frost,
-  arcane, lumen, varnish, panacea, phoenix) or 11 **effect styles**
-  (healing, strength, love, fire tonic, frost salve, settling (alkaline),
-  etching (acid), bane, insight, transmutation, antidote). An effect plan
-  picks an ingredient known to carry the effect, a solvent it dissolves in
-  and a preparation (grinding, steeping heat, stirring); higher tiers blend
-  a second ingredient, sometimes one a hidden law acts on. Drinkable
-  potions get safety limits on poison, acid and death they did not ask
-  for. The plan uses only purchasable
-  reagents and owned equipment. `predict.js` computes its outcome with the
-  same mixture laws and reaction stoichiometry as the simulation, and the
-  requirements are placed around that outcome. Tolerances tighten with
-  tier and customer strictness. A requirement is only asked for where it
-  is predictable: no viscosity target for undissolved slurries, no
-  stability target for brews that keep loose grains, and a wider density
-  band where grains settle unevenly.
+  for one of the request templates. The plan search (`searchPlan`) picks
+  carriers of the wanted effects and balances them with helpers: each
+  candidate's raw (pre-law) effects per unit share are probed with
+  `predict.js` under the brew's extraction stage; on the net opposition
+  channels (fire − frost, life − death − 2·poison, signed acidity and the
+  unopposed effects) the problem is a convex least-squares one, solved for
+  all candidates at once with exact coordinate steps; the strongest few are
+  kept and polished on the full model (the world's laws, saturation,
+  tolerated effects); the real plan is then predicted, the model re-probed
+  where the brew actually is, and a near miss tuned particle by particle.
+  An **activation stage** is added when the target needs it (only
+  ingredients that wake within reach, all in one direction).
 
-  Effect orders now come from the request templates. The plan search
-  (`searchPlan`) picks carriers of the wanted effects and balances them
-  with helpers: each candidate's raw (pre-law) effects per unit share are
-  probed with `predict.js` under the brew's extraction stage; on the net
-  opposition channels (fire − frost, life − death − 2·poison, signed acidity
-  and the unopposed effects) the problem is a convex least-squares one,
-  solved for all candidates at once with exact coordinate steps; the
-  strongest few are kept and polished on the full model (the world's laws,
-  saturation, tolerated effects); the real plan is then predicted, the
-  model re-probed where the brew actually is, and a near miss tuned
-  particle by particle. An **activation stage** is added when the target
-  needs it (only ingredients that wake within reach, all in one
-  direction). Plans are kept only if the predicted potion scores above the
-  acceptance line with `evaluatePotion` itself (the same function the
-  counter uses), including the purity rule planned with a 0.6× margin.
-  Masters fall back to a gentler strength when their combination is out of
-  reach (a brew holds at most half grains, or it cannot steep).
-  `scripts/achievability.mjs` then brews generated orders' plans in the real
-  simulation with the rank's equipment (`autobrew.js`, stages pour → crush
-  → stir → steep → heat/chill → hold → serve) and reports the quality the
-  counter would award.
+  *Practical feasibility.* Only ingredients the shop can get today enter
+  the search (`obtainable`: on the shelf, gatherable now, or legally for
+  sale); `checkSupply` then checks the plan's every ingredient — with
+  `TEST_MARGIN` (15 %) for test doses and what sticks to the pot — against
+  shelf, wilds and market, and the purchases against the purse. A plan
+  that fails is searched again without the missing (or dearest)
+  ingredient. The order carries a **supplies brief** (`supplyBrief`): how
+  much brew to make and, for each wanted effect, the ingredients that carry
+  it and where they can be had today — public knowledge, never the hidden
+  plan.
+
+  *Techniques* (`TECHNIQUES`). Customers also ask for what the simulation
+  makes physically real with natural ingredients, each applied to the
+  plan, re-predicted and checked by the counter's own scoring before it may
+  be asked: **true colour** (only full extraction in the right proportions
+  gives it; whole or unsteeped herbs are off by ΔE 10–30), **serving
+  temperature**, **well mixed** (stability; an unstirred brew reads 20–60),
+  **density** (rises with what is dissolved and as water boils off), **a
+  heady tincture** (part of the water held back and made up with spirit
+  added cold, after the steep — volatility), and **boiled down** (a real
+  `reduce` stage: lid off, a quarter of the volume boiled away — stronger,
+  side effects too, volatility lower; only where the prediction of the
+  boiling is trustworthy: no new reaction, no change in awakening). Tiers
+  gate them (colour and serving from the start, mixing, density and
+  tinctures from Journeyman, boiling down from Adept, two at once later)
+  and archetypes prefer their own. Each carries a one-line lesson shown
+  with the order, and a technique sold well for the first time is recorded
+  as mastered (journal, +4 reputation). The old prepared-reagent physical
+  styles (syrups, salves, panaceas…) are gone from generation: they needed
+  reagents the market no longer sells. Natural grains dissolve or extract
+  in the cauldron rather than thicken it, so viscosity and charge are not
+  asked for (see the integration report).
+
+  *Variety and progression.* Requests sold in the last three sales are
+  avoided when there is anything else; the same order again and again
+  earns less reputation (`patrons.js noveltyFactor`: 70 % for the third of
+  six, 50 % beyond). Plans are kept only if the predicted potion scores
+  full marks with `evaluatePotion` (the same function the counter uses),
+  volatility included. `scripts/achievability.mjs` brews generated
+  orders' plans — every technique, every tier — in the real simulation for
+  *realistic* shops (the equipment a player of that rank typically owns, a
+  modest purse) and fully equipped ones (`autobrew.js`, stages pour → crush
+  → stir → steep → heat/chill → hold → reduce → serve → late additions).
+* **`patrons.js`** remembers customers by name: visits, potions that
+  worked, fair complaints and a trust between −1 and 1. A share of
+  customer slots goes to a returning patron (`returningPatron`), who keeps
+  their face and temperament but adjusts it by history (`welcomePatron`):
+  trust lowers the proof they need and their haggling and raises their
+  purse; a burned patron opens with what went wrong and wants proof; one
+  let down badly enough stays away.
+* **`recipes.js`** makes recipes procedures. The lab keeps a coarse trace
+  of every brew (one sample a second: mean temperature, stirring,
+  crushing, the lid) beside the pour, skim and distil events;
+  `buildProcedure` compresses it into ordered steps (pour, stir, crush,
+  temp = bring to a temperature and hold, lid, skim, distil, serve).
+  `matchRecipe` decides whether a batch follows a recipe: the same
+  ingredients within 5 ml *and* the same heating and cooling stages
+  (within 10 °C) — the same ingredients prepared differently only share a
+  shopping list. `checkReproduction` compares a re-brewed, tested batch
+  with what the recipe recorded (within the combined margins), once per
+  batch, and `recipeConfidence` reads untested → tested → reproduced (or
+  unreliable). The homunculus replays the steps (`autobrew.js` step mode);
+  it cannot skim or distil, and a recipe says so.
 * **`customers.js`** has 12 archetypes (farmer, innkeeper, bard, healer,
   knight, traveller, scholar, hedge witch, blacksmith, noble, wizard,
   hunter), each with preferred styles, properties they care about, budget,
@@ -377,11 +428,18 @@ into the new vessel's shape instead of being dropped.
   * *Negotiation.* The customer scores the label against the order with
     `evaluatePotion` (what they can see — colour, temperature, thickness —
     is real; the effects are the label's), weighs trust (trial evidence,
-    reputation, unknowns, how much proof they need), the volume and their
+    reputation, unknowns, how much proof they need — each tested claim
+    counting by its evidence level: one reading 45 %, repeated 70 %,
+    corroborated 90 %, certified 100 %), the volume and their
     temperament, and bargains over several rounds toward a hidden limit:
     counter-offers concede part of the gap, greed costs patience and can
-    end the talks, and a demanding customer will not buy an untested
-    label at all. Stepping away keeps the talks for that bottle and label
+    end the talks, and a demanding customer will not buy without the proof
+    they need (`proofGaps`): a customer who insists on proof wants the
+    wanted effects tested more than once, the most exacting want them read
+    on two rabbits, and with a purity rule every other effect tested (one
+    trial reads them all). The opening comes with the reasons the customer
+    weighs (`reasons`: fit, trust and why, measure, temper, history) — the
+    reservation price itself stays hidden. Stepping away keeps the talks for that bottle and label
     (and costs patience); a new label re-prices it without a fresh start.
     The agreed price is paid; how good the potion really was (its stars,
     a perfect potion, the grand commission) counts only once the customer
@@ -425,10 +483,19 @@ into the new vessel's shape instead of being dropped.
   dose's real values (`tv`, read only by the drift check), the theory
   beside it, and a replay. Law discovery needs two trials where a law is
   at work. **Certification** pools every trial of this batch *and
-  revision* whose real values still match the brew within max(3, 15%)
-  (`summarize`: the mean, a ± that shrinks with more readings and above
-  all more different rabbits, the counts, the newest record); a sealed
-  vial keeps its own samples. Pouring anything bumps the revision, so
+  revision* whose real values still match the brew within max(3, 15%).
+  `summarize` keeps three things apart: the mean; the spread actually seen
+  between readings (sample standard deviation); and the margin of the
+  mean (`unc`, ~95 %), built only from what the guild knows publicly — each
+  reading's own dose noise for its size and the rabbit's visible age and
+  health (`readingSteadiness`: a rabbit below half its health shakes),
+  blended with the spread seen once there are several readings, plus each
+  rabbit's possible bias divided by the number of *different* rabbits. One
+  reading is never "±0"; repeats on one rabbit never remove its bias. The
+  evidence level follows: preliminary (one reading), repeated (one
+  rabbit), corroborated (two or more), certified (corroborated, at least
+  three readings, a narrow margin). A sealed vial keeps its own samples,
+  and bottles of the same batch share theirs (`GameState.shareEvidence`). Pouring anything bumps the revision, so
   earlier trials stop counting; drift from reactions, settling or heat is
   caught silently. The estimates become the tested claims on a label
   (`commerce.js`); an untested potion can still be offered, but customers
@@ -484,9 +551,11 @@ into the new vessel's shape instead of being dropped.
   `gatherPlan` decides one harvest: the ingredient's method (pick, dig,
   chip, scrape, sweep) and whether its tool is owned (trowel, rock hammer,
   badger brush, silver sickle — by hand, half of what is cut is spoiled);
-  the part of the day
-  (dawn while the first customer of the day is in the shop, dusk with the
-  last; twilight plants out of their hour give a quarter); the day's
+  the part of the day, whose clock is the shop door (`dayPart`): dawn
+  until the door is opened, the day while the shop is open, dusk once the
+  last customer has gone until the shop closes for the night — so dawn
+  flowers are gathered before trade and dusk plants after it, to stock up
+  for orders to come (twilight plants out of their hour give a quarter); the day's
   weather, deterministic from seed and day (rain regrows plants overnight,
   frost shuts meadow flowers, a storm recharges crystal seams, fog keeps
   twilight plants open, a heatwave favours flowers over mosses); and care —
@@ -511,8 +580,12 @@ into the new vessel's shape instead of being dropped.
   ingredient knowledge and achievements.
 * **`autobrew.js`** is a controller that carries out a plan in the real
   simulation: it pours (ground in the mortar where the plan says so),
-  stirs, kneads, crushes, heats and cools with feedback, and holds. In the game it is the homunculus upgrade, which
-  brews saved recipes. Tests and tools use it to prove orders achievable
+  stirs, kneads, crushes, heats and cools with feedback, holds, boils down
+  with the lid off until the brew has lost its share of volume (then lets
+  the steam out before the lid goes back, boiling off again what rains
+  back), and adds cold ingredients after the stages. In **step mode** it
+  replays a recorded procedure exactly, step by step. In the game it is the
+  homunculus upgrade, which brews saved recipes. Tests and tools use it to prove orders achievable
   and to run balancing playthroughs.
 * **`persistence.js`** autosaves to `localStorage` with a rolling backup,
   recovers from a damaged save, handles exporting and importing save files,

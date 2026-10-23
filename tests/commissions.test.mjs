@@ -63,7 +63,8 @@ test('requests are coherent: the wanted effects, the customer and the story come
       assert.ok(req.minTier <= tier);
       // (fresh shops have no market event, so no festival or plague extras)
       assert.ok(req.who.includes(com.customer.archetype), `${req.id} asked by a ${com.customer.archetype}`);
-      assert.ok(req.story.includes(com.dialogue), 'the story told is the request’s own');
+      // the request's own story, then whatever techniques the customer adds
+      assert.ok(req.story.some((t) => com.dialogue.startsWith(t)), 'the story told is the request’s own');
       const wanted = com.requirements.filter((r) => r.effect && r.key !== 'purity').map((r) => r.key).sort();
       assert.deepEqual(wanted, req.fx.map((f) => f.key).sort(), `${req.id} asks exactly for its effects`);
     }
@@ -81,13 +82,16 @@ test('targets rise with rank, every plan uses only what the shop can reach, and 
       const plan = com.reference;
       assert.ok((plan.heatTo ?? 20) <= st.cap.maxFlame - 30, 'the fire can reach it');
       assert.ok((plan.coolTo ?? 20) >= st.cap.minCool, 'the cold can reach it');
-      if (com.request) t.push(Math.abs(com.requirements[0].target));
+      // a boiled-down order is stronger than its tier by design: the rise is measured without it
+      // the demand of an order is the total strength it asks for across its wanted effects
+      // (masters combine several); a boiled-down order is stronger than its tier by design
+      if (com.request && !(com.techniques || []).includes('concentrate')) t.push(com.requirements.filter((r) => r.effect && r.key !== 'purity').reduce((a, r) => a + Math.abs(Number(r.target)), 0));
       if (com.activation) {
         activations++;
         assert.ok(tier >= 2);
         assert.ok(Object.keys(predictPlan(st.world, st.lookup, plan).composition).some(isAwakenedId), 'the plan awakens its magic');
         // without the awakening stage the same ingredients fall short
-        const plain = { ...plan, heatTo: Math.min(plan.heatTo, 20), coolTo: Math.max(plan.coolTo, 20), activate: false };
+        const plain = { ...plan, heatTo: Math.min(plan.heatTo, 20), coolTo: Math.max(plan.coolTo, 20), activate: false, reduce: undefined };
         const p2 = predictPlan(st.world, st.lookup, plain);
         const main = com.requirements[0];
         if (main.kind === 'min' && Math.abs(p2.effects[EFFECT_INDEX[main.key]]) < main.target) needed++;

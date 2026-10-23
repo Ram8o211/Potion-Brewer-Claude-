@@ -45,10 +45,10 @@ export class Tutorial {
       { text: 'Herbs steep only when warm. Slide the fire control to the right and bring the brew to about 60°C — heat enters through the bottom and spreads.', target: () => lab.furnaceInput.parentElement, done: () => brewT() >= 50 },
       { text: 'Is it really a healing tonic? Nobody knows until it is tested. Open the Trials room.', target: tab('trials'), done: () => lab.view === 'trials' },
       { text: 'Choose a rabbit in the hutch and give it a dose: press Give, or drag the dropper onto it. The dose is real potion from the tap. Each rabbit reads a potion a little differently — later, test several.', target: () => document.querySelector('[data-act=test-rabbit]') || lab.views.trials.hutch.el, done: rabbitTested },
-      { text: 'The rabbit shows how much vitality — and any frost or fire left over — this batch carries. Verified effects now count on the order. Back to the cauldron!', target: tab('brew'), done: () => lab.view === 'brew' },
+      { text: 'The rabbit shows how much vitality — and any frost or fire left over — this batch carries. One reading is a rough guess (see its wide ± band); a second rabbit narrows it, and demanding customers insist on that. Back to the cauldron!', target: tab('brew'), done: () => lab.view === 'brew' },
       { text: 'Let it cool to a warm 45°C or so, then press Bottle. A bottle can go to the counter or onto your potion shelves for later.', target: () => lab.bottleFab, done: () => this.flags.bottled },
       { text: 'Your sealed vial waits at the Counter. Offer it to the customer: seal its label (your trial reading is already written in), then agree on a price.', target: () => document.querySelector('[data-act=serve]') || tab('counter')(), done: () => this.flags.sold },
-      { text: 'Splendid — your first sale! New orders ask for strength, love, fire… Every herb carries side effects: gather in the Wilds, balance them against their opposites, test every mixture in the Trials room and save good recipes in your Book.', button: 'Run my shop!' },
+      { text: 'Splendid — your first sale! New orders ask for strength, love, fire — and soon for a true colour, a well-mixed brew, a density or a brew boiled down; the order card says what each takes. Each day dawns with the shop closed: gather dawn flowers, then open the door. Saved recipes keep every step, so you can brew them again exactly.', button: 'Run my shop!' },
     ];
   }
 

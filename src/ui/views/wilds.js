@@ -71,7 +71,7 @@ export class WildsView {
     clear(this.sky).append(...[
       h('div', { class: 'row wrap sky-row' },
         icon(part === 'dawn' ? 'sun' : part === 'dusk' ? 'wisp' : 'sun', 'sm'), h('b', { text: lab.sandbox ? 'Any hour' : DAY_PART_NAME[part] }),
-        lab.sandbox ? null : h('span', { class: 'muted', text: part === 'dawn' ? '(the first customer of the day)' : part === 'dusk' ? '(the last customer, and after closing)' : '' }),
+        lab.sandbox ? null : h('span', { class: 'muted', text: part === 'dawn' ? '(until you open the shop)' : part === 'dusk' ? '(after the last customer, until you close)' : '(the shop is open)' }),
         h('span', { class: 'spacer' }), icon(weather.icon, 'sm'), h('b', { text: lab.sandbox ? '' : weather.name })),
       lab.sandbox || weather.id === 'clear' ? null : h('div', { class: 'muted', text: weather.desc }),
       h('div', { class: 'row wrap seg harvest-mode' }, h('span', { text: 'Harvest:' }), mode('Careful', false, 'harvest-careful'), mode('Thorough ×2', true, 'harvest-thorough'),

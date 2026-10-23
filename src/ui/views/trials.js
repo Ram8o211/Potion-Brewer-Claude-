@@ -3,9 +3,9 @@
 // right where they live. Every dose reads a little differently and each
 // rabbit feels a potion a little more or less than the next, so one reading
 // is only a rough guess. One section shows what the brew is expected to do:
-// every effect as a percentage — the plain mean of every trial of the batch
-// and their standard deviation (after one trial: that reading, ±0, flagged
-// as a first, imprecise measure). Trials on the same rabbit keep the others
+// every effect as a percentage — the mean of every trial of the batch, the
+// margin of that mean (a single reading carries the full margin of one
+// dose, never ±0) and the level of the evidence. Trials on the same rabbit keep the others
 // clean but pile the effect up in it towards a degeneration threshold that
 // is hidden and its own; trials on others average out each rabbit's bias. Any trial can be replayed on the chosen rabbit's
 // portrait without spending a drop.
@@ -17,7 +17,12 @@ import { SUBJECT_BY_ID, DOSES, missingEffects } from '../../game/experiments.js'
 import { EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, EFFECT_KEYS, potencyWord } from '../../alchemy/effects.js';
 import { SIM } from '../../simulation/constants.js';
 import { applyTrials } from '../../game/commerce.js';
-import { summarize, addSamples } from '../../game/experiments.js';
+import { summarize, addSamples, EVIDENCE_TEXT, evidenceRank } from '../../game/experiments.js';
+import { evidenceOf } from '../../game/commerce.js';
+import { shortName } from '../../game/customers.js';
+
+/** A short word for each evidence level (experiments.js). */
+const LEVEL_SHORT = { preliminary: '1 reading', repeated: 'repeated', corroborated: 'corroborated', certified: 'certified' };
 import { drawRabbit } from '../../rendering/rabbit.js';
 import { focusRabbit, findRabbit, rabbitSnap, decodeSnap, lookFromSeed, RABBIT_MARKS } from '../../game/colony.js';
 import { HutchPanel } from './hutch.js';
@@ -153,9 +158,10 @@ export class TrialsView {
 
   /**
    * The one section that says what the brew does: each effect's expected
-   * strength (the mean of every trial of it) with the standard deviation of
-   * those trials; a single trial is shown as it is, ±0, flagged as a first
-   * measure.
+   * strength (the mean of every trial of it), the margin within which the
+   * true strength lies (never ±0: one reading carries the margin of a single
+   * dose) and how strong the evidence is (one reading, repeated on one
+   * rabbit, corroborated on several, certified).
    * @param {any} cert
    */
   renderExpected(cert) {
@@ -175,23 +181,35 @@ export class TrialsView {
     }
     const rows = h('div', { class: 'reading-rows' });
     for (const k of shown) {
-      const e = EFFECT_BY_KEY[k], v = cert.values[k], sp = sdRound(cert.spread[k] || 0), one = (cert.n[k] || 0) === 1;
-      const lo = Math.max(0, Math.abs(v) - sp), hi = Math.min(100, Math.abs(v) + sp);
+      const e = EFFECT_BY_KEY[k], v = cert.values[k], one = (cert.n[k] || 0) === 1;
+      const u = sdRound((cert.unc || {})[k] ?? (cert.spread[k] || 0)), sd = sdRound(cert.spread[k] || 0);
+      const lvl = (cert.level || {})[k] || (one ? 'preliminary' : 'repeated');
+      const lo = Math.max(0, Math.abs(v) - u), hi = Math.min(100, Math.abs(v) + u);
       const t = th ? th[k] : undefined;
-      rows.appendChild(h('div', { class: 'reading' + (one ? ' first' : ''), 'data-effect': k, title: `${e.label}: ${cert.n[k]} reading${cert.n[k] === 1 ? '' : 's'} on ${cert.rabbits[k]} rabbit${cert.rabbits[k] === 1 ? '' : 's'}${t !== undefined ? ` · theory ${Math.round(t)}%` : ''}` },
+      rows.appendChild(h('div', { class: 'reading lvl-' + lvl + (one ? ' first' : ''), 'data-effect': k, 'data-level': lvl, title: `${e.label}: ${cert.n[k]} reading${cert.n[k] === 1 ? '' : 's'} on ${cert.rabbits[k]} rabbit${cert.rabbits[k] === 1 ? '' : 's'}${one ? '' : `, which differ by about ±${sd} from each other`} · ${EVIDENCE_TEXT[lvl]}${t !== undefined ? ` · theory ${Math.round(t)}%` : ''}` },
         icon(e.icon, 'sm'), h('span', { class: 'rk', text: e.label }),
         h('div', { class: 'rbar' },
-          sp > 0 ? h('i', { class: 'range', style: { left: lo + '%', width: (hi - lo) + '%', background: rgb(e.color) } }) : null,
+          u > 0 ? h('i', { class: 'range', style: { left: lo + '%', width: (hi - lo) + '%', background: rgb(e.color) } }) : null,
           t !== undefined && Math.abs(t) >= 0.5 ? h('i', { class: 'th theory', style: { left: Math.min(100, Math.abs(t)) + '%' } }) : null,
           h('i', { class: 'th mean', style: { left: Math.min(100, Math.abs(v)) + '%' } })),
-        h('span', { class: 'rv', text: `${fmtPct(v)}% ±${sp}${one ? ' · 1st' : ''} · ${potencyWord(v, k)}` })));
+        h('span', { class: 'rv', text: `${fmtPct(v)}% ±${u} · ${LEVEL_SHORT[lvl]}` })));
     }
     if (shown.length) el.append(rows);
     const none = tested.filter((k) => !shown.includes(k));
     if (none.length) el.append(h('div', { class: 'small muted quiet' }, shown.length ? 'Not seen: ' : 'No effect seen: ', ...none.map((k) => icon(EFFECT_BY_KEY[k].icon, 'sm'))));
-    if (firsts.length) el.append(h('div', { class: 'warn small first-flag', text: `First measure${firsts.length === shown.length ? '' : ` (${firsts.map((k) => EFFECT_BY_KEY[k].label).join(', ')})`}: one trial only, so the value is that single reading and its ±0 means nothing yet — it is imprecise. Test again to see how much the readings vary.` }));
-    el.append(h('div', { class: 'small muted est-foot', text: 'Value: the mean of every trial. ±: their standard deviation (band: mean ± one deviation). Labels use the mean.' }));
-    if (rabbits <= 1 && trials >= 2) el.append(h('div', { class: 'warn small', text: 'All on one rabbit: the others stay clean, but the effect piles up in it — and nobody knows how much it can take before it runs out of control.' }));
+    if (firsts.length) el.append(h('div', { class: 'warn small first-flag', text: `First measure${firsts.length === shown.length ? '' : ` (${firsts.map((k) => EFFECT_BY_KEY[k].label).join(', ')})`}: one reading only, so its margin is that of a single dose — wide. Test again; a second rabbit narrows it most.` }));
+    el.append(h('div', { class: 'small muted est-foot', text: 'Value: the mean of every trial. ±: how far the true strength may lie from it (the band). One rabbit’s own bias never averages out on that rabbit — other rabbits average it away. Hover a row for how much the readings differed.' }));
+    if (rabbits <= 1 && trials >= 2) el.append(h('div', { class: 'warn small', text: 'All on one rabbit: the others stay clean, but its own bias stays in the estimate and the effect piles up in it — and nobody knows how much it can take before it runs out of control.' }));
+    // what the order's customer will make of this evidence
+    const com = this.lab.state.current;
+    if (com && !this.lab.sandbox) {
+      const proof = com.customer.persona ? com.customer.persona.proof : 0.5;
+      const need = proof >= 0.92 ? 'corroborated' : proof >= 0.8 ? 'repeated' : null;
+      const keys = com.requirements.filter((r) => r.effect && r.key !== 'purity').map((r) => r.key);
+      const short = need ? keys.filter((k) => cert.level && (cert.level[k] === undefined || evidenceRank(cert.level[k]) < evidenceRank(need))) : [];
+      if (need && short.length) el.append(h('div', { class: 'small proof-need', text: `${shortName(com.customer.name)} insists on proof: ${short.map((k) => EFFECT_BY_KEY[k].label).join(', ')} must be ${need === 'corroborated' ? 'read on at least two rabbits' : 'tested more than once'}.` }));
+      else if (keys.length && keys.every((k) => cert.level && cert.level[k])) el.append(h('div', { class: 'small ok', text: need ? `Enough proof for ${shortName(com.customer.name)}.` : 'Stronger evidence (more rabbits) makes customers trust your label — and pay — more.' }));
+    }
   }
 
   /** The pooled estimate of the source being tested (batch or vial). */
@@ -257,8 +275,10 @@ export class TrialsView {
         const sum = summarize(vial.samples);
         vial.cert = sum.values;
         vial.certRecords = sum.records;
-        if (vial.label) applyTrials(vial.label, Object.fromEntries(Object.keys(record.values).map((k) => [k, sum.values[k]])), record.id);
+        if (vial.label) applyTrials(vial.label, Object.fromEntries(Object.keys(record.values).map((k) => [k, sum.values[k]])), record.id, evidenceOf(vial));
       }
+      // every bottle of this batch shares the new reading (each checked against its own contents)
+      lab.shareEvidence(record.batchId);
       this.last = record;
       this.replay = null;
       this.rreact[rabbit.id] = 1;

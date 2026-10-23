@@ -9,6 +9,7 @@
 // remains or bury it. Buying, feeding, breeding and the purging draughts
 // live in the head of the panel.
 
+import { readingSteadiness } from '../../game/experiments.js';
 import { h, btn, clear, toast, modal, confirmDialog } from '../dom.js';
 import { icon } from '../icons.js';
 import { audio } from '../../audio/audio.js';
@@ -184,7 +185,8 @@ export class HutchPanel {
           h('div', { class: 'rd-title' }, h('b', { text: r.name }), h('span', { class: 'small muted', text: ` ${r.sex === 'f' ? 'doe' : 'buck'} · ${STAGE_WORD[stage]}${r.alive ? ` · ${age >= 0 ? `${age} day${age === 1 ? '' : 's'} old` : 'grown'}` : ''}` })),
           h('div', { class: 'small', text: words.join(' · ') }),
           r.alive ? h('div', { class: 'rd-hp' }, icon('heart', 'sm'), h('span', { class: 'bar hp big' }, hpFill), hpText) : null,
-          h('div', { class: 'small muted', text: `${r.trials} trial${r.trials === 1 ? '' : 's'}${parents.length ? ` · child of ${parents.join(' and ')}` : ''}` }))),
+          h('div', { class: 'small muted', text: `${r.trials} trial${r.trials === 1 ? '' : 's'}${parents.length ? ` · child of ${parents.join(' and ')}` : ''}` }),
+          r.alive ? (() => { const k = readingSteadiness(r, st.day); return h('div', { class: 'small steadiness ' + (k <= 1.02 ? 'ok' : 'warn'), 'data-steadiness': String(Math.round(k * 100) / 100), title: 'How steady its readings are, from its age and health (its own hidden sensitivity is not in it)', text: k <= 1.02 ? 'Readings: steady' : k <= 1.2 ? 'Readings: a little unsteady' : 'Readings: shaky — hurt or very young or old' }); })() : null)),
       r.alive ? effects : null,
       h('div', { class: 'row wrap rd-actions' }, ...actions));
     return out;

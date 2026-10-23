@@ -8,16 +8,19 @@ import { serializeMaterial, deserializeMaterial } from '../materials/schema.js';
 import { generateCommission, tutorialCommission } from './commissions.js';
 import { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById } from './equipment.js';
 import { SIM } from '../simulation/constants.js';
-import { createTrials, normalizeTrials, runTrial, SUBJECT_BY_ID, knownLaws } from './experiments.js';
-import { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth } from './gathering.js';
+import { createTrials, normalizeTrials, runTrial, SUBJECT_BY_ID, knownLaws, certification, summarize } from './experiments.js';
+import { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth, depositStatus } from './gathering.js';
 import { predictPlan } from './predict.js';
 import { EFFECT_INDEX } from '../alchemy/effects.js';
 import { migrateVial } from './vial.js';
-import { recordSale, resolveFollowUp } from './commerce.js';
+import { recordSale, resolveFollowUp, applyTrials, evidenceOf } from './commerce.js';
 import { colonyDay, colonyTick, livingRabbits, findRabbit, addBoughtRabbit, retireRabbit, remainsSource, purgeRabbit, cullRabbit, maxHealthOf, FOUNDER_BORN } from './colony.js';
 import { remainsMaterials, remainsPlan, isRemains } from '../materials/remains.js';
+import { returningPatron, welcomePatron, recentStyles, notePatron, patronVerdict, noveltyFactor } from './patrons.js';
+import { techniqueById } from './commissions.js';
+import { migrateRecipe } from './recipes.js';
 
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 /** A purging draught at the apothecary, and brewed in the still. */
 export const PURGE_PRICE = 8;
 export const PURGE_BREW_COST = 1;
@@ -137,6 +140,10 @@ export class GameState {
     /** @type {any[]} */ this.followUps = Array.isArray(data.followUps) ? data.followUps : [];
     /** friends sent by satisfied customers, still to arrive */
     /** @type {number} */ this.referrals = data.referrals | 0;
+    /** the shop door has been opened today (dawn ends; gathering.js dayPart) */
+    /** @type {boolean} */ this.opened = data.opened !== undefined ? !!data.opened : (data.customerIndex | 0) > 0 || !!data.current;
+    /** customers who have been here before: what they bought and how it went (customers.js) */
+    /** @type {Record<string, any>} */ this.patrons = data.patrons && typeof data.patrons === 'object' ? data.patrons : {};
     /** identity of the brew in the cauldron: a new id when it is emptied, rev++ on every addition */
     this.batch = data.batch && typeof data.batch.id === 'string' ? { id: data.batch.id, rev: data.batch.rev | 0 } : newBatch();
     this.lookup = makeLookup(this.world);
@@ -222,7 +229,7 @@ export class GameState {
 
   /** Ingredients the player may buy now (unlocked by rank). */
   purchasable() {
-    return this.world.ingredients.filter((id) => { const m = this.lookup(id); return m && !isRemains(m) && (m.tier || 0) <= this.rank; });
+    return this.world.ingredients.filter((id) => { const m = this.lookup(id); return m && !isRemains(m) && !(m.wild && m.wild.gatherOnly) && !m.product && (m.tier || 0) <= this.rank; });
   }
 
   /** Ingredient ids that are buyable or in stock. */
@@ -537,8 +544,29 @@ export class GameState {
     return this.inventory[id] ?? 0;
   }
 
+  /**
+   * May this ingredient be bought at the market now? The same rules as the
+   * market panel: only ingredients the market stocks (solvents, and the
+   * herbalist's common wild ones from their rank on), never gather-only
+   * finds, rabbit remains, reaction products or the retired prepared reagents.
+   * @param {string} id
+   * @returns {{ok:boolean, reason?:string}}
+   */
+  canBuy(id) {
+    const m = this.lookup(id);
+    if (!m) return { ok: false, reason: 'Unknown ingredient.' };
+    if (id === this.world.roles.water) return { ok: false, reason: 'Well water is free.' };
+    if (isRemains(m)) return { ok: false, reason: 'Remains are never sold.' };
+    if (m.wild && m.wild.gatherOnly) return { ok: false, reason: `${m.name} is only found in the wilds.` };
+    if (!this.world.ingredients.includes(id) || m.product) return { ok: false, reason: 'The market does not sell that.' };
+    if ((m.tier || 0) > this.rank) return { ok: false, reason: `The herbalist sells ${m.name} from the rank of ${(RANKS[m.tier] || RANKS[RANKS.length - 1]).name}.` };
+    return { ok: true };
+  }
+
   /** @param {string} id @param {number} ml */
   buy(id, ml) {
+    const legal = this.canBuy(id);
+    if (!legal.ok) return { ok: false, reason: legal.reason };
     const room = this.cap.storage - this.stock(id);
     const amount = Math.min(ml, room);
     if (amount <= 0) return { ok: false, reason: 'Your shelves are full for that reagent.' };
@@ -645,6 +673,34 @@ export class GameState {
     return { ok: true, bottle: b };
   }
 
+  /**
+   * Bottles of one batch share its evidence: every trial of that batch and
+   * revision — from the cauldron, the counter's vial or any shelved bottle —
+   * counts for each of them, checked against each bottle's own contents (a
+   * bottle drawn from a different layer reads stale instead). Readings a
+   * bottle already held stay, even once the trial log has forgotten them.
+   * @param {string} [batchId] only bottles of this batch
+   */
+  shareEvidence(batchId) {
+    const known = new Set(this.trials.records.map((r) => r.id));
+    for (const v of [this.vial, ...this.bottles]) {
+      if (!v || !v.batchId || (batchId && v.batchId !== batchId) || !v.m) continue;
+      const cert = certification(this.trials, { id: v.batchId, rev: v.rev }, v.m.effects);
+      /** @type {Record<string, any[]>} */
+      const merged = {};
+      for (const [k, list] of Object.entries(v.samples || {})) merged[k] = list.filter((x) => !known.has(x.rec) || (cert.samples[k] || []).some((y) => y.rec === x.rec));
+      for (const [k, list] of Object.entries(cert.samples)) for (const x of list) if (!(merged[k] ||= []).some((y) => y.rec === x.rec)) merged[k].push(x);
+      for (const k of Object.keys(merged)) if (!merged[k].length) delete merged[k];
+      const count = (o) => Object.values(o || {}).reduce((a, l) => a + l.length, 0);
+      const sum = summarize(merged);
+      const changed = JSON.stringify(sum.values) !== JSON.stringify(v.cert || {}) || count(merged) !== count(v.samples);
+      v.samples = merged;
+      v.cert = sum.values;
+      v.certRecords = sum.records;
+      if (changed && v.label) applyTrials(v.label, sum.values, Object.values(sum.records)[0] || '', evidenceOf(v));
+    }
+  }
+
   /** Remove a bottle from the shelves (it is poured away or back). @param {string} id */
   removeBottle(id) {
     const k = this.bottles.findIndex((b) => b.id === id);
@@ -653,11 +709,35 @@ export class GameState {
   }
 
   // ------------------------------------------------------------ customers
+  /**
+   * How much of an ingredient the shop can lay hands on today without
+   * buying it: the stock on the shelf plus what careful harvests of every
+   * reachable deposit would bring right now (method, tool, hour and weather
+   * included). Purchases come on top (canBuy).
+   * @param {string} id @param {number} [now]
+   */
+  supplyOf(id, now = Date.now()) {
+    const stock = this.stock(id);
+    if (!isFinite(stock)) return Infinity;
+    let wild = 0;
+    for (const d of this.deposits) {
+      if (d.materialId !== id || d.rank > this.rank) continue;
+      const plan = gatherPlan(this, d, this.lookup(id));
+      // repeated careful harvests: everything above the reserve, at today's usable share
+      const s = depositStatus(this.gathering, d, now);
+      wild += Math.floor((Math.max(0, s.stock - plan.reserve) * plan.eff) / 5) * 5;
+    }
+    return stock + wild;
+  }
+
   commissionContext() {
     const available = this.availableSet();
     for (const id of this.gatherableSet()) available.add(id);
     // orders are never planned around a rabbit's remains (their effects are unknown)
     for (const id of [...available]) if (isRemains(this.lookup(id))) available.delete(id);
+    const now = Date.now();
+    /** @type {Map<string, number>} */
+    const supplies = new Map();
     return {
       world: this.world,
       lookup: this.lookup,
@@ -666,6 +746,11 @@ export class GameState {
       rank: this.rank,
       priceOf: (id) => this.priceOf(id),
       event: this.market.event,
+      coins: this.coins,
+      // what the shop can gather or holds today, and what it may buy
+      supply: (id) => { if (!supplies.has(id)) supplies.set(id, this.supplyOf(id, now)); return /** @type {number} */ (supplies.get(id)); },
+      buyable: (id) => this.canBuy(id).ok,
+      stock: (id) => this.stock(id),
     };
   }
 
@@ -673,17 +758,38 @@ export class GameState {
   nextCustomer() {
     if (this.current) return this.current;
     if (this.customerIndex >= this.customersPerDay) return null;
+    this.opened = true;
+    // a customer the shop cannot serve with anything it can gather, hold or
+    // buy today never comes in: the next one does (the day can never stall)
+    for (let guard = 0; guard < 4 && this.customerIndex < this.customersPerDay; guard++) {
+      const com = this._makeCustomer();
+      if (com) { this.current = com; return com; }
+      this.customerIndex++;
+    }
+    return null;
+  }
+
+  /** Generate the customer at the current index (null if nothing feasible could be asked). */
+  _makeCustomer() {
     const rng = new Rng(hashString(`${this.seed}:${this.day}:${this.customerIndex}`));
+    const ctx = this.commissionContext();
     let com;
     if (this.tutorial.active && !this.tutorial.done && this.stats.served === 0) {
-      com = tutorialCommission(this.commissionContext(), rng);
+      com = tutorialCommission(ctx, rng);
     } else if (this.rank >= 4 && !this.grandDone && this.customerIndex === 0 && this.day % 2 === 0) {
       com = this.grandCommission(rng);
-    } else {
+    }
+    if (!com) {
       const contract = this.has('charter') && this.rank >= 2 && this.customerIndex === this.customersPerDay - 1;
       // difficulty follows rank, with some easier and harder requests mixed in
       const tier = Math.max(0, Math.min(4, this.rank + (rng.chance(0.25) ? -1 : 0) + (rng.chance(0.15) ? 1 : 0)));
-      com = generateCommission(this.commissionContext(), rng, { tier: Math.min(tier, this.rank + 1), contract });
+      const patron = returningPatron(this, rng);
+      const opts = { tier: Math.min(tier, this.rank + 1), contract, patron, recent: recentStyles(this) };
+      com = generateCommission(ctx, rng, opts);
+      // fallback: the same customer with an easier need, then the plainest order of all
+      for (let t = opts.tier - 1; !com && t >= 0; t--) com = generateCommission(ctx, rng, { ...opts, tier: t, contract: false });
+      if (!com) com = generateCommission(ctx, rng, { tier: 0, simple: true });
+      if (com && patron) welcomePatron(com, patron, this);
       if (com && this.referrals > 0) {
         // a friend of a satisfied customer: they come with a better budget
         this.referrals--;
@@ -692,13 +798,13 @@ export class GameState {
         com.dialogue = `A friend told me your potions really work. ${com.dialogue}`;
       }
     }
-    this.current = com;
-    return com;
+    return com || null;
   }
 
   grandCommission(rng) {
-    const com = generateCommission(this.commissionContext(), rng, { tier: 4, style: 'panacea', archetype: 'noble', contract: true }) ||
-      generateCommission(this.commissionContext(), rng, { tier: 4, contract: true });
+    const ctx = this.commissionContext();
+    const com = generateCommission(ctx, rng, { tier: 4, request: rng.pick(['warpath', 'starseer']), contract: true, techniques: ['colour'] }) ||
+      generateCommission(ctx, rng, { tier: 4, contract: true });
     if (com) {
       com.grand = true;
       com.customer.name = 'Queen Isolde’s Herald';
@@ -786,6 +892,12 @@ export class GameState {
     sale.perfect = ev.perfect;
     sale.stars = ev.stars;
     sale.grand = !!com.grand;
+    sale.style = com.style || null;
+    sale.techniques = com.techniques || [];
+    // orders well below the shop's rank (and the same one over and over) teach the guild little
+    const novelty = noveltyFactor(sale.style, recentStyles(this), com.tier || 0, this.rank);
+    if (sale.repDelta > 0 && novelty < 1) { sale.repDelta = Math.round(sale.repDelta * novelty); sale.novelty = novelty; }
+    notePatron(this, com);
     const events = this._bookSale(com, ev, truth, price, 1, sale.id);
     this.sales.unshift(sale);
     if (this.sales.length > 80) this.sales.length = 80;
@@ -826,7 +938,15 @@ export class GameState {
       const hist = this.history.find((x) => x.saleId === sale.id);
       if (hist && hist.quality === null) { hist.quality = sale.quality; hist.stars = sale.stars ?? null; }
       events.push(...this._verdict(sale.quality, !!sale.perfect, !!sale.grand));
+      // a technique that worked for a paying customer is mastered: the guild takes note
+      if (sale.quality >= 0.85) for (const t of sale.techniques || []) {
+        const T = techniqueById(t);
+        if (!T) continue;
+        const entry = this.discover({ key: 'technique:' + t, title: `Technique: ${T.name}`, text: T.lesson, kind: 'technique' });
+        if (entry) { events.push({ type: 'technique', id: t, name: T.name, text: T.lesson }); events.push(...this.adjustReputation(4)); }
+      }
     }
+    patronVerdict(this, f, action);
     return { ...r, events };
   }
 
@@ -873,6 +993,7 @@ export class GameState {
     this.dayEarnings = 0;
     this.daySpending = 0;
     this.current = null;
+    this.opened = false;
     this.customersPerDay = 3 + Math.floor(this.rank / 2);
     this.rollMarket();
     newDayRegrowth(this.gathering, this.deposits);
@@ -1012,6 +1133,8 @@ export class GameState {
       sales: this.sales,
       followUps: this.followUps,
       referrals: this.referrals,
+      opened: this.opened,
+      patrons: this.patrons,
       savedAt: Date.now(),
     };
   }
@@ -1120,6 +1243,14 @@ export function migrate(raw) {
     d.followUps = Array.isArray(d.followUps) ? d.followUps : [];
     d.referrals = d.referrals | 0;
     d.version = 4;
+  }
+  if (d.version < 5) {
+    // v5: the shop door is the day's clock, customers remember the shop,
+    // and recipes record their procedure (older ones are marked approximate)
+    d.opened = (d.customerIndex | 0) > 0 || !!d.current;
+    d.patrons = d.patrons && typeof d.patrons === 'object' ? d.patrons : {};
+    d.recipes = (d.recipes || []).map(migrateRecipe);
+    d.version = 5;
   }
   if (d.world && Array.isArray(d.world.materials) && d.world.materials.length === 0) throw new Error('The save has no reagents');
   if (!d.inventory || typeof d.inventory !== 'object') throw new Error('The save has no inventory');
