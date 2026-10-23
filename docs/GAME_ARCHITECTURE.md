@@ -387,7 +387,7 @@ into the new vessel's shape instead of being dropped.
   orders' plans — every technique, every tier — in the real simulation for
   *realistic* shops (the equipment a player of that rank typically owns, a
   modest purse) and fully equipped ones (`autobrew.js`, stages pour → crush
-  → stir → steep → heat/chill → hold → reduce → serve → late additions;
+  → stir → steep → heat/chill → hold → reduce → serve;
   recorded procedures replay step by step, boil-downs to the share that
   boiled away).
 * **`patrons.js`** remembers customers by name: visits, potions that

@@ -26,8 +26,6 @@ export const ACTIVATION_MARGIN = 6;
  * @property {{T:number, hold:number}} [steep] an extraction stage before anything else (°C, seconds)
  * @property {{frac:number}} [reduce] boil off this share of the brew's volume with the lid open
  *           (the most volatile solvents go first: spirit before water); what does not boil stays
- * @property {{id:string, n:number, ground?:boolean}[]} [late] added after the heat stages, at serving
- *           temperature (they never see the steep, so they react only as they would cold)
  */
 
 /** Species tables by world lookup (predictPlan). @type {WeakMap<Function, SpeciesTable>} */
@@ -104,23 +102,6 @@ export function predictPlan(world, lookup, plan) {
       vol.set(x.id, x.v - take);
       total -= take;
       left -= take;
-    }
-  }
-  // late additions: cold, after the stages (only reactions that run at serving temperature)
-  if (plan.late && plan.late.length) {
-    const T = plan.serveTemp ?? 20;
-    for (const ing of plan.late) { vol.set(ing.id, (vol.get(ing.id) || 0) + ing.n); total += ing.n; }
-    for (const r of world.reactions) {
-      if (!plan.late.some((i) => i.id === r.a || i.id === r.b)) continue;
-      const a = vol.get(r.a) || 0, b = r.b ? vol.get(r.b) || 0 : Infinity;
-      if (a <= 0 || b <= 0 || r.minT > T || r.maxT < T) continue;
-      const ext = Math.min(a / r.ra, r.b ? b / r.rb : Infinity) * (r.kind === 'decompose' ? 0.55 : 0.88);
-      if (ext <= 0.01) continue;
-      vol.set(r.a, a - ext * r.ra);
-      if (r.b) vol.set(r.b, b - ext * r.rb);
-      const used = ext * (r.ra + (r.b ? r.rb : 0));
-      for (const pr of r.products) vol.set(pr.id, (vol.get(pr.id) || 0) + used * pr.frac);
-      fired.push(r.id);
     }
   }
   // gaseous products escape the liquid (they bubble out)

@@ -618,7 +618,7 @@ export function checkSupply(plan, ctx) {
   if (!ctx.supply) return out;
   /** @type {Map<string, number>} */
   const need = new Map();
-  for (const ing of [...plan.ingredients, ...(plan.late || [])]) need.set(ing.id, (need.get(ing.id) || 0) + ing.n * SIM.ML_PER_PARTICLE * TEST_MARGIN);
+  for (const ing of plan.ingredients) need.set(ing.id, (need.get(ing.id) || 0) + ing.n * SIM.ML_PER_PARTICLE * TEST_MARGIN);
   for (const [id, ml] of need) {
     if (id === ctx.world.roles.water) continue;
     const free = ctx.supply(id);

@@ -7,7 +7,7 @@ import { PHASE, SIM } from '../simulation/constants.js';
 import { MAX_SPECIES } from '../reactions/species.js';
 
 /**
- * @typedef {'pour'|'crush'|'stir'|'steep'|'heat'|'hold'|'reduce'|'serve'|'late'|'steps'|'done'} Stage
+ * @typedef {'pour'|'crush'|'stir'|'steep'|'heat'|'hold'|'reduce'|'serve'|'steps'|'done'} Stage
  */
 
 /** Liquid (non-vapour) particles in the cauldron. @param {import('../simulation/world.js').Simulation} sim */
@@ -59,7 +59,6 @@ export class AutoBrewer {
     this.target = 20;
     this.reduceFrom = 0;
     this.venting = 0;
-    this.lateDone = false;
     if (this.steps) this.stage = 'steps';
   }
 
@@ -201,27 +200,7 @@ export class AutoBrewer {
         const err = this.control(plan.serveTemp ?? 20);
         this.status = `Bringing to ${Math.round(plan.serveTemp ?? 20)}°C`;
         if (this.stageT % 2 < 1.2) this.stir(0.8); else this.release();
-        if ((err < 3 && this.stageT > 3) || this.stageT > 60) {
-          if (plan.late && plan.late.length && !this.lateDone) { this.next('late'); return; }
-          this.finish();
-        }
-        return;
-      }
-      case 'late': {
-        // cold additions after the stages: poured at serving temperature, then worked in
-        this.control(plan.serveTemp ?? 20);
-        if (sim.emitter.pouring) { this.stir(0.6); return; }
-        const late = plan.late || [];
-        if (this.ingIndex < plan.ingredients.length + late.length) {
-          const ing = late[this.ingIndex - plan.ingredients.length];
-          this.ingIndex++;
-          if (!this.pourOne(ing)) return;
-          return;
-        }
-        this.lateDone = true;
-        this.status = 'Working it in';
-        this.stir(1);
-        if (this.stageT > (plan.knead ? 14 : 8)) this.finish();
+        if ((err < 3 && this.stageT > 3) || this.stageT > 60) this.finish();
         return;
       }
     }
