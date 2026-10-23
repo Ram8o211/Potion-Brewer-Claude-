@@ -53,9 +53,9 @@ export const SUBJECT_BY_ID = Object.fromEntries([...SUBJECTS, ...RETIRED].map((s
 export const RECORD_LIMIT = 160;
 export const DOSES = [5, 10, 25];
 /** Per-dose variation of a reading (relative, one sigma, for an adult and 10 ml). */
-export const DOSE_NOISE = 0.16;
+export const DOSE_NOISE = 0.3;
 /** Absolute per-dose variation of a reading (one sigma, for an adult and 10 ml). */
-export const READ_NOISE = 0.4;
+export const READ_NOISE = 1.5;
 
 /** Absolute/relative tolerance for "the brew still matches the trial". */
 export function driftTolerance(v) {

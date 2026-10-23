@@ -3376,6 +3376,8 @@ const AGGRO_AT = 60;
 const LOVE_MATE = 25;
 const MATE_EVERY = [60, 3];
 const MARK_TAU = 600;
+const BURNS = ['fire', 'acid'];
+const BURN_RATE = 0.3;
 const MAX_BONUS = 150;
 const DEGEN_RISE = 0.25;
 const ATTACK_EVERY = [9, 4];
@@ -3472,6 +3474,9 @@ return AGGRO.filter((k) => (r.marks[k] || 0) >= aggroAt(r, k)).sort((p, q) => (r
 function isFeral(r) {
 return aggroOf(r).length > 0;
 }
+function burnRate(v) {
+return v > 0 ? BURN_RATE * Math.min(1, v / MARK_MAX) ** 1.5 : 0;
+}
 function mateEvery(love) {
 if (!(love >= LOVE_MATE)) return Infinity;
 const t = clamp((love - LOVE_MATE) / (MARK_MAX - LOVE_MATE), 0, 1);
@@ -3481,7 +3486,7 @@ function mateCost(love) {
 const t = clamp((love - LOVE_MATE) / (MARK_MAX - LOVE_MATE), 0, 1);
 return 0.5 + 6 * t * t;
 }
-const RABBIT_BIAS = 0.08;
+const RABBIT_BIAS = 0.1;
 function rabbitSensitivity(r, key) {
 const rng = new Rng(hashString(`sens:${r.id}:${r.look ? r.look.seed : 0}:${key}`));
 return Math.round(clamp(Math.exp(RABBIT_BIAS * rng.gauss()), 0.6, 1.6) * 1000) / 1000;
@@ -3543,6 +3548,7 @@ const emptyMarks = () => Object.fromEntries(RABBIT_MARKS.map((k) => [k, 0]));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const fin = (v, d) => (Number.isFinite(Number(v)) ? Number(v) : d);
 const round1 = (v) => Math.round(v * 10) / 10;
+const round4 = (v) => Math.round(v * 1e4) / 1e4;
 function founders() {
 const clover = { coat: [0.93, 0.89, 0.82], coat2: [0.36, 0.24, 0.18], pattern: 'solid', ear: 'upright', size: 1, eye: 'dark', tail: 1, seed: 1 };
 const bramble = { coat: [0.55, 0.42, 0.3], coat2: [0.93, 0.89, 0.82], pattern: 'agouti', ear: 'lop', size: 1.05, eye: 'dark', tail: 1, seed: 2 };
@@ -3764,18 +3770,21 @@ for (const r of c.rabbits) {
 if (!r.alive) continue;
 const dg = degenOf(r);
 let drain = 0, topped = null;
+const hurts = {};
 for (const k of RABBIT_MARKS) {
 if (dg.includes(k)) {
 const v = r.marks[k];
 r.marks[k] = round1(Math.min(MARK_MAX, v + degenRate(r, k) * (0.6 + 0.8 * v / MARK_MAX) * dt));
 if (r.marks[k] >= MARK_MAX && !topped) topped = k;
-if (LETHAL.includes(k)) drain += (0.4 + 1.6 * r.marks[k] / 100) * dt;
+if (LETHAL.includes(k)) hurts[k] = (0.4 + 1.6 * r.marks[k] / 100) * dt;
 } else {
 const v = r.marks[k] * fade;
-r.marks[k] = v < 0.3 ? 0 : Math.round(v * 100) / 100;
+r.marks[k] = v < 0.3 ? 0 : Math.round(v * 1e4) / 1e4;
 }
 }
 if (topped) { die(r, CAUSE_OF[topped] || 'poison'); continue; }
+for (const k of BURNS) if (r.marks[k] > 0) hurts[k] = (hurts[k] || 0) + burnRate(r.marks[k]) * dt;
+for (const v of Object.values(hurts)) drain += v;
 if (dg.includes('vitality')) r.bonus = round1(Math.min(MAX_BONUS, (r.bonus || 0) + 0.25 * dt));
 if (dg.includes('transformation')) {
 const e0 = r.exposure.transformation;
@@ -3784,13 +3793,15 @@ for (const t of growTraits(r, e0, r.exposure.transformation, r.marks)) rep.trait
 }
 const max = maxHealthOf(r, day);
 if (drain > 0) {
-r.health = round1(r.health - drain);
+r.health = round4(r.health - drain);
+const burned = BURNS.reduce((a, k) => a + (dg.includes(k) ? 0 : burnRate(r.marks[k]) * dt), 0);
+if (burned > 0) r.scar = Math.min(80, round4((r.scar || 0) + 0.05 * burned));
 if (r.health <= 0.5) {
-const worst = dg.filter((k) => LETHAL.includes(k)).sort((p, q) => r.marks[q] - r.marks[p])[0];
-die(r, CAUSE_OF[worst] || 'poison');
+const worst = Object.entries(hurts).sort((p, q) => q[1] - p[1])[0];
+die(r, (worst && CAUSE_OF[worst[0]]) || 'poison');
 continue;
 }
-} else r.health = round1(Math.min(max, r.health + 0.05 * dt));
+} else r.health = round4(Math.min(max, r.health + 0.05 * dt)); // a tenth would round a 0.05 step away
 if (r.health > max) r.health = max;
 }
 for (const r of c.rabbits) {
@@ -4106,7 +4117,7 @@ if (!f.alive) { f.pregnant = null; f.cause = f.cause || 'unknown'; if (f.diedDay
 });
 return trials;
 }
-return { RABBIT_MARKS, MARK_INDEX, KIT_DAYS, ADULT_DAYS, ELDER_DAYS, LIFESPAN_DAYS, FOUNDER_BORN, GESTATION_DAYS, DOSE_LIMIT, MEMORIAL_LIMIT, LEVEL_AT, TRAIT_AT, DEGEN_AT, MARK_MAX, LETHAL, AGGRO, FERAL, AGGRO_AT, LOVE_MATE, MATE_EVERY, MARK_TAU, MAX_BONUS, DEGEN_RISE, ATTACK_EVERY, TRAITS, TRAIT_EXCLUSIVE, TRAIT_WORDS, COATS, rollLook, inheritLook, lookFromSeed, visibleLevel, stageOf, maxHealthOf, degenOf, degenAt, degenRate, aggroAt, aggroOf, isFeral, mateEvery, mateCost, RABBIT_BIAS, rabbitSensitivity, rabbitSnap, encodeSnap, defaultSnap, decodeSnap, NAMES, createColony, findRabbit, livingRabbits, bodies, focusRabbit, pickName, makeRabbit, addBoughtRabbit, recordDose, related, STAGE_ERR, MARK_DECAY, rabbitResponse, colonyTick, purgeRabbit, cullRabbit, colonyDay, retireRabbit, trimMemorial, remainsSource, causeWord, rabbitCondition, normalizeRabbit, normalizeColony, installRabbitAlias };
+return { RABBIT_MARKS, MARK_INDEX, KIT_DAYS, ADULT_DAYS, ELDER_DAYS, LIFESPAN_DAYS, FOUNDER_BORN, GESTATION_DAYS, DOSE_LIMIT, MEMORIAL_LIMIT, LEVEL_AT, TRAIT_AT, DEGEN_AT, MARK_MAX, LETHAL, AGGRO, FERAL, AGGRO_AT, LOVE_MATE, MATE_EVERY, MARK_TAU, BURNS, BURN_RATE, MAX_BONUS, DEGEN_RISE, ATTACK_EVERY, TRAITS, TRAIT_EXCLUSIVE, TRAIT_WORDS, COATS, rollLook, inheritLook, lookFromSeed, visibleLevel, stageOf, maxHealthOf, degenOf, degenAt, degenRate, aggroAt, aggroOf, isFeral, burnRate, mateEvery, mateCost, RABBIT_BIAS, rabbitSensitivity, rabbitSnap, encodeSnap, defaultSnap, decodeSnap, NAMES, createColony, findRabbit, livingRabbits, bodies, focusRabbit, pickName, makeRabbit, addBoughtRabbit, recordDose, related, STAGE_ERR, MARK_DECAY, rabbitResponse, colonyTick, purgeRabbit, cullRabbit, colonyDay, retireRabbit, trimMemorial, remainsSource, causeWord, rabbitCondition, normalizeRabbit, normalizeColony, installRabbitAlias };
 })();
 // src/game/experiments.js
 const __m27 = (() => {
@@ -4126,8 +4137,8 @@ const RETIRED = [
 const SUBJECT_BY_ID = Object.fromEntries([...SUBJECTS, ...RETIRED].map((s) => [s.id, s]));
 const RECORD_LIMIT = 160;
 const DOSES = [5, 10, 25];
-const DOSE_NOISE = 0.16;
-const READ_NOISE = 0.4;
+const DOSE_NOISE = 0.3;
+const READ_NOISE = 1.5;
 function driftTolerance(v) {
 return Math.max(3, 0.15 * Math.abs(v));
 }
@@ -13778,7 +13789,7 @@ const { audio } = __m4;
 const { drawRabbit, RABBIT_W, RABBIT_H } = __m65;
 const { HutchScene, HUTCH_W, HUTCH_H } = __m67;
 const { EFFECT_BY_KEY } = __m13;
-const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral, RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE } = __m28;
+const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral, RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE, BURNS } = __m28;
 const { PURGE_BREW_TIME } = __m5;
 const STAGE_WORD = { kit: 'kit', young: 'youngster', adult: 'adult', elder: 'elder' };
 const CHANNELS = RABBIT_MARKS.map((k) => {
@@ -13906,7 +13917,8 @@ const grid = h('div', { class: 'status-bars', role: 'list', 'aria-label': `Effec
 for (const ch of CHANNELS) {
 const fill = h('i', { style: { background: rgb(ch.color) } });
 const val = h('span', { class: 'sb-v' });
-const row = h('div', { class: 'sb', role: 'listitem', title: `${ch.label} active in ${r.name}. Somewhere along this bar — only this rabbit knows where — it starts running out of control.` },
+const burns = BURNS.includes(ch.key) ? ' While any of it is active it burns the rabbit, faster the higher it is.' : '';
+const row = h('div', { class: 'sb', role: 'listitem', title: `${ch.label} active in ${r.name}.${burns} Somewhere along this bar — only this rabbit knows where — it starts running out of control.` },
 icon(ch.icon, 'sm'), h('span', { class: 'sb-k', text: ch.label }), h('span', { class: 'sb-bar' }, fill), val);
 bars[ch.key] = { fill, row, val };
 grid.append(row);
@@ -13953,6 +13965,7 @@ b.val.textContent = v < 0.5 ? '—' : `${Math.round(v)}%`;
 b.row.classList.toggle('degen', dg.includes(k));
 b.row.classList.toggle('lethal', dg.includes(k) && LETHAL.includes(k));
 b.row.classList.toggle('mating', k === 'love' && v >= LOVE_MATE);
+b.row.classList.toggle('burning', BURNS.includes(k) && v >= 0.5);
 b.row.classList.toggle('zero', v < 0.5);
 }
 }

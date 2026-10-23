@@ -53,7 +53,8 @@ computed from the particles that actually run out of the tap. What a
   from the tap or the sealed vial).
   * A rabbit shows every effect, but never exactly: each rabbit feels each
     effect a little more or less than the next (a hidden, lifelong bias of
-    about ±8 %), and every dose varies too. One section, **Expected effects
+    about ±10 %), and every dose varies a lot (about ±30 %, so a first
+    trial is only a rough guess). One section, **Expected effects
     of this batch**, pools every trial of the brew: each effect as a
     percentage with its ± band and how many trials on how many rabbits. The
     band narrows with every trial — on the same rabbit too (which keeps the
@@ -64,6 +65,10 @@ computed from the particles that actually run out of the tap. What a
     with how much of it is active in it right now, plus its health (current
     / maximum). Doses are cumulative and fade slowly in real time (about a
     seven-minute half-life, faster overnight).
+  * **Fire and acid burn** for as long as any of them is active in a
+    rabbit: a slow, steady loss of health that grows with the percentage
+    (about 0.05 health a second at 30 %, 0.14 at 60 %, 0.3 at the top) and
+    stops its healing until the mark has faded.
   * Every rabbit has its own **hidden degeneration threshold for every
     channel** (somewhere around 45–95, never shown). Past it the effect
     runs out of control and keeps climbing on its own, faster or slower

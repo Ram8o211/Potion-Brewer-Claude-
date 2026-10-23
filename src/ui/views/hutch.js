@@ -17,7 +17,7 @@ import { HutchScene, HUTCH_W, HUTCH_H } from '../../rendering/hutch-scene.js';
 import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
 import {
   livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral,
-  RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE,
+  RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE, BURNS,
 } from '../../game/colony.js';
 import { PURGE_BREW_TIME } from '../../game/state.js';
 
@@ -167,7 +167,8 @@ export class HutchPanel {
     for (const ch of CHANNELS) {
       const fill = h('i', { style: { background: rgb(ch.color) } });
       const val = h('span', { class: 'sb-v' });
-      const row = h('div', { class: 'sb', role: 'listitem', title: `${ch.label} active in ${r.name}. Somewhere along this bar — only this rabbit knows where — it starts running out of control.` },
+      const burns = BURNS.includes(ch.key) ? ' While any of it is active it burns the rabbit, faster the higher it is.' : '';
+      const row = h('div', { class: 'sb', role: 'listitem', title: `${ch.label} active in ${r.name}.${burns} Somewhere along this bar — only this rabbit knows where — it starts running out of control.` },
         icon(ch.icon, 'sm'), h('span', { class: 'sb-k', text: ch.label }), h('span', { class: 'sb-bar' }, fill), val);
       bars[ch.key] = { fill, row, val };
       grid.append(row);
@@ -216,6 +217,7 @@ export class HutchPanel {
       b.row.classList.toggle('degen', dg.includes(k));
       b.row.classList.toggle('lethal', dg.includes(k) && LETHAL.includes(k));
       b.row.classList.toggle('mating', k === 'love' && v >= LOVE_MATE);
+      b.row.classList.toggle('burning', BURNS.includes(k) && v >= 0.5);
       b.row.classList.toggle('zero', v < 0.5);
     }
   }

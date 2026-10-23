@@ -32,7 +32,8 @@
 // remains (once) or buries it.
 //
 // Between days the hutch lives in real time (colonyTick): marks fade slowly,
-// health creeps back, degenerations climb, aggressive rabbits attack and
+// fire and acid burn for as long as they are active (harder the higher they
+// are), health creeps back otherwise, degenerations climb, aggressive rabbits attack and
 // lovestruck ones mate. The
 // model is pure and deterministic (Rng streams seeded by the world seed, the
 // rabbit, the day and the tick counter). The player sees every channel's
@@ -80,6 +81,10 @@ export const LOVE_MATE = 25;
 export const MATE_EVERY = [60, 3];
 /** Seconds for an ordinary mark to fade to 1/e in real time (≈7 min half-life). */
 export const MARK_TAU = 600;
+/** Channels that keep hurting a rabbit for as long as they are active, harder the higher they are. */
+export const BURNS = ['fire', 'acid'];
+/** Health lost per second by a burning channel at the top of its mark (it scales as (mark/100)^1.5). */
+export const BURN_RATE = 0.3;
 /** Most extra maximum health vitality can grow. */
 export const MAX_BONUS = 150;
 /** How fast a degenerating mark usually climbs (per second; each rabbit its own: degenRate) and how often an aggressive rabbit strikes. */
@@ -263,6 +268,11 @@ export function isFeral(r) {
   return aggroOf(r).length > 0;
 }
 
+/** Health a burning channel (fire, acid) takes per second at this mark. @param {number} v */
+export function burnRate(v) {
+  return v > 0 ? BURN_RATE * Math.min(1, v / MARK_MAX) ** 1.5 : 0;
+}
+
 /** Seconds between two matings of a rabbit this much in love (Infinity below LOVE_MATE). @param {number} love */
 export function mateEvery(love) {
   if (!(love >= LOVE_MATE)) return Infinity;
@@ -277,11 +287,11 @@ export function mateCost(love) {
 }
 
 /** Relative spread of the rabbits' lifelong sensitivity (one sigma). */
-export const RABBIT_BIAS = 0.08;
+export const RABBIT_BIAS = 0.1;
 
 /**
  * How strongly one rabbit shows one effect, relative to the potion's real
- * strength: a hidden, lifelong trait of the individual (about ±8 %), so
+ * strength: a hidden, lifelong trait of the individual (about ±10 %), so
  * repeated readings on one rabbit settle on its own slightly biased value
  * and only several rabbits average that out.
  * @param {{id:string, look:{seed:number}}} r @param {string} key effect key
@@ -437,6 +447,7 @@ const emptyMarks = () => Object.fromEntries(RABBIT_MARKS.map((k) => [k, 0]));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const fin = (v, d) => (Number.isFinite(Number(v)) ? Number(v) : d);
 const round1 = (v) => Math.round(v * 10) / 10;
+const round4 = (v) => Math.round(v * 1e4) / 1e4;
 
 /** The two founders every new hutch starts with (identical in every game). */
 function founders() {
@@ -750,19 +761,25 @@ export function colonyTick(c, dt, o = {}) {
     if (!r.alive) continue;
     const dg = degenOf(r);
     let drain = 0, topped = null;
+    /** @type {Record<string, number>} what each channel takes from its health this step */
+    const hurts = {};
     for (const k of RABBIT_MARKS) {
       if (dg.includes(k)) {
         // it does not stop: faster the further it has gone
         const v = r.marks[k];
         r.marks[k] = round1(Math.min(MARK_MAX, v + degenRate(r, k) * (0.6 + 0.8 * v / MARK_MAX) * dt));
         if (r.marks[k] >= MARK_MAX && !topped) topped = k;
-        if (LETHAL.includes(k)) drain += (0.4 + 1.6 * r.marks[k] / 100) * dt;
+        if (LETHAL.includes(k)) hurts[k] = (0.4 + 1.6 * r.marks[k] / 100) * dt;
       } else {
+        // kept to a ten-thousandth: rounding to a hundredth froze small marks (a step's fade is smaller than that)
         const v = r.marks[k] * fade;
-        r.marks[k] = v < 0.3 ? 0 : Math.round(v * 100) / 100;
+        r.marks[k] = v < 0.3 ? 0 : Math.round(v * 1e4) / 1e4;
       }
     }
     if (topped) { die(r, CAUSE_OF[topped] || 'poison'); continue; }
+    // fire and acid burn slowly for as long as they are active, faster the higher they are
+    for (const k of BURNS) if (r.marks[k] > 0) hurts[k] = (hurts[k] || 0) + burnRate(r.marks[k]) * dt;
+    for (const v of Object.values(hurts)) drain += v;
     if (dg.includes('vitality')) r.bonus = round1(Math.min(MAX_BONUS, (r.bonus || 0) + 0.25 * dt));
     if (dg.includes('transformation')) {
       const e0 = r.exposure.transformation;
@@ -771,13 +788,16 @@ export function colonyTick(c, dt, o = {}) {
     }
     const max = maxHealthOf(r, day);
     if (drain > 0) {
-      r.health = round1(r.health - drain);
+      // kept to a ten-thousandth: a slow burn must not round away
+      r.health = round4(r.health - drain);
+      const burned = BURNS.reduce((a, k) => a + (dg.includes(k) ? 0 : burnRate(r.marks[k]) * dt), 0);
+      if (burned > 0) r.scar = Math.min(80, round4((r.scar || 0) + 0.05 * burned));
       if (r.health <= 0.5) {
-        const worst = dg.filter((k) => LETHAL.includes(k)).sort((p, q) => r.marks[q] - r.marks[p])[0];
-        die(r, CAUSE_OF[worst] || 'poison');
+        const worst = Object.entries(hurts).sort((p, q) => q[1] - p[1])[0];
+        die(r, (worst && CAUSE_OF[worst[0]]) || 'poison');
         continue;
       }
-    } else r.health = round1(Math.min(max, r.health + 0.05 * dt));
+    } else r.health = round4(Math.min(max, r.health + 0.05 * dt)); // a tenth would round a 0.05 step away
     if (r.health > max) r.health = max;
   }
   // aggressive rabbits strike
