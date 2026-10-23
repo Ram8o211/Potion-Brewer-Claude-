@@ -31,7 +31,7 @@ test('readings vary between rabbits and between doses; absent effects read as ab
   assert.deepEqual(r1, rabbitReading(a, e, { ml: 10, salt: '1' }), 'deterministic');
 });
 
-test('the batch estimate pools trials and gets surer with every trial, fastest over different rabbits', () => {
+test('the batch estimate is the plain mean and standard deviation of the trials; one trial is flagged', () => {
   const st = GameState.create('farm-1', { tutorial: false });
   st.batch = { id: 'farm-1', rev: 0 }; // fixed: the readings are the same every run
   st.coins = 500;
@@ -39,32 +39,29 @@ test('the batch estimate pools trials and gets surer with every trial, fastest o
   for (let k = 0; k < 4; k++) st.buyRabbit();
   assert.equal(st.colony.rabbits.length, 6);
   const truth = fx({ vitality: 14 });
-  st.recordTrial('rabbit', dose({ vitality: 14 }), ctx(st, { rabbitId: 'r1' }));
+  const { record } = st.recordTrial('rabbit', dose({ vitality: 14 }), ctx(st, { rabbitId: 'r1' }));
   const one = certification(st.trials, st.batch, truth);
-  assert.equal(one.rabbits.vitality, 1);
+  assert.equal(one.values.vitality, record.values.vitality, 'after one trial: exactly that reading');
+  assert.equal(one.spread.vitality, 0, 'with no deviation');
+  assert.equal(one.first.vitality, true, 'flagged as a first measure');
   for (const r of st.colony.rabbits.slice(1)) st.recordTrial('rabbit', dose({ vitality: 14 }), ctx(st, { rabbitId: r.id }));
   const many = certification(st.trials, st.batch, truth);
   assert.equal(many.rabbits.vitality, 6);
   assert.equal(many.n.vitality, 6);
-  assert.ok(many.spread.vitality < one.spread.vitality, `±${many.spread.vitality} < ±${one.spread.vitality}`);
+  assert.equal(many.first.vitality, false);
+  const vs = st.trials.records.filter((r) => r.batchId === 'farm-1').map((r) => r.values.vitality);
+  const mean = vs.reduce((a, v) => a + v, 0) / vs.length;
+  const sd = Math.sqrt(vs.reduce((a, v) => a + (v - mean) ** 2, 0) / (vs.length - 1));
+  assert.equal(many.values.vitality, Math.round(mean * 10) / 10, 'the mean of the readings');
+  assert.equal(many.spread.vitality, Math.round(sd * 10) / 10, 'their sample standard deviation');
   assert.ok(Math.abs(many.values.vitality - 14) < 6, `mean ${many.values.vitality} is near the truth`);
-  // the same rabbit again and again narrows it too, but not as far as six rabbits
-  const st2 = GameState.create('farm-1b', { tutorial: false });
-  st2.batch = { id: 'farm-1b', rev: 0 };
-  st2.recordTrial('rabbit', dose({ vitality: 14 }), ctx(st2, { rabbitId: 'r2' }));
-  const first = certification(st2.trials, st2.batch, truth);
-  for (let k = 0; k < 5; k++) st2.recordTrial('rabbit', dose({ vitality: 14 }), ctx(st2, { rabbitId: 'r2' }));
-  const same = certification(st2.trials, st2.batch, truth);
-  assert.equal(same.rabbits.vitality, 1);
-  assert.equal(same.n.vitality, 6);
-  assert.ok(same.spread.vitality < first.spread.vitality, `six trials on one rabbit (±${same.spread.vitality}) beat one (±${first.spread.vitality})`);
-  // the model alone (these readings are random): one rabbit levels off at its own bias, many rabbits keep narrowing
-  const pile = (nr, per) => summarize({ fire: Array.from({ length: nr * per }, (_, i) => ({ v: 40, r: 'r' + (i % nr), rec: 't' + i })) }).spread.fire;
-  assert.ok(pile(1, 4) < pile(1, 1) && pile(1, 16) < pile(1, 4), 'repeats on one rabbit narrow it');
-  assert.ok(pile(16, 1) < pile(1, 16), 'the same number of trials over many rabbits narrows it more');
   const s = summarize({ fire: [{ v: 10, r: 'a', rec: 't1' }, { v: 12, r: 'b', rec: 't2' }] });
   assert.equal(s.values.fire, 11);
+  assert.equal(s.spread.fire, Math.round(Math.SQRT2 * 10) / 10, 'sd of 10 and 12 is √2');
+  assert.equal(s.first.fire, false);
   assert.equal(s.records.fire, 't2');
+  const f = summarize({ fire: [{ v: 37.4, r: 'a', rec: 't1' }] });
+  assert.deepEqual([f.values.fire, f.spread.fire, f.first.fire], [37.4, 0, true]);
 });
 
 test('effects pile up in a rabbit and fade slowly in real time', () => {
@@ -79,12 +76,6 @@ test('effects pile up in a rabbit and fade slowly in real time', () => {
   assert.ok(x.marks.love < v0 && x.marks.love > v0 * 0.85, 'a minute fades it only a little');
   for (let k = 0; k < 30; k++) colonyTick(c, 60);
   assert.ok(x.marks.love < v0 * Math.exp(-1800 / MARK_TAU) + 1, 'half an hour fades it most of the way');
-});
-
-test('a first trial is a rough guess: its band is wide', () => {
-  const one = (v) => summarize({ x: [{ v, r: 'a', rec: 't1' }] }).spread.x;
-  assert.ok(one(50) >= 12, `50 ±${one(50)}`);
-  assert.ok(one(10) >= 3, `10 ±${one(10)}`);
 });
 
 test('fire and acid burn slowly for as long as they are active, harder the higher they are', () => {

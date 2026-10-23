@@ -4179,26 +4179,21 @@ function summarize(samples) {
 /** @type {Record<string, number>} */ const n = {};
 /** @type {Record<string, number>} */ const rabbits = {};
 /** @type {Record<string, string>} */ const records = {};
+/** @type {Record<string, boolean>} */ const first = {};
 for (const [key, list] of Object.entries(samples || {})) {
 if (!Array.isArray(list) || !list.length) continue;
-const mean = list.reduce((a, s) => a + s.v, 0) / list.length;
 const N = list.length;
-const per = {};
-for (const s of list) per[s.r] = (per[s.r] || 0) + 1;
-const nr = Object.keys(per).length;
+const mean = list.reduce((a, s) => a + s.v, 0) / N;
 const sd = N > 1 ? Math.sqrt(list.reduce((a, s) => a + (s.v - mean) ** 2, 0) / (N - 1)) : 0;
-const am = Math.abs(mean);
-const bias = RABBIT_BIAS * am * Math.sqrt(Object.values(per).reduce((a, c) => a + c * c, 0)) / N;
-const noise = Math.sqrt(list.reduce((a, s) => { const e = s.e || 1; return a + (DOSE_NOISE * e * am) ** 2 + (READ_NOISE * e + 0.3) ** 2; }, 0)) / N;
-const model = Math.sqrt(bias * bias + noise * noise);
 const m = Math.round(mean * 10) / 10;
 values[key] = Math.abs(m) < 0.5 ? 0 : m;
-spread[key] = Math.round(Math.max(0.5, model, sd / Math.sqrt(N)) * 10) / 10;
-n[key] = list.length;
-rabbits[key] = nr;
-records[key] = list[list.length - 1].rec;
+spread[key] = Math.round(sd * 10) / 10;
+n[key] = N;
+rabbits[key] = new Set(list.map((s) => s.r)).size;
+records[key] = list[N - 1].rec;
+first[key] = N === 1;
 }
-return { values, spread, n, rabbits, records };
+return { values, spread, n, rabbits, records, first };
 }
 function addSamples(samples, rec) {
 for (const key of rec.revealed || []) {
@@ -14234,6 +14229,7 @@ const vial = this.source === 'vial';
 const th = this.theoryOf();
 const tested = EFFECT_KEYS.filter((k) => cert.values[k] !== undefined);
 const shown = tested.filter((k) => cert.values[k] !== 0 || (cert.spread[k] || 0) > 1);
+const firsts = shown.filter((k) => (cert.n[k] || 0) === 1);
 const trials = tested.length ? Math.max(...tested.map((k) => cert.n[k] || 0)) : 0;
 const rabbits = tested.length ? Math.max(...tested.map((k) => cert.rabbits[k] || 0)) : 0;
 el.append(h('div', { class: 'row' }, icon('scales'), h('b', { text: vial ? 'Expected effects of this vial' : 'Expected effects of this batch' }), h('span', { class: 'spacer' }),
@@ -14244,21 +14240,22 @@ return;
 }
 const rows = h('div', { class: 'reading-rows' });
 for (const k of shown) {
-const e = EFFECT_BY_KEY[k], v = cert.values[k], sp = Math.max(1, Math.round(cert.spread[k] || 0));
+const e = EFFECT_BY_KEY[k], v = cert.values[k], sp = sdRound(cert.spread[k] || 0), one = (cert.n[k] || 0) === 1;
 const lo = Math.max(0, Math.abs(v) - sp), hi = Math.min(100, Math.abs(v) + sp);
 const t = th ? th[k] : undefined;
-rows.appendChild(h('div', { class: 'reading', 'data-effect': k, title: `${e.label}: ${cert.n[k]} reading${cert.n[k] === 1 ? '' : 's'} on ${cert.rabbits[k]} rabbit${cert.rabbits[k] === 1 ? '' : 's'}${t !== undefined ? ` · theory ${Math.round(t)}%` : ''}` },
+rows.appendChild(h('div', { class: 'reading' + (one ? ' first' : ''), 'data-effect': k, title: `${e.label}: ${cert.n[k]} reading${cert.n[k] === 1 ? '' : 's'} on ${cert.rabbits[k]} rabbit${cert.rabbits[k] === 1 ? '' : 's'}${t !== undefined ? ` · theory ${Math.round(t)}%` : ''}` },
 icon(e.icon, 'sm'), h('span', { class: 'rk', text: e.label }),
 h('div', { class: 'rbar' },
-h('i', { class: 'range', style: { left: lo + '%', width: Math.max(1, hi - lo) + '%', background: rgb(e.color) } }),
+sp > 0 ? h('i', { class: 'range', style: { left: lo + '%', width: (hi - lo) + '%', background: rgb(e.color) } }) : null,
 t !== undefined && Math.abs(t) >= 0.5 ? h('i', { class: 'th theory', style: { left: Math.min(100, Math.abs(t)) + '%' } }) : null,
 h('i', { class: 'th mean', style: { left: Math.min(100, Math.abs(v)) + '%' } })),
-h('span', { class: 'rv', text: `${Math.round(v)}% ±${sp} · ${potencyWord(v, k)}` })));
+h('span', { class: 'rv', text: `${fmtPct(v)}% ±${sp}${one ? ' · 1st' : ''} · ${potencyWord(v, k)}` })));
 }
 if (shown.length) el.append(rows);
 const none = tested.filter((k) => !shown.includes(k));
 if (none.length) el.append(h('div', { class: 'small muted quiet' }, shown.length ? 'Not seen: ' : 'No effect seen: ', ...none.map((k) => icon(EFFECT_BY_KEY[k].icon, 'sm'))));
-el.append(h('div', { class: 'small muted est-foot', text: 'Band: where the true strength likely lies. Each trial narrows it — other rabbits narrow it fastest. Labels use the mean.' }));
+if (firsts.length) el.append(h('div', { class: 'warn small first-flag', text: `First measure${firsts.length === shown.length ? '' : ` (${firsts.map((k) => EFFECT_BY_KEY[k].label).join(', ')})`}: one trial only, so the value is that single reading and its ±0 means nothing yet — it is imprecise. Test again to see how much the readings vary.` }));
+el.append(h('div', { class: 'small muted est-foot', text: 'Value: the mean of every trial. ±: their standard deviation (band: mean ± one deviation). Labels use the mean.' }));
 if (rabbits <= 1 && trials >= 2) el.append(h('div', { class: 'warn small', text: 'All on one rabbit: the others stay clean, but the effect piles up in it — and nobody knows how much it can take before it runs out of control.' }));
 }
 estimate() {
@@ -14470,6 +14467,12 @@ return s;
 function vialFallback(v) {
 if (v.samples) return {};
 return summarize(seedSamples(v));
+}
+function sdRound(s) {
+return s < 10 ? Math.round(s * 10) / 10 : Math.round(s);
+}
+function fmtPct(v) {
+return Math.abs(v) < 10 ? String(Math.round(v * 10) / 10) : String(Math.round(v));
 }
 function rgb(c) {
 return `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2] * 255)})`;

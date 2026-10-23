@@ -56,11 +56,13 @@ computed from the particles that actually run out of the tap. What a
     about ±10 %), and every dose varies a lot (about ±30 %, so a first
     trial is only a rough guess). One section, **Expected effects
     of this batch**, pools every trial of the brew: each effect as a
-    percentage with its ± band and how many trials on how many rabbits. The
-    band narrows with every trial — on the same rabbit too (which keeps the
-    others clean, down to that rabbit's own bias), fastest over different
-    rabbits. Your label sells on that estimate, and a customer complains when
-    the real potion is far from it.
+    percentage, plainly computed: the mean of every trial ± their sample
+    standard deviation, with how many trials on how many rabbits. After the
+    first trial the value is exactly that reading with ±0, flagged as a
+    first, imprecise measure. Trials on the same rabbit keep the others
+    clean but keep that rabbit's own bias in the mean; other rabbits average
+    it out. Your label sells on the mean, and a customer complains when the
+    real potion is far from it.
   * The chosen rabbit shows a bar per effect channel (acid and lye apart)
     with how much of it is active in it right now, plus its health (current
     / maximum). Doses are cumulative and fade slowly in real time (about a
