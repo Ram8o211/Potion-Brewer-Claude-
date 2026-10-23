@@ -279,8 +279,9 @@ export function testBatch(st, sim, com, prof, parts, clock, met) {
   if (!pool.length) return null;
   const theory = theoryOf(parts, st.lookup, st.knownLaws);
   for (let k = 0; k < prof.trials; k++) {
-    const rb = pool[k % pool.length];
-    if (!rb.alive) continue;
+    // the trial replaces a rabbit's record: always look it up afresh
+    const rb = st.colony.rabbits.find((r) => r.id === pool[k % pool.length].id);
+    if (!rb || !rb.alive) continue;
     const sel = tapSelection(sim, 2);
     if (sel.length < 2 || sim.p.count - 2 < com.bottleN) break;
     const dose = measureParticles(sim, sel);

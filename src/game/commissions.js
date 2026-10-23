@@ -199,7 +199,9 @@ function prepFor(m, ctx, solvents) {
     const solvent = rx.b ? solvents.find((l) => l.id === rx.b) : water;
     if (!solvent) return null;
     const boil = isFinite(solvent.boil) ? solvent.boil : 400;
-    const lo = rx.minT + 4, hi = Math.min(rx.maxT - 4, boil - 8, ctx.cap.maxFlame - 40);
+    // well inside the window: the furnace holds the mean to ±4 °C and the cooler edges of the
+    // brew lag behind, so a steep at the window's very edge extracts only part of a slow herb
+    const lo = rx.minT + 7, hi = Math.min(rx.maxT - 4, boil - 8, ctx.cap.maxFlame - 40);
     if (hi < lo) return null;
     if (lo <= 15) {
       // a cold steep (below room temperature)
@@ -338,6 +340,25 @@ function composePlan(pick, wanted, exclude, ctx, solvents, n, o, pool) {
     if (ing.length < 2) return null;
     return plainPlan(ing);
   };
+  /**
+   * No ingredient may be steeped only at the very edge of its window: in the
+   * real cauldron the cooler edges of the brew lag behind the mean, and a
+   * slow herb held there extracts only in part. An ingredient is fine when
+   * some held stage (the steep, or the awakening hold) lies well inside its
+   * window — or when none comes near it (then it is not counted on).
+   */
+  const edgeOk = (plan, ids) => {
+    const held = [plan.steep ? plan.steep.T : null, plan.activate ? plan.heatTo : null, plan.activate ? plan.coolTo : null].filter((t) => t !== null);
+    if (!held.length) return true;
+    for (const id of ids) {
+      const rx = ctx.world.reactions.find((r) => r.a === id && r.wet && r.products.length === 1 && /^rw_(extract|steep|infuse)/.test(r.id));
+      if (!rx) continue;
+      const inside = held.some((t) => t >= rx.minT + 7 && t <= rx.maxT - 2);
+      const edge = held.some((t) => t >= rx.minT - 3 && t < rx.minT + 7);
+      if (edge && !inside) return false;
+    }
+    return true;
+  };
   /** stage temperatures: preparation stays arcane-quiet; activation awakens the blend in a stage of its own */
   const finish = (plan) => {
     const ids = plan.ingredients.map((i) => i.id);
@@ -346,6 +367,7 @@ function composePlan(pick, wanted, exclude, ctx, solvents, n, o, pool) {
       plan.heatTo = Math.max(plan.heatTo, stageT);
       plan.coolTo = Math.min(plan.coolTo, stageT);
     }
+    if (!edgeOk(plan, ids)) return null;
     const pre = predictPlan(ctx.world, ctx.lookup, plan);
     if (arcaneRegime([...ids, ...Object.keys(pre.composition)], ctx.lookup, temps) !== 'quiet') return null;
     if (plan.heatTo > ctx.cap.maxFlame - 40 || plan.coolTo < ctx.cap.minCool + 2) return null;
@@ -367,6 +389,7 @@ function composePlan(pick, wanted, exclude, ctx, solvents, n, o, pool) {
     }
     plan.hold = 18;
     plan.activate = true;
+    if (!edgeOk(plan, ids)) return null;
     const pred = predictPlan(ctx.world, ctx.lookup, plan);
     return pred.awakened ? pred : null;
   };
@@ -790,7 +813,7 @@ function effectCommission(req, arch, tier, ctx, rng, totalN, bottleMl, bottleN, 
   // the sampled strength first, then the tier's mildest, then (for masters,
   // whose orders combine several balanced effects) a gentler one, before giving up
   const mains = opts.simple ? [lo] : [Math.round(rng.range(lo, hi)), lo];
-  if (tier >= 3) mains.push(TIER_TARGET[tier - 2][0]);
+  if (tier >= 3) mains.push(TIER_TARGET[tier - 1][0], TIER_TARGET[tier - 2][0]);
   outer: for (const main of mains) {
     wanted = req.fx.map((f, k) => ({ key: f.key, sign: f.sign || 1, target: k === 0 ? main : Math.max(4, Math.round(main * (f.share || 0.6) * rng.range(0.9, 1.1))) }));
     exclude = [...wanted.map((w) => w.key), ...(req.tolerate || [])];

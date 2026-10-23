@@ -83,7 +83,9 @@ test('targets rise with rank, every plan uses only what the shop can reach, and 
       assert.ok((plan.heatTo ?? 20) <= st.cap.maxFlame - 30, 'the fire can reach it');
       assert.ok((plan.coolTo ?? 20) >= st.cap.minCool, 'the cold can reach it');
       // a boiled-down order is stronger than its tier by design: the rise is measured without it
-      if (com.request && !(com.techniques || []).includes('concentrate')) t.push(Math.abs(com.requirements[0].target));
+      // the demand of an order is the total strength it asks for across its wanted effects
+      // (masters combine several); a boiled-down order is stronger than its tier by design
+      if (com.request && !(com.techniques || []).includes('concentrate')) t.push(com.requirements.filter((r) => r.effect && r.key !== 'purity').reduce((a, r) => a + Math.abs(Number(r.target)), 0));
       if (com.activation) {
         activations++;
         assert.ok(tier >= 2);
