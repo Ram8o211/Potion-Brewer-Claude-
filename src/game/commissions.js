@@ -23,7 +23,7 @@ import { ARCHETYPES, makeCustomer, archetypeOf } from './customers.js';
 import { viscosityClass } from './measure.js';
 import { evaluatePotion } from './evaluate.js';
 import { SIM } from '../simulation/constants.js';
-import { EFFECT_INDEX, EFFECT_BY_KEY, EFFECT_KEYS, NE } from '../alchemy/effects.js';
+import { EFFECT_INDEX, EFFECT_BY_KEY, EFFECT_KEYS, NE, interact } from '../alchemy/effects.js';
 import { thresholdToCelsius, isMagical } from '../alchemy/arcane.js';
 import { compatFactor } from '../reactions/compatibility.js';
 import { REQUESTS, TIER_TARGET, PURITY_LIMIT, requestById } from './requests.js';
@@ -326,8 +326,19 @@ function prepFor(m, ctx, solvents) {
 }
 
 /**
+ * Effects the guild's universal oppositions can neutralise: fire and frost,
+ * life and death (life also mends poison), acid and alkali. Every natural
+ * ingredient carries side effects only on these, so an order for any effect
+ * can be brewed by balancing ingredients against each other.
+ */
+const NEUTRALISABLE = new Set(['fire', 'frost', 'vitality', 'death', 'toxicity', 'acidity']);
+
+/**
  * Search for a hidden plan that delivers the wanted effects at (at least)
- * the targets, with every other effect under the purity limit.
+ * the targets, with every other effect under the purity limit. Natural
+ * ingredients are never pure, so a plan is a balance: carriers of the
+ * wanted effects plus helpers whose own effects oppose the carriers' side
+ * effects, proportioned so that the unwanted ones cancel out.
  * @param {{key:string, sign:number, target:number}[]} wanted
  * @param {string[]} exclude  effects that may be present (wanted + tolerated)
  * @param {CommissionContext} ctx @param {Rng} rng @param {number} n total particles
@@ -337,97 +348,121 @@ function searchPlan(wanted, exclude, ctx, rng, n, o) {
   const solvents = solventsOf(ctx);
   if (!solvents.length) return null;
   const pot = (m, w) => w.sign * (((m.effects || {})[w.key]) || 0);
-  const all = [...ctx.available].map(ctx.lookup).filter((m) => m && m.effects && m.form !== 'gas' && !m.awakened);
+  // an ingredient may go in only if all it carries is wanted, tolerated or neutralisable
+  const admissible = (m) => Object.entries(m.effects).every(([k, v]) => Math.abs(Number(v) || 0) < 1 || exclude.includes(k) || NEUTRALISABLE.has(k));
+  // an awakening plan can only use what wakes within the fire's (or the frost's) reach in a
+  // watery brew; ingredients that wake by cold and by heat never mix in one
+  const water = ctx.lookup(ctx.world.roles.water);
+  const hot = Math.min(ctx.cap.maxFlame - 40, (water && isFinite(water.boil) ? water.boil : 100) - 6), cold = 20 + 0.55 * (ctx.cap.minCool - 20);
+  const wakes = (m) => isMagical(m) && (m.arcane.thr >= 0 ? thresholdToCelsius(m.arcane.thr) + ACTIVATION_MARGIN + 4 <= hot : thresholdToCelsius(m.arcane.thr) - ACTIVATION_MARGIN - 4 >= cold);
+  const pool = [...ctx.available].map(ctx.lookup)
+    .filter((m) => m && m.effects && m.form !== 'gas' && !m.awakened && !m.remains && !m.product && Object.keys(m.effects).length && admissible(m) && (!o.activation || wakes(m)));
   /** carriers for each wanted effect, cleanest first (with some variety) */
-  const carriers = wanted.map((w) => all.filter((m) => pot(m, w) >= 4)
+  const carriers = wanted.map((w) => pool.filter((m) => pot(m, w) >= 4)
     .map((m) => {
       let side = 0;
       for (const [k, v] of Object.entries(m.effects)) if (!exclude.includes(k)) side += Math.abs(Number(v) || 0);
-      return { m, score: pot(m, w) / (1 + side * 1.5) * (0.85 + 0.3 * rng.next()) };
+      return { m, score: pot(m, w) / (1 + side * 0.04) * (0.8 + 0.4 * rng.next()) };
     })
     .sort((a, b) => b.score - a.score).slice(0, 4).map((c) => c.m));
   if (carriers.some((c) => !c.length)) return null;
   const tries = [];
-  for (let a = 0; a < 3; a++) tries.push(wanted.map((w, k) => carriers[k][Math.min(carriers[k].length - 1, a === 0 ? 0 : rng.int(0, carriers[k].length - 1))]));
+  for (let a = 0; a < 3; a++) {
+    const pick = wanted.map((w, k) => carriers[k][Math.min(carriers[k].length - 1, a === 0 ? 0 : rng.int(0, carriers[k].length - 1))]);
+    // awakening needs one direction: all by heat or all by cold
+    if (o.activation && new Set(pick.map((m) => m.arcane.thr >= 0)).size > 1) continue;
+    if (!tries.some((t) => t.every((m, k) => m === pick[k]))) tries.push(pick);
+  }
   for (const pick of tries) {
-    const plan = composePlan(pick, wanted, exclude, ctx, solvents, n, o);
+    const sign = pick[0].arcane ? pick[0].arcane.thr >= 0 : true;
+    const plan = composePlan(pick, wanted, exclude, ctx, solvents, n, o, o.activation ? pool.filter((m) => (m.arcane.thr >= 0) === sign) : pool);
     if (plan) return plan;
   }
   return null;
 }
 
 /**
- * Proportion a set of carriers (one per wanted effect, possibly repeated),
- * prepare them, optionally awaken the blend, cancel unwanted traces and
- * check the result with the predictor.
+ * Balance a set of carriers (one per wanted effect, possibly repeated) with
+ * helpers that cancel their side effects. The proportions are solved on a
+ * linear model of what each ingredient gives up under this brew's
+ * preparation (probed with the predictor), with the world's laws and the
+ * universal oppositions applied on top; the predictor then checks the real
+ * plan and the model is refined until both agree.
  */
-function composePlan(pick, wanted, exclude, ctx, solvents, n, o) {
+function composePlan(pick, wanted, exclude, ctx, solvents, n, o, pool) {
   const uniq = [...new Set(pick)];
   const preps = uniq.map((m) => prepFor(m, ctx, solvents));
   if (preps.some((p) => !p)) return null;
-  // one solvent for the whole brew
-  const solvent = preps.find((p) => p.solvent)?.solvent || solvents[0];
-  if (preps.some((p) => p.solvent && p.solvent.id !== solvent.id)) return null;
-  // the extraction stage: one temperature inside every reagent's window
-  const warm = preps.filter((p) => p.lo !== undefined), cold = preps.filter((p) => p.coolTo < 20);
-  if (warm.length && cold.length) return null;
-  let win = null;
-  if (warm.length) win = [Math.max(...warm.map((p) => p.lo)), Math.min(...warm.map((p) => p.hi))];
-  else if (cold.length) win = [Math.max(ctx.cap.minCool + 2, ...cold.map((p) => p.coolTo - 3)), Math.min(...cold.map((p) => p.coolTo + 3))];
-  if (win && win[0] > win[1]) return null;
-  const hold = Math.max(...preps.map((p) => p.hold));
-  /** @type {Map<string, number>} share of the brew per reagent */
-  const x = new Map(uniq.map((m) => [m.id, 0.25]));
-  /** @type {[string, number][]} cancellers */
-  let extra = [];
-  const build = () => {
-    const ing = [];
-    let used = 0;
-    for (const m of uniq) used += x.get(m.id);
-    for (const [, f] of extra) used += f;
-    if (used > 0.97) return null;
+  // one solvent and one extraction stage for the whole brew: the main
+  // carrier sets them, the others join where their windows overlap and
+  // otherwise go in unsteeped (they still dissolve as far as they can)
+  let solvent = null, win = null, chill = false, hold = 8;
+  for (const p of preps) {
+    if (p.solvent && solvent && p.solvent.id !== solvent.id) continue;
+    const pw = p.lo !== undefined ? [p.lo, p.hi] : p.coolTo < 20 ? [Math.max(ctx.cap.minCool + 2, p.coolTo - 3), p.coolTo + 3] : null;
+    if (pw) {
+      const isCold = p.coolTo < 20;
+      if (win && isCold !== chill) continue;
+      const nw = win ? [Math.max(win[0], pw[0]), Math.min(win[1], pw[1])] : pw;
+      if (nw[0] > nw[1]) continue;
+      win = nw;
+      chill = isCold;
+    }
+    solvent = solvent || p.solvent;
+    hold = Math.max(hold, p.hold);
+  }
+  solvent = solvent || solvents.find((x) => x.id === ctx.world.roles.water) || solvents[0];
+  const quietServe = o.activation ? [] : [o.serve];
+  // the steep temperature nearest the middle of the window that wakes none of the carriers
+  let stageT = null;
+  if (win) {
+    const mid = (win[0] + win[1]) / 2;
+    for (let T = Math.ceil(win[0]); T <= win[1]; T++) {
+      if (arcaneRegime(uniq.map((m) => m.id), ctx.lookup, [T, ...quietServe]) !== 'quiet') continue;
+      if (stageT === null || Math.abs(T - mid) < Math.abs(stageT - mid)) stageT = T;
+    }
+    if (stageT === null) return null;
+  }
+  const temps = stageT === null ? quietServe : [stageT, ...quietServe];
+  // helpers: anything that keeps this stage quiet and is not a carrier
+  const helpers = pool.filter((m) => !uniq.includes(m) && arcaneRegime([...uniq.map((c) => c.id), m.id], ctx.lookup, temps) === 'quiet');
+  const solidFrac = (id) => ctx.lookup(id).form !== 'liquid';
+
+  /** the plain plan for a list of ingredients (finish() adds the stages) */
+  const plainPlan = (ing) => /** @type {import('./predict.js').BrewPlan} */ ({ ingredients: ing, heatTo: Math.max(20, o.serve), coolTo: Math.min(20, o.serve), serveTemp: o.serve, knead: ing.some((i) => solidFrac(i.id)), hold: 8 });
+  /** a plan from shares of the brew per ingredient (the solvent fills the rest) */
+  const build = (x) => {
+    let used = 0, solids = 0;
+    for (const [id, f] of x) { used += f; if (solidFrac(id)) solids += f; }
     // at least half of the brew must be liquid, or the grains form a paste that cannot steep
-    let solids = 0;
-    for (const m of uniq) if (m.form !== 'liquid') solids += x.get(m.id);
-    for (const [id, f] of extra) if (ctx.lookup(id).form !== 'liquid') solids += f;
-    if (solids > 0.5) return null;
+    if (used > 0.97 || solids > 0.5) return null;
+    const ing = [];
     const ns = Math.round(n * (1 - used));
     if (ns >= 2) ing.push({ id: solvent.id, n: ns });
-    uniq.forEach((m, k) => ing.push({ id: m.id, n: Math.max(2, Math.round(n * x.get(m.id))), ground: preps[k].ground || undefined }));
-    for (const [id, f] of extra) ing.push({ id, n: Math.max(1, Math.round(n * f)), ground: ctx.lookup(id).form === 'solid' && ctx.cap.has('mortar') ? true : undefined });
-    return /** @type {import('./predict.js').BrewPlan} */ ({ ingredients: ing, heatTo: Math.max(20, o.serve), coolTo: Math.min(20, o.serve), serveTemp: o.serve, knead: uniq.some((m) => m.form !== 'liquid'), hold: 8 });
+    for (const [id, f] of x) {
+      const c = Math.round(n * f);
+      if (c < 1) continue;
+      ing.push({ id, n: c, ground: solidFrac(id) && ctx.lookup(id).form === 'solid' && ctx.cap.has('mortar') ? true : undefined });
+    }
+    if (ing.length < 2) return null;
+    return plainPlan(ing);
   };
-  /**
-   * Stage temperatures. Preparation (mixing, steeping, serving a plain
-   * brew) must be arcane-quiet for every local mixture; an activation plan
-   * then awakens the well-mixed blend in a stage of its own.
-   * @param {import('./predict.js').BrewPlan} plan
-   */
+  /** stage temperatures: preparation stays arcane-quiet; activation awakens the blend in a stage of its own */
   const finish = (plan) => {
     const ids = plan.ingredients.map((i) => i.id);
-    const pre = predictPlan(ctx.world, ctx.lookup, { ...plan, steep: win ? { T: (win[0] + win[1]) / 2, hold } : undefined });
-    const all = [...ids, ...Object.keys(pre.composition)];
-    const quietServe = o.activation ? [] : [o.serve];
-    if (win) {
-      // the steep temperature nearest the middle of the window that wakes nothing
-      const mid = (win[0] + win[1]) / 2;
-      let best = null;
-      for (let T = Math.ceil(win[0]); T <= win[1]; T++) {
-        if (arcaneRegime(all, ctx.lookup, [T, ...quietServe]) !== 'quiet') continue;
-        if (best === null || Math.abs(T - mid) < Math.abs(best - mid)) best = T;
-      }
-      if (best === null) return null;
-      plan.steep = { T: best, hold };
-      plan.heatTo = Math.max(plan.heatTo, best);
-      plan.coolTo = Math.min(plan.coolTo, best);
-    } else if (arcaneRegime(all, ctx.lookup, quietServe) !== 'quiet') return null;
+    if (stageT !== null) {
+      plan.steep = { T: stageT, hold };
+      plan.heatTo = Math.max(plan.heatTo, stageT);
+      plan.coolTo = Math.min(plan.coolTo, stageT);
+    }
+    const pre = predictPlan(ctx.world, ctx.lookup, plan);
+    if (arcaneRegime([...ids, ...Object.keys(pre.composition)], ctx.lookup, temps) !== 'quiet') return null;
     if (plan.heatTo > ctx.cap.maxFlame - 40 || plan.coolTo < ctx.cap.minCool + 2) return null;
-    let pred = predictPlan(ctx.world, ctx.lookup, plan);
-    if (!o.activation) return pred.awakened ? null : pred;
+    if (!o.activation) return pre.awakened ? null : pre;
     // activation stage: past the threshold of the mixed blend, reachable both ways
-    if (pred.threshold === null) return null;
-    const Ta = thresholdToCelsius(pred.threshold);
-    if (pred.threshold >= 0) {
+    if (pre.threshold === null) return null;
+    const Ta = thresholdToCelsius(pre.threshold);
+    if (pre.threshold >= 0) {
       const T = Math.ceil(Ta + ACTIVATION_MARGIN + 4);
       const boil = Math.min(...plan.ingredients.map((i) => ctx.lookup(i.id).boil).filter((b) => isFinite(b)), 400);
       if (T > Math.min(ctx.cap.maxFlame - 40, boil - 6)) return null;
@@ -441,68 +476,220 @@ function composePlan(pick, wanted, exclude, ctx, solvents, n, o) {
     }
     plan.hold = 18;
     plan.activate = true;
-    pred = predictPlan(ctx.world, ctx.lookup, plan);
+    const pred = predictPlan(ctx.world, ctx.lookup, plan);
     return pred.awakened ? pred : null;
   };
-  let plan = null, pred = null;
-  for (let it = 0; it < 6; it++) {
-    plan = build();
+
+  // ---- the linear model: raw (pre-law) effects per unit share of the brew
+  /** @type {Map<string, number[]>} */
+  const model = new Map();
+  const probe = (m, f) => {
+    const plan = build(new Map([[m.id, f]]));
     if (!plan) return null;
-    pred = finish(plan);
-    if (!pred) return null;
-    // proportion the carriers toward 1.15 × each target
-    let ok = true;
-    const scale = new Map(uniq.map((m) => [m.id, 1]));
-    wanted.forEach((w, k) => {
-      const v = w.sign * pred.effects[EFFECT_INDEX[w.key]];
-      const want = w.target * 1.15;
-      if (v < w.target * 1.02 || v > w.target * 1.6) ok = false;
-      const r = v > 0.2 ? want / v : 2.5;
-      const id = pick[k].id;
-      scale.set(id, Math.min(scale.get(id) === 1 ? r : Math.max(scale.get(id), r), 2.5));
-    });
-    const dirty = unwantedMax(pred.effects, exclude);
-    if (ok && dirty.value <= PURITY_LIMIT * 0.6) return { plan, pred };
-    if (!ok) {
-      // a brew that is mostly grains turns to paste and stops steeping
-      for (const m of uniq) x.set(m.id, Math.max(0.04, Math.min(m.form === 'liquid' ? 0.92 : 0.5, x.get(m.id) * scale.get(m.id))));
-      continue;
+    if (stageT !== null) {
+      plan.steep = { T: stageT, hold };
+      plan.heatTo = Math.max(plan.heatTo, stageT);
+      plan.coolTo = Math.min(plan.coolTo, stageT);
     }
-    // too dirty: add (or grow) something that cancels the strongest unwanted effect
-    const c = canceller(dirty.key, pred.effects[EFFECT_INDEX[dirty.key]], exclude, ctx);
-    if (!c) return null;
-    const have = extra.find((e) => e[0] === c.id);
-    const add = Math.min(0.3, dirty.value / Math.max(2, c.potency) * 1.05);
-    if (have) have[1] = Math.min(0.35, have[1] + add);
-    else extra = [...extra, [c.id, add]];
+    const pr = predictPlan(ctx.world, ctx.lookup, plan);
+    const share = (plan.ingredients.find((i) => i.id === m.id)?.n || 0) / pr.totalParticles;
+    if (share <= 0) return null;
+    const g = o.activation && isMagical(m) ? m.arcane.gain : 1;
+    return pr.raw.map((v) => (v / share) * g);
+  };
+  const vecOf = (m, f = 0.2) => {
+    if (!model.has(m.id)) model.set(m.id, probe(m, f) || new Array(NE).fill(0));
+    return /** @type {number[]} */ (model.get(m.id));
+  };
+  const laws = ctx.world.laws || [];
+  const tmp = new Float64Array(NE);
+  /** what the model says a set of shares gives (laws, oppositions, saturation) */
+  const outcome = (ids, xs) => {
+    tmp.fill(0);
+    for (let j = 0; j < ids.length; j++) {
+      const v = /** @type {number[]} */ (model.get(ids[j]));
+      for (let k = 0; k < NE; k++) tmp[k] += xs[j] * v[k];
+    }
+    return interact(tmp, laws);
+  };
+  const wIdx = wanted.map((w) => EFFECT_INDEX[w.key]);
+  const free = EFFECT_KEYS.map((k) => exclude.includes(k));
+  /** how far a modelled outcome is from the order (0 = ideal) */
+  const badness = (e) => {
+    let b = 0;
+    wanted.forEach((w, j) => {
+      const v = w.sign * e[wIdx[j]];
+      const lo = w.target * 1.15, hi = w.target * 1.45;
+      if (v < lo) b += 40 * ((lo - v) / w.target) ** 2;
+      else if (v > hi) b += 8 * ((v - hi) / w.target) ** 2;
+    });
+    for (let k = 0; k < NE; k++) {
+      if (free[k]) continue;
+      const a = Math.abs(e[k]);
+      b += 0.05 * a * a + (a > 0.3 ? 6 * (a - 0.3) ** 2 : 0);
+    }
+    return b;
+  };
+  /** proportion a set of ingredients on the model (coordinate descent with projection) */
+  const solve = (ids, start) => {
+    const xs = start.slice();
+    const solid = ids.map(solidFrac);
+    const feasible = () => {
+      let used = 0, sol = 0;
+      for (let j = 0; j < xs.length; j++) { if (xs[j] < 0) return false; used += xs[j]; if (solid[j]) sol += xs[j]; }
+      return used <= 0.92 && sol <= 0.48;
+    };
+    const cost = () => badness(outcome(ids, xs)) + 0.02 * xs.reduce((a, v) => a + v, 0);
+    let best = cost(), step = 0.08;
+    for (let it = 0; it < 220 && step > 0.0015; it++) {
+      let moved = false;
+      for (let j = 0; j < xs.length; j++) {
+        for (const d of [step, -step]) {
+          const old = xs[j];
+          xs[j] = Math.max(0, old + d);
+          if (xs[j] !== old && feasible()) {
+            const c = cost();
+            if (c < best - 1e-9) { best = c; moved = true; continue; }
+          }
+          xs[j] = old;
+        }
+      }
+      if (!moved) step *= 0.5;
+    }
+    return { xs, cost: best };
+  };
+  const good = (e) => wanted.every((w, j) => w.sign * e[wIdx[j]] >= w.target * 1.04) && EFFECT_KEYS.every((k, i) => free[i] || Math.abs(e[i]) <= PURITY_LIMIT * 0.45);
+
+  // ---- first guess on the guild's opposing pairs, where the problem is
+  // convex: fire − frost, life − death − 2·poison (life mends poison two to
+  // one) and signed acidity are each a single linear channel, as are the
+  // effects nothing opposes. Every candidate goes in at once; least squares
+  // with exact coordinate steps picks the carriers' and helpers' shares.
+  for (const m of uniq) vecOf(m);
+  if (uniq.some((m) => model.get(m.id).every((v) => v === 0))) return null;
+  const E_ = EFFECT_INDEX;
+  const net = (v) => [v[E_.fire] - v[E_.frost], v[E_.vitality] - v[E_.death] - 2 * v[E_.toxicity], v[E_.acidity], v[E_.strength], v[E_.love], v[E_.arcana], v[E_.transformation]];
+  const NC = 7;
+  const tgt = new Array(NC).fill(0), wt = new Array(NC).fill(6);
+  const chan = { fire: [0, 1], frost: [0, -1], vitality: [1, 1], acidity: [2, 1], strength: [3, 1], love: [4, 1], arcana: [5, 1], transformation: [6, 1] };
+  const convex = wanted.every((w) => chan[w.key]);
+  for (const w of wanted) {
+    if (!chan[w.key]) continue;
+    const [c, sg] = chan[w.key];
+    tgt[c] = sg * w.sign * w.target * 1.25;
+    wt[c] = 40 / (w.target * w.target);
+  }
+  let ids = uniq.map((m) => m.id);
+  let xs0 = ids.map(() => 0.25);
+  if (convex) {
+    const cand = [...uniq, ...helpers];
+    for (const m of helpers) vecOf(m);
+    const M = cand.map((m) => net(model.get(m.id)));
+    const solid = cand.map((m) => solidFrac(m.id));
+    const x = /** @type {number[]} */ (cand.map((m) => (uniq.includes(m) ? 0.15 : 0)));
+    const r = tgt.map((t, c) => cand.reduce((acc, m, j) => acc + M[j][c] * x[j], 0) - t);
+    for (let sweep = 0; sweep < 300; sweep++) {
+      let change = 0;
+      for (let j = 0; j < cand.length; j++) {
+        let g = 0.02, hh = 0;
+        for (let c = 0; c < NC; c++) { g += 2 * wt[c] * M[j][c] * r[c]; hh += 2 * wt[c] * M[j][c] * M[j][c]; }
+        if (hh <= 1e-12) continue;
+        let nx = Math.max(0, x[j] - g / hh);
+        // keep within the brew: at most 92 % ingredients, at most 48 % grains
+        let used = 0, sol = 0;
+        for (let q = 0; q < cand.length; q++) if (q !== j) { used += x[q]; if (solid[q]) sol += x[q]; }
+        nx = Math.min(nx, 0.92 - used, solid[j] ? 0.48 - sol : 1);
+        nx = Math.max(0, nx);
+        const d = nx - x[j];
+        if (d === 0) continue;
+        for (let c = 0; c < NC; c++) r[c] += M[j][c] * d;
+        x[j] = nx;
+        change = Math.max(change, Math.abs(d));
+      }
+      if (change < 1e-5) break;
+    }
+    // the carriers and the strongest few helpers
+    const keep = cand.map((m, j) => ({ m, f: x[j], c: uniq.includes(m) })).filter((k) => k.c || k.f * n >= 0.6)
+      .sort((p, q) => (q.c ? 1 : 0) - (p.c ? 1 : 0) || q.f - p.f).slice(0, Math.max(uniq.length + 1, 5));
+    ids = keep.map((k) => k.m.id);
+    xs0 = keep.map((k) => Math.max(k.f, 0.01));
+  }
+  // then the full model: the world's laws, saturation and what may be tolerated
+  let sol = solve(ids, xs0);
+  if (!good(outcome(ids, sol.xs)) && !convex) {
+    // effects the pairs cannot express (poison or death wanted): add the best single helper
+    const cands = helpers.filter((m) => !ids.includes(m.id)).slice(0, 12);
+    let bestTry = null;
+    for (const m of cands) {
+      vecOf(m);
+      const ids2 = [...ids, m.id];
+      const t = solve(ids2, [...sol.xs, 0.05]);
+      if (!bestTry || t.cost < bestTry.sol.cost) bestTry = { ids: ids2, sol: t };
+    }
+    if (bestTry && bestTry.sol.cost < sol.cost * 0.95) { ids = bestTry.ids; sol = bestTry.sol; }
+  }
+
+  // ---- build the real plan, check it with the predictor and refine the model
+  const accept = (pred) => wanted.every((w, j) => {
+    const v = w.sign * pred.effects[wIdx[j]];
+    return v >= w.target * 1.02 && v <= w.target * 1.7;
+  }) && unwantedMax(pred.effects, exclude).value <= PURITY_LIMIT * 0.6;
+  const toMap = (xs) => new Map(/** @type {[string, number][]} */ (ids.map((id, j) => [id, xs[j]])).filter(([, f]) => f * n >= 0.5));
+  let best = null;
+  for (let it = 0; it < 3; it++) {
+    const plan = build(toMap(sol.xs));
+    if (!plan) break;
+    const pred = finish(plan);
+    if (!pred) break;
+    if (accept(pred)) return { plan, pred };
+    const err = planError(pred, wanted, wIdx, exclude);
+    if (!best || err < best.err) best = { plan, pred, err };
+    // refine the model where the brew actually is, and solve again
+    for (const id of ids) {
+      const f = sol.xs[ids.indexOf(id)];
+      const v = probe(ctx.lookup(id), Math.max(0.03, f));
+      if (v) model.set(id, v);
+    }
+    sol = solve(ids, sol.xs);
+  }
+  // close enough: particle by particle, one more or one less of each ingredient
+  if (!best || best.err > 2) return null;
+  let cur = best;
+  for (let step = 0; step < 5; step++) {
+    let better = null;
+    for (let j = 0; j < cur.plan.ingredients.length; j++) {
+      for (const d of [1, -1]) {
+        const ing = cur.plan.ingredients.map((i) => ({ ...i }));
+        ing[j].n += d;
+        if (ing[j].n < 1) continue;
+        const p2 = plainPlan(ing);
+        const r2 = finish(p2);
+        if (!r2) continue;
+        const err = planError(r2, wanted, wIdx, exclude);
+        if (err < (better ? better.err : cur.err) - 1e-6) better = { plan: p2, pred: r2, err };
+      }
+    }
+    if (!better) break;
+    cur = better;
+    if (accept(cur.pred)) return { plan: cur.plan, pred: cur.pred };
   }
   return null;
 }
 
-/** Opposing effect that cancels an unwanted one (the guild primer's laws). */
-const CANCELS = { fire: ['frost'], frost: ['fire'], death: ['vitality'], toxicity: ['vitality'], acidity: ['acidity'] };
-
-/**
- * A reagent that cancels an unwanted effect without bringing new ones.
- * @param {string} key @param {number} value signed amount to cancel
- */
-function canceller(key, value, exclude, ctx) {
-  const opp = CANCELS[key];
-  if (!opp) return null;
-  let best = null;
-  for (const id of ctx.available) {
-    const m = ctx.lookup(id);
-    if (!m || !m.effects || m.form === 'gas' || m.awakened) continue;
-    let potency;
-    if (key === 'acidity') potency = -Math.sign(value) * (m.effects.acidity || 0);
-    else potency = m.effects[opp[0]] || 0;
-    if (potency < 6) continue;
-    let side = 0;
-    for (const [k, v] of Object.entries(m.effects)) if (k !== opp[0] && k !== key && !exclude.includes(k)) side += Math.abs(Number(v) || 0);
-    if (side > potency * 0.08) continue;
-    if (!best || potency - side > best.potency) best = { id, potency };
+/** How far a predicted brew misses the order (for particle-level tuning). */
+function planError(pred, wanted, wIdx, exclude) {
+  let e = 0;
+  wanted.forEach((w, j) => {
+    const v = w.sign * pred.effects[wIdx[j]];
+    if (v < w.target * 1.08) e += 4 * (w.target * 1.08 - v) / w.target;
+    else if (v > w.target * 1.6) e += (v - w.target * 1.6) / w.target;
+  });
+  for (let k = 0; k < NE; k++) {
+    if (exclude.includes(EFFECT_KEYS[k])) continue;
+    const a = Math.abs(pred.effects[k]);
+    if (a > PURITY_LIMIT * 0.5) e += a - PURITY_LIMIT * 0.5;
   }
-  return best;
+  return e;
 }
 
 // ------------------------------------------------------------------ generation
@@ -543,7 +730,8 @@ export function generateCommission(ctx, rng, opts = {}) {
     const requests = opts.request ? [requestById(opts.request)].filter(Boolean) : opts.style ? [] : requestsFor(arch, tier, ctx.event);
     const usePhysical = physical.length && (!requests.length || rng.chance(opts.style ? 1 : 0.3));
     if (usePhysical) com = physicalCommission(rng.pick(physical), arch, tier, ctx, rng, totalN, bottleMl, bottleN, opts);
-    else if (requests.length) com = effectCommission(rng.pick(requests), arch, tier, ctx, rng, totalN, bottleMl, bottleN, opts);
+    // a physical style needs prepared reagents the shop may not stock: ask for effects instead
+    if (!com && requests.length) com = effectCommission(rng.pick(requests), arch, tier, ctx, rng, totalN, bottleMl, bottleN, opts);
     if (com) return com;
   }
   return null;
@@ -558,8 +746,11 @@ function effectCommission(req, arch, tier, ctx, rng, totalN, bottleMl, bottleN, 
   const [lo, hi] = TIER_TARGET[tier];
   const serve = req.serve === 'warm' ? Math.round(rng.range(45, 58)) : req.serve === 'cold' && ctx.cap.minCool <= 6 ? Math.round(rng.range(6, 10)) : 20;
   let found = null, activation = false, wanted = [], exclude = [];
-  // the sampled strength first, then the tier's mildest, before giving up
-  for (const main of [Math.round(rng.range(lo, hi)), lo]) {
+  // the sampled strength first, then the tier's mildest, then (for masters,
+  // whose orders combine several balanced effects) a gentler one, before giving up
+  const mains = [Math.round(rng.range(lo, hi)), lo];
+  if (tier >= 3) mains.push(TIER_TARGET[tier - 2][0]);
+  for (const main of mains) {
     wanted = req.fx.map((f, k) => ({ key: f.key, sign: f.sign || 1, target: k === 0 ? main : Math.max(4, Math.round(main * (f.share || 0.6) * rng.range(0.9, 1.1))) }));
     exclude = [...wanted.map((w) => w.key), ...(req.tolerate || [])];
     // plain first; awakening only when plain cannot reach it (never for apprentices)
@@ -678,36 +869,44 @@ function finalize({ style, request, title, arch, tier, ctx, rng, plan, pred, req
   return com;
 }
 
-/** Fixed, gentle first commission used by the tutorial. */
+/** The two herbs of the tutorial's healing tonic: a healer that leaves frost, and a warming one that cancels it. */
+export const TUTORIAL_HERBS = { healer: 'wild-silverleaf', warmer: 'wild-sunthistle' };
+
+/**
+ * Fixed, gentle first commission used by the tutorial: a warm healing tonic
+ * of Silverleaf (healing with a frosty bite) balanced by Sunthistle (whose
+ * fire cancels the frost and adds a little more healing).
+ */
 export function tutorialCommission(ctx, rng) {
   const R = ctx.world.roles;
-  const plan = { ingredients: [{ id: R.water, n: 22 }, { id: R.essenceA, n: 22 }], heatTo: 45, coolTo: 20, serveTemp: 45 };
+  const { healer, warmer } = TUTORIAL_HERBS;
+  const plan = { ingredients: [{ id: R.water, n: 22 }, { id: healer, n: 10, ground: true }, { id: warmer, n: 5, ground: true }], heatTo: 62, coolTo: 20, serveTemp: 45, steep: { T: 62, hold: 22 }, knead: true, hold: 8 };
   const pred = predictPlan(ctx.world, ctx.lookup, plan);
-  const vit = Math.max(4, Math.round(pred.effects[EFFECT_INDEX.vitality] * 0.8));
+  const vit = Math.max(4, Math.round(pred.effects[EFFECT_INDEX.vitality] * 0.7));
   const arch = archetypeOf('farmer');
   const customer = makeCustomer(rng, arch);
   customer.name = 'Old Mabry Hollins';
   const colorWord = describeColor(pred.color);
+  const leaf = ctx.lookup(healer).name, sun = ctx.lookup(warmer).name;
   return {
     id: 'q-tutorial',
     tier: 0,
-    style: 'warm',
+    style: 'healing',
     contract: false,
     tutorial: true,
-    potionName: `${capitalize(colorWord)} Tonic`,
+    potionName: `${capitalize(colorWord)} Healing Tonic`,
     customer,
-    dialogue: `Ah, a new alchemist! My old joints ache. Could you brew me a warm, healing ${colorWord} tonic? ${ctx.lookup(R.essenceA).name} thinned with ${ctx.lookup(R.water).name} ought to do — but test that it truly heals, and that nothing else is in it!`,
+    dialogue: `Ah, a new alchemist! My old joints ache. Could you brew me a warm healing tonic? ${leaf} heals, they say, but it leaves a frosty bite — a little ${sun} should warm that away. Test that it truly heals, and that nothing else is in it!`,
     requirements: [
-      { key: 'color', kind: 'target', target: pred.lab, rgb: pred.color, tol: 14, zero: 44, label: colorWord },
       { key: 'temperature', kind: 'target', target: 45, tol: 12, zero: 36, label: '33–57°C' },
       { key: 'vitality', kind: 'min', target: vit, tol: 0, zero: Math.max(6, vit * 0.6), label: `at least ${vit}%`, effect: true },
-      purityRequirement(['vitality']),
+      purityRequirement(['vitality'], 3),
     ],
     bottleMl: 100,
     bottleN: 20,
     budget: 30,
     reference: plan,
-    predicted: { density: pred.density, viscosity: pred.viscosity, effects: Array.from(pred.effects), color: pred.color, reactions: [], threshold: pred.threshold, awakened: pred.awakened },
+    predicted: { density: pred.density, viscosity: pred.viscosity, effects: Array.from(pred.effects), color: pred.color, reactions: pred.reactions, threshold: pred.threshold, awakened: pred.awakened },
     effectOrder: true,
     activation: false,
     hintCost: 0,
@@ -724,4 +923,3 @@ function aOrAn(w) {
 }
 
 export { STYLE_NOUN, STYLE_TIER, unwantedMax };
-void isMagical;

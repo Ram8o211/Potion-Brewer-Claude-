@@ -10,7 +10,7 @@ test('choose a rabbit, dose it, replay the trial for free', async ({ page }, inf
   await newGame(page, { tutorial: false, seed: 'colony-ui-1' });
   const roles = await lab(page, (l) => l.state.world.roles);
   await pourDose(page, roles.water, [100]);
-  await pourDose(page, roles.essenceA, [100]);
+  await pourDose(page, 'wild-silverleaf', [100]);
   await page.click('[data-act=tab-trials]');
   await expect(page.locator('.rabbit-tile[data-rabbit]')).toHaveCount(2);
   await expect(page.locator('canvas.hutch-scene')).toBeVisible();

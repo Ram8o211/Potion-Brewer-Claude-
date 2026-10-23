@@ -279,7 +279,11 @@ into the new vessel's shape instead of being dropped.
   shelf limits, equipment, journal, knowledge, recipes, history,
   achievements, statistics, market day, tutorial progress, the cauldron
   snapshot, the current batch (id and revision), the sealed vial, the
-  trials state and the wilds' deposit stocks. It handles buying and selling, equipment, sales and
+  bottles on the potion shelves (`bottles`: vials with their exact
+  particles, at most `cap.bottles` of them — 3, then 6, 12 and 24 with the
+  Bottle Shelf, Potion Cabinet and Bottle Cellar; `shelveBottle`,
+  `takeBottle` swaps a shelved bottle with the counter's vial,
+  `removeBottle`), the trials state and the wilds' deposit stocks. It handles buying and selling, equipment, sales and
   reputation, rank-ups, end of day, market events and a once-a-day
   stipend that makes a run impossible to lose. `toJSON` / `fromJSON` run
   through `migrate()`, which upgrades older save versions and regenerates
@@ -304,6 +308,18 @@ into the new vessel's shape instead of being dropped.
   concentration, rising with tier, and advanced ones can only be met with
   awakened magic. `PURITY_LIMIT = 1.2`: an order with a purity rule
   allows no unwanted effect above 1.2 %.
+* **Natural ingredients only.** The shop stocks just the three plain
+  solvents (water, oil, spirit — no effects); the prepared reagents the
+  generator still makes (essences, salts, crystals…) are kept in the world
+  for the physics and appear only on the Free Experiment's shelf
+  (`LAB_ROLES`, `sandboxIngredients`). Every effect comes from the 36 wild
+  ingredients (`materials/wild.js`), and each carries a main effect plus
+  side effects that sit only on the universal opposing pairs (fire/frost,
+  life/death with life mending poison 2:1, acid/alkali) — never both halves
+  of one pair — so any order can be balanced. Extracts keep the raw
+  ingredient's whole profile: steeping never purifies, only mixing with an
+  opposite does. A few delicate ingredients (Heartpetal) cannot awaken, and
+  spoiled matter loses its magic.
 * **`commissions.js`** builds each order from a hidden **reference plan**
   (ingredients and amounts, heat-to, cool-to, serving temperature,
   kneading or crushing, hold time) for one of 14 physical brewing styles
@@ -325,11 +341,22 @@ into the new vessel's shape instead of being dropped.
   band where grains settle unevenly.
 
   Effect orders now come from the request templates. The plan search
-  (`searchPlan`) tries ingredient sets, amounts, preparations and — when
-  the target needs it — an **activation stage**, predicts each candidate
-  with `predict.js`, and keeps only plans whose predicted potion scores
-  above the acceptance line with `evaluatePotion` itself (the same function
-  the counter uses), including the purity rule planned with a 0.6× margin.
+  (`searchPlan`) picks carriers of the wanted effects and balances them
+  with helpers: each candidate's raw (pre-law) effects per unit share are
+  probed with `predict.js` under the brew's extraction stage; on the net
+  opposition channels (fire − frost, life − death − 2·poison, signed acidity
+  and the unopposed effects) the problem is a convex least-squares one,
+  solved for all candidates at once with exact coordinate steps; the
+  strongest few are kept and polished on the full model (the world's laws,
+  saturation, tolerated effects); the real plan is then predicted, the
+  model re-probed where the brew actually is, and a near miss tuned
+  particle by particle. An **activation stage** is added when the target
+  needs it (only ingredients that wake within reach, all in one
+  direction). Plans are kept only if the predicted potion scores above the
+  acceptance line with `evaluatePotion` itself (the same function the
+  counter uses), including the purity rule planned with a 0.6× margin.
+  Masters fall back to a gentler strength when their combination is out of
+  reach (a brew holds at most half grains, or it cannot steep).
   `scripts/achievability.mjs` then brews generated orders' plans in the real
   simulation with the rank's equipment (`autobrew.js`, stages pour → crush
   → stir → steep → heat/chill → hold → serve) and reports the quality the
@@ -447,7 +474,7 @@ into the new vessel's shape instead of being dropped.
   (the lookup re-indexes itself), are saved with the world, and are masked
   from the guild theory, the shop, the inspector, the book and order
   planning: only trials reveal them.
-* **`gathering.js`** is the wilds: six regions (four open from the start,
+* **`gathering.js`** is the wilds: six regions with 36 ingredients (four open from the start,
   two magical ones from Adept and Expert), deposits generated from the
   seed (never saved), and per-deposit stock plus a timestamp in the save.
   Stock is resolved lazily from elapsed wall-clock time when a deposit is
@@ -511,6 +538,13 @@ into the new vessel's shape instead of being dropped.
     and a shadow line add shape.
   * Powders are drawn as speckled grain clusters, darker when damp.
   * Frozen blocks get a crisp body with a frosty rim.
+  * A whole ingredient is drawn with its own surface, laid out in the
+    body's frame so it tumbles with it (`materials/shapes.js` LOOK): root
+    fibres, leaf veins, stone speckle, crystal facets, mushroom caps,
+    glossy beans and scales, bark plates split by fissures, glossy berries,
+    fungus gills, ribbed seeds, pearly shell rings, metallic bands, black
+    glass glints, spotted toadstool caps, velvet reeds and froths of
+    florets. Each shape also has its own 16×16 sprite (`scenes.js`).
   * Vapour is a soft fog.
   * Glowing and burning matter emits light.
 * **`portraits.js`** draws procedural customer portraits.
@@ -538,7 +572,8 @@ into the new vessel's shape instead of being dropped.
   meters, the cauldron view, the shelf (tap, long-press to inspect, or
   drag a jar onto the cauldron), dose buttons and the mortar switch, the
   fire and frost control, tools, lid, time speed, emptying, bottling into
-  a sealed vial, the brew-analysis panel, the probe and inspector, the
+  a sealed vial (to the counter, or onto the potion shelves while there is
+  room), the brew-analysis panel, the probe and inspector, the
   thermal view and keyboard shortcuts. It owns batch identity and the
   vial (serve, discard or pour back). The simulation runs in every room
   but is drawn only in the Brew room. It runs the frame loop: physics within a
@@ -547,7 +582,8 @@ into the new vessel's shape instead of being dropped.
   It also collects frame-timing statistics (`perfReport()`), used by the
   benchmark.
 * **`views/`** holds the other rooms: `counter.js` (customer, full order
-  with verified effects, the vial, serving), `wilds.js` (regions, the
+  with verified effects, the vial, serving, and the potion shelves: a grid
+  of bottle places, each bottle taken down, poured back or discarded), `wilds.js` (regions, the
   painted scene with tappable deposits, the deposit list), `trials.js`
   (subjects, the draggable dropper, dose size and source, reports with
   theory vs observation) and `book.js` (recipes, trial log, laws,

@@ -625,3 +625,20 @@ input[type=checkbox] { width: 22px; height: 22px; accent-color: #6a4b9a; }
 @media (max-width: 600px) {
   .item > .buy-row { grid-column: 1 / -1; justify-content: flex-start !important; }
 }
+
+/* ---- potion shelves (counter): sealed bottles kept for later */
+.shelf-card .row:first-child { align-items: center; gap: 8px; }
+.bottle-shelf { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0; margin: 8px 0; padding: 0 4px;
+  background: linear-gradient(to bottom, transparent 0 calc(100% - 8px), #6b4526 calc(100% - 8px) calc(100% - 4px), #3d2614 calc(100% - 4px));
+  background-size: 100% 64px; }
+.bottle-slot { position: relative; min-width: 44px; height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 0 0 10px;
+  background: none; border: 0; color: inherit; font: inherit; cursor: pointer; }
+.bottle-slot canvas { width: 32px; height: 44px; image-rendering: pixelated; }
+.bottle-slot .bml { position: absolute; bottom: 10px; right: 2px; font-size: 10px; line-height: 1; padding: 1px 2px; background: rgba(26, 15, 8, 0.75); color: #f3e3c0; border-radius: 2px; }
+.bottle-slot.active canvas { filter: drop-shadow(0 0 3px #ffd36a); }
+.bottle-slot.active::after { content: ''; position: absolute; left: 20%; right: 20%; bottom: 8px; height: 2px; background: #ffd36a; }
+.bottle-slot.empty::before { content: ''; width: 20px; height: 30px; margin-bottom: 0; border: 1px dashed rgba(90, 58, 32, 0.45); border-radius: 6px 6px 3px 3px; }
+.bottle-slot.locked { opacity: 0.25; }
+.bottle-slot.locked::before { content: ''; width: 24px; height: 2px; background: rgba(60, 38, 20, 0.5); }
+.bottle-detail { display: flex; flex-direction: column; gap: 6px; padding-top: 6px; border-top: 1px solid rgba(90, 58, 32, 0.3); }
+.bottle-dest { margin: 6px 0; }

@@ -69,7 +69,7 @@ export const REQUESTS = [
 ];
 
 /** Concentration targets (percent) of a request's main effect by tier. */
-export const TIER_TARGET = [[8, 15], [10, 18], [14, 26], [24, 40], [34, 55]];
+export const TIER_TARGET = [[8, 15], [10, 18], [13, 22], [17, 28], [22, 34]];
 
 /** Hard limit on any effect the customer did not ask for (percent). */
 export const PURITY_LIMIT = 1.2;

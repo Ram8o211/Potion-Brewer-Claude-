@@ -3,7 +3,7 @@
 
 import { h, btn } from './dom.js';
 import { PHASE } from '../simulation/constants.js';
-import { MAX_SPECIES } from '../reactions/species.js';
+import { TUTORIAL_HERBS } from '../game/commissions.js';
 
 export class Tutorial {
   /** @param {import('./lab.js').LabScreen} lab */
@@ -20,14 +20,10 @@ export class Tutorial {
     const lab = this.lab;
     const st = lab.state;
     const R = st.world.roles;
-    const water = st.lookup(R.water), ess = st.lookup(R.essenceA);
-    const volumeOf = (id) => {
-      const s = lab.sim.species.slotOf.get(id);
-      if (s === undefined) return 0;
-      let t = 0;
-      for (let i = 0; i < lab.sim.p.count; i++) t += lab.sim.p.comp[i * MAX_SPECIES + s];
-      return t * 5;
-    };
+    const water = st.lookup(R.water);
+    const H = TUTORIAL_HERBS, leaf = st.lookup(H.healer), sun = st.lookup(H.warmer);
+    /** ml of an ingredient poured into this batch */
+    const poured = (id) => st.brewLog.reduce((a, e) => a + (e.type === 'pour' && e.id === id ? e.ml : 0), 0);
     const brewT = () => {
       const p = lab.sim.p;
       let T = 0, n = 0;
@@ -38,27 +34,23 @@ export class Tutorial {
     const rabbitTested = () => st.trials.records.some((r) => r.subjectId === 'rabbit' && r.batchId === st.batch.id);
     return [
       { text: `Welcome to your shop, alchemist! Your very first customer is here. Let’s brew their order together — it only takes a few minutes.`, button: 'Let’s begin' },
-      { text: 'This strip is the order. Colour and temperature meters fill as your brew matches. The heart (healing) shows “?”: what a mixture really does stays unknown until you test it.', target: () => lab.strip, button: 'Got it' },
+      { text: 'This strip is the order. The temperature meter fills as your brew matches. The heart (healing) shows “?”: what a mixture really does stays unknown until you test it.', target: () => lab.strip, button: 'Got it' },
       { text: `Tap the jar of ${water.name} on the shelf to pick it up.`, target: () => lab.jarEls[R.water] && lab.jarEls[R.water].el, done: () => lab.selected === R.water },
-      { text: 'Pour about 110 ml: tap the dose buttons (100, then 25) or hold your finger in the cauldron. You can also drag a jar straight onto the cauldron.', target: () => lab.doseEl, done: () => volumeOf(R.water) >= 95 },
-      { text: `Now pick up the ${ess.name}. Long-press any jar to see what the plain ingredient is known to do.`, target: () => lab.jarEls[R.essenceA] && lab.jarEls[R.essenceA].el, done: () => lab.selected === R.essenceA },
-      { text: 'Pour about 110 ml of it. The colour stays where it lands at first — mixing starts where liquids touch.', target: () => lab.doseEl, done: () => volumeOf(R.essenceA) >= 95 && !lab.sim.emitter.pouring },
-      { text: 'Pick the spoon and drag it in circles through the brew. Stirring spreads colour — and magic — far faster than waiting.', target: () => lab.toolBtns.spoon, done: () => (lab.sim.tool.stirDistance - (this.flags.stir0 ?? (this.flags.stir0 = lab.sim.tool.stirDistance))) > 18 || this.colourScore() > 0.95 },
-      { text: 'The customer wants it served warm. Slide the fire control to the right — heat enters through the bottom and spreads.', target: () => lab.furnaceInput.parentElement, done: () => brewT() >= 36 },
+      { text: 'Pour about 110 ml: tap the dose buttons (100, then 25) or hold your finger in the cauldron. You can also drag a jar straight onto the cauldron.', target: () => lab.doseEl, done: () => poured(R.water) >= 95 },
+      { text: `Now pick up the ${leaf.name}. Long-press any jar to see what it is known to do: it heals, but carries a frosty bite.`, target: () => lab.jarEls[H.healer] && lab.jarEls[H.healer].el, done: () => lab.selected === H.healer },
+      { text: 'Pour about 50 ml. The mortar grinds it first (“Ground” is lit): whole leaves would give up almost nothing.', target: () => lab.doseEl, done: () => poured(H.healer) >= 45 && !lab.sim.emitter.pouring },
+      { text: `Nothing that grows is pure. Fire cancels frost, life cancels death, alkali cancels acid. Pick up the ${sun.name}: its fire will cancel the leaf’s frost.`, target: () => lab.jarEls[H.warmer] && lab.jarEls[H.warmer].el, done: () => lab.selected === H.warmer },
+      { text: 'Pour about 25 ml — half as much as the leaf, so the fire and the frost balance out.', target: () => lab.doseEl, done: () => poured(H.warmer) >= 20 && !lab.sim.emitter.pouring },
+      { text: 'Pick the spoon and drag it in circles through the brew. Stirring spreads colour — and magic — far faster than waiting.', target: () => lab.toolBtns.spoon, done: () => (lab.sim.tool.stirDistance - (this.flags.stir0 ?? (this.flags.stir0 = lab.sim.tool.stirDistance))) > 12 || lab.sim.tool.auto || brewT() >= 40 },
+      { text: 'Herbs steep only when warm. Slide the fire control to the right and bring the brew to about 60°C — heat enters through the bottom and spreads.', target: () => lab.furnaceInput.parentElement, done: () => brewT() >= 50 },
       { text: 'Is it really a healing tonic? Nobody knows until it is tested. Open the Trials room.', target: tab('trials'), done: () => lab.view === 'trials' },
       { text: 'Choose a rabbit in the hutch and give it a dose: press Give, or drag the dropper onto it. The dose is real potion from the tap. Each rabbit reads a potion a little differently — later, test several.', target: () => document.querySelector('[data-act=test-rabbit]') || lab.views.trials.hutch.el, done: rabbitTested },
-      { text: 'The rabbit shows how much vitality (and poison) this batch carries. Verified effects now count on the order. Back to the cauldron!', target: tab('brew'), done: () => lab.view === 'brew' },
-      { text: 'When the meters are full and the brew is warm, press Bottle. (Turn the fire down once it is warm enough.)', target: () => lab.bottleFab, done: () => this.flags.bottled },
+      { text: 'The rabbit shows how much vitality — and any frost or fire left over — this batch carries. Verified effects now count on the order. Back to the cauldron!', target: tab('brew'), done: () => lab.view === 'brew' },
+      { text: 'Let it cool to a warm 45°C or so, then press Bottle. A bottle can go to the counter or onto your potion shelves for later.', target: () => lab.bottleFab, done: () => this.flags.bottled },
       { text: 'Your sealed vial waits at the Counter. Offer it to the customer: seal its label (your trial reading is already written in), then agree on a price.', target: () => document.querySelector('[data-act=serve]') || tab('counter')(), done: () => this.flags.sold },
-      { text: 'Splendid — your first sale! New orders ask for strength, love, fire… Gather wild herbs in the Wilds, grind them, test every new mixture in the Trials room, and save good recipes in your Book.', button: 'Run my shop!' },
+      { text: 'Splendid — your first sale! New orders ask for strength, love, fire… Every herb carries side effects: gather in the Wilds, balance them against their opposites, test every mixture in the Trials room and save good recipes in your Book.', button: 'Run my shop!' },
     ];
   }
-
-  colourScore() {
-    const r = this.lab.reqEls && this.lab.reqEls.find((x) => x.req.key === 'color');
-    return r ? parseFloat(r.meter.style.width) / 100 : 0;
-  }
-
 
   start(restart = false) {
     if (restart) {

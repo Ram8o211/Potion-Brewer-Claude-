@@ -7,7 +7,7 @@
 
 import { SpeciesTable, MAX_SPECIES } from '../reactions/species.js';
 import { mixtureProps } from '../reactions/mixture.js';
-import { compositionEffects, NE } from '../alchemy/effects.js';
+import { compositionEffects, extractedEffects, NE } from '../alchemy/effects.js';
 import { isMagical, awakenedId, thresholdToCelsius } from '../alchemy/arcane.js';
 
 /** degrees past (or short of) a threshold a plan keeps, so the brew is unambiguous */
@@ -25,6 +25,9 @@ export const ACTIVATION_MARGIN = 6;
  * @property {boolean} [activate] the plan means to awaken its magic (alchemy/arcane.js)
  * @property {{T:number, hold:number}} [steep] an extraction stage before anything else (°C, seconds)
  */
+
+/** Species tables by world lookup (predictPlan). @type {WeakMap<Function, SpeciesTable>} */
+const tables = new WeakMap();
 
 /**
  * @param {{reactions: import('../reactions/reactions.js').ReactionRule[], laws?: any[]}} world
@@ -93,21 +96,33 @@ export function predictPlan(world, lookup, plan) {
       vol.set(id, 0);
     }
   }
-  const sp = new SpeciesTable();
+  // the species table is kept per world between predictions (planning probes
+  // thousands of plans); a full one starts afresh
+  let sp = tables.get(lookup);
   const comp = new Float32Array(MAX_SPECIES);
-  for (const [id, v] of vol) {
-    if (v <= 1e-6) continue;
-    const def = lookup(id);
-    if (!def) continue;
-    const s = sp.ensure(def);
-    if (s >= 0) comp[s] += v / total;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (!sp || attempt) { sp = new SpeciesTable(); tables.set(lookup, sp); }
+    comp.fill(0);
+    let full = false;
+    for (const [id, v] of vol) {
+      if (v <= 1e-6) continue;
+      const def = lookup(id);
+      if (!def) continue;
+      const s = sp.ensure(def);
+      if (s >= 0) comp[s] += v / total;
+      else full = true;
+    }
+    if (!full) break;
   }
   const props = mixtureProps(sp, comp, 0, plan.serveTemp ?? 20);
   const effects = compositionEffects(sp, comp, 0, plan.serveTemp ?? 20, world.laws || [], new Array(NE).fill(0));
+  // what is extracted before laws and oppositions act (the planner balances on it)
+  const raw = new Array(NE).fill(0);
+  extractedEffects(sp, comp, 0, plan.serveTemp ?? 20, raw);
   /** @type {Record<string, number>} */
   const composition = {};
   for (let s = 0; s < sp.count; s++) if (sp.defs[s] && comp[s] > 1e-5) composition[sp.defs[s].id] = comp[s];
-  return { ...props, effects, composition, reactions: fired, totalParticles: total, threshold, awakened };
+  return { ...props, effects, raw, composition, reactions: fired, totalParticles: total, threshold, awakened };
 }
 
 /**

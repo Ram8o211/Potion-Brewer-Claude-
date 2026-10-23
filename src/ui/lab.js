@@ -29,6 +29,7 @@ import { saveGame, saveJSON, KEYS } from '../game/persistence.js';
 import { AutoBrewer } from '../game/autobrew.js';
 import { RANKS } from '../game/equipment.js';
 import { certification, missingEffects } from '../game/experiments.js';
+import { sandboxIngredients } from '../materials/generator.js';
 import { makeVial, appendParticles, updateVial, takeDose, pourBack, pourBackParts, relaxVial } from '../game/vial.js';
 import { theoryOf, EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, dominantEffect, NE } from '../alchemy/effects.js';
 import { awakenParts, describeThreshold } from '../alchemy/arcane.js';
@@ -403,7 +404,7 @@ export class LabScreen {
     const sh = clear(this.shelfEl);
     this.jarEls = {};
     const st = this.state;
-    const ids = this.sandbox ? st.world.ingredients : st.world.ingredients.filter((id) => st.lookup(id).tier <= st.rank || st.stock(id) > 0);
+    const ids = this.sandbox ? sandboxIngredients(st.world) : st.world.ingredients.filter((id) => st.lookup(id).tier <= st.rank || st.stock(id) > 0);
     const labels = shelfLabels(ids.map((id) => st.lookup(id).name));
     for (const [n, id] of ids.entries()) {
       const m = st.lookup(id);
@@ -915,18 +916,30 @@ export class LabScreen {
   }
 
   // ------------------------------------------------------------------ bottling → vial → serving
-  /** Choose how much to bottle, then bottle it into a sealed vial. */
+  /**
+   * Choose how much to bottle and where it goes — the counter, or a place on
+   * the potion shelves — then bottle it into a sealed vial.
+   */
   startBottling() {
     if (this.bottling) return;
     const st = this.state;
-    if (st.vial) { toast('A vial is waiting', 'Serve, pour back or discard the sealed vial at the Counter first.', 'bottle'); this.showView('counter'); return; }
+    const counterFree = !st.vial && !this.sandbox;
+    if (!counterFree && !this.sandbox && st.bottleRoom <= 0) {
+      toast('Nowhere to put it', `The counter holds a vial and the potion shelves are full (${st.cap.bottles}). Serve, pour back or discard a bottle first — or buy more shelving.`, 'bottle', 4500);
+      this.showView('counter');
+      return;
+    }
+    if (this.sandbox && st.vial) { toast('A vial is waiting', 'Pour back or discard the sealed vial first.', 'bottle'); return; }
     const avail = Math.floor(this.tapAvailable() / SIM.ML_PER_PARTICLE);
     if (avail < 1) { toast('Nothing to bottle', 'There is no liquid at the tap.', 'flask'); audio.play('error'); return; }
-    panels.openBottleSize(this, avail, (n) => this.beginBottling(n));
+    panels.openBottleSize(this, avail, (n, dest) => this.beginBottling(n, dest), { counterFree: counterFree || this.sandbox, shelfRoom: this.sandbox ? 0 : st.bottleRoom, shelves: !this.sandbox });
   }
 
-  /** Draw `n` particles from the tap into a new vial (animated). @param {number} n */
-  beginBottling(n) {
+  /**
+   * Draw `n` particles from the tap into a new vial (animated).
+   * @param {number} n @param {'counter'|'shelf'} [dest] where the sealed bottle goes
+   */
+  beginBottling(n, dest = 'counter') {
     if (this.bottling) return;
     const st = this.state;
     const sel = tapSelection(this.sim, n);
@@ -940,7 +953,7 @@ export class LabScreen {
       batchId: st.batch.id, rev: st.batch.rev, cert: cert.values, certRecords: cert.records, samples: cert.samples, parts: this.batchParts(),
       day: st.day, commissionId: st.current ? st.current.id : null,
     });
-    this.bottling = { total: sel.length, removed: 0, progress: 0, color: m.color, t: 0, vial };
+    this.bottling = { total: sel.length, removed: 0, progress: 0, color: m.color, t: 0, vial, dest };
     audio.play('glass');
     if (this.tutorial) this.tutorial.notify('bottle');
   }
@@ -970,6 +983,16 @@ export class LabScreen {
     const vial = b.vial;
     updateVial(vial, st.lookup, st.world.laws);
     vial.recipe = this.recipeDraft(vial.m, null, st.current);
+    vial.commissionId = b.dest === 'shelf' ? null : vial.commissionId;
+    if (b.dest === 'shelf' && st.shelveBottle(vial).ok) {
+      if (this.sim.p.count === 0) { st.brewLog = []; st.newBatch(); this.lastPoured = {}; }
+      audio.play('glass');
+      this.save();
+      toast('Bottle shelved', `${vial.ml} ml sealed and put on the potion shelves (${st.bottles.length}/${st.cap.bottles}). Take it down at the Counter whenever you need it.`, 'bottle', 3600);
+      if (this.view === 'counter') this.views.counter.refresh();
+      this.updateBadges();
+      return;
+    }
     st.vial = vial;
     if (this.sim.p.count === 0) { st.brewLog = []; st.newBatch(); this.lastPoured = {}; }
     audio.play('glass');
@@ -977,6 +1000,47 @@ export class LabScreen {
     if (this.sandbox || !st.current) toast('Vial sealed', `${vial.ml} ml bottled. Test it in the Trials room, or pour it back to keep working on it.`, 'bottle', 3600);
     this.showView(this.sandbox ? 'trials' : 'counter');
     this.updateBadges();
+  }
+
+  /** Put the counter's vial on the potion shelves. */
+  shelveVial() {
+    const st = this.state;
+    const r = st.shelveBottle();
+    if (!r.ok) { toast('The shelves are full', r.reason, 'bottle', 4000); audio.play('error'); return; }
+    audio.play('glass');
+    this.save();
+    this.views.counter.refresh();
+    this.updateBadges();
+  }
+
+  /** Take a shelved bottle down to the counter (swapping with the vial there). @param {string} id */
+  takeBottle(id) {
+    const r = this.state.takeBottle(id);
+    if (!r.ok) return;
+    updateVial(r.bottle, this.state.lookup, this.state.world.laws);
+    audio.play('glass');
+    this.save();
+    this.views.counter.refresh();
+    this.updateBadges();
+  }
+
+  /** Pour a shelved bottle away. @param {string} id */
+  discardBottle(id) {
+    if (!this.state.removeBottle(id)) return;
+    audio.play('splash');
+    this.save();
+    this.views.counter.refresh();
+  }
+
+  /** Pour a shelved bottle back into the cauldron. @param {string} id */
+  pourBackBottle(id) {
+    const b = this.state.bottles.find((x) => x.id === id);
+    if (!b) return;
+    if (!this.pourVialIntoCauldron(b)) return;
+    this.state.removeBottle(id);
+    this.save();
+    this.views.counter.refresh();
+    this.showView('brew');
   }
 
   /**
@@ -1063,19 +1127,26 @@ export class LabScreen {
     const st = this.state;
     const v = st.vial;
     if (!v) return;
+    if (!this.pourVialIntoCauldron(v)) return;
+    st.vial = null;
+    this.save();
+    this.views.counter.refresh();
+    this.showView('brew');
+  }
+
+  /** Pour a sealed bottle's exact matter into the cauldron. Returns false if there is no room. @param {any} v */
+  pourVialIntoCauldron(v) {
+    const st = this.state;
     const made = pourBack(v, this.sim);
-    if (!made) { toast('No room', 'The cauldron is too full to pour the vial back.', 'cauldron'); return; }
+    if (!made) { toast('No room', 'The cauldron is too full to pour the bottle back.', 'cauldron'); return false; }
     // provenance: the batch now also holds its share of what the vial's batch was made of
     st.brewLog.push({ type: 'vial', ml: made * SIM.ML_PER_PARTICLE, t: Math.round(this.sim.time), parts: pourBackParts(v, made * SIM.ML_PER_PARTICLE), from: v.id });
     // it is the same batch only if the cauldron still holds that batch
     if (st.batch.id !== v.batchId) st.newBatch();
     st.touchBatch();
-    st.vial = null;
     audio.play('splash');
     toast('Poured back', `${made * SIM.ML_PER_PARTICLE} ml returned to the cauldron. Earlier trials no longer describe the brew.`, 'pour');
-    this.save();
-    this.views.counter.refresh();
-    this.showView('brew');
+    return true;
   }
 
   /** Build a recipe description from the brew log + the measured result. */
@@ -1572,16 +1643,26 @@ export class LabScreen {
 
   /** The sealed vial drifts toward room temperature; re-measure it now and then. @param {number} dt */
   stepVial(dt) {
-    const v = this.state.vial;
+    const st = this.state;
+    // shelved bottles cool too; they are re-measured when the shelves are shown
+    for (const b of st.bottles) this._shelfDrift = (this._shelfDrift || 0) + relaxVial(b, dt * this.speed);
+    const v = st.vial;
     if (!v) return;
     this._vialDrift = (this._vialDrift || 0) + relaxVial(v, dt * this.speed);
     this._vialT = (this._vialT || 0) + dt;
     if (this._vialT > 2 && this._vialDrift > 0.5) {
       this._vialT = 0;
       this._vialDrift = 0;
-      updateVial(v, this.state.lookup, this.state.world.laws);
+      updateVial(v, st.lookup, st.world.laws);
       if (this.view === 'counter') this.views.counter.refresh();
     }
+  }
+
+  /** Re-measure the shelved bottles if they have cooled noticeably since last shown. */
+  freshBottles() {
+    if ((this._shelfDrift || 0) < 0.5) return;
+    this._shelfDrift = 0;
+    for (const b of this.state.bottles) updateVial(b, this.state.lookup, this.state.world.laws);
   }
 
   /** Warn when the brew boils or burns while the player is in another room. */

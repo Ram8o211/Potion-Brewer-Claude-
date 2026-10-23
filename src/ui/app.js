@@ -5,6 +5,7 @@ import { h, btn, modal, toast, setOverlayRoot, setToastRoot, confirmDialog, clea
 import { icon } from './icons.js';
 import { audio } from '../audio/audio.js';
 import { GameState } from '../game/state.js';
+import { sandboxIngredients } from '../materials/generator.js';
 import { EQUIPMENT } from '../game/equipment.js';
 import { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } from '../game/persistence.js';
 import { LabScreen } from './lab.js';
@@ -112,7 +113,7 @@ export class App {
     const existing = loadGame().state;
     const seed = existing ? existing.seed : saved && saved.seed ? saved.seed : 'experiment';
     const st = GameState.create(seed, { tutorial: false });
-    for (const id of st.world.ingredients) st.inventory[id] = Infinity;
+    for (const id of sandboxIngredients(st.world)) st.inventory[id] = Infinity;
     st.equipment = EQUIPMENT.map((e) => e.id);
     st.reputation = 99999;
     st.current = null;
@@ -124,7 +125,7 @@ export class App {
       st.day = Math.max(st.day, st.colony.day || 1);
       st.colony.seed = st.colony.seed || String(seed);
       st.restoreRemains();
-      for (const id of st.world.ingredients) st.inventory[id] = Infinity;
+      for (const id of sandboxIngredients(st.world)) st.inventory[id] = Infinity;
     }
     this._swap(new LabScreen(this, st, { sandbox: true }));
     toast('Free Experiment', 'Unlimited reagents, wild ingredients, tools and test subjects. Nothing here affects your shop.', 'flask', 4500);

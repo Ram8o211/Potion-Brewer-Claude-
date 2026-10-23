@@ -3,7 +3,7 @@
 // Pure data + logic (no DOM), so it is fully testable headlessly.
 
 import { Rng, hashString } from '../core/rng.js';
-import { generateWorld, makeLookup, addAlchemy } from '../materials/generator.js';
+import { generateWorld, makeLookup, addAlchemy, LAB_ROLES } from '../materials/generator.js';
 import { serializeMaterial, deserializeMaterial } from '../materials/schema.js';
 import { generateCommission, tutorialCommission } from './commissions.js';
 import { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById } from './equipment.js';
@@ -23,6 +23,9 @@ export const PURGE_PRICE = 8;
 export const PURGE_BREW_COST = 1;
 export const PURGE_BREW_TIME = 40;
 export const WORLD_GEN_VERSION = 2;
+
+/** What a new shop's shelves hold (ml): a healer's and a hedge-witch's basics. */
+export const STARTER_HERBS = { silverleaf: 200, sunthistle: 150, heartpetal: 150, ironroot: 150, emberbark: 100, frostcap: 100, riverchalk: 100, nettle: 100 };
 /** old aspect requirement keys → effect keys (v2 saves) */
 const ASPECT_KEY_MAP = { vitality: 'vitality', ardor: 'fire', arcana: 'arcana', fortitude: 'strength' };
 
@@ -125,6 +128,9 @@ export class GameState {
     /** @type {ReturnType<typeof createGathering>} */ this.gathering = normalizeGathering(data.gathering);
     /** the sealed vial (game/vial.js): exact bottled particles, or null */
     this.vial = migrateVial(data.vial);
+    /** sealed bottles kept on the potion shelves (vials, each with its exact particles) */
+    /** @type {import('./vial.js').Vial[]} */
+    this.bottles = Array.isArray(data.bottles) ? data.bottles.map(migrateVial).filter(Boolean) : [];
     /** sales ledger (commerce.js): price, label, the true potion and the evidence */
     /** @type {any[]} */ this.sales = Array.isArray(data.sales) ? data.sales : [];
     /** customers coming back after drinking (praise, complaints) */
@@ -157,14 +163,11 @@ export class GameState {
     for (const id of world.starting) inventory[id] = 0;
     const R = world.roles;
     inventory[R.water] = Infinity;
-    inventory[R.essenceA] = 300;
-    inventory[R.essenceB] = 200;
     inventory[R.oil] = 200;
-    inventory[R.syrup] = 200;
     inventory[R.spirit] = 200;
-    inventory[R.binder] = 300;
-    inventory[R.salt] = 200;
     for (const id of world.wild || []) inventory[id] = 0;
+    // a first satchel of common herbs and minerals; everything else is gathered
+    for (const [key, ml] of Object.entries(STARTER_HERBS)) if (world.wild.includes('wild-' + key)) inventory['wild-' + key] = ml;
     const st = new GameState({
       version: SAVE_VERSION,
       genVersion: WORLD_GEN_VERSION,
@@ -581,6 +584,74 @@ export class GameState {
     return { ok: true, item: e };
   }
 
+  /**
+   * The shop no longer stocks prepared reagents (essences, salts, crystals…):
+   * whatever an older save still held of them, the guild buys back at the
+   * usual 40 %. Returns the coins paid.
+   */
+  buyBackPrepared() {
+    let paid = 0;
+    for (const role of LAB_ROLES) {
+      const id = this.world.roles[role];
+      const ml = id ? this.inventory[id] : 0;
+      if (!id || !(ml > 0) || !isFinite(ml)) continue;
+      const m = this.lookup(id);
+      paid += (ml / 100) * ((m && m.price) || 0) * 0.4;
+      this.inventory[id] = 0;
+    }
+    paid = round1(paid);
+    if (paid > 0) {
+      this.coins = round1(this.coins + paid);
+      // a note in the journal (not a discovery: it earns no reputation)
+      this.journal['note:buyback'] = { key: 'note:buyback', kind: 'note', title: 'The guild bought back your reagents', day: this.day,
+        text: `The market no longer sells prepared reagents: every effect must now come from what you gather. The guild paid ${paid} coins for the essences, salts and crystals left on your shelves.` };
+    }
+    return paid;
+  }
+
+  // ------------------------------------------------------------ potion shelves
+  /** Free places on the potion shelves. */
+  get bottleRoom() {
+    return Math.max(0, this.cap.bottles - this.bottles.length);
+  }
+
+  /**
+   * Put a sealed bottle on the potion shelves (the counter's vial when none
+   * is given). Fails when the shelves are full.
+   * @param {import('./vial.js').Vial} [v]
+   */
+  shelveBottle(v) {
+    const fromCounter = !v;
+    const b = v || this.vial;
+    if (!b) return { ok: false, reason: 'There is no bottle to put away.' };
+    if (this.bottleRoom <= 0) return { ok: false, reason: `The potion shelves are full (${this.cap.bottles} bottles). Sell, pour back or discard one, or buy more shelving.` };
+    this.bottles.push(b);
+    if (fromCounter) this.vial = null;
+    return { ok: true, bottle: b };
+  }
+
+  /**
+   * Take a bottle down to the counter. A bottle already on the counter goes
+   * up in its place.
+   * @param {string} id
+   */
+  takeBottle(id) {
+    const k = this.bottles.findIndex((b) => b.id === id);
+    if (k < 0) return { ok: false, reason: 'No such bottle.' };
+    const b = this.bottles[k];
+    if (this.vial) this.bottles[k] = this.vial;
+    else this.bottles.splice(k, 1);
+    this.vial = b;
+    return { ok: true, bottle: b };
+  }
+
+  /** Remove a bottle from the shelves (it is poured away or back). @param {string} id */
+  removeBottle(id) {
+    const k = this.bottles.findIndex((b) => b.id === id);
+    if (k < 0) return null;
+    return this.bottles.splice(k, 1)[0];
+  }
+
   // ------------------------------------------------------------ customers
   commissionContext() {
     const available = this.availableSet();
@@ -936,6 +1007,7 @@ export class GameState {
       trials: this.trials,
       gathering: this.gathering,
       vial: this.vial,
+      bottles: this.bottles,
       batch: this.batch,
       sales: this.sales,
       followUps: this.followUps,
@@ -959,6 +1031,7 @@ export class GameState {
     for (const [k, v] of Object.entries(inventory)) if (!Number.isFinite(v) && v !== Infinity) inventory[k] = 0;
     const st = new GameState({ ...data, world, inventory });
     if (data._migratedFrom !== undefined && data._migratedFrom < 3) st.genVersion = WORLD_GEN_VERSION;
+    st.buyBackPrepared();
     if (st.current) migrateCommission(st.current, st.world, st.lookup);
     return st;
   }

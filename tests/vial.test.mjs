@@ -125,3 +125,33 @@ test('pouring part of a batch back returns its share of the batch’s provenance
   assert.deepEqual(pourBackParts(v, 500), v.parts);
   assert.deepEqual(pourBackParts(/** @type {any} */ ({}), 20), []);
 });
+
+test('potion shelves: bottles are kept with their exact contents, swap with the counter and are limited by the shelving', () => {
+  const g = GameState.create('shelves-1', { tutorial: false });
+  const sim = brew();
+  const mk = () => bottle(sim, 4);
+  assert.equal(g.cap.bottles, 3, 'a new shop has room for three bottles');
+  const a = mk(), b = mk(), c = mk(), d = mk();
+  for (const v of [a, b, c]) assert.ok(g.shelveBottle(v).ok);
+  assert.equal(g.bottleRoom, 0);
+  assert.equal(g.shelveBottle(d).ok, false, 'a full shelf takes no more');
+  // the counter's vial goes up when one is taken down
+  g.vial = d;
+  assert.ok(g.takeBottle(b.id).ok);
+  assert.equal(g.vial, b);
+  assert.ok(g.bottles.includes(d) && !g.bottles.includes(b), 'the counter vial took the shelf place');
+  assert.equal(g.shelveBottle().ok, false, 'still full');
+  // more shelving, then the counter vial can go up too
+  g.equipment.push('rack1');
+  assert.equal(g.cap.bottles, 6);
+  assert.ok(g.shelveBottle().ok);
+  assert.equal(g.vial, null);
+  assert.equal(g.bottles.length, 4);
+  assert.ok(g.removeBottle(a.id));
+  assert.equal(g.bottles.length, 3);
+  // saved and loaded with every particle
+  const back = GameState.fromJSON(JSON.parse(JSON.stringify(g.toJSON())));
+  assert.equal(back.bottles.length, 3);
+  assert.deepEqual(back.bottles.map((v) => v.particles.length), g.bottles.map((v) => v.particles.length));
+  assert.deepEqual(vialInventory(back.bottles[0]), vialInventory(g.bottles[0]));
+});

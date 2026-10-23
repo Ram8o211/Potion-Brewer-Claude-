@@ -100,8 +100,7 @@ test('panels open, fit and close', async ({ page }, info) => {
     await expect(page.locator('.overlay')).toHaveCount(0);
   }
   // long-press a jar: the ingredient sheet shows its known effects
-  const roles = await page.evaluate(() => window.__alchemist.screen.state.world.roles);
-  const jar = page.locator(`.jar[data-id="${roles.essenceA}"]`);
+  const jar = page.locator('.jar[data-id="wild-silverleaf"]');
   await jar.click({ button: 'right' });
   await expect(page.locator('.overlay .modal')).toContainText('Vitality');
   await shot(page, info, 'ingredient-panel');

@@ -84,7 +84,8 @@ export function generateDeposits(world, lookup) {
     /** @type {[number, number][]} */
     const placed = [];
     for (const m of mats) {
-      const copies = m.wild.rare ? 1 : 2;
+      // a crowded region grows one patch of each ingredient, a sparse one two
+      const copies = m.wild.rare || mats.length > 5 ? 1 : 2;
       for (let c = 0; c < copies; c++) {
         let x = 0.5, y = 0.7;
         for (let tries = 0; tries < 40; tries++) {
@@ -217,8 +218,8 @@ export function weatherOn(seed, day) {
   return WEATHERS.find((w) => w.id === id) || WEATHERS[0];
 }
 
-const PLANT_SHAPES = new Set(['root', 'leaf', 'petal', 'flower', 'clover', 'moss', 'cap', 'bean', 'pepper']);
-const FLOWER_SHAPES = new Set(['petal', 'flower', 'clover']);
+const PLANT_SHAPES = new Set(['root', 'leaf', 'petal', 'flower', 'clover', 'moss', 'cap', 'bean', 'pepper', 'bark', 'berry', 'bracket', 'sprig', 'spike', 'seed', 'lily', 'toadstool', 'reed']);
+const FLOWER_SHAPES = new Set(['petal', 'flower', 'clover', 'spike', 'lily']);
 
 /**
  * Everything that decides one harvest of a deposit right now: the method,
@@ -241,7 +242,7 @@ export function gatherPlan(st, d, m, opts = {}) {
   if (!open) factors.push({ why: `closed until ${hour} — only a few sprigs`, f: 0.25 });
   const shape = w.shape || '';
   if (weather.id === 'frost' && FLOWER_SHAPES.has(shape)) factors.push({ why: 'shut by the frost', f: 0.5 });
-  if (weather.id === 'frost' && shape === 'cap') factors.push({ why: 'swollen in the frost', f: 1.5 });
+  if (weather.id === 'frost' && (shape === 'cap' || shape === 'toadstool' || shape === 'bracket')) factors.push({ why: 'swollen in the frost', f: 1.5 });
   if (weather.id === 'heat' && (FLOWER_SHAPES.has(shape))) factors.push({ why: 'lush in the heat', f: 1.25 });
   if (weather.id === 'heat' && shape === 'moss') factors.push({ why: 'dried out in the heat', f: 0.5 });
   if (weather.id === 'storm') factors.push({ why: 'wind scatters it', f: 0.75 });
@@ -278,7 +279,7 @@ export function weatherRegrowth(g, deposits, weather, lookup) {
   for (const d of deposits) {
     const m = lookup(d.materialId);
     const shape = m && m.wild ? m.wild.shape : '';
-    if ((weather.id === 'rain' && PLANT_SHAPES.has(shape)) || (weather.id === 'storm' && shape === 'crystal')) delete g.nodes[d.id];
+    if ((weather.id === 'rain' && PLANT_SHAPES.has(shape)) || (weather.id === 'storm' && (shape === 'crystal' || shape === 'shard'))) delete g.nodes[d.id];
   }
 }
 

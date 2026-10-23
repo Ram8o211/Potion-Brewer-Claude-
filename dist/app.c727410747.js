@@ -1141,74 +1141,141 @@ const { EFFECT_INDEX } = __m13;
 const { arcaneProfile } = __m11;
 const WILD_SPECS = [
 { key: 'ironroot', noun: 'Ironroot', shape: 'root', region: 'forest', rank: 0, buy: 1, hue: [28, 0.45, 0.42], form: 'solid', density: 1.05, hardness: 0.5, sol: 0.12, solT: 0.0022,
-fx: { strength: 28 }, arc: [750, 3], price: 9, gather: 'dig', lore: 'A knotted woodland root that carries strength. Crush or grind it; it gives up far more when steeped in hot water.' },
+fx: { strength: 26, frost: 9 }, arc: [560, 3], price: 9, gather: 'dig', lore: 'A knotted woodland root that carries strength — and a cold, earthy chill that needs something fiery to cancel it. Crush or grind it; it gives up far more when steeped in hot water.' },
 { key: 'silverleaf', noun: 'Silverleaf', shape: 'leaf', region: 'forest', rank: 0, buy: 1, hue: [150, 0.25, 0.7], form: 'solid', density: 0.72, hardness: 0.22, sol: 0.18, solT: 0.0015,
-fx: { vitality: 24, frost: 2 }, arc: [550, 3], price: 9, gather: 'pick', lore: 'Soft silvery leaves prized by healers. Grind them into water; gentle warmth draws out their healing.' },
+fx: { vitality: 24, frost: 8 }, arc: [550, 3], price: 9, gather: 'pick', lore: 'Soft silvery leaves prized by healers. They heal, but leave a frosty bite that a warming herb must cancel. Gentle warmth draws out their healing.' },
 { key: 'nightshade', noun: 'Nightshade', shape: 'leaf', region: 'forest', rank: 0, buy: null, hue: [285, 0.45, 0.42], form: 'solid', density: 1.12, hardness: 0.25, sol: 0.16, solT: 0.001, compat: [0.55, 0.22],
-fx: { toxicity: 28, death: 12, acidity: 4 }, arc: [-350, 2.5], price: 12, gather: 'pick', dusk: true,
-steep: { name: 'Nightshade Tincture', into: 'spirit', lo: [20, 25], hi: [60, 65], fx: { toxicity: 30, death: 13, acidity: 3 } },
+fx: { toxicity: 28, death: 12, acidity: 5 }, arc: [350, 2.5], price: 12, gather: 'pick', dusk: true,
+steep: { name: 'Nightshade Tincture', into: 'spirit', lo: [20, 25], hi: [60, 65] },
 lore: 'A poisonous leaf, gathered at dusk. Its oily extract dissolves in spirits rather than water. Test tiny doses before you trust it.' },
+{ key: 'emberbark', noun: 'Emberbark', shape: 'bark', region: 'forest', rank: 0, buy: 1, hue: [12, 0.55, 0.36], form: 'solid', density: 0.88, hardness: 0.4, sol: 0.12, solT: 0.002,
+fx: { fire: 22, toxicity: 7 }, arc: [560, 2.8], price: 8, gather: 'scrape',
+steep: { name: 'Emberbark Tea', into: 'water', lo: [45, 50], hi: [85, 90] },
+lore: 'Resinous red bark that smoulders in the mouth. It warms, but its sap is a little poisonous: something healing must mend the bite.' },
+{ key: 'owlberry', noun: 'Owlberry', shape: 'berry', region: 'forest', rank: 0, buy: null, hue: [330, 0.55, 0.38], form: 'solid', density: 0.98, hardness: 0.12, sol: 0.22, solT: 0.0012,
+fx: { love: 20, toxicity: 6, fire: 5 }, arc: [380, 3], price: 9, gather: 'pick',
+steep: { name: 'Owlberry Cordial', into: 'water', lo: [30, 35], hi: [65, 70] },
+lore: 'Dark berries the owls guard jealously. Sweet with affection, warm on the tongue and faintly poisonous.' },
+{ key: 'witchear', noun: 'Witch’s Ear', shape: 'bracket', region: 'forest', rank: 1, buy: 2, hue: [32, 0.35, 0.3], form: 'solid', density: 0.8, hardness: 0.3, sol: 0.15, solT: 0.0012,
+fx: { arcana: 20, death: 7 }, arc: [420, 3], price: 14, gather: 'scrape',
+steep: { name: 'Witch’s Ear Broth', into: 'water', lo: [25, 30], hi: [60, 65] },
+lore: 'A leathery shelf fungus that grows on dead oaks. It sharpens the mind but carries the dead tree’s chill of decay; life cancels it.' },
 { key: 'mandrake', noun: 'Mandrake', shape: 'root', region: 'forest', rank: 2, buy: null, hue: [38, 0.5, 0.6], form: 'solid', density: 1.15, hardness: 0.45, sol: 0.12, solT: 0.0015, rare: true,
-fx: { transformation: 32, strength: 10, toxicity: 3 }, arc: [420, 3], price: 30, gather: 'dig', lore: 'A rare screaming root of transformation. Old grimoires say it wakes fully only in warm spirits.' },
+fx: { transformation: 34, strength: 12, toxicity: 7 }, arc: [420, 3], price: 30, gather: 'dig', lore: 'A rare screaming root of transformation, with strength in it and a poisonous skin. Old grimoires say it wakes fully only in warm spirits.' },
 { key: 'heartpetal', noun: 'Heartpetal', shape: 'petal', region: 'meadow', rank: 0, buy: 1, hue: [335, 0.6, 0.72], form: 'solid', density: 0.6, hardness: 0.15, sol: 0.2, solT: 0.001,
-fx: { love: 26, vitality: 1 }, arc: [-200, 3], price: 10, gather: 'pick',
-steep: { name: 'Heartpetal Infusion', into: 'water', lo: [30, 35], hi: [60, 65], fx: { love: 28, vitality: 1 } },
-lore: 'Soft meadow petals carrying affection. Warm water draws their love into an infusion; strong heat spoils them.' },
+fx: { love: 26, fire: 6 }, arc: null, price: 10, gather: 'pick',
+steep: { name: 'Heartpetal Infusion', into: 'water', lo: [30, 35], hi: [60, 65] },
+lore: 'Soft meadow petals carrying affection — and the flush of passion, a little fire that something cool must cancel. Warm water draws out their love; strong heat spoils them. Too delicate to hold awakened magic.' },
 { key: 'sunthistle', noun: 'Sunthistle', shape: 'flower', region: 'meadow', rank: 0, buy: 1, hue: [45, 0.8, 0.55], form: 'solid', density: 0.8, hardness: 0.3, sol: 0.15, solT: 0.0015,
-fx: { fire: 15, vitality: 5, strength: 2 }, arc: [650, 2.8], price: 9, gather: 'pick',
-steep: { name: 'Sunthistle Tea', into: 'water', lo: [50, 55], hi: [90, 95], fx: { fire: 16, vitality: 5, strength: 2 } },
-lore: 'A prickly golden flower that warms the blood. It brews into a fiery tea.' },
+fx: { fire: 16, vitality: 8 }, arc: [520, 2.8], price: 9, gather: 'pick',
+steep: { name: 'Sunthistle Tea', into: 'water', lo: [40, 45], hi: [80, 85] },
+lore: 'A prickly golden flower that warms the blood and lifts the spirits. It brews into a fiery, restoring tea.' },
+{ key: 'nettle', noun: 'Nettle', shape: 'sprig', region: 'meadow', rank: 0, buy: 1, hue: [105, 0.5, 0.4], form: 'solid', density: 0.74, hardness: 0.2, sol: 0.17, solT: 0.0015,
+fx: { strength: 16, acidity: 10 }, arc: [560, 3], price: 7, gather: 'pick',
+steep: { name: 'Nettle Tea', into: 'water', lo: [45, 50], hi: [85, 90] },
+lore: 'Stinging hedgerow nettles. Steeped hot they give strength, and the sting of their acid — chalk or another alkali settles it.' },
 { key: 'dreamclover', noun: 'Dreamclover', shape: 'clover', region: 'meadow', rank: 1, buy: null, hue: [205, 0.45, 0.62], form: 'solid', density: 0.7, hardness: 0.18, sol: 0.16, solT: 0.0012, rare: true,
-fx: { arcana: 14, love: 5, transformation: 3 }, arc: [-50, 3], price: 18, gather: 'pick', dawn: true,
-steep: { name: 'Dreamclover Tea', into: 'water', lo: [35, 40], hi: [70, 75], fx: { arcana: 15, love: 5, transformation: 3 } },
-lore: 'A rare blue clover, open only at dawn, that brings vivid dreams and clear insight.' },
+fx: { arcana: 16, frost: 7, vitality: 4 }, arc: [250, 3], price: 18, gather: 'pick', dawn: true,
+steep: { name: 'Dreamclover Tea', into: 'water', lo: [30, 35], hi: [60, 65] },
+lore: 'A rare blue clover, open only at dawn, that brings vivid dreams and clear insight, with a cool and gently healing aftertaste.' },
+{ key: 'beebalm', noun: 'Bee Balm', shape: 'spike', region: 'meadow', rank: 1, buy: 2, hue: [300, 0.5, 0.6], form: 'solid', density: 0.66, hardness: 0.15, sol: 0.19, solT: 0.0012,
+fx: { vitality: 14, love: 10, acidity: -6 }, arc: [480, 3], price: 12, gather: 'pick',
+steep: { name: 'Balm Tea', into: 'water', lo: [35, 40], hi: [70, 75] },
+lore: 'Shaggy purple flower-spikes humming with bees: a gentle balm for body and heart, with a soft alkaline aftertaste.' },
+{ key: 'hemlock', noun: 'Hemlock Seed', shape: 'seed', region: 'meadow', rank: 1, buy: null, hue: [70, 0.25, 0.5], form: 'solid', density: 1.1, hardness: 0.35, sol: 0.14, solT: 0.0015,
+fx: { death: 20, frost: 8, toxicity: 6 }, arc: [450, 2.6], price: 14, gather: 'pick', dusk: true,
+steep: { name: 'Hemlock Draught', into: 'water', lo: [20, 25], hi: [50, 55] },
+lore: 'Ribbed grey seeds of the spotted hemlock, gathered at dusk. A cold, creeping death with a little poison in it.' },
 { key: 'riverchalk', noun: 'River Chalk', shape: 'stone', region: 'river', rank: 0, buy: 1, hue: [48, 0.22, 0.82], form: 'solid', density: 1.32, hardness: 0.35, sol: 0.06, solT: 0.0005, binder: 0.55, friction: 0.7,
-fx: { acidity: -24, strength: 1 }, arc: [150, 2.5], price: 6, gather: 'dig',
-steep: { name: 'Chalk Milk', into: 'water', lo: [15, 20], hi: [60, 65], fx: { acidity: -26, strength: 1 } },
-lore: 'Soft alkaline chalk from the bank. It neutralises acids. Ground and stirred into water it clouds into chalk milk; a little water kneads it into a paste.' },
+fx: { acidity: -24, frost: 6 }, arc: [350, 2.5], price: 6, gather: 'dig',
+steep: { name: 'Chalk Milk', into: 'water', lo: [15, 20], hi: [60, 65] },
+lore: 'Soft, cold alkaline chalk from the bank. It neutralises acids. Ground and stirred into water it clouds into chalk milk; a little water kneads it into a paste.' },
 { key: 'frostcap', noun: 'Frostcap', shape: 'cap', region: 'river', rank: 0, buy: 1, hue: [196, 0.5, 0.72], form: 'solid', density: 0.95, hardness: 0.25, sol: 0.17, solT: 0.0012,
-fx: { frost: 24, transformation: 5 }, arc: [-450, 2.8], price: 10, gather: 'pick',
-steep: { name: 'Frostcap Brine', into: 'water', lo: [1, 2], hi: [12, 14], fx: { frost: 26, transformation: 5 } },
-lore: 'A cool mushroom growing beneath the willows. It steeps only in ice-cold water, giving a freezing brine.' },
+fx: { frost: 24, death: 6 }, arc: [520, 2.8], price: 10, gather: 'pick',
+steep: { name: 'Frostcap Brine', into: 'water', lo: [1, 2], hi: [12, 14] },
+lore: 'A cool mushroom growing beneath the willows, with a breath of the grave about it. It steeps only in ice-cold water, giving a freezing brine.' },
 { key: 'bogbean', noun: 'Bogbean', shape: 'bean', region: 'river', rank: 0, buy: null, hue: [95, 0.4, 0.42], form: 'solid', density: 1.0, hardness: 0.3, sol: 0.2, solT: 0.0015,
-fx: { vitality: 12, toxicity: 6 }, arc: [200, 2.5], price: 7, gather: 'pick',
-steep: { name: 'Bogbean Broth', into: 'water', lo: [40, 45], hi: [80, 85], fx: { vitality: 13, toxicity: 6 } },
-lore: 'A marsh bean: restorative, though a little poisonous unless something cancels its bite.' },
+fx: { vitality: 14, acidity: 8 }, arc: [400, 2.5], price: 7, gather: 'pick',
+steep: { name: 'Bogbean Broth', into: 'water', lo: [40, 45], hi: [80, 85] },
+lore: 'A marsh bean: restorative, though sour with bog acid unless something alkaline settles it.' },
+{ key: 'willowbark', noun: 'Willow Bark', shape: 'bark', region: 'river', rank: 0, buy: 1, hue: [60, 0.18, 0.55], form: 'solid', density: 0.85, hardness: 0.4, sol: 0.12, solT: 0.002,
+fx: { frost: 14, vitality: 6, acidity: 7 }, arc: [560, 2.6], price: 7, gather: 'scrape',
+steep: { name: 'Willow Tea', into: 'water', lo: [40, 45], hi: [80, 85] },
+lore: 'Pale grey bark that cools fevers and soothes, bitter with acid.' },
+{ key: 'reedmace', noun: 'Reedmace', shape: 'reed', region: 'river', rank: 0, buy: null, hue: [26, 0.5, 0.3], form: 'solid', density: 0.7, hardness: 0.25, sol: 0.16, solT: 0.0015,
+fx: { strength: 13, acidity: -7, frost: 5 }, arc: [520, 2.8], price: 7, gather: 'scrape',
+steep: { name: 'Reed Pith Broth', into: 'water', lo: [35, 40], hi: [80, 85] },
+lore: 'Brown velvet heads on tall stems. The pith gives a steady strength, chalky and cool.' },
+{ key: 'riverpearl', noun: 'River Pearl', shape: 'shell', region: 'river', rank: 1, buy: 2, hue: [210, 0.15, 0.85], form: 'solid', density: 1.6, hardness: 0.55, sol: 0.08, solT: 0.002,
+fx: { arcana: 14, acidity: -12 }, arc: [560, 3], price: 16, gather: 'pick',
+steep: { name: 'Nacre Milk', into: 'water', lo: [50, 55], hi: [85, 90] },
+lore: 'Mussel shells lined with mother-of-pearl. Ground and simmered, the nacre gives insight — and a strongly alkaline milk.' },
 { key: 'emberflint', noun: 'Ember Flint', shape: 'stone', region: 'quarry', rank: 0, buy: 1, hue: [16, 0.62, 0.55], form: 'solid', density: 1.6, hardness: 0.7, sol: 0.05, solT: 0.003,
-fx: { fire: 26, acidity: 12, strength: 3 }, arc: [800, 2.5], price: 11, gather: 'mine',
-steep: { name: 'Flint Fire-Water', into: 'water', lo: [85, 90], hi: [160, 170], fx: { fire: 28, acidity: 12, strength: 3 } },
-lore: 'A warm flint that releases fire when ground. It barely dissolves unless the water is near boiling.' },
+fx: { fire: 26, acidity: 12 }, arc: [820, 2.5], price: 11, gather: 'mine',
+steep: { name: 'Flint Fire-Water', into: 'water', lo: [80, 85], hi: [160, 170] },
+lore: 'A warm flint that releases fire, and a sharp acid with it, when ground. It barely dissolves unless the water is near boiling.' },
 { key: 'mica', noun: 'Mica Dust', shape: 'powder', region: 'quarry', rank: 0, buy: 1, hue: [270, 0.25, 0.75], form: 'powder', density: 1.22, hardness: 0.3, sol: 0.16, solT: 0.001, binder: 0.4, friction: 0.66,
-fx: { transformation: 14 }, arc: [300, 3], price: 7, gather: 'sweep',
-steep: { name: 'Mica Shimmer', into: 'water', lo: [40, 45], hi: [90, 95], fx: { transformation: 15 } },
-lore: 'Naturally loose glittering grains. Knead with a little water for dough; warm plenty of water with it for a shimmering infusion.' },
+fx: { transformation: 18, acidity: -6 }, arc: [500, 3], price: 7, gather: 'sweep',
+steep: { name: 'Mica Shimmer', into: 'water', lo: [40, 45], hi: [85, 90] },
+lore: 'Naturally loose glittering grains of change, faintly alkaline. Knead with a little water for dough; warm plenty of water with it for a shimmering infusion.' },
+{ key: 'saltpetre', noun: 'Saltpetre', shape: 'crust', region: 'quarry', rank: 0, buy: 1, hue: [190, 0.12, 0.88], form: 'powder', density: 1.9, hardness: 0.3, sol: 0.3, solT: 0.004, friction: 0.6,
+fx: { frost: 16, acidity: 7 }, arc: [540, 2.6], price: 6, gather: 'sweep',
+lore: 'Cold white crystals that bloom on cave walls. They dissolve readily and chill whatever they touch, with a sour edge.' },
 { key: 'sulfur', noun: 'Sulphur Crust', shape: 'powder', region: 'quarry', rank: 1, buy: 2, hue: [56, 0.85, 0.6], form: 'powder', density: 1.4, hardness: 0.3, sol: 0.22, solT: 0.0015, friction: 0.6,
-fx: { acidity: 26, fire: 7, toxicity: 4 }, arc: [500, 2.5], price: 10, gather: 'mine',
-steep: { name: 'Sulphur Water', into: 'water', lo: [50, 55], hi: [100, 110], fx: { acidity: 28, fire: 6, toxicity: 4 } },
+fx: { acidity: 26, fire: 7, toxicity: 5 }, arc: [500, 2.5], price: 10, gather: 'mine',
+steep: { name: 'Sulphur Water', into: 'water', lo: [50, 55], hi: [95, 100] },
 lore: 'A crumbly yellow crust. Strongly acidic, it etches stone and stings flesh. Hot water dissolves it into a biting acid.' },
-{ key: 'stormglass', noun: 'Storm Glass', shape: 'crystal', region: 'quarry', rank: 2, buy: null, hue: [222, 0.55, 0.7], form: 'solid', density: 1.9, hardness: 0.65, sol: 0.08, solT: 0.0015, rare: true,
-fx: { arcana: 10, transformation: 6 }, arc: [-600, 3], econd: 0.6, charge: 1, glow: 0.3, price: 28, gather: 'mine', lore: 'Glass struck by lightning. It still holds a charge that flows into anything that conducts.' },
+{ key: 'lodestone', noun: 'Lodestone', shape: 'nugget', region: 'quarry', rank: 1, buy: 2, hue: [220, 0.08, 0.3], form: 'solid', density: 2.4, hardness: 0.75, sol: 0.06, solT: 0.003,
+fx: { strength: 20, toxicity: 6, frost: 5 }, arc: [760, 2.6], price: 13, gather: 'mine',
+steep: { name: 'Rust Water', into: 'water', lo: [70, 75], hi: [150, 160] },
+lore: 'A heavy, magnetic black nugget. Its iron gives great strength but rusts into a cold, faintly poisonous water.' },
+{ key: 'cinnabar', noun: 'Cinnabar', shape: 'crystal', region: 'quarry', rank: 1, buy: null, hue: [358, 0.7, 0.42], form: 'solid', density: 2.2, hardness: 0.5, sol: 0.08, solT: 0.002,
+fx: { transformation: 18, toxicity: 10, fire: 4 }, arc: [620, 2.8], price: 15, gather: 'mine',
+steep: { name: 'Cinnabar Tincture', into: 'spirit', lo: [30, 35], hi: [60, 65] },
+lore: 'Blood-red crystals of quicksilver ore. Powerfully transforming and poisonous; it dissolves in warm spirits.' },
+{ key: 'stormglass', noun: 'Storm Glass', shape: 'shard', region: 'quarry', rank: 2, buy: null, hue: [222, 0.55, 0.7], form: 'solid', density: 1.9, hardness: 0.65, sol: 0.08, solT: 0.0015, rare: true,
+fx: { arcana: 12, transformation: 6, fire: 6 }, arc: [-600, 3], econd: 0.6, charge: 1, glow: 0.3, price: 28, gather: 'mine', lore: 'Glass struck by lightning: insight, change and a crackle of fire. It still holds a charge that flows into anything that conducts.' },
 { key: 'gravemoss', noun: 'Grave Moss', shape: 'moss', region: 'moonfen', rank: 2, buy: null, hue: [150, 0.12, 0.45], form: 'solid', density: 0.85, hardness: 0.2, sol: 0.16, solT: 0.0012,
-fx: { death: 32, frost: 7, toxicity: 16 }, arc: [-700, 2.5], price: 26, gather: 'scrape', dusk: true,
-steep: { name: 'Barrow Draught', into: 'water', lo: [-5, 0], hi: [10, 12], fx: { death: 34, frost: 7, toxicity: 16 } },
+fx: { death: 34, frost: 8, toxicity: 12 }, arc: [-700, 2.5], price: 26, gather: 'scrape', dusk: true,
+steep: { name: 'Barrow Draught', into: 'water', lo: [-5, 0], hi: [10, 12] },
 lore: 'Moss from old barrows, heavy with death magic, scraped at dusk. It steeps only in near-freezing water. Dilute generously and test carefully.' },
 { key: 'starquartz', noun: 'Star Quartz', shape: 'crystal', region: 'moonfen', rank: 2, buy: null, hue: [280, 0.45, 0.78], form: 'solid', density: 1.5, hardness: 0.65, sol: 0.1, solT: 0.002, glow: 0.5,
-fx: { arcana: 20, love: 14, transformation: 8 }, arc: [600, 3], price: 30, gather: 'mine', lore: 'A luminous crystal of love and insight. Crush it, then warm it in spirits.' },
+fx: { arcana: 26, love: 14, frost: 5 }, arc: [-400, 3], price: 30, gather: 'mine', lore: 'A luminous crystal of love and insight, cool to the touch. Crush it, then warm it in spirits.' },
 { key: 'wisplichen', noun: 'Wisp Lichen', shape: 'moss', region: 'moonfen', rank: 2, buy: null, hue: [172, 0.6, 0.6], form: 'solid', density: 0.7, hardness: 0.15, sol: 0.18, solT: 0.001, glow: 0.7,
-fx: { arcana: 22, transformation: 7 }, arc: [-250, 3], price: 24, gather: 'scrape',
-steep: { name: 'Lichen Glow', into: 'water', lo: [20, 25], hi: [50, 55], fx: { arcana: 24, transformation: 7 } },
-lore: 'A faintly glowing lichen that the wisps feed on. Lukewarm water draws out its light.' },
+fx: { arcana: 28, frost: 7, toxicity: 4 }, arc: [-250, 3], price: 24, gather: 'scrape',
+steep: { name: 'Lichen Glow', into: 'water', lo: [15, 20], hi: [45, 50] },
+lore: 'A faintly glowing lichen that the wisps feed on, cold and a little poisonous. Lukewarm water draws out its light.' },
+{ key: 'moonlily', noun: 'Moonlily', shape: 'lily', region: 'moonfen', rank: 2, buy: null, hue: [240, 0.3, 0.86], form: 'solid', density: 0.62, hardness: 0.12, sol: 0.2, solT: 0.001, glow: 0.4,
+fx: { vitality: 30, frost: 12, acidity: -4 }, arc: [-300, 3], price: 22, gather: 'pick', dawn: true,
+steep: { name: 'Moonlily Dew', into: 'water', lo: [10, 15], hi: [40, 45] },
+lore: 'A pale lily that opens to the moon and closes at sunrise; gather it at dawn. Deeply healing, and cold as a winter night.' },
+{ key: 'toadstool', noun: 'Toadstool', shape: 'toadstool', region: 'moonfen', rank: 2, buy: null, hue: [5, 0.75, 0.48], form: 'solid', density: 0.9, hardness: 0.2, sol: 0.18, solT: 0.0012,
+fx: { transformation: 28, toxicity: 9, death: 5 }, arc: [-350, 2.8], price: 20, gather: 'pick',
+steep: { name: 'Toadstool Broth', into: 'water', lo: [20, 25], hi: [50, 55] },
+lore: 'A red, white-spotted toadstool from the fairy rings. It changes whoever eats it — and poisons them a little.' },
+{ key: 'sirenreed', noun: 'Siren Reed', shape: 'reed', region: 'moonfen', rank: 2, buy: null, hue: [180, 0.35, 0.5], form: 'solid', density: 0.66, hardness: 0.2, sol: 0.18, solT: 0.0012,
+fx: { love: 28, frost: 8, toxicity: 6 }, arc: [-200, 3], price: 20, gather: 'scrape', dusk: true,
+steep: { name: 'Siren Water', into: 'water', lo: [15, 20], hi: [45, 50] },
+lore: 'Reeds that sing to travellers at dusk. Their pith enchants the heart, coldly, and with a trace of poison.' },
 { key: 'dragonpepper', noun: 'Dragon Pepper', shape: 'pepper', region: 'crags', rank: 3, buy: null, hue: [4, 0.8, 0.5], form: 'solid', density: 0.9, hardness: 0.3, sol: 0.18, solT: 0.0015,
-fx: { fire: 32, strength: 14, toxicity: 2 }, arc: [850, 2.6], price: 32, gather: 'pick', lore: 'A furious red pepper from the crags. Its fire loves oil.' },
+fx: { fire: 34, strength: 14, toxicity: 4 }, arc: [850, 2.6], price: 32, gather: 'pick', lore: 'A furious red pepper from the crags, with strength in its heat and a poisonous sting. Its fire loves oil.' },
 { key: 'cinderscale', noun: 'Cinder Scale', shape: 'scale', region: 'crags', rank: 3, buy: null, hue: [24, 0.7, 0.4], form: 'solid', density: 1.45, hardness: 0.6, sol: 0.07, solT: 0.003, rare: true,
-fx: { fire: 18, transformation: 16, vitality: 5 }, arc: [1000, 2.6], econd: 0.3, charge: 0.4, price: 40, gather: 'mine',
-steep: { name: 'Salamander Essence', into: 'oil', lo: [140, 150], hi: [300, 320], fx: { fire: 20, transformation: 17, vitality: 5 } },
+fx: { fire: 22, transformation: 18, vitality: 6 }, arc: [1000, 2.6], econd: 0.3, charge: 0.4, price: 40, gather: 'mine',
+steep: { name: 'Salamander Essence', into: 'oil', lo: [140, 150], hi: [300, 320] },
 lore: 'A shed salamander scale, warm to the touch. Only fierce heat — hot oil, not water — dissolves it.' },
+{ key: 'ashbloom', noun: 'Ashbloom', shape: 'lily', region: 'crags', rank: 3, buy: null, hue: [20, 0.85, 0.6], form: 'solid', density: 0.7, hardness: 0.15, sol: 0.18, solT: 0.0015, glow: 0.3,
+fx: { vitality: 30, fire: 12, acidity: 6 }, arc: [560, 2.8], price: 30, gather: 'pick',
+steep: { name: 'Ashbloom Tea', into: 'water', lo: [45, 50], hi: [85, 90] },
+lore: 'A flower that blooms in warm ash after an eruption. It heals and burns, with a smoky acid note.' },
+{ key: 'obsidian', noun: 'Obsidian', shape: 'shard', region: 'crags', rank: 3, buy: null, hue: [265, 0.3, 0.16], form: 'solid', density: 2.35, hardness: 0.8, sol: 0.06, solT: 0.002,
+fx: { strength: 32, death: 8, fire: 6 }, arc: [900, 2.6], price: 34, gather: 'mine',
+steep: { name: 'Obsidian Water', into: 'water', lo: [75, 80], hi: [150, 160] },
+lore: 'Black volcanic glass with an edge like a razor: unyielding strength, a smouldering heat and a whisper of death. It gives itself up only to water near the boil.' },
 ];
 const WILD_BY_KEY = Object.fromEntries(WILD_SPECS.map((s) => [s.key, s]));
 const PREFIX = ['Moss', 'Moon', 'Dusk', 'Ember', 'Witch', 'Frost', 'Star', 'Thorn', 'Dew', 'Raven', 'Old', 'Hollow'];
 const r2 = (v) => Math.round(v * 100) / 100;
-const WILD_FX_VERSION = 3;
+const WILD_FX_VERSION = 4;
 function generateWild(seed, base) {
 const rng = new Rng('wild:' + seed);
 const used = new Set(base.materials.filter((m) => !m.id.startsWith('wild-')).map((m) => m.name));
@@ -1236,7 +1303,7 @@ price: s.price, tier: s.buy === null ? 99 : s.buy, product: false, description: 
 });
 const mm = /** @type {any} */ (m);
 mm.effects = fx;
-mm.arcane = arcaneProfile(seed, id, s.arc[0], s.arc[1]);
+if (s.arc) mm.arcane = arcaneProfile(seed, id, s.arc[0], s.arc[1]);
 mm.fxv = WILD_FX_VERSION;
 mm.econd = s.econd ?? 0.04;
 mm.charge = s.charge ?? 0;
@@ -1249,6 +1316,10 @@ const reactions = [];
 const t5 = (lo, hi) => Math.round(rng.range(lo, hi) / 5) * 5;
 const product = (key, from, props, fx) => {
 const src = materials.find((m) => m.id === ids[from]);
+if (!fx) {
+const k = 1.08 * rng.range(0.97, 1.03);
+fx = Object.fromEntries(Object.entries(/** @type {any} */ (src).effects).map(([e, v]) => [e, Math.round(Number(v) * k * 10) / 10]));
+}
 const m = completeMaterial({
 id: 'wild-p-' + key, archetype: 'product', tint: 0.85, opacity: 0.85, heatCapacity: 3.6, boil: Infinity, melt: -20,
 viscosity: 2.5, compat: src.compat.slice(), price: 0, tier: 99, product: true, density: src.density,
@@ -1266,27 +1337,28 @@ return m;
 const water = base.roles.water, spirit = base.roles.spirit, oil = base.roles.oil;
 const nm = (k) => materials.find((m) => m.id === ids[k]).name;
 const short = (k) => nm(k).split(' ').slice(-1)[0];
-const steepedRoot = product('steeped-ironroot', 'ironroot', { name: `Steeped ${nm('ironroot')}`, description: 'A dark root extract: all of the root’s strength, fully in solution.' }, { strength: 30 });
+const steepedRoot = product('steeped-ironroot', 'ironroot', { name: `Steeped ${nm('ironroot')}`, description: 'A dark root extract: all of the root’s strength, and its chill, fully in solution.' });
 reactions.push({ id: 'rw_steep_root', name: steepedRoot.name, kind: 'decompose', a: ids.ironroot, b: null, ra: 1, rb: 0, products: [{ id: steepedRoot.id, frac: 1 }],
 minT: t5(60, 70), maxT: 160, rate: 0.09, heat: -5, stir: 0.3, wet: true, hint: `Ground ${nm('ironroot')} steeps into a liquid extract in hot water.` });
-const infusion = product('silver-infusion', 'silverleaf', { name: `${nm('silverleaf')} Infusion`, description: 'A pale, fragrant healing infusion.' }, { vitality: 26, frost: 2 });
+const infusion = product('silver-infusion', 'silverleaf', { name: `${nm('silverleaf')} Infusion`, description: 'A pale, fragrant healing infusion with a frosty edge.' });
 reactions.push({ id: 'rw_infuse_leaf', name: infusion.name, kind: 'decompose', a: ids.silverleaf, b: null, ra: 1, rb: 0, products: [{ id: infusion.id, frac: 1 }],
 minT: t5(45, 55), maxT: t5(85, 95), rate: 0.1, heat: -5, stir: 0.3, wet: true, hint: `${nm('silverleaf')} infuses in warm (not boiling) water.` });
 const wilted = product('wilted-petal', 'heartpetal', { name: `Wilted ${nm('heartpetal')}`, color: [0.45, 0.32, 0.3], description: 'Scorched petals: the love is gone and bitterness remains.' }, { love: 6, toxicity: 9 });
+delete /** @type {any} */ (wilted).arcane;
 reactions.push({ id: 'rw_wilt_petal', name: wilted.name, kind: 'decompose', a: ids.heartpetal, b: null, ra: 1, rb: 0, products: [{ id: wilted.id, frac: 1 }],
 minT: t5(78, 88), maxT: 400, rate: 0.12, heat: 0, stir: 0.2, hint: `Strong heat spoils ${nm('heartpetal')}.` });
-const mandrakeT = product('mandrake-tincture', 'mandrake', { name: `${nm('mandrake')} Tincture`, compat: [0.62, 0.16], description: 'The waking root dissolved in warm spirit.' }, { transformation: 36, strength: 8 });
+const mandrakeT = product('mandrake-tincture', 'mandrake', { name: `${nm('mandrake')} Tincture`, compat: [0.62, 0.16], description: 'The waking root dissolved in warm spirit.' });
 reactions.push({ id: 'rw_mandrake', name: mandrakeT.name, kind: 'mix', a: ids.mandrake, b: spirit, ra: 1, rb: 2, products: [{ id: mandrakeT.id, frac: 1 }],
 minT: t5(35, 45), maxT: t5(70, 75), rate: 0.25, heat: 10, stir: 0.8, hint: `${nm('mandrake')} wakes in warm spirit.` });
-const starT = product('starlit-tincture', 'starquartz', { name: `Starlit ${short('starquartz')} Tincture`, compat: [0.62, 0.16], glow: 0.7, description: 'Crushed quartz dissolved in warm spirit; it glimmers.' }, { arcana: 26, love: 13, transformation: 6 });
+const starT = product('starlit-tincture', 'starquartz', { name: `Starlit ${short('starquartz')} Tincture`, compat: [0.62, 0.16], glow: 0.7, description: 'Crushed quartz dissolved in warm spirit; it glimmers.' });
 reactions.push({ id: 'rw_starquartz', name: starT.name, kind: 'mix', a: ids.starquartz, b: spirit, ra: 1, rb: 2, products: [{ id: starT.id, frac: 1 }],
 minT: t5(35, 45), maxT: t5(70, 80), rate: 0.25, heat: 8, stir: 0.8, hint: `Crushed ${nm('starquartz')} dissolves in warm spirit.` });
 const dragonOil = product('dragonfire-oil', 'dragonpepper', { name: 'Dragonfire Oil', compat: [0.16, 0.11], color: [0.85, 0.25, 0.08], flammability: 0.7, ignition: 240, combustionHeat: 900,
-ash: base.roles.soot, smoke: base.roles.smoke, description: 'Pepper fire carried in oil.' }, { fire: 36, strength: 12 });
+ash: base.roles.soot, smoke: base.roles.smoke, description: 'Pepper fire carried in oil.' });
 reactions.push({ id: 'rw_dragonoil', name: dragonOil.name, kind: 'contact', a: ids.dragonpepper, b: oil, ra: 1, rb: 1, products: [{ id: dragonOil.id, frac: 1 }],
 minT: t5(30, 40), maxT: 220, rate: 0.4, heat: 20, stir: 1, hint: `Ground ${nm('dragonpepper')} pours its fire into warm oil.` });
 const gypsum = product('gypsum', 'riverchalk', { name: 'Gypsum Grit', form: 'powder', color: [0.9, 0.88, 0.82], friction: 0.68, solubility: 0.02, melt: 1500, viscosity: 1,
-description: 'The neutral grit left where acid met chalk.' }, { strength: 3 });
+description: 'The neutral grit left where acid met chalk: whatever either carried is spent.' }, {});
 reactions.push({ id: 'rw_neutralise', name: 'Neutralisation', kind: 'contact', a: ids.riverchalk, b: ids.sulfur, ra: 1, rb: 1, products: [{ id: gypsum.id, frac: 1 }],
 minT: -10, maxT: 400, rate: 0.5, heat: 60, stir: 1, wet: true, hint: `${nm('riverchalk')} fizzes where it meets ${nm('sulfur')} and both turn to neutral grit.` });
 for (const s of WILD_SPECS) {
@@ -1297,7 +1369,7 @@ const solv = base.materials.find((m) => m.id === solvent);
 const ext = product(`extract-${s.key}`, s.key, {
 name: st.name, ...(solv ? { compat: solv.compat.slice() } : {}),
 description: `The magic of ${nm(s.key)} drawn into ${st.into === 'water' ? 'water' : st.into}.`,
-}, Object.fromEntries(Object.entries(st.fx).map(([k, v]) => [k, Math.round(v * rng.range(0.95, 1.05) * 10) / 10])));
+});
 const lo = t5(st.lo[0], st.lo[1]), hi = t5(st.hi[0], st.hi[1]);
 const where = st.into === 'water' ? '' : ` in ${st.into}`;
 const window = lo <= 15 ? `only when chilled below ${hi}°C` : `between about ${lo} and ${hi}°C`;
@@ -1759,8 +1831,9 @@ id: 'r_lumen', name: lumen.name, kind: 'contact', a: spores.id, b: starlight.id,
 minT: t(30, 40), maxT: 75, rate: 0.35, heat: 10, stir: 1,
 hint: `${spores.name} bloom when kneaded into warm ${starlight.name}.`,
 });
-const ingredients = [water, oil, syrup, spirit, essA, essB, binder, salt, essC, ember, frost, metal, crystal, wax, fizz, spores, resin, starlight, moss, vapor, phoenix, voidInk].map((m) => m.id);
-const starting = [water, oil, syrup, spirit, essA, essB, binder, salt].map((m) => m.id);
+void [syrup, essA, essB, binder, salt, essC, ember, frost, metal, crystal, wax, fizz, spores, resin, starlight, moss, vapor, phoenix, voidInk];
+const ingredients = [water, oil, spirit].map((m) => m.id);
+const starting = ingredients.slice();
 return addAlchemy({ seed: seedStr, materials, ingredients, starting, reactions, roles });
 }
 function addAlchemy(world) {
@@ -1785,7 +1858,17 @@ for (const id of world.wild) if (!world.ingredients.includes(id)) world.ingredie
 if (!world.laws) world.laws = w.laws;
 }
 if (!world.laws) world.laws = generateLaws(world.seed);
+const keep = new Set([...SOLVENT_ROLES.map((r) => world.roles[r]), ...world.wild]);
+world.ingredients = world.ingredients.filter((id) => keep.has(id) || world.materials.some((m) => m.id === id && m.remains));
+world.starting = SOLVENT_ROLES.map((r) => world.roles[r]).filter(Boolean);
 return world;
+}
+const SOLVENT_ROLES = ['water', 'oil', 'spirit'];
+const LAB_ROLES = ['syrup', 'essenceA', 'essenceB', 'binder', 'salt', 'essenceC', 'ember', 'frost', 'metal', 'crystal', 'wax', 'fizz', 'spores', 'resin', 'starlight', 'moss', 'vapor', 'phoenix', 'void'];
+function sandboxIngredients(world) {
+const ids = world.ingredients.slice();
+for (const r of LAB_ROLES) if (world.roles[r] && !ids.includes(world.roles[r])) ids.push(world.roles[r]);
+return ids;
 }
 function makeLookup(world, extra = []) {
 const map = new Map();
@@ -1802,14 +1885,19 @@ if (n !== world.materials.length) index();
 return map.get(id);
 });
 }
-return { generateWorld, addAlchemy, makeLookup };
+return { generateWorld, addAlchemy, SOLVENT_ROLES, LAB_ROLES, sandboxIngredients, makeLookup };
 })();
 // src/materials/shapes.js
 const __m19 = (() => {
-const LOOK = Object.freeze({ ICE: 0, FIBRE: 1, LEAF: 2, STONE: 3, CRYSTAL: 4, CAP: 5, GLOSSY: 6, BONE: 7, FUR: 8, LUMP: 9 });
+const LOOK = Object.freeze({
+ICE: 0, FIBRE: 1, LEAF: 2, STONE: 3, CRYSTAL: 4, CAP: 5, GLOSSY: 6, BONE: 7, FUR: 8, LUMP: 9,
+BARK: 10, BERRY: 11, GILLS: 12, SEED: 13, SHELL: 14, METAL: 15, GLASS: 16, SPOTS: 17, REED: 18, FLORET: 19,
+});
 const SHAPE_LOOK = {
-root: LOOK.FIBRE, pepper: LOOK.FIBRE, leaf: LOOK.LEAF, petal: LOOK.LEAF, flower: LOOK.LEAF, clover: LOOK.LEAF, moss: LOOK.LEAF,
-stone: LOOK.STONE, crystal: LOOK.CRYSTAL, cap: LOOK.CAP, bean: LOOK.GLOSSY, scale: LOOK.GLOSSY, bone: LOOK.BONE, fur: LOOK.FUR, lump: LOOK.LUMP,
+root: LOOK.FIBRE, pepper: LOOK.FIBRE, leaf: LOOK.LEAF, petal: LOOK.LEAF, flower: LOOK.LEAF, clover: LOOK.LEAF, moss: LOOK.LEAF, sprig: LOOK.LEAF,
+stone: LOOK.STONE, crust: LOOK.STONE, crystal: LOOK.CRYSTAL, cap: LOOK.CAP, bean: LOOK.GLOSSY, scale: LOOK.GLOSSY, bone: LOOK.BONE, fur: LOOK.FUR, lump: LOOK.LUMP,
+bark: LOOK.BARK, berry: LOOK.BERRY, bracket: LOOK.GILLS, seed: LOOK.SEED, shell: LOOK.SHELL, nugget: LOOK.METAL, shard: LOOK.GLASS,
+toadstool: LOOK.SPOTS, reed: LOOK.REED, spike: LOOK.FLORET, lily: LOOK.FLORET,
 };
 function shapeOf(def) {
 if (!def) return 'stone';
@@ -1844,6 +1932,18 @@ scale: [[0, 0], [1, 0], [-1, 0], ...[hex(0, 1), hex(-1, 1), hex(0, -1), hex(-1, 
 bone: [[0, 0], [1, 0], [-1, 0], [2, 0], [-2, 0], [3, 0.5], [3, -0.5], [-3, 0.5], [-3, -0.5], [3.8, 0], [-3.8, 0]],
 fur: [[0, 0], [1, 0.2], [-1, 0.1], [0.4, 0.9], [-0.6, 0.9], [0.5, -0.85], [-0.4, -0.8], [1.5, -0.6]],
 lump: [[0, 0], [1, 0], [-1, 0.1], [0.5, 0.86], [-0.5, 0.9], [0.4, -0.85], [-0.6, -0.8], [1.6, 0.6]],
+bark: [[0, 0], [1, 0], [-1, 0], [2, 0.1], [-2, 0.1], [0.5, 0.86], [-0.5, 0.86], [1.5, 0.95], [-1.5, 0.95], [2.8, 0.6]],
+berry: [[0, 0], [1, 0], [0.5, 0.86], [-0.5, 0.86], [-1, 0], [0, 1.73], [1, 1.73], [0.5, -0.9]],
+bracket: [[0, 0], [1, 0], [-1, 0], [2, 0], [-2, 0], [0.5, -0.86], [-0.5, -0.86], [1.5, -0.86], [-1.5, -0.86], [0, -1.73]],
+sprig: [[0, 0], [0, 1], [0, -1], [0.9, 0.5], [-0.9, -0.5], [0.9, -1.3], [-0.9, 1.3], [0, 2], [0, -2]],
+spike: [[0, 0], [0, 1], [0, -1], [0, 2], [0, -2], [0.8, 0.5], [-0.8, 0.5], [0.8, -0.5], [-0.8, -0.5], [0, 3]],
+seed: [[0, 0], [1, 0], [-1, 0], [0.5, 0.8], [-0.5, 0.8], [0.5, -0.8]],
+nugget: [[0, 0], [1, 0], [0.5, 0.86], [-0.5, 0.86], [-1, 0], [-0.5, -0.86], [0.5, -0.86], [1.4, 0.9]],
+shard: [[0, 0], [0.9, 0.25], [-0.9, -0.25], [1.8, 0.5], [-1.8, -0.5], [2.7, 0.6], [0.4, -0.7], [-2.6, -0.4]],
+lily: [[0, 0], [1, 0], [-1, 0], [0.5, 0.86], [-0.5, 0.86], [1.6, -0.6], [-1.6, -0.6], [0, 1.73], [0, 2.6]],
+toadstool: [[0, 0], [1, 0], [-1, 0], [2, 0.15], [-2, 0.15], [0.5, -0.86], [-0.5, -0.86], [1.5, -0.7], [-1.5, -0.7], [0, 1], [0, 2]],
+reed: [[0, 0], [0, 1], [0, 2], [0, -1], [0, -2], [0, 3], [0.8, -1.5], [0.8, -2.5], [0, -3]],
+shell: [[0, 0], [1, 0], [-1, 0], [0.5, -0.86], [-0.5, -0.86], [1.5, -0.86], [-1.5, -0.86], [0, -1.73], [1, -1.73], [-1, -1.73]],
 };
 function chunkTemplate(def, max) {
 const t = TEMPLATES[shapeOf(def)] || TEMPLATES.stone;
@@ -2141,9 +2241,10 @@ return { granularFraction, suspensionLnMult, mixtureProps, zeroComposition };
 const __m17 = (() => {
 const { SpeciesTable, MAX_SPECIES } = __m18;
 const { mixtureProps } = __m20;
-const { compositionEffects, NE } = __m13;
+const { compositionEffects, extractedEffects, NE } = __m13;
 const { isMagical, awakenedId, thresholdToCelsius } = __m15;
 const ACTIVATION_MARGIN = 6;
+const tables = new WeakMap();
 function predictPlan(world, lookup, plan) {
 const vol = new Map();
 let total = 0;
@@ -2199,20 +2300,29 @@ total -= v;
 vol.set(id, 0);
 }
 }
-const sp = new SpeciesTable();
+let sp = tables.get(lookup);
 const comp = new Float32Array(MAX_SPECIES);
+for (let attempt = 0; attempt < 2; attempt++) {
+if (!sp || attempt) { sp = new SpeciesTable(); tables.set(lookup, sp); }
+comp.fill(0);
+let full = false;
 for (const [id, v] of vol) {
 if (v <= 1e-6) continue;
 const def = lookup(id);
 if (!def) continue;
 const s = sp.ensure(def);
 if (s >= 0) comp[s] += v / total;
+else full = true;
+}
+if (!full) break;
 }
 const props = mixtureProps(sp, comp, 0, plan.serveTemp ?? 20);
 const effects = compositionEffects(sp, comp, 0, plan.serveTemp ?? 20, world.laws || [], new Array(NE).fill(0));
+const raw = new Array(NE).fill(0);
+extractedEffects(sp, comp, 0, plan.serveTemp ?? 20, raw);
 const composition = {};
 for (let s = 0; s < sp.count; s++) if (sp.defs[s] && comp[s] > 1e-5) composition[sp.defs[s].id] = comp[s];
-return { ...props, effects, composition, reactions: fired, totalParticles: total, threshold, awakened };
+return { ...props, effects, raw, composition, reactions: fired, totalParticles: total, threshold, awakened };
 }
 function arcaneRegime(ids, lookup, temps) {
 const ths = [];
@@ -2712,7 +2822,7 @@ story: ['The northern campaign. Strength, fire against the frost and healing for
 { id: 'starseer', title: 'Star-Seer’s Elixir', fx: [{ key: 'arcana' }, { key: 'transformation', share: 0.5 }, { key: 'love', share: 0.4 }], who: ['wizard', 'noble'], minTier: 4,
 story: ['A rite under the comet: sight, change and the bond between the casters — all three, in measure.'] },
 ];
-const TIER_TARGET = [[8, 15], [10, 18], [14, 26], [24, 40], [34, 55]];
+const TIER_TARGET = [[8, 15], [10, 18], [13, 22], [17, 28], [22, 34]];
 const PURITY_LIMIT = 1.2;
 function requestById(id) {
 return REQUESTS.find((r) => r.id === id);
@@ -2728,7 +2838,7 @@ const { ARCHETYPES, makeCustomer, archetypeOf } = __m21;
 const { viscosityClass } = __m22;
 const { evaluatePotion } = __m24;
 const { SIM } = __m23;
-const { EFFECT_INDEX, EFFECT_BY_KEY, EFFECT_KEYS, NE } = __m13;
+const { EFFECT_INDEX, EFFECT_BY_KEY, EFFECT_KEYS, NE, interact } = __m13;
 const { thresholdToCelsius, isMagical } = __m15;
 const { compatFactor } = __m14;
 const { REQUESTS, TIER_TARGET, PURITY_LIMIT, requestById } = __m25;
@@ -2957,81 +3067,101 @@ const compat = solvents.find((l) => compatFactor(m.compat[0], m.compat[1], l.com
 if (!compat || (m.solubility || 0) < 0.03) return null;
 return { solvent: compat, heatTo: 20, coolTo: 20, hold: 10, ground };
 }
+const NEUTRALISABLE = new Set(['fire', 'frost', 'vitality', 'death', 'toxicity', 'acidity']);
 function searchPlan(wanted, exclude, ctx, rng, n, o) {
 const solvents = solventsOf(ctx);
 if (!solvents.length) return null;
 const pot = (m, w) => w.sign * (((m.effects || {})[w.key]) || 0);
-const all = [...ctx.available].map(ctx.lookup).filter((m) => m && m.effects && m.form !== 'gas' && !m.awakened);
-const carriers = wanted.map((w) => all.filter((m) => pot(m, w) >= 4)
+const admissible = (m) => Object.entries(m.effects).every(([k, v]) => Math.abs(Number(v) || 0) < 1 || exclude.includes(k) || NEUTRALISABLE.has(k));
+const water = ctx.lookup(ctx.world.roles.water);
+const hot = Math.min(ctx.cap.maxFlame - 40, (water && isFinite(water.boil) ? water.boil : 100) - 6), cold = 20 + 0.55 * (ctx.cap.minCool - 20);
+const wakes = (m) => isMagical(m) && (m.arcane.thr >= 0 ? thresholdToCelsius(m.arcane.thr) + ACTIVATION_MARGIN + 4 <= hot : thresholdToCelsius(m.arcane.thr) - ACTIVATION_MARGIN - 4 >= cold);
+const pool = [...ctx.available].map(ctx.lookup)
+.filter((m) => m && m.effects && m.form !== 'gas' && !m.awakened && !m.remains && !m.product && Object.keys(m.effects).length && admissible(m) && (!o.activation || wakes(m)));
+const carriers = wanted.map((w) => pool.filter((m) => pot(m, w) >= 4)
 .map((m) => {
 let side = 0;
 for (const [k, v] of Object.entries(m.effects)) if (!exclude.includes(k)) side += Math.abs(Number(v) || 0);
-return { m, score: pot(m, w) / (1 + side * 1.5) * (0.85 + 0.3 * rng.next()) };
+return { m, score: pot(m, w) / (1 + side * 0.04) * (0.8 + 0.4 * rng.next()) };
 })
 .sort((a, b) => b.score - a.score).slice(0, 4).map((c) => c.m));
 if (carriers.some((c) => !c.length)) return null;
 const tries = [];
-for (let a = 0; a < 3; a++) tries.push(wanted.map((w, k) => carriers[k][Math.min(carriers[k].length - 1, a === 0 ? 0 : rng.int(0, carriers[k].length - 1))]));
+for (let a = 0; a < 3; a++) {
+const pick = wanted.map((w, k) => carriers[k][Math.min(carriers[k].length - 1, a === 0 ? 0 : rng.int(0, carriers[k].length - 1))]);
+if (o.activation && new Set(pick.map((m) => m.arcane.thr >= 0)).size > 1) continue;
+if (!tries.some((t) => t.every((m, k) => m === pick[k]))) tries.push(pick);
+}
 for (const pick of tries) {
-const plan = composePlan(pick, wanted, exclude, ctx, solvents, n, o);
+const sign = pick[0].arcane ? pick[0].arcane.thr >= 0 : true;
+const plan = composePlan(pick, wanted, exclude, ctx, solvents, n, o, o.activation ? pool.filter((m) => (m.arcane.thr >= 0) === sign) : pool);
 if (plan) return plan;
 }
 return null;
 }
-function composePlan(pick, wanted, exclude, ctx, solvents, n, o) {
+function composePlan(pick, wanted, exclude, ctx, solvents, n, o, pool) {
 const uniq = [...new Set(pick)];
 const preps = uniq.map((m) => prepFor(m, ctx, solvents));
 if (preps.some((p) => !p)) return null;
-const solvent = preps.find((p) => p.solvent)?.solvent || solvents[0];
-if (preps.some((p) => p.solvent && p.solvent.id !== solvent.id)) return null;
-const warm = preps.filter((p) => p.lo !== undefined), cold = preps.filter((p) => p.coolTo < 20);
-if (warm.length && cold.length) return null;
-let win = null;
-if (warm.length) win = [Math.max(...warm.map((p) => p.lo)), Math.min(...warm.map((p) => p.hi))];
-else if (cold.length) win = [Math.max(ctx.cap.minCool + 2, ...cold.map((p) => p.coolTo - 3)), Math.min(...cold.map((p) => p.coolTo + 3))];
-if (win && win[0] > win[1]) return null;
-const hold = Math.max(...preps.map((p) => p.hold));
-const x = new Map(uniq.map((m) => [m.id, 0.25]));
-let extra = [];
-const build = () => {
+let solvent = null, win = null, chill = false, hold = 8;
+for (const p of preps) {
+if (p.solvent && solvent && p.solvent.id !== solvent.id) continue;
+const pw = p.lo !== undefined ? [p.lo, p.hi] : p.coolTo < 20 ? [Math.max(ctx.cap.minCool + 2, p.coolTo - 3), p.coolTo + 3] : null;
+if (pw) {
+const isCold = p.coolTo < 20;
+if (win && isCold !== chill) continue;
+const nw = win ? [Math.max(win[0], pw[0]), Math.min(win[1], pw[1])] : pw;
+if (nw[0] > nw[1]) continue;
+win = nw;
+chill = isCold;
+}
+solvent = solvent || p.solvent;
+hold = Math.max(hold, p.hold);
+}
+solvent = solvent || solvents.find((x) => x.id === ctx.world.roles.water) || solvents[0];
+const quietServe = o.activation ? [] : [o.serve];
+let stageT = null;
+if (win) {
+const mid = (win[0] + win[1]) / 2;
+for (let T = Math.ceil(win[0]); T <= win[1]; T++) {
+if (arcaneRegime(uniq.map((m) => m.id), ctx.lookup, [T, ...quietServe]) !== 'quiet') continue;
+if (stageT === null || Math.abs(T - mid) < Math.abs(stageT - mid)) stageT = T;
+}
+if (stageT === null) return null;
+}
+const temps = stageT === null ? quietServe : [stageT, ...quietServe];
+const helpers = pool.filter((m) => !uniq.includes(m) && arcaneRegime([...uniq.map((c) => c.id), m.id], ctx.lookup, temps) === 'quiet');
+const solidFrac = (id) => ctx.lookup(id).form !== 'liquid';
+const plainPlan = (ing) => /** @type {import('./predict.js').BrewPlan} */ ({ ingredients: ing, heatTo: Math.max(20, o.serve), coolTo: Math.min(20, o.serve), serveTemp: o.serve, knead: ing.some((i) => solidFrac(i.id)), hold: 8 });
+const build = (x) => {
+let used = 0, solids = 0;
+for (const [id, f] of x) { used += f; if (solidFrac(id)) solids += f; }
+if (used > 0.97 || solids > 0.5) return null;
 const ing = [];
-let used = 0;
-for (const m of uniq) used += x.get(m.id);
-for (const [, f] of extra) used += f;
-if (used > 0.97) return null;
-let solids = 0;
-for (const m of uniq) if (m.form !== 'liquid') solids += x.get(m.id);
-for (const [id, f] of extra) if (ctx.lookup(id).form !== 'liquid') solids += f;
-if (solids > 0.5) return null;
 const ns = Math.round(n * (1 - used));
 if (ns >= 2) ing.push({ id: solvent.id, n: ns });
-uniq.forEach((m, k) => ing.push({ id: m.id, n: Math.max(2, Math.round(n * x.get(m.id))), ground: preps[k].ground || undefined }));
-for (const [id, f] of extra) ing.push({ id, n: Math.max(1, Math.round(n * f)), ground: ctx.lookup(id).form === 'solid' && ctx.cap.has('mortar') ? true : undefined });
-return /** @type {import('./predict.js').BrewPlan} */ ({ ingredients: ing, heatTo: Math.max(20, o.serve), coolTo: Math.min(20, o.serve), serveTemp: o.serve, knead: uniq.some((m) => m.form !== 'liquid'), hold: 8 });
+for (const [id, f] of x) {
+const c = Math.round(n * f);
+if (c < 1) continue;
+ing.push({ id, n: c, ground: solidFrac(id) && ctx.lookup(id).form === 'solid' && ctx.cap.has('mortar') ? true : undefined });
+}
+if (ing.length < 2) return null;
+return plainPlan(ing);
 };
 const finish = (plan) => {
 const ids = plan.ingredients.map((i) => i.id);
-const pre = predictPlan(ctx.world, ctx.lookup, { ...plan, steep: win ? { T: (win[0] + win[1]) / 2, hold } : undefined });
-const all = [...ids, ...Object.keys(pre.composition)];
-const quietServe = o.activation ? [] : [o.serve];
-if (win) {
-const mid = (win[0] + win[1]) / 2;
-let best = null;
-for (let T = Math.ceil(win[0]); T <= win[1]; T++) {
-if (arcaneRegime(all, ctx.lookup, [T, ...quietServe]) !== 'quiet') continue;
-if (best === null || Math.abs(T - mid) < Math.abs(best - mid)) best = T;
+if (stageT !== null) {
+plan.steep = { T: stageT, hold };
+plan.heatTo = Math.max(plan.heatTo, stageT);
+plan.coolTo = Math.min(plan.coolTo, stageT);
 }
-if (best === null) return null;
-plan.steep = { T: best, hold };
-plan.heatTo = Math.max(plan.heatTo, best);
-plan.coolTo = Math.min(plan.coolTo, best);
-} else if (arcaneRegime(all, ctx.lookup, quietServe) !== 'quiet') return null;
+const pre = predictPlan(ctx.world, ctx.lookup, plan);
+if (arcaneRegime([...ids, ...Object.keys(pre.composition)], ctx.lookup, temps) !== 'quiet') return null;
 if (plan.heatTo > ctx.cap.maxFlame - 40 || plan.coolTo < ctx.cap.minCool + 2) return null;
-let pred = predictPlan(ctx.world, ctx.lookup, plan);
-if (!o.activation) return pred.awakened ? null : pred;
-if (pred.threshold === null) return null;
-const Ta = thresholdToCelsius(pred.threshold);
-if (pred.threshold >= 0) {
+if (!o.activation) return pre.awakened ? null : pre;
+if (pre.threshold === null) return null;
+const Ta = thresholdToCelsius(pre.threshold);
+if (pre.threshold >= 0) {
 const T = Math.ceil(Ta + ACTIVATION_MARGIN + 4);
 const boil = Math.min(...plan.ingredients.map((i) => ctx.lookup(i.id).boil).filter((b) => isFinite(b)), 400);
 if (T > Math.min(ctx.cap.maxFlame - 40, boil - 6)) return null;
@@ -3043,58 +3173,198 @@ plan.coolTo = Math.min(plan.coolTo, T);
 }
 plan.hold = 18;
 plan.activate = true;
-pred = predictPlan(ctx.world, ctx.lookup, plan);
+const pred = predictPlan(ctx.world, ctx.lookup, plan);
 return pred.awakened ? pred : null;
 };
-let plan = null, pred = null;
-for (let it = 0; it < 6; it++) {
-plan = build();
+const model = new Map();
+const probe = (m, f) => {
+const plan = build(new Map([[m.id, f]]));
 if (!plan) return null;
-pred = finish(plan);
-if (!pred) return null;
-let ok = true;
-const scale = new Map(uniq.map((m) => [m.id, 1]));
-wanted.forEach((w, k) => {
-const v = w.sign * pred.effects[EFFECT_INDEX[w.key]];
-const want = w.target * 1.15;
-if (v < w.target * 1.02 || v > w.target * 1.6) ok = false;
-const r = v > 0.2 ? want / v : 2.5;
-const id = pick[k].id;
-scale.set(id, Math.min(scale.get(id) === 1 ? r : Math.max(scale.get(id), r), 2.5));
-});
-const dirty = unwantedMax(pred.effects, exclude);
-if (ok && dirty.value <= PURITY_LIMIT * 0.6) return { plan, pred };
-if (!ok) {
-for (const m of uniq) x.set(m.id, Math.max(0.04, Math.min(m.form === 'liquid' ? 0.92 : 0.5, x.get(m.id) * scale.get(m.id))));
-continue;
+if (stageT !== null) {
+plan.steep = { T: stageT, hold };
+plan.heatTo = Math.max(plan.heatTo, stageT);
+plan.coolTo = Math.min(plan.coolTo, stageT);
 }
-const c = canceller(dirty.key, pred.effects[EFFECT_INDEX[dirty.key]], exclude, ctx);
-if (!c) return null;
-const have = extra.find((e) => e[0] === c.id);
-const add = Math.min(0.3, dirty.value / Math.max(2, c.potency) * 1.05);
-if (have) have[1] = Math.min(0.35, have[1] + add);
-else extra = [...extra, [c.id, add]];
+const pr = predictPlan(ctx.world, ctx.lookup, plan);
+const share = (plan.ingredients.find((i) => i.id === m.id)?.n || 0) / pr.totalParticles;
+if (share <= 0) return null;
+const g = o.activation && isMagical(m) ? m.arcane.gain : 1;
+return pr.raw.map((v) => (v / share) * g);
+};
+const vecOf = (m, f = 0.2) => {
+if (!model.has(m.id)) model.set(m.id, probe(m, f) || new Array(NE).fill(0));
+return /** @type {number[]} */ (model.get(m.id));
+};
+const laws = ctx.world.laws || [];
+const tmp = new Float64Array(NE);
+const outcome = (ids, xs) => {
+tmp.fill(0);
+for (let j = 0; j < ids.length; j++) {
+const v = /** @type {number[]} */ (model.get(ids[j]));
+for (let k = 0; k < NE; k++) tmp[k] += xs[j] * v[k];
+}
+return interact(tmp, laws);
+};
+const wIdx = wanted.map((w) => EFFECT_INDEX[w.key]);
+const free = EFFECT_KEYS.map((k) => exclude.includes(k));
+const badness = (e) => {
+let b = 0;
+wanted.forEach((w, j) => {
+const v = w.sign * e[wIdx[j]];
+const lo = w.target * 1.15, hi = w.target * 1.45;
+if (v < lo) b += 40 * ((lo - v) / w.target) ** 2;
+else if (v > hi) b += 8 * ((v - hi) / w.target) ** 2;
+});
+for (let k = 0; k < NE; k++) {
+if (free[k]) continue;
+const a = Math.abs(e[k]);
+b += 0.05 * a * a + (a > 0.3 ? 6 * (a - 0.3) ** 2 : 0);
+}
+return b;
+};
+const solve = (ids, start) => {
+const xs = start.slice();
+const solid = ids.map(solidFrac);
+const feasible = () => {
+let used = 0, sol = 0;
+for (let j = 0; j < xs.length; j++) { if (xs[j] < 0) return false; used += xs[j]; if (solid[j]) sol += xs[j]; }
+return used <= 0.92 && sol <= 0.48;
+};
+const cost = () => badness(outcome(ids, xs)) + 0.02 * xs.reduce((a, v) => a + v, 0);
+let best = cost(), step = 0.08;
+for (let it = 0; it < 220 && step > 0.0015; it++) {
+let moved = false;
+for (let j = 0; j < xs.length; j++) {
+for (const d of [step, -step]) {
+const old = xs[j];
+xs[j] = Math.max(0, old + d);
+if (xs[j] !== old && feasible()) {
+const c = cost();
+if (c < best - 1e-9) { best = c; moved = true; continue; }
+}
+xs[j] = old;
+}
+}
+if (!moved) step *= 0.5;
+}
+return { xs, cost: best };
+};
+const good = (e) => wanted.every((w, j) => w.sign * e[wIdx[j]] >= w.target * 1.04) && EFFECT_KEYS.every((k, i) => free[i] || Math.abs(e[i]) <= PURITY_LIMIT * 0.45);
+for (const m of uniq) vecOf(m);
+if (uniq.some((m) => model.get(m.id).every((v) => v === 0))) return null;
+const E_ = EFFECT_INDEX;
+const net = (v) => [v[E_.fire] - v[E_.frost], v[E_.vitality] - v[E_.death] - 2 * v[E_.toxicity], v[E_.acidity], v[E_.strength], v[E_.love], v[E_.arcana], v[E_.transformation]];
+const NC = 7;
+const tgt = new Array(NC).fill(0), wt = new Array(NC).fill(6);
+const chan = { fire: [0, 1], frost: [0, -1], vitality: [1, 1], acidity: [2, 1], strength: [3, 1], love: [4, 1], arcana: [5, 1], transformation: [6, 1] };
+const convex = wanted.every((w) => chan[w.key]);
+for (const w of wanted) {
+if (!chan[w.key]) continue;
+const [c, sg] = chan[w.key];
+tgt[c] = sg * w.sign * w.target * 1.25;
+wt[c] = 40 / (w.target * w.target);
+}
+let ids = uniq.map((m) => m.id);
+let xs0 = ids.map(() => 0.25);
+if (convex) {
+const cand = [...uniq, ...helpers];
+for (const m of helpers) vecOf(m);
+const M = cand.map((m) => net(model.get(m.id)));
+const solid = cand.map((m) => solidFrac(m.id));
+const x = /** @type {number[]} */ (cand.map((m) => (uniq.includes(m) ? 0.15 : 0)));
+const r = tgt.map((t, c) => cand.reduce((acc, m, j) => acc + M[j][c] * x[j], 0) - t);
+for (let sweep = 0; sweep < 300; sweep++) {
+let change = 0;
+for (let j = 0; j < cand.length; j++) {
+let g = 0.02, hh = 0;
+for (let c = 0; c < NC; c++) { g += 2 * wt[c] * M[j][c] * r[c]; hh += 2 * wt[c] * M[j][c] * M[j][c]; }
+if (hh <= 1e-12) continue;
+let nx = Math.max(0, x[j] - g / hh);
+let used = 0, sol = 0;
+for (let q = 0; q < cand.length; q++) if (q !== j) { used += x[q]; if (solid[q]) sol += x[q]; }
+nx = Math.min(nx, 0.92 - used, solid[j] ? 0.48 - sol : 1);
+nx = Math.max(0, nx);
+const d = nx - x[j];
+if (d === 0) continue;
+for (let c = 0; c < NC; c++) r[c] += M[j][c] * d;
+x[j] = nx;
+change = Math.max(change, Math.abs(d));
+}
+if (change < 1e-5) break;
+}
+const keep = cand.map((m, j) => ({ m, f: x[j], c: uniq.includes(m) })).filter((k) => k.c || k.f * n >= 0.6)
+.sort((p, q) => (q.c ? 1 : 0) - (p.c ? 1 : 0) || q.f - p.f).slice(0, Math.max(uniq.length + 1, 5));
+ids = keep.map((k) => k.m.id);
+xs0 = keep.map((k) => Math.max(k.f, 0.01));
+}
+let sol = solve(ids, xs0);
+if (!good(outcome(ids, sol.xs)) && !convex) {
+const cands = helpers.filter((m) => !ids.includes(m.id)).slice(0, 12);
+let bestTry = null;
+for (const m of cands) {
+vecOf(m);
+const ids2 = [...ids, m.id];
+const t = solve(ids2, [...sol.xs, 0.05]);
+if (!bestTry || t.cost < bestTry.sol.cost) bestTry = { ids: ids2, sol: t };
+}
+if (bestTry && bestTry.sol.cost < sol.cost * 0.95) { ids = bestTry.ids; sol = bestTry.sol; }
+}
+const accept = (pred) => wanted.every((w, j) => {
+const v = w.sign * pred.effects[wIdx[j]];
+return v >= w.target * 1.02 && v <= w.target * 1.7;
+}) && unwantedMax(pred.effects, exclude).value <= PURITY_LIMIT * 0.6;
+const toMap = (xs) => new Map(/** @type {[string, number][]} */ (ids.map((id, j) => [id, xs[j]])).filter(([, f]) => f * n >= 0.5));
+let best = null;
+for (let it = 0; it < 3; it++) {
+const plan = build(toMap(sol.xs));
+if (!plan) break;
+const pred = finish(plan);
+if (!pred) break;
+if (accept(pred)) return { plan, pred };
+const err = planError(pred, wanted, wIdx, exclude);
+if (!best || err < best.err) best = { plan, pred, err };
+for (const id of ids) {
+const f = sol.xs[ids.indexOf(id)];
+const v = probe(ctx.lookup(id), Math.max(0.03, f));
+if (v) model.set(id, v);
+}
+sol = solve(ids, sol.xs);
+}
+if (!best || best.err > 2) return null;
+let cur = best;
+for (let step = 0; step < 5; step++) {
+let better = null;
+for (let j = 0; j < cur.plan.ingredients.length; j++) {
+for (const d of [1, -1]) {
+const ing = cur.plan.ingredients.map((i) => ({ ...i }));
+ing[j].n += d;
+if (ing[j].n < 1) continue;
+const p2 = plainPlan(ing);
+const r2 = finish(p2);
+if (!r2) continue;
+const err = planError(r2, wanted, wIdx, exclude);
+if (err < (better ? better.err : cur.err) - 1e-6) better = { plan: p2, pred: r2, err };
+}
+}
+if (!better) break;
+cur = better;
+if (accept(cur.pred)) return { plan: cur.plan, pred: cur.pred };
 }
 return null;
 }
-const CANCELS = { fire: ['frost'], frost: ['fire'], death: ['vitality'], toxicity: ['vitality'], acidity: ['acidity'] };
-function canceller(key, value, exclude, ctx) {
-const opp = CANCELS[key];
-if (!opp) return null;
-let best = null;
-for (const id of ctx.available) {
-const m = ctx.lookup(id);
-if (!m || !m.effects || m.form === 'gas' || m.awakened) continue;
-let potency;
-if (key === 'acidity') potency = -Math.sign(value) * (m.effects.acidity || 0);
-else potency = m.effects[opp[0]] || 0;
-if (potency < 6) continue;
-let side = 0;
-for (const [k, v] of Object.entries(m.effects)) if (k !== opp[0] && k !== key && !exclude.includes(k)) side += Math.abs(Number(v) || 0);
-if (side > potency * 0.08) continue;
-if (!best || potency - side > best.potency) best = { id, potency };
+function planError(pred, wanted, wIdx, exclude) {
+let e = 0;
+wanted.forEach((w, j) => {
+const v = w.sign * pred.effects[wIdx[j]];
+if (v < w.target * 1.08) e += 4 * (w.target * 1.08 - v) / w.target;
+else if (v > w.target * 1.6) e += (v - w.target * 1.6) / w.target;
+});
+for (let k = 0; k < NE; k++) {
+if (exclude.includes(EFFECT_KEYS[k])) continue;
+const a = Math.abs(pred.effects[k]);
+if (a > PURITY_LIMIT * 0.5) e += a - PURITY_LIMIT * 0.5;
 }
-return best;
+return e;
 }
 function requestsFor(arch, tier, event) {
 let list = REQUESTS.filter((r) => r.minTier <= tier && r.who.includes(arch.key));
@@ -3122,7 +3392,7 @@ const physical = opts.style ? [opts.style] : opts.request ? [] : physicalFor(arc
 const requests = opts.request ? [requestById(opts.request)].filter(Boolean) : opts.style ? [] : requestsFor(arch, tier, ctx.event);
 const usePhysical = physical.length && (!requests.length || rng.chance(opts.style ? 1 : 0.3));
 if (usePhysical) com = physicalCommission(rng.pick(physical), arch, tier, ctx, rng, totalN, bottleMl, bottleN, opts);
-else if (requests.length) com = effectCommission(rng.pick(requests), arch, tier, ctx, rng, totalN, bottleMl, bottleN, opts);
+if (!com && requests.length) com = effectCommission(rng.pick(requests), arch, tier, ctx, rng, totalN, bottleMl, bottleN, opts);
 if (com) return com;
 }
 return null;
@@ -3131,7 +3401,9 @@ function effectCommission(req, arch, tier, ctx, rng, totalN, bottleMl, bottleN, 
 const [lo, hi] = TIER_TARGET[tier];
 const serve = req.serve === 'warm' ? Math.round(rng.range(45, 58)) : req.serve === 'cold' && ctx.cap.minCool <= 6 ? Math.round(rng.range(6, 10)) : 20;
 let found = null, activation = false, wanted = [], exclude = [];
-for (const main of [Math.round(rng.range(lo, hi)), lo]) {
+const mains = [Math.round(rng.range(lo, hi)), lo];
+if (tier >= 3) mains.push(TIER_TARGET[tier - 2][0]);
+for (const main of mains) {
 wanted = req.fx.map((f, k) => ({ key: f.key, sign: f.sign || 1, target: k === 0 ? main : Math.max(4, Math.round(main * (f.share || 0.6) * rng.range(0.9, 1.1))) }));
 exclude = [...wanted.map((w) => w.key), ...(req.tolerate || [])];
 found = searchPlan(wanted, exclude, ctx, rng, totalN, { activation: false, serve });
@@ -3232,35 +3504,37 @@ if (fx.length) greet += ` It should carry a little ${fx.join(' and ')} — and n
 Object.assign(com, { potionName, customer, dialogue: greet, budget: Math.max(12, budget), hintCost: Math.max(3, Math.round(budget * 0.12)) });
 return com;
 }
+const TUTORIAL_HERBS = { healer: 'wild-silverleaf', warmer: 'wild-sunthistle' };
 function tutorialCommission(ctx, rng) {
 const R = ctx.world.roles;
-const plan = { ingredients: [{ id: R.water, n: 22 }, { id: R.essenceA, n: 22 }], heatTo: 45, coolTo: 20, serveTemp: 45 };
+const { healer, warmer } = TUTORIAL_HERBS;
+const plan = { ingredients: [{ id: R.water, n: 22 }, { id: healer, n: 10, ground: true }, { id: warmer, n: 5, ground: true }], heatTo: 62, coolTo: 20, serveTemp: 45, steep: { T: 62, hold: 22 }, knead: true, hold: 8 };
 const pred = predictPlan(ctx.world, ctx.lookup, plan);
-const vit = Math.max(4, Math.round(pred.effects[EFFECT_INDEX.vitality] * 0.8));
+const vit = Math.max(4, Math.round(pred.effects[EFFECT_INDEX.vitality] * 0.7));
 const arch = archetypeOf('farmer');
 const customer = makeCustomer(rng, arch);
 customer.name = 'Old Mabry Hollins';
 const colorWord = describeColor(pred.color);
+const leaf = ctx.lookup(healer).name, sun = ctx.lookup(warmer).name;
 return {
 id: 'q-tutorial',
 tier: 0,
-style: 'warm',
+style: 'healing',
 contract: false,
 tutorial: true,
-potionName: `${capitalize(colorWord)} Tonic`,
+potionName: `${capitalize(colorWord)} Healing Tonic`,
 customer,
-dialogue: `Ah, a new alchemist! My old joints ache. Could you brew me a warm, healing ${colorWord} tonic? ${ctx.lookup(R.essenceA).name} thinned with ${ctx.lookup(R.water).name} ought to do — but test that it truly heals, and that nothing else is in it!`,
+dialogue: `Ah, a new alchemist! My old joints ache. Could you brew me a warm healing tonic? ${leaf} heals, they say, but it leaves a frosty bite — a little ${sun} should warm that away. Test that it truly heals, and that nothing else is in it!`,
 requirements: [
-{ key: 'color', kind: 'target', target: pred.lab, rgb: pred.color, tol: 14, zero: 44, label: colorWord },
 { key: 'temperature', kind: 'target', target: 45, tol: 12, zero: 36, label: '33–57°C' },
 { key: 'vitality', kind: 'min', target: vit, tol: 0, zero: Math.max(6, vit * 0.6), label: `at least ${vit}%`, effect: true },
-purityRequirement(['vitality']),
+purityRequirement(['vitality'], 3),
 ],
 bottleMl: 100,
 bottleN: 20,
 budget: 30,
 reference: plan,
-predicted: { density: pred.density, viscosity: pred.viscosity, effects: Array.from(pred.effects), color: pred.color, reactions: [], threshold: pred.threshold, awakened: pred.awakened },
+predicted: { density: pred.density, viscosity: pred.viscosity, effects: Array.from(pred.effects), color: pred.color, reactions: pred.reactions, threshold: pred.threshold, awakened: pred.awakened },
 effectOrder: true,
 activation: false,
 hintCost: 0,
@@ -3272,8 +3546,7 @@ return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 function aOrAn(w) {
 return /^[aeiou]/i.test(w) ? 'an' : 'a';
 }
-void isMagical;
-return { purityRequirement, generateCommission, tutorialCommission, STYLE_NOUN, STYLE_TIER, unwantedMax };
+return { purityRequirement, generateCommission, TUTORIAL_HERBS, tutorialCommission, STYLE_NOUN, STYLE_TIER, unwantedMax };
 })();
 // src/game/equipment.js
 const __m26 = (() => {
@@ -3312,10 +3585,14 @@ const EQUIPMENT = [
 { id: 'sickle', name: 'Silver Sickle', category: 'storage', price: 45, rank: 1, icon: 'sickle', desc: 'Cuts mosses and lichens clean from stone and barrow.' },
 { id: 'shelf1', name: 'Oak Shelves', category: 'storage', price: 90, rank: 1, icon: 'shelf', desc: 'Store up to 2.5 L of each reagent.', effect: { storage: 2500 } },
 { id: 'shelf2', name: 'Cellar Racks', category: 'storage', price: 260, rank: 2, icon: 'shelf2', requires: ['shelf1'], desc: 'Store up to 6 L of each reagent.', effect: { storage: 6000 } },
+{ id: 'rack1', name: 'Bottle Shelf', category: 'storage', price: 40, rank: 0, icon: 'shelf', desc: 'A plank shelf with a lip: room for 6 sealed bottles of potion.', effect: { bottles: 6 } },
+{ id: 'rack2', name: 'Potion Cabinet', category: 'storage', price: 150, rank: 1, icon: 'shelf2', requires: ['rack1'], desc: 'A glass-fronted cabinet: room for 12 sealed bottles.', effect: { bottles: 12 } },
+{ id: 'rack3', name: 'Bottle Cellar', category: 'storage', price: 420, rank: 2, icon: 'shelf2', requires: ['rack2'], desc: 'Cool cellar racks from floor to vault: room for 24 sealed bottles.', effect: { bottles: 24 } },
 { id: 'charter', name: 'Guild Charter', category: 'guild', price: 400, rank: 2, icon: 'charter', desc: 'Guild membership: 15% off all reagents and access to guild contracts.', effect: { discount: 0.15 } },
 ];
 const STARTING_EQUIPMENT = ['hearth', 'basin', 'pot', 'spoon', 'mortar', 'thermometer'];
 const BASE_STORAGE = 1000;
+const BASE_BOTTLES = 3;
 const BASE_HUTCH = 4;
 function equipmentById(id) {
 return EQUIPMENT.find((e) => e.id === id);
@@ -3335,7 +3612,7 @@ return r;
 }
 function capabilities(owned) {
 const has = owned instanceof Set ? owned : new Set(owned);
-const cap = { maxFlame: 340, heatPower: 3.5, minCool: 4, coolPower: 4, size: 'pot', storage: BASE_STORAGE, discount: 0, hutch: BASE_HUTCH, has: (id) => has.has(id) };
+const cap = { maxFlame: 340, heatPower: 3.5, minCool: 4, coolPower: 4, size: 'pot', storage: BASE_STORAGE, discount: 0, hutch: BASE_HUTCH, bottles: BASE_BOTTLES, has: (id) => has.has(id) };
 for (const e of EQUIPMENT) {
 if (!has.has(e.id) || !e.effect) continue;
 const f = /** @type {any} */ (e.effect);
@@ -3346,10 +3623,11 @@ if (f.size === 'grand') cap.size = 'grand';
 if (f.storage && f.storage > cap.storage) cap.storage = f.storage;
 if (f.discount) cap.discount = Math.max(cap.discount, f.discount);
 if (f.hutch && f.hutch > cap.hutch) cap.hutch = f.hutch;
+if (f.bottles && f.bottles > cap.bottles) cap.bottles = f.bottles;
 }
 return cap;
 }
-return { EQUIPMENT, STARTING_EQUIPMENT, BASE_STORAGE, BASE_HUTCH, equipmentById, RANKS, rankIndex, capabilities };
+return { EQUIPMENT, STARTING_EQUIPMENT, BASE_STORAGE, BASE_BOTTLES, BASE_HUTCH, equipmentById, RANKS, rankIndex, capabilities };
 })();
 // src/game/colony.js
 const __m28 = (() => {
@@ -4325,7 +4603,7 @@ for (const region of REGIONS) {
 const mats = (world.wild || []).map(lookup).filter((m) => m && m.wild && m.wild.region === region.id);
 const placed = [];
 for (const m of mats) {
-const copies = m.wild.rare ? 1 : 2;
+const copies = m.wild.rare || mats.length > 5 ? 1 : 2;
 for (let c = 0; c < copies; c++) {
 let x = 0.5, y = 0.7;
 for (let tries = 0; tries < 40; tries++) {
@@ -4416,8 +4694,8 @@ const ids = ['clear', 'rain', 'fog', 'frost', 'storm', 'heat'];
 const id = ids[cut.findIndex((c) => r < c)];
 return WEATHERS.find((w) => w.id === id) || WEATHERS[0];
 }
-const PLANT_SHAPES = new Set(['root', 'leaf', 'petal', 'flower', 'clover', 'moss', 'cap', 'bean', 'pepper']);
-const FLOWER_SHAPES = new Set(['petal', 'flower', 'clover']);
+const PLANT_SHAPES = new Set(['root', 'leaf', 'petal', 'flower', 'clover', 'moss', 'cap', 'bean', 'pepper', 'bark', 'berry', 'bracket', 'sprig', 'spike', 'seed', 'lily', 'toadstool', 'reed']);
+const FLOWER_SHAPES = new Set(['petal', 'flower', 'clover', 'spike', 'lily']);
 function gatherPlan(st, d, m, opts = {}) {
 const method = methodOf(m);
 const hasTool = !method.tool || st.has(method.tool);
@@ -4432,7 +4710,7 @@ if (!hasTool) factors.push({ why: method.hand, f: 0.5 });
 if (!open) factors.push({ why: `closed until ${hour} — only a few sprigs`, f: 0.25 });
 const shape = w.shape || '';
 if (weather.id === 'frost' && FLOWER_SHAPES.has(shape)) factors.push({ why: 'shut by the frost', f: 0.5 });
-if (weather.id === 'frost' && shape === 'cap') factors.push({ why: 'swollen in the frost', f: 1.5 });
+if (weather.id === 'frost' && (shape === 'cap' || shape === 'toadstool' || shape === 'bracket')) factors.push({ why: 'swollen in the frost', f: 1.5 });
 if (weather.id === 'heat' && (FLOWER_SHAPES.has(shape))) factors.push({ why: 'lush in the heat', f: 1.25 });
 if (weather.id === 'heat' && shape === 'moss') factors.push({ why: 'dried out in the heat', f: 0.5 });
 if (weather.id === 'storm') factors.push({ why: 'wind scatters it', f: 0.75 });
@@ -4452,7 +4730,7 @@ function weatherRegrowth(g, deposits, weather, lookup) {
 for (const d of deposits) {
 const m = lookup(d.materialId);
 const shape = m && m.wild ? m.wild.shape : '';
-if ((weather.id === 'rain' && PLANT_SHAPES.has(shape)) || (weather.id === 'storm' && shape === 'crystal')) delete g.nodes[d.id];
+if ((weather.id === 'rain' && PLANT_SHAPES.has(shape)) || (weather.id === 'storm' && (shape === 'crystal' || shape === 'shard'))) delete g.nodes[d.id];
 }
 }
 function harvest(st, d, opts = {}) {
@@ -7943,7 +8221,7 @@ return { remainsId, isRemains, remainsPlan, remainsMaterials };
 // src/game/state.js
 const __m5 = (() => {
 const { Rng, hashString } = __m6;
-const { generateWorld, makeLookup, addAlchemy } = __m7;
+const { generateWorld, makeLookup, addAlchemy, LAB_ROLES } = __m7;
 const { serializeMaterial, deserializeMaterial } = __m9;
 const { generateCommission, tutorialCommission } = __m16;
 const { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById } = __m26;
@@ -7961,6 +8239,7 @@ const PURGE_PRICE = 8;
 const PURGE_BREW_COST = 1;
 const PURGE_BREW_TIME = 40;
 const WORLD_GEN_VERSION = 2;
+const STARTER_HERBS = { silverleaf: 200, sunthistle: 150, heartpetal: 150, ironroot: 150, emberbark: 100, frostcap: 100, riverchalk: 100, nettle: 100 };
 const ASPECT_KEY_MAP = { vitality: 'vitality', ardor: 'fire', arcana: 'arcana', fortitude: 'strength' };
 const MARKET_EVENTS = [
 { key: 'none', name: 'An ordinary day', text: 'Business as usual in the market square.' },
@@ -8046,6 +8325,7 @@ this.stats = { served: 0, perfect: 0, earned: 0, spent: 0, brews: 0, declined: 0
 /** @type {ReturnType<typeof createTrials>} */ this.trials = normalizeTrials(data.trials);
 /** @type {ReturnType<typeof createGathering>} */ this.gathering = normalizeGathering(data.gathering);
 this.vial = migrateVial(data.vial);
+this.bottles = Array.isArray(data.bottles) ? data.bottles.map(migrateVial).filter(Boolean) : [];
 /** @type {any[]} */ this.sales = Array.isArray(data.sales) ? data.sales : [];
 /** @type {any[]} */ this.followUps = Array.isArray(data.followUps) ? data.followUps : [];
 /** @type {number} */ this.referrals = data.referrals | 0;
@@ -8065,14 +8345,10 @@ const inventory = {};
 for (const id of world.starting) inventory[id] = 0;
 const R = world.roles;
 inventory[R.water] = Infinity;
-inventory[R.essenceA] = 300;
-inventory[R.essenceB] = 200;
 inventory[R.oil] = 200;
-inventory[R.syrup] = 200;
 inventory[R.spirit] = 200;
-inventory[R.binder] = 300;
-inventory[R.salt] = 200;
 for (const id of world.wild || []) inventory[id] = 0;
+for (const [key, ml] of Object.entries(STARTER_HERBS)) if (world.wild.includes('wild-' + key)) inventory['wild-' + key] = ml;
 const st = new GameState({
 version: SAVE_VERSION,
 genVersion: WORLD_GEN_VERSION,
@@ -8384,6 +8660,50 @@ this.stats.spent += e.price;
 this.daySpending += e.price;
 return { ok: true, item: e };
 }
+buyBackPrepared() {
+let paid = 0;
+for (const role of LAB_ROLES) {
+const id = this.world.roles[role];
+const ml = id ? this.inventory[id] : 0;
+if (!id || !(ml > 0) || !isFinite(ml)) continue;
+const m = this.lookup(id);
+paid += (ml / 100) * ((m && m.price) || 0) * 0.4;
+this.inventory[id] = 0;
+}
+paid = round1(paid);
+if (paid > 0) {
+this.coins = round1(this.coins + paid);
+this.journal['note:buyback'] = { key: 'note:buyback', kind: 'note', title: 'The guild bought back your reagents', day: this.day,
+text: `The market no longer sells prepared reagents: every effect must now come from what you gather. The guild paid ${paid} coins for the essences, salts and crystals left on your shelves.` };
+}
+return paid;
+}
+get bottleRoom() {
+return Math.max(0, this.cap.bottles - this.bottles.length);
+}
+shelveBottle(v) {
+const fromCounter = !v;
+const b = v || this.vial;
+if (!b) return { ok: false, reason: 'There is no bottle to put away.' };
+if (this.bottleRoom <= 0) return { ok: false, reason: `The potion shelves are full (${this.cap.bottles} bottles). Sell, pour back or discard one, or buy more shelving.` };
+this.bottles.push(b);
+if (fromCounter) this.vial = null;
+return { ok: true, bottle: b };
+}
+takeBottle(id) {
+const k = this.bottles.findIndex((b) => b.id === id);
+if (k < 0) return { ok: false, reason: 'No such bottle.' };
+const b = this.bottles[k];
+if (this.vial) this.bottles[k] = this.vial;
+else this.bottles.splice(k, 1);
+this.vial = b;
+return { ok: true, bottle: b };
+}
+removeBottle(id) {
+const k = this.bottles.findIndex((b) => b.id === id);
+if (k < 0) return null;
+return this.bottles.splice(k, 1)[0];
+}
 commissionContext() {
 const available = this.availableSet();
 for (const id of this.gatherableSet()) available.add(id);
@@ -8654,6 +8974,7 @@ createdAt: this.createdAt,
 trials: this.trials,
 gathering: this.gathering,
 vial: this.vial,
+bottles: this.bottles,
 batch: this.batch,
 sales: this.sales,
 followUps: this.followUps,
@@ -8673,6 +8994,7 @@ for (const id of world.wild || []) if (!(id in inventory)) inventory[id] = 0;
 for (const [k, v] of Object.entries(inventory)) if (!Number.isFinite(v) && v !== Infinity) inventory[k] = 0;
 const st = new GameState({ ...data, world, inventory });
 if (data._migratedFrom !== undefined && data._migratedFrom < 3) st.genVersion = WORLD_GEN_VERSION;
+st.buyBackPrepared();
 if (st.current) migrateCommission(st.current, st.world, st.lookup);
 return st;
 }
@@ -8745,7 +9067,7 @@ return d;
 function round1(v) {
 return Math.round(v * 10) / 10;
 }
-return { SAVE_VERSION, PURGE_PRICE, PURGE_BREW_COST, PURGE_BREW_TIME, WORLD_GEN_VERSION, MARKET_EVENTS, ACHIEVEMENTS, GameState, migrateCommission, migrate, EQUIPMENT, SIM };
+return { SAVE_VERSION, PURGE_PRICE, PURGE_BREW_COST, PURGE_BREW_TIME, WORLD_GEN_VERSION, STARTER_HERBS, MARKET_EVENTS, ACHIEVEMENTS, GameState, migrateCommission, migrate, EQUIPMENT, SIM };
 })();
 // src/game/persistence.js
 const __m47 = (() => {
@@ -9630,6 +9952,56 @@ case LOOK.GLOSSY: l = Math.abs(lx * 0.7 + ly * 0.7 + 0.06) * s < 0.6 ? 1.3 : 0.9
 case LOOK.BONE: l = hv < 0.05 ? 0.8 : Math.abs(ly * s) < 0.6 ? 0.96 : 1.04; break;
 case LOOK.FUR: l = 0.78 + hash01(sd + (u + 4096) * 37 + Math.floor(ly * s * 0.4 + 4096) * 1013) * 0.42; break;
 case LOOK.LUMP: l = Math.abs(lx * 0.7 + ly * 0.7 + 0.05) * s < 0.6 ? 1.32 : 0.88 + hv * 0.06; a = 0.94; break;
+case LOOK.BARK: { // rough plates split by deep, wandering fissures
+const col = Math.floor(lx * s * 0.35);
+const f = ly * s * 0.4 + hash01(sd + (col + 4096) * 97) * 0.9;
+l = f - Math.floor(f) < 0.24 ? 0.58 : 0.9 + hv * 0.14;
+break;
+}
+case LOOK.BERRY: { // round, glossy berries with dark gaps and a bright dot each
+const fx = lx * s * 0.4, fy = ly * s * 0.4, dx = fx - Math.round(fx), dy = fy - Math.round(fy);
+const r2 = dx * dx + dy * dy;
+l = r2 > 0.2 ? 0.55 : dx < -0.08 && dy < -0.08 && r2 < 0.1 ? 1.55 : 1.02 - r2;
+break;
+}
+case LOOK.GILLS: { // fine lamellae fanning out from the stalk
+const ang = Math.atan2(ly + 1.5, lx);
+l = (Math.floor(ang * 14 / Math.PI + 64) & 1) ? 0.78 : 1.04 + hv * 0.05;
+break;
+}
+case LOOK.SEED: { // diagonal ribs
+const rb = Math.floor((lx * 0.8 + ly * 0.6) * s * 0.55);
+l = (rb & 1) ? 0.74 : 1.06 + hv * 0.05;
+break;
+}
+case LOOK.SHELL: { // concentric growth rings with a pearly sheen
+const ring = Math.floor(Math.hypot(lx, ly - 1.2) * s * 0.45);
+l = (ring & 1) ? 0.86 : 1.08;
+if (hv > 0.9) { l = 1.35; r = r * 0.7 + 0.3; g = g * 0.7 + 0.28; b = b * 0.7 + 0.32; }
+break;
+}
+case LOOK.METAL: // bands of metallic sheen and the odd bright fleck
+l = 0.7 + 0.5 * Math.abs(Math.sin(ly * s * 0.22 + lx * s * 0.05)) + (hv > 0.96 ? 0.35 : 0);
+break;
+case LOOK.GLASS: { // dark glass with sharp, curving glints
+const c = Math.sin((lx * 1.3 + ly * ly * 0.6) * s * 0.3);
+l = c > 0.9 ? 1.7 : 0.72 + hv * 0.06;
+a = 0.95;
+break;
+}
+case LOOK.SPOTS: { // white warts scattered over the cap
+const fx = lx * s * 0.28, fy = ly * s * 0.28, cx = Math.floor(fx), cy = Math.floor(fy);
+const dx = fx - cx - 0.5, dy = fy - cy - 0.5;
+if (hash01(sd + (cx + 4096) * 131 + (cy + 4096) * 977) < 0.4 && dx * dx + dy * dy < 0.08) { r = 0.95; g = 0.93; b = 0.88; l = 1; }
+else l = 0.95 + hv * 0.08;
+break;
+}
+case LOOK.REED: // fine velvet striations along the stem
+l = (Math.floor(lx * s * 0.9) & 1 ? 0.86 : 1.0) + hv * 0.08;
+break;
+case LOOK.FLORET: // a froth of tiny florets
+l = hv > 0.72 ? 1.32 : hv < 0.16 ? 0.72 : 0.98;
+break;
 default: l = 0.92 + hv * 0.1;
 }
 if (edgeHi) l *= 1.16; else if (edgeLo) l *= 0.64;
@@ -10577,6 +10949,101 @@ for (let y = 7; y < 12; y++) for (let x = x0 + ((y & 1) ? 1 : 0); x < x1; x += 3
 P(x0, 11, x1 - x0, 1, d);
 break;
 }
+case 'bark': {
+const w = Math.round(6 + 5 * s);
+P(8 - w / 2, 4, w, 9, k); P(9 - w / 2, 5, w - 2, 7, c);
+for (let i = 0; i < w - 3; i += 3) P(9 - w / 2 + i + 1, 5, 1, 7, d);
+P(9 - w / 2, 5, w - 2, 1, hi); P(8 + w / 2 - 2, 6, 1, 5, css(color, 0.45));
+break;
+}
+case 'berry': {
+P(7, 1, 2, 4, gd); P(9, 2, 3, 1, g);
+const n = Math.max(2, Math.round(5 * s));
+const pos = [[6, 5], [9, 5], [4, 8], [7, 8], [10, 8], [6, 11]];
+for (let i = 0; i < n; i++) { const [px, py] = pos[i]; P(px - 1, py - 1, 5, 5, k); P(px, py, 3, 3, c); P(px, py, 1, 1, hi); P(px + 2, py + 2, 1, 1, d); }
+break;
+}
+case 'bracket': {
+P(1, 3, 3, 12, '#4a3020'); P(2, 3, 1, 12, '#6b4a30');
+const w = Math.round(6 + 6 * s);
+P(4, 6, w, 5, k); P(4, 7, w - 1, 3, c); P(4, 7, w - 2, 1, hi);
+for (let i = 5; i < 4 + w - 1; i += 2) P(i, 9, 1, 1, d);
+if (s > 0.6) { P(4, 11, w - 3, 3, k); P(4, 12, w - 4, 1, c); }
+break;
+}
+case 'sprig': {
+P(7, 3, 2, 12, gd);
+const n = Math.max(1, Math.round(3 * s));
+for (let i = 0; i < n; i++) {
+const y0 = 3 + i * 4;
+P(2, y0, 5, 3, k); P(3, y0 + 1, 4, 1, c); P(2, y0 + 1, 1, 1, c);
+P(9, y0 + 1, 5, 3, k); P(9, y0 + 2, 4, 1, c); P(13, y0 + 2, 1, 1, c);
+P(4, y0, 1, 1, hi); P(11, y0 + 1, 1, 1, hi);
+}
+break;
+}
+case 'spike': {
+P(7, 9, 2, 6, g); P(4, 12, 3, 2, g);
+const h = Math.round(5 + 4 * s);
+P(5, 9 - h, 6, h + 1, k);
+for (let y = 10 - h; y < 9; y += 2) { P(5, y, 6, 1, c); P(6, y + 1, 4, 1, d); }
+P(6, 10 - h, 1, 1, hi); P(9, 12 - h, 1, 1, hi);
+break;
+}
+case 'seed': {
+P(7, 7, 2, 8, gd);
+const n = Math.max(2, Math.round(5 * s));
+for (let i = 0; i < n; i++) { const px = 2 + i * 2.5; P(px, 3 + (i % 2), 3, 4, k); P(px + 1, 4 + (i % 2), 1, 2, c); P(px + 1, 6 + (i % 2), 6 - px / 2.5, 1, gd); }
+break;
+}
+case 'crust': {
+const w = Math.round(6 + 6 * s);
+P(8 - w / 2, 12, w, 3, '#5a5450');
+for (let i = 0; i < w; i += 2) { P(8 - w / 2 + i, 9 + (i % 4 === 0 ? 0 : 1), 2, 3, k); P(8 - w / 2 + i, 10 + (i % 4 === 0 ? 0 : 1), 1, 2, c); }
+P(9 - w / 2, 9, 1, 1, hi); P(8, 10, 1, 1, hi);
+break;
+}
+case 'nugget': {
+const w = Math.round(5 + 5 * s);
+P(8 - w / 2, 8, w, 6, k); P(9 - w / 2, 8, w - 2, 5, c); P(8 - w / 2 + 1, 7, w - 3, 1, k);
+P(9 - w / 2, 9, w - 3, 1, css(color, 1.9)); P(10 - w / 2, 12, w - 4, 1, d);
+break;
+}
+case 'shard': {
+const h = Math.round(5 + 7 * s);
+for (let i = 0; i < h; i++) { P(4 + i * 0.6, 14 - i, 3, 1, k); P(5 + i * 0.6, 14 - i, 1, 1, c); }
+P(5 + (h - 2) * 0.6, 15 - h, 1, 1, '#ffffff'); P(5, 13, 1, 1, hi);
+break;
+}
+case 'lily': {
+P(7, 8, 2, 7, g); P(9, 12, 3, 2, g);
+const r = Math.round(2 + 2 * s);
+P(8 - r - 1, 3, r * 2 + 2, 5, k); P(8 - r, 4, r * 2, 3, c);
+P(8 - r - 1, 2, 2, 2, k); P(7 + r, 2, 2, 2, k); P(8 - r, 3, 1, 1, c); P(8 + r, 3, 1, 1, c);
+P(7, 7, 2, 1, d); P(8 - r, 4, 1, 1, hi);
+break;
+}
+case 'toadstool': {
+P(6, 9, 4, 6, '#e8dcc4'); P(6, 9, 1, 6, '#fff6e6');
+const w = Math.round(7 + 4 * s);
+P(8 - w / 2, 4, w, 6, k); P(9 - w / 2, 5, w - 2, 4, c); P(10 - w / 2, 4, w - 4, 1, k);
+P(9 - w / 2 + 1, 6, 1, 1, '#ffffff'); P(8, 5, 2, 1, '#ffffff'); P(7 + w / 2 - 2, 7, 1, 1, '#ffffff');
+break;
+}
+case 'reed': {
+P(7, 1, 1, 3, gd); P(7, 9, 2, 6, g);
+const h = Math.round(3 + 3 * s);
+P(6, 3, 4, h + 1, k); P(7, 4, 2, h - 1, c); P(7, 4, 1, 1, hi);
+P(9, 10, 4, 1, g); P(3, 12, 4, 1, g);
+break;
+}
+case 'shell': {
+const w = Math.round(6 + 5 * s);
+P(8 - w / 2, 7, w, 6, k); P(9 - w / 2, 8, w - 2, 4, c); P(7, 13, 2, 2, k);
+for (let i = 1; i < w - 2; i += 2) P(8 - w / 2 + i, 8, 1, 4, d);
+P(9 - w / 2, 8, w - 2, 1, css(mix(color, [1, 0.9, 1], 0.6)));
+break;
+}
 default: { // stone
 const w = Math.round(6 + 6 * s);
 P(8 - w / 2, 9, w, 6, k); P(9 - w / 2, 9, w - 2, 5, c); P(9 - w / 2, 9, w - 3, 1, hi); P(10 - w / 2, 13, w - 3, 1, d);
@@ -10945,7 +11412,7 @@ return m;
 }
 function renderReagents(lab, body, rerender) {
 const st = lab.state;
-body.appendChild(h('div', { class: 'muted small', text: `Prices per 100 ml. Shelf space: ${st.cap.storage} ml per reagent. Water from the well is free. Wild herbs and minerals are free to gather in the Wilds; the herbalist sells the common ones at a premium.` }));
+body.appendChild(h('div', { class: 'muted small', text: `Prices per 100 ml. Shelf space: ${st.cap.storage} ml per reagent. The market sells no prepared reagents: every effect comes from nature. Water from the well is free; oil and spirit are plain solvents. Wild herbs and minerals are free to gather in the Wilds; from Journeyman on, the herbalist sells the common ones at a premium.` }));
 const list = h('div', { class: 'list' });
 for (const id of st.world.ingredients) {
 const mt = st.lookup(id);
@@ -11066,6 +11533,7 @@ asp.append(h('span', {}, icon(e.icon, 'sm'), ' ' + e.label), h('div', { class: '
 if (m.remains) asp.append(h('span', { class: 'muted', text: `Unknown: recovered from ${m.remains.rabbitName}. Whatever it absorbed in life may linger — test it in the Trials room.` }));
 else if (!asp.children.length) asp.append(h('span', { class: 'muted', text: 'No magical or chemical effect.' }));
 const reactions = st.world.reactions.filter((r) => (r.a === id || r.b === id) && st.journal['reaction:' + r.id]);
+const balance = m.wild ? balanceHints(st, m) : [];
 modal({
 title: m.name,
 body: [
@@ -11073,9 +11541,33 @@ h('div', { class: 'card parch ing-card' }, jarCanvas(m, 22, 30), h('div', {}, h(
 h('div', { class: 'card parch' }, facts),
 h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: m.remains ? 'Effects' : m.product ? 'Effects of this pure substance (as the guild knows it)' : 'Known effects of the pure ingredient (mixtures must be tested)' }), asp,
 (m.wild || m.remains) && m.form === 'solid' ? h('div', { class: 'small', text: 'Supplied whole: crush it in the pot with the pestle, or switch on “Ground” to grind it in the mortar first. Only what dissolves takes effect.' }) : null),
+balance.length ? h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Nothing that grows is pure. Its side effects cancel against their opposites:' }), ...balance.map((t) => h('div', { class: 'small', text: '• ' + t }))) : null,
 reactions.length ? h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Known reactions' }), ...reactions.map((r) => h('div', { class: 'small', text: `• ${r.name}: ${r.hint || ''}` }))) : null,
 ],
 });
+}
+const OPPOSITE = {
+fire: ['frost', 'frost cancels fire'], frost: ['fire', 'fire cancels frost'], death: ['vitality', 'life cancels death'],
+toxicity: ['vitality', 'life mends poison, two parts of life to one of poison'], vitality: ['death', 'death (or poison) cancels life'],
+acid: ['alkali', 'an alkali neutralises acid'], alkali: ['acid', 'an acid neutralises alkali'],
+};
+function balanceHints(st, m) {
+const fx = Object.entries(m.effects || {}).filter(([, v]) => Math.abs(Number(v)) >= 1);
+if (fx.length < 2) return [];
+const main = fx.reduce((a, b) => (Math.abs(Number(b[1])) > Math.abs(Number(a[1])) ? b : a))[0];
+const key = (k, v) => (k === 'acidity' ? (v < 0 ? 'alkali' : 'acid') : k);
+const carries = (x, ch) => (ch === 'acid' ? Math.max(0, x.effects.acidity || 0) : ch === 'alkali' ? Math.max(0, -(x.effects.acidity || 0)) : x.effects[ch] || 0);
+const out = [];
+for (const [k, v] of fx) {
+if (k === main) continue;
+const opp = OPPOSITE[key(k, Number(v))];
+if (!opp) continue;
+const names = (st.world.wild || []).map(st.lookup).filter((x) => x && x.id !== m.id && x.effects && carries(x, opp[0]) >= 6 && x.wild.rank <= Math.max(st.rank, 1))
+.sort((a, b) => carries(b, opp[0]) - carries(a, opp[0])).slice(0, 3).map((x) => x.name);
+const label = k === 'acidity' ? (Number(v) < 0 ? 'Alkali' : 'Acid') : EFFECTS.find((e) => e.key === k).label;
+out.push(`${label}: ${opp[1]}${names.length ? ` — e.g. ${names.join(', ')}` : ''}.`);
+}
+return out;
 }
 function openHint(lab) {
 const st = lab.state;
@@ -11127,24 +11619,38 @@ lab.refreshHud();
 show();
 });
 }
-function openBottleSize(lab, avail, onPick) {
+function openBottleSize(lab, avail, onPick, o = {}) {
 const st = lab.state;
 const com = lab.sandbox ? null : st.current;
 const per = SIM.ML_PER_PARTICLE;
+const counterFree = o.counterFree !== false, shelfRoom = o.shelfRoom || 0;
+let dest = /** @type {'counter'|'shelf'} */ (counterFree ? 'counter' : 'shelf');
 const sizes = new Set([25, 50, 100, 150, 200, 300]);
 if (com) sizes.add(com.bottleMl);
 const list = [...sizes].sort((a, b) => a - b);
 let m;
-const pick = (ml) => { m.close(); onPick(Math.max(1, Math.round(ml / per))); };
+const pick = (ml) => { m.close(); onPick(Math.max(1, Math.round(ml / per)), dest); };
 const btns = list.map((ml) => btn(`${ml} ml${com && ml === com.bottleMl ? ' · the order' : ''}`, () => pick(ml), {
 cls: com && ml === com.bottleMl ? 'primary' : '', disabled: ml / per > avail, act: 'bottle-' + ml,
 }));
 btns.push(btn(`All at the tap · ${avail * per} ml`, () => pick(avail * per), { act: 'bottle-all' }));
+let destRow = null;
+if (o.shelves) {
+const opts = /** @type {[string, string, boolean][]} */ ([
+['counter', counterFree ? 'To the counter' : 'Counter is taken', counterFree],
+['shelf', shelfRoom > 0 ? `To the potion shelves · ${shelfRoom} free` : 'Potion shelves are full', shelfRoom > 0],
+]);
+const bs = opts.map(([k, label, ok]) => btn(label, () => { dest = /** @type {any} */ (k); sync(); }, { icon: k === 'shelf' ? 'shelf2' : 'deal', disabled: !ok, act: 'bottle-dest-' + k }));
+const sync = () => bs.forEach((b, i) => b.classList.toggle('active', opts[i][0] === dest));
+sync();
+destRow = h('div', { class: 'row wrap bottle-dest' }, ...bs);
+}
 m = modal({
 title: 'Bottle a measured quantity',
 body: [h('div', { class: 'card parch' },
-h('div', { class: 'small', text: `The vial takes what runs out of the tap — the lowest layer first. ${avail * per} ml can be drawn now.` }),
-h('div', { class: 'small muted', text: 'A sealed vial keeps its exact contents. You can test doses from it, pour it back to keep working, or serve it.' }),
+h('div', { class: 'small', text: `The bottle takes what runs out of the tap — the lowest layer first. ${avail * per} ml can be drawn now.` }),
+h('div', { class: 'small muted', text: 'A sealed bottle keeps its exact contents. On the counter you can test doses from it, pour it back or serve it; on the potion shelves it waits until you need it.' }),
+destRow,
 h('div', { class: 'row wrap bottle-sizes' }, ...btns))],
 });
 return m;
@@ -11386,7 +11892,7 @@ modal({
 title: 'How to play',
 wide: true,
 body: [
-sec('Your shop', ['Customers ask for potions with effects at a strength — healing, strength, love, fire… — and physical qualities such as colour, thickness and temperature. Strength is the effective concentration in percent: everyday orders want about 8–15 %, master commissions far more.', 'Many orders forbid side effects: “no other effect above 1.2 %”. Every other kind of magic in the bottle must stay that faint.', 'You know what each plain ingredient does. You do NOT know what a mixture does: mixing, heat, reactions and hidden laws change things. Test doses in the Trials room to find out.', 'Bottle a measured quantity from the tap at the bottom of the cauldron (the lowest layer comes out first). A sealed vial keeps its exact contents: test doses from it, pour it back to keep working, or offer it at the Counter.', 'Before a sale you write the label — tested values, the guild theory’s estimates, “none” or unknown — and bargain over the price. The customer pays what you agree, drinks the real potion and comes back the next day: pleased, or with a complaint. Refund them, dispute it with your trial records, or turn them away.', 'Honest, well-tested potions earn reputation. Reputation unlocks ranks, regions of the wilds, reagents and equipment.']),
+sec('Your shop', ['Customers ask for potions with effects at a strength — healing, strength, love, fire… — and physical qualities such as colour, thickness and temperature. Strength is the effective concentration in percent: everyday orders want about 8–15 %, master commissions far more.', 'Many orders forbid side effects: “no other effect above 1.2 %”. Every other kind of magic in the bottle must stay that faint.', 'The market sells no prepared reagents — only free well water and two plain solvents, oil and spirit. Every effect comes from what you gather, and nothing that grows is pure: each herb or mineral brings side effects. Cancel them with their opposites — fire and frost, life and death (life also mends poison, two parts to one), acid and alkali. Long-press an ingredient to see what cancels its side effects.', 'You know what each plain ingredient does. You do NOT know what a mixture does: mixing, heat, reactions and hidden laws change things. Test doses in the Trials room to find out.', 'Bottle a measured quantity from the tap at the bottom of the cauldron (the lowest layer comes out first). A sealed vial keeps its exact contents: test doses from it, pour it back to keep working, or offer it at the Counter.', 'Bottle onto the potion shelves whenever you like, as long as there is room (3 bottles, more with a Bottle Shelf, Potion Cabinet or Bottle Cellar). Take a shelved bottle down at the Counter to test or sell it later.', 'Before a sale you write the label — tested values, the guild theory’s estimates, “none” or unknown — and bargain over the price. The customer pays what you agree, drinks the real potion and comes back the next day: pleased, or with a complaint. Refund them, dispute it with your trial records, or turn them away.', 'Honest, well-tested potions earn reputation. Reputation unlocks ranks, regions of the wilds, reagents and equipment.']),
 sec('Arcane awakening', ['Magical ingredients carry a hidden arcane threshold. Heat the brew past it (or, for cold magic, chill it below) and the magic awakens: it glows in the colour of its effect and acts several times stronger.', 'In a blend the threshold is the mix of its magical ingredients’ thresholds, by volume — a hot-waking and a cold-waking ingredient pull each other toward room temperature.', 'Mix first, at room temperature; then heat or chill to awaken. A half-mixed brew awakens unevenly.', 'Awakened magic stays awake when it cools, is bottled or kept. Only dilution and reactions undo it.', 'Your journal notes where each ingredient awoke; the Arcanometer reads a brew’s threshold directly.']),
 sec('Wilds and trials', ['Gather roots, leaves, flowers, mushrooms and minerals in the Wilds. Deposits are finite and regrow over time, even while the game is closed.', 'Each ingredient has its method — pick, dig, chip, scrape or sweep — and the right tool doubles the harvest. Twilight plants open only at dawn (your first customer of the day) or dusk (your last). The weather changes daily. A thorough harvest takes twice as much but the deposit regrows slowly.', 'Whole roots and stones do nothing until crushed (pestle) or ground (mortar, the “Ground” switch on the shelf). Only what dissolves takes effect; hot water dissolves more, and some herbs steep into strong extracts when held warm.', 'Each subject responds to some effects only: a stone shows acid but not love. Choose subjects that cover what the customer cares about.', 'When a trial surprises you, a hidden law may be at work. Confirm it twice and your theory learns it.']),
 sec('Brewing', ['Tap a jar on the shelf, then hold your finger (or the mouse) inside the cauldron to pour. Dose buttons pour exact amounts.', 'Stir with the spoon: drag through the brew. Mixing starts where liquids touch and spreads; stirring speeds it up dramatically.', 'Powders pile up like sand. Knead a binding powder with a watery liquid to make dough; add more liquid to thin it.', 'Slide the fire control right to heat from below, left to cool. Heat spreads through the brew gradually.', 'Keep the lid on to trap vapour; let things cool and the vapour condenses back. Open the lid to let it escape.', 'Freeze liquids into blocks, then crush them with the pestle. Some reagents react when mixed, heated or chilled — discoveries go into your journal.']),
@@ -11654,7 +12160,7 @@ return { openIdentify, openNegotiation, showDeal, followUpCard, claimSummary, EF
 const __m60 = (() => {
 const { h, btn } = __m2;
 const { PHASE } = __m23;
-const { MAX_SPECIES } = __m18;
+const { TUTORIAL_HERBS } = __m16;
 class Tutorial {
 constructor(lab) {
 this.lab = lab;
@@ -11668,14 +12174,9 @@ get steps() {
 const lab = this.lab;
 const st = lab.state;
 const R = st.world.roles;
-const water = st.lookup(R.water), ess = st.lookup(R.essenceA);
-const volumeOf = (id) => {
-const s = lab.sim.species.slotOf.get(id);
-if (s === undefined) return 0;
-let t = 0;
-for (let i = 0; i < lab.sim.p.count; i++) t += lab.sim.p.comp[i * MAX_SPECIES + s];
-return t * 5;
-};
+const water = st.lookup(R.water);
+const H = TUTORIAL_HERBS, leaf = st.lookup(H.healer), sun = st.lookup(H.warmer);
+const poured = (id) => st.brewLog.reduce((a, e) => a + (e.type === 'pour' && e.id === id ? e.ml : 0), 0);
 const brewT = () => {
 const p = lab.sim.p;
 let T = 0, n = 0;
@@ -11686,24 +12187,22 @@ const tab = (id) => () => lab.tabEls[id] && lab.tabEls[id].b;
 const rabbitTested = () => st.trials.records.some((r) => r.subjectId === 'rabbit' && r.batchId === st.batch.id);
 return [
 { text: `Welcome to your shop, alchemist! Your very first customer is here. Let’s brew their order together — it only takes a few minutes.`, button: 'Let’s begin' },
-{ text: 'This strip is the order. Colour and temperature meters fill as your brew matches. The heart (healing) shows “?”: what a mixture really does stays unknown until you test it.', target: () => lab.strip, button: 'Got it' },
+{ text: 'This strip is the order. The temperature meter fills as your brew matches. The heart (healing) shows “?”: what a mixture really does stays unknown until you test it.', target: () => lab.strip, button: 'Got it' },
 { text: `Tap the jar of ${water.name} on the shelf to pick it up.`, target: () => lab.jarEls[R.water] && lab.jarEls[R.water].el, done: () => lab.selected === R.water },
-{ text: 'Pour about 110 ml: tap the dose buttons (100, then 25) or hold your finger in the cauldron. You can also drag a jar straight onto the cauldron.', target: () => lab.doseEl, done: () => volumeOf(R.water) >= 95 },
-{ text: `Now pick up the ${ess.name}. Long-press any jar to see what the plain ingredient is known to do.`, target: () => lab.jarEls[R.essenceA] && lab.jarEls[R.essenceA].el, done: () => lab.selected === R.essenceA },
-{ text: 'Pour about 110 ml of it. The colour stays where it lands at first — mixing starts where liquids touch.', target: () => lab.doseEl, done: () => volumeOf(R.essenceA) >= 95 && !lab.sim.emitter.pouring },
-{ text: 'Pick the spoon and drag it in circles through the brew. Stirring spreads colour — and magic — far faster than waiting.', target: () => lab.toolBtns.spoon, done: () => (lab.sim.tool.stirDistance - (this.flags.stir0 ?? (this.flags.stir0 = lab.sim.tool.stirDistance))) > 18 || this.colourScore() > 0.95 },
-{ text: 'The customer wants it served warm. Slide the fire control to the right — heat enters through the bottom and spreads.', target: () => lab.furnaceInput.parentElement, done: () => brewT() >= 36 },
+{ text: 'Pour about 110 ml: tap the dose buttons (100, then 25) or hold your finger in the cauldron. You can also drag a jar straight onto the cauldron.', target: () => lab.doseEl, done: () => poured(R.water) >= 95 },
+{ text: `Now pick up the ${leaf.name}. Long-press any jar to see what it is known to do: it heals, but carries a frosty bite.`, target: () => lab.jarEls[H.healer] && lab.jarEls[H.healer].el, done: () => lab.selected === H.healer },
+{ text: 'Pour about 50 ml. The mortar grinds it first (“Ground” is lit): whole leaves would give up almost nothing.', target: () => lab.doseEl, done: () => poured(H.healer) >= 45 && !lab.sim.emitter.pouring },
+{ text: `Nothing that grows is pure. Fire cancels frost, life cancels death, alkali cancels acid. Pick up the ${sun.name}: its fire will cancel the leaf’s frost.`, target: () => lab.jarEls[H.warmer] && lab.jarEls[H.warmer].el, done: () => lab.selected === H.warmer },
+{ text: 'Pour about 25 ml — half as much as the leaf, so the fire and the frost balance out.', target: () => lab.doseEl, done: () => poured(H.warmer) >= 20 && !lab.sim.emitter.pouring },
+{ text: 'Pick the spoon and drag it in circles through the brew. Stirring spreads colour — and magic — far faster than waiting.', target: () => lab.toolBtns.spoon, done: () => (lab.sim.tool.stirDistance - (this.flags.stir0 ?? (this.flags.stir0 = lab.sim.tool.stirDistance))) > 12 || lab.sim.tool.auto || brewT() >= 40 },
+{ text: 'Herbs steep only when warm. Slide the fire control to the right and bring the brew to about 60°C — heat enters through the bottom and spreads.', target: () => lab.furnaceInput.parentElement, done: () => brewT() >= 50 },
 { text: 'Is it really a healing tonic? Nobody knows until it is tested. Open the Trials room.', target: tab('trials'), done: () => lab.view === 'trials' },
 { text: 'Choose a rabbit in the hutch and give it a dose: press Give, or drag the dropper onto it. The dose is real potion from the tap. Each rabbit reads a potion a little differently — later, test several.', target: () => document.querySelector('[data-act=test-rabbit]') || lab.views.trials.hutch.el, done: rabbitTested },
-{ text: 'The rabbit shows how much vitality (and poison) this batch carries. Verified effects now count on the order. Back to the cauldron!', target: tab('brew'), done: () => lab.view === 'brew' },
-{ text: 'When the meters are full and the brew is warm, press Bottle. (Turn the fire down once it is warm enough.)', target: () => lab.bottleFab, done: () => this.flags.bottled },
+{ text: 'The rabbit shows how much vitality — and any frost or fire left over — this batch carries. Verified effects now count on the order. Back to the cauldron!', target: tab('brew'), done: () => lab.view === 'brew' },
+{ text: 'Let it cool to a warm 45°C or so, then press Bottle. A bottle can go to the counter or onto your potion shelves for later.', target: () => lab.bottleFab, done: () => this.flags.bottled },
 { text: 'Your sealed vial waits at the Counter. Offer it to the customer: seal its label (your trial reading is already written in), then agree on a price.', target: () => document.querySelector('[data-act=serve]') || tab('counter')(), done: () => this.flags.sold },
-{ text: 'Splendid — your first sale! New orders ask for strength, love, fire… Gather wild herbs in the Wilds, grind them, test every new mixture in the Trials room, and save good recipes in your Book.', button: 'Run my shop!' },
+{ text: 'Splendid — your first sale! New orders ask for strength, love, fire… Every herb carries side effects: gather in the Wilds, balance them against their opposites, test every mixture in the Trials room and save good recipes in your Book.', button: 'Run my shop!' },
 ];
-}
-colourScore() {
-const r = this.lab.reqEls && this.lab.reqEls.find((x) => x.req.key === 'color');
-return r ? parseFloat(r.meter.style.width) / 100 : 0;
 }
 start(restart = false) {
 if (restart) {
@@ -11827,6 +12326,7 @@ h('div', { class: 'row wrap' },
 st.dayOver ? btn('Close shop for the night', () => lab.endDay(), { cls: 'gold', icon: 'sun', act: 'end-day' })
 : btn('Open the door', () => lab.bringCustomer(true), { cls: 'gold', icon: 'door', act: 'next-customer' }))));
 this.vialCard(el);
+this.shelfCard(el);
 return;
 }
 const portrait = /** @type {HTMLCanvasElement} */ (h('canvas', { class: 'portrait big' }));
@@ -11867,6 +12367,7 @@ btn(com.hintCost ? `Advice (${com.hintCost})` : 'Advice', () => panels.openHint(
 com.tutorial ? null : btn('Decline', () => lab.decline(), { icon: 'door', act: 'decline' }),
 btn('To the cauldron', () => lab.showView('brew'), { icon: 'cauldron', cls: 'primary', act: 'go-brew' }))));
 this.vialCard(el);
+this.shelfCard(el);
 }
 vialCard(el) {
 const lab = this.lab, st = lab.state;
@@ -11887,6 +12388,7 @@ const serve = com ? btn(`Offer to ${first}`, () => lab.serveVial(), { cls: 'prim
 const labelB = btn(v.label ? 'Revise label' : 'Label', () => lab.identifyVial(), { icon: 'tag', act: 'label' });
 const testB = btn('Test a dose', () => { lab.trialSource = 'vial'; lab.showView('trials'); }, { icon: 'dropper', act: 'test-vial' });
 const back = btn('Pour back', () => lab.pourBackVial(), { icon: 'pour', act: 'pour-back' });
+const store = lab.sandbox ? null : btn('Put on shelf', () => lab.shelveVial(), { icon: 'shelf2', act: 'shelve-vial', disabled: st.bottleRoom <= 0, title: st.bottleRoom <= 0 ? 'The potion shelves are full' : 'Keep this bottle on the potion shelves' });
 const discard = btn('Discard', async () => { if (await confirmDialog('Discard the vial?', 'The potion is poured away. Ingredients are not refunded.', 'Discard', 'danger')) lab.discardVial(); }, { icon: 'trash', cls: 'danger', act: 'discard' });
 el.append(h('div', { class: 'card parch vial-card' },
 h('div', { class: 'row' }, cv, h('div', {},
@@ -11896,7 +12398,47 @@ h('div', { class: 'small' }, 'Verified: ', Object.keys(v.cert || {}).length ? Ob
 v.label ? h('div', { class: 'small label-line' }, icon('tag', 'sm'), ` ${trade.claimSummary(v.label.claims)}`) : null)),
 need.length && com ? h('div', { class: 'warn small', text: `Not yet tested: ${need.map((k) => EFFECT_BY_KEY[k].label).join(', ')}. You may still sell on the guild's theory, but ${first} will trust an untested label less${com.customer.persona && com.customer.persona.proof >= 0.8 ? ' — and this customer insists on proof' : ''}.` }) : null,
 com && v.ml < com.bottleMl ? h('div', { class: 'small muted', text: `Short of the ${com.bottleMl} ml ordered; the customer pays less.` }) : null,
-h('div', { class: 'row wrap' }, serve, labelB, testB, back, discard)));
+h('div', { class: 'row wrap' }, serve, labelB, testB, store, back, discard)));
+}
+shelfCard(el) {
+const lab = this.lab, st = lab.state;
+if (lab.sandbox) return;
+lab.freshBottles();
+const cap = st.cap.bottles;
+if (this.sel && !st.bottles.some((b) => b.id === this.sel)) this.sel = null;
+const grid = h('div', { class: 'bottle-shelf', role: 'listbox', 'aria-label': 'Potion shelves' });
+const rows = Math.ceil(cap / 6);
+for (let i = 0; i < rows * 6; i++) {
+const b = st.bottles[i];
+if (!b) {
+grid.appendChild(h('div', { class: 'bottle-slot' + (i < cap ? ' empty' : ' locked'), 'aria-hidden': 'true' }));
+continue;
+}
+const cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: '16', height: '22', class: 'vial-art' }));
+drawBottle(/** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')), 2, 2, 12, 19, b.m ? b.m.color : [0.5, 0.5, 0.5], Math.min(1, b.ml / Math.max(1, b.bottledMl || b.ml)));
+const slot = h('button', { class: 'bottle-slot' + (this.sel === b.id ? ' active' : ''), role: 'option', 'aria-selected': this.sel === b.id ? 'true' : 'false', 'aria-label': `${b.label && b.label.name ? b.label.name : 'Bottle'}, ${Math.round(b.ml)} ml`, 'data-act': 'bottle-slot', 'data-id': b.id },
+cv, h('span', { class: 'bml', text: `${Math.round(b.ml)}` }));
+slot.addEventListener('click', () => { this.sel = this.sel === b.id ? null : b.id; this.refresh(); });
+grid.appendChild(slot);
+}
+const b = this.sel ? st.bottles.find((x) => x.id === this.sel) : null;
+let detail = null;
+if (b) {
+const m = b.m || {};
+const fx = Object.entries(b.cert || {});
+detail = h('div', { class: 'bottle-detail' },
+h('div', { class: 'small' }, h('span', { class: 'swatch', style: { background: rgbToHex(m.color || [0.5, 0.5, 0.5]) } }), ` ${describeColor(m.color || [0.5, 0.5, 0.5])} · ${Math.round(b.ml)} ml · ${Math.round(m.temperature ?? 20)}°C · bottled on day ${b.day || st.day}`),
+h('div', { class: 'small' }, 'Verified: ', fx.length ? fx.map(([k, x]) => h('span', { class: 'fx-chip' }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(x)}`)) : h('span', { class: 'muted', text: 'nothing — effects unknown' })),
+b.label ? h('div', { class: 'small label-line' }, icon('tag', 'sm'), ` ${trade.claimSummary(b.label.claims)}`) : null,
+h('div', { class: 'row wrap' },
+btn(st.vial ? 'Swap onto the counter' : 'Take to the counter', () => lab.takeBottle(b.id), { icon: 'deal', cls: 'primary', act: 'take-bottle' }),
+btn('Pour back', () => lab.pourBackBottle(b.id), { icon: 'pour', act: 'pour-back-bottle' }),
+btn('Discard', async () => { if (await confirmDialog('Discard the bottle?', 'The potion is poured away. Ingredients are not refunded.', 'Discard', 'danger')) lab.discardBottle(b.id); }, { icon: 'trash', cls: 'danger', act: 'discard-bottle' })));
+}
+el.append(h('div', { class: 'card parch shelf-card' },
+h('div', { class: 'row' }, icon('shelf2'), h('b', { text: `Potion shelves · ${st.bottles.length}/${cap}` })),
+st.bottles.length ? null : h('div', { class: 'small muted', text: 'Bottle a brew onto the shelves whenever you like, to keep it for a later customer, test it later or pour it back into a new brew. More shelving is sold at the Guild.' }),
+grid, detail));
 }
 }
 return { CounterView };
@@ -14602,6 +15144,7 @@ const { saveGame, saveJSON, KEYS } = __m47;
 const { AutoBrewer } = __m57;
 const { RANKS } = __m26;
 const { certification, missingEffects } = __m27;
+const { sandboxIngredients } = __m7;
 const { makeVial, appendParticles, updateVial, takeDose, pourBack, pourBackParts, relaxVial } = __m30;
 const { theoryOf, EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, dominantEffect, NE } = __m13;
 const { awakenParts, describeThreshold } = __m15;
@@ -14937,7 +15480,7 @@ buildShelf() {
 const sh = clear(this.shelfEl);
 this.jarEls = {};
 const st = this.state;
-const ids = this.sandbox ? st.world.ingredients : st.world.ingredients.filter((id) => st.lookup(id).tier <= st.rank || st.stock(id) > 0);
+const ids = this.sandbox ? sandboxIngredients(st.world) : st.world.ingredients.filter((id) => st.lookup(id).tier <= st.rank || st.stock(id) > 0);
 const labels = shelfLabels(ids.map((id) => st.lookup(id).name));
 for (const [n, id] of ids.entries()) {
 const m = st.lookup(id);
@@ -15390,12 +15933,18 @@ this.views.wilds.refresh();
 startBottling() {
 if (this.bottling) return;
 const st = this.state;
-if (st.vial) { toast('A vial is waiting', 'Serve, pour back or discard the sealed vial at the Counter first.', 'bottle'); this.showView('counter'); return; }
+const counterFree = !st.vial && !this.sandbox;
+if (!counterFree && !this.sandbox && st.bottleRoom <= 0) {
+toast('Nowhere to put it', `The counter holds a vial and the potion shelves are full (${st.cap.bottles}). Serve, pour back or discard a bottle first — or buy more shelving.`, 'bottle', 4500);
+this.showView('counter');
+return;
+}
+if (this.sandbox && st.vial) { toast('A vial is waiting', 'Pour back or discard the sealed vial first.', 'bottle'); return; }
 const avail = Math.floor(this.tapAvailable() / SIM.ML_PER_PARTICLE);
 if (avail < 1) { toast('Nothing to bottle', 'There is no liquid at the tap.', 'flask'); audio.play('error'); return; }
-panels.openBottleSize(this, avail, (n) => this.beginBottling(n));
+panels.openBottleSize(this, avail, (n, dest) => this.beginBottling(n, dest), { counterFree: counterFree || this.sandbox, shelfRoom: this.sandbox ? 0 : st.bottleRoom, shelves: !this.sandbox });
 }
-beginBottling(n) {
+beginBottling(n, dest = 'counter') {
 if (this.bottling) return;
 const st = this.state;
 const sel = tapSelection(this.sim, n);
@@ -15408,7 +15957,7 @@ const vial = makeVial(this.sim, [], {
 batchId: st.batch.id, rev: st.batch.rev, cert: cert.values, certRecords: cert.records, samples: cert.samples, parts: this.batchParts(),
 day: st.day, commissionId: st.current ? st.current.id : null,
 });
-this.bottling = { total: sel.length, removed: 0, progress: 0, color: m.color, t: 0, vial };
+this.bottling = { total: sel.length, removed: 0, progress: 0, color: m.color, t: 0, vial, dest };
 audio.play('glass');
 if (this.tutorial) this.tutorial.notify('bottle');
 }
@@ -15435,6 +15984,16 @@ const st = this.state;
 const vial = b.vial;
 updateVial(vial, st.lookup, st.world.laws);
 vial.recipe = this.recipeDraft(vial.m, null, st.current);
+vial.commissionId = b.dest === 'shelf' ? null : vial.commissionId;
+if (b.dest === 'shelf' && st.shelveBottle(vial).ok) {
+if (this.sim.p.count === 0) { st.brewLog = []; st.newBatch(); this.lastPoured = {}; }
+audio.play('glass');
+this.save();
+toast('Bottle shelved', `${vial.ml} ml sealed and put on the potion shelves (${st.bottles.length}/${st.cap.bottles}). Take it down at the Counter whenever you need it.`, 'bottle', 3600);
+if (this.view === 'counter') this.views.counter.refresh();
+this.updateBadges();
+return;
+}
 st.vial = vial;
 if (this.sim.p.count === 0) { st.brewLog = []; st.newBatch(); this.lastPoured = {}; }
 audio.play('glass');
@@ -15442,6 +16001,39 @@ this.save();
 if (this.sandbox || !st.current) toast('Vial sealed', `${vial.ml} ml bottled. Test it in the Trials room, or pour it back to keep working on it.`, 'bottle', 3600);
 this.showView(this.sandbox ? 'trials' : 'counter');
 this.updateBadges();
+}
+shelveVial() {
+const st = this.state;
+const r = st.shelveBottle();
+if (!r.ok) { toast('The shelves are full', r.reason, 'bottle', 4000); audio.play('error'); return; }
+audio.play('glass');
+this.save();
+this.views.counter.refresh();
+this.updateBadges();
+}
+takeBottle(id) {
+const r = this.state.takeBottle(id);
+if (!r.ok) return;
+updateVial(r.bottle, this.state.lookup, this.state.world.laws);
+audio.play('glass');
+this.save();
+this.views.counter.refresh();
+this.updateBadges();
+}
+discardBottle(id) {
+if (!this.state.removeBottle(id)) return;
+audio.play('splash');
+this.save();
+this.views.counter.refresh();
+}
+pourBackBottle(id) {
+const b = this.state.bottles.find((x) => x.id === id);
+if (!b) return;
+if (!this.pourVialIntoCauldron(b)) return;
+this.state.removeBottle(id);
+this.save();
+this.views.counter.refresh();
+this.showView('brew');
 }
 serveVial() {
 const st = this.state;
@@ -15513,17 +16105,22 @@ pourBackVial() {
 const st = this.state;
 const v = st.vial;
 if (!v) return;
-const made = pourBack(v, this.sim);
-if (!made) { toast('No room', 'The cauldron is too full to pour the vial back.', 'cauldron'); return; }
-st.brewLog.push({ type: 'vial', ml: made * SIM.ML_PER_PARTICLE, t: Math.round(this.sim.time), parts: pourBackParts(v, made * SIM.ML_PER_PARTICLE), from: v.id });
-if (st.batch.id !== v.batchId) st.newBatch();
-st.touchBatch();
+if (!this.pourVialIntoCauldron(v)) return;
 st.vial = null;
-audio.play('splash');
-toast('Poured back', `${made * SIM.ML_PER_PARTICLE} ml returned to the cauldron. Earlier trials no longer describe the brew.`, 'pour');
 this.save();
 this.views.counter.refresh();
 this.showView('brew');
+}
+pourVialIntoCauldron(v) {
+const st = this.state;
+const made = pourBack(v, this.sim);
+if (!made) { toast('No room', 'The cauldron is too full to pour the bottle back.', 'cauldron'); return false; }
+st.brewLog.push({ type: 'vial', ml: made * SIM.ML_PER_PARTICLE, t: Math.round(this.sim.time), parts: pourBackParts(v, made * SIM.ML_PER_PARTICLE), from: v.id });
+if (st.batch.id !== v.batchId) st.newBatch();
+st.touchBatch();
+audio.play('splash');
+toast('Poured back', `${made * SIM.ML_PER_PARTICLE} ml returned to the cauldron. Earlier trials no longer describe the brew.`, 'pour');
+return true;
 }
 recipeDraft(m, ev, com) {
 const st = this.state;
@@ -15946,16 +16543,23 @@ if (att.length && this.time - (this._feralWarned || -99) > 20) { this._feralWarn
 }
 }
 stepVial(dt) {
-const v = this.state.vial;
+const st = this.state;
+for (const b of st.bottles) this._shelfDrift = (this._shelfDrift || 0) + relaxVial(b, dt * this.speed);
+const v = st.vial;
 if (!v) return;
 this._vialDrift = (this._vialDrift || 0) + relaxVial(v, dt * this.speed);
 this._vialT = (this._vialT || 0) + dt;
 if (this._vialT > 2 && this._vialDrift > 0.5) {
 this._vialT = 0;
 this._vialDrift = 0;
-updateVial(v, this.state.lookup, this.state.world.laws);
+updateVial(v, st.lookup, st.world.laws);
 if (this.view === 'counter') this.views.counter.refresh();
 }
+}
+freshBottles() {
+if ((this._shelfDrift || 0) < 0.5) return;
+this._shelfDrift = 0;
+for (const b of this.state.bottles) updateVial(b, this.state.lookup, this.state.world.laws);
 }
 checkAway() {
 if (this.view === 'brew') return;
@@ -16265,6 +16869,7 @@ const { h, btn, modal, toast, setOverlayRoot, setToastRoot, confirmDialog, clear
 const { icon } = __m3;
 const { audio } = __m4;
 const { GameState } = __m5;
+const { sandboxIngredients } = __m7;
 const { EQUIPMENT } = __m26;
 const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m47;
 const { LabScreen } = __m48;
@@ -16358,7 +16963,7 @@ const saved = loadJSON(KEYS.sandbox, null);
 const existing = loadGame().state;
 const seed = existing ? existing.seed : saved && saved.seed ? saved.seed : 'experiment';
 const st = GameState.create(seed, { tutorial: false });
-for (const id of st.world.ingredients) st.inventory[id] = Infinity;
+for (const id of sandboxIngredients(st.world)) st.inventory[id] = Infinity;
 st.equipment = EQUIPMENT.map((e) => e.id);
 st.reputation = 99999;
 st.current = null;
@@ -16368,7 +16973,7 @@ st.trials = normalizeTrials(saved.trials);
 st.day = Math.max(st.day, st.colony.day || 1);
 st.colony.seed = st.colony.seed || String(seed);
 st.restoreRemains();
-for (const id of st.world.ingredients) st.inventory[id] = Infinity;
+for (const id of sandboxIngredients(st.world)) st.inventory[id] = Infinity;
 }
 this._swap(new LabScreen(this, st, { sandbox: true }));
 toast('Free Experiment', 'Unlimited reagents, wild ingredients, tools and test subjects. Nothing here affects your shop.', 'flask', 4500);
