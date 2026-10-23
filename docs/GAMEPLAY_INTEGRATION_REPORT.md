@@ -176,15 +176,115 @@ the hidden plan, and each technique shows a one-line lesson.
 
 ## 4. Balance and gameplay measurements
 
-PLAYTEST_SECTION
+Command: `node scripts/playtest.mjs 10 3` — five automated player profiles
+(`scripts/lib/player.mjs`), three worlds (`playtest-0…2`), ten shop days
+each, 150 shop-days in all. The players never read an order's hidden
+plan: they formulate from public ingredient effects and the guild theory,
+gather (careful, or thorough when short) or buy through `GameState.buy`,
+brew with their own stages in the real simulation, test doses on their
+own rabbits, adjust (more carrier, a neutraliser, dilution), bottle,
+label, bargain and sell through `completeDeal`, settle the next day's
+verdicts, and buy equipment from their own shopping lists.
+
+| Profile | Sold | Mean quality | Abandoned | Trials / order | Margin at sale (±) | Praise / complaints | Reputation (mean) | Ranks reached | Coins (mean) | Gathered ml/day | Shelf sales | Recipe reuse |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| beginner | 63 % | 0.82 | 0 | 1 | 4.42 | 12 / 21 (17 fair) | 69 | Journeyman, Apprentice, Journeyman | 545 | 108 | 0 | 0 |
+| casual | 64 % | 0.8 | 0 | 1.83 | 6.42 | 14 / 21 (16 fair) | 75 | Journeyman, Apprentice, Journeyman | 532 | 358 | 0 | 0 |
+| careful | 70 % | 0.93 | 28 | 6.23 | 5.66 | 37 / 18 (15 fair) | 133 | Journeyman, Journeyman, Adept | 283 | 506 | 0 | 0 |
+| experienced | 77 % | 0.95 | 21 | 3.67 | 6.69 | 44 / 19 (15 fair) | 151 | Adept, Journeyman, Adept | 407 | 413 | 0 | 30 |
+| efficient | 99 % | 0.87 | 1 | 2.84 | 5.98 | 43 / 34 (29 fair) | 158 | Adept, Journeyman, Adept | 408 | 470 | 6 | 24 |
+
+What the numbers say:
+
+* **Rigour pays, as intended.** The players who test on several rabbits
+  and adjust (careful, experienced, efficient) finish at a reputation of
+  133–158 against 69–75 for one-trial players, with two to four times the
+  praise per complaint. Thin evidence is not punished by the rules (a
+  tested claim within its stated margin is forgiven) but by trust, price
+  and cautious customers who refuse it.
+* **No player is stuck:** no day stalls, orders that cannot be supplied
+  give way to easier ones, and the beginner still sells ~63 % of its
+  orders. Six of fifteen runs reach Adept within ten days; one-trial
+  players stay Journeymen.
+* **Batch production is the strongest strategy** — the efficient player
+  sells 99 % (shelf sales 6, recipe reuse 24) — but not a
+  dominating one: its quality (0.87) and praise ratio trail the
+  careful and experienced players, whose reputation is comparable.
+* **Variety:** the most-sold request is "healing" at 29 % of sales
+  (it was "love" at 42 % before the variety and tuning changes).
+  Techniques sold: colour 97, serve 33, density 54, volatile 4, stable 15, concentrate 1.
+* **Processes that mattered in successful brews:** grinding 645, steeping 585, awakening 18, neutralising 59, dilution 77, chilling 70, cold addition 6, boiling down 2.
+* **Theory vs. trials:** the guild theory misses the measured strength by
+  0.44–1.38 (relative) — most of all for players who steep hot, because the top
+  of several steeping windows lies past the herb's arcane threshold and the
+  brew awakens. The trials, not the theory, are what a label can rest on.
+* **Rabbits:** 1 rabbit death in 150 shop-days of testing — the colony is a risk
+  only for players who pile doses on one animal.
+* **Equipment bought / used:** bought trowel ×15, pestle ×15, rack1 ×15, rockhammer ×12, brush ×12, satchel ×11, bellows ×11, kennel ×11, hydrometer ×9, assay ×9, sickle ×6, frostrune ×9, lens ×3, still ×3, arcanometer ×5, charter ×4, copper ×4, stirrer ×3, rack2 ×3, rack3 ×1.
+  Used to serve orders: hydrometer 35, assay 16, shelves 60, stirrer 52. Bought but unused: arcanometer
+  (awakened orders came late in these runs). Never bought within ten days:
+  athanor, glacial, grand, skimmer, alembic, homunculus, viscometer, galvanometer, thermal, warren, shelf1, shelf2 — mostly items of the Expert and Master ranks
+  the runs did not reach, and the items the automated players have no use
+  for (section 7).
+* **Before this round** the old playtest reached Expert in twelve days
+  with every sale perfect — because it brewed the hidden plan and booked
+  sales directly. The realistic loop is slower and honest about it.
+
 
 ## 5. Achievability of generated orders
 
-ACHIEVABILITY_SECTION
+Command: `node scripts/achievability.mjs 2 ach docs/achievability-results.json`
+— for every tier and every technique, two worlds each, a *realistic*
+shop (the starting kit plus what a typical player of that rank owns, a
+purse of 60 + 120 × rank coins) generates an order with the technique
+forced, and the order's hidden plan is brewed in the real simulation;
+plain orders are brewed for fully equipped shops too.
+
+| Technique | Orders generated / tried | Brewed to quality ≥ 0.85 |
+|---|---|---|
+| plain | 20 / 20 | 20 / 20 |
+| colour | 10 / 10 | 10 / 10 |
+| serve | 8 / 10 | 8 / 8 |
+| stable | 8 / 8 | 8 / 8 |
+| density | 8 / 8 | 8 / 8 |
+| volatile | 1 / 8 | 1 / 1 |
+| concentrate | 2 / 6 | 2 / 2 |
+
+57 brews, mean quality 1.000, lowest 1.00. "Tried but not generated"
+means the order the customer brought could not honestly take that
+technique (for example no water to hold back for a tincture, or a boil
+that would start a reaction) — the customer then asks without it. During
+this round one generated order (a tier-1 strength order) did brew short:
+its steep sat at the very edge of a slow root's window, so in the real
+cauldron part of the brew stayed below it. The generator now rejects plans
+that hold an ingredient within 7 °C of its window's edge unless another
+held stage lies well inside it, and the run above has no failures.
+
 
 ## 6. Performance
 
-PERFORMANCE_SECTION
+Command: `npm run bench` (Node physics, headless Chromium for frames),
+on the same machine for the original `main` and this branch, the browser
+part repeated.
+
+| Scene (phone 390×844 @2x, CPU ×4 throttle, quality auto) | `main` | this branch (two runs) |
+|---|---|---|
+| 60 particles | 46.0 fps | 47.1 / 46.1 fps |
+| 150 particles | 36.4 fps | 43.0 / 41.6 fps |
+| 300 particles | 34.9 fps | 30.8 / 30.0 fps |
+| 600 particles | 30.6 fps | 27.3 / 29.4 fps |
+
+Desktop frames are unchanged (55–59 fps at every load), the hutch scene
+runs at 56–60 fps on the throttled phone, and physics step costs are
+unchanged (the engine was not touched beyond the stirrer's sweep). The
+throttled phone results move a few frames either way; the bench's brews
+are built from generated orders, which now differ, so the scenes are not
+identical. The new per-frame work is small and bounded: the brew advice
+scans the cauldron at most once a second, the chip row is rebuilt only
+when its content changes, the procedure trace adds one sample a second
+(capped at 1200, older halves thinned), and commission generation takes
+about 15–20 ms per customer (supply checks included).
+
 
 ## 7. Remaining limitations and intentional exceptions
 
@@ -193,9 +293,9 @@ PERFORMANCE_SECTION
   2), and the charge a bottle carries depends on how storm-glass grains
   happen to be distributed at the tap, which the predictor cannot
   forecast honestly. The viscometer and galvanometer remain instruments
-  for the Free Experiment, old saves' orders and curiosity; they are the
-  two purchases without a campaign use (documented in their descriptions'
-  absence of order claims).
+  for the Free Experiment, old saves' orders and curiosity. They are the
+  two purchases without a campaign use; their descriptions promise only a
+  reading, not an advantage with customers.
 * **Boiling down** is only generated where the prediction of the boil is
   trustworthy; spirit tinctures and heat-sensitive petals (Heartpetal
   wilts above ~80 °C) are excluded, so "boiled down" orders are rarer
@@ -213,3 +313,61 @@ PERFORMANCE_SECTION
   contradict it.
 * Phone and tablet behaviour is verified in desktop Chromium emulation
   (viewport, touch events, device pixel ratio), not on physical devices.
+
+## 8. Tests
+
+* `npm test` — 134 headless tests, all passing. New in this round:
+  `tests/integration.test.mjs` (market rules and no prepared reagents;
+  supply-feasible orders; a stripped, penniless shop whose day still ends;
+  every technique generated with a real requirement; unground herbs
+  missing the colour and an unstirred brew missing stability in the real
+  simulation; boiling down brewed in the real cauldron; one reading never
+  exact and more rabbits narrowing the margin, margins never using the
+  truth; hurt rabbits reading less steadily; corroborated evidence earning
+  more trust and a better price; bottles of one batch sharing trials, a
+  drifted bottle getting none; a recipe recorded in order and replayed by
+  the homunculus to the same potion, an unheated brew only sharing its
+  ingredients; recipe confidence; patrons and repetition; a version-4 save
+  migrating). Updated: commission tests (stories plus techniques, demand
+  rising with rank measured over all wanted effects), commerce tests
+  (claims carry evidence; a very demanding customer wants corroboration
+  and tested purity), gathering tests (the shop door as the clock).
+* `npm run test:browser` — 102 Playwright tests over desktop, phone
+  portrait and landscape, tablet, the offline production build and the
+  GitHub Pages sub-path, all passing in the final full run. New:
+  `tests/browser/integration.spec.mjs` (a day dawning closed; the order
+  card's techniques and supplies; no meter without the instrument; brew
+  advice; a trial's margin and level, corroboration on a second rabbit; a
+  recipe's recorded steps in the book; the bargaining reasons; the
+  alembic's distillate back into its jar). Updated: the proof test now
+  requires a second rabbit for a very demanding customer; a recipe
+  re-poured without its steep is reported as "not yet prepared the same
+  way". Two assertions that depended on a single noisy reading were made
+  robust (the dosed brew is now steeped first; one ground grain may already
+  be dissolving). The grinding test fails intermittently on `main` too
+  (measured: 5 of 6 runs failed on `main` under load); the reading test's
+  unsteeped brew carried so little fire that one noisy reading could show
+  none.
+* `npm run typecheck` (TypeScript `checkJs` over source, scripts and
+  tests) and `npm run build` (bundled, precached `dist/` and the release
+  zip) both clean.
+
+## 9. Acceptance criteria
+
+| # | Criterion | Status |
+|---|---|---|
+| 1 | Whole loop from gathering to delayed feedback | ✔ played end to end by five automated profiles through the real code (section 4) and by the browser tests |
+| 2 | Natural ingredients and impurity balancing central | ✔ unchanged and enforced (`canBuy`); every order is a balance; neutralising and dilution are the players' main adjustments |
+| 3 | Varied, feasible, understandable commissions | ✔ six techniques on top of twenty requests, supply-checked, with lessons and a supplies brief; 57/57 achievability brews pass |
+| 4 | Advanced processes with gameplay uses | ✔ extraction (colour, density), stirring (stability), reduction, cold additions, awakening; ◐ viscosity and charge have none (section 7) |
+| 5 | Distinct advantage per major upgrade | ✔ for instruments, stirrer, alembic, homunculus, cauldrons and shelves; ◐ viscometer, galvanometer and skimmer remain niche |
+| 6 | Meaningful, honestly uncertain experiments | ✔ margins, levels, steadiness, proof demands, rabbit risk |
+| 7 | Informative, reproducible recipes | ✔ ordered procedures, exact homunculus replay, reproduction tracking |
+| 8 | Storage supports planning | ✔ shared batch evidence, shelf matches at the counter, dawn/dusk stocking; used by the efficient player |
+| 9 | More than concentration matching | ✔ techniques, evidence, patrons, rank-relative reputation |
+| 10 | Clear explanations without hidden information | ✔ advice from the cauldron, reasons in bargaining, margins; hidden effects, laws, rabbit limits and reservation prices stay hidden |
+| 11 | Physically consistent | ✔ no scripted outcome; the two new stages are real operations of the engine, measured against the predictor |
+| 12 | Old saves, mobile, style, Free Experiment | ✔ v2, v3 and v4 saves migrate (tests); all browser projects pass; Free Experiment specs pass |
+| 13 | Tests verify behaviour, not idealised recipes | ✔ realistic playtest, realistic achievability shops, integration tests on the real simulation |
+| 14 | No dominant exploit or deadlock | ✔ no stalled day; batch production is strongest but not dominant (section 4) |
+| 15 | No system made redundant | ✔ the old physical styles were already unreachable; every other system is kept and now connected |

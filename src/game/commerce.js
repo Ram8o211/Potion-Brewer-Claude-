@@ -21,7 +21,7 @@
 
 import { Rng, hashString } from '../core/rng.js';
 import { EFFECT_KEYS, EFFECT_INDEX, NE, EFFECT_BY_KEY } from '../alchemy/effects.js';
-import { evaluatePotion, strongestUnwanted } from './evaluate.js';
+import { evaluatePotion, strongestUnwanted, PROPERTY_LABELS } from './evaluate.js';
 import { PURITY_LIMIT } from './requests.js';
 import { summarize, evidenceRank, EVIDENCE_TEXT } from './experiments.js';
 
@@ -47,7 +47,7 @@ import { summarize, evidenceRank, EVIDENCE_TEXT } from './experiments.js';
  * Draft a label from what the player knows: trial readings of this vial or
  * batch where there are any, the guild theory elsewhere (marked as an
  * estimate), unknown where neither exists.
- * @param {{cert?:Record<string, number>, certRecords?:Record<string, string>}} vial
+ * @param {{cert?:Record<string, number>, certRecords?:Record<string, string>, samples?:Record<string, any[]>}} vial
  * @param {ArrayLike<number>|null} theory naive theory for the batch (alchemy/effects.js theoryOf)
  * @param {number} day
  * @returns {Label}
@@ -304,7 +304,7 @@ export function openNegotiation(com, vial, label, rank) {
   // why they value it as they do, in their terms (never the hidden price)
   const misses = fitEv.rows.filter((r) => r.score < 0.999).map((r) => r.req.key);
   const reasons = [
-    { k: 'fit', v: Math.round(fit * 100), text: fit >= 0.999 ? 'the label and what they see meet the whole order' : `short on ${misses.map((m) => (EFFECT_BY_KEY[m] ? EFFECT_BY_KEY[m].label.toLowerCase() : m)).join(', ')}` },
+    { k: 'fit', v: Math.round(fit * 100), text: fit >= 0.999 ? 'the label and what they see meet the whole order' : `short on ${misses.map((m) => String(PROPERTY_LABELS[m] || m).toLowerCase()).join(', ')}` },
     { k: 'trust', v: Math.round(trust * 100), text: tr.reasons.join('; ') },
     { k: 'quantity', v: Math.round(qty * 100), text: qty >= 0.98 ? 'the full measure' : `only ${vial.ml} of ${com.bottleMl} ml` },
     { k: 'temper', v: Math.round((1 - persona.haggle) * 100), text: persona.haggle > 0.6 ? 'a hard bargainer' : persona.haggle < 0.3 ? 'easy-going' : 'a fair trader' },

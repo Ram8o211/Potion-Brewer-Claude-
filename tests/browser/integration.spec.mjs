@@ -6,6 +6,9 @@
 import { test, expect } from '@playwright/test';
 import { watchErrors, shot, newGame, lab, pourDose } from './helpers.mjs';
 
+/** Clear the toasts so a screenshot shows the room itself. @param {import('@playwright/test').Page} page */
+const clean = (page) => page.evaluate(() => document.querySelectorAll('.toast').forEach((t) => t.remove()));
+
 test('a day dawns closed; the order card says what it takes and where to find it', async ({ page }, info) => {
   const errors = watchErrors(page);
   await newGame(page, { tutorial: false, seed: 'integration-1', open: false });
@@ -28,8 +31,10 @@ test('a day dawns closed; the order card says what it takes and where to find it
   await page.click('[data-act=tab-counter]');
   // an order with a technique, generated with the game's own context
   await lab(page, async (l) => {
-    const mod = await import('/src/game/commissions.js');
-    const rng = await import('/src/core/rng.js');
+    // the dev server serves the source modules (browser-side imports, not resolved by the type checker)
+    const src = '/src/game/';
+    const mod = await import(/* @vite-ignore */ src + 'commissions.js');
+    const rng = await import(/* @vite-ignore */ '/src/core/' + 'rng.js');
     const st = l.state;
     st.current = mod.generateCommission(st.commissionContext(), new rng.Rng('ui-tech'), { tier: 1, techniques: ['stable'] });
     l.refreshCustomer();
@@ -39,11 +44,13 @@ test('a day dawns closed; the order card says what it takes and where to find it
   await expect(page.locator('.supply-card summary')).toContainText('ml of brew');
   await page.click('.supply-card summary');
   await expect(page.locator('.supply-card')).toContainText('Every one of them brings side effects');
+  await clean(page);
+  await page.locator('.tech-card').scrollIntoViewIfNeeded();
+  await shot(page, info, 'order-techniques');
   // the order strip shows the stability requirement without a meter: no assay kit yet
   await page.click('[data-act=tab-brew]');
   await pourDose(page, await lab(page, (l) => l.state.world.roles.water), [100]);
   await expect(page.locator('.req-chip.unknown').first()).toBeVisible();
-  await shot(page, info, 'order-techniques');
   expect(errors).toEqual([]);
 });
 
@@ -79,6 +86,8 @@ test('advice read off the cauldron, a trial’s margin and level, and a recipe t
   await lab(page, (l) => { const st = l.state; const other = st.colony.rabbits.find((r) => r.alive && r.id !== st.colony.focus); st.selectRabbit(other.id); l.views.trials.refresh(); });
   await page.click('[data-act=test-rabbit]');
   await expect(page.locator('.reading').first()).toHaveAttribute('data-level', /corroborated|certified/);
+  await clean(page);
+  await page.locator('.reading-rows').scrollIntoViewIfNeeded();
   await shot(page, info, 'trial-evidence');
   // save the brew as a recipe straight from its draft: its procedure has the steep
   const steps = await lab(page, (l) => { const m = l.assay; const r = l.recipeDraft(m, null, null); l.state.addRecipe({ ...r, name: 'Leaf tea' }); return r.steps.map((s) => s.op); });
@@ -91,6 +100,8 @@ test('advice read off the cauldron, a trial’s margin and level, and a recipe t
   await card.locator('details.steps summary').click();
   await expect(card.locator('.recipe-steps li', { hasText: 'Heat to' }).first()).toBeVisible();
   await expect(card).toHaveAttribute('data-confidence', 'tested');
+  await clean(page);
+  await card.scrollIntoViewIfNeeded();
   await shot(page, info, 'recipe-steps');
   expect(errors).toEqual([]);
 });
@@ -110,6 +121,7 @@ test('bargaining shows what the customer weighs; the alembic’s distillate goes
   await page.click('[data-act=label-seal]');
   await expect(page.locator('.haggle-why')).toContainText('Trust');
   await expect(page.locator('.haggle-why')).toContainText('Fit');
+  await clean(page);
   await shot(page, info, 'bargain-reasons');
   await page.click('[data-act=walk-away]');
   // the alembic: a receiver of clean spirit (boiled off a tincture) goes back into its jar

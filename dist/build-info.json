@@ -1,7 +1,7 @@
 {
   "name": "alchemists-shop",
-  "version": "2.1.0",
-  "build": "2.1.0-0eee0c43dc",
+  "version": "2.2.0",
+  "build": "2.2.0-07535c61dc",
   "modules": 74,
   "files": 9
 }

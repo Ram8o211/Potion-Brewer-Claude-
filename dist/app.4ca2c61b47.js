@@ -1,4 +1,4 @@
-// The Alchemist's Shop 2.1.0 — bundled build
+// The Alchemist's Shop 2.2.0 — bundled build
 // src/ui/icons.js
 const __m3 = (() => {
 const PAL = {
@@ -2978,7 +2978,7 @@ if (rx) {
 const solvent = rx.b ? solvents.find((l) => l.id === rx.b) : water;
 if (!solvent) return null;
 const boil = isFinite(solvent.boil) ? solvent.boil : 400;
-const lo = rx.minT + 4, hi = Math.min(rx.maxT - 4, boil - 8, ctx.cap.maxFlame - 40);
+const lo = rx.minT + 7, hi = Math.min(rx.maxT - 4, boil - 8, ctx.cap.maxFlame - 40);
 if (hi < lo) return null;
 if (lo <= 15) {
 const T = Math.max(lo, Math.min(hi, ctx.cap.minCool + 3));
@@ -3073,6 +3073,18 @@ ing.push({ id, n: c, ground: solidFrac(id) && ctx.lookup(id).form === 'solid' &&
 if (ing.length < 2) return null;
 return plainPlan(ing);
 };
+const edgeOk = (plan, ids) => {
+const held = [plan.steep ? plan.steep.T : null, plan.activate ? plan.heatTo : null, plan.activate ? plan.coolTo : null].filter((t) => t !== null);
+if (!held.length) return true;
+for (const id of ids) {
+const rx = ctx.world.reactions.find((r) => r.a === id && r.wet && r.products.length === 1 && /^rw_(extract|steep|infuse)/.test(r.id));
+if (!rx) continue;
+const inside = held.some((t) => t >= rx.minT + 7 && t <= rx.maxT - 2);
+const edge = held.some((t) => t >= rx.minT - 3 && t < rx.minT + 7);
+if (edge && !inside) return false;
+}
+return true;
+};
 const finish = (plan) => {
 const ids = plan.ingredients.map((i) => i.id);
 if (stageT !== null) {
@@ -3080,6 +3092,7 @@ plan.steep = { T: stageT, hold };
 plan.heatTo = Math.max(plan.heatTo, stageT);
 plan.coolTo = Math.min(plan.coolTo, stageT);
 }
+if (!edgeOk(plan, ids)) return null;
 const pre = predictPlan(ctx.world, ctx.lookup, plan);
 if (arcaneRegime([...ids, ...Object.keys(pre.composition)], ctx.lookup, temps) !== 'quiet') return null;
 if (plan.heatTo > ctx.cap.maxFlame - 40 || plan.coolTo < ctx.cap.minCool + 2) return null;
@@ -3098,6 +3111,7 @@ plan.coolTo = Math.min(plan.coolTo, T);
 }
 plan.hold = 18;
 plan.activate = true;
+if (!edgeOk(plan, ids)) return null;
 const pred = predictPlan(ctx.world, ctx.lookup, plan);
 return pred.awakened ? pred : null;
 };
@@ -3295,7 +3309,7 @@ function requestsFor(arch, tier, event, recent = []) {
 let list = REQUESTS.filter((r) => r.minTier <= tier && r.who.includes(arch.key));
 const bonus = { winter: ['warming', 'hearth', 'forgefire'], plague: ['healing', 'recovery', 'fevercure'], conclave: ['insight', 'meditation', 'shapeshift'], festival: ['love', 'blessing', 'hearth'] }[event];
 if (bonus) list = list.concat(REQUESTS.filter((r) => bonus.includes(r.id) && r.minTier <= tier));
-const fresh = list.filter((r) => !recent.slice(0, 3).some((s) => s && s.split('+')[0] === r.id));
+const fresh = list.filter((r) => !recent.slice(0, 4).some((s) => s && s.split('+')[0] === r.id));
 return fresh.length ? fresh : list;
 }
 function obtainable(ctx, id, ml) {
@@ -3433,7 +3447,7 @@ const serve = req.serve === 'warm' ? Math.round(rng.range(45, 58)) : req.serve =
 let found = null, activation = false, wanted = [], exclude = [], supply = null;
 const local = { ...ctx, avoid: new Set(ctx.avoid || []) };
 const mains = opts.simple ? [lo] : [Math.round(rng.range(lo, hi)), lo];
-if (tier >= 3) mains.push(TIER_TARGET[tier - 2][0]);
+if (tier >= 3) mains.push(TIER_TARGET[tier - 1][0], TIER_TARGET[tier - 2][0]);
 outer: for (const main of mains) {
 wanted = req.fx.map((f, k) => ({ key: f.key, sign: f.sign || 1, target: k === 0 ? main : Math.max(4, Math.round(main * (f.share || 0.6) * rng.range(0.9, 1.1))) }));
 exclude = [...wanted.map((w) => w.key), ...(req.tolerate || [])];
@@ -7961,7 +7975,7 @@ return { makeVial, appendParticles, measureVial, updateVial, takeDose, pourBack,
 const __m45 = (() => {
 const { Rng, hashString } = __m6;
 const { EFFECT_KEYS, EFFECT_INDEX, NE, EFFECT_BY_KEY } = __m13;
-const { evaluatePotion, strongestUnwanted } = __m24;
+const { evaluatePotion, strongestUnwanted, PROPERTY_LABELS } = __m24;
 const { PURITY_LIMIT } = __m25;
 const { summarize, evidenceRank, EVIDENCE_TEXT } = __m27;
 function draftLabel(vial, theory, day) {
@@ -8115,7 +8129,7 @@ const reservation = Math.round(com.budget * Math.pow(fit, 1.3) * trust * Math.po
 const offer = Math.round(reservation * (0.58 + 0.27 * (1 - persona.haggle)) * 10) / 10;
 const misses = fitEv.rows.filter((r) => r.score < 0.999).map((r) => r.req.key);
 const reasons = [
-{ k: 'fit', v: Math.round(fit * 100), text: fit >= 0.999 ? 'the label and what they see meet the whole order' : `short on ${misses.map((m) => (EFFECT_BY_KEY[m] ? EFFECT_BY_KEY[m].label.toLowerCase() : m)).join(', ')}` },
+{ k: 'fit', v: Math.round(fit * 100), text: fit >= 0.999 ? 'the label and what they see meet the whole order' : `short on ${misses.map((m) => String(PROPERTY_LABELS[m] || m).toLowerCase()).join(', ')}` },
 { k: 'trust', v: Math.round(trust * 100), text: tr.reasons.join('; ') },
 { k: 'quantity', v: Math.round(qty * 100), text: qty >= 0.98 ? 'the full measure' : `only ${vial.ml} of ${com.bottleMl} ml` },
 { k: 'temper', v: Math.round((1 - persona.haggle) * 100), text: persona.haggle > 0.6 ? 'a hard bargainer' : persona.haggle < 0.3 ? 'easy-going' : 'a fair trader' },
@@ -8167,7 +8181,8 @@ const c = label.claims[k];
 const v = truth.effects[EFFECT_INDEX[k]];
 if (!c || c.kind === 'unknown') continue;
 if (c.kind === 'none' && Math.abs(v) >= PURITY_LIMIT) wrong.push(k);
-if (c.kind === 'value' && Math.abs(v - (c.value || 0)) > Math.max(3, 0.25 * Math.abs(c.value || 0))) wrong.push(k);
+const margin = c.source === 'trial' && c.evidence ? c.evidence.u || 0 : 0;
+if (c.kind === 'value' && Math.abs(v - (c.value || 0)) > Math.max(3, 0.25 * Math.abs(c.value || 0), margin)) wrong.push(k);
 }
 const purity = com.requirements.find((r) => r.key === 'purity');
 const side = purity ? strongestUnwanted(truth.effects, purity.exclude || []) : { value: 0, key: '' };
@@ -8402,9 +8417,11 @@ return com;
 function recentStyles(st) {
 return (st.sales || []).slice(0, 8).map((s) => s.style).filter(Boolean);
 }
-function noveltyFactor(style, recent) {
+function noveltyFactor(style, recent, tier = 0, rank = 0) {
+const below = Math.max(0, rank - tier);
+const level = below <= 1 ? 1 : below === 2 ? 0.6 : 0.4;
 const same = recent.slice(0, 6).filter((s) => s === style).length;
-return same <= 1 ? 1 : same === 2 ? 0.7 : 0.5;
+return level * (same >= 2 ? 0.85 : 1);
 }
 function round2(v) {
 return Math.round(v * 100) / 100;
@@ -9216,7 +9233,7 @@ sale.stars = ev.stars;
 sale.grand = !!com.grand;
 sale.style = com.style || null;
 sale.techniques = com.techniques || [];
-const novelty = noveltyFactor(sale.style, recentStyles(this));
+const novelty = noveltyFactor(sale.style, recentStyles(this), com.tier || 0, this.rank);
 if (sale.repDelta > 0 && novelty < 1) { sale.repDelta = Math.round(sale.repDelta * novelty); sale.novelty = novelty; }
 notePatron(this, com);
 const events = this._bookSale(com, ev, truth, price, 1, sale.id);
@@ -12473,7 +12490,7 @@ sec('Arcane awakening', ['Magical ingredients carry a hidden arcane threshold. H
 sec('Wilds and trials', ['Gather roots, leaves, flowers, mushrooms and minerals in the Wilds. Deposits are finite and regrow over time, even while the game is closed.', 'Each ingredient has its method — pick, dig, chip, scrape or sweep — and the right tool doubles the harvest. Twilight plants open only at dawn (before you open the shop door) or at dusk (after the last customer, until you close for the night) — gather ahead for the orders to come. The weather changes daily. A thorough harvest takes twice as much but the deposit regrows slowly.', 'Whole roots and stones do nothing until crushed (pestle) or ground (mortar, the “Ground” switch on the shelf). Only what dissolves takes effect; hot water dissolves more, and some herbs steep into strong extracts when held warm.', 'A rabbit shows every effect, but each reading is uncertain: the ± band of an estimate is how far the truth may lie. One reading is a rough guess; repeating it on the same rabbit helps a little (that rabbit’s own bias never averages out); other rabbits help most. Evidence levels: one reading → repeated → corroborated (two or more rabbits) → certified.', 'Customers weigh that evidence: cautious ones want readings repeated or corroborated before they buy, and every customer trusts — and pays for — a well-tested label more. One trial reads every effect at once, so a purity rule needs only one.', 'A hurt rabbit reads less steadily; kits and old rabbits too. Bottles of one batch share its trials, each checked against its own contents.', 'When a trial surprises you, a hidden law may be at work. Confirm it twice and your theory learns it.']),
 sec('Brewing', ['Tap a jar on the shelf, then hold your finger (or the mouse) inside the cauldron to pour. Dose buttons pour exact amounts.', 'Stir with the spoon: drag through the brew. Mixing starts where liquids touch and spreads; stirring speeds it up dramatically.', 'Powders pile up like sand. Knead a binding powder with a watery liquid to make dough; add more liquid to thin it.', 'Boil a brew down with the lid off: water leaves as steam and the magic stays, stronger (side effects too). Boiling also wakes most magic. Spirit boils long before water: add it once the brew has cooled to keep a tincture heady.', 'An unstirred brew is uneven (low stability); colour shows how much really dissolved; density rises with what is dissolved and as water boils off.', 'Saved recipes record every step in order. The homunculus replays them exactly; a recipe brewed again and tested the same becomes reproduced (reliable).', 'Slide the fire control right to heat from below, left to cool. Heat spreads through the brew gradually.', 'Keep the lid on to trap vapour; let things cool and the vapour condenses back. Open the lid to let it escape.', 'Freeze liquids into blocks, then crush them with the pestle. Some reagents react when mixed, heated or chilled — discoveries go into your journal.']),
 sec('Controls', ['Keys: 1 pour · 2 spoon · 3 pestle · 4 skimmer · 5 inspect · L lid · B bottle · F time speed · A auto-stir · arrows fire · S shop · R recipes · J journal · Esc menu.', 'Long-press (or right-click) a jar to inspect a reagent.', 'Use the time-speed button to skip waiting while things heat, cool or react.']),
-sec('Tips', ['Ask the guild for advice on a difficult order — it costs a few coins.', 'Instruments turn rough guesses into readings: the hydrometer reads density, the assay kit stability and volatility, the arcanometer the arcane threshold. Without them the order strip shows no meter for those requirements.', 'Repeating the same order over and over earns less reputation; a technique sold well for the first time earns a bonus. Returning customers remember how your last potion worked.', 'If you run out of money, the guild will help a struggling apprentice once a day — and water from the well is always free.']),
+sec('Tips', ['Ask the guild for advice on a difficult order — it costs a few coins.', 'Instruments turn rough guesses into readings: the hydrometer reads density, the assay kit stability and volatility, the arcanometer the arcane threshold. Without them the order strip shows no meter for those requirements.', 'Orders far below your rank earn little reputation (and the same one over and over a little less); a technique sold well for the first time earns a bonus. A tested claim states its margin: customers forgive a potion that lies within it. Returning customers remember how your last potion worked.', 'If you run out of money, the guild will help a struggling apprentice once a day — and water from the well is always free.']),
 ],
 });
 }
@@ -12556,7 +12573,7 @@ const lvl = c.evidence ? c.evidence.level : 'preliminary';
 const src = c.source === 'trial' ? h('span', { class: 'src trial lvl-' + lvl, title: `Measured in trials of this batch: ${c.evidence ? `${c.evidence.n} reading${c.evidence.n === 1 ? '' : 's'} on ${c.evidence.r} rabbit${c.evidence.r === 1 ? '' : 's'}, ±${c.evidence.u}` : 'one reading'}` }, icon('dropper', 'sm'), lvl === 'preliminary' ? ' 1 reading' : ` ${lvl}`)
 : c.kind === 'unknown' ? h('span', { class: 'src unknown', text: 'unknown' })
 : c.source === 'estimate' ? h('span', { class: 'src est', text: `theory${c.spread ? ' ±' + c.spread : ''}` }) : h('span', { class: 'src you', text: 'your claim' });
-const val = c.kind === 'value' ? `${Math.round((c.value || 0) * 10) / 10}%` : c.kind === 'none' ? `none (< ${PURITY_LIMIT}%)` : '?';
+const val = c.kind === 'value' ? `${Math.round((c.value || 0) * 10) / 10}%${c.source === 'trial' && c.evidence && c.evidence.u ? ` ±${c.evidence.u}` : ''}` : c.kind === 'none' ? `none (< ${PURITY_LIMIT}%)` : '?';
 const edit = (op) => () => { draft.claims[e.key] = editClaim(c, e.key, op); render(); };
 const row = h('div', { class: 'label-row' + (relevant.has(e.key) ? ' relevant' : '') + (c.kind === 'unknown' ? ' unknown' : '') + (open === e.key ? ' open' : ''), 'data-claim': e.key },
 icon(e.icon, 'sm'), h('span', { class: 'lk', text: e.label }), src, h('b', { class: 'lv', text: val }),
@@ -14949,6 +14966,7 @@ return { HUTCH_W, HUTCH_H, HUTCH_BODIES, paintHutch, paintHutchFront, HutchScene
 })();
 // src/ui/views/hutch.js
 const __m68 = (() => {
+const { readingSteadiness } = __m27;
 const { h, btn, clear, toast, modal, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
@@ -15100,7 +15118,8 @@ h('div', { class: 'rd-info' },
 h('div', { class: 'rd-title' }, h('b', { text: r.name }), h('span', { class: 'small muted', text: ` ${r.sex === 'f' ? 'doe' : 'buck'} · ${STAGE_WORD[stage]}${r.alive ? ` · ${age >= 0 ? `${age} day${age === 1 ? '' : 's'} old` : 'grown'}` : ''}` })),
 h('div', { class: 'small', text: words.join(' · ') }),
 r.alive ? h('div', { class: 'rd-hp' }, icon('heart', 'sm'), h('span', { class: 'bar hp big' }, hpFill), hpText) : null,
-h('div', { class: 'small muted', text: `${r.trials} trial${r.trials === 1 ? '' : 's'}${parents.length ? ` · child of ${parents.join(' and ')}` : ''}` }))),
+h('div', { class: 'small muted', text: `${r.trials} trial${r.trials === 1 ? '' : 's'}${parents.length ? ` · child of ${parents.join(' and ')}` : ''}` }),
+r.alive ? (() => { const k = readingSteadiness(r, st.day); return h('div', { class: 'small steadiness ' + (k <= 1.02 ? 'ok' : 'warn'), 'data-steadiness': String(Math.round(k * 100) / 100), title: 'How steady its readings are, from its age and health (its own hidden sensitivity is not in it)', text: k <= 1.02 ? 'Readings: steady' : k <= 1.2 ? 'Readings: a little unsteady' : 'Readings: shaky — hurt or very young or old' }); })() : null)),
 r.alive ? effects : null,
 h('div', { class: 'row wrap rd-actions' }, ...actions));
 return out;
@@ -16902,6 +16921,12 @@ if (matchRecipe(r, parts, steps) === 'exact') return r;
 return null;
 }
 brewAdvice() {
+if (this._advice && this.time - this._advice.t < 1) return this._advice.list;
+const list = this.computeAdvice();
+this._advice = { t: this.time, list };
+return list;
+}
+computeAdvice() {
 const sim = this.sim, p = sim.p, st = this.state, sp = sim.species, S = MAX_SPECIES;
 const out = [];
 if (!p.count) return out;

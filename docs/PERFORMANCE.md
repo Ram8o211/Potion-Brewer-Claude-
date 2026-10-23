@@ -132,6 +132,15 @@ Each rabbit's static body is cached per visible state and pose (an LRU
 keyed by the quantised snapshot), so a frame blits it and draws only the
 animated effects — flames, frost breath, sparkles, hearts — on top.
 
+## 2b. Gameplay integration round
+
+The brew advice, procedure trace, supply-aware generation and evidence
+model add little per frame (advice once a second, the trace one sample a
+second, generation ~15–20 ms per customer). Measured on one machine
+against the original `main`, the throttled phone moves a few frames per
+second either way (better at 150 particles, worse at 300–600); desktop is
+unchanged. Details: [GAMEPLAY_INTEGRATION_REPORT.md](GAMEPLAY_INTEGRATION_REPORT.md#6-performance).
+
 ## 3. Graphics presets
 
 Settings → Graphics. Physics, quantities and scores are identical in every

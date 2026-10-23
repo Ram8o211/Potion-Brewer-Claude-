@@ -125,7 +125,7 @@ export function formulate(st, com, prof, brewMl, now, rng) {
     .slice(0, prof.helpers).map((x) => x.m);
   const cand = [...new Set([...carriers, ...helpers])];
   const M = cand.map(vec);
-  const x = cand.map((m) => (carriers.includes(m) ? 0.2 : 0));
+  const x = /** @type {number[]} */ (cand.map((m) => (carriers.includes(m) ? 0.2 : 0)));
   const solid = cand.map((m) => m.form !== 'liquid');
   for (let sweep = 0; sweep < 300; sweep++) {
     let change = 0;
@@ -449,7 +449,10 @@ export function serveOrder(st, prof, rng, clock, met) {
   const sim = cauldronFor(st);
   const log = [];
   st.newBatch();
-  let parts = null, plan = null;
+  /** @type {any} */
+  let parts = null;
+  /** @type {any} */
+  let plan = null;
   // an experienced player brews a saved recipe for the same request again (the homunculus if owned)
   // …but only one whose tested values meet this order (a weaker order of the same kind is fine, a stronger one is not)
   const fits = (r) => com.requirements.filter((q) => q.effect && q.key !== 'purity').every((q) => r.verified[q.key] !== undefined && scoreRequirement(q, /** @type {any} */ ({ effects: Object.assign(new Array(NE).fill(0), { [EFFECT_INDEX[q.key]]: r.verified[q.key] }) })).score >= 0.999)

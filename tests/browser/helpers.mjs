@@ -33,7 +33,7 @@ export async function openGame(page) {
   await page.waitForSelector('[data-act=new-game]');
 }
 
-/** @param {import('@playwright/test').Page} page @param {{tutorial?: boolean, seed?: string}} [o] */
+/** @param {import('@playwright/test').Page} page @param {{tutorial?: boolean, seed?: string, open?: boolean}} [o] */
 export async function newGame(page, o = {}) {
   await openGame(page);
   await page.click('[data-act=new-game]');

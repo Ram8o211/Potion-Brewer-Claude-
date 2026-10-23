@@ -1325,6 +1325,15 @@ export class LabScreen {
    * @returns {{key:string, text:string}[]}
    */
   brewAdvice() {
+    // read off the cauldron at most once a second (it scans every particle)
+    if (this._advice && this.time - this._advice.t < 1) return this._advice.list;
+    const list = this.computeAdvice();
+    this._advice = { t: this.time, list };
+    return list;
+  }
+
+  /** @returns {{key:string, text:string}[]} */
+  computeAdvice() {
     const sim = this.sim, p = sim.p, st = this.state, sp = sim.species, S = MAX_SPECIES;
     const out = [];
     if (!p.count) return out;
