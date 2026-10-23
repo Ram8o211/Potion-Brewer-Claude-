@@ -355,6 +355,8 @@ canvas.hutch-scene { display: block; width: 100%; height: auto; aspect-ratio: 22
 .status-bars .sb-v { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .status-bars .sb.zero { opacity: 0.55; }
 .status-bars .sb.mating .sb-k { color: #b0306a; }
+.status-bars .sb.burning .sb-k { color: #b04a14; }
+.status-bars .sb.burning .sb-v { color: #b04a14; }
 .status-bars .sb.degen .sb-k { color: #a8241a; font-weight: bold; }
 .status-bars .sb.degen .sb-bar { animation: degen 0.7s steps(2) infinite; }
 @keyframes degen { 50% { box-shadow: 0 0 0 1px var(--ink), 0 0 0 3px #ff3a2a; } }

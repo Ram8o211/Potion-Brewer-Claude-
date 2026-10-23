@@ -34,8 +34,9 @@ test('a trial doses the chosen rabbit only, and records who, how sure, and a rep
   st.selectRabbit('r1');
   assert.equal(st.recordTrial('rabbit', dose({ love: 5 }), ctx(st)).record.rabbitId, 'r1');
   // kits read less precisely
-  const kitRec = (() => { const s2 = GameState.create('colony-1b', { tutorial: false }); const k = findRabbit(s2.colony, 'r1'); k.born = s2.day; return s2.recordTrial('rabbit', dose({ vitality: 12 }), ctx(s2)).record; })();
-  const adultRec = GameState.create('colony-1c', { tutorial: false }).recordTrial('rabbit', dose({ vitality: 12 }), ctx(GameState.create('colony-1c', { tutorial: false }))).record;
+  // (the same batch id for both: the same random draws, so only the stage differs)
+  const kitRec = (() => { const s2 = GameState.create('colony-1b', { tutorial: false }); const k = findRabbit(s2.colony, 'r1'); k.born = s2.day; return s2.recordTrial('rabbit', dose({ vitality: 12 }), ctx(s2, { batchId: 'kit-vs-adult' })).record; })();
+  const adultRec = GameState.create('colony-1c', { tutorial: false }).recordTrial('rabbit', dose({ vitality: 12 }), ctx(GameState.create('colony-1c', { tutorial: false }), { batchId: 'kit-vs-adult' })).record;
   assert.ok(kitRec.err.vitality / kitRec.values.vitality > adultRec.err.vitality / adultRec.values.vitality, 'relative to what they read');
 });
 
