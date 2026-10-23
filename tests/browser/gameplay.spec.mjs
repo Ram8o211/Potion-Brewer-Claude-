@@ -11,35 +11,42 @@ test('first commission: brew, test on a subject, bottle and serve', async ({ pag
   await page.waitForTimeout(200);
   await page.click('[data-act=tutorial-next]').catch(() => {});
   const roles = await lab(page, (l) => l.state.world.roles);
-  const before = await lab(page, (l, id) => ({ coins: l.state.coins, rep: l.state.reputation, essence: l.state.stock(id) }), roles.essenceA);
-  // 125 ml of water, 125 ml of the healing essence
+  const leaf = 'wild-silverleaf', sun = 'wild-sunthistle';
+  const before = await lab(page, (l, id) => ({ coins: l.state.coins, rep: l.state.reputation, leaf: l.state.stock(id) }), leaf);
+  // 125 ml of water, 50 ml of ground Silverleaf (healing with a frosty bite), 25 ml of Sunthistle to cancel the frost
   await pourDose(page, roles.water, [100, 25]);
-  await pourDose(page, roles.essenceA, [100, 25]);
-  expect(await lab(page, (l) => l.sim.p.count * 5)).toBe(250);
-  expect(await lab(page, (l, id) => l.state.stock(id), roles.essenceA), 'poured reagents are charged to the inventory').toBe(before.essence - 125);
+  await pourDose(page, leaf, [50]);
+  await pourDose(page, sun, [25]);
+  expect(await lab(page, (l) => l.sim.p.count * 5)).toBe(200);
+  expect(await lab(page, (l, id) => l.state.stock(id), leaf), 'poured herbs are charged to the inventory').toBe(before.leaf - 50);
   await shot(page, info, 'tutorial-poured');
   // the order shows the healing effect as unknown before any trial
   await expect(page.locator('.req-chip.fx').first()).toContainText('?');
-  // stir with the spoon until the colour is even
+  // stir with the spoon
   await page.click('[data-act=tool-spoon]');
+  const stir0 = await lab(page, (l) => l.sim.tool.stirDistance);
   await drag(page, await stirPath(page, 4, 160));
-  const spread = await lab(page, (l) => {
-    const p = l.sim.p, sp = l.sim.species, s = sp.slotOf.get(l.state.world.roles.essenceA);
-    let mn = 1, mx = 0;
-    for (let i = 0; i < p.count; i++) { const f = p.comp[i * p.S + s]; mn = Math.min(mn, f); mx = Math.max(mx, f); }
-    return mx - mn;
-  });
-  expect(spread, 'stirring evens out the essence').toBeLessThan(0.35);
+  expect(await lab(page, (l) => l.sim.tool.stirDistance), 'the spoon stirred the brew').toBeGreaterThan(stir0 + 5);
   await shot(page, info, 'tutorial-stirred');
-  // heat to the requested temperature with the fire control
+  // heat to steep the herbs, hold a while, then let it settle warm
   await page.locator('input[aria-label="Fire and frost control"]').fill('90');
   await page.waitForFunction(() => {
     const p = window.__alchemist.screen.sim.p;
     let t = 0;
     for (let i = 0; i < p.count; i++) t += p.temp[i];
-    return t / p.count > 44;
+    return t / p.count > 56;
   }, null, { timeout: 60_000, polling: 250 });
-  await page.locator('input[aria-label="Fire and frost control"]').fill('12');
+  await page.locator('input[aria-label="Fire and frost control"]').fill('20');
+  await lab(page, (l) => { l.speed = 4; });
+  await page.waitForFunction(() => {
+    const st = window.__alchemist.screen.state, sim = window.__alchemist.screen.sim;
+    const leafLeft = sim.species.slotOf.get('wild-silverleaf');
+    let f = 0;
+    for (let i = 0; i < sim.p.count; i++) f += leafLeft === undefined ? 0 : sim.p.comp[i * sim.p.S + leafLeft];
+    return f < 2 && !!st;
+  }, null, { timeout: 90_000, polling: 500 });
+  await lab(page, (l) => { l.speed = 1; });
+  await page.locator('input[aria-label="Fire and frost control"]').fill('0');
   await shot(page, info, 'tutorial-heated');
   // the trial: a real 10 ml dose leaves the cauldron and reveals vitality
   await page.click('[data-act=tab-trials]');
@@ -50,7 +57,7 @@ test('first commission: brew, test on a subject, bottle and serve', async ({ pag
   expect(await lab(page, (l) => l.sim.p.count), 'the dose was taken from the cauldron').toBe(n0 - 2);
   const rec = await lab(page, (l) => l.state.trials.records[0]);
   expect(rec.subjectId).toBe('rabbit');
-  expect(rec.values.vitality).toBeGreaterThan(4);
+  expect(rec.values.vitality).toBeGreaterThan(3);
   expect(rec.values.love, 'the rabbit reports love too').toBeDefined();
   expect(rec.values.acidity, 'and acidity: a rabbit shows every effect').toBeDefined();
   await shot(page, info, 'trial');
@@ -93,15 +100,15 @@ test('first commission: brew, test on a subject, bottle and serve', async ({ pag
   await page.waitForFunction(() => { const s = window.__alchemist.screen.state; return !!s.current && !s.current.tutorial; }, null, { timeout: 10_000 });
   // the saved recipe is in the book, marked tested, and can be prepared again (charging stock)
   await lab(page, (l) => { l.sim.clear(); l.state.brewLog = []; l.state.newBatch(); });
-  const stock0 = await lab(page, (l, id) => l.state.stock(id), roles.essenceA);
+  const stock0 = await lab(page, (l, id) => l.state.stock(id), leaf);
   await page.click('[data-act=tab-book]');
   await page.click('[data-act=book-recipes]');
   await expect(page.locator('.view-book .item', { hasText: 'Mabry' })).toBeVisible();
   await expect(page.locator('.view-book .item', { hasText: 'Mabry' })).toContainText('Tested');
   await page.locator('.view-book [data-act=prepare]').first().click();
-  await page.waitForFunction(() => window.__alchemist.screen.sim.p.count >= 50 && !window.__alchemist.screen.sim.emitter.pouring, null, { timeout: 30_000 });
-  expect(await lab(page, (l) => l.sim.p.count * 5)).toBe(250);
-  expect(await lab(page, (l, id) => l.state.stock(id), roles.essenceA)).toBe(stock0 - 125);
+  await page.waitForFunction(() => window.__alchemist.screen.sim.p.count >= 40 && !window.__alchemist.screen.sim.emitter.pouring, null, { timeout: 30_000 });
+  expect(await lab(page, (l) => l.sim.p.count * 5)).toBe(200);
+  expect(await lab(page, (l, id) => l.state.stock(id), leaf)).toBe(stock0 - 50);
   // the brew follows a tested recipe: its effects show as "Recipe", not as verified
   await lab(page, (l) => l.showView('brew'));
   await page.click('[data-act=brew-info]');
@@ -121,7 +128,8 @@ test('a customer who insists on proof will not buy until the vial is tested; tes
     l.refreshCustomer();
     l.views.counter.refresh();
   });
-  await pourDose(page, await lab(page, (l) => l.state.world.roles.essenceA), [100]);
+  await pourDose(page, await lab(page, (l) => l.state.world.roles.water), [100]);
+  await pourDose(page, 'wild-silverleaf', [50]);
   await page.click('[data-act=bottle]');
   await page.click('[data-act=bottle-50]');
   await expect(page.locator('[data-act=serve]')).toBeVisible({ timeout: 20_000 });

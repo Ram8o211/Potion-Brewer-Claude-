@@ -354,6 +354,56 @@ export class FluidRenderer {
               case LOOK.BONE: l = hv < 0.05 ? 0.8 : Math.abs(ly * s) < 0.6 ? 0.96 : 1.04; break;
               case LOOK.FUR: l = 0.78 + hash01(sd + (u + 4096) * 37 + Math.floor(ly * s * 0.4 + 4096) * 1013) * 0.42; break;
               case LOOK.LUMP: l = Math.abs(lx * 0.7 + ly * 0.7 + 0.05) * s < 0.6 ? 1.32 : 0.88 + hv * 0.06; a = 0.94; break;
+              case LOOK.BARK: { // rough plates split by deep, wandering fissures
+                const col = Math.floor(lx * s * 0.35);
+                const f = ly * s * 0.4 + hash01(sd + (col + 4096) * 97) * 0.9;
+                l = f - Math.floor(f) < 0.24 ? 0.58 : 0.9 + hv * 0.14;
+                break;
+              }
+              case LOOK.BERRY: { // round, glossy berries with dark gaps and a bright dot each
+                const fx = lx * s * 0.4, fy = ly * s * 0.4, dx = fx - Math.round(fx), dy = fy - Math.round(fy);
+                const r2 = dx * dx + dy * dy;
+                l = r2 > 0.2 ? 0.55 : dx < -0.08 && dy < -0.08 && r2 < 0.1 ? 1.55 : 1.02 - r2;
+                break;
+              }
+              case LOOK.GILLS: { // fine lamellae fanning out from the stalk
+                const ang = Math.atan2(ly + 1.5, lx);
+                l = (Math.floor(ang * 14 / Math.PI + 64) & 1) ? 0.78 : 1.04 + hv * 0.05;
+                break;
+              }
+              case LOOK.SEED: { // diagonal ribs
+                const rb = Math.floor((lx * 0.8 + ly * 0.6) * s * 0.55);
+                l = (rb & 1) ? 0.74 : 1.06 + hv * 0.05;
+                break;
+              }
+              case LOOK.SHELL: { // concentric growth rings with a pearly sheen
+                const ring = Math.floor(Math.hypot(lx, ly - 1.2) * s * 0.45);
+                l = (ring & 1) ? 0.86 : 1.08;
+                if (hv > 0.9) { l = 1.35; r = r * 0.7 + 0.3; g = g * 0.7 + 0.28; b = b * 0.7 + 0.32; }
+                break;
+              }
+              case LOOK.METAL: // bands of metallic sheen and the odd bright fleck
+                l = 0.7 + 0.5 * Math.abs(Math.sin(ly * s * 0.22 + lx * s * 0.05)) + (hv > 0.96 ? 0.35 : 0);
+                break;
+              case LOOK.GLASS: { // dark glass with sharp, curving glints
+                const c = Math.sin((lx * 1.3 + ly * ly * 0.6) * s * 0.3);
+                l = c > 0.9 ? 1.7 : 0.72 + hv * 0.06;
+                a = 0.95;
+                break;
+              }
+              case LOOK.SPOTS: { // white warts scattered over the cap
+                const fx = lx * s * 0.28, fy = ly * s * 0.28, cx = Math.floor(fx), cy = Math.floor(fy);
+                const dx = fx - cx - 0.5, dy = fy - cy - 0.5;
+                if (hash01(sd + (cx + 4096) * 131 + (cy + 4096) * 977) < 0.4 && dx * dx + dy * dy < 0.08) { r = 0.95; g = 0.93; b = 0.88; l = 1; }
+                else l = 0.95 + hv * 0.08;
+                break;
+              }
+              case LOOK.REED: // fine velvet striations along the stem
+                l = (Math.floor(lx * s * 0.9) & 1 ? 0.86 : 1.0) + hv * 0.08;
+                break;
+              case LOOK.FLORET: // a froth of tiny florets
+                l = hv > 0.72 ? 1.32 : hv < 0.16 ? 0.72 : 0.98;
+                break;
               default: l = 0.92 + hv * 0.1;
             }
             if (edgeHi) l *= 1.16; else if (edgeLo) l *= 0.64;

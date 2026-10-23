@@ -1,6 +1,7 @@
 // The shop counter: yesterday's customers coming back with their verdict,
 // the current customer and their full order (with which effects you have
-// verified), and the sealed vial — labelled, then bargained over.
+// verified), the sealed vial — labelled, then bargained over — and the
+// potion shelves, where sealed bottles wait until they are needed.
 
 import { h, btn, clear, coins, confirmDialog } from '../dom.js';
 import { icon } from '../icons.js';
@@ -44,6 +45,7 @@ export class CounterView {
           st.dayOver ? btn('Close shop for the night', () => lab.endDay(), { cls: 'gold', icon: 'sun', act: 'end-day' })
             : btn('Open the door', () => lab.bringCustomer(true), { cls: 'gold', icon: 'door', act: 'next-customer' }))));
       this.vialCard(el);
+      this.shelfCard(el);
       return;
     }
     const portrait = /** @type {HTMLCanvasElement} */ (h('canvas', { class: 'portrait big' }));
@@ -86,6 +88,7 @@ export class CounterView {
         com.tutorial ? null : btn('Decline', () => lab.decline(), { icon: 'door', act: 'decline' }),
         btn('To the cauldron', () => lab.showView('brew'), { icon: 'cauldron', cls: 'primary', act: 'go-brew' }))));
     this.vialCard(el);
+    this.shelfCard(el);
   }
 
   /** @param {HTMLElement} el */
@@ -108,6 +111,7 @@ export class CounterView {
     const labelB = btn(v.label ? 'Revise label' : 'Label', () => lab.identifyVial(), { icon: 'tag', act: 'label' });
     const testB = btn('Test a dose', () => { lab.trialSource = 'vial'; lab.showView('trials'); }, { icon: 'dropper', act: 'test-vial' });
     const back = btn('Pour back', () => lab.pourBackVial(), { icon: 'pour', act: 'pour-back' });
+    const store = lab.sandbox ? null : btn('Put on shelf', () => lab.shelveVial(), { icon: 'shelf2', act: 'shelve-vial', disabled: st.bottleRoom <= 0, title: st.bottleRoom <= 0 ? 'The potion shelves are full' : 'Keep this bottle on the potion shelves' });
     const discard = btn('Discard', async () => { if (await confirmDialog('Discard the vial?', 'The potion is poured away. Ingredients are not refunded.', 'Discard', 'danger')) lab.discardVial(); }, { icon: 'trash', cls: 'danger', act: 'discard' });
     el.append(h('div', { class: 'card parch vial-card' },
       h('div', { class: 'row' }, cv, h('div', {},
@@ -117,6 +121,53 @@ export class CounterView {
         v.label ? h('div', { class: 'small label-line' }, icon('tag', 'sm'), ` ${trade.claimSummary(v.label.claims)}`) : null)),
       need.length && com ? h('div', { class: 'warn small', text: `Not yet tested: ${need.map((k) => EFFECT_BY_KEY[k].label).join(', ')}. You may still sell on the guild's theory, but ${first} will trust an untested label less${com.customer.persona && com.customer.persona.proof >= 0.8 ? ' — and this customer insists on proof' : ''}.` }) : null,
       com && v.ml < com.bottleMl ? h('div', { class: 'small muted', text: `Short of the ${com.bottleMl} ml ordered; the customer pays less.` }) : null,
-      h('div', { class: 'row wrap' }, serve, labelB, testB, back, discard)));
+      h('div', { class: 'row wrap' }, serve, labelB, testB, store, back, discard)));
+  }
+
+  /**
+   * The potion shelves: sealed bottles kept for later, each with its exact
+   * contents. Tap a bottle to see it; take it down to the counter to serve
+   * or test it (a bottle already there goes up in its place).
+   * @param {HTMLElement} el
+   */
+  shelfCard(el) {
+    const lab = this.lab, st = lab.state;
+    if (lab.sandbox) return;
+    lab.freshBottles();
+    const cap = st.cap.bottles;
+    if (this.sel && !st.bottles.some((b) => b.id === this.sel)) this.sel = null;
+    const grid = h('div', { class: 'bottle-shelf', role: 'listbox', 'aria-label': 'Potion shelves' });
+    const rows = Math.ceil(cap / 6);
+    for (let i = 0; i < rows * 6; i++) {
+      const b = st.bottles[i];
+      if (!b) {
+        grid.appendChild(h('div', { class: 'bottle-slot' + (i < cap ? ' empty' : ' locked'), 'aria-hidden': 'true' }));
+        continue;
+      }
+      const cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: '16', height: '22', class: 'vial-art' }));
+      drawBottle(/** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')), 2, 2, 12, 19, b.m ? b.m.color : [0.5, 0.5, 0.5], Math.min(1, b.ml / Math.max(1, b.bottledMl || b.ml)));
+      const slot = h('button', { class: 'bottle-slot' + (this.sel === b.id ? ' active' : ''), role: 'option', 'aria-selected': this.sel === b.id ? 'true' : 'false', 'aria-label': `${b.label && b.label.name ? b.label.name : 'Bottle'}, ${Math.round(b.ml)} ml`, 'data-act': 'bottle-slot', 'data-id': b.id },
+        cv, h('span', { class: 'bml', text: `${Math.round(b.ml)}` }));
+      slot.addEventListener('click', () => { this.sel = this.sel === b.id ? null : b.id; this.refresh(); });
+      grid.appendChild(slot);
+    }
+    const b = this.sel ? st.bottles.find((x) => x.id === this.sel) : null;
+    let detail = null;
+    if (b) {
+      const m = b.m || {};
+      const fx = Object.entries(b.cert || {});
+      detail = h('div', { class: 'bottle-detail' },
+        h('div', { class: 'small' }, h('span', { class: 'swatch', style: { background: rgbToHex(m.color || [0.5, 0.5, 0.5]) } }), ` ${describeColor(m.color || [0.5, 0.5, 0.5])} · ${Math.round(b.ml)} ml · ${Math.round(m.temperature ?? 20)}°C · bottled on day ${b.day || st.day}`),
+        h('div', { class: 'small' }, 'Verified: ', fx.length ? fx.map(([k, x]) => h('span', { class: 'fx-chip' }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(x)}`)) : h('span', { class: 'muted', text: 'nothing — effects unknown' })),
+        b.label ? h('div', { class: 'small label-line' }, icon('tag', 'sm'), ` ${trade.claimSummary(b.label.claims)}`) : null,
+        h('div', { class: 'row wrap' },
+          btn(st.vial ? 'Swap onto the counter' : 'Take to the counter', () => lab.takeBottle(b.id), { icon: 'deal', cls: 'primary', act: 'take-bottle' }),
+          btn('Pour back', () => lab.pourBackBottle(b.id), { icon: 'pour', act: 'pour-back-bottle' }),
+          btn('Discard', async () => { if (await confirmDialog('Discard the bottle?', 'The potion is poured away. Ingredients are not refunded.', 'Discard', 'danger')) lab.discardBottle(b.id); }, { icon: 'trash', cls: 'danger', act: 'discard-bottle' })));
+    }
+    el.append(h('div', { class: 'card parch shelf-card' },
+      h('div', { class: 'row' }, icon('shelf2'), h('b', { text: `Potion shelves · ${st.bottles.length}/${cap}` })),
+      st.bottles.length ? null : h('div', { class: 'small muted', text: 'Bottle a brew onto the shelves whenever you like, to keep it for a later customer, test it later or pour it back into a new brew. More shelving is sold at the Guild.' }),
+      grid, detail));
   }
 }

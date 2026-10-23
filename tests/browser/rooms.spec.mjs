@@ -66,7 +66,7 @@ test('the dropper doses a rabbit on the farm; a dead one is replaced for coins; 
   await newGame(page, { tutorial: false, seed: 'trial-room-1' });
   const roles = await lab(page, (l) => l.state.world.roles);
   await pourDose(page, roles.water, [100]);
-  await pourDose(page, roles.essenceB, [100]);
+  await pourDose(page, 'wild-emberbark', [100]);
   await page.click('[data-act=tab-trials]');
   await expect(page.locator('[data-subject=beetle]')).toHaveCount(0);
   await expect(page.locator('.status-bars .sb')).toHaveCount(11);

@@ -149,12 +149,22 @@ test('resonance laws: transmute, catalyse and suppress act per particle and are 
 });
 
 test('heat spoils delicate petals: love falls and toxicity appears (reaction products carry effects)', () => {
-  const s = sim([]);
-  pour(s, R.water, 30);
-  pour(s, 'wild-heartpetal', 8, { ground: true });
-  stir(s, 8);
-  run(s, 2);
-  const cool = fx(s).effects;
+  const brew = () => {
+    const s = sim([]);
+    pour(s, R.water, 30);
+    pour(s, 'wild-heartpetal', 8, { ground: true });
+    stir(s, 8);
+    return s;
+  };
+  // steeped gently, kept between 45 and 52 °C
+  const gentle = brew();
+  const meanT = (s) => { let t = 0; for (let i = 0; i < s.p.count; i++) t += s.p.temp[i]; return t / s.p.count; };
+  gentle.furnace.setting = 0.25;
+  for (let k = 0; k < 12; k++) { run(gentle, 5); const T = meanT(gentle); gentle.furnace.setting = T > 52 ? 0 : T < 45 ? 0.25 : gentle.furnace.setting; }
+  gentle.furnace.setting = -0.8; run(gentle, 30); gentle.furnace.setting = 0; run(gentle, 2);
+  const steeped = fx(gentle).effects;
+  // boiled hard
+  const s = brew();
   s.furnace.setting = 0.7;
   run(s, 45);
   s.furnace.setting = -0.8;
@@ -162,8 +172,9 @@ test('heat spoils delicate petals: love falls and toxicity appears (reaction pro
   s.furnace.setting = 0;
   run(s, 2);
   const spoiled = fx(s).effects;
-  assert.ok(spoiled[V.love] < cool[V.love] * 0.8, `love ${cool[V.love].toFixed(1)} → ${spoiled[V.love].toFixed(1)}`);
-  assert.ok(spoiled[V.toxicity] > cool[V.toxicity] + 0.5, `toxicity ${cool[V.toxicity].toFixed(1)} → ${spoiled[V.toxicity].toFixed(1)}`);
+  assert.ok(steeped[V.toxicity] < 0.5, 'a gentle steep spoils nothing');
+  assert.ok(spoiled[V.love] < steeped[V.love] * 0.8, `love ${steeped[V.love].toFixed(1)} → ${spoiled[V.love].toFixed(1)}`);
+  assert.ok(spoiled[V.toxicity] > steeped[V.toxicity] + 0.5, `toxicity ${steeped[V.toxicity].toFixed(1)} → ${spoiled[V.toxicity].toFixed(1)}`);
 });
 
 test('reduction: boiling water away with the lid open concentrates a non-volatile extract', () => {

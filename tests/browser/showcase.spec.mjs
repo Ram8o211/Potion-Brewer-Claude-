@@ -16,7 +16,7 @@ test('an awakened brew glows in the colour of its magic', async ({ page }, info)
   const errors = watchErrors(page);
   await newGame(page, { tutorial: false, seed: 'showcase-glow' });
   await pourRole(page, 'water', 125);
-  await pourRole(page, 'essenceA', 125);
+  await pourRole(page, 'wild-silverleaf', 100);
   // stir until even, then heat past the blend's threshold with the fire control
   await lab(page, (l) => { l.setAutoStir(true); });
   await page.waitForTimeout(2500);
@@ -80,7 +80,8 @@ test('label, bargain, and the customer comes back with a complaint', async ({ pa
     l.views.counter.refresh();
   });
   await pourRole(page, 'water', 50);
-  await pourRole(page, 'essenceA', 50);
+  await pourRole(page, 'water', 50);
+  await pourRole(page, 'wild-silverleaf', 50);
   await page.click('[data-act=bottle]');
   await page.click('[data-act=bottle-50]');
   await expect(page.locator('[data-act=serve]')).toBeVisible({ timeout: 20_000 });

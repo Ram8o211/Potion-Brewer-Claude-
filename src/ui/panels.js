@@ -76,7 +76,7 @@ export function openShop(lab, tab = 'reagents') {
 
 function renderReagents(lab, body, rerender) {
   const st = lab.state;
-  body.appendChild(h('div', { class: 'muted small', text: `Prices per 100 ml. Shelf space: ${st.cap.storage} ml per reagent. Water from the well is free. Wild herbs and minerals are free to gather in the Wilds; the herbalist sells the common ones at a premium.` }));
+  body.appendChild(h('div', { class: 'muted small', text: `Prices per 100 ml. Shelf space: ${st.cap.storage} ml per reagent. The market sells no prepared reagents: every effect comes from nature. Water from the well is free; oil and spirit are plain solvents. Wild herbs and minerals are free to gather in the Wilds; from Journeyman on, the herbalist sells the common ones at a premium.` }));
   const list = h('div', { class: 'list' });
   for (const id of st.world.ingredients) {
     const mt = st.lookup(id);
@@ -201,6 +201,7 @@ export function openIngredient(lab, id) {
   if (m.remains) asp.append(h('span', { class: 'muted', text: `Unknown: recovered from ${m.remains.rabbitName}. Whatever it absorbed in life may linger — test it in the Trials room.` }));
   else if (!asp.children.length) asp.append(h('span', { class: 'muted', text: 'No magical or chemical effect.' }));
   const reactions = st.world.reactions.filter((r) => (r.a === id || r.b === id) && st.journal['reaction:' + r.id]);
+  const balance = m.wild ? balanceHints(st, m) : [];
   modal({
     title: m.name,
     body: [
@@ -208,9 +209,38 @@ export function openIngredient(lab, id) {
       h('div', { class: 'card parch' }, facts),
       h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: m.remains ? 'Effects' : m.product ? 'Effects of this pure substance (as the guild knows it)' : 'Known effects of the pure ingredient (mixtures must be tested)' }), asp,
         (m.wild || m.remains) && m.form === 'solid' ? h('div', { class: 'small', text: 'Supplied whole: crush it in the pot with the pestle, or switch on “Ground” to grind it in the mortar first. Only what dissolves takes effect.' }) : null),
+      balance.length ? h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Nothing that grows is pure. Its side effects cancel against their opposites:' }), ...balance.map((t) => h('div', { class: 'small', text: '• ' + t }))) : null,
       reactions.length ? h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Known reactions' }), ...reactions.map((r) => h('div', { class: 'small', text: `• ${r.name}: ${r.hint || ''}` }))) : null,
     ],
   });
+}
+
+/** The guild primer's opposing pairs, as advice for a natural ingredient's side effects. */
+const OPPOSITE = {
+  fire: ['frost', 'frost cancels fire'], frost: ['fire', 'fire cancels frost'], death: ['vitality', 'life cancels death'],
+  toxicity: ['vitality', 'life mends poison, two parts of life to one of poison'], vitality: ['death', 'death (or poison) cancels life'],
+  acid: ['alkali', 'an alkali neutralises acid'], alkali: ['acid', 'an acid neutralises alkali'],
+};
+
+/** "Frost: fire cancels frost (Sunthistle, Emberbark…)" for each side effect of a natural ingredient. @param {any} st @param {any} m */
+function balanceHints(st, m) {
+  const fx = Object.entries(m.effects || {}).filter(([, v]) => Math.abs(Number(v)) >= 1);
+  if (fx.length < 2) return [];
+  const main = fx.reduce((a, b) => (Math.abs(Number(b[1])) > Math.abs(Number(a[1])) ? b : a))[0];
+  const key = (k, v) => (k === 'acidity' ? (v < 0 ? 'alkali' : 'acid') : k);
+  /** the strength of an opposing channel in another ingredient */
+  const carries = (x, ch) => (ch === 'acid' ? Math.max(0, x.effects.acidity || 0) : ch === 'alkali' ? Math.max(0, -(x.effects.acidity || 0)) : x.effects[ch] || 0);
+  const out = [];
+  for (const [k, v] of fx) {
+    if (k === main) continue;
+    const opp = OPPOSITE[key(k, Number(v))];
+    if (!opp) continue;
+    const names = (st.world.wild || []).map(st.lookup).filter((x) => x && x.id !== m.id && x.effects && carries(x, opp[0]) >= 6 && x.wild.rank <= Math.max(st.rank, 1))
+      .sort((a, b) => carries(b, opp[0]) - carries(a, opp[0])).slice(0, 3).map((x) => x.name);
+    const label = k === 'acidity' ? (Number(v) < 0 ? 'Alkali' : 'Acid') : EFFECTS.find((e) => e.key === k).label;
+    out.push(`${label}: ${opp[1]}${names.length ? ` — e.g. ${names.join(', ')}` : ''}.`);
+  }
+  return out;
 }
 
 // ------------------------------------------------------------------ advice / hint
@@ -268,27 +298,45 @@ export function openHint(lab) {
 
 // ------------------------------------------------------------------ bottling
 /**
- * Choose a measured quantity to bottle into a sealed vial.
- * @param {any} lab @param {number} avail particles at the tap @param {(n:number)=>void} onPick
+ * Choose a measured quantity to bottle into a sealed vial, and where it goes:
+ * onto the counter (to serve or test) or onto the potion shelves (to keep).
+ * @param {any} lab @param {number} avail particles at the tap @param {(n:number, dest:'counter'|'shelf')=>void} onPick
+ * @param {{counterFree?:boolean, shelfRoom?:number, shelves?:boolean}} [o]
  */
-export function openBottleSize(lab, avail, onPick) {
+export function openBottleSize(lab, avail, onPick, o = {}) {
   const st = lab.state;
   const com = lab.sandbox ? null : st.current;
   const per = SIM.ML_PER_PARTICLE;
+  const counterFree = o.counterFree !== false, shelfRoom = o.shelfRoom || 0;
+  // the counter first while it is free; the shelves otherwise
+  let dest = /** @type {'counter'|'shelf'} */ (counterFree ? 'counter' : 'shelf');
   const sizes = new Set([25, 50, 100, 150, 200, 300]);
   if (com) sizes.add(com.bottleMl);
   const list = [...sizes].sort((a, b) => a - b);
   let m;
-  const pick = (ml) => { m.close(); onPick(Math.max(1, Math.round(ml / per))); };
+  const pick = (ml) => { m.close(); onPick(Math.max(1, Math.round(ml / per)), dest); };
   const btns = list.map((ml) => btn(`${ml} ml${com && ml === com.bottleMl ? ' · the order' : ''}`, () => pick(ml), {
     cls: com && ml === com.bottleMl ? 'primary' : '', disabled: ml / per > avail, act: 'bottle-' + ml,
   }));
   btns.push(btn(`All at the tap · ${avail * per} ml`, () => pick(avail * per), { act: 'bottle-all' }));
+  /** @type {HTMLElement|null} */
+  let destRow = null;
+  if (o.shelves) {
+    const opts = /** @type {[string, string, boolean][]} */ ([
+      ['counter', counterFree ? 'To the counter' : 'Counter is taken', counterFree],
+      ['shelf', shelfRoom > 0 ? `To the potion shelves · ${shelfRoom} free` : 'Potion shelves are full', shelfRoom > 0],
+    ]);
+    const bs = opts.map(([k, label, ok]) => btn(label, () => { dest = /** @type {any} */ (k); sync(); }, { icon: k === 'shelf' ? 'shelf2' : 'deal', disabled: !ok, act: 'bottle-dest-' + k }));
+    const sync = () => bs.forEach((b, i) => b.classList.toggle('active', opts[i][0] === dest));
+    sync();
+    destRow = h('div', { class: 'row wrap bottle-dest' }, ...bs);
+  }
   m = modal({
     title: 'Bottle a measured quantity',
     body: [h('div', { class: 'card parch' },
-      h('div', { class: 'small', text: `The vial takes what runs out of the tap — the lowest layer first. ${avail * per} ml can be drawn now.` }),
-      h('div', { class: 'small muted', text: 'A sealed vial keeps its exact contents. You can test doses from it, pour it back to keep working, or serve it.' }),
+      h('div', { class: 'small', text: `The bottle takes what runs out of the tap — the lowest layer first. ${avail * per} ml can be drawn now.` }),
+      h('div', { class: 'small muted', text: 'A sealed bottle keeps its exact contents. On the counter you can test doses from it, pour it back or serve it; on the potion shelves it waits until you need it.' }),
+      destRow,
       h('div', { class: 'row wrap bottle-sizes' }, ...btns))],
   });
   return m;
@@ -552,7 +600,7 @@ export function openHelp() {
     title: 'How to play',
     wide: true,
     body: [
-      sec('Your shop', ['Customers ask for potions with effects at a strength — healing, strength, love, fire… — and physical qualities such as colour, thickness and temperature. Strength is the effective concentration in percent: everyday orders want about 8–15 %, master commissions far more.', 'Many orders forbid side effects: “no other effect above 1.2 %”. Every other kind of magic in the bottle must stay that faint.', 'You know what each plain ingredient does. You do NOT know what a mixture does: mixing, heat, reactions and hidden laws change things. Test doses in the Trials room to find out.', 'Bottle a measured quantity from the tap at the bottom of the cauldron (the lowest layer comes out first). A sealed vial keeps its exact contents: test doses from it, pour it back to keep working, or offer it at the Counter.', 'Before a sale you write the label — tested values, the guild theory’s estimates, “none” or unknown — and bargain over the price. The customer pays what you agree, drinks the real potion and comes back the next day: pleased, or with a complaint. Refund them, dispute it with your trial records, or turn them away.', 'Honest, well-tested potions earn reputation. Reputation unlocks ranks, regions of the wilds, reagents and equipment.']),
+      sec('Your shop', ['Customers ask for potions with effects at a strength — healing, strength, love, fire… — and physical qualities such as colour, thickness and temperature. Strength is the effective concentration in percent: everyday orders want about 8–15 %, master commissions far more.', 'Many orders forbid side effects: “no other effect above 1.2 %”. Every other kind of magic in the bottle must stay that faint.', 'The market sells no prepared reagents — only free well water and two plain solvents, oil and spirit. Every effect comes from what you gather, and nothing that grows is pure: each herb or mineral brings side effects. Cancel them with their opposites — fire and frost, life and death (life also mends poison, two parts to one), acid and alkali. Long-press an ingredient to see what cancels its side effects.', 'You know what each plain ingredient does. You do NOT know what a mixture does: mixing, heat, reactions and hidden laws change things. Test doses in the Trials room to find out.', 'Bottle a measured quantity from the tap at the bottom of the cauldron (the lowest layer comes out first). A sealed vial keeps its exact contents: test doses from it, pour it back to keep working, or offer it at the Counter.', 'Bottle onto the potion shelves whenever you like, as long as there is room (3 bottles, more with a Bottle Shelf, Potion Cabinet or Bottle Cellar). Take a shelved bottle down at the Counter to test or sell it later.', 'Before a sale you write the label — tested values, the guild theory’s estimates, “none” or unknown — and bargain over the price. The customer pays what you agree, drinks the real potion and comes back the next day: pleased, or with a complaint. Refund them, dispute it with your trial records, or turn them away.', 'Honest, well-tested potions earn reputation. Reputation unlocks ranks, regions of the wilds, reagents and equipment.']),
       sec('Arcane awakening', ['Magical ingredients carry a hidden arcane threshold. Heat the brew past it (or, for cold magic, chill it below) and the magic awakens: it glows in the colour of its effect and acts several times stronger.', 'In a blend the threshold is the mix of its magical ingredients’ thresholds, by volume — a hot-waking and a cold-waking ingredient pull each other toward room temperature.', 'Mix first, at room temperature; then heat or chill to awaken. A half-mixed brew awakens unevenly.', 'Awakened magic stays awake when it cools, is bottled or kept. Only dilution and reactions undo it.', 'Your journal notes where each ingredient awoke; the Arcanometer reads a brew’s threshold directly.']),
       sec('Wilds and trials', ['Gather roots, leaves, flowers, mushrooms and minerals in the Wilds. Deposits are finite and regrow over time, even while the game is closed.', 'Each ingredient has its method — pick, dig, chip, scrape or sweep — and the right tool doubles the harvest. Twilight plants open only at dawn (your first customer of the day) or dusk (your last). The weather changes daily. A thorough harvest takes twice as much but the deposit regrows slowly.', 'Whole roots and stones do nothing until crushed (pestle) or ground (mortar, the “Ground” switch on the shelf). Only what dissolves takes effect; hot water dissolves more, and some herbs steep into strong extracts when held warm.', 'Each subject responds to some effects only: a stone shows acid but not love. Choose subjects that cover what the customer cares about.', 'When a trial surprises you, a hidden law may be at work. Confirm it twice and your theory learns it.']),
       sec('Brewing', ['Tap a jar on the shelf, then hold your finger (or the mouse) inside the cauldron to pour. Dose buttons pour exact amounts.', 'Stir with the spoon: drag through the brew. Mixing starts where liquids touch and spreads; stirring speeds it up dramatically.', 'Powders pile up like sand. Knead a binding powder with a watery liquid to make dough; add more liquid to thin it.', 'Slide the fire control right to heat from below, left to cool. Heat spreads through the brew gradually.', 'Keep the lid on to trap vapour; let things cool and the vapour condenses back. Open the lid to let it escape.', 'Freeze liquids into blocks, then crush them with the pestle. Some reagents react when mixed, heated or chilled — discoveries go into your journal.']),

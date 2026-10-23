@@ -64,9 +64,9 @@ export function lab(page, fn, arg) {
   }, [fn.toString(), arg]);
 }
 
-/** Pour a reagent by role through the game's own pour API and wait until it lands. */
+/** Pour a reagent by role (or a wild ingredient by id) through the game's own pour API and wait until it lands. */
 export async function pourRole(page, role, ml, x = 0) {
-  await lab(page, (l, a) => { const id = l.state.world.roles[a.role]; l.selectIngredient(id); l.startPour(a.x, Math.round(a.ml / 5)); }, { role, ml, x });
+  await lab(page, (l, a) => { const id = l.state.world.roles[a.role] || a.role; l.selectIngredient(id); l.startPour(a.x, Math.round(a.ml / 5)); }, { role, ml, x });
   await page.waitForFunction(() => !(/** @type {any} */ (window).__alchemist.screen.sim.emitter.pouring), null, { timeout: 30_000 });
 }
 

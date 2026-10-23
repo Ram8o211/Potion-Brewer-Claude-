@@ -377,8 +377,14 @@ export function generateWorld(seed) {
     hint: `${spores.name} bloom when kneaded into warm ${starlight.name}.`,
   });
 
-  const ingredients = [water, oil, syrup, spirit, essA, essB, binder, salt, essC, ember, frost, metal, crystal, wax, fizz, spores, resin, starlight, moss, vapor, phoenix, voidInk].map((m) => m.id);
-  const starting = [water, oil, syrup, spirit, essA, essB, binder, salt].map((m) => m.id);
+  // The shop sells no prepared reagents: every effect comes from what grows
+  // or lies in the wilds (added by addAlchemy). Only the three plain
+  // solvents, which carry no magic of their own, are stocked. The prepared
+  // reagents above stay in the world as physics references and for old
+  // brews, but are never on the shelf.
+  void [syrup, essA, essB, binder, salt, essC, ember, frost, metal, crystal, wax, fizz, spores, resin, starlight, moss, vapor, phoenix, voidInk];
+  const ingredients = [water, oil, spirit].map((m) => m.id);
+  const starting = ingredients.slice();
   return addAlchemy({ seed: seedStr, materials, ingredients, starting, reactions, roles });
 }
 
@@ -413,7 +419,29 @@ export function addAlchemy(world) {
     if (!world.laws) world.laws = w.laws;
   }
   if (!world.laws) world.laws = generateLaws(world.seed);
+  // older worlds stocked prepared reagents (essences, salts, crystals…):
+  // only the solvents, the wild ingredients and recovered remains stay
+  const keep = new Set([...SOLVENT_ROLES.map((r) => world.roles[r]), ...world.wild]);
+  world.ingredients = world.ingredients.filter((id) => keep.has(id) || world.materials.some((m) => m.id === id && m.remains));
+  world.starting = SOLVENT_ROLES.map((r) => world.roles[r]).filter(Boolean);
   return world;
+}
+
+/** The plain solvents the shop still sells: they carry no magic. */
+export const SOLVENT_ROLES = ['water', 'oil', 'spirit'];
+
+/**
+ * Prepared laboratory reagents: never sold in the shop, but on the shelf of
+ * the Free Experiment, where they show off the physics (layers, doughs,
+ * frozen blocks, burning oil, charge).
+ */
+export const LAB_ROLES = ['syrup', 'essenceA', 'essenceB', 'binder', 'salt', 'essenceC', 'ember', 'frost', 'metal', 'crystal', 'wax', 'fizz', 'spores', 'resin', 'starlight', 'moss', 'vapor', 'phoenix', 'void'];
+
+/** Everything on the Free Experiment's shelf. @param {World} world */
+export function sandboxIngredients(world) {
+  const ids = world.ingredients.slice();
+  for (const r of LAB_ROLES) if (world.roles[r] && !ids.includes(world.roles[r])) ids.push(world.roles[r]);
+  return ids;
 }
 
 /**

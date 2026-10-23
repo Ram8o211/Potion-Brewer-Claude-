@@ -58,11 +58,17 @@ export const EQUIPMENT = [
   // storage & guild
   { id: 'shelf1', name: 'Oak Shelves', category: 'storage', price: 90, rank: 1, icon: 'shelf', desc: 'Store up to 2.5 L of each reagent.', effect: { storage: 2500 } },
   { id: 'shelf2', name: 'Cellar Racks', category: 'storage', price: 260, rank: 2, icon: 'shelf2', requires: ['shelf1'], desc: 'Store up to 6 L of each reagent.', effect: { storage: 6000 } },
+  // potion storage: shelves of sealed glass bottles
+  { id: 'rack1', name: 'Bottle Shelf', category: 'storage', price: 40, rank: 0, icon: 'shelf', desc: 'A plank shelf with a lip: room for 6 sealed bottles of potion.', effect: { bottles: 6 } },
+  { id: 'rack2', name: 'Potion Cabinet', category: 'storage', price: 150, rank: 1, icon: 'shelf2', requires: ['rack1'], desc: 'A glass-fronted cabinet: room for 12 sealed bottles.', effect: { bottles: 12 } },
+  { id: 'rack3', name: 'Bottle Cellar', category: 'storage', price: 420, rank: 2, icon: 'shelf2', requires: ['rack2'], desc: 'Cool cellar racks from floor to vault: room for 24 sealed bottles.', effect: { bottles: 24 } },
   { id: 'charter', name: 'Guild Charter', category: 'guild', price: 400, rank: 2, icon: 'charter', desc: 'Guild membership: 15% off all reagents and access to guild contracts.', effect: { discount: 0.15 } },
 ];
 
 export const STARTING_EQUIPMENT = ['hearth', 'basin', 'pot', 'spoon', 'mortar', 'thermometer'];
 export const BASE_STORAGE = 1000;
+/** Sealed bottles the shop's first shelf holds. */
+export const BASE_BOTTLES = 3;
 /** Rabbits the starting hutch holds. */
 export const BASE_HUTCH = 4;
 
@@ -93,7 +99,7 @@ export function rankIndex(rep) {
  */
 export function capabilities(owned) {
   const has = owned instanceof Set ? owned : new Set(owned);
-  const cap = { maxFlame: 340, heatPower: 3.5, minCool: 4, coolPower: 4, size: 'pot', storage: BASE_STORAGE, discount: 0, hutch: BASE_HUTCH, has: (id) => has.has(id) };
+  const cap = { maxFlame: 340, heatPower: 3.5, minCool: 4, coolPower: 4, size: 'pot', storage: BASE_STORAGE, discount: 0, hutch: BASE_HUTCH, bottles: BASE_BOTTLES, has: (id) => has.has(id) };
   for (const e of EQUIPMENT) {
     if (!has.has(e.id) || !e.effect) continue;
     const f = /** @type {any} */ (e.effect);
@@ -104,6 +110,7 @@ export function capabilities(owned) {
     if (f.storage && f.storage > cap.storage) cap.storage = f.storage;
     if (f.discount) cap.discount = Math.max(cap.discount, f.discount);
     if (f.hutch && f.hutch > cap.hutch) cap.hutch = f.hutch;
+    if (f.bottles && f.bottles > cap.bottles) cap.bottles = f.bottles;
   }
   return cap;
 }

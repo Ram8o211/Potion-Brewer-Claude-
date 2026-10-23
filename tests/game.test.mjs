@@ -23,22 +23,33 @@ test('worlds are deterministic per seed and differ between seeds', () => {
   assert.notDeepEqual(a.reactions.map((r) => r.name), c.reactions.map((r) => r.name));
 });
 
-test('every world starts with at least six liquids and two powders', () => {
+test('the shop stocks only plain solvents; every gathered ingredient is impure but can be balanced', () => {
+  const PAIRS = new Set(['fire', 'frost', 'vitality', 'death', 'toxicity', 'acidity']);
   for (let k = 0; k < 25; k++) {
     const w = generateWorld('start-' + k);
     const lk = makeLookup(w);
-    const start = w.ingredients.map(lk).filter((m) => m.tier === 0);
-    const liquids = start.filter((m) => m.form === 'liquid').length;
-    const powders = start.filter((m) => m.form === 'powder').length;
-    assert.ok(liquids >= 6, `seed start-${k}: ${liquids} starting liquids`);
-    assert.ok(powders >= 2, `seed start-${k}: ${powders} starting powders`);
-    // names are unique and every material has sane physical properties
-    assert.equal(new Set(w.ingredients.map((id) => lk(id).name)).size, w.ingredients.length);
+    const solvents = [w.roles.water, w.roles.oil, w.roles.spirit];
+    assert.deepEqual(w.starting, solvents, `seed start-${k}: only solvents to start`);
     for (const id of w.ingredients) {
       const m = lk(id);
+      if (solvents.includes(id)) {
+        assert.equal(Object.values(m.effects || {}).filter((v) => Math.abs(Number(v)) >= 1).length, 0, `${m.name} is a plain solvent`);
+        continue;
+      }
+      assert.ok(m.wild, `${m.name} is a natural ingredient`);
+      const fx = Object.entries(m.effects).filter(([, v]) => Math.abs(Number(v)) >= 1);
+      assert.ok(fx.length >= 2, `${m.name} carries several effects (${fx.map(([e]) => e).join(', ')})`);
+      // the main effect may be anything; every side effect sits on an opposing pair
+      const main = fx.reduce((a, b) => (Math.abs(Number(b[1])) > Math.abs(Number(a[1])) ? b : a));
+      for (const [e] of fx) if (e !== main[0] && !PAIRS.has(e)) assert.ok(['strength', 'love', 'arcana', 'transformation'].includes(e) && fx.length >= 3, `${m.name}: ${e} rides with another main effect`);
+      // and never both halves of one pair (it would cancel itself)
+      const has = (e) => fx.some(([x]) => x === e);
+      assert.ok(!(has('fire') && has('frost')) && !(has('vitality') && (has('death') || has('toxicity'))), `${m.name} does not cancel itself`);
       assert.ok(m.density > 0.3 && m.density < 15, `${m.name} density ${m.density}`);
       assert.ok(m.price > 0);
     }
+    assert.ok(w.wild.length >= 30, `a wide variety of natural ingredients (${w.wild.length})`);
+    assert.equal(new Set(w.ingredients.map((id) => lk(id).name)).size, w.ingredients.length, 'names are unique');
   }
 });
 
@@ -104,7 +115,7 @@ test('scoring rewards accuracy and tolerates small deviations', () => {
 
 test('the market: buying, storage limits and selling back', () => {
   const st = GameState.create('market-1', { tutorial: false });
-  const id = st.world.roles.binder;
+  const id = st.world.roles.spirit;
   const c0 = st.coins, s0 = st.stock(id);
   const r = st.buy(id, 100);
   assert.ok(r.ok);
@@ -169,7 +180,7 @@ test('sales, reputation and ranks progress', () => {
 test('save → JSON → load round-trips the whole game', () => {
   const st = GameState.create('save-1');
   st.coins = 123.4; st.reputation = 17; st.day = 4;
-  st.buy(st.world.roles.salt, 100);
+  st.buy(st.world.roles.spirit, 100);
   st.discover(/** @type {any} */ ({ key: 'phase:boil', kind: 'phase', title: 'Boiling', text: 'x' }));
   st.addRecipe({ name: 'Test', steps: [] });
   const json = JSON.stringify(st.toJSON());
@@ -177,7 +188,7 @@ test('save → JSON → load round-trips the whole game', () => {
   assert.equal(back.coins, st.coins);
   assert.equal(back.day, 4);
   assert.equal(back.stock(st.world.roles.water), Infinity, 'unlimited water survives JSON');
-  assert.equal(back.stock(st.world.roles.salt), st.stock(st.world.roles.salt));
+  assert.equal(back.stock(st.world.roles.spirit), st.stock(st.world.roles.spirit));
   assert.deepEqual(back.world.ingredients, st.world.ingredients);
   assert.equal(back.lookup(st.world.roles.oil).name, st.lookup(st.world.roles.oil).name);
   assert.ok(back.journal['phase:boil']);
@@ -197,6 +208,15 @@ test('old saves migrate and bad files are rejected with a readable message', () 
   delete bare.world;
   const regen = GameState.fromJSON(bare);
   assert.deepEqual(regen.world.ingredients, st.world.ingredients);
+  // prepared reagents an older shop still held are bought back by the guild
+  const held = JSON.parse(JSON.stringify(st.toJSON()));
+  held.inventory[st.world.roles.essenceA] = 300;
+  held.inventory[st.world.roles.salt] = 100;
+  const sold = GameState.fromJSON(held);
+  assert.equal(sold.stock(st.world.roles.essenceA), 0);
+  assert.ok(sold.coins > st.coins, `paid for the reagents (${st.coins} → ${sold.coins})`);
+  assert.ok(sold.journal['note:buyback']);
+  assert.ok(!sold.world.ingredients.includes(st.world.roles.essenceA), 'and never stocked again');
   assert.throws(() => parseImport('not json'), /not a valid save/);
   assert.throws(() => migrate({ version: SAVE_VERSION + 1 }), /newer version/);
   assert.throws(() => migrate(null), /Not a save/);

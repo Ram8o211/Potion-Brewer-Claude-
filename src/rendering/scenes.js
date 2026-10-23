@@ -118,6 +118,114 @@ export function drawRaw(ctx, x, y, shape, color, fill = 1) {
       P(x0, 11, x1 - x0, 1, d);
       break;
     }
+    case 'bark': {
+      // a curled strip of bark with dark fissures
+      const w = Math.round(6 + 5 * s);
+      P(8 - w / 2, 4, w, 9, k); P(9 - w / 2, 5, w - 2, 7, c);
+      for (let i = 0; i < w - 3; i += 3) P(9 - w / 2 + i + 1, 5, 1, 7, d);
+      P(9 - w / 2, 5, w - 2, 1, hi); P(8 + w / 2 - 2, 6, 1, 5, css(color, 0.45));
+      break;
+    }
+    case 'berry': {
+      // a bunch of round berries hanging from a twig
+      P(7, 1, 2, 4, gd); P(9, 2, 3, 1, g);
+      const n = Math.max(2, Math.round(5 * s));
+      const pos = [[6, 5], [9, 5], [4, 8], [7, 8], [10, 8], [6, 11]];
+      for (let i = 0; i < n; i++) { const [px, py] = pos[i]; P(px - 1, py - 1, 5, 5, k); P(px, py, 3, 3, c); P(px, py, 1, 1, hi); P(px + 2, py + 2, 1, 1, d); }
+      break;
+    }
+    case 'bracket': {
+      // a half-moon shelf fungus on a stump, with gill lines beneath
+      P(1, 3, 3, 12, '#4a3020'); P(2, 3, 1, 12, '#6b4a30');
+      const w = Math.round(6 + 6 * s);
+      P(4, 6, w, 5, k); P(4, 7, w - 1, 3, c); P(4, 7, w - 2, 1, hi);
+      for (let i = 5; i < 4 + w - 1; i += 2) P(i, 9, 1, 1, d);
+      if (s > 0.6) { P(4, 11, w - 3, 3, k); P(4, 12, w - 4, 1, c); }
+      break;
+    }
+    case 'sprig': {
+      // a stinging sprig: a stem with jagged paired leaves
+      P(7, 3, 2, 12, gd);
+      const n = Math.max(1, Math.round(3 * s));
+      for (let i = 0; i < n; i++) {
+        const y0 = 3 + i * 4;
+        P(2, y0, 5, 3, k); P(3, y0 + 1, 4, 1, c); P(2, y0 + 1, 1, 1, c);
+        P(9, y0 + 1, 5, 3, k); P(9, y0 + 2, 4, 1, c); P(13, y0 + 2, 1, 1, c);
+        P(4, y0, 1, 1, hi); P(11, y0 + 1, 1, 1, hi);
+      }
+      break;
+    }
+    case 'spike': {
+      // a tall spike of shaggy florets
+      P(7, 9, 2, 6, g); P(4, 12, 3, 2, g);
+      const h = Math.round(5 + 4 * s);
+      P(5, 9 - h, 6, h + 1, k);
+      for (let y = 10 - h; y < 9; y += 2) { P(5, y, 6, 1, c); P(6, y + 1, 4, 1, d); }
+      P(6, 10 - h, 1, 1, hi); P(9, 12 - h, 1, 1, hi);
+      break;
+    }
+    case 'seed': {
+      // a dry umbel of ribbed seeds
+      P(7, 7, 2, 8, gd);
+      const n = Math.max(2, Math.round(5 * s));
+      for (let i = 0; i < n; i++) { const px = 2 + i * 2.5; P(px, 3 + (i % 2), 3, 4, k); P(px + 1, 4 + (i % 2), 1, 2, c); P(px + 1, 6 + (i % 2), 6 - px / 2.5, 1, gd); }
+      break;
+    }
+    case 'crust': {
+      // flaky crystalline crust heaped on a stone
+      const w = Math.round(6 + 6 * s);
+      P(8 - w / 2, 12, w, 3, '#5a5450');
+      for (let i = 0; i < w; i += 2) { P(8 - w / 2 + i, 9 + (i % 4 === 0 ? 0 : 1), 2, 3, k); P(8 - w / 2 + i, 10 + (i % 4 === 0 ? 0 : 1), 1, 2, c); }
+      P(9 - w / 2, 9, 1, 1, hi); P(8, 10, 1, 1, hi);
+      break;
+    }
+    case 'nugget': {
+      // a heavy dark nugget with a metallic gleam
+      const w = Math.round(5 + 5 * s);
+      P(8 - w / 2, 8, w, 6, k); P(9 - w / 2, 8, w - 2, 5, c); P(8 - w / 2 + 1, 7, w - 3, 1, k);
+      P(9 - w / 2, 9, w - 3, 1, css(color, 1.9)); P(10 - w / 2, 12, w - 4, 1, d);
+      break;
+    }
+    case 'shard': {
+      // a black glass blade with a sharp glint
+      const h = Math.round(5 + 7 * s);
+      for (let i = 0; i < h; i++) { P(4 + i * 0.6, 14 - i, 3, 1, k); P(5 + i * 0.6, 14 - i, 1, 1, c); }
+      P(5 + (h - 2) * 0.6, 15 - h, 1, 1, '#ffffff'); P(5, 13, 1, 1, hi);
+      break;
+    }
+    case 'lily': {
+      // a trumpet bloom on a long stem
+      P(7, 8, 2, 7, g); P(9, 12, 3, 2, g);
+      const r = Math.round(2 + 2 * s);
+      P(8 - r - 1, 3, r * 2 + 2, 5, k); P(8 - r, 4, r * 2, 3, c);
+      P(8 - r - 1, 2, 2, 2, k); P(7 + r, 2, 2, 2, k); P(8 - r, 3, 1, 1, c); P(8 + r, 3, 1, 1, c);
+      P(7, 7, 2, 1, d); P(8 - r, 4, 1, 1, hi);
+      break;
+    }
+    case 'toadstool': {
+      // a red cap with white warts on a stout white stem
+      P(6, 9, 4, 6, '#e8dcc4'); P(6, 9, 1, 6, '#fff6e6');
+      const w = Math.round(7 + 4 * s);
+      P(8 - w / 2, 4, w, 6, k); P(9 - w / 2, 5, w - 2, 4, c); P(10 - w / 2, 4, w - 4, 1, k);
+      P(9 - w / 2 + 1, 6, 1, 1, '#ffffff'); P(8, 5, 2, 1, '#ffffff'); P(7 + w / 2 - 2, 7, 1, 1, '#ffffff');
+      break;
+    }
+    case 'reed': {
+      // a tall stem topped with a velvet head
+      P(7, 1, 1, 3, gd); P(7, 9, 2, 6, g);
+      const h = Math.round(3 + 3 * s);
+      P(6, 3, 4, h + 1, k); P(7, 4, 2, h - 1, c); P(7, 4, 1, 1, hi);
+      P(9, 10, 4, 1, g); P(3, 12, 4, 1, g);
+      break;
+    }
+    case 'shell': {
+      // a ribbed fan shell with a pearly lip
+      const w = Math.round(6 + 5 * s);
+      P(8 - w / 2, 7, w, 6, k); P(9 - w / 2, 8, w - 2, 4, c); P(7, 13, 2, 2, k);
+      for (let i = 1; i < w - 2; i += 2) P(8 - w / 2 + i, 8, 1, 4, d);
+      P(9 - w / 2, 8, w - 2, 1, css(mix(color, [1, 0.9, 1], 0.6)));
+      break;
+    }
     default: { // stone
       const w = Math.round(6 + 6 * s);
       P(8 - w / 2, 9, w, 6, k); P(9 - w / 2, 9, w - 2, 5, c); P(9 - w / 2, 9, w - 3, 1, hi); P(10 - w / 2, 13, w - 3, 1, d);

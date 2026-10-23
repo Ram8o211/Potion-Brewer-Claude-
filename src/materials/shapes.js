@@ -9,11 +9,16 @@
 // the silhouette breaks down exactly as the simulated damage does.
 
 /** Surface looks of solid matter (renderer codes). */
-export const LOOK = Object.freeze({ ICE: 0, FIBRE: 1, LEAF: 2, STONE: 3, CRYSTAL: 4, CAP: 5, GLOSSY: 6, BONE: 7, FUR: 8, LUMP: 9 });
+export const LOOK = Object.freeze({
+  ICE: 0, FIBRE: 1, LEAF: 2, STONE: 3, CRYSTAL: 4, CAP: 5, GLOSSY: 6, BONE: 7, FUR: 8, LUMP: 9,
+  BARK: 10, BERRY: 11, GILLS: 12, SEED: 13, SHELL: 14, METAL: 15, GLASS: 16, SPOTS: 17, REED: 18, FLORET: 19,
+});
 
 const SHAPE_LOOK = {
-  root: LOOK.FIBRE, pepper: LOOK.FIBRE, leaf: LOOK.LEAF, petal: LOOK.LEAF, flower: LOOK.LEAF, clover: LOOK.LEAF, moss: LOOK.LEAF,
-  stone: LOOK.STONE, crystal: LOOK.CRYSTAL, cap: LOOK.CAP, bean: LOOK.GLOSSY, scale: LOOK.GLOSSY, bone: LOOK.BONE, fur: LOOK.FUR, lump: LOOK.LUMP,
+  root: LOOK.FIBRE, pepper: LOOK.FIBRE, leaf: LOOK.LEAF, petal: LOOK.LEAF, flower: LOOK.LEAF, clover: LOOK.LEAF, moss: LOOK.LEAF, sprig: LOOK.LEAF,
+  stone: LOOK.STONE, crust: LOOK.STONE, crystal: LOOK.CRYSTAL, cap: LOOK.CAP, bean: LOOK.GLOSSY, scale: LOOK.GLOSSY, bone: LOOK.BONE, fur: LOOK.FUR, lump: LOOK.LUMP,
+  bark: LOOK.BARK, berry: LOOK.BERRY, bracket: LOOK.GILLS, seed: LOOK.SEED, shell: LOOK.SHELL, nugget: LOOK.METAL, shard: LOOK.GLASS,
+  toadstool: LOOK.SPOTS, reed: LOOK.REED, spike: LOOK.FLORET, lily: LOOK.FLORET,
 };
 
 /**
@@ -67,6 +72,30 @@ const TEMPLATES = {
   bone: [[0, 0], [1, 0], [-1, 0], [2, 0], [-2, 0], [3, 0.5], [3, -0.5], [-3, 0.5], [-3, -0.5], [3.8, 0], [-3.8, 0]],
   fur: [[0, 0], [1, 0.2], [-1, 0.1], [0.4, 0.9], [-0.6, 0.9], [0.5, -0.85], [-0.4, -0.8], [1.5, -0.6]],
   lump: [[0, 0], [1, 0], [-1, 0.1], [0.5, 0.86], [-0.5, 0.9], [0.4, -0.85], [-0.6, -0.8], [1.6, 0.6]],
+  // a curled strip of bark
+  bark: [[0, 0], [1, 0], [-1, 0], [2, 0.1], [-2, 0.1], [0.5, 0.86], [-0.5, 0.86], [1.5, 0.95], [-1.5, 0.95], [2.8, 0.6]],
+  // a bunch of berries on a stalk
+  berry: [[0, 0], [1, 0], [0.5, 0.86], [-0.5, 0.86], [-1, 0], [0, 1.73], [1, 1.73], [0.5, -0.9]],
+  // a half-moon shelf fungus
+  bracket: [[0, 0], [1, 0], [-1, 0], [2, 0], [-2, 0], [0.5, -0.86], [-0.5, -0.86], [1.5, -0.86], [-1.5, -0.86], [0, -1.73]],
+  // a stem with jagged paired leaves
+  sprig: [[0, 0], [0, 1], [0, -1], [0.9, 0.5], [-0.9, -0.5], [0.9, -1.3], [-0.9, 1.3], [0, 2], [0, -2]],
+  // a tall flower spike
+  spike: [[0, 0], [0, 1], [0, -1], [0, 2], [0, -2], [0.8, 0.5], [-0.8, 0.5], [0.8, -0.5], [-0.8, -0.5], [0, 3]],
+  // a small ribbed seed head
+  seed: [[0, 0], [1, 0], [-1, 0], [0.5, 0.8], [-0.5, 0.8], [0.5, -0.8]],
+  // a dense heavy nugget
+  nugget: [[0, 0], [1, 0], [0.5, 0.86], [-0.5, 0.86], [-1, 0], [-0.5, -0.86], [0.5, -0.86], [1.4, 0.9]],
+  // a long thin glassy blade
+  shard: [[0, 0], [0.9, 0.25], [-0.9, -0.25], [1.8, 0.5], [-1.8, -0.5], [2.7, 0.6], [0.4, -0.7], [-2.6, -0.4]],
+  // a trumpet-shaped bloom
+  lily: [[0, 0], [1, 0], [-1, 0], [0.5, 0.86], [-0.5, 0.86], [1.6, -0.6], [-1.6, -0.6], [0, 1.73], [0, 2.6]],
+  // a wide spotted cap on a stout stem
+  toadstool: [[0, 0], [1, 0], [-1, 0], [2, 0.15], [-2, 0.15], [0.5, -0.86], [-0.5, -0.86], [1.5, -0.7], [-1.5, -0.7], [0, 1], [0, 2]],
+  // a reed stem with its velvet head
+  reed: [[0, 0], [0, 1], [0, 2], [0, -1], [0, -2], [0, 3], [0.8, -1.5], [0.8, -2.5], [0, -3]],
+  // a ribbed fan-shaped shell
+  shell: [[0, 0], [1, 0], [-1, 0], [0.5, -0.86], [-0.5, -0.86], [1.5, -0.86], [-1.5, -0.86], [0, -1.73], [1, -1.73], [-1, -1.73]],
 };
 
 /**

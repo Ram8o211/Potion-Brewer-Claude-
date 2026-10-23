@@ -29,10 +29,27 @@ computed from the particles that actually run out of the tap. What a
   8–15 %). They come from what is actually dissolved in each particle:
   * a whole root does nothing until it is crushed or ground;
   * hot steeping extracts more than cold;
-  * fire and frost cancel where they meet;
+  * the guild's opposing pairs cancel where they meet: fire and frost,
+    life and death (life also mends poison, two parts to one), acid and
+    alkali;
   * each world has six hidden laws that transmute, amplify or suppress
     effects that meet inside the brew;
   * heat, reactions, boiling and dilution change the result.
+* **Only natural ingredients, and none of them pure.** The market sells no
+  prepared reagents — just the free well water and two plain solvents (oil
+  and spirit) that carry no magic. Every effect comes from 36 herbs, roots,
+  fungi, berries, shells and minerals gathered in the wilds, and every one
+  of them carries a main effect *and* side effects: Silverleaf heals but
+  leaves a frosty bite, Heartpetal's love comes with the heat of passion,
+  Nettle's strength stings with acid, Witch's Ear sharpens the mind with a
+  breath of decay. Side effects always sit on an opposing pair, so the
+  craft is balancing ingredients against each other — Sunthistle's fire
+  cancels Silverleaf's frost, River Chalk settles Nettle's acid — until
+  only what the customer asked for remains. Long-press an ingredient to see
+  its side effects and what cancels them. Each kind of ingredient has its
+  own sprite and its own surface in the cauldron (bark plates, glossy
+  berries, fungus gills, ribbed seeds, pearly shells, metallic nuggets,
+  black glass, spotted caps, velvet reeds…).
 * **Arcane awakening.** Magical ingredients carry a hidden activation
   threshold (−1000…+1000, mapped onto temperature). Heat or chill a
   well-mixed brew past the volume-weighted threshold of its magic and that
@@ -95,13 +112,21 @@ computed from the particles that actually run out of the tap. What a
     full health it raises its maximum health instead.
   * Repeated trials uncover the hidden laws. Pouring anything new
     invalidates earlier tests of the batch.
+* **Potion shelves.** Bottle the cauldron whenever you like — onto the
+  counter, or into a sealed glass bottle on your potion shelves, as long as
+  there is room. Each bottle keeps its exact contents; take it down later
+  to test, label and sell it (the bottle on the counter goes up in its
+  place), pour it back into a new brew or pour it away. The shop starts
+  with room for 3 bottles; a Bottle Shelf (6), a Potion Cabinet (12) and a
+  Bottle Cellar (24) add more.
 * **Trade.** Label the bottle with what you know — tested values, the
   guild's estimates, "none" or unknown — and bargain with customers who
   each haggle, trust and need proof differently. They pay the agreed
   price, drink the real potion and come back the next day: pleased, with a
   fair complaint, or a dishonest one you can dispute with your trial
   records. Many orders forbid any side effect above 1.2 %.
-* **The wilds.** Six regions, two of them magical and opened by rank. Each
+* **The wilds.** Six regions, two of them magical and opened by rank, with
+  36 natural ingredients between them. Each
   ingredient is picked, dug, chipped, scraped or swept (without the right
   tool half of what you cut is spoiled), some only open at dawn or dusk,
   the weather changes daily, careful hands leave part of every deposit to
@@ -116,12 +141,15 @@ computed from the particles that actually run out of the tap. What a
 * **Achievable orders.** Every commission, physical or effect-based, is
   derived from a hidden reference plan made only from what you can buy or
   gather, and accepted only if the predicted potion passes the counter's
-  own scoring — including awakening stages and the purity rule. A
-  feasibility run brews generated orders in the real simulation (latest:
-  100 orders, mean quality 0.999, none below 0.8).
+  own scoring — including awakening stages and the purity rule. Because no
+  ingredient is pure, the planner balances carriers of the wanted effects
+  against helpers whose effects oppose their side effects (a least-squares
+  solve on the opposing pairs, refined with the predictor), so every plan
+  is a real neutralisation puzzle. A feasibility run brews generated
+  orders in the real simulation.
 * **A shop to grow.**
   * Coins, reputation and six guild ranks.
-  * 35 pieces of equipment: furnaces, frost plates, bigger cauldrons, a
+  * 38 pieces of equipment, among them three sizes of potion shelving: furnaces, frost plates, bigger cauldrons, a
     mortar, instruments (an arcanometer reads a brew's activation
     threshold), a galvanometer, a clockwork stirrer, an alembic, a
     kennel, a rabbit warren and a purging still, foraging tools and a

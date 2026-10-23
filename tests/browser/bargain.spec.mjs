@@ -24,7 +24,8 @@ test('walking away keeps the talks; the same bottle resumes them; a new label re
     l.views.counter.refresh();
   });
   await pourRole(page, 'water', 50);
-  await pourRole(page, 'essenceA', 50);
+  await pourRole(page, 'water', 50);
+  await pourRole(page, 'wild-silverleaf', 50);
   await page.click('[data-act=bottle]');
   await page.click('[data-act=bottle-50]');
   await expect(page.locator('[data-act=serve]')).toBeVisible({ timeout: 20_000 });
