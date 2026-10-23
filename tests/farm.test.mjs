@@ -1,7 +1,9 @@
 // The rabbit farm: readings that differ from rabbit to rabbit, estimates
-// that narrow with more rabbits, effects piling up until they degenerate,
-// feral rabbits attacking the colony, purging draughts, culling, and
-// vitality raising a healthy rabbit's maximum health.
+// that narrow with every trial (fastest over different rabbits), effects
+// piling up until they pass each rabbit's own hidden threshold and run away
+// to death, aggression from the effects themselves (its own threshold),
+// love that makes a rabbit mate faster and faster, purging draughts,
+// culling, and vitality raising a healthy rabbit's maximum health.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { GameState, PURGE_PRICE, PURGE_BREW_TIME } from '../src/game/state.js';
@@ -9,7 +11,7 @@ import { NE, EFFECT_INDEX } from '../src/alchemy/effects.js';
 import { certification, rabbitReading, summarize } from '../src/game/experiments.js';
 import {
   createColony, findRabbit, rabbitResponse, colonyTick, purgeRabbit, maxHealthOf, rabbitSensitivity, isFeral, rabbitSnap, encodeSnap, decodeSnap,
-  DEGEN_AT, MARK_TAU,
+  degenAt, degenRate, aggroAt, mateEvery, MARK_TAU, RABBIT_MARKS, AGGRO, LOVE_MATE,
 } from '../src/game/colony.js';
 
 const fx = (o) => { const e = new Array(NE).fill(0); for (const [k, v] of Object.entries(o)) e[EFFECT_INDEX[k]] = v; return e; };
@@ -29,7 +31,7 @@ test('readings vary between rabbits and between doses; absent effects read as ab
   assert.deepEqual(r1, rabbitReading(a, e, { ml: 10, salt: '1' }), 'deterministic');
 });
 
-test('the batch estimate pools trials and gets surer with more different rabbits', () => {
+test('the batch estimate pools trials and gets surer with every trial, fastest over different rabbits', () => {
   const st = GameState.create('farm-1', { tutorial: false });
   st.coins = 500;
   st.equipment.push('kennel');
@@ -45,12 +47,20 @@ test('the batch estimate pools trials and gets surer with more different rabbits
   assert.equal(many.n.vitality, 6);
   assert.ok(many.spread.vitality < one.spread.vitality, `±${many.spread.vitality} < ±${one.spread.vitality}`);
   assert.ok(Math.abs(many.values.vitality - 14) < 4, `mean ${many.values.vitality} is near the truth`);
-  // the same rabbit again and again does not shrink its own bias
+  // the same rabbit again and again narrows it too, but not as far as six rabbits
   const st2 = GameState.create('farm-1b', { tutorial: false });
-  for (let k = 0; k < 6; k++) st2.recordTrial('rabbit', dose({ vitality: 14 }), ctx(st2, { rabbitId: 'r2', ml: 5 }));
+  st2.recordTrial('rabbit', dose({ vitality: 14 }), ctx(st2, { rabbitId: 'r2' }));
+  const first = certification(st2.trials, st2.batch, truth);
+  for (let k = 0; k < 5; k++) st2.recordTrial('rabbit', dose({ vitality: 14 }), ctx(st2, { rabbitId: 'r2' }));
   const same = certification(st2.trials, st2.batch, truth);
   assert.equal(same.rabbits.vitality, 1);
+  assert.equal(same.n.vitality, 6);
+  assert.ok(same.spread.vitality < first.spread.vitality, `six trials on one rabbit (±${same.spread.vitality}) beat one (±${first.spread.vitality})`);
   assert.ok(same.spread.vitality > many.spread.vitality, 'one rabbit stays less certain than six');
+  // the model alone: one rabbit levels off at its own bias, many rabbits keep narrowing
+  const pile = (nr, per) => summarize({ fire: Array.from({ length: nr * per }, (_, i) => ({ v: 40, r: 'r' + (i % nr), rec: 't' + i })) }).spread.fire;
+  assert.ok(pile(1, 4) < pile(1, 1) && pile(1, 16) < pile(1, 4), 'repeats on one rabbit narrow it');
+  assert.ok(pile(16, 1) < pile(1, 16), 'the same number of trials over many rabbits narrows it more');
   const s = summarize({ fire: [{ v: 10, r: 'a', rec: 't1' }, { v: 12, r: 'b', rec: 't2' }] });
   assert.equal(s.values.fire, 11);
   assert.equal(s.records.fire, 't2');
@@ -70,22 +80,38 @@ test('effects pile up in a rabbit and fade slowly in real time', () => {
   assert.ok(x.marks.love < v0 * Math.exp(-1800 / MARK_TAU) + 1, 'half an hour fades it most of the way');
 });
 
-test('a lethal effect past the threshold degenerates and kills; a purge stops it', () => {
+test('every rabbit has its own hidden threshold for every channel; aggression has separate ones', () => {
   const c = createColony();
-  let r = c.rabbits[0];
+  const [a, b] = c.rabbits;
+  const ta = RABBIT_MARKS.map((k) => degenAt(a, k));
+  assert.ok(ta.every((t) => t >= 42 && t <= 95));
+  assert.ok(new Set(ta).size > 3, `independent per channel: ${ta}`);
+  assert.notDeepEqual(ta, RABBIT_MARKS.map((k) => degenAt(b, k)), 'and per rabbit');
+  assert.equal(degenAt(a, 'fire'), degenAt(a, 'fire'), 'lifelong');
+  assert.ok(RABBIT_MARKS.some((k) => degenRate(a, k) !== degenRate(a, RABBIT_MARKS[0])), 'it runs away at its own pace');
+  assert.ok(AGGRO.some((k) => aggroAt(a, k) !== degenAt(a, k)), 'aggression is not the degeneration threshold');
+  assert.equal(aggroAt(a, 'love'), Infinity, 'love never makes a rabbit aggressive');
+  assert.equal(aggroAt(a, 'fire'), Infinity, 'nor does fire');
+});
+
+test('past its own threshold an effect climbs on its own until the rabbit dies; a purge stops it', () => {
+  const c = createColony();
+  const i = degenAt(c.rabbits[0], 'acid') < degenAt(c.rabbits[1], 'acid') ? 0 : 1; // the one with room to watch it climb
+  let r = c.rabbits[i];
   let res;
-  for (let k = 0; k < 10 && !(res && res.degen.length); k++) { res = rabbitResponse(r, fx({ acidity: 9 }), 10, { day: 1 }); r = res.after; }
+  for (let k = 0; k < 12 && !(res && res.degen.length); k++) { res = rabbitResponse(r, fx({ acidity: 9 }), 10, { day: 1 }); r = res.after; }
   assert.ok(r.alive);
-  assert.deepEqual(r.degen, ['acid'], `acid degenerates past ${DEGEN_AT}`);
+  assert.deepEqual(r.degen, ['acid'], `acid degenerates past ${degenAt(r, 'acid')}`);
+  assert.ok(r.marks.acid >= degenAt(r, 'acid'));
   assert.ok(res.observations.some((o) => /acid/.test(o.text)));
   const saved = JSON.parse(JSON.stringify(r));
-  c.rabbits[0] = r;
+  c.rabbits[i] = r;
   let died = null;
-  for (let s = 0; s < 400 && r.alive; s++) { const rep = colonyTick(c, 1, { day: 1 }); if (rep.died.length) died = rep.died[0]; }
+  for (let s = 0; s < 1500 && r.alive; s++) { const rep = colonyTick(c, 1, { day: 1 }); if (rep.died.length) died = rep.died[0]; }
   assert.equal(r.alive, false, 'it runs out of control until the rabbit dies');
   assert.equal(died.cause, 'acid');
   // the same rabbit, purged in time, lives
-  c.rabbits[0] = saved;
+  c.rabbits[i] = saved;
   for (let s = 0; s < 5; s++) colonyTick(c, 1, { day: 1 });
   assert.ok(purgeRabbit(saved));
   assert.deepEqual(saved.degen, []);
@@ -94,17 +120,48 @@ test('a lethal effect past the threshold degenerates and kills; a purge stops it
   assert.ok(saved.alive, 'purged, it recovers');
 });
 
-test('love or transformation past the threshold turns a rabbit feral: it attacks the colony', () => {
+test('a harmless effect that degenerates also climbs until it kills: a mark at the top is always death', () => {
   const c = createColony();
-  let r = c.rabbits[0];
-  for (let k = 0; k < 10 && !r.degen.length; k++) r = rabbitResponse(r, fx({ love: 15 }), 10).after;
-  c.rabbits[0] = r;
-  assert.ok(isFeral(r));
-  assert.ok(rabbitSnap(r).ag, 'the art knows it is feral');
-  assert.deepEqual(decodeSnap(encodeSnap(rabbitSnap(r))).dg, ['love'], 'replays keep it');
+  const r = c.rabbits[0];
+  r.marks.vitality = degenAt(r, 'vitality') + 1;
+  r.degen = ['vitality'];
+  let died = null;
+  for (let s = 0; s < 1500 && r.alive; s++) { const rep = colonyTick(c, 1, { day: 1 }); if (rep.died.length) died = rep.died.find((d) => d.id === r.id) || died; }
+  assert.equal(r.alive, false);
+  assert.equal(died.cause, 'growth');
+  // a dose that drives a mark to the top kills at once
+  const x = createColony().rabbits[1];
+  const out = rabbitResponse(x, fx({ strength: 100 }), 25, { day: 1 });
+  assert.equal(out.after.alive, false);
+  assert.equal(out.cause, 'strain');
+});
+
+test('aggression comes from the effect itself, past its own threshold — degenerating or not', () => {
+  const c = createColony();
+  const r = c.rabbits[0];
+  const at = aggroAt(r, 'strength');
+  r.marks.strength = at - 3;
+  assert.ok(!isFeral(r), 'below its aggression threshold it is calm');
+  r.marks.strength = at + 1;
+  assert.deepEqual(r.degen, [], 'not degenerating');
+  assert.equal(isFeral(r), r.marks.strength >= at);
+  assert.ok(isFeral(r), 'past it, it is aggressive');
+  assert.ok(rabbitSnap(r).ag, 'the art knows it is aggressive');
+  assert.equal(decodeSnap(encodeSnap(rabbitSnap(r))).ag, true, 'replays keep it');
+  // a rabbit degenerating on fire is not aggressive
+  const f = c.rabbits[1];
+  f.marks.fire = 99; f.degen = ['fire'];
+  assert.ok(!isFeral(f));
+  assert.equal(decodeSnap(encodeSnap(rabbitSnap(f))).ag, false);
+  assert.deepEqual(decodeSnap(encodeSnap(rabbitSnap(f))).dg, ['fire']);
+  f.marks.fire = 0; f.degen = [];
+  // old replays: a degenerating feral channel meant feral
+  assert.equal(decodeSnap('a010|00000000000|00000|||love').ag, true);
   const victim = c.rabbits[1];
+  r.marks.strength = 100; // held there: the test stops it fading
   let attacks = 0, killed = null;
   for (let s = 0; s < 300 && victim.alive; s++) {
+    r.marks.strength = Math.max(r.marks.strength, at + 20);
     const rep = colonyTick(c, 1);
     attacks += rep.attacks.length;
     if (rep.died.length) killed = rep.died[0];
@@ -113,6 +170,37 @@ test('love or transformation past the threshold turns a rabbit feral: it attacks
   assert.equal(victim.alive, false, 'left alone, it kills the others');
   assert.equal(killed.cause, 'mauled');
   assert.equal(killed.by, r.name);
+});
+
+test('love makes a rabbit mate with the others, faster and faster, until too much of it kills', () => {
+  assert.ok(mateEvery(LOVE_MATE - 1) === Infinity);
+  assert.ok(mateEvery(90) < mateEvery(50) && mateEvery(50) < mateEvery(LOVE_MATE));
+  // moderate love: it mates, a doe may conceive, and it survives
+  const c = createColony();
+  const [doe, buck] = c.rabbits;
+  doe.marks.love = 45;
+  let mates = 0, conceived = false;
+  for (let s = 0; s < 240; s++) { const rep = colonyTick(c, 1, { day: 1, cap: 6 }); mates += rep.mates.length; conceived ||= rep.mates.some((m) => m.conceived); }
+  assert.ok(mates >= 3, `${mates} matings`);
+  assert.ok(doe.alive && buck.alive, 'a little love does no lasting harm');
+  assert.ok(conceived && doe.pregnant, 'and kits are on the way');
+  assert.ok(isFeral(doe) === false, 'love never makes it aggressive');
+  // love run out of control: faster and faster until it dies
+  const c2 = createColony();
+  const r = c2.rabbits[0];
+  r.marks.love = degenAt(r, 'love') + 1;
+  r.degen = ['love'];
+  let died = null;
+  const times = [];
+  for (let s = 0; s < 1500 && r.alive; s++) {
+    const rep = colonyTick(c2, 1, { day: 1 });
+    if (rep.mates.some((m) => m.from === r.id)) times.push(s);
+    if (rep.died.length) died = rep.died.find((d) => d.id === r.id) || died;
+  }
+  assert.equal(r.alive, false);
+  assert.equal(died.cause, 'love', 'worn out by love');
+  const gap = (i) => times[i + 1] - times[i];
+  assert.ok(times.length >= 4 && gap(times.length - 2) <= gap(0), `matings come faster: ${times.join(',')}`);
 });
 
 test('the farm in the game: purges are bought, brewed with the still, given; rabbits can be put down', () => {

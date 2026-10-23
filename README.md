@@ -53,27 +53,37 @@ computed from the particles that actually run out of the tap. What a
   from the tap or the sealed vial).
   * A rabbit shows every effect, but never exactly: each rabbit feels each
     effect a little more or less than the next (a hidden, lifelong bias of
-    about ±18 %), and every dose varies a little too. The batch estimate
-    pools every trial of the brew (mean ± uncertainty, with how many
-    readings and how many different rabbits) and narrows as you test more
-    *different* rabbits; dosing one rabbit again and again never removes its
-    bias. Your label sells on that estimate, and a customer complains when
+    about ±8 %), and every dose varies too. One section, **Expected effects
+    of this batch**, pools every trial of the brew: each effect as a
+    percentage with its ± band and how many trials on how many rabbits. The
+    band narrows with every trial — on the same rabbit too (which keeps the
+    others clean, down to that rabbit's own bias), fastest over different
+    rabbits. Your label sells on that estimate, and a customer complains when
     the real potion is far from it.
-  * Every rabbit has live status bars: its health (current / maximum) and
-    one bar per effect channel (acid and lye apart) showing what potions
-    have piled up in it. Doses are cumulative and fade slowly in real time
-    (about a seven-minute half-life, faster overnight).
-  * Past the tick at 70 an effect **degenerates** and runs out of control:
-    poison, death, acid, lye, fire and frost keep climbing and kill the
-    rabbit; vitality, strength, love, arcana and transformation turn it
-    **feral** — it attacks the rest of the colony (transformation keeps
-    changing it, vitality keeps swelling it) until you stop it.
+  * The chosen rabbit shows a bar per effect channel (acid and lye apart)
+    with how much of it is active in it right now, plus its health (current
+    / maximum). Doses are cumulative and fade slowly in real time (about a
+    seven-minute half-life, faster overnight).
+  * Every rabbit has its own **hidden degeneration threshold for every
+    channel** (somewhere around 45–95, never shown). Past it the effect
+    runs out of control and keeps climbing on its own, faster or slower
+    depending on the rabbit, until it reaches the top and kills the rabbit
+    (poison, death, acid, lye, fire and frost eat its health on the way). A
+    mark driven to the top is always death. So piling trials on one rabbit
+    spares the others but risks crossing a line you cannot see.
+  * **Aggression** comes from the effect itself: strength, vitality, arcana
+    and transformation make a rabbit attack the others once the mark is past
+    its own aggression threshold — hidden, and independent of the
+    degeneration threshold — whether or not it is degenerating.
+  * **Love** makes a rabbit mate with the others in real time, faster and
+    faster the higher it is (does may conceive); every mating wears it out,
+    so too much love — or love running out of control — kills it.
   * A **purging draught** washes every effect out of a rabbit and stops any
     degeneration (what grew for good stays). You start with two, buy more
     from the apothecary (8 coins), and once you can afford the guild's
     **Purging Still** you brew your own (1 coin and 40 seconds each).
-  * **Put down** any rabbit at any time — a feral one before it kills
-    again; the body stays for its remains or burial.
+  * **Put down** any rabbit at any time — an aggressive one before it
+    kills again; the body stays for its remains or burial.
   * Vitality heals what a rabbit is missing; given to a rabbit already at
     full health it raises its maximum health instead.
   * Repeated trials uncover the hidden laws. Pouring anything new

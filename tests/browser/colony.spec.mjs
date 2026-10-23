@@ -23,7 +23,7 @@ test('choose a rabbit, dose it, replay the trial for free', async ({ page }, inf
   const rec = await lab(page, (l) => l.state.trials.records[0]);
   expect(rec.rabbitId).toBe('r2');
   await expect(page.locator('.trial-report .report').first()).toContainText('Bramble');
-  await expect(page.locator('.trial-report .rv').first()).toContainText('±');
+  await expect(page.locator('.estimate-card .rv').first()).toContainText('±');
   await shot(page, info, 'colony-dosed');
   // the dropper onto a rabbit in the roster doses that rabbit (a tall
   // window, so the dropper and the roster are both on screen)

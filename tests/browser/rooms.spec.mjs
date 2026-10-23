@@ -85,7 +85,7 @@ test('the dropper doses a rabbit on the farm; a dead one is replaced for coins; 
   expect(rec.values.fire, 'the rabbit shows fire').toBeGreaterThan(2);
   // the room's batch estimate updates at once
   await expect(page.locator('.view-trials')).not.toContainText('nothing tested yet');
-  await expect(page.locator('.trial-report .estimate')).toBeVisible();
+  await expect(page.locator('.estimate-card .reading-rows')).toBeVisible();
   await shot(page, info, 'trial-farm');
   // a dead rabbit is replaced for its price
   await lab(page, (l) => { l.state.trials.subjects.rabbit.alive = false; l.state.trials.subjects.rabbit.health = 0; l.views.trials.refresh(); });

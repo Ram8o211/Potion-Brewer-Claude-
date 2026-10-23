@@ -1565,7 +1565,7 @@ export class LabScreen {
       this.updateBadges();
       if (this.view !== 'trials') {
         const att = events.filter((e) => e.type === 'attack');
-        if (att.length && this.time - (this._feralWarned || -99) > 20) { this._feralWarned = this.time; toast('Trouble in the hutch', `${att[0].fromName} has gone feral and is attacking ${att[0].toName}!`, 'claw', 4500); }
+        if (att.length && this.time - (this._feralWarned || -99) > 20) { this._feralWarned = this.time; toast('Trouble in the hutch', `${att[0].fromName} has turned aggressive and is attacking ${att[0].toName}!`, 'claw', 4500); }
       }
     }
   }

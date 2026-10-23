@@ -58,7 +58,8 @@ test('mortality: lethal doses kill with a cause, the body stays; lingering poiso
   assert.equal(dead.cause, 'death');
   assert.equal(dead.diedDay, 3);
   assert.equal(rabbitResponse(r, fx({ fire: 60 }), 25, { day: 3 }).after.cause, 'fire');
-  assert.equal(rabbitResponse(r, fx({ frost: 60 }), 25, { day: 3 }).after.alive, true, 'deep cold hurts but this is survivable');
+  assert.equal(rabbitResponse(r, fx({ frost: 60 }), 10, { day: 3 }).after.alive, true, 'deep cold hurts but this is survivable');
+  assert.equal(rabbitResponse(r, fx({ frost: 60 }), 25, { day: 3 }).after.cause, 'frost', 'a mark driven to the top is always death');
   assert.equal(rabbitResponse(r, fx({ frost: 70 }), 25, { day: 3 }).after.cause, 'frost');
   assert.equal(rabbitResponse(dead, fx({ vitality: 20 }), 10).after.alive, false, 'the dead stay dead');
   // a sick rabbit with a heavy poison load declines over the days
