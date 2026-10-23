@@ -1,5 +1,5 @@
 {
- "date": "2026-10-23T16:39:12.372Z",
+ "date": "2026-10-23T18:49:36.782Z",
  "seeds": 3,
  "results": {
   "grinding": [
@@ -20,31 +20,31 @@
     },
     "ground": {
      "wanted": {
-      "vitality": 7.4
+      "vitality": 6.1
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 2.3
+      "v": 1.9
      },
      "effects": {
-      "vitality": 7.4,
-      "frost": 2.3
+      "vitality": 6.1,
+      "frost": 1.9
      },
      "brewMl": 330,
      "stability": 100,
-     "seconds": 37
+     "seconds": 38
     },
     "pestle": {
      "wanted": {
-      "vitality": 7.3
+      "vitality": 6.1
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 2.3
+      "v": 1.9
      },
      "effects": {
-      "vitality": 7.3,
-      "frost": 2.3
+      "vitality": 6.1,
+      "frost": 1.9
      },
      "brewMl": 330,
      "stability": 100,
@@ -68,31 +68,31 @@
     },
     "ground": {
      "wanted": {
-      "vitality": 6.9
+      "vitality": 5.7
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 2.4
+      "v": 1.9
      },
      "effects": {
-      "vitality": 6.9,
-      "frost": 2.4
+      "vitality": 5.7,
+      "frost": 1.9
      },
      "brewMl": 330,
      "stability": 100,
-     "seconds": 37
+     "seconds": 38
     },
     "pestle": {
      "wanted": {
-      "vitality": 6.8
+      "vitality": 5.7
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 2.3
+      "v": 1.9
      },
      "effects": {
-      "vitality": 6.8,
-      "frost": 2.3
+      "vitality": 5.7,
+      "frost": 1.9
      },
      "brewMl": 330,
      "stability": 100,
@@ -116,31 +116,31 @@
     },
     "ground": {
      "wanted": {
-      "vitality": 6.9
+      "vitality": 5.8
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 2.6
+      "v": 2.2
      },
      "effects": {
-      "vitality": 6.9,
-      "frost": 2.6
+      "vitality": 5.8,
+      "frost": 2.2
      },
      "brewMl": 330,
      "stability": 100,
-     "seconds": 37
+     "seconds": 38
     },
     "pestle": {
      "wanted": {
-      "vitality": 7.3
+      "vitality": 5.8
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 2.7
+      "v": 2.2
      },
      "effects": {
-      "vitality": 7.3,
-      "frost": 2.7
+      "vitality": 5.8,
+      "frost": 2.2
      },
      "brewMl": 330,
      "stability": 100,
@@ -169,15 +169,15 @@
     },
     "silverleaf 62°C": {
      "wanted": {
-      "vitality": 7.4
+      "vitality": 6.1
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 2.3
+      "v": 1.9
      },
      "effects": {
-      "vitality": 7.4,
-      "frost": 2.3
+      "vitality": 6.1,
+      "frost": 1.9
      },
      "brewMl": 330,
      "stability": 100,
@@ -185,19 +185,19 @@
     },
     "silverleaf 95°C (past its threshold)": {
      "wanted": {
-      "vitality": 16.4
+      "vitality": 16.7
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 5.2
+      "v": 5.3
      },
      "effects": {
-      "vitality": 16.4,
-      "frost": 5.2
+      "vitality": 16.7,
+      "frost": 5.3
      },
      "brewMl": 330,
      "stability": 100,
-     "seconds": 40
+     "seconds": 75
     },
     "heavy silverleaf 20°C": {
      "wanted": {
@@ -217,15 +217,15 @@
     },
     "heavy silverleaf 35°C": {
      "wanted": {
-      "vitality": 4.2
+      "vitality": 3.9
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 1.3
+      "v": 1.2
      },
      "effects": {
-      "vitality": 4.2,
-      "frost": 1.3
+      "vitality": 3.9,
+      "frost": 1.2
      },
      "brewMl": 420,
      "stability": 100,
@@ -233,15 +233,15 @@
     },
     "heavy silverleaf 62°C": {
      "wanted": {
-      "vitality": 12.6
+      "vitality": 10.2
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 4
+      "v": 3.2
      },
      "effects": {
-      "vitality": 12.6,
-      "frost": 4
+      "vitality": 10.2,
+      "frost": 3.2
      },
      "brewMl": 420,
      "stability": 100,
@@ -261,7 +261,7 @@
      },
      "brewMl": 420,
      "stability": 100,
-     "seconds": 33
+     "seconds": 34
     },
     "heavy frostcap 40°C": {
      "wanted": {
@@ -297,20 +297,20 @@
     },
     "heartpetal 95°C": {
      "wanted": {
-      "love": 2.7
+      "love": 3.8
      },
      "worstUnwanted": {
       "key": "toxicity",
-      "v": 2.6
+      "v": 2.2
      },
      "effects": {
-      "love": 2.7,
-      "fire": 0.2,
-      "toxicity": 2.6
+      "love": 3.8,
+      "fire": 0.5,
+      "toxicity": 2.2
      },
      "brewMl": 370,
      "stability": 100,
-     "seconds": 41
+     "seconds": 82
     }
    },
    {
@@ -333,15 +333,15 @@
     },
     "silverleaf 62°C": {
      "wanted": {
-      "vitality": 6.9
+      "vitality": 5.7
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 2.4
+      "v": 1.9
      },
      "effects": {
-      "vitality": 6.9,
-      "frost": 2.4
+      "vitality": 5.7,
+      "frost": 1.9
      },
      "brewMl": 330,
      "stability": 100,
@@ -361,7 +361,7 @@
      },
      "brewMl": 330,
      "stability": 100,
-     "seconds": 40
+     "seconds": 75
     },
     "heavy silverleaf 20°C": {
      "wanted": {
@@ -381,15 +381,15 @@
     },
     "heavy silverleaf 35°C": {
      "wanted": {
-      "vitality": 3.7
+      "vitality": 3.6
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 1.3
+      "v": 1.2
      },
      "effects": {
-      "vitality": 3.7,
-      "frost": 1.3
+      "vitality": 3.6,
+      "frost": 1.2
      },
      "brewMl": 420,
      "stability": 100,
@@ -397,15 +397,15 @@
     },
     "heavy silverleaf 62°C": {
      "wanted": {
-      "vitality": 11.8
+      "vitality": 9.5
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 4
+      "v": 3.2
      },
      "effects": {
-      "vitality": 11.8,
-      "frost": 4
+      "vitality": 9.5,
+      "frost": 3.2
      },
      "brewMl": 420,
      "stability": 100,
@@ -425,7 +425,7 @@
      },
      "brewMl": 420,
      "stability": 100,
-     "seconds": 33
+     "seconds": 34
     },
     "heavy frostcap 40°C": {
      "wanted": {
@@ -457,24 +457,24 @@
      },
      "brewMl": 370,
      "stability": 100,
-     "seconds": 35
+     "seconds": 34
     },
     "heartpetal 95°C": {
      "wanted": {
-      "love": 2.6
+      "love": 3.4
      },
      "worstUnwanted": {
       "key": "toxicity",
-      "v": 2.6
+      "v": 2.3
      },
      "effects": {
-      "love": 2.6,
-      "fire": 0.2,
-      "toxicity": 2.6
+      "love": 3.4,
+      "fire": 0.5,
+      "toxicity": 2.3
      },
      "brewMl": 370,
      "stability": 100,
-     "seconds": 41
+     "seconds": 82
     }
    },
    {
@@ -497,15 +497,15 @@
     },
     "silverleaf 62°C": {
      "wanted": {
-      "vitality": 6.9
+      "vitality": 5.8
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 2.6
+      "v": 2.2
      },
      "effects": {
-      "vitality": 6.9,
-      "frost": 2.6
+      "vitality": 5.8,
+      "frost": 2.2
      },
      "brewMl": 330,
      "stability": 100,
@@ -513,19 +513,19 @@
     },
     "silverleaf 95°C (past its threshold)": {
      "wanted": {
-      "vitality": 16.4
+      "vitality": 16.6
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 6.1
+      "v": 6.2
      },
      "effects": {
-      "vitality": 16.4,
-      "frost": 6.1
+      "vitality": 16.6,
+      "frost": 6.2
      },
      "brewMl": 330,
      "stability": 100,
-     "seconds": 40
+     "seconds": 73
     },
     "heavy silverleaf 20°C": {
      "wanted": {
@@ -549,11 +549,11 @@
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 1.4
+      "v": 1.3
      },
      "effects": {
       "vitality": 3.6,
-      "frost": 1.4
+      "frost": 1.3
      },
      "brewMl": 420,
      "stability": 100,
@@ -561,15 +561,15 @@
     },
     "heavy silverleaf 62°C": {
      "wanted": {
-      "vitality": 12.2
+      "vitality": 9.7
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 4.6
+      "v": 3.6
      },
      "effects": {
-      "vitality": 12.2,
-      "frost": 4.6
+      "vitality": 9.7,
+      "frost": 3.6
      },
      "brewMl": 420,
      "stability": 100,
@@ -589,7 +589,7 @@
      },
      "brewMl": 420,
      "stability": 100,
-     "seconds": 33
+     "seconds": 34
     },
     "heavy frostcap 40°C": {
      "wanted": {
@@ -605,7 +605,7 @@
      },
      "brewMl": 420,
      "stability": 100,
-     "seconds": 33
+     "seconds": 32
     },
     "heartpetal 50°C": {
      "wanted": {
@@ -621,24 +621,24 @@
      },
      "brewMl": 370,
      "stability": 100,
-     "seconds": 35
+     "seconds": 34
     },
     "heartpetal 95°C": {
      "wanted": {
-      "love": 2.6
+      "love": 3.6
      },
      "worstUnwanted": {
       "key": "toxicity",
-      "v": 2.6
+      "v": 2.2
      },
      "effects": {
-      "love": 2.6,
-      "fire": 0.2,
-      "toxicity": 2.6
+      "love": 3.6,
+      "fire": 0.5,
+      "toxicity": 2.2
      },
      "brewMl": 370,
      "stability": 100,
-     "seconds": 41
+     "seconds": 81
     }
    }
   ],
@@ -647,15 +647,15 @@
     "seed": "experiment-0",
     "none": {
      "wanted": {
-      "vitality": 5.8
+      "vitality": 5.1
      },
      "worstUnwanted": {
       "key": "fire",
-      "v": 0.6
+      "v": 0.7
      },
      "effects": {
-      "vitality": 5.8,
-      "fire": 0.6,
+      "vitality": 5.1,
+      "fire": 0.7,
       "frost": 0.3
      },
      "brewMl": 345,
@@ -666,15 +666,15 @@
     },
     "hand": {
      "wanted": {
-      "vitality": 5.8
+      "vitality": 5.3
      },
      "worstUnwanted": {
       "key": "fire",
-      "v": 0.3
+      "v": 0.2
      },
      "effects": {
-      "vitality": 5.8,
-      "fire": 0.3
+      "vitality": 5.3,
+      "fire": 0.2
      },
      "brewMl": 345,
      "stability": 97,
@@ -684,15 +684,15 @@
     },
     "clockwork": {
      "wanted": {
-      "vitality": 5.7
+      "vitality": 5.2
      },
      "worstUnwanted": {
       "key": "fire",
-      "v": 0.3
+      "v": 0.4
      },
      "effects": {
-      "vitality": 5.7,
-      "fire": 0.3
+      "vitality": 5.2,
+      "fire": 0.4
      },
      "brewMl": 345,
      "stability": 100,
@@ -702,19 +702,19 @@
     },
     "late, unstirred": {
      "wanted": {
-      "strength": 15.5
+      "strength": 16
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 3.7
+      "v": 3.9
      },
      "effects": {
-      "strength": 15.5,
-      "frost": 3.7,
+      "strength": 16,
+      "frost": 3.9,
       "toxicity": 0.5
      },
      "brewMl": 375,
-     "stability": 91,
+     "stability": 89,
      "spreadFrost": 0.2,
      "spreadFire": 0
     },
@@ -724,16 +724,16 @@
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 3.9
+      "v": 3.8
      },
      "effects": {
       "strength": 15.6,
-      "frost": 3.9,
+      "frost": 3.8,
       "toxicity": 0.5
      },
      "brewMl": 375,
-     "stability": 98,
-     "spreadFrost": 0,
+     "stability": 97,
+     "spreadFrost": 0.1,
      "spreadFire": 0
     },
     "late, clockwork 6 s": {
@@ -750,21 +750,21 @@
       "toxicity": 0.5
      },
      "brewMl": 375,
-     "stability": 99,
+     "stability": 100,
      "spreadFrost": 0,
      "spreadFire": 0
     },
     "late, hand 20 s": {
      "wanted": {
-      "strength": 15.4
+      "strength": 15.5
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 3.7
+      "v": 3.8
      },
      "effects": {
-      "strength": 15.4,
-      "frost": 3.7,
+      "strength": 15.5,
+      "frost": 3.8,
       "toxicity": 0.5
      },
      "brewMl": 375,
@@ -777,16 +777,16 @@
     "seed": "experiment-1",
     "none": {
      "wanted": {
-      "vitality": 5.7
+      "vitality": 5.2
      },
      "worstUnwanted": {
       "key": "fire",
-      "v": 1.2
+      "v": 0.7
      },
      "effects": {
-      "vitality": 5.7,
-      "fire": 1.2,
-      "frost": 0.1
+      "vitality": 5.2,
+      "fire": 0.7,
+      "frost": 0.3
      },
      "brewMl": 345,
      "stability": 88,
@@ -796,33 +796,33 @@
     },
     "hand": {
      "wanted": {
-      "vitality": 5.8
+      "vitality": 5.1
      },
      "worstUnwanted": {
       "key": "fire",
-      "v": 0.6
+      "v": 0.4
      },
      "effects": {
-      "vitality": 5.8,
-      "fire": 0.6
+      "vitality": 5.1,
+      "fire": 0.4
      },
      "brewMl": 345,
      "stability": 97,
      "seconds": 39,
      "spreadFrost": 0,
-     "spreadFire": 0.1
+     "spreadFire": 0
     },
     "clockwork": {
      "wanted": {
-      "vitality": 5.7
+      "vitality": 5
      },
      "worstUnwanted": {
       "key": "fire",
-      "v": 0.8
+      "v": 0.5
      },
      "effects": {
-      "vitality": 5.7,
-      "fire": 0.8
+      "vitality": 5,
+      "fire": 0.5
      },
      "brewMl": 345,
      "stability": 100,
@@ -832,38 +832,38 @@
     },
     "late, unstirred": {
      "wanted": {
-      "strength": 15.6
+      "strength": 15.2
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 3.5
+      "v": 3
      },
      "effects": {
-      "strength": 15.6,
-      "frost": 3.5,
-      "toxicity": 0.5
+      "strength": 15.2,
+      "frost": 3,
+      "toxicity": 0.6
      },
      "brewMl": 375,
-     "stability": 91,
+     "stability": 92,
      "spreadFrost": 0.1,
      "spreadFire": 0
     },
     "late, hand 6 s": {
      "wanted": {
-      "strength": 15.8
+      "strength": 15.7
      },
      "worstUnwanted": {
       "key": "frost",
       "v": 3.5
      },
      "effects": {
-      "strength": 15.8,
+      "strength": 15.7,
       "frost": 3.5,
       "toxicity": 0.5
      },
      "brewMl": 375,
-     "stability": 97,
-     "spreadFrost": 0.1,
+     "stability": 98,
+     "spreadFrost": 0,
      "spreadFire": 0
     },
     "late, clockwork 6 s": {
@@ -880,7 +880,7 @@
       "toxicity": 0.5
      },
      "brewMl": 375,
-     "stability": 99,
+     "stability": 100,
      "spreadFrost": 0,
      "spreadFire": 0
     },
@@ -907,52 +907,52 @@
     "seed": "experiment-2",
     "none": {
      "wanted": {
-      "vitality": 5.4
+      "vitality": 4.8
      },
      "worstUnwanted": {
       "key": "fire",
-      "v": 0.9
+      "v": 0.8
      },
      "effects": {
-      "vitality": 5.4,
-      "fire": 0.9,
+      "vitality": 4.8,
+      "fire": 0.8,
       "frost": 0.2
      },
      "brewMl": 345,
      "stability": 88,
      "seconds": 31,
      "spreadFrost": 0.1,
-     "spreadFire": 0.2
+     "spreadFire": 0.1
     },
     "hand": {
      "wanted": {
-      "vitality": 5.5
+      "vitality": 5
      },
      "worstUnwanted": {
       "key": "fire",
-      "v": 0.4
+      "v": 0.3
      },
      "effects": {
-      "vitality": 5.5,
-      "fire": 0.4
+      "vitality": 5,
+      "fire": 0.3
      },
      "brewMl": 345,
-     "stability": 98,
+     "stability": 97,
      "seconds": 39,
      "spreadFrost": 0,
-     "spreadFire": 0
+     "spreadFire": 0.1
     },
     "clockwork": {
      "wanted": {
-      "vitality": 5.5
+      "vitality": 4.9
      },
      "worstUnwanted": {
       "key": "fire",
-      "v": 0.4
+      "v": 0.3
      },
      "effects": {
-      "vitality": 5.5,
-      "fire": 0.4
+      "vitality": 4.9,
+      "fire": 0.3
      },
      "brewMl": 345,
      "stability": 100,
@@ -962,38 +962,38 @@
     },
     "late, unstirred": {
      "wanted": {
-      "strength": 15.5
+      "strength": 14.9
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 3.5
+      "v": 2.9
      },
      "effects": {
-      "strength": 15.5,
-      "frost": 3.5,
-      "toxicity": 0.5
+      "strength": 14.9,
+      "frost": 2.9,
+      "toxicity": 0.6
      },
      "brewMl": 375,
-     "stability": 92,
-     "spreadFrost": 0.3,
+     "stability": 90,
+     "spreadFrost": 0.1,
      "spreadFire": 0
     },
     "late, hand 6 s": {
      "wanted": {
-      "strength": 15.2
+      "strength": 15.1
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 3.5
+      "v": 3.4
      },
      "effects": {
-      "strength": 15.2,
-      "frost": 3.5,
+      "strength": 15.1,
+      "frost": 3.4,
       "toxicity": 0.5
      },
      "brewMl": 375,
      "stability": 98,
-     "spreadFrost": 0,
+     "spreadFrost": 0.1,
      "spreadFire": 0
     },
     "late, clockwork 6 s": {
@@ -1010,7 +1010,7 @@
       "toxicity": 0.5
      },
      "brewMl": 375,
-     "stability": 99,
+     "stability": 100,
      "spreadFrost": 0,
      "spreadFire": 0
     },
@@ -1039,81 +1039,14 @@
     "seed": "experiment-0",
     "together": {
      "wanted": {
-      "vitality": 6.6
-     },
-     "worstUnwanted": {
-      "key": "fire",
-      "v": 0.5
-     },
-     "effects": {
-      "vitality": 6.6,
-      "fire": 0.5
-     },
-     "brewMl": 345,
-     "stability": 100,
-     "seconds": 39
-    },
-    "after the steep": {
-     "wanted": {
-      "vitality": 6.2
-     },
-     "worstUnwanted": {
-      "key": "frost",
-      "v": 0.1
-     },
-     "effects": {
-      "vitality": 6.2,
-      "frost": 0.1
-     },
-     "brewMl": 345,
-     "stability": 100,
-     "seconds": 38
-    },
-    "spirit before heating": {
-     "wanted": {
-      "vitality": 13.1
-     },
-     "worstUnwanted": {
-      "key": "frost",
-      "v": 4.2
-     },
-     "effects": {
-      "vitality": 13.1,
-      "frost": 4.2
-     },
-     "brewMl": 320,
-     "stability": 100,
-     "spiritShare": 22
-    },
-    "spirit after cooling": {
-     "wanted": {
-      "vitality": 12.4
-     },
-     "worstUnwanted": {
-      "key": "frost",
-      "v": 4
-     },
-     "effects": {
-      "vitality": 12.4,
-      "frost": 4
-     },
-     "brewMl": 335,
-     "stability": 98,
-     "spiritShare": 23
-    }
-   },
-   {
-    "seed": "experiment-1",
-    "together": {
-     "wanted": {
-      "vitality": 6.8
+      "vitality": 5.2
      },
      "worstUnwanted": {
       "key": "fire",
       "v": 0.4
      },
      "effects": {
-      "vitality": 6.8,
+      "vitality": 5.2,
       "fire": 0.4
      },
      "brewMl": 345,
@@ -1122,47 +1055,47 @@
     },
     "after the steep": {
      "wanted": {
-      "vitality": 5.7
+      "vitality": 5.1
      },
      "worstUnwanted": {
       "key": "fire",
-      "v": 0.2
+      "v": 0.3
      },
      "effects": {
-      "vitality": 5.7,
-      "fire": 0.2
+      "vitality": 5.1,
+      "fire": 0.3
      },
      "brewMl": 345,
-     "stability": 98,
-     "seconds": 38
+     "stability": 100,
+     "seconds": 39
     },
     "spirit before heating": {
-     "wanted": {
-      "vitality": 13.1
-     },
-     "worstUnwanted": {
-      "key": "frost",
-      "v": 4.5
-     },
-     "effects": {
-      "vitality": 13.1,
-      "frost": 4.5
-     },
-     "brewMl": 320,
-     "stability": 100,
-     "spiritShare": 22
-    },
-    "spirit after cooling": {
      "wanted": {
       "vitality": 12.3
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 4.2
+      "v": 3.9
      },
      "effects": {
       "vitality": 12.3,
-      "frost": 4.2
+      "frost": 3.9
+     },
+     "brewMl": 335,
+     "stability": 100,
+     "spiritShare": 22
+    },
+    "spirit after cooling": {
+     "wanted": {
+      "vitality": 12.1
+     },
+     "worstUnwanted": {
+      "key": "frost",
+      "v": 3.8
+     },
+     "effects": {
+      "vitality": 12.1,
+      "frost": 3.8
      },
      "brewMl": 335,
      "stability": 99,
@@ -1170,17 +1103,84 @@
     }
    },
    {
+    "seed": "experiment-1",
+    "together": {
+     "wanted": {
+      "vitality": 5
+     },
+     "worstUnwanted": {
+      "key": "fire",
+      "v": 0.5
+     },
+     "effects": {
+      "vitality": 5,
+      "fire": 0.5
+     },
+     "brewMl": 345,
+     "stability": 100,
+     "seconds": 39
+    },
+    "after the steep": {
+     "wanted": {
+      "vitality": 4.9
+     },
+     "worstUnwanted": {
+      "key": "fire",
+      "v": 0.5
+     },
+     "effects": {
+      "vitality": 4.9,
+      "fire": 0.5
+     },
+     "brewMl": 345,
+     "stability": 97,
+     "seconds": 39
+    },
+    "spirit before heating": {
+     "wanted": {
+      "vitality": 11.6
+     },
+     "worstUnwanted": {
+      "key": "frost",
+      "v": 4
+     },
+     "effects": {
+      "vitality": 11.6,
+      "frost": 4
+     },
+     "brewMl": 335,
+     "stability": 100,
+     "spiritShare": 22
+    },
+    "spirit after cooling": {
+     "wanted": {
+      "vitality": 10.8
+     },
+     "worstUnwanted": {
+      "key": "frost",
+      "v": 3.7
+     },
+     "effects": {
+      "vitality": 10.8,
+      "frost": 3.7
+     },
+     "brewMl": 335,
+     "stability": 94,
+     "spiritShare": 24
+    }
+   },
+   {
     "seed": "experiment-2",
     "together": {
      "wanted": {
-      "vitality": 6.4
+      "vitality": 4.9
      },
      "worstUnwanted": {
       "key": "fire",
       "v": 0.3
      },
      "effects": {
-      "vitality": 6.4,
+      "vitality": 4.9,
       "fire": 0.3
      },
      "brewMl": 345,
@@ -1189,51 +1189,51 @@
     },
     "after the steep": {
      "wanted": {
-      "vitality": 5.8
+      "vitality": 4.9
      },
      "worstUnwanted": {
-      "key": "frost",
-      "v": 0.1
+      "key": "fire",
+      "v": 0.2
      },
      "effects": {
-      "vitality": 5.8,
-      "frost": 0.1
+      "vitality": 4.9,
+      "fire": 0.2
      },
      "brewMl": 345,
-     "stability": 98,
-     "seconds": 38
+     "stability": 99,
+     "seconds": 39
     },
     "spirit before heating": {
      "wanted": {
-      "vitality": 12.8
+      "vitality": 11.6
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 4.8
+      "v": 4.3
      },
      "effects": {
-      "vitality": 12.8,
-      "frost": 4.8
+      "vitality": 11.6,
+      "frost": 4.3
      },
-     "brewMl": 320,
+     "brewMl": 335,
      "stability": 100,
      "spiritShare": 22
     },
     "spirit after cooling": {
      "wanted": {
-      "vitality": 12
+      "vitality": 11.2
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 4.5
+      "v": 4.2
      },
      "effects": {
-      "vitality": 12,
-      "frost": 4.5
+      "vitality": 11.2,
+      "frost": 4.2
      },
      "brewMl": 335,
-     "stability": 96,
-     "spiritShare": 23
+     "stability": 98,
+     "spiritShare": 24
     }
    }
   ],
@@ -1255,7 +1255,7 @@
      },
      "brewMl": 400,
      "stability": 100,
-     "seconds": 31
+     "seconds": 46
     },
     "diluted +50 % water": {
      "wanted": {
@@ -1263,33 +1263,33 @@
      },
      "worstUnwanted": {
       "key": "vitality",
-      "v": 1.2
+      "v": 1.3
      },
      "effects": {
-      "vitality": 1.2,
+      "vitality": 1.3,
       "strength": 10.5,
       "frost": 0.9
      },
      "brewMl": 550,
      "stability": 100,
-     "seconds": 33
+     "seconds": 48
     },
     "boiled down 30 %": {
      "wanted": {
-      "strength": 20.4
+      "strength": 16.2
      },
      "worstUnwanted": {
       "key": "vitality",
-      "v": 2.4
+      "v": 1.9
      },
      "effects": {
-      "vitality": 2.4,
-      "strength": 20.4,
-      "frost": 1.8
+      "vitality": 1.9,
+      "strength": 16.2,
+      "frost": 1.3
      },
-     "brewMl": 275,
+     "brewMl": 355,
      "stability": 100,
-     "seconds": 43
+     "seconds": 60
     }
    },
    {
@@ -1309,7 +1309,7 @@
      },
      "brewMl": 400,
      "stability": 100,
-     "seconds": 32
+     "seconds": 48
     },
     "diluted +50 % water": {
      "wanted": {
@@ -1326,31 +1326,31 @@
      },
      "brewMl": 550,
      "stability": 100,
-     "seconds": 34
+     "seconds": 50
     },
     "boiled down 30 %": {
      "wanted": {
-      "strength": 20.9
+      "strength": 15.7
      },
      "worstUnwanted": {
       "key": "vitality",
-      "v": 2.6
+      "v": 1.9
      },
      "effects": {
-      "vitality": 2.6,
-      "strength": 20.9,
-      "frost": 1.9
+      "vitality": 1.9,
+      "strength": 15.7,
+      "frost": 1.4
      },
-     "brewMl": 270,
+     "brewMl": 370,
      "stability": 100,
-     "seconds": 43
+     "seconds": 62
     }
    },
    {
     "seed": "experiment-2",
     "plain": {
      "wanted": {
-      "strength": 15.6
+      "strength": 15.7
      },
      "worstUnwanted": {
       "key": "vitality",
@@ -1358,16 +1358,16 @@
      },
      "effects": {
       "vitality": 1.5,
-      "strength": 15.6,
+      "strength": 15.7,
       "frost": 1.2
      },
      "brewMl": 400,
      "stability": 100,
-     "seconds": 31
+     "seconds": 48
     },
     "diluted +50 % water": {
      "wanted": {
-      "strength": 10.4
+      "strength": 10.5
      },
      "worstUnwanted": {
       "key": "vitality",
@@ -1375,29 +1375,29 @@
      },
      "effects": {
       "vitality": 1.1,
-      "strength": 10.4,
+      "strength": 10.5,
       "frost": 0.9
      },
      "brewMl": 550,
      "stability": 100,
-     "seconds": 33
+     "seconds": 50
     },
     "boiled down 30 %": {
      "wanted": {
-      "strength": 29.5
+      "strength": 16.2
      },
      "worstUnwanted": {
       "key": "vitality",
-      "v": 2.4
+      "v": 1.6
      },
      "effects": {
-      "vitality": 2.4,
-      "strength": 29.5,
-      "frost": 2
+      "vitality": 1.6,
+      "strength": 16.2,
+      "frost": 1.2
      },
-     "brewMl": 240,
-     "stability": 99,
-     "seconds": 43
+     "brewMl": 390,
+     "stability": 100,
+     "seconds": 62
     }
    }
   ],
@@ -1406,55 +1406,55 @@
     "seed": "experiment-0",
     "water brew + oil, just stirred": {
      "wanted": {
-      "vitality": 4.9
+      "vitality": 3.4
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 1.6
+      "v": 1.1
      },
      "effects": {
-      "vitality": 4.9,
-      "frost": 1.6
+      "vitality": 3.4,
+      "frost": 1.1
      },
      "brewMl": 510,
      "stability": 0,
-     "oilShare": 20
+     "oilShare": 30
     },
     "water brew + oil, settled: bottom tap": {
      "wanted": {
-      "vitality": 5.2
+      "vitality": 3.2
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 1.7
+      "v": 1
      },
      "effects": {
-      "vitality": 5.2,
-      "frost": 1.7
+      "vitality": 3.2,
+      "frost": 1
      },
      "brewMl": 510,
      "stability": 0,
-     "oilShare": 15
+     "oilShare": 35
     },
     "water brew + oil, settled: upper band": {
      "effects": {
-      "vitality": 3,
-      "frost": 0.9
+      "vitality": 2.5,
+      "frost": 0.8
      },
-     "oilShare": 52
+     "oilShare": 48
     },
     "fully mixed (sampled at once)": {
      "wanted": {
-      "vitality": 2.4
+      "vitality": 1.3
      },
      "worstUnwanted": {
       "key": "fire",
-      "v": 6.1
+      "v": 6
      },
      "effects": {
-      "vitality": 2.4,
-      "strength": 2.7,
-      "fire": 6.1
+      "vitality": 1.3,
+      "strength": 2.5,
+      "fire": 6
      },
      "brewMl": 560,
      "stability": 100,
@@ -1462,15 +1462,15 @@
     },
     "layered: bottom tap": {
      "wanted": {
-      "vitality": 2.4
+      "vitality": 1.3
      },
      "worstUnwanted": {
       "key": "fire",
       "v": 6.1
      },
      "effects": {
-      "vitality": 2.4,
-      "strength": 2.7,
+      "vitality": 1.3,
+      "strength": 2.5,
       "fire": 6.1
      },
      "brewMl": 560,
@@ -1479,31 +1479,31 @@
     },
     "layered: upper band": {
      "effects": {
-      "vitality": 2.4,
-      "strength": 2.7,
-      "fire": 6.1
+      "vitality": 1.3,
+      "strength": 2.5,
+      "fire": 6
      },
      "oilShare": 44
     },
     "layered: lower band": {
      "effects": {
-      "vitality": 2.4,
-      "strength": 2.7,
-      "fire": 6.1
+      "vitality": 1.3,
+      "strength": 2.5,
+      "fire": 6
      },
      "oilShare": 44
     },
     "upper layer skimmed off": {
      "wanted": {
-      "vitality": 2.4
+      "vitality": 1.3
      },
      "worstUnwanted": {
       "key": "fire",
       "v": 6.1
      },
      "effects": {
-      "vitality": 2.4,
-      "strength": 2.7,
+      "vitality": 1.3,
+      "strength": 2.5,
       "fire": 6.1
      },
      "brewMl": 310,
@@ -1513,16 +1513,16 @@
     },
     "lower layer drained, then tapped": {
      "wanted": {
-      "fire": 6.1
+      "fire": 6
      },
      "worstUnwanted": {
       "key": "strength",
-      "v": 2.7
+      "v": 2.5
      },
      "effects": {
-      "vitality": 2.4,
-      "strength": 2.7,
-      "fire": 6.1
+      "vitality": 1.3,
+      "strength": 2.5,
+      "fire": 6
      },
      "brewMl": 285,
      "stability": 100,
@@ -1534,15 +1534,15 @@
     "seed": "experiment-1",
     "water brew + oil, just stirred": {
      "wanted": {
-      "vitality": 3
+      "vitality": 2.5
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 1
+      "v": 0.9
      },
      "effects": {
-      "vitality": 3,
-      "frost": 1
+      "vitality": 2.5,
+      "frost": 0.9
      },
      "brewMl": 510,
      "stability": 0,
@@ -1550,257 +1550,246 @@
     },
     "water brew + oil, settled: bottom tap": {
      "wanted": {
-      "vitality": 3.2
+      "vitality": 2.5
      },
      "worstUnwanted": {
       "key": "frost",
-      "v": 1.1
+      "v": 0.9
      },
      "effects": {
-      "vitality": 3.2,
-      "frost": 1.1
+      "vitality": 2.5,
+      "frost": 0.9
      },
      "brewMl": 510,
      "stability": 0,
-     "oilShare": 40
+     "oilShare": 45
     },
     "water brew + oil, settled: upper band": {
      "effects": {
-      "vitality": 2.9,
-      "frost": 1
-     },
-     "oilShare": 47
-    },
-    "fully mixed (sampled at once)": {
-     "wanted": {
-      "vitality": 3.2
-     },
-     "worstUnwanted": {
-      "key": "fire",
-      "v": 5.5
-     },
-     "effects": {
-      "vitality": 3.2,
-      "strength": 2.6,
-      "fire": 5.5,
-      "toxicity": 0.5
-     },
-     "brewMl": 560,
-     "stability": 0,
-     "oilShare": 40
-    },
-    "layered: bottom tap": {
-     "wanted": {
-      "vitality": 3.7
-     },
-     "worstUnwanted": {
-      "key": "fire",
-      "v": 4.5
-     },
-     "effects": {
-      "vitality": 3.7,
-      "strength": 2.3,
-      "fire": 4.5,
-      "toxicity": 0.4
-     },
-     "brewMl": 560,
-     "stability": 0,
-     "oilShare": 31
-    },
-    "layered: upper band": {
-     "effects": {
-      "vitality": 2.5,
-      "strength": 3,
-      "fire": 6.9,
-      "toxicity": 0.7
-     },
-     "oilShare": 52
-    },
-    "layered: lower band": {
-     "effects": {
-      "vitality": 4,
-      "strength": 2.1,
-      "fire": 3.8,
-      "toxicity": 0.3
+      "vitality": 3.4,
+      "frost": 1.2
      },
      "oilShare": 24
     },
-    "upper layer skimmed off": {
-     "wanted": {
-      "vitality": 3.7
-     },
-     "worstUnwanted": {
-      "key": "fire",
-      "v": 4.5
-     },
-     "effects": {
-      "vitality": 3.7,
-      "strength": 2.3,
-      "fire": 4.5,
-      "toxicity": 0.4
-     },
-     "brewMl": 310,
-     "stability": 0,
-     "removedMl": 250,
-     "oilShare": 31
-    },
-    "lower layer drained, then tapped": {
-     "wanted": {
-      "fire": 6.5
-     },
-     "worstUnwanted": {
-      "key": "strength",
-      "v": 2.9
-     },
-     "effects": {
-      "vitality": 2.7,
-      "strength": 2.9,
-      "fire": 6.5,
-      "toxicity": 0.7
-     },
-     "brewMl": 285,
-     "stability": 0,
-     "drainedMl": 275,
-     "oilShare": 49
-    }
-   },
-   {
-    "seed": "experiment-2",
-    "water brew + oil, just stirred": {
-     "wanted": {
-      "vitality": 3.4
-     },
-     "worstUnwanted": {
-      "key": "frost",
-      "v": 1.3
-     },
-     "effects": {
-      "vitality": 3.4,
-      "frost": 1.3
-     },
-     "brewMl": 510,
-     "stability": 0,
-     "oilShare": 40
-    },
-    "water brew + oil, settled: bottom tap": {
-     "wanted": {
-      "vitality": 3.4
-     },
-     "worstUnwanted": {
-      "key": "frost",
-      "v": 1.3
-     },
-     "effects": {
-      "vitality": 3.4,
-      "frost": 1.3
-     },
-     "brewMl": 510,
-     "stability": 0,
-     "oilShare": 40
-    },
-    "water brew + oil, settled: upper band": {
-     "effects": {
-      "vitality": 3.4,
-      "frost": 1.3
-     },
-     "oilShare": 39
-    },
     "fully mixed (sampled at once)": {
      "wanted": {
-      "vitality": 3.1
+      "vitality": 1.6
      },
      "worstUnwanted": {
       "key": "fire",
       "v": 6.2
      },
      "effects": {
-      "vitality": 3.1,
-      "strength": 4.3,
+      "vitality": 1.6,
+      "strength": 2.7,
       "fire": 6.2,
-      "frost": 0.1,
-      "toxicity": 0.7
+      "toxicity": 0.5
      },
      "brewMl": 560,
      "stability": 0,
-     "oilShare": 45
+     "oilShare": 47
     },
     "layered: bottom tap": {
      "wanted": {
-      "vitality": 4.2
+      "vitality": 1.8
      },
      "worstUnwanted": {
       "key": "fire",
-      "v": 3.6
+      "v": 5.9
      },
      "effects": {
-      "vitality": 4.2,
-      "strength": 2.9,
-      "fire": 3.6,
-      "frost": 0.1,
+      "vitality": 1.8,
+      "strength": 2.6,
+      "fire": 5.9,
       "toxicity": 0.4
      },
      "brewMl": 560,
      "stability": 0,
-     "oilShare": 26
+     "oilShare": 43
     },
     "layered: upper band": {
      "effects": {
-      "vitality": 2.6,
-      "strength": 4.9,
-      "fire": 7.2,
-      "toxicity": 0.8
+      "vitality": 1.5,
+      "strength": 2.8,
+      "fire": 6.6,
+      "toxicity": 0.6
      },
      "oilShare": 52
     },
     "layered: lower band": {
      "effects": {
-      "vitality": 4.3,
-      "strength": 2.6,
-      "fire": 3.2,
-      "frost": 0.1,
+      "vitality": 2,
+      "strength": 2.5,
+      "fire": 5.5,
       "toxicity": 0.4
      },
-     "oilShare": 24
+     "oilShare": 37
     },
     "upper layer skimmed off": {
      "wanted": {
-      "vitality": 4.2
+      "vitality": 1.8
      },
      "worstUnwanted": {
       "key": "fire",
-      "v": 3.6
+      "v": 5.9
      },
      "effects": {
-      "vitality": 4.2,
-      "strength": 2.9,
-      "fire": 3.6,
-      "frost": 0.1,
+      "vitality": 1.8,
+      "strength": 2.6,
+      "fire": 5.9,
       "toxicity": 0.4
      },
      "brewMl": 310,
      "stability": 0,
      "removedMl": 250,
-     "oilShare": 26
+     "oilShare": 43
     },
     "lower layer drained, then tapped": {
      "wanted": {
-      "fire": 4.9
+      "fire": 6.6
      },
      "worstUnwanted": {
-      "key": "vitality",
-      "v": 3.6
+      "key": "strength",
+      "v": 2.8
      },
      "effects": {
-      "vitality": 3.6,
-      "strength": 3.6,
-      "fire": 4.9,
-      "frost": 0.1,
-      "toxicity": 0.5
+      "vitality": 1.5,
+      "strength": 2.8,
+      "fire": 6.6,
+      "toxicity": 0.6
      },
      "brewMl": 285,
      "stability": 0,
      "drainedMl": 275,
-     "oilShare": 36
+     "oilShare": 52
+    }
+   },
+   {
+    "seed": "experiment-2",
+    "water brew + oil, just stirred": {
+     "wanted": {
+      "vitality": 3.2
+     },
+     "worstUnwanted": {
+      "key": "frost",
+      "v": 1.2
+     },
+     "effects": {
+      "vitality": 3.2,
+      "frost": 1.2
+     },
+     "brewMl": 510,
+     "stability": 0,
+     "oilShare": 30
+    },
+    "water brew + oil, settled: bottom tap": {
+     "wanted": {
+      "vitality": 3.2
+     },
+     "worstUnwanted": {
+      "key": "frost",
+      "v": 1.2
+     },
+     "effects": {
+      "vitality": 3.2,
+      "frost": 1.2
+     },
+     "brewMl": 510,
+     "stability": 0,
+     "oilShare": 30
+    },
+    "water brew + oil, settled: upper band": {
+     "effects": {
+      "vitality": 2.9,
+      "frost": 1.1
+     },
+     "oilShare": 38
+    },
+    "fully mixed (sampled at once)": {
+     "wanted": {
+      "vitality": 1.1
+     },
+     "worstUnwanted": {
+      "key": "fire",
+      "v": 6.4
+     },
+     "effects": {
+      "vitality": 1.1,
+      "strength": 4.2,
+      "fire": 6.4
+     },
+     "brewMl": 560,
+     "stability": 100,
+     "oilShare": 39
+    },
+    "layered: bottom tap": {
+     "wanted": {
+      "vitality": 1.1
+     },
+     "worstUnwanted": {
+      "key": "fire",
+      "v": 6.4
+     },
+     "effects": {
+      "vitality": 1.1,
+      "strength": 4.2,
+      "fire": 6.4
+     },
+     "brewMl": 560,
+     "stability": 100,
+     "oilShare": 39
+    },
+    "layered: upper band": {
+     "effects": {
+      "vitality": 1,
+      "strength": 3.9,
+      "fire": 6
+     },
+     "oilShare": 44
+    },
+    "layered: lower band": {
+     "effects": {
+      "vitality": 1,
+      "strength": 4,
+      "fire": 6.3
+     },
+     "oilShare": 42
+    },
+    "upper layer skimmed off": {
+     "wanted": {
+      "vitality": 1.1
+     },
+     "worstUnwanted": {
+      "key": "fire",
+      "v": 6.4
+     },
+     "effects": {
+      "vitality": 1.1,
+      "strength": 4.2,
+      "fire": 6.4
+     },
+     "brewMl": 310,
+     "stability": 100,
+     "removedMl": 250,
+     "oilShare": 39
+    },
+    "lower layer drained, then tapped": {
+     "wanted": {
+      "fire": 6.4
+     },
+     "worstUnwanted": {
+      "key": "strength",
+      "v": 4.2
+     },
+     "effects": {
+      "vitality": 1.1,
+      "strength": 4.2,
+      "fire": 6.4
+     },
+     "brewMl": 285,
+     "stability": 100,
+     "drainedMl": 275,
+     "oilShare": 39
     }
    }
   ],
@@ -1809,14 +1798,14 @@
     "seed": "experiment-0",
     "not reduced": {
      "wanted": {
-      "vitality": 5
+      "vitality": 4
      },
      "worstUnwanted": {
       "key": "fire",
       "v": 0.3
      },
      "effects": {
-      "vitality": 5,
+      "vitality": 4,
       "fire": 0.3
      },
      "brewMl": 445,
@@ -1825,39 +1814,39 @@
     },
     "boiled down, lid open": {
      "wanted": {
-      "vitality": 16.5
+      "vitality": 12.7
      },
      "worstUnwanted": {
       "key": "fire",
-      "v": 1.5
+      "v": 1.1
      },
      "effects": {
-      "vitality": 16.5,
-      "fire": 1.5
+      "vitality": 12.7,
+      "fire": 1.1
      },
-     "brewMl": 290,
+     "brewMl": 390,
      "stability": 100,
-     "seconds": 13,
-     "vented": "Thorn Dew 97 ml, Awakened Hollow Silverleaf 0 ml, Awakened Moon Sunthistle 0 ml, Awakened Sunthistle Tea 1 ml, Awakened Hollow Silverleaf Infusion 2 ml, Mintwort Spirit 54 ml, Hollow Silverleaf 0 ml, Moon Sunthistle 0 ml, Sunthistle Tea 0 ml, Hollow Silverleaf Infusion 0 ml",
-     "spiritShare": 24
+     "seconds": 20,
+     "vented": "Thorn Dew 35 ml, Mintwort Spirit 19 ml, Awakened Hollow Silverleaf 0 ml, Awakened Moon Sunthistle 0 ml, Awakened Sunthistle Tea 0 ml, Awakened Hollow Silverleaf Infusion 0 ml, Hollow Silverleaf 0 ml, Moon Sunthistle 0 ml, Sunthistle Tea 0 ml, Hollow Silverleaf Infusion 0 ml",
+     "spiritShare": 27
     },
     "distilled, alembic": {
      "wanted": {
-      "vitality": 15.5
+      "vitality": 15.8
      },
      "worstUnwanted": {
       "key": "fire",
       "v": 1.4
      },
      "effects": {
-      "vitality": 15.5,
+      "vitality": 15.8,
       "fire": 1.4
      },
      "brewMl": 310,
-     "stability": 99,
-     "seconds": 6,
+     "stability": 100,
+     "seconds": 15,
      "receiverMl": 135,
-     "receiver": "Thorn Dew 62 %, Hollow Silverleaf 0 %, Moon Sunthistle 0 %, Sunthistle Tea 0 %, Hollow Silverleaf Infusion 0 %, Awakened Hollow Silverleaf 0 %, Awakened Moon Sunthistle 0 %, Awakened Sunthistle Tea 1 %, Awakened Hollow Silverleaf Infusion 2 %, Mintwort Spirit 35 %",
+     "receiver": "Thorn Dew 63 %, Hollow Silverleaf 0 %, Moon Sunthistle 0 %, Sunthistle Tea 0 %, Hollow Silverleaf Infusion 0 %, Mintwort Spirit 35 %, Awakened Hollow Silverleaf 0 %, Awakened Moon Sunthistle 0 %, Awakened Sunthistle Tea 1 %, Awakened Hollow Silverleaf Infusion 1 %",
      "spiritRecoveredMl": 47,
      "spiritValue": 1.9,
      "spiritShare": 25
@@ -1867,57 +1856,57 @@
     "seed": "experiment-1",
     "not reduced": {
      "wanted": {
-      "vitality": 5.3
+      "vitality": 3.8
      },
      "worstUnwanted": {
       "key": "fire",
       "v": 0.4
      },
      "effects": {
-      "vitality": 5.3,
+      "vitality": 3.8,
       "fire": 0.4
      },
      "brewMl": 445,
-     "stability": 99,
+     "stability": 98,
      "spiritShare": 29
     },
     "boiled down, lid open": {
      "wanted": {
-      "vitality": 16.9
+      "vitality": 12.7
      },
      "worstUnwanted": {
       "key": "fire",
-      "v": 1.1
+      "v": 0.8
      },
      "effects": {
-      "vitality": 16.9,
-      "fire": 1.1
+      "vitality": 12.7,
+      "fire": 0.8
      },
-     "brewMl": 290,
+     "brewMl": 400,
      "stability": 100,
-     "seconds": 13,
-     "vented": "Frostmere Spring Water 97 ml, Dusk Silverleaf 0 ml, Raven Sunthistle 0 ml, Sunthistle Tea 0 ml, Dusk Silverleaf Infusion 0 ml, Awakened Dusk Silverleaf 0 ml, Awakened Raven Sunthistle 0 ml, Awakened Sunthistle Tea 1 ml, Awakened Dusk Silverleaf Infusion 2 ml, Hexberry Spirit 54 ml",
-     "spiritShare": 24
+     "seconds": 20,
+     "vented": "Frostmere Spring Water 29 ml, Dusk Silverleaf 0 ml, Raven Sunthistle 0 ml, Sunthistle Tea 0 ml, Dusk Silverleaf Infusion 0 ml, Hexberry Spirit 16 ml, Awakened Dusk Silverleaf 0 ml, Awakened Raven Sunthistle 0 ml, Awakened Sunthistle Tea 0 ml, Awakened Dusk Silverleaf Infusion 0 ml",
+     "spiritShare": 27
     },
     "distilled, alembic": {
      "wanted": {
-      "vitality": 16.2
+      "vitality": 16.4
      },
      "worstUnwanted": {
       "key": "fire",
       "v": 1
      },
      "effects": {
-      "vitality": 16.2,
+      "vitality": 16.4,
       "fire": 1
      },
-     "brewMl": 310,
-     "stability": 99,
-     "seconds": 6,
-     "receiverMl": 135,
-     "receiver": "Frostmere Spring Water 62 %, Awakened Dusk Silverleaf 0 %, Awakened Raven Sunthistle 0 %, Awakened Sunthistle Tea 1 %, Awakened Dusk Silverleaf Infusion 2 %, Hexberry Spirit 35 %, Dusk Silverleaf 0 %, Raven Sunthistle 0 %, Sunthistle Tea 0 %, Dusk Silverleaf Infusion 0 %",
-     "spiritRecoveredMl": 47,
-     "spiritValue": 1.9,
+     "brewMl": 305,
+     "stability": 100,
+     "seconds": 16,
+     "receiverMl": 140,
+     "receiver": "Frostmere Spring Water 63 %, Dusk Silverleaf 0 %, Raven Sunthistle 0 %, Sunthistle Tea 0 %, Dusk Silverleaf Infusion 0 %, Hexberry Spirit 35 %, Awakened Dusk Silverleaf 0 %, Awakened Raven Sunthistle 0 %, Awakened Sunthistle Tea 1 %, Awakened Dusk Silverleaf Infusion 1 %",
+     "spiritRecoveredMl": 49,
+     "spiritValue": 2,
      "spiritShare": 25
     }
    },
@@ -1925,14 +1914,14 @@
     "seed": "experiment-2",
     "not reduced": {
      "wanted": {
-      "vitality": 4.8
+      "vitality": 3.8
      },
      "worstUnwanted": {
       "key": "fire",
       "v": 0.3
      },
      "effects": {
-      "vitality": 4.8,
+      "vitality": 3.8,
       "fire": 0.3
      },
      "brewMl": 445,
@@ -1941,39 +1930,39 @@
     },
     "boiled down, lid open": {
      "wanted": {
-      "vitality": 17
+      "vitality": 13.1
      },
      "worstUnwanted": {
       "key": "fire",
-      "v": 0.6
+      "v": 0.5
      },
      "effects": {
-      "vitality": 17,
-      "fire": 0.6
+      "vitality": 13.1,
+      "fire": 0.5
      },
-     "brewMl": 270,
+     "brewMl": 365,
      "stability": 100,
-     "seconds": 14,
-     "vented": "Moonwell Wellwater 109 ml, Old Silverleaf 0 ml, Witch Sunthistle 0 ml, Sunthistle Tea 0 ml, Old Silverleaf Infusion 0 ml, Awakened Old Silverleaf 0 ml, Awakened Witch Sunthistle 0 ml, Awakened Sunthistle Tea 2 ml, Awakened Old Silverleaf Infusion 3 ml, Jadeleaf Brandywine 61 ml",
-     "spiritShare": 24
+     "seconds": 20,
+     "vented": "Moonwell Wellwater 51 ml, Old Silverleaf 0 ml, Witch Sunthistle 0 ml, Sunthistle Tea 0 ml, Old Silverleaf Infusion 0 ml, Jadeleaf Brandywine 28 ml, Awakened Old Silverleaf 0 ml, Awakened Witch Sunthistle 0 ml, Awakened Sunthistle Tea 1 ml, Awakened Old Silverleaf Infusion 1 ml",
+     "spiritShare": 27
     },
     "distilled, alembic": {
      "wanted": {
-      "vitality": 15.2
+      "vitality": 15.5
      },
      "worstUnwanted": {
       "key": "fire",
       "v": 0.6
      },
      "effects": {
-      "vitality": 15.2,
+      "vitality": 15.5,
       "fire": 0.6
      },
      "brewMl": 310,
      "stability": 98,
-     "seconds": 7,
+     "seconds": 16,
      "receiverMl": 135,
-     "receiver": "Moonwell Wellwater 62 %, Awakened Old Silverleaf 0 %, Awakened Witch Sunthistle 0 %, Awakened Sunthistle Tea 1 %, Awakened Old Silverleaf Infusion 2 %, Jadeleaf Brandywine 35 %, Old Silverleaf 0 %, Witch Sunthistle 0 %, Sunthistle Tea 0 %, Old Silverleaf Infusion 0 %",
+     "receiver": "Moonwell Wellwater 63 %, Old Silverleaf 0 %, Witch Sunthistle 0 %, Sunthistle Tea 0 %, Old Silverleaf Infusion 0 %, Jadeleaf Brandywine 35 %, Awakened Old Silverleaf 0 %, Awakened Witch Sunthistle 0 %, Awakened Sunthistle Tea 1 %, Awakened Old Silverleaf Infusion 1 %",
      "spiritRecoveredMl": 47,
      "spiritValue": 1.9,
      "spiritShare": 25
@@ -1986,8 +1975,8 @@
     "late addition, unstirred": {
      "bottles": [
       {
-       "strength": 18,
-       "frost": 9,
+       "strength": 18.3,
+       "frost": 8.9,
        "acidity": 1
       },
       {
@@ -1996,26 +1985,26 @@
        "acidity": 0.9
       },
       {
-       "strength": 19.4,
-       "frost": 8.4,
-       "acidity": 0.6
+       "strength": 19.2,
+       "frost": 8.5,
+       "acidity": 0.7
       }
      ]
     },
     "late addition, hand 6 s": {
      "bottles": [
       {
-       "strength": 18.9,
-       "frost": 8.6,
-       "acidity": 0.8
-      },
-      {
        "strength": 18.7,
        "frost": 8.7,
        "acidity": 0.8
       },
       {
-       "strength": 18.5,
+       "strength": 18.8,
+       "frost": 8.7,
+       "acidity": 0.8
+      },
+      {
+       "strength": 18.4,
        "frost": 8.8,
        "acidity": 0.9
       }
@@ -2029,7 +2018,7 @@
        "acidity": 0.8
       },
       {
-       "strength": 18.6,
+       "strength": 18.7,
        "frost": 8.7,
        "acidity": 0.8
       },
@@ -2121,18 +2110,18 @@
     "late addition, unstirred": {
      "bottles": [
       {
-       "strength": 18.1,
-       "frost": 8.6,
-       "acidity": 1.2
+       "strength": 18.4,
+       "frost": 8.5,
+       "acidity": 1.1
       },
       {
-       "strength": 18.5,
-       "frost": 8.4,
-       "acidity": 1
+       "strength": 18.3,
+       "frost": 8.5,
+       "acidity": 1.1
       },
       {
-       "strength": 19.7,
-       "frost": 8,
+       "strength": 19.5,
+       "frost": 8.1,
        "acidity": 0.7
       }
      ]
@@ -2145,12 +2134,12 @@
        "acidity": 0.9
       },
       {
-       "strength": 18.8,
+       "strength": 18.9,
        "frost": 8.3,
        "acidity": 0.9
       },
       {
-       "strength": 18.7,
+       "strength": 18.5,
        "frost": 8.4,
        "acidity": 1
       }
@@ -2159,17 +2148,17 @@
     "late addition, clockwork 6 s": {
      "bottles": [
       {
-       "strength": 18.8,
-       "frost": 8.3,
-       "acidity": 0.9
-      },
-      {
-       "strength": 18.8,
-       "frost": 8.3,
-       "acidity": 0.9
-      },
-      {
        "strength": 18.9,
+       "frost": 8.3,
+       "acidity": 0.9
+      },
+      {
+       "strength": 18.8,
+       "frost": 8.3,
+       "acidity": 0.9
+      },
+      {
+       "strength": 18.8,
        "frost": 8.3,
        "acidity": 0.9
       }
@@ -2275,17 +2264,17 @@
     "late addition, hand 6 s": {
      "bottles": [
       {
-       "strength": 18.1,
-       "frost": 8.1,
-       "acidity": 0.9
-      },
-      {
        "strength": 18.2,
        "frost": 8.1,
        "acidity": 0.8
       },
       {
-       "strength": 17.9,
+       "strength": 18,
+       "frost": 8.2,
+       "acidity": 0.9
+      },
+      {
+       "strength": 18,
        "frost": 8.2,
        "acidity": 0.9
       }
@@ -2305,7 +2294,7 @@
       },
       {
        "strength": 18.1,
-       "frost": 8.1,
+       "frost": 8.2,
        "acidity": 0.9
       }
      ]
@@ -2392,7 +2381,7 @@
       "ml": 120
      }
     },
-    "bellows": {
+    "bellows (retired)": {
      "water 450 ml to 92°C (s)": 3.6,
      "boil down 30 % (s)": 12,
      "lamp oil after 60 s at full fire": {
@@ -2400,7 +2389,7 @@
       "ml": 0
      }
     },
-    "athanor": {
+    "athanor (retired)": {
      "water 450 ml to 92°C (s)": 2.1,
      "boil down 30 % (s)": 13,
      "lamp oil after 60 s at full fire": {
@@ -2419,18 +2408,33 @@
      },
      "frostcap cold steep": {
       "wanted": {
-       "frost": 3.4
+       "frost": 9.5
       },
       "worstUnwanted": {
        "key": "death",
-       "v": 1
+       "v": 2.7
       },
       "effects": {
-       "frost": 3.4,
-       "death": 1
+       "frost": 9.5,
+       "death": 2.7
       },
       "brewMl": 420,
       "stability": 100
+     },
+     "frostcap at full cold": {
+      "wanted": {
+       "frost": 9.6
+      },
+      "worstUnwanted": {
+       "key": "death",
+       "v": 2.7
+      },
+      "effects": {
+       "frost": 9.6,
+       "death": 2.7
+      },
+      "brewMl": 420,
+      "stability": 99
      }
     },
     "frost rune": {
@@ -2456,6 +2460,21 @@
       },
       "brewMl": 420,
       "stability": 100
+     },
+     "frostcap at full cold": {
+      "wanted": {
+       "frost": 6.6
+      },
+      "worstUnwanted": {
+       "key": "death",
+       "v": 1.9
+      },
+      "effects": {
+       "frost": 6.6,
+       "death": 1.9
+      },
+      "brewMl": 420,
+      "stability": 99
      }
     },
     "glacial sigil": {
@@ -2481,6 +2500,21 @@
       },
       "brewMl": 420,
       "stability": 100
+     },
+     "frostcap at full cold": {
+      "wanted": {
+       "frost": 4.9
+      },
+      "worstUnwanted": {
+       "key": "death",
+       "v": 1.4
+      },
+      "effects": {
+       "frost": 4.9,
+       "death": 1.4
+      },
+      "brewMl": 420,
+      "stability": 93
      }
     }
    },
@@ -2494,7 +2528,7 @@
       "ml": 155
      }
     },
-    "bellows": {
+    "bellows (retired)": {
      "water 450 ml to 92°C (s)": 3.5,
      "boil down 30 % (s)": 11,
      "lamp oil after 60 s at full fire": {
@@ -2502,7 +2536,7 @@
       "ml": 0
      }
     },
-    "athanor": {
+    "athanor (retired)": {
      "water 450 ml to 92°C (s)": 2,
      "boil down 30 % (s)": 12,
      "lamp oil after 60 s at full fire": {
@@ -2521,18 +2555,33 @@
      },
      "frostcap cold steep": {
       "wanted": {
-       "frost": 4
+       "frost": 10.6
       },
       "worstUnwanted": {
        "key": "death",
-       "v": 1.1
+       "v": 4.5
       },
       "effects": {
-       "frost": 4,
-       "death": 1.1
+       "frost": 10.6,
+       "death": 4.5
       },
       "brewMl": 420,
       "stability": 100
+     },
+     "frostcap at full cold": {
+      "wanted": {
+       "frost": 10.6
+      },
+      "worstUnwanted": {
+       "key": "death",
+       "v": 4.6
+      },
+      "effects": {
+       "frost": 10.6,
+       "death": 4.6
+      },
+      "brewMl": 420,
+      "stability": 99
      }
     },
     "frost rune": {
@@ -2546,18 +2595,33 @@
      },
      "frostcap cold steep": {
       "wanted": {
-       "frost": 10.6
+       "frost": 10.5
       },
       "worstUnwanted": {
        "key": "death",
        "v": 4.5
       },
       "effects": {
-       "frost": 10.6,
+       "frost": 10.5,
        "death": 4.5
       },
       "brewMl": 420,
       "stability": 100
+     },
+     "frostcap at full cold": {
+      "wanted": {
+       "frost": 7.4
+      },
+      "worstUnwanted": {
+       "key": "death",
+       "v": 2
+      },
+      "effects": {
+       "frost": 7.4,
+       "death": 2
+      },
+      "brewMl": 420,
+      "stability": 96
      }
     },
     "glacial sigil": {
@@ -2583,6 +2647,21 @@
       },
       "brewMl": 420,
       "stability": 100
+     },
+     "frostcap at full cold": {
+      "wanted": {
+       "frost": 5.8
+      },
+      "worstUnwanted": {
+       "key": "death",
+       "v": 1.6
+      },
+      "effects": {
+       "frost": 5.8,
+       "death": 1.6
+      },
+      "brewMl": 420,
+      "stability": 98
      }
     }
    },
@@ -2596,7 +2675,7 @@
       "ml": 300
      }
     },
-    "bellows": {
+    "bellows (retired)": {
      "water 450 ml to 92°C (s)": 3.5,
      "boil down 30 % (s)": 11,
      "lamp oil after 60 s at full fire": {
@@ -2604,7 +2683,7 @@
       "ml": 0
      }
     },
-    "athanor": {
+    "athanor (retired)": {
      "water 450 ml to 92°C (s)": 2.1,
      "boil down 30 % (s)": 12,
      "lamp oil after 60 s at full fire": {
@@ -2623,18 +2702,33 @@
      },
      "frostcap cold steep": {
       "wanted": {
-       "frost": 3.9
+       "frost": 11
       },
       "worstUnwanted": {
        "key": "death",
-       "v": 1
+       "v": 2.8
       },
       "effects": {
-       "frost": 3.9,
-       "death": 1
+       "frost": 11,
+       "death": 2.8
       },
       "brewMl": 420,
       "stability": 100
+     },
+     "frostcap at full cold": {
+      "wanted": {
+       "frost": 11.1
+      },
+      "worstUnwanted": {
+       "key": "death",
+       "v": 2.8
+      },
+      "effects": {
+       "frost": 11.1,
+       "death": 2.8
+      },
+      "brewMl": 420,
+      "stability": 99
      }
     },
     "frost rune": {
@@ -2648,18 +2742,33 @@
      },
      "frostcap cold steep": {
       "wanted": {
-       "frost": 11.1
+       "frost": 11
       },
       "worstUnwanted": {
        "key": "death",
        "v": 2.8
       },
       "effects": {
-       "frost": 11.1,
+       "frost": 11,
        "death": 2.8
       },
       "brewMl": 420,
       "stability": 100
+     },
+     "frostcap at full cold": {
+      "wanted": {
+       "frost": 7.3
+      },
+      "worstUnwanted": {
+       "key": "death",
+       "v": 1.8
+      },
+      "effects": {
+       "frost": 7.3,
+       "death": 1.8
+      },
+      "brewMl": 420,
+      "stability": 98
      }
     },
     "glacial sigil": {
@@ -2685,6 +2794,21 @@
       },
       "brewMl": 420,
       "stability": 100
+     },
+     "frostcap at full cold": {
+      "wanted": {
+       "frost": 5.4
+      },
+      "worstUnwanted": {
+       "key": "death",
+       "v": 1.4
+      },
+      "effects": {
+       "frost": 5.4,
+       "death": 1.4
+      },
+      "brewMl": 420,
+      "stability": 94
      }
     }
    }
