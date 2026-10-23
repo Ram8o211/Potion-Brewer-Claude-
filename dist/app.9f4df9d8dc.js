@@ -1,4 +1,4 @@
-// The Alchemist's Shop 2.2.0 — bundled build
+// The Alchemist's Shop 2.3.0 — bundled build
 // src/ui/icons.js
 const __m3 = (() => {
 const PAL = {
