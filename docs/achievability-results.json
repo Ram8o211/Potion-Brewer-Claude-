@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-23T12:13:23.356Z",
+  "date": "2026-10-23T17:31:07.052Z",
   "per": 2,
   "rows": [
     {
@@ -11,7 +11,7 @@
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 1.3
+      "seconds": 2
     },
     {
       "kind": "realistic",
@@ -22,29 +22,7 @@
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 1.4
-    },
-    {
-      "kind": "realistic",
-      "tier": 0,
-      "tech": "colour",
-      "style": "healing+colour",
-      "generated": true,
-      "quality": 1,
-      "stopped": false,
-      "fails": [],
-      "seconds": 1.4
-    },
-    {
-      "kind": "realistic",
-      "tier": 0,
-      "tech": "colour",
-      "style": "warming+colour",
-      "generated": true,
-      "quality": 1,
-      "stopped": false,
-      "fails": [],
-      "seconds": 1.2
+      "seconds": 1.9
     },
     {
       "kind": "realistic",
@@ -55,62 +33,35 @@
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 1.1
+      "seconds": 1.2
     },
     {
       "kind": "realistic",
       "tier": 0,
       "tech": "serve",
+      "generated": false
+    },
+    {
+      "kind": "realistic",
+      "tier": 1,
+      "tech": null,
       "style": "love+serve",
       "generated": true,
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 6
+      "seconds": 3.1
     },
     {
       "kind": "realistic",
       "tier": 1,
       "tech": null,
-      "style": "love+colour+serve",
+      "style": "strength",
       "generated": true,
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 6.2
-    },
-    {
-      "kind": "realistic",
-      "tier": 1,
-      "tech": null,
-      "style": "strength+density+stable",
-      "generated": true,
-      "quality": 1,
-      "stopped": false,
-      "fails": [],
-      "seconds": 1.5
-    },
-    {
-      "kind": "realistic",
-      "tier": 1,
-      "tech": "colour",
-      "style": "warming+colour+density",
-      "generated": true,
-      "quality": 1,
-      "stopped": false,
-      "fails": [],
-      "seconds": 1.4
-    },
-    {
-      "kind": "realistic",
-      "tier": 1,
-      "tech": "colour",
-      "style": "love+colour",
-      "generated": true,
-      "quality": 1,
-      "stopped": false,
-      "fails": [],
-      "seconds": 1.8
+      "seconds": 2.2
     },
     {
       "kind": "realistic",
@@ -122,74 +73,7 @@
       "kind": "realistic",
       "tier": 1,
       "tech": "serve",
-      "style": "healing+colour+serve",
-      "generated": true,
-      "quality": 1,
-      "stopped": false,
-      "fails": [],
-      "seconds": 2
-    },
-    {
-      "kind": "realistic",
-      "tier": 1,
-      "tech": "stable",
-      "style": "healing+stable",
-      "generated": true,
-      "quality": 1,
-      "stopped": false,
-      "fails": [],
-      "seconds": 2.3
-    },
-    {
-      "kind": "realistic",
-      "tier": 1,
-      "tech": "stable",
-      "style": "love+stable",
-      "generated": true,
-      "quality": 1,
-      "stopped": false,
-      "fails": [],
-      "seconds": 1.5
-    },
-    {
-      "kind": "realistic",
-      "tier": 1,
-      "tech": "density",
-      "style": "warming+density",
-      "generated": true,
-      "quality": 1,
-      "stopped": false,
-      "fails": [],
-      "seconds": 2.1
-    },
-    {
-      "kind": "realistic",
-      "tier": 1,
-      "tech": "density",
-      "style": "love+colour+density",
-      "generated": true,
-      "quality": 1,
-      "stopped": false,
-      "fails": [],
-      "seconds": 1.6
-    },
-    {
-      "kind": "realistic",
-      "tier": 1,
-      "tech": "volatile",
-      "generated": false
-    },
-    {
-      "kind": "realistic",
-      "tier": 1,
-      "tech": "volatile",
-      "generated": false
-    },
-    {
-      "kind": "realistic",
-      "tier": 2,
-      "tech": null,
-      "style": "etching+density+serve",
+      "style": "healing+serve",
       "generated": true,
       "quality": 1,
       "stopped": false,
@@ -200,34 +84,23 @@
       "kind": "realistic",
       "tier": 2,
       "tech": null,
-      "style": "etching+colour+density",
+      "style": "etching+strong",
       "generated": true,
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 3.1
+      "seconds": 5.1
     },
     {
       "kind": "realistic",
       "tier": 2,
-      "tech": "colour",
-      "style": "expedition+colour",
+      "tech": null,
+      "style": "etching+serve",
       "generated": true,
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 3.9
-    },
-    {
-      "kind": "realistic",
-      "tier": 2,
-      "tech": "colour",
-      "style": "recovery+colour",
-      "generated": true,
-      "quality": 1,
-      "stopped": false,
-      "fails": [],
-      "seconds": 5.2
+      "seconds": 2.8
     },
     {
       "kind": "realistic",
@@ -239,40 +112,7 @@
       "kind": "realistic",
       "tier": 2,
       "tech": "serve",
-      "style": "etching+concentrate+serve",
-      "generated": true,
-      "quality": 1,
-      "stopped": false,
-      "fails": [],
-      "seconds": 3.2
-    },
-    {
-      "kind": "realistic",
-      "tier": 2,
-      "tech": "stable",
-      "style": "strength+serve+stable",
-      "generated": true,
-      "quality": 1,
-      "stopped": false,
-      "fails": [],
-      "seconds": 10.2
-    },
-    {
-      "kind": "realistic",
-      "tier": 2,
-      "tech": "stable",
-      "style": "healing+stable",
-      "generated": true,
-      "quality": 1,
-      "stopped": false,
-      "fails": [],
-      "seconds": 2.7
-    },
-    {
-      "kind": "realistic",
-      "tier": 2,
-      "tech": "density",
-      "style": "cooling+density",
+      "style": "etching+serve",
       "generated": true,
       "quality": 1,
       "stopped": false,
@@ -282,225 +122,107 @@
     {
       "kind": "realistic",
       "tier": 2,
-      "tech": "density",
-      "style": "etching+density",
+      "tech": "strong",
+      "style": "healing+strong",
       "generated": true,
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 2.1
+      "seconds": 11.2
     },
     {
       "kind": "realistic",
       "tier": 2,
-      "tech": "volatile",
-      "style": "love+volatile",
+      "tech": "strong",
+      "style": "expedition+strong",
       "generated": true,
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 3.2
-    },
-    {
-      "kind": "realistic",
-      "tier": 2,
-      "tech": "volatile",
-      "generated": false
-    },
-    {
-      "kind": "realistic",
-      "tier": 2,
-      "tech": "concentrate",
-      "style": "cooling+concentrate",
-      "generated": true,
-      "quality": 1,
-      "stopped": false,
-      "fails": [],
-      "seconds": 4.4
-    },
-    {
-      "kind": "realistic",
-      "tier": 2,
-      "tech": "concentrate",
-      "generated": false
+      "seconds": 12.8
     },
     {
       "kind": "realistic",
       "tier": 3,
       "tech": null,
-      "style": "change+volatile",
+      "style": "change+strong",
       "generated": true,
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 6
+      "seconds": 11.8
     },
     {
       "kind": "realistic",
       "tier": 3,
       "tech": null,
-      "style": "strength+concentrate+serve",
+      "style": "strength+serve+strong",
       "generated": true,
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 8.5
-    },
-    {
-      "kind": "realistic",
-      "tier": 3,
-      "tech": "colour",
-      "style": "love+colour",
-      "generated": true,
-      "quality": 1,
-      "stopped": false,
-      "fails": [],
-      "seconds": 3.5
-    },
-    {
-      "kind": "realistic",
-      "tier": 3,
-      "tech": "colour",
-      "style": "forgefire+colour+density",
-      "generated": true,
-      "quality": 1,
-      "stopped": false,
-      "fails": [],
-      "seconds": 4.8
+      "seconds": 20.6
     },
     {
       "kind": "realistic",
       "tier": 3,
       "tech": "serve",
-      "style": "blessing+colour+serve",
+      "style": "blessing+serve+strong",
       "generated": true,
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 6.3
+      "seconds": 17.8
     },
     {
       "kind": "realistic",
       "tier": 3,
       "tech": "serve",
-      "style": "healing+colour+serve",
+      "style": "healing+serve",
       "generated": true,
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 3.7
+      "seconds": 6.8
     },
     {
       "kind": "realistic",
       "tier": 3,
-      "tech": "stable",
-      "style": "forgefire+density+stable",
-      "generated": true,
-      "quality": 1,
-      "stopped": false,
-      "fails": [],
-      "seconds": 4.1
-    },
-    {
-      "kind": "realistic",
-      "tier": 3,
-      "tech": "stable",
-      "style": "forgefire+density+stable",
-      "generated": true,
-      "quality": 1,
-      "stopped": false,
-      "fails": [],
-      "seconds": 5.1
-    },
-    {
-      "kind": "realistic",
-      "tier": 3,
-      "tech": "density",
-      "style": "warming+density",
-      "generated": true,
-      "quality": 1,
-      "stopped": false,
-      "fails": [],
-      "seconds": 3.6
-    },
-    {
-      "kind": "realistic",
-      "tier": 3,
-      "tech": "density",
-      "style": "warming+colour+density",
-      "generated": true,
-      "quality": 1,
-      "stopped": false,
-      "fails": [],
-      "seconds": 2.7
-    },
-    {
-      "kind": "realistic",
-      "tier": 3,
-      "tech": "volatile",
+      "tech": "strong",
       "generated": false
     },
     {
       "kind": "realistic",
       "tier": 3,
-      "tech": "volatile",
-      "generated": false
-    },
-    {
-      "kind": "realistic",
-      "tier": 3,
-      "tech": "concentrate",
-      "generated": false
-    },
-    {
-      "kind": "realistic",
-      "tier": 3,
-      "tech": "concentrate",
-      "generated": false
+      "tech": "strong",
+      "style": "fevercure+strong",
+      "generated": true,
+      "quality": 1,
+      "stopped": false,
+      "fails": [],
+      "seconds": 10.7
     },
     {
       "kind": "realistic",
       "tier": 4,
       "tech": null,
-      "style": "etching+colour+stable",
+      "style": "etching+strong",
       "generated": true,
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 3.6
+      "seconds": 9.8
     },
     {
       "kind": "realistic",
       "tier": 4,
       "tech": null,
-      "style": "healing+density",
+      "style": "healing+strong",
       "generated": true,
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 5.1
-    },
-    {
-      "kind": "realistic",
-      "tier": 4,
-      "tech": "colour",
-      "style": "warming+colour",
-      "generated": true,
-      "quality": 1,
-      "stopped": false,
-      "fails": [],
-      "seconds": 3.3
-    },
-    {
-      "kind": "realistic",
-      "tier": 4,
-      "tech": "colour",
-      "style": "healing+colour+serve",
-      "generated": true,
-      "quality": 1,
-      "stopped": false,
-      "fails": [],
-      "seconds": 3.6
+      "seconds": 17.8
     },
     {
       "kind": "realistic",
@@ -511,91 +233,40 @@
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 5.4
+      "seconds": 8.7
     },
     {
       "kind": "realistic",
       "tier": 4,
       "tech": "serve",
-      "style": "strength+density+serve",
+      "style": "strength+serve",
       "generated": true,
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 5.8
+      "seconds": 6.9
     },
     {
       "kind": "realistic",
       "tier": 4,
-      "tech": "stable",
-      "style": "recovery+stable",
+      "tech": "strong",
+      "style": "healing+strong",
       "generated": true,
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 7
+      "seconds": 12.5
     },
     {
       "kind": "realistic",
       "tier": 4,
-      "tech": "stable",
-      "style": "change+stable",
+      "tech": "strong",
+      "style": "fevercure+strong",
       "generated": true,
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 5.5
-    },
-    {
-      "kind": "realistic",
-      "tier": 4,
-      "tech": "density",
-      "style": "fevercure+density+stable",
-      "generated": true,
-      "quality": 1,
-      "stopped": false,
-      "fails": [],
-      "seconds": 3.6
-    },
-    {
-      "kind": "realistic",
-      "tier": 4,
-      "tech": "density",
-      "style": "healing+density+serve",
-      "generated": true,
-      "quality": 1,
-      "stopped": false,
-      "fails": [],
-      "seconds": 3.5
-    },
-    {
-      "kind": "realistic",
-      "tier": 4,
-      "tech": "volatile",
-      "generated": false
-    },
-    {
-      "kind": "realistic",
-      "tier": 4,
-      "tech": "volatile",
-      "generated": false
-    },
-    {
-      "kind": "realistic",
-      "tier": 4,
-      "tech": "concentrate",
-      "style": "warming+concentrate",
-      "generated": true,
-      "quality": 1,
-      "stopped": false,
-      "fails": [],
-      "seconds": 4.9
-    },
-    {
-      "kind": "realistic",
-      "tier": 4,
-      "tech": "concentrate",
-      "generated": false
+      "seconds": 11
     },
     {
       "kind": "full",
@@ -606,7 +277,7 @@
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 0.8
+      "seconds": 1.2
     },
     {
       "kind": "full",
@@ -617,51 +288,51 @@
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 1.3
+      "seconds": 1.5
     },
     {
       "kind": "full",
       "tier": 1,
       "tech": null,
-      "style": "love+colour+serve",
+      "style": "love+serve",
       "generated": true,
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 6
+      "seconds": 2.7
     },
     {
       "kind": "full",
       "tier": 1,
       "tech": null,
-      "style": "strength+density+stable",
+      "style": "strength",
       "generated": true,
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 2.3
+      "seconds": 2
     },
     {
       "kind": "full",
       "tier": 2,
       "tech": null,
-      "style": "etching+density+serve",
+      "style": "etching+strong",
       "generated": true,
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 3
+      "seconds": 4.2
     },
     {
       "kind": "full",
       "tier": 2,
       "tech": null,
-      "style": "etching+colour+density",
+      "style": "etching+serve",
       "generated": true,
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 2.5
+      "seconds": 2.8
     },
     {
       "kind": "full",
@@ -672,40 +343,40 @@
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 4.4
+      "seconds": 4.7
     },
     {
       "kind": "full",
       "tier": 3,
       "tech": null,
-      "style": "strength+concentrate+serve",
+      "style": "strength+serve+strong",
       "generated": true,
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 6.4
+      "seconds": 20.6
     },
     {
       "kind": "full",
       "tier": 4,
       "tech": null,
-      "style": "etching+colour+stable",
+      "style": "etching+strong",
       "generated": true,
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 3.3
+      "seconds": 9.8
     },
     {
       "kind": "full",
       "tier": 4,
       "tech": null,
-      "style": "healing+density",
+      "style": "healing+strong",
       "generated": true,
       "quality": 1,
       "stopped": false,
       "fails": [],
-      "seconds": 5.4
+      "seconds": 20.7
     }
   ],
   "byTech": {
@@ -715,40 +386,16 @@
       "generated": 20,
       "tried": 20
     },
-    "colour": {
-      "n": 10,
-      "pass": 10,
-      "generated": 10,
-      "tried": 10
-    },
     "serve": {
-      "n": 8,
-      "pass": 8,
-      "generated": 8,
+      "n": 7,
+      "pass": 7,
+      "generated": 7,
       "tried": 10
     },
-    "stable": {
-      "n": 8,
-      "pass": 8,
-      "generated": 8,
-      "tried": 8
-    },
-    "density": {
-      "n": 8,
-      "pass": 8,
-      "generated": 8,
-      "tried": 8
-    },
-    "volatile": {
-      "n": 1,
-      "pass": 1,
-      "generated": 1,
-      "tried": 8
-    },
-    "concentrate": {
-      "n": 2,
-      "pass": 2,
-      "generated": 2,
+    "strong": {
+      "n": 5,
+      "pass": 5,
+      "generated": 5,
       "tried": 6
     }
   },

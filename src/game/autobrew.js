@@ -7,7 +7,7 @@ import { PHASE, SIM } from '../simulation/constants.js';
 import { MAX_SPECIES } from '../reactions/species.js';
 
 /**
- * @typedef {'pour'|'crush'|'stir'|'steep'|'heat'|'hold'|'reduce'|'serve'|'late'|'steps'|'done'} Stage
+ * @typedef {'pour'|'crush'|'stir'|'steep'|'heat'|'hold'|'reduce'|'serve'|'steps'|'done'} Stage
  */
 
 /** Liquid (non-vapour) particles in the cauldron. @param {import('../simulation/world.js').Simulation} sim */
@@ -59,7 +59,6 @@ export class AutoBrewer {
     this.target = 20;
     this.reduceFrom = 0;
     this.venting = 0;
-    this.lateDone = false;
     if (this.steps) this.stage = 'steps';
   }
 
@@ -201,27 +200,7 @@ export class AutoBrewer {
         const err = this.control(plan.serveTemp ?? 20);
         this.status = `Bringing to ${Math.round(plan.serveTemp ?? 20)}°C`;
         if (this.stageT % 2 < 1.2) this.stir(0.8); else this.release();
-        if ((err < 3 && this.stageT > 3) || this.stageT > 60) {
-          if (plan.late && plan.late.length && !this.lateDone) { this.next('late'); return; }
-          this.finish();
-        }
-        return;
-      }
-      case 'late': {
-        // cold additions after the stages: poured at serving temperature, then worked in
-        this.control(plan.serveTemp ?? 20);
-        if (sim.emitter.pouring) { this.stir(0.6); return; }
-        const late = plan.late || [];
-        if (this.ingIndex < plan.ingredients.length + late.length) {
-          const ing = late[this.ingIndex - plan.ingredients.length];
-          this.ingIndex++;
-          if (!this.pourOne(ing)) return;
-          return;
-        }
-        this.lateDone = true;
-        this.status = 'Working it in';
-        this.stir(1);
-        if (this.stageT > (plan.knead ? 14 : 8)) this.finish();
+        if ((err < 3 && this.stageT > 3) || this.stageT > 60) this.finish();
         return;
       }
     }
@@ -284,6 +263,7 @@ export class AutoBrewer {
         return;
       }
       case 'temp': {
+        if (s.loss) { this.tickBoilDown(s, done); return; }
         this.target = s.T;
         this.status = `${s.T < 20 ? 'Chilling' : 'Heating'} to ${s.T}°C`;
         const err = this.control(s.T);
@@ -306,9 +286,35 @@ export class AutoBrewer {
         return;
       }
       default:
-        // skimming and distilling are left to the alchemist: the step is skipped
+        // the skimming and distilling of old recipes are beyond it: the step is skipped (and was announced)
         done();
     }
+  }
+
+  /**
+   * A recorded boil-down: the lid open and the brew boiling until the share
+   * of it that boiled away when the recipe was made has gone, then the fire
+   * out until the steam has left.
+   * @param {{T:number, hold:number, loss:number}} s @param {()=>void} done
+   */
+  tickBoilDown(s, done) {
+    const sim = this.sim, c = sim.cauldron, dt = SIM.DT;
+    if (this.stageT <= dt + 1e-9) { this.reduceFrom = condensedCount(sim); this.venting = 0; }
+    c.lidClosed = false;
+    const goal = Math.round(this.reduceFrom * (1 - s.loss));
+    if (!this.venting) {
+      this.status = `Boiling down (${Math.round((1 - condensedCount(sim) / Math.max(1, this.reduceFrom)) * 100)} of ${Math.round(s.loss * 100)} %)`;
+      this.control(Math.max(s.T, 130));
+      sim.furnace.setting = Math.min(sim.furnace.setting, 0.7);
+      if (this.stageT % 3 < 1.2) this.stir(0.7); else this.release();
+      // what matters is how much boiled away, not how long it took on that fire
+      if (condensedCount(sim) <= goal || this.stageT > s.hold + 200) { this.venting = this.stageT; sim.furnace.setting = 0; this.release(); }
+      return;
+    }
+    this.status = 'Letting the steam out';
+    sim.furnace.setting = 0;
+    const gas = sim.p.count - condensedCount(sim);
+    if (gas <= 0 || this.stageT - this.venting > 20) { this.venting = 0; done(); }
   }
 
   /** @param {Stage} s */

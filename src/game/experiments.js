@@ -177,6 +177,7 @@ export function summarize(samples) {
   /** @type {Record<string, number>} */ const rabbits = {};
   /** @type {Record<string, string>} */ const records = {};
   /** @type {Record<string, boolean>} */ const first = {};
+  /** @type {Record<string, boolean>} */ const unseen = {};
   for (const [key, list] of Object.entries(samples || {})) {
     if (!Array.isArray(list) || !list.length) continue;
     const N = list.length;
@@ -190,6 +191,7 @@ export function summarize(samples) {
     rabbits[key] = R;
     records[key] = list[N - 1].rec;
     first[key] = N === 1;
+    unseen[key] = list.every((s) => s.v === 0);
     // expected per-dose noise (without the rabbit's bias), from each reading's own margin
     const bias = RABBIT_BIAS * Math.abs(mean);
     let prior2 = 0;
@@ -204,8 +206,78 @@ export function summarize(samples) {
     unc[key] = Math.round(1.96 * se * 10) / 10;
     level[key] = N === 1 ? 'preliminary' : R === 1 ? 'repeated' : N >= 3 && unc[key] <= Math.max(2.5, 0.2 * Math.abs(mean)) ? 'certified' : 'corroborated';
   }
-  return { values, spread, unc, level, n, rabbits, records, first };
+  return { values, spread, unc, level, n, rabbits, records, first, unseen };
 }
+
+/**
+ * What the readings of one effect let the alchemist say — never the truth:
+ *   untested      no reading yet;
+ *   not-detected  every rabbit showed nothing. That is not proof of absence:
+ *                 the effect may still be there below the detection margin
+ *                 (`bound`, which narrows with more and larger doses);
+ *   detected      seen in one reading: a rough estimate;
+ *   repeated      several readings on one rabbit (its bias stays in);
+ *   corroborated  readings on several rabbits (certified: also narrow).
+ * Against a tolerance — what an order asks of this effect — `within` says
+ * whether the whole margin lies on the right side of it: true (reliably
+ * met), false (reliably missed) or null (the margin straddles it).
+ * @param {ReturnType<typeof summarize>} sum @param {string} key
+ * @param {{kind:'min'|'max'|'target'|'limit', target:number, tol?:number}} [need]
+ * @returns {{state:string, value:number, bound:number, level:string|null, within:boolean|null}}
+ */
+export function effectEvidence(sum, key, need) {
+  if (!sum || sum.values[key] === undefined) return { state: 'untested', value: 0, bound: Infinity, level: null, within: null };
+  const v = sum.values[key], u = sum.unc[key] ?? 0, level = sum.level[key];
+  const state = sum.unseen && sum.unseen[key] ? 'not-detected' : level === 'preliminary' ? 'detected' : level === 'repeated' ? 'repeated' : 'corroborated';
+  let within = null;
+  if (need) {
+    const lo = v - u, hi = v + u;
+    if (need.kind === 'limit') within = Math.max(Math.abs(lo), Math.abs(hi)) <= need.target ? true : Math.min(Math.abs(lo), Math.abs(hi)) > need.target && Math.sign(lo) === Math.sign(hi) ? false : null;
+    else if (need.kind === 'min') within = lo >= need.target ? true : hi < need.target ? false : null;
+    else if (need.kind === 'max') within = hi <= need.target ? true : lo > need.target ? false : null;
+    else { const t = need.tol || 0; within = Math.abs(v - need.target) + u <= t ? true : Math.abs(v - need.target) - u > t ? false : null; }
+  }
+  return { state, value: v, bound: u, level, within };
+}
+
+/**
+ * What the trials say about one requirement of an order, in the player's
+ * terms (shared by the counter and the trials room): untested, not detected
+ * (with how strong it could still be), a value with its margin — and whether
+ * that margin lies reliably inside what the customer asked (✓), outside it
+ * (✗) or across it (~). A purity rule is judged on every effect it covers.
+ * @param {{key:string, kind:string, target:number, tol?:number, exclude?:string[]}} req
+ * @param {ReturnType<typeof summarize>} sum the trials that count (a batch's, or a vial's own)
+ * @returns {{evidence:string, within:boolean|null, mark:string, text:string, title:string}}
+ */
+export function requirementEvidence(req, sum) {
+  const mark = (w) => (w === true ? '✓' : w === false ? '✗' : '~');
+  const pct = (u) => (u < 10 ? u.toFixed(1) : String(Math.round(u)));
+  if (req.key === 'purity') {
+    const keys = EFFECT_KEYS.filter((k) => !(req.exclude || []).includes(k));
+    const ev = keys.map((k) => ({ k, e: effectEvidence(sum, k, { kind: 'limit', target: req.target }) }));
+    const open = ev.filter((x) => x.e.state === 'untested').length;
+    if (open) return { evidence: 'untested', within: null, mark: '?', text: `${open} untested`, title: 'Test a dose: one trial reads every effect at once.' };
+    const bad = ev.filter((x) => x.e.within === false), unsure = ev.filter((x) => x.e.within === null);
+    if (bad.length) return { evidence: 'missed', within: false, mark: '✗', text: bad.map((x) => EFFECTS[EFFECT_INDEX[x.k]].label).join(', '), title: 'Reliably above the limit.' };
+    if (unsure.length) return { evidence: 'unsure', within: null, mark: '~', text: `${unsure.length} not ruled out`, title: `Not detected is not proof of absence: ${unsure.map((x) => EFFECTS[EFFECT_INDEX[x.k]].label).join(', ')} could still lie above ${req.target}%. More readings, or larger doses, narrow it.` };
+    return { evidence: 'within', within: true, mark: '✓', text: `all below ${req.target}%`, title: 'Every other effect is reliably below the limit.' };
+  }
+  const need = req.kind === 'target' ? { kind: 'target', target: req.target, tol: req.tol } : { kind: req.kind, target: req.target };
+  const e = effectEvidence(sum, req.key, /** @type {any} */ (need));
+  if (e.state === 'untested') return { evidence: 'untested', within: null, mark: '?', text: 'untested', title: '' };
+  if (e.state === 'not-detected') return { evidence: 'not-detected', within: e.within, mark: mark(e.within), text: `not detected (≤${pct(e.bound)})`, title: 'No rabbit showed it. It could still be there, below the reading noise.' };
+  return { evidence: e.state, within: e.within, mark: mark(e.within), text: `${Math.round(e.value)} ±${pct(e.bound)}`, title: e.within === null ? 'The margin of the trials straddles what the customer asked: test again to be sure.' : EVIDENCE_STATE_TEXT[e.state] };
+}
+
+/** How each evidence state reads to the player. */
+export const EVIDENCE_STATE_TEXT = {
+  untested: 'untested',
+  'not-detected': 'not detected',
+  detected: 'detected once — a rough estimate',
+  repeated: 'measured repeatedly on one rabbit',
+  corroborated: 'corroborated on several rabbits',
+};
 
 /** Add one record's readings to a sample set (newest last). @param {Record<string, Sample[]>} samples @param {any} rec */
 export function addSamples(samples, rec) {

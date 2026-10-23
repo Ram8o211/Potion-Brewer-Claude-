@@ -190,6 +190,9 @@ function newSystemsBench() {
 }
 
 // ------------------------------------------------------------------ browser
+/** A preinstalled Chromium can stand in for Playwright's own (PW_CHROMIUM=/path/to/chromium). */
+const LAUNCH = process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {};
+
 async function browserBench() {
   let chromium;
   try {
@@ -202,7 +205,7 @@ async function browserBench() {
   const port = 4199;
   const server = spawn(process.execPath, [path.join(ROOT, 'scripts', 'serve.mjs'), '--root', path.join(ROOT, 'dist'), '--port', String(port)], { stdio: 'ignore' });
   await new Promise((r) => setTimeout(r, 600));
-  const browser = await chromium.launch();
+  const browser = await chromium.launch(LAUNCH);
   const results = [];
   let memory = null;
   const profiles = [
@@ -369,7 +372,7 @@ if (memoryOnly) {
   if (!fs.existsSync(path.join(ROOT, 'dist', 'index.html'))) execFileSync(process.execPath, [path.join(ROOT, 'scripts', 'build.mjs'), '--no-zip'], { stdio: 'inherit' });
   const server = spawn(process.execPath, [path.join(ROOT, 'scripts', 'serve.mjs'), '--root', path.join(ROOT, 'dist'), '--port', '4199'], { stdio: 'ignore' });
   await new Promise((r) => setTimeout(r, 600));
-  const browser = await chromium.launch();
+  const browser = await chromium.launch(LAUNCH);
   try {
     out.browser = { ...(prev.browser || {}), memory: await memorySoak(browser, 4199) };
   } finally {

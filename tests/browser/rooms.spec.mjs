@@ -23,10 +23,10 @@ test('gathering in the wilds fills the stores and depletes the deposit', async (
   const drawn = dep.capacity - node.stock;
   expect(drawn, 'the deposit gave at least what was gathered').toBeGreaterThanOrEqual(promised - 0.5);
   expect(drawn, 'and no more than a quarter of a careful harvest spoils').toBeLessThanOrEqual(dep.capacity * 0.7 + 0.5);
-  // buying the right tool raises the yield
+  // buying the Forager's Kit raises the yield of everything that is not simply picked
   const tool = await lab(page, (l, id) => { const m = l.state.lookup(id); return m.wild.gather; }, dep.materialId);
-  if (tool === 'dig') {
-    await lab(page, (l) => { l.state.coins += 50; l.state.buyEquipment('trowel'); l.views.wilds.refresh(); });
+  if (tool !== 'pick') {
+    await lab(page, (l) => { l.state.coins += 80; l.state.buyEquipment('kit'); l.views.wilds.refresh(); });
     const label2 = await page.locator(`[data-act="gather-${dep.id}"]`).innerText();
     expect(Number(/\+(\d+) ml/.exec(label2)?.[1])).toBe(promised * 2);
   }

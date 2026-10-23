@@ -8,16 +8,15 @@ import { gatherPlan, dayPart, weatherOn, WEATHERS, depositStatus, normalizeGathe
 const fresh = (seed = 'gather-1') => GameState.create(seed, { tutorial: false });
 const depositOf = (st, key) => st.deposits.find((d) => st.lookup(d.materialId).wild.key === key);
 
-test('the right tool doubles a harvest; picking needs none', () => {
+test('the Forager’s Kit doubles every harvest that is not simply picked; picking needs nothing', () => {
   const st = fresh();
-  const chalk = depositOf(st, 'riverchalk');
   const leaf = depositOf(st, 'silverleaf');
-  const byHand = gatherPlan(st, chalk, st.lookup(chalk.materialId));
-  assert.equal(byHand.method.tool, 'trowel');
-  assert.equal(byHand.hasTool, false);
-  st.equipment.push('trowel');
-  const withTool = gatherPlan(st, chalk, st.lookup(chalk.materialId));
-  assert.equal(withTool.take, byHand.take * 2);
+  const kinds = ['riverchalk', 'emberflint', 'emberbark', 'mica'].map((k) => depositOf(st, k)).filter(Boolean);
+  assert.ok(kinds.length >= 3, 'deposits of roots, seams, bark and dust');
+  const byHand = kinds.map((d) => gatherPlan(st, d, st.lookup(d.materialId)));
+  for (const p of byHand) { assert.equal(p.method.tool, 'kit'); assert.equal(p.hasTool, false); }
+  st.equipment.push('kit');
+  kinds.forEach((d, k) => assert.equal(gatherPlan(st, d, st.lookup(d.materialId)).take, byHand[k].take * 2, `${d.materialId}: one kit serves every method`));
   assert.equal(gatherPlan(st, leaf, st.lookup(leaf.materialId)).hasTool, true, 'leaves are picked by hand');
 });
 
@@ -109,10 +108,10 @@ test('what spoils is cut all the same, and careful hands leave a reserve to regr
   // a thorough harvest may take the reserve
   const r = st.gather(chalk.id, { now, thorough: true });
   assert.ok(r.ok);
-  // with the trowel, nothing is spoiled
+  // with the Forager's Kit, nothing is spoiled
   const st2 = fresh('gather-2');
   st2.customerIndex = 1; st2.opened = true;
-  st2.equipment.push('trowel');
+  st2.equipment.push('kit');
   assert.equal(gatherPlan(st2, chalk, st2.lookup(chalk.materialId)).eff, 1);
 });
 

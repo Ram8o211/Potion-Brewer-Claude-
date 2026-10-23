@@ -48,7 +48,7 @@ export class Tutorial {
       { text: 'The rabbit shows how much vitality — and any frost or fire left over — this batch carries. One reading is a rough guess (see its wide ± band); a second rabbit narrows it, and demanding customers insist on that. Back to the cauldron!', target: tab('brew'), done: () => lab.view === 'brew' },
       { text: 'Let it cool to a warm 45°C or so, then press Bottle. A bottle can go to the counter or onto your potion shelves for later.', target: () => lab.bottleFab, done: () => this.flags.bottled },
       { text: 'Your sealed vial waits at the Counter. It labelled itself from your trial — the tested reading is already on it. Offer it to the customer and agree on a price.', target: () => document.querySelector('[data-act=serve]') || tab('counter')(), done: () => this.flags.sold },
-      { text: 'Splendid — your first sale! New orders ask for strength, love, fire — and soon for a true colour, a well-mixed brew, a density or a brew boiled down; the order card says what each takes. Each day dawns with the shop closed: gather dawn flowers, then open the door. Saved recipes keep every step, so you can brew them again exactly.', button: 'Run my shop!' },
+      { text: 'Splendid — your first sale! New orders ask for strength, love, fire — some served hot or chilled, and later stronger than plain brewing gives; the order card says what each takes. Grinding, the steeping heat, cold steeps, stirring and boiling down all change what ends up in the bottle, and only trials tell you how much. Each day dawns with the shop closed: gather dawn flowers, then open the door. Saved recipes keep every step, so you can brew them again the same way.', button: 'Run my shop!' },
     ];
   }
 

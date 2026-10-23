@@ -38,7 +38,7 @@ export const REGIONS = [
   { id: 'meadow', name: 'Sunlit Meadow', rank: 0, magical: false, desc: 'Flowers and clover under an open sky.', sky: [0.55, 0.72, 0.9] },
   { id: 'river', name: 'Willow Bank', rank: 0, magical: false, desc: 'Chalky banks, mushrooms and bog plants along the slow river.', sky: [0.5, 0.66, 0.78] },
   { id: 'quarry', name: 'Ironstone Quarry', rank: 0, magical: false, desc: 'Cut rock faces, mineral crusts and glittering dust.', sky: [0.62, 0.6, 0.58] },
-  { id: 'moonfen', name: 'Moonfen', rank: 2, magical: true, desc: 'A haunted bog lit by wisps. Death-moss and star crystals.', sky: [0.16, 0.18, 0.32] },
+  { id: 'moonfen', name: 'Moonfen', rank: 2, magical: true, desc: 'A haunted bog lit by wisps. Death-moss and star crystals — and magic that wakes in the cold, not the heat.', sky: [0.16, 0.18, 0.32] },
   { id: 'crags', name: 'Ember Crags', rank: 3, magical: true, desc: 'Volcanic slopes where fire-peppers and salamanders live.', sky: [0.42, 0.2, 0.16] },
 ];
 /** @type {Record<string, Region>} */
@@ -160,15 +160,16 @@ export const SCAR_SLOWDOWN = 2;
 // ------------------------------------------------------------------ methods, tools, hours and weather
 
 /**
- * How each kind of ingredient is gathered, and the tool that does it well.
+ * How each kind of ingredient is gathered. Everything but picking needs the
+ * Forager's Kit for a full harvest.
  * @type {Record<string, {verb:string, tool:string|null, sound:string, icon:string, hand:string}>}
  */
 export const METHODS = {
   pick: { verb: 'Pick', tool: null, sound: 'snip', icon: 'rose', hand: '' },
-  dig: { verb: 'Dig up', tool: 'trowel', sound: 'dig', icon: 'trowel', hand: 'by hand, half as much — a trowel digs it out whole' },
-  mine: { verb: 'Chip out', tool: 'rockhammer', sound: 'crack', icon: 'pick', hand: 'prised out by hand, half as much — a rock hammer would split the seam' },
-  scrape: { verb: 'Scrape', tool: 'sickle', sound: 'snip', icon: 'sickle', hand: 'torn off by hand, half as much — a sickle cuts it clean' },
-  sweep: { verb: 'Sweep up', tool: 'brush', sound: 'dig', icon: 'brush', hand: 'scooped by hand, half as much — a brush gathers the fine dust' },
+  dig: { verb: 'Dig up', tool: 'kit', sound: 'dig', icon: 'trowel', hand: 'by hand, half as much — the Forager’s Kit’s trowel digs it out whole' },
+  mine: { verb: 'Chip out', tool: 'kit', sound: 'crack', icon: 'pick', hand: 'prised out by hand, half as much — the Forager’s Kit’s hammer would split the seam' },
+  scrape: { verb: 'Scrape', tool: 'kit', sound: 'snip', icon: 'sickle', hand: 'torn off by hand, half as much — the Forager’s Kit’s sickle cuts it clean' },
+  sweep: { verb: 'Sweep up', tool: 'kit', sound: 'dig', icon: 'brush', hand: 'scooped by hand, half as much — the Forager’s Kit’s brush gathers the fine dust' },
 };
 
 /** The method an ingredient needs. @param {any} m material */

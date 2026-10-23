@@ -18,6 +18,8 @@ export default defineConfig({
     baseURL: 'http://localhost:5173',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
+    // a preinstalled Chromium can stand in for the pinned one (PW_CHROMIUM=/path/to/chromium)
+    ...(process.env.PW_CHROMIUM ? { launchOptions: { executablePath: process.env.PW_CHROMIUM } } : {}),
   },
   webServer: [
     { command: 'node scripts/serve.mjs --root . --port 5173', url: 'http://localhost:5173/index.html', reuseExistingServer: true },

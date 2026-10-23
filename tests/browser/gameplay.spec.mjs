@@ -62,9 +62,9 @@ test('first commission: brew, test on a subject, bottle and serve', async ({ pag
   expect(rec.values.love, 'the rabbit reports love too').toBeDefined();
   expect(rec.values.acidity, 'and acidity: a rabbit shows every effect').toBeDefined();
   await shot(page, info, 'trial');
-  // back at the cauldron the healing requirement is verified
+  // back at the cauldron the healing requirement has a reading — met (✓) or, after a single noisy one, not yet settled (~)
   await page.click('[data-act=tab-brew]');
-  await expect(page.locator('.req-chip.fx').first()).toContainText('✓', { timeout: 5000 });
+  await expect(page.locator('.req-chip.fx').first()).toContainText(/[✓~]/, { timeout: 5000 });
   // bottle the ordered quantity: the sealed vial goes to the counter
   await page.click('[data-act=bottle]');
   const orderMl = await lab(page, (l) => l.state.current.bottleMl);
@@ -137,6 +137,12 @@ test('a customer who insists on proof will not buy until the vial is tested; tes
   });
   await pourDose(page, await lab(page, (l) => l.state.world.roles.water), [100]);
   await pourDose(page, 'wild-silverleaf', [50]);
+  // steeped warm, so one reading plainly shows the healing (a cold brew is too weak to be sure of)
+  await lab(page, (l) => { l.setAutoStir(true); l.setFurnace(0.8); l.speed = 4; });
+  await page.waitForFunction(() => { const p = window.__alchemist.screen.sim.p; let t = 0; for (let i = 0; i < p.count; i++) t += p.temp[i]; return t / p.count > 60; }, null, { timeout: 60_000, polling: 250 });
+  await lab(page, (l) => l.setFurnace(0.1));
+  await page.waitForTimeout(4000);
+  await lab(page, (l) => { l.setFurnace(0); l.setAutoStir(false); l.speed = 1; });
   await page.click('[data-act=bottle]');
   await page.click('[data-act=bottle-50]');
   await expect(page.locator('[data-act=serve]')).toBeVisible({ timeout: 20_000 });

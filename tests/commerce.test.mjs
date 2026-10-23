@@ -262,10 +262,11 @@ test('a tested label carries the standard deviation, and earns accuracy stars as
 
 test('the label rates as its least accurate claim; estimates and your own figures earn no stars', () => {
   const ev = { level: 'certified', n: 10, r: 5, u: 0.8, s: 0.4 };
-  const label = { day: 1, claims: {
+  /** @type {import('../src/game/commerce.js').Label} */
+  const label = /** @type {any} */ ({ day: 1, claims: {
     vitality: { kind: 'value', value: 7, measured: 7, source: 'trial', evidence: ev },
     love: { kind: 'unknown', source: 'estimate' },
-  } };
+  } });
   assert.equal(labelStars(label), 3, 'a claim of nothing does not count');
   label.claims.fire = { kind: 'value', value: 4, source: 'estimate', spread: 3 };
   assert.equal(labelStars(label), 0);

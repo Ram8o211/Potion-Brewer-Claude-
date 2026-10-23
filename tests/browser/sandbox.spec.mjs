@@ -60,6 +60,17 @@ test('freeze a liquid into a block, then crush it with the pestle', async ({ pag
   expect(errors).toEqual([]);
 });
 
+test('the physics demonstrations live here: skimmer, alembic, heat map and exact readings', async ({ page }) => {
+  const errors = watchErrors(page);
+  await startSandbox(page);
+  for (const act of ['alembic', 'thermal', 'tool-skimmer']) await expect(page.locator(`[data-act=${act}]`).first()).toBeAttached();
+  await pourRole(page, 'water', 200, 0);
+  await page.click('[data-act=sample]');
+  await expect(page.locator('.overlay')).toContainText('g/ml');
+  await expect(page.locator('.overlay')).toContainText('Charge');
+  expect(errors).toEqual([]);
+});
+
 test('oil catches fire on a strong furnace and the lid smothers it', async ({ page }, info) => {
   const errors = watchErrors(page);
   await startSandbox(page);

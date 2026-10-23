@@ -1,10 +1,13 @@
 // An automated shopkeeper that plays the real game loop with only what a
 // player can know: the public effects of each ingredient (the jar's
 // long-press), the guild theory (alchemy/effects.js theoryOf, with the laws
-// it has discovered), extraction windows it has learnt from the ingredients'
-// lore (the knowing profiles), its trials on its own rabbits, and what its
-// instruments read. It never sees the order's hidden reference plan, the
-// hidden laws or the true effects of a brew.
+// it has discovered), steeping temperatures read from each ingredient's lore
+// until its journal records the extraction it has seen happen (with the
+// window the journal states), awakening temperatures its journal recorded,
+// the arcanometer's reading of the brew in its own cauldron, its trials on
+// its own rabbits, and what it sees. It never reads the order's hidden
+// reference plan, an ingredient's hidden arcane threshold or reaction
+// window, the hidden laws or the true effects of a brew.
 //
 // One order: gather or (legally) buy → formulate → brew in the real
 // simulation (AutoBrewer stages driven by the bot's own plan) → test doses
@@ -15,17 +18,19 @@
 import { Simulation } from '../../src/simulation/world.js';
 import { AutoBrewer, condensedCount } from '../../src/game/autobrew.js';
 import { tapSelection, measureParticles } from '../../src/game/measure.js';
+import { processEvent } from '../../src/game/journal.js';
+import { ARC_NONE } from '../../src/simulation/particles.js';
 import { certification } from '../../src/game/experiments.js';
+import { coldFloor } from '../../src/game/commissions.js';
 import { draftLabel, openNegotiation, proposePrice, acceptOffer, proofGaps } from '../../src/game/commerce.js';
 import { makeVial, updateVial } from '../../src/game/vial.js';
 import { livingRabbits } from '../../src/game/colony.js';
 import { theoryOf, EFFECT_KEYS, EFFECT_INDEX, NE } from '../../src/alchemy/effects.js';
 import { isMagical, thresholdToCelsius } from '../../src/alchemy/arcane.js';
 import { scoreRequirement } from '../../src/game/evaluate.js';
-import { buildProcedure, traceSample, matchRecipe } from '../../src/game/recipes.js';
+import { buildProcedure, traceSample } from '../../src/game/recipes.js';
 import { PHASE, SIM } from '../../src/simulation/constants.js';
 import { equipmentById } from '../../src/game/equipment.js';
-import { techniqueById } from '../../src/game/commissions.js';
 
 /**
  * Player profiles. `shop` is the order in which equipment is bought when
@@ -34,15 +39,15 @@ import { techniqueById } from '../../src/game/commissions.js';
  */
 export const PROFILES = {
   beginner: { name: 'beginner', trials: 1, rabbits: 1, iterate: 0, windows: false, lessons: false, recipes: false, batch: false, stir: 4, margin: 1.0, error: 0.3, helpers: 1,
-    shop: ['trowel', 'pestle', 'rack1'] },
+    shop: ['kit', 'rack1'] },
   casual: { name: 'casual', trials: 1, rabbits: 1, iterate: 1, windows: false, lessons: true, recipes: false, batch: false, stir: 8, margin: 1.15, error: 0.15, helpers: 2,
-    shop: ['trowel', 'pestle', 'rack1', 'rockhammer', 'brush', 'satchel', 'bellows', 'kennel'] },
+    shop: ['kit', 'rack1', 'satchel', 'kennel', 'frostrune'] },
   careful: { name: 'careful', trials: 3, rabbits: 3, iterate: 3, windows: true, lessons: true, recipes: false, batch: false, stir: 14, margin: 1.3, error: 0.04, helpers: 4,
-    shop: ['trowel', 'pestle', 'hydrometer', 'rockhammer', 'brush', 'assay', 'kennel', 'sickle', 'frostrune', 'bellows', 'arcanometer', 'lens', 'rack1', 'still', 'satchel', 'charter', 'copper', 'athanor'] },
+    shop: ['kit', 'kennel', 'frostrune', 'arcanometer', 'rack1', 'still', 'satchel', 'warren', 'charter', 'copper', 'glacial'] },
   experienced: { name: 'experienced', trials: 2, rabbits: 2, iterate: 2, windows: true, lessons: true, recipes: true, batch: false, stir: 12, margin: 1.3, error: 0.04, helpers: 4,
-    shop: ['trowel', 'pestle', 'rockhammer', 'brush', 'hydrometer', 'assay', 'bellows', 'frostrune', 'kennel', 'sickle', 'arcanometer', 'rack1', 'satchel', 'homunculus', 'copper', 'charter', 'athanor'] },
+    shop: ['kit', 'frostrune', 'kennel', 'arcanometer', 'rack1', 'satchel', 'stirrer', 'charter', 'copper', 'homunculus', 'glacial'] },
   efficient: { name: 'efficient', trials: 2, rabbits: 2, iterate: 1, windows: true, lessons: true, recipes: true, batch: true, stir: 12, margin: 1.3, error: 0.06, helpers: 3,
-    shop: ['trowel', 'pestle', 'rack1', 'rockhammer', 'brush', 'stirrer', 'hydrometer', 'assay', 'bellows', 'rack2', 'kennel', 'copper', 'frostrune', 'satchel', 'arcanometer', 'charter', 'rack3', 'homunculus'] },
+    shop: ['kit', 'rack1', 'stirrer', 'frostrune', 'rack2', 'kennel', 'copper', 'satchel', 'arcanometer', 'charter', 'rack3', 'homunculus'] },
 };
 
 /** The guild's opposing pairs as net channels the bot balances on (theory is linear on them). */
@@ -74,12 +79,77 @@ export function cauldronFor(st) {
   return sim;
 }
 
-/** The extraction window of an ingredient (what its lore tells a reader), or null. */
-function windowOf(st, id) {
-  const r = st.world.reactions.find((x) => x.a === id && x.products.length === 1 && /^rw_(extract|infuse|steep|mandrake|starquartz|dragonoil)/.test(x.id));
-  if (!r) return null;
-  const into = r.b === st.world.roles.spirit ? 'spirit' : r.b === st.world.roles.oil ? 'oil' : 'water';
-  return { lo: r.minT, hi: r.maxT, into };
+/**
+ * The steeping window of an ingredient as the player knows it: the one the
+ * journal states once the extraction has been seen happening in the shop's
+ * cauldron, otherwise a guess from the lore's words ("ice-cold", "gentle
+ * warmth", "near boiling", "warm spirits", "hot oil"…). Null for liquids
+ * and for solids the lore gives no reason to steep.
+ * @param {any} st @param {string} id
+ */
+export function windowOf(st, id) {
+  const m = st.lookup(id);
+  if (!m || m.form === 'liquid' || m.form === 'gas') return null;
+  const lore = String(m.description || '').toLowerCase();
+  const into = /spirit/.test(lore) ? 'spirit' : /hot oil|loves oil|into oil/.test(lore) ? 'oil' : 'water';
+  // an extraction the journal has recorded (named an extract, infusion, tea… — not a spoiling)
+  const seen = discovered(st, id).find((r) => EXTRACTION.test(r.id));
+  if (seen) return { lo: seen.minT, hi: seen.maxT, into: seen.b === st.world.roles.spirit ? 'spirit' : seen.b === st.world.roles.oil ? 'oil' : 'water', known: true };
+  const w = loreWindow(lore, into, m);
+  // "strong heat spoils them": keep delicate petals well below a boil
+  if (w && /spoil|wilt/.test(lore)) w.hi = Math.min(w.hi, 70);
+  return w;
+}
+
+/** Extraction reactions (as their names in the journal tell): extracts, infusions, teas, tinctures. */
+const EXTRACTION = /^rw_(extract|infuse|steep|mandrake|starquartz|dragonoil)/;
+
+/** Reactions of an ingredient that the journal has recorded. @param {any} st @param {string} id */
+function discovered(st, id) {
+  return st.world.reactions.filter((r) => r.a === id && st.journal['reaction:' + r.id]);
+}
+
+/** A steeping window guessed from an ingredient's lore. */
+function loreWindow(lore, into, m) {
+  if (/ice-cold|near-freezing|freezing water/.test(lore)) return { lo: 0, hi: 10, into, known: false };
+  if (/hot oil|fierce heat/.test(lore)) return { lo: 150, hi: 250, into: 'oil', known: false };
+  if (/near boiling|near the boil|nearly boiling/.test(lore)) return { lo: 80, hi: 98, into, known: false };
+  if (/lukewarm/.test(lore)) return { lo: 20, hi: 45, into, known: false };
+  if (/gentle warmth|warm water|warm spirits|warmed/.test(lore)) return { lo: 35, hi: 60, into, known: false };
+  if (/steeped hot|simmer|hot water/.test(lore)) return { lo: 50, hi: 85, into, known: false };
+  if (m.form === 'solid' || m.form === 'powder') return { lo: 40, hi: 75, into, known: false };
+  return null;
+}
+
+/** Feed the cauldron's events to the journal, as the lab does (what the player sees happen). */
+function observe(st, sim) {
+  if (!sim.events.length) return;
+  for (const e of sim.events.splice(0)) processEvent(st, e);
+}
+
+/**
+ * The arcanometer's reading of the brew: the mean arcane threshold of the
+ * unawakened magic in the cauldron, to the nearest 50 (lab.js arcaneReading).
+ * Null without magic.
+ * @param {any} sim
+ */
+function arcanometerReading(sim) {
+  const p = sim.p;
+  let w = 0, t = 0;
+  for (let i = 0; i < p.count; i++) if (p.arcT[i] < ARC_NONE) { w++; t += p.arcT[i]; }
+  return w ? Math.round(t / w / 50) * 50 : null;
+}
+
+/**
+ * Where the player expects magic to wake: the temperatures its journal
+ * recorded for these ingredients (or the extracts it has seen them give),
+ * else the region's lore (the Moonfen's magic wakes in the cold).
+ */
+function awakenGuess(st, mags) {
+  const ids = (m) => [m.id, ...discovered(st, m.id).flatMap((r) => r.products.map((p) => p.id))];
+  const seen = mags.flatMap((m) => ids(m).map((id) => st.knowledge[id] && st.knowledge[id].awaken)).filter((v) => v !== undefined);
+  const cold = mags.some((m) => m.wild && m.wild.region === 'moonfen');
+  return { seen, cold };
 }
 
 /** Ingredients the shop can get today: shelf, wilds, market. */
@@ -107,7 +177,7 @@ export function formulate(st, com, prof, brewMl, now, rng) {
   const free = new Set([...(purity ? purity.exclude : wanted.map((w) => w.key))]);
   const pool = obtainable(st, now).filter((m) => Object.entries(m.effects).every(([k, v]) => Math.abs(Number(v)) < 1 || free.has(k) || CHAN[k]));
   const vec = (m) => { const e = new Array(NE).fill(0); for (const [k, v] of Object.entries(m.effects)) e[EFFECT_INDEX[k]] = Number(v) || 0; return CH(e); };
-  const carriers = wanted.map((w) => pool.filter((m) => w.sign * (m.effects[w.key] || 0) >= 8).sort((a, b) => w.sign * (b.effects[b.key] || 0) - w.sign * (a.effects[a.key] || 0) || (st.stock(b.id) - st.stock(a.id)))[0]).filter(Boolean);
+  const carriers = wanted.map((w) => pool.filter((m) => w.sign * (m.effects[w.key] || 0) >= 8).sort((a, b) => w.sign * (b.effects[w.key] || 0) - w.sign * (a.effects[w.key] || 0) || (st.stock(b.id) - st.stock(a.id)))[0]).filter(Boolean);
   if (carriers.length < wanted.length) return null;
   const tgt = new Array(7).fill(0), wt = new Array(7).fill(6);
   for (const w of wanted) {
@@ -184,9 +254,10 @@ export function provision(st, parts, prof, clock, met) {
 
 /**
  * Turn a formulation into stages the AutoBrewer runs: grind every solid,
- * steep where the bot knows the windows (else a warm 60 °C steep), hold
- * past the arcane threshold when the order needs awakening (by the
- * arcanometer's reading if owned, by the boil otherwise), then the
+ * steep where the bot's knowledge puts the windows (the journal, else the
+ * lore; a beginner just steeps at 60 °C), hold past the arcane threshold
+ * when the order needs awakening (where the journal saw it wake, else the
+ * arcanometer's reading of the brew — see brew() — else the boil), then the
  * techniques the order asks for, as the order card's lessons say.
  */
 export function stagePlan(st, com, prof, parts, sim) {
@@ -204,25 +275,26 @@ export function stagePlan(st, com, prof, parts, sim) {
       plan.steep = { T: Math.min(T, st.cap.maxFlame - 40), hold: 24 };
       plan.heatTo = plan.steep.T;
     }
-    if (wins.some((w) => w.lo <= 15) && st.cap.minCool <= 6) plan.coolTo = Math.max(st.cap.minCool + 2, 4);
+    // ice-cold steeps: as cold as the equipment holds a brew (the basin's description says about 9 °C), never frozen
+    const cold = wins.filter((w) => w.hi <= 20);
+    if (cold.length) { const T = Math.max(coldFloor(st.cap) + 1, Math.round((cold[0].lo + cold[0].hi) / 2)); if (T <= Math.min(...cold.map((w) => w.hi)) - 2) plan.coolTo = T; }
   } else if (wins.length) { plan.steep = { T: 60, hold: 20 }; plan.heatTo = 60; }
-  // awakening: the order is beyond sleeping magic
+  // awakening: the order is beyond sleeping magic. The temperature comes from
+  // the journal (where these ingredients awoke before), else from the
+  // arcanometer read on the brew itself (brew()), else the boil or the
+  // coldest the plate gives
   if (com.activation) {
     const mags = parts.map((p) => st.lookup(p.id)).filter(isMagical);
-    const thr = mags.length ? mags.reduce((a, m) => a + m.arcane.thr, 0) / mags.length : 0;
-    if (thr >= 0) plan.heatTo = Math.max(plan.heatTo, st.has('arcanometer') ? Math.min(98, thresholdToCelsius(thr) + 10) : 98);
-    else plan.coolTo = Math.min(plan.coolTo, st.has('arcanometer') ? Math.max(st.cap.minCool + 2, thresholdToCelsius(thr) - 10) : st.cap.minCool + 2);
+    const g = awakenGuess(st, mags);
+    if (!g.cold) plan.heatTo = Math.max(plan.heatTo, g.seen.length ? Math.min(98, Math.max(...g.seen) + 8) : 98);
+    else plan.coolTo = Math.min(plan.coolTo, g.seen.length ? Math.max(st.cap.minCool + 2, Math.min(...g.seen) - 8) : st.cap.minCool + 2);
     plan.hold = 18; plan.activate = true;
+    plan.arcanometer = st.has('arcanometer') && !g.seen.length;
   }
   const temp = com.requirements.find((r) => r.key === 'temperature');
   if (temp) plan.serveTemp = Math.round(Number(temp.target));
   const techs = prof.lessons ? com.techniques || [] : [];
-  if (techs.includes('concentrate')) plan.reduce = { frac: 0.25 };
-  if (techs.includes('volatile')) {
-    const w = plan.ingredients.find((i) => i.id === st.world.roles.water);
-    const n = Math.round(plan.ingredients.reduce((a, i) => a + i.n, 0) * 0.3);
-    if (w && w.n > n + 4) { w.n -= n; plan.late = [{ id: st.world.roles.spirit, n }]; }
-  }
+  if (techs.includes('strong')) plan.reduce = { frac: 0.25 };
   plan.knead = prof.stir >= 10;
   void sim;
   return plan;
@@ -230,6 +302,17 @@ export function stagePlan(st, com, prof, parts, sim) {
 
 /** Brew a plan in the real cauldron, recording the brew log (pours and a trace) as the lab does. */
 export function brew(st, sim, plan, met, log) {
+  // with the arcanometer, the awakening is planned from its reading of the poured, mixed brew
+  if (plan.activate && plan.arcanometer) {
+    const pre = { ...plan, heatTo: plan.steep ? plan.steep.T : 20, coolTo: Math.min(20, plan.steep ? plan.steep.T : 20, plan.coolTo > 0 ? plan.coolTo : 20), serveTemp: 20, activate: false, hold: 6, reduce: undefined };
+    brew(st, sim, pre, met, log);
+    const thr = arcanometerReading(sim);
+    bump(met, 'arcanometer');
+    const next = { ingredients: [], heatTo: 20, coolTo: 20, serveTemp: plan.serveTemp, hold: 18, activate: true, knead: plan.knead };
+    if (thr !== null && thr >= 0) next.heatTo = Math.min(98, thresholdToCelsius(thr) + 8);
+    else if (thr !== null) next.coolTo = Math.max(st.cap.minCool + 2, thresholdToCelsius(thr) - 8);
+    return brew(st, sim, { ...next, reduce: plan.reduce }, met, log);
+  }
   const ab = new AutoBrewer(sim, plan, st.lookup, {
     onPour: (id, n) => st.consume(id, n * SIM.ML_PER_PARTICLE),
     onPoured: (id, n, ground) => log.push({ type: 'pour', id, ml: n * SIM.ML_PER_PARTICLE, t: Math.round(sim.time), ...(ground ? { ground: true } : {}) }),
@@ -238,11 +321,12 @@ export function brew(st, sim, plan, met, log) {
   for (let g = 0; !ab.done && g < 120 * 900; g++) {
     ab.tick();
     sim.step();
+    observe(st, sim);
     if (sim.time >= next) {
       next = sim.time + 1;
       let T = 0, n = 0;
       for (let i = 0; i < sim.p.count; i++) if (sim.p.phase[i] !== PHASE.GAS) { T += sim.p.temp[i]; n++; }
-      if (n) traceSample(log, { t: sim.time, T: T / n, stir: sim.tool.active && sim.tool.type === 'spoon', crush: sim.tool.active && sim.tool.type === 'pestle', lid: sim.cauldron.lidClosed });
+      if (n) traceSample(log, { t: sim.time, T: T / n, stir: sim.tool.active && sim.tool.type === 'spoon', crush: sim.tool.active && sim.tool.type === 'pestle', lid: sim.cauldron.lidClosed, ml: n * SIM.ML_PER_PARTICLE });
     }
   }
   if (ab.failed) met.failedBrews++;
@@ -251,8 +335,9 @@ export function brew(st, sim, plan, met, log) {
   if (plan.steep) bump(met, 'steeping', 'processes');
   if (plan.activate) bump(met, 'awakening', 'processes');
   if (plan.reduce) bump(met, 'boiling down', 'processes');
-  if (plan.late) bump(met, 'cold addition', 'processes');
+  if (plan.steep && plan.steep.T < 15 || (plan.coolTo ?? 20) <= 8 && !plan.activate) bump(met, 'cold steep', 'processes');
   if ((plan.coolTo ?? 20) < 15) bump(met, 'chilling', 'processes');
+  if ((plan.steps || []).length) bump(met, 'recipe replay', 'processes');
   return ab;
 }
 
@@ -266,9 +351,10 @@ export function stirFor(st, sim, secs, met) {
     t.autoCenterY = (top + c.depth) / 2; t.autoRadius = c.belly * 0.55; t.autoSpan = Math.max(0, (c.depth - top) / 2 - 0.2);
     bump(met, 'stirrer');
   } else { t.autoCenterY = c.depth - Math.min(0.75, c.depth * 0.3); t.autoRadius = c.belly * 0.32; t.autoSpan = 0; }
-  for (let k = 0; k < secs * 120; k++) { t.beginFrame(); t.substep(0, 1); sim.step(); }
+  for (let k = 0; k < secs * 120; k++) { t.beginFrame(); t.substep(0, 1); sim.step(); observe(st, sim); }
   t.auto = false; t.active = false;
   for (let k = 0; k < 60; k++) sim.step();
+  observe(st, sim);
 }
 
 /** Test doses from the tap on `rabbits` different rabbits, `trials` doses in all. */
@@ -403,12 +489,6 @@ export function sell(st, vial, prof, met, fromShelf = false) {
     met.levelsAtSale[c.evidence.level] = (met.levelsAtSale[c.evidence.level] || 0) + 1;
     met.uncAtSale.push(c.evidence.u);
   }
-  // instruments that read what this order asked
-  for (const r of com.requirements) {
-    const inst = { density: 'hydrometer', stability: 'assay', volatility: 'assay', viscosity: 'viscometer' }[r.key];
-    if (inst && st.has(inst)) bump(met, inst);
-  }
-  if (com.activation && st.has('arcanometer')) bump(met, 'arcanometer');
   return sale;
 }
 
@@ -528,10 +608,9 @@ export function serveOrder(st, prof, rng, clock, met) {
   // remember how it was done
   if (sale && prof.recipes && sale.quality >= 0.85 && !recipe) {
     const steps = buildProcedure(log, vial.m.temperature);
-    st.addRecipe({ name: com.potionName, request: com.request, techniques: com.techniques || [], ingredients: parts.map((p) => ({ ...p })), steps, verified: { ...(vial.cert || {}) }, result: { color: vial.m.color, density: vial.m.density, viscosity: vial.m.viscosity }, serveTemp: Math.round(vial.m.temperature), maxTemp: 20, minTemp: 20 });
+    st.addRecipe({ name: com.potionName, request: com.request, techniques: com.techniques || [], ingredients: parts.map((p) => ({ ...p })), steps, verified: { ...(vial.cert || {}) }, result: { color: vial.m.color }, serveTemp: Math.round(vial.m.temperature), maxTemp: 20, minTemp: 20, brews: 1, reproduced: 0, mismatched: 0 });
     met.recipeSaves++;
   }
-  void matchRecipe;
   return sale ? 'sold' : 'refused';
 }
 
@@ -548,6 +627,8 @@ export function evening(st, prof, met) {
     else st.settleFollowUp(f.id, 'dismiss');
   }
   if (st.coins > 5) st.feedRabbits();
+  // the most of any one reagent ever on the shelf (does shelf space ever bind?)
+  for (const v of Object.values(st.inventory)) if (Number.isFinite(v)) met.maxStock = Math.max(met.maxStock || 0, v);
   for (const id of prof.shop) {
     const e = equipmentById(id);
     if (!e || st.has(id) || e.rank > st.rank || (e.requires && !e.requires.every((r) => st.has(r)))) continue;
@@ -556,5 +637,4 @@ export function evening(st, prof, met) {
   }
   // stale stock: bottles of shelved batches whose evidence went stale are poured away when the shelves fill
   while (st.bottleRoom <= 0 && st.bottles.length) { st.bottles.shift(); met.discarded++; }
-  void techniqueById;
 }

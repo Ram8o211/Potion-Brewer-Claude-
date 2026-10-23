@@ -11,15 +11,19 @@
 //   stability   homogeneity of composition, phase compatibility, sediment
 //   volatility  tendency to evaporate / react (volatile species, dissolved gas)
 //   quantity    millilitres actually bottled
+//
+// Customers only ever judge the effects, the quantity and (if asked) the
+// temperature. Colour, density, thickness and evenness are what the eye sees
+// (the words below); their numbers, with stability, volatility and charge,
+// are physics shown in the Free Experiment and used internally (the brew
+// advice reads stability to tell an uneven brew).
 
 import { MAX_SPECIES } from '../reactions/species.js';
 import { PHASE, SIM } from '../simulation/constants.js';
 import { compatFactor } from '../reactions/compatibility.js';
 import { oklabToRgb } from '../core/color.js';
-import { sampleEffects, EFFECT_KEYS } from '../alchemy/effects.js';
+import { sampleEffects } from '../alchemy/effects.js';
 
-export const PHYSICAL_KEYS = ['color', 'density', 'viscosity', 'temperature', 'stability', 'volatility', 'charge', 'quantity'];
-export const PROPERTY_KEYS = [...PHYSICAL_KEYS.slice(0, -1), ...EFFECT_KEYS, 'quantity'];
 
 /**
  * @typedef {Object} Measurement
@@ -33,7 +37,7 @@ export const PROPERTY_KEYS = [...PHYSICAL_KEYS.slice(0, -1), ...EFFECT_KEYS, 'qu
  * @property {number} temperature
  * @property {number[]} effects  NE effect channels (alchemy/effects.js EFFECT_KEYS order)
  * @property {number[]} resonance how much each world law contributed (for discovery)
- * @property {number} charge    mean electric charge per particle (galvanometer)
+ * @property {number} charge    mean electric charge per particle (shown in the Free Experiment)
  * @property {number} stability 0..100
  * @property {number} volatility 0..100
  * @property {Record<string, number>} phases fraction of particles per phase name
@@ -178,6 +182,12 @@ export function viscosityClass(cP) {
   return 'stiff dough';
 }
 
-export const VISCOSITY_CLASSES = [
-  ['watery', 0, 3], ['thin', 3, 30], ['syrupy', 30, 400], ['thick', 400, 8000], ['paste', 8000, 120000], ['stiff dough', 120000, 1e9],
-];
+/** What the eye and the hand tell of a brew's weight. @param {number} rho g/ml */
+export function densityWord(rho) {
+  return rho > 1.3 ? 'heavy' : rho < 0.9 ? 'light' : 'like water';
+}
+
+/** Whether a brew looks evenly mixed (from its stability). @param {number} stability 0..100 */
+export function evennessWord(stability) {
+  return stability >= 90 ? 'evenly mixed' : stability >= 70 ? 'a little uneven' : 'uneven — stir it';
+}

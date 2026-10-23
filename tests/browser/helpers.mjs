@@ -8,7 +8,7 @@ export const SHOT_DIR = path.resolve('test-results', 'screenshots');
 export function watchErrors(page) {
   /** @type {string[]} */
   const errors = [];
-  page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
+  page.on('pageerror', (e) => errors.push('pageerror: ' + e.message + (process.env.PW_STACK ? ' ' + e.stack : '')));
   page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
   return errors;
 }

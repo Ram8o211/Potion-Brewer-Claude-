@@ -20,14 +20,14 @@ test('buying reagents and equipment', async ({ page }, info) => {
   expect(after.stock).toBe(before.stock + Number(ml));
   expect(after.coins).toBeLessThan(before.coins);
   await shot(page, info, 'shop-bought');
-  // equipment: give enough coins, then buy the bellows through the dialog
+  // equipment: give enough coins, then buy the frost rune through the dialog
   await lab(page, (l) => { l.state.coins = 500; l.state.reputation = 70; });
   await page.click('[data-act=shop-tab-equipment]');
-  await page.click('[data-act=equip-bellows]');
+  await page.click('[data-act=equip-frostrune]');
   await page.locator('.overlay .modal-foot .btn', { hasText: 'Buy' }).last().click();
-  await expect.poll(() => lab(page, (l) => l.state.has('bellows'))).toBe(true);
-  const furnace = await lab(page, (l) => l.sim.furnace.maxFlame);
-  expect(furnace, 'the new furnace raises the flame limit').toBeGreaterThan(400);
+  await expect.poll(() => lab(page, (l) => l.state.has('frostrune'))).toBe(true);
+  const plate = await lab(page, (l) => l.sim.furnace.minCool);
+  expect(plate, 'the rune draws the plate far below freezing').toBeLessThan(-20);
   await shot(page, info, 'shop-equipment');
   expect(errors).toEqual([]);
 });
