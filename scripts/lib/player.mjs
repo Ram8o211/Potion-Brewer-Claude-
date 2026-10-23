@@ -177,7 +177,7 @@ export function formulate(st, com, prof, brewMl, now, rng) {
   const free = new Set([...(purity ? purity.exclude : wanted.map((w) => w.key))]);
   const pool = obtainable(st, now).filter((m) => Object.entries(m.effects).every(([k, v]) => Math.abs(Number(v)) < 1 || free.has(k) || CHAN[k]));
   const vec = (m) => { const e = new Array(NE).fill(0); for (const [k, v] of Object.entries(m.effects)) e[EFFECT_INDEX[k]] = Number(v) || 0; return CH(e); };
-  const carriers = wanted.map((w) => pool.filter((m) => w.sign * (m.effects[w.key] || 0) >= 8).sort((a, b) => w.sign * (b.effects[b.key] || 0) - w.sign * (a.effects[a.key] || 0) || (st.stock(b.id) - st.stock(a.id)))[0]).filter(Boolean);
+  const carriers = wanted.map((w) => pool.filter((m) => w.sign * (m.effects[w.key] || 0) >= 8).sort((a, b) => w.sign * (b.effects[w.key] || 0) - w.sign * (a.effects[w.key] || 0) || (st.stock(b.id) - st.stock(a.id)))[0]).filter(Boolean);
   if (carriers.length < wanted.length) return null;
   const tgt = new Array(7).fill(0), wt = new Array(7).fill(6);
   for (const w of wanted) {
