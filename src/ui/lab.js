@@ -1202,6 +1202,8 @@ export class LabScreen {
     const steps = buildProcedure(st.brewLog, m.temperature);
     return {
       name: com ? com.potionName : 'Experiment',
+      request: com ? com.request : null,
+      techniques: com ? com.techniques || [] : [],
       ingredients: agg,
       limits: procedureLimits(steps),
       maxTemp: Math.round(stats.maxT ?? m.temperature),
@@ -1312,6 +1314,54 @@ export class LabScreen {
       if (matchRecipe(r, parts, steps) === 'exact') return r;
     }
     return null;
+  }
+
+  /**
+   * What the brew needs, read from the cauldron itself (never the hidden
+   * effects): whole solids that will not give anything up, herbs outside the
+   * steeping window the alchemist has discovered for them (or a hint that
+   * some herbs want warmth), an uneven brew, steam leaving with the lid off,
+   * awakening reached. At most three lines.
+   * @returns {{key:string, text:string}[]}
+   */
+  brewAdvice() {
+    const sim = this.sim, p = sim.p, st = this.state, sp = sim.species, S = MAX_SPECIES;
+    const out = [];
+    if (!p.count) return out;
+    let whole = 0, gas = 0, T = 0, n = 0;
+    /** @type {Map<number, number>} raw wild ingredient slots still in the brew */
+    const raw = new Map();
+    for (let i = 0; i < p.count; i++) {
+      const ph = p.phase[i];
+      if (ph === PHASE.GAS) { gas++; continue; }
+      T += p.temp[i]; n++;
+      for (let s = 0; s < sp.count; s++) {
+        const f = p.comp[i * S + s];
+        const d = sp.defs[s];
+        if (f < 0.3 || !d || !d.wild) continue;
+        if (ph === PHASE.SOLID && d.crushable) whole++;
+        raw.set(s, (raw.get(s) || 0) + f);
+      }
+    }
+    T = n ? T / n : 20;
+    if (whole >= 3) out.push({ key: 'whole', text: 'Whole herbs and stones give up almost nothing: crush them with the pestle (or grind them before pouring).' });
+    // the steeping windows the alchemist has seen work, for what is still undissolved
+    const windows = [];
+    for (const [s, f] of raw) {
+      if (f < 1.5) continue;
+      const d = sp.defs[s];
+      const r = st.world.reactions.find((x) => x.a === d.id && x.products.length === 1 && /^rw_(extract|infuse|steep)/.test(x.id));
+      if (!r) continue;
+      const knownR = this.sandbox || st.journal['reaction:' + r.id];
+      if (knownR && (T < r.minT - 2 || T > r.maxT + 2)) windows.push(`${d.name.split(' ').slice(-1)[0]} steeps at ${r.minT}–${r.maxT}°C`);
+      else if (!knownR && T < 30 && r.minT > 25) windows.push('');
+    }
+    const named = windows.filter(Boolean);
+    if (named.length) out.push({ key: 'window', text: `${named.slice(0, 2).join('; ')} — the brew is at ${Math.round(T)}°C.` });
+    else if (windows.length) out.push({ key: 'warm', text: 'Some of these herbs have not given up their magic yet: most steep only when warmed (a few only ice-cold).' });
+    if (gas >= 3 && !sim.cauldron.lidClosed) out.push({ key: 'steam', text: 'Boiling with the lid off: steam is leaving, so the brew grows smaller and stronger — side effects too.' });
+    else if (this.assay && this.assay.stability < 70 && !sim.emitter.pouring && !this.autoStir) out.push({ key: 'stir', text: 'The brew is uneven — pockets and layers. Stir it through before you test or bottle.' });
+    return out.slice(0, 3);
   }
 
   /** A saved recipe with this batch's ingredients but not (yet) its procedure. */
@@ -1486,6 +1536,7 @@ export class LabScreen {
     const thList = EFFECTS.map((e, k) => /** @type {[import('../alchemy/effects.js').EffectDef, number]} */ ([e, theory[k]])).filter(([, v]) => Math.abs(v) >= 1);
     el.append(...[
       h('div', { class: 'small', text: `${n * SIM.ML_PER_PARTICLE} ml · ${tn ? Math.round(tsum / tn) : '—'}°C${tn ? ` (${Math.round(tmin)}–${Math.round(tmax)})` : ''} · lid ${sim.cauldron.lidClosed ? 'on' : 'off'}` }),
+      ...this.brewAdvice().map((a) => h('div', { class: 'small advice', 'data-advice': a.key, text: a.text })),
       h('div', { class: 'phase-bar' }, ...['liquid', 'powder', 'paste', 'solid', 'gas'].map((name, k) => phases[k] ? h('i', { class: 'ph-' + name, title: name, style: { flexGrow: String(phases[k]) } }) : null)),
       h('div', { class: 'small muted', text: ['liquid', 'powder', 'paste', 'solid', 'vapour'].map((name, k) => (phases[k] ? `${name} ${Math.round((phases[k] / n) * 100)}%` : '')).filter(Boolean).join(' · ') }),
       ...comp.map(([id, v]) => {
@@ -1582,20 +1633,32 @@ export class LabScreen {
   }
 
   updateChips() {
-    const c = clear(this.chips);
     const sim = this.sim;
     const p = sim.p;
     let T = 0, n = 0, gas = 0;
     for (let i = 0; i < p.count; i++) { if (p.phase[i] === PHASE.GAS) gas++; else { T += p.temp[i]; n++; } }
-    c.append(h('div', { class: 'chip', text: `${p.count * SIM.ML_PER_PARTICLE} / ${sim.maxParticles * SIM.ML_PER_PARTICLE} ml` }));
-    if (n) c.append(h('div', { class: 'chip', text: `${Math.round(T / n)}°C` }));
-    if (gas > 0) c.append(h('div', { class: 'chip', text: `Vapour ${gas * SIM.ML_PER_PARTICLE} ml${sim.cauldron.lidClosed ? '' : ' (escaping!)'}` }));
-    if (this.autoBrewer) c.append(h('div', { class: 'chip', text: `Homunculus: ${this.autoBrewer.status}` }));
+    /** @type {{text:string, act?:string, cls?:string, title?:string, on?:()=>void, key?:string}[]} */
+    const list = [{ text: `${p.count * SIM.ML_PER_PARTICLE} / ${sim.maxParticles * SIM.ML_PER_PARTICLE} ml` }];
+    if (n) list.push({ text: `${Math.round(T / n)}°C` });
+    if (gas > 0) list.push({ text: `Vapour ${gas * SIM.ML_PER_PARTICLE} ml${sim.cauldron.lidClosed ? '' : ' (escaping!)'}` });
+    if (this.autoBrewer) list.push({ text: `Homunculus: ${this.autoBrewer.status}` });
+    else if (!this.bottling) {
+      const a = this.brewAdvice()[0];
+      if (a) list.push({ text: ADVICE_SHORT[a.key] || 'Advice', act: 'advice-chip', cls: 'advice', title: a.text, key: a.key, on: () => toast('At the cauldron', a.text, 'bulb', 5000) });
+    }
     if (this.state.receiver && this.state.receiver.count) {
       const pure = this.receiverJar();
-      c.append(h('button', { class: 'chip chip-btn', 'data-act': 'receiver', title: 'The alembic’s receiver flask', onclick: () => panels.openReceiver(this) }, `Receiver ${this.state.receiver.count * SIM.ML_PER_PARTICLE} ml${pure ? ` · ${this.state.lookup(pure).name.split(' ').slice(-1)[0]}` : ''}`));
+      list.push({ text: `Receiver ${this.state.receiver.count * SIM.ML_PER_PARTICLE} ml${pure ? ` · ${this.state.lookup(pure).name.split(' ').slice(-1)[0]}` : ''}`, act: 'receiver', title: 'The alembic’s receiver flask', on: () => panels.openReceiver(this) });
     }
-    if (this.app.settings.showFps) c.append(h('div', { class: 'chip', text: `${this.fpsAcc.fps} fps · ${sim.stats.stepMs.toFixed(1)} ms/step · ${p.count} p` }));
+    if (this.app.settings.showFps) list.push({ text: `${this.fpsAcc.fps} fps · ${sim.stats.stepMs.toFixed(1)} ms/step · ${p.count} p` });
+    // rebuilt only when something changed, so a chip can be tapped reliably
+    const sig = list.map((x) => x.text + '|' + (x.title || '')).join('/');
+    if (sig === this._chipSig) return;
+    this._chipSig = sig;
+    const c = clear(this.chips);
+    for (const x of list) {
+      c.append(x.act ? h('button', { class: 'chip chip-btn' + (x.cls ? ' ' + x.cls : ''), 'data-act': x.act, ...(x.key ? { 'data-advice': x.key } : {}), title: x.title || '', onclick: x.on }, x.text) : h('div', { class: 'chip', text: x.text }));
+    }
   }
 
   // ------------------------------------------------------------------ frame loop
@@ -1981,6 +2044,9 @@ export class LabScreen {
 }
 
 export { describeValue };
+
+/** Short labels of the brew advice (lab.brewAdvice) for the chip row. */
+const ADVICE_SHORT = { whole: 'Whole herbs: crush', window: 'Outside the steep', warm: 'Not steeped yet', steam: 'Steam escaping', stir: 'Uneven: stir' };
 
 /** The instrument that reads a property precisely (without it, the order strip shows no meter for it). */
 const INSTRUMENT_FOR = { density: 'hydrometer', viscosity: 'viscometer', stability: 'assay', volatility: 'assay', charge: 'galvanometer' };

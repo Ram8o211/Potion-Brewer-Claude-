@@ -8569,12 +8569,12 @@ const { serializeMaterial, deserializeMaterial } = __m9;
 const { generateCommission, tutorialCommission } = __m16;
 const { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById } = __m26;
 const { SIM } = __m23;
-const { createTrials, normalizeTrials, runTrial, SUBJECT_BY_ID, knownLaws } = __m27;
+const { createTrials, normalizeTrials, runTrial, SUBJECT_BY_ID, knownLaws, certification, summarize } = __m27;
 const { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth, depositStatus } = __m29;
 const { predictPlan } = __m17;
 const { EFFECT_INDEX } = __m13;
 const { migrateVial } = __m30;
-const { recordSale, resolveFollowUp } = __m45;
+const { recordSale, resolveFollowUp, applyTrials, evidenceOf } = __m45;
 const { colonyDay, colonyTick, livingRabbits, findRabbit, addBoughtRabbit, retireRabbit, remainsSource, purgeRabbit, cullRabbit, maxHealthOf, FOUNDER_BORN } = __m28;
 const { remainsMaterials, remainsPlan, isRemains } = __m46;
 const { returningPatron, welcomePatron, recentStyles, notePatron, patronVerdict, noveltyFactor } = __m47;
@@ -9058,6 +9058,24 @@ if (this.vial) this.bottles[k] = this.vial;
 else this.bottles.splice(k, 1);
 this.vial = b;
 return { ok: true, bottle: b };
+}
+shareEvidence(batchId) {
+const known = new Set(this.trials.records.map((r) => r.id));
+for (const v of [this.vial, ...this.bottles]) {
+if (!v || !v.batchId || (batchId && v.batchId !== batchId) || !v.m) continue;
+const cert = certification(this.trials, { id: v.batchId, rev: v.rev }, v.m.effects);
+const merged = {};
+for (const [k, list] of Object.entries(v.samples || {})) merged[k] = list.filter((x) => !known.has(x.rec) || (cert.samples[k] || []).some((y) => y.rec === x.rec));
+for (const [k, list] of Object.entries(cert.samples)) for (const x of list) if (!(merged[k] ||= []).some((y) => y.rec === x.rec)) merged[k].push(x);
+for (const k of Object.keys(merged)) if (!merged[k].length) delete merged[k];
+const count = (o) => Object.values(o || {}).reduce((a, l) => a + l.length, 0);
+const sum = summarize(merged);
+const changed = JSON.stringify(sum.values) !== JSON.stringify(v.cert || {}) || count(merged) !== count(v.samples);
+v.samples = merged;
+v.cert = sum.values;
+v.certRecords = sum.records;
+if (changed && v.label) applyTrials(v.label, sum.values, Object.values(sum.records)[0] || '', evidenceOf(v));
+}
 }
 removeBottle(id) {
 const k = this.bottles.findIndex((b) => b.id === id);
@@ -12452,10 +12470,10 @@ wide: true,
 body: [
 sec('Your shop', ['Customers ask for potions with effects at a strength — healing, strength, love, fire… — and physical qualities such as colour, thickness and temperature. Strength is the effective concentration in percent: everyday orders want about 8–15 %, master commissions far more.', 'Many orders forbid side effects: “no other effect above 1.2 %”. Every other kind of magic in the bottle must stay that faint.', 'The market sells no prepared reagents — only free well water and two plain solvents, oil and spirit. Every effect comes from what you gather, and nothing that grows is pure: each herb or mineral brings side effects. Cancel them with their opposites — fire and frost, life and death (life also mends poison, two parts to one), acid and alkali. Long-press an ingredient to see what cancels its side effects.', 'You know what each plain ingredient does. You do NOT know what a mixture does: mixing, heat, reactions and hidden laws change things. Test doses in the Trials room to find out.', 'Bottle a measured quantity from the tap at the bottom of the cauldron (the lowest layer comes out first). A sealed vial keeps its exact contents: test doses from it, pour it back to keep working, or offer it at the Counter.', 'Bottle onto the potion shelves whenever you like, as long as there is room (3 bottles, more with a Bottle Shelf, Potion Cabinet or Bottle Cellar). Take a shelved bottle down at the Counter to test or sell it later.', 'Before a sale you write the label — tested values, the guild theory’s estimates, “none” or unknown — and bargain over the price. The customer pays what you agree, drinks the real potion and comes back the next day: pleased, or with a complaint. Refund them, dispute it with your trial records, or turn them away.', 'Honest, well-tested potions earn reputation. Reputation unlocks ranks, regions of the wilds, reagents and equipment.']),
 sec('Arcane awakening', ['Magical ingredients carry a hidden arcane threshold. Heat the brew past it (or, for cold magic, chill it below) and the magic awakens: it glows in the colour of its effect and acts several times stronger.', 'In a blend the threshold is the mix of its magical ingredients’ thresholds, by volume — a hot-waking and a cold-waking ingredient pull each other toward room temperature.', 'Mix first, at room temperature; then heat or chill to awaken. A half-mixed brew awakens unevenly.', 'Awakened magic stays awake when it cools, is bottled or kept. Only dilution and reactions undo it.', 'Your journal notes where each ingredient awoke; the Arcanometer reads a brew’s threshold directly.']),
-sec('Wilds and trials', ['Gather roots, leaves, flowers, mushrooms and minerals in the Wilds. Deposits are finite and regrow over time, even while the game is closed.', 'Each ingredient has its method — pick, dig, chip, scrape or sweep — and the right tool doubles the harvest. Twilight plants open only at dawn (your first customer of the day) or dusk (your last). The weather changes daily. A thorough harvest takes twice as much but the deposit regrows slowly.', 'Whole roots and stones do nothing until crushed (pestle) or ground (mortar, the “Ground” switch on the shelf). Only what dissolves takes effect; hot water dissolves more, and some herbs steep into strong extracts when held warm.', 'Each subject responds to some effects only: a stone shows acid but not love. Choose subjects that cover what the customer cares about.', 'When a trial surprises you, a hidden law may be at work. Confirm it twice and your theory learns it.']),
-sec('Brewing', ['Tap a jar on the shelf, then hold your finger (or the mouse) inside the cauldron to pour. Dose buttons pour exact amounts.', 'Stir with the spoon: drag through the brew. Mixing starts where liquids touch and spreads; stirring speeds it up dramatically.', 'Powders pile up like sand. Knead a binding powder with a watery liquid to make dough; add more liquid to thin it.', 'Slide the fire control right to heat from below, left to cool. Heat spreads through the brew gradually.', 'Keep the lid on to trap vapour; let things cool and the vapour condenses back. Open the lid to let it escape.', 'Freeze liquids into blocks, then crush them with the pestle. Some reagents react when mixed, heated or chilled — discoveries go into your journal.']),
+sec('Wilds and trials', ['Gather roots, leaves, flowers, mushrooms and minerals in the Wilds. Deposits are finite and regrow over time, even while the game is closed.', 'Each ingredient has its method — pick, dig, chip, scrape or sweep — and the right tool doubles the harvest. Twilight plants open only at dawn (before you open the shop door) or at dusk (after the last customer, until you close for the night) — gather ahead for the orders to come. The weather changes daily. A thorough harvest takes twice as much but the deposit regrows slowly.', 'Whole roots and stones do nothing until crushed (pestle) or ground (mortar, the “Ground” switch on the shelf). Only what dissolves takes effect; hot water dissolves more, and some herbs steep into strong extracts when held warm.', 'A rabbit shows every effect, but each reading is uncertain: the ± band of an estimate is how far the truth may lie. One reading is a rough guess; repeating it on the same rabbit helps a little (that rabbit’s own bias never averages out); other rabbits help most. Evidence levels: one reading → repeated → corroborated (two or more rabbits) → certified.', 'Customers weigh that evidence: cautious ones want readings repeated or corroborated before they buy, and every customer trusts — and pays for — a well-tested label more. One trial reads every effect at once, so a purity rule needs only one.', 'A hurt rabbit reads less steadily; kits and old rabbits too. Bottles of one batch share its trials, each checked against its own contents.', 'When a trial surprises you, a hidden law may be at work. Confirm it twice and your theory learns it.']),
+sec('Brewing', ['Tap a jar on the shelf, then hold your finger (or the mouse) inside the cauldron to pour. Dose buttons pour exact amounts.', 'Stir with the spoon: drag through the brew. Mixing starts where liquids touch and spreads; stirring speeds it up dramatically.', 'Powders pile up like sand. Knead a binding powder with a watery liquid to make dough; add more liquid to thin it.', 'Boil a brew down with the lid off: water leaves as steam and the magic stays, stronger (side effects too). Boiling also wakes most magic. Spirit boils long before water: add it once the brew has cooled to keep a tincture heady.', 'An unstirred brew is uneven (low stability); colour shows how much really dissolved; density rises with what is dissolved and as water boils off.', 'Saved recipes record every step in order. The homunculus replays them exactly; a recipe brewed again and tested the same becomes reproduced (reliable).', 'Slide the fire control right to heat from below, left to cool. Heat spreads through the brew gradually.', 'Keep the lid on to trap vapour; let things cool and the vapour condenses back. Open the lid to let it escape.', 'Freeze liquids into blocks, then crush them with the pestle. Some reagents react when mixed, heated or chilled — discoveries go into your journal.']),
 sec('Controls', ['Keys: 1 pour · 2 spoon · 3 pestle · 4 skimmer · 5 inspect · L lid · B bottle · F time speed · A auto-stir · arrows fire · S shop · R recipes · J journal · Esc menu.', 'Long-press (or right-click) a jar to inspect a reagent.', 'Use the time-speed button to skip waiting while things heat, cool or react.']),
-sec('Tips', ['Ask the guild for advice on a difficult order — it costs a few coins.', 'Instruments like the hydrometer, viscometer, assay kit and aether lens turn rough guesses into exact readings.', 'If you run out of money, the guild will help a struggling apprentice once a day — and water from the well is always free.']),
+sec('Tips', ['Ask the guild for advice on a difficult order — it costs a few coins.', 'Instruments turn rough guesses into readings: the hydrometer reads density, the assay kit stability and volatility, the arcanometer the arcane threshold. Without them the order strip shows no meter for those requirements.', 'Repeating the same order over and over earns less reputation; a technique sold well for the first time earns a bonus. Returning customers remember how your last potion worked.', 'If you run out of money, the guild will help a struggling apprentice once a day — and water from the well is always free.']),
 ],
 });
 }
@@ -12763,10 +12781,10 @@ return [
 { text: 'Herbs steep only when warm. Slide the fire control to the right and bring the brew to about 60°C — heat enters through the bottom and spreads.', target: () => lab.furnaceInput.parentElement, done: () => brewT() >= 50 },
 { text: 'Is it really a healing tonic? Nobody knows until it is tested. Open the Trials room.', target: tab('trials'), done: () => lab.view === 'trials' },
 { text: 'Choose a rabbit in the hutch and give it a dose: press Give, or drag the dropper onto it. The dose is real potion from the tap. Each rabbit reads a potion a little differently — later, test several.', target: () => document.querySelector('[data-act=test-rabbit]') || lab.views.trials.hutch.el, done: rabbitTested },
-{ text: 'The rabbit shows how much vitality — and any frost or fire left over — this batch carries. Verified effects now count on the order. Back to the cauldron!', target: tab('brew'), done: () => lab.view === 'brew' },
+{ text: 'The rabbit shows how much vitality — and any frost or fire left over — this batch carries. One reading is a rough guess (see its wide ± band); a second rabbit narrows it, and demanding customers insist on that. Back to the cauldron!', target: tab('brew'), done: () => lab.view === 'brew' },
 { text: 'Let it cool to a warm 45°C or so, then press Bottle. A bottle can go to the counter or onto your potion shelves for later.', target: () => lab.bottleFab, done: () => this.flags.bottled },
 { text: 'Your sealed vial waits at the Counter. Offer it to the customer: seal its label (your trial reading is already written in), then agree on a price.', target: () => document.querySelector('[data-act=serve]') || tab('counter')(), done: () => this.flags.sold },
-{ text: 'Splendid — your first sale! New orders ask for strength, love, fire… Every herb carries side effects: gather in the Wilds, balance them against their opposites, test every mixture in the Trials room and save good recipes in your Book.', button: 'Run my shop!' },
+{ text: 'Splendid — your first sale! New orders ask for strength, love, fire — and soon for a true colour, a well-mixed brew, a density or a brew boiled down; the order card says what each takes. Each day dawns with the shop closed: gather dawn flowers, then open the door. Saved recipes keep every step, so you can brew them again exactly.', button: 'Run my shop!' },
 ];
 }
 start(restart = false) {
@@ -15770,9 +15788,9 @@ const { saveGame, saveJSON, KEYS } = __m49;
 const { AutoBrewer } = __m59;
 const { equipmentById } = __m26;
 const { traceSample, buildProcedure, procedureLimits, matchRecipe, checkReproduction, TRACE_DT } = __m48;
-const { proofGaps, evidenceOf, applyTrials } = __m45;
+const { proofGaps } = __m45;
 const { RANKS } = __m26;
-const { certification, missingEffects, summarize } = __m27;
+const { certification, missingEffects } = __m27;
 const { sandboxIngredients } = __m7;
 const { makeVial, appendParticles, updateVial, takeDose, pourBack, pourBackParts, relaxVial } = __m30;
 const { theoryOf, EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, dominantEffect, NE } = __m13;
@@ -16789,6 +16807,8 @@ const stats = st.brewLog.find((e) => e.type === 'stats') || {};
 const steps = buildProcedure(st.brewLog, m.temperature);
 return {
 name: com ? com.potionName : 'Experiment',
+request: com ? com.request : null,
+techniques: com ? com.techniques || [] : [],
 ingredients: agg,
 limits: procedureLimits(steps),
 maxTemp: Math.round(stats.maxT ?? m.temperature),
@@ -16880,6 +16900,43 @@ if (!r.verified || !Object.keys(r.verified).length || !r.ingredients) continue;
 if (matchRecipe(r, parts, steps) === 'exact') return r;
 }
 return null;
+}
+brewAdvice() {
+const sim = this.sim, p = sim.p, st = this.state, sp = sim.species, S = MAX_SPECIES;
+const out = [];
+if (!p.count) return out;
+let whole = 0, gas = 0, T = 0, n = 0;
+const raw = new Map();
+for (let i = 0; i < p.count; i++) {
+const ph = p.phase[i];
+if (ph === PHASE.GAS) { gas++; continue; }
+T += p.temp[i]; n++;
+for (let s = 0; s < sp.count; s++) {
+const f = p.comp[i * S + s];
+const d = sp.defs[s];
+if (f < 0.3 || !d || !d.wild) continue;
+if (ph === PHASE.SOLID && d.crushable) whole++;
+raw.set(s, (raw.get(s) || 0) + f);
+}
+}
+T = n ? T / n : 20;
+if (whole >= 3) out.push({ key: 'whole', text: 'Whole herbs and stones give up almost nothing: crush them with the pestle (or grind them before pouring).' });
+const windows = [];
+for (const [s, f] of raw) {
+if (f < 1.5) continue;
+const d = sp.defs[s];
+const r = st.world.reactions.find((x) => x.a === d.id && x.products.length === 1 && /^rw_(extract|infuse|steep)/.test(x.id));
+if (!r) continue;
+const knownR = this.sandbox || st.journal['reaction:' + r.id];
+if (knownR && (T < r.minT - 2 || T > r.maxT + 2)) windows.push(`${d.name.split(' ').slice(-1)[0]} steeps at ${r.minT}–${r.maxT}°C`);
+else if (!knownR && T < 30 && r.minT > 25) windows.push('');
+}
+const named = windows.filter(Boolean);
+if (named.length) out.push({ key: 'window', text: `${named.slice(0, 2).join('; ')} — the brew is at ${Math.round(T)}°C.` });
+else if (windows.length) out.push({ key: 'warm', text: 'Some of these herbs have not given up their magic yet: most steep only when warmed (a few only ice-cold).' });
+if (gas >= 3 && !sim.cauldron.lidClosed) out.push({ key: 'steam', text: 'Boiling with the lid off: steam is leaving, so the brew grows smaller and stronger — side effects too.' });
+else if (this.assay && this.assay.stability < 70 && !sim.emitter.pouring && !this.autoStir) out.push({ key: 'stir', text: 'The brew is uneven — pockets and layers. Stir it through before you test or bottle.' });
+return out.slice(0, 3);
 }
 similarRecipe() {
 const parts = this.batchParts();
@@ -17024,6 +17081,7 @@ const similar = known ? null : this.similarRecipe();
 const thList = EFFECTS.map((e, k) => /** @type {[import('../alchemy/effects.js').EffectDef, number]} */ ([e, theory[k]])).filter(([, v]) => Math.abs(v) >= 1);
 el.append(...[
 h('div', { class: 'small', text: `${n * SIM.ML_PER_PARTICLE} ml · ${tn ? Math.round(tsum / tn) : '—'}°C${tn ? ` (${Math.round(tmin)}–${Math.round(tmax)})` : ''} · lid ${sim.cauldron.lidClosed ? 'on' : 'off'}` }),
+...this.brewAdvice().map((a) => h('div', { class: 'small advice', 'data-advice': a.key, text: a.text })),
 h('div', { class: 'phase-bar' }, ...['liquid', 'powder', 'paste', 'solid', 'gas'].map((name, k) => phases[k] ? h('i', { class: 'ph-' + name, title: name, style: { flexGrow: String(phases[k]) } }) : null)),
 h('div', { class: 'small muted', text: ['liquid', 'powder', 'paste', 'solid', 'vapour'].map((name, k) => (phases[k] ? `${name} ${Math.round((phases[k] / n) * 100)}%` : '')).filter(Boolean).join(' · ') }),
 ...comp.map(([id, v]) => {
@@ -17109,20 +17167,30 @@ j.el.classList.toggle('empty', s < SIM.ML_PER_PARTICLE);
 }
 }
 updateChips() {
-const c = clear(this.chips);
 const sim = this.sim;
 const p = sim.p;
 let T = 0, n = 0, gas = 0;
 for (let i = 0; i < p.count; i++) { if (p.phase[i] === PHASE.GAS) gas++; else { T += p.temp[i]; n++; } }
-c.append(h('div', { class: 'chip', text: `${p.count * SIM.ML_PER_PARTICLE} / ${sim.maxParticles * SIM.ML_PER_PARTICLE} ml` }));
-if (n) c.append(h('div', { class: 'chip', text: `${Math.round(T / n)}°C` }));
-if (gas > 0) c.append(h('div', { class: 'chip', text: `Vapour ${gas * SIM.ML_PER_PARTICLE} ml${sim.cauldron.lidClosed ? '' : ' (escaping!)'}` }));
-if (this.autoBrewer) c.append(h('div', { class: 'chip', text: `Homunculus: ${this.autoBrewer.status}` }));
+const list = [{ text: `${p.count * SIM.ML_PER_PARTICLE} / ${sim.maxParticles * SIM.ML_PER_PARTICLE} ml` }];
+if (n) list.push({ text: `${Math.round(T / n)}°C` });
+if (gas > 0) list.push({ text: `Vapour ${gas * SIM.ML_PER_PARTICLE} ml${sim.cauldron.lidClosed ? '' : ' (escaping!)'}` });
+if (this.autoBrewer) list.push({ text: `Homunculus: ${this.autoBrewer.status}` });
+else if (!this.bottling) {
+const a = this.brewAdvice()[0];
+if (a) list.push({ text: ADVICE_SHORT[a.key] || 'Advice', act: 'advice-chip', cls: 'advice', title: a.text, key: a.key, on: () => toast('At the cauldron', a.text, 'bulb', 5000) });
+}
 if (this.state.receiver && this.state.receiver.count) {
 const pure = this.receiverJar();
-c.append(h('button', { class: 'chip chip-btn', 'data-act': 'receiver', title: 'The alembic’s receiver flask', onclick: () => panels.openReceiver(this) }, `Receiver ${this.state.receiver.count * SIM.ML_PER_PARTICLE} ml${pure ? ` · ${this.state.lookup(pure).name.split(' ').slice(-1)[0]}` : ''}`));
+list.push({ text: `Receiver ${this.state.receiver.count * SIM.ML_PER_PARTICLE} ml${pure ? ` · ${this.state.lookup(pure).name.split(' ').slice(-1)[0]}` : ''}`, act: 'receiver', title: 'The alembic’s receiver flask', on: () => panels.openReceiver(this) });
 }
-if (this.app.settings.showFps) c.append(h('div', { class: 'chip', text: `${this.fpsAcc.fps} fps · ${sim.stats.stepMs.toFixed(1)} ms/step · ${p.count} p` }));
+if (this.app.settings.showFps) list.push({ text: `${this.fpsAcc.fps} fps · ${sim.stats.stepMs.toFixed(1)} ms/step · ${p.count} p` });
+const sig = list.map((x) => x.text + '|' + (x.title || '')).join('/');
+if (sig === this._chipSig) return;
+this._chipSig = sig;
+const c = clear(this.chips);
+for (const x of list) {
+c.append(x.act ? h('button', { class: 'chip chip-btn' + (x.cls ? ' ' + x.cls : ''), 'data-act': x.act, ...(x.key ? { 'data-advice': x.key } : {}), title: x.title || '', onclick: x.on }, x.text) : h('div', { class: 'chip', text: x.text }));
+}
 }
 frame(t) {
 const tw0 = performance.now();
@@ -17247,23 +17315,8 @@ if (this.view === 'counter') this.views.counter.refresh();
 }
 }
 shareEvidence(batchId) {
-const st = this.state;
 if (this.sandbox) return;
-for (const v of [st.vial, ...st.bottles]) {
-if (!v || !v.batchId || (batchId && v.batchId !== batchId) || !v.m) continue;
-const cert = certification(st.trials, { id: v.batchId, rev: v.rev }, v.m.effects);
-const merged = {};
-const known = new Set(st.trials.records.map((r) => r.id));
-for (const [k, list] of Object.entries(v.samples || {})) merged[k] = list.filter((x) => !known.has(x.rec) || (cert.samples[k] || []).some((y) => y.rec === x.rec));
-for (const [k, list] of Object.entries(cert.samples)) for (const x of list) if (!(merged[k] ||= []).some((y) => y.rec === x.rec)) merged[k].push(x);
-for (const k of Object.keys(merged)) if (!merged[k].length) delete merged[k];
-const sum = summarize(merged);
-const changed = JSON.stringify(sum.values) !== JSON.stringify(v.cert || {}) || Object.values(merged).reduce((a, l) => a + l.length, 0) !== Object.values(v.samples || {}).reduce((a, l) => a + l.length, 0);
-v.samples = merged;
-v.cert = sum.values;
-v.certRecords = sum.records;
-if (changed && v.label) applyTrials(v.label, sum.values, Object.values(sum.records)[0] || '', evidenceOf(v));
-}
+this.state.shareEvidence(batchId);
 }
 freshBottles() {
 if ((this._shelfDrift || 0) < 0.5) return;
@@ -17455,6 +17508,7 @@ this.state.cauldron = snapshotSim(this.sim, this.cap.size);
 saveGame(this.state);
 }
 }
+const ADVICE_SHORT = { whole: 'Whole herbs: crush', window: 'Outside the steep', warm: 'Not steeped yet', steam: 'Steam escaping', stir: 'Uneven: stir' };
 const INSTRUMENT_FOR = { density: 'hydrometer', viscosity: 'viscometer', stability: 'assay', volatility: 'assay', charge: 'galvanometer' };
 const RANK_NEWS = [
 '',
