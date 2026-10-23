@@ -370,14 +370,18 @@ Object.assign(EXPERIMENTS, {
     const colds = [['basin', base], ['frost rune', [...base, 'frostrune']], ['glacial sigil', [...base, 'frostrune', 'glacial']]];
     for (const [name, eq] of colds) {
       out[name] = { 'water + Frostcap after 60 s at full cold': reach(eq, -1, 60, st.world.roles.water, 70, 'frostcap'), 'spirit after 60 s at full cold': reach(eq, -1, 60, st.world.roles.spirit, 60) };
-      // a cold steep of Frostcap at the coldest the equipment holds
-      const sim = cauldron(st, eq);
-      pour(st, sim, st.world.roles.water, 50);
-      pour(st, sim, W('frostcap'), 34, { ground: true });
-      hold(sim, Math.max(4, capabilitiesOf(eq).minCool + 8), 22, 'hand', 120);
-      settleTo(sim, 20, 90, 'hand');
-      stirFor(sim, 4, 'hand');
-      out[name]['frostcap cold steep'] = summary(sim, ['frost']);
+      // a cold steep of Frostcap held as cold as the equipment holds a watery brew without freezing it
+      // (the basin's floor is about 9 °C), and the same brew left at full cold (frozen solid where it can be)
+      for (const [label, mode] of [['frostcap cold steep', 'hold'], ['frostcap at full cold', 'full']]) {
+        const sim = cauldron(st, eq);
+        pour(st, sim, st.world.roles.water, 50);
+        pour(st, sim, W('frostcap'), 34, { ground: true });
+        if (mode === 'hold') hold(sim, capabilitiesOf(eq).minCool > 0 ? 9 : 5, 22, 'hand', 120);
+        else { for (let t = 0; t < 40; t += SIM.DT) { sim.furnace.setting = -1; sim.step(); } sim.furnace.setting = 0; }
+        settleTo(sim, 20, 120, 'hand');
+        stirFor(sim, 4, 'hand');
+        out[name][label] = summary(sim, ['frost']);
+      }
     }
     return out;
   },
