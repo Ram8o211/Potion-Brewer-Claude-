@@ -72,12 +72,16 @@ test('first commission: brew, test on a subject, bottle and serve', async ({ pag
   await expect(page.locator('[data-act=serve]')).toBeVisible({ timeout: 20_000 });
   await expect(page.locator('[data-act=serve]')).toBeEnabled();
   await shot(page, info, 'vial');
-  // offer it: the label is drafted from the trial (vitality tested), then the bargaining
-  await page.click('[data-act=serve]');
+  // the batch was tested, so the bottle labelled itself (vitality tested) and shows it at once
+  expect(await lab(page, (l) => l.state.vial.label && l.state.vial.label.claims.vitality.source)).toBe('trial');
+  await expect(page.locator('.label-line').first()).toContainText('(tested');
+  await page.click('[data-act=label]');
   await expect(page.locator('.label-rows')).toBeVisible();
   await expect(page.locator('.label-row.relevant .src.trial').first()).toBeVisible();
   await shot(page, info, 'label');
   await page.click('[data-act=label-seal]');
+  // offer it: straight to the bargaining
+  await page.click('[data-act=serve]');
   await expect(page.locator('.haggle-log')).toBeVisible();
   await shot(page, info, 'bargain');
   await page.click('[data-act=accept-offer]');

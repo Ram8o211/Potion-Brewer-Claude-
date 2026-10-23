@@ -2,12 +2,12 @@
 // customer over several rounds, the deal, and the customers who come back
 // the next day — pleased, or with a complaint to settle.
 
-import { h, btn, modal, toast, coins, clear } from './dom.js';
+import { h, btn, modal, toast, coins, clear, starsText } from './dom.js';
 import { icon } from './icons.js';
 import { drawPortrait } from '../rendering/portraits.js';
 import { audio } from '../audio/audio.js';
 import { EFFECTS, EFFECT_BY_KEY } from '../alchemy/effects.js';
-import { draftLabel, openNegotiation as beginNegotiation, proposePrice, acceptOffer, relevantEffects, trustReport, editClaim, proofGaps } from '../game/commerce.js';
+import { draftLabel, openNegotiation as beginNegotiation, proposePrice, acceptOffer, relevantEffects, trustReport, editClaim, proofGaps, claimSigma, claimStars, labelStars, MAX_STARS } from '../game/commerce.js';
 import { PURITY_LIMIT } from '../game/requests.js';
 import { shortName } from '../game/customers.js';
 
@@ -29,13 +29,16 @@ export function openIdentify(lab, vial, onDone) {
     for (const e of EFFECTS) {
       const c = draft.claims[e.key];
       const lvl = c.evidence ? c.evidence.level : 'preliminary';
-      const src = c.source === 'trial' ? h('span', { class: 'src trial lvl-' + lvl, title: `Measured in trials of this batch: ${c.evidence ? `${c.evidence.n} reading${c.evidence.n === 1 ? '' : 's'} on ${c.evidence.r} rabbit${c.evidence.r === 1 ? '' : 's'}, ±${c.evidence.u}` : 'one reading'}` }, icon('dropper', 'sm'), lvl === 'preliminary' ? ' 1 reading' : ` ${lvl}`)
+      const sigma = claimSigma(c);
+      const src = c.source === 'trial' ? h('span', { class: 'src trial lvl-' + lvl, title: `Measured in trials of this batch: ${c.evidence ? `${c.evidence.n} reading${c.evidence.n === 1 ? '' : 's'} on ${c.evidence.r} rabbit${c.evidence.r === 1 ? '' : 's'}, standard deviation ${sigma} (±${c.evidence.u} at 95 %)` : 'one reading'}` }, icon('dropper', 'sm'), lvl === 'preliminary' ? ' 1 reading' : ` ${lvl}`)
         : c.kind === 'unknown' ? h('span', { class: 'src unknown', text: 'unknown' })
           : c.source === 'estimate' ? h('span', { class: 'src est', text: `theory${c.spread ? ' ±' + c.spread : ''}` }) : h('span', { class: 'src you', text: 'your claim' });
-      const val = c.kind === 'value' ? `${Math.round((c.value || 0) * 10) / 10}%${c.source === 'trial' && c.evidence && c.evidence.u ? ` ±${c.evidence.u}` : ''}` : c.kind === 'none' ? `none (< ${PURITY_LIMIT}%)` : '?';
+      const sd = c.source === 'trial' && sigma !== null ? ` σ ${sigma}` : '';
+      const val = c.kind === 'value' ? `${Math.round((c.value || 0) * 10) / 10}%${sd}` : c.kind === 'none' ? `none (< ${PURITY_LIMIT}%)${sd}` : '?';
+      const cs = claimStars(c);
       const edit = (op) => () => { draft.claims[e.key] = editClaim(c, e.key, op); render(); };
       const row = h('div', { class: 'label-row' + (relevant.has(e.key) ? ' relevant' : '') + (c.kind === 'unknown' ? ' unknown' : '') + (open === e.key ? ' open' : ''), 'data-claim': e.key },
-        icon(e.icon, 'sm'), h('span', { class: 'lk', text: e.label }), src, h('b', { class: 'lv', text: val }),
+        icon(e.icon, 'sm'), h('span', { class: 'lk', text: e.label }), src, h('b', { class: 'lv' }, val, cs === null ? null : h('span', { class: 'acc-stars', title: accuracyTitle(cs), text: ' ' + starsText(cs, MAX_STARS) })),
         h('span', { class: 'lctl' },
           btn('−', edit('down'), { cls: 'small', title: `Claim less ${e.label.toLowerCase()}`, act: `claim-dn-${e.key}` }),
           btn('+', edit('up'), { cls: 'small', title: `Claim more ${e.label.toLowerCase()}`, act: `claim-up-${e.key}` }),
@@ -49,6 +52,8 @@ export function openIdentify(lab, vial, onDone) {
       });
       rows.appendChild(row);
     }
+    const ls = labelStars(draft);
+    accEl.textContent = ls === null ? '' : `Accuracy ${starsText(ls, MAX_STARS)} — ${accuracyTitle(ls)}`;
     if (com) {
       const rep = trustReport(com, draft, st.rank);
       const t = rep.trust;
@@ -57,6 +62,7 @@ export function openIdentify(lab, vial, onDone) {
     }
   };
   const trustEl = h('div', { class: 'small' });
+  const accEl = h('div', { class: 'small acc-line', 'data-acc': 'label' });
   let m;
   m = modal({
     title: 'Label the potion',
@@ -65,7 +71,7 @@ export function openIdentify(lab, vial, onDone) {
       h('div', { class: 'card parch' },
         h('div', { class: 'small', text: 'Write down what this potion does. Tested values come from trials of this very batch — one reading counts for less than readings repeated, and those less than readings on several rabbits. The rest are the guild theory’s estimates, or unknown. Customers pay for what you claim — and come back if it is not true.' }),
         h('div', { class: 'small muted', text: com ? 'Highlighted: the effects this order cares about (with a purity rule, all of them).' : '' }),
-        trustEl),
+        accEl, trustEl),
       h('div', { class: 'card parch' }, rows),
     ],
     foot: [btn('Seal the label', () => { m.close(); audio.play('page'); onDone(draft); }, { cls: 'primary', icon: 'tag', act: 'label-seal' })],
@@ -229,15 +235,31 @@ export function followUpCard(lab, f) {
     h('div', { class: 'row wrap' }, ...actions));
 }
 
-/** One line describing a label's claims. @param {Record<string, any>} claims */
+/** One line describing a label's claims (tested ones with their standard deviation). @param {Record<string, any>} claims */
 export function claimSummary(claims) {
   const parts = [];
   for (const e of EFFECTS) {
     const c = claims[e.key];
     if (!c || c.kind === 'none') continue;
-    parts.push(c.kind === 'unknown' ? `${e.label} ?` : `${e.label} ${Math.round(c.value)}%${c.source === 'trial' ? ' (tested)' : ''}`);
+    const sigma = c.source === 'trial' ? claimSigma(c) : null;
+    parts.push(c.kind === 'unknown' ? `${e.label} ?` : `${e.label} ${Math.round(c.value)}%${c.source === 'trial' ? ` (tested${sigma !== null ? `, σ ${sigma}` : ''})` : ''}`);
   }
   return parts.length ? parts.join(', ') + '; nothing else' : 'no magical effect';
+}
+
+/** What a number of accuracy stars means. @param {number} n */
+export function accuracyTitle(n) {
+  return ['a rough guess: test it again, on other rabbits', 'fairly reliable', 'reliable', 'precise: a narrow standard deviation'][n] || '';
+}
+
+/**
+ * A label at a glance: its accuracy stars (the least accurate claim), then
+ * its claims.
+ * @param {any} label
+ */
+export function labelLine(label) {
+  const n = labelStars(label);
+  return `${n === null ? '' : starsText(n, MAX_STARS) + ' '}${claimSummary(label.claims)}`;
 }
 
 export { EFFECT_BY_KEY };

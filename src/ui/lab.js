@@ -29,7 +29,7 @@ import { saveGame, saveJSON, KEYS } from '../game/persistence.js';
 import { AutoBrewer } from '../game/autobrew.js';
 import { equipmentById } from '../game/equipment.js';
 import { traceSample, buildProcedure, procedureLimits, matchRecipe, checkReproduction, TRACE_DT } from '../game/recipes.js';
-import { proofGaps } from '../game/commerce.js';
+import { proofGaps, draftLabel } from '../game/commerce.js';
 import { RANKS } from '../game/equipment.js';
 import { certification, missingEffects } from '../game/experiments.js';
 import { sandboxIngredients } from '../materials/generator.js';
@@ -145,6 +145,7 @@ export class LabScreen {
       this.tutorial = new Tutorial(this);
       if (st.tutorial.active && !st.tutorial.done) this.tutorial.start();
     }
+    this.autoLabel();
     this.showView(this.sandbox ? 'brew' : st.vial ? 'counter' : 'brew', true);
     this.refreshHud(true);
     this.running = true;
@@ -1016,6 +1017,7 @@ export class LabScreen {
     const vial = b.vial;
     updateVial(vial, st.lookup, st.world.laws);
     vial.recipe = this.recipeDraft(vial.m, null, st.current);
+    this.autoLabel(vial);
     vial.commissionId = b.dest === 'shelf' ? null : vial.commissionId;
     if (b.dest === 'shelf' && st.shelveBottle(vial).ok) {
       if (this.sim.p.count === 0) { st.brewLog = []; st.newBatch(); this.lastPoured = {}; }
@@ -1824,8 +1826,24 @@ export class LabScreen {
    * @param {string} [batchId] only bottles of this batch
    */
   shareEvidence(batchId) {
-    if (this.sandbox) return;
-    this.state.shareEvidence(batchId);
+    if (!this.sandbox) this.state.shareEvidence(batchId);
+    this.autoLabel();
+  }
+
+  /**
+   * A bottle whose batch has been tested labels itself: the tested readings,
+   * the guild's theory (marked as estimates) for the rest. Later trials of
+   * the batch keep updating it (applyTrials); the player can still revise it.
+   * @param {any} [only] just this vial
+   */
+  autoLabel(only) {
+    const st = this.state;
+    for (const v of only ? [only] : [st.vial, ...st.bottles]) {
+      if (!v || v.label || !v.cert || !Object.keys(v.cert).length) continue;
+      if (!v.m) updateVial(v, st.lookup, st.world.laws);
+      v.label = draftLabel(v, this.vialTheory(v), st.day);
+      v.label.auto = true;
+    }
   }
 
   /** Re-measure the shelved bottles if they have cooled noticeably since last shown. */

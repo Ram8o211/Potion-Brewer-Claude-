@@ -125,8 +125,18 @@ computed from the particles that actually run out of the tap. What a
   place), pour it back into a new brew or pour it away. The shop starts
   with room for 3 bottles; a Bottle Shelf (6), a Potion Cabinet (12) and a
   Bottle Cellar (24) add more.
-* **Trade.** Label the bottle with what you know — tested values, the
-  guild's estimates, "none" or unknown — and bargain with customers who
+* **Trade.** A bottle whose batch has been tested labels itself — the
+  tested values, the guild's estimates for the rest — and keeps its label up
+  to date as further trials of the batch come in, so every bottle of that
+  batch (on the counter or the shelves, where hovering a bottle shows its
+  label) can be read and sold without testing it again. Every tested value
+  carries its standard deviation (σ), and accuracy stars — ☆☆☆ to ★★★ —
+  show at a glance how far to trust it: one reading earns none, readings
+  repeated on several rabbits narrow σ and earn up to three. A bottle rates
+  as its least accurate claim; estimates and figures you write yourself
+  earn no stars. Revise the label
+  with what you know — tested values, estimates, "none" or unknown — and
+  bargain with customers who
   each haggle, trust and need proof differently. They pay the agreed
   price, drink the real potion and come back the next day: pleased, with a
   fair complaint, or a dishonest one you can dispute with your trial

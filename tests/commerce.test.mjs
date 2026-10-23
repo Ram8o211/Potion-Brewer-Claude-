@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { GameState } from '../src/game/state.js';
 import { EFFECT_INDEX, NE } from '../src/alchemy/effects.js';
-import { draftLabel, labelTrust, unprovenWanted, openNegotiation, proposePrice, acceptOffer, recordSale, resolveFollowUp, relevantEffects, editClaim, applyTrials } from '../src/game/commerce.js';
+import { draftLabel, labelTrust, unprovenWanted, openNegotiation, proposePrice, acceptOffer, recordSale, resolveFollowUp, relevantEffects, editClaim, applyTrials, evidenceOf, claimSigma, claimStars, labelStars, accuracyStars } from '../src/game/commerce.js';
 import { purityRequirement } from '../src/game/commissions.js';
 
 /** A measurement with the given effects (everything else a plain potion). */
@@ -233,4 +233,44 @@ test('a refund is paid in full or not at all; a lost dispute costs more name whe
   assert.equal(st.reputation, -20);
   st.adjustReputation(-500);
   assert.equal(st.reputation, -100);
+});
+
+test('a tested label carries the standard deviation, and earns accuracy stars as it narrows', () => {
+  // readings of a ~7 % healing brew: one reading, then more and more on several rabbits
+  const reads = [7.4, 6.1, 7.9, 6.8, 7.2, 6.6, 7.5, 7.0, 6.9, 7.3, 6.7, 7.1];
+  const starsAfter = (n, rabbits) => {
+    const samples = { vitality: reads.slice(0, n).map((v, i) => ({ v, r: 'r' + (i % rabbits), rec: 'x' + i, e: 1 })) };
+    const vial = { samples, cert: { vitality: 7 } };
+    const label = draftLabel(vial, null, 1);
+    const c = label.claims.vitality;
+    assert.equal(c.source, 'trial');
+    const sigma = claimSigma(c);
+    assert.ok(sigma !== null && sigma > 0, 'the standard deviation is on the label');
+    assert.equal(sigma, evidenceOf(vial).vitality.s);
+    return { stars: claimStars(c), sigma, label: labelStars(label) };
+  };
+  const one = starsAfter(1, 1), few = starsAfter(3, 3), many = starsAfter(12, 6);
+  assert.equal(one.stars, 0, 'one reading is a rough guess');
+  assert.ok(few.sigma < one.sigma && many.sigma < few.sigma, 'the deviation narrows with readings');
+  assert.ok(few.stars >= 1 && few.stars <= 2);
+  assert.equal(many.stars, 3);
+  assert.equal(many.label, 3, 'a label of one tested claim rates as that claim');
+  // stars are 0…3 and only grow as the deviation narrows
+  let last = 3;
+  for (let s = 0; s <= 5; s += 0.1) { const n = accuracyStars(7, s); assert.ok(n >= 0 && n <= 3 && n <= last); last = n; }
+});
+
+test('the label rates as its least accurate claim; estimates and your own figures earn no stars', () => {
+  const ev = { level: 'certified', n: 10, r: 5, u: 0.8, s: 0.4 };
+  const label = { day: 1, claims: {
+    vitality: { kind: 'value', value: 7, measured: 7, source: 'trial', evidence: ev },
+    love: { kind: 'unknown', source: 'estimate' },
+  } };
+  assert.equal(labelStars(label), 3, 'a claim of nothing does not count');
+  label.claims.fire = { kind: 'value', value: 4, source: 'estimate', spread: 3 };
+  assert.equal(labelStars(label), 0);
+  label.claims.fire = editClaim(label.claims.vitality, 'vitality', 'up');
+  assert.equal(claimStars(label.claims.fire), 0, 'a figure the player wrote is not a tested one');
+  // older evidence without readings: no deviation to show, no stars
+  assert.equal(claimSigma({ kind: 'value', value: 5, source: 'trial', evidence: { level: 'preliminary', n: 1, r: 1, u: 0 } }), null);
 });
