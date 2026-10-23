@@ -3,11 +3,11 @@
 // right where they live. Every dose reads a little differently and each
 // rabbit feels a potion a little more or less than the next, so one reading
 // is only a rough guess. One section shows what the brew is expected to do:
-// every effect as a percentage with its uncertainty, pooled from every
-// trial of the batch, narrowing with each new trial — on the same rabbit
-// (which keeps the others clean, but piles the effect up in it towards a
-// degeneration threshold that is hidden and its own) or on others (which
-// narrows it fastest). Any trial can be replayed on the chosen rabbit's
+// every effect as a percentage — the plain mean of every trial of the batch
+// and their standard deviation (after one trial: that reading, ±0, flagged
+// as a first, imprecise measure). Trials on the same rabbit keep the others
+// clean but pile the effect up in it towards a degeneration threshold that
+// is hidden and its own; trials on others average out each rabbit's bias. Any trial can be replayed on the chosen rabbit's
 // portrait without spending a drop.
 
 import { h, btn, clear, toast } from '../dom.js';
@@ -153,8 +153,9 @@ export class TrialsView {
 
   /**
    * The one section that says what the brew does: each effect's expected
-   * strength (the mean of every trial of it) with its uncertainty band, which
-   * narrows with every trial, on the same rabbit or on others.
+   * strength (the mean of every trial of it) with the standard deviation of
+   * those trials; a single trial is shown as it is, ±0, flagged as a first
+   * measure.
    * @param {any} cert
    */
   renderExpected(cert) {
@@ -163,6 +164,7 @@ export class TrialsView {
     const th = this.theoryOf();
     const tested = EFFECT_KEYS.filter((k) => cert.values[k] !== undefined);
     const shown = tested.filter((k) => cert.values[k] !== 0 || (cert.spread[k] || 0) > 1);
+    const firsts = shown.filter((k) => (cert.n[k] || 0) === 1);
     const trials = tested.length ? Math.max(...tested.map((k) => cert.n[k] || 0)) : 0;
     const rabbits = tested.length ? Math.max(...tested.map((k) => cert.rabbits[k] || 0)) : 0;
     el.append(h('div', { class: 'row' }, icon('scales'), h('b', { text: vial ? 'Expected effects of this vial' : 'Expected effects of this batch' }), h('span', { class: 'spacer' }),
@@ -173,21 +175,22 @@ export class TrialsView {
     }
     const rows = h('div', { class: 'reading-rows' });
     for (const k of shown) {
-      const e = EFFECT_BY_KEY[k], v = cert.values[k], sp = Math.max(1, Math.round(cert.spread[k] || 0));
+      const e = EFFECT_BY_KEY[k], v = cert.values[k], sp = sdRound(cert.spread[k] || 0), one = (cert.n[k] || 0) === 1;
       const lo = Math.max(0, Math.abs(v) - sp), hi = Math.min(100, Math.abs(v) + sp);
       const t = th ? th[k] : undefined;
-      rows.appendChild(h('div', { class: 'reading', 'data-effect': k, title: `${e.label}: ${cert.n[k]} reading${cert.n[k] === 1 ? '' : 's'} on ${cert.rabbits[k]} rabbit${cert.rabbits[k] === 1 ? '' : 's'}${t !== undefined ? ` · theory ${Math.round(t)}%` : ''}` },
+      rows.appendChild(h('div', { class: 'reading' + (one ? ' first' : ''), 'data-effect': k, title: `${e.label}: ${cert.n[k]} reading${cert.n[k] === 1 ? '' : 's'} on ${cert.rabbits[k]} rabbit${cert.rabbits[k] === 1 ? '' : 's'}${t !== undefined ? ` · theory ${Math.round(t)}%` : ''}` },
         icon(e.icon, 'sm'), h('span', { class: 'rk', text: e.label }),
         h('div', { class: 'rbar' },
-          h('i', { class: 'range', style: { left: lo + '%', width: Math.max(1, hi - lo) + '%', background: rgb(e.color) } }),
+          sp > 0 ? h('i', { class: 'range', style: { left: lo + '%', width: (hi - lo) + '%', background: rgb(e.color) } }) : null,
           t !== undefined && Math.abs(t) >= 0.5 ? h('i', { class: 'th theory', style: { left: Math.min(100, Math.abs(t)) + '%' } }) : null,
           h('i', { class: 'th mean', style: { left: Math.min(100, Math.abs(v)) + '%' } })),
-        h('span', { class: 'rv', text: `${Math.round(v)}% ±${sp} · ${potencyWord(v, k)}` })));
+        h('span', { class: 'rv', text: `${fmtPct(v)}% ±${sp}${one ? ' · 1st' : ''} · ${potencyWord(v, k)}` })));
     }
     if (shown.length) el.append(rows);
     const none = tested.filter((k) => !shown.includes(k));
     if (none.length) el.append(h('div', { class: 'small muted quiet' }, shown.length ? 'Not seen: ' : 'No effect seen: ', ...none.map((k) => icon(EFFECT_BY_KEY[k].icon, 'sm'))));
-    el.append(h('div', { class: 'small muted est-foot', text: 'Band: where the true strength likely lies. Each trial narrows it — other rabbits narrow it fastest. Labels use the mean.' }));
+    if (firsts.length) el.append(h('div', { class: 'warn small first-flag', text: `First measure${firsts.length === shown.length ? '' : ` (${firsts.map((k) => EFFECT_BY_KEY[k].label).join(', ')})`}: one trial only, so the value is that single reading and its ±0 means nothing yet — it is imprecise. Test again to see how much the readings vary.` }));
+    el.append(h('div', { class: 'small muted est-foot', text: 'Value: the mean of every trial. ±: their standard deviation (band: mean ± one deviation). Labels use the mean.' }));
     if (rabbits <= 1 && trials >= 2) el.append(h('div', { class: 'warn small', text: 'All on one rabbit: the others stay clean, but the effect piles up in it — and nobody knows how much it can take before it runs out of control.' }));
   }
 
@@ -429,6 +432,16 @@ function seedSamples(v) {
 function vialFallback(v) {
   if (v.samples) return {};
   return summarize(seedSamples(v));
+}
+
+/** A standard deviation as shown: one decimal below 10. @param {number} s */
+function sdRound(s) {
+  return s < 10 ? Math.round(s * 10) / 10 : Math.round(s);
+}
+
+/** A mean as shown: one decimal below 10. @param {number} v */
+function fmtPct(v) {
+  return Math.abs(v) < 10 ? String(Math.round(v * 10) / 10) : String(Math.round(v));
 }
 
 /** @param {number[]} c */

@@ -377,6 +377,7 @@ canvas.hutch-scene { display: block; width: 100%; height: auto; aspect-ratio: 22
 .reading .rbar .th.theory { background: rgba(43, 29, 20, 0.45); width: 1px; }
 .estimate-card { margin: 0 0 6px; color: var(--ink); line-height: 1.35; }
 .estimate-card .est-foot { margin-top: 2px; }
+.estimate-card .reading.first .rv { color: #8a4a10; }
 .trial-report .quiet { display: flex; gap: 3px; align-items: center; flex-wrap: wrap; }
 .trial-report .estimate { margin-top: 8px; }
 .hutch .memorial { margin-top: 2px; }

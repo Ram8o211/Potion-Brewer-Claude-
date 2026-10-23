@@ -48,7 +48,8 @@ test('a trial consumes a real dose; a rabbit shows every effect, read with an in
   assert.equal(st.stock(R.essenceA), stock0, 'no ingredient was duplicated or refunded');
   const theory = theoryOf([{ id: R.water, ml: 150 }, { id: R.essenceA, ml: 150 }], st.lookup);
   assert.deepEqual(SUBJECTS.map((s) => s.id), ['rabbit'], 'rabbits are the only subjects');
-  const { record } = st.recordTrial('rabbit', dose, { ml: 10, source: 'cauldron', batchId: st.batch.id, rev: st.batch.rev, theory, parts: [] });
+  // a fixed batch id: the reading's random draws are the same every run
+  const { record } = st.recordTrial('rabbit', dose, { ml: 10, source: 'cauldron', batchId: 'trial-seed-1', rev: st.batch.rev, theory, parts: [] });
   assert.equal(record.revealed.length, NE, 'a rabbit shows every effect');
   assert.ok(record.values.vitality > 3, `the rabbit shows vitality ${record.values.vitality}`);
   assert.notEqual(record.values.vitality, record.tv.vitality, 'a reading is not the exact truth');
@@ -65,6 +66,7 @@ test('certification: valid for this batch only, invalidated by a new pour or by 
   const R = st.world.roles;
   const sim = brew(st, [[R.water, 30], [R.essenceA, 30]]);
   const theory = new Float64Array(NE);
+  st.batch.id = 'trial-seed-2'; // fixed: the reading is the same every run
   st.recordTrial('rabbit', drawDose(sim, 10), { ml: 10, source: 'cauldron', batchId: st.batch.id, rev: st.batch.rev, theory, parts: [] });
   const now = measureParticles(sim, tapSelection(sim, 20)).effects;
   const cert = certification(st.trials, st.batch, now);

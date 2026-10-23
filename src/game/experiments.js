@@ -5,11 +5,11 @@
 // no reading is exact: every dose varies (DOSE_NOISE) and each rabbit feels
 // each effect a little more or less than the next (colony.js
 // rabbitSensitivity, a small hidden lifelong bias). One reading is a rough
-// guess; the estimate narrows with every trial. Trials on the same rabbit
-// keep the rest of the colony clean and still narrow it (down to that
-// rabbit's own small bias), but the effect piles up in that rabbit towards
-// a degeneration threshold nobody can see; trials on different rabbits
-// narrow it fastest.
+// guess; the estimate is the plain mean and standard deviation of every
+// trial. Trials on the same rabbit keep the rest of the colony clean, but
+// the effect piles up in that rabbit towards a degeneration threshold
+// nobody can see, and that rabbit's own bias stays in the mean; trials on
+// different rabbits average the biases out.
 //
 // Certification: a batch (one filling of the cauldron) is known for an
 // effect once trials of *this batch, unchanged since* read it; the estimate
@@ -120,12 +120,12 @@ export function rabbitReading(rabbit, effects, o) {
 export const doseErr = (ml) => Math.round(Math.sqrt(10 / Math.max(1, Number(ml) || 10)) * 1000) / 1000;
 
 /**
- * Pool readings into an estimate per effect: the mean, how sure it is (±,
- * one sigma), the number of readings and of rabbits, and the newest record
- * behind it. The ± shrinks with every reading: the dose-to-dose noise
- * averages out over all of them, the rabbits' own biases only over
- * different rabbits — so readings piled on one rabbit level off at that
- * rabbit's bias, and spreading them over the colony narrows it fastest.
+ * Pool readings into an estimate per effect, plainly: the mean of the
+ * readings and their sample standard deviation (n − 1), the number of
+ * readings and of rabbits, the newest record behind it, and whether it is
+ * still a single reading (`first`: its value is that reading, its
+ * deviation 0 — not because it is exact, but because one measure says
+ * nothing about its own error).
  * @param {Record<string, Sample[]>} samples
  */
 export function summarize(samples) {
@@ -134,27 +134,21 @@ export function summarize(samples) {
   /** @type {Record<string, number>} */ const n = {};
   /** @type {Record<string, number>} */ const rabbits = {};
   /** @type {Record<string, string>} */ const records = {};
+  /** @type {Record<string, boolean>} */ const first = {};
   for (const [key, list] of Object.entries(samples || {})) {
     if (!Array.isArray(list) || !list.length) continue;
-    const mean = list.reduce((a, s) => a + s.v, 0) / list.length;
     const N = list.length;
-    /** @type {Record<string, number>} */
-    const per = {};
-    for (const s of list) per[s.r] = (per[s.r] || 0) + 1;
-    const nr = Object.keys(per).length;
+    const mean = list.reduce((a, s) => a + s.v, 0) / N;
     const sd = N > 1 ? Math.sqrt(list.reduce((a, s) => a + (s.v - mean) ** 2, 0) / (N - 1)) : 0;
-    const am = Math.abs(mean);
-    const bias = RABBIT_BIAS * am * Math.sqrt(Object.values(per).reduce((a, c) => a + c * c, 0)) / N;
-    const noise = Math.sqrt(list.reduce((a, s) => { const e = s.e || 1; return a + (DOSE_NOISE * e * am) ** 2 + (READ_NOISE * e + 0.3) ** 2; }, 0)) / N;
-    const model = Math.sqrt(bias * bias + noise * noise);
     const m = Math.round(mean * 10) / 10;
     values[key] = Math.abs(m) < 0.5 ? 0 : m;
-    spread[key] = Math.round(Math.max(0.5, model, sd / Math.sqrt(N)) * 10) / 10;
-    n[key] = list.length;
-    rabbits[key] = nr;
-    records[key] = list[list.length - 1].rec;
+    spread[key] = Math.round(sd * 10) / 10;
+    n[key] = N;
+    rabbits[key] = new Set(list.map((s) => s.r)).size;
+    records[key] = list[N - 1].rec;
+    first[key] = N === 1;
   }
-  return { values, spread, n, rabbits, records };
+  return { values, spread, n, rabbits, records, first };
 }
 
 /** Add one record's readings to a sample set (newest last). @param {Record<string, Sample[]>} samples @param {any} rec */

@@ -40,7 +40,8 @@ test('a hutch of changed rabbits, and a body that keeps its changes', async ({ p
     st.equipment.push('kennel');
     for (let i = 0; i < 4; i++) st.buyRabbit();
     const fx = (o) => { const e = new Array(a.NE).fill(0); for (const [k, v] of Object.entries(o)) e[a.KEYS.indexOf(k)] = v; return { effects: e, resonance: [], color: [0.6, 0.4, 0.5], temperature: 25 }; };
-    const ctx = (id, ml = 25) => ({ ml, source: 'cauldron', batchId: st.batch.id, rev: st.batch.rev, theory: new Array(a.NE).fill(0), parts: [], rabbitId: id });
+    const ctx = (id, ml = 25) => ({ ml, source: 'cauldron', batchId: 'showcase-hutch', rev: st.batch.rev, // fixed: the same readings every run
+      theory: new Array(a.NE).fill(0), parts: [], rabbitId: id });
     const ids = st.colony.rabbits.map((r) => r.id);
     st.recordTrial('rabbit', fx({ strength: 16, love: 10 }), ctx(ids[0]));
     st.recordTrial('rabbit', fx({ transformation: 12, arcana: 14 }), ctx(ids[1]));
