@@ -136,7 +136,10 @@ export class LabScreen {
     this.bindInput();
     this.selectTool('spoon', true);
     if (!this.sandbox) {
-      if (!st.current && !st.dayOver) this.bringCustomer(false);
+      // the shop opens when the player opens the door (dawn lasts until then);
+      // a shop that was already open, or the tutorial's first visit, carries on
+      const tutorialVisit = st.tutorial.active && !st.tutorial.done && st.stats.served === 0;
+      if (!st.current && !st.dayOver && (st.opened || tutorialVisit)) this.bringCustomer(false);
       this.tutorial = new Tutorial(this);
       if (st.tutorial.active && !st.tutorial.done) this.tutorial.start();
     }
@@ -909,7 +912,10 @@ export class LabScreen {
       const relief = this.state.claimRelief();
       if (relief) toast('Guild stipend', `The guild lends a struggling apprentice ${relief} coins.`, 'coin', 4000);
       this.buildShelf();
-      this.bringCustomer(true);
+      // a new day dawns with the shop still closed: gather dawn flowers, then open the door
+      this.refreshCustomer();
+      this.views.counter.refresh();
+      this.updateBadges();
       this.refreshHud(true);
       this.views.wilds.refresh();
     });

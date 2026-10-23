@@ -24,6 +24,10 @@ export const ACTIVATION_MARGIN = 6;
  * @property {number} [hold]     seconds held at the reaction temperature
  * @property {boolean} [activate] the plan means to awaken its magic (alchemy/arcane.js)
  * @property {{T:number, hold:number}} [steep] an extraction stage before anything else (°C, seconds)
+ * @property {{frac:number}} [reduce] boil off this share of the brew's volume with the lid open
+ *           (the most volatile solvents go first: spirit before water); what does not boil stays
+ * @property {{id:string, n:number, ground?:boolean}[]} [late] added after the heat stages, at serving
+ *           temperature (they never see the steep, so they react only as they would cold)
  */
 
 /** Species tables by world lookup (predictPlan). @type {WeakMap<Function, SpeciesTable>} */
@@ -46,7 +50,7 @@ export function predictPlan(world, lookup, plan) {
   const fired = [];
   const st = plan.steep ? plan.steep.T : 20;
   const lo = Math.min(20, plan.coolTo ?? 20, plan.serveTemp ?? 20, st);
-  const hi = Math.max(20, plan.heatTo ?? 20, plan.serveTemp ?? 20, st);
+  const hi = Math.max(20, plan.heatTo ?? 20, plan.serveTemp ?? 20, st, plan.reduce ? reduceTemp(plan, lookup) : 20);
   for (let pass = 0; pass < 3; pass++) {
     for (const r of world.reactions) {
       const a = vol.get(r.a) || 0;
@@ -88,6 +92,37 @@ export function predictPlan(world, lookup, plan) {
       }
     }
   }
+  // reduction: the lid is off and the brew boils; the most volatile liquid
+  // goes first and leaves as vapour, everything that cannot boil stays
+  if (plan.reduce && plan.reduce.frac > 0) {
+    let left = plan.reduce.frac * total;
+    const vols = [...vol].map(([id, v]) => ({ id, v, d: lookup(id) })).filter((x) => x.v > 1e-6 && x.d && x.d.form === 'liquid' && isFinite(x.d.boil) && x.d.boil < 150)
+      .sort((a, b) => a.d.boil - b.d.boil);
+    for (const x of vols) {
+      if (left <= 0) break;
+      const take = Math.min(x.v, left);
+      vol.set(x.id, x.v - take);
+      total -= take;
+      left -= take;
+    }
+  }
+  // late additions: cold, after the stages (only reactions that run at serving temperature)
+  if (plan.late && plan.late.length) {
+    const T = plan.serveTemp ?? 20;
+    for (const ing of plan.late) { vol.set(ing.id, (vol.get(ing.id) || 0) + ing.n); total += ing.n; }
+    for (const r of world.reactions) {
+      if (!plan.late.some((i) => i.id === r.a || i.id === r.b)) continue;
+      const a = vol.get(r.a) || 0, b = r.b ? vol.get(r.b) || 0 : Infinity;
+      if (a <= 0 || b <= 0 || r.minT > T || r.maxT < T) continue;
+      const ext = Math.min(a / r.ra, r.b ? b / r.rb : Infinity) * (r.kind === 'decompose' ? 0.55 : 0.88);
+      if (ext <= 0.01) continue;
+      vol.set(r.a, a - ext * r.ra);
+      if (r.b) vol.set(r.b, b - ext * r.rb);
+      const used = ext * (r.ra + (r.b ? r.rb : 0));
+      for (const pr of r.products) vol.set(pr.id, (vol.get(pr.id) || 0) + used * pr.frac);
+      fired.push(r.id);
+    }
+  }
   // gaseous products escape the liquid (they bubble out)
   for (const [id, v] of vol) {
     const d = lookup(id);
@@ -123,6 +158,30 @@ export function predictPlan(world, lookup, plan) {
   const composition = {};
   for (let s = 0; s < sp.count; s++) if (sp.defs[s] && comp[s] > 1e-5) composition[sp.defs[s].id] = comp[s];
   return { ...props, effects, raw, composition, reactions: fired, totalParticles: total, threshold, awakened };
+}
+
+/**
+ * The temperature a reducing brew boils at: its most volatile solvent's
+ * boiling point while that lasts (spirit before water).
+ * @param {BrewPlan} plan @param {(id:string)=>any} lookup
+ */
+export function reduceTemp(plan, lookup) {
+  let b = Infinity;
+  for (const ing of plan.ingredients) {
+    const d = lookup(ing.id);
+    if (d && d.form === 'liquid' && isFinite(d.boil) && d.boil < 150) b = Math.min(b, d.boil);
+  }
+  // a brew that loses all of a low-boiling spirit goes on to the water's boil
+  let water = Infinity;
+  for (const ing of plan.ingredients) { const d = lookup(ing.id); if (d && d.form === 'liquid' && isFinite(d.boil) && d.boil < 150 && d.boil > b + 10) water = Math.min(water, d.boil); }
+  return isFinite(water) && plan.reduce && plan.reduce.frac > spiritShare(plan, lookup, b) ? water : isFinite(b) ? b : 100;
+}
+
+/** Share of the plan that is the solvent boiling at b. */
+function spiritShare(plan, lookup, b) {
+  let s = 0, t = 0;
+  for (const ing of plan.ingredients) { const d = lookup(ing.id); t += ing.n; if (d && d.boil === b) s += ing.n; }
+  return t ? s / t : 0;
 }
 
 /**

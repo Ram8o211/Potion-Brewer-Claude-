@@ -40,10 +40,11 @@ export class CounterView {
     const com = st.current;
     if (!com) {
       el.append(h('div', { class: 'card parch counter-empty' },
-        h('div', { text: st.dayOver ? `The last customer has left. Day ${st.day} is over.` : 'The shop is quiet.' }),
+        h('div', { text: st.dayOver ? `The last customer has left. Day ${st.day} is over.` : st.opened ? 'The shop is quiet.' : `Dawn of day ${st.day}. The shop is still closed.` }),
+        h('div', { class: 'small muted', text: st.dayOver ? 'Dusk: the twilight plants are open in the wilds until you close for the night.' : st.opened ? '' : 'Dawn flowers are open in the wilds only until you open the door. Brew ahead for the shelves, or open up when you are ready.' }),
         h('div', { class: 'row wrap' },
           st.dayOver ? btn('Close shop for the night', () => lab.endDay(), { cls: 'gold', icon: 'sun', act: 'end-day' })
-            : btn('Open the door', () => lab.bringCustomer(true), { cls: 'gold', icon: 'door', act: 'next-customer' }))));
+            : btn(st.opened ? 'Next customer' : 'Open the door', () => lab.bringCustomer(true), { cls: 'gold', icon: 'door', act: 'next-customer' }))));
       this.vialCard(el);
       this.shelfCard(el);
       return;

@@ -11,9 +11,9 @@
 // How much one harvest brings depends on what the player does and when:
 //   • the method each ingredient needs (pick, dig, chip, scrape, sweep) and
 //     whether the right tool is in the satchel — by hand, half as much;
-//   • the part of the day: some plants open only at dawn or dusk (the first
-//     and the last customer of a shop day); out of their hour only a few
-//     sprigs are worth taking, so nothing is ever completely out of reach;
+//   • the part of the day: some plants open only at dawn (before the shop
+//     opens) or at dusk (after the last customer); out of their hour only a
+//     few sprigs are worth taking, so nothing is ever completely out of reach;
 //   • the day's weather (from the world seed and the day number): rain makes
 //     plants regrow overnight, frost closes the meadow flowers, a storm
 //     recharges the crystal seams, fog keeps the twilight plants open;
@@ -177,17 +177,25 @@ export function methodOf(m) {
 }
 
 /**
- * The part of the shop day: dawn while the first customer of the day is in
- * the shop, dusk with the last one (and after closing), day in between.
- * @param {{customerIndex:number, customersPerDay:number, dayOver?:boolean}} st
+ * The part of the shop day. The day has one clock, the shop door:
+ *   dawn — before the shop opens (the first customer has not been let in);
+ *   day  — while the shop is open;
+ *   dusk — once the last customer has gone, until the shop closes for the night.
+ * Dawn flowers are therefore gathered before opening, dusk plants after the
+ * day's trade — or in fog, which keeps twilight all day. (A state without an
+ * `opened` flag, as in old tests, counts as open once a customer was served.)
+ * @param {{customerIndex:number, customersPerDay:number, dayOver?:boolean, opened?:boolean, current?:any}} st
  * @returns {'dawn'|'day'|'dusk'}
  */
 export function dayPart(st) {
-  if (st.dayOver || st.customerIndex >= st.customersPerDay - 1) return 'dusk';
-  return st.customerIndex <= 0 ? 'dawn' : 'day';
+  if (st.dayOver) return 'dusk';
+  const opened = st.opened !== undefined ? st.opened : st.customerIndex > 0;
+  return opened ? 'day' : 'dawn';
 }
 
 export const DAY_PART_NAME = { dawn: 'Dawn', day: 'Midday', dusk: 'Dusk' };
+/** What each part of the day means for the shop. */
+export const DAY_PART_HINT = { dawn: 'The shop is still closed: dawn flowers are open.', day: 'The shop is open.', dusk: 'The shop has closed: dusk plants are open until you close for the night.' };
 
 /**
  * @typedef {Object} Weather

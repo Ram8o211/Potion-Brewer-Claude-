@@ -21,19 +21,23 @@ test('the right tool doubles a harvest; picking needs none', () => {
   assert.equal(gatherPlan(st, leaf, st.lookup(leaf.materialId)).hasTool, true, 'leaves are picked by hand');
 });
 
-test('dawn and dusk follow the customers; twilight plants give a few sprigs out of their hour', () => {
+test('the shop door is the clock: dawn before opening, dusk after the last customer; twilight plants give a few sprigs out of their hour', () => {
   const st = fresh();
-  st.customerIndex = 0;
-  assert.equal(dayPart(st), 'dawn');
-  st.customerIndex = 1;
+  st.opened = false;
+  assert.equal(dayPart(st), 'dawn', 'before the door opens');
+  st.nextCustomer();
+  assert.ok(st.opened, 'letting the first customer in opens the shop');
   assert.equal(dayPart(st), 'day');
-  st.customerIndex = st.customersPerDay - 1;
-  assert.equal(dayPart(st), 'dusk');
+  st.current = null; st.customerIndex = st.customersPerDay;
+  assert.equal(dayPart(st), 'dusk', 'once the last customer has gone');
+  st.endDay();
+  assert.equal(dayPart(st), 'dawn', 'a new day starts closed');
+  st.current = null; st.customerIndex = st.customersPerDay;
   const shade = depositOf(st, 'nightshade');
   const m = st.lookup(shade.materialId);
   assert.ok(m.wild.dusk);
   const atDusk = gatherPlan(st, shade, m);
-  st.customerIndex = 1;
+  st.customerIndex = 1; st.opened = true;
   const atNoon = gatherPlan(st, shade, m);
   assert.ok(atDusk.open && !atNoon.open);
   assert.ok(atNoon.take >= 5, 'never completely out of reach');
@@ -61,7 +65,7 @@ test('weather is deterministic per world and day, and acts on regrowth', () => {
 test('a thorough harvest takes twice as much and scars the deposit until it is full', () => {
   const st = fresh();
   st.equipment.push('trowel');
-  st.customerIndex = 1;
+  st.customerIndex = 1; st.opened = true;
   const root = depositOf(st, 'ironroot');
   const careful = gatherPlan(st, root, st.lookup(root.materialId)).take;
   const now = 1_000_000;
@@ -82,7 +86,7 @@ test('a thorough harvest takes twice as much and scars the deposit until it is f
 
 test('what spoils is cut all the same, and careful hands leave a reserve to regrow', () => {
   const st = fresh('gather-2');
-  st.customerIndex = 1;
+  st.customerIndex = 1; st.opened = true;
   const chalk = depositOf(st, 'riverchalk');
   const now = 2_000_000;
   const plan = gatherPlan(st, chalk, st.lookup(chalk.materialId));
@@ -107,7 +111,7 @@ test('what spoils is cut all the same, and careful hands leave a reserve to regr
   assert.ok(r.ok);
   // with the trowel, nothing is spoiled
   const st2 = fresh('gather-2');
-  st2.customerIndex = 1;
+  st2.customerIndex = 1; st2.opened = true;
   st2.equipment.push('trowel');
   assert.equal(gatherPlan(st2, chalk, st2.lookup(chalk.materialId)).eff, 1);
 });
