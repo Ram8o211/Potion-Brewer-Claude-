@@ -6,21 +6,21 @@ import { Rng, hashString } from '../core/rng.js';
 import { generateWorld, makeLookup, addAlchemy, LAB_ROLES } from '../materials/generator.js';
 import { serializeMaterial, deserializeMaterial } from '../materials/schema.js';
 import { generateCommission, tutorialCommission } from './commissions.js';
-import { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById } from './equipment.js';
+import { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById, RETIRED_EQUIPMENT } from './equipment.js';
 import { SIM } from '../simulation/constants.js';
 import { createTrials, normalizeTrials, runTrial, SUBJECT_BY_ID, knownLaws, certification, summarize } from './experiments.js';
 import { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth, depositStatus } from './gathering.js';
 import { predictPlan } from './predict.js';
-import { EFFECT_INDEX } from '../alchemy/effects.js';
+import { EFFECT_INDEX, EFFECT_KEYS } from '../alchemy/effects.js';
 import { migrateVial } from './vial.js';
 import { recordSale, resolveFollowUp, applyTrials, evidenceOf } from './commerce.js';
 import { colonyDay, colonyTick, livingRabbits, findRabbit, addBoughtRabbit, retireRabbit, remainsSource, purgeRabbit, cullRabbit, maxHealthOf, FOUNDER_BORN } from './colony.js';
 import { remainsMaterials, remainsPlan, isRemains } from '../materials/remains.js';
 import { returningPatron, welcomePatron, recentStyles, notePatron, patronVerdict, noveltyFactor } from './patrons.js';
-import { techniqueById } from './commissions.js';
+import { techniqueById, migrateTechniques } from './commissions.js';
 import { migrateRecipe } from './recipes.js';
 
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 /** A purging draught at the apothecary, and brewed in the still. */
 export const PURGE_PRICE = 8;
 export const PURGE_BREW_COST = 1;
@@ -64,7 +64,6 @@ export const ACHIEVEMENTS = [
   { id: 'master', name: 'Master Alchemist', desc: 'Reach the rank of Master.', reward: 150 },
   { id: 'grand', name: 'Grand Alchemist', desc: 'Complete the Grand Commission.', reward: 500 },
   { id: 'recipe', name: 'Written Down', desc: 'Save a recipe to your book.', reward: 10 },
-  { id: 'distil', name: 'Spirit Catcher', desc: 'Collect a distillate with the alembic.', reward: 30 },
   { id: 'layers', name: 'Oil and Water', desc: 'Observe immiscible liquids separating into layers.', reward: 10 },
   { id: 'trial1', name: 'First Trial', desc: 'Test a potion on a subject.', reward: 10 },
   { id: 'trial25', name: 'Empiricist', desc: 'Run 25 trials.', reward: 60 },
@@ -122,7 +121,6 @@ export class GameState {
     /** @type {{active:boolean, step:number, done:boolean, tips?:Record<string, boolean>}} */ this.tutorial = { active: false, step: 0, done: true, ...(data.tutorial || {}) };
     /** @type {{event:string, mods:Record<string, number>}} */ this.market = data.market || { event: 'none', mods: {} };
     /** @type {any} */ this.cauldron = data.cauldron || null;
-    /** @type {any} */ this.receiver = data.receiver || null;
     /** @type {any[]} */ this.brewLog = data.brewLog || [];
     /** @type {number} */ this.reliefDay = data.reliefDay || 0;
     /** @type {boolean} */ this.grandDone = !!data.grandDone;
@@ -200,7 +198,6 @@ export class GameState {
       tutorial: { active: opts.tutorial !== false, step: 0, done: opts.tutorial === false },
       market: { event: 'none', mods: {} },
       cauldron: null,
-      receiver: null,
       brewLog: [],
       reliefDay: 0,
       grandDone: false,
@@ -803,7 +800,7 @@ export class GameState {
 
   grandCommission(rng) {
     const ctx = this.commissionContext();
-    const com = generateCommission(ctx, rng, { tier: 4, request: rng.pick(['warpath', 'starseer']), contract: true, techniques: ['colour'] }) ||
+    const com = generateCommission(ctx, rng, { tier: 4, request: rng.pick(['warpath', 'starseer']), contract: true, techniques: ['strong'] }) ||
       generateCommission(ctx, rng, { tier: 4, contract: true });
     if (com) {
       com.grand = true;
@@ -1120,7 +1117,6 @@ export class GameState {
       tutorial: this.tutorial,
       market: this.market,
       cauldron: this.cauldron,
-      receiver: this.receiver,
       brewLog: this.brewLog,
       reliefDay: this.reliefDay,
       grandDone: this.grandDone,
@@ -1156,6 +1152,7 @@ export class GameState {
     if (data._migratedFrom !== undefined && data._migratedFrom < 3) st.genVersion = WORLD_GEN_VERSION;
     st.buyBackPrepared();
     if (st.current) migrateCommission(st.current, st.world, st.lookup);
+    if (st.current && data._migratedFrom < 6) retireRequirements(st.current);
     return st;
   }
 }
@@ -1206,9 +1203,8 @@ export function migrate(raw) {
   // the Wisp Lantern left with the wisp (rabbits are the only subjects): its owners get the Purging Still
   if (Array.isArray(d.equipment) && d.equipment.includes('lantern')) d.equipment = [...new Set(d.equipment.map((id) => (id === 'lantern' ? 'still' : id)))];
   if (d.version < 2) {
-    // v1 had no market, receiver or grand-commission fields
+    // v1 had no market or grand-commission fields
     d.market = d.market || { event: 'none', mods: {} };
-    d.receiver = d.receiver || null;
     d.grandDone = !!d.grandDone;
     d.reliefDay = d.reliefDay || 0;
     d.knowledge = d.knowledge || {};
@@ -1252,9 +1248,88 @@ export function migrate(raw) {
     d.recipes = (d.recipes || []).map(migrateRecipe);
     d.version = 5;
   }
+  if (d.version < 6) {
+    // v6: the gameplay refactor. Equipment without a campaign purpose is
+    // retired (refunded, or replaced by the item that took over its job),
+    // customers no longer ask for density, stability, volatility, viscosity,
+    // charge or colour, recipes are matched on their procedure, and the
+    // alembic's receiver is gone with the alembic.
+    const refit = retireEquipment(d.equipment);
+    d.equipment = refit.equipment;
+    d.coins = round1((Number(d.coins) || 0) + refit.refund);
+    if (refit.lines.length) {
+      d.journal['note:refit'] = { key: 'note:refit', kind: 'note', title: 'The guild refitted your workshop', day: d.day | 0,
+        text: `Some instruments and tools no longer serve the trade, and the guild has taken them back: ${refit.lines.join('; ')}. ${refit.refund > 0 ? `${refit.refund} coins were paid back in all.` : ''}`.trim() };
+    }
+    // (an order in progress is brought up to date in fromJSON, after its v2 aspects)
+    d.recipes = (d.recipes || []).map(migrateRecipe);
+    delete d.receiver;
+    d.version = 6;
+  }
+  // every shop owns the starting kit (the pestle joined it in v6)
+  for (const id of STARTING_EQUIPMENT) if (!d.equipment.includes(id)) d.equipment = [...d.equipment, id];
   if (d.world && Array.isArray(d.world.materials) && d.world.materials.length === 0) throw new Error('The save has no reagents');
   if (!d.inventory || typeof d.inventory !== 'object') throw new Error('The save has no inventory');
   return d;
+}
+
+/**
+ * Retire equipment the campaign no longer uses (equipment.js
+ * RETIRED_EQUIPMENT). Owners get the item that took over its purpose, or
+ * their coins back: the four gathering tools become the Forager's Kit (any
+ * paid beyond the kit's price is refunded), the Aether Lens becomes the
+ * Arcanometer (refunded if they already own one), the pestle — now part of
+ * every starting kit — is refunded, everything else is refunded in full.
+ * Pure; applied once, by the save migration.
+ * @param {string[]} list
+ * @returns {{equipment:string[], refund:number, lines:string[]}}
+ */
+export function retireEquipment(list) {
+  const owned = [...new Set(list || [])];
+  const out = owned.filter((id) => !RETIRED_EQUIPMENT[id] && id !== 'pestle');
+  let refund = 0;
+  const lines = [];
+  /** @type {Record<string, number>} paid for items that now become another */
+  const into = {};
+  for (const id of owned) {
+    const r = RETIRED_EQUIPMENT[id];
+    if (!r) continue;
+    if (r.into) { into[r.into] = (into[r.into] || 0) + r.price; continue; }
+    refund += r.price;
+    lines.push(`${r.name} (${r.price} coins: ${r.why})`);
+  }
+  for (const [target, paid] of Object.entries(into)) {
+    const e = equipmentById(target);
+    const names = owned.filter((id) => RETIRED_EQUIPMENT[id] && RETIRED_EQUIPMENT[id].into === target).map((id) => RETIRED_EQUIPMENT[id].name);
+    if (!e) continue;
+    if (out.includes(target)) {
+      refund += paid;
+      lines.push(`${names.join(', ')} (${paid} coins: you already own the ${e.name})`);
+    } else {
+      out.push(target);
+      const back = Math.max(0, paid - e.price);
+      refund += back;
+      lines.push(`${names.join(', ')} → the ${e.name}${back ? ` and ${back} coins` : ''}`);
+    }
+  }
+  if (owned.includes('pestle')) { refund += 35; lines.push('Granite Pestle (35 coins: every workshop now has one)'); }
+  return { equipment: out, refund: round1(refund), lines };
+}
+
+/**
+ * An order taken before v6 keeps its customer, story and budget; the
+ * requirements customers no longer make are dropped (they only made it
+ * harder), and its techniques are renamed to the current ones.
+ * @param {any} com
+ */
+export function retireRequirements(com) {
+  if (!com || !Array.isArray(com.requirements)) return com;
+  const keep = (r) => r.key === 'temperature' || r.key === 'purity' || EFFECT_KEYS.includes(r.key);
+  com.requirements = com.requirements.filter(keep);
+  com.techniques = migrateTechniques(com.techniques || []);
+  if (typeof com.style === 'string') com.style = [com.style.split('+')[0], ...com.techniques.slice().sort()].join('+');
+  com.effectOrder = com.requirements.some((r) => r.effect);
+  return com;
 }
 
 /** @param {number} v */

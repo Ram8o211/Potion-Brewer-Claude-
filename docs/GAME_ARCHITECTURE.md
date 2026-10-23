@@ -1,5 +1,11 @@
 # Game architecture
 
+> The gameplay layer was refactored in v2.3 (`docs/GAMEPLAY_ARCHITECTURE.md`
+> is the reference for the loop, the layers' contracts, the equipment and
+> how to add a mechanic; `docs/GAMEPLAY_PURPOSE_AUDIT.md` has the
+> evidence). This document describes the engine and modules; its gameplay
+> sections below are updated to match.
+
 The Alchemist's Shop is a static web app made of native ES modules (about
 13,700 lines in 59 modules) with no runtime dependencies. In development the
 browser loads `src/` directly; `scripts/build.mjs` bundles it into one
@@ -257,10 +263,8 @@ neutral brew costs one scan per step.
 
 The spoon has a velocity-field stirring zone (radius 0.42) and a physical
 bowl collider. The pestle has a heavy head; it crushes rigid frozen bodies
-and crystals into grains when struck hard enough. The skimmer removes
-matter and counts what it lifted: a particle that is at least 92% one
-substance (and not burning) counts as `recovered`, so a skimmed layer of
-a pure reagent goes back into its jar; mixtures are waste. Tool motion is sub-stepped along the pointer path, so fast strokes
+and crystals into grains when struck hard enough. The skimmer (a Free
+Experiment tool since v2.3) removes matter and counts what it lifted. Tool motion is sub-stepped along the pointer path, so fast strokes
 can't jump through the brew. Tools can never push matter through the
 walls (tested).
 
@@ -360,38 +364,32 @@ into the new vessel's shape instead of being dropped.
   it and where they can be had today — public knowledge, never the hidden
   plan.
 
-  *Techniques* (`TECHNIQUES`). Customers also ask for what the simulation
-  makes physically real with natural ingredients, each applied to the
-  plan, re-predicted and checked by the counter's own scoring before it may
-  be asked: **true colour** (only full extraction in the right proportions
-  gives it; whole or unsteeped herbs are off by ΔE 10–30), **serving
-  temperature**, **well mixed** (stability; an unstirred brew reads 20–60),
-  **density** (rises with what is dissolved and as water boils off), **a
-  heady tincture** (part of the water held back and made up with spirit
-  added cold, after the steep — volatility), and **boiled down** (a real
-  `reduce` stage: lid off, a quarter of the volume boiled away — stronger,
-  side effects too, volatility lower; only where the prediction of the
-  boiling is trustworthy: no new reaction, no change in awakening). Tiers
-  gate them (colour and serving from the start, mixing, density and
-  tinctures from Journeyman, boiling down from Adept, two at once later)
-  and archetypes prefer their own. Each carries a one-line lesson shown
-  with the order, and a technique sold well for the first time is recorded
-  as mastered (journal, +4 reputation). The old prepared-reagent physical
-  styles (syrups, salves, panaceas…) are gone from generation: they needed
-  reagents the market no longer sells. Natural grains dissolve or extract
-  in the cauldron rather than thicken it, so viscosity and charge are not
-  asked for (see the integration report).
+  *Techniques* (`TECHNIQUES`). Customers judge outcomes, never
+  procedures: the effects, purity, the quantity and, for some, the
+  temperature it is served at. On top of the plain request they may ask
+  for a **serving temperature** or, from Adept, a brew **strong and
+  compact** — a strength beyond what a plain brew of the plan gives,
+  planned with a real `reduce` stage (lid off, a quarter of the volume
+  boiled away, side effects stronger too; only where the prediction of the
+  boiling is trustworthy) but met by any method. Each names its mechanic
+  (`mechanics.js`) and carries a one-line lesson shown with the order; a
+  technique sold well for the first time is recorded as mastered (journal,
+  +4 reputation). Density, viscosity, stability, volatility, charge and an
+  exact colour are never asked for (`docs/GAMEPLAY_PURPOSE_AUDIT.md`).
+  Cold steeps are planned only where the equipment holds them (the basin
+  about 9 °C, a cold plate just above freezing).
 
   *Variety and progression.* Requests sold in the last three sales are
   avoided when there is anything else; the same order again and again
   earns less reputation (`patrons.js noveltyFactor`: 70 % for the third of
   six, 50 % beyond). Plans are kept only if the predicted potion scores
-  full marks with `evaluatePotion` (the same function the counter uses),
-  volatility included. `scripts/achievability.mjs` brews generated
+  full marks with `evaluatePotion` (the same function the counter uses). `scripts/achievability.mjs` brews generated
   orders' plans — every technique, every tier — in the real simulation for
   *realistic* shops (the equipment a player of that rank typically owns, a
   modest purse) and fully equipped ones (`autobrew.js`, stages pour → crush
-  → stir → steep → heat/chill → hold → reduce → serve → late additions).
+  → stir → steep → heat/chill → hold → reduce → serve → late additions;
+  recorded procedures replay step by step, boil-downs to the share that
+  boiled away).
 * **`patrons.js`** remembers customers by name: visits, potions that
   worked, fair complaints and a trust between −1 and 1. A share of
   customer slots goes to a returning patron (`returningPatron`), who keeps
@@ -549,8 +547,8 @@ into the new vessel's shape instead of being dropped.
   the game is closed. A new day lets every deposit recover half its
   capacity. Harvests respect shelf space; the satchel gathers 50% more.
   `gatherPlan` decides one harvest: the ingredient's method (pick, dig,
-  chip, scrape, sweep) and whether its tool is owned (trowel, rock hammer,
-  badger brush, silver sickle — by hand, half of what is cut is spoiled);
+  chip, scrape, sweep) and whether the Forager's Kit is owned (everything
+  but picking needs it — by hand, half of what is cut is spoiled);
   the part of the day, whose clock is the shop door (`dayPart`): dawn
   until the door is opened, the day while the shop is open, dusk once the
   last customer has gone until the shop closes for the night — so dawn
@@ -565,16 +563,16 @@ into the new vessel's shape instead of being dropped.
   usable share of what is cut: a harvest draws `amount / eff` from the
   deposit, so spoiled material is gone from it too, and `harvestable`
   tells the button exactly what the next harvest will bring.
-* **`evaluate.js`** scores each requirement (full marks within tolerance,
-  falling linearly to zero), weights them (colour counts more, quantity
-  less), caps the score for a short bottle, and turns quality into stars,
+* **`evaluate.js`** scores each requirement — effects, purity, serving
+  temperature (full marks within tolerance, falling linearly to zero) —
+  weights them (quantity counts less), caps the score for a short bottle, and turns quality into stars,
   payment and reputation.
-* **`equipment.js`** lists 29 items in heating, cooling, vessels, tools,
-  instruments, trials, storage and guild categories (new: stone mortar,
-  galvanometer, subject kennel, wisp lantern, forager's satchel), with ranks and prerequisites.
-  `capabilities()` folds owned items into the simulation's limits (flame
-  temperature and power, coldest temperature, cauldron size, storage,
-  discount).
+* **`equipment.js`** lists 23 items (7 in the starting kit, 16 for sale),
+  each naming the mechanics it serves (`mechanics.js`), with ranks and
+  prerequisites, and the retired items an older save is refunded for
+  (`RETIRED_EQUIPMENT`). `capabilities()` folds owned items into the
+  simulation's limits (flame temperature and power, coldest temperature,
+  cauldron size, storage, discount, hutch and bottle shelves).
 * **`journal.js`** turns simulation events (first boil, freeze, dough,
   crushing, dissolving, steeping, each reaction, fire, sparks, awakening) into journal discoveries,
   ingredient knowledge and achievements.

@@ -2,7 +2,7 @@
 // day dawning with the shop closed, an order that names its techniques and
 // what to gather, brewing advice read off the cauldron, a trial's margin and
 // evidence level, the recipe book's recorded steps, what a customer weighs
-// in bargaining, and the alembic's receiver going back into its jar.
+// in bargaining, and a guild shop that sells only tools with a purpose.
 import { test, expect } from '@playwright/test';
 import { watchErrors, shot, newGame, lab, pourDose } from './helpers.mjs';
 
@@ -36,21 +36,24 @@ test('a day dawns closed; the order card says what it takes and where to find it
     const mod = await import(/* @vite-ignore */ src + 'commissions.js');
     const rng = await import(/* @vite-ignore */ '/src/core/' + 'rng.js');
     const st = l.state;
-    st.current = mod.generateCommission(st.commissionContext(), new rng.Rng('ui-tech'), { tier: 1, techniques: ['stable'] });
+    st.current = mod.generateCommission(st.commissionContext(), new rng.Rng('ui-tech'), { tier: 1, techniques: ['serve'] });
     l.refreshCustomer();
     l.views.counter.refresh();
   });
-  await expect(page.locator('.tech-card')).toContainText('Well mixed');
+  await expect(page.locator('.tech-card')).toContainText('Serving temperature');
   await expect(page.locator('.supply-card summary')).toContainText('ml of brew');
   await page.click('.supply-card summary');
   await expect(page.locator('.supply-card')).toContainText('Every one of them brings side effects');
   await clean(page);
   await page.locator('.tech-card').scrollIntoViewIfNeeded();
   await shot(page, info, 'order-techniques');
-  // the order strip shows the stability requirement without a meter: no assay kit yet
+  // the order strip: effects (unknown until tested), purity, the serving temperature read off the brew, the quantity
   await page.click('[data-act=tab-brew]');
   await pourDose(page, await lab(page, (l) => l.state.world.roles.water), [100]);
+  const keys = await lab(page, (l) => l.state.current.requirements.map((r) => r.key));
+  for (const k of keys) expect(['temperature', 'purity', 'vitality', 'strength', 'love', 'arcana', 'transformation', 'fire', 'frost', 'acidity', 'toxicity', 'death']).toContain(k);
   await expect(page.locator('.req-chip.unknown').first()).toBeVisible();
+  await expect(page.locator('.req-chip', { hasText: '°' }).first()).toBeVisible();
   expect(errors).toEqual([]);
 });
 
@@ -106,7 +109,7 @@ test('advice read off the cauldron, a trial’s margin and level, and a recipe t
   expect(errors).toEqual([]);
 });
 
-test('bargaining shows what the customer weighs; the alembic’s distillate goes back into its jar', async ({ page }, info) => {
+test('bargaining shows what the customer weighs; the guild sells only tools with a purpose', async ({ page }, info) => {
   const errors = watchErrors(page);
   await newGame(page, { tutorial: false, seed: 'integration-3' });
   const water = await lab(page, (l) => l.state.world.roles.water);
@@ -124,12 +127,17 @@ test('bargaining shows what the customer weighs; the alembic’s distillate goes
   await clean(page);
   await shot(page, info, 'bargain-reasons');
   await page.click('[data-act=walk-away]');
-  // the alembic: a receiver of clean spirit (boiled off a tincture) goes back into its jar
-  const spirit = await lab(page, (l) => l.state.world.roles.spirit);
-  const s0 = await lab(page, (l, sp) => { const st = l.state; if (!st.has('alembic')) st.equipment.push('alembic'); st.receiver = { count: 10, comp: { [sp]: 10 }, color: [0.7, 0.8, 0.9] }; l.showView('brew'); l.updateChips(); return st.stock(sp); }, spirit);
-  await page.click('[data-act=receiver]');
-  await page.click('[data-act=receiver-jar]');
-  expect(await lab(page, (l, sp) => l.state.stock(sp), spirit)).toBe(s0 + 50);
-  expect(await lab(page, (l) => l.state.receiver)).toBeNull();
+  // the shop's brew room has no physics-demonstration controls: those live in the Free Experiment
+  await page.click('[data-act=tab-brew]');
+  for (const act of ['alembic', 'thermal', 'tool-skimmer']) expect(await page.locator(`[data-act=${act}]`).count(), `${act} is a Free Experiment control`).toBe(0);
+  // every item at the guild names what it is for; no retired item is sold
+  await lab(page, (l) => { l.state.reputation = 9999; });
+  await page.click('[data-act=shop]');
+  await page.click('[data-act=shop-tab-equipment]');
+  const items = page.locator('.overlay .item');
+  const n = await items.count();
+  expect(n).toBeGreaterThan(15);
+  await expect(page.locator('.overlay .item .mech')).toHaveCount(n);
+  for (const id of ['hydrometer', 'viscometer', 'assay', 'galvanometer', 'thermal', 'skimmer', 'alembic', 'bellows', 'athanor', 'lens', 'trowel', 'shelf1']) expect(await page.locator(`[data-act=equip-${id}]`).count(), `${id} is retired`).toBe(0);
   expect(errors).toEqual([]);
 });

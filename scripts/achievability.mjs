@@ -24,11 +24,11 @@ import { Rng } from '../src/core/rng.js';
 
 /** Equipment a typical player owns by each rank (cumulative), beyond the starting kit. */
 export const REALISTIC = [
-  ['trowel', 'pestle', 'hydrometer'],
-  ['rockhammer', 'brush', 'rack1', 'kennel', 'frostrune', 'assay'],
-  ['bellows', 'satchel', 'sickle', 'lens', 'rack2'],
-  ['copper', 'arcanometer', 'alembic', 'charter'],
-  ['athanor', 'homunculus', 'glacial'],
+  ['kit', 'rack1'],
+  ['kennel', 'frostrune', 'satchel'],
+  ['arcanometer', 'rack2', 'stirrer'],
+  ['copper', 'charter'],
+  ['homunculus', 'glacial'],
 ];
 
 /**

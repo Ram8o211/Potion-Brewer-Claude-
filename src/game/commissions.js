@@ -16,13 +16,17 @@
 // needs arcane activation), and every effect the customer did not ask for
 // must stay below 1.2 %.
 //
-// On top of the effects, customers ask for *techniques* (TECHNIQUES): a
-// colour that only full extraction gives, a density, a well-mixed (stable)
-// brew, a serving temperature, a concentrated brew boiled down with the lid
-// off, a heady spirit tincture or a steady one. Each is applied to the
-// hidden plan, re-predicted and re-checked, so it is only asked for when the
-// natural ingredients at hand can deliver it; the measured properties are
-// what the instruments (hydrometer, assay kit…) read.
+// Customers judge outcomes, never procedures, and only outcomes a customer
+// can fairly check: the effects (and the absence of every other effect),
+// the quantity and, for some, the temperature it is served at. On top of
+// the plain request they may ask for a *technique* (TECHNIQUES): a draught
+// served hot or chilled, or one stronger than plain brewing gives (boiling
+// water off concentrates it — so does using more herb). Each technique is
+// applied to the hidden plan, re-predicted and re-checked, so it is only
+// asked for when the natural ingredients at hand can deliver it. Physical
+// properties the simulation computes but no customer can reasonably want
+// (density, viscosity, stability, volatility, charge, an exact colour) are
+// never asked for (docs/GAMEPLAY_PURPOSE_AUDIT.md).
 //
 // Feasibility is practical, not only theoretical: every ingredient of the
 // plan must be on the shelf, gatherable today (careful harvests of reachable
@@ -33,7 +37,6 @@ import { Rng } from '../core/rng.js';
 import { describeColor } from '../core/color.js';
 import { predictPlan, planCost, arcaneRegime, ACTIVATION_MARGIN } from './predict.js';
 import { ARCHETYPES, makeCustomer, archetypeOf } from './customers.js';
-import { viscosityClass } from './measure.js';
 import { evaluatePotion } from './evaluate.js';
 import { SIM } from '../simulation/constants.js';
 import { EFFECT_INDEX, EFFECT_BY_KEY, EFFECT_KEYS, NE, interact } from '../alchemy/effects.js';
@@ -43,12 +46,11 @@ import { REQUESTS, TIER_TARGET, PURITY_LIMIT, requestById } from './requests.js'
 
 /**
  * @typedef {Object} Requirement
- * @property {string} key        color | density | viscosity | temperature | stability | volatility | purity | an effect key (alchemy/effects.js)
+ * @property {string} key        temperature | purity | an effect key (alchemy/effects.js)
  * @property {'target'|'min'|'max'} kind
- * @property {number|number[]} target   number, or OKLab triple for colour
+ * @property {number} target
  * @property {number} tol        perfect-match tolerance
  * @property {number} zero       distance at which the score reaches zero
- * @property {number[]} [rgb]    colour swatch
  * @property {string} label
  * @property {boolean} [effect]   an effect requirement (needs a verified trial)
  * @property {boolean} [limit]    a safety limit on an unwanted effect
@@ -56,13 +58,6 @@ import { REQUESTS, TIER_TARGET, PURITY_LIMIT, requestById } from './requests.js'
  * @property {string} [name]
  */
 
-const STYLE_NOUN = {
-  healing: 'Healing Draught', strength: 'Strength Tonic', love: 'Love Philtre', firetonic: 'Fire Tonic', frostsalve: 'Frost Draught',
-  settling: 'Settling Draught', etching: 'Etching Acid', bane: 'Pest Bane', insight: 'Draught of Insight', transmute: 'Transmutation Elixir',
-  antidote: 'Antidote',
-  tonic: 'Tonic', syrup: 'Cordial', warm: 'Hot Toddy', salve: 'Salve', elixir: 'Elixir', ardent: 'Warming Draught', arcane: 'Arcane Philtre',
-  fizzy: 'Fizzing Brew', frost: 'Frost Draught', heavy: 'Heavy Draught', lumen: 'Glowing Philtre', panacea: 'Panacea', phoenix: 'Phoenix Brew', varnish: 'Protective Varnish',
-};
 
 /**
  * @typedef {Object} CommissionContext
@@ -81,58 +76,14 @@ const STYLE_NOUN = {
  */
 
 /**
- * Turn a predicted physical property into a requirement around it.
- * @param {string} key @param {any} pred @param {number} tier @param {number} strict @param {Rng} rng @param {import('./predict.js').BrewPlan} plan
- * @returns {Requirement|null}
+ * The serving temperature a customer asks for, around the plan's own.
+ * @param {number} tier @param {number} strict @param {import('./predict.js').BrewPlan} plan
+ * @returns {Requirement}
  */
-function makeRequirement(key, pred, tier, strict, rng, plan, style) {
-  const s = strict;
-  switch (key) {
-    case 'color': {
-      const tol = Math.max(5, (13 - 1.8 * tier) * s);
-      return { key, kind: 'target', target: pred.lab, rgb: pred.color, tol, zero: tol * 3.2, label: describeColor(pred.color) };
-    }
-    case 'density': {
-      let tol = Math.max(0.025, (0.075 - 0.01 * tier) * s);
-      // loose grains settle unevenly, so the bottle drawn from the tap varies
-      if (pred.looseSolids > 0.04) tol = Math.max(tol, 0.05 + 0.5 * pred.looseSolids);
-      tol = Math.round(tol * 100) / 100;
-      const t = Math.round((pred.density + rng.range(-0.3, 0.3) * tol) * 100) / 100;
-      return { key, kind: 'target', target: t, tol, zero: tol * 3, label: `${(t - tol).toFixed(2)}–${(t + tol).toFixed(2)} g/ml` };
-    }
-    case 'viscosity': {
-      // only where the outcome is predictable: plain liquids, or deliberate doughs/pastes
-      if (pred.granular > 0.02 && style !== 'salve') return null;
-      // log-space tolerance (factor); pastes get more room because their
-      // viscosity climbs steeply with tiny changes in solids content
-      const f = Math.max(1.6, (3.2 - 0.3 * tier) * s);
-      const steep = 1 + Math.max(0, (Math.log(pred.viscosity) - Math.log(3000)) / 2.5);
-      const tol = Math.log(f) * steep;
-      const t = Math.log(pred.viscosity) + rng.range(-0.3, 0.3) * tol;
-      return { key, kind: 'target', target: t, tol, zero: tol * 3, label: viscosityClass(Math.exp(t)) };
-    }
-    case 'temperature': {
-      const tol = Math.max(5, (12 - 1.5 * tier) * s);
-      const t = Math.round(plan.serveTemp ?? 20);
-      return { key, kind: 'target', target: t, tol, zero: tol * 3, label: `${Math.round(t - tol)}–${Math.round(t + tol)}°C` };
-    }
-    case 'stability': {
-      // a brew that keeps loose grains by design can never read as stable
-      if (pred.looseSolids > 0.04) return null;
-      const min = Math.round(Math.min(85, 50 + 8 * tier) * (s < 1 ? 1.05 : 1));
-      return { key, kind: 'min', target: min, tol: 0, zero: 35, label: `at least ${min}` };
-    }
-    case 'volatility': {
-      const v = pred.volatility * 100 + (plan.ingredients.some((i) => /fizz/.test(i.id)) ? 25 : 0);
-      if (v > 30) {
-        const min = Math.round(Math.max(20, v * 0.6));
-        return { key, kind: 'min', target: min, tol: 0, zero: Math.max(10, min * 0.6), label: `at least ${min}` };
-      }
-      const max = Math.round(Math.max(15, v + 12));
-      return { key, kind: 'max', target: max, tol: 0, zero: 30, label: `at most ${max}` };
-    }
-  }
-  return null;
+function servingRequirement(tier, strict, plan) {
+  const tol = Math.max(5, (12 - 1.5 * tier) * strict);
+  const t = Math.round(plan.serveTemp ?? 20);
+  return { key: 'temperature', kind: 'target', target: t, tol, zero: tol * 3, label: `${Math.round(t - tol)}–${Math.round(t + tol)}°C` };
 }
 
 /**
@@ -199,6 +150,15 @@ function prepFor(m, ctx, solvents) {
     const solvent = rx.b ? solvents.find((l) => l.id === rx.b) : water;
     if (!solvent) return null;
     const boil = isFinite(solvent.boil) ? solvent.boil : 400;
+    if (rx.maxT <= 20) {
+      // an ice-cold steep (Frostcap, Grave Moss): the basin holds a watery
+      // brew near 9 °C at best, the frost rune well below — but never so cold
+      // that the brew freezes (docs/GAMEPLAY_PURPOSE_AUDIT.md)
+      const floor = coldFloor(ctx.cap);
+      const T = Math.max(Math.round((rx.minT + rx.maxT) / 2), floor + 1);
+      if (T > rx.maxT - 3) return null;
+      return { solvent, heatTo: 20, coolTo: T, hold: 22, ground, lo: Math.max(rx.minT + 1, floor + 1), hi: rx.maxT - 3 };
+    }
     // well inside the window: the furnace holds the mean to ±4 °C and the cooler edges of the
     // brew lag behind, so a steep at the window's very edge extracts only part of a slow herb
     const lo = rx.minT + 7, hi = Math.min(rx.maxT - 4, boil - 8, ctx.cap.maxFlame - 40);
@@ -215,6 +175,16 @@ function prepFor(m, ctx, solvents) {
   const compat = solvents.find((l) => compatFactor(m.compat[0], m.compat[1], l.compat[0], l.compat[1]) > 0.6);
   if (!compat || (m.solubility || 0) < 0.03) return null;
   return { solvent: compat, heatTo: 20, coolTo: 20, hold: 10, ground };
+}
+
+/**
+ * The coldest a watery brew can be held at with this equipment (°C): the
+ * basin's cool water stops near 9 °C; a cold plate holds it just above
+ * freezing (colder, it freezes, and frozen herbs give up less).
+ * @param {{minCool:number}} cap
+ */
+export function coldFloor(cap) {
+  return cap.minCool > 0 ? 9 : 3;
 }
 
 /**
@@ -353,8 +323,10 @@ function composePlan(pick, wanted, exclude, ctx, solvents, n, o, pool) {
     for (const id of ids) {
       const rx = ctx.world.reactions.find((r) => r.a === id && r.wet && r.products.length === 1 && /^rw_(extract|steep|infuse)/.test(r.id));
       if (!rx) continue;
-      const inside = held.some((t) => t >= rx.minT + 7 && t <= rx.maxT - 2);
-      const edge = held.some((t) => t >= rx.minT - 3 && t < rx.minT + 7);
+      // a cold window's lagging edge is its warm end; a hot window's its cool end
+      const cold = rx.maxT <= 20;
+      const inside = held.some((t) => (cold ? t >= rx.minT + 1 && t <= rx.maxT - 2 : t >= rx.minT + 7 && t <= rx.maxT - 2));
+      const edge = held.some((t) => (cold ? t > rx.maxT - 2 && t <= rx.maxT + 3 : t >= rx.minT - 3 && t < rx.minT + 7));
       if (edge && !inside) return false;
     }
     return true;
@@ -667,81 +639,40 @@ export function checkSupply(plan, ctx) {
 // ------------------------------------------------------------------ techniques
 
 /**
- * What customers can ask for beyond the effects. Each technique is applied
- * to the hidden plan and its prediction; it returns requirements (and
- * possibly a changed plan), or null when it cannot honestly be asked.
+ * What customers can ask for beyond the plain request. Each technique is an
+ * outcome the counter can judge, tied to a campaign mechanic (mechanics.js);
+ * it is applied to the hidden plan and its prediction and returns
+ * requirements (and possibly a changed plan), or null when it cannot honestly
+ * be asked of this brew.
  * @typedef {Object} Technique
  * @property {string} id
  * @property {string} name        what the player learns to do
+ * @property {string} mechanic    the campaign mechanic it exercises
  * @property {number} minTier
  * @property {string[]} who       archetypes who care about it
- * @property {string} lesson      one line: why it matters, shown with the order
+ * @property {string} lesson      one line: why it matters and what can achieve it, shown with the order
  * @property {(c:any)=>any} apply
  */
 
 /** @type {Technique[]} */
 export const TECHNIQUES = [
   {
-    id: 'colour', name: 'True colour', minTier: 0, who: ['noble', 'bard', 'healer', 'innkeeper', 'scholar', 'wizard', 'farmer'],
-    lesson: 'Its colour comes from what is really dissolved: whole or unsteeped herbs leave it pale and wrong. Compare the swatch as you brew.',
-    apply: ({ pred, tier, strict, rng, plan }) => {
-      const r = makeRequirement('color', pred, tier, strict, rng, plan, '');
-      if (!r) return null;
-      return { reqs: [r], say: `It must have the proper colour — ${r.label}, the way it looks when it is brewed right.` };
-    },
-  },
-  {
-    id: 'serve', name: 'Serving temperature', minTier: 0, who: ['innkeeper', 'traveler', 'blacksmith', 'healer', 'hunter', 'farmer'],
-    lesson: 'Bottle it at the asked temperature: the furnace and the cold basin control it, the thermometer reads it.',
-    apply: ({ plan, ctx, rng, tier, strict, request }) => {
+    id: 'serve', name: 'Serving temperature', mechanic: 'serving', minTier: 0, who: ['innkeeper', 'traveler', 'blacksmith', 'healer', 'hunter', 'farmer'],
+    lesson: 'Bottle it at the asked temperature: the fire and the cold basin bring the brew there, the thermometer reads it. Mind what heat does to the brew on the way.',
+    apply: ({ plan, ctx, rng, request }) => {
       if (request && request.serve) return null;
       const cold = ctx.cap.minCool <= 6 && rng.chance(0.4);
-      const T = cold ? Math.round(rng.range(6, 10)) : Math.round(rng.range(42, 60));
+      const T = cold ? Math.round(rng.range(9, 13)) : Math.round(rng.range(42, 60));
       const p2 = { ...plan, serveTemp: T, heatTo: Math.max(plan.heatTo, T), coolTo: Math.min(plan.coolTo, T) };
-      return { plan: p2, reqs: [], serve: T, say: cold ? 'Serve it chilled, please.' : 'Serve it hot, please.' };
-    },
-  },
-  {
-    id: 'stable', name: 'Well mixed', minTier: 1, who: ['scholar', 'hunter', 'noble', 'wizard', 'healer'],
-    lesson: 'An unstirred brew is a mess of pockets and layers (stability falls far below 80). Stir it through before bottling; the assay kit reads stability.',
-    apply: ({ tier }) => {
-      const min = Math.min(92, 80 + 3 * tier);
-      return { reqs: [{ key: 'stability', kind: 'min', target: min, tol: 0, zero: 40, label: `at least ${min}` }], say: 'It must be perfectly even — no layers, no pockets, nothing settling.' };
-    },
-  },
-  {
-    id: 'density', name: 'Density', minTier: 1, who: ['knight', 'blacksmith', 'traveler', 'hunter'],
-    lesson: 'Density follows what is dissolved in it: extraction and boiling down make it heavier, water makes it lighter. The hydrometer reads it to the hundredth.',
-    apply: ({ pred, tier, strict, rng, plan }) => {
-      const r = makeRequirement('density', { ...pred, looseSolids: 0 }, tier, strict, rng, plan, '');
-      if (!r) return null;
-      return { reqs: [r], say: `It has to weigh right in the hand: ${r.label}.` };
-    },
-  },
-  {
-    id: 'volatile', name: 'A heady tincture', minTier: 1, who: ['wizard', 'bard', 'witch', 'scholar'],
-    lesson: 'Spirit makes a brew volatile, but it boils off far below water: add it once the brew has cooled, keep the lid on and never let it boil.',
-    apply: ({ plan, ctx, rng, wanted }) => {
-      const spirit = ctx.world.roles.spirit;
-      if (!spirit || !ctx.available.has(spirit) || plan.reduce) return null;
-      const tot = plan.ingredients.reduce((a, i) => a + i.n, 0);
-      const n = Math.round(tot * rng.range(0.25, 0.35));
-      if ((plan.serveTemp ?? 20) > 45) return null;
-      // part of the water is held back and made up with spirit at the end
-      const water = ctx.world.roles.water;
-      const w = plan.ingredients.find((i) => i.id === water);
-      if (!w || w.n - n < tot * 0.2) return null;
-      const p2 = { ...plan, ingredients: plan.ingredients.map((i) => (i === w ? { ...i, n: i.n - n } : i)), late: [...(plan.late || []), { id: spirit, n }] };
       const r2 = predictPlan(ctx.world, ctx.lookup, p2);
-      if (!wanted.every((w) => w.sign * r2.effects[EFFECT_INDEX[w.key]] >= w.target * 1.02)) return null;
-      const min = Math.round(predictedVolatility(r2) - 3);
-      if (min < 17) return null;
-      return { plan: p2, pred: r2, reqs: [{ key: 'volatility', kind: 'min', target: min, tol: 0, zero: 10, label: `at least ${min}` }], say: 'It should be heady — a tincture whose vapours rise off it.' };
+      // serving hot must not wake (or spoil) what the plain plan kept quiet
+      if (r2.awakened !== !!plan.activate || r2.reactions.length !== predictPlan(ctx.world, ctx.lookup, plan).reactions.length) return null;
+      return { plan: p2, pred: r2, reqs: [], serve: T, say: cold ? 'Serve it chilled, please.' : 'Serve it hot, please.' };
     },
   },
   {
-    id: 'concentrate', name: 'Boiled down', minTier: 2, who: ['hunter', 'traveler', 'knight', 'healer', 'wizard', 'witch', 'blacksmith'],
-    lesson: 'Boil it down with the lid off: water leaves as steam, the magic stays and grows stronger — and so do its side effects, which must then be cancelled harder. Boiling also lowers volatility.',
+    id: 'strong', name: 'Strong and compact', mechanic: 'concentration', minTier: 2, who: ['hunter', 'traveler', 'knight', 'healer', 'wizard', 'witch', 'blacksmith'],
+    lesson: 'Stronger than a plain brew of these herbs gives. Boil water off with the lid open — the magic stays, but its side effects grow with it and must be cancelled harder — or brew with more herb and less water.',
     apply: ({ plan, pred, ctx, rng, wanted, exclude }) => {
       const water = ctx.world.roles.water;
       const nW = plan.ingredients.filter((i) => i.id === water).reduce((a, i) => a + i.n, 0);
@@ -755,10 +686,7 @@ export const TECHNIQUES = [
       if (r2.reactions.length !== pred.reactions.length || r2.awakened !== pred.awakened) return null;
       if (unwantedMax(r2.effects, exclude).value > PURITY_LIMIT * 0.6) return null;
       if (!wanted.every((w) => w.sign * r2.effects[EFFECT_INDEX[w.key]] >= w.sign * pred.effects[EFFECT_INDEX[w.key]] * 1.25)) return null;
-      const v = predictedVolatility(r2);
-      const max = Math.round(Math.max(6, v + 2));
-      if (max >= predictedVolatility(pred) - 1) return null;
-      return { plan: p2, pred: r2, strengthen: true, reqs: [{ key: 'volatility', kind: 'max', target: max, tol: 0, zero: 12, label: `at most ${max}` }], say: 'Make it strong and compact — boiled down, so it keeps in a pack and nothing sloshes about.' };
+      return { plan: p2, pred: r2, strengthen: true, reqs: [], say: 'Make it strong and compact — a little goes a long way where I am going.' };
     },
   },
 ];
@@ -768,9 +696,9 @@ export function techniqueById(id) {
   return TECHNIQUES.find((t) => t.id === id);
 }
 
-/** Volatility the counter would read for a predicted brew (measure.js uses the same weights). */
-export function predictedVolatility(pred) {
-  return Math.max(0, Math.min(100, (pred.volatility || 0) * 70 + (pred.reactivity || 0) * 30));
+/** Techniques of older orders under their current names (retired ones dropped). @param {string[]} ids */
+export function migrateTechniques(ids) {
+  return [...new Set(ids.map((t) => (t === 'concentrate' ? 'strong' : t)).filter((t) => techniqueById(t)))];
 }
 
 /**
@@ -806,7 +734,7 @@ export function generateCommission(ctx, rng, opts = {}) {
  */
 function effectCommission(req, arch, tier, ctx, rng, totalN, bottleMl, bottleN, opts) {
   const [lo, hi] = TIER_TARGET[tier];
-  const serve = req.serve === 'warm' ? Math.round(rng.range(45, 58)) : req.serve === 'cold' && ctx.cap.minCool <= 6 ? Math.round(rng.range(6, 10)) : 20;
+  const serve = req.serve === 'warm' ? Math.round(rng.range(45, 58)) : req.serve === 'cold' && ctx.cap.minCool <= 6 ? Math.round(rng.range(9, 12)) : 20;
   let found = null, activation = false, wanted = [], exclude = [], supply = null;
   // ingredients the shop cannot get today are left out and the search runs again
   const local = { ...ctx, avoid: new Set(ctx.avoid || []) };
@@ -843,7 +771,8 @@ function effectCommission(req, arch, tier, ctx, rng, totalN, bottleMl, bottleN, 
   const techReqs = [];
   let serveT = serve, say = [];
   if (!opts.simple) {
-    const n = tier === 0 ? (rng.chance(0.45) ? 1 : 0) : tier <= 2 ? 1 + (rng.chance(0.25) ? 1 : 0) : 1 + (rng.chance(0.6) ? 1 : 0);
+    // a plain request is the rule; techniques add to it, more often as the customers grow demanding
+    const n = tier <= 1 ? (rng.chance(0.35) ? 1 : 0) : tier === 2 ? (rng.chance(0.65) ? 1 : 0) : 1 + (rng.chance(0.4) ? 1 : 0);
     const forced = (opts.techniques || []).map(techniqueById).filter(Boolean);
     const pool = TECHNIQUES.filter((t) => t.minTier <= tier && !forced.includes(t));
     const weighted = rng.shuffle(pool).sort((a, b) => (b.who.includes(arch.key) ? 1 : 0) - (a.who.includes(arch.key) ? 1 : 0));
@@ -863,15 +792,11 @@ function effectCommission(req, arch, tier, ctx, rng, totalN, bottleMl, bottleN, 
     if (chosen.length && !checkSupply(plan, local).ok) return null;
     if (!wanted.every((w) => w.sign * pred.effects[EFFECT_INDEX[w.key]] >= w.target * 1.0)) return null;
   }
-  // property requirements of earlier techniques must describe the final brew
-  for (const r of techReqs) {
-    if (r.key === 'color') Object.assign(r, { target: pred.lab, rgb: pred.color, label: describeColor(pred.color) });
-  }
   /** @type {Requirement[]} */
   const reqs = [];
   for (const w of wanted) {
     const v = w.sign * pred.effects[EFFECT_INDEX[w.key]];
-    reqs.push(effectRequirement(w.key, w.sign, Math.min(chosen.includes('concentrate') ? v * 0.85 : w.target, v * 0.88)));
+    reqs.push(effectRequirement(w.key, w.sign, Math.min(chosen.includes('strong') ? v * 0.85 : w.target, v * 0.88)));
   }
   // an exacting master sometimes wants a measured dose, not just "enough"
   if (tier >= 3 && strict < 1 && rng.chance(0.4)) {
@@ -882,7 +807,7 @@ function effectCommission(req, arch, tier, ctx, rng, totalN, bottleMl, bottleN, 
     }
   }
   if (req.drunk !== false || (req.tolerate && req.tolerate.length < 9)) reqs.push(purityRequirement(exclude, opts.simple ? 3 : PURITY_LIMIT));
-  if (serveT !== 20) reqs.push(/** @type {Requirement} */ (makeRequirement('temperature', pred, tier, strict, rng, plan, req.id)));
+  if (serveT !== 20) reqs.push(servingRequirement(tier, strict, plan));
   reqs.push(...techReqs);
   const com = finalize({ style: req.id, request: req, title: req.title, arch, tier, ctx, rng, plan, pred, reqs, bottleMl, bottleN, opts, activation, techniques: chosen, say });
   if (com) com.supplies = supplyBrief(plan, local, wanted, exclude, supply);
@@ -907,12 +832,9 @@ function supplyBrief(plan, ctx, wanted, exclude, supply) {
   return { brewMl: Math.round((total * TEST_MARGIN) / 10) * 10, carriers, purchases: supply ? Math.round(supply.cost * 10) / 10 : 0 };
 }
 
-/** The predicted bottle as the counter would measure it (a stirred brew reads as fully stable). */
+/** The predicted bottle as the counter would measure it. */
 function predictedMeasurement(pred, plan, ml) {
-  return {
-    ml, count: Math.round(ml / SIM.ML_PER_PARTICLE), lab: pred.lab, color: pred.color, density: pred.density, viscosity: pred.viscosity,
-    temperature: plan.serveTemp ?? 20, effects: Array.from(pred.effects), stability: 100, volatility: predictedVolatility(pred),
-  };
+  return { ml, count: Math.round(ml / SIM.ML_PER_PARTICLE), lab: pred.lab, color: pred.color, temperature: plan.serveTemp ?? 20, effects: Array.from(pred.effects) };
 }
 
 /** Assemble, verify and price a commission. */
@@ -921,7 +843,7 @@ function finalize({ style, request, title, arch, tier, ctx, rng, plan, pred, req
     id: 'q' + Math.floor(rng.next() * 1e9).toString(36),
     tier, style: [style, ...techniques.slice().sort()].join('+'), request: request ? request.id : null, contract: !!opts.contract, potionName: '', customer: null, dialogue: '',
     requirements: reqs, bottleMl, bottleN, budget: 0, reference: plan, techniques,
-    predicted: { density: pred.density, viscosity: pred.viscosity, effects: Array.from(pred.effects), color: pred.color, reactions: pred.reactions, threshold: pred.threshold, awakened: pred.awakened },
+    predicted: { effects: Array.from(pred.effects), color: pred.color, reactions: pred.reactions, threshold: pred.threshold, awakened: pred.awakened },
     effectOrder: reqs.some((r) => r.effect), activation, hintCost: 0,
   };
   // the hidden plan must satisfy the customer by the counter's own rules
@@ -930,10 +852,10 @@ function finalize({ style, request, title, arch, tier, ctx, rng, plan, pred, req
   const customer = makeCustomer(rng, arch);
   const cost = planCost(plan, ctx.priceOf) * (bottleN / pred.totalParticles) * 1.6;
   const eventBonus = ctx.event && ['winter', 'plague', 'conclave', 'festival'].includes(ctx.event) ? 1.15 : 1;
-  // techniques pay: each is extra work, a boiled-down brew most of all
-  const techPay = techniques.reduce((a, t) => a + (t === 'concentrate' ? 18 + 4 * tier : t === 'colour' || t === 'serve' ? 5 : 9), 0);
+  // techniques pay: each is extra work, a stronger brew most of all
+  const techPay = techniques.reduce((a, t) => a + (t === 'strong' ? 18 + 4 * tier : 5), 0);
   const budget = Math.round((14 + cost * (2.6 + 0.45 * tier) + 9 * tier + reqs.length * 5 + (com.effectOrder ? 10 : 0) + techPay + (activation ? 30 + 12 * tier : 0)) * arch.budget * eventBonus * (opts.contract ? 2.2 : 1));
-  const potionName = (techniques.includes('concentrate') ? 'Concentrated ' : '') + (title || STYLE_NOUN[style] || 'Potion');
+  const potionName = (techniques.includes('strong') ? 'Concentrated ' : '') + (title || 'Potion');
   let greet = request ? rng.pick(request.story) : rng.pick(arch.greet).replace('{potion}', aOrAn(potionName.toLowerCase()) + ' ' + potionName.toLowerCase());
   if (say.length) greet += ' ' + say.join(' ');
   Object.assign(com, { potionName, customer, dialogue: greet, budget: Math.max(12, budget), hintCost: Math.max(3, Math.round(budget * 0.12)) });
@@ -977,7 +899,7 @@ export function tutorialCommission(ctx, rng) {
     bottleN: 20,
     budget: 30,
     reference: plan,
-    predicted: { density: pred.density, viscosity: pred.viscosity, effects: Array.from(pred.effects), color: pred.color, reactions: pred.reactions, threshold: pred.threshold, awakened: pred.awakened },
+    predicted: { effects: Array.from(pred.effects), color: pred.color, reactions: pred.reactions, threshold: pred.threshold, awakened: pred.awakened },
     effectOrder: true,
     activation: false,
     hintCost: 0,
@@ -994,4 +916,4 @@ function aOrAn(w) {
   return /^[aeiou]/i.test(w) ? 'an' : 'a';
 }
 
-export { STYLE_NOUN, unwantedMax };
+export { unwantedMax };

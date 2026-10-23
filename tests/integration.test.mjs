@@ -9,6 +9,7 @@ import assert from 'node:assert/strict';
 import { GameState, SAVE_VERSION } from '../src/game/state.js';
 import { RANKS } from '../src/game/equipment.js';
 import { generateCommission, checkSupply, TECHNIQUES } from '../src/game/commissions.js';
+import { predictPlan } from '../src/game/predict.js';
 import { summarize, readingSteadiness, evidenceRank } from '../src/game/experiments.js';
 import { draftLabel, labelTrust, proofGaps, openNegotiation } from '../src/game/commerce.js';
 import { buildProcedure, traceSample, migrateRecipe, matchRecipe, checkReproduction, recipeConfidence } from '../src/game/recipes.js';
@@ -95,55 +96,53 @@ test('stripped wilds and an empty purse never stall the day: easier orders, then
   void served;
 });
 
-test('every technique can be asked for, and each puts a real requirement on the brew', () => {
+test('every technique can be asked for and changes the order; customers only ask for outcomes they can judge', () => {
   for (const t of TECHNIQUES) {
-    let got = null;
+    let got = null, st = null;
     for (let k = 0; k < 8 && !got; k++) {
-      const st = GameState.create(`tech-${t.id}-${k}`, { tutorial: false });
+      st = GameState.create(`tech-${t.id}-${k}`, { tutorial: false });
       const tier = Math.max(2, t.minTier);
       st.reputation = RANKS[tier].rep;
       st.coins = 200;
-      st.equipment.push('trowel', 'pestle', 'rockhammer', 'bellows');
+      st.equipment.push('kit');
       const com = generateCommission(st.commissionContext(), new Rng(`t${k}`), { tier, techniques: [t.id] });
       if (com && com.techniques.includes(t.id)) got = com;
     }
-    assert.ok(got, `${t.id} was generated`);
-    const keys = got.requirements.map((r) => r.key);
-    const want = { colour: 'color', serve: 'temperature', stable: 'stability', density: 'density', volatile: 'volatility', concentrate: 'volatility' }[t.id];
-    assert.ok(keys.includes(want), `${t.id} asks for ${want}`);
-    if (t.id === 'concentrate') assert.ok(got.reference.reduce && got.reference.reduce.frac > 0, 'a boiled-down order is planned with a real reduction');
-    if (t.id === 'volatile') assert.ok(got.reference.late && got.reference.late.length, 'a tincture’s spirit goes in cold, after the steep');
+    assert.ok(got && st, `${t.id} was generated`);
+    for (const r of got.requirements) assert.ok(r.key === 'temperature' || r.key === 'purity' || EFFECT_INDEX[r.key] !== undefined, `${t.id}: ${r.key} is an outcome a customer can judge`);
+    if (t.id === 'serve') assert.ok(got.requirements.some((r) => r.key === 'temperature'), 'a serving temperature is asked');
+    if (t.id === 'strong') {
+      assert.ok(got.reference.reduce && got.reference.reduce.frac > 0, 'a strong order is planned with a real boil-down');
+      const plain = predictPlan(st.world, st.lookup, { ...got.reference, reduce: undefined });
+      const r0 = got.requirements.find((r) => r.effect && r.key !== 'purity');
+      assert.ok(Number(r0.target) > plain.effects[EFFECT_INDEX[r0.key]] * 0.98, `the asked strength (${r0.target}) is beyond the plain brew (${plain.effects[EFFECT_INDEX[r0.key]].toFixed(1)})`);
+    }
   }
 });
 
-test('the simulation decides techniques: unground herbs miss the colour, an unstirred brew is not stable', () => {
+test('the simulation decides: whole herbs and an unsteeped brew miss an order the proper brew fills', () => {
   let st = null, com = null;
   for (let k = 0; k < 10 && !com; k++) {
     st = GameState.create(`phys-${k}`, { tutorial: false });
     st.reputation = RANKS[1].rep;
-    st.equipment.push('trowel', 'pestle');
-    const c = generateCommission(st.commissionContext(), new Rng(`p${k}`), { tier: 1, techniques: ['colour', 'stable'] });
-    if (c && c.techniques.includes('colour') && c.techniques.includes('stable')) com = c;
+    st.equipment.push('kit');
+    const c = generateCommission(st.commissionContext(), new Rng(`p${k}`), { tier: 1, techniques: [] });
+    if (c && c.reference.steep && c.reference.ingredients.some((i) => i.ground)) com = c;
   }
-  assert.ok(com, 'an order wanting colour and stability');
-  const score = (sim, key) => evaluatePotion(com, measureParticles(sim, tapSelection(sim, com.bottleN))).rows.find((r) => r.req.key === key).score;
-  // done properly
+  assert.ok(com && st, 'an order whose plan grinds and steeps');
+  const main = com.requirements.find((r) => r.effect && r.key !== 'purity');
+  const score = (sim) => evaluatePotion(com, measureParticles(sim, tapSelection(sim, com.bottleN))).rows.find((r) => r.req.key === main.key).score;
   const good = simFor(st);
   runPlanHeadless(good, com.reference, st.lookup);
-  assert.equal(score(good, 'color'), 1, 'the hidden plan has the colour');
-  assert.equal(score(good, 'stability'), 1, 'and is stable');
-  // the same herbs left whole: almost nothing dissolves, the colour is wrong
+  assert.equal(score(good), 1, 'the plan, brewed properly, is strong enough');
+  // the same herbs left whole: almost nothing dissolves
   const whole = simFor(st);
   runPlanHeadless(whole, { ...com.reference, ingredients: com.reference.ingredients.map((i) => ({ ...i, ground: false })) }, st.lookup);
-  assert.ok(score(whole, 'color') < 1, 'whole herbs give the wrong colour');
-  // the same ingredients poured and left unstirred
-  const lazy = simFor(st);
-  for (const ing of com.reference.ingredients) {
-    lazy.emitter.start(st.lookup(ing.id), { x: 0.3, amount: ing.n, rate: 90, ground: !!ing.ground });
-    for (let g = 0; g < 20000 && lazy.emitter.pouring; g++) lazy.step();
-  }
-  for (let s = 0; s < 120 * 8; s++) lazy.step();
-  assert.ok(measureParticles(lazy, tapSelection(lazy, 1000)).stability < measureParticles(good, tapSelection(good, 1000)).stability - 15, 'an unstirred brew is far less stable');
+  assert.ok(score(whole) < 1, 'whole herbs fall short');
+  // the same, ground but never steeped
+  const cold = simFor(st);
+  runPlanHeadless(cold, { ...com.reference, steep: undefined, heatTo: 20 }, st.lookup);
+  assert.ok(score(cold) < 1, 'unsteeped, it falls short');
 });
 
 test('boiling down with the lid off concentrates the brew as predicted, in the real cauldron', () => {
@@ -152,16 +151,16 @@ test('boiling down with the lid off concentrates the brew as predicted, in the r
     st = GameState.create(`conc-${k}`, { tutorial: false });
     st.reputation = RANKS[2].rep;
     st.coins = 200;
-    const c = generateCommission(st.commissionContext(), new Rng(`c${k}`), { tier: 2, techniques: ['concentrate'] });
-    if (c && c.techniques.includes('concentrate')) com = c;
+    const c = generateCommission(st.commissionContext(), new Rng(`c${k}`), { tier: 2, techniques: ['strong'] });
+    if (c && c.techniques.includes('strong')) com = c;
   }
-  assert.ok(com, 'a boiled-down order');
+  assert.ok(com, 'a strong order');
   const sim = simFor(st);
   const ab = runPlanHeadless(sim, com.reference, st.lookup);
   assert.ok(!ab.failed, 'the plan completes');
   const ev = evaluatePotion(com, measureParticles(sim, tapSelection(sim, com.bottleN)));
   assert.ok(ev.quality >= 0.85, `brewed to ${ev.quality.toFixed(2)}: ${ev.rows.filter((r) => r.score < 1).map((r) => `${r.req.key} ${r.text} vs ${r.req.label}`).join(', ')}`);
-  // without the boiling it misses the order (weaker, and more volatile)
+  // without the boiling it is too weak
   const plain = simFor(st);
   runPlanHeadless(plain, { ...com.reference, reduce: undefined }, st.lookup);
   const ev2 = evaluatePotion(com, measureParticles(plain, tapSelection(plain, com.bottleN)));
@@ -260,7 +259,7 @@ function brewRecorded(st, plan) {
       next = sim.time + 1;
       let T = 0, n = 0;
       for (let i = 0; i < sim.p.count; i++) if (sim.p.phase[i] !== PHASE.GAS) { T += sim.p.temp[i]; n++; }
-      if (n) traceSample(log, { t: sim.time, T: T / n, stir: sim.tool.active && sim.tool.type === 'spoon', crush: sim.tool.active && sim.tool.type === 'pestle', lid: sim.cauldron.lidClosed });
+      if (n) traceSample(log, { t: sim.time, T: T / n, stir: sim.tool.active && sim.tool.type === 'spoon', crush: sim.tool.active && sim.tool.type === 'pestle', lid: sim.cauldron.lidClosed, ml: n * 5 });
     }
   }
   let T = 0, n = 0;
@@ -292,8 +291,8 @@ test('a recipe records the procedure in order, and the homunculus replays it to 
   // the same ingredients without the steep are not the same recipe
   const recipe = { ingredients: steps.filter((s) => s.op === 'pour').map((s) => ({ id: s.id, ml: s.ml, ground: s.ground })), steps, verified: { vitality: a.effects[k] } };
   const parts = recipe.ingredients.map((i) => ({ id: i.id, ml: i.ml }));
-  assert.equal(matchRecipe(recipe, parts, steps), 'exact');
-  assert.equal(matchRecipe(recipe, parts, steps.filter((s) => s.op !== 'temp')), 'ingredients', 'unheated, it only shares the ingredients');
+  assert.equal(matchRecipe(recipe, parts, steps), 'procedure');
+  assert.equal(matchRecipe(recipe, parts, steps.filter((s) => s.op !== 'temp')), 'formulation', 'unheated, it only shares the formulation');
 });
 
 test('recipes earn confidence by repeating; old recipes become approximate procedures', () => {

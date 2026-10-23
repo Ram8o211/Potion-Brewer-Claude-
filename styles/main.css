@@ -239,6 +239,14 @@ canvas.portrait.big { width: 88px; height: 88px; box-shadow: 0 0 0 var(--px) var
 .fx-status { font-size: var(--fs-s); white-space: nowrap; }
 .fx-status.unknown { color: #7a2a22; }
 .fx-status.known { color: #2f6a1a; }
+.fx-status.open { color: #8a5a12; }
+.fx-status.miss { color: #a83a2a; font-weight: bold; }
+.meta.mech { font-style: italic; }
+.reading.undetected .rv { color: #6b5a44; }
+.within { font-size: var(--fs-s); }
+.within .ok { color: #2f6a1a; }
+.within .open { color: #8a5a12; }
+.within .miss { color: #a83a2a; }
 .cust-actions { margin-top: 6px; gap: 6px; }
 .vial-card canvas.vial-art { width: 48px; height: 64px; flex: none; }
 .counter-empty { text-align: center; }

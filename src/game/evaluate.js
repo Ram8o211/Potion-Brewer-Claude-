@@ -1,12 +1,13 @@
-// Tolerance-based potion assessment and payment.
+// Tolerance-based potion assessment and payment. A customer judges what a
+// customer can judge: the effects of the potion (and that nothing else is in
+// it), how much of it there is, and — if they asked — the temperature it is
+// served at. The simulation's other physical readings (density, viscosity,
+// stability, volatility, charge) are never part of a commission.
 
-import { deltaE } from '../core/color.js';
-import { viscosityClass } from './measure.js';
 import { EFFECTS, EFFECT_INDEX, EFFECT_KEYS, NE } from '../alchemy/effects.js';
 
 export const PROPERTY_LABELS = {
-  color: 'Colour', density: 'Density', viscosity: 'Viscosity', temperature: 'Temperature', stability: 'Stability', volatility: 'Volatility',
-  charge: 'Charge', quantity: 'Quantity', purity: 'Purity', ...Object.fromEntries(EFFECTS.map((e) => [e.key, e.label])),
+  temperature: 'Temperature', quantity: 'Quantity', purity: 'Purity', ...Object.fromEntries(EFFECTS.map((e) => [e.key, e.label])),
 };
 
 /**
@@ -39,30 +40,8 @@ export function isEffectKey(key) {
 export function scoreRequirement(req, m) {
   let value, d;
   switch (req.key) {
-    case 'color':
-      d = deltaE(m.lab, /** @type {number[]} */ (req.target));
-      value = d;
-      break;
-    case 'density':
-      value = m.density;
-      d = Math.abs(value - /** @type {number} */ (req.target));
-      break;
-    case 'viscosity':
-      value = m.viscosity;
-      d = Math.abs(Math.log(Math.max(1e-3, value)) - /** @type {number} */ (req.target));
-      break;
     case 'temperature':
       value = m.temperature;
-      d = Math.abs(value - /** @type {number} */ (req.target));
-      break;
-    case 'stability':
-      value = m.stability;
-      break;
-    case 'volatility':
-      value = m.volatility;
-      break;
-    case 'charge':
-      value = m.charge || 0;
       d = Math.abs(value - /** @type {number} */ (req.target));
       break;
     case 'purity':
@@ -89,19 +68,12 @@ export function scoreRequirement(req, m) {
   return { score, value, distance: d, text: describeValue(req.key, value, m) };
 }
 
-/** @param {string} key @param {number} value @param {any} m */
+/** @param {string} key @param {number} value @param {any} [m] */
 export function describeValue(key, value, m) {
+  void m;
   switch (key) {
-    case 'color':
-      return `ΔE ${value.toFixed(1)}`;
-    case 'density':
-      return `${value.toFixed(2)} g/ml`;
-    case 'viscosity':
-      return `${viscosityClass(value)} (${value < 100 ? value.toFixed(1) : Math.round(value)} cP)`;
     case 'temperature':
       return `${Math.round(value)}°C`;
-    case 'charge':
-      return `${value >= 0 ? '+' : ''}${value.toFixed(2)}`;
     case 'purity':
       return value < 0.05 ? 'pure' : `${value.toFixed(1)}% other magic`;
     default:
@@ -130,7 +102,7 @@ export function evaluatePotion(commission, m) {
   });
   let wsum = 0, s = 0;
   for (const r of rows) {
-    const w = r.req.key === 'quantity' ? 0.8 : r.req.key === 'color' ? 1.2 : 1;
+    const w = r.req.key === 'quantity' ? 0.8 : 1;
     wsum += w;
     s += w * r.score;
   }

@@ -284,6 +284,7 @@ export class AutoBrewer {
         return;
       }
       case 'temp': {
+        if (s.loss) { this.tickBoilDown(s, done); return; }
         this.target = s.T;
         this.status = `${s.T < 20 ? 'Chilling' : 'Heating'} to ${s.T}°C`;
         const err = this.control(s.T);
@@ -306,9 +307,35 @@ export class AutoBrewer {
         return;
       }
       default:
-        // skimming and distilling are left to the alchemist: the step is skipped
+        // the skimming and distilling of old recipes are beyond it: the step is skipped (and was announced)
         done();
     }
+  }
+
+  /**
+   * A recorded boil-down: the lid open and the brew boiling until the share
+   * of it that boiled away when the recipe was made has gone, then the fire
+   * out until the steam has left.
+   * @param {{T:number, hold:number, loss:number}} s @param {()=>void} done
+   */
+  tickBoilDown(s, done) {
+    const sim = this.sim, c = sim.cauldron, dt = SIM.DT;
+    if (this.stageT <= dt + 1e-9) { this.reduceFrom = condensedCount(sim); this.venting = 0; }
+    c.lidClosed = false;
+    const goal = Math.round(this.reduceFrom * (1 - s.loss));
+    if (!this.venting) {
+      this.status = `Boiling down (${Math.round((1 - condensedCount(sim) / Math.max(1, this.reduceFrom)) * 100)} of ${Math.round(s.loss * 100)} %)`;
+      this.control(Math.max(s.T, 130));
+      sim.furnace.setting = Math.min(sim.furnace.setting, 0.7);
+      if (this.stageT % 3 < 1.2) this.stir(0.7); else this.release();
+      // what matters is how much boiled away, not how long it took on that fire
+      if (condensedCount(sim) <= goal || this.stageT > s.hold + 200) { this.venting = this.stageT; sim.furnace.setting = 0; this.release(); }
+      return;
+    }
+    this.status = 'Letting the steam out';
+    sim.furnace.setting = 0;
+    const gas = sim.p.count - condensedCount(sim);
+    if (gas <= 0 || this.stageT - this.venting > 20) { this.venting = 0; done(); }
   }
 
   /** @param {Stage} s */

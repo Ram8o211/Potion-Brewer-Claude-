@@ -8,20 +8,22 @@
 // exactly what it refuses a player.
 //
 //   node scripts/playtest.mjs [days=8] [seeds=3] [profiles=all]
-// Results: docs/playtest-results.json (and a summary on stdout)
+//   node scripts/playtest.mjs --merge a.json b.json …   (one report from runs made in parallel)
+// Results: docs/playtest-results.json, or $PLAYTEST_OUT (and a summary on stdout)
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { GameState } from '../src/game/state.js';
-import { EQUIPMENT, RANKS } from '../src/game/equipment.js';
+import { EQUIPMENT, RANKS, STARTING_EQUIPMENT } from '../src/game/equipment.js';
 import { Rng } from '../src/core/rng.js';
 import { PROFILES, newMetrics, serveOrder, evening } from './lib/player.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const DAYS = Number(process.argv[2] || 8);
-const SEEDS = Number(process.argv[3] || 3);
-const ONLY = process.argv[4] ? process.argv[4].split(',') : Object.keys(PROFILES);
+const MERGE = process.argv[2] === '--merge' ? process.argv.slice(3).map((f) => JSON.parse(fs.readFileSync(f, 'utf8'))) : null;
+const DAYS = MERGE ? MERGE[0].days : Number(process.argv[2] || 8);
+const SEEDS = MERGE ? MERGE[0].seeds : Number(process.argv[3] || 3);
+const ONLY = MERGE ? [...new Set(MERGE.flatMap((r) => r.runs.map((x) => x.profile)))] : process.argv[4] ? process.argv[4].split(',') : Object.keys(PROFILES);
 
 /** @param {number[]} a */
 const mean = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null);
@@ -60,8 +62,8 @@ function playRun(seed, prof) {
   };
 }
 
-const runs = [];
-for (const key of ONLY) {
+const runs = MERGE ? MERGE.flatMap((r) => r.runs) : [];
+if (!MERGE) for (const key of ONLY) {
   const prof = PROFILES[key];
   for (let k = 0; k < SEEDS; k++) {
     const run = playRun(`playtest-${k}`, prof);
@@ -87,6 +89,8 @@ for (const key of ONLY) {
     praise: sum((r) => r.metrics.praise), complaints: sum((r) => r.metrics.complaints), legitComplaints: sum((r) => r.metrics.legitComplaints),
     finalCoins: Math.round(mean(rs.map((r) => r.final.coins))), finalReputation: Math.round(mean(rs.map((r) => r.final.reputation))), ranks: rs.map((r) => r.final.rank),
     shelfSales: sum((r) => r.metrics.shelfSales), recipeReuse: sum((r) => r.metrics.recipeReuse), homunculus: sum((r) => r.metrics.homunculus),
+    maxStockMl: Math.max(0, ...rs.map((r) => r.metrics.maxStock || 0)),
+    purchases: Object.fromEntries([...new Set(rs.flatMap((r) => Object.keys(r.metrics.equipment)))].map((id) => [id, rs.filter((r) => r.metrics.equipment[id] !== undefined).map((r) => r.metrics.equipment[id])])),
   };
 }
 // technique and process variety, equipment bought vs used, dominant orders
@@ -97,15 +101,16 @@ const dominant = Object.entries(styles).sort((a, b) => b[1] - a[1])[0] || ['', 0
 const bought = {};
 for (const r of runs) for (const id of r.final.equipment) bought[id] = (bought[id] || 0) + 1;
 const used = agg('used');
-const neverUsed = Object.keys(bought).filter((id) => !used[id] && !['trowel', 'rockhammer', 'brush', 'sickle', 'satchel', 'pestle', 'rack1', 'rack2', 'rack3', 'kennel', 'warren', 'bellows', 'athanor', 'frostrune', 'glacial', 'copper', 'grand', 'charter', 'still', 'lens', 'thermal', 'shelf1', 'shelf2'].includes(id));
+// items whose use is passive (yield, capacity, cost) are not counted per order
+const neverUsed = Object.keys(bought).filter((id) => !used[id] && !['kit', 'satchel', 'rack1', 'rack2', 'rack3', 'kennel', 'warren', 'frostrune', 'glacial', 'copper', 'grand', 'charter', 'still'].includes(id));
 const report = {
   date: new Date().toISOString(), days: DAYS, seeds: SEEDS, summary,
   techniquesSold: agg('techniques'), processesUsed: agg('processes'), styles, dominantOrder: { style: dominant[0], share: r2(dominant[1] / Math.max(1, totalSold)) },
   evidenceAtSale: agg('levelsAtSale'), equipmentBought: bought, equipmentUsed: used, instrumentsBoughtButUnused: neverUsed,
-  equipmentNeverBought: EQUIPMENT.map((e) => e.id).filter((id) => !bought[id] && !['hearth', 'basin', 'pot', 'spoon', 'mortar', 'thermometer'].includes(id)),
+  equipmentNeverBought: EQUIPMENT.map((e) => e.id).filter((id) => !bought[id] && !STARTING_EQUIPMENT.includes(id)),
   runs,
 };
 console.log('\n' + JSON.stringify({ summary, techniquesSold: report.techniquesSold, processesUsed: report.processesUsed, dominantOrder: report.dominantOrder, evidenceAtSale: report.evidenceAtSale, instrumentsBoughtButUnused: neverUsed, equipmentNeverBought: report.equipmentNeverBought }, null, 1));
-const file = path.join(ROOT, 'docs', 'playtest-results.json');
+const file = process.env.PLAYTEST_OUT || path.join(ROOT, 'docs', 'playtest-results.json');
 fs.writeFileSync(file, JSON.stringify(report, null, 1) + '\n');
-console.log('\nWrote docs/playtest-results.json');
+console.log(`\nWrote ${path.relative(ROOT, file)}`);

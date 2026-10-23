@@ -143,8 +143,8 @@ computed from the particles that actually run out of the tap. What a
   records. Many orders forbid any side effect above 1.2 %.
 * **The wilds.** Six regions, two of them magical and opened by rank, with
   36 natural ingredients between them. Each
-  ingredient is picked, dug, chipped, scraped or swept (without the right
-  tool half of what you cut is spoiled), some only open at dawn (before
+  ingredient is picked, dug, chipped, scraped or swept (without the
+  Forager's Kit half of what you dig, chip, scrape or sweep is spoiled), some only open at dawn (before
   you open the shop door) or dusk (after the last customer),
   the weather changes daily, careful hands leave part of every deposit to
   regrow, and a thorough harvest strips it and scars it. Deposits are
@@ -155,14 +155,16 @@ computed from the particles that actually run out of the tap. What a
 * **A procedural world per seed.** Every new shop generates its own
   reagents (names, colours, densities, viscosities, melting and boiling
   points, effects), reactions, wild deposits, hidden laws and customers.
-* **Orders that use the whole craft.** Besides effects, customers ask for
-  *techniques* the simulation makes real with natural ingredients: a true
-  colour (only full extraction gives it), a serving temperature, a well
-  mixed brew (stability), a density, a heady tincture (spirit added once
-  the brew has cooled) or a brew boiled down with the lid off (stronger,
-  side effects too). The order card says what each takes, how much to brew
-  and where today's carriers of each effect can be found; instruments read
-  what the eye cannot (no hydrometer, no density meter on the order strip).
+* **Orders judged on outcomes.** Customers ask for what a customer can
+  judge: the effects at a strength, nothing else above the purity limit,
+  the quantity and — for some — the temperature it is served at; from
+  Adept on, brews stronger than plain brewing gives (boil water off, or
+  use more herb). How you get there is yours: grinding, the steeping heat,
+  cold steeps, stirring, awakening and boiling down all change what ends
+  up in the bottle. Density, viscosity, stability, volatility and charge
+  are simulated and visible, never asked for. The order card says what a
+  technique takes, how much to brew and where today's carriers of each
+  effect can be found. See `docs/GAMEPLAY_ARCHITECTURE.md`.
 * **Achievable orders.** Every commission is derived from a hidden
   reference plan made only from what you can gather today, hold, or
   legally buy with the coins you have — gather-only finds are never for
@@ -177,24 +179,31 @@ computed from the particles that actually run out of the tap. What a
   orders in the real simulation.
 * **A shop to grow.**
   * Coins, reputation and six guild ranks.
-  * 38 pieces of equipment, among them three sizes of potion shelving: furnaces, frost plates, bigger cauldrons, a
-    mortar, instruments (an arcanometer reads a brew's activation
-    threshold), a galvanometer, a clockwork stirrer, an alembic, a
-    kennel, a rabbit warren and a purging still, foraging tools and a
-    satchel, and a homunculus that brews your saved recipes.
-  * A recipe book that records each brew as ordered steps (pours,
-    grinding, stirring, every heat and chill held, the lid), which the
-    homunculus replays exactly; a recipe brewed again and tested the same
-    becomes *reproduced*. A trial log, the laws you have found, a
-    discovery journal, achievements, market days and guild contracts.
+  * A starting kit that covers the core craft (hearth, cold basin, pot,
+    spoon, mortar, pestle, thermometer) and 16 purchases, each of which
+    lets you do something new or faster: the Forager's Kit and satchel,
+    three sizes of potion shelving, the frost rune and glacial sigil
+    (deep cold for cold awakenings and narrow steeps), a clockwork
+    stirrer, the arcanometer (auras and arcane thresholds), a kennel,
+    warren and purging still, larger cauldrons, the guild charter and a
+    homunculus that brews your saved recipes.
+  * A recipe book that keeps a brew's formulation, its procedure (pours,
+    grinding, stirring, every heat, chill and boil-down held, the lid)
+    and whether it was reproduced apart; the homunculus replays the
+    procedure, and a batch only counts as the recipe when it was
+    prepared the same way where that changes the potion. A trial log, the
+    laws you have found, a discovery journal, achievements, market days
+    and guild contracts.
   * Returning customers who remember how your last potion worked, and
     less reputation for selling the same order again and again.
 * **Free Experiment mode** with every reagent, tool, rabbit and region
-  unlocked.
+  unlocked, plus the physics demonstrations the campaign does not need:
+  the skimmer, the alembic, the heat map, a hotter furnace and the exact
+  readings of density, viscosity, stability, volatility and charge.
 * **Mobile first, desktop too.**
   * A bottom tab bar over five rooms (Counter, Brew, Wilds, Trials, Book).
   * Drag a jar onto the cauldron, or drag the dropper onto a rabbit.
-    Every gesture except skimming has a tap alternative.
+    Every gesture has a tap alternative.
   * Touch targets of at least 44 px, and portrait, landscape, tablet and
     desktop layouts.
   * Installable and fully offline, with saves on the device and

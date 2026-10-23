@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { GameState, SAVE_VERSION } from '../src/game/state.js';
+import { GameState, SAVE_VERSION, retireEquipment } from '../src/game/state.js';
 import { LAB_ROLES } from '../src/materials/generator.js';
 import { Simulation } from '../src/simulation/world.js';
 import { applySnapshot } from '../src/simulation/snapshot.js';
@@ -161,7 +161,13 @@ test('a genuine v2 save migrates: progress kept, effects and wilds added, aspect
   // prepared reagents are no longer stocked: the guild bought them back
   const prepared = new Set(LAB_ROLES.map((r) => raw.world.roles[r]));
   const paid = Object.entries(raw.inventory).reduce((a, [k, v]) => a + (prepared.has(k) && Number(v) > 0 ? (Number(v) / 100) * raw.world.materials.find((m) => m.id === k).price * 0.4 : 0), 0);
-  assert.ok(Math.abs(st.coins - (raw.coins + paid)) < 0.2, `coins kept, plus the buy-back (${raw.coins} + ${paid.toFixed(1)} → ${st.coins})`);
+  // retired equipment is refunded or replaced (v6): the pestle (now in every kit) and
+  // the hydrometer are paid back, the Aether Lens becomes the Arcanometer
+  const refit = retireEquipment(raw.equipment);
+  assert.equal(refit.refund, 35 + 45);
+  assert.ok(Math.abs(st.coins - (raw.coins + paid + refit.refund)) < 0.2, `coins kept, plus the buy-back and the refit (${raw.coins} + ${paid.toFixed(1)} + ${refit.refund} → ${st.coins})`);
+  assert.ok(st.has('arcanometer') && st.has('pestle') && !st.has('lens') && !st.has('hydrometer'), 'the lens became an arcanometer; the pestle stays as part of the kit');
+  assert.ok(st.journal['note:refit'], 'the journal says what the guild took back and paid');
   assert.equal(st.reputation, raw.reputation);
   assert.equal(st.day, raw.day);
   assert.equal(st.recipes.length, raw.recipes.length);

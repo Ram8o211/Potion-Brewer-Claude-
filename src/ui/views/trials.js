@@ -17,7 +17,7 @@ import { SUBJECT_BY_ID, DOSES, missingEffects } from '../../game/experiments.js'
 import { EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, EFFECT_KEYS, potencyWord } from '../../alchemy/effects.js';
 import { SIM } from '../../simulation/constants.js';
 import { applyTrials } from '../../game/commerce.js';
-import { summarize, addSamples, EVIDENCE_TEXT, evidenceRank } from '../../game/experiments.js';
+import { summarize, addSamples, EVIDENCE_TEXT, evidenceRank, requirementEvidence } from '../../game/experiments.js';
 import { evidenceOf } from '../../game/commerce.js';
 import { shortName } from '../../game/customers.js';
 
@@ -169,7 +169,9 @@ export class TrialsView {
     const vial = this.source === 'vial';
     const th = this.theoryOf();
     const tested = EFFECT_KEYS.filter((k) => cert.values[k] !== undefined);
-    const shown = tested.filter((k) => cert.values[k] !== 0 || (cert.spread[k] || 0) > 1);
+    // every rabbit showed nothing: not detected (which is not proof of absence)
+    const unseen = tested.filter((k) => cert.unseen ? cert.unseen[k] : cert.values[k] === 0 && (cert.spread[k] || 0) <= 1);
+    const shown = tested.filter((k) => !unseen.includes(k));
     const firsts = shown.filter((k) => (cert.n[k] || 0) === 1);
     const trials = tested.length ? Math.max(...tested.map((k) => cert.n[k] || 0)) : 0;
     const rabbits = tested.length ? Math.max(...tested.map((k) => cert.rabbits[k] || 0)) : 0;
@@ -195,14 +197,21 @@ export class TrialsView {
         h('span', { class: 'rv', text: `${fmtPct(v)}% ±${u} · ${LEVEL_SHORT[lvl]}` })));
     }
     if (shown.length) el.append(rows);
-    const none = tested.filter((k) => !shown.includes(k));
-    if (none.length) el.append(h('div', { class: 'small muted quiet' }, shown.length ? 'Not seen: ' : 'No effect seen: ', ...none.map((k) => icon(EFFECT_BY_KEY[k].icon, 'sm'))));
+    if (unseen.length) {
+      const bound = Math.max(...unseen.map((k) => (cert.unc || {})[k] || 0));
+      el.append(h('div', { class: 'small muted quiet', 'data-undetected': unseen.join(' '), title: 'No rabbit showed these. A faint effect can hide below the reading noise: more readings, and larger doses, narrow how strong it could be.' },
+        'Not detected: ', ...unseen.map((k) => icon(EFFECT_BY_KEY[k].icon, 'sm')), ` — each could still be up to ${sdRound(bound)}%`));
+    }
     if (firsts.length) el.append(h('div', { class: 'warn small first-flag', text: `First measure${firsts.length === shown.length ? '' : ` (${firsts.map((k) => EFFECT_BY_KEY[k].label).join(', ')})`}: one reading only, so its margin is that of a single dose — wide. Test again; a second rabbit narrows it most.` }));
     el.append(h('div', { class: 'small muted est-foot', text: 'Value: the mean of every trial. ±: how far the true strength may lie from it (the band). One rabbit’s own bias never averages out on that rabbit — other rabbits average it away. Hover a row for how much the readings differed.' }));
     if (rabbits <= 1 && trials >= 2) el.append(h('div', { class: 'warn small', text: 'All on one rabbit: the others stay clean, but its own bias stays in the estimate and the effect piles up in it — and nobody knows how much it can take before it runs out of control.' }));
     // what the order's customer will make of this evidence
     const com = this.lab.state.current;
     if (com && !this.lab.sandbox) {
+      // each requirement against the margin: reliably met, missed, or not yet settled
+      const reqs = com.requirements.filter((r) => r.effect);
+      if (reqs.length) el.append(h('div', { class: 'within', 'data-section': 'within' }, h('b', { text: 'Against the order: ' }),
+        ...reqs.map((r) => { const x = requirementEvidence(r, cert); return h('span', { class: 'w ' + (x.within === true ? 'ok' : x.within === false ? 'miss' : 'open'), 'data-req': r.key, 'data-evidence': x.evidence, title: x.title, text: ` ${r.key === 'purity' ? 'purity' : EFFECT_BY_KEY[r.key].label} ${x.mark} ${x.text}` }); })));
       const proof = com.customer.persona ? com.customer.persona.proof : 0.5;
       const need = proof >= 0.92 ? 'corroborated' : proof >= 0.8 ? 'repeated' : null;
       const keys = com.requirements.filter((r) => r.effect && r.key !== 'purity').map((r) => r.key);

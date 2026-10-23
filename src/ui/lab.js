@@ -22,16 +22,15 @@ import { Renderer } from '../rendering/renderer.js';
 import { drawPortrait } from '../rendering/portraits.js';
 import { drawJar } from '../rendering/art.js';
 import { rawSprite } from '../rendering/scenes.js';
-import { measureParticles, tapSelection, probeSelection, viscosityClass } from '../game/measure.js';
-import { evaluatePotion, scoreRequirement, PROPERTY_LABELS, describeValue } from '../game/evaluate.js';
+import { measureParticles, tapSelection, probeSelection, viscosityClass, densityWord } from '../game/measure.js';
+import { scoreRequirement, PROPERTY_LABELS } from '../game/evaluate.js';
 import { processEvent } from '../game/journal.js';
 import { saveGame, saveJSON, KEYS } from '../game/persistence.js';
-import { AutoBrewer } from '../game/autobrew.js';
-import { equipmentById } from '../game/equipment.js';
-import { traceSample, buildProcedure, procedureLimits, matchRecipe, checkReproduction, TRACE_DT } from '../game/recipes.js';
+import { AutoBrewer, condensedCount } from '../game/autobrew.js';
+import { traceSample, buildProcedure, procedureLimits, matchRecipe, compareRecipe, checkReproduction, TRACE_DT } from '../game/recipes.js';
 import { proofGaps, draftLabel } from '../game/commerce.js';
 import { RANKS } from '../game/equipment.js';
-import { certification, missingEffects } from '../game/experiments.js';
+import { certification, missingEffects, requirementEvidence } from '../game/experiments.js';
 import { sandboxIngredients } from '../materials/generator.js';
 import { makeVial, appendParticles, updateVial, takeDose, pourBack, pourBackParts, relaxVial } from '../game/vial.js';
 import { theoryOf, EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, dominantEffect, NE } from '../alchemy/effects.js';
@@ -50,11 +49,12 @@ import { TrialsView } from './views/trials.js';
 import { BookView } from './views/book.js';
 import { shortName } from '../game/customers.js';
 
-const REQ_ICON = { color: 'palette', density: 'weight', viscosity: 'drop', temperature: 'thermo', stability: 'scales', volatility: 'bubbles', charge: 'spark', quantity: 'flask', purity: 'pure' };
+const REQ_ICON = { temperature: 'thermo', quantity: 'flask', purity: 'pure' };
 const TOOL_DEFS = [
   { id: 'spoon', label: 'Spoon', icon: 'spoon', key: '2' },
   { id: 'pestle', label: 'Pestle', icon: 'pestle', key: '3', needs: 'pestle' },
-  { id: 'skimmer', label: 'Skim', icon: 'ladle', key: '4', needs: 'skimmer' },
+  // the skimmer only demonstrates layering in the Free Experiment
+  { id: 'skimmer', label: 'Skim', icon: 'ladle', key: '4', sandbox: true },
   { id: 'probe', label: 'Inspect', icon: 'lens', key: '5' },
   { id: 'pour', label: 'Pour', icon: 'pour', key: '1' },
 ];
@@ -88,6 +88,8 @@ export class LabScreen {
     this.thermal = false;
     this.autoStir = false;
     this.alembicOpen = false;
+    /** the Free Experiment's alembic receiver flask (distillate), or null */
+    this.receiver = null;
     this.autoBrewer = null;
     this.time = 0;
     this.hudTimer = 0;
@@ -200,7 +202,9 @@ export class LabScreen {
 
   _applyFurnaceCaps() {
     const cap = this.state.cap;
-    Object.assign(this.sim.furnace, { maxFlame: cap.maxFlame, heatPower: cap.heatPower, minCool: cap.minCool, coolPower: cap.coolPower });
+    // the Free Experiment keeps the old furnace's full heat for demonstrations (melting, fire)
+    const fire = this.sandbox ? SANDBOX_FIRE : cap;
+    Object.assign(this.sim.furnace, { maxFlame: fire.maxFlame, heatPower: fire.heatPower, minCool: cap.minCool, coolPower: cap.coolPower });
   }
 
   /** Re-read capabilities after a purchase (and install a bigger cauldron). */
@@ -355,11 +359,10 @@ export class LabScreen {
     set.stir.addEventListener('pointercancel', stopAuto);
     set.speed = btn('1×', () => this.cycleSpeed(), { icon: 'speed', cls: 'icon', title: 'Time speed (F)', act: 'speed' });
     a.append(set.stir, set.speed);
-    if (this.state.has('thermal') || this.sandbox) {
+    // physics demonstrations of the Free Experiment: the heat map and the alembic
+    if (this.sandbox) {
       set.thermal = btn('', () => this.toggleThermal(), { icon: 'monocle', cls: 'icon', title: 'Heat map (H)', act: 'thermal' });
       a.append(set.thermal);
-    }
-    if (this.state.has('alembic')) {
       set.alembic = btn('', () => this.toggleAlembic(), { icon: 'alembic', cls: 'icon', title: 'Alembic valve', act: 'alembic' });
       a.append(set.alembic);
     }
@@ -392,7 +395,7 @@ export class LabScreen {
     const t = clear(this.toolsEl);
     this.toolBtns = {};
     for (const d of TOOL_DEFS) {
-      if (d.needs && !this.state.has(d.needs) && !this.sandbox) continue;
+      if (!this.sandbox && (d.sandbox || (d.needs && !this.state.has(d.needs)))) continue;
       if (d.id === 'pour') continue; // pouring starts from the shelf
       const b = btn(d.label, () => this.selectTool(d.id), { icon: d.icon, title: `${d.label} (${d.key})`, act: 'tool-' + d.id });
       this.toolBtns[d.id] = b;
@@ -667,7 +670,7 @@ export class LabScreen {
     else if (k === 'r' && !this.sandbox) { this.showView('book'); this.views.book.open('recipes'); }
     else if (k === 'g') { this.ground = !this.ground; this.syncGround(); }
     else if (k === 'a') this.setAutoStir(!this.autoStir);
-    else if (k === 'h' && (this.state.has('thermal') || this.sandbox)) this.toggleThermal();
+    else if (k === 'h' && this.sandbox) this.toggleThermal();
     else if (k === 'escape') panels.openPause(this);
     else if (k === 'arrowup' || k === 'arrowright') { this.setFurnace(Math.min(1, this.sim.furnace.setting + 0.1)); }
     else if (k === 'arrowdown' || k === 'arrowleft') { this.setFurnace(Math.max(-1, this.sim.furnace.setting - 0.1)); }
@@ -734,7 +737,7 @@ export class LabScreen {
       return;
     }
     if (this.sim.p.count >= this.sim.maxParticles - 2) {
-      toast('The cauldron is full', 'Bottle, skim or empty it first.', 'cauldron');
+      toast('The cauldron is full', 'Bottle or empty it first.', 'cauldron');
       return;
     }
     this.pourX = this.clampPourX(x);
@@ -781,15 +784,6 @@ export class LabScreen {
     // something was added: earlier trials no longer describe this brew
     this.state.touchBatch();
     this.state.stats.brews = this.state.stats.brews || 0;
-  }
-
-  /** Note a skim or a distillation in the brew log (merged with the previous one if close). @param {'skim'|'distil'} type @param {number} ml */
-  logOp(type, ml) {
-    if (this.sandbox) return;
-    const log = this.state.brewLog;
-    const last = log.filter((e) => e.type === type).pop();
-    const t = Math.round(this.sim.time);
-    if (last && t - last.t <= 4) { last.ml += ml; last.t = t; } else log.push({ type, ml, t });
   }
 
   setFurnace(v) {
@@ -1214,10 +1208,10 @@ export class LabScreen {
       stirSeconds: Math.round(stats.stir || 0),
       crushed: !!stats.crushed,
       lid: this.sim.cauldron.lidClosed,
-      result: { color: m.color, density: m.density, viscosity: m.viscosity, stability: m.stability, volatility: m.volatility, ml: m.ml },
+      result: { color: m.color, ml: m.ml },
       verified: { ...this.cert.values },
       // the ordered procedure, and how well the trials behind it know it
-      steps: buildProcedure(st.brewLog, m.temperature),
+      steps,
       evidence: Object.fromEntries(Object.keys(this.cert.values || {}).map((k) => [k, { level: (this.cert.level || {})[k] || 'preliminary', n: (this.cert.n || {})[k] || 1, r: (this.cert.rabbits || {})[k] || 1, u: (this.cert.unc || {})[k] || 0 }])),
       brews: 1, reproduced: 0, mismatched: 0,
       quality: ev ? ev.quality : null,
@@ -1249,7 +1243,7 @@ export class LabScreen {
     this._tr.stir ||= stirring;
     this._tr.crush ||= t.active && t.type === 'pestle';
     if (n && this.sim.time - this._tr.t >= TRACE_DT) {
-      traceSample(log, { t: this.sim.time, T, stir: this._tr.stir, crush: this._tr.crush, lid: this.sim.cauldron.lidClosed });
+      traceSample(log, { t: this.sim.time, T, stir: this._tr.stir, crush: this._tr.crush, lid: this.sim.cauldron.lidClosed, ml: condensedCount(this.sim) * SIM.ML_PER_PARTICLE });
       this._tr = { t: this.sim.time, stir: false, crush: false };
     }
   }
@@ -1302,9 +1296,10 @@ export class LabScreen {
   }
 
   /**
-   * A saved recipe this batch follows (same reagents, amounts within 5 ml),
-   * whose effects were verified when it was first brewed — the middle tier
-   * between theory and a trial of this very batch.
+   * A saved recipe this batch follows — the same formulation prepared by the
+   * same procedure (recipes.js compareRecipe) — whose effects were verified
+   * when it was first brewed: the middle tier between theory and a trial of
+   * this very batch.
    */
   knownRecipe() {
     const parts = this.batchParts();
@@ -1312,8 +1307,7 @@ export class LabScreen {
     const steps = buildProcedure(this.state.brewLog);
     for (const r of this.state.recipes) {
       if (!r.verified || !Object.keys(r.verified).length || !r.ingredients) continue;
-      // the same ingredients prepared the same way (heats and chills matched): an exact follow
-      if (matchRecipe(r, parts, steps) === 'exact') return r;
+      if (matchRecipe(r, parts, steps, this.state.lookup) === 'procedure') return r;
     }
     return null;
   }
@@ -1375,12 +1369,21 @@ export class LabScreen {
     return out.slice(0, 3);
   }
 
-  /** A saved recipe with this batch's ingredients but not (yet) its procedure. */
+  /**
+   * A saved recipe with this batch's formulation but not (yet) its procedure,
+   * with what differs.
+   * @returns {{recipe:any, differences:string[], approx:boolean}|null}
+   */
   similarRecipe() {
     const parts = this.batchParts();
     if (!parts.length || this.sandbox) return null;
     const steps = buildProcedure(this.state.brewLog);
-    return this.state.recipes.find((r) => r.verified && Object.keys(r.verified).length && matchRecipe(r, parts, steps) === 'ingredients') || null;
+    for (const r of this.state.recipes) {
+      if (!r.verified || !Object.keys(r.verified).length) continue;
+      const c = compareRecipe(r, parts, steps, this.state.lookup);
+      if (c.formulation && !c.procedure) return { recipe: r, differences: c.differences, approx: c.procedure === null };
+    }
+    return null;
   }
 
   /**
@@ -1462,32 +1465,25 @@ export class LabScreen {
           const f = Math.min(1, m.ml / com.bottleMl);
           score = f >= 0.98 ? 1 : f * f;
           text = `${m.ml}`;
-        } else if (r.req.key === 'purity') {
-          // never read from the brew: only trials of this batch can show it
-          const keys = EFFECTS.map((e) => e.key).filter((k) => !(r.req.exclude || []).includes(k));
-          const known = keys.filter((k) => this.cert.values[k] !== undefined);
-          if (known.length < keys.length) { unknown = true; text = known.length ? `${known.length}/${keys.length}` : '?'; score = 0; }
-          else {
-            const worst = Math.max(...known.map((k) => Math.abs(this.cert.values[k])));
-            score = worst <= r.req.target ? 1 : Math.max(0, 1 - (worst - r.req.target) / r.req.zero);
-            text = worst < 0.05 ? '✓pure' : `✓${worst.toFixed(1)}`;
-          }
-        } else if (EFFECT_BY_KEY[r.req.key]) {
-          // effects are never read from the brew: only what a trial verified
+        } else if (r.req.key === 'purity' || EFFECT_BY_KEY[r.req.key]) {
+          // never read from the brew: only trials of this batch can show it, with their margin —
+          // ✓ reliably met, ~ not settled (an undetected effect may still be there), ✗ missed
+          const ev = requirementEvidence(r.req, /** @type {any} */ (this.cert));
           const v = this.cert.values[r.req.key];
-          if (v === undefined) { unknown = true; text = '?'; score = 0; }
-          else {
-            const s = scoreRequirement(r.req, { ...m, effects: fromValue(r.req.key, v) });
-            score = s.score;
-            text = `✓${Math.round(v)}`;
+          if (ev.evidence === 'untested') {
+            unknown = true; score = 0;
+            if (r.req.key === 'purity') { const keys = EFFECTS.map((e) => e.key).filter((k) => !(r.req.exclude || []).includes(k)); const known = keys.filter((k) => this.cert.values[k] !== undefined).length; text = known ? `${known}/${keys.length}` : '?'; }
+            else text = '?';
+          } else {
+            score = ev.within === true ? 1 : ev.within === false ? 0.2 : 0.7;
+            text = r.req.key === 'purity' ? ev.mark : ev.evidence === 'not-detected' ? `${ev.mark}nd` : `${ev.mark}${Math.round(v)}`;
           }
+          r.li.title = `${PROPERTY_LABELS[r.req.key]}: ${r.req.label} — ${ev.text}${ev.title ? ` (${ev.title})` : ''}`;
         } else {
+          // the serving temperature: the thermometer reads it
           const s = scoreRequirement(r.req, m);
           score = s.score;
-          text = this.readable(r.req.key, s.value, m, st);
-          // without the instrument the property is only a guess by eye: no meter
-          const inst = INSTRUMENT_FOR[r.req.key];
-          if (inst && !this.sandbox && !st.has(inst)) { unknown = true; score = 0; r.li.title = `A ${equipmentById(inst)?.name || inst} would read this precisely.`; }
+          text = `${Math.round(s.value)}°`;
         }
       }
       r.now.textContent = text;
@@ -1499,20 +1495,6 @@ export class LabScreen {
     if (this.bottleFab) this.bottleFab.disabled = !m;
     this.updateBadges();
     void force;
-  }
-
-  /** Value text respecting which instruments the player owns. */
-  readable(key, value, m, st) {
-    const has = (id) => this.sandbox || st.has(id);
-    switch (key) {
-      case 'color': return value < 1 ? 'exact' : `Δ${value.toFixed(0)}`;
-      case 'temperature': return `${Math.round(value)}°`;
-      case 'density': return has('hydrometer') ? `${value.toFixed(2)}` : '?';
-      case 'viscosity': return has('viscometer') ? `${value < 100 ? value.toFixed(1) : Math.round(value)}` : viscosityClass(value);
-      case 'stability': case 'volatility': return has('assay') ? `${Math.round(value)}` : value > 66 ? 'high' : value > 33 ? 'med' : 'low';
-      case 'charge': return has('galvanometer') ? value.toFixed(2) : '?';
-      default: return '?';
-    }
   }
 
   toggleBrewInfo() {
@@ -1556,7 +1538,9 @@ export class LabScreen {
       }),
       h('div', { class: 'small know' }, h('b', { text: 'Theory ' }), thList.length ? thList.map(([e, v]) => h('span', { class: 'fx-chip dim', title: e.label }, icon(e.icon, 'sm'), ` ≈${Math.round(v)}`)) : h('span', { class: 'muted', text: 'no effects expected' })),
       known ? h('div', { class: 'small know' }, h('b', { text: 'Recipe ' }), ...Object.entries(known.verified).map(([k, v]) => h('span', { class: 'fx-chip dim', title: `${EFFECT_BY_KEY[k].label}, as verified when “${known.name}” was first brewed` }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ~${Math.round(/** @type {number} */ (v))}`))) : null,
-      similar ? h('div', { class: 'small warn recipe-partial', text: `Recipe “${similar.name}”: the same ingredients, but not yet prepared the same way — follow its steps (${(similar.steps || []).filter((x) => x.op === 'temp').map((x) => `${x.T}°C for ${x.hold} s`).join(', ') || 'see the book'}) before you rely on what it recorded.` }) : null,
+      similar ? h('div', { class: 'small warn recipe-partial', text: similar.approx
+        ? `Recipe “${similar.recipe.name}”: the same ingredients, but its procedure is only approximate — test this batch rather than rely on what it recorded.`
+        : `Recipe “${similar.recipe.name}”: the same ingredients, but not yet prepared the same way (${similar.differences.slice(0, 2).join('; ')}) — follow its steps before you rely on what it recorded.` }) : null,
       h('div', { class: 'small know' }, h('b', { text: 'Verified ' }), Object.keys(cert.values).length ? Object.entries(cert.values).map(([k, v]) => h('span', { class: 'fx-chip', title: EFFECT_BY_KEY[k].label }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(v)}`)) : h('span', { class: 'muted', text: cert.changed ? 'outdated — retest' : 'nothing yet' })),
       h('div', { class: 'small muted', text: known ? 'Theory adds up what each ingredient is known to do; Recipe is what this recipe did when it was tested. Only a trial of this batch counts as verified.' : 'Theory adds up what each ingredient is known to do. The real brew can differ: test it.' }),
     ].filter(Boolean));
@@ -1578,16 +1562,19 @@ export class LabScreen {
     const st = this.state;
     const comp = Object.entries(m.composition).sort((a, b) => b[1] - a[1]).slice(0, 3);
     const phase = Object.entries(m.phases).sort((a, b) => b[1] - a[1])[0][0];
-    const lens = this.sandbox || st.has('lens');
-    const aura = lens ? EFFECTS.filter((e, k) => Math.abs(m.effects[k]) >= 3) : [];
+    // the arcanometer shows the aura of strong magic and reads the threshold
+    const arc = this.sandbox || st.has('arcanometer');
+    const aura = arc ? EFFECTS.filter((e, k) => Math.abs(m.effects[k]) >= 3) : [];
     el.append(
       h('div', { class: 'rrow' }, h('span', { class: 'swatch', style: { background: rgbToHex(m.color) } }), h('b', { text: `${describeColor(m.color)} ${phase}` })),
-      h('div', { text: `${Math.round(m.temperature)}°C · ${this.readable('viscosity', m.viscosity, m, st)}${st.has('viscometer') || this.sandbox ? ' cP' : ''}` }),
-      h('div', { text: `Density ${this.readable('density', m.density, m, st)}${st.has('galvanometer') || this.sandbox ? ` · charge ${m.charge.toFixed(2)}` : ''}` }),
+      // what the eye tells in the shop; the simulation's numbers in the Free Experiment
+      this.sandbox
+        ? h('div', { text: `${Math.round(m.temperature)}°C · ${m.viscosity < 100 ? m.viscosity.toFixed(1) : Math.round(m.viscosity)} cP · ${m.density.toFixed(2)} g/ml · charge ${m.charge.toFixed(2)}` })
+        : h('div', { text: `${Math.round(m.temperature)}°C · ${viscosityClass(m.viscosity)} · ${densityWord(m.density)}` }),
       ...comp.map(([id, f]) => h('div', { text: `${Math.round(f * 100)}% ${st.lookup(id) ? st.lookup(id).name : id}` })),
-      lens ? h('div', { class: 'aura' }, h('span', { text: 'Aura: ' }), aura.length ? aura.map((e) => icon(e.icon, 'sm')) : h('span', { text: 'none' })) : h('div', { class: 'muted', text: 'Effects: unknown (test in Trials)' }),
+      arc ? h('div', { class: 'aura' }, h('span', { text: 'Aura: ' }), aura.length ? aura.map((e) => icon(e.icon, 'sm')) : h('span', { text: 'none' })) : h('div', { class: 'muted', text: 'Effects: unknown (test in Trials)' }),
     );
-    if (this.sandbox || st.has('arcanometer')) el.append(this.arcaneReading(sel, m));
+    if (arc) el.append(this.arcaneReading(sel, m));
   }
 
   /**
@@ -1657,10 +1644,7 @@ export class LabScreen {
       const a = this.brewAdvice()[0];
       if (a) list.push({ text: ADVICE_SHORT[a.key] || 'Advice', act: 'advice-chip', cls: 'advice', title: a.text, key: a.key, on: () => toast('At the cauldron', a.text, 'bulb', 5000) });
     }
-    if (this.state.receiver && this.state.receiver.count) {
-      const pure = this.receiverJar();
-      list.push({ text: `Receiver ${this.state.receiver.count * SIM.ML_PER_PARTICLE} ml${pure ? ` · ${this.state.lookup(pure).name.split(' ').slice(-1)[0]}` : ''}`, act: 'receiver', title: 'The alembic’s receiver flask', on: () => panels.openReceiver(this) });
-    }
+    if (this.receiver && this.receiver.count) list.push({ text: `Receiver ${this.receiver.count * SIM.ML_PER_PARTICLE} ml`, act: 'receiver', title: 'The alembic’s receiver flask', on: () => panels.openReceiver(this) });
     if (this.app.settings.showFps) list.push({ text: `${this.fpsAcc.fps} fps · ${sim.stats.stepMs.toFixed(1)} ms/step · ${p.count} p` });
     // rebuilt only when something changed, so a chip can be tapped reliably
     const sig = list.map((x) => x.text + '|' + (x.title || '')).join('/');
@@ -1728,7 +1712,7 @@ export class LabScreen {
     this.assayTimer += dt;
     this.saveTimer += dt;
     this.layerTimer += dt;
-    if (this.hudTimer > 0.25) { this.hudTimer = 0; if (this.autoStir) this.aimStirrer(); this.refreshHud(); this.updateShelf(); if (this.probe) this.updateProbe(); this.updateBrewPanel(); this.checkAway(); this.recoverSkimmed(); }
+    if (this.hudTimer > 0.25) { this.hudTimer = 0; if (this.autoStir) this.aimStirrer(); this.refreshHud(); this.updateShelf(); if (this.probe) this.updateProbe(); this.updateBrewPanel(); this.checkAway(); }
     if (this.assayTimer > 0.4 && !this.bottling) { this.assayTimer = 0; this.updateAssay(); }
     if (this.layerTimer > 2) { this.layerTimer = 0; this.detectLayers(); }
     if (this.saveTimer > 15) { this.saveTimer = 0; this.save(); }
@@ -1756,10 +1740,10 @@ export class LabScreen {
         showBottle: true,
         probe: this.tool === 'probe' ? this.probe : null,
         thermal: this.thermal,
-        alembic: this.state.has('alembic'),
-        receiver: this.state.receiver,
+        alembic: this.sandbox,
+        receiver: this.receiver,
         stirrer: this.state.has('stirrer') && this.autoStir,
-        aura: this.sandbox || this.state.has('lens'),
+        aura: this.sandbox || this.state.has('arcanometer'),
       });
     } else if (this.views[this.view] && this.views[this.view].frame) {
       this.views[this.view].frame(dt);
@@ -1894,8 +1878,7 @@ export class LabScreen {
       case 'crack': audio.play('crack'); break;
       case 'spark': if (Math.random() < 0.3) audio.play('crush'); break;
       case 'phase': if (e.to === 'solid' && Math.random() < 0.15) audio.play('freeze'); break;
-      case 'full': toast('The cauldron is full', 'Bottle, skim or empty it before adding more.', 'cauldron'); break;
-      case 'skim': this.logOp('skim', (e.count || 1) * SIM.ML_PER_PARTICLE); break;
+      case 'full': toast('The cauldron is full', 'Bottle or empty it before adding more.', 'cauldron'); break;
     }
     if (this.sandbox) return;
     const r = processEvent(this.state, e);
@@ -1928,13 +1911,12 @@ export class LabScreen {
     }
   }
 
-  /** Alembic: draw vapour from under the lid into the receiver flask. */
+  /** The Free Experiment's alembic: draw vapour from under the closed lid into the receiver flask. */
   collectVapour() {
     const sim = this.sim, p = sim.p, c = sim.cauldron;
-    if (!c.lidClosed) return;
-    const st = this.state;
-    st.receiver = st.receiver || { count: 0, comp: {}, color: [0.7, 0.8, 0.9] };
-    const rec = st.receiver;
+    if (!c.lidClosed || !this.sandbox) return;
+    this.receiver = this.receiver || { count: 0, comp: {}, color: [0.7, 0.8, 0.9] };
+    const rec = this.receiver;
     let took = 0;
     for (let i = p.count - 1; i >= 0 && took < 3; i--) {
       if (p.phase[i] !== PHASE.GAS || p.y[i] > 0.25 || p.x[i] < c.mouth * 0.3) continue;
@@ -1947,42 +1929,11 @@ export class LabScreen {
       sim.removeParticle(i);
       took++;
     }
-    if (took) this.logOp('distil', took * SIM.ML_PER_PARTICLE);
-    if (took && rec.count >= 4) {
-      const r = st.unlock('distil');
-      for (const a of r) this.announce(a);
-    }
-  }
-
-  /**
-   * The jar the receiver's distillate can go back into: an ingredient that
-   * makes up at least 92 % of it (the alembic recovers spirit and water
-   * clean; anything carrying dissolved magic is not a jar's contents).
-   */
-  receiverJar() {
-    const rec = this.state.receiver;
-    if (!rec || !rec.count || this.sandbox) return null;
-    const tot = Object.values(rec.comp).reduce((a, b) => a + b, 0) || 1;
-    const [id, f] = Object.entries(rec.comp).sort((a, b) => b[1] - a[1])[0] || [null, 0];
-    if (!id || f / tot < 0.92 || !this.state.world.ingredients.includes(id) || !isFinite(this.state.stock(id))) return null;
-    return id;
-  }
-
-  /** Return a clean distillate to its jar. */
-  receiverToJar() {
-    const st = this.state, rec = st.receiver, id = this.receiverJar();
-    if (!rec || !id) return 0;
-    const ml = Math.min(rec.count * SIM.ML_PER_PARTICLE, Math.max(0, st.cap.storage - st.stock(id)));
-    st.inventory[id] = st.stock(id) + ml;
-    st.receiver = null;
-    this.updateShelf();
-    toast('Distillate recovered', `${ml} ml of ${st.lookup(id).name} went back into its jar.`, 'alembic', 3000);
-    return ml;
   }
 
   /** Pour the receiver's distillate back into the cauldron (as liquid). */
   pourReceiver() {
-    const rec = this.state.receiver;
+    const rec = this.receiver;
     if (!rec || !rec.count) return;
     const sim = this.sim;
     const total = Object.values(rec.comp).reduce((a, b) => a + b, 0) || 1;
@@ -2000,7 +1951,7 @@ export class LabScreen {
       sim.p.dirty[i] = 1;
       made++;
     }
-    this.state.receiver = null;
+    this.receiver = null;
     this.state.touchBatch();
     toast('Distillate poured back', `${made * SIM.ML_PER_PARTICLE} ml returned to the cauldron.`, 'alembic');
   }
@@ -2008,8 +1959,10 @@ export class LabScreen {
   /**
    * Run a saved recipe with the homunculus: it follows the recorded steps
    * one by one in the real cauldron (pours, grinding, stirring, each heat
-   * and chill held as long as it was, the lid), paying for every ingredient.
-   * It cannot skim or distil: those steps are left to the alchemist.
+   * and chill held as long as it was, each boil-down to the share that boiled
+   * away, the lid), paying for every ingredient. An approximate recipe is
+   * replayed as well as it can be, and says so; the skimming and distilling
+   * of old recipes it skips.
    */
   startHomunculus(recipe) {
     const steps = recipe.steps && recipe.steps.length ? recipe.steps : null;
@@ -2033,30 +1986,10 @@ export class LabScreen {
       onPoured: (id, n, ground) => { this.pourGround = ground; },
     });
     recipe.brews = (recipe.brews | 0) + 1;
-    const limits = recipe.limits && recipe.limits.length ? ` It will leave the ${recipe.limits.join(' and ')} to you.` : '';
-    toast('The homunculus gets to work', `${recipe.name}${recipe.approx ? ' — an old recipe without its procedure: the replay is approximate.' : ''}${limits}`, 'homunculus', 4200);
+    const lim = procedureLimits(steps || []);
+    const limits = lim.length ? ` It cannot do the ${lim.join(' or ')} and skips ${lim.length > 1 ? 'those steps' : 'that step'}.` : '';
+    toast('The homunculus gets to work', `${recipe.name}${recipe.approx ? ` — an approximate recipe (${recipe.approxWhy || 'saved before procedures were kept'}): the result may differ, so test it.` : ''}${limits}`, 'homunculus', 5200);
     return true;
-  }
-
-  /** Skimmed matter that is nearly pure goes back on the shelf. */
-  recoverSkimmed() {
-    const rec = this.sim.tool.recovered;
-    const st = this.state;
-    let any = 0;
-    for (const [id, n] of Object.entries(rec)) {
-      if (n <= 0) continue;
-      rec[id] = 0;
-      // only real ingredients (not reaction products) have a jar to return to
-      if (this.sandbox || !st.world.ingredients.includes(id) || !isFinite(st.stock(id))) continue;
-      const ml = n * SIM.ML_PER_PARTICLE;
-      const room = Math.max(0, st.cap.storage - st.stock(id));
-      const back = Math.min(ml, room);
-      if (back > 0) { st.inventory[id] = st.stock(id) + back; any += back; }
-    }
-    if (any) {
-      this.updateShelf();
-      if (this.time - (this._recToast || -99) > 4) { this._recToast = this.time; toast('Recovered', `${any} ml of skimmed reagent went back into its jar.`, 'ladle', 2200); }
-    }
   }
 
   save() {
@@ -2070,20 +2003,18 @@ export class LabScreen {
   }
 }
 
-export { describeValue };
+/** The Free Experiment's furnace: hotter than any campaign fire, to show what heat does. */
+const SANDBOX_FIRE = { maxFlame: 800, heatPower: 8 };
 
 /** Short labels of the brew advice (lab.brewAdvice) for the chip row. */
 const ADVICE_SHORT = { whole: 'Whole herbs: crush', window: 'Outside the steep', warm: 'Not steeped yet', steam: 'Steam escaping', stir: 'Uneven: stir' };
 
-/** The instrument that reads a property precisely (without it, the order strip shows no meter for it). */
-const INSTRUMENT_FOR = { density: 'hydrometer', viscosity: 'viscometer', stability: 'assay', volatility: 'assay', charge: 'galvanometer' };
-
 /** What each promotion brings (the difficulty curve, in the guild's words). */
 const RANK_NEWS = [
   '',
-  'Journeyman: customers now ask for well-mixed and heavy brews and heady tinctures — the assay kit and hydrometer read them — and the herbalist sells the common herbs.',
-  'Adept: strong orders need awakened magic, or a brew boiled down with the lid off. The Moonfen opens, and the alembic and arcanometer are for sale.',
-  'Expert: customers combine several effects and techniques in one order. The Ember Crags open.',
+  'Journeyman: cooling and insight orders arrive, the herbalist sells the common herbs, and the guild offers the Frost Rune (deep cold), the Clockwork Stirrer and the Arcanometer.',
+  'Adept: strong orders need awakened magic, or a brew boiled down with the lid open, and customers combine two effects. The Moonfen opens, its magic woken by cold; larger cauldrons and the Guild Charter are for sale.',
+  'Expert: customers combine several effects and techniques in one order. The Ember Crags open; the Glacial Sigil reaches the deepest cold, and the Brass Homunculus brews your recipes.',
   'Master: the grandest commissions — several effects, awakened, in exact measure. The Queen’s herald may call.',
   'Grand Alchemist: the guild has nothing left to teach you.',
 ];
