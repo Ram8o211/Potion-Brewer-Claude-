@@ -118,7 +118,7 @@ export function coins(v) {
   return (Math.round(v * 10) / 10).toLocaleString('en-US', { maximumFractionDigits: 1 });
 }
 
-/** @param {number} n */
-export function starsText(n) {
-  return '★'.repeat(n) + '☆'.repeat(5 - n);
+/** @param {number} n @param {number} [max] */
+export function starsText(n, max = 5) {
+  return '★'.repeat(n) + '☆'.repeat(max - n);
 }

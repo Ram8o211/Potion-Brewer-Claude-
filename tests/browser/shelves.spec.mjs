@@ -101,7 +101,11 @@ test('a tested batch labels its bottles by itself: shelved bottles show their ef
   expect(await lab(page, (l) => l.state.trials.records.length)).toBe(records);
   await page.click('[data-act=tab-counter]');
   await page.locator('[data-act=bottle-slot]').nth(1).click();
-  await expect(page.locator('.bottle-detail .label-line')).toContainText('(tested)');
-  await expect(page.locator('[data-act=bottle-slot]').nth(1)).toHaveAttribute('title', /\(tested\)/);
+  await expect(page.locator('.bottle-detail .label-line')).toContainText('(tested');
+  await expect(page.locator('[data-act=bottle-slot]').nth(1)).toHaveAttribute('title', /\(tested, σ/);
+  // with its standard deviation, and accuracy stars (a single reading earns none yet)
+  await expect(page.locator('.bottle-detail .label-line')).toContainText(/σ \d/);
+  await expect(page.locator('.bottle-detail .label-line')).toContainText('☆☆☆');
+  await expect(page.locator('[data-act=bottle-slot]').nth(1).locator('.bstars')).toHaveAttribute('data-stars', '0');
   expect(errors).toEqual([]);
 });

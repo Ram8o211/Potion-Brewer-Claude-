@@ -529,8 +529,8 @@ setTimeout(() => t.remove(), 320);
 function coins(v) {
 return (Math.round(v * 10) / 10).toLocaleString('en-US', { maximumFractionDigits: 1 });
 }
-function starsText(n) {
-return '★'.repeat(n) + '☆'.repeat(5 - n);
+function starsText(n, max = 5) {
+return '★'.repeat(n) + '☆'.repeat(max - n);
 }
 return { h, btn, clear, setOverlayRoot, modal, confirmDialog, setToastRoot, toast, coins, starsText };
 })();
@@ -8014,8 +8014,34 @@ for (const k of Object.keys((vial && vial.cert) || {})) out[k] = { level: 'preli
 return out;
 }
 const s = summarize(vial.samples);
-for (const k of Object.keys(s.values)) out[k] = { level: s.level[k], n: s.n[k], r: s.rabbits[k], u: s.unc[k] };
+for (const k of Object.keys(s.values)) out[k] = { level: s.level[k], n: s.n[k], r: s.rabbits[k], u: s.unc[k], s: sigmaOfMargin(s.unc[k]) };
 return out;
+}
+const sigmaOfMargin = (u) => Math.round((u / 1.96) * 10) / 10;
+const STAR_STEPS = [0.25, 0.17, 0.09];
+const MAX_STARS = STAR_STEPS.length;
+function accuracyStars(value, sigma) {
+const rel = sigma / Math.max(5, Math.abs(value));
+return STAR_STEPS.filter((t) => rel <= t).length;
+}
+function claimSigma(c) {
+if (!c || !c.evidence) return null;
+if (c.evidence.s !== undefined) return c.evidence.s;
+return c.evidence.u ? sigmaOfMargin(c.evidence.u) : null;
+}
+function claimStars(c) {
+if (!c || c.kind === 'unknown') return null;
+const sigma = claimSigma(c);
+if (c.source !== 'trial' || sigma === null || (c.evidence && c.evidence.n < 2)) return 0;
+return accuracyStars(c.measured ?? c.value ?? 0, sigma);
+}
+function labelStars(label) {
+let min = null;
+for (const c of Object.values((label && label.claims) || {})) {
+const st = claimStars(c);
+if (st !== null) min = min === null ? st : Math.min(min, st);
+}
+return min;
 }
 function trialClaim(v, record, evidence) {
 const measured = Math.round(v * 10) / 10;
@@ -8259,7 +8285,7 @@ return { coins, rep, text };
 function fmt(v) {
 return (Math.round(v * 10) / 10).toLocaleString('en-US', { maximumFractionDigits: 1 });
 }
-return { draftLabel, applyTrials, evidenceOf, trialClaim, sameClaim, editClaim, claimedEffects, relevantEffects, EVIDENCE_WEIGHT, trustReport, labelTrust, unprovenWanted, proofGaps, claimedMeasurement, openNegotiation, proposePrice, acceptOffer, recordSale, resolveFollowUp, EVIDENCE_TEXT };
+return { draftLabel, applyTrials, evidenceOf, STAR_STEPS, MAX_STARS, accuracyStars, claimSigma, claimStars, labelStars, trialClaim, sameClaim, editClaim, claimedEffects, relevantEffects, EVIDENCE_WEIGHT, trustReport, labelTrust, unprovenWanted, proofGaps, claimedMeasurement, openNegotiation, proposePrice, acceptOffer, recordSale, resolveFollowUp, EVIDENCE_TEXT };
 })();
 // src/materials/remains.js
 const __m46 = (() => {
@@ -12550,12 +12576,12 @@ return { fxChips, openShop, openIngredient, openHint, openBottleSize, showResult
 })();
 // src/ui/trade.js
 const __m61 = (() => {
-const { h, btn, modal, toast, coins, clear } = __m2;
+const { h, btn, modal, toast, coins, clear, starsText } = __m2;
 const { icon } = __m3;
 const { drawPortrait } = __m56;
 const { audio } = __m4;
 const { EFFECTS, EFFECT_BY_KEY } = __m13;
-const { draftLabel, openNegotiation: beginNegotiation, proposePrice, acceptOffer, relevantEffects, trustReport, editClaim, proofGaps } = __m45;
+const { draftLabel, openNegotiation: beginNegotiation, proposePrice, acceptOffer, relevantEffects, trustReport, editClaim, proofGaps, claimSigma, claimStars, labelStars, MAX_STARS } = __m45;
 const { PURITY_LIMIT } = __m25;
 const { shortName } = __m21;
 function openIdentify(lab, vial, onDone) {
@@ -12570,13 +12596,16 @@ clear(rows);
 for (const e of EFFECTS) {
 const c = draft.claims[e.key];
 const lvl = c.evidence ? c.evidence.level : 'preliminary';
-const src = c.source === 'trial' ? h('span', { class: 'src trial lvl-' + lvl, title: `Measured in trials of this batch: ${c.evidence ? `${c.evidence.n} reading${c.evidence.n === 1 ? '' : 's'} on ${c.evidence.r} rabbit${c.evidence.r === 1 ? '' : 's'}, ±${c.evidence.u}` : 'one reading'}` }, icon('dropper', 'sm'), lvl === 'preliminary' ? ' 1 reading' : ` ${lvl}`)
+const sigma = claimSigma(c);
+const src = c.source === 'trial' ? h('span', { class: 'src trial lvl-' + lvl, title: `Measured in trials of this batch: ${c.evidence ? `${c.evidence.n} reading${c.evidence.n === 1 ? '' : 's'} on ${c.evidence.r} rabbit${c.evidence.r === 1 ? '' : 's'}, standard deviation ${sigma} (±${c.evidence.u} at 95 %)` : 'one reading'}` }, icon('dropper', 'sm'), lvl === 'preliminary' ? ' 1 reading' : ` ${lvl}`)
 : c.kind === 'unknown' ? h('span', { class: 'src unknown', text: 'unknown' })
 : c.source === 'estimate' ? h('span', { class: 'src est', text: `theory${c.spread ? ' ±' + c.spread : ''}` }) : h('span', { class: 'src you', text: 'your claim' });
-const val = c.kind === 'value' ? `${Math.round((c.value || 0) * 10) / 10}%${c.source === 'trial' && c.evidence && c.evidence.u ? ` ±${c.evidence.u}` : ''}` : c.kind === 'none' ? `none (< ${PURITY_LIMIT}%)` : '?';
+const sd = c.source === 'trial' && sigma !== null ? ` σ ${sigma}` : '';
+const val = c.kind === 'value' ? `${Math.round((c.value || 0) * 10) / 10}%${sd}` : c.kind === 'none' ? `none (< ${PURITY_LIMIT}%)${sd}` : '?';
+const cs = claimStars(c);
 const edit = (op) => () => { draft.claims[e.key] = editClaim(c, e.key, op); render(); };
 const row = h('div', { class: 'label-row' + (relevant.has(e.key) ? ' relevant' : '') + (c.kind === 'unknown' ? ' unknown' : '') + (open === e.key ? ' open' : ''), 'data-claim': e.key },
-icon(e.icon, 'sm'), h('span', { class: 'lk', text: e.label }), src, h('b', { class: 'lv', text: val }),
+icon(e.icon, 'sm'), h('span', { class: 'lk', text: e.label }), src, h('b', { class: 'lv' }, val, cs === null ? null : h('span', { class: 'acc-stars', title: accuracyTitle(cs), text: ' ' + starsText(cs, MAX_STARS) })),
 h('span', { class: 'lctl' },
 btn('−', edit('down'), { cls: 'small', title: `Claim less ${e.label.toLowerCase()}`, act: `claim-dn-${e.key}` }),
 btn('+', edit('up'), { cls: 'small', title: `Claim more ${e.label.toLowerCase()}`, act: `claim-up-${e.key}` }),
@@ -12590,6 +12619,8 @@ render();
 });
 rows.appendChild(row);
 }
+const ls = labelStars(draft);
+accEl.textContent = ls === null ? '' : `Accuracy ${starsText(ls, MAX_STARS)} — ${accuracyTitle(ls)}`;
 if (com) {
 const rep = trustReport(com, draft, st.rank);
 const t = rep.trust;
@@ -12598,6 +12629,7 @@ trustEl.textContent = `${shortName(com.customer.name)} will trust this label ${t
 }
 };
 const trustEl = h('div', { class: 'small' });
+const accEl = h('div', { class: 'small acc-line', 'data-acc': 'label' });
 let m;
 m = modal({
 title: 'Label the potion',
@@ -12606,7 +12638,7 @@ body: [
 h('div', { class: 'card parch' },
 h('div', { class: 'small', text: 'Write down what this potion does. Tested values come from trials of this very batch — one reading counts for less than readings repeated, and those less than readings on several rabbits. The rest are the guild theory’s estimates, or unknown. Customers pay for what you claim — and come back if it is not true.' }),
 h('div', { class: 'small muted', text: com ? 'Highlighted: the effects this order cares about (with a purity rule, all of them).' : '' }),
-trustEl),
+accEl, trustEl),
 h('div', { class: 'card parch' }, rows),
 ],
 foot: [btn('Seal the label', () => { m.close(); audio.play('page'); onDone(draft); }, { cls: 'primary', icon: 'tag', act: 'label-seal' })],
@@ -12750,11 +12782,19 @@ const parts = [];
 for (const e of EFFECTS) {
 const c = claims[e.key];
 if (!c || c.kind === 'none') continue;
-parts.push(c.kind === 'unknown' ? `${e.label} ?` : `${e.label} ${Math.round(c.value)}%${c.source === 'trial' ? ' (tested)' : ''}`);
+const sigma = c.source === 'trial' ? claimSigma(c) : null;
+parts.push(c.kind === 'unknown' ? `${e.label} ?` : `${e.label} ${Math.round(c.value)}%${c.source === 'trial' ? ` (tested${sigma !== null ? `, σ ${sigma}` : ''})` : ''}`);
 }
 return parts.length ? parts.join(', ') + '; nothing else' : 'no magical effect';
 }
-return { openIdentify, openNegotiation, showDeal, followUpCard, claimSummary, EFFECT_BY_KEY };
+function accuracyTitle(n) {
+return ['a rough guess: test it again, on other rabbits', 'fairly reliable', 'reliable', 'precise: a narrow standard deviation'][n] || '';
+}
+function labelLine(label) {
+const n = labelStars(label);
+return `${n === null ? '' : starsText(n, MAX_STARS) + ' '}${claimSummary(label.claims)}`;
+}
+return { openIdentify, openNegotiation, showDeal, followUpCard, claimSummary, accuracyTitle, labelLine, EFFECT_BY_KEY };
 })();
 // src/ui/tutorial.js
 const __m62 = (() => {
@@ -12888,7 +12928,7 @@ return { Tutorial };
 })();
 // src/ui/views/counter.js
 const __m63 = (() => {
-const { h, btn, clear, coins, confirmDialog } = __m2;
+const { h, btn, clear, coins, confirmDialog, starsText } = __m2;
 const { icon } = __m3;
 const { drawPortrait } = __m56;
 const { drawBottle } = __m52;
@@ -12897,7 +12937,7 @@ const { techniqueById } = __m16;
 const { EFFECT_INDEX, NE } = __m13;
 const { EFFECT_BY_KEY } = __m13;
 const { missingEffects } = __m27;
-const { relevantEffects } = __m45;
+const { relevantEffects, labelStars, MAX_STARS } = __m45;
 const trade = __m61;
 const { describeColor, rgbToHex } = __m8;
 const { viscosityClass } = __m22;
@@ -13041,7 +13081,7 @@ h('div', { class: 'row' }, cv, h('div', {},
 h('b', { text: `Sealed vial · ${Math.round(v.ml)} ml` }),
 h('div', { class: 'small' }, h('span', { class: 'swatch', style: { background: rgbToHex(m.color) } }), ` ${describeColor(m.color)} · ${Math.round(m.temperature)}°C · ${has('viscometer') ? `${m.viscosity < 100 ? m.viscosity.toFixed(1) : Math.round(m.viscosity)} cP` : viscosityClass(m.viscosity)}${has('hydrometer') ? ` · ${m.density.toFixed(2)} g/ml` : ''}`),
 h('div', { class: 'small' }, 'Verified: ', Object.keys(v.cert || {}).length ? Object.entries(v.cert).map(([k, x]) => h('span', { class: 'fx-chip' }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(x)}`)) : h('span', { class: 'muted', text: 'nothing — effects unknown' })),
-v.label ? h('div', { class: 'small label-line' }, icon('tag', 'sm'), ` ${trade.claimSummary(v.label.claims)}`) : null)),
+v.label ? h('div', { class: 'small label-line' }, icon('tag', 'sm'), ` ${trade.labelLine(v.label)}`) : null)),
 need.length && com ? h('div', { class: 'warn small', text: `Not yet tested: ${need.map((k) => EFFECT_BY_KEY[k].label).join(', ')}. You may still sell on the guild's theory, but ${first} will trust an untested label less${com.customer.persona && com.customer.persona.proof >= 0.8 ? ' — and this customer insists on proof' : ''}.` }) : null,
 com && v.ml < com.bottleMl ? h('div', { class: 'small muted', text: `Short of the ${com.bottleMl} ml ordered; the customer pays less.` }) : null,
 h('div', { class: 'row wrap' }, serve, labelB, testB, store, back, discard)));
@@ -13062,9 +13102,11 @@ continue;
 }
 const cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: '16', height: '22', class: 'vial-art' }));
 drawBottle(/** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')), 2, 2, 12, 19, b.m ? b.m.color : [0.5, 0.5, 0.5], Math.min(1, b.ml / Math.max(1, b.bottledMl || b.ml)));
-const fxText = b.label ? trade.claimSummary(b.label.claims) : '';
+const fxText = b.label ? trade.labelLine(b.label) : '';
+const acc = b.label ? labelStars(b.label) : null;
 const slot = h('button', { class: 'bottle-slot' + (this.sel === b.id ? ' active' : '') + (b.label ? ' labelled' : ''), role: 'option', 'aria-selected': this.sel === b.id ? 'true' : 'false', 'aria-label': `${b.label && b.label.name ? b.label.name : 'Bottle'}, ${Math.round(b.ml)} ml${fxText ? `: ${fxText}` : ''}`, ...(fxText ? { title: fxText } : {}), 'data-act': 'bottle-slot', 'data-id': b.id },
-cv, h('span', { class: 'bml', text: `${Math.round(b.ml)}` }), b.label ? h('span', { class: 'btag' }, icon('tag', 'sm')) : null);
+cv, h('span', { class: 'bml', text: `${Math.round(b.ml)}` }), b.label ? h('span', { class: 'btag' }, icon('tag', 'sm')) : null,
+acc === null ? null : h('span', { class: 'bstars', 'data-stars': String(acc), text: starsText(acc, MAX_STARS) }));
 slot.addEventListener('click', () => { this.sel = this.sel === b.id ? null : b.id; this.refresh(); });
 grid.appendChild(slot);
 }
@@ -13076,7 +13118,7 @@ const fx = Object.entries(b.cert || {});
 detail = h('div', { class: 'bottle-detail' },
 h('div', { class: 'small' }, h('span', { class: 'swatch', style: { background: rgbToHex(m.color || [0.5, 0.5, 0.5]) } }), ` ${describeColor(m.color || [0.5, 0.5, 0.5])} · ${Math.round(b.ml)} ml · ${Math.round(m.temperature ?? 20)}°C · bottled on day ${b.day || st.day}`),
 h('div', { class: 'small' }, 'Verified: ', fx.length ? fx.map(([k, x]) => h('span', { class: 'fx-chip' }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(x)}`)) : h('span', { class: 'muted', text: 'nothing — effects unknown' })),
-b.label ? h('div', { class: 'small label-line' }, icon('tag', 'sm'), ` ${trade.claimSummary(b.label.claims)}`) : null,
+b.label ? h('div', { class: 'small label-line' }, icon('tag', 'sm'), ` ${trade.labelLine(b.label)}`) : null,
 h('div', { class: 'row wrap' },
 btn(st.vial ? 'Swap onto the counter' : 'Take to the counter', () => lab.takeBottle(b.id), { icon: 'deal', cls: 'primary', act: 'take-bottle' }),
 btn('Pour back', () => lab.pourBackBottle(b.id), { icon: 'pour', act: 'pour-back-bottle' }),

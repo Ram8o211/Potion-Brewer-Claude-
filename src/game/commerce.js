@@ -34,7 +34,7 @@ import { summarize, evidenceRank, EVIDENCE_TEXT } from './experiments.js';
  * @property {number} [spread]     uncertainty of an estimate (plus or minus)
  * @property {string} [record]     the trial record backing it
  * @property {number} [measured]   the tested reading of this batch, kept when the player edits the claim
- * @property {{level:string, n:number, r:number, u:number}} [evidence] how well the trials back it (experiments.js summarize)
+ * @property {{level:string, n:number, r:number, u:number, s?:number}} [evidence] how well the trials back it (experiments.js summarize): u the ~95 % margin, s the standard deviation of the estimate
  */
 
 /**
@@ -95,21 +95,74 @@ export function applyTrials(label, values, record, evidence = {}) {
  * The evidence behind each tested effect of a vial (or bottle): level,
  * readings, rabbits and margin, from its own samples.
  * @param {{samples?:Record<string, any[]>, cert?:Record<string, number>}} vial
- * @returns {Record<string, {level:string, n:number, r:number, u:number}>}
+ * @returns {Record<string, {level:string, n:number, r:number, u:number, s?:number}>}
  */
 export function evidenceOf(vial) {
-  /** @type {Record<string, {level:string, n:number, r:number, u:number}>} */
+  /** @type {Record<string, {level:string, n:number, r:number, u:number, s?:number}>} */
   const out = {};
   if (!vial || !vial.samples) {
     for (const k of Object.keys((vial && vial.cert) || {})) out[k] = { level: 'preliminary', n: 1, r: 1, u: 0 };
     return out;
   }
   const s = summarize(vial.samples);
-  for (const k of Object.keys(s.values)) out[k] = { level: s.level[k], n: s.n[k], r: s.rabbits[k], u: s.unc[k] };
+  for (const k of Object.keys(s.values)) out[k] = { level: s.level[k], n: s.n[k], r: s.rabbits[k], u: s.unc[k], s: sigmaOfMargin(s.unc[k]) };
   return out;
 }
 
-/** A claim made from a trial reading. @param {number} v @param {string} [record] @param {{level:string, n:number, r:number, u:number}} [evidence] @returns {Claim} */
+/** The standard deviation behind a ~95 % margin (summarize's unc is 1.96 σ). @param {number} u */
+const sigmaOfMargin = (u) => Math.round((u / 1.96) * 10) / 10;
+
+/**
+ * Accuracy stars: 0 to 3 as the standard deviation of a tested reading
+ * narrows against the reading itself (small readings count against 5 %, so
+ * "none" earns its stars like any other value). One reading never earns a
+ * star; three need many readings on several rabbits.
+ */
+export const STAR_STEPS = [0.25, 0.17, 0.09];
+export const MAX_STARS = STAR_STEPS.length;
+
+/** Stars for a value read with standard deviation `sigma`. @param {number} value @param {number} sigma */
+export function accuracyStars(value, sigma) {
+  const rel = sigma / Math.max(5, Math.abs(value));
+  return STAR_STEPS.filter((t) => rel <= t).length;
+}
+
+/** The standard deviation of a claim's tested reading, or null if it has none. @param {Claim} c */
+export function claimSigma(c) {
+  if (!c || !c.evidence) return null;
+  if (c.evidence.s !== undefined) return c.evidence.s;
+  // older evidence without its readings has no margin to go by
+  return c.evidence.u ? sigmaOfMargin(c.evidence.u) : null;
+}
+
+/**
+ * How accurate a claim is (0…3 stars): a tested claim by its standard
+ * deviation; anything else — an estimate, or the player's own figure —
+ * none. Null for "no claim".
+ * @param {Claim} c
+ */
+export function claimStars(c) {
+  if (!c || c.kind === 'unknown') return null;
+  const sigma = claimSigma(c);
+  if (c.source !== 'trial' || sigma === null || (c.evidence && c.evidence.n < 2)) return 0;
+  return accuracyStars(c.measured ?? c.value ?? 0, sigma);
+}
+
+/**
+ * How accurate a whole label is: its least accurate claim (claims of
+ * nothing do not count). Null when it claims nothing at all.
+ * @param {Label} label
+ */
+export function labelStars(label) {
+  let min = null;
+  for (const c of Object.values((label && label.claims) || {})) {
+    const st = claimStars(c);
+    if (st !== null) min = min === null ? st : Math.min(min, st);
+  }
+  return min;
+}
+
+/** A claim made from a trial reading. @param {number} v @param {string} [record] @param {{level:string, n:number, r:number, u:number, s?:number}} [evidence] @returns {Claim} */
 export function trialClaim(v, record, evidence) {
   const measured = Math.round(v * 10) / 10;
   const ev = evidence ? { evidence } : {};

@@ -74,7 +74,7 @@ test('first commission: brew, test on a subject, bottle and serve', async ({ pag
   await shot(page, info, 'vial');
   // the batch was tested, so the bottle labelled itself (vitality tested) and shows it at once
   expect(await lab(page, (l) => l.state.vial.label && l.state.vial.label.claims.vitality.source)).toBe('trial');
-  await expect(page.locator('.label-line').first()).toContainText('(tested)');
+  await expect(page.locator('.label-line').first()).toContainText('(tested');
   await page.click('[data-act=label]');
   await expect(page.locator('.label-rows')).toBeVisible();
   await expect(page.locator('.label-row.relevant .src.trial').first()).toBeVisible();
