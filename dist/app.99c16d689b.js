@@ -3368,11 +3368,16 @@ const MEMORIAL_LIMIT = 24;
 const LEVEL_AT = [8, 30, 60];
 const TRAIT_AT = [20, 50, 90, 140, 200];
 const DEGEN_AT = 70;
+const MARK_MAX = 100;
 const LETHAL = ['toxicity', 'death', 'acid', 'alkali', 'fire', 'frost'];
-const FERAL = ['vitality', 'strength', 'love', 'arcana', 'transformation'];
+const AGGRO = ['vitality', 'strength', 'arcana', 'transformation'];
+const FERAL = AGGRO;
+const AGGRO_AT = 60;
+const LOVE_MATE = 25;
+const MATE_EVERY = [60, 3];
 const MARK_TAU = 600;
 const MAX_BONUS = 150;
-const DEGEN_RISE = 0.6;
+const DEGEN_RISE = 0.25;
 const ATTACK_EVERY = [9, 4];
 const TRAITS = ['ears2', 'horns', 'antlers', 'unihorn', 'scales', 'spines', 'tail-lizard', 'tail-plume', 'giant', 'tiny', 'eye3', 'wings'];
 const TRAIT_EXCLUSIVE = [['giant', 'tiny'], ['horns', 'antlers', 'unihorn'], ['tail-lizard', 'tail-plume']];
@@ -3449,12 +3454,37 @@ return Math.round(base * (stageOf(r, day) === 'elder' && Number.isFinite(day) ? 
 function degenOf(r) {
 return Array.isArray(r && r.degen) ? r.degen : [];
 }
-function isFeral(r) {
-return !!r && r.alive !== false && degenOf(r).some((k) => FERAL.includes(k));
+const trait = (r, salt, key) => new Rng(hashString(`${salt}:${r.id}:${r.look ? r.look.seed : 0}:${key}`)).gauss();
+function degenAt(r, key) {
+return Math.round(clamp(DEGEN_AT + 13 * trait(r, 'degen', key), 42, 95));
 }
+function degenRate(r, key) {
+return Math.round(DEGEN_RISE * clamp(Math.exp(0.55 * trait(r, 'rise', key)), 0.3, 3) * 1000) / 1000;
+}
+function aggroAt(r, key) {
+if (!AGGRO.includes(key)) return Infinity;
+return Math.round(clamp(AGGRO_AT + 16 * trait(r, 'aggro', key), 30, 95));
+}
+function aggroOf(r) {
+if (!r || r.alive === false || !r.marks) return [];
+return AGGRO.filter((k) => (r.marks[k] || 0) >= aggroAt(r, k)).sort((p, q) => (r.marks[q] - aggroAt(r, q)) - (r.marks[p] - aggroAt(r, p)));
+}
+function isFeral(r) {
+return aggroOf(r).length > 0;
+}
+function mateEvery(love) {
+if (!(love >= LOVE_MATE)) return Infinity;
+const t = clamp((love - LOVE_MATE) / (MARK_MAX - LOVE_MATE), 0, 1);
+return MATE_EVERY[0] * (MATE_EVERY[1] / MATE_EVERY[0]) ** t;
+}
+function mateCost(love) {
+const t = clamp((love - LOVE_MATE) / (MARK_MAX - LOVE_MATE), 0, 1);
+return 0.5 + 6 * t * t;
+}
+const RABBIT_BIAS = 0.08;
 function rabbitSensitivity(r, key) {
 const rng = new Rng(hashString(`sens:${r.id}:${r.look ? r.look.seed : 0}:${key}`));
-return Math.round(clamp(Math.exp(0.18 * rng.gauss()), 0.6, 1.6) * 1000) / 1000;
+return Math.round(clamp(Math.exp(RABBIT_BIAS * rng.gauss()), 0.6, 1.6) * 1000) / 1000;
 }
 function rabbitSnap(r, day) {
 const mk = r.marks || {}, ex = r.exposure || {};
@@ -3476,13 +3506,13 @@ preg: !!r.pregnant && alive,
 lv, sc,
 traits: Array.isArray(r.traits) ? r.traits.slice() : [],
 cause: !alive ? (r.cause || 'unknown') : null,
-dg, ag: dg.some((k) => FERAL.includes(k)),
+dg, ag: alive && isFeral(r),
 };
 }
 const STAGE_CH = { kit: 'k', young: 'y', adult: 'a', elder: 'e' };
 const CH_STAGE = { k: 'kit', y: 'young', a: 'adult', e: 'elder' };
 function encodeSnap(s) {
-const dg = s.dg && s.dg.length ? `|${s.dg.join(',')}` : '';
+const dg = (s.dg && s.dg.length) || s.ag ? `|${(s.dg || []).join(',')}|${s.ag ? 'a' : '0'}` : '';
 return `${STAGE_CH[s.stage] || 'a'}${s.hp}${s.alive ? 1 : 0}${s.preg ? 1 : 0}|${s.lv.join('')}|${s.sc.join('')}|${s.traits.join(',')}|${s.cause || ''}${dg}`;
 }
 function defaultSnap() {
@@ -3502,9 +3532,10 @@ const dg = p[5] ? p[5].split(',').filter((k) => MARK_INDEX[k] !== undefined) : [
 return {
 stage, hp: /** @type {0|1|2|3} */ (hp >= 0 && hp <= 3 ? hp : 0), alive: p[0][2] === '1', preg: p[0][3] === '1', lv, sc: sc.slice(0, 5),
 traits: p[3] ? p[3].split(',').filter((t) => TRAITS.includes(t)) : [], cause: p[4] || null,
-dg, ag: dg.some((k) => FERAL.includes(k)),
+dg, ag: p[6] !== undefined ? p[6] === 'a' : dg.some((k) => LEGACY_FERAL.includes(k)),
 };
 }
+const LEGACY_FERAL = ['vitality', 'strength', 'love', 'arcana', 'transformation'];
 const NAMES = ['Clover', 'Bramble', 'Hazel', 'Juniper', 'Pip', 'Thistle', 'Willow', 'Sorrel', 'Barley', 'Fennel', 'Nettle', 'Poppy', 'Rowan', 'Sage',
 'Tansy', 'Teasel', 'Bryony', 'Campion', 'Dill', 'Elder', 'Flax', 'Gorse', 'Heather', 'Ivy', 'Kale', 'Lovage', 'Mallow', 'Nutmeg', 'Oats', 'Parsley', 'Quince',
 'Radish', 'Saffron', 'Tarragon', 'Umber', 'Vetch', 'Wren', 'Yarrow', 'Acorn', 'Basil', 'Cobnut', 'Dandelion', 'Eyebright', 'Foxglove', 'Ginger', 'Hops', 'Iris', 'Jasmine'];
@@ -3523,7 +3554,7 @@ newRabbit({ id: 'r2', name: 'Bramble', sex: 'm', born: FOUNDER_BORN, look: bramb
 function newRabbit(o) {
 return {
 id: o.id, name: o.name, sex: o.sex, born: o.born, look: o.look, parents: o.parents || null,
-health: 100, bonus: 0, alive: true, trials: 0, marks: emptyMarks(), exposure: emptyMarks(), scar: 0, traits: [], degen: [], cd: 0,
+health: 100, bonus: 0, alive: true, trials: 0, marks: emptyMarks(), exposure: emptyMarks(), scar: 0, traits: [], degen: [], cd: 0, mc: 0,
 doses: [], dosesDropped: 0, pregnant: null, diedDay: null, cause: null,
 };
 }
@@ -3591,7 +3622,7 @@ unihorn: 'A single spiral horn grows from its forehead!', scales: 'Its haunches 
 'tail-lizard': 'Its tail stretches into a scaly lizard tail!', 'tail-plume': 'Its tail blooms into a long feathery plume!', giant: 'It swells to twice its size!',
 tiny: 'It shrinks to the size of a kitten!', eye3: 'A third eye opens on its forehead!', wings: 'Little membrane wings unfold from its shoulders!',
 };
-const CAUSE_OF = { toxicity: 'poison', death: 'death', fire: 'fire', frost: 'frost', acid: 'acid', alkali: 'alkali', transformation: 'change', arcana: 'arcana' };
+const CAUSE_OF = { toxicity: 'poison', death: 'death', fire: 'fire', frost: 'frost', acid: 'acid', alkali: 'alkali', transformation: 'change', arcana: 'arcana', vitality: 'growth', strength: 'strain', love: 'love' };
 const DEGEN_LINES = {
 toxicity: 'The poison has taken hold: it is spreading through its blood on its own!',
 death: 'The grey pallor deepens by itself — death magic is eating it from within!',
@@ -3599,11 +3630,17 @@ acid: 'The burns keep spreading: its own body is turning to acid!',
 alkali: 'The lye crust keeps growing, cracking deeper into its skin!',
 fire: 'It is smouldering from the inside — the heat keeps rising!',
 frost: 'The cold has reached its heart and keeps spreading!',
-vitality: 'Wild growth: it swells, ravenous and restless — and bares its teeth at the others!',
-strength: 'Its muscles keep swelling; it starts shoving and biting the others!',
-love: 'Its devotion curdles into jealous fury — it goes for the other rabbits!',
-arcana: 'The magic in it runs wild: sparks lash out at the colony!',
-transformation: 'The change will not stop — it twists into something feral and attacks!',
+vitality: 'Wild growth: it keeps swelling on its own, ravenous and restless!',
+strength: 'Its muscles keep swelling on their own, straining its heart!',
+love: 'Its passion will not cool: it chases the others to mate, faster and faster!',
+arcana: 'The magic in it runs wild and keeps building!',
+transformation: 'The change will not stop — it keeps twisting into something new!',
+};
+const AGGRO_LINES = {
+vitality: 'Bursting with wild vigour, it bares its teeth at the others!',
+strength: 'Swollen with strength, it starts shoving and biting the others!',
+arcana: 'Sparks lash out of it at the other rabbits!',
+transformation: 'Something feral wakes in it — it goes for the others!',
 };
 const partners = (t) => TRAIT_EXCLUSIVE.filter((g) => g.includes(t)).flat().filter((x) => x !== t);
 function growTraits(r, e0, e1, applied) {
@@ -3627,6 +3664,7 @@ const r = normalizeRabbit(JSON.parse(JSON.stringify(before || {})), before && be
 const obs = [];
 const say = (key, tone, text) => obs.push({ key, tone, text });
 if (!r.alive) return { after: r, observations: [{ key: '', tone: /** @type {'neutral'} */ ('neutral'), text: `${r.name || 'The rabbit'} is dead. Choose or buy another rabbit.` }], harm: 0, applied: {}, react: [], newTraits: [], cause: r.cause };
+const wasAggro = aggroOf(r);
 const stage = stageOf(r, o.day);
 const x = Math.min(2.5, Math.max(0, ml) / 10);
 const s = (STAGE_SENS[stage] || 1) / (r.look.size || 1) * (r.traits.includes('giant') ? 0.85 : 1) * (r.traits.includes('tiny') ? 1.2 : 1);
@@ -3671,6 +3709,8 @@ maxHealth = maxHealthOf(r, o.day);
 }
 r.health = round1(clamp(health + heal, 0, maxHealth));
 r.alive = r.health > 0.5;
+const topped = RABBIT_MARKS.filter((k) => m[k] >= MARK_MAX).sort((p, q) => a[q] - a[p])[0];
+if (r.alive && topped) { r.alive = false; r.health = 0; hurt[topped] = (hurt[topped] || 0) + 1000; }
 const big = (v) => v > 20;
 if (a.vitality > 1) say('vitality', 'good', grow > 0.5 ? 'Already in full health, it grows hardier still.' : big(a.vitality) ? 'Its coat gleams; it bounds about full of life.' : 'It looks refreshed.');
 if (a.strength > 1) say('strength', 'good', big(a.strength) ? 'Its haunches swell with muscle; it shoves at the bars.' : 'It moves with new strength.');
@@ -3687,12 +3727,15 @@ const newTraits = growTraits(r, e0, r.exposure.transformation, a);
 for (const t of newTraits) say('transformation', 'neutral', TRAIT_LINES[t]);
 const degen = r.alive ? startDegeneration(r) : [];
 for (const k of degen) say(k === 'acid' || k === 'alkali' ? 'acidity' : k, 'bad', DEGEN_LINES[k]);
+const angry = r.alive ? aggroOf(r).filter((k) => !wasAggro.includes(k)) : [];
+if (angry.length && !wasAggro.length) { say(angry[0], 'bad', AGGRO_LINES[angry[0]]); if (!(r.cd > 0)) r.cd = 3; }
+if (r.alive && a.love > 1 && m.love >= LOVE_MATE && !(r.mc > 0)) r.mc = Math.min(mateEvery(m.love), 8);
 if (!r.alive) {
 const worst = Object.entries(hurt).sort((p, q) => q[1] - p[1])[0];
 r.cause = worst && worst[1] > 0 ? CAUSE_OF[worst[0]] : 'frail';
 r.diedDay = Number.isFinite(o.day) ? o.day : null;
 r.pregnant = null;
-say('', 'bad', r.cause === 'fire' ? 'It collapses in a smouldering heap.' : r.cause === 'frost' ? 'It freezes stiff and topples over.' : r.cause === 'poison' ? 'It convulses, then lies still.' : 'It collapses and does not get up.');
+say('', 'bad', r.cause === 'fire' ? 'It collapses in a smouldering heap.' : r.cause === 'frost' ? 'It freezes stiff and topples over.' : r.cause === 'poison' ? 'It convulses, then lies still.' : r.cause === 'love' ? 'Its heart gives out in a frenzy of passion.' : 'It collapses and does not get up.');
 }
 if (!obs.length) say('', 'neutral', 'No visible change.');
 r.trials++;
@@ -3702,13 +3745,12 @@ return { after: r, observations: obs, harm, applied: a, react, newTraits, degen,
 function startDegeneration(r) {
 const out = [];
 for (const k of RABBIT_MARKS) {
-if (r.marks[k] >= DEGEN_AT && !r.degen.includes(k)) { r.degen.push(k); out.push(k); }
+if (r.marks[k] >= degenAt(r, k) && !r.degen.includes(k)) { r.degen.push(k); out.push(k); }
 }
-if (out.some((k) => FERAL.includes(k)) && !(r.cd > 0)) r.cd = 3;
 return out;
 }
 function colonyTick(c, dt, o = {}) {
-const rep = { died: [], attacks: [], degen: [], traits: [] };
+const rep = { died: [], attacks: [], degen: [], traits: [], mates: [] };
 if (!(dt > 0)) return rep;
 const rng = new Rng(hashString(`${o.seed ?? c.seed}:tick:${c.ticks || 0}`));
 c.ticks = (c.ticks || 0) + 1;
@@ -3721,16 +3763,19 @@ rep.died.push({ id: r.id, name: r.name, cause, ...(by ? { by } : {}) });
 for (const r of c.rabbits) {
 if (!r.alive) continue;
 const dg = degenOf(r);
-let drain = 0;
+let drain = 0, topped = null;
 for (const k of RABBIT_MARKS) {
 if (dg.includes(k)) {
-r.marks[k] = round1(Math.min(100, r.marks[k] + DEGEN_RISE * dt));
+const v = r.marks[k];
+r.marks[k] = round1(Math.min(MARK_MAX, v + degenRate(r, k) * (0.6 + 0.8 * v / MARK_MAX) * dt));
+if (r.marks[k] >= MARK_MAX && !topped) topped = k;
 if (LETHAL.includes(k)) drain += (0.4 + 1.6 * r.marks[k] / 100) * dt;
 } else {
 const v = r.marks[k] * fade;
 r.marks[k] = v < 0.3 ? 0 : Math.round(v * 100) / 100;
 }
 }
+if (topped) { die(r, CAUSE_OF[topped] || 'poison'); continue; }
 if (dg.includes('vitality')) r.bonus = round1(Math.min(MAX_BONUS, (r.bonus || 0) + 0.25 * dt));
 if (dg.includes('transformation')) {
 const e0 = r.exposure.transformation;
@@ -3749,11 +3794,12 @@ continue;
 if (r.health > max) r.health = max;
 }
 for (const r of c.rabbits) {
-if (!isFeral(r)) continue;
+const angry = aggroOf(r);
+if (!angry.length) { if (r.alive) r.cd = 0; continue; }
 r.cd = (r.cd || 0) - dt;
 if (r.cd > 0) continue;
-const fury = Math.max(...degenOf(r).filter((k) => FERAL.includes(k)).map((k) => r.marks[k]));
-const t = clamp((fury - DEGEN_AT) / (100 - DEGEN_AT), 0, 1);
+const fury = Math.max(...angry.map((k) => r.marks[k]));
+const t = clamp(Math.max(...angry.map((k) => (r.marks[k] - aggroAt(r, k)) / Math.max(1, MARK_MAX - aggroAt(r, k)))), 0, 1);
 r.cd = round1((ATTACK_EVERY[0] + (ATTACK_EVERY[1] - ATTACK_EVERY[0]) * t) * rng.range(0.8, 1.25));
 const prey = c.rabbits.filter((x) => x.alive && x.id !== r.id);
 if (!prey.length) continue;
@@ -3765,6 +3811,35 @@ const killed = v.health <= 0.5;
 rep.attacks.push({ from: r.id, to: v.id, fromName: r.name, toName: v.name, dmg, killed });
 if (killed) die(v, 'mauled', r.name);
 }
+let living = c.rabbits.filter((x) => x.alive).length;
+let pending = 2 * c.rabbits.filter((x) => x.alive && x.pregnant).length;
+for (const r of c.rabbits) {
+if (!r.alive) continue;
+const love = r.marks.love || 0;
+if (love < LOVE_MATE) { r.mc = 0; continue; }
+r.mc = (r.mc || mateEvery(love)) - dt;
+if (r.mc > 0) continue;
+r.mc = round1(Math.max(0.5, mateEvery(love) * rng.range(0.8, 1.2)));
+const others = c.rabbits.filter((x) => x.alive && x.id !== r.id && stageOf(x, day) !== 'kit');
+if (!others.length) continue;
+const mates = others.filter((x) => x.sex !== r.sex);
+const p = rng.pick(mates.length ? mates : others);
+let conceived = false;
+if (p.sex !== r.sex) {
+const doe = r.sex === 'f' ? r : p, buck = r.sex === 'f' ? p : r;
+const room = !Number.isFinite(o.cap) || living + pending < /** @type {number} */ (o.cap);
+if (!doe.pregnant && stageOf(doe, day) !== 'kit' && room && rng.chance(0.35)) {
+doe.pregnant = { sire: buck.id, due: (Number.isFinite(day) ? /** @type {number} */ (day) : c.day || 0) + GESTATION_DAYS };
+pending += 2;
+conceived = true;
+}
+}
+r.health = round1(r.health - mateCost(love) * rng.range(0.8, 1.2));
+p.health = round1(p.health - 0.5);
+rep.mates.push({ from: r.id, to: p.id, fromName: r.name, toName: p.name, conceived });
+if (r.health <= 0.5) { die(r, 'love'); living--; }
+if (p.alive && p.health <= 0.5) { die(p, 'love'); living--; }
+}
 return rep;
 }
 function purgeRabbit(r) {
@@ -3772,11 +3847,12 @@ if (!r || !r.alive) return false;
 for (const k of RABBIT_MARKS) r.marks[k] = 0;
 r.degen = [];
 r.cd = 0;
+r.mc = 0;
 return true;
 }
 function cullRabbit(r, day) {
 if (!r || !r.alive) return false;
-r.alive = false; r.health = 0; r.cause = 'culled'; r.diedDay = Number.isFinite(day) ? day : null; r.pregnant = null; r.degen = []; r.cd = 0;
+r.alive = false; r.health = 0; r.cause = 'culled'; r.diedDay = Number.isFinite(day) ? day : null; r.pregnant = null; r.degen = []; r.cd = 0; r.mc = 0;
 return true;
 }
 function colonyDay(c, o) {
@@ -3868,7 +3944,7 @@ id: r.id, name: r.name, sex: r.sex, look: r.look, exposure: { ...r.exposure }, c
 stage: /** @type {any} */ (r).stage || stageOf(r, r.diedDay ?? day), traits: r.traits.slice(), diedDay: r.diedDay ?? null,
 };
 }
-const CAUSE_WORDS = { culled: 'put down', mauled: 'mauled by a feral rabbit', poison: 'poisoned', death: 'withered by death magic', fire: 'burned', frost: 'frozen', acid: 'eaten by acid', alkali: 'scalded by lye', change: 'torn apart by change', arcana: 'overwhelmed by magic', age: 'died of old age', frail: 'too frail', unknown: 'died' };
+const CAUSE_WORDS = { culled: 'put down', mauled: 'mauled by an aggressive rabbit', love: 'worn out by love', growth: 'burst with wild growth', strain: 'its heart gave out from the strain', poison: 'poisoned', death: 'withered by death magic', fire: 'burned', frost: 'frozen', acid: 'eaten by acid', alkali: 'scalded by lye', change: 'torn apart by change', arcana: 'overwhelmed by magic', age: 'died of old age', frail: 'too frail', unknown: 'died' };
 function causeWord(cause) {
 return CAUSE_WORDS[cause || 'unknown'] || 'died';
 }
@@ -3879,7 +3955,7 @@ w.push(`dead — ${causeWord(r.cause)}${Number.isFinite(r.diedDay) ? ` (day ${r.
 } else {
 const h = 100 * r.health / Math.max(1, maxHealthOf(r, day));
 w.push(h >= 75 ? 'healthy' : h >= 40 ? 'weakened' : h >= 10 ? 'very weak' : 'near death');
-if (isFeral(r)) w.push('FERAL');
+if (isFeral(r)) w.push('AGGRESSIVE');
 else if (degenOf(r).length) w.push('degenerating');
 if ((r.bonus || 0) >= 10) w.push(r.bonus >= 60 ? 'hale beyond nature' : 'extra hardy');
 if (r.scar >= 20) w.push(r.scar >= 50 ? 'badly scarred' : 'scarred');
@@ -3936,7 +4012,7 @@ id, name: typeof d.name === 'string' && d.name ? d.name : 'Clover', sex: d.sex =
 born: fin(d.born, FOUNDER_BORN), look: normalizeLook(d.look, id), parents: Array.isArray(d.parents) ? d.parents.filter((p) => typeof p === 'string').slice(0, 2) : null,
 health: clamp(fin(d.health, 100), 0, 100 + MAX_BONUS), bonus: clamp(fin(d.bonus, 0), 0, MAX_BONUS), alive, trials: Math.max(0, fin(d.trials, 0) | 0),
 marks: normalizeMarks(d.marks), exposure: normalizeMarks(d.exposure), scar, traits,
-degen: alive && Array.isArray(d.degen) ? [...new Set(d.degen.filter((k) => MARK_INDEX[k] !== undefined))] : [], cd: Math.max(0, fin(d.cd, 0)),
+degen: alive && Array.isArray(d.degen) ? [...new Set(d.degen.filter((k) => MARK_INDEX[k] !== undefined))] : [], cd: Math.max(0, fin(d.cd, 0)), mc: Math.max(0, fin(d.mc, 0)),
 doses: (Array.isArray(d.doses) ? d.doses : []).filter((x) => x && typeof x.rec === 'string').map((x) => ({
 rec: x.rec, day: fin(x.day, 0) | 0, ml: Math.max(0, fin(x.ml, 0)), src: x.src === 'vial' ? 'vial' : 'cauldron', obs: typeof x.obs === 'string' ? x.obs : '', ...(x.died ? { died: 1 } : {}),
 })).slice(-DOSE_LIMIT),
@@ -4030,13 +4106,13 @@ if (!f.alive) { f.pregnant = null; f.cause = f.cause || 'unknown'; if (f.diedDay
 });
 return trials;
 }
-return { RABBIT_MARKS, MARK_INDEX, KIT_DAYS, ADULT_DAYS, ELDER_DAYS, LIFESPAN_DAYS, FOUNDER_BORN, GESTATION_DAYS, DOSE_LIMIT, MEMORIAL_LIMIT, LEVEL_AT, TRAIT_AT, DEGEN_AT, LETHAL, FERAL, MARK_TAU, MAX_BONUS, DEGEN_RISE, ATTACK_EVERY, TRAITS, TRAIT_EXCLUSIVE, TRAIT_WORDS, COATS, rollLook, inheritLook, lookFromSeed, visibleLevel, stageOf, maxHealthOf, degenOf, isFeral, rabbitSensitivity, rabbitSnap, encodeSnap, defaultSnap, decodeSnap, NAMES, createColony, findRabbit, livingRabbits, bodies, focusRabbit, pickName, makeRabbit, addBoughtRabbit, recordDose, related, STAGE_ERR, MARK_DECAY, rabbitResponse, colonyTick, purgeRabbit, cullRabbit, colonyDay, retireRabbit, trimMemorial, remainsSource, causeWord, rabbitCondition, normalizeRabbit, normalizeColony, installRabbitAlias };
+return { RABBIT_MARKS, MARK_INDEX, KIT_DAYS, ADULT_DAYS, ELDER_DAYS, LIFESPAN_DAYS, FOUNDER_BORN, GESTATION_DAYS, DOSE_LIMIT, MEMORIAL_LIMIT, LEVEL_AT, TRAIT_AT, DEGEN_AT, MARK_MAX, LETHAL, AGGRO, FERAL, AGGRO_AT, LOVE_MATE, MATE_EVERY, MARK_TAU, MAX_BONUS, DEGEN_RISE, ATTACK_EVERY, TRAITS, TRAIT_EXCLUSIVE, TRAIT_WORDS, COATS, rollLook, inheritLook, lookFromSeed, visibleLevel, stageOf, maxHealthOf, degenOf, degenAt, degenRate, aggroAt, aggroOf, isFeral, mateEvery, mateCost, RABBIT_BIAS, rabbitSensitivity, rabbitSnap, encodeSnap, defaultSnap, decodeSnap, NAMES, createColony, findRabbit, livingRabbits, bodies, focusRabbit, pickName, makeRabbit, addBoughtRabbit, recordDose, related, STAGE_ERR, MARK_DECAY, rabbitResponse, colonyTick, purgeRabbit, cullRabbit, colonyDay, retireRabbit, trimMemorial, remainsSource, causeWord, rabbitCondition, normalizeRabbit, normalizeColony, installRabbitAlias };
 })();
 // src/game/experiments.js
 const __m27 = (() => {
 const { EFFECTS, EFFECT_KEYS, EFFECT_INDEX, NE, potencyWord } = __m13;
 const { Rng, hashString } = __m6;
-const { createColony, normalizeColony, installRabbitAlias, rabbitResponse, findRabbit, focusRabbit, recordDose, rabbitSnap, encodeSnap, stageOf, addBoughtRabbit, STAGE_ERR, rabbitSensitivity } = __m28;
+const { createColony, normalizeColony, installRabbitAlias, rabbitResponse, findRabbit, focusRabbit, recordDose, rabbitSnap, encodeSnap, stageOf, addBoughtRabbit, STAGE_ERR, rabbitSensitivity, RABBIT_BIAS } = __m28;
 const SUBJECTS = [
 { id: 'rabbit', name: 'Moon Rabbit', kind: 'animal', reveals: EFFECT_KEYS.slice(), cost: 6,
 desc: 'A Moon Rabbit of your colony. It shows every effect — each one a little differently.' },
@@ -4050,7 +4126,8 @@ const RETIRED = [
 const SUBJECT_BY_ID = Object.fromEntries([...SUBJECTS, ...RETIRED].map((s) => [s.id, s]));
 const RECORD_LIMIT = 160;
 const DOSES = [5, 10, 25];
-const DOSE_NOISE = 0.1;
+const DOSE_NOISE = 0.16;
+const READ_NOISE = 0.4;
 function driftTolerance(v) {
 return Math.max(3, 0.15 * Math.abs(v));
 }
@@ -4079,11 +4156,12 @@ const v = Number(effects[k]) || 0;
 const g1 = rng.gauss(), g2 = rng.gauss();
 if (Math.abs(v) < 0.3) continue;
 const f = rabbitSensitivity(rabbit, EFFECT_KEYS[k]) * Math.max(0.3, 1 + DOSE_NOISE * errK * g1);
-out[k] = v * f + 0.4 * errK * g2;
+out[k] = v * f + READ_NOISE * errK * g2;
 if (Math.sign(out[k]) !== Math.sign(v)) out[k] = 0;
 }
 return out;
 }
+const doseErr = (ml) => Math.round(Math.sqrt(10 / Math.max(1, Number(ml) || 10)) * 1000) / 1000;
 function summarize(samples) {
 /** @type {Record<string, number>} */ const values = {};
 /** @type {Record<string, number>} */ const spread = {};
@@ -4093,12 +4171,18 @@ function summarize(samples) {
 for (const [key, list] of Object.entries(samples || {})) {
 if (!Array.isArray(list) || !list.length) continue;
 const mean = list.reduce((a, s) => a + s.v, 0) / list.length;
-const nr = new Set(list.map((s) => s.r)).size;
-const sd = list.length > 1 ? Math.sqrt(list.reduce((a, s) => a + (s.v - mean) ** 2, 0) / (list.length - 1)) : 0;
-const model = (0.18 * Math.abs(mean)) / Math.sqrt(nr) + (0.1 * Math.abs(mean) + 0.5) / Math.sqrt(list.length);
+const N = list.length;
+const per = {};
+for (const s of list) per[s.r] = (per[s.r] || 0) + 1;
+const nr = Object.keys(per).length;
+const sd = N > 1 ? Math.sqrt(list.reduce((a, s) => a + (s.v - mean) ** 2, 0) / (N - 1)) : 0;
+const am = Math.abs(mean);
+const bias = RABBIT_BIAS * am * Math.sqrt(Object.values(per).reduce((a, c) => a + c * c, 0)) / N;
+const noise = Math.sqrt(list.reduce((a, s) => { const e = s.e || 1; return a + (DOSE_NOISE * e * am) ** 2 + (READ_NOISE * e + 0.3) ** 2; }, 0)) / N;
+const model = Math.sqrt(bias * bias + noise * noise);
 const m = Math.round(mean * 10) / 10;
 values[key] = Math.abs(m) < 0.5 ? 0 : m;
-spread[key] = Math.round(Math.max(0.5, model, sd / Math.sqrt(list.length)) * 10) / 10;
+spread[key] = Math.round(Math.max(0.5, model, sd / Math.sqrt(N)) * 10) / 10;
 n[key] = list.length;
 rabbits[key] = nr;
 records[key] = list[list.length - 1].rec;
@@ -4108,7 +4192,7 @@ return { values, spread, n, rabbits, records };
 function addSamples(samples, rec) {
 for (const key of rec.revealed || []) {
 if (rec.values[key] === undefined) continue;
-(samples[key] ||= []).push({ v: rec.values[key], r: rec.rabbitId || rec.subjectId, rec: rec.id });
+(samples[key] ||= []).push({ v: rec.values[key], r: rec.rabbitId || rec.subjectId, rec: rec.id, e: doseErr(rec.ml) });
 }
 return samples;
 }
@@ -4132,7 +4216,7 @@ const k = EFFECT_INDEX[key];
 const val = Math.round(felt[k] * 10) / 10;
 values[key] = Math.abs(val) < 0.5 ? 0 : val;
 tv[key] = Math.round((Number(dose.effects[k]) || 0) * 10) / 10;
-err[key] = Math.round(Math.sqrt((0.2 * Math.abs(values[key])) ** 2 + (DOSE_NOISE * errK * Math.abs(values[key])) ** 2 + (0.4 * errK) ** 2) * 10) / 10;
+err[key] = Math.round(Math.sqrt((RABBIT_BIAS * Math.abs(values[key])) ** 2 + (DOSE_NOISE * errK * Math.abs(values[key])) ** 2 + (READ_NOISE * errK) ** 2) * 10) / 10;
 theory[key] = Math.round((ctx.theory?.[k] ?? 0) * 10) / 10;
 if (Math.abs(values[key] - theory[key]) > Math.max(4, 0.35 * Math.abs(theory[key]))) anomalies.push(key);
 }
@@ -4183,7 +4267,7 @@ for (const key of r.revealed) {
 if (r.values[key] === undefined) continue;
 const ref = r.tv && r.tv[key] !== undefined ? r.tv[key] : r.values[key];
 if (current && Math.abs(current[EFFECT_INDEX[key]] - ref) > driftTolerance(ref)) { stale.add(key); continue; }
-(samples[key] ||= []).push({ v: r.values[key], r: r.rabbitId || r.subjectId, rec: r.id });
+(samples[key] ||= []).push({ v: r.values[key], r: r.rabbitId || r.subjectId, rec: r.id, e: doseErr(r.ml) });
 }
 }
 for (const k of Object.keys(samples)) stale.delete(k);
@@ -4206,7 +4290,7 @@ function describeReading(key, v) {
 const e = EFFECTS[EFFECT_INDEX[key]];
 return `${e.label} ${Math.round(v)} (${potencyWord(v, key)})`;
 }
-return { SUBJECTS, SUBJECT_BY_ID, RECORD_LIMIT, DOSES, DOSE_NOISE, driftTolerance, createTrials, normalizeTrials, rabbitReading, summarize, addSamples, runTrial, resetSubject, certification, requiredEffects, missingEffects, suggestSubjects, knownLaws, describeReading };
+return { SUBJECTS, SUBJECT_BY_ID, RECORD_LIMIT, DOSES, DOSE_NOISE, READ_NOISE, driftTolerance, createTrials, normalizeTrials, rabbitReading, doseErr, summarize, addSamples, runTrial, resetSubject, certification, requiredEffects, missingEffects, suggestSubjects, knownLaws, describeReading };
 })();
 // src/game/gathering.js
 const __m29 = (() => {
@@ -8236,9 +8320,10 @@ if (c.still) {
 c.still = round1(c.still - dt);
 if (c.still <= 0) { c.still = null; c.purges = (c.purges || 0) + 1; events.push({ type: 'purge-brewed' }); }
 }
-const rep = colonyTick(c, dt, { day: this.day, seed: this.seed });
+const rep = colonyTick(c, dt, { day: this.day, seed: this.seed, cap: this.cap.hutch });
 for (const d of rep.died) events.push({ type: 'rabbit-died', ...d });
 for (const a of rep.attacks) events.push({ type: 'attack', ...a });
+for (const m of rep.mates) events.push({ type: 'mate', ...m });
 for (const t of rep.traits) events.push({ type: 'trait', ...t });
 return { rep, events };
 }
@@ -13446,6 +13531,16 @@ const side = a.x < v.x ? -1 : 1;
 this._hopTo(a, this._roam(v.x + side * 10, v.y), 3, true);
 }
 }
+mate(fromId, toId) {
+const a = this.actors.get(String(fromId)), v = this.actors.get(String(toId));
+if (!v || v.hidden) return;
+const b = this._box(v);
+this.clashes.push({ x: Math.round((b.x0 + b.x1) / 2), y: Math.round(b.y0), t: 0, love: true });
+if (a && a.alive && !a.hidden && a.act !== 'collapse' && a.act !== 'frozen') {
+const side = a.x < v.x ? -1 : 1;
+this._hopTo(a, this._roam(v.x + side * 7, v.y), 2, true);
+}
+}
 poke(id, channels = []) {
 const a = this.actors.get(String(id));
 if (!a || !a.alive || a.act === 'collapse' || a.act === 'frozen') return;
@@ -13475,6 +13570,14 @@ R(ctx, hx - 4, y, 2, 1, on ? '#ff3a2a' : '#a8241a'); R(ctx, hx + 3, y, 2, 1, on 
 R(ctx, hx - 3, y - 1, 1, 1, '#ff3a2a'); R(ctx, hx + 3, y - 1, 1, 1, '#ff3a2a');
 }
 for (const c of this.clashes) {
+if (c.love) {
+for (let i = 0; i < 2; i++) {
+const hx = c.x - 3 + i * 6, hy = Math.round(c.y - 2 - c.t * 10 - i * 2);
+const col = c.t < 0.5 ? '#ff5a8a' : '#c8306a';
+R(ctx, hx, hy, 1, 1, col); R(ctx, hx + 2, hy, 1, 1, col); R(ctx, hx - 1 + 1, hy + 1, 3, 1, col); R(ctx, hx + 1, hy + 2, 1, 1, col);
+}
+continue;
+}
 const k = c.t < 0.45 ? '#ff3a2a' : '#a8241a';
 for (let i = 0; i < 3; i++) for (let j = 0; j < 5; j++) R(ctx, c.x - 4 + i * 3 + j, c.y - 3 + j, 1, 1, j === 2 ? '#fff0e0' : k);
 if (c.t < 0.3) for (let i = 0; i < 6; i++) R(ctx, c.x + Math.round(Math.cos(i) * (4 + c.t * 20)), c.y + Math.round(Math.sin(i * 1.7) * (3 + c.t * 10)), 1, 1, '#f6ead0');
@@ -13675,7 +13778,7 @@ const { audio } = __m4;
 const { drawRabbit, RABBIT_W, RABBIT_H } = __m65;
 const { HutchScene, HUTCH_W, HUTCH_H } = __m67;
 const { EFFECT_BY_KEY } = __m13;
-const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral, RABBIT_MARKS, DEGEN_AT, LETHAL, TRAIT_WORDS } = __m28;
+const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral, RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE } = __m28;
 const { PURGE_BREW_TIME } = __m5;
 const STAGE_WORD = { kit: 'kit', young: 'youngster', adult: 'adult', elder: 'elder' };
 const CHANNELS = RABBIT_MARKS.map((k) => {
@@ -13709,7 +13812,7 @@ const fed = c.fedDay === st.day;
 const feral = live.filter((r) => isFeral(r));
 el.append(h('div', { class: 'row wrap hutch-head' },
 icon('rabbit'), h('b', { text: 'The hutch' }), h('span', { class: 'small muted', text: `${live.length} of ${cap} places` }),
-feral.length ? h('span', { class: 'feral-warn small' }, icon('claw', 'sm'), ` ${feral.map((r) => r.name).join(', ')} gone feral!`) : null));
+feral.length ? h('span', { class: 'feral-warn small' }, icon('claw', 'sm'), ` ${feral.map((r) => r.name).join(', ')} attacking the others!`) : null));
 const manage = [h('div', { class: 'hutch-actions' },
 btn(price ? `Buy · ${price}` : 'Buy', () => this.buy(), { icon: 'plus', act: 'colony-buy', disabled: full || (!lab.sandbox && st.coins < price), title: full ? `The hutch is full (${cap} places): upgrade it at the guild.` : 'Buy an adult rabbit from the breeder' }),
 btn(fed ? 'Fed' : lab.sandbox ? 'Feed' : `Feed · ${st.feedCost()}`, () => this.feed(), { icon: 'leaf', act: 'colony-feed', disabled: fed || !live.length, title: 'Hay and greens: they recover faster and pair up more readily tonight' }),
@@ -13799,15 +13902,19 @@ actions.push(btn('History', () => this.history(r), { icon: 'scroll', act: 'rabbi
 const hpFill = h('i'), hpText = h('span', { class: 'small hp-text' });
 this.d.hp = hpFill; this.d.hpText = hpText;
 const bars = {};
-const grid = h('div', { class: 'status-bars', role: 'list', 'aria-label': 'What the potions have left in it' });
+const grid = h('div', { class: 'status-bars', role: 'list', 'aria-label': `Effects active in ${r.name}` });
 for (const ch of CHANNELS) {
 const fill = h('i', { style: { background: rgb(ch.color) } });
-const row = h('div', { class: 'sb', role: 'listitem', title: `${ch.label}: past the tick it degenerates` },
-icon(ch.icon, 'sm'), h('span', { class: 'sb-k', text: ch.label }), h('span', { class: 'sb-bar' }, fill, h('b', { class: 'sb-tick', style: { left: DEGEN_AT + '%' } })));
-bars[ch.key] = { fill, row };
+const val = h('span', { class: 'sb-v' });
+const row = h('div', { class: 'sb', role: 'listitem', title: `${ch.label} active in ${r.name}. Somewhere along this bar — only this rabbit knows where — it starts running out of control.` },
+icon(ch.icon, 'sm'), h('span', { class: 'sb-k', text: ch.label }), h('span', { class: 'sb-bar' }, fill), val);
+bars[ch.key] = { fill, row, val };
 grid.append(row);
 }
 this.d.bars = bars;
+const effects = h('div', { class: 'rd-effects' },
+h('div', { class: 'row rd-effects-head' }, h('b', { class: 'small', text: `Active in ${r.name}` }), h('span', { class: 'spacer' }), h('span', { class: 'small muted', text: 'its limits are hidden' })),
+grid);
 const out = h('div', { class: 'rabbit-detail' + (isFeral(r) ? ' feral' : '') },
 h('div', { class: 'rd-top' },
 portrait,
@@ -13816,7 +13923,7 @@ h('div', { class: 'rd-title' }, h('b', { text: r.name }), h('span', { class: 'sm
 h('div', { class: 'small', text: words.join(' · ') }),
 r.alive ? h('div', { class: 'rd-hp' }, icon('heart', 'sm'), h('span', { class: 'bar hp big' }, hpFill), hpText) : null,
 h('div', { class: 'small muted', text: `${r.trials} trial${r.trials === 1 ? '' : 's'}${parents.length ? ` · child of ${parents.join(' and ')}` : ''}` }))),
-r.alive ? grid : null,
+r.alive ? effects : null,
 h('div', { class: 'row wrap rd-actions' }, ...actions));
 return out;
 }
@@ -13842,9 +13949,10 @@ const dg = degenOf(r);
 for (const [k, b] of Object.entries(this.d.bars)) {
 const v = Math.max(0, Math.min(100, r.marks[k] || 0));
 b.fill.style.width = v.toFixed(1) + '%';
+b.val.textContent = v < 0.5 ? '—' : `${Math.round(v)}%`;
 b.row.classList.toggle('degen', dg.includes(k));
 b.row.classList.toggle('lethal', dg.includes(k) && LETHAL.includes(k));
-b.row.classList.toggle('near', !dg.includes(k) && v >= DEGEN_AT * 0.75);
+b.row.classList.toggle('mating', k === 'love' && v >= LOVE_MATE);
 b.row.classList.toggle('zero', v < 0.5);
 }
 }
@@ -13902,12 +14010,12 @@ const res = this.st.purgeRabbit(r.id, this.lab.sandbox);
 if (!res.ok) { toast('No purge', res.reason, 'purge'); audio.play('error'); return; }
 audio.play('glass');
 this.view.rreact[r.id] = 1;
-toast(`${r.name} is purged`, 'Every potion effect washes out of it; anything degenerating has stopped. What grew for good stays.', 'purge', 3500);
+toast(`${r.name} is purged`, 'Every potion effect washes out of it; anything degenerating has stopped, and so has any aggression or frenzy. What grew for good stays.', 'purge', 3500);
 this.after();
 }
 async cull(r) {
 const feral = isFeral(r);
-if (!await confirmDialog(`Put ${r.name} down?`, feral ? `${r.name} has gone feral and is attacking the colony. The body stays: recover its remains or bury it.` : 'It dies at once. The body stays: recover its remains or bury it.', 'Put down', 'danger')) return;
+if (!await confirmDialog(`Put ${r.name} down?`, feral ? `${r.name} is aggressive and is attacking the colony. The body stays: recover its remains or bury it.` : 'It dies at once. The body stays: recover its remains or bury it.', 'Put down', 'danger')) return;
 const res = this.st.cullRabbit(r.id);
 if (!res.ok) { toast('Cannot', res.reason, 'knife'); return; }
 audio.play('toll');
@@ -14034,13 +14142,14 @@ build() {
 const lab = this.lab, st = lab.state;
 const el = clear(this.el);
 this.head = h('div', { class: 'trials-head card parch' });
+this.expect = h('div', { class: 'card parch estimate-card', 'data-role': 'estimate' });
 this.status = h('div', { class: 'trials-status small' });
 this.dropper = h('div', { class: 'dropper', role: 'button', tabindex: '0', 'aria-label': 'Dropper: drag onto a rabbit to give it the dose' }, icon('dropper', 'lg'), h('span', { class: 'small', text: 'Drag' }));
 this.bindDropper();
 this.report = h('div', { class: 'trial-report' });
-el.append(this.head, this.status, this.hutch.el, this.report);
+el.append(this.head, this.expect, this.status, this.hutch.el, this.report);
 this.cards = { rabbit: { card: this.hutch.el } };
-if (!lab.sandbox && st.firstTip('farm')) toast('The rabbit farm', 'Test on several different rabbits: each one feels a potion a little differently. Too much in one rabbit and the effect runs out of control.', 'rabbit', 7000);
+if (!lab.sandbox && st.firstTip('farm')) toast('The rabbit farm', 'Every trial narrows the estimate. Testing one rabbit again keeps the others clean, but the effect piles up in it — and nobody knows how much it can take.', 'rabbit', 7000);
 this.refresh();
 }
 select(id) {
@@ -14084,19 +14193,11 @@ h('span', { class: 'small muted', text: `Vial: ${Math.round(st.vial.ml)} ml of $
 btn('Pour back', () => lab.pourBackVial(), { icon: 'pour', act: 'trials-pour-back', title: 'Return the rest of the vial to the cauldron' }),
 btn('Discard', () => { lab.discardVial(); this.refresh(); }, { icon: 'trash', cls: 'danger', act: 'trials-discard' })));
 }
-const status = clear(this.status);
 const cert = this.estimate();
-const known = Object.entries(cert.values);
 const com = st.current;
 const need = com ? missingEffects(com, cert.values) : [];
-status.append(h('div', { class: 'row wrap' },
-h('b', { text: src === 'vial' ? 'This vial: ' : 'This batch: ' }),
-known.length ? known.filter(([, v]) => v !== 0).map(([k, v]) => h('span', { class: 'fx-chip', title: `${EFFECT_BY_KEY[k].label}: ${cert.n[k]} reading${cert.n[k] === 1 ? '' : 's'} on ${cert.rabbits[k]} rabbit${cert.rabbits[k] === 1 ? '' : 's'}` }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(v)} ±${Math.max(1, Math.round(cert.spread[k] || 0))}`)) : h('span', { class: 'muted', text: 'effects unknown — nothing tested yet' }),
-known.length && known.every(([, v]) => v === 0) ? h('span', { class: 'muted', text: 'no effect seen' }) : null));
-if (known.length) {
-const nr = Math.max(...Object.values(cert.rabbits));
-status.append(h('div', { class: nr >= 3 ? 'ok small' : 'warn small', text: nr >= 3 ? `Estimated from ${nr} different rabbits.` : `Only ${nr} rabbit${nr === 1 ? '' : 's'} tested: each one reads a potion a little differently — test on others before you trust it.` }));
-}
+this.renderExpected(cert);
+const status = clear(this.status);
 if (cert.changed && src === 'cauldron') status.append(h('div', { class: 'warn small', text: 'Earlier trials of this batch are outdated: you added ingredients since.' }));
 if (cert.stale.length) status.append(h('div', { class: 'warn small', text: `The brew has changed since it was tested (${cert.stale.map((k) => EFFECT_BY_KEY[k].label).join(', ')}): reactions, heat or settling. Test again.` }));
 if (com && need.length) {
@@ -14106,6 +14207,46 @@ status.append(h('div', { class: 'ok small', text: 'Every effect the order asks a
 }
 this.hutch.render();
 this.renderReport();
+}
+theoryOf() {
+const lab = this.lab, st = lab.state;
+try {
+const t = this.source === 'vial' && st.vial ? lab.vialTheory(st.vial) : lab.theory();
+return t ? Object.fromEntries(EFFECT_KEYS.map((k) => [k, Number(t[EFFECT_INDEX[k]]) || 0])) : null;
+} catch { return null; }
+}
+renderExpected(cert) {
+const el = clear(this.expect);
+const vial = this.source === 'vial';
+const th = this.theoryOf();
+const tested = EFFECT_KEYS.filter((k) => cert.values[k] !== undefined);
+const shown = tested.filter((k) => cert.values[k] !== 0 || (cert.spread[k] || 0) > 1);
+const trials = tested.length ? Math.max(...tested.map((k) => cert.n[k] || 0)) : 0;
+const rabbits = tested.length ? Math.max(...tested.map((k) => cert.rabbits[k] || 0)) : 0;
+el.append(h('div', { class: 'row' }, icon('scales'), h('b', { text: vial ? 'Expected effects of this vial' : 'Expected effects of this batch' }), h('span', { class: 'spacer' }),
+trials ? h('span', { class: 'small muted', text: `${trials} trial${trials === 1 ? '' : 's'} · ${rabbits} rabbit${rabbits === 1 ? '' : 's'}` }) : null));
+if (!tested.length) {
+el.append(h('div', { class: 'small muted', text: 'Unknown — nothing tested yet. Give a rabbit a dose to start the estimate.' }));
+return;
+}
+const rows = h('div', { class: 'reading-rows' });
+for (const k of shown) {
+const e = EFFECT_BY_KEY[k], v = cert.values[k], sp = Math.max(1, Math.round(cert.spread[k] || 0));
+const lo = Math.max(0, Math.abs(v) - sp), hi = Math.min(100, Math.abs(v) + sp);
+const t = th ? th[k] : undefined;
+rows.appendChild(h('div', { class: 'reading', 'data-effect': k, title: `${e.label}: ${cert.n[k]} reading${cert.n[k] === 1 ? '' : 's'} on ${cert.rabbits[k]} rabbit${cert.rabbits[k] === 1 ? '' : 's'}${t !== undefined ? ` · theory ${Math.round(t)}%` : ''}` },
+icon(e.icon, 'sm'), h('span', { class: 'rk', text: e.label }),
+h('div', { class: 'rbar' },
+h('i', { class: 'range', style: { left: lo + '%', width: Math.max(1, hi - lo) + '%', background: rgb(e.color) } }),
+t !== undefined && Math.abs(t) >= 0.5 ? h('i', { class: 'th theory', style: { left: Math.min(100, Math.abs(t)) + '%' } }) : null,
+h('i', { class: 'th mean', style: { left: Math.min(100, Math.abs(v)) + '%' } })),
+h('span', { class: 'rv', text: `${Math.round(v)}% ±${sp} · ${potencyWord(v, k)}` })));
+}
+if (shown.length) el.append(rows);
+const none = tested.filter((k) => !shown.includes(k));
+if (none.length) el.append(h('div', { class: 'small muted quiet' }, shown.length ? 'Not seen: ' : 'No effect seen: ', ...none.map((k) => icon(EFFECT_BY_KEY[k].icon, 'sm'))));
+el.append(h('div', { class: 'small muted est-foot', text: 'Band: where the true strength likely lies. Each trial narrows it — other rabbits narrow it fastest. Labels use the mean.' }));
+if (rabbits <= 1 && trials >= 2) el.append(h('div', { class: 'warn small', text: 'All on one rabbit: the others stay clean, but the effect piles up in it — and nobody knows how much it can take before it runs out of control.' }));
 }
 estimate() {
 const lab = this.lab, st = lab.state;
@@ -14117,55 +14258,22 @@ const lab = this.lab, st = lab.state;
 const r = this.last || st.trials.records[0];
 const el = clear(this.report);
 if (!r) {
-el.append(h('div', { class: 'card parch small', text: 'A mixture’s effects are unknown until you test it. You know what each plain ingredient does — but mixing, heat and reactions change things. Choose a rabbit and give it a dose; then test other rabbits too, because each one reads a potion a little differently.' }));
+el.append(h('div', { class: 'card parch small', text: 'A mixture’s effects are unknown until you test it. You know what each plain ingredient does — but mixing, heat and reactions change things. Choose a rabbit and give it a dose; every further trial — on it or on others — narrows the estimate.' }));
 return;
 }
 const subj = SUBJECT_BY_ID[r.subjectId] || SUBJECT_BY_ID.rabbit;
-const rows = h('div', { class: 'reading-rows' });
-const quiet = [];
-for (const key of r.revealed) {
-const e = EFFECT_BY_KEY[key];
-const v = r.values[key], th = r.theory[key] ?? 0;
-if (v === 0 && Math.abs(th) < 0.5 && !r.anomalies.includes(key)) { quiet.push(e); continue; }
-const anomaly = r.anomalies.includes(key);
-const width = (x) => Math.min(100, Math.abs(x)) + '%';
-const err = r.err && r.err[key] !== undefined ? Math.max(1, Math.round(r.err[key])) : 0;
-rows.appendChild(h('div', { class: 'reading' + (anomaly ? ' anomaly' : ''), title: e.desc },
-icon(e.icon, 'sm'), h('span', { class: 'rk', text: e.label }),
-h('div', { class: 'rbar' }, h('i', { class: 'obs', style: { width: width(v), background: rgb(e.color) } }), h('i', { class: 'th', style: { left: width(th) } })),
-h('span', { class: 'rv', text: v === 0 ? 'none' : `${Math.round(v)}${err ? ` ±${err}` : ''} · ${potencyWord(v, key)}` })));
-}
 const laws = r.lawsFound.map((id) => (st.world.laws || []).find((l) => l.id === id)).filter(Boolean);
 const who = r.rabbitName ? r.rabbitName : subj.name;
 const body = r.rabbitId ? findRabbit(st.colony, r.rabbitId) : null;
 el.append(h('div', { class: 'card parch report' },
 h('div', { class: 'row' }, icon('dropper'), h('b', { text: `Trial ${r.serial}: ${who}` }), h('span', { class: 'spacer' }), h('span', { class: 'small muted', text: `${r.ml} ml from the ${r.source === 'vial' ? 'vial' : 'tap'}` })),
 h('ul', { class: 'obs-list' }, ...r.observations.map((o) => h('li', { class: 'tone-' + o.tone, text: o.text }))),
-rows,
-quiet.length ? h('div', { class: 'small muted quiet' }, 'Nothing seen: ', ...quiet.map((e) => icon(e.icon, 'sm'))) : null,
-h('div', { class: 'small muted', text: 'Bar: what this rabbit showed (± how far one reading can be off). Tick: what the guild’s theory predicts. One rabbit’s reading is biased by its own nature: average several rabbits.' }),
+h('div', { class: 'small muted', text: 'This reading has gone into the expected effects above.' }),
 r.anomalies.length ? h('div', { class: 'warn small', text: `Unexpected: ${r.anomalies.map((k) => EFFECT_BY_KEY[k].label).join(', ')} differs from theory. Something in this mixture interacts — repeat with variations to find out what.` }) : null,
 ...laws.map((L) => h('div', { class: 'law-found' }, icon('star'), h('div', {}, h('b', { text: `Law discovered: ${L.name}` }), h('div', { class: 'small', text: L.lore + ' Your theory now accounts for it.' })))),
 r.died ? h('div', { class: 'bad small', text: `${who} did not survive. ${body ? 'The body stays in the hutch: recover its remains or bury it.' : ''} A potion that kills a rabbit should not be sold as a remedy.` }) : null,
 r.replay ? h('div', { class: 'row' }, btn('Replay', () => this.startReplay(r), { icon: 'eye', act: 'replay-trial', title: 'Watch this trial again — nothing is used up' })) : null,
 ));
-const cert = this.estimate();
-const keys = EFFECT_KEYS.filter((k) => cert.values[k] !== undefined && (cert.values[k] !== 0 || (cert.spread[k] || 0) > 1));
-if (keys.length) {
-const est = h('div', { class: 'reading-rows' });
-for (const k of keys) {
-const e = EFFECT_BY_KEY[k], v = cert.values[k], s = cert.spread[k] || 0;
-const lo = Math.max(0, Math.abs(v) - s), hi = Math.min(100, Math.abs(v) + s);
-est.appendChild(h('div', { class: 'reading', title: `${cert.n[k]} reading${cert.n[k] === 1 ? '' : 's'} on ${cert.rabbits[k]} rabbit${cert.rabbits[k] === 1 ? '' : 's'}` },
-icon(e.icon, 'sm'), h('span', { class: 'rk', text: e.label }),
-h('div', { class: 'rbar' }, h('i', { class: 'range', style: { left: lo + '%', width: Math.max(1, hi - lo) + '%', background: rgb(e.color) } }), h('i', { class: 'th mean', style: { left: Math.min(100, Math.abs(v)) + '%' } })),
-h('span', { class: 'rv', text: `${Math.round(v)} ±${Math.max(1, Math.round(s))} · ${cert.rabbits[k]} rabbit${cert.rabbits[k] === 1 ? '' : 's'}` })));
-}
-el.append(h('div', { class: 'card parch estimate' },
-h('div', { class: 'row' }, icon('scales'), h('b', { text: this.source === 'vial' ? 'Vial estimate' : 'Batch estimate' })),
-est,
-h('div', { class: 'small muted', text: 'The mean of every trial of this brew. The band narrows as you test more different rabbits; the label you sell with uses this mean.' })));
-}
 }
 test(id = 'rabbit') {
 void id;
@@ -14205,7 +14313,7 @@ this.replay = null;
 this.rreact[rabbit.id] = 1;
 this.hutch.poke(rabbit.id, record.replay && record.replay.rx ? record.replay.rx.split(',') : []);
 audio.play(record.died ? 'toll' : record.observations.some((o) => o.tone === 'bad') ? 'thump' : 'squeak');
-if (record.degen && record.degen.length && !record.died) toast(`${rabbit.name} is degenerating!`, 'An effect has piled up past what its body can hold and is running out of control. Purge it — or put it down before it is too late.', 'claw', 6000);
+if (record.degen && record.degen.length && !record.died) toast(`${rabbit.name} is degenerating!`, 'An effect has piled up past what its body can hold and keeps rising on its own until it kills it. Purge it — or put it down.', 'skull', 6000);
 for (const e of events) {
 if (e.type === 'law') { toast(`Law discovered: ${e.name}`, e.lore, 'star', 6000); audio.play('fanfare'); }
 else if (e.type === 'rabbit-died') toast(`${e.name} died`, 'The body stays in the hutch. Recover its remains — once — or bury it.', 'skull', 5000);
@@ -14235,14 +14343,17 @@ colonyEvents(events) {
 if (!events.length) return;
 let rebuild = false;
 for (const e of events) {
-if (e.type === 'attack') {
+if (e.type === 'mate') {
+this.hutch.scene.mate && this.hutch.scene.mate(e.from, e.to);
+if (e.conceived) rebuild = true;
+} else if (e.type === 'attack') {
 this.hutch.scene.attack && this.hutch.scene.attack(e.from, e.to);
 this.rreact[e.to] = 1;
 if (this.lab.view === 'trials') audio.play('thump');
 if (e.killed) rebuild = true;
 } else if (e.type === 'rabbit-died') {
 rebuild = true;
-toast(`${e.name} died`, e.by ? `${e.by} mauled ${e.name} to death. Put the feral rabbit down or purge it before it kills again.` : `The degeneration ran its course. The body stays in the hutch.`, 'skull', 5000);
+toast(`${e.name} died`, e.by ? `${e.by} mauled ${e.name} to death. Put the aggressive rabbit down or purge it before it kills again.` : e.cause === 'love' ? `${e.name} wore itself out with love. The body stays in the hutch.` : `The degeneration ran its course. The body stays in the hutch.`, 'skull', 5000);
 audio.play('toll');
 } else if (e.type === 'trait') rebuild = true;
 else if (e.type === 'purge-brewed') { toast('A purging draught is ready', 'The still has finished brewing.', 'purge', 2500); rebuild = true; }
@@ -15814,7 +15925,7 @@ this.views.trials.colonyEvents(events);
 this.updateBadges();
 if (this.view !== 'trials') {
 const att = events.filter((e) => e.type === 'attack');
-if (att.length && this.time - (this._feralWarned || -99) > 20) { this._feralWarned = this.time; toast('Trouble in the hutch', `${att[0].fromName} has gone feral and is attacking ${att[0].toName}!`, 'claw', 4500); }
+if (att.length && this.time - (this._feralWarned || -99) > 20) { this._feralWarned = this.time; toast('Trouble in the hutch', `${att[0].fromName} has turned aggressive and is attacking ${att[0].toName}!`, 'claw', 4500); }
 }
 }
 }

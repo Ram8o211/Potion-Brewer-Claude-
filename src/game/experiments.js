@@ -2,12 +2,14 @@
 // test subjects. A mixture's effects are hidden; the way to learn them is to
 // give a real dose — drawn from the cauldron tap or split off a sealed
 // vial — to a rabbit and read what it does. A rabbit shows every effect, but
-// no reading is exact: each rabbit feels each effect a little more or less
-// than the next (colony.js rabbitSensitivity, a hidden lifelong bias) and
-// every dose varies a little too. One reading is a rough guess; several
-// rabbits averaged make an estimate worth selling on. Dosing the same
-// rabbit again does not remove its bias — and piles the effect up in it
-// until it degenerates.
+// no reading is exact: every dose varies (DOSE_NOISE) and each rabbit feels
+// each effect a little more or less than the next (colony.js
+// rabbitSensitivity, a small hidden lifelong bias). One reading is a rough
+// guess; the estimate narrows with every trial. Trials on the same rabbit
+// keep the rest of the colony clean and still narrow it (down to that
+// rabbit's own small bias), but the effect piles up in that rabbit towards
+// a degeneration threshold nobody can see; trials on different rabbits
+// narrow it fastest.
 //
 // Certification: a batch (one filling of the cauldron) is known for an
 // effect once trials of *this batch, unchanged since* read it; the estimate
@@ -20,7 +22,7 @@ import { EFFECTS, EFFECT_KEYS, EFFECT_INDEX, NE, potencyWord } from '../alchemy/
 import { Rng, hashString } from '../core/rng.js';
 import {
   createColony, normalizeColony, installRabbitAlias, rabbitResponse, findRabbit, focusRabbit, recordDose,
-  rabbitSnap, encodeSnap, stageOf, addBoughtRabbit, STAGE_ERR, rabbitSensitivity,
+  rabbitSnap, encodeSnap, stageOf, addBoughtRabbit, STAGE_ERR, rabbitSensitivity, RABBIT_BIAS,
 } from './colony.js';
 
 /**
@@ -51,7 +53,9 @@ export const SUBJECT_BY_ID = Object.fromEntries([...SUBJECTS, ...RETIRED].map((s
 export const RECORD_LIMIT = 160;
 export const DOSES = [5, 10, 25];
 /** Per-dose variation of a reading (relative, one sigma, for an adult and 10 ml). */
-export const DOSE_NOISE = 0.1;
+export const DOSE_NOISE = 0.16;
+/** Absolute per-dose variation of a reading (one sigma, for an adult and 10 ml). */
+export const READ_NOISE = 0.4;
 
 /** Absolute/relative tolerance for "the brew still matches the trial". */
 export function driftTolerance(v) {
@@ -104,18 +108,24 @@ export function rabbitReading(rabbit, effects, o) {
     const g1 = rng.gauss(), g2 = rng.gauss();
     if (Math.abs(v) < 0.3) continue;
     const f = rabbitSensitivity(rabbit, EFFECT_KEYS[k]) * Math.max(0.3, 1 + DOSE_NOISE * errK * g1);
-    out[k] = v * f + 0.4 * errK * g2;
+    out[k] = v * f + READ_NOISE * errK * g2;
     if (Math.sign(out[k]) !== Math.sign(v)) out[k] = 0;
   }
   return out;
 }
 
-/** @typedef {{v:number, r:string, rec:string}} Sample one reading: value, rabbit id, record id */
+/** @typedef {{v:number, r:string, rec:string, e?:number}} Sample one reading: value, rabbit id, record id, noise factor of its dose (√(10 ml / dose), 1 if absent) */
+
+/** Noise factor of a dose of `ml`. @param {number} ml */
+export const doseErr = (ml) => Math.round(Math.sqrt(10 / Math.max(1, Number(ml) || 10)) * 1000) / 1000;
 
 /**
  * Pool readings into an estimate per effect: the mean, how sure it is (±,
- * shrinking with more readings and, above all, more different rabbits), the
- * number of readings and of rabbits, and the newest record behind it.
+ * one sigma), the number of readings and of rabbits, and the newest record
+ * behind it. The ± shrinks with every reading: the dose-to-dose noise
+ * averages out over all of them, the rabbits' own biases only over
+ * different rabbits — so readings piled on one rabbit level off at that
+ * rabbit's bias, and spreading them over the colony narrows it fastest.
  * @param {Record<string, Sample[]>} samples
  */
 export function summarize(samples) {
@@ -127,12 +137,19 @@ export function summarize(samples) {
   for (const [key, list] of Object.entries(samples || {})) {
     if (!Array.isArray(list) || !list.length) continue;
     const mean = list.reduce((a, s) => a + s.v, 0) / list.length;
-    const nr = new Set(list.map((s) => s.r)).size;
-    const sd = list.length > 1 ? Math.sqrt(list.reduce((a, s) => a + (s.v - mean) ** 2, 0) / (list.length - 1)) : 0;
-    const model = (0.18 * Math.abs(mean)) / Math.sqrt(nr) + (0.1 * Math.abs(mean) + 0.5) / Math.sqrt(list.length);
+    const N = list.length;
+    /** @type {Record<string, number>} */
+    const per = {};
+    for (const s of list) per[s.r] = (per[s.r] || 0) + 1;
+    const nr = Object.keys(per).length;
+    const sd = N > 1 ? Math.sqrt(list.reduce((a, s) => a + (s.v - mean) ** 2, 0) / (N - 1)) : 0;
+    const am = Math.abs(mean);
+    const bias = RABBIT_BIAS * am * Math.sqrt(Object.values(per).reduce((a, c) => a + c * c, 0)) / N;
+    const noise = Math.sqrt(list.reduce((a, s) => { const e = s.e || 1; return a + (DOSE_NOISE * e * am) ** 2 + (READ_NOISE * e + 0.3) ** 2; }, 0)) / N;
+    const model = Math.sqrt(bias * bias + noise * noise);
     const m = Math.round(mean * 10) / 10;
     values[key] = Math.abs(m) < 0.5 ? 0 : m;
-    spread[key] = Math.round(Math.max(0.5, model, sd / Math.sqrt(list.length)) * 10) / 10;
+    spread[key] = Math.round(Math.max(0.5, model, sd / Math.sqrt(N)) * 10) / 10;
     n[key] = list.length;
     rabbits[key] = nr;
     records[key] = list[list.length - 1].rec;
@@ -144,7 +161,7 @@ export function summarize(samples) {
 export function addSamples(samples, rec) {
   for (const key of rec.revealed || []) {
     if (rec.values[key] === undefined) continue;
-    (samples[key] ||= []).push({ v: rec.values[key], r: rec.rabbitId || rec.subjectId, rec: rec.id });
+    (samples[key] ||= []).push({ v: rec.values[key], r: rec.rabbitId || rec.subjectId, rec: rec.id, e: doseErr(rec.ml) });
   }
   return samples;
 }
@@ -206,7 +223,7 @@ export function runTrial(trials, subjectId, dose, ctx) {
     const val = Math.round(felt[k] * 10) / 10;
     values[key] = Math.abs(val) < 0.5 ? 0 : val;
     tv[key] = Math.round((Number(dose.effects[k]) || 0) * 10) / 10;
-    err[key] = Math.round(Math.sqrt((0.2 * Math.abs(values[key])) ** 2 + (DOSE_NOISE * errK * Math.abs(values[key])) ** 2 + (0.4 * errK) ** 2) * 10) / 10;
+    err[key] = Math.round(Math.sqrt((RABBIT_BIAS * Math.abs(values[key])) ** 2 + (DOSE_NOISE * errK * Math.abs(values[key])) ** 2 + (READ_NOISE * errK) ** 2) * 10) / 10;
     theory[key] = Math.round((ctx.theory?.[k] ?? 0) * 10) / 10;
     if (Math.abs(values[key] - theory[key]) > Math.max(4, 0.35 * Math.abs(theory[key]))) anomalies.push(key);
   }
@@ -272,7 +289,7 @@ export function certification(trials, batch, current) {
       if (r.values[key] === undefined) continue;
       const ref = r.tv && r.tv[key] !== undefined ? r.tv[key] : r.values[key];
       if (current && Math.abs(current[EFFECT_INDEX[key]] - ref) > driftTolerance(ref)) { stale.add(key); continue; }
-      (samples[key] ||= []).push({ v: r.values[key], r: r.rabbitId || r.subjectId, rec: r.id });
+      (samples[key] ||= []).push({ v: r.values[key], r: r.rabbitId || r.subjectId, rec: r.id, e: doseErr(r.ml) });
     }
   }
   for (const k of Object.keys(samples)) stale.delete(k);

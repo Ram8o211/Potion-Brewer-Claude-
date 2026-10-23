@@ -36,7 +36,7 @@ test('a trial doses the chosen rabbit only, and records who, how sure, and a rep
   // kits read less precisely
   const kitRec = (() => { const s2 = GameState.create('colony-1b', { tutorial: false }); const k = findRabbit(s2.colony, 'r1'); k.born = s2.day; return s2.recordTrial('rabbit', dose({ vitality: 12 }), ctx(s2)).record; })();
   const adultRec = GameState.create('colony-1c', { tutorial: false }).recordTrial('rabbit', dose({ vitality: 12 }), ctx(GameState.create('colony-1c', { tutorial: false }))).record;
-  assert.ok(kitRec.err.vitality > adultRec.err.vitality);
+  assert.ok(kitRec.err.vitality / kitRec.values.vitality > adultRec.err.vitality / adultRec.values.vitality, 'relative to what they read');
 });
 
 test('the hutch: rabbits cost coins, the kennel and warren make room; a full hutch refuses', () => {

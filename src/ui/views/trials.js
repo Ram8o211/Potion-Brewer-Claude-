@@ -1,11 +1,14 @@
 // The trials room is the rabbit farm: every test is a real, measured dose of
 // the brew (or of a sealed vial) given to one of the colony's Moon Rabbits,
-// right where they live. A rabbit shows every effect, but each one feels a
-// potion a little differently and every dose varies, so one reading is only
-// a rough guess: the batch estimate pools every trial of the batch and
-// narrows as more *different* rabbits are tested. Dosing the same rabbit
-// again piles the effect up in it until it degenerates. Any trial can be
-// replayed on the chosen rabbit's portrait without spending a drop.
+// right where they live. Every dose reads a little differently and each
+// rabbit feels a potion a little more or less than the next, so one reading
+// is only a rough guess. One section shows what the brew is expected to do:
+// every effect as a percentage with its uncertainty, pooled from every
+// trial of the batch, narrowing with each new trial — on the same rabbit
+// (which keeps the others clean, but piles the effect up in it towards a
+// degeneration threshold that is hidden and its own) or on others (which
+// narrows it fastest). Any trial can be replayed on the chosen rabbit's
+// portrait without spending a drop.
 
 import { h, btn, clear, toast } from '../dom.js';
 import { icon } from '../icons.js';
@@ -64,13 +67,14 @@ export class TrialsView {
     const lab = this.lab, st = lab.state;
     const el = clear(this.el);
     this.head = h('div', { class: 'trials-head card parch' });
+    this.expect = h('div', { class: 'card parch estimate-card', 'data-role': 'estimate' });
     this.status = h('div', { class: 'trials-status small' });
     this.dropper = h('div', { class: 'dropper', role: 'button', tabindex: '0', 'aria-label': 'Dropper: drag onto a rabbit to give it the dose' }, icon('dropper', 'lg'), h('span', { class: 'small', text: 'Drag' }));
     this.bindDropper();
     this.report = h('div', { class: 'trial-report' });
-    el.append(this.head, this.status, this.hutch.el, this.report);
+    el.append(this.head, this.expect, this.status, this.hutch.el, this.report);
     this.cards = { rabbit: { card: this.hutch.el } };
-    if (!lab.sandbox && st.firstTip('farm')) toast('The rabbit farm', 'Test on several different rabbits: each one feels a potion a little differently. Too much in one rabbit and the effect runs out of control.', 'rabbit', 7000);
+    if (!lab.sandbox && st.firstTip('farm')) toast('The rabbit farm', 'Every trial narrows the estimate. Testing one rabbit again keeps the others clean, but the effect piles up in it — and nobody knows how much it can take.', 'rabbit', 7000);
     this.refresh();
   }
 
@@ -121,20 +125,12 @@ export class TrialsView {
         btn('Pour back', () => lab.pourBackVial(), { icon: 'pour', act: 'trials-pour-back', title: 'Return the rest of the vial to the cauldron' }),
         btn('Discard', () => { lab.discardVial(); this.refresh(); }, { icon: 'trash', cls: 'danger', act: 'trials-discard' })));
     }
-    // ---- what this batch is known to do
-    const status = clear(this.status);
+    // ---- what this batch is expected to do (the one estimate section)
     const cert = this.estimate();
-    const known = Object.entries(cert.values);
     const com = st.current;
     const need = com ? missingEffects(com, cert.values) : [];
-    status.append(h('div', { class: 'row wrap' },
-      h('b', { text: src === 'vial' ? 'This vial: ' : 'This batch: ' }),
-      known.length ? known.filter(([, v]) => v !== 0).map(([k, v]) => h('span', { class: 'fx-chip', title: `${EFFECT_BY_KEY[k].label}: ${cert.n[k]} reading${cert.n[k] === 1 ? '' : 's'} on ${cert.rabbits[k]} rabbit${cert.rabbits[k] === 1 ? '' : 's'}` }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(v)} ±${Math.max(1, Math.round(cert.spread[k] || 0))}`)) : h('span', { class: 'muted', text: 'effects unknown — nothing tested yet' }),
-      known.length && known.every(([, v]) => v === 0) ? h('span', { class: 'muted', text: 'no effect seen' }) : null));
-    if (known.length) {
-      const nr = Math.max(...Object.values(cert.rabbits));
-      status.append(h('div', { class: nr >= 3 ? 'ok small' : 'warn small', text: nr >= 3 ? `Estimated from ${nr} different rabbits.` : `Only ${nr} rabbit${nr === 1 ? '' : 's'} tested: each one reads a potion a little differently — test on others before you trust it.` }));
-    }
+    this.renderExpected(cert);
+    const status = clear(this.status);
     if (cert.changed && src === 'cauldron') status.append(h('div', { class: 'warn small', text: 'Earlier trials of this batch are outdated: you added ingredients since.' }));
     if (cert.stale.length) status.append(h('div', { class: 'warn small', text: `The brew has changed since it was tested (${cert.stale.map((k) => EFFECT_BY_KEY[k].label).join(', ')}): reactions, heat or settling. Test again.` }));
     if (com && need.length) {
@@ -144,6 +140,55 @@ export class TrialsView {
     }
     this.hutch.render();
     this.renderReport();
+  }
+
+  /** What the guild's theory predicts for the source, by effect key (or null). */
+  theoryOf() {
+    const lab = this.lab, st = lab.state;
+    try {
+      const t = this.source === 'vial' && st.vial ? lab.vialTheory(st.vial) : lab.theory();
+      return t ? Object.fromEntries(EFFECT_KEYS.map((k) => [k, Number(t[EFFECT_INDEX[k]]) || 0])) : null;
+    } catch { return null; }
+  }
+
+  /**
+   * The one section that says what the brew does: each effect's expected
+   * strength (the mean of every trial of it) with its uncertainty band, which
+   * narrows with every trial, on the same rabbit or on others.
+   * @param {any} cert
+   */
+  renderExpected(cert) {
+    const el = clear(this.expect);
+    const vial = this.source === 'vial';
+    const th = this.theoryOf();
+    const tested = EFFECT_KEYS.filter((k) => cert.values[k] !== undefined);
+    const shown = tested.filter((k) => cert.values[k] !== 0 || (cert.spread[k] || 0) > 1);
+    const trials = tested.length ? Math.max(...tested.map((k) => cert.n[k] || 0)) : 0;
+    const rabbits = tested.length ? Math.max(...tested.map((k) => cert.rabbits[k] || 0)) : 0;
+    el.append(h('div', { class: 'row' }, icon('scales'), h('b', { text: vial ? 'Expected effects of this vial' : 'Expected effects of this batch' }), h('span', { class: 'spacer' }),
+      trials ? h('span', { class: 'small muted', text: `${trials} trial${trials === 1 ? '' : 's'} · ${rabbits} rabbit${rabbits === 1 ? '' : 's'}` }) : null));
+    if (!tested.length) {
+      el.append(h('div', { class: 'small muted', text: 'Unknown — nothing tested yet. Give a rabbit a dose to start the estimate.' }));
+      return;
+    }
+    const rows = h('div', { class: 'reading-rows' });
+    for (const k of shown) {
+      const e = EFFECT_BY_KEY[k], v = cert.values[k], sp = Math.max(1, Math.round(cert.spread[k] || 0));
+      const lo = Math.max(0, Math.abs(v) - sp), hi = Math.min(100, Math.abs(v) + sp);
+      const t = th ? th[k] : undefined;
+      rows.appendChild(h('div', { class: 'reading', 'data-effect': k, title: `${e.label}: ${cert.n[k]} reading${cert.n[k] === 1 ? '' : 's'} on ${cert.rabbits[k]} rabbit${cert.rabbits[k] === 1 ? '' : 's'}${t !== undefined ? ` · theory ${Math.round(t)}%` : ''}` },
+        icon(e.icon, 'sm'), h('span', { class: 'rk', text: e.label }),
+        h('div', { class: 'rbar' },
+          h('i', { class: 'range', style: { left: lo + '%', width: Math.max(1, hi - lo) + '%', background: rgb(e.color) } }),
+          t !== undefined && Math.abs(t) >= 0.5 ? h('i', { class: 'th theory', style: { left: Math.min(100, Math.abs(t)) + '%' } }) : null,
+          h('i', { class: 'th mean', style: { left: Math.min(100, Math.abs(v)) + '%' } })),
+        h('span', { class: 'rv', text: `${Math.round(v)}% ±${sp} · ${potencyWord(v, k)}` })));
+    }
+    if (shown.length) el.append(rows);
+    const none = tested.filter((k) => !shown.includes(k));
+    if (none.length) el.append(h('div', { class: 'small muted quiet' }, shown.length ? 'Not seen: ' : 'No effect seen: ', ...none.map((k) => icon(EFFECT_BY_KEY[k].icon, 'sm'))));
+    el.append(h('div', { class: 'small muted est-foot', text: 'Band: where the true strength likely lies. Each trial narrows it — other rabbits narrow it fastest. Labels use the mean.' }));
+    if (rabbits <= 1 && trials >= 2) el.append(h('div', { class: 'warn small', text: 'All on one rabbit: the others stay clean, but the effect piles up in it — and nobody knows how much it can take before it runs out of control.' }));
   }
 
   /** The pooled estimate of the source being tested (batch or vial). */
@@ -158,56 +203,22 @@ export class TrialsView {
     const r = this.last || st.trials.records[0];
     const el = clear(this.report);
     if (!r) {
-      el.append(h('div', { class: 'card parch small', text: 'A mixture’s effects are unknown until you test it. You know what each plain ingredient does — but mixing, heat and reactions change things. Choose a rabbit and give it a dose; then test other rabbits too, because each one reads a potion a little differently.' }));
+      el.append(h('div', { class: 'card parch small', text: 'A mixture’s effects are unknown until you test it. You know what each plain ingredient does — but mixing, heat and reactions change things. Choose a rabbit and give it a dose; every further trial — on it or on others — narrows the estimate.' }));
       return;
     }
     const subj = SUBJECT_BY_ID[r.subjectId] || SUBJECT_BY_ID.rabbit;
-    const rows = h('div', { class: 'reading-rows' });
-    const quiet = [];
-    for (const key of r.revealed) {
-      const e = EFFECT_BY_KEY[key];
-      const v = r.values[key], th = r.theory[key] ?? 0;
-      if (v === 0 && Math.abs(th) < 0.5 && !r.anomalies.includes(key)) { quiet.push(e); continue; }
-      const anomaly = r.anomalies.includes(key);
-      const width = (x) => Math.min(100, Math.abs(x)) + '%';
-      const err = r.err && r.err[key] !== undefined ? Math.max(1, Math.round(r.err[key])) : 0;
-      rows.appendChild(h('div', { class: 'reading' + (anomaly ? ' anomaly' : ''), title: e.desc },
-        icon(e.icon, 'sm'), h('span', { class: 'rk', text: e.label }),
-        h('div', { class: 'rbar' }, h('i', { class: 'obs', style: { width: width(v), background: rgb(e.color) } }), h('i', { class: 'th', style: { left: width(th) } })),
-        h('span', { class: 'rv', text: v === 0 ? 'none' : `${Math.round(v)}${err ? ` ±${err}` : ''} · ${potencyWord(v, key)}` })));
-    }
     const laws = r.lawsFound.map((id) => (st.world.laws || []).find((l) => l.id === id)).filter(Boolean);
     const who = r.rabbitName ? r.rabbitName : subj.name;
     const body = r.rabbitId ? findRabbit(st.colony, r.rabbitId) : null;
     el.append(h('div', { class: 'card parch report' },
       h('div', { class: 'row' }, icon('dropper'), h('b', { text: `Trial ${r.serial}: ${who}` }), h('span', { class: 'spacer' }), h('span', { class: 'small muted', text: `${r.ml} ml from the ${r.source === 'vial' ? 'vial' : 'tap'}` })),
       h('ul', { class: 'obs-list' }, ...r.observations.map((o) => h('li', { class: 'tone-' + o.tone, text: o.text }))),
-      rows,
-      quiet.length ? h('div', { class: 'small muted quiet' }, 'Nothing seen: ', ...quiet.map((e) => icon(e.icon, 'sm'))) : null,
-      h('div', { class: 'small muted', text: 'Bar: what this rabbit showed (± how far one reading can be off). Tick: what the guild’s theory predicts. One rabbit’s reading is biased by its own nature: average several rabbits.' }),
+      h('div', { class: 'small muted', text: 'This reading has gone into the expected effects above.' }),
       r.anomalies.length ? h('div', { class: 'warn small', text: `Unexpected: ${r.anomalies.map((k) => EFFECT_BY_KEY[k].label).join(', ')} differs from theory. Something in this mixture interacts — repeat with variations to find out what.` }) : null,
       ...laws.map((L) => h('div', { class: 'law-found' }, icon('star'), h('div', {}, h('b', { text: `Law discovered: ${L.name}` }), h('div', { class: 'small', text: L.lore + ' Your theory now accounts for it.' })))),
       r.died ? h('div', { class: 'bad small', text: `${who} did not survive. ${body ? 'The body stays in the hutch: recover its remains or bury it.' : ''} A potion that kills a rabbit should not be sold as a remedy.` }) : null,
       r.replay ? h('div', { class: 'row' }, btn('Replay', () => this.startReplay(r), { icon: 'eye', act: 'replay-trial', title: 'Watch this trial again — nothing is used up' })) : null,
     ));
-    // the pooled estimate of the batch, effect by effect
-    const cert = this.estimate();
-    const keys = EFFECT_KEYS.filter((k) => cert.values[k] !== undefined && (cert.values[k] !== 0 || (cert.spread[k] || 0) > 1));
-    if (keys.length) {
-      const est = h('div', { class: 'reading-rows' });
-      for (const k of keys) {
-        const e = EFFECT_BY_KEY[k], v = cert.values[k], s = cert.spread[k] || 0;
-        const lo = Math.max(0, Math.abs(v) - s), hi = Math.min(100, Math.abs(v) + s);
-        est.appendChild(h('div', { class: 'reading', title: `${cert.n[k]} reading${cert.n[k] === 1 ? '' : 's'} on ${cert.rabbits[k]} rabbit${cert.rabbits[k] === 1 ? '' : 's'}` },
-          icon(e.icon, 'sm'), h('span', { class: 'rk', text: e.label }),
-          h('div', { class: 'rbar' }, h('i', { class: 'range', style: { left: lo + '%', width: Math.max(1, hi - lo) + '%', background: rgb(e.color) } }), h('i', { class: 'th mean', style: { left: Math.min(100, Math.abs(v)) + '%' } })),
-          h('span', { class: 'rv', text: `${Math.round(v)} ±${Math.max(1, Math.round(s))} · ${cert.rabbits[k]} rabbit${cert.rabbits[k] === 1 ? '' : 's'}` })));
-      }
-      el.append(h('div', { class: 'card parch estimate' },
-        h('div', { class: 'row' }, icon('scales'), h('b', { text: this.source === 'vial' ? 'Vial estimate' : 'Batch estimate' })),
-        est,
-        h('div', { class: 'small muted', text: 'The mean of every trial of this brew. The band narrows as you test more different rabbits; the label you sell with uses this mean.' })));
-    }
   }
 
   /** @param {string} [id] always the chosen rabbit */
@@ -250,7 +261,7 @@ export class TrialsView {
       this.rreact[rabbit.id] = 1;
       this.hutch.poke(rabbit.id, record.replay && record.replay.rx ? record.replay.rx.split(',') : []);
       audio.play(record.died ? 'toll' : record.observations.some((o) => o.tone === 'bad') ? 'thump' : 'squeak');
-      if (record.degen && record.degen.length && !record.died) toast(`${rabbit.name} is degenerating!`, 'An effect has piled up past what its body can hold and is running out of control. Purge it — or put it down before it is too late.', 'claw', 6000);
+      if (record.degen && record.degen.length && !record.died) toast(`${rabbit.name} is degenerating!`, 'An effect has piled up past what its body can hold and keeps rising on its own until it kills it. Purge it — or put it down.', 'skull', 6000);
       for (const e of events) {
         if (e.type === 'law') { toast(`Law discovered: ${e.name}`, e.lore, 'star', 6000); audio.play('fanfare'); }
         else if (e.type === 'rabbit-died') toast(`${e.name} died`, 'The body stays in the hutch. Recover its remains — once — or bury it.', 'skull', 5000);
@@ -289,14 +300,17 @@ export class TrialsView {
     if (!events.length) return;
     let rebuild = false;
     for (const e of events) {
-      if (e.type === 'attack') {
+      if (e.type === 'mate') {
+        this.hutch.scene.mate && this.hutch.scene.mate(e.from, e.to);
+        if (e.conceived) rebuild = true;
+      } else if (e.type === 'attack') {
         this.hutch.scene.attack && this.hutch.scene.attack(e.from, e.to);
         this.rreact[e.to] = 1;
         if (this.lab.view === 'trials') audio.play('thump');
         if (e.killed) rebuild = true;
       } else if (e.type === 'rabbit-died') {
         rebuild = true;
-        toast(`${e.name} died`, e.by ? `${e.by} mauled ${e.name} to death. Put the feral rabbit down or purge it before it kills again.` : `The degeneration ran its course. The body stays in the hutch.`, 'skull', 5000);
+        toast(`${e.name} died`, e.by ? `${e.by} mauled ${e.name} to death. Put the aggressive rabbit down or purge it before it kills again.` : e.cause === 'love' ? `${e.name} wore itself out with love. The body stays in the hutch.` : `The degeneration ran its course. The body stays in the hutch.`, 'skull', 5000);
         audio.play('toll');
       } else if (e.type === 'trait') rebuild = true;
       else if (e.type === 'purge-brewed') { toast('A purging draught is ready', 'The still has finished brewing.', 'purge', 2500); rebuild = true; }

@@ -344,14 +344,17 @@ canvas.hutch-scene { display: block; width: 100%; height: auto; aspect-ratio: 22
 .rabbit-detail .rd-actions .btn { min-height: 44px; font-size: var(--fs-s); flex: 1 1 auto; }
 .rabbit-detail .rd-actions .btn.primary { flex: 2 1 100%; min-height: 50px; font-size: 18px; }
 .status-bars { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px 10px; padding: 4px 2px; }
-.status-bars .sb { display: grid; grid-template-columns: 14px 6.2em minmax(0, 1fr); align-items: center; gap: 4px; font-size: 14px; line-height: 1; color: var(--ink); }
+.rd-effects { display: flex; flex-direction: column; gap: 2px; }
+.rd-effects-head { gap: 6px; }
+.status-bars .sb { display: grid; grid-template-columns: 14px 6.2em minmax(0, 1fr) 2.6em; align-items: center; gap: 4px; font-size: 14px; line-height: 1; color: var(--ink); }
 .status-bars .sb img.ico { width: 14px; height: 14px; }
 .status-bars .sb-k { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .status-bars .sb-bar { position: relative; height: 9px; background: #3a2a1e; box-shadow: 0 0 0 1px var(--ink); overflow: visible; }
 .status-bars .sb-bar > i { position: absolute; left: 0; top: 0; bottom: 0; transition: width .25s linear; box-shadow: inset 0 2px 0 rgba(255,255,255,.35), inset 0 -2px 0 rgba(0,0,0,.25); }
-.status-bars .sb-tick { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: #7a2a22; }
+@media (max-width: 600px) { .status-bars { grid-template-columns: minmax(0, 1fr); } }
+.status-bars .sb-v { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .status-bars .sb.zero { opacity: 0.55; }
-.status-bars .sb.near .sb-k { color: #8a4a10; }
+.status-bars .sb.mating .sb-k { color: #b0306a; }
 .status-bars .sb.degen .sb-k { color: #a8241a; font-weight: bold; }
 .status-bars .sb.degen .sb-bar { animation: degen 0.7s steps(2) infinite; }
 @keyframes degen { 50% { box-shadow: 0 0 0 1px var(--ink), 0 0 0 3px #ff3a2a; } }
@@ -369,6 +372,9 @@ canvas.hutch-scene { display: block; width: 100%; height: auto; aspect-ratio: 22
 .dose-bar .dropper { min-height: 52px; padding: 4px 10px; }
 .hutch-manage { display: flex; flex-direction: column; gap: 6px; margin-top: 2px; }
 .reading-rows .rbar > i.range { position: absolute; top: 0; bottom: 0; opacity: .85; }
+.reading .rbar .th.theory { background: rgba(43, 29, 20, 0.45); width: 1px; }
+.estimate-card { margin: 0 0 6px; color: var(--ink); line-height: 1.35; }
+.estimate-card .est-foot { margin-top: 2px; }
 .trial-report .quiet { display: flex; gap: 3px; align-items: center; flex-wrap: wrap; }
 .trial-report .estimate { margin-top: 8px; }
 .hutch .memorial { margin-top: 2px; }

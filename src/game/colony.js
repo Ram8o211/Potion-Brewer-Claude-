@@ -13,18 +13,27 @@
 //   • traits     permanent anatomy grown from transformation magic;
 //   • bonus      extra maximum health grown from vitality given to a rabbit
 //                that was already at full health;
-//   • degen      channels that went past DEGEN_AT and now run out of
-//                control: a lethal one (poison, death, acid, lye, fire,
-//                frost) climbs until the rabbit dies, a feral one
-//                (vitality, strength, love, arcana, transformation) turns
-//                it on the rest of the colony. Only a purging draught (or
-//                the knife) stops it.
+//   • degen      channels that went past the rabbit's own hidden
+//                threshold for that channel (degenAt: every rabbit, every
+//                channel its own) and now run out of control: the mark
+//                climbs on its own, at the rabbit's own pace (degenRate),
+//                until it reaches the top and the rabbit dies of it (the
+//                lethal ones — poison, death, acid, lye, fire, frost — eat
+//                its health along the way). Only a purging draught (or the
+//                knife) stops it.
+// Aggression is a separate matter: strength, vitality, arcana and
+// transformation make a rabbit attack the others once the mark itself is
+// past the rabbit's own aggression threshold (aggroAt, independent of the
+// degeneration threshold) — degenerating or not. Love never makes it
+// aggressive: past LOVE_MATE it mates with the others, faster the higher it
+// is, wearing itself out — too much love kills it.
 // Several effects show at once, each at one of four levels, and a dead
 // rabbit keeps its body, traits and scars until the alchemist recovers its
 // remains (once) or buries it.
 //
 // Between days the hutch lives in real time (colonyTick): marks fade slowly,
-// health creeps back, degenerations climb and feral rabbits attack. The
+// health creeps back, degenerations climb, aggressive rabbits attack and
+// lovestruck ones mate. The
 // model is pure and deterministic (Rng streams seeded by the world seed, the
 // rabbit, the day and the tick counter). The player sees every channel's
 // accumulated level as a status bar; a dose's exact effect comes only from
@@ -53,18 +62,28 @@ export const MEMORIAL_LIMIT = 24;
 export const LEVEL_AT = [8, 30, 60];
 /** Lifetime transformation exposure at which each new trait grows. */
 export const TRAIT_AT = [20, 50, 90, 140, 200];
-/** A mark at or above this runs out of control (degeneration). */
+/** The usual mark at which a channel runs out of control (each rabbit has its own, per channel: degenAt). */
 export const DEGEN_AT = 70;
-/** Channels whose degeneration kills the rabbit. */
+/** The top of a mark: a channel that reaches it kills the rabbit. */
+export const MARK_MAX = 100;
+/** Channels whose degeneration eats the rabbit's health on the way up. */
 export const LETHAL = ['toxicity', 'death', 'acid', 'alkali', 'fire', 'frost'];
-/** Channels whose degeneration turns the rabbit against the colony. */
-export const FERAL = ['vitality', 'strength', 'love', 'arcana', 'transformation'];
+/** Channels that make a rabbit attack the others once past its own aggression threshold (aggroAt). */
+export const AGGRO = ['vitality', 'strength', 'arcana', 'transformation'];
+/** @deprecated the old name of AGGRO */
+export const FERAL = AGGRO;
+/** The usual aggression threshold (each rabbit has its own, per channel, independent of degenAt). */
+export const AGGRO_AT = 60;
+/** Love from which a rabbit starts mating with the others in real time. */
+export const LOVE_MATE = 25;
+/** Seconds between matings at LOVE_MATE and at the top of the mark. */
+export const MATE_EVERY = [60, 3];
 /** Seconds for an ordinary mark to fade to 1/e in real time (≈7 min half-life). */
 export const MARK_TAU = 600;
 /** Most extra maximum health vitality can grow. */
 export const MAX_BONUS = 150;
-/** How fast a degenerating mark climbs (per second) and how often a feral rabbit strikes. */
-export const DEGEN_RISE = 0.6;
+/** How fast a degenerating mark usually climbs (per second; each rabbit its own: degenRate) and how often an aggressive rabbit strikes. */
+export const DEGEN_RISE = 0.25;
 export const ATTACK_EVERY = [9, 4];
 export const TRAITS = ['ears2', 'horns', 'antlers', 'unihorn', 'scales', 'spines', 'tail-lizard', 'tail-plume', 'giant', 'tiny', 'eye3', 'wings'];
 /** Traits that cannot grow together. */
@@ -106,7 +125,7 @@ export const TRAIT_WORDS = {
  * @property {string[]} traits
  * @property {string|null} cause  cause of death (dead rabbits)
  * @property {string[]} [dg]   degenerating channels
- * @property {boolean} [ag]    feral: attacking the colony
+ * @property {boolean} [ag]    aggressive: attacking the colony
  */
 
 // ------------------------------------------------------------------ looks
@@ -205,20 +224,71 @@ export function degenOf(r) {
   return Array.isArray(r && r.degen) ? r.degen : [];
 }
 
-/** Is a rabbit feral (a degenerating feral channel)? @param {any} r */
-export function isFeral(r) {
-  return !!r && r.alive !== false && degenOf(r).some((k) => FERAL.includes(k));
+/** A hidden, lifelong number of one rabbit for one channel. @param {any} r @param {string} salt @param {string} key */
+const trait = (r, salt, key) => new Rng(hashString(`${salt}:${r.id}:${r.look ? r.look.seed : 0}:${key}`)).gauss();
+
+/**
+ * The mark at which one channel of one rabbit runs out of control: hidden,
+ * lifelong, its own for every rabbit and every channel (about 45–95).
+ * @param {any} r @param {string} key channel (RABBIT_MARKS)
+ */
+export function degenAt(r, key) {
+  return Math.round(clamp(DEGEN_AT + 13 * trait(r, 'degen', key), 42, 95));
+}
+
+/** How fast a degenerating channel of one rabbit climbs (per second): hidden, lifelong. @param {any} r @param {string} key */
+export function degenRate(r, key) {
+  return Math.round(DEGEN_RISE * clamp(Math.exp(0.55 * trait(r, 'rise', key)), 0.3, 3) * 1000) / 1000;
 }
 
 /**
+ * The mark of an aggressive channel past which one rabbit attacks the
+ * others: hidden, lifelong, independent of its degeneration threshold
+ * (about 30–95; Infinity for channels that never make it aggressive).
+ * @param {any} r @param {string} key
+ */
+export function aggroAt(r, key) {
+  if (!AGGRO.includes(key)) return Infinity;
+  return Math.round(clamp(AGGRO_AT + 16 * trait(r, 'aggro', key), 30, 95));
+}
+
+/** The aggressive channels driving a rabbit, strongest first. @param {any} r @returns {string[]} */
+export function aggroOf(r) {
+  if (!r || r.alive === false || !r.marks) return [];
+  return AGGRO.filter((k) => (r.marks[k] || 0) >= aggroAt(r, k)).sort((p, q) => (r.marks[q] - aggroAt(r, q)) - (r.marks[p] - aggroAt(r, p)));
+}
+
+/** Is a rabbit aggressive (an aggressive channel past its own threshold)? @param {any} r */
+export function isFeral(r) {
+  return aggroOf(r).length > 0;
+}
+
+/** Seconds between two matings of a rabbit this much in love (Infinity below LOVE_MATE). @param {number} love */
+export function mateEvery(love) {
+  if (!(love >= LOVE_MATE)) return Infinity;
+  const t = clamp((love - LOVE_MATE) / (MARK_MAX - LOVE_MATE), 0, 1);
+  return MATE_EVERY[0] * (MATE_EVERY[1] / MATE_EVERY[0]) ** t;
+}
+
+/** Health one mating costs a rabbit this much in love. @param {number} love */
+export function mateCost(love) {
+  const t = clamp((love - LOVE_MATE) / (MARK_MAX - LOVE_MATE), 0, 1);
+  return 0.5 + 6 * t * t;
+}
+
+/** Relative spread of the rabbits' lifelong sensitivity (one sigma). */
+export const RABBIT_BIAS = 0.08;
+
+/**
  * How strongly one rabbit shows one effect, relative to the potion's real
- * strength: a hidden, lifelong trait of the individual (about ±18 %), so a
- * single rabbit's readings are biased and only several rabbits average out.
+ * strength: a hidden, lifelong trait of the individual (about ±8 %), so
+ * repeated readings on one rabbit settle on its own slightly biased value
+ * and only several rabbits average that out.
  * @param {{id:string, look:{seed:number}}} r @param {string} key effect key
  */
 export function rabbitSensitivity(r, key) {
   const rng = new Rng(hashString(`sens:${r.id}:${r.look ? r.look.seed : 0}:${key}`));
-  return Math.round(clamp(Math.exp(0.18 * rng.gauss()), 0.6, 1.6) * 1000) / 1000;
+  return Math.round(clamp(Math.exp(RABBIT_BIAS * rng.gauss()), 0.6, 1.6) * 1000) / 1000;
 }
 
 /**
@@ -245,7 +315,7 @@ export function rabbitSnap(r, day) {
     lv, sc,
     traits: Array.isArray(r.traits) ? r.traits.slice() : [],
     cause: !alive ? (r.cause || 'unknown') : null,
-    dg, ag: dg.some((k) => FERAL.includes(k)),
+    dg, ag: alive && isFeral(r),
   };
 }
 
@@ -254,7 +324,8 @@ const CH_STAGE = { k: 'kit', y: 'young', a: 'adult', e: 'elder' };
 
 /** Compact string form of a snapshot (cache keys, replays in trial records). @param {RabbitSnap} s */
 export function encodeSnap(s) {
-  const dg = s.dg && s.dg.length ? `|${s.dg.join(',')}` : '';
+  // the last field marks aggression ('a') apart from degeneration; older replays have no such field
+  const dg = (s.dg && s.dg.length) || s.ag ? `|${(s.dg || []).join(',')}|${s.ag ? 'a' : '0'}` : '';
   return `${STAGE_CH[s.stage] || 'a'}${s.hp}${s.alive ? 1 : 0}${s.preg ? 1 : 0}|${s.lv.join('')}|${s.sc.join('')}|${s.traits.join(',')}|${s.cause || ''}${dg}`;
 }
 
@@ -278,9 +349,12 @@ export function decodeSnap(str) {
   return {
     stage, hp: /** @type {0|1|2|3} */ (hp >= 0 && hp <= 3 ? hp : 0), alive: p[0][2] === '1', preg: p[0][3] === '1', lv, sc: sc.slice(0, 5),
     traits: p[3] ? p[3].split(',').filter((t) => TRAITS.includes(t)) : [], cause: p[4] || null,
-    dg, ag: dg.some((k) => FERAL.includes(k)),
+    dg, ag: p[6] !== undefined ? p[6] === 'a' : dg.some((k) => LEGACY_FERAL.includes(k)),
   };
 }
+
+/** Before aggression had its own thresholds, any of these degenerating meant a feral rabbit. */
+const LEGACY_FERAL = ['vitality', 'strength', 'love', 'arcana', 'transformation'];
 
 // ------------------------------------------------------------------ individuals
 
@@ -312,7 +386,8 @@ export function decodeSnap(str) {
  * @property {number} scar          0..80 permanent harm
  * @property {string[]} traits      permanent anatomy, in the order grown (≤ 5)
  * @property {string[]} degen       channels running out of control
- * @property {number} cd            seconds until a feral rabbit strikes again
+ * @property {number} cd            seconds until an aggressive rabbit strikes again
+ * @property {number} mc            seconds until a lovestruck rabbit mates again
  * @property {DoseEntry[]} doses    oldest first, ≤ DOSE_LIMIT
  * @property {number} dosesDropped
  * @property {{sire:string, due:number}|null} pregnant
@@ -379,7 +454,7 @@ function founders() {
 function newRabbit(o) {
   return {
     id: o.id, name: o.name, sex: o.sex, born: o.born, look: o.look, parents: o.parents || null,
-    health: 100, bonus: 0, alive: true, trials: 0, marks: emptyMarks(), exposure: emptyMarks(), scar: 0, traits: [], degen: [], cd: 0,
+    health: 100, bonus: 0, alive: true, trials: 0, marks: emptyMarks(), exposure: emptyMarks(), scar: 0, traits: [], degen: [], cd: 0, mc: 0,
     doses: [], dosesDropped: 0, pregnant: null, diedDay: null, cause: null,
   };
 }
@@ -481,7 +556,7 @@ const TRAIT_LINES = {
   'tail-lizard': 'Its tail stretches into a scaly lizard tail!', 'tail-plume': 'Its tail blooms into a long feathery plume!', giant: 'It swells to twice its size!',
   tiny: 'It shrinks to the size of a kitten!', eye3: 'A third eye opens on its forehead!', wings: 'Little membrane wings unfold from its shoulders!',
 };
-const CAUSE_OF = { toxicity: 'poison', death: 'death', fire: 'fire', frost: 'frost', acid: 'acid', alkali: 'alkali', transformation: 'change', arcana: 'arcana' };
+const CAUSE_OF = { toxicity: 'poison', death: 'death', fire: 'fire', frost: 'frost', acid: 'acid', alkali: 'alkali', transformation: 'change', arcana: 'arcana', vitality: 'growth', strength: 'strain', love: 'love' };
 /** What the player sees when a channel goes out of control. */
 const DEGEN_LINES = {
   toxicity: 'The poison has taken hold: it is spreading through its blood on its own!',
@@ -490,11 +565,18 @@ const DEGEN_LINES = {
   alkali: 'The lye crust keeps growing, cracking deeper into its skin!',
   fire: 'It is smouldering from the inside — the heat keeps rising!',
   frost: 'The cold has reached its heart and keeps spreading!',
-  vitality: 'Wild growth: it swells, ravenous and restless — and bares its teeth at the others!',
-  strength: 'Its muscles keep swelling; it starts shoving and biting the others!',
-  love: 'Its devotion curdles into jealous fury — it goes for the other rabbits!',
-  arcana: 'The magic in it runs wild: sparks lash out at the colony!',
-  transformation: 'The change will not stop — it twists into something feral and attacks!',
+  vitality: 'Wild growth: it keeps swelling on its own, ravenous and restless!',
+  strength: 'Its muscles keep swelling on their own, straining its heart!',
+  love: 'Its passion will not cool: it chases the others to mate, faster and faster!',
+  arcana: 'The magic in it runs wild and keeps building!',
+  transformation: 'The change will not stop — it keeps twisting into something new!',
+};
+/** What the player sees when an effect makes a rabbit turn on the others. */
+const AGGRO_LINES = {
+  vitality: 'Bursting with wild vigour, it bares its teeth at the others!',
+  strength: 'Swollen with strength, it starts shoving and biting the others!',
+  arcana: 'Sparks lash out of it at the other rabbits!',
+  transformation: 'Something feral wakes in it — it goes for the others!',
 };
 
 /** Exclusive partners of a trait. @param {string} t */
@@ -538,6 +620,7 @@ export function rabbitResponse(before, effects, ml, o = {}) {
   const obs = [];
   const say = (key, tone, text) => obs.push({ key, tone, text });
   if (!r.alive) return { after: r, observations: [{ key: '', tone: /** @type {'neutral'} */ ('neutral'), text: `${r.name || 'The rabbit'} is dead. Choose or buy another rabbit.` }], harm: 0, applied: {}, react: [], newTraits: [], cause: r.cause };
+  const wasAggro = aggroOf(r);
   const stage = stageOf(r, o.day);
   const x = Math.min(2.5, Math.max(0, ml) / 10);
   const s = (STAGE_SENS[stage] || 1) / (r.look.size || 1) * (r.traits.includes('giant') ? 0.85 : 1) * (r.traits.includes('tiny') ? 1.2 : 1);
@@ -586,6 +669,9 @@ export function rabbitResponse(before, effects, ml, o = {}) {
   }
   r.health = round1(clamp(health + heal, 0, maxHealth));
   r.alive = r.health > 0.5;
+  // a mark driven to the top kills, whatever the effect
+  const topped = RABBIT_MARKS.filter((k) => m[k] >= MARK_MAX).sort((p, q) => a[q] - a[p])[0];
+  if (r.alive && topped) { r.alive = false; r.health = 0; hurt[topped] = (hurt[topped] || 0) + 1000; }
   // what it looks like (all channels; intensity words)
   const big = (v) => v > 20;
   if (a.vitality > 1) say('vitality', 'good', grow > 0.5 ? 'Already in full health, it grows hardier still.' : big(a.vitality) ? 'Its coat gleams; it bounds about full of life.' : 'It looks refreshed.');
@@ -603,12 +689,15 @@ export function rabbitResponse(before, effects, ml, o = {}) {
   for (const t of newTraits) say('transformation', 'neutral', TRAIT_LINES[t]);
   const degen = r.alive ? startDegeneration(r) : [];
   for (const k of degen) say(k === 'acid' || k === 'alkali' ? 'acidity' : k, 'bad', DEGEN_LINES[k]);
+  const angry = r.alive ? aggroOf(r).filter((k) => !wasAggro.includes(k)) : [];
+  if (angry.length && !wasAggro.length) { say(angry[0], 'bad', AGGRO_LINES[angry[0]]); if (!(r.cd > 0)) r.cd = 3; }
+  if (r.alive && a.love > 1 && m.love >= LOVE_MATE && !(r.mc > 0)) r.mc = Math.min(mateEvery(m.love), 8);
   if (!r.alive) {
     const worst = Object.entries(hurt).sort((p, q) => q[1] - p[1])[0];
     r.cause = worst && worst[1] > 0 ? CAUSE_OF[worst[0]] : 'frail';
     r.diedDay = Number.isFinite(o.day) ? o.day : null;
     r.pregnant = null;
-    say('', 'bad', r.cause === 'fire' ? 'It collapses in a smouldering heap.' : r.cause === 'frost' ? 'It freezes stiff and topples over.' : r.cause === 'poison' ? 'It convulses, then lies still.' : 'It collapses and does not get up.');
+    say('', 'bad', r.cause === 'fire' ? 'It collapses in a smouldering heap.' : r.cause === 'frost' ? 'It freezes stiff and topples over.' : r.cause === 'poison' ? 'It convulses, then lies still.' : r.cause === 'love' ? 'Its heart gives out in a frenzy of passion.' : 'It collapses and does not get up.');
   }
   if (!obs.length) say('', 'neutral', 'No visible change.');
   r.trials++;
@@ -616,13 +705,12 @@ export function rabbitResponse(before, effects, ml, o = {}) {
   return { after: r, observations: obs, harm, applied: a, react, newTraits, degen, cause: r.alive ? null : r.cause };
 }
 
-/** Channels that crossed DEGEN_AT start degenerating. @param {Rabbit} r @returns {string[]} new ones */
+/** Channels that crossed the rabbit's own threshold start degenerating. @param {Rabbit} r @returns {string[]} new ones */
 function startDegeneration(r) {
   const out = [];
   for (const k of RABBIT_MARKS) {
-    if (r.marks[k] >= DEGEN_AT && !r.degen.includes(k)) { r.degen.push(k); out.push(k); }
+    if (r.marks[k] >= degenAt(r, k) && !r.degen.includes(k)) { r.degen.push(k); out.push(k); }
   }
-  if (out.some((k) => FERAL.includes(k)) && !(r.cd > 0)) r.cd = 3;
   return out;
 }
 
@@ -630,21 +718,25 @@ function startDegeneration(r) {
 
 /**
  * @typedef {{died:{id:string, name:string, cause:string, by?:string}[], attacks:{from:string, to:string, fromName:string, toName:string, dmg:number, killed:boolean}[],
- *   degen:{id:string, name:string, key:string}[], traits:{id:string, name:string, trait:string}[]}} TickReport
+ *   degen:{id:string, name:string, key:string}[], traits:{id:string, name:string, trait:string}[],
+ *   mates:{from:string, to:string, fromName:string, toName:string, conceived:boolean}[]}} TickReport
  */
 
 /**
  * The hutch in real time, `dt` seconds (call with steps of a second or so):
  * ordinary marks fade slowly and health creeps back; degenerating marks
- * climb, lethal ones eat away the rabbit's health, feral ones make it
- * strike the others (vitality keeps swelling it, transformation keeps
- * changing it). Deterministic for the same colony and calls.
- * @param {Colony} c @param {number} dt @param {{day?:number, seed?:string}} [o]
+ * climb at the rabbit's own pace until they reach the top and kill it
+ * (lethal ones eat its health on the way; vitality keeps swelling it,
+ * transformation keeps changing it); a rabbit whose aggressive marks are
+ * past its own aggression threshold strikes the others; a lovestruck one
+ * mates with them, faster the more it is in love, and every mating wears
+ * it out. Deterministic for the same colony and calls.
+ * @param {Colony} c @param {number} dt @param {{day?:number, seed?:string, cap?:number}} [o]
  * @returns {TickReport}
  */
 export function colonyTick(c, dt, o = {}) {
   /** @type {TickReport} */
-  const rep = { died: [], attacks: [], degen: [], traits: [] };
+  const rep = { died: [], attacks: [], degen: [], traits: [], mates: [] };
   if (!(dt > 0)) return rep;
   const rng = new Rng(hashString(`${o.seed ?? c.seed}:tick:${c.ticks || 0}`));
   c.ticks = (c.ticks || 0) + 1;
@@ -657,16 +749,20 @@ export function colonyTick(c, dt, o = {}) {
   for (const r of c.rabbits) {
     if (!r.alive) continue;
     const dg = degenOf(r);
-    let drain = 0;
+    let drain = 0, topped = null;
     for (const k of RABBIT_MARKS) {
       if (dg.includes(k)) {
-        r.marks[k] = round1(Math.min(100, r.marks[k] + DEGEN_RISE * dt));
+        // it does not stop: faster the further it has gone
+        const v = r.marks[k];
+        r.marks[k] = round1(Math.min(MARK_MAX, v + degenRate(r, k) * (0.6 + 0.8 * v / MARK_MAX) * dt));
+        if (r.marks[k] >= MARK_MAX && !topped) topped = k;
         if (LETHAL.includes(k)) drain += (0.4 + 1.6 * r.marks[k] / 100) * dt;
       } else {
         const v = r.marks[k] * fade;
         r.marks[k] = v < 0.3 ? 0 : Math.round(v * 100) / 100;
       }
     }
+    if (topped) { die(r, CAUSE_OF[topped] || 'poison'); continue; }
     if (dg.includes('vitality')) r.bonus = round1(Math.min(MAX_BONUS, (r.bonus || 0) + 0.25 * dt));
     if (dg.includes('transformation')) {
       const e0 = r.exposure.transformation;
@@ -684,13 +780,14 @@ export function colonyTick(c, dt, o = {}) {
     } else r.health = round1(Math.min(max, r.health + 0.05 * dt));
     if (r.health > max) r.health = max;
   }
-  // feral rabbits strike
+  // aggressive rabbits strike
   for (const r of c.rabbits) {
-    if (!isFeral(r)) continue;
+    const angry = aggroOf(r);
+    if (!angry.length) { if (r.alive) r.cd = 0; continue; }
     r.cd = (r.cd || 0) - dt;
     if (r.cd > 0) continue;
-    const fury = Math.max(...degenOf(r).filter((k) => FERAL.includes(k)).map((k) => r.marks[k]));
-    const t = clamp((fury - DEGEN_AT) / (100 - DEGEN_AT), 0, 1);
+    const fury = Math.max(...angry.map((k) => r.marks[k]));
+    const t = clamp(Math.max(...angry.map((k) => (r.marks[k] - aggroAt(r, k)) / Math.max(1, MARK_MAX - aggroAt(r, k)))), 0, 1);
     r.cd = round1((ATTACK_EVERY[0] + (ATTACK_EVERY[1] - ATTACK_EVERY[0]) * t) * rng.range(0.8, 1.25));
     const prey = c.rabbits.filter((x) => x.alive && x.id !== r.id);
     if (!prey.length) continue;
@@ -701,6 +798,36 @@ export function colonyTick(c, dt, o = {}) {
     const killed = v.health <= 0.5;
     rep.attacks.push({ from: r.id, to: v.id, fromName: r.name, toName: v.name, dmg, killed });
     if (killed) die(v, 'mauled', r.name);
+  }
+  // lovestruck rabbits mate, faster and faster as love rises, and wear themselves out
+  let living = c.rabbits.filter((x) => x.alive).length;
+  let pending = 2 * c.rabbits.filter((x) => x.alive && x.pregnant).length;
+  for (const r of c.rabbits) {
+    if (!r.alive) continue;
+    const love = r.marks.love || 0;
+    if (love < LOVE_MATE) { r.mc = 0; continue; }
+    r.mc = (r.mc || mateEvery(love)) - dt;
+    if (r.mc > 0) continue;
+    r.mc = round1(Math.max(0.5, mateEvery(love) * rng.range(0.8, 1.2)));
+    const others = c.rabbits.filter((x) => x.alive && x.id !== r.id && stageOf(x, day) !== 'kit');
+    if (!others.length) continue;
+    const mates = others.filter((x) => x.sex !== r.sex);
+    const p = rng.pick(mates.length ? mates : others);
+    let conceived = false;
+    if (p.sex !== r.sex) {
+      const doe = r.sex === 'f' ? r : p, buck = r.sex === 'f' ? p : r;
+      const room = !Number.isFinite(o.cap) || living + pending < /** @type {number} */ (o.cap);
+      if (!doe.pregnant && stageOf(doe, day) !== 'kit' && room && rng.chance(0.35)) {
+        doe.pregnant = { sire: buck.id, due: (Number.isFinite(day) ? /** @type {number} */ (day) : c.day || 0) + GESTATION_DAYS };
+        pending += 2;
+        conceived = true;
+      }
+    }
+    r.health = round1(r.health - mateCost(love) * rng.range(0.8, 1.2));
+    p.health = round1(p.health - 0.5);
+    rep.mates.push({ from: r.id, to: p.id, fromName: r.name, toName: p.name, conceived });
+    if (r.health <= 0.5) { die(r, 'love'); living--; }
+    if (p.alive && p.health <= 0.5) { die(p, 'love'); living--; }
   }
   return rep;
 }
@@ -715,6 +842,7 @@ export function purgeRabbit(r) {
   for (const k of RABBIT_MARKS) r.marks[k] = 0;
   r.degen = [];
   r.cd = 0;
+  r.mc = 0;
   return true;
 }
 
@@ -725,7 +853,7 @@ export function purgeRabbit(r) {
  */
 export function cullRabbit(r, day) {
   if (!r || !r.alive) return false;
-  r.alive = false; r.health = 0; r.cause = 'culled'; r.diedDay = Number.isFinite(day) ? day : null; r.pregnant = null; r.degen = []; r.cd = 0;
+  r.alive = false; r.health = 0; r.cause = 'culled'; r.diedDay = Number.isFinite(day) ? day : null; r.pregnant = null; r.degen = []; r.cd = 0; r.mc = 0;
   return true;
 }
 
@@ -869,7 +997,7 @@ export function remainsSource(r, day) {
 
 // ------------------------------------------------------------------ words (never numbers)
 
-const CAUSE_WORDS = { culled: 'put down', mauled: 'mauled by a feral rabbit', poison: 'poisoned', death: 'withered by death magic', fire: 'burned', frost: 'frozen', acid: 'eaten by acid', alkali: 'scalded by lye', change: 'torn apart by change', arcana: 'overwhelmed by magic', age: 'died of old age', frail: 'too frail', unknown: 'died' };
+const CAUSE_WORDS = { culled: 'put down', mauled: 'mauled by an aggressive rabbit', love: 'worn out by love', growth: 'burst with wild growth', strain: 'its heart gave out from the strain', poison: 'poisoned', death: 'withered by death magic', fire: 'burned', frost: 'frozen', acid: 'eaten by acid', alkali: 'scalded by lye', change: 'torn apart by change', arcana: 'overwhelmed by magic', age: 'died of old age', frail: 'too frail', unknown: 'died' };
 
 /** @param {string|null} cause */
 export function causeWord(cause) {
@@ -888,7 +1016,7 @@ export function rabbitCondition(r, day) {
   } else {
     const h = 100 * r.health / Math.max(1, maxHealthOf(r, day));
     w.push(h >= 75 ? 'healthy' : h >= 40 ? 'weakened' : h >= 10 ? 'very weak' : 'near death');
-    if (isFeral(r)) w.push('FERAL');
+    if (isFeral(r)) w.push('AGGRESSIVE');
     else if (degenOf(r).length) w.push('degenerating');
     if ((r.bonus || 0) >= 10) w.push(r.bonus >= 60 ? 'hale beyond nature' : 'extra hardy');
     if (r.scar >= 20) w.push(r.scar >= 50 ? 'badly scarred' : 'scarred');
@@ -954,7 +1082,7 @@ export function normalizeRabbit(r, fallbackId) {
     born: fin(d.born, FOUNDER_BORN), look: normalizeLook(d.look, id), parents: Array.isArray(d.parents) ? d.parents.filter((p) => typeof p === 'string').slice(0, 2) : null,
     health: clamp(fin(d.health, 100), 0, 100 + MAX_BONUS), bonus: clamp(fin(d.bonus, 0), 0, MAX_BONUS), alive, trials: Math.max(0, fin(d.trials, 0) | 0),
     marks: normalizeMarks(d.marks), exposure: normalizeMarks(d.exposure), scar, traits,
-    degen: alive && Array.isArray(d.degen) ? [...new Set(d.degen.filter((k) => MARK_INDEX[k] !== undefined))] : [], cd: Math.max(0, fin(d.cd, 0)),
+    degen: alive && Array.isArray(d.degen) ? [...new Set(d.degen.filter((k) => MARK_INDEX[k] !== undefined))] : [], cd: Math.max(0, fin(d.cd, 0)), mc: Math.max(0, fin(d.mc, 0)),
     doses: (Array.isArray(d.doses) ? d.doses : []).filter((x) => x && typeof x.rec === 'string').map((x) => ({
       rec: x.rec, day: fin(x.day, 0) | 0, ml: Math.max(0, fin(x.ml, 0)), src: x.src === 'vial' ? 'vial' : 'cauldron', obs: typeof x.obs === 'string' ? x.obs : '', ...(x.died ? { died: 1 } : {}),
     })).slice(-DOSE_LIMIT),

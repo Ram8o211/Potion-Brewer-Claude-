@@ -512,9 +512,10 @@ export class GameState {
       c.still = round1(c.still - dt);
       if (c.still <= 0) { c.still = null; c.purges = (c.purges || 0) + 1; events.push({ type: 'purge-brewed' }); }
     }
-    const rep = colonyTick(c, dt, { day: this.day, seed: this.seed });
+    const rep = colonyTick(c, dt, { day: this.day, seed: this.seed, cap: this.cap.hutch });
     for (const d of rep.died) events.push({ type: 'rabbit-died', ...d });
     for (const a of rep.attacks) events.push({ type: 'attack', ...a });
+    for (const m of rep.mates) events.push({ type: 'mate', ...m });
     for (const t of rep.traits) events.push({ type: 'trait', ...t });
     return { rep, events };
   }

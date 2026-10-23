@@ -229,8 +229,8 @@ export class HutchScene {
     this.bgKey = '';
     /** @type {any} */
     this.fg = null;
-    /** claw marks where a feral rabbit struck: art pixels and age (s) */
-    /** @type {{x:number, y:number, t:number}[]} */
+    /** claw marks where an aggressive rabbit struck (or hearts where two mated): art pixels and age (s) */
+    /** @type {{x:number, y:number, t:number, love?:boolean}[]} */
     this.clashes = [];
   }
 
@@ -302,6 +302,22 @@ export class HutchScene {
   }
 
   /**
+   * A lovestruck rabbit mates with another: it hops over and hearts rise
+   * between them.
+   * @param {string} fromId @param {string} toId
+   */
+  mate(fromId, toId) {
+    const a = this.actors.get(String(fromId)), v = this.actors.get(String(toId));
+    if (!v || v.hidden) return;
+    const b = this._box(v);
+    this.clashes.push({ x: Math.round((b.x0 + b.x1) / 2), y: Math.round(b.y0), t: 0, love: true });
+    if (a && a.alive && !a.hidden && a.act !== 'collapse' && a.act !== 'frozen') {
+      const side = a.x < v.x ? -1 : 1;
+      this._hopTo(a, this._roam(v.x + side * 7, v.y), 2, true);
+    }
+  }
+
+  /**
    * A pat or a dose landing on a rabbit: it hops on the spot and flashes
    * the channels given (drawRabbit's react).
    * @param {string} id @param {string[]} [channels]
@@ -343,6 +359,15 @@ export class HutchScene {
       R(ctx, hx - 3, y - 1, 1, 1, '#ff3a2a'); R(ctx, hx + 3, y - 1, 1, 1, '#ff3a2a');
     }
     for (const c of this.clashes) {
+      if (c.love) {
+        // two little hearts drifting up
+        for (let i = 0; i < 2; i++) {
+          const hx = c.x - 3 + i * 6, hy = Math.round(c.y - 2 - c.t * 10 - i * 2);
+          const col = c.t < 0.5 ? '#ff5a8a' : '#c8306a';
+          R(ctx, hx, hy, 1, 1, col); R(ctx, hx + 2, hy, 1, 1, col); R(ctx, hx - 1 + 1, hy + 1, 3, 1, col); R(ctx, hx + 1, hy + 2, 1, 1, col);
+        }
+        continue;
+      }
       const k = c.t < 0.45 ? '#ff3a2a' : '#a8241a';
       for (let i = 0; i < 3; i++) for (let j = 0; j < 5; j++) R(ctx, c.x - 4 + i * 3 + j, c.y - 3 + j, 1, 1, j === 2 ? '#fff0e0' : k);
       if (c.t < 0.3) for (let i = 0; i < 6; i++) R(ctx, c.x + Math.round(Math.cos(i) * (4 + c.t * 20)), c.y + Math.round(Math.sin(i * 1.7) * (3 + c.t * 10)), 1, 1, '#f6ead0');

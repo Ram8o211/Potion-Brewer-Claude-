@@ -1,8 +1,10 @@
 // The farm: the colony of Moon Rabbits is where every potion is tested. The
 // hutch scene (tap a rabbit to choose it, or drag the dropper onto it), a
 // roster of every rabbit and body with its health, and the chosen rabbit up
-// close: its health, a status bar per effect channel showing what has piled
-// up in it (the tick marks where it degenerates), and what to do — give it a
+// close: its health, a bar per effect channel showing how much of it is
+// active in the rabbit right now (where that rabbit degenerates or turns
+// aggressive is never shown: every rabbit has its own, hidden, thresholds),
+// and what to do — give it a
 // dose, purge it, put it down, look back at its trials, recover a body's
 // remains or bury it. Buying, feeding, breeding and the purging draughts
 // live in the head of the panel.
@@ -15,7 +17,7 @@ import { HutchScene, HUTCH_W, HUTCH_H } from '../../rendering/hutch-scene.js';
 import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
 import {
   livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral,
-  RABBIT_MARKS, DEGEN_AT, LETHAL, TRAIT_WORDS,
+  RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE,
 } from '../../game/colony.js';
 import { PURGE_BREW_TIME } from '../../game/state.js';
 
@@ -41,7 +43,7 @@ export class HutchPanel {
     this.hover = null;
     this._acc = 0;
     this._live = 0;
-    /** @type {{portrait?:CanvasRenderingContext2D, hp?:HTMLElement, hpText?:HTMLElement, bars?:Record<string, {fill:HTMLElement, row:HTMLElement}>, id?:string, still?:HTMLElement}} */
+    /** @type {{portrait?:CanvasRenderingContext2D, hp?:HTMLElement, hpText?:HTMLElement, bars?:Record<string, {fill:HTMLElement, row:HTMLElement, val:HTMLElement}>, id?:string, still?:HTMLElement}} */
     this.d = {};
   }
 
@@ -62,7 +64,7 @@ export class HutchPanel {
     // ---- head: room, buying, feeding, breeding
     el.append(h('div', { class: 'row wrap hutch-head' },
       icon('rabbit'), h('b', { text: 'The hutch' }), h('span', { class: 'small muted', text: `${live.length} of ${cap} places` }),
-      feral.length ? h('span', { class: 'feral-warn small' }, icon('claw', 'sm'), ` ${feral.map((r) => r.name).join(', ')} gone feral!`) : null));
+      feral.length ? h('span', { class: 'feral-warn small' }, icon('claw', 'sm'), ` ${feral.map((r) => r.name).join(', ')} attacking the others!`) : null));
     const manage = [h('div', { class: 'hutch-actions' },
       btn(price ? `Buy · ${price}` : 'Buy', () => this.buy(), { icon: 'plus', act: 'colony-buy', disabled: full || (!lab.sandbox && st.coins < price), title: full ? `The hutch is full (${cap} places): upgrade it at the guild.` : 'Buy an adult rabbit from the breeder' }),
       btn(fed ? 'Fed' : lab.sandbox ? 'Feed' : `Feed · ${st.feedCost()}`, () => this.feed(), { icon: 'leaf', act: 'colony-feed', disabled: fed || !live.length, title: 'Hay and greens: they recover faster and pair up more readily tonight' }),
@@ -159,17 +161,21 @@ export class HutchPanel {
     // health and status bars
     const hpFill = h('i'), hpText = h('span', { class: 'small hp-text' });
     this.d.hp = hpFill; this.d.hpText = hpText;
-    /** @type {Record<string, {fill:HTMLElement, row:HTMLElement}>} */
+    /** @type {Record<string, {fill:HTMLElement, row:HTMLElement, val:HTMLElement}>} */
     const bars = {};
-    const grid = h('div', { class: 'status-bars', role: 'list', 'aria-label': 'What the potions have left in it' });
+    const grid = h('div', { class: 'status-bars', role: 'list', 'aria-label': `Effects active in ${r.name}` });
     for (const ch of CHANNELS) {
       const fill = h('i', { style: { background: rgb(ch.color) } });
-      const row = h('div', { class: 'sb', role: 'listitem', title: `${ch.label}: past the tick it degenerates` },
-        icon(ch.icon, 'sm'), h('span', { class: 'sb-k', text: ch.label }), h('span', { class: 'sb-bar' }, fill, h('b', { class: 'sb-tick', style: { left: DEGEN_AT + '%' } })));
-      bars[ch.key] = { fill, row };
+      const val = h('span', { class: 'sb-v' });
+      const row = h('div', { class: 'sb', role: 'listitem', title: `${ch.label} active in ${r.name}. Somewhere along this bar — only this rabbit knows where — it starts running out of control.` },
+        icon(ch.icon, 'sm'), h('span', { class: 'sb-k', text: ch.label }), h('span', { class: 'sb-bar' }, fill), val);
+      bars[ch.key] = { fill, row, val };
       grid.append(row);
     }
     this.d.bars = bars;
+    const effects = h('div', { class: 'rd-effects' },
+      h('div', { class: 'row rd-effects-head' }, h('b', { class: 'small', text: `Active in ${r.name}` }), h('span', { class: 'spacer' }), h('span', { class: 'small muted', text: 'its limits are hidden' })),
+      grid);
     const out = h('div', { class: 'rabbit-detail' + (isFeral(r) ? ' feral' : '') },
       h('div', { class: 'rd-top' },
         portrait,
@@ -178,7 +184,7 @@ export class HutchPanel {
           h('div', { class: 'small', text: words.join(' · ') }),
           r.alive ? h('div', { class: 'rd-hp' }, icon('heart', 'sm'), h('span', { class: 'bar hp big' }, hpFill), hpText) : null,
           h('div', { class: 'small muted', text: `${r.trials} trial${r.trials === 1 ? '' : 's'}${parents.length ? ` · child of ${parents.join(' and ')}` : ''}` }))),
-      r.alive ? grid : null,
+      r.alive ? effects : null,
       h('div', { class: 'row wrap rd-actions' }, ...actions));
     return out;
   }
@@ -206,9 +212,10 @@ export class HutchPanel {
     for (const [k, b] of Object.entries(this.d.bars)) {
       const v = Math.max(0, Math.min(100, r.marks[k] || 0));
       b.fill.style.width = v.toFixed(1) + '%';
+      b.val.textContent = v < 0.5 ? '—' : `${Math.round(v)}%`;
       b.row.classList.toggle('degen', dg.includes(k));
       b.row.classList.toggle('lethal', dg.includes(k) && LETHAL.includes(k));
-      b.row.classList.toggle('near', !dg.includes(k) && v >= DEGEN_AT * 0.75);
+      b.row.classList.toggle('mating', k === 'love' && v >= LOVE_MATE);
       b.row.classList.toggle('zero', v < 0.5);
     }
   }
@@ -280,14 +287,14 @@ export class HutchPanel {
     if (!res.ok) { toast('No purge', res.reason, 'purge'); audio.play('error'); return; }
     audio.play('glass');
     this.view.rreact[r.id] = 1;
-    toast(`${r.name} is purged`, 'Every potion effect washes out of it; anything degenerating has stopped. What grew for good stays.', 'purge', 3500);
+    toast(`${r.name} is purged`, 'Every potion effect washes out of it; anything degenerating has stopped, and so has any aggression or frenzy. What grew for good stays.', 'purge', 3500);
     this.after();
   }
 
   /** @param {any} r */
   async cull(r) {
     const feral = isFeral(r);
-    if (!await confirmDialog(`Put ${r.name} down?`, feral ? `${r.name} has gone feral and is attacking the colony. The body stays: recover its remains or bury it.` : 'It dies at once. The body stays: recover its remains or bury it.', 'Put down', 'danger')) return;
+    if (!await confirmDialog(`Put ${r.name} down?`, feral ? `${r.name} is aggressive and is attacking the colony. The body stays: recover its remains or bury it.` : 'It dies at once. The body stays: recover its remains or bury it.', 'Put down', 'danger')) return;
     const res = this.st.cullRabbit(r.id);
     if (!res.ok) { toast('Cannot', res.reason, 'knife'); return; }
     audio.play('toll');
