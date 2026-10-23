@@ -12800,7 +12800,7 @@ return [
 { text: 'Choose a rabbit in the hutch and give it a dose: press Give, or drag the dropper onto it. The dose is real potion from the tap. Each rabbit reads a potion a little differently — later, test several.', target: () => document.querySelector('[data-act=test-rabbit]') || lab.views.trials.hutch.el, done: rabbitTested },
 { text: 'The rabbit shows how much vitality — and any frost or fire left over — this batch carries. One reading is a rough guess (see its wide ± band); a second rabbit narrows it, and demanding customers insist on that. Back to the cauldron!', target: tab('brew'), done: () => lab.view === 'brew' },
 { text: 'Let it cool to a warm 45°C or so, then press Bottle. A bottle can go to the counter or onto your potion shelves for later.', target: () => lab.bottleFab, done: () => this.flags.bottled },
-{ text: 'Your sealed vial waits at the Counter. Offer it to the customer: seal its label (your trial reading is already written in), then agree on a price.', target: () => document.querySelector('[data-act=serve]') || tab('counter')(), done: () => this.flags.sold },
+{ text: 'Your sealed vial waits at the Counter. It labelled itself from your trial — the tested reading is already on it. Offer it to the customer and agree on a price.', target: () => document.querySelector('[data-act=serve]') || tab('counter')(), done: () => this.flags.sold },
 { text: 'Splendid — your first sale! New orders ask for strength, love, fire — and soon for a true colour, a well-mixed brew, a density or a brew boiled down; the order card says what each takes. Each day dawns with the shop closed: gather dawn flowers, then open the door. Saved recipes keep every step, so you can brew them again exactly.', button: 'Run my shop!' },
 ];
 }
@@ -13062,8 +13062,9 @@ continue;
 }
 const cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: '16', height: '22', class: 'vial-art' }));
 drawBottle(/** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')), 2, 2, 12, 19, b.m ? b.m.color : [0.5, 0.5, 0.5], Math.min(1, b.ml / Math.max(1, b.bottledMl || b.ml)));
-const slot = h('button', { class: 'bottle-slot' + (this.sel === b.id ? ' active' : ''), role: 'option', 'aria-selected': this.sel === b.id ? 'true' : 'false', 'aria-label': `${b.label && b.label.name ? b.label.name : 'Bottle'}, ${Math.round(b.ml)} ml`, 'data-act': 'bottle-slot', 'data-id': b.id },
-cv, h('span', { class: 'bml', text: `${Math.round(b.ml)}` }));
+const fxText = b.label ? trade.claimSummary(b.label.claims) : '';
+const slot = h('button', { class: 'bottle-slot' + (this.sel === b.id ? ' active' : '') + (b.label ? ' labelled' : ''), role: 'option', 'aria-selected': this.sel === b.id ? 'true' : 'false', 'aria-label': `${b.label && b.label.name ? b.label.name : 'Bottle'}, ${Math.round(b.ml)} ml${fxText ? `: ${fxText}` : ''}`, ...(fxText ? { title: fxText } : {}), 'data-act': 'bottle-slot', 'data-id': b.id },
+cv, h('span', { class: 'bml', text: `${Math.round(b.ml)}` }), b.label ? h('span', { class: 'btag' }, icon('tag', 'sm')) : null);
 slot.addEventListener('click', () => { this.sel = this.sel === b.id ? null : b.id; this.refresh(); });
 grid.appendChild(slot);
 }
@@ -15807,7 +15808,7 @@ const { saveGame, saveJSON, KEYS } = __m49;
 const { AutoBrewer } = __m59;
 const { equipmentById } = __m26;
 const { traceSample, buildProcedure, procedureLimits, matchRecipe, checkReproduction, TRACE_DT } = __m48;
-const { proofGaps } = __m45;
+const { proofGaps, draftLabel } = __m45;
 const { RANKS } = __m26;
 const { certification, missingEffects } = __m27;
 const { sandboxIngredients } = __m7;
@@ -15910,6 +15911,7 @@ if (!st.current && !st.dayOver && (st.opened || tutorialVisit)) this.bringCustom
 this.tutorial = new Tutorial(this);
 if (st.tutorial.active && !st.tutorial.done) this.tutorial.start();
 }
+this.autoLabel();
 this.showView(this.sandbox ? 'brew' : st.vial ? 'counter' : 'brew', true);
 this.refreshHud(true);
 this.running = true;
@@ -16669,6 +16671,7 @@ const st = this.state;
 const vial = b.vial;
 updateVial(vial, st.lookup, st.world.laws);
 vial.recipe = this.recipeDraft(vial.m, null, st.current);
+this.autoLabel(vial);
 vial.commissionId = b.dest === 'shelf' ? null : vial.commissionId;
 if (b.dest === 'shelf' && st.shelveBottle(vial).ok) {
 if (this.sim.p.count === 0) { st.brewLog = []; st.newBatch(); this.lastPoured = {}; }
@@ -17340,8 +17343,17 @@ if (this.view === 'counter') this.views.counter.refresh();
 }
 }
 shareEvidence(batchId) {
-if (this.sandbox) return;
-this.state.shareEvidence(batchId);
+if (!this.sandbox) this.state.shareEvidence(batchId);
+this.autoLabel();
+}
+autoLabel(only) {
+const st = this.state;
+for (const v of only ? [only] : [st.vial, ...st.bottles]) {
+if (!v || v.label || !v.cert || !Object.keys(v.cert).length) continue;
+if (!v.m) updateVial(v, st.lookup, st.world.laws);
+v.label = draftLabel(v, this.vialTheory(v), st.day);
+v.label.auto = true;
+}
 }
 freshBottles() {
 if ((this._shelfDrift || 0) < 0.5) return;

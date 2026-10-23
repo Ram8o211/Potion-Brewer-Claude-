@@ -41,6 +41,7 @@ import { summarize, evidenceRank, EVIDENCE_TEXT } from './experiments.js';
  * @typedef {Object} Label
  * @property {Record<string, Claim>} claims
  * @property {number} day
+ * @property {boolean} [auto]  drafted by itself once the batch was tested (lab.js autoLabel)
  */
 
 /**

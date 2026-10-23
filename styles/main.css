@@ -635,6 +635,7 @@ input[type=checkbox] { width: 22px; height: 22px; accent-color: #6a4b9a; }
   background: none; border: 0; color: inherit; font: inherit; cursor: pointer; }
 .bottle-slot canvas { width: 32px; height: 44px; image-rendering: pixelated; }
 .bottle-slot .bml { position: absolute; bottom: 10px; right: 2px; font-size: 10px; line-height: 1; padding: 1px 2px; background: rgba(26, 15, 8, 0.75); color: #f3e3c0; border-radius: 2px; }
+.bottle-slot .btag { position: absolute; top: 2px; right: 2px; line-height: 0; opacity: 0.85; }
 .bottle-slot.active canvas { filter: drop-shadow(0 0 3px #ffd36a); }
 .bottle-slot.active::after { content: ''; position: absolute; left: 20%; right: 20%; bottom: 8px; height: 2px; background: #ffd36a; }
 .bottle-slot.empty::before { content: ''; width: 20px; height: 30px; margin-bottom: 0; border: 1px dashed rgba(90, 58, 32, 0.45); border-radius: 6px 6px 3px 3px; }

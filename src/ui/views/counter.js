@@ -206,8 +206,10 @@ export class CounterView {
       }
       const cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: '16', height: '22', class: 'vial-art' }));
       drawBottle(/** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')), 2, 2, 12, 19, b.m ? b.m.color : [0.5, 0.5, 0.5], Math.min(1, b.ml / Math.max(1, b.bottledMl || b.ml)));
-      const slot = h('button', { class: 'bottle-slot' + (this.sel === b.id ? ' active' : ''), role: 'option', 'aria-selected': this.sel === b.id ? 'true' : 'false', 'aria-label': `${b.label && b.label.name ? b.label.name : 'Bottle'}, ${Math.round(b.ml)} ml`, 'data-act': 'bottle-slot', 'data-id': b.id },
-        cv, h('span', { class: 'bml', text: `${Math.round(b.ml)}` }));
+      // a labelled bottle tells what it does without opening it
+      const fxText = b.label ? trade.claimSummary(b.label.claims) : '';
+      const slot = h('button', { class: 'bottle-slot' + (this.sel === b.id ? ' active' : '') + (b.label ? ' labelled' : ''), role: 'option', 'aria-selected': this.sel === b.id ? 'true' : 'false', 'aria-label': `${b.label && b.label.name ? b.label.name : 'Bottle'}, ${Math.round(b.ml)} ml${fxText ? `: ${fxText}` : ''}`, ...(fxText ? { title: fxText } : {}), 'data-act': 'bottle-slot', 'data-id': b.id },
+        cv, h('span', { class: 'bml', text: `${Math.round(b.ml)}` }), b.label ? h('span', { class: 'btag' }, icon('tag', 'sm')) : null);
       slot.addEventListener('click', () => { this.sel = this.sel === b.id ? null : b.id; this.refresh(); });
       grid.appendChild(slot);
     }

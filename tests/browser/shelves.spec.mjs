@@ -71,3 +71,37 @@ test('every natural ingredient has its own look on the shelf and in the cauldron
   await page.locator('.shelf-wrap').screenshot({ path: 'test-results/screenshots/' + info.project.name + '-herb-shelf.png' });
   expect(errors).toEqual([]);
 });
+
+test('a tested batch labels its bottles by itself: shelved bottles show their effects at once', async ({ page }) => {
+  const errors = watchErrors(page);
+  await newGame(page, { tutorial: false, seed: 'shelves-label-1' });
+  await pourRole(page, 'water', 150);
+  await pourRole(page, 'wild-silverleaf', 100);
+  const shelve = async () => {
+    await page.click('[data-act=tab-brew]');
+    await page.click('[data-act=bottle]');
+    await page.click('[data-act=bottle-dest-shelf]');
+    await page.click('[data-act=bottle-25]');
+    await page.waitForFunction(() => !(/** @type {any} */ (window)).__alchemist.screen.bottling, null, { timeout: 20_000 });
+  };
+  // an untested bottle carries no label
+  await shelve();
+  expect(await lab(page, (l) => l.state.bottles[0].label || null)).toBeNull();
+  // one trial of the batch: the bottle already on the shelf labels itself
+  await page.click('[data-act=tab-trials]');
+  await page.click('[data-act=test-rabbit]');
+  await expect(page.locator('.trial-report .report')).toBeVisible();
+  const first = await lab(page, (l) => { const b = l.state.bottles[0]; return { auto: !!(b.label && b.label.auto), tested: Object.values(b.label ? b.label.claims : {}).some((c) => c.source === 'trial'), cert: Object.keys(b.cert || {}).length }; });
+  if (first.cert) expect(first).toMatchObject({ auto: true, tested: true });
+  // a new bottle of the same (tested) batch is labelled the moment it is shelved: no new trial
+  const records = await lab(page, (l) => l.state.trials.records.length);
+  await shelve();
+  const second = await lab(page, (l) => { const b = l.state.bottles[1]; return { auto: !!(b.label && b.label.auto), vitality: b.label && b.label.claims.vitality.source }; });
+  expect(second).toEqual({ auto: true, vitality: 'trial' });
+  expect(await lab(page, (l) => l.state.trials.records.length)).toBe(records);
+  await page.click('[data-act=tab-counter]');
+  await page.locator('[data-act=bottle-slot]').nth(1).click();
+  await expect(page.locator('.bottle-detail .label-line')).toContainText('(tested)');
+  await expect(page.locator('[data-act=bottle-slot]').nth(1)).toHaveAttribute('title', /\(tested\)/);
+  expect(errors).toEqual([]);
+});
