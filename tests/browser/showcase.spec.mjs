@@ -117,7 +117,7 @@ test('the wilds at dusk in a thunderstorm', async ({ page }, info) => {
   const seed = await lab(page, (l) => l.state.seed);
   let day = 2;
   while (day < 80 && weatherOn(seed, day).id !== 'storm') day++;
-  await lab(page, (l, d) => { const st = l.state; st.day = d; st.customerIndex = st.customersPerDay - 1; l.showView('wilds'); l.views.wilds.refresh(); }, day);
+  await lab(page, (l, d) => { const st = l.state; st.day = d; st.current = null; st.customerIndex = st.customersPerDay; l.showView('wilds'); l.views.wilds.refresh(); }, day);
   await expect(page.locator('.wilds-sky')).toContainText('Dusk');
   await expect(page.locator('.wilds-sky')).toContainText('Thunderstorm');
   await page.waitForTimeout(800);

@@ -22,8 +22,22 @@ import { EFFECTS, EFFECT_KEYS, EFFECT_INDEX, NE, potencyWord } from '../alchemy/
 import { Rng, hashString } from '../core/rng.js';
 import {
   createColony, normalizeColony, installRabbitAlias, rabbitResponse, findRabbit, focusRabbit, recordDose,
-  rabbitSnap, encodeSnap, stageOf, addBoughtRabbit, STAGE_ERR, rabbitSensitivity, RABBIT_BIAS,
+  rabbitSnap, encodeSnap, stageOf, addBoughtRabbit, STAGE_ERR, rabbitSensitivity, RABBIT_BIAS, maxHealthOf,
 } from './colony.js';
+
+/**
+ * How unsteady a rabbit's readings are (a factor on the dose noise), from
+ * what anyone can see: its age (kits and elders read less steadily than
+ * adults) and its health — a rabbit below half of its health shakes, up to
+ * half as noisy again near death. Its hidden sensitivity is not in it.
+ * @param {any} rabbit @param {number} [day]
+ */
+export function readingSteadiness(rabbit, day) {
+  const stage = STAGE_ERR[stageOf(rabbit, day)] || 1;
+  const max = Math.max(1, maxHealthOf(rabbit, day ?? 1));
+  const frac = Math.max(0, Math.min(1, (rabbit.health ?? max) / max));
+  return stage * (frac < 0.5 ? 1 + (0.5 - frac) : 1);
+}
 
 /**
  * @typedef {Object} SubjectDef
@@ -101,7 +115,7 @@ export function normalizeTrials(t) {
  */
 export function rabbitReading(rabbit, effects, o) {
   const rng = new Rng(hashString(`reading:${o.salt}:${rabbit.id}`));
-  const errK = Math.sqrt(10 / Math.max(1, o.ml)) * (STAGE_ERR[stageOf(rabbit, o.day)] || 1);
+  const errK = Math.sqrt(10 / Math.max(1, o.ml)) * readingSteadiness(rabbit, o.day);
   const out = new Array(NE).fill(0);
   for (let k = 0; k < NE; k++) {
     const v = Number(effects[k]) || 0;
@@ -114,23 +128,51 @@ export function rabbitReading(rabbit, effects, o) {
   return out;
 }
 
-/** @typedef {{v:number, r:string, rec:string, e?:number}} Sample one reading: value, rabbit id, record id, noise factor of its dose (√(10 ml / dose), 1 if absent) */
+/** @typedef {{v:number, r:string, rec:string, e?:number, u?:number}} Sample one reading: value, rabbit id, record id, noise factor of its dose (√(10 ml / dose), 1 if absent), its own one-reading uncertainty (record err) */
 
 /** Noise factor of a dose of `ml`. @param {number} ml */
 export const doseErr = (ml) => Math.round(Math.sqrt(10 / Math.max(1, Number(ml) || 10)) * 1000) / 1000;
 
 /**
- * Pool readings into an estimate per effect, plainly: the mean of the
- * readings and their sample standard deviation (n − 1), the number of
- * readings and of rabbits, the newest record behind it, and whether it is
- * still a single reading (`first`: its value is that reading, its
- * deviation 0 — not because it is exact, but because one measure says
- * nothing about its own error).
+ * How much evidence stands behind an estimate, from weakest to strongest:
+ *   preliminary  — a single reading (its spread says nothing yet);
+ *   repeated     — several readings, all on one rabbit (that rabbit's own
+ *                  bias stays in the mean however often it is tested);
+ *   corroborated — readings on two or more rabbits;
+ *   certified    — corroborated, at least three readings, and the
+ *                  uncertainty of the mean is small.
+ */
+export const EVIDENCE_LEVELS = ['preliminary', 'repeated', 'corroborated', 'certified'];
+export const EVIDENCE_TEXT = {
+  preliminary: 'one reading — a rough guess',
+  repeated: 'repeated on one rabbit — its own bias is still in it',
+  corroborated: 'corroborated on several rabbits',
+  certified: 'certified: several rabbits, a narrow margin',
+};
+/** @param {string} level */
+export const evidenceRank = (level) => EVIDENCE_LEVELS.indexOf(level);
+
+/** Weight of the noise the guild expects, against the spread actually seen, when pooling few readings. */
+const PRIOR_WEIGHT = 2;
+
+/**
+ * Pool readings into an estimate per effect: the mean of the readings, the
+ * spread actually seen between them (sample standard deviation, n − 1), and
+ * — separately — how uncertain the *mean* is (`unc`, the half-width of a
+ * ~95 % margin). The margin uses only what the guild knows publicly: how
+ * much a dose of that size on a rabbit of that age varies (each reading's
+ * own `u`), blended with the spread seen once there are several readings,
+ * and how far one rabbit may feel an effect more or less than another
+ * (RABBIT_BIAS) — which repeated tests of one rabbit never average out, and
+ * other rabbits do. So one reading is never "±0": it carries the full
+ * margin of a single dose. `first` still marks a single reading.
  * @param {Record<string, Sample[]>} samples
  */
 export function summarize(samples) {
   /** @type {Record<string, number>} */ const values = {};
   /** @type {Record<string, number>} */ const spread = {};
+  /** @type {Record<string, number>} */ const unc = {};
+  /** @type {Record<string, string>} */ const level = {};
   /** @type {Record<string, number>} */ const n = {};
   /** @type {Record<string, number>} */ const rabbits = {};
   /** @type {Record<string, string>} */ const records = {};
@@ -140,22 +182,36 @@ export function summarize(samples) {
     const N = list.length;
     const mean = list.reduce((a, s) => a + s.v, 0) / N;
     const sd = N > 1 ? Math.sqrt(list.reduce((a, s) => a + (s.v - mean) ** 2, 0) / (N - 1)) : 0;
+    const R = new Set(list.map((s) => s.r)).size;
     const m = Math.round(mean * 10) / 10;
     values[key] = Math.abs(m) < 0.5 ? 0 : m;
     spread[key] = Math.round(sd * 10) / 10;
     n[key] = N;
-    rabbits[key] = new Set(list.map((s) => s.r)).size;
+    rabbits[key] = R;
     records[key] = list[N - 1].rec;
     first[key] = N === 1;
+    // expected per-dose noise (without the rabbit's bias), from each reading's own margin
+    const bias = RABBIT_BIAS * Math.abs(mean);
+    let prior2 = 0;
+    for (const s of list) {
+      const e = s.e ?? 1;
+      const u = s.u ?? Math.sqrt((DOSE_NOISE * e * Math.abs(mean)) ** 2 + (READ_NOISE * e) ** 2 + bias ** 2);
+      prior2 += Math.max((READ_NOISE * e * 0.5) ** 2, u * u - bias * bias);
+    }
+    prior2 /= N;
+    const s2 = (PRIOR_WEIGHT * prior2 + (N - 1) * sd * sd) / (PRIOR_WEIGHT + N - 1);
+    const se = Math.sqrt(s2 / N + (bias * bias) / R);
+    unc[key] = Math.round(1.96 * se * 10) / 10;
+    level[key] = N === 1 ? 'preliminary' : R === 1 ? 'repeated' : N >= 3 && unc[key] <= Math.max(2.5, 0.2 * Math.abs(mean)) ? 'certified' : 'corroborated';
   }
-  return { values, spread, n, rabbits, records, first };
+  return { values, spread, unc, level, n, rabbits, records, first };
 }
 
 /** Add one record's readings to a sample set (newest last). @param {Record<string, Sample[]>} samples @param {any} rec */
 export function addSamples(samples, rec) {
   for (const key of rec.revealed || []) {
     if (rec.values[key] === undefined) continue;
-    (samples[key] ||= []).push({ v: rec.values[key], r: rec.rabbitId || rec.subjectId, rec: rec.id, e: doseErr(rec.ml) });
+    (samples[key] ||= []).push({ v: rec.values[key], r: rec.rabbitId || rec.subjectId, rec: rec.id, e: doseErr(rec.ml), ...(rec.err && rec.err[key] !== undefined ? { u: rec.err[key] } : {}) });
   }
   return samples;
 }
@@ -206,7 +262,8 @@ export function runTrial(trials, subjectId, dose, ctx) {
   // what this rabbit actually feels (and shows) of this dose
   const felt = rabbitReading(st, dose.effects, { ml: ctx.ml, day: ctx.day, salt: `${trials.serial + 1}:${ctx.batchId}:${ctx.rev}` });
   const rr = rabbitResponse(st, felt, ctx.ml, { day: ctx.day });
-  const errK = Math.sqrt(10 / ctx.ml) * (STAGE_ERR[stageOf(st, ctx.day)] || 1);
+  // the steadiness the rabbit had when dosed (before this dose acted on it)
+  const errK = Math.sqrt(10 / ctx.ml) * readingSteadiness(st, ctx.day);
   /** @type {Record<string, number>} */ const err = {};
   /** @type {Record<string, number>} */ const values = {};
   /** @type {Record<string, number>} */ const theory = {};
@@ -283,7 +340,7 @@ export function certification(trials, batch, current) {
       if (r.values[key] === undefined) continue;
       const ref = r.tv && r.tv[key] !== undefined ? r.tv[key] : r.values[key];
       if (current && Math.abs(current[EFFECT_INDEX[key]] - ref) > driftTolerance(ref)) { stale.add(key); continue; }
-      (samples[key] ||= []).push({ v: r.values[key], r: r.rabbitId || r.subjectId, rec: r.id, e: doseErr(r.ml) });
+      (samples[key] ||= []).push({ v: r.values[key], r: r.rabbitId || r.subjectId, rec: r.id, e: doseErr(r.ml), ...(r.err && r.err[key] !== undefined ? { u: r.err[key] } : {}) });
     }
   }
   for (const k of Object.keys(samples)) stale.delete(k);

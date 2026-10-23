@@ -37,7 +37,7 @@ test('a label never discloses untested truth: unknown without theory, estimates 
   assert.equal(est.claims.vitality.source, 'estimate');
   assert.ok(est.claims.vitality.spread > 0, 'estimates carry their uncertainty');
   const tested = draftLabel({ cert: { vitality: 12.34, fire: 0.4 }, certRecords: { vitality: 't1', fire: 't1' } }, theory, 3);
-  assert.deepEqual(tested.claims.vitality, { kind: 'value', value: 12.3, source: 'trial', record: 't1', measured: 12.3 });
+  assert.deepEqual(tested.claims.vitality, { kind: 'value', value: 12.3, source: 'trial', record: 't1', measured: 12.3, evidence: { level: 'preliminary', n: 1, r: 1, u: 0 } });
   assert.equal(tested.claims.fire.kind, 'none');
   assert.equal(tested.claims.fire.source, 'trial');
 });
@@ -49,9 +49,17 @@ test('trust grows with trial evidence; a demanding customer insists on proof', (
   const guess = draftLabel({ cert: {} }, theory, 1);
   const allKeys = relevantEffects(com);
   assert.equal(allKeys.length, NE, 'with a purity rule, every channel matters');
-  const proven = draftLabel({ cert: Object.fromEntries(allKeys.map((k) => [k, k === 'vitality' ? 14 : 0])), certRecords: Object.fromEntries(allKeys.map((k) => [k, 't'])) }, theory, 1);
-  assert.ok(labelTrust(com, proven, 1) > labelTrust(com, guess, 1) + 0.2);
-  assert.deepEqual(unprovenWanted(com, guess), ['vitality']);
+  const cert = Object.fromEntries(allKeys.map((k) => [k, k === 'vitality' ? 14 : 0]));
+  const records = Object.fromEntries(allKeys.map((k) => [k, 't']));
+  // one reading of every channel (a single trial on one rabbit reads them all)
+  const once = draftLabel({ cert, certRecords: records }, theory, 1);
+  // the same readings repeated on two rabbits: corroborated
+  const samples = Object.fromEntries(allKeys.map((k) => [k, [{ v: cert[k], r: 'a', rec: 't1' }, { v: cert[k] * 1.05, r: 'b', rec: 't2' }, { v: cert[k] * 0.95, r: 'a', rec: 't3' }]]));
+  const proven = draftLabel({ cert, certRecords: records, samples }, theory, 1);
+  assert.ok(labelTrust(com, once, 1) > labelTrust(com, guess, 1) + 0.15, 'one trial already earns trust');
+  assert.ok(labelTrust(com, proven, 1) > labelTrust(com, once, 1) + 0.05, 'corroborated evidence earns more than one reading');
+  assert.deepEqual(unprovenWanted(com, guess), allKeys, 'untested: the wanted effect and, for the purity rule, every other one');
+  assert.deepEqual(unprovenWanted(com, once), ['vitality'], 'a very demanding customer wants the wanted effect read on more than one rabbit');
   assert.deepEqual(unprovenWanted(com, proven), []);
   assert.deepEqual(unprovenWanted(order(easy), guess), [], 'an easy-going customer buys on theory');
 });

@@ -1,6 +1,8 @@
 // Modal panels: shop & guild, recipe book, journal, ingredient inspector,
 // guild advice, potion result, day summary, analysis, pause menu, settings.
 
+import { recipeConfidence, CONFIDENCE_TEXT, describeStep } from '../game/recipes.js';
+import { evidenceRank } from '../game/experiments.js';
 import { h, btn, modal, toast, coins, starsText, confirmDialog, clear } from './dom.js';
 import { icon } from './icons.js';
 import { drawPortrait } from '../rendering/portraits.js';
@@ -481,29 +483,31 @@ export function renderRecipes(lab, container, rerender) {
       return;
     }
     for (const r of st.recipes) {
-      const ing = r.ingredients.map((i) => `${i.ml} ml ${st.lookup(i.id) ? st.lookup(i.id).name : '?'}`).join(', ');
-      const steps = [];
-      if (r.crushed) steps.push('crush solids');
-      if (r.stirSeconds) steps.push(`stir ~${r.stirSeconds}s`);
-      if (r.maxTemp > 30) steps.push(`heat to ${r.maxTemp}°C`);
-      if (r.minTemp < 12) steps.push(`chill to ${r.minTemp}°C`);
-      steps.push(`serve at ${r.serveTemp}°C`);
+      const ing = r.ingredients.map((i) => `${i.ml} ml ${st.lookup(i.id) ? st.lookup(i.id).name : '?'}${i.ground ? ' (ground)' : ''}`).join(', ');
+      const steps = r.steps || [];
+      const conf = recipeConfidence(r);
       const canAfford = r.ingredients.every((i) => lab.sandbox || st.stock(i.id) >= i.ml);
       const actions = h('div', { class: 'row', style: { flexWrap: 'wrap' } },
-        btn('Prepare', () => { prepareRecipe(lab, r); if (lab.showView) lab.showView('brew'); }, { icon: 'pour', disabled: !canAfford, title: canAfford ? 'Pour all ingredients' : 'Not enough stock', act: 'prepare' }),
-        st.has('homunculus') ? btn('Homunculus', () => { lab.startHomunculus(r); if (lab.showView) lab.showView('brew'); }, { icon: 'homunculus', disabled: !canAfford, act: 'homunculus' }) : null,
+        btn('Prepare', () => { prepareRecipe(lab, r); if (lab.showView) lab.showView('brew'); }, { icon: 'pour', disabled: !canAfford, title: canAfford ? 'Pour the ingredients in order; you follow the steps' : 'Not enough stock', act: 'prepare' }),
+        st.has('homunculus') ? btn('Homunculus', () => { if (lab.startHomunculus(r) !== false && lab.showView) lab.showView('brew'); }, { icon: 'homunculus', disabled: !canAfford, act: 'homunculus', title: 'The homunculus follows every recorded step in the real cauldron' }) : null,
         btn('', async () => { const name = prompt('Rename recipe', r.name); if (name) { r.name = name.slice(0, 40); render(); } }, { icon: 'scroll', cls: 'icon', title: 'Rename' }),
         btn('', async () => { if (await confirmDialog('Delete recipe?', r.name, 'Delete', 'danger')) { st.recipes.splice(st.recipes.indexOf(r), 1); render(); } }, { icon: 'trash', cls: 'icon danger', title: 'Delete' }),
       );
       const verified = r.verified && Object.keys(r.verified).length;
-      m.body.appendChild(h('div', { class: 'item parch' },
+      const ev = r.evidence || {};
+      const weakest = Object.values(ev).reduce((w, e) => (w === null || evidenceRank(e.level) < evidenceRank(w) ? e.level : w), null);
+      const stepList = h('ol', { class: 'recipe-steps' }, ...steps.map((x) => h('li', { class: 'small' + (x.op === 'skim' || x.op === 'distil' ? ' manual' : ''), text: describeStep(x, st.lookup) })));
+      m.body.appendChild(h('div', { class: 'item parch recipe', 'data-recipe': r.id || '', 'data-confidence': conf },
         swatch(r.result.color),
         h('div', {},
           h('div', { class: 'title', text: r.name }),
           h('div', { class: 'meta', text: ing }),
-          h('div', { class: 'meta', text: steps.join(' · ') }),
+          steps.length ? h('details', { class: 'meta steps' }, h('summary', { text: `${steps.length} steps${r.approx ? ' (approximate: saved before procedures were kept)' : ''}` }), stepList) : null,
+          r.limits && r.limits.length ? h('div', { class: 'meta muted', text: `The homunculus cannot do the ${r.limits.join(' or ')}: you do that part.` }) : null,
           h('div', { class: 'meta', text: `Result: ${describeColor(r.result.color)}, ${viscosityClass(r.result.viscosity)}, ${r.result.density.toFixed(2)} g/ml${r.quality !== null && r.quality !== undefined ? ` · sold at ${Math.round(r.quality * 100)}% quality` : ''}` }),
-          h('div', { class: 'meta' }, h('span', { class: verified ? 'ok' : 'muted', text: verified ? 'Tested: ' : 'Untested formula — effects unknown' }), ...(verified ? fxChips(r.verified, 0.5) : [])),
+          h('div', { class: 'meta' }, h('span', { class: verified ? 'ok' : 'muted', text: verified ? 'Tested: ' : 'Untested formula — effects unknown' }), ...(verified ? fxChips(r.verified, 0.5) : []),
+            weakest ? h('span', { class: 'muted', text: ` · ${weakest === 'preliminary' ? 'one reading' : weakest}` }) : null),
+          h('div', { class: 'meta conf conf-' + conf, text: `${CONF_LABEL[conf]} — ${CONFIDENCE_TEXT[conf]}${r.brews ? ` (brewed ${r.brews}×, reproduced ${r.reproduced | 0}×)` : ''}` }),
         ),
         actions,
       ));
@@ -513,12 +517,22 @@ export function renderRecipes(lab, container, rerender) {
   void rerender;
 }
 
-/** Pour a recipe's ingredients in order (the player still stirs and heats). */
+const CONF_LABEL = { untested: 'Untested', tested: 'Tested once', reproduced: 'Reproduced', unreliable: 'Unreliable' };
+
+/**
+ * Pour a recipe's ingredients in order (the player still does the rest).
+ * With a recorded procedure, only the ingredients before its first other
+ * step are poured; the book lists what comes next.
+ */
 function prepareRecipe(lab, r) {
-  const queue = r.ingredients.slice();
+  const steps = r.steps || [];
+  const firstOther = steps.findIndex((x) => x.op !== 'pour');
+  const lead = steps.length ? steps.slice(0, firstOther < 0 ? steps.length : firstOther).filter((x) => x.op === 'pour').map((x) => ({ id: x.id, ml: x.ml, ground: x.ground })) : r.ingredients.slice();
+  const queue = lead.length ? lead : r.ingredients.slice();
+  const rest = steps.slice(firstOther < 0 ? steps.length : firstOther);
   const next = () => {
     if (!queue.length) {
-      toast('Ingredients poured', `Now ${r.stirSeconds ? 'stir' : 'mix'}${r.maxTemp > 30 ? `, heat to ${r.maxTemp}°C` : ''}${r.minTemp < 12 ? `, chill to ${r.minTemp}°C` : ''} and serve at ${r.serveTemp}°C.`, 'book', 6000);
+      toast('Ingredients poured', rest.length ? `Next: ${rest.slice(0, 3).map((x) => describeStep(x, lab.state.lookup)).join('; ')}${rest.length > 3 ? '… (see the book)' : ''}.` : `Now ${r.stirSeconds ? 'stir' : 'mix'} and serve at ${r.serveTemp}°C.`, 'book', 7000);
       return;
     }
     if (lab.sim.emitter.pouring) { setTimeout(next, 200); return; }
@@ -592,6 +606,26 @@ export function openPause(lab) {
   if (!lab.sandbox) items.push(btn('Restart tutorial', () => { m.close(); lab.tutorial && lab.tutorial.start(true); }, { icon: 'bulb' }));
   items.push(btn(lab.sandbox ? 'Leave experiment' : 'Save & quit to menu', () => { m.close(); app.showMenu(); }, { icon: 'door', act: 'quit' }));
   m = modal({ title: lab.sandbox ? 'Free Experiment' : 'Paused', body: h('div', { class: 'list' }, items) });
+}
+
+/** The alembic's receiver flask: pour the distillate back, return it to its jar, or pour it away. @param {any} lab */
+export function openReceiver(lab) {
+  const st = lab.state, rec = st.receiver;
+  if (!rec || !rec.count) return;
+  const jar = lab.receiverJar();
+  const tot = Object.values(rec.comp).reduce((a, b) => /** @type {number} */ (a) + /** @type {number} */ (b), 0) || 1;
+  const parts = Object.entries(rec.comp).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([id, f]) => `${st.lookup(id) ? st.lookup(id).name : id} ${Math.round((f / tot) * 100)}%`).join(', ');
+  let m;
+  m = modal({
+    title: `Receiver flask · ${rec.count * SIM.ML_PER_PARTICLE} ml`,
+    body: h('div', { class: 'card parch' }, h('div', { class: 'small', text: `What the alembic drew off: ${parts}.` }),
+      h('div', { class: 'small muted', text: jar ? 'It is clean enough to go back into its jar.' : 'It carries more than one thing: pour it back into a brew, or away.' })),
+    foot: [
+      jar ? btn('Back into the jar', () => { lab.receiverToJar(); m.close(); }, { cls: 'primary', icon: 'jar', act: 'receiver-jar' }) : null,
+      btn('Pour into the cauldron', () => { lab.pourReceiver(); m.close(); }, { icon: 'pour', act: 'receiver-pour' }),
+      btn('Pour away', () => { st.receiver = null; m.close(); }, { icon: 'trash', cls: 'danger', act: 'receiver-away' }),
+    ].filter(Boolean),
+  });
 }
 
 export function openHelp() {

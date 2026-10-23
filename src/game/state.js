@@ -16,7 +16,8 @@ import { migrateVial } from './vial.js';
 import { recordSale, resolveFollowUp } from './commerce.js';
 import { colonyDay, colonyTick, livingRabbits, findRabbit, addBoughtRabbit, retireRabbit, remainsSource, purgeRabbit, cullRabbit, maxHealthOf, FOUNDER_BORN } from './colony.js';
 import { remainsMaterials, remainsPlan, isRemains } from '../materials/remains.js';
-import { returningPatron, welcomePatron, recentStyles, notePatron } from './patrons.js';
+import { returningPatron, welcomePatron, recentStyles, notePatron, patronVerdict, noveltyFactor } from './patrons.js';
+import { techniqueById } from './commissions.js';
 import { migrateRecipe } from './recipes.js';
 
 export const SAVE_VERSION = 5;
@@ -863,6 +864,12 @@ export class GameState {
     sale.perfect = ev.perfect;
     sale.stars = ev.stars;
     sale.grand = !!com.grand;
+    sale.style = com.style || null;
+    sale.techniques = com.techniques || [];
+    // the same order over and over teaches the guild nothing new: repeats earn less
+    const novelty = noveltyFactor(sale.style, recentStyles(this));
+    if (sale.repDelta > 0 && novelty < 1) { sale.repDelta = Math.round(sale.repDelta * novelty); sale.novelty = novelty; }
+    notePatron(this, com);
     const events = this._bookSale(com, ev, truth, price, 1, sale.id);
     this.sales.unshift(sale);
     if (this.sales.length > 80) this.sales.length = 80;
@@ -903,7 +910,15 @@ export class GameState {
       const hist = this.history.find((x) => x.saleId === sale.id);
       if (hist && hist.quality === null) { hist.quality = sale.quality; hist.stars = sale.stars ?? null; }
       events.push(...this._verdict(sale.quality, !!sale.perfect, !!sale.grand));
+      // a technique that worked for a paying customer is mastered: the guild takes note
+      if (sale.quality >= 0.85) for (const t of sale.techniques || []) {
+        const T = techniqueById(t);
+        if (!T) continue;
+        const entry = this.discover({ key: 'technique:' + t, title: `Technique: ${T.name}`, text: T.lesson, kind: 'technique' });
+        if (entry) { events.push({ type: 'technique', id: t, name: T.name, text: T.lesson }); events.push(...this.adjustReputation(4)); }
+      }
     }
+    patronVerdict(this, f, action);
     return { ...r, events };
   }
 

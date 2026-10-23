@@ -7,7 +7,7 @@ import { icon } from './icons.js';
 import { drawPortrait } from '../rendering/portraits.js';
 import { audio } from '../audio/audio.js';
 import { EFFECTS, EFFECT_BY_KEY } from '../alchemy/effects.js';
-import { draftLabel, openNegotiation as beginNegotiation, proposePrice, acceptOffer, relevantEffects, labelTrust, editClaim } from '../game/commerce.js';
+import { draftLabel, openNegotiation as beginNegotiation, proposePrice, acceptOffer, relevantEffects, trustReport, editClaim, proofGaps } from '../game/commerce.js';
 import { PURITY_LIMIT } from '../game/requests.js';
 import { shortName } from '../game/customers.js';
 
@@ -28,7 +28,8 @@ export function openIdentify(lab, vial, onDone) {
     clear(rows);
     for (const e of EFFECTS) {
       const c = draft.claims[e.key];
-      const src = c.source === 'trial' ? h('span', { class: 'src trial', title: 'Measured in a trial of this batch' }, icon('dropper', 'sm'), ' tested')
+      const lvl = c.evidence ? c.evidence.level : 'preliminary';
+      const src = c.source === 'trial' ? h('span', { class: 'src trial lvl-' + lvl, title: `Measured in trials of this batch: ${c.evidence ? `${c.evidence.n} reading${c.evidence.n === 1 ? '' : 's'} on ${c.evidence.r} rabbit${c.evidence.r === 1 ? '' : 's'}, ±${c.evidence.u}` : 'one reading'}` }, icon('dropper', 'sm'), lvl === 'preliminary' ? ' 1 reading' : ` ${lvl}`)
         : c.kind === 'unknown' ? h('span', { class: 'src unknown', text: 'unknown' })
           : c.source === 'estimate' ? h('span', { class: 'src est', text: `theory${c.spread ? ' ±' + c.spread : ''}` }) : h('span', { class: 'src you', text: 'your claim' });
       const val = c.kind === 'value' ? `${Math.round((c.value || 0) * 10) / 10}%` : c.kind === 'none' ? `none (< ${PURITY_LIMIT}%)` : '?';
@@ -49,8 +50,10 @@ export function openIdentify(lab, vial, onDone) {
       rows.appendChild(row);
     }
     if (com) {
-      const t = labelTrust(com, draft, st.rank);
-      trustEl.textContent = `${shortName(com.customer.name)} will trust this label ${t >= 0.9 ? 'fully' : t >= 0.7 ? 'well' : t >= 0.5 ? 'somewhat' : 'barely'}.`;
+      const rep = trustReport(com, draft, st.rank);
+      const t = rep.trust;
+      const gaps = proofGaps(com, draft);
+      trustEl.textContent = `${shortName(com.customer.name)} will trust this label ${t >= 0.9 ? 'fully' : t >= 0.7 ? 'well' : t >= 0.5 ? 'somewhat' : 'barely'}: ${rep.reasons.join('; ')}.${gaps.length ? ` Before buying they want ${gaps.some((g) => g.have === 'untested') ? 'the untested effects tested' : 'stronger proof'}.` : ''}`;
     }
   };
   const trustEl = h('div', { class: 'small' });
@@ -60,7 +63,7 @@ export function openIdentify(lab, vial, onDone) {
     wide: true,
     body: [
       h('div', { class: 'card parch' },
-        h('div', { class: 'small', text: 'Write down what this potion does. Tested values come from trials of this very batch; the rest are the guild theory’s estimates, or unknown. Customers pay for what you claim — and come back if it is not true.' }),
+        h('div', { class: 'small', text: 'Write down what this potion does. Tested values come from trials of this very batch — one reading counts for less than readings repeated, and those less than readings on several rabbits. The rest are the guild theory’s estimates, or unknown. Customers pay for what you claim — and come back if it is not true.' }),
         h('div', { class: 'small muted', text: com ? 'Highlighted: the effects this order cares about (with a purity rule, all of them).' : '' }),
         trustEl),
       h('div', { class: 'card parch' }, rows),
@@ -100,6 +103,8 @@ export function openNegotiation(lab, com, vial, onEnd) {
   const portrait = /** @type {HTMLCanvasElement} */ (h('canvas', { class: 'portrait big' }));
   drawPortrait(portrait, com.customer.portrait, n.fit >= 0.7 ? 'happy' : n.fit >= 0.4 ? 'neutral' : 'unhappy');
   const log = h('div', { class: 'haggle-log' });
+  const why = h('div', { class: 'haggle-why small' }, h('b', { text: 'What they weigh: ' }),
+    ...(n.reasons || []).map((r) => h('span', { class: 'why-chip why-' + r.k + (r.v >= 85 ? ' good' : r.v < 55 ? ' bad' : ''), title: r.text, text: `${WHY[r.k] || r.k} ${r.k === 'temper' ? '' : r.v + '%'} — ${r.text}` })));
   let ask = Math.round(Math.max(n.offer * 1.25, com.budget * 0.9));
   const askEl = h('b', { class: 'ask' });
   const offerEl = h('div', { class: 'offer' });
@@ -142,6 +147,7 @@ export function openNegotiation(lab, com, vial, onEnd) {
         h('div', { class: 'cust-name', text: com.customer.name }),
         h('div', { class: 'small muted', text: `${com.customer.title} · wants ${com.potionName.toLowerCase()} · ${vial.ml} ml on offer` }),
         offerEl, roundsEl)),
+      why,
       log,
       h('div', { class: 'row wrap haggle-ctl' }, h('span', { class: 'small', text: 'Your price:' }), minus, askEl, plus, askBtn, takeBtn))],
     foot: [walk],
@@ -149,6 +155,9 @@ export function openNegotiation(lab, com, vial, onEnd) {
   render();
   return m;
 }
+
+/** Names of what a customer weighs in bargaining (commerce.js openNegotiation reasons). */
+const WHY = { fit: 'Fit', trust: 'Trust', quantity: 'Measure', temper: 'Temper', history: 'History' };
 
 /**
  * The deal is done: what was paid, and that the customer will report back.

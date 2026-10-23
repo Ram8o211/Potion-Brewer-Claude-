@@ -57,7 +57,8 @@ test('first commission: brew, test on a subject, bottle and serve', async ({ pag
   expect(await lab(page, (l) => l.sim.p.count), 'the dose was taken from the cauldron').toBe(n0 - 2);
   const rec = await lab(page, (l) => l.state.trials.records[0]);
   expect(rec.subjectId).toBe('rabbit');
-  expect(rec.values.vitality).toBeGreaterThan(3);
+  // one reading of a ~7 % brew: noisy (about ±30 % a dose, plus the rabbit's own bias) but plainly there
+  expect(rec.values.vitality).toBeGreaterThan(1.5);
   expect(rec.values.love, 'the rabbit reports love too').toBeDefined();
   expect(rec.values.acidity, 'and acidity: a rabbit shows every effect').toBeDefined();
   await shot(page, info, 'trial');
@@ -109,10 +110,12 @@ test('first commission: brew, test on a subject, bottle and serve', async ({ pag
   await page.waitForFunction(() => window.__alchemist.screen.sim.p.count >= 40 && !window.__alchemist.screen.sim.emitter.pouring, null, { timeout: 30_000 });
   expect(await lab(page, (l) => l.sim.p.count * 5)).toBe(200);
   expect(await lab(page, (l, id) => l.state.stock(id), leaf)).toBe(stock0 - 50);
-  // the brew follows a tested recipe: its effects show as "Recipe", not as verified
+  // the recipe keeps its procedure: the book lists the steps, heating included
+  await expect(page.locator('.view-book .item', { hasText: 'Mabry' }).locator('.recipe-steps li', { hasText: 'Heat to' }).first()).toBeAttached();
+  // poured but not yet prepared the same way: the panel says so, and nothing is verified
   await lab(page, (l) => l.showView('brew'));
   await page.click('[data-act=brew-info]');
-  await expect(page.locator('.brew-panel')).toContainText('Recipe');
+  await expect(page.locator('.brew-panel .recipe-partial')).toContainText('not yet prepared the same way');
   await expect(page.locator('.brew-panel')).toContainText('Verified nothing yet');
   expect(errors).toEqual([]);
 });
@@ -149,7 +152,18 @@ test('a customer who insists on proof will not buy until the vial is tested; tes
   const ml0 = await lab(page, (l) => l.state.vial.ml);
   await page.click('[data-act=test-rabbit]');
   expect(await lab(page, (l) => l.state.vial.ml), 'the dose came out of the vial').toBe(ml0 - 10);
+  await expect(page.locator('.reading[data-effect=vitality]')).toHaveAttribute('data-level', 'preliminary');
+  await expect(page.locator('.reading[data-effect=vitality] .rv')).not.toContainText('±0 ');
   expect(await lab(page, (l) => l.state.vial.label.claims.vitality.source), 'the reading fills in the label').toBe('trial');
+  await page.click('[data-act=tab-counter]');
+  // one reading is not proof enough for this customer: they want it read on a second rabbit
+  await page.click('[data-act=serve]');
+  await expect(page.locator('.toast').last()).toContainText('second rabbit');
+  await expect(page.locator('.haggle-log')).toHaveCount(0);
+  await page.click('[data-act=test-vial]');
+  await lab(page, (l) => { const st = l.state; const other = st.colony.rabbits.find((r) => r.alive && r.id !== st.colony.focus); st.selectRabbit(other.id); l.views.trials.refresh(); });
+  await page.click('[data-act=test-rabbit]');
+  expect(await lab(page, (l) => l.state.vial.label.claims.vitality.evidence.level), 'two rabbits corroborate the reading').toMatch(/corroborated|certified/);
   await page.click('[data-act=tab-counter]');
   await shot(page, info, 'vial-certified');
   await page.click('[data-act=serve]');

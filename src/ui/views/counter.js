@@ -7,7 +7,9 @@ import { h, btn, clear, coins, confirmDialog } from '../dom.js';
 import { icon } from '../icons.js';
 import { drawPortrait } from '../../rendering/portraits.js';
 import { drawBottle } from '../../rendering/renderer.js';
-import { PROPERTY_LABELS } from '../../game/evaluate.js';
+import { PROPERTY_LABELS, scoreRequirement } from '../../game/evaluate.js';
+import { techniqueById } from '../../game/commissions.js';
+import { EFFECT_INDEX, NE } from '../../alchemy/effects.js';
 import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
 import { missingEffects } from '../../game/experiments.js';
 import { relevantEffects } from '../../game/commerce.js';
@@ -80,9 +82,13 @@ export class CounterView {
         h('div', { class: 'cust-name', text: `${com.customer.name}` }),
         h('div', { class: 'small muted', text: `${com.customer.title}${com.contract ? ' · Guild contract' : ''}${com.grand ? ' · Grand Commission' : ''}` }),
         h('div', { class: 'budget' }, icon('coin', 'sm'), ` up to ${coins(com.budget)}`))),
+      com.patron ? h('div', { class: 'small patron ' + (com.patron.trust > 0.2 ? 'ok' : com.patron.trust < -0.2 ? 'warn' : 'muted'), text: `A returning customer (${com.patron.visits} earlier visit${com.patron.visits === 1 ? '' : 's'}): ${com.patron.trust > 0.2 ? 'they trust your shop — less haggling, a bigger purse' : com.patron.trust < -0.2 ? 'they were let down before and want proof this time' : 'they know your shop'}.` }) : null,
       h('div', { class: 'speech', text: '“' + com.dialogue + '”' }),
       h('div', { class: 'potion-name', text: com.potionName }),
       list,
+      this.techCard(com),
+      this.supplyCard(com),
+      this.shelfMatches(com),
       com.effectOrder ? h('div', { class: 'small muted', text: 'Effects can only be known by testing this batch in the Trials room. Customers pay for what your label claims — and come back tomorrow if it was not true.' }) : null,
       h('div', { class: 'row wrap cust-actions' },
         btn(com.hintCost ? `Advice (${com.hintCost})` : 'Advice', () => panels.openHint(lab), { icon: 'bulb', act: 'hint' }),
@@ -90,6 +96,59 @@ export class CounterView {
         btn('To the cauldron', () => lab.showView('brew'), { icon: 'cauldron', cls: 'primary', act: 'go-brew' }))));
     this.vialCard(el);
     this.shelfCard(el);
+  }
+
+  /** What the order's techniques ask of the alchemist (one line each). @param {any} com */
+  techCard(com) {
+    const ts = (com.techniques || []).map(techniqueById).filter(Boolean);
+    if (!ts.length) return null;
+    const st = this.lab.state;
+    return h('div', { class: 'small tech-card' }, h('b', { text: 'What it takes: ' }),
+      ...ts.map((t) => h('div', { class: 'tech', 'data-tech': t.id }, h('span', { class: st.journal['technique:' + t.id] ? 'ok' : '', text: `${t.name}${st.journal['technique:' + t.id] ? ' ✓' : ''}: ` }), t.lesson)));
+  }
+
+  /**
+   * How much to brew and where the wanted effects can be had today — from
+   * what the shop knows of its ingredients, never the hidden plan.
+   * @param {any} com
+   */
+  supplyCard(com) {
+    const sup = com.supplies;
+    if (!sup || com.tutorial) return null;
+    const st = this.lab.state;
+    const where = { shelf: 'on the shelf', wilds: 'in the wilds', market: 'at the market' };
+    return h('details', { class: 'small supply-card' }, h('summary', { text: `Plan for about ${sup.brewMl} ml of brew (the bottle and a few test doses)` }),
+      ...sup.carriers.map((c) => h('div', {}, h('b', { text: `${EFFECT_BY_KEY[c.key].label}${c.sign < 0 ? ' (alkaline)' : ''}: ` }),
+        c.carriers.length ? c.carriers.map((x) => `${st.lookup(x.id).name} (${where[x.where] || x.where})`).join(', ') : 'nothing you can get today carries it')),
+      h('div', { class: 'muted', text: 'Every one of them brings side effects: plan what will cancel them. Long-press a jar on the shelf to see its effects.' }));
+  }
+
+  /**
+   * Shelved bottles whose own evidence and visible qualities already meet
+   * this order (judged on their trials, never on hidden truth).
+   * @param {any} com
+   */
+  shelfMatches(com) {
+    const st = this.lab.state;
+    if (!st.bottles.length) return null;
+    const fits = [];
+    for (const b of st.bottles) {
+      if (!b.m) continue;
+      const cert = b.cert || {};
+      const fx = new Array(NE).fill(0);
+      let untested = 0;
+      for (const r of com.requirements) {
+        if (r.key === 'purity') { for (const e of Object.keys(EFFECT_INDEX)) if (!(r.exclude || []).includes(e) && cert[e] === undefined) untested++; continue; }
+        if (EFFECT_BY_KEY[r.key] && cert[r.key] === undefined) untested++;
+      }
+      for (const [k, v] of Object.entries(cert)) fx[EFFECT_INDEX[k]] = v;
+      const m = { ...b.m, effects: fx, ml: b.ml };
+      const ok = com.requirements.every((r) => scoreRequirement(r, /** @type {any} */ (m)).score >= 0.999) && b.ml >= com.bottleMl;
+      if (ok || (untested && com.requirements.filter((r) => !EFFECT_BY_KEY[r.key] && r.key !== 'purity').every((r) => scoreRequirement(r, /** @type {any} */ (m)).score >= 0.999))) fits.push({ b, ok: ok && !untested });
+    }
+    if (!fits.length) return null;
+    const sure = fits.filter((f) => f.ok).length;
+    return h('div', { class: 'small shelf-match ' + (sure ? 'ok' : 'muted'), text: sure ? `On your shelves: ${sure} tested bottle${sure === 1 ? '' : 's'} already meet${sure === 1 ? 's' : ''} this order — take it down and offer it.` : `On your shelves: ${fits.length} bottle${fits.length === 1 ? '' : 's'} look${fits.length === 1 ? 's' : ''} right but ${fits.length === 1 ? 'is' : 'are'} not fully tested for this order.` });
   }
 
   /** @param {HTMLElement} el */

@@ -45,6 +45,8 @@ export async function newGame(page, o = {}) {
   await page.click('[data-act=start-game]');
   await page.waitForSelector('canvas.view-canvas');
   await page.waitForTimeout(500);
+  // the day dawns with the shop closed: open the door (as a player does) unless asked not to
+  if (o.open !== false) await lab(page, (l) => { if (!l.state.current && !l.state.dayOver) l.bringCustomer(false); });
 }
 
 /** @param {import('@playwright/test').Page} page */
