@@ -74,12 +74,18 @@ computed from the particles that actually run out of the tap. What a
     trial is only a rough guess). One section, **Expected effects
     of this batch**, pools every trial of the brew: each effect as a
     percentage, plainly computed: the mean of every trial ± their sample
-    standard deviation, with how many trials on how many rabbits. After the
-    first trial the value is exactly that reading with ±0, flagged as a
-    first, imprecise measure. Trials on the same rabbit keep the others
+    margin within which the true strength lies, with how many trials on how
+    many rabbits and an **evidence level**: one reading (a rough guess,
+    with the full margin of a single dose — never ±0), repeated on one
+    rabbit, corroborated on several, certified. The observed spread between
+    readings is shown separately. Trials on the same rabbit keep the others
     clean but keep that rabbit's own bias in the mean; other rabbits average
-    it out. Your label sells on the mean, and a customer complains when the
-    real potion is far from it.
+    it out. A hurt rabbit (below half its health) reads less steadily.
+    Your label sells on the mean and carries its evidence: customers trust,
+    and pay for, corroborated readings more than one, cautious ones insist
+    on repeated or corroborated proof, and a customer complains when the
+    real potion is far from the label. Bottles of one batch share its
+    trials, each checked against its own contents.
   * The chosen rabbit shows a bar per effect channel (acid and lye apart)
     with how much of it is active in it right now, plus its health (current
     / maximum). Doses are cumulative and fade slowly in real time (about a
@@ -128,7 +134,8 @@ computed from the particles that actually run out of the tap. What a
 * **The wilds.** Six regions, two of them magical and opened by rank, with
   36 natural ingredients between them. Each
   ingredient is picked, dug, chipped, scraped or swept (without the right
-  tool half of what you cut is spoiled), some only open at dawn or dusk,
+  tool half of what you cut is spoiled), some only open at dawn (before
+  you open the shop door) or dusk (after the last customer),
   the weather changes daily, careful hands leave part of every deposit to
   regrow, and a thorough harvest strips it and scars it. Deposits are
   finite and regrow with real time, even while the game is closed.
@@ -138,10 +145,21 @@ computed from the particles that actually run out of the tap. What a
 * **A procedural world per seed.** Every new shop generates its own
   reagents (names, colours, densities, viscosities, melting and boiling
   points, effects), reactions, wild deposits, hidden laws and customers.
-* **Achievable orders.** Every commission, physical or effect-based, is
-  derived from a hidden reference plan made only from what you can buy or
-  gather, and accepted only if the predicted potion passes the counter's
-  own scoring — including awakening stages and the purity rule. Because no
+* **Orders that use the whole craft.** Besides effects, customers ask for
+  *techniques* the simulation makes real with natural ingredients: a true
+  colour (only full extraction gives it), a serving temperature, a well
+  mixed brew (stability), a density, a heady tincture (spirit added once
+  the brew has cooled) or a brew boiled down with the lid off (stronger,
+  side effects too). The order card says what each takes, how much to brew
+  and where today's carriers of each effect can be found; instruments read
+  what the eye cannot (no hydrometer, no density meter on the order strip).
+* **Achievable orders.** Every commission is derived from a hidden
+  reference plan made only from what you can gather today, hold, or
+  legally buy with the coins you have — gather-only finds are never for
+  sale — and accepted only if the predicted potion passes the counter's
+  own scoring, techniques, awakening stages and the purity rule included.
+  An order that cannot be met gives way to an easier one; the day never
+  stalls. Because no
   ingredient is pure, the planner balances carriers of the wanted effects
   against helpers whose effects oppose their side effects (a least-squares
   solve on the opposing pairs, refined with the predictor), so every plan
@@ -154,8 +172,13 @@ computed from the particles that actually run out of the tap. What a
     threshold), a galvanometer, a clockwork stirrer, an alembic, a
     kennel, a rabbit warren and a purging still, foraging tools and a
     satchel, and a homunculus that brews your saved recipes.
-  * A recipe book, a trial log, the laws you have found, a discovery
-    journal, achievements, market days and guild contracts.
+  * A recipe book that records each brew as ordered steps (pours,
+    grinding, stirring, every heat and chill held, the lid), which the
+    homunculus replays exactly; a recipe brewed again and tested the same
+    becomes *reproduced*. A trial log, the laws you have found, a
+    discovery journal, achievements, market days and guild contracts.
+  * Returning customers who remember how your last potion worked, and
+    less reputation for selling the same order again and again.
 * **Free Experiment mode** with every reagent, tool, rabbit and region
   unlocked.
 * **Mobile first, desktop too.**
@@ -240,8 +263,8 @@ npm test                  # headless tests: physics, game rules, effects, the ra
 npx playwright install chromium   # once, if no Chromium is available
 npm run test:browser      # browser tests: desktop / phone / tablet emulation, offline build, GitHub Pages sub-path
 npm run bench             # measured physics and frame timings → docs/perf-results.json
-node scripts/playtest.mjs # automated 12-day balancing playthrough → docs/playtest-results.json
-node scripts/achievability.mjs 30   # brew 30 generated commissions in the real simulation
+node scripts/playtest.mjs 8 3      # five automated player profiles, 3 worlds × 8 days, the real loop → docs/playtest-results.json
+node scripts/achievability.mjs 2 ach docs/achievability-results.json   # brew generated commissions (every tier and technique) in the real simulation
 npm run check             # typecheck + tests + build
 ```
 
@@ -249,10 +272,14 @@ Browser screenshots from the test run land in `test-results/screenshots/`.
 
 ## How to play
 
+0. **Dawn.** Each day starts with the shop closed: gather dawn flowers in
+   the Wilds, brew ahead for the shelves, then open the door.
 1. **Counter.** Read the order. Each requirement shows its target; effects
-   show "?" until you have tested them.
+   show "?" until you have tested them. "What it takes" explains the
+   techniques; the supplies line says how much to brew and where the
+   ingredients for each effect can be had today.
 2. **Wilds.** Gather what the order needs by tapping a deposit, or buy
-   reagents at the Market (bag icon).
+   the common herbs at the Market (bag icon) from Journeyman on.
 3. **Brew.** Pour in one of three ways: tap a jar and hold inside the
    cauldron, tap a jar and use the dose buttons, or drag the jar onto the
    cauldron. Switch on **Ground** to grind roots and stones in the mortar
@@ -262,8 +289,11 @@ Browser screenshots from the test run land in `test-results/screenshots/`.
    estimate, and watch their status bars: purge or rest a rabbit before an
    effect passes the tick and degenerates. The report compares what happened with the guild's theory.
    Surprises point at hidden laws.
-5. **Bottle** into a sealed vial and **serve** it at the Counter. Payment
-   follows how well it matches. Save good brews as recipes in the Book.
+5. **Bottle** into a sealed vial and **serve** it at the Counter, or keep
+   it on the potion shelves for a later customer (the counter points out a
+   tested bottle that already meets an order). Label it, bargain (the
+   customer shows what they weigh), and hear their verdict tomorrow. Save
+   good brews as recipes in the Book: they keep every step.
 
 Keyboard: `C` `V` `W` `T` `J` rooms, `1`–`5` tools, `G` ground, `L` lid,
 `B` bottle, `F` time speed, `A` auto-stir, `H` thermal view, arrows fire,
@@ -305,6 +335,9 @@ docs/                            architecture, report, checklist, measured resul
   scenes from the browser tests.
 * [docs/CHECKLIST.md](docs/CHECKLIST.md): the brief, item by item, with
   where each requirement is implemented and how it was verified.
+* [docs/GAMEPLAY_INTEGRATION_REPORT.md](docs/GAMEPLAY_INTEGRATION_REPORT.md):
+  the gameplay integration audit — weaknesses found, fixes, how the
+  systems now connect, measured balance, and remaining limitations.
 
 ## A note on the starting point
 

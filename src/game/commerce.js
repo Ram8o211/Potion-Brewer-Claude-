@@ -375,7 +375,9 @@ export function recordSale(st, com, vial, label, price, truth) {
     const v = truth.effects[EFFECT_INDEX[k]];
     if (!c || c.kind === 'unknown') continue;
     if (c.kind === 'none' && Math.abs(v) >= PURITY_LIMIT) wrong.push(k);
-    if (c.kind === 'value' && Math.abs(v - (c.value || 0)) > Math.max(3, 0.25 * Math.abs(c.value || 0))) wrong.push(k);
+    // a tested claim states its margin: a fair customer forgives what lies within it
+    const margin = c.source === 'trial' && c.evidence ? c.evidence.u || 0 : 0;
+    if (c.kind === 'value' && Math.abs(v - (c.value || 0)) > Math.max(3, 0.25 * Math.abs(c.value || 0), margin)) wrong.push(k);
   }
   const purity = com.requirements.find((r) => r.key === 'purity');
   const side = purity ? strongestUnwanted(truth.effects, purity.exclude || []) : { value: 0, key: '' };

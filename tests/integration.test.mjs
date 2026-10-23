@@ -310,7 +310,7 @@ test('recipes earn confidence by repeating; old recipes become approximate proce
   assert.deepEqual(old.steps.map((s) => s.op), ['pour', 'pour', 'stir', 'temp', 'serve']);
 });
 
-test('patrons remember: trust after good potions, proof after bad ones; repeats earn less', () => {
+test('patrons remember: trust after good potions, proof after bad ones; easy repeats earn less', () => {
   const st = /** @type {any} */ ({ patrons: {}, day: 3, rank: 1 });
   const com = { potionName: 'Healing Draught', customer: { name: 'Bryn Oakhart', archetype: 'healer', title: 'Healer', portrait: {}, persona: { haggle: 0.4, patience: 3, honesty: 0.9, proof: 0.6 } } };
   notePatron(st, com);
@@ -323,8 +323,9 @@ test('patrons remember: trust after good potions, proof after bad ones; repeats 
   patronVerdict(st, { customer: com.customer, kind: 'praise', legit: true }, 'thank');
   const happy = welcomePatron({ customer: { name: 'x', persona: { haggle: 0.4, patience: 3, honesty: 0.9, proof: 0.6 } }, budget: 50, dialogue: 'Hello.' }, st.patrons['Bryn Oakhart'], st);
   assert.ok(happy.customer.persona.proof < 0.6 && happy.budget >= 50, 'won back: less proof, a bigger purse');
-  assert.equal(noveltyFactor('healing', []), 1);
-  assert.ok(noveltyFactor('healing', ['healing', 'healing', 'healing']) < 1, 'the same order again and again earns less');
+  assert.equal(noveltyFactor('healing', [], 0, 0), 1, 'an apprentice is never punished for what customers ask');
+  assert.ok(noveltyFactor('healing', ['healing', 'healing', 'healing'], 0, 0) < 1, 'the same order again and again earns a little less');
+  assert.ok(noveltyFactor('healing', [], 0, 3) < 0.5, 'an easy order far below the shop’s rank teaches the guild little');
 });
 
 test('an older (version 4) save migrates: the day clock, patrons and recipes as approximate procedures', () => {

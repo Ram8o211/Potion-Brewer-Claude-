@@ -894,8 +894,8 @@ export class GameState {
     sale.grand = !!com.grand;
     sale.style = com.style || null;
     sale.techniques = com.techniques || [];
-    // the same order over and over teaches the guild nothing new: repeats earn less
-    const novelty = noveltyFactor(sale.style, recentStyles(this));
+    // orders well below the shop's rank (and the same one over and over) teach the guild little
+    const novelty = noveltyFactor(sale.style, recentStyles(this), com.tier || 0, this.rank);
     if (sale.repDelta > 0 && novelty < 1) { sale.repDelta = Math.round(sale.repDelta * novelty); sale.novelty = novelty; }
     notePatron(this, com);
     const events = this._bookSale(com, ev, truth, price, 1, sale.id);

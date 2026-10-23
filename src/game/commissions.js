@@ -590,7 +590,7 @@ function requestsFor(arch, tier, event, recent = []) {
   let list = REQUESTS.filter((r) => r.minTier <= tier && r.who.includes(arch.key));
   const bonus = { winter: ['warming', 'hearth', 'forgefire'], plague: ['healing', 'recovery', 'fevercure'], conclave: ['insight', 'meditation', 'shapeshift'], festival: ['love', 'blessing', 'hearth'] }[event];
   if (bonus) list = list.concat(REQUESTS.filter((r) => bonus.includes(r.id) && r.minTier <= tier));
-  const fresh = list.filter((r) => !recent.slice(0, 3).some((s) => s && s.split('+')[0] === r.id));
+  const fresh = list.filter((r) => !recent.slice(0, 4).some((s) => s && s.split('+')[0] === r.id));
   return fresh.length ? fresh : list;
 }
 

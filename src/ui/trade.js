@@ -32,7 +32,7 @@ export function openIdentify(lab, vial, onDone) {
       const src = c.source === 'trial' ? h('span', { class: 'src trial lvl-' + lvl, title: `Measured in trials of this batch: ${c.evidence ? `${c.evidence.n} reading${c.evidence.n === 1 ? '' : 's'} on ${c.evidence.r} rabbit${c.evidence.r === 1 ? '' : 's'}, ±${c.evidence.u}` : 'one reading'}` }, icon('dropper', 'sm'), lvl === 'preliminary' ? ' 1 reading' : ` ${lvl}`)
         : c.kind === 'unknown' ? h('span', { class: 'src unknown', text: 'unknown' })
           : c.source === 'estimate' ? h('span', { class: 'src est', text: `theory${c.spread ? ' ±' + c.spread : ''}` }) : h('span', { class: 'src you', text: 'your claim' });
-      const val = c.kind === 'value' ? `${Math.round((c.value || 0) * 10) / 10}%` : c.kind === 'none' ? `none (< ${PURITY_LIMIT}%)` : '?';
+      const val = c.kind === 'value' ? `${Math.round((c.value || 0) * 10) / 10}%${c.source === 'trial' && c.evidence && c.evidence.u ? ` ±${c.evidence.u}` : ''}` : c.kind === 'none' ? `none (< ${PURITY_LIMIT}%)` : '?';
       const edit = (op) => () => { draft.claims[e.key] = editClaim(c, e.key, op); render(); };
       const row = h('div', { class: 'label-row' + (relevant.has(e.key) ? ' relevant' : '') + (c.kind === 'unknown' ? ' unknown' : '') + (open === e.key ? ' open' : ''), 'data-claim': e.key },
         icon(e.icon, 'sm'), h('span', { class: 'lk', text: e.label }), src, h('b', { class: 'lv', text: val }),

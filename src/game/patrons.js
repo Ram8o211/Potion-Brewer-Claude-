@@ -114,14 +114,19 @@ export function recentStyles(st) {
 }
 
 /**
- * How much reputation a sale of this kind still earns, given what was sold
- * lately: the third of the same order in a row earns 70 %, later ones 50 %.
- * A first sale of a new technique earns a bonus elsewhere (state.js).
- * @param {string} style @param {string[]} recent
+ * How much reputation a sale still earns. Customers choose what they ask
+ * for, so an apprentice is never punished for the village's needs; what
+ * stops one easy recipe from carrying a career is the order's level: an
+ * order below the shop's rank teaches the guild little (two ranks below:
+ * 60 %, three or more: 40 %), and the same order sold again and again on
+ * top of that earns a little less (85 % from the third of six).
+ * @param {string} style @param {string[]} recent @param {number} [tier] @param {number} [rank]
  */
-export function noveltyFactor(style, recent) {
+export function noveltyFactor(style, recent, tier = 0, rank = 0) {
+  const below = Math.max(0, rank - tier);
+  const level = below <= 1 ? 1 : below === 2 ? 0.6 : 0.4;
   const same = recent.slice(0, 6).filter((s) => s === style).length;
-  return same <= 1 ? 1 : same === 2 ? 0.7 : 0.5;
+  return level * (same >= 2 ? 0.85 : 1);
 }
 
 /** @param {number} v */

@@ -310,19 +310,22 @@ export function testBatch(st, sim, com, prof, parts, clock, met) {
  * which unwanted ones are too strong (judged on the trial means only, and
  * the physical readings the instruments give).
  */
-export function judge(st, com, cert, m) {
+export function judge(st, com, cert, m, prof) {
   const short = [], excess = [];
+  // a thinking player reads the margin: half of it is benefit of the doubt (a beginner reads the bare mean)
+  const slack = (k) => (prof && prof.windows ? 0.5 * ((cert.unc || {})[k] || 0) : 0);
   for (const r of com.requirements) {
     if (r.effect && r.key !== 'purity') {
       const v = cert.values[r.key];
       if (v === undefined) continue;
-      const s = scoreRequirement(r, /** @type {any} */ ({ ...m, effects: Object.assign(new Array(NE).fill(0), { [EFFECT_INDEX[r.key]]: v }) }));
+      const vv = r.kind === 'max' ? v - slack(r.key) : v + slack(r.key);
+      const s = scoreRequirement(r, /** @type {any} */ ({ ...m, effects: Object.assign(new Array(NE).fill(0), { [EFFECT_INDEX[r.key]]: vv }) }));
       if (s.score < 0.999) short.push({ key: r.key, v, target: Math.abs(Number(r.target)), sign: r.kind === 'max' ? -1 : 1 });
     } else if (r.key === 'purity') {
       for (const k of EFFECT_KEYS) {
         if ((r.exclude || []).includes(k)) continue;
         const v = cert.values[k];
-        if (v !== undefined && Math.abs(v) > r.target) excess.push({ key: k, v });
+        if (v !== undefined && Math.abs(v) - slack(k) > r.target) excess.push({ key: k, v });
       }
     }
   }
@@ -447,7 +450,10 @@ export function serveOrder(st, prof, rng, clock, met) {
   st.newBatch();
   let parts = null, plan = null;
   // an experienced player brews a saved recipe for the same request again (the homunculus if owned)
-  const recipe = prof.recipes ? st.recipes.find((r) => r.request === com.request && r.steps && !r.approx && (r.techniques || []).join() === (com.techniques || []).join()) : null;
+  // …but only one whose tested values meet this order (a weaker order of the same kind is fine, a stronger one is not)
+  const fits = (r) => com.requirements.filter((q) => q.effect && q.key !== 'purity').every((q) => r.verified[q.key] !== undefined && scoreRequirement(q, /** @type {any} */ ({ effects: Object.assign(new Array(NE).fill(0), { [EFFECT_INDEX[q.key]]: r.verified[q.key] }) })).score >= 0.999)
+    && (!com.requirements.some((q) => q.key === 'temperature') || r.serveTemp !== undefined && Math.abs(r.serveTemp - Number(com.requirements.find((q) => q.key === 'temperature').target)) < 6);
+  const recipe = prof.recipes ? st.recipes.find((r) => r.request === com.request && r.steps && !r.approx && (r.techniques || []).join() === (com.techniques || []).join() && fits(r)) : null;
   if (recipe) {
     const need = recipe.steps.filter((s) => s.op === 'pour').map((s) => ({ id: s.id, ml: s.ml }));
     if (provision(st, need, prof, clock, met)) {
@@ -470,7 +476,7 @@ export function serveOrder(st, prof, rng, clock, met) {
   // test, interpret, adjust
   let res = testBatch(st, sim, com, prof, parts, clock, met);
   for (let it = 0; res && it < prof.iterate; it++) {
-    const j = judge(st, com, res.cert, res.m);
+    const j = judge(st, com, res.cert, res.m, prof);
     if (!j.short.length && !j.excess.length) break;
     met.iterations++;
     let acted = false;
@@ -504,7 +510,7 @@ export function serveOrder(st, prof, rng, clock, met) {
   }
   if (!res) { met.abandoned++; return 'abandoned'; }
   // a careful player who sees the order unmet does not sell it
-  const j = judge(st, com, res.cert, res.m);
+  const j = judge(st, com, res.cert, res.m, prof);
   if (process.env.PLAYTEST_DEBUG) console.log(`  [${prof.name}] ${com.style} ${com.activation ? 'AWAKEN ' : ''}parts ${parts.map((p) => p.id.replace('wild-', '') + ':' + p.ml).join(' ')} steep ${JSON.stringify(plan.steep || null)} heat ${plan.heatTo} cool ${plan.coolTo} → est ${Object.entries(res.cert.values).filter(([, v]) => v).map(([k, v]) => k + ' ' + v).join(', ')} | theory ${Array.from(res.theory).map((v, k) => (Math.abs(v) >= 1 ? EFFECT_KEYS[k] + ' ' + v.toFixed(0) : '')).filter(Boolean).join(', ')} | short ${j.short.map((x) => x.key).join(',')} excess ${j.excess.map((x) => x.key + ' ' + x.v).join(',')}`);
   if ((j.short.length || j.excess.length) && prof.iterate >= 2) { met.abandoned++; return 'abandoned'; }
   const vial = bottle(st, sim, com.bottleN, parts);
