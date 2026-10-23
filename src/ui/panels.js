@@ -253,39 +253,21 @@ export function openHint(lab) {
   if (!com) return;
   const show = () => {
     const ref = com.reference;
-    if (com.effectOrder) {
-      // effect orders: a clue, never the recipe — the player must experiment
-      const main = ref.ingredients.slice().sort((a, b) => b.n - a.n).map((i) => st.lookup(i.id)).find((x) => x && x.effects && Object.values(x.effects).some((v) => Math.abs(v) >= 12));
-      const tips = [];
-      if (main) tips.push(`A guild alchemist would start from ${main.name}${main.wild ? ` (it grows in the ${main.wild.region === 'forest' ? 'Whisperwood' : main.wild.region === 'meadow' ? 'Sunlit Meadow' : main.wild.region === 'river' ? 'Willow Bank' : main.wild.region === 'quarry' ? 'Ironstone Quarry' : main.wild.region === 'moonfen' ? 'Moonfen' : 'Ember Crags'})` : ''}.`);
-      if (ref.ingredients.some((i) => i.ground)) tips.push('Grind what is whole — only what dissolves takes effect.');
-      if ((ref.heatTo ?? 20) > 40 && !com.activation) tips.push('Patience and gentle heat draw out more than stirring alone.');
-      if (com.activation) {
-        const cold = com.predicted && com.predicted.threshold !== null && com.predicted.threshold < 0;
-        tips.push(`This strength is out of reach for sleeping magic: it must be awakened. Mix everything first at room temperature, then ${cold ? 'chill' : 'heat'} the whole brew until it glows — and hold it there until the glow is even.`);
-      }
-      if (com.requirements.some((r) => r.key === 'purity')) tips.push('“No other effect above 1.2 %” is strict. Choose ingredients that do one thing, and test for the effects you did not ask for, too.');
-      tips.push('How much, and with what? That you must find out. Test small doses before you bottle.');
-      modal({ title: 'Guild advice', body: [h('div', { class: 'card parch' }, ...tips.map((t) => h('div', { class: 'small', text: '• ' + t })))] });
-      return;
+    // a clue, never the recipe — the player must experiment
+    const main = ref.ingredients.slice().sort((a, b) => b.n - a.n).map((i) => st.lookup(i.id)).find((x) => x && x.effects && Object.values(x.effects).some((v) => Math.abs(v) >= 12));
+    const tips = [];
+    if (main) tips.push(`A guild alchemist would start from ${main.name}${main.wild ? ` (it grows in the ${main.wild.region === 'forest' ? 'Whisperwood' : main.wild.region === 'meadow' ? 'Sunlit Meadow' : main.wild.region === 'river' ? 'Willow Bank' : main.wild.region === 'quarry' ? 'Ironstone Quarry' : main.wild.region === 'moonfen' ? 'Moonfen' : 'Ember Crags'})` : ''}.`);
+    if (ref.ingredients.some((i) => i.ground)) tips.push('Grind what is whole — only what dissolves takes effect.');
+    if (ref.steep && ref.steep.T < 15) tips.push('Part of this wants ice-cold water, not heat — cold, but not frozen.');
+    else if ((ref.heatTo ?? 20) > 40 && !com.activation) tips.push('Patience and gentle heat draw out more than stirring alone.');
+    if (ref.reduce) tips.push('It must be stronger than the herbs give plainly: boil some water off with the lid open — and cancel the side effects harder, for they grow too.');
+    if (com.activation) {
+      const cold = com.predicted && com.predicted.threshold !== null && com.predicted.threshold < 0;
+      tips.push(`This strength is out of reach for sleeping magic: it must be awakened. Mix everything first at room temperature, then ${cold ? 'chill' : 'heat'} the whole brew until it glows — and hold it there until the glow is even.`);
     }
-    const total = ref.ingredients.reduce((a, b) => a + b.n, 0);
-    const rows = ref.ingredients.map((i) => h('div', { class: 'row' }, jarCanvas(st.lookup(i.id), 12, 16), h('span', { text: `${Math.round((i.n / total) * 100)}%  ${st.lookup(i.id).name}` })));
-    const steps = [];
-    if (ref.crush) steps.push('Crush the solid chunks with the pestle.');
-    if (ref.knead) steps.push('Stir and knead thoroughly.');
-    else steps.push('Stir until the colour is even.');
-    if ((ref.heatTo ?? 20) > 30) steps.push(`Heat to about ${Math.round(ref.heatTo)}°C and hold it there a while.`);
-    if ((ref.coolTo ?? 20) < 12) steps.push(`Chill it to about ${Math.round(ref.coolTo)}°C.`);
-    steps.push(`Serve at about ${Math.round(ref.serveTemp ?? 20)}°C; bottle at least ${com.bottleMl} ml.`);
-    modal({
-      title: 'Guild advice',
-      body: [
-        h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'A guild alchemist would try roughly:' }), ...rows),
-        h('div', { class: 'card parch' }, ...steps.map((s) => h('div', { class: 'small', text: '• ' + s }))),
-        h('div', { class: 'small muted', text: 'Other approaches can work too — the customer only cares about the result.' }),
-      ],
-    });
+    if (com.requirements.some((r) => r.key === 'purity')) tips.push('“No other effect above 1.2 %” is strict. Choose ingredients that do one thing, and test for the effects you did not ask for, too — “not detected” after one small dose is not yet proof.');
+    tips.push('How much, and with what? That you must find out. Test small doses before you bottle.');
+    modal({ title: 'Guild advice', body: [h('div', { class: 'card parch' }, ...tips.map((t) => h('div', { class: 'small', text: '• ' + t })))] });
   };
   if (com.hintBought || !com.hintCost) { com.hintBought = true; show(); return; }
   confirmDialog('Ask the guild?', `A guild alchemist will suggest an approach for ${com.hintCost} coins.`, 'Pay').then((ok) => {
