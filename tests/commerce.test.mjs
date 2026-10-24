@@ -5,6 +5,7 @@ import { GameState } from '../src/game/state.js';
 import { EFFECT_INDEX, NE } from '../src/alchemy/effects.js';
 import { draftLabel, labelTrust, unprovenWanted, openNegotiation, proposePrice, acceptOffer, recordSale, resolveFollowUp, relevantEffects, editClaim, applyTrials, evidenceOf, claimSigma, claimStars, labelStars, accuracyStars } from '../src/game/commerce.js';
 import { purityRequirement } from '../src/game/commissions.js';
+import { Rng } from '../src/core/rng.js';
 
 /** A measurement with the given effects (everything else a plain potion). */
 function meas(fx, ml = 100) {
@@ -260,7 +261,7 @@ test('a tested label carries the standard deviation, and earns accuracy stars as
   for (let s = 0; s <= 5; s += 0.1) { const n = accuracyStars(7, s); assert.ok(n >= 0 && n <= 3 && n <= last); last = n; }
 });
 
-test('the label rates as its least accurate claim; estimates and your own figures earn no stars', () => {
+test('the label rates as the strength-weighted mean σ of its tested effects; estimates and your own figures earn no stars', () => {
   const ev = { level: 'certified', n: 10, r: 5, u: 0.8, s: 0.4 };
   /** @type {import('../src/game/commerce.js').Label} */
   const label = /** @type {any} */ ({ day: 1, claims: {
@@ -268,10 +269,46 @@ test('the label rates as its least accurate claim; estimates and your own figure
     love: { kind: 'unknown', source: 'estimate' },
   } });
   assert.equal(labelStars(label), 3, 'a claim of nothing does not count');
+  // an estimate is not a tested effect: it does not drag the weighted mean down
   label.claims.fire = { kind: 'value', value: 4, source: 'estimate', spread: 3 };
-  assert.equal(labelStars(label), 0);
+  assert.equal(labelStars(label), 3);
+  assert.equal(claimStars(label.claims.fire), 0);
   label.claims.fire = editClaim(label.claims.vitality, 'vitality', 'up');
   assert.equal(claimStars(label.claims.fire), 0, 'a figure the player wrote is not a tested one');
+  delete label.claims.fire;
+  // a strong precise effect outweighs a weak loose one: 40 % at σ 4 (0.10) and 5 % at σ 1.5 (0.30)
+  label.claims.vitality = { kind: 'value', value: 40, measured: 40, source: 'trial', evidence: { level: 'certified', n: 6, r: 3, u: 7.8, s: 4 } };
+  label.claims.frost = { kind: 'value', value: 5, measured: 5, source: 'trial', evidence: { level: 'corroborated', n: 6, r: 3, u: 2.9, s: 1.5 } };
+  assert.equal(claimStars(label.claims.frost), 0, 'the weak effect alone earns none');
+  assert.equal(labelStars(label), 3, '(40·0.10 + 5·0.30) / 45 ≈ 0.12');
+  // the same two the other way round: the loose effect is now the strong one
+  label.claims.vitality.evidence = { ...label.claims.vitality.evidence, s: 12 };
+  label.claims.frost.evidence = { ...label.claims.frost.evidence, s: 0.5 };
+  assert.equal(labelStars(label), 0, '(40·0.30 + 5·0.10) / 45 ≈ 0.28');
+  // nothing tested more than once: no stars
+  assert.equal(labelStars(/** @type {any} */ ({ day: 1, claims: { vitality: { kind: 'value', value: 7, measured: 7, source: 'trial', evidence: { level: 'preliminary', n: 1, r: 1, u: 4, s: 2 } } } })), 0);
   // older evidence without readings: no deviation to show, no stars
   assert.equal(claimSigma({ kind: 'value', value: 5, source: 'trial', evidence: { level: 'preliminary', n: 1, r: 1, u: 0 } }), null);
+});
+
+test('stars come within a handful of trials: two readings one star, three or four two, about six all three', () => {
+  // a typical brew read on rabbits that alternate, with the guild's usual noise
+  const rng = new Rng(7);
+  const truth = { vitality: 30, fire: 12, love: 6 };
+  const median = (n, rabbits) => {
+    const got = [];
+    for (let t = 0; t < 61; t++) {
+      const bias = Array.from({ length: rabbits }, () => 1 + 0.1 * rng.gauss());
+      /** @type {Record<string, any[]>} */
+      const samples = {};
+      for (let i = 0; i < n; i++) for (const [k, v] of Object.entries(truth)) (samples[k] ||= []).push({ v: Math.max(0, v * bias[i % rabbits] * Math.max(0.3, 1 + 0.3 * rng.gauss()) + 1.5 * rng.gauss()), r: 'r' + (i % rabbits), rec: 'x' + i, e: 1 });
+      const vial = { samples, cert: Object.fromEntries(Object.keys(truth).map((k) => [k, truth[k]])) };
+      got.push(labelStars(draftLabel(vial, null, 1)));
+    }
+    return got.sort((a, b) => a - b)[30];
+  };
+  assert.equal(median(1, 1), 0);
+  assert.ok(median(2, 2) >= 1);
+  assert.ok(median(4, 2) >= 2);
+  assert.equal(median(7, 3), 3);
 });

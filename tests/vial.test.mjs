@@ -11,6 +11,7 @@ import { PHASE } from '../src/simulation/constants.js';
 import { tapSelection, measureParticles } from '../src/game/measure.js';
 import { makeVial, appendParticles, updateVial, takeDose, pourBack, pourBackParts, vialInventory, migrateVial, relaxVial } from '../src/game/vial.js';
 import { certification } from '../src/game/experiments.js';
+import { draftLabel } from '../src/game/commerce.js';
 import { awakenedId, thresholdToCelsius } from '../src/alchemy/arcane.js';
 import { EFFECT_INDEX } from '../src/alchemy/effects.js';
 
@@ -103,6 +104,45 @@ test('modifying the brew after a trial invalidates the old certification', () =>
   // the vial goes back in (the shop bumps the batch revision)
   s2.touchBatch();
   assert.equal(Object.keys(certification(s2.trials, s2.batch, now).values).length, 0, 'no longer certified');
+});
+
+test('a tested bottle shelved and poured back into an empty cauldron is still that tested potion, label and all', () => {
+  const s3 = GameState.create('vial-tests-3', { tutorial: false });
+  const sim = brew();
+  for (let k = 0; k < 3; k++) {
+    const dose = measureParticles(sim, tapSelection(sim, 2));
+    s3.recordTrial('rabbit', dose, { ml: 10, source: 'cauldron', batchId: s3.batch.id, rev: s3.batch.rev, theory: new Array(10).fill(0), parts: [] });
+  }
+  const now = measureParticles(sim, tapSelection(sim, 20)).effects;
+  const cert = certification(s3.trials, s3.batch, now);
+  const v = bottle(sim, 20);
+  Object.assign(v, { batchId: s3.batch.id, rev: s3.batch.rev, cert: cert.values, certRecords: cert.records, samples: cert.samples });
+  v.label = draftLabel(v, null, 1);
+  v.label.claims.love = { kind: 'none', source: 'player' };
+  assert.ok(s3.shelveBottle(v).ok);
+  // the cauldron is emptied and starts a new batch; the trial log forgets the old one
+  s3.newBatch();
+  s3.trials.records.length = 0;
+  assert.equal(Object.keys(certification(s3.trials, s3.batch, v.m.effects).values).length, 0);
+  // taken down and poured back into the empty cauldron
+  s3.removeBottle(v.id);
+  const fresh = new Simulation({ size: 'pot', lookup: st.lookup, reactions: st.world.reactions, laws: st.world.laws });
+  pourBack(v, fresh);
+  s3.resumeBatch(v);
+  assert.equal(s3.batch.id, v.batchId);
+  const again = certification(s3.trials, s3.batch, v.m.effects);
+  assert.deepEqual(again.values, v.cert, 'the readings it carried still certify it');
+  assert.deepEqual(again.stale, []);
+  assert.equal(s3.batch.carried && s3.batch.carried.label.claims.love.source, 'player', 'its label, the player’s own claims too');
+  // through a save
+  const loaded = GameState.fromJSON(JSON.parse(JSON.stringify(s3.toJSON())));
+  assert.deepEqual(certification(loaded.trials, loaded.batch, v.m.effects).values, v.cert);
+  // a brew that has drifted reads stale; anything added drops it all
+  const drifted = Array.from(v.m.effects, (x) => x * 2 + 5);
+  assert.equal(Object.keys(certification(s3.trials, s3.batch, drifted).values).length, 0);
+  s3.touchBatch();
+  assert.equal(s3.batch.carried, undefined);
+  assert.equal(Object.keys(certification(s3.trials, s3.batch, v.m.effects).values).length, 0);
 });
 
 test('a vial from an older save becomes particles of its mean composition', () => {

@@ -4413,6 +4413,15 @@ if (current && Math.abs(current[EFFECT_INDEX[key]] - ref) > driftTolerance(ref))
 (samples[key] ||= []).push({ v: r.values[key], r: r.rabbitId || r.subjectId, rec: r.id, e: doseErr(r.ml), ...(r.err && r.err[key] !== undefined ? { u: r.err[key] } : {}) });
 }
 }
+const carried = /** @type {any} */ (batch).carried;
+if (carried && carried.samples) {
+const known = new Set(trials.records.map((r) => r.id));
+for (const [key, list] of Object.entries(carried.samples)) {
+const i = EFFECT_INDEX[key], ref = carried.ref ? carried.ref[i] : undefined;
+if (current && ref !== undefined && Math.abs(current[i] - ref) > driftTolerance(ref)) { stale.add(key); continue; }
+for (const x of /** @type {Sample[]} */ (list)) if (!known.has(x.rec) && !(samples[key] || []).some((y) => y.rec === x.rec)) (samples[key] ||= []).push(x);
+}
+}
 for (const k of Object.keys(samples)) stale.delete(k);
 return { ...summarize(samples), samples, stale: [...stale], changed };
 }
@@ -7926,30 +7935,37 @@ for (const k of Object.keys(s.values)) out[k] = { level: s.level[k], n: s.n[k], 
 return out;
 }
 const sigmaOfMargin = (u) => Math.round((u / 1.96) * 10) / 10;
-const STAR_STEPS = [0.25, 0.17, 0.09];
+const STAR_STEPS = [0.26, 0.19, 0.14];
 const MAX_STARS = STAR_STEPS.length;
+const starsOf = (rel) => STAR_STEPS.filter((t) => rel <= t).length;
+const relSigma = (value, sigma) => sigma / Math.max(5, Math.abs(value));
 function accuracyStars(value, sigma) {
-const rel = sigma / Math.max(5, Math.abs(value));
-return STAR_STEPS.filter((t) => rel <= t).length;
+return starsOf(relSigma(value, sigma));
 }
 function claimSigma(c) {
 if (!c || !c.evidence) return null;
 if (c.evidence.s !== undefined) return c.evidence.s;
 return c.evidence.u ? sigmaOfMargin(c.evidence.u) : null;
 }
+const wellTested = (c) => c.source === 'trial' && claimSigma(c) !== null && !(c.evidence && c.evidence.n < 2);
 function claimStars(c) {
 if (!c || c.kind === 'unknown') return null;
-const sigma = claimSigma(c);
-if (c.source !== 'trial' || sigma === null || (c.evidence && c.evidence.n < 2)) return 0;
-return accuracyStars(c.measured ?? c.value ?? 0, sigma);
+if (!wellTested(c)) return 0;
+return accuracyStars(c.measured ?? c.value ?? 0, /** @type {number} */ (claimSigma(c)));
 }
 function labelStars(label) {
-let min = null;
+let any = false, num = 0, den = 0;
 for (const c of Object.values((label && label.claims) || {})) {
-const st = claimStars(c);
-if (st !== null) min = min === null ? st : Math.min(min, st);
+if (!c || c.kind === 'unknown') continue;
+any = true;
+if (!wellTested(c)) continue;
+const v = c.measured ?? c.value ?? 0;
+const w = Math.max(1, Math.abs(v));
+num += w * relSigma(v, /** @type {number} */ (claimSigma(c)));
+den += w;
 }
-return min;
+if (!any) return null;
+return den > 0 ? starsOf(num / den) : 0;
 }
 function trialClaim(v, record, evidence) {
 const measured = Math.round(v * 10) / 10;
@@ -8707,7 +8723,7 @@ this.bottles = Array.isArray(data.bottles) ? data.bottles.map(migrateVial).filte
 /** @type {number} */ this.referrals = data.referrals | 0;
 /** @type {boolean} */ this.opened = data.opened !== undefined ? !!data.opened : (data.customerIndex | 0) > 0 || !!data.current;
 /** @type {Record<string, any>} */ this.patrons = data.patrons && typeof data.patrons === 'object' ? data.patrons : {};
-this.batch = data.batch && typeof data.batch.id === 'string' ? { id: data.batch.id, rev: data.batch.rev | 0 } : newBatch();
+this.batch = data.batch && typeof data.batch.id === 'string' ? { id: data.batch.id, rev: data.batch.rev | 0, ...(data.batch.carried && typeof data.batch.carried === 'object' ? { carried: data.batch.carried } : {}) } : newBatch();
 this.lookup = makeLookup(this.world);
 this._deposits = null;
 const col = this.trials.colony;
@@ -8810,6 +8826,20 @@ return this.batch;
 }
 touchBatch() {
 this.batch.rev++;
+delete this.batch.carried;
+}
+resumeBatch(v) {
+const same = this.batch.id === v.batchId && this.batch.rev === v.rev;
+const prev = /** @type {any} */ ((same && this.batch.carried) || {});
+const samples = JSON.parse(JSON.stringify(prev.samples || {}));
+for (const [k, list] of Object.entries(v.samples || {})) for (const x of list) if (!(samples[k] ||= []).some((y) => y.rec === x.rec)) samples[k].push(x);
+const label = v.label || prev.label;
+this.batch = { id: v.batchId, rev: v.rev, carried: {
+samples,
+ref: v.m && v.m.effects ? Array.from(v.m.effects) : prev.ref,
+...(label ? { label: JSON.parse(JSON.stringify(label)) } : {}),
+} };
+return this.batch;
 }
 get knownLaws() {
 return knownLaws(this.trials, this.world.laws || []);
@@ -15913,7 +15943,7 @@ const { processEvent } = __m58;
 const { saveGame, saveJSON, KEYS } = __m49;
 const { AutoBrewer, condensedCount } = __m59;
 const { traceSample, buildProcedure, procedureLimits, matchRecipe, compareRecipe, checkReproduction, TRACE_DT } = __m48;
-const { proofGaps, draftLabel } = __m45;
+const { proofGaps, draftLabel, applyTrials, evidenceOf } = __m45;
 const { RANKS } = __m25;
 const { certification, missingEffects, requirementEvidence } = __m26;
 const { sandboxIngredients } = __m7;
@@ -16742,6 +16772,11 @@ const vial = makeVial(this.sim, [], {
 batchId: st.batch.id, rev: st.batch.rev, cert: cert.values, certRecords: cert.records, samples: cert.samples, parts: this.batchParts(),
 day: st.day, commissionId: st.current ? st.current.id : null,
 });
+const carried = st.batch.carried;
+if (carried && carried.label && !cert.stale.length && Object.keys(cert.values).length) {
+vial.label = JSON.parse(JSON.stringify(carried.label));
+applyTrials(vial.label, cert.values, Object.values(cert.records)[0] || '', evidenceOf(vial));
+}
 this.bottling = { total: sel.length, removed: 0, progress: 0, color: m.color, t: 0, vial, dest };
 audio.play('glass');
 if (this.tutorial) this.tutorial.notify('bottle');
@@ -16904,13 +16939,18 @@ this.showView('brew');
 }
 pourVialIntoCauldron(v) {
 const st = this.state;
+const empty = this.sim.p.count === 0;
 const made = pourBack(v, this.sim);
 if (!made) { toast('No room', 'The cauldron is too full to pour the bottle back.', 'cauldron'); return false; }
 st.brewLog.push({ type: 'vial', ml: made * SIM.ML_PER_PARTICLE, t: Math.round(this.sim.time), parts: pourBackParts(v, made * SIM.ML_PER_PARTICLE), from: v.id });
+const kept = !!v.batchId && (empty || (st.batch.id === v.batchId && st.batch.rev === v.rev));
+if (kept) st.resumeBatch(v);
+else {
 if (st.batch.id !== v.batchId) st.newBatch();
 st.touchBatch();
+}
 audio.play('splash');
-toast('Poured back', `${made * SIM.ML_PER_PARTICLE} ml returned to the cauldron. Earlier trials no longer describe the brew.`, 'pour');
+toast('Poured back', `${made * SIM.ML_PER_PARTICLE} ml returned to the cauldron. ${kept ? 'It is the same tested potion: its trials and label still hold.' : 'Earlier trials no longer describe the brew.'}`, 'pour');
 return true;
 }
 recipeDraft(m, ev, com) {

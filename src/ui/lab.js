@@ -28,7 +28,7 @@ import { processEvent } from '../game/journal.js';
 import { saveGame, saveJSON, KEYS } from '../game/persistence.js';
 import { AutoBrewer, condensedCount } from '../game/autobrew.js';
 import { traceSample, buildProcedure, procedureLimits, matchRecipe, compareRecipe, checkReproduction, TRACE_DT } from '../game/recipes.js';
-import { proofGaps, draftLabel } from '../game/commerce.js';
+import { proofGaps, draftLabel, applyTrials, evidenceOf } from '../game/commerce.js';
 import { RANKS } from '../game/equipment.js';
 import { certification, missingEffects, requirementEvidence } from '../game/experiments.js';
 import { sandboxIngredients } from '../materials/generator.js';
@@ -981,6 +981,12 @@ export class LabScreen {
       batchId: st.batch.id, rev: st.batch.rev, cert: cert.values, certRecords: cert.records, samples: cert.samples, parts: this.batchParts(),
       day: st.day, commissionId: st.current ? st.current.id : null,
     });
+    // a poured-back bottle bottled again keeps its label, while nothing has drifted
+    const carried = st.batch.carried;
+    if (carried && carried.label && !cert.stale.length && Object.keys(cert.values).length) {
+      vial.label = JSON.parse(JSON.stringify(carried.label));
+      applyTrials(vial.label, cert.values, Object.values(cert.records)[0] || '', evidenceOf(vial));
+    }
     this.bottling = { total: sel.length, removed: 0, progress: 0, color: m.color, t: 0, vial, dest };
     audio.play('glass');
     if (this.tutorial) this.tutorial.notify('bottle');
@@ -1171,15 +1177,21 @@ export class LabScreen {
   /** Pour a sealed bottle's exact matter into the cauldron. Returns false if there is no room. @param {any} v */
   pourVialIntoCauldron(v) {
     const st = this.state;
+    const empty = this.sim.p.count === 0;
     const made = pourBack(v, this.sim);
     if (!made) { toast('No room', 'The cauldron is too full to pour the bottle back.', 'cauldron'); return false; }
     // provenance: the batch now also holds its share of what the vial's batch was made of
     st.brewLog.push({ type: 'vial', ml: made * SIM.ML_PER_PARTICLE, t: Math.round(this.sim.time), parts: pourBackParts(v, made * SIM.ML_PER_PARTICLE), from: v.id });
-    // it is the same batch only if the cauldron still holds that batch
-    if (st.batch.id !== v.batchId) st.newBatch();
-    st.touchBatch();
+    // into an empty cauldron, or back into the unchanged batch it came from,
+    // the bottle stays what it was: its trials and label still hold
+    const kept = !!v.batchId && (empty || (st.batch.id === v.batchId && st.batch.rev === v.rev));
+    if (kept) st.resumeBatch(v);
+    else {
+      if (st.batch.id !== v.batchId) st.newBatch();
+      st.touchBatch();
+    }
     audio.play('splash');
-    toast('Poured back', `${made * SIM.ML_PER_PARTICLE} ml returned to the cauldron. Earlier trials no longer describe the brew.`, 'pour');
+    toast('Poured back', `${made * SIM.ML_PER_PARTICLE} ml returned to the cauldron. ${kept ? 'It is the same tested potion: its trials and label still hold.' : 'Earlier trials no longer describe the brew.'}`, 'pour');
     return true;
   }
 

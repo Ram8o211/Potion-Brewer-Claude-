@@ -142,8 +142,9 @@ export class GameState {
     /** @type {boolean} */ this.opened = data.opened !== undefined ? !!data.opened : (data.customerIndex | 0) > 0 || !!data.current;
     /** customers who have been here before: what they bought and how it went (customers.js) */
     /** @type {Record<string, any>} */ this.patrons = data.patrons && typeof data.patrons === 'object' ? data.patrons : {};
-    /** identity of the brew in the cauldron: a new id when it is emptied, rev++ on every addition */
-    this.batch = data.batch && typeof data.batch.id === 'string' ? { id: data.batch.id, rev: data.batch.rev | 0 } : newBatch();
+    /** identity of the brew in the cauldron: a new id when it is emptied, rev++ on every addition; `carried` what a poured-back bottle brought (resumeBatch) */
+    /** @type {{id:string, rev:number, carried?:{samples:Record<string, any[]>, ref?:number[], label?:any}}} */
+    this.batch = data.batch && typeof data.batch.id === 'string' ? { id: data.batch.id, rev: data.batch.rev | 0, ...(data.batch.carried && typeof data.batch.carried === 'object' ? { carried: data.batch.carried } : {}) } : newBatch();
     this.lookup = makeLookup(this.world);
     /** @type {import('./gathering.js').Deposit[]|null} */
     this._deposits = null;
@@ -278,6 +279,30 @@ export class GameState {
   /** Something was added to the brew: earlier trials no longer describe it. */
   touchBatch() {
     this.batch.rev++;
+    delete this.batch.carried;
+  }
+
+  /**
+   * A sealed bottle poured back where nothing changes it — into an empty
+   * cauldron, or into the unchanged batch it was drawn from — is still that
+   * batch: the cauldron takes its identity, its readings (even those the
+   * trial log has forgotten), what it measured then (to notice drift) and
+   * its label, so bottling it again bottles the same tested potion.
+   * @param {any} v the vial poured back
+   */
+  resumeBatch(v) {
+    const same = this.batch.id === v.batchId && this.batch.rev === v.rev;
+    const prev = /** @type {any} */ ((same && this.batch.carried) || {});
+    /** @type {Record<string, any[]>} */
+    const samples = JSON.parse(JSON.stringify(prev.samples || {}));
+    for (const [k, list] of Object.entries(v.samples || {})) for (const x of list) if (!(samples[k] ||= []).some((y) => y.rec === x.rec)) samples[k].push(x);
+    const label = v.label || prev.label;
+    this.batch = { id: v.batchId, rev: v.rev, carried: {
+      samples,
+      ref: v.m && v.m.effects ? Array.from(v.m.effects) : prev.ref,
+      ...(label ? { label: JSON.parse(JSON.stringify(label)) } : {}),
+    } };
+    return this.batch;
   }
 
   /** Resonance laws the player has confirmed by experiment. */

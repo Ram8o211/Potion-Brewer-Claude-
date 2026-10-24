@@ -253,8 +253,8 @@ export function accuracyTitle(n) {
 }
 
 /**
- * A label at a glance: its accuracy stars (the least accurate claim), then
- * its claims.
+ * A label at a glance: its accuracy stars (its tested effects, weighted by
+ * strength), then its claims.
  * @param {any} label
  */
 export function labelLine(label) {
