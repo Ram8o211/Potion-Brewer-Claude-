@@ -45,6 +45,18 @@ test('gathering in the wilds fills the stores and depletes the deposit', async (
   await drag(page, [pt, pt], 30);
   expect(await lab(page, (l, id) => l.state.stock(id), d2.materialId), 'tapping the deposit gathered').toBeGreaterThan(s0);
   await shot(page, info, 'wilds-gathered');
+  // Whisperwood is drawn from its sprite atlas; only deposits take taps — a
+  // tap on the sky or canopy gathers nothing
+  await page.waitForFunction(() => window.__alchemist.screen.views.wilds.bgKey.endsWith(':true'));
+  const scenery = await lab(page, (l) => ({ total: l.state.gathering.total, nodes: JSON.stringify(l.state.gathering.nodes) }));
+  for (const fx of [0.1, 0.5, 0.9]) await page.mouse.click(cv.x + cv.width * fx, cv.y + cv.height * 0.06);
+  expect(await lab(page, (l) => JSON.stringify(l.state.gathering.nodes)), 'scenery is not gatherable').toBe(scenery.nodes);
+  // pointing at a deposit highlights it
+  if (info.project.name === 'desktop') {
+    const d3 = deps.find((d) => d.rank === 0 && d.id !== d2.id) || deps[0];
+    await page.mouse.move(cv.x + d3.x * cv.width, cv.y + (d3.y * 144 - 8) / 144 * cv.height);
+    await expect.poll(() => lab(page, (l) => l.views.wilds.hover)).toBe(d3.id);
+  }
   // a magical region is closed to an apprentice
   await page.click('[data-act=region-moonfen]');
   await expect(page.locator('.toast', { hasText: 'Moonfen' })).toBeVisible();
