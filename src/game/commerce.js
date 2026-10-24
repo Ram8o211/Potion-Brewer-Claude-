@@ -116,15 +116,21 @@ const sigmaOfMargin = (u) => Math.round((u / 1.96) * 10) / 10;
  * Accuracy stars: 0 to 3 as the standard deviation of a tested reading
  * narrows against the reading itself (small readings count against 5 %, so
  * "none" earns its stars like any other value). One reading never earns a
- * star; three need many readings on several rabbits.
+ * star; two earn one, three or four on more than one rabbit two, and about
+ * six on two or three rabbits all three.
  */
-export const STAR_STEPS = [0.25, 0.17, 0.09];
+export const STAR_STEPS = [0.26, 0.19, 0.14];
 export const MAX_STARS = STAR_STEPS.length;
+
+/** Stars for a relative standard deviation. @param {number} rel */
+const starsOf = (rel) => STAR_STEPS.filter((t) => rel <= t).length;
+
+/** The standard deviation of a value relative to the value itself (at least 5 %). @param {number} value @param {number} sigma */
+const relSigma = (value, sigma) => sigma / Math.max(5, Math.abs(value));
 
 /** Stars for a value read with standard deviation `sigma`. @param {number} value @param {number} sigma */
 export function accuracyStars(value, sigma) {
-  const rel = sigma / Math.max(5, Math.abs(value));
-  return STAR_STEPS.filter((t) => rel <= t).length;
+  return starsOf(relSigma(value, sigma));
 }
 
 /** The standard deviation of a claim's tested reading, or null if it has none. @param {Claim} c */
@@ -135,6 +141,9 @@ export function claimSigma(c) {
   return c.evidence.u ? sigmaOfMargin(c.evidence.u) : null;
 }
 
+/** Is this a claim backed by several readings of the batch? @param {Claim} c */
+const wellTested = (c) => c.source === 'trial' && claimSigma(c) !== null && !(c.evidence && c.evidence.n < 2);
+
 /**
  * How accurate a claim is (0…3 stars): a tested claim by its standard
  * deviation; anything else — an estimate, or the player's own figure —
@@ -143,23 +152,31 @@ export function claimSigma(c) {
  */
 export function claimStars(c) {
   if (!c || c.kind === 'unknown') return null;
-  const sigma = claimSigma(c);
-  if (c.source !== 'trial' || sigma === null || (c.evidence && c.evidence.n < 2)) return 0;
-  return accuracyStars(c.measured ?? c.value ?? 0, sigma);
+  if (!wellTested(c)) return 0;
+  return accuracyStars(c.measured ?? c.value ?? 0, /** @type {number} */ (claimSigma(c)));
 }
 
 /**
- * How accurate a whole label is: its least accurate claim (claims of
- * nothing do not count). Null when it claims nothing at all.
+ * How accurate a whole label is: the mean of the relative standard
+ * deviations of its tested effects, each weighted by its measured mean (so
+ * a strong effect counts for more than a trace, and "none" barely at all).
+ * A label with no effect tested more than once earns none; null when it
+ * claims nothing at all.
  * @param {Label} label
  */
 export function labelStars(label) {
-  let min = null;
+  let any = false, num = 0, den = 0;
   for (const c of Object.values((label && label.claims) || {})) {
-    const st = claimStars(c);
-    if (st !== null) min = min === null ? st : Math.min(min, st);
+    if (!c || c.kind === 'unknown') continue;
+    any = true;
+    if (!wellTested(c)) continue;
+    const v = c.measured ?? c.value ?? 0;
+    const w = Math.max(1, Math.abs(v));
+    num += w * relSigma(v, /** @type {number} */ (claimSigma(c)));
+    den += w;
   }
-  return min;
+  if (!any) return null;
+  return den > 0 ? starsOf(num / den) : 0;
 }
 
 /** A claim made from a trial reading. @param {number} v @param {string} [record] @param {{level:string, n:number, r:number, u:number, s?:number}} [evidence] @returns {Claim} */

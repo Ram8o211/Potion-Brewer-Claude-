@@ -131,10 +131,14 @@ computed from the particles that actually run out of the tap. What a
   batch (on the counter or the shelves, where hovering a bottle shows its
   label) can be read and sold without testing it again. Every tested value
   carries its standard deviation (σ), and accuracy stars — ☆☆☆ to ★★★ —
-  show at a glance how far to trust it: one reading earns none, readings
-  repeated on several rabbits narrow σ and earn up to three. A bottle rates
-  as its least accurate claim; estimates and figures you write yourself
-  earn no stars. Revise the label
+  show at a glance how far to trust it: one reading earns none, two earn
+  one, three or four on more than one rabbit two, about six on two or three
+  rabbits all three. A bottle rates as the mean σ of its tested effects
+  (relative to each reading), weighted by how strong each effect measured;
+  estimates and figures you write yourself earn no stars. A tested bottle
+  keeps its label when it is shelved, taken down, or poured back into an
+  empty cauldron (or into the unchanged batch it came from) and bottled
+  again. Revise the label
   with what you know — tested values, estimates, "none" or unknown — and
   bargain with customers who
   each haggle, trust and need proof differently. They pay the agreed

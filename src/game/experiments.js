@@ -397,7 +397,7 @@ export function resetSubject(trials, id) {
  * revision that still agrees with the brew as it would be bottled now,
  * pooled into an estimate per effect (summarize).
  * @param {ReturnType<typeof createTrials>} trials
- * @param {{id:string, rev:number}} batch
+ * @param {{id:string, rev:number, carried?:{samples:Record<string, Sample[]>, ref?:number[]}}} batch
  * @param {ArrayLike<number>|null} current effects of what would be bottled (hidden truth)
  */
 export function certification(trials, batch, current) {
@@ -413,6 +413,17 @@ export function certification(trials, batch, current) {
       const ref = r.tv && r.tv[key] !== undefined ? r.tv[key] : r.values[key];
       if (current && Math.abs(current[EFFECT_INDEX[key]] - ref) > driftTolerance(ref)) { stale.add(key); continue; }
       (samples[key] ||= []).push({ v: r.values[key], r: r.rabbitId || r.subjectId, rec: r.id, e: doseErr(r.ml), ...(r.err && r.err[key] !== undefined ? { u: r.err[key] } : {}) });
+    }
+  }
+  // readings a poured-back bottle brought with it (resumeBatch), checked
+  // against what that bottle measured when it went in
+  const carried = /** @type {any} */ (batch).carried;
+  if (carried && carried.samples) {
+    const known = new Set(trials.records.map((r) => r.id));
+    for (const [key, list] of Object.entries(carried.samples)) {
+      const i = EFFECT_INDEX[key], ref = carried.ref ? carried.ref[i] : undefined;
+      if (current && ref !== undefined && Math.abs(current[i] - ref) > driftTolerance(ref)) { stale.add(key); continue; }
+      for (const x of /** @type {Sample[]} */ (list)) if (!known.has(x.rec) && !(samples[key] || []).some((y) => y.rec === x.rec)) (samples[key] ||= []).push(x);
     }
   }
   for (const k of Object.keys(samples)) stale.delete(k);
