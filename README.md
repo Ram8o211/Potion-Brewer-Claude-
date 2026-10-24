@@ -216,23 +216,31 @@ computed from the particles that actually run out of the tap. What a
     desktop layouts.
   * Installable and fully offline, with saves on the device and
     export/import.
-* **Pixel art painted in code:** layered wilds panoramas (lit oak
+* **Pixel art painted in code:** layered wilds panoramas, shown until a
+  region's sprites have loaded (lit oak
   canopies and light shafts, a willow river, terraced quarry faces with a
   crane and lantern, a moonlit bog of willows, crystals and wisps, smoking
   volcanic crags), a furnished workshop (brick wall, shelves of jars and
   plants, drying herbs, ivy, barrel, sack, firewood under the cauldron), a
   hutch with a hay rack, a thatched hide box and a fence, shaded rabbits,
   and wood-grain, parchment and nail textures on the interface.
-* **Whisperwood sprites:** the forest is composed from a small sprite atlas
-  (`assets/whisperwood/atlas.png`, 24 KB): trees, shrubs, rocks, a stump,
-  logs and wildflowers around the painted sky and clearing, and one
-  outlined sprite per forest ingredient (Ironroot, Silverleaf, Nightshade,
-  Owlberry, Emberbark, Witch’s Ear, Mandrake) with hover, harvesting and
-  depleted frames. Nothing decorative looks like a gatherable, and only
-  deposits take taps. The atlas is built from the concept-art pack in
-  `art/whisperwood/` by `python scripts/make-whisperwood.py` (needs
-  Pillow), which brings each sprite down to the scene's art-pixel scale and
-  snaps it to the scene's own palette.
+* **Sprite-composed wilds:** Whisperwood, Willow Bank, Ironstone Quarry,
+  Moonfen and the Ember Crags are each composed in layers from their own
+  atlas (`assets/wilds/<region>.png`, 40–90 KB each) built from the
+  corrected Wilds sprite pack: the pack's sky and parallax strips (canopy
+  and tree lines, mountains and pines, cliff faces, the moonlit bog and its
+  mist, smoky volcanic ridges and lava fissures), then the region's terrain
+  and scenery — ancient oaks, willows, a river with its chalk bank, a crane
+  and timber frames, drowned stumps and pools of black water, lava crags,
+  vents and a lava pool. Every ingredient of those regions is an outlined
+  sprite with hover and depleted (harvested) frames; the dusk Nightshade,
+  Grave Moss and Siren Reed and the dawn Moonlily show their closed state
+  out of their hour, and each has its icon on the deposit card, the shelf
+  and in the book. Nothing decorative looks like a gatherable, and only
+  deposits take taps. Built from `art/wilds/` by
+  `python scripts/make-wilds.py` (needs Pillow and NumPy);
+  `art/wilds/README.md` lists which sprite went where and how it was
+  changed.
 * **Sunlit Meadow sprites:** the meadow is composed in layers from its own
   atlas (`assets/meadow/atlas.png`, 53 KB): the pack's sky, clouds and
   birds, far and near mountains, a treeline of firs, a split-rail fence,
@@ -246,8 +254,7 @@ computed from the particles that actually run out of the tap. What a
   NumPy); `art/meadow/README.md` lists which sprite went where and how it
   was changed.
 * **Everything is original and bundled:** pixel art drawn in code (plus
-  the Whisperwood and Sunlit Meadow sprites from the project's own
-  concept-art packs), a
+  the wilds' sprites from the project's own concept-art packs), a
   pixel font, synthesised sound effects and music. No third-party runtime
   code, no CDNs, no network calls.
 
