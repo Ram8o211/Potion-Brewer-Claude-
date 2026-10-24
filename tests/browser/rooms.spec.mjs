@@ -38,21 +38,22 @@ test('gathering in the wilds fills the stores and depletes the deposit', async (
   await page.locator('.view-wilds canvas.scene').scrollIntoViewIfNeeded();
   const cv = await page.locator('.view-wilds canvas.scene').boundingBox();
   if (!cv) throw new Error('no scene');
-  const deps = await lab(page, (l) => l.state.deposits.filter((d) => d.region === 'forest'));
+  // (each deposit stands where the scene's layout put it, clear of the scenery)
+  await page.waitForFunction(() => window.__alchemist.screen.views.wilds.bgKey.endsWith(':true'));
+  const deps = await lab(page, (l) => l.views.wilds.inScene());
   const d2 = deps[1];
   const s0 = await lab(page, (l, id) => l.state.stock(id), d2.materialId);
-  const pt = { x: cv.x + d2.x * cv.width, y: cv.y + (d2.y * 108 - 6) / 108 * cv.height };
+  const pt = { x: cv.x + d2.x * cv.width, y: cv.y + (d2.y * 144 - 8) / 144 * cv.height };
   await drag(page, [pt, pt], 30);
   expect(await lab(page, (l, id) => l.state.stock(id), d2.materialId), 'tapping the deposit gathered').toBeGreaterThan(s0);
   await shot(page, info, 'wilds-gathered');
   // Whisperwood is drawn from its sprite atlas; only deposits take taps — a
   // tap on the sky or canopy gathers nothing
-  await page.waitForFunction(() => window.__alchemist.screen.views.wilds.bgKey.endsWith(':true'));
   const scenery = await lab(page, (l) => ({ total: l.state.gathering.total, nodes: JSON.stringify(l.state.gathering.nodes) }));
   for (const fx of [0.1, 0.5, 0.9]) await page.mouse.click(cv.x + cv.width * fx, cv.y + cv.height * 0.06);
   expect(await lab(page, (l) => JSON.stringify(l.state.gathering.nodes)), 'scenery is not gatherable').toBe(scenery.nodes);
   // a deposit beyond the guild rank is left out of the scene (its card says what opens it)
-  const far = deps.find((d) => d.rank > 0);
+  const far = await lab(page, (l) => l.state.deposits.find((d) => d.region === 'forest' && d.rank > 0));
   if (far) expect(await lab(page, (l, id) => l.views.wilds.inScene().some((d) => d.id === id), far.id)).toBe(false);
   // pointing at a deposit highlights it
   if (info.project.name === 'desktop') {

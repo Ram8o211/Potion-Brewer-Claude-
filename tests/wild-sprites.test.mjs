@@ -6,13 +6,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import zlib from 'node:zlib';
 import { ATLASES } from '../src/rendering/wilds-atlas.js';
 import * as FIELD from '../src/rendering/meadow-atlas.js';
 import { GATHERABLES, MIN_HIT, MEADOW, REGION_ATLAS, gatherFrameName, depositBox, hitDeposit } from '../src/rendering/wild-sprites.js';
 import { REGIONS } from '../src/game/gathering.js';
 import { WILD_SPECS } from '../src/materials/wild.js';
 import { GameState } from '../src/game/state.js';
-import { SCENE_W, SCENE_H } from '../src/rendering/regions.js';
+import { SCENE_W, SCENE_H, layoutDeposits, fixedOf, lavaStream, GROUND_TOP, animateRegion } from '../src/rendering/regions.js';
 
 
 test('each atlas file exists and matches its generated frame map', () => {
@@ -133,6 +134,112 @@ test('hit testing finds deposits, prefers the front one and ignores the scenery'
   const box = depositBox(a, 'silverleaf', SCENE_W, SCENE_H);
   assert.equal(hitDeposit([a], k, box.x1 + 3, box.y0 + 5, SCENE_W, SCENE_H)?.id, 'a');
   assert.equal(hitDeposit([a], k, box.x1 + 12, box.y0 + 5, SCENE_W, SCENE_H), null);
+});
+
+/** The RGBA pixels of an 8-bit, non-interlaced RGBA PNG (the atlases). @param {Buffer} png */
+function decodePng(png) {
+  const width = png.readUInt32BE(16), height = png.readUInt32BE(20);
+  assert.deepEqual([png[24], png[25], png[28]], [8, 6, 0], 'RGBA, 8 bits, not interlaced');
+  const idat = [];
+  for (let o = 8; o < png.length;) {
+    const len = png.readUInt32BE(o), type = png.toString('ascii', o + 4, o + 8);
+    if (type === 'IDAT') idat.push(png.subarray(o + 8, o + 8 + len));
+    o += 12 + len;
+  }
+  const raw = zlib.inflateSync(Buffer.concat(idat)), stride = width * 4, data = new Uint8Array(stride * height);
+  for (let y = 0; y < height; y++) {
+    const f = raw[y * (stride + 1)], src = raw.subarray(y * (stride + 1) + 1, (y + 1) * (stride + 1)), row = y * stride;
+    for (let i = 0; i < stride; i++) {
+      const a = i >= 4 ? data[row + i - 4] : 0, b = y ? data[row - stride + i] : 0, c = y && i >= 4 ? data[row - stride + i - 4] : 0;
+      const p = a + b - c, pa = Math.abs(p - a), pb = Math.abs(p - b), pc = Math.abs(p - c);
+      const pred = f === 1 ? a : f === 2 ? b : f === 3 ? (a + b) >> 1 : f === 4 ? (pa <= pb && pa <= pc ? a : pb <= pc ? b : c) : 0;
+      data[row + i] = (src[i] + pred) & 255;
+    }
+  }
+  return { width, data };
+}
+
+test('every gatherable rises out of open ground, clear of the scenery and of each other', () => {
+  const regions = ['forest', 'meadow', 'river', 'quarry', 'moonfen', 'crags'];
+  for (const r of regions) assert.ok(GROUND_TOP[r] > SCENE_H / 2, `${r} has open ground`);
+  const unready = { id: 'x', x: 0.3, y: 0.6 };
+  assert.deepEqual(layoutDeposits('forest', 's', [unready], () => 'silverleaf'), { x: { x: 0.3, y: 0.6 } }, 'until the sheet can be read a deposit keeps its spot');
+  const atlases = [...new Set(regions.map((r) => REGION_ATLAS[r]))];
+  for (const a of atlases) { a.pixels = decodePng(fs.readFileSync(new URL('../' + a.url, import.meta.url))); a.ready = true; }
+  try {
+    for (const seed of ['whisper-hit', 'gather-seed-1', 'abc', 'zed9']) {
+      const st = GameState.create(seed, { tutorial: false });
+      for (const region of regions) {
+        const A = REGION_ATLAS[region];
+        const deps = st.deposits.filter((d) => d.region === region);
+        const keyOf = (d) => st.lookup(d.materialId).wild.key;
+        const spots = layoutDeposits(region, seed, deps, keyOf);
+        assert.deepEqual(layoutDeposits(region, seed, deps, keyOf), spots, 'the same layout every time');
+        // the scenery's pixels: upright pieces, and the flat ones (pools) no foot may rest in
+        const solid = new Uint8Array(SCENE_W * SCENE_H), flat = new Uint8Array(SCENE_W * SCENE_H);
+        /** @param {Uint8Array} grid @param {any} atlas @param {string} name @param {number} x @param {number} y @param {boolean} [flip] */
+        const paint = (grid, atlas, name, x, y, flip) => {
+          const [, , w, h] = atlas.frame(name), m = atlas.mask(name), left = Math.round(x - w / 2), top = Math.round(y - h);
+          let hit = false;
+          for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+            const px = left + i, py = top + j;
+            if (!m[j * w + (flip ? w - 1 - i : i)] || px < 0 || py < 0 || px >= SCENE_W || py >= SCENE_H) continue;
+            if (grid[py * SCENE_W + px]) hit = true;
+            grid[py * SCENE_W + px] = 1;
+          }
+          return { hit, left, top, w, h };
+        };
+        for (const [name, x, y, flip, isFlat] of fixedOf(region)) paint(isFlat ? flat : solid, A, name, x, y, flip);
+        const lava = region === 'crags' ? lavaStream(seed) : [];
+        const placed = new Uint8Array(SCENE_W * SCENE_H);
+        for (const d of deps) {
+          const g = GATHERABLES[keyOf(d)], s = spots[d.id];
+          const ax = Math.round(s.x * SCENE_W), ay = Math.round(s.y * SCENE_H);
+          const where = `${seed} ${d.id} at ${ax},${ay}`;
+          assert.ok(ay >= GROUND_TOP[region] && ay <= SCENE_H - 3, `${where}: its foot is on the open ground, inside the frame`);
+          const b = paint(placed, g.atlas, g.idle, ax, ay);
+          assert.ok(!b.hit, `${where} overlaps another deposit`);
+          assert.ok(b.left >= 1 && b.left + b.w <= SCENE_W - 1 && b.top >= 1, `${where} lies inside the frame`);
+          const m = /** @type {Uint8Array} */ (g.atlas.mask(g.idle));
+          for (let j = 0; j < b.h; j++) for (let i = 0; i < b.w; i++) {
+            if (!m[j * b.w + i]) continue;
+            const k = (b.top + j) * SCENE_W + b.left + i;
+            assert.ok(!solid[k], `${where} overlaps the scenery at ${b.left + i},${b.top + j}`);
+            if (j === b.h - 1) assert.ok(!flat[k], `${where} stands in a pool`);
+          }
+          // the foot's row: on the near shore or the far meadow, never in the river; never in the lava
+          if (region === 'river') assert.ok(ay < 89 || ay > 120, `${where} stands in the river`);
+          const row = lava.find(([y]) => y === ay - 1);
+          if (row) assert.ok(b.left + b.w <= row[1] - row[2] / 2 || b.left >= row[1] + row[2] / 2, `${where} stands in the lava`);
+        }
+      }
+    }
+  } finally {
+    for (const a of atlases) { a.pixels = null; a.masks = {}; a.ready = false; }
+  }
+});
+
+test('the Ember Crags breathe moving smoke, not smoke painted into the rocks', () => {
+  const A = REGION_ATLAS.crags;
+  // the vent and gusher frames end at their mouths: the pack's plumes are cleared
+  assert.ok(A.frame('vent')[3] < 20 && A.frame('gusher')[3] < 36, 'no plume left on the vent or the gusher');
+  /** what the overlay paints at time t above the plain: pixel → its last colour and opacity */
+  const smoke = (t) => {
+    /** @type {Map<string, string>} */
+    const px = new Map();
+    const ctx = /** @type {any} */ ({ fillStyle: '', globalAlpha: 1, fillRect(x, y, w, h) { if (y < 72 && this.globalAlpha > 0) for (let i = 0; i < w; i++) for (let j = 0; j < h; j++) px.set(`${x + i},${y + j}`, this.fillStyle + this.globalAlpha); } });
+    animateRegion(ctx, 'crags', t);
+    return px;
+  };
+  A.ready = true;
+  try {
+    const a = smoke(1), b = smoke(2.5);
+    assert.ok(a.size > 100 && b.size > 100, 'smoke rises over the vent and the gusher');
+    const same = [...a].filter(([k, v]) => b.get(k) === v).length;
+    assert.ok(same < a.size / 2, `and it moves (${same} of ${a.size} pixels unchanged)`);
+  } finally {
+    A.ready = false;
+  }
 });
 
 test('without a DOM the atlases never load and the procedural scenes stay', async () => {
