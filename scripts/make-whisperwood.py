@@ -6,12 +6,17 @@ edges, an uneven ~2 px grid and far more colours than pixel art uses. Each
 sprite is brought down to the scene's art-pixel scale (4 source pixels to 1;
 the Wilds scene is 256 x 144 art pixels, the reference screenshot ~900 px
 wide) by majority vote over each block after quantising it to a small
-palette, with a hard alpha. Gatherables get a dark outline (so they read
-ahead of the decorative flora, which has none) and a generated hover frame
-with a light outline (and a flat silhouette for one out of reach); all frames of one gatherable share a canvas with the
-same bottom-centre anchor so they swap in place. A few are recoloured to
-match the ingredient they stand for (silvery Silverleaf, brown Witch's Ear,
-ember-red Emberbark, pale Mandrake).
+palette, with a hard alpha. Every sprite is then snapped to the scene's own
+palette (the ramps the procedural painting uses; gatherables keep their own
+accent colours too), so sprites and painting share one set of colours; small
+details lose their dark fringe and lone stray pixels take their
+surroundings' colour. Gatherables get a dark outline (so they read ahead of
+the decorative flora, which has none) and a generated hover frame with a
+light outline; all frames of one gatherable share a canvas with the same
+bottom-centre anchor so they swap in place. Ironroot grows out of a mound
+of soil in the scene (its card keeps the whole root). A few are recoloured
+to match the ingredient they stand for (silvery Silverleaf, brown Witch's
+Ear, ember-red Emberbark, pale Mandrake).
 
 Writes assets/whisperwood/atlas.png and src/rendering/whisperwood-atlas.js
 (the frame rectangles). `--preview out.png` also writes an enlarged sheet.
@@ -29,7 +34,27 @@ OUT_JS = os.path.join(ROOT, 'src', 'rendering', 'whisperwood-atlas.js')
 
 INK = (26, 18, 24, 255)      # the game's outline colour (#1a1218)
 GLOW = (255, 243, 196, 255)  # hover outline: warm parchment white
-LOCKED = (22, 52, 20, 255)   # silhouette of a gatherable out of reach
+
+
+def hexes(*cs):
+    return [tuple(int(c[i:i + 2], 16) for i in (1, 3, 5)) for c in cs]
+
+
+# the scene's palette (rendering/regions.js: LEAF, SHRUB, OAKBARK, RSTONE,
+# MOSS, the Whisperwood ground and flowers, the outline colour)
+SCENE = hexes('#163212', '#2a6a1c', '#3f8f24', '#68bc34', '#b6ea5a',
+              '#12300f', '#256018', '#3a8a22', '#5cb030', '#a6e050',
+              '#68b83a', '#5aa830', '#428a24', '#7cc846',
+              '#1e1008', '#4a2a14', '#6e4220', '#94602e', '#b8844a', '#d8a868',
+              '#1e2028', '#555a68', '#7a8090', '#9aa2b0', '#c8d0da',
+              '#4f7a31', '#7da447',
+              '#ffffff', '#fff3b0', '#ffd23a', '#e8a020', '#1a1218')
+# flowers and grass tufts: light greens and petal colours only (no bark or ink)
+DETAIL = hexes('#2a6a1c', '#3f8f24', '#68bc34', '#b6ea5a', '#3a8a22', '#5cb030', '#7cc846',
+               '#ffffff', '#fff3b0', '#ffd23a', '#e8a020')
+# the wood beyond the clearing: the haze greens of the far tree lines
+FAR = hexes('#163212', '#1f4a2a', '#2a5e36', '#3a8060', '#4f9068', '#5aa070', '#74baa8',
+            '#2a1c14', '#3e2a1c', '#56402c')
 
 
 def load(rel):
@@ -65,6 +90,98 @@ def down(im, f=4, colours=14, alpha_share=0.5):
         return purity, out
 
     return max((sample(ox, oy) for oy in range(f) for ox in range(f)), key=lambda r: r[0])[1]
+
+
+def dist(a, b):
+    return 2 * (a[0] - b[0]) ** 2 + 4 * (a[1] - b[1]) ** 2 + 3 * (a[2] - b[2]) ** 2
+
+
+def snap(im, palette):
+    """Map every opaque pixel to the nearest palette colour."""
+    out, cache = im.copy(), {}
+    p = out.load()
+    for y in range(out.height):
+        for x in range(out.width):
+            c = p[x, y]
+            if c[3]:
+                if c[:3] not in cache:
+                    cache[c[:3]] = min(palette, key=lambda q: dist(q, c))
+                p[x, y] = (*cache[c[:3]], 255)
+    return out
+
+
+def accents(im, n=8):
+    """A sprite's own colours that are not foliage green (berries, bells, caps, bark)."""
+    px = [c[:3] for c in getattr(im, 'get_flattened_data', im.getdata)() if c[3]]
+    flat = Image.new('RGB', (len(px), 1))
+    flat.putdata(px)
+    q = flat.quantize(n, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
+    used = {i for _, i in q.getcolors()}
+    pal = q.getpalette()
+    out = []
+    for i in sorted(used):
+        c = tuple(pal[i * 3:i * 3 + 3])
+        h, s, v = colorsys.rgb_to_hsv(*(k / 255 for k in c))
+        if not (hue_in(h, 60, 170) and s > 0.3) and v > 0.08:
+            out.append(c)
+    return out
+
+
+def neighbours(p, x, y, w, h):
+    return [p[nx, ny] for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)) if 0 <= nx < w and 0 <= ny < h]
+
+
+def despeckle(im, near=14400):
+    """A lone pixel whose neighbours (three or four of them alike) differ from it takes
+    their colour, if it is close to it (noise, not a blossom or a berry glint)."""
+    out = im.copy()
+    src, o = im.load(), out.load()
+    for y in range(im.height):
+        for x in range(im.width):
+            c = src[x, y]
+            if not c[3]:
+                continue
+            ns = neighbours(src, x, y, im.width, im.height)
+            if len(ns) == 4 and all(n[3] for n in ns) and c not in ns:
+                n, k = Counter(ns).most_common(1)[0]
+                if k >= 3 and dist(n, c) < near:
+                    o[x, y] = n
+    return out
+
+
+def defringe(im, luma=70):
+    """Drop dark pixels on the silhouette edge (soft-alpha halos of the source art)."""
+    out = im.copy()
+    src, o = im.load(), out.load()
+    for y in range(im.height):
+        for x in range(im.width):
+            r, g, b, a = src[x, y]
+            if a and 0.3 * r + 0.59 * g + 0.11 * b < luma:
+                ns = neighbours(src, x, y, im.width, im.height)
+                if len(ns) < 4 or any(not n[3] for n in ns):
+                    o[x, y] = (0, 0, 0, 0)
+    return out
+
+
+def clean(im, palette, fringe=False):
+    im = snap(im, palette)
+    if fringe:
+        im = trim(defringe(im))
+    return despeckle(im)
+
+
+def plant(im, keep=0.68):
+    """Bury the lower part of a root in a mound of soil, so it grows out of the ground."""
+    h = max(1, round(im.height * keep))
+    out = Image.new('RGBA', (im.width, h + 2), (0, 0, 0, 0))
+    out.paste(im.crop((0, 0, im.width, h)), (0, 0))
+    p = out.load()
+    cx, m = im.width // 2, max(6, round(im.width * 0.55))
+    for row, (c, w) in enumerate(zip(hexes('#6e4220', '#4a2a14', '#4a2a14'), (m - 4, m - 1, m))):
+        for x in range(cx - w // 2, cx - w // 2 + w):
+            if 0 <= x < out.width:
+                p[x, h - 1 + row] = (*c, 255)
+    return out
 
 
 def trim(im):
@@ -154,37 +271,42 @@ def anchored(frames):
     return out
 
 
-def gatherable(name, idle, extra=None, tint=None):
-    """idle + hover (+ any extra states), outlined, tinted and anchored."""
-    def prep(im):
+def gatherable(name, idle, extra=None, tint=None, planted=False):
+    """idle + hover (+ any extra states), outlined, tinted, snapped to the
+    scene palette plus the sprite's own accent colours, and anchored. A
+    planted gatherable grows out of a mound in the scene; its card keeps the
+    whole plant (`<name>_card`)."""
+    def prep(im, bury=False):
         im = trim(down(im))
-        return outline(recolour(im, tint) if tint else im, INK)
-    base = prep(idle)
-    # out of reach (a higher guild rank): a flat shadow of the plant
-    shadow = Image.new('RGBA', base.size, (0, 0, 0, 0))
-    shadow.paste(Image.new('RGBA', base.size, LOCKED), mask=base.getchannel('A'))
-    frames = {'idle': base, 'hover': outline(base, GLOW), 'locked': shadow}
+        im = recolour(im, tint) if tint else im
+        im = clean(im, SCENE + accents(im))
+        return outline(plant(im) if bury else im, INK)
+    base = prep(idle, planted)
+    frames = {'idle': base, 'hover': outline(base, GLOW)}
     for k, im in (extra or {}).items():
         frames[k] = prep(im)
-    return {f'{name}_{k}': v for k, v in anchored(frames).items()}
+    out = {f'{name}_{k}': v for k, v in anchored(frames).items()}
+    if planted:
+        out[f'{name}_card'] = prep(idle)
+    return out
 
 
 def build():
     S = {}
     # decorative world objects (no outline: they stay behind the gatherables)
+    # (the far trees are snapped to the haze greens of the distant tree lines)
     for n in ('oak_round_01', 'oak_round_02', 'oak_wide_03'):
-        im = trim(down(load('sprites/trees/' + n)))
-        S[n] = im
-        S[n + '_far'] = recolour(im, far)
+        S[n + '_far'] = clean(recolour(trim(down(load('sprites/trees/' + n))), far), FAR)
     for rel in ('bushes/forest_bush_01', 'bushes/flower_bush_01', 'rocks/mossy_boulder', 'rocks/gray_boulder',
-                'rocks/stone_cluster', 'props/tree_stump', 'props/fallen_log', 'props/mossy_log',
-                'details/daisies', 'details/buttercups', 'details/grass_tuft_01', 'details/grass_tuft_02',
-                'details/grass_tuft_03', 'details/grass_tuft_04', 'details/grass_tuft_05'):
-        S[rel.split('/')[1]] = trim(down(load('sprites/' + rel), colours=10))
-    S['forest_bush_01_far'] = recolour(S['forest_bush_01'], far)
+                'rocks/stone_cluster', 'props/tree_stump', 'props/mossy_log'):
+        S[rel.split('/')[1]] = clean(trim(down(load('sprites/' + rel), colours=10)), SCENE)
+    # small details sit straight on the grass: no dark halo
+    for rel in ('details/daisies', 'details/buttercups', 'details/grass_tuft_01', 'details/grass_tuft_02', 'details/grass_tuft_03'):
+        S[rel.split('/')[1]] = clean(trim(down(load('sprites/' + rel), colours=8)), DETAIL, fringe=True)
+    S['forest_bush_01_far'] = clean(recolour(trim(down(load('sprites/bushes/forest_bush_01'), colours=10)), far), FAR)
     # gatherables, one per real Whisperwood ingredient (materials/wild.js keys)
     G = 'sprites/gatherables/'
-    S.update(gatherable('ironroot', load(G + 'raven_ironroot_idle'), {'depleted': load(G + 'raven_ironroot_depleted')}))
+    S.update(gatherable('ironroot', load(G + 'raven_ironroot_idle'), {'depleted': load(G + 'raven_ironroot_depleted')}, planted=True))
     S.update(gatherable('silverleaf', load(G + 'herb_idle'), {'harvesting': load(G + 'herb_harvesting'), 'depleted': load(G + 'herb_depleted')}, silvery))
     S.update(gatherable('nightshade', load(G + 'bellflowers')))
     S.update(gatherable('owlberry', load(G + 'red_berries')))
@@ -192,7 +314,8 @@ def build():
     S.update(gatherable('witchear', load(G + 'red_mushrooms'), tint=brown_caps))
     S.update(gatherable('mandrake', load(G + 'exposed_root'), tint=pale))
     # a picked-over patch for everything without its own depleted art
-    S['picked'] = outline(trim(down(load(G + 'herb_depleted'))), INK)
+    picked = trim(down(load(G + 'herb_depleted')))
+    S['picked'] = outline(clean(picked, SCENE + accents(picked)), INK)
     # the glint over a fully grown gatherable (16 px frames at half scale)
     for i in range(4):
         S[f'glint_{i}'] = trim(down(load(f'effects/glint_frame_0{i}'), f=2, colours=4, alpha_share=0.25))

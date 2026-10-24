@@ -91,16 +91,17 @@ function treeLine(ctx, rng, y, size, c, cHi) {
 /**
  * A leafy crown: dark mass, mid-tone clusters, lit clusters to the upper
  * left, a few highlight specks and a ragged edge of single leaves.
- * @param {string[]} pal [outline, dark, mid, light, highlight]
+ * @param {string[]} pal [outline, dark, mid, light, highlight] @param {boolean} [tidy] without the specks
  */
-function canopy(ctx, rng, cx, cy, r, pal) {
+function canopy(ctx, rng, cx, cy, r, pal, tidy = false) {
   const blobs = [];
   for (let i = 0; i < 9; i++) blobs.push([cx + rng.range(-r * 0.8, r * 0.8), cy + rng.range(-r * 0.5, r * 0.45), rng.range(r * 0.4, r * 0.62)]);
   for (const [x, y, br] of blobs) disc(ctx, Math.round(x), Math.round(y), Math.round(br) + 1, Math.round(br * 0.85) + 1, pal[0]);
   for (const [x, y, br] of blobs) disc(ctx, Math.round(x), Math.round(y), Math.round(br), Math.round(br * 0.85), pal[1]);
   for (const [x, y, br] of blobs) disc(ctx, Math.round(x - br * 0.15), Math.round(y - br * 0.2), Math.round(br * 0.75), Math.round(br * 0.62), pal[2]);
   for (const [x, y, br] of blobs) if (x < cx + r * 0.3 && y < cy + r * 0.1) disc(ctx, Math.round(x - br * 0.3), Math.round(y - br * 0.35), Math.round(br * 0.42), Math.round(br * 0.34), pal[3]);
-  for (let i = 0; i < r * 1.2; i++) R(ctx, cx + rng.range(-r, r * 0.5), cy + rng.range(-r * 0.7, r * 0.1), 1, 1, pal[4]);
+  // highlight specks (a tidy crown keeps only its lit clusters: no lone pixels)
+  for (let i = 0; i < r * 1.2; i++) { const x = cx + rng.range(-r, r * 0.5), y = cy + rng.range(-r * 0.7, r * 0.1); if (!tidy) R(ctx, x, y, 1, 1, pal[4]); }
   for (let i = 0; i < r * 2; i++) {
     const a = rng.range(0, Math.PI * 2), d = r * rng.range(0.85, 1.05);
     R(ctx, cx + Math.cos(a) * d, cy + Math.sin(a) * d * 0.75, 1, 1, pal[rng.int(0, 1)]);
@@ -384,46 +385,55 @@ function forest(ctx, rng) {
  */
 function forestSprites(ctx, rng, avoid) {
   const W = SCENE_W, H = SCENE_H;
-  const free = (x0, y0, x1, y1) => avoid.every((b) => x1 < b.x0 || x0 > b.x1 || y1 < b.y0 || y0 > b.y1);
-  /** Draw a prop at the first spot that keeps clear of the deposits. @param {string} name @param {[number, number][]} spots */
+  /** what is already standing on the ground: the deposits, then each prop placed */
+  const taken = avoid.slice();
+  const free = (x0, y0, x1, y1) => taken.every((b) => x1 < b.x0 || x0 > b.x1 || y1 < b.y0 || y0 > b.y1);
+  /** A few random spots in a band of the ground. @returns {[number, number][]} */
+  const spots = (x0, x1, y0, y1, n = 5) => Array.from({ length: n }, () => [rng.int(x0, x1), rng.int(y0, y1)]);
+  /** Draw a prop at the first spot clear of the deposits and the props before it. @param {string} name @param {[number, number][]} spots */
   const prop = (name, spots, flip = false) => {
     const f = frame(name);
     if (!f) return;
     for (const [x, y] of spots) {
-      if (free(x - f[2] / 2, y - f[3], x + f[2] / 2, y)) { drawFrame(ctx, name, x, y, 1, flip); return; }
+      const b = { x0: x - f[2] / 2, y0: y - f[3], x1: x + f[2] / 2, y1: y };
+      if (free(b.x0, b.y0, b.x1, b.y1)) { drawFrame(ctx, name, x, y, 1, flip); taken.push(b); return; }
     }
   };
   gradient(ctx, 0, 0, W, 64, ['#3f8ee0', '#7ec0f0', '#cdeef0'], 9);
   cloud(ctx, 122, 14, 2, '#ffffff', '#cfe2f2');
   cloud(ctx, 92, 30, 1, '#ffffff', '#d4e6f4');
+  // the depth of the wood behind the far tree lines, so no sky shows between their crowns
+  R(ctx, 0, 44, W, 38, '#4a8c7c');
   treeLine(ctx, rng, 46, 12, '#4f9a96', '#74baa8');
   treeLine(ctx, rng, 54, 14, '#3a8060', '#5aa070');
-  gradient(ctx, 0, 62, W, H - 62, ['#68b83a', '#5aa830', '#428a24'], 7);
-  for (let y = 70; y < 124; y++) {
-    const t = (y - 70) / 54, hw = 30 + t * 64;
-    for (let x = Math.round(128 - hw); x < 128 + hw; x++) {
-      const e = 1 - Math.abs(x - 128) / hw;
-      if (e * 1.4 * (1 - Math.abs(t - 0.45)) > bayer(x, y) + 0.15) R(ctx, x, y, 1, 1, '#7cc846');
+  // ground in flat bands, lighter in the sunlit clearing (stepped, not dithered)
+  const bands = ['#68b83a', '#62b034', '#5aa830', '#52a02c', '#4a9628', '#428a24'];
+  for (let k = 0; k < bands.length; k++) { const y0 = 66 + Math.round(k * (H - 66) / bands.length); R(ctx, 0, y0, W, H - y0, bands[k]); }
+  for (const [c, grow] of /** @type {[string, number][]} */ ([['#70c040', 1], ['#7cc846', 0.7]])) {
+    // a ragged edge in steps of two pixels, so the clearing is not a drawn oval
+    for (let y = 72; y < 126; y += 2) {
+      const t = (y - 72) / 54, hw = Math.round((24 + Math.sin(t * Math.PI) * 74) * grow);
+      const l = 128 - hw - rng.int(0, 3) * 2, r = 128 + hw + rng.int(0, 3) * 2;
+      if (hw > 0) R(ctx, l, y, r - l, 2, c);
     }
   }
-  // the wood beyond the clearing, darker and cooler than the oaks in front
+  // the wood beyond the clearing, in the haze colours of the far tree lines
   drawFrame(ctx, 'oak_wide_03_far', 86, 73);
   drawFrame(ctx, 'oak_round_02_far', 126, 71);
   drawFrame(ctx, 'oak_round_01_far', 170, 72);
   rays(ctx, rng, 2, 0.12);
   for (let i = 0; i < 3; i++) { const x0 = 100 + i * 15; for (let y = 0; y < 104; y++) R(ctx, x0 + y * 0.35, y, 6 - i, 1, `rgba(255,250,210,${(0.2 * (1 - y / 104)).toFixed(3)})`); }
-  speckle(ctx, rng, 66, H - 1, 200, ['#4a9a2a', '#7cc846', '#3a8a22'], 3);
   // a hedge of shrubs closing off the clearing
   for (let x = -4, i = 0; x < W + 12; x += rng.int(18, 24), i++) drawFrame(ctx, i % 3 ? 'forest_bush_01_far' : 'forest_bush_01', x, rng.int(77, 80), 1, i % 2 === 1);
-  if (free(108, 72, 146, 88)) fence(ctx, 112, 87, 3, 14);
+  if (free(108, 72, 146, 88)) { fence(ctx, 112, 87, 3, 14); taken.push({ x0: 108, y0: 72, x1: 146, y1: 88 }); }
   // the great oaks framing the scene, canopies meeting overhead
   const trees = [[4, 18], [62, 12], [184, 12], [234, 18]];
   for (const [x, w] of trees) oak(ctx, rng, x, 18, 82 + rng.int(-2, 2), w, OAKBARK);
   for (const [x, w] of trees) {
     const c = x + w / 2;
-    canopy(ctx, rng, c - 12, rng.int(4, 12), rng.int(22, 26), LEAF);
-    canopy(ctx, rng, c + 14, rng.int(6, 14), rng.int(20, 24), LEAF);
-    canopy(ctx, rng, c, rng.int(20, 26), rng.int(16, 20), LEAF);
+    canopy(ctx, rng, c - 12, rng.int(4, 12), rng.int(22, 26), LEAF, true);
+    canopy(ctx, rng, c + 14, rng.int(6, 14), rng.int(20, 24), LEAF, true);
+    canopy(ctx, rng, c, rng.int(20, 26), rng.int(16, 20), LEAF, true);
   }
   // shrubs, rocks, a stump and a log around the clearing
   prop('flower_bush_01', [[48, 100], [36, 96], [70, 96]]);
@@ -437,15 +447,12 @@ function forestSprites(ctx, rng, avoid) {
   // foliage cut off by the bottom of the frame
   prop('forest_bush_01', [[56, 148], [74, 148], [92, 148]]);
   prop('flower_bush_01', [[196, 148], [180, 148], [164, 148]], true);
-  // wildflowers in clumps and grass in the open
-  for (let i = 0; i < 6; i++) {
-    const x = rng.int(20, W - 20), y = rng.int(88, H - 2), name = rng.chance(0.6) ? 'daisies' : 'buttercups';
-    for (let k = 0; k < rng.int(1, 3); k++) prop(name, [[x + rng.int(-9, 9), y + rng.int(-4, 4)]], rng.chance(0.5));
+  // wildflowers in small clumps and a little grass in the open, never on a prop
+  for (let i = 0; i < 7; i++) {
+    const x = rng.int(20, W - 20), y = rng.int(90, H - 3), name = rng.chance(0.6) ? 'daisies' : 'buttercups';
+    for (let k = 0; k < rng.int(2, 3); k++) prop(name, spots(x - 10, x + 10, y - 4, y + 4), rng.chance(0.5));
   }
-  for (let i = 0; i < 22; i++) { const x = rng.int(4, W - 4), y = rng.int(82, H + 2); prop(`grass_tuft_0${rng.int(1, 5)}`, [[x, y]], rng.chance(0.5)); }
-  for (let i = 0; i < 5; i++) { const x = rng.int(0, W), y = rng.int(132, H - 2); if (free(x - 10, y - 10, x + 10, y)) fern(ctx, rng, x, y, rng.int(8, 11), '#2a6a1c', '#7ac848'); }
-  // a few motes in the light (quieter than a ripe gatherable's glint)
-  for (let i = 0; i < 6; i++) R(ctx, rng.int(60, 200), rng.int(40, 100), 1, 1, '#fff3a0');
+  for (let i = 0; i < 18; i++) prop(`grass_tuft_0${rng.int(1, 3)}`, spots(6, W - 6, 84, H + 1), rng.chance(0.5));
 }
 
 /** @param {CanvasRenderingContext2D} ctx @param {Rng} rng */

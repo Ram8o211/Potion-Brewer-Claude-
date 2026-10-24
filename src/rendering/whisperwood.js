@@ -4,7 +4,10 @@
 // ingredient's wild key (materials/wild.js). Each gatherable has idle and
 // hover frames and, where the art exists, harvesting and depleted ones; all
 // frames of one gatherable share a canvas anchored at its bottom centre (the
-// deposit's spot on the ground), so states swap in place.
+// deposit's spot on the ground), so states swap in place. A `card` frame is
+// the whole plant for its deposit card (Ironroot is half buried in the scene).
+// Deposits beyond the player's guild rank are not drawn in the scene at all;
+// their cards say what rank opens them.
 //
 // The atlas loads once, in the background; until it has (and in Node, where
 // there is no Image), callers fall back to the procedural painting. Layout
@@ -13,9 +16,9 @@
 
 import { ATLAS_URL, FRAMES } from './whisperwood-atlas.js';
 
-/** Which frames each forest ingredient uses. @type {Record<string, {idle:string, hover:string, locked:string, depleted:string, harvesting?:string}>} */
+/** Which frames each forest ingredient uses. @type {Record<string, {idle:string, hover:string, card:string, depleted:string, harvesting?:string}>} */
 export const GATHERABLES = Object.fromEntries(['ironroot', 'silverleaf', 'nightshade', 'owlberry', 'emberbark', 'witchear', 'mandrake'].map((k) => [k, {
-  idle: k + '_idle', hover: k + '_hover', locked: k + '_locked',
+  idle: k + '_idle', hover: k + '_hover', card: FRAMES[k + '_card'] ? k + '_card' : k + '_idle',
   // own depleted / harvesting art where the pack has it, else a picked-over patch
   depleted: FRAMES[k + '_depleted'] ? k + '_depleted' : 'picked',
   ...(FRAMES[k + '_harvesting'] ? { harvesting: k + '_harvesting' } : {}),
@@ -67,15 +70,15 @@ export function drawFrame(ctx, name, x, y, scale = 1, flip = false) {
 
 /**
  * The frame a gatherable shows. `can` is whether it can be harvested now;
- * `harvesting` a moment after a harvest; `locked` when the guild rank is too low.
- * @param {string} key wild key @param {{can:boolean, hover?:boolean, harvesting?:boolean, locked?:boolean}} s
+ * `harvesting` a moment after a harvest; `card` for the deposit card's picture.
+ * @param {string} key wild key @param {{can:boolean, hover?:boolean, harvesting?:boolean, card?:boolean}} s
  */
 export function gatherFrameName(key, s) {
   const g = GATHERABLES[key];
   if (!g) return null;
-  if (s.locked) return g.locked;
   if (s.harvesting && g.harvesting) return g.harvesting;
   if (!s.can) return g.depleted;
+  if (s.card) return g.card;
   return s.hover ? g.hover : g.idle;
 }
 

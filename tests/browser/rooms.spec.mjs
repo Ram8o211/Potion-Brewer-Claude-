@@ -51,6 +51,9 @@ test('gathering in the wilds fills the stores and depletes the deposit', async (
   const scenery = await lab(page, (l) => ({ total: l.state.gathering.total, nodes: JSON.stringify(l.state.gathering.nodes) }));
   for (const fx of [0.1, 0.5, 0.9]) await page.mouse.click(cv.x + cv.width * fx, cv.y + cv.height * 0.06);
   expect(await lab(page, (l) => JSON.stringify(l.state.gathering.nodes)), 'scenery is not gatherable').toBe(scenery.nodes);
+  // a deposit beyond the guild rank is left out of the scene (its card says what opens it)
+  const far = deps.find((d) => d.rank > 0);
+  if (far) expect(await lab(page, (l, id) => l.views.wilds.inScene().some((d) => d.id === id), far.id)).toBe(false);
   // pointing at a deposit highlights it
   if (info.project.name === 'desktop') {
     const d3 = deps.find((d) => d.rank === 0 && d.id !== d2.id) || deps[0];

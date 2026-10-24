@@ -117,14 +117,19 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 .topbar { grid-area: top; display: flex; align-items: center; gap: 6px; padding: 3px 6px; z-index: 3; min-width: 0; }
 .topbar .btn { min-height: 44px; min-width: 44px; padding: 4px; }
 .topbar .stat { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
-.topbar .rankbox { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1 1 auto; max-width: 140px; }
+.topbar .rankbox { display: flex; flex-direction: column; align-items: stretch; gap: 3px; min-width: 0; flex: 1 1 auto; max-width: 140px; }
 .topbar .rankname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-s); color: var(--brassHi); }
 .topbar .coins-val { min-width: 2ch; }
-.topbar .rankrow { display: flex; align-items: center; gap: 4px; min-width: 0; flex: 1 1 auto; max-width: 220px; }
+/* coins never shrink; rank and day shrink and clip inside their own boxes
+   (Android's text scaling enlarges the font without widening the bar) */
+.topbar > .stat { flex: none; }
+.topbar .rankrow { display: flex; align-items: center; gap: 4px; min-width: 0; flex: 0 1 auto; max-width: 220px; overflow: hidden; }
+.topbar .rankname { max-width: 100%; text-align: left; }
 .topbar .shop-btn { padding: 4px 10px; gap: 4px; }
 .bar { height: 6px; background: var(--wood0); box-shadow: 0 0 0 1px #000; position: relative; overflow: hidden; }
 .bar > i { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(var(--brassHi), var(--brass)); }
-.topbar .day { font-size: var(--fs-s); display: flex; flex-direction: column; line-height: 1.2; white-space: nowrap; }
+.topbar .day { font-size: var(--fs-s); display: flex; flex-direction: column; line-height: 1.2; white-space: nowrap; min-width: 0; flex: 0 1 auto; overflow: hidden; padding-left: 6px; border-left: 2px solid rgba(26, 18, 24, 0.45); }
+.topbar .day > * { overflow: hidden; text-overflow: ellipsis; }
 .topbar .day .event { color: var(--frost); }
 .topbar .day .guests { color: var(--parch1); }
 
