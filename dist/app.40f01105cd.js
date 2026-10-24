@@ -13400,47 +13400,50 @@ return { CounterView };
 // src/rendering/whisperwood-atlas.js
 const __m68 = (() => {
 const ATLAS_URL = 'assets/whisperwood/atlas.png';
-const ATLAS_SIZE = [256, 97];
+const ATLAS_SIZE = [256, 125];
 const FRAMES = {
-buttercups: [33, 86, 14, 9],
-daisies: [87, 86, 15, 7],
-emberbark_hover: [210, 41, 26, 19],
-emberbark_idle: [0, 66, 26, 19],
-flower_bush_01: [134, 66, 24, 17],
-forest_bush_01: [159, 66, 24, 17],
-forest_bush_01_far: [184, 66, 24, 17],
-glint_0: [113, 86, 3, 3],
-glint_1: [103, 86, 4, 4],
-glint_2: [117, 86, 3, 3],
-glint_3: [108, 86, 4, 4],
-grass_tuft_01: [0, 86, 12, 11],
-grass_tuft_02: [64, 86, 10, 8],
-grass_tuft_03: [75, 86, 11, 8],
-gray_boulder: [231, 66, 19, 14],
-ironroot_card: [0, 0, 23, 40],
-ironroot_depleted: [116, 0, 25, 32],
-ironroot_hover: [142, 0, 25, 32],
-ironroot_idle: [168, 0, 25, 32],
-mandrake_hover: [52, 41, 28, 23],
-mandrake_idle: [81, 41, 28, 23],
-mossy_boulder: [77, 66, 29, 18],
-mossy_log: [107, 66, 26, 18],
-nightshade_hover: [110, 41, 24, 23],
-nightshade_idle: [135, 41, 24, 23],
-oak_round_01_far: [59, 0, 29, 33],
-oak_round_02_far: [89, 0, 26, 33],
-oak_wide_03_far: [24, 0, 34, 34],
-owlberry_hover: [160, 41, 24, 22],
-owlberry_idle: [185, 41, 24, 22],
-picked: [13, 86, 19, 11],
-silverleaf_depleted: [194, 0, 25, 24],
-silverleaf_harvesting: [220, 0, 25, 24],
-silverleaf_hover: [0, 41, 25, 24],
-silverleaf_idle: [26, 41, 25, 24],
-stone_cluster: [48, 86, 15, 9],
-tree_stump: [209, 66, 21, 16],
-witchear_hover: [27, 66, 24, 19],
-witchear_idle: [52, 66, 24, 19],
+buttercups: [177, 103, 14, 9],
+daisies: [231, 103, 15, 7],
+emberbark_hover: [100, 79, 26, 19],
+emberbark_idle: [127, 79, 26, 19],
+flower_bush_01: [27, 103, 24, 17],
+forest_bush_01: [52, 103, 24, 17],
+forest_bush_01_far: [77, 103, 24, 17],
+glint_0: [0, 122, 3, 3],
+glint_1: [247, 103, 4, 4],
+glint_2: [4, 122, 3, 3],
+glint_3: [252, 103, 4, 4],
+grass_tuft_01: [144, 103, 12, 11],
+grass_tuft_02: [208, 103, 10, 8],
+grass_tuft_03: [219, 103, 11, 8],
+gray_boulder: [124, 103, 19, 14],
+ironroot_card: [120, 0, 23, 40],
+ironroot_depleted: [0, 46, 25, 32],
+ironroot_hover: [26, 46, 25, 32],
+ironroot_idle: [52, 46, 25, 32],
+mandrake_hover: [182, 46, 28, 23],
+mandrake_idle: [211, 46, 28, 23],
+mossy_boulder: [204, 79, 29, 18],
+mossy_log: [0, 103, 26, 18],
+nightshade_hover: [0, 79, 24, 23],
+nightshade_idle: [25, 79, 24, 23],
+oak_round_01_far: [179, 0, 29, 33],
+oak_round_01_near: [45, 0, 38, 43],
+oak_round_02_far: [209, 0, 26, 33],
+oak_round_02_near: [84, 0, 35, 43],
+oak_wide_03_far: [144, 0, 34, 34],
+oak_wide_03_near: [0, 0, 44, 45],
+owlberry_hover: [50, 79, 24, 22],
+owlberry_idle: [75, 79, 24, 22],
+picked: [157, 103, 19, 11],
+silverleaf_depleted: [78, 46, 25, 24],
+silverleaf_harvesting: [104, 46, 25, 24],
+silverleaf_hover: [130, 46, 25, 24],
+silverleaf_idle: [156, 46, 25, 24],
+stone_cluster: [192, 103, 15, 9],
+tree_stump: [102, 103, 21, 16],
+witchear_hover: [154, 79, 24, 19],
+witchear_idle: [179, 79, 24, 19],
 };
 return { ATLAS_URL, ATLAS_SIZE, FRAMES };
 })();
@@ -13580,14 +13583,14 @@ if (cHi) disc(ctx, x - Math.round(r / 3), cy - Math.round(r / 2), Math.max(1, Ma
 R(ctx, x, cy, Math.max(2, r * 2 / 3), y + 30 - cy, c);
 }
 }
-function canopy(ctx, rng, cx, cy, r, pal, tidy = false) {
+function canopy(ctx, rng, cx, cy, r, pal) {
 const blobs = [];
 for (let i = 0; i < 9; i++) blobs.push([cx + rng.range(-r * 0.8, r * 0.8), cy + rng.range(-r * 0.5, r * 0.45), rng.range(r * 0.4, r * 0.62)]);
 for (const [x, y, br] of blobs) disc(ctx, Math.round(x), Math.round(y), Math.round(br) + 1, Math.round(br * 0.85) + 1, pal[0]);
 for (const [x, y, br] of blobs) disc(ctx, Math.round(x), Math.round(y), Math.round(br), Math.round(br * 0.85), pal[1]);
 for (const [x, y, br] of blobs) disc(ctx, Math.round(x - br * 0.15), Math.round(y - br * 0.2), Math.round(br * 0.75), Math.round(br * 0.62), pal[2]);
 for (const [x, y, br] of blobs) if (x < cx + r * 0.3 && y < cy + r * 0.1) disc(ctx, Math.round(x - br * 0.3), Math.round(y - br * 0.35), Math.round(br * 0.42), Math.round(br * 0.34), pal[3]);
-for (let i = 0; i < r * 1.2; i++) { const x = cx + rng.range(-r, r * 0.5), y = cy + rng.range(-r * 0.7, r * 0.1); if (!tidy) R(ctx, x, y, 1, 1, pal[4]); }
+for (let i = 0; i < r * 1.2; i++) R(ctx, cx + rng.range(-r, r * 0.5), cy + rng.range(-r * 0.7, r * 0.1), 1, 1, pal[4]);
 for (let i = 0; i < r * 2; i++) {
 const a = rng.range(0, Math.PI * 2), d = r * rng.range(0.85, 1.05);
 R(ctx, cx + Math.cos(a) * d, cy + Math.sin(a) * d * 0.75, 1, 1, pal[rng.int(0, 1)]);
@@ -13826,14 +13829,10 @@ rays(ctx, rng, 2, 0.12);
 for (let i = 0; i < 3; i++) { const x0 = 100 + i * 15; for (let y = 0; y < 104; y++) R(ctx, x0 + y * 0.35, y, 6 - i, 1, `rgba(255,250,210,${(0.2 * (1 - y / 104)).toFixed(3)})`); }
 for (let x = -4, i = 0; x < W + 12; x += rng.int(18, 24), i++) drawFrame(ctx, i % 3 ? 'forest_bush_01_far' : 'forest_bush_01', x, rng.int(77, 80), 1, i % 2 === 1);
 if (free(108, 72, 146, 88)) { fence(ctx, 112, 87, 3, 14); taken.push({ x0: 108, y0: 72, x1: 146, y1: 88 }); }
-const trees = [[4, 18], [62, 12], [184, 12], [234, 18]];
-for (const [x, w] of trees) oak(ctx, rng, x, 18, 82 + rng.int(-2, 2), w, OAKBARK);
-for (const [x, w] of trees) {
-const c = x + w / 2;
-canopy(ctx, rng, c - 12, rng.int(4, 12), rng.int(22, 26), LEAF, true);
-canopy(ctx, rng, c + 14, rng.int(6, 14), rng.int(20, 24), LEAF, true);
-canopy(ctx, rng, c, rng.int(20, 26), rng.int(16, 20), LEAF, true);
-}
+drawFrame(ctx, 'oak_round_02_near', 70, 84, 2);
+drawFrame(ctx, 'oak_round_01_near', 186, 84, 2, true);
+drawFrame(ctx, 'oak_wide_03_near', 8, 88, 2);
+drawFrame(ctx, 'oak_wide_03_near', 250, 88, 2, true);
 prop('flower_bush_01', [[48, 100], [36, 96], [70, 96]]);
 prop('forest_bush_01', [[226, 98], [212, 94], [242, 102]], true);
 prop('stone_cluster', [[146, 96], [96, 98], [160, 92]]);
