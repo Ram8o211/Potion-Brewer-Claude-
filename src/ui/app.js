@@ -22,6 +22,9 @@ export class App {
   constructor(root) {
     this.root = root;
     this.settings = loadJSON(KEYS.settings, { ...DEFAULT_SETTINGS });
+    // music is on whenever its volume is above zero (an old "music off" switch becomes volume 0)
+    if (this.settings.musicOn === false) this.settings.music = 0;
+    this.settings.musicOn = this.settings.music > 0;
     this.screen = null;
     setOverlayRoot(root);
     setToastRoot(root);
@@ -81,7 +84,7 @@ export class App {
   newGameDialog() {
     const rng = new Rng(Date.now() >>> 0);
     const seedIn = /** @type {HTMLInputElement} */ (h('input', { type: 'text', value: `${rng.pick(SEED_WORDS)}-${rng.pick(SEED_WORDS)}-${rng.int(10, 99)}`, maxlength: '32', 'aria-label': 'World seed' }));
-    const tut = /** @type {HTMLInputElement} */ (h('input', { type: 'checkbox', 'aria-label': 'Play the tutorial' }));
+    const tut = /** @type {HTMLInputElement} */ (h('input', { type: 'checkbox', 'aria-label': 'Guided tour' }));
     tut.checked = true;
     let m;
     const go = async () => {
@@ -100,9 +103,9 @@ export class App {
       title: 'A New Shop',
       body: [
         h('div', { class: 'card parch' },
-          h('div', { class: 'small', text: 'Every world has its own reagents, reactions and customers, generated from its seed. Share a seed to share a world.' }),
+          h('div', { class: 'small', text: 'The seed generates the world: its ingredients, reactions and customers. The same seed gives the same world.' }),
           h('label', { class: 'field' }, 'World seed', seedIn),
-          h('div', { class: 'toggle-row' }, h('span', { text: 'Guided first brew (recommended)' }), tut)),
+          h('div', { class: 'toggle-row' }, h('span', { text: 'Guided tour of the shop (recommended)' }), tut)),
       ],
       foot: [btn('Open my shop', go, { cls: 'primary', icon: 'door', act: 'start-game' })],
     });

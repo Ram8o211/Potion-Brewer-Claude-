@@ -206,6 +206,10 @@ computed from the particles that actually run out of the tap. What a
   readings of density, viscosity, stability, volatility and charge.
 * **Mobile first, desktop too.**
   * A bottom tab bar over five rooms (Counter, Brew, Wilds, Trials, Book).
+  * A guided tour on a new game walks through every room and control,
+    step by step, in a strip of its own that never covers a control
+    (replay it from the menu).
+  * Every tool shows its name under its icon.
   * Drag a jar onto the cauldron, or drag the dropper onto a rabbit.
     Every gesture has a tap alternative.
   * Touch targets of at least 44 px, and portrait, landscape, tablet and
@@ -302,7 +306,7 @@ Browser screenshots from the test run land in `test-results/screenshots/`.
    techniques; the supplies line says how much to brew and where the
    ingredients for each effect can be had today.
 2. **Wilds.** Gather what the order needs by tapping a deposit, or buy
-   the common herbs at the Market (bag icon) from Journeyman on.
+   the common herbs in the Shop (top bar) from Journeyman on.
 3. **Brew.** Pour in one of three ways: tap a jar and hold inside the
    cauldron, tap a jar and use the dose buttons, or drag the jar onto the
    cauldron. Switch on **Ground** to grind roots and stones in the mortar

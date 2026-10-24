@@ -516,15 +516,24 @@ function setToastRoot(root) {
 toastBox = h('div', { class: 'toasts', 'aria-live': 'polite' });
 root.appendChild(toastBox);
 }
+function placeToasts() {
+if (!toastBox || !toastBox.parentElement) return;
+const tour = document.querySelector('.tutor-slot .tutor');
+const top = tour ? tour.getBoundingClientRect().bottom - toastBox.parentElement.getBoundingClientRect().top + 6 : 0;
+toastBox.style.top = top > 0 ? `${Math.round(top)}px` : '';
+}
 function toast(title, text = '', iconName = 'star', ms = 3200) {
 if (!toastBox) return;
+placeToasts();
 const t = h('div', { class: 'toast parch' }, icon(iconName), h('div', {}, h('b', { text: title }), text));
 toastBox.appendChild(t);
-while (toastBox.children.length > 4) toastBox.firstChild.remove();
-setTimeout(() => {
+while (toastBox.children.length > 3) toastBox.firstChild.remove();
+const out = () => {
+if (t.classList.contains('out')) return;
 t.classList.add('out');
 setTimeout(() => t.remove(), 320);
-}, ms);
+};
+setTimeout(out, ms);
 }
 function coins(v) {
 return (Math.round(v * 10) / 10).toLocaleString('en-US', { maximumFractionDigits: 1 });
@@ -532,7 +541,7 @@ return (Math.round(v * 10) / 10).toLocaleString('en-US', { maximumFractionDigits
 function starsText(n, max = 5) {
 return '★'.repeat(n) + '☆'.repeat(max - n);
 }
-return { h, btn, clear, setOverlayRoot, modal, confirmDialog, setToastRoot, toast, coins, starsText };
+return { h, btn, clear, setOverlayRoot, modal, confirmDialog, setToastRoot, placeToasts, toast, coins, starsText };
 })();
 // src/core/rng.js
 const __m6 = (() => {
@@ -8852,7 +8861,7 @@ return Math.ceil(SUBJECT_BY_ID.rabbit.cost * (this.has('kennel') ? 0.5 : 1));
 buyRabbit(free = false) {
 const c = this.colony;
 const cap = this.cap.hutch;
-if (livingRabbits(c).length >= cap) return { ok: false, reason: `The hutch is full (${cap} places). Upgrade it at the guild.` };
+if (livingRabbits(c).length >= cap) return { ok: false, reason: `The hutch is full (${cap} places). More places are sold in the Shop.` };
 const cost = free ? 0 : this.rabbitPrice();
 if (cost > this.coins + 1e-9) return { ok: false, reason: `A new rabbit costs ${cost} coins.` };
 this.coins = round1(this.coins - cost);
@@ -8956,7 +8965,7 @@ this.colony.purges = (this.colony.purges || 0) + 1;
 return { ok: true, cost };
 }
 brewPurge(free = false) {
-if (!free && !this.has('still')) return { ok: false, reason: 'Buy the Purging Still at the guild to brew your own.' };
+if (!free && !this.has('still')) return { ok: false, reason: 'Buy the Purging Still in the Shop to brew your own.' };
 if (this.colony.still) return { ok: false, reason: 'The still is already working.' };
 const cost = free ? 0 : PURGE_BREW_COST;
 if (cost > this.coins + 1e-9) return { ok: false, reason: `The salts cost ${cost} coin.` };
@@ -12112,19 +12121,19 @@ const st = lab.state;
 const body = h('div');
 const tabs = h('div', { class: 'tabs' });
 let current = tab;
-const m = modal({ title: 'Market & Guild', body: [tabs, body], wide: true, onClose: () => lab.refreshHud(true) });
+const m = modal({ title: 'Shop', body: [tabs, body], wide: true, onClose: () => lab.refreshHud(true) });
 m.el.insertBefore(tabs, m.body);
 const coinLine = h('div', { class: 'row', style: { justifyContent: 'flex-end', padding: '0 12px' } });
 m.el.insertBefore(coinLine, m.body);
 const renderTabs = () => {
 clear(tabs);
-for (const [k, label] of [['reagents', 'Reagents'], ['equipment', 'Equipment'], ['sell', 'Sell surplus']]) {
-tabs.appendChild(btn(label, () => { current = k; render(); }, { cls: current === k ? 'active' : '', act: 'shop-tab-' + k }));
+for (const [k, label, ic] of [['reagents', 'Buy', 'jar'], ['equipment', 'Equipment', 'gear'], ['sell', 'Sell', 'coin']]) {
+tabs.appendChild(btn(label, () => { current = k; render(); }, { icon: ic, cls: current === k ? 'active' : '', act: 'shop-tab-' + k }));
 }
 };
 const render = () => {
 renderTabs();
-clear(coinLine).append(icon('coin'), h('span', { text: coins(st.coins) + ' coins' }), h('span', { class: 'muted small', text: ` · ${st.marketEvent.name}` }));
+clear(coinLine).append(icon('coin'), h('span', { text: coins(st.coins) + ' coins' }), ...(st.marketEvent.key !== 'none' ? [h('span', { class: 'muted small', text: ` · today: ${st.marketEvent.name}` })] : []));
 clear(m.body);
 if (current === 'reagents') renderReagents(lab, m.body, render);
 else if (current === 'equipment') renderEquipment(lab, m.body, render);
@@ -12136,7 +12145,7 @@ return m;
 }
 function renderReagents(lab, body, rerender) {
 const st = lab.state;
-body.appendChild(h('div', { class: 'muted small', text: `Prices per 100 ml. Shelf space: ${st.cap.storage} ml per reagent. The market sells no prepared reagents: every effect comes from nature. Water from the well is free; oil and spirit are plain solvents. Wild herbs and minerals are free to gather in the Wilds; from Journeyman on, the herbalist sells the common ones at a premium.` }));
+body.appendChild(h('div', { class: 'muted small', text: `Prices per 100 ml · room for ${st.cap.storage} ml of each. Water is free; oil and spirit carry no magic. Herbs and minerals are free in the Wilds — from Journeyman on, the common ones are sold here too.` }));
 const list = h('div', { class: 'list' });
 for (const id of st.world.ingredients) {
 const mt = st.lookup(id);
@@ -12172,7 +12181,6 @@ body.appendChild(list);
 }
 function renderEquipment(lab, body, rerender) {
 const st = lab.state;
-body.appendChild(h('div', { class: 'muted small', text: 'Every tool here lets you do something new in the craft, or do it faster. Each names the part of the craft it serves.' }));
 for (const cat of Object.keys(CAT_LABEL)) {
 const items = EQUIPMENT.filter((e) => e.category === cat);
 if (!items.length) continue;
@@ -12210,7 +12218,7 @@ body.appendChild(list);
 }
 function renderSell(lab, body, rerender) {
 const st = lab.state;
-body.appendChild(h('div', { class: 'muted small', text: 'The merchant buys back reagents at 40% of today’s price.' }));
+body.appendChild(h('div', { class: 'muted small', text: 'Ingredients you have 100 ml or more of, bought back at 40% of today’s price.' }));
 const list = h('div', { class: 'list' });
 for (const id of st.world.ingredients) {
 const s = st.stock(id);
@@ -12338,14 +12346,14 @@ if (com) sizes.add(com.bottleMl);
 const list = [...sizes].sort((a, b) => a - b);
 let m;
 const pick = (ml) => { m.close(); onPick(Math.max(1, Math.round(ml / per)), dest); };
-const btns = list.map((ml) => btn(`${ml} ml${com && ml === com.bottleMl ? ' · the order' : ''}`, () => pick(ml), {
+const btns = list.map((ml) => btn(`${ml} ml${com && ml === com.bottleMl ? ' · ordered' : ''}`, () => pick(ml), {
 cls: com && ml === com.bottleMl ? 'primary' : '', disabled: ml / per > avail, act: 'bottle-' + ml,
 }));
-btns.push(btn(`All at the tap · ${avail * per} ml`, () => pick(avail * per), { act: 'bottle-all' }));
+btns.push(btn(`All · ${avail * per} ml`, () => pick(avail * per), { act: 'bottle-all', title: 'Everything that can run out of the tap' }));
 let destRow = null;
 if (o.shelves) {
 const opts = /** @type {[string, string, boolean][]} */ ([
-['counter', counterFree ? 'To the counter' : 'Counter is taken', counterFree],
+['counter', counterFree ? 'To the counter (sell or test)' : 'Counter is taken', counterFree],
 ['shelf', shelfRoom > 0 ? `To the potion shelves · ${shelfRoom} free` : 'Potion shelves are full', shelfRoom > 0],
 ]);
 const bs = opts.map(([k, label, ok]) => btn(label, () => { dest = /** @type {any} */ (k); sync(); }, { icon: k === 'shelf' ? 'shelf2' : 'deal', disabled: !ok, act: 'bottle-dest-' + k }));
@@ -12354,11 +12362,12 @@ sync();
 destRow = h('div', { class: 'row wrap bottle-dest' }, ...bs);
 }
 m = modal({
-title: 'Bottle a measured quantity',
+title: 'Bottle the potion',
 body: [h('div', { class: 'card parch' },
-h('div', { class: 'small', text: `The bottle takes what runs out of the tap — the lowest layer first. ${avail * per} ml can be drawn now.` }),
-h('div', { class: 'small muted', text: 'A sealed bottle keeps its exact contents. On the counter you can test doses from it, pour it back or serve it; on the potion shelves it waits until you need it.' }),
+h('div', { class: 'small', text: `It fills from the tap at the bottom (the lowest layer first): ${avail * per} ml can be drawn. A sealed bottle keeps its exact contents.` }),
+destRow ? h('div', { class: 'small muted step-k', text: '1. Where to?' }) : null,
 destRow,
+h('div', { class: 'small muted step-k', text: destRow ? '2. How much?' : 'How much?' }),
 h('div', { class: 'row wrap bottle-sizes' }, ...btns))],
 });
 return m;
@@ -12382,7 +12391,7 @@ hutchSummary(summary.colony),
 h('div', { class: 'card parch' }, h('b', { text: `Tomorrow: ${st.marketEvent.name}` }), h('div', { class: 'small', text: st.marketEvent.text })),
 st.nextRank() ? h('div', { class: 'small muted', text: `Next rank: ${st.nextRank().name} at ${st.nextRank().rep} reputation.` }) : null,
 ],
-foot: [btn('Open the shop', () => document.querySelector('.overlay .modal-head .btn').dispatchEvent(new MouseEvent('click')), { cls: 'primary', act: 'next-day' })],
+foot: [btn('Start the new day', () => document.querySelector('.overlay .modal-head .btn').dispatchEvent(new MouseEvent('click')), { cls: 'primary', icon: 'sun', act: 'next-day', title: 'Dawn: gather in the Wilds, then open the door at the Counter' })],
 });
 }
 function hutchSummary(col) {
@@ -12414,7 +12423,7 @@ h('span', { class: 'k', text: 'Colour' }), h('span', {}, swatch(m.color), ' ' + 
 ...kv('Weight', sand ? `${m.density.toFixed(3)} g/ml` : densityWord(m.density)),
 ...kv('Thickness', sand ? `${viscosityClass(m.viscosity)} (${m.viscosity < 100 ? m.viscosity.toFixed(1) : Math.round(m.viscosity)} cP)` : viscosityClass(m.viscosity)),
 ...(sand ? [...kv('Volatility', String(Math.round(m.volatility))), ...kv('Charge', `${m.charge >= 0 ? '+' : ''}${m.charge.toFixed(2)}`)] : []),
-...kv('Effects', 'unknown — test a dose in the Trials room'),
+...kv('Effects', 'unknown — test a dose in Trials'),
 ...(aura ? kv('Aura', aura) : []),
 )),
 h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Composition' }), ...comp.map(([id, f]) => h('div', { class: 'small', text: `${(f * 100).toFixed(1)}%  ${st.lookup(id) ? st.lookup(id).name : id}` }))),
@@ -12538,14 +12547,14 @@ function openPause(lab) {
 const app = lab.app;
 let m;
 const items = [
-btn('Resume', () => m.close(), { cls: 'primary', icon: 'speed', act: 'resume' }),
+btn('Back to the game', () => m.close(), { cls: 'primary', icon: 'speed', act: 'resume' }),
 btn('How to play', () => { m.close(); openHelp(); }, { icon: 'help', act: 'help' }),
-btn('Settings & saves', () => { m.close(); openSettings(app, lab); }, { icon: 'gear', act: 'settings' }),
 ];
+if (!lab.sandbox) items.push(btn('Guided tour', () => { m.close(); if (lab.tutorial) { lab.tutorial.start(true); lab.showView('brew'); } }, { icon: 'bulb', act: 'tour', title: 'Walk through every part of the shop again' }));
+items.push(btn('Settings & saves', () => { m.close(); openSettings(app, lab); }, { icon: 'gear', act: 'settings' }));
 if (lab.sandbox && lab.receiver && lab.receiver.count) items.push(btn('Pour back distillate', () => { lab.pourReceiver(); m.close(); }, { icon: 'alembic' }));
-if (!lab.sandbox) items.push(btn('Restart tutorial', () => { m.close(); lab.tutorial && lab.tutorial.start(true); }, { icon: 'bulb' }));
-items.push(btn(lab.sandbox ? 'Leave experiment' : 'Save & quit to menu', () => { m.close(); app.showMenu(); }, { icon: 'door', act: 'quit' }));
-m = modal({ title: lab.sandbox ? 'Free Experiment' : 'Paused', body: h('div', { class: 'list' }, items) });
+items.push(btn(lab.sandbox ? 'Leave the experiment' : 'Save & quit to title', () => { m.close(); app.showMenu(); }, { icon: 'door', act: 'quit' }));
+m = modal({ title: lab.sandbox ? 'Free Experiment' : 'Menu', body: h('div', { class: 'list' }, items) });
 }
 function openReceiver(lab) {
 const st = lab.state, rec = lab.receiver;
@@ -12564,25 +12573,43 @@ btn('Pour away', () => { lab.receiver = null; m.close(); }, { icon: 'trash', cls
 });
 }
 function openHelp() {
-const sec = (title, lines) => h('div', { class: 'card parch' }, h('h3', { text: title }), ...lines.map((l) => h('div', { class: 'small', text: '• ' + l })));
-modal({
-title: 'How to play',
-wide: true,
-body: [
-sec('Your shop', ['Customers ask for potions by their effects — healing, strength, love, fire… — at a strength, and some want them served hot or chilled. Strength is the effective concentration in percent: everyday orders want about 8–15 %, master commissions far more.', 'Most orders forbid side effects: “no other effect above 1.2 %”. Every other kind of magic in the bottle must stay that faint.', 'The market sells no prepared reagents — only free well water and two plain solvents, oil and spirit. Every effect comes from what you gather, and nothing that grows is pure: each herb or mineral brings side effects. Cancel them with their opposites — fire and frost, life and death (life also mends poison, two parts to one), acid and alkali. Long-press an ingredient to see what cancels its side effects.', 'You know what each plain ingredient does. You do NOT know what a mixture does: how well it was extracted, heat, reactions and hidden laws change things. Test doses in the Trials room to find out.', 'Bottle a measured quantity from the tap at the bottom of the cauldron. A sealed vial keeps its exact contents: test doses from it, pour it back to keep working, or offer it at the Counter.', 'Bottle onto the potion shelves whenever you like, as long as there is room (3 bottles, more with a Bottle Shelf, Potion Cabinet or Bottle Cellar). Bottles of one batch share its trials, so a well-stirred, tested batch can serve several customers.', 'Before a sale you write the label — tested values, the guild theory’s estimates, “none” or unknown — and bargain over the price. The customer pays what you agree, drinks the real potion and comes back the next day: pleased, or with a complaint. Refund them, dispute it with your trial records, or turn them away.', 'Honest, well-tested potions earn reputation. Reputation unlocks ranks, regions of the wilds, reagents and equipment — each piece of equipment lets you do something new.']),
-sec('Preparing a brew', ['Grind or crush: whole roots, leaves and stones give up almost nothing. Switch on “Ground” on the shelf to grind them in the mortar, or crush them in the pot with the pestle.', 'Steep at the right heat: most herbs give up two to three times as much when held warm inside their steeping window; the window is in each herb’s lore and, once you have seen the extraction happen, in your journal. A herb added after the steep stays weak.', 'Some herbs want ice-cold water: Frostcap steeped near 9 °C (the basin’s best) gives about three times what it gives warm — but a brew frozen solid gives up less again. Grave Moss and the narrowest cold windows need the Frost Rune. Delicate petals spoil if boiled: Heartpetal wilts above about 85 °C, losing most of its love and turning a little poisonous.', 'Stir after every addition. Powders dissolve faster when stirred, neutralisers have to meet what they cancel, and an unstirred brew pours unevenly — later bottles may not match the dose you tested. The Clockwork Stirrer does it on its own, about three times as fast.', 'Concentrate or dilute: boil water off with the lid open and every effect grows — side effects too, so they must be cancelled harder; add water to weaken a brew that overshoots. Spirit boils long before water.', 'Serve at the asked temperature: the fire and the basin bring the brew there; the thermometer reads it.']),
-sec('Arcane awakening', ['Magical ingredients carry a hidden arcane threshold. Heat the brew past it (or, for cold magic, chill it below) and the magic awakens: it glows in the colour of its effect and acts two to three times stronger — side effects too.', 'In a blend the threshold is the mix of its magical ingredients’ thresholds, by volume — a hot-waking and a cold-waking ingredient pull each other toward room temperature.', 'Mix first, at room temperature; then heat or chill to awaken. A half-mixed brew awakens unevenly. Boiling passes most heat-waking thresholds, so a boiled brew is usually awakened.', 'Awakened magic stays awake when it cools, is bottled or kept. Only dilution and reactions undo it.', 'Your journal notes where each ingredient awoke; the Arcanometer reads a brew’s threshold and shows the aura of its strong magic.']),
-sec('Wilds and trials', ['Gather roots, leaves, flowers, mushrooms and minerals in the Wilds. Deposits are finite and regrow over time, even while the game is closed.', 'Flowers and leaves are picked by hand; roots, mineral seams, mosses and dust need the Forager’s Kit for a full harvest. Twilight plants open only at dawn (before you open the shop door) or at dusk (after the last customer, until you close for the night). The weather changes daily. A thorough harvest takes twice as much but the deposit regrows slowly.', 'A rabbit shows every effect, but each reading is uncertain: the ± band of an estimate is how far the truth may lie. One reading is a rough guess; repeating it on the same rabbit helps a little (that rabbit’s own bias never averages out); other rabbits help most. Evidence: detected once → measured repeatedly → corroborated on several rabbits.', '“Not detected” is not proof of absence: a faint effect can hide below the reading noise. The trials show how strong an undetected effect could still be; larger doses and more readings narrow it. Against an order the trials say when a value is reliably within what the customer asked.', 'Customers weigh that evidence: cautious ones want readings repeated or corroborated before they buy, and every customer trusts — and pays for — a well-tested label more. One trial reads every effect at once.', 'A hurt rabbit reads less steadily; kits and old rabbits too. When a trial surprises you, a hidden law may be at work. Confirm it twice and your theory learns it.']),
-sec('Brewing controls', ['Tap a jar on the shelf, then hold your finger (or the mouse) inside the cauldron to pour. Dose buttons pour exact amounts.', 'Stir with the spoon: drag through the brew, or hold the stir button. Powders pile up like sand; knead a binding powder with a little water to make dough.', 'Slide the fire control right to heat from below, left to cool. Keep the lid on to trap vapour; open it to let steam escape.', 'Saved recipes keep three things apart: the formulation (what went in), the procedure (what was done, in order) and whether it was reproduced (brewed again the same way and tested the same). The Brass Homunculus replays a procedure step by step.', 'Keys: 1 pour · 2 spoon · 3 pestle · 5 inspect · L lid · B bottle · F time speed · A auto-stir · arrows fire · S shop · R recipes · J journal · Esc menu. Long-press (or right-click) a jar to inspect a reagent.', 'The Free Experiment has every tool and instrument, including the skimmer, the alembic, the heat map and the exact physical readings (density, viscosity, stability, charge) that customers never ask for.']),
-sec('Tips', ['Ask the guild for advice on a difficult order — it costs a few coins.', 'Orders far below your rank earn little reputation (and the same one over and over a little less); a technique sold well for the first time earns a bonus. A tested claim states its margin: customers forgive a potion that lies within it. Returning customers remember how your last potion worked.', 'If you run out of money, the guild will help a struggling apprentice once a day — and water from the well is always free.']),
-],
-});
+const sec = (title, ic, lines, open = false) => h('details', { class: 'card parch help-sec', ...(open ? { open: true } : {}) },
+h('summary', {}, icon(ic), h('span', { text: title })),
+...lines.map((l) => h('div', { class: 'small', text: '• ' + l })));
+const body = h('div', { class: 'help' },
+h('div', { class: 'card parch help-day' }, h('h3', { text: 'A day in the shop' }),
+h('ol', { class: 'small' }, ...[
+'Dawn: gather herbs and minerals in the Wilds (dawn flowers close once the shop opens).',
+'Open the door at the Counter and read the customer’s order.',
+'Brew: pour, grind, stir, heat or chill in the cauldron.',
+'Test a dose on a rabbit in Trials: only a test shows what a mixture does.',
+'Bottle it, check the label and sell it at the Counter — agree on a price.',
+'When the last customer has gone (dusk), close the shop for the night.',
+].map((t) => h('li', { text: t })))),
+sec('Orders and selling', 'stall', ['Customers ask for an effect — healing, strength, love, fire… — at a strength in percent (everyday orders want about 8–15 %).', 'Most orders forbid side effects: “no other effect above 1.2 %”. Every other kind of magic in the bottle must stay that faint.', 'Before a sale you write the label — tested values, the guild theory’s estimates, “none” or unknown — and bargain over the price. The customer comes back the next day: pleased, or with a complaint. Refund them, dispute it with your trial records, or turn them away.', 'Bottle onto the potion shelves whenever there is room (3 bottles; more with a Bottle Shelf, Potion Cabinet or Bottle Cellar). Bottles of one batch share its trials.', 'Honest, well-tested potions earn reputation. Reputation raises your rank, which opens regions, ingredients, equipment and harder orders.'], true),
+sec('Ingredients and side effects', 'leaf', ['The Shop sells no prepared reagents — only free well water and two plain solvents, oil and spirit. Every effect comes from what you gather.', 'Nothing that grows is pure: each herb or mineral brings side effects. Cancel them with their opposites — fire and frost, life and death (life also mends poison, two parts to one), acid and alkali.', 'Long-press (or right-click) a jar to see what it does and what cancels its side effects.', 'You know what each plain ingredient does. You do NOT know what a mixture does: extraction, heat, reactions and hidden laws change it.']),
+sec('Brewing', 'cauldron', ['Pour: tap a jar, then a dose button (25–250 ml) — or hold your finger in the cauldron, or drag a jar onto it.', 'Grind or crush: whole roots, leaves and stones give up almost nothing. “Ground” (on the dose row) grinds them in the mortar first; Crush (the pestle) breaks them up in the pot.', 'Steep at the right heat: most herbs give two to three times as much held warm in their steeping window (see the herb’s card and your journal). Some want ice-cold water: Frostcap near 9 °C gives about three times as much — but frozen solid gives less. Heartpetal wilts above about 85 °C.', 'Stir after every addition: an unstirred brew pours unevenly, so later bottles may not match the tested dose. Auto stirs for you (the Clockwork Stirrer about three times as fast).', 'The fire control: right heats, left cools. The lid keeps steam in; boiling with the lid off makes a brew smaller and stronger — side effects too. Add water to weaken it.', 'Tap the ml · °C readout over the cauldron to see what is in it; Inspect reads one spot; Sample measures what a bottle would hold.']),
+sec('Arcane awakening', 'awaken', ['Magical ingredients carry a hidden arcane threshold. Heat the brew past it (or, for cold magic, chill it below) and the magic awakens: it glows and acts two to three times stronger — side effects too.', 'In a blend the threshold is the mix of its magical ingredients’ thresholds, by volume. Mix first at room temperature, then heat or chill; a half-mixed brew awakens unevenly.', 'Awakened magic stays awake when it cools, is bottled or kept. Only dilution and reactions undo it. The Arcanometer reads a brew’s threshold.']),
+sec('Trials and rabbits', 'rabbit', ['Choose a rabbit and give it a dose (5, 10 or 25 ml) from the cauldron tap or the sealed vial. One trial reads every effect at once.', 'Each reading is uncertain: the ± margin is how far the truth may lie. One reading is a rough guess; repeating it on the same rabbit helps a little; other rabbits help most (detected once → repeated → corroborated).', '“Not detected” is not proof of absence: a faint effect can hide below the noise. Cautious customers want readings repeated or corroborated, and every customer pays more for a well-tested label.', 'Effects pile up in a rabbit and fade slowly. Past its own hidden limit an effect runs out of control and can kill it; fire and acid burn; strength and vitality can make it attack; love makes it mate. A purging draught washes everything out. Rabbits can be fed, bred, bought and put down; a body’s remains can be recovered once as an ingredient.', 'When a trial surprises you, a hidden law may be at work. Confirm it twice and your theory learns it.']),
+sec('Wilds', 'tree', ['Tap a plant in the picture, or its button, to gather. Deposits are finite and regrow over time, even while the game is closed.', 'Careful leaves some to regrow; Thorough takes twice as much but the deposit regrows slowly. Roots, seams, mosses and dust need the Forager’s Kit for a full harvest.', 'Twilight plants open only at dawn (before you open the shop) or at dusk (after the last customer). The weather changes daily. New regions open with rank.']),
+sec('Recipes and the Book', 'book', ['After a sale you can save the brew as a recipe: what went in, and every step in order. Prepare pours it again; the Brass Homunculus replays every step.', 'The Book also keeps every trial, the laws you discovered, all ingredients, your journal, awards and sales.']),
+sec('Keys and tips', 'bulb', ['Keys: 1 pour · 2 stir · 3 crush · 5 inspect · L lid · B bottle · F speed · A auto-stir · arrows fire · G ground · S shop · R recipes · C/V/W/T/J rooms · Esc menu.', 'Advice at the Counter buys a hint for a hard order.', 'Orders far below your rank earn little reputation; a technique sold well for the first time earns a bonus.', 'Out of money? The guild helps a struggling apprentice once a day — and well water is always free.', 'The Free Experiment has every tool, the skimmer, the alembic, a heat map and exact physical readings.']),
+);
+body.addEventListener('toggle', (e) => {
+const t = /** @type {HTMLDetailsElement} */ (e.target);
+if (t.open) for (const d of body.querySelectorAll('details[open]')) if (d !== t) /** @type {HTMLDetailsElement} */ (d).open = false;
+}, true);
+modal({ title: 'How to play', wide: true, body: [body] });
 }
 function openSettings(app, lab) {
 const s = app.settings;
 const vol = (key, label) => {
 const inp = /** @type {HTMLInputElement} */ (h('input', { type: 'range', class: 'vol', min: '0', max: '100', value: String(Math.round(s[key] * 100)), 'aria-label': label }));
-inp.addEventListener('input', () => { s[key] = Number(inp.value) / 100; app.applySettings(); });
+inp.addEventListener('input', () => {
+s[key] = Number(inp.value) / 100;
+app.applySettings();
+if (key === 'music' && s.musicOn !== s.music > 0) { s.musicOn = s.music > 0; audio.music(s.musicOn); }
+});
 return h('div', { class: 'toggle-row' }, h('span', { text: label }), inp);
 };
 const check = (key, label, after) => {
@@ -12591,7 +12618,7 @@ inp.checked = !!s[key];
 inp.addEventListener('change', () => { s[key] = inp.checked; app.applySettings(); after && after(); });
 return h('div', { class: 'toggle-row' }, h('span', { text: label }), inp);
 };
-const quality = /** @type {HTMLSelectElement} */ (h('select', { 'aria-label': 'Graphics quality', style: { width: '50%' } }, ...[['auto', 'Automatic'], ['high', 'High quality'], ['medium', 'Balanced'], ['low', 'Battery saver']].map(([q, t]) => h('option', { value: q, text: t }))));
+const quality = /** @type {HTMLSelectElement} */ (h('select', { 'aria-label': 'Graphics quality', style: { width: '55%' } }, ...[['auto', 'Automatic'], ['high', 'Best looking'], ['medium', 'Balanced'], ['low', 'Battery saver']].map(([q, t]) => h('option', { value: q, text: t }))));
 quality.value = s.quality;
 quality.addEventListener('change', () => { s.quality = /** @type {any} */ (quality.value); app.applySettings(); if (lab) lab.resize(true); });
 const fileIn = /** @type {HTMLInputElement} */ (h('input', { type: 'file', accept: '.json,application/json', class: 'hidden' }));
@@ -12611,7 +12638,7 @@ toast('Import failed', e.message, 'close', 5000);
 });
 const saveSection = lab && !lab.sandbox ? h('div', { class: 'card parch' },
 h('h3', { text: 'Saves' }),
-h('div', { class: 'small', text: 'The game saves automatically on this device. Export a file to back it up or move it to another device.' }),
+h('div', { class: 'small', text: 'Saved automatically on this device. Export a file to back it up or move it to another device.' }),
 h('div', { class: 'row', style: { flexWrap: 'wrap', marginTop: '6px' } },
 btn('Export save', () => { lab.save(); exportSave(lab.state); }, { icon: 'scroll', act: 'export' }),
 btn('Import save', () => fileIn.click(), { icon: 'plus', act: 'import' }),
@@ -12621,12 +12648,12 @@ modal({
 title: 'Settings',
 onClose: () => app.saveSettings(),
 body: [
-h('div', { class: 'card parch' }, h('h3', { text: 'Sound' }), vol('master', 'Master volume'), vol('sfx', 'Effects'), vol('music', 'Music'), check('musicOn', 'Play music', () => audio.music(s.musicOn)), check('muted', 'Mute everything')),
+h('div', { class: 'card parch' }, h('h3', { text: 'Sound' }), vol('master', 'Volume'), vol('sfx', 'Effects'), vol('music', 'Music'), check('muted', 'Mute everything')),
 h('div', { class: 'card parch' }, h('h3', { text: 'Display' }), h('div', { class: 'toggle-row' }, h('span', { text: 'Graphics' }), quality),
-h('div', { class: 'small muted', text: 'High quality uses the finest pixels and every glow. Balanced keeps the lighting and full frame rate with coarser pixels on large screens. Battery saver draws at 30 frames per second with coarser pixels and no lighting. Automatic steps down when frames run slow. The physics, quantities and scores are identical in every mode.' }),
-check('showFps', 'Show performance stats')),
+h('div', { class: 'small muted', text: 'Automatic lowers the detail when the game runs slowly. Battery saver draws 30 frames a second without lighting. The brewing itself is identical in every mode.' }),
+check('showFps', 'Show frame rate')),
 saveSection,
-h('div', { class: 'card parch small' }, 'The Alchemist’s Shop — all art, sound, font and code made for this game. Runs fully offline.'),
+h('div', { class: 'small muted credits', text: 'The Alchemist’s Shop — all art, sound, font and code made for this game. Runs fully offline.' }),
 ],
 });
 }
@@ -12694,8 +12721,8 @@ title: 'Label the potion',
 wide: true,
 body: [
 h('div', { class: 'card parch' },
-h('div', { class: 'small', text: 'Write down what this potion does. Tested values come from trials of this very batch — one reading counts for less than readings repeated, and those less than readings on several rabbits. The rest are the guild theory’s estimates, or unknown. Customers pay for what you claim — and come back if it is not true.' }),
-h('div', { class: 'small muted', text: com ? 'Highlighted: the effects this order cares about (with a purity rule, all of them).' : '' }),
+h('div', { class: 'small', text: 'Claim what this potion does. Tested values come from trials of this batch (more readings, more rabbits: more trust); the rest are the guild theory’s estimates, or unknown. Customers pay for your claims — and come back if they were wrong. Tap a line to change it.' }),
+com ? h('div', { class: 'small muted', text: 'Highlighted: the effects this order cares about.' }) : null,
 accEl, trustEl),
 h('div', { class: 'card parch' }, rows),
 ],
@@ -12856,9 +12883,10 @@ return { openIdentify, openNegotiation, showDeal, followUpCard, claimSummary, ac
 })();
 // src/ui/tutorial.js
 const __m63 = (() => {
-const { h, btn } = __m2;
+const { h, btn, placeToasts } = __m2;
 const { PHASE } = __m23;
 const { TUTORIAL_HERBS } = __m16;
+const { shortName } = __m21;
 class Tutorial {
 constructor(lab) {
 this.lab = lab;
@@ -12882,24 +12910,41 @@ for (let i = 0; i < p.count; i++) if (p.phase[i] !== PHASE.GAS) { T += p.temp[i]
 return n ? T / n : 20;
 };
 const tab = (id) => () => lab.tabEls[id] && lab.tabEls[id].b;
+const q = (sel) => () => /** @type {HTMLElement|null} */ (lab.el.querySelector(sel));
+const inView = (id) => () => lab.view === id;
 const rabbitTested = () => st.trials.records.some((r) => r.subjectId === 'rabbit' && r.batchId === st.batch.id);
+const who = st.current && st.current.customer ? shortName(st.current.customer.name) : 'the customer';
 return [
-{ text: `Welcome to your shop, alchemist! Your very first customer is here. Let’s brew their order together — it only takes a few minutes.`, button: 'Let’s begin' },
-{ text: 'This strip is the order. The heart (healing) shows “?”: what a mixture really does stays unknown until you test it.', target: () => lab.strip, button: 'Got it' },
-{ text: `Tap the jar of ${water.name} on the shelf to pick it up.`, target: () => lab.jarEls[R.water] && lab.jarEls[R.water].el, done: () => lab.selected === R.water },
-{ text: 'Pour about 110 ml: tap the dose buttons (100, then 25) or hold your finger in the cauldron. You can also drag a jar straight onto the cauldron.', target: () => lab.doseEl, done: () => poured(R.water) >= 95 },
-{ text: `Now pick up the ${leaf.name}. Long-press any jar to see what it is known to do: it heals, but carries a frosty bite.`, target: () => lab.jarEls[H.healer] && lab.jarEls[H.healer].el, done: () => lab.selected === H.healer },
-{ text: 'Pour about 50 ml. The mortar grinds it first (“Ground” is lit): whole leaves would give up almost nothing.', target: () => lab.doseEl, done: () => poured(H.healer) >= 45 && !lab.sim.emitter.pouring },
-{ text: `Nothing that grows is pure. Fire cancels frost, life cancels death, alkali cancels acid. Pick up the ${sun.name}: its fire will cancel the leaf’s frost.`, target: () => lab.jarEls[H.warmer] && lab.jarEls[H.warmer].el, done: () => lab.selected === H.warmer },
-{ text: 'Pour about 25 ml — half as much as the leaf, so the fire and the frost balance out.', target: () => lab.doseEl, done: () => poured(H.warmer) >= 20 && !lab.sim.emitter.pouring },
-{ text: 'Pick the spoon and drag it in circles through the brew. Stirring spreads colour — and magic — far faster than waiting.', target: () => lab.toolBtns.spoon, done: () => (lab.sim.tool.stirDistance - (this.flags.stir0 ?? (this.flags.stir0 = lab.sim.tool.stirDistance))) > 12 || lab.sim.tool.auto || brewT() >= 40 },
-{ text: 'Herbs steep only when warm. Slide the fire control to the right and bring the brew to about 60°C — heat enters through the bottom and spreads.', target: () => lab.furnaceInput.parentElement, done: () => brewT() >= 50 },
-{ text: 'Is it really a healing tonic? Nobody knows until it is tested. Open the Trials room.', target: tab('trials'), done: () => lab.view === 'trials' },
-{ text: 'Choose a rabbit in the hutch and give it a dose: press Give, or drag the dropper onto it. The dose is real potion from the tap. Each rabbit reads a potion a little differently — later, test several.', target: () => document.querySelector('[data-act=test-rabbit]') || lab.views.trials.hutch.el, done: rabbitTested },
-{ text: 'The rabbit shows how much vitality — and any frost or fire left over — this batch carries. One reading is a rough guess (see its wide ± band); a second rabbit narrows it, and demanding customers insist on that. Back to the cauldron!', target: tab('brew'), done: () => lab.view === 'brew' },
-{ text: 'Let it cool to a warm 45°C or so, then press Bottle. A bottle can go to the counter or onto your potion shelves for later.', target: () => lab.bottleFab, done: () => this.flags.bottled },
-{ text: 'Your sealed vial waits at the Counter. It labelled itself from your trial — the tested reading is already on it. Offer it to the customer and agree on a price.', target: () => document.querySelector('[data-act=serve]') || tab('counter')(), done: () => this.flags.sold },
-{ text: 'Splendid — your first sale! New orders ask for strength, love, fire — and later stronger than plain brewing gives; the order card says what each takes. Grinding, the steeping heat, cold steeps, stirring and boiling down all change what ends up in the bottle, and only trials tell you how much. Each day dawns with the shop closed: gather dawn flowers, then open the door. Saved recipes keep every step, so you can brew them again the same way.', button: 'Run my shop!' },
+{ text: 'Welcome to your shop, alchemist! This tour shows every part of it while you brew your first order. Follow the glowing outline: do what it asks, or press Next.', button: 'Let’s begin' },
+{ text: 'The top bar: ☰ opens the menu (how to play, settings, this tour). Then your coins, your rank (its bar fills with reputation), the day and which customer of the day this is. Shop sells ingredients and equipment.', target: () => lab.topbar, button: 'Next' },
+{ text: 'Five rooms along the edge: Counter (customers), Brew (the cauldron), Wilds (gathering), Trials (testing on rabbits) and Book (recipes and notes). A red mark means something is waiting there.', target: () => lab.tabbar, button: 'Next' },
+{ text: 'A customer is waiting. Open the Counter.', target: tab('counter'), done: inView('counter') },
+{ text: 'The order: every line must be met — the effect and its strength, purity (no other effect above a limit) and the quantity. “?” means not tested yet. Advice buys a hint; Decline sends a customer away.', target: q('.customer-card .reqs'), button: 'Next' },
+{ text: 'Let’s brew it. Press “Brew it”.', target: () => lab.el.querySelector('[data-act=go-brew]') || tab('brew')(), done: inView('brew') },
+{ text: 'The order strip stays above the cauldron: each chip fills as the brew meets that line of the order. Tap the strip to go back to the Counter.', target: () => lab.strip, button: 'Next' },
+{ text: `Tap the jar of ${water.name} on the shelf to pick it up. The small number on a jar is how many ml you have.`, target: () => lab.jarEls[R.water] && lab.jarEls[R.water].el, done: () => lab.selected === R.water },
+{ text: 'Pour about 110 ml: tap 100, then 25. You can also hold your finger in the cauldron to pour freely, or drag a jar onto it.', target: () => lab.doseEl, done: () => poured(R.water) >= 95 },
+{ text: `Now pick up the ${leaf.name}. Tip: long-press (or right-click) any jar to read what it does — this one heals, but leaves a frosty bite.`, target: () => lab.jarEls[H.healer] && lab.jarEls[H.healer].el, done: () => lab.selected === H.healer },
+{ text: 'Pour 50 ml. “Ground” is lit: the mortar grinds it first, because whole leaves give up almost nothing.', target: () => lab.doseEl, done: () => poured(H.healer) >= 45 && !lab.sim.emitter.pouring },
+{ text: `Nothing that grows is pure, but opposites cancel: fire–frost, life–death, acid–alkali. Pick up the ${sun.name}: its fire cancels the leaf’s frost.`, target: () => lab.jarEls[H.warmer] && lab.jarEls[H.warmer].el, done: () => lab.selected === H.warmer },
+{ text: 'Pour 25 ml — half as much as the leaf, so fire and frost balance out.', target: () => lab.doseEl, done: () => poured(H.warmer) >= 20 && !lab.sim.emitter.pouring },
+{ text: 'Choose Stir and drag circles through the brew: stirring spreads the magic evenly. (Auto, further along, stirs for you while you hold it.)', target: () => lab.toolBtns.spoon, done: () => (lab.sim.tool.stirDistance - (this.flags.stir0 ?? (this.flags.stir0 = lab.sim.tool.stirDistance))) > 12 || lab.sim.tool.auto || brewT() >= 40 },
+{ text: 'Herbs steep only when warm. Slide the fire control right (left cools) and bring the brew to about 60 °C. The lid keeps steam in; with the lid off, boiling makes a brew smaller and stronger.', target: () => lab.controls, done: () => brewT() >= 50 },
+{ text: 'The other tools: Crush (whole herbs, stones, ice), Inspect (tap a spot to read it), Sample (what a bottle would hold), 1× (speeds up time), Empty. Tap the ml · °C readout over the cauldron to see what is inside.', target: () => lab.toolbar, button: 'Next' },
+{ text: 'Does it really heal? What a mixture does is unknown until it is tested. Open the Trials room.', target: tab('trials'), done: inView('trials') },
+{ text: 'Choose a rabbit (tap it) and press Give — or drag the dropper onto it. The dose is real potion from the cauldron’s tap.', target: () => document.querySelector('[data-act=test-rabbit]') || lab.views.trials.hutch.el, done: rabbitTested },
+{ text: 'The result: each effect the rabbit showed, with a ± margin. One reading is a rough guess; a second rabbit narrows it most — and demanding customers insist on that.', target: q('.estimate-card'), button: 'Next' },
+{ text: 'Look after your rabbits here: buy, feed, breed, and purge one to wash a potion out. Too much of an effect can make a rabbit sick, wild or dead — every rabbit has its own hidden limits.', target: q('.hutch-manage'), button: 'Next' },
+{ text: 'Back to the cauldron.', target: tab('brew'), done: inView('brew') },
+{ text: 'Press Bottle and choose 100 ml (the order’s quantity). A bottle goes to the counter, or onto your potion shelves for later.', target: () => lab.bottleFab, done: () => this.flags.bottled },
+{ text: `Your vial is on the counter, labelled from your trial. Press “Sell to ${who}”, agree on a price, then save the recipe to your book.`, target: () => document.querySelector('[data-act=serve]') || tab('counter')(), done: () => this.flags.sold },
+{ text: 'Splendid — your first sale! The customer comes back tomorrow: pleased, or with a complaint you can refund, dispute with your trial records, or refuse. The potion shelves below keep sealed bottles for later customers.', target: () => lab.el.querySelector('.view-counter .shelf-card') || tab('counter')(), button: 'Next' },
+{ text: 'Ingredients run out. Open the Wilds to gather more.', target: tab('wilds'), done: inView('wilds') },
+{ text: 'Tap a plant in the picture, or its button, to gather it. Deposits regrow over time. Careful leaves some to regrow; Thorough takes twice as much but regrows slowly. Some flowers open only at dawn or at dusk. New regions open as your rank rises.', target: q('.view-wilds .deposits'), button: 'Next' },
+{ text: 'Now open the Book.', target: tab('book'), done: inView('book') },
+{ text: 'The Book keeps your recipes (Prepare pours one again), every trial, the laws of magic you discover, all ingredients, your journal, awards and sales.', target: q('.book-tabs'), button: 'Next' },
+{ text: 'The Shop sells ingredients, buys your surplus, and offers equipment: each piece lets you do something new (deep cold, a stirrer, a bigger cauldron, more shelves…).', target: q('[data-act=shop]'), button: 'Next' },
+{ text: 'That is a day: at dawn gather in the Wilds, then open the door at the Counter; brew, test, bottle and sell; when the last customer has gone, close the shop. ☰ → How to play explains everything in detail. Good luck!', target: tab('counter'), button: 'Run my shop!' },
 ];
 }
 start(restart = false) {
@@ -12924,37 +12969,30 @@ this.lab.state.tutorial.done = true;
 clearUi() {
 if (this.box) this.box.remove();
 this.box = null;
+this.lab.el.classList.remove('touring');
 if (this.target) this.target.classList.remove('highlight');
 this.target = null;
+placeToasts();
 }
 show() {
 this.clearUi();
 const steps = this.steps;
 const s = steps[this.index];
 if (!s) { this.finish(); return; }
-if (s.hidden) return;
 const lab = this.lab;
 const actions = h('div', { class: 'tutor-actions' },
-btn('Skip tutorial', () => this.finish(), { act: 'tutorial-skip' }),
-s.button ? btn(s.button, () => this.advance(), { cls: 'primary', act: 'tutorial-next' }) : h('span', { class: 'small muted', text: `Step ${this.index + 1} of ${steps.length}` }),
+h('span', { class: 'tutor-step', text: `${this.index + 1}/${steps.length}` }),
+btn('End tour', () => this.finish(), { act: 'tutorial-skip', title: 'End the guided tour (restart it from ☰ Menu)' }),
+s.button
+? btn(s.button, () => this.advance(), { cls: 'primary', act: 'tutorial-next' })
+: btn('Skip step', () => this.advance(), { act: 'tutorial-skip-step', title: 'Move on without doing this step' }),
 );
-this.box = h('div', { class: 'tutor parch', role: 'note' }, h('div', { text: s.text }), actions);
-lab.el.appendChild(this.box);
+this.box = h('div', { class: 'tutor parch' + (s.button ? '' : ' waiting'), role: 'note' }, h('div', { class: 'tutor-text', text: s.text }), actions);
+lab.tutorSlot.appendChild(this.box);
+lab.el.classList.add('touring');
 const t = s.target ? s.target() : null;
 if (t) { t.classList.add('highlight'); this.target = t; }
-this.place();
-}
-place() {
-if (!this.box) return;
-const lab = this.lab;
-const area = lab.view === 'brew' ? lab.stageEl : lab.viewsEl;
-const sr = area.getBoundingClientRect();
-const lr = lab.el.getBoundingClientRect();
-const bw = this.box.offsetWidth;
-this.box.style.left = Math.max(8, Math.min(lr.width - bw - 8, sr.left - lr.left + (sr.width - bw) / 2)) + 'px';
-const t = this.target && this.target.getBoundingClientRect();
-const top = sr.top - lr.top + 8;
-this.box.style.top = (t && t.top - lr.top < top + this.box.offsetHeight + 8 && t.bottom - lr.top > top ? Math.max(8, t.bottom - lr.top + 8) : Math.max(8, top)) + 'px';
+placeToasts();
 }
 advance() {
 this.index++;
@@ -12978,7 +13016,6 @@ if (s.done && s.done()) this.advance();
 else if (this.box && Math.random() < 0.05) {
 const t = s.target ? s.target() : null;
 if (t && t !== this.target) { if (this.target) this.target.classList.remove('highlight'); t.classList.add('highlight'); this.target = t; }
-this.place();
 }
 }
 }
@@ -13054,11 +13091,10 @@ list,
 this.techCard(com),
 this.supplyCard(com),
 this.shelfMatches(com),
-com.effectOrder ? h('div', { class: 'small muted', text: 'Effects can only be known by testing this batch in the Trials room. Customers pay for what your label claims — and come back tomorrow if it was not true.' }) : null,
 h('div', { class: 'row wrap cust-actions' },
-btn(com.hintCost ? `Advice (${com.hintCost})` : 'Advice', () => panels.openHint(lab), { icon: 'bulb', act: 'hint' }),
-com.tutorial ? null : btn('Decline', () => lab.decline(), { icon: 'door', act: 'decline' }),
-btn('To the cauldron', () => lab.showView('brew'), { icon: 'cauldron', cls: 'primary', act: 'go-brew' }))));
+btn('Brew it', () => lab.showView('brew'), { icon: 'cauldron', cls: 'primary', act: 'go-brew', title: 'Go to the cauldron' }),
+btn(com.hintCost ? `Advice · ${com.hintCost}` : 'Advice', () => panels.openHint(lab), { icon: 'bulb', act: 'hint', title: com.hintCost ? `A guild alchemist suggests an approach for ${com.hintCost} coins` : 'A guild alchemist suggests an approach' }),
+com.tutorial ? null : btn('Decline', () => lab.decline(), { icon: 'door', act: 'decline', title: 'Send this customer away (no penalty)' }))));
 this.vialCard(el);
 this.shelfCard(el);
 }
@@ -13073,7 +13109,7 @@ supplyCard(com) {
 const sup = com.supplies;
 if (!sup || com.tutorial) return null;
 const st = this.lab.state;
-const where = { shelf: 'on the shelf', wilds: 'in the wilds', market: 'at the market' };
+const where = { shelf: 'on the shelf', wilds: 'in the wilds', market: 'in the Shop' };
 return h('details', { class: 'small supply-card' }, h('summary', { text: `Plan for about ${sup.brewMl} ml of brew (the bottle and a few test doses)` }),
 ...sup.carriers.map((c) => h('div', {}, h('b', { text: `${EFFECT_BY_KEY[c.key].label}${c.sign < 0 ? ' (alkaline)' : ''}: ` }),
 c.carriers.length ? c.carriers.map((x) => `${st.lookup(x.id).name} (${where[x.where] || x.where})`).join(', ') : 'nothing you can get today carries it')),
@@ -13105,7 +13141,7 @@ vialCard(el) {
 const lab = this.lab, st = lab.state;
 const v = st.vial;
 if (!v) {
-if (st.current) el.append(h('div', { class: 'card parch small muted', text: 'Brew in the cauldron, test it in the Trials room, then Bottle it to serve here.' }));
+if (st.current) el.append(h('div', { class: 'card parch small muted next-step' }, h('b', { text: 'Next: ' }), 'brew it, test a dose in Trials, then Bottle it — the vial appears here.'));
 return;
 }
 const com = st.current;
@@ -13115,19 +13151,19 @@ const ctx = cv.getContext('2d');
 drawBottle(ctx, 2, 3, 20, 29, m.color, Math.min(1, v.ml / Math.max(1, com ? com.bottleMl : v.ml)));
 const need = com ? missingEffects(com, v.cert || {}) : [];
 const first = com ? shortName(com.customer.name) : '';
-const serve = com ? btn(`Offer to ${first}`, () => lab.serveVial(), { cls: 'primary', icon: 'deal', disabled: v.ml < 5, act: 'serve' }) : null;
-const labelB = btn(v.label ? 'Revise label' : 'Label', () => lab.identifyVial(), { icon: 'tag', act: 'label' });
-const testB = btn('Test a dose', () => { lab.trialSource = 'vial'; lab.showView('trials'); }, { icon: 'dropper', act: 'test-vial' });
-const back = btn('Pour back', () => lab.pourBackVial(), { icon: 'pour', act: 'pour-back' });
-const store = lab.sandbox ? null : btn('Put on shelf', () => lab.shelveVial(), { icon: 'shelf2', act: 'shelve-vial', disabled: st.bottleRoom <= 0, title: st.bottleRoom <= 0 ? 'The potion shelves are full' : 'Keep this bottle on the potion shelves' });
-const discard = btn('Discard', async () => { if (await confirmDialog('Discard the vial?', 'The potion is poured away. Ingredients are not refunded.', 'Discard', 'danger')) lab.discardVial(); }, { icon: 'trash', cls: 'danger', act: 'discard' });
+const serve = com ? btn(`Sell to ${first}`, () => lab.serveVial(), { cls: 'primary', icon: 'deal', disabled: v.ml < 5, act: 'serve', title: `Offer the vial to ${first} and agree on a price` }) : null;
+const labelB = btn(v.label ? 'Edit label' : 'Write label', () => lab.identifyVial(), { icon: 'tag', act: 'label', title: 'What the label claims the potion does' });
+const testB = btn('Test it', () => { lab.trialSource = 'vial'; lab.showView('trials'); }, { icon: 'dropper', act: 'test-vial', title: 'Give a dose from this vial to a rabbit' });
+const back = btn('Pour back', () => lab.pourBackVial(), { icon: 'pour', act: 'pour-back', title: 'Return the vial to the cauldron to keep working on it' });
+const store = lab.sandbox ? null : btn('To shelf', () => lab.shelveVial(), { icon: 'shelf2', act: 'shelve-vial', disabled: st.bottleRoom <= 0, title: st.bottleRoom <= 0 ? 'The potion shelves are full' : 'Keep this bottle on the potion shelves' });
+const discard = btn('Discard', async () => { if (await confirmDialog('Discard the vial?', 'The potion is poured away. Ingredients are not refunded.', 'Discard', 'danger')) lab.discardVial(); }, { icon: 'trash', cls: 'danger', act: 'discard', title: 'Pour the vial away' });
 el.append(h('div', { class: 'card parch vial-card' },
 h('div', { class: 'row' }, cv, h('div', {},
 h('b', { text: `Sealed vial · ${Math.round(v.ml)} ml` }),
 h('div', { class: 'small' }, h('span', { class: 'swatch', style: { background: rgbToHex(m.color) } }), ` ${describeColor(m.color)} · ${Math.round(m.temperature)}°C · ${viscosityClass(m.viscosity)}`),
 verifiedLine(v.cert),
 v.label ? h('div', { class: 'small label-line' }, icon('tag', 'sm'), ` ${trade.labelLine(v.label)}`) : null)),
-need.length && com ? h('div', { class: 'warn small', text: `Not yet tested: ${need.map((k) => EFFECT_BY_KEY[k].label).join(', ')}. You may still sell on the guild's theory, but ${first} will trust an untested label less${com.customer.persona && com.customer.persona.proof >= 0.8 ? ' — and this customer insists on proof' : ''}.` }) : null,
+need.length && com ? h('div', { class: 'warn small', text: `Not yet tested: ${need.map((k) => EFFECT_BY_KEY[k].label).join(', ')}. ${first} trusts an untested label less${com.customer.persona && com.customer.persona.proof >= 0.8 ? ' — and insists on proof' : ''}.` }) : null,
 com && v.ml < com.bottleMl ? h('div', { class: 'small muted', text: `Short of the ${com.bottleMl} ml ordered; the customer pays less.` }) : null,
 h('div', { class: 'row wrap' }, serve, labelB, testB, store, back, discard)));
 }
@@ -13164,13 +13200,13 @@ h('div', { class: 'small' }, h('span', { class: 'swatch', style: { background: r
 verifiedLine(b.cert),
 b.label ? h('div', { class: 'small label-line' }, icon('tag', 'sm'), ` ${trade.labelLine(b.label)}`) : null,
 h('div', { class: 'row wrap' },
-btn(st.vial ? 'Swap onto the counter' : 'Take to the counter', () => lab.takeBottle(b.id), { icon: 'deal', cls: 'primary', act: 'take-bottle' }),
+btn(st.vial ? 'Swap with the vial' : 'To the counter', () => lab.takeBottle(b.id), { icon: 'deal', cls: 'primary', act: 'take-bottle', title: 'Put this bottle on the counter to sell or test it' }),
 btn('Pour back', () => lab.pourBackBottle(b.id), { icon: 'pour', act: 'pour-back-bottle' }),
 btn('Discard', async () => { if (await confirmDialog('Discard the bottle?', 'The potion is poured away. Ingredients are not refunded.', 'Discard', 'danger')) lab.discardBottle(b.id); }, { icon: 'trash', cls: 'danger', act: 'discard-bottle' })));
 }
 el.append(h('div', { class: 'card parch shelf-card' },
 h('div', { class: 'row' }, icon('shelf2'), h('b', { text: `Potion shelves · ${st.bottles.length}/${cap}` })),
-st.bottles.length ? null : h('div', { class: 'small muted', text: 'Bottle a brew onto the shelves whenever you like, to keep it for a later customer, test it later or pour it back into a new brew. More shelving is sold at the Guild.' }),
+st.bottles.length ? null : h('div', { class: 'small muted', text: 'Empty. When you bottle a brew, choose “To the potion shelves” to keep it for a later customer. Tap a bottle here to use it. More shelving is sold in the Shop.' }),
 grid, detail));
 }
 }
@@ -13612,7 +13648,7 @@ h('div', { class: 'meta fx' }, ...fx.map(([k, v]) => h('span', { class: 'fx-chip
 h('span', { class: 'muted', text: ` · in stores: ${Math.round(st.stock(m.id))} ml` }))),
 g));
 }
-clear(this.foot).append(`Shelf space ${st.cap.storage} ml per ingredient. ${st.has('satchel') ? 'Your satchel carries half as much again. ' : ''}Deposits regrow with time — even while the shop is closed — and recover half their stock each new day (a stripped one, a quarter). Dawn lasts until you open the shop door; dusk begins when the last customer has gone.`);
+clear(this.foot).append(`Room for ${st.cap.storage} ml of each ingredient. ${st.has('satchel') ? 'Your satchel carries half as much again. ' : ''}Deposits regrow over time, even while the game is closed, and recover half their stock each new day (a stripped one, a quarter).`);
 this.paintBg();
 }
 deposits() {
@@ -15113,7 +15149,7 @@ el.append(h('div', { class: 'row wrap hutch-head' },
 icon('rabbit'), h('b', { text: 'The hutch' }), h('span', { class: 'small muted', text: `${live.length} of ${cap} places` }),
 feral.length ? h('span', { class: 'feral-warn small' }, icon('claw', 'sm'), ` ${feral.map((r) => r.name).join(', ')} attacking the others!`) : null));
 const manage = [h('div', { class: 'hutch-actions' },
-btn(price ? `Buy · ${price}` : 'Buy', () => this.buy(), { icon: 'plus', act: 'colony-buy', disabled: full || (!lab.sandbox && st.coins < price), title: full ? `The hutch is full (${cap} places): upgrade it at the guild.` : 'Buy an adult rabbit from the breeder' }),
+btn(price ? `Buy · ${price}` : 'Buy', () => this.buy(), { icon: 'plus', act: 'colony-buy', disabled: full || (!lab.sandbox && st.coins < price), title: full ? `The hutch is full (${cap} places): more places are sold in the Shop.` : 'Buy an adult rabbit from the breeder' }),
 btn(fed ? 'Fed' : lab.sandbox ? 'Feed' : `Feed · ${st.feedCost()}`, () => this.feed(), { icon: 'leaf', act: 'colony-feed', disabled: fed || !live.length, title: 'Hay and greens: they recover faster and pair up more readily tonight' }),
 btn(c.breed ? 'Breeding on' : 'Breeding off', () => this.toggleBreed(), { icon: 'nest', cls: c.breed ? 'active' : '', act: 'colony-breed', title: 'Let healthy, unrelated adults pair up overnight' }),
 lab.sandbox ? btn('Next day', () => this.nextDay(), { icon: 'clock', act: 'colony-day', title: 'Let a night pass in the hutch' }) : null)];
@@ -15125,7 +15161,7 @@ h('span', { class: 'spacer' }),
 lab.sandbox ? null : btn(`Buy · ${st.purgePrice()}`, () => this.buyPurge(), { icon: 'coin', act: 'purge-buy', disabled: st.coins < st.purgePrice(), title: 'A purging draught from the apothecary: washes every potion effect out of a rabbit and stops degeneration' }),
 lab.sandbox ? null : (st.has('still')
 ? btn(brewing ? 'Brewing…' : 'Brew · 1', () => this.brewPurge(), { icon: 'alembic', act: 'purge-brew', disabled: brewing || st.coins < 1, title: 'Brew a purging draught in your still' })
-: h('span', { class: 'small muted', text: 'Brew your own with the Purging Still (guild)' })),
+: h('span', { class: 'small muted', text: 'Brew your own with a Purging Still (Shop)' })),
 this.d.still));
 this.canvas = /** @type {HTMLCanvasElement} */ (h('canvas', { width: String(HUTCH_W), height: String(HUTCH_H), class: 'hutch-scene', role: 'img', 'aria-label': `The hutch: ${live.length} rabbits${bodies(c).length ? ` and ${bodies(c).length} bodies` : ''}. Tap a rabbit to choose it.` }));
 this.ctx = /** @type {CanvasRenderingContext2D} */ (this.canvas.getContext('2d'));
@@ -15136,12 +15172,15 @@ el.append(h('div', { class: 'hutch-scene-wrap' }, this.canvas));
 this.syncScene();
 const chosen = findRabbit(c, c.focus);
 const view = this.view, dose = view.doseMl(), avail = view.available();
+el.append(h('div', { class: 'dose-ctl' }, ...view.doseControls()));
 if (chosen && chosen.alive) {
 el.append(h('div', { class: 'dose-bar' },
 view.dropper,
 btn(`Give ${dose} ml to ${chosen.name}`, () => view.test('rabbit'), { cls: 'primary', icon: 'dropper', act: 'test-rabbit', disabled: dose <= 0 || avail <= 0, title: `Give ${chosen.name} ${dose} ml from the ${view.source === 'vial' ? 'sealed vial' : 'cauldron tap'}` })));
 } else if (chosen) {
 el.append(h('div', { class: 'dose-bar' }, h('span', { class: 'small', text: `${chosen.name} is dead: choose a living rabbit to dose.` })));
+} else {
+el.append(h('div', { class: 'dose-bar' }, h('span', { class: 'small', text: 'Tap a rabbit to choose it.' })));
 }
 const tiles = h('div', { class: 'rabbit-tiles', role: 'listbox', 'aria-label': 'Rabbits' });
 this.tiles = {};
@@ -15446,15 +15485,14 @@ return d < SIM.ML_PER_PARTICLE ? this.lab.trialDose : Math.floor(d / SIM.ML_PER_
 build() {
 const lab = this.lab, st = lab.state;
 const el = clear(this.el);
-this.head = h('div', { class: 'trials-head card parch' });
 this.expect = h('div', { class: 'card parch estimate-card', 'data-role': 'estimate' });
 this.status = h('div', { class: 'trials-status small' });
 this.dropper = h('div', { class: 'dropper', role: 'button', tabindex: '0', 'aria-label': 'Dropper: drag onto a rabbit to give it the dose' }, icon('dropper', 'lg'), h('span', { class: 'small', text: 'Drag' }));
 this.bindDropper();
 this.report = h('div', { class: 'trial-report' });
-el.append(this.head, this.expect, this.status, this.hutch.el, this.report);
+el.append(this.expect, this.status, this.hutch.el, this.report);
 this.cards = { rabbit: { card: this.hutch.el } };
-if (!lab.sandbox && st.firstTip('farm')) toast('The rabbit farm', 'Every trial narrows the estimate. Testing one rabbit again keeps the others clean, but the effect piles up in it — and nobody knows how much it can take.', 'rabbit', 7000);
+void st;
 this.refresh();
 }
 select(id) {
@@ -15481,23 +15519,22 @@ audio.play(rec.died ? 'toll' : 'squeak');
 const p = this.hutch.el.querySelector('.rabbit-detail');
 if (p && p.scrollIntoView) p.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
+doseControls() {
+const lab = this.lab, st = lab.state;
+const src = this.source;
+const from = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Dose from' }, h('span', { class: 'small seg-k', text: 'From' }),
+btn(`Cauldron · ${Math.round(lab.tapAvailable())} ml`, () => { lab.trialSource = 'cauldron'; this.refresh(); }, { cls: src === 'cauldron' ? 'active' : '', act: 'src-cauldron', title: 'Draw the dose from the cauldron’s tap' }),
+st.vial ? btn(`Vial · ${Math.round(st.vial.ml)} ml`, () => { lab.trialSource = 'vial'; this.refresh(); }, { cls: src === 'vial' ? 'active' : '', act: 'src-vial', title: `The sealed vial: ${Math.round(st.vial.ml)} of ${Math.round(st.vial.bottledMl || st.vial.ml)} ml left` }) : null,
+st.vial && src === 'vial' ? btn('Pour back', () => lab.pourBackVial(), { icon: 'pour', act: 'trials-pour-back', title: 'Return the rest of the vial to the cauldron' }) : null,
+st.vial && src === 'vial' && lab.sandbox ? btn('Discard', () => { lab.discardVial(); this.refresh(); }, { icon: 'trash', cls: 'danger', act: 'trials-discard' }) : null);
+const doses = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Dose' }, h('span', { class: 'small seg-k', text: 'Dose' }),
+...DOSES.map((ml) => btn(`${ml} ml`, () => { lab.trialDose = ml; this.refresh(); }, { cls: lab.trialDose === ml ? 'active' : '', act: 'dose-' + ml })));
+return [from, doses];
+}
 refresh() {
 const lab = this.lab, st = lab.state;
-if (!this.head) return;
-const head = clear(this.head);
+if (!this.expect) return;
 const src = this.source;
-const seg = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Sample source' },
-btn(`Cauldron tap · ${Math.round(lab.tapAvailable())} ml`, () => { lab.trialSource = 'cauldron'; this.refresh(); }, { cls: src === 'cauldron' ? 'active' : '', act: 'src-cauldron' }),
-st.vial ? btn(`Sealed vial · ${Math.round(st.vial.ml)} ml`, () => { lab.trialSource = 'vial'; this.refresh(); }, { cls: src === 'vial' ? 'active' : '', act: 'src-vial' }) : null);
-const doses = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Dose' }, h('span', { class: 'small muted', text: 'Dose' }),
-...DOSES.map((ml) => btn(`${ml} ml`, () => { lab.trialDose = ml; this.refresh(); }, { cls: lab.trialDose === ml ? 'active' : '', act: 'dose-' + ml })));
-head.append(h('div', { class: 'row wrap' }, seg), h('div', { class: 'row wrap' }, doses));
-if (st.vial) {
-head.append(h('div', { class: 'row wrap vial-row' },
-h('span', { class: 'small muted', text: `Vial: ${Math.round(st.vial.ml)} ml of ${Math.round(st.vial.bottledMl || st.vial.ml)} ml bottled` }),
-btn('Pour back', () => lab.pourBackVial(), { icon: 'pour', act: 'trials-pour-back', title: 'Return the rest of the vial to the cauldron' }),
-btn('Discard', () => { lab.discardVial(); this.refresh(); }, { icon: 'trash', cls: 'danger', act: 'trials-discard' })));
-}
 const cert = this.estimate();
 const com = st.current;
 const need = com ? missingEffects(com, cert.values) : [];
@@ -15506,7 +15543,7 @@ const status = clear(this.status);
 if (cert.changed && src === 'cauldron') status.append(h('div', { class: 'warn small', text: 'Earlier trials of this batch are outdated: you added ingredients since.' }));
 if (cert.stale.length) status.append(h('div', { class: 'warn small', text: `The brew has changed since it was tested (${cert.stale.map((k) => EFFECT_BY_KEY[k].label).join(', ')}): reactions, heat or settling. Test again.` }));
 if (com && need.length) {
-status.append(h('div', { class: 'small' }, h('span', { text: 'The order still needs: ' }), ...need.map((k) => h('span', { class: 'fx-chip need' }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ' ' + EFFECT_BY_KEY[k].label))));
+status.append(h('div', { class: 'small' }, h('span', { text: 'Not yet tested for the order: ' }), ...need.map((k) => h('span', { class: 'fx-chip need' }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ' ' + EFFECT_BY_KEY[k].label))));
 } else if (com && com.effectOrder) {
 status.append(h('div', { class: 'ok small', text: 'Every effect the order asks about has been tested for this ' + (src === 'vial' ? 'vial.' : 'batch.') }));
 }
@@ -15530,10 +15567,10 @@ const shown = tested.filter((k) => !unseen.includes(k));
 const firsts = shown.filter((k) => (cert.n[k] || 0) === 1);
 const trials = tested.length ? Math.max(...tested.map((k) => cert.n[k] || 0)) : 0;
 const rabbits = tested.length ? Math.max(...tested.map((k) => cert.rabbits[k] || 0)) : 0;
-el.append(h('div', { class: 'row' }, icon('scales'), h('b', { text: vial ? 'Expected effects of this vial' : 'Expected effects of this batch' }), h('span', { class: 'spacer' }),
+el.append(h('div', { class: 'row', title: 'Each value is the mean of every trial; ± is how far the true strength may lie from it. Other rabbits average out each rabbit’s own bias.' }, icon('scales'), h('b', { text: vial ? 'Expected effects of this vial' : 'Expected effects of this batch' }), h('span', { class: 'spacer' }),
 trials ? h('span', { class: 'small muted', text: `${trials} trial${trials === 1 ? '' : 's'} · ${rabbits} rabbit${rabbits === 1 ? '' : 's'}` }) : null));
 if (!tested.length) {
-el.append(h('div', { class: 'small muted', text: 'Unknown — nothing tested yet. Give a rabbit a dose to start the estimate.' }));
+el.append(h('div', { class: 'small muted', text: 'Unknown — nothing tested yet. Give a rabbit a dose below to start the estimate.' }));
 return;
 }
 const rows = h('div', { class: 'reading-rows' });
@@ -15557,9 +15594,8 @@ const bound = Math.max(...unseen.map((k) => (cert.unc || {})[k] || 0));
 el.append(h('div', { class: 'small muted quiet', 'data-undetected': unseen.join(' '), title: 'No rabbit showed these. A faint effect can hide below the reading noise: more readings, and larger doses, narrow how strong it could be.' },
 'Not detected: ', ...unseen.map((k) => icon(EFFECT_BY_KEY[k].icon, 'sm')), ` — each could still be up to ${sdRound(bound)}%`));
 }
-if (firsts.length) el.append(h('div', { class: 'warn small first-flag', text: `First measure${firsts.length === shown.length ? '' : ` (${firsts.map((k) => EFFECT_BY_KEY[k].label).join(', ')})`}: one reading only, so its margin is that of a single dose — wide. Test again; a second rabbit narrows it most.` }));
-el.append(h('div', { class: 'small muted est-foot', text: 'Value: the mean of every trial. ±: how far the true strength may lie from it (the band). One rabbit’s own bias never averages out on that rabbit — other rabbits average it away. Hover a row for how much the readings differed.' }));
-if (rabbits <= 1 && trials >= 2) el.append(h('div', { class: 'warn small', text: 'All on one rabbit: the others stay clean, but its own bias stays in the estimate and the effect piles up in it — and nobody knows how much it can take before it runs out of control.' }));
+if (firsts.length) el.append(h('div', { class: 'warn small first-flag', text: `One reading only${firsts.length === shown.length ? '' : ` (${firsts.map((k) => EFFECT_BY_KEY[k].label).join(', ')})`}: a rough guess with a wide margin. Test again — a second rabbit narrows it most.` }));
+if (rabbits <= 1 && trials >= 2) el.append(h('div', { class: 'warn small', text: 'All on one rabbit: its own bias stays in the estimate, and the effect piles up in it towards a limit nobody can see. Try another rabbit.' }));
 const com = this.lab.state.current;
 if (com && !this.lab.sandbox) {
 const reqs = com.requirements.filter((r) => r.effect);
@@ -15583,7 +15619,7 @@ const lab = this.lab, st = lab.state;
 const r = this.last || st.trials.records[0];
 const el = clear(this.report);
 if (!r) {
-el.append(h('div', { class: 'card parch small', text: 'A mixture’s effects are unknown until you test it. You know what each plain ingredient does — but mixing, heat and reactions change things. Choose a rabbit and give it a dose; every further trial — on it or on others — narrows the estimate.' }));
+el.append(h('div', { class: 'card parch small', text: 'No trial yet. A mixture’s effects are unknown until it is tested: choose a rabbit above and give it a dose.' }));
 return;
 }
 const subj = SUBJECT_BY_ID[r.subjectId] || SUBJECT_BY_ID.rabbit;
@@ -15593,7 +15629,6 @@ const body = r.rabbitId ? findRabbit(st.colony, r.rabbitId) : null;
 el.append(h('div', { class: 'card parch report' },
 h('div', { class: 'row' }, icon('dropper'), h('b', { text: `Trial ${r.serial}: ${who}` }), h('span', { class: 'spacer' }), h('span', { class: 'small muted', text: `${r.ml} ml from the ${r.source === 'vial' ? 'vial' : 'tap'}` })),
 h('ul', { class: 'obs-list' }, ...r.observations.map((o) => h('li', { class: 'tone-' + o.tone, text: o.text }))),
-h('div', { class: 'small muted', text: 'This reading has gone into the expected effects above.' }),
 r.anomalies.length ? h('div', { class: 'warn small', text: `Unexpected: ${r.anomalies.map((k) => EFFECT_BY_KEY[k].label).join(', ')} differs from theory. Something in this mixture interacts — repeat with variations to find out what.` }) : null,
 ...laws.map((L) => h('div', { class: 'law-found' }, icon('star'), h('div', {}, h('b', { text: `Law discovered: ${L.name}` }), h('div', { class: 'small', text: L.lore + ' Your theory now accounts for it.' })))),
 r.died ? h('div', { class: 'bad small', text: `${who} did not survive. ${body ? 'The body stays in the hutch: recover its remains or bury it.' : ''} A potion that kills a rabbit should not be sold as a remedy.` }) : null,
@@ -15684,8 +15719,8 @@ audio.play('toll');
 } else if (e.type === 'trait') rebuild = true;
 else if (e.type === 'purge-brewed') { toast('A purging draught is ready', 'The still has finished brewing.', 'purge', 2500); rebuild = true; }
 }
-if (rebuild && this.head) this.refresh();
-else if (this.head) this.hutch.syncScene();
+if (rebuild && this.expect) this.refresh();
+else if (this.expect) this.hutch.syncScene();
 }
 bindDropper() {
 const d = this.dropper;
@@ -15927,7 +15962,7 @@ const { awakenParts, describeThreshold } = __m15;
 const { ARC_NONE } = __m31;
 const { describeColor, rgbToHex } = __m8;
 const { h, btn, clear, toast, coins, confirmDialog } = __m2;
-const { icon, iconUrl } = __m3;
+const { icon } = __m3;
 const { audio } = __m4;
 const panels = __m60;
 const trade = __m62;
@@ -15939,10 +15974,10 @@ const { BookView } = __m71;
 const { shortName } = __m21;
 const REQ_ICON = { temperature: 'thermo', quantity: 'flask', purity: 'pure' };
 const TOOL_DEFS = [
-{ id: 'spoon', label: 'Spoon', icon: 'spoon', key: '2' },
-{ id: 'pestle', label: 'Pestle', icon: 'pestle', key: '3', needs: 'pestle' },
-{ id: 'skimmer', label: 'Skim', icon: 'ladle', key: '4', sandbox: true },
-{ id: 'probe', label: 'Inspect', icon: 'lens', key: '5' },
+{ id: 'spoon', label: 'Stir', icon: 'spoon', key: '2', title: 'Spoon: drag in the brew to stir' },
+{ id: 'pestle', label: 'Crush', icon: 'pestle', key: '3', needs: 'pestle', title: 'Pestle: drag over whole herbs, stones or ice to crush them' },
+{ id: 'skimmer', label: 'Skim', icon: 'ladle', key: '4', sandbox: true, title: 'Skimmer: lift off the top layer' },
+{ id: 'probe', label: 'Inspect', icon: 'lens', key: '5', title: 'Inspect: tap a spot to read its colour, heat and contents' },
 { id: 'pour', label: 'Pour', icon: 'pour', key: '1' },
 ];
 const VIEWS = [
@@ -16097,36 +16132,38 @@ this.rankName = h('div', { class: 'rankname' });
 this.rankBar = h('i');
 this.dayEl = h('div', { class: 'day' });
 this.topbar = h('header', { class: 'topbar frame' },
-btn('', () => panels.openPause(this), { icon: 'menu', cls: 'icon', title: 'Menu (Esc)', act: 'menu' }),
+btn('', () => panels.openPause(this), { icon: 'menu', cls: 'icon', title: 'Menu: help, settings, tour (Esc)', act: 'menu' }),
 this.sandbox
 ? h('div', { class: 'stat' }, icon('flask'), h('span', { text: 'Free Experiment' }))
-: h('div', { class: 'stat' }, icon('coin'), this.coinEl),
-this.sandbox ? null : h('div', { class: 'rankrow' }, icon('star', 'rank-ico'), h('div', { class: 'stat rankbox' }, this.rankName, h('div', { class: 'bar' }, this.rankBar))),
+: h('div', { class: 'stat', title: 'Coins' }, icon('coin'), this.coinEl),
+this.sandbox ? null : h('div', { class: 'rankrow' }, h('div', { class: 'stat rankbox' }, this.rankName, h('div', { class: 'bar' }, this.rankBar))),
 this.sandbox ? null : this.dayEl,
 h('div', { class: 'spacer' }),
-this.sandbox ? null : btn('', () => panels.openShop(this), { icon: 'bag', cls: 'icon', title: 'Market & Guild (S)', act: 'shop' }),
+this.sandbox ? null : btn('Shop', () => panels.openShop(this), { icon: 'bag', cls: 'shop-btn', title: 'Shop: ingredients and equipment (S)', act: 'shop' }),
 );
 this.strip = h('div', { class: 'order-strip parch', role: 'button', tabindex: '0', 'aria-label': 'Order: open the counter' });
 this.strip.addEventListener('click', (e) => { if (!(/** @type {HTMLElement} */ (e.target)).closest('.btn')) this.showView('counter'); });
 this.canvas = /** @type {HTMLCanvasElement} */ (h('canvas', { class: 'view-canvas', 'aria-label': 'Cauldron: drag to stir, hold to pour the selected reagent' }));
 this.readout = h('div', { class: 'readout parch hidden' });
-this.chips = h('div', { class: 'hud-chips' });
+this.infoText = h('span');
+this.infoBtn = h('button', { class: 'chip chip-btn info-chip', 'data-act': 'brew-info', title: 'What is in the cauldron', 'aria-label': 'What is in the cauldron' }, icon('scroll', 'sm'), this.infoText);
+this.infoBtn.addEventListener('click', () => { audio.play('click'); this.toggleBrewInfo(); });
+this.chipList = h('div', { class: 'chip-list' });
+this.chips = h('div', { class: 'hud-chips' }, this.infoBtn, this.chipList);
 this.pourHint = h('div', { class: 'pour-hint chip hidden' });
-this.bottleFab = btn('Bottle', () => this.startBottling(), { icon: 'bottle', cls: 'fab primary', title: 'Bottle the potion (B)', act: 'bottle' });
-this.infoFab = btn('', () => this.toggleBrewInfo(), { icon: 'scroll', cls: 'fab-mini icon', title: 'What is in the cauldron', act: 'brew-info' });
+this.bottleFab = btn('Bottle', () => this.startBottling(), { icon: 'bottle', cls: 'fab primary', title: 'Bottle the potion from the tap (B)', act: 'bottle' });
 this.brewPanel = h('div', { class: 'brew-panel parch hidden' });
-this.stageEl = h('main', { class: 'stage' }, this.canvas, this.readout, this.chips, this.pourHint, this.brewPanel, this.infoFab, this.bottleFab);
+this.stageEl = h('main', { class: 'stage' }, this.canvas, this.readout, this.chips, this.pourHint, this.brewPanel, this.bottleFab);
 this.furnaceInput = /** @type {HTMLInputElement} */ (h('input', { type: 'range', min: '-100', max: '100', step: '1', value: '0', 'aria-label': 'Fire and frost control' }));
 this.furnaceInput.addEventListener('input', () => {
 const v = Number(this.furnaceInput.value) / 100;
 this.setFurnace(Math.abs(v) < 0.06 ? 0 : v);
 });
 this.furnaceLabel = h('span', { class: 'flabel' });
-this.furnaceIcon = icon('flame');
-this.lidBtn = btn('', () => this.toggleLid(), { icon: 'lid', cls: 'icon', title: 'Lid on/off (L)', act: 'lid' });
+this.lidBtn = btn('Lid', () => this.toggleLid(), { icon: 'lid', cls: 'lid-btn', title: 'Lid on/off (L)', act: 'lid' });
 this.controls = h('section', { class: 'controls frame' },
 this.lidBtn,
-h('div', { class: 'furnace' }, this.furnaceIcon, this.furnaceInput, this.furnaceLabel),
+h('div', { class: 'furnace', title: 'Slide left to cool, right to heat (arrow keys, 0 for off)' }, icon('snow', 'sm'), this.furnaceInput, icon('flame', 'sm'), this.furnaceLabel),
 );
 this.toolsEl = h('div', { class: 'tools', role: 'toolbar', 'aria-label': 'Tools' });
 this.toolbar = h('nav', { class: 'toolbar frame' }, this.toolsEl);
@@ -16147,7 +16184,8 @@ b.addEventListener('click', () => { audio.play('select'); this.showView(v.id); }
 this.tabEls[v.id] = { b, badge };
 this.tabbar.appendChild(b);
 }
-this.el.append(this.topbar, this.viewsEl, this.tabbar);
+this.tutorSlot = h('div', { class: 'tutor-slot', 'aria-live': 'polite' });
+this.el.append(this.topbar, this.tutorSlot, this.viewsEl, this.tabbar);
 this.root.appendChild(this.el);
 this.buildTools();
 this.buildShelf();
@@ -16171,6 +16209,7 @@ if (t.active && !t.auto) t.setTarget(t.x, t.y, false);
 }
 const v = this.views[id];
 if (v) v.refresh();
+if (id === 'trials' && !this.sandbox && !(this.tutorial && this.tutorial.active) && this.state.firstTip('farm')) toast('The rabbit farm', 'One reading is a rough guess: test again, ideally on another rabbit. Too much of an effect in one rabbit can make it sick, wild or dead.', 'rabbit', 6000);
 if (id === 'brew') requestAnimationFrame(() => this.resize());
 if (!silent) this.updateBadges();
 if (this.tutorial) this.tutorial.notify('view', id);
@@ -16200,29 +16239,31 @@ const a = this.actionsEl;
 if (!a) return;
 clear(a);
 const set = {};
-set.stir = btn('', () => {}, { icon: 'gear', cls: 'icon', title: this.state.has('stirrer') ? 'Clockwork stirrer on/off (A)' : 'Hold to stir automatically', act: 'autostir' });
+set.stir = btn('Auto', () => {}, { icon: 'swirl', title: this.state.has('stirrer') ? 'Clockwork stirrer on/off (A)' : 'Hold to stir automatically (A)', act: 'autostir' });
 const startAuto = (e) => { e.preventDefault(); if (this.state.has('stirrer')) this.setAutoStir(!this.autoStir); else this.setAutoStir(true); };
 const stopAuto = () => { if (!this.state.has('stirrer')) this.setAutoStir(false); };
 set.stir.addEventListener('pointerdown', startAuto);
 set.stir.addEventListener('pointerup', stopAuto);
 set.stir.addEventListener('pointerleave', stopAuto);
 set.stir.addEventListener('pointercancel', stopAuto);
-set.speed = btn('1×', () => this.cycleSpeed(), { icon: 'speed', cls: 'icon', title: 'Time speed (F)', act: 'speed' });
+set.speed = btn('1×', () => this.cycleSpeed(), { icon: 'speed', title: 'Time speed: 1×, 2×, 4× (F)', act: 'speed' });
 a.append(set.stir, set.speed);
 if (this.sandbox) {
-set.thermal = btn('', () => this.toggleThermal(), { icon: 'monocle', cls: 'icon', title: 'Heat map (H)', act: 'thermal' });
+set.thermal = btn('Heat', () => this.toggleThermal(), { icon: 'monocle', title: 'Heat map (H)', act: 'thermal' });
 a.append(set.thermal);
-set.alembic = btn('', () => this.toggleAlembic(), { icon: 'alembic', cls: 'icon', title: 'Alembic valve', act: 'alembic' });
+set.alembic = btn('Still', () => this.toggleAlembic(), { icon: 'alembic', title: 'Alembic valve: draw off the vapour', act: 'alembic' });
 a.append(set.alembic);
 }
-a.append(btn('', () => this.emptyCauldron(), { icon: 'trash', cls: 'icon danger', title: 'Empty the cauldron', act: 'empty' }));
+a.append(btn('Empty', () => this.emptyCauldron(), { icon: 'trash', cls: 'danger', title: 'Empty the cauldron', act: 'empty' }));
 this.actionSet = set;
 this.syncActions();
 }
 syncActions() {
 const lidOpen = !this.sim.cauldron.lidClosed;
-this.lidBtn.classList.toggle('active', lidOpen);
-this.lidBtn.title = lidOpen ? 'Lid open — tap to close (L)' : 'Lid closed — tap to open (L)';
+this.lidBtn.classList.toggle('active', !lidOpen);
+this.lidBtn.title = lidOpen ? 'The lid is off: steam escapes — tap to put it on (L)' : 'The lid is on: steam stays in — tap to take it off (L)';
+const ll = this.lidBtn.querySelector('.lbl');
+if (ll) ll.textContent = lidOpen ? 'Lid off' : 'Lid on';
 const set = this.actionSet;
 if (!set) return;
 set.stir.classList.toggle('active', this.autoStir);
@@ -16242,11 +16283,11 @@ this.toolBtns = {};
 for (const d of TOOL_DEFS) {
 if (!this.sandbox && (d.sandbox || (d.needs && !this.state.has(d.needs)))) continue;
 if (d.id === 'pour') continue; // pouring starts from the shelf
-const b = btn(d.label, () => this.selectTool(d.id), { icon: d.icon, title: `${d.label} (${d.key})`, act: 'tool-' + d.id });
+const b = btn(d.label, () => this.selectTool(d.id), { icon: d.icon, title: `${d.title || d.label} (${d.key})`, act: 'tool-' + d.id });
 this.toolBtns[d.id] = b;
 t.appendChild(b);
 }
-t.appendChild(btn('Sample', () => this.sampleVial(), { icon: 'jar', title: 'Measure what the tap would draw', act: 'sample' }));
+t.appendChild(btn('Sample', () => this.sampleVial(), { icon: 'jar', title: 'Sample: measure what a bottle drawn from the tap would hold', act: 'sample' }));
 t.appendChild(h('div', { class: 'sep' }));
 this.actionsEl = h('div', { class: 'acts' });
 t.appendChild(this.actionsEl);
@@ -16338,7 +16379,7 @@ buildDose() {
 const d = clear(this.doseEl);
 this.groundBtn = btn('Ground', () => { this.ground = !this.ground; this.syncGround(); audio.play('select'); }, { icon: 'mortar', title: 'Grind in the mortar before pouring', act: 'ground' });
 this.selName = h('span', { class: 'sel-name' });
-d.append(this.selName);
+d.append(icon('pour', 'sm'), this.selName);
 for (const ml of [25, 50, 100, 250]) d.append(btn(`${ml}`, () => this.pourDose(ml), { title: `Pour exactly ${ml} ml`, act: 'dose-' + ml }));
 d.append(h('span', { class: 'muted dose-note', text: 'ml' }), this.groundBtn);
 this.syncGround();
@@ -16518,7 +16559,7 @@ if (this.tutorial) this.tutorial.notify('select', id);
 updatePourHint() {
 if (this.tool !== 'pour') return;
 const m = this.selected ? this.state.lookup(this.selected) : null;
-this.pourHint.textContent = m ? `Hold in the cauldron to ${m.form === 'solid' && !this.ground ? 'drop in' : 'pour'} ${m.name}` : 'Tap a jar on the shelf';
+this.pourHint.textContent = m ? `Hold in the cauldron to ${m.form === 'solid' && !this.ground ? 'drop it in' : 'pour'}` : 'Tap a jar on the shelf';
 }
 clampPourX(x) {
 const m = this.sim.cauldron.mouth - 0.15;
@@ -16535,7 +16576,7 @@ const avail = this.canPour(id);
 if (avail <= 0) {
 audio.play('error');
 const m = this.state.lookup(id);
-toast('Out of stock', m.remains ? 'A rabbit’s remains are recovered only once.' : m.wild && m.tier > this.state.rank ? `Gather more ${m.name} in the Wilds.` : `Buy more ${m.name} at the market${m.wild ? ' or gather it in the Wilds' : ''}.`, m.remains ? 'bone' : m.wild ? 'tree' : 'bag');
+toast('Out of stock', m.remains ? 'A rabbit’s remains are recovered only once.' : m.wild && m.tier > this.state.rank ? `Gather more ${m.name} in the Wilds.` : `Buy more ${m.name} in the Shop${m.wild ? ' or gather it in the Wilds' : ''}.`, m.remains ? 'bone' : m.wild ? 'tree' : 'bag');
 return;
 }
 if (this.sim.p.count >= this.sim.maxParticles - 2) {
@@ -16647,7 +16688,7 @@ const st = this.state;
 if (this.sandbox) return;
 const c = st.nextCustomer();
 if (c && withSound) audio.play('bell');
-if (c && !c.tutorial) {
+if (c && !c.tutorial && !(this.tutorial && this.tutorial.active)) {
 if (c.activation && st.firstTip('activation')) toast('Awakened magic wanted', 'This order is stronger than sleeping magic can reach: the brew must be awakened past its arcane threshold. See How to play → Arcane awakening, or ask the guild.', 'awaken', 8000);
 else if (c.requirements.some((r) => r.key === 'purity') && st.firstTip('purity')) toast('A pure potion', '“No other effect above 1.2 %”: every effect the customer did not ask for must stay that faint. Test for them too.', 'pure', 7000);
 }
@@ -17179,6 +17220,9 @@ void force;
 }
 toggleBrewInfo() {
 this.brewPanel.classList.toggle('hidden');
+const open = !this.brewPanel.classList.contains('hidden');
+this.stageEl.classList.toggle('info-open', open);
+this.infoBtn.classList.toggle('active', open);
 this.updateBrewPanel(true);
 }
 updateBrewPanel(force = false) {
@@ -17220,7 +17264,7 @@ similar ? h('div', { class: 'small warn recipe-partial', text: similar.approx
 ? `Recipe “${similar.recipe.name}”: the same ingredients, but its procedure is only approximate — test this batch rather than rely on what it recorded.`
 : `Recipe “${similar.recipe.name}”: the same ingredients, but not yet prepared the same way (${similar.differences.slice(0, 2).join('; ')}) — follow its steps before you rely on what it recorded.` }) : null,
 h('div', { class: 'small know' }, h('b', { text: 'Verified ' }), Object.keys(cert.values).length ? Object.entries(cert.values).map(([k, v]) => h('span', { class: 'fx-chip', title: EFFECT_BY_KEY[k].label }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(v)}`)) : h('span', { class: 'muted', text: cert.changed ? 'outdated — retest' : 'nothing yet' })),
-h('div', { class: 'small muted', text: known ? 'Theory adds up what each ingredient is known to do; Recipe is what this recipe did when it was tested. Only a trial of this batch counts as verified.' : 'Theory adds up what each ingredient is known to do. The real brew can differ: test it.' }),
+h('div', { class: 'small muted', text: `Theory: what the ingredients do on paper.${known ? ' Recipe: what this recipe did when tested.' : ''} Verified: trials of this batch — the only proof.` }),
 ].filter(Boolean));
 void force;
 }
@@ -17274,16 +17318,17 @@ const r = st.rank, next = RANKS[r + 1];
 this.rankName.textContent = RANKS[r].name;
 const prog = next ? (st.reputation - RANKS[r].rep) / (next.rep - RANKS[r].rep) : 1;
 this.rankBar.style.width = Math.round(Math.max(0, Math.min(1, prog)) * 100) + '%';
-this.rankBar.parentElement.title = `Reputation ${st.reputation}${next ? ' / ' + next.rep : ''}`;
-clear(this.dayEl).append(h('span', { text: `Day ${st.day} · ${Math.min(st.customerIndex + (st.current ? 1 : 0), st.customersPerDay)}/${st.customersPerDay}` }), h('span', { class: 'event', text: st.marketEvent.key !== 'none' ? st.marketEvent.name : '' }));
+this.rankBar.parentElement.parentElement.title = `Rank: ${RANKS[r].name} · reputation ${st.reputation}${next ? ` of ${next.rep} for ${next.name}` : ''}`;
+const guest = Math.min(st.customerIndex + (st.current ? 1 : 0), st.customersPerDay);
+this.dayEl.title = `Day ${st.day}: customer ${guest} of ${st.customersPerDay} today${st.marketEvent.key !== 'none' ? ` · ${st.marketEvent.name}` : ''}`;
+clear(this.dayEl).append(h('span', { text: `Day ${st.day}` }), h('span', { class: 'guests', text: `Customer ${guest}/${st.customersPerDay}` }), ...(st.marketEvent.key !== 'none' ? [h('span', { class: 'event', text: st.marketEvent.name })] : []));
 }
 this.syncActions();
 const f = this.sim.furnace.setting;
 const c = this.sim.cauldron;
-const label = f > 0.02 ? `Fire ${Math.round(f * 100)}%` : f < -0.02 ? `Frost ${Math.round(-f * 100)}%` : 'Off';
+const label = f > 0.02 ? `Heat ${Math.round(f * 100)}%` : f < -0.02 ? `Cool ${Math.round(-f * 100)}%` : 'Off';
 this.furnaceLabel.textContent = `${label} · ${Math.round(c.bottomTemperature())}°C`;
-const want = iconUrl(f < -0.02 ? 'snow' : 'flame');
-if (this.furnaceIcon.src !== want) this.furnaceIcon.src = want;
+this.furnaceLabel.title = 'Setting, and the temperature of the cauldron floor';
 if (full) this.updateShelf();
 this.updateChips();
 }
@@ -17300,8 +17345,9 @@ const sim = this.sim;
 const p = sim.p;
 let T = 0, n = 0, gas = 0;
 for (let i = 0; i < p.count; i++) { if (p.phase[i] === PHASE.GAS) gas++; else { T += p.temp[i]; n++; } }
-const list = [{ text: `${p.count * SIM.ML_PER_PARTICLE} / ${sim.maxParticles * SIM.ML_PER_PARTICLE} ml` }];
-if (n) list.push({ text: `${Math.round(T / n)}°C` });
+const info = `${p.count * SIM.ML_PER_PARTICLE} / ${sim.maxParticles * SIM.ML_PER_PARTICLE} ml${n ? ` · ${Math.round(T / n)}°C` : ''}`;
+if (this.infoText.textContent !== info) this.infoText.textContent = info;
+const list = [];
 if (gas > 0) list.push({ text: `Vapour ${gas * SIM.ML_PER_PARTICLE} ml${sim.cauldron.lidClosed ? '' : ' (escaping!)'}` });
 if (this.autoBrewer) list.push({ text: `Homunculus: ${this.autoBrewer.status}` });
 else if (!this.bottling) {
@@ -17313,7 +17359,7 @@ if (this.app.settings.showFps) list.push({ text: `${this.fpsAcc.fps} fps · ${si
 const sig = list.map((x) => x.text + '|' + (x.title || '')).join('/');
 if (sig === this._chipSig) return;
 this._chipSig = sig;
-const c = clear(this.chips);
+const c = clear(this.chipList);
 for (const x of list) {
 c.append(x.act ? h('button', { class: 'chip chip-btn' + (x.cls ? ' ' + x.cls : ''), 'data-act': x.act, ...(x.key ? { 'data-advice': x.key } : {}), title: x.title || '', onclick: x.on }, x.text) : h('div', { class: 'chip', text: x.text }));
 }
@@ -17777,6 +17823,8 @@ class App {
 constructor(root) {
 this.root = root;
 this.settings = loadJSON(KEYS.settings, { ...DEFAULT_SETTINGS });
+if (this.settings.musicOn === false) this.settings.music = 0;
+this.settings.musicOn = this.settings.music > 0;
 this.screen = null;
 setOverlayRoot(root);
 setToastRoot(root);
@@ -17826,7 +17874,7 @@ this.showMenu();
 newGameDialog() {
 const rng = new Rng(Date.now() >>> 0);
 const seedIn = /** @type {HTMLInputElement} */ (h('input', { type: 'text', value: `${rng.pick(SEED_WORDS)}-${rng.pick(SEED_WORDS)}-${rng.int(10, 99)}`, maxlength: '32', 'aria-label': 'World seed' }));
-const tut = /** @type {HTMLInputElement} */ (h('input', { type: 'checkbox', 'aria-label': 'Play the tutorial' }));
+const tut = /** @type {HTMLInputElement} */ (h('input', { type: 'checkbox', 'aria-label': 'Guided tour' }));
 tut.checked = true;
 let m;
 const go = async () => {
@@ -17845,9 +17893,9 @@ m = modal({
 title: 'A New Shop',
 body: [
 h('div', { class: 'card parch' },
-h('div', { class: 'small', text: 'Every world has its own reagents, reactions and customers, generated from its seed. Share a seed to share a world.' }),
+h('div', { class: 'small', text: 'The seed generates the world: its ingredients, reactions and customers. The same seed gives the same world.' }),
 h('label', { class: 'field' }, 'World seed', seedIn),
-h('div', { class: 'toggle-row' }, h('span', { text: 'Guided first brew (recommended)' }), tut)),
+h('div', { class: 'toggle-row' }, h('span', { text: 'Guided tour of the shop (recommended)' }), tut)),
 ],
 foot: [btn('Open my shop', go, { cls: 'primary', icon: 'door', act: 'start-game' })],
 });

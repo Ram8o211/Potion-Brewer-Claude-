@@ -106,7 +106,7 @@ export class WildsView {
             h('span', { class: 'muted', text: ` · in stores: ${Math.round(st.stock(m.id))} ml` }))),
         g));
     }
-    clear(this.foot).append(`Shelf space ${st.cap.storage} ml per ingredient. ${st.has('satchel') ? 'Your satchel carries half as much again. ' : ''}Deposits regrow with time — even while the shop is closed — and recover half their stock each new day (a stripped one, a quarter). Dawn lasts until you open the shop door; dusk begins when the last customer has gone.`);
+    clear(this.foot).append(`Room for ${st.cap.storage} ml of each ingredient. ${st.has('satchel') ? 'Your satchel carries half as much again. ' : ''}Deposits regrow over time, even while the game is closed, and recover half their stock each new day (a stripped one, a quarter).`);
     this.paintBg();
   }
 

@@ -355,7 +355,7 @@ export class GameState {
   buyRabbit(free = false) {
     const c = this.colony;
     const cap = this.cap.hutch;
-    if (livingRabbits(c).length >= cap) return { ok: false, reason: `The hutch is full (${cap} places). Upgrade it at the guild.` };
+    if (livingRabbits(c).length >= cap) return { ok: false, reason: `The hutch is full (${cap} places). More places are sold in the Shop.` };
     const cost = free ? 0 : this.rabbitPrice();
     if (cost > this.coins + 1e-9) return { ok: false, reason: `A new rabbit costs ${cost} coins.` };
     this.coins = round1(this.coins - cost);
@@ -502,7 +502,7 @@ export class GameState {
 
   /** Start brewing a purging draught in the still (needs the Purging Still). @param {boolean} [free] */
   brewPurge(free = false) {
-    if (!free && !this.has('still')) return { ok: false, reason: 'Buy the Purging Still at the guild to brew your own.' };
+    if (!free && !this.has('still')) return { ok: false, reason: 'Buy the Purging Still in the Shop to brew your own.' };
     if (this.colony.still) return { ok: false, reason: 'The still is already working.' };
     const cost = free ? 0 : PURGE_BREW_COST;
     if (cost > this.coins + 1e-9) return { ok: false, reason: `The salts cost ${cost} coin.` };

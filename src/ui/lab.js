@@ -38,7 +38,7 @@ import { awakenParts, describeThreshold } from '../alchemy/arcane.js';
 import { ARC_NONE } from '../simulation/particles.js';
 import { describeColor, rgbToHex } from '../core/color.js';
 import { h, btn, clear, toast, coins, confirmDialog } from './dom.js';
-import { icon, iconUrl } from './icons.js';
+import { icon } from './icons.js';
 import { audio } from '../audio/audio.js';
 import * as panels from './panels.js';
 import * as trade from './trade.js';
@@ -51,11 +51,11 @@ import { shortName } from '../game/customers.js';
 
 const REQ_ICON = { temperature: 'thermo', quantity: 'flask', purity: 'pure' };
 const TOOL_DEFS = [
-  { id: 'spoon', label: 'Spoon', icon: 'spoon', key: '2' },
-  { id: 'pestle', label: 'Pestle', icon: 'pestle', key: '3', needs: 'pestle' },
+  { id: 'spoon', label: 'Stir', icon: 'spoon', key: '2', title: 'Spoon: drag in the brew to stir' },
+  { id: 'pestle', label: 'Crush', icon: 'pestle', key: '3', needs: 'pestle', title: 'Pestle: drag over whole herbs, stones or ice to crush them' },
   // the skimmer only demonstrates layering in the Free Experiment
-  { id: 'skimmer', label: 'Skim', icon: 'ladle', key: '4', sandbox: true },
-  { id: 'probe', label: 'Inspect', icon: 'lens', key: '5' },
+  { id: 'skimmer', label: 'Skim', icon: 'ladle', key: '4', sandbox: true, title: 'Skimmer: lift off the top layer' },
+  { id: 'probe', label: 'Inspect', icon: 'lens', key: '5', title: 'Inspect: tap a spot to read its colour, heat and contents' },
   { id: 'pour', label: 'Pour', icon: 'pour', key: '1' },
 ];
 export const VIEWS = [
@@ -236,37 +236,41 @@ export class LabScreen {
     this.rankBar = h('i');
     this.dayEl = h('div', { class: 'day' });
     this.topbar = h('header', { class: 'topbar frame' },
-      btn('', () => panels.openPause(this), { icon: 'menu', cls: 'icon', title: 'Menu (Esc)', act: 'menu' }),
+      btn('', () => panels.openPause(this), { icon: 'menu', cls: 'icon', title: 'Menu: help, settings, tour (Esc)', act: 'menu' }),
       this.sandbox
         ? h('div', { class: 'stat' }, icon('flask'), h('span', { text: 'Free Experiment' }))
-        : h('div', { class: 'stat' }, icon('coin'), this.coinEl),
-      this.sandbox ? null : h('div', { class: 'rankrow' }, icon('star', 'rank-ico'), h('div', { class: 'stat rankbox' }, this.rankName, h('div', { class: 'bar' }, this.rankBar))),
+        : h('div', { class: 'stat', title: 'Coins' }, icon('coin'), this.coinEl),
+      this.sandbox ? null : h('div', { class: 'rankrow' }, h('div', { class: 'stat rankbox' }, this.rankName, h('div', { class: 'bar' }, this.rankBar))),
       this.sandbox ? null : this.dayEl,
       h('div', { class: 'spacer' }),
-      this.sandbox ? null : btn('', () => panels.openShop(this), { icon: 'bag', cls: 'icon', title: 'Market & Guild (S)', act: 'shop' }),
+      this.sandbox ? null : btn('Shop', () => panels.openShop(this), { icon: 'bag', cls: 'shop-btn', title: 'Shop: ingredients and equipment (S)', act: 'shop' }),
     );
     // ---- brew room
     this.strip = h('div', { class: 'order-strip parch', role: 'button', tabindex: '0', 'aria-label': 'Order: open the counter' });
     this.strip.addEventListener('click', (e) => { if (!(/** @type {HTMLElement} */ (e.target)).closest('.btn')) this.showView('counter'); });
     this.canvas = /** @type {HTMLCanvasElement} */ (h('canvas', { class: 'view-canvas', 'aria-label': 'Cauldron: drag to stir, hold to pour the selected reagent' }));
     this.readout = h('div', { class: 'readout parch hidden' });
-    this.chips = h('div', { class: 'hud-chips' });
+    // the cauldron's volume and temperature: tap it to see what is inside
+    this.infoText = h('span');
+    this.infoBtn = h('button', { class: 'chip chip-btn info-chip', 'data-act': 'brew-info', title: 'What is in the cauldron', 'aria-label': 'What is in the cauldron' }, icon('scroll', 'sm'), this.infoText);
+    this.infoBtn.addEventListener('click', () => { audio.play('click'); this.toggleBrewInfo(); });
+    this.chipList = h('div', { class: 'chip-list' });
+    this.chips = h('div', { class: 'hud-chips' }, this.infoBtn, this.chipList);
     this.pourHint = h('div', { class: 'pour-hint chip hidden' });
-    this.bottleFab = btn('Bottle', () => this.startBottling(), { icon: 'bottle', cls: 'fab primary', title: 'Bottle the potion (B)', act: 'bottle' });
-    this.infoFab = btn('', () => this.toggleBrewInfo(), { icon: 'scroll', cls: 'fab-mini icon', title: 'What is in the cauldron', act: 'brew-info' });
+    this.bottleFab = btn('Bottle', () => this.startBottling(), { icon: 'bottle', cls: 'fab primary', title: 'Bottle the potion from the tap (B)', act: 'bottle' });
     this.brewPanel = h('div', { class: 'brew-panel parch hidden' });
-    this.stageEl = h('main', { class: 'stage' }, this.canvas, this.readout, this.chips, this.pourHint, this.brewPanel, this.infoFab, this.bottleFab);
+    this.stageEl = h('main', { class: 'stage' }, this.canvas, this.readout, this.chips, this.pourHint, this.brewPanel, this.bottleFab);
     this.furnaceInput = /** @type {HTMLInputElement} */ (h('input', { type: 'range', min: '-100', max: '100', step: '1', value: '0', 'aria-label': 'Fire and frost control' }));
     this.furnaceInput.addEventListener('input', () => {
       const v = Number(this.furnaceInput.value) / 100;
       this.setFurnace(Math.abs(v) < 0.06 ? 0 : v);
     });
     this.furnaceLabel = h('span', { class: 'flabel' });
-    this.furnaceIcon = icon('flame');
-    this.lidBtn = btn('', () => this.toggleLid(), { icon: 'lid', cls: 'icon', title: 'Lid on/off (L)', act: 'lid' });
+    this.lidBtn = btn('Lid', () => this.toggleLid(), { icon: 'lid', cls: 'lid-btn', title: 'Lid on/off (L)', act: 'lid' });
     this.controls = h('section', { class: 'controls frame' },
       this.lidBtn,
-      h('div', { class: 'furnace' }, this.furnaceIcon, this.furnaceInput, this.furnaceLabel),
+      // left cools (the basin), right heats (the fire)
+      h('div', { class: 'furnace', title: 'Slide left to cool, right to heat (arrow keys, 0 for off)' }, icon('snow', 'sm'), this.furnaceInput, icon('flame', 'sm'), this.furnaceLabel),
     );
     this.toolsEl = h('div', { class: 'tools', role: 'toolbar', 'aria-label': 'Tools' });
     this.toolbar = h('nav', { class: 'toolbar frame' }, this.toolsEl);
@@ -289,7 +293,9 @@ export class LabScreen {
       this.tabEls[v.id] = { b, badge };
       this.tabbar.appendChild(b);
     }
-    this.el.append(this.topbar, this.viewsEl, this.tabbar);
+    // the guided tour docks here, between the top bar and the rooms, so it never covers a control
+    this.tutorSlot = h('div', { class: 'tutor-slot', 'aria-live': 'polite' });
+    this.el.append(this.topbar, this.tutorSlot, this.viewsEl, this.tabbar);
     this.root.appendChild(this.el);
     this.buildTools();
     this.buildShelf();
@@ -315,6 +321,7 @@ export class LabScreen {
     }
     const v = this.views[id];
     if (v) v.refresh();
+    if (id === 'trials' && !this.sandbox && !(this.tutorial && this.tutorial.active) && this.state.firstTip('farm')) toast('The rabbit farm', 'One reading is a rough guess: test again, ideally on another rabbit. Too much of an effect in one rabbit can make it sick, wild or dead.', 'rabbit', 6000);
     if (id === 'brew') requestAnimationFrame(() => this.resize());
     if (!silent) this.updateBadges();
     if (this.tutorial) this.tutorial.notify('view', id);
@@ -350,23 +357,23 @@ export class LabScreen {
     if (!a) return;
     clear(a);
     const set = {};
-    set.stir = btn('', () => {}, { icon: 'gear', cls: 'icon', title: this.state.has('stirrer') ? 'Clockwork stirrer on/off (A)' : 'Hold to stir automatically', act: 'autostir' });
+    set.stir = btn('Auto', () => {}, { icon: 'swirl', title: this.state.has('stirrer') ? 'Clockwork stirrer on/off (A)' : 'Hold to stir automatically (A)', act: 'autostir' });
     const startAuto = (e) => { e.preventDefault(); if (this.state.has('stirrer')) this.setAutoStir(!this.autoStir); else this.setAutoStir(true); };
     const stopAuto = () => { if (!this.state.has('stirrer')) this.setAutoStir(false); };
     set.stir.addEventListener('pointerdown', startAuto);
     set.stir.addEventListener('pointerup', stopAuto);
     set.stir.addEventListener('pointerleave', stopAuto);
     set.stir.addEventListener('pointercancel', stopAuto);
-    set.speed = btn('1×', () => this.cycleSpeed(), { icon: 'speed', cls: 'icon', title: 'Time speed (F)', act: 'speed' });
+    set.speed = btn('1×', () => this.cycleSpeed(), { icon: 'speed', title: 'Time speed: 1×, 2×, 4× (F)', act: 'speed' });
     a.append(set.stir, set.speed);
     // physics demonstrations of the Free Experiment: the heat map and the alembic
     if (this.sandbox) {
-      set.thermal = btn('', () => this.toggleThermal(), { icon: 'monocle', cls: 'icon', title: 'Heat map (H)', act: 'thermal' });
+      set.thermal = btn('Heat', () => this.toggleThermal(), { icon: 'monocle', title: 'Heat map (H)', act: 'thermal' });
       a.append(set.thermal);
-      set.alembic = btn('', () => this.toggleAlembic(), { icon: 'alembic', cls: 'icon', title: 'Alembic valve', act: 'alembic' });
+      set.alembic = btn('Still', () => this.toggleAlembic(), { icon: 'alembic', title: 'Alembic valve: draw off the vapour', act: 'alembic' });
       a.append(set.alembic);
     }
-    a.append(btn('', () => this.emptyCauldron(), { icon: 'trash', cls: 'icon danger', title: 'Empty the cauldron', act: 'empty' }));
+    a.append(btn('Empty', () => this.emptyCauldron(), { icon: 'trash', cls: 'danger', title: 'Empty the cauldron', act: 'empty' }));
     this.actionSet = set;
     this.syncActions();
   }
@@ -374,8 +381,10 @@ export class LabScreen {
   /** Reflect toggle states on the action buttons. */
   syncActions() {
     const lidOpen = !this.sim.cauldron.lidClosed;
-    this.lidBtn.classList.toggle('active', lidOpen);
-    this.lidBtn.title = lidOpen ? 'Lid open — tap to close (L)' : 'Lid closed — tap to open (L)';
+    this.lidBtn.classList.toggle('active', !lidOpen);
+    this.lidBtn.title = lidOpen ? 'The lid is off: steam escapes — tap to put it on (L)' : 'The lid is on: steam stays in — tap to take it off (L)';
+    const ll = this.lidBtn.querySelector('.lbl');
+    if (ll) ll.textContent = lidOpen ? 'Lid off' : 'Lid on';
     const set = this.actionSet;
     if (!set) return;
     set.stir.classList.toggle('active', this.autoStir);
@@ -397,11 +406,11 @@ export class LabScreen {
     for (const d of TOOL_DEFS) {
       if (!this.sandbox && (d.sandbox || (d.needs && !this.state.has(d.needs)))) continue;
       if (d.id === 'pour') continue; // pouring starts from the shelf
-      const b = btn(d.label, () => this.selectTool(d.id), { icon: d.icon, title: `${d.label} (${d.key})`, act: 'tool-' + d.id });
+      const b = btn(d.label, () => this.selectTool(d.id), { icon: d.icon, title: `${d.title || d.label} (${d.key})`, act: 'tool-' + d.id });
       this.toolBtns[d.id] = b;
       t.appendChild(b);
     }
-    t.appendChild(btn('Sample', () => this.sampleVial(), { icon: 'jar', title: 'Measure what the tap would draw', act: 'sample' }));
+    t.appendChild(btn('Sample', () => this.sampleVial(), { icon: 'jar', title: 'Sample: measure what a bottle drawn from the tap would hold', act: 'sample' }));
     t.appendChild(h('div', { class: 'sep' }));
     this.actionsEl = h('div', { class: 'acts' });
     t.appendChild(this.actionsEl);
@@ -507,7 +516,7 @@ export class LabScreen {
     const d = clear(this.doseEl);
     this.groundBtn = btn('Ground', () => { this.ground = !this.ground; this.syncGround(); audio.play('select'); }, { icon: 'mortar', title: 'Grind in the mortar before pouring', act: 'ground' });
     this.selName = h('span', { class: 'sel-name' });
-    d.append(this.selName);
+    d.append(icon('pour', 'sm'), this.selName);
     for (const ml of [25, 50, 100, 250]) d.append(btn(`${ml}`, () => this.pourDose(ml), { title: `Pour exactly ${ml} ml`, act: 'dose-' + ml }));
     d.append(h('span', { class: 'muted dose-note', text: 'ml' }), this.groundBtn);
     this.syncGround();
@@ -712,7 +721,7 @@ export class LabScreen {
   updatePourHint() {
     if (this.tool !== 'pour') return;
     const m = this.selected ? this.state.lookup(this.selected) : null;
-    this.pourHint.textContent = m ? `Hold in the cauldron to ${m.form === 'solid' && !this.ground ? 'drop in' : 'pour'} ${m.name}` : 'Tap a jar on the shelf';
+    this.pourHint.textContent = m ? `Hold in the cauldron to ${m.form === 'solid' && !this.ground ? 'drop it in' : 'pour'}` : 'Tap a jar on the shelf';
   }
 
   clampPourX(x) {
@@ -733,7 +742,7 @@ export class LabScreen {
     if (avail <= 0) {
       audio.play('error');
       const m = this.state.lookup(id);
-      toast('Out of stock', m.remains ? 'A rabbit’s remains are recovered only once.' : m.wild && m.tier > this.state.rank ? `Gather more ${m.name} in the Wilds.` : `Buy more ${m.name} at the market${m.wild ? ' or gather it in the Wilds' : ''}.`, m.remains ? 'bone' : m.wild ? 'tree' : 'bag');
+      toast('Out of stock', m.remains ? 'A rabbit’s remains are recovered only once.' : m.wild && m.tier > this.state.rank ? `Gather more ${m.name} in the Wilds.` : `Buy more ${m.name} in the Shop${m.wild ? ' or gather it in the Wilds' : ''}.`, m.remains ? 'bone' : m.wild ? 'tree' : 'bag');
       return;
     }
     if (this.sim.p.count >= this.sim.maxParticles - 2) {
@@ -864,8 +873,8 @@ export class LabScreen {
     if (this.sandbox) return;
     const c = st.nextCustomer();
     if (c && withSound) audio.play('bell');
-    if (c && !c.tutorial) {
-      // the first order of a new kind explains itself once
+    if (c && !c.tutorial && !(this.tutorial && this.tutorial.active)) {
+      // the first order of a new kind explains itself once (never over the guided tour)
       if (c.activation && st.firstTip('activation')) toast('Awakened magic wanted', 'This order is stronger than sleeping magic can reach: the brew must be awakened past its arcane threshold. See How to play → Arcane awakening, or ask the guild.', 'awaken', 8000);
       else if (c.requirements.some((r) => r.key === 'purity') && st.firstTip('purity')) toast('A pure potion', '“No other effect above 1.2 %”: every effect the customer did not ask for must stay that faint. Test for them too.', 'pure', 7000);
     }
@@ -1511,6 +1520,9 @@ export class LabScreen {
 
   toggleBrewInfo() {
     this.brewPanel.classList.toggle('hidden');
+    const open = !this.brewPanel.classList.contains('hidden');
+    this.stageEl.classList.toggle('info-open', open);
+    this.infoBtn.classList.toggle('active', open);
     this.updateBrewPanel(true);
   }
 
@@ -1554,7 +1566,7 @@ export class LabScreen {
         ? `Recipe “${similar.recipe.name}”: the same ingredients, but its procedure is only approximate — test this batch rather than rely on what it recorded.`
         : `Recipe “${similar.recipe.name}”: the same ingredients, but not yet prepared the same way (${similar.differences.slice(0, 2).join('; ')}) — follow its steps before you rely on what it recorded.` }) : null,
       h('div', { class: 'small know' }, h('b', { text: 'Verified ' }), Object.keys(cert.values).length ? Object.entries(cert.values).map(([k, v]) => h('span', { class: 'fx-chip', title: EFFECT_BY_KEY[k].label }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(v)}`)) : h('span', { class: 'muted', text: cert.changed ? 'outdated — retest' : 'nothing yet' })),
-      h('div', { class: 'small muted', text: known ? 'Theory adds up what each ingredient is known to do; Recipe is what this recipe did when it was tested. Only a trial of this batch counts as verified.' : 'Theory adds up what each ingredient is known to do. The real brew can differ: test it.' }),
+      h('div', { class: 'small muted', text: `Theory: what the ingredients do on paper.${known ? ' Recipe: what this recipe did when tested.' : ''} Verified: trials of this batch — the only proof.` }),
     ].filter(Boolean));
     void force;
   }
@@ -1619,16 +1631,17 @@ export class LabScreen {
       this.rankName.textContent = RANKS[r].name;
       const prog = next ? (st.reputation - RANKS[r].rep) / (next.rep - RANKS[r].rep) : 1;
       this.rankBar.style.width = Math.round(Math.max(0, Math.min(1, prog)) * 100) + '%';
-      this.rankBar.parentElement.title = `Reputation ${st.reputation}${next ? ' / ' + next.rep : ''}`;
-      clear(this.dayEl).append(h('span', { text: `Day ${st.day} · ${Math.min(st.customerIndex + (st.current ? 1 : 0), st.customersPerDay)}/${st.customersPerDay}` }), h('span', { class: 'event', text: st.marketEvent.key !== 'none' ? st.marketEvent.name : '' }));
+      this.rankBar.parentElement.parentElement.title = `Rank: ${RANKS[r].name} · reputation ${st.reputation}${next ? ` of ${next.rep} for ${next.name}` : ''}`;
+      const guest = Math.min(st.customerIndex + (st.current ? 1 : 0), st.customersPerDay);
+      this.dayEl.title = `Day ${st.day}: customer ${guest} of ${st.customersPerDay} today${st.marketEvent.key !== 'none' ? ` · ${st.marketEvent.name}` : ''}`;
+      clear(this.dayEl).append(h('span', { text: `Day ${st.day}` }), h('span', { class: 'guests', text: `Customer ${guest}/${st.customersPerDay}` }), ...(st.marketEvent.key !== 'none' ? [h('span', { class: 'event', text: st.marketEvent.name })] : []));
     }
     this.syncActions();
     const f = this.sim.furnace.setting;
     const c = this.sim.cauldron;
-    const label = f > 0.02 ? `Fire ${Math.round(f * 100)}%` : f < -0.02 ? `Frost ${Math.round(-f * 100)}%` : 'Off';
+    const label = f > 0.02 ? `Heat ${Math.round(f * 100)}%` : f < -0.02 ? `Cool ${Math.round(-f * 100)}%` : 'Off';
     this.furnaceLabel.textContent = `${label} · ${Math.round(c.bottomTemperature())}°C`;
-    const want = iconUrl(f < -0.02 ? 'snow' : 'flame');
-    if (this.furnaceIcon.src !== want) this.furnaceIcon.src = want;
+    this.furnaceLabel.title = 'Setting, and the temperature of the cauldron floor';
     if (full) this.updateShelf();
     this.updateChips();
   }
@@ -1647,9 +1660,10 @@ export class LabScreen {
     const p = sim.p;
     let T = 0, n = 0, gas = 0;
     for (let i = 0; i < p.count; i++) { if (p.phase[i] === PHASE.GAS) gas++; else { T += p.temp[i]; n++; } }
+    const info = `${p.count * SIM.ML_PER_PARTICLE} / ${sim.maxParticles * SIM.ML_PER_PARTICLE} ml${n ? ` · ${Math.round(T / n)}°C` : ''}`;
+    if (this.infoText.textContent !== info) this.infoText.textContent = info;
     /** @type {{text:string, act?:string, cls?:string, title?:string, on?:()=>void, key?:string}[]} */
-    const list = [{ text: `${p.count * SIM.ML_PER_PARTICLE} / ${sim.maxParticles * SIM.ML_PER_PARTICLE} ml` }];
-    if (n) list.push({ text: `${Math.round(T / n)}°C` });
+    const list = [];
     if (gas > 0) list.push({ text: `Vapour ${gas * SIM.ML_PER_PARTICLE} ml${sim.cauldron.lidClosed ? '' : ' (escaping!)'}` });
     if (this.autoBrewer) list.push({ text: `Homunculus: ${this.autoBrewer.status}` });
     else if (!this.bottling) {
@@ -1662,7 +1676,7 @@ export class LabScreen {
     const sig = list.map((x) => x.text + '|' + (x.title || '')).join('/');
     if (sig === this._chipSig) return;
     this._chipSig = sig;
-    const c = clear(this.chips);
+    const c = clear(this.chipList);
     for (const x of list) {
       c.append(x.act ? h('button', { class: 'chip chip-btn' + (x.cls ? ' ' + x.cls : ''), 'data-act': x.act, ...(x.key ? { 'data-advice': x.key } : {}), title: x.title || '', onclick: x.on }, x.text) : h('div', { class: 'chip', text: x.text }));
     }

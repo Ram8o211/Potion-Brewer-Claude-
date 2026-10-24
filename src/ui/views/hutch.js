@@ -67,7 +67,7 @@ export class HutchPanel {
       icon('rabbit'), h('b', { text: 'The hutch' }), h('span', { class: 'small muted', text: `${live.length} of ${cap} places` }),
       feral.length ? h('span', { class: 'feral-warn small' }, icon('claw', 'sm'), ` ${feral.map((r) => r.name).join(', ')} attacking the others!`) : null));
     const manage = [h('div', { class: 'hutch-actions' },
-      btn(price ? `Buy · ${price}` : 'Buy', () => this.buy(), { icon: 'plus', act: 'colony-buy', disabled: full || (!lab.sandbox && st.coins < price), title: full ? `The hutch is full (${cap} places): upgrade it at the guild.` : 'Buy an adult rabbit from the breeder' }),
+      btn(price ? `Buy · ${price}` : 'Buy', () => this.buy(), { icon: 'plus', act: 'colony-buy', disabled: full || (!lab.sandbox && st.coins < price), title: full ? `The hutch is full (${cap} places): more places are sold in the Shop.` : 'Buy an adult rabbit from the breeder' }),
       btn(fed ? 'Fed' : lab.sandbox ? 'Feed' : `Feed · ${st.feedCost()}`, () => this.feed(), { icon: 'leaf', act: 'colony-feed', disabled: fed || !live.length, title: 'Hay and greens: they recover faster and pair up more readily tonight' }),
       btn(c.breed ? 'Breeding on' : 'Breeding off', () => this.toggleBreed(), { icon: 'nest', cls: c.breed ? 'active' : '', act: 'colony-breed', title: 'Let healthy, unrelated adults pair up overnight' }),
       lab.sandbox ? btn('Next day', () => this.nextDay(), { icon: 'clock', act: 'colony-day', title: 'Let a night pass in the hutch' }) : null)];
@@ -80,7 +80,7 @@ export class HutchPanel {
       lab.sandbox ? null : btn(`Buy · ${st.purgePrice()}`, () => this.buyPurge(), { icon: 'coin', act: 'purge-buy', disabled: st.coins < st.purgePrice(), title: 'A purging draught from the apothecary: washes every potion effect out of a rabbit and stops degeneration' }),
       lab.sandbox ? null : (st.has('still')
         ? btn(brewing ? 'Brewing…' : 'Brew · 1', () => this.brewPurge(), { icon: 'alembic', act: 'purge-brew', disabled: brewing || st.coins < 1, title: 'Brew a purging draught in your still' })
-        : h('span', { class: 'small muted', text: 'Brew your own with the Purging Still (guild)' })),
+        : h('span', { class: 'small muted', text: 'Brew your own with a Purging Still (Shop)' })),
       this.d.still));
     // ---- the scene: rabbits going about their lives
     this.canvas = /** @type {HTMLCanvasElement} */ (h('canvas', { width: String(HUTCH_W), height: String(HUTCH_H), class: 'hutch-scene', role: 'img', 'aria-label': `The hutch: ${live.length} rabbits${bodies(c).length ? ` and ${bodies(c).length} bodies` : ''}. Tap a rabbit to choose it.` }));
@@ -93,12 +93,15 @@ export class HutchPanel {
     // ---- dose the chosen rabbit right here
     const chosen = findRabbit(c, c.focus);
     const view = this.view, dose = view.doseMl(), avail = view.available();
+    el.append(h('div', { class: 'dose-ctl' }, ...view.doseControls()));
     if (chosen && chosen.alive) {
       el.append(h('div', { class: 'dose-bar' },
         view.dropper,
         btn(`Give ${dose} ml to ${chosen.name}`, () => view.test('rabbit'), { cls: 'primary', icon: 'dropper', act: 'test-rabbit', disabled: dose <= 0 || avail <= 0, title: `Give ${chosen.name} ${dose} ml from the ${view.source === 'vial' ? 'sealed vial' : 'cauldron tap'}` })));
     } else if (chosen) {
       el.append(h('div', { class: 'dose-bar' }, h('span', { class: 'small', text: `${chosen.name} is dead: choose a living rabbit to dose.` })));
+    } else {
+      el.append(h('div', { class: 'dose-bar' }, h('span', { class: 'small', text: 'Tap a rabbit to choose it.' })));
     }
     // ---- the roster
     const tiles = h('div', { class: 'rabbit-tiles', role: 'listbox', 'aria-label': 'Rabbits' });
