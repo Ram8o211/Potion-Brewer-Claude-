@@ -72,6 +72,8 @@ test('gathering in the wilds fills the stores and depletes the deposit', async (
   await drag(page, [mpt, mpt], 30);
   expect(await lab(page, (l, id) => l.state.stock(id), m0.materialId), 'tapping a meadow plant gathered').toBeGreaterThan(ms0);
   expect(await page.evaluate(() => [...document.querySelectorAll('.view-wilds .deposit canvas')].some((c) => /** @type {HTMLCanvasElement} */ (c).width === 24)), 'a card shows its plant icon').toBe(true);
+  // (the screenshot without the toasts of the first gathering over the scene)
+  await page.evaluate(() => document.querySelectorAll('.toast').forEach((t) => t.remove()));
   await shot(page, info, 'wilds-meadow');
   // a magical region is closed to an apprentice
   await page.click('[data-act=region-moonfen]');
