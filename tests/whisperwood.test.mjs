@@ -39,6 +39,8 @@ test('every Whisperwood ingredient has gatherable art; nothing else does', () =>
     assert.ok(FRAMES[n + '_far'] && FRAMES[n + '_near'], n);
     assert.ok(FRAMES[n + '_near'][3] > FRAMES[n + '_far'][3], `${n}: the near oak is the finer, larger reduction`);
   }
+  // the right-hand oaks are mirrored in the atlas (not at draw time), so their shaded bark is lit from the left
+  for (const n of ['oak_round_01', 'oak_wide_03']) assert.deepEqual(FRAMES[n + '_near_m'].slice(2), FRAMES[n + '_near'].slice(2), n);
 });
 
 test('a gatherable shows what can be done with it', () => {

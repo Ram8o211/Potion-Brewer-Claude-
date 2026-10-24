@@ -224,7 +224,7 @@ computed from the particles that actually run out of the tap. What a
   hutch with a hay rack, a thatched hide box and a fence, shaded rabbits,
   and wood-grain, parchment and nail textures on the interface.
 * **Whisperwood sprites:** the forest is composed from a small sprite atlas
-  (`assets/whisperwood/atlas.png`, 19 KB): trees, shrubs, rocks, a stump,
+  (`assets/whisperwood/atlas.png`, 24 KB): trees, shrubs, rocks, a stump,
   logs and wildflowers around the painted sky and clearing, and one
   outlined sprite per forest ingredient (Ironroot, Silverleaf, Nightshade,
   Owlberry, Emberbark, Witch’s Ear, Mandrake) with hover, harvesting and
