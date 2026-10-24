@@ -174,3 +174,29 @@ export async function pourDose(page, id, doses) {
     await page.waitForFunction(() => !(/** @type {any} */ (window).__alchemist.screen.sim.emitter.pouring), null, { timeout: 30_000 });
   }
 }
+
+/** Whole solids (herbs, roots, stones) in the cauldron. @param {import('@playwright/test').Page} page */
+export function wholeSolids(page) {
+  return lab(page, (l) => { const p = l.sim.p; let n = 0; for (let i = 0; i < p.count; i++) if (p.phase[i] === 3) n++; return n; });
+}
+
+/** Pick Crush and drag the pestle back and forth over the whole solids, as a player does, until none is left (or the strokes run out). @param {import('@playwright/test').Page} page */
+export async function crushInPot(page, rounds = 30) {
+  await page.click('[data-act=tool-pestle]');
+  const box = await page.locator('canvas.view-canvas').boundingBox();
+  if (!box) throw new Error('no canvas');
+  for (let r = 0; r < rounds; r++) {
+    // aim at the lowest whole piece (screen px from the renderer's view)
+    const c = await lab(page, (l) => {
+      const p = l.sim.p; let k = -1;
+      for (let i = 0; i < p.count; i++) if (p.phase[i] === 3 && (k < 0 || p.y[i] > p.y[k])) k = i;
+      if (k < 0) return null;
+      const [sx, sy] = l.renderer.toScreen(p.x[k], p.y[k]);
+      return { x: sx * l.renderer.artPx, y: sy * l.renderer.artPx, w: l.renderer.view.scale * l.renderer.artPx };
+    });
+    if (!c) return;
+    const pts = [];
+    for (let k = 0; k <= 16; k++) pts.push({ x: box.x + c.x + Math.sin(k / 2) * c.w * 0.18, y: box.y + c.y - c.w * 0.08 + Math.abs(Math.cos(k / 2)) * c.w * 0.2 });
+    await drag(page, pts, 30);
+  }
+}

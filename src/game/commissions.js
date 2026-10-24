@@ -131,8 +131,8 @@ function prepFor(m, ctx, solvents) {
     const compat = solvents.find((l) => compatFactor(m.compat[0], m.compat[1], l.compat[0], l.compat[1]) > 0.6);
     return { solvent: compat || null, heatTo: 20, coolTo: 20, hold: 12 };
   }
-  const ground = m.form === 'solid' ? (ctx.cap.has('mortar') ? true : null) : false;
-  if (ground === null) return null;
+  // a whole solid is crushed in the pot with the pestle (every kit has one)
+  const ground = m.form === 'solid';
   // its own extraction (steeping, infusing, a tincture in spirit, fire into oil)
   const rx = ctx.world.reactions.find((r) => r.a === m.id && (r.wet || r.kind === 'mix' || r.kind === 'contact') && r.products.length === 1 && /^rw_(extract|steep|infuse|mandrake|starquartz|dragonoil)/.test(r.id));
   if (rx) {
@@ -281,7 +281,7 @@ function composePlan(pick, wanted, exclude, ctx, solvents, n, o, pool) {
   const solidFrac = (id) => ctx.lookup(id).form !== 'liquid';
 
   /** the plain plan for a list of ingredients (finish() adds the stages) */
-  const plainPlan = (ing) => /** @type {import('./predict.js').BrewPlan} */ ({ ingredients: ing, heatTo: Math.max(20, o.serve), coolTo: Math.min(20, o.serve), serveTemp: o.serve, knead: ing.some((i) => solidFrac(i.id)), hold: 8 });
+  const plainPlan = (ing) => /** @type {import('./predict.js').BrewPlan} */ ({ ingredients: ing, heatTo: Math.max(20, o.serve), coolTo: Math.min(20, o.serve), serveTemp: o.serve, knead: ing.some((i) => solidFrac(i.id)), crush: ing.some((i) => solidFrac(i.id) && ctx.lookup(i.id).form === 'solid'), hold: 8 });
   /** a plan from shares of the brew per ingredient (the solvent fills the rest) */
   const build = (x) => {
     let used = 0, solids = 0;
@@ -294,7 +294,7 @@ function composePlan(pick, wanted, exclude, ctx, solvents, n, o, pool) {
     for (const [id, f] of x) {
       const c = Math.round(n * f);
       if (c < 1) continue;
-      ing.push({ id, n: c, ground: solidFrac(id) && ctx.lookup(id).form === 'solid' && ctx.cap.has('mortar') ? true : undefined });
+      ing.push({ id, n: c });
     }
     if (ing.length < 2) return null;
     return plainPlan(ing);
@@ -847,7 +847,7 @@ export const TUTORIAL_HERBS = { healer: 'wild-silverleaf', warmer: 'wild-sunthis
 export function tutorialCommission(ctx, rng) {
   const R = ctx.world.roles;
   const { healer, warmer } = TUTORIAL_HERBS;
-  const plan = { ingredients: [{ id: R.water, n: 22 }, { id: healer, n: 10, ground: true }, { id: warmer, n: 5, ground: true }], heatTo: 62, coolTo: 20, serveTemp: 20, steep: { T: 62, hold: 22 }, knead: true, hold: 8 };
+  const plan = { ingredients: [{ id: R.water, n: 22 }, { id: healer, n: 10 }, { id: warmer, n: 5 }], heatTo: 62, coolTo: 20, serveTemp: 20, steep: { T: 62, hold: 22 }, knead: true, crush: true, hold: 8 };
   const pred = predictPlan(ctx.world, ctx.lookup, plan);
   const vit = Math.max(4, Math.round(pred.effects[EFFECT_INDEX.vitality] * 0.7));
   const arch = archetypeOf('farmer');

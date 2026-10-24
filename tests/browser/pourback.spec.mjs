@@ -4,13 +4,14 @@
 // of what the batch was made of, and — poured back into the unchanged batch
 // it came from — its trials still describe it.
 import { test, expect } from '@playwright/test';
-import { watchErrors, newGame, lab, pourRole } from './helpers.mjs';
+import { watchErrors, newGame, lab, pourRole, crushInPot } from './helpers.mjs';
 
 test('bottle, test a dose of the vial, pour the rest back', async ({ page }) => {
   const errors = watchErrors(page);
   await newGame(page, { tutorial: false, seed: 'pour-back-ui' });
   await pourRole(page, 'water', 150);
   await pourRole(page, 'wild-silverleaf', 50);
+  await crushInPot(page);
   const n0 = await lab(page, (l) => l.sim.p.count);
   await page.click('[data-act=bottle]');
   await page.click('[data-act=bottle-50]');
@@ -43,6 +44,7 @@ test('a tested bottle keeps its label through the shelf, a pour back into the em
   await newGame(page, { tutorial: false, seed: 'pour-back-label' });
   await pourRole(page, 'water', 150);
   await pourRole(page, 'wild-silverleaf', 100);
+  await crushInPot(page);
   // two trials of the batch (its label is drafted from them), then the whole cauldron onto the shelves
   await page.click('[data-act=tab-trials]');
   for (let k = 0; k < 2; k++) {

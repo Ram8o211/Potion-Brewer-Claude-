@@ -4,7 +4,7 @@
 // evidence level, the recipe book's recorded steps, what a customer weighs
 // in bargaining, and a guild shop that sells only tools with a purpose.
 import { test, expect } from '@playwright/test';
-import { watchErrors, shot, newGame, lab, pourDose } from './helpers.mjs';
+import { watchErrors, shot, newGame, lab, pourDose, crushInPot } from './helpers.mjs';
 
 /** Clear the toasts so a screenshot shows the room itself. @param {import('@playwright/test').Page} page */
 const clean = (page) => page.evaluate(() => document.querySelectorAll('.toast').forEach((t) => t.remove()));
@@ -61,18 +61,17 @@ test('advice read off the cauldron, a trial’s margin and level, and a recipe t
   const errors = watchErrors(page);
   await newGame(page, { tutorial: false, seed: 'integration-2' });
   const water = await lab(page, (l) => l.state.world.roles.water);
-  // whole leaves (the mortar switched off): the advice chip says to crush them
-  await lab(page, (l) => { l.pourGround = false; if (l.groundBtn) l.syncActions(); });
+  // whole leaves: the advice chip says to crush them
   await pourDose(page, water, [100]);
-  await lab(page, (l) => { l.pourGround = false; });
   await pourDose(page, 'wild-silverleaf', [25]);
   const whole = await lab(page, (l) => { const p = l.sim.p; let n = 0; for (let i = 0; i < p.count; i++) if (p.phase[i] === 3) n++; return n; });
   if (whole >= 3) await expect(page.locator('[data-act=advice-chip]')).toBeVisible({ timeout: 5000 });
-  // a proper brew: ground leaves and warmth
-  await lab(page, (l) => { l.sim.clear(); l.state.brewLog = []; l.state.newBatch(); l.pourGround = true; });
+  // a proper brew: leaves crushed with the pestle, and warmth
+  await lab(page, (l) => { l.sim.clear(); l.state.brewLog = []; l.state.newBatch(); });
   await pourDose(page, water, [100]);
   await pourDose(page, 'wild-silverleaf', [50]);
   await pourDose(page, 'wild-sunthistle', [25]);
+  await crushInPot(page);
   await lab(page, (l) => { l.setAutoStir(true); l.setFurnace(0.8); l.speed = 4; });
   await page.waitForFunction(() => { const p = window.__alchemist.screen.sim.p; let t = 0; for (let i = 0; i < p.count; i++) t += p.temp[i]; return t / p.count > 60; }, null, { timeout: 60_000, polling: 250 });
   await lab(page, (l) => l.setFurnace(0.15));
@@ -115,6 +114,7 @@ test('bargaining shows what the customer weighs; the guild sells only tools with
   const water = await lab(page, (l) => l.state.world.roles.water);
   await pourDose(page, water, [100]);
   await pourDose(page, 'wild-silverleaf', [50]);
+  await crushInPot(page);
   await page.click('[data-act=bottle]');
   const ml = await lab(page, (l) => l.state.current.bottleMl);
   await page.click(`[data-act=bottle-${ml}]`).catch(async () => { await page.locator('[data-act^=bottle-]').first().click(); });

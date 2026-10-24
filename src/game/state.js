@@ -1249,7 +1249,6 @@ export function migrate(raw) {
   if (d.version < 3) {
     // v3: effects and experiments, the wilds, sealed vials, batch identity.
     // Everything the player had is kept; the new systems start fresh.
-    if (!d.equipment.includes('mortar')) d.equipment = [...d.equipment, 'mortar'];
     d.trials = d.trials || null;
     d.gathering = d.gathering || null;
     d.vial = null;
@@ -1294,6 +1293,8 @@ export function migrate(raw) {
   }
   // every shop owns the starting kit (the pestle joined it in v6)
   for (const id of STARTING_EQUIPMENT) if (!d.equipment.includes(id)) d.equipment = [...d.equipment, id];
+  // the free starter mortar is retired: solids go in whole and the pestle crushes them
+  d.equipment = d.equipment.filter((id) => id !== 'mortar');
   if (d.world && Array.isArray(d.world.materials) && d.world.materials.length === 0) throw new Error('The save has no reagents');
   if (!d.inventory || typeof d.inventory !== 'object') throw new Error('The save has no inventory');
   return d;

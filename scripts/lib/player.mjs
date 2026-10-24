@@ -261,7 +261,7 @@ export function provision(st, parts, prof, clock, met) {
  * techniques the order asks for, as the order card's lessons say.
  */
 export function stagePlan(st, com, prof, parts, sim) {
-  const plan = { ingredients: parts.map((p) => ({ id: p.id, n: Math.max(1, Math.round(p.ml / SIM.ML_PER_PARTICLE)), ground: st.lookup(p.id).form === 'solid' ? true : undefined })), heatTo: 20, coolTo: 20, serveTemp: 20, knead: true, hold: 8 };
+  const plan = { ingredients: parts.map((p) => ({ id: p.id, n: Math.max(1, Math.round(p.ml / SIM.ML_PER_PARTICLE)), })), heatTo: 20, coolTo: 20, serveTemp: 20, knead: true, crush: parts.some((p) => st.lookup(p.id).form === 'solid'), hold: 8 };
   // extraction
   const wins = parts.map((p) => windowOf(st, p.id)).filter(Boolean);
   if (prof.windows && wins.length) {
@@ -315,7 +315,7 @@ export function brew(st, sim, plan, met, log) {
   }
   const ab = new AutoBrewer(sim, plan, st.lookup, {
     onPour: (id, n) => st.consume(id, n * SIM.ML_PER_PARTICLE),
-    onPoured: (id, n, ground) => log.push({ type: 'pour', id, ml: n * SIM.ML_PER_PARTICLE, t: Math.round(sim.time), ...(ground ? { ground: true } : {}) }),
+    onPoured: (id, n) => log.push({ type: 'pour', id, ml: n * SIM.ML_PER_PARTICLE, t: Math.round(sim.time) }),
   });
   let next = sim.time;
   for (let g = 0; !ab.done && g < 120 * 900; g++) {
@@ -331,7 +331,7 @@ export function brew(st, sim, plan, met, log) {
   }
   if (ab.failed) met.failedBrews++;
   // the processes this brew really used
-  if (plan.ingredients.some((i) => i.ground) || (plan.steps || []).some((s) => s.ground)) bump(met, 'grinding', 'processes');
+  if (plan.crush || (plan.steps || []).some((s) => s.op === 'crush')) bump(met, 'grinding', 'processes');
   if (plan.steep) bump(met, 'steeping', 'processes');
   if (plan.activate) bump(met, 'awakening', 'processes');
   if (plan.reduce) bump(met, 'boiling down', 'processes');
@@ -444,7 +444,7 @@ function neutraliser(st, key, sign, now, free) {
 /** Add an ingredient to the running brew (gathering or buying it first), steeping it in where it needs heat. */
 function addMore(st, sim, id, ml, prof, clock, met, log) {
   if (!provision(st, [{ id, ml }], prof, clock, met)) return false;
-  const plan = { ingredients: [{ id, n: Math.max(1, Math.round(ml / SIM.ML_PER_PARTICLE)), ground: st.lookup(id).form === 'solid' ? true : undefined }], heatTo: 20, coolTo: 20, serveTemp: 20, knead: true, hold: 6 };
+  const plan = { ingredients: [{ id, n: Math.max(1, Math.round(ml / SIM.ML_PER_PARTICLE)), }], heatTo: 20, coolTo: 20, serveTemp: 20, knead: true, crush: st.lookup(id).form === 'solid', hold: 6 };
   const w = windowOf(st, id);
   if (w && w.lo > 15) { const T = prof.windows ? Math.round((w.lo + Math.min(w.hi, 95)) / 2) : 60; plan.steep = { T, hold: 20 }; plan.heatTo = T; }
   brew(st, sim, plan, met, log);

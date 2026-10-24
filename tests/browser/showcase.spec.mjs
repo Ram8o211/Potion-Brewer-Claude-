@@ -4,7 +4,7 @@
 // labelling and bargaining; a customer back the next day; the wilds at
 // dusk in bad weather. Each scene also checks what it shows.
 import { test, expect } from '@playwright/test';
-import { watchErrors, shot, newGame, lab, pourRole } from './helpers.mjs';
+import { watchErrors, shot, newGame, lab, pourRole, crushInPot } from './helpers.mjs';
 import { weatherOn } from '../../src/game/gathering.js';
 
 const NE = 10;
@@ -17,6 +17,7 @@ test('an awakened brew glows in the colour of its magic', async ({ page }, info)
   await newGame(page, { tutorial: false, seed: 'showcase-glow' });
   await pourRole(page, 'water', 125);
   await pourRole(page, 'wild-silverleaf', 100);
+  await crushInPot(page);
   // stir until even, then heat past the blend's threshold with the fire control
   await lab(page, (l) => { l.setAutoStir(true); });
   await page.waitForTimeout(2500);
@@ -82,6 +83,7 @@ test('label, bargain, and the customer comes back with a complaint', async ({ pa
   await pourRole(page, 'water', 50);
   await pourRole(page, 'water', 50);
   await pourRole(page, 'wild-silverleaf', 50);
+  await crushInPot(page);
   await page.click('[data-act=bottle]');
   await page.click('[data-act=bottle-50]');
   await expect(page.locator('[data-act=serve]')).toBeVisible({ timeout: 20_000 });

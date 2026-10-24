@@ -503,16 +503,11 @@ export function renderCauldron(c, v) {
 }
 
 /**
- * Pre-render the closed lid: a flanged iron dome with a turned wooden knob,
- * on the same iron pixel as the cauldron. `topY(wx)` gives the dome's top
- * edge (screen px) above world x, so fittings can sit on it.
- * @param {import('../simulation/cauldron.js').Cauldron} c
- * @param {{scale:number, ox:number, oy:number}} v
+ * Paint the lid on iron pixels (S of them per world unit): a flanged iron
+ * dome with a turned wooden knob, flange at the bottom.
+ * @param {import('../simulation/cauldron.js').Cauldron} c @param {number} S
  */
-export function renderLid(c, v) {
-  const s = v.scale;
-  const p = s >= 70 ? 2 : 1;
-  const S = s / p;
+function paintLid(c, S) {
   const half = Math.round((c.mouth + 0.22) * S);
   const fh = Math.max(2, Math.round(0.1 * S)); // flange
   const dh = Math.max(3, Math.round(0.2 * S)); // dome rise
@@ -556,6 +551,21 @@ export function renderLid(c, v) {
   R(ctx, cx + Math.ceil(kw / 2) - 1, ky, 1, kh - 1, PAL.wood1);
   R(ctx, cx - Math.ceil(kw / 2), ky, Math.ceil(kw / 2) * 2, 1, PAL.wood4);
 
+  return { cv, cw, ch, cx, base, fh, domeH };
+}
+
+/**
+ * Pre-render the closed lid on the same iron pixel as the cauldron.
+ * `topY(wx)` gives the dome's top edge (screen px) above world x, so
+ * fittings can sit on it.
+ * @param {import('../simulation/cauldron.js').Cauldron} c
+ * @param {{scale:number, ox:number, oy:number}} v
+ */
+export function renderLid(c, v) {
+  const s = v.scale;
+  const p = s >= 70 ? 2 : 1;
+  const S = s / p;
+  const { cv, cw, ch, cx, base, fh, domeH } = paintLid(c, S);
   const w = cw * p, h = ch * p;
   const out = makeCanvas(w, h);
   const octx = out.getContext('2d');
@@ -567,8 +577,10 @@ export function renderLid(c, v) {
 }
 
 /**
- * Pre-render the lid when it is off: stood on its rim on the hearth and
- * leaning back against the left leg, dome toward us, knob in the middle.
+ * Pre-render the lid when it is off: the very same lid, full size, stood on
+ * its rim on the hearth against the left of the belly, dome and knob facing
+ * out. It is the closed lid's sprite transposed (a quarter turn and a
+ * mirror), so the light still falls from the upper left.
  * @param {import('../simulation/cauldron.js').Cauldron} c
  * @param {{scale:number, ox:number, oy:number}} v
  */
@@ -576,60 +588,26 @@ export function renderLidAside(c, v) {
   const s = v.scale;
   const p = s >= 70 ? 2 : 1;
   const S = s / p;
-  const hgt = Math.max(9, Math.round((c.mouth + 0.22) * 2 * 0.42 * S)); // stylised, like the jars on the shelves
-  const wid = Math.max(5, Math.round(hgt * 0.5));
-  const lean = Math.round(hgt * 0.16);
-  const cw = wid + lean + 4, ch = hgt + 3;
-  const a = wid / 2, b = hgt / 2;
-  const cv = makeCanvas(cw, ch);
-  const ctx = cv.getContext('2d');
-  const iron = [PAL.iron0, PAL.iron1, PAL.iron2, PAL.iron3, PAL.iron4, PAL.iron5, '#9a95a6'];
-  const inside = (x, y) => {
-    const off = lean * (1 - y / hgt); // the top leans to the right
-    const dx = (x + 0.5 - 1 - off - a) / a, dy = (y + 0.5 - 1 - b) / b;
-    return dx * dx + dy * dy <= 1 ? [dx, dy] : null;
-  };
-  for (let y = 0; y < ch; y++) {
-    for (let x = 0; x < cw; x++) {
-      const e = inside(x, y);
-      if (!e) continue;
-      const edge = !inside(x - 1, y) || !inside(x + 1, y) || !inside(x, y - 1) || !inside(x, y + 1);
-      if (edge) { R(ctx, x, y, 1, 1, '#08070a'); continue; }
-      const [dx, dy] = e;
-      const t2 = dx * dx + dy * dy;
-      const bay = (BAYER4[(x & 3) + (y & 3) * 4] + 0.5) / 16 - 0.5;
-      let lum;
-      if (t2 > 0.62) {
-        // the flange: a flat ring, bright where it faces the light
-        lum = 3.6 - dx * 1.2 - dy * 1.2;
-        if (t2 < 0.7) lum = 1.2; // the step up to the dome
-      } else {
-        // the dome bulges toward us: lit from the upper left
-        lum = 3.2 - dx * 2.0 - dy * 1.4;
-        if (Math.abs(dx + 0.35) < 0.12 && dy < 0 && dy > -0.55) lum += 1.5; // highlight streak
-      }
-      R(ctx, x, y, 1, 1, iron[Math.max(1, Math.min(6, Math.floor(lum + bay * 0.8 + 0.5)))]);
-    }
-  }
-  // wooden knob at the centre of the dome, seen end-on
-  const kx = Math.round(1 + a + lean / 2), ky = Math.round(1 + b);
-  const kr = Math.max(1, Math.round(0.06 * S));
-  for (let y = -kr - 1; y <= kr + 1; y++) for (let x = -kr - 1; x <= kr + 1; x++) {
-    const r = Math.hypot(x, y);
-    if (r > kr + 0.7) continue;
-    R(ctx, kx + x, ky + y, 1, 1, r > kr - 0.3 ? '#08070a' : x + y < 0 ? PAL.wood5 : PAL.wood3);
-  }
+  const { cv, cw, ch } = paintLid(c, S);
+  // transposed: the lid's height becomes its width, the flange faces the pot
+  const tw = ch, th = cw;
+  const t = makeCanvas(tw + 2, th + 1);
+  const tctx = t.getContext('2d');
+  tctx.imageSmoothingEnabled = false;
+  tctx.setTransform(0, 1, 1, 0, 0, 0);
+  tctx.drawImage(cv, 0, 0);
+  tctx.setTransform(1, 0, 0, 1, 0, 0);
   // contact shadow on the hearth
-  R(ctx, 1, ch - 2, wid, 1, 'rgba(0,0,0,0.35)');
-
-  const w = cw * p, h = ch * p;
+  R(tctx, 0, th, tw + 2, 1, 'rgba(0,0,0,0.4)');
+  const w = (tw + 2) * p, h = (th + 1) * p;
   const out = makeCanvas(w, h);
   const octx = out.getContext('2d');
   octx.imageSmoothingEnabled = false;
-  octx.drawImage(cv, 0, 0, w, h);
-  // right edge rests on the outside of the left leg, rim on the hearth
-  const legOut = v.ox + (-c.belly * 0.6 - 0.16) * s;
-  const x = Math.round(legOut - w), y = Math.round(v.oy + (c.depth + 0.4) * s) - h + p;
+  octx.drawImage(t, 0, 0, w, h);
+  // the flange rests against the widest part of the belly, the rim stands
+  // where the feet do
+  const x = Math.round(v.ox + (-c.belly - 0.1) * s) - tw * p;
+  const y = Math.round(v.oy + (c.depth + 0.4) * s) - th * p;
   return { canvas: out, x, y };
 }
 

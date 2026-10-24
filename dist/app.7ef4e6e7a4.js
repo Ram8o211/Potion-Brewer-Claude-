@@ -2754,8 +2754,7 @@ if (m.form === 'solid' && m.melt < 15 && m.boil > 60) {
 const compat = solvents.find((l) => compatFactor(m.compat[0], m.compat[1], l.compat[0], l.compat[1]) > 0.6);
 return { solvent: compat || null, heatTo: 20, coolTo: 20, hold: 12 };
 }
-const ground = m.form === 'solid' ? (ctx.cap.has('mortar') ? true : null) : false;
-if (ground === null) return null;
+const ground = m.form === 'solid';
 const rx = ctx.world.reactions.find((r) => r.a === m.id && (r.wet || r.kind === 'mix' || r.kind === 'contact') && r.products.length === 1 && /^rw_(extract|steep|infuse|mandrake|starquartz|dragonoil)/.test(r.id));
 if (rx) {
 const solvent = rx.b ? solvents.find((l) => l.id === rx.b) : water;
@@ -2849,7 +2848,7 @@ if (stageT === null) return null;
 const temps = stageT === null ? quietServe : [stageT, ...quietServe];
 const helpers = pool.filter((m) => !uniq.includes(m) && arcaneRegime([...uniq.map((c) => c.id), m.id], ctx.lookup, temps) === 'quiet');
 const solidFrac = (id) => ctx.lookup(id).form !== 'liquid';
-const plainPlan = (ing) => /** @type {import('./predict.js').BrewPlan} */ ({ ingredients: ing, heatTo: Math.max(20, o.serve), coolTo: Math.min(20, o.serve), serveTemp: o.serve, knead: ing.some((i) => solidFrac(i.id)), hold: 8 });
+const plainPlan = (ing) => /** @type {import('./predict.js').BrewPlan} */ ({ ingredients: ing, heatTo: Math.max(20, o.serve), coolTo: Math.min(20, o.serve), serveTemp: o.serve, knead: ing.some((i) => solidFrac(i.id)), crush: ing.some((i) => solidFrac(i.id) && ctx.lookup(i.id).form === 'solid'), hold: 8 });
 const build = (x) => {
 let used = 0, solids = 0;
 for (const [id, f] of x) { used += f; if (solidFrac(id)) solids += f; }
@@ -2860,7 +2859,7 @@ if (ns >= 2) ing.push({ id: solvent.id, n: ns });
 for (const [id, f] of x) {
 const c = Math.round(n * f);
 if (c < 1) continue;
-ing.push({ id, n: c, ground: solidFrac(id) && ctx.lookup(id).form === 'solid' && ctx.cap.has('mortar') ? true : undefined });
+ing.push({ id, n: c });
 }
 if (ing.length < 2) return null;
 return plainPlan(ing);
@@ -3280,7 +3279,7 @@ const TUTORIAL_HERBS = { healer: 'wild-silverleaf', warmer: 'wild-sunthistle' };
 function tutorialCommission(ctx, rng) {
 const R = ctx.world.roles;
 const { healer, warmer } = TUTORIAL_HERBS;
-const plan = { ingredients: [{ id: R.water, n: 22 }, { id: healer, n: 10, ground: true }, { id: warmer, n: 5, ground: true }], heatTo: 62, coolTo: 20, serveTemp: 20, steep: { T: 62, hold: 22 }, knead: true, hold: 8 };
+const plan = { ingredients: [{ id: R.water, n: 22 }, { id: healer, n: 10 }, { id: warmer, n: 5 }], heatTo: 62, coolTo: 20, serveTemp: 20, steep: { T: 62, hold: 22 }, knead: true, crush: true, hold: 8 };
 const pred = predictPlan(ctx.world, ctx.lookup, plan);
 const vit = Math.max(4, Math.round(pred.effects[EFFECT_INDEX.vitality] * 0.7));
 const arch = archetypeOf('farmer');
@@ -3327,8 +3326,7 @@ const EQUIPMENT = [
 { id: 'basin', name: 'Cold-Water Basin', category: 'cold', price: 0, rank: 0, icon: 'basin', mechanics: ['cold-extraction'], desc: 'Cool well water under the cauldron: chills a brew to about 9°C — cold enough for most ice-cold steeps, never colder.', effect: { minCool: 4, coolPower: 4 } },
 { id: 'pot', name: 'Iron Pot', category: 'vessel', price: 0, rank: 0, icon: 'cauldron', mechanics: ['batch'], desc: 'Your first cauldron (about 1.5 litres).', effect: { size: 'pot' } },
 { id: 'spoon', name: 'Oak Spoon', category: 'tool', price: 0, rank: 0, icon: 'spoon', mechanics: ['mixing'], desc: 'Stirs, folds and kneads.' },
-{ id: 'mortar', name: 'Stone Mortar', category: 'tool', price: 0, rank: 0, icon: 'mortar', mechanics: ['extraction'], desc: 'Grinds roots, leaves and stones into powder before they go into the pot ("Ground" on the shelf).' },
-{ id: 'pestle', name: 'Granite Pestle', category: 'tool', price: 0, rank: 0, icon: 'pestle', mechanics: ['extraction'], desc: 'Crushes whole herbs already in the pot, frozen blocks and crystal chunks into grains.' },
+{ id: 'pestle', name: 'Granite Pestle', category: 'tool', price: 0, rank: 0, icon: 'pestle', mechanics: ['extraction'], desc: 'Crushes whole herbs, roots and stones in the pot, frozen blocks and crystal chunks into grains. Everything solid goes in whole: only the pestle breaks it up.' },
 { id: 'thermometer', name: 'Mercury Thermometer', category: 'instrument', price: 0, rank: 0, icon: 'thermo', mechanics: ['steeping'], desc: 'Reads temperatures anywhere in the brew.' },
 { id: 'kit', name: 'Forager’s Kit', category: 'gathering', price: 60, rank: 0, icon: 'trowel', mechanics: ['gathering'], desc: 'Trowel, rock hammer, sickle and brush: roots, mineral seams, mosses and fine dust come up whole. Without it you scrabble up half as much of anything you cannot simply pick.' },
 { id: 'satchel', name: 'Forager’s Satchel', category: 'gathering', price: 80, rank: 1, icon: 'satchel', mechanics: ['gathering'], desc: 'Carry more from the wilds: each harvest gathers half as much again.' },
@@ -3347,7 +3345,7 @@ const EQUIPMENT = [
 { id: 'grand', name: 'Grand Athanor Vessel', category: 'vessel', price: 1800, rank: 4, icon: 'cauldron3', requires: ['copper'], mechanics: ['batch'], desc: 'A huge vessel (3 litres) for the grandest commissions and whole shelves from one batch.', effect: { size: 'grand' } },
 { id: 'charter', name: 'Guild Charter', category: 'guild', price: 400, rank: 2, icon: 'charter', mechanics: ['commerce'], desc: 'Guild membership: 15% off all reagents, and the day’s last customer brings a guild contract — a larger bottle for a much larger fee.', effect: { discount: 0.15 } },
 ];
-const STARTING_EQUIPMENT = ['hearth', 'basin', 'pot', 'spoon', 'mortar', 'pestle', 'thermometer'];
+const STARTING_EQUIPMENT = ['hearth', 'basin', 'pot', 'spoon', 'pestle', 'thermometer'];
 const BASE_STORAGE = 2500;
 const BASE_BOTTLES = 3;
 const BASE_HUTCH = 4;
@@ -8424,7 +8422,7 @@ stir += samples[si][2] * dt;
 crush += samples[si][3] * dt;
 si++;
 }
-if (crush >= 2) steps.push({ op: 'crush', s: Math.round(crush) });
+if (crush > 0) steps.push({ op: 'crush', s: Math.max(10, Math.round(crush)) });
 if (stir >= 3) steps.push({ op: 'stir', s: Math.round(stir) });
 };
 for (const ev of events) {
@@ -8581,7 +8579,7 @@ return agree ? 'agree' : 'differ';
 }
 function describeStep(s, lookup) {
 switch (s.op) {
-case 'pour': { const m = lookup(s.id); return `Add ${Math.round(s.ml)} ml ${m ? m.name : s.id}${s.ground ? ', ground' : ''}`; }
+case 'pour': { const m = lookup(s.id); return `Add ${Math.round(s.ml)} ml ${m ? m.name : s.id}${s.ground ? ', then crush it' : ''}`; }
 case 'stir': return `Stir ${s.s} s`;
 case 'crush': return `Crush with the pestle ${s.s} s`;
 case 'temp': return `${s.T > ROOM ? 'Heat' : 'Cool'} to ${s.T}°C and hold ${s.hold} s${s.loss ? `, lid open, until ${Math.round(s.loss * 100)} % has boiled away` : ''}${s.stir && s.stir > 0.4 ? ', stirring' : ''}`;
@@ -9519,7 +9517,6 @@ d.history = d.history || [];
 d.brewLog = d.brewLog || [];
 d.equipment = d.equipment && d.equipment.length ? d.equipment : STARTING_EQUIPMENT.slice();
 if (d.version < 3) {
-if (!d.equipment.includes('mortar')) d.equipment = [...d.equipment, 'mortar'];
 d.trials = d.trials || null;
 d.gathering = d.gathering || null;
 d.vial = null;
@@ -9552,6 +9549,7 @@ delete d.receiver;
 d.version = 6;
 }
 for (const id of STARTING_EQUIPMENT) if (!d.equipment.includes(id)) d.equipment = [...d.equipment, id];
+d.equipment = d.equipment.filter((id) => id !== 'mortar');
 if (d.world && Array.isArray(d.world.materials) && d.world.materials.length === 0) throw new Error('The save has no reagents');
 if (!d.inventory || typeof d.inventory !== 'object') throw new Error('The save has no inventory');
 return d;
@@ -10253,10 +10251,7 @@ if (fx < w && fy < h) wallPix.push(fx, fy, wallCells[k + 2]);
 }
 return { canvas: out, x: x0, y: y0, wallPix };
 }
-function renderLid(c, v) {
-const s = v.scale;
-const p = s >= 70 ? 2 : 1;
-const S = s / p;
+function paintLid(c, S) {
 const half = Math.round((c.mouth + 0.22) * S);
 const fh = Math.max(2, Math.round(0.1 * S)); // flange
 const dh = Math.max(3, Math.round(0.2 * S)); // dome rise
@@ -10296,6 +10291,13 @@ R(ctx, cx - Math.ceil(kw / 2), ky, Math.ceil(kw / 2) * 2, kh - 1, PAL.wood3);
 R(ctx, cx - Math.ceil(kw / 2), ky, 1, kh - 1, PAL.wood5);
 R(ctx, cx + Math.ceil(kw / 2) - 1, ky, 1, kh - 1, PAL.wood1);
 R(ctx, cx - Math.ceil(kw / 2), ky, Math.ceil(kw / 2) * 2, 1, PAL.wood4);
+return { cv, cw, ch, cx, base, fh, domeH };
+}
+function renderLid(c, v) {
+const s = v.scale;
+const p = s >= 70 ? 2 : 1;
+const S = s / p;
+const { cv, cw, ch, cx, base, fh, domeH } = paintLid(c, S);
 const w = cw * p, h = ch * p;
 const out = makeCanvas(w, h);
 const octx = out.getContext('2d');
@@ -10308,54 +10310,22 @@ function renderLidAside(c, v) {
 const s = v.scale;
 const p = s >= 70 ? 2 : 1;
 const S = s / p;
-const hgt = Math.max(9, Math.round((c.mouth + 0.22) * 2 * 0.42 * S)); // stylised, like the jars on the shelves
-const wid = Math.max(5, Math.round(hgt * 0.5));
-const lean = Math.round(hgt * 0.16);
-const cw = wid + lean + 4, ch = hgt + 3;
-const a = wid / 2, b = hgt / 2;
-const cv = makeCanvas(cw, ch);
-const ctx = cv.getContext('2d');
-const iron = [PAL.iron0, PAL.iron1, PAL.iron2, PAL.iron3, PAL.iron4, PAL.iron5, '#9a95a6'];
-const inside = (x, y) => {
-const off = lean * (1 - y / hgt); // the top leans to the right
-const dx = (x + 0.5 - 1 - off - a) / a, dy = (y + 0.5 - 1 - b) / b;
-return dx * dx + dy * dy <= 1 ? [dx, dy] : null;
-};
-for (let y = 0; y < ch; y++) {
-for (let x = 0; x < cw; x++) {
-const e = inside(x, y);
-if (!e) continue;
-const edge = !inside(x - 1, y) || !inside(x + 1, y) || !inside(x, y - 1) || !inside(x, y + 1);
-if (edge) { R(ctx, x, y, 1, 1, '#08070a'); continue; }
-const [dx, dy] = e;
-const t2 = dx * dx + dy * dy;
-const bay = (BAYER4[(x & 3) + (y & 3) * 4] + 0.5) / 16 - 0.5;
-let lum;
-if (t2 > 0.62) {
-lum = 3.6 - dx * 1.2 - dy * 1.2;
-if (t2 < 0.7) lum = 1.2; // the step up to the dome
-} else {
-lum = 3.2 - dx * 2.0 - dy * 1.4;
-if (Math.abs(dx + 0.35) < 0.12 && dy < 0 && dy > -0.55) lum += 1.5; // highlight streak
-}
-R(ctx, x, y, 1, 1, iron[Math.max(1, Math.min(6, Math.floor(lum + bay * 0.8 + 0.5)))]);
-}
-}
-const kx = Math.round(1 + a + lean / 2), ky = Math.round(1 + b);
-const kr = Math.max(1, Math.round(0.06 * S));
-for (let y = -kr - 1; y <= kr + 1; y++) for (let x = -kr - 1; x <= kr + 1; x++) {
-const r = Math.hypot(x, y);
-if (r > kr + 0.7) continue;
-R(ctx, kx + x, ky + y, 1, 1, r > kr - 0.3 ? '#08070a' : x + y < 0 ? PAL.wood5 : PAL.wood3);
-}
-R(ctx, 1, ch - 2, wid, 1, 'rgba(0,0,0,0.35)');
-const w = cw * p, h = ch * p;
+const { cv, cw, ch } = paintLid(c, S);
+const tw = ch, th = cw;
+const t = makeCanvas(tw + 2, th + 1);
+const tctx = t.getContext('2d');
+tctx.imageSmoothingEnabled = false;
+tctx.setTransform(0, 1, 1, 0, 0, 0);
+tctx.drawImage(cv, 0, 0);
+tctx.setTransform(1, 0, 0, 1, 0, 0);
+R(tctx, 0, th, tw + 2, 1, 'rgba(0,0,0,0.4)');
+const w = (tw + 2) * p, h = (th + 1) * p;
 const out = makeCanvas(w, h);
 const octx = out.getContext('2d');
 octx.imageSmoothingEnabled = false;
-octx.drawImage(cv, 0, 0, w, h);
-const legOut = v.ox + (-c.belly * 0.6 - 0.16) * s;
-const x = Math.round(legOut - w), y = Math.round(v.oy + (c.depth + 0.4) * s) - h + p;
+octx.drawImage(t, 0, 0, w, h);
+const x = Math.round(v.ox + (-c.belly - 0.1) * s) - tw * p;
+const y = Math.round(v.oy + (c.depth + 0.4) * s) - th * p;
 return { canvas: out, x, y };
 }
 function makeCanvas(w, h) {
@@ -11928,7 +11898,9 @@ this.phase = 0;
 this.status = 'Preparing';
 this.failed = false;
 this.held = 0;
-this.steps = /** @type {any[]|null} */ (/** @type {any} */ (plan).steps || null);
+this.crushTarget = -1;
+const steps = /** @type {any} */ (plan).steps;
+this.steps = /** @type {any[]|null} */ (steps ? steps.flatMap((s) => (s.op === 'pour' && s.ground ? [{ ...s, ground: undefined }, { op: 'crush', s: 60 }] : [s])) : null);
 this.stepIndex = 0;
 this.target = 20;
 this.reduceFrom = 0;
@@ -11990,18 +11962,7 @@ this.pourOne(ing);
 return;
 }
 case 'crush': {
-this.status = 'Grinding solids';
-const p = sim.p;
-let solids = 0, sx = 0, sy = 0;
-for (let i = 0; i < p.count; i++) if (p.phase[i] === PHASE.SOLID) { solids++; sx += p.x[i]; sy += p.y[i]; }
-if (solids === 0 || this.stageT > 25) { this.release(); this.next('stir'); return; }
-const t = sim.tool;
-t.type = 'pestle';
-this.phase += dt * 9;
-const cx = sx / solids, cy = sy / solids;
-t.setTarget(cx + Math.sin(this.phase * 0.6) * 0.35, cy + Math.abs(Math.sin(this.phase)) * 0.3 - 0.05, true);
-t.beginFrame();
-t.substep(0, 1);
+if (!this.crushSolids() || this.stageT > 90) { this.release(); this.next('stir'); }
 return;
 }
 case 'stir': {
@@ -12064,15 +12025,32 @@ return;
 }
 }
 }
+crushSolids() {
+const sim = this.sim, p = sim.p;
+this.status = 'Crushing solids';
+let k = this.crushTarget ?? -1;
+if (k < 0 || k >= p.count || p.phase[k] !== PHASE.SOLID) {
+k = -1;
+for (let i = 0; i < p.count; i++) if (p.phase[i] === PHASE.SOLID && (k < 0 || p.y[i] > p.y[k])) k = i;
+this.crushTarget = k;
+}
+if (k < 0) return false;
+const t = sim.tool;
+t.type = 'pestle';
+this.phase += SIM.DT * 9;
+t.setTarget(p.x[k] + Math.sin(this.phase * 0.6) * 0.18, p.y[k] + Math.abs(Math.sin(this.phase)) * 0.25 - 0.08, true);
+t.beginFrame();
+t.substep(0, 1);
+return true;
+}
 pourOne(ing) {
 const n = Math.max(1, Math.round((ing.n ?? (ing.ml || 0) / SIM.ML_PER_PARTICLE) * this.scale));
 if (this.onPour && !this.onPour(ing.id, n)) { this.failed = true; this.finish(); return false; }
 const def = this.lookup(ing.id);
 if (!def) { this.failed = true; this.finish(); return false; }
-const ground = !!ing.ground && def.form === 'solid';
-this.sim.emitter.start(def, { x: (this.ingIndex % 2 ? -0.35 : 0.35), amount: n, rate: def.form === 'powder' || ground ? 70 : 110, ground });
-this.status = ground ? `Grinding and adding ${def.name}` : `Pouring ${def.name}`;
-if (this.onPoured) this.onPoured(ing.id, n, ground);
+this.sim.emitter.start(def, { x: (this.ingIndex % 2 ? -0.35 : 0.35), amount: n, rate: def.form === 'powder' ? 70 : 110 });
+this.status = `Pouring ${def.name}`;
+if (this.onPoured) this.onPoured(ing.id, n);
 return true;
 }
 tickStep() {
@@ -12094,18 +12072,8 @@ this.stir(1);
 if (this.stageT >= s.s) done();
 return;
 case 'crush': {
-this.status = 'Grinding solids';
 this.control(this.target);
-const p = sim.p;
-let solids = 0, sx = 0, sy = 0;
-for (let i = 0; i < p.count; i++) if (p.phase[i] === PHASE.SOLID) { solids++; sx += p.x[i]; sy += p.y[i]; }
-if (!solids || this.stageT >= s.s) { done(); return; }
-const t = sim.tool;
-t.type = 'pestle';
-this.phase += dt * 9;
-t.setTarget(sx / solids + Math.sin(this.phase * 0.6) * 0.35, sy / solids + Math.abs(Math.sin(this.phase)) * 0.3 - 0.05, true);
-t.beginFrame();
-t.substep(0, 1);
+if (!this.crushSolids() || this.stageT >= s.s) done();
 return;
 }
 case 'temp': {
@@ -12191,7 +12159,7 @@ consequence: 'Effects cancel in pairs where they meet (fire–frost, life–deat
 objective: 'The wanted effects at strength, every other effect under the purity limit.',
 feedback: 'Each ingredient’s known effects and its balancing hints; the guild theory; trials.' },
 { id: 'extraction', name: 'Grinding and extraction', role: 'core', stage: 'preparation', rank: 0,
-decision: 'Grind in the mortar, crush in the pot, or drop in whole.',
+decision: 'Crush in the pot with the pestle, or leave it whole.',
 consequence: 'Only what dissolves acts: a whole herb gives nothing, the same herb ground gives its effects.',
 objective: 'Reaching the strength the order asks for at all.',
 feedback: 'Brew advice (“whole herbs: crush”), the brew’s colour, trials.' },
@@ -12467,7 +12435,7 @@ body: [
 h('div', { class: 'card parch ing-card' }, jarCanvas(m, 22, 30), h('div', {}, h('div', { text: m.description }), h('div', {}, ...tags.map((t) => h('span', { class: 'tag', text: t }))))),
 h('div', { class: 'card parch' }, facts),
 h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: m.remains ? 'Effects' : m.product ? 'Effects of this pure substance (as the guild knows it)' : 'Known effects of the pure ingredient (mixtures must be tested)' }), asp,
-(m.wild || m.remains) && m.form === 'solid' ? h('div', { class: 'small', text: 'Supplied whole: crush it in the pot with the pestle, or switch on “Ground” to grind it in the mortar first. Only what dissolves takes effect.' }) : null),
+(m.wild || m.remains) && m.form === 'solid' ? h('div', { class: 'small', text: 'Supplied whole: crush it in the pot with the pestle (Crush). Only what dissolves takes effect.' }) : null),
 balance.length ? h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Nothing that grows is pure. Its side effects cancel against their opposites:' }), ...balance.map((t) => h('div', { class: 'small', text: '• ' + t }))) : null,
 reactions.length ? h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Known reactions' }), ...reactions.map((r) => h('div', { class: 'small', text: `• ${r.name}: ${r.hint || ''}` }))) : null,
 ],
@@ -12505,7 +12473,7 @@ const ref = com.reference;
 const main = ref.ingredients.slice().sort((a, b) => b.n - a.n).map((i) => st.lookup(i.id)).find((x) => x && x.effects && Object.values(x.effects).some((v) => Math.abs(v) >= 12));
 const tips = [];
 if (main) tips.push(`A guild alchemist would start from ${main.name}${main.wild ? ` (it grows in the ${main.wild.region === 'forest' ? 'Whisperwood' : main.wild.region === 'meadow' ? 'Sunlit Meadow' : main.wild.region === 'river' ? 'Willow Bank' : main.wild.region === 'quarry' ? 'Ironstone Quarry' : main.wild.region === 'moonfen' ? 'Moonfen' : 'Ember Crags'})` : ''}.`);
-if (ref.ingredients.some((i) => i.ground)) tips.push('Grind what is whole — only what dissolves takes effect.');
+if (ref.ingredients.some((i) => i.ground)) tips.push('Crush what is whole with the pestle — only what dissolves takes effect.');
 if (ref.steep && ref.steep.T < 15) tips.push('Part of this wants ice-cold water, not heat — cold, but not frozen.');
 else if ((ref.heatTo ?? 20) > 40 && !com.activation) tips.push('Patience and gentle heat draw out more than stirring alone.');
 if (ref.reduce) tips.push('It must be stronger than the herbs give plainly: boil some water off with the lid open — and cancel the side effects harder, for they grow too.');
@@ -12675,7 +12643,7 @@ const CONF_LABEL = { untested: 'Untested', tested: 'Tested once', reproduced: 'R
 function prepareRecipe(lab, r) {
 const steps = r.steps || [];
 const firstOther = steps.findIndex((x) => x.op !== 'pour');
-const lead = steps.length ? steps.slice(0, firstOther < 0 ? steps.length : firstOther).filter((x) => x.op === 'pour').map((x) => ({ id: x.id, ml: x.ml, ground: x.ground })) : r.ingredients.slice();
+const lead = steps.length ? steps.slice(0, firstOther < 0 ? steps.length : firstOther).filter((x) => x.op === 'pour').map((x) => ({ id: x.id, ml: x.ml })) : r.ingredients.slice();
 const queue = lead.length ? lead : r.ingredients.slice();
 const rest = steps.slice(firstOther < 0 ? steps.length : firstOther);
 const next = () => {
@@ -12686,7 +12654,7 @@ return;
 if (lab.sim.emitter.pouring) { setTimeout(next, 200); return; }
 const i = queue.shift();
 lab.selectIngredient(i.id);
-lab.startPour(lab.pourX, Math.round(i.ml / SIM.ML_PER_PARTICLE), i.ground);
+lab.startPour(lab.pourX, Math.round(i.ml / SIM.ML_PER_PARTICLE));
 setTimeout(next, 250);
 };
 next();
@@ -12774,19 +12742,19 @@ h('div', { class: 'card parch help-day' }, h('h3', { text: 'A day in the shop' }
 h('ol', { class: 'small' }, ...[
 'Dawn: gather herbs and minerals in the Wilds (dawn flowers close once the shop opens).',
 'Open the door at the Counter and read the customer’s order.',
-'Brew: pour, grind, stir, heat or chill in the cauldron.',
+'Brew: pour, crush, stir, heat or chill in the cauldron.',
 'Test a dose on a rabbit in Trials: only a test shows what a mixture does.',
 'Bottle it, check the label and sell it at the Counter — agree on a price.',
 'When the last customer has gone (dusk), close the shop for the night.',
 ].map((t) => h('li', { text: t })))),
 sec('Orders and selling', 'stall', ['Customers ask for an effect — healing, strength, love, fire… — at a strength in percent (everyday orders want about 8–15 %).', 'Most orders forbid side effects: “no other effect above 1.2 %”. Every other kind of magic in the bottle must stay that faint.', 'Before a sale you write the label — tested values, the guild theory’s estimates, “none” or unknown — and bargain over the price. The customer comes back the next day: pleased, or with a complaint. Refund them, dispute it with your trial records, or turn them away.', 'Bottle onto the potion shelves whenever there is room (3 bottles; more with a Bottle Shelf, Potion Cabinet or Bottle Cellar). Bottles of one batch share its trials.', 'Honest, well-tested potions earn reputation. Reputation raises your rank, which opens regions, ingredients, equipment and harder orders.'], true),
 sec('Ingredients and side effects', 'leaf', ['The Shop sells no prepared reagents — only free well water and two plain solvents, oil and spirit. Every effect comes from what you gather.', 'Nothing that grows is pure: each herb or mineral brings side effects. Cancel them with their opposites — fire and frost, life and death (life also mends poison, two parts to one), acid and alkali.', 'Long-press (or right-click) a jar to see what it does and what cancels its side effects.', 'You know what each plain ingredient does. You do NOT know what a mixture does: extraction, heat, reactions and hidden laws change it.']),
-sec('Brewing', 'cauldron', ['Pour: tap a jar, then a dose button (25–250 ml) — or hold your finger in the cauldron, or drag a jar onto it.', 'Grind or crush: whole roots, leaves and stones give up almost nothing. “Ground” (on the dose row) grinds them in the mortar first; Crush (the pestle) breaks them up in the pot.', 'Steep at the right heat: most herbs give two to three times as much held warm in their steeping window (see the herb’s card and your journal). Some want ice-cold water: Frostcap near 9 °C gives about three times as much — but frozen solid gives less. Heartpetal wilts above about 85 °C.', 'Stir after every addition: an unstirred brew pours unevenly, so later bottles may not match the tested dose. Auto stirs for you (the Clockwork Stirrer about three times as fast).', 'The fire control: right heats, left cools. The lid keeps steam in; boiling with the lid off makes a brew smaller and stronger — side effects too. Add water to weaken it.', 'Tap the ml · °C readout over the cauldron to see what is in it; Inspect reads one spot; Sample measures what a bottle would hold.']),
+sec('Brewing', 'cauldron', ['Pour: tap a jar, then a dose button (25–250 ml) — or hold your finger in the cauldron, or drag a jar onto it.', 'Crush: whole roots, leaves and stones go into the pot whole and give up almost nothing until you break them up with Crush (the pestle).', 'Steep at the right heat: most herbs give two to three times as much held warm in their steeping window (see the herb’s card and your journal). Some want ice-cold water: Frostcap near 9 °C gives about three times as much — but frozen solid gives less. Heartpetal wilts above about 85 °C.', 'Stir after every addition: an unstirred brew pours unevenly, so later bottles may not match the tested dose. Auto stirs for you (the Clockwork Stirrer about three times as fast).', 'The fire control: right heats, left cools; tap Off beside it (or press 0) to put it out at once. The lid keeps steam in; boiling with the lid off makes a brew smaller and stronger — side effects too. Add water to weaken it.', 'Tap the ml · °C readout over the cauldron to see what is in it; Inspect reads one spot; Sample measures what a bottle would hold.']),
 sec('Arcane awakening', 'awaken', ['Magical ingredients carry a hidden arcane threshold. Heat the brew past it (or, for cold magic, chill it below) and the magic awakens: it glows and acts two to three times stronger — side effects too.', 'In a blend the threshold is the mix of its magical ingredients’ thresholds, by volume. Mix first at room temperature, then heat or chill; a half-mixed brew awakens unevenly.', 'Awakened magic stays awake when it cools, is bottled or kept. Only dilution and reactions undo it. The Arcanometer reads a brew’s threshold.']),
 sec('Trials and rabbits', 'rabbit', ['Choose a rabbit and give it a dose (5, 10 or 25 ml) from the cauldron tap or the sealed vial. One trial reads every effect at once.', 'Each reading is uncertain: the ± margin is how far the truth may lie. One reading is a rough guess; repeating it on the same rabbit helps a little; other rabbits help most (detected once → repeated → corroborated).', '“Not detected” is not proof of absence: a faint effect can hide below the noise. Cautious customers want readings repeated or corroborated, and every customer pays more for a well-tested label.', 'Effects pile up in a rabbit and fade slowly. Past its own hidden limit an effect runs out of control and can kill it; fire and acid burn; strength and vitality can make it attack; love makes it mate. A purging draught washes everything out. Rabbits can be fed, bred, bought and put down; a body’s remains can be recovered once as an ingredient.', 'When a trial surprises you, a hidden law may be at work. Confirm it twice and your theory learns it.']),
 sec('Wilds', 'tree', ['Tap a plant in the picture, or its button, to gather. Deposits are finite and regrow over time, even while the game is closed.', 'Careful leaves some to regrow; Thorough takes twice as much but the deposit regrows slowly. Roots, seams, mosses and dust need the Forager’s Kit for a full harvest.', 'Twilight plants open only at dawn (before you open the shop) or at dusk (after the last customer). The weather changes daily. New regions open with rank.']),
 sec('Recipes and the Book', 'book', ['After a sale you can save the brew as a recipe: what went in, and every step in order. Prepare pours it again; the Brass Homunculus replays every step.', 'The Book also keeps every trial, the laws you discovered, all ingredients, your journal, awards and sales.']),
-sec('Keys and tips', 'bulb', ['Keys: 1 pour · 2 stir · 3 crush · 5 inspect · L lid · B bottle · F speed · A auto-stir · arrows fire · G ground · S shop · R recipes · C/V/W/T/J rooms · Esc menu.', 'Advice at the Counter buys a hint for a hard order.', 'Orders far below your rank earn little reputation; a technique sold well for the first time earns a bonus.', 'Out of money? The guild helps a struggling apprentice once a day — and well water is always free.', 'The Free Experiment has every tool, the skimmer, the alembic, a heat map and exact physical readings.']),
+sec('Keys and tips', 'bulb', ['Keys: 1 pour · 2 stir · 3 crush · 5 inspect · L lid · B bottle · F speed · A auto-stir · arrows fire · 0 fire off · S shop · R recipes · C/V/W/T/J rooms · Esc menu.', 'Advice at the Counter buys a hint for a hard order.', 'Orders far below your rank earn little reputation; a technique sold well for the first time earns a bonus.', 'Out of money? The guild helps a struggling apprentice once a day — and well water is always free.', 'The Free Experiment has every tool, the skimmer, the alembic, a heat map and exact physical readings.']),
 );
 body.addEventListener('toggle', (e) => {
 const t = /** @type {HTMLDetailsElement} */ (e.target);
@@ -13102,6 +13070,12 @@ let T = 0, n = 0;
 for (let i = 0; i < p.count; i++) if (p.phase[i] !== PHASE.GAS) { T += p.temp[i]; n++; }
 return n ? T / n : 20;
 };
+const wholeSolids = () => {
+const p = lab.sim.p;
+let n = 0;
+for (let i = 0; i < p.count; i++) if (p.phase[i] === PHASE.SOLID) n++;
+return n;
+};
 const tab = (id) => () => lab.tabEls[id] && lab.tabEls[id].b;
 const q = (sel) => () => /** @type {HTMLElement|null} */ (lab.el.querySelector(sel));
 const inView = (id) => () => lab.view === id;
@@ -13118,9 +13092,10 @@ return [
 { text: `Tap the jar of ${water.name} on the shelf to pick it up. The small number on a jar is how many ml you have.`, target: () => lab.jarEls[R.water] && lab.jarEls[R.water].el, done: () => lab.selected === R.water },
 { text: 'Pour about 110 ml: tap 100, then 25. You can also hold your finger in the cauldron to pour freely, or drag a jar onto it.', target: () => lab.doseEl, done: () => poured(R.water) >= 95 },
 { text: `Now pick up the ${leaf.name}. Tip: long-press (or right-click) any jar to read what it does — this one heals, but leaves a frosty bite.`, target: () => lab.jarEls[H.healer] && lab.jarEls[H.healer].el, done: () => lab.selected === H.healer },
-{ text: 'Pour 50 ml. “Ground” is lit: the mortar grinds it first, because whole leaves give up almost nothing.', target: () => lab.doseEl, done: () => poured(H.healer) >= 45 && !lab.sim.emitter.pouring },
+{ text: 'Pour 50 ml. The leaves go in whole — and whole leaves give up almost nothing, so you will crush them in a moment.', target: () => lab.doseEl, done: () => poured(H.healer) >= 45 && !lab.sim.emitter.pouring },
 { text: `Nothing that grows is pure, but opposites cancel: fire–frost, life–death, acid–alkali. Pick up the ${sun.name}: its fire cancels the leaf’s frost.`, target: () => lab.jarEls[H.warmer] && lab.jarEls[H.warmer].el, done: () => lab.selected === H.warmer },
 { text: 'Pour 25 ml — half as much as the leaf, so fire and frost balance out.', target: () => lab.doseEl, done: () => poured(H.warmer) >= 20 && !lab.sim.emitter.pouring },
+{ text: 'Now choose Crush (the pestle) and drag it back and forth over the leaves at the bottom of the pot. Only crushed herbs give up their magic — nothing is ground for you.', target: () => lab.toolBtns.pestle, done: () => wholeSolids() <= 3 || (lab.tool === 'pestle' && (lab.sim.tool.stirDistance - (this.flags.crush0 ?? (this.flags.crush0 = lab.sim.tool.stirDistance))) > 25) },
 { text: 'Choose Stir and drag circles through the brew: stirring spreads the magic evenly. (Auto, further along, stirs for you while you hold it.)', target: () => lab.toolBtns.spoon, done: () => (lab.sim.tool.stirDistance - (this.flags.stir0 ?? (this.flags.stir0 = lab.sim.tool.stirDistance))) > 12 || lab.sim.tool.auto || brewT() >= 40 },
 { text: 'Herbs steep only when warm. Slide the fire control right (left cools) and bring the brew to about 60 °C. The lid keeps steam in; with the lid off, boiling makes a brew smaller and stronger.', target: () => lab.controls, done: () => brewT() >= 50 },
 { text: 'The other tools: Crush (whole herbs, stones, ice), Inspect (tap a spot to read it), Sample (what a bottle would hold), 1× (speeds up time), Empty. Tap the ml · °C readout over the cauldron to see what is inside.', target: () => lab.toolbar, button: 'Next' },
@@ -16187,7 +16162,6 @@ this.state = state;
 this.sandbox = !!opts.sandbox;
 this.tool = 'spoon';
 this.selected = null;
-this.ground = false;
 this.speed = 1;
 this.pointer = { down: false, x: 0, y: 0, id: -1, wx: 0, wy: 0 };
 this.pourX = 0.3;
@@ -16351,13 +16325,14 @@ this.stageEl = h('main', { class: 'stage' }, this.canvas, this.readout, this.chi
 this.furnaceInput = /** @type {HTMLInputElement} */ (h('input', { type: 'range', min: '-100', max: '100', step: '1', value: '0', 'aria-label': 'Fire and frost control' }));
 this.furnaceInput.addEventListener('input', () => {
 const v = Number(this.furnaceInput.value) / 100;
-this.setFurnace(Math.abs(v) < 0.06 ? 0 : v);
+this.setFurnace(Math.abs(v) < 0.12 ? 0 : v);
 });
+this.furnaceOff = btn('Off', () => { this.setFurnace(0); audio.play('select'); }, { cls: 'foff', title: 'Put the fire or frost out (0)', act: 'furnace-off' });
 this.furnaceLabel = h('span', { class: 'flabel' });
 this.lidBtn = btn('Lid', () => this.toggleLid(), { icon: 'lid', cls: 'lid-btn', title: 'Lid on/off (L)', act: 'lid' });
 this.controls = h('section', { class: 'controls frame' },
 this.lidBtn,
-h('div', { class: 'furnace', title: 'Slide left to cool, right to heat (arrow keys, 0 for off)' }, icon('snow', 'sm'), this.furnaceInput, icon('flame', 'sm'), this.furnaceLabel),
+h('div', { class: 'furnace', title: 'Slide left to cool, right to heat (arrow keys, 0 for off)' }, icon('snow', 'sm'), h('div', { class: 'frange' }, this.furnaceInput), icon('flame', 'sm'), this.furnaceLabel, this.furnaceOff),
 );
 this.toolsEl = h('div', { class: 'tools', role: 'toolbar', 'aria-label': 'Tools' });
 this.toolbar = h('nav', { class: 'toolbar frame' }, this.toolsEl);
@@ -16571,19 +16546,14 @@ el.addEventListener('contextmenu', (e) => { e.preventDefault(); panels.openIngre
 }
 buildDose() {
 const d = clear(this.doseEl);
-this.groundBtn = btn('Ground', () => { this.ground = !this.ground; this.syncGround(); audio.play('select'); }, { icon: 'mortar', title: 'Grind in the mortar before pouring', act: 'ground' });
 this.selName = h('span', { class: 'sel-name' });
 d.append(icon('pour', 'sm'), this.selName);
 for (const ml of [25, 50, 100, 250]) d.append(btn(`${ml}`, () => this.pourDose(ml), { title: `Pour exactly ${ml} ml`, act: 'dose-' + ml }));
-d.append(h('span', { class: 'muted dose-note', text: 'ml' }), this.groundBtn);
-this.syncGround();
+d.append(h('span', { class: 'muted dose-note', text: 'ml' }));
+this.syncSelName();
 }
-syncGround() {
-if (!this.groundBtn) return;
+syncSelName() {
 const m = this.selected ? this.state.lookup(this.selected) : null;
-const can = !!m && m.form === 'solid' && (this.sandbox || this.state.has('mortar'));
-this.groundBtn.classList.toggle('hidden', !can);
-this.groundBtn.classList.toggle('active', can && this.ground);
 if (this.selName) this.selName.textContent = m ? m.name : 'Pick a jar';
 }
 resize(force = false) {
@@ -16713,7 +16683,6 @@ else if (k === 'f') this.cycleSpeed();
 else if (k === 'b') this.startBottling();
 else if (k === 's' && !this.sandbox) panels.openShop(this);
 else if (k === 'r' && !this.sandbox) { this.showView('book'); this.views.book.open('recipes'); }
-else if (k === 'g') { this.ground = !this.ground; this.syncGround(); }
 else if (k === 'a') this.setAutoStir(!this.autoStir);
 else if (k === 'h' && this.sandbox) this.toggleThermal();
 else if (k === 'escape') panels.openPause(this);
@@ -16734,12 +16703,11 @@ this.selected = id === 'pour' ? this.selected : null;
 this.pourHint.classList.toggle('hidden', id !== 'pour');
 this.updatePourHint();
 this.placeDose();
-this.syncGround();
+this.syncSelName();
 if (!silent) audio.play('select');
 if (this.tutorial) this.tutorial.notify('tool', id);
 }
 selectIngredient(id) {
-if (this.selected !== id) this.ground = !!(this.state.lookup(id).form === 'solid' && (this.sandbox || this.state.has('mortar')) && (this.state.lookup(id).wild || this.state.lookup(id).remains));
 this.selected = id;
 this.selectTool('pour', true);
 this.selected = id;
@@ -16747,13 +16715,13 @@ for (const [k, j] of Object.entries(this.jarEls)) j.el.classList.toggle('selecte
 audio.play('select');
 this.updatePourHint();
 this.placeDose();
-this.syncGround();
+this.syncSelName();
 if (this.tutorial) this.tutorial.notify('select', id);
 }
 updatePourHint() {
 if (this.tool !== 'pour') return;
 const m = this.selected ? this.state.lookup(this.selected) : null;
-this.pourHint.textContent = m ? `Hold in the cauldron to ${m.form === 'solid' && !this.ground ? 'drop it in' : 'pour'}` : 'Tap a jar on the shelf';
+this.pourHint.textContent = m ? `Hold in the cauldron to ${m.form === 'solid' ? 'drop it in' : 'pour'}` : 'Tap a jar on the shelf';
 }
 clampPourX(x) {
 const m = this.sim.cauldron.mouth - 0.15;
@@ -16763,7 +16731,7 @@ canPour(id) {
 if (this.sandbox) return Infinity;
 return Math.floor(this.state.stock(id) / SIM.ML_PER_PARTICLE);
 }
-startPour(x, amount, ground) {
+startPour(x, amount) {
 const id = this.selected;
 if (!id) return;
 const avail = this.canPour(id);
@@ -16780,12 +16748,9 @@ return;
 this.pourX = this.clampPourX(x);
 const def = this.state.lookup(id);
 const n = Math.min(avail, amount ?? Infinity);
-const g = ground ?? (this.ground && def.form === 'solid' && (this.sandbox || this.state.has('mortar')));
-this.sim.emitter.start(def, { x: this.pourX, amount: n, ground: g });
+this.sim.emitter.start(def, { x: this.pourX, amount: n });
 this.sim.emitter.active.dose = amount !== undefined;
 this.lastPoured[id] = this.sim.emitter.poured[id] || 0;
-this.pourGround = g;
-if (g) audio.play('crush');
 if (this.tutorial) this.tutorial.notify('pour', id);
 }
 pourDose(ml) {
@@ -16805,15 +16770,15 @@ if (!this.sandbox) {
 this.state.consume(id, ml);
 if (this.state.stock(id) < SIM.ML_PER_PARTICLE && em.active && em.active.def.id === id) em.stop();
 }
-this.logPour(id, ml, !!(em.active ? em.active.form === 'powder' && em.active.def.form === 'solid' : this.pourGround));
+this.logPour(id, ml);
 }
 }
-logPour(id, ml, ground = false) {
+logPour(id, ml) {
 const log = this.state.brewLog;
 if (this.sim.p.count <= Math.round(ml / SIM.ML_PER_PARTICLE) + 1 && !log.some((e) => e.type === 'pour')) this.state.newBatch();
 const last = log[log.length - 1];
-if (last && last.type === 'pour' && last.id === id && !!last.ground === ground) last.ml += ml;
-else log.push({ type: 'pour', id, ml, t: Math.round(this.sim.time), ground: ground || undefined });
+if (last && last.type === 'pour' && last.id === id && !last.ground) last.ml += ml;
+else log.push({ type: 'pour', id, ml, t: Math.round(this.sim.time) });
 this.state.touchBatch();
 this.state.stats.brews = this.state.stats.brews || 0;
 }
@@ -17295,7 +17260,7 @@ raw.set(s, (raw.get(s) || 0) + f);
 }
 }
 T = n ? T / n : 20;
-if (whole >= 3) out.push({ key: 'whole', text: 'Whole herbs and stones give up almost nothing: crush them with the pestle (or grind them before pouring).' });
+if (whole >= 3) out.push({ key: 'whole', text: 'Whole herbs and stones give up almost nothing: crush them with the pestle (Crush).' });
 const windows = [];
 for (const [s, f] of raw) {
 if (f < 1.5) continue;
@@ -17523,6 +17488,10 @@ const c = this.sim.cauldron;
 const label = f > 0.02 ? `Heat ${Math.round(f * 100)}%` : f < -0.02 ? `Cool ${Math.round(-f * 100)}%` : 'Off';
 this.furnaceLabel.textContent = `${label} · ${Math.round(c.bottomTemperature())}°C`;
 this.furnaceLabel.title = 'Setting, and the temperature of the cauldron floor';
+const on = Math.abs(f) > 0.02;
+this.furnaceOff.disabled = !on;
+this.furnaceOff.classList.toggle('hot', f > 0.02);
+this.furnaceOff.classList.toggle('cold', f < -0.02);
 if (full) this.updateShelf();
 this.updateChips();
 }
@@ -17810,7 +17779,7 @@ startHomunculus(recipe) {
 const steps = recipe.steps && recipe.steps.length ? recipe.steps : null;
 const plan = steps ? { ingredients: [], heatTo: recipe.maxTemp, coolTo: recipe.minTemp, serveTemp: recipe.serveTemp, steps } : {
 ingredients: recipe.ingredients.map((i) => ({ id: i.id, n: Math.round(i.ml / SIM.ML_PER_PARTICLE), ground: i.ground })),
-heatTo: recipe.maxTemp, coolTo: recipe.minTemp, serveTemp: recipe.serveTemp, knead: recipe.stirSeconds > 12, crush: recipe.crushed, hold: 12,
+heatTo: recipe.maxTemp, coolTo: recipe.minTemp, serveTemp: recipe.serveTemp, knead: recipe.stirSeconds > 12, crush: recipe.crushed || recipe.ingredients.some((i) => i.ground), hold: 12,
 };
 const need = new Map();
 for (const s of steps || []) if (s.op === 'pour') need.set(s.id, (need.get(s.id) || 0) + s.ml);
@@ -17823,7 +17792,6 @@ const ml = n * SIM.ML_PER_PARTICLE;
 if (!this.sandbox && this.state.stock(id) < ml) return false;
 return true;
 },
-onPoured: (id, n, ground) => { this.pourGround = ground; },
 });
 recipe.brews = (recipe.brews | 0) + 1;
 const lim = procedureLimits(steps || []);

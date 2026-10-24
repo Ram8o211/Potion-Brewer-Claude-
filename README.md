@@ -184,7 +184,7 @@ computed from the particles that actually run out of the tap. What a
 * **A shop to grow.**
   * Coins, reputation and six guild ranks.
   * A starting kit that covers the core craft (hearth, cold basin, pot,
-    spoon, mortar, pestle, thermometer) and 16 purchases, each of which
+    spoon, pestle, thermometer) and 16 purchases, each of which
     lets you do something new or faster: the Forager's Kit and satchel,
     three sizes of potion shelving, the frost rune and glacial sigil
     (deep cold for cold awakenings and narrow steeps), a clockwork
@@ -309,8 +309,9 @@ Browser screenshots from the test run land in `test-results/screenshots/`.
    the common herbs in the Shop (top bar) from Journeyman on.
 3. **Brew.** Pour in one of three ways: tap a jar and hold inside the
    cauldron, tap a jar and use the dose buttons, or drag the jar onto the
-   cauldron. Switch on **Ground** to grind roots and stones in the mortar
-   first. Stir with the spoon, and slide the fire control to heat or cool.
+   cauldron. Roots, leaves and stones go in whole: break them up with
+   **Crush** (the pestle). Stir with the spoon, slide the fire control to
+   heat or cool, and tap **Off** beside it to put it out.
 4. **Trials.** Tap a rabbit in the hutch and press **Give**, or drag the
    dropper onto it. Test several different rabbits before you trust the
    estimate, and watch their status bars: purge or rest a rabbit before an
