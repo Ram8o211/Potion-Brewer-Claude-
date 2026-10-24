@@ -12,7 +12,7 @@ import { EQUIPMENT, RANKS } from '../game/equipment.js';
 import { ACHIEVEMENTS } from '../game/state.js';
 import { viscosityClass, densityWord, evennessWord } from '../game/measure.js';
 import { EFFECTS, EFFECT_BY_KEY, EFFECT_KEYS, dominantEffect } from '../alchemy/effects.js';
-import { rawSprite } from '../rendering/scenes.js';
+import { ingredientSprite } from '../rendering/wild-sprites.js';
 import { compatFactor } from '../reactions/compatibility.js';
 import { describeColor, rgbToHex } from '../core/color.js';
 import { SIM } from '../simulation/constants.js';
@@ -25,7 +25,7 @@ const CAT_LABEL = { heat: 'Fire', cold: 'Cooling', vessel: 'Cauldrons', tool: 'T
 
 function jarCanvas(m, w = 22, hh = 30) {
   if ((m.wild || m.remains) && m.form === 'solid') {
-    const cv = rawSprite(m.wild ? m.wild.shape : m.shape || 'stone', m.look || m.color);
+    const cv = ingredientSprite(m);
     cv.style.width = w * 2 + 'px';
     cv.style.height = w * 2 + 'px';
     return cv;
