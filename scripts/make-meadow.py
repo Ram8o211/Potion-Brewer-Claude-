@@ -5,8 +5,8 @@ The pack in art/meadow/ (plants, background layers and environment props,
 cut from generated concept sheets) is drawn on a soft grid of 8 to 16 source
 pixels per art pixel. Each sprite is brought to the size it takes in the
 256 x 144 Wilds scene by majority vote over each block of a quantised copy,
-with a hard alpha (the scripts/make-whisperwood.py way, but to an exact
-size, as these sheets have no common grid). Everything is then snapped to
+with a hard alpha (scripts/pixelart.py `fit`: to an exact size, as these
+sheets have no common grid). Everything is then snapped to
 one meadow palette: the colours of the pack's full scene preview, so the
 layers read as one picture; gatherables keep their own accent colours too.
 
@@ -24,10 +24,8 @@ layers read as one picture; gatherables keep their own accent colours too.
 Writes assets/meadow/atlas.png and src/rendering/meadow-atlas.js (the frame
 rectangles). `--preview out.png` also writes an enlarged sheet.
 """
-import importlib.util
 import os
 import sys
-import numpy as np
 from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -35,43 +33,13 @@ SRC = os.path.join(ROOT, 'art', 'meadow')
 OUT_PNG = os.path.join(ROOT, 'assets', 'meadow', 'atlas.png')
 OUT_JS = os.path.join(ROOT, 'src', 'rendering', 'meadow-atlas.js')
 
-# the outline, trimming, anchoring, palette and packing helpers of the Whisperwood build
-_spec = importlib.util.spec_from_file_location('ww', os.path.join(ROOT, 'scripts', 'make-whisperwood.py'))
-ww = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(ww)
-INK, GLOW, trim, outline, anchored, accents, snap, despeckle, defringe, pack = (
-    ww.INK, ww.GLOW, ww.trim, ww.outline, ww.anchored, ww.accents, ww.snap, ww.despeckle, ww.defringe, ww.pack)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import pixelart as ww  # noqa: E402
+from pixelart import INK, GLOW, trim, outline, anchored, accents, snap, despeckle, defringe, pack, fit  # noqa: E402
 
 
 def load(rel):
     return Image.open(os.path.join(SRC, rel + '.png')).convert('RGBA')
-
-
-def fit(im, w=None, h=None, colours=16, alpha_share=0.5):
-    """Majority-vote downsample to w x h art pixels (one given: keep the aspect)."""
-    im = trim(im)
-    W, H = im.size
-    if w is None:
-        w = max(1, round(W * h / H))
-    if h is None:
-        h = max(1, round(H * w / W))
-    a = np.asarray(im.getchannel('A')) >= 128
-    opaque = np.asarray(im.convert('RGB'))[a]
-    fill = tuple(int(v) for v in np.median(opaque, axis=0)) if len(opaque) else (0, 0, 0)
-    flat = Image.new('RGB', im.size, fill)
-    flat.paste(im.convert('RGB'), mask=Image.fromarray((a * 255).astype(np.uint8)))
-    q = flat.quantize(colours, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
-    idx, pal = np.asarray(q), q.getpalette()
-    xs, ys = np.linspace(0, W, w + 1).round().astype(int), np.linspace(0, H, h + 1).round().astype(int)
-    out = np.zeros((h, w, 4), np.uint8)
-    for y in range(h):
-        for x in range(w):
-            ba = a[ys[y]:ys[y + 1], xs[x]:xs[x + 1]]
-            if not ba.size or ba.mean() < alpha_share:
-                continue
-            i = np.bincount(idx[ys[y]:ys[y + 1], xs[x]:xs[x + 1]][ba]).argmax()
-            out[y, x] = (*pal[i * 3:i * 3 + 3], 255)
-    return Image.fromarray(out, 'RGBA')
 
 
 # The meadow palette: the 64 colours of the pack's full scene preview
@@ -176,7 +144,7 @@ def build():
                         closed=P + 'Thorn_Hemlock_Seed_closed_seed_pods', icon=P + 'Thorn_Hemlock_Seed_seed_icon', tint=lift))
     # the glint over a fully grown gatherable (the Whisperwood frames)
     for i in range(4):
-        S[f'glint_{i}'] = trim(ww.down(Image.open(os.path.join(ROOT, 'art', 'whisperwood', 'effects', f'glint_frame_0{i}.png')).convert('RGBA'), f=2, colours=4, alpha_share=0.25))
+        S[f'glint_{i}'] = trim(ww.down(Image.open(os.path.join(ROOT, 'art', 'effects', f'glint_frame_0{i}.png')).convert('RGBA'), f=2, colours=4, alpha_share=0.25))
     return S
 
 

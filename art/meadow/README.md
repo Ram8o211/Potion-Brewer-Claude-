@@ -29,7 +29,7 @@ pixels take their surroundings' colour.
 | Rocks | `environment/rocks_flora_atlas_01, 02, 03` | 30–40 px wide |
 | Flower clumps (8) | `environment/flowers_flora_atlas_01, 02, 03, 08`, `flowers_props_atlas_06–09` | 10–14 px, so they never read as a gatherable |
 | Grass | `environment/grass_flora_atlas_01–08` | 5–44 px |
-| Glint | `../whisperwood/effects/glint_frame_00–03` | shared with Whisperwood |
+| Glint | `../effects/glint_frame_00–03` | shared with the other wilds |
 
 Not used: the lupin clumps (`flowers_flora_atlas_04`, `fences_props_atlas_09`)
 would look like Bee Balm, and the single large flowers like Heartpetal, so

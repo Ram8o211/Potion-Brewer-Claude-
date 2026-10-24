@@ -3,11 +3,10 @@
 // finite and regrow with real time; nothing here runs while you brew. What a
 // harvest brings depends on the method and tool, the hour (dawn / midday /
 // dusk follow the shop's customers), the weather and how thoroughly you
-// strip the deposit (game/gathering.js). Whisperwood's and the Sunlit
-// Meadow's deposits are sprites (rendering/wild-sprites.js) with hover,
-// harvesting, depleted and (for a dawn or dusk plant out of its hour) closed
-// frames; only deposits take taps — the scenery is painted into the cached
-// background.
+// strip the deposit (game/gathering.js). Every region's deposits are sprites
+// (rendering/wild-sprites.js) with hover, depleted and (for a dawn or dusk
+// plant out of its hour) closed frames; only deposits take taps — the
+// scenery is painted into the cached background.
 
 import { h, btn, clear, toast } from '../dom.js';
 import { icon } from '../icons.js';

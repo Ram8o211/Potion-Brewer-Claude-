@@ -1,22 +1,23 @@
-// Wild sprites (Whisperwood and the Sunlit Meadow): each atlas and its frame
-// map agree, every forest and meadow ingredient (and only those) has
-// gatherable art with all its states, the meadow's dawn and dusk plants have
-// closed frames and every meadow ingredient an icon, and hit testing picks
-// deposits — never the scenery — at any scene size.
+// Wild sprites (every region): each atlas and its frame map agree, every
+// wild ingredient has gatherable art with all its states in its own region's
+// atlas, the dawn and dusk plants have closed frames and every ingredient an
+// icon, each region has its layered scene, and hit testing picks deposits —
+// never the scenery — at any scene size.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import * as WOOD from '../src/rendering/whisperwood-atlas.js';
+import { ATLASES } from '../src/rendering/wilds-atlas.js';
 import * as FIELD from '../src/rendering/meadow-atlas.js';
-import { GATHERABLES, MIN_HIT, WOODLAND, MEADOW, REGION_ATLAS, gatherFrameName, depositBox, hitDeposit } from '../src/rendering/wild-sprites.js';
+import { GATHERABLES, MIN_HIT, MEADOW, REGION_ATLAS, gatherFrameName, depositBox, hitDeposit } from '../src/rendering/wild-sprites.js';
+import { REGIONS } from '../src/game/gathering.js';
 import { WILD_SPECS } from '../src/materials/wild.js';
 import { GameState } from '../src/game/state.js';
 import { SCENE_W, SCENE_H } from '../src/rendering/regions.js';
 
-const FRAMES = WOOD.FRAMES;
 
 test('each atlas file exists and matches its generated frame map', () => {
-  for (const { ATLAS_URL, ATLAS_SIZE, FRAMES: frames } of [WOOD, FIELD]) {
+  const all = [FIELD, ...Object.values(ATLASES).map((a) => ({ ATLAS_URL: a.url, ATLAS_SIZE: a.size, FRAMES: a.frames }))];
+  for (const { ATLAS_URL, ATLAS_SIZE, FRAMES: frames } of all) {
     const png = fs.readFileSync(new URL('../' + ATLAS_URL, import.meta.url));
     assert.equal(png.toString('ascii', 1, 4), 'PNG');
     assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], ATLAS_SIZE, 'IHDR size');
@@ -24,35 +25,48 @@ test('each atlas file exists and matches its generated frame map', () => {
       assert.ok(w > 0 && h > 0 && x >= 0 && y >= 0 && x + w <= ATLAS_SIZE[0] && y + h <= ATLAS_SIZE[1], `${name} lies inside ${ATLAS_URL}`);
     }
   }
-  assert.equal(REGION_ATLAS.forest, WOODLAND);
   assert.equal(REGION_ATLAS.meadow, MEADOW);
+  for (const r of REGIONS) assert.ok(REGION_ATLAS[r.id], `${r.id} has an atlas`);
+  for (const [region, a] of Object.entries(ATLASES)) assert.equal(REGION_ATLAS[region].url, a.url);
 });
 
-test('every Whisperwood and Meadow ingredient has gatherable art; nothing else does', () => {
-  const real = WILD_SPECS.filter((s) => s.region === 'forest' || s.region === 'meadow').map((s) => s.key).sort();
+test('every wild ingredient has gatherable art in its own region; nothing else does', () => {
+  const real = WILD_SPECS.map((s) => s.key).sort();
   assert.deepEqual(Object.keys(GATHERABLES).sort(), real, 'one sprite set per real ingredient, no invented ones');
   for (const [key, g] of Object.entries(GATHERABLES)) {
-    assert.equal(g.region, WILD_SPECS.find((s) => s.key === key)?.region, `${key} is drawn in its own region`);
+    const spec = /** @type {any} */ (WILD_SPECS.find((s) => s.key === key));
+    assert.equal(g.region, spec.region, `${key} is drawn in its own region`);
     assert.equal(g.atlas, REGION_ATLAS[g.region], `${key} comes from its region's atlas`);
     const frames = g.atlas.frames;
     for (const state of ['idle', 'hover', 'card', 'depleted']) assert.ok(frames[g[state]], `${key} ${state}`);
     // the states of one gatherable share a canvas, so they swap in place
     const [, , w, h] = frames[g.idle];
-    for (const name of [g.hover, g.harvesting, g.closed, g.closedHover, g.atlas === MEADOW ? g.depleted : null].filter(Boolean)) assert.deepEqual(frames[name].slice(2), [w, h], `${name} shares ${key}'s canvas`);
+    for (const name of [g.hover, g.depleted, g.harvesting, g.closed, g.closedHover].filter(Boolean)) assert.deepEqual(frames[name].slice(2), [w, h], `${name} shares ${key}'s canvas`);
+    // a dawn or dusk plant shows a closed frame out of its hour; the others never close
+    assert.equal(!!g.closed, !!(spec.dawn || spec.dusk), `${key} closes only if it keeps an hour`);
+    // a 16 px icon for the shelf and the book, a 24 px one for its card
+    assert.ok(g.icon && frames[g.icon][2] <= 16 && frames[g.icon][3] <= 16, `${key} icon`);
+    assert.equal(g.card, key + '_card');
+    assert.equal(Math.max(frames[g.card][2], frames[g.card][3]), 24, `${key} card is 24 px`);
+    // large enough to tap and to read, narrow enough to stand beside its neighbours
+    assert.ok(frames[g.idle][3] >= 16 && frames[g.idle][2] <= 32, `${key} is ${frames[g.idle][2]}x${frames[g.idle][3]}`);
   }
-  assert.ok(GATHERABLES.silverleaf.harvesting, 'the herb sequence keeps its harvesting frame');
-  // Ironroot grows half buried in the scene; its card shows the whole root
-  assert.equal(GATHERABLES.ironroot.card, 'ironroot_card');
-  assert.ok(FRAMES.ironroot_card[3] > FRAMES.ironroot_idle[3]);
-  assert.equal(GATHERABLES.owlberry.card, 'owlberry_idle');
-  for (let i = 0; i < 4; i++) assert.ok(FRAMES['glint_' + i]);
-  // the pack's oaks stand both behind the clearing and, larger, in front of it
-  for (const n of ['oak_round_01', 'oak_round_02', 'oak_wide_03']) {
-    assert.ok(FRAMES[n + '_far'] && FRAMES[n + '_near'], n);
-    assert.ok(FRAMES[n + '_near'][3] > FRAMES[n + '_far'][3], `${n}: the near oak is the finer, larger reduction`);
+  for (const a of [MEADOW, ...Object.values(REGION_ATLAS)]) for (let i = 0; i < 4; i++) assert.ok(a.frames['glint_' + i], `${a.url} glint ${i}`);
+});
+
+test('each sprite region has a layered scene spanning the frame', () => {
+  const layers = {
+    forest: ['sky', 'distant', 'mid', 'near', 'oaks', 'oak_small'],
+    river: ['sky', 'mountains', 'pines', 'water', 'bank', 'willow_great', 'willow_second'],
+    quarry: ['sky', 'far_cliffs', 'near_cliffs', 'crane', 'frame', 'cart'],
+    moonfen: ['sky', 'hills', 'treeline', 'mist', 'water', 'willow_left', 'willow_center'],
+    crags: ['sky', 'ridges', 'fissures', 'crag_large', 'lava_pool', 'gusher'],
+  };
+  for (const [region, names] of Object.entries(layers)) {
+    const F = ATLASES[region].frames;
+    for (const n of names) assert.ok(F[n], `${region} ${n}`);
+    for (const n of names.slice(0, 3)) assert.equal(F[n][2], SCENE_W, `${region} ${n} spans the scene`);
   }
-  // the right-hand oaks are mirrored in the atlas (not at draw time), so their shaded bark is lit from the left
-  for (const n of ['oak_round_01', 'oak_wide_03']) assert.deepEqual(FRAMES[n + '_near_m'].slice(2), FRAMES[n + '_near'].slice(2), n);
 });
 
 test('the meadow has its layers, its plants their closed hours and their icons', () => {
@@ -61,17 +75,8 @@ test('the meadow has its layers, its plants their closed hours and their icons',
   for (const n of ['sky', 'far_mountains', 'near_mountains', 'treeline', 'fence', 'oak', 'bush_pink', 'rock_big', 'bird_1', 'bird_3']) assert.ok(F[n], n);
   for (const n of ['sky', 'far_mountains', 'near_mountains', 'treeline']) assert.equal(F[n][2], SCENE_W, `${n} spans the scene`);
   assert.ok(Object.keys(F).some((n) => n.startsWith('cloud_')) && Object.keys(F).some((n) => n.startsWith('flowers_')) && Object.keys(F).some((n) => n.startsWith('grass_')));
-  // the dawn clover and the dusk hemlock show closed frames out of their hour; the others never close
-  for (const s of WILD_SPECS.filter((x) => x.region === 'meadow')) {
-    const g = GATHERABLES[s.key];
-    assert.equal(!!g.closed, !!(s.dawn || s.dusk), `${s.key} closes only if it keeps an hour`);
-    // a 16 px icon for the shelf and the book, a 24 px one for its card
-    assert.ok(g.icon && F[g.icon][2] <= 16 && F[g.icon][3] <= 16, `${s.key} icon`);
-    assert.equal(g.card, s.key + '_card');
-    assert.equal(Math.max(F[g.card][2], F[g.card][3]), 24, `${s.key} card is 24 px`);
-    // a gatherable stands out from the 8-14 px decorative clumps
-    assert.ok(F[g.idle][3] >= 20, `${s.key} is drawn larger than the flower clumps`);
-  }
+  // a gatherable stands out from the 8-14 px decorative clumps
+  for (const s of WILD_SPECS.filter((x) => x.region === 'meadow')) assert.ok(F[GATHERABLES[s.key].idle][3] >= 20, `${s.key} is drawn larger than the flower clumps`);
   for (const [n, f] of Object.entries(F)) if (n.startsWith('flowers_')) assert.ok(f[3] <= 14, `${n} stays a small clump`);
   assert.equal(gatherFrameName('dreamclover', { can: true, closed: true }), 'dreamclover_closed');
   assert.equal(gatherFrameName('dreamclover', { can: true, closed: true, hover: true }), 'dreamclover_closed_hover');
@@ -86,13 +91,14 @@ test('a gatherable shows what can be done with it', () => {
   assert.equal(gatherFrameName('ironroot', { can: true, hover: true }), 'ironroot_hover');
   assert.equal(gatherFrameName('ironroot', { can: false }), 'ironroot_depleted');
   assert.equal(gatherFrameName('ironroot', { can: false, hover: true }), 'ironroot_depleted', 'no highlight on what cannot be gathered');
-  assert.equal(gatherFrameName('owlberry', { can: false }), 'picked');
-  assert.equal(gatherFrameName('silverleaf', { can: true, harvesting: true }), 'silverleaf_harvesting');
-  assert.equal(gatherFrameName('owlberry', { can: true, harvesting: true }), 'owlberry_idle');
+  assert.equal(gatherFrameName('owlberry', { can: true, harvesting: true }), 'owlberry_idle', 'no harvesting art: the idle frame hops');
   assert.equal(gatherFrameName('ironroot', { can: true, card: true }), 'ironroot_card');
   assert.equal(gatherFrameName('ironroot', { can: false, card: true }), 'ironroot_depleted');
-  assert.equal(gatherFrameName('heartpetal', { can: true }), 'heartpetal_idle');
-  assert.equal(gatherFrameName('frostcap', { can: true }), null, 'other regions keep their procedural sprites');
+  assert.equal(gatherFrameName('frostcap', { can: true }), 'frostcap_idle');
+  assert.equal(gatherFrameName('moonlily', { can: true, closed: true }), 'moonlily_closed');
+  assert.equal(gatherFrameName('gravemoss', { can: true, closed: true, hover: true }), 'gravemoss_closed_hover');
+  assert.equal(gatherFrameName('obsidian', { can: true, closed: true }), 'obsidian_idle', 'a mineral never closes');
+  assert.equal(gatherFrameName('nosuch', { can: true }), null);
 });
 
 test('deposit boxes sit on the deposit spot and are never smaller than a tap', () => {
@@ -130,7 +136,7 @@ test('hit testing finds deposits, prefers the front one and ignores the scenery'
 });
 
 test('without a DOM the atlases never load and the procedural scenes stay', async () => {
-  for (const atlas of [WOODLAND, MEADOW]) {
+  for (const atlas of [MEADOW, ...Object.values(REGION_ATLAS)]) {
     assert.equal(await atlas.load(), false);
     assert.equal(atlas.ready, false);
   }

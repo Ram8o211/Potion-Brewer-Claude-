@@ -1,15 +1,16 @@
-// Wild sprites: one atlas per sprite-composed region — Whisperwood
-// (assets/whisperwood/atlas.png, built by scripts/make-whisperwood.py) and
-// the Sunlit Meadow (assets/meadow/atlas.png, scripts/make-meadow.py) — of
-// decorative world objects and the gatherables that stand for the region's
-// real ingredients, keyed by the ingredient's wild key (materials/wild.js).
-// Each gatherable has idle and hover frames and, where the art exists,
-// harvesting, depleted and closed ones (a dawn or dusk plant out of its
+// Wild sprites: one atlas per region — the Sunlit Meadow
+// (assets/meadow/atlas.png, built by scripts/make-meadow.py) and Whisperwood,
+// Willow Bank, Ironstone Quarry, Moonfen and the Ember Crags
+// (assets/wilds/<region>.png, scripts/make-wilds.py) — of decorative world
+// objects and the gatherables that stand for the region's real ingredients,
+// keyed by the ingredient's wild key (materials/wild.js).
+// Each gatherable has idle, hover and depleted frames and, where the art
+// exists, harvesting and closed ones (a dawn or dusk plant out of its
 // hour); all frames of one gatherable share a canvas anchored at its bottom
 // centre (the deposit's spot on the ground), so states swap in place. A
-// `card` frame is the picture on its deposit card (Ironroot's whole root, a
-// meadow plant's single flower) and an `icon` frame, where there is one, the
-// 16 px picture on the shelf and in the book. Deposits beyond the player's
+// `card` frame is the picture on its deposit card (the ingredient's single
+// flower, root, crystal…) and an `icon` frame the 16 px picture on the shelf
+// and in the book. Deposits beyond the player's
 // guild rank are not drawn in the scene at all; their cards say what rank
 // opens them.
 //
@@ -18,7 +19,7 @@
 // and hit testing are pure functions of the frame sizes so they can be tested
 // without a browser.
 
-import * as WOOD from './whisperwood-atlas.js';
+import { ATLASES } from './wilds-atlas.js';
 import * as FIELD from './meadow-atlas.js';
 import { rawSprite } from './scenes.js';
 
@@ -85,11 +86,13 @@ export class SpriteAtlas {
   }
 }
 
-export const WOODLAND = new SpriteAtlas(WOOD.ATLAS_URL, WOOD.FRAMES);
 export const MEADOW = new SpriteAtlas(FIELD.ATLAS_URL, FIELD.FRAMES);
 
-/** The atlas a region's scene is composed from, if it has one. @type {Record<string, SpriteAtlas>} */
-export const REGION_ATLAS = { forest: WOODLAND, meadow: MEADOW };
+/** The atlas each region's scene is composed from. @type {Record<string, SpriteAtlas>} */
+export const REGION_ATLAS = {
+  meadow: MEADOW,
+  ...Object.fromEntries(Object.entries(ATLASES).map(([region, a]) => [region, new SpriteAtlas(a.url, a.frames)])),
+};
 
 /**
  * @typedef {{region:string, atlas:SpriteAtlas, idle:string, hover:string, card:string, depleted:string,
@@ -101,8 +104,7 @@ function gatherable(region, atlas, k) {
   const has = (/** @type {string} */ n) => !!atlas.frames[k + '_' + n];
   return [k, {
     region, atlas, idle: k + '_idle', hover: k + '_hover', card: has('card') ? k + '_card' : k + '_idle',
-    // own depleted / harvesting art where the pack has it, else a picked-over patch
-    depleted: has('depleted') ? k + '_depleted' : 'picked',
+    depleted: k + '_depleted',
     ...(has('harvesting') ? { harvesting: k + '_harvesting' } : {}),
     ...(has('closed') ? { closed: k + '_closed', closedHover: k + '_closed_hover' } : {}),
     ...(has('icon') ? { icon: k + '_icon' } : {}),
@@ -110,10 +112,14 @@ function gatherable(region, atlas, k) {
 }
 
 /** Which frames each sprite-drawn ingredient uses. @type {Record<string, Gatherable>} */
-export const GATHERABLES = Object.fromEntries([
-  ...['ironroot', 'silverleaf', 'nightshade', 'owlberry', 'emberbark', 'witchear', 'mandrake'].map((k) => gatherable('forest', WOODLAND, k)),
-  ...['heartpetal', 'sunthistle', 'nettle', 'dreamclover', 'beebalm', 'hemlock'].map((k) => gatherable('meadow', MEADOW, k)),
-]);
+export const GATHERABLES = Object.fromEntries(Object.entries({
+  forest: ['ironroot', 'silverleaf', 'nightshade', 'owlberry', 'emberbark', 'witchear', 'mandrake'],
+  meadow: ['heartpetal', 'sunthistle', 'nettle', 'dreamclover', 'beebalm', 'hemlock'],
+  river: ['riverchalk', 'frostcap', 'bogbean', 'willowbark', 'reedmace', 'riverpearl'],
+  quarry: ['emberflint', 'mica', 'saltpetre', 'sulfur', 'lodestone', 'cinnabar', 'stormglass'],
+  moonfen: ['gravemoss', 'starquartz', 'wisplichen', 'moonlily', 'toadstool', 'sirenreed'],
+  crags: ['dragonpepper', 'cinderscale', 'ashbloom', 'obsidian'],
+}).flatMap(([region, keys]) => keys.map((k) => gatherable(region, REGION_ATLAS[region], k))));
 
 /** Smallest tap target around a deposit, in art pixels (≈ 30 CSS px on a phone). */
 export const MIN_HIT = 20;
