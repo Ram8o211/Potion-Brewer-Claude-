@@ -87,13 +87,11 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 .parch::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; image-rendering: pixelated; background: var(--tex-parch) repeat; background-size: 128px 128px; }
 .card.parch::before { background: var(--nail) no-repeat left 4px top 4px, var(--nail) no-repeat right 4px top 4px, var(--nail) no-repeat left 4px bottom 5px, var(--nail) no-repeat right 4px bottom 5px, var(--tex-parch) repeat; background-size: 4px 4px, 4px 4px, 4px 4px, 4px 4px, 128px 128px; }
 .btn:disabled::before { opacity: .6; }
-/* leafy sprigs over the corners of lit buttons, cards and the wilds' list */
-.btn.active::after, .tab.active::after, .card.parch::after, .deposit.parch::after, .scene-wrap::after {
+/* leafy sprigs over the corners of cards, the wilds' list and its scene */
+.card.parch::after, .deposit.parch::after, .scene-wrap::after {
   content: ''; position: absolute; inset: -7px -7px auto -7px; height: 20px; z-index: 2; pointer-events: none; image-rendering: pixelated;
   background: var(--sprig-l) no-repeat left top, var(--sprig-r) no-repeat right top; background-size: 24px 20px;
 }
-.btn.active::after, .tab.active::after { inset: auto -6px -6px -6px; transform: scaleY(-1); }
-.tools .btn.active::after, .jar.selected::after { display: none; }
 
 /* ---------- screens ---------- */
 .screen { position: absolute; inset: 0; overflow: hidden; }
