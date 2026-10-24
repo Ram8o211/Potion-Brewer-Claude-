@@ -87,6 +87,13 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 .parch::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; image-rendering: pixelated; background: var(--tex-parch) repeat; background-size: 128px 128px; }
 .card.parch::before { background: var(--nail) no-repeat left 4px top 4px, var(--nail) no-repeat right 4px top 4px, var(--nail) no-repeat left 4px bottom 5px, var(--nail) no-repeat right 4px bottom 5px, var(--tex-parch) repeat; background-size: 4px 4px, 4px 4px, 4px 4px, 4px 4px, 128px 128px; }
 .btn:disabled::before { opacity: .6; }
+/* leafy sprigs over the corners of lit buttons, cards and the wilds' list */
+.btn.active::after, .tab.active::after, .card.parch::after, .deposit.parch::after, .scene-wrap::after {
+  content: ''; position: absolute; inset: -7px -7px auto -7px; height: 20px; z-index: 2; pointer-events: none; image-rendering: pixelated;
+  background: var(--sprig-l) no-repeat left top, var(--sprig-r) no-repeat right top; background-size: 24px 20px;
+}
+.btn.active::after, .tab.active::after { inset: auto -6px -6px -6px; transform: scaleY(-1); }
+.tools .btn.active::after, .jar.selected::after { display: none; }
 
 /* ---------- screens ---------- */
 .screen { position: absolute; inset: 0; overflow: hidden; }
@@ -433,24 +440,25 @@ canvas.hutch-scene { display: block; width: 100%; height: auto; aspect-ratio: 22
 .law-found { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: center; padding: 6px; margin-top: 6px; background: rgba(232, 180, 92, 0.25); box-shadow: 0 0 0 1px var(--brass); }
 
 /* ---------- wilds ---------- */
-.region-tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; padding: 2px 0 6px; }
+.region-tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 8px 8px 10px; }
 .region-tabs::-webkit-scrollbar { display: none; }
-.region-tabs .btn { flex: none; min-height: 44px; font-size: var(--fs-s); }
+.region-tabs .btn { flex: none; min-height: 50px; padding-left: 12px; padding-right: 14px; }
+.region-tabs .btn img.ico { width: 28px; height: 28px; }
 .region-tabs .btn.locked { opacity: 0.55; }
 .scene-wrap { position: relative; box-shadow: 0 0 0 var(--px) var(--wood0), 0 0 0 calc(var(--px) * 2) var(--wood3); }
 canvas.scene { display: block; width: 100%; aspect-ratio: 16 / 9; height: auto; touch-action: manipulation; cursor: pointer; }
 .region-info { margin: 6px 2px; color: var(--parch2); line-height: 1.35; }
 .deposits { display: flex; flex-direction: column; gap: 6px; }
-.deposit { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px 8px; }
-.deposit canvas { width: 32px; height: 32px; }
-.deposit .title { font-size: 18px; display: flex; gap: 6px; align-items: center; }
+.deposit { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 8px 10px; }
+.deposit canvas { width: 48px; height: 48px; image-rendering: pixelated; filter: drop-shadow(2px 2px 0 rgba(43, 29, 20, 0.25)); }
+.deposit .title { font-size: 21px; display: flex; gap: 6px; align-items: center; }
 .deposit .meta { font-size: var(--fs-s); color: var(--ink2); line-height: 1.3; }
 .deposit .bar { height: 5px; margin: 2px 0; background: rgba(43, 29, 20, 0.25); box-shadow: none; }
 .deposit .bar > i { background: linear-gradient(#9fd06a, #4f7a31); }
 .deposit .btn { min-height: 48px; }
 /* narrow screens: the gather button goes under the deposit, so its notes keep their width */
 @media (max-width: 600px) {
-  .deposit { grid-template-columns: 36px minmax(0, 1fr); }
+  .deposit { grid-template-columns: 52px minmax(0, 1fr); }
   .deposit > .btn { grid-column: 1 / -1; }
 }
 .deposit.locked { opacity: 0.6; }
@@ -541,7 +549,7 @@ canvas.scene { display: block; width: 100%; aspect-ratio: 16 / 9; height: auto; 
   .tools { gap: 2px; }
   .tools .btn { min-width: 44px; padding: 2px; }
   .tools .btn .lbl { font-size: 11px; }
-  .deposit { grid-template-columns: 36px minmax(0, 1fr); }
+  .deposit { grid-template-columns: 52px minmax(0, 1fr); }
   .deposit > .btn { grid-column: 1 / -1; }
   .topbar { padding: 1px 6px; }
   .topbar .btn { min-height: 44px; min-width: 44px; }
