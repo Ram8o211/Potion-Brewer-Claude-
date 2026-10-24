@@ -325,7 +325,7 @@ export function renderCauldron(c, v) {
   const s = v.scale;
   const wall = 0.16, rim = 0.28;
   const x0 = Math.floor(v.ox + (-c.belly - 0.6) * s), x1 = Math.ceil(v.ox + (c.belly + 0.6) * s);
-  const y0 = Math.floor(v.oy + -0.25 * s), y1 = Math.ceil(v.oy + (c.depth + 0.75) * s);
+  const y0 = Math.floor(v.oy + -0.25 * s), y1 = Math.ceil(v.oy + (c.depth + 0.5) * s);
   const w = x1 - x0, h = y1 - y0;
   // iron pixel: p art pixels square
   const p = s >= 70 ? 2 : 1;
@@ -411,7 +411,7 @@ export function renderCauldron(c, v) {
 
   // cast legs with claw feet, behind the belly
   const legW = Math.max(3, Math.round(0.2 * S));
-  const top = Y(c.depth - 0.3), bot = Y(c.depth + 0.7);
+  const top = Y(c.depth - 0.3), bot = Y(c.depth + 0.4);
   for (const sgn of [-1, 1]) {
     const cx = X(sgn * c.belly * 0.6);
     for (let y = top; y < bot; y++) {
@@ -566,6 +566,73 @@ export function renderLid(c, v) {
   return { canvas: out, x, y, topY: (wx) => y + (base - domeH(Math.round(wx * S)) - 1) * p };
 }
 
+/**
+ * Pre-render the lid when it is off: stood on its rim on the hearth and
+ * leaning back against the left leg, dome toward us, knob in the middle.
+ * @param {import('../simulation/cauldron.js').Cauldron} c
+ * @param {{scale:number, ox:number, oy:number}} v
+ */
+export function renderLidAside(c, v) {
+  const s = v.scale;
+  const p = s >= 70 ? 2 : 1;
+  const S = s / p;
+  const hgt = Math.max(9, Math.round((c.mouth + 0.22) * 2 * 0.42 * S)); // stylised, like the jars on the shelves
+  const wid = Math.max(5, Math.round(hgt * 0.5));
+  const lean = Math.round(hgt * 0.16);
+  const cw = wid + lean + 4, ch = hgt + 3;
+  const a = wid / 2, b = hgt / 2;
+  const cv = makeCanvas(cw, ch);
+  const ctx = cv.getContext('2d');
+  const iron = [PAL.iron0, PAL.iron1, PAL.iron2, PAL.iron3, PAL.iron4, PAL.iron5, '#9a95a6'];
+  const inside = (x, y) => {
+    const off = lean * (1 - y / hgt); // the top leans to the right
+    const dx = (x + 0.5 - 1 - off - a) / a, dy = (y + 0.5 - 1 - b) / b;
+    return dx * dx + dy * dy <= 1 ? [dx, dy] : null;
+  };
+  for (let y = 0; y < ch; y++) {
+    for (let x = 0; x < cw; x++) {
+      const e = inside(x, y);
+      if (!e) continue;
+      const edge = !inside(x - 1, y) || !inside(x + 1, y) || !inside(x, y - 1) || !inside(x, y + 1);
+      if (edge) { R(ctx, x, y, 1, 1, '#08070a'); continue; }
+      const [dx, dy] = e;
+      const t2 = dx * dx + dy * dy;
+      const bay = (BAYER4[(x & 3) + (y & 3) * 4] + 0.5) / 16 - 0.5;
+      let lum;
+      if (t2 > 0.62) {
+        // the flange: a flat ring, bright where it faces the light
+        lum = 3.6 - dx * 1.2 - dy * 1.2;
+        if (t2 < 0.7) lum = 1.2; // the step up to the dome
+      } else {
+        // the dome bulges toward us: lit from the upper left
+        lum = 3.2 - dx * 2.0 - dy * 1.4;
+        if (Math.abs(dx + 0.35) < 0.12 && dy < 0 && dy > -0.55) lum += 1.5; // highlight streak
+      }
+      R(ctx, x, y, 1, 1, iron[Math.max(1, Math.min(6, Math.floor(lum + bay * 0.8 + 0.5)))]);
+    }
+  }
+  // wooden knob at the centre of the dome, seen end-on
+  const kx = Math.round(1 + a + lean / 2), ky = Math.round(1 + b);
+  const kr = Math.max(1, Math.round(0.06 * S));
+  for (let y = -kr - 1; y <= kr + 1; y++) for (let x = -kr - 1; x <= kr + 1; x++) {
+    const r = Math.hypot(x, y);
+    if (r > kr + 0.7) continue;
+    R(ctx, kx + x, ky + y, 1, 1, r > kr - 0.3 ? '#08070a' : x + y < 0 ? PAL.wood5 : PAL.wood3);
+  }
+  // contact shadow on the hearth
+  R(ctx, 1, ch - 2, wid, 1, 'rgba(0,0,0,0.35)');
+
+  const w = cw * p, h = ch * p;
+  const out = makeCanvas(w, h);
+  const octx = out.getContext('2d');
+  octx.imageSmoothingEnabled = false;
+  octx.drawImage(cv, 0, 0, w, h);
+  // right edge rests on the outside of the left leg, rim on the hearth
+  const legOut = v.ox + (-c.belly * 0.6 - 0.16) * s;
+  const x = Math.round(legOut - w), y = Math.round(v.oy + (c.depth + 0.4) * s) - h + p;
+  return { canvas: out, x, y };
+}
+
 /** @param {number} w @param {number} h @returns {HTMLCanvasElement} */
 export function makeCanvas(w, h) {
   const cv = document.createElement('canvas');
@@ -583,7 +650,7 @@ export function makeCanvas(w, h) {
 export function paintHearth(ctx, c, v) {
   const s = v.scale;
   const left = Math.round(v.ox - (c.belly + 0.55) * s), right = Math.round(v.ox + (c.belly + 0.55) * s);
-  const top = Math.round(v.oy + (c.depth + 0.55) * s), bot = Math.round(v.oy + (c.depth + 1.0) * s);
+  const top = Math.round(v.oy + (c.depth + 0.25) * s), bot = Math.round(v.oy + (c.depth + 0.7) * s);
   const rng = new Rng('hearth');
   const sw = Math.max(5, Math.round(s * 0.32)), sh = Math.max(3, Math.round(s * 0.16));
   for (let y = top, row = 0; y < bot; y += sh, row++) {
@@ -595,7 +662,7 @@ export function paintHearth(ctx, c, v) {
   }
   R(ctx, left, top, right - left, 1, PAL.stone4);
   // firewood under the cauldron: split logs with pale end grain, and coals
-  const fy = Math.round(v.oy + (c.depth + 0.5) * s), lw = Math.round(c.belly * 0.5 * s), lh = Math.max(3, Math.round(s * 0.11));
+  const fy = Math.round(v.oy + (c.depth + 0.2) * s), lw = Math.round(c.belly * 0.5 * s), lh = Math.max(3, Math.round(s * 0.11));
   for (const [dx, dy, ww] of [[-0.55, 0, 1], [0.05, 0, 1], [-0.25, -1, 0.9]]) {
     const x = Math.round(v.ox + dx * c.belly * s), y = fy + Math.round(dy * lh * 0.8);
     const w2 = Math.round(lw * ww);

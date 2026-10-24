@@ -10101,7 +10101,7 @@ function renderCauldron(c, v) {
 const s = v.scale;
 const wall = 0.16, rim = 0.28;
 const x0 = Math.floor(v.ox + (-c.belly - 0.6) * s), x1 = Math.ceil(v.ox + (c.belly + 0.6) * s);
-const y0 = Math.floor(v.oy + -0.25 * s), y1 = Math.ceil(v.oy + (c.depth + 0.75) * s);
+const y0 = Math.floor(v.oy + -0.25 * s), y1 = Math.ceil(v.oy + (c.depth + 0.5) * s);
 const w = x1 - x0, h = y1 - y0;
 const p = s >= 70 ? 2 : 1;
 const cw = Math.ceil(w / p), ch = Math.ceil(h / p);
@@ -10174,7 +10174,7 @@ const cv = makeCanvas(cw, ch);
 const ctx = cv.getContext('2d');
 const X = (wx) => Math.round(ox + wx * S), Y = (wy) => Math.round(oy + wy * S);
 const legW = Math.max(3, Math.round(0.2 * S));
-const top = Y(c.depth - 0.3), bot = Y(c.depth + 0.7);
+const top = Y(c.depth - 0.3), bot = Y(c.depth + 0.4);
 for (const sgn of [-1, 1]) {
 const cx = X(sgn * c.belly * 0.6);
 for (let y = top; y < bot; y++) {
@@ -10304,6 +10304,60 @@ octx.drawImage(cv, 0, 0, w, h);
 const x = Math.round(v.ox) - cx * p, y = Math.round(v.oy - 0.12 * s) - (ch - 1 - fh) * p;
 return { canvas: out, x, y, topY: (wx) => y + (base - domeH(Math.round(wx * S)) - 1) * p };
 }
+function renderLidAside(c, v) {
+const s = v.scale;
+const p = s >= 70 ? 2 : 1;
+const S = s / p;
+const hgt = Math.max(9, Math.round((c.mouth + 0.22) * 2 * 0.42 * S)); // stylised, like the jars on the shelves
+const wid = Math.max(5, Math.round(hgt * 0.5));
+const lean = Math.round(hgt * 0.16);
+const cw = wid + lean + 4, ch = hgt + 3;
+const a = wid / 2, b = hgt / 2;
+const cv = makeCanvas(cw, ch);
+const ctx = cv.getContext('2d');
+const iron = [PAL.iron0, PAL.iron1, PAL.iron2, PAL.iron3, PAL.iron4, PAL.iron5, '#9a95a6'];
+const inside = (x, y) => {
+const off = lean * (1 - y / hgt); // the top leans to the right
+const dx = (x + 0.5 - 1 - off - a) / a, dy = (y + 0.5 - 1 - b) / b;
+return dx * dx + dy * dy <= 1 ? [dx, dy] : null;
+};
+for (let y = 0; y < ch; y++) {
+for (let x = 0; x < cw; x++) {
+const e = inside(x, y);
+if (!e) continue;
+const edge = !inside(x - 1, y) || !inside(x + 1, y) || !inside(x, y - 1) || !inside(x, y + 1);
+if (edge) { R(ctx, x, y, 1, 1, '#08070a'); continue; }
+const [dx, dy] = e;
+const t2 = dx * dx + dy * dy;
+const bay = (BAYER4[(x & 3) + (y & 3) * 4] + 0.5) / 16 - 0.5;
+let lum;
+if (t2 > 0.62) {
+lum = 3.6 - dx * 1.2 - dy * 1.2;
+if (t2 < 0.7) lum = 1.2; // the step up to the dome
+} else {
+lum = 3.2 - dx * 2.0 - dy * 1.4;
+if (Math.abs(dx + 0.35) < 0.12 && dy < 0 && dy > -0.55) lum += 1.5; // highlight streak
+}
+R(ctx, x, y, 1, 1, iron[Math.max(1, Math.min(6, Math.floor(lum + bay * 0.8 + 0.5)))]);
+}
+}
+const kx = Math.round(1 + a + lean / 2), ky = Math.round(1 + b);
+const kr = Math.max(1, Math.round(0.06 * S));
+for (let y = -kr - 1; y <= kr + 1; y++) for (let x = -kr - 1; x <= kr + 1; x++) {
+const r = Math.hypot(x, y);
+if (r > kr + 0.7) continue;
+R(ctx, kx + x, ky + y, 1, 1, r > kr - 0.3 ? '#08070a' : x + y < 0 ? PAL.wood5 : PAL.wood3);
+}
+R(ctx, 1, ch - 2, wid, 1, 'rgba(0,0,0,0.35)');
+const w = cw * p, h = ch * p;
+const out = makeCanvas(w, h);
+const octx = out.getContext('2d');
+octx.imageSmoothingEnabled = false;
+octx.drawImage(cv, 0, 0, w, h);
+const legOut = v.ox + (-c.belly * 0.6 - 0.16) * s;
+const x = Math.round(legOut - w), y = Math.round(v.oy + (c.depth + 0.4) * s) - h + p;
+return { canvas: out, x, y };
+}
 function makeCanvas(w, h) {
 const cv = document.createElement('canvas');
 cv.width = Math.max(1, w);
@@ -10315,7 +10369,7 @@ return cv;
 function paintHearth(ctx, c, v) {
 const s = v.scale;
 const left = Math.round(v.ox - (c.belly + 0.55) * s), right = Math.round(v.ox + (c.belly + 0.55) * s);
-const top = Math.round(v.oy + (c.depth + 0.55) * s), bot = Math.round(v.oy + (c.depth + 1.0) * s);
+const top = Math.round(v.oy + (c.depth + 0.25) * s), bot = Math.round(v.oy + (c.depth + 0.7) * s);
 const rng = new Rng('hearth');
 const sw = Math.max(5, Math.round(s * 0.32)), sh = Math.max(3, Math.round(s * 0.16));
 for (let y = top, row = 0; y < bot; y += sh, row++) {
@@ -10326,7 +10380,7 @@ R(ctx, x + 1, y + 1, sw - 2, 1, PAL.stone4);
 }
 }
 R(ctx, left, top, right - left, 1, PAL.stone4);
-const fy = Math.round(v.oy + (c.depth + 0.5) * s), lw = Math.round(c.belly * 0.5 * s), lh = Math.max(3, Math.round(s * 0.11));
+const fy = Math.round(v.oy + (c.depth + 0.2) * s), lw = Math.round(c.belly * 0.5 * s), lh = Math.max(3, Math.round(s * 0.11));
 for (const [dx, dy, ww] of [[-0.55, 0, 1], [0.05, 0, 1], [-0.25, -1, 0.9]]) {
 const x = Math.round(v.ox + dx * c.belly * s), y = fy + Math.round(dy * lh * 0.8);
 const w2 = Math.round(lw * ww);
@@ -10337,7 +10391,7 @@ R(ctx, x + w2 - lh, y, lh, lh, PAL.parch1); R(ctx, x + w2 - lh + 1, y + 1, Math.
 }
 for (let k = 0; k < 14; k++) R(ctx, Math.round(v.ox + rng.range(-0.6, 0.6) * c.belly * s), fy + lh + rng.int(-1, 1), 2, 1, rng.pick([PAL.fire0, PAL.iron1, PAL.copper0]));
 }
-return { PAL, hex2rgb, rgbStr, mixHex, paintBackground, drawJar, renderCauldron, renderLid, makeCanvas, paintHearth, rect: R };
+return { PAL, hex2rgb, rgbStr, mixHex, paintBackground, drawJar, renderCauldron, renderLid, renderLidAside, makeCanvas, paintHearth, rect: R };
 })();
 // src/rendering/fluid.js
 const __m54 = (() => {
@@ -11001,7 +11055,7 @@ return { Effects };
 })();
 // src/rendering/renderer.js
 const __m52 = (() => {
-const { PAL, paintBackground, renderCauldron, renderLid, paintHearth, makeCanvas, rgbStr, hex2rgb, drawJar, rect } = __m53;
+const { PAL, paintBackground, renderCauldron, renderLid, renderLidAside, paintHearth, makeCanvas, rgbStr, hex2rgb, drawJar, rect } = __m53;
 const { FluidRenderer } = __m54;
 const { Effects } = __m55;
 const { COLUMN } = __m33;
@@ -11022,6 +11076,7 @@ this.view = { scale: 50, ox: 0, oy: 0 };
 this.bg = null;
 this.cauldronArt = null;
 this.lidArt = null;
+this.lidAsideArt = null;
 this.heatCanvas = null;
 this.frame = 0;
 this.jars = [];
@@ -11050,7 +11105,7 @@ this.ctx = this.canvas.getContext('2d', { alpha: false });
 this.ctx.imageSmoothingEnabled = false;
 const c = cauldron;
 const viewW = 2 * (c.belly + 0.55);
-const viewTop = VIEW_TOP, viewBot = c.depth + 1.0;
+const viewTop = VIEW_TOP, viewBot = c.depth + 0.7;
 const viewH = viewBot - viewTop;
 const s = Math.min(W / viewW, H / viewH);
 this.view = { scale: s, ox: Math.round(W / 2), oy: Math.round((H - viewH * s) / 2 - viewTop * s) };
@@ -11058,11 +11113,12 @@ this.jars = jars;
 this.bg = makeCanvas(W, H);
 const bctx = this.bg.getContext('2d');
 bctx.imageSmoothingEnabled = false;
-const floorY = Math.round(this.view.oy + (c.depth + 0.72) * s);
+const floorY = Math.round(this.view.oy + (c.depth + 0.42) * s);
 paintBackground(bctx, W, H, { cx: this.view.ox, floorY, scale: s, half: (c.belly + 0.6) * s, top: this.view.oy - 0.25 * s, jars });
 paintHearth(bctx, c, this.view);
 this.cauldronArt = renderCauldron(c, this.view);
 this.lidArt = renderLid(c, this.view);
+this.lidAsideArt = renderLidAside(c, this.view);
 this.heatCanvas = makeCanvas(this.cauldronArt.canvas.width, this.cauldronArt.canvas.height);
 this.heatCtx = this.heatCanvas.getContext('2d');
 this.heatImg = this.heatCtx.createImageData(this.heatCanvas.width, this.heatCanvas.height);
@@ -11082,7 +11138,7 @@ const s = view.scale;
 this.frame++;
 ctx.drawImage(this.bg, 0, 0);
 const setting = sim.furnace.setting;
-const fireX = view.ox, fireY = Math.round(view.oy + (c.depth + 0.52) * s);
+const fireX = view.ox, fireY = Math.round(view.oy + (c.depth + 0.22) * s);
 const fireW = c.belly * 1.15 * s;
 rect(ctx, fireX - fireW / 2, fireY, fireW, Math.max(2, s * 0.06), setting > 0.02 ? PAL.fire0 : PAL.stone0);
 if (setting > 0.02) {
@@ -11178,7 +11234,6 @@ this.heatCtx.putImageData(img, 0, 0);
 _drawLid(c, st) {
 const { ctx, view } = this;
 const s = view.scale;
-const lw = Math.round((c.mouth + 0.22) * 2 * s);
 if (c.lidClosed) {
 const la = this.lidArt;
 ctx.drawImage(la.canvas, la.x, la.y);
@@ -11192,24 +11247,15 @@ rect(ctx, px - fw / 2, y - fh - Math.round(0.06 * s), fw, fh, PAL.brass);
 rect(ctx, px - fw / 2, y - fh - Math.round(0.06 * s), fw, 1, PAL.brassHi);
 rect(ctx, px + fw / 2 - 1, y - fh - Math.round(0.06 * s), 1, fh, PAL.copper2);
 } else {
-const lh = Math.round(lw * 0.42);
-const x = Math.round(view.ox - (c.belly * 0.62 + 0.2) * s - lh * 0.35), y = Math.round(view.oy + (c.depth + 0.55) * s);
-ctx.save();
-ctx.translate(x, y);
-ctx.rotate(-0.35);
-const th = Math.max(3, Math.round(0.11 * s));
-rect(ctx, -th - 1, -lh - 1, th + 2, lh + 2, '#08070a');
-rect(ctx, -th, -lh, th, lh, PAL.iron3);
-rect(ctx, -th, -lh, 1, lh, PAL.iron5);
-rect(ctx, 0, -lh * 0.6, Math.max(2, Math.round(th * 0.8)), Math.round(lh * 0.2), PAL.wood4);
-ctx.restore();
+const la = this.lidAsideArt;
+ctx.drawImage(la.canvas, la.x, la.y);
 }
 }
 _drawTap(c, st) {
 const { ctx, view } = this;
 const s = view.scale;
-const tx = Math.round(view.ox + (c.halfWidth(c.depth - 0.35) + 0.16) * s);
-const ty = Math.round(view.oy + (c.depth - 0.35) * s);
+const tx = Math.round(view.ox + (c.halfWidth(c.depth - 0.62) + 0.16) * s);
+const ty = Math.round(view.oy + (c.depth - 0.62) * s);
 const tw = Math.max(4, Math.round(0.25 * s)), th = Math.max(2, Math.round(0.07 * s));
 rect(ctx, tx, ty, tw, th, PAL.brass);
 rect(ctx, tx, ty, tw, 1, PAL.brassHi);
@@ -11217,7 +11263,7 @@ rect(ctx, tx + tw - th, ty + th, th, th * 2, PAL.copper2);
 rect(ctx, tx + Math.round(tw / 3), ty - th, th, th, PAL.copper3); // valve handle
 const b = st.bottling;
 const bw = Math.max(6, Math.round(0.34 * s)), bh = Math.max(9, Math.round(0.55 * s));
-const bx = tx + tw - th / 2 - bw / 2, by = Math.round(view.oy + (c.depth + 0.55) * s) - bh;
+const bx = tx + tw - th / 2 - bw / 2, by = Math.round(view.oy + (c.depth + 0.25) * s) - bh;
 if (b) {
 const sx = Math.round(tx + tw - th / 2), sy = ty + th * 3;
 if (b.progress < 1) rect(ctx, sx - 1, sy, 2, by + bh * (1 - b.progress * 0.8) - sy, rgbStr(b.color));
@@ -11333,13 +11379,13 @@ const setting = st.sim.furnace.setting;
 ctx.globalCompositeOperation = 'lighter';
 if (setting > 0.02) {
 const flick = 0.85 + Math.sin(st.time * 11) * 0.08 + Math.sin(st.time * 17.3) * 0.05;
-const g = ctx.createRadialGradient(view.ox, view.oy + (c.depth + 0.6) * s, 0, view.ox, view.oy + (c.depth + 0.6) * s, s * 2.6);
+const g = ctx.createRadialGradient(view.ox, view.oy + (c.depth + 0.3) * s, 0, view.ox, view.oy + (c.depth + 0.3) * s, s * 2.6);
 g.addColorStop(0, `rgba(255,120,40,${0.32 * setting * flick})`);
 g.addColorStop(1, 'rgba(255,120,40,0)');
 ctx.fillStyle = g;
 ctx.fillRect(0, 0, this.W, this.H);
 } else if (setting < -0.02) {
-const g = ctx.createRadialGradient(view.ox, view.oy + (c.depth + 0.6) * s, 0, view.ox, view.oy + (c.depth + 0.6) * s, s * 2.2);
+const g = ctx.createRadialGradient(view.ox, view.oy + (c.depth + 0.3) * s, 0, view.ox, view.oy + (c.depth + 0.3) * s, s * 2.2);
 g.addColorStop(0, `rgba(90,170,255,${0.22 * -setting})`);
 g.addColorStop(1, 'rgba(90,170,255,0)');
 ctx.fillStyle = g;
@@ -16200,6 +16246,7 @@ this.selectTool('spoon', true);
 if (!this.sandbox) {
 const tutorialVisit = st.tutorial.active && !st.tutorial.done && st.stats.served === 0;
 if (!st.current && !st.dayOver && (st.opened || tutorialVisit)) this.bringCustomer(false);
+else this.refreshCustomer();
 this.tutorial = new Tutorial(this);
 if (st.tutorial.active && !st.tutorial.done) this.tutorial.start();
 }
