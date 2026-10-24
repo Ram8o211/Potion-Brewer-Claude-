@@ -2,7 +2,7 @@
 // tools, effects and lighting at a fixed "art pixel" density, upscaled with
 // nearest-neighbour filtering for crisp pixel art at any screen size.
 
-import { PAL, paintBackground, renderCauldron, paintHearth, makeCanvas, rgbStr, hex2rgb, drawJar, rect } from './art.js';
+import { PAL, paintBackground, renderCauldron, renderLid, paintHearth, makeCanvas, rgbStr, hex2rgb, drawJar, rect } from './art.js';
 import { FluidRenderer } from './fluid.js';
 import { Effects } from './effects.js';
 import { COLUMN } from '../simulation/cauldron.js';
@@ -27,6 +27,7 @@ export class Renderer {
     this.view = { scale: 50, ox: 0, oy: 0 };
     this.bg = null;
     this.cauldronArt = null;
+    this.lidArt = null;
     this.heatCanvas = null;
     this.frame = 0;
     this.jars = [];
@@ -78,6 +79,7 @@ export class Renderer {
     paintBackground(bctx, W, H, { cx: this.view.ox, floorY, scale: s, half: (c.belly + 0.6) * s, top: this.view.oy - 0.25 * s, jars });
     paintHearth(bctx, c, this.view);
     this.cauldronArt = renderCauldron(c, this.view);
+    this.lidArt = renderLid(c, this.view);
     this.heatCanvas = makeCanvas(this.cauldronArt.canvas.width, this.cauldronArt.canvas.height);
     this.heatCtx = this.heatCanvas.getContext('2d');
     this.heatImg = this.heatCtx.createImageData(this.heatCanvas.width, this.heatCanvas.height);
@@ -233,21 +235,18 @@ export class Renderer {
     const s = view.scale;
     const lw = Math.round((c.mouth + 0.22) * 2 * s);
     if (c.lidClosed) {
-      const x = Math.round(view.ox - lw / 2), y = Math.round(view.oy - 0.12 * s);
-      const h = Math.max(3, Math.round(0.12 * s));
-      rect(ctx, x, y, lw, h, PAL.iron3);
-      rect(ctx, x, y, lw, 1, PAL.iron5);
-      rect(ctx, x + 2, y - Math.round(0.08 * s), lw - 4, Math.round(0.08 * s), PAL.iron2);
-      rect(ctx, x + 2, y - Math.round(0.08 * s), lw - 4, 1, PAL.iron4);
-      // knob
-      const kw = Math.max(3, Math.round(0.2 * s));
-      rect(ctx, view.ox - kw / 2 - Math.round(0.9 * s), y - Math.round(0.2 * s), kw, Math.round(0.12 * s), PAL.wood4);
-      // funnel port (brass)
-      const px = Math.round(view.ox + (st.pour && st.pour.active ? st.pour.x : 0.6) * s);
-      const fw = Math.max(4, Math.round(0.22 * s));
-      rect(ctx, px - fw / 2, y - Math.round(0.18 * s), fw, Math.round(0.1 * s), PAL.brass);
-      rect(ctx, px - fw / 4, y - Math.round(0.1 * s), fw / 2, Math.round(0.14 * s), PAL.copper2);
-      rect(ctx, px - fw / 2, y - Math.round(0.18 * s), fw, 1, PAL.brassHi);
+      const la = this.lidArt;
+      ctx.drawImage(la.canvas, la.x, la.y);
+      // funnel port (brass), seated on the dome
+      const wx = st.pour && st.pour.active ? st.pour.x : 0.6;
+      const px = Math.round(view.ox + wx * s);
+      const fw = Math.max(4, Math.round(0.22 * s)), fh = Math.max(2, Math.round(0.1 * s));
+      const y = la.topY(wx) + 1;
+      rect(ctx, px - fw / 2 - 1, y - fh - Math.round(0.06 * s) - 1, fw + 2, fh + 2, '#08070a');
+      rect(ctx, px - fw / 4, y - Math.round(0.06 * s), fw / 2, Math.round(0.06 * s) + 1, PAL.copper2);
+      rect(ctx, px - fw / 2, y - fh - Math.round(0.06 * s), fw, fh, PAL.brass);
+      rect(ctx, px - fw / 2, y - fh - Math.round(0.06 * s), fw, 1, PAL.brassHi);
+      rect(ctx, px + fw / 2 - 1, y - fh - Math.round(0.06 * s), 1, fh, PAL.copper2);
     } else {
       // lid propped against the cauldron's leg, standing on the hearth
       const lh = Math.round(lw * 0.42);
@@ -256,6 +255,7 @@ export class Renderer {
       ctx.translate(x, y);
       ctx.rotate(-0.35);
       const th = Math.max(3, Math.round(0.11 * s));
+      rect(ctx, -th - 1, -lh - 1, th + 2, lh + 2, '#08070a');
       rect(ctx, -th, -lh, th, lh, PAL.iron3);
       rect(ctx, -th, -lh, 1, lh, PAL.iron5);
       rect(ctx, 0, -lh * 0.6, Math.max(2, Math.round(th * 0.8)), Math.round(lh * 0.2), PAL.wood4);
