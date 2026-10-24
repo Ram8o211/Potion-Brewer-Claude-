@@ -103,7 +103,8 @@ def whole(im, keep=0.06):
     for i, (size, (x0, y0, x1, y1)) in enumerate(parts, 1):
         m = lab == i
         white = ((rgb[m].min(axis=1) > 215).mean()) > 0.5
-        thin = min(x1 - x0, y1 - y0) <= 4 and max(x1 - x0, y1 - y0) >= 4 * min(x1 - x0, y1 - y0)
+        # (a rule, a white bar or a slice of a header plank: long and thin)
+        thin = min(x1 - x0, y1 - y0) <= 12 and max(x1 - x0, y1 - y0) >= 4 * min(x1 - x0, y1 - y0)
         if size < big * keep or white or (thin and size < big * 0.3):
             px[m] = 0
     px[px[..., 3] < 128] = 0
@@ -153,10 +154,70 @@ def dehalo(im, light=165):
     return Image.fromarray(flood_clear(px, pale), 'RGBA')
 
 
+def edge_halo(im, passes=2):
+    """Clear what is left of the cut-outs' light border after resampling:
+    khaki, beige or pale pixels on the silhouette that are lighter than the
+    sprite just inside them."""
+    for _ in range(passes):
+        px = np.asarray(im).copy()
+        a = px[..., 3] > 0
+        rgb = px[..., :3].astype(int)
+        luma = rgb @ np.array([0.3, 0.59, 0.11])
+        h, w = a.shape
+        out = px.copy()
+        for y in range(h):
+            for x in range(w):
+                if not a[y, x]:
+                    continue
+                ns = [(y + dy, x + dx) for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1))]
+                if all(0 <= ny < h and 0 <= nx < w and a[ny, nx] for ny, nx in ns):
+                    continue
+                inner = [luma[ny, nx] for ny in range(max(0, y - 1), min(h, y + 2)) for nx in range(max(0, x - 1), min(w, x + 2)) if a[ny, nx] and (ny, nx) != (y, x)]
+                if not inner:
+                    continue
+                hh, ss, vv = colorsys.rgb_to_hsv(*(rgb[y, x] / 255))
+                khaki = hue_in(hh, 30, 62) and ss < 0.72 and vv > 0.5
+                pale = ss < 0.22 and vv > 0.72
+                if (khaki or pale) and luma[y, x] - np.mean(inner) > 25:
+                    out[y, x] = 0
+        im = Image.fromarray(out, 'RGBA')
+    return im
+
+
+def smooth(im):
+    """A lone pixel whose four neighbours share one colour takes that colour
+    (the specks of a broken outline inside a beam or a stone)."""
+    px = np.asarray(im).copy()
+    out = px.copy()
+    h, w = px.shape[:2]
+    for y in range(1, h - 1):
+        for x in range(1, w - 1):
+            if not px[y, x, 3]:
+                continue
+            ns = [tuple(px[y + dy, x + dx]) for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1))]
+            if ns[0][3] and all(n == ns[0] for n in ns) and ns[0] != tuple(px[y, x]):
+                out[y, x] = ns[0]
+    return Image.fromarray(out, 'RGBA')
+
+
+def despur(im):
+    """Drop rows one pixel thin with nothing above or below (a flat strand of
+    grass along a sprite's foot), which an outline would turn into a long line."""
+    px = np.asarray(im).copy()
+    a = px[..., 3] > 0
+    up = np.zeros_like(a)
+    up[1:] = a[:-1]
+    down_ = np.zeros_like(a)
+    down_[:-1] = a[1:]
+    px[a & ~up & ~down_] = 0
+    return trim(Image.fromarray(px, 'RGBA'))
+
+
 def strip(biome, rel, box, h=None, key=None):
     """A background band: cropped clear of captions and margins, `W` px wide.
     `key(r, g, b)` marks the sky above it, keyed out from the top down."""
-    im = load(biome, 'backgrounds/' + rel if '/' not in rel else rel).crop(box)
+    # (3 px in from each side: the strips keep a sliver of the sheet's border)
+    im = load(biome, 'backgrounds/' + rel if '/' not in rel else rel).crop((box[0] + 3, box[1], box[2] - 3, box[3]))
     if key:
         px = np.asarray(im).copy()
         rgb = px[..., :3].astype(int)
@@ -222,16 +283,22 @@ class Region:
         self.S = {}
 
     def clean(self, im, own=10, fringe=False):
-        im = snap(im, self.pal + accents(im, own))
+        im = edge_halo(snap(im, self.pal + accents(im, own)))
         if fringe:
-            im = trim(defringe(im))
-        return despeckle(im)
+            im = defringe(im)
+        return trim(smooth(despeckle(im)))
 
-    def band(self, name, rel, box, h=None, key=None):
-        self.S[name] = despeckle(snap(strip(self.biome, rel, box, h, key), self.pal))
+    def band(self, name, rel, box, h=None, key=None, own=6, alone=False):
+        # (the band's own accents too: the moon, lava, the river's foam; a
+        # band `alone` keeps only its own colours — the night sky, whose pale
+        # moon would otherwise take the bog's teal)
+        im = strip(self.biome, rel, box, h, key)
+        self.S[name] = despeckle(snap(im, (accents(im, own) if alone else self.pal + accents(im, own))))
 
     def prop(self, name, rel, w=None, h=None, colours=14, own=10, fringe=False, sheet=False, keep=0.06, flip=False):
-        im = load(self.biome, 'props/' + rel)
+        # ('Biome:path' borrows another biome's prop, snapped to this region's palette)
+        biome, rel = rel.split(':') if ':' in rel else (self.biome, rel)
+        im = load(biome, 'props/' + rel)
         if sheet:
             im = unsheet(im)
         im = whole(dehalo(im), keep)
@@ -264,7 +331,8 @@ class Region:
                 im = fit(whole(dehalo(load(self.biome, f'gatherables/{key}/{name}'))), w=round(MAX_W * hh / h), colours=18)
             if tint:
                 im = recolour(im, tint)
-            return outline(self.clean(im), INK)
+            # (more of its own colours than scenery keeps: a deposit must read as what it is)
+            return outline(despur(self.clean(im, own=16)), INK)
         base = prep(idle, h)
         frames = {'idle': base, 'hover': outline(base, GLOW), 'depleted': prep(depleted, max(8, round(h * dh)))}
         if closed:
@@ -305,7 +373,7 @@ def forest():
     R.prop('oaks', P + 'two_ancient_oaks_composite', h=104, colours=24, own=12)
     R.prop('oak_small', P + 'small_oak_tree', h=60, colours=20)
     R.prop('stones', P + 'mossy_stones_cluster', w=46)
-    R.prop('fern', P + 'sunlit_fern', w=34)
+    R.prop('fern', 'trees_bushes_flora/trees_bushes_flora_007', w=34)
     R.prop('log', P + 'woodland_log', w=40, colours=16)
     F = 'trees_bushes_flora/trees_bushes_flora_'
     R.prop('bush_round', F + '003', w=26)
@@ -313,10 +381,8 @@ def forest():
     R.prop('bush_small', F + '005', w=20)
     R.prop('fern_small', F + '006', w=20)
     R.prop('stump', F + '017', w=22, colours=16)
-    R.prop('snowdrops', F + '010', w=12, colours=10, fringe=True)
-    R.prop('leaves_1', F + '012', w=13, colours=8, fringe=True)
-    R.prop('leaves_2', F + '013', w=9, colours=8, fringe=True)
-    R.prop('leaves_3', F + '011', w=18, colours=8, fringe=True)
+    R.prop('leaves_1', F + '012', w=16, colours=10, fringe=True)
+    R.prop('leaves_2', F + '011', w=20, colours=10, fringe=True)
     R.prop('sticks', 'rocks_logs_forest_props/rocks_logs_forest_props_003', w=16, colours=8)
     R.prop('snag', 'rocks_logs_forest_props/rocks_logs_forest_props_004', w=12, colours=10)
     R.gatherable('ironroot', 24)
@@ -340,33 +406,33 @@ def river():
     R.S['bank'] = despeckle(snap(fit_full(unsheet(im, light=225, sat=0.05), 150, 20), R.pal))
     P = 'CURATED_COMPLETE_OBJECTS/'
     # (the curated great willow is cut off on its right; these two are whole)
-    R.prop('willow_great', P + 'second_willow_tree', h=96, colours=22, sheet=True)
+    # (several of the pack's curated bushes, stumps and willows are cut off
+    # on their right: whole ones stand in, Whisperwood's bushes recoloured
+    # to the river's palette among them)
+    R.prop('willow_great', P + 'great_willow_tree', h=96, colours=22, sheet=True)
     R.prop('willow_second', 'willow_trees_bushes/willow_trees_bushes_002', h=88, colours=22, sheet=True, flip=True)
-    R.prop('willow_small', P + 'small_willow_tree', h=46, colours=18, sheet=True)
-    R.prop('bush_plain', P + 'plain_bush', w=28)
-    R.prop('bush_leafy', P + 'leafy_bush', w=20)
-    R.prop('bush_flowers', P + 'flowering_bush', w=30)
-    R.prop('stump', P + 'river_stump', w=22)
+    R.prop('willow_small', 'willow_trees_bushes/willow_trees_bushes_001', h=46, colours=18, sheet=True)
+    R.prop('bush_plain', 'Whisperwood:trees_bushes_flora/trees_bushes_flora_003', w=28)
+    R.prop('bush_leafy', 'Whisperwood:trees_bushes_flora/trees_bushes_flora_005', w=20)
+    R.prop('bush_flowers', 'Whisperwood:trees_bushes_flora/trees_bushes_flora_004', w=30)
+    R.prop('stump', 'riverbank_flora_props/riverbank_flora_props_023', w=22)
     F = 'riverbank_flora_props/riverbank_flora_props_'
     R.prop('grass_tall', F + '003', w=16, colours=8, fringe=True)
     R.prop('grass_1', F + '015', w=12, colours=8, fringe=True)
     R.prop('grass_2', F + '016', w=12, colours=8, fringe=True)
-    R.prop('grass_3', F + '007', w=8, colours=8, fringe=True)
     R.prop('pinks', F + '006', w=12, colours=10, fringe=True)
     R.prop('buttercups', F + '009', w=9, colours=8, fringe=True)
-    R.prop('clover', F + '010', w=8, colours=8, fringe=True)
     R.prop('post', F + '026', h=20, colours=8)
     R.prop('sign', F + '027', h=20, colours=10)
     R.prop('branch', F + '021', w=24, colours=8)
-    for i, w in ((1, 34), (3, 18)):
-        R.prop(f'chalk_{i}', f'loose_chalk_rocks/loose_chalk_rocks_00{i}', w=w, colours=10, fringe=True)
     R.prop('pebble', 'riverbank_flora_props/riverbank_flora_props_029', w=8, colours=6)
     R.gatherable('riverchalk', 20, tol=20)
     R.gatherable('frostcap', 22)
     R.gatherable('bogbean', 22)
     R.gatherable('willowbark', 20)
     R.gatherable('reedmace', 28)
-    R.gatherable('riverpearl', 18)
+    # (the pack's mature shell is barely open; its hover art shows the pearl)
+    R.gatherable('riverpearl', 18, idle='hover')
     R.glints()
     return R.S
 
@@ -394,8 +460,6 @@ def quarry():
     R.prop('shrub_small', D + '003', w=14)
     R.prop('brush', D + '004', w=16, colours=8, fringe=True)
     R.prop('brush_small', D + '009', w=11, colours=8, fringe=True)
-    R.prop('tuft', D + '010', w=10, colours=8, fringe=True)
-    R.prop('dead_bush', D + '001', w=16, colours=8)
     R.prop('boulder', D + '016', w=16, colours=10)
     R.prop('pebbles', D + '014', w=14, colours=8)
     R.prop('coal', D + '017', w=14, colours=8)
@@ -415,7 +479,7 @@ def quarry():
 
 def moonfen():
     R = Region('moonfen')
-    R.band('sky', 'night_sky', (3, 6, 422, 75), h=50)
+    R.band('sky', 'night_sky', (3, 6, 422, 75), h=50, own=20, alone=True)
     R.band('hills', 'distant_hills', (0, 8, 424, 53), key=26)
     R.band('treeline', 'swamp_treeline', (0, 10, 425, 83), key=lambda r, g, b: b > g + 25 and b > r + 30 or min(r, g, b) > 200)
     R.band('mist', 'mist_overlay', (0, 12, 425, 42), key=white)
@@ -424,12 +488,14 @@ def moonfen():
     R.S['water_2'] = pool(despeckle(snap(fit_full(im.crop((202, 26, 420, 68)), 112, 20), R.pal)), seed=2)
     P = 'CURATED_COMPLETE_OBJECTS/'
     R.prop('willow_left', P + 'ancient_willow_left', h=100, colours=22, sheet=True)
-    R.prop('willow_center', P + 'ancient_willow_center', h=86, colours=22, sheet=True, flip=True)
+    # (cut off on its right in the pack: it stands at the right edge of the frame)
+    R.prop('willow_center', P + 'ancient_willow_center', h=86, colours=22, sheet=True)
     R.prop('willow_small', P + 'small_willow', h=52, colours=18, sheet=True)
     R.prop('dead_tree', P + 'dead_swamp_tree', h=58, colours=16)
-    R.prop('stump_drowned', P + 'drowned_stump', h=26, colours=14)
+    # (the curated drowned stump and fallen trunk are cut off on their right: whole ones stand in)
+    R.prop('stump_drowned', 'decorative_flora/decorative_flora_003', h=20, colours=14)
     R.prop('stump_glowing', P + 'glowing_wooden_stump', h=26, colours=14)
-    R.prop('trunk', P + 'mossy_fallen_trunk', w=44, colours=16)
+    R.prop('trunk', 'swamp_trees_props/swamp_trees_props_003', w=44, colours=16)
     R.prop('ghost_stumps', P + 'ghost_crystals_and_stumps', w=26, colours=12)
     F = 'plants_crystals_reeds/plants_crystals_reeds_'
     R.prop('cattails', F + '001', h=30, colours=12)
@@ -440,9 +506,9 @@ def moonfen():
     R.prop('pad', F + '008', w=9, colours=6)
     R.prop('night_flowers', F + '012', w=13, colours=10)
     S = 'stepping_rocks/stepping_rocks_'
-    R.prop('rock_big', S + '004', w=36, colours=14)
-    R.prop('rock_mid', S + '002', w=20, colours=12)
-    R.prop('rock_small', S + '003', w=14, colours=10)
+    R.prop('rock_big', S + '002', w=30, colours=12)
+    R.prop('rock_mid', S + '003', w=20, colours=12)
+    R.prop('rock_small', S + '006', w=10, colours=8)
     R.prop('stone_flat', S + '001', w=10, colours=8)
     R.gatherable('gravemoss', 20, closed='closed')
     R.gatherable('starquartz', 22)
@@ -458,29 +524,27 @@ def moonfen():
 def crags():
     R = Region('crags')
     R.band('sky', 'smoky_sky', (4, 22, 474, 75), h=64)
-    R.band('ridges', 'volcanic_ridges', (4, 20, 474, 77), key=lambda r, g, b: r > 120 and r > g * 1.45)
-    R.band('fissures', 'lava_ridges', (4, 30, 474, 80), key=lambda r, g, b: r > 120 and r > g * 1.6 and g < 110)
+    R.band('ridges', 'volcanic_ridges', (4, 28, 474, 77), key=lambda r, g, b: r > 120 and r > g * 1.45)
+    R.band('fissures', 'lava_ridges', (4, 37, 474, 80), key=lambda r, g, b: r > 120 and r > g * 1.6 and g < 110)
     P = 'CURATED_COMPLETE_OBJECTS/'
-    R.prop('crag_large', P + 'lava_crag_large', h=44, colours=16)
-    R.prop('crag_tall', P + 'lava_crag_tall', h=42, colours=16)
-    R.prop('crag_medium', P + 'lava_crag_medium', h=32, colours=14)
-    R.prop('crag_small', P + 'lava_crag_small', h=28, colours=14)
-    R.prop('lava_pool', P + 'lava_pool', w=48, colours=14)
+    # (the curated crags and lava pool are cut off on their right: the whole
+    # ones from the sheet's other export stand in)
+    L = 'lava_rock_vents_plants/lava_rock_vents_plants_'
+    R.prop('crag_large', L + '001', h=44, colours=16)
+    R.prop('crag_tall', L + '002', h=42, colours=16)
+    R.prop('crag_medium', L + '003', h=32, colours=14)
+    R.prop('crag_small', L + '003', h=24, colours=14, flip=True)
+    R.prop('lava_pool', L + '013', w=48, colours=14)
     R.prop('vent', P + 'lava_vent_with_steam', h=38, colours=16)
     R.prop('gusher', P + 'sulfur_steam_gusher', h=46, colours=16)
-    L = 'lava_rock_vents_plants/lava_rock_vents_plants_'
-    R.prop('rock_mound', L + '005', w=40, colours=14)
+    R.prop('rock_mound', L + '015', w=36, colours=14)
     R.prop('rock_1', L + '006', w=16, colours=10)
     R.prop('rock_2', L + '008', w=16, colours=10)
     R.prop('rock_3', L + '023', w=13, colours=10)
     R.prop('lava_pan', L + '018', w=20, colours=10)
-    R.prop('dead_tree', L + '022', h=34, colours=10)
     R.prop('dead_brush', L + '017', h=26, colours=10)
-    R.prop('ember_brush', L + '020', w=14, colours=8, fringe=True)
-    R.prop('ember_brush_small', L + '028', w=9, colours=8, fringe=True)
-    R.prop('ember_tuft', L + '026', w=8, colours=8, fringe=True)
-    R.prop('post', L + '024', h=14, colours=8)
-    R.prop('post_tall', L + '027', h=18, colours=8)
+    R.prop('ember_brush', L + '020', w=16, colours=8, fringe=True)
+    R.prop('ember_brush_small', L + '028', w=12, colours=8, fringe=True)
     R.gatherable('dragonpepper', 22)
     R.gatherable('cinderscale', 20)
     R.gatherable('ashbloom', 22)

@@ -386,28 +386,45 @@ function placer(ctx, rng, atlas, avoid) {
   const free = (x0, y0, x1, y1) => taken.every((b) => x1 < b.x0 || x0 > b.x1 || y1 < b.y0 || y0 > b.y1);
   /** A few random spots in a band of the ground. @returns {[number, number][]} */
   const spots = (x0, x1, y0, y1, n = 5) => Array.from({ length: n }, () => [rng.int(x0, x1), rng.int(y0, y1)]);
-  /** Draw a prop at the first spot clear of the deposits and the props before it. @param {string} name @param {[number, number][]} spots */
-  const prop = (name, spots, flip = false) => {
+  /**
+   * Draw a prop at the first spot clear of the deposits and the props before
+   * it. A tall structure standing against the far face can be tested by its
+   * footprint only (its bottom `foot` rows), so a deposit may stand in front
+   * of its upper part.
+   * @param {string} name @param {[number, number][]} spots @param {boolean} [flip] @param {number} [foot]
+   */
+  const prop = (name, spots, flip = false, foot = 0) => {
     const f = atlas.frame(name);
     if (!f) return;
     for (const [x, y] of spots) {
-      const b = { x0: x - f[2] / 2, y0: y - f[3], x1: x + f[2] / 2, y1: y };
+      const b = { x0: x - f[2] / 2, y0: y - (foot || f[3]), x1: x + f[2] / 2, y1: y };
       if (free(b.x0, b.y0, b.x1, b.y1)) { atlas.draw(ctx, name, x, y, 1, flip); taken.push(b); return; }
     }
   };
   return { taken, free, spots, prop };
 }
 
-/** The ground in flat bands from y0 to the bottom of the frame (stepped, not dithered). @param {CanvasRenderingContext2D} ctx @param {number} y0 @param {string[]} bands */
+/**
+ * The ground in flat bands from y0 to the bottom of the frame (stepped, not
+ * dithered), its top edge ragged, so the far band and the ground meet
+ * without a ruled line.
+ * @param {CanvasRenderingContext2D} ctx @param {number} y0 @param {string[]} bands
+ */
 function groundBands(ctx, y0, bands) {
   for (let k = 0; k < bands.length; k++) { const y = y0 + Math.round(k * (SCENE_H - y0) / bands.length); R(ctx, 0, y, SCENE_W, SCENE_H - y, bands[k]); }
+  raggedUp(ctx, y0, bands[0]);
+}
+
+/** A ragged edge rising from row y: columns two pixels wide, zero to three rows tall. @param {CanvasRenderingContext2D} ctx @param {number} y @param {string} c */
+function raggedUp(ctx, y, c) {
+  for (let x = 0; x < SCENE_W; x += 2) { const d = (x * 7 + (x >> 3) * 5 + (x >> 5)) % 4; if (d) R(ctx, x, y - d, 2, d, c); }
 }
 
 /**
  * Whisperwood from its sprite atlas (rendering/wild-sprites.js, built from
  * the Wilds pack): the pack's sky through the canopy, its distant, middle
  * and near tree lines, a sunlit clearing in bands of grass, two ancient oaks
- * framing it (mirrored on the right) and a smaller oak beyond; mossy stones,
+ * framing it on both sides and a smaller oak beyond; mossy stones,
  * a fallen log, a stump, bushes, ferns and ground cover. Nothing decorative
  * looks like a gatherable — no bellflowers, toadstools or berries — so the
  * outlined deposits drawn on top are the only things that read as something
@@ -434,8 +451,9 @@ function forestSprites(ctx, rng, avoid) {
   A.draw(ctx, 'oak_small', 132, 78);
   for (let i = 0; i < 3; i++) { const x0 = 96 + i * 15; for (let y = 0; y < 104; y++) R(ctx, x0 + y * 0.35, y, 6 - i, 1, `rgba(255,250,210,${(0.18 * (1 - y / 104)).toFixed(3)})`); }
   // the ancient oaks framing the clearing, crowns running off the top
-  A.draw(ctx, 'oaks', 22, 96);
-  A.draw(ctx, 'oaks', 238, 94, 1, true);
+  // (the pair is cut off on its right in the pack: the cut edge runs off the frame on both sides)
+  A.draw(ctx, 'oaks', 22, 96, 1, true);
+  A.draw(ctx, 'oaks', 238, 94);
   // stones, a log, a stump, bushes and ferns around the clearing
   prop('bush_flowers', [[96, 84], [86, 86], [108, 82]]);
   prop('bush_round', [[170, 84], [182, 86], [158, 82]], true);
@@ -450,16 +468,15 @@ function forestSprites(ctx, rng, avoid) {
   // foliage cut off by the bottom of the frame
   prop('bush_round', [[14, 150], [28, 150]]);
   prop('bush_flowers', [[244, 150], [230, 150]], true);
-  // ground cover and a few snowdrops in the open, never on a prop or a deposit
-  for (let i = 0; i < 22; i++) prop(`leaves_${rng.int(1, 3)}`, spots(6, W - 6, 86, H + 2), rng.chance(0.5));
-  for (let i = 0; i < 4; i++) prop('snowdrops', spots(20, W - 20, 92, H), rng.chance(0.5));
+  // ground cover in the open, never on a prop or a deposit
+  for (let i = 0; i < 18; i++) prop(`leaves_${rng.int(1, 2)}`, spots(6, W - 6, 86, H + 2), rng.chance(0.5));
 }
 
 /**
  * Willow Bank from its sprite atlas: the pack's sky, distant mountains and
  * pines, a meadow on the far side of the river, its chalk bank, the river
  * itself and the near shore; the great willows on either side and a young
- * one across the water, bushes, posts, a sign, chalk stones, grass and small
+ * one across the water, bushes, posts, a sign, pebbles, grass and small
  * flowers. No cattails, mushrooms, mossy logs or white bog flowers: those
  * are the region's gatherables.
  * @param {CanvasRenderingContext2D} ctx @param {Rng} rng @param {{x0:number, y0:number, x1:number, y1:number}[]} avoid
@@ -475,8 +492,9 @@ function riverSprites(ctx, rng, avoid) {
   A.draw(ctx, 'water', W / 2, 114);
   const bank = /** @type {number[]} */ (A.frame('bank'));
   for (let x = -rng.int(0, 40); x < W; x += bank[2] - 2) A.draw(ctx, 'bank', x + bank[2] / 2, 96);
-  R(ctx, 0, 114, W, 1, '#3a7a2a');
+  // the near shore: grass in bands, its edge ragged in steps over the water
   for (let k = 0, bands = ['#6cbe3c', '#62b636', '#58ac30', '#4ea22c']; k < bands.length; k++) R(ctx, 0, 115 + k * 8, W, H, bands[k]);
+  for (let x = 0; x < W; x += 2) { const d = rng.int(0, 2); R(ctx, x, 113 - d, 2, d + 2, '#6cbe3c'); R(ctx, x, 112 - d, 2, 1, '#3a7a2a'); }
   A.draw(ctx, 'willow_small', 150, 78);
   prop('bush_plain', [[96, 82], [84, 84], [110, 82]]);
   prop('bush_flowers', [[192, 84], [178, 84], [206, 86]], true);
@@ -486,12 +504,10 @@ function riverSprites(ctx, rng, avoid) {
   A.draw(ctx, 'willow_great', 26, 98);
   A.draw(ctx, 'willow_second', 232, 96);
   prop('stump', [[214, 132], [228, 136], [200, 128]]);
-  prop('chalk_1', [[40, 130], [56, 134], [28, 126]]);
-  prop('chalk_3', [[150, 140], [130, 138], [170, 142]]);
   prop('branch', [[100, 136], [84, 138], [120, 140]]);
   // grass, small flowers and pebbles on both banks, never on a prop or a deposit
-  for (let i = 0; i < 12; i++) prop(rng.pick(['grass_1', 'grass_2', 'grass_3', 'clover']), spots(8, W - 8, 72, 90), rng.chance(0.5));
-  for (let i = 0; i < 18; i++) prop(rng.pick(['grass_1', 'grass_2', 'grass_3', 'grass_tall', 'clover', 'pinks', 'buttercups']), spots(6, W - 6, 120, H + 2), rng.chance(0.5));
+  for (let i = 0; i < 10; i++) prop(rng.pick(['grass_1', 'grass_2']), spots(8, W - 8, 72, 90), rng.chance(0.5));
+  for (let i = 0; i < 14; i++) prop(rng.pick(['grass_1', 'grass_2', 'grass_tall', 'grass_tall', 'pinks', 'buttercups']), spots(6, W - 6, 122, H + 2), rng.chance(0.5));
   for (let i = 0; i < 5; i++) prop('pebble', spots(10, W - 10, 118, H - 2));
 }
 
@@ -505,16 +521,27 @@ function riverSprites(ctx, rng, avoid) {
  */
 function quarrySprites(ctx, rng, avoid) {
   const W = SCENE_W, H = SCENE_H, A = REGION_ATLAS.quarry;
-  const { spots, prop } = placer(ctx, rng, A, avoid);
+  const { taken, free, spots, prop } = placer(ctx, rng, A, avoid);
   A.draw(ctx, 'sky', W / 2, 56);
   A.draw(ctx, 'far_cliffs', W / 2, 64);
   A.draw(ctx, 'near_cliffs', W / 2, 84);
   groundBands(ctx, 80, ['#b89462', '#ad8a59', '#a18052', '#95754a', '#896b43']);
-  speckle(ctx, rng, 82, H - 1, 260, ['#7a5e3a', '#c8a472', '#6e6a78', '#5a5664'], 2);
-  A.draw(ctx, 'frame', 64, 86);
-  A.draw(ctx, 'scaffold', 150, 84);
-  A.draw(ctx, 'ladder', 112, 86);
-  A.draw(ctx, 'crane', 206, 92);
+  speckle(ctx, rng, 82, H - 1, 160, ['#7a5e3a', '#c8a472', '#8a6a42'], 2);
+  // the timber structures stand against the face, clear of the deposits
+  // the crane where neither its foot nor the stone hanging from its jib (on
+  // its right, or its left when mirrored) is behind a deposit
+  const crane = /** @type {number[]} */ (A.frame('crane'));
+  for (const [x, y, flip] of /** @type {[number, number, boolean][]} */ ([[206, 90, false], [60, 90, true], [222, 88, false], [40, 90, true], [150, 90, false], [104, 90, true], [236, 88, false]])) {
+    const hook = flip ? x - crane[2] / 2 : x + crane[2] / 2 - 18;
+    if (free(x - crane[2] / 2, y - 8, x + crane[2] / 2, y) && free(hook, y - 40, hook + 18, y)) {
+      A.draw(ctx, 'crane', x, y, 1, flip);
+      taken.push({ x0: x - crane[2] / 2, y0: y - 8, x1: x + crane[2] / 2, y1: y });
+      break;
+    }
+  }
+  prop('frame', [[64, 86], [48, 86], [84, 86], [130, 86], [30, 86], [170, 86]], false, 6);
+  prop('scaffold', [[150, 84], [164, 84], [118, 84], [236, 84], [96, 84]], false, 6);
+  prop('ladder', [[112, 86], [100, 86], [176, 86], [30, 86], [140, 86]], false, 6);
   prop('blocks', [[176, 96], [190, 98], [94, 94]]);
   prop('stone_pillar', [[236, 96], [246, 98]]);
   prop('rail_fence', [[132, 98], [120, 100], [40, 96]]);
@@ -527,7 +554,7 @@ function quarrySprites(ctx, rng, avoid) {
   prop('dirt_heap', [[56, 136], [40, 140], [70, 132]]);
   prop('shrub_small', [[12, 140], [24, 142]]);
   // dry brush, tufts and loose stones on the pit floor, never on a prop or a deposit
-  for (let i = 0; i < 14; i++) prop(rng.pick(['brush', 'brush_small', 'tuft', 'tuft', 'dead_bush']), spots(6, W - 6, 96, H + 2), rng.chance(0.5));
+  for (let i = 0; i < 10; i++) prop(rng.pick(['brush', 'brush_small', 'shrub_small']), spots(6, W - 6, 96, H + 2), rng.chance(0.5));
   for (let i = 0; i < 10; i++) prop(rng.pick(['boulder', 'pebbles', 'coal', 'pebbles']), spots(6, W - 6, 98, H), rng.chance(0.5));
 }
 
@@ -543,10 +570,11 @@ function moonfenSprites(ctx, rng, avoid) {
   const W = SCENE_W, H = SCENE_H, A = REGION_ATLAS.moonfen;
   const { spots, prop } = placer(ctx, rng, A, avoid);
   A.draw(ctx, 'sky', W / 2, 50);
-  A.draw(ctx, 'hills', W / 2, 56);
+  A.draw(ctx, 'hills', W / 2, 60);
   A.draw(ctx, 'treeline', W / 2, 74);
   groundBands(ctx, 74, ['#1f3a2a', '#1b3325', '#172d20', '#13261b', '#102117']);
   A.draw(ctx, 'mist', W / 2, 82);
+  raggedUp(ctx, 82, '#1f3a2a');
   // pools of black water
   A.draw(ctx, 'water_2', 70, 104);
   A.draw(ctx, 'water', 196, 122);
@@ -571,9 +599,9 @@ function moonfenSprites(ctx, rng, avoid) {
 /**
  * The Ember Crags from their sprite atlas: the pack's smoky sky, distant
  * volcanic ridges and the lava fissures beneath them, a scorched plain with
- * a winding stream of lava and glowing cracks, lava crags, a pool of lava, a vent and a sulphur gusher
- * steaming, black rocks, dead trees and ember brush. No crystals or
- * flowering brush: those are the deposits.
+ * a winding stream of lava, lava crags, a pool of lava, a vent and a
+ * sulphur gusher steaming, black rocks, a dead bush and ember brush. No
+ * crystals or flowering brush: those are the deposits.
  * @param {CanvasRenderingContext2D} ctx @param {Rng} rng @param {{x0:number, y0:number, x1:number, y1:number}[]} avoid
  */
 function cragsSprites(ctx, rng, avoid) {
@@ -591,26 +619,18 @@ function cragsSprites(ctx, rng, avoid) {
     R(ctx, x - w / 2 - 1, y, w + 2, 1, '#a8320c');
     R(ctx, x - w / 2, y, w, 1, y % 5 ? '#ff7a1c' : '#ffb444');
   }
-  // glowing cracks in the plain
-  for (let i = 0; i < 8; i++) {
-    let x = rng.int(0, W), y = rng.int(84, H - 12);
-    for (let k = 0; k < rng.int(8, 16); k++) { R(ctx, x, y, 1, 1, k % 4 ? '#ff7a1c' : '#ffb444'); x += rng.int(-1, 1); y += 1; }
-  }
   A.draw(ctx, 'gusher', 182, 86);
   A.draw(ctx, 'vent', 76, 88);
   A.draw(ctx, 'crag_large', 22, 104);
   A.draw(ctx, 'crag_tall', 236, 102);
   prop('crag_medium', [[126, 88], [140, 86], [112, 90]]);
   prop('crag_small', [[210, 92], [222, 94]]);
-  prop('dead_tree', [[46, 92], [36, 90], [104, 90]]);
   prop('lava_pool', [[150, 128], [128, 132], [172, 126]]);
   prop('rock_mound', [[208, 140], [222, 142], [192, 138]]);
   prop('dead_brush', [[60, 132], [46, 136], [74, 128]]);
-  prop('post_tall', [[100, 118], [90, 120]]);
-  prop('post', [[160, 104], [170, 106]]);
   // black rocks, lava pans and ember brush, never on a prop or a deposit
   for (let i = 0; i < 10; i++) prop(rng.pick(['rock_1', 'rock_2', 'rock_3', 'lava_pan']), spots(6, W - 6, 94, H), rng.chance(0.5));
-  for (let i = 0; i < 14; i++) prop(rng.pick(['ember_brush', 'ember_brush_small', 'ember_tuft']), spots(6, W - 6, 90, H + 2), rng.chance(0.5));
+  for (let i = 0; i < 10; i++) prop(rng.pick(['ember_brush', 'ember_brush_small']), spots(6, W - 6, 90, H + 2), rng.chance(0.5));
 }
 
 /** @param {CanvasRenderingContext2D} ctx @param {Rng} rng */
