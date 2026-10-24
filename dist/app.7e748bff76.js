@@ -13397,9 +13397,146 @@ unseen ? h('span', { class: 'muted', text: ` ${seen.length ? '· ' : ''}${unseen
 }
 return { CounterView };
 })();
+// src/rendering/whisperwood-atlas.js
+const __m68 = (() => {
+const ATLAS_URL = 'assets/whisperwood/atlas.png';
+const ATLAS_SIZE = [256, 135];
+const FRAMES = {
+buttercups: [76, 121, 14, 9],
+daisies: [107, 121, 15, 8],
+emberbark_hover: [179, 77, 26, 19],
+emberbark_idle: [206, 77, 26, 19],
+emberbark_locked: [0, 101, 26, 19],
+fallen_log: [20, 121, 22, 13],
+flower_bush_01: [159, 101, 24, 17],
+forest_bush_01: [184, 101, 24, 17],
+forest_bush_01_far: [209, 101, 24, 17],
+glint_0: [176, 121, 3, 3],
+glint_1: [166, 121, 4, 4],
+glint_2: [180, 121, 3, 3],
+glint_3: [171, 121, 4, 4],
+grass_tuft_01: [43, 121, 12, 11],
+grass_tuft_02: [123, 121, 9, 8],
+grass_tuft_03: [133, 121, 11, 8],
+grass_tuft_04: [145, 121, 10, 7],
+grass_tuft_05: [156, 121, 9, 5],
+gray_boulder: [0, 121, 19, 14],
+ironroot_depleted: [0, 0, 25, 42],
+ironroot_hover: [26, 0, 25, 42],
+ironroot_idle: [52, 0, 25, 42],
+ironroot_locked: [78, 0, 25, 42],
+mandrake_hover: [184, 43, 28, 23],
+mandrake_idle: [213, 43, 28, 23],
+mandrake_locked: [0, 77, 28, 23],
+mossy_boulder: [102, 101, 29, 18],
+mossy_log: [132, 101, 26, 18],
+nightshade_hover: [29, 77, 24, 23],
+nightshade_idle: [54, 77, 24, 23],
+nightshade_locked: [79, 77, 24, 23],
+oak_round_01: [174, 0, 29, 33],
+oak_round_01_far: [204, 0, 29, 33],
+oak_round_02: [0, 43, 26, 33],
+oak_round_02_far: [27, 43, 26, 33],
+oak_wide_03: [104, 0, 34, 34],
+oak_wide_03_far: [139, 0, 34, 34],
+owlberry_hover: [104, 77, 24, 22],
+owlberry_idle: [129, 77, 24, 22],
+owlberry_locked: [154, 77, 24, 22],
+picked: [56, 121, 19, 11],
+silverleaf_depleted: [54, 43, 25, 24],
+silverleaf_harvesting: [80, 43, 25, 24],
+silverleaf_hover: [106, 43, 25, 24],
+silverleaf_idle: [132, 43, 25, 24],
+silverleaf_locked: [158, 43, 25, 24],
+stone_cluster: [91, 121, 15, 9],
+tree_stump: [234, 101, 21, 16],
+witchear_hover: [27, 101, 24, 19],
+witchear_idle: [52, 101, 24, 19],
+witchear_locked: [77, 101, 24, 19],
+};
+return { ATLAS_URL, ATLAS_SIZE, FRAMES };
+})();
+// src/rendering/whisperwood.js
+const __m67 = (() => {
+const { ATLAS_URL, FRAMES } = __m68;
+const GATHERABLES = Object.fromEntries(['ironroot', 'silverleaf', 'nightshade', 'owlberry', 'emberbark', 'witchear', 'mandrake'].map((k) => [k, {
+idle: k + '_idle', hover: k + '_hover', locked: k + '_locked',
+depleted: FRAMES[k + '_depleted'] ? k + '_depleted' : 'picked',
+...(FRAMES[k + '_harvesting'] ? { harvesting: k + '_harvesting' } : {}),
+}]));
+const MIN_HIT = 20;
+let atlas = null;
+let ready = false;
+let loading = null;
+function loadWhisperwood() {
+if (loading) return loading;
+if (typeof Image === 'undefined') return (loading = Promise.resolve(false));
+loading = new Promise((resolve) => {
+const img = new Image();
+img.onload = () => { atlas = img; ready = true; resolve(true); };
+img.onerror = () => resolve(false);
+img.src = ATLAS_URL;
+});
+return loading;
+}
+const whisperwoodReady = () => ready;
+const frame = (name) => FRAMES[name] || null;
+function drawFrame(ctx, name, x, y, scale = 1, flip = false) {
+const f = FRAMES[name];
+if (!f || !atlas) return;
+const w = f[2] * scale, h = f[3] * scale, left = Math.round(x - w / 2), top = Math.round(y - h);
+if (flip) {
+ctx.save();
+ctx.translate(left + w, top);
+ctx.scale(-1, 1);
+ctx.drawImage(atlas, f[0], f[1], f[2], f[3], 0, 0, w, h);
+ctx.restore();
+} else ctx.drawImage(atlas, f[0], f[1], f[2], f[3], left, top, w, h);
+}
+function gatherFrameName(key, s) {
+const g = GATHERABLES[key];
+if (!g) return null;
+if (s.locked) return g.locked;
+if (s.harvesting && g.harvesting) return g.harvesting;
+if (!s.can) return g.depleted;
+return s.hover ? g.hover : g.idle;
+}
+function depositBox(d, key, W, H) {
+const g = key ? GATHERABLES[key] : null;
+const f = g ? FRAMES[g.idle] : null;
+const ax = Math.round(d.x * W), ay = Math.round(d.y * H);
+const w = f ? f[2] : 16, h = f ? f[3] : 16, bottom = f ? ay : ay + 2;
+const hw = Math.max(w, MIN_HIT) / 2, hh = Math.max(h, MIN_HIT);
+return { ax, ay, w, h, x0: ax - hw, x1: ax + hw, y0: bottom - hh, y1: bottom + 2 };
+}
+function hitDeposit(deps, keyOf, px, py, W, H, slop = 4) {
+let best = null, bestY = -Infinity, near = null, nearD = slop * slop;
+for (const d of deps) {
+const b = depositBox(d, keyOf(d), W, H);
+if (px >= b.x0 && px <= b.x1 && py >= b.y0 && py <= b.y1) {
+if (b.ay > bestY) { bestY = b.ay; best = d; }
+continue;
+}
+const dx = Math.max(b.x0 - px, 0, px - b.x1), dy = Math.max(b.y0 - py, 0, py - b.y1), dd = dx * dx + dy * dy;
+if (dd <= nearD) { nearD = dd; near = d; }
+}
+return best || near;
+}
+function frameCanvas(name) {
+const f = FRAMES[name];
+const cv = document.createElement('canvas');
+const s = f ? Math.max(f[2], f[3]) : 16;
+cv.width = s; cv.height = s;
+const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
+if (f) drawFrame(ctx, name, s / 2, s - Math.floor((s - f[3]) / 2));
+return cv;
+}
+return { GATHERABLES, MIN_HIT, loadWhisperwood, whisperwoodReady, frame, drawFrame, gatherFrameName, depositBox, hitDeposit, frameCanvas };
+})();
 // src/rendering/regions.js
 const __m66 = (() => {
 const { Rng } = __m6;
+const { drawFrame, frame, whisperwoodReady } = __m67;
 const SCENE_W = 256;
 const SCENE_H = 144;
 const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
@@ -13666,6 +13803,63 @@ mushroom(ctx, 40, 140, 2, SHROOM); mushroom(ctx, 50, 142, 1, SHROOM);
 mushroom(ctx, 196, 138, 2, SHROOM); mushroom(ctx, 205, 141, 1, SHROOM);
 for (let i = 0; i < 18; i++) sparkle(ctx, rng.int(4, W - 4), rng.int(60, H - 6), rng.pick(['#fff3a0', '#ffe066']), '#ffffff');
 }
+function forestSprites(ctx, rng, avoid) {
+const W = SCENE_W, H = SCENE_H;
+const free = (x0, y0, x1, y1) => avoid.every((b) => x1 < b.x0 || x0 > b.x1 || y1 < b.y0 || y0 > b.y1);
+const prop = (name, spots, flip = false) => {
+const f = frame(name);
+if (!f) return;
+for (const [x, y] of spots) {
+if (free(x - f[2] / 2, y - f[3], x + f[2] / 2, y)) { drawFrame(ctx, name, x, y, 1, flip); return; }
+}
+};
+gradient(ctx, 0, 0, W, 64, ['#3f8ee0', '#7ec0f0', '#cdeef0'], 9);
+cloud(ctx, 122, 14, 2, '#ffffff', '#cfe2f2');
+cloud(ctx, 92, 30, 1, '#ffffff', '#d4e6f4');
+treeLine(ctx, rng, 46, 12, '#4f9a96', '#74baa8');
+treeLine(ctx, rng, 54, 14, '#3a8060', '#5aa070');
+gradient(ctx, 0, 62, W, H - 62, ['#68b83a', '#5aa830', '#428a24'], 7);
+for (let y = 70; y < 124; y++) {
+const t = (y - 70) / 54, hw = 30 + t * 64;
+for (let x = Math.round(128 - hw); x < 128 + hw; x++) {
+const e = 1 - Math.abs(x - 128) / hw;
+if (e * 1.4 * (1 - Math.abs(t - 0.45)) > bayer(x, y) + 0.15) R(ctx, x, y, 1, 1, '#7cc846');
+}
+}
+drawFrame(ctx, 'oak_wide_03_far', 86, 73);
+drawFrame(ctx, 'oak_round_02_far', 126, 71);
+drawFrame(ctx, 'oak_round_01_far', 170, 72);
+rays(ctx, rng, 2, 0.12);
+for (let i = 0; i < 3; i++) { const x0 = 100 + i * 15; for (let y = 0; y < 104; y++) R(ctx, x0 + y * 0.35, y, 6 - i, 1, `rgba(255,250,210,${(0.2 * (1 - y / 104)).toFixed(3)})`); }
+speckle(ctx, rng, 66, H - 1, 200, ['#4a9a2a', '#7cc846', '#3a8a22'], 3);
+for (let x = -4, i = 0; x < W + 12; x += rng.int(18, 24), i++) drawFrame(ctx, i % 3 ? 'forest_bush_01_far' : 'forest_bush_01', x, rng.int(77, 80), 1, i % 2 === 1);
+if (free(108, 72, 146, 88)) fence(ctx, 112, 87, 3, 14);
+const trees = [[4, 18], [62, 12], [184, 12], [234, 18]];
+for (const [x, w] of trees) oak(ctx, rng, x, 18, 82 + rng.int(-2, 2), w, OAKBARK);
+for (const [x, w] of trees) {
+const c = x + w / 2;
+canopy(ctx, rng, c - 12, rng.int(4, 12), rng.int(22, 26), LEAF);
+canopy(ctx, rng, c + 14, rng.int(6, 14), rng.int(20, 24), LEAF);
+canopy(ctx, rng, c, rng.int(20, 26), rng.int(16, 20), LEAF);
+}
+prop('flower_bush_01', [[48, 100], [36, 96], [70, 96]]);
+prop('forest_bush_01', [[226, 98], [212, 94], [242, 102]], true);
+prop('stone_cluster', [[146, 96], [96, 98], [160, 92]]);
+prop('tree_stump', [[170, 120], [150, 118], [190, 122], [120, 124]]);
+prop('mossy_log', [[214, 116], [200, 110], [60, 118]]);
+prop('gray_boulder', [[26, 120], [14, 114], [44, 124]]);
+prop('mossy_boulder', [[16, 146], [30, 148]]);
+prop('mossy_boulder', [[240, 148], [226, 150]], true);
+prop('forest_bush_01', [[56, 148], [74, 148], [92, 148]]);
+prop('flower_bush_01', [[196, 148], [180, 148], [164, 148]], true);
+for (let i = 0; i < 6; i++) {
+const x = rng.int(20, W - 20), y = rng.int(88, H - 2), name = rng.chance(0.6) ? 'daisies' : 'buttercups';
+for (let k = 0; k < rng.int(1, 3); k++) prop(name, [[x + rng.int(-9, 9), y + rng.int(-4, 4)]], rng.chance(0.5));
+}
+for (let i = 0; i < 22; i++) { const x = rng.int(4, W - 4), y = rng.int(82, H + 2); prop(`grass_tuft_0${rng.int(1, 5)}`, [[x, y]], rng.chance(0.5)); }
+for (let i = 0; i < 5; i++) { const x = rng.int(0, W), y = rng.int(132, H - 2); if (free(x - 10, y - 10, x + 10, y)) fern(ctx, rng, x, y, rng.int(8, 11), '#2a6a1c', '#7ac848'); }
+for (let i = 0; i < 6; i++) R(ctx, rng.int(60, 200), rng.int(40, 100), 1, 1, '#fff3a0');
+}
 function meadow(ctx, rng) {
 const W = SCENE_W, H = SCENE_H;
 gradient(ctx, 0, 0, W, 70, ['#5a96e0', '#8cc0f0', '#d8eef8'], 9);
@@ -13820,9 +14014,10 @@ for (const [x, y] of [[70, 96], [190, 92]]) for (let k = 0; k < 7; k++) { let bx
 for (let i = 0; i < 16; i++) sparkle(ctx, rng.int(4, W - 4), rng.int(60, H - 4), rng.pick(['#ffb444', '#ff7a1c']), '#fff3b0');
 }
 const PAINTERS = { forest, meadow, river, quarry, moonfen, crags };
-function paintRegion(ctx, region, seed) {
+function paintRegion(ctx, region, seed, avoid = []) {
 const rng = new Rng(`scene2:${seed}:${region}`);
-(PAINTERS[region] || forest)(ctx, rng);
+if ((region === 'forest' || !PAINTERS[region]) && whisperwoodReady()) forestSprites(ctx, rng, avoid);
+else (PAINTERS[region] || forest)(ctx, rng);
 R(ctx, 0, 0, SCENE_W, 1, 'rgba(0,0,0,0.35)');
 R(ctx, 0, SCENE_H - 1, SCENE_W, 1, 'rgba(0,0,0,0.35)');
 }
@@ -13879,6 +14074,7 @@ const { equipmentById } = __m25;
 const { RANKS } = __m25;
 const { drawRaw, rawSprite } = __m57;
 const { paintRegion, animateRegion, SCENE_W, SCENE_H } = __m66;
+const { GATHERABLES, loadWhisperwood, whisperwoodReady, gatherFrameName, drawFrame, frame, frameCanvas, depositBox, hitDeposit } = __m67;
 const { EFFECT_BY_KEY } = __m13;
 class WildsView {
 constructor(lab) {
@@ -13891,6 +14087,9 @@ this.bg = null;
 this.bgKey = '';
 this.thorough = false;
 this.rain = [];
+this.hover = null;
+this.harvested = {};
+this.can = {};
 }
 build() {
 const el = clear(this.el);
@@ -13899,11 +14098,14 @@ this.sky = h('div', { class: 'wilds-sky small' });
 this.canvas = /** @type {HTMLCanvasElement} */ (h('canvas', { width: String(SCENE_W), height: String(SCENE_H), class: 'scene', 'aria-label': 'Region scene: tap a deposit to gather' }));
 this.ctx = /** @type {CanvasRenderingContext2D} */ (this.canvas.getContext('2d'));
 this.canvas.addEventListener('pointerdown', (e) => this.tapScene(e));
+this.canvas.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') this.setHover(this.depositAt(e)); });
+this.canvas.addEventListener('pointerleave', () => this.setHover(null));
 this.info = h('div', { class: 'region-info small' });
 this.list = h('div', { class: 'deposits' });
 this.foot = h('div', { class: 'small muted wilds-foot' });
 el.append(this.tabs, h('div', { class: 'wilds-scene' }, h('div', { class: 'scene-wrap' }, this.canvas), this.info), h('div', { class: 'wilds-list' }, this.sky, this.list, this.foot));
 this.refresh();
+if (!whisperwoodReady()) loadWhisperwood().then((ok) => { if (ok) { this.bgKey = ''; this.refresh(); } });
 }
 unlocked(r) {
 return this.lab.sandbox || r.rank <= this.lab.state.rank;
@@ -13944,14 +14146,16 @@ const take = lab.sandbox ? d.take : can || plan.take;
 const fx = Object.entries(m.effects || {}).filter(([, v]) => Math.abs(v) >= 5).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 3);
 const stock = lab.sandbox ? '∞' : `${Math.floor(s.stock)} / ${d.capacity} ml`;
 const when = lab.sandbox ? 'never runs out' : this.when(s, can, plan);
+this.can[d.id] = locked || can >= 5;
+const key = this.spriteKey(d);
 const g = btn(locked ? RANKS[d.rank].name : `${plan.method.verb} +${take} ml`, () => this.gather(d), { cls: 'gold', icon: locked ? 'lock' : plan.method.icon, disabled: locked || (!lab.sandbox && can < 5), act: 'gather-' + d.id });
 const barI = h('i', { style: { width: Math.round((lab.sandbox ? 1 : s.fraction) * 100) + '%' } });
 const meta = h('div', { class: 'meta', text: `${stock} · ${when}` });
 this.rows[d.id] = { barI, meta, g, locked, take };
 const notes = lab.sandbox ? [] : plan.factors.filter((f) => f.why !== 'satchel' && !f.why.startsWith('thorough')).map((f) => f.why);
 const tool = plan.method.tool ? equipmentById(plan.method.tool) : null;
-list.appendChild(h('div', { class: 'deposit parch' + (locked ? ' locked' : '') + (s.scarred ? ' scarred' : '') },
-rawSprite(m.wild ? m.wild.shape : 'stone', m.look || m.color, lab.sandbox ? 1 : s.fraction),
+const card = h('div', { class: 'deposit parch' + (locked ? ' locked' : '') + (s.scarred ? ' scarred' : '') },
+key ? frameCanvas(/** @type {string} */ (gatherFrameName(key, { can: this.can[d.id] }))) : rawSprite(m.wild ? m.wild.shape : 'stone', m.look || m.color, lab.sandbox ? 1 : s.fraction),
 h('div', { class: 'dep-info' },
 h('div', { class: 'title' }, m.name, d.rare ? h('span', { class: 'tag rare', text: 'rare' }) : null, plan.hour ? h('span', { class: 'tag hour', text: plan.hour }) : null),
 d.place ? h('div', { class: 'meta place', text: d.place }) : null,
@@ -13961,7 +14165,10 @@ notes.length ? h('div', { class: 'meta note', text: notes.join(' · ') }) : null
 !lab.sandbox && tool && !plan.hasTool ? h('div', { class: 'meta muted', text: `${tool.name}: ${tool.price} coins at the shop` }) : null,
 h('div', { class: 'meta fx' }, ...fx.map(([k, v]) => h('span', { class: 'fx-chip', title: EFFECT_BY_KEY[k].label }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(v)}`)),
 h('span', { class: 'muted', text: ` · in stores: ${Math.round(st.stock(m.id))} ml` }))),
-g));
+g);
+card.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') this.setHover(d.id); });
+card.addEventListener('pointerleave', () => { if (this.hover === d.id) this.setHover(null); });
+list.appendChild(card);
 }
 clear(this.foot).append(`Room for ${st.cap.storage} ml of each ingredient. ${st.has('satchel') ? 'Your satchel carries half as much again. ' : ''}Deposits regrow over time, even while the game is closed, and recover half their stock each new day (a stripped one, a quarter).`);
 this.paintBg();
@@ -13969,13 +14176,31 @@ this.paintBg();
 deposits() {
 return this.lab.state.deposits.filter((d) => d.region === this.region);
 }
+spriteKey(d) {
+if (d.region !== 'forest' || !whisperwoodReady()) return null;
+const m = this.lab.state.lookup(d.materialId);
+const k = m && m.wild ? m.wild.key : '';
+return GATHERABLES[k] ? k : null;
+}
 paintBg() {
-const key = this.region + ':' + this.lab.state.seed;
+const key = this.region + ':' + this.lab.state.seed + ':' + whisperwoodReady();
 if (key === this.bgKey) return;
 this.bgKey = key;
 this.bg = document.createElement('canvas');
 this.bg.width = SCENE_W; this.bg.height = SCENE_H;
-paintRegion(/** @type {CanvasRenderingContext2D} */ (this.bg.getContext('2d')), this.region, this.lab.state.seed);
+const avoid = this.deposits().map((d) => depositBox(d, this.spriteKey(d), SCENE_W, SCENE_H));
+paintRegion(/** @type {CanvasRenderingContext2D} */ (this.bg.getContext('2d')), this.region, this.lab.state.seed, avoid);
+}
+setHover(id) {
+if (this.hover === id) return;
+this.hover = id;
+if (this.canvas) this.canvas.style.cursor = id ? 'pointer' : 'default';
+}
+depositAt(e) {
+const r = this.canvas.getBoundingClientRect();
+const x = ((e.clientX - r.left) / r.width) * SCENE_W, y = ((e.clientY - r.top) / r.height) * SCENE_H;
+const d = hitDeposit(this.deposits(), (dd) => this.spriteKey(dd), x, y, SCENE_W, SCENE_H);
+return d ? d.id : null;
 }
 gather(d) {
 const lab = this.lab, st = lab.state;
@@ -13990,7 +14215,9 @@ return;
 }
 audio.play(plan.method.sound);
 setTimeout(() => audio.play('select'), 140);
-this.floaters.push({ x: d.x * SCENE_W, y: d.y * SCENE_H, t: 0, text: `+${r.amount}`, color: m.look || m.color, shape: m.wild ? m.wild.shape : 'stone' });
+this.harvested[d.id] = this.time;
+const box = depositBox(d, this.spriteKey(d), SCENE_W, SCENE_H);
+this.floaters.push({ x: d.x * SCENE_W, y: d.y * SCENE_H - Math.max(0, box.h - 16), t: 0, text: `+${r.amount}`, color: m.look || m.color, shape: m.wild ? m.wild.shape : 'stone' });
 for (const e of r.events || []) lab.announce(e);
 if (lab.tutorial) lab.tutorial.notify('gather', d.materialId);
 if (!lab.jarEls[d.materialId]) lab.buildShelf(); else lab.updateShelf();
@@ -13998,15 +14225,9 @@ lab.save();
 this.refresh();
 }
 tapScene(e) {
-const r = this.canvas.getBoundingClientRect();
-const x = ((e.clientX - r.left) / r.width) * SCENE_W, y = ((e.clientY - r.top) / r.height) * SCENE_H;
-let best = null, bd = 14 * 14;
-for (const d of this.deposits()) {
-const dx = d.x * SCENE_W - x, dy = d.y * SCENE_H - 6 - y;
-const dd = dx * dx + dy * dy;
-if (dd < bd) { bd = dd; best = d; }
-}
-if (best) this.gather(best);
+const id = this.depositAt(e);
+const d = id && this.deposits().find((dd) => dd.id === id);
+if (d) this.gather(d);
 }
 frame(dt) {
 if (!this.ctx || !this.bg) return;
@@ -14019,6 +14240,8 @@ for (const d of deps) {
 const m = st.lookup(d.materialId);
 const s = this.lab.sandbox ? { fraction: 1 } : depositStatus(st.gathering, d, now);
 const locked = !this.lab.sandbox && d.rank > st.rank;
+const key = this.spriteKey(d);
+if (key) { this.drawGatherable(ctx, d, key, s.fraction, locked); continue; }
 const x = Math.round(d.x * SCENE_W) - 8, y = Math.round(d.y * SCENE_H) - 14;
 ctx.fillStyle = 'rgba(0,0,0,0.25)';
 ctx.fillRect(x + 3, y + 14, 10, 2);
@@ -14045,6 +14268,23 @@ ctx.globalAlpha = 1;
 this.floaters = this.floaters.filter((f) => f.t < 1.2);
 this._acc = (this._acc || 0) + dt;
 if (this._acc > 1) { this._acc = 0; this.tick(); }
+}
+drawGatherable(ctx, d, key, fraction, locked) {
+const x = Math.round(d.x * SCENE_W), y = Math.round(d.y * SCENE_H);
+const since = this.time - (this.harvested[d.id] ?? -9);
+const harvesting = since < 0.35;
+const name = /** @type {string} */ (gatherFrameName(key, { can: this.lab.sandbox || this.can[d.id] !== false, hover: this.hover === d.id, harvesting, locked }));
+const f = /** @type {number[]} */ (frame(name));
+const sw = Math.max(6, Math.round(f[2] * 0.6));
+ctx.fillStyle = 'rgba(10,30,8,0.35)';
+ctx.fillRect(x - Math.floor(sw / 2), y - 1, sw, 2);
+if (locked) ctx.globalAlpha = 0.6;
+drawFrame(ctx, name, x, y - (harvesting && !GATHERABLES[key].harvesting ? 1 : 0));
+ctx.globalAlpha = 1;
+if (!locked && fraction >= 0.999 && this.hover !== d.id) {
+const phase = (this.time * 0.5 + d.x * 7.3 + d.y * 3.1) % 4;
+if (phase < 0.6) drawFrame(ctx, 'glint_' + Math.min(3, Math.floor(phase / 0.15)), x + Math.round(f[2] / 2) - 3, y - f[3] + 4);
+}
 }
 paintSky(ctx, dt) {
 const st = this.lab.state;
@@ -14097,13 +14337,14 @@ const can = harvestable(st.gathering, d, plan, now);
 row.barI.style.width = Math.round(s.fraction * 100) + '%';
 row.meta.textContent = `${Math.floor(s.stock)} / ${d.capacity} ml · ${this.when(s, can, plan)}`;
 row.g.disabled = row.locked || can < 5;
+this.can[d.id] = row.locked || can >= 5;
 }
 }
 }
 return { WildsView };
 })();
 // src/rendering/rabbit.js
-const __m68 = (() => {
+const __m70 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m53;
 const { RABBIT_MARKS } = __m27;
@@ -14999,10 +15240,10 @@ ctx.fillRect(fx, fy, RABBIT_W, RABBIT_H);
 return { RABBIT_W, RABBIT_H, rabbitLevels, rabbitPose, rabbitPace, rabbitAnchors, rabbitSpriteKey, drawRabbitSprite, clearRabbitSprites, drawRabbit };
 })();
 // src/rendering/hutch-scene.js
-const __m70 = (() => {
+const __m72 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m53;
-const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m68;
+const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m70;
 const HUTCH_W = 224;
 const HUTCH_H = 88;
 const HUTCH_BODIES = 3;
@@ -15420,13 +15661,13 @@ ctx.drawImage(this.bg, 0, 0);
 return { HUTCH_W, HUTCH_H, HUTCH_BODIES, paintHutch, paintHutchFront, HutchScene };
 })();
 // src/ui/views/hutch.js
-const __m69 = (() => {
+const __m71 = (() => {
 const { readingSteadiness } = __m26;
 const { h, btn, clear, toast, modal, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { drawRabbit, RABBIT_W, RABBIT_H } = __m68;
-const { HutchScene, HUTCH_W, HUTCH_H } = __m70;
+const { drawRabbit, RABBIT_W, RABBIT_H } = __m70;
+const { HutchScene, HUTCH_W, HUTCH_H } = __m72;
 const { EFFECT_BY_KEY } = __m13;
 const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral, RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE, BURNS } = __m27;
 const { PURGE_BREW_TIME } = __m5;
@@ -15755,7 +15996,7 @@ if (this._live >= 0.25) { this._live = 0; this.live(); }
 return { CHANNELS, HutchPanel };
 })();
 // src/ui/views/trials.js
-const __m67 = (() => {
+const __m69 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
@@ -15767,9 +16008,9 @@ const { summarize, addSamples, EVIDENCE_TEXT, evidenceRank, requirementEvidence 
 const { evidenceOf } = __m45;
 const { shortName } = __m21;
 const LEVEL_SHORT = { preliminary: '1 reading', repeated: 'repeated', corroborated: 'corroborated', certified: 'certified' };
-const { drawRabbit } = __m68;
+const { drawRabbit } = __m70;
 const { focusRabbit, findRabbit, rabbitSnap, decodeSnap, lookFromSeed, RABBIT_MARKS } = __m27;
-const { HutchPanel } = __m69;
+const { HutchPanel } = __m71;
 const REPLAY_T = 3.2;
 class TrialsView {
 constructor(lab) {
@@ -16146,7 +16387,7 @@ return `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2
 return { TrialsView, EFFECTS, EFFECT_INDEX };
 })();
 // src/ui/views/book.js
-const __m71 = (() => {
+const __m73 = (() => {
 const { h, btn, clear } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
@@ -16284,8 +16525,8 @@ const trade = __m62;
 const { Tutorial } = __m63;
 const { CounterView } = __m64;
 const { WildsView } = __m65;
-const { TrialsView } = __m67;
-const { BookView } = __m71;
+const { TrialsView } = __m69;
+const { BookView } = __m73;
 const { shortName } = __m21;
 const REQ_ICON = { temperature: 'thermo', quantity: 'flask', purity: 'pure' };
 const TOOL_DEFS = [
@@ -17991,7 +18232,7 @@ void dominantEffect;
 return { VIEWS, LabScreen };
 })();
 // src/materials/reference.js
-const __m73 = (() => {
+const __m75 = (() => {
 const { completeMaterial } = __m9;
 const REF = {};
 const add = (d) => (REF[d.id] = completeMaterial(d));
@@ -18029,11 +18270,11 @@ const refLookup = (id) => REF[id];
 return { REF, refLookup };
 })();
 // src/ui/menu.js
-const __m72 = (() => {
+const __m74 = (() => {
 const { h, btn } = __m2;
 const { Renderer } = __m52;
 const { Simulation } = __m30;
-const { REF, refLookup } = __m73;
+const { REF, refLookup } = __m75;
 const { hasSave, loadGame } = __m49;
 const { audio } = __m4;
 class MenuScreen {
@@ -18122,7 +18363,7 @@ const { sandboxIngredients } = __m7;
 const { EQUIPMENT } = __m25;
 const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m49;
 const { LabScreen } = __m50;
-const { MenuScreen } = __m72;
+const { MenuScreen } = __m74;
 const { openSettings, openHelp } = __m60;
 const { Rng } = __m6;
 const { normalizeTrials } = __m26;
@@ -18239,7 +18480,7 @@ openHelp();
 return { App, icon };
 })();
 // src/ui/textures.js
-const __m74 = (() => {
+const __m76 = (() => {
 const { Rng } = __m6;
 function texture(w, h, paint) {
 const cv = document.createElement('canvas');
@@ -18291,7 +18532,7 @@ return { installTextures };
 // src/main.js
 const __m0 = (() => {
 const { App } = __m1;
-const { installTextures } = __m74;
+const { installTextures } = __m76;
 installTextures();
 const root = document.getElementById('app');
 const app = new App(root);

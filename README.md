@@ -223,7 +223,18 @@ computed from the particles that actually run out of the tap. What a
   plants, drying herbs, ivy, barrel, sack, firewood under the cauldron), a
   hutch with a hay rack, a thatched hide box and a fence, shaded rabbits,
   and wood-grain, parchment and nail textures on the interface.
-* **Everything is original and bundled:** pixel art drawn in code, a
+* **Whisperwood sprites:** the forest is composed from a small sprite atlas
+  (`assets/whisperwood/atlas.png`, 19 KB): trees, shrubs, rocks, a stump,
+  logs and wildflowers around the painted sky and clearing, and one
+  outlined sprite per forest ingredient (Ironroot, Silverleaf, Nightshade,
+  Owlberry, Emberbark, Witch’s Ear, Mandrake) with hover, harvesting,
+  depleted and out-of-reach frames. Nothing decorative looks like a
+  gatherable, and only deposits take taps. The atlas is built from the
+  concept-art pack in `art/whisperwood/` by
+  `python scripts/make-whisperwood.py` (needs Pillow), which brings each
+  sprite down to the scene's art-pixel scale.
+* **Everything is original and bundled:** pixel art drawn in code (plus
+  the Whisperwood sprites from the project's own concept-art pack), a
   pixel font, synthesised sound effects and music. No third-party runtime
   code, no CDNs, no network calls.
 
@@ -330,7 +341,8 @@ Keyboard: `C` `V` `W` `T` `J` rooms, `1`–`5` tools, `G` ground, `L` lid,
 ## Project layout
 
 ```
-index.html, styles/, assets/     page shell, stylesheet, pixel font, icons
+index.html, styles/, assets/     page shell, stylesheet, pixel font, icons, Whisperwood sprite atlas
+art/                             source art for generated assets (not shipped)
 src/core/                        seeded RNG, colour science (Beer–Lambert, OKLab), maths
 src/alchemy/                     effects: extraction, hidden resonance laws, oppositions, theory
 src/materials/                   material schema, procedural world generator, effect profiles, wild ingredients, names

@@ -7,9 +7,11 @@
 // the deposits sit on (they are placed between 0.5 and 0.88 of the height).
 // Painted once per region into a cached canvas; animateRegion adds a few
 // moving pixels each frame. Deterministic: every random choice comes from
-// an Rng seeded by the world seed and the region.
+// an Rng seeded by the world seed and the region. Whisperwood swaps its
+// painted scenery for sprites (rendering/whisperwood.js) once they load.
 
 import { Rng } from '../core/rng.js';
+import { drawFrame, frame, whisperwoodReady } from './whisperwood.js';
 
 export const SCENE_W = 256;
 export const SCENE_H = 144;
@@ -370,6 +372,82 @@ function forest(ctx, rng) {
   for (let i = 0; i < 18; i++) sparkle(ctx, rng.int(4, W - 4), rng.int(60, H - 6), rng.pick(['#fff3a0', '#ffe066']), '#ffffff');
 }
 
+/**
+ * Whisperwood from the sprite atlas (rendering/whisperwood.js): the same
+ * sky, haze and clearing as the procedural painting, with sprite trees,
+ * shrubs, rocks, logs, a stump and wildflowers. Nothing decorative here
+ * looks like a gatherable — no berries, bellflowers or toadstools — so the
+ * deposits drawn on top (outlined, with hover and depleted frames) are the
+ * only plants that read as something to pick. Props that would sit under a
+ * deposit move aside or are left out (`avoid` holds the deposits' boxes).
+ * @param {CanvasRenderingContext2D} ctx @param {Rng} rng @param {{x0:number, y0:number, x1:number, y1:number}[]} avoid
+ */
+function forestSprites(ctx, rng, avoid) {
+  const W = SCENE_W, H = SCENE_H;
+  const free = (x0, y0, x1, y1) => avoid.every((b) => x1 < b.x0 || x0 > b.x1 || y1 < b.y0 || y0 > b.y1);
+  /** Draw a prop at the first spot that keeps clear of the deposits. @param {string} name @param {[number, number][]} spots */
+  const prop = (name, spots, flip = false) => {
+    const f = frame(name);
+    if (!f) return;
+    for (const [x, y] of spots) {
+      if (free(x - f[2] / 2, y - f[3], x + f[2] / 2, y)) { drawFrame(ctx, name, x, y, 1, flip); return; }
+    }
+  };
+  gradient(ctx, 0, 0, W, 64, ['#3f8ee0', '#7ec0f0', '#cdeef0'], 9);
+  cloud(ctx, 122, 14, 2, '#ffffff', '#cfe2f2');
+  cloud(ctx, 92, 30, 1, '#ffffff', '#d4e6f4');
+  treeLine(ctx, rng, 46, 12, '#4f9a96', '#74baa8');
+  treeLine(ctx, rng, 54, 14, '#3a8060', '#5aa070');
+  gradient(ctx, 0, 62, W, H - 62, ['#68b83a', '#5aa830', '#428a24'], 7);
+  for (let y = 70; y < 124; y++) {
+    const t = (y - 70) / 54, hw = 30 + t * 64;
+    for (let x = Math.round(128 - hw); x < 128 + hw; x++) {
+      const e = 1 - Math.abs(x - 128) / hw;
+      if (e * 1.4 * (1 - Math.abs(t - 0.45)) > bayer(x, y) + 0.15) R(ctx, x, y, 1, 1, '#7cc846');
+    }
+  }
+  // the wood beyond the clearing, darker and cooler than the oaks in front
+  drawFrame(ctx, 'oak_wide_03_far', 86, 73);
+  drawFrame(ctx, 'oak_round_02_far', 126, 71);
+  drawFrame(ctx, 'oak_round_01_far', 170, 72);
+  rays(ctx, rng, 2, 0.12);
+  for (let i = 0; i < 3; i++) { const x0 = 100 + i * 15; for (let y = 0; y < 104; y++) R(ctx, x0 + y * 0.35, y, 6 - i, 1, `rgba(255,250,210,${(0.2 * (1 - y / 104)).toFixed(3)})`); }
+  speckle(ctx, rng, 66, H - 1, 200, ['#4a9a2a', '#7cc846', '#3a8a22'], 3);
+  // a hedge of shrubs closing off the clearing
+  for (let x = -4, i = 0; x < W + 12; x += rng.int(18, 24), i++) drawFrame(ctx, i % 3 ? 'forest_bush_01_far' : 'forest_bush_01', x, rng.int(77, 80), 1, i % 2 === 1);
+  if (free(108, 72, 146, 88)) fence(ctx, 112, 87, 3, 14);
+  // the great oaks framing the scene, canopies meeting overhead
+  const trees = [[4, 18], [62, 12], [184, 12], [234, 18]];
+  for (const [x, w] of trees) oak(ctx, rng, x, 18, 82 + rng.int(-2, 2), w, OAKBARK);
+  for (const [x, w] of trees) {
+    const c = x + w / 2;
+    canopy(ctx, rng, c - 12, rng.int(4, 12), rng.int(22, 26), LEAF);
+    canopy(ctx, rng, c + 14, rng.int(6, 14), rng.int(20, 24), LEAF);
+    canopy(ctx, rng, c, rng.int(20, 26), rng.int(16, 20), LEAF);
+  }
+  // shrubs, rocks, a stump and a log around the clearing
+  prop('flower_bush_01', [[48, 100], [36, 96], [70, 96]]);
+  prop('forest_bush_01', [[226, 98], [212, 94], [242, 102]], true);
+  prop('stone_cluster', [[146, 96], [96, 98], [160, 92]]);
+  prop('tree_stump', [[170, 120], [150, 118], [190, 122], [120, 124]]);
+  prop('mossy_log', [[214, 116], [200, 110], [60, 118]]);
+  prop('gray_boulder', [[26, 120], [14, 114], [44, 124]]);
+  prop('mossy_boulder', [[16, 146], [30, 148]]);
+  prop('mossy_boulder', [[240, 148], [226, 150]], true);
+  // foliage cut off by the bottom of the frame
+  prop('forest_bush_01', [[56, 148], [74, 148], [92, 148]]);
+  prop('flower_bush_01', [[196, 148], [180, 148], [164, 148]], true);
+  // wildflowers in clumps and grass in the open
+  for (let i = 0; i < 6; i++) {
+    const x = rng.int(20, W - 20), y = rng.int(88, H - 2), name = rng.chance(0.6) ? 'daisies' : 'buttercups';
+    for (let k = 0; k < rng.int(1, 3); k++) prop(name, [[x + rng.int(-9, 9), y + rng.int(-4, 4)]], rng.chance(0.5));
+  }
+  for (let i = 0; i < 22; i++) { const x = rng.int(4, W - 4), y = rng.int(82, H + 2); prop(`grass_tuft_0${rng.int(1, 5)}`, [[x, y]], rng.chance(0.5)); }
+  for (let i = 0; i < 5; i++) { const x = rng.int(0, W), y = rng.int(132, H - 2); if (free(x - 10, y - 10, x + 10, y)) fern(ctx, rng, x, y, rng.int(8, 11), '#2a6a1c', '#7ac848'); }
+  // a few motes in the light (quieter than a ripe gatherable's glint)
+  for (let i = 0; i < 6; i++) R(ctx, rng.int(60, 200), rng.int(40, 100), 1, 1, '#fff3a0');
+}
+
 /** @param {CanvasRenderingContext2D} ctx @param {Rng} rng */
 function meadow(ctx, rng) {
   const W = SCENE_W, H = SCENE_H;
@@ -554,12 +632,15 @@ function crags(ctx, rng) {
 const PAINTERS = { forest, meadow, river, quarry, moonfen, crags };
 
 /**
- * Paint a region's static panorama into a 256×144 context.
- * @param {CanvasRenderingContext2D} ctx @param {string} region @param {string} seed
+ * Paint a region's static panorama into a 256×144 context. Whisperwood is
+ * composed from its sprite atlas once that has loaded (procedural until
+ * then); `avoid` lists the deposits' boxes, which its props keep clear of.
+ * @param {CanvasRenderingContext2D} ctx @param {string} region @param {string} seed @param {{x0:number, y0:number, x1:number, y1:number}[]} [avoid]
  */
-export function paintRegion(ctx, region, seed) {
+export function paintRegion(ctx, region, seed, avoid = []) {
   const rng = new Rng(`scene2:${seed}:${region}`);
-  (PAINTERS[region] || forest)(ctx, rng);
+  if ((region === 'forest' || !PAINTERS[region]) && whisperwoodReady()) forestSprites(ctx, rng, avoid);
+  else (PAINTERS[region] || forest)(ctx, rng);
   // a dark frame line so the panel reads as a painting
   R(ctx, 0, 0, SCENE_W, 1, 'rgba(0,0,0,0.35)');
   R(ctx, 0, SCENE_H - 1, SCENE_W, 1, 'rgba(0,0,0,0.35)');
