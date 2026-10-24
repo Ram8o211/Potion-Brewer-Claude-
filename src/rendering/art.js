@@ -295,94 +295,275 @@ export function drawJar(ctx, x, y, w, h, color, form) {
   R(ctx, x + 1, y + Math.round(h * 0.45), w - 2, Math.max(1, Math.round(h * 0.18)), glass);
 }
 
+/** 4×4 ordered-dither matrix: sixteen levels, so gradients don't step into bands */
+const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+
+/** Smooth value noise on a coarse lattice (hammered-iron dimples). */
+function hammer(x, y) {
+  const h = (i, j) => {
+    let n = (i * 374761393 + j * 668265263) | 0;
+    n = Math.imul(n ^ (n >>> 13), 1274126177);
+    return ((n ^ (n >>> 16)) >>> 0) / 4294967296;
+  };
+  const i = Math.floor(x), j = Math.floor(y), fx = x - i, fy = y - j;
+  const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+  const a = h(i, j) + (h(i + 1, j) - h(i, j)) * sx;
+  const b = h(i, j + 1) + (h(i + 1, j + 1) - h(i, j + 1)) * sx;
+  return a + (b - a) * sy;
+}
+
 /**
  * Pre-render the iron cauldron, legs, rim and handles from the vessel profile.
+ * Painted on a chunkier "iron pixel" (two art pixels on big screens) with a
+ * dark outline, banded dither shading, a cool reflected rim light, riveted
+ * seams on the back wall, a rolled lip, cast claw feet and ring handles.
  * Returns a canvas positioned at (x0,y0) in screen pixels.
  * @param {import('../simulation/cauldron.js').Cauldron} c
  * @param {{scale:number, ox:number, oy:number}} v
  */
-/** 4×4 ordered-dither matrix: sixteen levels, so gradients don't step into bands */
-const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
-
 export function renderCauldron(c, v) {
   const s = v.scale;
   const wall = 0.16, rim = 0.28;
   const x0 = Math.floor(v.ox + (-c.belly - 0.6) * s), x1 = Math.ceil(v.ox + (c.belly + 0.6) * s);
   const y0 = Math.floor(v.oy + -0.25 * s), y1 = Math.ceil(v.oy + (c.depth + 0.75) * s);
   const w = x1 - x0, h = y1 - y0;
-  const cv = makeCanvas(w, h);
-  const ctx = cv.getContext('2d');
-  const img = ctx.createImageData(w, h);
+  // iron pixel: p art pixels square
+  const p = s >= 70 ? 2 : 1;
+  const cw = Math.ceil(w / p), ch = Math.ceil(h / p);
+  const S = s / p, u = 1 / S; // coarse px per world unit, world units per coarse px
+  const ox = (v.ox - x0) / p, oy = (v.oy - y0) / p;
+  const body = makeCanvas(cw, ch);
+  const bctx = body.getContext('2d');
+  const img = bctx.createImageData(cw, ch);
   const d = img.data;
-  const iron = [PAL.iron0, PAL.iron1, PAL.iron2, PAL.iron3, PAL.iron4, PAL.iron5].map(hex2rgb);
-  const rng = new Rng('cauldron');
-  /** wall pixel → nearest wall cell, for dynamic heat glow */
-  const wallPix = [];
-  for (let py = 0; py < h; py++) {
-    const wy = (py + y0 + 0.5 - v.oy) / s;
-    for (let px = 0; px < w; px++) {
-      const wx = (px + x0 + 0.5 - v.ox) / s;
-      let dist = c.sample(wx, wy);
-      let isRim = false;
-      if (wy < 0.12 && wy > -0.12 && Math.abs(wx) < c.mouth + rim && Math.abs(wx) > c.mouth - 0.02) { isRim = true; }
-      if (wy < -0.02) continue;
-      if (dist <= 0 && wy >= 0 && !isRim) {
-        // dark inner back wall of the vessel (seen through the cut-away)
-        // a faintly lit back wall: lighter toward the rim, darker in the depths
+  const iron = [PAL.iron0, PAL.iron1, PAL.iron2, PAL.iron3, PAL.iron4, PAL.iron5, '#9a95a6'].map(hex2rgb);
+  const OUT = hex2rgb('#08070a');
+  const put = (px, py, col) => { const o = (py * cw + px) * 4; d[o] = col[0]; d[o + 1] = col[1]; d[o + 2] = col[2]; d[o + 3] = 255; };
+  const band = (lum, px, py) => {
+    const t = (BAYER4[(px & 3) + (py & 3) * 4] + 0.5) / 16;
+    return Math.max(0, Math.min(6, Math.floor(lum + (t - 0.5) * 0.7 + 0.5)));
+  };
+  // riveted seams across the back wall: far halves of horizontal hoops, so
+  // they arc upward in the middle (the pot is seen from a little above)
+  const seams = [c.neck * 0.8, c.neck + (c.depth - c.neck) * 0.55];
+  const rivetGap = Math.max(5, Math.round(0.22 * S));
+  /** wall pixel (coarse) → nearest wall cell, for dynamic heat glow */
+  const wallCells = [];
+  for (let py = 0; py < ch; py++) {
+    const wy = (py + 0.5 - oy) * u;
+    if (wy < -0.02) continue;
+    for (let px = 0; px < cw; px++) {
+      const wx = (px + 0.5 - ox) * u;
+      const dist = c.sample(wx, wy);
+      const nx = c.nx, ny = c.ny;
+      if (dist <= 0 && wy >= 0) {
+        // the inside of the far wall, seen through the cut-away: lit from the
+        // upper left, so the right of the bowl catches light; dark in the
+        // depths and in the shadow under the lip
+        const hw = Math.max(0.05, c.halfWidth(wy));
+        const xt = wx / hw;
         const depthT = Math.min(1, wy / c.depth);
-        const bayer = (BAYER4[(px & 3) + (py & 3) * 4] + 0.5) / 16;
-        const shade = 1.1 - depthT * 1.1 + Math.max(0, 0.6 + dist * 6);
-        const k2 = Math.max(0, Math.min(2, Math.floor(shade + bayer)));
-        const col2 = iron[k2];
-        const o2 = (py * w + px) * 4;
-        d[o2] = col2[0]; d[o2 + 1] = col2[1]; d[o2 + 2] = col2[2]; d[o2 + 3] = 255;
+        let lum = 1.7 - depthT * 1.2 + xt * 0.5 - xt * xt * 0.4;
+        lum += (hammer(wx * 7, wy * 7) - 0.5) * 0.35;
+        if (wy < 0.14) lum -= (0.14 - wy) * 6; // shadow cast by the rim
+        if (dist > -u * 1.5) lum = Math.min(lum, 0.6); // seam where wall meets bowl
+        let k = Math.min(3, band(lum, px, py));
+        const k0 = k;
+        for (const sy of seams) {
+          const yy = sy - 0.07 * (1 - xt * xt);
+          const dy = (wy - yy) * S;
+          if (dy >= -0.5 && dy < 0.5) k = Math.max(0, k0 - 1);
+          else if (dy >= 0.5 && dy < 1.5) k = Math.min(4, k0 + 1);
+          // rivets ride the seam, foreshortened toward the sides
+          if (Math.abs(xt) < 0.92 && Math.abs(dy + 1) < 1.01) {
+            const along = Math.round(Math.asin(Math.max(-1, Math.min(1, xt))) * hw * S);
+            const m = ((along % rivetGap) + rivetGap) % rivetGap;
+            if (m === 0) k = dy < -1 ? 5 : 4;
+            else if (m === 1 && dy > -1.5) k = 1;
+          }
+        }
+        put(px, py, iron[k]);
         continue;
       }
-      if (!(dist > 0 && dist < wall) && !isRim) continue;
-      // normal-based shading: light from upper left
-      const nx = c.nx, ny = c.ny;
-      let lum = 2.2 - nx * 1.4 - ny * 1.1;
-      lum += Math.pow(Math.max(0, -nx * 0.66 - ny * 0.75), 8) * 2.4; // a sheen on the upper left of the belly
-      lum += (rng.next() - 0.5) * 0.6; // hammered texture
-      if (isRim) lum = wy < -0.06 ? 4.3 : wy < 0.03 ? 3.4 : 1.8;
-      if (dist < 0.03 && !isRim) lum -= 0.8; // inner edge shadow
-      const k = Math.max(0, Math.min(5, Math.round(lum)));
-      const col = iron[k];
-      const o = (py * w + px) * 4;
-      d[o] = col[0]; d[o + 1] = col[1]; d[o + 2] = col[2]; d[o + 3] = 255;
-      if (!isRim) {
+      if (!(dist > 0 && dist < wall)) continue;
+      // the wall in section: shaded by its normal, light from the upper left
+      let lum = 3.0 - nx * 1.6 - ny * 1.3;
+      lum += Math.pow(Math.max(0, -nx * 0.66 - ny * 0.75), 6) * 2.2; // sheen on the upper left of the belly
+      lum += (hammer(wx * 9, wy * 9) - 0.5) * 0.9; // hammered dimples
+      const outer = wall - dist;
+      // reflected light off the hearth along the lower right edge
+      if (outer < u * 2.2 && nx * 0.6 + ny * 0.8 > 0.35) lum = Math.max(lum, 3.6);
+      if (dist < u * 1.2) lum = 0.6; // inner lip in shadow
+      let col = iron[band(lum, px, py)];
+      if (outer < u) col = OUT; // silhouette outline
+      put(px, py, col);
+      if (outer >= u) {
         const cell = c.wallCellAt(Math.max(-c.belly, Math.min(c.belly, wx - nx * dist)), Math.min(c.depth, wy - ny * dist));
-        if (cell >= 0) wallPix.push(px, py, cell);
+        if (cell >= 0) wallCells.push(px, py, cell);
       }
     }
   }
-  ctx.putImageData(img, 0, 0);
-  // legs
-  const legW = Math.max(3, Math.round(0.18 * s));
-  for (const lx of [-c.belly * 0.62, c.belly * 0.62]) {
-    const px = Math.round(v.ox + lx * s - x0 - legW / 2);
-    // short cast feet under the belly, flaring to a claw on the hearth
-    const top = Math.round(v.oy + (c.depth - 0.05) * s - y0);
-    const bot = Math.round(v.oy + (c.depth + 0.7) * s - y0);
-    R(ctx, px - 1, top, legW + 2, bot - top, PAL.iron0);
-    R(ctx, px, top, legW, bot - top, PAL.iron2);
-    R(ctx, px, top, 1, bot - top, PAL.iron4);
-    R(ctx, px + legW - 1, top, 1, bot - top, PAL.iron1);
-    R(ctx, px - 2, bot - 3, legW + 4, 3, PAL.iron0);
-    R(ctx, px - 1, bot - 3, legW + 2, 2, PAL.iron3);
-    R(ctx, px - 1, bot - 3, legW + 2, 1, PAL.iron5);
-  }
-  // ring handles at the neck
-  const hy = Math.round(v.oy + 0.55 * s - y0);
+  bctx.putImageData(img, 0, 0);
+
+  const cv = makeCanvas(cw, ch);
+  const ctx = cv.getContext('2d');
+  const X = (wx) => Math.round(ox + wx * S), Y = (wy) => Math.round(oy + wy * S);
+
+  // cast legs with claw feet, behind the belly
+  const legW = Math.max(3, Math.round(0.2 * S));
+  const top = Y(c.depth - 0.3), bot = Y(c.depth + 0.7);
   for (const sgn of [-1, 1]) {
-    const hx = Math.round(v.ox + sgn * (c.halfWidth(0.55) + wall + 0.06) * s - x0);
-    ctx.strokeStyle = PAL.iron4;
-    ctx.lineWidth = Math.max(1, Math.round(s * 0.035));
-    ctx.beginPath();
-    ctx.arc(hx, hy, Math.max(3, Math.round(s * 0.13)), 0, Math.PI * 2);
-    ctx.stroke();
+    const cx = X(sgn * c.belly * 0.6);
+    for (let y = top; y < bot; y++) {
+      const t = (y - top) / Math.max(1, bot - top);
+      // thick at the hip, a waist, then the foot flares outward
+      const half = Math.round(legW * (0.62 - 0.22 * Math.sin(Math.min(1, t / 0.8) * Math.PI) + (t > 0.78 ? (t - 0.78) * 3.2 : 0)) );
+      const shift = t > 0.78 ? Math.round(sgn * (t - 0.78) * legW * 1.6) : 0;
+      const l = cx - half + shift, r = cx + half + shift;
+      R(ctx, l - 1, y, r - l + 2, 1, '#08070a');
+      R(ctx, l, y, r - l, 1, PAL.iron2);
+      R(ctx, l, y, Math.max(1, Math.round((r - l) * 0.3)), 1, PAL.iron4);
+      R(ctx, l + Math.max(1, Math.round((r - l) * 0.3)), y, 1, 1, PAL.iron3);
+      R(ctx, r - 1, y, 1, 1, PAL.iron1);
+    }
+    // claw toes on the hearth
+    const fx = cx + Math.round(sgn * legW * 0.35), toe = Math.max(1, Math.round(legW * 0.3));
+    for (let k = -1; k <= 1; k++) {
+      const tx = fx + k * (toe + 1) - Math.floor(toe / 2);
+      R(ctx, tx - 1, bot - 1, toe + 2, 2, '#08070a');
+      R(ctx, tx, bot - 1, toe, 1, PAL.iron3);
+    }
+    R(ctx, cx - legW, bot, legW * 2 + Math.round(legW * 0.7), 1, 'rgba(0,0,0,0.45)');
   }
-  return { canvas: cv, x: x0, y: y0, wallPix };
+  ctx.drawImage(body, 0, 0);
+
+  // ring handles hanging from lugs at the neck
+  const hy = Y(0.55);
+  const ringR = Math.max(3, Math.round(0.14 * S)), ringT = Math.max(1, Math.round(0.045 * S));
+  for (const sgn of [-1, 1]) {
+    const wallX = X(sgn * (c.halfWidth(0.42) + wall));
+    const hx = wallX + sgn * (ringR - 1);
+    const lugW = Math.max(2, Math.round(0.08 * S) + 1), lugH = Math.max(3, Math.round(0.12 * S));
+    const ly = hy - ringR - Math.round(lugH / 2);
+    const lx = sgn > 0 ? wallX - 1 : wallX - lugW + 1;
+    R(ctx, lx - 1, ly - 1, lugW + 2, lugH + 2, '#08070a');
+    R(ctx, lx, ly, lugW, lugH, PAL.iron3);
+    R(ctx, lx, ly, lugW, 1, PAL.iron5);
+    R(ctx, lx, ly + lugH - 1, lugW, 1, PAL.iron1);
+    // the ring: a pixel annulus, outlined, lit from the upper left
+    for (let yy = -ringR - 1; yy <= ringR + 1; yy++) {
+      for (let xx = -ringR - 1; xx <= ringR + 1; xx++) {
+        const r = Math.hypot(xx + 0.5 * 0, yy);
+        if (r > ringR + 0.6 || r < ringR - ringT - 0.6) continue;
+        let col;
+        if (r > ringR - 0.4 || r < ringR - ringT + 0.4) col = '#08070a';
+        else {
+          const lit = (-xx - yy) / (r || 1);
+          col = lit > 0.55 ? PAL.iron5 : lit > -0.2 ? PAL.iron4 : lit > -0.7 ? PAL.iron3 : PAL.iron2;
+        }
+        if (ringT === 1 && col === '#08070a' && r < ringR + 0.1 && r > ringR - 1.4) col = PAL.iron4;
+        R(ctx, hx + xx, hy + yy, 1, 1, col);
+      }
+    }
+    // the lug's pin passes in front of the ring
+    R(ctx, lx, hy - ringR - 1, lugW, 2, PAL.iron4);
+  }
+
+  // the rolled lip: an outlined bar each side with rounded ends
+  const ry = Y(-0.12), rh = Math.max(4, Y(0.12) - ry);
+  for (const sgn of [-1, 1]) {
+    const a = X(sgn * (c.mouth - 0.02)), b = X(sgn * (c.mouth + rim));
+    const l = Math.min(a, b), r = Math.max(a, b);
+    R(ctx, l + 1, ry - 1, r - l - 2, rh + 2, '#08070a');
+    R(ctx, l, ry, r - l, rh, '#08070a');
+    R(ctx, l + 1, ry, r - l - 2, rh, PAL.iron3);
+    R(ctx, l, ry + 1, r - l, rh - 2, PAL.iron3);
+    const hiH = Math.max(1, Math.round(rh * 0.3));
+    R(ctx, l + 1, ry, r - l - 2, hiH, PAL.iron5);
+    R(ctx, l + 1, ry + hiH, r - l - 2, 1, PAL.iron4);
+    R(ctx, l + 1, ry + rh - Math.max(1, Math.round(rh * 0.3)), r - l - 2, Math.max(1, Math.round(rh * 0.3)), PAL.iron1);
+    // a glint on the outer curl
+    const gx = sgn < 0 ? l + 2 : r - 4;
+    R(ctx, gx, ry, 2, 1, '#c8c3d2');
+  }
+
+  // up-scale the iron pixels to art pixels
+  const out = makeCanvas(w, h);
+  const octx = out.getContext('2d');
+  octx.imageSmoothingEnabled = false;
+  octx.drawImage(cv, 0, 0, cw * p, ch * p);
+  const wallPix = [];
+  for (let k = 0; k < wallCells.length; k += 3) {
+    for (let j = 0; j < p; j++) for (let i = 0; i < p; i++) {
+      const fx = wallCells[k] * p + i, fy = wallCells[k + 1] * p + j;
+      if (fx < w && fy < h) wallPix.push(fx, fy, wallCells[k + 2]);
+    }
+  }
+  return { canvas: out, x: x0, y: y0, wallPix };
+}
+
+/**
+ * Pre-render the closed lid: a flanged iron dome with a turned wooden knob,
+ * on the same iron pixel as the cauldron. `topY(wx)` gives the dome's top
+ * edge (screen px) above world x, so fittings can sit on it.
+ * @param {import('../simulation/cauldron.js').Cauldron} c
+ * @param {{scale:number, ox:number, oy:number}} v
+ */
+export function renderLid(c, v) {
+  const s = v.scale;
+  const p = s >= 70 ? 2 : 1;
+  const S = s / p;
+  const half = Math.round((c.mouth + 0.22) * S);
+  const fh = Math.max(2, Math.round(0.1 * S)); // flange
+  const dh = Math.max(3, Math.round(0.2 * S)); // dome rise
+  const kh = Math.max(3, Math.round(0.13 * S)), kw = Math.max(3, Math.round(0.11 * S)); // knob
+  const cw = half * 2 + 2, ch = fh + dh + kh + 3;
+  const cv = makeCanvas(cw, ch);
+  const ctx = cv.getContext('2d');
+  const cx = half + 1, base = ch - 1 - fh; // dome sits on the flange
+  const rd = half - Math.max(2, Math.round(0.07 * S));
+  const OUT = '#08070a';
+  const iron = [PAL.iron0, PAL.iron1, PAL.iron2, PAL.iron3, PAL.iron4, PAL.iron5, '#9a95a6'];
+  /** dome height (coarse px) at column offset x */
+  const domeH = (x) => (Math.abs(x) >= rd ? 0 : Math.round(dh * Math.sqrt(1 - (x / rd) * (x / rd))));
+  for (let x = -rd; x <= rd; x++) {
+    const hgt = domeH(x);
+    const topY = base - hgt;
+    R(ctx, cx + x, topY - 1, 1, 1, OUT);
+    for (let y = topY; y < base; y++) {
+      const xt = x / rd, yt = (base - y) / Math.max(1, dh);
+      let lum = 3.4 - xt * 1.6 + yt * 0.8;
+      if (Math.abs(xt + 0.42) < 0.08 && yt > 0.35) lum += 1.6; // a highlight streak
+      const t = (BAYER4[((cx + x) & 3) + (y & 3) * 4] + 0.5) / 16;
+      R(ctx, cx + x, y, 1, 1, iron[Math.max(1, Math.min(6, Math.floor(lum + (t - 0.5) * 0.8 + 0.5)))]);
+    }
+  }
+  // the flange: a wide outlined band that overhangs the rim
+  const fy = base;
+  R(ctx, 1, fy - 1, cw - 2, fh + 2, OUT);
+  R(ctx, 0, fy, cw, fh, OUT);
+  R(ctx, 1, fy, cw - 2, fh, PAL.iron3);
+  R(ctx, 1, fy, cw - 2, 1, PAL.iron5);
+  R(ctx, 1, fy + fh - 1, cw - 2, 1, PAL.iron1);
+  R(ctx, 3, fy, Math.max(2, Math.round(half * 0.3)), 1, '#c8c3d2');
+  // turned wooden knob on a little iron collar
+  const ky = base - dh - kh;
+  R(ctx, cx - kw - 1, base - dh - 2, kw * 2 + 2, 3, OUT);
+  R(ctx, cx - kw, base - dh - 1, kw * 2, 1, PAL.iron4);
+  R(ctx, cx - Math.ceil(kw / 2) - 1, ky - 1, Math.ceil(kw / 2) * 2 + 2, kh + 1, OUT);
+  R(ctx, cx - Math.ceil(kw / 2), ky, Math.ceil(kw / 2) * 2, kh - 1, PAL.wood3);
+  R(ctx, cx - Math.ceil(kw / 2), ky, 1, kh - 1, PAL.wood5);
+  R(ctx, cx + Math.ceil(kw / 2) - 1, ky, 1, kh - 1, PAL.wood1);
+  R(ctx, cx - Math.ceil(kw / 2), ky, Math.ceil(kw / 2) * 2, 1, PAL.wood4);
+
+  const w = cw * p, h = ch * p;
+  const out = makeCanvas(w, h);
+  const octx = out.getContext('2d');
+  octx.imageSmoothingEnabled = false;
+  octx.drawImage(cv, 0, 0, w, h);
+  // the flange's top sits at world y = -0.12, like the old flat lid
+  const x = Math.round(v.ox) - cx * p, y = Math.round(v.oy - 0.12 * s) - (ch - 1 - fh) * p;
+  return { canvas: out, x, y, topY: (wx) => y + (base - domeH(Math.round(wx * S)) - 1) * p };
 }
 
 /** @param {number} w @param {number} h @returns {HTMLCanvasElement} */

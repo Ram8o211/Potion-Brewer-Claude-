@@ -225,7 +225,9 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 .jar.selected { background: #5a3a7a; box-shadow: 0 0 0 var(--px) #1a0f26, 0 0 0 calc(var(--px) * 2) var(--brass); }
 .jar.empty { opacity: 0.5; }
 .dose { display: flex; gap: 4px; align-items: center; font-size: var(--fs-s); padding: 4px 6px 0; overflow-x: auto; scrollbar-width: none; }
-.dose.collapsed { display: none; }
+/* collapsed keeps its row so the stage (and the cauldron's zoom) never jumps
+   when the first ingredient is picked */
+.dose.collapsed { opacity: 0.5; pointer-events: none; }
 .dose .btn { min-height: 44px; min-width: 46px; padding: 2px 6px; font-size: var(--fs-s); flex: none; }
 .dose .sel-name { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--brassHi); }
 .dose > img.ico.sm { width: 16px; height: 16px; flex: none; }
@@ -500,7 +502,6 @@ canvas.scene { display: block; width: 100%; aspect-ratio: 16 / 9; height: auto; 
   .jar canvas.raw { width: 40px; height: 40px; }
   .jar .jname { max-width: 82px; }
   .dose { flex-wrap: wrap; padding: 0 0 6px; }
-  .dose.collapsed { display: flex; opacity: 0.5; pointer-events: none; }
   .dose .sel-name { flex-basis: 100%; }
   .controls { padding: 8px 10px; }
   .toolbar .tools .btn { padding: 4px 10px; flex-direction: row; gap: 6px; }

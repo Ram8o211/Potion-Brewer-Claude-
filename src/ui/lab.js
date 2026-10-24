@@ -528,7 +528,7 @@ export class LabScreen {
     const can = !!m && m.form === 'solid' && (this.sandbox || this.state.has('mortar'));
     this.groundBtn.classList.toggle('hidden', !can);
     this.groundBtn.classList.toggle('active', can && this.ground);
-    if (this.selName) this.selName.textContent = m ? m.name : '';
+    if (this.selName) this.selName.textContent = m ? m.name : 'Pick a jar';
   }
 
   // ------------------------------------------------------------------ layout
