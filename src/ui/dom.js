@@ -98,19 +98,30 @@ export function setToastRoot(root) {
   root.appendChild(toastBox);
 }
 
+/** During the guided tour, notes appear under its strip rather than over it (call when the strip changes). */
+export function placeToasts() {
+  if (!toastBox || !toastBox.parentElement) return;
+  const tour = document.querySelector('.tutor-slot .tutor');
+  const top = tour ? tour.getBoundingClientRect().bottom - toastBox.parentElement.getBoundingClientRect().top + 6 : 0;
+  toastBox.style.top = top > 0 ? `${Math.round(top)}px` : '';
+}
+
 /**
  * Small notification.
  * @param {string} title @param {string} [text] @param {string} [iconName] @param {number} [ms]
  */
 export function toast(title, text = '', iconName = 'star', ms = 3200) {
   if (!toastBox) return;
+  placeToasts();
   const t = h('div', { class: 'toast parch' }, icon(iconName), h('div', {}, h('b', { text: title }), text));
   toastBox.appendChild(t);
-  while (toastBox.children.length > 4) toastBox.firstChild.remove();
-  setTimeout(() => {
+  while (toastBox.children.length > 3) toastBox.firstChild.remove();
+  const out = () => {
+    if (t.classList.contains('out')) return;
     t.classList.add('out');
     setTimeout(() => t.remove(), 320);
-  }, ms);
+  };
+  setTimeout(out, ms);
 }
 
 /** Format coins. @param {number} v */

@@ -69,8 +69,8 @@ export function openIdentify(lab, vial, onDone) {
     wide: true,
     body: [
       h('div', { class: 'card parch' },
-        h('div', { class: 'small', text: 'Write down what this potion does. Tested values come from trials of this very batch — one reading counts for less than readings repeated, and those less than readings on several rabbits. The rest are the guild theory’s estimates, or unknown. Customers pay for what you claim — and come back if it is not true.' }),
-        h('div', { class: 'small muted', text: com ? 'Highlighted: the effects this order cares about (with a purity rule, all of them).' : '' }),
+        h('div', { class: 'small', text: 'Claim what this potion does. Tested values come from trials of this batch (more readings, more rabbits: more trust); the rest are the guild theory’s estimates, or unknown. Customers pay for your claims — and come back if they were wrong. Tap a line to change it.' }),
+        com ? h('div', { class: 'small muted', text: 'Highlighted: the effects this order cares about.' }) : null,
         accEl, trustEl),
       h('div', { class: 'card parch' }, rows),
     ],

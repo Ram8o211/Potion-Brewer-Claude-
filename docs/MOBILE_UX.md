@@ -13,14 +13,17 @@ left rail so the cauldron keeps the full height.
 | Tab | Room | What happens there |
 |---|---|---|
 | Counter | `views/counter.js` | the customer, the full order with which effects are already verified, the sealed vial, serving, the day summary |
-| Brew | the cauldron | live simulation, shelf, dose buttons, fire/frost slider, tools (pour, spoon, pestle, skimmer, probe), lid, mortar, bottling |
+| Brew | the cauldron | live simulation, shelf, dose buttons, fire/frost slider, labelled tools (Stir, Crush, Inspect, Sample, Auto, speed, Empty; the skimmer in the Free Experiment), lid, mortar, bottling; the ml · °C readout opens what is in the cauldron |
 | Wilds | `views/wilds.js` | regions, a painted scene with tappable deposits and the same deposits as a list |
-| Trials | `views/trials.js`, `views/hutch.js` | the rabbit farm: the hutch scene, a Give button and the dropper right under it, the roster, the chosen rabbit's health and status bars, purge / put down, dose size, source (cauldron tap or vial), reports and the batch estimate |
+| Trials | `views/trials.js`, `views/hutch.js` | the rabbit farm: the batch estimate, the hutch scene, the source (cauldron tap or vial) and dose size beside the Give button and the dropper, the roster, the chosen rabbit's health and status bars, purge / put down, reports |
 | Book | `views/book.js` | recipes, trial log, laws, journal, ingredients, awards, sales |
 
-The top bar holds the menu (help, settings and saves, tutorial), coins,
-rank, day and the Market & Guild, where reagents, common wild herbs and
-upgrades are bought (dead rabbits are replaced in the Trials room).
+The top bar holds the menu (how to play, the guided tour, settings and
+saves), coins, rank, the day and the customer of the day, and the Shop,
+where reagents, common wild herbs and upgrades are bought (dead rabbits
+are replaced in the Trials room). The guided tour docks in a strip between
+the top bar and the rooms, so it never covers a control; notes (toasts)
+never take a tap from the control under them.
 On phones in portrait every dialog opens as a bottom sheet; elsewhere it is
 a centred panel. The shelf in the Brew room is
 the inventory: each jar shows its stock. Tabs carry badges: the Counter

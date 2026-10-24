@@ -52,19 +52,19 @@ export function openShop(lab, tab = 'reagents') {
   const body = h('div');
   const tabs = h('div', { class: 'tabs' });
   let current = tab;
-  const m = modal({ title: 'Market & Guild', body: [tabs, body], wide: true, onClose: () => lab.refreshHud(true) });
+  const m = modal({ title: 'Shop', body: [tabs, body], wide: true, onClose: () => lab.refreshHud(true) });
   m.el.insertBefore(tabs, m.body);
   const coinLine = h('div', { class: 'row', style: { justifyContent: 'flex-end', padding: '0 12px' } });
   m.el.insertBefore(coinLine, m.body);
   const renderTabs = () => {
     clear(tabs);
-    for (const [k, label] of [['reagents', 'Reagents'], ['equipment', 'Equipment'], ['sell', 'Sell surplus']]) {
-      tabs.appendChild(btn(label, () => { current = k; render(); }, { cls: current === k ? 'active' : '', act: 'shop-tab-' + k }));
+    for (const [k, label, ic] of [['reagents', 'Buy', 'jar'], ['equipment', 'Equipment', 'gear'], ['sell', 'Sell', 'coin']]) {
+      tabs.appendChild(btn(label, () => { current = k; render(); }, { icon: ic, cls: current === k ? 'active' : '', act: 'shop-tab-' + k }));
     }
   };
   const render = () => {
     renderTabs();
-    clear(coinLine).append(icon('coin'), h('span', { text: coins(st.coins) + ' coins' }), h('span', { class: 'muted small', text: ` · ${st.marketEvent.name}` }));
+    clear(coinLine).append(icon('coin'), h('span', { text: coins(st.coins) + ' coins' }), ...(st.marketEvent.key !== 'none' ? [h('span', { class: 'muted small', text: ` · today: ${st.marketEvent.name}` })] : []));
     clear(m.body);
     if (current === 'reagents') renderReagents(lab, m.body, render);
     else if (current === 'equipment') renderEquipment(lab, m.body, render);
@@ -77,7 +77,7 @@ export function openShop(lab, tab = 'reagents') {
 
 function renderReagents(lab, body, rerender) {
   const st = lab.state;
-  body.appendChild(h('div', { class: 'muted small', text: `Prices per 100 ml. Shelf space: ${st.cap.storage} ml per reagent. The market sells no prepared reagents: every effect comes from nature. Water from the well is free; oil and spirit are plain solvents. Wild herbs and minerals are free to gather in the Wilds; from Journeyman on, the herbalist sells the common ones at a premium.` }));
+  body.appendChild(h('div', { class: 'muted small', text: `Prices per 100 ml · room for ${st.cap.storage} ml of each. Water is free; oil and spirit carry no magic. Herbs and minerals are free in the Wilds — from Journeyman on, the common ones are sold here too.` }));
   const list = h('div', { class: 'list' });
   for (const id of st.world.ingredients) {
     const mt = st.lookup(id);
@@ -114,7 +114,6 @@ function renderReagents(lab, body, rerender) {
 
 function renderEquipment(lab, body, rerender) {
   const st = lab.state;
-  body.appendChild(h('div', { class: 'muted small', text: 'Every tool here lets you do something new in the craft, or do it faster. Each names the part of the craft it serves.' }));
   for (const cat of Object.keys(CAT_LABEL)) {
     const items = EQUIPMENT.filter((e) => e.category === cat);
     if (!items.length) continue;
@@ -153,7 +152,7 @@ function renderEquipment(lab, body, rerender) {
 
 function renderSell(lab, body, rerender) {
   const st = lab.state;
-  body.appendChild(h('div', { class: 'muted small', text: 'The merchant buys back reagents at 40% of today’s price.' }));
+  body.appendChild(h('div', { class: 'muted small', text: 'Ingredients you have 100 ml or more of, bought back at 40% of today’s price.' }));
   const list = h('div', { class: 'list' });
   for (const id of st.world.ingredients) {
     const s = st.stock(id);
@@ -300,15 +299,15 @@ export function openBottleSize(lab, avail, onPick, o = {}) {
   const list = [...sizes].sort((a, b) => a - b);
   let m;
   const pick = (ml) => { m.close(); onPick(Math.max(1, Math.round(ml / per)), dest); };
-  const btns = list.map((ml) => btn(`${ml} ml${com && ml === com.bottleMl ? ' · the order' : ''}`, () => pick(ml), {
+  const btns = list.map((ml) => btn(`${ml} ml${com && ml === com.bottleMl ? ' · ordered' : ''}`, () => pick(ml), {
     cls: com && ml === com.bottleMl ? 'primary' : '', disabled: ml / per > avail, act: 'bottle-' + ml,
   }));
-  btns.push(btn(`All at the tap · ${avail * per} ml`, () => pick(avail * per), { act: 'bottle-all' }));
+  btns.push(btn(`All · ${avail * per} ml`, () => pick(avail * per), { act: 'bottle-all', title: 'Everything that can run out of the tap' }));
   /** @type {HTMLElement|null} */
   let destRow = null;
   if (o.shelves) {
     const opts = /** @type {[string, string, boolean][]} */ ([
-      ['counter', counterFree ? 'To the counter' : 'Counter is taken', counterFree],
+      ['counter', counterFree ? 'To the counter (sell or test)' : 'Counter is taken', counterFree],
       ['shelf', shelfRoom > 0 ? `To the potion shelves · ${shelfRoom} free` : 'Potion shelves are full', shelfRoom > 0],
     ]);
     const bs = opts.map(([k, label, ok]) => btn(label, () => { dest = /** @type {any} */ (k); sync(); }, { icon: k === 'shelf' ? 'shelf2' : 'deal', disabled: !ok, act: 'bottle-dest-' + k }));
@@ -317,11 +316,12 @@ export function openBottleSize(lab, avail, onPick, o = {}) {
     destRow = h('div', { class: 'row wrap bottle-dest' }, ...bs);
   }
   m = modal({
-    title: 'Bottle a measured quantity',
+    title: 'Bottle the potion',
     body: [h('div', { class: 'card parch' },
-      h('div', { class: 'small', text: `The bottle takes what runs out of the tap — the lowest layer first. ${avail * per} ml can be drawn now.` }),
-      h('div', { class: 'small muted', text: 'A sealed bottle keeps its exact contents. On the counter you can test doses from it, pour it back or serve it; on the potion shelves it waits until you need it.' }),
+      h('div', { class: 'small', text: `It fills from the tap at the bottom (the lowest layer first): ${avail * per} ml can be drawn. A sealed bottle keeps its exact contents.` }),
+      destRow ? h('div', { class: 'small muted step-k', text: '1. Where to?' }) : null,
       destRow,
+      h('div', { class: 'small muted step-k', text: destRow ? '2. How much?' : 'How much?' }),
       h('div', { class: 'row wrap bottle-sizes' }, ...btns))],
   });
   return m;
@@ -346,7 +346,7 @@ export function showDaySummary(lab, summary, onDone) {
       h('div', { class: 'card parch' }, h('b', { text: `Tomorrow: ${st.marketEvent.name}` }), h('div', { class: 'small', text: st.marketEvent.text })),
       st.nextRank() ? h('div', { class: 'small muted', text: `Next rank: ${st.nextRank().name} at ${st.nextRank().rep} reputation.` }) : null,
     ],
-    foot: [btn('Open the shop', () => document.querySelector('.overlay .modal-head .btn').dispatchEvent(new MouseEvent('click')), { cls: 'primary', act: 'next-day' })],
+    foot: [btn('Start the new day', () => document.querySelector('.overlay .modal-head .btn').dispatchEvent(new MouseEvent('click')), { cls: 'primary', icon: 'sun', act: 'next-day', title: 'Dawn: gather in the Wilds, then open the door at the Counter' })],
   });
 }
 
@@ -383,7 +383,7 @@ export function showAnalysis(lab, m, recipe, title = 'Analysis of the brew') {
         ...kv('Weight', sand ? `${m.density.toFixed(3)} g/ml` : densityWord(m.density)),
         ...kv('Thickness', sand ? `${viscosityClass(m.viscosity)} (${m.viscosity < 100 ? m.viscosity.toFixed(1) : Math.round(m.viscosity)} cP)` : viscosityClass(m.viscosity)),
         ...(sand ? [...kv('Volatility', String(Math.round(m.volatility))), ...kv('Charge', `${m.charge >= 0 ? '+' : ''}${m.charge.toFixed(2)}`)] : []),
-        ...kv('Effects', 'unknown — test a dose in the Trials room'),
+        ...kv('Effects', 'unknown — test a dose in Trials'),
         ...(aura ? kv('Aura', aura) : []),
       )),
       h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Composition' }), ...comp.map(([id, f]) => h('div', { class: 'small', text: `${(f * 100).toFixed(1)}%  ${st.lookup(id) ? st.lookup(id).name : id}` }))),
@@ -524,14 +524,14 @@ export function openPause(lab) {
   const app = lab.app;
   let m;
   const items = [
-    btn('Resume', () => m.close(), { cls: 'primary', icon: 'speed', act: 'resume' }),
+    btn('Back to the game', () => m.close(), { cls: 'primary', icon: 'speed', act: 'resume' }),
     btn('How to play', () => { m.close(); openHelp(); }, { icon: 'help', act: 'help' }),
-    btn('Settings & saves', () => { m.close(); openSettings(app, lab); }, { icon: 'gear', act: 'settings' }),
   ];
+  if (!lab.sandbox) items.push(btn('Guided tour', () => { m.close(); if (lab.tutorial) { lab.tutorial.start(true); lab.showView('brew'); } }, { icon: 'bulb', act: 'tour', title: 'Walk through every part of the shop again' }));
+  items.push(btn('Settings & saves', () => { m.close(); openSettings(app, lab); }, { icon: 'gear', act: 'settings' }));
   if (lab.sandbox && lab.receiver && lab.receiver.count) items.push(btn('Pour back distillate', () => { lab.pourReceiver(); m.close(); }, { icon: 'alembic' }));
-  if (!lab.sandbox) items.push(btn('Restart tutorial', () => { m.close(); lab.tutorial && lab.tutorial.start(true); }, { icon: 'bulb' }));
-  items.push(btn(lab.sandbox ? 'Leave experiment' : 'Save & quit to menu', () => { m.close(); app.showMenu(); }, { icon: 'door', act: 'quit' }));
-  m = modal({ title: lab.sandbox ? 'Free Experiment' : 'Paused', body: h('div', { class: 'list' }, items) });
+  items.push(btn(lab.sandbox ? 'Leave the experiment' : 'Save & quit to title', () => { m.close(); app.showMenu(); }, { icon: 'door', act: 'quit' }));
+  m = modal({ title: lab.sandbox ? 'Free Experiment' : 'Menu', body: h('div', { class: 'list' }, items) });
 }
 
 /** The Free Experiment's alembic receiver flask: pour the distillate back, or away. @param {any} lab */
@@ -553,26 +553,47 @@ export function openReceiver(lab) {
 }
 
 export function openHelp() {
-  const sec = (title, lines) => h('div', { class: 'card parch' }, h('h3', { text: title }), ...lines.map((l) => h('div', { class: 'small', text: '• ' + l })));
-  modal({
-    title: 'How to play',
-    wide: true,
-    body: [
-      sec('Your shop', ['Customers ask for potions by their effects — healing, strength, love, fire… — at a strength, and some want them served hot or chilled. Strength is the effective concentration in percent: everyday orders want about 8–15 %, master commissions far more.', 'Most orders forbid side effects: “no other effect above 1.2 %”. Every other kind of magic in the bottle must stay that faint.', 'The market sells no prepared reagents — only free well water and two plain solvents, oil and spirit. Every effect comes from what you gather, and nothing that grows is pure: each herb or mineral brings side effects. Cancel them with their opposites — fire and frost, life and death (life also mends poison, two parts to one), acid and alkali. Long-press an ingredient to see what cancels its side effects.', 'You know what each plain ingredient does. You do NOT know what a mixture does: how well it was extracted, heat, reactions and hidden laws change things. Test doses in the Trials room to find out.', 'Bottle a measured quantity from the tap at the bottom of the cauldron. A sealed vial keeps its exact contents: test doses from it, pour it back to keep working, or offer it at the Counter.', 'Bottle onto the potion shelves whenever you like, as long as there is room (3 bottles, more with a Bottle Shelf, Potion Cabinet or Bottle Cellar). Bottles of one batch share its trials, so a well-stirred, tested batch can serve several customers.', 'Before a sale you write the label — tested values, the guild theory’s estimates, “none” or unknown — and bargain over the price. The customer pays what you agree, drinks the real potion and comes back the next day: pleased, or with a complaint. Refund them, dispute it with your trial records, or turn them away.', 'Honest, well-tested potions earn reputation. Reputation unlocks ranks, regions of the wilds, reagents and equipment — each piece of equipment lets you do something new.']),
-      sec('Preparing a brew', ['Grind or crush: whole roots, leaves and stones give up almost nothing. Switch on “Ground” on the shelf to grind them in the mortar, or crush them in the pot with the pestle.', 'Steep at the right heat: most herbs give up two to three times as much when held warm inside their steeping window; the window is in each herb’s lore and, once you have seen the extraction happen, in your journal. A herb added after the steep stays weak.', 'Some herbs want ice-cold water: Frostcap steeped near 9 °C (the basin’s best) gives about three times what it gives warm — but a brew frozen solid gives up less again. Grave Moss and the narrowest cold windows need the Frost Rune. Delicate petals spoil if boiled: Heartpetal wilts above about 85 °C, losing most of its love and turning a little poisonous.', 'Stir after every addition. Powders dissolve faster when stirred, neutralisers have to meet what they cancel, and an unstirred brew pours unevenly — later bottles may not match the dose you tested. The Clockwork Stirrer does it on its own, about three times as fast.', 'Concentrate or dilute: boil water off with the lid open and every effect grows — side effects too, so they must be cancelled harder; add water to weaken a brew that overshoots. Spirit boils long before water.', 'Serve at the asked temperature: the fire and the basin bring the brew there; the thermometer reads it.']),
-      sec('Arcane awakening', ['Magical ingredients carry a hidden arcane threshold. Heat the brew past it (or, for cold magic, chill it below) and the magic awakens: it glows in the colour of its effect and acts two to three times stronger — side effects too.', 'In a blend the threshold is the mix of its magical ingredients’ thresholds, by volume — a hot-waking and a cold-waking ingredient pull each other toward room temperature.', 'Mix first, at room temperature; then heat or chill to awaken. A half-mixed brew awakens unevenly. Boiling passes most heat-waking thresholds, so a boiled brew is usually awakened.', 'Awakened magic stays awake when it cools, is bottled or kept. Only dilution and reactions undo it.', 'Your journal notes where each ingredient awoke; the Arcanometer reads a brew’s threshold and shows the aura of its strong magic.']),
-      sec('Wilds and trials', ['Gather roots, leaves, flowers, mushrooms and minerals in the Wilds. Deposits are finite and regrow over time, even while the game is closed.', 'Flowers and leaves are picked by hand; roots, mineral seams, mosses and dust need the Forager’s Kit for a full harvest. Twilight plants open only at dawn (before you open the shop door) or at dusk (after the last customer, until you close for the night). The weather changes daily. A thorough harvest takes twice as much but the deposit regrows slowly.', 'A rabbit shows every effect, but each reading is uncertain: the ± band of an estimate is how far the truth may lie. One reading is a rough guess; repeating it on the same rabbit helps a little (that rabbit’s own bias never averages out); other rabbits help most. Evidence: detected once → measured repeatedly → corroborated on several rabbits.', '“Not detected” is not proof of absence: a faint effect can hide below the reading noise. The trials show how strong an undetected effect could still be; larger doses and more readings narrow it. Against an order the trials say when a value is reliably within what the customer asked.', 'Customers weigh that evidence: cautious ones want readings repeated or corroborated before they buy, and every customer trusts — and pays for — a well-tested label more. One trial reads every effect at once.', 'A hurt rabbit reads less steadily; kits and old rabbits too. When a trial surprises you, a hidden law may be at work. Confirm it twice and your theory learns it.']),
-      sec('Brewing controls', ['Tap a jar on the shelf, then hold your finger (or the mouse) inside the cauldron to pour. Dose buttons pour exact amounts.', 'Stir with the spoon: drag through the brew, or hold the stir button. Powders pile up like sand; knead a binding powder with a little water to make dough.', 'Slide the fire control right to heat from below, left to cool. Keep the lid on to trap vapour; open it to let steam escape.', 'Saved recipes keep three things apart: the formulation (what went in), the procedure (what was done, in order) and whether it was reproduced (brewed again the same way and tested the same). The Brass Homunculus replays a procedure step by step.', 'Keys: 1 pour · 2 spoon · 3 pestle · 5 inspect · L lid · B bottle · F time speed · A auto-stir · arrows fire · S shop · R recipes · J journal · Esc menu. Long-press (or right-click) a jar to inspect a reagent.', 'The Free Experiment has every tool and instrument, including the skimmer, the alembic, the heat map and the exact physical readings (density, viscosity, stability, charge) that customers never ask for.']),
-      sec('Tips', ['Ask the guild for advice on a difficult order — it costs a few coins.', 'Orders far below your rank earn little reputation (and the same one over and over a little less); a technique sold well for the first time earns a bonus. A tested claim states its margin: customers forgive a potion that lies within it. Returning customers remember how your last potion worked.', 'If you run out of money, the guild will help a struggling apprentice once a day — and water from the well is always free.']),
-    ],
-  });
+  // one section open at a time keeps the sheet short; the quick start is open first
+  const sec = (title, ic, lines, open = false) => h('details', { class: 'card parch help-sec', ...(open ? { open: true } : {}) },
+    h('summary', {}, icon(ic), h('span', { text: title })),
+    ...lines.map((l) => h('div', { class: 'small', text: '• ' + l })));
+  const body = h('div', { class: 'help' },
+    h('div', { class: 'card parch help-day' }, h('h3', { text: 'A day in the shop' }),
+      h('ol', { class: 'small' }, ...[
+        'Dawn: gather herbs and minerals in the Wilds (dawn flowers close once the shop opens).',
+        'Open the door at the Counter and read the customer’s order.',
+        'Brew: pour, grind, stir, heat or chill in the cauldron.',
+        'Test a dose on a rabbit in Trials: only a test shows what a mixture does.',
+        'Bottle it, check the label and sell it at the Counter — agree on a price.',
+        'When the last customer has gone (dusk), close the shop for the night.',
+      ].map((t) => h('li', { text: t })))),
+    sec('Orders and selling', 'stall', ['Customers ask for an effect — healing, strength, love, fire… — at a strength in percent (everyday orders want about 8–15 %). Some want it served hot or chilled.', 'Most orders forbid side effects: “no other effect above 1.2 %”. Every other kind of magic in the bottle must stay that faint.', 'Before a sale you write the label — tested values, the guild theory’s estimates, “none” or unknown — and bargain over the price. The customer comes back the next day: pleased, or with a complaint. Refund them, dispute it with your trial records, or turn them away.', 'Bottle onto the potion shelves whenever there is room (3 bottles; more with a Bottle Shelf, Potion Cabinet or Bottle Cellar). Bottles of one batch share its trials.', 'Honest, well-tested potions earn reputation. Reputation raises your rank, which opens regions, ingredients, equipment and harder orders.'], true),
+    sec('Ingredients and side effects', 'leaf', ['The Shop sells no prepared reagents — only free well water and two plain solvents, oil and spirit. Every effect comes from what you gather.', 'Nothing that grows is pure: each herb or mineral brings side effects. Cancel them with their opposites — fire and frost, life and death (life also mends poison, two parts to one), acid and alkali.', 'Long-press (or right-click) a jar to see what it does and what cancels its side effects.', 'You know what each plain ingredient does. You do NOT know what a mixture does: extraction, heat, reactions and hidden laws change it.']),
+    sec('Brewing', 'cauldron', ['Pour: tap a jar, then a dose button (25–250 ml) — or hold your finger in the cauldron, or drag a jar onto it.', 'Grind or crush: whole roots, leaves and stones give up almost nothing. “Ground” (on the dose row) grinds them in the mortar first; Crush (the pestle) breaks them up in the pot.', 'Steep at the right heat: most herbs give two to three times as much held warm in their steeping window (see the herb’s card and your journal). Some want ice-cold water: Frostcap near 9 °C gives about three times as much — but frozen solid gives less. Heartpetal wilts above about 85 °C.', 'Stir after every addition: an unstirred brew pours unevenly, so later bottles may not match the tested dose. Auto stirs for you (the Clockwork Stirrer about three times as fast).', 'The fire control: right heats, left cools. The lid keeps steam in; boiling with the lid off makes a brew smaller and stronger — side effects too. Add water to weaken it.', 'Tap the ml · °C readout over the cauldron to see what is in it; Inspect reads one spot; Sample measures what a bottle would hold.']),
+    sec('Arcane awakening', 'awaken', ['Magical ingredients carry a hidden arcane threshold. Heat the brew past it (or, for cold magic, chill it below) and the magic awakens: it glows and acts two to three times stronger — side effects too.', 'In a blend the threshold is the mix of its magical ingredients’ thresholds, by volume. Mix first at room temperature, then heat or chill; a half-mixed brew awakens unevenly.', 'Awakened magic stays awake when it cools, is bottled or kept. Only dilution and reactions undo it. The Arcanometer reads a brew’s threshold.']),
+    sec('Trials and rabbits', 'rabbit', ['Choose a rabbit and give it a dose (5, 10 or 25 ml) from the cauldron tap or the sealed vial. One trial reads every effect at once.', 'Each reading is uncertain: the ± margin is how far the truth may lie. One reading is a rough guess; repeating it on the same rabbit helps a little; other rabbits help most (detected once → repeated → corroborated).', '“Not detected” is not proof of absence: a faint effect can hide below the noise. Cautious customers want readings repeated or corroborated, and every customer pays more for a well-tested label.', 'Effects pile up in a rabbit and fade slowly. Past its own hidden limit an effect runs out of control and can kill it; fire and acid burn; strength and vitality can make it attack; love makes it mate. A purging draught washes everything out. Rabbits can be fed, bred, bought and put down; a body’s remains can be recovered once as an ingredient.', 'When a trial surprises you, a hidden law may be at work. Confirm it twice and your theory learns it.']),
+    sec('Wilds', 'tree', ['Tap a plant in the picture, or its button, to gather. Deposits are finite and regrow over time, even while the game is closed.', 'Careful leaves some to regrow; Thorough takes twice as much but the deposit regrows slowly. Roots, seams, mosses and dust need the Forager’s Kit for a full harvest.', 'Twilight plants open only at dawn (before you open the shop) or at dusk (after the last customer). The weather changes daily. New regions open with rank.']),
+    sec('Recipes and the Book', 'book', ['After a sale you can save the brew as a recipe: what went in, and every step in order. Prepare pours it again; the Brass Homunculus replays every step.', 'The Book also keeps every trial, the laws you discovered, all ingredients, your journal, awards and sales.']),
+    sec('Keys and tips', 'bulb', ['Keys: 1 pour · 2 stir · 3 crush · 5 inspect · L lid · B bottle · F speed · A auto-stir · arrows fire · G ground · S shop · R recipes · C/V/W/T/J rooms · Esc menu.', 'Advice at the Counter buys a hint for a hard order.', 'Orders far below your rank earn little reputation; a technique sold well for the first time earns a bonus.', 'Out of money? The guild helps a struggling apprentice once a day — and well water is always free.', 'The Free Experiment has every tool, the skimmer, the alembic, a heat map and exact physical readings.']),
+  );
+  // opening one section closes the others
+  body.addEventListener('toggle', (e) => {
+    const t = /** @type {HTMLDetailsElement} */ (e.target);
+    if (t.open) for (const d of body.querySelectorAll('details[open]')) if (d !== t) /** @type {HTMLDetailsElement} */ (d).open = false;
+  }, true);
+  modal({ title: 'How to play', wide: true, body: [body] });
 }
 
 export function openSettings(app, lab) {
   const s = app.settings;
   const vol = (key, label) => {
     const inp = /** @type {HTMLInputElement} */ (h('input', { type: 'range', class: 'vol', min: '0', max: '100', value: String(Math.round(s[key] * 100)), 'aria-label': label }));
-    inp.addEventListener('input', () => { s[key] = Number(inp.value) / 100; app.applySettings(); });
+    inp.addEventListener('input', () => {
+      s[key] = Number(inp.value) / 100;
+      app.applySettings();
+      // the music slider at zero is music off
+      if (key === 'music' && s.musicOn !== s.music > 0) { s.musicOn = s.music > 0; audio.music(s.musicOn); }
+    });
     return h('div', { class: 'toggle-row' }, h('span', { text: label }), inp);
   };
   const check = (key, label, after) => {
@@ -581,7 +602,7 @@ export function openSettings(app, lab) {
     inp.addEventListener('change', () => { s[key] = inp.checked; app.applySettings(); after && after(); });
     return h('div', { class: 'toggle-row' }, h('span', { text: label }), inp);
   };
-  const quality = /** @type {HTMLSelectElement} */ (h('select', { 'aria-label': 'Graphics quality', style: { width: '50%' } }, ...[['auto', 'Automatic'], ['high', 'High quality'], ['medium', 'Balanced'], ['low', 'Battery saver']].map(([q, t]) => h('option', { value: q, text: t }))));
+  const quality = /** @type {HTMLSelectElement} */ (h('select', { 'aria-label': 'Graphics quality', style: { width: '55%' } }, ...[['auto', 'Automatic'], ['high', 'Best looking'], ['medium', 'Balanced'], ['low', 'Battery saver']].map(([q, t]) => h('option', { value: q, text: t }))));
   quality.value = s.quality;
   quality.addEventListener('change', () => { s.quality = /** @type {any} */ (quality.value); app.applySettings(); if (lab) lab.resize(true); });
   const fileIn = /** @type {HTMLInputElement} */ (h('input', { type: 'file', accept: '.json,application/json', class: 'hidden' }));
@@ -601,7 +622,7 @@ export function openSettings(app, lab) {
   });
   const saveSection = lab && !lab.sandbox ? h('div', { class: 'card parch' },
     h('h3', { text: 'Saves' }),
-    h('div', { class: 'small', text: 'The game saves automatically on this device. Export a file to back it up or move it to another device.' }),
+    h('div', { class: 'small', text: 'Saved automatically on this device. Export a file to back it up or move it to another device.' }),
     h('div', { class: 'row', style: { flexWrap: 'wrap', marginTop: '6px' } },
       btn('Export save', () => { lab.save(); exportSave(lab.state); }, { icon: 'scroll', act: 'export' }),
       btn('Import save', () => fileIn.click(), { icon: 'plus', act: 'import' }),
@@ -611,12 +632,12 @@ export function openSettings(app, lab) {
     title: 'Settings',
     onClose: () => app.saveSettings(),
     body: [
-      h('div', { class: 'card parch' }, h('h3', { text: 'Sound' }), vol('master', 'Master volume'), vol('sfx', 'Effects'), vol('music', 'Music'), check('musicOn', 'Play music', () => audio.music(s.musicOn)), check('muted', 'Mute everything')),
+      h('div', { class: 'card parch' }, h('h3', { text: 'Sound' }), vol('master', 'Volume'), vol('sfx', 'Effects'), vol('music', 'Music'), check('muted', 'Mute everything')),
       h('div', { class: 'card parch' }, h('h3', { text: 'Display' }), h('div', { class: 'toggle-row' }, h('span', { text: 'Graphics' }), quality),
-        h('div', { class: 'small muted', text: 'High quality uses the finest pixels and every glow. Balanced keeps the lighting and full frame rate with coarser pixels on large screens. Battery saver draws at 30 frames per second with coarser pixels and no lighting. Automatic steps down when frames run slow. The physics, quantities and scores are identical in every mode.' }),
-        check('showFps', 'Show performance stats')),
+        h('div', { class: 'small muted', text: 'Automatic lowers the detail when the game runs slowly. Battery saver draws 30 frames a second without lighting. The brewing itself is identical in every mode.' }),
+        check('showFps', 'Show frame rate')),
       saveSection,
-      h('div', { class: 'card parch small' }, 'The Alchemist’s Shop — all art, sound, font and code made for this game. Runs fully offline.'),
+      h('div', { class: 'small muted credits', text: 'The Alchemist’s Shop — all art, sound, font and code made for this game. Runs fully offline.' }),
     ],
   });
 }

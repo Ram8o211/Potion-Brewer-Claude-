@@ -76,11 +76,10 @@ export class CounterView {
       this.techCard(com),
       this.supplyCard(com),
       this.shelfMatches(com),
-      com.effectOrder ? h('div', { class: 'small muted', text: 'Effects can only be known by testing this batch in the Trials room. Customers pay for what your label claims — and come back tomorrow if it was not true.' }) : null,
       h('div', { class: 'row wrap cust-actions' },
-        btn(com.hintCost ? `Advice (${com.hintCost})` : 'Advice', () => panels.openHint(lab), { icon: 'bulb', act: 'hint' }),
-        com.tutorial ? null : btn('Decline', () => lab.decline(), { icon: 'door', act: 'decline' }),
-        btn('To the cauldron', () => lab.showView('brew'), { icon: 'cauldron', cls: 'primary', act: 'go-brew' }))));
+        btn('Brew it', () => lab.showView('brew'), { icon: 'cauldron', cls: 'primary', act: 'go-brew', title: 'Go to the cauldron' }),
+        btn(com.hintCost ? `Advice · ${com.hintCost}` : 'Advice', () => panels.openHint(lab), { icon: 'bulb', act: 'hint', title: com.hintCost ? `A guild alchemist suggests an approach for ${com.hintCost} coins` : 'A guild alchemist suggests an approach' }),
+        com.tutorial ? null : btn('Decline', () => lab.decline(), { icon: 'door', act: 'decline', title: 'Send this customer away (no penalty)' }))));
     this.vialCard(el);
     this.shelfCard(el);
   }
@@ -103,7 +102,7 @@ export class CounterView {
     const sup = com.supplies;
     if (!sup || com.tutorial) return null;
     const st = this.lab.state;
-    const where = { shelf: 'on the shelf', wilds: 'in the wilds', market: 'at the market' };
+    const where = { shelf: 'on the shelf', wilds: 'in the wilds', market: 'in the Shop' };
     return h('details', { class: 'small supply-card' }, h('summary', { text: `Plan for about ${sup.brewMl} ml of brew (the bottle and a few test doses)` }),
       ...sup.carriers.map((c) => h('div', {}, h('b', { text: `${EFFECT_BY_KEY[c.key].label}${c.sign < 0 ? ' (alkaline)' : ''}: ` }),
         c.carriers.length ? c.carriers.map((x) => `${st.lookup(x.id).name} (${where[x.where] || x.where})`).join(', ') : 'nothing you can get today carries it')),
@@ -143,7 +142,7 @@ export class CounterView {
     const lab = this.lab, st = lab.state;
     const v = st.vial;
     if (!v) {
-      if (st.current) el.append(h('div', { class: 'card parch small muted', text: 'Brew in the cauldron, test it in the Trials room, then Bottle it to serve here.' }));
+      if (st.current) el.append(h('div', { class: 'card parch small muted next-step' }, h('b', { text: 'Next: ' }), 'brew it, test a dose in Trials, then Bottle it — the vial appears here.'));
       return;
     }
     const com = st.current;
@@ -153,19 +152,19 @@ export class CounterView {
     drawBottle(ctx, 2, 3, 20, 29, m.color, Math.min(1, v.ml / Math.max(1, com ? com.bottleMl : v.ml)));
     const need = com ? missingEffects(com, v.cert || {}) : [];
     const first = com ? shortName(com.customer.name) : '';
-    const serve = com ? btn(`Offer to ${first}`, () => lab.serveVial(), { cls: 'primary', icon: 'deal', disabled: v.ml < 5, act: 'serve' }) : null;
-    const labelB = btn(v.label ? 'Revise label' : 'Label', () => lab.identifyVial(), { icon: 'tag', act: 'label' });
-    const testB = btn('Test a dose', () => { lab.trialSource = 'vial'; lab.showView('trials'); }, { icon: 'dropper', act: 'test-vial' });
-    const back = btn('Pour back', () => lab.pourBackVial(), { icon: 'pour', act: 'pour-back' });
-    const store = lab.sandbox ? null : btn('Put on shelf', () => lab.shelveVial(), { icon: 'shelf2', act: 'shelve-vial', disabled: st.bottleRoom <= 0, title: st.bottleRoom <= 0 ? 'The potion shelves are full' : 'Keep this bottle on the potion shelves' });
-    const discard = btn('Discard', async () => { if (await confirmDialog('Discard the vial?', 'The potion is poured away. Ingredients are not refunded.', 'Discard', 'danger')) lab.discardVial(); }, { icon: 'trash', cls: 'danger', act: 'discard' });
+    const serve = com ? btn(`Sell to ${first}`, () => lab.serveVial(), { cls: 'primary', icon: 'deal', disabled: v.ml < 5, act: 'serve', title: `Offer the vial to ${first} and agree on a price` }) : null;
+    const labelB = btn(v.label ? 'Edit label' : 'Write label', () => lab.identifyVial(), { icon: 'tag', act: 'label', title: 'What the label claims the potion does' });
+    const testB = btn('Test it', () => { lab.trialSource = 'vial'; lab.showView('trials'); }, { icon: 'dropper', act: 'test-vial', title: 'Give a dose from this vial to a rabbit' });
+    const back = btn('Pour back', () => lab.pourBackVial(), { icon: 'pour', act: 'pour-back', title: 'Return the vial to the cauldron to keep working on it' });
+    const store = lab.sandbox ? null : btn('To shelf', () => lab.shelveVial(), { icon: 'shelf2', act: 'shelve-vial', disabled: st.bottleRoom <= 0, title: st.bottleRoom <= 0 ? 'The potion shelves are full' : 'Keep this bottle on the potion shelves' });
+    const discard = btn('Discard', async () => { if (await confirmDialog('Discard the vial?', 'The potion is poured away. Ingredients are not refunded.', 'Discard', 'danger')) lab.discardVial(); }, { icon: 'trash', cls: 'danger', act: 'discard', title: 'Pour the vial away' });
     el.append(h('div', { class: 'card parch vial-card' },
       h('div', { class: 'row' }, cv, h('div', {},
         h('b', { text: `Sealed vial · ${Math.round(v.ml)} ml` }),
         h('div', { class: 'small' }, h('span', { class: 'swatch', style: { background: rgbToHex(m.color) } }), ` ${describeColor(m.color)} · ${Math.round(m.temperature)}°C · ${viscosityClass(m.viscosity)}`),
         verifiedLine(v.cert),
         v.label ? h('div', { class: 'small label-line' }, icon('tag', 'sm'), ` ${trade.labelLine(v.label)}`) : null)),
-      need.length && com ? h('div', { class: 'warn small', text: `Not yet tested: ${need.map((k) => EFFECT_BY_KEY[k].label).join(', ')}. You may still sell on the guild's theory, but ${first} will trust an untested label less${com.customer.persona && com.customer.persona.proof >= 0.8 ? ' — and this customer insists on proof' : ''}.` }) : null,
+      need.length && com ? h('div', { class: 'warn small', text: `Not yet tested: ${need.map((k) => EFFECT_BY_KEY[k].label).join(', ')}. ${first} trusts an untested label less${com.customer.persona && com.customer.persona.proof >= 0.8 ? ' — and insists on proof' : ''}.` }) : null,
       com && v.ml < com.bottleMl ? h('div', { class: 'small muted', text: `Short of the ${com.bottleMl} ml ordered; the customer pays less.` }) : null,
       h('div', { class: 'row wrap' }, serve, labelB, testB, store, back, discard)));
   }
@@ -210,13 +209,13 @@ export class CounterView {
         verifiedLine(b.cert),
         b.label ? h('div', { class: 'small label-line' }, icon('tag', 'sm'), ` ${trade.labelLine(b.label)}`) : null,
         h('div', { class: 'row wrap' },
-          btn(st.vial ? 'Swap onto the counter' : 'Take to the counter', () => lab.takeBottle(b.id), { icon: 'deal', cls: 'primary', act: 'take-bottle' }),
+          btn(st.vial ? 'Swap with the vial' : 'To the counter', () => lab.takeBottle(b.id), { icon: 'deal', cls: 'primary', act: 'take-bottle', title: 'Put this bottle on the counter to sell or test it' }),
           btn('Pour back', () => lab.pourBackBottle(b.id), { icon: 'pour', act: 'pour-back-bottle' }),
           btn('Discard', async () => { if (await confirmDialog('Discard the bottle?', 'The potion is poured away. Ingredients are not refunded.', 'Discard', 'danger')) lab.discardBottle(b.id); }, { icon: 'trash', cls: 'danger', act: 'discard-bottle' })));
     }
     el.append(h('div', { class: 'card parch shelf-card' },
       h('div', { class: 'row' }, icon('shelf2'), h('b', { text: `Potion shelves · ${st.bottles.length}/${cap}` })),
-      st.bottles.length ? null : h('div', { class: 'small muted', text: 'Bottle a brew onto the shelves whenever you like, to keep it for a later customer, test it later or pour it back into a new brew. More shelving is sold at the Guild.' }),
+      st.bottles.length ? null : h('div', { class: 'small muted', text: 'Empty. When you bottle a brew, choose “To the potion shelves” to keep it for a later customer. Tap a bottle here to use it. More shelving is sold in the Shop.' }),
       grid, detail));
   }
 }

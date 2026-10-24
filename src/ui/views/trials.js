@@ -71,15 +71,14 @@ export class TrialsView {
   build() {
     const lab = this.lab, st = lab.state;
     const el = clear(this.el);
-    this.head = h('div', { class: 'trials-head card parch' });
     this.expect = h('div', { class: 'card parch estimate-card', 'data-role': 'estimate' });
     this.status = h('div', { class: 'trials-status small' });
     this.dropper = h('div', { class: 'dropper', role: 'button', tabindex: '0', 'aria-label': 'Dropper: drag onto a rabbit to give it the dose' }, icon('dropper', 'lg'), h('span', { class: 'small', text: 'Drag' }));
     this.bindDropper();
     this.report = h('div', { class: 'trial-report' });
-    el.append(this.head, this.expect, this.status, this.hutch.el, this.report);
+    el.append(this.expect, this.status, this.hutch.el, this.report);
     this.cards = { rabbit: { card: this.hutch.el } };
-    if (!lab.sandbox && st.firstTip('farm')) toast('The rabbit farm', 'Every trial narrows the estimate. Testing one rabbit again keeps the others clean, but the effect piles up in it — and nobody knows how much it can take.', 'rabbit', 7000);
+    void st;
     this.refresh();
   }
 
@@ -111,25 +110,28 @@ export class TrialsView {
     if (p && p.scrollIntoView) p.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
 
+  /**
+   * Where the dose comes from and how much: shown beside the Give button.
+   * @returns {HTMLElement[]}
+   */
+  doseControls() {
+    const lab = this.lab, st = lab.state;
+    const src = this.source;
+    const from = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Dose from' }, h('span', { class: 'small seg-k', text: 'From' }),
+      btn(`Cauldron · ${Math.round(lab.tapAvailable())} ml`, () => { lab.trialSource = 'cauldron'; this.refresh(); }, { cls: src === 'cauldron' ? 'active' : '', act: 'src-cauldron', title: 'Draw the dose from the cauldron’s tap' }),
+      st.vial ? btn(`Vial · ${Math.round(st.vial.ml)} ml`, () => { lab.trialSource = 'vial'; this.refresh(); }, { cls: src === 'vial' ? 'active' : '', act: 'src-vial', title: `The sealed vial: ${Math.round(st.vial.ml)} of ${Math.round(st.vial.bottledMl || st.vial.ml)} ml left` }) : null,
+      // the iterate loop: test the vial, pour the rest back, improve, bottle again
+      st.vial && src === 'vial' ? btn('Pour back', () => lab.pourBackVial(), { icon: 'pour', act: 'trials-pour-back', title: 'Return the rest of the vial to the cauldron' }) : null,
+      st.vial && src === 'vial' && lab.sandbox ? btn('Discard', () => { lab.discardVial(); this.refresh(); }, { icon: 'trash', cls: 'danger', act: 'trials-discard' }) : null);
+    const doses = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Dose' }, h('span', { class: 'small seg-k', text: 'Dose' }),
+      ...DOSES.map((ml) => btn(`${ml} ml`, () => { lab.trialDose = ml; this.refresh(); }, { cls: lab.trialDose === ml ? 'active' : '', act: 'dose-' + ml })));
+    return [from, doses];
+  }
+
   refresh() {
     const lab = this.lab, st = lab.state;
-    if (!this.head) return;
-    // ---- source & dose
-    const head = clear(this.head);
+    if (!this.expect) return;
     const src = this.source;
-    const seg = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Sample source' },
-      btn(`Cauldron tap · ${Math.round(lab.tapAvailable())} ml`, () => { lab.trialSource = 'cauldron'; this.refresh(); }, { cls: src === 'cauldron' ? 'active' : '', act: 'src-cauldron' }),
-      st.vial ? btn(`Sealed vial · ${Math.round(st.vial.ml)} ml`, () => { lab.trialSource = 'vial'; this.refresh(); }, { cls: src === 'vial' ? 'active' : '', act: 'src-vial' }) : null);
-    const doses = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Dose' }, h('span', { class: 'small muted', text: 'Dose' }),
-      ...DOSES.map((ml) => btn(`${ml} ml`, () => { lab.trialDose = ml; this.refresh(); }, { cls: lab.trialDose === ml ? 'active' : '', act: 'dose-' + ml })));
-    head.append(h('div', { class: 'row wrap' }, seg), h('div', { class: 'row wrap' }, doses));
-    if (st.vial) {
-      // the iterate loop: test the vial, pour the rest back, improve, bottle again
-      head.append(h('div', { class: 'row wrap vial-row' },
-        h('span', { class: 'small muted', text: `Vial: ${Math.round(st.vial.ml)} ml of ${Math.round(st.vial.bottledMl || st.vial.ml)} ml bottled` }),
-        btn('Pour back', () => lab.pourBackVial(), { icon: 'pour', act: 'trials-pour-back', title: 'Return the rest of the vial to the cauldron' }),
-        btn('Discard', () => { lab.discardVial(); this.refresh(); }, { icon: 'trash', cls: 'danger', act: 'trials-discard' })));
-    }
     // ---- what this batch is expected to do (the one estimate section)
     const cert = this.estimate();
     const com = st.current;
@@ -139,7 +141,7 @@ export class TrialsView {
     if (cert.changed && src === 'cauldron') status.append(h('div', { class: 'warn small', text: 'Earlier trials of this batch are outdated: you added ingredients since.' }));
     if (cert.stale.length) status.append(h('div', { class: 'warn small', text: `The brew has changed since it was tested (${cert.stale.map((k) => EFFECT_BY_KEY[k].label).join(', ')}): reactions, heat or settling. Test again.` }));
     if (com && need.length) {
-      status.append(h('div', { class: 'small' }, h('span', { text: 'The order still needs: ' }), ...need.map((k) => h('span', { class: 'fx-chip need' }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ' ' + EFFECT_BY_KEY[k].label))));
+      status.append(h('div', { class: 'small' }, h('span', { text: 'Not yet tested for the order: ' }), ...need.map((k) => h('span', { class: 'fx-chip need' }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ' ' + EFFECT_BY_KEY[k].label))));
     } else if (com && com.effectOrder) {
       status.append(h('div', { class: 'ok small', text: 'Every effect the order asks about has been tested for this ' + (src === 'vial' ? 'vial.' : 'batch.') }));
     }
@@ -175,10 +177,10 @@ export class TrialsView {
     const firsts = shown.filter((k) => (cert.n[k] || 0) === 1);
     const trials = tested.length ? Math.max(...tested.map((k) => cert.n[k] || 0)) : 0;
     const rabbits = tested.length ? Math.max(...tested.map((k) => cert.rabbits[k] || 0)) : 0;
-    el.append(h('div', { class: 'row' }, icon('scales'), h('b', { text: vial ? 'Expected effects of this vial' : 'Expected effects of this batch' }), h('span', { class: 'spacer' }),
+    el.append(h('div', { class: 'row', title: 'Each value is the mean of every trial; ± is how far the true strength may lie from it. Other rabbits average out each rabbit’s own bias.' }, icon('scales'), h('b', { text: vial ? 'Expected effects of this vial' : 'Expected effects of this batch' }), h('span', { class: 'spacer' }),
       trials ? h('span', { class: 'small muted', text: `${trials} trial${trials === 1 ? '' : 's'} · ${rabbits} rabbit${rabbits === 1 ? '' : 's'}` }) : null));
     if (!tested.length) {
-      el.append(h('div', { class: 'small muted', text: 'Unknown — nothing tested yet. Give a rabbit a dose to start the estimate.' }));
+      el.append(h('div', { class: 'small muted', text: 'Unknown — nothing tested yet. Give a rabbit a dose below to start the estimate.' }));
       return;
     }
     const rows = h('div', { class: 'reading-rows' });
@@ -202,9 +204,8 @@ export class TrialsView {
       el.append(h('div', { class: 'small muted quiet', 'data-undetected': unseen.join(' '), title: 'No rabbit showed these. A faint effect can hide below the reading noise: more readings, and larger doses, narrow how strong it could be.' },
         'Not detected: ', ...unseen.map((k) => icon(EFFECT_BY_KEY[k].icon, 'sm')), ` — each could still be up to ${sdRound(bound)}%`));
     }
-    if (firsts.length) el.append(h('div', { class: 'warn small first-flag', text: `First measure${firsts.length === shown.length ? '' : ` (${firsts.map((k) => EFFECT_BY_KEY[k].label).join(', ')})`}: one reading only, so its margin is that of a single dose — wide. Test again; a second rabbit narrows it most.` }));
-    el.append(h('div', { class: 'small muted est-foot', text: 'Value: the mean of every trial. ±: how far the true strength may lie from it (the band). One rabbit’s own bias never averages out on that rabbit — other rabbits average it away. Hover a row for how much the readings differed.' }));
-    if (rabbits <= 1 && trials >= 2) el.append(h('div', { class: 'warn small', text: 'All on one rabbit: the others stay clean, but its own bias stays in the estimate and the effect piles up in it — and nobody knows how much it can take before it runs out of control.' }));
+    if (firsts.length) el.append(h('div', { class: 'warn small first-flag', text: `One reading only${firsts.length === shown.length ? '' : ` (${firsts.map((k) => EFFECT_BY_KEY[k].label).join(', ')})`}: a rough guess with a wide margin. Test again — a second rabbit narrows it most.` }));
+    if (rabbits <= 1 && trials >= 2) el.append(h('div', { class: 'warn small', text: 'All on one rabbit: its own bias stays in the estimate, and the effect piles up in it towards a limit nobody can see. Try another rabbit.' }));
     // what the order's customer will make of this evidence
     const com = this.lab.state.current;
     if (com && !this.lab.sandbox) {
@@ -233,7 +234,7 @@ export class TrialsView {
     const r = this.last || st.trials.records[0];
     const el = clear(this.report);
     if (!r) {
-      el.append(h('div', { class: 'card parch small', text: 'A mixture’s effects are unknown until you test it. You know what each plain ingredient does — but mixing, heat and reactions change things. Choose a rabbit and give it a dose; every further trial — on it or on others — narrows the estimate.' }));
+      el.append(h('div', { class: 'card parch small', text: 'No trial yet. A mixture’s effects are unknown until it is tested: choose a rabbit above and give it a dose.' }));
       return;
     }
     const subj = SUBJECT_BY_ID[r.subjectId] || SUBJECT_BY_ID.rabbit;
@@ -243,7 +244,6 @@ export class TrialsView {
     el.append(h('div', { class: 'card parch report' },
       h('div', { class: 'row' }, icon('dropper'), h('b', { text: `Trial ${r.serial}: ${who}` }), h('span', { class: 'spacer' }), h('span', { class: 'small muted', text: `${r.ml} ml from the ${r.source === 'vial' ? 'vial' : 'tap'}` })),
       h('ul', { class: 'obs-list' }, ...r.observations.map((o) => h('li', { class: 'tone-' + o.tone, text: o.text }))),
-      h('div', { class: 'small muted', text: 'This reading has gone into the expected effects above.' }),
       r.anomalies.length ? h('div', { class: 'warn small', text: `Unexpected: ${r.anomalies.map((k) => EFFECT_BY_KEY[k].label).join(', ')} differs from theory. Something in this mixture interacts — repeat with variations to find out what.` }) : null,
       ...laws.map((L) => h('div', { class: 'law-found' }, icon('star'), h('div', {}, h('b', { text: `Law discovered: ${L.name}` }), h('div', { class: 'small', text: L.lore + ' Your theory now accounts for it.' })))),
       r.died ? h('div', { class: 'bad small', text: `${who} did not survive. ${body ? 'The body stays in the hutch: recover its remains or bury it.' : ''} A potion that kills a rabbit should not be sold as a remedy.` }) : null,
@@ -347,8 +347,8 @@ export class TrialsView {
       } else if (e.type === 'trait') rebuild = true;
       else if (e.type === 'purge-brewed') { toast('A purging draught is ready', 'The still has finished brewing.', 'purge', 2500); rebuild = true; }
     }
-    if (rebuild && this.head) this.refresh();
-    else if (this.head) this.hutch.syncScene();
+    if (rebuild && this.expect) this.refresh();
+    else if (this.expect) this.hutch.syncScene();
   }
 
   bindDropper() {
