@@ -22,6 +22,7 @@ Writes assets/whisperwood/atlas.png and src/rendering/whisperwood-atlas.js
 (the frame rectangles). `--preview out.png` also writes an enlarged sheet.
 """
 import colorsys
+import math
 import os
 import sys
 from collections import Counter
@@ -178,10 +179,66 @@ def bare_trunk(im):
     green = lambda c: c[3] and c[1] > c[0] + 10 and c[1] >= c[2]
     for y in range(im.height):
         for x in range(1, im.width - 1):
-            for w in (1, 2):
+            for w in (1, 2, 3):
                 if x + w < im.width and all(green(src[x + k, y]) for k in range(w)) and bark(src[x - 1, y]) and bark(src[x + w, y]):
                     for k in range(w):
                         o[x + k, y] = src[x - 1, y]
+    # and patches: a green pixel with bark on two or more sides, worked inwards
+    for _ in range(4):
+        src = out.copy().load()
+        for y in range(im.height):
+            for x in range(im.width):
+                if green(src[x, y]):
+                    b = [n for n in neighbours(src, x, y, im.width, im.height) if bark(n)]
+                    if len(b) >= 2:
+                        o[x, y] = Counter(b).most_common(1)[0][0]
+    return out
+
+
+# bark, dark to light (rendering/regions.js OAKBARK)
+BARK = hexes('#1e1008', '#4a2a14', '#6e4220', '#94602e', '#b8844a', '#d8a868')
+
+
+def bark_texture(im, seed=0):
+    """Re-shade each row of a trunk: lit from the left (a light edge, then
+    light, mid and dark bark), two long grooves wavering down it, and the
+    shade of the crown on the bark just beneath it. A trunk's run includes
+    the dark crevices inside it; the outline stays."""
+    out = im.copy()
+    src, o = im.load(), out.load()
+    w, h = im.size
+    bark = lambda c: c[3] and c[0] > c[1] + 8 and c[0] > c[2] + 8
+    dark = lambda c: c[3] and 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2] < 60
+    leaf = lambda c: c[3] and c[1] > c[0] + 10
+    for y in range(h):
+        x = 0
+        while x < w:
+            if not bark(src[x, y]):
+                x += 1
+                continue
+            x0 = x
+            while x < w and (bark(src[x, y]) or (dark(src[x, y]) and any(bark(src[x + k, y]) for k in (1, 2) if x + k < w))):
+                x += 1
+            L = x - x0
+            if L < 4:
+                continue
+            tones = []
+            for xx in range(x0, x):
+                t = (xx - x0 + 0.5) / L
+                tone = 4 if t < 0.12 else 3 if t < 0.4 else 2 if t < 0.76 else 1
+                # in the crown's shade
+                if any(leaf(src[xx, y - k]) or (dark(src[xx, y - k]) and not bark(src[xx, y - k])) for k in range(1, 4) if y - k >= 0):
+                    tone -= 1
+                tones.append(tone)
+            if L >= 7:
+                for k, gt in enumerate((0.42, 0.7)):
+                    if (y + k * 5 + seed) % 11 == 0:
+                        continue
+                    gx = round(gt * L + math.sin(y * 0.22 + k * 2.4 + seed) * 1.1)
+                    if 1 <= gx < L - 1:
+                        tones[gx] = max(0, tones[gx] - 1)
+            for k, tone in enumerate(tones):
+                o[x0 + k, y] = (*BARK[max(0, tone)], 255)
     return out
 
 
@@ -272,7 +329,7 @@ def pale(h, s, v):
 
 def sunlit(h, s, v):
     # the near oaks stand in the clearing's light: lift their shade off black
-    return h, s, min(1, v * 1.12 + 0.04)
+    return h, s, min(1, v * 1.18 + 0.06)
 
 
 def far(h, s, v):
@@ -315,11 +372,16 @@ def build():
     S = {}
     # decorative world objects (no outline: they stay behind the gatherables)
     # (the far trees are snapped to the haze greens of the distant tree lines)
-    # the great oaks framing the clearing: a finer reduction (3 to 1) the scene
-    # draws at twice the size, so the nearest trees have the chunkiest pixels
+    # the great oaks framing the clearing: the finest reduction (3 to 2, one
+    # concept-art pixel or so per art pixel), drawn at full scene resolution
     for n in ('oak_round_01', 'oak_round_02', 'oak_wide_03'):
         S[n + '_far'] = clean(recolour(trim(down(load('sprites/trees/' + n))), far), FAR)
-        S[n + '_near'] = bare_trunk(clean(recolour(trim(down(load('sprites/trees/' + n), f=3, colours=16)), sunlit), SCENE))
+        src = load('sprites/trees/' + n)
+        near = bare_trunk(clean(recolour(trim(down(src.resize((src.width * 2, src.height * 2), Image.NEAREST), f=3, colours=20)), sunlit), SCENE))
+        S[n + '_near'] = bark_texture(near, seed=len(n))
+        # the mirrored oaks on the right are shaded after mirroring, so their bark is lit from the left too
+        if n != 'oak_round_02':
+            S[n + '_near_m'] = bark_texture(near.transpose(Image.Transpose.FLIP_LEFT_RIGHT), seed=len(n) + 3)
     for rel in ('bushes/forest_bush_01', 'bushes/flower_bush_01', 'rocks/mossy_boulder', 'rocks/gray_boulder',
                 'rocks/stone_cluster', 'props/tree_stump', 'props/mossy_log'):
         S[rel.split('/')[1]] = clean(trim(down(load('sprites/' + rel), colours=10)), SCENE)

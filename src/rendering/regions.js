@@ -375,7 +375,7 @@ function forest(ctx, rng) {
 /**
  * Whisperwood from the sprite atlas (rendering/whisperwood.js): the same
  * sky and haze as the procedural painting, with sprite trees (the great
- * oaks in front at twice the size), shrubs, rocks, logs, a stump and
+ * oaks in front in finer detail), shrubs, rocks, logs, a stump and
  * wildflowers. Nothing decorative here
  * looks like a gatherable — no berries, bellflowers or toadstools — so the
  * deposits drawn on top (outlined, with hover and depleted frames) are the
@@ -426,12 +426,13 @@ function forestSprites(ctx, rng, avoid) {
   // a hedge of shrubs closing off the clearing
   for (let x = -4, i = 0; x < W + 12; x += rng.int(18, 24), i++) drawFrame(ctx, i % 3 ? 'forest_bush_01_far' : 'forest_bush_01', x, rng.int(77, 80), 1, i % 2 === 1);
   if (free(108, 72, 146, 88)) { fence(ctx, 112, 87, 3, 14); taken.push({ x0: 108, y0: 72, x1: 146, y1: 88 }); }
-  // the great oaks framing the scene at twice the size (the nearest, chunkiest
-  // pixels), crowns running off the top of the frame; the inner pair first
-  drawFrame(ctx, 'oak_round_02_near', 70, 84, 2);
-  drawFrame(ctx, 'oak_round_01_near', 186, 84, 2, true);
-  drawFrame(ctx, 'oak_wide_03_near', 8, 88, 2);
-  drawFrame(ctx, 'oak_wide_03_near', 250, 88, 2, true);
+  // the great oaks framing the scene, in full detail, crowns running off the
+  // top of the frame; the inner pair first (the right-hand ones are mirrored
+  // in the atlas, so their bark stays lit from the left)
+  drawFrame(ctx, 'oak_round_02_near', 70, 84);
+  drawFrame(ctx, 'oak_round_01_near_m', 186, 84);
+  drawFrame(ctx, 'oak_wide_03_near', 8, 88);
+  drawFrame(ctx, 'oak_wide_03_near_m', 250, 88);
   // shrubs, rocks, a stump and a log around the clearing
   prop('flower_bush_01', [[48, 100], [36, 96], [70, 96]]);
   prop('forest_bush_01', [[226, 98], [212, 94], [242, 102]], true);
