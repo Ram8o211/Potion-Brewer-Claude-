@@ -227,12 +227,12 @@ computed from the particles that actually run out of the tap. What a
   (`assets/whisperwood/atlas.png`, 19 KB): trees, shrubs, rocks, a stump,
   logs and wildflowers around the painted sky and clearing, and one
   outlined sprite per forest ingredient (Ironroot, Silverleaf, Nightshade,
-  Owlberry, Emberbark, Witch’s Ear, Mandrake) with hover, harvesting,
-  depleted and out-of-reach frames. Nothing decorative looks like a
-  gatherable, and only deposits take taps. The atlas is built from the
-  concept-art pack in `art/whisperwood/` by
-  `python scripts/make-whisperwood.py` (needs Pillow), which brings each
-  sprite down to the scene's art-pixel scale.
+  Owlberry, Emberbark, Witch’s Ear, Mandrake) with hover, harvesting and
+  depleted frames. Nothing decorative looks like a gatherable, and only
+  deposits take taps. The atlas is built from the concept-art pack in
+  `art/whisperwood/` by `python scripts/make-whisperwood.py` (needs
+  Pillow), which brings each sprite down to the scene's art-pixel scale and
+  snaps it to the scene's own palette.
 * **Everything is original and bundled:** pixel art drawn in code (plus
   the Whisperwood sprites from the project's own concept-art pack), a
   pixel font, synthesised sound effects and music. No third-party runtime

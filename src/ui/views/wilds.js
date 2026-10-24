@@ -109,7 +109,7 @@ export class WildsView {
       const notes = lab.sandbox ? [] : plan.factors.filter((f) => f.why !== 'satchel' && !f.why.startsWith('thorough')).map((f) => f.why);
       const tool = plan.method.tool ? equipmentById(plan.method.tool) : null;
       const card = h('div', { class: 'deposit parch' + (locked ? ' locked' : '') + (s.scarred ? ' scarred' : '') },
-        key ? frameCanvas(/** @type {string} */ (gatherFrameName(key, { can: this.can[d.id] }))) : rawSprite(m.wild ? m.wild.shape : 'stone', m.look || m.color, lab.sandbox ? 1 : s.fraction),
+        key ? frameCanvas(/** @type {string} */ (gatherFrameName(key, { can: this.can[d.id], card: true }))) : rawSprite(m.wild ? m.wild.shape : 'stone', m.look || m.color, lab.sandbox ? 1 : s.fraction),
         h('div', { class: 'dep-info' },
           h('div', { class: 'title' }, m.name, d.rare ? h('span', { class: 'tag rare', text: 'rare' }) : null, plan.hour ? h('span', { class: 'tag hour', text: plan.hour }) : null),
           d.place ? h('div', { class: 'meta place', text: d.place }) : null,
@@ -148,8 +148,14 @@ export class WildsView {
     this.bg = document.createElement('canvas');
     this.bg.width = SCENE_W; this.bg.height = SCENE_H;
     // the scenery keeps clear of the deposits, so nothing hides a gatherable
-    const avoid = this.deposits().map((d) => depositBox(d, this.spriteKey(d), SCENE_W, SCENE_H));
+    const avoid = this.inScene().map((d) => depositBox(d, this.spriteKey(d), SCENE_W, SCENE_H));
     paintRegion(/** @type {CanvasRenderingContext2D} */ (this.bg.getContext('2d')), this.region, this.lab.state.seed, avoid);
+  }
+
+  /** The deposits drawn in the scene: a sprite deposit beyond the guild rank is left out (its card says so). */
+  inScene() {
+    const lab = this.lab;
+    return this.deposits().filter((d) => lab.sandbox || d.rank <= lab.state.rank || !this.spriteKey(d));
   }
 
   /** @param {string | null} id */
@@ -163,7 +169,7 @@ export class WildsView {
   depositAt(e) {
     const r = this.canvas.getBoundingClientRect();
     const x = ((e.clientX - r.left) / r.width) * SCENE_W, y = ((e.clientY - r.top) / r.height) * SCENE_H;
-    const d = hitDeposit(this.deposits(), (dd) => this.spriteKey(dd), x, y, SCENE_W, SCENE_H);
+    const d = hitDeposit(this.inScene(), (dd) => this.spriteKey(dd), x, y, SCENE_W, SCENE_H);
     return d ? d.id : null;
   }
 
@@ -206,13 +212,13 @@ export class WildsView {
     const ctx = this.ctx, st = this.lab.state, now = Date.now();
     ctx.drawImage(this.bg, 0, 0);
     animateRegion(ctx, this.region, this.time);
-    const deps = this.deposits().slice().sort((a, b) => a.y - b.y);
+    const deps = this.inScene().sort((a, b) => a.y - b.y);
     for (const d of deps) {
       const m = st.lookup(d.materialId);
       const s = this.lab.sandbox ? { fraction: 1 } : depositStatus(st.gathering, d, now);
       const locked = !this.lab.sandbox && d.rank > st.rank;
       const key = this.spriteKey(d);
-      if (key) { this.drawGatherable(ctx, d, key, s.fraction, locked); continue; }
+      if (key) { this.drawGatherable(ctx, d, key, s.fraction); continue; }
       const x = Math.round(d.x * SCENE_W) - 8, y = Math.round(d.y * SCENE_H) - 14;
       ctx.fillStyle = 'rgba(0,0,0,0.25)';
       ctx.fillRect(x + 3, y + 14, 10, 2);
@@ -244,24 +250,22 @@ export class WildsView {
 
   /**
    * A Whisperwood deposit: a ground shadow, then its idle, hover, harvesting
-   * or depleted frame (a flat silhouette while out of reach); a ripe one glints now and then (the scene's decorative
+   * or depleted frame; a ripe one glints now and then (the scene's decorative
    * motes stay fainter than this).
-   * @param {CanvasRenderingContext2D} ctx @param {any} d @param {string} key @param {number} fraction @param {boolean} locked
+   * @param {CanvasRenderingContext2D} ctx @param {any} d @param {string} key @param {number} fraction
    */
-  drawGatherable(ctx, d, key, fraction, locked) {
+  drawGatherable(ctx, d, key, fraction) {
     const x = Math.round(d.x * SCENE_W), y = Math.round(d.y * SCENE_H);
     const since = this.time - (this.harvested[d.id] ?? -9);
     const harvesting = since < 0.35;
-    const name = /** @type {string} */ (gatherFrameName(key, { can: this.lab.sandbox || this.can[d.id] !== false, hover: this.hover === d.id, harvesting, locked }));
+    const name = /** @type {string} */ (gatherFrameName(key, { can: this.lab.sandbox || this.can[d.id] !== false, hover: this.hover === d.id, harvesting }));
     const f = /** @type {number[]} */ (frame(name));
     const sw = Math.max(6, Math.round(f[2] * 0.6));
     ctx.fillStyle = 'rgba(10,30,8,0.35)';
     ctx.fillRect(x - Math.floor(sw / 2), y - 1, sw, 2);
-    if (locked) ctx.globalAlpha = 0.6;
     // a hop as it is harvested, for art without a harvesting frame
     drawFrame(ctx, name, x, y - (harvesting && !GATHERABLES[key].harvesting ? 1 : 0));
-    ctx.globalAlpha = 1;
-    if (!locked && fraction >= 0.999 && this.hover !== d.id) {
+    if (fraction >= 0.999 && this.hover !== d.id) {
       const phase = (this.time * 0.5 + d.x * 7.3 + d.y * 3.1) % 4;
       if (phase < 0.6) drawFrame(ctx, 'glint_' + Math.min(3, Math.floor(phase / 0.15)), x + Math.round(f[2] / 2) - 3, y - f[3] + 4);
     }

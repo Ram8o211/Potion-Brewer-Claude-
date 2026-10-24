@@ -13400,59 +13400,47 @@ return { CounterView };
 // src/rendering/whisperwood-atlas.js
 const __m68 = (() => {
 const ATLAS_URL = 'assets/whisperwood/atlas.png';
-const ATLAS_SIZE = [256, 135];
+const ATLAS_SIZE = [256, 97];
 const FRAMES = {
-buttercups: [76, 121, 14, 9],
-daisies: [107, 121, 15, 8],
-emberbark_hover: [179, 77, 26, 19],
-emberbark_idle: [206, 77, 26, 19],
-emberbark_locked: [0, 101, 26, 19],
-fallen_log: [20, 121, 22, 13],
-flower_bush_01: [159, 101, 24, 17],
-forest_bush_01: [184, 101, 24, 17],
-forest_bush_01_far: [209, 101, 24, 17],
-glint_0: [176, 121, 3, 3],
-glint_1: [166, 121, 4, 4],
-glint_2: [180, 121, 3, 3],
-glint_3: [171, 121, 4, 4],
-grass_tuft_01: [43, 121, 12, 11],
-grass_tuft_02: [123, 121, 9, 8],
-grass_tuft_03: [133, 121, 11, 8],
-grass_tuft_04: [145, 121, 10, 7],
-grass_tuft_05: [156, 121, 9, 5],
-gray_boulder: [0, 121, 19, 14],
-ironroot_depleted: [0, 0, 25, 42],
-ironroot_hover: [26, 0, 25, 42],
-ironroot_idle: [52, 0, 25, 42],
-ironroot_locked: [78, 0, 25, 42],
-mandrake_hover: [184, 43, 28, 23],
-mandrake_idle: [213, 43, 28, 23],
-mandrake_locked: [0, 77, 28, 23],
-mossy_boulder: [102, 101, 29, 18],
-mossy_log: [132, 101, 26, 18],
-nightshade_hover: [29, 77, 24, 23],
-nightshade_idle: [54, 77, 24, 23],
-nightshade_locked: [79, 77, 24, 23],
-oak_round_01: [174, 0, 29, 33],
-oak_round_01_far: [204, 0, 29, 33],
-oak_round_02: [0, 43, 26, 33],
-oak_round_02_far: [27, 43, 26, 33],
-oak_wide_03: [104, 0, 34, 34],
-oak_wide_03_far: [139, 0, 34, 34],
-owlberry_hover: [104, 77, 24, 22],
-owlberry_idle: [129, 77, 24, 22],
-owlberry_locked: [154, 77, 24, 22],
-picked: [56, 121, 19, 11],
-silverleaf_depleted: [54, 43, 25, 24],
-silverleaf_harvesting: [80, 43, 25, 24],
-silverleaf_hover: [106, 43, 25, 24],
-silverleaf_idle: [132, 43, 25, 24],
-silverleaf_locked: [158, 43, 25, 24],
-stone_cluster: [91, 121, 15, 9],
-tree_stump: [234, 101, 21, 16],
-witchear_hover: [27, 101, 24, 19],
-witchear_idle: [52, 101, 24, 19],
-witchear_locked: [77, 101, 24, 19],
+buttercups: [33, 86, 14, 9],
+daisies: [87, 86, 15, 7],
+emberbark_hover: [210, 41, 26, 19],
+emberbark_idle: [0, 66, 26, 19],
+flower_bush_01: [134, 66, 24, 17],
+forest_bush_01: [159, 66, 24, 17],
+forest_bush_01_far: [184, 66, 24, 17],
+glint_0: [113, 86, 3, 3],
+glint_1: [103, 86, 4, 4],
+glint_2: [117, 86, 3, 3],
+glint_3: [108, 86, 4, 4],
+grass_tuft_01: [0, 86, 12, 11],
+grass_tuft_02: [64, 86, 10, 8],
+grass_tuft_03: [75, 86, 11, 8],
+gray_boulder: [231, 66, 19, 14],
+ironroot_card: [0, 0, 23, 40],
+ironroot_depleted: [116, 0, 25, 32],
+ironroot_hover: [142, 0, 25, 32],
+ironroot_idle: [168, 0, 25, 32],
+mandrake_hover: [52, 41, 28, 23],
+mandrake_idle: [81, 41, 28, 23],
+mossy_boulder: [77, 66, 29, 18],
+mossy_log: [107, 66, 26, 18],
+nightshade_hover: [110, 41, 24, 23],
+nightshade_idle: [135, 41, 24, 23],
+oak_round_01_far: [59, 0, 29, 33],
+oak_round_02_far: [89, 0, 26, 33],
+oak_wide_03_far: [24, 0, 34, 34],
+owlberry_hover: [160, 41, 24, 22],
+owlberry_idle: [185, 41, 24, 22],
+picked: [13, 86, 19, 11],
+silverleaf_depleted: [194, 0, 25, 24],
+silverleaf_harvesting: [220, 0, 25, 24],
+silverleaf_hover: [0, 41, 25, 24],
+silverleaf_idle: [26, 41, 25, 24],
+stone_cluster: [48, 86, 15, 9],
+tree_stump: [209, 66, 21, 16],
+witchear_hover: [27, 66, 24, 19],
+witchear_idle: [52, 66, 24, 19],
 };
 return { ATLAS_URL, ATLAS_SIZE, FRAMES };
 })();
@@ -13460,7 +13448,7 @@ return { ATLAS_URL, ATLAS_SIZE, FRAMES };
 const __m67 = (() => {
 const { ATLAS_URL, FRAMES } = __m68;
 const GATHERABLES = Object.fromEntries(['ironroot', 'silverleaf', 'nightshade', 'owlberry', 'emberbark', 'witchear', 'mandrake'].map((k) => [k, {
-idle: k + '_idle', hover: k + '_hover', locked: k + '_locked',
+idle: k + '_idle', hover: k + '_hover', card: FRAMES[k + '_card'] ? k + '_card' : k + '_idle',
 depleted: FRAMES[k + '_depleted'] ? k + '_depleted' : 'picked',
 ...(FRAMES[k + '_harvesting'] ? { harvesting: k + '_harvesting' } : {}),
 }]));
@@ -13496,9 +13484,9 @@ ctx.restore();
 function gatherFrameName(key, s) {
 const g = GATHERABLES[key];
 if (!g) return null;
-if (s.locked) return g.locked;
 if (s.harvesting && g.harvesting) return g.harvesting;
 if (!s.can) return g.depleted;
+if (s.card) return g.card;
 return s.hover ? g.hover : g.idle;
 }
 function depositBox(d, key, W, H) {
@@ -13592,14 +13580,14 @@ if (cHi) disc(ctx, x - Math.round(r / 3), cy - Math.round(r / 2), Math.max(1, Ma
 R(ctx, x, cy, Math.max(2, r * 2 / 3), y + 30 - cy, c);
 }
 }
-function canopy(ctx, rng, cx, cy, r, pal) {
+function canopy(ctx, rng, cx, cy, r, pal, tidy = false) {
 const blobs = [];
 for (let i = 0; i < 9; i++) blobs.push([cx + rng.range(-r * 0.8, r * 0.8), cy + rng.range(-r * 0.5, r * 0.45), rng.range(r * 0.4, r * 0.62)]);
 for (const [x, y, br] of blobs) disc(ctx, Math.round(x), Math.round(y), Math.round(br) + 1, Math.round(br * 0.85) + 1, pal[0]);
 for (const [x, y, br] of blobs) disc(ctx, Math.round(x), Math.round(y), Math.round(br), Math.round(br * 0.85), pal[1]);
 for (const [x, y, br] of blobs) disc(ctx, Math.round(x - br * 0.15), Math.round(y - br * 0.2), Math.round(br * 0.75), Math.round(br * 0.62), pal[2]);
 for (const [x, y, br] of blobs) if (x < cx + r * 0.3 && y < cy + r * 0.1) disc(ctx, Math.round(x - br * 0.3), Math.round(y - br * 0.35), Math.round(br * 0.42), Math.round(br * 0.34), pal[3]);
-for (let i = 0; i < r * 1.2; i++) R(ctx, cx + rng.range(-r, r * 0.5), cy + rng.range(-r * 0.7, r * 0.1), 1, 1, pal[4]);
+for (let i = 0; i < r * 1.2; i++) { const x = cx + rng.range(-r, r * 0.5), y = cy + rng.range(-r * 0.7, r * 0.1); if (!tidy) R(ctx, x, y, 1, 1, pal[4]); }
 for (let i = 0; i < r * 2; i++) {
 const a = rng.range(0, Math.PI * 2), d = r * rng.range(0.85, 1.05);
 R(ctx, cx + Math.cos(a) * d, cy + Math.sin(a) * d * 0.75, 1, 1, pal[rng.int(0, 1)]);
@@ -13805,25 +13793,30 @@ for (let i = 0; i < 18; i++) sparkle(ctx, rng.int(4, W - 4), rng.int(60, H - 6),
 }
 function forestSprites(ctx, rng, avoid) {
 const W = SCENE_W, H = SCENE_H;
-const free = (x0, y0, x1, y1) => avoid.every((b) => x1 < b.x0 || x0 > b.x1 || y1 < b.y0 || y0 > b.y1);
+const taken = avoid.slice();
+const free = (x0, y0, x1, y1) => taken.every((b) => x1 < b.x0 || x0 > b.x1 || y1 < b.y0 || y0 > b.y1);
+const spots = (x0, x1, y0, y1, n = 5) => Array.from({ length: n }, () => [rng.int(x0, x1), rng.int(y0, y1)]);
 const prop = (name, spots, flip = false) => {
 const f = frame(name);
 if (!f) return;
 for (const [x, y] of spots) {
-if (free(x - f[2] / 2, y - f[3], x + f[2] / 2, y)) { drawFrame(ctx, name, x, y, 1, flip); return; }
+const b = { x0: x - f[2] / 2, y0: y - f[3], x1: x + f[2] / 2, y1: y };
+if (free(b.x0, b.y0, b.x1, b.y1)) { drawFrame(ctx, name, x, y, 1, flip); taken.push(b); return; }
 }
 };
 gradient(ctx, 0, 0, W, 64, ['#3f8ee0', '#7ec0f0', '#cdeef0'], 9);
 cloud(ctx, 122, 14, 2, '#ffffff', '#cfe2f2');
 cloud(ctx, 92, 30, 1, '#ffffff', '#d4e6f4');
+R(ctx, 0, 44, W, 38, '#4a8c7c');
 treeLine(ctx, rng, 46, 12, '#4f9a96', '#74baa8');
 treeLine(ctx, rng, 54, 14, '#3a8060', '#5aa070');
-gradient(ctx, 0, 62, W, H - 62, ['#68b83a', '#5aa830', '#428a24'], 7);
-for (let y = 70; y < 124; y++) {
-const t = (y - 70) / 54, hw = 30 + t * 64;
-for (let x = Math.round(128 - hw); x < 128 + hw; x++) {
-const e = 1 - Math.abs(x - 128) / hw;
-if (e * 1.4 * (1 - Math.abs(t - 0.45)) > bayer(x, y) + 0.15) R(ctx, x, y, 1, 1, '#7cc846');
+const bands = ['#68b83a', '#62b034', '#5aa830', '#52a02c', '#4a9628', '#428a24'];
+for (let k = 0; k < bands.length; k++) { const y0 = 66 + Math.round(k * (H - 66) / bands.length); R(ctx, 0, y0, W, H - y0, bands[k]); }
+for (const [c, grow] of /** @type {[string, number][]} */ ([['#70c040', 1], ['#7cc846', 0.7]])) {
+for (let y = 72; y < 126; y += 2) {
+const t = (y - 72) / 54, hw = Math.round((24 + Math.sin(t * Math.PI) * 74) * grow);
+const l = 128 - hw - rng.int(0, 3) * 2, r = 128 + hw + rng.int(0, 3) * 2;
+if (hw > 0) R(ctx, l, y, r - l, 2, c);
 }
 }
 drawFrame(ctx, 'oak_wide_03_far', 86, 73);
@@ -13831,16 +13824,15 @@ drawFrame(ctx, 'oak_round_02_far', 126, 71);
 drawFrame(ctx, 'oak_round_01_far', 170, 72);
 rays(ctx, rng, 2, 0.12);
 for (let i = 0; i < 3; i++) { const x0 = 100 + i * 15; for (let y = 0; y < 104; y++) R(ctx, x0 + y * 0.35, y, 6 - i, 1, `rgba(255,250,210,${(0.2 * (1 - y / 104)).toFixed(3)})`); }
-speckle(ctx, rng, 66, H - 1, 200, ['#4a9a2a', '#7cc846', '#3a8a22'], 3);
 for (let x = -4, i = 0; x < W + 12; x += rng.int(18, 24), i++) drawFrame(ctx, i % 3 ? 'forest_bush_01_far' : 'forest_bush_01', x, rng.int(77, 80), 1, i % 2 === 1);
-if (free(108, 72, 146, 88)) fence(ctx, 112, 87, 3, 14);
+if (free(108, 72, 146, 88)) { fence(ctx, 112, 87, 3, 14); taken.push({ x0: 108, y0: 72, x1: 146, y1: 88 }); }
 const trees = [[4, 18], [62, 12], [184, 12], [234, 18]];
 for (const [x, w] of trees) oak(ctx, rng, x, 18, 82 + rng.int(-2, 2), w, OAKBARK);
 for (const [x, w] of trees) {
 const c = x + w / 2;
-canopy(ctx, rng, c - 12, rng.int(4, 12), rng.int(22, 26), LEAF);
-canopy(ctx, rng, c + 14, rng.int(6, 14), rng.int(20, 24), LEAF);
-canopy(ctx, rng, c, rng.int(20, 26), rng.int(16, 20), LEAF);
+canopy(ctx, rng, c - 12, rng.int(4, 12), rng.int(22, 26), LEAF, true);
+canopy(ctx, rng, c + 14, rng.int(6, 14), rng.int(20, 24), LEAF, true);
+canopy(ctx, rng, c, rng.int(20, 26), rng.int(16, 20), LEAF, true);
 }
 prop('flower_bush_01', [[48, 100], [36, 96], [70, 96]]);
 prop('forest_bush_01', [[226, 98], [212, 94], [242, 102]], true);
@@ -13852,13 +13844,11 @@ prop('mossy_boulder', [[16, 146], [30, 148]]);
 prop('mossy_boulder', [[240, 148], [226, 150]], true);
 prop('forest_bush_01', [[56, 148], [74, 148], [92, 148]]);
 prop('flower_bush_01', [[196, 148], [180, 148], [164, 148]], true);
-for (let i = 0; i < 6; i++) {
-const x = rng.int(20, W - 20), y = rng.int(88, H - 2), name = rng.chance(0.6) ? 'daisies' : 'buttercups';
-for (let k = 0; k < rng.int(1, 3); k++) prop(name, [[x + rng.int(-9, 9), y + rng.int(-4, 4)]], rng.chance(0.5));
+for (let i = 0; i < 7; i++) {
+const x = rng.int(20, W - 20), y = rng.int(90, H - 3), name = rng.chance(0.6) ? 'daisies' : 'buttercups';
+for (let k = 0; k < rng.int(2, 3); k++) prop(name, spots(x - 10, x + 10, y - 4, y + 4), rng.chance(0.5));
 }
-for (let i = 0; i < 22; i++) { const x = rng.int(4, W - 4), y = rng.int(82, H + 2); prop(`grass_tuft_0${rng.int(1, 5)}`, [[x, y]], rng.chance(0.5)); }
-for (let i = 0; i < 5; i++) { const x = rng.int(0, W), y = rng.int(132, H - 2); if (free(x - 10, y - 10, x + 10, y)) fern(ctx, rng, x, y, rng.int(8, 11), '#2a6a1c', '#7ac848'); }
-for (let i = 0; i < 6; i++) R(ctx, rng.int(60, 200), rng.int(40, 100), 1, 1, '#fff3a0');
+for (let i = 0; i < 18; i++) prop(`grass_tuft_0${rng.int(1, 3)}`, spots(6, W - 6, 84, H + 1), rng.chance(0.5));
 }
 function meadow(ctx, rng) {
 const W = SCENE_W, H = SCENE_H;
@@ -14155,7 +14145,7 @@ this.rows[d.id] = { barI, meta, g, locked, take };
 const notes = lab.sandbox ? [] : plan.factors.filter((f) => f.why !== 'satchel' && !f.why.startsWith('thorough')).map((f) => f.why);
 const tool = plan.method.tool ? equipmentById(plan.method.tool) : null;
 const card = h('div', { class: 'deposit parch' + (locked ? ' locked' : '') + (s.scarred ? ' scarred' : '') },
-key ? frameCanvas(/** @type {string} */ (gatherFrameName(key, { can: this.can[d.id] }))) : rawSprite(m.wild ? m.wild.shape : 'stone', m.look || m.color, lab.sandbox ? 1 : s.fraction),
+key ? frameCanvas(/** @type {string} */ (gatherFrameName(key, { can: this.can[d.id], card: true }))) : rawSprite(m.wild ? m.wild.shape : 'stone', m.look || m.color, lab.sandbox ? 1 : s.fraction),
 h('div', { class: 'dep-info' },
 h('div', { class: 'title' }, m.name, d.rare ? h('span', { class: 'tag rare', text: 'rare' }) : null, plan.hour ? h('span', { class: 'tag hour', text: plan.hour }) : null),
 d.place ? h('div', { class: 'meta place', text: d.place }) : null,
@@ -14188,8 +14178,12 @@ if (key === this.bgKey) return;
 this.bgKey = key;
 this.bg = document.createElement('canvas');
 this.bg.width = SCENE_W; this.bg.height = SCENE_H;
-const avoid = this.deposits().map((d) => depositBox(d, this.spriteKey(d), SCENE_W, SCENE_H));
+const avoid = this.inScene().map((d) => depositBox(d, this.spriteKey(d), SCENE_W, SCENE_H));
 paintRegion(/** @type {CanvasRenderingContext2D} */ (this.bg.getContext('2d')), this.region, this.lab.state.seed, avoid);
+}
+inScene() {
+const lab = this.lab;
+return this.deposits().filter((d) => lab.sandbox || d.rank <= lab.state.rank || !this.spriteKey(d));
 }
 setHover(id) {
 if (this.hover === id) return;
@@ -14199,7 +14193,7 @@ if (this.canvas) this.canvas.style.cursor = id ? 'pointer' : 'default';
 depositAt(e) {
 const r = this.canvas.getBoundingClientRect();
 const x = ((e.clientX - r.left) / r.width) * SCENE_W, y = ((e.clientY - r.top) / r.height) * SCENE_H;
-const d = hitDeposit(this.deposits(), (dd) => this.spriteKey(dd), x, y, SCENE_W, SCENE_H);
+const d = hitDeposit(this.inScene(), (dd) => this.spriteKey(dd), x, y, SCENE_W, SCENE_H);
 return d ? d.id : null;
 }
 gather(d) {
@@ -14235,13 +14229,13 @@ this.time += dt;
 const ctx = this.ctx, st = this.lab.state, now = Date.now();
 ctx.drawImage(this.bg, 0, 0);
 animateRegion(ctx, this.region, this.time);
-const deps = this.deposits().slice().sort((a, b) => a.y - b.y);
+const deps = this.inScene().sort((a, b) => a.y - b.y);
 for (const d of deps) {
 const m = st.lookup(d.materialId);
 const s = this.lab.sandbox ? { fraction: 1 } : depositStatus(st.gathering, d, now);
 const locked = !this.lab.sandbox && d.rank > st.rank;
 const key = this.spriteKey(d);
-if (key) { this.drawGatherable(ctx, d, key, s.fraction, locked); continue; }
+if (key) { this.drawGatherable(ctx, d, key, s.fraction); continue; }
 const x = Math.round(d.x * SCENE_W) - 8, y = Math.round(d.y * SCENE_H) - 14;
 ctx.fillStyle = 'rgba(0,0,0,0.25)';
 ctx.fillRect(x + 3, y + 14, 10, 2);
@@ -14269,19 +14263,17 @@ this.floaters = this.floaters.filter((f) => f.t < 1.2);
 this._acc = (this._acc || 0) + dt;
 if (this._acc > 1) { this._acc = 0; this.tick(); }
 }
-drawGatherable(ctx, d, key, fraction, locked) {
+drawGatherable(ctx, d, key, fraction) {
 const x = Math.round(d.x * SCENE_W), y = Math.round(d.y * SCENE_H);
 const since = this.time - (this.harvested[d.id] ?? -9);
 const harvesting = since < 0.35;
-const name = /** @type {string} */ (gatherFrameName(key, { can: this.lab.sandbox || this.can[d.id] !== false, hover: this.hover === d.id, harvesting, locked }));
+const name = /** @type {string} */ (gatherFrameName(key, { can: this.lab.sandbox || this.can[d.id] !== false, hover: this.hover === d.id, harvesting }));
 const f = /** @type {number[]} */ (frame(name));
 const sw = Math.max(6, Math.round(f[2] * 0.6));
 ctx.fillStyle = 'rgba(10,30,8,0.35)';
 ctx.fillRect(x - Math.floor(sw / 2), y - 1, sw, 2);
-if (locked) ctx.globalAlpha = 0.6;
 drawFrame(ctx, name, x, y - (harvesting && !GATHERABLES[key].harvesting ? 1 : 0));
-ctx.globalAlpha = 1;
-if (!locked && fraction >= 0.999 && this.hover !== d.id) {
+if (fraction >= 0.999 && this.hover !== d.id) {
 const phase = (this.time * 0.5 + d.x * 7.3 + d.y * 3.1) % 4;
 if (phase < 0.6) drawFrame(ctx, 'glint_' + Math.min(3, Math.floor(phase / 0.15)), x + Math.round(f[2] / 2) - 3, y - f[3] + 4);
 }

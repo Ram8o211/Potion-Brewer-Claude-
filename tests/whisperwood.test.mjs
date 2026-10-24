@@ -23,12 +23,16 @@ test('every Whisperwood ingredient has gatherable art; nothing else does', () =>
   const forest = WILD_SPECS.filter((s) => s.region === 'forest').map((s) => s.key).sort();
   assert.deepEqual(Object.keys(GATHERABLES).sort(), forest, 'one sprite set per real forest ingredient, no invented ones');
   for (const [key, g] of Object.entries(GATHERABLES)) {
-    for (const state of ['idle', 'hover', 'locked', 'depleted']) assert.ok(FRAMES[g[state]], `${key} ${state}`);
+    for (const state of ['idle', 'hover', 'card', 'depleted']) assert.ok(FRAMES[g[state]], `${key} ${state}`);
     // the states of one gatherable share a canvas, so they swap in place
     const [, , w, h] = FRAMES[g.idle];
-    for (const name of [g.hover, g.locked, g.harvesting].filter(Boolean)) assert.deepEqual(FRAMES[name].slice(2), [w, h], `${name} shares ${key}'s canvas`);
+    for (const name of [g.hover, g.harvesting].filter(Boolean)) assert.deepEqual(FRAMES[name].slice(2), [w, h], `${name} shares ${key}'s canvas`);
   }
   assert.ok(GATHERABLES.silverleaf.harvesting, 'the herb sequence keeps its harvesting frame');
+  // Ironroot grows half buried in the scene; its card shows the whole root
+  assert.equal(GATHERABLES.ironroot.card, 'ironroot_card');
+  assert.ok(FRAMES.ironroot_card[3] > FRAMES.ironroot_idle[3]);
+  assert.equal(GATHERABLES.owlberry.card, 'owlberry_idle');
   for (let i = 0; i < 4; i++) assert.ok(FRAMES['glint_' + i]);
 });
 
@@ -40,7 +44,8 @@ test('a gatherable shows what can be done with it', () => {
   assert.equal(gatherFrameName('owlberry', { can: false }), 'picked');
   assert.equal(gatherFrameName('silverleaf', { can: true, harvesting: true }), 'silverleaf_harvesting');
   assert.equal(gatherFrameName('owlberry', { can: true, harvesting: true }), 'owlberry_idle');
-  assert.equal(gatherFrameName('mandrake', { can: true, hover: true, locked: true }), 'mandrake_locked');
+  assert.equal(gatherFrameName('ironroot', { can: true, card: true }), 'ironroot_card');
+  assert.equal(gatherFrameName('ironroot', { can: false, card: true }), 'ironroot_depleted');
   assert.equal(gatherFrameName('heartpetal', { can: true }), null, 'other regions keep their procedural sprites');
 });
 
