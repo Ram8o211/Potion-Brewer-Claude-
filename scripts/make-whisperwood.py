@@ -170,6 +170,21 @@ def clean(im, palette, fringe=False):
     return despeckle(im)
 
 
+def bare_trunk(im):
+    """Paint over streaks of moss on a trunk: a green pixel with bark on both sides takes the bark's colour."""
+    out = im.copy()
+    src, o = im.load(), out.load()
+    bark = lambda c: c[3] and c[0] > c[1] and c[0] > c[2]
+    green = lambda c: c[3] and c[1] > c[0] + 10 and c[1] >= c[2]
+    for y in range(im.height):
+        for x in range(1, im.width - 1):
+            for w in (1, 2):
+                if x + w < im.width and all(green(src[x + k, y]) for k in range(w)) and bark(src[x - 1, y]) and bark(src[x + w, y]):
+                    for k in range(w):
+                        o[x + k, y] = src[x - 1, y]
+    return out
+
+
 def plant(im, keep=0.68):
     """Bury the lower part of a root in a mound of soil, so it grows out of the ground."""
     h = max(1, round(im.height * keep))
@@ -255,6 +270,11 @@ def pale(h, s, v):
     return h, s, v
 
 
+def sunlit(h, s, v):
+    # the near oaks stand in the clearing's light: lift their shade off black
+    return h, s, min(1, v * 1.12 + 0.04)
+
+
 def far(h, s, v):
     # back-row trees: darker and cooler so they sit behind the clearing
     return h + 0.02, s * 0.85, v * 0.88
@@ -295,8 +315,11 @@ def build():
     S = {}
     # decorative world objects (no outline: they stay behind the gatherables)
     # (the far trees are snapped to the haze greens of the distant tree lines)
+    # the great oaks framing the clearing: a finer reduction (3 to 1) the scene
+    # draws at twice the size, so the nearest trees have the chunkiest pixels
     for n in ('oak_round_01', 'oak_round_02', 'oak_wide_03'):
         S[n + '_far'] = clean(recolour(trim(down(load('sprites/trees/' + n))), far), FAR)
+        S[n + '_near'] = bare_trunk(clean(recolour(trim(down(load('sprites/trees/' + n), f=3, colours=16)), sunlit), SCENE))
     for rel in ('bushes/forest_bush_01', 'bushes/flower_bush_01', 'rocks/mossy_boulder', 'rocks/gray_boulder',
                 'rocks/stone_cluster', 'props/tree_stump', 'props/mossy_log'):
         S[rel.split('/')[1]] = clean(trim(down(load('sprites/' + rel), colours=10)), SCENE)

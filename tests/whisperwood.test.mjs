@@ -34,6 +34,11 @@ test('every Whisperwood ingredient has gatherable art; nothing else does', () =>
   assert.ok(FRAMES.ironroot_card[3] > FRAMES.ironroot_idle[3]);
   assert.equal(GATHERABLES.owlberry.card, 'owlberry_idle');
   for (let i = 0; i < 4; i++) assert.ok(FRAMES['glint_' + i]);
+  // the pack's oaks stand both behind the clearing and, larger, in front of it
+  for (const n of ['oak_round_01', 'oak_round_02', 'oak_wide_03']) {
+    assert.ok(FRAMES[n + '_far'] && FRAMES[n + '_near'], n);
+    assert.ok(FRAMES[n + '_near'][3] > FRAMES[n + '_far'][3], `${n}: the near oak is the finer, larger reduction`);
+  }
 });
 
 test('a gatherable shows what can be done with it', () => {

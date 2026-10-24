@@ -91,17 +91,16 @@ function treeLine(ctx, rng, y, size, c, cHi) {
 /**
  * A leafy crown: dark mass, mid-tone clusters, lit clusters to the upper
  * left, a few highlight specks and a ragged edge of single leaves.
- * @param {string[]} pal [outline, dark, mid, light, highlight] @param {boolean} [tidy] without the specks
+ * @param {string[]} pal [outline, dark, mid, light, highlight]
  */
-function canopy(ctx, rng, cx, cy, r, pal, tidy = false) {
+function canopy(ctx, rng, cx, cy, r, pal) {
   const blobs = [];
   for (let i = 0; i < 9; i++) blobs.push([cx + rng.range(-r * 0.8, r * 0.8), cy + rng.range(-r * 0.5, r * 0.45), rng.range(r * 0.4, r * 0.62)]);
   for (const [x, y, br] of blobs) disc(ctx, Math.round(x), Math.round(y), Math.round(br) + 1, Math.round(br * 0.85) + 1, pal[0]);
   for (const [x, y, br] of blobs) disc(ctx, Math.round(x), Math.round(y), Math.round(br), Math.round(br * 0.85), pal[1]);
   for (const [x, y, br] of blobs) disc(ctx, Math.round(x - br * 0.15), Math.round(y - br * 0.2), Math.round(br * 0.75), Math.round(br * 0.62), pal[2]);
   for (const [x, y, br] of blobs) if (x < cx + r * 0.3 && y < cy + r * 0.1) disc(ctx, Math.round(x - br * 0.3), Math.round(y - br * 0.35), Math.round(br * 0.42), Math.round(br * 0.34), pal[3]);
-  // highlight specks (a tidy crown keeps only its lit clusters: no lone pixels)
-  for (let i = 0; i < r * 1.2; i++) { const x = cx + rng.range(-r, r * 0.5), y = cy + rng.range(-r * 0.7, r * 0.1); if (!tidy) R(ctx, x, y, 1, 1, pal[4]); }
+  for (let i = 0; i < r * 1.2; i++) R(ctx, cx + rng.range(-r, r * 0.5), cy + rng.range(-r * 0.7, r * 0.1), 1, 1, pal[4]);
   for (let i = 0; i < r * 2; i++) {
     const a = rng.range(0, Math.PI * 2), d = r * rng.range(0.85, 1.05);
     R(ctx, cx + Math.cos(a) * d, cy + Math.sin(a) * d * 0.75, 1, 1, pal[rng.int(0, 1)]);
@@ -375,8 +374,9 @@ function forest(ctx, rng) {
 
 /**
  * Whisperwood from the sprite atlas (rendering/whisperwood.js): the same
- * sky, haze and clearing as the procedural painting, with sprite trees,
- * shrubs, rocks, logs, a stump and wildflowers. Nothing decorative here
+ * sky and haze as the procedural painting, with sprite trees (the great
+ * oaks in front at twice the size), shrubs, rocks, logs, a stump and
+ * wildflowers. Nothing decorative here
  * looks like a gatherable — no berries, bellflowers or toadstools — so the
  * deposits drawn on top (outlined, with hover and depleted frames) are the
  * only plants that read as something to pick. Props that would sit under a
@@ -426,15 +426,12 @@ function forestSprites(ctx, rng, avoid) {
   // a hedge of shrubs closing off the clearing
   for (let x = -4, i = 0; x < W + 12; x += rng.int(18, 24), i++) drawFrame(ctx, i % 3 ? 'forest_bush_01_far' : 'forest_bush_01', x, rng.int(77, 80), 1, i % 2 === 1);
   if (free(108, 72, 146, 88)) { fence(ctx, 112, 87, 3, 14); taken.push({ x0: 108, y0: 72, x1: 146, y1: 88 }); }
-  // the great oaks framing the scene, canopies meeting overhead
-  const trees = [[4, 18], [62, 12], [184, 12], [234, 18]];
-  for (const [x, w] of trees) oak(ctx, rng, x, 18, 82 + rng.int(-2, 2), w, OAKBARK);
-  for (const [x, w] of trees) {
-    const c = x + w / 2;
-    canopy(ctx, rng, c - 12, rng.int(4, 12), rng.int(22, 26), LEAF, true);
-    canopy(ctx, rng, c + 14, rng.int(6, 14), rng.int(20, 24), LEAF, true);
-    canopy(ctx, rng, c, rng.int(20, 26), rng.int(16, 20), LEAF, true);
-  }
+  // the great oaks framing the scene at twice the size (the nearest, chunkiest
+  // pixels), crowns running off the top of the frame; the inner pair first
+  drawFrame(ctx, 'oak_round_02_near', 70, 84, 2);
+  drawFrame(ctx, 'oak_round_01_near', 186, 84, 2, true);
+  drawFrame(ctx, 'oak_wide_03_near', 8, 88, 2);
+  drawFrame(ctx, 'oak_wide_03_near', 250, 88, 2, true);
   // shrubs, rocks, a stump and a log around the clearing
   prop('flower_bush_01', [[48, 100], [36, 96], [70, 96]]);
   prop('forest_bush_01', [[226, 98], [212, 94], [242, 102]], true);
