@@ -20,7 +20,7 @@ import { windowOf } from '../scripts/lib/player.mjs';
 import { cauldron, pour, hold, settleTo, stirFor, boilDown, tap } from '../scripts/lib/experiment.mjs';
 import { SIM, PHASE } from '../src/simulation/constants.js';
 
-const OUTCOME = (k) => k === 'temperature' || k === 'purity' || EFFECT_INDEX[k] !== undefined;
+const OUTCOME = (k) => k === 'purity' || EFFECT_INDEX[k] !== undefined;
 
 test('every piece of equipment serves a campaign mechanic, and every technique exercises one', () => {
   for (const e of EQUIPMENT) {
@@ -39,7 +39,7 @@ test('every piece of equipment serves a campaign mechanic, and every technique e
   for (const e of EQUIPMENT.filter((x) => x.price > 0)) assert.ok(e.effect || e.mechanics.some((m) => m !== 'storage') || e.id.startsWith('rack'), `${e.id} does something itself`);
 });
 
-test('customers only ask for outcomes they can judge: effects, purity, quantity and the serving temperature', () => {
+test('customers only ask for outcomes they can judge: effects, purity and quantity — never a serving temperature', () => {
   let n = 0;
   for (let tier = 0; tier < 5; tier++) {
     for (let k = 0; k < 4; k++) {
@@ -51,11 +51,28 @@ test('customers only ask for outcomes they can judge: effects, purity, quantity 
       if (!com) continue;
       n++;
       for (const r of com.requirements) assert.ok(OUTCOME(r.key), `${com.style}: ${r.key} is an outcome`);
+      assert.ok(!com.requirements.some((r) => r.key === 'temperature'), 'no serving temperature is asked');
       assert.ok(com.requirements.some((r) => r.effect && r.key !== 'purity'), 'every order wants an effect');
       for (const t of com.techniques) assert.ok(TECHNIQUES.some((x) => x.id === t), `${t} is a current technique`);
     }
   }
   assert.ok(n >= 16, `orders generated (${n})`);
+});
+
+test('an order taken before keeps everything but its serving temperature', () => {
+  const st = GameState.create('old-serve-1', { tutorial: false });
+  st.current = generateCommission(st.commissionContext(), new Rng('old-serve'), { tier: 0 });
+  const com = st.current;
+  com.requirements.unshift({ key: 'temperature', kind: 'target', target: 50, tol: 8, zero: 24, label: '42–58°C' });
+  com.techniques = ['serve'];
+  com.style = com.style.split('+')[0] + '+serve';
+  const n = com.requirements.length;
+  const back = GameState.fromJSON(JSON.parse(JSON.stringify(st.toJSON())));
+  assert.equal(back.current.requirements.length, n - 1);
+  assert.ok(!back.current.requirements.some((r) => r.key === 'temperature'));
+  assert.deepEqual(back.current.techniques, []);
+  assert.equal(back.current.style, com.style.split('+')[0]);
+  assert.equal(back.current.customer.name, com.customer.name);
 });
 
 test('cold steeps are only planned where the equipment can hold them, never frozen', () => {

@@ -34,7 +34,7 @@ export class Tutorial {
     const rabbitTested = () => st.trials.records.some((r) => r.subjectId === 'rabbit' && r.batchId === st.batch.id);
     return [
       { text: `Welcome to your shop, alchemist! Your very first customer is here. Let’s brew their order together — it only takes a few minutes.`, button: 'Let’s begin' },
-      { text: 'This strip is the order. The temperature meter fills as your brew matches. The heart (healing) shows “?”: what a mixture really does stays unknown until you test it.', target: () => lab.strip, button: 'Got it' },
+      { text: 'This strip is the order. The heart (healing) shows “?”: what a mixture really does stays unknown until you test it.', target: () => lab.strip, button: 'Got it' },
       { text: `Tap the jar of ${water.name} on the shelf to pick it up.`, target: () => lab.jarEls[R.water] && lab.jarEls[R.water].el, done: () => lab.selected === R.water },
       { text: 'Pour about 110 ml: tap the dose buttons (100, then 25) or hold your finger in the cauldron. You can also drag a jar straight onto the cauldron.', target: () => lab.doseEl, done: () => poured(R.water) >= 95 },
       { text: `Now pick up the ${leaf.name}. Long-press any jar to see what it is known to do: it heals, but carries a frosty bite.`, target: () => lab.jarEls[H.healer] && lab.jarEls[H.healer].el, done: () => lab.selected === H.healer },
@@ -48,7 +48,7 @@ export class Tutorial {
       { text: 'The rabbit shows how much vitality — and any frost or fire left over — this batch carries. One reading is a rough guess (see its wide ± band); a second rabbit narrows it, and demanding customers insist on that. Back to the cauldron!', target: tab('brew'), done: () => lab.view === 'brew' },
       { text: 'Let it cool to a warm 45°C or so, then press Bottle. A bottle can go to the counter or onto your potion shelves for later.', target: () => lab.bottleFab, done: () => this.flags.bottled },
       { text: 'Your sealed vial waits at the Counter. It labelled itself from your trial — the tested reading is already on it. Offer it to the customer and agree on a price.', target: () => document.querySelector('[data-act=serve]') || tab('counter')(), done: () => this.flags.sold },
-      { text: 'Splendid — your first sale! New orders ask for strength, love, fire — some served hot or chilled, and later stronger than plain brewing gives; the order card says what each takes. Grinding, the steeping heat, cold steeps, stirring and boiling down all change what ends up in the bottle, and only trials tell you how much. Each day dawns with the shop closed: gather dawn flowers, then open the door. Saved recipes keep every step, so you can brew them again the same way.', button: 'Run my shop!' },
+      { text: 'Splendid — your first sale! New orders ask for strength, love, fire — and later stronger than plain brewing gives; the order card says what each takes. Grinding, the steeping heat, cold steeps, stirring and boiling down all change what ends up in the bottle, and only trials tell you how much. Each day dawns with the shop closed: gather dawn flowers, then open the door. Saved recipes keep every step, so you can brew them again the same way.', button: 'Run my shop!' },
     ];
   }
 

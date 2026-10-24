@@ -36,24 +36,24 @@ test('a day dawns closed; the order card says what it takes and where to find it
     const mod = await import(/* @vite-ignore */ src + 'commissions.js');
     const rng = await import(/* @vite-ignore */ '/src/core/' + 'rng.js');
     const st = l.state;
-    st.current = mod.generateCommission(st.commissionContext(), new rng.Rng('ui-tech'), { tier: 1, techniques: ['serve'] });
+    st.current = mod.generateCommission(st.commissionContext(), new rng.Rng('ui-tech'), { tier: 2, techniques: ['strong'] });
     l.refreshCustomer();
     l.views.counter.refresh();
   });
-  await expect(page.locator('.tech-card')).toContainText('Serving temperature');
+  await expect(page.locator('.tech-card')).toContainText('Strong and compact');
   await expect(page.locator('.supply-card summary')).toContainText('ml of brew');
   await page.click('.supply-card summary');
   await expect(page.locator('.supply-card')).toContainText('Every one of them brings side effects');
   await clean(page);
   await page.locator('.tech-card').scrollIntoViewIfNeeded();
   await shot(page, info, 'order-techniques');
-  // the order strip: effects (unknown until tested), purity, the serving temperature read off the brew, the quantity
+  // the order strip: effects (unknown until tested), purity, the quantity
   await page.click('[data-act=tab-brew]');
   await pourDose(page, await lab(page, (l) => l.state.world.roles.water), [100]);
   const keys = await lab(page, (l) => l.state.current.requirements.map((r) => r.key));
-  for (const k of keys) expect(['temperature', 'purity', 'vitality', 'strength', 'love', 'arcana', 'transformation', 'fire', 'frost', 'acidity', 'toxicity', 'death']).toContain(k);
+  for (const k of keys) expect(['purity', 'vitality', 'strength', 'love', 'arcana', 'transformation', 'fire', 'frost', 'acidity', 'toxicity', 'death']).toContain(k);
   await expect(page.locator('.req-chip.unknown').first()).toBeVisible();
-  await expect(page.locator('.req-chip', { hasText: '°' }).first()).toBeVisible();
+  await expect(page.locator('.req-chip', { hasText: '°' }), 'no serving temperature on the order').toHaveCount(0);
   expect(errors).toEqual([]);
 });
 

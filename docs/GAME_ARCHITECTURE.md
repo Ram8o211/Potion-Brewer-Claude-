@@ -365,9 +365,9 @@ into the new vessel's shape instead of being dropped.
   plan.
 
   *Techniques* (`TECHNIQUES`). Customers judge outcomes, never
-  procedures: the effects, purity, the quantity and, for some, the
-  temperature it is served at. On top of the plain request they may ask
-  for a **serving temperature** or, from Adept, a brew **strong and
+  procedures: the effects, purity and the quantity (never the temperature
+  it is served at). On top of the plain request they may ask, from Adept,
+  for a brew **strong and
   compact** — a strength beyond what a plain brew of the plan gives,
   planned with a real `reduce` stage (lid off, a quarter of the volume
   boiled away, side effects stronger too; only where the prediction of the

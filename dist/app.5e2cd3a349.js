@@ -2656,9 +2656,9 @@ story: ['My patients are wasting with fever. I need something that truly heals �
 story: ['The new anvil arrives tomorrow and it takes four men to lift. I want to be one of them.', 'Harvest is in and the carts are heavy. Strength in my arms, nothing more.', 'A tourney at the castle. My lance arm must not tire.'] },
 { id: 'love', title: 'Love Philtre', fx: [{ key: 'love' }], who: ['bard', 'innkeeper', 'noble', 'farmer'], minTier: 0,
 story: ['There is someone I sing to every night, and she has not once looked up. Just a little warmth in her heart.', 'For a betrothal feast — it should warm every heart at the table, and do nothing else.', 'My husband has grown cold as a cellar. Remind him why he married me.'] },
-{ id: 'warming', title: 'Warming Draught', fx: [{ key: 'fire' }], who: ['traveler', 'blacksmith', 'hunter', 'farmer'], minTier: 0, serve: 'warm',
-story: ['The mountain pass is all ice. Something with real fire in it, against the cold.', 'My forge-hands work through the winter nights. Fire in the belly, nothing more.', 'The well froze and so did I. A warming draught, served hot, please.'] },
-{ id: 'cooling', title: 'Cooling Draught', fx: [{ key: 'frost' }], who: ['healer', 'hunter', 'blacksmith', 'traveler'], minTier: 1, serve: 'cold',
+{ id: 'warming', title: 'Warming Draught', fx: [{ key: 'fire' }], who: ['traveler', 'blacksmith', 'hunter', 'farmer'], minTier: 0,
+story: ['The mountain pass is all ice. Something with real fire in it, against the cold.', 'My forge-hands work through the winter nights. Fire in the belly, nothing more.', 'The well froze and so did I. A warming draught, please.'] },
+{ id: 'cooling', title: 'Cooling Draught', fx: [{ key: 'frost' }], who: ['healer', 'hunter', 'blacksmith', 'traveler'], minTier: 1,
 story: ['A child with a burning fever. It must be properly cold-natured.', 'I crossed the salt flats and my blood is still boiling. Something icy.', 'A dragon-bite on my forearm. Frost, and plenty of it.'] },
 { id: 'insight', title: 'Draught of Insight', fx: [{ key: 'arcana' }], who: ['scholar', 'wizard', 'noble'], minTier: 1,
 story: ['My treatise is stuck on the same page for a month. Sharpen my mind — and only my mind.', 'The stars align tonight. I need clear arcane sight for the reading.', 'Examinations at the academy. True arcana, if you please.'] },
@@ -2672,19 +2672,19 @@ story: ['I etch my maker’s mark into blades. A strong acid that bites steel.',
 story: ['Rats in the granary, bold as cats. It has to be poisonous to them.', 'Slugs have eaten half my cabbages. Deadly to pests, please.'] },
 { id: 'expedition', title: 'Expedition Draught', fx: [{ key: 'strength' }, { key: 'transformation', share: 0.6 }], who: ['knight', 'hunter', 'traveler'], minTier: 2,
 story: ['We ride into the Thornwastes. I must be strong enough to carry the wounded, and able to change shape to slip past the wardens.', 'A long patrol beyond the border. Strength for the march, and a change of form for the night watch.'] },
-{ id: 'hearth', title: 'Hearth-and-Heart Cordial', fx: [{ key: 'fire' }, { key: 'love', share: 0.7 }], who: ['innkeeper', 'farmer', 'bard'], minTier: 2, serve: 'warm',
+{ id: 'hearth', title: 'Hearth-and-Heart Cordial', fx: [{ key: 'fire' }, { key: 'love', share: 0.7 }], who: ['innkeeper', 'farmer', 'bard'], minTier: 2,
 story: ['Our cottage is cold and so is my marriage. Fire for the hearth and love for the heart, in one cup.', 'A winter wedding in a draughty barn. Warm them through, and warm them to each other.'] },
 { id: 'recovery', title: 'Soldier’s Recovery', fx: [{ key: 'vitality' }, { key: 'strength', share: 0.6 }], who: ['knight', 'healer', 'hunter'], minTier: 2,
 story: ['My company limps home from the siege. Heal the wounds and put the strength back in their legs.', 'Back from a bear hunt with three broken ribs. Mend me, and make me strong enough to try again.'] },
-{ id: 'meditation', title: 'Glacial Meditation', fx: [{ key: 'arcana' }, { key: 'frost', share: 0.6 }], who: ['wizard', 'scholar'], minTier: 2, serve: 'cold',
+{ id: 'meditation', title: 'Glacial Meditation', fx: [{ key: 'arcana' }, { key: 'frost', share: 0.6 }], who: ['wizard', 'scholar'], minTier: 2,
 story: ['A week of meditation on the glacier. A cold, clear mind — frost to endure, arcana to see.', 'I study the ice-runes of the north. I must think clearly and feel no cold.'] },
-{ id: 'forgefire', title: 'Forge-Fire Tonic', fx: [{ key: 'strength' }, { key: 'fire', share: 0.6 }], who: ['blacksmith', 'knight'], minTier: 2, serve: 'warm',
+{ id: 'forgefire', title: 'Forge-Fire Tonic', fx: [{ key: 'strength' }, { key: 'fire', share: 0.6 }], who: ['blacksmith', 'knight'], minTier: 2,
 story: ['The great bell must be cast tonight. Strength to swing the hammer, fire to stand the heat.', 'A duel at dawn in the frozen yard. Strength, and fire against the cold.'] },
 { id: 'blessing', title: 'Wedding Blessing', fx: [{ key: 'love' }, { key: 'vitality', share: 0.6 }], who: ['noble', 'bard', 'healer'], minTier: 2,
 story: ['My daughter weds the baron’s son. A toast for long life and true affection.', 'A blessing for the newlyweds: health to them, and love between them.'] },
 { id: 'shapeshift', title: 'Shapeshifter’s Study', fx: [{ key: 'transformation' }, { key: 'arcana', share: 0.6 }], who: ['wizard', 'witch', 'scholar'], minTier: 3,
 story: ['I study the old shapeshifters. I need to change, and understand the change while it happens.', 'The coven elders want a true shifting draught: change of form, guided by arcane sight.'] },
-{ id: 'fevercure', title: 'Fever Cure', fx: [{ key: 'vitality' }, { key: 'frost', share: 0.5 }], who: ['healer', 'noble'], minTier: 3, serve: 'cold',
+{ id: 'fevercure', title: 'Fever Cure', fx: [{ key: 'vitality' }, { key: 'frost', share: 0.5 }], who: ['healer', 'noble'], minTier: 3,
 story: ['The marsh fever: it burns them up from inside. It must heal, and it must cool.', 'The prince is burning with fever. Healing, and cold to break the heat.'] },
 { id: 'warpath', title: 'War-Path Draught', fx: [{ key: 'strength' }, { key: 'fire', share: 0.5 }, { key: 'vitality', share: 0.5 }], who: ['knight'], minTier: 4,
 story: ['The northern campaign. Strength, fire against the frost and healing for the march — the general’s own order.'] },
@@ -2710,11 +2710,6 @@ const { EFFECT_INDEX, EFFECT_BY_KEY, EFFECT_KEYS, NE, interact } = __m13;
 const { thresholdToCelsius, isMagical } = __m15;
 const { compatFactor } = __m14;
 const { REQUESTS, TIER_TARGET, PURITY_LIMIT, requestById } = __m24;
-function servingRequirement(tier, strict, plan) {
-const tol = Math.max(5, (12 - 1.5 * tier) * strict);
-const t = Math.round(plan.serveTemp ?? 20);
-return { key: 'temperature', kind: 'target', target: t, tol, zero: tol * 3, label: `${Math.round(t - tol)}–${Math.round(t + tol)}°C` };
-}
 function effectRequirement(key, sign, min) {
 if (sign < 0) {
 const max = -Math.max(3, Math.round(min));
@@ -3129,19 +3124,6 @@ return out;
 }
 const TECHNIQUES = [
 {
-id: 'serve', name: 'Serving temperature', mechanic: 'serving', minTier: 0, who: ['innkeeper', 'traveler', 'blacksmith', 'healer', 'hunter', 'farmer'],
-lesson: 'Bottle it at the asked temperature: the fire and the cold basin bring the brew there, the thermometer reads it. Mind what heat does to the brew on the way.',
-apply: ({ plan, ctx, rng, request }) => {
-if (request && request.serve) return null;
-const cold = ctx.cap.minCool <= 6 && rng.chance(0.4);
-const T = cold ? Math.round(rng.range(9, 13)) : Math.round(rng.range(42, 60));
-const p2 = { ...plan, serveTemp: T, heatTo: Math.max(plan.heatTo, T), coolTo: Math.min(plan.coolTo, T) };
-const r2 = predictPlan(ctx.world, ctx.lookup, p2);
-if (r2.awakened !== !!plan.activate || r2.reactions.length !== predictPlan(ctx.world, ctx.lookup, plan).reactions.length) return null;
-return { plan: p2, pred: r2, reqs: [], serve: T, say: cold ? 'Serve it chilled, please.' : 'Serve it hot, please.' };
-},
-},
-{
 id: 'strong', name: 'Strong and compact', mechanic: 'concentration', minTier: 2, who: ['hunter', 'traveler', 'knight', 'healer', 'wizard', 'witch', 'blacksmith'],
 lesson: 'Stronger than a plain brew of these herbs gives. Boil water off with the lid open — the magic stays, but its side effects grow with it and must be cancelled harder — or brew with more herb and less water.',
 apply: ({ plan, pred, ctx, rng, wanted, exclude }) => {
@@ -3185,7 +3167,7 @@ return null;
 }
 function effectCommission(req, arch, tier, ctx, rng, totalN, bottleMl, bottleN, opts) {
 const [lo, hi] = TIER_TARGET[tier];
-const serve = req.serve === 'warm' ? Math.round(rng.range(45, 58)) : req.serve === 'cold' && ctx.cap.minCool <= 6 ? Math.round(rng.range(9, 12)) : 20;
+const serve = 20;
 let found = null, activation = false, wanted = [], exclude = [], supply = null;
 const local = { ...ctx, avoid: new Set(ctx.avoid || []) };
 const mains = opts.simple ? [lo] : [Math.round(rng.range(lo, hi)), lo];
@@ -3213,7 +3195,7 @@ let { plan, pred } = found;
 const strict = arch.strict * (opts.contract ? 0.8 : 1) * (opts.simple ? 1.4 : 1);
 const chosen = [];
 const techReqs = [];
-let serveT = serve, say = [];
+let say = [];
 if (!opts.simple) {
 const n = tier <= 1 ? (rng.chance(0.35) ? 1 : 0) : tier === 2 ? (rng.chance(0.65) ? 1 : 0) : 1 + (rng.chance(0.4) ? 1 : 0);
 const forced = (opts.techniques || []).map(techniqueById).filter(Boolean);
@@ -3224,7 +3206,6 @@ if (chosen.length >= Math.max(n, forced.length)) break;
 const r = t.apply({ plan, pred, ctx: local, rng, tier, strict, wanted, exclude, request: req });
 if (!r) continue;
 if (r.plan) { plan = r.plan; pred = r.pred || predictPlan(ctx.world, ctx.lookup, plan); }
-if (r.serve !== undefined) serveT = r.serve;
 if (unwantedMax(pred.effects, exclude).value > PURITY_LIMIT * 0.6) return null;
 techReqs.push(...r.reqs);
 chosen.push(t.id);
@@ -3246,7 +3227,6 @@ Object.assign(r0, { kind: 'target', target: Math.round(v), tol, zero: tol * 3, l
 }
 }
 if (req.drunk !== false || (req.tolerate && req.tolerate.length < 9)) reqs.push(purityRequirement(exclude, opts.simple ? 3 : PURITY_LIMIT));
-if (serveT !== 20) reqs.push(servingRequirement(tier, strict, plan));
 reqs.push(...techReqs);
 const com = finalize({ style: req.id, request: req, title: req.title, arch, tier, ctx, rng, plan, pred, reqs, bottleMl, bottleN, opts, activation, techniques: chosen, say });
 if (com) com.supplies = supplyBrief(plan, local, wanted, exclude, supply);
@@ -3291,7 +3271,7 @@ const TUTORIAL_HERBS = { healer: 'wild-silverleaf', warmer: 'wild-sunthistle' };
 function tutorialCommission(ctx, rng) {
 const R = ctx.world.roles;
 const { healer, warmer } = TUTORIAL_HERBS;
-const plan = { ingredients: [{ id: R.water, n: 22 }, { id: healer, n: 10, ground: true }, { id: warmer, n: 5, ground: true }], heatTo: 62, coolTo: 20, serveTemp: 45, steep: { T: 62, hold: 22 }, knead: true, hold: 8 };
+const plan = { ingredients: [{ id: R.water, n: 22 }, { id: healer, n: 10, ground: true }, { id: warmer, n: 5, ground: true }], heatTo: 62, coolTo: 20, serveTemp: 20, steep: { T: 62, hold: 22 }, knead: true, hold: 8 };
 const pred = predictPlan(ctx.world, ctx.lookup, plan);
 const vit = Math.max(4, Math.round(pred.effects[EFFECT_INDEX.vitality] * 0.7));
 const arch = archetypeOf('farmer');
@@ -3307,9 +3287,8 @@ contract: false,
 tutorial: true,
 potionName: `${capitalize(colorWord)} Healing Tonic`,
 customer,
-dialogue: `Ah, a new alchemist! My old joints ache. Could you brew me a warm healing tonic? ${leaf} heals, they say, but it leaves a frosty bite — a little ${sun} should warm that away. Test that it truly heals, and that nothing else is in it!`,
+dialogue: `Ah, a new alchemist! My old joints ache. Could you brew me a healing tonic? ${leaf} heals, they say, but it leaves a frosty bite — a little ${sun} should warm that away. Test that it truly heals, and that nothing else is in it!`,
 requirements: [
-{ key: 'temperature', kind: 'target', target: 45, tol: 12, zero: 36, label: '33–57°C' },
 { key: 'vitality', kind: 'min', target: vit, tol: 0, zero: Math.max(6, vit * 0.6), label: `at least ${vit}%`, effect: true },
 purityRequirement(['vitality'], 3),
 ],
@@ -3321,7 +3300,7 @@ predicted: { effects: Array.from(pred.effects), color: pred.color, reactions: pr
 effectOrder: true,
 activation: false,
 hintCost: 0,
-techniques: ['serve'],
+techniques: [],
 };
 }
 function capitalize(s) {
@@ -3336,12 +3315,12 @@ return { purityRequirement, coldFloor, TEST_MARGIN, checkSupply, TECHNIQUES, tec
 const __m25 = (() => {
 const EQUIPMENT = [
 { id: 'hearth', name: 'Stone Hearth', category: 'heat', price: 0, rank: 0, icon: 'fire', mechanics: ['steeping', 'concentration', 'awakening'], desc: 'A wood fire under the cauldron. It brings a pot to the boil in seconds and takes lamp oil past 200°C — every steep, boil and heat-awakening in the guild’s books.', effect: { maxFlame: 340, heatPower: 3.5 } },
-{ id: 'basin', name: 'Cold-Water Basin', category: 'cold', price: 0, rank: 0, icon: 'basin', mechanics: ['cold-extraction', 'serving'], desc: 'Cool well water under the cauldron: chills a brew to about 9°C — cold enough for most ice-cold steeps and chilled serving, never colder.', effect: { minCool: 4, coolPower: 4 } },
+{ id: 'basin', name: 'Cold-Water Basin', category: 'cold', price: 0, rank: 0, icon: 'basin', mechanics: ['cold-extraction'], desc: 'Cool well water under the cauldron: chills a brew to about 9°C — cold enough for most ice-cold steeps, never colder.', effect: { minCool: 4, coolPower: 4 } },
 { id: 'pot', name: 'Iron Pot', category: 'vessel', price: 0, rank: 0, icon: 'cauldron', mechanics: ['batch'], desc: 'Your first cauldron (about 1.5 litres).', effect: { size: 'pot' } },
 { id: 'spoon', name: 'Oak Spoon', category: 'tool', price: 0, rank: 0, icon: 'spoon', mechanics: ['mixing'], desc: 'Stirs, folds and kneads.' },
 { id: 'mortar', name: 'Stone Mortar', category: 'tool', price: 0, rank: 0, icon: 'mortar', mechanics: ['extraction'], desc: 'Grinds roots, leaves and stones into powder before they go into the pot ("Ground" on the shelf).' },
 { id: 'pestle', name: 'Granite Pestle', category: 'tool', price: 0, rank: 0, icon: 'pestle', mechanics: ['extraction'], desc: 'Crushes whole herbs already in the pot, frozen blocks and crystal chunks into grains.' },
-{ id: 'thermometer', name: 'Mercury Thermometer', category: 'instrument', price: 0, rank: 0, icon: 'thermo', mechanics: ['steeping', 'serving'], desc: 'Reads temperatures anywhere in the brew.' },
+{ id: 'thermometer', name: 'Mercury Thermometer', category: 'instrument', price: 0, rank: 0, icon: 'thermo', mechanics: ['steeping'], desc: 'Reads temperatures anywhere in the brew.' },
 { id: 'kit', name: 'Forager’s Kit', category: 'gathering', price: 60, rank: 0, icon: 'trowel', mechanics: ['gathering'], desc: 'Trowel, rock hammer, sickle and brush: roots, mineral seams, mosses and fine dust come up whole. Without it you scrabble up half as much of anything you cannot simply pick.' },
 { id: 'satchel', name: 'Forager’s Satchel', category: 'gathering', price: 80, rank: 1, icon: 'satchel', mechanics: ['gathering'], desc: 'Carry more from the wilds: each harvest gathers half as much again.' },
 { id: 'rack1', name: 'Bottle Shelf', category: 'storage', price: 40, rank: 0, icon: 'shelf', mechanics: ['storage'], desc: 'A plank shelf with a lip: room for 6 sealed bottles of potion.', effect: { bottles: 6 } },
@@ -9481,7 +9460,7 @@ const st = new GameState({ ...data, world, inventory });
 if (data._migratedFrom !== undefined && data._migratedFrom < 3) st.genVersion = WORLD_GEN_VERSION;
 st.buyBackPrepared();
 if (st.current) migrateCommission(st.current, st.world, st.lookup);
-if (st.current && data._migratedFrom < 6) retireRequirements(st.current);
+if (st.current) retireRequirements(st.current);
 return st;
 }
 }
@@ -9600,7 +9579,7 @@ return { equipment: out, refund: round1(refund), lines };
 }
 function retireRequirements(com) {
 if (!com || !Array.isArray(com.requirements)) return com;
-const keep = (r) => r.key === 'temperature' || r.key === 'purity' || EFFECT_KEYS.includes(r.key);
+const keep = (r) => r.key === 'purity' || EFFECT_KEYS.includes(r.key);
 com.requirements = com.requirements.filter(keep);
 com.techniques = migrateTechniques(com.techniques || []);
 if (typeof com.style === 'string') com.style = [com.style.split('+')[0], ...com.techniques.slice().sort()].join('+');
@@ -12044,11 +12023,6 @@ decision: 'Stir, and how thoroughly, after every addition.',
 consequence: 'Powders dissolve faster when stirred (about 40 % more in a cold brew), neutralisers meet what they cancel, and every bottle of the batch comes out the same.',
 objective: 'Bottles that match the trials of their batch (shared batch evidence).',
 feedback: 'The swirl of colours, brew advice (“uneven: stir”), bottles whose evidence goes stale.' },
-{ id: 'serving', name: 'Serving temperature', role: 'supporting', stage: 'balancing', rank: 0,
-decision: 'Bring the brew to the asked temperature before bottling.',
-consequence: 'The bottle keeps the temperature of the brew it was drawn from, and cools slowly.',
-objective: 'Customers who want a draught hot or chilled.',
-feedback: 'The thermometer.' },
 { id: 'experimentation', name: 'Trials on rabbits', role: 'core', stage: 'experimentation', rank: 0,
 decision: 'How many doses, how large, on how many rabbits — and when a rabbit needs a purge.',
 consequence: 'Each reading narrows the estimate; several rabbits average out each one’s bias; doses pile up in a rabbit.',
@@ -12911,7 +12885,7 @@ const tab = (id) => () => lab.tabEls[id] && lab.tabEls[id].b;
 const rabbitTested = () => st.trials.records.some((r) => r.subjectId === 'rabbit' && r.batchId === st.batch.id);
 return [
 { text: `Welcome to your shop, alchemist! Your very first customer is here. Let’s brew their order together — it only takes a few minutes.`, button: 'Let’s begin' },
-{ text: 'This strip is the order. The temperature meter fills as your brew matches. The heart (healing) shows “?”: what a mixture really does stays unknown until you test it.', target: () => lab.strip, button: 'Got it' },
+{ text: 'This strip is the order. The heart (healing) shows “?”: what a mixture really does stays unknown until you test it.', target: () => lab.strip, button: 'Got it' },
 { text: `Tap the jar of ${water.name} on the shelf to pick it up.`, target: () => lab.jarEls[R.water] && lab.jarEls[R.water].el, done: () => lab.selected === R.water },
 { text: 'Pour about 110 ml: tap the dose buttons (100, then 25) or hold your finger in the cauldron. You can also drag a jar straight onto the cauldron.', target: () => lab.doseEl, done: () => poured(R.water) >= 95 },
 { text: `Now pick up the ${leaf.name}. Long-press any jar to see what it is known to do: it heals, but carries a frosty bite.`, target: () => lab.jarEls[H.healer] && lab.jarEls[H.healer].el, done: () => lab.selected === H.healer },
@@ -12925,7 +12899,7 @@ return [
 { text: 'The rabbit shows how much vitality — and any frost or fire left over — this batch carries. One reading is a rough guess (see its wide ± band); a second rabbit narrows it, and demanding customers insist on that. Back to the cauldron!', target: tab('brew'), done: () => lab.view === 'brew' },
 { text: 'Let it cool to a warm 45°C or so, then press Bottle. A bottle can go to the counter or onto your potion shelves for later.', target: () => lab.bottleFab, done: () => this.flags.bottled },
 { text: 'Your sealed vial waits at the Counter. It labelled itself from your trial — the tested reading is already on it. Offer it to the customer and agree on a price.', target: () => document.querySelector('[data-act=serve]') || tab('counter')(), done: () => this.flags.sold },
-{ text: 'Splendid — your first sale! New orders ask for strength, love, fire — some served hot or chilled, and later stronger than plain brewing gives; the order card says what each takes. Grinding, the steeping heat, cold steeps, stirring and boiling down all change what ends up in the bottle, and only trials tell you how much. Each day dawns with the shop closed: gather dawn flowers, then open the door. Saved recipes keep every step, so you can brew them again the same way.', button: 'Run my shop!' },
+{ text: 'Splendid — your first sale! New orders ask for strength, love, fire — and later stronger than plain brewing gives; the order card says what each takes. Grinding, the steeping heat, cold steeps, stirring and boiling down all change what ends up in the bottle, and only trials tell you how much. Each day dawns with the shop closed: gather dawn flowers, then open the door. Saved recipes keep every step, so you can brew them again the same way.', button: 'Run my shop!' },
 ];
 }
 start(restart = false) {
