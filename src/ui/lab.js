@@ -1492,7 +1492,7 @@ export class LabScreen {
           }
           r.li.title = `${PROPERTY_LABELS[r.req.key]}: ${r.req.label} — ${ev.text}${ev.title ? ` (${ev.title})` : ''}`;
         } else {
-          // the serving temperature: the thermometer reads it
+          // any other measured requirement
           const s = scoreRequirement(r.req, m);
           score = s.score;
           text = `${Math.round(s.value)}°`;

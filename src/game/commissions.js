@@ -18,10 +18,10 @@
 //
 // Customers judge outcomes, never procedures, and only outcomes a customer
 // can fairly check: the effects (and the absence of every other effect),
-// the quantity and, for some, the temperature it is served at. On top of
-// the plain request they may ask for a *technique* (TECHNIQUES): a draught
-// served hot or chilled, or one stronger than plain brewing gives (boiling
-// water off concentrates it — so does using more herb). Each technique is
+// and the quantity — never the temperature it is served at. On top of the
+// plain request they may ask for a *technique* (TECHNIQUES): a draught
+// stronger than plain brewing gives (boiling water off concentrates it — so
+// does using more herb). Each technique is
 // applied to the hidden plan, re-predicted and re-checked, so it is only
 // asked for when the natural ingredients at hand can deliver it. Physical
 // properties the simulation computes but no customer can reasonably want
@@ -46,7 +46,7 @@ import { REQUESTS, TIER_TARGET, PURITY_LIMIT, requestById } from './requests.js'
 
 /**
  * @typedef {Object} Requirement
- * @property {string} key        temperature | purity | an effect key (alchemy/effects.js)
+ * @property {string} key        purity | an effect key (alchemy/effects.js)
  * @property {'target'|'min'|'max'} kind
  * @property {number} target
  * @property {number} tol        perfect-match tolerance
@@ -74,17 +74,6 @@ import { REQUESTS, TIER_TARGET, PURITY_LIMIT, requestById } from './requests.js'
  * @property {(id:string)=>number} [stock]    ml on the shelf
  * @property {Set<string>} [avoid]      ingredients the plan must do without
  */
-
-/**
- * The serving temperature a customer asks for, around the plan's own.
- * @param {number} tier @param {number} strict @param {import('./predict.js').BrewPlan} plan
- * @returns {Requirement}
- */
-function servingRequirement(tier, strict, plan) {
-  const tol = Math.max(5, (12 - 1.5 * tier) * strict);
-  const t = Math.round(plan.serveTemp ?? 20);
-  return { key: 'temperature', kind: 'target', target: t, tol, zero: tol * 3, label: `${Math.round(t - tol)}–${Math.round(t + tol)}°C` };
-}
 
 /**
  * Requirement on a wanted effect: at least `min` percent (or, for some
@@ -657,20 +646,6 @@ export function checkSupply(plan, ctx) {
 /** @type {Technique[]} */
 export const TECHNIQUES = [
   {
-    id: 'serve', name: 'Serving temperature', mechanic: 'serving', minTier: 0, who: ['innkeeper', 'traveler', 'blacksmith', 'healer', 'hunter', 'farmer'],
-    lesson: 'Bottle it at the asked temperature: the fire and the cold basin bring the brew there, the thermometer reads it. Mind what heat does to the brew on the way.',
-    apply: ({ plan, ctx, rng, request }) => {
-      if (request && request.serve) return null;
-      const cold = ctx.cap.minCool <= 6 && rng.chance(0.4);
-      const T = cold ? Math.round(rng.range(9, 13)) : Math.round(rng.range(42, 60));
-      const p2 = { ...plan, serveTemp: T, heatTo: Math.max(plan.heatTo, T), coolTo: Math.min(plan.coolTo, T) };
-      const r2 = predictPlan(ctx.world, ctx.lookup, p2);
-      // serving hot must not wake (or spoil) what the plain plan kept quiet
-      if (r2.awakened !== !!plan.activate || r2.reactions.length !== predictPlan(ctx.world, ctx.lookup, plan).reactions.length) return null;
-      return { plan: p2, pred: r2, reqs: [], serve: T, say: cold ? 'Serve it chilled, please.' : 'Serve it hot, please.' };
-    },
-  },
-  {
     id: 'strong', name: 'Strong and compact', mechanic: 'concentration', minTier: 2, who: ['hunter', 'traveler', 'knight', 'healer', 'wizard', 'witch', 'blacksmith'],
     lesson: 'Stronger than a plain brew of these herbs gives. Boil water off with the lid open — the magic stays, but its side effects grow with it and must be cancelled harder — or brew with more herb and less water.',
     apply: ({ plan, pred, ctx, rng, wanted, exclude }) => {
@@ -734,7 +709,8 @@ export function generateCommission(ctx, rng, opts = {}) {
  */
 function effectCommission(req, arch, tier, ctx, rng, totalN, bottleMl, bottleN, opts) {
   const [lo, hi] = TIER_TARGET[tier];
-  const serve = req.serve === 'warm' ? Math.round(rng.range(45, 58)) : req.serve === 'cold' && ctx.cap.minCool <= 6 ? Math.round(rng.range(9, 12)) : 20;
+  // customers never ask for a serving temperature: the plan is bottled at room temperature
+  const serve = 20;
   let found = null, activation = false, wanted = [], exclude = [], supply = null;
   // ingredients the shop cannot get today are left out and the search runs again
   const local = { ...ctx, avoid: new Set(ctx.avoid || []) };
@@ -769,7 +745,7 @@ function effectCommission(req, arch, tier, ctx, rng, totalN, bottleMl, bottleN, 
   const chosen = [];
   /** @type {Requirement[]} */
   const techReqs = [];
-  let serveT = serve, say = [];
+  let say = [];
   if (!opts.simple) {
     // a plain request is the rule; techniques add to it, more often as the customers grow demanding
     const n = tier <= 1 ? (rng.chance(0.35) ? 1 : 0) : tier === 2 ? (rng.chance(0.65) ? 1 : 0) : 1 + (rng.chance(0.4) ? 1 : 0);
@@ -781,7 +757,6 @@ function effectCommission(req, arch, tier, ctx, rng, totalN, bottleMl, bottleN, 
       const r = t.apply({ plan, pred, ctx: local, rng, tier, strict, wanted, exclude, request: req });
       if (!r) continue;
       if (r.plan) { plan = r.plan; pred = r.pred || predictPlan(ctx.world, ctx.lookup, plan); }
-      if (r.serve !== undefined) serveT = r.serve;
       // a technique that changes the brew must not break the order's purity
       if (unwantedMax(pred.effects, exclude).value > PURITY_LIMIT * 0.6) return null;
       techReqs.push(...r.reqs);
@@ -807,7 +782,6 @@ function effectCommission(req, arch, tier, ctx, rng, totalN, bottleMl, bottleN, 
     }
   }
   if (req.drunk !== false || (req.tolerate && req.tolerate.length < 9)) reqs.push(purityRequirement(exclude, opts.simple ? 3 : PURITY_LIMIT));
-  if (serveT !== 20) reqs.push(servingRequirement(tier, strict, plan));
   reqs.push(...techReqs);
   const com = finalize({ style: req.id, request: req, title: req.title, arch, tier, ctx, rng, plan, pred, reqs, bottleMl, bottleN, opts, activation, techniques: chosen, say });
   if (com) com.supplies = supplyBrief(plan, local, wanted, exclude, supply);
@@ -873,7 +847,7 @@ export const TUTORIAL_HERBS = { healer: 'wild-silverleaf', warmer: 'wild-sunthis
 export function tutorialCommission(ctx, rng) {
   const R = ctx.world.roles;
   const { healer, warmer } = TUTORIAL_HERBS;
-  const plan = { ingredients: [{ id: R.water, n: 22 }, { id: healer, n: 10, ground: true }, { id: warmer, n: 5, ground: true }], heatTo: 62, coolTo: 20, serveTemp: 45, steep: { T: 62, hold: 22 }, knead: true, hold: 8 };
+  const plan = { ingredients: [{ id: R.water, n: 22 }, { id: healer, n: 10, ground: true }, { id: warmer, n: 5, ground: true }], heatTo: 62, coolTo: 20, serveTemp: 20, steep: { T: 62, hold: 22 }, knead: true, hold: 8 };
   const pred = predictPlan(ctx.world, ctx.lookup, plan);
   const vit = Math.max(4, Math.round(pred.effects[EFFECT_INDEX.vitality] * 0.7));
   const arch = archetypeOf('farmer');
@@ -889,9 +863,8 @@ export function tutorialCommission(ctx, rng) {
     tutorial: true,
     potionName: `${capitalize(colorWord)} Healing Tonic`,
     customer,
-    dialogue: `Ah, a new alchemist! My old joints ache. Could you brew me a warm healing tonic? ${leaf} heals, they say, but it leaves a frosty bite — a little ${sun} should warm that away. Test that it truly heals, and that nothing else is in it!`,
+    dialogue: `Ah, a new alchemist! My old joints ache. Could you brew me a healing tonic? ${leaf} heals, they say, but it leaves a frosty bite — a little ${sun} should warm that away. Test that it truly heals, and that nothing else is in it!`,
     requirements: [
-      { key: 'temperature', kind: 'target', target: 45, tol: 12, zero: 36, label: '33–57°C' },
       { key: 'vitality', kind: 'min', target: vit, tol: 0, zero: Math.max(6, vit * 0.6), label: `at least ${vit}%`, effect: true },
       purityRequirement(['vitality'], 3),
     ],
@@ -903,7 +876,7 @@ export function tutorialCommission(ctx, rng) {
     effectOrder: true,
     activation: false,
     hintCost: 0,
-    techniques: ['serve'],
+    techniques: [],
   };
 }
 

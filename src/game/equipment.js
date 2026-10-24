@@ -23,12 +23,12 @@
 export const EQUIPMENT = [
   // the starting kit: everything an apprentice needs for the core loop
   { id: 'hearth', name: 'Stone Hearth', category: 'heat', price: 0, rank: 0, icon: 'fire', mechanics: ['steeping', 'concentration', 'awakening'], desc: 'A wood fire under the cauldron. It brings a pot to the boil in seconds and takes lamp oil past 200°C — every steep, boil and heat-awakening in the guild’s books.', effect: { maxFlame: 340, heatPower: 3.5 } },
-  { id: 'basin', name: 'Cold-Water Basin', category: 'cold', price: 0, rank: 0, icon: 'basin', mechanics: ['cold-extraction', 'serving'], desc: 'Cool well water under the cauldron: chills a brew to about 9°C — cold enough for most ice-cold steeps and chilled serving, never colder.', effect: { minCool: 4, coolPower: 4 } },
+  { id: 'basin', name: 'Cold-Water Basin', category: 'cold', price: 0, rank: 0, icon: 'basin', mechanics: ['cold-extraction'], desc: 'Cool well water under the cauldron: chills a brew to about 9°C — cold enough for most ice-cold steeps, never colder.', effect: { minCool: 4, coolPower: 4 } },
   { id: 'pot', name: 'Iron Pot', category: 'vessel', price: 0, rank: 0, icon: 'cauldron', mechanics: ['batch'], desc: 'Your first cauldron (about 1.5 litres).', effect: { size: 'pot' } },
   { id: 'spoon', name: 'Oak Spoon', category: 'tool', price: 0, rank: 0, icon: 'spoon', mechanics: ['mixing'], desc: 'Stirs, folds and kneads.' },
   { id: 'mortar', name: 'Stone Mortar', category: 'tool', price: 0, rank: 0, icon: 'mortar', mechanics: ['extraction'], desc: 'Grinds roots, leaves and stones into powder before they go into the pot ("Ground" on the shelf).' },
   { id: 'pestle', name: 'Granite Pestle', category: 'tool', price: 0, rank: 0, icon: 'pestle', mechanics: ['extraction'], desc: 'Crushes whole herbs already in the pot, frozen blocks and crystal chunks into grains.' },
-  { id: 'thermometer', name: 'Mercury Thermometer', category: 'instrument', price: 0, rank: 0, icon: 'thermo', mechanics: ['steeping', 'serving'], desc: 'Reads temperatures anywhere in the brew.' },
+  { id: 'thermometer', name: 'Mercury Thermometer', category: 'instrument', price: 0, rank: 0, icon: 'thermo', mechanics: ['steeping'], desc: 'Reads temperatures anywhere in the brew.' },
   // gathering
   { id: 'kit', name: 'Forager’s Kit', category: 'gathering', price: 60, rank: 0, icon: 'trowel', mechanics: ['gathering'], desc: 'Trowel, rock hammer, sickle and brush: roots, mineral seams, mosses and fine dust come up whole. Without it you scrabble up half as much of anything you cannot simply pick.' },
   { id: 'satchel', name: 'Forager’s Satchel', category: 'gathering', price: 80, rank: 1, icon: 'satchel', mechanics: ['gathering'], desc: 'Carry more from the wilds: each harvest gathers half as much again.' },

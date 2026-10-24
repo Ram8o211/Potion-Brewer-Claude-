@@ -1177,7 +1177,8 @@ export class GameState {
     if (data._migratedFrom !== undefined && data._migratedFrom < 3) st.genVersion = WORLD_GEN_VERSION;
     st.buyBackPrepared();
     if (st.current) migrateCommission(st.current, st.world, st.lookup);
-    if (st.current && data._migratedFrom < 6) retireRequirements(st.current);
+    // customers no longer ask for a serving temperature: an order taken before keeps the rest
+    if (st.current) retireRequirements(st.current);
     return st;
   }
 }
@@ -1342,14 +1343,15 @@ export function retireEquipment(list) {
 }
 
 /**
- * An order taken before v6 keeps its customer, story and budget; the
- * requirements customers no longer make are dropped (they only made it
- * harder), and its techniques are renamed to the current ones.
+ * An order taken earlier keeps its customer, story and budget; the
+ * requirements customers no longer make (old physical targets, the serving
+ * temperature) are dropped — they only made it harder — and its techniques
+ * are renamed to the current ones (retired ones dropped).
  * @param {any} com
  */
 export function retireRequirements(com) {
   if (!com || !Array.isArray(com.requirements)) return com;
-  const keep = (r) => r.key === 'temperature' || r.key === 'purity' || EFFECT_KEYS.includes(r.key);
+  const keep = (r) => r.key === 'purity' || EFFECT_KEYS.includes(r.key);
   com.requirements = com.requirements.filter(keep);
   com.techniques = migrateTechniques(com.techniques || []);
   if (typeof com.style === 'string') com.style = [com.style.split('+')[0], ...com.techniques.slice().sort()].join('+');

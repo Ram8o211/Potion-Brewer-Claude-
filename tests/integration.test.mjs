@@ -109,8 +109,7 @@ test('every technique can be asked for and changes the order; customers only ask
       if (com && com.techniques.includes(t.id)) got = com;
     }
     assert.ok(got && st, `${t.id} was generated`);
-    for (const r of got.requirements) assert.ok(r.key === 'temperature' || r.key === 'purity' || EFFECT_INDEX[r.key] !== undefined, `${t.id}: ${r.key} is an outcome a customer can judge`);
-    if (t.id === 'serve') assert.ok(got.requirements.some((r) => r.key === 'temperature'), 'a serving temperature is asked');
+    for (const r of got.requirements) assert.ok(r.key === 'purity' || EFFECT_INDEX[r.key] !== undefined, `${t.id}: ${r.key} is an outcome a customer can judge`);
     if (t.id === 'strong') {
       assert.ok(got.reference.reduce && got.reference.reduce.frac > 0, 'a strong order is planned with a real boil-down');
       const plain = predictPlan(st.world, st.lookup, { ...got.reference, reduce: undefined });
