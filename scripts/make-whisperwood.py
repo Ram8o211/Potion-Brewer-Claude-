@@ -178,10 +178,19 @@ def bare_trunk(im):
     green = lambda c: c[3] and c[1] > c[0] + 10 and c[1] >= c[2]
     for y in range(im.height):
         for x in range(1, im.width - 1):
-            for w in (1, 2):
+            for w in (1, 2, 3):
                 if x + w < im.width and all(green(src[x + k, y]) for k in range(w)) and bark(src[x - 1, y]) and bark(src[x + w, y]):
                     for k in range(w):
                         o[x + k, y] = src[x - 1, y]
+    # and patches: a green pixel with bark on two or more sides, worked inwards
+    for _ in range(4):
+        src = out.copy().load()
+        for y in range(im.height):
+            for x in range(im.width):
+                if green(src[x, y]):
+                    b = [n for n in neighbours(src, x, y, im.width, im.height) if bark(n)]
+                    if len(b) >= 2:
+                        o[x, y] = Counter(b).most_common(1)[0][0]
     return out
 
 
@@ -272,7 +281,7 @@ def pale(h, s, v):
 
 def sunlit(h, s, v):
     # the near oaks stand in the clearing's light: lift their shade off black
-    return h, s, min(1, v * 1.12 + 0.04)
+    return h, s, min(1, v * 1.18 + 0.06)
 
 
 def far(h, s, v):
@@ -315,11 +324,12 @@ def build():
     S = {}
     # decorative world objects (no outline: they stay behind the gatherables)
     # (the far trees are snapped to the haze greens of the distant tree lines)
-    # the great oaks framing the clearing: a finer reduction (3 to 1) the scene
-    # draws at twice the size, so the nearest trees have the chunkiest pixels
+    # the great oaks framing the clearing: the finest reduction (3 to 2, one
+    # concept-art pixel or so per art pixel), drawn at full scene resolution
     for n in ('oak_round_01', 'oak_round_02', 'oak_wide_03'):
         S[n + '_far'] = clean(recolour(trim(down(load('sprites/trees/' + n))), far), FAR)
-        S[n + '_near'] = bare_trunk(clean(recolour(trim(down(load('sprites/trees/' + n), f=3, colours=16)), sunlit), SCENE))
+        src = load('sprites/trees/' + n)
+        S[n + '_near'] = bare_trunk(clean(recolour(trim(down(src.resize((src.width * 2, src.height * 2), Image.NEAREST), f=3, colours=20)), sunlit), SCENE))
     for rel in ('bushes/forest_bush_01', 'bushes/flower_bush_01', 'rocks/mossy_boulder', 'rocks/gray_boulder',
                 'rocks/stone_cluster', 'props/tree_stump', 'props/mossy_log'):
         S[rel.split('/')[1]] = clean(trim(down(load('sprites/' + rel), colours=10)), SCENE)

@@ -13400,50 +13400,50 @@ return { CounterView };
 // src/rendering/whisperwood-atlas.js
 const __m68 = (() => {
 const ATLAS_URL = 'assets/whisperwood/atlas.png';
-const ATLAS_SIZE = [256, 125];
+const ATLAS_SIZE = [256, 187];
 const FRAMES = {
-buttercups: [177, 103, 14, 9],
-daisies: [231, 103, 15, 7],
-emberbark_hover: [100, 79, 26, 19],
-emberbark_idle: [127, 79, 26, 19],
-flower_bush_01: [27, 103, 24, 17],
-forest_bush_01: [52, 103, 24, 17],
-forest_bush_01_far: [77, 103, 24, 17],
-glint_0: [0, 122, 3, 3],
-glint_1: [247, 103, 4, 4],
-glint_2: [4, 122, 3, 3],
-glint_3: [252, 103, 4, 4],
-grass_tuft_01: [144, 103, 12, 11],
-grass_tuft_02: [208, 103, 10, 8],
-grass_tuft_03: [219, 103, 11, 8],
-gray_boulder: [124, 103, 19, 14],
-ironroot_card: [120, 0, 23, 40],
-ironroot_depleted: [0, 46, 25, 32],
-ironroot_hover: [26, 46, 25, 32],
-ironroot_idle: [52, 46, 25, 32],
-mandrake_hover: [182, 46, 28, 23],
-mandrake_idle: [211, 46, 28, 23],
-mossy_boulder: [204, 79, 29, 18],
-mossy_log: [0, 103, 26, 18],
-nightshade_hover: [0, 79, 24, 23],
-nightshade_idle: [25, 79, 24, 23],
-oak_round_01_far: [179, 0, 29, 33],
-oak_round_01_near: [45, 0, 38, 43],
-oak_round_02_far: [209, 0, 26, 33],
-oak_round_02_near: [84, 0, 35, 43],
-oak_wide_03_far: [144, 0, 34, 34],
-oak_wide_03_near: [0, 0, 44, 45],
-owlberry_hover: [50, 79, 24, 22],
-owlberry_idle: [75, 79, 24, 22],
-picked: [157, 103, 19, 11],
-silverleaf_depleted: [78, 46, 25, 24],
-silverleaf_harvesting: [104, 46, 25, 24],
-silverleaf_hover: [130, 46, 25, 24],
-silverleaf_idle: [156, 46, 25, 24],
-stone_cluster: [192, 103, 15, 9],
-tree_stump: [102, 103, 21, 16],
-witchear_hover: [154, 79, 24, 19],
-witchear_idle: [179, 79, 24, 19],
+buttercups: [33, 176, 14, 9],
+daisies: [87, 176, 15, 7],
+emberbark_hover: [210, 131, 26, 19],
+emberbark_idle: [0, 156, 26, 19],
+flower_bush_01: [134, 156, 24, 17],
+forest_bush_01: [159, 156, 24, 17],
+forest_bush_01_far: [184, 156, 24, 17],
+glint_0: [113, 176, 3, 3],
+glint_1: [103, 176, 4, 4],
+glint_2: [117, 176, 3, 3],
+glint_3: [108, 176, 4, 4],
+grass_tuft_01: [0, 176, 12, 11],
+grass_tuft_02: [64, 176, 10, 8],
+grass_tuft_03: [75, 176, 11, 8],
+gray_boulder: [231, 156, 19, 14],
+ironroot_card: [0, 90, 23, 40],
+ironroot_depleted: [116, 90, 25, 32],
+ironroot_hover: [142, 90, 25, 32],
+ironroot_idle: [168, 90, 25, 32],
+mandrake_hover: [52, 131, 28, 23],
+mandrake_idle: [81, 131, 28, 23],
+mossy_boulder: [77, 156, 29, 18],
+mossy_log: [107, 156, 26, 18],
+nightshade_hover: [110, 131, 24, 23],
+nightshade_idle: [135, 131, 24, 23],
+oak_round_01_far: [59, 90, 29, 33],
+oak_round_01_near: [88, 0, 75, 86],
+oak_round_02_far: [89, 90, 26, 33],
+oak_round_02_near: [164, 0, 70, 85],
+oak_wide_03_far: [24, 90, 34, 34],
+oak_wide_03_near: [0, 0, 87, 89],
+owlberry_hover: [160, 131, 24, 22],
+owlberry_idle: [185, 131, 24, 22],
+picked: [13, 176, 19, 11],
+silverleaf_depleted: [194, 90, 25, 24],
+silverleaf_harvesting: [220, 90, 25, 24],
+silverleaf_hover: [0, 131, 25, 24],
+silverleaf_idle: [26, 131, 25, 24],
+stone_cluster: [48, 176, 15, 9],
+tree_stump: [209, 156, 21, 16],
+witchear_hover: [27, 156, 24, 19],
+witchear_idle: [52, 156, 24, 19],
 };
 return { ATLAS_URL, ATLAS_SIZE, FRAMES };
 })();
@@ -13829,10 +13829,10 @@ rays(ctx, rng, 2, 0.12);
 for (let i = 0; i < 3; i++) { const x0 = 100 + i * 15; for (let y = 0; y < 104; y++) R(ctx, x0 + y * 0.35, y, 6 - i, 1, `rgba(255,250,210,${(0.2 * (1 - y / 104)).toFixed(3)})`); }
 for (let x = -4, i = 0; x < W + 12; x += rng.int(18, 24), i++) drawFrame(ctx, i % 3 ? 'forest_bush_01_far' : 'forest_bush_01', x, rng.int(77, 80), 1, i % 2 === 1);
 if (free(108, 72, 146, 88)) { fence(ctx, 112, 87, 3, 14); taken.push({ x0: 108, y0: 72, x1: 146, y1: 88 }); }
-drawFrame(ctx, 'oak_round_02_near', 70, 84, 2);
-drawFrame(ctx, 'oak_round_01_near', 186, 84, 2, true);
-drawFrame(ctx, 'oak_wide_03_near', 8, 88, 2);
-drawFrame(ctx, 'oak_wide_03_near', 250, 88, 2, true);
+drawFrame(ctx, 'oak_round_02_near', 70, 84);
+drawFrame(ctx, 'oak_round_01_near', 186, 84, 1, true);
+drawFrame(ctx, 'oak_wide_03_near', 8, 88);
+drawFrame(ctx, 'oak_wide_03_near', 250, 88, 1, true);
 prop('flower_bush_01', [[48, 100], [36, 96], [70, 96]]);
 prop('forest_bush_01', [[226, 98], [212, 94], [242, 102]], true);
 prop('stone_cluster', [[146, 96], [96, 98], [160, 92]]);
