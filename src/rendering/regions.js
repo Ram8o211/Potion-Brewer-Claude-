@@ -7,11 +7,12 @@
 // the deposits sit on (they are placed between 0.5 and 0.88 of the height).
 // Painted once per region into a cached canvas; animateRegion adds a few
 // moving pixels each frame. Deterministic: every random choice comes from
-// an Rng seeded by the world seed and the region. Whisperwood swaps its
-// painted scenery for sprites (rendering/whisperwood.js) once they load.
+// an Rng seeded by the world seed and the region. Whisperwood and the Sunlit
+// Meadow swap their painted scenery for sprites (rendering/wild-sprites.js)
+// once they load.
 
 import { Rng } from '../core/rng.js';
-import { drawFrame, frame, whisperwoodReady } from './whisperwood.js';
+import { WOODLAND, MEADOW } from './wild-sprites.js';
 
 export const SCENE_W = 256;
 export const SCENE_H = 144;
@@ -373,7 +374,32 @@ function forest(ctx, rng) {
 }
 
 /**
- * Whisperwood from the sprite atlas (rendering/whisperwood.js): the same
+ * Props from a sprite atlas that keep clear of the deposits and of each
+ * other: `prop` draws a frame at the first of its spots whose box is free
+ * (`avoid` holds the deposits' boxes) and remembers it; `spots` picks a few
+ * random spots in a band of the ground.
+ * @param {CanvasRenderingContext2D} ctx @param {Rng} rng @param {import('./wild-sprites.js').SpriteAtlas} atlas @param {{x0:number, y0:number, x1:number, y1:number}[]} avoid
+ */
+function placer(ctx, rng, atlas, avoid) {
+  /** what is already standing on the ground: the deposits, then each prop placed */
+  const taken = avoid.slice();
+  const free = (x0, y0, x1, y1) => taken.every((b) => x1 < b.x0 || x0 > b.x1 || y1 < b.y0 || y0 > b.y1);
+  /** A few random spots in a band of the ground. @returns {[number, number][]} */
+  const spots = (x0, x1, y0, y1, n = 5) => Array.from({ length: n }, () => [rng.int(x0, x1), rng.int(y0, y1)]);
+  /** Draw a prop at the first spot clear of the deposits and the props before it. @param {string} name @param {[number, number][]} spots */
+  const prop = (name, spots, flip = false) => {
+    const f = atlas.frame(name);
+    if (!f) return;
+    for (const [x, y] of spots) {
+      const b = { x0: x - f[2] / 2, y0: y - f[3], x1: x + f[2] / 2, y1: y };
+      if (free(b.x0, b.y0, b.x1, b.y1)) { atlas.draw(ctx, name, x, y, 1, flip); taken.push(b); return; }
+    }
+  };
+  return { taken, free, spots, prop };
+}
+
+/**
+ * Whisperwood from the sprite atlas (rendering/wild-sprites.js): the same
  * sky and haze as the procedural painting, with sprite trees (the great
  * oaks in front in finer detail), shrubs, rocks, logs, a stump and
  * wildflowers. Nothing decorative here
@@ -385,20 +411,8 @@ function forest(ctx, rng) {
  */
 function forestSprites(ctx, rng, avoid) {
   const W = SCENE_W, H = SCENE_H;
-  /** what is already standing on the ground: the deposits, then each prop placed */
-  const taken = avoid.slice();
-  const free = (x0, y0, x1, y1) => taken.every((b) => x1 < b.x0 || x0 > b.x1 || y1 < b.y0 || y0 > b.y1);
-  /** A few random spots in a band of the ground. @returns {[number, number][]} */
-  const spots = (x0, x1, y0, y1, n = 5) => Array.from({ length: n }, () => [rng.int(x0, x1), rng.int(y0, y1)]);
-  /** Draw a prop at the first spot clear of the deposits and the props before it. @param {string} name @param {[number, number][]} spots */
-  const prop = (name, spots, flip = false) => {
-    const f = frame(name);
-    if (!f) return;
-    for (const [x, y] of spots) {
-      const b = { x0: x - f[2] / 2, y0: y - f[3], x1: x + f[2] / 2, y1: y };
-      if (free(b.x0, b.y0, b.x1, b.y1)) { drawFrame(ctx, name, x, y, 1, flip); taken.push(b); return; }
-    }
-  };
+  const { taken, free, spots, prop } = placer(ctx, rng, WOODLAND, avoid);
+  const drawFrame = WOODLAND.draw.bind(WOODLAND);
   gradient(ctx, 0, 0, W, 64, ['#3f8ee0', '#7ec0f0', '#cdeef0'], 9);
   cloud(ctx, 122, 14, 2, '#ffffff', '#cfe2f2');
   cloud(ctx, 92, 30, 1, '#ffffff', '#d4e6f4');
@@ -476,6 +490,57 @@ function meadow(ctx, rng) {
   for (let i = 0; i < 6; i++) bluebell(ctx, 134 + i * 4 + rng.int(-1, 1), 112 + rng.int(-4, 4), rng.int(9, 12));
   rock(ctx, rng, -4, 124, 34, 20, RSTONE, MOSS);
   for (let i = 0; i < 14; i++) sparkle(ctx, rng.int(4, W - 4), rng.int(78, H - 6), '#fff3a0');
+}
+
+/**
+ * The Sunlit Meadow from its sprite atlas (rendering/wild-sprites.js), in
+ * layers: the pack's sky, clouds, far and near mountains and a treeline of
+ * firs; then the field in flat bands of grass, a split-rail fence across it,
+ * the great oak on the left, bushes along the fence, rocks, small clumps of
+ * daisies, buttercups and pinks, grass tufts and a fringe of tall grass at
+ * the bottom of the frame. The decorative flowers are small and have no
+ * outline, and none of them is a lupin-like spike, a blue clover or a seed
+ * head, so the outlined gatherables drawn on top are the only plants that
+ * read as something to pick. Props keep clear of the deposits.
+ * @param {CanvasRenderingContext2D} ctx @param {Rng} rng @param {{x0:number, y0:number, x1:number, y1:number}[]} avoid
+ */
+function meadowSprites(ctx, rng, avoid) {
+  const W = SCENE_W, H = SCENE_H;
+  const A = MEADOW;
+  const { spots, prop } = placer(ctx, rng, A, avoid);
+  // sky, clouds and the distance
+  A.draw(ctx, 'sky', W / 2, 66);
+  for (const [name, x, y] of /** @type {[string, number, number][]} */ ([['cloud_2', 30, 14], ['cloud_1', 92, 26], ['cloud_3', 150, 12], ['cloud_6', 212, 20], ['cloud_8', 128, 36], ['cloud_5', 244, 38]])) A.draw(ctx, name, x, y);
+  A.draw(ctx, 'far_mountains', W / 2, 54);
+  A.draw(ctx, 'near_mountains', W / 2, 60);
+  A.draw(ctx, 'treeline', W / 2, 66);
+  // the field in flat bands, brighter towards the viewer
+  const bands = ['#7cc844', '#6cbe3c', '#62b636', '#58ac30', '#4ea22c', '#459826'];
+  for (let k = 0; k < bands.length; k++) { const y0 = 64 + Math.round(k * (H - 64) / bands.length); R(ctx, 0, y0, W, H - y0, bands[k]); }
+  // a speckle of tiny far-off flowers (single pixels: nothing here looks pickable)
+  for (let i = 0; i < 260; i++) {
+    const y = rng.int(68, H - 1), x = rng.int(0, W - 1);
+    R(ctx, x, y, 1, 1, rng.pick(['#ffffff', '#ffffff', '#ffe066', '#ff9fc7', '#d6f08a', '#3f8a2a', '#3f8a2a']));
+  }
+  // the split-rail fence at the far edge of the field, behind every deposit
+  // (each length shares its end post with the next)
+  const fence = /** @type {number[]} */ (A.frame('fence'));
+  for (let x = -6; x < W + fence[2]; x += fence[2] - 4) A.draw(ctx, 'fence', x + fence[2] / 2, 73);
+  // bushes along the fence, the great oak, rocks
+  prop('bush_round', [[66, 80], [78, 81], [52, 80], [92, 80]]);
+  prop('bush_low', [[118, 78], [104, 78], [132, 78], [150, 78]]);
+  prop('bush_pink', [[206, 80], [192, 80], [220, 81], [176, 80]]);
+  prop('bush_dark', [[244, 82], [236, 83], [252, 82]]);
+  A.draw(ctx, 'oak', 30, 80);
+  prop('rock_big', [[14, 146], [24, 146]]);
+  prop('rock_mossy', [[226, 112], [238, 108], [212, 116], [150, 100]]);
+  prop('rock_pair', [[170, 92], [158, 94], [184, 92], [100, 94]]);
+  // small clumps of meadow flowers and grass in the open, never on a prop or a deposit
+  const clumps = ['flowers_daisies', 'flowers_pinks', 'flowers_yellows', 'flowers_mixed', 'flowers_daisy_clump', 'flowers_buttercups', 'flowers_pink_clump', 'flowers_posies'];
+  for (let i = 0; i < 24; i++) prop(rng.pick(clumps), spots(6, W - 6, 88, H + 2), rng.chance(0.5));
+  for (let i = 0; i < 28; i++) prop(`grass_${rng.int(2, 8)}`, spots(4, W - 4, 82, H + 1), rng.chance(0.5));
+  // tall grass along the bottom of the frame
+  for (let x = 40; x < W; x += rng.int(30, 44)) prop(rng.chance(0.5) ? 'grass_near' : 'grass_1', [[x, H + 6], [x + 8, H + 6]], rng.chance(0.5));
 }
 
 /** @param {CanvasRenderingContext2D} ctx @param {Rng} rng */
@@ -637,14 +702,16 @@ function crags(ctx, rng) {
 const PAINTERS = { forest, meadow, river, quarry, moonfen, crags };
 
 /**
- * Paint a region's static panorama into a 256×144 context. Whisperwood is
- * composed from its sprite atlas once that has loaded (procedural until
- * then); `avoid` lists the deposits' boxes, which its props keep clear of.
+ * Paint a region's static panorama into a 256×144 context. Whisperwood and
+ * the Sunlit Meadow are composed from their sprite atlases once those have
+ * loaded (procedural until then); `avoid` lists the deposits' boxes, which
+ * their props keep clear of.
  * @param {CanvasRenderingContext2D} ctx @param {string} region @param {string} seed @param {{x0:number, y0:number, x1:number, y1:number}[]} [avoid]
  */
 export function paintRegion(ctx, region, seed, avoid = []) {
   const rng = new Rng(`scene2:${seed}:${region}`);
-  if ((region === 'forest' || !PAINTERS[region]) && whisperwoodReady()) forestSprites(ctx, rng, avoid);
+  if ((region === 'forest' || !PAINTERS[region]) && WOODLAND.ready) forestSprites(ctx, rng, avoid);
+  else if (region === 'meadow' && MEADOW.ready) meadowSprites(ctx, rng, avoid);
   else (PAINTERS[region] || forest)(ctx, rng);
   // a dark frame line so the panel reads as a painting
   R(ctx, 0, 0, SCENE_W, 1, 'rgba(0,0,0,0.35)');
@@ -664,7 +731,12 @@ export function animateRegion(ctx, region, t) {
       R(ctx, x - 1, y - 2, 2, 4, '#8fe0ff'); R(ctx, x - 1, y, 2, 2, '#e9fbff'); R(ctx, x, y - 4 + Math.round(Math.sin(t * 8 + i)), 1, 2, '#5fd4e8');
     }
   } else if (region === 'forest' || region === 'meadow' || region === 'river') {
-    for (let i = 0; i < 3; i++) {
+    // the meadow's birds are the pack's, two wingbeats apart
+    if (region === 'meadow' && MEADOW.ready) for (let i = 0; i < 2; i++) {
+      const x = ((t * (6 + i * 2) + i * 130) % (W + 20)) - 10, y = H * (0.1 + i * 0.12) + Math.sin(t * 1.5 + i) * 2;
+      MEADOW.draw(ctx, Math.sin(t * 7 + i * 2) > 0 ? 'bird_1' : 'bird_3', x, y);
+    }
+    else for (let i = 0; i < 3; i++) {
       const x = ((t * (8 + i * 3) + i * 80) % (W + 20)) - 10, y = H * (0.12 + i * 0.06) + Math.sin(t * 3 + i) * 2;
       const up = Math.sin(t * 10 + i) > 0 ? 1 : 0;
       R(ctx, x, y, 1, 1, '#24160f'); R(ctx, x - 1, y - up, 1, 1, '#24160f'); R(ctx, x + 1, y - up, 1, 1, '#24160f'); R(ctx, x - 2, y - up * 2 + 1, 1, 1, '#24160f'); R(ctx, x + 2, y - up * 2 + 1, 1, 1, '#24160f');

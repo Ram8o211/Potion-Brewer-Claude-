@@ -233,8 +233,21 @@ computed from the particles that actually run out of the tap. What a
   `art/whisperwood/` by `python scripts/make-whisperwood.py` (needs
   Pillow), which brings each sprite down to the scene's art-pixel scale and
   snaps it to the scene's own palette.
+* **Sunlit Meadow sprites:** the meadow is composed in layers from its own
+  atlas (`assets/meadow/atlas.png`, 53 KB): the pack's sky, clouds and
+  birds, far and near mountains, a treeline of firs, a split-rail fence,
+  the great oak, bushes, rocks, small flower clumps and grass. Each meadow
+  ingredient (Heartpetal, Sunthistle, Nettle, Dreamclover, Bee Balm,
+  Hemlock Seed) is an outlined sprite with hover and depleted frames; the
+  dawn Dreamclover and the dusk Hemlock show their closed buds and seed
+  pods out of their hour. The same art gives every meadow ingredient its
+  icon on the deposit card, the shelf and in the book. Built from
+  `art/meadow/` by `python scripts/make-meadow.py` (needs Pillow and
+  NumPy); `art/meadow/README.md` lists which sprite went where and how it
+  was changed.
 * **Everything is original and bundled:** pixel art drawn in code (plus
-  the Whisperwood sprites from the project's own concept-art pack), a
+  the Whisperwood and Sunlit Meadow sprites from the project's own
+  concept-art packs), a
   pixel font, synthesised sound effects and music. No third-party runtime
   code, no CDNs, no network calls.
 
@@ -341,7 +354,7 @@ Keyboard: `C` `V` `W` `T` `J` rooms, `1`–`5` tools, `G` ground, `L` lid,
 ## Project layout
 
 ```
-index.html, styles/, assets/     page shell, stylesheet, pixel font, icons, Whisperwood sprite atlas
+index.html, styles/, assets/     page shell, stylesheet, pixel font, icons, Whisperwood and Meadow sprite atlases
 art/                             source art for generated assets (not shipped)
 src/core/                        seeded RNG, colour science (Beer–Lambert, OKLab), maths
 src/alchemy/                     effects: extraction, hidden resonance laws, oppositions, theory

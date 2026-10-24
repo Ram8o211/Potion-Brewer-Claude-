@@ -3,9 +3,11 @@
 // finite and regrow with real time; nothing here runs while you brew. What a
 // harvest brings depends on the method and tool, the hour (dawn / midday /
 // dusk follow the shop's customers), the weather and how thoroughly you
-// strip the deposit (game/gathering.js). Whisperwood's deposits are sprites
-// (rendering/whisperwood.js) with hover, harvesting and depleted frames; only
-// deposits take taps — the scenery is painted into the cached background.
+// strip the deposit (game/gathering.js). Whisperwood's and the Sunlit
+// Meadow's deposits are sprites (rendering/wild-sprites.js) with hover,
+// harvesting, depleted and (for a dawn or dusk plant out of its hour) closed
+// frames; only deposits take taps — the scenery is painted into the cached
+// background.
 
 import { h, btn, clear, toast } from '../dom.js';
 import { icon } from '../icons.js';
@@ -15,7 +17,7 @@ import { equipmentById } from '../../game/equipment.js';
 import { RANKS } from '../../game/equipment.js';
 import { drawRaw, rawSprite } from '../../rendering/scenes.js';
 import { paintRegion, animateRegion, SCENE_W, SCENE_H } from '../../rendering/regions.js';
-import { GATHERABLES, loadWhisperwood, whisperwoodReady, gatherFrameName, drawFrame, frame, frameCanvas, depositBox, hitDeposit } from '../../rendering/whisperwood.js';
+import { GATHERABLES, REGION_ATLAS, gatherFrameName, depositBox, hitDeposit } from '../../rendering/wild-sprites.js';
 import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
 
 export class WildsView {
@@ -37,6 +39,10 @@ export class WildsView {
     this.harvested = {};
     /** deposit id → whether it can be harvested now (refreshed with the list) */
     this.can = {};
+    /** deposit id → whether it is a dawn or dusk plant out of its hour */
+    this.closed = {};
+    /** the sprite atlases this view waits on */
+    this.waiting = new Set();
   }
 
   build() {
@@ -55,8 +61,14 @@ export class WildsView {
     // keep the scene in view beside the deposit list
     el.append(this.tabs, h('div', { class: 'wilds-scene' }, h('div', { class: 'scene-wrap' }, this.canvas), this.info), h('div', { class: 'wilds-list' }, this.sky, this.list, this.foot));
     this.refresh();
-    // Whisperwood's sprites arrive in the background; repaint once they have
-    if (!whisperwoodReady()) loadWhisperwood().then((ok) => { if (ok) { this.bgKey = ''; this.refresh(); } });
+  }
+
+  /** A region's sprites arrive in the background; repaint once they have. */
+  loadSprites() {
+    const atlas = REGION_ATLAS[this.region];
+    if (!atlas || atlas.ready || this.waiting.has(atlas)) return;
+    this.waiting.add(atlas);
+    atlas.load().then((ok) => { if (ok) { this.bgKey = ''; this.refresh(); } });
   }
 
   unlocked(r) {
@@ -66,6 +78,7 @@ export class WildsView {
   refresh() {
     const lab = this.lab, st = lab.state;
     if (!this.tabs) return;
+    this.loadSprites();
     const tabs = clear(this.tabs);
     for (const r of REGIONS) {
       const ok = this.unlocked(r);
@@ -101,6 +114,7 @@ export class WildsView {
       const stock = lab.sandbox ? '∞' : `${Math.floor(s.stock)} / ${d.capacity} ml`;
       const when = lab.sandbox ? 'never runs out' : this.when(s, can, plan);
       this.can[d.id] = locked || can >= 5;
+      this.closed[d.id] = !lab.sandbox && !plan.open;
       const key = this.spriteKey(d);
       const g = btn(locked ? RANKS[d.rank].name : `${plan.method.verb} +${take} ml`, () => this.gather(d), { cls: 'gold', icon: locked ? 'lock' : plan.method.icon, disabled: locked || (!lab.sandbox && can < 5), act: 'gather-' + d.id });
       const barI = h('i', { style: { width: Math.round((lab.sandbox ? 1 : s.fraction) * 100) + '%' } });
@@ -109,7 +123,7 @@ export class WildsView {
       const notes = lab.sandbox ? [] : plan.factors.filter((f) => f.why !== 'satchel' && !f.why.startsWith('thorough')).map((f) => f.why);
       const tool = plan.method.tool ? equipmentById(plan.method.tool) : null;
       const card = h('div', { class: 'deposit parch' + (locked ? ' locked' : '') + (s.scarred ? ' scarred' : '') },
-        key ? frameCanvas(/** @type {string} */ (gatherFrameName(key, { can: this.can[d.id], card: true }))) : rawSprite(m.wild ? m.wild.shape : 'stone', m.look || m.color, lab.sandbox ? 1 : s.fraction),
+        key ? GATHERABLES[key].atlas.canvas(/** @type {string} */ (gatherFrameName(key, { can: this.can[d.id], card: true }))) : rawSprite(m.wild ? m.wild.shape : 'stone', m.look || m.color, lab.sandbox ? 1 : s.fraction),
         h('div', { class: 'dep-info' },
           h('div', { class: 'title' }, m.name, d.rare ? h('span', { class: 'tag rare', text: 'rare' }) : null, plan.hour ? h('span', { class: 'tag hour', text: plan.hour }) : null),
           d.place ? h('div', { class: 'meta place', text: d.place }) : null,
@@ -133,16 +147,16 @@ export class WildsView {
     return this.lab.state.deposits.filter((d) => d.region === this.region);
   }
 
-  /** The sprite set a deposit is drawn with (Whisperwood, once its atlas is in), else null. @param {any} d */
+  /** The sprite set a deposit is drawn with (once its region's atlas is in), else null. @param {any} d */
   spriteKey(d) {
-    if (d.region !== 'forest' || !whisperwoodReady()) return null;
     const m = this.lab.state.lookup(d.materialId);
-    const k = m && m.wild ? m.wild.key : '';
-    return GATHERABLES[k] ? k : null;
+    const g = m && m.wild ? GATHERABLES[m.wild.key] : null;
+    return g && g.region === d.region && g.atlas.ready ? m.wild.key : null;
   }
 
   paintBg() {
-    const key = this.region + ':' + this.lab.state.seed + ':' + whisperwoodReady();
+    const atlas = REGION_ATLAS[this.region];
+    const key = this.region + ':' + this.lab.state.seed + ':' + !!(atlas && atlas.ready);
     if (key === this.bgKey) return;
     this.bgKey = key;
     this.bg = document.createElement('canvas');
@@ -249,25 +263,26 @@ export class WildsView {
   }
 
   /**
-   * A Whisperwood deposit: a ground shadow, then its idle, hover, harvesting
-   * or depleted frame; a ripe one glints now and then (the scene's decorative
-   * motes stay fainter than this).
+   * A sprite deposit: a ground shadow, then its idle, hover, harvesting,
+   * closed or depleted frame; a ripe one glints now and then (the scene's
+   * decorative motes stay fainter than this).
    * @param {CanvasRenderingContext2D} ctx @param {any} d @param {string} key @param {number} fraction
    */
   drawGatherable(ctx, d, key, fraction) {
     const x = Math.round(d.x * SCENE_W), y = Math.round(d.y * SCENE_H);
     const since = this.time - (this.harvested[d.id] ?? -9);
     const harvesting = since < 0.35;
-    const name = /** @type {string} */ (gatherFrameName(key, { can: this.lab.sandbox || this.can[d.id] !== false, hover: this.hover === d.id, harvesting }));
-    const f = /** @type {number[]} */ (frame(name));
+    const g = GATHERABLES[key];
+    const name = /** @type {string} */ (gatherFrameName(key, { can: this.lab.sandbox || this.can[d.id] !== false, hover: this.hover === d.id, harvesting, closed: this.closed[d.id] }));
+    const f = /** @type {number[]} */ (g.atlas.frame(name));
     const sw = Math.max(6, Math.round(f[2] * 0.6));
     ctx.fillStyle = 'rgba(10,30,8,0.35)';
     ctx.fillRect(x - Math.floor(sw / 2), y - 1, sw, 2);
     // a hop as it is harvested, for art without a harvesting frame
-    drawFrame(ctx, name, x, y - (harvesting && !GATHERABLES[key].harvesting ? 1 : 0));
-    if (fraction >= 0.999 && this.hover !== d.id) {
+    g.atlas.draw(ctx, name, x, y - (harvesting && !g.harvesting ? 1 : 0));
+    if (fraction >= 0.999 && this.hover !== d.id && !this.closed[d.id]) {
       const phase = (this.time * 0.5 + d.x * 7.3 + d.y * 3.1) % 4;
-      if (phase < 0.6) drawFrame(ctx, 'glint_' + Math.min(3, Math.floor(phase / 0.15)), x + Math.round(f[2] / 2) - 3, y - f[3] + 4);
+      if (phase < 0.6) g.atlas.draw(ctx, 'glint_' + Math.min(3, Math.floor(phase / 0.15)), x + Math.round(f[2] / 2) - 3, y - f[3] + 4);
     }
   }
 
@@ -327,6 +342,7 @@ export class WildsView {
       row.meta.textContent = `${Math.floor(s.stock)} / ${d.capacity} ml · ${this.when(s, can, plan)}`;
       row.g.disabled = row.locked || can < 5;
       this.can[d.id] = row.locked || can >= 5;
+      this.closed[d.id] = !plan.open;
     }
   }
 }

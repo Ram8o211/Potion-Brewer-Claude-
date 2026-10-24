@@ -21,7 +21,7 @@ import { compatFactor } from '../reactions/compatibility.js';
 import { Renderer } from '../rendering/renderer.js';
 import { drawPortrait } from '../rendering/portraits.js';
 import { drawJar } from '../rendering/art.js';
-import { rawSprite } from '../rendering/scenes.js';
+import { ingredientSprite } from '../rendering/wild-sprites.js';
 import { measureParticles, tapSelection, probeSelection, viscosityClass, densityWord } from '../game/measure.js';
 import { scoreRequirement, PROPERTY_LABELS } from '../game/evaluate.js';
 import { processEvent } from '../game/journal.js';
@@ -432,7 +432,7 @@ export class LabScreen {
       const m = st.lookup(id);
       let cv;
       if ((m.wild || m.remains) && m.form === 'solid') {
-        cv = rawSprite(m.wild ? m.wild.shape : m.shape || 'stone', m.look || m.color);
+        cv = ingredientSprite(m);
         cv.classList.add('raw');
       } else {
         cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: '15', height: '20' }));

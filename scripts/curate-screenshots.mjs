@@ -20,7 +20,7 @@ const PICK = [
   'desktop-showcase-body', 'phone-portrait-showcase-body', 'desktop-colony-replay', 'phone-portrait-colony-dosed', 'desktop-colony-night',
   'desktop-colony-remains-shelf', 'desktop-showcase-label', 'phone-portrait-showcase-label', 'desktop-showcase-bargain', 'phone-portrait-showcase-bargain',
   'desktop-showcase-complaint', 'phone-portrait-showcase-complaint', 'desktop-showcase-wilds-storm', 'phone-portrait-showcase-wilds-storm',
-  'desktop-wilds-gathered',
+  'desktop-wilds-gathered', 'desktop-wilds-meadow', 'phone-portrait-wilds-meadow',
   // integration: techniques and supplies on the order, evidence levels, recipe procedures, bargaining reasons
   'desktop-order-techniques', 'phone-portrait-order-techniques', 'desktop-trial-evidence', 'phone-portrait-trial-evidence',
   'desktop-recipe-steps', 'phone-portrait-recipe-steps', 'desktop-bargain-reasons', 'phone-portrait-bargain-reasons', 'desktop-vial-certified',

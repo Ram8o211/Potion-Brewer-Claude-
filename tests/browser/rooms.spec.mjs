@@ -60,6 +60,19 @@ test('gathering in the wilds fills the stores and depletes the deposit', async (
     await page.mouse.move(cv.x + d3.x * cv.width, cv.y + (d3.y * 144 - 8) / 144 * cv.height);
     await expect.poll(() => lab(page, (l) => l.views.wilds.hover)).toBe(d3.id);
   }
+  // the Sunlit Meadow is composed from its own atlas; its plants are sprites
+  // that take taps the same way, and their cards show the plant's icon
+  await page.click('[data-act=region-meadow]');
+  await page.waitForFunction(() => { const w = window.__alchemist.screen.views.wilds; return w.region === 'meadow' && w.bgKey.endsWith(':true'); });
+  const meadow = await lab(page, (l) => l.views.wilds.inScene().filter((d) => l.views.wilds.spriteKey(d)));
+  expect(meadow.length, 'meadow deposits are drawn as sprites').toBeGreaterThan(0);
+  const m0 = meadow[0];
+  const ms0 = await lab(page, (l, id) => l.state.stock(id), m0.materialId);
+  const mpt = { x: cv.x + m0.x * cv.width, y: cv.y + (m0.y * 144 - 8) / 144 * cv.height };
+  await drag(page, [mpt, mpt], 30);
+  expect(await lab(page, (l, id) => l.state.stock(id), m0.materialId), 'tapping a meadow plant gathered').toBeGreaterThan(ms0);
+  expect(await page.evaluate(() => [...document.querySelectorAll('.view-wilds .deposit canvas')].some((c) => /** @type {HTMLCanvasElement} */ (c).width === 24)), 'a card shows its plant icon').toBe(true);
+  await shot(page, info, 'wilds-meadow');
   // a magical region is closed to an apprentice
   await page.click('[data-act=region-moonfen]');
   await expect(page.locator('.toast', { hasText: 'Moonfen' })).toBeVisible();
