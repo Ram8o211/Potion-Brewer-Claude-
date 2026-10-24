@@ -51,7 +51,7 @@ export class Tutorial {
       { text: 'The top bar: ☰ opens the menu (how to play, settings, this tour). Then your coins, your rank (its bar fills with reputation), the day and which customer of the day this is. Shop sells ingredients and equipment.', target: () => lab.topbar, button: 'Next' },
       { text: 'Five rooms along the edge: Counter (customers), Brew (the cauldron), Wilds (gathering), Trials (testing on rabbits) and Book (recipes and notes). A red mark means something is waiting there.', target: () => lab.tabbar, button: 'Next' },
       { text: 'A customer is waiting. Open the Counter.', target: tab('counter'), done: inView('counter') },
-      { text: 'The order: every line must be met — the effect and its strength, purity (no other effect above a limit), the serving temperature and the quantity. “?” means not tested yet. Advice buys a hint; Decline sends a customer away.', target: q('.customer-card .reqs'), button: 'Next' },
+      { text: 'The order: every line must be met — the effect and its strength, purity (no other effect above a limit) and the quantity. “?” means not tested yet. Advice buys a hint; Decline sends a customer away.', target: q('.customer-card .reqs'), button: 'Next' },
       { text: 'Let’s brew it. Press “Brew it”.', target: () => lab.el.querySelector('[data-act=go-brew]') || tab('brew')(), done: inView('brew') },
       // ---- the first brew
       { text: 'The order strip stays above the cauldron: each chip fills as the brew meets that line of the order. Tap the strip to go back to the Counter.', target: () => lab.strip, button: 'Next' },
@@ -71,7 +71,7 @@ export class Tutorial {
       { text: 'Look after your rabbits here: buy, feed, breed, and purge one to wash a potion out. Too much of an effect can make a rabbit sick, wild or dead — every rabbit has its own hidden limits.', target: q('.hutch-manage'), button: 'Next' },
       { text: 'Back to the cauldron.', target: tab('brew'), done: inView('brew') },
       // ---- selling
-      { text: 'Let it cool to about 45 °C (the order’s serving temperature), then press Bottle and choose 100 ml. A bottle goes to the counter, or onto your potion shelves for later.', target: () => lab.bottleFab, done: () => this.flags.bottled },
+      { text: 'Press Bottle and choose 100 ml (the order’s quantity). A bottle goes to the counter, or onto your potion shelves for later.', target: () => lab.bottleFab, done: () => this.flags.bottled },
       { text: `Your vial is on the counter, labelled from your trial. Press “Sell to ${who}”, agree on a price, then save the recipe to your book.`, target: () => document.querySelector('[data-act=serve]') || tab('counter')(), done: () => this.flags.sold },
       { text: 'Splendid — your first sale! The customer comes back tomorrow: pleased, or with a complaint you can refund, dispute with your trial records, or refuse. The potion shelves below keep sealed bottles for later customers.', target: () => lab.el.querySelector('.view-counter .shelf-card') || tab('counter')(), button: 'Next' },
       // ---- the rest of the shop

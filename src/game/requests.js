@@ -18,7 +18,6 @@
  * @property {number} minTier
  * @property {boolean} [drunk]       false: applied, not drunk (no purity limit on its harmful partners)
  * @property {string[]} [tolerate]   unwanted effects the customer does not mind (special orders)
- * @property {'warm'|'cold'} [serve]
  * @property {string[]} story        greeting + purpose; {name} is the customer's first name
  */
 
@@ -31,9 +30,9 @@ export const REQUESTS = [
     story: ['The new anvil arrives tomorrow and it takes four men to lift. I want to be one of them.', 'Harvest is in and the carts are heavy. Strength in my arms, nothing more.', 'A tourney at the castle. My lance arm must not tire.'] },
   { id: 'love', title: 'Love Philtre', fx: [{ key: 'love' }], who: ['bard', 'innkeeper', 'noble', 'farmer'], minTier: 0,
     story: ['There is someone I sing to every night, and she has not once looked up. Just a little warmth in her heart.', 'For a betrothal feast — it should warm every heart at the table, and do nothing else.', 'My husband has grown cold as a cellar. Remind him why he married me.'] },
-  { id: 'warming', title: 'Warming Draught', fx: [{ key: 'fire' }], who: ['traveler', 'blacksmith', 'hunter', 'farmer'], minTier: 0, serve: 'warm',
-    story: ['The mountain pass is all ice. Something with real fire in it, against the cold.', 'My forge-hands work through the winter nights. Fire in the belly, nothing more.', 'The well froze and so did I. A warming draught, served hot, please.'] },
-  { id: 'cooling', title: 'Cooling Draught', fx: [{ key: 'frost' }], who: ['healer', 'hunter', 'blacksmith', 'traveler'], minTier: 1, serve: 'cold',
+  { id: 'warming', title: 'Warming Draught', fx: [{ key: 'fire' }], who: ['traveler', 'blacksmith', 'hunter', 'farmer'], minTier: 0,
+    story: ['The mountain pass is all ice. Something with real fire in it, against the cold.', 'My forge-hands work through the winter nights. Fire in the belly, nothing more.', 'The well froze and so did I. A warming draught, please.'] },
+  { id: 'cooling', title: 'Cooling Draught', fx: [{ key: 'frost' }], who: ['healer', 'hunter', 'blacksmith', 'traveler'], minTier: 1,
     story: ['A child with a burning fever. It must be properly cold-natured.', 'I crossed the salt flats and my blood is still boiling. Something icy.', 'A dragon-bite on my forearm. Frost, and plenty of it.'] },
   { id: 'insight', title: 'Draught of Insight', fx: [{ key: 'arcana' }], who: ['scholar', 'wizard', 'noble'], minTier: 1,
     story: ['My treatise is stuck on the same page for a month. Sharpen my mind — and only my mind.', 'The stars align tonight. I need clear arcane sight for the reading.', 'Examinations at the academy. True arcana, if you please.'] },
@@ -48,19 +47,19 @@ export const REQUESTS = [
   // ---- coherent combinations
   { id: 'expedition', title: 'Expedition Draught', fx: [{ key: 'strength' }, { key: 'transformation', share: 0.6 }], who: ['knight', 'hunter', 'traveler'], minTier: 2,
     story: ['We ride into the Thornwastes. I must be strong enough to carry the wounded, and able to change shape to slip past the wardens.', 'A long patrol beyond the border. Strength for the march, and a change of form for the night watch.'] },
-  { id: 'hearth', title: 'Hearth-and-Heart Cordial', fx: [{ key: 'fire' }, { key: 'love', share: 0.7 }], who: ['innkeeper', 'farmer', 'bard'], minTier: 2, serve: 'warm',
+  { id: 'hearth', title: 'Hearth-and-Heart Cordial', fx: [{ key: 'fire' }, { key: 'love', share: 0.7 }], who: ['innkeeper', 'farmer', 'bard'], minTier: 2,
     story: ['Our cottage is cold and so is my marriage. Fire for the hearth and love for the heart, in one cup.', 'A winter wedding in a draughty barn. Warm them through, and warm them to each other.'] },
   { id: 'recovery', title: 'Soldier’s Recovery', fx: [{ key: 'vitality' }, { key: 'strength', share: 0.6 }], who: ['knight', 'healer', 'hunter'], minTier: 2,
     story: ['My company limps home from the siege. Heal the wounds and put the strength back in their legs.', 'Back from a bear hunt with three broken ribs. Mend me, and make me strong enough to try again.'] },
-  { id: 'meditation', title: 'Glacial Meditation', fx: [{ key: 'arcana' }, { key: 'frost', share: 0.6 }], who: ['wizard', 'scholar'], minTier: 2, serve: 'cold',
+  { id: 'meditation', title: 'Glacial Meditation', fx: [{ key: 'arcana' }, { key: 'frost', share: 0.6 }], who: ['wizard', 'scholar'], minTier: 2,
     story: ['A week of meditation on the glacier. A cold, clear mind — frost to endure, arcana to see.', 'I study the ice-runes of the north. I must think clearly and feel no cold.'] },
-  { id: 'forgefire', title: 'Forge-Fire Tonic', fx: [{ key: 'strength' }, { key: 'fire', share: 0.6 }], who: ['blacksmith', 'knight'], minTier: 2, serve: 'warm',
+  { id: 'forgefire', title: 'Forge-Fire Tonic', fx: [{ key: 'strength' }, { key: 'fire', share: 0.6 }], who: ['blacksmith', 'knight'], minTier: 2,
     story: ['The great bell must be cast tonight. Strength to swing the hammer, fire to stand the heat.', 'A duel at dawn in the frozen yard. Strength, and fire against the cold.'] },
   { id: 'blessing', title: 'Wedding Blessing', fx: [{ key: 'love' }, { key: 'vitality', share: 0.6 }], who: ['noble', 'bard', 'healer'], minTier: 2,
     story: ['My daughter weds the baron’s son. A toast for long life and true affection.', 'A blessing for the newlyweds: health to them, and love between them.'] },
   { id: 'shapeshift', title: 'Shapeshifter’s Study', fx: [{ key: 'transformation' }, { key: 'arcana', share: 0.6 }], who: ['wizard', 'witch', 'scholar'], minTier: 3,
     story: ['I study the old shapeshifters. I need to change, and understand the change while it happens.', 'The coven elders want a true shifting draught: change of form, guided by arcane sight.'] },
-  { id: 'fevercure', title: 'Fever Cure', fx: [{ key: 'vitality' }, { key: 'frost', share: 0.5 }], who: ['healer', 'noble'], minTier: 3, serve: 'cold',
+  { id: 'fevercure', title: 'Fever Cure', fx: [{ key: 'vitality' }, { key: 'frost', share: 0.5 }], who: ['healer', 'noble'], minTier: 3,
     story: ['The marsh fever: it burns them up from inside. It must heal, and it must cool.', 'The prince is burning with fever. Healing, and cold to break the heat.'] },
   { id: 'warpath', title: 'War-Path Draught', fx: [{ key: 'strength' }, { key: 'fire', share: 0.5 }, { key: 'vitality', share: 0.5 }], who: ['knight'], minTier: 4,
     story: ['The northern campaign. Strength, fire against the frost and healing for the march — the general’s own order.'] },

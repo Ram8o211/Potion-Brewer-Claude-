@@ -161,8 +161,8 @@ computed from the particles that actually run out of the tap. What a
   points, effects), reactions, wild deposits, hidden laws and customers.
 * **Orders judged on outcomes.** Customers ask for what a customer can
   judge: the effects at a strength, nothing else above the purity limit,
-  the quantity and — for some — the temperature it is served at; from
-  Adept on, brews stronger than plain brewing gives (boil water off, or
+  and the quantity — never the temperature it is served at; from Adept
+  on, brews stronger than plain brewing gives (boil water off, or
   use more herb). How you get there is yours: grinding, the steeping heat,
   cold steeps, stirring, awakening and boiling down all change what ends
   up in the bottle. Density, viscosity, stability, volatility and charge

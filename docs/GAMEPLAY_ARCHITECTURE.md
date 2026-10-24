@@ -109,8 +109,8 @@ in the real cauldron pass (`scripts/achievability.mjs`).
    effects included. Water does the opposite.
 6. **The customer judges outcomes.** `evaluatePotion` scores the effects
    (minimums, alkaline maximums, or a band for exacting masters), purity
-   (no other effect above 1.2 % unless tolerated), the quantity and, if
-   asked, the serving temperature. Nothing else.
+   (no other effect above 1.2 % unless tolerated) and the quantity.
+   Nothing else — not even the serving temperature.
 7. **Trust comes from evidence.** At the counter the customer sees only
    the label; how much they pay depends on how well the trials back it
    (`commerce.js trustReport`), and the next day they judge the real
@@ -128,7 +128,6 @@ sleeping magic (Adept and up). Techniques (`TECHNIQUES`) then add to it:
 
 | Technique | Mechanic | From tier | What it asks | Ways to meet it |
 |---|---|---|---|---|
-| Serving temperature | serving | 0 | Bottled within a band of the asked temperature | Fire, basin, the thermometer |
 | Strong and compact | concentration | 2 | A strength beyond what a plain brew of the plan gives | Boil water off (lid open), use more herb, awaken |
 
 Customers judge results, never procedures: any way that meets the
@@ -168,7 +167,7 @@ when a version-5 save is loaded.
 
 | Gameplay (the campaign relies on it) | Supporting (explains or enables) | Immersion only (simulated, visible, never asked, scored or sold) |
 |---|---|---|
-| Extraction and grinding, steeping windows, cold extraction, heat damage, reactions, awakening, neutralisation, concentration and dilution | Mixing (consistency, contact, dissolution), serving temperature, colour as feedback, glow, evenness advice, density (layering) | Layering and separation, viscosity, pastes and doughs, electric charge and sparks, freezing and melting, vapour and condensation, fire, bubbles |
+| Extraction and grinding, steeping windows, cold extraction, heat damage, reactions, awakening, neutralisation, concentration and dilution | Mixing (consistency, contact, dissolution), colour as feedback, glow, evenness advice, density (layering) | Layering and separation, viscosity, pastes and doughs, electric charge and sparks, freezing and melting, vapour and condensation, fire, bubbles |
 
 The Free Experiment shows everything (`mechanics.js SANDBOX_CONTROLS`):
 the skimmer, the alembic and its receiver, the heat map, a hotter furnace,
