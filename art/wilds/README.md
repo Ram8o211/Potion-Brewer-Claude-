@@ -21,11 +21,15 @@ scene's art-pixel size and packs one atlas per region into
 - **Clean-up of the automated cut-outs.** Fragments of neighbouring sheet
   cells, white bars along a cell's edge and thin rules are dropped (anything
   smaller than a few percent of the object); the pale sticker border around
-  an object is cleared; where the sheet's white shows through a sprite (a
-  willow's curtain of branches, between a ladder's rungs or a crane's beams)
-  it is cleared too.
-- **Background strips** are cropped clear of the sheet's captions and white
-  margins and brought to 256 px wide; a strip that stands in front of
+  an object is cleared, before resampling and again after (khaki or pale
+  pixels on the silhouette that are lighter than the sprite inside them);
+  where the sheet's white shows through a sprite (a willow's curtain of
+  branches, between a ladder's rungs or a crane's beams) it is cleared too.
+  Lone specks of a broken outline take their surroundings' colour, and a
+  gatherable loses any one-pixel-thin strand along its foot, which its
+  outline would turn into a ruled line.
+- **Background strips** are cropped clear of the sheet's captions, white
+  margins and side borders and brought to 256 px wide; a strip that stands in front of
   another has its sky keyed out from the top down, so the layer behind shows
   through. Moonfen's water strips are rounded into pools.
 - **Gatherables** get a dark outline (so they read ahead of the scenery,
@@ -42,11 +46,18 @@ scene's art-pixel size and packs one atlas per region into
 
 | Region | Layers (back to front) | Scenery |
 | --- | --- | --- |
-| Whisperwood | `backgrounds/sky_rays`, `distant_forest`, `mid_treeline`, `near_treeline`; the clearing in bands of grass | `two_ancient_oaks_composite` (mirrored on the right), `small_oak_tree`, `mossy_stones_cluster`, `sunlit_fern`, `woodland_log`; bushes, ferns, a stump, ground cover and snowdrops from `trees_bushes_flora`; sticks and a snag from `rocks_logs_forest_props` |
-| Willow Bank | `backgrounds/sky`, `mountains`, `pine_treeline`; the far meadow, `terrain/chalk_bank_strip`, `terrain/water_surface`, the near shore | `second_willow_tree` and `willow_trees_bushes_002` (the curated great willow is cut off on one side), `small_willow_tree`, the plain, leafy and flowering bushes, `river_stump`; grass, pinks, buttercups, clover, a post, a sign and a branch from `riverbank_flora_props`; chalk stones |
-| Ironstone Quarry | `backgrounds/quarry_sky`, `distant_cliffs`, `near_cliffs`; the pit floor in bands of dust | `crane_with_lantern_and_stone`, `quarry_support_beam`, `ladder`, `mine_cart_full`, `wooden_crate`; a scaffold, a rail fence, cut blocks, a bench and a crate from `cranes_carts_ladders`; shrubs, dry brush and loose stones from `shrubs_rocks_decorations`; a wall block and pillar, a dirt heap |
-| Moonfen | `backgrounds/night_sky`, `distant_hills`, `swamp_treeline`, `mist_overlay`; dark moss ground; pools from `terrain/bog_water_tiles` | `ancient_willow_left`, `ancient_willow_center` (mirrored), `small_willow`, `dead_swamp_tree`, `drowned_stump`, `glowing_wooden_stump`, `mossy_fallen_trunk`, `ghost_crystals_and_stumps`; cattails, grass, fiddleheads, night flowers and lily pads from `plants_crystals_reeds`; `stepping_rocks` |
-| Ember Crags | `backgrounds/smoky_sky`, `volcanic_ridges`, `lava_ridges`; a scorched plain with glowing cracks | the four `lava_crag_*`, `lava_pool`, `lava_vent_with_steam`, `sulfur_steam_gusher`; a rock mound, black rocks, a lava pan, dead trees, ember brush and charred posts from `lava_rock_vents_plants` |
+| Whisperwood | `backgrounds/sky_rays`, `distant_forest`, `mid_treeline`, `near_treeline`; the clearing in bands of grass | `two_ancient_oaks_composite` on both sides of the frame, `small_oak_tree`, `mossy_stones_cluster`, `woodland_log`; the big fern, bushes, a fern, a stump and ground cover from `trees_bushes_flora`; sticks and a snag from `rocks_logs_forest_props` |
+| Willow Bank | `backgrounds/sky`, `mountains`, `pine_treeline`; the far meadow, `terrain/chalk_bank_strip`, `terrain/water_surface`, the near shore with a ragged edge | `great_willow_tree`, `willow_trees_bushes_002` (mirrored) and `_001` (small, across the water); Whisperwood's round, leafy and flowering bushes recoloured to the river's palette; grass, pinks, buttercups, a stump, a post, a sign, a branch and a pebble from `riverbank_flora_props` |
+| Ironstone Quarry | `backgrounds/quarry_sky`, `distant_cliffs`, `near_cliffs`; the pit floor in bands of dust | `crane_with_lantern_and_stone` (placed so the stone on its jib never hangs over a deposit), `quarry_support_beam`, `ladder`, `mine_cart_full`, `wooden_crate`; a scaffold, a rail fence, cut blocks, a bench and a crate from `cranes_carts_ladders`; shrubs, dry brush and loose stones from `shrubs_rocks_decorations`; a wall block and pillar, a dirt heap |
+| Moonfen | `backgrounds/night_sky` (in its own colours), `distant_hills`, `swamp_treeline`, `mist_overlay`; dark moss ground; pools from `terrain/bog_water_tiles` | `ancient_willow_left`, `ancient_willow_center` (at the right edge), `small_willow`, `dead_swamp_tree`, `glowing_wooden_stump`, `ghost_crystals_and_stumps`; a drowned stump from `decorative_flora`, a fallen trunk from `swamp_trees_props`; cattails, grass, fiddleheads, night flowers and lily pads from `plants_crystals_reeds`; `stepping_rocks` |
+| Ember Crags | `backgrounds/smoky_sky`, `volcanic_ridges`, `lava_ridges`; a scorched plain with a winding stream of lava | four crags, a lava pool and a rock mound from `lava_rock_vents_plants`, `lava_vent_with_steam`, `sulfur_steam_gusher`; black rocks, a lava pan, a dead bush and ember brush from `lava_rock_vents_plants` |
+
+Several of the pack's `CURATED_COMPLETE_OBJECTS` are cut off along their
+right side (the lava crags and pool, the Willow Bank bushes, stumps and two
+willows, Moonfen's drowned stump and fallen trunk, the sunlit fern); a whole
+copy of the same object from the sheet's other export stands in, and the
+oak pair and Moonfen's centre willow, whose cut edge is slight, stand with it
+off the frame.
 
 Not used as scenery: anything that looks like one of the region's
 gatherables (bellflowers, toadstools and berry bushes in Whisperwood;
