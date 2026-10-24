@@ -35,7 +35,7 @@ export class AutoBrewer {
    * @param {import('../simulation/world.js').Simulation} sim
    * @param {import('./predict.js').BrewPlan} plan
    * @param {(id:string)=>any} lookup
-   * @param {{scale?: number, onPour?: (id:string, n:number)=>boolean, onPoured?: (id:string, n:number, ground:boolean)=>void}} [opts]
+   * @param {{scale?: number, onPour?: (id:string, n:number)=>boolean, onPoured?: (id:string, n:number)=>void}} [opts]
    */
   constructor(sim, plan, lookup, opts = {}) {
     this.sim = sim;
@@ -53,8 +53,13 @@ export class AutoBrewer {
     this.status = 'Preparing';
     this.failed = false;
     this.held = 0;
+    /** the whole piece the pestle is working on (particle index) */
+    this.crushTarget = -1;
     /** recorded procedure (recipes.js): replayed step by step instead of the plan's stages */
-    this.steps = /** @type {any[]|null} */ (/** @type {any} */ (plan).steps || null);
+    // solids always go in whole now (the mortar is retired): an old recipe's
+    // ground pour becomes a whole pour crushed with the pestle
+    const steps = /** @type {any} */ (plan).steps;
+    this.steps = /** @type {any[]|null} */ (steps ? steps.flatMap((s) => (s.op === 'pour' && s.ground ? [{ ...s, ground: undefined }, { op: 'crush', s: 60 }] : [s])) : null);
     this.stepIndex = 0;
     this.target = 20;
     this.reduceFrom = 0;
@@ -126,18 +131,8 @@ export class AutoBrewer {
         return;
       }
       case 'crush': {
-        this.status = 'Grinding solids';
-        const p = sim.p;
-        let solids = 0, sx = 0, sy = 0;
-        for (let i = 0; i < p.count; i++) if (p.phase[i] === PHASE.SOLID) { solids++; sx += p.x[i]; sy += p.y[i]; }
-        if (solids === 0 || this.stageT > 25) { this.release(); this.next('stir'); return; }
-        const t = sim.tool;
-        t.type = 'pestle';
-        this.phase += dt * 9;
-        const cx = sx / solids, cy = sy / solids;
-        t.setTarget(cx + Math.sin(this.phase * 0.6) * 0.35, cy + Math.abs(Math.sin(this.phase)) * 0.3 - 0.05, true);
-        t.beginFrame();
-        t.substep(0, 1);
+        // the pestle works until nothing whole is left (a generous cap)
+        if (!this.crushSolids() || this.stageT > 90) { this.release(); this.next('stir'); }
         return;
       }
       case 'stir': {
@@ -207,6 +202,30 @@ export class AutoBrewer {
   }
 
   /**
+   * One step of work with the pestle: it picks a whole piece (the lowest),
+   * keeps on it until it breaks, and pounds back and forth over it.
+   * Returns false when nothing whole is left.
+   */
+  crushSolids() {
+    const sim = this.sim, p = sim.p;
+    this.status = 'Crushing solids';
+    let k = this.crushTarget ?? -1;
+    if (k < 0 || k >= p.count || p.phase[k] !== PHASE.SOLID) {
+      k = -1;
+      for (let i = 0; i < p.count; i++) if (p.phase[i] === PHASE.SOLID && (k < 0 || p.y[i] > p.y[k])) k = i;
+      this.crushTarget = k;
+    }
+    if (k < 0) return false;
+    const t = sim.tool;
+    t.type = 'pestle';
+    this.phase += SIM.DT * 9;
+    t.setTarget(p.x[k] + Math.sin(this.phase * 0.6) * 0.18, p.y[k] + Math.abs(Math.sin(this.phase)) * 0.25 - 0.08, true);
+    t.beginFrame();
+    t.substep(0, 1);
+    return true;
+  }
+
+  /**
    * Start pouring one ingredient (n particles, or ml in a recorded step).
    * Returns false (and stops) if the stock does not allow it.
    * @param {{id:string, n?:number, ml?:number, ground?:boolean}} ing
@@ -216,10 +235,9 @@ export class AutoBrewer {
     if (this.onPour && !this.onPour(ing.id, n)) { this.failed = true; this.finish(); return false; }
     const def = this.lookup(ing.id);
     if (!def) { this.failed = true; this.finish(); return false; }
-    const ground = !!ing.ground && def.form === 'solid';
-    this.sim.emitter.start(def, { x: (this.ingIndex % 2 ? -0.35 : 0.35), amount: n, rate: def.form === 'powder' || ground ? 70 : 110, ground });
-    this.status = ground ? `Grinding and adding ${def.name}` : `Pouring ${def.name}`;
-    if (this.onPoured) this.onPoured(ing.id, n, ground);
+    this.sim.emitter.start(def, { x: (this.ingIndex % 2 ? -0.35 : 0.35), amount: n, rate: def.form === 'powder' ? 70 : 110 });
+    this.status = `Pouring ${def.name}`;
+    if (this.onPoured) this.onPoured(ing.id, n);
     return true;
   }
 
@@ -248,18 +266,8 @@ export class AutoBrewer {
         if (this.stageT >= s.s) done();
         return;
       case 'crush': {
-        this.status = 'Grinding solids';
         this.control(this.target);
-        const p = sim.p;
-        let solids = 0, sx = 0, sy = 0;
-        for (let i = 0; i < p.count; i++) if (p.phase[i] === PHASE.SOLID) { solids++; sx += p.x[i]; sy += p.y[i]; }
-        if (!solids || this.stageT >= s.s) { done(); return; }
-        const t = sim.tool;
-        t.type = 'pestle';
-        this.phase += dt * 9;
-        t.setTarget(sx / solids + Math.sin(this.phase * 0.6) * 0.35, sy / solids + Math.abs(Math.sin(this.phase)) * 0.3 - 0.05, true);
-        t.beginFrame();
-        t.substep(0, 1);
+        if (!this.crushSolids() || this.stageT >= s.s) done();
         return;
       }
       case 'temp': {

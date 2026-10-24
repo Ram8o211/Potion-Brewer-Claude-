@@ -3,7 +3,7 @@
 // death, remains on the shelf (kept across a reload), buying until the
 // hutch is full, a night in the hutch, and the sandbox's next-day button.
 import { test, expect } from '@playwright/test';
-import { watchErrors, shot, newGame, lab, drag, pourDose, startSandbox } from './helpers.mjs';
+import { watchErrors, shot, newGame, lab, drag, pourDose, startSandbox, crushInPot } from './helpers.mjs';
 
 test('choose a rabbit, dose it, replay the trial for free', async ({ page }, info) => {
   const errors = watchErrors(page);
@@ -11,6 +11,7 @@ test('choose a rabbit, dose it, replay the trial for free', async ({ page }, inf
   const roles = await lab(page, (l) => l.state.world.roles);
   await pourDose(page, roles.water, [100]);
   await pourDose(page, 'wild-silverleaf', [100]);
+  await crushInPot(page);
   await page.click('[data-act=tab-trials]');
   await expect(page.locator('.rabbit-tile[data-rabbit]')).toHaveCount(2);
   await expect(page.locator('canvas.hutch-scene')).toBeVisible();

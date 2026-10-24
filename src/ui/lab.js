@@ -78,7 +78,6 @@ export class LabScreen {
     this.sandbox = !!opts.sandbox;
     this.tool = 'spoon';
     this.selected = null;
-    this.ground = false;
     this.speed = 1;
     this.pointer = { down: false, x: 0, y: 0, id: -1, wx: 0, wy: 0 };
     this.pourX = 0.3;
@@ -265,14 +264,17 @@ export class LabScreen {
     this.furnaceInput = /** @type {HTMLInputElement} */ (h('input', { type: 'range', min: '-100', max: '100', step: '1', value: '0', 'aria-label': 'Fire and frost control' }));
     this.furnaceInput.addEventListener('input', () => {
       const v = Number(this.furnaceInput.value) / 100;
-      this.setFurnace(Math.abs(v) < 0.06 ? 0 : v);
+      // a wide notch at the middle: easy to land on "off" by sliding
+      this.setFurnace(Math.abs(v) < 0.12 ? 0 : v);
     });
+    // one tap puts the fire (or the frost) out
+    this.furnaceOff = btn('Off', () => { this.setFurnace(0); audio.play('select'); }, { cls: 'foff', title: 'Put the fire or frost out (0)', act: 'furnace-off' });
     this.furnaceLabel = h('span', { class: 'flabel' });
     this.lidBtn = btn('Lid', () => this.toggleLid(), { icon: 'lid', cls: 'lid-btn', title: 'Lid on/off (L)', act: 'lid' });
     this.controls = h('section', { class: 'controls frame' },
       this.lidBtn,
       // left cools (the basin), right heats (the fire)
-      h('div', { class: 'furnace', title: 'Slide left to cool, right to heat (arrow keys, 0 for off)' }, icon('snow', 'sm'), this.furnaceInput, icon('flame', 'sm'), this.furnaceLabel),
+      h('div', { class: 'furnace', title: 'Slide left to cool, right to heat (arrow keys, 0 for off)' }, icon('snow', 'sm'), h('div', { class: 'frange' }, this.furnaceInput), icon('flame', 'sm'), this.furnaceLabel, this.furnaceOff),
     );
     this.toolsEl = h('div', { class: 'tools', role: 'toolbar', 'aria-label': 'Tools' });
     this.toolbar = h('nav', { class: 'toolbar frame' }, this.toolsEl);
@@ -349,7 +351,7 @@ export class LabScreen {
     return REQ_ICON[key] || (EFFECT_BY_KEY[key] ? EFFECT_BY_KEY[key].icon : 'star');
   }
 
-  /** Dose buttons and the mortar switch sit above the shelf. */
+  /** The dose buttons sit above the shelf. */
   placeDose() {
     this.doseEl.classList.toggle('collapsed', this.tool !== 'pour' || !this.selected);
   }
@@ -516,20 +518,15 @@ export class LabScreen {
 
   buildDose() {
     const d = clear(this.doseEl);
-    this.groundBtn = btn('Ground', () => { this.ground = !this.ground; this.syncGround(); audio.play('select'); }, { icon: 'mortar', title: 'Grind in the mortar before pouring', act: 'ground' });
     this.selName = h('span', { class: 'sel-name' });
     d.append(icon('pour', 'sm'), this.selName);
     for (const ml of [25, 50, 100, 250]) d.append(btn(`${ml}`, () => this.pourDose(ml), { title: `Pour exactly ${ml} ml`, act: 'dose-' + ml }));
-    d.append(h('span', { class: 'muted dose-note', text: 'ml' }), this.groundBtn);
-    this.syncGround();
+    d.append(h('span', { class: 'muted dose-note', text: 'ml' }));
+    this.syncSelName();
   }
 
-  syncGround() {
-    if (!this.groundBtn) return;
+  syncSelName() {
     const m = this.selected ? this.state.lookup(this.selected) : null;
-    const can = !!m && m.form === 'solid' && (this.sandbox || this.state.has('mortar'));
-    this.groundBtn.classList.toggle('hidden', !can);
-    this.groundBtn.classList.toggle('active', can && this.ground);
     if (this.selName) this.selName.textContent = m ? m.name : 'Pick a jar';
   }
 
@@ -679,7 +676,6 @@ export class LabScreen {
     else if (k === 'b') this.startBottling();
     else if (k === 's' && !this.sandbox) panels.openShop(this);
     else if (k === 'r' && !this.sandbox) { this.showView('book'); this.views.book.open('recipes'); }
-    else if (k === 'g') { this.ground = !this.ground; this.syncGround(); }
     else if (k === 'a') this.setAutoStir(!this.autoStir);
     else if (k === 'h' && this.sandbox) this.toggleThermal();
     else if (k === 'escape') panels.openPause(this);
@@ -702,13 +698,12 @@ export class LabScreen {
     this.pourHint.classList.toggle('hidden', id !== 'pour');
     this.updatePourHint();
     this.placeDose();
-    this.syncGround();
+    this.syncSelName();
     if (!silent) audio.play('select');
     if (this.tutorial) this.tutorial.notify('tool', id);
   }
 
   selectIngredient(id) {
-    if (this.selected !== id) this.ground = !!(this.state.lookup(id).form === 'solid' && (this.sandbox || this.state.has('mortar')) && (this.state.lookup(id).wild || this.state.lookup(id).remains));
     this.selected = id;
     this.selectTool('pour', true);
     this.selected = id;
@@ -716,14 +711,14 @@ export class LabScreen {
     audio.play('select');
     this.updatePourHint();
     this.placeDose();
-    this.syncGround();
+    this.syncSelName();
     if (this.tutorial) this.tutorial.notify('select', id);
   }
 
   updatePourHint() {
     if (this.tool !== 'pour') return;
     const m = this.selected ? this.state.lookup(this.selected) : null;
-    this.pourHint.textContent = m ? `Hold in the cauldron to ${m.form === 'solid' && !this.ground ? 'drop it in' : 'pour'}` : 'Tap a jar on the shelf';
+    this.pourHint.textContent = m ? `Hold in the cauldron to ${m.form === 'solid' ? 'drop it in' : 'pour'}` : 'Tap a jar on the shelf';
   }
 
   clampPourX(x) {
@@ -736,8 +731,8 @@ export class LabScreen {
     return Math.floor(this.state.stock(id) / SIM.ML_PER_PARTICLE);
   }
 
-  /** @param {number} x @param {number} [amount] particles @param {boolean} [ground] */
-  startPour(x, amount, ground) {
+  /** Solids always go in whole: only the pestle breaks them up. @param {number} x @param {number} [amount] particles */
+  startPour(x, amount) {
     const id = this.selected;
     if (!id) return;
     const avail = this.canPour(id);
@@ -754,12 +749,9 @@ export class LabScreen {
     this.pourX = this.clampPourX(x);
     const def = this.state.lookup(id);
     const n = Math.min(avail, amount ?? Infinity);
-    const g = ground ?? (this.ground && def.form === 'solid' && (this.sandbox || this.state.has('mortar')));
-    this.sim.emitter.start(def, { x: this.pourX, amount: n, ground: g });
+    this.sim.emitter.start(def, { x: this.pourX, amount: n });
     this.sim.emitter.active.dose = amount !== undefined;
     this.lastPoured[id] = this.sim.emitter.poured[id] || 0;
-    this.pourGround = g;
-    if (g) audio.play('crush');
     if (this.tutorial) this.tutorial.notify('pour', id);
   }
 
@@ -782,16 +774,16 @@ export class LabScreen {
         this.state.consume(id, ml);
         if (this.state.stock(id) < SIM.ML_PER_PARTICLE && em.active && em.active.def.id === id) em.stop();
       }
-      this.logPour(id, ml, !!(em.active ? em.active.form === 'powder' && em.active.def.form === 'solid' : this.pourGround));
+      this.logPour(id, ml);
     }
   }
 
-  logPour(id, ml, ground = false) {
+  logPour(id, ml) {
     const log = this.state.brewLog;
     if (this.sim.p.count <= Math.round(ml / SIM.ML_PER_PARTICLE) + 1 && !log.some((e) => e.type === 'pour')) this.state.newBatch();
     const last = log[log.length - 1];
-    if (last && last.type === 'pour' && last.id === id && !!last.ground === ground) last.ml += ml;
-    else log.push({ type: 'pour', id, ml, t: Math.round(this.sim.time), ground: ground || undefined });
+    if (last && last.type === 'pour' && last.id === id && !last.ground) last.ml += ml;
+    else log.push({ type: 'pour', id, ml, t: Math.round(this.sim.time) });
     // something was added: earlier trials no longer describe this brew
     this.state.touchBatch();
     this.state.stats.brews = this.state.stats.brews || 0;
@@ -1372,7 +1364,7 @@ export class LabScreen {
       }
     }
     T = n ? T / n : 20;
-    if (whole >= 3) out.push({ key: 'whole', text: 'Whole herbs and stones give up almost nothing: crush them with the pestle (or grind them before pouring).' });
+    if (whole >= 3) out.push({ key: 'whole', text: 'Whole herbs and stones give up almost nothing: crush them with the pestle (Crush).' });
     // the steeping windows the alchemist has seen work, for what is still undissolved
     const windows = [];
     for (const [s, f] of raw) {
@@ -1644,6 +1636,10 @@ export class LabScreen {
     const label = f > 0.02 ? `Heat ${Math.round(f * 100)}%` : f < -0.02 ? `Cool ${Math.round(-f * 100)}%` : 'Off';
     this.furnaceLabel.textContent = `${label} · ${Math.round(c.bottomTemperature())}°C`;
     this.furnaceLabel.title = 'Setting, and the temperature of the cauldron floor';
+    const on = Math.abs(f) > 0.02;
+    this.furnaceOff.disabled = !on;
+    this.furnaceOff.classList.toggle('hot', f > 0.02);
+    this.furnaceOff.classList.toggle('cold', f < -0.02);
     if (full) this.updateShelf();
     this.updateChips();
   }
@@ -1996,7 +1992,7 @@ export class LabScreen {
     const steps = recipe.steps && recipe.steps.length ? recipe.steps : null;
     const plan = steps ? { ingredients: [], heatTo: recipe.maxTemp, coolTo: recipe.minTemp, serveTemp: recipe.serveTemp, steps } : {
       ingredients: recipe.ingredients.map((i) => ({ id: i.id, n: Math.round(i.ml / SIM.ML_PER_PARTICLE), ground: i.ground })),
-      heatTo: recipe.maxTemp, coolTo: recipe.minTemp, serveTemp: recipe.serveTemp, knead: recipe.stirSeconds > 12, crush: recipe.crushed, hold: 12,
+      heatTo: recipe.maxTemp, coolTo: recipe.minTemp, serveTemp: recipe.serveTemp, knead: recipe.stirSeconds > 12, crush: recipe.crushed || recipe.ingredients.some((i) => i.ground), hold: 12,
     };
     // check the whole stock first, so it never stops half-way through
     /** @type {Map<string, number>} */
@@ -2011,7 +2007,6 @@ export class LabScreen {
         if (!this.sandbox && this.state.stock(id) < ml) return false;
         return true;
       },
-      onPoured: (id, n, ground) => { this.pourGround = ground; },
     });
     recipe.brews = (recipe.brews | 0) + 1;
     const lim = procedureLimits(steps || []);

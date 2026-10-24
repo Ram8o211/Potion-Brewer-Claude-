@@ -41,7 +41,7 @@ export const MECHANICS = [
     objective: 'The wanted effects at strength, every other effect under the purity limit.',
     feedback: 'Each ingredient’s known effects and its balancing hints; the guild theory; trials.' },
   { id: 'extraction', name: 'Grinding and extraction', role: 'core', stage: 'preparation', rank: 0,
-    decision: 'Grind in the mortar, crush in the pot, or drop in whole.',
+    decision: 'Crush in the pot with the pestle, or leave it whole.',
     consequence: 'Only what dissolves acts: a whole herb gives nothing, the same herb ground gives its effects.',
     objective: 'Reaching the strength the order asks for at all.',
     feedback: 'Brew advice (“whole herbs: crush”), the brew’s colour, trials.' },

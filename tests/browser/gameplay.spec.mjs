@@ -2,7 +2,7 @@
 // pointer (touch events on phone projects), the fire control, a trial in
 // the Trials room, bottling, serving at the Counter — then the customer pays.
 import { test, expect } from '@playwright/test';
-import { watchErrors, shot, newGame, lab, drag, stirPath, pourDose } from './helpers.mjs';
+import { watchErrors, shot, newGame, lab, drag, stirPath, pourDose, wholeSolids, crushInPot } from './helpers.mjs';
 
 test('first commission: brew, test on a subject, bottle and serve', async ({ page }, info) => {
   const errors = watchErrors(page);
@@ -13,13 +13,17 @@ test('first commission: brew, test on a subject, bottle and serve', async ({ pag
   const roles = await lab(page, (l) => l.state.world.roles);
   const leaf = 'wild-silverleaf', sun = 'wild-sunthistle';
   const before = await lab(page, (l, id) => ({ coins: l.state.coins, rep: l.state.reputation, leaf: l.state.stock(id) }), leaf);
-  // 125 ml of water, 50 ml of ground Silverleaf (healing with a frosty bite), 25 ml of Sunthistle to cancel the frost
+  // 125 ml of water, 50 ml of whole Silverleaf (healing with a frosty bite), 25 ml of Sunthistle to cancel the frost
   await pourDose(page, roles.water, [100, 25]);
   await pourDose(page, leaf, [50]);
   await pourDose(page, sun, [25]);
   expect(await lab(page, (l) => l.sim.p.count * 5)).toBe(200);
   expect(await lab(page, (l, id) => l.state.stock(id), leaf), 'poured herbs are charged to the inventory').toBe(before.leaf - 50);
   await shot(page, info, 'tutorial-poured');
+  // the herbs went in whole: crush them with the pestle
+  const whole = await wholeSolids(page);
+  await crushInPot(page);
+  expect(await wholeSolids(page), 'the pestle broke up the herbs').toBeLessThan(whole);
   // the order shows the healing effect as unknown before any trial
   await expect(page.locator('.req-chip.fx').first()).toContainText('?');
   // stir with the spoon
@@ -137,6 +141,7 @@ test('a customer who insists on proof will not buy until the vial is tested; tes
   });
   await pourDose(page, await lab(page, (l) => l.state.world.roles.water), [100]);
   await pourDose(page, 'wild-silverleaf', [50]);
+  await crushInPot(page);
   // steeped warm, so one reading plainly shows the healing (a cold brew is too weak to be sure of)
   await lab(page, (l) => { l.setAutoStir(true); l.setFurnace(0.8); l.speed = 4; });
   await page.waitForFunction(() => { const p = window.__alchemist.screen.sim.p; let t = 0; for (let i = 0; i < p.count; i++) t += p.temp[i]; return t / p.count > 60; }, null, { timeout: 60_000, polling: 250 });
@@ -241,7 +246,7 @@ test('tools switch and act on the brew', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test('drag a jar from the shelf onto the cauldron to pour; grind a root in the mortar', async ({ page }) => {
+test('drag a jar from the shelf onto the cauldron to pour; a root goes in whole and only the pestle crushes it', async ({ page }) => {
   const errors = watchErrors(page);
   await newGame(page, { tutorial: false, seed: 'drag-pour-2' });
   const roles = await lab(page, (l) => l.state.world.roles);
@@ -254,17 +259,17 @@ test('drag a jar from the shelf onto the cauldron to pour; grind a root in the m
   await drag(page, pts, 20);
   await page.waitForTimeout(800);
   expect(await lab(page, (l) => l.sim.p.count), 'dragging the jar onto the cauldron poured it').toBeGreaterThan(3);
-  // a wild root, ground in the mortar, pours as powder grains
+  // a wild root goes in whole: there is no grinding before the pour
   await lab(page, (l) => { l.state.inventory['wild-ironroot'] = 100; l.buildShelf(); });
   await page.click('.jar[data-id="wild-ironroot"]');
-  await expect(page.locator('[data-act=ground]')).toBeVisible();
-  await expect(page.locator('[data-act=ground]')).toHaveClass(/active/);
+  await expect(page.locator('[data-act=ground]')).toHaveCount(0);
   await page.click('[data-act=dose-25]');
   await page.waitForFunction(() => !window.__alchemist.screen.sim.emitter.pouring);
-  const grains = await lab(page, (l) => { const sp = l.sim.species, s = sp.slotOf.get('wild-ironroot'); let g = 0, solid = 0; for (let i = 0; i < l.sim.p.count; i++) if (l.sim.p.comp[i * l.sim.p.S + s] > 0.5) { if (l.sim.p.phase[i] === 1) g++; if (l.sim.p.phase[i] === 3) solid++; } return { g, solid }; });
-  // 25 ml = 5 grains, all powder, none whole (one may already be dissolving into the water)
-  expect(grains.g, 'ground root arrives as powder').toBeGreaterThanOrEqual(4);
-  expect(grains.solid).toBe(0);
-  expect(await lab(page, (l) => l.state.brewLog.some((e) => e.type === 'pour' && e.id === 'wild-ironroot' && e.ground))).toBe(true);
+  const before = await wholeSolids(page);
+  expect(before, 'the root arrives whole').toBeGreaterThanOrEqual(4);
+  expect(await lab(page, (l) => l.state.brewLog.some((e) => e.type === 'pour' && e.ground))).toBe(false);
+  // the pestle breaks it up
+  await crushInPot(page);
+  expect(await wholeSolids(page), 'the pestle crushed the root').toBeLessThan(before);
   expect(errors).toEqual([]);
 });

@@ -190,7 +190,13 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 
 .controls { grid-area: controls; display: flex; align-items: center; gap: 8px; padding: 2px 6px; z-index: 2; }
 .controls .btn { min-height: 44px; min-width: 44px; }
-.furnace { flex: 1; display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 6px; min-width: 0; }
+.furnace { flex: 1; display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto; align-items: center; gap: 6px; min-width: 0; }
+/* the slider sits over a notch that marks "off" */
+.furnace .frange { position: relative; min-width: 0; }
+.furnace .frange::before { content: ''; position: absolute; left: 50%; top: 8px; bottom: 8px; width: 2px; margin-left: -1px; background: var(--parch2); box-shadow: 0 0 0 1px var(--wood0); pointer-events: none; }
+.furnace .foff { min-height: 44px; min-width: 52px; padding: 2px 8px; font-size: var(--fs-s); }
+.furnace .foff.hot { background: #8a2a14; color: var(--brassHi); }
+.furnace .foff.cold { background: #2a4f7a; color: #dff4ff; }
 .furnace img.ico.sm { width: 16px; height: 16px; }
 .controls .lid-btn { flex-direction: column; gap: 1px; padding: 3px 6px; min-width: 52px; }
 .controls .lid-btn .lbl { font-size: 12px; line-height: 1; white-space: nowrap; }
@@ -199,7 +205,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 .furnace input[type=range]::-moz-range-track { height: 12px; background: linear-gradient(90deg, #8fc7f2, #3a5a8a 40%, #3a3341 50%, #8a3a1a 60%, #ffb444); box-shadow: 0 0 0 2px var(--wood0); }
 .furnace input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 36px; margin-top: -12px; background: var(--brass); box-shadow: 0 0 0 2px var(--wood0), inset 0 2px 0 var(--brassHi); border: none; }
 .furnace input[type=range]::-moz-range-thumb { width: 22px; height: 36px; background: var(--brass); box-shadow: 0 0 0 2px var(--wood0); border: none; border-radius: 0; }
-.furnace .flabel { font-size: var(--fs-s); min-width: 88px; text-align: right; white-space: nowrap; }
+.furnace .flabel { font-size: var(--fs-s); min-width: 72px; text-align: right; white-space: nowrap; }
 
 .toolbar { grid-area: tools; display: flex; align-items: center; gap: 6px; padding: 3px 6px; z-index: 2; min-width: 0; }
 .tools { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; flex: 1; min-width: 0; }

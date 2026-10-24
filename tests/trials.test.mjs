@@ -175,7 +175,7 @@ test('a genuine v2 save migrates: progress kept, effects and wilds added, aspect
   for (const [k, v] of Object.entries(raw.inventory)) assert.equal(String(st.inventory[k] === Infinity ? 'inf' : st.inventory[k]), prepared.has(k) ? '0' : String(v), `stock of ${k} kept (or bought back)`);
   assert.ok(st.world.wild.length >= 15 && st.world.laws.length === 6, 'wild ingredients and laws added');
   for (const m of st.world.materials) assert.ok(m.effects, `${m.id} has effects`);
-  assert.ok(st.has('mortar'), 'the new starter mortar is granted');
+  assert.ok(!st.has('mortar') && st.has('pestle'), 'the retired mortar is gone; the pestle crushes');
   // the old reagents are exactly the ones the seed always had
   const oldIds = raw.world.materials.map((m) => m.id);
   for (const id of oldIds) assert.ok(st.lookup(id), id);

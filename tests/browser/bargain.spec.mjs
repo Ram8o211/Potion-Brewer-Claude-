@@ -2,7 +2,7 @@
 // the rounds and costs the customer's patience, offering it again resumes
 // the talks, and a new label re-prices the bottle without a fresh start.
 import { test, expect } from '@playwright/test';
-import { watchErrors, newGame, lab, pourRole } from './helpers.mjs';
+import { watchErrors, newGame, lab, pourRole, crushInPot } from './helpers.mjs';
 
 /** Set the asking price to about `f` × what the customer would really pay, and ask. */
 async function askAbout(page, f) {
@@ -26,6 +26,7 @@ test('walking away keeps the talks; the same bottle resumes them; a new label re
   await pourRole(page, 'water', 50);
   await pourRole(page, 'water', 50);
   await pourRole(page, 'wild-silverleaf', 50);
+  await crushInPot(page);
   await page.click('[data-act=bottle]');
   await page.click('[data-act=bottle-50]');
   await expect(page.locator('[data-act=serve]')).toBeVisible({ timeout: 20_000 });

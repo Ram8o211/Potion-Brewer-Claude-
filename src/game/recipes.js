@@ -113,7 +113,9 @@ export function buildProcedure(log, serveT) {
       crush += samples[si][3] * dt;
       si++;
     }
-    if (crush >= 2) steps.push({ op: 'crush', s: Math.round(crush) });
+    // any crushing counts (a few strokes break a whole herb); the replay
+    // stops as soon as nothing whole is left, so give it time enough
+    if (crush > 0) steps.push({ op: 'crush', s: Math.max(10, Math.round(crush)) });
     if (stir >= 3) steps.push({ op: 'stir', s: Math.round(stir) });
   };
   for (const ev of events) {
@@ -353,7 +355,7 @@ export function checkReproduction(recipe, cert, batchKey) {
 /** One line per step, for the recipe book. @param {Step} s @param {(id:string)=>any} lookup */
 export function describeStep(s, lookup) {
   switch (s.op) {
-    case 'pour': { const m = lookup(s.id); return `Add ${Math.round(s.ml)} ml ${m ? m.name : s.id}${s.ground ? ', ground' : ''}`; }
+    case 'pour': { const m = lookup(s.id); return `Add ${Math.round(s.ml)} ml ${m ? m.name : s.id}${s.ground ? ', then crush it' : ''}`; }
     case 'stir': return `Stir ${s.s} s`;
     case 'crush': return `Crush with the pestle ${s.s} s`;
     case 'temp': return `${s.T > ROOM ? 'Heat' : 'Cool'} to ${s.T}°C and hold ${s.hold} s${s.loss ? `, lid open, until ${Math.round(s.loss * 100)} % has boiled away` : ''}${s.stir && s.stir > 0.4 ? ', stirring' : ''}`;

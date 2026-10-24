@@ -2,7 +2,7 @@
 // stores and depletes a deposit, a dragged dropper doses a subject, a spent
 // subject is replaced for coins, and all of it survives a reload.
 import { test, expect } from '@playwright/test';
-import { watchErrors, shot, newGame, lab, drag, pourDose } from './helpers.mjs';
+import { watchErrors, shot, newGame, lab, drag, pourDose, crushInPot } from './helpers.mjs';
 
 test('gathering in the wilds fills the stores and depletes the deposit', async ({ page }, info) => {
   const errors = watchErrors(page);
@@ -67,6 +67,7 @@ test('the dropper doses a rabbit on the farm; a dead one is replaced for coins; 
   const roles = await lab(page, (l) => l.state.world.roles);
   await pourDose(page, roles.water, [100]);
   await pourDose(page, 'wild-emberbark', [100]);
+  await crushInPot(page);
   // steep the bark (it gives up its fire only when warm), so one reading plainly shows it
   await lab(page, (l) => { l.setAutoStir(true); l.setFurnace(0.8); l.speed = 4; });
   await page.waitForFunction(() => { const p = window.__alchemist.screen.sim.p; let t = 0; for (let i = 0; i < p.count; i++) t += p.temp[i]; return t / p.count > 62; }, null, { timeout: 60_000, polling: 250 });

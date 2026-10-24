@@ -126,9 +126,9 @@ test('the simulation decides: whole herbs and an unsteeped brew miss an order th
     st.reputation = RANKS[1].rep;
     st.equipment.push('kit');
     const c = generateCommission(st.commissionContext(), new Rng(`p${k}`), { tier: 1, techniques: [] });
-    if (c && c.reference.steep && c.reference.ingredients.some((i) => i.ground)) com = c;
+    if (c && c.reference.steep && c.reference.crush) com = c;
   }
-  assert.ok(com && st, 'an order whose plan grinds and steeps');
+  assert.ok(com && st, 'an order whose plan crushes and steeps');
   const main = com.requirements.find((r) => r.effect && r.key !== 'purity');
   const score = (sim) => evaluatePotion(com, measureParticles(sim, tapSelection(sim, com.bottleN))).rows.find((r) => r.req.key === main.key).score;
   const good = simFor(st);
@@ -136,9 +136,9 @@ test('the simulation decides: whole herbs and an unsteeped brew miss an order th
   assert.equal(score(good), 1, 'the plan, brewed properly, is strong enough');
   // the same herbs left whole: almost nothing dissolves
   const whole = simFor(st);
-  runPlanHeadless(whole, { ...com.reference, ingredients: com.reference.ingredients.map((i) => ({ ...i, ground: false })) }, st.lookup);
+  runPlanHeadless(whole, { ...com.reference, crush: false }, st.lookup);
   assert.ok(score(whole) < 1, 'whole herbs fall short');
-  // the same, ground but never steeped
+  // the same, crushed but never steeped
   const cold = simFor(st);
   runPlanHeadless(cold, { ...com.reference, steep: undefined, heatTo: 20 }, st.lookup);
   assert.ok(score(cold) < 1, 'unsteeped, it falls short');
@@ -249,16 +249,20 @@ test('bottles of one batch share its trials, each checked against its own conten
 function brewRecorded(st, plan) {
   const sim = simFor(st);
   const log = [];
-  const ab = new AutoBrewer(sim, plan, st.lookup, { onPoured: (id, n, ground) => log.push({ type: 'pour', id, ml: n * 5, t: Math.round(sim.time), ...(ground ? { ground: true } : {}) }) });
-  let next = 0;
+  const ab = new AutoBrewer(sim, plan, st.lookup, { onPoured: (id, n) => log.push({ type: 'pour', id, ml: n * 5, t: Math.round(sim.time) }) });
+  let next = 0, stir = false, crush = false;
   for (let g = 0; !ab.done && g < 120 * 400; g++) {
     ab.tick();
     sim.step();
+    // like the lab: a sample notes any stirring or crushing since the last one
+    stir ||= sim.tool.active && sim.tool.type === 'spoon';
+    crush ||= sim.tool.active && sim.tool.type === 'pestle';
     if (sim.time >= next) {
       next = sim.time + 1;
       let T = 0, n = 0;
       for (let i = 0; i < sim.p.count; i++) if (sim.p.phase[i] !== PHASE.GAS) { T += sim.p.temp[i]; n++; }
-      if (n) traceSample(log, { t: sim.time, T: T / n, stir: sim.tool.active && sim.tool.type === 'spoon', crush: sim.tool.active && sim.tool.type === 'pestle', lid: sim.cauldron.lidClosed, ml: n * 5 });
+      if (n) traceSample(log, { t: sim.time, T: T / n, stir, crush, lid: sim.cauldron.lidClosed, ml: n * 5 });
+      stir = crush = false;
     }
   }
   let T = 0, n = 0;
