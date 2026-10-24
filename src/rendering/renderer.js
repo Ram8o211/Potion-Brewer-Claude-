@@ -2,7 +2,7 @@
 // tools, effects and lighting at a fixed "art pixel" density, upscaled with
 // nearest-neighbour filtering for crisp pixel art at any screen size.
 
-import { PAL, paintBackground, renderCauldron, renderLid, paintHearth, makeCanvas, rgbStr, hex2rgb, drawJar, rect } from './art.js';
+import { PAL, paintBackground, renderCauldron, renderLid, renderLidAside, paintHearth, makeCanvas, rgbStr, hex2rgb, drawJar, rect } from './art.js';
 import { FluidRenderer } from './fluid.js';
 import { Effects } from './effects.js';
 import { COLUMN } from '../simulation/cauldron.js';
@@ -28,6 +28,7 @@ export class Renderer {
     this.bg = null;
     this.cauldronArt = null;
     this.lidArt = null;
+    this.lidAsideArt = null;
     this.heatCanvas = null;
     this.frame = 0;
     this.jars = [];
@@ -67,7 +68,7 @@ export class Renderer {
     this.ctx.imageSmoothingEnabled = false;
     const c = cauldron;
     const viewW = 2 * (c.belly + 0.55);
-    const viewTop = VIEW_TOP, viewBot = c.depth + 1.0;
+    const viewTop = VIEW_TOP, viewBot = c.depth + 0.7;
     const viewH = viewBot - viewTop;
     const s = Math.min(W / viewW, H / viewH);
     this.view = { scale: s, ox: Math.round(W / 2), oy: Math.round((H - viewH * s) / 2 - viewTop * s) };
@@ -75,11 +76,12 @@ export class Renderer {
     this.bg = makeCanvas(W, H);
     const bctx = this.bg.getContext('2d');
     bctx.imageSmoothingEnabled = false;
-    const floorY = Math.round(this.view.oy + (c.depth + 0.72) * s);
+    const floorY = Math.round(this.view.oy + (c.depth + 0.42) * s);
     paintBackground(bctx, W, H, { cx: this.view.ox, floorY, scale: s, half: (c.belly + 0.6) * s, top: this.view.oy - 0.25 * s, jars });
     paintHearth(bctx, c, this.view);
     this.cauldronArt = renderCauldron(c, this.view);
     this.lidArt = renderLid(c, this.view);
+    this.lidAsideArt = renderLidAside(c, this.view);
     this.heatCanvas = makeCanvas(this.cauldronArt.canvas.width, this.cauldronArt.canvas.height);
     this.heatCtx = this.heatCanvas.getContext('2d');
     this.heatImg = this.heatCtx.createImageData(this.heatCanvas.width, this.heatCanvas.height);
@@ -110,7 +112,7 @@ export class Renderer {
 
     // ---- fire / frost under the cauldron
     const setting = sim.furnace.setting;
-    const fireX = view.ox, fireY = Math.round(view.oy + (c.depth + 0.52) * s);
+    const fireX = view.ox, fireY = Math.round(view.oy + (c.depth + 0.22) * s);
     const fireW = c.belly * 1.15 * s;
     // coal bed
     rect(ctx, fireX - fireW / 2, fireY, fireW, Math.max(2, s * 0.06), setting > 0.02 ? PAL.fire0 : PAL.stone0);
@@ -233,7 +235,6 @@ export class Renderer {
   _drawLid(c, st) {
     const { ctx, view } = this;
     const s = view.scale;
-    const lw = Math.round((c.mouth + 0.22) * 2 * s);
     if (c.lidClosed) {
       const la = this.lidArt;
       ctx.drawImage(la.canvas, la.x, la.y);
@@ -248,26 +249,17 @@ export class Renderer {
       rect(ctx, px - fw / 2, y - fh - Math.round(0.06 * s), fw, 1, PAL.brassHi);
       rect(ctx, px + fw / 2 - 1, y - fh - Math.round(0.06 * s), 1, fh, PAL.copper2);
     } else {
-      // lid propped against the cauldron's leg, standing on the hearth
-      const lh = Math.round(lw * 0.42);
-      const x = Math.round(view.ox - (c.belly * 0.62 + 0.2) * s - lh * 0.35), y = Math.round(view.oy + (c.depth + 0.55) * s);
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(-0.35);
-      const th = Math.max(3, Math.round(0.11 * s));
-      rect(ctx, -th - 1, -lh - 1, th + 2, lh + 2, '#08070a');
-      rect(ctx, -th, -lh, th, lh, PAL.iron3);
-      rect(ctx, -th, -lh, 1, lh, PAL.iron5);
-      rect(ctx, 0, -lh * 0.6, Math.max(2, Math.round(th * 0.8)), Math.round(lh * 0.2), PAL.wood4);
-      ctx.restore();
+      // lid stood on its rim, leaning on the cauldron's leg
+      const la = this.lidAsideArt;
+      ctx.drawImage(la.canvas, la.x, la.y);
     }
   }
 
   _drawTap(c, st) {
     const { ctx, view } = this;
     const s = view.scale;
-    const tx = Math.round(view.ox + (c.halfWidth(c.depth - 0.35) + 0.16) * s);
-    const ty = Math.round(view.oy + (c.depth - 0.35) * s);
+    const tx = Math.round(view.ox + (c.halfWidth(c.depth - 0.62) + 0.16) * s);
+    const ty = Math.round(view.oy + (c.depth - 0.62) * s);
     const tw = Math.max(4, Math.round(0.25 * s)), th = Math.max(2, Math.round(0.07 * s));
     rect(ctx, tx, ty, tw, th, PAL.brass);
     rect(ctx, tx, ty, tw, 1, PAL.brassHi);
@@ -276,7 +268,7 @@ export class Renderer {
     const b = st.bottling;
     // bottle stands on the hearth below the tap
     const bw = Math.max(6, Math.round(0.34 * s)), bh = Math.max(9, Math.round(0.55 * s));
-    const bx = tx + tw - th / 2 - bw / 2, by = Math.round(view.oy + (c.depth + 0.55) * s) - bh;
+    const bx = tx + tw - th / 2 - bw / 2, by = Math.round(view.oy + (c.depth + 0.25) * s) - bh;
     if (b) {
       // stream from tap
       const sx = Math.round(tx + tw - th / 2), sy = ty + th * 3;
@@ -403,13 +395,13 @@ export class Renderer {
     ctx.globalCompositeOperation = 'lighter';
     if (setting > 0.02) {
       const flick = 0.85 + Math.sin(st.time * 11) * 0.08 + Math.sin(st.time * 17.3) * 0.05;
-      const g = ctx.createRadialGradient(view.ox, view.oy + (c.depth + 0.6) * s, 0, view.ox, view.oy + (c.depth + 0.6) * s, s * 2.6);
+      const g = ctx.createRadialGradient(view.ox, view.oy + (c.depth + 0.3) * s, 0, view.ox, view.oy + (c.depth + 0.3) * s, s * 2.6);
       g.addColorStop(0, `rgba(255,120,40,${0.32 * setting * flick})`);
       g.addColorStop(1, 'rgba(255,120,40,0)');
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, this.W, this.H);
     } else if (setting < -0.02) {
-      const g = ctx.createRadialGradient(view.ox, view.oy + (c.depth + 0.6) * s, 0, view.ox, view.oy + (c.depth + 0.6) * s, s * 2.2);
+      const g = ctx.createRadialGradient(view.ox, view.oy + (c.depth + 0.3) * s, 0, view.ox, view.oy + (c.depth + 0.3) * s, s * 2.2);
       g.addColorStop(0, `rgba(90,170,255,${0.22 * -setting})`);
       g.addColorStop(1, 'rgba(90,170,255,0)');
       ctx.fillStyle = g;

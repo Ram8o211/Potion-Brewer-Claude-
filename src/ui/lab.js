@@ -144,6 +144,8 @@ export class LabScreen {
       // a shop that was already open, or the tutorial's first visit, carries on
       const tutorialVisit = st.tutorial.active && !st.tutorial.done && st.stats.served === 0;
       if (!st.current && !st.dayOver && (st.opened || tutorialVisit)) this.bringCustomer(false);
+      // a resumed order (or a shop still closed at dawn) fills the strip too
+      else this.refreshCustomer();
       this.tutorial = new Tutorial(this);
       if (st.tutorial.active && !st.tutorial.done) this.tutorial.start();
     }
