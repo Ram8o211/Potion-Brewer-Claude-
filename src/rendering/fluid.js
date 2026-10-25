@@ -12,15 +12,20 @@
 //     clears as they melt;
 //   • whole solid ingredients (roots, stones, crystals…) are drawn as their
 //     own material — fibres, speckles, facets, veins — with cracks where the
-//     pestle has damaged them, so they break down as the simulation does;
+//     pestle has damaged them, so they break down as the simulation does; a
+//     wild ingredient's object is painted from the piece it was poured as
+//     (one of its four in the piece atlas, rendering/pieces-art.js), turning
+//     with it and eaten away particle by particle;
 //   • gases are soft translucent wisps;
 //   • magic shines: every particle emits light in the colours of the effects
 //     it actually carries (derived.js), as bright as their concentration, and
 //     the light spills into a soft pixel halo around the brew.
 // Rendering resolution is independent of the physics resolution.
 
-import { PHASE } from '../simulation/constants.js';
-import { LOOK } from '../materials/shapes.js';
+import { PHASE, SIM } from '../simulation/constants.js';
+import { LOOK, piece } from '../materials/shapes.js';
+import { PIECE_ART, loadPieceArt } from './pieces-art.js';
+import { PIECE_CELL } from '../materials/pieces.js';
 
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 /** Interleaved liquid accumulator stride: weight, r, g, b, opacity, paste, texture, temperature, slush. */
@@ -123,6 +128,8 @@ export class FluidRenderer {
       if (ph === SOLID) anySolid = true; else if (ph === GAS) anyGas = true; else if (ph === POWDER) anyGrain = true;
       if (p.auraI[i] > 0.002 || p.glow[i] > 0.02 || p.burn[i] > 0.02) anyLight = true;
     }
+    if (anySolid && !PIECE_ART.loading) loadPieceArt();
+    const art = PIECE_ART.ready ? PIECE_ART.px : null, artW = PIECE_ART.width;
     const pad = Math.ceil(0.16 * s) + 8;
     const bx = Math.floor(minX) - pad, by = Math.floor(minY) - pad;
     const w = Math.ceil(maxX) + pad - bx, h = Math.ceil(maxY) + pad - by;
@@ -326,11 +333,24 @@ export class FluidRenderer {
             const th = gi >= 0 ? sim.rigid.angle[gi] : 0;
             const ddx = (x + 0.5 - (p.x[bi] * s + view.ox - bx)) / s, ddy = (y + 0.5 - (p.y[bi] * s + view.oy - by)) / s;
             const ct = Math.cos(th), st = Math.sin(th);
-            const lx = p.restX[bi] + ct * ddx + st * ddy, ly = p.restY[bi] - st * ddx + ct * ddy;
+            const ox = ct * ddx + st * ddy, oy = -st * ddx + ct * ddy;
+            const lx = p.restX[bi] + ox, ly = p.restY[bi] + oy;
             const u = Math.floor(lx * s * 0.75), v = Math.floor(ly * s * 0.75);
             const sd = gi >= 0 ? gi * 7919 + 13 : p.seed[bi];
             const hv = hash01(sd + (u + 4096) * 37 + (v + 4096) * 1013);
-            switch (p.look[bi]) {
+            const pc = art && p.skin[bi] ? piece(p.skin[bi]) : null;
+            if (pc) {
+              // its painted piece, read where this pixel falls in it (each
+              // particle knows its own spot, so broken-off bits keep theirs);
+              // the blob around the piece's outline stays clear
+              const tx = Math.floor(pc.ax + (p.skinU[bi] + ox / SIM.SPACING) * pc.ppu);
+              const ty = Math.floor(pc.ay + (p.skinV[bi] + oy / SIM.SPACING) * pc.ppu);
+              const c = tx >= pc.cx && ty >= pc.cy && tx < pc.cx + PIECE_CELL && ty < pc.cy + PIECE_CELL ? /** @type {Uint32Array} */ (art)[ty * artW + tx] : 0;
+              if (c >>> 31) {
+                r = (c & 255) / 255; g = ((c >>> 8) & 255) / 255; b = ((c >>> 16) & 255) / 255;
+                a = 1;
+              } else a = 0;
+            } else switch (p.look[bi]) {
               case LOOK.FIBRE: { // fibres along the root, the odd knot
                 const band = Math.floor(ly * s * 0.55);
                 l = (band & 1) ? 0.8 + hv * 0.08 : 0.97 + hv * 0.08;
@@ -406,7 +426,7 @@ export class FluidRenderer {
                 break;
               default: l = 0.92 + hv * 0.1;
             }
-            if (edgeHi) l *= 1.16; else if (edgeLo) l *= 0.64;
+            if (!pc) { if (edgeHi) l *= 1.16; else if (edgeLo) l *= 0.64; }
             // cracks open up as the pestle damages it
             const dmg = sim.dmg[bi] / (0.25 + p.hardness[bi] * 1.5);
             if (dmg > 0.12 && hash01(p.seed[bi] * 3 + (u + 4096) * 7 + (v + 4096) * 131) < dmg * 0.4) l *= 0.42;

@@ -7,12 +7,21 @@
 // its *look* tells the renderer which surface to draw on it (fibres,
 // speckles, facets, veins…). Crushing removes particles from the object, so
 // the silhouette breaks down exactly as the simulated damage does.
+//
+// A wild ingredient has four painted pieces (materials/pieces.js, cut from
+// art/icons/pieces_sheet.png); every object poured takes one of them at
+// random, and its particles are laid out over that piece's silhouette (as
+// many as its template has, so a dose weighs the same), so what tumbles and
+// collides is the piece the cauldron draws on it (rendering/fluid.js).
 
 /** Surface looks of solid matter (renderer codes). */
 export const LOOK = Object.freeze({
   ICE: 0, FIBRE: 1, LEAF: 2, STONE: 3, CRYSTAL: 4, CAP: 5, GLOSSY: 6, BONE: 7, FUR: 8, LUMP: 9,
   BARK: 10, BERRY: 11, GILLS: 12, SEED: 13, SHELL: 14, METAL: 15, GLASS: 16, SPOTS: 17, REED: 18, FLORET: 19,
 });
+
+import { PIECES, PIECE_CELL, PIECE_MASK } from './pieces.js';
+import { WILD_BY_KEY } from './wild.js';
 
 const SHAPE_LOOK = {
   root: LOOK.FIBRE, pepper: LOOK.FIBRE, leaf: LOOK.LEAF, petal: LOOK.LEAF, flower: LOOK.LEAF, clover: LOOK.LEAF, moss: LOOK.LEAF, sprig: LOOK.LEAF,
@@ -100,13 +109,103 @@ const TEMPLATES = {
 
 /**
  * Particle offsets (in particle spacings) of one whole object of a solid
- * material, at most `max` of them (a part-dose takes the compact core).
- * @param {any} def @param {number} max
+ * material, at most `max` of them (a part-dose takes the compact core): its
+ * painted piece `variant` (0..3) where it has pieces, else its template.
+ * @param {any} def @param {number} max @param {number} [variant]
  * @returns {number[][]}
  */
-export function chunkTemplate(def, max) {
-  const t = TEMPLATES[shapeOf(def)] || TEMPLATES.stone;
+export function chunkTemplate(def, max, variant = -1) {
+  const pc = variant >= 0 ? piece(skinOf(def, variant)) : null;
+  const t = pc ? pc.pts : TEMPLATES[shapeOf(def)] || TEMPLATES.stone;
   return t.slice(0, Math.max(1, Math.min(max, t.length)));
+}
+
+// ------------------------------------------------------------ painted pieces
+
+/** Every painted piece by skin id − 1: four per ingredient, in key order. */
+const SKINS = Object.keys(PIECES).sort().flatMap((key) => PIECES[key].map((_, v) => ({ key, v })));
+const SKIN_BASE = Object.fromEntries(Object.keys(PIECES).sort().map((key, n) => [key, 1 + n * 4]));
+
+/** Whether whole objects of a material are drawn as its painted pieces. @param {any} def */
+export function hasPieces(def) {
+  return !!def && def.form === 'solid' && !def.shape && !!def.wild && def.wild.key in SKIN_BASE;
+}
+
+/** Skin id (1..) of a material's piece `variant`, 0 if it has none. @param {any} def @param {number} variant */
+export function skinOf(def, variant) {
+  return hasPieces(def) ? SKIN_BASE[def.wild.key] + (variant & 3) : 0;
+}
+
+/**
+ * @typedef {object} Piece
+ * @property {number[][]} pts  particle offsets (spacings) from the piece's centre, core first
+ * @property {number} ax       atlas x of that centre (px)
+ * @property {number} ay       atlas y of that centre (px)
+ * @property {number} ppu      atlas px per particle spacing
+ * @property {number} cx       atlas x of the piece's cell (px)
+ * @property {number} cy       atlas y of the piece's cell (px)
+ */
+/** @type {(Piece|null|undefined)[]} */
+const fitted = [];
+
+/**
+ * A painted piece fitted with particles: hex lattices of every spacing and
+ * offset are laid over its silhouette, and of those holding exactly as many
+ * particles as the material's template, the one whose rendered blob best
+ * matches the silhouette wins (computed once per piece, on first use).
+ * @param {number} skin
+ * @returns {Piece|null}
+ */
+export function piece(skin) {
+  if (!skin) return null;
+  if (fitted[skin] !== undefined) return /** @type {Piece|null} */ (fitted[skin]);
+  const sk = SKINS[skin - 1];
+  if (!sk) return null;
+  const [fx, fy, hexRows] = PIECES[sk.key][sk.v];
+  const M = PIECE_MASK, D = (M + 3) >> 2;
+  const mask = new Uint8Array(M * M);
+  for (let y = 0; y < M; y++) {
+    const row = parseInt(hexRows.slice(y * D, (y + 1) * D), 16);
+    for (let x = 0; x < M; x++) mask[y * M + x] = (row >>> (D * 4 - 1 - x)) & 1;
+  }
+  let area = 0;
+  for (const m of mask) area += m;
+  const spec = WILD_BY_KEY[sk.key];
+  const n = (TEMPLATES[spec ? spec.shape : 'stone'] || TEMPLATES.stone).length;
+  const inside = (x, y) => x >= 0 && y >= 0 && x < M && y < M && mask[(y | 0) * M + (x | 0)] === 1;
+  /** @type {number[][]|null} */
+  let best = null;
+  let bestScore = -1, bestK = 1;
+  for (let k = 1.5; k <= M / 1.5; k += 0.05) {
+    // the drawn blob reaches about 0.65 spacings beyond each particle
+    const rr = (0.65 * k) ** 2;
+    for (let oy = 0; oy < 4; oy++) for (let ox = 0; ox < 4; ox++) {
+      const pts = [];
+      const x0 = (ox / 4) * k, y0 = (oy / 4) * k * 0.866;
+      for (let b = -1; b * k * 0.866 + y0 < M + k; b++) {
+        for (let a = -1; a * k + x0 < M + k; a++) {
+          const x = (a + (b & 1) * 0.5) * k + x0, y = b * k * 0.866 + y0;
+          if (inside(x, y)) pts.push([x, y]);
+        }
+      }
+      if (pts.length !== n) continue;
+      let both = 0, blob = 0;
+      for (let cy = 0; cy < M; cy++) for (let cx = 0; cx < M; cx++) {
+        let hit = false;
+        for (const [x, y] of pts) if ((x - cx - 0.5) ** 2 + (y - cy - 0.5) ** 2 < rr) { hit = true; break; }
+        if (hit) { blob++; if (mask[cy * M + cx]) both++; }
+      }
+      const score = both / (area + blob - both);
+      if (score > bestScore) { bestScore = score; best = pts; bestK = k; }
+    }
+  }
+  if (!best) return (fitted[skin] = null);
+  let mx = 0, my = 0;
+  for (const [x, y] of best) { mx += x; my += y; }
+  mx /= n; my /= n;
+  const pts = best.map(([x, y]) => [(x - mx) / bestK, (y - my) / bestK]).sort((p, q) => Math.hypot(p[0], p[1]) - Math.hypot(q[0], q[1]));
+  const r = PIECE_CELL / M;
+  return (fitted[skin] = { pts, ax: fx + mx * r, ay: fy + my * r, ppu: bestK * r, cx: fx, cy: fy });
 }
 
 /** Largest object size of a material (particles). @param {any} def */

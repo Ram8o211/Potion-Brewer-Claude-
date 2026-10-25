@@ -6,7 +6,7 @@
 
 import { PHASE, SIM, formPhase } from './constants.js';
 import { COLUMN } from './cauldron.js';
-import { chunkTemplate, chunkSize } from '../materials/shapes.js';
+import { chunkTemplate, chunkSize, hasPieces, skinOf } from '../materials/shapes.js';
 
 export class Emitter {
   /** @param {import('./world.js').Simulation} sim */
@@ -137,11 +137,16 @@ export class Emitter {
     if (this.acc > 3) this.acc = 3;
   }
 
-  /** Spawn one whole object of a solid ingredient, shaped by its template. */
+  /**
+   * Spawn one whole object of a solid ingredient, shaped by its template —
+   * or, for a wild ingredient, by one of its four painted pieces, picked at
+   * random, which its particles then carry.
+   */
   _spawnChunk(a, size) {
     const sim = this.sim;
     const s = SIM.SPACING;
-    const offs = chunkTemplate(a.def, size);
+    const variant = hasPieces(a.def) ? Math.floor(sim.rand() * 4) : -1;
+    const offs = chunkTemplate(a.def, size, variant);
     let ext = 0;
     for (const [ox, oy] of offs) ext = Math.max(ext, Math.hypot(ox, oy) * s);
     const mouth = sim.cauldron.mouth;
@@ -156,15 +161,29 @@ export class Emitter {
     const g = sim.rigid.alloc();
     if (g < 0) return false;
     const idx = [];
-    for (const [x, y] of pts) {
+    const skin = variant >= 0 ? skinOf(a.def, variant) : 0;
+    for (let k = 0; k < pts.length; k++) {
+      const [x, y] = pts[k];
       const i = sim.addParticle(a.def, x, y, PHASE.SOLID, a.temp);
       if (i < 0) break;
       sim.p.group[i] = g;
       sim.p.vy[i] = 1.2;
+      sim.p.skin[i] = skin;
+      sim.p.skinU[i] = offs[k][0];
+      sim.p.skinV[i] = offs[k][1];
       idx.push(i);
     }
+    if (!idx.length) return false;
+    // the rest shape is the upright template, turned by the angle it tumbles in at
     sim.rigid.setRest(idx, g);
+    const p = sim.p;
+    for (const i of idx) {
+      const rx = p.restX[i], ry = p.restY[i];
+      p.restX[i] = ca * rx + sa * ry;
+      p.restY[i] = -sa * rx + ca * ry;
+    }
+    sim.rigid.angle[g] = ang;
     sim.rigid.markDirty(g);
-    return idx.length > 0;
+    return true;
   }
 }
