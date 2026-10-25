@@ -1,7 +1,7 @@
 // Wild sprites (every region): each atlas and its frame map agree, every
 // wild ingredient has gatherable art with all its states in its own region's
 // atlas, the dawn and dusk plants have closed frames and every ingredient an
-// icon, every ingredient grows through sprout, ripe and mature frames, each
+// icon (and a painted one in the icon sheet), every ingredient grows through sprout, ripe and mature frames, each
 // region has its painted backdrop, plants grow on its open ground with room
 // round them, only the crystals sparkle (on their edges), and hit testing
 // picks plants — never the scenery — at any scene size.
@@ -12,6 +12,7 @@ import zlib from 'node:zlib';
 import { ATLASES } from '../src/rendering/wilds-atlas.js';
 import * as FIELD from '../src/rendering/meadow-atlas.js';
 import * as GROW from '../src/rendering/growth-atlas.js';
+import { ICONS_URL, ICONS_SIZE, ICON_FRAMES } from '../src/rendering/ingredient-icons.js';
 import { CRYSTALS, GATHERABLES, GROWTH, ICON_SIZE, MIN_HIT, MEADOW, REGION_ATLAS, gatherFrameName, glintSpots, growthFrame, plantBox, hitPlant } from '../src/rendering/wild-sprites.js';
 import { REGIONS, STAGES, depositStatus } from '../src/game/gathering.js';
 import { WILD_SPECS } from '../src/materials/wild.js';
@@ -21,7 +22,7 @@ import { GROUND } from '../src/rendering/backdrops-ground.js';
 
 
 test('each atlas file exists and matches its generated frame map', () => {
-  const all = [FIELD, GROW, ...Object.values(ATLASES).map((a) => ({ ATLAS_URL: a.url, ATLAS_SIZE: a.size, FRAMES: a.frames }))];
+  const all = [FIELD, GROW, { ATLAS_URL: ICONS_URL, ATLAS_SIZE: ICONS_SIZE, FRAMES: ICON_FRAMES }, ...Object.values(ATLASES).map((a) => ({ ATLAS_URL: a.url, ATLAS_SIZE: a.size, FRAMES: a.frames }))];
   for (const { ATLAS_URL, ATLAS_SIZE, FRAMES: frames } of all) {
     const png = fs.readFileSync(new URL('../' + ATLAS_URL, import.meta.url));
     assert.equal(png.toString('ascii', 1, 4), 'PNG');
@@ -276,4 +277,9 @@ test('without a DOM the atlases never load and the procedural scenes stay', asyn
     assert.equal(await atlas.load(), false);
     assert.equal(atlas.ready, false);
   }
+});
+
+test('every wild ingredient has its painted icon in the icon sheet', () => {
+  for (const { key } of WILD_SPECS) assert.ok(ICON_FRAMES[key], `${key} icon`);
+  assert.equal(Object.keys(ICON_FRAMES).length, WILD_SPECS.length);
 });
