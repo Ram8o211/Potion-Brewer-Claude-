@@ -8,8 +8,10 @@
 // exists, harvesting and closed ones (a dawn or dusk plant out of its
 // hour); all frames of one gatherable share a canvas anchored at its bottom
 // centre, so states swap in place. An `icon` frame (the ingredient's single
-// flower, root, crystal…) is its one picture in every list: the shelf, the
-// shop, the book and its deposit card. The plants of
+// flower, root, crystal…) is its fallback picture in lists; its one picture
+// in every list (the shelf, the shop, the book and its deposit card) is its
+// painted icon in the ingredient icon sheet (assets/icons/ingredients.png,
+// scripts/make-ingredient-icons.py). The plants of
 // a deposit beyond the player's guild rank are not drawn in the scene at
 // all; its card says what rank opens it.
 //
@@ -26,6 +28,7 @@
 import { ATLASES } from './wilds-atlas.js';
 import * as FIELD from './meadow-atlas.js';
 import * as GROW from './growth-atlas.js';
+import { ICONS_URL, ICON_FRAMES } from './ingredient-icons.js';
 import { rawSprite } from './scenes.js';
 
 /**
@@ -147,6 +150,9 @@ export const GATHERABLES = Object.fromEntries(Object.entries({
   crags: ['dragonpepper', 'cinderscale', 'ashbloom', 'obsidian'],
 }).flatMap(([region, keys]) => keys.map((k) => gatherable(region, REGION_ATLAS[region], k))));
 
+/** Every wild ingredient's painted icon, its picture in every list. */
+export const ICONS = new SpriteAtlas(ICONS_URL, ICON_FRAMES);
+
 /** Every wild ingredient as a sprout, ripe and mature plant. */
 export const GROWTH = new SpriteAtlas(GROW.ATLAS_URL, GROW.FRAMES, GROW.RES);
 
@@ -265,23 +271,41 @@ export function hitPlant(plants, frameOf, px, py, W, H, slop = 4) {
 
 /**
  * A square picture of a raw ingredient for every list it appears in (the
- * shelf, the shop, the book and its deposit card): its
- * 32 px icon frame where the region's art has one (drawn as soon as the
- * atlas is in), else the 16 px procedural sprite of its shape (the page
- * sizes it either way).
+ * shelf, the shop, the book and its deposit card): its painted icon from the
+ * icon sheet (drawn as soon as the sheet is in, smoothly scaled — it is far
+ * finer than the page shows it), else its region's 32 px icon frame, else
+ * the 16 px procedural sprite of its shape (the page sizes it either way).
  * @param {any} m material @param {number} [fill] 0..1
  */
 export function ingredientSprite(m, fill = 1) {
   const cv = rawSprite(m.wild ? m.wild.shape : m.shape || 'stone', m.look || m.color, fill);
-  const g = m.wild ? GATHERABLES[m.wild.key] : null;
+  const key = m.wild ? m.wild.key : null;
+  const g = key ? GATHERABLES[key] : null;
   const f = g && g.icon ? g.atlas.frames[g.icon] : null;
-  if (!g || !f) return cv;
-  const paint = () => {
+  const fi = key ? ICONS.frames[key] : null;
+  if (!f && !fi) return cv;
+  const paintFrame = () => {
+    if (!g || !f) return;
     cv.width = cv.height = ICON_SIZE;
     const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
     g.atlas.draw(ctx, /** @type {string} */ (g.icon), cv.width / 2, cv.height - Math.floor((cv.height - f[3]) / 2));
   };
-  if (g.atlas.ready) paint();
-  else g.atlas.load().then((ok) => { if (ok) paint(); });
+  const paintIcon = () => {
+    if (!fi || !key) return;
+    cv.width = fi[2];
+    cv.height = fi[3];
+    cv.style.imageRendering = 'auto';
+    const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
+    ctx.imageSmoothingEnabled = true;
+    ICONS.draw(ctx, key, cv.width / 2, cv.height);
+  };
+  if (fi && ICONS.ready) paintIcon();
+  else {
+    if (f) {
+      if (g && g.atlas.ready) paintFrame();
+      else if (g) g.atlas.load().then((ok) => { if (ok && !(fi && ICONS.ready)) paintFrame(); });
+    }
+    if (fi) ICONS.load().then((ok) => { if (ok) paintIcon(); });
+  }
   return cv;
 }

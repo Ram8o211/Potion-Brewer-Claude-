@@ -12097,8 +12097,52 @@ witchear_sprout: [150, 280, 48, 34],
 };
 return { ATLAS_URL, RES, ATLAS_SIZE, FRAMES };
 })();
-// src/rendering/scenes.js
+// src/rendering/ingredient-icons.js
 const __m61 = (() => {
+const ICONS_URL = 'assets/icons/ingredients.png';
+const ICONS_SIZE = /** @type {[number, number]} */ ([576, 576]);
+const ICON_FRAMES = {
+ashbloom: [96, 384, 96, 96],
+beebalm: [480, 288, 96, 96],
+bogbean: [384, 288, 96, 96],
+cinderscale: [384, 384, 96, 96],
+cinnabar: [96, 192, 96, 96],
+dragonpepper: [288, 384, 96, 96],
+dreamclover: [384, 96, 96, 96],
+emberbark: [288, 0, 96, 96],
+emberflint: [192, 192, 96, 96],
+frostcap: [288, 288, 96, 96],
+gravemoss: [192, 480, 96, 96],
+heartpetal: [96, 96, 96, 96],
+hemlock: [0, 384, 96, 96],
+ironroot: [0, 0, 96, 96],
+lodestone: [0, 192, 96, 96],
+mandrake: [0, 96, 96, 96],
+mica: [288, 192, 96, 96],
+moonlily: [480, 384, 96, 96],
+nettle: [288, 96, 96, 96],
+nightshade: [192, 0, 96, 96],
+obsidian: [192, 384, 96, 96],
+owlberry: [384, 0, 96, 96],
+reedmace: [0, 288, 96, 96],
+riverchalk: [192, 288, 96, 96],
+riverpearl: [96, 288, 96, 96],
+saltpetre: [384, 192, 96, 96],
+silverleaf: [96, 0, 96, 96],
+sirenreed: [96, 480, 96, 96],
+starquartz: [288, 480, 96, 96],
+stormglass: [480, 480, 96, 96],
+sulfur: [480, 96, 96, 96],
+sunthistle: [192, 96, 96, 96],
+toadstool: [0, 480, 96, 96],
+willowbark: [480, 192, 96, 96],
+wisplichen: [384, 480, 96, 96],
+witchear: [480, 0, 96, 96],
+};
+return { ICONS_URL, ICONS_SIZE, ICON_FRAMES };
+})();
+// src/rendering/scenes.js
+const __m62 = (() => {
 function R(ctx, x, y, w, h, c) {
 ctx.fillStyle = c;
 ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
@@ -12315,7 +12359,8 @@ const __m57 = (() => {
 const { ATLASES } = __m58;
 const FIELD = __m59;
 const GROW = __m60;
-const { rawSprite } = __m61;
+const { ICONS_URL, ICON_FRAMES } = __m61;
+const { rawSprite } = __m62;
 class SpriteAtlas {
 constructor(url, frames, res = 1) {
 this.url = url;
@@ -12394,6 +12439,7 @@ quarry: ['emberflint', 'mica', 'saltpetre', 'sulfur', 'lodestone', 'cinnabar', '
 moonfen: ['gravemoss', 'starquartz', 'wisplichen', 'moonlily', 'toadstool', 'sirenreed'],
 crags: ['dragonpepper', 'cinderscale', 'ashbloom', 'obsidian'],
 }).flatMap(([region, keys]) => keys.map((k) => gatherable(region, REGION_ATLAS[region], k))));
+const ICONS = new SpriteAtlas(ICONS_URL, ICON_FRAMES);
 const GROWTH = new SpriteAtlas(GROW.ATLAS_URL, GROW.FRAMES, GROW.RES);
 function growthFrame(key, stage, hover = false) {
 const name = `${key}_${stage}${hover && stage === 'mature' ? '_hover' : ''}`;
@@ -12455,22 +12501,40 @@ return best || near;
 }
 function ingredientSprite(m, fill = 1) {
 const cv = rawSprite(m.wild ? m.wild.shape : m.shape || 'stone', m.look || m.color, fill);
-const g = m.wild ? GATHERABLES[m.wild.key] : null;
+const key = m.wild ? m.wild.key : null;
+const g = key ? GATHERABLES[key] : null;
 const f = g && g.icon ? g.atlas.frames[g.icon] : null;
-if (!g || !f) return cv;
-const paint = () => {
+const fi = key ? ICONS.frames[key] : null;
+if (!f && !fi) return cv;
+const paintFrame = () => {
+if (!g || !f) return;
 cv.width = cv.height = ICON_SIZE;
 const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
 g.atlas.draw(ctx, /** @type {string} */ (g.icon), cv.width / 2, cv.height - Math.floor((cv.height - f[3]) / 2));
 };
-if (g.atlas.ready) paint();
-else g.atlas.load().then((ok) => { if (ok) paint(); });
+const paintIcon = () => {
+if (!fi || !key) return;
+cv.width = fi[2];
+cv.height = fi[3];
+cv.style.imageRendering = 'auto';
+const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
+ctx.imageSmoothingEnabled = true;
+ICONS.draw(ctx, key, cv.width / 2, cv.height);
+};
+if (fi && ICONS.ready) paintIcon();
+else {
+if (f) {
+if (g && g.atlas.ready) paintFrame();
+else if (g) g.atlas.load().then((ok) => { if (ok && !(fi && ICONS.ready)) paintFrame(); });
+}
+if (fi) ICONS.load().then((ok) => { if (ok) paintIcon(); });
+}
 return cv;
 }
-return { SpriteAtlas, MEADOW, REGION_ATLAS, GATHERABLES, GROWTH, growthFrame, CRYSTALS, glintSpots, ICON_SIZE, MIN_HIT, gatherFrameName, plantBox, hitPlant, ingredientSprite };
+return { SpriteAtlas, MEADOW, REGION_ATLAS, GATHERABLES, ICONS, GROWTH, growthFrame, CRYSTALS, glintSpots, ICON_SIZE, MIN_HIT, gatherFrameName, plantBox, hitPlant, ingredientSprite };
 })();
 // src/game/journal.js
-const __m62 = (() => {
+const __m63 = (() => {
 function processEvent(state, e) {
 const entries = [];
 const achievements = [];
@@ -12583,7 +12647,7 @@ return { entries, achievements };
 return { processEvent };
 })();
 // src/game/autobrew.js
-const __m63 = (() => {
+const __m64 = (() => {
 const { PHASE, SIM } = __m23;
 const { MAX_SPECIES } = __m18;
 function condensedCount(sim) {
@@ -12867,7 +12931,7 @@ return t / Math.max(1, sim.p.count);
 return { condensedCount, stageGoal, AutoBrewer, runPlanHeadless, speciesFraction };
 })();
 // src/game/mechanics.js
-const __m65 = (() => {
+const __m66 = (() => {
 const MECHANICS = [
 { id: 'formulation', name: 'Formulation and neutralisation', role: 'core', stage: 'formulation', rank: 0,
 decision: 'Which natural ingredients, in what proportions, to carry the wanted effects and cancel their side effects.',
@@ -12953,9 +13017,9 @@ const SANDBOX_CONTROLS = ['skimmer', 'alembic', 'heatmap', 'readouts'];
 return { MECHANICS, MECHANIC_BY_ID, IMMERSION, SANDBOX_CONTROLS };
 })();
 // src/ui/panels.js
-const __m64 = (() => {
+const __m65 = (() => {
 const { recipeConfidence, CONFIDENCE_TEXT, describeStep } = __m48;
-const { MECHANIC_BY_ID } = __m65;
+const { MECHANIC_BY_ID } = __m66;
 const { evidenceRank } = __m26;
 const { h, btn, modal, toast, coins, starsText, confirmDialog, clear } = __m2;
 const { icon } = __m3;
@@ -13537,7 +13601,7 @@ h('div', { class: 'small muted credits', text: 'The Alchemist’s Shop — all a
 return { jarCanvas, fxChips, openShop, openIngredient, openHint, openBottleSize, showDaySummary, showAnalysis, openRecipes, renderRecipes, openJournal, renderJournal, openPause, openReceiver, openHelp, openSettings };
 })();
 // src/ui/trade.js
-const __m66 = (() => {
+const __m67 = (() => {
 const { h, btn, modal, toast, coins, clear, starsText } = __m2;
 const { icon } = __m3;
 const { drawPortrait } = __m56;
@@ -13759,7 +13823,7 @@ return `${n === null ? '' : starsText(n, MAX_STARS) + ' '}${claimSummary(label.c
 return { openIdentify, openNegotiation, showDeal, followUpCard, claimSummary, accuracyTitle, labelLine, EFFECT_BY_KEY };
 })();
 // src/ui/tutorial.js
-const __m67 = (() => {
+const __m68 = (() => {
 const { h, btn, placeToasts } = __m2;
 const { PHASE } = __m23;
 const { TUTORIAL_HERBS } = __m16;
@@ -13906,7 +13970,7 @@ if (t && t !== this.target) { if (this.target) this.target.classList.remove('hig
 return { Tutorial };
 })();
 // src/ui/views/counter.js
-const __m68 = (() => {
+const __m69 = (() => {
 const { h, btn, clear, coins, confirmDialog, starsText } = __m2;
 const { icon } = __m3;
 const { drawPortrait } = __m56;
@@ -13917,10 +13981,10 @@ const { EFFECT_INDEX, NE } = __m13;
 const { EFFECT_BY_KEY } = __m13;
 const { missingEffects, summarize, requirementEvidence } = __m26;
 const { labelStars, MAX_STARS } = __m45;
-const trade = __m66;
+const trade = __m67;
 const { describeColor, rgbToHex } = __m8;
 const { viscosityClass } = __m44;
-const panels = __m64;
+const panels = __m65;
 const { shortName } = __m21;
 class CounterView {
 constructor(lab) {
@@ -14114,7 +14178,7 @@ unseen ? h('span', { class: 'muted', text: ` ${seen.length ? '· ' : ''}${unseen
 return { CounterView };
 })();
 // src/rendering/backdrops-ground.js
-const __m71 = (() => {
+const __m72 = (() => {
 const GROUND = {
 meadow: [
 [],
@@ -14996,10 +15060,10 @@ crags: [
 return { GROUND };
 })();
 // src/rendering/regions.js
-const __m70 = (() => {
+const __m71 = (() => {
 const { Rng } = __m6;
 const { SpriteAtlas, MEADOW } = __m57;
-const { GROUND } = __m71;
+const { GROUND } = __m72;
 const SCENE_W = 256;
 const SCENE_H = 144;
 const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
@@ -15564,15 +15628,15 @@ if (!BACKDROPS.quarry.ready) R(ctx, 24, 56, 3, 5, `rgba(255,243,176,${flick.toFi
 return { SCENE_W, SCENE_H, BACKDROPS, GROUND_TOP, PlantGround, paintRegion, animateRegion };
 })();
 // src/ui/views/wilds.js
-const __m69 = (() => {
+const __m70 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
 const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, marksIn, DAY_PART_NAME } = __m28;
 const { equipmentById } = __m25;
 const { RANKS } = __m25;
-const { drawRaw } = __m61;
-const { paintRegion, animateRegion, PlantGround, BACKDROPS, SCENE_W, SCENE_H } = __m70;
+const { drawRaw } = __m62;
+const { paintRegion, animateRegion, PlantGround, BACKDROPS, SCENE_W, SCENE_H } = __m71;
 const { GATHERABLES, GROWTH, CRYSTALS, REGION_ATLAS, growthFrame, glintSpots, plantBox, hitPlant, ingredientSprite } = __m57;
 const { EFFECT_BY_KEY } = __m13;
 function sparkle(ctx, x, y, u) {
@@ -15940,7 +16004,7 @@ this.grow();
 return { WildsView };
 })();
 // src/rendering/rabbit.js
-const __m73 = (() => {
+const __m74 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m53;
 const { RABBIT_MARKS } = __m27;
@@ -16836,10 +16900,10 @@ ctx.fillRect(fx, fy, RABBIT_W, RABBIT_H);
 return { RABBIT_W, RABBIT_H, rabbitLevels, rabbitPose, rabbitPace, rabbitAnchors, rabbitSpriteKey, drawRabbitSprite, clearRabbitSprites, drawRabbit };
 })();
 // src/rendering/hutch-scene.js
-const __m75 = (() => {
+const __m76 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m53;
-const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m73;
+const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m74;
 const HUTCH_W = 224;
 const HUTCH_H = 88;
 const HUTCH_BODIES = 3;
@@ -17257,13 +17321,13 @@ ctx.drawImage(this.bg, 0, 0);
 return { HUTCH_W, HUTCH_H, HUTCH_BODIES, paintHutch, paintHutchFront, HutchScene };
 })();
 // src/ui/views/hutch.js
-const __m74 = (() => {
+const __m75 = (() => {
 const { readingSteadiness } = __m26;
 const { h, btn, clear, toast, modal, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { drawRabbit, RABBIT_W, RABBIT_H } = __m73;
-const { HutchScene, HUTCH_W, HUTCH_H } = __m75;
+const { drawRabbit, RABBIT_W, RABBIT_H } = __m74;
+const { HutchScene, HUTCH_W, HUTCH_H } = __m76;
 const { EFFECT_BY_KEY } = __m13;
 const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral, RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE, BURNS } = __m27;
 const { PURGE_BREW_TIME } = __m5;
@@ -17592,7 +17656,7 @@ if (this._live >= 0.25) { this._live = 0; this.live(); }
 return { CHANNELS, HutchPanel };
 })();
 // src/ui/views/trials.js
-const __m72 = (() => {
+const __m73 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
@@ -17604,9 +17668,9 @@ const { summarize, addSamples, EVIDENCE_TEXT, evidenceRank, requirementEvidence 
 const { evidenceOf } = __m45;
 const { shortName } = __m21;
 const LEVEL_SHORT = { preliminary: '1 reading', repeated: 'repeated', corroborated: 'corroborated', certified: 'certified' };
-const { drawRabbit } = __m73;
+const { drawRabbit } = __m74;
 const { focusRabbit, findRabbit, rabbitSnap, decodeSnap, lookFromSeed, RABBIT_MARKS } = __m27;
-const { HutchPanel } = __m74;
+const { HutchPanel } = __m75;
 const REPLAY_T = 3.2;
 class TrialsView {
 constructor(lab) {
@@ -17983,11 +18047,11 @@ return `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2
 return { TrialsView, EFFECTS, EFFECT_INDEX };
 })();
 // src/ui/views/book.js
-const __m76 = (() => {
+const __m77 = (() => {
 const { h, btn, clear } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const panels = __m64;
+const panels = __m65;
 const { SUBJECT_BY_ID } = __m26;
 const { EFFECTS, EFFECT_BY_KEY, EFFECT_KEYS } = __m13;
 const { rgbToHex } = __m8;
@@ -18100,9 +18164,9 @@ const { drawJar } = __m53;
 const { ingredientSprite } = __m57;
 const { measureParticles, tapSelection, probeSelection, viscosityClass, densityWord } = __m44;
 const { scoreRequirement, PROPERTY_LABELS } = __m22;
-const { processEvent } = __m62;
+const { processEvent } = __m63;
 const { saveGame, saveJSON, KEYS } = __m49;
-const { AutoBrewer, condensedCount } = __m63;
+const { AutoBrewer, condensedCount } = __m64;
 const { traceSample, buildProcedure, procedureLimits, matchRecipe, compareRecipe, checkReproduction, TRACE_DT } = __m48;
 const { proofGaps, draftLabel, applyTrials, evidenceOf } = __m45;
 const { RANKS } = __m25;
@@ -18116,13 +18180,13 @@ const { describeColor, rgbToHex } = __m8;
 const { h, btn, clear, toast, coins, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const panels = __m64;
-const trade = __m66;
-const { Tutorial } = __m67;
-const { CounterView } = __m68;
-const { WildsView } = __m69;
-const { TrialsView } = __m72;
-const { BookView } = __m76;
+const panels = __m65;
+const trade = __m67;
+const { Tutorial } = __m68;
+const { CounterView } = __m69;
+const { WildsView } = __m70;
+const { TrialsView } = __m73;
+const { BookView } = __m77;
 const { shortName } = __m21;
 const REQ_ICON = { temperature: 'thermo', quantity: 'flask', purity: 'pure' };
 const TOOL_DEFS = [
@@ -19828,7 +19892,7 @@ void dominantEffect;
 return { VIEWS, LabScreen };
 })();
 // src/materials/reference.js
-const __m78 = (() => {
+const __m79 = (() => {
 const { completeMaterial } = __m9;
 const REF = {};
 const add = (d) => (REF[d.id] = completeMaterial(d));
@@ -19866,11 +19930,11 @@ const refLookup = (id) => REF[id];
 return { REF, refLookup };
 })();
 // src/ui/menu.js
-const __m77 = (() => {
+const __m78 = (() => {
 const { h, btn } = __m2;
 const { Renderer } = __m52;
 const { Simulation } = __m30;
-const { REF, refLookup } = __m78;
+const { REF, refLookup } = __m79;
 const { hasSave, loadGame } = __m49;
 const { audio } = __m4;
 class MenuScreen {
@@ -19959,8 +20023,8 @@ const { sandboxIngredients } = __m7;
 const { EQUIPMENT } = __m25;
 const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m49;
 const { LabScreen } = __m50;
-const { MenuScreen } = __m77;
-const { openSettings, openHelp } = __m64;
+const { MenuScreen } = __m78;
+const { openSettings, openHelp } = __m65;
 const { Rng } = __m6;
 const { normalizeTrials } = __m26;
 const DEFAULT_SETTINGS = { master: 0.8, sfx: 0.8, music: 0.35, musicOn: true, muted: false, quality: 'auto', showFps: false };
@@ -20076,7 +20140,7 @@ openHelp();
 return { App, icon };
 })();
 // src/ui/textures.js
-const __m79 = (() => {
+const __m80 = (() => {
 const { Rng } = __m6;
 function texture(w, h, paint) {
 const cv = document.createElement('canvas');
@@ -20120,7 +20184,7 @@ return { installTextures };
 // src/main.js
 const __m0 = (() => {
 const { App } = __m1;
-const { installTextures } = __m79;
+const { installTextures } = __m80;
 installTextures();
 const root = document.getElementById('app');
 const app = new App(root);
