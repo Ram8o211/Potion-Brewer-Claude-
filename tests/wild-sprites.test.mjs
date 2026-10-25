@@ -2,7 +2,8 @@
 // wild ingredient has gatherable art with all its states in its own region's
 // atlas, the dawn and dusk plants have closed frames and every ingredient an
 // icon, every ingredient grows through sprout, ripe and mature frames, each
-// region has its layered scene, plants grow on open ground, and hit testing
+// region has its painted backdrop, plants grow on its open ground with room
+// round them, and hit testing
 // picks plants — never the scenery — at any scene size.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -15,7 +16,8 @@ import { GATHERABLES, GROWTH, MIN_HIT, MEADOW, REGION_ATLAS, gatherFrameName, gr
 import { REGIONS, STAGES, depositStatus } from '../src/game/gathering.js';
 import { WILD_SPECS } from '../src/materials/wild.js';
 import { GameState } from '../src/game/state.js';
-import { SCENE_W, SCENE_H, PlantGround, fixedOf, lavaStream, GROUND_TOP, animateRegion } from '../src/rendering/regions.js';
+import { SCENE_W, SCENE_H, PlantGround, BACKDROPS, GROUND_TOP } from '../src/rendering/regions.js';
+import { GROUND } from '../src/rendering/backdrops-ground.js';
 
 
 test('each atlas file exists and matches its generated frame map', () => {
@@ -171,13 +173,26 @@ function decodePng(png) {
   return { width, data };
 }
 
-test('every plant rises out of open ground, clear of the scenery and of each other, and keeps its spot as it grows', () => {
-  const regions = ['forest', 'meadow', 'river', 'quarry', 'moonfen', 'crags'];
-  for (const r of regions) assert.ok(GROUND_TOP[r] > SCENE_H / 2, `${r} has open ground`);
+test('each region has its painted backdrop, the size of the scene, with open ground below its far scenery', () => {
+  for (const r of REGIONS) {
+    const png = fs.readFileSync(new URL('../' + BACKDROPS[r.id].url, import.meta.url));
+    assert.equal(png.toString('ascii', 1, 4), 'PNG');
+    assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [SCENE_W, SCENE_H], `${r.id} backdrop size`);
+    const rows = GROUND[r.id];
+    assert.equal(rows.length, SCENE_H, `${r.id} ground has a row per scene row`);
+    for (const runs of rows) for (const [x0, x1] of runs) assert.ok(x0 >= 0 && x0 < x1 && x1 <= SCENE_W, `${r.id} run inside the scene`);
+    const area = rows.reduce((n, runs) => n + runs.reduce((m, [x0, x1]) => m + x1 - x0, 0), 0);
+    assert.ok(area > 2500, `${r.id} has room to grow (${area} px of ground)`);
+    assert.ok(GROUND_TOP[r.id] > SCENE_H / 2, `${r.id} ground lies in the lower half`);
+  }
+});
+
+test('every plant stands on its backdrop\'s ground, clear of the others, and keeps its spot as it grows', () => {
+  const regions = REGIONS.map((r) => r.id);
   const unready = { id: 'x', x: 0.3, y: 0.6, key: 'silverleaf' };
-  assert.deepEqual(new PlantGround('forest', 's').place([unready], () => null), { x: { x: 0.3, y: 0.6 } }, 'until the sheet can be read a plant keeps its spot');
-  const atlases = [...new Set(regions.map((r) => REGION_ATLAS[r])), GROWTH];
-  for (const a of atlases) { a.pixels = decodePng(fs.readFileSync(new URL('../' + a.url, import.meta.url))); a.ready = true; }
+  assert.deepEqual(new PlantGround('forest').place([unready], () => null), { x: { x: 0.3, y: 0.6 } }, 'without its shape a plant keeps its spot');
+  GROWTH.pixels = decodePng(fs.readFileSync(new URL('../' + GROWTH.url, import.meta.url)));
+  GROWTH.ready = true;
   /** a plant's full-grown silhouette: every frame of it */
   const shapeOf = (p) => {
     const [, , w, h] = GROWTH.frame(p.key + '_mature_hover'), m = new Uint8Array(w * h);
@@ -191,87 +206,52 @@ test('every plant rises out of open ground, clear of the scenery and of each oth
       const later = Date.now() + 1e9;
       for (const d of st.deposits) st.gathering.nodes[d.id] = { plants: [], due: Date.now(), seq: 0 };
       for (const region of regions) {
-        const A = REGION_ATLAS[region];
+        const ground = new Uint8Array(SCENE_W * SCENE_H);
+        GROUND[region].forEach((runs, y) => { for (const [x0, x1] of runs) ground.fill(1, y * SCENE_W + x0, y * SCENE_W + x1); });
         const plants = st.deposits.filter((d) => d.region === region)
           .flatMap((d) => depositStatus(st.gathering, d, later).plants.map((p) => ({ ...p, key: st.lookup(d.materialId).wild.key })))
           .sort((a, b) => a.born - b.born);
-        const ground = new PlantGround(region, seed);
-        const spots = ground.place(plants, shapeOf);
-        assert.deepEqual(ground.place(plants, shapeOf), spots, 'the same layout every time');
+        const pg = new PlantGround(region);
+        const spots = pg.place(plants, shapeOf);
+        assert.deepEqual(pg.place(plants, shapeOf), spots, 'the same layout every time');
         // a plant harvested leaves the others where they stand
         const fewer = plants.slice(1);
-        const after = ground.place(fewer, shapeOf);
+        const after = pg.place(fewer, shapeOf);
         for (const p of fewer) assert.deepEqual(after[p.id], spots[p.id], 'neighbours do not move');
-        assert.deepEqual(new PlantGround(region, seed).place(plants, shapeOf), spots, 'deterministic for a seed');
-        // the scenery's pixels: upright pieces, and the flat ones (pools) no foot may rest in
-        const solid = new Uint8Array(SCENE_W * SCENE_H), flat = new Uint8Array(SCENE_W * SCENE_H);
-        /** @param {Uint8Array} grid @param {any} atlas @param {string} name @param {number} x @param {number} y @param {boolean} [flip] */
-        const paint = (grid, atlas, name, x, y, flip) => {
-          const [, , w, h] = atlas.frame(name), m = atlas.mask(name), left = Math.round(x - w / 2), top = Math.round(y - h);
-          let hit = false;
-          for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
-            const px = left + i, py = top + j;
-            if (!m[j * w + (flip ? w - 1 - i : i)] || px < 0 || py < 0 || px >= SCENE_W || py >= SCENE_H) continue;
-            if (grid[py * SCENE_W + px]) hit = true;
-            grid[py * SCENE_W + px] = 1;
-          }
-          return { hit, left, top, w, h };
-        };
-        for (const [name, x, y, flip, isFlat] of fixedOf(region)) paint(isFlat ? flat : solid, A, name, x, y, flip);
-        const lava = region === 'crags' ? lavaStream(seed) : [];
+        assert.deepEqual(new PlantGround(region).place(plants, shapeOf), spots, 'deterministic for a seed');
         const placed = new Uint8Array(SCENE_W * SCENE_H);
+        /** @type {{ax:number, ay:number}[]} */
+        const feet = [];
         for (const p of plants) {
           const s = spots[p.id], name = `${p.key}_mature_hover`;
           const ax = Math.round(s.x * SCENE_W), ay = Math.round(s.y * SCENE_H);
-          const where = `${seed} ${p.id} at ${ax},${ay}`;
-          assert.ok(ay >= GROUND_TOP[region] && ay <= SCENE_H - 3, `${where}: its foot is on the open ground, inside the frame`);
-          const b = paint(placed, GROWTH, name, ax, ay);
-          assert.ok(!b.hit, `${where} overlaps another plant`);
-          assert.ok(b.left >= 1 && b.left + b.w <= SCENE_W - 1 && b.top >= 1, `${where} lies inside the frame`);
+          const where = `${seed} ${region} ${p.id} at ${ax},${ay}`;
+          const [, , w, h] = GROWTH.frame(name), left = Math.round(ax - w / 2), top = ay - h;
+          assert.ok(left >= 1 && left + w <= SCENE_W - 1 && top >= 1 && ay <= SCENE_H - 3, `${where} lies inside the frame`);
+          // its foot and shadow rest on the ground (never in water, lava or on a rock)
+          const sw = Math.max(4, Math.round(w * 0.5));
+          for (let x = ax - Math.floor(sw / 2); x < ax - Math.floor(sw / 2) + sw; x++) assert.ok(ground[ay * SCENE_W + x], `${where}: its foot at ${x} is on the ground`);
           const m = /** @type {Uint8Array} */ (GROWTH.mask(name));
-          for (let j = 0; j < b.h; j++) for (let i = 0; i < b.w; i++) {
-            if (!m[j * b.w + i]) continue;
-            const k = (b.top + j) * SCENE_W + b.left + i;
-            assert.ok(!solid[k], `${where} overlaps the scenery at ${b.left + i},${b.top + j}`);
-            if (j === b.h - 1) assert.ok(!flat[k], `${where} stands in a pool`);
+          for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+            if (!m[j * w + i]) continue;
+            const k = (top + j) * SCENE_W + left + i;
+            assert.ok(!placed[k], `${where} overlaps another plant`);
+            placed[k] = 1;
           }
-          // the foot's row: on the near shore or the far meadow, never in the river; never in the lava
-          if (region === 'river') assert.ok(ay < 89 || ay > 120, `${where} stands in the river`);
-          const row = lava.find(([y]) => y === ay - 1);
-          if (row) assert.ok(b.left + b.w <= row[1] - row[2] / 2 || b.left >= row[1] + row[2] / 2, `${where} stands in the lava`);
+          feet.push({ ax, ay });
         }
+        // not crowded: most plants keep a clear stride from their nearest neighbour
+        const near = feet.filter((a) => feet.some((b) => b !== a && Math.abs(a.ax - b.ax) < 12 && Math.abs(a.ay - b.ay) < 6)).length;
+        assert.ok(near <= Math.ceil(feet.length / 4), `${seed} ${region}: ${near} of ${feet.length} plants crowd a neighbour`);
       }
     }
   } finally {
-    for (const a of atlases) { a.pixels = null; a.masks = {}; a.ready = false; }
-  }
-});
-
-test('the Ember Crags breathe moving smoke, not smoke painted into the rocks', () => {
-  const A = REGION_ATLAS.crags;
-  // the vent and gusher frames end at their mouths: the pack's plumes are cleared
-  assert.ok(A.frame('vent')[3] < 20 && A.frame('gusher')[3] < 36, 'no plume left on the vent or the gusher');
-  /** what the overlay paints at time t above the plain: pixel → its last colour and opacity */
-  const smoke = (t) => {
-    /** @type {Map<string, string>} */
-    const px = new Map();
-    const ctx = /** @type {any} */ ({ fillStyle: '', globalAlpha: 1, fillRect(x, y, w, h) { if (y < 72 && this.globalAlpha > 0) for (let i = 0; i < w; i++) for (let j = 0; j < h; j++) px.set(`${x + i},${y + j}`, this.fillStyle + this.globalAlpha); } });
-    animateRegion(ctx, 'crags', t);
-    return px;
-  };
-  A.ready = true;
-  try {
-    const a = smoke(1), b = smoke(2.5);
-    assert.ok(a.size > 100 && b.size > 100, 'smoke rises over the vent and the gusher');
-    const same = [...a].filter(([k, v]) => b.get(k) === v).length;
-    assert.ok(same < a.size / 2, `and it moves (${same} of ${a.size} pixels unchanged)`);
-  } finally {
-    A.ready = false;
+    GROWTH.pixels = null; GROWTH.masks = {}; GROWTH.ready = false;
   }
 });
 
 test('without a DOM the atlases never load and the procedural scenes stay', async () => {
-  for (const atlas of [MEADOW, ...Object.values(REGION_ATLAS)]) {
+  for (const atlas of [MEADOW, ...Object.values(REGION_ATLAS), ...Object.values(BACKDROPS)]) {
     assert.equal(await atlas.load(), false);
     assert.equal(atlas.ready, false);
   }

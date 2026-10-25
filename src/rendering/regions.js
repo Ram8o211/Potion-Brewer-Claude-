@@ -1,19 +1,19 @@
-// The wilds as pixel-art panoramas (256×144 art pixels): each region is a
-// layered painting — a dithered sky, far silhouettes, the scenery that gives
-// it its character (lit oak canopies over a sunny clearing with shrubs,
-// berries, bluebells, daisies and toadstools, a flowered meadow, a
-// willow river, terraced quarry faces with cranes and a lantern, a moonlit
-// bog of willows, crystals and wisps, smoking volcanic crags) and a ground
-// the plants grow on (they sprout between 0.56 and 0.9 of the height; in
-// a sprite scene PlantGround moves each onto open ground, clear of the
-// scenery). Painted once per region into a cached canvas; animateRegion adds
-// the moving parts each frame (wisps, birds, embers, the crags' smoke). Deterministic: every random choice comes from
-// an Rng seeded by the world seed and the region. Each region swaps its
-// painted scenery for a composition of sprites from its atlas
-// (rendering/wild-sprites.js) once that loads.
+// The wilds' scenes (256×144 art pixels). Each region is shown as its
+// painted backdrop (assets/backdrops/<region>.png, scripts/make-backdrops.py)
+// once that has loaded; until then (and in Node) as a procedural panorama — a
+// dithered sky, far silhouettes, the scenery that gives it its character (lit
+// oak canopies over a sunny clearing, a flowered meadow, a willow river,
+// terraced quarry faces with cranes and a lantern, a moonlit bog of willows,
+// crystals and wisps, smoking volcanic crags) and a ground. The plants grow
+// on the backdrop's open ground: PlantGround moves each sprout onto it (never
+// into water, lava or onto a rock) with room round it. Painted once per
+// region into a cached canvas; animateRegion adds the moving parts each frame
+// (wisps, birds, embers). Deterministic: every random choice comes from an
+// Rng seeded by the world seed and the region.
 
 import { Rng } from '../core/rng.js';
-import { REGION_ATLAS, MEADOW, GATHERABLES } from './wild-sprites.js';
+import { SpriteAtlas, MEADOW } from './wild-sprites.js';
+import { GROUND } from './backdrops-ground.js';
 
 export const SCENE_W = 256;
 export const SCENE_H = 144;
@@ -374,118 +374,50 @@ function forest(ctx, rng) {
   for (let i = 0; i < 18; i++) sparkle(ctx, rng.int(4, W - 4), rng.int(60, H - 6), rng.pick(['#fff3a0', '#ffe066']), '#ffffff');
 }
 
-/**
- * The scenery fixed in each sprite scene: [frame, x, y, flip, flat]. An
- * upright piece (a tree, a crag, the fence) is kept clear by every pixel of
- * a deposit; a flat one (a pool) only by its foot. The painters draw them
- * through `stand`.
- * @type {Record<string, [string, number, number, boolean?, boolean?][]>}
- */
-const FIXED = {
-  forest: [['oak_small', 132, 78], ['oaks', 22, 96, true], ['oaks', 238, 94]],
-  meadow: [['oak', 30, 80]],
-  river: [['willow_small', 150, 78], ['willow_great', 26, 98], ['willow_second', 232, 96]],
-  quarry: [['crane', 206, 90]],
-  moonfen: [['water_2', 70, 104, false, true], ['water', 196, 122, false, true], ['water', 48, 140, true, true],
-    ['willow_small', 164, 82], ['dead_tree', 96, 84], ['willow_left', 24, 102], ['willow_center', 234, 98]],
-  crags: [['gusher', 182, 86], ['vent', 76, 88], ['crag_large', 22, 104], ['crag_tall', 236, 102]],
-};
+/** Each region's painted backdrop (assets/backdrops/<region>.png, built by scripts/make-backdrops.py), one frame the size of the scene. */
+export const BACKDROPS = Object.fromEntries(Object.keys(GROUND).map((r) => [r, new SpriteAtlas(`assets/backdrops/${r}.png`, { scene: [0, 0, SCENE_W, SCENE_H] })]));
 
-/** The first row of open ground in each sprite scene (above it: the far bands, the cliff, the mist). */
-export const GROUND_TOP = { forest: 80, meadow: 78, river: 80, quarry: 88, moonfen: 88, crags: 86 };
-/** Ground no deposit stands on, [x, y, w, h]: Willow Bank's chalk face, the river and the near shore's edge. */
-const WET = { river: [[0, 89, SCENE_W, 31]] };
-
-/** A region's fixed scenery, the meadow's fence included. @param {string} region */
-export function fixedOf(region) {
-  const list = FIXED[region] || [];
-  if (region !== 'meadow') return list;
-  // the split-rail fence at the far edge of the field (each length shares its end post with the next)
-  const f = MEADOW.frame('fence');
-  /** @type {[string, number, number][]} */
-  const fence = [];
-  if (f) for (let x = -6; x < SCENE_W + f[2]; x += f[2] - 4) fence.push(['fence', x + f[2] / 2, 73]);
-  return [...fence, ...list];
+/** A region's ground as a scene grid: 1 where a plant's foot may rest (on its backdrop's open ground, never in water, lava or on a rock). @param {string} region */
+function groundGrid(region) {
+  const grid = new Uint8Array(SCENE_W * SCENE_H);
+  (GROUND[region] || []).forEach((runs, y) => { for (const [x0, x1] of runs) grid.fill(1, y * SCENE_W + x0, y * SCENE_W + x1); });
+  return grid;
 }
 
-/** Draw a region's fixed pieces of one frame. @param {CanvasRenderingContext2D} ctx @param {string} region @param {string} name */
-function stand(ctx, region, name) {
-  for (const [n, x, y, flip] of fixedOf(region)) if (n === name) REGION_ATLAS[region].draw(ctx, n, x, y, 1, !!flip);
-}
-
-/**
- * The Ember Crags' stream of lava winding down the plain, as rows [y, x, w]
- * (the same for a seed every time it is painted or laid out).
- * @param {string} seed
- */
-export function lavaStream(seed) {
-  const rng = new Rng(`lava:${seed}`);
-  /** @type {[number, number, number][]} */
-  const rows = [];
-  for (let y = 80, x = rng.int(90, 150); y < SCENE_H; y++) {
-    x += Math.sin(y * 0.13 + 1) * 1.3 + rng.range(-0.6, 0.6);
-    rows.push([y, x, 2 + Math.round((y - 80) / 26)]);
-  }
-  return rows;
-}
+/** The first row of open ground in each backdrop (above it: the sky, the far scenery, the cliff). */
+export const GROUND_TOP = Object.fromEntries(Object.entries(GROUND).map(([r, rows]) => [r, rows.findIndex((runs) => runs.length)]));
 
 /** Where a frame lands when drawn with its bottom centre at (x, y) (as SpriteAtlas.draw places it). @param {number[]} f @param {number} x @param {number} y */
 const frameAt = (f, x, y) => [Math.round(x - f[2] / 2), Math.round(y - f[3])];
 
-/** Mark a mask's pixels (grown by `grow`) in a scene grid. @param {Uint8Array} grid @param {ArrayLike<number>} m @param {number} w @param {number} h @param {number} left @param {number} top @param {boolean} flip @param {number} grow */
-function stamp(grid, m, w, h, left, top, flip, grow) {
+/** Mark a mask's pixels (grown by `grow`) in a scene grid. @param {Uint8Array} grid @param {ArrayLike<number>} m @param {number} w @param {number} h @param {number} left @param {number} top @param {number} grow */
+function stamp(grid, m, w, h, left, top, grow) {
   const W = SCENE_W, H = SCENE_H;
   for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
-    if (!m[j * w + (flip ? w - 1 - i : i)]) continue;
+    if (!m[j * w + i]) continue;
     for (let y = Math.max(0, top + j - grow); y <= Math.min(H - 1, top + j + grow); y++)
       for (let x = Math.max(0, left + i - grow); x <= Math.min(W - 1, left + i + grow); x++) grid[y * W + x] = 1;
   }
 }
 
-/**
- * The ground of a region's sprite scene: what nothing growing may touch
- * (its trees, crags, fence and other upright scenery) and where nothing may
- * stand (water, a pool, the lava), or null until the region's sheet can be read.
- * @param {string} region @param {string} seed
- */
-function groundGrids(region, seed) {
-  const W = SCENE_W, H = SCENE_H, A = REGION_ATLAS[region];
-  if (!A || !A.ready || !SPRITE_PAINTERS[region]) return null;
-  const solid = new Uint8Array(W * H), wet = new Uint8Array(W * H);
-  for (const [name, x, y, flip, flat] of fixedOf(region)) {
-    const f = A.frame(name), m = A.mask(name);
-    if (!f || !m) return null;
-    const [left, top] = frameAt(f, x, y);
-    stamp(flat ? wet : solid, m, f[2], f[3], left, top, !!flip, flat ? 2 : 1);
-  }
-  for (const [x0, y0, w, h] of WET[region] || []) for (let y = y0; y < Math.min(H, y0 + h); y++) wet.fill(1, y * W + x0, y * W + Math.min(W, x0 + w));
-  if (region === 'crags') for (const [y, x, w] of lavaStream(seed)) for (let xx = Math.round(x - w / 2) - 2; xx <= Math.round(x + w / 2) + 2; xx++) if (xx >= 0 && xx < W) wet[y * W + xx] = 1;
-  return { solid, wet, top: GROUND_TOP[region] || 80, bottom: H - 3 };
-}
-
-/** A prop this large (in art pixels) is kept clear by the plants; smaller ground cover is grown over. */
-const BIG_PROP = 150;
+/** The room a plant leaves round itself where the ground allows (art pixels); where it is short, one pixel. */
+const ROOM = 4;
 
 /**
- * Where the plants of a region's sprite scene stand. A plant keeps its spot
- * once it has one, so it grows in place; a new sprout takes the open ground
- * nearest the random spot it came up at, where it rises out of the ground —
- * its foot and shadow on dry ground, below the far bands — and where, grown
- * to its full size, none of its pixels touches the upright scenery, a large
- * prop or another plant. Until the region's sheet can be read (and for a
- * plant without growth art) a plant keeps the spot it came up at.
+ * Where the plants of a region stand. A plant keeps its spot once it has
+ * one, so it grows in place; a new sprout takes the open ground nearest the
+ * random spot it came up at, where its foot and shadow rest on the
+ * backdrop's ground (rendering/backdrops-ground.js) and, grown to its full
+ * size, it keeps a little room from every other plant, so a stand never
+ * crowds into a clump. For a plant without growth art a plant keeps the
+ * spot it came up at.
  */
 export class PlantGround {
-  /**
-   * @param {string} region @param {string} seed
-   * @param {{x0:number, y0:number, x1:number, y1:number}[]} [props] the boxes of the props painted into the scene
-   */
-  constructor(region, seed, props = []) {
+  /** @param {string} region */
+  constructor(region) {
     this.region = region;
-    this.seed = seed;
-    this.props = props.filter((b) => (b.x1 - b.x0) * (b.y1 - b.y0) >= BIG_PROP);
-    /** @type {ReturnType<typeof groundGrids>} */
-    this.grids = null;
+    this.ground = groundGrid(region);
+    this.top = Math.max(1, GROUND_TOP[region] ?? 0);
     /** plant id → its spot in art pixels and the mask it was placed with @type {Map<string, {x:number, y:number, w:number, h:number, m:Uint8Array}>} */
     this.spots = new Map();
   }
@@ -497,305 +429,50 @@ export class PlantGround {
    * @returns {Record<string, {x:number, y:number}>}
    */
   place(plants, shapeOf) {
-    const W = SCENE_W, H = SCENE_H;
+    const W = SCENE_W, H = SCENE_H, G = this.ground;
     /** @type {Record<string, {x:number, y:number}>} */
     const out = {};
     for (const p of plants) out[p.id] = { x: p.x, y: p.y };
-    if (!this.grids) this.grids = groundGrids(this.region, this.seed);
-    const G = this.grids;
-    if (!G) return out;
     const here = new Set(plants.map((p) => p.id));
     for (const id of [...this.spots.keys()]) if (!here.has(id)) this.spots.delete(id);
     const fresh = plants.filter((p) => !this.spots.has(p.id) && shapeOf(p));
     if (fresh.length) {
-      // the scenery and the plants; then the same with the large props
-      const bare = G.solid.slice();
-      for (const s of this.spots.values()) { const [left, top] = frameAt([0, 0, s.w, s.h], s.x, s.y); stamp(bare, s.m, s.w, s.h, left, top, false, 1); }
-      const full = bare.slice();
-      for (const b of this.props) for (let y = Math.max(0, Math.floor(b.y0)); y < Math.min(H, Math.ceil(b.y1)); y++) full.fill(1, y * W + Math.max(0, Math.floor(b.x0)), y * W + Math.min(W, Math.ceil(b.x1)));
+      // the plants standing, with room round them; then touching only by a pixel
+      const roomy = new Uint8Array(W * H), tight = new Uint8Array(W * H);
+      const mark = (/** @type {{x:number, y:number, w:number, h:number, m:Uint8Array}} */ s) => {
+        const [left, top] = frameAt([0, 0, s.w, s.h], s.x, s.y);
+        stamp(roomy, s.m, s.w, s.h, left, top, ROOM);
+        stamp(tight, s.m, s.w, s.h, left, top, 1);
+      };
+      for (const s of this.spots.values()) mark(s);
       for (const p of fresh) {
         const { w, h, m } = /** @type {{w:number, h:number, m:Uint8Array}} */ (shapeOf(p));
         const f = [0, 0, w, h], sw = Math.max(4, Math.round(w * 0.5));
-        /** @param {Uint8Array} solid @param {number} ax @param {number} ay */
-        const fits = (solid, ax, ay) => {
+        /** @param {Uint8Array} taken @param {number} ax @param {number} ay */
+        const fits = (taken, ax, ay) => {
           const [left, top] = frameAt(f, ax, ay);
-          if (ay < G.top || ay > G.bottom || left < 1 || left + w > W - 1 || top < 1) return false;
-          for (let y = ay - 2; y <= ay; y++) for (let x = left; x < left + w; x++) if (G.wet[y * W + x]) return false;
-          for (let x = ax - Math.floor(sw / 2); x < ax - Math.floor(sw / 2) + sw; x++) if (solid[ay * W + x]) return false;
-          for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
-            if (!m[j * w + i]) continue;
-            const k = (top + j) * W + left + i;
-            if (solid[k] || (j >= h * 2 / 3 && G.wet[k])) return false;
-          }
+          if (ay < this.top || ay > H - 3 || left < 1 || left + w > W - 1 || top < 1) return false;
+          // the foot and its shadow on the ground
+          for (let y = ay - 1; y <= ay; y++) for (let x = ax - Math.floor(sw / 2); x < ax - Math.floor(sw / 2) + sw; x++) if (!G[y * W + x]) return false;
+          for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (m[j * w + i] && taken[(top + j) * W + left + i]) return false;
           return true;
         };
         const ox = Math.round(p.x * W), oy = Math.round(p.y * H);
         /** @type {[number, number, number][]} */
         const tries = [[0, ox, oy]];
-        for (let y = G.top; y <= G.bottom; y++) for (let x = (y + ox) & 1; x < W; x += 2) tries.push([(x - ox) ** 2 + ((y - oy) * 1.6) ** 2, x, y]);
+        for (let y = this.top; y <= H - 3; y++) for (let x = (y + ox) & 1; x < W; x += 2) if (G[y * W + x]) tries.push([(x - ox) ** 2 + ((y - oy) * 1.6) ** 2, x, y]);
         tries.sort((a, b) => a[0] - b[0]);
-        // no open ground left: it grows over a large prop, else where it came up
-        const spot = tries.find(([, x, y]) => fits(full, x, y)) || tries.find(([, x, y]) => fits(bare, x, y));
+        // no roomy ground left: the nearest spot it fits at all, else where it came up
+        const spot = tries.find(([, x, y]) => fits(roomy, x, y)) || tries.find(([, x, y]) => fits(tight, x, y));
         const [, x, y] = spot || [0, ox, oy];
-        const [left, top] = frameAt(f, x, y);
-        stamp(full, m, w, h, left, top, false, 1);
-        stamp(bare, m, w, h, left, top, false, 1);
-        this.spots.set(p.id, { x, y, w, h, m });
+        const s = { x, y, w, h, m };
+        mark(s);
+        this.spots.set(p.id, s);
       }
     }
     for (const [id, s] of this.spots) out[id] = { x: s.x / W, y: s.y / H };
     return out;
   }
-}
-
-/**
- * Props from a sprite atlas that keep clear of the deposits and of each
- * other: `prop` draws a frame at the first of its spots whose box is free
- * (`avoid` holds the deposits' boxes) and remembers it; `spots` picks a few
- * random spots in a band of the ground.
- * @param {CanvasRenderingContext2D} ctx @param {Rng} rng @param {import('./wild-sprites.js').SpriteAtlas} atlas @param {{x0:number, y0:number, x1:number, y1:number}[]} avoid
- */
-function placer(ctx, rng, atlas, avoid) {
-  /** what is already standing on the ground: what to avoid, then each prop placed (the caller's list grows with them) */
-  const taken = avoid;
-  const free = (x0, y0, x1, y1) => taken.every((b) => x1 < b.x0 || x0 > b.x1 || y1 < b.y0 || y0 > b.y1);
-  /** A few random spots in a band of the ground. @returns {[number, number][]} */
-  const spots = (x0, x1, y0, y1, n = 5) => Array.from({ length: n }, () => [rng.int(x0, x1), rng.int(y0, y1)]);
-  /**
-   * Draw a prop at the first spot clear of the deposits and the props before it.
-   * @param {string} name @param {[number, number][]} spots @param {boolean} [flip]
-   */
-  const prop = (name, spots, flip = false) => {
-    const f = atlas.frame(name);
-    if (!f) return;
-    for (const [x, y] of spots) {
-      const b = { x0: x - f[2] / 2, y0: y - f[3], x1: x + f[2] / 2, y1: y };
-      if (free(b.x0, b.y0, b.x1, b.y1)) { atlas.draw(ctx, name, x, y, 1, flip); taken.push(b); return; }
-    }
-  };
-  return { taken, spots, prop };
-}
-
-/**
- * The ground in flat bands from y0 to the bottom of the frame (stepped, not
- * dithered), its top edge ragged, so the far band and the ground meet
- * without a ruled line.
- * @param {CanvasRenderingContext2D} ctx @param {number} y0 @param {string[]} bands
- */
-function groundBands(ctx, y0, bands) {
-  for (let k = 0; k < bands.length; k++) { const y = y0 + Math.round(k * (SCENE_H - y0) / bands.length); R(ctx, 0, y, SCENE_W, SCENE_H - y, bands[k]); }
-  raggedUp(ctx, y0, bands[0]);
-}
-
-/** A ragged edge rising from row y: columns two pixels wide, zero to three rows tall. @param {CanvasRenderingContext2D} ctx @param {number} y @param {string} c */
-function raggedUp(ctx, y, c) {
-  for (let x = 0; x < SCENE_W; x += 2) { const d = (x * 7 + (x >> 3) * 5 + (x >> 5)) % 4; if (d) R(ctx, x, y - d, 2, d, c); }
-}
-
-/**
- * Whisperwood from its sprite atlas (rendering/wild-sprites.js, built from
- * the Wilds pack): the pack's sky through the canopy, its distant, middle
- * and near tree lines, a sunlit clearing in bands of grass, two ancient oaks
- * framing it on both sides and a smaller oak beyond; mossy stones,
- * a fallen log, a stump, bushes, ferns and ground cover. Nothing decorative
- * looks like a gatherable — no bellflowers, toadstools or berries — so the
- * outlined deposits drawn on top are the only things that read as something
- * to pick. Props that would sit under a deposit move aside or are left out
- * (`avoid` holds the deposits' boxes).
- * @param {CanvasRenderingContext2D} ctx @param {Rng} rng @param {{x0:number, y0:number, x1:number, y1:number}[]} avoid
- */
-function forestSprites(ctx, rng, avoid) {
-  const W = SCENE_W, H = SCENE_H, A = REGION_ATLAS.forest;
-  const { spots, prop } = placer(ctx, rng, A, avoid);
-  A.draw(ctx, 'sky', W / 2, 46);
-  A.draw(ctx, 'distant', W / 2, 52);
-  A.draw(ctx, 'mid', W / 2, 64);
-  A.draw(ctx, 'near', W / 2, 74);
-  groundBands(ctx, 70, ['#5aa830', '#52a02c', '#4a9628', '#428a24', '#3a7e20']);
-  // the sunlit clearing: a ragged lighter patch in steps of two pixels
-  for (const [c, grow] of /** @type {[string, number][]} */ ([['#68b83a', 1], ['#7cc846', 0.62]])) {
-    for (let y = 74; y < 130; y += 2) {
-      const t = (y - 74) / 56, hw = Math.round((22 + Math.sin(t * Math.PI) * 76) * grow);
-      const l = 128 - hw - rng.int(0, 3) * 2, r = 128 + hw + rng.int(0, 3) * 2;
-      if (hw > 0) R(ctx, l, y, r - l, 2, c);
-    }
-  }
-  stand(ctx, 'forest', 'oak_small');
-  for (let i = 0; i < 3; i++) { const x0 = 96 + i * 15; for (let y = 0; y < 104; y++) R(ctx, x0 + y * 0.35, y, 6 - i, 1, `rgba(255,250,210,${(0.18 * (1 - y / 104)).toFixed(3)})`); }
-  // the ancient oaks framing the clearing, crowns running off the top
-  // (the pair is cut off on its right in the pack: the cut edge runs off the frame on both sides)
-  stand(ctx, 'forest', 'oaks');
-  // bushes along the far edge of the clearing, ferns, a stump and stones at
-  // the oaks' feet, a log and ferns in the near corners: the clearing itself
-  // stays open for the plants (as the Sunlit Meadow's field does)
-  prop('bush_flowers', [[96, 84], [86, 85], [108, 83]]);
-  prop('bush_round', [[170, 84], [182, 85], [158, 83]], true);
-  prop('bush_small', [[118, 83], [146, 83]]);
-  prop('fern', [[40, 104], [52, 102]]);
-  prop('snag', [[10, 106], [16, 110]]);
-  prop('stump', [[214, 100], [222, 102]]);
-  prop('stones', [[234, 116], [238, 120]]);
-  prop('log', [[20, 142], [26, 142]]);
-  prop('fern_small', [[246, 144], [240, 144]], true);
-  // foliage cut off by the bottom of the frame
-  prop('bush_flowers', [[208, 152], [196, 152]], true);
-  // a few sticks and leaves on the open ground (too small to keep a plant away)
-  prop('sticks', [[140, 138], [120, 136], [166, 138]]);
-  for (let i = 0; i < 9; i++) prop(`leaves_${rng.int(1, 2)}`, spots(6, W - 6, 88, H + 2), rng.chance(0.5));
-}
-
-/**
- * Willow Bank from its sprite atlas: the pack's sky, distant mountains and
- * pines, a meadow on the far side of the river, its chalk bank, the river
- * itself and the near shore; the great willows on either side and a young
- * one across the water, bushes, posts, a sign, pebbles, grass and small
- * flowers. No cattails, mushrooms, mossy logs or white bog flowers: those
- * are the region's gatherables.
- * @param {CanvasRenderingContext2D} ctx @param {Rng} rng @param {{x0:number, y0:number, x1:number, y1:number}[]} avoid
- */
-function riverSprites(ctx, rng, avoid) {
-  const W = SCENE_W, H = SCENE_H, A = REGION_ATLAS.river;
-  const { spots, prop } = placer(ctx, rng, A, avoid);
-  A.draw(ctx, 'sky', W / 2, 58);
-  A.draw(ctx, 'mountains', W / 2, 60);
-  A.draw(ctx, 'pines', W / 2, 70);
-  // the far meadow, the river and the near shore
-  groundBands(ctx, 68, ['#7cc846', '#70be40', '#64b43a']);
-  A.draw(ctx, 'water', W / 2, 114);
-  const bank = /** @type {number[]} */ (A.frame('bank'));
-  for (let x = -rng.int(0, 40); x < W; x += bank[2] - 2) A.draw(ctx, 'bank', x + bank[2] / 2, 96);
-  // the near shore: grass in bands, its edge ragged in steps over the water
-  for (let k = 0, bands = ['#6cbe3c', '#62b636', '#58ac30', '#4ea22c']; k < bands.length; k++) R(ctx, 0, 115 + k * 8, W, H, bands[k]);
-  for (let x = 0; x < W; x += 2) { const d = rng.int(0, 2); R(ctx, x, 113 - d, 2, d + 2, '#6cbe3c'); R(ctx, x, 112 - d, 2, 1, '#3a7a2a'); }
-  stand(ctx, 'river', 'willow_small');
-  // the bushes at the willows' feet, a post and a sign on the bank: the far
-  // meadow between them stays open for the plants
-  prop('bush_plain', [[58, 84], [64, 84]]);
-  prop('post', [[172, 94], [164, 94]]);
-  prop('sign', [[64, 94], [56, 94]]);
-  stand(ctx, 'river', 'willow_great');
-  stand(ctx, 'river', 'willow_second');
-  // the near shore: a stump and a branch in its corners, the rest open
-  prop('stump', [[244, 146], [236, 146]]);
-  prop('branch', [[12, 146], [18, 146]]);
-  // grass, small flowers and pebbles on both banks (too small to keep a plant away)
-  for (let i = 0; i < 6; i++) prop(rng.pick(['grass_1', 'grass_2']), spots(8, W - 8, 80, 90), rng.chance(0.5));
-  for (let i = 0; i < 8; i++) prop(rng.pick(['grass_1', 'grass_2', 'buttercups']), spots(6, W - 6, 124, H + 2), rng.chance(0.5));
-  for (let i = 0; i < 3; i++) prop('pebble', spots(10, W - 10, 122, H - 2));
-}
-
-/**
- * Ironstone Quarry from its sprite atlas: the pack's sky, its distant and
- * near cliff faces, the pit floor in bands of dust, a crane with its lantern
- * and hoisted stone, timber frames, a ladder and scaffold against the face,
- * a loaded cart, crates, cut blocks, dry shrubs and loose
- * stones. No crystal or ore heaps: those are the deposits.
- * @param {CanvasRenderingContext2D} ctx @param {Rng} rng @param {{x0:number, y0:number, x1:number, y1:number}[]} avoid
- */
-function quarrySprites(ctx, rng, avoid) {
-  const W = SCENE_W, H = SCENE_H, A = REGION_ATLAS.quarry;
-  const { taken, spots, prop } = placer(ctx, rng, A, avoid);
-  A.draw(ctx, 'sky', W / 2, 56);
-  A.draw(ctx, 'far_cliffs', W / 2, 64);
-  A.draw(ctx, 'near_cliffs', W / 2, 84);
-  groundBands(ctx, 80, ['#b89462', '#ad8a59', '#a18052', '#95754a', '#896b43']);
-  speckle(ctx, rng, 82, H - 1, 160, ['#7a5e3a', '#c8a472', '#8a6a42'], 2);
-  // the crane with its lantern and hoisted stone; the timber structures
-  // stand against the face, wholly clear of the deposits
-  stand(ctx, 'quarry', 'crane');
-  for (const [, x, y] of fixedOf('quarry')) { const f = /** @type {number[]} */ (A.frame('crane')); taken.push({ x0: x - f[2] / 2, y0: y - f[3], x1: x + f[2] / 2, y1: y }); }
-  prop('frame', [[64, 86], [48, 86], [84, 86], [130, 86], [30, 86], [170, 86]]);
-  prop('scaffold', [[150, 84], [164, 84], [118, 84], [236, 84], [96, 84]]);
-  prop('ladder', [[112, 86], [100, 86], [176, 86], [30, 86], [140, 86]]);
-  // cut blocks, a rail fence and a pillar along the face, shrubs at the sides,
-  // the cart and its crates in the near right corner, stone and spoil in the
-  // near left: the pit floor stays open for the deposits
-  prop('rail_fence', [[44, 94], [36, 94]]);
-  prop('blocks', [[174, 94], [182, 94]]);
-  prop('stone_pillar', [[248, 104], [246, 100]]);
-  prop('shrub_green', [[10, 112], [12, 118]]);
-  prop('cart', [[234, 142], [228, 142]]);
-  prop('crate', [[208, 142], [204, 142]]);
-  prop('crate_small', [[198, 143], [194, 143]]);
-  prop('stone_block', [[14, 146], [20, 146]]);
-  prop('dirt_heap', [[38, 143], [44, 143]]);
-  // dry tufts and loose stones on the pit floor (too small to keep a deposit away)
-  for (let i = 0; i < 6; i++) prop(rng.pick(['brush_small', 'pebbles', 'brush_small']), spots(6, W - 6, 98, H), rng.chance(0.5));
-}
-
-/**
- * Moonfen from its sprite atlas: the pack's night sky with its moon, the
- * distant bogs, a tree line of willows in mist, dark moss ground with pools
- * of black water, ancient willows, a dead tree, drowned and glowing stumps,
- * a fallen trunk, mossy stones, cattails, ferns and night flowers. No violet reeds or crystals, lilies, wisp stalks or toadstools:
- * those are the deposits.
- * @param {CanvasRenderingContext2D} ctx @param {Rng} rng @param {{x0:number, y0:number, x1:number, y1:number}[]} avoid
- */
-function moonfenSprites(ctx, rng, avoid) {
-  const W = SCENE_W, H = SCENE_H, A = REGION_ATLAS.moonfen;
-  const { spots, prop } = placer(ctx, rng, A, avoid);
-  A.draw(ctx, 'sky', W / 2, 50);
-  A.draw(ctx, 'hills', W / 2, 60);
-  A.draw(ctx, 'treeline', W / 2, 74);
-  groundBands(ctx, 74, ['#1f3a2a', '#1b3325', '#172d20', '#13261b', '#102117']);
-  A.draw(ctx, 'mist', W / 2, 82);
-  raggedUp(ctx, 82, '#1f3a2a');
-  // pools of black water
-  stand(ctx, 'moonfen', 'water_2');
-  stand(ctx, 'moonfen', 'water');
-  for (const name of ['willow_small', 'dead_tree', 'willow_left', 'willow_center']) stand(ctx, 'moonfen', name);
-  // the drowned and ghostly stumps and the cattails stand in the pools, the
-  // glowing stump at a willow's foot, the fallen trunk and the rocks in the
-  // near corners: the moss between the pools stays open for the deposits
-  prop('stump_drowned', [[40, 102], [48, 102]]);
-  prop('cattails', [[112, 104], [106, 104]]);
-  prop('stump_glowing', [[232, 100], [226, 100]]);
-  prop('rock_mid', [[12, 118], [16, 120]]);
-  prop('trunk', [[236, 148], [230, 148]], true);
-  prop('ghost_stumps', [[86, 102], [80, 102]]);
-  prop('rock_big', [[18, 146], [24, 146]]);
-  // ferns, grass, night flowers, stones and lily pads (too small to keep a deposit away)
-  for (let i = 0; i < 9; i++) prop(rng.pick(['grass_2', 'grass_3', 'fiddleheads', 'night_flowers']), spots(6, W - 6, 90, H + 2), rng.chance(0.5));
-  for (let i = 0; i < 4; i++) prop(rng.pick(['rock_small', 'stone_flat', 'rock_small']), spots(10, W - 10, 92, H), rng.chance(0.5));
-  for (let i = 0; i < 4; i++) prop('pad', spots(30, 110, 92, 102));
-}
-
-/**
- * The Ember Crags from their sprite atlas: the pack's smoky sky, distant
- * volcanic ridges and the lava fissures beneath them, a scorched plain with
- * a winding stream of lava, lava crags, a pool of lava, a vent and a
- * sulphur gusher steaming, black rocks, a dead bush and ember brush. No
- * crystals or flowering brush: those are the deposits.
- * @param {CanvasRenderingContext2D} ctx @param {Rng} rng @param {{x0:number, y0:number, x1:number, y1:number}[]} avoid @param {string} seed
- */
-function cragsSprites(ctx, rng, avoid, seed) {
-  const W = SCENE_W, H = SCENE_H, A = REGION_ATLAS.crags;
-  const { spots, prop } = placer(ctx, rng, A, avoid);
-  A.draw(ctx, 'sky', W / 2, 64);
-  A.draw(ctx, 'ridges', W / 2, 62);
-  A.draw(ctx, 'fissures', W / 2, 78);
-  groundBands(ctx, 76, ['#3a2420', '#34201c', '#2e1c19', '#281815', '#221412']);
-  speckle(ctx, rng, 78, H - 1, 260, ['#4a2e26', '#1a0c0a', '#5a3a2e'], 3);
-  // a thin stream of lava winding down the plain, as in the pack's scene
-  for (const [y, x, w] of lavaStream(seed)) {
-    R(ctx, x - w / 2 - 1, y, w + 2, 1, '#a8320c');
-    R(ctx, x - w / 2, y, w, 1, y % 5 ? '#ff7a1c' : '#ffb444');
-  }
-  // the vent and the gusher (their smoke rises in animateRegion), the great crags
-  for (const name of ['gusher', 'vent', 'crag_large', 'crag_tall']) stand(ctx, 'crags', name);
-  // the smaller crags along the ridge, the stream pooling at the bottom of
-  // the frame, a mound and a dead bush in the near corners: the plain stays
-  // open for the deposits
-  prop('crag_medium', [[126, 88], [140, 86], [112, 90]]);
-  prop('crag_small', [[210, 92], [222, 94]]);
-  const [, mouth] = lavaStream(seed).slice(-1)[0];
-  prop('lava_pool', [[Math.round(mouth), H + 8], [Math.round(mouth) + 6, H + 8]]);
-  prop('rock_mound', [[242, 152], [236, 152]]);
-  prop('dead_brush', [[8, 142], [12, 142]]);
-  prop('lava_pan', [[44, 146], [52, 146]]);
-  // black rocks and ember brush on the plain (too small to keep a deposit away)
-  for (let i = 0; i < 6; i++) prop(rng.pick(['rock_1', 'rock_3']), spots(6, W - 6, 96, H), rng.chance(0.5));
-  for (let i = 0; i < 5; i++) prop(rng.pick(['ember_brush', 'ember_brush_small']), spots(6, W - 6, 92, H + 2), rng.chance(0.5));
 }
 
 /** @param {CanvasRenderingContext2D} ctx @param {Rng} rng */
@@ -821,55 +498,6 @@ function meadow(ctx, rng) {
   for (let i = 0; i < 6; i++) bluebell(ctx, 134 + i * 4 + rng.int(-1, 1), 112 + rng.int(-4, 4), rng.int(9, 12));
   rock(ctx, rng, -4, 124, 34, 20, RSTONE, MOSS);
   for (let i = 0; i < 14; i++) sparkle(ctx, rng.int(4, W - 4), rng.int(78, H - 6), '#fff3a0');
-}
-
-/**
- * The Sunlit Meadow from its sprite atlas (rendering/wild-sprites.js), in
- * layers: the pack's sky, clouds, far and near mountains and a treeline of
- * firs; then the field in flat bands of grass, a split-rail fence across it,
- * the great oak on the left, bushes along the fence, rocks, small clumps of
- * daisies, buttercups and pinks, grass tufts and a fringe of tall grass at
- * the bottom of the frame. The decorative flowers are small and have no
- * outline, and none of them is a lupin-like spike, a blue clover or a seed
- * head, so the outlined gatherables drawn on top are the only plants that
- * read as something to pick. Props keep clear of the deposits.
- * @param {CanvasRenderingContext2D} ctx @param {Rng} rng @param {{x0:number, y0:number, x1:number, y1:number}[]} avoid
- */
-function meadowSprites(ctx, rng, avoid) {
-  const W = SCENE_W, H = SCENE_H;
-  const A = MEADOW;
-  const { spots, prop } = placer(ctx, rng, A, avoid);
-  // sky, clouds and the distance
-  A.draw(ctx, 'sky', W / 2, 66);
-  for (const [name, x, y] of /** @type {[string, number, number][]} */ ([['cloud_2', 30, 14], ['cloud_1', 92, 26], ['cloud_3', 150, 12], ['cloud_6', 212, 20], ['cloud_8', 128, 36], ['cloud_5', 244, 38]])) A.draw(ctx, name, x, y);
-  A.draw(ctx, 'far_mountains', W / 2, 54);
-  A.draw(ctx, 'near_mountains', W / 2, 60);
-  A.draw(ctx, 'treeline', W / 2, 66);
-  // the field in flat bands, brighter towards the viewer
-  const bands = ['#7cc844', '#6cbe3c', '#62b636', '#58ac30', '#4ea22c', '#459826'];
-  for (let k = 0; k < bands.length; k++) { const y0 = 64 + Math.round(k * (H - 64) / bands.length); R(ctx, 0, y0, W, H - y0, bands[k]); }
-  // a speckle of tiny far-off flowers (single pixels: nothing here looks pickable)
-  for (let i = 0; i < 260; i++) {
-    const y = rng.int(68, H - 1), x = rng.int(0, W - 1);
-    R(ctx, x, y, 1, 1, rng.pick(['#ffffff', '#ffffff', '#ffe066', '#ff9fc7', '#d6f08a', '#3f8a2a', '#3f8a2a']));
-  }
-  // the split-rail fence at the far edge of the field
-  stand(ctx, 'meadow', 'fence');
-  // bushes along the fence, the great oak, rocks
-  prop('bush_round', [[66, 80], [78, 81], [52, 80], [92, 80]]);
-  prop('bush_low', [[118, 78], [104, 78], [132, 78], [150, 78]]);
-  prop('bush_pink', [[206, 80], [192, 80], [220, 81], [176, 80]]);
-  prop('bush_dark', [[244, 82], [236, 83], [252, 82]]);
-  stand(ctx, 'meadow', 'oak');
-  prop('rock_big', [[14, 146], [24, 146]]);
-  prop('rock_mossy', [[226, 112], [238, 108], [212, 116], [150, 100]]);
-  prop('rock_pair', [[170, 92], [158, 94], [184, 92], [100, 94]]);
-  // small clumps of meadow flowers and grass in the open, never on a prop or a deposit
-  const clumps = ['flowers_daisies', 'flowers_pinks', 'flowers_yellows', 'flowers_mixed', 'flowers_daisy_clump', 'flowers_buttercups', 'flowers_pink_clump', 'flowers_posies'];
-  for (let i = 0; i < 24; i++) prop(rng.pick(clumps), spots(6, W - 6, 88, H + 2), rng.chance(0.5));
-  for (let i = 0; i < 28; i++) prop(`grass_${rng.int(2, 8)}`, spots(4, W - 4, 82, H + 1), rng.chance(0.5));
-  // tall grass along the bottom of the frame
-  for (let x = 40; x < W; x += rng.int(30, 44)) prop(rng.chance(0.5) ? 'grass_near' : 'grass_1', [[x, H + 6], [x + 8, H + 6]], rng.chance(0.5));
 }
 
 /** @param {CanvasRenderingContext2D} ctx @param {Rng} rng */
@@ -1029,78 +657,23 @@ function crags(ctx, rng) {
 }
 
 const PAINTERS = { forest, meadow, river, quarry, moonfen, crags };
-/** Each region composed from its sprite atlas, once that has loaded, over its backdrop colour. */
-const BACKDROP = { forest: '#2f6a4a', river: '#6aa8e0', quarry: '#9aa6c0', moonfen: '#1a2a4a', crags: '#6a2418' };
-const SPRITE_PAINTERS = { forest: forestSprites, meadow: meadowSprites, river: riverSprites, quarry: quarrySprites, moonfen: moonfenSprites, crags: cragsSprites };
 
 /**
- * Paint a region's static panorama into a 256×144 context. Each region is
- * composed from its sprite atlas once that has loaded (procedural until
- * then); its props keep clear of the boxes in `avoid`, and each prop placed
- * is added to it (so the plants can keep clear of the props in turn).
- * @param {CanvasRenderingContext2D} ctx @param {string} region @param {string} seed @param {{x0:number, y0:number, x1:number, y1:number}[]} [avoid]
+ * Paint a region's static panorama into a 256×144 context: its painted
+ * backdrop once that has loaded, the procedural panorama until then.
+ * @param {CanvasRenderingContext2D} ctx @param {string} region @param {string} seed
  */
-export function paintRegion(ctx, region, seed, avoid = []) {
-  const rng = new Rng(`scene2:${seed}:${region}`);
+export function paintRegion(ctx, region, seed) {
   const id = PAINTERS[region] ? region : 'forest';
-  if (REGION_ATLAS[id].ready) {
-    // the far colour behind the keyed bands, should a gap in them show through
-    if (BACKDROP[id]) R(ctx, 0, 0, SCENE_W, SCENE_H, BACKDROP[id]);
-    SPRITE_PAINTERS[id](ctx, rng, avoid, seed);
-  }
-  else PAINTERS[id](ctx, rng);
+  if (BACKDROPS[id] && BACKDROPS[id].ready) BACKDROPS[id].draw(ctx, 'scene', SCENE_W / 2, SCENE_H);
+  else PAINTERS[id](ctx, new Rng(`scene2:${seed}:${region}`));
   // a dark frame line so the panel reads as a painting
   R(ctx, 0, 0, SCENE_W, 1, 'rgba(0,0,0,0.35)');
   R(ctx, 0, SCENE_H - 1, SCENE_W, 1, 'rgba(0,0,0,0.35)');
 }
 
 /**
- * The smoke the Ember Crags' gusher and vent breathe: from the mouth of the
- * frame (x, y within it), `n` puffs that each live `life` seconds while
- * rising `rise` pixels, drifting on the wind and swelling to radius `r`,
- * their colour turning from the first to the last of `cols` — the gusher's
- * quick jet of sulphur and the slow smoke above it, the vent's steam.
- * @type {[string, number, number, number, number, number, number, string[]][]}
- */
-const FUMES = [
-  ['gusher', 26, 2, 14, 50, 4.2, 8, ['#f2c771', '#dca878', '#c4937f', '#a8787a', '#8a6268', '#6a4852']],
-  ['gusher', 26, 2, 6, 16, 1.1, 2.5, ['#fff0b8', '#f2c771', '#e0b070']],
-  ['vent', 20, 2, 12, 40, 5, 7, ['#ecd2a8', '#c9aaa4', '#ba9ea1', '#9a8088', '#7a5e66', '#5a4048']],
-];
-
-/** The crags' fumes at time t. @param {CanvasRenderingContext2D} ctx @param {number} t seconds */
-function fumes(ctx, t) {
-  const A = REGION_ATLAS.crags;
-  for (const [name, mx, my, n, rise, life, size, cols] of FUMES) {
-    const f = A.frame(name);
-    if (!f) continue;
-    for (const [, x, y] of fixedOf('crags').filter(([nn]) => nn === name)) {
-      const [left, top] = frameAt(f, x, y), ox = left + mx, oy = top + my;
-      // each puff's age (0 at the mouth, 1 gone) and its round, so no two rounds rise alike; the oldest drawn first
-      const puffs = Array.from({ length: n }, (_, i) => { const a = t / life + i / n; return { i, p: a % 1, k: Math.floor(a) }; }).sort((u, v) => v.p - u.p);
-      for (const { i, p, k } of puffs) {
-        const jitter = Math.sin(k * 12.99 + i * 78.23) * 0.5 + 0.5;
-        const r = 1 + p * size * (0.7 + jitter * 0.3);
-        const px = ox + p * p * rise * 0.35 + Math.sin(t * 1.4 + i * 2.1) * p * 2 + (jitter - 0.5) * 4 * p;
-        const py = oy - p * rise * (0.85 + jitter * 0.3);
-        const c = Math.min(cols.length - 1, Math.floor(p * cols.length));
-        // fading in at the mouth and out as it thins, in steps (as pixel art fades)
-        const alpha = Math.round(Math.min(1, p / 0.06) * Math.min(1, (1 - p) * 1.6) * 0.85 * 5) / 5;
-        if (!alpha) continue;
-        ctx.globalAlpha = alpha;
-        // (a puff too small for a disc is a 2×2 dab)
-        if (r < 2) R(ctx, Math.round(px) - 1, Math.round(py) - 1, 2, 2, cols[c]);
-        else disc(ctx, Math.round(px), Math.round(py), Math.round(r), Math.max(1, Math.round(r * 0.8)), cols[c]);
-        // a lit cap on the upper left of a grown puff
-        if (r > 2.5) disc(ctx, Math.round(px - r * 0.3), Math.round(py - r * 0.35), Math.round(r * 0.5), Math.max(1, Math.round(r * 0.35)), cols[Math.max(0, c - 1)]);
-      }
-      ctx.globalAlpha = 1;
-    }
-  }
-}
-
-/**
- * Animated overlay (wisps, birds, butterflies, ripples, embers, fumes) drawn each frame.
+ * Animated overlay (wisps, birds, butterflies, ripples, embers) drawn each frame.
  * @param {CanvasRenderingContext2D} ctx @param {string} region @param {number} t seconds
  */
 export function animateRegion(ctx, region, t) {
@@ -1131,9 +704,9 @@ export function animateRegion(ctx, region, t) {
       const x = (i * 37 + Math.sin(t * 0.5 + i) * 6) % W, y = 40 + ((i * 29 + t * 4) % 60);
       if (Math.sin(t * 2 + i * 1.7) > 0.3) R(ctx, x, y, 1, 1, '#fff6c0');
     }
-    // glints drifting down the river (across the sprite scene, winding down the painted one)
-    if (region === 'river' && REGION_ATLAS.river.ready) for (let i = 0; i < 8; i++) {
-      const x = ((t * (5 + i % 3) + i * 37) % (W + 8)) - 4, y = 98 + ((i * 5) % 14) + Math.round(Math.sin(t * 2 + i));
+    // glints drifting down the river (across the backdrop, winding down the procedural scene)
+    if (region === 'river' && BACKDROPS.river.ready) for (let i = 0; i < 8; i++) {
+      const x = ((t * (5 + i % 3) + i * 37) % (W + 8)) - 4, y = 86 + ((i * 5) % 14) + Math.round(Math.sin(t * 2 + i));
       R(ctx, x, y, 3, 1, '#dff4ff');
     }
     else if (region === 'river') for (let i = 0; i < 8; i++) {
@@ -1141,7 +714,6 @@ export function animateRegion(ctx, region, t) {
       R(ctx, x, y, 3, 1, '#dff4ff');
     }
   } else if (region === 'crags') {
-    if (REGION_ATLAS.crags.ready) fumes(ctx, t);
     for (let i = 0; i < 12; i++) {
       const y = H * 0.75 - ((t * 12 + i * 11) % 60), x = W * (0.05 + i * 0.08) + Math.sin(t + i) * 4;
       R(ctx, x, y, 1, 1, i % 3 ? '#ffb444' : '#ff7a1c');
@@ -1151,8 +723,8 @@ export function animateRegion(ctx, region, t) {
       const x = (i * 47 + t * 6) % W, y = 60 + Math.sin(t * 0.8 + i) * 10 + i * 6;
       R(ctx, x, y, 1, 1, 'rgba(255,240,210,0.6)');
     }
-    // the painted lantern flickers (the sprite scene's lanterns are part of the crane and the lamp post)
+    // the procedural scene's lantern flickers
     const flick = 0.7 + 0.3 * Math.sin(t * 9);
-    if (!REGION_ATLAS.quarry.ready) R(ctx, 24, 56, 3, 5, `rgba(255,243,176,${flick.toFixed(2)})`);
+    if (!BACKDROPS.quarry.ready) R(ctx, 24, 56, 3, 5, `rgba(255,243,176,${flick.toFixed(2)})`);
   }
 }

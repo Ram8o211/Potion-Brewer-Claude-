@@ -217,40 +217,38 @@ computed from the particles that actually run out of the tap. What a
   * Installable and fully offline, with saves on the device and
     export/import.
 * **Pixel art painted in code:** layered wilds panoramas, shown until a
-  region's sprites have loaded (lit oak
+  region's backdrop has loaded (lit oak
   canopies and light shafts, a willow river, terraced quarry faces with a
   crane and lantern, a moonlit bog of willows, crystals and wisps, smoking
   volcanic crags), a furnished workshop (brick wall, shelves of jars and
   plants, drying herbs, ivy, barrel, sack, firewood under the cauldron), a
   hutch with a hay rack, a thatched hide box and a fence, shaded rabbits,
   and wood-grain, parchment and nail textures on the interface.
-* **Sprite-composed wilds:** Whisperwood, Willow Bank, Ironstone Quarry,
-  Moonfen and the Ember Crags are each composed in layers from their own
-  atlas (`assets/wilds/<region>.png`, 35–80 KB each) built from the
-  corrected Wilds sprite pack: the pack's sky and parallax strips (canopy
-  and tree lines, mountains and pines, cliff faces, the moonlit bog and its
-  mist, smoky volcanic ridges and lava fissures), then the region's terrain
-  and scenery — ancient oaks, willows, a river with its chalk bank, a crane
-  and timber frames, drowned stumps and pools of black water, lava crags,
-  a lava pool and a vent and sulphur gusher whose smoke rises and drifts
-  as it plays. As in the Sunlit Meadow, the large scenery stands along the
-  back, at the sides and in the near corners, and only small ground cover
-  is scattered over the open ground in the middle, so each deposit rises
-  out of open ground — never in the river, a pool or the lava, never on a
-  tree, crag, prop or another deposit. The sprites are cleaned the way the
-  meadow's are: no stray pixels inside them and a whole outline round them. Every ingredient of those regions is an outlined
-  sprite with hover and depleted (harvested) frames; the dusk Nightshade,
-  Grave Moss and Siren Reed and the dawn Moonlily show their closed state
-  out of their hour, and each has its icon on the deposit card, the shelf
-  and in the book. Nothing decorative looks like a gatherable, and only
-  deposits take taps. Built from `art/wilds/` by
-  `python scripts/make-wilds.py` (needs Pillow and NumPy);
-  `art/wilds/README.md` lists which sprite went where and how it was
-  changed.
-* **Sunlit Meadow sprites:** the meadow is composed in layers from its own
-  atlas (`assets/meadow/atlas.png`, 53 KB): the pack's sky, clouds and
-  birds, far and near mountains, a treeline of firs, a split-rail fence,
-  the great oak, bushes, rocks, small flower clumps and grass. Each meadow
+* **Painted wilds:** each of the six regions — the Sunlit Meadow,
+  Whisperwood, Willow Bank, Ironstone Quarry, Moonfen and the Ember Crags —
+  is shown as one painted pixel-art backdrop (`assets/backdrops/<region>.png`,
+  256 × 144, 39–54 KB each): the meadow's oak and split-rail fence, the
+  ancient oaks round a sunlit clearing, the willow river, the quarry's
+  cliff, scaffolds and crane, the moonlit fen and its pools, the smoking
+  crags and their lava. The plants grow on top of it, on the ground: each
+  region has a map of its open ground (`src/rendering/backdrops-ground.js`)
+  drawn round the scenery and, by colour, clear of water, lava and rock, and
+  a new sprout takes the open ground nearest the spot it came up at, where
+  its foot rests on that ground and it keeps a few pixels of room from
+  every other plant, so even a full region never crowds into a clump. Every
+  ingredient is an outlined sprite with hover and depleted (harvested)
+  frames on its deposit card; the dusk Nightshade, Grave Moss and Siren Reed
+  and the dawn Moonlily show their closed state out of their hour, and each
+  has its icon on the deposit card, the shelf and in the book. Only plants
+  take taps. Built from `art/backdrops/` by
+  `python scripts/make-backdrops.py` (needs Pillow and NumPy), which brings
+  each picture down to the scene's pixels and writes its ground map;
+  `art/backdrops/README.md` says how. The cards and icons come from each
+  region's atlas (`assets/wilds/<region>.png`, built from `art/wilds/` by
+  `python scripts/make-wilds.py`; `art/wilds/README.md` lists which sprite
+  went where).
+* **Sunlit Meadow sprites:** the meadow's atlas (`assets/meadow/atlas.png`,
+  53 KB) holds the birds that fly over its backdrop. Each meadow
   ingredient (Heartpetal, Sunthistle, Nettle, Dreamclover, Bee Balm,
   Hemlock Seed) is an outlined sprite with hover and depleted frames; the
   dawn Dreamclover and the dusk Hemlock show their closed buds and seed

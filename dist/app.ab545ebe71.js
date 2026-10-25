@@ -14131,10 +14131,893 @@ unseen ? h('span', { class: 'muted', text: ` ${seen.length ? '· ' : ''}${unseen
 }
 return { CounterView };
 })();
+// src/rendering/backdrops-ground.js
+const __m71 = (() => {
+const GROUND = {
+meadow: [
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[[62, 222]],
+[[50, 222]],
+[[50, 222]],
+[[50, 222]],
+[[50, 222]],
+[[50, 222]],
+[[50, 222]],
+[[50, 222]],
+[[4, 222]],
+[[4, 222]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[4, 253]],
+[[11, 253]],
+[[17, 253]],
+[[24, 244]],
+[[31, 235]],
+[[37, 226]],
+[[44, 217]],
+[],
+[],
+[],
+[],
+[],
+],
+forest: [
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[[100, 167]],
+[[94, 168]],
+[[88, 169]],
+[[82, 170]],
+[[76, 172]],
+[[76, 173]],
+[[76, 174]],
+[[76, 175]],
+[[76, 176]],
+[[76, 176]],
+[[63, 176]],
+[[60, 176]],
+[[58, 181]],
+[[50, 216]],
+[[43, 251]],
+[[35, 251]],
+[[27, 251]],
+[[20, 251]],
+[[12, 251]],
+[[12, 251]],
+[[12, 251]],
+[[12, 251]],
+[[12, 251]],
+[[12, 251]],
+[[12, 251]],
+[[12, 251]],
+[[12, 251]],
+[[12, 244]],
+[[12, 237]],
+[[12, 228]],
+[[12, 219]],
+[[16, 210]],
+[[20, 201]],
+[[24, 200]],
+[[28, 199]],
+[[32, 197]],
+[[36, 196]],
+[[40, 195]],
+[[44, 194]],
+[[48, 193]],
+[[52, 192]],
+[[53, 190]],
+[[53, 189]],
+[[54, 188]],
+[[54, 187]],
+[[55, 187]],
+[[55, 186]],
+[[56, 186]],
+[[56, 186]],
+[[57, 185]],
+[[57, 185]],
+[[58, 184]],
+[[58, 184]],
+[[59, 184]],
+[[59, 183]],
+[[60, 183]],
+[],
+[],
+],
+river: [
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[[36, 109], [114, 117], [123, 142], [152, 220]],
+[[36, 117], [123, 220]],
+[[36, 117], [123, 220]],
+[[36, 118], [123, 220]],
+[[36, 220]],
+[[36, 220]],
+[[36, 220]],
+[[23, 220]],
+[[23, 220]],
+[[22, 220]],
+[[21, 220]],
+[[20, 253]],
+[[19, 253]],
+[[18, 253]],
+[[17, 253]],
+[[16, 253]],
+[[18, 253]],
+[[20, 253]],
+[[21, 253]],
+[[23, 253]],
+[[25, 250]],
+[[27, 246]],
+[[28, 243]],
+[[30, 240]],
+[[32, 174], [179, 236]],
+[[34, 173], [180, 233]],
+[[35, 173], [182, 232]],
+[[37, 171], [182, 230]],
+[[39, 171], [182, 229]],
+[[41, 171], [182, 227]],
+[[42, 171], [182, 226]],
+[[44, 171], [182, 224]],
+[[46, 59], [64, 123], [128, 171], [181, 223]],
+[[47, 58], [68, 122], [130, 172], [181, 222]],
+[[49, 57], [68, 120], [132, 220]],
+[[50, 57], [68, 119], [132, 219]],
+[[52, 57], [68, 119], [132, 217]],
+[[53, 57], [68, 119], [132, 216]],
+[[55, 57], [68, 119], [132, 214]],
+[[56, 59], [66, 119], [132, 213]],
+[[58, 59], [64, 119], [131, 208]],
+[[59, 121], [131, 176], [182, 203]],
+[[61, 174], [186, 199]],
+[[62, 173], [186, 194]],
+[[64, 172], [187, 189]],
+[],
+[],
+],
+quarry: [
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[[4, 7], [17, 23], [34, 66], [71, 73], [84, 191], [199, 217], [228, 234]],
+[[16, 23], [34, 74], [83, 166], [175, 234]],
+[[17, 23], [31, 77], [82, 166], [175, 234]],
+[[17, 23], [31, 166], [175, 234]],
+[[17, 23], [29, 166], [175, 234]],
+[[17, 166], [175, 234]],
+[[22, 167], [174, 223], [229, 234]],
+[[22, 220], [229, 234]],
+[[22, 219], [229, 234]],
+[[22, 218], [229, 234]],
+[[22, 166], [171, 218], [229, 234]],
+[[22, 165], [172, 218], [229, 234]],
+[[22, 27], [32, 164], [172, 218], [228, 234]],
+[[22, 26], [34, 77], [83, 164], [172, 218], [227, 234]],
+[[22, 26], [34, 77], [83, 164], [172, 218], [227, 234]],
+[[22, 26], [34, 76], [83, 164], [172, 218], [227, 234]],
+[[22, 26], [34, 76], [83, 164], [171, 234]],
+[[22, 26], [34, 76], [83, 165], [171, 234]],
+[[22, 26], [33, 76], [83, 234]],
+[[22, 26], [32, 76], [83, 234]],
+[[22, 27], [32, 212]],
+[[22, 110], [118, 212]],
+[[22, 109], [118, 212]],
+[[22, 108], [118, 212]],
+[[22, 107], [118, 212]],
+[[22, 107], [118, 212]],
+[[22, 107], [117, 212]],
+[[31, 107], [116, 212]],
+[[4, 14], [34, 107], [115, 212]],
+[[4, 11], [34, 109], [115, 212]],
+[[4, 8], [34, 212]],
+[[4, 7], [34, 212]],
+[[4, 7], [34, 40], [45, 212]],
+[[4, 7], [32, 37], [47, 212]],
+[[60, 212]],
+[[60, 194], [203, 212]],
+[[60, 191], [206, 212]],
+[[60, 188], [206, 212]],
+[[60, 186], [206, 212]],
+[[60, 183], [206, 212]],
+[[60, 180], [206, 212]],
+[[60, 180], [204, 212]],
+[[60, 180], [203, 212]],
+[[61, 180], [203, 212]],
+[[63, 147], [154, 179], [203, 212]],
+[[72, 146], [154, 179], [199, 206], [211, 212]],
+[[75, 146], [154, 179], [198, 206]],
+[[79, 146], [154, 178], [197, 206]],
+[[79, 146], [154, 177], [197, 206]],
+[[79, 146], [154, 175], [197, 206]],
+[[79, 146], [153, 172], [197, 206]],
+[[79, 83], [91, 147], [152, 169], [197, 206]],
+[[77, 81], [91, 166], [196, 212]],
+[[72, 81], [91, 163], [196, 212]],
+[[72, 80], [91, 162], [186, 187], [196, 212]],
+[[72, 80], [91, 162], [184, 187], [196, 212]],
+[[72, 80], [90, 162], [179, 187], [196, 212]],
+[[61, 62], [71, 80], [89, 162], [177, 190], [196, 212]],
+[],
+[],
+],
+moonfen: [
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[[52, 53], [63, 76], [81, 135], [144, 151], [154, 158], [163, 204]],
+[[52, 53], [63, 76], [81, 135], [144, 150], [154, 204]],
+[[52, 55], [59, 135], [144, 150], [155, 177], [180, 204]],
+[[52, 136], [142, 150], [155, 177], [181, 204]],
+[[52, 114], [118, 150], [155, 177], [181, 204]],
+[[52, 97], [101, 114], [118, 150], [155, 177], [182, 204]],
+[[52, 97], [101, 114], [118, 177], [182, 204]],
+[[52, 96], [101, 114], [118, 178], [183, 204]],
+[[52, 96], [100, 114], [118, 178], [183, 204]],
+[[52, 96], [100, 114], [118, 179], [183, 204]],
+[[52, 96], [100, 149], [152, 158], [184, 204]],
+[[52, 53], [56, 59], [68, 72], [75, 96], [99, 139], [184, 190], [197, 200]],
+[[87, 91], [94, 96], [99, 135], [186, 190], [197, 199]],
+[[88, 89], [105, 135], [169, 171], [187, 190], [197, 199]],
+[[88, 89], [105, 135], [149, 152], [157, 159], [169, 171], [187, 191], [197, 199]],
+[[88, 89], [105, 138], [149, 152], [157, 159], [165, 172], [176, 180], [187, 191], [197, 199]],
+[[55, 59], [66, 72], [77, 81], [88, 93], [105, 152], [157, 181], [186, 191], [195, 204]],
+[[52, 60], [66, 72], [77, 83], [86, 87], [90, 95], [101, 105], [108, 152], [157, 191], [195, 204]],
+[[52, 63], [70, 73], [79, 80], [86, 87], [94, 95], [98, 104], [109, 131], [136, 154], [157, 204]],
+[[52, 62], [98, 104], [109, 127], [140, 204]],
+[[52, 62], [99, 101], [109, 126], [142, 204]],
+[[52, 62], [99, 100], [109, 126], [142, 204]],
+[[52, 70], [80, 81], [99, 100], [108, 126], [142, 204]],
+[[52, 72], [80, 95], [99, 100], [107, 128], [131, 204]],
+[[52, 73], [78, 96], [99, 104], [107, 204]],
+[[52, 55], [58, 69], [72, 74], [78, 84], [88, 204]],
+[[52, 53], [75, 77], [91, 96], [105, 107], [129, 204]],
+[[52, 53], [91, 96], [105, 107], [132, 204]],
+[[6, 21], [43, 45], [48, 53], [105, 107], [133, 251]],
+[[6, 18], [43, 44], [53, 56], [107, 123], [136, 251]],
+[[6, 18], [30, 40], [43, 44], [110, 122], [137, 251]],
+[[6, 18], [24, 40], [111, 122], [137, 171], [174, 175], [187, 191], [194, 215], [227, 251]],
+[[6, 27], [31, 40], [111, 122], [137, 165], [197, 215], [229, 251]],
+[[6, 26], [31, 40], [111, 122], [133, 157], [202, 215], [229, 251]],
+[[6, 26], [31, 38], [66, 68], [113, 125], [130, 154], [204, 205], [208, 209], [229, 246]],
+[[6, 26], [30, 38], [113, 150], [232, 246]],
+[[6, 26], [30, 33], [113, 150], [232, 235], [238, 239], [243, 246]],
+[[6, 33], [113, 150], [155, 156], [245, 247]],
+[[118, 120], [126, 150], [154, 156]],
+[[118, 119], [132, 151], [154, 156], [192, 193]],
+[[82, 83], [132, 142], [147, 151]],
+[[132, 139], [147, 150], [238, 239]],
+[[63, 65], [129, 138], [219, 220], [225, 226], [238, 239]],
+[[50, 51], [63, 65], [129, 138], [219, 220], [225, 227], [232, 233], [238, 239]],
+[[45, 46], [50, 51], [63, 65], [129, 138], [143, 144], [219, 220], [226, 227], [232, 233], [249, 250]],
+[[44, 47], [50, 51], [56, 65], [83, 84], [129, 139], [142, 144], [163, 166], [185, 186], [219, 221], [226, 228], [232, 233], [249, 251]],
+[[44, 68], [82, 84], [112, 117], [127, 144], [161, 167], [185, 187]],
+[[44, 68], [82, 87], [109, 150], [153, 170], [173, 193], [197, 203]],
+[[44, 70], [82, 87], [108, 114], [118, 206]],
+[[44, 70], [79, 87], [120, 206]],
+[[44, 72], [79, 87], [129, 188], [193, 206]],
+[[44, 87], [129, 134], [139, 187], [193, 206]],
+[[44, 91], [129, 134], [145, 187], [193, 206]],
+[[44, 99], [125, 134], [147, 187], [192, 206]],
+[[44, 104], [125, 126], [129, 135], [149, 206]],
+[[44, 106], [130, 140], [149, 206]],
+[[6, 88], [98, 102], [131, 140], [149, 206]],
+[[6, 56], [67, 69], [84, 85], [98, 99], [135, 136], [143, 206]],
+[[6, 43], [67, 69], [98, 99], [135, 136], [145, 206]],
+[[6, 18], [37, 38], [98, 99], [146, 206]],
+[[6, 17], [146, 206]],
+[[6, 17], [146, 206]],
+[[6, 17], [39, 40], [46, 54], [142, 206]],
+[[6, 17], [20, 28], [32, 33], [42, 54], [142, 206]],
+[[6, 27], [32, 33], [42, 54], [142, 206]],
+[],
+[],
+[],
+],
+crags: [
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[[56, 104], [125, 131], [140, 196]],
+[[56, 110], [121, 125], [142, 196]],
+[[56, 110], [121, 125], [152, 196]],
+[[56, 115], [121, 125], [152, 196]],
+[[56, 125], [152, 196]],
+[[56, 125], [152, 196]],
+[[56, 125], [152, 196]],
+[[64, 134], [156, 196]],
+[[70, 138], [159, 196]],
+[[75, 138], [161, 196]],
+[[88, 139], [164, 196]],
+[[88, 145], [167, 196]],
+[[56, 58], [88, 147], [172, 253]],
+[[56, 63], [88, 153], [175, 253]],
+[[56, 68], [88, 156], [175, 190], [195, 253]],
+[[56, 68], [78, 157], [175, 181], [195, 253]],
+[[4, 42], [49, 151], [157, 158], [175, 181], [196, 238], [243, 253]],
+[[4, 42], [49, 151], [175, 181], [204, 238], [243, 253]],
+[[4, 42], [49, 151], [174, 181], [211, 212], [217, 238], [244, 253]],
+[[4, 42], [49, 151], [173, 181], [217, 238], [245, 253]],
+[[4, 42], [49, 151], [172, 182], [218, 238], [245, 253]],
+[[4, 42], [49, 151], [172, 183], [218, 238], [246, 253]],
+[[4, 42], [49, 150], [173, 184], [218, 238], [246, 253]],
+[[4, 43], [48, 144], [173, 195], [218, 238], [247, 253]],
+[[4, 141], [173, 195], [200, 203], [218, 239], [247, 253]],
+[[4, 20], [29, 74], [83, 139], [173, 207], [214, 240], [248, 253]],
+[[4, 6], [16, 18], [29, 74], [83, 134], [173, 240], [248, 253]],
+[[16, 17], [29, 74], [83, 115], [122, 125], [165, 240], [248, 253]],
+[[29, 74], [83, 102], [158, 240], [248, 253]],
+[[29, 74], [83, 102], [152, 241], [249, 253]],
+[[28, 74], [81, 102], [149, 241], [249, 253]],
+[[28, 75], [80, 102], [148, 241], [249, 253]],
+[[27, 102], [154, 241], [249, 253]],
+[[27, 106], [116, 119], [157, 202], [208, 242], [249, 253]],
+[[15, 17], [27, 119], [160, 200], [208, 242], [249, 253]],
+[[14, 17], [27, 119], [174, 200], [208, 243], [249, 253]],
+[[14, 17], [27, 119], [139, 143], [176, 200], [208, 225], [230, 243], [249, 253]],
+[[12, 17], [26, 119], [129, 146], [176, 200], [208, 211], [230, 243], [248, 253]],
+[[12, 16], [26, 149], [176, 200], [208, 209], [233, 253]],
+[[11, 16], [27, 153], [176, 200], [207, 209], [233, 253]],
+[[10, 15], [27, 38], [43, 158], [176, 208], [234, 253]],
+[[7, 15], [27, 37], [43, 111], [120, 160], [173, 208], [234, 253]],
+[[7, 15], [27, 33], [44, 109], [120, 160], [175, 208], [234, 253]],
+[[6, 15], [27, 33], [52, 108], [120, 160], [177, 207], [234, 253]],
+[[5, 6], [27, 33], [55, 108], [120, 163], [180, 206], [234, 253]],
+[[27, 33], [63, 107], [120, 165], [185, 206], [234, 253]],
+[[25, 33], [66, 107], [120, 167], [188, 206], [235, 253]],
+[[25, 33], [66, 107], [120, 167], [190, 205], [235, 253]],
+[[26, 33], [66, 107], [120, 171], [194, 199], [225, 226], [235, 253]],
+[[27, 34], [66, 107], [120, 175], [224, 226], [235, 244]],
+[[27, 34], [66, 107], [119, 180], [224, 226]],
+[[37, 41], [55, 56], [63, 68], [73, 110], [115, 182], [223, 226]],
+[[55, 67], [74, 181]],
+[[59, 67], [74, 118], [126, 178]],
+[[74, 118], [131, 174]],
+[],
+[],
+[],
+[],
+[],
+],
+};
+return { GROUND };
+})();
 // src/rendering/regions.js
 const __m70 = (() => {
 const { Rng } = __m6;
-const { REGION_ATLAS, MEADOW, GATHERABLES } = __m57;
+const { SpriteAtlas, MEADOW } = __m57;
+const { GROUND } = __m71;
 const SCENE_W = 256;
 const SCENE_H = 144;
 const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
@@ -14401,260 +15284,69 @@ mushroom(ctx, 40, 140, 2, SHROOM); mushroom(ctx, 50, 142, 1, SHROOM);
 mushroom(ctx, 196, 138, 2, SHROOM); mushroom(ctx, 205, 141, 1, SHROOM);
 for (let i = 0; i < 18; i++) sparkle(ctx, rng.int(4, W - 4), rng.int(60, H - 6), rng.pick(['#fff3a0', '#ffe066']), '#ffffff');
 }
-const FIXED = {
-forest: [['oak_small', 132, 78], ['oaks', 22, 96, true], ['oaks', 238, 94]],
-meadow: [['oak', 30, 80]],
-river: [['willow_small', 150, 78], ['willow_great', 26, 98], ['willow_second', 232, 96]],
-quarry: [['crane', 206, 90]],
-moonfen: [['water_2', 70, 104, false, true], ['water', 196, 122, false, true], ['water', 48, 140, true, true],
-['willow_small', 164, 82], ['dead_tree', 96, 84], ['willow_left', 24, 102], ['willow_center', 234, 98]],
-crags: [['gusher', 182, 86], ['vent', 76, 88], ['crag_large', 22, 104], ['crag_tall', 236, 102]],
-};
-const GROUND_TOP = { forest: 80, meadow: 78, river: 80, quarry: 88, moonfen: 88, crags: 86 };
-const WET = { river: [[0, 89, SCENE_W, 31]] };
-function fixedOf(region) {
-const list = FIXED[region] || [];
-if (region !== 'meadow') return list;
-const f = MEADOW.frame('fence');
-const fence = [];
-if (f) for (let x = -6; x < SCENE_W + f[2]; x += f[2] - 4) fence.push(['fence', x + f[2] / 2, 73]);
-return [...fence, ...list];
+const BACKDROPS = Object.fromEntries(Object.keys(GROUND).map((r) => [r, new SpriteAtlas(`assets/backdrops/${r}.png`, { scene: [0, 0, SCENE_W, SCENE_H] })]));
+function groundGrid(region) {
+const grid = new Uint8Array(SCENE_W * SCENE_H);
+(GROUND[region] || []).forEach((runs, y) => { for (const [x0, x1] of runs) grid.fill(1, y * SCENE_W + x0, y * SCENE_W + x1); });
+return grid;
 }
-function stand(ctx, region, name) {
-for (const [n, x, y, flip] of fixedOf(region)) if (n === name) REGION_ATLAS[region].draw(ctx, n, x, y, 1, !!flip);
-}
-function lavaStream(seed) {
-const rng = new Rng(`lava:${seed}`);
-const rows = [];
-for (let y = 80, x = rng.int(90, 150); y < SCENE_H; y++) {
-x += Math.sin(y * 0.13 + 1) * 1.3 + rng.range(-0.6, 0.6);
-rows.push([y, x, 2 + Math.round((y - 80) / 26)]);
-}
-return rows;
-}
+const GROUND_TOP = Object.fromEntries(Object.entries(GROUND).map(([r, rows]) => [r, rows.findIndex((runs) => runs.length)]));
 const frameAt = (f, x, y) => [Math.round(x - f[2] / 2), Math.round(y - f[3])];
-function stamp(grid, m, w, h, left, top, flip, grow) {
+function stamp(grid, m, w, h, left, top, grow) {
 const W = SCENE_W, H = SCENE_H;
 for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
-if (!m[j * w + (flip ? w - 1 - i : i)]) continue;
+if (!m[j * w + i]) continue;
 for (let y = Math.max(0, top + j - grow); y <= Math.min(H - 1, top + j + grow); y++)
 for (let x = Math.max(0, left + i - grow); x <= Math.min(W - 1, left + i + grow); x++) grid[y * W + x] = 1;
 }
 }
-function groundGrids(region, seed) {
-const W = SCENE_W, H = SCENE_H, A = REGION_ATLAS[region];
-if (!A || !A.ready || !SPRITE_PAINTERS[region]) return null;
-const solid = new Uint8Array(W * H), wet = new Uint8Array(W * H);
-for (const [name, x, y, flip, flat] of fixedOf(region)) {
-const f = A.frame(name), m = A.mask(name);
-if (!f || !m) return null;
-const [left, top] = frameAt(f, x, y);
-stamp(flat ? wet : solid, m, f[2], f[3], left, top, !!flip, flat ? 2 : 1);
-}
-for (const [x0, y0, w, h] of WET[region] || []) for (let y = y0; y < Math.min(H, y0 + h); y++) wet.fill(1, y * W + x0, y * W + Math.min(W, x0 + w));
-if (region === 'crags') for (const [y, x, w] of lavaStream(seed)) for (let xx = Math.round(x - w / 2) - 2; xx <= Math.round(x + w / 2) + 2; xx++) if (xx >= 0 && xx < W) wet[y * W + xx] = 1;
-return { solid, wet, top: GROUND_TOP[region] || 80, bottom: H - 3 };
-}
-const BIG_PROP = 150;
+const ROOM = 4;
 class PlantGround {
-constructor(region, seed, props = []) {
+constructor(region) {
 this.region = region;
-this.seed = seed;
-this.props = props.filter((b) => (b.x1 - b.x0) * (b.y1 - b.y0) >= BIG_PROP);
-this.grids = null;
+this.ground = groundGrid(region);
+this.top = Math.max(1, GROUND_TOP[region] ?? 0);
 this.spots = new Map();
 }
 place(plants, shapeOf) {
-const W = SCENE_W, H = SCENE_H;
+const W = SCENE_W, H = SCENE_H, G = this.ground;
 const out = {};
 for (const p of plants) out[p.id] = { x: p.x, y: p.y };
-if (!this.grids) this.grids = groundGrids(this.region, this.seed);
-const G = this.grids;
-if (!G) return out;
 const here = new Set(plants.map((p) => p.id));
 for (const id of [...this.spots.keys()]) if (!here.has(id)) this.spots.delete(id);
 const fresh = plants.filter((p) => !this.spots.has(p.id) && shapeOf(p));
 if (fresh.length) {
-const bare = G.solid.slice();
-for (const s of this.spots.values()) { const [left, top] = frameAt([0, 0, s.w, s.h], s.x, s.y); stamp(bare, s.m, s.w, s.h, left, top, false, 1); }
-const full = bare.slice();
-for (const b of this.props) for (let y = Math.max(0, Math.floor(b.y0)); y < Math.min(H, Math.ceil(b.y1)); y++) full.fill(1, y * W + Math.max(0, Math.floor(b.x0)), y * W + Math.min(W, Math.ceil(b.x1)));
+const roomy = new Uint8Array(W * H), tight = new Uint8Array(W * H);
+const mark = (/** @type {{x:number, y:number, w:number, h:number, m:Uint8Array}} */ s) => {
+const [left, top] = frameAt([0, 0, s.w, s.h], s.x, s.y);
+stamp(roomy, s.m, s.w, s.h, left, top, ROOM);
+stamp(tight, s.m, s.w, s.h, left, top, 1);
+};
+for (const s of this.spots.values()) mark(s);
 for (const p of fresh) {
 const { w, h, m } = /** @type {{w:number, h:number, m:Uint8Array}} */ (shapeOf(p));
 const f = [0, 0, w, h], sw = Math.max(4, Math.round(w * 0.5));
-const fits = (solid, ax, ay) => {
+const fits = (taken, ax, ay) => {
 const [left, top] = frameAt(f, ax, ay);
-if (ay < G.top || ay > G.bottom || left < 1 || left + w > W - 1 || top < 1) return false;
-for (let y = ay - 2; y <= ay; y++) for (let x = left; x < left + w; x++) if (G.wet[y * W + x]) return false;
-for (let x = ax - Math.floor(sw / 2); x < ax - Math.floor(sw / 2) + sw; x++) if (solid[ay * W + x]) return false;
-for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
-if (!m[j * w + i]) continue;
-const k = (top + j) * W + left + i;
-if (solid[k] || (j >= h * 2 / 3 && G.wet[k])) return false;
-}
+if (ay < this.top || ay > H - 3 || left < 1 || left + w > W - 1 || top < 1) return false;
+for (let y = ay - 1; y <= ay; y++) for (let x = ax - Math.floor(sw / 2); x < ax - Math.floor(sw / 2) + sw; x++) if (!G[y * W + x]) return false;
+for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (m[j * w + i] && taken[(top + j) * W + left + i]) return false;
 return true;
 };
 const ox = Math.round(p.x * W), oy = Math.round(p.y * H);
 const tries = [[0, ox, oy]];
-for (let y = G.top; y <= G.bottom; y++) for (let x = (y + ox) & 1; x < W; x += 2) tries.push([(x - ox) ** 2 + ((y - oy) * 1.6) ** 2, x, y]);
+for (let y = this.top; y <= H - 3; y++) for (let x = (y + ox) & 1; x < W; x += 2) if (G[y * W + x]) tries.push([(x - ox) ** 2 + ((y - oy) * 1.6) ** 2, x, y]);
 tries.sort((a, b) => a[0] - b[0]);
-const spot = tries.find(([, x, y]) => fits(full, x, y)) || tries.find(([, x, y]) => fits(bare, x, y));
+const spot = tries.find(([, x, y]) => fits(roomy, x, y)) || tries.find(([, x, y]) => fits(tight, x, y));
 const [, x, y] = spot || [0, ox, oy];
-const [left, top] = frameAt(f, x, y);
-stamp(full, m, w, h, left, top, false, 1);
-stamp(bare, m, w, h, left, top, false, 1);
-this.spots.set(p.id, { x, y, w, h, m });
+const s = { x, y, w, h, m };
+mark(s);
+this.spots.set(p.id, s);
 }
 }
 for (const [id, s] of this.spots) out[id] = { x: s.x / W, y: s.y / H };
 return out;
 }
-}
-function placer(ctx, rng, atlas, avoid) {
-const taken = avoid;
-const free = (x0, y0, x1, y1) => taken.every((b) => x1 < b.x0 || x0 > b.x1 || y1 < b.y0 || y0 > b.y1);
-const spots = (x0, x1, y0, y1, n = 5) => Array.from({ length: n }, () => [rng.int(x0, x1), rng.int(y0, y1)]);
-const prop = (name, spots, flip = false) => {
-const f = atlas.frame(name);
-if (!f) return;
-for (const [x, y] of spots) {
-const b = { x0: x - f[2] / 2, y0: y - f[3], x1: x + f[2] / 2, y1: y };
-if (free(b.x0, b.y0, b.x1, b.y1)) { atlas.draw(ctx, name, x, y, 1, flip); taken.push(b); return; }
-}
-};
-return { taken, spots, prop };
-}
-function groundBands(ctx, y0, bands) {
-for (let k = 0; k < bands.length; k++) { const y = y0 + Math.round(k * (SCENE_H - y0) / bands.length); R(ctx, 0, y, SCENE_W, SCENE_H - y, bands[k]); }
-raggedUp(ctx, y0, bands[0]);
-}
-function raggedUp(ctx, y, c) {
-for (let x = 0; x < SCENE_W; x += 2) { const d = (x * 7 + (x >> 3) * 5 + (x >> 5)) % 4; if (d) R(ctx, x, y - d, 2, d, c); }
-}
-function forestSprites(ctx, rng, avoid) {
-const W = SCENE_W, H = SCENE_H, A = REGION_ATLAS.forest;
-const { spots, prop } = placer(ctx, rng, A, avoid);
-A.draw(ctx, 'sky', W / 2, 46);
-A.draw(ctx, 'distant', W / 2, 52);
-A.draw(ctx, 'mid', W / 2, 64);
-A.draw(ctx, 'near', W / 2, 74);
-groundBands(ctx, 70, ['#5aa830', '#52a02c', '#4a9628', '#428a24', '#3a7e20']);
-for (const [c, grow] of /** @type {[string, number][]} */ ([['#68b83a', 1], ['#7cc846', 0.62]])) {
-for (let y = 74; y < 130; y += 2) {
-const t = (y - 74) / 56, hw = Math.round((22 + Math.sin(t * Math.PI) * 76) * grow);
-const l = 128 - hw - rng.int(0, 3) * 2, r = 128 + hw + rng.int(0, 3) * 2;
-if (hw > 0) R(ctx, l, y, r - l, 2, c);
-}
-}
-stand(ctx, 'forest', 'oak_small');
-for (let i = 0; i < 3; i++) { const x0 = 96 + i * 15; for (let y = 0; y < 104; y++) R(ctx, x0 + y * 0.35, y, 6 - i, 1, `rgba(255,250,210,${(0.18 * (1 - y / 104)).toFixed(3)})`); }
-stand(ctx, 'forest', 'oaks');
-prop('bush_flowers', [[96, 84], [86, 85], [108, 83]]);
-prop('bush_round', [[170, 84], [182, 85], [158, 83]], true);
-prop('bush_small', [[118, 83], [146, 83]]);
-prop('fern', [[40, 104], [52, 102]]);
-prop('snag', [[10, 106], [16, 110]]);
-prop('stump', [[214, 100], [222, 102]]);
-prop('stones', [[234, 116], [238, 120]]);
-prop('log', [[20, 142], [26, 142]]);
-prop('fern_small', [[246, 144], [240, 144]], true);
-prop('bush_flowers', [[208, 152], [196, 152]], true);
-prop('sticks', [[140, 138], [120, 136], [166, 138]]);
-for (let i = 0; i < 9; i++) prop(`leaves_${rng.int(1, 2)}`, spots(6, W - 6, 88, H + 2), rng.chance(0.5));
-}
-function riverSprites(ctx, rng, avoid) {
-const W = SCENE_W, H = SCENE_H, A = REGION_ATLAS.river;
-const { spots, prop } = placer(ctx, rng, A, avoid);
-A.draw(ctx, 'sky', W / 2, 58);
-A.draw(ctx, 'mountains', W / 2, 60);
-A.draw(ctx, 'pines', W / 2, 70);
-groundBands(ctx, 68, ['#7cc846', '#70be40', '#64b43a']);
-A.draw(ctx, 'water', W / 2, 114);
-const bank = /** @type {number[]} */ (A.frame('bank'));
-for (let x = -rng.int(0, 40); x < W; x += bank[2] - 2) A.draw(ctx, 'bank', x + bank[2] / 2, 96);
-for (let k = 0, bands = ['#6cbe3c', '#62b636', '#58ac30', '#4ea22c']; k < bands.length; k++) R(ctx, 0, 115 + k * 8, W, H, bands[k]);
-for (let x = 0; x < W; x += 2) { const d = rng.int(0, 2); R(ctx, x, 113 - d, 2, d + 2, '#6cbe3c'); R(ctx, x, 112 - d, 2, 1, '#3a7a2a'); }
-stand(ctx, 'river', 'willow_small');
-prop('bush_plain', [[58, 84], [64, 84]]);
-prop('post', [[172, 94], [164, 94]]);
-prop('sign', [[64, 94], [56, 94]]);
-stand(ctx, 'river', 'willow_great');
-stand(ctx, 'river', 'willow_second');
-prop('stump', [[244, 146], [236, 146]]);
-prop('branch', [[12, 146], [18, 146]]);
-for (let i = 0; i < 6; i++) prop(rng.pick(['grass_1', 'grass_2']), spots(8, W - 8, 80, 90), rng.chance(0.5));
-for (let i = 0; i < 8; i++) prop(rng.pick(['grass_1', 'grass_2', 'buttercups']), spots(6, W - 6, 124, H + 2), rng.chance(0.5));
-for (let i = 0; i < 3; i++) prop('pebble', spots(10, W - 10, 122, H - 2));
-}
-function quarrySprites(ctx, rng, avoid) {
-const W = SCENE_W, H = SCENE_H, A = REGION_ATLAS.quarry;
-const { taken, spots, prop } = placer(ctx, rng, A, avoid);
-A.draw(ctx, 'sky', W / 2, 56);
-A.draw(ctx, 'far_cliffs', W / 2, 64);
-A.draw(ctx, 'near_cliffs', W / 2, 84);
-groundBands(ctx, 80, ['#b89462', '#ad8a59', '#a18052', '#95754a', '#896b43']);
-speckle(ctx, rng, 82, H - 1, 160, ['#7a5e3a', '#c8a472', '#8a6a42'], 2);
-stand(ctx, 'quarry', 'crane');
-for (const [, x, y] of fixedOf('quarry')) { const f = /** @type {number[]} */ (A.frame('crane')); taken.push({ x0: x - f[2] / 2, y0: y - f[3], x1: x + f[2] / 2, y1: y }); }
-prop('frame', [[64, 86], [48, 86], [84, 86], [130, 86], [30, 86], [170, 86]]);
-prop('scaffold', [[150, 84], [164, 84], [118, 84], [236, 84], [96, 84]]);
-prop('ladder', [[112, 86], [100, 86], [176, 86], [30, 86], [140, 86]]);
-prop('rail_fence', [[44, 94], [36, 94]]);
-prop('blocks', [[174, 94], [182, 94]]);
-prop('stone_pillar', [[248, 104], [246, 100]]);
-prop('shrub_green', [[10, 112], [12, 118]]);
-prop('cart', [[234, 142], [228, 142]]);
-prop('crate', [[208, 142], [204, 142]]);
-prop('crate_small', [[198, 143], [194, 143]]);
-prop('stone_block', [[14, 146], [20, 146]]);
-prop('dirt_heap', [[38, 143], [44, 143]]);
-for (let i = 0; i < 6; i++) prop(rng.pick(['brush_small', 'pebbles', 'brush_small']), spots(6, W - 6, 98, H), rng.chance(0.5));
-}
-function moonfenSprites(ctx, rng, avoid) {
-const W = SCENE_W, H = SCENE_H, A = REGION_ATLAS.moonfen;
-const { spots, prop } = placer(ctx, rng, A, avoid);
-A.draw(ctx, 'sky', W / 2, 50);
-A.draw(ctx, 'hills', W / 2, 60);
-A.draw(ctx, 'treeline', W / 2, 74);
-groundBands(ctx, 74, ['#1f3a2a', '#1b3325', '#172d20', '#13261b', '#102117']);
-A.draw(ctx, 'mist', W / 2, 82);
-raggedUp(ctx, 82, '#1f3a2a');
-stand(ctx, 'moonfen', 'water_2');
-stand(ctx, 'moonfen', 'water');
-for (const name of ['willow_small', 'dead_tree', 'willow_left', 'willow_center']) stand(ctx, 'moonfen', name);
-prop('stump_drowned', [[40, 102], [48, 102]]);
-prop('cattails', [[112, 104], [106, 104]]);
-prop('stump_glowing', [[232, 100], [226, 100]]);
-prop('rock_mid', [[12, 118], [16, 120]]);
-prop('trunk', [[236, 148], [230, 148]], true);
-prop('ghost_stumps', [[86, 102], [80, 102]]);
-prop('rock_big', [[18, 146], [24, 146]]);
-for (let i = 0; i < 9; i++) prop(rng.pick(['grass_2', 'grass_3', 'fiddleheads', 'night_flowers']), spots(6, W - 6, 90, H + 2), rng.chance(0.5));
-for (let i = 0; i < 4; i++) prop(rng.pick(['rock_small', 'stone_flat', 'rock_small']), spots(10, W - 10, 92, H), rng.chance(0.5));
-for (let i = 0; i < 4; i++) prop('pad', spots(30, 110, 92, 102));
-}
-function cragsSprites(ctx, rng, avoid, seed) {
-const W = SCENE_W, H = SCENE_H, A = REGION_ATLAS.crags;
-const { spots, prop } = placer(ctx, rng, A, avoid);
-A.draw(ctx, 'sky', W / 2, 64);
-A.draw(ctx, 'ridges', W / 2, 62);
-A.draw(ctx, 'fissures', W / 2, 78);
-groundBands(ctx, 76, ['#3a2420', '#34201c', '#2e1c19', '#281815', '#221412']);
-speckle(ctx, rng, 78, H - 1, 260, ['#4a2e26', '#1a0c0a', '#5a3a2e'], 3);
-for (const [y, x, w] of lavaStream(seed)) {
-R(ctx, x - w / 2 - 1, y, w + 2, 1, '#a8320c');
-R(ctx, x - w / 2, y, w, 1, y % 5 ? '#ff7a1c' : '#ffb444');
-}
-for (const name of ['gusher', 'vent', 'crag_large', 'crag_tall']) stand(ctx, 'crags', name);
-prop('crag_medium', [[126, 88], [140, 86], [112, 90]]);
-prop('crag_small', [[210, 92], [222, 94]]);
-const [, mouth] = lavaStream(seed).slice(-1)[0];
-prop('lava_pool', [[Math.round(mouth), H + 8], [Math.round(mouth) + 6, H + 8]]);
-prop('rock_mound', [[242, 152], [236, 152]]);
-prop('dead_brush', [[8, 142], [12, 142]]);
-prop('lava_pan', [[44, 146], [52, 146]]);
-for (let i = 0; i < 6; i++) prop(rng.pick(['rock_1', 'rock_3']), spots(6, W - 6, 96, H), rng.chance(0.5));
-for (let i = 0; i < 5; i++) prop(rng.pick(['ember_brush', 'ember_brush_small']), spots(6, W - 6, 92, H + 2), rng.chance(0.5));
 }
 function meadow(ctx, rng) {
 const W = SCENE_W, H = SCENE_H;
@@ -14677,35 +15369,6 @@ for (const [cx, cy, n] of [[30, 100, 6], [110, 92, 5], [170, 120, 6], [232, 128,
 for (let i = 0; i < 6; i++) bluebell(ctx, 134 + i * 4 + rng.int(-1, 1), 112 + rng.int(-4, 4), rng.int(9, 12));
 rock(ctx, rng, -4, 124, 34, 20, RSTONE, MOSS);
 for (let i = 0; i < 14; i++) sparkle(ctx, rng.int(4, W - 4), rng.int(78, H - 6), '#fff3a0');
-}
-function meadowSprites(ctx, rng, avoid) {
-const W = SCENE_W, H = SCENE_H;
-const A = MEADOW;
-const { spots, prop } = placer(ctx, rng, A, avoid);
-A.draw(ctx, 'sky', W / 2, 66);
-for (const [name, x, y] of /** @type {[string, number, number][]} */ ([['cloud_2', 30, 14], ['cloud_1', 92, 26], ['cloud_3', 150, 12], ['cloud_6', 212, 20], ['cloud_8', 128, 36], ['cloud_5', 244, 38]])) A.draw(ctx, name, x, y);
-A.draw(ctx, 'far_mountains', W / 2, 54);
-A.draw(ctx, 'near_mountains', W / 2, 60);
-A.draw(ctx, 'treeline', W / 2, 66);
-const bands = ['#7cc844', '#6cbe3c', '#62b636', '#58ac30', '#4ea22c', '#459826'];
-for (let k = 0; k < bands.length; k++) { const y0 = 64 + Math.round(k * (H - 64) / bands.length); R(ctx, 0, y0, W, H - y0, bands[k]); }
-for (let i = 0; i < 260; i++) {
-const y = rng.int(68, H - 1), x = rng.int(0, W - 1);
-R(ctx, x, y, 1, 1, rng.pick(['#ffffff', '#ffffff', '#ffe066', '#ff9fc7', '#d6f08a', '#3f8a2a', '#3f8a2a']));
-}
-stand(ctx, 'meadow', 'fence');
-prop('bush_round', [[66, 80], [78, 81], [52, 80], [92, 80]]);
-prop('bush_low', [[118, 78], [104, 78], [132, 78], [150, 78]]);
-prop('bush_pink', [[206, 80], [192, 80], [220, 81], [176, 80]]);
-prop('bush_dark', [[244, 82], [236, 83], [252, 82]]);
-stand(ctx, 'meadow', 'oak');
-prop('rock_big', [[14, 146], [24, 146]]);
-prop('rock_mossy', [[226, 112], [238, 108], [212, 116], [150, 100]]);
-prop('rock_pair', [[170, 92], [158, 94], [184, 92], [100, 94]]);
-const clumps = ['flowers_daisies', 'flowers_pinks', 'flowers_yellows', 'flowers_mixed', 'flowers_daisy_clump', 'flowers_buttercups', 'flowers_pink_clump', 'flowers_posies'];
-for (let i = 0; i < 24; i++) prop(rng.pick(clumps), spots(6, W - 6, 88, H + 2), rng.chance(0.5));
-for (let i = 0; i < 28; i++) prop(`grass_${rng.int(2, 8)}`, spots(4, W - 4, 82, H + 1), rng.chance(0.5));
-for (let x = 40; x < W; x += rng.int(30, 44)) prop(rng.chance(0.5) ? 'grass_near' : 'grass_1', [[x, H + 6], [x + 8, H + 6]], rng.chance(0.5));
 }
 function river(ctx, rng) {
 const W = SCENE_W, H = SCENE_H;
@@ -14839,48 +15502,12 @@ for (const [x, y] of [[70, 96], [190, 92]]) for (let k = 0; k < 7; k++) { let bx
 for (let i = 0; i < 16; i++) sparkle(ctx, rng.int(4, W - 4), rng.int(60, H - 4), rng.pick(['#ffb444', '#ff7a1c']), '#fff3b0');
 }
 const PAINTERS = { forest, meadow, river, quarry, moonfen, crags };
-const BACKDROP = { forest: '#2f6a4a', river: '#6aa8e0', quarry: '#9aa6c0', moonfen: '#1a2a4a', crags: '#6a2418' };
-const SPRITE_PAINTERS = { forest: forestSprites, meadow: meadowSprites, river: riverSprites, quarry: quarrySprites, moonfen: moonfenSprites, crags: cragsSprites };
-function paintRegion(ctx, region, seed, avoid = []) {
-const rng = new Rng(`scene2:${seed}:${region}`);
+function paintRegion(ctx, region, seed) {
 const id = PAINTERS[region] ? region : 'forest';
-if (REGION_ATLAS[id].ready) {
-if (BACKDROP[id]) R(ctx, 0, 0, SCENE_W, SCENE_H, BACKDROP[id]);
-SPRITE_PAINTERS[id](ctx, rng, avoid, seed);
-}
-else PAINTERS[id](ctx, rng);
+if (BACKDROPS[id] && BACKDROPS[id].ready) BACKDROPS[id].draw(ctx, 'scene', SCENE_W / 2, SCENE_H);
+else PAINTERS[id](ctx, new Rng(`scene2:${seed}:${region}`));
 R(ctx, 0, 0, SCENE_W, 1, 'rgba(0,0,0,0.35)');
 R(ctx, 0, SCENE_H - 1, SCENE_W, 1, 'rgba(0,0,0,0.35)');
-}
-const FUMES = [
-['gusher', 26, 2, 14, 50, 4.2, 8, ['#f2c771', '#dca878', '#c4937f', '#a8787a', '#8a6268', '#6a4852']],
-['gusher', 26, 2, 6, 16, 1.1, 2.5, ['#fff0b8', '#f2c771', '#e0b070']],
-['vent', 20, 2, 12, 40, 5, 7, ['#ecd2a8', '#c9aaa4', '#ba9ea1', '#9a8088', '#7a5e66', '#5a4048']],
-];
-function fumes(ctx, t) {
-const A = REGION_ATLAS.crags;
-for (const [name, mx, my, n, rise, life, size, cols] of FUMES) {
-const f = A.frame(name);
-if (!f) continue;
-for (const [, x, y] of fixedOf('crags').filter(([nn]) => nn === name)) {
-const [left, top] = frameAt(f, x, y), ox = left + mx, oy = top + my;
-const puffs = Array.from({ length: n }, (_, i) => { const a = t / life + i / n; return { i, p: a % 1, k: Math.floor(a) }; }).sort((u, v) => v.p - u.p);
-for (const { i, p, k } of puffs) {
-const jitter = Math.sin(k * 12.99 + i * 78.23) * 0.5 + 0.5;
-const r = 1 + p * size * (0.7 + jitter * 0.3);
-const px = ox + p * p * rise * 0.35 + Math.sin(t * 1.4 + i * 2.1) * p * 2 + (jitter - 0.5) * 4 * p;
-const py = oy - p * rise * (0.85 + jitter * 0.3);
-const c = Math.min(cols.length - 1, Math.floor(p * cols.length));
-const alpha = Math.round(Math.min(1, p / 0.06) * Math.min(1, (1 - p) * 1.6) * 0.85 * 5) / 5;
-if (!alpha) continue;
-ctx.globalAlpha = alpha;
-if (r < 2) R(ctx, Math.round(px) - 1, Math.round(py) - 1, 2, 2, cols[c]);
-else disc(ctx, Math.round(px), Math.round(py), Math.round(r), Math.max(1, Math.round(r * 0.8)), cols[c]);
-if (r > 2.5) disc(ctx, Math.round(px - r * 0.3), Math.round(py - r * 0.35), Math.round(r * 0.5), Math.max(1, Math.round(r * 0.35)), cols[Math.max(0, c - 1)]);
-}
-ctx.globalAlpha = 1;
-}
-}
 }
 function animateRegion(ctx, region, t) {
 const W = SCENE_W, H = SCENE_H;
@@ -14909,8 +15536,8 @@ if (region === 'forest') for (let i = 0; i < 10; i++) {
 const x = (i * 37 + Math.sin(t * 0.5 + i) * 6) % W, y = 40 + ((i * 29 + t * 4) % 60);
 if (Math.sin(t * 2 + i * 1.7) > 0.3) R(ctx, x, y, 1, 1, '#fff6c0');
 }
-if (region === 'river' && REGION_ATLAS.river.ready) for (let i = 0; i < 8; i++) {
-const x = ((t * (5 + i % 3) + i * 37) % (W + 8)) - 4, y = 98 + ((i * 5) % 14) + Math.round(Math.sin(t * 2 + i));
+if (region === 'river' && BACKDROPS.river.ready) for (let i = 0; i < 8; i++) {
+const x = ((t * (5 + i % 3) + i * 37) % (W + 8)) - 4, y = 86 + ((i * 5) % 14) + Math.round(Math.sin(t * 2 + i));
 R(ctx, x, y, 3, 1, '#dff4ff');
 }
 else if (region === 'river') for (let i = 0; i < 8; i++) {
@@ -14918,7 +15545,6 @@ const y = 70 + ((t * 8 + i * 9) % (H - 70)), tt = (y - 62) / (H - 62), x = 70 + 
 R(ctx, x, y, 3, 1, '#dff4ff');
 }
 } else if (region === 'crags') {
-if (REGION_ATLAS.crags.ready) fumes(ctx, t);
 for (let i = 0; i < 12; i++) {
 const y = H * 0.75 - ((t * 12 + i * 11) % 60), x = W * (0.05 + i * 0.08) + Math.sin(t + i) * 4;
 R(ctx, x, y, 1, 1, i % 3 ? '#ffb444' : '#ff7a1c');
@@ -14929,10 +15555,10 @@ const x = (i * 47 + t * 6) % W, y = 60 + Math.sin(t * 0.8 + i) * 10 + i * 6;
 R(ctx, x, y, 1, 1, 'rgba(255,240,210,0.6)');
 }
 const flick = 0.7 + 0.3 * Math.sin(t * 9);
-if (!REGION_ATLAS.quarry.ready) R(ctx, 24, 56, 3, 5, `rgba(255,243,176,${flick.toFixed(2)})`);
+if (!BACKDROPS.quarry.ready) R(ctx, 24, 56, 3, 5, `rgba(255,243,176,${flick.toFixed(2)})`);
 }
 }
-return { SCENE_W, SCENE_H, GROUND_TOP, fixedOf, lavaStream, PlantGround, paintRegion, animateRegion };
+return { SCENE_W, SCENE_H, BACKDROPS, GROUND_TOP, PlantGround, paintRegion, animateRegion };
 })();
 // src/ui/views/wilds.js
 const __m69 = (() => {
@@ -14943,7 +15569,7 @@ const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, we
 const { equipmentById } = __m25;
 const { RANKS } = __m25;
 const { drawRaw, rawSprite } = __m61;
-const { paintRegion, animateRegion, PlantGround, SCENE_W, SCENE_H } = __m70;
+const { paintRegion, animateRegion, PlantGround, BACKDROPS, SCENE_W, SCENE_H } = __m70;
 const { GATHERABLES, GROWTH, REGION_ATLAS, gatherFrameName, growthFrame, plantBox, hitPlant } = __m57;
 const { EFFECT_BY_KEY } = __m13;
 class WildsView {
@@ -14981,7 +15607,7 @@ el.append(this.tabs, h('div', { class: 'wilds-scene' }, h('div', { class: 'scene
 this.refresh();
 }
 loadSprites() {
-for (const atlas of [REGION_ATLAS[this.region], GROWTH]) {
+for (const atlas of [BACKDROPS[this.region], REGION_ATLAS[this.region], GROWTH]) {
 if (!atlas || atlas.ready || this.waiting.has(atlas)) continue;
 this.waiting.add(atlas);
 atlas.load().then((ok) => { if (ok) { this.bgKey = ''; this.refresh(); } });
@@ -15068,15 +15694,14 @@ const g = m && m.wild ? GATHERABLES[m.wild.key] : null;
 return g && g.region === d.region && g.atlas.ready ? m.wild.key : null;
 }
 paintBg() {
-const atlas = REGION_ATLAS[this.region];
-const key = this.region + ':' + this.lab.state.seed + ':' + !!(atlas && atlas.ready) + ':' + GROWTH.ready;
+const backdrop = BACKDROPS[this.region];
+const key = this.region + ':' + this.lab.state.seed + ':' + !!(backdrop && backdrop.ready) + ':' + GROWTH.ready;
 if (key === this.bgKey) return;
 this.bgKey = key;
 this.bg = document.createElement('canvas');
 this.bg.width = SCENE_W; this.bg.height = SCENE_H;
-const props = [];
-paintRegion(/** @type {CanvasRenderingContext2D} */ (this.bg.getContext('2d')), this.region, this.lab.state.seed, props);
-this.ground = new PlantGround(this.region, this.lab.state.seed, props);
+paintRegion(/** @type {CanvasRenderingContext2D} */ (this.bg.getContext('2d')), this.region, this.lab.state.seed);
+this.ground = new PlantGround(this.region);
 this.field = [];
 }
 shown() {
@@ -15298,7 +15923,7 @@ this.grow();
 return { WildsView };
 })();
 // src/rendering/rabbit.js
-const __m72 = (() => {
+const __m73 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m53;
 const { RABBIT_MARKS } = __m27;
@@ -16194,10 +16819,10 @@ ctx.fillRect(fx, fy, RABBIT_W, RABBIT_H);
 return { RABBIT_W, RABBIT_H, rabbitLevels, rabbitPose, rabbitPace, rabbitAnchors, rabbitSpriteKey, drawRabbitSprite, clearRabbitSprites, drawRabbit };
 })();
 // src/rendering/hutch-scene.js
-const __m74 = (() => {
+const __m75 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m53;
-const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m72;
+const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m73;
 const HUTCH_W = 224;
 const HUTCH_H = 88;
 const HUTCH_BODIES = 3;
@@ -16615,13 +17240,13 @@ ctx.drawImage(this.bg, 0, 0);
 return { HUTCH_W, HUTCH_H, HUTCH_BODIES, paintHutch, paintHutchFront, HutchScene };
 })();
 // src/ui/views/hutch.js
-const __m73 = (() => {
+const __m74 = (() => {
 const { readingSteadiness } = __m26;
 const { h, btn, clear, toast, modal, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { drawRabbit, RABBIT_W, RABBIT_H } = __m72;
-const { HutchScene, HUTCH_W, HUTCH_H } = __m74;
+const { drawRabbit, RABBIT_W, RABBIT_H } = __m73;
+const { HutchScene, HUTCH_W, HUTCH_H } = __m75;
 const { EFFECT_BY_KEY } = __m13;
 const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral, RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE, BURNS } = __m27;
 const { PURGE_BREW_TIME } = __m5;
@@ -16950,7 +17575,7 @@ if (this._live >= 0.25) { this._live = 0; this.live(); }
 return { CHANNELS, HutchPanel };
 })();
 // src/ui/views/trials.js
-const __m71 = (() => {
+const __m72 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
@@ -16962,9 +17587,9 @@ const { summarize, addSamples, EVIDENCE_TEXT, evidenceRank, requirementEvidence 
 const { evidenceOf } = __m45;
 const { shortName } = __m21;
 const LEVEL_SHORT = { preliminary: '1 reading', repeated: 'repeated', corroborated: 'corroborated', certified: 'certified' };
-const { drawRabbit } = __m72;
+const { drawRabbit } = __m73;
 const { focusRabbit, findRabbit, rabbitSnap, decodeSnap, lookFromSeed, RABBIT_MARKS } = __m27;
-const { HutchPanel } = __m73;
+const { HutchPanel } = __m74;
 const REPLAY_T = 3.2;
 class TrialsView {
 constructor(lab) {
@@ -17341,7 +17966,7 @@ return `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2
 return { TrialsView, EFFECTS, EFFECT_INDEX };
 })();
 // src/ui/views/book.js
-const __m75 = (() => {
+const __m76 = (() => {
 const { h, btn, clear } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
@@ -17479,8 +18104,8 @@ const trade = __m66;
 const { Tutorial } = __m67;
 const { CounterView } = __m68;
 const { WildsView } = __m69;
-const { TrialsView } = __m71;
-const { BookView } = __m75;
+const { TrialsView } = __m72;
+const { BookView } = __m76;
 const { shortName } = __m21;
 const REQ_ICON = { temperature: 'thermo', quantity: 'flask', purity: 'pure' };
 const TOOL_DEFS = [
@@ -19186,7 +19811,7 @@ void dominantEffect;
 return { VIEWS, LabScreen };
 })();
 // src/materials/reference.js
-const __m77 = (() => {
+const __m78 = (() => {
 const { completeMaterial } = __m9;
 const REF = {};
 const add = (d) => (REF[d.id] = completeMaterial(d));
@@ -19224,11 +19849,11 @@ const refLookup = (id) => REF[id];
 return { REF, refLookup };
 })();
 // src/ui/menu.js
-const __m76 = (() => {
+const __m77 = (() => {
 const { h, btn } = __m2;
 const { Renderer } = __m52;
 const { Simulation } = __m30;
-const { REF, refLookup } = __m77;
+const { REF, refLookup } = __m78;
 const { hasSave, loadGame } = __m49;
 const { audio } = __m4;
 class MenuScreen {
@@ -19317,7 +19942,7 @@ const { sandboxIngredients } = __m7;
 const { EQUIPMENT } = __m25;
 const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m49;
 const { LabScreen } = __m50;
-const { MenuScreen } = __m76;
+const { MenuScreen } = __m77;
 const { openSettings, openHelp } = __m64;
 const { Rng } = __m6;
 const { normalizeTrials } = __m26;
@@ -19434,7 +20059,7 @@ openHelp();
 return { App, icon };
 })();
 // src/ui/textures.js
-const __m78 = (() => {
+const __m79 = (() => {
 const { Rng } = __m6;
 function texture(w, h, paint) {
 const cv = document.createElement('canvas');
@@ -19486,7 +20111,7 @@ return { installTextures };
 // src/main.js
 const __m0 = (() => {
 const { App } = __m1;
-const { installTextures } = __m78;
+const { installTextures } = __m79;
 installTextures();
 const root = document.getElementById('app');
 const app = new App(root);
