@@ -12,7 +12,8 @@ was cut programmatically from generated concept sheets. Each region gets:
 - scenery: the curated trees, rocks, structures and flora (no outline, so
   they stay behind the gatherables); fragments of neighbouring sheet cells
   and white bars are dropped, and the white sheet showing through a willow's
-  curtain of branches is cleared
+  curtain of branches is cleared; the Crags' vent and gusher lose the smoke
+  painted above them (the scene animates its own)
 - gatherables, one per real ingredient of the region (materials/wild.js
   keys): the mature deposit outlined in ink with a light-outlined hover frame,
   the harvested deposit as its depleted frame and, for a dawn or dusk plant,
@@ -306,6 +307,23 @@ class Region:
             im = im.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
         self.S[name] = self.clean(fit(im, w, h, colours), own, fringe)
 
+    def desmoke(self, name, top=8):
+        """Clear the smoke a vent breathes in the pack's art (the scene animates
+        its own): the plume's colours are the ones in its top `top` rows, plus
+        the pale yellows and oranges of a jet of steam; each column is cleared
+        from the top down to its first pixel of rock."""
+        a = np.array(self.S[name])
+        plume = {tuple(int(v) for v in a[r, c, :3]) for r in range(top) for c in range(a.shape[1]) if a[r, c, 3]}
+        for c in range(a.shape[1]):
+            for r in range(a.shape[0]):
+                if not a[r, c, 3]:
+                    continue
+                p = tuple(int(v) for v in a[r, c, :3])
+                if p not in plume and not (p[0] > 200 and p[1] > 140):
+                    break
+                a[r, c, 3] = 0
+        self.S[name] = trim(Image.fromarray(a))
+
     def icon(self, key, tol=40):
         """The framed icon, lifted out of its parchment frame: inside the
         frame, the parchment (the colours along the inner edge, flooded in
@@ -537,6 +555,8 @@ def crags():
     R.prop('lava_pool', L + '013', w=48, colours=14)
     R.prop('vent', P + 'lava_vent_with_steam', h=38, colours=16)
     R.prop('gusher', P + 'sulfur_steam_gusher', h=46, colours=16)
+    R.desmoke('vent')
+    R.desmoke('gusher')
     R.prop('rock_mound', L + '015', w=36, colours=14)
     R.prop('rock_1', L + '006', w=16, colours=10)
     R.prop('rock_2', L + '008', w=16, colours=10)

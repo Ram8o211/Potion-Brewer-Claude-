@@ -232,7 +232,10 @@ computed from the particles that actually run out of the tap. What a
   mist, smoky volcanic ridges and lava fissures), then the region's terrain
   and scenery — ancient oaks, willows, a river with its chalk bank, a crane
   and timber frames, drowned stumps and pools of black water, lava crags,
-  vents and a lava pool. Every ingredient of those regions is an outlined
+  a lava pool and a vent and sulphur gusher whose smoke rises and drifts
+  as it plays. Each deposit is laid out to rise out of open ground — never
+  in the river, a pool or the lava, never on a tree, crag or fence or
+  another deposit — and the props keep clear of it. Every ingredient of those regions is an outlined
   sprite with hover and depleted (harvested) frames; the dusk Nightshade,
   Grave Moss and Siren Reed and the dawn Moonlily show their closed state
   out of their hour, and each has its icon on the deposit card, the shelf

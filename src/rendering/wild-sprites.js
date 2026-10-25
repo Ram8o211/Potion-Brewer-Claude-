@@ -34,6 +34,10 @@ export class SpriteAtlas {
     this.ready = false;
     /** @type {Promise<boolean> | null} */
     this.loading = null;
+    /** the sheet's RGBA pixels, read once for the frames' masks (set directly where there is no canvas) @type {{width:number, data:ArrayLike<number>} | null} */
+    this.pixels = null;
+    /** @type {Record<string, Uint8Array>} */
+    this.masks = {};
   }
 
   /** Start loading (once). Resolves true when it can be drawn, false without a DOM or on error. */
@@ -52,6 +56,28 @@ export class SpriteAtlas {
   /** @param {string} name */
   frame(name) {
     return this.frames[name] || null;
+  }
+
+  /**
+   * Which pixels of a frame are opaque, row by row (w × h, 1 for opaque), or
+   * null until the sheet's pixels can be read.
+   * @param {string} name
+   */
+  mask(name) {
+    const f = this.frames[name];
+    if (!f) return null;
+    if (this.masks[name]) return this.masks[name];
+    if (!this.pixels && this.img && typeof document !== 'undefined') {
+      const cv = document.createElement('canvas');
+      cv.width = this.img.width; cv.height = this.img.height;
+      const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d', { willReadFrequently: true }));
+      ctx.drawImage(this.img, 0, 0);
+      this.pixels = { width: cv.width, data: ctx.getImageData(0, 0, cv.width, cv.height).data };
+    }
+    if (!this.pixels) return null;
+    const [x, y, w, h] = f, { width, data } = this.pixels, m = new Uint8Array(w * h);
+    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) m[j * w + i] = data[((y + j) * width + x + i) * 4 + 3] > 0 ? 1 : 0;
+    return (this.masks[name] = m);
   }
 
   /**

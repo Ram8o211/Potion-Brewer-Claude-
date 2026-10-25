@@ -15,7 +15,7 @@ import { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, w
 import { equipmentById } from '../../game/equipment.js';
 import { RANKS } from '../../game/equipment.js';
 import { drawRaw, rawSprite } from '../../rendering/scenes.js';
-import { paintRegion, animateRegion, SCENE_W, SCENE_H } from '../../rendering/regions.js';
+import { paintRegion, animateRegion, layoutDeposits, SCENE_W, SCENE_H } from '../../rendering/regions.js';
 import { GATHERABLES, REGION_ATLAS, gatherFrameName, depositBox, hitDeposit } from '../../rendering/wild-sprites.js';
 import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
 
@@ -29,6 +29,8 @@ export class WildsView {
     this.floaters = [];
     this.bg = null;
     this.bgKey = '';
+    /** deposit id → where it stands in the painted scene (layoutDeposits) */
+    this.spots = {};
     /** strip deposits for twice the yield (they regrow at half speed) */
     this.thorough = false;
     this.rain = [];
@@ -155,20 +157,28 @@ export class WildsView {
 
   paintBg() {
     const atlas = REGION_ATLAS[this.region];
-    const key = this.region + ':' + this.lab.state.seed + ':' + !!(atlas && atlas.ready);
+    const shown = this.shown();
+    const key = this.region + ':' + this.lab.state.seed + ':' + shown.map((d) => d.id).join(',') + ':' + !!(atlas && atlas.ready);
     if (key === this.bgKey) return;
     this.bgKey = key;
     this.bg = document.createElement('canvas');
     this.bg.width = SCENE_W; this.bg.height = SCENE_H;
-    // the scenery keeps clear of the deposits, so nothing hides a gatherable
+    // each deposit rises out of open ground, clear of the fixed scenery; the
+    // props then keep clear of the deposits, so nothing hides a gatherable
+    this.spots = layoutDeposits(this.region, this.lab.state.seed, shown, (d) => this.spriteKey(d));
     const avoid = this.inScene().map((d) => depositBox(d, this.spriteKey(d), SCENE_W, SCENE_H));
     paintRegion(/** @type {CanvasRenderingContext2D} */ (this.bg.getContext('2d')), this.region, this.lab.state.seed, avoid);
   }
 
   /** The deposits drawn in the scene: a sprite deposit beyond the guild rank is left out (its card says so). */
-  inScene() {
+  shown() {
     const lab = this.lab;
     return this.deposits().filter((d) => lab.sandbox || d.rank <= lab.state.rank || !this.spriteKey(d));
+  }
+
+  /** The deposits drawn in the scene, each where it stands in it. */
+  inScene() {
+    return this.shown().map((d) => ({ ...d, ...this.spots[d.id] }));
   }
 
   /** @param {string | null} id */
@@ -201,8 +211,8 @@ export class WildsView {
     audio.play(plan.method.sound);
     setTimeout(() => audio.play('select'), 140);
     this.harvested[d.id] = this.time;
-    const box = depositBox(d, this.spriteKey(d), SCENE_W, SCENE_H);
-    this.floaters.push({ x: d.x * SCENE_W, y: d.y * SCENE_H - Math.max(0, box.h - 16), t: 0, text: `+${r.amount}`, color: m.look || m.color, shape: m.wild ? m.wild.shape : 'stone' });
+    const at = { ...d, ...this.spots[d.id] }, box = depositBox(at, this.spriteKey(d), SCENE_W, SCENE_H);
+    this.floaters.push({ x: at.x * SCENE_W, y: at.y * SCENE_H - Math.max(0, box.h - 16), t: 0, text: `+${r.amount}`, color: m.look || m.color, shape: m.wild ? m.wild.shape : 'stone' });
     for (const e of r.events || []) lab.announce(e);
     if (lab.tutorial) lab.tutorial.notify('gather', d.materialId);
     // a first find gets its own place on the shelf

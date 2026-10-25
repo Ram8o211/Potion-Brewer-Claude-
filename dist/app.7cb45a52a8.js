@@ -11810,50 +11810,50 @@ wisplichen_idle: [129, 287, 32, 26],
 },
 crags: {
 url: 'assets/wilds/crags.png',
-size: [256, 259],
+size: [256, 257],
 frames: {
-ashbloom_card: [64, 167, 20, 24],
-ashbloom_depleted: [214, 140, 31, 25],
-ashbloom_hover: [0, 167, 31, 25],
-ashbloom_icon: [205, 218, 14, 16],
-ashbloom_idle: [32, 167, 31, 25],
-cinderscale_card: [85, 167, 22, 24],
-cinderscale_depleted: [23, 218, 31, 23],
-cinderscale_hover: [55, 218, 31, 23],
-cinderscale_icon: [220, 218, 15, 16],
-cinderscale_idle: [87, 218, 31, 23],
-crag_large: [42, 65, 59, 44],
-crag_medium: [191, 65, 33, 32],
-crag_small: [108, 167, 25, 24],
-crag_tall: [102, 65, 43, 42],
-dead_brush: [0, 140, 24, 26],
-dragonpepper_card: [134, 167, 19, 24],
-dragonpepper_depleted: [25, 140, 32, 26],
-dragonpepper_hover: [58, 140, 32, 26],
-dragonpepper_icon: [236, 218, 13, 16],
-dragonpepper_idle: [91, 140, 32, 26],
-ember_brush: [29, 243, 15, 13],
-ember_brush_small: [16, 243, 12, 14],
-fissures: [0, 193, 256, 24],
-glint_0: [124, 243, 3, 3],
-glint_1: [114, 243, 4, 4],
-glint_2: [128, 243, 3, 3],
-glint_3: [119, 243, 4, 4],
-gusher: [0, 65, 41, 46],
-lava_pan: [93, 243, 20, 7],
-lava_pool: [156, 218, 48, 18],
-obsidian_card: [0, 218, 22, 24],
-obsidian_depleted: [124, 140, 29, 26],
-obsidian_hover: [154, 140, 29, 26],
-obsidian_icon: [0, 243, 15, 16],
-obsidian_idle: [184, 140, 29, 26],
-ridges: [0, 112, 256, 27],
-rock_1: [62, 243, 16, 10],
-rock_2: [45, 243, 16, 11],
-rock_3: [79, 243, 13, 8],
-rock_mound: [119, 218, 36, 22],
+ashbloom_card: [64, 165, 20, 24],
+ashbloom_depleted: [214, 138, 31, 25],
+ashbloom_hover: [0, 165, 31, 25],
+ashbloom_icon: [205, 216, 14, 16],
+ashbloom_idle: [32, 165, 31, 25],
+cinderscale_card: [85, 165, 22, 24],
+cinderscale_depleted: [23, 216, 31, 23],
+cinderscale_hover: [55, 216, 31, 23],
+cinderscale_icon: [220, 216, 15, 16],
+cinderscale_idle: [87, 216, 31, 23],
+crag_large: [0, 65, 59, 44],
+crag_medium: [146, 65, 33, 32],
+crag_small: [108, 165, 25, 24],
+crag_tall: [60, 65, 43, 42],
+dead_brush: [0, 138, 24, 26],
+dragonpepper_card: [134, 165, 19, 24],
+dragonpepper_depleted: [25, 138, 32, 26],
+dragonpepper_hover: [58, 138, 32, 26],
+dragonpepper_icon: [236, 216, 13, 16],
+dragonpepper_idle: [91, 138, 32, 26],
+ember_brush: [74, 241, 15, 13],
+ember_brush_small: [61, 241, 12, 14],
+fissures: [0, 191, 256, 24],
+glint_0: [169, 241, 3, 3],
+glint_1: [159, 241, 4, 4],
+glint_2: [173, 241, 3, 3],
+glint_3: [164, 241, 4, 4],
+gusher: [104, 65, 41, 33],
+lava_pan: [138, 241, 20, 7],
+lava_pool: [156, 216, 48, 18],
+obsidian_card: [0, 216, 22, 24],
+obsidian_depleted: [124, 138, 29, 26],
+obsidian_hover: [154, 138, 29, 26],
+obsidian_icon: [0, 241, 15, 16],
+obsidian_idle: [184, 138, 29, 26],
+ridges: [0, 110, 256, 27],
+rock_1: [107, 241, 16, 10],
+rock_2: [90, 241, 16, 11],
+rock_3: [124, 241, 13, 8],
+rock_mound: [119, 216, 36, 22],
 sky: [0, 0, 256, 64],
-vent: [146, 65, 44, 38],
+vent: [16, 241, 44, 15],
 },
 },
 };
@@ -12169,6 +12169,8 @@ this.frames = frames;
 this.img = null;
 this.ready = false;
 this.loading = null;
+this.pixels = null;
+this.masks = {};
 }
 load() {
 if (this.loading) return this.loading;
@@ -12183,6 +12185,22 @@ return this.loading;
 }
 frame(name) {
 return this.frames[name] || null;
+}
+mask(name) {
+const f = this.frames[name];
+if (!f) return null;
+if (this.masks[name]) return this.masks[name];
+if (!this.pixels && this.img && typeof document !== 'undefined') {
+const cv = document.createElement('canvas');
+cv.width = this.img.width; cv.height = this.img.height;
+const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d', { willReadFrequently: true }));
+ctx.drawImage(this.img, 0, 0);
+this.pixels = { width: cv.width, data: ctx.getImageData(0, 0, cv.width, cv.height).data };
+}
+if (!this.pixels) return null;
+const [x, y, w, h] = f, { width, data } = this.pixels, m = new Uint8Array(w * h);
+for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) m[j * w + i] = data[((y + j) * width + x + i) * 4 + 3] > 0 ? 1 : 0;
+return (this.masks[name] = m);
 }
 draw(ctx, name, x, y, scale = 1, flip = false) {
 const f = this.frames[name];
@@ -13923,7 +13941,7 @@ return { CounterView };
 // src/rendering/regions.js
 const __m69 = (() => {
 const { Rng } = __m6;
-const { REGION_ATLAS, MEADOW } = __m57;
+const { REGION_ATLAS, MEADOW, GATHERABLES } = __m57;
 const SCENE_W = 256;
 const SCENE_H = 144;
 const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
@@ -14190,19 +14208,108 @@ mushroom(ctx, 40, 140, 2, SHROOM); mushroom(ctx, 50, 142, 1, SHROOM);
 mushroom(ctx, 196, 138, 2, SHROOM); mushroom(ctx, 205, 141, 1, SHROOM);
 for (let i = 0; i < 18; i++) sparkle(ctx, rng.int(4, W - 4), rng.int(60, H - 6), rng.pick(['#fff3a0', '#ffe066']), '#ffffff');
 }
+const FIXED = {
+forest: [['oak_small', 132, 78], ['oaks', 22, 96, true], ['oaks', 238, 94]],
+meadow: [['oak', 30, 80]],
+river: [['willow_small', 150, 78], ['willow_great', 26, 98], ['willow_second', 232, 96]],
+quarry: [['crane', 206, 90]],
+moonfen: [['water_2', 70, 104, false, true], ['water', 196, 122, false, true], ['water', 48, 140, true, true],
+['willow_small', 164, 82], ['dead_tree', 96, 84], ['willow_left', 24, 102], ['willow_center', 234, 98]],
+crags: [['gusher', 182, 86], ['vent', 76, 88], ['crag_large', 22, 104], ['crag_tall', 236, 102]],
+};
+const GROUND_TOP = { forest: 80, meadow: 78, river: 80, quarry: 88, moonfen: 88, crags: 86 };
+const WET = { river: [[0, 89, SCENE_W, 31]] };
+function fixedOf(region) {
+const list = FIXED[region] || [];
+if (region !== 'meadow') return list;
+const f = MEADOW.frame('fence');
+const fence = [];
+if (f) for (let x = -6; x < SCENE_W + f[2]; x += f[2] - 4) fence.push(['fence', x + f[2] / 2, 73]);
+return [...fence, ...list];
+}
+function stand(ctx, region, name) {
+for (const [n, x, y, flip] of fixedOf(region)) if (n === name) REGION_ATLAS[region].draw(ctx, n, x, y, 1, !!flip);
+}
+function lavaStream(seed) {
+const rng = new Rng(`lava:${seed}`);
+const rows = [];
+for (let y = 80, x = rng.int(90, 150); y < SCENE_H; y++) {
+x += Math.sin(y * 0.13 + 1) * 1.3 + rng.range(-0.6, 0.6);
+rows.push([y, x, 2 + Math.round((y - 80) / 26)]);
+}
+return rows;
+}
+const frameAt = (f, x, y) => [Math.round(x - f[2] / 2), Math.round(y - f[3])];
+function layoutDeposits(region, seed, deps, keyOf) {
+const W = SCENE_W, H = SCENE_H, A = REGION_ATLAS[region];
+const out = {};
+for (const d of deps) out[d.id] = { x: d.x, y: d.y };
+if (!A || !A.ready || !SPRITE_PAINTERS[region]) return out;
+const solid = new Uint8Array(W * H), wet = new Uint8Array(W * H);
+const stamp = (grid, m, w, h, left, top, flip, grow) => {
+for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+if (!m[j * w + (flip ? w - 1 - i : i)]) continue;
+for (let y = Math.max(0, top + j - grow); y <= Math.min(H - 1, top + j + grow); y++)
+for (let x = Math.max(0, left + i - grow); x <= Math.min(W - 1, left + i + grow); x++) grid[y * W + x] = 1;
+}
+};
+for (const [name, x, y, flip, flat] of fixedOf(region)) {
+const f = A.frame(name), m = A.mask(name);
+if (!f || !m) return out;
+const [left, top] = frameAt(f, x, y);
+stamp(flat ? wet : solid, m, f[2], f[3], left, top, !!flip, flat ? 2 : 1);
+}
+for (const [x0, y0, w, h] of WET[region] || []) for (let y = y0; y < Math.min(H, y0 + h); y++) wet.fill(1, y * W + x0, y * W + Math.min(W, x0 + w));
+if (region === 'crags') for (const [y, x, w] of lavaStream(seed)) for (let xx = Math.round(x - w / 2) - 2; xx <= Math.round(x + w / 2) + 2; xx++) if (xx >= 0 && xx < W) wet[y * W + xx] = 1;
+const top0 = GROUND_TOP[region] || 80, bottom = H - 3;
+for (const d of deps) {
+const key = keyOf(d), g = key ? GATHERABLES[key] : null;
+const f = g ? g.atlas.frame(g.idle) : null;
+if (!g || !f) continue;
+const w = f[2], h = f[3];
+const m = new Uint8Array(w * h);
+for (const name of [g.idle, g.hover, g.depleted, g.harvesting, g.closed, g.closedHover]) {
+const mm = name ? g.atlas.mask(name) : null;
+if (mm && mm.length === m.length) for (let k = 0; k < m.length; k++) m[k] |= mm[k];
+}
+const sw = Math.max(6, Math.round(w * 0.6));
+const fits = (ax, ay) => {
+const [left, top] = frameAt(f, ax, ay);
+if (ay < top0 || ay > bottom || left < 1 || left + w > W - 1 || top < 1) return false;
+for (let y = ay - 2; y <= ay; y++) for (let x = left; x < left + w; x++) if (wet[y * W + x]) return false;
+for (let x = ax - Math.floor(sw / 2); x < ax - Math.floor(sw / 2) + sw; x++) if (solid[ay * W + x]) return false;
+for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+if (!m[j * w + i]) continue;
+const k = (top + j) * W + left + i;
+if (solid[k] || (j >= h * 2 / 3 && wet[k])) return false;
+}
+return true;
+};
+const ox = Math.round(d.x * W), oy = Math.round(d.y * H);
+const tries = [[0, ox, oy]];
+for (let y = top0; y <= bottom; y++) for (let x = (y + ox) & 1; x < W; x += 2) tries.push([(x - ox) ** 2 + ((y - oy) * 1.6) ** 2, x, y]);
+tries.sort((a, b) => a[0] - b[0]);
+const spot = tries.find(([, x, y]) => fits(x, y));
+if (!spot) continue;
+const [, x, y] = spot, [left, top] = frameAt(f, x, y);
+stamp(solid, m, w, h, left, top, false, 2);
+out[d.id] = { x: x / W, y: y / H };
+}
+return out;
+}
 function placer(ctx, rng, atlas, avoid) {
 const taken = avoid.slice();
 const free = (x0, y0, x1, y1) => taken.every((b) => x1 < b.x0 || x0 > b.x1 || y1 < b.y0 || y0 > b.y1);
 const spots = (x0, x1, y0, y1, n = 5) => Array.from({ length: n }, () => [rng.int(x0, x1), rng.int(y0, y1)]);
-const prop = (name, spots, flip = false, foot = 0) => {
+const prop = (name, spots, flip = false) => {
 const f = atlas.frame(name);
 if (!f) return;
 for (const [x, y] of spots) {
-const b = { x0: x - f[2] / 2, y0: y - (foot || f[3]), x1: x + f[2] / 2, y1: y };
+const b = { x0: x - f[2] / 2, y0: y - f[3], x1: x + f[2] / 2, y1: y };
 if (free(b.x0, b.y0, b.x1, b.y1)) { atlas.draw(ctx, name, x, y, 1, flip); taken.push(b); return; }
 }
 };
-return { taken, free, spots, prop };
+return { taken, spots, prop };
 }
 function groundBands(ctx, y0, bands) {
 for (let k = 0; k < bands.length; k++) { const y = y0 + Math.round(k * (SCENE_H - y0) / bands.length); R(ctx, 0, y, SCENE_W, SCENE_H - y, bands[k]); }
@@ -14226,10 +14333,9 @@ const l = 128 - hw - rng.int(0, 3) * 2, r = 128 + hw + rng.int(0, 3) * 2;
 if (hw > 0) R(ctx, l, y, r - l, 2, c);
 }
 }
-A.draw(ctx, 'oak_small', 132, 78);
+stand(ctx, 'forest', 'oak_small');
 for (let i = 0; i < 3; i++) { const x0 = 96 + i * 15; for (let y = 0; y < 104; y++) R(ctx, x0 + y * 0.35, y, 6 - i, 1, `rgba(255,250,210,${(0.18 * (1 - y / 104)).toFixed(3)})`); }
-A.draw(ctx, 'oaks', 22, 96, 1, true);
-A.draw(ctx, 'oaks', 238, 94);
+stand(ctx, 'forest', 'oaks');
 prop('bush_flowers', [[96, 84], [86, 86], [108, 82]]);
 prop('bush_round', [[170, 84], [182, 86], [158, 82]], true);
 prop('fern', [[60, 106], [46, 110], [76, 104]]);
@@ -14256,14 +14362,14 @@ const bank = /** @type {number[]} */ (A.frame('bank'));
 for (let x = -rng.int(0, 40); x < W; x += bank[2] - 2) A.draw(ctx, 'bank', x + bank[2] / 2, 96);
 for (let k = 0, bands = ['#6cbe3c', '#62b636', '#58ac30', '#4ea22c']; k < bands.length; k++) R(ctx, 0, 115 + k * 8, W, H, bands[k]);
 for (let x = 0; x < W; x += 2) { const d = rng.int(0, 2); R(ctx, x, 113 - d, 2, d + 2, '#6cbe3c'); R(ctx, x, 112 - d, 2, 1, '#3a7a2a'); }
-A.draw(ctx, 'willow_small', 150, 78);
+stand(ctx, 'river', 'willow_small');
 prop('bush_plain', [[96, 82], [84, 84], [110, 82]]);
 prop('bush_flowers', [[192, 84], [178, 84], [206, 86]], true);
 prop('bush_leafy', [[122, 80], [134, 80], [62, 82]]);
 prop('post', [[172, 92], [164, 92]]);
 prop('sign', [[70, 92], [56, 90]]);
-A.draw(ctx, 'willow_great', 26, 98);
-A.draw(ctx, 'willow_second', 232, 96);
+stand(ctx, 'river', 'willow_great');
+stand(ctx, 'river', 'willow_second');
 prop('stump', [[214, 132], [228, 136], [200, 128]]);
 prop('branch', [[100, 136], [84, 138], [120, 140]]);
 for (let i = 0; i < 10; i++) prop(rng.pick(['grass_1', 'grass_2']), spots(8, W - 8, 72, 90), rng.chance(0.5));
@@ -14272,24 +14378,17 @@ for (let i = 0; i < 5; i++) prop('pebble', spots(10, W - 10, 118, H - 2));
 }
 function quarrySprites(ctx, rng, avoid) {
 const W = SCENE_W, H = SCENE_H, A = REGION_ATLAS.quarry;
-const { taken, free, spots, prop } = placer(ctx, rng, A, avoid);
+const { taken, spots, prop } = placer(ctx, rng, A, avoid);
 A.draw(ctx, 'sky', W / 2, 56);
 A.draw(ctx, 'far_cliffs', W / 2, 64);
 A.draw(ctx, 'near_cliffs', W / 2, 84);
 groundBands(ctx, 80, ['#b89462', '#ad8a59', '#a18052', '#95754a', '#896b43']);
 speckle(ctx, rng, 82, H - 1, 160, ['#7a5e3a', '#c8a472', '#8a6a42'], 2);
-const crane = /** @type {number[]} */ (A.frame('crane'));
-for (const [x, y, flip] of /** @type {[number, number, boolean][]} */ ([[206, 90, false], [60, 90, true], [222, 88, false], [40, 90, true], [150, 90, false], [104, 90, true], [236, 88, false]])) {
-const hook = flip ? x - crane[2] / 2 : x + crane[2] / 2 - 18;
-if (free(x - crane[2] / 2, y - 8, x + crane[2] / 2, y) && free(hook, y - 40, hook + 18, y)) {
-A.draw(ctx, 'crane', x, y, 1, flip);
-taken.push({ x0: x - crane[2] / 2, y0: y - 8, x1: x + crane[2] / 2, y1: y });
-break;
-}
-}
-prop('frame', [[64, 86], [48, 86], [84, 86], [130, 86], [30, 86], [170, 86]], false, 6);
-prop('scaffold', [[150, 84], [164, 84], [118, 84], [236, 84], [96, 84]], false, 6);
-prop('ladder', [[112, 86], [100, 86], [176, 86], [30, 86], [140, 86]], false, 6);
+stand(ctx, 'quarry', 'crane');
+for (const [, x, y] of fixedOf('quarry')) { const f = /** @type {number[]} */ (A.frame('crane')); taken.push({ x0: x - f[2] / 2, y0: y - f[3], x1: x + f[2] / 2, y1: y }); }
+prop('frame', [[64, 86], [48, 86], [84, 86], [130, 86], [30, 86], [170, 86]]);
+prop('scaffold', [[150, 84], [164, 84], [118, 84], [236, 84], [96, 84]]);
+prop('ladder', [[112, 86], [100, 86], [176, 86], [30, 86], [140, 86]]);
 prop('blocks', [[176, 96], [190, 98], [94, 94]]);
 prop('stone_pillar', [[236, 96], [246, 98]]);
 prop('rail_fence', [[132, 98], [120, 100], [40, 96]]);
@@ -14313,13 +14412,9 @@ A.draw(ctx, 'treeline', W / 2, 74);
 groundBands(ctx, 74, ['#1f3a2a', '#1b3325', '#172d20', '#13261b', '#102117']);
 A.draw(ctx, 'mist', W / 2, 82);
 raggedUp(ctx, 82, '#1f3a2a');
-A.draw(ctx, 'water_2', 70, 104);
-A.draw(ctx, 'water', 196, 122);
-A.draw(ctx, 'water', 48, 140, 1, true);
-A.draw(ctx, 'willow_small', 164, 82);
-A.draw(ctx, 'dead_tree', 96, 84);
-A.draw(ctx, 'willow_left', 24, 102);
-A.draw(ctx, 'willow_center', 234, 98);
+stand(ctx, 'moonfen', 'water_2');
+stand(ctx, 'moonfen', 'water');
+for (const name of ['willow_small', 'dead_tree', 'willow_left', 'willow_center']) stand(ctx, 'moonfen', name);
 prop('trunk', [[132, 96], [146, 98], [120, 94]]);
 prop('stump_glowing', [[200, 96], [186, 94], [214, 98]]);
 prop('stump_drowned', [[118, 112], [140, 108], [104, 116]]);
@@ -14331,7 +14426,7 @@ for (let i = 0; i < 16; i++) prop(rng.pick(['grass_1', 'grass_2', 'grass_3', 'fi
 for (let i = 0; i < 6; i++) prop(rng.pick(['rock_small', 'stone_flat', 'rock_small']), spots(10, W - 10, 90, H), rng.chance(0.5));
 for (let i = 0; i < 4; i++) prop('pad', spots(50, 120, 96, 102));
 }
-function cragsSprites(ctx, rng, avoid) {
+function cragsSprites(ctx, rng, avoid, seed) {
 const W = SCENE_W, H = SCENE_H, A = REGION_ATLAS.crags;
 const { spots, prop } = placer(ctx, rng, A, avoid);
 A.draw(ctx, 'sky', W / 2, 64);
@@ -14339,16 +14434,11 @@ A.draw(ctx, 'ridges', W / 2, 62);
 A.draw(ctx, 'fissures', W / 2, 78);
 groundBands(ctx, 76, ['#3a2420', '#34201c', '#2e1c19', '#281815', '#221412']);
 speckle(ctx, rng, 78, H - 1, 260, ['#4a2e26', '#1a0c0a', '#5a3a2e'], 3);
-for (let y = 80, x = rng.int(90, 150); y < H; y++) {
-x += Math.sin(y * 0.13 + 1) * 1.3 + rng.range(-0.6, 0.6);
-const w = 2 + Math.round((y - 80) / 26);
+for (const [y, x, w] of lavaStream(seed)) {
 R(ctx, x - w / 2 - 1, y, w + 2, 1, '#a8320c');
 R(ctx, x - w / 2, y, w, 1, y % 5 ? '#ff7a1c' : '#ffb444');
 }
-A.draw(ctx, 'gusher', 182, 86);
-A.draw(ctx, 'vent', 76, 88);
-A.draw(ctx, 'crag_large', 22, 104);
-A.draw(ctx, 'crag_tall', 236, 102);
+for (const name of ['gusher', 'vent', 'crag_large', 'crag_tall']) stand(ctx, 'crags', name);
 prop('crag_medium', [[126, 88], [140, 86], [112, 90]]);
 prop('crag_small', [[210, 92], [222, 94]]);
 prop('lava_pool', [[150, 128], [128, 132], [172, 126]]);
@@ -14394,13 +14484,12 @@ for (let i = 0; i < 260; i++) {
 const y = rng.int(68, H - 1), x = rng.int(0, W - 1);
 R(ctx, x, y, 1, 1, rng.pick(['#ffffff', '#ffffff', '#ffe066', '#ff9fc7', '#d6f08a', '#3f8a2a', '#3f8a2a']));
 }
-const fence = /** @type {number[]} */ (A.frame('fence'));
-for (let x = -6; x < W + fence[2]; x += fence[2] - 4) A.draw(ctx, 'fence', x + fence[2] / 2, 73);
+stand(ctx, 'meadow', 'fence');
 prop('bush_round', [[66, 80], [78, 81], [52, 80], [92, 80]]);
 prop('bush_low', [[118, 78], [104, 78], [132, 78], [150, 78]]);
 prop('bush_pink', [[206, 80], [192, 80], [220, 81], [176, 80]]);
 prop('bush_dark', [[244, 82], [236, 83], [252, 82]]);
-A.draw(ctx, 'oak', 30, 80);
+stand(ctx, 'meadow', 'oak');
 prop('rock_big', [[14, 146], [24, 146]]);
 prop('rock_mossy', [[226, 112], [238, 108], [212, 116], [150, 100]]);
 prop('rock_pair', [[170, 92], [158, 94], [184, 92], [100, 94]]);
@@ -14548,11 +14637,41 @@ const rng = new Rng(`scene2:${seed}:${region}`);
 const id = PAINTERS[region] ? region : 'forest';
 if (REGION_ATLAS[id].ready) {
 if (BACKDROP[id]) R(ctx, 0, 0, SCENE_W, SCENE_H, BACKDROP[id]);
-SPRITE_PAINTERS[id](ctx, rng, avoid);
+SPRITE_PAINTERS[id](ctx, rng, avoid, seed);
 }
 else PAINTERS[id](ctx, rng);
 R(ctx, 0, 0, SCENE_W, 1, 'rgba(0,0,0,0.35)');
 R(ctx, 0, SCENE_H - 1, SCENE_W, 1, 'rgba(0,0,0,0.35)');
+}
+const FUMES = [
+['gusher', 26, 2, 14, 50, 4.2, 8, ['#f2c771', '#dca878', '#c4937f', '#a8787a', '#8a6268', '#6a4852']],
+['gusher', 26, 2, 6, 16, 1.1, 2.5, ['#fff0b8', '#f2c771', '#e0b070']],
+['vent', 20, 2, 12, 40, 5, 7, ['#ecd2a8', '#c9aaa4', '#ba9ea1', '#9a8088', '#7a5e66', '#5a4048']],
+];
+function fumes(ctx, t) {
+const A = REGION_ATLAS.crags;
+for (const [name, mx, my, n, rise, life, size, cols] of FUMES) {
+const f = A.frame(name);
+if (!f) continue;
+for (const [, x, y] of fixedOf('crags').filter(([nn]) => nn === name)) {
+const [left, top] = frameAt(f, x, y), ox = left + mx, oy = top + my;
+const puffs = Array.from({ length: n }, (_, i) => { const a = t / life + i / n; return { i, p: a % 1, k: Math.floor(a) }; }).sort((u, v) => v.p - u.p);
+for (const { i, p, k } of puffs) {
+const jitter = Math.sin(k * 12.99 + i * 78.23) * 0.5 + 0.5;
+const r = 1 + p * size * (0.7 + jitter * 0.3);
+const px = ox + p * p * rise * 0.35 + Math.sin(t * 1.4 + i * 2.1) * p * 2 + (jitter - 0.5) * 4 * p;
+const py = oy - p * rise * (0.85 + jitter * 0.3);
+const c = Math.min(cols.length - 1, Math.floor(p * cols.length));
+const alpha = Math.round(Math.min(1, p / 0.06) * Math.min(1, (1 - p) * 1.6) * 0.85 * 5) / 5;
+if (!alpha) continue;
+ctx.globalAlpha = alpha;
+if (r < 2) R(ctx, Math.round(px) - 1, Math.round(py) - 1, 2, 2, cols[c]);
+else disc(ctx, Math.round(px), Math.round(py), Math.round(r), Math.max(1, Math.round(r * 0.8)), cols[c]);
+if (r > 2.5) disc(ctx, Math.round(px - r * 0.3), Math.round(py - r * 0.35), Math.round(r * 0.5), Math.max(1, Math.round(r * 0.35)), cols[Math.max(0, c - 1)]);
+}
+ctx.globalAlpha = 1;
+}
+}
 }
 function animateRegion(ctx, region, t) {
 const W = SCENE_W, H = SCENE_H;
@@ -14590,6 +14709,7 @@ const y = 70 + ((t * 8 + i * 9) % (H - 70)), tt = (y - 62) / (H - 62), x = 70 + 
 R(ctx, x, y, 3, 1, '#dff4ff');
 }
 } else if (region === 'crags') {
+if (REGION_ATLAS.crags.ready) fumes(ctx, t);
 for (let i = 0; i < 12; i++) {
 const y = H * 0.75 - ((t * 12 + i * 11) % 60), x = W * (0.05 + i * 0.08) + Math.sin(t + i) * 4;
 R(ctx, x, y, 1, 1, i % 3 ? '#ffb444' : '#ff7a1c');
@@ -14603,7 +14723,7 @@ const flick = 0.7 + 0.3 * Math.sin(t * 9);
 if (!REGION_ATLAS.quarry.ready) R(ctx, 24, 56, 3, 5, `rgba(255,243,176,${flick.toFixed(2)})`);
 }
 }
-return { SCENE_W, SCENE_H, paintRegion, animateRegion };
+return { SCENE_W, SCENE_H, GROUND_TOP, fixedOf, lavaStream, layoutDeposits, paintRegion, animateRegion };
 })();
 // src/ui/views/wilds.js
 const __m68 = (() => {
@@ -14614,7 +14734,7 @@ const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, we
 const { equipmentById } = __m25;
 const { RANKS } = __m25;
 const { drawRaw, rawSprite } = __m60;
-const { paintRegion, animateRegion, SCENE_W, SCENE_H } = __m69;
+const { paintRegion, animateRegion, layoutDeposits, SCENE_W, SCENE_H } = __m69;
 const { GATHERABLES, REGION_ATLAS, gatherFrameName, depositBox, hitDeposit } = __m57;
 const { EFFECT_BY_KEY } = __m13;
 class WildsView {
@@ -14626,6 +14746,7 @@ this.time = 0;
 this.floaters = [];
 this.bg = null;
 this.bgKey = '';
+this.spots = {};
 this.thorough = false;
 this.rain = [];
 this.hover = null;
@@ -14733,17 +14854,22 @@ return g && g.region === d.region && g.atlas.ready ? m.wild.key : null;
 }
 paintBg() {
 const atlas = REGION_ATLAS[this.region];
-const key = this.region + ':' + this.lab.state.seed + ':' + !!(atlas && atlas.ready);
+const shown = this.shown();
+const key = this.region + ':' + this.lab.state.seed + ':' + shown.map((d) => d.id).join(',') + ':' + !!(atlas && atlas.ready);
 if (key === this.bgKey) return;
 this.bgKey = key;
 this.bg = document.createElement('canvas');
 this.bg.width = SCENE_W; this.bg.height = SCENE_H;
+this.spots = layoutDeposits(this.region, this.lab.state.seed, shown, (d) => this.spriteKey(d));
 const avoid = this.inScene().map((d) => depositBox(d, this.spriteKey(d), SCENE_W, SCENE_H));
 paintRegion(/** @type {CanvasRenderingContext2D} */ (this.bg.getContext('2d')), this.region, this.lab.state.seed, avoid);
 }
-inScene() {
+shown() {
 const lab = this.lab;
 return this.deposits().filter((d) => lab.sandbox || d.rank <= lab.state.rank || !this.spriteKey(d));
+}
+inScene() {
+return this.shown().map((d) => ({ ...d, ...this.spots[d.id] }));
 }
 setHover(id) {
 if (this.hover === id) return;
@@ -14770,8 +14896,8 @@ return;
 audio.play(plan.method.sound);
 setTimeout(() => audio.play('select'), 140);
 this.harvested[d.id] = this.time;
-const box = depositBox(d, this.spriteKey(d), SCENE_W, SCENE_H);
-this.floaters.push({ x: d.x * SCENE_W, y: d.y * SCENE_H - Math.max(0, box.h - 16), t: 0, text: `+${r.amount}`, color: m.look || m.color, shape: m.wild ? m.wild.shape : 'stone' });
+const at = { ...d, ...this.spots[d.id] }, box = depositBox(at, this.spriteKey(d), SCENE_W, SCENE_H);
+this.floaters.push({ x: at.x * SCENE_W, y: at.y * SCENE_H - Math.max(0, box.h - 16), t: 0, text: `+${r.amount}`, color: m.look || m.color, shape: m.wild ? m.wild.shape : 'stone' });
 for (const e of r.events || []) lab.announce(e);
 if (lab.tutorial) lab.tutorial.notify('gather', d.materialId);
 if (!lab.jarEls[d.materialId]) lab.buildShelf(); else lab.updateShelf();
