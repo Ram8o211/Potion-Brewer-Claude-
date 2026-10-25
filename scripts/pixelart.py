@@ -135,11 +135,11 @@ def majority(im, passes=2):
     return Image.fromarray(px, 'RGBA')
 
 
-def rim(im, palette, luma=70):
+def rim(im, palette=None, luma=70):
     """Replace a broken dark outline with a whole one: the dark pixels on the
     silhouette's edge are dropped, then the silhouette is grown by one pixel,
     each new pixel a deep shade of the one inside it (dark green around
-    leaves, dark brown around bark), snapped to the palette."""
+    leaves, dark brown around bark), snapped to the palette if one is given."""
     im = trim(defringe(im, luma))
     out = Image.new('RGBA', (im.width + 2, im.height + 2), (0, 0, 0, 0))
     out.paste(im, (1, 1))
@@ -155,7 +155,7 @@ def rim(im, palette, luma=70):
             c = ns[0][:3]
             if c not in cache:
                 deep = tuple(int(v * 0.32) for v in c)
-                cache[c] = min(palette, key=lambda q: dist(q, deep))
+                cache[c] = min(palette, key=lambda q: dist(q, deep)) if palette else deep
             o[x, y] = (*cache[c], 255)
     return out
 
@@ -240,6 +240,23 @@ def outline(im, colour):
                 if 0 <= nx < out.width and 0 <= ny < out.height and src[nx, ny][3]:
                     o[x, y] = colour
                     break
+    return out
+
+
+def list_icon(src, finish, side=32, colours=32):
+    """A list icon `side` px on its long side: `src` resampled to a few sizes
+    near it, each finished by `finish` (whose clean-up and outline change
+    its size), and the one coming closest without going over is centred on
+    a `side` px canvas."""
+    def make(t):
+        im = fit(src, h=t, colours=colours)
+        if im.width > im.height:
+            im = fit(src, w=t, colours=colours)
+        return finish(im)
+    im = max((im for im in map(make, range(side - 2, side + 3)) if max(im.size) <= side), key=lambda im: max(im.size))
+    w, h = (side, im.height) if im.width >= im.height else (im.width, side)
+    out = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    out.paste(im, ((w - im.width) // 2, (h - im.height) // 2))
     return out
 
 
