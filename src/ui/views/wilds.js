@@ -7,8 +7,8 @@
 // depends on the method and tool, the hour (dawn / midday / dusk follow the
 // shop's customers), the weather and how thoroughly you dig (game/gathering.js).
 // The plants are drawn from the growth atlas (rendering/wild-sprites.js) at
-// their stage; only plants take taps — the scenery is painted into the
-// cached background.
+// their stage on the open ground of the region's painted backdrop; only
+// plants take taps — the scenery is part of the cached background.
 
 import { h, btn, clear, toast } from '../dom.js';
 import { icon } from '../icons.js';
@@ -17,7 +17,7 @@ import { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, w
 import { equipmentById } from '../../game/equipment.js';
 import { RANKS } from '../../game/equipment.js';
 import { drawRaw, rawSprite } from '../../rendering/scenes.js';
-import { paintRegion, animateRegion, PlantGround, SCENE_W, SCENE_H } from '../../rendering/regions.js';
+import { paintRegion, animateRegion, PlantGround, BACKDROPS, SCENE_W, SCENE_H } from '../../rendering/regions.js';
 import { GATHERABLES, GROWTH, REGION_ATLAS, gatherFrameName, growthFrame, plantBox, hitPlant } from '../../rendering/wild-sprites.js';
 import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
 
@@ -68,9 +68,9 @@ export class WildsView {
     this.refresh();
   }
 
-  /** A region's sprites and the growth atlas arrive in the background; repaint once they have. */
+  /** A region's backdrop, its sprites and the growth atlas arrive in the background; repaint once they have. */
   loadSprites() {
-    for (const atlas of [REGION_ATLAS[this.region], GROWTH]) {
+    for (const atlas of [BACKDROPS[this.region], REGION_ATLAS[this.region], GROWTH]) {
       if (!atlas || atlas.ready || this.waiting.has(atlas)) continue;
       this.waiting.add(atlas);
       atlas.load().then((ok) => { if (ok) { this.bgKey = ''; this.refresh(); } });
@@ -167,16 +167,14 @@ export class WildsView {
   }
 
   paintBg() {
-    const atlas = REGION_ATLAS[this.region];
-    const key = this.region + ':' + this.lab.state.seed + ':' + !!(atlas && atlas.ready) + ':' + GROWTH.ready;
+    const backdrop = BACKDROPS[this.region];
+    const key = this.region + ':' + this.lab.state.seed + ':' + !!(backdrop && backdrop.ready) + ':' + GROWTH.ready;
     if (key === this.bgKey) return;
     this.bgKey = key;
     this.bg = document.createElement('canvas');
     this.bg.width = SCENE_W; this.bg.height = SCENE_H;
-    // the props painted into the scene; the plants then grow clear of the larger ones
-    const props = [];
-    paintRegion(/** @type {CanvasRenderingContext2D} */ (this.bg.getContext('2d')), this.region, this.lab.state.seed, props);
-    this.ground = new PlantGround(this.region, this.lab.state.seed, props);
+    paintRegion(/** @type {CanvasRenderingContext2D} */ (this.bg.getContext('2d')), this.region, this.lab.state.seed);
+    this.ground = new PlantGround(this.region);
     this.field = [];
   }
 
