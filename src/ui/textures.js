@@ -1,8 +1,7 @@
 // Pixel textures for the interface, drawn once at startup and handed to the
 // stylesheet as CSS custom properties: a translucent wood grain laid over
 // every wooden button, tab and frame (so it tints with their colour), a
-// parchment fibre for the cards, an iron nail for their corners and a
-// leafy sprig that grows over the corners of cards and lit buttons.
+// parchment fibre for the cards and an iron nail for their corners.
 
 import { Rng } from '../core/rng.js';
 
@@ -43,16 +42,7 @@ export function installTextures() {
     R(1, 0, 2, 4, 'rgba(18,12,10,0.85)'); R(0, 1, 4, 2, 'rgba(18,12,10,0.85)');
     R(1, 1, 2, 2, '#8a8296'); R(1, 1, 1, 1, '#d8d2e0');
   });
-  // a leafy sprig for the corners of cards and lit buttons (and its mirror)
-  const sprig = (flip) => texture(12, 10, (_, R) => {
-    const P = (x, y, w, h, c) => R(flip ? 12 - x - w : x, y, w, h, c);
-    const leaf = (x, y) => { P(x, y, 4, 3, '#163212'); P(x + 1, y - 1, 2, 5, '#163212'); P(x + 1, y, 2, 3, '#3f8f24'); P(x + 1, y, 1, 1, '#b6ea5a'); };
-    P(1, 8, 6, 1, '#163212'); P(2, 7, 4, 1, '#2a6a1c');
-    leaf(0, 4); leaf(4, 1); leaf(7, 5);
-  });
   const root = document.documentElement;
-  root.style.setProperty('--sprig-l', sprig(false));
-  root.style.setProperty('--sprig-r', sprig(true));
   root.style.setProperty('--tex-wood', wood);
   root.style.setProperty('--tex-parch', parch);
   root.style.setProperty('--nail', nail);

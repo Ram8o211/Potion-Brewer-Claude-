@@ -5,7 +5,9 @@ region, one row per wild ingredient, and three cells per row for its sprout,
 ripe and mature stages. The game never loads this file.
 `python scripts/make-growth.py` (needs Pillow and NumPy) cuts each cell out of
 its parchment, brings all stages down by the same factor (so a sprout stays
-small beside its mature plant), outlines them in ink, adds a light-outlined
+small beside its mature plant) to twice the scene's resolution (`RES`: the
+scene is drawn on a canvas twice its art-pixel size, so the plants keep
+their detail), outlines them in ink, adds a light-outlined
 hover frame for the mature stage and packs them into
 `assets/growth/atlas.png`, with the frame map in
 `src/rendering/growth-atlas.js`.

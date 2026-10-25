@@ -28,12 +28,20 @@ import * as FIELD from './meadow-atlas.js';
 import * as GROW from './growth-atlas.js';
 import { rawSprite } from './scenes.js';
 
-/** One sprite sheet and its frame rectangles [x, y, w, h]. */
+/**
+ * One sprite sheet and its frame rectangles [x, y, w, h]. A sheet drawn at
+ * `res` pixels to an art pixel (the growth atlas) keeps its rectangles in
+ * sheet pixels in `src`; `frames` and masks are in art pixels, and a frame
+ * is drawn at its art size (crisp on a canvas scaled up by `res`).
+ */
 export class SpriteAtlas {
-  /** @param {string} url @param {Record<string, [number, number, number, number]>} frames */
-  constructor(url, frames) {
+  /** @param {string} url @param {Record<string, [number, number, number, number]>} frames @param {number} [res] */
+  constructor(url, frames, res = 1) {
     this.url = url;
-    this.frames = frames;
+    this.res = res;
+    this.src = frames;
+    /** @type {Record<string, [number, number, number, number]>} */
+    this.frames = res === 1 ? frames : Object.fromEntries(Object.entries(frames).map(([k, f]) => [k, /** @type {[number, number, number, number]} */ (f.map((v) => v / res))]));
     /** @type {HTMLImageElement | null} */
     this.img = null;
     this.ready = false;
@@ -80,8 +88,9 @@ export class SpriteAtlas {
       this.pixels = { width: cv.width, data: ctx.getImageData(0, 0, cv.width, cv.height).data };
     }
     if (!this.pixels) return null;
-    const [x, y, w, h] = f, { width, data } = this.pixels, m = new Uint8Array(w * h);
-    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) m[j * w + i] = data[((y + j) * width + x + i) * 4 + 3] > 0 ? 1 : 0;
+    // an art pixel is opaque where any of its sheet pixels is
+    const [x, y] = this.src[name], [, , w, h] = f, r = this.res, { width, data } = this.pixels, m = new Uint8Array(w * h);
+    for (let j = 0; j < h * r; j++) for (let i = 0; i < w * r; i++) if (data[((y + j) * width + x + i) * 4 + 3] > 0) m[Math.floor(j / r) * w + Math.floor(i / r)] = 1;
     return (this.masks[name] = m);
   }
 
@@ -90,16 +99,16 @@ export class SpriteAtlas {
    * @param {CanvasRenderingContext2D} ctx @param {string} name @param {number} x @param {number} y @param {number} [scale] @param {boolean} [flip] mirror horizontally
    */
   draw(ctx, name, x, y, scale = 1, flip = false) {
-    const f = this.frames[name];
+    const f = this.frames[name], s = this.src[name];
     if (!f || !this.img) return;
     const w = f[2] * scale, h = f[3] * scale, left = Math.round(x - w / 2), top = Math.round(y - h);
     if (flip) {
       ctx.save();
       ctx.translate(left + w, top);
       ctx.scale(-1, 1);
-      ctx.drawImage(this.img, f[0], f[1], f[2], f[3], 0, 0, w, h);
+      ctx.drawImage(this.img, s[0], s[1], s[2], s[3], 0, 0, w, h);
       ctx.restore();
-    } else ctx.drawImage(this.img, f[0], f[1], f[2], f[3], left, top, w, h);
+    } else ctx.drawImage(this.img, s[0], s[1], s[2], s[3], left, top, w, h);
   }
 
   /**
@@ -153,7 +162,7 @@ export const GATHERABLES = Object.fromEntries(Object.entries({
 }).flatMap(([region, keys]) => keys.map((k) => gatherable(region, REGION_ATLAS[region], k))));
 
 /** Every wild ingredient as a sprout, ripe and mature plant. */
-export const GROWTH = new SpriteAtlas(GROW.ATLAS_URL, GROW.FRAMES);
+export const GROWTH = new SpriteAtlas(GROW.ATLAS_URL, GROW.FRAMES, GROW.RES);
 
 /**
  * The growth frame of a plant at a stage (the hover frame only for a mature
@@ -164,6 +173,53 @@ export function growthFrame(key, stage, hover = false) {
   const name = `${key}_${stage}${hover && stage === 'mature' ? '_hover' : ''}`;
   return GROWTH.frames[name] ? name : null;
 }
+
+/**
+ * The plants drawn as crystals in the growth atlas: only these sparkle,
+ * at the bright tips and edges of their facets.
+ */
+export const CRYSTALS = new Set(['saltpetre', 'sulfur', 'lodestone', 'cinnabar', 'stormglass', 'starquartz', 'wisplichen', 'sirenreed', 'cinderscale', 'obsidian']);
+
+/** @type {Record<string, number[][]>} */
+const glints = {};
+
+/**
+ * Where a frame catches the light: up to `n` bright pixels on its upper
+ * edge (an opaque, light pixel with the outline or the open air just above
+ * or beside it), the highest and brightest first and a few art pixels apart,
+ * as [dx, dy] in art pixels from the frame's bottom centre to the pixel's
+ * corner (to half an art pixel on a sheet of twice the resolution). Empty
+ * until the sheet can be read.
+ * @param {SpriteAtlas} atlas @param {string} name @param {number} [n]
+ */
+export function glintSpots(atlas, name, n = 4) {
+  if (glints[name]) return glints[name];
+  const f = atlas.frames[name];
+  if (!f || !atlas.mask(name) || !atlas.pixels) return [];
+  const [x0, y0, w, h] = atlas.src[name], r = atlas.res, { width, data } = atlas.pixels;
+  const at = (/** @type {number} */ i, /** @type {number} */ j) => (i < 0 || j < 0 || i >= w || j >= h ? -1 : ((y0 + j) * width + x0 + i) * 4);
+  const luma = (/** @type {number} */ k) => (k < 0 || !data[k + 3] ? 0 : 0.3 * data[k] + 0.59 * data[k + 1] + 0.11 * data[k + 2]);
+  /** @type {{i:number, j:number, s:number}[]} */
+  const cands = [];
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+    const l = luma(at(i, j));
+    if (l < 120) continue;
+    // on the edge: the ink outline or the open air above it, or beside it
+    if ([[0, -1], [-1, 0], [1, 0], [-1, -1], [1, -1]].some(([di, dj]) => luma(at(i + di, j + dj)) < 50)) cands.push({ i, j, s: l - (j / h) * 120 });
+  }
+  cands.sort((a, b) => b.s - a.s);
+  /** @type {number[][]} */
+  const out = [];
+  for (const c of cands) {
+    if (out.length >= n) break;
+    const dx = c.i / r - w / r / 2, dy = c.j / r - h / r;
+    if (out.every(([ox, oy]) => Math.abs(ox - dx) + Math.abs(oy - dy) >= 5)) out.push([dx, dy]);
+  }
+  return (glints[name] = out);
+}
+
+/** The size of an ingredient's icon frame (the shelf and the book), in pixels. */
+export const ICON_SIZE = 32;
 
 /** Smallest tap target around a deposit, in art pixels (≈ 30 CSS px on a phone). */
 export const MIN_HIT = 20;
@@ -223,9 +279,10 @@ export function hitPlant(plants, frameOf, px, py, W, H, slop = 4) {
 }
 
 /**
- * A 16×16 picture of a raw ingredient for the shelf and the book: its icon
- * frame where the region's art has one (drawn as soon as the atlas is in),
- * else the procedural sprite of its shape.
+ * A square picture of a raw ingredient for the shelf and the book: its
+ * 32 px icon frame where the region's art has one (drawn as soon as the
+ * atlas is in), else the 16 px procedural sprite of its shape (the page
+ * sizes it either way).
  * @param {any} m material @param {number} [fill] 0..1
  */
 export function ingredientSprite(m, fill = 1) {
@@ -234,8 +291,8 @@ export function ingredientSprite(m, fill = 1) {
   const f = g && g.icon ? g.atlas.frames[g.icon] : null;
   if (!g || !f) return cv;
   const paint = () => {
+    cv.width = cv.height = ICON_SIZE;
     const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
-    ctx.clearRect(0, 0, cv.width, cv.height);
     g.atlas.draw(ctx, /** @type {string} */ (g.icon), cv.width / 2, cv.height - Math.floor((cv.height - f[3]) / 2));
   };
   if (g.atlas.ready) paint();

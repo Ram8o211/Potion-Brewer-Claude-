@@ -29,7 +29,7 @@ pixels take their surroundings' colour.
 | Rocks | `environment/rocks_flora_atlas_01, 02, 03` | 30–40 px wide |
 | Flower clumps (8) | `environment/flowers_flora_atlas_01, 02, 03, 08`, `flowers_props_atlas_06–09` | 10–14 px, so they never read as a gatherable |
 | Grass | `environment/grass_flora_atlas_01–08` | 5–44 px |
-| Glint | `../effects/glint_frame_00–03` | shared with the other wilds |
+| Glint | `../effects/glint_frame_00–03` | packed with the other wilds; the scene now draws its own sparkle on the crystals instead |
 
 Not used: the lupin clumps (`flowers_flora_atlas_04`, `fences_props_atlas_09`)
 would look like Bee Balm, and the single large flowers like Heartpetal, so
@@ -43,7 +43,7 @@ The pack names the plants as they appear in one save (`Ember Heartpetal`,
 `Witch Sunthistle`, …): the first word is generated per world, so the game
 binds the art to the ingredient's key (`materials/wild.js`).
 
-| Ingredient (key) | In the scene | Out of its hour | Depleted | Icons (16 px shelf / book, 24 px card) |
+| Ingredient (key) | In the scene | Out of its hour | Depleted | Icons (32 px shelf / book, 48 px card) |
 | --- | --- | --- | --- | --- |
 | Heartpetal (`heartpetal`) | `Ember_Heartpetal_mature_cluster` | — | `Ember_Heartpetal_harvested_remnant` | `Ember_Heartpetal_flower_icon` |
 | Sunthistle (`sunthistle`) | `Witch_Sunthistle_mature_cluster` | — | `Witch_Sunthistle_harvested_remnant` | `Witch_Sunthistle_flower_icon` |
@@ -56,4 +56,4 @@ The gatherables are 22–27 px tall with a dark outline; a hover frame with a
 light outline is generated from each. All frames of one plant share a canvas
 anchored at its foot, so states swap in place. Hemlock's near-black seed
 heads are lifted off the outline colour. Icons keep their own colours (a
-16 px flower has no pixel to spare for its yellow heart).
+small flower has no pixel to spare for its yellow heart).

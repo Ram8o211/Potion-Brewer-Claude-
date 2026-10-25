@@ -5,12 +5,14 @@ Dev-time only: `python scripts/make-backdrops.py` (needs Pillow and NumPy).
 Each source picture (art/backdrops/<region>.png, 4:3) is brought down to 256
 art pixels wide by majority vote over a 64-colour palette (crisp pixels, as
 the sprites drawn on top are), then cut to the scene's 16:9 by dropping rows
-of sky above and foreground below (`CROP`: the first row kept).
+of sky above and foreground below (`CROP`: the first row kept). The Ember
+Crags' painted plumes of steam are filled in from their surroundings
+(`PLUMES`): the scene animates the steam.
 
 The ground is where a plant's foot may rest: inside the region's open ground
 (`GROUND`, polygons drawn over the picture in art pixels), off the scenery
 that stands on it (`SCENERY`: trunks, stumps, the cart...) and, by colour,
-never in water, in lava or on a rock; then shrunk by a pixel or two so a foot
+never in water, in lava or on a rock (nor in Moonfen's pools and mist); then shrunk by a pixel or two so a foot
 never rests on an edge. It is written as rows of [x0, x1) runs.
 
 Writes assets/backdrops/<region>.png and src/rendering/backdrops-ground.js.
@@ -53,7 +55,7 @@ SCENERY = {
     'forest': [(0, 0, 76, 96), (176, 0, 256, 98)],
     'river': [(10, 86, 36, 104), (220, 88, 256, 108)],
     'quarry': [(234, 64, 256, 104), (0, 90, 22, 112), (212, 104, 256, 144), (0, 118, 60, 144)],
-    'moonfen': [(0, 0, 52, 104), (204, 0, 256, 104), (206, 122, 256, 144), (0, 114, 44, 132)],
+    'moonfen': [(0, 0, 52, 104), (204, 0, 256, 104), (226, 118, 256, 144), (0, 114, 44, 132)],
     'crags': [(0, 0, 56, 100), (196, 0, 256, 96)],
 }
 
@@ -64,6 +66,16 @@ SHRINK = {'moonfen': 1}
 def water(rgb):
     r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
     return (b > r + 50) & (b > g + 40)
+
+
+def bog(rgb):
+    """Moonfen's dark pools and mist: where most of the pixels round about are
+    bluer than the green bank (a blade of grass standing in a pool does not
+    make it ground, nor a bluish speck in the grass a pool)."""
+    blue = (rgb[..., 2] > rgb[..., 1] + 8).astype(float)
+    pad, n = np.pad(blue, 3, mode='edge'), 7
+    share = sum(pad[dy:dy + blue.shape[0], dx:dx + blue.shape[1]] for dy in range(n) for dx in range(n)) / (n * n)
+    return share > 0.6
 
 
 def lava(rgb):
@@ -86,8 +98,40 @@ def violet_rock(rgb):
 # what no foot may rest in, by colour, per region
 BLOCKED = {
     'meadow': [], 'forest': [],
-    'river': [water, stone], 'quarry': [stone], 'moonfen': [water, stone], 'crags': [lava, violet_rock],
+    'river': [water, stone], 'quarry': [stone], 'moonfen': [water, stone, bog], 'crags': [lava, violet_rock],
 }
+
+
+# painted plumes of steam over the crags' vents, [x0, y0, x1, y1] in scene
+# pixels above each vent: cleared from the picture (the scene animates the smoke)
+PLUMES = {'crags': [(64, 18, 88, 58), (186, 0, 208, 34)]}
+
+
+def plume(rgb):
+    """Steam: purple-grey smoke (bluer than the red sky and rock) or the
+    glowing yellow-orange column (lighter than the lava under it)."""
+    r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+    return ((b > 0.45 * r) & (b > 40)) | ((r > 200) & (g > 90))
+
+
+def clear_plumes(region, rgb):
+    """Fill each plume in from the colours round it, ring by ring."""
+    rgb = rgb.copy()
+    hole = np.zeros((H, W), bool)
+    for x0, y0, x1, y1 in PLUMES.get(region, ()):
+        hole[y0:y1, x0:x1] |= plume(rgb[y0:y1, x0:x1].astype(int))
+    hole = grow(hole, 1)
+    while hole.any():
+        fill = []
+        for y, x in zip(*np.nonzero(hole)):
+            near = [tuple(rgb[y + dy, x + dx]) for dy in (-1, 0, 1) for dx in (-1, 0, 1)
+                    if 0 <= y + dy < H and 0 <= x + dx < W and not hole[y + dy, x + dx]]
+            if near:
+                fill.append((y, x, max(set(near), key=near.count)))
+        for y, x, c in fill:
+            rgb[y, x] = c
+            hole[y, x] = False
+    return rgb
 
 
 def down(src, w, colours=64):
@@ -179,6 +223,7 @@ def main():
         full = down(Image.open(os.path.join(SRC, region + '.png')), W)
         rgb = full[CROP[region]:CROP[region] + H]
         assert rgb.shape[:2] == (H, W), (region, rgb.shape)
+        rgb = clear_plumes(region, rgb)
         Image.fromarray(rgb, 'RGB').save(os.path.join(OUT, region + '.png'), optimize=True)
         g = ground(region, rgb)
         rows[region] = [runs(g[y]) for y in range(H)]

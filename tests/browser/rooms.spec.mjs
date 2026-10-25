@@ -88,7 +88,7 @@ test('harvesting a mature plant fills the stores and leaves a mark; growing ones
   const ms0 = await lab(page, (l, id) => l.state.stock(id), m0.materialId);
   await drag(page, [tapAt(m0), tapAt(m0)], 30);
   expect(await lab(page, (l, id) => l.state.stock(id), m0.materialId), 'tapping a meadow plant gathered').toBeGreaterThan(ms0);
-  expect(await page.evaluate(() => [...document.querySelectorAll('.view-wilds .deposit canvas')].some((c) => /** @type {HTMLCanvasElement} */ (c).width === 24)), 'a card shows its plant icon').toBe(true);
+  expect(await page.evaluate(() => [...document.querySelectorAll('.view-wilds .deposit canvas')].some((c) => /** @type {HTMLCanvasElement} */ (c).width === 48)), 'a card shows its plant icon').toBe(true);
   // (the screenshot without the toasts of the first gathering over the scene)
   await page.evaluate(() => document.querySelectorAll('.toast').forEach((t) => t.remove()));
   await shot(page, info, 'wilds-meadow');

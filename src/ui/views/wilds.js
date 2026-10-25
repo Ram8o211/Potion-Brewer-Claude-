@@ -18,8 +18,26 @@ import { equipmentById } from '../../game/equipment.js';
 import { RANKS } from '../../game/equipment.js';
 import { drawRaw, rawSprite } from '../../rendering/scenes.js';
 import { paintRegion, animateRegion, PlantGround, BACKDROPS, SCENE_W, SCENE_H } from '../../rendering/regions.js';
-import { GATHERABLES, GROWTH, REGION_ATLAS, gatherFrameName, growthFrame, plantBox, hitPlant } from '../../rendering/wild-sprites.js';
+import { GATHERABLES, GROWTH, CRYSTALS, REGION_ATLAS, gatherFrameName, growthFrame, glintSpots, plantBox, hitPlant } from '../../rendering/wild-sprites.js';
 import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
+
+/**
+ * A four-pointed sparkle on a crystal's edge: thin arms (half an art pixel,
+ * the long ones up and down) that grow out of a white point and draw back
+ * in over its life `u` (0..1).
+ * @param {CanvasRenderingContext2D} ctx @param {number} x @param {number} y @param {number} u
+ */
+function sparkle(ctx, x, y, u) {
+  const q = 0.5, L = [1, 2, 4, 6, 4, 2, 1][Math.min(6, Math.floor(u * 7))] * q;
+  const cx = Math.round(x / q) * q, cy = Math.round(y / q) * q;
+  ctx.fillStyle = 'rgba(255,250,225,0.75)';
+  ctx.fillRect(cx, cy - L * 1.5, q, L * 1.5);
+  ctx.fillRect(cx, cy + q, q, L * 1.5);
+  ctx.fillRect(cx - L, cy, L, q);
+  ctx.fillRect(cx + q, cy, L, q);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(cx, cy, q, q);
+}
 
 export class WildsView {
   /** @param {import('../lab.js').LabScreen} lab */
@@ -54,8 +72,12 @@ export class WildsView {
     const el = clear(this.el);
     this.tabs = h('div', { class: 'region-tabs', role: 'tablist' });
     this.sky = h('div', { class: 'wilds-sky small' });
-    this.canvas = /** @type {HTMLCanvasElement} */ (h('canvas', { width: String(SCENE_W), height: String(SCENE_H), class: 'scene', 'aria-label': 'Region scene: tap a deposit to gather' }));
+    // the scene is drawn in art pixels on a canvas of twice the resolution, so
+    // the plants (kept at that resolution) and the sparkles are finer than the backdrop
+    this.canvas = /** @type {HTMLCanvasElement} */ (h('canvas', { width: String(SCENE_W * GROWTH.res), height: String(SCENE_H * GROWTH.res), class: 'scene', 'aria-label': 'Region scene: tap a deposit to gather' }));
     this.ctx = /** @type {CanvasRenderingContext2D} */ (this.canvas.getContext('2d'));
+    this.ctx.setTransform(GROWTH.res, 0, 0, GROWTH.res, 0, 0);
+    this.ctx.imageSmoothingEnabled = false;
     this.canvas.addEventListener('pointerdown', (e) => this.tapScene(e));
     this.canvas.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') this.setHover(this.depositAt(e)); });
     this.canvas.addEventListener('pointerleave', () => this.setHover(null));
@@ -329,8 +351,9 @@ export class WildsView {
 
   /**
    * A plant at its stage: a ground shadow, then its growth frame, springing
-   * up a pixel as it reaches a new stage; a mature one glints now and then
-   * (the scene's decorative motes stay fainter than this).
+   * up a pixel as it reaches a new stage; a mature crystal glints now and
+   * then at the tips of its facets (the scene's decorative motes stay
+   * fainter than this).
    * @param {CanvasRenderingContext2D} ctx @param {any} p @param {string} name
    */
   drawPlant(ctx, p, name) {
@@ -342,10 +365,13 @@ export class WildsView {
     ctx.fillStyle = 'rgba(10,30,8,0.35)';
     ctx.fillRect(x - Math.floor(sw / 2), y - 1, sw, 2);
     GROWTH.draw(ctx, name, x, y - (since < 0.3 ? 1 : 0));
-    if (p.stage === 'mature' && this.hover !== p.id && !this.closed[p.dep.id]) {
-      const phase = (this.time * 0.5 + p.x * 7.3 + p.y * 3.1) % 4;
-      const A = REGION_ATLAS[this.region];
-      if (phase < 0.6 && A && A.ready) A.draw(ctx, 'glint_' + Math.min(3, Math.floor(phase / 0.15)), x + Math.round(f[2] / 4), y - f[3] + 5);
+    if (p.stage === 'mature' && CRYSTALS.has(p.key) && this.hover !== p.id && !this.closed[p.dep.id]) {
+      const spots = glintSpots(GROWTH, name);
+      const cycle = this.time * 0.6 + p.x * 7.3 + p.y * 3.1, phase = cycle % 2;
+      if (spots.length && phase < 0.5) {
+        const [dx, dy] = spots[Math.floor(cycle / 2) % spots.length];
+        sparkle(ctx, x + dx, y + dy, phase / 0.5);
+      }
     }
   }
 

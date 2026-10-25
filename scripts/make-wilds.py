@@ -19,7 +19,8 @@ was cut programmatically from generated concept sheets. Each region gets:
   the harvested deposit as its depleted frame and, for a dawn or dusk plant,
   its closed frame and hover; all frames on one bottom-centre anchor
 - icons: the ingredient's framed icon, lifted out of its parchment frame, at
-  16 px for the shelf and the book and 24 px for its deposit card
+  32 px for the shelf and the book and 48 px for its deposit card (both shown
+  at about that many CSS pixels, so their detail is not crowded)
 
 Every sprite is resampled by majority vote (`pixelart.fit`, hard alpha) and
 snapped to its region's palette: the 64 colours of the region's full scene
@@ -377,7 +378,7 @@ class Region:
             frames['closed'], frames['closed_hover'] = c, outline(c, GLOW)
         self.S.update({f'{key}_{k}': v for k, v in anchored(frames).items()})
         src = self.icon(key, tol)
-        for size, name in ((16, 'icon'), (24, 'card')):
+        for size, name in ((32, 'icon'), (48, 'card')):
             im = fit(src, h=size - 2, colours=32)
             if im.width > size - 2:
                 im = fit(src, w=size - 2, colours=32)

@@ -3,7 +3,7 @@
 // atlas, the dawn and dusk plants have closed frames and every ingredient an
 // icon, every ingredient grows through sprout, ripe and mature frames, each
 // region has its painted backdrop, plants grow on its open ground with room
-// round them, and hit testing
+// round them, only the crystals sparkle (on their edges), and hit testing
 // picks plants — never the scenery — at any scene size.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -12,7 +12,7 @@ import zlib from 'node:zlib';
 import { ATLASES } from '../src/rendering/wilds-atlas.js';
 import * as FIELD from '../src/rendering/meadow-atlas.js';
 import * as GROW from '../src/rendering/growth-atlas.js';
-import { GATHERABLES, GROWTH, MIN_HIT, MEADOW, REGION_ATLAS, gatherFrameName, growthFrame, plantBox, hitPlant } from '../src/rendering/wild-sprites.js';
+import { CRYSTALS, GATHERABLES, GROWTH, ICON_SIZE, MIN_HIT, MEADOW, REGION_ATLAS, gatherFrameName, glintSpots, growthFrame, plantBox, hitPlant } from '../src/rendering/wild-sprites.js';
 import { REGIONS, STAGES, depositStatus } from '../src/game/gathering.js';
 import { WILD_SPECS } from '../src/materials/wild.js';
 import { GameState } from '../src/game/state.js';
@@ -49,10 +49,10 @@ test('every wild ingredient has gatherable art in its own region; nothing else d
     for (const name of [g.hover, g.depleted, g.harvesting, g.closed, g.closedHover].filter(Boolean)) assert.deepEqual(frames[name].slice(2), [w, h], `${name} shares ${key}'s canvas`);
     // a dawn or dusk plant shows a closed frame out of its hour; the others never close
     assert.equal(!!g.closed, !!(spec.dawn || spec.dusk), `${key} closes only if it keeps an hour`);
-    // a 16 px icon for the shelf and the book, a 24 px one for its card
-    assert.ok(g.icon && frames[g.icon][2] <= 16 && frames[g.icon][3] <= 16, `${key} icon`);
+    // a 32 px icon for the shelf and the book, a 48 px one for its card
+    assert.ok(g.icon && frames[g.icon][2] <= ICON_SIZE && frames[g.icon][3] <= ICON_SIZE, `${key} icon`);
     assert.equal(g.card, key + '_card');
-    assert.equal(Math.max(frames[g.card][2], frames[g.card][3]), 24, `${key} card is 24 px`);
+    assert.equal(Math.max(frames[g.card][2], frames[g.card][3]), 48, `${key} card is 48 px`);
     // large enough to tap and to read, narrow enough to stand beside its neighbours
     assert.ok(frames[g.idle][3] >= 16 && frames[g.idle][2] <= 32, `${key} is ${frames[g.idle][2]}x${frames[g.idle][3]}`);
   }
@@ -118,6 +118,30 @@ test('every wild ingredient grows in place through sprout, ripe and mature frame
     assert.ok(size[0] <= 34 && size[1] >= 12, `${key} is ${size[0]}x${size[1]}`);
   }
   assert.equal(growthFrame('nosuch', 'mature'), null);
+  // the sheet holds the plants at twice the scene's resolution, each frame whole art pixels
+  assert.equal(GROWTH.res, GROW.RES);
+  assert.equal(GROW.RES, 2);
+  for (const [n, f] of Object.entries(GROW.FRAMES)) assert.ok(f[2] % GROW.RES === 0 && f[3] % GROW.RES === 0, `${n} is whole art pixels`);
+});
+
+test('only the crystals sparkle, on the bright edges of their upper half', () => {
+  for (const k of CRYSTALS) assert.ok(WILD_SPECS.some((s) => s.key === k), `${k} is a real ingredient`);
+  for (const k of ['silverleaf', 'heartpetal', 'toadstool', 'dragonpepper', 'mica']) assert.ok(!CRYSTALS.has(k), `${k} does not sparkle`);
+  assert.deepEqual(glintSpots(GROWTH, 'stormglass_mature'), [], 'nothing until the sheet can be read');
+  GROWTH.pixels = decodePng(fs.readFileSync(new URL('../' + GROWTH.url, import.meta.url)));
+  try {
+    for (const k of CRYSTALS) {
+      const name = k + '_mature', [, , w, h] = GROWTH.frame(name), spots = glintSpots(GROWTH, name);
+      assert.ok(spots.length >= 2, `${k} has places to sparkle`);
+      for (const [dx, dy] of spots) {
+        assert.ok(Math.abs(dx) <= w / 2 && dy < 0 && dy >= -h, `${k}: ${dx},${dy} lies on the plant`);
+        assert.ok(dy * 2 <= -h * 0.4, `${k}: ${dx},${dy} is on its upper part`);
+        assert.ok(Number.isInteger(dx * GROW.RES), 'on the sheet\'s pixel grid');
+      }
+    }
+  } finally {
+    GROWTH.pixels = null; GROWTH.masks = {};
+  }
 });
 
 test('plant boxes sit on the plant’s spot and are never smaller than a tap', () => {
