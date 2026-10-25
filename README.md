@@ -226,16 +226,19 @@ computed from the particles that actually run out of the tap. What a
   and wood-grain, parchment and nail textures on the interface.
 * **Sprite-composed wilds:** Whisperwood, Willow Bank, Ironstone Quarry,
   Moonfen and the Ember Crags are each composed in layers from their own
-  atlas (`assets/wilds/<region>.png`, 40–90 KB each) built from the
+  atlas (`assets/wilds/<region>.png`, 35–80 KB each) built from the
   corrected Wilds sprite pack: the pack's sky and parallax strips (canopy
   and tree lines, mountains and pines, cliff faces, the moonlit bog and its
   mist, smoky volcanic ridges and lava fissures), then the region's terrain
   and scenery — ancient oaks, willows, a river with its chalk bank, a crane
   and timber frames, drowned stumps and pools of black water, lava crags,
   a lava pool and a vent and sulphur gusher whose smoke rises and drifts
-  as it plays. Each deposit is laid out to rise out of open ground — never
-  in the river, a pool or the lava, never on a tree, crag or fence or
-  another deposit — and the props keep clear of it. Every ingredient of those regions is an outlined
+  as it plays. As in the Sunlit Meadow, the large scenery stands along the
+  back, at the sides and in the near corners, and only small ground cover
+  is scattered over the open ground in the middle, so each deposit rises
+  out of open ground — never in the river, a pool or the lava, never on a
+  tree, crag, prop or another deposit. The sprites are cleaned the way the
+  meadow's are: no stray pixels inside them and a whole outline round them. Every ingredient of those regions is an outlined
   sprite with hover and depleted (harvested) frames; the dusk Nightshade,
   Grave Moss and Siren Reed and the dawn Moonlily show their closed state
   out of their hour, and each has its icon on the deposit card, the shelf

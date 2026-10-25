@@ -28,6 +28,16 @@ scene's art-pixel size and packs one atlas per region into
   Lone specks of a broken outline take their surroundings' colour, and a
   gatherable loses any one-pixel-thin strand along its foot, which its
   outline would turn into a ruled line.
+- **Clean pixels, as in the Sunlit Meadow.** The pack's sprites are small
+  and soft (two or three source pixels to an art pixel, where the meadow's
+  have six or more), so a plain block vote leaves salt-and-pepper inside
+  them and breaks their thin dark outline into dots. Scenery is therefore
+  smoothed first (a 3 × 3 median over its colours), and after resampling
+  an inner pixel that matches at most one of its eight neighbours takes
+  their common colour (the background strips get the same clean-up); then
+  the broken outline is dropped and drawn whole, one pixel round the
+  silhouette, each pixel a deep shade of the colour inside it (dark green
+  round leaves, dark brown round bark). Ground cover keeps no outline.
 - **Background strips** are cropped clear of the sheet's captions, white
   margins and side borders and brought to 256 px wide; a strip that stands in front of
   another has its sky keyed out from the top down, so the layer behind shows
@@ -47,10 +57,19 @@ scene's art-pixel size and packs one atlas per region into
 | Region | Layers (back to front) | Scenery |
 | --- | --- | --- |
 | Whisperwood | `backgrounds/sky_rays`, `distant_forest`, `mid_treeline`, `near_treeline`; the clearing in bands of grass | `two_ancient_oaks_composite` on both sides of the frame, `small_oak_tree`, `mossy_stones_cluster`, `woodland_log`; the big fern, bushes, a fern, a stump and ground cover from `trees_bushes_flora`; sticks and a snag from `rocks_logs_forest_props` |
-| Willow Bank | `backgrounds/sky`, `mountains`, `pine_treeline`; the far meadow, `terrain/chalk_bank_strip`, `terrain/water_surface`, the near shore with a ragged edge | `great_willow_tree`, `willow_trees_bushes_002` (mirrored) and `_001` (small, across the water); Whisperwood's round, leafy and flowering bushes recoloured to the river's palette; grass, pinks, buttercups, a stump, a post, a sign, a branch and a pebble from `riverbank_flora_props` |
-| Ironstone Quarry | `backgrounds/quarry_sky`, `distant_cliffs`, `near_cliffs`; the pit floor in bands of dust | `crane_with_lantern_and_stone` (placed so the stone on its jib never hangs over a deposit), `quarry_support_beam`, `ladder`, `mine_cart_full`, `wooden_crate`; a scaffold, a rail fence, cut blocks, a bench and a crate from `cranes_carts_ladders`; shrubs, dry brush and loose stones from `shrubs_rocks_decorations`; a wall block and pillar, a dirt heap |
+| Willow Bank | `backgrounds/sky`, `mountains`, `pine_treeline`; the far meadow, `terrain/chalk_bank_strip`, `terrain/water_surface`, the near shore with a ragged edge | `great_willow_tree`, `willow_trees_bushes_002` (mirrored) and `_001` (small, across the water); Whisperwood's round bush recoloured to the river's palette; grass, buttercups, a stump, a post, a sign, a branch and a pebble from `riverbank_flora_props` |
+| Ironstone Quarry | `backgrounds/quarry_sky`, `distant_cliffs`, `near_cliffs`; the pit floor in bands of dust | `crane_with_lantern_and_stone` (placed so the stone on its jib never hangs over a deposit), `quarry_support_beam`, `ladder`, `mine_cart_full`, `wooden_crate`; a scaffold, a rail fence, cut blocks and a crate from `cranes_carts_ladders`; a shrub, dry tufts and loose stones from `shrubs_rocks_decorations`; a wall block and pillar, a dirt heap |
 | Moonfen | `backgrounds/night_sky` (in its own colours), `distant_hills`, `swamp_treeline`, `mist_overlay`; dark moss ground; pools from `terrain/bog_water_tiles` | `ancient_willow_left`, `ancient_willow_center` (at the right edge), `small_willow`, `dead_swamp_tree`, `glowing_wooden_stump`, `ghost_crystals_and_stumps`; a drowned stump from `decorative_flora`, a fallen trunk from `swamp_trees_props`; cattails, grass, fiddleheads, night flowers and lily pads from `plants_crystals_reeds`; `stepping_rocks` |
 | Ember Crags | `backgrounds/smoky_sky`, `volcanic_ridges`, `lava_ridges`; a scorched plain with a winding stream of lava | four crags, a lava pool and a rock mound from `lava_rock_vents_plants`, `lava_vent_with_steam`, `sulfur_steam_gusher` (their painted plumes cleared: the scene animates the smoke); black rocks, a lava pan, a dead bush and ember brush from `lava_rock_vents_plants` |
+
+The scenes are laid out as the Sunlit Meadow is: the large scenery stands
+along the back of the ground, at the sides (at the trees' feet) and in the
+near corners, partly cut off by the frame; in Moonfen the drowned and
+ghostly stumps and the cattails stand in the pools, and in the Crags the
+stream of lava runs into the pool at the bottom of the frame. Only ground
+cover too small to keep a plant away (under 150 art pixels: grass, leaves,
+pebbles, tufts) is scattered over the open ground, which is left to the
+deposits.
 
 Several of the pack's `CURATED_COMPLETE_OBJECTS` are cut off along their
 right side (the lava crags and pool, the Willow Bank bushes, stumps and two
