@@ -8,8 +8,8 @@
 // on the backdrop's open ground: PlantGround moves each sprout onto it (never
 // into water, lava or onto a rock) with room round it. Painted once per
 // region into a cached canvas; animateRegion adds the moving parts each frame
-// (wisps, birds, embers). Deterministic: every random choice comes from an
-// Rng seeded by the world seed and the region.
+// (wisps, birds, embers, the steam over the crags' vents). Deterministic:
+// every random choice comes from an Rng seeded by the world seed and the region.
 
 import { Rng } from '../core/rng.js';
 import { SpriteAtlas, MEADOW } from './wild-sprites.js';
@@ -672,6 +672,36 @@ export function paintRegion(ctx, region, seed) {
   R(ctx, 0, SCENE_H - 1, SCENE_W, 1, 'rgba(0,0,0,0.35)');
 }
 
+/** The vents of the Ember Crags' backdrop: mouth, plume height, drift and puff size (art pixels). */
+const VENTS = [
+  { x: 71, y: 57, rise: 46, drift: 8, r: 4, n: 22, speed: 0.16 },
+  { x: 195, y: 34, rise: 34, drift: 6, r: 3, n: 18, speed: 0.19 },
+];
+const STEAM = ['#fff0b0', '#f49e39', '#e56522', '#8a4a50', '#6a4457', '#4e3040'];
+
+/**
+ * A plume of steam: puffs leave the vent lit by the lava (yellow, then
+ * orange), swell, cool to a purple-grey, drift with the wind and thin out.
+ * @param {CanvasRenderingContext2D} ctx @param {typeof VENTS[number]} v @param {number} t
+ */
+function steam(ctx, v, t) {
+  for (let k = v.n - 1; k >= 0; k--) {
+    const age = (t * v.speed + k / v.n) % 1, seed = Math.floor(t * v.speed + k / v.n) * 7 + k;
+    const x = v.x + age * v.drift + Math.sin(age * 5 + seed) * (1 + age * 2), y = v.y - age * v.rise;
+    const r = Math.max(2, Math.round(v.r * (0.55 + age * 1.2)));
+    const c = STEAM[Math.min(STEAM.length - 1, Math.floor(Math.sqrt(age) * STEAM.length))];
+    ctx.globalAlpha = age < 0.55 ? 0.85 : Math.ceil(((1 - age) / 0.45) * 4) / 4 * 0.85;
+    disc(ctx, Math.round(x), Math.round(y), r, r - 1, c);
+    // a lighter crown on the bigger puffs, lit from below near the vent
+    if (r >= 4) disc(ctx, Math.round(x - 1), Math.round(y - 1), r - 2, Math.max(1, r - 3), STEAM[Math.max(0, STEAM.indexOf(c) - 1)]);
+  }
+  // the glowing throat of the vent
+  ctx.globalAlpha = 0.9;
+  R(ctx, v.x - 1, v.y - 4, 3, 4, STEAM[1]);
+  R(ctx, v.x, v.y - 3 - (Math.sin(t * 9) > 0 ? 1 : 0), 1, 3, STEAM[0]);
+  ctx.globalAlpha = 1;
+}
+
 /**
  * Animated overlay (wisps, birds, butterflies, ripples, embers) drawn each frame.
  * @param {CanvasRenderingContext2D} ctx @param {string} region @param {number} t seconds
@@ -714,6 +744,8 @@ export function animateRegion(ctx, region, t) {
       R(ctx, x, y, 3, 1, '#dff4ff');
     }
   } else if (region === 'crags') {
+    // steam rising from the backdrop's two vents (its painted plumes are cleared)
+    if (BACKDROPS.crags.ready) for (const v of VENTS) steam(ctx, v, t);
     for (let i = 0; i < 12; i++) {
       const y = H * 0.75 - ((t * 12 + i * 11) % 60), x = W * (0.05 + i * 0.08) + Math.sin(t + i) * 4;
       R(ctx, x, y, 1, 1, i % 3 ? '#ffb444' : '#ff7a1c');

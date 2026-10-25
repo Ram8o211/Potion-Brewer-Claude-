@@ -19,10 +19,15 @@ sprites drawn on top, and cuts it to the scene's 16:9 (256 × 144) by
 dropping rows of sky above and foreground below (`CROP` in the script). It
 writes `assets/backdrops/<region>.png`.
 
+The Ember Crags' painted plumes of steam (`PLUMES`) are filled in from the
+colours round them, ring by ring: the scene animates the steam rising from
+the two vents instead.
+
 It also writes `src/rendering/backdrops-ground.js`: for each region, row by
 row, the runs of ground a plant's foot may rest on. That is the region's
 open ground (`GROUND`, polygons drawn over the scene), less the scenery
 standing on it (`SCENERY`: trunks, the cart, the rubble) and, by colour,
-less water, lava and rock (`BLOCKED`), shrunk by a pixel or two from them.
+less water, lava and rock (`BLOCKED`; in Moonfen, any stretch mostly bluer
+than its green bank — the pools and the mist — so nothing floats on them), shrunk by a pixel or two from them.
 `--preview DIR` writes each backdrop enlarged with its ground tinted, to
 check the map after changing a picture or a polygon.

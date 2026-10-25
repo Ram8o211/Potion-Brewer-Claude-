@@ -48,9 +48,13 @@ scene's art-pixel size and packs one atlas per region into
   swap in place. They are 16–28 px tall and at most 28 px wide (deposits
   stand about 27 px apart).
 - **Icons** are lifted out of the pack's parchment frames (the parchment is
-  flooded away from the frame's inner edge) and drawn at 16 px for the shelf
-  and the book and 24 px for the deposit card.
-- The glint over a ripe deposit is `../effects/glint_frame_00–03`.
+  flooded away from the frame's inner edge) and drawn at 32 px for the shelf
+  and the book and 48 px for the deposit card (each shown at about as many
+  CSS pixels, so its detail is not crowded into a few coarse pixels).
+- `../effects/glint_frame_00–03` are still packed as `glint_0–3`, but the
+  scene no longer uses them: a ripe crystal sparkles with a thin four-point
+  star drawn at the bright tips of its facets (`glintSpots` in
+  `src/rendering/wild-sprites.js`).
 
 ## The scenes
 
