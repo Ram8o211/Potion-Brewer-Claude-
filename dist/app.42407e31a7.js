@@ -11592,315 +11592,304 @@ const __m58 = (() => {
 const ATLASES = {
 forest: {
 url: 'assets/wilds/forest.png',
-size: [256, 389],
+size: [256, 390],
 frames: {
-bush_flowers: [0, 299, 26, 20],
-bush_round: [190, 272, 26, 21],
-bush_small: [27, 299, 20, 20],
+bush_flowers: [70, 299, 24, 19],
+bush_round: [222, 272, 24, 20],
+bush_small: [0, 299, 19, 20],
 distant: [0, 241, 256, 30],
-emberbark_card: [157, 320, 24, 18],
-emberbark_depleted: [98, 299, 30, 19],
-emberbark_hover: [129, 299, 30, 19],
-emberbark_icon: [0, 377, 16, 12],
-emberbark_idle: [160, 299, 30, 19],
-fern: [217, 272, 34, 21],
-fern_small: [189, 340, 20, 17],
-glint_0: [115, 377, 3, 3],
-glint_1: [105, 377, 4, 4],
-glint_2: [119, 377, 3, 3],
-glint_3: [110, 377, 4, 4],
-ironroot_card: [182, 320, 24, 18],
-ironroot_depleted: [13, 359, 32, 16],
-ironroot_hover: [46, 359, 32, 16],
-ironroot_icon: [17, 377, 16, 12],
-ironroot_idle: [79, 359, 32, 16],
-leaves_1: [51, 377, 16, 11],
-leaves_2: [84, 377, 20, 8],
-log: [210, 340, 40, 17],
+emberbark_card: [223, 320, 24, 18],
+emberbark_depleted: [95, 299, 30, 19],
+emberbark_hover: [126, 299, 30, 19],
+emberbark_icon: [17, 377, 16, 12],
+emberbark_idle: [157, 299, 30, 19],
+fern: [190, 272, 31, 21],
+fern_small: [66, 359, 18, 16],
+glint_0: [123, 377, 3, 3],
+glint_1: [113, 377, 4, 4],
+glint_2: [127, 377, 3, 3],
+glint_3: [118, 377, 4, 4],
+ironroot_card: [0, 340, 24, 18],
+ironroot_depleted: [85, 359, 32, 16],
+ironroot_hover: [118, 359, 32, 16],
+ironroot_icon: [34, 377, 16, 12],
+ironroot_idle: [151, 359, 32, 16],
+leaves_1: [68, 377, 12, 9],
+leaves_2: [93, 377, 19, 7],
+log: [188, 299, 39, 19],
 mandrake_card: [165, 272, 24, 22],
-mandrake_depleted: [191, 299, 32, 19],
-mandrake_hover: [224, 299, 32, 19],
-mandrake_icon: [182, 359, 16, 15],
-mandrake_idle: [0, 320, 32, 19],
+mandrake_depleted: [0, 320, 32, 19],
+mandrake_hover: [33, 320, 32, 19],
+mandrake_icon: [184, 359, 16, 15],
+mandrake_idle: [66, 320, 32, 19],
 mid: [0, 200, 256, 40],
 near: [0, 105, 256, 47],
-nightshade_card: [48, 299, 24, 20],
+nightshade_card: [20, 299, 24, 20],
 nightshade_closed: [0, 272, 32, 26],
 nightshade_closed_hover: [33, 272, 32, 26],
 nightshade_depleted: [66, 272, 32, 26],
 nightshade_hover: [99, 272, 32, 26],
-nightshade_icon: [199, 359, 16, 13],
+nightshade_icon: [213, 359, 16, 13],
 nightshade_idle: [132, 272, 32, 26],
-oak_small: [156, 0, 55, 60],
-oaks: [0, 0, 155, 104],
-owlberry_card: [73, 299, 24, 20],
-owlberry_depleted: [33, 320, 32, 19],
-owlberry_hover: [66, 320, 32, 19],
-owlberry_icon: [216, 359, 16, 13],
-owlberry_idle: [99, 320, 32, 19],
-silverleaf_card: [207, 320, 24, 18],
-silverleaf_depleted: [0, 340, 32, 18],
-silverleaf_hover: [33, 340, 32, 18],
-silverleaf_icon: [34, 377, 16, 12],
-silverleaf_idle: [66, 340, 32, 18],
+oak_small: [154, 0, 55, 59],
+oaks: [0, 0, 153, 104],
+owlberry_card: [45, 299, 24, 20],
+owlberry_depleted: [99, 320, 32, 19],
+owlberry_hover: [132, 320, 32, 19],
+owlberry_icon: [230, 359, 16, 13],
+owlberry_idle: [165, 320, 32, 19],
+silverleaf_card: [25, 340, 24, 18],
+silverleaf_depleted: [50, 340, 32, 18],
+silverleaf_hover: [83, 340, 32, 18],
+silverleaf_icon: [51, 377, 16, 12],
+silverleaf_idle: [116, 340, 32, 18],
 sky: [0, 153, 256, 46],
-snag: [0, 359, 12, 17],
-sticks: [68, 377, 15, 10],
-stones: [112, 359, 46, 16],
-stump: [159, 359, 22, 16],
-witchear_card: [132, 320, 24, 19],
-witchear_depleted: [99, 340, 29, 18],
-witchear_hover: [129, 340, 29, 18],
-witchear_icon: [233, 359, 16, 13],
-witchear_idle: [159, 340, 29, 18],
+snag: [201, 359, 11, 15],
+sticks: [81, 377, 11, 8],
+stones: [0, 359, 43, 17],
+stump: [44, 359, 21, 17],
+witchear_card: [198, 320, 24, 19],
+witchear_depleted: [149, 340, 29, 18],
+witchear_hover: [179, 340, 29, 18],
+witchear_icon: [0, 377, 16, 13],
+witchear_idle: [209, 340, 29, 18],
 },
 },
 river: {
 url: 'assets/wilds/river.png',
-size: [256, 426],
+size: [256, 404],
 frames: {
-bank: [0, 368, 150, 20],
-bogbean_card: [93, 272, 21, 24],
-bogbean_depleted: [62, 299, 32, 22],
-bogbean_hover: [95, 299, 32, 22],
-bogbean_icon: [210, 389, 14, 16],
-bogbean_idle: [128, 299, 32, 22],
-branch: [56, 410, 23, 12],
-bush_flowers: [181, 272, 30, 23],
-bush_leafy: [151, 368, 20, 20],
-bush_plain: [161, 299, 28, 22],
-buttercups: [114, 410, 8, 11],
-frostcap_card: [115, 272, 22, 24],
-frostcap_depleted: [212, 272, 30, 23],
-frostcap_hover: [0, 299, 30, 23],
-frostcap_icon: [225, 389, 15, 16],
-frostcap_idle: [31, 299, 30, 23],
-glint_0: [166, 410, 3, 3],
-glint_1: [156, 410, 4, 4],
-glint_2: [170, 410, 3, 3],
-glint_3: [161, 410, 4, 4],
-grass_1: [123, 410, 10, 10],
-grass_2: [134, 410, 12, 9],
-grass_tall: [17, 410, 15, 15],
-mountains: [0, 241, 256, 30],
-pebble: [147, 410, 8, 6],
-pines: [0, 203, 256, 37],
-pinks: [0, 346, 11, 21],
-post: [172, 368, 8, 20],
-reedmace_card: [138, 272, 17, 24],
-reedmace_depleted: [0, 272, 30, 26],
-reedmace_hover: [31, 272, 30, 26],
-reedmace_icon: [241, 389, 11, 16],
-reedmace_idle: [62, 272, 30, 26],
-riverchalk_card: [185, 389, 24, 17],
-riverchalk_depleted: [64, 389, 31, 19],
-riverchalk_hover: [96, 389, 31, 19],
-riverchalk_icon: [80, 410, 16, 12],
-riverchalk_idle: [128, 389, 31, 19],
-riverpearl_card: [160, 389, 24, 18],
-riverpearl_depleted: [12, 346, 31, 21],
-riverpearl_hover: [44, 346, 31, 21],
-riverpearl_icon: [97, 410, 16, 12],
-riverpearl_idle: [76, 346, 31, 21],
-sign: [181, 368, 12, 20],
+bank: [96, 345, 150, 20],
+bogbean_card: [93, 271, 21, 24],
+bogbean_depleted: [31, 298, 32, 22],
+bogbean_hover: [64, 298, 32, 22],
+bogbean_icon: [0, 388, 14, 16],
+bogbean_idle: [97, 298, 32, 22],
+branch: [82, 388, 23, 12],
+bush_plain: [130, 298, 27, 22],
+buttercups: [151, 388, 8, 9],
+frostcap_card: [115, 271, 22, 24],
+frostcap_depleted: [181, 271, 30, 23],
+frostcap_hover: [212, 271, 30, 23],
+frostcap_icon: [15, 388, 15, 16],
+frostcap_idle: [0, 298, 30, 23],
+glint_0: [191, 388, 3, 3],
+glint_1: [181, 388, 4, 4],
+glint_2: [195, 388, 3, 3],
+glint_3: [186, 388, 4, 4],
+grass_1: [140, 388, 10, 10],
+grass_2: [160, 388, 12, 9],
+mountains: [0, 240, 256, 30],
+pebble: [173, 388, 7, 6],
+pines: [0, 202, 256, 37],
+post: [247, 345, 9, 20],
+reedmace_card: [138, 271, 17, 24],
+reedmace_depleted: [0, 271, 30, 26],
+reedmace_hover: [31, 271, 30, 26],
+reedmace_icon: [31, 388, 11, 16],
+reedmace_idle: [62, 271, 30, 26],
+riverchalk_card: [229, 367, 24, 17],
+riverchalk_depleted: [108, 367, 31, 19],
+riverchalk_hover: [140, 367, 31, 19],
+riverchalk_icon: [106, 388, 16, 12],
+riverchalk_idle: [172, 367, 31, 19],
+riverpearl_card: [204, 367, 24, 18],
+riverpearl_depleted: [0, 345, 31, 21],
+riverpearl_hover: [32, 345, 31, 21],
+riverpearl_icon: [123, 388, 16, 12],
+riverpearl_idle: [64, 345, 31, 21],
+sign: [0, 367, 11, 20],
 sky: [0, 97, 256, 58],
-stump: [33, 410, 22, 15],
-water: [0, 323, 256, 22],
-willow_great: [0, 0, 78, 96],
-willow_second: [79, 0, 72, 88],
-willow_small: [0, 156, 39, 46],
-willowbark_card: [156, 272, 24, 24],
-willowbark_depleted: [194, 368, 31, 20],
-willowbark_hover: [0, 389, 31, 20],
-willowbark_icon: [0, 410, 16, 16],
-willowbark_idle: [32, 389, 31, 20],
+stump: [43, 388, 21, 16],
+water: [0, 322, 256, 22],
+willow_great: [0, 0, 79, 96],
+willow_second: [80, 0, 71, 87],
+willow_small: [0, 156, 37, 45],
+willowbark_card: [156, 271, 24, 24],
+willowbark_depleted: [12, 367, 31, 20],
+willowbark_hover: [44, 367, 31, 20],
+willowbark_icon: [65, 388, 16, 16],
+willowbark_idle: [76, 367, 31, 20],
 },
 },
 quarry: {
 url: 'assets/wilds/quarry.png',
-size: [256, 404],
+size: [256, 390],
 frames: {
-bench: [63, 393, 22, 9],
-blocks: [81, 341, 30, 16],
-boulder: [147, 376, 16, 11],
-brush: [131, 376, 15, 12],
-brush_small: [86, 393, 11, 9],
+blocks: [32, 321, 30, 17],
+brush_small: [214, 375, 11, 9],
 cart: [41, 287, 34, 26],
-cinnabar_card: [32, 322, 24, 17],
-cinnabar_depleted: [112, 341, 32, 16],
-cinnabar_hover: [145, 341, 32, 16],
-cinnabar_icon: [164, 376, 16, 11],
-cinnabar_idle: [178, 341, 32, 16],
-coal: [31, 393, 14, 10],
+cinnabar_card: [63, 321, 24, 17],
+cinnabar_depleted: [91, 340, 32, 16],
+cinnabar_hover: [124, 340, 32, 16],
+cinnabar_icon: [84, 375, 16, 11],
+cinnabar_idle: [157, 340, 32, 16],
 crane: [0, 0, 54, 72],
-crate: [181, 376, 12, 11],
-crate_small: [98, 393, 9, 8],
-dirt_heap: [194, 376, 18, 11],
-emberflint_card: [90, 287, 24, 23],
-emberflint_depleted: [57, 322, 32, 17],
-emberflint_hover: [90, 322, 32, 17],
-emberflint_icon: [32, 376, 16, 15],
-emberflint_idle: [123, 322, 32, 17],
+crate: [101, 375, 11, 11],
+crate_small: [226, 375, 9, 8],
+dirt_heap: [113, 375, 17, 11],
+emberflint_card: [91, 287, 24, 23],
+emberflint_depleted: [88, 321, 32, 17],
+emberflint_hover: [121, 321, 32, 17],
+emberflint_icon: [0, 375, 16, 15],
+emberflint_idle: [154, 321, 32, 17],
 far_cliffs: [0, 243, 256, 43],
 frame: [0, 192, 48, 50],
-glint_0: [118, 393, 3, 3],
-glint_1: [108, 393, 4, 4],
-glint_2: [122, 393, 3, 3],
-glint_3: [113, 393, 4, 4],
-ladder: [0, 287, 21, 34],
-lodestone_card: [156, 322, 24, 17],
-lodestone_depleted: [211, 341, 31, 16],
-lodestone_hover: [0, 359, 31, 16],
-lodestone_icon: [213, 376, 16, 11],
-lodestone_idle: [32, 359, 31, 16],
-mica_card: [64, 359, 24, 16],
-mica_depleted: [181, 322, 32, 17],
-mica_hover: [214, 322, 32, 17],
-mica_icon: [230, 376, 16, 11],
-mica_idle: [0, 341, 32, 17],
+glint_0: [246, 375, 3, 3],
+glint_1: [236, 375, 4, 4],
+glint_2: [250, 375, 3, 3],
+glint_3: [241, 375, 4, 4],
+ladder: [0, 287, 21, 33],
+lodestone_card: [187, 321, 24, 17],
+lodestone_depleted: [190, 340, 31, 16],
+lodestone_hover: [222, 340, 31, 16],
+lodestone_icon: [131, 375, 16, 11],
+lodestone_idle: [0, 358, 31, 16],
+mica_card: [32, 358, 24, 16],
+mica_depleted: [212, 321, 32, 17],
+mica_hover: [0, 340, 32, 17],
+mica_icon: [148, 375, 16, 11],
+mica_idle: [33, 340, 32, 17],
 near_cliffs: [0, 73, 256, 61],
-pebbles: [0, 393, 13, 11],
-rail_fence: [49, 376, 24, 15],
-saltpetre_card: [33, 341, 24, 17],
-saltpetre_depleted: [89, 359, 31, 16],
-saltpetre_hover: [121, 359, 31, 16],
-saltpetre_icon: [14, 393, 16, 11],
-saltpetre_idle: [153, 359, 31, 16],
-scaffold: [22, 287, 18, 30],
-shrub_green: [140, 287, 22, 20],
-shrub_small: [116, 376, 14, 13],
+pebbles: [182, 375, 14, 10],
+rail_fence: [17, 375, 24, 15],
+saltpetre_card: [66, 340, 24, 17],
+saltpetre_depleted: [57, 358, 31, 16],
+saltpetre_hover: [89, 358, 31, 16],
+saltpetre_icon: [165, 375, 16, 11],
+saltpetre_idle: [121, 358, 31, 16],
+scaffold: [22, 287, 18, 29],
+shrub_green: [141, 287, 20, 20],
 sky: [0, 135, 256, 56],
-stone_block: [58, 341, 22, 17],
-stone_pillar: [76, 287, 13, 26],
-stormglass_card: [74, 376, 24, 15],
-stormglass_depleted: [185, 359, 31, 16],
-stormglass_hover: [217, 359, 31, 16],
-stormglass_icon: [46, 393, 16, 10],
-stormglass_idle: [0, 376, 31, 16],
-sulfur_card: [115, 287, 24, 21],
-sulfur_depleted: [163, 287, 31, 18],
-sulfur_hover: [195, 287, 31, 18],
-sulfur_icon: [99, 376, 16, 14],
-sulfur_idle: [0, 322, 31, 18],
+stone_block: [162, 287, 22, 18],
+stone_pillar: [76, 287, 14, 26],
+stormglass_card: [42, 375, 24, 15],
+stormglass_depleted: [153, 358, 31, 16],
+stormglass_hover: [185, 358, 31, 16],
+stormglass_icon: [197, 375, 16, 10],
+stormglass_idle: [217, 358, 31, 16],
+sulfur_card: [116, 287, 24, 21],
+sulfur_depleted: [185, 287, 31, 18],
+sulfur_hover: [217, 287, 31, 18],
+sulfur_icon: [67, 375, 16, 14],
+sulfur_idle: [0, 321, 31, 18],
 },
 },
 moonfen: {
 url: 'assets/wilds/moonfen.png',
-size: [256, 449],
+size: [256, 441],
 frames: {
-cattails: [0, 198, 25, 30],
+cattails: [0, 197, 24, 29],
 dead_tree: [126, 0, 37, 58],
-fiddleheads: [160, 424, 10, 13],
-ghost_stumps: [185, 424, 26, 11],
-glint_0: [21, 443, 3, 3],
-glint_1: [11, 443, 4, 4],
-glint_2: [25, 443, 3, 3],
-glint_3: [16, 443, 4, 4],
-grass_1: [89, 424, 15, 14],
-grass_2: [212, 424, 10, 10],
-grass_3: [223, 424, 8, 8],
-gravemoss_card: [95, 339, 24, 21],
-gravemoss_closed: [162, 287, 32, 24],
-gravemoss_closed_hover: [195, 287, 32, 24],
-gravemoss_depleted: [0, 314, 32, 24],
-gravemoss_hover: [33, 314, 32, 24],
-gravemoss_icon: [105, 424, 16, 14],
-gravemoss_idle: [66, 314, 32, 24],
-hills: [0, 229, 256, 28],
-mist: [0, 405, 256, 18],
-moonlily_card: [99, 314, 23, 24],
-moonlily_closed: [123, 314, 32, 24],
-moonlily_closed_hover: [156, 314, 32, 24],
-moonlily_depleted: [189, 314, 32, 24],
-moonlily_hover: [222, 314, 32, 24],
-moonlily_icon: [31, 424, 16, 16],
-moonlily_idle: [0, 339, 32, 24],
-night_flowers: [171, 424, 13, 12],
-pad: [243, 424, 9, 6],
-rock_big: [0, 424, 30, 18],
-rock_mid: [122, 424, 20, 14],
-rock_small: [232, 424, 10, 8],
-sirenreed_card: [33, 339, 22, 24],
-sirenreed_closed: [0, 258, 32, 28],
-sirenreed_closed_hover: [33, 258, 32, 28],
-sirenreed_depleted: [66, 258, 32, 28],
-sirenreed_hover: [99, 258, 32, 28],
-sirenreed_icon: [48, 424, 14, 16],
-sirenreed_idle: [132, 258, 32, 28],
-sky: [0, 101, 256, 50],
-starquartz_card: [56, 339, 20, 24],
-starquartz_depleted: [165, 258, 31, 26],
-starquartz_hover: [197, 258, 31, 26],
-starquartz_icon: [63, 424, 13, 16],
-starquartz_idle: [0, 287, 31, 26],
-stone_flat: [0, 443, 10, 6],
-stump_drowned: [145, 339, 31, 20],
-stump_glowing: [32, 287, 30, 26],
-toadstool_card: [120, 339, 24, 21],
-toadstool_depleted: [177, 339, 32, 20],
-toadstool_hover: [210, 339, 32, 20],
-toadstool_icon: [143, 424, 16, 14],
-toadstool_idle: [0, 364, 32, 20],
-treeline: [0, 152, 256, 45],
-trunk: [0, 385, 44, 19],
-water: [33, 364, 96, 20],
-water_2: [130, 364, 112, 20],
-willow_center: [79, 0, 46, 86],
-willow_left: [0, 0, 78, 100],
-willow_small: [164, 0, 38, 52],
-wisplichen_card: [77, 339, 17, 24],
-wisplichen_depleted: [63, 287, 32, 26],
-wisplichen_hover: [96, 287, 32, 26],
-wisplichen_icon: [77, 424, 11, 16],
-wisplichen_idle: [129, 287, 32, 26],
+fiddleheads: [142, 423, 10, 13],
+ghost_stumps: [153, 423, 25, 11],
+glint_0: [247, 423, 3, 3],
+glint_1: [237, 423, 4, 4],
+glint_2: [251, 423, 3, 3],
+glint_3: [242, 423, 4, 4],
+grass_2: [191, 423, 9, 9],
+grass_3: [201, 423, 8, 7],
+gravemoss_card: [95, 337, 24, 21],
+gravemoss_closed: [160, 285, 32, 24],
+gravemoss_closed_hover: [193, 285, 32, 24],
+gravemoss_depleted: [0, 312, 32, 24],
+gravemoss_hover: [33, 312, 32, 24],
+gravemoss_icon: [88, 423, 16, 14],
+gravemoss_idle: [66, 312, 32, 24],
+hills: [0, 227, 256, 28],
+mist: [0, 404, 256, 18],
+moonlily_card: [99, 312, 23, 24],
+moonlily_closed: [123, 312, 32, 24],
+moonlily_closed_hover: [156, 312, 32, 24],
+moonlily_depleted: [189, 312, 32, 24],
+moonlily_hover: [222, 312, 32, 24],
+moonlily_icon: [30, 423, 16, 16],
+moonlily_idle: [0, 337, 32, 24],
+night_flowers: [179, 423, 11, 11],
+pad: [229, 423, 7, 5],
+rock_big: [0, 423, 29, 18],
+rock_mid: [105, 423, 19, 14],
+rock_small: [210, 423, 9, 7],
+sirenreed_card: [33, 337, 22, 24],
+sirenreed_closed: [0, 256, 32, 28],
+sirenreed_closed_hover: [33, 256, 32, 28],
+sirenreed_depleted: [66, 256, 32, 28],
+sirenreed_hover: [99, 256, 32, 28],
+sirenreed_icon: [47, 423, 14, 16],
+sirenreed_idle: [132, 256, 32, 28],
+sky: [0, 100, 256, 50],
+starquartz_card: [56, 337, 20, 24],
+starquartz_depleted: [165, 256, 31, 26],
+starquartz_hover: [197, 256, 31, 26],
+starquartz_icon: [62, 423, 13, 16],
+starquartz_idle: [0, 285, 31, 26],
+stone_flat: [220, 423, 8, 6],
+stump_drowned: [145, 337, 29, 20],
+stump_glowing: [32, 285, 28, 26],
+toadstool_card: [120, 337, 24, 21],
+toadstool_depleted: [175, 337, 32, 20],
+toadstool_hover: [208, 337, 32, 20],
+toadstool_icon: [125, 423, 16, 14],
+toadstool_idle: [0, 362, 32, 20],
+treeline: [0, 151, 256, 45],
+trunk: [33, 362, 42, 20],
+water: [76, 362, 96, 20],
+water_2: [0, 383, 112, 20],
+willow_center: [79, 0, 46, 85],
+willow_left: [0, 0, 78, 99],
+willow_small: [164, 0, 39, 51],
+wisplichen_card: [77, 337, 17, 24],
+wisplichen_depleted: [61, 285, 32, 26],
+wisplichen_hover: [94, 285, 32, 26],
+wisplichen_icon: [76, 423, 11, 16],
+wisplichen_idle: [127, 285, 32, 26],
 },
 },
 crags: {
 url: 'assets/wilds/crags.png',
-size: [256, 257],
+size: [256, 256],
 frames: {
-ashbloom_card: [64, 165, 20, 24],
-ashbloom_depleted: [214, 138, 31, 25],
-ashbloom_hover: [0, 165, 31, 25],
-ashbloom_icon: [205, 216, 14, 16],
-ashbloom_idle: [32, 165, 31, 25],
-cinderscale_card: [85, 165, 22, 24],
-cinderscale_depleted: [23, 216, 31, 23],
-cinderscale_hover: [55, 216, 31, 23],
-cinderscale_icon: [220, 216, 15, 16],
-cinderscale_idle: [87, 216, 31, 23],
-crag_large: [0, 65, 59, 44],
-crag_medium: [146, 65, 33, 32],
-crag_small: [108, 165, 25, 24],
-crag_tall: [60, 65, 43, 42],
-dead_brush: [0, 138, 24, 26],
-dragonpepper_card: [134, 165, 19, 24],
-dragonpepper_depleted: [25, 138, 32, 26],
-dragonpepper_hover: [58, 138, 32, 26],
-dragonpepper_icon: [236, 216, 13, 16],
-dragonpepper_idle: [91, 138, 32, 26],
-ember_brush: [74, 241, 15, 13],
-ember_brush_small: [61, 241, 12, 14],
-fissures: [0, 191, 256, 24],
-glint_0: [169, 241, 3, 3],
-glint_1: [159, 241, 4, 4],
-glint_2: [173, 241, 3, 3],
-glint_3: [164, 241, 4, 4],
-gusher: [104, 65, 41, 33],
-lava_pan: [138, 241, 20, 7],
-lava_pool: [156, 216, 48, 18],
-obsidian_card: [0, 216, 22, 24],
-obsidian_depleted: [124, 138, 29, 26],
-obsidian_hover: [154, 138, 29, 26],
-obsidian_icon: [0, 241, 15, 16],
-obsidian_idle: [184, 138, 29, 26],
-ridges: [0, 110, 256, 27],
-rock_1: [107, 241, 16, 10],
-rock_2: [90, 241, 16, 11],
-rock_3: [124, 241, 13, 8],
-rock_mound: [119, 216, 36, 22],
+ashbloom_card: [55, 164, 20, 24],
+ashbloom_depleted: [189, 137, 31, 25],
+ashbloom_hover: [221, 137, 31, 25],
+ashbloom_icon: [227, 215, 14, 16],
+ashbloom_idle: [0, 164, 31, 25],
+cinderscale_card: [76, 164, 22, 24],
+cinderscale_depleted: [23, 215, 31, 23],
+cinderscale_hover: [55, 215, 31, 23],
+cinderscale_icon: [0, 240, 15, 16],
+cinderscale_idle: [87, 215, 31, 23],
+crag_large: [0, 65, 56, 43],
+crag_medium: [143, 65, 31, 31],
+crag_small: [119, 215, 23, 23],
+crag_tall: [57, 65, 43, 41],
+dead_brush: [32, 164, 22, 25],
+dragonpepper_card: [99, 164, 19, 24],
+dragonpepper_depleted: [0, 137, 32, 26],
+dragonpepper_hover: [33, 137, 32, 26],
+dragonpepper_icon: [16, 240, 13, 16],
+dragonpepper_idle: [66, 137, 32, 26],
+ember_brush: [102, 240, 12, 11],
+ember_brush_small: [91, 240, 10, 14],
+fissures: [0, 190, 256, 24],
+glint_0: [173, 240, 3, 3],
+glint_1: [163, 240, 4, 4],
+glint_2: [177, 240, 3, 3],
+glint_3: [168, 240, 4, 4],
+gusher: [101, 65, 41, 34],
+lava_pan: [142, 240, 20, 8],
+lava_pool: [179, 215, 47, 18],
+obsidian_card: [0, 215, 22, 24],
+obsidian_depleted: [99, 137, 29, 26],
+obsidian_hover: [129, 137, 29, 26],
+obsidian_icon: [30, 240, 15, 16],
+obsidian_idle: [159, 137, 29, 26],
+ridges: [0, 109, 256, 27],
+rock_1: [115, 240, 14, 9],
+rock_3: [130, 240, 11, 9],
+rock_mound: [143, 215, 35, 23],
 sky: [0, 0, 256, 64],
-vent: [16, 241, 44, 15],
+vent: [46, 240, 44, 16],
 },
 },
 };
@@ -14560,19 +14549,18 @@ if (hw > 0) R(ctx, l, y, r - l, 2, c);
 stand(ctx, 'forest', 'oak_small');
 for (let i = 0; i < 3; i++) { const x0 = 96 + i * 15; for (let y = 0; y < 104; y++) R(ctx, x0 + y * 0.35, y, 6 - i, 1, `rgba(255,250,210,${(0.18 * (1 - y / 104)).toFixed(3)})`); }
 stand(ctx, 'forest', 'oaks');
-prop('bush_flowers', [[96, 84], [86, 86], [108, 82]]);
-prop('bush_round', [[170, 84], [182, 86], [158, 82]], true);
-prop('fern', [[60, 106], [46, 110], [76, 104]]);
-prop('stones', [[196, 114], [210, 118], [180, 110]]);
-prop('log', [[74, 128], [96, 132], [52, 124]]);
-prop('stump', [[160, 104], [146, 100], [174, 106]]);
-prop('fern_small', [[226, 128], [212, 132], [236, 124]], true);
-prop('bush_small', [[118, 96], [140, 94]]);
-prop('snag', [[32, 116], [20, 120]]);
-prop('sticks', [[140, 136], [120, 134], [166, 138]]);
-prop('bush_round', [[14, 150], [28, 150]]);
-prop('bush_flowers', [[244, 150], [230, 150]], true);
-for (let i = 0; i < 18; i++) prop(`leaves_${rng.int(1, 2)}`, spots(6, W - 6, 86, H + 2), rng.chance(0.5));
+prop('bush_flowers', [[96, 84], [86, 85], [108, 83]]);
+prop('bush_round', [[170, 84], [182, 85], [158, 83]], true);
+prop('bush_small', [[118, 83], [146, 83]]);
+prop('fern', [[40, 104], [52, 102]]);
+prop('snag', [[10, 106], [16, 110]]);
+prop('stump', [[214, 100], [222, 102]]);
+prop('stones', [[234, 116], [238, 120]]);
+prop('log', [[20, 142], [26, 142]]);
+prop('fern_small', [[246, 144], [240, 144]], true);
+prop('bush_flowers', [[208, 152], [196, 152]], true);
+prop('sticks', [[140, 138], [120, 136], [166, 138]]);
+for (let i = 0; i < 9; i++) prop(`leaves_${rng.int(1, 2)}`, spots(6, W - 6, 88, H + 2), rng.chance(0.5));
 }
 function riverSprites(ctx, rng, avoid) {
 const W = SCENE_W, H = SCENE_H, A = REGION_ATLAS.river;
@@ -14587,18 +14575,16 @@ for (let x = -rng.int(0, 40); x < W; x += bank[2] - 2) A.draw(ctx, 'bank', x + b
 for (let k = 0, bands = ['#6cbe3c', '#62b636', '#58ac30', '#4ea22c']; k < bands.length; k++) R(ctx, 0, 115 + k * 8, W, H, bands[k]);
 for (let x = 0; x < W; x += 2) { const d = rng.int(0, 2); R(ctx, x, 113 - d, 2, d + 2, '#6cbe3c'); R(ctx, x, 112 - d, 2, 1, '#3a7a2a'); }
 stand(ctx, 'river', 'willow_small');
-prop('bush_plain', [[96, 82], [84, 84], [110, 82]]);
-prop('bush_flowers', [[192, 84], [178, 84], [206, 86]], true);
-prop('bush_leafy', [[122, 80], [134, 80], [62, 82]]);
-prop('post', [[172, 92], [164, 92]]);
-prop('sign', [[70, 92], [56, 90]]);
+prop('bush_plain', [[58, 84], [64, 84]]);
+prop('post', [[172, 94], [164, 94]]);
+prop('sign', [[64, 94], [56, 94]]);
 stand(ctx, 'river', 'willow_great');
 stand(ctx, 'river', 'willow_second');
-prop('stump', [[214, 132], [228, 136], [200, 128]]);
-prop('branch', [[100, 136], [84, 138], [120, 140]]);
-for (let i = 0; i < 10; i++) prop(rng.pick(['grass_1', 'grass_2']), spots(8, W - 8, 72, 90), rng.chance(0.5));
-for (let i = 0; i < 14; i++) prop(rng.pick(['grass_1', 'grass_2', 'grass_tall', 'grass_tall', 'pinks', 'buttercups']), spots(6, W - 6, 122, H + 2), rng.chance(0.5));
-for (let i = 0; i < 5; i++) prop('pebble', spots(10, W - 10, 118, H - 2));
+prop('stump', [[244, 146], [236, 146]]);
+prop('branch', [[12, 146], [18, 146]]);
+for (let i = 0; i < 6; i++) prop(rng.pick(['grass_1', 'grass_2']), spots(8, W - 8, 80, 90), rng.chance(0.5));
+for (let i = 0; i < 8; i++) prop(rng.pick(['grass_1', 'grass_2', 'buttercups']), spots(6, W - 6, 124, H + 2), rng.chance(0.5));
+for (let i = 0; i < 3; i++) prop('pebble', spots(10, W - 10, 122, H - 2));
 }
 function quarrySprites(ctx, rng, avoid) {
 const W = SCENE_W, H = SCENE_H, A = REGION_ATLAS.quarry;
@@ -14613,19 +14599,16 @@ for (const [, x, y] of fixedOf('quarry')) { const f = /** @type {number[]} */ (A
 prop('frame', [[64, 86], [48, 86], [84, 86], [130, 86], [30, 86], [170, 86]]);
 prop('scaffold', [[150, 84], [164, 84], [118, 84], [236, 84], [96, 84]]);
 prop('ladder', [[112, 86], [100, 86], [176, 86], [30, 86], [140, 86]]);
-prop('blocks', [[176, 96], [190, 98], [94, 94]]);
-prop('stone_pillar', [[236, 96], [246, 98]]);
-prop('rail_fence', [[132, 98], [120, 100], [40, 96]]);
-prop('shrub_green', [[30, 112], [16, 116], [44, 110]]);
-prop('cart', [[232, 134], [218, 138], [240, 126]]);
-prop('crate', [[198, 136], [204, 128], [184, 140]]);
-prop('crate_small', [[188, 140], [178, 134]]);
-prop('stone_block', [[100, 132], [80, 136], [120, 134]]);
-prop('bench', [[150, 132], [164, 136], [138, 140]]);
-prop('dirt_heap', [[56, 136], [40, 140], [70, 132]]);
-prop('shrub_small', [[12, 140], [24, 142]]);
-for (let i = 0; i < 10; i++) prop(rng.pick(['brush', 'brush_small', 'shrub_small']), spots(6, W - 6, 96, H + 2), rng.chance(0.5));
-for (let i = 0; i < 10; i++) prop(rng.pick(['boulder', 'pebbles', 'coal', 'pebbles']), spots(6, W - 6, 98, H), rng.chance(0.5));
+prop('rail_fence', [[44, 94], [36, 94]]);
+prop('blocks', [[174, 94], [182, 94]]);
+prop('stone_pillar', [[248, 104], [246, 100]]);
+prop('shrub_green', [[10, 112], [12, 118]]);
+prop('cart', [[234, 142], [228, 142]]);
+prop('crate', [[208, 142], [204, 142]]);
+prop('crate_small', [[198, 143], [194, 143]]);
+prop('stone_block', [[14, 146], [20, 146]]);
+prop('dirt_heap', [[38, 143], [44, 143]]);
+for (let i = 0; i < 6; i++) prop(rng.pick(['brush_small', 'pebbles', 'brush_small']), spots(6, W - 6, 98, H), rng.chance(0.5));
 }
 function moonfenSprites(ctx, rng, avoid) {
 const W = SCENE_W, H = SCENE_H, A = REGION_ATLAS.moonfen;
@@ -14639,16 +14622,16 @@ raggedUp(ctx, 82, '#1f3a2a');
 stand(ctx, 'moonfen', 'water_2');
 stand(ctx, 'moonfen', 'water');
 for (const name of ['willow_small', 'dead_tree', 'willow_left', 'willow_center']) stand(ctx, 'moonfen', name);
-prop('trunk', [[132, 96], [146, 98], [120, 94]]);
-prop('stump_glowing', [[200, 96], [186, 94], [214, 98]]);
-prop('stump_drowned', [[118, 112], [140, 108], [104, 116]]);
-prop('rock_big', [[214, 138], [226, 140], [200, 136]]);
-prop('cattails', [[72, 128], [58, 130], [86, 126]]);
-prop('ghost_stumps', [[160, 134], [144, 138], [176, 136]]);
-prop('rock_mid', [[40, 116], [54, 118], [28, 120]]);
-for (let i = 0; i < 16; i++) prop(rng.pick(['grass_1', 'grass_2', 'grass_3', 'fiddleheads', 'night_flowers']), spots(6, W - 6, 86, H + 2), rng.chance(0.5));
-for (let i = 0; i < 6; i++) prop(rng.pick(['rock_small', 'stone_flat', 'rock_small']), spots(10, W - 10, 90, H), rng.chance(0.5));
-for (let i = 0; i < 4; i++) prop('pad', spots(50, 120, 96, 102));
+prop('stump_drowned', [[40, 102], [48, 102]]);
+prop('cattails', [[112, 104], [106, 104]]);
+prop('stump_glowing', [[232, 100], [226, 100]]);
+prop('rock_mid', [[12, 118], [16, 120]]);
+prop('trunk', [[236, 148], [230, 148]], true);
+prop('ghost_stumps', [[86, 102], [80, 102]]);
+prop('rock_big', [[18, 146], [24, 146]]);
+for (let i = 0; i < 9; i++) prop(rng.pick(['grass_2', 'grass_3', 'fiddleheads', 'night_flowers']), spots(6, W - 6, 90, H + 2), rng.chance(0.5));
+for (let i = 0; i < 4; i++) prop(rng.pick(['rock_small', 'stone_flat', 'rock_small']), spots(10, W - 10, 92, H), rng.chance(0.5));
+for (let i = 0; i < 4; i++) prop('pad', spots(30, 110, 92, 102));
 }
 function cragsSprites(ctx, rng, avoid, seed) {
 const W = SCENE_W, H = SCENE_H, A = REGION_ATLAS.crags;
@@ -14665,11 +14648,13 @@ R(ctx, x - w / 2, y, w, 1, y % 5 ? '#ff7a1c' : '#ffb444');
 for (const name of ['gusher', 'vent', 'crag_large', 'crag_tall']) stand(ctx, 'crags', name);
 prop('crag_medium', [[126, 88], [140, 86], [112, 90]]);
 prop('crag_small', [[210, 92], [222, 94]]);
-prop('lava_pool', [[150, 128], [128, 132], [172, 126]]);
-prop('rock_mound', [[208, 140], [222, 142], [192, 138]]);
-prop('dead_brush', [[60, 132], [46, 136], [74, 128]]);
-for (let i = 0; i < 10; i++) prop(rng.pick(['rock_1', 'rock_2', 'rock_3', 'lava_pan']), spots(6, W - 6, 94, H), rng.chance(0.5));
-for (let i = 0; i < 10; i++) prop(rng.pick(['ember_brush', 'ember_brush_small']), spots(6, W - 6, 90, H + 2), rng.chance(0.5));
+const [, mouth] = lavaStream(seed).slice(-1)[0];
+prop('lava_pool', [[Math.round(mouth), H + 8], [Math.round(mouth) + 6, H + 8]]);
+prop('rock_mound', [[242, 152], [236, 152]]);
+prop('dead_brush', [[8, 142], [12, 142]]);
+prop('lava_pan', [[44, 146], [52, 146]]);
+for (let i = 0; i < 6; i++) prop(rng.pick(['rock_1', 'rock_3']), spots(6, W - 6, 96, H), rng.chance(0.5));
+for (let i = 0; i < 5; i++) prop(rng.pick(['ember_brush', 'ember_brush_small']), spots(6, W - 6, 92, H + 2), rng.chance(0.5));
 }
 function meadow(ctx, rng) {
 const W = SCENE_W, H = SCENE_H;
