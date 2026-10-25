@@ -23,7 +23,12 @@ import { causeWord } from '../game/colony.js';
 
 const CAT_LABEL = { heat: 'Fire', cold: 'Cooling', vessel: 'Cauldrons', tool: 'Tools', instrument: 'Instruments', trials: 'Trials room', gathering: 'Foraging', storage: 'Potion storage', guild: 'Guild' };
 
-function jarCanvas(m, w = 22, hh = 30) {
+/**
+ * An ingredient's picture in a list: a raw ingredient's icon (the same one
+ * on the shelf, in the shop, in the book and on its deposit card), else its jar.
+ * @param {any} m material @param {number} [w] @param {number} [hh]
+ */
+export function jarCanvas(m, w = 22, hh = 30) {
   if ((m.wild || m.remains) && m.form === 'solid') {
     const cv = ingredientSprite(m);
     cv.style.width = w * 2 + 'px';

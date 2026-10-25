@@ -460,6 +460,8 @@ canvas.scene { display: block; width: 100%; aspect-ratio: 16 / 9; height: auto; 
   .deposit > .btn { grid-column: 1 / -1; }
 }
 .deposit.locked { opacity: 0.6; }
+/* nothing mature to gather: its picture fades, as the harvested plant would */
+.deposit.spent > canvas { opacity: 0.5; filter: grayscale(0.6); }
 .tag.rare { background: rgba(166, 120, 255, 0.25); }
 .wilds-foot { margin: 8px 2px; line-height: 1.35; }
 .tag.hour { background: rgba(255, 170, 90, 0.3); }

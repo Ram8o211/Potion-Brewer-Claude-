@@ -9,7 +9,9 @@ flood, so pale caps, shells and petals inside them stay), the pieces of the
 sprite are kept and stray specks dropped. All stages are brought down by one
 factor, so a sprout stays small beside its mature plant, to twice the
 scene's resolution (`RES`), by majority vote
-(`pixelart.fit`, hard alpha), then outlined in ink. The mature stage also
+(`pixelart.fit`, hard alpha), then outlined on the sides and top in a deep
+shade of each edge's own colour (the parchment's pale rim peeled off first),
+so the plants sit in the scene rather than on it like stickers. The mature stage also
 gets a light-outlined hover frame. The frames of an ingredient share one
 canvas anchored at its bottom centre (its spot on the ground), so a plant
 grows in place.
@@ -24,7 +26,7 @@ import numpy as np
 from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from pixelart import INK, GLOW, trim, outline, anchored, pack, fit  # noqa: E402
+from pixelart import GLOW, trim, outline, anchored, pack, fit  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, 'art', 'growth', 'growth_atlas.png')
@@ -84,8 +86,29 @@ def cut(sheet, x0, x1, y0, y1):
         for n, s in enumerate(sizes, 1):
             if s < big * 0.04:
                 keep[lab == n] = False
+    keep = defringe(sheet[y0:y1, x0:x1, :3].astype(int), keep)
     a = np.dstack([sheet[y0:y1, x0:x1, :3], (keep * 255).astype(np.uint8)])
     return trim(Image.fromarray(a, 'RGBA'))
+
+
+def defringe(rgb, keep, passes=3):
+    """Peel the pale rim the parchment leaves round a sprite (its soft edge,
+    blended between the parchment and the sprite's own dark outline, which
+    the flood stops short of): an edge pixel lighter than the darkest pixel
+    just inside it and greyish or warm, not a petal's colour."""
+    luma = rgb @ np.array([0.3, 0.59, 0.11])
+    sat = (rgb.max(axis=2) - rgb.min(axis=2)) / np.maximum(rgb.max(axis=2), 1)
+    h, w = keep.shape
+    for _ in range(passes):
+        k = np.pad(keep, 1)
+        edge = keep & ~(k[:-2, 1:-1] & k[2:, 1:-1] & k[1:-1, :-2] & k[1:-1, 2:])
+        lp = np.pad(np.where(keep, luma, 999), 1, constant_values=999)
+        inner = np.min([lp[1 + dy:h + 1 + dy, 1 + dx:w + 1 + dx] for dy in (-1, 0, 1) for dx in (-1, 0, 1) if dy or dx], axis=0)
+        pale = edge & (luma > 95) & (luma - inner > 30) & (sat < 0.42)
+        if not pale.any():
+            break
+        keep = keep & ~pale
+    return keep
 
 
 def label(a):
@@ -113,6 +136,25 @@ def label(a):
     return lab, sizes
 
 
+def rim(im):
+    """A soft outline: the silhouette grown by one pixel on its sides and top,
+    each new pixel a deep shade of the one inside it (dark green round
+    leaves, dark brown round a root), not one flat ink that would cut the
+    plant out of the scene like a sticker. Its foot gets none: it stands in
+    the ground rather than on it."""
+    out = Image.new('RGBA', (im.width + 2, im.height + 1), (0, 0, 0, 0))
+    out.paste(im, (1, 1))
+    src, o = out.copy().load(), out.load()
+    for y in range(out.height):
+        for x in range(out.width):
+            if src[x, y][3]:
+                continue
+            ns = [src[nx, ny] for nx, ny in ((x, y + 1), (x + 1, y), (x - 1, y), (x, y - 1)) if 0 <= nx < out.width and 0 <= ny < out.height and src[nx, ny][3]]
+            if ns:
+                o[x, y] = (*(int(v * 0.3) for v in ns[0][:3]), 255)
+    return out
+
+
 def even(im):
     """Pad a frame on the top and right to whole art pixels (multiples of RES)."""
     w, h = -(-im.width // RES) * RES, -(-im.height // RES) * RES
@@ -134,7 +176,7 @@ def build():
             for stage, (x0, x1) in zip(STAGES, COLS[side]):
                 im = cut(sheet, x0, x1, y0, y1)
                 im = fit(im, w=max(3, round(im.width * RES / SCALE)), colours=24)
-                frames[stage] = outline(trim(im), INK)
+                frames[stage] = rim(trim(im))
             frames['mature_hover'] = outline(outline(frames['mature'], GLOW), GLOW)
             sprites.update({f'{key}_{k}': even(v) for k, v in anchored(frames).items()})
     return sprites

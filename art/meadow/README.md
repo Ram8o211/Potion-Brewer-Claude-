@@ -43,7 +43,7 @@ The pack names the plants as they appear in one save (`Ember Heartpetal`,
 `Witch Sunthistle`, …): the first word is generated per world, so the game
 binds the art to the ingredient's key (`materials/wild.js`).
 
-| Ingredient (key) | In the scene | Out of its hour | Depleted | Icons (32 px shelf / book, 48 px card) |
+| Ingredient (key) | In the scene | Out of its hour | Depleted | Icon (32 px: shelf, shop, book, deposit card) |
 | --- | --- | --- | --- | --- |
 | Heartpetal (`heartpetal`) | `Ember_Heartpetal_mature_cluster` | — | `Ember_Heartpetal_harvested_remnant` | `Ember_Heartpetal_flower_icon` |
 | Sunthistle (`sunthistle`) | `Witch_Sunthistle_mature_cluster` | — | `Witch_Sunthistle_harvested_remnant` | `Witch_Sunthistle_flower_icon` |

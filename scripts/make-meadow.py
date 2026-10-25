@@ -18,9 +18,9 @@ layers read as one picture; gatherables keep their own accent colours too.
   harvested remnant as its depleted frame, all on one bottom-centre anchor;
   the dawn / dusk plants also have their closed frames (Dreamclover's buds,
   Hemlock's shut seed pods) shown out of their hour
-- icons: each ingredient's single flower (or seed head) at 32 px for the
-  shelf and the book, and at 48 px for its deposit card (both shown at
-  about that many CSS pixels, so their detail is not crowded)
+- icons: each ingredient's single flower (or seed head) at 32 px, the one
+  picture of it in every list (the shelf, the shop, the book and its
+  deposit card)
 
 Writes assets/meadow/atlas.png and src/rendering/meadow-atlas.js (the frame
 rectangles). `--preview out.png` also writes an enlarged sheet.
@@ -92,13 +92,12 @@ def gatherable(key, rel, h, depleted, closed=None, icon=None, tint=None):
         frames['closed'], frames['closed_hover'] = c, outline(c, GLOW)
     out = {f'{key}_{k}': v for k, v in anchored(frames).items()}
     src = load(icon)
-    for size, name in ((32, 'icon'), (48, 'card')):
-        im = fit(src, h=size - 2, colours=32)
-        if im.width > size - 2:
-            im = fit(src, w=size - 2, colours=32)
-        im = ww.recolour(im, tint) if tint else im
-        # (UI pictures keep the icon's own colours: a small flower has no pixel to spare for its heart)
-        out[f'{key}_{name}'] = outline(despeckle(im), INK)
+    im = fit(src, h=30, colours=32)
+    if im.width > 30:
+        im = fit(src, w=30, colours=32)
+    im = ww.recolour(im, tint) if tint else im
+    # (UI pictures keep the icon's own colours: a small flower has no pixel to spare for its heart)
+    out[f'{key}_icon'] = outline(despeckle(im), INK)
     return out
 
 
