@@ -10,7 +10,7 @@ import { tapSelection, measureParticles } from '../src/game/measure.js';
 import { theoryOf, EFFECT_INDEX, NE } from '../src/alchemy/effects.js';
 import { SUBJECTS, SUBJECT_BY_ID, certification, missingEffects, suggestSubjects } from '../src/game/experiments.js';
 import { rabbitResponse, findRabbit } from '../src/game/colony.js';
-import { depositStatus, generateDeposits, SCAR_SLOWDOWN } from '../src/game/gathering.js';
+import { depositStatus, generateDeposits } from '../src/game/gathering.js';
 import { PHASE } from '../src/simulation/constants.js';
 
 const V = EFFECT_INDEX;
@@ -118,39 +118,38 @@ test('lethal doses kill a rabbit; a dead one cannot be dosed and a new one costs
   assert.equal(st.subjectAvailable('wisp'), false, 'the old subjects are gone');
 });
 
-test('the wilds: deterministic deposits, finite stock, timestamp regrowth, rank locks and storage limits', () => {
+test('the wilds: deterministic deposits, plants that mature with time, rank locks and storage limits', () => {
   const st = GameState.create('wild-seed-1', { tutorial: false });
   const again = generateDeposits(st.world, st.lookup);
   assert.equal(JSON.stringify(again), JSON.stringify(st.deposits), 'deterministic layout');
   const regions = new Set(st.deposits.map((d) => d.region));
   assert.ok(regions.size >= 6, 'six regions');
   const d = st.deposits.find((x) => x.rank === 0 && !x.rare);
-  const t0 = 1_000_000_000_000;
+  const t0 = Date.now() + 60 * 60000;
   const inv0 = st.stock(d.materialId);
   let got = 0, n = 0;
-  // careful harvests stop at the reserve; a thorough one strips the rest
-  while (n++ < 100) { const r = st.gather(d.id, { now: t0 }); if (!r.ok) { assert.equal(r.reason, 'reserve'); break; } got += r.amount; }
-  while (n++ < 200) { const r = st.gather(d.id, { now: t0, thorough: true }); if (!r.ok) break; got += r.amount; }
+  // careful or thorough, each harvest takes one mature plant until none is left
+  while (n++ < 100) { const r = st.gather(d.id, { now: t0 }); if (!r.ok) { assert.equal(r.reason, 'depleted'); break; } got += r.amount; }
   assert.ok(got > 0 && got <= d.capacity, `gathered ${got} of ${d.capacity}`);
   assert.equal(st.stock(d.materialId), inv0 + got, 'everything gathered is in the inventory');
-  assert.equal(st.gather(d.id, { now: t0, thorough: true }).reason, 'depleted');
-  // a stripped deposit is scarred and regrows at a slower pace
-  const half = depositStatus(st.gathering, d, t0 + d.regrowMs / 2);
-  assert.ok(Math.abs(half.stock - d.capacity / 2 / SCAR_SLOWDOWN) < 2, 'regrows with elapsed time');
-  assert.ok(depositStatus(st.gathering, d, t0 + d.regrowMs * SCAR_SLOWDOWN * 2).stock === d.capacity, 'never above capacity');
+  // the stand grows back with elapsed time, and never past its slots
+  const s = depositStatus(st.gathering, d, t0);
+  assert.equal(depositStatus(st.gathering, d, t0 + s.fullIn).mature, d.slots, 'grows back with elapsed time');
+  assert.equal(depositStatus(st.gathering, d, t0 + s.fullIn * 5).plants.length, d.slots, 'never above its slots');
   const locked = st.deposits.find((x) => x.rank > 0);
   assert.equal(st.gather(locked.id, { now: t0 }).reason, 'locked');
   // shelves cap what can be carried home
   st.inventory[d.materialId] = st.cap.storage;
   assert.equal(st.gather(d.id, { now: t0 + d.regrowMs * 3 }).reason, 'full');
-  // persistence of deposit state
+  // persistence of the plants
   const back = GameState.fromJSON(JSON.parse(JSON.stringify(st.toJSON())));
   assert.equal(JSON.stringify(back.gathering.nodes), JSON.stringify(st.gathering.nodes));
-  // a new day regrows half of each deposit
+  // a new day brings every plant on and fills half of the empty slots
   st.inventory[d.materialId] = 0;
-  st.gathering.nodes[d.id] = { stock: 0, at: Date.now() };
+  const now = Date.now();
+  st.gathering.nodes[d.id] = { plants: [], due: now + d.spawnMs, seq: 10 };
   st.endDay();
-  assert.ok(depositStatus(st.gathering, d).stock >= d.capacity * 0.5 - 1);
+  assert.ok(depositStatus(st.gathering, d).plants.length >= d.slots / 2);
 });
 
 test('a genuine v2 save migrates: progress kept, effects and wilds added, aspect order rescaled and needing a trial', () => {

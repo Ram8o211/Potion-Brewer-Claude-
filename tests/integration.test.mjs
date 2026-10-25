@@ -78,9 +78,9 @@ test('stripped wilds and an empty purse never stall the day: easier orders, then
   const st = GameState.create('stall', { tutorial: false });
   st.coins = 0;
   for (const id of Object.keys(st.inventory)) if (isFinite(st.inventory[id])) st.inventory[id] = 0;
-  // strip every deposit bare, now
+  // strip every stand bare, now
   const now = Date.now();
-  for (const d of st.deposits) st.gathering.nodes[d.id] = { stock: 0, at: now, scar: true };
+  for (const d of st.deposits) st.gathering.nodes[d.id] = { plants: [], due: now + d.spawnMs, seq: d.slots, scar: true };
   let served = 0;
   for (let guard = 0; guard < 20 && !st.dayOver; guard++) {
     const com = st.nextCustomer();

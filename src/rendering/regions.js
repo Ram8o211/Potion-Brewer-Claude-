@@ -4,8 +4,8 @@
 // berries, bluebells, daisies and toadstools, a flowered meadow, a
 // willow river, terraced quarry faces with cranes and a lantern, a moonlit
 // bog of willows, crystals and wisps, smoking volcanic crags) and a ground
-// the deposits sit on (they are placed between 0.5 and 0.88 of the height;
-// in a sprite scene layoutDeposits moves each onto open ground, clear of the
+// the plants grow on (they sprout between 0.56 and 0.9 of the height; in
+// a sprite scene PlantGround moves each onto open ground, clear of the
 // scenery). Painted once per region into a cached canvas; animateRegion adds
 // the moving parts each frame (wisps, birds, embers, the crags' smoke). Deterministic: every random choice comes from
 // an Rng seeded by the world seed and the region. Each region swaps its
@@ -432,82 +432,120 @@ export function lavaStream(seed) {
 /** Where a frame lands when drawn with its bottom centre at (x, y) (as SpriteAtlas.draw places it). @param {number[]} f @param {number} x @param {number} y */
 const frameAt = (f, x, y) => [Math.round(x - f[2] / 2), Math.round(y - f[3])];
 
+/** Mark a mask's pixels (grown by `grow`) in a scene grid. @param {Uint8Array} grid @param {ArrayLike<number>} m @param {number} w @param {number} h @param {number} left @param {number} top @param {boolean} flip @param {number} grow */
+function stamp(grid, m, w, h, left, top, flip, grow) {
+  const W = SCENE_W, H = SCENE_H;
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+    if (!m[j * w + (flip ? w - 1 - i : i)]) continue;
+    for (let y = Math.max(0, top + j - grow); y <= Math.min(H - 1, top + j + grow); y++)
+      for (let x = Math.max(0, left + i - grow); x <= Math.min(W - 1, left + i + grow); x++) grid[y * W + x] = 1;
+  }
+}
+
 /**
- * Where each deposit stands in a region's sprite scene: as near its spot as
- * can be found where it rises out of open ground — its foot and shadow on
- * the ground, below the far bands and never in water, a pool or the lava —
- * and none of its pixels (in any of its states) touches a tree, crag, fence
- * or other upright piece of scenery or another deposit. The props are
- * placed afterwards, clear of the deposits. Until the region's sheet can be
- * read (and for deposits without sprite art) a deposit keeps its spot.
- * @param {string} region @param {string} seed @param {{id:string, x:number, y:number}[]} deps
- * @param {(d:any)=>string|null} keyOf the deposit's sprite key, or null
- * @returns {Record<string, {x:number, y:number}>} each deposit's spot, as fractions of the scene
+ * The ground of a region's sprite scene: what nothing growing may touch
+ * (its trees, crags, fence and other upright scenery) and where nothing may
+ * stand (water, a pool, the lava), or null until the region's sheet can be read.
+ * @param {string} region @param {string} seed
  */
-export function layoutDeposits(region, seed, deps, keyOf) {
+function groundGrids(region, seed) {
   const W = SCENE_W, H = SCENE_H, A = REGION_ATLAS[region];
-  /** @type {Record<string, {x:number, y:number}>} */
-  const out = {};
-  for (const d of deps) out[d.id] = { x: d.x, y: d.y };
-  if (!A || !A.ready || !SPRITE_PAINTERS[region]) return out;
-  // what a deposit may not touch (upright scenery, then each deposit placed) and where none may stand
+  if (!A || !A.ready || !SPRITE_PAINTERS[region]) return null;
   const solid = new Uint8Array(W * H), wet = new Uint8Array(W * H);
-  /** @param {Uint8Array} grid @param {Uint8Array} m @param {number} w @param {number} h @param {number} left @param {number} top @param {boolean} flip @param {number} grow */
-  const stamp = (grid, m, w, h, left, top, flip, grow) => {
-    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
-      if (!m[j * w + (flip ? w - 1 - i : i)]) continue;
-      for (let y = Math.max(0, top + j - grow); y <= Math.min(H - 1, top + j + grow); y++)
-        for (let x = Math.max(0, left + i - grow); x <= Math.min(W - 1, left + i + grow); x++) grid[y * W + x] = 1;
-    }
-  };
   for (const [name, x, y, flip, flat] of fixedOf(region)) {
     const f = A.frame(name), m = A.mask(name);
-    if (!f || !m) return out;
+    if (!f || !m) return null;
     const [left, top] = frameAt(f, x, y);
     stamp(flat ? wet : solid, m, f[2], f[3], left, top, !!flip, flat ? 2 : 1);
   }
   for (const [x0, y0, w, h] of WET[region] || []) for (let y = y0; y < Math.min(H, y0 + h); y++) wet.fill(1, y * W + x0, y * W + Math.min(W, x0 + w));
   if (region === 'crags') for (const [y, x, w] of lavaStream(seed)) for (let xx = Math.round(x - w / 2) - 2; xx <= Math.round(x + w / 2) + 2; xx++) if (xx >= 0 && xx < W) wet[y * W + xx] = 1;
-  const top0 = GROUND_TOP[region] || 80, bottom = H - 3;
-  for (const d of deps) {
-    const key = keyOf(d), g = key ? GATHERABLES[key] : null;
-    const f = g ? g.atlas.frame(g.idle) : null;
-    if (!g || !f) continue;
-    const w = f[2], h = f[3];
-    // every state of a gatherable shares its canvas: keep clear with all of them
-    const m = new Uint8Array(w * h);
-    for (const name of [g.idle, g.hover, g.depleted, g.harvesting, g.closed, g.closedHover]) {
-      const mm = name ? g.atlas.mask(name) : null;
-      if (mm && mm.length === m.length) for (let k = 0; k < m.length; k++) m[k] |= mm[k];
-    }
-    const sw = Math.max(6, Math.round(w * 0.6));
-    /** @param {number} ax @param {number} ay */
-    const fits = (ax, ay) => {
-      const [left, top] = frameAt(f, ax, ay);
-      if (ay < top0 || ay > bottom || left < 1 || left + w > W - 1 || top < 1) return false;
-      // the foot and its shadow on dry ground, its lower third clear of the water
-      for (let y = ay - 2; y <= ay; y++) for (let x = left; x < left + w; x++) if (wet[y * W + x]) return false;
-      for (let x = ax - Math.floor(sw / 2); x < ax - Math.floor(sw / 2) + sw; x++) if (solid[ay * W + x]) return false;
-      for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
-        if (!m[j * w + i]) continue;
-        const k = (top + j) * W + left + i;
-        if (solid[k] || (j >= h * 2 / 3 && wet[k])) return false;
-      }
-      return true;
-    };
-    const ox = Math.round(d.x * W), oy = Math.round(d.y * H);
-    /** @type {[number, number, number][]} */
-    const tries = [[0, ox, oy]];
-    for (let y = top0; y <= bottom; y++) for (let x = (y + ox) & 1; x < W; x += 2) tries.push([(x - ox) ** 2 + ((y - oy) * 1.6) ** 2, x, y]);
-    tries.sort((a, b) => a[0] - b[0]);
-    const spot = tries.find(([, x, y]) => fits(x, y));
-    if (!spot) continue;
-    const [, x, y] = spot, [left, top] = frameAt(f, x, y);
-    // neighbours keep a gap of two pixels
-    stamp(solid, m, w, h, left, top, false, 2);
-    out[d.id] = { x: x / W, y: y / H };
+  return { solid, wet, top: GROUND_TOP[region] || 80, bottom: H - 3 };
+}
+
+/** A prop this large (in art pixels) is kept clear by the plants; smaller ground cover is grown over. */
+const BIG_PROP = 150;
+
+/**
+ * Where the plants of a region's sprite scene stand. A plant keeps its spot
+ * once it has one, so it grows in place; a new sprout takes the open ground
+ * nearest the random spot it came up at, where it rises out of the ground —
+ * its foot and shadow on dry ground, below the far bands — and where, grown
+ * to its full size, none of its pixels touches the upright scenery, a large
+ * prop or another plant. Until the region's sheet can be read (and for a
+ * plant without growth art) a plant keeps the spot it came up at.
+ */
+export class PlantGround {
+  /**
+   * @param {string} region @param {string} seed
+   * @param {{x0:number, y0:number, x1:number, y1:number}[]} [props] the boxes of the props painted into the scene
+   */
+  constructor(region, seed, props = []) {
+    this.region = region;
+    this.seed = seed;
+    this.props = props.filter((b) => (b.x1 - b.x0) * (b.y1 - b.y0) >= BIG_PROP);
+    /** @type {ReturnType<typeof groundGrids>} */
+    this.grids = null;
+    /** plant id → its spot in art pixels and the mask it was placed with @type {Map<string, {x:number, y:number, w:number, h:number, m:Uint8Array}>} */
+    this.spots = new Map();
   }
-  return out;
+
+  /**
+   * Each plant's spot, as fractions of the scene.
+   * @param {{id:string, x:number, y:number}[]} plants oldest first
+   * @param {(p:any)=>{w:number, h:number, m:Uint8Array}|null} shapeOf the plant's full-grown silhouette (every frame of it), or null
+   * @returns {Record<string, {x:number, y:number}>}
+   */
+  place(plants, shapeOf) {
+    const W = SCENE_W, H = SCENE_H;
+    /** @type {Record<string, {x:number, y:number}>} */
+    const out = {};
+    for (const p of plants) out[p.id] = { x: p.x, y: p.y };
+    if (!this.grids) this.grids = groundGrids(this.region, this.seed);
+    const G = this.grids;
+    if (!G) return out;
+    const here = new Set(plants.map((p) => p.id));
+    for (const id of [...this.spots.keys()]) if (!here.has(id)) this.spots.delete(id);
+    const fresh = plants.filter((p) => !this.spots.has(p.id) && shapeOf(p));
+    if (fresh.length) {
+      // the scenery and the plants; then the same with the large props
+      const bare = G.solid.slice();
+      for (const s of this.spots.values()) { const [left, top] = frameAt([0, 0, s.w, s.h], s.x, s.y); stamp(bare, s.m, s.w, s.h, left, top, false, 1); }
+      const full = bare.slice();
+      for (const b of this.props) for (let y = Math.max(0, Math.floor(b.y0)); y < Math.min(H, Math.ceil(b.y1)); y++) full.fill(1, y * W + Math.max(0, Math.floor(b.x0)), y * W + Math.min(W, Math.ceil(b.x1)));
+      for (const p of fresh) {
+        const { w, h, m } = /** @type {{w:number, h:number, m:Uint8Array}} */ (shapeOf(p));
+        const f = [0, 0, w, h], sw = Math.max(4, Math.round(w * 0.5));
+        /** @param {Uint8Array} solid @param {number} ax @param {number} ay */
+        const fits = (solid, ax, ay) => {
+          const [left, top] = frameAt(f, ax, ay);
+          if (ay < G.top || ay > G.bottom || left < 1 || left + w > W - 1 || top < 1) return false;
+          for (let y = ay - 2; y <= ay; y++) for (let x = left; x < left + w; x++) if (G.wet[y * W + x]) return false;
+          for (let x = ax - Math.floor(sw / 2); x < ax - Math.floor(sw / 2) + sw; x++) if (solid[ay * W + x]) return false;
+          for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+            if (!m[j * w + i]) continue;
+            const k = (top + j) * W + left + i;
+            if (solid[k] || (j >= h * 2 / 3 && G.wet[k])) return false;
+          }
+          return true;
+        };
+        const ox = Math.round(p.x * W), oy = Math.round(p.y * H);
+        /** @type {[number, number, number][]} */
+        const tries = [[0, ox, oy]];
+        for (let y = G.top; y <= G.bottom; y++) for (let x = (y + ox) & 1; x < W; x += 2) tries.push([(x - ox) ** 2 + ((y - oy) * 1.6) ** 2, x, y]);
+        tries.sort((a, b) => a[0] - b[0]);
+        // no open ground left: it grows over a large prop, else where it came up
+        const spot = tries.find(([, x, y]) => fits(full, x, y)) || tries.find(([, x, y]) => fits(bare, x, y));
+        const [, x, y] = spot || [0, ox, oy];
+        const [left, top] = frameAt(f, x, y);
+        stamp(full, m, w, h, left, top, false, 1);
+        stamp(bare, m, w, h, left, top, false, 1);
+        this.spots.set(p.id, { x, y, w, h, m });
+      }
+    }
+    for (const [id, s] of this.spots) out[id] = { x: s.x / W, y: s.y / H };
+    return out;
+  }
 }
 
 /**
@@ -518,8 +556,8 @@ export function layoutDeposits(region, seed, deps, keyOf) {
  * @param {CanvasRenderingContext2D} ctx @param {Rng} rng @param {import('./wild-sprites.js').SpriteAtlas} atlas @param {{x0:number, y0:number, x1:number, y1:number}[]} avoid
  */
 function placer(ctx, rng, atlas, avoid) {
-  /** what is already standing on the ground: the deposits, then each prop placed */
-  const taken = avoid.slice();
+  /** what is already standing on the ground: what to avoid, then each prop placed (the caller's list grows with them) */
+  const taken = avoid;
   const free = (x0, y0, x1, y1) => taken.every((b) => x1 < b.x0 || x0 > b.x1 || y1 < b.y0 || y0 > b.y1);
   /** A few random spots in a band of the ground. @returns {[number, number][]} */
   const spots = (x0, x1, y0, y1, n = 5) => Array.from({ length: n }, () => [rng.int(x0, x1), rng.int(y0, y1)]);
@@ -988,7 +1026,8 @@ const SPRITE_PAINTERS = { forest: forestSprites, meadow: meadowSprites, river: r
 /**
  * Paint a region's static panorama into a 256×144 context. Each region is
  * composed from its sprite atlas once that has loaded (procedural until
- * then); `avoid` lists the deposits' boxes, which its props keep clear of.
+ * then); its props keep clear of the boxes in `avoid`, and each prop placed
+ * is added to it (so the plants can keep clear of the props in turn).
  * @param {CanvasRenderingContext2D} ctx @param {string} region @param {string} seed @param {{x0:number, y0:number, x1:number, y1:number}[]} [avoid]
  */
 export function paintRegion(ctx, region, seed, avoid = []) {

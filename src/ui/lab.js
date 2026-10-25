@@ -4,7 +4,7 @@
 // desktop) around five rooms:
 //   Counter  the customer, the full order, the sealed vial and serving
 //   Brew     the cauldron: the live simulation, tools, fire, shelf
-//   Wilds    gathering raw ingredients from finite, regrowing deposits
+//   Wilds    gathering raw ingredients from plants that grow, mature and sprout again
 //   Trials   giving measured doses to test subjects to learn effects
 //   Book     recipes, trial log, laws, journal, ingredients, awards
 // The cauldron simulation keeps running whichever room is open (a fire left

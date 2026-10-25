@@ -4443,80 +4443,115 @@ const REGIONS = [
 ];
 const REGION_BY_ID = Object.fromEntries(REGIONS.map((r) => [r.id, r]));
 const PLACES = {
-forest: ['by the old oak', 'in the fern hollow', 'under the beeches', 'at the mossy stump', 'by the woodcutter’s path', 'in the deep shade'],
+forest: ['by the old oak', 'in the fern hollow', 'under the beeches', 'at the mossy stump', 'by the woodcutter’s path', 'in the deep shade', 'along the brook'],
 meadow: ['by the stile', 'on the sunny slope', 'near the beehives', 'along the hedgerow', 'in the long grass', 'by the well'],
 river: ['under the willow', 'on the chalk bank', 'by the ford', 'in the reeds', 'at the mill race', 'on the gravel bar'],
-quarry: ['on the east face', 'in the spoil heap', 'by the cart track', 'in the old cutting', 'under the crane', 'at the seam'],
-moonfen: ['on the barrow', 'by the will-o’-pool', 'in the drowned grove', 'on the stepping stones'],
+quarry: ['on the east face', 'in the spoil heap', 'by the cart track', 'in the old cutting', 'under the crane', 'at the seam', 'by the powder store'],
+moonfen: ['on the barrow', 'by the will-o’-pool', 'in the drowned grove', 'on the stepping stones', 'by the sunken cross', 'in the reed beds'],
 crags: ['on the ash slope', 'by the steam vent', 'in the lava cave', 'on the black ridge'],
 };
+const STAGES = /** @type {const} */ (['sprout', 'ripe', 'mature']);
+const SPROUT_SHARE = 0.4;
+const MARK_MS = 4 * 60000;
 function generateDeposits(world, lookup) {
 const rng = new Rng('deposits:' + world.seed);
 const out = [];
 for (const region of REGIONS) {
 const mats = (world.wild || []).map(lookup).filter((m) => m && m.wild && m.wild.region === region.id);
-const placed = [];
-for (const m of mats) {
-const copies = m.wild.rare || mats.length > 5 ? 1 : 2;
-for (let c = 0; c < copies; c++) {
-let x = 0.5, y = 0.7;
-for (let tries = 0; tries < 40; tries++) {
-x = rng.range(0.1, 0.9);
-y = rng.range(0.5, 0.88);
-if (placed.every(([px, py]) => Math.hypot((px - x) * 1.6, py - y) > 0.17)) break;
-}
-placed.push([x, y]);
+mats.forEach((m, k) => {
 const rare = !!m.wild.rare;
+const slots = rare ? 1 + (mats.length <= 5 ? 1 : 0) : mats.length > 5 ? 2 : 3;
+const take = rare ? rng.int(3, 4) * 10 : rng.int(5, 8) * 10;
+const growMs = Math.round((rare ? rng.range(18, 30) : rng.range(4, 8)) * 60000);
+const spawnMs = Math.round((rare ? rng.range(15, 25) : rng.range(3, 5)) * 60000);
 out.push({
-id: `${region.id}:${m.wild.key}:${c}`,
-place: PLACES[region.id][(placed.length - 1) % PLACES[region.id].length],
+id: `${region.id}:${m.wild.key}:0`,
+place: PLACES[region.id][k % PLACES[region.id].length],
 region: region.id,
 materialId: m.id,
-x: Math.round(x * 1000) / 1000,
-y: Math.round(y * 1000) / 1000,
-capacity: rare ? rng.int(4, 6) * 20 : rng.int(10, 16) * 20,
-regrowMs: Math.round((rare ? rng.range(45, 80) : rng.range(10, 20)) * 60000),
-take: rare ? 20 : 40,
+x: Math.round(rng.range(0.1, 0.9) * 1000) / 1000,
+y: Math.round(rng.range(0.56, 0.88) * 1000) / 1000,
+slots,
+capacity: slots * take,
+growMs,
+spawnMs,
+regrowMs: spawnMs * (slots - 1) + growMs,
+take,
 rank: Math.max(region.rank, m.wild.rank || 0),
 rare,
 });
-}
-}
+});
 }
 return out;
 }
 function createGathering(now = Date.now()) {
-return { nodes: /** @type {Record<string, {stock:number, at:number, scar?:boolean}>} */ ({}), total: 0, trips: 0, created: now };
+return { nodes: /** @type {Record<string, Stand>} */ ({}), marks: /** @type {Mark[]} */ ([]), total: 0, trips: 0, created: now };
 }
+const finite = (/** @type {any} */ v) => typeof v === 'number' && Number.isFinite(v);
 function normalizeGathering(g, now = Date.now()) {
 const out = createGathering(now);
 if (!g || typeof g !== 'object') return out;
+if (finite(g.created)) out.created = Math.min(g.created, now);
 if (g.nodes && typeof g.nodes === 'object') {
 for (const [id, v] of Object.entries(g.nodes)) {
-if (!v || typeof v !== 'object') continue;
-const stock = Number(v.stock), at = Number(v.at);
-if (Number.isFinite(stock) && Number.isFinite(at)) out.nodes[id] = { stock: Math.max(0, stock), at: Math.min(at, now), ...(/** @type {any} */ (v).scar ? { scar: true } : {}) };
+if (!v || typeof v !== 'object' || !Array.isArray(v.plants)) continue;
+const plants = v.plants.filter((p) => p && typeof p.id === 'string' && finite(p.x) && finite(p.y) && finite(p.born))
+.map((p) => ({ id: p.id, x: Math.min(1, Math.max(0, p.x)), y: Math.min(1, Math.max(0, p.y)), born: Math.min(p.born, now) }));
+out.nodes[id] = { plants, due: finite(v.due) ? v.due : null, seq: finite(v.seq) ? v.seq : plants.length, ...(v.scar ? { scar: true } : {}) };
 }
+}
+if (Array.isArray(g.marks)) {
+out.marks = g.marks.filter((k) => k && typeof k.region === 'string' && typeof k.key === 'string' && finite(k.x) && finite(k.y) && finite(k.at) && now - k.at < MARK_MS * 2)
+.map((k) => ({ region: k.region, key: k.key, x: k.x, y: k.y, at: Math.min(k.at, now), ...(k.deep ? { deep: true } : {}) }));
 }
 out.total = Number.isFinite(g.total) ? g.total : 0;
 out.trips = Number.isFinite(g.trips) ? g.trips : 0;
 return out;
 }
-function depositStatus(g, d, now = Date.now()) {
-const saved = g.nodes[d.id];
-let stock = d.capacity;
-const scarred = !!(saved && saved.scar);
-const regrow = d.regrowMs * (scarred ? SCAR_SLOWDOWN : 1);
-if (saved) {
-const dt = Math.max(0, now - saved.at);
-stock = Math.min(d.capacity, saved.stock + (dt / regrow) * d.capacity);
+function sprout(g, d, seq, born) {
+const rng = new Rng(hashString(`sprout:${g.created}:${d.id}:${seq}`));
+return { id: `${d.id}#${seq}`, x: Math.round(rng.range(0.06, 0.94) * 1000) / 1000, y: Math.round(rng.range(0.56, 0.9) * 1000) / 1000, born: Math.round(born) };
 }
-const available = Math.floor(stock + 1e-6);
-const fullIn = stock >= d.capacity ? 0 : ((d.capacity - stock) / d.capacity) * regrow;
-const nextIn = available >= Math.min(d.take, d.capacity) ? 0 : ((Math.min(d.take, d.capacity) - stock) / d.capacity) * regrow;
-return { stock, available, fraction: stock / d.capacity, fullIn, nextIn, scarred: scarred && stock < d.capacity };
+function untouched(g, d, now) {
+const t0 = Math.min(g.created, now), rng = new Rng(hashString(`stand:${g.created}:${d.id}`));
+const plants = [];
+for (let k = 0; k < d.slots; k++) plants.push(sprout(g, d, k, t0 - d.growMs * (k === 0 ? 1.2 : rng.range(0.1, 1.6))));
+return { plants, due: null, seq: d.slots };
+}
+const every = (d, s) => d.spawnMs * (s.scar ? SCAR_SLOWDOWN : 1);
+function standOf(g, d, now = Date.now()) {
+const saved = g.nodes[d.id] || untouched(g, d, now);
+const s = { plants: saved.plants.slice(), due: saved.due, seq: saved.seq, ...(saved.scar ? { scar: true } : {}) };
+while (s.due !== null && s.due <= now && s.plants.length < d.slots) {
+s.plants.push(sprout(g, d, s.seq++, s.due));
+s.due += every(d, s);
+}
+if (s.plants.length >= d.slots) { s.due = null; delete s.scar; }
+return s;
+}
+function plantStage(d, p, now = Date.now()) {
+const grown = Math.max(0, Math.min(1, (now - p.born) / d.growMs));
+return { stage: grown >= 1 ? 'mature' : grown >= SPROUT_SHARE ? 'ripe' : 'sprout', grown, matureIn: Math.max(0, p.born + d.growMs - now) };
+}
+function depositStatus(g, d, now = Date.now()) {
+const s = standOf(g, d, now);
+const plants = s.plants.map((p) => ({ ...p, ...plantStage(d, p, now) }));
+const mature = plants.filter((p) => p.stage === 'mature').length;
+const missing = d.slots - plants.length;
+const lastSprout = missing > 0 && s.due !== null ? s.due + (missing - 1) * every(d, s) : now;
+const fullAt = Math.max(now, lastSprout + (missing > 0 ? d.growMs : 0), ...plants.map((p) => p.born + d.growMs));
+const nextAt = mature ? now : Math.min(...plants.map((p) => p.born + d.growMs), s.due !== null ? s.due + d.growMs : Infinity);
+const stock = mature * d.take;
+return {
+plants, mature, stock, available: stock,
+fraction: plants.reduce((a, p) => a + p.grown, 0) / d.slots,
+fullIn: fullAt - now, nextIn: Math.max(0, nextAt - now), scarred: !!s.scar,
+};
 }
 const SCAR_SLOWDOWN = 2;
+function marksIn(g, region, now = Date.now()) {
+return g.marks.filter((k) => k.region === region).map((k) => ({ ...k, faded: (now - k.at) / (MARK_MS * (k.deep ? 2 : 1)) })).filter((k) => k.faded < 1);
+}
 const METHODS = {
 pick: { verb: 'Pick', tool: null, sound: 'snip', icon: 'rose', hand: '' },
 dig: { verb: 'Dig up', tool: 'kit', sound: 'dig', icon: 'trowel', hand: 'by hand, half as much — the Forager’s Kit’s trowel digs it out whole' },
@@ -4570,51 +4605,63 @@ if (weather.id === 'frost' && (shape === 'cap' || shape === 'toadstool' || shape
 if (weather.id === 'heat' && (FLOWER_SHAPES.has(shape))) factors.push({ why: 'lush in the heat', f: 1.25 });
 if (weather.id === 'heat' && shape === 'moss') factors.push({ why: 'dried out in the heat', f: 0.5 });
 if (weather.id === 'storm') factors.push({ why: 'wind scatters it', f: 0.75 });
-if (opts.thorough) factors.push({ why: 'thorough: the deposit will regrow slowly', f: 2 });
+if (opts.thorough) factors.push({ why: 'thorough: the stand will sprout slowly', f: 2 });
 const f = factors.reduce((a, x) => a * x.f, 1);
 const take = Math.max(5, Math.floor((d.take * f) / 5) * 5);
 const eff = factors.filter((x) => x.why !== 'satchel' && !x.why.startsWith('thorough')).reduce((a, x) => a * x.f, 1);
-const reserve = opts.thorough ? 0 : Math.round(d.capacity * CAREFUL_RESERVE);
-return { method, hasTool, part, weather, hour, open, factors, take, eff, reserve, thorough: !!opts.thorough };
+return { method, hasTool, part, weather, hour, open, factors, take, eff, thorough: !!opts.thorough };
 }
-const CAREFUL_RESERVE = 0.3;
 function harvestable(g, d, plan, now = Date.now()) {
-const s = depositStatus(g, d, now);
-return Math.floor(Math.min(plan.take, Math.max(0, s.stock - plan.reserve) * plan.eff) / 5) * 5;
+return depositStatus(g, d, now).mature ? plan.take : 0;
 }
-function weatherRegrowth(g, deposits, weather, lookup) {
+function ripen(g, d, now) {
+const s = standOf(g, d, now);
+const born = now - d.growMs;
+s.plants = s.plants.map((p) => ({ ...p, born: Math.min(p.born, born) }));
+while (s.plants.length < d.slots) s.plants.push(sprout(g, d, s.seq++, born));
+g.nodes[d.id] = { plants: s.plants, due: null, seq: s.seq };
+}
+function weatherRegrowth(g, deposits, weather, lookup, now = Date.now()) {
 for (const d of deposits) {
 const m = lookup(d.materialId);
 const shape = m && m.wild ? m.wild.shape : '';
-if ((weather.id === 'rain' && PLANT_SHAPES.has(shape)) || (weather.id === 'storm' && (shape === 'crystal' || shape === 'shard'))) delete g.nodes[d.id];
+if ((weather.id === 'rain' && PLANT_SHAPES.has(shape)) || (weather.id === 'storm' && (shape === 'crystal' || shape === 'shard'))) ripen(g, d, now);
 }
 }
 function harvest(st, d, opts = {}) {
 const now = opts.now ?? Date.now();
 if (d.rank > st.rank && !opts.unlimited) return { ok: false, amount: 0, reason: 'locked' };
+if (opts.unlimited) return { ok: true, amount: d.take, remaining: d.capacity };
 const g = st.gathering;
-const s = depositStatus(g, d, now);
+const s = standOf(g, d, now);
 const have = st.inventory[d.materialId] ?? 0;
 const room = isFinite(have) ? Math.max(0, st.cap.storage - have) : 0;
-if (opts.unlimited) return { ok: true, amount: d.take, remaining: d.capacity };
-const eff = opts.eff > 0 ? opts.eff : 1, reserve = Math.max(0, opts.reserve || 0);
-const amount = Math.floor(Math.min(d.take, Math.max(0, s.stock - reserve) * eff, room) / 5) * 5;
-if (amount <= 0) return { ok: false, amount: 0, reason: room <= 0 ? 'full' : reserve > 0 && Math.min(d.take, s.stock * eff) >= 5 ? 'reserve' : 'depleted', nextIn: s.nextIn };
-const drawn = Math.min(s.stock, amount / eff);
-const scar = opts.thorough || (s.scarred && s.stock - drawn < d.capacity);
-g.nodes[d.id] = { stock: s.stock - drawn, at: now, ...(scar ? { scar: true } : {}) };
+const ripe = s.plants.filter((p) => plantStage(d, p, now).stage === 'mature').sort((a, b) => a.born - b.born);
+const p = opts.plant ? s.plants.find((q) => q.id === opts.plant) : ripe[0];
+if (!p || !ripe.includes(p)) {
+const status = depositStatus(g, d, now);
+return { ok: false, amount: 0, reason: p ? 'growing' : opts.plant ? 'gone' : 'depleted', nextIn: p ? plantStage(d, p, now).matureIn : status.nextIn };
+}
+const amount = Math.floor(Math.min(d.take, room) / 5) * 5;
+if (amount <= 0) return { ok: false, amount: 0, reason: 'full' };
+const plants = s.plants.filter((q) => q !== p);
+const scar = !!(opts.thorough || s.scar);
+g.nodes[d.id] = { plants, due: s.due ?? now + every(d, { scar }), seq: s.seq, ...(scar ? { scar: true } : {}) };
+g.marks = g.marks.filter((k) => now - k.at < MARK_MS * 2);
+g.marks.push({ region: d.region, key: opts.key || '', x: p.x, y: p.y, at: now, ...(opts.thorough ? { deep: true } : {}) });
 st.inventory[d.materialId] = have + amount;
 g.total += amount;
-return { ok: true, amount, remaining: Math.floor(s.stock - drawn) };
+return { ok: true, amount, plant: p.id, remaining: (ripe.length - 1) * d.take };
 }
 function newDayRegrowth(g, deposits, now = Date.now()) {
 for (const d of deposits) {
-const saved = g.nodes[d.id];
-if (!saved) continue;
-const s = depositStatus(g, d, now);
-const stock = Math.min(d.capacity, s.stock + d.capacity * (saved.scar ? 0.25 : 0.5));
-if (stock >= d.capacity - 1e-6) delete g.nodes[d.id];
-else g.nodes[d.id] = { stock, at: now, ...(saved.scar ? { scar: true } : {}) };
+if (!g.nodes[d.id]) continue;
+const s = standOf(g, d, now);
+const plants = s.plants.map((p) => ({ ...p, born: p.born - d.growMs / 2 }));
+const add = Math.ceil((d.slots - plants.length) * (s.scar ? 0.25 : 0.5));
+for (let k = 0; k < add; k++) plants.push(sprout(g, d, s.seq++, now));
+const full = plants.length >= d.slots;
+g.nodes[d.id] = { plants, due: full ? null : s.due, seq: s.seq, ...(s.scar && !full ? { scar: true } : {}) };
 }
 }
 function formatWait(ms) {
@@ -4624,7 +4671,7 @@ const m = Math.ceil(s / 60);
 if (m < 60) return `${m} min`;
 return `${Math.floor(m / 60)} h ${m % 60} min`;
 }
-return { REGIONS, REGION_BY_ID, generateDeposits, createGathering, normalizeGathering, depositStatus, SCAR_SLOWDOWN, METHODS, methodOf, dayPart, DAY_PART_NAME, DAY_PART_HINT, WEATHERS, weatherOn, gatherPlan, CAREFUL_RESERVE, harvestable, weatherRegrowth, harvest, newDayRegrowth, formatWait };
+return { REGIONS, REGION_BY_ID, STAGES, SPROUT_SHARE, MARK_MS, generateDeposits, createGathering, normalizeGathering, standOf, plantStage, depositStatus, SCAR_SLOWDOWN, marksIn, METHODS, methodOf, dayPart, DAY_PART_NAME, DAY_PART_HINT, WEATHERS, weatherOn, gatherPlan, harvestable, weatherRegrowth, harvest, newDayRegrowth, formatWait };
 })();
 // src/simulation/particles.js
 const __m31 = (() => {
@@ -8797,8 +8844,9 @@ return s;
 gather(depositId, opts = {}) {
 const d = this.deposits.find((x) => x.id === depositId);
 if (!d) return { ok: false, amount: 0, reason: 'unknown' };
-const { take, eff, reserve } = gatherPlan(this, d, this.lookup(d.materialId), { thorough: opts.thorough });
-const r = harvest(this, { ...d, take }, { ...opts, eff, reserve });
+const m = this.lookup(d.materialId);
+const { take } = gatherPlan(this, d, m, { thorough: opts.thorough });
+const r = harvest(this, { ...d, take }, { ...opts, key: m && m.wild ? m.wild.key : '' });
 if (r.ok && !opts.unlimited) {
 this.stats.gathered = (this.stats.gathered || 0) + r.amount;
 /** @type {any} */ (r).events = [...this.unlock('forage1')];
@@ -9134,8 +9182,7 @@ let wild = 0;
 for (const d of this.deposits) {
 if (d.materialId !== id || d.rank > this.rank) continue;
 const plan = gatherPlan(this, d, this.lookup(id));
-const s = depositStatus(this.gathering, d, now);
-wild += Math.floor((Math.max(0, s.stock - plan.reserve) * plan.eff) / 5) * 5;
+wild += depositStatus(this.gathering, d, now).mature * plan.take;
 }
 return stock + wild;
 }
@@ -11944,8 +11991,160 @@ treeline: [0, 196, 256, 30],
 };
 return { ATLAS_URL, ATLAS_SIZE, FRAMES };
 })();
-// src/rendering/scenes.js
+// src/rendering/growth-atlas.js
 const __m60 = (() => {
+const ATLAS_URL = 'assets/growth/atlas.png';
+const ATLAS_SIZE = [256, 294];
+const FRAMES = {
+ashbloom_mature: [108, 0, 25, 23],
+ashbloom_mature_hover: [134, 0, 25, 23],
+ashbloom_ripe: [160, 0, 25, 23],
+ashbloom_sprout: [186, 0, 25, 23],
+beebalm_mature: [78, 25, 20, 21],
+beebalm_mature_hover: [99, 25, 20, 21],
+beebalm_ripe: [120, 25, 20, 21],
+beebalm_sprout: [141, 25, 20, 21],
+bogbean_mature: [0, 131, 24, 18],
+bogbean_mature_hover: [25, 131, 24, 18],
+bogbean_ripe: [50, 131, 24, 18],
+bogbean_sprout: [75, 131, 24, 18],
+cinderscale_mature: [103, 48, 26, 20],
+cinderscale_mature_hover: [130, 48, 26, 20],
+cinderscale_ripe: [157, 48, 26, 20],
+cinderscale_sprout: [184, 48, 26, 20],
+cinnabar_mature: [196, 188, 26, 17],
+cinnabar_mature_hover: [223, 188, 26, 17],
+cinnabar_ripe: [0, 207, 26, 17],
+cinnabar_sprout: [27, 207, 26, 17],
+dragonpepper_mature: [162, 25, 26, 21],
+dragonpepper_mature_hover: [189, 25, 26, 21],
+dragonpepper_ripe: [216, 25, 26, 21],
+dragonpepper_sprout: [0, 48, 26, 21],
+dreamclover_mature: [220, 70, 20, 19],
+dreamclover_mature_hover: [0, 91, 20, 19],
+dreamclover_ripe: [21, 91, 20, 19],
+dreamclover_sprout: [42, 91, 20, 19],
+emberbark_mature: [54, 207, 25, 17],
+emberbark_mature_hover: [80, 207, 25, 17],
+emberbark_ripe: [106, 207, 25, 17],
+emberbark_sprout: [132, 207, 25, 17],
+emberflint_mature: [158, 207, 26, 17],
+emberflint_mature_hover: [185, 207, 26, 17],
+emberflint_ripe: [212, 207, 26, 17],
+emberflint_sprout: [0, 225, 26, 17],
+frostcap_mature: [100, 131, 24, 18],
+frostcap_mature_hover: [125, 131, 24, 18],
+frostcap_ripe: [150, 131, 24, 18],
+frostcap_sprout: [175, 131, 24, 18],
+gravemoss_mature: [188, 243, 24, 16],
+gravemoss_mature_hover: [213, 243, 24, 16],
+gravemoss_ripe: [0, 261, 24, 16],
+gravemoss_sprout: [25, 261, 24, 16],
+heartpetal_mature: [211, 48, 21, 20],
+heartpetal_mature_hover: [233, 48, 21, 20],
+heartpetal_ripe: [0, 70, 21, 20],
+heartpetal_sprout: [22, 70, 21, 20],
+hemlock_mature: [27, 48, 18, 21],
+hemlock_mature_hover: [46, 48, 18, 21],
+hemlock_ripe: [65, 48, 18, 21],
+hemlock_sprout: [84, 48, 18, 21],
+ironroot_mature: [200, 131, 26, 18],
+ironroot_mature_hover: [227, 131, 26, 18],
+ironroot_ripe: [0, 150, 26, 18],
+ironroot_sprout: [27, 150, 26, 18],
+lodestone_mature: [50, 261, 25, 16],
+lodestone_mature_hover: [76, 261, 25, 16],
+lodestone_ripe: [102, 261, 25, 16],
+lodestone_sprout: [128, 261, 25, 16],
+mandrake_mature: [63, 91, 26, 19],
+mandrake_mature_hover: [90, 91, 26, 19],
+mandrake_ripe: [117, 91, 26, 19],
+mandrake_sprout: [144, 91, 26, 19],
+mica_mature: [154, 261, 25, 16],
+mica_mature_hover: [180, 261, 25, 16],
+mica_ripe: [206, 261, 25, 16],
+mica_sprout: [0, 278, 25, 16],
+moonlily_mature: [26, 278, 24, 16],
+moonlily_mature_hover: [51, 278, 24, 16],
+moonlily_ripe: [76, 278, 24, 16],
+moonlily_sprout: [101, 278, 24, 16],
+nettle_mature: [44, 70, 20, 20],
+nettle_mature_hover: [65, 70, 20, 20],
+nettle_ripe: [86, 70, 20, 20],
+nettle_sprout: [107, 70, 20, 20],
+nightshade_mature: [54, 150, 24, 18],
+nightshade_mature_hover: [79, 150, 24, 18],
+nightshade_ripe: [104, 150, 24, 18],
+nightshade_sprout: [129, 150, 24, 18],
+obsidian_mature: [0, 0, 26, 24],
+obsidian_mature_hover: [27, 0, 26, 24],
+obsidian_ripe: [54, 0, 26, 24],
+obsidian_sprout: [81, 0, 26, 24],
+owlberry_mature: [27, 225, 26, 17],
+owlberry_mature_hover: [54, 225, 26, 17],
+owlberry_ripe: [81, 225, 26, 17],
+owlberry_sprout: [108, 225, 26, 17],
+reedmace_mature: [212, 0, 25, 22],
+reedmace_mature_hover: [0, 25, 25, 22],
+reedmace_ripe: [26, 25, 25, 22],
+reedmace_sprout: [52, 25, 25, 22],
+riverchalk_mature: [154, 150, 28, 18],
+riverchalk_mature_hover: [183, 150, 28, 18],
+riverchalk_ripe: [212, 150, 28, 18],
+riverchalk_sprout: [0, 169, 28, 18],
+riverpearl_mature: [29, 169, 28, 18],
+riverpearl_mature_hover: [58, 169, 28, 18],
+riverpearl_ripe: [87, 169, 28, 18],
+riverpearl_sprout: [116, 169, 28, 18],
+saltpetre_mature: [135, 225, 25, 17],
+saltpetre_mature_hover: [161, 225, 25, 17],
+saltpetre_ripe: [187, 225, 25, 17],
+saltpetre_sprout: [213, 225, 25, 17],
+silverleaf_mature: [145, 169, 26, 18],
+silverleaf_mature_hover: [172, 169, 26, 18],
+silverleaf_ripe: [199, 169, 26, 18],
+silverleaf_sprout: [226, 169, 26, 18],
+sirenreed_mature: [128, 70, 22, 20],
+sirenreed_mature_hover: [151, 70, 22, 20],
+sirenreed_ripe: [174, 70, 22, 20],
+sirenreed_sprout: [197, 70, 22, 20],
+starquartz_mature: [0, 188, 22, 18],
+starquartz_mature_hover: [23, 188, 22, 18],
+starquartz_ripe: [46, 188, 22, 18],
+starquartz_sprout: [69, 188, 22, 18],
+stormglass_mature: [0, 243, 25, 17],
+stormglass_mature_hover: [26, 243, 25, 17],
+stormglass_ripe: [52, 243, 25, 17],
+stormglass_sprout: [78, 243, 25, 17],
+sulfur_mature: [92, 188, 25, 18],
+sulfur_mature_hover: [118, 188, 25, 18],
+sulfur_ripe: [144, 188, 25, 18],
+sulfur_sprout: [170, 188, 25, 18],
+sunthistle_mature: [171, 91, 22, 19],
+sunthistle_mature_hover: [194, 91, 22, 19],
+sunthistle_ripe: [217, 91, 22, 19],
+sunthistle_sprout: [0, 111, 22, 19],
+toadstool_mature: [126, 278, 20, 15],
+toadstool_mature_hover: [147, 278, 20, 15],
+toadstool_ripe: [168, 278, 20, 15],
+toadstool_sprout: [189, 278, 20, 15],
+willowbark_mature: [23, 111, 28, 19],
+willowbark_mature_hover: [52, 111, 28, 19],
+willowbark_ripe: [81, 111, 28, 19],
+willowbark_sprout: [110, 111, 28, 19],
+wisplichen_mature: [104, 243, 20, 17],
+wisplichen_mature_hover: [125, 243, 20, 17],
+wisplichen_ripe: [146, 243, 20, 17],
+wisplichen_sprout: [167, 243, 20, 17],
+witchear_mature: [139, 111, 25, 19],
+witchear_mature_hover: [165, 111, 25, 19],
+witchear_ripe: [191, 111, 25, 19],
+witchear_sprout: [217, 111, 25, 19],
+};
+return { ATLAS_URL, ATLAS_SIZE, FRAMES };
+})();
+// src/rendering/scenes.js
+const __m61 = (() => {
 function R(ctx, x, y, w, h, c) {
 ctx.fillStyle = c;
 ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
@@ -12161,7 +12360,8 @@ return { drawRaw, rawSprite };
 const __m57 = (() => {
 const { ATLASES } = __m58;
 const FIELD = __m59;
-const { rawSprite } = __m60;
+const GROW = __m60;
+const { rawSprite } = __m61;
 class SpriteAtlas {
 constructor(url, frames) {
 this.url = url;
@@ -12247,6 +12447,11 @@ quarry: ['emberflint', 'mica', 'saltpetre', 'sulfur', 'lodestone', 'cinnabar', '
 moonfen: ['gravemoss', 'starquartz', 'wisplichen', 'moonlily', 'toadstool', 'sirenreed'],
 crags: ['dragonpepper', 'cinderscale', 'ashbloom', 'obsidian'],
 }).flatMap(([region, keys]) => keys.map((k) => gatherable(region, REGION_ATLAS[region], k))));
+const GROWTH = new SpriteAtlas(GROW.ATLAS_URL, GROW.FRAMES);
+function growthFrame(key, stage, hover = false) {
+const name = `${key}_${stage}${hover && stage === 'mature' ? '_hover' : ''}`;
+return GROWTH.frames[name] ? name : null;
+}
 const MIN_HIT = 20;
 function gatherFrameName(key, s) {
 const g = GATHERABLES[key];
@@ -12257,24 +12462,23 @@ if (s.card) return g.card;
 if (s.closed && g.closed) return s.hover ? /** @type {string} */ (g.closedHover) : g.closed;
 return s.hover ? g.hover : g.idle;
 }
-function depositBox(d, key, W, H) {
-const g = key ? GATHERABLES[key] : null;
-const f = g ? g.atlas.frames[g.idle] : null;
-const ax = Math.round(d.x * W), ay = Math.round(d.y * H);
+function plantBox(p, name, W, H) {
+const f = name ? GROWTH.frames[name] : null;
+const ax = Math.round(p.x * W), ay = Math.round(p.y * H);
 const w = f ? f[2] : 16, h = f ? f[3] : 16, bottom = f ? ay : ay + 2;
 const hw = Math.max(w, MIN_HIT) / 2, hh = Math.max(h, MIN_HIT);
 return { ax, ay, w, h, x0: ax - hw, x1: ax + hw, y0: bottom - hh, y1: bottom + 2 };
 }
-function hitDeposit(deps, keyOf, px, py, W, H, slop = 4) {
+function hitPlant(plants, frameOf, px, py, W, H, slop = 4) {
 let best = null, bestY = -Infinity, near = null, nearD = slop * slop;
-for (const d of deps) {
-const b = depositBox(d, keyOf(d), W, H);
+for (const p of plants) {
+const b = plantBox(p, frameOf(p), W, H);
 if (px >= b.x0 && px <= b.x1 && py >= b.y0 && py <= b.y1) {
-if (b.ay > bestY) { bestY = b.ay; best = d; }
+if (b.ay > bestY) { bestY = b.ay; best = p; }
 continue;
 }
 const dx = Math.max(b.x0 - px, 0, px - b.x1), dy = Math.max(b.y0 - py, 0, py - b.y1), dd = dx * dx + dy * dy;
-if (dd <= nearD) { nearD = dd; near = d; }
+if (dd <= nearD) { nearD = dd; near = p; }
 }
 return best || near;
 }
@@ -12292,10 +12496,10 @@ if (g.atlas.ready) paint();
 else g.atlas.load().then((ok) => { if (ok) paint(); });
 return cv;
 }
-return { SpriteAtlas, MEADOW, REGION_ATLAS, GATHERABLES, MIN_HIT, gatherFrameName, depositBox, hitDeposit, ingredientSprite };
+return { SpriteAtlas, MEADOW, REGION_ATLAS, GATHERABLES, GROWTH, growthFrame, MIN_HIT, gatherFrameName, plantBox, hitPlant, ingredientSprite };
 })();
 // src/game/journal.js
-const __m61 = (() => {
+const __m62 = (() => {
 function processEvent(state, e) {
 const entries = [];
 const achievements = [];
@@ -12408,7 +12612,7 @@ return { entries, achievements };
 return { processEvent };
 })();
 // src/game/autobrew.js
-const __m62 = (() => {
+const __m63 = (() => {
 const { PHASE, SIM } = __m23;
 const { MAX_SPECIES } = __m18;
 function condensedCount(sim) {
@@ -12692,7 +12896,7 @@ return t / Math.max(1, sim.p.count);
 return { condensedCount, stageGoal, AutoBrewer, runPlanHeadless, speciesFraction };
 })();
 // src/game/mechanics.js
-const __m64 = (() => {
+const __m65 = (() => {
 const MECHANICS = [
 { id: 'formulation', name: 'Formulation and neutralisation', role: 'core', stage: 'formulation', rank: 0,
 decision: 'Which natural ingredients, in what proportions, to carry the wanted effects and cancel their side effects.',
@@ -12778,9 +12982,9 @@ const SANDBOX_CONTROLS = ['skimmer', 'alembic', 'heatmap', 'readouts'];
 return { MECHANICS, MECHANIC_BY_ID, IMMERSION, SANDBOX_CONTROLS };
 })();
 // src/ui/panels.js
-const __m63 = (() => {
+const __m64 = (() => {
 const { recipeConfidence, CONFIDENCE_TEXT, describeStep } = __m48;
-const { MECHANIC_BY_ID } = __m64;
+const { MECHANIC_BY_ID } = __m65;
 const { evidenceRank } = __m26;
 const { h, btn, modal, toast, coins, starsText, confirmDialog, clear } = __m2;
 const { icon } = __m3;
@@ -13293,7 +13497,7 @@ sec('Ingredients and side effects', 'leaf', ['The Shop sells no prepared reagent
 sec('Brewing', 'cauldron', ['Pour: tap a jar, then a dose button (25–250 ml) — or hold your finger in the cauldron, or drag a jar onto it.', 'Crush: whole roots, leaves and stones go into the pot whole and give up almost nothing until you break them up with Crush (the pestle).', 'Steep at the right heat: most herbs give two to three times as much held warm in their steeping window (see the herb’s card and your journal). Some want ice-cold water: Frostcap near 9 °C gives about three times as much — but frozen solid gives less. Heartpetal wilts above about 85 °C.', 'Stir after every addition: an unstirred brew pours unevenly, so later bottles may not match the tested dose. Auto stirs for you (the Clockwork Stirrer about three times as fast).', 'The fire control: right heats, left cools; tap Off beside it (or press 0) to put it out at once. The lid keeps steam in; boiling with the lid off makes a brew smaller and stronger — side effects too. Add water to weaken it.', 'Tap the ml · °C readout over the cauldron to see what is in it; Inspect reads one spot; Sample measures what a bottle would hold.']),
 sec('Arcane awakening', 'awaken', ['Magical ingredients carry a hidden arcane threshold. Heat the brew past it (or, for cold magic, chill it below) and the magic awakens: it glows and acts two to three times stronger — side effects too.', 'In a blend the threshold is the mix of its magical ingredients’ thresholds, by volume. Mix first at room temperature, then heat or chill; a half-mixed brew awakens unevenly.', 'Awakened magic stays awake when it cools, is bottled or kept. Only dilution and reactions undo it. The Arcanometer reads a brew’s threshold.']),
 sec('Trials and rabbits', 'rabbit', ['Choose a rabbit and give it a dose (5, 10 or 25 ml) from the cauldron tap or the sealed vial. One trial reads every effect at once.', 'Each reading is uncertain: the ± margin is how far the truth may lie. One reading is a rough guess; repeating it on the same rabbit helps a little; other rabbits help most (detected once → repeated → corroborated).', '“Not detected” is not proof of absence: a faint effect can hide below the noise. Cautious customers want readings repeated or corroborated, and every customer pays more for a well-tested label.', 'Effects pile up in a rabbit and fade slowly. Past its own hidden limit an effect runs out of control and can kill it; fire and acid burn; strength and vitality can make it attack; love makes it mate. A purging draught washes everything out. Rabbits can be fed, bred, bought and put down; a body’s remains can be recovered once as an ingredient.', 'When a trial surprises you, a hidden law may be at work. Confirm it twice and your theory learns it.']),
-sec('Wilds', 'tree', ['Tap a plant in the picture, or its button, to gather. Deposits are finite and regrow over time, even while the game is closed.', 'Careful leaves some to regrow; Thorough takes twice as much but the deposit regrows slowly. Roots, seams, mosses and dust need the Forager’s Kit for a full harvest.', 'Twilight plants open only at dawn (before you open the shop) or at dusk (after the last customer). The weather changes daily. New regions open with rank.']),
+sec('Wilds', 'tree', ['Tap a mature plant in the picture, or its button, to gather. Every plant grows from sprout to ripe to mature, and only a mature one can be harvested. A harvest leaves a mark on the ground that fades; new sprouts come up at random spots until the region is full again, even while the game is closed.', 'Thorough digs the plant out for twice as much, but its kind then sprouts at half pace. Roots, seams, mosses and dust need the Forager’s Kit for a full harvest.', 'Twilight plants open only at dawn (before you open the shop) or at dusk (after the last customer). The weather changes daily. New regions open with rank.']),
 sec('Recipes and the Book', 'book', ['After a sale you can save the brew as a recipe: what went in, and every step in order. Prepare pours it again; the Brass Homunculus replays every step.', 'The Book also keeps every trial, the laws you discovered, all ingredients, your journal, awards and sales.']),
 sec('Keys and tips', 'bulb', ['Keys: 1 pour · 2 stir · 3 crush · 5 inspect · L lid · B bottle · F speed · A auto-stir · arrows fire · 0 fire off · S shop · R recipes · C/V/W/T/J rooms · Esc menu.', 'Advice at the Counter buys a hint for a hard order.', 'Orders far below your rank earn little reputation; a technique sold well for the first time earns a bonus.', 'Out of money? The guild helps a struggling apprentice once a day — and well water is always free.', 'The Free Experiment has every tool, the skimmer, the alembic, a heat map and exact physical readings.']),
 );
@@ -13362,7 +13566,7 @@ h('div', { class: 'small muted credits', text: 'The Alchemist’s Shop — all a
 return { fxChips, openShop, openIngredient, openHint, openBottleSize, showDaySummary, showAnalysis, openRecipes, renderRecipes, openJournal, renderJournal, openPause, openReceiver, openHelp, openSettings };
 })();
 // src/ui/trade.js
-const __m65 = (() => {
+const __m66 = (() => {
 const { h, btn, modal, toast, coins, clear, starsText } = __m2;
 const { icon } = __m3;
 const { drawPortrait } = __m56;
@@ -13584,7 +13788,7 @@ return `${n === null ? '' : starsText(n, MAX_STARS) + ' '}${claimSummary(label.c
 return { openIdentify, openNegotiation, showDeal, followUpCard, claimSummary, accuracyTitle, labelLine, EFFECT_BY_KEY };
 })();
 // src/ui/tutorial.js
-const __m66 = (() => {
+const __m67 = (() => {
 const { h, btn, placeToasts } = __m2;
 const { PHASE } = __m23;
 const { TUTORIAL_HERBS } = __m16;
@@ -13649,7 +13853,7 @@ return [
 { text: `Your vial is on the counter, labelled from your trial. Press “Sell to ${who}”, agree on a price, then save the recipe to your book.`, target: () => document.querySelector('[data-act=serve]') || tab('counter')(), done: () => this.flags.sold },
 { text: 'Splendid — your first sale! The customer comes back tomorrow: pleased, or with a complaint you can refund, dispute with your trial records, or refuse. The potion shelves below keep sealed bottles for later customers.', target: () => lab.el.querySelector('.view-counter .shelf-card') || tab('counter')(), button: 'Next' },
 { text: 'Ingredients run out. Open the Wilds to gather more.', target: tab('wilds'), done: inView('wilds') },
-{ text: 'Tap a plant in the picture, or its button, to gather it. Deposits regrow over time. Careful leaves some to regrow; Thorough takes twice as much but regrows slowly. Some flowers open only at dawn or at dusk. New regions open as your rank rises.', target: q('.view-wilds .deposits'), button: 'Next' },
+{ text: 'Tap a mature plant in the picture, or its button, to gather it. Plants grow from sprout to ripe to mature; only mature ones can be harvested, and new sprouts come up until the ground is full. Thorough digs a plant out for twice as much, but its kind sprouts slowly. Some flowers open only at dawn or at dusk. New regions open as your rank rises.', target: q('.view-wilds .deposits'), button: 'Next' },
 { text: 'Now open the Book.', target: tab('book'), done: inView('book') },
 { text: 'The Book keeps your recipes (Prepare pours one again), every trial, the laws of magic you discover, all ingredients, your journal, awards and sales.', target: q('.book-tabs'), button: 'Next' },
 { text: 'The Shop sells ingredients, buys your surplus, and offers equipment: each piece lets you do something new (deep cold, a stirrer, a bigger cauldron, more shelves…).', target: q('[data-act=shop]'), button: 'Next' },
@@ -13731,7 +13935,7 @@ if (t && t !== this.target) { if (this.target) this.target.classList.remove('hig
 return { Tutorial };
 })();
 // src/ui/views/counter.js
-const __m67 = (() => {
+const __m68 = (() => {
 const { h, btn, clear, coins, confirmDialog, starsText } = __m2;
 const { icon } = __m3;
 const { drawPortrait } = __m56;
@@ -13742,10 +13946,10 @@ const { EFFECT_INDEX, NE } = __m13;
 const { EFFECT_BY_KEY } = __m13;
 const { missingEffects, summarize, requirementEvidence } = __m26;
 const { labelStars, MAX_STARS } = __m45;
-const trade = __m65;
+const trade = __m66;
 const { describeColor, rgbToHex } = __m8;
 const { viscosityClass } = __m44;
-const panels = __m63;
+const panels = __m64;
 const { shortName } = __m21;
 class CounterView {
 constructor(lab) {
@@ -13939,7 +14143,7 @@ unseen ? h('span', { class: 'muted', text: ` ${seen.length ? '· ' : ''}${unseen
 return { CounterView };
 })();
 // src/rendering/regions.js
-const __m69 = (() => {
+const __m70 = (() => {
 const { Rng } = __m6;
 const { REGION_ATLAS, MEADOW, GATHERABLES } = __m57;
 const SCENE_W = 256;
@@ -14240,65 +14444,85 @@ rows.push([y, x, 2 + Math.round((y - 80) / 26)]);
 return rows;
 }
 const frameAt = (f, x, y) => [Math.round(x - f[2] / 2), Math.round(y - f[3])];
-function layoutDeposits(region, seed, deps, keyOf) {
-const W = SCENE_W, H = SCENE_H, A = REGION_ATLAS[region];
-const out = {};
-for (const d of deps) out[d.id] = { x: d.x, y: d.y };
-if (!A || !A.ready || !SPRITE_PAINTERS[region]) return out;
-const solid = new Uint8Array(W * H), wet = new Uint8Array(W * H);
-const stamp = (grid, m, w, h, left, top, flip, grow) => {
+function stamp(grid, m, w, h, left, top, flip, grow) {
+const W = SCENE_W, H = SCENE_H;
 for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
 if (!m[j * w + (flip ? w - 1 - i : i)]) continue;
 for (let y = Math.max(0, top + j - grow); y <= Math.min(H - 1, top + j + grow); y++)
 for (let x = Math.max(0, left + i - grow); x <= Math.min(W - 1, left + i + grow); x++) grid[y * W + x] = 1;
 }
-};
+}
+function groundGrids(region, seed) {
+const W = SCENE_W, H = SCENE_H, A = REGION_ATLAS[region];
+if (!A || !A.ready || !SPRITE_PAINTERS[region]) return null;
+const solid = new Uint8Array(W * H), wet = new Uint8Array(W * H);
 for (const [name, x, y, flip, flat] of fixedOf(region)) {
 const f = A.frame(name), m = A.mask(name);
-if (!f || !m) return out;
+if (!f || !m) return null;
 const [left, top] = frameAt(f, x, y);
 stamp(flat ? wet : solid, m, f[2], f[3], left, top, !!flip, flat ? 2 : 1);
 }
 for (const [x0, y0, w, h] of WET[region] || []) for (let y = y0; y < Math.min(H, y0 + h); y++) wet.fill(1, y * W + x0, y * W + Math.min(W, x0 + w));
 if (region === 'crags') for (const [y, x, w] of lavaStream(seed)) for (let xx = Math.round(x - w / 2) - 2; xx <= Math.round(x + w / 2) + 2; xx++) if (xx >= 0 && xx < W) wet[y * W + xx] = 1;
-const top0 = GROUND_TOP[region] || 80, bottom = H - 3;
-for (const d of deps) {
-const key = keyOf(d), g = key ? GATHERABLES[key] : null;
-const f = g ? g.atlas.frame(g.idle) : null;
-if (!g || !f) continue;
-const w = f[2], h = f[3];
-const m = new Uint8Array(w * h);
-for (const name of [g.idle, g.hover, g.depleted, g.harvesting, g.closed, g.closedHover]) {
-const mm = name ? g.atlas.mask(name) : null;
-if (mm && mm.length === m.length) for (let k = 0; k < m.length; k++) m[k] |= mm[k];
+return { solid, wet, top: GROUND_TOP[region] || 80, bottom: H - 3 };
 }
-const sw = Math.max(6, Math.round(w * 0.6));
-const fits = (ax, ay) => {
+const BIG_PROP = 150;
+class PlantGround {
+constructor(region, seed, props = []) {
+this.region = region;
+this.seed = seed;
+this.props = props.filter((b) => (b.x1 - b.x0) * (b.y1 - b.y0) >= BIG_PROP);
+this.grids = null;
+this.spots = new Map();
+}
+place(plants, shapeOf) {
+const W = SCENE_W, H = SCENE_H;
+const out = {};
+for (const p of plants) out[p.id] = { x: p.x, y: p.y };
+if (!this.grids) this.grids = groundGrids(this.region, this.seed);
+const G = this.grids;
+if (!G) return out;
+const here = new Set(plants.map((p) => p.id));
+for (const id of [...this.spots.keys()]) if (!here.has(id)) this.spots.delete(id);
+const fresh = plants.filter((p) => !this.spots.has(p.id) && shapeOf(p));
+if (fresh.length) {
+const bare = G.solid.slice();
+for (const s of this.spots.values()) { const [left, top] = frameAt([0, 0, s.w, s.h], s.x, s.y); stamp(bare, s.m, s.w, s.h, left, top, false, 1); }
+const full = bare.slice();
+for (const b of this.props) for (let y = Math.max(0, Math.floor(b.y0)); y < Math.min(H, Math.ceil(b.y1)); y++) full.fill(1, y * W + Math.max(0, Math.floor(b.x0)), y * W + Math.min(W, Math.ceil(b.x1)));
+for (const p of fresh) {
+const { w, h, m } = /** @type {{w:number, h:number, m:Uint8Array}} */ (shapeOf(p));
+const f = [0, 0, w, h], sw = Math.max(4, Math.round(w * 0.5));
+const fits = (solid, ax, ay) => {
 const [left, top] = frameAt(f, ax, ay);
-if (ay < top0 || ay > bottom || left < 1 || left + w > W - 1 || top < 1) return false;
-for (let y = ay - 2; y <= ay; y++) for (let x = left; x < left + w; x++) if (wet[y * W + x]) return false;
+if (ay < G.top || ay > G.bottom || left < 1 || left + w > W - 1 || top < 1) return false;
+for (let y = ay - 2; y <= ay; y++) for (let x = left; x < left + w; x++) if (G.wet[y * W + x]) return false;
 for (let x = ax - Math.floor(sw / 2); x < ax - Math.floor(sw / 2) + sw; x++) if (solid[ay * W + x]) return false;
 for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
 if (!m[j * w + i]) continue;
 const k = (top + j) * W + left + i;
-if (solid[k] || (j >= h * 2 / 3 && wet[k])) return false;
+if (solid[k] || (j >= h * 2 / 3 && G.wet[k])) return false;
 }
 return true;
 };
-const ox = Math.round(d.x * W), oy = Math.round(d.y * H);
+const ox = Math.round(p.x * W), oy = Math.round(p.y * H);
 const tries = [[0, ox, oy]];
-for (let y = top0; y <= bottom; y++) for (let x = (y + ox) & 1; x < W; x += 2) tries.push([(x - ox) ** 2 + ((y - oy) * 1.6) ** 2, x, y]);
+for (let y = G.top; y <= G.bottom; y++) for (let x = (y + ox) & 1; x < W; x += 2) tries.push([(x - ox) ** 2 + ((y - oy) * 1.6) ** 2, x, y]);
 tries.sort((a, b) => a[0] - b[0]);
-const spot = tries.find(([, x, y]) => fits(x, y));
-if (!spot) continue;
-const [, x, y] = spot, [left, top] = frameAt(f, x, y);
-stamp(solid, m, w, h, left, top, false, 2);
-out[d.id] = { x: x / W, y: y / H };
+const spot = tries.find(([, x, y]) => fits(full, x, y)) || tries.find(([, x, y]) => fits(bare, x, y));
+const [, x, y] = spot || [0, ox, oy];
+const [left, top] = frameAt(f, x, y);
+stamp(full, m, w, h, left, top, false, 1);
+stamp(bare, m, w, h, left, top, false, 1);
+this.spots.set(p.id, { x, y, w, h, m });
 }
+}
+for (const [id, s] of this.spots) out[id] = { x: s.x / W, y: s.y / H };
 return out;
 }
+}
 function placer(ctx, rng, atlas, avoid) {
-const taken = avoid.slice();
+const taken = avoid;
 const free = (x0, y0, x1, y1) => taken.every((b) => x1 < b.x0 || x0 > b.x1 || y1 < b.y0 || y0 > b.y1);
 const spots = (x0, x1, y0, y1, n = 5) => Array.from({ length: n }, () => [rng.int(x0, x1), rng.int(y0, y1)]);
 const prop = (name, spots, flip = false) => {
@@ -14723,19 +14947,19 @@ const flick = 0.7 + 0.3 * Math.sin(t * 9);
 if (!REGION_ATLAS.quarry.ready) R(ctx, 24, 56, 3, 5, `rgba(255,243,176,${flick.toFixed(2)})`);
 }
 }
-return { SCENE_W, SCENE_H, GROUND_TOP, fixedOf, lavaStream, layoutDeposits, paintRegion, animateRegion };
+return { SCENE_W, SCENE_H, GROUND_TOP, fixedOf, lavaStream, PlantGround, paintRegion, animateRegion };
 })();
 // src/ui/views/wilds.js
-const __m68 = (() => {
+const __m69 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, DAY_PART_NAME } = __m28;
+const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, marksIn, DAY_PART_NAME } = __m28;
 const { equipmentById } = __m25;
 const { RANKS } = __m25;
-const { drawRaw, rawSprite } = __m60;
-const { paintRegion, animateRegion, layoutDeposits, SCENE_W, SCENE_H } = __m69;
-const { GATHERABLES, REGION_ATLAS, gatherFrameName, depositBox, hitDeposit } = __m57;
+const { drawRaw, rawSprite } = __m61;
+const { paintRegion, animateRegion, PlantGround, SCENE_W, SCENE_H } = __m70;
+const { GATHERABLES, GROWTH, REGION_ATLAS, gatherFrameName, growthFrame, plantBox, hitPlant } = __m57;
 const { EFFECT_BY_KEY } = __m13;
 class WildsView {
 constructor(lab) {
@@ -14746,11 +14970,12 @@ this.time = 0;
 this.floaters = [];
 this.bg = null;
 this.bgKey = '';
-this.spots = {};
+this.ground = null;
+this.field = [];
 this.thorough = false;
 this.rain = [];
 this.hover = null;
-this.harvested = {};
+this.grewAt = {};
 this.can = {};
 this.closed = {};
 this.waiting = new Set();
@@ -14771,10 +14996,11 @@ el.append(this.tabs, h('div', { class: 'wilds-scene' }, h('div', { class: 'scene
 this.refresh();
 }
 loadSprites() {
-const atlas = REGION_ATLAS[this.region];
-if (!atlas || atlas.ready || this.waiting.has(atlas)) return;
+for (const atlas of [REGION_ATLAS[this.region], GROWTH]) {
+if (!atlas || atlas.ready || this.waiting.has(atlas)) continue;
 this.waiting.add(atlas);
 atlas.load().then((ok) => { if (ok) { this.bgKey = ''; this.refresh(); } });
+}
 }
 unlocked(r) {
 return this.lab.sandbox || r.rank <= this.lab.state.rank;
@@ -14804,7 +15030,7 @@ lab.sandbox ? null : h('span', { class: 'muted', text: part === 'dawn' ? '(until
 h('span', { class: 'spacer' }), icon(weather.icon, 'sm'), h('b', { text: lab.sandbox ? '' : weather.name })),
 lab.sandbox || weather.id === 'clear' ? null : h('div', { class: 'muted', text: weather.desc }),
 h('div', { class: 'row wrap seg harvest-mode' }, h('span', { text: 'Harvest:' }), mode('Careful', false, 'harvest-careful'), mode('Thorough ×2', true, 'harvest-thorough'),
-this.thorough ? h('span', { class: 'muted', text: 'strips the deposit: it regrows at half speed' }) : null)].filter(Boolean));
+this.thorough ? h('span', { class: 'muted', text: 'digs the plant out whole: its kind sprouts at half pace' }) : null)].filter(Boolean));
 this.rows = {};
 for (const d of this.deposits()) {
 const m = st.lookup(d.materialId);
@@ -14814,8 +15040,8 @@ const plan = gatherPlan(st, d, m, { thorough: this.thorough });
 const can = lab.sandbox ? d.take : harvestable(st.gathering, d, plan, now);
 const take = lab.sandbox ? d.take : can || plan.take;
 const fx = Object.entries(m.effects || {}).filter(([, v]) => Math.abs(v) >= 5).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 3);
-const stock = lab.sandbox ? '∞' : `${Math.floor(s.stock)} / ${d.capacity} ml`;
-const when = lab.sandbox ? 'never runs out' : this.when(s, can, plan);
+const stock = lab.sandbox ? '∞' : this.stockText(d, s);
+const when = lab.sandbox ? 'never runs out' : this.when(s, can);
 this.can[d.id] = locked || can >= 5;
 this.closed[d.id] = !lab.sandbox && !plan.open;
 const key = this.spriteKey(d);
@@ -14825,7 +15051,7 @@ const meta = h('div', { class: 'meta', text: `${stock} · ${when}` });
 this.rows[d.id] = { barI, meta, g, locked, take };
 const notes = lab.sandbox ? [] : plan.factors.filter((f) => f.why !== 'satchel' && !f.why.startsWith('thorough')).map((f) => f.why);
 const tool = plan.method.tool ? equipmentById(plan.method.tool) : null;
-const card = h('div', { class: 'deposit parch' + (locked ? ' locked' : '') + (s.scarred ? ' scarred' : '') },
+const card = h('div', { class: 'deposit parch' + (locked ? ' locked' : '') + (s.scarred ? ' scarred' : ''), 'data-deposit': d.id },
 key ? GATHERABLES[key].atlas.canvas(/** @type {string} */ (gatherFrameName(key, { can: this.can[d.id], card: true }))) : rawSprite(m.wild ? m.wild.shape : 'stone', m.look || m.color, lab.sandbox ? 1 : s.fraction),
 h('div', { class: 'dep-info' },
 h('div', { class: 'title' }, m.name, d.rare ? h('span', { class: 'tag rare', text: 'rare' }) : null, plan.hour ? h('span', { class: 'tag hour', text: plan.hour }) : null),
@@ -14841,8 +15067,12 @@ card.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') th
 card.addEventListener('pointerleave', () => { if (this.hover === d.id) this.setHover(null); });
 list.appendChild(card);
 }
-clear(this.foot).append(`Room for ${st.cap.storage} ml of each ingredient. ${st.has('satchel') ? 'Your satchel carries half as much again. ' : ''}Deposits regrow over time, even while the game is closed, and recover half their stock each new day (a stripped one, a quarter).`);
+clear(this.foot).append(`Room for ${st.cap.storage} ml of each ingredient. ${st.has('satchel') ? 'Your satchel carries half as much again. ' : ''}Only mature plants can be harvested. New sprouts come up at random spots until the ground is full again, even while the game is closed, and each new day brings every plant on.`);
 this.paintBg();
+this.grow();
+}
+stockText(d, s) {
+return `${s.mature} of ${d.slots} mature${s.plants.length > s.mature ? ` · ${s.plants.length - s.mature} growing` : ''} · ${d.take} ml each`;
 }
 deposits() {
 return this.lab.state.deposits.filter((d) => d.region === this.region);
@@ -14854,50 +15084,91 @@ return g && g.region === d.region && g.atlas.ready ? m.wild.key : null;
 }
 paintBg() {
 const atlas = REGION_ATLAS[this.region];
-const shown = this.shown();
-const key = this.region + ':' + this.lab.state.seed + ':' + shown.map((d) => d.id).join(',') + ':' + !!(atlas && atlas.ready);
+const key = this.region + ':' + this.lab.state.seed + ':' + !!(atlas && atlas.ready) + ':' + GROWTH.ready;
 if (key === this.bgKey) return;
 this.bgKey = key;
 this.bg = document.createElement('canvas');
 this.bg.width = SCENE_W; this.bg.height = SCENE_H;
-this.spots = layoutDeposits(this.region, this.lab.state.seed, shown, (d) => this.spriteKey(d));
-const avoid = this.inScene().map((d) => depositBox(d, this.spriteKey(d), SCENE_W, SCENE_H));
-paintRegion(/** @type {CanvasRenderingContext2D} */ (this.bg.getContext('2d')), this.region, this.lab.state.seed, avoid);
+const props = [];
+paintRegion(/** @type {CanvasRenderingContext2D} */ (this.bg.getContext('2d')), this.region, this.lab.state.seed, props);
+this.ground = new PlantGround(this.region, this.lab.state.seed, props);
+this.field = [];
 }
 shown() {
 const lab = this.lab;
-return this.deposits().filter((d) => lab.sandbox || d.rank <= lab.state.rank || !this.spriteKey(d));
+return this.deposits().filter((d) => lab.sandbox || d.rank <= lab.state.rank);
 }
-inScene() {
-return this.shown().map((d) => ({ ...d, ...this.spots[d.id] }));
+shapeOf(p) {
+if (!p.key || !GROWTH.ready) return null;
+const f = GROWTH.frame(p.key + '_mature_hover');
+if (!f) return null;
+const m = new Uint8Array(f[2] * f[3]);
+for (const stage of ['sprout', 'ripe', 'mature', 'mature_hover']) {
+const mm = GROWTH.mask(`${p.key}_${stage}`);
+if (mm && mm.length === m.length) for (let k = 0; k < m.length; k++) m[k] |= mm[k];
+}
+return { w: f[2], h: f[3], m };
+}
+grow() {
+if (!this.ground) return;
+const st = this.lab.state, now = Date.now();
+const plants = [];
+for (const d of this.shown()) {
+const m = st.lookup(d.materialId);
+const key = m && m.wild && GATHERABLES[m.wild.key] ? m.wild.key : null;
+const s = depositStatus(st.gathering, d, now);
+for (const p of s.plants) plants.push({ ...p, dep: d, m, key, stage: this.lab.sandbox ? 'mature' : p.stage, grown: this.lab.sandbox ? 1 : p.grown });
+}
+plants.sort((a, b) => a.born - b.born || (a.id < b.id ? -1 : 1));
+const spots = this.ground.place(plants, (p) => this.shapeOf(p));
+const grewAt = {};
+for (const p of plants) {
+Object.assign(p, spots[p.id]);
+const tag = p.id + ':' + p.stage;
+grewAt[tag] = this.grewAt[tag] ?? (this.field.length ? this.time : -9);
+}
+this.grewAt = grewAt;
+this.field = plants;
 }
 setHover(id) {
 if (this.hover === id) return;
 this.hover = id;
-if (this.canvas) this.canvas.style.cursor = id ? 'pointer' : 'default';
+const p = id && this.field.find((q) => q.id === id);
+if (this.canvas) this.canvas.style.cursor = p ? (p.stage === 'mature' ? 'pointer' : 'help') : 'default';
 }
-depositAt(e) {
+frameOf(p) {
+return p.key && GROWTH.ready ? growthFrame(p.key, p.stage, this.hover === p.id || this.hover === p.dep.id) : null;
+}
+plantAt(e) {
 const r = this.canvas.getBoundingClientRect();
 const x = ((e.clientX - r.left) / r.width) * SCENE_W, y = ((e.clientY - r.top) / r.height) * SCENE_H;
-const d = hitDeposit(this.inScene(), (dd) => this.spriteKey(dd), x, y, SCENE_W, SCENE_H);
-return d ? d.id : null;
+const ripe = this.field.filter((p) => p.stage === 'mature');
+return hitPlant(ripe, (p) => this.frameOf(p), x, y, SCENE_W, SCENE_H) || hitPlant(this.field, (p) => this.frameOf(p), x, y, SCENE_W, SCENE_H);
 }
-gather(d) {
+depositAt(e) {
+const p = this.plantAt(e);
+return p ? p.id : null;
+}
+gather(d, plant = null) {
 const lab = this.lab, st = lab.state;
 const m = st.lookup(d.materialId);
 const plan = gatherPlan(st, d, m, { thorough: this.thorough });
-const r = lab.sandbox ? { ok: true, amount: d.take, events: [] } : st.gather(d.id, { thorough: this.thorough });
+const r = lab.sandbox ? { ok: true, amount: d.take, events: [], plant: plant ? plant.id : null } : st.gather(d.id, { thorough: this.thorough, ...(plant ? { plant: plant.id } : {}) });
 if (!r.ok) {
 audio.play('error');
-const why = r.reason === 'full' ? `Your shelves are full of ${m.name}.` : r.reason === 'locked' ? 'You may not gather here yet.' : r.reason === 'reserve' ? 'Careful hands leave the rest to regrow. A thorough harvest would strip it — and it would regrow slowly.' : `Picked clean. It regrows in ${formatWait(r.nextIn || 60000)}.`;
-toast('Nothing to gather', why, 'satchel');
+const why = r.reason === 'full' ? `Your shelves are full of ${m.name}.` : r.reason === 'locked' ? 'You may not gather here yet.'
+: r.reason === 'growing' ? `Still growing — only a mature plant can be harvested. This one matures in ${formatWait(r.nextIn || 60000)}.`
+: `Nothing is mature yet. The next plant matures in ${formatWait(r.nextIn || 60000)}.`;
+toast(r.reason === 'growing' ? 'Not ripe yet' : 'Nothing to gather', why, 'satchel');
 return;
 }
 audio.play(plan.method.sound);
 setTimeout(() => audio.play('select'), 140);
-this.harvested[d.id] = this.time;
-const at = { ...d, ...this.spots[d.id] }, box = depositBox(at, this.spriteKey(d), SCENE_W, SCENE_H);
-this.floaters.push({ x: at.x * SCENE_W, y: at.y * SCENE_H - Math.max(0, box.h - 16), t: 0, text: `+${r.amount}`, color: m.look || m.color, shape: m.wild ? m.wild.shape : 'stone' });
+const at = this.field.find((p) => p.id === r.plant) || { x: d.x, y: d.y, key: null, stage: 'mature' };
+const mark = st.gathering.marks[st.gathering.marks.length - 1];
+if (!lab.sandbox && mark && r.plant && at.key) { mark.x = at.x; mark.y = at.y; }
+const f = at.key && GROWTH.ready ? GROWTH.frame(at.key + '_mature') : null;
+this.floaters.push({ x: at.x * SCENE_W, y: at.y * SCENE_H - Math.max(0, (f ? f[3] : 16) - 16), t: 0, text: `+${r.amount}`, color: m.look || m.color, shape: m.wild ? m.wild.shape : 'stone' });
 for (const e of r.events || []) lab.announce(e);
 if (lab.tutorial) lab.tutorial.notify('gather', d.materialId);
 if (!lab.jarEls[d.materialId]) lab.buildShelf(); else lab.updateShelf();
@@ -14905,9 +15176,8 @@ lab.save();
 this.refresh();
 }
 tapScene(e) {
-const id = this.depositAt(e);
-const d = id && this.deposits().find((dd) => dd.id === id);
-if (d) this.gather(d);
+const p = this.plantAt(e);
+if (p) this.gather(p.dep, p);
 }
 frame(dt) {
 if (!this.ctx || !this.bg) return;
@@ -14915,20 +15185,15 @@ this.time += dt;
 const ctx = this.ctx, st = this.lab.state, now = Date.now();
 ctx.drawImage(this.bg, 0, 0);
 animateRegion(ctx, this.region, this.time);
-const deps = this.inScene().sort((a, b) => a.y - b.y);
-for (const d of deps) {
-const m = st.lookup(d.materialId);
-const s = this.lab.sandbox ? { fraction: 1 } : depositStatus(st.gathering, d, now);
-const locked = !this.lab.sandbox && d.rank > st.rank;
-const key = this.spriteKey(d);
-if (key) { this.drawGatherable(ctx, d, key, s.fraction); continue; }
-const x = Math.round(d.x * SCENE_W) - 8, y = Math.round(d.y * SCENE_H) - 14;
+for (const k of marksIn(st.gathering, this.region, now)) this.drawMark(ctx, k);
+for (const p of this.field.slice().sort((a, b) => a.y - b.y)) {
+const name = this.frameOf(p);
+if (name) { this.drawPlant(ctx, p, name); continue; }
+const x = Math.round(p.x * SCENE_W) - 8, y = Math.round(p.y * SCENE_H) - 14;
 ctx.fillStyle = 'rgba(0,0,0,0.25)';
 ctx.fillRect(x + 3, y + 14, 10, 2);
-if (locked) ctx.globalAlpha = 0.35;
-drawRaw(ctx, x, y, m.wild ? m.wild.shape : 'stone', m.look || m.color, s.fraction);
-ctx.globalAlpha = 1;
-if (!locked && s.fraction >= 0.999 && Math.sin(this.time * 3 + d.x * 20) > 0.92) { ctx.fillStyle = '#fff6e0'; ctx.fillRect(x + 12, y + 1, 1, 1); }
+drawRaw(ctx, x, y, p.m.wild ? p.m.wild.shape : 'stone', p.m.look || p.m.color, 0.25 + p.grown * 0.75);
+if (p.stage === 'mature' && Math.sin(this.time * 3 + p.x * 20) > 0.92) { ctx.fillStyle = '#fff6e0'; ctx.fillRect(x + 12, y + 1, 1, 1); }
 }
 this.paintSky(ctx, dt);
 for (const f of this.floaters) {
@@ -14949,21 +15214,44 @@ this.floaters = this.floaters.filter((f) => f.t < 1.2);
 this._acc = (this._acc || 0) + dt;
 if (this._acc > 1) { this._acc = 0; this.tick(); }
 }
-drawGatherable(ctx, d, key, fraction) {
-const x = Math.round(d.x * SCENE_W), y = Math.round(d.y * SCENE_H);
-const since = this.time - (this.harvested[d.id] ?? -9);
-const harvesting = since < 0.35;
-const g = GATHERABLES[key];
-const name = /** @type {string} */ (gatherFrameName(key, { can: this.lab.sandbox || this.can[d.id] !== false, hover: this.hover === d.id, harvesting, closed: this.closed[d.id] }));
-const f = /** @type {number[]} */ (g.atlas.frame(name));
-const sw = Math.max(6, Math.round(f[2] * 0.6));
+drawPlant(ctx, p, name) {
+const x = Math.round(p.x * SCENE_W), y = Math.round(p.y * SCENE_H);
+const f = /** @type {number[]} */ (GROWTH.frame(name));
+const body = GROWTH.frame(p.key + '_' + p.stage);
+const since = this.time - (this.grewAt[p.id + ':' + p.stage] ?? -9);
+const sw = Math.max(4, Math.round((body ? body[2] : f[2]) * (p.stage === 'sprout' ? 0.3 : p.stage === 'ripe' ? 0.45 : 0.55)));
 ctx.fillStyle = 'rgba(10,30,8,0.35)';
 ctx.fillRect(x - Math.floor(sw / 2), y - 1, sw, 2);
-g.atlas.draw(ctx, name, x, y - (harvesting && !g.harvesting ? 1 : 0));
-if (fraction >= 0.999 && this.hover !== d.id && !this.closed[d.id]) {
-const phase = (this.time * 0.5 + d.x * 7.3 + d.y * 3.1) % 4;
-if (phase < 0.6) g.atlas.draw(ctx, 'glint_' + Math.min(3, Math.floor(phase / 0.15)), x + Math.round(f[2] / 2) - 3, y - f[3] + 4);
+GROWTH.draw(ctx, name, x, y - (since < 0.3 ? 1 : 0));
+if (p.stage === 'mature' && this.hover !== p.id && !this.closed[p.dep.id]) {
+const phase = (this.time * 0.5 + p.x * 7.3 + p.y * 3.1) % 4;
+const A = REGION_ATLAS[this.region];
+if (phase < 0.6 && A && A.ready) A.draw(ctx, 'glint_' + Math.min(3, Math.floor(phase / 0.15)), x + Math.round(f[2] / 4), y - f[3] + 5);
 }
+}
+drawMark(ctx, k) {
+const f = k.key && GROWTH.ready ? GROWTH.frame(k.key + '_mature') : null;
+const x = Math.round(k.x * SCENE_W), y = Math.round(k.y * SCENE_H);
+const w = Math.max(8, Math.round((f ? f[2] : 16) * 0.75)), hw = Math.floor(w / 2);
+const stone = this.region === 'quarry' || this.region === 'crags';
+const [soil, dark, clod] = stone ? ['#6e6258', '#3a322c', '#a09280'] : this.region === 'moonfen' ? ['#3a3228', '#16120e', '#5a5040'] : ['#7a5230', '#3a2412', '#a07a4a'];
+ctx.globalAlpha = Math.ceil((1 - k.faded) * 4) / 4;
+ctx.fillStyle = soil;
+ctx.fillRect(x - hw, y - 3, w, 4);
+ctx.fillRect(x - hw + 2, y - 4, w - 4, 1);
+ctx.fillStyle = dark;
+ctx.fillRect(x - hw + 1, y + 1, w - 2, 1);
+if (k.deep) {
+ctx.fillRect(x - Math.floor(hw / 2), y - 2, Math.max(3, hw), 2);
+}
+ctx.fillStyle = clod;
+for (let i = 0; i < 4; i++) ctx.fillRect(x - hw + 1 + ((i * 7 + Math.round(k.x * 97)) % Math.max(1, w - 2)), y - 4 + (i % 3) * 2, 1, 1);
+if (!k.deep && !stone) {
+ctx.fillStyle = '#4a6a22';
+ctx.fillRect(x - 2, y - 6, 1, 3);
+ctx.fillRect(x + 1, y - 5, 1, 2);
+}
+ctx.globalAlpha = 1;
 }
 paintSky(ctx, dt) {
 const st = this.lab.state;
@@ -14997,11 +15285,11 @@ ctx.fillStyle = 'rgba(255,200,90,0.1)';
 ctx.fillRect(0, 0, SCENE_W, SCENE_H);
 }
 }
-when(s, can, plan) {
-if (s.fraction >= 0.999) return 'fully grown';
-const growing = `regrowing${s.scarred ? ' slowly' : ''} · full in ${formatWait(s.fullIn)}`;
+when(s, can) {
+if (s.fullIn <= 0) return 'fully grown';
+const growing = `growing back${s.scarred ? ' slowly' : ''} · full in ${formatWait(s.fullIn)}`;
 if (can >= 5) return growing;
-return s.stock > plan.reserve ? `left to regrow · ${growing}` : `resting · full in ${formatWait(s.fullIn)}`;
+return `next ripe in ${formatWait(s.nextIn)} · ${growing}`;
 }
 tick() {
 const lab = this.lab, st = lab.state;
@@ -15014,17 +15302,18 @@ const s = depositStatus(st.gathering, d, now);
 const plan = gatherPlan(st, d, st.lookup(d.materialId), { thorough: this.thorough });
 const can = harvestable(st.gathering, d, plan, now);
 row.barI.style.width = Math.round(s.fraction * 100) + '%';
-row.meta.textContent = `${Math.floor(s.stock)} / ${d.capacity} ml · ${this.when(s, can, plan)}`;
+row.meta.textContent = `${this.stockText(d, s)} · ${this.when(s, can)}`;
 row.g.disabled = row.locked || can < 5;
 this.can[d.id] = row.locked || can >= 5;
 this.closed[d.id] = !plan.open;
 }
+this.grow();
 }
 }
 return { WildsView };
 })();
 // src/rendering/rabbit.js
-const __m71 = (() => {
+const __m72 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m53;
 const { RABBIT_MARKS } = __m27;
@@ -15920,10 +16209,10 @@ ctx.fillRect(fx, fy, RABBIT_W, RABBIT_H);
 return { RABBIT_W, RABBIT_H, rabbitLevels, rabbitPose, rabbitPace, rabbitAnchors, rabbitSpriteKey, drawRabbitSprite, clearRabbitSprites, drawRabbit };
 })();
 // src/rendering/hutch-scene.js
-const __m73 = (() => {
+const __m74 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m53;
-const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m71;
+const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m72;
 const HUTCH_W = 224;
 const HUTCH_H = 88;
 const HUTCH_BODIES = 3;
@@ -16341,13 +16630,13 @@ ctx.drawImage(this.bg, 0, 0);
 return { HUTCH_W, HUTCH_H, HUTCH_BODIES, paintHutch, paintHutchFront, HutchScene };
 })();
 // src/ui/views/hutch.js
-const __m72 = (() => {
+const __m73 = (() => {
 const { readingSteadiness } = __m26;
 const { h, btn, clear, toast, modal, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { drawRabbit, RABBIT_W, RABBIT_H } = __m71;
-const { HutchScene, HUTCH_W, HUTCH_H } = __m73;
+const { drawRabbit, RABBIT_W, RABBIT_H } = __m72;
+const { HutchScene, HUTCH_W, HUTCH_H } = __m74;
 const { EFFECT_BY_KEY } = __m13;
 const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral, RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE, BURNS } = __m27;
 const { PURGE_BREW_TIME } = __m5;
@@ -16676,7 +16965,7 @@ if (this._live >= 0.25) { this._live = 0; this.live(); }
 return { CHANNELS, HutchPanel };
 })();
 // src/ui/views/trials.js
-const __m70 = (() => {
+const __m71 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
@@ -16688,9 +16977,9 @@ const { summarize, addSamples, EVIDENCE_TEXT, evidenceRank, requirementEvidence 
 const { evidenceOf } = __m45;
 const { shortName } = __m21;
 const LEVEL_SHORT = { preliminary: '1 reading', repeated: 'repeated', corroborated: 'corroborated', certified: 'certified' };
-const { drawRabbit } = __m71;
+const { drawRabbit } = __m72;
 const { focusRabbit, findRabbit, rabbitSnap, decodeSnap, lookFromSeed, RABBIT_MARKS } = __m27;
-const { HutchPanel } = __m72;
+const { HutchPanel } = __m73;
 const REPLAY_T = 3.2;
 class TrialsView {
 constructor(lab) {
@@ -17067,11 +17356,11 @@ return `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2
 return { TrialsView, EFFECTS, EFFECT_INDEX };
 })();
 // src/ui/views/book.js
-const __m74 = (() => {
+const __m75 = (() => {
 const { h, btn, clear } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const panels = __m63;
+const panels = __m64;
 const { SUBJECT_BY_ID } = __m26;
 const { EFFECTS, EFFECT_BY_KEY, EFFECT_KEYS } = __m13;
 const { rgbToHex } = __m8;
@@ -17184,9 +17473,9 @@ const { drawJar } = __m53;
 const { ingredientSprite } = __m57;
 const { measureParticles, tapSelection, probeSelection, viscosityClass, densityWord } = __m44;
 const { scoreRequirement, PROPERTY_LABELS } = __m22;
-const { processEvent } = __m61;
+const { processEvent } = __m62;
 const { saveGame, saveJSON, KEYS } = __m49;
-const { AutoBrewer, condensedCount } = __m62;
+const { AutoBrewer, condensedCount } = __m63;
 const { traceSample, buildProcedure, procedureLimits, matchRecipe, compareRecipe, checkReproduction, TRACE_DT } = __m48;
 const { proofGaps, draftLabel, applyTrials, evidenceOf } = __m45;
 const { RANKS } = __m25;
@@ -17200,13 +17489,13 @@ const { describeColor, rgbToHex } = __m8;
 const { h, btn, clear, toast, coins, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const panels = __m63;
-const trade = __m65;
-const { Tutorial } = __m66;
-const { CounterView } = __m67;
-const { WildsView } = __m68;
-const { TrialsView } = __m70;
-const { BookView } = __m74;
+const panels = __m64;
+const trade = __m66;
+const { Tutorial } = __m67;
+const { CounterView } = __m68;
+const { WildsView } = __m69;
+const { TrialsView } = __m71;
+const { BookView } = __m75;
 const { shortName } = __m21;
 const REQ_ICON = { temperature: 'thermo', quantity: 'flask', purity: 'pure' };
 const TOOL_DEFS = [
@@ -18912,7 +19201,7 @@ void dominantEffect;
 return { VIEWS, LabScreen };
 })();
 // src/materials/reference.js
-const __m76 = (() => {
+const __m77 = (() => {
 const { completeMaterial } = __m9;
 const REF = {};
 const add = (d) => (REF[d.id] = completeMaterial(d));
@@ -18950,11 +19239,11 @@ const refLookup = (id) => REF[id];
 return { REF, refLookup };
 })();
 // src/ui/menu.js
-const __m75 = (() => {
+const __m76 = (() => {
 const { h, btn } = __m2;
 const { Renderer } = __m52;
 const { Simulation } = __m30;
-const { REF, refLookup } = __m76;
+const { REF, refLookup } = __m77;
 const { hasSave, loadGame } = __m49;
 const { audio } = __m4;
 class MenuScreen {
@@ -19043,8 +19332,8 @@ const { sandboxIngredients } = __m7;
 const { EQUIPMENT } = __m25;
 const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m49;
 const { LabScreen } = __m50;
-const { MenuScreen } = __m75;
-const { openSettings, openHelp } = __m63;
+const { MenuScreen } = __m76;
+const { openSettings, openHelp } = __m64;
 const { Rng } = __m6;
 const { normalizeTrials } = __m26;
 const DEFAULT_SETTINGS = { master: 0.8, sfx: 0.8, music: 0.35, musicOn: true, muted: false, quality: 'auto', showFps: false };
@@ -19160,7 +19449,7 @@ openHelp();
 return { App, icon };
 })();
 // src/ui/textures.js
-const __m77 = (() => {
+const __m78 = (() => {
 const { Rng } = __m6;
 function texture(w, h, paint) {
 const cv = document.createElement('canvas');
@@ -19212,7 +19501,7 @@ return { installTextures };
 // src/main.js
 const __m0 = (() => {
 const { App } = __m1;
-const { installTextures } = __m77;
+const { installTextures } = __m78;
 installTextures();
 const root = document.getElementById('app');
 const app = new App(root);

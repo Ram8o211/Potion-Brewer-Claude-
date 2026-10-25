@@ -7,12 +7,16 @@
 // Each gatherable has idle, hover and depleted frames and, where the art
 // exists, harvesting and closed ones (a dawn or dusk plant out of its
 // hour); all frames of one gatherable share a canvas anchored at its bottom
-// centre (the deposit's spot on the ground), so states swap in place. A
-// `card` frame is the picture on its deposit card (the ingredient's single
-// flower, root, crystal…) and an `icon` frame the 16 px picture on the shelf
-// and in the book. Deposits beyond the player's
-// guild rank are not drawn in the scene at all; their cards say what rank
-// opens them.
+// centre, so states swap in place. A `card` frame is the picture on its
+// deposit card (the ingredient's single flower, root, crystal…) and an
+// `icon` frame the 16 px picture on the shelf and in the book. The plants of
+// a deposit beyond the player's guild rank are not drawn in the scene at
+// all; its card says what rank opens it.
+//
+// What grows on the ground is drawn from one more atlas, the growth atlas
+// (assets/growth/atlas.png, scripts/make-growth.py): every ingredient as a
+// sprout, ripe and mature plant, plus a hover frame for the mature one, all
+// on one bottom-centre anchor so a plant grows in place.
 //
 // Each atlas loads once, in the background; until it has (and in Node, where
 // there is no Image), callers fall back to the procedural painting. Layout
@@ -21,6 +25,7 @@
 
 import { ATLASES } from './wilds-atlas.js';
 import * as FIELD from './meadow-atlas.js';
+import * as GROW from './growth-atlas.js';
 import { rawSprite } from './scenes.js';
 
 /** One sprite sheet and its frame rectangles [x, y, w, h]. */
@@ -147,6 +152,19 @@ export const GATHERABLES = Object.fromEntries(Object.entries({
   crags: ['dragonpepper', 'cinderscale', 'ashbloom', 'obsidian'],
 }).flatMap(([region, keys]) => keys.map((k) => gatherable(region, REGION_ATLAS[region], k))));
 
+/** Every wild ingredient as a sprout, ripe and mature plant. */
+export const GROWTH = new SpriteAtlas(GROW.ATLAS_URL, GROW.FRAMES);
+
+/**
+ * The growth frame of a plant at a stage (the hover frame only for a mature
+ * one, the only stage that can be harvested), or null without art for it.
+ * @param {string} key wild key @param {string} stage sprout | ripe | mature @param {boolean} [hover]
+ */
+export function growthFrame(key, stage, hover = false) {
+  const name = `${key}_${stage}${hover && stage === 'mature' ? '_hover' : ''}`;
+  return GROWTH.frames[name] ? name : null;
+}
+
 /** Smallest tap target around a deposit, in art pixels (≈ 30 CSS px on a phone). */
 export const MIN_HIT = 20;
 
@@ -167,39 +185,39 @@ export function gatherFrameName(key, s) {
 }
 
 /**
- * Where a deposit sits in the scene and what can be tapped: the frame's box
- * anchored at the deposit's bottom centre, grown to at least MIN_HIT square.
- * Deposits without sprite art keep the 16 px icon box of the procedural scene.
- * @param {{x:number, y:number}} d @param {string | null} key @param {number} W scene width @param {number} H scene height
+ * Where a plant stands in the scene and what can be tapped: its growth
+ * frame's box anchored at its spot on the ground (bottom centre), grown to
+ * at least MIN_HIT square. A plant without growth art (the procedural scene)
+ * keeps a 16 px icon box.
+ * @param {{x:number, y:number}} p @param {string | null} name its growth frame @param {number} W scene width @param {number} H scene height
  */
-export function depositBox(d, key, W, H) {
-  const g = key ? GATHERABLES[key] : null;
-  const f = g ? g.atlas.frames[g.idle] : null;
-  const ax = Math.round(d.x * W), ay = Math.round(d.y * H);
+export function plantBox(p, name, W, H) {
+  const f = name ? GROWTH.frames[name] : null;
+  const ax = Math.round(p.x * W), ay = Math.round(p.y * H);
   const w = f ? f[2] : 16, h = f ? f[3] : 16, bottom = f ? ay : ay + 2;
   const hw = Math.max(w, MIN_HIT) / 2, hh = Math.max(h, MIN_HIT);
   return { ax, ay, w, h, x0: ax - hw, x1: ax + hw, y0: bottom - hh, y1: bottom + 2 };
 }
 
 /**
- * The deposit under a scene point: the front-most (lowest on screen) box that
- * contains it, else the nearest box within `slop` art pixels. Only deposits
+ * The plant under a scene point: the front-most (lowest on screen) box that
+ * contains it, else the nearest box within `slop` art pixels. Only plants
  * are ever hit — the scenery is painted into the background and never takes a tap.
- * @template {{x:number, y:number}} D
- * @param {D[]} deps @param {(d:D)=>string|null} keyOf @param {number} px @param {number} py @param {number} W @param {number} H @param {number} [slop]
- * @returns {D | null}
+ * @template {{x:number, y:number}} P
+ * @param {P[]} plants @param {(p:P)=>string|null} frameOf @param {number} px @param {number} py @param {number} W @param {number} H @param {number} [slop]
+ * @returns {P | null}
  */
-export function hitDeposit(deps, keyOf, px, py, W, H, slop = 4) {
-  /** @type {D | null} */
+export function hitPlant(plants, frameOf, px, py, W, H, slop = 4) {
+  /** @type {P | null} */
   let best = null, bestY = -Infinity, near = null, nearD = slop * slop;
-  for (const d of deps) {
-    const b = depositBox(d, keyOf(d), W, H);
+  for (const p of plants) {
+    const b = plantBox(p, frameOf(p), W, H);
     if (px >= b.x0 && px <= b.x1 && py >= b.y0 && py <= b.y1) {
-      if (b.ay > bestY) { bestY = b.ay; best = d; }
+      if (b.ay > bestY) { bestY = b.ay; best = p; }
       continue;
     }
     const dx = Math.max(b.x0 - px, 0, px - b.x1), dy = Math.max(b.y0 - py, 0, py - b.y1), dd = dx * dx + dy * dy;
-    if (dd <= nearD) { nearD = dd; near = d; }
+    if (dd <= nearD) { nearD = dd; near = p; }
   }
   return best || near;
 }
