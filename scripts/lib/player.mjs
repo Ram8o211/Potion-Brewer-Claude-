@@ -237,8 +237,8 @@ export function provision(st, parts, prof, clock, met) {
     for (const d of deps) {
       for (let k = 0; k < 8 && st.stock(p.id) < need; k++) {
         clock.t += 60_000;
-        let r = st.gather(d.id, { now: clock.t });
-        if (!r.ok && prof.batch && r.reason === 'reserve') r = st.gather(d.id, { now: clock.t, thorough: true });
+        // a batch brewer digs plants out whole when the stand is all that is left
+        const r = st.gather(d.id, { now: clock.t, thorough: !!prof.batch && st.stock(p.id) < need / 2 });
         if (!r.ok) break;
         met.gatheredMl += r.amount; met.harvests++;
       }

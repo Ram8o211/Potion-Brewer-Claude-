@@ -252,15 +252,17 @@ export class GameState {
   }
 
   /**
-   * Gather from a deposit into the inventory. The yield follows the method
-   * and tool, the hour, the weather and the care taken (gathering.js).
-   * @param {string} depositId @param {{now?:number, unlimited?:boolean, thorough?:boolean}} [opts]
+   * Harvest a mature plant of a deposit (the one given, else the oldest)
+   * into the inventory. The yield follows the method and tool, the hour, the
+   * weather and the care taken (gathering.js).
+   * @param {string} depositId @param {{now?:number, unlimited?:boolean, thorough?:boolean, plant?:string}} [opts]
    */
   gather(depositId, opts = {}) {
     const d = this.deposits.find((x) => x.id === depositId);
     if (!d) return { ok: false, amount: 0, reason: 'unknown' };
-    const { take, eff, reserve } = gatherPlan(this, d, this.lookup(d.materialId), { thorough: opts.thorough });
-    const r = harvest(this, { ...d, take }, { ...opts, eff, reserve });
+    const m = this.lookup(d.materialId);
+    const { take } = gatherPlan(this, d, m, { thorough: opts.thorough });
+    const r = harvest(this, { ...d, take }, { ...opts, key: m && m.wild ? m.wild.key : '' });
     if (r.ok && !opts.unlimited) {
       this.stats.gathered = (this.stats.gathered || 0) + r.amount;
       /** @type {any} */ (r).events = [...this.unlock('forage1')];
@@ -734,7 +736,7 @@ export class GameState {
   /**
    * How much of an ingredient the shop can lay hands on today without
    * buying it: the stock on the shelf plus what careful harvests of every
-   * reachable deposit would bring right now (method, tool, hour and weather
+   * mature plant within reach would bring right now (method, tool, hour and weather
    * included). Purchases come on top (canBuy).
    * @param {string} id @param {number} [now]
    */
@@ -745,9 +747,8 @@ export class GameState {
     for (const d of this.deposits) {
       if (d.materialId !== id || d.rank > this.rank) continue;
       const plan = gatherPlan(this, d, this.lookup(id));
-      // repeated careful harvests: everything above the reserve, at today's usable share
-      const s = depositStatus(this.gathering, d, now);
-      wild += Math.floor((Math.max(0, s.stock - plan.reserve) * plan.eff) / 5) * 5;
+      // a careful harvest of every mature plant
+      wild += depositStatus(this.gathering, d, now).mature * plan.take;
     }
     return stock + wild;
   }

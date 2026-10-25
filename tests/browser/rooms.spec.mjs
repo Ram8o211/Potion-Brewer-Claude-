@@ -1,10 +1,11 @@
-// The Wilds and the Trials room through real input: gathering fills the
-// stores and depletes a deposit, a dragged dropper doses a subject, a spent
-// subject is replaced for coins, and all of it survives a reload.
+// The Wilds and the Trials room through real input: harvesting a mature
+// plant fills the stores and leaves a mark where it stood, a dragged
+// dropper doses a subject, a spent subject is replaced for coins, and all
+// of it survives a reload.
 import { test, expect } from '@playwright/test';
 import { watchErrors, shot, newGame, lab, drag, pourDose, crushInPot } from './helpers.mjs';
 
-test('gathering in the wilds fills the stores and depletes the deposit', async ({ page }, info) => {
+test('harvesting a mature plant fills the stores and leaves a mark; growing ones cannot be taken', async ({ page }, info) => {
   const errors = watchErrors(page);
   await newGame(page, { tutorial: false, seed: 'gather-seed-1' });
   await page.click('[data-act=tab-wilds]');
@@ -19,10 +20,9 @@ test('gathering in the wilds fills the stores and depletes the deposit', async (
   const after = await lab(page, (l, id) => l.state.stock(id), dep.materialId);
   expect(after, 'gathered what the button promised').toBe(before + promised);
   const node = await lab(page, (l, id) => l.state.gathering.nodes[id], dep.id);
-  // what spoils by hand, out of hours or in the weather is cut all the same
-  const drawn = dep.capacity - node.stock;
-  expect(drawn, 'the deposit gave at least what was gathered').toBeGreaterThanOrEqual(promised - 0.5);
-  expect(drawn, 'and no more than a quarter of a careful harvest spoils').toBeLessThanOrEqual(dep.capacity * 0.7 + 0.5);
+  expect(node.plants.length, 'one plant was taken').toBe(dep.slots - 1);
+  expect(node.due, 'and the stand is sprouting again').toBeGreaterThan(Date.now() - 1000);
+  expect(await lab(page, (l) => l.state.gathering.marks.length), 'it left a mark on the ground').toBe(1);
   // buying the Forager's Kit raises the yield of everything that is not simply picked
   const tool = await lab(page, (l, id) => { const m = l.state.lookup(id); return m.wild.gather; }, dep.materialId);
   if (tool !== 'pick') {
@@ -34,43 +34,59 @@ test('gathering in the wilds fills the stores and depletes the deposit', async (
   await page.click('[data-act=harvest-thorough]');
   await expect(page.locator('[data-act=harvest-thorough]')).toHaveClass(/active/);
   await page.click('[data-act=harvest-careful]');
-  // tapping a deposit in the scene gathers too
+  // tapping a mature plant in the scene harvests it
   await page.locator('.view-wilds canvas.scene').scrollIntoViewIfNeeded();
   const cv = await page.locator('.view-wilds canvas.scene').boundingBox();
   if (!cv) throw new Error('no scene');
-  // (each deposit stands where the scene's layout put it, clear of the scenery)
-  await page.waitForFunction(() => window.__alchemist.screen.views.wilds.bgKey.endsWith(':true'));
-  const deps = await lab(page, (l) => l.views.wilds.inScene());
-  const d2 = deps[1];
-  const s0 = await lab(page, (l, id) => l.state.stock(id), d2.materialId);
-  const pt = { x: cv.x + d2.x * cv.width, y: cv.y + (d2.y * 144 - 8) / 144 * cv.height };
-  await drag(page, [pt, pt], 30);
-  expect(await lab(page, (l, id) => l.state.stock(id), d2.materialId), 'tapping the deposit gathered').toBeGreaterThan(s0);
+  // (each plant stands where the scene's ground put it, clear of the scenery)
+  await page.waitForFunction(() => window.__alchemist.screen.views.wilds.bgKey.endsWith(':true:true'));
+  await lab(page, (l) => l.views.wilds.grow());
+  const field = await lab(page, (l) => l.views.wilds.field.map((p) => ({ id: p.id, dep: p.dep.id, materialId: p.dep.materialId, x: p.x, y: p.y, stage: p.stage })));
+  const tapAt = (p) => ({ x: cv.x + p.x * cv.width, y: cv.y + (p.y * 144 - 6) / 144 * cv.height });
+  const ripe = field.find((p) => p.stage === 'mature' && p.dep !== dep.id);
+  const s0 = await lab(page, (l, id) => l.state.stock(id), ripe.materialId);
+  await drag(page, [tapAt(ripe), tapAt(ripe)], 30);
+  expect(await lab(page, (l, id) => l.state.stock(id), ripe.materialId), 'tapping the mature plant gathered').toBeGreaterThan(s0);
+  expect(await lab(page, (l, id) => l.views.wilds.field.some((p) => p.id === id), ripe.id), 'and it is gone from the ground').toBe(false);
   await shot(page, info, 'wilds-gathered');
-  // Whisperwood is drawn from its sprite atlas; only deposits take taps — a
-  // tap on the sky or canopy gathers nothing
-  const scenery = await lab(page, (l) => ({ total: l.state.gathering.total, nodes: JSON.stringify(l.state.gathering.nodes) }));
-  for (const fx of [0.1, 0.5, 0.9]) await page.mouse.click(cv.x + cv.width * fx, cv.y + cv.height * 0.06);
-  expect(await lab(page, (l) => JSON.stringify(l.state.gathering.nodes)), 'scenery is not gatherable').toBe(scenery.nodes);
-  // a deposit beyond the guild rank is left out of the scene (its card says what opens it)
-  const far = await lab(page, (l) => l.state.deposits.find((d) => d.region === 'forest' && d.rank > 0));
-  if (far) expect(await lab(page, (l, id) => l.views.wilds.inScene().some((d) => d.id === id), far.id)).toBe(false);
-  // pointing at a deposit highlights it
-  if (info.project.name === 'desktop') {
-    const d3 = deps.find((d) => d.rank === 0 && d.id !== d2.id) || deps[0];
-    await page.mouse.move(cv.x + d3.x * cv.width, cv.y + (d3.y * 144 - 8) / 144 * cv.height);
-    await expect.poll(() => lab(page, (l) => l.views.wilds.hover)).toBe(d3.id);
+  // a plant still growing cannot be taken
+  // (the youngest plant, a fresh sprout where there is one)
+  await page.evaluate(() => document.querySelectorAll('.toast').forEach((t) => t.remove()));
+  const total = await lab(page, (l) => l.state.gathering.total);
+  const young = await lab(page, (l) => {
+    const w = l.views.wilds;
+    w.grow();
+    const p = w.field.filter((q) => q.stage !== 'mature').sort((a, b) => b.born - a.born)[0];
+    if (p) w.gather(p.dep, p);
+    return !!p;
+  });
+  if (young) {
+    await expect(page.locator('.toast', { hasText: 'Not ripe yet' })).toBeVisible();
+    expect(await lab(page, (l) => l.state.gathering.total)).toBe(total);
   }
-  // the Sunlit Meadow is composed from its own atlas; its plants are sprites
-  // that take taps the same way, and their cards show the plant's icon
+  // Whisperwood is drawn from its sprite atlas; only plants take taps — a
+  // tap on the sky or canopy gathers nothing
+  const scenery = await lab(page, (l) => JSON.stringify(l.state.gathering.nodes));
+  for (const fx of [0.1, 0.5, 0.9]) await page.mouse.click(cv.x + cv.width * fx, cv.y + cv.height * 0.06);
+  expect(await lab(page, (l) => JSON.stringify(l.state.gathering.nodes)), 'scenery is not gatherable').toBe(scenery);
+  // a deposit beyond the guild rank grows nothing in the scene (its card says what opens it)
+  const far = await lab(page, (l) => l.state.deposits.find((d) => d.region === 'forest' && d.rank > 0));
+  if (far) expect(await lab(page, (l, id) => l.views.wilds.field.some((p) => p.dep.id === id), far.id)).toBe(false);
+  // pointing at a mature plant highlights it
+  if (info.project.name === 'desktop') {
+    const p3 = await lab(page, (l) => { const p = l.views.wilds.field.find((q) => q.stage === 'mature'); return p && { id: p.id, x: p.x, y: p.y }; });
+    if (p3) {
+      await page.mouse.move(tapAt(p3).x, tapAt(p3).y);
+      await expect.poll(() => lab(page, (l) => l.views.wilds.hover)).toBe(p3.id);
+    }
+  }
+  // the Sunlit Meadow grows its own plants, tapped the same way; their cards show the plant's icon
   await page.click('[data-act=region-meadow]');
-  await page.waitForFunction(() => { const w = window.__alchemist.screen.views.wilds; return w.region === 'meadow' && w.bgKey.endsWith(':true'); });
-  const meadow = await lab(page, (l) => l.views.wilds.inScene().filter((d) => l.views.wilds.spriteKey(d)));
-  expect(meadow.length, 'meadow deposits are drawn as sprites').toBeGreaterThan(0);
-  const m0 = meadow[0];
+  await page.waitForFunction(() => { const w = window.__alchemist.screen.views.wilds; return w.region === 'meadow' && w.bgKey.endsWith(':true:true'); });
+  await lab(page, (l) => l.views.wilds.grow());
+  const m0 = await lab(page, (l) => { const p = l.views.wilds.field.find((q) => q.stage === 'mature'); return { id: p.id, materialId: p.dep.materialId, x: p.x, y: p.y }; });
   const ms0 = await lab(page, (l, id) => l.state.stock(id), m0.materialId);
-  const mpt = { x: cv.x + m0.x * cv.width, y: cv.y + (m0.y * 144 - 8) / 144 * cv.height };
-  await drag(page, [mpt, mpt], 30);
+  await drag(page, [tapAt(m0), tapAt(m0)], 30);
   expect(await lab(page, (l, id) => l.state.stock(id), m0.materialId), 'tapping a meadow plant gathered').toBeGreaterThan(ms0);
   expect(await page.evaluate(() => [...document.querySelectorAll('.view-wilds .deposit canvas')].some((c) => /** @type {HTMLCanvasElement} */ (c).width === 24)), 'a card shows its plant icon').toBe(true);
   // (the screenshot without the toasts of the first gathering over the scene)
@@ -82,13 +98,13 @@ test('gathering in the wilds fills the stores and depletes the deposit', async (
   // the gathered herb is on the shelf
   await page.click('[data-act=tab-brew]');
   await expect(page.locator(`.jar[data-id="${dep.materialId}"]`)).toBeVisible();
-  // and the deposit state survives a reload
+  // and the plants survive a reload
   await lab(page, (l) => l.save());
   await page.reload();
   await page.click('[data-act=continue]');
   await page.waitForSelector('canvas.view-canvas');
   const back = await lab(page, (l, id) => l.state.gathering.nodes[id], dep.id);
-  expect(back.stock).toBeCloseTo(node.stock, 0);
+  expect(back.plants).toEqual(node.plants);
   expect(errors).toEqual([]);
 });
 

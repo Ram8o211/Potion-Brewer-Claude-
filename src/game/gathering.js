@@ -1,12 +1,17 @@
-// The wilds: regions with finite deposits of raw ingredients.
+// The wilds: regions where raw ingredients grow, plant by plant.
 //
-// The layout (which deposits exist, where, how big, how fast they regrow) is
-// generated from the world seed, so it never needs saving or migrating. Only
-// each deposit's stock and the time it was last touched are saved. Stock is
-// resolved lazily from elapsed wall-clock time whenever a deposit is shown
-// or gathered — there are no timers and nothing runs per frame, so the wilds
-// cost nothing while the player brews (and regrow while the game is closed).
-// A new shop day also lets every deposit recover half of its capacity.
+// The layout (which ingredients grow in each region, how many plants of
+// each the ground holds, how fast they grow) is generated from the world
+// seed, so it never needs saving or migrating. Each ingredient has a stand
+// of plants (crystals, stones, shells...) that come up as sprouts at random
+// spots, ripen and mature; only a mature plant can be harvested. Harvesting
+// one leaves a mark on the ground that fades, and the stand sprouts again
+// until it is back to its share of the region's saturation. Only each
+// stand's plants (where and when each sprouted) and the marks are saved;
+// what has grown since is resolved lazily from elapsed wall-clock time
+// whenever a stand is shown or gathered — there are no timers and nothing
+// runs per frame, so the wilds cost nothing while the player brews (and
+// grow while the game is closed). A new shop day also brings every stand on.
 //
 // How much one harvest brings depends on what the player does and when:
 //   • the method each ingredient needs (pick, dig, chip, scrape, sweep) and
@@ -17,8 +22,9 @@
 //   • the day's weather (from the world seed and the day number): rain makes
 //     plants regrow overnight, frost closes the meadow flowers, a storm
 //     recharges the crystal seams, fog keeps the twilight plants open;
-//   • careful or thorough harvesting: thorough takes twice as much but scars
-//     the deposit, which then regrows at half speed until it is full again.
+//   • careful or thorough harvesting: thorough digs the whole plant out for
+//     twice as much but scars the stand, which then sprouts at half pace
+//     until it is saturated again.
 
 import { Rng, hashString } from '../core/rng.js';
 
@@ -49,28 +55,48 @@ export const REGION_BY_ID = Object.fromEntries(REGIONS.map((r) => [r.id, r]));
  * @property {string} id
  * @property {string} region
  * @property {string} materialId
- * @property {number} x          0..1 position in the region scene
+ * @property {number} x          0..1 where the stand was first found in the region scene
  * @property {number} y          0..1
- * @property {number} capacity   ml when fully grown
- * @property {number} regrowMs   time to regrow from empty to full
- * @property {number} take       ml gathered per harvest
+ * @property {number} slots      plants the stand grows to (its share of the region's saturation)
+ * @property {number} capacity   ml the stand holds when every plant is mature (slots × take)
+ * @property {number} growMs     time a sprout takes to mature
+ * @property {number} spawnMs    time between new sprouts while the stand is below its slots
+ * @property {number} regrowMs   time to grow back from bare ground to every plant mature
+ * @property {number} take       ml one mature plant gives (before the hour, weather and tools)
  * @property {number} rank       guild rank needed
  * @property {boolean} rare
  * @property {string} [place]    a name for the spot
  */
 
+/**
+ * @typedef {Object} Plant
+ * @property {string} id
+ * @property {number} x      0..1 where it sprouted in the region scene
+ * @property {number} y      0..1
+ * @property {number} born   wall-clock time it sprouted
+ */
+
 /** Names of spots within each region (so two deposits read apart). */
 const PLACES = {
-  forest: ['by the old oak', 'in the fern hollow', 'under the beeches', 'at the mossy stump', 'by the woodcutter’s path', 'in the deep shade'],
+  forest: ['by the old oak', 'in the fern hollow', 'under the beeches', 'at the mossy stump', 'by the woodcutter’s path', 'in the deep shade', 'along the brook'],
   meadow: ['by the stile', 'on the sunny slope', 'near the beehives', 'along the hedgerow', 'in the long grass', 'by the well'],
   river: ['under the willow', 'on the chalk bank', 'by the ford', 'in the reeds', 'at the mill race', 'on the gravel bar'],
-  quarry: ['on the east face', 'in the spoil heap', 'by the cart track', 'in the old cutting', 'under the crane', 'at the seam'],
-  moonfen: ['on the barrow', 'by the will-o’-pool', 'in the drowned grove', 'on the stepping stones'],
+  quarry: ['on the east face', 'in the spoil heap', 'by the cart track', 'in the old cutting', 'under the crane', 'at the seam', 'by the powder store'],
+  moonfen: ['on the barrow', 'by the will-o’-pool', 'in the drowned grove', 'on the stepping stones', 'by the sunken cross', 'in the reed beds'],
   crags: ['on the ash slope', 'by the steam vent', 'in the lava cave', 'on the black ridge'],
 };
 
+/** The growth stages a plant passes through; only a mature one can be harvested. */
+export const STAGES = /** @type {const} */ (['sprout', 'ripe', 'mature']);
+/** The share of its growing time a plant spends as a sprout. */
+export const SPROUT_SHARE = 0.4;
+/** How long the mark a harvest leaves on the ground takes to fade (a dug-out plant's, twice as long). */
+export const MARK_MS = 4 * 60000;
+
 /**
- * Deterministic deposits for a world.
+ * Deterministic deposits for a world: one stand of each wild ingredient in
+ * its region. A stand grows up to `slots` plants; the slots of a region's
+ * stands are its saturation.
  * @param {{seed:string, wild?:string[]}} world
  * @param {(id:string)=>any} lookup
  * @returns {Deposit[]}
@@ -81,81 +107,156 @@ export function generateDeposits(world, lookup) {
   const out = [];
   for (const region of REGIONS) {
     const mats = (world.wild || []).map(lookup).filter((m) => m && m.wild && m.wild.region === region.id);
-    /** @type {[number, number][]} */
-    const placed = [];
-    for (const m of mats) {
-      // a crowded region grows one patch of each ingredient, a sparse one two
-      const copies = m.wild.rare || mats.length > 5 ? 1 : 2;
-      for (let c = 0; c < copies; c++) {
-        let x = 0.5, y = 0.7;
-        for (let tries = 0; tries < 40; tries++) {
-          x = rng.range(0.1, 0.9);
-          y = rng.range(0.5, 0.88);
-          if (placed.every(([px, py]) => Math.hypot((px - x) * 1.6, py - y) > 0.17)) break;
-        }
-        placed.push([x, y]);
-        const rare = !!m.wild.rare;
-        out.push({
-          id: `${region.id}:${m.wild.key}:${c}`,
-          place: PLACES[region.id][(placed.length - 1) % PLACES[region.id].length],
-          region: region.id,
-          materialId: m.id,
-          x: Math.round(x * 1000) / 1000,
-          y: Math.round(y * 1000) / 1000,
-          capacity: rare ? rng.int(4, 6) * 20 : rng.int(10, 16) * 20,
-          regrowMs: Math.round((rare ? rng.range(45, 80) : rng.range(10, 20)) * 60000),
-          take: rare ? 20 : 40,
-          rank: Math.max(region.rank, m.wild.rank || 0),
-          rare,
-        });
-      }
-    }
+    mats.forEach((m, k) => {
+      const rare = !!m.wild.rare;
+      // a crowded region grows fewer of each ingredient, so its ground does not overflow
+      const slots = rare ? 1 + (mats.length <= 5 ? 1 : 0) : mats.length > 5 ? 2 : 3;
+      const take = rare ? rng.int(3, 4) * 10 : rng.int(5, 8) * 10;
+      const growMs = Math.round((rare ? rng.range(18, 30) : rng.range(4, 8)) * 60000);
+      const spawnMs = Math.round((rare ? rng.range(15, 25) : rng.range(3, 5)) * 60000);
+      out.push({
+        id: `${region.id}:${m.wild.key}:0`,
+        place: PLACES[region.id][k % PLACES[region.id].length],
+        region: region.id,
+        materialId: m.id,
+        x: Math.round(rng.range(0.1, 0.9) * 1000) / 1000,
+        y: Math.round(rng.range(0.56, 0.88) * 1000) / 1000,
+        slots,
+        capacity: slots * take,
+        growMs,
+        spawnMs,
+        regrowMs: spawnMs * (slots - 1) + growMs,
+        take,
+        rank: Math.max(region.rank, m.wild.rank || 0),
+        rare,
+      });
+    });
   }
   return out;
 }
 
-/** Fresh gathering state: every deposit full. */
+/**
+ * @typedef {Object} Stand  a deposit's saved plants
+ * @property {Plant[]} plants
+ * @property {number|null} due   when the next sprout appears (null: the stand is saturated)
+ * @property {number} seq        sprouts so far (names the next one and seeds where it grows)
+ * @property {boolean} [scar]    dug out thoroughly: sprouts come at half pace until it is saturated again
+ */
+
+/**
+ * @typedef {Object} Mark  the trace a harvest leaves on the ground
+ * @property {string} region
+ * @property {string} key    the plant's wild key (its size on the ground)
+ * @property {number} x
+ * @property {number} y
+ * @property {number} at
+ * @property {boolean} [deep] dug out by a thorough harvest
+ */
+
+/** Fresh gathering state: every stand saturated, some of it already mature. */
 export function createGathering(now = Date.now()) {
-  return { nodes: /** @type {Record<string, {stock:number, at:number, scar?:boolean}>} */ ({}), total: 0, trips: 0, created: now };
+  return { nodes: /** @type {Record<string, Stand>} */ ({}), marks: /** @type {Mark[]} */ ([]), total: 0, trips: 0, created: now };
 }
+
+const finite = (/** @type {any} */ v) => typeof v === 'number' && Number.isFinite(v);
 
 /** @param {any} g */
 export function normalizeGathering(g, now = Date.now()) {
   const out = createGathering(now);
   if (!g || typeof g !== 'object') return out;
+  if (finite(g.created)) out.created = Math.min(g.created, now);
   if (g.nodes && typeof g.nodes === 'object') {
     for (const [id, v] of Object.entries(g.nodes)) {
-      if (!v || typeof v !== 'object') continue;
-      const stock = Number(v.stock), at = Number(v.at);
-      if (Number.isFinite(stock) && Number.isFinite(at)) out.nodes[id] = { stock: Math.max(0, stock), at: Math.min(at, now), ...(/** @type {any} */ (v).scar ? { scar: true } : {}) };
+      // a stand saved before plants grew one by one (stock in ml) starts afresh, saturated
+      if (!v || typeof v !== 'object' || !Array.isArray(v.plants)) continue;
+      const plants = v.plants.filter((p) => p && typeof p.id === 'string' && finite(p.x) && finite(p.y) && finite(p.born))
+        .map((p) => ({ id: p.id, x: Math.min(1, Math.max(0, p.x)), y: Math.min(1, Math.max(0, p.y)), born: Math.min(p.born, now) }));
+      out.nodes[id] = { plants, due: finite(v.due) ? v.due : null, seq: finite(v.seq) ? v.seq : plants.length, ...(v.scar ? { scar: true } : {}) };
     }
+  }
+  if (Array.isArray(g.marks)) {
+    out.marks = g.marks.filter((k) => k && typeof k.region === 'string' && typeof k.key === 'string' && finite(k.x) && finite(k.y) && finite(k.at) && now - k.at < MARK_MS * 2)
+      .map((k) => ({ region: k.region, key: k.key, x: k.x, y: k.y, at: Math.min(k.at, now), ...(k.deep ? { deep: true } : {}) }));
   }
   out.total = Number.isFinite(g.total) ? g.total : 0;
   out.trips = Number.isFinite(g.trips) ? g.trips : 0;
   return out;
 }
 
+/** A new sprout of a stand, somewhere random in its region. @param {ReturnType<typeof createGathering>} g @param {Deposit} d @param {number} seq @param {number} born @returns {Plant} */
+function sprout(g, d, seq, born) {
+  const rng = new Rng(hashString(`sprout:${g.created}:${d.id}:${seq}`));
+  return { id: `${d.id}#${seq}`, x: Math.round(rng.range(0.06, 0.94) * 1000) / 1000, y: Math.round(rng.range(0.56, 0.9) * 1000) / 1000, born: Math.round(born) };
+}
+
 /**
- * Current stock of a deposit (pure; resolves regrowth since it was touched).
+ * A stand nobody has touched: saturated when the wilds were first walked,
+ * its first plant mature and the others at every stage of growing.
+ * @param {ReturnType<typeof createGathering>} g @param {Deposit} d @param {number} now @returns {Stand}
+ */
+function untouched(g, d, now) {
+  const t0 = Math.min(g.created, now), rng = new Rng(hashString(`stand:${g.created}:${d.id}`));
+  const plants = [];
+  for (let k = 0; k < d.slots; k++) plants.push(sprout(g, d, k, t0 - d.growMs * (k === 0 ? 1.2 : rng.range(0.1, 1.6))));
+  return { plants, due: null, seq: d.slots };
+}
+
+/** Time between sprouts of a stand (a scarred one, slower). @param {Deposit} d @param {{scar?:boolean}} s */
+const every = (d, s) => d.spawnMs * (s.scar ? SCAR_SLOWDOWN : 1);
+
+/**
+ * A deposit's stand as it is now (pure): the saved plants plus every sprout
+ * that has come up since, at random spots, until the stand is saturated.
+ * @param {ReturnType<typeof createGathering>} g @param {Deposit} d @param {number} [now] @returns {Stand}
+ */
+export function standOf(g, d, now = Date.now()) {
+  const saved = g.nodes[d.id] || untouched(g, d, now);
+  /** @type {Stand} */
+  const s = { plants: saved.plants.slice(), due: saved.due, seq: saved.seq, ...(saved.scar ? { scar: true } : {}) };
+  while (s.due !== null && s.due <= now && s.plants.length < d.slots) {
+    s.plants.push(sprout(g, d, s.seq++, s.due));
+    s.due += every(d, s);
+  }
+  if (s.plants.length >= d.slots) { s.due = null; delete s.scar; }
+  return s;
+}
+
+/** A plant's stage and how far it has grown (0..1). @param {Deposit} d @param {Plant} p @param {number} [now] */
+export function plantStage(d, p, now = Date.now()) {
+  const grown = Math.max(0, Math.min(1, (now - p.born) / d.growMs));
+  return { stage: grown >= 1 ? 'mature' : grown >= SPROUT_SHARE ? 'ripe' : 'sprout', grown, matureIn: Math.max(0, p.born + d.growMs - now) };
+}
+
+/**
+ * How a deposit is doing now (pure): its plants and their stages, how much
+ * its mature plants hold, how far the stand has grown back, when the next
+ * plant matures and when every slot holds a mature plant again.
  * @param {ReturnType<typeof createGathering>} g @param {Deposit} d @param {number} [now]
  */
 export function depositStatus(g, d, now = Date.now()) {
-  const saved = g.nodes[d.id];
-  let stock = d.capacity;
-  const scarred = !!(saved && saved.scar);
-  const regrow = d.regrowMs * (scarred ? SCAR_SLOWDOWN : 1);
-  if (saved) {
-    const dt = Math.max(0, now - saved.at);
-    stock = Math.min(d.capacity, saved.stock + (dt / regrow) * d.capacity);
-  }
-  const available = Math.floor(stock + 1e-6);
-  const fullIn = stock >= d.capacity ? 0 : ((d.capacity - stock) / d.capacity) * regrow;
-  const nextIn = available >= Math.min(d.take, d.capacity) ? 0 : ((Math.min(d.take, d.capacity) - stock) / d.capacity) * regrow;
-  return { stock, available, fraction: stock / d.capacity, fullIn, nextIn, scarred: scarred && stock < d.capacity };
+  const s = standOf(g, d, now);
+  const plants = s.plants.map((p) => ({ ...p, ...plantStage(d, p, now) }));
+  const mature = plants.filter((p) => p.stage === 'mature').length;
+  // the sprouts still to come, then the last of them growing up
+  const missing = d.slots - plants.length;
+  const lastSprout = missing > 0 && s.due !== null ? s.due + (missing - 1) * every(d, s) : now;
+  const fullAt = Math.max(now, lastSprout + (missing > 0 ? d.growMs : 0), ...plants.map((p) => p.born + d.growMs));
+  const nextAt = mature ? now : Math.min(...plants.map((p) => p.born + d.growMs), s.due !== null ? s.due + d.growMs : Infinity);
+  const stock = mature * d.take;
+  return {
+    plants, mature, stock, available: stock,
+    fraction: plants.reduce((a, p) => a + p.grown, 0) / d.slots,
+    fullIn: fullAt - now, nextIn: Math.max(0, nextAt - now), scarred: !!s.scar,
+  };
 }
 
-/** A thoroughly stripped deposit regrows this many times slower until full. */
+/** A thoroughly dug stand sprouts this many times slower until it is saturated again. */
 export const SCAR_SLOWDOWN = 2;
+
+/** The harvest marks still showing in a region, each with how far it has faded (0..1). @param {ReturnType<typeof createGathering>} g @param {string} region @param {number} [now] */
+export function marksIn(g, region, now = Date.now()) {
+  return g.marks.filter((k) => k.region === region).map((k) => ({ ...k, faded: (now - k.at) / (MARK_MS * (k.deep ? 2 : 1)) })).filter((k) => k.faded < 1);
+}
 
 // ------------------------------------------------------------------ methods, tools, hours and weather
 
@@ -255,86 +356,103 @@ export function gatherPlan(st, d, m, opts = {}) {
   if (weather.id === 'heat' && (FLOWER_SHAPES.has(shape))) factors.push({ why: 'lush in the heat', f: 1.25 });
   if (weather.id === 'heat' && shape === 'moss') factors.push({ why: 'dried out in the heat', f: 0.5 });
   if (weather.id === 'storm') factors.push({ why: 'wind scatters it', f: 0.75 });
-  if (opts.thorough) factors.push({ why: 'thorough: the deposit will regrow slowly', f: 2 });
+  if (opts.thorough) factors.push({ why: 'thorough: the stand will sprout slowly', f: 2 });
   const f = factors.reduce((a, x) => a * x.f, 1);
   const take = Math.max(5, Math.floor((d.take * f) / 5) * 5);
   // how much of what is cut becomes usable (the rest is spoiled by hand, out
   // of hours or by the weather); the satchel and a thorough harvest change how
   // much is taken per trip, not how well
   const eff = factors.filter((x) => x.why !== 'satchel' && !x.why.startsWith('thorough')).reduce((a, x) => a * x.f, 1);
-  // careful hands leave part of every deposit to regrow
-  const reserve = opts.thorough ? 0 : Math.round(d.capacity * CAREFUL_RESERVE);
-  return { method, hasTool, part, weather, hour, open, factors, take, eff, reserve, thorough: !!opts.thorough };
+  return { method, hasTool, part, weather, hour, open, factors, take, eff, thorough: !!opts.thorough };
 }
 
-/** The share of a deposit a careful harvest leaves standing. */
-export const CAREFUL_RESERVE = 0.3;
-
 /**
- * How much one harvest can bring right now (ignoring shelf space).
- * @param {ReturnType<typeof createGathering>} g @param {Deposit} d @param {{take:number, eff:number, reserve:number}} plan @param {number} [now]
+ * How much one harvest can bring right now (ignoring shelf space): one
+ * mature plant's yield, or nothing while every plant is still growing.
+ * @param {ReturnType<typeof createGathering>} g @param {Deposit} d @param {{take:number}} plan @param {number} [now]
  */
 export function harvestable(g, d, plan, now = Date.now()) {
-  const s = depositStatus(g, d, now);
-  return Math.floor(Math.min(plan.take, Math.max(0, s.stock - plan.reserve) * plan.eff) / 5) * 5;
+  return depositStatus(g, d, now).mature ? plan.take : 0;
 }
 
 /**
- * A new day's weather acts on the deposits: rain refills the plants, a storm
- * the crystal seams.
- * @param {ReturnType<typeof createGathering>} g @param {Deposit[]} deposits @param {Weather} weather @param {(id:string)=>any} lookup
+ * A stand grown back at once: its plants all mature, its empty slots filled
+ * with mature plants at new spots.
+ * @param {ReturnType<typeof createGathering>} g @param {Deposit} d @param {number} now
  */
-export function weatherRegrowth(g, deposits, weather, lookup) {
+function ripen(g, d, now) {
+  const s = standOf(g, d, now);
+  const born = now - d.growMs;
+  s.plants = s.plants.map((p) => ({ ...p, born: Math.min(p.born, born) }));
+  while (s.plants.length < d.slots) s.plants.push(sprout(g, d, s.seq++, born));
+  g.nodes[d.id] = { plants: s.plants, due: null, seq: s.seq };
+}
+
+/**
+ * A new day's weather acts on the deposits: rain grows the plants back in
+ * full, a storm the crystal seams.
+ * @param {ReturnType<typeof createGathering>} g @param {Deposit[]} deposits @param {Weather} weather @param {(id:string)=>any} lookup @param {number} [now]
+ */
+export function weatherRegrowth(g, deposits, weather, lookup, now = Date.now()) {
   for (const d of deposits) {
     const m = lookup(d.materialId);
     const shape = m && m.wild ? m.wild.shape : '';
-    if ((weather.id === 'rain' && PLANT_SHAPES.has(shape)) || (weather.id === 'storm' && (shape === 'crystal' || shape === 'shard'))) delete g.nodes[d.id];
+    if ((weather.id === 'rain' && PLANT_SHAPES.has(shape)) || (weather.id === 'storm' && (shape === 'crystal' || shape === 'shard'))) ripen(g, d, now);
   }
 }
 
 /**
- * Harvest a deposit into the shop inventory. Respects shelf storage and the
- * deposit's stock; returns what was gathered (0 if nothing could be).
+ * Harvest one mature plant of a deposit into the shop inventory: the plant
+ * given (`plant`, a plant id) or else the oldest mature one. Only a mature
+ * plant can be taken; it leaves a mark on the ground that fades, and the
+ * stand starts sprouting again (at random spots) until it is saturated.
+ * Respects shelf storage; returns what was gathered (0 if nothing could be).
  * @param {{rank:number, inventory:Record<string,number>, cap:{storage:number}, gathering:any}} st
- * @param {Deposit} d
- * Each harvest draws on the deposit by what it really takes from the plant:
- * `eff` is the usable share (the rest is spoiled), and a careful harvest
- * never cuts into the `reserve` it leaves to regrow.
- * @param {{now?:number, unlimited?:boolean, thorough?:boolean, eff?:number, reserve?:number}} [opts]
+ * @param {Deposit} d `take` is what the plant gives (gatherPlan)
+ * @param {{now?:number, unlimited?:boolean, thorough?:boolean, plant?:string, key?:string}} [opts]
  */
 export function harvest(st, d, opts = {}) {
   const now = opts.now ?? Date.now();
   if (d.rank > st.rank && !opts.unlimited) return { ok: false, amount: 0, reason: 'locked' };
+  if (opts.unlimited) return { ok: true, amount: d.take, remaining: d.capacity };
   const g = st.gathering;
-  const s = depositStatus(g, d, now);
+  const s = standOf(g, d, now);
   const have = st.inventory[d.materialId] ?? 0;
   const room = isFinite(have) ? Math.max(0, st.cap.storage - have) : 0;
-  if (opts.unlimited) return { ok: true, amount: d.take, remaining: d.capacity };
-  const eff = opts.eff > 0 ? opts.eff : 1, reserve = Math.max(0, opts.reserve || 0);
-  const amount = Math.floor(Math.min(d.take, Math.max(0, s.stock - reserve) * eff, room) / 5) * 5;
-  if (amount <= 0) return { ok: false, amount: 0, reason: room <= 0 ? 'full' : reserve > 0 && Math.min(d.take, s.stock * eff) >= 5 ? 'reserve' : 'depleted', nextIn: s.nextIn };
-  const drawn = Math.min(s.stock, amount / eff);
-  // a scar stays until the deposit has grown back in full
-  const scar = opts.thorough || (s.scarred && s.stock - drawn < d.capacity);
-  g.nodes[d.id] = { stock: s.stock - drawn, at: now, ...(scar ? { scar: true } : {}) };
+  const ripe = s.plants.filter((p) => plantStage(d, p, now).stage === 'mature').sort((a, b) => a.born - b.born);
+  const p = opts.plant ? s.plants.find((q) => q.id === opts.plant) : ripe[0];
+  if (!p || !ripe.includes(p)) {
+    const status = depositStatus(g, d, now);
+    return { ok: false, amount: 0, reason: p ? 'growing' : opts.plant ? 'gone' : 'depleted', nextIn: p ? plantStage(d, p, now).matureIn : status.nextIn };
+  }
+  const amount = Math.floor(Math.min(d.take, room) / 5) * 5;
+  if (amount <= 0) return { ok: false, amount: 0, reason: 'full' };
+  const plants = s.plants.filter((q) => q !== p);
+  const scar = !!(opts.thorough || s.scar);
+  g.nodes[d.id] = { plants, due: s.due ?? now + every(d, { scar }), seq: s.seq, ...(scar ? { scar: true } : {}) };
+  g.marks = g.marks.filter((k) => now - k.at < MARK_MS * 2);
+  g.marks.push({ region: d.region, key: opts.key || '', x: p.x, y: p.y, at: now, ...(opts.thorough ? { deep: true } : {}) });
   st.inventory[d.materialId] = have + amount;
   g.total += amount;
-  return { ok: true, amount, remaining: Math.floor(s.stock - drawn) };
+  return { ok: true, amount, plant: p.id, remaining: (ripe.length - 1) * d.take };
 }
 
 /**
- * A new shop day: every deposit recovers half its capacity (on top of
- * wall-clock regrowth), so a quick player is never stuck waiting.
+ * A new shop day: every plant grows on by half its growing time and a stand
+ * below its slots puts up half of its missing sprouts (a scarred one, a
+ * quarter), on top of wall-clock growth, so a quick player is never stuck
+ * waiting.
  * @param {ReturnType<typeof createGathering>} g @param {Deposit[]} deposits @param {number} [now]
  */
 export function newDayRegrowth(g, deposits, now = Date.now()) {
   for (const d of deposits) {
-    const saved = g.nodes[d.id];
-    if (!saved) continue;
-    const s = depositStatus(g, d, now);
-    const stock = Math.min(d.capacity, s.stock + d.capacity * (saved.scar ? 0.25 : 0.5));
-    if (stock >= d.capacity - 1e-6) delete g.nodes[d.id];
-    else g.nodes[d.id] = { stock, at: now, ...(saved.scar ? { scar: true } : {}) };
+    if (!g.nodes[d.id]) continue;
+    const s = standOf(g, d, now);
+    const plants = s.plants.map((p) => ({ ...p, born: p.born - d.growMs / 2 }));
+    const add = Math.ceil((d.slots - plants.length) * (s.scar ? 0.25 : 0.5));
+    for (let k = 0; k < add; k++) plants.push(sprout(g, d, s.seq++, now));
+    const full = plants.length >= d.slots;
+    g.nodes[d.id] = { plants, due: full ? null : s.due, seq: s.seq, ...(s.scar && !full ? { scar: true } : {}) };
   }
 }
 
