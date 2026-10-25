@@ -50,7 +50,10 @@ scene's art-pixel size and packs one atlas per region into
 - **Icons** are lifted out of the pack's parchment frames (the parchment is
   flooded away from the frame's inner edge) and drawn at 32 px: one picture
   of the ingredient in every list (the shelf, the shop, the book and its
-  deposit card). The pack's icons are barely larger than that, so a bigger
+  deposit card). The parchment's soft edge left round the icon's own dark
+  outline is peeled after resampling, and the outline is drawn whole in a
+  deep shade of each edge's own colour rather than a flat ink ring, so an
+  icon sits in its card instead of on it like a sticker. The pack's icons are barely larger than that, so a bigger
   card picture resampled from them came out ruled with dark grid lines.
 - `../effects/glint_frame_00–03` are still packed as `glint_0–3`, but the
   scene no longer uses them: a ripe crystal sparkles with a thin four-point

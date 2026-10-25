@@ -38,7 +38,7 @@ import numpy as np
 from PIL import Image, ImageFilter
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from pixelart import INK, GLOW, trim, outline, anchored, accents, snap, despeckle, defringe, pack, fit, recolour, hue_in, down, majority, rim  # noqa: E402
+from pixelart import INK, GLOW, trim, outline, anchored, accents, snap, despeckle, defringe, pack, fit, recolour, hue_in, down, majority, rim, list_icon  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, 'art', 'wilds')
@@ -193,6 +193,42 @@ def edge_halo(im, passes=2):
                 if (khaki or pale) and luma[y, x] - np.mean(inner) > 25:
                     out[y, x] = 0
         im = Image.fromarray(out, 'RGBA')
+    return im
+
+
+def peel(im, passes=3, dark=70, most=0.15):
+    """Peel the parchment halo round a resampled icon: the pack paints each
+    icon with a dark outline and the parchment's soft edge beyond it, so an
+    edge pixel near that outline (within two pixels of a dark one) and
+    lighter than the darkest pixel just inside it is halo. Loose specks it
+    leaves (an edge pixel with at most one neighbour) go too. If peeling
+    would take more than `most` of the picture (a pale pearl whose outline
+    is faint), fewer passes are tried."""
+    n = (np.asarray(im)[..., 3] > 0).sum()
+    for p in range(passes, 0, -1):
+        px = np.asarray(im).copy()
+        for _ in range(p):
+            a = px[..., 3] > 0
+            h, w = a.shape
+            luma = px[..., :3].astype(int) @ np.array([0.3, 0.59, 0.11])
+            k = np.pad(a, 1)
+            edge = a & ~(k[:-2, 1:-1] & k[2:, 1:-1] & k[1:-1, :-2] & k[1:-1, 2:])
+            lp = np.pad(np.where(a, luma, 999), 1, constant_values=999)
+            inner = np.min([lp[1 + dy:h + 1 + dy, 1 + dx:w + 1 + dx] for dy in (-1, 0, 1) for dx in (-1, 0, 1) if dy or dx], axis=0)
+            dk = np.pad(a & (luma < dark), 2)
+            near = np.max([dk[2 + dy:h + 2 + dy, 2 + dx:w + 2 + dx] for dy in range(-2, 3) for dx in range(-2, 3)], axis=0)
+            rgb = px[..., :3].astype(int)
+            sat = (rgb.max(axis=2) - rgb.min(axis=2)) / np.maximum(rgb.max(axis=2), 1)
+            halo = edge & near & (luma - inner > 30) & (sat < 0.55)
+            if not halo.any():
+                break
+            px[halo] = 0
+        a = px[..., 3] > 0
+        k = np.pad(a, 1).astype(int)
+        px[a & (k[:-2, 1:-1] + k[2:, 1:-1] + k[1:-1, :-2] + k[1:-1, 2:] <= 1)] = 0
+        out = whole(Image.fromarray(px, 'RGBA'), keep=0.04)
+        if (np.asarray(out)[..., 3] > 0).sum() >= n * (1 - most):
+            return out
     return im
 
 
@@ -378,11 +414,9 @@ class Region:
             c = prep(closed, h)
             frames['closed'], frames['closed_hover'] = c, outline(c, GLOW)
         self.S.update({f'{key}_{k}': v for k, v in anchored(frames).items()})
-        src = self.icon(key, tol)
-        im = fit(src, h=30, colours=32)
-        if im.width > 30:
-            im = fit(src, w=30, colours=32)
-        self.S[f'{key}_icon'] = outline(despeckle(im), INK)
+        # (its parchment halo peeled and a deep shade of its own edge round it, not
+        # a flat ink ring: in a list it sits in the card rather than on it like a sticker)
+        self.S[f'{key}_icon'] = list_icon(self.icon(key, tol), lambda im: rim(peel(despeckle(im))))
 
     def glints(self):
         for i in range(4):

@@ -56,4 +56,6 @@ The gatherables are 22–27 px tall with a dark outline; a hover frame with a
 light outline is generated from each. All frames of one plant share a canvas
 anchored at its foot, so states swap in place. Hemlock's near-black seed
 heads are lifted off the outline colour. Icons keep their own colours (a
-small flower has no pixel to spare for its yellow heart).
+small flower has no pixel to spare for its yellow heart) and are outlined
+in a deep shade of each edge's own colour, not flat ink, so they don't read
+as stickers in the lists.

@@ -36,7 +36,7 @@ OUT_JS = os.path.join(ROOT, 'src', 'rendering', 'meadow-atlas.js')
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pixelart as ww  # noqa: E402
-from pixelart import INK, GLOW, trim, outline, anchored, accents, snap, despeckle, defringe, pack, fit  # noqa: E402
+from pixelart import INK, GLOW, trim, outline, anchored, accents, snap, despeckle, defringe, pack, fit, rim  # noqa: E402
 
 
 def load(rel):
@@ -91,13 +91,9 @@ def gatherable(key, rel, h, depleted, closed=None, icon=None, tint=None):
         c = prep(load(closed), h)
         frames['closed'], frames['closed_hover'] = c, outline(c, GLOW)
     out = {f'{key}_{k}': v for k, v in anchored(frames).items()}
-    src = load(icon)
-    im = fit(src, h=30, colours=32)
-    if im.width > 30:
-        im = fit(src, w=30, colours=32)
-    im = ww.recolour(im, tint) if tint else im
-    # (UI pictures keep the icon's own colours: a small flower has no pixel to spare for its heart)
-    out[f'{key}_icon'] = outline(despeckle(im), INK)
+    # (UI pictures keep the icon's own colours: a small flower has no pixel to spare for its heart;
+    # a deep shade of its own edge goes round it, not a flat ink ring that reads as a sticker)
+    out[f'{key}_icon'] = ww.list_icon(load(icon), lambda im: rim(despeckle(ww.recolour(im, tint) if tint else im)))
     return out
 
 
