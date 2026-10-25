@@ -6,7 +6,7 @@
 
 import { PHASE, SIM, formPhase } from './constants.js';
 import { COLUMN } from './cauldron.js';
-import { chunkTemplate, chunkSize, hasPieces, skinOf } from '../materials/shapes.js';
+import { chunkTemplate, chunkSize, hasPieces, skinOf, grainSkinOf, piece } from '../materials/shapes.js';
 
 export class Emitter {
   /** @param {import('./world.js').Simulation} sim */
@@ -128,6 +128,7 @@ export class Emitter {
       const p = sim.p;
       p.vx[i] = (sim.rand() - 0.5) * (form === 'powder' ? 0.35 : 0.15);
       p.vy[i] = form === 'gas' ? 0.2 : sim.cauldron.lidClosed ? 1.4 : 2.2;
+      if (form === 'powder') this._grainSkin(a.def, i);
       a.remaining--;
       a.spawned++;
       this.acc -= 1;
@@ -135,6 +136,24 @@ export class Emitter {
       this.poured[a.def.id] = (this.poured[a.def.id] || 0) + 1;
     }
     if (this.acc > 3) this.acc = 3;
+  }
+
+  /**
+   * A grain of a powder (or a ground solid) with painted pieces is drawn in
+   * their colours: it takes a spot in one of them, picked from its seed (so
+   * the simulation's random stream is untouched).
+   * @param {any} def @param {number} i
+   */
+  _grainSkin(def, i) {
+    const p = this.sim.p, sd = p.seed[i];
+    const skin = grainSkinOf(def, sd >>> 30);
+    const pc = skin ? piece(skin) : null;
+    if (!pc) return;
+    const h = Math.imul(sd ^ (sd >>> 13), 0x5bd1e995) >>> 0;
+    const [u, v] = pc.pts[h % pc.pts.length];
+    p.skin[i] = skin;
+    p.skinU[i] = u + (((h >>> 8) & 255) / 255 - 0.5) * 0.8;
+    p.skinV[i] = v + (((h >>> 16) & 255) / 255 - 0.5) * 0.8;
   }
 
   /**

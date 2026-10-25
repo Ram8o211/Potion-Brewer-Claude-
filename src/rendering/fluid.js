@@ -7,7 +7,8 @@
 //     colour gradients; each particle also carries a texture value so pastes
 //     look grainy and the texture moves with the material (no screen-space
 //     "swimming" noise); liquid on its way to freezing turns to slush;
-//   • powders are drawn as speckled grain clusters (darker when damp);
+//   • powders are drawn as clusters of small, irregular chips (darker when
+//     damp), an ingredient's in the colours of its painted pieces;
 //   • frozen blocks get a compact, crisp icy body with a frosty rim that
 //     clears as they melt;
 //   • whole solid ingredients (roots, stones, crystals…) are drawn as their
@@ -24,7 +25,7 @@
 
 import { PHASE, SIM } from '../simulation/constants.js';
 import { LOOK, piece } from '../materials/shapes.js';
-import { PIECE_ART, loadPieceArt } from './pieces-art.js';
+import { PIECE_ART, loadPieceArt, piecePalette } from './pieces-art.js';
 import { PIECE_CELL } from '../materials/pieces.js';
 
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
@@ -128,7 +129,7 @@ export class FluidRenderer {
       if (ph === SOLID) anySolid = true; else if (ph === GAS) anyGas = true; else if (ph === POWDER) anyGrain = true;
       if (p.auraI[i] > 0.002 || p.glow[i] > 0.02 || p.burn[i] > 0.02) anyLight = true;
     }
-    if (anySolid && !PIECE_ART.loading) loadPieceArt();
+    if ((anySolid || anyGrain) && !PIECE_ART.loading) loadPieceArt();
     const art = PIECE_ART.ready ? PIECE_ART.px : null, artW = PIECE_ART.width;
     const pad = Math.ceil(0.16 * s) + 8;
     const bx = Math.floor(minX) - pad, by = Math.floor(minY) - pad;
@@ -148,7 +149,7 @@ export class FluidRenderer {
     const rs = 0.085 * s; // solid
     const rgas = 0.13 * s; // gas, in half-resolution pixels (wide, soft kernel so vapour reads as fog)
     const rgrain = Math.max(1.2, 0.05 * s * 1.02);
-    const RL = Math.ceil(rl), RS = Math.ceil(rs), RG = Math.ceil(rgas), RGR = Math.ceil(rgrain);
+    const RL = Math.ceil(rl), RS = Math.ceil(rs), RG = Math.ceil(rgas);
     const colR = sim.colR, colG = sim.colG, colB = sim.colB;
     const T = p.temp;
 
@@ -190,24 +191,63 @@ export class FluidRenderer {
           }
         }
       } else if (ph === POWDER) {
-        // speckled grain cluster
+        // a few small, irregular chips and a stray speck or two: each chip a
+        // lobed blob with a ragged edge, lit from the upper left. A grain of
+        // an ingredient with painted pieces takes its chips' colours from its
+        // spot in its piece (a crushed object's grains carry the colours of
+        // the part they broke from), blending toward the brew's colour as it
+        // dissolves away.
         const frozen = p.gran[i] < 0.5;
         const damp = !frozen && p.gran[i] < 0.96 ? Math.min(0.45, (0.97 - p.gran[i]) * 1.6) : 0;
-        const cx = Math.round(fx), cy = Math.round(fy);
-        for (let dy = -RGR; dy <= RGR; dy++) {
-          for (let dx = -RGR; dx <= RGR; dx++) {
-            if (dx * dx + dy * dy > rgrain * rgrain + 0.5) continue;
-            const xx = cx + dx, yy = cy + dy;
-            if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
-            const hv = hash01(seed + (dx + 7) * 31 + (dy + 7) * 977);
-            // individual grains: bright facets and darker crevices, no holes
-            let lum = hv < 0.18 ? 0.62 : 0.84 + hv * 0.28;
-            if (frozen) lum = 0.95 + hv * 0.12;
-            lum *= 1 - damp;
-            if (p.burn[i] > 0.1) lum *= 1 + p.burn[i];
-            const R8 = clamp255(r * lum * 255), G8 = clamp255(g * lum * 255), B8 = clamp255(b * lum * 255);
-            grain[yy * w + xx] = 0xff000000 | (B8 << 16) | (G8 << 8) | R8;
-            if (lit) { const e = (yy * w + xx) * 4; emit[e] += eR; emit[e + 1] += eG; emit[e + 2] += eB; emit[e + 3] += 1; }
+        const burnL = p.burn[i] > 0.1 ? 1 + p.burn[i] : 1;
+        const pc = art && p.skin[i] ? piece(p.skin[i]) : null;
+        const pal = pc ? piecePalette(p.skin[i]) : null;
+        const wArt = pc ? Math.max(0, Math.min(1, (p.whole[i] - 0.3) * 2)) : 0;
+        const rx = Math.round(fx), ry = Math.round(fy);
+        const chips = 3 + (seed & 1);
+        for (let c = 0; c < chips + 2; c++) {
+          const h1 = hash01(seed + c * 7919), h2 = hash01(seed * 3 + c * 104729 + 1), h3 = hash01(seed * 7 + c * 1299709 + 2);
+          const speck = c >= chips;
+          const an = h1 * 6.2832;
+          const dist = speck ? rgrain * (0.85 + 0.45 * h2) : c === 0 ? 0 : Math.sqrt(h2) * rgrain * 0.6;
+          const rc = speck ? 0.5 : Math.max(0.8, rgrain * (0.36 + 0.2 * h3));
+          const ccx = fx + Math.cos(an) * dist, ccy = fy + Math.sin(an) * dist;
+          // a second, smaller lobe makes the chip irregular rather than round
+          const lcx = ccx + Math.cos(h3 * 6.2832) * rc * 0.65, lcy = ccy + Math.sin(h3 * 6.2832) * rc * 0.65;
+          let cr = r, cg = g, cb = b;
+          if (pc && wArt > 0) {
+            const u = p.skinU[i] + (ccx - fx) / (s * SIM.SPACING) + (h1 - 0.5) * 0.5, v = p.skinV[i] + (ccy - fy) / (s * SIM.SPACING) + (h3 - 0.5) * 0.5;
+            const tx = Math.floor(pc.ax + u * pc.ppu), ty = Math.floor(pc.ay + v * pc.ppu);
+            let t = tx >= pc.cx && ty >= pc.cy && tx < pc.cx + PIECE_CELL && ty < pc.cy + PIECE_CELL ? /** @type {Uint32Array} */ (art)[ty * artW + tx] : 0;
+            if (!(t >>> 31) && pal) t = pal[Math.floor(h2 * pal.length)];
+            if (t >>> 31) {
+              cr = ((t & 255) / 255) * wArt + r * (1 - wArt);
+              cg = (((t >>> 8) & 255) / 255) * wArt + g * (1 - wArt);
+              cb = (((t >>> 16) & 255) / 255) * wArt + b * (1 - wArt);
+            }
+          } else {
+            // no painting: chips of the grain's own colour, each a shade apart
+            const k = 0.8 + 0.34 * h3;
+            cr = r * k; cg = g * (k + (h1 - 0.5) * 0.06); cb = b * (k + (h2 - 0.5) * 0.06);
+          }
+          const R2 = rc * rc, L2 = R2 * 0.5;
+          const x0 = Math.max(0, Math.floor(Math.min(ccx, lcx) - rc)), x1 = Math.min(w - 1, Math.ceil(Math.max(ccx, lcx) + rc));
+          const y0 = Math.max(0, Math.floor(Math.min(ccy, lcy) - rc)), y1 = Math.min(h - 1, Math.ceil(Math.max(ccy, lcy) + rc));
+          for (let yy = y0; yy <= y1; yy++) {
+            for (let xx = x0; xx <= x1; xx++) {
+              const hv = hash01(seed + (xx - rx + 15) * 31 + (yy - ry + 15) * 977 + c * 65537);
+              const dx = xx + 0.5 - ccx, dy = yy + 0.5 - ccy, ex = xx + 0.5 - lcx, ey = yy + 0.5 - lcy;
+              // a ragged edge: border pixels come and go with the hash
+              const edge = 0.62 + 0.5 * hv;
+              const inside = speck ? (xx === Math.floor(ccx) && yy === Math.floor(ccy)) : (dx * dx + dy * dy < R2 * edge || ex * ex + ey * ey < L2 * edge);
+              if (!inside) continue;
+              let lum = speck ? 0.9 + hv * 0.2 : 1 + 0.24 * Math.max(-1, Math.min(1, -(dx + dy) / (rc * 1.4))) + (hv - 0.5) * 0.12;
+              if (frozen) lum = 0.95 + hv * 0.12;
+              lum *= (1 - damp) * burnL;
+              const R8 = clamp255(cr * lum * 255), G8 = clamp255(cg * lum * 255), B8 = clamp255(cb * lum * 255);
+              grain[yy * w + xx] = 0xff000000 | (B8 << 16) | (G8 << 8) | R8;
+              if (lit) { const e = (yy * w + xx) * 4; emit[e] += eR; emit[e + 1] += eG; emit[e + 2] += eB; emit[e + 3] += 1; }
+            }
           }
         }
       } else if (ph === SOLID) {

@@ -131,6 +131,15 @@ export function hasPieces(def) {
   return !!def && def.form === 'solid' && !def.shape && !!def.wild && def.wild.key in SKIN_BASE;
 }
 
+/**
+ * Skin id (1..) whose palette a material's grains are drawn in — a powder
+ * ingredient's (mica, sulphur…) or a solid's ground in the mortar — 0 if it
+ * has no pieces. @param {any} def @param {number} variant
+ */
+export function grainSkinOf(def, variant) {
+  return def && !def.shape && def.wild && def.wild.key in SKIN_BASE ? SKIN_BASE[def.wild.key] + (variant & 3) : 0;
+}
+
 /** Skin id (1..) of a material's piece `variant`, 0 if it has none. @param {any} def @param {number} variant */
 export function skinOf(def, variant) {
   return hasPieces(def) ? SKIN_BASE[def.wild.key] + (variant & 3) : 0;
