@@ -43,16 +43,16 @@ test('every wild ingredient has gatherable art in its own region; nothing else d
     assert.equal(g.region, spec.region, `${key} is drawn in its own region`);
     assert.equal(g.atlas, REGION_ATLAS[g.region], `${key} comes from its region's atlas`);
     const frames = g.atlas.frames;
-    for (const state of ['idle', 'hover', 'card', 'depleted']) assert.ok(frames[g[state]], `${key} ${state}`);
+    for (const state of ['idle', 'hover', 'depleted']) assert.ok(frames[g[state]], `${key} ${state}`);
     // the states of one gatherable share a canvas, so they swap in place
     const [, , w, h] = frames[g.idle];
     for (const name of [g.hover, g.depleted, g.harvesting, g.closed, g.closedHover].filter(Boolean)) assert.deepEqual(frames[name].slice(2), [w, h], `${name} shares ${key}'s canvas`);
     // a dawn or dusk plant shows a closed frame out of its hour; the others never close
     assert.equal(!!g.closed, !!(spec.dawn || spec.dusk), `${key} closes only if it keeps an hour`);
-    // a 32 px icon for the shelf and the book, a 48 px one for its card
+    // one 32 px icon, its picture in every list (the shelf, the shop, the book, its deposit card)
     assert.ok(g.icon && frames[g.icon][2] <= ICON_SIZE && frames[g.icon][3] <= ICON_SIZE, `${key} icon`);
-    assert.equal(g.card, key + '_card');
-    assert.equal(Math.max(frames[g.card][2], frames[g.card][3]), 48, `${key} card is 48 px`);
+    assert.equal(Math.max(frames[g.icon][2], frames[g.icon][3]), ICON_SIZE, `${key} icon is ${ICON_SIZE} px`);
+    assert.ok(!frames[key + '_card'], `${key} has no separate card picture`);
     // large enough to tap and to read, narrow enough to stand beside its neighbours
     assert.ok(frames[g.idle][3] >= 16 && frames[g.idle][2] <= 32, `${key} is ${frames[g.idle][2]}x${frames[g.idle][3]}`);
   }
@@ -88,7 +88,6 @@ test('the meadow has its layers, its plants their closed hours and their icons',
   assert.equal(gatherFrameName('dreamclover', { can: true }), 'dreamclover_idle');
   assert.equal(gatherFrameName('hemlock', { can: false, closed: true }), 'hemlock_depleted');
   assert.equal(gatherFrameName('heartpetal', { can: true, closed: true }), 'heartpetal_idle', 'a plant with no hour never shows closed');
-  assert.equal(gatherFrameName('heartpetal', { can: true, card: true }), 'heartpetal_card');
 });
 
 test('a gatherable shows what can be done with it', () => {
@@ -97,8 +96,6 @@ test('a gatherable shows what can be done with it', () => {
   assert.equal(gatherFrameName('ironroot', { can: false }), 'ironroot_depleted');
   assert.equal(gatherFrameName('ironroot', { can: false, hover: true }), 'ironroot_depleted', 'no highlight on what cannot be gathered');
   assert.equal(gatherFrameName('owlberry', { can: true, harvesting: true }), 'owlberry_idle', 'no harvesting art: the idle frame hops');
-  assert.equal(gatherFrameName('ironroot', { can: true, card: true }), 'ironroot_card');
-  assert.equal(gatherFrameName('ironroot', { can: false, card: true }), 'ironroot_depleted');
   assert.equal(gatherFrameName('frostcap', { can: true }), 'frostcap_idle');
   assert.equal(gatherFrameName('moonlily', { can: true, closed: true }), 'moonlily_closed');
   assert.equal(gatherFrameName('gravemoss', { can: true, closed: true, hover: true }), 'gravemoss_closed_hover');

@@ -48,9 +48,10 @@ scene's art-pixel size and packs one atlas per region into
   swap in place. They are 16–28 px tall and at most 28 px wide (deposits
   stand about 27 px apart).
 - **Icons** are lifted out of the pack's parchment frames (the parchment is
-  flooded away from the frame's inner edge) and drawn at 32 px for the shelf
-  and the book and 48 px for the deposit card (each shown at about as many
-  CSS pixels, so its detail is not crowded into a few coarse pixels).
+  flooded away from the frame's inner edge) and drawn at 32 px: one picture
+  of the ingredient in every list (the shelf, the shop, the book and its
+  deposit card). The pack's icons are barely larger than that, so a bigger
+  card picture resampled from them came out ruled with dark grid lines.
 - `../effects/glint_frame_00–03` are still packed as `glint_0–3`, but the
   scene no longer uses them: a ripe crystal sparkles with a thin four-point
   star drawn at the bright tips of its facets (`glintSpots` in

@@ -237,9 +237,10 @@ computed from the particles that actually run out of the tap. What a
   its foot rests on that ground and it keeps a few pixels of room from
   every other plant, so even a full region never crowds into a clump. Every
   ingredient is an outlined sprite with hover and depleted (harvested)
-  frames on its deposit card; the dusk Nightshade, Grave Moss and Siren Reed
+  frames; the dusk Nightshade, Grave Moss and Siren Reed
   and the dawn Moonlily show their closed state out of their hour, and each
-  has its icon on the deposit card, the shelf and in the book. Only plants
+  has one icon, the same on the deposit card, the shelf, in the shop and in
+  the book. Only plants
   take taps. Built from `art/backdrops/` by
   `python scripts/make-backdrops.py` (needs Pillow and NumPy), which brings
   each picture down to the scene's pixels and writes its ground map;
@@ -253,7 +254,7 @@ computed from the particles that actually run out of the tap. What a
   Hemlock Seed) is an outlined sprite with hover and depleted frames; the
   dawn Dreamclover and the dusk Hemlock show their closed buds and seed
   pods out of their hour. The same art gives every meadow ingredient its
-  icon on the deposit card, the shelf and in the book. Built from
+  one icon, on the deposit card, the shelf, in the shop and in the book. Built from
   `art/meadow/` by `python scripts/make-meadow.py` (needs Pillow and
   NumPy); `art/meadow/README.md` lists which sprite went where and how it
   was changed.

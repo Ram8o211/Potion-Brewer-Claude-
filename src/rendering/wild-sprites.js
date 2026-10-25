@@ -7,9 +7,9 @@
 // Each gatherable has idle, hover and depleted frames and, where the art
 // exists, harvesting and closed ones (a dawn or dusk plant out of its
 // hour); all frames of one gatherable share a canvas anchored at its bottom
-// centre, so states swap in place. A `card` frame is the picture on its
-// deposit card (the ingredient's single flower, root, crystal…) and an
-// `icon` frame the 16 px picture on the shelf and in the book. The plants of
+// centre, so states swap in place. An `icon` frame (the ingredient's single
+// flower, root, crystal…) is its one picture in every list: the shelf, the
+// shop, the book and its deposit card. The plants of
 // a deposit beyond the player's guild rank are not drawn in the scene at
 // all; its card says what rank opens it.
 //
@@ -110,20 +110,6 @@ export class SpriteAtlas {
       ctx.restore();
     } else ctx.drawImage(this.img, s[0], s[1], s[2], s[3], left, top, w, h);
   }
-
-  /**
-   * A small square canvas of one frame, centred (a deposit card's picture).
-   * @param {string} name
-   */
-  canvas(name) {
-    const f = this.frames[name];
-    const cv = document.createElement('canvas');
-    const s = f ? Math.max(f[2], f[3]) : 16;
-    cv.width = s; cv.height = s;
-    const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
-    if (f) this.draw(ctx, name, s / 2, s - Math.floor((s - f[3]) / 2));
-    return cv;
-  }
 }
 
 export const MEADOW = new SpriteAtlas(FIELD.ATLAS_URL, FIELD.FRAMES);
@@ -135,7 +121,7 @@ export const REGION_ATLAS = {
 };
 
 /**
- * @typedef {{region:string, atlas:SpriteAtlas, idle:string, hover:string, card:string, depleted:string,
+ * @typedef {{region:string, atlas:SpriteAtlas, idle:string, hover:string, depleted:string,
  *   harvesting?:string, closed?:string, closedHover?:string, icon?:string}} Gatherable
  */
 
@@ -143,7 +129,7 @@ export const REGION_ATLAS = {
 function gatherable(region, atlas, k) {
   const has = (/** @type {string} */ n) => !!atlas.frames[k + '_' + n];
   return [k, {
-    region, atlas, idle: k + '_idle', hover: k + '_hover', card: has('card') ? k + '_card' : k + '_idle',
+    region, atlas, idle: k + '_idle', hover: k + '_hover',
     depleted: k + '_depleted',
     ...(has('harvesting') ? { harvesting: k + '_harvesting' } : {}),
     ...(has('closed') ? { closed: k + '_closed', closedHover: k + '_closed_hover' } : {}),
@@ -227,15 +213,14 @@ export const MIN_HIT = 20;
 /**
  * The frame a gatherable shows. `can` is whether it can be harvested now;
  * `closed` a dawn or dusk plant out of its hour; `harvesting` a moment after
- * a harvest; `card` for the deposit card's picture.
- * @param {string} key wild key @param {{can:boolean, hover?:boolean, harvesting?:boolean, card?:boolean, closed?:boolean}} s
+ * a harvest.
+ * @param {string} key wild key @param {{can:boolean, hover?:boolean, harvesting?:boolean, closed?:boolean}} s
  */
 export function gatherFrameName(key, s) {
   const g = GATHERABLES[key];
   if (!g) return null;
   if (s.harvesting && g.harvesting) return g.harvesting;
   if (!s.can) return g.depleted;
-  if (s.card) return g.card;
   if (s.closed && g.closed) return s.hover ? /** @type {string} */ (g.closedHover) : g.closed;
   return s.hover ? g.hover : g.idle;
 }
@@ -279,7 +264,8 @@ export function hitPlant(plants, frameOf, px, py, W, H, slop = 4) {
 }
 
 /**
- * A square picture of a raw ingredient for the shelf and the book: its
+ * A square picture of a raw ingredient for every list it appears in (the
+ * shelf, the shop, the book and its deposit card): its
  * 32 px icon frame where the region's art has one (drawn as soon as the
  * atlas is in), else the 16 px procedural sprite of its shape (the page
  * sizes it either way).

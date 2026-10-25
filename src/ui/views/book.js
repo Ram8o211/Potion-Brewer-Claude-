@@ -106,7 +106,7 @@ export class BookView {
       const seen = lab.sandbox || m.tier <= st.rank || st.stock(id) > 0 || (m.wild && st.gatherableSet().has(id));
       const fx = m.remains ? [] : EFFECT_KEYS.map((k) => [k, (m.effects && m.effects[k]) || 0]).filter(([, v]) => Math.abs(v) >= 1).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
       list.appendChild(h('div', { class: 'item parch' + (seen ? '' : ' locked') },
-        h('span', { class: 'swatch big', style: { background: rgbToHex(m.look || m.color) } }),
+        panels.jarCanvas(m, 18, 24),
         h('div', {},
           h('div', { class: 'title', text: seen ? m.name : '???' }),
           seen ? h('div', { class: 'meta' }, m.remains ? h('span', { class: 'muted', text: 'effects unknown — test it' }) : fx.length ? fx.map(([k, v]) => h('span', { class: 'fx-chip', title: EFFECT_BY_KEY[k].label }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(v)}`)) : h('span', { class: 'muted', text: 'no magical effect' })) : h('div', { class: 'meta', text: 'Not yet available.' }),

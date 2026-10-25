@@ -16,9 +16,9 @@ import { audio } from '../../audio/audio.js';
 import { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, marksIn, DAY_PART_NAME } from '../../game/gathering.js';
 import { equipmentById } from '../../game/equipment.js';
 import { RANKS } from '../../game/equipment.js';
-import { drawRaw, rawSprite } from '../../rendering/scenes.js';
+import { drawRaw } from '../../rendering/scenes.js';
 import { paintRegion, animateRegion, PlantGround, BACKDROPS, SCENE_W, SCENE_H } from '../../rendering/regions.js';
-import { GATHERABLES, GROWTH, CRYSTALS, REGION_ATLAS, gatherFrameName, growthFrame, glintSpots, plantBox, hitPlant } from '../../rendering/wild-sprites.js';
+import { GATHERABLES, GROWTH, CRYSTALS, REGION_ATLAS, growthFrame, glintSpots, plantBox, hitPlant, ingredientSprite } from '../../rendering/wild-sprites.js';
 import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
 
 /**
@@ -143,15 +143,15 @@ export class WildsView {
       const when = lab.sandbox ? 'never runs out' : this.when(s, can);
       this.can[d.id] = locked || can >= 5;
       this.closed[d.id] = !lab.sandbox && !plan.open;
-      const key = this.spriteKey(d);
       const g = btn(locked ? RANKS[d.rank].name : `${plan.method.verb} +${take} ml`, () => this.gather(d), { cls: 'gold', icon: locked ? 'lock' : plan.method.icon, disabled: locked || (!lab.sandbox && can < 5), act: 'gather-' + d.id });
       const barI = h('i', { style: { width: Math.round((lab.sandbox ? 1 : s.fraction) * 100) + '%' } });
       const meta = h('div', { class: 'meta', text: `${stock} · ${when}` });
-      this.rows[d.id] = { barI, meta, g, locked, take };
+      this.rows[d.id] = { barI, meta, g, locked, take, card: /** @type {HTMLElement | null} */ (null) };
       const notes = lab.sandbox ? [] : plan.factors.filter((f) => f.why !== 'satchel' && !f.why.startsWith('thorough')).map((f) => f.why);
       const tool = plan.method.tool ? equipmentById(plan.method.tool) : null;
-      const card = h('div', { class: 'deposit parch' + (locked ? ' locked' : '') + (s.scarred ? ' scarred' : ''), 'data-deposit': d.id },
-        key ? GATHERABLES[key].atlas.canvas(/** @type {string} */ (gatherFrameName(key, { can: this.can[d.id], card: true }))) : rawSprite(m.wild ? m.wild.shape : 'stone', m.look || m.color, lab.sandbox ? 1 : s.fraction),
+      const card = h('div', { class: 'deposit parch' + (locked ? ' locked' : '') + (s.scarred ? ' scarred' : '') + (this.can[d.id] ? '' : ' spent'), 'data-deposit': d.id },
+        // the same picture of the ingredient as on the shelf, in the shop and in the book
+        ingredientSprite(m, lab.sandbox ? 1 : s.fraction),
         h('div', { class: 'dep-info' },
           h('div', { class: 'title' }, m.name, d.rare ? h('span', { class: 'tag rare', text: 'rare' }) : null, plan.hour ? h('span', { class: 'tag hour', text: plan.hour }) : null),
           d.place ? h('div', { class: 'meta place', text: d.place }) : null,
@@ -162,6 +162,7 @@ export class WildsView {
           h('div', { class: 'meta fx' }, ...fx.map(([k, v]) => h('span', { class: 'fx-chip', title: EFFECT_BY_KEY[k].label }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(v)}`)),
             h('span', { class: 'muted', text: ` · in stores: ${Math.round(st.stock(m.id))} ml` }))),
         g);
+      this.rows[d.id].card = card;
       // pointing at a card picks out its deposit in the scene
       card.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') this.setHover(d.id); });
       card.addEventListener('pointerleave', () => { if (this.hover === d.id) this.setHover(null); });
@@ -179,13 +180,6 @@ export class WildsView {
 
   deposits() {
     return this.lab.state.deposits.filter((d) => d.region === this.region);
-  }
-
-  /** The sprite set a deposit is drawn with (once its region's atlas is in), else null. @param {any} d */
-  spriteKey(d) {
-    const m = this.lab.state.lookup(d.materialId);
-    const g = m && m.wild ? GATHERABLES[m.wild.key] : null;
-    return g && g.region === d.region && g.atlas.ready ? m.wild.key : null;
   }
 
   paintBg() {
@@ -362,8 +356,11 @@ export class WildsView {
     const body = GROWTH.frame(p.key + '_' + p.stage);
     const since = this.time - (this.grewAt[p.id + ':' + p.stage] ?? -9);
     const sw = Math.max(4, Math.round((body ? body[2] : f[2]) * (p.stage === 'sprout' ? 0.3 : p.stage === 'ripe' ? 0.45 : 0.55)));
-    ctx.fillStyle = 'rgba(10,30,8,0.35)';
+    // a soft shadow it stands in: darkest under its foot, fading out to the sides
+    ctx.fillStyle = 'rgba(10,30,8,0.2)';
     ctx.fillRect(x - Math.floor(sw / 2), y - 1, sw, 2);
+    ctx.fillRect(x - Math.floor(sw / 2) + 2, y, Math.max(2, sw - 4), 1);
+    ctx.fillRect(x - Math.floor(sw / 4), y - 1, Math.max(2, Math.floor(sw / 2)), 2);
     GROWTH.draw(ctx, name, x, y - (since < 0.3 ? 1 : 0));
     if (p.stage === 'mature' && CRYSTALS.has(p.key) && this.hover !== p.id && !this.closed[p.dep.id]) {
       const spots = glintSpots(GROWTH, name);
@@ -465,6 +462,7 @@ export class WildsView {
       row.meta.textContent = `${this.stockText(d, s)} · ${this.when(s, can)}`;
       row.g.disabled = row.locked || can < 5;
       this.can[d.id] = row.locked || can >= 5;
+      if (row.card) row.card.classList.toggle('spent', !this.can[d.id]);
       this.closed[d.id] = !plan.open;
     }
     this.grow();
