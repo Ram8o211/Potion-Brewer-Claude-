@@ -2192,6 +2192,9 @@ const SKIN_BASE = Object.fromEntries(Object.keys(PIECES).sort().map((key, n) => 
 function hasPieces(def) {
 return !!def && def.form === 'solid' && !def.shape && !!def.wild && def.wild.key in SKIN_BASE;
 }
+function grainSkinOf(def, variant) {
+return def && !def.shape && def.wild && def.wild.key in SKIN_BASE ? SKIN_BASE[def.wild.key] + (variant & 3) : 0;
+}
 function skinOf(def, variant) {
 return hasPieces(def) ? SKIN_BASE[def.wild.key] + (variant & 3) : 0;
 }
@@ -2248,7 +2251,7 @@ return (fitted[skin] = { pts, ax: fx + mx * r, ay: fy + my * r, ppu: bestK * r, 
 function chunkSize(def) {
 return (TEMPLATES[shapeOf(def)] || TEMPLATES.stone).length;
 }
-return { LOOK, shapeOf, solidLook, chunkTemplate, hasPieces, skinOf, piece, chunkSize };
+return { LOOK, shapeOf, solidLook, chunkTemplate, hasPieces, grainSkinOf, skinOf, piece, chunkSize };
 })();
 // src/reactions/species.js
 const __m18 = (() => {
@@ -6882,7 +6885,7 @@ return { TOOL_SPECS, ToolState, clampToInterior, toolForces, toolConstraints, LI
 const __m43 = (() => {
 const { PHASE, SIM, formPhase } = __m24;
 const { COLUMN } = __m34;
-const { chunkTemplate, chunkSize, hasPieces, skinOf } = __m19;
+const { chunkTemplate, chunkSize, hasPieces, skinOf, grainSkinOf, piece } = __m19;
 class Emitter {
 constructor(sim) {
 this.sim = sim;
@@ -6982,6 +6985,7 @@ if (i < 0) break;
 const p = sim.p;
 p.vx[i] = (sim.rand() - 0.5) * (form === 'powder' ? 0.35 : 0.15);
 p.vy[i] = form === 'gas' ? 0.2 : sim.cauldron.lidClosed ? 1.4 : 2.2;
+if (form === 'powder') this._grainSkin(a.def, i);
 a.remaining--;
 a.spawned++;
 this.acc -= 1;
@@ -6989,6 +6993,17 @@ this.blocked = 0;
 this.poured[a.def.id] = (this.poured[a.def.id] || 0) + 1;
 }
 if (this.acc > 3) this.acc = 3;
+}
+_grainSkin(def, i) {
+const p = this.sim.p, sd = p.seed[i];
+const skin = grainSkinOf(def, sd >>> 30);
+const pc = skin ? piece(skin) : null;
+if (!pc) return;
+const h = Math.imul(sd ^ (sd >>> 13), 0x5bd1e995) >>> 0;
+const [u, v] = pc.pts[h % pc.pts.length];
+p.skin[i] = skin;
+p.skinU[i] = u + (((h >>> 8) & 255) / 255 - 0.5) * 0.8;
+p.skinV[i] = v + (((h >>> 16) & 255) / 255 - 0.5) * 0.8;
 }
 _spawnChunk(a, size) {
 const sim = this.sim;
@@ -10729,7 +10744,8 @@ return { PAL, hex2rgb, rgbStr, mixHex, paintBackground, drawJar, renderCauldron,
 })();
 // src/rendering/pieces-art.js
 const __m56 = (() => {
-const { PIECES_URL } = __m20;
+const { PIECES_URL, PIECE_CELL } = __m20;
+const { piece } = __m19;
 const PIECE_ART = {
 ready: false,
 width: 0,
@@ -10759,13 +10775,32 @@ img.src = PIECES_URL;
 });
 return PIECE_ART.loading;
 }
-return { PIECE_ART, loadPieceArt };
+const palettes = new Map();
+function piecePalette(skin) {
+const px = PIECE_ART.px;
+if (!px) return null;
+let pal = palettes.get(skin);
+if (pal) return pal;
+const pc = piece(skin);
+if (!pc) return null;
+const out = [];
+for (let y = pc.cy; y < pc.cy + PIECE_CELL; y++) {
+for (let x = pc.cx; x < pc.cx + PIECE_CELL; x++) {
+const c = px[y * PIECE_ART.width + x];
+if (c >>> 31) out.push(c);
+}
+}
+pal = Uint32Array.from(out.length ? out : [0xff808080]);
+palettes.set(skin, pal);
+return pal;
+}
+return { PIECE_ART, loadPieceArt, piecePalette };
 })();
 // src/rendering/fluid.js
 const __m55 = (() => {
 const { PHASE, SIM } = __m24;
 const { LOOK, piece } = __m19;
-const { PIECE_ART, loadPieceArt } = __m56;
+const { PIECE_ART, loadPieceArt, piecePalette } = __m56;
 const { PIECE_CELL } = __m20;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const LS = 9;
@@ -10846,7 +10881,7 @@ const ph = p.phase[i];
 if (ph === SOLID) anySolid = true; else if (ph === GAS) anyGas = true; else if (ph === POWDER) anyGrain = true;
 if (p.auraI[i] > 0.002 || p.glow[i] > 0.02 || p.burn[i] > 0.02) anyLight = true;
 }
-if (anySolid && !PIECE_ART.loading) loadPieceArt();
+if ((anySolid || anyGrain) && !PIECE_ART.loading) loadPieceArt();
 const art = PIECE_ART.ready ? PIECE_ART.px : null, artW = PIECE_ART.width;
 const pad = Math.ceil(0.16 * s) + 8;
 const bx = Math.floor(minX) - pad, by = Math.floor(minY) - pad;
@@ -10864,7 +10899,7 @@ const rl = 0.092 * s; // liquid kernel radius (px), ~1.85 particle radii
 const rs = 0.085 * s; // solid
 const rgas = 0.13 * s; // gas, in half-resolution pixels (wide, soft kernel so vapour reads as fog)
 const rgrain = Math.max(1.2, 0.05 * s * 1.02);
-const RL = Math.ceil(rl), RS = Math.ceil(rs), RG = Math.ceil(rgas), RGR = Math.ceil(rgrain);
+const RL = Math.ceil(rl), RS = Math.ceil(rs), RG = Math.ceil(rgas);
 const colR = sim.colR, colG = sim.colG, colB = sim.colB;
 const T = p.temp;
 for (let i = 0; i < n; i++) {
@@ -10905,20 +10940,52 @@ if (lit) { const e = (row + xx) * 4; emit[e] += q * eR; emit[e + 1] += q * eG; e
 } else if (ph === POWDER) {
 const frozen = p.gran[i] < 0.5;
 const damp = !frozen && p.gran[i] < 0.96 ? Math.min(0.45, (0.97 - p.gran[i]) * 1.6) : 0;
-const cx = Math.round(fx), cy = Math.round(fy);
-for (let dy = -RGR; dy <= RGR; dy++) {
-for (let dx = -RGR; dx <= RGR; dx++) {
-if (dx * dx + dy * dy > rgrain * rgrain + 0.5) continue;
-const xx = cx + dx, yy = cy + dy;
-if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
-const hv = hash01(seed + (dx + 7) * 31 + (dy + 7) * 977);
-let lum = hv < 0.18 ? 0.62 : 0.84 + hv * 0.28;
+const burnL = p.burn[i] > 0.1 ? 1 + p.burn[i] : 1;
+const pc = art && p.skin[i] ? piece(p.skin[i]) : null;
+const pal = pc ? piecePalette(p.skin[i]) : null;
+const wArt = pc ? Math.max(0, Math.min(1, (p.whole[i] - 0.3) * 2)) : 0;
+const rx = Math.round(fx), ry = Math.round(fy);
+const chips = 3 + (seed & 1);
+for (let c = 0; c < chips + 2; c++) {
+const h1 = hash01(seed + c * 7919), h2 = hash01(seed * 3 + c * 104729 + 1), h3 = hash01(seed * 7 + c * 1299709 + 2);
+const speck = c >= chips;
+const an = h1 * 6.2832;
+const dist = speck ? rgrain * (0.85 + 0.45 * h2) : c === 0 ? 0 : Math.sqrt(h2) * rgrain * 0.6;
+const rc = speck ? 0.5 : Math.max(0.8, rgrain * (0.36 + 0.2 * h3));
+const ccx = fx + Math.cos(an) * dist, ccy = fy + Math.sin(an) * dist;
+const lcx = ccx + Math.cos(h3 * 6.2832) * rc * 0.65, lcy = ccy + Math.sin(h3 * 6.2832) * rc * 0.65;
+let cr = r, cg = g, cb = b;
+if (pc && wArt > 0) {
+const u = p.skinU[i] + (ccx - fx) / (s * SIM.SPACING) + (h1 - 0.5) * 0.5, v = p.skinV[i] + (ccy - fy) / (s * SIM.SPACING) + (h3 - 0.5) * 0.5;
+const tx = Math.floor(pc.ax + u * pc.ppu), ty = Math.floor(pc.ay + v * pc.ppu);
+let t = tx >= pc.cx && ty >= pc.cy && tx < pc.cx + PIECE_CELL && ty < pc.cy + PIECE_CELL ? /** @type {Uint32Array} */ (art)[ty * artW + tx] : 0;
+if (!(t >>> 31) && pal) t = pal[Math.floor(h2 * pal.length)];
+if (t >>> 31) {
+cr = ((t & 255) / 255) * wArt + r * (1 - wArt);
+cg = (((t >>> 8) & 255) / 255) * wArt + g * (1 - wArt);
+cb = (((t >>> 16) & 255) / 255) * wArt + b * (1 - wArt);
+}
+} else {
+const k = 0.8 + 0.34 * h3;
+cr = r * k; cg = g * (k + (h1 - 0.5) * 0.06); cb = b * (k + (h2 - 0.5) * 0.06);
+}
+const R2 = rc * rc, L2 = R2 * 0.5;
+const x0 = Math.max(0, Math.floor(Math.min(ccx, lcx) - rc)), x1 = Math.min(w - 1, Math.ceil(Math.max(ccx, lcx) + rc));
+const y0 = Math.max(0, Math.floor(Math.min(ccy, lcy) - rc)), y1 = Math.min(h - 1, Math.ceil(Math.max(ccy, lcy) + rc));
+for (let yy = y0; yy <= y1; yy++) {
+for (let xx = x0; xx <= x1; xx++) {
+const hv = hash01(seed + (xx - rx + 15) * 31 + (yy - ry + 15) * 977 + c * 65537);
+const dx = xx + 0.5 - ccx, dy = yy + 0.5 - ccy, ex = xx + 0.5 - lcx, ey = yy + 0.5 - lcy;
+const edge = 0.62 + 0.5 * hv;
+const inside = speck ? (xx === Math.floor(ccx) && yy === Math.floor(ccy)) : (dx * dx + dy * dy < R2 * edge || ex * ex + ey * ey < L2 * edge);
+if (!inside) continue;
+let lum = speck ? 0.9 + hv * 0.2 : 1 + 0.24 * Math.max(-1, Math.min(1, -(dx + dy) / (rc * 1.4))) + (hv - 0.5) * 0.12;
 if (frozen) lum = 0.95 + hv * 0.12;
-lum *= 1 - damp;
-if (p.burn[i] > 0.1) lum *= 1 + p.burn[i];
-const R8 = clamp255(r * lum * 255), G8 = clamp255(g * lum * 255), B8 = clamp255(b * lum * 255);
+lum *= (1 - damp) * burnL;
+const R8 = clamp255(cr * lum * 255), G8 = clamp255(cg * lum * 255), B8 = clamp255(cb * lum * 255);
 grain[yy * w + xx] = 0xff000000 | (B8 << 16) | (G8 << 8) | R8;
 if (lit) { const e = (yy * w + xx) * 4; emit[e] += eR; emit[e + 1] += eG; emit[e + 2] += eB; emit[e + 3] += 1; }
+}
 }
 }
 } else if (ph === SOLID) {

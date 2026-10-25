@@ -4,7 +4,8 @@
 // so it needs the atlas readable, not just drawable. Loads once, on first
 // use; until then (and with no DOM) objects keep their procedural surface.
 
-import { PIECES_URL } from '../materials/pieces.js';
+import { PIECES_URL, PIECE_CELL } from '../materials/pieces.js';
+import { piece } from '../materials/shapes.js';
 
 export const PIECE_ART = {
   ready: false,
@@ -38,4 +39,31 @@ export function loadPieceArt() {
     img.src = PIECES_URL;
   });
   return PIECE_ART.loading;
+}
+
+/** @type {Map<number, Uint32Array>} */
+const palettes = new Map();
+
+/**
+ * Every opaque pixel of a piece, its palette for grains whose own spot in
+ * it falls outside the painting (null until the atlas is in).
+ * @param {number} skin
+ */
+export function piecePalette(skin) {
+  const px = PIECE_ART.px;
+  if (!px) return null;
+  let pal = palettes.get(skin);
+  if (pal) return pal;
+  const pc = piece(skin);
+  if (!pc) return null;
+  const out = [];
+  for (let y = pc.cy; y < pc.cy + PIECE_CELL; y++) {
+    for (let x = pc.cx; x < pc.cx + PIECE_CELL; x++) {
+      const c = px[y * PIECE_ART.width + x];
+      if (c >>> 31) out.push(c);
+    }
+  }
+  pal = Uint32Array.from(out.length ? out : [0xff808080]);
+  palettes.set(skin, pal);
+  return pal;
 }
