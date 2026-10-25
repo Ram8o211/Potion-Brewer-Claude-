@@ -33,10 +33,10 @@ import os
 import sys
 from collections import deque
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from pixelart import INK, GLOW, trim, outline, anchored, accents, snap, despeckle, defringe, pack, fit, recolour, hue_in, down  # noqa: E402
+from pixelart import INK, GLOW, trim, outline, anchored, accents, snap, despeckle, defringe, pack, fit, recolour, hue_in, down, majority, rim  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, 'art', 'wilds')
@@ -111,6 +111,15 @@ def whole(im, keep=0.06):
     px[px[..., 3] < 128] = 0
     px[px[..., 3] >= 128, 3] = 255
     return trim(Image.fromarray(px, 'RGBA'))
+
+
+def soften(im):
+    """A 3 x 3 median over the colours (the alpha untouched): the pack's
+    sprites are small and soft, a few source pixels to an art pixel, and
+    the block vote would otherwise pick up their noise as stray pixels."""
+    out = im.convert('RGB').filter(ImageFilter.MedianFilter(3)).convert('RGBA')
+    out.putalpha(im.getchannel('A'))
+    return out
 
 
 def unsheet(im, light=200, sat=0.12):
@@ -276,6 +285,24 @@ def hsv(r, g, b):
     return colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
 
 
+def desmoke(im, top=8):
+    """Clear the smoke a vent breathes in the pack's art (the scene animates
+    its own): the plume's colours are the ones in its top `top` rows, plus
+    the pale yellows and oranges of a jet of steam; each column is cleared
+    from the top down to its first pixel of rock."""
+    a = np.array(im)
+    plume = {tuple(int(v) for v in a[r, c, :3]) for r in range(top) for c in range(a.shape[1]) if a[r, c, 3]}
+    for c in range(a.shape[1]):
+        for r in range(a.shape[0]):
+            if not a[r, c, 3]:
+                continue
+            p = tuple(int(v) for v in a[r, c, :3])
+            if p not in plume and not (p[0] > 200 and p[1] > 140):
+                break
+            a[r, c, 3] = 0
+    return trim(Image.fromarray(a))
+
+
 class Region:
     def __init__(self, region):
         self.region = region
@@ -294,35 +321,27 @@ class Region:
         # band `alone` keeps only its own colours — the night sky, whose pale
         # moon would otherwise take the bog's teal)
         im = strip(self.biome, rel, box, h, key)
-        self.S[name] = despeckle(snap(im, (accents(im, own) if alone else self.pal + accents(im, own))))
+        self.S[name] = majority(despeckle(snap(im, (accents(im, own) if alone else self.pal + accents(im, own)))))
 
-    def prop(self, name, rel, w=None, h=None, colours=14, own=10, fringe=False, sheet=False, keep=0.06, flip=False):
+    def prop(self, name, rel, w=None, h=None, colours=14, own=10, fringe=False, sheet=False, keep=0.06, flip=False, smoke=False):
+        """A piece of scenery, cleaned the way the Sunlit Meadow's are: softened,
+        resampled, its stray pixels taken into the colour around them and its
+        broken outline drawn whole (`rim`; ground cover, `fringe`, has none).
+        `smoke`: the vent's painted plume is cleared before the outline is drawn."""
         # ('Biome:path' borrows another biome's prop, snapped to this region's palette)
         biome, rel = rel.split(':') if ':' in rel else (self.biome, rel)
         im = load(biome, 'props/' + rel)
         if sheet:
             im = unsheet(im)
-        im = whole(dehalo(im), keep)
+        im = soften(whole(dehalo(im), keep))
         if flip:
             im = im.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
-        self.S[name] = self.clean(fit(im, w, h, colours), own, fringe)
-
-    def desmoke(self, name, top=8):
-        """Clear the smoke a vent breathes in the pack's art (the scene animates
-        its own): the plume's colours are the ones in its top `top` rows, plus
-        the pale yellows and oranges of a jet of steam; each column is cleared
-        from the top down to its first pixel of rock."""
-        a = np.array(self.S[name])
-        plume = {tuple(int(v) for v in a[r, c, :3]) for r in range(top) for c in range(a.shape[1]) if a[r, c, 3]}
-        for c in range(a.shape[1]):
-            for r in range(a.shape[0]):
-                if not a[r, c, 3]:
-                    continue
-                p = tuple(int(v) for v in a[r, c, :3])
-                if p not in plume and not (p[0] > 200 and p[1] > 140):
-                    break
-                a[r, c, 3] = 0
-        self.S[name] = trim(Image.fromarray(a))
+        # (the outline adds a pixel on every side: the sprite keeps the size asked for)
+        inner = lambda v: v and v - (0 if fringe else 2)
+        im = majority(self.clean(fit(im, inner(w), inner(h), colours), own, fringe))
+        if smoke:
+            im = desmoke(im)
+        self.S[name] = im if fringe else rim(im, self.pal)
 
     def icon(self, key, tol=40):
         """The framed icon, lifted out of its parchment frame: inside the
@@ -399,7 +418,7 @@ def forest():
     R.prop('bush_small', F + '005', w=20)
     R.prop('fern_small', F + '006', w=20)
     R.prop('stump', F + '017', w=22, colours=16)
-    R.prop('leaves_1', F + '012', w=16, colours=10, fringe=True)
+    R.prop('leaves_1', F + '012', w=14, colours=10, fringe=True)
     R.prop('leaves_2', F + '011', w=20, colours=10, fringe=True)
     R.prop('sticks', 'rocks_logs_forest_props/rocks_logs_forest_props_003', w=16, colours=8)
     R.prop('snag', 'rocks_logs_forest_props/rocks_logs_forest_props_004', w=12, colours=10)
@@ -431,14 +450,10 @@ def river():
     R.prop('willow_second', 'willow_trees_bushes/willow_trees_bushes_002', h=88, colours=22, sheet=True, flip=True)
     R.prop('willow_small', 'willow_trees_bushes/willow_trees_bushes_001', h=46, colours=18, sheet=True)
     R.prop('bush_plain', 'Whisperwood:trees_bushes_flora/trees_bushes_flora_003', w=28)
-    R.prop('bush_leafy', 'Whisperwood:trees_bushes_flora/trees_bushes_flora_005', w=20)
-    R.prop('bush_flowers', 'Whisperwood:trees_bushes_flora/trees_bushes_flora_004', w=30)
     R.prop('stump', 'riverbank_flora_props/riverbank_flora_props_023', w=22)
     F = 'riverbank_flora_props/riverbank_flora_props_'
-    R.prop('grass_tall', F + '003', w=16, colours=8, fringe=True)
     R.prop('grass_1', F + '015', w=12, colours=8, fringe=True)
     R.prop('grass_2', F + '016', w=12, colours=8, fringe=True)
-    R.prop('pinks', F + '006', w=12, colours=10, fringe=True)
     R.prop('buttercups', F + '009', w=9, colours=8, fringe=True)
     R.prop('post', F + '026', h=20, colours=8)
     R.prop('sign', F + '027', h=20, colours=10)
@@ -471,16 +486,11 @@ def quarry():
     R.prop('scaffold', C + '002', h=30, colours=12, sheet=True)
     R.prop('rail_fence', C + '013', w=24, colours=10, sheet=True)
     R.prop('blocks', C + '014', w=30, colours=10)
-    R.prop('bench', C + '010', w=22, colours=10, sheet=True)
     R.prop('crate_small', C + '011', w=9, colours=8)
     D = 'shrubs_rocks_decorations/shrubs_rocks_decorations_'
     R.prop('shrub_green', D + '002', w=22)
-    R.prop('shrub_small', D + '003', w=14)
-    R.prop('brush', D + '004', w=16, colours=8, fringe=True)
     R.prop('brush_small', D + '009', w=11, colours=8, fringe=True)
-    R.prop('boulder', D + '016', w=16, colours=10)
     R.prop('pebbles', D + '014', w=14, colours=8)
-    R.prop('coal', D + '017', w=14, colours=8)
     R.prop('stone_block', 'quarry_walls/quarry_walls_002', w=22, colours=10)
     R.prop('stone_pillar', 'quarry_walls/quarry_walls_004', h=26, colours=10)
     R.prop('dirt_heap', 'stone_materials/stone_materials_023', w=18, colours=8)
@@ -517,7 +527,6 @@ def moonfen():
     R.prop('ghost_stumps', P + 'ghost_crystals_and_stumps', w=26, colours=12)
     F = 'plants_crystals_reeds/plants_crystals_reeds_'
     R.prop('cattails', F + '001', h=30, colours=12)
-    R.prop('grass_1', F + '002', w=16, colours=8, fringe=True)
     R.prop('grass_2', F + '014', w=11, colours=8, fringe=True)
     R.prop('grass_3', F + '005', w=10, colours=8, fringe=True)
     R.prop('fiddleheads', F + '011', w=12, colours=8, fringe=True)
@@ -553,13 +562,10 @@ def crags():
     R.prop('crag_medium', L + '003', h=32, colours=14)
     R.prop('crag_small', L + '003', h=24, colours=14, flip=True)
     R.prop('lava_pool', L + '013', w=48, colours=14)
-    R.prop('vent', P + 'lava_vent_with_steam', h=38, colours=16)
-    R.prop('gusher', P + 'sulfur_steam_gusher', h=46, colours=16)
-    R.desmoke('vent')
-    R.desmoke('gusher')
+    R.prop('vent', P + 'lava_vent_with_steam', h=38, colours=16, smoke=True)
+    R.prop('gusher', P + 'sulfur_steam_gusher', h=46, colours=16, smoke=True)
     R.prop('rock_mound', L + '015', w=36, colours=14)
     R.prop('rock_1', L + '006', w=16, colours=10)
-    R.prop('rock_2', L + '008', w=16, colours=10)
     R.prop('rock_3', L + '023', w=13, colours=10)
     R.prop('lava_pan', L + '018', w=20, colours=10)
     R.prop('dead_brush', L + '017', h=26, colours=10)

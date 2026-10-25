@@ -110,6 +110,56 @@ def despeckle(im, near=14400):
     return out
 
 
+def majority(im, passes=2):
+    """Clean the salt and pepper a soft source leaves inside a sprite: an
+    inner pixel that shares its colour with at most one of its eight
+    neighbours takes their most common colour, if four or more share it.
+    The silhouette's edge stays."""
+    px = np.asarray(im).copy()
+    h, w = px.shape[:2]
+    for _ in range(passes):
+        src = px.copy()
+        for y in range(1, h - 1):
+            for x in range(1, w - 1):
+                if not src[y, x, 3]:
+                    continue
+                ns = [tuple(src[y + dy, x + dx]) for dy in (-1, 0, 1) for dx in (-1, 0, 1) if dy or dx]
+                if any(not n[3] for n in ns):
+                    continue
+                me = tuple(src[y, x])
+                if sum(n == me for n in ns) >= 2:
+                    continue
+                c, k = Counter(ns).most_common(1)[0]
+                if k >= 4:
+                    px[y, x] = c
+    return Image.fromarray(px, 'RGBA')
+
+
+def rim(im, palette, luma=70):
+    """Replace a broken dark outline with a whole one: the dark pixels on the
+    silhouette's edge are dropped, then the silhouette is grown by one pixel,
+    each new pixel a deep shade of the one inside it (dark green around
+    leaves, dark brown around bark), snapped to the palette."""
+    im = trim(defringe(im, luma))
+    out = Image.new('RGBA', (im.width + 2, im.height + 2), (0, 0, 0, 0))
+    out.paste(im, (1, 1))
+    src, o = out.copy().load(), out.load()
+    cache = {}
+    for y in range(out.height):
+        for x in range(out.width):
+            if src[x, y][3]:
+                continue
+            ns = [src[nx, ny] for nx, ny in ((x, y + 1), (x, y - 1), (x + 1, y), (x - 1, y)) if 0 <= nx < out.width and 0 <= ny < out.height and src[nx, ny][3]]
+            if not ns:
+                continue
+            c = ns[0][:3]
+            if c not in cache:
+                deep = tuple(int(v * 0.32) for v in c)
+                cache[c] = min(palette, key=lambda q: dist(q, deep))
+            o[x, y] = (*cache[c], 255)
+    return out
+
+
 def defringe(im, luma=70):
     """Drop dark pixels on the silhouette edge (soft-alpha halos of the source art)."""
     out = im.copy()

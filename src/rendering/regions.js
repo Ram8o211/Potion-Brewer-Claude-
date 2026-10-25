@@ -625,22 +625,23 @@ function forestSprites(ctx, rng, avoid) {
   // the ancient oaks framing the clearing, crowns running off the top
   // (the pair is cut off on its right in the pack: the cut edge runs off the frame on both sides)
   stand(ctx, 'forest', 'oaks');
-  // stones, a log, a stump, bushes and ferns around the clearing
-  prop('bush_flowers', [[96, 84], [86, 86], [108, 82]]);
-  prop('bush_round', [[170, 84], [182, 86], [158, 82]], true);
-  prop('fern', [[60, 106], [46, 110], [76, 104]]);
-  prop('stones', [[196, 114], [210, 118], [180, 110]]);
-  prop('log', [[74, 128], [96, 132], [52, 124]]);
-  prop('stump', [[160, 104], [146, 100], [174, 106]]);
-  prop('fern_small', [[226, 128], [212, 132], [236, 124]], true);
-  prop('bush_small', [[118, 96], [140, 94]]);
-  prop('snag', [[32, 116], [20, 120]]);
-  prop('sticks', [[140, 136], [120, 134], [166, 138]]);
+  // bushes along the far edge of the clearing, ferns, a stump and stones at
+  // the oaks' feet, a log and ferns in the near corners: the clearing itself
+  // stays open for the plants (as the Sunlit Meadow's field does)
+  prop('bush_flowers', [[96, 84], [86, 85], [108, 83]]);
+  prop('bush_round', [[170, 84], [182, 85], [158, 83]], true);
+  prop('bush_small', [[118, 83], [146, 83]]);
+  prop('fern', [[40, 104], [52, 102]]);
+  prop('snag', [[10, 106], [16, 110]]);
+  prop('stump', [[214, 100], [222, 102]]);
+  prop('stones', [[234, 116], [238, 120]]);
+  prop('log', [[20, 142], [26, 142]]);
+  prop('fern_small', [[246, 144], [240, 144]], true);
   // foliage cut off by the bottom of the frame
-  prop('bush_round', [[14, 150], [28, 150]]);
-  prop('bush_flowers', [[244, 150], [230, 150]], true);
-  // ground cover in the open, never on a prop or a deposit
-  for (let i = 0; i < 18; i++) prop(`leaves_${rng.int(1, 2)}`, spots(6, W - 6, 86, H + 2), rng.chance(0.5));
+  prop('bush_flowers', [[208, 152], [196, 152]], true);
+  // a few sticks and leaves on the open ground (too small to keep a plant away)
+  prop('sticks', [[140, 138], [120, 136], [166, 138]]);
+  for (let i = 0; i < 9; i++) prop(`leaves_${rng.int(1, 2)}`, spots(6, W - 6, 88, H + 2), rng.chance(0.5));
 }
 
 /**
@@ -667,19 +668,20 @@ function riverSprites(ctx, rng, avoid) {
   for (let k = 0, bands = ['#6cbe3c', '#62b636', '#58ac30', '#4ea22c']; k < bands.length; k++) R(ctx, 0, 115 + k * 8, W, H, bands[k]);
   for (let x = 0; x < W; x += 2) { const d = rng.int(0, 2); R(ctx, x, 113 - d, 2, d + 2, '#6cbe3c'); R(ctx, x, 112 - d, 2, 1, '#3a7a2a'); }
   stand(ctx, 'river', 'willow_small');
-  prop('bush_plain', [[96, 82], [84, 84], [110, 82]]);
-  prop('bush_flowers', [[192, 84], [178, 84], [206, 86]], true);
-  prop('bush_leafy', [[122, 80], [134, 80], [62, 82]]);
-  prop('post', [[172, 92], [164, 92]]);
-  prop('sign', [[70, 92], [56, 90]]);
+  // the bushes at the willows' feet, a post and a sign on the bank: the far
+  // meadow between them stays open for the plants
+  prop('bush_plain', [[58, 84], [64, 84]]);
+  prop('post', [[172, 94], [164, 94]]);
+  prop('sign', [[64, 94], [56, 94]]);
   stand(ctx, 'river', 'willow_great');
   stand(ctx, 'river', 'willow_second');
-  prop('stump', [[214, 132], [228, 136], [200, 128]]);
-  prop('branch', [[100, 136], [84, 138], [120, 140]]);
-  // grass, small flowers and pebbles on both banks, never on a prop or a deposit
-  for (let i = 0; i < 10; i++) prop(rng.pick(['grass_1', 'grass_2']), spots(8, W - 8, 72, 90), rng.chance(0.5));
-  for (let i = 0; i < 14; i++) prop(rng.pick(['grass_1', 'grass_2', 'grass_tall', 'grass_tall', 'pinks', 'buttercups']), spots(6, W - 6, 122, H + 2), rng.chance(0.5));
-  for (let i = 0; i < 5; i++) prop('pebble', spots(10, W - 10, 118, H - 2));
+  // the near shore: a stump and a branch in its corners, the rest open
+  prop('stump', [[244, 146], [236, 146]]);
+  prop('branch', [[12, 146], [18, 146]]);
+  // grass, small flowers and pebbles on both banks (too small to keep a plant away)
+  for (let i = 0; i < 6; i++) prop(rng.pick(['grass_1', 'grass_2']), spots(8, W - 8, 80, 90), rng.chance(0.5));
+  for (let i = 0; i < 8; i++) prop(rng.pick(['grass_1', 'grass_2', 'buttercups']), spots(6, W - 6, 124, H + 2), rng.chance(0.5));
+  for (let i = 0; i < 3; i++) prop('pebble', spots(10, W - 10, 122, H - 2));
 }
 
 /**
@@ -705,20 +707,20 @@ function quarrySprites(ctx, rng, avoid) {
   prop('frame', [[64, 86], [48, 86], [84, 86], [130, 86], [30, 86], [170, 86]]);
   prop('scaffold', [[150, 84], [164, 84], [118, 84], [236, 84], [96, 84]]);
   prop('ladder', [[112, 86], [100, 86], [176, 86], [30, 86], [140, 86]]);
-  prop('blocks', [[176, 96], [190, 98], [94, 94]]);
-  prop('stone_pillar', [[236, 96], [246, 98]]);
-  prop('rail_fence', [[132, 98], [120, 100], [40, 96]]);
-  prop('shrub_green', [[30, 112], [16, 116], [44, 110]]);
-  prop('cart', [[232, 134], [218, 138], [240, 126]]);
-  prop('crate', [[198, 136], [204, 128], [184, 140]]);
-  prop('crate_small', [[188, 140], [178, 134]]);
-  prop('stone_block', [[100, 132], [80, 136], [120, 134]]);
-  prop('bench', [[150, 132], [164, 136], [138, 140]]);
-  prop('dirt_heap', [[56, 136], [40, 140], [70, 132]]);
-  prop('shrub_small', [[12, 140], [24, 142]]);
-  // dry brush, tufts and loose stones on the pit floor, never on a prop or a deposit
-  for (let i = 0; i < 10; i++) prop(rng.pick(['brush', 'brush_small', 'shrub_small']), spots(6, W - 6, 96, H + 2), rng.chance(0.5));
-  for (let i = 0; i < 10; i++) prop(rng.pick(['boulder', 'pebbles', 'coal', 'pebbles']), spots(6, W - 6, 98, H), rng.chance(0.5));
+  // cut blocks, a rail fence and a pillar along the face, shrubs at the sides,
+  // the cart and its crates in the near right corner, stone and spoil in the
+  // near left: the pit floor stays open for the deposits
+  prop('rail_fence', [[44, 94], [36, 94]]);
+  prop('blocks', [[174, 94], [182, 94]]);
+  prop('stone_pillar', [[248, 104], [246, 100]]);
+  prop('shrub_green', [[10, 112], [12, 118]]);
+  prop('cart', [[234, 142], [228, 142]]);
+  prop('crate', [[208, 142], [204, 142]]);
+  prop('crate_small', [[198, 143], [194, 143]]);
+  prop('stone_block', [[14, 146], [20, 146]]);
+  prop('dirt_heap', [[38, 143], [44, 143]]);
+  // dry tufts and loose stones on the pit floor (too small to keep a deposit away)
+  for (let i = 0; i < 6; i++) prop(rng.pick(['brush_small', 'pebbles', 'brush_small']), spots(6, W - 6, 98, H), rng.chance(0.5));
 }
 
 /**
@@ -742,17 +744,20 @@ function moonfenSprites(ctx, rng, avoid) {
   stand(ctx, 'moonfen', 'water_2');
   stand(ctx, 'moonfen', 'water');
   for (const name of ['willow_small', 'dead_tree', 'willow_left', 'willow_center']) stand(ctx, 'moonfen', name);
-  prop('trunk', [[132, 96], [146, 98], [120, 94]]);
-  prop('stump_glowing', [[200, 96], [186, 94], [214, 98]]);
-  prop('stump_drowned', [[118, 112], [140, 108], [104, 116]]);
-  prop('rock_big', [[214, 138], [226, 140], [200, 136]]);
-  prop('cattails', [[72, 128], [58, 130], [86, 126]]);
-  prop('ghost_stumps', [[160, 134], [144, 138], [176, 136]]);
-  prop('rock_mid', [[40, 116], [54, 118], [28, 120]]);
-  // ferns, grass, night flowers, lily pads, stones and crystals, never on a prop or a deposit
-  for (let i = 0; i < 16; i++) prop(rng.pick(['grass_1', 'grass_2', 'grass_3', 'fiddleheads', 'night_flowers']), spots(6, W - 6, 86, H + 2), rng.chance(0.5));
-  for (let i = 0; i < 6; i++) prop(rng.pick(['rock_small', 'stone_flat', 'rock_small']), spots(10, W - 10, 90, H), rng.chance(0.5));
-  for (let i = 0; i < 4; i++) prop('pad', spots(50, 120, 96, 102));
+  // the drowned and ghostly stumps and the cattails stand in the pools, the
+  // glowing stump at a willow's foot, the fallen trunk and the rocks in the
+  // near corners: the moss between the pools stays open for the deposits
+  prop('stump_drowned', [[40, 102], [48, 102]]);
+  prop('cattails', [[112, 104], [106, 104]]);
+  prop('stump_glowing', [[232, 100], [226, 100]]);
+  prop('rock_mid', [[12, 118], [16, 120]]);
+  prop('trunk', [[236, 148], [230, 148]], true);
+  prop('ghost_stumps', [[86, 102], [80, 102]]);
+  prop('rock_big', [[18, 146], [24, 146]]);
+  // ferns, grass, night flowers, stones and lily pads (too small to keep a deposit away)
+  for (let i = 0; i < 9; i++) prop(rng.pick(['grass_2', 'grass_3', 'fiddleheads', 'night_flowers']), spots(6, W - 6, 90, H + 2), rng.chance(0.5));
+  for (let i = 0; i < 4; i++) prop(rng.pick(['rock_small', 'stone_flat', 'rock_small']), spots(10, W - 10, 92, H), rng.chance(0.5));
+  for (let i = 0; i < 4; i++) prop('pad', spots(30, 110, 92, 102));
 }
 
 /**
@@ -778,14 +783,19 @@ function cragsSprites(ctx, rng, avoid, seed) {
   }
   // the vent and the gusher (their smoke rises in animateRegion), the great crags
   for (const name of ['gusher', 'vent', 'crag_large', 'crag_tall']) stand(ctx, 'crags', name);
+  // the smaller crags along the ridge, the stream pooling at the bottom of
+  // the frame, a mound and a dead bush in the near corners: the plain stays
+  // open for the deposits
   prop('crag_medium', [[126, 88], [140, 86], [112, 90]]);
   prop('crag_small', [[210, 92], [222, 94]]);
-  prop('lava_pool', [[150, 128], [128, 132], [172, 126]]);
-  prop('rock_mound', [[208, 140], [222, 142], [192, 138]]);
-  prop('dead_brush', [[60, 132], [46, 136], [74, 128]]);
-  // black rocks, lava pans and ember brush, never on a prop or a deposit
-  for (let i = 0; i < 10; i++) prop(rng.pick(['rock_1', 'rock_2', 'rock_3', 'lava_pan']), spots(6, W - 6, 94, H), rng.chance(0.5));
-  for (let i = 0; i < 10; i++) prop(rng.pick(['ember_brush', 'ember_brush_small']), spots(6, W - 6, 90, H + 2), rng.chance(0.5));
+  const [, mouth] = lavaStream(seed).slice(-1)[0];
+  prop('lava_pool', [[Math.round(mouth), H + 8], [Math.round(mouth) + 6, H + 8]]);
+  prop('rock_mound', [[242, 152], [236, 152]]);
+  prop('dead_brush', [[8, 142], [12, 142]]);
+  prop('lava_pan', [[44, 146], [52, 146]]);
+  // black rocks and ember brush on the plain (too small to keep a deposit away)
+  for (let i = 0; i < 6; i++) prop(rng.pick(['rock_1', 'rock_3']), spots(6, W - 6, 96, H), rng.chance(0.5));
+  for (let i = 0; i < 5; i++) prop(rng.pick(['ember_brush', 'ember_brush_small']), spots(6, W - 6, 92, H + 2), rng.chance(0.5));
 }
 
 /** @param {CanvasRenderingContext2D} ctx @param {Rng} rng */
