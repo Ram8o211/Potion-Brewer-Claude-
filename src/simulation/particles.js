@@ -5,9 +5,10 @@ import { MAX_SPECIES } from '../reactions/species.js';
 import { PHASE } from './constants.js';
 
 /** Per-particle state fields that are persisted & swapped on removal. */
-export const STATE_FIELDS_F32 = ['x', 'y', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet', 'q'];
+export const STATE_FIELDS_F32 = ['x', 'y', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet', 'q', 'skinU', 'skinV'];
 export const STATE_FIELDS_I32 = ['group'];
 export const STATE_FIELDS_U8 = ['phase'];
+export const STATE_FIELDS_U16 = ['skin'];
 export const STATE_FIELDS_U32 = ['seed'];
 
 /** Derived (cached) per-particle properties computed from composition. */
@@ -49,6 +50,11 @@ export class Particles {
     /** electric charge (conserved; see electric.js) */
     this.q = new Float32Array(capacity);
     this.group = new Int32Array(capacity).fill(-1);
+    /** painted piece of a poured whole object it belongs to (materials/shapes.js skin id, 0 = none) */
+    this.skin = new Uint16Array(capacity);
+    /** where in that piece it sits: offset from the piece's centre in particle spacings */
+    this.skinU = new Float32Array(capacity);
+    this.skinV = new Float32Array(capacity);
     this.phase = new Uint8Array(capacity);
     this.seed = new Uint32Array(capacity);
     this.sleep = new Uint16Array(capacity);
@@ -115,6 +121,7 @@ export class Particles {
     this.restX[i] = 0; this.restY[i] = 0;
     this.agit[i] = 0; this.burn[i] = 0; this.wet[i] = 0; this.q[i] = 0;
     this.group[i] = -1;
+    this.skin[i] = 0; this.skinU[i] = 0; this.skinV[i] = 0;
     this.phase[i] = phase;
     this.seed[i] = (Math.imul(this._seedCounter++, 2654435761) >>> 0) || 1;
     this.sleep[i] = 0;
@@ -126,7 +133,7 @@ export class Particles {
   /** Copy every field of particle `src` into slot `dst`. @param {number} dst @param {number} src */
   copy(dst, src) {
     const self = /** @type {any} */ (this);
-    for (const f of ['x', 'y', 'px', 'py', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet', 'q', 'group', 'phase', 'seed', 'sleep', 'dirty']) {
+    for (const f of ['x', 'y', 'px', 'py', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet', 'q', 'group', 'skin', 'skinU', 'skinV', 'phase', 'seed', 'sleep', 'dirty']) {
       self[f][dst] = self[f][src];
     }
     for (const f of DERIVED_FIELDS) self[f][dst] = self[f][src];

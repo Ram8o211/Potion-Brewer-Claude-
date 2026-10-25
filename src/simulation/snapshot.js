@@ -63,6 +63,9 @@ export function snapshotSim(sim, sizeKey) {
     group: toBase64(p.group.slice(0, n)),
     phase: toBase64(p.phase.slice(0, n)),
     seed: toBase64(p.seed.slice(0, n)),
+    // painted pieces of whole objects (optional: older saves have none)
+    skin: toBase64(p.skin.slice(0, n)),
+    skinUV: toBase64(Float32Array.from({ length: 2 * n }, (_, k) => (k < n ? p.skinU[k] : p.skinV[k - n]))),
     walls: Array.from(c.cellT, (t) => Math.round(t * 100) / 100),
     vented: { ...sim.vented },
     progress: { ...sim.reactions.progress },
@@ -102,6 +105,12 @@ export function applySnapshot(sim, snap, env) {
   const phase = fromBase64(snap.phase);
   const sb = fromBase64(snap.seed);
   const seed = new Uint32Array(sb.buffer, sb.byteOffset, sb.byteLength / 4);
+  let skin = null, skinUV = null;
+  if (snap.skin && snap.skinUV) {
+    const kb = fromBase64(snap.skin), ub = fromBase64(snap.skinUV);
+    skin = new Uint16Array(kb.buffer, kb.byteOffset, kb.byteLength / 2);
+    skinUV = new Float32Array(ub.buffer, ub.byteOffset, ub.byteLength / 4);
+  }
   const p = sim.p;
   const S = MAX_SPECIES;
   const fields = (snap.v || 1) >= 2 ? F32_FIELDS : F32_FIELDS_V1;
@@ -126,6 +135,9 @@ export function applySnapshot(sim, snap, env) {
     p.group[i] = group[i];
     p.phase[i] = phase[i];
     p.seed[i] = seed[i];
+    p.skin[i] = skin ? skin[i] : 0;
+    p.skinU[i] = skinUV ? skinUV[i] : 0;
+    p.skinV[i] = skinUV ? skinUV[snap.n + i] : 0;
     p.sleep[i] = 0;
     p.comp.fill(0, i * S, (i + 1) * S);
     for (let s = 0; s < used; s++) {

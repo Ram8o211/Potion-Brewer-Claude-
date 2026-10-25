@@ -6,7 +6,9 @@ import assert from 'node:assert/strict';
 import { Simulation } from '../src/simulation/world.js';
 import { PHASE } from '../src/simulation/constants.js';
 import { generateWorld, makeLookup } from '../src/materials/generator.js';
-import { chunkSize } from '../src/materials/shapes.js';
+import { chunkSize, chunkTemplate, piece, skinOf, hasPieces } from '../src/materials/shapes.js';
+import { PIECES } from '../src/materials/pieces.js';
+import { snapshotSim, restoreSim } from '../src/simulation/snapshot.js';
 
 const world = generateWorld('solids-tests-1');
 const lookup = makeLookup(world);
@@ -59,13 +61,50 @@ test('whole ingredients enter as recognisable rigid objects, not as powder', () 
   assert.equal(b.length, 1, 'one root');
   assert.equal(b[0].length, n, 'every particle belongs to it');
   for (let i = 0; i < s.p.count; i++) assert.equal(s.p.phase[i], PHASE.SOLID);
-  assert.ok(aspect(s, b[0]) > 2.2, `a root is long and thin (aspect ${aspect(s, b[0]).toFixed(2)})`);
+  // it is one of the root's painted pieces, its particles laid out over it
+  const skin = s.p.skin[b[0][0]], v = skin - skinOf(lookup('wild-ironroot'), 0);
+  assert.ok(v >= 0 && v < 4, 'the root carries one of its four pieces');
+  const pts = chunkTemplate(lookup('wild-ironroot'), n, v);
+  for (const i of b[0]) {
+    assert.equal(s.p.skin[i], skin, 'the whole body shares the piece');
+    assert.ok(pts.some(([u, w]) => Math.abs(u - s.p.skinU[i]) < 1e-6 && Math.abs(w - s.p.skinV[i]) < 1e-6), 'each particle knows its spot in it');
+  }
   const t = sim();
   pour(t, 'wild-riverchalk', chunkSize(lookup('wild-riverchalk')));
   run(t, 3);
   assert.ok(aspect(t, bodies(t)[0]) < 1.5, 'a pebble is round');
   // whole roots carry the renderer's look and count as "whole"
   assert.ok(s.p.whole[0] > 0.99);
+});
+
+test('every wild solid has four painted pieces, each fitted with exactly its template\'s particles; a pour picks one at random', () => {
+  for (const id of world.materials.map((m) => m.id)) {
+    const def = lookup(id);
+    if (!hasPieces(def)) continue;
+    assert.ok(def.wild.key in PIECES, def.wild.key);
+    for (let v = 0; v < 4; v++) {
+      const pc = piece(skinOf(def, v));
+      assert.ok(pc, `${def.wild.key} piece ${v} fits`);
+      assert.equal(pc.pts.length, chunkSize(def), `${def.wild.key} piece ${v} weighs a whole object`);
+    }
+  }
+  // powders and shop solids keep their own shapes
+  assert.ok(!hasPieces(lookup('wild-mica')));
+  const s = sim();
+  const def = lookup('wild-riverchalk'), n = chunkSize(def), seen = new Set();
+  for (let k = 0; k < 16; k++) {
+    s.clear();
+    pour(s, 'wild-riverchalk', n);
+    seen.add(s.p.skin[0]);
+  }
+  assert.equal(seen.size, 4, 'all four pieces turn up');
+  // a saved cauldron keeps every object's piece
+  const back = restoreSim(snapshotSim(s, 'small'), { lookup, reactions: world.reactions });
+  for (let i = 0; i < s.p.count; i++) {
+    assert.equal(back.p.skin[i], s.p.skin[i]);
+    assert.equal(back.p.skinU[i], s.p.skinU[i]);
+    assert.equal(back.p.skinV[i], s.p.skinV[i]);
+  }
 });
 
 test('the pestle cracks a body into fragments where it strikes, then grinds them; untouched parts stay whole', () => {

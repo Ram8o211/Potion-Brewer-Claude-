@@ -1896,12 +1896,240 @@ return map.get(id);
 }
 return { generateWorld, addAlchemy, SOLVENT_ROLES, LAB_ROLES, sandboxIngredients, makeLookup };
 })();
+// src/materials/pieces.js
+const __m20 = (() => {
+const PIECES_URL = 'assets/icons/pieces.png';
+const PIECES_SIZE = /** @type {[number, number]} */ ([160, 1440]);
+const PIECE_CELL = 40;
+const PIECE_MASK = 20;
+const PIECES = {
+ashbloom: [
+[0, 1000, '00c6001ff00fff81fff81fff83fffe3fffe3fffe7fffe7fffe7fffcffff8ffff87fff83fff83fff03fff01ffc007fc000380'],
+[40, 1000, '00000180803c3c03cfe03fff03fff03fff83fff83fffc7fffc7fffc3fffc3fffc3fffc1fffc0fffc0fff807ff803ff001cc0'],
+[80, 1000, '0018003fc007fe03fff83fffc7fffc7fffe7fffe7fffeffffffffff7fffe7fffe3fffc1fffc1fff80fff807ff001e0000000'],
+[120, 1000, '0080001c0003ff007ff86fff87fffc7fffcffffefffff7fffe7fffe7fffe7fffc7fffc3fffc1fffc0fff807fe003c0000000'],
+],
+beebalm: [
+[0, 920, '00040001e0007f000ff803ff807ff80fffc0fffc3fffc7fffc7fffc3fffe3fffc1fff81fff00fff80fff80ffe00e00004000'],
+[40, 920, '0080001f0007f800ffc00ffe01fff03fff03fff03fff03fffc7fffe3fffe1fffc0fffc1fff83fff01fff00fff003cf000020'],
+[80, 920, '00060003f0007f001ff803ffc03ffc07ffc77ffe7fffe7fffc7fffc3fffe3fffc1fff81fff01fff01ffe01ffc01e00008000'],
+[120, 920, '0040000e0001f8007fc00ffc00ffe00fff01fff03fff03fff81fff81fff00fff03fffc7fffc3fff81fff00ff8001e0000000'],
+],
+bogbean: [
+[0, 880, '00c0001e0001f8003fe007ff00fff00fff00fff00fff80fff81fff81fff81fff81fff81fff80fff007fe003fc000f8000600'],
+[40, 880, '00060001e0007f001ff807ff80fffc0fffc1fffc3fffc3fffc7fffe7fffc7fffc7fff87ffe07ffc07ff807fe007fc001f000'],
+[80, 880, '0070001fe007ff00fff81fffc3fffe7fffefffffffffffffff7ffff7ffff7ffff7fffe3fffc3fff81fff01ffc00fc0000000'],
+[120, 880, '000e0001f0003f000ff803ff807ffc0fffc1fffc1fffc3fffc3fff83fff83fff83fff03fff01ffe01ff800fe000f80004000'],
+],
+cinderscale: [
+[0, 1120, '001c000ff001ff807ffc07ffc0fffe0fffe1fffe3fffe3fffe3fffe3fffc7fffc3fff83fff83fff01ffe00ff8007e0003800'],
+[40, 1120, '0038001ff007ff807ffc0fffe1ffff3ffff3fffe7ffff7ffff7fffeffffe7fffcffff87fff87fff03ffc01ff800fc0000000'],
+[80, 1120, '003c000ff803ffc07ffe0fffe1fffe3fffe3fffe7fffe7fffe7fffe7fffc7fffc7fffc3fff83fff01ffe00ff8007e0003000'],
+[120, 1120, '00c0003f0007fc00ffe00fff01fff01fff83fff83fffc3fffc3fffc3fffc3fffc3fff83fff83fff01ffe00ffc003f0001c00'],
+],
+cinnabar: [
+[0, 520, '003fc00ffe01ffe03ffe07ffe0fffe1fffe3fffe7fffe7fffe7fffe7fffe7fffe7fffe7fffc3fffc3fff83ffe01ff800e000'],
+[40, 520, '0018000fc007fe01fff03fff03fff83fff83fff83fff87fffc7fffc7fffc7fffe7fffe7fffc7fffc3fff80ffe001fc000380'],
+[80, 520, '000f0007f801ffc03ffc07ffe0fffe3fffe3fffe7fffc7fffc7fffc7fffc7fffc7fff87fff83fff81fff80fff003fe000380'],
+[120, 520, '0080003e0007f000ffc01fff03fff87fffc7fffc7fffe7fffe7fffe7fffe3fffe3fffe3fffe3fffc1fff80fff001fe0003c0'],
+],
+dragonpepper: [
+[0, 1080, '007001ffc03ffe03ffe03ffe00fff00fff80fff80fffc07ffc07ffe07ffe07ffe0fffe3fffe7fe7e7f83e1e03e0001c00008'],
+[40, 1080, '020000f0000fc000ff000ff800ffc01ffc01ffc01ffe01ffe00ffe00ffe007fe003ff001ff000ff0007f8003f8000f800030'],
+[80, 1080, '00000000003be007ff00fff807ff803ffc03ffc07ffe07ffe03fff03fff81fff80fffc07ffe01fff007fe0007c0000000000'],
+[120, 1080, '1f0001ff801ffc00ffe01ffe01fff03fff83fff83fff83fff81fff807ff807ff007ff007fe00ffc01ff801fe001fc000e000'],
+],
+dreamclover: [
+[0, 400, '0080007c6007ff80fffc07ffc07ffc0fff81fffc7fffe7fffffffff7fffe7fffe7fff83fff01ffe01ffe01ffc01c00000000'],
+[40, 400, '0100003f0003f8007f8007fc007fc07fff07fff83fffc3fffc1fffe1fffe3fffc3fffc7fffc7fffc7fffc7fffc787f800100'],
+[80, 400, '00380007c000fe001fe01fff83fffc3fffe3fffe3fffe3fffc3fff87fff87fff87fff87fff87fff87fff83f3f03c00020000'],
+[120, 400, '0180007c000fef01fff81fff81fffc1fff83fff83fff83fffc1fffc1fffe3fffc3fffc3fff87fff83fffc3f1fc0001c00008'],
+],
+emberbark: [
+[0, 120, '00008000fc007fc00ffc01ff801ff803ff803ffc0fffc0fff81fff81fff01ffe01ffe01ffe01ffc03ff803fc003e00010000'],
+[40, 120, '002000070001ff003ff807ff80fff80fff81fff81fffe3fffe3fffe3fffe3fffc3fff03fff07ffe07ffc07ff807fe0038000'],
+[80, 120, '000f8003f8007fc03ffc07ffc0fffc1fffe3fffe7fffe7fffc7fffc7fff87fff03fff03ffe03ffe03ffc03ff003fe001c000'],
+[120, 120, '00000003e000ff801ff803ff80fff81fff83fffc3fffe7fffe7ffffffffeffffcffff0fffe0fffe0fff80fff0001c0000000'],
+],
+emberflint: [
+[0, 560, '0001000078001fc003fc00ffc03ffc0fffc1fffc1fffc1fffc3fff83fff87fff03fff03ffe01ffe01ffc00ff000fc0006000'],
+[40, 560, '0002000070001f8003f800ff803ffc07ffc0fffc0fffc1fffc1fffc3fffc3fffc3fffc3fffc1fff81ffe00ffc003f8000e00'],
+[80, 560, '00038000fc003fc00ffe03ffe0fffe0fffe1fffe3fffe3fffe7fffc7fffc7fff87fff87fff07ffe03ffc01ff000fc0003000'],
+[120, 560, '000000078001fe00fff01fff81fffc1fffe3fffe3fffe3ffff7fffe7fffe7fffcffff0fffe07ffc03ff001f8000c00000000'],
+],
+frostcap: [
+[0, 840, '0070003fc007ff00fffc1fffe1fffe3fffe3fffe7fffc7fff87fff0fffe0fffe07fff07fff81c3fc003fc001f8000f000060'],
+[40, 840, '01c0003f0007fc00ffe01fff01fff83fffc7fffc7fffe7fffe7fffe3fffe1fffc03ff803fc007f000ff0007e0007e0003c00'],
+[80, 840, '00f8003fc007fe00fff03fff87fff87fffc7fffc7fffc3fffc1fffe0fffe07ffe07ffe1fffc3fffc3fef81fc000f80003000'],
+[120, 840, '000e0007f001ff00fff81fff83fff87fffc7fffc3fffc1fffc0fffe07ffe0fffe1fffc3fff83fe003fc003f8001f80007000'],
+],
+gravemoss: [
+[0, 1280, '00f8003ff807ffc0fffe0fffe0ffff1ffff3fffe3fffe7fffe7fffe7fffc7fffcffffc7fff87fff83fff03ffc00ff8001c00'],
+[40, 1280, '0038001ff007ff807ffc0fffc1fffe1fffe3fffe3fffe7fffe7fffc7fffc7fffc7fffc7fff87fff83fff01ffe01ff0003800'],
+[80, 1280, '00c0003f8007fe00fff01fff81fff83fffc7fffc7fffcffffcffffe7fffe7fffe3fffc1fffc0fff80ffe007f8001f8000e00'],
+[120, 1280, '0020000f8003fe01fff83fffc7fffc7fffc7fffe7fffc7fffc7fffc7fffc7fff87fff87fff87fff87fff03fff00ffc003800'],
+],
+heartpetal: [
+[0, 280, '00000001e00fbf03fff83fffc7fffc7fff87fffe3ffff3ffff7fffe7fffeffffeffffe7fffe3fffe03ffe01fcf0000200000'],
+[40, 280, '0080001f0007f800ffc01fff03fff83fff87fff07ffc07ffe03fff03fff83fffc1fffc1fffc1fffc0fff807ff803ff000780'],
+[80, 280, '0180003e0017f003ffe03fff03fff83fffc3fff83fff87fffcffffeffffe7fffe7fffe7fffc3fff03ffe03fc803800010000'],
+[120, 280, '00c0003f1007ff00fff81fff83fff83fff87fff87fff87fffc7fffc3fffe1fffc1fffe1fffe3fffe1ffe40ffc007f8000400'],
+],
+hemlock: [
+[0, 960, '0004000ce001fe003ff003fe003fe00ffc01ff801ff801ffb00fff00ffe013fc01ff800ff0007e0007c0003c000380001000'],
+[40, 960, '002000070000f8001f8001f800ff801ff801ff781fff80fff807ff003ff007fe003fe001fe000fc0007c0003800038000180'],
+[80, 960, '00040001e0003e0063e00f7e00f7e00fffc0fffc2fffc7fffc3fff83fff01ffe00ffc00ff8007e0007c00078000700002000'],
+[120, 960, '0f0000f8001fc000fc1c0fe3e0fe7e07e7e3fefc7fefc7fff83f7f83fff80fff007fe001fc001f8000f0000f0000f0000600'],
+],
+ironroot: [
+[0, 0, '00000003f0003f0007f8007fc00ffe03fff07ffe0fffe1fffc1fffc3fff83fff87fff87fff87fffc67ffc03f9801f0000000'],
+[40, 0, '00380003c0007c001fc003fe00ffe01fff81fffc1fffc3fffc7fff83fffc0fffc1fffc3fff87fff039ff803f7807c3c03018'],
+[80, 0, '0002000070007f807ffc0fff81fff83fffc7fffc77ffc77ffe6fffe1fffe3fff67fff0ffff0f9ff871ff803e1803c0001800'],
+[120, 0, '01e0007f801ffe03fff07fff0ffff8ffff87fff87fffc7fffc7fffe7fffe7fffe7fffe3fff81fff80fff801ff001fe000400'],
+],
+lodestone: [
+[0, 480, '000f001ff803ffc07ffe07ffe0fffe1fffe1fffe3fffe7fffe7fffe7fffeffffcffffcffffcffff8fffe0fff807fc0038000'],
+[40, 480, '001c0003e0007f001ff803ff80fffc0fffc1fffc1fffc1fffc1fffc3fffc3fffc3fffc3fff83fff81fff00ffc007f0003000'],
+[80, 480, '00030003f801ffc03ffe07ffe0fffe1fffe1fffe3fffc3fffc7fffc7fff8ffff87fff87fff03fff01ffe00ffc003f0001800'],
+[120, 480, '0060001fc001fe003ff007ff80fffc1fffc3fffc3fffc3fffc7fffc7fffe7fffc7fffe7fffe3fffc1fffc07ff801ff0007e0'],
+],
+mandrake: [
+[0, 240, '038000fc000fec007efc03ffc01ffc03ff807ff00fff81ff383ff007ff807ffc03ffe03ffe03ffc077fe063fe021cf000430'],
+[40, 240, '00180003c0003c0003c0007c000fc001fc003fe007fe007ff00fff81fff81fff81fff81fff807ff007fe0066c00c08000000'],
+[80, 240, '000001c0003f0007f8007faf03fff81fffc0fffe1fff83ffe03ffe07fff87fffc3fffe3fff81fffe0cfff0e7ff0400000000'],
+[120, 240, '0030000fc003ff007ff80fffc1fffc3fffe3fffe3fffe7fffe3fffc7fffc7fffc7fff83fff81fff81fff00ffe007fc000600'],
+],
+mica: [
+[0, 600, '0020000f8003fc007fe00fff00fff81fffc1fffe3fffe7fffe7fffc7fffc7fff87fff03fff03ffe03ffe03ffc01fc000e000'],
+[40, 600, '0040001e0003f8007fc00fff01fff83fffc3fffc3fffc3fffc3fffc3fffc7fffe7fffe7fffe7fffc7fff83fff03ffc01e000'],
+[80, 600, '00000000c0003f001ffc07ffe1ffff3ffff7ffffffffeffffeffffe7fffc7fffc7fffc7fff83fff81fff003f8000c0000000'],
+[120, 600, '03f8007fe00fff00fff81fffe1fffe3ffff3ffff3ffff7ffff7ffff7fffefffffffffeffffc7fff87ffe03ff8007c0000000'],
+],
+moonlily: [
+[0, 1160, '0070000f8001fc01bfc07fff87fffc7fffe7fffe3fffe1fffe1fffc1fff83fff83fff87fffc7fffc3fffc3fff83e3f800070'],
+[40, 1160, '0080001e3003f7807ff807ff80fff81fff83fff83fffc1fffe1fffe0fffc3fffc7fff87fff07ffe03ffe01ffe00ffc000040'],
+[80, 1160, '0070000fc001fe01bfe03fffc7fffe7fffefffffffffe7fffe3fffc1fff83fffc3fffe3fffe7fffe7fffe3fffe07c7e00004'],
+[120, 1160, '000c0007e003fe007fe007ff00fff00fff01fff03fff03fff03fff83fff83fffc3fffc3fffc3fffc1fffc1f3fc081f800070'],
+],
+nettle: [
+[0, 360, '00060007e000ff007ff00fff81fff81fffc3fffc7fffc7fffc7fffc3fffc3fffc1fff80fff80fff01ffc03cf003800030000'],
+[40, 360, '03c000fff00fff83fff83fff07fff07fff87fffc7fffe7fffe7fffe7ffff7dffe78ffe387fe303fe300fe0001e0000c00000'],
+[80, 360, '0004000ff803ff80fff81fffc3fffc3fffc7fffc7fffc7fffcffffeffffe7fffe7fffe3fffe3ffff3fffe380003000000000'],
+[120, 360, '0100003f000ffc03ffe03fff03fff87fff87fffc7fffc7fffc7fffc7fffc3fffc1fff80fff80fff0020f0000700007000020'],
+],
+nightshade: [
+[0, 80, '000000060007fe00fff80fff83fff83fffc3fffc3fffe7fffe7fffe7fffe3fffe3fffe3fffe1fffc0fffc0fff801fe000980'],
+[40, 80, '0010003f0003ff00fff80fff80fff81fff83fff83fff83fff87fffc7fffc3fffc3fff83fff81fff00fff007ff003fe000900'],
+[80, 80, '0010001f8007fe00fff80fff83fffc3fffc3fffc3fffe7fffe7fffe3fffe3fffe3fffc3fffc1fffc1fffc07ff801fe000100'],
+[120, 80, '0000001fc007fe01fffc1fffc3fffc7fffcffffe7ffff7fffe7fffe7fffe7fffe3fffe3fffe1fffc0fff807fe000fc000000'],
+],
+obsidian: [
+[0, 1040, '007f801ffc03ffc07ffe0fffc1fffe3fffe3fffe7fffe7fffe7fffe7fffe7fffeffffcffff8ffff87fff03ffe01ffc007000'],
+[40, 1040, '0018003fc007fc007fe007fe00fff00fff80fff81fffc1fffc1fffc1fffc1fffc3fff83fff81fff80ffe007fc001f8000600'],
+[80, 1040, '00380007f801ffc03ffc0fffc1fffe3fffe7fffe7fffe7fffe7ffffffffeffffe7fffc3fff83fff81ffe00ffc007e0000000'],
+[120, 1040, '01c0003fc00ffe01fff03fff87fffc7fffc7fffc7fffe3fffe3fffc3fffe3fffc1fffc1fff81fff80fff007ff000fe0001c0'],
+],
+owlberry: [
+[0, 160, '0040001f8003fc007fc007fc007fe00fff01fff81fff83fffc3fffc3fffc3fffc3fffc3fffc1fffc0fffc07ff803ff000060'],
+[40, 160, '0180003e0007f000ff801ff801ffc01ffe01fff01fff81fff83fffc3fffc3fffc3fff81fff81fff00fff007fe003fc000f00'],
+[80, 160, '0300007e0007f000ff801ff801ffc01ffe01fff01fff83fff83fffc3fffc3fffc3fffc3fff81fff81fff00ffe007fc001f00'],
+[120, 160, '0030001f8003f8003fc007fc007fe00fff00fff01fff81fffc1fffe1fffe1fffe3fffe7fffc3fff83fff81ffe00ff8006800'],
+],
+reedmace: [
+[0, 720, '0000000000070000f80c0fc1c0fe1c0ff380ff3807ff807ffe7fffe3fffc0fffc07ff803ff003ff001fe0004000000000000'],
+[40, 720, '0000000040003e0007e000fe001fe003fc007fc067fbe67ffe67ff8f7fe0fffc0fdfe0ffff07fff87f018780002000000000'],
+[80, 720, '0000000000001c0007f000ff063ff067ff077fe2fffcef7ffef7ffcffff87fff87fff07fc003e0003c000100000000000000'],
+[120, 720, '00000000000000007f000ff801ff801ff801ff801ffc00ffcc0fffe0fffeffff77ffe33ffe01ffc001f00000000000000000'],
+],
+riverchalk: [
+[0, 800, '007c000ff001ff803ffc0fffe1fffe3ffff7ffff7ffffffffeffffe7fffc7fffc7fffc7fff83fff03fff01ffe00ffc000f00'],
+[40, 800, '0038000fe003ff007ff80fff80fffc1fffc1fffc1fffc3fffe3fffe3fffe3fffc3fff87fff87fff07ffe03ff801fe0001000'],
+[80, 800, '000f000ff807ffc0fffc1fffe3fffe3ffff3ffff7ffff7fffeffffeffffeffffe7fffc7fffc3fff81ffe00ffc001f0000400'],
+[120, 800, '0018000fe003ff00fff81fffc1fffc3fffe3fffe3fffe7fffe7fffe7fffe7fffeffffcffffc7fff83fff01fff007f8001800'],
+],
+riverpearl: [
+[0, 760, '00000000f8007fc03ffe07ffe0ffff1ffff3ffff7fffffffffffffeffffe7fffc7fffc3fff81fff80fff007f800380000000'],
+[40, 760, '001c0007e000ff003ff807ffc0fffc1fffc1fffe1fffe3fffe3fffe3fffe7fffe7fffc7fffc7fff83fff81fff007fe000780'],
+[80, 760, '00000001e000ff803ffc0fffc1fffe3fffe7ffff7ffff7fffeffffeffffc7fffc7fff83fff01ffe00ff8007f0001c0000000'],
+[120, 760, '00000003f000ff803ffc07ffe1fffe3fffe3ffff7ffff7ffffffffffffffffffeffffe7fffc7fff83fff01ffe003f0000000'],
+],
+saltpetre: [
+[0, 640, '0000000fe003ff00fff81fffc7fffc7fffcffffeffffeffffe7fffe7fffe7ffff7ffff7fffe7fffc3fff00ffe000f8000000'],
+[40, 640, '0300007c000fe001ff803ffe03fff87fffc7fffe7fffeffffeffffe7fffe7fffe3fffe3fffc3fffc1fffc1fff80fff000fe0'],
+[80, 640, '00078003fc007fe01fff07fff0ffff1ffff1ffff1ffff3ffff3fffe7fffe7fffcffffcffff87fff07fff03ffe00ffc003f00'],
+[120, 640, '00000007c001fe003ff007ff00fffc0fffe1ffff3ffff3ffff7ffff7fffffffffffffe7fffc3fff81ffe007f0001e0000000'],
+],
+silverleaf: [
+[0, 40, '000060007f000fe007fc00ffc01ffc0bff81fffc1fffc1fffc3fffc3fff83fff03fff03fff01fff01ffe03ff8078c0060000'],
+[40, 40, '0002000070001f0003f0017f003ff003ff807ff80fff80fff81fff01fff80fff00fff00ffe007fc003f8001c000180001800'],
+[80, 40, '00000000fe00fff01ffe0fffe1fffe1fffc3fff83fff87fffc7fff87fff07ffe03ffc03ffe03ffc073e00e00004000000000'],
+[120, 40, '000080003c00078007f001ff003ff007ff007ff80fff81fff81fff83fff83ffe03ffe03ffc03ffc01fc001f8001c00000000'],
+],
+sirenreed: [
+[0, 1240, '00008000fc001fc00ffc01ffc01ffc01ff807ff80fff80fff03ffe03ffe03ffc03ff003ff803ff003fe003fc001f00018000'],
+[40, 1240, '00008001bc003fc003fc01ffc03ffc03ffc03ff807ff807ff027ff03fff07ffe07ff807fe007fe003fe003fc003e00010000'],
+[80, 1240, '00010000f8003f8007f000ff803ff807ff007ff007fe017fe01ffe01ffe01ffd81fff80fff00ffe007fc007f0007c0003000'],
+[120, 1240, '00018000fc007fc007f800ffc03ff807ff807ff007ff017ff01bfe03ffc03ff003ffc03ff803ff001ff001fc001e00008000'],
+],
+starquartz: [
+[0, 1320, '000e0007f000ff801ffc03ffc03ffe37ffe3fffe3fffe7fffc7fffc7fff87fff87fffc3fffc3fff81fff01ffe00ff8006000'],
+[40, 1320, '00080003c0007e001fe003fe007ff407ffe3fffe3fffe3fffe7fffe7fffe7fffc3fffc3fff81fff00ffc00fe000780002000'],
+[80, 1320, '000c0003e001fe003ff007ff00fff80fff81fffc3fffc3fffc3fff83fff83fff83fff03fff01ffe01ffc00ff800fe0007000'],
+[120, 1320, '001000078000fc001fe011fe03fff03fff03fff87fffc7fffc7fffc3fffc3fff81fff81fff80fff007fe003fc000f8000100'],
+],
+stormglass: [
+[0, 1400, '003f000ff801ffc03ffc07ffc0fffc0fffe1fffe1fffe3fffc3fffc7fff87fff87fff07ffe07ffc07ffc03ff003f8001c000'],
+[40, 1400, '00020001f8007fc01ffc03ffe07ffe07ffe0fffe1fffc1fffc3fffc3fffc3fffc7fff87fff07ffe07ff807ff003fe001f800'],
+[80, 1400, '00000000f8007fc01ffc03ffe07ffe0ffff1ffff3fffe3fffe7fffe7fffc7fff8ffff07ffe07ffc03ff801fe000300000000'],
+[120, 1400, '000380007c001fe007fe01ffe03ffe07ffe0fffe1fffe1fffc3fffc3fff83fff07fff07ffe07ffc03ff801ff001fc0006000'],
+],
+sulfur: [
+[0, 440, '000e000ff803ffc07ffe0fffe0fffe1fffe3fffe3fffe7fffe7fffe7fffe7fffe3fffe3fffe1fffc0fff80ffe007f0001800'],
+[40, 440, '007e007ff00fff81fff83fffc3fffc7fffc7fff87fff87fffc7fffe3fffe3fffe3fffc3fffc1fffc0f7f8007f8001f000060'],
+[80, 440, '0003801ffe07ffe07ffe0fffe1fffe1fffe3fffe7fffe7fffe7fffe7fffc7fffc7fffc7fffc7fff07ffe03ffc01ff8000000'],
+[120, 440, '0200007e000ff801ffc01ffe03fff07fff07fff87fff87fff87fffc7fffc7fffc7fffc7fffe7fffe7fffc3fffc3fff007f80'],
+],
+sunthistle: [
+[0, 320, '0080001ee003ff00bff01fff83fffe3fffe1fffe1fffc3fff87fffc7fffe3fffc1fff83fff83fff83fff810ff8007f800038'],
+[40, 320, '0e4001fe001ffe01fff01fff07fff07fffc3fffc3fffe3fffc3fffc7fffc7fffe7fffe7fffe7fffc7fff8fcf38e000000000'],
+[80, 320, '00c0000f001ff801ffc01fff03fff87fffc7fffc7fff87fff81fffc1fffc3fffe3fffe3fffc3fff03fff03ffe03800010000'],
+[120, 320, '0060007f0007fe007ff007ff03fff07fffc7fffe3fffe1fffc3fffc7fff87fff87fff83fff00fff01fff01fff01c07000020'],
+],
+toadstool: [
+[0, 1200, '00f0003fe007ff00fff81fffc1fffe3fffe3fffc3fffc7fff87ffe07ffe07fff03fff81f7f8007fc003fc003f8001f0000c0'],
+[40, 1200, '0070001fc007ff00fff80fff81fffc3fffc3fffe7fffe7fffe7fffe7fffc3fffc0fff007f8007f000ff0007f0003e0000c00'],
+[80, 1200, '00f0003fc00ffe01fff03fff87fff87fffcffffcffffe7fffe7fffe3fffe0fffe07ffc0fff80fff00ff000ff0007e0001c00'],
+[120, 1200, '0070000f8003fc007fe00fff01fff81fff83fffc3fffc3fffe7fffe7fffc7fffc7fff87ffe07ffe03ffe01efe0007c000300'],
+],
+willowbark: [
+[0, 680, '0000000040003f0007f803ffc07ffc0fffe0fffe3ffff7ffff7ffff7fffeffffc7fff87ffe03ffc01ff000fe0007c0000000'],
+[40, 680, '00000000000028003ff007ff80fffc1fffe3ffff3ffff7ffff7fffeffffe7fffc7fff03ff803fe001f000040000000000000'],
+[80, 680, '0000000000000f8001fc007fe07ffe0ffff1ffff3ffff7fffe7fffc7fff8ffff8ffff07ffc03ff801fe000fc000000000000'],
+[120, 680, '000000010000fc001fe003ff80fffc0fffe1fffe3fffe7fffffffffffffeffffc7fff03ffc03ff801ff000f0000000000000'],
+],
+wisplichen: [
+[0, 1360, '0000000fc001fe003ff01fffc3fffe7fffeffffffffffffffe7fffe7fffc3fff81fff00ffe007fc00ffc00f3e0021c000000'],
+[40, 1360, '03000078000fc0007f8003fe003fe007ff00fff81fffc3fffc3fffc7fffc7fffc7fffc3fff83fff01ffe01ff8007f0001c00'],
+[80, 1360, '0070001fc003fe007ff00fff01fffe7fffe7fffffffffffffe7fffe7fffe3fffc1fff80fff007fc001f0000f0000f0000200'],
+[120, 1360, '0060000f0003fc00ffe01fff01fff83fffc3fffc3fffc3fffc3fffc1fffc1fff83fff83fff03ffe018f80007800078000300'],
+],
+witchear: [
+[0, 200, '0070001fc007ff00fff81fff83fffc3fffc7fffe7fffe7fffe3fffe1fffe1fffe07ffc03ff803f8003f8003f8001f0000780'],
+[40, 200, '01f0007fc01ffe03fff07fff87fff83fffc3fffc3fffc1fffc0fffc0fffc0fff81fff03fe003fe003fe001fc000fc0003000'],
+[80, 200, '01fe007ff00fff81fffc3fffe3fffe7ffff7fffeffffeffffcffff87fff07fff87fff83fffc1e7fe003fc003fc003f8000c0'],
+[120, 200, '0030003fe007ff00fff81fffc3fffc7fffe7fffe7fffe7fffe3fffe3fffe0fffe07ffc0fff81ff001ff000ff0007e0001c00'],
+],
+};
+return { PIECES_URL, PIECES_SIZE, PIECE_CELL, PIECE_MASK, PIECES };
+})();
 // src/materials/shapes.js
 const __m19 = (() => {
 const LOOK = Object.freeze({
 ICE: 0, FIBRE: 1, LEAF: 2, STONE: 3, CRYSTAL: 4, CAP: 5, GLOSSY: 6, BONE: 7, FUR: 8, LUMP: 9,
 BARK: 10, BERRY: 11, GILLS: 12, SEED: 13, SHELL: 14, METAL: 15, GLASS: 16, SPOTS: 17, REED: 18, FLORET: 19,
 });
+const { PIECES, PIECE_CELL, PIECE_MASK } = __m20;
+const { WILD_BY_KEY } = __m12;
 const SHAPE_LOOK = {
 root: LOOK.FIBRE, pepper: LOOK.FIBRE, leaf: LOOK.LEAF, petal: LOOK.LEAF, flower: LOOK.LEAF, clover: LOOK.LEAF, moss: LOOK.LEAF, sprig: LOOK.LEAF,
 stone: LOOK.STONE, crust: LOOK.STONE, crystal: LOOK.CRYSTAL, cap: LOOK.CAP, bean: LOOK.GLOSSY, scale: LOOK.GLOSSY, bone: LOOK.BONE, fur: LOOK.FUR, lump: LOOK.LUMP,
@@ -1954,14 +2182,73 @@ toadstool: [[0, 0], [1, 0], [-1, 0], [2, 0.15], [-2, 0.15], [0.5, -0.86], [-0.5,
 reed: [[0, 0], [0, 1], [0, 2], [0, -1], [0, -2], [0, 3], [0.8, -1.5], [0.8, -2.5], [0, -3]],
 shell: [[0, 0], [1, 0], [-1, 0], [0.5, -0.86], [-0.5, -0.86], [1.5, -0.86], [-1.5, -0.86], [0, -1.73], [1, -1.73], [-1, -1.73]],
 };
-function chunkTemplate(def, max) {
-const t = TEMPLATES[shapeOf(def)] || TEMPLATES.stone;
+function chunkTemplate(def, max, variant = -1) {
+const pc = variant >= 0 ? piece(skinOf(def, variant)) : null;
+const t = pc ? pc.pts : TEMPLATES[shapeOf(def)] || TEMPLATES.stone;
 return t.slice(0, Math.max(1, Math.min(max, t.length)));
+}
+const SKINS = Object.keys(PIECES).sort().flatMap((key) => PIECES[key].map((_, v) => ({ key, v })));
+const SKIN_BASE = Object.fromEntries(Object.keys(PIECES).sort().map((key, n) => [key, 1 + n * 4]));
+function hasPieces(def) {
+return !!def && def.form === 'solid' && !def.shape && !!def.wild && def.wild.key in SKIN_BASE;
+}
+function skinOf(def, variant) {
+return hasPieces(def) ? SKIN_BASE[def.wild.key] + (variant & 3) : 0;
+}
+const fitted = [];
+function piece(skin) {
+if (!skin) return null;
+if (fitted[skin] !== undefined) return /** @type {Piece|null} */ (fitted[skin]);
+const sk = SKINS[skin - 1];
+if (!sk) return null;
+const [fx, fy, hexRows] = PIECES[sk.key][sk.v];
+const M = PIECE_MASK, D = (M + 3) >> 2;
+const mask = new Uint8Array(M * M);
+for (let y = 0; y < M; y++) {
+const row = parseInt(hexRows.slice(y * D, (y + 1) * D), 16);
+for (let x = 0; x < M; x++) mask[y * M + x] = (row >>> (D * 4 - 1 - x)) & 1;
+}
+let area = 0;
+for (const m of mask) area += m;
+const spec = WILD_BY_KEY[sk.key];
+const n = (TEMPLATES[spec ? spec.shape : 'stone'] || TEMPLATES.stone).length;
+const inside = (x, y) => x >= 0 && y >= 0 && x < M && y < M && mask[(y | 0) * M + (x | 0)] === 1;
+let best = null;
+let bestScore = -1, bestK = 1;
+for (let k = 1.5; k <= M / 1.5; k += 0.05) {
+const rr = (0.65 * k) ** 2;
+for (let oy = 0; oy < 4; oy++) for (let ox = 0; ox < 4; ox++) {
+const pts = [];
+const x0 = (ox / 4) * k, y0 = (oy / 4) * k * 0.866;
+for (let b = -1; b * k * 0.866 + y0 < M + k; b++) {
+for (let a = -1; a * k + x0 < M + k; a++) {
+const x = (a + (b & 1) * 0.5) * k + x0, y = b * k * 0.866 + y0;
+if (inside(x, y)) pts.push([x, y]);
+}
+}
+if (pts.length !== n) continue;
+let both = 0, blob = 0;
+for (let cy = 0; cy < M; cy++) for (let cx = 0; cx < M; cx++) {
+let hit = false;
+for (const [x, y] of pts) if ((x - cx - 0.5) ** 2 + (y - cy - 0.5) ** 2 < rr) { hit = true; break; }
+if (hit) { blob++; if (mask[cy * M + cx]) both++; }
+}
+const score = both / (area + blob - both);
+if (score > bestScore) { bestScore = score; best = pts; bestK = k; }
+}
+}
+if (!best) return (fitted[skin] = null);
+let mx = 0, my = 0;
+for (const [x, y] of best) { mx += x; my += y; }
+mx /= n; my /= n;
+const pts = best.map(([x, y]) => [(x - mx) / bestK, (y - my) / bestK]).sort((p, q) => Math.hypot(p[0], p[1]) - Math.hypot(q[0], q[1]));
+const r = PIECE_CELL / M;
+return (fitted[skin] = { pts, ax: fx + mx * r, ay: fy + my * r, ppu: bestK * r, cx: fx, cy: fy });
 }
 function chunkSize(def) {
 return (TEMPLATES[shapeOf(def)] || TEMPLATES.stone).length;
 }
-return { LOOK, shapeOf, solidLook, chunkTemplate, chunkSize };
+return { LOOK, shapeOf, solidLook, chunkTemplate, hasPieces, skinOf, piece, chunkSize };
 })();
 // src/reactions/species.js
 const __m18 = (() => {
@@ -2148,7 +2435,7 @@ return [0, 1, 2].map((k) => -Math.log(Math.max(0.003, srgbToLinear(def.color[k])
 return { MAX_SPECIES, NO_BOIL, SpeciesTable, absorbance };
 })();
 // src/reactions/mixture.js
-const __m20 = (() => {
+const __m21 = (() => {
 const { MAX_SPECIES, NO_BOIL } = __m18;
 const { rgbToOklab, linearToSrgb } = __m8;
 function granularFraction(sp, comp, off, T) {
@@ -2249,7 +2536,7 @@ return { granularFraction, suspensionLnMult, mixtureProps, zeroComposition };
 // src/game/predict.js
 const __m17 = (() => {
 const { SpeciesTable, MAX_SPECIES } = __m18;
-const { mixtureProps } = __m20;
+const { mixtureProps } = __m21;
 const { compositionEffects, extractedEffects, NE } = __m13;
 const { isMagical, awakenedId, thresholdToCelsius } = __m15;
 const ACTIVATION_MARGIN = 6;
@@ -2395,7 +2682,7 @@ return c;
 return { ACTIVATION_MARGIN, predictPlan, reduceTemp, arcaneRegime, activationMargin, planCost };
 })();
 // src/game/customers.js
-const __m21 = (() => {
+const __m22 = (() => {
 const { Rng } = __m6;
 const ARCHETYPES = [
 {
@@ -2524,7 +2811,7 @@ return ARCHETYPES.find((a) => a.key === key) || ARCHETYPES[0];
 return { ARCHETYPES, shortName, makeCustomer, archetypeOf, Rng };
 })();
 // src/game/evaluate.js
-const __m22 = (() => {
+const __m23 = (() => {
 const { EFFECTS, EFFECT_INDEX, EFFECT_KEYS, NE } = __m13;
 const PROPERTY_LABELS = {
 temperature: 'Temperature', quantity: 'Quantity', purity: 'Purity', ...Object.fromEntries(EFFECTS.map((e) => [e.key, e.label])),
@@ -2616,7 +2903,7 @@ return { rows, quality, stars, perfect, payment, repDelta };
 return { PROPERTY_LABELS, strongestUnwanted, isEffectKey, scoreRequirement, describeValue, evaluatePotion };
 })();
 // src/simulation/constants.js
-const __m23 = (() => {
+const __m24 = (() => {
 const PHASE = Object.freeze({ LIQUID: 0, POWDER: 1, PASTE: 2, SOLID: 3, GAS: 4 });
 const PHASE_NAMES = ['liquid', 'powder', 'paste', 'solid', 'gas'];
 const SIM = Object.freeze({
@@ -2657,7 +2944,7 @@ return PHASE.LIQUID;
 return { PHASE, PHASE_NAMES, SIM, TUNE, formPhase };
 })();
 // src/game/requests.js
-const __m24 = (() => {
+const __m25 = (() => {
 const REQUESTS = [
 { id: 'healing', title: 'Healing Draught', fx: [{ key: 'vitality' }], who: ['healer', 'farmer', 'innkeeper', 'knight', 'hunter'], minTier: 0,
 story: ['My patients are wasting with fever. I need something that truly heals — and nothing else in it.', 'The goats are poorly and so is my back. A healing draught, plain and honest.', 'A traveller collapsed in my common room. Something to bring the colour back to his face.'] },
@@ -2712,13 +2999,13 @@ const __m16 = (() => {
 const { Rng } = __m6;
 const { describeColor } = __m8;
 const { predictPlan, planCost, arcaneRegime, ACTIVATION_MARGIN } = __m17;
-const { ARCHETYPES, makeCustomer, archetypeOf } = __m21;
-const { evaluatePotion } = __m22;
-const { SIM } = __m23;
+const { ARCHETYPES, makeCustomer, archetypeOf } = __m22;
+const { evaluatePotion } = __m23;
+const { SIM } = __m24;
 const { EFFECT_INDEX, EFFECT_BY_KEY, EFFECT_KEYS, NE, interact } = __m13;
 const { thresholdToCelsius, isMagical } = __m15;
 const { compatFactor } = __m14;
-const { REQUESTS, TIER_TARGET, PURITY_LIMIT, requestById } = __m24;
+const { REQUESTS, TIER_TARGET, PURITY_LIMIT, requestById } = __m25;
 function effectRequirement(key, sign, min) {
 if (sign < 0) {
 const max = -Math.max(3, Math.round(min));
@@ -3320,7 +3607,7 @@ return /^[aeiou]/i.test(w) ? 'an' : 'a';
 return { purityRequirement, coldFloor, TEST_MARGIN, checkSupply, TECHNIQUES, techniqueById, migrateTechniques, generateCommission, TUTORIAL_HERBS, tutorialCommission, unwantedMax };
 })();
 // src/game/equipment.js
-const __m25 = (() => {
+const __m26 = (() => {
 const EQUIPMENT = [
 { id: 'hearth', name: 'Stone Hearth', category: 'heat', price: 0, rank: 0, icon: 'fire', mechanics: ['steeping', 'concentration', 'awakening'], desc: 'A wood fire under the cauldron. It brings a pot to the boil in seconds and takes lamp oil past 200°C — every steep, boil and heat-awakening in the guild’s books.', effect: { maxFlame: 340, heatPower: 3.5 } },
 { id: 'basin', name: 'Cold-Water Basin', category: 'cold', price: 0, rank: 0, icon: 'basin', mechanics: ['cold-extraction'], desc: 'Cool well water under the cauldron: chills a brew to about 9°C — cold enough for most ice-cold steeps, never colder.', effect: { minCool: 4, coolPower: 4 } },
@@ -3403,7 +3690,7 @@ return cap;
 return { EQUIPMENT, STARTING_EQUIPMENT, BASE_STORAGE, BASE_BOTTLES, BASE_HUTCH, RETIRED_EQUIPMENT, equipmentById, RANKS, rankIndex, capabilities };
 })();
 // src/game/colony.js
-const __m27 = (() => {
+const __m28 = (() => {
 const { EFFECT_INDEX } = __m13;
 const { Rng, hashString } = __m6;
 const RABBIT_MARKS = ['vitality', 'strength', 'love', 'arcana', 'transformation', 'fire', 'frost', 'acid', 'alkali', 'toxicity', 'death'];
@@ -4171,10 +4458,10 @@ return trials;
 return { RABBIT_MARKS, MARK_INDEX, KIT_DAYS, ADULT_DAYS, ELDER_DAYS, LIFESPAN_DAYS, FOUNDER_BORN, GESTATION_DAYS, DOSE_LIMIT, MEMORIAL_LIMIT, LEVEL_AT, TRAIT_AT, DEGEN_AT, MARK_MAX, LETHAL, AGGRO, FERAL, AGGRO_AT, LOVE_MATE, MATE_EVERY, MARK_TAU, BURNS, BURN_RATE, MAX_BONUS, DEGEN_RISE, ATTACK_EVERY, TRAITS, TRAIT_EXCLUSIVE, TRAIT_WORDS, COATS, rollLook, inheritLook, lookFromSeed, visibleLevel, stageOf, maxHealthOf, degenOf, degenAt, degenRate, aggroAt, aggroOf, isFeral, burnRate, mateEvery, mateCost, RABBIT_BIAS, rabbitSensitivity, rabbitSnap, encodeSnap, defaultSnap, decodeSnap, NAMES, createColony, findRabbit, livingRabbits, bodies, focusRabbit, pickName, makeRabbit, addBoughtRabbit, recordDose, related, STAGE_ERR, MARK_DECAY, rabbitResponse, colonyTick, purgeRabbit, cullRabbit, colonyDay, retireRabbit, trimMemorial, remainsSource, causeWord, rabbitCondition, normalizeRabbit, normalizeColony, installRabbitAlias };
 })();
 // src/game/experiments.js
-const __m26 = (() => {
+const __m27 = (() => {
 const { EFFECTS, EFFECT_KEYS, EFFECT_INDEX, NE, potencyWord } = __m13;
 const { Rng, hashString } = __m6;
-const { createColony, normalizeColony, installRabbitAlias, rabbitResponse, findRabbit, focusRabbit, recordDose, rabbitSnap, encodeSnap, stageOf, addBoughtRabbit, STAGE_ERR, rabbitSensitivity, RABBIT_BIAS, maxHealthOf } = __m27;
+const { createColony, normalizeColony, installRabbitAlias, rabbitResponse, findRabbit, focusRabbit, recordDose, rabbitSnap, encodeSnap, stageOf, addBoughtRabbit, STAGE_ERR, rabbitSensitivity, RABBIT_BIAS, maxHealthOf } = __m28;
 function readingSteadiness(rabbit, day) {
 const stage = STAGE_ERR[stageOf(rabbit, day)] || 1;
 const max = Math.max(1, maxHealthOf(rabbit, day ?? 1));
@@ -4431,7 +4718,7 @@ return `${e.label} ${Math.round(v)} (${potencyWord(v, key)})`;
 return { readingSteadiness, SUBJECTS, SUBJECT_BY_ID, RECORD_LIMIT, DOSES, DOSE_NOISE, READ_NOISE, driftTolerance, createTrials, normalizeTrials, rabbitReading, doseErr, EVIDENCE_LEVELS, EVIDENCE_TEXT, evidenceRank, summarize, effectEvidence, requirementEvidence, EVIDENCE_STATE_TEXT, addSamples, runTrial, resetSubject, certification, requiredEffects, missingEffects, suggestSubjects, knownLaws, describeReading };
 })();
 // src/game/gathering.js
-const __m28 = (() => {
+const __m29 = (() => {
 const { Rng, hashString } = __m6;
 const REGIONS = [
 { id: 'forest', name: 'Whisperwood', rank: 0, magical: false, desc: 'Old oaks and ferns. Roots and leaves grow in the shade.', sky: [0.36, 0.52, 0.42] },
@@ -4674,12 +4961,13 @@ return `${Math.floor(m / 60)} h ${m % 60} min`;
 return { REGIONS, REGION_BY_ID, STAGES, SPROUT_SHARE, MARK_MS, generateDeposits, createGathering, normalizeGathering, standOf, plantStage, depositStatus, SCAR_SLOWDOWN, marksIn, METHODS, methodOf, dayPart, DAY_PART_NAME, DAY_PART_HINT, WEATHERS, weatherOn, gatherPlan, harvestable, weatherRegrowth, harvest, newDayRegrowth, formatWait };
 })();
 // src/simulation/particles.js
-const __m31 = (() => {
+const __m32 = (() => {
 const { MAX_SPECIES } = __m18;
-const { PHASE } = __m23;
-const STATE_FIELDS_F32 = ['x', 'y', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet', 'q'];
+const { PHASE } = __m24;
+const STATE_FIELDS_F32 = ['x', 'y', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet', 'q', 'skinU', 'skinV'];
 const STATE_FIELDS_I32 = ['group'];
 const STATE_FIELDS_U8 = ['phase'];
+const STATE_FIELDS_U16 = ['skin'];
 const STATE_FIELDS_U32 = ['seed'];
 const DERIVED_FIELDS = [
 'rho20', 'rho', 'invMass', 'rhoCp', 'kappa', 'lnMu20', 'viscT', 'lnMu', 'gran', 'binder',
@@ -4709,6 +4997,9 @@ this.burn = new Float32Array(capacity);
 this.wet = new Float32Array(capacity);
 this.q = new Float32Array(capacity);
 this.group = new Int32Array(capacity).fill(-1);
+this.skin = new Uint16Array(capacity);
+this.skinU = new Float32Array(capacity);
+this.skinV = new Float32Array(capacity);
 this.phase = new Uint8Array(capacity);
 this.seed = new Uint32Array(capacity);
 this.sleep = new Uint16Array(capacity);
@@ -4764,6 +5055,7 @@ this.lat[i] = 0; this.eph[i] = 0;
 this.restX[i] = 0; this.restY[i] = 0;
 this.agit[i] = 0; this.burn[i] = 0; this.wet[i] = 0; this.q[i] = 0;
 this.group[i] = -1;
+this.skin[i] = 0; this.skinU[i] = 0; this.skinV[i] = 0;
 this.phase[i] = phase;
 this.seed[i] = (Math.imul(this._seedCounter++, 2654435761) >>> 0) || 1;
 this.sleep[i] = 0;
@@ -4773,7 +5065,7 @@ return i;
 }
 copy(dst, src) {
 const self = /** @type {any} */ (this);
-for (const f of ['x', 'y', 'px', 'py', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet', 'q', 'group', 'phase', 'seed', 'sleep', 'dirty']) {
+for (const f of ['x', 'y', 'px', 'py', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet', 'q', 'group', 'skin', 'skinU', 'skinV', 'phase', 'seed', 'sleep', 'dirty']) {
 self[f][dst] = self[f][src];
 }
 for (const f of DERIVED_FIELDS) self[f][dst] = self[f][src];
@@ -4788,10 +5080,10 @@ isCondensed(i) {
 return this.phase[i] !== PHASE.GAS;
 }
 }
-return { STATE_FIELDS_F32, STATE_FIELDS_I32, STATE_FIELDS_U8, STATE_FIELDS_U32, DERIVED_FIELDS, ARC_NONE, Particles };
+return { STATE_FIELDS_F32, STATE_FIELDS_I32, STATE_FIELDS_U8, STATE_FIELDS_U16, STATE_FIELDS_U32, DERIVED_FIELDS, ARC_NONE, Particles };
 })();
 // src/simulation/grid.js
-const __m32 = (() => {
+const __m33 = (() => {
 class NeighborGrid {
 constructor(minX, minY, maxX, maxY, cell, capacity) {
 this.minX = minX;
@@ -4891,8 +5183,8 @@ for (let a = cellStart[c]; a < cellStart[c + 1]; a++) fn(sorted[a]);
 return { NeighborGrid };
 })();
 // src/simulation/cauldron.js
-const __m33 = (() => {
-const { SIM } = __m23;
+const __m34 = (() => {
+const { SIM } = __m24;
 const CAULDRON_SIZES = {
 pot: { key: 'pot', label: 'Iron Pot', mouth: 0.8, belly: 1.0, neck: 0.5, depth: 1.55, capacity: 310 },
 copper: { key: 'copper', label: 'Copper Cauldron', mouth: 0.95, belly: 1.2, neck: 0.6, depth: 1.8, capacity: 440 },
@@ -5128,13 +5420,13 @@ return s / this.lidCells;
 return { CAULDRON_SIZES, COLUMN, Cauldron };
 })();
 // src/simulation/derived.js
-const __m34 = (() => {
+const __m35 = (() => {
 const { MAX_SPECIES, NO_BOIL } = __m18;
-const { granularFraction, suspensionLnMult } = __m20;
+const { granularFraction, suspensionLnMult } = __m21;
 const { rgbToOklab, linearToSrgb } = __m8;
-const { PHASE } = __m23;
+const { PHASE } = __m24;
 const { compositionEffects, EFFECTS, NE } = __m13;
-const { ARC_NONE } = __m31;
+const { ARC_NONE } = __m32;
 const AURA_W = EFFECTS.map((e) => (e.kind === 'magic' ? 1 : 0.55));
 const AURA_COL = EFFECTS.map((e) => e.color);
 const auraFx = new Float64Array(NE);
@@ -5273,8 +5565,8 @@ p.auraI[i] = I / 100;
 return { GAS_MASS, refreshParticle, refreshAura };
 })();
 // src/simulation/rigid.js
-const __m35 = (() => {
-const { PHASE } = __m23;
+const __m36 = (() => {
+const { PHASE } = __m24;
 const MAX_GROUPS = 2048;
 const BOND = 0.135;
 const FRESH = -2;
@@ -5467,8 +5759,8 @@ return this.active.length;
 return { FRESH, RigidBodies };
 })();
 // src/simulation/thermal.js
-const __m36 = (() => {
-const { PHASE, SIM } = __m23;
+const __m37 = (() => {
+const { PHASE, SIM } = __m24;
 const KPP = 34; // particle–particle conductance (game-scaled)
 const KW = 24; // particle–wall conductance
 const KA = 0.35; // free-surface loss to air
@@ -5584,11 +5876,11 @@ for (let k = 0; k < M + L; k++) Tw[k] += flow[k] / Cw[k];
 return { thermalStep, wallStep };
 })();
 // src/simulation/phase.js
-const __m37 = (() => {
-const { PHASE, PHASE_NAMES } = __m23;
+const __m38 = (() => {
+const { PHASE, PHASE_NAMES } = __m24;
 const { MAX_SPECIES, NO_BOIL } = __m18;
-const { refreshParticle } = __m34;
-const { FRESH } = __m35;
+const { refreshParticle } = __m35;
+const { FRESH } = __m36;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const BOIL_VOLATILE = 0.8;
 const DRY_MIN = 0.12;
@@ -5873,8 +6165,8 @@ classifyFluid(sim, j);
 return { classifyFluid, isFrozenGrain, dominantId, phaseStep };
 })();
 // src/reactions/diffusion.js
-const __m38 = (() => {
-const { PHASE } = __m23;
+const __m39 = (() => {
+const { PHASE } = __m24;
 const { MAX_SPECIES } = __m18;
 const { compatFactor } = __m14;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
@@ -5980,10 +6272,10 @@ return w > 0 ? s / w : 0;
 return { diffusionStep };
 })();
 // src/simulation/arcane.js
-const __m40 = (() => {
+const __m41 = (() => {
 const { MAX_SPECIES } = __m18;
 const { ARCANE_SCALE, ARCANE_ZERO, awakenedId } = __m15;
-const { ARC_NONE } = __m31;
+const { ARC_NONE } = __m32;
 const RATE = 0.55;
 const HEAT = 24;
 const TAIL = 0.002;
@@ -6062,11 +6354,11 @@ return a;
 return { arcaneStep, awakeSlot };
 })();
 // src/reactions/reactions.js
-const __m39 = (() => {
+const __m40 = (() => {
 const { MAX_SPECIES } = __m18;
-const { PHASE } = __m23;
+const { PHASE } = __m24;
 const { awakenedId } = __m15;
-const { awakeSlot } = __m40;
+const { awakeSlot } = __m41;
 const { GAS, SOLID } = PHASE;
 class ReactionSystem {
 constructor(sim, rules) {
@@ -6341,8 +6633,8 @@ return best;
 return { ReactionSystem };
 })();
 // src/simulation/tools.js
-const __m41 = (() => {
-const { PHASE, SIM } = __m23;
+const __m42 = (() => {
+const { PHASE, SIM } = __m24;
 const { MAX_SPECIES } = __m18;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const TOOL_SPECS = {
@@ -6587,10 +6879,10 @@ if (victims.length) sim.emit({ type: 'skim', count: victims.length, x: t.x, y: t
 return { TOOL_SPECS, ToolState, clampToInterior, toolForces, toolConstraints, LIQUID };
 })();
 // src/simulation/emitter.js
-const __m42 = (() => {
-const { PHASE, SIM, formPhase } = __m23;
-const { COLUMN } = __m33;
-const { chunkTemplate, chunkSize } = __m19;
+const __m43 = (() => {
+const { PHASE, SIM, formPhase } = __m24;
+const { COLUMN } = __m34;
+const { chunkTemplate, chunkSize, hasPieces, skinOf } = __m19;
 class Emitter {
 constructor(sim) {
 this.sim = sim;
@@ -6701,7 +6993,8 @@ if (this.acc > 3) this.acc = 3;
 _spawnChunk(a, size) {
 const sim = this.sim;
 const s = SIM.SPACING;
-const offs = chunkTemplate(a.def, size);
+const variant = hasPieces(a.def) ? Math.floor(sim.rand() * 4) : -1;
+const offs = chunkTemplate(a.def, size, variant);
 let ext = 0;
 for (const [ox, oy] of offs) ext = Math.max(ext, Math.hypot(ox, oy) * s);
 const mouth = sim.cauldron.mouth;
@@ -6715,23 +7008,36 @@ for (const [x, y] of pts) if (!this._free(x, y, 0.085)) return false;
 const g = sim.rigid.alloc();
 if (g < 0) return false;
 const idx = [];
-for (const [x, y] of pts) {
+const skin = variant >= 0 ? skinOf(a.def, variant) : 0;
+for (let k = 0; k < pts.length; k++) {
+const [x, y] = pts[k];
 const i = sim.addParticle(a.def, x, y, PHASE.SOLID, a.temp);
 if (i < 0) break;
 sim.p.group[i] = g;
 sim.p.vy[i] = 1.2;
+sim.p.skin[i] = skin;
+sim.p.skinU[i] = offs[k][0];
+sim.p.skinV[i] = offs[k][1];
 idx.push(i);
 }
+if (!idx.length) return false;
 sim.rigid.setRest(idx, g);
+const p = sim.p;
+for (const i of idx) {
+const rx = p.restX[i], ry = p.restY[i];
+p.restX[i] = ca * rx + sa * ry;
+p.restY[i] = -sa * rx + ca * ry;
+}
+sim.rigid.angle[g] = ang;
 sim.rigid.markDirty(g);
-return idx.length > 0;
+return true;
 }
 }
 return { Emitter };
 })();
 // src/simulation/electric.js
-const __m43 = (() => {
-const { PHASE } = __m23;
+const __m44 = (() => {
+const { PHASE } = __m24;
 const KQ = 26; // conduction rate (game scaled)
 const RE = 0.16; // contact distance
 const JOULE = 140; // heat per unit of charge moved per unit of potential difference
@@ -6778,22 +7084,22 @@ return s;
 return { electricStep, totalCharge };
 })();
 // src/simulation/world.js
-const __m30 = (() => {
-const { PHASE, SIM, TUNE, formPhase } = __m23;
-const { Particles } = __m31;
-const { NeighborGrid } = __m32;
-const { Cauldron, COLUMN } = __m33;
+const __m31 = (() => {
+const { PHASE, SIM, TUNE, formPhase } = __m24;
+const { Particles } = __m32;
+const { NeighborGrid } = __m33;
+const { Cauldron, COLUMN } = __m34;
 const { SpeciesTable, MAX_SPECIES } = __m18;
-const { refreshParticle } = __m34;
-const { RigidBodies } = __m35;
-const { thermalStep } = __m36;
-const { phaseStep, classifyFluid } = __m37;
-const { diffusionStep } = __m38;
-const { ReactionSystem } = __m39;
-const { ToolState, toolForces, toolConstraints } = __m41;
-const { Emitter } = __m42;
-const { electricStep } = __m43;
-const { arcaneStep } = __m40;
+const { refreshParticle } = __m35;
+const { RigidBodies } = __m36;
+const { thermalStep } = __m37;
+const { phaseStep, classifyFluid } = __m38;
+const { diffusionStep } = __m39;
+const { ReactionSystem } = __m40;
+const { ToolState, toolForces, toolConstraints } = __m42;
+const { Emitter } = __m43;
+const { electricStep } = __m44;
+const { arcaneStep } = __m41;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const MODE = Object.freeze({ PBF: 0, GRAN: 1, COH: 2, RIGID: 3, GAS: 4 });
 const M_PBF = 0, M_GRAN = 1, M_COH = 2, M_RIGID = 3, M_GAS = 4;
@@ -7613,9 +7919,9 @@ if (p.sleep[i] >= SLEEP_STEPS) p.sleep[i] = 0;
 return { MODE, SLEEP_STEPS, Simulation, formPhase };
 })();
 // src/game/measure.js
-const __m44 = (() => {
+const __m45 = (() => {
 const { MAX_SPECIES } = __m18;
-const { PHASE, SIM } = __m23;
+const { PHASE, SIM } = __m24;
 const { compatFactor } = __m14;
 const { oklabToRgb } = __m8;
 const { sampleEffects } = __m13;
@@ -7740,12 +8046,12 @@ return stability >= 90 ? 'evenly mixed' : stability >= 70 ? 'a little uneven' : 
 return { measureParticles, tapSelection, probeSelection, viscosityClass, densityWord, evennessWord };
 })();
 // src/game/vial.js
-const __m29 = (() => {
-const { Simulation } = __m30;
-const { PHASE, SIM } = __m23;
+const __m30 = (() => {
+const { Simulation } = __m31;
+const { PHASE, SIM } = __m24;
 const { MAX_SPECIES } = __m18;
-const { measureParticles } = __m44;
-const { refreshParticle } = __m34;
+const { measureParticles } = __m45;
+const { refreshParticle } = __m35;
 const ROOM = SIM.AMBIENT;
 const COOL_TAU = 480;
 function makeVial(sim, indices, meta) {
@@ -7922,12 +8228,12 @@ return { ...v, species, particles, ml: n * SIM.ML_PER_PARTICLE, bottledMl: v.bot
 return { makeVial, appendParticles, measureVial, updateVial, takeDose, pourBack, pourBackParts, relaxVial, vialInventory, migrateVial };
 })();
 // src/game/commerce.js
-const __m45 = (() => {
+const __m46 = (() => {
 const { Rng, hashString } = __m6;
 const { EFFECT_KEYS, EFFECT_INDEX, NE, EFFECT_BY_KEY } = __m13;
-const { evaluatePotion, strongestUnwanted, PROPERTY_LABELS } = __m22;
-const { PURITY_LIMIT } = __m24;
-const { summarize, evidenceRank, EVIDENCE_TEXT } = __m26;
+const { evaluatePotion, strongestUnwanted, PROPERTY_LABELS } = __m23;
+const { PURITY_LIMIT } = __m25;
+const { summarize, evidenceRank, EVIDENCE_TEXT } = __m27;
 function draftLabel(vial, theory, day) {
 const claims = {};
 const cert = vial.cert || {}, recs = vial.certRecords || {};
@@ -8245,7 +8551,7 @@ return (Math.round(v * 10) / 10).toLocaleString('en-US', { maximumFractionDigits
 return { draftLabel, applyTrials, evidenceOf, STAR_STEPS, MAX_STARS, accuracyStars, claimSigma, claimStars, labelStars, trialClaim, sameClaim, editClaim, claimedEffects, relevantEffects, EVIDENCE_WEIGHT, trustReport, labelTrust, unprovenWanted, proofGaps, claimedMeasurement, openNegotiation, proposePrice, acceptOffer, recordSale, resolveFollowUp, EVIDENCE_TEXT };
 })();
 // src/materials/remains.js
-const __m46 = (() => {
+const __m47 = (() => {
 const { completeMaterial } = __m9;
 const { arcaneProfile, jitter } = __m11;
 function remainsId(rabbitId, part) {
@@ -8344,7 +8650,7 @@ return m;
 return { remainsId, isRemains, remainsPlan, remainsMaterials };
 })();
 // src/game/patrons.js
-const __m47 = (() => {
+const __m48 = (() => {
 const RETURN_CHANCE = 0.3;
 const BANNED_TRUST = -0.75;
 const clamp1 = (v) => Math.max(-1, Math.min(1, v));
@@ -8412,7 +8718,7 @@ return Math.round(v * 100) / 100;
 return { RETURN_CHANCE, BANNED_TRUST, notePatron, patronVerdict, returningPatron, welcomePatron, recentStyles, noveltyFactor };
 })();
 // src/game/recipes.js
-const __m48 = (() => {
+const __m49 = (() => {
 const TRACE_DT = 1;
 const TRACE_MAX = 1200;
 const HOLD_MIN = 6, HOLD_BAND = 4, ROOM = 20;
@@ -8648,19 +8954,19 @@ const { Rng, hashString } = __m6;
 const { generateWorld, makeLookup, addAlchemy, LAB_ROLES } = __m7;
 const { serializeMaterial, deserializeMaterial } = __m9;
 const { generateCommission, tutorialCommission } = __m16;
-const { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById, RETIRED_EQUIPMENT } = __m25;
-const { SIM } = __m23;
-const { createTrials, normalizeTrials, runTrial, SUBJECT_BY_ID, knownLaws, certification, summarize } = __m26;
-const { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth, depositStatus } = __m28;
+const { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById, RETIRED_EQUIPMENT } = __m26;
+const { SIM } = __m24;
+const { createTrials, normalizeTrials, runTrial, SUBJECT_BY_ID, knownLaws, certification, summarize } = __m27;
+const { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth, depositStatus } = __m29;
 const { predictPlan } = __m17;
 const { EFFECT_INDEX, EFFECT_KEYS } = __m13;
-const { migrateVial } = __m29;
-const { recordSale, resolveFollowUp, applyTrials, evidenceOf } = __m45;
-const { colonyDay, colonyTick, livingRabbits, findRabbit, addBoughtRabbit, retireRabbit, remainsSource, purgeRabbit, cullRabbit, maxHealthOf, FOUNDER_BORN } = __m27;
-const { remainsMaterials, remainsPlan, isRemains } = __m46;
-const { returningPatron, welcomePatron, recentStyles, notePatron, patronVerdict, noveltyFactor } = __m47;
+const { migrateVial } = __m30;
+const { recordSale, resolveFollowUp, applyTrials, evidenceOf } = __m46;
+const { colonyDay, colonyTick, livingRabbits, findRabbit, addBoughtRabbit, retireRabbit, remainsSource, purgeRabbit, cullRabbit, maxHealthOf, FOUNDER_BORN } = __m28;
+const { remainsMaterials, remainsPlan, isRemains } = __m47;
+const { returningPatron, welcomePatron, recentStyles, notePatron, patronVerdict, noveltyFactor } = __m48;
 const { techniqueById, migrateTechniques } = __m16;
-const { migrateRecipe } = __m48;
+const { migrateRecipe } = __m49;
 const SAVE_VERSION = 6;
 const PURGE_PRICE = 8;
 const PURGE_BREW_COST = 1;
@@ -9646,7 +9952,7 @@ return Math.round(v * 10) / 10;
 return { SAVE_VERSION, PURGE_PRICE, PURGE_BREW_COST, PURGE_BREW_TIME, WORLD_GEN_VERSION, STARTER_HERBS, MARKET_EVENTS, ACHIEVEMENTS, GameState, migrateCommission, migrate, retireEquipment, retireRequirements, EQUIPMENT, SIM };
 })();
 // src/game/persistence.js
-const __m49 = (() => {
+const __m50 = (() => {
 const { GameState } = __m5;
 const KEYS = {
 save: 'alchemist-shop.save',
@@ -9770,11 +10076,11 @@ if (s) s.removeItem(key);
 return { KEYS, storageAvailable, saveGame, loadGame, hasSave, deleteSave, exportSave, parseImport, loadJSON, saveJSON, removeKey };
 })();
 // src/simulation/snapshot.js
-const __m51 = (() => {
+const __m52 = (() => {
 const { MAX_SPECIES } = __m18;
-const { refreshParticle } = __m34;
-const { Simulation } = __m30;
-const { CAULDRON_SIZES } = __m33;
+const { refreshParticle } = __m35;
+const { Simulation } = __m31;
+const { CAULDRON_SIZES } = __m34;
 const F32_FIELDS_V1 = ['x', 'y', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet'];
 const F32_FIELDS = [...F32_FIELDS_V1, 'q'];
 const SNAPSHOT_VERSION = 2;
@@ -9819,6 +10125,8 @@ comp: toBase64(comp),
 group: toBase64(p.group.slice(0, n)),
 phase: toBase64(p.phase.slice(0, n)),
 seed: toBase64(p.seed.slice(0, n)),
+skin: toBase64(p.skin.slice(0, n)),
+skinUV: toBase64(Float32Array.from({ length: 2 * n }, (_, k) => (k < n ? p.skinU[k] : p.skinV[k - n]))),
 walls: Array.from(c.cellT, (t) => Math.round(t * 100) / 100),
 vented: { ...sim.vented },
 progress: { ...sim.reactions.progress },
@@ -9849,6 +10157,12 @@ const group = new Int32Array(gb.buffer, gb.byteOffset, gb.byteLength / 4);
 const phase = fromBase64(snap.phase);
 const sb = fromBase64(snap.seed);
 const seed = new Uint32Array(sb.buffer, sb.byteOffset, sb.byteLength / 4);
+let skin = null, skinUV = null;
+if (snap.skin && snap.skinUV) {
+const kb = fromBase64(snap.skin), ub = fromBase64(snap.skinUV);
+skin = new Uint16Array(kb.buffer, kb.byteOffset, kb.byteLength / 2);
+skinUV = new Float32Array(ub.buffer, ub.byteOffset, ub.byteLength / 4);
+}
 const p = sim.p;
 const S = MAX_SPECIES;
 const fields = (snap.v || 1) >= 2 ? F32_FIELDS : F32_FIELDS_V1;
@@ -9871,6 +10185,9 @@ p.py[i] = p.y[i];
 p.group[i] = group[i];
 p.phase[i] = phase[i];
 p.seed[i] = seed[i];
+p.skin[i] = skin ? skin[i] : 0;
+p.skinU[i] = skinUV ? skinUV[i] : 0;
+p.skinV[i] = skinUV ? skinUV[snap.n + i] : 0;
 p.sleep[i] = 0;
 p.comp.fill(0, i * S, (i + 1) * S);
 for (let s = 0; s < used; s++) {
@@ -9894,7 +10211,7 @@ for (let i = 0; i < n; i++) if (p.group[i] >= 0) sim.rigid.used[p.group[i]] = 1;
 return { SNAPSHOT_VERSION, toBase64, fromBase64, snapshotSim, restoreSim, applySnapshot };
 })();
 // src/rendering/art.js
-const __m53 = (() => {
+const __m54 = (() => {
 const { Rng } = __m6;
 const PAL = {
 night0: '#0d0a10', night1: '#17121c', night2: '#221a28',
@@ -10410,10 +10727,46 @@ for (let k = 0; k < 14; k++) R(ctx, Math.round(v.ox + rng.range(-0.6, 0.6) * c.b
 }
 return { PAL, hex2rgb, rgbStr, mixHex, paintBackground, drawJar, renderCauldron, renderLid, renderLidAside, makeCanvas, paintHearth, rect: R };
 })();
+// src/rendering/pieces-art.js
+const __m56 = (() => {
+const { PIECES_URL } = __m20;
+const PIECE_ART = {
+ready: false,
+width: 0,
+height: 0,
+px: null,
+loading: null,
+};
+function loadPieceArt() {
+if (PIECE_ART.loading) return PIECE_ART.loading;
+if (typeof Image === 'undefined' || typeof document === 'undefined') return (PIECE_ART.loading = Promise.resolve(false));
+PIECE_ART.loading = new Promise((resolve) => {
+const img = new Image();
+img.onload = () => {
+const cv = document.createElement('canvas');
+cv.width = img.width; cv.height = img.height;
+const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d', { willReadFrequently: true }));
+ctx.drawImage(img, 0, 0);
+const data = ctx.getImageData(0, 0, cv.width, cv.height).data;
+PIECE_ART.px = new Uint32Array(data.buffer, data.byteOffset, data.byteLength / 4);
+PIECE_ART.width = cv.width;
+PIECE_ART.height = cv.height;
+PIECE_ART.ready = true;
+resolve(true);
+};
+img.onerror = () => resolve(false);
+img.src = PIECES_URL;
+});
+return PIECE_ART.loading;
+}
+return { PIECE_ART, loadPieceArt };
+})();
 // src/rendering/fluid.js
-const __m54 = (() => {
-const { PHASE } = __m23;
-const { LOOK } = __m19;
+const __m55 = (() => {
+const { PHASE, SIM } = __m24;
+const { LOOK, piece } = __m19;
+const { PIECE_ART, loadPieceArt } = __m56;
+const { PIECE_CELL } = __m20;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const LS = 9;
 function hash01(n) {
@@ -10493,6 +10846,8 @@ const ph = p.phase[i];
 if (ph === SOLID) anySolid = true; else if (ph === GAS) anyGas = true; else if (ph === POWDER) anyGrain = true;
 if (p.auraI[i] > 0.002 || p.glow[i] > 0.02 || p.burn[i] > 0.02) anyLight = true;
 }
+if (anySolid && !PIECE_ART.loading) loadPieceArt();
+const art = PIECE_ART.ready ? PIECE_ART.px : null, artW = PIECE_ART.width;
 const pad = Math.ceil(0.16 * s) + 8;
 const bx = Math.floor(minX) - pad, by = Math.floor(minY) - pad;
 const w = Math.ceil(maxX) + pad - bx, h = Math.ceil(maxY) + pad - by;
@@ -10672,11 +11027,21 @@ const gi = p.group[bi];
 const th = gi >= 0 ? sim.rigid.angle[gi] : 0;
 const ddx = (x + 0.5 - (p.x[bi] * s + view.ox - bx)) / s, ddy = (y + 0.5 - (p.y[bi] * s + view.oy - by)) / s;
 const ct = Math.cos(th), st = Math.sin(th);
-const lx = p.restX[bi] + ct * ddx + st * ddy, ly = p.restY[bi] - st * ddx + ct * ddy;
+const ox = ct * ddx + st * ddy, oy = -st * ddx + ct * ddy;
+const lx = p.restX[bi] + ox, ly = p.restY[bi] + oy;
 const u = Math.floor(lx * s * 0.75), v = Math.floor(ly * s * 0.75);
 const sd = gi >= 0 ? gi * 7919 + 13 : p.seed[bi];
 const hv = hash01(sd + (u + 4096) * 37 + (v + 4096) * 1013);
-switch (p.look[bi]) {
+const pc = art && p.skin[bi] ? piece(p.skin[bi]) : null;
+if (pc) {
+const tx = Math.floor(pc.ax + (p.skinU[bi] + ox / SIM.SPACING) * pc.ppu);
+const ty = Math.floor(pc.ay + (p.skinV[bi] + oy / SIM.SPACING) * pc.ppu);
+const c = tx >= pc.cx && ty >= pc.cy && tx < pc.cx + PIECE_CELL && ty < pc.cy + PIECE_CELL ? /** @type {Uint32Array} */ (art)[ty * artW + tx] : 0;
+if (c >>> 31) {
+r = (c & 255) / 255; g = ((c >>> 8) & 255) / 255; b = ((c >>> 16) & 255) / 255;
+a = 1;
+} else a = 0;
+} else switch (p.look[bi]) {
 case LOOK.FIBRE: { // fibres along the root, the odd knot
 const band = Math.floor(ly * s * 0.55);
 l = (band & 1) ? 0.8 + hv * 0.08 : 0.97 + hv * 0.08;
@@ -10752,7 +11117,7 @@ l = hv > 0.72 ? 1.32 : hv < 0.16 ? 0.72 : 0.98;
 break;
 default: l = 0.92 + hv * 0.1;
 }
-if (edgeHi) l *= 1.16; else if (edgeLo) l *= 0.64;
+if (!pc) { if (edgeHi) l *= 1.16; else if (edgeLo) l *= 0.64; }
 const dmg = sim.dmg[bi] / (0.25 + p.hardness[bi] * 1.5);
 if (dmg > 0.12 && hash01(p.seed[bi] * 3 + (u + 4096) * 7 + (v + 4096) * 131) < dmg * 0.4) l *= 0.42;
 } else {
@@ -10957,8 +11322,8 @@ return v < 0 ? 0 : v > 255 ? 255 : v | 0;
 return { FluidRenderer };
 })();
 // src/rendering/effects.js
-const __m55 = (() => {
-const { PAL, hex2rgb } = __m53;
+const __m57 = (() => {
+const { PAL, hex2rgb } = __m54;
 const MAX = 900;
 const FIRE_RAMP = [PAL.fire5, PAL.fire4, PAL.fire3, PAL.fire2, PAL.fire1, PAL.fire0].map(hex2rgb);
 class Effects {
@@ -11071,12 +11436,12 @@ ctx.globalAlpha = 1;
 return { Effects };
 })();
 // src/rendering/renderer.js
-const __m52 = (() => {
-const { PAL, paintBackground, renderCauldron, renderLid, renderLidAside, paintHearth, makeCanvas, rgbStr, hex2rgb, drawJar, rect } = __m53;
-const { FluidRenderer } = __m54;
-const { Effects } = __m55;
-const { COLUMN } = __m33;
-const { PHASE } = __m23;
+const __m53 = (() => {
+const { PAL, paintBackground, renderCauldron, renderLid, renderLidAside, paintHearth, makeCanvas, rgbStr, hex2rgb, drawJar, rect } = __m54;
+const { FluidRenderer } = __m55;
+const { Effects } = __m57;
+const { COLUMN } = __m34;
+const { PHASE } = __m24;
 const { compositionEffects, dominantEffect, EFFECTS, NE } = __m13;
 const auraScratch = new Float64Array(NE);
 const VIEW_TOP = -1.25;
@@ -11470,7 +11835,7 @@ rect(ctx, x, y + h - 1, w, 1, 'rgba(0,0,0,0.4)');
 return { Renderer, drawBottle, PHASE };
 })();
 // src/rendering/portraits.js
-const __m56 = (() => {
+const __m58 = (() => {
 const { Rng } = __m6;
 const S = 32;
 const shade = (c, f) => `rgb(${Math.round(Math.min(255, c[0] * 255 * f))},${Math.round(Math.min(255, c[1] * 255 * f))},${Math.round(Math.min(255, c[2] * 255 * f))})`;
@@ -11588,7 +11953,7 @@ if (rng.chance(0.5)) P(hx - 1, 8, 2, 10, hc);
 return { drawPortrait };
 })();
 // src/rendering/wilds-atlas.js
-const __m58 = (() => {
+const __m60 = (() => {
 const ATLASES = {
 forest: {
 url: 'assets/wilds/forest.png',
@@ -11866,7 +12231,7 @@ vent: [204, 247, 44, 16],
 return { ATLASES };
 })();
 // src/rendering/meadow-atlas.js
-const __m59 = (() => {
+const __m61 = (() => {
 const ATLAS_URL = 'assets/meadow/atlas.png';
 const ATLAS_SIZE = [256, 473];
 const FRAMES = {
@@ -11945,7 +12310,7 @@ treeline: [0, 229, 256, 30],
 return { ATLAS_URL, ATLAS_SIZE, FRAMES };
 })();
 // src/rendering/growth-atlas.js
-const __m60 = (() => {
+const __m62 = (() => {
 const ATLAS_URL = 'assets/growth/atlas.png';
 const RES = 2;
 const ATLAS_SIZE = [512, 542];
@@ -12098,7 +12463,7 @@ witchear_sprout: [150, 280, 48, 34],
 return { ATLAS_URL, RES, ATLAS_SIZE, FRAMES };
 })();
 // src/rendering/ingredient-icons.js
-const __m61 = (() => {
+const __m63 = (() => {
 const ICONS_URL = 'assets/icons/ingredients.png';
 const ICONS_SIZE = /** @type {[number, number]} */ ([576, 576]);
 const ICON_FRAMES = {
@@ -12142,7 +12507,7 @@ witchear: [480, 0, 96, 96],
 return { ICONS_URL, ICONS_SIZE, ICON_FRAMES };
 })();
 // src/rendering/scenes.js
-const __m62 = (() => {
+const __m64 = (() => {
 function R(ctx, x, y, w, h, c) {
 ctx.fillStyle = c;
 ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
@@ -12355,12 +12720,12 @@ return cv;
 return { drawRaw, rawSprite };
 })();
 // src/rendering/wild-sprites.js
-const __m57 = (() => {
-const { ATLASES } = __m58;
-const FIELD = __m59;
-const GROW = __m60;
-const { ICONS_URL, ICON_FRAMES } = __m61;
-const { rawSprite } = __m62;
+const __m59 = (() => {
+const { ATLASES } = __m60;
+const FIELD = __m61;
+const GROW = __m62;
+const { ICONS_URL, ICON_FRAMES } = __m63;
+const { rawSprite } = __m64;
 class SpriteAtlas {
 constructor(url, frames, res = 1) {
 this.url = url;
@@ -12534,7 +12899,7 @@ return cv;
 return { SpriteAtlas, MEADOW, REGION_ATLAS, GATHERABLES, ICONS, GROWTH, growthFrame, CRYSTALS, glintSpots, ICON_SIZE, MIN_HIT, gatherFrameName, plantBox, hitPlant, ingredientSprite };
 })();
 // src/game/journal.js
-const __m63 = (() => {
+const __m65 = (() => {
 function processEvent(state, e) {
 const entries = [];
 const achievements = [];
@@ -12647,8 +13012,8 @@ return { entries, achievements };
 return { processEvent };
 })();
 // src/game/autobrew.js
-const __m64 = (() => {
-const { PHASE, SIM } = __m23;
+const __m66 = (() => {
+const { PHASE, SIM } = __m24;
 const { MAX_SPECIES } = __m18;
 function condensedCount(sim) {
 const p = sim.p;
@@ -12931,7 +13296,7 @@ return t / Math.max(1, sim.p.count);
 return { condensedCount, stageGoal, AutoBrewer, runPlanHeadless, speciesFraction };
 })();
 // src/game/mechanics.js
-const __m66 = (() => {
+const __m68 = (() => {
 const MECHANICS = [
 { id: 'formulation', name: 'Formulation and neutralisation', role: 'core', stage: 'formulation', rank: 0,
 decision: 'Which natural ingredients, in what proportions, to carry the wanted effects and cancel their side effects.',
@@ -13017,26 +13382,26 @@ const SANDBOX_CONTROLS = ['skimmer', 'alembic', 'heatmap', 'readouts'];
 return { MECHANICS, MECHANIC_BY_ID, IMMERSION, SANDBOX_CONTROLS };
 })();
 // src/ui/panels.js
-const __m65 = (() => {
-const { recipeConfidence, CONFIDENCE_TEXT, describeStep } = __m48;
-const { MECHANIC_BY_ID } = __m66;
-const { evidenceRank } = __m26;
+const __m67 = (() => {
+const { recipeConfidence, CONFIDENCE_TEXT, describeStep } = __m49;
+const { MECHANIC_BY_ID } = __m68;
+const { evidenceRank } = __m27;
 const { h, btn, modal, toast, coins, starsText, confirmDialog, clear } = __m2;
 const { icon } = __m3;
-const { drawPortrait } = __m56;
-const { drawJar } = __m53;
-const { EQUIPMENT, RANKS } = __m25;
+const { drawPortrait } = __m58;
+const { drawJar } = __m54;
+const { EQUIPMENT, RANKS } = __m26;
 const { ACHIEVEMENTS } = __m5;
-const { viscosityClass, densityWord, evennessWord } = __m44;
+const { viscosityClass, densityWord, evennessWord } = __m45;
 const { EFFECTS, EFFECT_BY_KEY, EFFECT_KEYS, dominantEffect } = __m13;
-const { ingredientSprite } = __m57;
+const { ingredientSprite } = __m59;
 const { compatFactor } = __m14;
 const { describeColor, rgbToHex } = __m8;
-const { SIM } = __m23;
-const { exportSave, parseImport, saveGame } = __m49;
+const { SIM } = __m24;
+const { exportSave, parseImport, saveGame } = __m50;
 const { audio } = __m4;
 const { isMagical } = __m15;
-const { causeWord } = __m27;
+const { causeWord } = __m28;
 const CAT_LABEL = { heat: 'Fire', cold: 'Cooling', vessel: 'Cauldrons', tool: 'Tools', instrument: 'Instruments', trials: 'Trials room', gathering: 'Foraging', storage: 'Potion storage', guild: 'Guild' };
 function jarCanvas(m, w = 22, hh = 30) {
 if ((m.wild || m.remains) && m.form === 'solid') {
@@ -13601,15 +13966,15 @@ h('div', { class: 'small muted credits', text: 'The Alchemist’s Shop — all a
 return { jarCanvas, fxChips, openShop, openIngredient, openHint, openBottleSize, showDaySummary, showAnalysis, openRecipes, renderRecipes, openJournal, renderJournal, openPause, openReceiver, openHelp, openSettings };
 })();
 // src/ui/trade.js
-const __m67 = (() => {
+const __m69 = (() => {
 const { h, btn, modal, toast, coins, clear, starsText } = __m2;
 const { icon } = __m3;
-const { drawPortrait } = __m56;
+const { drawPortrait } = __m58;
 const { audio } = __m4;
 const { EFFECTS, EFFECT_BY_KEY } = __m13;
-const { draftLabel, openNegotiation: beginNegotiation, proposePrice, acceptOffer, relevantEffects, trustReport, editClaim, proofGaps, claimSigma, claimStars, labelStars, MAX_STARS } = __m45;
-const { PURITY_LIMIT } = __m24;
-const { shortName } = __m21;
+const { draftLabel, openNegotiation: beginNegotiation, proposePrice, acceptOffer, relevantEffects, trustReport, editClaim, proofGaps, claimSigma, claimStars, labelStars, MAX_STARS } = __m46;
+const { PURITY_LIMIT } = __m25;
+const { shortName } = __m22;
 function openIdentify(lab, vial, onDone) {
 const st = lab.state;
 const draft = vial.label ? JSON.parse(JSON.stringify(vial.label)) : draftLabel(vial, lab.vialTheory(vial), st.day);
@@ -13823,11 +14188,11 @@ return `${n === null ? '' : starsText(n, MAX_STARS) + ' '}${claimSummary(label.c
 return { openIdentify, openNegotiation, showDeal, followUpCard, claimSummary, accuracyTitle, labelLine, EFFECT_BY_KEY };
 })();
 // src/ui/tutorial.js
-const __m68 = (() => {
+const __m70 = (() => {
 const { h, btn, placeToasts } = __m2;
-const { PHASE } = __m23;
+const { PHASE } = __m24;
 const { TUTORIAL_HERBS } = __m16;
-const { shortName } = __m21;
+const { shortName } = __m22;
 class Tutorial {
 constructor(lab) {
 this.lab = lab;
@@ -13970,22 +14335,22 @@ if (t && t !== this.target) { if (this.target) this.target.classList.remove('hig
 return { Tutorial };
 })();
 // src/ui/views/counter.js
-const __m69 = (() => {
+const __m71 = (() => {
 const { h, btn, clear, coins, confirmDialog, starsText } = __m2;
 const { icon } = __m3;
-const { drawPortrait } = __m56;
-const { drawBottle } = __m52;
-const { PROPERTY_LABELS, scoreRequirement } = __m22;
+const { drawPortrait } = __m58;
+const { drawBottle } = __m53;
+const { PROPERTY_LABELS, scoreRequirement } = __m23;
 const { techniqueById } = __m16;
 const { EFFECT_INDEX, NE } = __m13;
 const { EFFECT_BY_KEY } = __m13;
-const { missingEffects, summarize, requirementEvidence } = __m26;
-const { labelStars, MAX_STARS } = __m45;
-const trade = __m67;
+const { missingEffects, summarize, requirementEvidence } = __m27;
+const { labelStars, MAX_STARS } = __m46;
+const trade = __m69;
 const { describeColor, rgbToHex } = __m8;
-const { viscosityClass } = __m44;
-const panels = __m65;
-const { shortName } = __m21;
+const { viscosityClass } = __m45;
+const panels = __m67;
+const { shortName } = __m22;
 class CounterView {
 constructor(lab) {
 this.lab = lab;
@@ -14178,7 +14543,7 @@ unseen ? h('span', { class: 'muted', text: ` ${seen.length ? '· ' : ''}${unseen
 return { CounterView };
 })();
 // src/rendering/backdrops-ground.js
-const __m72 = (() => {
+const __m74 = (() => {
 const GROUND = {
 meadow: [
 [],
@@ -15060,10 +15425,10 @@ crags: [
 return { GROUND };
 })();
 // src/rendering/regions.js
-const __m71 = (() => {
+const __m73 = (() => {
 const { Rng } = __m6;
-const { SpriteAtlas, MEADOW } = __m57;
-const { GROUND } = __m72;
+const { SpriteAtlas, MEADOW } = __m59;
+const { GROUND } = __m74;
 const SCENE_W = 256;
 const SCENE_H = 144;
 const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
@@ -15628,16 +15993,16 @@ if (!BACKDROPS.quarry.ready) R(ctx, 24, 56, 3, 5, `rgba(255,243,176,${flick.toFi
 return { SCENE_W, SCENE_H, BACKDROPS, GROUND_TOP, PlantGround, paintRegion, animateRegion };
 })();
 // src/ui/views/wilds.js
-const __m70 = (() => {
+const __m72 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, marksIn, DAY_PART_NAME } = __m28;
-const { equipmentById } = __m25;
-const { RANKS } = __m25;
-const { drawRaw } = __m62;
-const { paintRegion, animateRegion, PlantGround, BACKDROPS, SCENE_W, SCENE_H } = __m71;
-const { GATHERABLES, GROWTH, CRYSTALS, REGION_ATLAS, growthFrame, glintSpots, plantBox, hitPlant, ingredientSprite } = __m57;
+const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, marksIn, DAY_PART_NAME } = __m29;
+const { equipmentById } = __m26;
+const { RANKS } = __m26;
+const { drawRaw } = __m64;
+const { paintRegion, animateRegion, PlantGround, BACKDROPS, SCENE_W, SCENE_H } = __m73;
+const { GATHERABLES, GROWTH, CRYSTALS, REGION_ATLAS, growthFrame, glintSpots, plantBox, hitPlant, ingredientSprite } = __m59;
 const { EFFECT_BY_KEY } = __m13;
 function sparkle(ctx, x, y, u) {
 const q = 0.5, L = [1, 2, 4, 6, 4, 2, 1][Math.min(6, Math.floor(u * 7))] * q;
@@ -16004,10 +16369,10 @@ this.grow();
 return { WildsView };
 })();
 // src/rendering/rabbit.js
-const __m74 = (() => {
+const __m76 = (() => {
 const { Rng, hashString } = __m6;
-const { PAL, makeCanvas } = __m53;
-const { RABBIT_MARKS } = __m27;
+const { PAL, makeCanvas } = __m54;
+const { RABBIT_MARKS } = __m28;
 const RABBIT_W = 48;
 const RABBIT_H = 40;
 const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
@@ -16900,10 +17265,10 @@ ctx.fillRect(fx, fy, RABBIT_W, RABBIT_H);
 return { RABBIT_W, RABBIT_H, rabbitLevels, rabbitPose, rabbitPace, rabbitAnchors, rabbitSpriteKey, drawRabbitSprite, clearRabbitSprites, drawRabbit };
 })();
 // src/rendering/hutch-scene.js
-const __m76 = (() => {
+const __m78 = (() => {
 const { Rng, hashString } = __m6;
-const { PAL, makeCanvas } = __m53;
-const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m74;
+const { PAL, makeCanvas } = __m54;
+const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m76;
 const HUTCH_W = 224;
 const HUTCH_H = 88;
 const HUTCH_BODIES = 3;
@@ -17321,15 +17686,15 @@ ctx.drawImage(this.bg, 0, 0);
 return { HUTCH_W, HUTCH_H, HUTCH_BODIES, paintHutch, paintHutchFront, HutchScene };
 })();
 // src/ui/views/hutch.js
-const __m75 = (() => {
-const { readingSteadiness } = __m26;
+const __m77 = (() => {
+const { readingSteadiness } = __m27;
 const { h, btn, clear, toast, modal, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { drawRabbit, RABBIT_W, RABBIT_H } = __m74;
-const { HutchScene, HUTCH_W, HUTCH_H } = __m76;
+const { drawRabbit, RABBIT_W, RABBIT_H } = __m76;
+const { HutchScene, HUTCH_W, HUTCH_H } = __m78;
 const { EFFECT_BY_KEY } = __m13;
-const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral, RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE, BURNS } = __m27;
+const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral, RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE, BURNS } = __m28;
 const { PURGE_BREW_TIME } = __m5;
 const STAGE_WORD = { kit: 'kit', young: 'youngster', adult: 'adult', elder: 'elder' };
 const CHANNELS = RABBIT_MARKS.map((k) => {
@@ -17656,21 +18021,21 @@ if (this._live >= 0.25) { this._live = 0; this.live(); }
 return { CHANNELS, HutchPanel };
 })();
 // src/ui/views/trials.js
-const __m73 = (() => {
+const __m75 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { SUBJECT_BY_ID, DOSES, missingEffects } = __m26;
+const { SUBJECT_BY_ID, DOSES, missingEffects } = __m27;
 const { EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, EFFECT_KEYS, potencyWord } = __m13;
-const { SIM } = __m23;
-const { applyTrials } = __m45;
-const { summarize, addSamples, EVIDENCE_TEXT, evidenceRank, requirementEvidence } = __m26;
-const { evidenceOf } = __m45;
-const { shortName } = __m21;
+const { SIM } = __m24;
+const { applyTrials } = __m46;
+const { summarize, addSamples, EVIDENCE_TEXT, evidenceRank, requirementEvidence } = __m27;
+const { evidenceOf } = __m46;
+const { shortName } = __m22;
 const LEVEL_SHORT = { preliminary: '1 reading', repeated: 'repeated', corroborated: 'corroborated', certified: 'certified' };
-const { drawRabbit } = __m74;
-const { focusRabbit, findRabbit, rabbitSnap, decodeSnap, lookFromSeed, RABBIT_MARKS } = __m27;
-const { HutchPanel } = __m75;
+const { drawRabbit } = __m76;
+const { focusRabbit, findRabbit, rabbitSnap, decodeSnap, lookFromSeed, RABBIT_MARKS } = __m28;
+const { HutchPanel } = __m77;
 const REPLAY_T = 3.2;
 class TrialsView {
 constructor(lab) {
@@ -18047,12 +18412,12 @@ return `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2
 return { TrialsView, EFFECTS, EFFECT_INDEX };
 })();
 // src/ui/views/book.js
-const __m77 = (() => {
+const __m79 = (() => {
 const { h, btn, clear } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const panels = __m65;
-const { SUBJECT_BY_ID } = __m26;
+const panels = __m67;
+const { SUBJECT_BY_ID } = __m27;
 const { EFFECTS, EFFECT_BY_KEY, EFFECT_KEYS } = __m13;
 const { rgbToHex } = __m8;
 const TABS = [
@@ -18151,43 +18516,43 @@ body.appendChild(list);
 return { BookView };
 })();
 // src/ui/lab.js
-const __m50 = (() => {
-const { Simulation } = __m30;
-const { PHASE, SIM } = __m23;
-const { snapshotSim, applySnapshot } = __m51;
-const { clampToInterior } = __m41;
+const __m51 = (() => {
+const { Simulation } = __m31;
+const { PHASE, SIM } = __m24;
+const { snapshotSim, applySnapshot } = __m52;
+const { clampToInterior } = __m42;
 const { MAX_SPECIES } = __m18;
 const { compatFactor } = __m14;
-const { Renderer } = __m52;
-const { drawPortrait } = __m56;
-const { drawJar } = __m53;
-const { ingredientSprite } = __m57;
-const { measureParticles, tapSelection, probeSelection, viscosityClass, densityWord } = __m44;
-const { scoreRequirement, PROPERTY_LABELS } = __m22;
-const { processEvent } = __m63;
-const { saveGame, saveJSON, KEYS } = __m49;
-const { AutoBrewer, condensedCount } = __m64;
-const { traceSample, buildProcedure, procedureLimits, matchRecipe, compareRecipe, checkReproduction, TRACE_DT } = __m48;
-const { proofGaps, draftLabel, applyTrials, evidenceOf } = __m45;
-const { RANKS } = __m25;
-const { certification, missingEffects, requirementEvidence } = __m26;
+const { Renderer } = __m53;
+const { drawPortrait } = __m58;
+const { drawJar } = __m54;
+const { ingredientSprite } = __m59;
+const { measureParticles, tapSelection, probeSelection, viscosityClass, densityWord } = __m45;
+const { scoreRequirement, PROPERTY_LABELS } = __m23;
+const { processEvent } = __m65;
+const { saveGame, saveJSON, KEYS } = __m50;
+const { AutoBrewer, condensedCount } = __m66;
+const { traceSample, buildProcedure, procedureLimits, matchRecipe, compareRecipe, checkReproduction, TRACE_DT } = __m49;
+const { proofGaps, draftLabel, applyTrials, evidenceOf } = __m46;
+const { RANKS } = __m26;
+const { certification, missingEffects, requirementEvidence } = __m27;
 const { sandboxIngredients } = __m7;
-const { makeVial, appendParticles, updateVial, takeDose, pourBack, pourBackParts, relaxVial } = __m29;
+const { makeVial, appendParticles, updateVial, takeDose, pourBack, pourBackParts, relaxVial } = __m30;
 const { theoryOf, EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, dominantEffect, NE } = __m13;
 const { awakenParts, describeThreshold } = __m15;
-const { ARC_NONE } = __m31;
+const { ARC_NONE } = __m32;
 const { describeColor, rgbToHex } = __m8;
 const { h, btn, clear, toast, coins, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const panels = __m65;
-const trade = __m67;
-const { Tutorial } = __m68;
-const { CounterView } = __m69;
-const { WildsView } = __m70;
-const { TrialsView } = __m73;
-const { BookView } = __m77;
-const { shortName } = __m21;
+const panels = __m67;
+const trade = __m69;
+const { Tutorial } = __m70;
+const { CounterView } = __m71;
+const { WildsView } = __m72;
+const { TrialsView } = __m75;
+const { BookView } = __m79;
+const { shortName } = __m22;
 const REQ_ICON = { temperature: 'thermo', quantity: 'flask', purity: 'pure' };
 const TOOL_DEFS = [
 { id: 'spoon', label: 'Stir', icon: 'spoon', key: '2', title: 'Spoon: drag in the brew to stir' },
@@ -19892,7 +20257,7 @@ void dominantEffect;
 return { VIEWS, LabScreen };
 })();
 // src/materials/reference.js
-const __m79 = (() => {
+const __m81 = (() => {
 const { completeMaterial } = __m9;
 const REF = {};
 const add = (d) => (REF[d.id] = completeMaterial(d));
@@ -19930,12 +20295,12 @@ const refLookup = (id) => REF[id];
 return { REF, refLookup };
 })();
 // src/ui/menu.js
-const __m78 = (() => {
+const __m80 = (() => {
 const { h, btn } = __m2;
-const { Renderer } = __m52;
-const { Simulation } = __m30;
-const { REF, refLookup } = __m79;
-const { hasSave, loadGame } = __m49;
+const { Renderer } = __m53;
+const { Simulation } = __m31;
+const { REF, refLookup } = __m81;
+const { hasSave, loadGame } = __m50;
 const { audio } = __m4;
 class MenuScreen {
 constructor(app) {
@@ -20020,13 +20385,13 @@ const { icon } = __m3;
 const { audio } = __m4;
 const { GameState } = __m5;
 const { sandboxIngredients } = __m7;
-const { EQUIPMENT } = __m25;
-const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m49;
-const { LabScreen } = __m50;
-const { MenuScreen } = __m78;
-const { openSettings, openHelp } = __m65;
+const { EQUIPMENT } = __m26;
+const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m50;
+const { LabScreen } = __m51;
+const { MenuScreen } = __m80;
+const { openSettings, openHelp } = __m67;
 const { Rng } = __m6;
-const { normalizeTrials } = __m26;
+const { normalizeTrials } = __m27;
 const DEFAULT_SETTINGS = { master: 0.8, sfx: 0.8, music: 0.35, musicOn: true, muted: false, quality: 'auto', showFps: false };
 const SEED_WORDS = ['amber', 'ashen', 'brine', 'copper', 'dusk', 'elder', 'fen', 'gloam', 'hollow', 'iron', 'juniper', 'kelp', 'lantern', 'moon', 'nettle', 'oak', 'pewter', 'quill', 'raven', 'sage', 'thorn', 'umber', 'vale', 'willow', 'wyrm', 'yarrow'];
 class App {
@@ -20140,7 +20505,7 @@ openHelp();
 return { App, icon };
 })();
 // src/ui/textures.js
-const __m80 = (() => {
+const __m82 = (() => {
 const { Rng } = __m6;
 function texture(w, h, paint) {
 const cv = document.createElement('canvas');
@@ -20184,7 +20549,7 @@ return { installTextures };
 // src/main.js
 const __m0 = (() => {
 const { App } = __m1;
-const { installTextures } = __m80;
+const { installTextures } = __m82;
 installTextures();
 const root = document.getElementById('app');
 const app = new App(root);
