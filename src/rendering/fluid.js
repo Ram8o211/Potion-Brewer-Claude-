@@ -47,6 +47,8 @@ import { preparePalettes, paletteColour, pc as palCol } from './brew-palette.js'
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 /** Interleaved liquid accumulator stride: weight, r, g, b, opacity, paste, texture, temperature, slush. */
 const LS = 9;
+/** channels of the softened liquid colour field */
+const LC = 6;
 
 /** Small integer hash → [0,1). */
 function hash01(n) {
@@ -156,6 +158,8 @@ export class FluidRenderer {
       this.wl = new Float32Array(n); // liquid weight, contiguous (blur, neighbours)
       this.wb = new Float32Array(n); // smoothed liquid weight (surface shape)
       this.wt = new Float32Array(n); // blur scratch
+      this.lc = new Float32Array(n * LC); // softened liquid colour: weight, r, g, b, opacity, paste
+      this.lct = new Float32Array(n * LC); // its blur scratch
       this.grain = new Uint32Array(n); // packed grain colour (0 = none)
     }
     if (w !== this.w || h !== this.h || !this.canvas) {
@@ -417,6 +421,10 @@ export class FluidRenderer {
     // liquid weight, packed contiguously for the blur and the neighbour reads
     const wl = this.wl;
     for (let k = 0; k < N; k++) wl[k] = liq[k * LS];
+    // the colour is softened over a few pixels more than the particles'
+    // own kernels: a brew half stirred holds parcels of different colours
+    // side by side, and they should meet in gradients, not hard edges
+    this._softenColour(w, h);
     for (let y = 0; y < h; y++) {
       const row = y * w;
       for (let x = 0; x < w; x++) {
@@ -438,6 +446,7 @@ export class FluidRenderer {
 
     // ------------------------------------------------------------ compose
     const data = this.image.data;
+    const lc = this.lc;
     const thr = 0.3; // liquid surface threshold
     // first liquid pixel of every column → depth below the surface (Beer–Lambert style darkening)
     if (!this.surf || this.surf.length < w) this.surf = new Int32Array(w);
@@ -627,22 +636,24 @@ export class FluidRenderer {
             if (lw < 1e-4) continue;
           }
           const inv = 1 / lw;
-          const c9 = kc * LS;
-          let r = liq[c9 + 1] * inv, g = liq[c9 + 2] * inv, b = liq[c9 + 3] * inv;
-          const paste = liq[c9 + 5] * inv;
-          const opac = liq[c9 + 4] * inv;
+          const c9 = kc * LS, c6 = kc * LC, lcw = lc[c6];
+          if (lcw < 1e-5) continue;
+          const ic = 1 / lcw;
+          let r = lc[c6 + 1] * ic, g = lc[c6 + 2] * ic, b = lc[c6 + 3] * ic;
+          const paste = lc[c6 + 5] * ic;
+          const opac = lc[c6 + 4] * ic;
           let a = Math.min(0.96, 0.7 + 0.3 * opac);
           const tex = liq[c9 + 6] * inv;
           const up = y > 0 ? wb[k - w] : 0;
           const down = y < h - 1 ? wb[k + w] : 0;
           let l = 1;
-          if (paste > 0.5) {
-            // thick, opaque, grainy paste with a soft dark outline
-            a = 1;
-            l = 0.9 + tex * 0.09;
-            if (up <= thr) l = 1.12;
-            else if (down <= thr || (x > 0 && wb[k - 1] <= thr) || (x < w - 1 && wb[k + 1] <= thr)) l = 0.7;
-          } else {
+          // Liquid and paste are shaded their own ways, blended by how much
+          // of the pixel is paste: a stirred brew interleaves the two, and
+          // a hard switch between them would draw sharp colour edges.
+          const tP = paste <= 0.2 ? 0 : paste >= 0.8 ? 1 : ((paste - 0.2) / 0.6) * ((paste - 0.2) / 0.6) * (3 - 2 * ((paste - 0.2) / 0.6));
+          const depth = Math.max(0, (y - surf[x]) * depthScale);
+          let rL = r, gL = g, bL = b, lL = 1, rP = r, gP = g, bP = b, lP = 1;
+          if (tP < 1) {
             // light crosses more of the brew the deeper it is: each channel
             // is absorbed by its own amount (Beer–Lambert on the brew's
             // transmitted colour), so the colour deepens and saturates
@@ -650,18 +661,29 @@ export class FluidRenderer {
             // heart. Clear liquids deepen faster (the dark iron shows
             // through); opaque ones keep more of their colour.
             const clear = Math.max(0, 1 - opac);
-            const depth = Math.max(0, (y - surf[x]) * depthScale);
             const path = Math.min(4.5, 0.75 + depth * (0.9 + 2 * clear));
-            r = Math.pow(Math.max(0.02, r), path); g = Math.pow(Math.max(0.02, g), path); b = Math.pow(Math.max(0.02, b), path);
+            rL = Math.pow(Math.max(0.02, r), path); gL = Math.pow(Math.max(0.02, g), path); bL = Math.pow(Math.max(0.02, b), path);
             // texture carried by the particles: currents show as soft light
             // and shade moving with the brew
-            l = (1 + tex * 0.07) * (1 - clear * 0.18) * (1 - Math.min(0.3, depth * 0.1));
-            if (up <= thr) l = 1.32; // meniscus highlight
-            else if (y > 1 && wb[k - 2 * w] <= thr) l = 1.16; // sheen just under the surface
-            else if (y > 2 && wb[k - 3 * w] <= thr) l *= 1.07;
+            lL = (1 + tex * 0.07) * (1 - clear * 0.18) * (1 - Math.min(0.3, depth * 0.1));
+            if (up <= thr) lL = 1.32; // meniscus highlight
+            else if (y > 1 && wb[k - 2 * w] <= thr) lL = 1.16; // sheen just under the surface
+            else if (y > 2 && wb[k - 3 * w] <= thr) lL *= 1.07;
             // the lower edge against the iron gets a thin shadow line
-            if (down <= thr) l *= 0.7;
+            if (down <= thr) lL *= 0.7;
           }
+          if (tP > 0) {
+            // thick, opaque, grainy paste with a soft dark outline; it
+            // deepens a little with depth too, so it sits in the brew
+            const path = Math.min(2, 1 + depth * 0.3);
+            rP = Math.pow(Math.max(0.02, r), path); gP = Math.pow(Math.max(0.02, g), path); bP = Math.pow(Math.max(0.02, b), path);
+            lP = (0.92 + tex * 0.09) * (1 - Math.min(0.2, depth * 0.06));
+            if (up <= thr) lP = 1.12;
+            else if (down <= thr || (x > 0 && wb[k - 1] <= thr) || (x < w - 1 && wb[k + 1] <= thr)) lP = 0.7;
+          }
+          r = rL + (rP - rL) * tP; g = gL + (gP - gL) * tP; b = bL + (bP - bL) * tP;
+          l = lL + (lP - lL) * tP;
+          a = a + (1 - a) * tP;
           // slush: liquid giving up its latent heat clouds over with ice crystals
           const slush = liq[c9 + 8] * inv;
           if (slush > 0.04) {
@@ -757,6 +779,55 @@ export class FluidRenderer {
     this.ctx.putImageData(this.image, 0, 0);
     const halo = anyGlow && this.halo && !thermal ? this._halo(w, h) : null;
     return { canvas: this.canvas, x: bx, y: by, halo };
+  }
+
+  /**
+   * Soften the liquid's colour: a separable binomial blur (radius 4) of its
+   * weighted colour sums, so colours average by how much liquid carries
+   * them and the empty space around the brew adds nothing.
+   * @param {number} w @param {number} h
+   */
+  _softenColour(w, h) {
+    const liq = this.liq, a = this.lct, b = this.lc, N = w * h;
+    const K = [1, 8, 28, 56, 70, 56, 28, 8, 1], R = 4, norm = 1 / 256;
+    for (let k = 0; k < N; k++) {
+      const s = k * LS, d = k * LC;
+      a[d] = liq[s]; a[d + 1] = liq[s + 1]; a[d + 2] = liq[s + 2]; a[d + 3] = liq[s + 3]; a[d + 4] = liq[s + 4]; a[d + 5] = liq[s + 5];
+    }
+    // horizontal: a → b
+    for (let y = 0; y < h; y++) {
+      const row = y * w;
+      for (let x = 0; x < w; x++) {
+        const o = (row + x) * LC;
+        let s0 = 0, s1 = 0, s2 = 0, s3 = 0, s4 = 0, s5 = 0;
+        for (let d = -R; d <= R; d++) {
+          const xx = x + d;
+          if (xx < 0 || xx >= w) continue;
+          const q = (row + xx) * LC;
+          if (a[q] <= 0) continue;
+          const kw = K[d + R];
+          s0 += a[q] * kw; s1 += a[q + 1] * kw; s2 += a[q + 2] * kw; s3 += a[q + 3] * kw; s4 += a[q + 4] * kw; s5 += a[q + 5] * kw;
+        }
+        b[o] = s0 * norm; b[o + 1] = s1 * norm; b[o + 2] = s2 * norm; b[o + 3] = s3 * norm; b[o + 4] = s4 * norm; b[o + 5] = s5 * norm;
+      }
+    }
+    // vertical: b → a, then back into b
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const o = (y * w + x) * LC;
+        let s0 = 0, s1 = 0, s2 = 0, s3 = 0, s4 = 0, s5 = 0;
+        for (let d = -R; d <= R; d++) {
+          const yy = y + d;
+          if (yy < 0 || yy >= h) continue;
+          const q = (yy * w + x) * LC;
+          if (b[q] <= 0) continue;
+          const kw = K[d + R];
+          s0 += b[q] * kw; s1 += b[q + 1] * kw; s2 += b[q + 2] * kw; s3 += b[q + 3] * kw; s4 += b[q + 4] * kw; s5 += b[q + 5] * kw;
+        }
+        a[o] = s0 * norm; a[o + 1] = s1 * norm; a[o + 2] = s2 * norm; a[o + 3] = s3 * norm; a[o + 4] = s4 * norm; a[o + 5] = s5 * norm;
+      }
+    }
+    this.lc = a; this.lct = b;
   }
 
   /** Separable box blur (radius 2) of the half-resolution vapour field. */

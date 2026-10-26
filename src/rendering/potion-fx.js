@@ -4,16 +4,22 @@
 // shows only as bolder, denser patterns). The patterns are drawn in the potion's own colour —
 // lighter, darker and highlight tones of whatever it is dyed — so they
 // adapt to every brew, and every one of them moves:
-//   vitality        soft mottling breathing with a heartbeat, motes of life rising
-//   strength        heavy stepped bands, waving and rolling slowly
-//   love            hearts, large and small, drifting up and swaying
-//   arcana          four-pointed stars of every size, twinkling in and out
-//   transformation  diagonal stripes sliding by and swelling in turn, beaded with dots
-//   fire            tongues of flame licking upward, flickering, with sparks
-//   frost           a frosty pallor, snowflakes of two sizes drifting down
-//   acidity         a dense fizz of fine bubbles racing up, popping at the surface
-//   toxicity        murky blotches roiling, ringed bubbles rising slowly
-//   death           dark smoke swirling, black specks sinking
+//   vitality        mottling flowing and breathing with a heartbeat, motes of
+//                   life weaving upward that burst into rings on the beat
+//   strength        heavy stepped bands, waving, surging and rolling
+//   love            hearts, large and small, beating as they drift up and sway,
+//                   trailing sparkles
+//   arcana          four-pointed stars of every size turning and twinkling,
+//                   drifting, with the odd shooting star
+//   transformation  stripes sliding by, their angle slowly turning, swelling in
+//                   turn and beaded with running dots
+//   fire            tongues of flame leaning in gusts, flickering, with sparks
+//   frost           a frosty pallor and shimmering rime, snowflakes turning
+//                   and tumbling down in gusts
+//   acidity         a fizz that comes in waves: bubbles wobbling up, swelling
+//                   as they rise, popping at the surface
+//   toxicity        murky blotches roiling, bubbles that rise, swell and burst
+//   death           dark smoke swirling, black specks spiralling down
 // Patterns are laid out in screen pixels (so they stay crisp pixel art) and
 // animated in time; fluid.js calls potionFx per liquid pixel.
 
@@ -63,6 +69,15 @@ function cellDot(sx, sy, C, scroll, prob, salt, m) {
   return true;
 }
 
+/**
+ * Sideways sway of a whole row of dot cells: each row of the scrolled grid
+ * is shifted as one (so no shape is cut at a cell edge), by up to `amp` px.
+ */
+function sway(sy, C, scroll, amp, freq, time, salt) {
+  const row = Math.floor((sy + Math.floor(scroll)) / C);
+  return Math.round(Math.sin(time * freq + row * 1.9 + salt) * amp + Math.sin(time * freq * 0.53 + row * 0.7) * amp * 0.5);
+}
+
 /** Output colour (fc) and the potion's own tones it is drawn with. */
 export const fc = [0, 0, 0];
 const INK = [0.02, 0.02, 0.03], GROUND = [0, 0, 0];
@@ -108,128 +123,177 @@ export function potionFx(f, o, mask, inv, sx, sy, time, below, edge) {
     mixTo(GROUND, A * 0.35);
     switch (k) {
       case K.vitality: {
-        // lub-dub: two quick swells every 1.2 s brighten the mottling
+        // lub-dub: two quick swells every 1.2 s brighten and swell the mottling,
+        // which flows up and sideways
         const t = (time / 1.2) % 1;
         const beat = Math.exp(-Math.pow((t - 0.1) / 0.05, 2)) + 0.6 * Math.exp(-Math.pow((t - 0.3) / 0.05, 2));
-        const n = vnoise(sx * 0.11, sy * 0.11 - time * 0.4, 101);
-        if (n > 0.55) mixTo(LIGHT, A * (n - 0.55) * (1.3 + 1.2 * beat));
-        else if (n < 0.4) mixTo(DARK, A * (0.4 - n) * 1.1);
-        // motes of life rising, swelling into a little cross on the beat
-        if (cellDot(sx, sy, 8, time * 5, A * 0.45, 103, 1)) {
-          const ax = Math.abs(dX), ay = Math.abs(dY);
-          if (ax + ay === 0) mixTo(HI, 0.9);
-          else if (ax + ay === 1 && dH > 0.6 && beat > 0.3) mixTo(LIGHT, 0.7);
+        const zs = 0.11 * (1 - 0.12 * beat);
+        const n = vnoise(sx * zs + Math.sin(time * 0.5) * 0.8, sy * zs - time * 0.5, 101);
+        if (n > 0.55) mixTo(LIGHT, A * (n - 0.55) * (1.3 + 1.6 * beat));
+        else if (n < 0.4) mixTo(DARK, A * (0.4 - n) * (1.1 - 0.4 * beat));
+        // motes of life weaving upward, bursting into a ring on the beat
+        const sc = time * 5, wx = sx + sway(sy, 8, sc, 1.5, 1.7, time, 0);
+        if (cellDot(wx, sy, 8, sc, A * 0.45, 103, 2)) {
+          const d = Math.abs(dX) + Math.abs(dY);
+          const ring = Math.round(t * 6);
+          if (d === 0) mixTo(HI, 0.9);
+          else if (dH > 0.4 && t < 0.4 && d === ring && ring <= 2) mixTo(LIGHT, 0.75 * (1 - t));
         }
         break;
       }
       case K.strength: {
-        // heavy bands stepping light → dark, waving and rolling slowly
-        const wv = sy * 0.09 + Math.sin(sx * 0.075 + time * 0.7) * 0.5 + time * 0.12;
+        // heavy bands stepping light → dark, waving, surging and rolling
+        const surge = 0.5 + 0.5 * Math.sin(time * 0.9);
+        const wv = sy * 0.09 + Math.sin(sx * 0.075 + time * 1.1) * (0.35 + 0.45 * surge) + Math.sin(sx * 0.03 - time * 0.6) * 0.3 + time * (0.12 + 0.18 * surge);
         const step = Math.floor((wv - Math.floor(wv)) * 5);
         const tone = step === 0 ? HI : step === 1 ? LIGHT : step === 3 ? DARK : step === 4 ? DEEP : null;
-        if (tone) mixTo(tone, A * (step === 4 ? 0.45 : 0.55));
+        if (tone) mixTo(tone, A * (step === 4 ? 0.45 : 0.55) * (0.8 + 0.3 * surge));
         break;
       }
       case K.love: {
-        // large hearts rise slowly, small ones faster; both sway
-        if (cellDot(sx, sy, 16, time * 3, A * 0.45, 211, 4)) {
-          const sw = Math.round(Math.sin(time * 1.6 + dH * 9) * 1.5);
-          if (inMask(HEART_L, 7, dX + 3 - sw, dY + 2)) mixTo(HI, 0.85);
+        // large hearts rise slowly, beating; small ones faster; both sway,
+        // and sparkles trail beneath them
+        const s1 = time * 4, x1 = sx + sway(sy, 16, s1, 2, 2.2, time, 1);
+        if (cellDot(x1, sy, 16, s1, A * 0.45, 211, 4)) {
+          const big = Math.sin(time * 5 + dH * 12) > -0.2;
+          if (big ? inMask(HEART_L, 7, dX + 3, dY + 2) : inMask(HEART_S, 5, dX + 2, dY + 1)) mixTo(HI, 0.85);
+          else if (dX === 0 && dY > 4 && dY < 7 && Math.sin(time * 9 + dY * 2 + dH * 20) > 0.3) mixTo(LIGHT, 0.6);
         }
-        if (cellDot(sx, sy, 10, time * 5, A * 0.5, 223, 3)) {
-          const sw = Math.round(Math.sin(time * 2.2 + dH * 9) * 1);
-          if (inMask(HEART_S, 5, dX + 2 - sw, dY + 1)) mixTo(LIGHT, 0.85);
+        const s2 = time * 6.5, x2 = sx + sway(sy, 10, s2, 1.5, 3, time, 2);
+        if (cellDot(x2, sy, 10, s2, A * 0.5, 223, 3)) {
+          if (inMask(HEART_S, 5, dX + 2, dY + 1)) mixTo(LIGHT, 0.85);
         }
-        if (cellDot(sx, sy, 6, time * 4, A * 0.25, 227, 0) && dX === 0 && dY === 0) mixTo(HI, 0.6);
+        if (cellDot(sx, sy, 6, time * 4, A * 0.25, 227, 0) && dX === 0 && dY === 0 && Math.sin(time * 6 + dH * 30) > 0) mixTo(HI, 0.6);
         break;
       }
       case K.arcana: {
-        // four-pointed stars of every size, their arms growing and shrinking
-        mixTo(DARK, A * 0.18);
-        if (cellDot(sx, sy, 11, time * 0.6, A * 0.75, 307, 4)) {
-          const tw = 0.5 + 0.5 * Math.sin(time * (1.2 + dH * 1.8) + dH * 40);
+        // four-pointed stars of every size, turning between + and ×, their
+        // arms growing and shrinking as they drift
+        mixTo(DARK, A * (0.14 + 0.08 * Math.sin(time * 0.8 + sx * 0.03)));
+        const sc = time * 2, wx = sx + sway(sy, 11, sc, 2, 1.4, time, 3);
+        if (cellDot(wx, sy, 11, sc, A * 0.75, 307, 4)) {
+          const tw = 0.5 + 0.5 * Math.sin(time * (1.6 + dH * 2.4) + dH * 40);
           const L = Math.round((1 + Math.floor(dH * 3.99)) * (0.3 + 0.7 * tw));
+          const diag = Math.sin(time * 1.3 + dH * 25) > 0;
           const ax = Math.abs(dX), ay = Math.abs(dY);
+          const onArm = diag ? ax === ay && ax <= Math.max(1, L - 1) : (ax === 0 && ay <= L) || (ay === 0 && ax <= L);
           if (ax === 0 && ay === 0 && tw > 0.05) mixTo(HI, 0.6 + 0.4 * tw);
-          else if ((ax === 0 && ay <= L) || (ay === 0 && ax <= L)) mixTo(Math.max(ax, ay) === L ? LIGHT : HI, 0.85);
+          else if (onArm) mixTo(Math.max(ax, ay) >= (diag ? L - 1 : L) ? LIGHT : HI, 0.85);
         }
-        if (cellDot(sx, sy, 5, 0, A * 0.3, 311, 0) && dX === 0 && dY === 0 && Math.sin(time * 3 + dH * 50) > 0) mixTo(LIGHT, 0.7);
+        if (cellDot(sx, sy, 5, time * 0.5, A * 0.3, 311, 0) && dX === 0 && dY === 0 && Math.sin(time * 4 + dH * 50) > 0) mixTo(LIGHT, 0.7);
+        // a shooting star now and then, streaking down across the brew
+        const cyc = Math.floor(time / 2.5), ft = time / 2.5 - cyc;
+        if (ft < 0.35 && cellHash(cyc, 0, 313) < A) {
+          const hx = (cellHash(cyc, 1, 317) - 0.5) * 120 + ft * 260, hy = (cellHash(cyc, 2, 331) - 0.5) * 40 + ft * 90;
+          const along = (sx - hx) * 0.94 + (sy - hy) * 0.33, across = Math.abs(-(sx - hx) * 0.33 + (sy - hy) * 0.94);
+          if (across < 0.8 && along <= 0 && along > -12) mixTo(along > -2 ? HI : LIGHT, 0.85 * (1 + along / 12));
+        }
         break;
       }
       case K.transformation: {
-        // diagonal stripes sliding by, each one swelling lighter and darker in turn
-        const ph = (sx + sy) / 14 - time * 0.5;
+        // stripes sliding by, their angle slowly turning, each swelling lighter and darker in turn
+        const ang = 0.785 + Math.sin(time * 0.35) * 0.6;
+        const ca = Math.cos(ang), sa = Math.sin(ang);
+        const u = sx * ca + sy * sa, v = -sx * sa + sy * ca;
+        const ph = u / 10 - time * (0.5 + 0.3 * Math.sin(time * 0.7));
         const fr = ph - Math.floor(ph), band = Math.floor(ph);
-        const sw = 0.75 + 0.25 * Math.sin(band * 1.7 + time * 1.6);
+        const sw = 0.75 + 0.25 * Math.sin(band * 1.7 + time * 2.2);
         mixTo(fr < 0.5 ? LIGHT : DARK, A * sw * (fr < 0.08 || (fr > 0.5 && fr < 0.58) ? 0.35 : 0.6));
         // a bead of light running along the middle of each light stripe
-        const along = (sx - sy) / 2 + time * 6;
+        const along = v / 1.5 + time * 8 * (band % 2 ? 1 : -1);
         if (fr > 0.2 && fr < 0.3 && ((Math.floor(along) % 5) + 5) % 5 === 0) mixTo(HI, A * 0.9);
         break;
       }
       case K.fire: {
-        // tongues of flame: noise stretched upward and racing up, flickering
-        const n = vnoise(sx * 0.16, sy * 0.06 + time * 1.8, 401) * 0.7 + vnoise(sx * 0.4, sy * 0.15 + time * 4, 403) * 0.3;
-        const hot = below < 10 ? 0.08 : 0;
+        // tongues of flame: noise stretched upward and racing up, leaning in gusts
+        const gust = Math.sin(time * 0.9) * 0.6 + Math.sin(time * 2.3) * 0.25;
+        const lean = sx * 0.16 + (sy * 0.06) * gust;
+        const n = vnoise(lean, sy * 0.06 + time * 2.2, 401) * 0.7 + vnoise(sx * 0.4 + gust, sy * 0.15 + time * 5, 403) * 0.3;
+        const hot = below < 10 ? 0.08 + 0.04 * Math.sin(time * 7 + sx * 0.3) : 0;
         if (n + hot > 0.62) mixTo(n + hot > 0.74 ? HI : LIGHT, A * Math.min(1, (n + hot - 0.62) * 5));
         else if (n < 0.38) mixTo(DARK, A * (0.38 - n) * 2);
-        // sparks: a bright point with a curling tail
-        if (cellDot(sx, sy, 9, time * 14, A * 0.4, 409, 2)) {
-          const cx = Math.round(Math.sin(time * 6 + dH * 20 + dY * 0.9) * 1);
+        // sparks: a bright point with a curling tail, blown with the gusts
+        const sc = time * 14, wx = sx - Math.round(gust * 2) + sway(sy, 9, sc, 1, 4, time, 4);
+        if (cellDot(wx, sy, 9, sc, A * 0.4, 409, 2)) {
+          const cx = Math.round(Math.sin(time * 6 + dH * 20 + dY * 0.9) * 1 + gust * dY * 0.4);
           if (dY === 0 && dX === 0) mixTo(HI, 0.95);
           else if (dY > 0 && dY <= 2 && dX === cx) mixTo(LIGHT, 0.7);
         }
         break;
       }
       case K.frost: {
-        // a frosty pallor, rime at the edges, flakes drifting down and swaying
-        mixTo(LIGHT, A * (edge ? 0.8 : 0.25));
-        if (cellDot(sx, sy, 12, -time * 2, A * 0.75, 503, 4)) {
-          const sw = Math.round(Math.sin(time * 1.1 + dH * 9) * 1.5);
-          const ax = Math.abs(dX - sw), ay = Math.abs(dY), R = dH > 0.5 ? 3 : 2;
-          const arm = (ax === 0 || ay === 0 || ax === ay) && Math.max(ax, ay) <= R;
+        // a frosty pallor, rime at the edges shimmering, flakes turning and
+        // tumbling down in gusts
+        const shimmer = 0.5 + 0.5 * Math.sin(time * 2 + sx * 0.2 + sy * 0.1);
+        mixTo(LIGHT, A * (edge ? 0.65 + 0.3 * shimmer : 0.2 + 0.1 * shimmer));
+        const sc = -time * 3.2, wx = sx + sway(sy, 12, sc, 2.5, 1.6, time, 5);
+        if (cellDot(wx, sy, 12, sc, A * 0.75, 503, 4)) {
+          const ax = Math.abs(dX), ay = Math.abs(dY), R = dH > 0.5 ? 3 : 2;
+          // turning: the six arms swap between upright and leaning
+          const tilt = Math.sin(time * (1 + dH) + dH * 30) > 0;
+          const arm = tilt ? (ax === 0 || ay === 0 || ax === ay) && Math.max(ax, ay) <= R : (ax === ay || ay === 0) && Math.max(ax, ay) <= R;
           const tip = R === 3 && ((ax === 1 && ay === 3) || (ax === 3 && ay === 1));
-          if (arm || tip) mixTo(ax + ay === 0 || Math.max(ax, ay) === R ? HI : LIGHT, 0.9);
+          if (arm || (tilt && tip)) mixTo(ax + ay === 0 || Math.max(ax, ay) === R ? HI : LIGHT, 0.9);
         }
-        if (cellDot(sx, sy, 6, -time * 3, A * 0.25, 509, 0) && dX === 0 && dY === 0) mixTo(HI, 0.7);
+        if (cellDot(sx + sway(sy, 6, -time * 3.5, 1, 1.4, time, 6), sy, 6, -time * 3.5, A * 0.25, 509, 1) && dX === 0 && dY === 0) mixTo(HI, 0.5 + 0.3 * shimmer);
         break;
       }
       case K.acidity: {
-        // a dense fizz: fine light and dark specks racing up
-        if (cellDot(sx, sy, 3, time * 18, A * 0.5, 601, 0) && dX === 0 && dY === 0) mixTo(dH < 0.65 ? HI : DARK, 0.75);
-        if (cellDot(sx, sy, 4, time * 11, A * 0.35, 603, 0) && dX === 0 && dY === 0) mixTo(LIGHT, 0.6);
+        // a fizz that comes in waves: fine specks and bubbles wobbling up,
+        // the bubbles swelling as they rise
+        const wave = 0.95 + 0.35 * Math.sin(time * 2.4 - sy * 0.08);
+        const s1 = time * 20, x1 = sx + sway(sy, 3, s1, 1, 6, time, 7);
+        if (cellDot(x1, sy, 3, s1, A * 0.5 * wave, 601, 0) && dX === 0 && dY === 0) mixTo(dH < 0.65 ? HI : DARK, 0.75);
+        if (cellDot(sx, sy, 4, time * 12, A * 0.35 * wave, 605, 0) && dX === 0 && dY === 0) mixTo(LIGHT, 0.6);
+        const s2 = time * 9, x2 = sx + sway(sy, 7, s2, 1, 5, time, 8);
+        if (cellDot(x2, sy, 7, s2, A * 0.35 * wave, 603, 2)) {
+          const big = Math.max(0, Math.min(1, 1 - below / 60)) > 0.5 || dH > 0.7;
+          const d = Math.abs(dX) + Math.abs(dY);
+          if (big ? d === 1 || (d === 2 && Math.abs(dX) === 1) : d === 0) mixTo(LIGHT, 0.7);
+        }
         // popping at the surface
-        if (below <= 1 && cellHash(sx, Math.floor(time * 10), 607) < A * 0.45) mixTo(HI, 0.8);
+        if (below <= 1 && cellHash(sx, Math.floor(time * 12), 607) < A * 0.45 * wave) mixTo(HI, 0.8);
         break;
       }
       case K.toxicity: {
         // murky blotches roiling
-        const n = vnoise(sx * 0.07 + time * 0.12, sy * 0.08 - time * 0.2, 701) * 0.75 + vnoise(sx * 0.2 - time * 0.3, sy * 0.2, 703) * 0.25;
+        const n = vnoise(sx * 0.07 + time * 0.2, sy * 0.08 - time * 0.3, 701) * 0.75 + vnoise(sx * 0.2 - time * 0.45, sy * 0.2 + Math.sin(time) * 0.5, 703) * 0.25;
         if (n > 0.52) mixTo(DEEP, A * Math.min(0.75, (n - 0.52) * 2.6));
         else if (n < 0.35) mixTo(LIGHT, A * (0.35 - n) * 1.8);
-        // ringed bubbles of a few sizes rising slowly, wobbling: a dark rim,
-        // a pale glint at the upper left
-        if (cellDot(sx, sy, 15, time * 2.2, A * 0.4, 709, 5)) {
-          const R = 2.3 + dH * 2.2 + Math.sin(time * 3 + dH * 30) * 0.3;
+        // ringed bubbles rising and wobbling, swelling until they burst: a
+        // dark rim, a pale glint at the upper left, a scatter of droplets
+        const sc = time * 2.6, wx = sx + sway(sy, 15, sc, 1.5, 1.1, time, 9);
+        if (cellDot(wx, sy, 15, sc, A * 0.4, 709, 6)) {
+          const life = (time * (0.3 + dH * 0.3) + dH * 7) % 1;
           const d = Math.hypot(dX, dY);
-          if (d < R + 0.5) {
-            if (d > R - 0.6) mixTo(DEEP, 0.85);
-            else if (dX < 0 && dY < 0 && d > R * 0.3 && d < R * 0.7) mixTo(HI, 0.85);
-            else mixTo(DARK, 0.4);
+          if (life < 0.85) {
+            const R = 1.5 + life * 4 + Math.sin(time * 3 + dH * 30) * 0.3;
+            if (d < R + 0.5) {
+              if (d > R - 0.6) mixTo(DEEP, 0.85);
+              else if (dX < 0 && dY < 0 && d > R * 0.3 && d < R * 0.7) mixTo(HI, 0.85);
+              else mixTo(DARK, 0.4);
+            }
+          } else {
+            // burst: droplets flung outward
+            const R = 5 + (life - 0.85) * 25;
+            if (Math.abs(d - R) < 0.6 && ((Math.round(Math.atan2(dY, dX) * 2.5) & 1) === 0)) mixTo(DEEP, 0.7);
           }
         }
         break;
       }
       case K.death: {
-        // dark smoke swirling: noise warped by noise, turning slowly
-        const wx = vnoise(sx * 0.05 + time * 0.1, sy * 0.05, 801) * 6, wy = vnoise(sx * 0.05, sy * 0.05 - time * 0.12, 803) * 6;
-        const n = vnoise(sx * 0.06 + wx, sy * 0.06 + wy - time * 0.15, 805);
+        // dark smoke swirling: noise warped by noise, turning
+        const wx = vnoise(sx * 0.05 + time * 0.18, sy * 0.05, 801) * 6, wy = vnoise(sx * 0.05, sy * 0.05 - time * 0.2, 803) * 6;
+        const n = vnoise(sx * 0.06 + wx + Math.sin(time * 0.3) * 1.5, sy * 0.06 + wy - time * 0.25, 805);
         if (n > 0.5) mixTo(DEEP, A * Math.min(0.85, (n - 0.5) * 2.4));
         else if (n < 0.3) mixTo(LIGHT, A * (0.3 - n) * 1.2);
-        // black specks sinking, the odd pale one
-        if (cellDot(sx, sy, 8, -time * 3.5, A * 0.4, 809, 1)) {
+        // black specks spiralling down, the odd pale one
+        const sc = -time * 3.5;
+        const row = Math.floor((sy + Math.floor(sc)) / 8);
+        const spin = Math.round(Math.cos(time * 2.2 + row * 1.3) * 2);
+        if (cellDot(sx + spin, sy, 8, sc, A * 0.4, 809, 2)) {
           if (dX === 0 && dY === 0) mixTo(dH < 0.8 ? INK : HI, 0.9);
-          else if (dH < 0.25 && dX === 1 && dY === 0) mixTo(INK, 0.8);
+          else if (dH < 0.25 && dX === (spin > 0 ? -1 : 1) && dY === 0) mixTo(INK, 0.8);
         }
         break;
       }

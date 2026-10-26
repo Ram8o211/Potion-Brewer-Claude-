@@ -220,6 +220,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 .tools .btn .lbl { display: block; font-size: 12px; line-height: 1; white-space: nowrap; }
 .tools .sep { flex: none; width: 2px; background: var(--wood0); margin: 4px 2px; }
 .tools .acts { display: flex; gap: 4px; }
+.tools .btn[data-act=autostir] { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 
 .shelf-wrap { grid-area: shelf; min-width: 0; padding-bottom: 2px; }
 .shelf { display: flex; gap: 5px; overflow-x: auto; overflow-y: hidden; padding: 4px 6px 6px; scrollbar-width: thin; -webkit-overflow-scrolling: touch; touch-action: pan-x; }
