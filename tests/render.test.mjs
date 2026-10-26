@@ -7,6 +7,7 @@ import { Simulation } from '../src/simulation/world.js';
 import { FluidRenderer } from '../src/rendering/fluid.js';
 import { EFFECTS, NE } from '../src/alchemy/effects.js';
 import { PIECE_ART } from '../src/rendering/pieces-art.js';
+import { dominantColour } from '../src/rendering/brew-palette.js';
 import { generateWorld, makeLookup } from '../src/materials/generator.js';
 
 // a minimal 2D context: the renderer only needs ImageData and putImageData
@@ -162,4 +163,46 @@ test('a brew takes the painted palette of the ingredient crushed into it', () =>
   const plain = pool(false), dyed = pool(true);
   // dyed by the (red) painting: much redder than the leaf's own colour makes it
   assert.ok(dyed[0] - (dyed[1] + dyed[2]) / 2 > plain[0] - (plain[1] + plain[2]) / 2 + 40, `the brew takes the painting's colour (${plain.map(Math.round)} → ${dyed.map(Math.round)})`);
+});
+
+test('a brew is dyed the dominant colour of a painting, not the mean of its textures', () => {
+  // mostly green, a few red berries, a dark outline and a pale highlight
+  const px = [];
+  for (let i = 0; i < 60; i++) px.push([0.2, 0.6 + (i % 5) * 0.04, 0.15]);
+  for (let i = 0; i < 25; i++) px.push([0.85, 0.1, 0.12]);
+  for (let i = 0; i < 20; i++) px.push([0.03, 0.03, 0.03]);
+  for (let i = 0; i < 6; i++) px.push([0.95, 0.95, 0.9]);
+  const c = dominantColour(px);
+  assert.ok(c[1] > 0.55 && c[0] < 0.3 && c[2] < 0.25, `green dominates (${c.map((v) => v.toFixed(2))})`);
+});
+
+test('drops falling into a pool cast no dark columns down through it', () => {
+  const lookup = refLookup;
+  const water = lookup('water');
+  const sim = new Simulation({ size: 'medium', lookup });
+  // a still pool, dyed so its depth shading shows…
+  for (let k = 0; k < 400; k++) sim.addParticle(water, ((k % 40) - 19.5) * 0.09, 3.6 - Math.floor(k / 40) * 0.09, PHASE.LIQUID, 20);
+  // …and a thin stream of drops above its middle
+  for (let k = 0; k < 8; k++) sim.addParticle(water, 0, 1.6 + k * 0.2, PHASE.LIQUID, 20);
+  for (let i = 0; i < sim.p.count; i++) sim.p.dirty[i] = 1;
+  sim.step();
+  const view = { scale: 60, ox: 200, oy: 20 };
+  const fr = new FluidRenderer();
+  fr.halo = false;
+  const out = fr.render(sim, view, 0);
+  assert.ok(out);
+  /** mean brightness of a column of the pool, deep below its surface @param {number} wx */
+  const col = (wx) => {
+    const x = Math.round(wx * view.scale + view.ox - out.x);
+    let sum = 0, n = 0;
+    for (let wy = 3.0; wy <= 3.4; wy += 0.02) {
+      const y = Math.round(wy * view.scale + view.oy - out.y), o = (y * fr.w + x) * 4;
+      if (fr.image.data[o + 3] < 100) continue;
+      sum += fr.image.data[o] + fr.image.data[o + 1] + fr.image.data[o + 2]; n++;
+    }
+    assert.ok(n > 5);
+    return sum / n;
+  };
+  const mid = col(0), side = (col(-0.6) + col(0.6)) / 2;
+  assert.ok(Math.abs(mid - side) < side * 0.08, `under the drops the pool is as bright as beside them (${mid.toFixed(0)} vs ${side.toFixed(0)})`);
 });
