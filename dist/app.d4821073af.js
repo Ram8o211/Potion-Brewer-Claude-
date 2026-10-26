@@ -10800,6 +10800,144 @@ return pal;
 }
 return { PIECE_ART, loadPieceArt, piecePalette };
 })();
+// src/rendering/potion-fx.js
+const __m57 = (() => {
+const { EFFECTS } = __m13;
+const K = Object.fromEntries(EFFECTS.map((e, k) => [e.key, k]));
+const COL = EFFECTS.map((e) => e.color);
+function hash01(n) {
+n = Math.imul(n ^ (n >>> 15), 0x2c1b3c6d);
+n = Math.imul(n ^ (n >>> 12), 0x297a2d39);
+n ^= n >>> 15;
+return (n >>> 0) / 4294967296;
+}
+function cellHash(cx, cy, salt) {
+return hash01(Math.imul(cx, 73856093) ^ Math.imul(cy, 19349663) ^ Math.imul(salt, 83492791));
+}
+function vnoise(x, y, salt) {
+const ix = Math.floor(x), iy = Math.floor(y);
+let fx = x - ix, fy = y - iy;
+fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy);
+const a = cellHash(ix, iy, salt), b = cellHash(ix + 1, iy, salt), c = cellHash(ix, iy + 1, salt), d = cellHash(ix + 1, iy + 1, salt);
+return (a + (b - a) * fx) * (1 - fy) + (c + (d - c) * fx) * fy;
+}
+let dX = 0, dY = 0, dH = 0;
+function cellDot(sx, sy, C, scroll, prob, salt, m) {
+if (prob <= 0) return false;
+const yy = sy + Math.floor(scroll);
+const cx = Math.floor(sx / C), cy = Math.floor(yy / C);
+const h = cellHash(cx, cy, salt);
+if (h >= prob) return false;
+dH = h / prob;
+const span = C - 2 * m;
+dX = sx - (cx * C + m + Math.floor(cellHash(cx, cy, salt + 7) * span));
+dY = yy - (cy * C + m + Math.floor(cellHash(cx, cy, salt + 13) * span));
+return true;
+}
+const fc = [0, 0, 0];
+function mixTo(c, t, l = 1) {
+fc[0] += (c[0] * l - fc[0]) * t; fc[1] += (c[1] * l - fc[1]) * t; fc[2] += (c[2] * l - fc[2]) * t;
+}
+function shade(f) { fc[0] *= f; fc[1] *= f; fc[2] *= f; }
+const IR = [0, 0, 0], GREY = [0, 0, 0];
+const WHITE = [1, 1, 1], BLACK = [0.04, 0.03, 0.06], EMBER = [1, 0.86, 0.4], ASH = [0.2, 0.18, 0.24];
+const HEART = [0b01010, 0b11111, 0b01110, 0b00100];
+function potionFx(f, o, mask, inv, sx, sy, time, below, edge) {
+for (let m = mask, k = 0; m; m >>>= 1, k++) {
+if (!(m & 1)) continue;
+const A = Math.min(1, Math.sqrt(f[o + k] * inv) * 1.3);
+if (A < 0.03) continue;
+const c = COL[k];
+switch (k) {
+case K.vitality: {
+const t = (time / 1.2) % 1;
+const beat = Math.exp(-Math.pow((t - 0.1) / 0.05, 2)) + 0.6 * Math.exp(-Math.pow((t - 0.3) / 0.05, 2));
+mixTo(c, A * (0.12 + 0.4 * beat), 1.2);
+if (cellDot(sx, sy, 9, time * 6, A * 0.5, 101, 1)) {
+const d = Math.abs(dX) + Math.abs(dY);
+if (d === 0) mixTo(WHITE, 0.75, 1); else if (d === 1) mixTo(c, 0.55, 1.3);
+}
+break;
+}
+case K.strength: {
+const wv = sy * 0.45 + Math.sin(sx * 0.06 + time * 0.5) * 2.2 + time * 0.6;
+const band = wv - Math.floor(wv / 4) * 4;
+if (band < 1) { mixTo(c, A * 0.4, 1.25); } else if (band >= 3) shade(1 - A * 0.22);
+break;
+}
+case K.love: {
+if (cellDot(sx, sy, 11, time * 4.5, A * 0.5, 211, 3)) {
+const wob = Math.round(Math.sin(time * 2 + dH * 9) * 1);
+const hx = dX + 2 - wob, hy = dY + 1;
+if (hx >= 0 && hx < 5 && hy >= 0 && hy < 4 && (HEART[hy] >> (4 - hx)) & 1) mixTo(c, 0.8, 1.2);
+}
+mixTo(c, A * 0.12);
+break;
+}
+case K.arcana: {
+mixTo(c, A * 0.1, 0.8);
+if (cellDot(sx, sy, 8, 0, A * 0.6, 307, 2)) {
+const tw = Math.max(0, Math.sin(time * (1.5 + dH * 2) + dH * 40));
+const ax = Math.abs(dX), ay = Math.abs(dY);
+if (ax === 0 && ay === 0 && tw > 0.1) mixTo(WHITE, 0.5 + 0.5 * tw, 1);
+else if (tw > 0.45 && ((ax === 0 && ay === 1) || (ay === 0 && ax === 1))) mixTo(c, 0.85, 1.5);
+else if (tw > 0.8 && ((ax === 0 && ay === 2) || (ay === 0 && ax === 2))) mixTo(c, 0.6, 1.3);
+}
+break;
+}
+case K.transformation: {
+const h = (sx * 0.05 - sy * 0.035 + time * 0.35) * 6.2832;
+IR[0] = 0.5 + 0.5 * Math.cos(h); IR[1] = 0.5 + 0.5 * Math.cos(h - 2.094); IR[2] = 0.5 + 0.5 * Math.cos(h + 2.094);
+mixTo(IR, A * 0.45, Math.max(fc[0], fc[1], fc[2], 0.25) * 1.1);
+break;
+}
+case K.fire: {
+const fl = vnoise(sx * 0.18, sy * 0.12 + time * 3, 401);
+mixTo(c, A * (0.15 + 0.45 * fl) * (below < 8 ? 1.4 : 1), 1.25);
+if (fl > 0.72) mixTo(EMBER, A * (fl - 0.72) * 2.5, 1.1);
+if (cellDot(sx, sy, 7, time * 22, A * 0.55, 409, 1) && dX === 0) {
+if (dY === 0) mixTo(EMBER, 0.95, 1.15); else if (dY === 1) mixTo(c, 0.85, 1.2); else if (dY === 2) mixTo(c, 0.45, 1);
+}
+break;
+}
+case K.frost: {
+if (edge) mixTo(WHITE, A * 0.6, 0.95);
+mixTo(c, A * 0.12);
+if (cellDot(sx, sy, 10, -time * 1.5, A * 0.6, 503, 2)) {
+const ax = Math.abs(dX), ay = Math.abs(dY);
+const flake = (ax === 0 && ay === 0) || (ax === 1 && ay === 1) || (ax === 0 && ay === 2) || (ay === 0 && ax === 2);
+if (flake) mixTo(WHITE, ax + ay === 0 ? 1 : 0.8, 1);
+}
+break;
+}
+case K.acidity: {
+if (cellDot(sx, sy, 5, time * 16, A * 0.5, 601, 0) && dX === 0 && dY === 0) mixTo(c, 0.7, 1.35);
+if (below <= 1 && cellHash(sx, Math.floor(time * 8), 607) < A * 0.4) mixTo(WHITE, 0.6, 1);
+break;
+}
+case K.toxicity: {
+const n = vnoise(sx * 0.1 + time * 0.15, sy * 0.1 - time * 0.25, 701);
+if (n > 0.5) mixTo(c, A * Math.min(1, (n - 0.5) * 2.2) * 0.7, 0.65);
+if (cellDot(sx, sy, 13, time * 2.5, A * 0.35, 709, 3)) {
+const bx = dX + 0.5, by = dY + 0.5, r2 = bx * bx + by * by;
+if (r2 < 4.4) mixTo(c, r2 > 1.6 ? 0.85 : bx < 0 && by < 0 ? 0.6 : 0.3, r2 > 1.6 ? 0.6 : 1.35);
+}
+break;
+}
+case K.death: {
+const n = vnoise(sx * 0.06 - time * 0.1, sy * 0.07 + time * 0.2, 801);
+GREY[0] = GREY[1] = GREY[2] = (fc[0] + fc[1] + fc[2]) / 3;
+mixTo(GREY, A * 0.45);
+if (n > 0.5) mixTo(BLACK, A * (n - 0.5) * 1.5);
+if (cellDot(sx, sy, 9, -time * 3, A * 0.35, 809, 1) && dX === 0 && dY === 0) mixTo(ASH, 0.8);
+mixTo(c, A * 0.08);
+break;
+}
+}
+}
+}
+return { fc, potionFx };
+})();
 // src/rendering/fluid.js
 const __m55 = (() => {
 const { PHASE, SIM } = __m24;
@@ -10807,6 +10945,7 @@ const { LOOK, piece } = __m19;
 const { PIECE_ART, loadPieceArt, piecePalette } = __m56;
 const { PIECE_CELL } = __m20;
 const { EFFECTS, NE } = __m13;
+const { potionFx, fc } = __m57;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const LS = 9;
 function hash01(n) {
@@ -11317,6 +11456,15 @@ const hh = Math.min(0.25, (temp - 70) / 400);
 r += hh; g += hh * 0.3;
 }
 r *= l; g *= l; b *= l;
+if (fxMask && !thermal) {
+const ew = emit[k * 4 + 3];
+if (ew > 0.02) {
+const edge = up <= thr || down <= thr || (x > 0 && wb[k - 1] <= thr) || (x < w - 1 && wb[k + 1] <= thr);
+fc[0] = r; fc[1] = g; fc[2] = b;
+potionFx(mfx, k * NE, fxMask, 1 / Math.max(ew, 0.6), x + bx, y + by, time, y - surf[x], edge);
+r = fc[0]; g = fc[1]; b = fc[2];
+}
+}
 R = R * (1 - a) + r * a; G = G * (1 - a) + g * a; B = B * (1 - a) + b * a;
 A = A + (1 - A) * a;
 }
@@ -11478,7 +11626,7 @@ return v < 0 ? 0 : v > 255 ? 255 : v | 0;
 return { FluidRenderer };
 })();
 // src/rendering/effects.js
-const __m57 = (() => {
+const __m58 = (() => {
 const { PAL, hex2rgb } = __m54;
 const MAX = 900;
 const FIRE_RAMP = [PAL.fire5, PAL.fire4, PAL.fire3, PAL.fire2, PAL.fire1, PAL.fire0].map(hex2rgb);
@@ -11595,7 +11743,7 @@ return { Effects };
 const __m53 = (() => {
 const { PAL, paintBackground, renderCauldron, renderLid, renderLidAside, paintHearth, makeCanvas, rgbStr, hex2rgb, drawJar, rect } = __m54;
 const { FluidRenderer } = __m55;
-const { Effects } = __m57;
+const { Effects } = __m58;
 const { COLUMN } = __m34;
 const { PHASE } = __m24;
 const { compositionEffects, dominantEffect, EFFECTS, NE } = __m13;
@@ -11991,7 +12139,7 @@ rect(ctx, x, y + h - 1, w, 1, 'rgba(0,0,0,0.4)');
 return { Renderer, drawBottle, PHASE };
 })();
 // src/rendering/portraits.js
-const __m58 = (() => {
+const __m59 = (() => {
 const { Rng } = __m6;
 const S = 32;
 const shade = (c, f) => `rgb(${Math.round(Math.min(255, c[0] * 255 * f))},${Math.round(Math.min(255, c[1] * 255 * f))},${Math.round(Math.min(255, c[2] * 255 * f))})`;
@@ -12109,7 +12257,7 @@ if (rng.chance(0.5)) P(hx - 1, 8, 2, 10, hc);
 return { drawPortrait };
 })();
 // src/rendering/wilds-atlas.js
-const __m60 = (() => {
+const __m61 = (() => {
 const ATLASES = {
 forest: {
 url: 'assets/wilds/forest.png',
@@ -12387,7 +12535,7 @@ vent: [204, 247, 44, 16],
 return { ATLASES };
 })();
 // src/rendering/meadow-atlas.js
-const __m61 = (() => {
+const __m62 = (() => {
 const ATLAS_URL = 'assets/meadow/atlas.png';
 const ATLAS_SIZE = [256, 473];
 const FRAMES = {
@@ -12466,7 +12614,7 @@ treeline: [0, 229, 256, 30],
 return { ATLAS_URL, ATLAS_SIZE, FRAMES };
 })();
 // src/rendering/growth-atlas.js
-const __m62 = (() => {
+const __m63 = (() => {
 const ATLAS_URL = 'assets/growth/atlas.png';
 const RES = 2;
 const ATLAS_SIZE = [512, 542];
@@ -12619,7 +12767,7 @@ witchear_sprout: [150, 280, 48, 34],
 return { ATLAS_URL, RES, ATLAS_SIZE, FRAMES };
 })();
 // src/rendering/ingredient-icons.js
-const __m63 = (() => {
+const __m64 = (() => {
 const ICONS_URL = 'assets/icons/ingredients.png';
 const ICONS_SIZE = /** @type {[number, number]} */ ([576, 576]);
 const ICON_FRAMES = {
@@ -12663,7 +12811,7 @@ witchear: [480, 0, 96, 96],
 return { ICONS_URL, ICONS_SIZE, ICON_FRAMES };
 })();
 // src/rendering/scenes.js
-const __m64 = (() => {
+const __m65 = (() => {
 function R(ctx, x, y, w, h, c) {
 ctx.fillStyle = c;
 ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
@@ -12876,12 +13024,12 @@ return cv;
 return { drawRaw, rawSprite };
 })();
 // src/rendering/wild-sprites.js
-const __m59 = (() => {
-const { ATLASES } = __m60;
-const FIELD = __m61;
-const GROW = __m62;
-const { ICONS_URL, ICON_FRAMES } = __m63;
-const { rawSprite } = __m64;
+const __m60 = (() => {
+const { ATLASES } = __m61;
+const FIELD = __m62;
+const GROW = __m63;
+const { ICONS_URL, ICON_FRAMES } = __m64;
+const { rawSprite } = __m65;
 class SpriteAtlas {
 constructor(url, frames, res = 1) {
 this.url = url;
@@ -13055,7 +13203,7 @@ return cv;
 return { SpriteAtlas, MEADOW, REGION_ATLAS, GATHERABLES, ICONS, GROWTH, growthFrame, CRYSTALS, glintSpots, ICON_SIZE, MIN_HIT, gatherFrameName, plantBox, hitPlant, ingredientSprite };
 })();
 // src/game/journal.js
-const __m65 = (() => {
+const __m66 = (() => {
 function processEvent(state, e) {
 const entries = [];
 const achievements = [];
@@ -13168,7 +13316,7 @@ return { entries, achievements };
 return { processEvent };
 })();
 // src/game/autobrew.js
-const __m66 = (() => {
+const __m67 = (() => {
 const { PHASE, SIM } = __m24;
 const { MAX_SPECIES } = __m18;
 function condensedCount(sim) {
@@ -13452,7 +13600,7 @@ return t / Math.max(1, sim.p.count);
 return { condensedCount, stageGoal, AutoBrewer, runPlanHeadless, speciesFraction };
 })();
 // src/game/mechanics.js
-const __m68 = (() => {
+const __m69 = (() => {
 const MECHANICS = [
 { id: 'formulation', name: 'Formulation and neutralisation', role: 'core', stage: 'formulation', rank: 0,
 decision: 'Which natural ingredients, in what proportions, to carry the wanted effects and cancel their side effects.',
@@ -13538,19 +13686,19 @@ const SANDBOX_CONTROLS = ['skimmer', 'alembic', 'heatmap', 'readouts'];
 return { MECHANICS, MECHANIC_BY_ID, IMMERSION, SANDBOX_CONTROLS };
 })();
 // src/ui/panels.js
-const __m67 = (() => {
+const __m68 = (() => {
 const { recipeConfidence, CONFIDENCE_TEXT, describeStep } = __m49;
-const { MECHANIC_BY_ID } = __m68;
+const { MECHANIC_BY_ID } = __m69;
 const { evidenceRank } = __m27;
 const { h, btn, modal, toast, coins, starsText, confirmDialog, clear } = __m2;
 const { icon } = __m3;
-const { drawPortrait } = __m58;
+const { drawPortrait } = __m59;
 const { drawJar } = __m54;
 const { EQUIPMENT, RANKS } = __m26;
 const { ACHIEVEMENTS } = __m5;
 const { viscosityClass, densityWord, evennessWord } = __m45;
 const { EFFECTS, EFFECT_BY_KEY, EFFECT_KEYS, dominantEffect } = __m13;
-const { ingredientSprite } = __m59;
+const { ingredientSprite } = __m60;
 const { compatFactor } = __m14;
 const { describeColor, rgbToHex } = __m8;
 const { SIM } = __m24;
@@ -14122,10 +14270,10 @@ h('div', { class: 'small muted credits', text: 'The Alchemist’s Shop — all a
 return { jarCanvas, fxChips, openShop, openIngredient, openHint, openBottleSize, showDaySummary, showAnalysis, openRecipes, renderRecipes, openJournal, renderJournal, openPause, openReceiver, openHelp, openSettings };
 })();
 // src/ui/trade.js
-const __m69 = (() => {
+const __m70 = (() => {
 const { h, btn, modal, toast, coins, clear, starsText } = __m2;
 const { icon } = __m3;
-const { drawPortrait } = __m58;
+const { drawPortrait } = __m59;
 const { audio } = __m4;
 const { EFFECTS, EFFECT_BY_KEY } = __m13;
 const { draftLabel, openNegotiation: beginNegotiation, proposePrice, acceptOffer, relevantEffects, trustReport, editClaim, proofGaps, claimSigma, claimStars, labelStars, MAX_STARS } = __m46;
@@ -14344,7 +14492,7 @@ return `${n === null ? '' : starsText(n, MAX_STARS) + ' '}${claimSummary(label.c
 return { openIdentify, openNegotiation, showDeal, followUpCard, claimSummary, accuracyTitle, labelLine, EFFECT_BY_KEY };
 })();
 // src/ui/tutorial.js
-const __m70 = (() => {
+const __m71 = (() => {
 const { h, btn, placeToasts } = __m2;
 const { PHASE } = __m24;
 const { TUTORIAL_HERBS } = __m16;
@@ -14491,10 +14639,10 @@ if (t && t !== this.target) { if (this.target) this.target.classList.remove('hig
 return { Tutorial };
 })();
 // src/ui/views/counter.js
-const __m71 = (() => {
+const __m72 = (() => {
 const { h, btn, clear, coins, confirmDialog, starsText } = __m2;
 const { icon } = __m3;
-const { drawPortrait } = __m58;
+const { drawPortrait } = __m59;
 const { drawBottle } = __m53;
 const { PROPERTY_LABELS, scoreRequirement } = __m23;
 const { techniqueById } = __m16;
@@ -14502,10 +14650,10 @@ const { EFFECT_INDEX, NE } = __m13;
 const { EFFECT_BY_KEY } = __m13;
 const { missingEffects, summarize, requirementEvidence } = __m27;
 const { labelStars, MAX_STARS } = __m46;
-const trade = __m69;
+const trade = __m70;
 const { describeColor, rgbToHex } = __m8;
 const { viscosityClass } = __m45;
-const panels = __m67;
+const panels = __m68;
 const { shortName } = __m22;
 class CounterView {
 constructor(lab) {
@@ -14699,7 +14847,7 @@ unseen ? h('span', { class: 'muted', text: ` ${seen.length ? '· ' : ''}${unseen
 return { CounterView };
 })();
 // src/rendering/backdrops-ground.js
-const __m74 = (() => {
+const __m75 = (() => {
 const GROUND = {
 meadow: [
 [],
@@ -15581,10 +15729,10 @@ crags: [
 return { GROUND };
 })();
 // src/rendering/regions.js
-const __m73 = (() => {
+const __m74 = (() => {
 const { Rng } = __m6;
-const { SpriteAtlas, MEADOW } = __m59;
-const { GROUND } = __m74;
+const { SpriteAtlas, MEADOW } = __m60;
+const { GROUND } = __m75;
 const SCENE_W = 256;
 const SCENE_H = 144;
 const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
@@ -16149,16 +16297,16 @@ if (!BACKDROPS.quarry.ready) R(ctx, 24, 56, 3, 5, `rgba(255,243,176,${flick.toFi
 return { SCENE_W, SCENE_H, BACKDROPS, GROUND_TOP, PlantGround, paintRegion, animateRegion };
 })();
 // src/ui/views/wilds.js
-const __m72 = (() => {
+const __m73 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
 const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, marksIn, DAY_PART_NAME } = __m29;
 const { equipmentById } = __m26;
 const { RANKS } = __m26;
-const { drawRaw } = __m64;
-const { paintRegion, animateRegion, PlantGround, BACKDROPS, SCENE_W, SCENE_H } = __m73;
-const { GATHERABLES, GROWTH, CRYSTALS, REGION_ATLAS, growthFrame, glintSpots, plantBox, hitPlant, ingredientSprite } = __m59;
+const { drawRaw } = __m65;
+const { paintRegion, animateRegion, PlantGround, BACKDROPS, SCENE_W, SCENE_H } = __m74;
+const { GATHERABLES, GROWTH, CRYSTALS, REGION_ATLAS, growthFrame, glintSpots, plantBox, hitPlant, ingredientSprite } = __m60;
 const { EFFECT_BY_KEY } = __m13;
 function sparkle(ctx, x, y, u) {
 const q = 0.5, L = [1, 2, 4, 6, 4, 2, 1][Math.min(6, Math.floor(u * 7))] * q;
@@ -16525,7 +16673,7 @@ this.grow();
 return { WildsView };
 })();
 // src/rendering/rabbit.js
-const __m76 = (() => {
+const __m77 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m54;
 const { RABBIT_MARKS } = __m28;
@@ -17421,10 +17569,10 @@ ctx.fillRect(fx, fy, RABBIT_W, RABBIT_H);
 return { RABBIT_W, RABBIT_H, rabbitLevels, rabbitPose, rabbitPace, rabbitAnchors, rabbitSpriteKey, drawRabbitSprite, clearRabbitSprites, drawRabbit };
 })();
 // src/rendering/hutch-scene.js
-const __m78 = (() => {
+const __m79 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m54;
-const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m76;
+const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m77;
 const HUTCH_W = 224;
 const HUTCH_H = 88;
 const HUTCH_BODIES = 3;
@@ -17842,13 +17990,13 @@ ctx.drawImage(this.bg, 0, 0);
 return { HUTCH_W, HUTCH_H, HUTCH_BODIES, paintHutch, paintHutchFront, HutchScene };
 })();
 // src/ui/views/hutch.js
-const __m77 = (() => {
+const __m78 = (() => {
 const { readingSteadiness } = __m27;
 const { h, btn, clear, toast, modal, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { drawRabbit, RABBIT_W, RABBIT_H } = __m76;
-const { HutchScene, HUTCH_W, HUTCH_H } = __m78;
+const { drawRabbit, RABBIT_W, RABBIT_H } = __m77;
+const { HutchScene, HUTCH_W, HUTCH_H } = __m79;
 const { EFFECT_BY_KEY } = __m13;
 const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral, RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE, BURNS } = __m28;
 const { PURGE_BREW_TIME } = __m5;
@@ -18177,7 +18325,7 @@ if (this._live >= 0.25) { this._live = 0; this.live(); }
 return { CHANNELS, HutchPanel };
 })();
 // src/ui/views/trials.js
-const __m75 = (() => {
+const __m76 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
@@ -18189,9 +18337,9 @@ const { summarize, addSamples, EVIDENCE_TEXT, evidenceRank, requirementEvidence 
 const { evidenceOf } = __m46;
 const { shortName } = __m22;
 const LEVEL_SHORT = { preliminary: '1 reading', repeated: 'repeated', corroborated: 'corroborated', certified: 'certified' };
-const { drawRabbit } = __m76;
+const { drawRabbit } = __m77;
 const { focusRabbit, findRabbit, rabbitSnap, decodeSnap, lookFromSeed, RABBIT_MARKS } = __m28;
-const { HutchPanel } = __m77;
+const { HutchPanel } = __m78;
 const REPLAY_T = 3.2;
 class TrialsView {
 constructor(lab) {
@@ -18568,11 +18716,11 @@ return `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2
 return { TrialsView, EFFECTS, EFFECT_INDEX };
 })();
 // src/ui/views/book.js
-const __m79 = (() => {
+const __m80 = (() => {
 const { h, btn, clear } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const panels = __m67;
+const panels = __m68;
 const { SUBJECT_BY_ID } = __m27;
 const { EFFECTS, EFFECT_BY_KEY, EFFECT_KEYS } = __m13;
 const { rgbToHex } = __m8;
@@ -18680,14 +18828,14 @@ const { clampToInterior } = __m42;
 const { MAX_SPECIES } = __m18;
 const { compatFactor } = __m14;
 const { Renderer } = __m53;
-const { drawPortrait } = __m58;
+const { drawPortrait } = __m59;
 const { drawJar } = __m54;
-const { ingredientSprite } = __m59;
+const { ingredientSprite } = __m60;
 const { measureParticles, tapSelection, probeSelection, viscosityClass, densityWord } = __m45;
 const { scoreRequirement, PROPERTY_LABELS } = __m23;
-const { processEvent } = __m65;
+const { processEvent } = __m66;
 const { saveGame, saveJSON, KEYS } = __m50;
-const { AutoBrewer, condensedCount } = __m66;
+const { AutoBrewer, condensedCount } = __m67;
 const { traceSample, buildProcedure, procedureLimits, matchRecipe, compareRecipe, checkReproduction, TRACE_DT } = __m49;
 const { proofGaps, draftLabel, applyTrials, evidenceOf } = __m46;
 const { RANKS } = __m26;
@@ -18701,13 +18849,13 @@ const { describeColor, rgbToHex } = __m8;
 const { h, btn, clear, toast, coins, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const panels = __m67;
-const trade = __m69;
-const { Tutorial } = __m70;
-const { CounterView } = __m71;
-const { WildsView } = __m72;
-const { TrialsView } = __m75;
-const { BookView } = __m79;
+const panels = __m68;
+const trade = __m70;
+const { Tutorial } = __m71;
+const { CounterView } = __m72;
+const { WildsView } = __m73;
+const { TrialsView } = __m76;
+const { BookView } = __m80;
 const { shortName } = __m22;
 const REQ_ICON = { temperature: 'thermo', quantity: 'flask', purity: 'pure' };
 const TOOL_DEFS = [
@@ -20413,7 +20561,7 @@ void dominantEffect;
 return { VIEWS, LabScreen };
 })();
 // src/materials/reference.js
-const __m81 = (() => {
+const __m82 = (() => {
 const { completeMaterial } = __m9;
 const REF = {};
 const add = (d) => (REF[d.id] = completeMaterial(d));
@@ -20451,11 +20599,11 @@ const refLookup = (id) => REF[id];
 return { REF, refLookup };
 })();
 // src/ui/menu.js
-const __m80 = (() => {
+const __m81 = (() => {
 const { h, btn } = __m2;
 const { Renderer } = __m53;
 const { Simulation } = __m31;
-const { REF, refLookup } = __m81;
+const { REF, refLookup } = __m82;
 const { hasSave, loadGame } = __m50;
 const { audio } = __m4;
 class MenuScreen {
@@ -20544,8 +20692,8 @@ const { sandboxIngredients } = __m7;
 const { EQUIPMENT } = __m26;
 const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m50;
 const { LabScreen } = __m51;
-const { MenuScreen } = __m80;
-const { openSettings, openHelp } = __m67;
+const { MenuScreen } = __m81;
+const { openSettings, openHelp } = __m68;
 const { Rng } = __m6;
 const { normalizeTrials } = __m27;
 const DEFAULT_SETTINGS = { master: 0.8, sfx: 0.8, music: 0.35, musicOn: true, muted: false, quality: 'auto', showFps: false };
@@ -20661,7 +20809,7 @@ openHelp();
 return { App, icon };
 })();
 // src/ui/textures.js
-const __m82 = (() => {
+const __m83 = (() => {
 const { Rng } = __m6;
 function texture(w, h, paint) {
 const cv = document.createElement('canvas');
@@ -20705,7 +20853,7 @@ return { installTextures };
 // src/main.js
 const __m0 = (() => {
 const { App } = __m1;
-const { installTextures } = __m82;
+const { installTextures } = __m83;
 installTextures();
 const root = document.getElementById('app');
 const app = new App(root);

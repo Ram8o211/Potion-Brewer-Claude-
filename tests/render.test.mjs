@@ -79,3 +79,42 @@ test('mixed magic glows in each effect\'s own colour, in proportion to its share
   assert.ok(red + blue > 600, 'the pool glows');
   assert.ok(share > 0.6 && share < 0.8, `vitality's colour covers its share of the glow (${share.toFixed(2)})`);
 });
+
+test('each effect leaves its own peculiar mark on a brew', () => {
+  let width = 0;
+  /** @param {number} e effect index, -1 for none @param {number} t */
+  const draw = (e, t) => {
+    const sim = new Simulation({ size: 'medium', lookup: refLookup });
+    for (let k = 0; k < 144; k++) sim.addParticle(refLookup('water'), ((k % 12) - 5.5) * 0.09, 3.2 + (Math.floor(k / 12) - 5.5) * 0.09, PHASE.LIQUID, 20);
+    const p = sim.p;
+    if (e >= 0) for (let i = 0; i < p.count; i++) { p.auraFx.fill(0, i * NE, (i + 1) * NE); p.auraFx[i * NE + e] = 0.6; p.auraI[i] = 0.6; }
+    const fr = new FluidRenderer();
+    fr.halo = false;
+    const out = fr.render(sim, { scale: 60, ox: 200, oy: 20 }, t);
+    assert.ok(out);
+    width = fr.w;
+    return Uint8ClampedArray.from(fr.image.data);
+  };
+  const plain = draw(-1, 1);
+  const looks = EFFECTS.map((_, e) => draw(e, 1));
+  /** mean absolute difference between two renders @param {Uint8ClampedArray} a @param {Uint8ClampedArray} b */
+  const diff = (a, b) => { let s = 0; for (let i = 0; i < a.length; i++) s += Math.abs(a[i] - b[i]); return s / a.length; };
+  /** how patterned a render is: mean colour step between neighbouring opaque pixels @param {Uint8ClampedArray} a @param {number} w */
+  const texture = (a, w) => {
+    let s = 0, n = 0;
+    for (let i = 0; i + 4 * w + 4 < a.length; i += 4) {
+      if (a[i + 3] < 200 || a[i + 7] < 200 || a[i + 4 * w + 3] < 200) continue;
+      for (let c = 0; c < 3; c++) s += Math.abs(a[i + c] - a[i + 4 + c]) + Math.abs(a[i + c] - a[i + 4 * w + c]);
+      n++;
+    }
+    return s / n;
+  };
+  for (let e = 0; e < NE; e++) {
+    assert.ok(diff(looks[e], plain) > 3, `${EFFECTS[e].key} changes the brew`);
+    for (let f = 0; f < e; f++) assert.ok(diff(looks[e], looks[f]) > 2, `${EFFECTS[e].key} looks unlike ${EFFECTS[f].key}`);
+  }
+  // patterns, not just a tint: the brew is more varied than plain water
+  const base = texture(plain, width);
+  const varied = EFFECTS.filter((_, e) => texture(looks[e], width) > base * 1.3).length;
+  assert.equal(varied, NE, `every effect draws a pattern (${varied}/${NE})`);
+});

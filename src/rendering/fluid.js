@@ -17,6 +17,9 @@
 //     wild ingredient's object is painted from the piece it was poured as
 //     (one of its four in the piece atlas, rendering/pieces-art.js), turning
 //     with it and eaten away particle by particle;
+//   • every effect a brew carries shows in it its own way, as strong as
+//     its share there: hearts for love, embers for fire, snowflakes for
+//     frost, a fizz for acid… (potion-fx.js);
 //   • liquids have depth: light crosses more of the brew the deeper it is,
 //     so the colour deepens and saturates downward, channel by channel
 //     (Beer–Lambert), under a bright thin surface layer and its meniscus;
@@ -37,6 +40,7 @@ import { LOOK, piece } from '../materials/shapes.js';
 import { PIECE_ART, loadPieceArt, piecePalette } from './pieces-art.js';
 import { PIECE_CELL } from '../materials/pieces.js';
 import { EFFECTS, NE } from '../alchemy/effects.js';
+import { potionFx, fc } from './potion-fx.js';
 
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 /** Interleaved liquid accumulator stride: weight, r, g, b, opacity, paste, texture, temperature, slush. */
@@ -644,6 +648,16 @@ export class FluidRenderer {
             r += hh; g += hh * 0.3;
           }
           r *= l; g *= l; b *= l;
+          // each effect the brew carries leaves its own mark here (potion-fx.js)
+          if (fxMask && !thermal) {
+            const ew = emit[k * 4 + 3];
+            if (ew > 0.02) {
+              const edge = up <= thr || down <= thr || (x > 0 && wb[k - 1] <= thr) || (x < w - 1 && wb[k + 1] <= thr);
+              fc[0] = r; fc[1] = g; fc[2] = b;
+              potionFx(mfx, k * NE, fxMask, 1 / Math.max(ew, 0.6), x + bx, y + by, time, y - surf[x], edge);
+              r = fc[0]; g = fc[1]; b = fc[2];
+            }
+          }
           R = R * (1 - a) + r * a; G = G * (1 - a) + g * a; B = B * (1 - a) + b * a;
           A = A + (1 - A) * a;
         }
