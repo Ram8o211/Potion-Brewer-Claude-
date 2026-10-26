@@ -8,9 +8,6 @@ import { drawRabbit, rabbitAnchors, RABBIT_W, RABBIT_H } from '../src/rendering/
 import { HutchScene, HUTCH_W, HUTCH_H } from '../src/rendering/hutch-scene.js';
 import { defaultSnap, RABBIT_MARKS, TRAITS, TRAIT_EXCLUSIVE, rollLook } from '../src/game/colony.js';
 import { Rng } from '../src/core/rng.js';
-import { rabbitFrame, ATLAS_CHANNELS } from '../src/rendering/rabbit-sprites.js';
-import { ATLAS_URL, ATLAS_SIZE, FRAMES } from '../src/rendering/rabbit-atlas.js';
-import fs from 'node:fs';
 
 /** A context that records what is drawn. */
 function stub() {
@@ -120,47 +117,32 @@ test('the hutch: deterministic behaviour, hit-testing, nothing mutated, any numb
   for (const n of [0, 1]) assert.doesNotThrow(() => run(entries.slice(0, n)));
 });
 
-test('the painted rabbit atlas: its frames lie in the sheet, each one a 48 × 34 rabbit-frame top', () => {
-  const png = fs.readFileSync(new URL('../' + ATLAS_URL, import.meta.url));
-  assert.equal(png.toString('ascii', 1, 4), 'PNG');
-  assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], ATLAS_SIZE, 'IHDR size');
-  for (const [name, [x, y, w, h]] of Object.entries(FRAMES)) {
-    assert.ok(x >= 0 && y >= 0 && x + w <= ATLAS_SIZE[0] && y + h <= ATLAS_SIZE[1], `${name} lies inside the sheet`);
-    assert.deepEqual([w, h], [RABBIT_W, 34], `${name} fills the frame above the straw`);
+test('the sheet poses: standing, sitting up, leaping, grazing, startled and lying dead, each its own drawing inside the frame', () => {
+  const poses = {
+    idle: draw(look, snap(), 1.3, 0, { hop: false }),
+    rear: draw(look, snap(), 1.3, 0, { hop: false, pose: 'rear' }),
+    hop: draw(look, snap(), 1.3, 0, { hop: false, lift: 3 }),
+    eat: draw(look, snap(), 1.3, 0, { hop: false, pose: 'eat' }),
+    hurt: draw(look, snap({ hp: 2 }), 1.3, 0, { hop: false }),
+    dead: draw(look, snap({ alive: false, hp: 3, cause: 'age' }), 1.3),
+  };
+  const seen = new Set();
+  for (const [name, calls] of Object.entries(poses)) {
+    assert.ok(inFrame(calls), name);
+    const s = JSON.stringify(calls);
+    assert.ok(!seen.has(s), `${name} differs from the others`);
+    seen.add(s);
   }
-  for (const pre of ['', 'kit_']) {
-    for (const ch of ATLAS_CHANNELS) {
-      assert.ok(FRAMES[`${pre}${ch}_dead`], `${pre}${ch} has a death`);
-      for (let lv = 1; lv < 4; lv++) for (const i of [0, 1]) assert.ok(FRAMES[`${pre}${ch}_${lv}_${i}`], `${pre}${ch} level ${lv}`);
-    }
-    for (let i = 0; i < 4; i++) assert.ok(FRAMES[`${pre}idle_${i}`] && FRAMES[`${pre}hop_${i}`], `${pre}idle and hop cycles`);
-  }
-});
-
-test('the atlas frame follows the rabbit: its strongest painted effect, its stage, its death; procedural where the sheet has no art', () => {
-  const at = (sn, o = {}) => rabbitFrame(look, sn, { pose: 'idle', t: 0.3, ...o });
-  assert.equal(at(snap({ L: { fire: 2, love: 3 } })).name.slice(0, 7), 'love_3_');
-  assert.equal(at(snap({ L: { fire: 3, love: 3 } })).channel, 'fire', 'fire wins a tie');
-  assert.match(at(snap({ L: { strength: 1 }, stage: 'kit' })).name, /^kit_strength_1_[01]$/);
-  assert.equal(at(snap({ L: { vitality: 3 } })).channel, null, 'a channel without art keeps its procedural overlay');
-  assert.equal(at(snap()).name, 'white', 'a solid coat at rest');
-  assert.match(rabbitFrame({ ...look, pattern: 'spotted' }, snap(), { pose: 'idle', t: 0.3 }).name, /^idle_[0-3]$/);
-  assert.match(at(snap(), { air: true }).name, /^hop_[0-3]$/);
-  assert.equal(at(snap({ alive: false, cause: 'fire' }), { pose: 'dead' }).name, 'fire_dead');
-  assert.equal(at(snap({ alive: false, cause: 'poison' }), { pose: 'dead' }).name, 'toxicity_dead');
-  assert.equal(at(snap({ alive: false, cause: 'frost' }), { pose: 'dead' }).name, 'dead');
-  assert.equal(at(snap({ L: { toxicity: 3 } }), { pose: 'sick' }).channel, 'toxicity');
-  assert.equal(at(snap({ hp: 2 }), { pose: 'sick' }), null, 'a slump without venom is procedural');
-  assert.equal(at(snap({ traits: ['horns'] })), null, 'grown traits are procedural');
-  assert.equal(at(snap({ L: { frost: 3 } })), null, 'frozen solid is procedural');
-  for (const pose of ['loaf', 'rear', 'flop', 'collapse']) assert.equal(at(snap(), { pose }), null, pose);
-  // every frame it can name exists, for any rabbit at any time
-  for (let i = 0; i < 200; i++) {
-    const r = new Rng('frames-' + i), lk = rollLook(r);
-    const sn = snap({ L: Object.fromEntries(RABBIT_MARKS.map((k) => [k, r.int(0, 3) * (r.chance(0.3) ? 1 : 0)])), stage: r.chance(0.3) ? 'kit' : 'adult' });
-    for (const o of [{ pose: 'idle' }, { pose: 'idle', air: true }, { pose: 'sick' }, { pose: 'dead' }]) {
-      const f = rabbitFrame(lk, sn, { t: r.range(0, 10), ...o });
-      if (f) assert.ok(FRAMES[f.name], f.name);
+  assert.equal(rabbitAnchors(look, snap({ hp: 2 })).pose, 'hurt', 'badly hurt sits startled');
+  assert.equal(rabbitAnchors(look, snap({ hp: 2, L: { toxicity: 2 } })).pose, 'sick', 'poison slumps');
+  assert.ok(poses.eat.some((c) => c[5] === '#6aa84f'), 'grazing shows the grass');
+  // a harmful dose makes it flinch; a kind one does not
+  assert.notEqual(JSON.stringify(draw(look, snap(), 1.3, 0.8, { hop: false, react: ['fire'], flash: false })), JSON.stringify(draw(look, snap(), 1.3, 0.8, { hop: false, react: ['love'], flash: false })));
+  for (const pose of ['rear', 'eat', 'hop', 'hurt']) {
+    for (const sn of [snap({ stage: 'kit' }), snap({ traits: ['giant', 'antlers'], L: { strength: 3 } }), snap({ preg: true })]) {
+      assert.ok(inFrame(draw({ ...look, size: 1.15 }, sn, 0.4, 0, { pose })), `${pose} fits`);
+      const a = rabbitAnchors({ ...look, size: 1.15 }, sn, pose);
+      assert.ok(a.box.x0 >= 0 && a.box.x1 < RABBIT_W, `${pose} body fits`);
     }
   }
 });
