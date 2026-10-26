@@ -356,7 +356,7 @@ canvas.portrait.big { width: 88px; height: 88px; box-shadow: 0 0 0 var(--px) var
 .hutch-head { align-items: center; gap: 6px; }
 .hutch-head .btn { min-height: 44px; font-size: var(--fs-s); }
 .hutch-scene-wrap { width: 100%; max-width: 760px; align-self: center; }
-canvas.hutch-scene { display: block; width: 100%; height: auto; aspect-ratio: 224 / 88; image-rendering: pixelated; box-shadow: 0 0 0 var(--px) var(--ink2); touch-action: manipulation; cursor: pointer; }
+canvas.hutch-scene { display: block; width: 100%; height: auto; aspect-ratio: 224 / 92; image-rendering: pixelated; box-shadow: 0 0 0 var(--px) var(--ink2); touch-action: manipulation; cursor: pointer; }
 .rabbit-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 6px; }
 .rabbit-tile { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 44px; min-height: 44px; padding: 4px; border: none; cursor: pointer; font-family: inherit; color: var(--ink); background: var(--parch1); box-shadow: 0 0 0 1px var(--ink2); }
 .rabbit-tile canvas { width: 100%; max-width: 96px; aspect-ratio: 48 / 40; height: auto; image-rendering: pixelated; background: radial-gradient(ellipse at 50% 80%, rgba(255, 240, 210, 0.9), rgba(194, 166, 120, 0.5)); }

@@ -5,7 +5,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { drawRabbit, rabbitAnchors, RABBIT_W, RABBIT_H } from '../src/rendering/rabbit.js';
-import { HutchScene, HUTCH_W, HUTCH_H } from '../src/rendering/hutch-scene.js';
+import { HutchScene, HUTCH_W, HUTCH_H, onGround } from '../src/rendering/hutch-scene.js';
 import { defaultSnap, RABBIT_MARKS, TRAITS, TRAIT_EXCLUSIVE, rollLook } from '../src/game/colony.js';
 import { Rng } from '../src/core/rng.js';
 
@@ -106,6 +106,7 @@ test('the hutch: deterministic behaviour, hit-testing, nothing mutated, any numb
     const w = a.sc.where(e.id);
     if (w.hidden) continue;
     assert.ok(w.x >= 0 && w.x < HUTCH_W && w.y >= 0 && w.y < HUTCH_H);
+    if (e.snap.alive !== false) assert.ok(onGround(w.x, w.y), `${e.id} stands on the straw (${w.x}, ${w.y})`);
     const box = a.sc.boxOf(e.id);
     assert.ok(box);
   }
@@ -115,6 +116,18 @@ test('the hutch: deterministic behaviour, hit-testing, nothing mutated, any numb
   assert.equal(solo.hit(w0.x, w0.y - 4), 'r0');
   assert.equal(solo.hit(2, 2), null);
   for (const n of [0, 1]) assert.doesNotThrow(() => run(entries.slice(0, n)));
+  // every step of the way, the living stand on the straw: never on a bowl, in the hide box, the wall or the rail
+  const sc = new HutchScene({ canvas: () => stub().ctx, sprites: false });
+  sc.sync(entries);
+  for (let k = 0; k < 600; k++) {
+    sc.update(0.1);
+    if (k % 25 === 0) sc.attack('r2', 'r3');
+    for (const e of entries) {
+      const w = sc.where(e.id);
+      if (e.snap.alive === false || ['hop', 'zoom', 'float'].includes(w.act)) continue;
+      assert.ok(onGround(w.x, w.y), `${e.id} ${w.act} on the straw at step ${k} (${w.x}, ${w.y})`);
+    }
+  }
 });
 
 test('the sheet poses: standing, sitting up, leaping, grazing, startled and lying dead, each its own drawing inside the frame', () => {
