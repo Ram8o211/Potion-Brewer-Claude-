@@ -18122,121 +18122,95 @@ ctx.fillRect(fx, fy, RABBIT_W, RABBIT_H);
 }
 return { RABBIT_W, RABBIT_H, rabbitLevels, rabbitPose, rabbitPace, rabbitAnchors, rabbitSpriteKey, drawRabbitSprite, clearRabbitSprites, drawRabbit };
 })();
+// src/rendering/hutch-ground.js
+const __m81 = (() => {
+const GROUND_Y0 = 56;
+const GROUND = [
+[[18,156]],
+[[18,45],[74,156]],
+[[18,45],[74,156]],
+[[18,45],[74,156]],
+[[18,45],[74,156]],
+[[18,45],[74,156]],
+[[18,45],[74,156]],
+[[18,45],[102,156]],
+[[18,45],[102,209]],
+[[18,45],[102,209]],
+[[18,45],[102,209]],
+[[18,45],[102,209]],
+[[18,45],[102,209]],
+[[18,45],[102,209]],
+[[18,45],[102,209]],
+[[18,73],[102,209]],
+[[18,73],[102,209]],
+[[18,73],[102,209]],
+[[18,73],[102,209]],
+[[18,73],[102,209]],
+];
+return { GROUND_Y0, GROUND };
+})();
 // src/rendering/hutch-scene.js
 const __m80 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m54;
 const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m78;
+const { GROUND, GROUND_Y0 } = __m81;
 const HUTCH_W = 224;
-const HUTCH_H = 88;
+const HUTCH_H = 92;
 const HUTCH_BODIES = 3;
-const FLOOR_Y = 48;
-const ROAM = { x0: 30, x1: 160, y0: 57, y1: 76 };
-const RACK = { x: 40, y: 58 };
-const SLOTS = [[180, 70], [200, 74], [186, 78]];
-const RAIL_Y = 79;
+const FLOOR_Y = 54;
+const ROAM = { x0: Math.min(...GROUND.flat().map((r) => r[0])), x1: Math.max(...GROUND.flat().map((r) => r[1] - 1)), y0: GROUND_Y0, y1: GROUND_Y0 + GROUND.length - 1 };
+const RACK = { x: 30, y: 57 };
+const SLOTS = [[182, 68], [202, 71], [190, 74]];
+const RAIL_Y = 76;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 function R(ctx, x, y, w, h, c) {
 ctx.fillStyle = c;
 ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
 }
-const HW = { k: '#1a1218', p0: '#2a170c', p1: '#3a2212', p2: '#4a2c17', p3: '#5a371d', p4: '#6d4626', p5: '#8a5c33', p6: '#a8763f' };
+const HW = { k: '#1a1218', p1: '#3a2212', p3: '#5a371d', p5: '#8a5c33' };
 const STRAW = ['#7a5a24', '#9a7630', '#b8923c', '#d2ae52', '#e8cc74', '#f6e2a0'];
-function post(ctx, x, y, w, h) {
-R(ctx, x - 1, y - 1, w + 2, h + 1, HW.k);
-R(ctx, x, y, w, h, HW.p4);
-R(ctx, x, y, 1, h, HW.p6);
-R(ctx, x + w - 1, y, 1, h, HW.p2);
-R(ctx, x - 1, y - 2, w + 2, 2, HW.p5); R(ctx, x - 1, y - 2, w + 2, 1, HW.p6);
-for (let yy = y + 3; yy < y + h - 1; yy += 4) R(ctx, x + 1 + (yy % 3), yy, 1, 2, HW.p3);
+const PEN = { back: lazyImage('assets/hutch/pen.png'), front: lazyImage('assets/hutch/pen-front.png') };
+function lazyImage(url) {
+const o = {
+ready: false, img: null,
+get() {
+if (!o.img && typeof Image !== 'undefined') {
+const img = new Image();
+img.onload = () => { o.ready = true; };
+img.src = url;
+o.img = img;
+}
+return o.ready ? o.img : null;
+},
+};
+return o;
 }
 function paintHutch(ctx, o = {}) {
-const W = HUTCH_W, H = HUTCH_H, rng = new Rng('hutch-bg-2');
-for (let y = 0, i = 0; y < FLOOR_Y; y += 8, i++) {
-const tone = [HW.p2, HW.p3, HW.p2, HW.p1, HW.p3, HW.p2][i % 6];
-R(ctx, 0, y, W, 8, tone);
-R(ctx, 0, y, W, 1, i % 2 ? HW.p4 : HW.p3);
-R(ctx, 0, y + 7, W, 1, HW.p0);
-for (let k = 0; k < 16; k++) R(ctx, rng.int(0, W - 10), y + rng.int(2, 6), rng.int(6, 22), 1, rng.chance(0.5) ? HW.p1 : HW.p4);
-for (let k = 0; k < 2; k++) { const kx = rng.int(8, W - 8), ky = y + rng.int(3, 5); R(ctx, kx - 1, ky, 3, 1, HW.p1); R(ctx, kx, ky - 1, 1, 3, HW.p1); R(ctx, kx, ky, 1, 1, HW.p0); }
-for (let x = (i % 2) * 31 + rng.int(10, 30); x < W; x += rng.int(52, 84)) {
-R(ctx, x, y + 1, 1, 6, HW.p0); R(ctx, x + 1, y + 1, 1, 6, HW.p4);
-R(ctx, x - 3, y + 3, 1, 1, '#8a8296'); R(ctx, x + 3, y + 3, 1, 1, '#8a8296');
+const W = HUTCH_W, H = HUTCH_H, rng = new Rng('hutch-bg-3');
+if (o.pen) ctx.drawImage(o.pen, 0, 0);
+else {
+R(ctx, 0, 0, W, FLOOR_Y, HW.p3);
+for (let y = 0; y < FLOOR_Y; y += 8) R(ctx, 0, y + 7, W, 1, HW.p1);
+R(ctx, 0, FLOOR_Y, W, H - FLOOR_Y, STRAW[2]);
+R(ctx, 0, FLOOR_Y, W, 1, HW.k);
 }
-}
-for (let y = 0; y < FLOOR_Y; y++) {
-const a = y < 16 ? 0.32 * (1 - y / 16) : 0;
-if (a > 0.01) R(ctx, 0, y, W, 1, `rgba(10,6,4,${a.toFixed(3)})`);
-if (y > 34) R(ctx, 0, y, W, 1, `rgba(255,190,90,${(0.05 * (y - 34) / 14).toFixed(3)})`);
-}
-post(ctx, 0, 0, 5, FLOOR_Y);
-post(ctx, W - 5, 0, 5, FLOOR_Y);
-R(ctx, 0, 0, W, 4, HW.p1); R(ctx, 0, 3, W, 1, HW.p0); R(ctx, 0, 0, W, 1, HW.p3);
-for (let y = FLOOR_Y; y < H; y++) R(ctx, 0, y, W, 1, y < FLOOR_Y + 3 ? STRAW[0] : STRAW[1 + ((y >> 2) % 2)]);
-for (let k = 0; k < 900; k++) {
-const x = rng.int(-2, W), y = rng.int(FLOOR_Y + 2, H - 1), len = rng.int(2, 5);
-const c = STRAW[rng.weighted([0, 1, 2, 3, 4, 5], [1.2, 1.6, 2, 2, 1.4, 0.6])];
-const dir = rng.pick([-1, 1, 0]);
-for (let j = 0; j < len; j++) R(ctx, x + j, y + (dir ? Math.round(j * dir * 0.5) : 0), 1, 1, c);
-}
-R(ctx, 0, FLOOR_Y, W, 1, HW.p0);
-R(ctx, 0, FLOOR_Y + 1, W, 2, 'rgba(20,10,0,0.35)');
-R(ctx, 0, FLOOR_Y + 3, W, 2, 'rgba(20,10,0,0.15)');
-const rx = 8, ry = 8, rw = 26, rh = 38;
-for (let k = 0; k < 140; k++) R(ctx, rng.int(rx + 2, rx + rw - 3), rng.int(ry + 2, ry + rh - 4), rng.int(1, 4), 1, rng.pick([STRAW[2], STRAW[3], STRAW[4], STRAW[5], '#a89a40']));
-for (let x = rx + 3; x < rx + rw - 2; x += 5) { R(ctx, x, ry + 2, 1, rh - 4, HW.p1); R(ctx, x + 1, ry + 2, 1, rh - 4, HW.p5); }
-for (let y = ry + 6; y < ry + rh - 3; y += 7) { R(ctx, rx + 2, y, rw - 4, 1, HW.p1); R(ctx, rx + 2, y - 1, rw - 4, 1, HW.p5); }
-post(ctx, rx, ry, 3, rh); post(ctx, rx + rw - 3, ry, 3, rh);
-R(ctx, rx - 1, ry, rw + 2, 3, HW.k); R(ctx, rx, ry, rw, 2, HW.p5); R(ctx, rx, ry, rw, 1, HW.p6);
-for (let k = 0; k < 26; k++) { const x = rng.int(rx + 1, rx + rw - 2); R(ctx, x, ry - rng.int(1, 4), 1, rng.int(2, 4), rng.pick([STRAW[3], STRAW[4], STRAW[5]])); }
-for (let k = 0; k < 40; k++) R(ctx, rng.int(rx - 4, rx + rw + 8), rng.int(FLOOR_Y + 1, FLOOR_Y + 9), rng.int(2, 5), 1, rng.pick([STRAW[3], STRAW[4], STRAW[5]]));
-const bx = 176, by = 22, bw = 42, bh = 32;
-R(ctx, bx - 1, by - 1, bw + 2, bh + 2, HW.k);
-for (let y = by, i = 0; y < by + bh; y += 6, i++) {
-R(ctx, bx, y, bw, 6, i % 2 ? HW.p4 : HW.p3);
-R(ctx, bx, y, bw, 1, HW.p5); R(ctx, bx, y + 5, bw, 1, HW.p1);
-for (let k = 0; k < 3; k++) R(ctx, bx + rng.int(1, bw - 8), y + rng.int(2, 4), rng.int(3, 7), 1, HW.p2);
-}
-R(ctx, bx, by, 2, bh, HW.p6); R(ctx, bx + bw - 2, by, 2, bh, HW.p2);
-const dx = bx + 13, dw = 16, dy = by + 10;
-for (let y = dy; y < by + bh; y++) {
-const t = y - dy, half = t < 6 ? Math.round(Math.sqrt(Math.max(0, 36 - (6 - t) * (6 - t))) * (dw / 12)) : dw / 2;
-R(ctx, dx + dw / 2 - half - 1, y, half * 2 + 2, 1, HW.p1);
-R(ctx, dx + dw / 2 - half, y, half * 2, 1, y < dy + 3 ? '#140c08' : '#0d0806');
-}
-if (o.nest) for (let k = 0; k < 22; k++) R(ctx, rng.int(dx, dx + dw - 2), rng.int(by + bh - 6, by + bh - 1), rng.int(2, 3), 1, rng.pick([STRAW[4], STRAW[5], '#f6ead0', '#e6d3a5']));
-for (let y = 0; y < 8; y++) {
-const w = bw + 8 - y;
-R(ctx, bx - 4 + Math.round(y / 2), by - 8 + y, w, 1, STRAW[y < 2 ? 4 : y < 5 ? 3 : 2]);
-}
-for (let k = 0; k < 60; k++) R(ctx, rng.int(bx - 4, bx + bw + 3), rng.int(by - 9, by - 1), 1, rng.int(1, 3), rng.pick([STRAW[1], STRAW[2], STRAW[5]]));
-R(ctx, bx - 4, by - 1, bw + 8, 1, STRAW[0]);
-R(ctx, bx, by + bh + 1, bw, 2, 'rgba(20,10,0,0.35)');
-bowl(ctx, 86, 70, 9, 3, '#2a3a8a', '#4a6ad0', '#8aa8ff', (x, y) => { for (let k = 0; k < 12; k++) R(ctx, x + rng.int(-6, 6), y + rng.int(-1, 0), 1, 1, rng.pick(['#c8782a', '#e8a040', '#8a4a1a'])); });
-bowl(ctx, 58, 64, 7, 2, '#3d3844', '#73697b', '#a8a2b0', (x, y) => { R(ctx, x - 5, y - 1, 11, 2, PAL.frost1); R(ctx, x - 3, y - 1, 3, 1, PAL.frost3); });
+if (o.nest) for (let k = 0; k < 22; k++) R(ctx, rng.int(186, 201), rng.int(54, 59), rng.int(2, 3), 1, rng.pick([STRAW[4], STRAW[5], '#f6ead0', '#e6d3a5']));
 if (o.cloth) {
-R(ctx, 166, 64, 56, 18, PAL.parch0); R(ctx, 167, 64, 54, 16, PAL.parch1); R(ctx, 167, 64, 54, 1, PAL.parch2);
-for (let x = 174; x < 220; x += 9) { R(ctx, x, 66, 1, 5, PAL.parch0); R(ctx, x + 1, 71, 1, 5, PAL.parch0); }
-for (let x = 167; x < 221; x += 2) R(ctx, x, 79, 1, 1, PAL.parch2);
+R(ctx, 170, 64, 46, 13, PAL.parch0); R(ctx, 171, 64, 44, 12, PAL.parch1); R(ctx, 171, 64, 44, 1, PAL.parch2);
+for (let x = 177; x < 214; x += 9) { R(ctx, x, 66, 1, 4, PAL.parch0); R(ctx, x + 1, 70, 1, 4, PAL.parch0); }
 }
-for (let x = 0; x < 10; x++) { const a = (0.28 * (1 - x / 10)).toFixed(3); R(ctx, x, 0, 1, H, `rgba(8,4,2,${a})`); R(ctx, W - 1 - x, 0, 1, H, `rgba(8,4,2,${a})`); }
 }
-function bowl(ctx, x, y, rx, ry, dark, mid, hi, fill) {
-R(ctx, x - rx - 1, y - ry - 1, rx * 2 + 3, ry * 2 + 5, 'rgba(20,10,0,0.25)');
-for (let yy = -ry; yy <= ry; yy++) { const w = Math.round(rx * Math.sqrt(Math.max(0, 1 - (yy * yy) / (ry * ry)))); R(ctx, x - w - 1, y + yy, w * 2 + 3, 1, HW.k); }
-R(ctx, x - rx, y, rx * 2 + 1, 4, HW.k);
-R(ctx, x - rx + 1, y, rx * 2 - 1, 3, mid); R(ctx, x - rx + 1, y + 2, rx * 2 - 1, 1, dark); R(ctx, x - rx + 2, y, 2, 2, hi);
-for (let yy = -ry + 1; yy < 1; yy++) { const w = Math.round((rx - 1) * Math.sqrt(Math.max(0, 1 - (yy * yy) / (ry * ry)))); R(ctx, x - w, y + yy, w * 2 + 1, 1, dark); }
-fill(x, y);
-}
-function paintHutchFront(ctx) {
+function paintHutchFront(ctx, pen) {
 const W = HUTCH_W, H = HUTCH_H;
+if (pen) { ctx.drawImage(pen, 0, 0); return; }
 R(ctx, 0, RAIL_Y - 1, W, H - RAIL_Y + 1, HW.k);
 R(ctx, 0, RAIL_Y, W, H - RAIL_Y, HW.p3);
-R(ctx, 0, RAIL_Y, W, 1, HW.p6); R(ctx, 0, RAIL_Y + 1, W, 1, HW.p5);
-R(ctx, 0, H - 2, W, 2, HW.p1);
-for (let x = 6; x < W; x += 13) R(ctx, x, RAIL_Y + 3 + (x % 3), 7, 1, HW.p2);
-for (const x of [2, 56, 112, 168, W - 8]) post(ctx, x, RAIL_Y - 7, 6, H - RAIL_Y + 7);
+R(ctx, 0, RAIL_Y, W, 1, HW.p5);
+}
+function onGround(x, y) {
+const row = GROUND[Math.round(y) - GROUND_Y0], xi = Math.round(x);
+return !!row && row.some(([x0, x1]) => xi >= x0 && xi < x1);
 }
 class HutchScene {
 constructor(opts = {}) {
@@ -18249,6 +18223,7 @@ this.cloth = false;
 this.bg = null;
 this.bgKey = '';
 this.fg = null;
+this.fgPen = false;
 this.clashes = [];
 }
 sync(entries) {
@@ -18396,13 +18371,14 @@ x: 0, y: 0, face: r.chance(0.5) ? 1 : -1, act: 'idle', at: 0, dur: r.range(0.3, 
 hops: 0, hopT: 0.34, hopH: 4, step: 8, sx: 0, sy: 0, tx: 0, ty: 0, gx: 0, gy: 0, next: null,
 n: 0, phase: r.range(0, 10), react: 0, reactCh: [], anSnap: null, anPose: null, an: null,
 };
-a.x = r.int(ROAM.x0, ROAM.x1);
-a.y = r.int(ROAM.y0, ROAM.y1);
+const p = this._roam(r.int(ROAM.x0, ROAM.x1), r.int(ROAM.y0, ROAM.y1));
+a.x = p.x; a.y = p.y;
 return a;
 }
 _place(a) {
 const r = new Rng(hashString(`hutch:place:${a.id}:${a.n++}`));
-a.x = r.int(ROAM.x0, ROAM.x1); a.y = r.int(ROAM.y0, ROAM.y1);
+const p = this._roam(r.int(ROAM.x0, ROAM.x1), r.int(ROAM.y0, ROAM.y1));
+a.x = p.x; a.y = p.y;
 a.act = 'idle'; a.at = 0; a.dur = 1; a.pose = null; a.hops = 0;
 }
 _tick(a, dt) {
@@ -18422,7 +18398,7 @@ return;
 }
 if (a.act === 'float') {
 const dx = a.gx - a.x, dy = a.gy - a.y, d = Math.hypot(dx, dy), s = Math.min(d, 6 * dt);
-if (d > 0.5) { a.x += (dx / d) * s; a.y += (dy / d) * s; if (Math.abs(dx) > 1) a.face = dx > 0 ? 1 : -1; }
+if (d > 0.5 && onGround(a.x + (dx / d) * s, a.y + (dy / d) * s)) { a.x += (dx / d) * s; a.y += (dy / d) * s; if (Math.abs(dx) > 1) a.face = dx > 0 ? 1 : -1; }
 }
 if (a.at >= a.dur) this._decide(a);
 }
@@ -18475,7 +18451,16 @@ if (best) return this._roam(best.x - 9 * Math.sign(best.x - a.x || 1), best.y + 
 return this._roam(a.x + r.range(-range, range), a.y + r.range(-range / 3, range / 3));
 }
 _roam(x, y) {
-return { x: clamp(x, ROAM.x0, ROAM.x1), y: clamp(y, ROAM.y0, ROAM.y1) };
+if (onGround(x, y)) return { x, y };
+let best = { x: RACK.x, y: RACK.y }, bd = Infinity;
+GROUND.forEach((row, i) => {
+const gy = GROUND_Y0 + i;
+for (const [x0, x1] of row) {
+const gx = clamp(x, x0, x1 - 1), d = (gx - x) ** 2 + (gy - y) ** 2;
+if (d < bd) { bd = d; best = { x: gx, y: gy }; }
+}
+});
+return best;
 }
 _hopTo(a, goal, n, zoom) {
 const kit = a.snap.stage === 'kit';
@@ -18490,8 +18475,8 @@ const dx = a.gx - a.x, dy = a.gy - a.y, d = Math.hypot(dx, dy);
 if (d < 0.5 && a.hops <= 0) return false;
 const len = Math.min(a.step, d);
 a.sx = a.x; a.sy = a.y;
-a.tx = d > 0 ? a.x + (dx / d) * len : a.x;
-a.ty = d > 0 ? a.y + (dy / d) * len : a.y;
+const land = d > 0 ? this._roam(a.x + (dx / d) * len, a.y + (dy / d) * len) : { x: a.x, y: a.y };
+a.tx = land.x; a.ty = land.y;
 if (Math.abs(dx) > 0.5) a.face = dx > 0 ? 1 : -1;
 a.at = 0;
 if (d < 0.5) a.hops = 1; // a hop on the spot (a poke), then stop
@@ -18524,15 +18509,16 @@ return [...this.actors.values()].filter((a) => !a.hidden).sort((p, q) => p.y - q
 }
 _front(ctx) {
 const factory = this.factory || (typeof document !== 'undefined' ? makeCanvas : null);
-if (!factory) { paintHutchFront(ctx); return; }
-if (!this.fg) { this.fg = factory(HUTCH_W, HUTCH_H); paintHutchFront(this.fg.getContext('2d')); }
+const pen = PEN.front.get();
+if (!factory) { paintHutchFront(ctx, pen); return; }
+if (!this.fg || this.fgPen !== !!pen) { this.fg = factory(HUTCH_W, HUTCH_H); paintHutchFront(this.fg.getContext('2d'), pen); this.fgPen = !!pen; }
 ctx.drawImage(this.fg, 0, 0);
 }
 _background(ctx) {
-const o = { nest: this.nest, cloth: this.cloth };
+const o = { nest: this.nest, cloth: this.cloth, pen: PEN.back.get() };
 const factory = this.factory || (typeof document !== 'undefined' ? makeCanvas : null);
 if (!factory) { paintHutch(ctx, o); return; }
-const key = `${o.nest ? 1 : 0}${o.cloth ? 1 : 0}`;
+const key = `${o.nest ? 1 : 0}${o.cloth ? 1 : 0}${o.pen ? 1 : 0}`;
 if (!this.bg || this.bgKey !== key) {
 this.bg = factory(HUTCH_W, HUTCH_H);
 paintHutch(this.bg.getContext('2d'), o);
@@ -18541,7 +18527,7 @@ this.bgKey = key;
 ctx.drawImage(this.bg, 0, 0);
 }
 }
-return { HUTCH_W, HUTCH_H, HUTCH_BODIES, paintHutch, paintHutchFront, HutchScene };
+return { HUTCH_W, HUTCH_H, HUTCH_BODIES, paintHutch, paintHutchFront, onGround, HutchScene };
 })();
 // src/ui/views/hutch.js
 const __m79 = (() => {
@@ -19270,7 +19256,7 @@ return `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2
 return { TrialsView, EFFECTS, EFFECT_INDEX };
 })();
 // src/ui/views/book.js
-const __m81 = (() => {
+const __m82 = (() => {
 const { h, btn, clear } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
@@ -19409,7 +19395,7 @@ const { Tutorial } = __m72;
 const { CounterView } = __m73;
 const { WildsView } = __m74;
 const { TrialsView } = __m77;
-const { BookView } = __m81;
+const { BookView } = __m82;
 const { shortName } = __m22;
 const REQ_ICON = { temperature: 'thermo', quantity: 'flask', purity: 'pure' };
 const TOOL_DEFS = [
@@ -21147,7 +21133,7 @@ void dominantEffect;
 return { VIEWS, LabScreen };
 })();
 // src/materials/reference.js
-const __m83 = (() => {
+const __m84 = (() => {
 const { completeMaterial } = __m9;
 const REF = {};
 const add = (d) => (REF[d.id] = completeMaterial(d));
@@ -21185,11 +21171,11 @@ const refLookup = (id) => REF[id];
 return { REF, refLookup };
 })();
 // src/ui/menu.js
-const __m82 = (() => {
+const __m83 = (() => {
 const { h, btn } = __m2;
 const { Renderer } = __m53;
 const { Simulation } = __m31;
-const { REF, refLookup } = __m83;
+const { REF, refLookup } = __m84;
 const { hasSave, loadGame } = __m50;
 const { audio } = __m4;
 class MenuScreen {
@@ -21278,7 +21264,7 @@ const { sandboxIngredients } = __m7;
 const { EQUIPMENT } = __m26;
 const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m50;
 const { LabScreen } = __m51;
-const { MenuScreen } = __m82;
+const { MenuScreen } = __m83;
 const { openSettings, openHelp } = __m69;
 const { Rng } = __m6;
 const { normalizeTrials } = __m27;
@@ -21395,7 +21381,7 @@ openHelp();
 return { App, icon };
 })();
 // src/ui/textures.js
-const __m84 = (() => {
+const __m85 = (() => {
 const { Rng } = __m6;
 function texture(w, h, paint) {
 const cv = document.createElement('canvas');
@@ -21439,7 +21425,7 @@ return { installTextures };
 // src/main.js
 const __m0 = (() => {
 const { App } = __m1;
-const { installTextures } = __m84;
+const { installTextures } = __m85;
 installTextures();
 const root = document.getElementById('app');
 const app = new App(root);
