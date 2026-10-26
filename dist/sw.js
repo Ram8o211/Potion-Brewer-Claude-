@@ -1,7 +1,7 @@
 // Service worker: cache-first offline support. The build script replaces
 // the asset list and version; in development it simply caches as it goes.
-const VERSION = '2.3.0-7855c16ddb';
-const ASSETS = ["./","app.d9b4a515af.js","assets/backdrops/crags.png","assets/backdrops/forest.png","assets/backdrops/meadow.png","assets/backdrops/moonfen.png","assets/backdrops/quarry.png","assets/backdrops/river.png","assets/fonts/alchemist-pixel.ttf","assets/growth/atlas.png","assets/icons/icon-192.png","assets/icons/icon-512.png","assets/icons/ingredients.png","assets/icons/pieces.png","assets/meadow/atlas.png","assets/rabbits/atlas.png","assets/wilds/crags.png","assets/wilds/forest.png","assets/wilds/moonfen.png","assets/wilds/quarry.png","assets/wilds/river.png","index.html","manifest.webmanifest","styles/main.ef4e13e7da.css"];
+const VERSION = '2.3.0-d810b57792';
+const ASSETS = ["./","app.e66639b822.js","assets/backdrops/crags.png","assets/backdrops/forest.png","assets/backdrops/meadow.png","assets/backdrops/moonfen.png","assets/backdrops/quarry.png","assets/backdrops/river.png","assets/fonts/alchemist-pixel.ttf","assets/growth/atlas.png","assets/icons/icon-192.png","assets/icons/icon-512.png","assets/icons/ingredients.png","assets/icons/pieces.png","assets/meadow/atlas.png","assets/wilds/crags.png","assets/wilds/forest.png","assets/wilds/moonfen.png","assets/wilds/quarry.png","assets/wilds/river.png","index.html","manifest.webmanifest","styles/main.ef4e13e7da.css"];
 // The origin may be shared — <owner>.github.io hosts every Pages site of an
 // account, and a branch deploy exposes this game both at the root and at
 // /dist/ — so cache names carry this worker's scope, and each worker only

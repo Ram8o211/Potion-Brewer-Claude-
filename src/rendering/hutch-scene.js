@@ -499,7 +499,7 @@ export class HutchScene {
   /** @param {Actor} a @param {string} act @param {number} dur */
   _begin(a, act, dur) {
     a.act = act; a.at = 0; a.dur = dur; a.hops = 0;
-    a.pose = act === 'loaf' ? 'loaf' : act === 'flex' ? 'rear' : act === 'flop' ? 'flop' : null;
+    a.pose = act === 'loaf' ? 'loaf' : act === 'flex' ? 'rear' : act === 'flop' ? 'flop' : act === 'eat' ? 'eat' : null;
     if (act === 'eat') a.face = -1;
   }
 

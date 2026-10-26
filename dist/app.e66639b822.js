@@ -16996,214 +16996,11 @@ this.grow();
 }
 return { WildsView };
 })();
-// src/rendering/rabbit-atlas.js
-const __m80 = (() => {
-const ATLAS_URL = 'assets/rabbits/atlas.png';
-const ATLAS_SIZE = [512, 384];
-const FRAMES = {
-acid_1_0: [0, 0, 48, 34],
-acid_1_1: [49, 0, 48, 34],
-acid_2_0: [98, 0, 48, 34],
-acid_2_1: [147, 0, 48, 34],
-acid_3_0: [196, 0, 48, 34],
-acid_3_1: [245, 0, 48, 34],
-acid_dead: [294, 0, 48, 34],
-dead: [343, 0, 48, 34],
-dutch: [392, 0, 48, 34],
-fire_1_0: [441, 0, 48, 34],
-fire_1_1: [0, 35, 48, 34],
-fire_2_0: [49, 35, 48, 34],
-fire_2_1: [98, 35, 48, 34],
-fire_3_0: [147, 35, 48, 34],
-fire_3_1: [196, 35, 48, 34],
-fire_dead: [245, 35, 48, 34],
-hop_0: [294, 35, 48, 34],
-hop_1: [343, 35, 48, 34],
-hop_2: [392, 35, 48, 34],
-hop_3: [441, 35, 48, 34],
-idle_0: [0, 70, 48, 34],
-idle_1: [49, 70, 48, 34],
-idle_2: [98, 70, 48, 34],
-idle_3: [147, 70, 48, 34],
-kit_acid_1_0: [196, 70, 48, 34],
-kit_acid_1_1: [245, 70, 48, 34],
-kit_acid_2_0: [294, 70, 48, 34],
-kit_acid_2_1: [343, 70, 48, 34],
-kit_acid_3_0: [392, 70, 48, 34],
-kit_acid_3_1: [441, 70, 48, 34],
-kit_acid_dead: [0, 105, 48, 34],
-kit_dead: [49, 105, 48, 34],
-kit_fire_1_0: [98, 105, 48, 34],
-kit_fire_1_1: [147, 105, 48, 34],
-kit_fire_2_0: [196, 105, 48, 34],
-kit_fire_2_1: [245, 105, 48, 34],
-kit_fire_3_0: [294, 105, 48, 34],
-kit_fire_3_1: [343, 105, 48, 34],
-kit_fire_dead: [392, 105, 48, 34],
-kit_hop_0: [441, 105, 48, 34],
-kit_hop_1: [0, 140, 48, 34],
-kit_hop_2: [49, 140, 48, 34],
-kit_hop_3: [98, 140, 48, 34],
-kit_idle_0: [147, 140, 48, 34],
-kit_idle_1: [196, 140, 48, 34],
-kit_idle_2: [245, 140, 48, 34],
-kit_idle_3: [294, 140, 48, 34],
-kit_love_1_0: [343, 140, 48, 34],
-kit_love_1_1: [392, 140, 48, 34],
-kit_love_2_0: [441, 140, 48, 34],
-kit_love_2_1: [0, 175, 48, 34],
-kit_love_3_0: [49, 175, 48, 34],
-kit_love_3_1: [98, 175, 48, 34],
-kit_love_dead: [147, 175, 48, 34],
-kit_strength_1_0: [196, 175, 48, 34],
-kit_strength_1_1: [245, 175, 48, 34],
-kit_strength_2_0: [294, 175, 48, 34],
-kit_strength_2_1: [343, 175, 48, 34],
-kit_strength_3_0: [392, 175, 48, 34],
-kit_strength_3_1: [441, 175, 48, 34],
-kit_strength_dead: [0, 210, 48, 34],
-kit_toxicity_1_0: [49, 210, 48, 34],
-kit_toxicity_1_1: [98, 210, 48, 34],
-kit_toxicity_2_0: [147, 210, 48, 34],
-kit_toxicity_2_1: [196, 210, 48, 34],
-kit_toxicity_3_0: [245, 210, 48, 34],
-kit_toxicity_3_1: [294, 210, 48, 34],
-kit_toxicity_dead: [343, 210, 48, 34],
-kit_transformation_1_0: [392, 210, 48, 34],
-kit_transformation_1_1: [441, 210, 48, 34],
-kit_transformation_2_0: [0, 245, 48, 34],
-kit_transformation_2_1: [49, 245, 48, 34],
-kit_transformation_3_0: [98, 245, 48, 34],
-kit_transformation_3_1: [147, 245, 48, 34],
-kit_transformation_dead: [196, 245, 48, 34],
-love_1_0: [245, 245, 48, 34],
-love_1_1: [294, 245, 48, 34],
-love_2_0: [343, 245, 48, 34],
-love_2_1: [392, 245, 48, 34],
-love_3_0: [441, 245, 48, 34],
-love_3_1: [0, 280, 48, 34],
-love_dead: [49, 280, 48, 34],
-strength_1_0: [98, 280, 48, 34],
-strength_1_1: [147, 280, 48, 34],
-strength_2_0: [196, 280, 48, 34],
-strength_2_1: [245, 280, 48, 34],
-strength_3_0: [294, 280, 48, 34],
-strength_3_1: [343, 280, 48, 34],
-strength_dead: [392, 280, 48, 34],
-toxicity_1_0: [441, 280, 48, 34],
-toxicity_1_1: [0, 315, 48, 34],
-toxicity_2_0: [49, 315, 48, 34],
-toxicity_2_1: [98, 315, 48, 34],
-toxicity_3_0: [147, 315, 48, 34],
-toxicity_3_1: [196, 315, 48, 34],
-toxicity_dead: [245, 315, 48, 34],
-transformation_1_0: [294, 315, 48, 34],
-transformation_1_1: [343, 315, 48, 34],
-transformation_2_0: [392, 315, 48, 34],
-transformation_2_1: [441, 315, 48, 34],
-transformation_3_0: [0, 350, 48, 34],
-transformation_3_1: [49, 350, 48, 34],
-transformation_dead: [98, 350, 48, 34],
-white: [147, 350, 48, 34],
-};
-const COAT_ALPHA = { fur: 254, spot: 253 };
-const COAT_V = { fur: 0.96, spot: 0.45 };
-return { ATLAS_URL, ATLAS_SIZE, FRAMES, COAT_ALPHA, COAT_V };
-})();
-// src/rendering/rabbit-sprites.js
-const __m79 = (() => {
-const { ATLAS_URL, FRAMES, COAT_ALPHA, COAT_V } = __m80;
-const { MARK_INDEX } = __m28;
-const ATLAS_CHANNELS = ['fire', 'toxicity', 'acid', 'transformation', 'love', 'strength'];
-const DEATH_FRAME = { fire: 'fire_dead', poison: 'toxicity_dead', acid: 'acid_dead', love: 'love_dead', change: 'transformation_dead' };
-const lvl = (v) => (v >= 3 ? 3 : v >= 2 ? 2 : v >= 1 ? 1 : 0);
-const mod = (v, m) => ((v % m) + m) % m;
-function rabbitFrame(look, snap, o) {
-if (!look || !snap) return null;
-if (Array.isArray(snap.traits) && snap.traits.length) return null;
-const pre = snap.stage === 'kit' ? 'kit_' : '';
-const has = (/** @type {string} */ n) => (FRAMES[pre + n] ? pre + n : null);
-if (o.pose === 'dead') {
-const n = has(DEATH_FRAME[snap.cause] || 'dead');
-return n ? { name: n, channel: null } : null;
-}
-const lv = Array.isArray(snap.lv) ? snap.lv : [];
-const L = (ch) => lvl(lv[MARK_INDEX[ch]]);
-let ch = null, best = 0;
-for (const c of ATLAS_CHANNELS) if (L(c) > best) { ch = c; best = L(c); }
-if (L('frost') === 3) return null;
-if (o.pose === 'sick' && !(ch === 'toxicity' && best >= 2)) return null;
-if (o.pose !== 'idle' && o.pose !== 'sick') return null;
-const seed = (look.seed >>> 0) || 1, t = Number(o.t) || 0;
-if (ch) {
-const i = ch === 'toxicity' ? seed & 1 : Math.floor(mod(t * 2.5 + (seed % 5) * 0.2, 2));
-const n = has(`${ch}_${best}_${i}`);
-return n ? { name: n, channel: ch } : null;
-}
-if (o.air) return { name: /** @type {string} */ (has(`hop_${Math.floor(mod(t * 10, 4))}`)), channel: null };
-if (!pre && (look.pattern === 'dutch' || look.pattern === 'hooded')) return { name: 'dutch', channel: null };
-if (!pre && look.pattern === 'solid') return { name: 'white', channel: null };
-return { name: /** @type {string} */ (has(`idle_${Math.floor(mod(t * 2.2 + (seed % 7) * 0.3, 4))}`)), channel: null };
-}
-let img = null;
-let loading = false;
-const COATS = new Map();
-const COATS_MAX = 24;
-function loadRabbitAtlas() {
-if (loading || typeof Image === 'undefined' || typeof document === 'undefined') return;
-loading = true;
-const im = new Image();
-im.onload = () => { img = im; };
-im.src = ATLAS_URL;
-}
-const rabbitAtlasReady = () => !!img;
-const rgb = (v, fb) => (Array.isArray(v) && v.length >= 3 ? [0, 1, 2].map((i) => Math.max(0, Math.min(1, +v[i] || 0))) : fb);
-function coatSheet(look) {
-const coat = rgb(look.coat, [0.93, 0.89, 0.82]);
-const solid = look.pattern === 'solid';
-const spot = solid ? coat.map((c) => c * 0.86) : rgb(look.coat2, [0.36, 0.24, 0.18]);
-const key = coat.concat(spot).map((c) => Math.round(c * 255)).join(',');
-let cv = COATS.get(key);
-if (cv) return cv;
-if (!img) return null;
-cv = document.createElement('canvas');
-cv.width = img.width; cv.height = img.height;
-const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d', { willReadFrequently: true }));
-ctx.drawImage(img, 0, 0);
-const data = ctx.getImageData(0, 0, cv.width, cv.height), d = data.data;
-for (let i = 0; i < d.length; i += 4) {
-const a = d[i + 3], fur = a === COAT_ALPHA.fur;
-if (!fur && a !== COAT_ALPHA.spot) continue;
-const c = fur ? coat : spot, k = Math.max(d[i], d[i + 1], d[i + 2]) / 255 / (fur ? COAT_V.fur : COAT_V.spot);
-for (let j = 0; j < 3; j++) d[i + j] = Math.round(255 * Math.min(1, k <= 1 ? c[j] * k : c[j] + (1 - c[j]) * (k - 1) * 0.6));
-d[i + 3] = 255;
-}
-ctx.putImageData(data, 0, 0);
-COATS.set(key, cv);
-if (COATS.size > COATS_MAX) COATS.delete(COATS.keys().next().value);
-return cv;
-}
-function drawRabbitFrame(ctx, look, name, x, y, mirror) {
-const f = FRAMES[name], sheet = f && coatSheet(name === 'dutch' ? { ...look, coat: look.coat2, coat2: look.coat } : look);
-if (!f || !sheet) return false;
-const [sx, sy, w, h] = f;
-if (mirror) {
-ctx.save();
-ctx.translate(x + w, y);
-ctx.scale(-1, 1);
-ctx.drawImage(sheet, sx, sy, w, h, 0, 0, w, h);
-ctx.restore();
-} else ctx.drawImage(sheet, sx, sy, w, h, x, y, w, h);
-return true;
-}
-return { ATLAS_CHANNELS, rabbitFrame, loadRabbitAtlas, rabbitAtlasReady, drawRabbitFrame };
-})();
 // src/rendering/rabbit.js
 const __m78 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m54;
 const { RABBIT_MARKS } = __m28;
-const { rabbitFrame, drawRabbitFrame, loadRabbitAtlas, rabbitAtlasReady } = __m79;
 const RABBIT_W = 48;
 const RABBIT_H = 40;
 const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
@@ -17220,6 +17017,8 @@ const C_BURN = '#ffc7dd', C_BURN_RIM = '#c0506a', C_RAW = '#ff8fa0', C_ACID = '#
 const C_SLIME = '#92cc71', C_SLIME2 = '#6f8a3a', C_DRIP = '#b6e08a';
 const C_GOLD = PAL.brassHi, C_GLEAM = '#fff0b0', C_CREAM = '#fff6e0';
 const C_RUNE = PAL.magic, C_RUNE_HI = PAL.magicHi, C_SHIM = '#5fd4b4', C_GREY = '#a8a2b0';
+const C_EAR = '#f08aa8', C_GRASS = '#6aa84f', C_GRASS2 = '#3f7a3a', C_GRASS3 = '#9ccc65';
+const HARM = ['fire', 'acid', 'toxicity', 'frost', 'death', 'alkali'];
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const mod = (v, m) => ((v % m) + m) % m;
 const lvl = (v) => (v >= 3 ? 3 : v >= 2 ? 2 : v >= 1 ? 1 : 0);
@@ -17333,8 +17132,9 @@ function rabbitPose(snap, want) {
 if (!snap || snap.alive === false) return 'dead';
 const L = rabbitLevels(snap);
 if (L.death === 3 || snap.hp >= 3) return 'collapse';
-if (want === 'loaf' || want === 'rear' || want === 'flop') return want;
-if (L.toxicity >= 2 || snap.hp >= 2) return 'sick';
+if (want === 'loaf' || want === 'rear' || want === 'flop' || want === 'eat' || want === 'hop' || want === 'hurt') return want;
+if (L.toxicity >= 2) return 'sick';
+if (snap.hp >= 2) return 'hurt';
 return 'idle';
 }
 function rabbitPace(snap) {
@@ -17359,30 +17159,45 @@ const ox = Math.round(24 - (lying ? 15 : 14) * g);
 const bulk = [0, 1, 1, 2][mus];
 const earK = (look.ear === 'short' ? 0.6 : 1) * (kit ? 0.7 : 1);
 const hornH = tr.has('antlers') ? HORN_H.antlers : tr.has('unihorn') ? HORN_H.unihorn : tr.has('horns') ? HORN_H.horns : 0;
-const headRy = Math.round(3.3 * hs);
+const headRy = Math.round((lying ? 3.8 : 4.5) * hs);
 let haunch, chest, head;
+const legs = [];
 if (lying) {
 const hry = Math.round(4.2 * g) + preg, cry = Math.round(3.6 * g + bulk * 0.5);
 haunch = E(ox + 11 * g, oy - hry, 11 * g, hry);
 chest = E(ox + 21 * g, oy - cry, 5 * g + bulk, cry);
-head = E(ox + 27 * g, oy - headRy, 4.2 * hs, headRy);
+head = E(ox + 27 * g, oy - headRy, 4.6 * hs, headRy);
+legs.push({ x: haunch.cx - haunch.rx - 2, y: oy - 3, w: Math.max(3, Math.round(5 * g)), h: 2 });
+} else if (pose === 'hop') {
+haunch = E(ox + 10 * g, oy - 8 * g, 9 * g, 5 * g + preg);
+chest = E(ox + 19 * g, oy - 8 * g, 6 * g + bulk, 4.5 * g + bulk * 0.5);
+head = E(ox + 25 * g, oy - 12 * g, 5 * hs, headRy);
+legs.push({ x: haunch.cx - haunch.rx - Math.round(3 * g), y: haunch.cy + Math.round(2 * g), w: Math.max(3, Math.round(6 * g)), h: 2 });
+legs.push({ x: chest.cx + chest.rx - 2, y: chest.cy + chest.ry - 1, w: Math.max(2, Math.round(4 * g)), h: 2 });
+} else if (pose === 'rear') {
+const earLen = look.ear === 'lop' ? 0 : Math.round(10 * hs * earK);
+haunch = E(ox + 10 * g, 0, 8 * g, 6.5 * g + preg);
+haunch.cy = oy - haunch.ry;
+chest = E(ox + 16 * g, oy - 10 * g, 5 * g + bulk, 6.5 * g + bulk * 0.5);
+const hcy = Math.max(oy - 18 * g, headRy + 1 + Math.max(Math.ceil(earLen * 0.7), hornH));
+head = E(ox + 19 * g, hcy, 5 * hs, headRy);
+legs.push({ x: chest.cx + chest.rx - 2, y: chest.cy - 1, w: 2, h: 3 });
 } else {
-let hrx = 10 * g, hry = 6 * g + preg, ccx = ox + 19 * g, ccy = oy - 8 * g, crx = 6 * g + bulk, cry = 5 * g + bulk * 0.5;
+let hrx = 9.5 * g, hry = 6.5 * g + preg, ccx = ox + 18 * g, ccy = oy - 6 * g, crx = 6 * g + bulk, cry = 5.5 * g + bulk * 0.5;
 let hcx = ox + 24 * g, hcy = oy - 13 * g;
 if (pose === 'sick') { hrx -= 1; hry += 1; hcy += 2; } // hunched, head hanging
 else if (pose === 'loaf') { hrx -= 1; hry -= 1; ccx -= 1; ccy += 1; hcx -= 1; hcy += 2; } // tucked into a loaf
+else if (pose === 'hurt') { hrx -= 1; ccx -= g; ccy -= 2 * g; cry += 1; hcx -= g; hcy -= 2 * g; } // startled up
+else if (pose === 'eat') { ccx += g; ccy += g; hcx += 2 * g; hcy = oy - headRy - 1; } // head down to the grass
 if (elder) { hry += 1; hcy += 1; } // a rounder back, the head a little lower
-if (pose === 'rear') {
-const earLen = look.ear === 'lop' ? 0 : Math.round(10 * hs * earK);
-const room = Math.round(hcy) - headRy - 1 - Math.max(Math.ceil(earLen * 0.7), hornH);
-const lift = clamp(Math.min(Math.round(5 * g), room), 0, 6);
-ccx += g; ccy -= Math.min(3 * g, lift); cry += 1; hcx -= g; hcy -= lift;
-}
 haunch = E(ox + 9 * g, 0, hrx, hry);
 haunch.cy = oy - haunch.ry;
 chest = E(ccx, ccy, crx, cry);
-head = E(hcx, hcy, 4.2 * hs, headRy);
+head = E(hcx, hcy, 5 * hs, headRy);
+if (pose === 'hurt') legs.push({ x: chest.cx + chest.rx - 1, y: chest.cy, w: Math.max(2, Math.round(3 * g)), h: 2 });
 }
+const mr = Math.max(1, Math.round(2.4 * hs));
+const muzzle = E(Math.min(head.cx + 3 * hs, RABBIT_W - 2 - mr), Math.min(head.cy + 1.5 * hs, oy - mr), mr, mr);
 const bulges = [];
 if (mus >= 2) bulges.push(E(chest.cx + chest.rx - 1, chest.cy + chest.ry - 2, 2 * g + 0.4, 2 * g + 0.4)); // forearm
 if (mus >= 3) {
@@ -17390,9 +17205,9 @@ bulges.push(E(chest.cx - 1, chest.cy - chest.ry + 2, 3.2 * g, 2.2 * g)); // shou
 bulges.push(E(haunch.cx + 3 * g, haunch.cy - haunch.ry + 2.5 * g, 4.2 * g, 3 * g)); // thigh
 bulges.push(E((chest.cx + head.cx) / 2, (chest.cy - chest.ry + head.cy + head.ry) / 2 + 1, 2.4 * g, 2 * g)); // neck
 }
-const parts = [haunch, chest, ...bulges, head];
+const parts = [haunch, chest, ...bulges, head, muzzle];
 const top = head.cy - head.ry;
-const ew = hs >= 1.1 ? 4 : 3;
+const ew = hs >= 0.9 ? 5 : 4;
 const droop = lying ? 0 : pose === 'sick' || (snap && snap.hp >= 2) || L.frost === 2 ? 3 : pose === 'loaf' ? 2 : 0;
 const shift = tr.has('eye3') ? 1 : 0;
 const ears = [];
@@ -17402,28 +17217,21 @@ ears.push({ kind: 'flat', far: true, x: head.cx - 2 - len, y: top - 1, len, w: 2
 ears.push({ kind: 'flat', far: false, x: head.cx - 1 - len, y: top + 1, len, w: 2, lean: 0 });
 } else {
 const kinds = look.ear === 'lop' ? ['lop', 'lop'] : look.ear === 'half' ? ['lop', 'up'] : ['up', 'up'];
+const swept = pose === 'hop' || pose === 'eat';
 for (let i = 0; i < 2; i++) {
 const far = i === 0;
 if (kinds[i] === 'lop') {
 const y = top - 1;
-ears.push({ kind: 'lop', far, x: head.cx - (far ? 5 : 3) - shift, y, len: head.cy + 4 - y, w: ew, lean: 0 });
+ears.push({ kind: 'lop', far, x: head.cx - (far ? 5 : 3) - shift, y, len: head.cy + 4 - y, w: ew - 1, lean: 0 });
 } else {
 const base = top + 1;
 const len = clamp(Math.round((far ? 9 : 10) * hs * earK) - droop, 2, base);
-ears.push({ kind: 'up', far, x: head.cx - (far ? 3 : 0) - shift, y: base, len, w: ew, lean: droop ? 2 : 4 });
+ears.push({ kind: 'up', far, x: head.cx - (far ? 5 : 2) - shift, y: base, len, w: ew, lean: droop || swept ? 2 : 4 });
 }
 }
 }
-const legs = [];
-if (pose === 'dead') {
-const lh = Math.max(2, Math.round(3 * g));
-for (const x of [chest.cx - 1, haunch.cx + Math.round(haunch.rx * 0.35)]) {
-const y = colEdge([haunch, chest], x, -1) ?? haunch.cy;
-legs.push({ x, y: y - lh, w: 2, h: lh + 1 });
-}
-} else if (pose === 'flop') legs.push({ x: haunch.cx - haunch.rx - 2, y: oy - 3, w: Math.max(3, Math.round(5 * g)), h: 2 });
-const eye = { x: head.cx + Math.max(1, Math.round(2 * hs)), y: head.cy - 1 };
-const nose = { x: head.cx + half(head, 1), y: head.cy + 1 };
+const eye = { x: head.cx + Math.max(1, Math.round(1.6 * hs)), y: head.cy - 1 };
+const nose = { x: muzzle.cx + muzzle.rx, y: muzzle.cy - 1 };
 const tailR = Math.max(1, Math.round([1, 2, 3][look.tail === 0 || look.tail === 2 ? look.tail : 1] * Math.min(1, g + 0.25)));
 const tx = haunch.cx - haunch.rx;
 const tail = { x: tx, y: haunch.cy - (lying ? 1 : 2), r: tailR, len: clamp(Math.round(9 * g), 3, tx - 1) };
@@ -17433,9 +17241,10 @@ const wing = lying ? { x: haunch.cx - 2, y: haunch.cy - haunch.ry - 2 } : { x: c
 let x0 = Math.min(haunch.cx - haunch.rx, tx - tailR) - 1;
 if (tr.has('tail-lizard')) x0 = Math.min(x0, tx - tail.len - 1);
 if (tr.has('tail-plume')) x0 = Math.min(x0, plume.cx - plume.rx - 1);
-if (legs.length && pose === 'flop') x0 = Math.min(x0, legs[0].x - 1);
+for (const l of legs) x0 = Math.min(x0, l.x - 1);
 let x1 = 0;
 for (const e of parts) x1 = Math.max(x1, e.cx + e.rx + 1);
+for (const l of legs) x1 = Math.max(x1, l.x + l.w);
 let y0 = top - 1;
 for (const e of ears) y0 = Math.min(y0, e.kind === 'up' ? e.y - e.len + 1 : e.y - 1);
 if (tr.has('ears2')) y0 = Math.min(y0, ...ears.map((e) => (e.kind === 'flat' ? e.y - 3 : y0)));
@@ -17444,8 +17253,8 @@ if (tr.has('wings')) y0 = Math.min(y0, wing.y - 1);
 for (const l of legs) y0 = Math.min(y0, l.y - 1);
 if (tr.has('spines')) y0 = Math.min(y0, Math.min(haunch.cy - haunch.ry, chest.cy - chest.ry) - 5);
 return {
-pose, lying, g, hs, haunch, chest, head, bulges, parts, ears, legs,
-eye, eye3: { x: head.cx + 1, y: top + 1 }, nose, cheek: { x: head.cx + 1, y: head.cy + 1 },
+pose, lying, g, hs, haunch, chest, head, muzzle, bulges, parts, ears, legs,
+eye, eye3: { x: head.cx + 1, y: top + 1 }, nose, cheek: { x: eye.x, y: eye.y + 3 },
 brow: { x: head.cx - 1 - shift, y: top }, tail, plume, wing,
 back: { x0: haunch.cx - haunch.rx + 2, x1: chest.cx, y: haunch.cy - haunch.ry },
 belly: { x: chest.cx + 1, y: chest.cy + chest.ry - 2 },
@@ -17455,6 +17264,7 @@ top: Math.max(0, y0 + 1),
 box: { x0, y0, x1, y1: oy + 1 },
 };
 }
+const lum = (c) => 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2];
 const shades = (c) => ({ body: css(c), shade: css(c, 0.82), dark: css(c, 0.68), hi: css(mix(c, WHITE, 0.4)), rgb: c });
 function tintCoat(c, L, sc, dead, cause) {
 let o = mix(c, TEAL, [0, 0.12, 0.25, 0.4][L.transformation]);
@@ -17465,7 +17275,7 @@ const v = [1, 1.04, 1.08, 1.12][L.vitality];
 o = [Math.min(1, o[0] * v), Math.min(1, o[1] * v), Math.min(1, o[2] * v)];
 if (L.fire === 3) o = mix(o, EMBER, 0.15);
 if (dead) {
-o = mix(o, ASH, 0.3).map((x) => x * 0.9);
+o = mix(o, ASH, 0.12).map((x) => x * 0.95);
 if (cause === 'fire') o = mix(o, CHAR, 0.65);
 }
 return o;
@@ -17483,8 +17293,9 @@ return out;
 function drawBody(P, look, snap, a, low) {
 const L = rabbitLevels(snap), sc = scarsOf(snap);
 const dead = !snap || snap.alive === false, cause = dead ? (snap && snap.cause) || 'unknown' : null;
-const coat = rgbOf(look.coat, [0.93, 0.89, 0.82]);
-const coat2 = rgbOf(look.coat2, [0.36, 0.24, 0.18]);
+let coat = rgbOf(look.coat, [0.93, 0.89, 0.82]);
+let coat2 = rgbOf(look.coat2, [0.36, 0.24, 0.18]);
+if (look.pattern === 'dutch' && lum(coat) > lum(coat2)) [coat, coat2] = [coat2, coat];
 const kit = snap && snap.stage === 'kit';
 const fur = tintCoat(coat, L, sc, dead, cause);
 const fur2 = tintCoat(kit ? mix(coat2, coat, 0.5) : coat2, L, sc, dead, cause);
@@ -17506,6 +17317,7 @@ acidMarks(S);
 alkaliMarks(S);
 frostMarks(S);
 sickMarks(S);
+pawLayer(S);
 nearLayer(S);
 faceLayer(S);
 if (dead) causeLayer(S);
@@ -17528,7 +17340,7 @@ const { P, a, tr, C, C2 } = S;
 for (const l of a.legs) {
 P(l.x - 1, l.y - 1, l.w + 2, l.h + 2, K);
 P(l.x, l.y, l.w, l.h, S.pattern === 'points' ? C2.body : C.body);
-if (a.pose === 'dead') P(l.x, l.y, l.w, 1, C.hi);
+P(l.x, l.y + l.h - 1, l.w, 1, S.pattern === 'points' ? C2.shade : C.shade);
 }
 if (tr.has('wings')) wingArt(S, true);
 tailLayer(S);
@@ -17560,14 +17372,16 @@ return;
 }
 const e = { cx: t.x, cy: t.y, rx: t.r, ry: t.r };
 ell(P, e, 1, K);
-ell(P, e, 0, S.pattern === 'points' ? C2.body : css(mix(S.fur, WHITE, 0.6)));
+const p = S.pattern;
+ell(P, e, 0, p === 'points' || p === 'spotted' ? C2.body : p === 'agouti' || p === 'dutch' ? S.C.dark : css(mix(S.fur, WHITE, 0.6)));
+if (e.rx > 1) P(e.cx - 1, e.cy - e.rx + 1, 1, 1, 'rgba(255,255,255,0.35)');
 }
 function earArt(S, e, side) {
 const { P, L, sc } = S;
-const base = S.pattern === 'hooded' || S.pattern === 'points' ? S.C2 : S.C;
+const base = S.pattern === 'hooded' || S.pattern === 'points' || S.pattern === 'spotted' ? S.C2 : S.C;
 const rgb = sc[3] >= 2 ? mix(base.rgb, GREY, 0.5) : base.rgb;
 const fill = css(rgb, side === 'near' ? 1 : side === 'far' ? 0.82 : 0.68);
-const inner = side !== 'near' ? null : S.dead ? '#c8a0b0' : C_PINK;
+const inner = side !== 'near' ? null : S.dead ? '#c8a0b0' : C_PINK, inner2 = S.dead ? '#b08898' : C_EAR;
 const tips = [];
 if (!S.dead) for (let i = 0; i < L.frost; i++) tips.push(C_RIME);
 const markN = sc[0] >= 2 ? sc[0] : sc[2];
@@ -17579,7 +17393,12 @@ if (fromTip === 0) { P(x + 1, y, e.w - 2, 1, K); continue; }
 P(x, y, e.w, 1, K);
 const tip = tips[fromTip - 1];
 P(x + 1, y, e.w - 2, 1, tip || fill);
-if (inner && !tip && i > 0) P(x + e.w - 2, y, 1, 1, inner);
+if (tip) continue;
+if (fromTip === 1 && e.w > 4) { P(x + 1, y, 1, 1, K); P(x + e.w - 2, y, 1, 1, K); continue; }
+if (inner && i > 0 && fromTip > 1) {
+P(x + e.w - 3, y, e.w > 4 ? 2 : 1, 1, inner);
+if (e.w > 4 && fromTip > 2 && i > 1) P(x + e.w - 3, y, 1, 1, inner2);
+} else if (side === 'far' && e.w > 4 && fromTip > 1) P(x + e.w - 2, y, 1, 1, css(rgb, 0.68));
 }
 } else if (e.kind === 'lop') {
 P(e.x, e.y, e.w, e.len - 1, K);
@@ -17623,11 +17442,23 @@ for (const b of a.bulges) ell(P, b, 0, C.body);
 ell(P, { cx: h.cx, cy: h.cy + Math.round(h.ry / 2), rx: Math.max(1, h.rx - 2), ry: Math.max(1, Math.round(h.ry / 3)) }, 0, C.shade);
 ell(P, { cx: a.belly.x, cy: a.belly.y, rx: Math.max(1, Math.round(3 * a.g)), ry: Math.max(1, Math.round(2 * a.g)) }, 0, C.hi);
 ell(P, a.head, 0, S.pattern === 'hooded' ? C2.body : C.body);
-if (!a.lying) {
-const foot = S.pattern === 'points' ? C2.body : C.dark, fw = Math.round(5 * a.g), hw = Math.round(6 * a.g);
-P(a.chest.cx - fw, a.feetY, fw, 1, foot);
-P(h.cx - hw, a.feetY, hw, 1, foot);
+const m = a.muzzle;
+ell(P, m, 0, S.pattern === 'dutch' ? C2.body : S.pattern === 'hooded' ? C2.body : C.body);
+if (S.pattern === 'agouti' || S.pattern === 'solid') ell(P, { cx: m.cx, cy: m.cy + 1, rx: Math.max(1, m.rx - 1), ry: Math.max(1, m.ry - 1) }, 0, C.hi);
+if (S.pattern === 'spotted' && (S.seed % 3) === 0) ell(P, { cx: a.eye.x, cy: a.eye.y, rx: 2, ry: 2 }, 0, C2.body); // an eye patch
 }
+function pawLayer(S) {
+const { P, a, C, C2 } = S;
+if (a.lying || a.pose === 'hop') return;
+const foot = S.pattern === 'points' ? C2 : S.pattern === 'dutch' ? C2 : C, y = a.feetY - 1;
+const paw = (x, w) => { P(x - 1, y, 1, 2, K); P(x, y - 1, w, 1, K); P(x + w, y, 1, 2, K); P(x, y, w, 1, foot.shade); P(x, y + 1, w, 1, foot.dark); };
+const hw = Math.max(3, Math.round(6 * a.g)), hx = a.haunch.cx - Math.round(a.g);
+paw(hx, hw);
+P(hx - 1, y + 2, hw + 2, 1, K);
+if (a.pose === 'rear' || a.pose === 'hurt') return;
+const fw = Math.max(2, Math.round(3 * a.g)), fx = Math.min(a.chest.cx + Math.round(a.chest.rx * 0.3), a.head.cx + a.head.rx - fw);
+paw(fx, fw);
+P(fx - 1, y + 2, fw + 2, 1, K);
 }
 function shadeLayer(S) {
 const { P, a } = S;
@@ -17648,18 +17479,18 @@ else if (b === 3 && (y & 1)) P(x, y, 1, 1, fur);
 function patternLayer(S) {
 const { P, a, C2 } = S, body = [a.haunch, a.chest];
 if (S.pattern === 'dutch') {
-const seam = a.chest.cx - a.chest.rx + 1, bw = Math.max(2, Math.round(2.5 * a.g));
+const seam = a.chest.cx - Math.round(a.chest.rx * 0.5), y0 = a.chest.cy - a.chest.ry;
 for (const [y, x0, x1] of rowsOf(body)) {
-const l = Math.max(x0, seam - bw), r = Math.min(x1, seam + bw);
-if (r >= l) P(l, y, r - l + 1, 1, C2.body);
+const l = Math.max(x0, seam - Math.round((y - y0) * 0.4));
+if (x1 >= l) P(l, y, x1 - l + 1, 1, C2.body);
 }
 } else if (S.pattern === 'spotted') {
-const r = new Rng(hashString(`${S.seed}:spots`)), n = 3 + r.int(0, 2);
+const r = new Rng(hashString(`${S.seed}:spots`)), n = 3 + r.int(0, 1);
 for (let i = 0; i < n; i++) {
 const e = i === 0 ? a.chest : a.haunch;
-const ang = r.range(0, Math.PI * 2), rad = Math.sqrt(r.next()) * 0.6;
+const ang = r.range(0, Math.PI * 2), rad = Math.sqrt(r.next()) * 0.55;
 const px = Math.round(e.cx + Math.cos(ang) * e.rx * rad), py = Math.round(e.cy + Math.sin(ang) * e.ry * rad);
-const b = { rx: Math.max(1, Math.round(r.range(1.5, 3) * a.g)), ry: Math.max(1, Math.round(r.range(1, 2) * a.g)) };
+const b = { rx: Math.max(1, Math.round(r.range(2.2, 3.6) * a.g)), ry: Math.max(1, Math.round(r.range(1.6, 2.6) * a.g)) };
 for (let yy = -b.ry; yy <= b.ry; yy++) {
 const s = spanOf(e, py + yy);
 if (!s) continue;
@@ -17668,6 +17499,10 @@ if (rr >= l) P(l, py + yy, rr - l + 1, 1, C2.body);
 }
 }
 } else if (S.pattern === 'agouti') {
+for (const [y, x0, x1] of rowsOf(body)) if (y >= a.chest.cy + 1) {
+const l = Math.max(x0, a.chest.cx - a.chest.rx), r = x1 - 1;
+if (r >= l) P(l, y, r - l + 1, 1, css(mix(S.fur, [1, 0.94, 0.82], 0.45)));
+}
 const tick = css(S.fur, 1.15), dark = css(S.fur, 0.8);
 const [x0, x1] = xRange(body);
 for (let x = x0; x <= x1; x++) {
@@ -17799,27 +17634,34 @@ if (S.pattern === 'points') P(n.x - 2, n.y - 1, 3, 3, C2.body);
 if (sc[3] >= 1) P(n.x - 2, n.y - 1, 3, 2, C_GREY);
 if (!dead && L.death >= 1) P(e.x - 1, e.y + 1, 3, 1, L.death >= 2 ? PAL.stone2 : C.dark);
 if (!dead && L.death >= 2) { P(e.x - 1, e.y - 1, 3, 1, PAL.stone2); P(e.x - 1, e.y + 2, 2, 1, C.dark); }
-if (dead) {
-P(e.x - 1, e.y, 3, 1, K);
-P(e.x - 1, e.y + 1, 1, 1, C.dark); P(e.x + 1, e.y + 1, 1, 1, C.dark);
-} else if (a.pose === 'flop') { P(e.x - 1, e.y - 1, 1, 1, K); P(e.x, e.y, 1, 1, K); P(e.x + 1, e.y - 1, 1, 1, K); }
+const cross = () => { P(e.x - 1, e.y - 1, 1, 1, K); P(e.x + 1, e.y - 1, 1, 1, K); P(e.x, e.y, 1, 1, K); P(e.x - 1, e.y + 1, 1, 1, K); P(e.x + 1, e.y + 1, 1, 1, K); };
+if (dead || a.pose === 'hurt') cross();
+else if (a.pose === 'flop') { P(e.x - 1, e.y - 1, 1, 1, K); P(e.x, e.y, 1, 1, K); P(e.x + 1, e.y - 1, 1, 1, K); }
 else if (L.love === 3) heart(P, e.x - 1, e.y - 1, C_HEART);
 else if (a.pose === 'collapse' || a.pose === 'loaf' || L.toxicity === 3) { P(e.x - 1, e.y - 1, 3, 1, C.dark); P(e.x - 1, e.y, 2, 1, K); }
 else if (L.love === 2) { P(e.x - 1, e.y, 1, 1, K); P(e.x, e.y - 1, 1, 1, K); P(e.x + 1, e.y, 1, 1, K); }
 else {
-const arc = L.arcana >= 2 || sc[4] >= 2;
-P(e.x, e.y, big ? 2 : 1, big ? 2 : 1, arc ? C_RUNE_HI : S.eyeCol === 'ruby' ? C_RUBY : K);
-if (big) P(e.x, e.y, 1, 1, arc ? '#ffffff' : C_CREAM);
-if (arc) P(e.x - 1, e.y, 1, 1, C_RUNE);
-else if (L.arcana === 1) P(e.x, e.y - 1, 1, 1, C_RUNE);
+const arc = L.arcana >= 2 || sc[4] >= 2, col = arc ? C_RUNE_HI : S.eyeCol === 'ruby' ? C_RUBY : K;
+if (big) { P(e.x, e.y - 1, 2, 3, col); P(e.x + 1, e.y - 1, 1, 1, arc ? '#ffffff' : C_CREAM); }
+else { P(e.x, e.y - 1, 2, 2, col); P(e.x + 1, e.y - 1, 1, 1, arc ? '#ffffff' : C_CREAM); }
+if (arc) P(e.x - 2, e.y, 1, 1, C_RUNE);
+else if (L.arcana === 1) P(e.x, e.y - 2, 1, 1, C_RUNE);
 }
 P(n.x, n.y, 1, 1, dead ? '#b07890' : C_NOSE);
+if (!dead) P(n.x - 1, n.y + 2, 1, 1, C.dark); // the mouth
+if (a.pose === 'eat') grassTuft(P, n.x - 2, a.feetY);
 if (dead) { if (S.tr.has('eye3')) P(a.eye3.x, a.eye3.y, 2, 1, K); return; }
 if (L.vitality >= 2) P(n.x - 1, n.y, 1, 1, '#ff8fb8');
-if (L.love >= 1) P(a.cheek.x, a.cheek.y, L.love === 3 ? 3 : 2, 1, C_BLUSH);
+P(a.cheek.x, a.cheek.y, L.love >= 1 ? (L.love === 3 ? 3 : 2) + 1 : 2, 1, L.love >= 2 ? C_HEART : C_BLUSH);
+if (L.love >= 1) P(a.cheek.x + 1, a.cheek.y - 1, 1, 1, C_BLUSH);
 if (L.toxicity === 3) { P(n.x - 1, n.y + 1, 1, 1, C_BLUSH); P(n.x, n.y + 1, 1, 2, C_SLIME); }
 if (L.alkali === 3) { P(n.x + 1, n.y - 1, 2, 1, C_CREAM); P(n.x + 1, n.y + 1, 2, 1, C_CREAM); }
 if (S.tr.has('eye3')) { P(a.eye3.x, a.eye3.y, 2, 1, C_RUNE); P(a.eye3.x + 1, a.eye3.y, 1, 1, C_RUNE_HI); }
+}
+function grassTuft(P, x, y) {
+P(x - 1, y, 7, 1, C_GRASS2);
+P(x, y - 1, 5, 1, C_GRASS);
+P(x, y - 2, 1, 1, C_GRASS); P(x + 2, y - 3, 1, 2, C_GRASS3); P(x + 4, y - 2, 1, 1, C_GRASS); P(x + 5, y - 3, 1, 1, C_GRASS3);
 }
 function causeLayer(S) {
 const { P, a } = S;
@@ -17876,6 +17718,10 @@ const body = [a.haunch, a.chest, ...a.bulges];
 const [bx0, bx1] = xRange(a.parts);
 const headTop = a.head.cy - a.head.ry, midY = Math.round((a.haunch.cy + a.head.cy) / 2);
 const backTop = (x) => colEdge(body, x, -1) ?? a.back.y;
+if (a.pose === 'hurt' && (react > 0 || mod(tt, 2.4) < 0.9)) { // startled: shock lines flick out from the crown
+const x = a.head.cx + a.head.rx, y = headTop - 1, o = (tt * 6) & 1;
+P(x - 1, y - 3 - o, 1, 2, K); P(x + 1, y - 1 - o, 1, 1, K); P(x + 2, y - 2 - o, 1, 1, K); P(x + 2 + o, y + 1, 2, 1, K);
+}
 let v = lv('vitality');
 if (v) { // a twinkle running along the back, rising gold pluses, a gleam
 const x = a.back.x0 + Math.floor(mod(tt * 9, Math.max(1, a.back.x1 - a.back.x0)));
@@ -18011,7 +17857,7 @@ const shake = react > 0 ? Math.round(Math.sin(t * 40) * react * 1.5) : 0;
 const L = rabbitLevels(snap);
 if (a.lying || L.frost === 3) return { dx: shake, dy: 0 };
 const seed = (look.seed >>> 0) || 1, ts = t * rabbitPace(snap);
-const slumped = a.pose === 'sick' || a.pose === 'loaf';
+const slumped = a.pose === 'sick' || a.pose === 'loaf' || a.pose === 'hurt';
 let dx = 0, dy = 0;
 if (hop && a.pose === 'idle') {
 const per = (4 + (seed % 300) / 100) * (snap.stage === 'kit' ? 0.6 : 1), ph = mod(ts + (seed % 7), per);
@@ -18066,25 +17912,19 @@ if (opts.clear !== false) ctx.clearRect(fx, fy, RABBIT_W, RABBIT_H);
 if (opts.floor !== false) drawFloor(ctx, fx, fy);
 if (!look || !snap) return;
 const low = opts.quality === 'low', mirror = !!opts.mirror, clip = opts.clip !== false;
-const a = rabbitAnchors(look, snap, opts.pose);
 const rx = clamp(Number(react) || 0, 0, 1);
 const acted = rx > 0 && Array.isArray(opts.react) ? opts.react : [];
 const time = Number(t) || 0;
+let a = rabbitAnchors(look, snap, opts.pose || (rx > 0.25 && acted.some((c) => HARM.includes(c)) ? 'hurt' : undefined));
 const m = motion(look, snap, a, time, rx, opts.hop !== false);
+if ((a.pose === 'idle' || a.pose === 'sick') && ((opts.lift || 0) > 0 || m.dy < -1)) a = rabbitAnchors(look, snap, 'hop');
 const dy = m.dy - Math.round(opts.lift || 0);
 const shadowP = pen(ctx, fx, fy, m.dx, 0, mirror, clip);
 const sx0 = a.haunch.cx - a.haunch.rx + 1, sx1 = Math.max(a.chest.cx + a.chest.rx, a.lying ? a.head.cx + a.head.rx : 0);
 shadowP(sx0, a.feetY + 1, sx1 - sx0, 1, 'rgba(0,0,0,0.18)');
 shadowP(sx0 + 2, a.feetY + 2, sx1 - sx0 - 4, 1, 'rgba(0,0,0,0.12)');
 const factory = opts.factory || (typeof document !== 'undefined' ? makeCanvas : null);
-loadRabbitAtlas();
-const fr = rabbitAtlasReady() ? rabbitFrame(look, snap, { pose: a.pose, t: time, air: (opts.lift || 0) > 0 || m.dy < -1 }) : null;
-if (fr && drawRabbitFrame(ctx, look, fr.name, mirror ? fx - m.dx : fx + m.dx, fy + dy, mirror)) {
-if (fr.channel) {
-const i = RABBIT_MARKS.indexOf(fr.channel);
-snap = { ...snap, lv: (snap.lv || []).map((v, j) => (j === i ? 0 : v)) };
-}
-} else if (opts.cache !== false && factory) {
+if (opts.cache !== false && factory) {
 const sprite = spriteFor(look, snap, a.pose, low, factory);
 if (mirror) {
 ctx.save();
@@ -18094,7 +17934,7 @@ ctx.drawImage(sprite, 0, 0);
 ctx.restore();
 } else ctx.drawImage(sprite, fx + m.dx, fy + dy);
 } else drawBody(pen(ctx, fx, fy, m.dx, dy, mirror, clip), look, snap, a, low);
-drawFx(pen(ctx, fx, fy, m.dx, dy, mirror, clip), look, snap, a, time, rx, fr && fr.channel ? acted.filter((c) => c !== fr.channel) : acted, low);
+drawFx(pen(ctx, fx, fy, m.dx, dy, mirror, clip), look, snap, a, time, rx, acted, low);
 if (rx > 0 && opts.flash !== false) {
 ctx.fillStyle = `rgba(255,255,255,${(rx * 0.35).toFixed(3)})`;
 ctx.fillRect(fx, fy, RABBIT_W, RABBIT_H);
@@ -18103,7 +17943,7 @@ ctx.fillRect(fx, fy, RABBIT_W, RABBIT_H);
 return { RABBIT_W, RABBIT_H, rabbitLevels, rabbitPose, rabbitPace, rabbitAnchors, rabbitSpriteKey, drawRabbitSprite, clearRabbitSprites, drawRabbit };
 })();
 // src/rendering/hutch-scene.js
-const __m82 = (() => {
+const __m80 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m54;
 const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m78;
@@ -18437,7 +18277,7 @@ return this._begin(a, pick, dur);
 }
 _begin(a, act, dur) {
 a.act = act; a.at = 0; a.dur = dur; a.hops = 0;
-a.pose = act === 'loaf' ? 'loaf' : act === 'flex' ? 'rear' : act === 'flop' ? 'flop' : null;
+a.pose = act === 'loaf' ? 'loaf' : act === 'flex' ? 'rear' : act === 'flop' ? 'flop' : act === 'eat' ? 'eat' : null;
 if (act === 'eat') a.face = -1;
 }
 _goal(a, r, range) {
@@ -18524,13 +18364,13 @@ ctx.drawImage(this.bg, 0, 0);
 return { HUTCH_W, HUTCH_H, HUTCH_BODIES, paintHutch, paintHutchFront, HutchScene };
 })();
 // src/ui/views/hutch.js
-const __m81 = (() => {
+const __m79 = (() => {
 const { readingSteadiness } = __m27;
 const { h, btn, clear, toast, modal, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
 const { drawRabbit, RABBIT_W, RABBIT_H } = __m78;
-const { HutchScene, HUTCH_W, HUTCH_H } = __m82;
+const { HutchScene, HUTCH_W, HUTCH_H } = __m80;
 const { EFFECT_BY_KEY } = __m13;
 const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral, RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE, BURNS } = __m28;
 const { PURGE_BREW_TIME } = __m5;
@@ -18873,7 +18713,7 @@ const { shortName } = __m22;
 const LEVEL_SHORT = { preliminary: '1 reading', repeated: 'repeated', corroborated: 'corroborated', certified: 'certified' };
 const { drawRabbit } = __m78;
 const { focusRabbit, findRabbit, rabbitSnap, decodeSnap, lookFromSeed, RABBIT_MARKS } = __m28;
-const { HutchPanel } = __m81;
+const { HutchPanel } = __m79;
 const REPLAY_T = 3.2;
 class TrialsView {
 constructor(lab) {
@@ -19250,7 +19090,7 @@ return `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2
 return { TrialsView, EFFECTS, EFFECT_INDEX };
 })();
 // src/ui/views/book.js
-const __m83 = (() => {
+const __m81 = (() => {
 const { h, btn, clear } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
@@ -19389,7 +19229,7 @@ const { Tutorial } = __m72;
 const { CounterView } = __m73;
 const { WildsView } = __m74;
 const { TrialsView } = __m77;
-const { BookView } = __m83;
+const { BookView } = __m81;
 const { shortName } = __m22;
 const REQ_ICON = { temperature: 'thermo', quantity: 'flask', purity: 'pure' };
 const TOOL_DEFS = [
@@ -21127,7 +20967,7 @@ void dominantEffect;
 return { VIEWS, LabScreen };
 })();
 // src/materials/reference.js
-const __m85 = (() => {
+const __m83 = (() => {
 const { completeMaterial } = __m9;
 const REF = {};
 const add = (d) => (REF[d.id] = completeMaterial(d));
@@ -21165,11 +21005,11 @@ const refLookup = (id) => REF[id];
 return { REF, refLookup };
 })();
 // src/ui/menu.js
-const __m84 = (() => {
+const __m82 = (() => {
 const { h, btn } = __m2;
 const { Renderer } = __m53;
 const { Simulation } = __m31;
-const { REF, refLookup } = __m85;
+const { REF, refLookup } = __m83;
 const { hasSave, loadGame } = __m50;
 const { audio } = __m4;
 class MenuScreen {
@@ -21258,7 +21098,7 @@ const { sandboxIngredients } = __m7;
 const { EQUIPMENT } = __m26;
 const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m50;
 const { LabScreen } = __m51;
-const { MenuScreen } = __m84;
+const { MenuScreen } = __m82;
 const { openSettings, openHelp } = __m69;
 const { Rng } = __m6;
 const { normalizeTrials } = __m27;
@@ -21375,7 +21215,7 @@ openHelp();
 return { App, icon };
 })();
 // src/ui/textures.js
-const __m86 = (() => {
+const __m84 = (() => {
 const { Rng } = __m6;
 function texture(w, h, paint) {
 const cv = document.createElement('canvas');
@@ -21419,7 +21259,7 @@ return { installTextures };
 // src/main.js
 const __m0 = (() => {
 const { App } = __m1;
-const { installTextures } = __m86;
+const { installTextures } = __m84;
 installTextures();
 const root = document.getElementById('app');
 const app = new App(root);
