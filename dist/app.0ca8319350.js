@@ -10804,7 +10804,6 @@ return { PIECE_ART, loadPieceArt, piecePalette };
 const __m57 = (() => {
 const { EFFECTS } = __m13;
 const K = Object.fromEntries(EFFECTS.map((e, k) => [e.key, k]));
-const COL = EFFECTS.map((e) => e.color);
 function hash01(n) {
 n = Math.imul(n ^ (n >>> 15), 0x2c1b3c6d);
 n = Math.imul(n ^ (n >>> 12), 0x297a2d39);
@@ -10829,114 +10828,265 @@ const cx = Math.floor(sx / C), cy = Math.floor(yy / C);
 const h = cellHash(cx, cy, salt);
 if (h >= prob) return false;
 dH = h / prob;
-const span = C - 2 * m;
+const span = Math.max(1, C - 2 * m);
 dX = sx - (cx * C + m + Math.floor(cellHash(cx, cy, salt + 7) * span));
 dY = yy - (cy * C + m + Math.floor(cellHash(cx, cy, salt + 13) * span));
 return true;
 }
 const fc = [0, 0, 0];
-function mixTo(c, t, l = 1) {
-fc[0] += (c[0] * l - fc[0]) * t; fc[1] += (c[1] * l - fc[1]) * t; fc[2] += (c[2] * l - fc[2]) * t;
+const INK = [0.02, 0.02, 0.03], GROUND = [0, 0, 0];
+const base = [0, 0, 0], LIGHT = [0, 0, 0], DARK = [0, 0, 0], HI = [0, 0, 0], DEEP = [0, 0, 0], TMP = [0, 0, 0];
+function mixTo(c, t) {
+fc[0] += (c[0] - fc[0]) * t; fc[1] += (c[1] - fc[1]) * t; fc[2] += (c[2] - fc[2]) * t;
 }
-function shade(f) { fc[0] *= f; fc[1] *= f; fc[2] *= f; }
-const IR = [0, 0, 0], GREY = [0, 0, 0];
-const WHITE = [1, 1, 1], BLACK = [0.04, 0.03, 0.06], EMBER = [1, 0.86, 0.4], ASH = [0.2, 0.18, 0.24];
-const HEART = [0b01010, 0b11111, 0b01110, 0b00100];
+const HEART_S = [0b01010, 0b11111, 0b01110, 0b00100]; // 5×4, centre (2, 1)
+const HEART_L = [0b0110110, 0b1111111, 0b1111111, 0b0111110, 0b0011100, 0b0001000]; // 7×6, centre (3, 2)
+const inMask = (rows, w, x, y) => x >= 0 && x < w && y >= 0 && y < rows.length && ((rows[y] >> (w - 1 - x)) & 1) === 1;
+function hueTurn(c, a, out) {
+const cs = Math.cos(a), sn = Math.sin(a), k = 0.57735;
+const d = (1 - cs) / 3, e = k * sn;
+out[0] = c[0] * (cs + d) + c[1] * (d - e) + c[2] * (d + e);
+out[1] = c[0] * (d + e) + c[1] * (cs + d) + c[2] * (d - e);
+out[2] = c[0] * (d - e) + c[1] * (d + e) + c[2] * (cs + d);
+return out;
+}
 function potionFx(f, o, mask, inv, sx, sy, time, below, edge) {
+base[0] = fc[0]; base[1] = fc[1]; base[2] = fc[2];
+for (let c = 0; c < 3; c++) {
+LIGHT[c] = base[c] + (1 - base[c]) * 0.45;
+HI[c] = base[c] + (1 - base[c]) * 0.9;
+GROUND[c] = base[c] * 0.8;
+DARK[c] = base[c] * 0.62;
+DEEP[c] = base[c] * 0.3;
+}
 for (let m = mask, k = 0; m; m >>>= 1, k++) {
 if (!(m & 1)) continue;
 const A = Math.min(1, Math.sqrt(f[o + k] * inv) * 1.3);
 if (A < 0.03) continue;
-const c = COL[k];
+mixTo(GROUND, A * 0.35);
 switch (k) {
 case K.vitality: {
 const t = (time / 1.2) % 1;
 const beat = Math.exp(-Math.pow((t - 0.1) / 0.05, 2)) + 0.6 * Math.exp(-Math.pow((t - 0.3) / 0.05, 2));
-mixTo(c, A * (0.12 + 0.4 * beat), 1.2);
-if (cellDot(sx, sy, 9, time * 6, A * 0.5, 101, 1)) {
-const d = Math.abs(dX) + Math.abs(dY);
-if (d === 0) mixTo(WHITE, 0.75, 1); else if (d === 1) mixTo(c, 0.55, 1.3);
+const n = vnoise(sx * 0.11, sy * 0.11 - time * 0.4, 101);
+if (n > 0.55) mixTo(LIGHT, A * (n - 0.55) * (1.3 + 1.2 * beat));
+else if (n < 0.4) mixTo(DARK, A * (0.4 - n) * 1.1);
+if (cellDot(sx, sy, 8, time * 5, A * 0.45, 103, 1)) {
+const ax = Math.abs(dX), ay = Math.abs(dY);
+if (ax + ay === 0) mixTo(HI, 0.9);
+else if (ax + ay === 1 && dH > 0.6 && beat > 0.3) mixTo(LIGHT, 0.7);
 }
 break;
 }
 case K.strength: {
-const wv = sy * 0.45 + Math.sin(sx * 0.06 + time * 0.5) * 2.2 + time * 0.6;
-const band = wv - Math.floor(wv / 4) * 4;
-if (band < 1) { mixTo(c, A * 0.4, 1.25); } else if (band >= 3) shade(1 - A * 0.22);
+const wv = sy * 0.09 + Math.sin(sx * 0.075 + time * 0.7) * 0.5 + time * 0.12;
+const step = Math.floor((wv - Math.floor(wv)) * 5);
+const tone = step === 0 ? HI : step === 1 ? LIGHT : step === 3 ? DARK : step === 4 ? DEEP : null;
+if (tone) mixTo(tone, A * (step === 4 ? 0.45 : 0.55));
 break;
 }
 case K.love: {
-if (cellDot(sx, sy, 11, time * 4.5, A * 0.5, 211, 3)) {
-const wob = Math.round(Math.sin(time * 2 + dH * 9) * 1);
-const hx = dX + 2 - wob, hy = dY + 1;
-if (hx >= 0 && hx < 5 && hy >= 0 && hy < 4 && (HEART[hy] >> (4 - hx)) & 1) mixTo(c, 0.8, 1.2);
+if (cellDot(sx, sy, 16, time * 3, A * 0.45, 211, 4)) {
+const sw = Math.round(Math.sin(time * 1.6 + dH * 9) * 1.5);
+if (inMask(HEART_L, 7, dX + 3 - sw, dY + 2)) mixTo(HI, 0.85);
 }
-mixTo(c, A * 0.12);
+if (cellDot(sx, sy, 10, time * 5, A * 0.5, 223, 3)) {
+const sw = Math.round(Math.sin(time * 2.2 + dH * 9) * 1);
+if (inMask(HEART_S, 5, dX + 2 - sw, dY + 1)) mixTo(LIGHT, 0.85);
+}
+if (cellDot(sx, sy, 6, time * 4, A * 0.25, 227, 0) && dX === 0 && dY === 0) mixTo(HI, 0.6);
 break;
 }
 case K.arcana: {
-mixTo(c, A * 0.1, 0.8);
-if (cellDot(sx, sy, 8, 0, A * 0.6, 307, 2)) {
-const tw = Math.max(0, Math.sin(time * (1.5 + dH * 2) + dH * 40));
+mixTo(DARK, A * 0.18);
+if (cellDot(sx, sy, 11, time * 0.6, A * 0.75, 307, 4)) {
+const tw = 0.5 + 0.5 * Math.sin(time * (1.2 + dH * 1.8) + dH * 40);
+const L = Math.round((1 + Math.floor(dH * 3.99)) * (0.3 + 0.7 * tw));
 const ax = Math.abs(dX), ay = Math.abs(dY);
-if (ax === 0 && ay === 0 && tw > 0.1) mixTo(WHITE, 0.5 + 0.5 * tw, 1);
-else if (tw > 0.45 && ((ax === 0 && ay === 1) || (ay === 0 && ax === 1))) mixTo(c, 0.85, 1.5);
-else if (tw > 0.8 && ((ax === 0 && ay === 2) || (ay === 0 && ax === 2))) mixTo(c, 0.6, 1.3);
+if (ax === 0 && ay === 0 && tw > 0.05) mixTo(HI, 0.6 + 0.4 * tw);
+else if ((ax === 0 && ay <= L) || (ay === 0 && ax <= L)) mixTo(Math.max(ax, ay) === L ? LIGHT : HI, 0.85);
 }
+if (cellDot(sx, sy, 5, 0, A * 0.3, 311, 0) && dX === 0 && dY === 0 && Math.sin(time * 3 + dH * 50) > 0) mixTo(LIGHT, 0.7);
 break;
 }
 case K.transformation: {
-const h = (sx * 0.05 - sy * 0.035 + time * 0.35) * 6.2832;
-IR[0] = 0.5 + 0.5 * Math.cos(h); IR[1] = 0.5 + 0.5 * Math.cos(h - 2.094); IR[2] = 0.5 + 0.5 * Math.cos(h + 2.094);
-mixTo(IR, A * 0.45, Math.max(fc[0], fc[1], fc[2], 0.25) * 1.1);
+const ph = (sx + sy) / 14 - time * 0.5;
+const fr = ph - Math.floor(ph), band = Math.floor(ph);
+hueTurn(fr < 0.5 ? LIGHT : DARK, Math.sin(band * 1.7 + time * 0.8) * 0.9, TMP);
+mixTo(TMP, A * (fr < 0.08 || (fr > 0.5 && fr < 0.58) ? 0.35 : 0.6));
+const along = (sx - sy) / 2 + time * 6;
+if (fr > 0.2 && fr < 0.3 && ((Math.floor(along) % 5) + 5) % 5 === 0) mixTo(HI, A * 0.9);
 break;
 }
 case K.fire: {
-const fl = vnoise(sx * 0.18, sy * 0.12 + time * 3, 401);
-mixTo(c, A * (0.15 + 0.45 * fl) * (below < 8 ? 1.4 : 1), 1.25);
-if (fl > 0.72) mixTo(EMBER, A * (fl - 0.72) * 2.5, 1.1);
-if (cellDot(sx, sy, 7, time * 22, A * 0.55, 409, 1) && dX === 0) {
-if (dY === 0) mixTo(EMBER, 0.95, 1.15); else if (dY === 1) mixTo(c, 0.85, 1.2); else if (dY === 2) mixTo(c, 0.45, 1);
+const n = vnoise(sx * 0.16, sy * 0.06 + time * 1.8, 401) * 0.7 + vnoise(sx * 0.4, sy * 0.15 + time * 4, 403) * 0.3;
+const hot = below < 10 ? 0.08 : 0;
+if (n + hot > 0.62) mixTo(n + hot > 0.74 ? HI : LIGHT, A * Math.min(1, (n + hot - 0.62) * 5));
+else if (n < 0.38) mixTo(DARK, A * (0.38 - n) * 2);
+if (cellDot(sx, sy, 9, time * 14, A * 0.4, 409, 2)) {
+const cx = Math.round(Math.sin(time * 6 + dH * 20 + dY * 0.9) * 1);
+if (dY === 0 && dX === 0) mixTo(HI, 0.95);
+else if (dY > 0 && dY <= 2 && dX === cx) mixTo(LIGHT, 0.7);
 }
 break;
 }
 case K.frost: {
-if (edge) mixTo(WHITE, A * 0.6, 0.95);
-mixTo(c, A * 0.12);
-if (cellDot(sx, sy, 10, -time * 1.5, A * 0.6, 503, 2)) {
-const ax = Math.abs(dX), ay = Math.abs(dY);
-const flake = (ax === 0 && ay === 0) || (ax === 1 && ay === 1) || (ax === 0 && ay === 2) || (ay === 0 && ax === 2);
-if (flake) mixTo(WHITE, ax + ay === 0 ? 1 : 0.8, 1);
+mixTo(LIGHT, A * (edge ? 0.8 : 0.25));
+if (cellDot(sx, sy, 12, -time * 2, A * 0.75, 503, 4)) {
+const sw = Math.round(Math.sin(time * 1.1 + dH * 9) * 1.5);
+const ax = Math.abs(dX - sw), ay = Math.abs(dY), R = dH > 0.5 ? 3 : 2;
+const arm = (ax === 0 || ay === 0 || ax === ay) && Math.max(ax, ay) <= R;
+const tip = R === 3 && ((ax === 1 && ay === 3) || (ax === 3 && ay === 1));
+if (arm || tip) mixTo(ax + ay === 0 || Math.max(ax, ay) === R ? HI : LIGHT, 0.9);
 }
+if (cellDot(sx, sy, 6, -time * 3, A * 0.25, 509, 0) && dX === 0 && dY === 0) mixTo(HI, 0.7);
 break;
 }
 case K.acidity: {
-if (cellDot(sx, sy, 5, time * 16, A * 0.5, 601, 0) && dX === 0 && dY === 0) mixTo(c, 0.7, 1.35);
-if (below <= 1 && cellHash(sx, Math.floor(time * 8), 607) < A * 0.4) mixTo(WHITE, 0.6, 1);
+if (cellDot(sx, sy, 3, time * 18, A * 0.5, 601, 0) && dX === 0 && dY === 0) mixTo(dH < 0.65 ? HI : DARK, 0.75);
+if (cellDot(sx, sy, 4, time * 11, A * 0.35, 603, 0) && dX === 0 && dY === 0) mixTo(LIGHT, 0.6);
+if (below <= 1 && cellHash(sx, Math.floor(time * 10), 607) < A * 0.45) mixTo(HI, 0.8);
 break;
 }
 case K.toxicity: {
-const n = vnoise(sx * 0.1 + time * 0.15, sy * 0.1 - time * 0.25, 701);
-if (n > 0.5) mixTo(c, A * Math.min(1, (n - 0.5) * 2.2) * 0.7, 0.65);
-if (cellDot(sx, sy, 13, time * 2.5, A * 0.35, 709, 3)) {
-const bx = dX + 0.5, by = dY + 0.5, r2 = bx * bx + by * by;
-if (r2 < 4.4) mixTo(c, r2 > 1.6 ? 0.85 : bx < 0 && by < 0 ? 0.6 : 0.3, r2 > 1.6 ? 0.6 : 1.35);
+const n = vnoise(sx * 0.07 + time * 0.12, sy * 0.08 - time * 0.2, 701) * 0.75 + vnoise(sx * 0.2 - time * 0.3, sy * 0.2, 703) * 0.25;
+if (n > 0.52) mixTo(DEEP, A * Math.min(0.75, (n - 0.52) * 2.6));
+else if (n < 0.35) mixTo(LIGHT, A * (0.35 - n) * 1.8);
+if (cellDot(sx, sy, 15, time * 2.2, A * 0.4, 709, 5)) {
+const R = 2.3 + dH * 2.2 + Math.sin(time * 3 + dH * 30) * 0.3;
+const d = Math.hypot(dX, dY);
+if (d < R + 0.5) {
+if (d > R - 0.6) mixTo(DEEP, 0.85);
+else if (dX < 0 && dY < 0 && d > R * 0.3 && d < R * 0.7) mixTo(HI, 0.85);
+else mixTo(DARK, 0.4);
+}
 }
 break;
 }
 case K.death: {
-const n = vnoise(sx * 0.06 - time * 0.1, sy * 0.07 + time * 0.2, 801);
-GREY[0] = GREY[1] = GREY[2] = (fc[0] + fc[1] + fc[2]) / 3;
-mixTo(GREY, A * 0.45);
-if (n > 0.5) mixTo(BLACK, A * (n - 0.5) * 1.5);
-if (cellDot(sx, sy, 9, -time * 3, A * 0.35, 809, 1) && dX === 0 && dY === 0) mixTo(ASH, 0.8);
-mixTo(c, A * 0.08);
+const wx = vnoise(sx * 0.05 + time * 0.1, sy * 0.05, 801) * 6, wy = vnoise(sx * 0.05, sy * 0.05 - time * 0.12, 803) * 6;
+const n = vnoise(sx * 0.06 + wx, sy * 0.06 + wy - time * 0.15, 805);
+if (n > 0.5) mixTo(DEEP, A * Math.min(0.85, (n - 0.5) * 2.4));
+else if (n < 0.3) mixTo(LIGHT, A * (0.3 - n) * 1.2);
+if (cellDot(sx, sy, 8, -time * 3.5, A * 0.4, 809, 1)) {
+if (dX === 0 && dY === 0) mixTo(dH < 0.8 ? INK : HI, 0.9);
+else if (dH < 0.25 && dX === 1 && dY === 0) mixTo(INK, 0.8);
+}
 break;
 }
 }
 }
 }
 return { fc, potionFx };
+})();
+// src/rendering/brew-palette.js
+const __m58 = (() => {
+const { MAX_SPECIES } = __m18;
+const { srgbToLinear, linearToSrgb } = __m8;
+const { PIECE_ART, piecePalette } = __m56;
+const { grainSkinOf } = __m19;
+const bySpecies = new WeakMap();
+const bySkin = new Map();
+function paintedSource(def, sim, depth = 0) {
+if (!def || depth > 3) return null;
+if (grainSkinOf(def, 0)) return def;
+if (def.awakened && def.base) return paintedSource(sim.lookup(def.base), sim, depth + 1);
+const rules = sim.reactions && sim.reactions.rules;
+if (rules) {
+for (const r of rules) {
+if (r.products && r.products.length === 1 && r.products[0].id === def.id && !r.b) {
+const src = paintedSource(sim.lookup(r.a), sim, depth + 1);
+if (src) return src;
+}
+}
+}
+return null;
+}
+function skinPalette(base) {
+let got = bySkin.get(base);
+if (got !== undefined) return got;
+const px = [];
+for (let v = 0; v < 4; v++) {
+const pal = piecePalette(base + v);
+if (!pal) continue;
+for (let i = 0; i < pal.length; i++) px.push(pal[i]);
+}
+if (!px.length) { bySkin.set(base, null); return null; }
+const cols = px.map((c) => [(c & 255) / 255, ((c >>> 8) & 255) / 255, ((c >>> 16) & 255) / 255]);
+const lum = (c) => 0.3 * c[0] + 0.55 * c[1] + 0.15 * c[2];
+const body = cols.filter((c) => lum(c) > 0.14);
+const use = body.length > cols.length * 0.3 ? body : cols;
+const mean = [0, 0, 0];
+for (const c of use) for (let k = 0; k < 3; k++) mean[k] += srgbToLinear(c[k]);
+for (let k = 0; k < 3; k++) mean[k] = linearToSrgb(mean[k] / use.length);
+const n = Math.min(32, use.length);
+const shades = new Float32Array(n * 3);
+for (let i = 0; i < n; i++) {
+const c = use[Math.floor(((i + 0.5) / n) * use.length)];
+for (let k = 0; k < 3; k++) shades[i * 3 + k] = Math.max(0.55, Math.min(1.5, (c[k] + 0.04) / (mean[k] + 0.04)));
+}
+got = { mean, shades, n };
+bySkin.set(base, got);
+return got;
+}
+function speciesPalette(def, sim) {
+if (!def || typeof def !== 'object') return null;
+let got = bySpecies.get(def);
+if (got !== undefined) return got;
+got = null;
+const src = paintedSource(def, sim);
+const sk = src ? skinPalette(grainSkinOf(src, 0)) : null;
+if (sk) {
+const dim = src === def || def.awakened ? 1 : 0.85;
+const tint = def.tint ?? 1;
+got = { abs: sk.mean.map((c) => -Math.log(Math.max(0.003, srgbToLinear(c * dim))) * tint), shades: sk.shades, n: sk.n };
+}
+bySpecies.set(def, got);
+return got;
+}
+const slots = /** @type {(SpeciesPalette|null)[]} */ (new Array(MAX_SPECIES).fill(null));
+const slotDef = new Array(MAX_SPECIES).fill(null);
+let any = false;
+function preparePalettes(sim) {
+if (!PIECE_ART.ready) return false;
+const sp = sim.species;
+any = false;
+for (let s = 0; s < sp.count; s++) {
+const d = sp.defs[s];
+if (d !== slotDef[s]) { slotDef[s] = d; slots[s] = speciesPalette(d, sim); }
+if (slots[s]) any = true;
+}
+return any;
+}
+const pc = [0, 0, 0];
+function paletteColour(sim, i) {
+const p = sim.p, sp = sim.species, comp = p.comp, off = i * MAX_SPECIES;
+let tot = 0, aR = 0, aG = 0, aB = 0, pw = 0, best = -1, bestF = 0;
+for (let s = 0; s < sp.count; s++) {
+const f = comp[off + s];
+if (f <= 0) continue;
+tot += f;
+const pl = slots[s];
+if (pl) {
+aR += f * pl.abs[0]; aG += f * pl.abs[1]; aB += f * pl.abs[2];
+pw += f;
+if (f > bestF) { bestF = f; best = s; }
+} else {
+aR += f * sp.absR[s]; aG += f * sp.absG[s]; aB += f * sp.absB[s];
+}
+}
+if (pw <= 0 || tot <= 1e-6) return false;
+const inv = 1 / tot;
+let r = linearToSrgb(Math.exp(-aR * inv)), g = linearToSrgb(Math.exp(-aG * inv)), b = linearToSrgb(Math.exp(-aB * inv));
+const pl = /** @type {SpeciesPalette} */ (slots[best]);
+const sd = p.seed[i];
+const h = (Math.imul(sd ^ (sd >>> 16), 0x45d9f3b) >>> 0) % pl.n;
+const t = Math.min(1, pw * inv * 1.6) * 0.6;
+r *= 1 + (pl.shades[h * 3] - 1) * t; g *= 1 + (pl.shades[h * 3 + 1] - 1) * t; b *= 1 + (pl.shades[h * 3 + 2] - 1) * t;
+pc[0] = Math.min(1, r); pc[1] = Math.min(1, g); pc[2] = Math.min(1, b);
+return true;
+}
+return { preparePalettes, pc, paletteColour };
 })();
 // src/rendering/fluid.js
 const __m55 = (() => {
@@ -10946,6 +11096,7 @@ const { PIECE_ART, loadPieceArt, piecePalette } = __m56;
 const { PIECE_CELL } = __m20;
 const { EFFECTS, NE } = __m13;
 const { potionFx, fc } = __m57;
+const { preparePalettes, paletteColour, pc: palCol } = __m58;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const LS = 9;
 function hash01(n) {
@@ -11063,7 +11214,8 @@ if (ph === SOLID) anySolid = true; else if (ph === GAS) anyGas = true; else if (
 if (p.auraI[i] > 0.002 || p.glow[i] > 0.02 || p.burn[i] > 0.02) anyLight = true;
 if (p.auraI[i] > 0.002) for (let k = 0, o = i * NE; k < NE; k++) if (p.auraFx[o + k] > 0) fxMask |= 1 << k;
 }
-if ((anySolid || anyGrain) && !PIECE_ART.loading) loadPieceArt();
+if (!PIECE_ART.loading) loadPieceArt();
+const painted = preparePalettes(sim);
 const art = PIECE_ART.ready ? PIECE_ART.px : null, artW = PIECE_ART.width;
 const pad = Math.ceil(0.16 * s) + 8;
 const bx = Math.floor(minX) - pad, by = Math.floor(minY) - pad;
@@ -11088,7 +11240,8 @@ const T = p.temp;
 for (let i = 0; i < n; i++) {
 const ph = p.phase[i];
 const fx = p.x[i] * s + view.ox - bx, fy = p.y[i] * s + view.oy - by;
-const r = colR[i], g = colG[i], b = colB[i];
+let r = colR[i], g = colG[i], b = colB[i];
+if (painted && p.whole[i] < 0.5 && paletteColour(sim, i)) { r = palCol[0]; g = palCol[1]; b = palCol[2]; }
 const seed = p.seed[i];
 const lit = anyLight && emission(p, i, r, g, b) > 0.004;
 const eR = em[0], eG = em[1], eB = em[2];
@@ -11282,7 +11435,7 @@ for (let y = 0; y < h; y++) {
 const row = y * w;
 for (let x = 0; x < w; x++) {
 const k = row + x;
-let R = 0, G = 0, B = 0, A = 0;
+let R = 0, G = 0, B = 0, A = 0, fxLiq = false, fxEdge = false;
 const gp = anyGrain ? grain[k] : 0;
 if (gp) {
 R = (gp & 255) / 255; G = ((gp >>> 8) & 255) / 255; B = ((gp >>> 16) & 255) / 255; A = 1;
@@ -11457,13 +11610,8 @@ r += hh; g += hh * 0.3;
 }
 r *= l; g *= l; b *= l;
 if (fxMask && !thermal) {
-const ew = emit[k * 4 + 3];
-if (ew > 0.02) {
-const edge = up <= thr || down <= thr || (x > 0 && wb[k - 1] <= thr) || (x < w - 1 && wb[k + 1] <= thr);
-fc[0] = r; fc[1] = g; fc[2] = b;
-potionFx(mfx, k * NE, fxMask, 1 / Math.max(ew, 0.6), x + bx, y + by, time, y - surf[x], edge);
-r = fc[0]; g = fc[1]; b = fc[2];
-}
+fxLiq = true;
+fxEdge = up <= thr || down <= thr || (x > 0 && wb[k - 1] <= thr) || (x < w - 1 && wb[k + 1] <= thr);
 }
 R = R * (1 - a) + r * a; G = G * (1 - a) + g * a; B = B * (1 - a) + b * a;
 A = A + (1 - A) * a;
@@ -11509,6 +11657,15 @@ R += (e0 * lum - R) * t; G += (e1 * lum - G) * t; B += (e2 * lum - B) * t;
 }
 const er = Math.min(1, e0 * 0.6), eg = Math.min(1, e1 * 0.6), eb = Math.min(1, e2 * 0.6);
 R = 1 - (1 - R) * (1 - er); G = 1 - (1 - G) * (1 - eg); B = 1 - (1 - B) * (1 - eb);
+}
+}
+if (fxLiq) {
+const ew = emit[k * 4 + 3];
+if (ew > 0.02 && A > 0.05) {
+const ia = 1 / A;
+fc[0] = R * ia; fc[1] = G * ia; fc[2] = B * ia;
+potionFx(mfx, k * NE, fxMask, 1 / Math.max(ew, 0.6), x + bx, y + by, time, y - surf[x], fxEdge);
+R = fc[0] * A; G = fc[1] * A; B = fc[2] * A;
 }
 }
 const o = k * 4;
@@ -11626,7 +11783,7 @@ return v < 0 ? 0 : v > 255 ? 255 : v | 0;
 return { FluidRenderer };
 })();
 // src/rendering/effects.js
-const __m58 = (() => {
+const __m59 = (() => {
 const { PAL, hex2rgb } = __m54;
 const MAX = 900;
 const FIRE_RAMP = [PAL.fire5, PAL.fire4, PAL.fire3, PAL.fire2, PAL.fire1, PAL.fire0].map(hex2rgb);
@@ -11743,7 +11900,7 @@ return { Effects };
 const __m53 = (() => {
 const { PAL, paintBackground, renderCauldron, renderLid, renderLidAside, paintHearth, makeCanvas, rgbStr, hex2rgb, drawJar, rect } = __m54;
 const { FluidRenderer } = __m55;
-const { Effects } = __m58;
+const { Effects } = __m59;
 const { COLUMN } = __m34;
 const { PHASE } = __m24;
 const { compositionEffects, dominantEffect, EFFECTS, NE } = __m13;
@@ -12139,7 +12296,7 @@ rect(ctx, x, y + h - 1, w, 1, 'rgba(0,0,0,0.4)');
 return { Renderer, drawBottle, PHASE };
 })();
 // src/rendering/portraits.js
-const __m59 = (() => {
+const __m60 = (() => {
 const { Rng } = __m6;
 const S = 32;
 const shade = (c, f) => `rgb(${Math.round(Math.min(255, c[0] * 255 * f))},${Math.round(Math.min(255, c[1] * 255 * f))},${Math.round(Math.min(255, c[2] * 255 * f))})`;
@@ -12257,7 +12414,7 @@ if (rng.chance(0.5)) P(hx - 1, 8, 2, 10, hc);
 return { drawPortrait };
 })();
 // src/rendering/wilds-atlas.js
-const __m61 = (() => {
+const __m62 = (() => {
 const ATLASES = {
 forest: {
 url: 'assets/wilds/forest.png',
@@ -12535,7 +12692,7 @@ vent: [204, 247, 44, 16],
 return { ATLASES };
 })();
 // src/rendering/meadow-atlas.js
-const __m62 = (() => {
+const __m63 = (() => {
 const ATLAS_URL = 'assets/meadow/atlas.png';
 const ATLAS_SIZE = [256, 473];
 const FRAMES = {
@@ -12614,7 +12771,7 @@ treeline: [0, 229, 256, 30],
 return { ATLAS_URL, ATLAS_SIZE, FRAMES };
 })();
 // src/rendering/growth-atlas.js
-const __m63 = (() => {
+const __m64 = (() => {
 const ATLAS_URL = 'assets/growth/atlas.png';
 const RES = 2;
 const ATLAS_SIZE = [512, 542];
@@ -12767,7 +12924,7 @@ witchear_sprout: [150, 280, 48, 34],
 return { ATLAS_URL, RES, ATLAS_SIZE, FRAMES };
 })();
 // src/rendering/ingredient-icons.js
-const __m64 = (() => {
+const __m65 = (() => {
 const ICONS_URL = 'assets/icons/ingredients.png';
 const ICONS_SIZE = /** @type {[number, number]} */ ([576, 576]);
 const ICON_FRAMES = {
@@ -12811,7 +12968,7 @@ witchear: [480, 0, 96, 96],
 return { ICONS_URL, ICONS_SIZE, ICON_FRAMES };
 })();
 // src/rendering/scenes.js
-const __m65 = (() => {
+const __m66 = (() => {
 function R(ctx, x, y, w, h, c) {
 ctx.fillStyle = c;
 ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
@@ -13024,12 +13181,12 @@ return cv;
 return { drawRaw, rawSprite };
 })();
 // src/rendering/wild-sprites.js
-const __m60 = (() => {
-const { ATLASES } = __m61;
-const FIELD = __m62;
-const GROW = __m63;
-const { ICONS_URL, ICON_FRAMES } = __m64;
-const { rawSprite } = __m65;
+const __m61 = (() => {
+const { ATLASES } = __m62;
+const FIELD = __m63;
+const GROW = __m64;
+const { ICONS_URL, ICON_FRAMES } = __m65;
+const { rawSprite } = __m66;
 class SpriteAtlas {
 constructor(url, frames, res = 1) {
 this.url = url;
@@ -13203,7 +13360,7 @@ return cv;
 return { SpriteAtlas, MEADOW, REGION_ATLAS, GATHERABLES, ICONS, GROWTH, growthFrame, CRYSTALS, glintSpots, ICON_SIZE, MIN_HIT, gatherFrameName, plantBox, hitPlant, ingredientSprite };
 })();
 // src/game/journal.js
-const __m66 = (() => {
+const __m67 = (() => {
 function processEvent(state, e) {
 const entries = [];
 const achievements = [];
@@ -13316,7 +13473,7 @@ return { entries, achievements };
 return { processEvent };
 })();
 // src/game/autobrew.js
-const __m67 = (() => {
+const __m68 = (() => {
 const { PHASE, SIM } = __m24;
 const { MAX_SPECIES } = __m18;
 function condensedCount(sim) {
@@ -13600,7 +13757,7 @@ return t / Math.max(1, sim.p.count);
 return { condensedCount, stageGoal, AutoBrewer, runPlanHeadless, speciesFraction };
 })();
 // src/game/mechanics.js
-const __m69 = (() => {
+const __m70 = (() => {
 const MECHANICS = [
 { id: 'formulation', name: 'Formulation and neutralisation', role: 'core', stage: 'formulation', rank: 0,
 decision: 'Which natural ingredients, in what proportions, to carry the wanted effects and cancel their side effects.',
@@ -13686,19 +13843,19 @@ const SANDBOX_CONTROLS = ['skimmer', 'alembic', 'heatmap', 'readouts'];
 return { MECHANICS, MECHANIC_BY_ID, IMMERSION, SANDBOX_CONTROLS };
 })();
 // src/ui/panels.js
-const __m68 = (() => {
+const __m69 = (() => {
 const { recipeConfidence, CONFIDENCE_TEXT, describeStep } = __m49;
-const { MECHANIC_BY_ID } = __m69;
+const { MECHANIC_BY_ID } = __m70;
 const { evidenceRank } = __m27;
 const { h, btn, modal, toast, coins, starsText, confirmDialog, clear } = __m2;
 const { icon } = __m3;
-const { drawPortrait } = __m59;
+const { drawPortrait } = __m60;
 const { drawJar } = __m54;
 const { EQUIPMENT, RANKS } = __m26;
 const { ACHIEVEMENTS } = __m5;
 const { viscosityClass, densityWord, evennessWord } = __m45;
 const { EFFECTS, EFFECT_BY_KEY, EFFECT_KEYS, dominantEffect } = __m13;
-const { ingredientSprite } = __m60;
+const { ingredientSprite } = __m61;
 const { compatFactor } = __m14;
 const { describeColor, rgbToHex } = __m8;
 const { SIM } = __m24;
@@ -14270,10 +14427,10 @@ h('div', { class: 'small muted credits', text: 'The Alchemist’s Shop — all a
 return { jarCanvas, fxChips, openShop, openIngredient, openHint, openBottleSize, showDaySummary, showAnalysis, openRecipes, renderRecipes, openJournal, renderJournal, openPause, openReceiver, openHelp, openSettings };
 })();
 // src/ui/trade.js
-const __m70 = (() => {
+const __m71 = (() => {
 const { h, btn, modal, toast, coins, clear, starsText } = __m2;
 const { icon } = __m3;
-const { drawPortrait } = __m59;
+const { drawPortrait } = __m60;
 const { audio } = __m4;
 const { EFFECTS, EFFECT_BY_KEY } = __m13;
 const { draftLabel, openNegotiation: beginNegotiation, proposePrice, acceptOffer, relevantEffects, trustReport, editClaim, proofGaps, claimSigma, claimStars, labelStars, MAX_STARS } = __m46;
@@ -14492,7 +14649,7 @@ return `${n === null ? '' : starsText(n, MAX_STARS) + ' '}${claimSummary(label.c
 return { openIdentify, openNegotiation, showDeal, followUpCard, claimSummary, accuracyTitle, labelLine, EFFECT_BY_KEY };
 })();
 // src/ui/tutorial.js
-const __m71 = (() => {
+const __m72 = (() => {
 const { h, btn, placeToasts } = __m2;
 const { PHASE } = __m24;
 const { TUTORIAL_HERBS } = __m16;
@@ -14639,10 +14796,10 @@ if (t && t !== this.target) { if (this.target) this.target.classList.remove('hig
 return { Tutorial };
 })();
 // src/ui/views/counter.js
-const __m72 = (() => {
+const __m73 = (() => {
 const { h, btn, clear, coins, confirmDialog, starsText } = __m2;
 const { icon } = __m3;
-const { drawPortrait } = __m59;
+const { drawPortrait } = __m60;
 const { drawBottle } = __m53;
 const { PROPERTY_LABELS, scoreRequirement } = __m23;
 const { techniqueById } = __m16;
@@ -14650,10 +14807,10 @@ const { EFFECT_INDEX, NE } = __m13;
 const { EFFECT_BY_KEY } = __m13;
 const { missingEffects, summarize, requirementEvidence } = __m27;
 const { labelStars, MAX_STARS } = __m46;
-const trade = __m70;
+const trade = __m71;
 const { describeColor, rgbToHex } = __m8;
 const { viscosityClass } = __m45;
-const panels = __m68;
+const panels = __m69;
 const { shortName } = __m22;
 class CounterView {
 constructor(lab) {
@@ -14847,7 +15004,7 @@ unseen ? h('span', { class: 'muted', text: ` ${seen.length ? '· ' : ''}${unseen
 return { CounterView };
 })();
 // src/rendering/backdrops-ground.js
-const __m75 = (() => {
+const __m76 = (() => {
 const GROUND = {
 meadow: [
 [],
@@ -15729,10 +15886,10 @@ crags: [
 return { GROUND };
 })();
 // src/rendering/regions.js
-const __m74 = (() => {
+const __m75 = (() => {
 const { Rng } = __m6;
-const { SpriteAtlas, MEADOW } = __m60;
-const { GROUND } = __m75;
+const { SpriteAtlas, MEADOW } = __m61;
+const { GROUND } = __m76;
 const SCENE_W = 256;
 const SCENE_H = 144;
 const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
@@ -16297,16 +16454,16 @@ if (!BACKDROPS.quarry.ready) R(ctx, 24, 56, 3, 5, `rgba(255,243,176,${flick.toFi
 return { SCENE_W, SCENE_H, BACKDROPS, GROUND_TOP, PlantGround, paintRegion, animateRegion };
 })();
 // src/ui/views/wilds.js
-const __m73 = (() => {
+const __m74 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
 const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, marksIn, DAY_PART_NAME } = __m29;
 const { equipmentById } = __m26;
 const { RANKS } = __m26;
-const { drawRaw } = __m65;
-const { paintRegion, animateRegion, PlantGround, BACKDROPS, SCENE_W, SCENE_H } = __m74;
-const { GATHERABLES, GROWTH, CRYSTALS, REGION_ATLAS, growthFrame, glintSpots, plantBox, hitPlant, ingredientSprite } = __m60;
+const { drawRaw } = __m66;
+const { paintRegion, animateRegion, PlantGround, BACKDROPS, SCENE_W, SCENE_H } = __m75;
+const { GATHERABLES, GROWTH, CRYSTALS, REGION_ATLAS, growthFrame, glintSpots, plantBox, hitPlant, ingredientSprite } = __m61;
 const { EFFECT_BY_KEY } = __m13;
 function sparkle(ctx, x, y, u) {
 const q = 0.5, L = [1, 2, 4, 6, 4, 2, 1][Math.min(6, Math.floor(u * 7))] * q;
@@ -16673,7 +16830,7 @@ this.grow();
 return { WildsView };
 })();
 // src/rendering/rabbit.js
-const __m77 = (() => {
+const __m78 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m54;
 const { RABBIT_MARKS } = __m28;
@@ -17569,10 +17726,10 @@ ctx.fillRect(fx, fy, RABBIT_W, RABBIT_H);
 return { RABBIT_W, RABBIT_H, rabbitLevels, rabbitPose, rabbitPace, rabbitAnchors, rabbitSpriteKey, drawRabbitSprite, clearRabbitSprites, drawRabbit };
 })();
 // src/rendering/hutch-scene.js
-const __m79 = (() => {
+const __m80 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m54;
-const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m77;
+const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m78;
 const HUTCH_W = 224;
 const HUTCH_H = 88;
 const HUTCH_BODIES = 3;
@@ -17990,13 +18147,13 @@ ctx.drawImage(this.bg, 0, 0);
 return { HUTCH_W, HUTCH_H, HUTCH_BODIES, paintHutch, paintHutchFront, HutchScene };
 })();
 // src/ui/views/hutch.js
-const __m78 = (() => {
+const __m79 = (() => {
 const { readingSteadiness } = __m27;
 const { h, btn, clear, toast, modal, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { drawRabbit, RABBIT_W, RABBIT_H } = __m77;
-const { HutchScene, HUTCH_W, HUTCH_H } = __m79;
+const { drawRabbit, RABBIT_W, RABBIT_H } = __m78;
+const { HutchScene, HUTCH_W, HUTCH_H } = __m80;
 const { EFFECT_BY_KEY } = __m13;
 const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral, RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE, BURNS } = __m28;
 const { PURGE_BREW_TIME } = __m5;
@@ -18325,7 +18482,7 @@ if (this._live >= 0.25) { this._live = 0; this.live(); }
 return { CHANNELS, HutchPanel };
 })();
 // src/ui/views/trials.js
-const __m76 = (() => {
+const __m77 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
@@ -18337,9 +18494,9 @@ const { summarize, addSamples, EVIDENCE_TEXT, evidenceRank, requirementEvidence 
 const { evidenceOf } = __m46;
 const { shortName } = __m22;
 const LEVEL_SHORT = { preliminary: '1 reading', repeated: 'repeated', corroborated: 'corroborated', certified: 'certified' };
-const { drawRabbit } = __m77;
+const { drawRabbit } = __m78;
 const { focusRabbit, findRabbit, rabbitSnap, decodeSnap, lookFromSeed, RABBIT_MARKS } = __m28;
-const { HutchPanel } = __m78;
+const { HutchPanel } = __m79;
 const REPLAY_T = 3.2;
 class TrialsView {
 constructor(lab) {
@@ -18716,11 +18873,11 @@ return `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2
 return { TrialsView, EFFECTS, EFFECT_INDEX };
 })();
 // src/ui/views/book.js
-const __m80 = (() => {
+const __m81 = (() => {
 const { h, btn, clear } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const panels = __m68;
+const panels = __m69;
 const { SUBJECT_BY_ID } = __m27;
 const { EFFECTS, EFFECT_BY_KEY, EFFECT_KEYS } = __m13;
 const { rgbToHex } = __m8;
@@ -18828,14 +18985,14 @@ const { clampToInterior } = __m42;
 const { MAX_SPECIES } = __m18;
 const { compatFactor } = __m14;
 const { Renderer } = __m53;
-const { drawPortrait } = __m59;
+const { drawPortrait } = __m60;
 const { drawJar } = __m54;
-const { ingredientSprite } = __m60;
+const { ingredientSprite } = __m61;
 const { measureParticles, tapSelection, probeSelection, viscosityClass, densityWord } = __m45;
 const { scoreRequirement, PROPERTY_LABELS } = __m23;
-const { processEvent } = __m66;
+const { processEvent } = __m67;
 const { saveGame, saveJSON, KEYS } = __m50;
-const { AutoBrewer, condensedCount } = __m67;
+const { AutoBrewer, condensedCount } = __m68;
 const { traceSample, buildProcedure, procedureLimits, matchRecipe, compareRecipe, checkReproduction, TRACE_DT } = __m49;
 const { proofGaps, draftLabel, applyTrials, evidenceOf } = __m46;
 const { RANKS } = __m26;
@@ -18849,13 +19006,13 @@ const { describeColor, rgbToHex } = __m8;
 const { h, btn, clear, toast, coins, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const panels = __m68;
-const trade = __m70;
-const { Tutorial } = __m71;
-const { CounterView } = __m72;
-const { WildsView } = __m73;
-const { TrialsView } = __m76;
-const { BookView } = __m80;
+const panels = __m69;
+const trade = __m71;
+const { Tutorial } = __m72;
+const { CounterView } = __m73;
+const { WildsView } = __m74;
+const { TrialsView } = __m77;
+const { BookView } = __m81;
 const { shortName } = __m22;
 const REQ_ICON = { temperature: 'thermo', quantity: 'flask', purity: 'pure' };
 const TOOL_DEFS = [
@@ -20561,7 +20718,7 @@ void dominantEffect;
 return { VIEWS, LabScreen };
 })();
 // src/materials/reference.js
-const __m82 = (() => {
+const __m83 = (() => {
 const { completeMaterial } = __m9;
 const REF = {};
 const add = (d) => (REF[d.id] = completeMaterial(d));
@@ -20599,11 +20756,11 @@ const refLookup = (id) => REF[id];
 return { REF, refLookup };
 })();
 // src/ui/menu.js
-const __m81 = (() => {
+const __m82 = (() => {
 const { h, btn } = __m2;
 const { Renderer } = __m53;
 const { Simulation } = __m31;
-const { REF, refLookup } = __m82;
+const { REF, refLookup } = __m83;
 const { hasSave, loadGame } = __m50;
 const { audio } = __m4;
 class MenuScreen {
@@ -20692,8 +20849,8 @@ const { sandboxIngredients } = __m7;
 const { EQUIPMENT } = __m26;
 const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m50;
 const { LabScreen } = __m51;
-const { MenuScreen } = __m81;
-const { openSettings, openHelp } = __m68;
+const { MenuScreen } = __m82;
+const { openSettings, openHelp } = __m69;
 const { Rng } = __m6;
 const { normalizeTrials } = __m27;
 const DEFAULT_SETTINGS = { master: 0.8, sfx: 0.8, music: 0.35, musicOn: true, muted: false, quality: 'auto', showFps: false };
@@ -20809,7 +20966,7 @@ openHelp();
 return { App, icon };
 })();
 // src/ui/textures.js
-const __m83 = (() => {
+const __m84 = (() => {
 const { Rng } = __m6;
 function texture(w, h, paint) {
 const cv = document.createElement('canvas');
@@ -20853,7 +21010,7 @@ return { installTextures };
 // src/main.js
 const __m0 = (() => {
 const { App } = __m1;
-const { installTextures } = __m83;
+const { installTextures } = __m84;
 installTextures();
 const root = document.getElementById('app');
 const app = new App(root);

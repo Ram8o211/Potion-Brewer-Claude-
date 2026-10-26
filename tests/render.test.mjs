@@ -6,6 +6,8 @@ import { refLookup, PHASE } from './helpers.mjs';
 import { Simulation } from '../src/simulation/world.js';
 import { FluidRenderer } from '../src/rendering/fluid.js';
 import { EFFECTS, NE } from '../src/alchemy/effects.js';
+import { PIECE_ART } from '../src/rendering/pieces-art.js';
+import { generateWorld, makeLookup } from '../src/materials/generator.js';
 
 // a minimal 2D context: the renderer only needs ImageData and putImageData
 /** @type {any} */ (globalThis).OffscreenCanvas ??= class {
@@ -80,7 +82,7 @@ test('mixed magic glows in each effect\'s own colour, in proportion to its share
   assert.ok(share > 0.6 && share < 0.8, `vitality's colour covers its share of the glow (${share.toFixed(2)})`);
 });
 
-test('each effect leaves its own peculiar mark on a brew', () => {
+test('each effect draws its own animated pattern on a brew', () => {
   let width = 0;
   /** @param {number} e effect index, -1 for none @param {number} t */
   const draw = (e, t) => {
@@ -117,4 +119,49 @@ test('each effect leaves its own peculiar mark on a brew', () => {
   const base = texture(plain, width);
   const varied = EFFECTS.filter((_, e) => texture(looks[e], width) > base * 1.3).length;
   assert.equal(varied, NE, `every effect draws a pattern (${varied}/${NE})`);
+  // and every pattern moves
+  for (let e = 0; e < NE; e++) {
+    const later = draw(e, 1.6);
+    assert.ok(diff(later, looks[e]) > 0.5, `${EFFECTS[e].key} is animated`);
+  }
+});
+
+test('a brew takes the painted palette of the ingredient crushed into it', () => {
+  const world = generateWorld('palette-test');
+  const lookup = makeLookup(world);
+  const leaf = lookup('wild-silverleaf'), water = lookup(world.roles.water);
+  assert.ok(leaf && water);
+  /** mean colour of the pool's pixels @param {boolean} painted */
+  const pool = (painted) => {
+    const sim = new Simulation({ size: 'medium', lookup });
+    // a dose of the ingredient dissolved through some water
+    for (let k = 0; k < 144; k++) {
+      const i = sim.addParticle(water, ((k % 12) - 5.5) * 0.09, 3.2 + (Math.floor(k / 12) - 5.5) * 0.09, PHASE.LIQUID, 20);
+      if (k % 3 === 0) {
+        const s = sim.species.ensure(leaf, lookup), off = i * sim.p.S;
+        sim.p.comp[off + s] = 0.4; sim.p.comp[off + sim.species.slotOf.get(water.id)] = 0.6;
+      }
+    }
+    for (let i = 0; i < sim.p.count; i++) sim.p.dirty[i] = 1;
+    sim.step();
+    // a stand-in atlas: every piece painted pure red
+    const saved = { ...PIECE_ART };
+    if (painted) Object.assign(PIECE_ART, { ready: true, loading: Promise.resolve(true), width: 160, height: 1440, px: new Uint32Array(160 * 1440).fill(0xff0000ff) });
+    const fr = new FluidRenderer();
+    fr.halo = false;
+    const out = fr.render(sim, { scale: 60, ox: 200, oy: 20 }, 0);
+    Object.assign(PIECE_ART, saved);
+    assert.ok(out);
+    const m = [0, 0, 0];
+    let n = 0;
+    for (let i = 0; i < fr.image.data.length; i += 4) {
+      if (fr.image.data[i + 3] < 200) continue;
+      for (let c = 0; c < 3; c++) m[c] += fr.image.data[i + c];
+      n++;
+    }
+    return m.map((v) => v / n);
+  };
+  const plain = pool(false), dyed = pool(true);
+  // dyed by the (red) painting: much redder than the leaf's own colour makes it
+  assert.ok(dyed[0] - (dyed[1] + dyed[2]) / 2 > plain[0] - (plain[1] + plain[2]) / 2 + 40, `the brew takes the painting's colour (${plain.map(Math.round)} → ${dyed.map(Math.round)})`);
 });
