@@ -1,13 +1,14 @@
 // The look of each effect inside a brew. Every effect a potion carries
 // draws its own pattern in the liquid where it is, as strong as its share
-// of the magic there. The patterns are drawn in the potion's own colour —
+// of the magic there (magic adds no colour or light of its own: awakening
+// shows only as bolder, denser patterns). The patterns are drawn in the potion's own colour —
 // lighter, darker and highlight tones of whatever it is dyed — so they
 // adapt to every brew, and every one of them moves:
 //   vitality        soft mottling breathing with a heartbeat, motes of life rising
 //   strength        heavy stepped bands, waving and rolling slowly
 //   love            hearts, large and small, drifting up and swaying
 //   arcana          four-pointed stars of every size, twinkling in and out
-//   transformation  diagonal stripes sliding by, beaded with dots, the hue turning
+//   transformation  diagonal stripes sliding by and swelling in turn, beaded with dots
 //   fire            tongues of flame licking upward, flickering, with sparks
 //   frost           a frosty pallor, snowflakes of two sizes drifting down
 //   acidity         a dense fizz of fine bubbles racing up, popping at the surface
@@ -65,8 +66,9 @@ function cellDot(sx, sy, C, scroll, prob, salt, m) {
 /** Output colour (fc) and the potion's own tones it is drawn with. */
 export const fc = [0, 0, 0];
 const INK = [0.02, 0.02, 0.03], GROUND = [0, 0, 0];
-const base = [0, 0, 0], LIGHT = [0, 0, 0], DARK = [0, 0, 0], HI = [0, 0, 0], DEEP = [0, 0, 0], TMP = [0, 0, 0];
+const base = [0, 0, 0], LIGHT = [0, 0, 0], DARK = [0, 0, 0], HI = [0, 0, 0], DEEP = [0, 0, 0];
 function mixTo(c, t) {
+  if (t > 1) t = 1;
   fc[0] += (c[0] - fc[0]) * t; fc[1] += (c[1] - fc[1]) * t; fc[2] += (c[2] - fc[2]) * t;
 }
 
@@ -75,16 +77,6 @@ const HEART_S = [0b01010, 0b11111, 0b01110, 0b00100]; // 5×4, centre (2, 1)
 const HEART_L = [0b0110110, 0b1111111, 0b1111111, 0b0111110, 0b0011100, 0b0001000]; // 7×6, centre (3, 2)
 /** @param {number[]} rows @param {number} w @param {number} x @param {number} y */
 const inMask = (rows, w, x, y) => x >= 0 && x < w && y >= 0 && y < rows.length && ((rows[y] >> (w - 1 - x)) & 1) === 1;
-
-/** Turn an sRGB colour's hue by `a` radians (keeping its brightness). */
-function hueTurn(c, a, out) {
-  const cs = Math.cos(a), sn = Math.sin(a), k = 0.57735;
-  const d = (1 - cs) / 3, e = k * sn;
-  out[0] = c[0] * (cs + d) + c[1] * (d - e) + c[2] * (d + e);
-  out[1] = c[0] * (d + e) + c[1] * (cs + d) + c[2] * (d - e);
-  out[2] = c[0] * (d - e) + c[1] * (d + e) + c[2] * (cs + d);
-  return out;
-}
 
 /**
  * Apply the effects' patterns to the liquid colour in fc.
@@ -106,8 +98,10 @@ export function potionFx(f, o, mask, inv, sx, sy, time, below, edge) {
   }
   for (let m = mask, k = 0; m; m >>>= 1, k++) {
     if (!(m & 1)) continue;
-    // a square root: a plain brew still shows its character, an awakened one in full
-    const A = Math.min(1, Math.sqrt(f[o + k] * inv) * 1.3);
+    // a square root: a plain brew still shows its character; an awakened one
+    // (several times the magic) draws its pattern bolder and denser — the
+    // only way awakening shows, as the potion keeps its colour
+    const A = Math.min(1.6, Math.sqrt(f[o + k] * inv) * 1.5);
     if (A < 0.03) continue;
     // a slightly deeper ground, so the pattern's light shapes stand out
     // even in a pale potion
@@ -163,11 +157,11 @@ export function potionFx(f, o, mask, inv, sx, sy, time, below, edge) {
         break;
       }
       case K.transformation: {
-        // diagonal stripes sliding by, their hue turning as they pass
+        // diagonal stripes sliding by, each one swelling lighter and darker in turn
         const ph = (sx + sy) / 14 - time * 0.5;
         const fr = ph - Math.floor(ph), band = Math.floor(ph);
-        hueTurn(fr < 0.5 ? LIGHT : DARK, Math.sin(band * 1.7 + time * 0.8) * 0.9, TMP);
-        mixTo(TMP, A * (fr < 0.08 || (fr > 0.5 && fr < 0.58) ? 0.35 : 0.6));
+        const sw = 0.75 + 0.25 * Math.sin(band * 1.7 + time * 1.6);
+        mixTo(fr < 0.5 ? LIGHT : DARK, A * sw * (fr < 0.08 || (fr > 0.5 && fr < 0.58) ? 0.35 : 0.6));
         // a bead of light running along the middle of each light stripe
         const along = (sx - sy) / 2 + time * 6;
         if (fr > 0.2 && fr < 0.3 && ((Math.floor(along) % 5) + 5) % 5 === 0) mixTo(HI, A * 0.9);

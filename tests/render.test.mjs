@@ -52,34 +52,32 @@ test('every phase is drawn where its particles are: liquid, paste, powder, ice a
   assert.ok(alphaAt(fr, out, view, -0.8, 2.2) < 1, 'nothing is drawn where there is no matter');
 });
 
-test('mixed magic glows in each effect\'s own colour, in proportion to its share', () => {
+test('magic never recolours a brew: awakened or not, it keeps its own hue and gives off no light', () => {
   const sim = new Simulation({ size: 'medium', lookup: refLookup });
   const vit = EFFECTS.findIndex((e) => e.key === 'vitality'), fro = EFFECTS.findIndex((e) => e.key === 'frost');
   for (let k = 0; k < 144; k++) sim.addParticle(refLookup('water'), ((k % 12) - 5.5) * 0.09, 3.2 + (Math.floor(k / 12) - 5.5) * 0.09, PHASE.LIQUID, 20);
   const fr = new FluidRenderer();
-  fr.halo = false;
   const view = { scale: 60, ox: 200, oy: 20 };
-  const plain = fr.render(sim, view, 0);
-  const base = Uint8ClampedArray.from(fr.image.data);
-  // a brew that is 70% vitality, 30% frost (as derived.js would leave it)
+  /** chromaticity of the pool: each channel's share of its mean colour */
+  const chroma = () => {
+    const m = [0, 0, 0];
+    for (let i = 0; i < fr.image.data.length; i += 4) if (fr.image.data[i + 3] > 200) for (let c = 0; c < 3; c++) m[c] += fr.image.data[i + c];
+    const t = m[0] + m[1] + m[2];
+    return m.map((v) => v / t);
+  };
+  assert.ok(fr.render(sim, view, 0));
+  const plain = chroma();
+  // a strongly magical brew, 70% vitality (red) and 30% frost (blue)
   const p = sim.p;
   for (let i = 0; i < p.count; i++) {
     p.auraFx.fill(0, i * NE, (i + 1) * NE);
     p.auraFx[i * NE + vit] = 0.7; p.auraFx[i * NE + fro] = 0.3; p.auraI[i] = 1;
   }
   const out = fr.render(sim, view, 0);
-  assert.ok(plain && out && out.x === plain.x && out.y === plain.y);
-  // inside the pool, each lit pixel leans to one effect's colour: red or ice blue
-  const cx = Math.round(view.ox - out.x), cy = Math.round(3.2 * view.scale + view.oy - out.y);
-  let red = 0, blue = 0;
-  for (let y = cy - 18; y <= cy + 18; y++) for (let x = cx - 18; x <= cx + 18; x++) {
-    const o = (y * fr.w + x) * 4;
-    const dR = fr.image.data[o] - base[o], dB = fr.image.data[o + 2] - base[o + 2];
-    if (dR > dB + 4) red++; else if (dB > dR + 4) blue++;
-  }
-  const share = red / (red + blue);
-  assert.ok(red + blue > 600, 'the pool glows');
-  assert.ok(share > 0.6 && share < 0.8, `vitality's colour covers its share of the glow (${share.toFixed(2)})`);
+  assert.ok(out);
+  const magic = chroma();
+  for (let c = 0; c < 3; c++) assert.ok(Math.abs(magic[c] - plain[c]) < 0.01, `hue kept (${plain.map((v) => v.toFixed(3))} → ${magic.map((v) => v.toFixed(3))})`);
+  assert.equal(out.halo, null, 'magic spills no light around the brew');
 });
 
 test('each effect draws its own animated pattern on a brew', () => {

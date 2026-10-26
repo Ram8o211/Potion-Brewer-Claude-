@@ -10835,21 +10835,14 @@ return true;
 }
 const fc = [0, 0, 0];
 const INK = [0.02, 0.02, 0.03], GROUND = [0, 0, 0];
-const base = [0, 0, 0], LIGHT = [0, 0, 0], DARK = [0, 0, 0], HI = [0, 0, 0], DEEP = [0, 0, 0], TMP = [0, 0, 0];
+const base = [0, 0, 0], LIGHT = [0, 0, 0], DARK = [0, 0, 0], HI = [0, 0, 0], DEEP = [0, 0, 0];
 function mixTo(c, t) {
+if (t > 1) t = 1;
 fc[0] += (c[0] - fc[0]) * t; fc[1] += (c[1] - fc[1]) * t; fc[2] += (c[2] - fc[2]) * t;
 }
 const HEART_S = [0b01010, 0b11111, 0b01110, 0b00100]; // 5×4, centre (2, 1)
 const HEART_L = [0b0110110, 0b1111111, 0b1111111, 0b0111110, 0b0011100, 0b0001000]; // 7×6, centre (3, 2)
 const inMask = (rows, w, x, y) => x >= 0 && x < w && y >= 0 && y < rows.length && ((rows[y] >> (w - 1 - x)) & 1) === 1;
-function hueTurn(c, a, out) {
-const cs = Math.cos(a), sn = Math.sin(a), k = 0.57735;
-const d = (1 - cs) / 3, e = k * sn;
-out[0] = c[0] * (cs + d) + c[1] * (d - e) + c[2] * (d + e);
-out[1] = c[0] * (d + e) + c[1] * (cs + d) + c[2] * (d - e);
-out[2] = c[0] * (d - e) + c[1] * (d + e) + c[2] * (cs + d);
-return out;
-}
 function potionFx(f, o, mask, inv, sx, sy, time, below, edge) {
 base[0] = fc[0]; base[1] = fc[1]; base[2] = fc[2];
 for (let c = 0; c < 3; c++) {
@@ -10861,7 +10854,7 @@ DEEP[c] = base[c] * 0.3;
 }
 for (let m = mask, k = 0; m; m >>>= 1, k++) {
 if (!(m & 1)) continue;
-const A = Math.min(1, Math.sqrt(f[o + k] * inv) * 1.3);
+const A = Math.min(1.6, Math.sqrt(f[o + k] * inv) * 1.5);
 if (A < 0.03) continue;
 mixTo(GROUND, A * 0.35);
 switch (k) {
@@ -10912,8 +10905,8 @@ break;
 case K.transformation: {
 const ph = (sx + sy) / 14 - time * 0.5;
 const fr = ph - Math.floor(ph), band = Math.floor(ph);
-hueTurn(fr < 0.5 ? LIGHT : DARK, Math.sin(band * 1.7 + time * 0.8) * 0.9, TMP);
-mixTo(TMP, A * (fr < 0.08 || (fr > 0.5 && fr < 0.58) ? 0.35 : 0.6));
+const sw = 0.75 + 0.25 * Math.sin(band * 1.7 + time * 1.6);
+mixTo(fr < 0.5 ? LIGHT : DARK, A * sw * (fr < 0.08 || (fr > 0.5 && fr < 0.58) ? 0.35 : 0.6));
 const along = (sx - sy) / 2 + time * 6;
 if (fr > 0.2 && fr < 0.3 && ((Math.floor(along) % 5) + 5) % 5 === 0) mixTo(HI, A * 0.9);
 break;
@@ -11094,7 +11087,8 @@ const { PHASE, SIM } = __m24;
 const { LOOK, piece } = __m19;
 const { PIECE_ART, loadPieceArt, piecePalette } = __m56;
 const { PIECE_CELL } = __m20;
-const { EFFECTS, NE } = __m13;
+const { NE } = __m13;
+const { MAX_SPECIES } = __m18;
 const { potionFx, fc } = __m57;
 const { preparePalettes, paletteColour, pc: palCol } = __m58;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
@@ -11105,11 +11099,10 @@ n = Math.imul(n ^ (n >>> 12), 0x297a2d39);
 n ^= n >>> 15;
 return (n >>> 0) / 4294967296;
 }
-const FX_COL = EFFECTS.map((e) => e.color);
 const em = [0, 0, 0];
 const chK = new Int32Array(NE), chV = new Float32Array(NE);
 let nc = 0;
-function emission(p, i, r, g, b) {
+function emission(p, i, r, g, b, glow) {
 const a = p.auraI[i];
 const s = a > 0.002 ? (1 - Math.exp(-Math.pow(a, 1.4) * 6)) * 0.75 : 0;
 nc = 0;
@@ -11120,35 +11113,34 @@ const v = fx[o + k];
 if (v > 0) { chK[nc] = k; chV[nc] = v * k0; nc++; }
 }
 }
-const gl = p.glow[i] * 0.42, bu = p.burn[i];
+const gl = glow * 0.42, bu = p.burn[i];
 em[0] = gl * (0.45 + r * 0.55) + bu;
 em[1] = gl * (0.45 + g * 0.55) + bu * 0.55;
 em[2] = gl * (0.45 + b * 0.55) + bu * 0.18;
 return s + em[0] + em[1] + em[2];
 }
+function drawnGlow(p, sp, i, vis) {
+if (!vis) return p.glow[i];
+const off = i * MAX_SPECIES;
+let g = 0, t = 0;
+for (let s = 0; s < sp.count; s++) { const f = p.comp[off + s]; if (f > 0) { g += f * vis[s]; t += f; } }
+return t > 0 ? g / t : 0;
+}
+const glowVis = new Float32Array(MAX_SPECIES);
+function drawnGlowTable(sim) {
+const sp = sim.species;
+let vis = null;
+for (let s = 0; s < sp.count; s++) {
+const d = sp.defs[s];
+const base = d && d.awakened && d.base ? sim.lookup(d.base) : null;
+glowVis[s] = base ? base.glow || 0 : sp.glow[s];
+if (glowVis[s] !== sp.glow[s]) vis = glowVis;
+}
+return vis;
+}
 function addMagic(mfx, px, q) {
 const o = px * NE;
 for (let c = 0; c < nc; c++) mfx[o + chK[c]] += q * chV[c];
-}
-let pickTot = 0;
-function pickEffect(f, o, mask, u) {
-let tot = 0;
-for (let m = mask, k = 0; m; m >>>= 1, k++) if (m & 1) tot += f[o + k];
-pickTot = tot;
-if (tot <= 0) return -1;
-let t = u * tot, last = -1;
-for (let m = mask, k = 0; m; m >>>= 1, k++) {
-if (!(m & 1) || f[o + k] <= 0) continue;
-last = k;
-t -= f[o + k];
-if (t < 0) return k;
-}
-return last;
-}
-function dither(cx, cy, time) {
-const c = Math.imul(cx, 73856093) ^ Math.imul(cy, 19349663);
-const ep = Math.floor(time * 0.7 + hash01(c) * 4);
-return hash01(c ^ Math.imul(ep + 1, 83492791));
 }
 class FluidRenderer {
 constructor() {
@@ -11192,8 +11184,8 @@ this.hw = hw; this.hh = hh;
 this.haloCanvas = makeCanvas(hw, hh);
 this.haloCtx = /** @type {any} */ (this.haloCanvas).getContext('2d');
 this.haloImage = this.haloCtx.createImageData(hw, hh);
-this.haloAcc = new Float32Array(hw * hh * (3 + NE));
-this.haloTmp = new Float32Array(hw * hh * (3 + NE));
+this.haloAcc = new Float32Array(hw * hh * 3);
+this.haloTmp = new Float32Array(hw * hh * 3);
 this.gas = new Float32Array(hw * hh * 4); // vapour weight + colour at half resolution
 this.mote = new Float32Array(w * h * 4); // vapour droplets: alpha + colour, full resolution
 this.gasTmp = new Float32Array(hw * hh * 4);
@@ -11204,7 +11196,7 @@ const p = sim.p, n = p.count;
 if (n === 0) return null;
 const s = view.scale;
 let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
-let anySolid = false, anyGas = false, anyGrain = false, anyLight = false, fxMask = 0;
+let anySolid = false, anyGas = false, anyGrain = false, anyLight = false, anyGlow = false, fxMask = 0;
 for (let i = 0; i < n; i++) {
 const x = p.x[i] * s + view.ox, y = p.y[i] * s + view.oy;
 if (x < minX) minX = x; if (x > maxX) maxX = x;
@@ -11212,10 +11204,12 @@ if (y < minY) minY = y; if (y > maxY) maxY = y;
 const ph = p.phase[i];
 if (ph === SOLID) anySolid = true; else if (ph === GAS) anyGas = true; else if (ph === POWDER) anyGrain = true;
 if (p.auraI[i] > 0.002 || p.glow[i] > 0.02 || p.burn[i] > 0.02) anyLight = true;
+if (p.glow[i] > 0.02 || p.burn[i] > 0.02) anyGlow = true;
 if (p.auraI[i] > 0.002) for (let k = 0, o = i * NE; k < NE; k++) if (p.auraFx[o + k] > 0) fxMask |= 1 << k;
 }
 if (!PIECE_ART.loading) loadPieceArt();
 const painted = preparePalettes(sim);
+const vis = anyGlow ? drawnGlowTable(sim) : null;
 const art = PIECE_ART.ready ? PIECE_ART.px : null, artW = PIECE_ART.width;
 const pad = Math.ceil(0.16 * s) + 8;
 const bx = Math.floor(minX) - pad, by = Math.floor(minY) - pad;
@@ -11243,7 +11237,7 @@ const fx = p.x[i] * s + view.ox - bx, fy = p.y[i] * s + view.oy - by;
 let r = colR[i], g = colG[i], b = colB[i];
 if (painted && p.whole[i] < 0.5 && paletteColour(sim, i)) { r = palCol[0]; g = palCol[1]; b = palCol[2]; }
 const seed = p.seed[i];
-const lit = anyLight && emission(p, i, r, g, b) > 0.004;
+const lit = anyLight && emission(p, i, r, g, b, drawnGlow(p, sim.species, i, vis)) > 0.004;
 const eR = em[0], eG = em[1], eB = em[2];
 if (ph === LIQUID || ph === PASTE) {
 const isPaste = ph === PASTE ? 1 : 0;
@@ -11639,17 +11633,12 @@ R = R * (1 - a) + mote[m4 + 1] * inv * a; G = G * (1 - a) + mote[m4 + 2] * inv *
 A = A + (1 - A) * a;
 }
 }
-if (anyLight && !thermal) {
+if (anyGlow && !thermal) {
 const e4 = k * 4, ew = emit[e4 + 3];
 if (ew > 0.02 && A > 0.05) {
 const inv = 1 / Math.max(ew, 0.6);
 const sp = ((x * 13 + y * 7) % 31 === 0) ? 1.6 + 0.8 * Math.max(0, Math.sin(twinkle + x * 0.7 + y)) : 1;
-let mr = 0, mg = 0, mb = 0;
-if (fxMask) {
-const fk = pickEffect(mfx, k * NE, fxMask, dither((x + bx) >> 1, (y + by) >> 1, time));
-if (fk >= 0) { const c = FX_COL[fk]; mr = c[0] * pickTot; mg = c[1] * pickTot; mb = c[2] * pickTot; }
-}
-const e0 = (emit[e4] + mr) * inv * sp, e1 = (emit[e4 + 1] + mg) * inv * sp, e2 = (emit[e4 + 2] + mb) * inv * sp;
+const e0 = emit[e4] * inv * sp, e1 = emit[e4 + 1] * inv * sp, e2 = emit[e4 + 2] * inv * sp;
 const eM = Math.max(e0, e1, e2);
 if (eM > 0.01) {
 const t = Math.min(0.6, eM * 0.7), lum = Math.max(R, G, B) / eM;
@@ -11680,7 +11669,7 @@ data[o + 3] = clamp255(A * 255);
 }
 }
 this.ctx.putImageData(this.image, 0, 0);
-const halo = anyLight && this.halo && !thermal ? this._halo(w, h, bx, by, time, fxMask) : null;
+const halo = anyGlow && this.halo && !thermal ? this._halo(w, h) : null;
 return { canvas: this.canvas, x: bx, y: by, halo };
 }
 _blurGas() {
@@ -11712,40 +11701,28 @@ a[o] = s0 * 0.2; a[o + 1] = s1 * 0.2; a[o + 2] = s2 * 0.2; a[o + 3] = s3 * 0.2;
 }
 }
 }
-_halo(w, h, bx, by, time, fxMask) {
-const hw = this.hw, hh = this.hh, acc = this.haloAcc, tmp = this.haloTmp, emit = this.emit, mfx = this.mfx;
-const fxK = [];
-for (let k = 0; k < NE; k++) if (fxMask & (1 << k)) fxK.push(k);
-const C = 3 + fxK.length, nf = fxK.length;
-acc.fill(0, 0, hw * hh * C);
+_halo(w, h) {
+const hw = this.hw, hh = this.hh, acc = this.haloAcc, tmp = this.haloTmp, emit = this.emit;
+acc.fill(0, 0, hw * hh * 3);
 for (let y = 0; y < h; y++) {
 const hy = (y >> 1) * hw;
 for (let x = 0; x < w; x++) {
-const px = y * w + x, e4 = px * 4;
+const e4 = (y * w + x) * 4;
 if (emit[e4 + 3] <= 0.01) continue;
-const k = (hy + (x >> 1)) * C;
+const k = (hy + (x >> 1)) * 3;
 acc[k] += emit[e4]; acc[k + 1] += emit[e4 + 1]; acc[k + 2] += emit[e4 + 2];
-for (let c = 0, o = px * NE; c < nf; c++) acc[k + 3 + c] += mfx[o + fxK[c]];
 }
 }
 for (let pass = 0; pass < 2; pass++) {
-blur5(acc, tmp, hw, hh, C, 1, hw);
-blur5(tmp, acc, hw, hh, C, hw, 1);
+blur5(acc, tmp, hw, hh, 3, 1, hw);
+blur5(tmp, acc, hw, hh, 3, hw, 1);
 }
 const d = this.haloImage.data;
-const ox = bx >> 1, oy = by >> 1;
-let mask = 0;
-for (let c = 0; c < nf; c++) mask |= 1 << c;
 for (let k = 0, o = 0; k < hw * hh; k++, o += 4) {
-const a = k * C;
-let r = acc[a], g = acc[a + 1], b = acc[a + 2];
-if (nf) {
-const c = pickEffect(acc, a + 3, mask, dither(ox + (k % hw), oy + ((k / hw) | 0), time));
-if (c >= 0) { const col = FX_COL[fxK[c]]; r += col[0] * pickTot; g += col[1] * pickTot; b += col[2] * pickTot; }
-}
-d[o] = clamp255(Math.round(r * 0.09 * 16) * 16);
-d[o + 1] = clamp255(Math.round(g * 0.09 * 16) * 16);
-d[o + 2] = clamp255(Math.round(b * 0.09 * 16) * 16);
+const a = k * 3;
+d[o] = clamp255(Math.round(acc[a] * 0.09 * 16) * 16);
+d[o + 1] = clamp255(Math.round(acc[a + 1] * 0.09 * 16) * 16);
+d[o + 2] = clamp255(Math.round(acc[a + 2] * 0.09 * 16) * 16);
 d[o + 3] = 255;
 }
 this.haloCtx.putImageData(this.haloImage, 0, 0);
@@ -11780,7 +11757,7 @@ return c;
 function clamp255(v) {
 return v < 0 ? 0 : v > 255 ? 255 : v | 0;
 }
-return { FluidRenderer };
+return { drawnGlow, drawnGlowTable, FluidRenderer };
 })();
 // src/rendering/effects.js
 const __m59 = (() => {
@@ -11899,7 +11876,7 @@ return { Effects };
 // src/rendering/renderer.js
 const __m53 = (() => {
 const { PAL, paintBackground, renderCauldron, renderLid, renderLidAside, paintHearth, makeCanvas, rgbStr, hex2rgb, drawJar, rect } = __m54;
-const { FluidRenderer } = __m55;
+const { FluidRenderer, drawnGlow, drawnGlowTable } = __m55;
 const { Effects } = __m59;
 const { COLUMN } = __m34;
 const { PHASE } = __m24;
@@ -12234,17 +12211,17 @@ g.addColorStop(1, 'rgba(90,170,255,0)');
 ctx.fillStyle = g;
 ctx.fillRect(0, 0, this.W, this.H);
 }
-const p = st.sim.p;
+const p = st.sim.p, vis = drawnGlowTable(st.sim);
 let glow = 0, gr = 0, gg = 0, gb = 0;
 const step = Math.max(1, Math.floor(p.count / 300));
 for (let i = 0; i < p.count; i += step) {
-const sI = p.auraI[i] > 0.002 ? 1 - Math.exp(-p.auraI[i] * 3.2) : 0;
-const e = p.glow[i] * 0.6 + p.burn[i] * 1.5 + sI;
+const gl = drawnGlow(p, st.sim.species, i, vis);
+const e = gl * 0.6 + p.burn[i] * 1.5;
 if (e > 0.05) {
 glow += e;
-gr += (p.auraR[i] * sI + (st.sim.colR[i] * p.glow[i] * 0.6) + p.burn[i] * 1.5) ;
-gg += (p.auraG[i] * sI + (st.sim.colG[i] * p.glow[i] * 0.6) + p.burn[i] * 0.8);
-gb += (p.auraB[i] * sI + (st.sim.colB[i] * p.glow[i] * 0.6) + p.burn[i] * 0.3);
+gr += st.sim.colR[i] * gl * 0.6 + p.burn[i] * 1.5;
+gg += st.sim.colG[i] * gl * 0.6 + p.burn[i] * 0.8;
+gb += st.sim.colB[i] * gl * 0.6 + p.burn[i] * 0.3;
 }
 }
 if (glow > 0.5) {
