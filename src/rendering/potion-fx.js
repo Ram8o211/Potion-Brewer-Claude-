@@ -18,10 +18,14 @@
 //                   surface
 //   toxicity        fat ringed green bubbles that swell and burst, little skulls
 //   death           dark smoke sinking and pale ghosts wavering up
-// Particles live in screen pixels (so they stay crisp pixel art), are drawn
-// only over the liquid (sparks and droplets may leave it for a moment), and
-// never change the colour of the brew around them. fluid.js gives them the
-// liquid's pixels and per-effect magic each frame (PotionParticles.step).
+// Particles live in screen pixels (so they stay crisp pixel art) and are
+// carried by the liquid they swim in: each frame the brew's own velocity
+// where a particle is moves it by as far as the simulation ran, so they swirl
+// with the stirring, slosh with the pour and ride the convection, on top of
+// their own drift. They are drawn only over the liquid (sparks and droplets
+// may leave it for a moment) and never change the colour of the brew around
+// them. fluid.js gives them the liquid's pixels, velocity and per-effect
+// magic each frame (PotionParticles.step).
 
 import { EFFECTS, NE } from '../alchemy/effects.js';
 
@@ -67,6 +71,9 @@ const FLAME = [
   ['..0..', '..1..', '.010.', '.121.', '01210', '12321', '.121.', '..0..'],
 ];
 const SHAPES = [CIRCLE, SQUARE, TRIANGLE, DIAMOND];
+
+/** The liquid's displacement at a particle (PotionParticles._carry). */
+let FX = 0, FY = 0;
 
 /** The double heartbeat: two quick swells every 1.2 s, 0..~1. */
 const heartbeat = (t) => {
@@ -119,9 +126,13 @@ export class PotionParticles {
    * Spawn, move and draw the particles over a rendered brew.
    * @param {number} time seconds
    * @param {{w:number, h:number, bx:number, by:number, data:Uint8ClampedArray, liquid:Uint8Array,
-   *   pix:Int32Array, npix:number, mfx:Float32Array, emit:Float32Array, mask:number}} f
+   *   pix:Int32Array, npix:number, mfx:Float32Array, emit:Float32Array, mask:number,
+   *   flow?:Float32Array, weight?:Float32Array, stride?:number, simDt?:number}} f
    *   the image (w × h at screen bx, by), which of its pixels are liquid
-   *   (and the list of them), and the per-effect magic and its kernel weight per pixel
+   *   (and the list of them), the per-effect magic and its kernel weight per
+   *   pixel, and the liquid's weighted velocity per pixel (flow, screen px
+   *   per simulated second; its weight every `stride` floats of `weight`)
+   *   with the simulated time since the last frame
    */
   step(time, f) {
     if (this.last < 0) this.seed = (Math.floor(time * 1000) ^ 0x5bd1e995) >>> 0;
@@ -222,6 +233,29 @@ export class PotionParticles {
     this.count[e]++;
   }
 
+  /**
+   * How far the liquid at screen point (x, y) moved since the last frame
+   * (into FX, FY): its velocity, bilinear between the four pixels around,
+   * times the simulated time.
+   */
+  _carry(f, x, y) {
+    FX = 0; FY = 0;
+    const { flow, weight, stride, simDt } = f;
+    if (!flow || !weight || !simDt) return;
+    const gx = x - f.bx - 0.5, gy = y - f.by - 0.5, ix = Math.floor(gx), iy = Math.floor(gy), tx = gx - ix, ty = gy - iy;
+    let vx = 0, vy = 0, ws = 0;
+    for (let c = 0; c < 4; c++) {
+      const px = ix + (c & 1), py = iy + (c >> 1);
+      if (px < 0 || py < 0 || px >= f.w || py >= f.h) continue;
+      const q = py * f.w + px, W = weight[q * (stride || 1)];
+      if (W < 1e-4) continue;
+      const k = ((c & 1) ? tx : 1 - tx) * ((c >> 1) ? ty : 1 - ty);
+      vx += (flow[q * 2] / W) * k; vy += (flow[q * 2 + 1] / W) * k; ws += k;
+    }
+    if (ws < 1e-3) return;
+    FX = (vx / ws) * simDt; FY = (vy / ws) * simDt;
+  }
+
   _move(time, dt, f) {
     const { w, h, bx, by, liquid } = f;
     for (let i = this.n - 1; i >= 0; i--) {
@@ -242,6 +276,9 @@ export class PotionParticles {
         continue;
       }
       const a = this.age[i];
+      // carried along by the brew
+      this._carry(f, this.x[i], this.y[i]);
+      this.ox[i] += FX; this.oy[i] += FY;
       switch (e) {
         case K.transformation: {
           // circling a centre that drifts up

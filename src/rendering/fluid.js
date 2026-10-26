@@ -143,6 +143,8 @@ export class FluidRenderer {
     this.hh = 0;
     /** the effects' particles, kept from frame to frame */
     this.fx = new PotionParticles();
+    /** the simulation's clock at the last frame */
+    this.simT = -1;
   }
 
   /** (Re)allocate buffers for a pixel region. */
@@ -166,6 +168,7 @@ export class FluidRenderer {
       this.grain = new Uint32Array(n); // packed grain colour (0 = none)
       this.fxLiq = new Uint8Array(n); // liquid the effects' particles may swim in…
       this.fxPix = new Int32Array(n); // …and the list of those pixels
+      this.flow = new Float32Array(n * 2); // the liquid's velocity (screen px per simulated second), weighted
     }
     if (w !== this.w || h !== this.h || !this.canvas) {
       this.w = w;
@@ -229,7 +232,8 @@ export class FluidRenderer {
     if (anyGas) { gas.fill(0, 0, this.hw * this.hh * 4); this.mote.fill(0, 0, N * 4); }
     if (anyGrain) grain.fill(0, 0, N);
     if (anyLight) emit.fill(0, 0, N * 4);
-    if (fxMask) { mfx.fill(0, 0, N * NE); this.fxLiq.fill(0, 0, N); }
+    if (fxMask) { mfx.fill(0, 0, N * NE); this.fxLiq.fill(0, 0, N); this.flow.fill(0, 0, N * 2); }
+    const flow = this.flow;
     let fxN = 0;
 
     const rl = 0.092 * s; // liquid kernel radius (px), ~1.85 particle radii
@@ -258,6 +262,8 @@ export class FluidRenderer {
         const slush = p.lat[i] < 0 && p.latF[i] > 0 ? Math.min(1, -p.lat[i] / p.latF[i]) : 0;
         const cy = fy | 0;
         const inv = 1 / (rl * rl), rl2 = rl * rl;
+        // its velocity on screen, which carries the effects' particles along
+        const fvx = p.vx[i] * s, fvy = p.vy[i] * s;
         for (let dy = -RL; dy <= RL; dy++) {
           const yy = cy + dy;
           if (yy < 0 || yy >= h) continue;
@@ -277,6 +283,7 @@ export class FluidRenderer {
             liq[k] += q; liq[k + 1] += q * r; liq[k + 2] += q * g; liq[k + 3] += q * b;
             liq[k + 4] += q * o; liq[k + 5] += q * isPaste; liq[k + 6] += q * tex; liq[k + 7] += q * Ti; liq[k + 8] += q * slush;
             if (lit) { const e = (row + xx) * 4; emit[e] += q * eR; emit[e + 1] += q * eG; emit[e + 2] += q * eB; emit[e + 3] += q; if (nc) addMagic(mfx, row + xx, q); }
+            if (fxMask) { const v2 = (row + xx) * 2; flow[v2] += q * fvx; flow[v2 + 1] += q * fvy; }
           }
         }
       } else if (ph === POWDER) {
@@ -771,7 +778,10 @@ export class FluidRenderer {
       }
     }
     // each effect the brew carries: its particles, drawn over the liquid (potion-fx.js)
-    if (fxN) this.fx.step(time, { w, h, bx, by, data, liquid: this.fxLiq, pix: this.fxPix, npix: fxN, mfx, emit, mask: fxMask });
+    // the brew has moved by what the simulation ran since the last frame
+    const simDt = this.simT < 0 || sim.time < this.simT ? 0 : Math.min(0.25, sim.time - this.simT);
+    this.simT = sim.time;
+    if (fxN) this.fx.step(time, { w, h, bx, by, data, liquid: this.fxLiq, pix: this.fxPix, npix: fxN, mfx, emit, mask: fxMask, flow, weight: liq, stride: LS, simDt });
     else if (this.fx.n) this.fx.clear();
     this.ctx.putImageData(this.image, 0, 0);
     const halo = anyGlow && this.halo && !thermal ? this._halo(w, h) : null;

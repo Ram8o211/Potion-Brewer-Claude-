@@ -278,3 +278,28 @@ test('effect particles: each effect in its own colour, a swarm that lives on fro
   fr.render(sim, view, 3.1);
   assert.equal(fr.fx.n, 0);
 });
+
+test('effect particles are carried by the brew: as far as the liquid moved in the simulated time', () => {
+  const str = EFFECTS.findIndex((e) => e.key === 'strength');
+  /** mean x of the swarm after a frame in which the liquid runs right at vx (world units/s) for 0.05 simulated s */
+  const run = (vx) => {
+    const sim = new Simulation({ size: 'medium', lookup: refLookup });
+    for (let k = 0; k < 400; k++) sim.addParticle(refLookup('water'), ((k % 20) - 9.5) * 0.09, 3.2 + (Math.floor(k / 20) - 9.5) * 0.09, PHASE.LIQUID, 20);
+    const p = sim.p;
+    for (let i = 0; i < p.count; i++) { p.auraFx.fill(0, i * NE, (i + 1) * NE); p.auraFx[i * NE + str] = 0.8; p.auraI[i] = 0.8; p.vx[i] = vx; }
+    const fr = new FluidRenderer();
+    fr.halo = false;
+    const view = { scale: 60, ox: 200, oy: 20 };
+    fr.render(sim, view, 1);
+    sim.time += 0.05;
+    fr.render(sim, view, 1.05);
+    const fx = fr.fx;
+    let sx = 0;
+    for (let i = 0; i < fx.n; i++) sx += fx.ox[i];
+    return { n: fx.n, x: sx / fx.n };
+  };
+  const still = run(0), moving = run(1);
+  assert.ok(still.n > 10 && moving.n > 10);
+  // 1 world unit/s × 60 px per unit × 0.05 s = 3 px
+  assert.ok(Math.abs(moving.x - still.x - 3) < 0.6, `carried ${(moving.x - still.x).toFixed(2)} px, expected 3`);
+});
