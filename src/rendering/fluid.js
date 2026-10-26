@@ -17,40 +17,22 @@
 //     wild ingredient's object is painted from the piece it was poured as
 //     (one of its four in the piece atlas, rendering/pieces-art.js), turning
 //     with it and eaten away particle by particle;
-//   • a brew takes the palette of the painted ingredients in it, each
-//     particle one of their shades, blending into gradients as it diffuses
-//     (brew-palette.js);
+//   • a brew takes the dominant colour of the painted ingredients in it,
+//     blending into gradients as it diffuses (brew-palette.js);
 //   • every effect a brew carries shows in it its own way, as strong as
 //     its share there: hearts for love, embers for fire, snowflakes for
 //     frost, a fizz for acid… (potion-fx.js);
 //   • liquids have depth: light crosses more of the brew the deeper it is,
 //     so the colour deepens and saturates downward, channel by channel
 //     (Beer–Lambert), under a bright thin surface layer and its meniscus;
+//     depth is measured from the pool's level, so a stream being poured or
+//     drops falling in don't cast dark columns down through the brew;
 //   • vapour is a swarm of fine droplets rising, swaying and fading in and
 //     out around its particles, over a faint haze;
 //   • magic never recolours a brew: the effects it carries show only as
 //     their patterns (below), and awakening makes those stronger and
 //     denser, not a different colour; matter that is luminous of itself,
 //     or burning, still glows and spills light into a soft pixel halo;
-//   • a brew takes the palette of the painted ingredients in it, each
-//     particle one of their shades, blending into gradients as it diffuses
-//     (brew-palette.js);
-//   • every effect a brew carries shows in it its own way, as strong as
-//     its share there: hearts for love, embers for fire, snowflakes for
-//     frost, a fizz for acid… (potion-fx.js);
-//   • liquids have depth: light crosses more of the brew the deeper it is,
-//     so the colour deepens and saturates downward, channel by channel
-//     (Beer–Lambert), under a bright thin surface layer and its meniscus;
-//   • vapour is a swarm of fine droplets rising, swaying and fading in and
-//     out around its particles, over a faint haze;
-//   • magic shines: every particle emits light in the colours of the effects
-//     it actually carries (derived.js, the palette of the effect bars), as
-//     bright as their concentration, and the light spills into a soft pixel
-//     halo around the brew. Effects are not blended into one colour: each
-//     glowing pixel (and halo block) shines in one effect's own colour,
-//     picked in proportion to that effect's share of the light there, so a
-//     brew that is 70% vitality and 30% frost glows 70% red and 30% ice
-//     blue, each as bright as its part of the magic.
 // Rendering resolution is independent of the physics resolution.
 
 import { PHASE, SIM } from '../simulation/constants.js';
@@ -252,7 +234,7 @@ export class FluidRenderer {
       const ph = p.phase[i];
       const fx = p.x[i] * s + view.ox - bx, fy = p.y[i] * s + view.oy - by;
       let r = colR[i], g = colG[i], b = colB[i];
-      // dyed by the painting of what went into it, in its shades (brew-palette.js)
+      // dyed by the dominant colour of the painting of what went into it (brew-palette.js)
       if (painted && p.whole[i] < 0.5 && paletteColour(sim, i)) { r = palCol[0]; g = palCol[1]; b = palCol[2]; }
       const seed = p.seed[i];
       const lit = anyLight && emission(p, i, r, g, b, drawnGlow(p, sim.species, i, vis)) > 0.004;
@@ -460,10 +442,36 @@ export class FluidRenderer {
     // first liquid pixel of every column → depth below the surface (Beer–Lambert style darkening)
     if (!this.surf || this.surf.length < w) this.surf = new Int32Array(w);
     const surf = this.surf;
+    if (!this.surfTmp || this.surfTmp.length < w) this.surfTmp = new Int32Array(w);
+    const top = this.surfTmp;
     for (let x = 0; x < w; x++) {
-      let y = 0;
-      while (y < h && wb[y * w + x] <= thr) y++;
-      surf[x] = y;
+      // the top of the lowest body of liquid in the column: drops falling
+      // above it (pouring, condensation) are separate runs and don't count
+      let y = h - 1;
+      while (y >= 0 && wb[y * w + x] <= thr) y--;
+      if (y < 0) { top[x] = h; continue; }
+      for (;;) {
+        while (y > 0 && wb[(y - 1) * w + x] > thr) y--;
+        // bridge a pixel or two of gap (a bubble), not the air above
+        let g = y - 1;
+        while (g >= 0 && y - g <= 3 && wb[g * w + x] <= thr) g--;
+        if (g >= 0 && y - g <= 3) y = g; else break;
+      }
+      top[x] = y;
+    }
+    // the pool's level: a stream being poured, drops falling in or a gap
+    // around a floating ingredient are narrow spikes in the first liquid
+    // pixel of each column — a median over the neighbouring columns keeps
+    // the surface's waves and drops them, so they don't darken whole columns
+    const SR = Math.max(4, Math.round(0.3 * s));
+    /** @type {number[]} */
+    const win = [];
+    for (let x = 0; x < w; x++) {
+      win.length = 0;
+      for (let xx = Math.max(0, x - SR), xe = Math.min(w - 1, x + SR); xx <= xe; xx++) if (top[xx] < h) win.push(top[xx]);
+      if (!win.length) { surf[x] = h; continue; }
+      win.sort((a, b) => a - b);
+      surf[x] = win[win.length >> 1];
     }
     const depthScale = 1 / Math.max(6, 0.9 * s);
     const thermal = this.thermal;

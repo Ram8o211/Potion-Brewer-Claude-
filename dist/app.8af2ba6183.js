@@ -10995,30 +10995,44 @@ if (src) return src;
 }
 return null;
 }
-function skinPalette(base) {
-let got = bySkin.get(base);
-if (got !== undefined) return got;
-const px = [];
-for (let v = 0; v < 4; v++) {
-const pal = piecePalette(base + v);
-if (!pal) continue;
-for (let i = 0; i < pal.length; i++) px.push(pal[i]);
-}
-if (!px.length) { bySkin.set(base, null); return null; }
-const cols = px.map((c) => [(c & 255) / 255, ((c >>> 8) & 255) / 255, ((c >>> 16) & 255) / 255]);
+function dominantColour(cols) {
 const lum = (c) => 0.3 * c[0] + 0.55 * c[1] + 0.15 * c[2];
 const body = cols.filter((c) => lum(c) > 0.14);
 const use = body.length > cols.length * 0.3 ? body : cols;
-const mean = [0, 0, 0];
-for (const c of use) for (let k = 0; k < 3; k++) mean[k] += srgbToLinear(c[k]);
-for (let k = 0; k < 3; k++) mean[k] = linearToSrgb(mean[k] / use.length);
-const n = Math.min(32, use.length);
-const shades = new Float32Array(n * 3);
-for (let i = 0; i < n; i++) {
-const c = use[Math.floor(((i + 0.5) / n) * use.length)];
-for (let k = 0; k < 3; k++) shades[i * 3 + k] = Math.max(0.55, Math.min(1.5, (c[k] + 0.04) / (mean[k] + 0.04)));
+const BINS = 12, GREY = BINS;
+const bin = new Array(BINS + 1).fill(0);
+const key = use.map((c) => {
+const mx = Math.max(c[0], c[1], c[2]), mn = Math.min(c[0], c[1], c[2]), d = mx - mn;
+if (d < 0.08 || d < mx * 0.15) return GREY;
+let hue = mx === c[0] ? ((c[1] - c[2]) / d + 6) % 6 : mx === c[1] ? (c[2] - c[0]) / d + 2 : (c[0] - c[1]) / d + 4;
+return Math.floor((hue / 6) * BINS + 0.5) % BINS;
+});
+for (const k of key) bin[k]++;
+let best = 0, bestS = -1;
+for (let k = 0; k <= BINS; k++) {
+const sc = k === GREY ? bin[k] : bin[k] + 0.5 * (bin[(k + 1) % BINS] + bin[(k + BINS - 1) % BINS]);
+if (sc > bestS) { bestS = sc; best = k; }
 }
-got = { mean, shades, n };
+const near = (k) => (best === GREY ? k === GREY : k !== GREY && Math.min((k - best + BINS) % BINS, (best - k + BINS) % BINS) <= 1);
+const mean = [0, 0, 0];
+let n = 0;
+for (let i = 0; i < use.length; i++) {
+if (!near(key[i])) continue;
+for (let c = 0; c < 3; c++) mean[c] += srgbToLinear(use[i][c]);
+n++;
+}
+return mean.map((v) => linearToSrgb(v / Math.max(1, n)));
+}
+function skinColour(base) {
+let got = bySkin.get(base);
+if (got !== undefined) return got;
+const cols = [];
+for (let v = 0; v < 4; v++) {
+const pal = piecePalette(base + v);
+if (!pal) continue;
+for (let i = 0; i < pal.length; i++) { const c = pal[i]; cols.push([(c & 255) / 255, ((c >>> 8) & 255) / 255, ((c >>> 16) & 255) / 255]); }
+}
+got = cols.length ? dominantColour(cols) : null;
 bySkin.set(base, got);
 return got;
 }
@@ -11028,11 +11042,11 @@ let got = bySpecies.get(def);
 if (got !== undefined) return got;
 got = null;
 const src = paintedSource(def, sim);
-const sk = src ? skinPalette(grainSkinOf(src, 0)) : null;
+const sk = src ? skinColour(grainSkinOf(src, 0)) : null;
 if (sk) {
 const dim = src === def || def.awakened ? 1 : 0.85;
 const tint = def.tint ?? 1;
-got = { abs: sk.mean.map((c) => -Math.log(Math.max(0.003, srgbToLinear(c * dim))) * tint), shades: sk.shades, n: sk.n };
+got = { abs: sk.map((c) => -Math.log(Math.max(0.003, srgbToLinear(c * dim))) * tint) };
 }
 bySpecies.set(def, got);
 return got;
@@ -11054,7 +11068,7 @@ return any;
 const pc = [0, 0, 0];
 function paletteColour(sim, i) {
 const p = sim.p, sp = sim.species, comp = p.comp, off = i * MAX_SPECIES;
-let tot = 0, aR = 0, aG = 0, aB = 0, pw = 0, best = -1, bestF = 0;
+let tot = 0, aR = 0, aG = 0, aB = 0, pw = 0;
 for (let s = 0; s < sp.count; s++) {
 const f = comp[off + s];
 if (f <= 0) continue;
@@ -11063,23 +11077,18 @@ const pl = slots[s];
 if (pl) {
 aR += f * pl.abs[0]; aG += f * pl.abs[1]; aB += f * pl.abs[2];
 pw += f;
-if (f > bestF) { bestF = f; best = s; }
 } else {
 aR += f * sp.absR[s]; aG += f * sp.absG[s]; aB += f * sp.absB[s];
 }
 }
 if (pw <= 0 || tot <= 1e-6) return false;
 const inv = 1 / tot;
-let r = linearToSrgb(Math.exp(-aR * inv)), g = linearToSrgb(Math.exp(-aG * inv)), b = linearToSrgb(Math.exp(-aB * inv));
-const pl = /** @type {SpeciesPalette} */ (slots[best]);
-const sd = p.seed[i];
-const h = (Math.imul(sd ^ (sd >>> 16), 0x45d9f3b) >>> 0) % pl.n;
-const t = Math.min(1, pw * inv * 1.6) * 0.6;
-r *= 1 + (pl.shades[h * 3] - 1) * t; g *= 1 + (pl.shades[h * 3 + 1] - 1) * t; b *= 1 + (pl.shades[h * 3 + 2] - 1) * t;
-pc[0] = Math.min(1, r); pc[1] = Math.min(1, g); pc[2] = Math.min(1, b);
+pc[0] = Math.min(1, linearToSrgb(Math.exp(-aR * inv)));
+pc[1] = Math.min(1, linearToSrgb(Math.exp(-aG * inv)));
+pc[2] = Math.min(1, linearToSrgb(Math.exp(-aB * inv)));
 return true;
 }
-return { preparePalettes, pc, paletteColour };
+return { dominantColour, preparePalettes, pc, paletteColour };
 })();
 // src/rendering/fluid.js
 const __m55 = (() => {
@@ -11417,10 +11426,28 @@ const data = this.image.data;
 const thr = 0.3; // liquid surface threshold
 if (!this.surf || this.surf.length < w) this.surf = new Int32Array(w);
 const surf = this.surf;
+if (!this.surfTmp || this.surfTmp.length < w) this.surfTmp = new Int32Array(w);
+const top = this.surfTmp;
 for (let x = 0; x < w; x++) {
-let y = 0;
-while (y < h && wb[y * w + x] <= thr) y++;
-surf[x] = y;
+let y = h - 1;
+while (y >= 0 && wb[y * w + x] <= thr) y--;
+if (y < 0) { top[x] = h; continue; }
+for (;;) {
+while (y > 0 && wb[(y - 1) * w + x] > thr) y--;
+let g = y - 1;
+while (g >= 0 && y - g <= 3 && wb[g * w + x] <= thr) g--;
+if (g >= 0 && y - g <= 3) y = g; else break;
+}
+top[x] = y;
+}
+const SR = Math.max(4, Math.round(0.3 * s));
+const win = [];
+for (let x = 0; x < w; x++) {
+win.length = 0;
+for (let xx = Math.max(0, x - SR), xe = Math.min(w - 1, x + SR); xx <= xe; xx++) if (top[xx] < h) win.push(top[xx]);
+if (!win.length) { surf[x] = h; continue; }
+win.sort((a, b) => a - b);
+surf[x] = win[win.length >> 1];
 }
 const depthScale = 1 / Math.max(6, 0.9 * s);
 const thermal = this.thermal;

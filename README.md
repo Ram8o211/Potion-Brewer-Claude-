@@ -56,9 +56,9 @@ computed from the particles that actually run out of the tap. What a
   magic awakens — several times stronger, and it stays awake through
   cooling, bottling and saving. Magic never recolours a brew: awakening
   shows only as its effects' patterns growing bolder and denser.
-  A brew takes the painted palette of the ingredients crushed into it,
-  in their own light and dark shades, blending into gradients as it
-  diffuses. Each effect also draws its own animated pattern in the
+  A brew takes the dominant colour of the painted ingredients crushed
+  into it (the shade covering most of the painting, not a blend of all
+  its textures), blending into gradients as it diffuses. Each effect also draws its own animated pattern in the
   potion's colour: mottling that breathes with a heartbeat for vitality,
   heavy waving bands for strength, rising hearts for love, twinkling
   stars for arcana, sliding hue-turning stripes for transformation,
