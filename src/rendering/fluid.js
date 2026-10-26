@@ -19,14 +19,20 @@
 //     with it and eaten away particle by particle;
 //   • gases are soft translucent wisps;
 //   • magic shines: every particle emits light in the colours of the effects
-//     it actually carries (derived.js), as bright as their concentration, and
-//     the light spills into a soft pixel halo around the brew.
+//     it actually carries (derived.js, the palette of the effect bars), as
+//     bright as their concentration, and the light spills into a soft pixel
+//     halo around the brew. Effects are not blended into one colour: each
+//     glowing pixel (and halo block) shines in one effect's own colour,
+//     picked in proportion to that effect's share of the light there, so a
+//     brew that is 70% vitality and 30% frost glows 70% red and 30% ice
+//     blue, each as bright as its part of the magic.
 // Rendering resolution is independent of the physics resolution.
 
 import { PHASE, SIM } from '../simulation/constants.js';
 import { LOOK, piece } from '../materials/shapes.js';
 import { PIECE_ART, loadPieceArt, piecePalette } from './pieces-art.js';
 import { PIECE_CELL } from '../materials/pieces.js';
+import { EFFECTS, NE } from '../alchemy/effects.js';
 
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 /** Interleaved liquid accumulator stride: weight, r, g, b, opacity, paste, texture, temperature, slush. */
@@ -40,17 +46,72 @@ function hash01(n) {
   return (n >>> 0) / 4294967296;
 }
 
-/** Light emitted by one particle: magic (effect colours), its own glow, flames. */
+/** Colour of each effect channel's light (the effect bars' palette). */
+const FX_COL = EFFECTS.map((e) => e.color);
+
+/**
+ * Light emitted by one particle: its own glow and flames in `em` (rgb), and
+ * its magic split by effect into chK/chV (nc channels: effect index and
+ * brightness, the shares of the particle's total magical light).
+ */
 const em = [0, 0, 0];
+const chK = new Int32Array(NE), chV = new Float32Array(NE);
+let nc = 0;
 function emission(p, i, r, g, b) {
   const a = p.auraI[i];
   // faint for plain ingredients, radiant once awakened (strongly non-linear)
   const s = a > 0.002 ? (1 - Math.exp(-Math.pow(a, 1.4) * 6)) * 0.75 : 0;
+  nc = 0;
+  if (s > 0) {
+    const fx = p.auraFx, o = i * NE, k0 = s / a;
+    for (let k = 0; k < NE; k++) {
+      const v = fx[o + k];
+      if (v > 0) { chK[nc] = k; chV[nc] = v * k0; nc++; }
+    }
+  }
   const gl = p.glow[i] * 0.42, bu = p.burn[i];
-  em[0] = p.auraR[i] * s + gl * (0.45 + r * 0.55) + bu;
-  em[1] = p.auraG[i] * s + gl * (0.45 + g * 0.55) + bu * 0.55;
-  em[2] = p.auraB[i] * s + gl * (0.45 + b * 0.55) + bu * 0.18;
-  return em[0] + em[1] + em[2];
+  em[0] = gl * (0.45 + r * 0.55) + bu;
+  em[1] = gl * (0.45 + g * 0.55) + bu * 0.55;
+  em[2] = gl * (0.45 + b * 0.55) + bu * 0.18;
+  return s + em[0] + em[1] + em[2];
+}
+
+/** Add the current particle's magic, weight q, to pixel `px` of a per-effect field. */
+function addMagic(mfx, px, q) {
+  const o = px * NE;
+  for (let c = 0; c < nc; c++) mfx[o + chK[c]] += q * chV[c];
+}
+
+/**
+ * Pick one effect channel of a per-effect field cell, each with probability
+ * equal to its share (u uniform in [0,1)). Sets pickTot to the cell's total.
+ * @returns {number} effect index, -1 when the cell carries no magic
+ */
+let pickTot = 0;
+function pickEffect(f, o, mask, u) {
+  let tot = 0;
+  for (let m = mask, k = 0; m; m >>>= 1, k++) if (m & 1) tot += f[o + k];
+  pickTot = tot;
+  if (tot <= 0) return -1;
+  let t = u * tot, last = -1;
+  for (let m = mask, k = 0; m; m >>>= 1, k++) {
+    if (!(m & 1) || f[o + k] <= 0) continue;
+    last = k;
+    t -= f[o + k];
+    if (t < 0) return k;
+  }
+  return last;
+}
+
+/**
+ * Uniform dither value for a cell anchored to the screen (so the pattern
+ * does not jump when the drawn region moves); each cell picks again now and
+ * then at its own moment, so mixed magic twinkles gently between its colours.
+ */
+function dither(cx, cy, time) {
+  const c = Math.imul(cx, 73856093) ^ Math.imul(cy, 19349663);
+  const ep = Math.floor(time * 0.7 + hash01(c) * 4);
+  return hash01(c ^ Math.imul(ep + 1, 83492791));
 }
 
 export class FluidRenderer {
@@ -82,6 +143,7 @@ export class FluidRenderer {
       this.liq = new Float32Array(n * LS);
       this.sol = new Float32Array(n * 4);
       this.emit = new Float32Array(n * 4); // emitted light r, g, b and kernel weight
+      this.mfx = new Float32Array(n * NE); // emitted magic, per effect
       this.solBest = new Float32Array(n); // strongest solid particle at a pixel…
       this.solIdx = new Int32Array(n); // …and its index
       this.wl = new Float32Array(n); // liquid weight, contiguous (blur, neighbours)
@@ -100,8 +162,8 @@ export class FluidRenderer {
       this.haloCanvas = makeCanvas(hw, hh);
       this.haloCtx = /** @type {any} */ (this.haloCanvas).getContext('2d');
       this.haloImage = this.haloCtx.createImageData(hw, hh);
-      this.haloAcc = new Float32Array(hw * hh * 3);
-      this.haloTmp = new Float32Array(hw * hh * 3);
+      this.haloAcc = new Float32Array(hw * hh * (3 + NE));
+      this.haloTmp = new Float32Array(hw * hh * (3 + NE));
       this.gas = new Float32Array(hw * hh * 4); // vapour weight + colour at half resolution
       this.gasTmp = new Float32Array(hw * hh * 4);
     }
@@ -120,7 +182,7 @@ export class FluidRenderer {
     const s = view.scale;
     // bounding box in screen pixels
     let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
-    let anySolid = false, anyGas = false, anyGrain = false, anyLight = false;
+    let anySolid = false, anyGas = false, anyGrain = false, anyLight = false, fxMask = 0;
     for (let i = 0; i < n; i++) {
       const x = p.x[i] * s + view.ox, y = p.y[i] * s + view.oy;
       if (x < minX) minX = x; if (x > maxX) maxX = x;
@@ -128,6 +190,7 @@ export class FluidRenderer {
       const ph = p.phase[i];
       if (ph === SOLID) anySolid = true; else if (ph === GAS) anyGas = true; else if (ph === POWDER) anyGrain = true;
       if (p.auraI[i] > 0.002 || p.glow[i] > 0.02 || p.burn[i] > 0.02) anyLight = true;
+      if (p.auraI[i] > 0.002) for (let k = 0, o = i * NE; k < NE; k++) if (p.auraFx[o + k] > 0) fxMask |= 1 << k;
     }
     if ((anySolid || anyGrain) && !PIECE_ART.loading) loadPieceArt();
     const art = PIECE_ART.ready ? PIECE_ART.px : null, artW = PIECE_ART.width;
@@ -137,13 +200,14 @@ export class FluidRenderer {
     if (w <= 0 || h <= 0 || w * h > 4e6) return null;
     this._alloc(w, h);
     const N = w * h;
-    const { liq, sol, gas, grain, emit, solBest, solIdx } = this;
+    const { liq, sol, gas, grain, emit, mfx, solBest, solIdx } = this;
     // only the fields of phases that are present need clearing and reading
     liq.fill(0, 0, N * LS);
     if (anySolid) { sol.fill(0, 0, N * 4); solBest.fill(0, 0, N); }
     if (anyGas) gas.fill(0, 0, this.hw * this.hh * 4);
     if (anyGrain) grain.fill(0, 0, N);
     if (anyLight) emit.fill(0, 0, N * 4);
+    if (fxMask) mfx.fill(0, 0, N * NE);
 
     const rl = 0.092 * s; // liquid kernel radius (px), ~1.85 particle radii
     const rs = 0.085 * s; // solid
@@ -187,7 +251,7 @@ export class FluidRenderer {
             const k = (row + xx) * LS;
             liq[k] += q; liq[k + 1] += q * r; liq[k + 2] += q * g; liq[k + 3] += q * b;
             liq[k + 4] += q * o; liq[k + 5] += q * isPaste; liq[k + 6] += q * tex; liq[k + 7] += q * Ti; liq[k + 8] += q * slush;
-            if (lit) { const e = (row + xx) * 4; emit[e] += q * eR; emit[e + 1] += q * eG; emit[e + 2] += q * eB; emit[e + 3] += q; }
+            if (lit) { const e = (row + xx) * 4; emit[e] += q * eR; emit[e + 1] += q * eG; emit[e + 2] += q * eB; emit[e + 3] += q; if (nc) addMagic(mfx, row + xx, q); }
           }
         }
       } else if (ph === POWDER) {
@@ -246,7 +310,7 @@ export class FluidRenderer {
               lum *= (1 - damp) * burnL;
               const R8 = clamp255(cr * lum * 255), G8 = clamp255(cg * lum * 255), B8 = clamp255(cb * lum * 255);
               grain[yy * w + xx] = 0xff000000 | (B8 << 16) | (G8 << 8) | R8;
-              if (lit) { const e = (yy * w + xx) * 4; emit[e] += eR; emit[e + 1] += eG; emit[e + 2] += eB; emit[e + 3] += 1; }
+              if (lit) { const e = (yy * w + xx) * 4; emit[e] += eR; emit[e + 1] += eG; emit[e + 2] += eB; emit[e + 3] += 1; if (nc) addMagic(mfx, yy * w + xx, 1); }
             }
           }
         }
@@ -267,7 +331,7 @@ export class FluidRenderer {
             const k4 = k * 4;
             sol[k4] += q; sol[k4 + 1] += q * r; sol[k4 + 2] += q * g; sol[k4 + 3] += q * b;
             if (q > solBest[k]) { solBest[k] = q; solIdx[k] = i; }
-            if (lit) { emit[k4] += q * eR; emit[k4 + 1] += q * eG; emit[k4 + 2] += q * eB; emit[k4 + 3] += q; }
+            if (lit) { emit[k4] += q * eR; emit[k4 + 1] += q * eG; emit[k4 + 2] += q * eB; emit[k4 + 3] += q; if (nc) addMagic(mfx, k, q); }
           }
         }
       } else if (ph === GAS) {
@@ -297,8 +361,9 @@ export class FluidRenderer {
           }
         }
         if (lit) {
-          const k = (Math.min(h - 1, Math.max(0, fy | 0)) * w + Math.min(w - 1, Math.max(0, fx | 0))) * 4;
+          const px = Math.min(h - 1, Math.max(0, fy | 0)) * w + Math.min(w - 1, Math.max(0, fx | 0)), k = px * 4;
           emit[k] += eR * 0.35; emit[k + 1] += eG * 0.35; emit[k + 2] += eB * 0.35; emit[k + 3] += 0.35;
+          if (nc) addMagic(mfx, px, 0.35);
         }
       }
     }
@@ -574,8 +639,16 @@ export class FluidRenderer {
             const inv = 1 / Math.max(ew, 0.6);
             // a few sparkling pixels where it is strong
             const sp = ((x * 13 + y * 7) % 31 === 0) ? 1.6 + 0.8 * Math.max(0, Math.sin(twinkle + x * 0.7 + y)) : 1;
+            // the magic here shines in one effect's colour, chosen by share,
+            // at the full brightness of the magic (so each effect's light is
+            // proportional to its part of it)
+            let mr = 0, mg = 0, mb = 0;
+            if (fxMask) {
+              const fk = pickEffect(mfx, k * NE, fxMask, dither((x + bx) >> 1, (y + by) >> 1, time));
+              if (fk >= 0) { const c = FX_COL[fk]; mr = c[0] * pickTot; mg = c[1] * pickTot; mb = c[2] * pickTot; }
+            }
             // screen blend: the matter takes on the light's colour without washing out
-            const er = Math.min(1, emit[e4] * inv * sp * 0.8), eg = Math.min(1, emit[e4 + 1] * inv * sp * 0.8), eb = Math.min(1, emit[e4 + 2] * inv * sp * 0.8);
+            const er = Math.min(1, (emit[e4] + mr) * inv * sp * 0.8), eg = Math.min(1, (emit[e4 + 1] + mg) * inv * sp * 0.8), eb = Math.min(1, (emit[e4 + 2] + mb) * inv * sp * 0.8);
             R = 1 - (1 - R) * (1 - er); G = 1 - (1 - G) * (1 - eg); B = 1 - (1 - B) * (1 - eb);
           }
         }
@@ -591,7 +664,7 @@ export class FluidRenderer {
       }
     }
     this.ctx.putImageData(this.image, 0, 0);
-    const halo = anyLight && this.halo && !thermal ? this._halo(w, h) : null;
+    const halo = anyLight && this.halo && !thermal ? this._halo(w, h, bx, by, time, fxMask) : null;
     return { canvas: this.canvas, x: bx, y: by, halo };
   }
 
@@ -628,61 +701,78 @@ export class FluidRenderer {
 
   /**
    * Soft light around glowing matter: the emission field at half resolution,
-   * blurred and drawn additively in 2-pixel blocks (it stays pixel art).
-   * @param {number} w @param {number} h
+   * blurred and drawn additively in 2-pixel blocks (it stays pixel art). The
+   * magic is blurred per effect, and each block shines in one effect's colour
+   * picked by its share there, like the matter itself.
+   * @param {number} w @param {number} h @param {number} bx @param {number} by
+   * @param {number} time @param {number} fxMask effect channels present
    */
-  _halo(w, h) {
-    const hw = this.hw, hh = this.hh, acc = this.haloAcc, tmp = this.haloTmp, emit = this.emit;
-    acc.fill(0);
+  _halo(w, h, bx, by, time, fxMask) {
+    const hw = this.hw, hh = this.hh, acc = this.haloAcc, tmp = this.haloTmp, emit = this.emit, mfx = this.mfx;
+    // channels: base light r, g, b, then each effect present (compacted)
+    const fxK = [];
+    for (let k = 0; k < NE; k++) if (fxMask & (1 << k)) fxK.push(k);
+    const C = 3 + fxK.length, nf = fxK.length;
+    acc.fill(0, 0, hw * hh * C);
     for (let y = 0; y < h; y++) {
       const hy = (y >> 1) * hw;
       for (let x = 0; x < w; x++) {
-        const e4 = (y * w + x) * 4;
+        const px = y * w + x, e4 = px * 4;
         if (emit[e4 + 3] <= 0.01) continue;
-        const k = (hy + (x >> 1)) * 3;
+        const k = (hy + (x >> 1)) * C;
         acc[k] += emit[e4]; acc[k + 1] += emit[e4 + 1]; acc[k + 2] += emit[e4 + 2];
+        for (let c = 0, o = px * NE; c < nf; c++) acc[k + 3 + c] += mfx[o + fxK[c]];
       }
     }
     // two box blurs (separable, radius 2) ≈ a soft falloff
     for (let pass = 0; pass < 2; pass++) {
-      for (let y = 0; y < hh; y++) {
-        for (let x = 0; x < hw; x++) {
-          let r = 0, g = 0, b = 0;
-          for (let d = -2; d <= 2; d++) {
-            const xx = x + d;
-            if (xx < 0 || xx >= hw) continue;
-            const k = (y * hw + xx) * 3;
-            r += acc[k]; g += acc[k + 1]; b += acc[k + 2];
-          }
-          const o = (y * hw + x) * 3;
-          tmp[o] = r * 0.2; tmp[o + 1] = g * 0.2; tmp[o + 2] = b * 0.2;
-        }
-      }
-      for (let y = 0; y < hh; y++) {
-        for (let x = 0; x < hw; x++) {
-          let r = 0, g = 0, b = 0;
-          for (let d = -2; d <= 2; d++) {
-            const yy = y + d;
-            if (yy < 0 || yy >= hh) continue;
-            const k = (yy * hw + x) * 3;
-            r += tmp[k]; g += tmp[k + 1]; b += tmp[k + 2];
-          }
-          const o = (y * hw + x) * 3;
-          acc[o] = r * 0.2; acc[o + 1] = g * 0.2; acc[o + 2] = b * 0.2;
-        }
-      }
+      blur5(acc, tmp, hw, hh, C, 1, hw);
+      blur5(tmp, acc, hw, hh, C, hw, 1);
     }
     const d = this.haloImage.data;
+    const ox = bx >> 1, oy = by >> 1;
+    let mask = 0;
+    for (let c = 0; c < nf; c++) mask |= 1 << c;
     for (let k = 0, o = 0; k < hw * hh; k++, o += 4) {
-      const a = k * 3;
+      const a = k * C;
+      let r = acc[a], g = acc[a + 1], b = acc[a + 2];
+      if (nf) {
+        const c = pickEffect(acc, a + 3, mask, dither(ox + (k % hw), oy + ((k / hw) | 0), time));
+        if (c >= 0) { const col = FX_COL[fxK[c]]; r += col[0] * pickTot; g += col[1] * pickTot; b += col[2] * pickTot; }
+      }
       // quantised levels keep the light banded like the rest of the pixel art
-      d[o] = clamp255(Math.round(acc[a] * 0.09 * 16) * 16);
-      d[o + 1] = clamp255(Math.round(acc[a + 1] * 0.09 * 16) * 16);
-      d[o + 2] = clamp255(Math.round(acc[a + 2] * 0.09 * 16) * 16);
+      d[o] = clamp255(Math.round(r * 0.09 * 16) * 16);
+      d[o + 1] = clamp255(Math.round(g * 0.09 * 16) * 16);
+      d[o + 2] = clamp255(Math.round(b * 0.09 * 16) * 16);
       d[o + 3] = 255;
     }
     this.haloCtx.putImageData(this.haloImage, 0, 0);
     return this.haloCanvas;
+  }
+}
+
+/**
+ * Box blur (radius 2) of a C-channel field along one axis: `step` is the
+ * cell stride along the axis, `cross` across it.
+ * @param {Float32Array} src @param {Float32Array} dst
+ * @param {number} hw @param {number} hh @param {number} C @param {number} step @param {number} cross
+ */
+function blur5(src, dst, hw, hh, C, step, cross) {
+  const n = step === 1 ? hw : hh, lines = step === 1 ? hh : hw;
+  for (let l = 0; l < lines; l++) {
+    const base = l * cross;
+    for (let i = 0; i < n; i++) {
+      const o = (base + i * step) * C;
+      for (let c = 0; c < C; c++) {
+        let v = 0;
+        for (let dd = -2; dd <= 2; dd++) {
+          const j = i + dd;
+          if (j < 0 || j >= n) continue;
+          v += src[(base + j * step) * C + c];
+        }
+        dst[o + c] = v * 0.2;
+      }
+    }
   }
 }
 

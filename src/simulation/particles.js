@@ -3,6 +3,7 @@
 
 import { MAX_SPECIES } from '../reactions/species.js';
 import { PHASE } from './constants.js';
+import { NE } from '../alchemy/effects.js';
 
 /** Per-particle state fields that are persisted & swapped on removal. */
 export const STATE_FIELDS_F32 = ['x', 'y', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet', 'q', 'skinU', 'skinV'];
@@ -98,6 +99,9 @@ export class Particles {
     this.auraG = new Float32Array(capacity);
     this.auraB = new Float32Array(capacity);
     this.auraI = new Float32Array(capacity);
+    /** the same light split by effect: NE values per particle (one per
+     * effect channel, summing to auraI), so each effect shines in its own colour */
+    this.auraFx = new Float32Array(capacity * NE);
     /** effective arcane threshold of the unawakened magic in the particle (ARC_NONE if none) */
     this.arcT = new Float32Array(capacity).fill(ARC_NONE);
     /** share of supplied-whole solid ingredient (roots, stones) in the particle */
@@ -138,6 +142,7 @@ export class Particles {
     }
     for (const f of DERIVED_FIELDS) self[f][dst] = self[f][src];
     this.comp.copyWithin(dst * this.S, src * this.S, (src + 1) * this.S);
+    this.auraFx.copyWithin(dst * NE, src * NE, (src + 1) * NE);
   }
 
   /** Remove by swapping the last particle into its slot. @param {number} i */
