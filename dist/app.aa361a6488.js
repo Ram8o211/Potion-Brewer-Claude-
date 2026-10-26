@@ -5436,6 +5436,7 @@ const { ARC_NONE } = __m32;
 const AURA_W = EFFECTS.map((e) => (e.kind === 'magic' ? 1 : 0.55));
 const AURA_COL = EFFECTS.map((e) => e.color);
 const auraFx = new Float64Array(NE);
+const STAIN = 1;
 const GAS_MASS = 0.05;
 function refreshParticle(sim, i) {
 const p = sim.p, sp = sim.species;
@@ -5447,6 +5448,7 @@ let tot = 0, rho = 0, rhoCp = 0, kap = 0, lnV = 0, lnVw = 0, vT = 0, beta = 0;
 let aR = 0, aG = 0, aB = 0, op = 0, flam = 0, ign = 0, ignW = 0, comb = 0, gasR = 0, glow = 0;
 let tbS = 0, tbW = 0, tmS = 0, tmW = 0, pmS = 0, pmW = 0, fricS = 0, hardS = 0, binder = 0, latF = 0, latV = 0;
 let cA = 0, cB = 0, ec = 0, arcW = 0, arcS = 0, whole = 0, lookF = 0, look = 0;
+let lR = 0, lG = 0, lB = 0;
 for (let s = 0; s < n; s++) {
 const f = comp[off + s];
 if (f <= 0) continue;
@@ -5463,6 +5465,7 @@ if (!powder || T >= sp.melt[s]) {
 lnV += f * sp.lnVisc[s];
 vT += f * sp.viscTemp[s];
 lnVw += f;
+lR += f * sp.absR[s]; lG += f * sp.absG[s]; lB += f * sp.absB[s];
 }
 aR += f * sp.absR[s];
 aG += f * sp.absG[s];
@@ -5531,6 +5534,10 @@ p.tb[i] = tbW > 0 ? tbS / tbW : NO_BOIL;
 p.volFrac[i] = tbW * inv;
 p.latF[i] = latF * inv;
 p.latV[i] = latV * inv;
+if (gran > 0 && lnVw > 0) {
+const st = STAIN * gran * tot / lnVw;
+aR += st * lR; aG += st * lG; aB += st * lB;
+}
 const cr = linearToSrgb(Math.exp(-aR * inv)), cg = linearToSrgb(Math.exp(-aG * inv)), cb = linearToSrgb(Math.exp(-aB * inv));
 sim.colR[i] = cr; sim.colG[i] = cg; sim.colB[i] = cb;
 const lab = rgbToOklab(cr, cg, cb);
@@ -5569,7 +5576,7 @@ p.auraR[i] = r / I; p.auraG[i] = g / I; p.auraB[i] = b / I;
 }
 p.auraI[i] = I / 100;
 }
-return { GAS_MASS, refreshParticle, refreshAura };
+return { STAIN, GAS_MASS, refreshParticle, refreshAura };
 })();
 // src/simulation/rigid.js
 const __m36 = (() => {
@@ -6236,11 +6243,15 @@ rate = base + 8 * knead * Math.max(bind, sol * 2, frozen ? 1 : 0);
 if (p.gran[i] > 0.97 && p.gran[j] > 0.97) continue;
 rate = 2.2 * agit;
 }
-let kx = rate * c * w * dt;
-if (kx > 0.45) kx = 0.45;
-if (kx < 1e-5) continue;
 const oi = i * S, oj = j * S;
 let m = 0;
+if (fi && fj && (pi === PASTE || pj === PASTE)) m += carrierExchange(sim, i, j, agit, c * w * dt);
+let kx = rate * c * w * dt;
+if (kx > 0.45) kx = 0.45;
+if (kx < 1e-5) {
+if (m > 0) { chg[i] += m; chg[j] += m; }
+continue;
+}
 for (let s = 0; s < ns; s++) {
 const a = comp[oi + s], b = comp[oj + s];
 if (a === b) continue;
@@ -6263,6 +6274,52 @@ sim.compChange[i] = 0;
 p.dirty[i] = 1;
 }
 }
+}
+const liqI = new Float64Array(MAX_SPECIES), liqJ = new Float64Array(MAX_SPECIES);
+function liquidPhase(sim, i, out) {
+const p = sim.p, sp = sim.species, comp = p.comp, off = i * MAX_SPECIES, n = sp.count, T = p.temp[i];
+let L = 0;
+for (let s = 0; s < n; s++) {
+const f = comp[off + s];
+const liq = f > 0 && !(sp.isPowder[s] && T < sp.melt[s]) ? f : 0;
+out[s] = liq;
+L += liq;
+}
+let tot = L;
+for (let s = 0; s < n; s++) {
+const f = comp[off + s];
+if (f <= 0 || out[s] > 0) continue;
+const sol = Math.min(0.9, Math.max(0, sp.solubility[s] + sp.solTemp[s] * (T - 20)));
+const d = Math.min(f, sol * L * 1.2);
+out[s] = d;
+tot += d;
+}
+return tot;
+}
+function carrierExchange(sim, i, j, agit, k) {
+const p = sim.p, comp = p.comp, n = sim.species.count;
+const Li = liquidPhase(sim, i, liqI), Lj = liquidPhase(sim, j, liqJ);
+if (Li < 1e-4 || Lj < 1e-4) return 0;
+const lnMu = Math.min(carrierLnMu(p, i), carrierLnMu(p, j));
+const Tm = 0.5 * (p.temp[i] + p.temp[j]);
+const fD = Math.max(0.03, Math.min(1, Math.exp(-0.5 * Math.max(0, lnMu)))) * Math.max(0.3, (Tm + 273) / 293);
+let kx = (1.5 * fD + 22 * agit * Math.max(0.35, fD)) * k;
+if (kx > 0.45) kx = 0.45;
+if (kx < 1e-5) return 0;
+const amt = kx * Math.min(Li, Lj), ii = 1 / Li, ij = 1 / Lj;
+const oi = i * MAX_SPECIES, oj = j * MAX_SPECIES;
+let m = 0;
+for (let s = 0; s < n; s++) {
+const d = (liqJ[s] * ij - liqI[s] * ii) * amt;
+if (d === 0) continue;
+comp[oi + s] += d;
+comp[oj + s] -= d;
+m += d < 0 ? -d : d;
+}
+return m;
+}
+function carrierLnMu(p, i) {
+return p.lnMu20[i] - p.viscT[i] * (Math.min(p.temp[i], 300) - 20);
 }
 function solubilityOf(sim, i) {
 const p = sim.p, sp = sim.species, off = i * MAX_SPECIES;
@@ -8778,7 +8835,9 @@ const level = n ? sum / n : ROOM;
 const dur = n > 1 ? samples[j - 1][0] - samples[k][0] + dt : 0;
 if (dur >= HOLD_MIN && Math.abs(level - ROOM) >= 6) {
 const step = { op: 'temp', T: Math.round(level), hold: Math.round(dur), stir: Math.round((stir / n) * 100) / 100 };
-const v0 = volumeAt(samples, k), v1 = volumeAt(samples, j - 1);
+const v0 = volumeAt(samples, k);
+let v1 = volumeAt(samples, j - 1);
+for (let q = k; q < j && v1 >= 0; q++) { const v = volumeAt(samples, q); if (v >= 0 && v < v1) v1 = v; }
 if (v0 > 0 && v1 >= 0 && (v0 - v1) / v0 >= LOSS_MIN) /** @type {any} */ (step).loss = Math.round(((v0 - v1) / v0) * 100) / 100;
 events.push({ t: samples[k][0] + 0.5, step });
 }
@@ -10978,6 +11037,7 @@ const { MAX_SPECIES } = __m18;
 const { srgbToLinear, linearToSrgb } = __m8;
 const { PIECE_ART, piecePalette } = __m56;
 const { grainSkinOf } = __m19;
+const { STAIN } = __m35;
 const bySpecies = new WeakMap();
 const bySkin = new Map();
 function paintedSource(def, sim, depth = 0) {
@@ -11068,20 +11128,24 @@ return any;
 const pc = [0, 0, 0];
 function paletteColour(sim, i) {
 const p = sim.p, sp = sim.species, comp = p.comp, off = i * MAX_SPECIES;
-let tot = 0, aR = 0, aG = 0, aB = 0, pw = 0;
+const T = p.temp[i];
+let tot = 0, aR = 0, aG = 0, aB = 0, pw = 0, lR = 0, lG = 0, lB = 0, lw = 0;
 for (let s = 0; s < sp.count; s++) {
 const f = comp[off + s];
 if (f <= 0) continue;
 tot += f;
 const pl = slots[s];
-if (pl) {
-aR += f * pl.abs[0]; aG += f * pl.abs[1]; aB += f * pl.abs[2];
-pw += f;
-} else {
-aR += f * sp.absR[s]; aG += f * sp.absG[s]; aB += f * sp.absB[s];
-}
+const r = pl ? pl.abs[0] : sp.absR[s], g = pl ? pl.abs[1] : sp.absG[s], b = pl ? pl.abs[2] : sp.absB[s];
+aR += f * r; aG += f * g; aB += f * b;
+if (pl) pw += f;
+if (!sp.isPowder[s] || T >= sp.melt[s]) { lR += f * r; lG += f * g; lB += f * b; lw += f; }
 }
 if (pw <= 0 || tot <= 1e-6) return false;
+const gran = p.gran[i];
+if (gran > 0 && lw > 0) {
+const st = STAIN * gran * tot / lw;
+aR += st * lR; aG += st * lG; aB += st * lB;
+}
 const inv = 1 / tot;
 pc[0] = Math.min(1, linearToSrgb(Math.exp(-aR * inv)));
 pc[1] = Math.min(1, linearToSrgb(Math.exp(-aG * inv)));

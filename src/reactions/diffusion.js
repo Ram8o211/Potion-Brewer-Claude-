@@ -11,6 +11,11 @@
 //
 // Pair rules:
 //   liquid/paste ↔ liquid/paste : molecular diffusion ∝ T/√μ, boosted by shear
+//   … and with a paste      : the liquid between its grains (liquids and
+//                             dissolved solute) also exchanges at the rate of
+//                             that carrier liquid, not the paste's stiffness,
+//                             so a paste takes on the colour of the brew around
+//                             it while its undissolved grains stay put
 //   powder ↔ liquid/paste       : surface wetting only (capped) unless agitated;
 //                                 soluble powders also dissolve slowly at rest
 //   damp powder ↔ powder        : moisture spreads only when kneaded
@@ -89,11 +94,15 @@ export function diffusionStep(sim, dt) {
       if (p.gran[i] > 0.97 && p.gran[j] > 0.97) continue;
       rate = 2.2 * agit;
     }
-    let kx = rate * c * w * dt;
-    if (kx > 0.45) kx = 0.45;
-    if (kx < 1e-5) continue;
     const oi = i * S, oj = j * S;
     let m = 0;
+    if (fi && fj && (pi === PASTE || pj === PASTE)) m += carrierExchange(sim, i, j, agit, c * w * dt);
+    let kx = rate * c * w * dt;
+    if (kx > 0.45) kx = 0.45;
+    if (kx < 1e-5) {
+      if (m > 0) { chg[i] += m; chg[j] += m; }
+      continue;
+    }
     for (let s = 0; s < ns; s++) {
       const a = comp[oi + s], b = comp[oj + s];
       if (a === b) continue;
@@ -116,6 +125,74 @@ export function diffusionStep(sim, dt) {
       p.dirty[i] = 1;
     }
   }
+}
+
+const liqI = new Float64Array(MAX_SPECIES), liqJ = new Float64Array(MAX_SPECIES);
+
+/**
+ * Liquid phase of particle i into out: its liquid-form species and the
+ * dissolved share of its powders (as granularFraction splits them).
+ * Returns the liquid phase's volume.
+ * @param {import('../simulation/world.js').Simulation} sim @param {number} i @param {Float64Array} out
+ */
+function liquidPhase(sim, i, out) {
+  const p = sim.p, sp = sim.species, comp = p.comp, off = i * MAX_SPECIES, n = sp.count, T = p.temp[i];
+  let L = 0;
+  for (let s = 0; s < n; s++) {
+    const f = comp[off + s];
+    const liq = f > 0 && !(sp.isPowder[s] && T < sp.melt[s]) ? f : 0;
+    out[s] = liq;
+    L += liq;
+  }
+  let tot = L;
+  for (let s = 0; s < n; s++) {
+    const f = comp[off + s];
+    if (f <= 0 || out[s] > 0) continue;
+    const sol = Math.min(0.9, Math.max(0, sp.solubility[s] + sp.solTemp[s] * (T - 20)));
+    const d = Math.min(f, sol * L * 1.2);
+    out[s] = d;
+    tot += d;
+  }
+  return tot;
+}
+
+/**
+ * Exchange the liquid phases of two touching particles, at least one a
+ * paste, at the rate of their carrier liquid (its viscosity without the
+ * grains' thickening). Each particle keeps its volume and its undissolved
+ * grains; only what fills the space between them moves. Returns the volume
+ * moved.
+ * @param {import('../simulation/world.js').Simulation} sim
+ * @param {number} i @param {number} j @param {number} agit @param {number} k compatibility × proximity × dt
+ */
+function carrierExchange(sim, i, j, agit, k) {
+  const p = sim.p, comp = p.comp, n = sim.species.count;
+  const Li = liquidPhase(sim, i, liqI), Lj = liquidPhase(sim, j, liqJ);
+  if (Li < 1e-4 || Lj < 1e-4) return 0;
+  const lnMu = Math.min(carrierLnMu(p, i), carrierLnMu(p, j));
+  const Tm = 0.5 * (p.temp[i] + p.temp[j]);
+  const fD = Math.max(0.03, Math.min(1, Math.exp(-0.5 * Math.max(0, lnMu)))) * Math.max(0.3, (Tm + 273) / 293);
+  // capillary wicking: a paste draws the liquid around it in faster than plain diffusion
+  let kx = (1.5 * fD + 22 * agit * Math.max(0.35, fD)) * k;
+  if (kx > 0.45) kx = 0.45;
+  if (kx < 1e-5) return 0;
+  // move toward each other's liquid-phase make-up, as much as the leaner side holds
+  const amt = kx * Math.min(Li, Lj), ii = 1 / Li, ij = 1 / Lj;
+  const oi = i * MAX_SPECIES, oj = j * MAX_SPECIES;
+  let m = 0;
+  for (let s = 0; s < n; s++) {
+    const d = (liqJ[s] * ij - liqI[s] * ii) * amt;
+    if (d === 0) continue;
+    comp[oi + s] += d;
+    comp[oj + s] -= d;
+    m += d < 0 ? -d : d;
+  }
+  return m;
+}
+
+/** ln viscosity of a particle's carrier liquid, without its grains' thickening. */
+function carrierLnMu(p, i) {
+  return p.lnMu20[i] - p.viscT[i] * (Math.min(p.temp[i], 300) - 20);
 }
 
 /** Mean solubility of the undissolved powder in a particle. */

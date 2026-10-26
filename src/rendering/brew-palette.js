@@ -13,6 +13,7 @@ import { MAX_SPECIES } from '../reactions/species.js';
 import { srgbToLinear, linearToSrgb } from '../core/color.js';
 import { PIECE_ART, piecePalette } from './pieces-art.js';
 import { grainSkinOf } from '../materials/shapes.js';
+import { STAIN } from '../simulation/derived.js';
 
 /**
  * @typedef {object} SpeciesPalette
@@ -141,26 +142,32 @@ export const pc = [0, 0, 0];
 
 /**
  * Colour of particle i in pc (sRGB): Beer–Lambert over its composition with
- * painted species dyed by their painting's dominant colour.
+ * painted species dyed by their painting's dominant colour, its grains
+ * stained by the liquid around them as derived.js stains them.
  * Returns false (pc untouched) when the particle holds nothing painted.
  * @param {import('../simulation/world.js').Simulation} sim @param {number} i
  */
 export function paletteColour(sim, i) {
   const p = sim.p, sp = sim.species, comp = p.comp, off = i * MAX_SPECIES;
-  let tot = 0, aR = 0, aG = 0, aB = 0, pw = 0;
+  const T = p.temp[i];
+  let tot = 0, aR = 0, aG = 0, aB = 0, pw = 0, lR = 0, lG = 0, lB = 0, lw = 0;
   for (let s = 0; s < sp.count; s++) {
     const f = comp[off + s];
     if (f <= 0) continue;
     tot += f;
     const pl = slots[s];
-    if (pl) {
-      aR += f * pl.abs[0]; aG += f * pl.abs[1]; aB += f * pl.abs[2];
-      pw += f;
-    } else {
-      aR += f * sp.absR[s]; aG += f * sp.absG[s]; aB += f * sp.absB[s];
-    }
+    const r = pl ? pl.abs[0] : sp.absR[s], g = pl ? pl.abs[1] : sp.absG[s], b = pl ? pl.abs[2] : sp.absB[s];
+    aR += f * r; aG += f * g; aB += f * b;
+    if (pl) pw += f;
+    if (!sp.isPowder[s] || T >= sp.melt[s]) { lR += f * r; lG += f * g; lB += f * b; lw += f; }
   }
   if (pw <= 0 || tot <= 1e-6) return false;
+  // undissolved grains take on the dye of the liquid soaking them (derived.js)
+  const gran = p.gran[i];
+  if (gran > 0 && lw > 0) {
+    const st = STAIN * gran * tot / lw;
+    aR += st * lR; aG += st * lG; aB += st * lB;
+  }
   const inv = 1 / tot;
   pc[0] = Math.min(1, linearToSrgb(Math.exp(-aR * inv)));
   pc[1] = Math.min(1, linearToSrgb(Math.exp(-aG * inv)));

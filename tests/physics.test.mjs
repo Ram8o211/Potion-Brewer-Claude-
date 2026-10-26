@@ -417,3 +417,38 @@ test('glowing iron lights an oil pool, and closing the lid smothers the fire', (
   assert.equal(burning(), 0, 'no flames remain under the closed lid');
   assert.ok(sim.p.count > 150, `most of the oil survives (${sim.p.count} particles)`);
 });
+
+test('a paste takes the dye of the brew around it, keeping its grains', () => {
+  const sim = makeSim();
+  const S = MAX_SPECIES;
+  const sw = sim.slotFor(REF.water), sf = sim.slotFor(REF.flour), sb = sim.slotFor(REF.blue);
+  // a flour paste beside a pool of blue tincture
+  for (let r = 0; r < 8; r++) for (let c = 0; c < 20; c++) {
+    const x = -0.95 + c * 0.1 + (r % 2) * 0.05, y = 3.1 - r * 0.087;
+    const i = sim.addParticle(REF.water, x, y);
+    if (c < 10) { sim.p.comp[i * S + sf] = 0.6; sim.p.comp[i * S + sw] = 0.4; } else { sim.p.comp[i * S + sb] = 0.5; sim.p.comp[i * S + sw] = 0.5; }
+    sim.p.dirty[i] = 1;
+  }
+  run(sim, 0.5);
+  stir(sim, 4, 0, 2.85, 0.8, 0.15, 2.6);
+  run(sim, 0.5);
+  let n = 0, blue = 0, flour = 0, liq = 0;
+  const pc = [0, 0, 0], lc = [0, 0, 0];
+  let ln = 0;
+  for (let i = 0; i < sim.p.count; i++) {
+    if (sim.p.phase[i] === PHASE.PASTE) {
+      n++; blue += sim.p.comp[i * S + sb]; flour += sim.p.comp[i * S + sf]; liq += 1 - sim.p.comp[i * S + sf];
+      pc[0] += sim.colR[i]; pc[1] += sim.colG[i]; pc[2] += sim.colB[i];
+    } else if (sim.p.phase[i] === PHASE.LIQUID) {
+      ln++; lc[0] += sim.colR[i]; lc[1] += sim.colG[i]; lc[2] += sim.colB[i];
+    }
+  }
+  assert.ok(n > 40 && ln > 40, `still a paste beside a liquid (${n} / ${ln})`);
+  const gap = Math.hypot(pc[0] / n - lc[0] / ln, pc[1] / n - lc[1] / ln, pc[2] / n - lc[2] / ln);
+  // the dye soaks into the liquid between the grains (≈0.12 without wicking)…
+  assert.ok(blue / liq > 0.16, `dye in the paste's liquid ${(blue / liq).toFixed(3)}`);
+  // …and stains them, so the paste's colour follows the brew's (≈0.44 apart unstained)
+  assert.ok(gap < 0.34, `paste and brew colours ${gap.toFixed(3)} apart`);
+  // its grains stay where they are
+  assert.ok(flour / n > 0.45, `the paste keeps its flour (${(flour / n).toFixed(3)})`);
+});
