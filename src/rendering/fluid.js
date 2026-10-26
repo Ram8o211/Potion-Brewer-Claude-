@@ -17,6 +17,9 @@
 //     wild ingredient's object is painted from the piece it was poured as
 //     (one of its four in the piece atlas, rendering/pieces-art.js), turning
 //     with it and eaten away particle by particle;
+//   • a brew takes the palette of the painted ingredients in it, each
+//     particle one of their shades, blending into gradients as it diffuses
+//     (brew-palette.js);
 //   • every effect a brew carries shows in it its own way, as strong as
 //     its share there: hearts for love, embers for fire, snowflakes for
 //     frost, a fizz for acid… (potion-fx.js);
@@ -41,6 +44,7 @@ import { PIECE_ART, loadPieceArt, piecePalette } from './pieces-art.js';
 import { PIECE_CELL } from '../materials/pieces.js';
 import { EFFECTS, NE } from '../alchemy/effects.js';
 import { potionFx, fc } from './potion-fx.js';
+import { preparePalettes, paletteColour, pc as palCol } from './brew-palette.js';
 
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 /** Interleaved liquid accumulator stride: weight, r, g, b, opacity, paste, texture, temperature, slush. */
@@ -201,7 +205,9 @@ export class FluidRenderer {
       if (p.auraI[i] > 0.002 || p.glow[i] > 0.02 || p.burn[i] > 0.02) anyLight = true;
       if (p.auraI[i] > 0.002) for (let k = 0, o = i * NE; k < NE; k++) if (p.auraFx[o + k] > 0) fxMask |= 1 << k;
     }
-    if ((anySolid || anyGrain) && !PIECE_ART.loading) loadPieceArt();
+    // the atlas also holds the palettes brews take from their painted ingredients
+    if (!PIECE_ART.loading) loadPieceArt();
+    const painted = preparePalettes(sim);
     const art = PIECE_ART.ready ? PIECE_ART.px : null, artW = PIECE_ART.width;
     const pad = Math.ceil(0.16 * s) + 8;
     const bx = Math.floor(minX) - pad, by = Math.floor(minY) - pad;
@@ -229,7 +235,9 @@ export class FluidRenderer {
     for (let i = 0; i < n; i++) {
       const ph = p.phase[i];
       const fx = p.x[i] * s + view.ox - bx, fy = p.y[i] * s + view.oy - by;
-      const r = colR[i], g = colG[i], b = colB[i];
+      let r = colR[i], g = colG[i], b = colB[i];
+      // dyed by the painting of what went into it, in its shades (brew-palette.js)
+      if (painted && p.whole[i] < 0.5 && paletteColour(sim, i)) { r = palCol[0]; g = palCol[1]; b = palCol[2]; }
       const seed = p.seed[i];
       const lit = anyLight && emission(p, i, r, g, b) > 0.004;
       const eR = em[0], eG = em[1], eB = em[2];
@@ -448,7 +456,7 @@ export class FluidRenderer {
       const row = y * w;
       for (let x = 0; x < w; x++) {
         const k = row + x;
-        let R = 0, G = 0, B = 0, A = 0;
+        let R = 0, G = 0, B = 0, A = 0, fxLiq = false, fxEdge = false;
         // grains (opaque)
         const gp = anyGrain ? grain[k] : 0;
         if (gp) {
@@ -648,15 +656,10 @@ export class FluidRenderer {
             r += hh; g += hh * 0.3;
           }
           r *= l; g *= l; b *= l;
-          // each effect the brew carries leaves its own mark here (potion-fx.js)
+          // the effects draw their patterns on it once it is lit (below)
           if (fxMask && !thermal) {
-            const ew = emit[k * 4 + 3];
-            if (ew > 0.02) {
-              const edge = up <= thr || down <= thr || (x > 0 && wb[k - 1] <= thr) || (x < w - 1 && wb[k + 1] <= thr);
-              fc[0] = r; fc[1] = g; fc[2] = b;
-              potionFx(mfx, k * NE, fxMask, 1 / Math.max(ew, 0.6), x + bx, y + by, time, y - surf[x], edge);
-              r = fc[0]; g = fc[1]; b = fc[2];
-            }
+            fxLiq = true;
+            fxEdge = up <= thr || down <= thr || (x > 0 && wb[k - 1] <= thr) || (x < w - 1 && wb[k + 1] <= thr);
           }
           R = R * (1 - a) + r * a; G = G * (1 - a) + g * a; B = B * (1 - a) + b * a;
           A = A + (1 - A) * a;
@@ -712,6 +715,17 @@ export class FluidRenderer {
             }
             const er = Math.min(1, e0 * 0.6), eg = Math.min(1, e1 * 0.6), eb = Math.min(1, e2 * 0.6);
             R = 1 - (1 - R) * (1 - er); G = 1 - (1 - G) * (1 - eg); B = 1 - (1 - B) * (1 - eb);
+          }
+        }
+        // each effect the brew carries draws its own pattern in the potion's
+        // final colour, glow included (potion-fx.js)
+        if (fxLiq) {
+          const ew = emit[k * 4 + 3];
+          if (ew > 0.02 && A > 0.05) {
+            const ia = 1 / A;
+            fc[0] = R * ia; fc[1] = G * ia; fc[2] = B * ia;
+            potionFx(mfx, k * NE, fxMask, 1 / Math.max(ew, 0.6), x + bx, y + by, time, y - surf[x], fxEdge);
+            R = fc[0] * A; G = fc[1] * A; B = fc[2] * A;
           }
         }
         const o = k * 4;

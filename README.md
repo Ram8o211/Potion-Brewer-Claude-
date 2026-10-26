@@ -58,12 +58,15 @@ computed from the particles that actually run out of the tap. What a
   brew carrying several effects is never one blended colour: each effect
   shines in its own colour (the palette of the effect bars), over its
   share of the brew and as bright as its part of the magic.
-  Each effect also marks the brew in its own way: a heartbeat and rising
-  motes of life for vitality, rolling molten bands for strength, drifting
-  hearts for love, twinkling stars for arcana, iridescent bands for
-  transformation, flicker and embers for fire, snowflakes and a frosted
-  rim for frost, a fizz for acid, murky blotches and fat bubbles for
-  poison, creeping shadows and sinking ash for death.
+  A brew takes the painted palette of the ingredients crushed into it,
+  in their own light and dark shades, blending into gradients as it
+  diffuses. Each effect also draws its own animated pattern in the
+  potion's colour: mottling that breathes with a heartbeat for vitality,
+  heavy waving bands for strength, rising hearts for love, twinkling
+  stars for arcana, sliding hue-turning stripes for transformation,
+  licking flames and sparks for fire, drifting snowflakes for frost, a
+  racing fizz for acid, roiling blotches and ringed bubbles for poison,
+  swirling smoke and sinking specks for death.
 * **A living rabbit colony.** Your Moon Rabbits are individuals with
   names, inherited coats, ages and family trees. Every dose acts on the
   rabbit's body and shows — muscles, hearts, frost, flames, acid burns, a
