@@ -3,7 +3,7 @@
 // nearest-neighbour filtering for crisp pixel art at any screen size.
 
 import { PAL, paintBackground, renderCauldron, renderLid, renderLidAside, paintHearth, makeCanvas, rgbStr, hex2rgb, drawJar, rect } from './art.js';
-import { FluidRenderer } from './fluid.js';
+import { FluidRenderer, drawnGlow, drawnGlowTable } from './fluid.js';
 import { Effects } from './effects.js';
 import { COLUMN } from '../simulation/cauldron.js';
 import { PHASE } from '../simulation/constants.js';
@@ -407,18 +407,19 @@ export class Renderer {
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, this.W, this.H);
     }
-    // glowing brews light the mouth of the cauldron in the colours of their magic
-    const p = st.sim.p;
+    // glowing (luminous or burning) brews light the mouth of the cauldron;
+    // magic adds no light of its own, it shows as the brew's patterns
+    const p = st.sim.p, vis = drawnGlowTable(st.sim);
     let glow = 0, gr = 0, gg = 0, gb = 0;
     const step = Math.max(1, Math.floor(p.count / 300));
     for (let i = 0; i < p.count; i += step) {
-      const sI = p.auraI[i] > 0.002 ? 1 - Math.exp(-p.auraI[i] * 3.2) : 0;
-      const e = p.glow[i] * 0.6 + p.burn[i] * 1.5 + sI;
+      const gl = drawnGlow(p, st.sim.species, i, vis);
+      const e = gl * 0.6 + p.burn[i] * 1.5;
       if (e > 0.05) {
         glow += e;
-        gr += (p.auraR[i] * sI + (st.sim.colR[i] * p.glow[i] * 0.6) + p.burn[i] * 1.5) ;
-        gg += (p.auraG[i] * sI + (st.sim.colG[i] * p.glow[i] * 0.6) + p.burn[i] * 0.8);
-        gb += (p.auraB[i] * sI + (st.sim.colB[i] * p.glow[i] * 0.6) + p.burn[i] * 0.3);
+        gr += st.sim.colR[i] * gl * 0.6 + p.burn[i] * 1.5;
+        gg += st.sim.colG[i] * gl * 0.6 + p.burn[i] * 0.8;
+        gb += st.sim.colB[i] * gl * 0.6 + p.burn[i] * 0.3;
       }
     }
     if (glow > 0.5) {

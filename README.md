@@ -53,11 +53,9 @@ computed from the particles that actually run out of the tap. What a
 * **Arcane awakening.** Magical ingredients carry a hidden activation
   threshold (−1000…+1000, mapped onto temperature). Heat or chill a
   well-mixed brew past the volume-weighted threshold of its magic and that
-  magic awakens — glowing in the colour of its effect, several times
-  stronger, and it stays awake through cooling, bottling and saving. A
-  brew carrying several effects is never one blended colour: each effect
-  shines in its own colour (the palette of the effect bars), over its
-  share of the brew and as bright as its part of the magic.
+  magic awakens — several times stronger, and it stays awake through
+  cooling, bottling and saving. Magic never recolours a brew: awakening
+  shows only as its effects' patterns growing bolder and denser.
   A brew takes the painted palette of the ingredients crushed into it,
   in their own light and dark shades, blending into gradients as it
   diffuses. Each effect also draws its own animated pattern in the

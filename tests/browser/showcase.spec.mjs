@@ -1,6 +1,6 @@
 // The new systems in their characteristic states, played through the real
 // game and captured for the documentation (scripts/curate-screenshots.mjs):
-// an awakened, glowing brew; a hutch full of changed rabbits and a body;
+// an awakened brew, its patterns bold; a hutch full of changed rabbits and a body;
 // labelling and bargaining; a customer back the next day; the wilds at
 // dusk in bad weather. Each scene also checks what it shows.
 import { test, expect } from '@playwright/test';
@@ -12,7 +12,7 @@ const NE = 10;
 const clean = (page) => page.evaluate(() => document.querySelectorAll('.toast').forEach((t) => t.remove()));
 const KEYS = ['vitality', 'strength', 'love', 'arcana', 'transformation', 'fire', 'frost', 'acidity', 'toxicity', 'death'];
 
-test('an awakened brew glows in the colour of its magic', async ({ page }, info) => {
+test('an awakened brew draws its effects\' patterns boldly', async ({ page }, info) => {
   const errors = watchErrors(page);
   await newGame(page, { tutorial: false, seed: 'showcase-glow' });
   await pourRole(page, 'water', 125);
