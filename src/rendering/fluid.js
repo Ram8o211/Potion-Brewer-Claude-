@@ -19,9 +19,10 @@
 //     with it and eaten away particle by particle;
 //   • a brew takes the dominant colour of the painted ingredients in it,
 //     blending into gradients as it diffuses (brew-palette.js);
-//   • every effect a brew carries shows in it its own way, as strong as
-//     its share there: hearts for love, embers for fire, snowflakes for
-//     frost, a fizz for acid… (potion-fx.js);
+//   • every effect a brew carries keeps a swarm of particles in it, as
+//     many as its share there, each in its own colour, shape and motion:
+//     hearts for love, flames for fire, snowflakes for frost, a fizz for
+//     acid… (potion-fx.js);
 //   • liquids have depth: light crosses more of the brew the deeper it is,
 //     so the colour deepens and saturates downward, channel by channel
 //     (Beer–Lambert), under a bright thin surface layer and its meniscus;
@@ -30,8 +31,8 @@
 //   • vapour is a swarm of fine droplets rising, swaying and fading in and
 //     out around its particles, over a faint haze;
 //   • magic never recolours a brew: the effects it carries show only as
-//     their patterns (below), and awakening makes those stronger and
-//     denser, not a different colour; matter that is luminous of itself,
+//     their particles, and awakening makes those denser and bolder, not
+//     the brew a different colour; matter that is luminous of itself,
 //     or burning, still glows and spills light into a soft pixel halo;
 // Rendering resolution is independent of the physics resolution.
 
@@ -41,7 +42,7 @@ import { PIECE_ART, loadPieceArt, piecePalette } from './pieces-art.js';
 import { PIECE_CELL } from '../materials/pieces.js';
 import { NE } from '../alchemy/effects.js';
 import { MAX_SPECIES } from '../reactions/species.js';
-import { potionFx, fc } from './potion-fx.js';
+import { PotionParticles } from './potion-fx.js';
 import { preparePalettes, paletteColour, pc as palCol } from './brew-palette.js';
 
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
@@ -140,6 +141,8 @@ export class FluidRenderer {
     this.haloImage = null;
     this.hw = 0;
     this.hh = 0;
+    /** the effects' particles, kept from frame to frame */
+    this.fx = new PotionParticles();
   }
 
   /** (Re)allocate buffers for a pixel region. */
@@ -161,6 +164,8 @@ export class FluidRenderer {
       this.lc = new Float32Array(n * LC); // softened liquid colour: weight, r, g, b, opacity, paste
       this.lct = new Float32Array(n * LC); // its blur scratch
       this.grain = new Uint32Array(n); // packed grain colour (0 = none)
+      this.fxLiq = new Uint8Array(n); // liquid the effects' particles may swim in…
+      this.fxPix = new Int32Array(n); // …and the list of those pixels
     }
     if (w !== this.w || h !== this.h || !this.canvas) {
       this.w = w;
@@ -224,7 +229,8 @@ export class FluidRenderer {
     if (anyGas) { gas.fill(0, 0, this.hw * this.hh * 4); this.mote.fill(0, 0, N * 4); }
     if (anyGrain) grain.fill(0, 0, N);
     if (anyLight) emit.fill(0, 0, N * 4);
-    if (fxMask) mfx.fill(0, 0, N * NE);
+    if (fxMask) { mfx.fill(0, 0, N * NE); this.fxLiq.fill(0, 0, N); }
+    let fxN = 0;
 
     const rl = 0.092 * s; // liquid kernel radius (px), ~1.85 particle radii
     const rs = 0.085 * s; // solid
@@ -489,7 +495,7 @@ export class FluidRenderer {
       const row = y * w;
       for (let x = 0; x < w; x++) {
         const k = row + x;
-        let R = 0, G = 0, B = 0, A = 0, fxLiq = false, fxEdge = false;
+        let R = 0, G = 0, B = 0, A = 0, fxLiq = false;
         // grains (opaque)
         const gp = anyGrain ? grain[k] : 0;
         if (gp) {
@@ -702,11 +708,8 @@ export class FluidRenderer {
             r += hh; g += hh * 0.3;
           }
           r *= l; g *= l; b *= l;
-          // the effects draw their patterns on it once it is lit (below)
-          if (fxMask && !thermal) {
-            fxLiq = true;
-            fxEdge = up <= thr || down <= thr || (x > 0 && wb[k - 1] <= thr) || (x < w - 1 && wb[k + 1] <= thr);
-          }
+          // the effects' particles swim in it (below)
+          if (fxMask && !thermal) fxLiq = true;
           R = R * (1 - a) + r * a; G = G * (1 - a) + g * a; B = B * (1 - a) + b * a;
           A = A + (1 - A) * a;
         }
@@ -754,17 +757,8 @@ export class FluidRenderer {
             R = 1 - (1 - R) * (1 - er); G = 1 - (1 - G) * (1 - eg); B = 1 - (1 - B) * (1 - eb);
           }
         }
-        // each effect the brew carries draws its own pattern in the potion's
-        // own colour (potion-fx.js)
-        if (fxLiq) {
-          const ew = emit[k * 4 + 3];
-          if (ew > 0.02 && A > 0.05) {
-            const ia = 1 / A;
-            fc[0] = R * ia; fc[1] = G * ia; fc[2] = B * ia;
-            potionFx(mfx, k * NE, fxMask, 1 / Math.max(ew, 0.6), x + bx, y + by, time, y - surf[x], fxEdge);
-            R = fc[0] * A; G = fc[1] * A; B = fc[2] * A;
-          }
-        }
+        // where magic is in the liquid, the effects' particles may swim
+        if (fxLiq && emit[k * 4 + 3] > 0.02 && A > 0.05) { this.fxLiq[k] = 1; this.fxPix[fxN++] = k; }
         const o = k * 4;
         if (A <= 0.003) {
           data[o + 3] = 0;
@@ -776,6 +770,9 @@ export class FluidRenderer {
         data[o + 3] = clamp255(A * 255);
       }
     }
+    // each effect the brew carries: its particles, drawn over the liquid (potion-fx.js)
+    if (fxN) this.fx.step(time, { w, h, bx, by, data, liquid: this.fxLiq, pix: this.fxPix, npix: fxN, mfx, emit, mask: fxMask });
+    else if (this.fx.n) this.fx.clear();
     this.ctx.putImageData(this.image, 0, 0);
     const halo = anyGlow && this.halo && !thermal ? this._halo(w, h) : null;
     return { canvas: this.canvas, x: bx, y: by, halo };

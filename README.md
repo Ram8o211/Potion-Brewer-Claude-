@@ -56,19 +56,22 @@ computed from the particles that actually run out of the tap. What a
   well-mixed brew past the volume-weighted threshold of its magic and that
   magic awakens — several times stronger, and it stays awake through
   cooling, bottling and saving. Magic never recolours a brew: awakening
-  shows only as its effects' patterns growing bolder and denser.
+  shows only as its effects' particles growing denser and bolder.
   A brew takes the dominant colour of the painted ingredients crushed
   into it (the shade covering most of the painting, not a blend of all
-  its textures), blending into gradients as it diffuses. Each effect also draws its own animated pattern in the
-  potion's colour, and every one of them moves: flowing mottling that
-  swells with a heartbeat and motes bursting into rings for vitality,
-  surging waving bands for strength, beating hearts swaying upward for
-  love, turning stars and the odd shooting star for arcana, stripes
-  whose angle slowly turns for transformation, flames leaning in gusts
-  for fire, snowflakes tumbling in gusts over shimmering rime for frost,
-  a fizz rising in waves for acid, roiling blotches and bubbles that
-  swell and burst for poison, swirling smoke and spiralling specks for
-  death.
+  its textures), blending into gradients as it diffuses. Each effect
+  also fills the brew with its own swarm of pixel-art particles, as many
+  as its share of the magic, each in the effect's own colour so it reads
+  at a glance: red healing crosses rising and swelling on a heartbeat for
+  vitality, golden dumbbells heaving up and thumping down for strength,
+  beating pink hearts swaying upward for love, twinkling violet stars and
+  the odd shooting star for arcana, circling shapes that turn circle,
+  square, triangle, diamond and change colour for transformation, flames
+  licking up from white-hot to smoke and throwing sparks for fire,
+  snowflakes turning as they tumble down for frost, a fizz of bubbles
+  popping into droplets at the surface for acid, fat green bubbles that
+  swell and burst among little skulls for poison, sinking dark smoke and
+  wavering ghosts for death.
 * **A living rabbit colony.** Your Moon Rabbits are individuals with
   names, inherited coats, ages and family trees. Every dose acts on the
   rabbit's body and shows — muscles, hearts, frost, flames, acid burns, a
