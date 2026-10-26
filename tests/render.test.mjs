@@ -53,16 +53,16 @@ test('every phase is drawn where its particles are: liquid, paste, powder, ice a
   assert.ok(alphaAt(fr, out, view, -0.8, 2.2) < 1, 'nothing is drawn where there is no matter');
 });
 
-test('magic never recolours a brew: awakened or not, it keeps its own hue and gives off no light', () => {
+test('magic never recolours a brew: between its particles it keeps its own hue, and it gives off no light', () => {
   const sim = new Simulation({ size: 'medium', lookup: refLookup });
   const vit = EFFECTS.findIndex((e) => e.key === 'vitality'), fro = EFFECTS.findIndex((e) => e.key === 'frost');
   for (let k = 0; k < 144; k++) sim.addParticle(refLookup('water'), ((k % 12) - 5.5) * 0.09, 3.2 + (Math.floor(k / 12) - 5.5) * 0.09, PHASE.LIQUID, 20);
   const fr = new FluidRenderer();
   const view = { scale: 60, ox: 200, oy: 20 };
-  /** chromaticity of the pool: each channel's share of its mean colour */
+  /** chromaticity of the pool (but the effects' particles): each channel's share of its mean colour */
   const chroma = () => {
-    const m = [0, 0, 0];
-    for (let i = 0; i < fr.image.data.length; i += 4) if (fr.image.data[i + 3] > 200) for (let c = 0; c < 3; c++) m[c] += fr.image.data[i + c];
+    const m = [0, 0, 0], cover = fr.fx.cover;
+    for (let i = 0; i < fr.image.data.length; i += 4) if (fr.image.data[i + 3] > 200 && !cover[i >> 2]) for (let c = 0; c < 3; c++) m[c] += fr.image.data[i + c];
     const t = m[0] + m[1] + m[2];
     return m.map((v) => v / t);
   };
@@ -81,7 +81,7 @@ test('magic never recolours a brew: awakened or not, it keeps its own hue and gi
   assert.equal(out.halo, null, 'magic spills no light around the brew');
 });
 
-test('each effect draws its own animated pattern on a brew', () => {
+test('each effect fills a brew with its own animated particles', () => {
   let width = 0;
   /** @param {number} e effect index, -1 for none @param {number} t */
   const draw = (e, t) => {
@@ -114,11 +114,11 @@ test('each effect draws its own animated pattern on a brew', () => {
     assert.ok(diff(looks[e], plain) > 3, `${EFFECTS[e].key} changes the brew`);
     for (let f = 0; f < e; f++) assert.ok(diff(looks[e], looks[f]) > 2, `${EFFECTS[e].key} looks unlike ${EFFECTS[f].key}`);
   }
-  // patterns, not just a tint: the brew is more varied than plain water
+  // particles, not a tint: the brew is more varied than plain water
   const base = texture(plain, width);
   const varied = EFFECTS.filter((_, e) => texture(looks[e], width) > base * 1.3).length;
-  assert.equal(varied, NE, `every effect draws a pattern (${varied}/${NE})`);
-  // and every pattern moves
+  assert.equal(varied, NE, `every effect draws particles (${varied}/${NE})`);
+  // and every swarm moves
   for (let e = 0; e < NE; e++) {
     const later = draw(e, 1.6);
     assert.ok(diff(later, looks[e]) > 0.5, `${EFFECTS[e].key} is animated`);
@@ -245,4 +245,36 @@ test('parcels of different colour and texture meet in gradients, not hard edges'
   // (a hard switch measured ≈105 and ≈110)
   assert.ok(c < 85, `two colours meet softly (step ${c})`);
   assert.ok(pst < 75, `paste and liquid meet softly (step ${pst})`);
+});
+
+test('effect particles: each effect in its own colour, a swarm that lives on from frame to frame, and gone with the magic', () => {
+  const sim = new Simulation({ size: 'medium', lookup: refLookup });
+  for (let k = 0; k < 144; k++) sim.addParticle(refLookup('water'), ((k % 12) - 5.5) * 0.09, 3.2 + (Math.floor(k / 12) - 5.5) * 0.09, PHASE.LIQUID, 20);
+  const p = sim.p, view = { scale: 60, ox: 200, oy: 20 };
+  const love = EFFECTS.findIndex((e) => e.key === 'love');
+  const set = (e, v) => { for (let i = 0; i < p.count; i++) { p.auraFx.fill(0, i * NE, (i + 1) * NE); if (e >= 0) p.auraFx[i * NE + e] = v; p.auraI[i] = e >= 0 ? v : 0; } };
+  const fr = new FluidRenderer();
+  fr.halo = false;
+  /** mean colour of the pixels the particles cover */
+  const covered = () => {
+    const m = [0, 0, 0];
+    let n = 0;
+    for (let q = 0; q < fr.w * fr.h; q++) if (fr.fx.cover[q]) { for (let c = 0; c < 3; c++) m[c] += fr.image.data[q * 4 + c]; n++; }
+    return { n, m: m.map((v) => v / Math.max(1, n)) };
+  };
+  set(love, 0.6);
+  for (let f = 0; f < 30; f++) fr.render(sim, view, f / 30);
+  const pink = covered();
+  assert.ok(pink.n > 50, 'the hearts cover part of the brew');
+  assert.ok(pink.m[0] > pink.m[1] + 30, `love draws pink (${pink.m.map(Math.round)})`);
+  const before = fr.fx.n;
+  assert.ok(before > 5);
+  // stronger magic, a denser swarm
+  set(love, 1.6);
+  for (let f = 30; f < 90; f++) fr.render(sim, view, f / 30);
+  assert.ok(fr.fx.n > before, `awakened magic packs more particles (${before} → ${fr.fx.n})`);
+  // the magic gone, the swarm goes with it
+  set(-1, 0);
+  fr.render(sim, view, 3.1);
+  assert.equal(fr.fx.n, 0);
 });
