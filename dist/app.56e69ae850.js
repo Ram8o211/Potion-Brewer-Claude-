@@ -10905,6 +10905,7 @@ this.haloImage = this.haloCtx.createImageData(hw, hh);
 this.haloAcc = new Float32Array(hw * hh * (3 + NE));
 this.haloTmp = new Float32Array(hw * hh * (3 + NE));
 this.gas = new Float32Array(hw * hh * 4); // vapour weight + colour at half resolution
+this.mote = new Float32Array(w * h * 4); // vapour droplets: alpha + colour, full resolution
 this.gasTmp = new Float32Array(hw * hh * 4);
 }
 }
@@ -10934,7 +10935,7 @@ const N = w * h;
 const { liq, sol, gas, grain, emit, mfx, solBest, solIdx } = this;
 liq.fill(0, 0, N * LS);
 if (anySolid) { sol.fill(0, 0, N * 4); solBest.fill(0, 0, N); }
-if (anyGas) gas.fill(0, 0, this.hw * this.hh * 4);
+if (anyGas) { gas.fill(0, 0, this.hw * this.hh * 4); this.mote.fill(0, 0, N * 4); }
 if (anyGrain) grain.fill(0, 0, N);
 if (anyLight) emit.fill(0, 0, N * 4);
 if (fxMask) mfx.fill(0, 0, N * NE);
@@ -11074,6 +11075,29 @@ const k = (yy * hw + xx) * 4;
 gas[k] += q; gas[k + 1] += q * gr0; gas[k + 2] += q * gg0; gas[k + 3] += q * gb0;
 }
 }
+const mote = this.mote, R0 = rgas * 1.7, rise = 0.07 * s;
+const mr = r * 0.6 + 0.4, mg = g * 0.6 + 0.4, mb = b * 0.6 + 0.4;
+const nm = 5 + (seed & 3);
+for (let m = 0; m < nm; m++) {
+const h1 = hash01(seed + m * 7919), h2 = hash01(seed * 3 + m * 104729 + 1), h3 = hash01(seed * 7 + m * 1299709 + 2);
+const t = time * (0.3 + 0.35 * h2) + h1;
+const cyc = Math.floor(t), ph = t - cyc;
+const h4 = hash01(seed + m * 31 + cyc * 65537);
+const an = h4 * 6.2832, dist = Math.sqrt(hash01(seed * 5 + m * 17 + cyc * 92821)) * R0;
+const mx = fx + Math.cos(an) * dist + Math.sin(time * 1.7 + h3 * 6.2832) * 1.2;
+const my = fy + Math.sin(an) * dist * 0.8 - ph * rise;
+const a = Math.min(1, Math.sin(ph * Math.PI) * 1.4) * (0.55 + 0.45 * h3);
+const sz = h2 > 0.78 ? 2 : 1;
+const x0 = Math.floor(mx), y0 = Math.floor(my);
+for (let yy = y0; yy < y0 + sz; yy++) {
+if (yy < 0 || yy >= h) continue;
+for (let xx = x0; xx < x0 + sz; xx++) {
+if (xx < 0 || xx >= w) continue;
+const k = (yy * w + xx) * 4;
+mote[k] += a; mote[k + 1] += a * mr; mote[k + 2] += a * mg; mote[k + 3] += a * mb;
+}
+}
+}
 if (lit) {
 const px = Math.min(h - 1, Math.max(0, fy | 0)) * w + Math.min(w - 1, Math.max(0, fx | 0)), k = px * 4;
 emit[k] += eR * 0.35; emit[k + 1] += eG * 0.35; emit[k + 2] += eB * 0.35; emit[k + 3] += 0.35;
@@ -11114,7 +11138,6 @@ surf[x] = y;
 }
 const depthScale = 1 / Math.max(6, 0.9 * s);
 const thermal = this.thermal;
-const shimmer = Math.sin(time * 2.1);
 const twinkle = time * 3.1;
 for (let y = 0; y < h; y++) {
 const row = y * w;
@@ -11268,14 +11291,14 @@ if (up <= thr) l = 1.12;
 else if (down <= thr || (x > 0 && wb[k - 1] <= thr) || (x < w - 1 && wb[k + 1] <= thr)) l = 0.7;
 } else {
 const clear = Math.max(0, 1 - opac);
-const ct = clear * 0.45;
-r = r * (1 - ct) + 0.42 * ct; g = g * (1 - ct) + 0.6 * ct; b = b * (1 - ct) + 0.82 * ct;
-l = (0.98 + tex * 0.03) * (1 - clear * 0.55);
-if (up <= thr) l = 1.28; // meniscus highlight
-else if (y > 1 && wb[k - 2 * w] <= thr) l = 1.1;
-const depth = (y - surf[x]) * depthScale;
-l *= 1 - Math.min(0.42, depth * 0.16);
-if (down <= thr) l *= 0.78;
+const depth = Math.max(0, (y - surf[x]) * depthScale);
+const path = Math.min(4.5, 0.75 + depth * (0.9 + 2 * clear));
+r = Math.pow(Math.max(0.02, r), path); g = Math.pow(Math.max(0.02, g), path); b = Math.pow(Math.max(0.02, b), path);
+l = (1 + tex * 0.07) * (1 - clear * 0.18) * (1 - Math.min(0.3, depth * 0.1));
+if (up <= thr) l = 1.32; // meniscus highlight
+else if (y > 1 && wb[k - 2 * w] <= thr) l = 1.16; // sheen just under the surface
+else if (y > 2 && wb[k - 3 * w] <= thr) l *= 1.07;
+if (down <= thr) l *= 0.7;
 }
 const slush = liq[c9 + 8] * inv;
 if (slush > 0.04) {
@@ -11306,12 +11329,17 @@ const w00 = (1 - tx) * (1 - ty), w10 = tx * (1 - ty), w01 = (1 - tx) * ty, w11 =
 const gw = gas[k00] * w00 + gas[k10] * w10 + gas[k01] * w01 + gas[k11] * w11;
 if (gw > 0.03) {
 const inv = 1 / gw;
-const bill = 0.88 + 0.12 * Math.sin(x * 0.21 + y * 0.17 + shimmer * 2 + Math.sin(y * 0.11 - time));
-const a = Math.min(0.78, 0.82 * (1 - Math.exp(-gw * 0.65))) * bill;
+const a = Math.min(0.34, 0.4 * (1 - Math.exp(-gw * 0.5)));
 const r = (gas[k00 + 1] * w00 + gas[k10 + 1] * w10 + gas[k01 + 1] * w01 + gas[k11 + 1] * w11) * inv;
 const g = (gas[k00 + 2] * w00 + gas[k10 + 2] * w10 + gas[k01 + 2] * w01 + gas[k11 + 2] * w11) * inv;
 const b = (gas[k00 + 3] * w00 + gas[k10 + 3] * w10 + gas[k01 + 3] * w01 + gas[k11 + 3] * w11) * inv;
 R = R * (1 - a) + r * a; G = G * (1 - a) + g * a; B = B * (1 - a) + b * a;
+A = A + (1 - A) * a;
+}
+const mote = this.mote, m4 = k * 4, ma = mote[m4];
+if (ma > 0.02) {
+const a = Math.min(0.9, ma), inv = 1.12 / ma;
+R = R * (1 - a) + mote[m4 + 1] * inv * a; G = G * (1 - a) + mote[m4 + 2] * inv * a; B = B * (1 - a) + mote[m4 + 3] * inv * a;
 A = A + (1 - A) * a;
 }
 }
@@ -11325,7 +11353,13 @@ if (fxMask) {
 const fk = pickEffect(mfx, k * NE, fxMask, dither((x + bx) >> 1, (y + by) >> 1, time));
 if (fk >= 0) { const c = FX_COL[fk]; mr = c[0] * pickTot; mg = c[1] * pickTot; mb = c[2] * pickTot; }
 }
-const er = Math.min(1, (emit[e4] + mr) * inv * sp * 0.8), eg = Math.min(1, (emit[e4 + 1] + mg) * inv * sp * 0.8), eb = Math.min(1, (emit[e4 + 2] + mb) * inv * sp * 0.8);
+const e0 = (emit[e4] + mr) * inv * sp, e1 = (emit[e4 + 1] + mg) * inv * sp, e2 = (emit[e4 + 2] + mb) * inv * sp;
+const eM = Math.max(e0, e1, e2);
+if (eM > 0.01) {
+const t = Math.min(0.6, eM * 0.7), lum = Math.max(R, G, B) / eM;
+R += (e0 * lum - R) * t; G += (e1 * lum - G) * t; B += (e2 * lum - B) * t;
+}
+const er = Math.min(1, e0 * 0.6), eg = Math.min(1, e1 * 0.6), eb = Math.min(1, e2 * 0.6);
 R = 1 - (1 - R) * (1 - er); G = 1 - (1 - G) * (1 - eg); B = 1 - (1 - B) * (1 - eb);
 }
 }
