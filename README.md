@@ -60,12 +60,15 @@ computed from the particles that actually run out of the tap. What a
   A brew takes the dominant colour of the painted ingredients crushed
   into it (the shade covering most of the painting, not a blend of all
   its textures), blending into gradients as it diffuses. Each effect also draws its own animated pattern in the
-  potion's colour: mottling that breathes with a heartbeat for vitality,
-  heavy waving bands for strength, rising hearts for love, twinkling
-  stars for arcana, sliding hue-turning stripes for transformation,
-  licking flames and sparks for fire, drifting snowflakes for frost, a
-  racing fizz for acid, roiling blotches and ringed bubbles for poison,
-  swirling smoke and sinking specks for death.
+  potion's colour, and every one of them moves: flowing mottling that
+  swells with a heartbeat and motes bursting into rings for vitality,
+  surging waving bands for strength, beating hearts swaying upward for
+  love, turning stars and the odd shooting star for arcana, stripes
+  whose angle slowly turns for transformation, flames leaning in gusts
+  for fire, snowflakes tumbling in gusts over shimmering rime for frost,
+  a fizz rising in waves for acid, roiling blotches and bubbles that
+  swell and burst for poison, swirling smoke and spiralling specks for
+  death.
 * **A living rabbit colony.** Your Moon Rabbits are individuals with
   names, inherited coats, ages and family trees. Every dose acts on the
   rabbit's body and shows — muscles, hearts, frost, flames, acid burns, a

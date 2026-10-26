@@ -86,6 +86,8 @@ export class LabScreen {
     this.probe = null;
     this.thermal = false;
     this.autoStir = false;
+    /** @type {(() => void) | null} */
+    this._autoScroll = null;
     this.alembicOpen = false;
     /** the Free Experiment's alembic receiver flask (distillate), or null */
     this.receiver = null;
@@ -362,12 +364,47 @@ export class LabScreen {
     clear(a);
     const set = {};
     set.stir = btn('Auto', () => {}, { icon: 'swirl', title: this.state.has('stirrer') ? 'Clockwork stirrer on/off (A)' : 'Hold to stir automatically (A)', act: 'autostir' });
-    const startAuto = (e) => { e.preventDefault(); if (this.state.has('stirrer')) this.setAutoStir(!this.autoStir); else this.setAutoStir(true); };
-    const stopAuto = () => { if (!this.state.has('stirrer')) this.setAutoStir(false); };
+    // The tool row scrolls sideways under a finger: a swipe that starts on
+    // Auto must not switch it on. Holding starts only once the finger has
+    // stayed put for a moment; the clockwork stirrer toggles on a clean tap.
+    const press = { id: -1, x: 0, y: 0, timer: 0, moved: false };
+    const SLOP = 8, HOLD_MS = 180;
+    const cancelPress = () => { clearTimeout(press.timer); press.timer = 0; press.id = -1; };
+    const startAuto = (e) => {
+      if (e.button > 0) return;
+      cancelPress();
+      press.id = e.pointerId; press.x = e.clientX; press.y = e.clientY; press.moved = false;
+      if (!this.state.has('stirrer')) press.timer = setTimeout(() => { press.timer = 0; if (press.id >= 0 && !press.moved) this.setAutoStir(true); }, e.pointerType === 'mouse' ? 0 : HOLD_MS);
+    };
+    const moveAuto = (e) => {
+      if (e.pointerId !== press.id || press.moved) return;
+      if (Math.hypot(e.clientX - press.x, e.clientY - press.y) > SLOP) {
+        press.moved = true;
+        clearTimeout(press.timer); press.timer = 0;
+        if (!this.state.has('stirrer')) this.setAutoStir(false);
+      }
+    };
+    const endAuto = (e) => {
+      if (e.pointerId !== press.id) return;
+      const tap = !press.moved;
+      cancelPress();
+      if (this.state.has('stirrer')) { if (tap) this.setAutoStir(!this.autoStir); } else this.setAutoStir(false);
+    };
+    const abortAuto = (e) => {
+      if (e.pointerId !== press.id) return;
+      cancelPress();
+      if (!this.state.has('stirrer')) this.setAutoStir(false);
+    };
     set.stir.addEventListener('pointerdown', startAuto);
-    set.stir.addEventListener('pointerup', stopAuto);
-    set.stir.addEventListener('pointerleave', stopAuto);
-    set.stir.addEventListener('pointercancel', stopAuto);
+    set.stir.addEventListener('pointermove', moveAuto);
+    set.stir.addEventListener('pointerup', endAuto);
+    set.stir.addEventListener('pointerleave', abortAuto);
+    // the browser takes the pointer over when the row starts scrolling
+    set.stir.addEventListener('pointercancel', abortAuto);
+    set.stir.addEventListener('contextmenu', (e) => e.preventDefault());
+    if (this._autoScroll) this.toolsEl.removeEventListener('scroll', this._autoScroll);
+    this._autoScroll = () => { if (press.id >= 0) { press.moved = true; clearTimeout(press.timer); press.timer = 0; if (!this.state.has('stirrer')) this.setAutoStir(false); } };
+    this.toolsEl.addEventListener('scroll', this._autoScroll, { passive: true });
     set.speed = btn('1×', () => this.cycleSpeed(), { icon: 'speed', title: 'Time speed: 1×, 2×, 4× (F)', act: 'speed' });
     a.append(set.stir, set.speed);
     // physics demonstrations of the Free Experiment: the heat map and the alembic

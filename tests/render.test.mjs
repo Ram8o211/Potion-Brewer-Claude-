@@ -206,3 +206,43 @@ test('drops falling into a pool cast no dark columns down through it', () => {
   const mid = col(0), side = (col(-0.6) + col(0.6)) / 2;
   assert.ok(Math.abs(mid - side) < side * 0.08, `under the drops the pool is as bright as beside them (${mid.toFixed(0)} vs ${side.toFixed(0)})`);
 });
+
+test('parcels of different colour and texture meet in gradients, not hard edges', () => {
+  /** largest colour step between neighbouring pixels across a pool whose halves differ @param {'colour'|'paste'} kind */
+  const edge = (kind) => {
+    const sim = new Simulation({ size: 'medium', lookup: refLookup });
+    const S = sim.p.S;
+    for (let k = 0; k < 400; k++) {
+      const col = k % 40, row = Math.floor(k / 40);
+      const i = sim.addParticle(refLookup('water'), (col - 19.5) * 0.09, 3.6 - row * 0.09, PHASE.LIQUID, 20);
+      if (kind === 'colour') {
+        const sd = sim.slotFor(refLookup(col < 20 ? 'red' : 'blue'));
+        sim.p.comp[i * S + sd] = 0.6; sim.p.comp[i * S + sim.slotFor(refLookup('water'))] = 0.4;
+      } else if (col < 20) {
+        sim.p.comp[i * S + sim.slotFor(refLookup('flour'))] = 0.6; sim.p.comp[i * S + sim.slotFor(refLookup('water'))] = 0.4;
+      }
+    }
+    for (let i = 0; i < sim.p.count; i++) sim.p.dirty[i] = 1;
+    sim.step();
+    const view = { scale: 60, ox: 200, oy: 20 };
+    const fr = new FluidRenderer();
+    fr.halo = false;
+    const out = fr.render(sim, view, 0);
+    assert.ok(out);
+    let worst = 0;
+    for (const wy of [3.0, 3.2, 3.4]) {
+      const y = Math.round(wy * view.scale + view.oy - out.y);
+      for (let wx = -0.5; wx < 0.5; wx += 1 / view.scale) {
+        const x = Math.round(wx * view.scale + view.ox - out.x), o = (y * fr.w + x) * 4;
+        const d = fr.image.data;
+        if (d[o + 3] < 200 || d[o + 7] < 200) continue;
+        worst = Math.max(worst, Math.abs(d[o] - d[o + 4]) + Math.abs(d[o + 1] - d[o + 5]) + Math.abs(d[o + 2] - d[o + 6]));
+      }
+    }
+    return worst;
+  };
+  const c = edge('colour'), pst = edge('paste');
+  // (a hard switch measured ≈105 and ≈110)
+  assert.ok(c < 85, `two colours meet softly (step ${c})`);
+  assert.ok(pst < 75, `paste and liquid meet softly (step ${pst})`);
+});

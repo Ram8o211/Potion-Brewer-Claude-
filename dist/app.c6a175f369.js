@@ -10892,6 +10892,10 @@ dX = sx - (cx * C + m + Math.floor(cellHash(cx, cy, salt + 7) * span));
 dY = yy - (cy * C + m + Math.floor(cellHash(cx, cy, salt + 13) * span));
 return true;
 }
+function sway(sy, C, scroll, amp, freq, time, salt) {
+const row = Math.floor((sy + Math.floor(scroll)) / C);
+return Math.round(Math.sin(time * freq + row * 1.9 + salt) * amp + Math.sin(time * freq * 0.53 + row * 0.7) * amp * 0.5);
+}
 const fc = [0, 0, 0];
 const INK = [0.02, 0.02, 0.03], GROUND = [0, 0, 0];
 const base = [0, 0, 0], LIGHT = [0, 0, 0], DARK = [0, 0, 0], HI = [0, 0, 0], DEEP = [0, 0, 0];
@@ -10920,109 +10924,150 @@ switch (k) {
 case K.vitality: {
 const t = (time / 1.2) % 1;
 const beat = Math.exp(-Math.pow((t - 0.1) / 0.05, 2)) + 0.6 * Math.exp(-Math.pow((t - 0.3) / 0.05, 2));
-const n = vnoise(sx * 0.11, sy * 0.11 - time * 0.4, 101);
-if (n > 0.55) mixTo(LIGHT, A * (n - 0.55) * (1.3 + 1.2 * beat));
-else if (n < 0.4) mixTo(DARK, A * (0.4 - n) * 1.1);
-if (cellDot(sx, sy, 8, time * 5, A * 0.45, 103, 1)) {
-const ax = Math.abs(dX), ay = Math.abs(dY);
-if (ax + ay === 0) mixTo(HI, 0.9);
-else if (ax + ay === 1 && dH > 0.6 && beat > 0.3) mixTo(LIGHT, 0.7);
+const zs = 0.11 * (1 - 0.12 * beat);
+const n = vnoise(sx * zs + Math.sin(time * 0.5) * 0.8, sy * zs - time * 0.5, 101);
+if (n > 0.55) mixTo(LIGHT, A * (n - 0.55) * (1.3 + 1.6 * beat));
+else if (n < 0.4) mixTo(DARK, A * (0.4 - n) * (1.1 - 0.4 * beat));
+const sc = time * 5, wx = sx + sway(sy, 8, sc, 1.5, 1.7, time, 0);
+if (cellDot(wx, sy, 8, sc, A * 0.45, 103, 2)) {
+const d = Math.abs(dX) + Math.abs(dY);
+const ring = Math.round(t * 6);
+if (d === 0) mixTo(HI, 0.9);
+else if (dH > 0.4 && t < 0.4 && d === ring && ring <= 2) mixTo(LIGHT, 0.75 * (1 - t));
 }
 break;
 }
 case K.strength: {
-const wv = sy * 0.09 + Math.sin(sx * 0.075 + time * 0.7) * 0.5 + time * 0.12;
+const surge = 0.5 + 0.5 * Math.sin(time * 0.9);
+const wv = sy * 0.09 + Math.sin(sx * 0.075 + time * 1.1) * (0.35 + 0.45 * surge) + Math.sin(sx * 0.03 - time * 0.6) * 0.3 + time * (0.12 + 0.18 * surge);
 const step = Math.floor((wv - Math.floor(wv)) * 5);
 const tone = step === 0 ? HI : step === 1 ? LIGHT : step === 3 ? DARK : step === 4 ? DEEP : null;
-if (tone) mixTo(tone, A * (step === 4 ? 0.45 : 0.55));
+if (tone) mixTo(tone, A * (step === 4 ? 0.45 : 0.55) * (0.8 + 0.3 * surge));
 break;
 }
 case K.love: {
-if (cellDot(sx, sy, 16, time * 3, A * 0.45, 211, 4)) {
-const sw = Math.round(Math.sin(time * 1.6 + dH * 9) * 1.5);
-if (inMask(HEART_L, 7, dX + 3 - sw, dY + 2)) mixTo(HI, 0.85);
+const s1 = time * 4, x1 = sx + sway(sy, 16, s1, 2, 2.2, time, 1);
+if (cellDot(x1, sy, 16, s1, A * 0.45, 211, 4)) {
+const big = Math.sin(time * 5 + dH * 12) > -0.2;
+if (big ? inMask(HEART_L, 7, dX + 3, dY + 2) : inMask(HEART_S, 5, dX + 2, dY + 1)) mixTo(HI, 0.85);
+else if (dX === 0 && dY > 4 && dY < 7 && Math.sin(time * 9 + dY * 2 + dH * 20) > 0.3) mixTo(LIGHT, 0.6);
 }
-if (cellDot(sx, sy, 10, time * 5, A * 0.5, 223, 3)) {
-const sw = Math.round(Math.sin(time * 2.2 + dH * 9) * 1);
-if (inMask(HEART_S, 5, dX + 2 - sw, dY + 1)) mixTo(LIGHT, 0.85);
+const s2 = time * 6.5, x2 = sx + sway(sy, 10, s2, 1.5, 3, time, 2);
+if (cellDot(x2, sy, 10, s2, A * 0.5, 223, 3)) {
+if (inMask(HEART_S, 5, dX + 2, dY + 1)) mixTo(LIGHT, 0.85);
 }
-if (cellDot(sx, sy, 6, time * 4, A * 0.25, 227, 0) && dX === 0 && dY === 0) mixTo(HI, 0.6);
+if (cellDot(sx, sy, 6, time * 4, A * 0.25, 227, 0) && dX === 0 && dY === 0 && Math.sin(time * 6 + dH * 30) > 0) mixTo(HI, 0.6);
 break;
 }
 case K.arcana: {
-mixTo(DARK, A * 0.18);
-if (cellDot(sx, sy, 11, time * 0.6, A * 0.75, 307, 4)) {
-const tw = 0.5 + 0.5 * Math.sin(time * (1.2 + dH * 1.8) + dH * 40);
+mixTo(DARK, A * (0.14 + 0.08 * Math.sin(time * 0.8 + sx * 0.03)));
+const sc = time * 2, wx = sx + sway(sy, 11, sc, 2, 1.4, time, 3);
+if (cellDot(wx, sy, 11, sc, A * 0.75, 307, 4)) {
+const tw = 0.5 + 0.5 * Math.sin(time * (1.6 + dH * 2.4) + dH * 40);
 const L = Math.round((1 + Math.floor(dH * 3.99)) * (0.3 + 0.7 * tw));
+const diag = Math.sin(time * 1.3 + dH * 25) > 0;
 const ax = Math.abs(dX), ay = Math.abs(dY);
+const onArm = diag ? ax === ay && ax <= Math.max(1, L - 1) : (ax === 0 && ay <= L) || (ay === 0 && ax <= L);
 if (ax === 0 && ay === 0 && tw > 0.05) mixTo(HI, 0.6 + 0.4 * tw);
-else if ((ax === 0 && ay <= L) || (ay === 0 && ax <= L)) mixTo(Math.max(ax, ay) === L ? LIGHT : HI, 0.85);
+else if (onArm) mixTo(Math.max(ax, ay) >= (diag ? L - 1 : L) ? LIGHT : HI, 0.85);
 }
-if (cellDot(sx, sy, 5, 0, A * 0.3, 311, 0) && dX === 0 && dY === 0 && Math.sin(time * 3 + dH * 50) > 0) mixTo(LIGHT, 0.7);
+if (cellDot(sx, sy, 5, time * 0.5, A * 0.3, 311, 0) && dX === 0 && dY === 0 && Math.sin(time * 4 + dH * 50) > 0) mixTo(LIGHT, 0.7);
+const cyc = Math.floor(time / 2.5), ft = time / 2.5 - cyc;
+if (ft < 0.35 && cellHash(cyc, 0, 313) < A) {
+const hx = (cellHash(cyc, 1, 317) - 0.5) * 120 + ft * 260, hy = (cellHash(cyc, 2, 331) - 0.5) * 40 + ft * 90;
+const along = (sx - hx) * 0.94 + (sy - hy) * 0.33, across = Math.abs(-(sx - hx) * 0.33 + (sy - hy) * 0.94);
+if (across < 0.8 && along <= 0 && along > -12) mixTo(along > -2 ? HI : LIGHT, 0.85 * (1 + along / 12));
+}
 break;
 }
 case K.transformation: {
-const ph = (sx + sy) / 14 - time * 0.5;
+const ang = 0.785 + Math.sin(time * 0.35) * 0.6;
+const ca = Math.cos(ang), sa = Math.sin(ang);
+const u = sx * ca + sy * sa, v = -sx * sa + sy * ca;
+const ph = u / 10 - time * (0.5 + 0.3 * Math.sin(time * 0.7));
 const fr = ph - Math.floor(ph), band = Math.floor(ph);
-const sw = 0.75 + 0.25 * Math.sin(band * 1.7 + time * 1.6);
+const sw = 0.75 + 0.25 * Math.sin(band * 1.7 + time * 2.2);
 mixTo(fr < 0.5 ? LIGHT : DARK, A * sw * (fr < 0.08 || (fr > 0.5 && fr < 0.58) ? 0.35 : 0.6));
-const along = (sx - sy) / 2 + time * 6;
+const along = v / 1.5 + time * 8 * (band % 2 ? 1 : -1);
 if (fr > 0.2 && fr < 0.3 && ((Math.floor(along) % 5) + 5) % 5 === 0) mixTo(HI, A * 0.9);
 break;
 }
 case K.fire: {
-const n = vnoise(sx * 0.16, sy * 0.06 + time * 1.8, 401) * 0.7 + vnoise(sx * 0.4, sy * 0.15 + time * 4, 403) * 0.3;
-const hot = below < 10 ? 0.08 : 0;
+const gust = Math.sin(time * 0.9) * 0.6 + Math.sin(time * 2.3) * 0.25;
+const lean = sx * 0.16 + (sy * 0.06) * gust;
+const n = vnoise(lean, sy * 0.06 + time * 2.2, 401) * 0.7 + vnoise(sx * 0.4 + gust, sy * 0.15 + time * 5, 403) * 0.3;
+const hot = below < 10 ? 0.08 + 0.04 * Math.sin(time * 7 + sx * 0.3) : 0;
 if (n + hot > 0.62) mixTo(n + hot > 0.74 ? HI : LIGHT, A * Math.min(1, (n + hot - 0.62) * 5));
 else if (n < 0.38) mixTo(DARK, A * (0.38 - n) * 2);
-if (cellDot(sx, sy, 9, time * 14, A * 0.4, 409, 2)) {
-const cx = Math.round(Math.sin(time * 6 + dH * 20 + dY * 0.9) * 1);
+const sc = time * 14, wx = sx - Math.round(gust * 2) + sway(sy, 9, sc, 1, 4, time, 4);
+if (cellDot(wx, sy, 9, sc, A * 0.4, 409, 2)) {
+const cx = Math.round(Math.sin(time * 6 + dH * 20 + dY * 0.9) * 1 + gust * dY * 0.4);
 if (dY === 0 && dX === 0) mixTo(HI, 0.95);
 else if (dY > 0 && dY <= 2 && dX === cx) mixTo(LIGHT, 0.7);
 }
 break;
 }
 case K.frost: {
-mixTo(LIGHT, A * (edge ? 0.8 : 0.25));
-if (cellDot(sx, sy, 12, -time * 2, A * 0.75, 503, 4)) {
-const sw = Math.round(Math.sin(time * 1.1 + dH * 9) * 1.5);
-const ax = Math.abs(dX - sw), ay = Math.abs(dY), R = dH > 0.5 ? 3 : 2;
-const arm = (ax === 0 || ay === 0 || ax === ay) && Math.max(ax, ay) <= R;
+const shimmer = 0.5 + 0.5 * Math.sin(time * 2 + sx * 0.2 + sy * 0.1);
+mixTo(LIGHT, A * (edge ? 0.65 + 0.3 * shimmer : 0.2 + 0.1 * shimmer));
+const sc = -time * 3.2, wx = sx + sway(sy, 12, sc, 2.5, 1.6, time, 5);
+if (cellDot(wx, sy, 12, sc, A * 0.75, 503, 4)) {
+const ax = Math.abs(dX), ay = Math.abs(dY), R = dH > 0.5 ? 3 : 2;
+const tilt = Math.sin(time * (1 + dH) + dH * 30) > 0;
+const arm = tilt ? (ax === 0 || ay === 0 || ax === ay) && Math.max(ax, ay) <= R : (ax === ay || ay === 0) && Math.max(ax, ay) <= R;
 const tip = R === 3 && ((ax === 1 && ay === 3) || (ax === 3 && ay === 1));
-if (arm || tip) mixTo(ax + ay === 0 || Math.max(ax, ay) === R ? HI : LIGHT, 0.9);
+if (arm || (tilt && tip)) mixTo(ax + ay === 0 || Math.max(ax, ay) === R ? HI : LIGHT, 0.9);
 }
-if (cellDot(sx, sy, 6, -time * 3, A * 0.25, 509, 0) && dX === 0 && dY === 0) mixTo(HI, 0.7);
+if (cellDot(sx + sway(sy, 6, -time * 3.5, 1, 1.4, time, 6), sy, 6, -time * 3.5, A * 0.25, 509, 1) && dX === 0 && dY === 0) mixTo(HI, 0.5 + 0.3 * shimmer);
 break;
 }
 case K.acidity: {
-if (cellDot(sx, sy, 3, time * 18, A * 0.5, 601, 0) && dX === 0 && dY === 0) mixTo(dH < 0.65 ? HI : DARK, 0.75);
-if (cellDot(sx, sy, 4, time * 11, A * 0.35, 603, 0) && dX === 0 && dY === 0) mixTo(LIGHT, 0.6);
-if (below <= 1 && cellHash(sx, Math.floor(time * 10), 607) < A * 0.45) mixTo(HI, 0.8);
+const wave = 0.95 + 0.35 * Math.sin(time * 2.4 - sy * 0.08);
+const s1 = time * 20, x1 = sx + sway(sy, 3, s1, 1, 6, time, 7);
+if (cellDot(x1, sy, 3, s1, A * 0.5 * wave, 601, 0) && dX === 0 && dY === 0) mixTo(dH < 0.65 ? HI : DARK, 0.75);
+if (cellDot(sx, sy, 4, time * 12, A * 0.35 * wave, 605, 0) && dX === 0 && dY === 0) mixTo(LIGHT, 0.6);
+const s2 = time * 9, x2 = sx + sway(sy, 7, s2, 1, 5, time, 8);
+if (cellDot(x2, sy, 7, s2, A * 0.35 * wave, 603, 2)) {
+const big = Math.max(0, Math.min(1, 1 - below / 60)) > 0.5 || dH > 0.7;
+const d = Math.abs(dX) + Math.abs(dY);
+if (big ? d === 1 || (d === 2 && Math.abs(dX) === 1) : d === 0) mixTo(LIGHT, 0.7);
+}
+if (below <= 1 && cellHash(sx, Math.floor(time * 12), 607) < A * 0.45 * wave) mixTo(HI, 0.8);
 break;
 }
 case K.toxicity: {
-const n = vnoise(sx * 0.07 + time * 0.12, sy * 0.08 - time * 0.2, 701) * 0.75 + vnoise(sx * 0.2 - time * 0.3, sy * 0.2, 703) * 0.25;
+const n = vnoise(sx * 0.07 + time * 0.2, sy * 0.08 - time * 0.3, 701) * 0.75 + vnoise(sx * 0.2 - time * 0.45, sy * 0.2 + Math.sin(time) * 0.5, 703) * 0.25;
 if (n > 0.52) mixTo(DEEP, A * Math.min(0.75, (n - 0.52) * 2.6));
 else if (n < 0.35) mixTo(LIGHT, A * (0.35 - n) * 1.8);
-if (cellDot(sx, sy, 15, time * 2.2, A * 0.4, 709, 5)) {
-const R = 2.3 + dH * 2.2 + Math.sin(time * 3 + dH * 30) * 0.3;
+const sc = time * 2.6, wx = sx + sway(sy, 15, sc, 1.5, 1.1, time, 9);
+if (cellDot(wx, sy, 15, sc, A * 0.4, 709, 6)) {
+const life = (time * (0.3 + dH * 0.3) + dH * 7) % 1;
 const d = Math.hypot(dX, dY);
+if (life < 0.85) {
+const R = 1.5 + life * 4 + Math.sin(time * 3 + dH * 30) * 0.3;
 if (d < R + 0.5) {
 if (d > R - 0.6) mixTo(DEEP, 0.85);
 else if (dX < 0 && dY < 0 && d > R * 0.3 && d < R * 0.7) mixTo(HI, 0.85);
 else mixTo(DARK, 0.4);
 }
+} else {
+const R = 5 + (life - 0.85) * 25;
+if (Math.abs(d - R) < 0.6 && ((Math.round(Math.atan2(dY, dX) * 2.5) & 1) === 0)) mixTo(DEEP, 0.7);
+}
 }
 break;
 }
 case K.death: {
-const wx = vnoise(sx * 0.05 + time * 0.1, sy * 0.05, 801) * 6, wy = vnoise(sx * 0.05, sy * 0.05 - time * 0.12, 803) * 6;
-const n = vnoise(sx * 0.06 + wx, sy * 0.06 + wy - time * 0.15, 805);
+const wx = vnoise(sx * 0.05 + time * 0.18, sy * 0.05, 801) * 6, wy = vnoise(sx * 0.05, sy * 0.05 - time * 0.2, 803) * 6;
+const n = vnoise(sx * 0.06 + wx + Math.sin(time * 0.3) * 1.5, sy * 0.06 + wy - time * 0.25, 805);
 if (n > 0.5) mixTo(DEEP, A * Math.min(0.85, (n - 0.5) * 2.4));
 else if (n < 0.3) mixTo(LIGHT, A * (0.3 - n) * 1.2);
-if (cellDot(sx, sy, 8, -time * 3.5, A * 0.4, 809, 1)) {
+const sc = -time * 3.5;
+const row = Math.floor((sy + Math.floor(sc)) / 8);
+const spin = Math.round(Math.cos(time * 2.2 + row * 1.3) * 2);
+if (cellDot(sx + spin, sy, 8, sc, A * 0.4, 809, 2)) {
 if (dX === 0 && dY === 0) mixTo(dH < 0.8 ? INK : HI, 0.9);
-else if (dH < 0.25 && dX === 1 && dY === 0) mixTo(INK, 0.8);
+else if (dH < 0.25 && dX === (spin > 0 ? -1 : 1) && dY === 0) mixTo(INK, 0.8);
 }
 break;
 }
@@ -11166,6 +11211,7 @@ const { potionFx, fc } = __m57;
 const { preparePalettes, paletteColour, pc: palCol } = __m58;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const LS = 9;
+const LC = 6;
 function hash01(n) {
 n = Math.imul(n ^ (n >>> 15), 0x2c1b3c6d);
 n = Math.imul(n ^ (n >>> 12), 0x297a2d39);
@@ -11244,6 +11290,8 @@ this.solIdx = new Int32Array(n); // …and its index
 this.wl = new Float32Array(n); // liquid weight, contiguous (blur, neighbours)
 this.wb = new Float32Array(n); // smoothed liquid weight (surface shape)
 this.wt = new Float32Array(n); // blur scratch
+this.lc = new Float32Array(n * LC); // softened liquid colour: weight, r, g, b, opacity, paste
+this.lct = new Float32Array(n * LC); // its blur scratch
 this.grain = new Uint32Array(n); // packed grain colour (0 = none)
 }
 if (w !== this.w || h !== this.h || !this.canvas) {
@@ -11468,6 +11516,7 @@ if (anyGas) this._blurGas();
 const wb = this.wb, wt = this.wt;
 const wl = this.wl;
 for (let k = 0; k < N; k++) wl[k] = liq[k * LS];
+this._softenColour(w, h);
 for (let y = 0; y < h; y++) {
 const row = y * w;
 for (let x = 0; x < w; x++) {
@@ -11487,6 +11536,7 @@ wb[k] = (wt[k] * 2 + u + d) * 0.25;
 }
 }
 const data = this.image.data;
+const lc = this.lc;
 const thr = 0.3; // liquid surface threshold
 if (!this.surf || this.surf.length < w) this.surf = new Int32Array(w);
 const surf = this.surf;
@@ -11652,31 +11702,40 @@ if (y > 0 && wl[k - w] > lw) { kc = k - w; lw = wl[kc]; }
 if (lw < 1e-4) continue;
 }
 const inv = 1 / lw;
-const c9 = kc * LS;
-let r = liq[c9 + 1] * inv, g = liq[c9 + 2] * inv, b = liq[c9 + 3] * inv;
-const paste = liq[c9 + 5] * inv;
-const opac = liq[c9 + 4] * inv;
+const c9 = kc * LS, c6 = kc * LC, lcw = lc[c6];
+if (lcw < 1e-5) continue;
+const ic = 1 / lcw;
+let r = lc[c6 + 1] * ic, g = lc[c6 + 2] * ic, b = lc[c6 + 3] * ic;
+const paste = lc[c6 + 5] * ic;
+const opac = lc[c6 + 4] * ic;
 let a = Math.min(0.96, 0.7 + 0.3 * opac);
 const tex = liq[c9 + 6] * inv;
 const up = y > 0 ? wb[k - w] : 0;
 const down = y < h - 1 ? wb[k + w] : 0;
 let l = 1;
-if (paste > 0.5) {
-a = 1;
-l = 0.9 + tex * 0.09;
-if (up <= thr) l = 1.12;
-else if (down <= thr || (x > 0 && wb[k - 1] <= thr) || (x < w - 1 && wb[k + 1] <= thr)) l = 0.7;
-} else {
-const clear = Math.max(0, 1 - opac);
+const tP = paste <= 0.2 ? 0 : paste >= 0.8 ? 1 : ((paste - 0.2) / 0.6) * ((paste - 0.2) / 0.6) * (3 - 2 * ((paste - 0.2) / 0.6));
 const depth = Math.max(0, (y - surf[x]) * depthScale);
+let rL = r, gL = g, bL = b, lL = 1, rP = r, gP = g, bP = b, lP = 1;
+if (tP < 1) {
+const clear = Math.max(0, 1 - opac);
 const path = Math.min(4.5, 0.75 + depth * (0.9 + 2 * clear));
-r = Math.pow(Math.max(0.02, r), path); g = Math.pow(Math.max(0.02, g), path); b = Math.pow(Math.max(0.02, b), path);
-l = (1 + tex * 0.07) * (1 - clear * 0.18) * (1 - Math.min(0.3, depth * 0.1));
-if (up <= thr) l = 1.32; // meniscus highlight
-else if (y > 1 && wb[k - 2 * w] <= thr) l = 1.16; // sheen just under the surface
-else if (y > 2 && wb[k - 3 * w] <= thr) l *= 1.07;
-if (down <= thr) l *= 0.7;
+rL = Math.pow(Math.max(0.02, r), path); gL = Math.pow(Math.max(0.02, g), path); bL = Math.pow(Math.max(0.02, b), path);
+lL = (1 + tex * 0.07) * (1 - clear * 0.18) * (1 - Math.min(0.3, depth * 0.1));
+if (up <= thr) lL = 1.32; // meniscus highlight
+else if (y > 1 && wb[k - 2 * w] <= thr) lL = 1.16; // sheen just under the surface
+else if (y > 2 && wb[k - 3 * w] <= thr) lL *= 1.07;
+if (down <= thr) lL *= 0.7;
 }
+if (tP > 0) {
+const path = Math.min(2, 1 + depth * 0.3);
+rP = Math.pow(Math.max(0.02, r), path); gP = Math.pow(Math.max(0.02, g), path); bP = Math.pow(Math.max(0.02, b), path);
+lP = (0.92 + tex * 0.09) * (1 - Math.min(0.2, depth * 0.06));
+if (up <= thr) lP = 1.12;
+else if (down <= thr || (x > 0 && wb[k - 1] <= thr) || (x < w - 1 && wb[k + 1] <= thr)) lP = 0.7;
+}
+r = rL + (rP - rL) * tP; g = gL + (gP - gL) * tP; b = bL + (bP - bL) * tP;
+l = lL + (lP - lL) * tP;
+a = a + (1 - a) * tP;
 const slush = liq[c9 + 8] * inv;
 if (slush > 0.04) {
 const f = Math.min(0.75, slush * 0.85);
@@ -11762,6 +11821,46 @@ data[o + 3] = clamp255(A * 255);
 this.ctx.putImageData(this.image, 0, 0);
 const halo = anyGlow && this.halo && !thermal ? this._halo(w, h) : null;
 return { canvas: this.canvas, x: bx, y: by, halo };
+}
+_softenColour(w, h) {
+const liq = this.liq, a = this.lct, b = this.lc, N = w * h;
+const K = [1, 8, 28, 56, 70, 56, 28, 8, 1], R = 4, norm = 1 / 256;
+for (let k = 0; k < N; k++) {
+const s = k * LS, d = k * LC;
+a[d] = liq[s]; a[d + 1] = liq[s + 1]; a[d + 2] = liq[s + 2]; a[d + 3] = liq[s + 3]; a[d + 4] = liq[s + 4]; a[d + 5] = liq[s + 5];
+}
+for (let y = 0; y < h; y++) {
+const row = y * w;
+for (let x = 0; x < w; x++) {
+const o = (row + x) * LC;
+let s0 = 0, s1 = 0, s2 = 0, s3 = 0, s4 = 0, s5 = 0;
+for (let d = -R; d <= R; d++) {
+const xx = x + d;
+if (xx < 0 || xx >= w) continue;
+const q = (row + xx) * LC;
+if (a[q] <= 0) continue;
+const kw = K[d + R];
+s0 += a[q] * kw; s1 += a[q + 1] * kw; s2 += a[q + 2] * kw; s3 += a[q + 3] * kw; s4 += a[q + 4] * kw; s5 += a[q + 5] * kw;
+}
+b[o] = s0 * norm; b[o + 1] = s1 * norm; b[o + 2] = s2 * norm; b[o + 3] = s3 * norm; b[o + 4] = s4 * norm; b[o + 5] = s5 * norm;
+}
+}
+for (let y = 0; y < h; y++) {
+for (let x = 0; x < w; x++) {
+const o = (y * w + x) * LC;
+let s0 = 0, s1 = 0, s2 = 0, s3 = 0, s4 = 0, s5 = 0;
+for (let d = -R; d <= R; d++) {
+const yy = y + d;
+if (yy < 0 || yy >= h) continue;
+const q = (yy * w + x) * LC;
+if (b[q] <= 0) continue;
+const kw = K[d + R];
+s0 += b[q] * kw; s1 += b[q + 1] * kw; s2 += b[q + 2] * kw; s3 += b[q + 3] * kw; s4 += b[q + 4] * kw; s5 += b[q + 5] * kw;
+}
+a[o] = s0 * norm; a[o + 1] = s1 * norm; a[o + 2] = s2 * norm; a[o + 3] = s3 * norm; a[o + 4] = s4 * norm; a[o + 5] = s5 * norm;
+}
+}
+this.lc = a; this.lct = b;
 }
 _blurGas() {
 const hw = this.hw, hh = this.hh, a = this.gas, t = this.gasTmp;
@@ -19112,6 +19211,7 @@ this.bottling = null;
 this.probe = null;
 this.thermal = false;
 this.autoStir = false;
+this._autoScroll = null;
 this.alembicOpen = false;
 this.receiver = null;
 this.autoBrewer = null;
@@ -19351,12 +19451,43 @@ if (!a) return;
 clear(a);
 const set = {};
 set.stir = btn('Auto', () => {}, { icon: 'swirl', title: this.state.has('stirrer') ? 'Clockwork stirrer on/off (A)' : 'Hold to stir automatically (A)', act: 'autostir' });
-const startAuto = (e) => { e.preventDefault(); if (this.state.has('stirrer')) this.setAutoStir(!this.autoStir); else this.setAutoStir(true); };
-const stopAuto = () => { if (!this.state.has('stirrer')) this.setAutoStir(false); };
+const press = { id: -1, x: 0, y: 0, timer: 0, moved: false };
+const SLOP = 8, HOLD_MS = 180;
+const cancelPress = () => { clearTimeout(press.timer); press.timer = 0; press.id = -1; };
+const startAuto = (e) => {
+if (e.button > 0) return;
+cancelPress();
+press.id = e.pointerId; press.x = e.clientX; press.y = e.clientY; press.moved = false;
+if (!this.state.has('stirrer')) press.timer = setTimeout(() => { press.timer = 0; if (press.id >= 0 && !press.moved) this.setAutoStir(true); }, e.pointerType === 'mouse' ? 0 : HOLD_MS);
+};
+const moveAuto = (e) => {
+if (e.pointerId !== press.id || press.moved) return;
+if (Math.hypot(e.clientX - press.x, e.clientY - press.y) > SLOP) {
+press.moved = true;
+clearTimeout(press.timer); press.timer = 0;
+if (!this.state.has('stirrer')) this.setAutoStir(false);
+}
+};
+const endAuto = (e) => {
+if (e.pointerId !== press.id) return;
+const tap = !press.moved;
+cancelPress();
+if (this.state.has('stirrer')) { if (tap) this.setAutoStir(!this.autoStir); } else this.setAutoStir(false);
+};
+const abortAuto = (e) => {
+if (e.pointerId !== press.id) return;
+cancelPress();
+if (!this.state.has('stirrer')) this.setAutoStir(false);
+};
 set.stir.addEventListener('pointerdown', startAuto);
-set.stir.addEventListener('pointerup', stopAuto);
-set.stir.addEventListener('pointerleave', stopAuto);
-set.stir.addEventListener('pointercancel', stopAuto);
+set.stir.addEventListener('pointermove', moveAuto);
+set.stir.addEventListener('pointerup', endAuto);
+set.stir.addEventListener('pointerleave', abortAuto);
+set.stir.addEventListener('pointercancel', abortAuto);
+set.stir.addEventListener('contextmenu', (e) => e.preventDefault());
+if (this._autoScroll) this.toolsEl.removeEventListener('scroll', this._autoScroll);
+this._autoScroll = () => { if (press.id >= 0) { press.moved = true; clearTimeout(press.timer); press.timer = 0; if (!this.state.has('stirrer')) this.setAutoStir(false); } };
+this.toolsEl.addEventListener('scroll', this._autoScroll, { passive: true });
 set.speed = btn('1×', () => this.cycleSpeed(), { icon: 'speed', title: 'Time speed: 1×, 2×, 4× (F)', act: 'speed' });
 a.append(set.stir, set.speed);
 if (this.sandbox) {

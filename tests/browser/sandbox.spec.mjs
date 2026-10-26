@@ -117,3 +117,34 @@ test('a long boiling session stays stable and conserves matter', async ({ page }
   info.annotations.push({ type: 'perf', description: JSON.stringify(st.perf) });
   expect(errors).toEqual([]);
 });
+
+test('swiping the tool row over Auto scrolls it without starting the stirrer', async ({ page }) => {
+  const errors = watchErrors(page);
+  await startSandbox(page);
+  const box = await page.locator('[data-act=autostir]').boundingBox();
+  if (!box) throw new Error('no Auto button');
+  const x = box.x + box.width / 2, y = box.y + box.height / 2;
+  /** @param {string} type @param {number} px */
+  const fire = (type, px) => page.locator('[data-act=autostir]').dispatchEvent(type, { pointerId: 7, pointerType: 'touch', isPrimary: true, button: 0, clientX: px, clientY: y, bubbles: true });
+  const stirring = () => lab(page, (l) => l.autoStir);
+  const upgraded = await lab(page, (l) => l.state.has('stirrer'));
+  // a swipe that starts on Auto
+  await fire('pointerdown', x);
+  for (let k = 1; k <= 6; k++) { await fire('pointermove', x - k * 8); await page.waitForTimeout(16); }
+  await page.waitForTimeout(300);
+  expect(await stirring(), 'a swipe leaves it off').toBe(false);
+  await fire('pointerup', x - 48);
+  expect(await stirring(), 'and lifting the finger too').toBe(false);
+  // a deliberate press still works
+  await fire('pointerdown', x);
+  await page.waitForTimeout(300);
+  if (upgraded) {
+    await fire('pointerup', x);
+    expect(await stirring(), 'a tap turns the clockwork stirrer on').toBe(true);
+  } else {
+    expect(await stirring(), 'holding stirs').toBe(true);
+    await fire('pointerup', x);
+    expect(await stirring(), 'letting go stops').toBe(false);
+  }
+  expect(errors).toEqual([]);
+});
