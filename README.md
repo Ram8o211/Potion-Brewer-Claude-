@@ -54,7 +54,10 @@ computed from the particles that actually run out of the tap. What a
   threshold (−1000…+1000, mapped onto temperature). Heat or chill a
   well-mixed brew past the volume-weighted threshold of its magic and that
   magic awakens — glowing in the colour of its effect, several times
-  stronger, and it stays awake through cooling, bottling and saving.
+  stronger, and it stays awake through cooling, bottling and saving. A
+  brew carrying several effects is never one blended colour: each effect
+  shines in its own colour (the palette of the effect bars), over its
+  share of the brew and as bright as its part of the magic.
 * **A living rabbit colony.** Your Moon Rabbits are individuals with
   names, inherited coats, ages and family trees. Every dose acts on the
   rabbit's body and shows — muscles, hearts, frost, flames, acid burns, a

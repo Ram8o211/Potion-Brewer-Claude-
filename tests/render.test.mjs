@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { refLookup, PHASE } from './helpers.mjs';
 import { Simulation } from '../src/simulation/world.js';
 import { FluidRenderer } from '../src/rendering/fluid.js';
+import { EFFECTS, NE } from '../src/alchemy/effects.js';
 
 // a minimal 2D context: the renderer only needs ImageData and putImageData
 /** @type {any} */ (globalThis).OffscreenCanvas ??= class {
@@ -47,4 +48,34 @@ test('every phase is drawn where its particles are: liquid, paste, powder, ice a
   }
   // empty space between the clusters stays transparent
   assert.ok(alphaAt(fr, out, view, -0.8, 2.2) < 1, 'nothing is drawn where there is no matter');
+});
+
+test('mixed magic glows in each effect\'s own colour, in proportion to its share', () => {
+  const sim = new Simulation({ size: 'medium', lookup: refLookup });
+  const vit = EFFECTS.findIndex((e) => e.key === 'vitality'), fro = EFFECTS.findIndex((e) => e.key === 'frost');
+  for (let k = 0; k < 144; k++) sim.addParticle(refLookup('water'), ((k % 12) - 5.5) * 0.09, 3.2 + (Math.floor(k / 12) - 5.5) * 0.09, PHASE.LIQUID, 20);
+  const fr = new FluidRenderer();
+  fr.halo = false;
+  const view = { scale: 60, ox: 200, oy: 20 };
+  const plain = fr.render(sim, view, 0);
+  const base = Uint8ClampedArray.from(fr.image.data);
+  // a brew that is 70% vitality, 30% frost (as derived.js would leave it)
+  const p = sim.p;
+  for (let i = 0; i < p.count; i++) {
+    p.auraFx.fill(0, i * NE, (i + 1) * NE);
+    p.auraFx[i * NE + vit] = 0.7; p.auraFx[i * NE + fro] = 0.3; p.auraI[i] = 1;
+  }
+  const out = fr.render(sim, view, 0);
+  assert.ok(plain && out && out.x === plain.x && out.y === plain.y);
+  // inside the pool, each lit pixel leans to one effect's colour: red or ice blue
+  const cx = Math.round(view.ox - out.x), cy = Math.round(3.2 * view.scale + view.oy - out.y);
+  let red = 0, blue = 0;
+  for (let y = cy - 18; y <= cy + 18; y++) for (let x = cx - 18; x <= cx + 18; x++) {
+    const o = (y * fr.w + x) * 4;
+    const dR = fr.image.data[o] - base[o], dB = fr.image.data[o + 2] - base[o + 2];
+    if (dR > dB + 4) red++; else if (dB > dR + 4) blue++;
+  }
+  const share = red / (red + blue);
+  assert.ok(red + blue > 600, 'the pool glows');
+  assert.ok(share > 0.6 && share < 0.8, `vitality's colour covers its share of the glow (${share.toFixed(2)})`);
 });

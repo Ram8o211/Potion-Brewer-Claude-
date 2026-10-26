@@ -140,19 +140,22 @@ export function refreshParticle(sim, i) {
 }
 
 /**
- * Magical emission of a particle: the colours of the effects it actually
- * carries (extracted, after resonance laws and oppositions — the same
- * function a bottle is measured with), weighted by their concentration.
+ * Magical emission of a particle: the effects it actually carries
+ * (extracted, after resonance laws and oppositions — the same function a
+ * bottle is measured with), each as bright as its concentration. The light
+ * is kept per effect (auraFx) so the renderer can show every effect in its
+ * own colour, in proportion to its share; auraR/G/B is their blend.
  * @param {import('./world.js').Simulation} sim @param {number} i
  */
 export function refreshAura(sim, i) {
-  const p = sim.p;
-  if (sim.species.count === 0) { p.auraI[i] = 0; return; }
+  const p = sim.p, fx = p.auraFx, o = i * NE;
+  if (sim.species.count === 0) { p.auraI[i] = 0; fx.fill(0, o, o + NE); return; }
   compositionEffects(sim.species, p.comp, i * MAX_SPECIES, p.temp[i], sim.laws || [], auraFx);
   let I = 0, r = 0, g = 0, b = 0;
   for (let k = 0; k < NE; k++) {
     const v = Math.abs(auraFx[k]) * AURA_W[k];
-    if (v < 0.05) continue;
+    if (v < 0.05) { fx[o + k] = 0; continue; }
+    fx[o + k] = v / 100;
     const c = AURA_COL[k];
     I += v; r += v * c[0]; g += v * c[1]; b += v * c[2];
   }
