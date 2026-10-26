@@ -19,7 +19,8 @@ computed from the particles that actually run out of the tap. What a
   and more liquid thins it back to a paste. Frozen liquid becomes one rigid
   block that the pestle crushes into grains. Vapour rises, collects under
   the lid and condenses back on the cooler iron. Mixing starts where two
-  liquids touch and spreads; stirring speeds it up dramatically. Heat comes
+  liquids touch and spreads; stirring speeds it up dramatically. A paste
+  wicks in the brew around it, so its grains take on the brew's dye. Heat comes
   in through the bottom and conducts outward. Water boils at its boiling
   point, wet pastes dry out, oil catches fire on glowing iron and the lid
   smothers it.

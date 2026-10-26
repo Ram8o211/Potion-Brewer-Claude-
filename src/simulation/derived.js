@@ -13,6 +13,9 @@ const AURA_W = EFFECTS.map((e) => (e.kind === 'magic' ? 1 : 0.55));
 const AURA_COL = EFFECTS.map((e) => e.color);
 const auraFx = new Float64Array(NE);
 
+/** how strongly undissolved grains take the dye of the liquid soaking them */
+export const STAIN = 1;
+
 /** Mass assigned to gas particles for constraint weighting (they yield to condensed matter). */
 export const GAS_MASS = 0.05;
 
@@ -30,6 +33,7 @@ export function refreshParticle(sim, i) {
   let aR = 0, aG = 0, aB = 0, op = 0, flam = 0, ign = 0, ignW = 0, comb = 0, gasR = 0, glow = 0;
   let tbS = 0, tbW = 0, tmS = 0, tmW = 0, pmS = 0, pmW = 0, fricS = 0, hardS = 0, binder = 0, latF = 0, latV = 0;
   let cA = 0, cB = 0, ec = 0, arcW = 0, arcS = 0, whole = 0, lookF = 0, look = 0;
+  let lR = 0, lG = 0, lB = 0;
   for (let s = 0; s < n; s++) {
     const f = comp[off + s];
     if (f <= 0) continue;
@@ -46,6 +50,7 @@ export function refreshParticle(sim, i) {
       lnV += f * sp.lnVisc[s];
       vT += f * sp.viscTemp[s];
       lnVw += f;
+      lR += f * sp.absR[s]; lG += f * sp.absG[s]; lB += f * sp.absB[s];
     }
     aR += f * sp.absR[s];
     aG += f * sp.absG[s];
@@ -115,7 +120,12 @@ export function refreshParticle(sim, i) {
   p.volFrac[i] = tbW * inv;
   p.latF[i] = latF * inv;
   p.latV[i] = latV * inv;
-  // Beer–Lambert colour: absorbances add by concentration
+  // Beer–Lambert colour: absorbances add by concentration; undissolved
+  // grains soak up the liquid around them and take on its dye
+  if (gran > 0 && lnVw > 0) {
+    const st = STAIN * gran * tot / lnVw;
+    aR += st * lR; aG += st * lG; aB += st * lB;
+  }
   const cr = linearToSrgb(Math.exp(-aR * inv)), cg = linearToSrgb(Math.exp(-aG * inv)), cb = linearToSrgb(Math.exp(-aB * inv));
   sim.colR[i] = cr; sim.colG[i] = cg; sim.colB[i] = cb;
   const lab = rgbToOklab(cr, cg, cb);

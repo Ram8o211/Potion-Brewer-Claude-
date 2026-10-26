@@ -94,8 +94,11 @@ export function buildProcedure(log, serveT) {
     if (dur >= HOLD_MIN && Math.abs(level - ROOM) >= 6) {
       /** @type {Step} */
       const step = { op: 'temp', T: Math.round(level), hold: Math.round(dur), stir: Math.round((stir / n) * 100) / 100 };
-      // volume before the hold (or at its start) against its end, if the trace has it
-      const v0 = volumeAt(samples, k), v1 = volumeAt(samples, j - 1);
+      // volume at the hold's start against its lowest during it, if the trace
+      // has it (vapour condensing back as it cools isn't what boiled away)
+      const v0 = volumeAt(samples, k);
+      let v1 = volumeAt(samples, j - 1);
+      for (let q = k; q < j && v1 >= 0; q++) { const v = volumeAt(samples, q); if (v >= 0 && v < v1) v1 = v; }
       if (v0 > 0 && v1 >= 0 && (v0 - v1) / v0 >= LOSS_MIN) /** @type {any} */ (step).loss = Math.round(((v0 - v1) / v0) * 100) / 100;
       events.push({ t: samples[k][0] + 0.5, step });
     }
