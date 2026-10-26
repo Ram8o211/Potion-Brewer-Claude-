@@ -14,6 +14,12 @@
 // and runes, frost motes, steam, chalk, wisps, gleams) are a few rects per
 // frame placed from the anchors and t only.
 //
+// Where the painted Rabbits Atlas has the frame (rabbit-sprites.js: the
+// idle and hop cycles, strength, venom, love, transformation, acid and fire
+// at each level, and their deaths, in each rabbit's own coat), drawRabbit
+// draws that instead of the procedural body, and leaves out the overlay of
+// the channel the frame paints.
+//
 // Pixel style as in scenes.js: integer rects only (one clipped painter, P),
 // 1px '#1a1218' outlines drawn as every ellipse 1px larger first, shading
 // css(c,.82)/css(c,.68), highlights mixed toward white by .4, and no
@@ -22,6 +28,7 @@
 import { Rng, hashString } from '../core/rng.js';
 import { PAL, makeCanvas } from './art.js';
 import { RABBIT_MARKS } from '../game/colony.js';
+import { rabbitFrame, drawRabbitFrame, loadRabbitAtlas, rabbitAtlasReady } from './rabbit-sprites.js';
 
 export const RABBIT_W = 48;
 export const RABBIT_H = 40;
@@ -1184,7 +1191,16 @@ export function drawRabbit(ctx, look, snap, t, react = 0, opts = {}) {
   shadowP(sx0, a.feetY + 1, sx1 - sx0, 1, 'rgba(0,0,0,0.18)');
   shadowP(sx0 + 2, a.feetY + 2, sx1 - sx0 - 4, 1, 'rgba(0,0,0,0.12)');
   const factory = opts.factory || (typeof document !== 'undefined' ? makeCanvas : null);
-  if (opts.cache !== false && factory) {
+  // the painted atlas where it has the frame (rabbit-sprites.js), the procedural body elsewhere
+  loadRabbitAtlas();
+  const fr = rabbitAtlasReady() ? rabbitFrame(look, snap, { pose: a.pose, t: time, air: (opts.lift || 0) > 0 || m.dy < -1 }) : null;
+  if (fr && drawRabbitFrame(ctx, look, fr.name, mirror ? fx - m.dx : fx + m.dx, fy + dy, mirror)) {
+    // the frame paints its own channel: leave that overlay out
+    if (fr.channel) {
+      const i = RABBIT_MARKS.indexOf(fr.channel);
+      snap = { ...snap, lv: (snap.lv || []).map((v, j) => (j === i ? 0 : v)) };
+    }
+  } else if (opts.cache !== false && factory) {
     const sprite = spriteFor(look, snap, a.pose, low, factory);
     if (mirror) {
       ctx.save();
@@ -1194,7 +1210,7 @@ export function drawRabbit(ctx, look, snap, t, react = 0, opts = {}) {
       ctx.restore();
     } else ctx.drawImage(sprite, fx + m.dx, fy + dy);
   } else drawBody(pen(ctx, fx, fy, m.dx, dy, mirror, clip), look, snap, a, low);
-  drawFx(pen(ctx, fx, fy, m.dx, dy, mirror, clip), look, snap, a, time, rx, acted, low);
+  drawFx(pen(ctx, fx, fy, m.dx, dy, mirror, clip), look, snap, a, time, rx, fr && fr.channel ? acted.filter((c) => c !== fr.channel) : acted, low);
   if (rx > 0 && opts.flash !== false) {
     ctx.fillStyle = `rgba(255,255,255,${(rx * 0.35).toFixed(3)})`;
     ctx.fillRect(fx, fy, RABBIT_W, RABBIT_H);

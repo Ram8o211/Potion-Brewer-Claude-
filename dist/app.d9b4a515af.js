@@ -16996,11 +16996,214 @@ this.grow();
 }
 return { WildsView };
 })();
+// src/rendering/rabbit-atlas.js
+const __m80 = (() => {
+const ATLAS_URL = 'assets/rabbits/atlas.png';
+const ATLAS_SIZE = [512, 384];
+const FRAMES = {
+acid_1_0: [0, 0, 48, 34],
+acid_1_1: [49, 0, 48, 34],
+acid_2_0: [98, 0, 48, 34],
+acid_2_1: [147, 0, 48, 34],
+acid_3_0: [196, 0, 48, 34],
+acid_3_1: [245, 0, 48, 34],
+acid_dead: [294, 0, 48, 34],
+dead: [343, 0, 48, 34],
+dutch: [392, 0, 48, 34],
+fire_1_0: [441, 0, 48, 34],
+fire_1_1: [0, 35, 48, 34],
+fire_2_0: [49, 35, 48, 34],
+fire_2_1: [98, 35, 48, 34],
+fire_3_0: [147, 35, 48, 34],
+fire_3_1: [196, 35, 48, 34],
+fire_dead: [245, 35, 48, 34],
+hop_0: [294, 35, 48, 34],
+hop_1: [343, 35, 48, 34],
+hop_2: [392, 35, 48, 34],
+hop_3: [441, 35, 48, 34],
+idle_0: [0, 70, 48, 34],
+idle_1: [49, 70, 48, 34],
+idle_2: [98, 70, 48, 34],
+idle_3: [147, 70, 48, 34],
+kit_acid_1_0: [196, 70, 48, 34],
+kit_acid_1_1: [245, 70, 48, 34],
+kit_acid_2_0: [294, 70, 48, 34],
+kit_acid_2_1: [343, 70, 48, 34],
+kit_acid_3_0: [392, 70, 48, 34],
+kit_acid_3_1: [441, 70, 48, 34],
+kit_acid_dead: [0, 105, 48, 34],
+kit_dead: [49, 105, 48, 34],
+kit_fire_1_0: [98, 105, 48, 34],
+kit_fire_1_1: [147, 105, 48, 34],
+kit_fire_2_0: [196, 105, 48, 34],
+kit_fire_2_1: [245, 105, 48, 34],
+kit_fire_3_0: [294, 105, 48, 34],
+kit_fire_3_1: [343, 105, 48, 34],
+kit_fire_dead: [392, 105, 48, 34],
+kit_hop_0: [441, 105, 48, 34],
+kit_hop_1: [0, 140, 48, 34],
+kit_hop_2: [49, 140, 48, 34],
+kit_hop_3: [98, 140, 48, 34],
+kit_idle_0: [147, 140, 48, 34],
+kit_idle_1: [196, 140, 48, 34],
+kit_idle_2: [245, 140, 48, 34],
+kit_idle_3: [294, 140, 48, 34],
+kit_love_1_0: [343, 140, 48, 34],
+kit_love_1_1: [392, 140, 48, 34],
+kit_love_2_0: [441, 140, 48, 34],
+kit_love_2_1: [0, 175, 48, 34],
+kit_love_3_0: [49, 175, 48, 34],
+kit_love_3_1: [98, 175, 48, 34],
+kit_love_dead: [147, 175, 48, 34],
+kit_strength_1_0: [196, 175, 48, 34],
+kit_strength_1_1: [245, 175, 48, 34],
+kit_strength_2_0: [294, 175, 48, 34],
+kit_strength_2_1: [343, 175, 48, 34],
+kit_strength_3_0: [392, 175, 48, 34],
+kit_strength_3_1: [441, 175, 48, 34],
+kit_strength_dead: [0, 210, 48, 34],
+kit_toxicity_1_0: [49, 210, 48, 34],
+kit_toxicity_1_1: [98, 210, 48, 34],
+kit_toxicity_2_0: [147, 210, 48, 34],
+kit_toxicity_2_1: [196, 210, 48, 34],
+kit_toxicity_3_0: [245, 210, 48, 34],
+kit_toxicity_3_1: [294, 210, 48, 34],
+kit_toxicity_dead: [343, 210, 48, 34],
+kit_transformation_1_0: [392, 210, 48, 34],
+kit_transformation_1_1: [441, 210, 48, 34],
+kit_transformation_2_0: [0, 245, 48, 34],
+kit_transformation_2_1: [49, 245, 48, 34],
+kit_transformation_3_0: [98, 245, 48, 34],
+kit_transformation_3_1: [147, 245, 48, 34],
+kit_transformation_dead: [196, 245, 48, 34],
+love_1_0: [245, 245, 48, 34],
+love_1_1: [294, 245, 48, 34],
+love_2_0: [343, 245, 48, 34],
+love_2_1: [392, 245, 48, 34],
+love_3_0: [441, 245, 48, 34],
+love_3_1: [0, 280, 48, 34],
+love_dead: [49, 280, 48, 34],
+strength_1_0: [98, 280, 48, 34],
+strength_1_1: [147, 280, 48, 34],
+strength_2_0: [196, 280, 48, 34],
+strength_2_1: [245, 280, 48, 34],
+strength_3_0: [294, 280, 48, 34],
+strength_3_1: [343, 280, 48, 34],
+strength_dead: [392, 280, 48, 34],
+toxicity_1_0: [441, 280, 48, 34],
+toxicity_1_1: [0, 315, 48, 34],
+toxicity_2_0: [49, 315, 48, 34],
+toxicity_2_1: [98, 315, 48, 34],
+toxicity_3_0: [147, 315, 48, 34],
+toxicity_3_1: [196, 315, 48, 34],
+toxicity_dead: [245, 315, 48, 34],
+transformation_1_0: [294, 315, 48, 34],
+transformation_1_1: [343, 315, 48, 34],
+transformation_2_0: [392, 315, 48, 34],
+transformation_2_1: [441, 315, 48, 34],
+transformation_3_0: [0, 350, 48, 34],
+transformation_3_1: [49, 350, 48, 34],
+transformation_dead: [98, 350, 48, 34],
+white: [147, 350, 48, 34],
+};
+const COAT_ALPHA = { fur: 254, spot: 253 };
+const COAT_V = { fur: 0.96, spot: 0.45 };
+return { ATLAS_URL, ATLAS_SIZE, FRAMES, COAT_ALPHA, COAT_V };
+})();
+// src/rendering/rabbit-sprites.js
+const __m79 = (() => {
+const { ATLAS_URL, FRAMES, COAT_ALPHA, COAT_V } = __m80;
+const { MARK_INDEX } = __m28;
+const ATLAS_CHANNELS = ['fire', 'toxicity', 'acid', 'transformation', 'love', 'strength'];
+const DEATH_FRAME = { fire: 'fire_dead', poison: 'toxicity_dead', acid: 'acid_dead', love: 'love_dead', change: 'transformation_dead' };
+const lvl = (v) => (v >= 3 ? 3 : v >= 2 ? 2 : v >= 1 ? 1 : 0);
+const mod = (v, m) => ((v % m) + m) % m;
+function rabbitFrame(look, snap, o) {
+if (!look || !snap) return null;
+if (Array.isArray(snap.traits) && snap.traits.length) return null;
+const pre = snap.stage === 'kit' ? 'kit_' : '';
+const has = (/** @type {string} */ n) => (FRAMES[pre + n] ? pre + n : null);
+if (o.pose === 'dead') {
+const n = has(DEATH_FRAME[snap.cause] || 'dead');
+return n ? { name: n, channel: null } : null;
+}
+const lv = Array.isArray(snap.lv) ? snap.lv : [];
+const L = (ch) => lvl(lv[MARK_INDEX[ch]]);
+let ch = null, best = 0;
+for (const c of ATLAS_CHANNELS) if (L(c) > best) { ch = c; best = L(c); }
+if (L('frost') === 3) return null;
+if (o.pose === 'sick' && !(ch === 'toxicity' && best >= 2)) return null;
+if (o.pose !== 'idle' && o.pose !== 'sick') return null;
+const seed = (look.seed >>> 0) || 1, t = Number(o.t) || 0;
+if (ch) {
+const i = ch === 'toxicity' ? seed & 1 : Math.floor(mod(t * 2.5 + (seed % 5) * 0.2, 2));
+const n = has(`${ch}_${best}_${i}`);
+return n ? { name: n, channel: ch } : null;
+}
+if (o.air) return { name: /** @type {string} */ (has(`hop_${Math.floor(mod(t * 10, 4))}`)), channel: null };
+if (!pre && (look.pattern === 'dutch' || look.pattern === 'hooded')) return { name: 'dutch', channel: null };
+if (!pre && look.pattern === 'solid') return { name: 'white', channel: null };
+return { name: /** @type {string} */ (has(`idle_${Math.floor(mod(t * 2.2 + (seed % 7) * 0.3, 4))}`)), channel: null };
+}
+let img = null;
+let loading = false;
+const COATS = new Map();
+const COATS_MAX = 24;
+function loadRabbitAtlas() {
+if (loading || typeof Image === 'undefined' || typeof document === 'undefined') return;
+loading = true;
+const im = new Image();
+im.onload = () => { img = im; };
+im.src = ATLAS_URL;
+}
+const rabbitAtlasReady = () => !!img;
+const rgb = (v, fb) => (Array.isArray(v) && v.length >= 3 ? [0, 1, 2].map((i) => Math.max(0, Math.min(1, +v[i] || 0))) : fb);
+function coatSheet(look) {
+const coat = rgb(look.coat, [0.93, 0.89, 0.82]);
+const solid = look.pattern === 'solid';
+const spot = solid ? coat.map((c) => c * 0.86) : rgb(look.coat2, [0.36, 0.24, 0.18]);
+const key = coat.concat(spot).map((c) => Math.round(c * 255)).join(',');
+let cv = COATS.get(key);
+if (cv) return cv;
+if (!img) return null;
+cv = document.createElement('canvas');
+cv.width = img.width; cv.height = img.height;
+const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d', { willReadFrequently: true }));
+ctx.drawImage(img, 0, 0);
+const data = ctx.getImageData(0, 0, cv.width, cv.height), d = data.data;
+for (let i = 0; i < d.length; i += 4) {
+const a = d[i + 3], fur = a === COAT_ALPHA.fur;
+if (!fur && a !== COAT_ALPHA.spot) continue;
+const c = fur ? coat : spot, k = Math.max(d[i], d[i + 1], d[i + 2]) / 255 / (fur ? COAT_V.fur : COAT_V.spot);
+for (let j = 0; j < 3; j++) d[i + j] = Math.round(255 * Math.min(1, k <= 1 ? c[j] * k : c[j] + (1 - c[j]) * (k - 1) * 0.6));
+d[i + 3] = 255;
+}
+ctx.putImageData(data, 0, 0);
+COATS.set(key, cv);
+if (COATS.size > COATS_MAX) COATS.delete(COATS.keys().next().value);
+return cv;
+}
+function drawRabbitFrame(ctx, look, name, x, y, mirror) {
+const f = FRAMES[name], sheet = f && coatSheet(name === 'dutch' ? { ...look, coat: look.coat2, coat2: look.coat } : look);
+if (!f || !sheet) return false;
+const [sx, sy, w, h] = f;
+if (mirror) {
+ctx.save();
+ctx.translate(x + w, y);
+ctx.scale(-1, 1);
+ctx.drawImage(sheet, sx, sy, w, h, 0, 0, w, h);
+ctx.restore();
+} else ctx.drawImage(sheet, sx, sy, w, h, x, y, w, h);
+return true;
+}
+return { ATLAS_CHANNELS, rabbitFrame, loadRabbitAtlas, rabbitAtlasReady, drawRabbitFrame };
+})();
 // src/rendering/rabbit.js
 const __m78 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m54;
 const { RABBIT_MARKS } = __m28;
+const { rabbitFrame, drawRabbitFrame, loadRabbitAtlas, rabbitAtlasReady } = __m79;
 const RABBIT_W = 48;
 const RABBIT_H = 40;
 const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
@@ -17874,7 +18077,14 @@ const sx0 = a.haunch.cx - a.haunch.rx + 1, sx1 = Math.max(a.chest.cx + a.chest.r
 shadowP(sx0, a.feetY + 1, sx1 - sx0, 1, 'rgba(0,0,0,0.18)');
 shadowP(sx0 + 2, a.feetY + 2, sx1 - sx0 - 4, 1, 'rgba(0,0,0,0.12)');
 const factory = opts.factory || (typeof document !== 'undefined' ? makeCanvas : null);
-if (opts.cache !== false && factory) {
+loadRabbitAtlas();
+const fr = rabbitAtlasReady() ? rabbitFrame(look, snap, { pose: a.pose, t: time, air: (opts.lift || 0) > 0 || m.dy < -1 }) : null;
+if (fr && drawRabbitFrame(ctx, look, fr.name, mirror ? fx - m.dx : fx + m.dx, fy + dy, mirror)) {
+if (fr.channel) {
+const i = RABBIT_MARKS.indexOf(fr.channel);
+snap = { ...snap, lv: (snap.lv || []).map((v, j) => (j === i ? 0 : v)) };
+}
+} else if (opts.cache !== false && factory) {
 const sprite = spriteFor(look, snap, a.pose, low, factory);
 if (mirror) {
 ctx.save();
@@ -17884,7 +18094,7 @@ ctx.drawImage(sprite, 0, 0);
 ctx.restore();
 } else ctx.drawImage(sprite, fx + m.dx, fy + dy);
 } else drawBody(pen(ctx, fx, fy, m.dx, dy, mirror, clip), look, snap, a, low);
-drawFx(pen(ctx, fx, fy, m.dx, dy, mirror, clip), look, snap, a, time, rx, acted, low);
+drawFx(pen(ctx, fx, fy, m.dx, dy, mirror, clip), look, snap, a, time, rx, fr && fr.channel ? acted.filter((c) => c !== fr.channel) : acted, low);
 if (rx > 0 && opts.flash !== false) {
 ctx.fillStyle = `rgba(255,255,255,${(rx * 0.35).toFixed(3)})`;
 ctx.fillRect(fx, fy, RABBIT_W, RABBIT_H);
@@ -17893,7 +18103,7 @@ ctx.fillRect(fx, fy, RABBIT_W, RABBIT_H);
 return { RABBIT_W, RABBIT_H, rabbitLevels, rabbitPose, rabbitPace, rabbitAnchors, rabbitSpriteKey, drawRabbitSprite, clearRabbitSprites, drawRabbit };
 })();
 // src/rendering/hutch-scene.js
-const __m80 = (() => {
+const __m82 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m54;
 const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m78;
@@ -18314,13 +18524,13 @@ ctx.drawImage(this.bg, 0, 0);
 return { HUTCH_W, HUTCH_H, HUTCH_BODIES, paintHutch, paintHutchFront, HutchScene };
 })();
 // src/ui/views/hutch.js
-const __m79 = (() => {
+const __m81 = (() => {
 const { readingSteadiness } = __m27;
 const { h, btn, clear, toast, modal, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
 const { drawRabbit, RABBIT_W, RABBIT_H } = __m78;
-const { HutchScene, HUTCH_W, HUTCH_H } = __m80;
+const { HutchScene, HUTCH_W, HUTCH_H } = __m82;
 const { EFFECT_BY_KEY } = __m13;
 const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral, RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE, BURNS } = __m28;
 const { PURGE_BREW_TIME } = __m5;
@@ -18663,7 +18873,7 @@ const { shortName } = __m22;
 const LEVEL_SHORT = { preliminary: '1 reading', repeated: 'repeated', corroborated: 'corroborated', certified: 'certified' };
 const { drawRabbit } = __m78;
 const { focusRabbit, findRabbit, rabbitSnap, decodeSnap, lookFromSeed, RABBIT_MARKS } = __m28;
-const { HutchPanel } = __m79;
+const { HutchPanel } = __m81;
 const REPLAY_T = 3.2;
 class TrialsView {
 constructor(lab) {
@@ -19040,7 +19250,7 @@ return `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2
 return { TrialsView, EFFECTS, EFFECT_INDEX };
 })();
 // src/ui/views/book.js
-const __m81 = (() => {
+const __m83 = (() => {
 const { h, btn, clear } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
@@ -19179,7 +19389,7 @@ const { Tutorial } = __m72;
 const { CounterView } = __m73;
 const { WildsView } = __m74;
 const { TrialsView } = __m77;
-const { BookView } = __m81;
+const { BookView } = __m83;
 const { shortName } = __m22;
 const REQ_ICON = { temperature: 'thermo', quantity: 'flask', purity: 'pure' };
 const TOOL_DEFS = [
@@ -20917,7 +21127,7 @@ void dominantEffect;
 return { VIEWS, LabScreen };
 })();
 // src/materials/reference.js
-const __m83 = (() => {
+const __m85 = (() => {
 const { completeMaterial } = __m9;
 const REF = {};
 const add = (d) => (REF[d.id] = completeMaterial(d));
@@ -20955,11 +21165,11 @@ const refLookup = (id) => REF[id];
 return { REF, refLookup };
 })();
 // src/ui/menu.js
-const __m82 = (() => {
+const __m84 = (() => {
 const { h, btn } = __m2;
 const { Renderer } = __m53;
 const { Simulation } = __m31;
-const { REF, refLookup } = __m83;
+const { REF, refLookup } = __m85;
 const { hasSave, loadGame } = __m50;
 const { audio } = __m4;
 class MenuScreen {
@@ -21048,7 +21258,7 @@ const { sandboxIngredients } = __m7;
 const { EQUIPMENT } = __m26;
 const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m50;
 const { LabScreen } = __m51;
-const { MenuScreen } = __m82;
+const { MenuScreen } = __m84;
 const { openSettings, openHelp } = __m69;
 const { Rng } = __m6;
 const { normalizeTrials } = __m27;
@@ -21165,7 +21375,7 @@ openHelp();
 return { App, icon };
 })();
 // src/ui/textures.js
-const __m84 = (() => {
+const __m86 = (() => {
 const { Rng } = __m6;
 function texture(w, h, paint) {
 const cv = document.createElement('canvas');
@@ -21209,7 +21419,7 @@ return { installTextures };
 // src/main.js
 const __m0 = (() => {
 const { App } = __m1;
-const { installTextures } = __m84;
+const { installTextures } = __m86;
 installTextures();
 const root = document.getElementById('app');
 const app = new App(root);
