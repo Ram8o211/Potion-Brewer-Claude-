@@ -10896,6 +10896,7 @@ const FLAME = [
 ['..0..', '..1..', '.010.', '.121.', '01210', '12321', '.121.', '..0..'],
 ];
 const SHAPES = [CIRCLE, SQUARE, TRIANGLE, DIAMOND];
+let FX = 0, FY = 0;
 const heartbeat = (t) => {
 const p = (t / 1.2) % 1;
 return Math.exp(-Math.pow((p - 0.1) / 0.05, 2)) + 0.6 * Math.exp(-Math.pow((p - 0.3) / 0.05, 2));
@@ -11017,6 +11018,23 @@ this.age[i] = 0; this.life[i] = life; this.v[i] = this.rand(); this.amp[i] = 1; 
 this.ox[i] = x; this.oy[i] = y;
 this.count[e]++;
 }
+_carry(f, x, y) {
+FX = 0; FY = 0;
+const { flow, weight, stride, simDt } = f;
+if (!flow || !weight || !simDt) return;
+const gx = x - f.bx - 0.5, gy = y - f.by - 0.5, ix = Math.floor(gx), iy = Math.floor(gy), tx = gx - ix, ty = gy - iy;
+let vx = 0, vy = 0, ws = 0;
+for (let c = 0; c < 4; c++) {
+const px = ix + (c & 1), py = iy + (c >> 1);
+if (px < 0 || py < 0 || px >= f.w || py >= f.h) continue;
+const q = py * f.w + px, W = weight[q * (stride || 1)];
+if (W < 1e-4) continue;
+const k = ((c & 1) ? tx : 1 - tx) * ((c >> 1) ? ty : 1 - ty);
+vx += (flow[q * 2] / W) * k; vy += (flow[q * 2 + 1] / W) * k; ws += k;
+}
+if (ws < 1e-3) return;
+FX = (vx / ws) * simDt; FY = (vy / ws) * simDt;
+}
 _move(time, dt, f) {
 const { w, h, bx, by, liquid } = f;
 for (let i = this.n - 1; i >= 0; i--) {
@@ -11036,6 +11054,8 @@ else if (this.vy[i] > 0 && liquid[ly * w + lx]) this._kill(i);
 continue;
 }
 const a = this.age[i];
+this._carry(f, this.x[i], this.y[i]);
+this.ox[i] += FX; this.oy[i] += FY;
 switch (e) {
 case K.transformation: {
 this.ox[i] += this.vx[i] * dt; this.oy[i] += this.vy[i] * dt;
@@ -11435,6 +11455,7 @@ this.haloImage = null;
 this.hw = 0;
 this.hh = 0;
 this.fx = new PotionParticles();
+this.simT = -1;
 }
 _alloc(w, h) {
 const n = w * h;
@@ -11454,6 +11475,7 @@ this.lct = new Float32Array(n * LC); // its blur scratch
 this.grain = new Uint32Array(n); // packed grain colour (0 = none)
 this.fxLiq = new Uint8Array(n); // liquid the effects' particles may swim in…
 this.fxPix = new Int32Array(n); // …and the list of those pixels
+this.flow = new Float32Array(n * 2); // the liquid's velocity (screen px per simulated second), weighted
 }
 if (w !== this.w || h !== this.h || !this.canvas) {
 this.w = w;
@@ -11505,7 +11527,8 @@ if (anySolid) { sol.fill(0, 0, N * 4); solBest.fill(0, 0, N); }
 if (anyGas) { gas.fill(0, 0, this.hw * this.hh * 4); this.mote.fill(0, 0, N * 4); }
 if (anyGrain) grain.fill(0, 0, N);
 if (anyLight) emit.fill(0, 0, N * 4);
-if (fxMask) { mfx.fill(0, 0, N * NE); this.fxLiq.fill(0, 0, N); }
+if (fxMask) { mfx.fill(0, 0, N * NE); this.fxLiq.fill(0, 0, N); this.flow.fill(0, 0, N * 2); }
+const flow = this.flow;
 let fxN = 0;
 const rl = 0.092 * s; // liquid kernel radius (px), ~1.85 particle radii
 const rs = 0.085 * s; // solid
@@ -11530,6 +11553,7 @@ const Ti = T[i];
 const slush = p.lat[i] < 0 && p.latF[i] > 0 ? Math.min(1, -p.lat[i] / p.latF[i]) : 0;
 const cy = fy | 0;
 const inv = 1 / (rl * rl), rl2 = rl * rl;
+const fvx = p.vx[i] * s, fvy = p.vy[i] * s;
 for (let dy = -RL; dy <= RL; dy++) {
 const yy = cy + dy;
 if (yy < 0 || yy >= h) continue;
@@ -11548,6 +11572,7 @@ const k = (row + xx) * LS;
 liq[k] += q; liq[k + 1] += q * r; liq[k + 2] += q * g; liq[k + 3] += q * b;
 liq[k + 4] += q * o; liq[k + 5] += q * isPaste; liq[k + 6] += q * tex; liq[k + 7] += q * Ti; liq[k + 8] += q * slush;
 if (lit) { const e = (row + xx) * 4; emit[e] += q * eR; emit[e + 1] += q * eG; emit[e + 2] += q * eB; emit[e + 3] += q; if (nc) addMagic(mfx, row + xx, q); }
+if (fxMask) { const v2 = (row + xx) * 2; flow[v2] += q * fvx; flow[v2 + 1] += q * fvy; }
 }
 }
 } else if (ph === POWDER) {
@@ -11969,7 +11994,9 @@ data[o + 2] = clamp255(B * 255);
 data[o + 3] = clamp255(A * 255);
 }
 }
-if (fxN) this.fx.step(time, { w, h, bx, by, data, liquid: this.fxLiq, pix: this.fxPix, npix: fxN, mfx, emit, mask: fxMask });
+const simDt = this.simT < 0 || sim.time < this.simT ? 0 : Math.min(0.25, sim.time - this.simT);
+this.simT = sim.time;
+if (fxN) this.fx.step(time, { w, h, bx, by, data, liquid: this.fxLiq, pix: this.fxPix, npix: fxN, mfx, emit, mask: fxMask, flow, weight: liq, stride: LS, simDt });
 else if (this.fx.n) this.fx.clear();
 this.ctx.putImageData(this.image, 0, 0);
 const halo = anyGlow && this.halo && !thermal ? this._halo(w, h) : null;
