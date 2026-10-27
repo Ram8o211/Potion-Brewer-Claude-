@@ -11729,6 +11729,7 @@ if (!this.surf || this.surf.length < w) this.surf = new Int32Array(w);
 const surf = this.surf;
 if (!this.surfTmp || this.surfTmp.length < w) this.surfTmp = new Int32Array(w);
 const top = this.surfTmp;
+const bodyRun = Math.max(6, Math.round(0.35 * s));
 for (let x = 0; x < w; x++) {
 let y = h - 1;
 while (y >= 0 && wb[y * w + x] <= thr) y--;
@@ -11736,8 +11737,12 @@ if (y < 0) { top[x] = h; continue; }
 for (;;) {
 while (y > 0 && wb[(y - 1) * w + x] > thr) y--;
 let g = y - 1;
-while (g >= 0 && y - g <= 3 && wb[g * w + x] <= thr) g--;
-if (g >= 0 && y - g <= 3) y = g; else break;
+while (g >= 0 && wb[g * w + x] <= thr) g--;
+if (g < 0) break;
+if (y - g <= 3) { y = g; continue; }
+let t = 0;
+while (g - t >= 0 && t < bodyRun && wb[(g - t) * w + x] > thr) t++;
+if (t >= bodyRun) y = g; else break;
 }
 top[x] = y;
 }

@@ -466,6 +466,8 @@ export class FluidRenderer {
     const surf = this.surf;
     if (!this.surfTmp || this.surfTmp.length < w) this.surfTmp = new Int32Array(w);
     const top = this.surfTmp;
+    // a run of liquid this thick above a gap is brew, not drops falling in
+    const bodyRun = Math.max(6, Math.round(0.35 * s));
     for (let x = 0; x < w; x++) {
       // the top of the lowest body of liquid in the column: drops falling
       // above it (pouring, condensation) are separate runs and don't count
@@ -476,8 +478,15 @@ export class FluidRenderer {
         while (y > 0 && wb[(y - 1) * w + x] > thr) y--;
         // bridge a pixel or two of gap (a bubble), not the air above
         let g = y - 1;
-        while (g >= 0 && y - g <= 3 && wb[g * w + x] <= thr) g--;
-        if (g >= 0 && y - g <= 3) y = g; else break;
+        while (g >= 0 && wb[g * w + x] <= thr) g--;
+        if (g < 0) break;
+        if (y - g <= 3) { y = g; continue; }
+        // a wider gap under a thick body of liquid is a hole in the brew
+        // (the spoon stirring): the pool's level is still above it, or the
+        // whole column under the hole would be shaded as shallow brew
+        let t = 0;
+        while (g - t >= 0 && t < bodyRun && wb[(g - t) * w + x] > thr) t++;
+        if (t >= bodyRun) y = g; else break;
       }
       top[x] = y;
     }
