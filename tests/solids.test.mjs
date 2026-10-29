@@ -7,7 +7,7 @@ import { Simulation } from '../src/simulation/world.js';
 import { PHASE } from '../src/simulation/constants.js';
 import { generateWorld, makeLookup } from '../src/materials/generator.js';
 import { chunkSize, chunkTemplate, piece, skinOf, hasPieces } from '../src/materials/shapes.js';
-import { PIECES } from '../src/materials/pieces.js';
+import { PIECE_KEYS } from '../src/visual/pieces.js';
 import { snapshotSim, restoreSim } from '../src/simulation/snapshot.js';
 
 const world = generateWorld('solids-tests-1');
@@ -77,11 +77,11 @@ test('whole ingredients enter as recognisable rigid objects, not as powder', () 
   assert.ok(s.p.whole[0] > 0.99);
 });
 
-test('every wild solid has four painted pieces, each fitted with exactly its template\'s particles; a pour picks one at random', () => {
+test('every wild solid has four procedural pieces, each fitted with exactly its template\'s particles; a pour picks one at random', () => {
   for (const id of world.materials.map((m) => m.id)) {
     const def = lookup(id);
     if (!hasPieces(def)) continue;
-    assert.ok(def.wild.key in PIECES, def.wild.key);
+    assert.ok(PIECE_KEYS.includes(def.wild.key), def.wild.key);
     for (let v = 0; v < 4; v++) {
       const pc = piece(skinOf(def, v));
       assert.ok(pc, `${def.wild.key} piece ${v} fits`);

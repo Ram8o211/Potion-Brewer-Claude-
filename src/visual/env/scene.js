@@ -31,6 +31,24 @@ const COMPOSERS = { meadow, forest, river, quarry, moonfen, crags };
 const cache = new Map();
 
 /**
+ * Compose a region's scene afresh (uncached).
+ * @param {string} region @param {string} seed @returns {Scene}
+ */
+export function composeScene(region, seed) {
+  const id = COMPOSERS[region] ? region : 'forest';
+  const cv = new Canvas(hashString(`scene:${seed}:${id}`));
+  COMPOSERS[id].compose(cv, String(seed));
+  // a gap the composition left (a dip below its sky) takes the colour above it
+  const px = cv.pix.px;
+  for (let y = 1; y < SCENE_H; y++) for (let x = 0; x < SCENE_W; x++) if (!(px[y * SCENE_W + x] >>> 24)) px[y * SCENE_W + x] = px[(y - 1) * SCENE_W + x] | 0xff000000;
+  // no plant at the very edges of the painting
+  for (let x = 0; x < SCENE_W; x++) { cv.open[x] = 0; cv.open[(SCENE_H - 1) * SCENE_W + x] = 0; cv.open[(SCENE_H - 2) * SCENE_W + x] = 0; }
+  let top = SCENE_H;
+  for (let k = 0; k < cv.open.length; k++) if (cv.open[k]) { top = Math.floor(k / SCENE_W); break; }
+  return { pix: cv.pix, open: cv.open, depth: cv.depth, top, meta: cv.meta };
+}
+
+/**
  * The scene of a region in a world.
  * @param {string} region @param {string} seed @returns {Scene}
  */
@@ -39,13 +57,7 @@ export function sceneOf(region, seed) {
   const key = `${ENV_VERSION}:${id}:${seed}`;
   let s = cache.get(key);
   if (s) return s;
-  const cv = new Canvas(hashString(`scene:${seed}:${id}`));
-  COMPOSERS[id].compose(cv, String(seed));
-  // the frame line along the top and bottom edges, as on the old paintings
-  for (let x = 0; x < SCENE_W; x++) { cv.open[x] = 0; cv.open[(SCENE_H - 1) * SCENE_W + x] = 0; cv.open[(SCENE_H - 2) * SCENE_W + x] = 0; }
-  let top = SCENE_H;
-  for (let k = 0; k < cv.open.length; k++) if (cv.open[k]) { top = Math.floor(k / SCENE_W); break; }
-  s = { pix: cv.pix, open: cv.open, depth: cv.depth, top, meta: cv.meta };
+  s = composeScene(id, seed);
   // a handful of worlds' regions at most: keep the last dozen
   if (cache.size >= 12) cache.delete(/** @type {string} */ (cache.keys().next().value));
   cache.set(key, s);

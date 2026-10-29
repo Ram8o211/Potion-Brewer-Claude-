@@ -35,7 +35,7 @@ function barkTexture(m, d, rng, x0, x1, y0, y1) {
       if (P.texture === 'plated') for (let y = y0 + 3; y < y1 - 2; y += 4 + rng.next() * 3) m.line([[x - 2, y], [x, y + 0.5]], 'wood', { lum: 0.08 });
     }
   } else if (P.texture === 'peeling') {
-    for (let i = 0; i < w * 0.6; i++) { const x = x0 + rng.next() * w, y = y0 + rng.next() * (y1 - y0); m.line([[x, y], [x + 1.5, y + 0.5]], 'pale', { lum: 0.8 }); }
+    for (let i = 0; i < w * 0.6; i++) { const x = x0 + rng.next() * w, y = y0 + rng.next() * (y1 - y0); m.line([[x, y], [x + 1.5, y + 0.5]], 'wood', { lum: 0.88 }); }
   } else {
     for (let i = 0; i < w * 0.5; i++) { const x = x0 + rng.next() * w, y = y0 + rng.next() * (y1 - y0); m.line([[x, y], [x + 1.5, y]], 'wood', { lum: 0.15 }); }
   }

@@ -60,10 +60,14 @@ export function plant(d, stage, o = {}) {
 
 export function icon(d) {
   const m = new Model(), rng = stream(d, 'icon');
-  m.stroke([[0, 22], [0, -6]], 2, 'stem');
-  m.poly(blade([0, 20], -Math.PI / 2 - 0.25, 22, 1.6, PROFILES.linear, { curl: -0.4 }), 'leaf', { shade: 'fold' });
-  headAt(m, d, rng, 0, -12, 2.2, true);
-  return m.rotate(0.45);
+  // a cut bunch: three stalks fanned out, heads up, a blade behind them
+  m.poly(blade([0, 16], -Math.PI / 2 - 0.45, 24, 2, PROFILES.linear, { curl: -0.3 }), 'leaf', { shade: 'fold' });
+  for (let i = -1; i <= 1; i++) {
+    const tx = i * 7, ty = -6 + Math.abs(i) * 4;
+    m.stroke([[i * 1.5, 16], [tx, ty]], 2, 'stem', { noOutline: true });
+    headAt(m, d, rng, tx, ty - 9, 2.4, true);
+  }
+  return m;
 }
 
 export function piece(d, v) {

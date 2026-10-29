@@ -28,8 +28,8 @@ export function size(d) {
 }
 
 /** One lump of the mineral at (cx, cy) of radius r. */
-export function lump(m, d, rng, cx, cy, r, tone = 0) {
-  const P = d.m, metal = d.form === 'nugget';
+export function lump(m, d, rng, cx, cy, r, tone = 0, flat = d.m.flat) {
+  const P = { ...d.m, flat }, metal = d.form === 'nugget';
   const pts = P.round > 0.45 || metal ? lumpy(cx, cy, r, r * P.flat, () => rng.next(), metal ? 0.3 : 0.15, metal ? 7 : 5) : polygon(cx, cy, r, 6, rng.next(), () => rng.next(), 0.5, P.flat);
   m.poly(pts, 'main', { shade: 'round', tone, tex: metal ? 0.6 : 1.3 });
   if (P.strata && !metal) for (let k = 1; k <= 2; k++) { const y = cy - r * P.flat * 0.5 + k * r * P.flat * 0.35; m.line([[cx - r * 0.8, y], [cx + r * 0.8, y + (rng.next() - 0.5) * 1.5]], 'main2', { lum: 0.8 }); }
@@ -103,7 +103,8 @@ export function icon(d) {
 export function piece(d, v) {
   const m = new Model(), rng = stream(d, 'piece' + v);
   if (d.form === 'crust') { bloom(m, d, rng, 0, 8, 16, 1); return m.rotate(v * 0.8); }
-  lump(m, d, rng, 0, 0, 14 - v * 1.5);
+  // a whole pebble or lump: compact and roundish, so it rolls like one
+  lump(m, d, rng, 0, 0, 14 - v * 1.5, 0, Math.max(0.85, d.m.flat));
   return m.rotate(v * 0.7);
 }
 

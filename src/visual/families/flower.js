@@ -218,12 +218,12 @@ export function plant(d, stage, o = {}) {
 }
 
 /** A spike of florets up the top of a stem (bee balm, lupins…). */
-function spike(m, d, pts, stage, o, rng) {
+function spike(m, d, pts, stage, o, rng, k = 1) {
   const P = d.m;
   m.stroke(pts, [1.8 + d.tr.thick, 1.1], 'stem', { noOutline: true });
-  const top = pts[pts.length - 1], n = stage === 2 ? 6 : 3, step = d.size.h * 0.07;
+  const top = pts[pts.length - 1], n = stage === 2 ? 6 : 3, step = d.size.h * 0.07 * (k > 1 ? 0.7 : 1);
   for (let i = n - 1; i >= 0; i--) {
-    const y = top[1] + i * step, w = (P.kind === 'whorl' ? 4.5 : 3.2) * (1 - (n - 1 - i) / (n + 3)) * (o.closed ? 0.6 : 1);
+    const y = top[1] + i * step, w = k * (P.kind === 'whorl' ? 4.5 : 3.2) * (1 - (n - 1 - i) / (n + 3)) * (o.closed ? 0.6 : 1);
     const lit = stage === 2 && !o.closed;
     if (P.kind === 'whorl') {
       for (let k = 0; k < 5; k++) {
@@ -241,10 +241,10 @@ function spike(m, d, pts, stage, o, rng) {
 export function icon(d) {
   const m = new Model(), P = d.m, rng = stream(d, 'icon');
   if (P.kind === 'whorl' || P.kind === 'raceme') {
-    const pts = stemPts(0, 0, 1, -30, 0.1);
-    spike(m, d, pts, 2, {}, rng);
-    leaf(m, pts[4][0], pts[4][1], -Math.PI / 2 - 1.1, 11, 3.5, { shape: P.leafShape, teeth: P.teeth });
-    leaf(m, pts[6][0], pts[6][1], -Math.PI / 2 + 1.1, 10, 3.2, { shape: P.leafShape, teeth: P.teeth, tone: -0.05 });
+    const pts = stemPts(0, 0, 1, -26, 0.1);
+    spike(m, d, pts, 2, {}, rng, 1.8);
+    leaf(m, pts[3][0], pts[3][1], -Math.PI / 2 - 1.1, 7, 2.6, { shape: P.leafShape, teeth: P.teeth });
+    leaf(m, pts[4][0], pts[4][1], -Math.PI / 2 + 1.1, 6, 2.4, { shape: P.leafShape, teeth: P.teeth, tone: -0.05 });
     return m.rotate(0.25);
   }
   if (P.kind === 'clover') {
@@ -272,7 +272,8 @@ export function piece(d, v) {
     return m;
   }
   if (P.kind === 'whorl' || P.kind === 'raceme') {
-    spike(m, d, [[0, 10], [0, -12 + v * 2]], 2, {}, rng);
+    // a broken-off length of the spike: florets, hardly any stem
+    spike(m, d, [[0, 4], [0, -10 + v * 2]], 2, {}, rng, 1.8);
     return m.rotate(v * 0.6);
   }
   if (v === 2 && P.kind !== 'trumpet' && P.kind !== 'thistle') {

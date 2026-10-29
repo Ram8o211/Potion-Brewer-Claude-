@@ -6,7 +6,7 @@ import { refLookup, PHASE } from './helpers.mjs';
 import { Simulation } from '../src/simulation/world.js';
 import { FluidRenderer } from '../src/rendering/fluid.js';
 import { EFFECTS, NE } from '../src/alchemy/effects.js';
-import { PIECE_ART } from '../src/rendering/pieces-art.js';
+import { PIECE_ART, registerSpecies, ensurePieces, forgetPieces } from '../src/visual/pieces.js';
 import { dominantColour } from '../src/rendering/brew-palette.js';
 import { generateWorld, makeLookup } from '../src/materials/generator.js';
 
@@ -125,7 +125,7 @@ test('each effect fills a brew with its own animated particles', () => {
   }
 });
 
-test('a brew takes the painted palette of the ingredient crushed into it', () => {
+test('a brew takes the palette of the pieces of the ingredient crushed into it', () => {
   const world = generateWorld('palette-test');
   const lookup = makeLookup(world);
   const leaf = lookup('wild-silverleaf'), water = lookup(world.roles.water);
@@ -143,13 +143,18 @@ test('a brew takes the painted palette of the ingredient crushed into it', () =>
     }
     for (let i = 0; i < sim.p.count; i++) sim.p.dirty[i] = 1;
     sim.step();
-    // a stand-in atlas: every piece painted pure red
+    // a stand-in for its pieces: every one drawn pure red (or no pieces at all)
+    registerSpecies(leaf);
+    ensurePieces('silverleaf');
     const saved = { ...PIECE_ART };
-    if (painted) Object.assign(PIECE_ART, { ready: true, loading: Promise.resolve(true), width: 160, height: 1440, px: new Uint32Array(160 * 1440).fill(0xff0000ff) });
+    if (painted) Object.assign(PIECE_ART, { px: new Uint32Array(PIECE_ART.px.length).fill(0xff0000ff) });
+    else PIECE_ART.ready = false;
+    forgetPieces();
     const fr = new FluidRenderer();
     fr.halo = false;
     const out = fr.render(sim, { scale: 60, ox: 200, oy: 20 }, 0);
     Object.assign(PIECE_ART, saved);
+    forgetPieces();
     assert.ok(out);
     const m = [0, 0, 0];
     let n = 0;

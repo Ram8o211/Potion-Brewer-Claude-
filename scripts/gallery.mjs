@@ -23,7 +23,7 @@ const rows = [];
 for (const seed of seeds) {
   const world = generateWorld(seed);
   for (const id of world.wild) {
-    const m = world.materials.find((x) => x.id === id);
+    const m = /** @type {any} */ (world.materials.find((x) => x.id === id));
     if (only && m.wild.key !== only) continue;
     if (fam && familyOf(m.wild.shape) !== fam) continue;
     if (!FAMILIES[familyOf(m.wild.shape)]) continue;
@@ -31,7 +31,7 @@ for (const seed of seeds) {
     const cells = [plantFrame(d, 0), plantFrame(d, 1), plantFrame(d, 2)];
     if (m.wild.dawn || m.wild.dusk) cells.push(plantFrame(d, 2, { closed: true }));
     cells.push(iconFrame(d));
-    for (let v = 0; v < 4; v++) cells.push({ pix: pieceFrame(d, v).pix, ax: 20, ay: 40 });
+    for (let v = 0; v < 4; v++) cells.push({ pix: pieceFrame(d, v).pix, ax: 20, ay: 40, glints: [] });
     rows.push({ cells, bg: BG[m.wild.region] || [40, 40, 40] });
   }
 }

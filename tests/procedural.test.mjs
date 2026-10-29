@@ -1,0 +1,192 @@
+// The procedural graphics: every wild ingredient carries a visual identity
+// from which its plant (at each growth stage), icon and cauldron pieces are
+// drawn; the same world always paints the same pixels, other worlds paint
+// other species; one ingredient looks like itself wherever it is shown; the
+// identity travels between devices; the six environments are generated
+// deterministically with open ground for plants (never water, lava or
+// scenery in front), and plants are placed and hit-tested on it.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { generateWorld, addAlchemy } from '../src/materials/generator.js';
+import { WILD_SPECS } from '../src/materials/wild.js';
+import { identityOf, encodeIdentity, decodeIdentity, attachVisuals, identityKey, VISUAL_SCHEMA } from '../src/visual/identity.js';
+import { describe } from '../src/visual/descriptor.js';
+import { plantFrame, iconFrame, pieceFrame, ICON_PX, PIECE_GRID } from '../src/visual/render.js';
+import { familyOf, BOTANICAL } from '../src/visual/taxonomy.js';
+import { FAMILIES } from '../src/visual/families/index.js';
+import { composeScene, sceneOf, SCENE_W, SCENE_H } from '../src/visual/env/scene.js';
+import { PlantGround, plantBox, hitPlant } from '../src/rendering/wild-scene.js';
+import { silhouetteOf, plantFrameOf, MIN_HIT } from '../src/rendering/species-sprites.js';
+import { dominantColour } from '../src/rendering/brew-palette.js';
+import { rgbToOklab, deltaE } from '../src/core/color.js';
+import { GameState } from '../src/game/state.js';
+import { REGIONS, depositStatus } from '../src/game/gathering.js';
+
+const wild = (/** @type {any} */ w) => w.wild.map((id) => /** @type {any} */ (w.materials.find((m) => m.id === id)));
+const species = (seed) => wild(generateWorld(seed)).map((m) => ({ m, d: describe(m.vis) }));
+/** every opaque pixel as sRGB 0..1 */
+const colours = (/** @type {any} */ pix) => { const out = []; for (const c of pix.px) if (c >>> 24) out.push([(c & 255) / 255, ((c >>> 8) & 255) / 255, ((c >>> 16) & 255) / 255]); return out; };
+
+test('every wild ingredient carries a versioned visual identity of its world, which survives a save and travels as a short code', () => {
+  const w = generateWorld('vis-1');
+  for (const m of wild(w)) {
+    assert.ok(m.vis, `${m.wild.key} has an identity`);
+    assert.equal(m.vis.v, VISUAL_SCHEMA);
+    assert.equal(m.vis.origin, 'vis-1');
+    assert.equal(m.vis.key, m.wild.key);
+    const code = encodeIdentity(m.vis);
+    assert.ok(code.length < 400, `compact (${code.length})`);
+    assert.deepEqual(decodeIdentity(code), m.vis, 'decodes to the same identity');
+    assert.equal(identityKey(decodeIdentity(code)), identityKey(m.vis));
+  }
+  assert.equal(decodeIdentity('nonsense'), null);
+  // a save from before the procedural graphics: its ingredients get exactly the identity a fresh world of that seed gives
+  const old = JSON.parse(JSON.stringify(w));
+  for (const m of old.materials) delete m.vis;
+  addAlchemy(old);
+  for (const m of wild(old)) assert.deepEqual(m.vis, wild(w).find((x) => x.id === m.id).vis);
+  // an identity already there is kept, even from an older schema
+  const kept = JSON.parse(JSON.stringify(w));
+  kept.materials.find((m) => m.id === 'wild-ironroot').vis.seed = 12345;
+  attachVisuals(kept);
+  assert.equal(kept.materials.find((m) => m.id === 'wild-ironroot').vis.seed, 12345);
+});
+
+test('the same world paints identical pixels; another world paints the same archetypes differently', () => {
+  const a = species('same-seed'), b = species('same-seed'), c = species('other-seed');
+  let differ = 0;
+  for (let i = 0; i < a.length; i++) {
+    const { d } = a[i], d2 = b[i].d, d3 = c.find((x) => x.m.id === a[i].m.id).d;
+    for (let st = 0; st < 3; st++) assert.equal(plantFrame(d, st).pix.hash(), plantFrame(d2, st).pix.hash(), `${a[i].m.wild.key} stage ${st}`);
+    assert.equal(iconFrame(d).pix.hash(), iconFrame(d2).pix.hash());
+    for (let v = 0; v < 4; v++) assert.equal(pieceFrame(d, v).pix.hash(), pieceFrame(d2, v).pix.hash());
+    if (iconFrame(d).pix.hash() !== iconFrame(d3).pix.hash() && plantFrame(d, 2).pix.hash() !== plantFrame(d3, 2).pix.hash()) differ++;
+  }
+  assert.equal(differ, a.length, 'every species looks different in another world');
+});
+
+test('within a world every species is its own: distinct icons, plants and pieces', () => {
+  const s = species('distinct-1');
+  const icons = new Set(s.map(({ d }) => iconFrame(d).pix.hash()));
+  const plants = new Set(s.map(({ d }) => plantFrame(d, 2).pix.hash()));
+  const pieces = new Set(s.map(({ d }) => pieceFrame(d, 0).pix.hash()));
+  assert.equal(icons.size, s.length);
+  assert.equal(plants.size, s.length);
+  assert.equal(pieces.size, s.length);
+});
+
+test('every species follows its family grammar: three distinct stages that grow, a full icon and four solid pieces', () => {
+  for (const seed of ['grammar-1', 'grammar-2']) for (const { m, d } of species(seed)) {
+    const key = m.wild.key;
+    assert.equal(d.family, familyOf(m.wild.shape));
+    assert.ok(FAMILIES[d.family], `${key}: ${d.family} has its grammar`);
+    assert.equal(d.botanical, BOTANICAL.has(d.family));
+    const area = [0, 1, 2].map((st) => plantFrame(d, st).pix.mask().reduce((a, v) => a + v, 0));
+    assert.ok(area[0] < area[1] && area[1] < area[2], `${key} grows: ${area}`);
+    const h = [0, 1, 2].map((st) => plantFrame(d, st));
+    assert.ok(new Set(h.map((f) => f.pix.hash())).size === 3, `${key}: each stage has its own form`);
+    const mature = h[2];
+    assert.ok(mature.pix.h >= 10 && mature.pix.h <= 70 && mature.pix.w <= 70, `${key} is ${mature.pix.w}×${mature.pix.h}`);
+    const ic = iconFrame(d).pix.mask().reduce((a, v) => a + v, 0);
+    assert.ok(ic >= ICON_PX * ICON_PX * 0.18, `${key} icon fills its box (${ic})`);
+    for (let v = 0; v < 4; v++) {
+      const cells = pieceFrame(d, v).mask.reduce((a, x) => a + x, 0);
+      assert.ok(cells >= 40 && cells < PIECE_GRID * PIECE_GRID, `${key} piece ${v}: ${cells} cells`);
+    }
+  }
+});
+
+test('one ingredient looks like itself on the ground, as an icon and in the cauldron', () => {
+  for (const { m, d } of species('match-1')) {
+    const lab = (rgb) => rgbToOklab(rgb[0], rgb[1], rgb[2]);
+    // the colours of its own body (not the soil, leaves or rock it grows from) agree across contexts
+    const plant = colours(plantFrame(d, 2).pix), icon = colours(iconFrame(d).pix), pieces = [0, 1, 2, 3].flatMap((v) => colours(pieceFrame(d, v).pix));
+    const body = [d.pal.main[3], d.pal.main[2], d.pal.crystal[3], d.pal.crystal[4], ...(d.family === 'bark' ? [d.pal.wood[3]] : [])];
+    const near = (cs) => Math.min(...body.map((c) => Math.min(...cs.map((x) => deltaE(lab(x), lab([(c & 255) / 255, ((c >>> 8) & 255) / 255, ((c >>> 16) & 255) / 255]))))));
+    for (const [what, cs] of [['plant', plant], ['icon', icon], ['pieces', pieces]]) assert.ok(near(cs) < 4, `${m.wild.key}: its ${what} shows its own colour`);
+    // and the dominant colour of the pieces (what dyes a brew) is the same family of colour as the icon's
+    const dp = lab(dominantColour(pieces)), di = lab(dominantColour(icon));
+    assert.ok(deltaE(dp, di) < 40, `${m.wild.key}: pieces and icon dye alike (${deltaE(dp, di).toFixed(1)})`);
+  }
+});
+
+test('the alchemy leaves clues: a species\' colour inputs change its palette but not its shape; its effects change its traits', () => {
+  const m = wild(generateWorld('clues-1')).find((x) => x.wild.key === 'heartpetal');
+  const d = describe(m.vis);
+  const recoloured = describe({ ...m.vis, color: [0.2, 0.4, 0.9] });
+  assert.deepEqual(recoloured.m, d.m, 'separate streams: colour never moves the morphology');
+  assert.notDeepEqual(recoloured.pal.main, d.pal.main);
+  const poisoned = describe({ ...m.vis, fx: { ...m.vis.fx, toxicity: 30 } });
+  assert.ok(poisoned.tr.spots > d.tr.spots, 'poison spots it');
+  const deadly = describe({ ...m.vis, fx: { death: 30 } });
+  assert.ok(deadly.tr.droop > 0.9 && d.tr.droop === 0);
+});
+
+test('the six environments are generated deterministically, differ per world and keep water, lava, cliffs and sky free of plants', () => {
+  for (const r of REGIONS) {
+    const t0 = performance.now();
+    const a = composeScene(r.id, 'env-1');
+    const ms = performance.now() - t0;
+    assert.ok(ms < 4000, `${r.id} in ${ms.toFixed(0)} ms`);
+    assert.equal(a.pix.w, SCENE_W);
+    assert.equal(a.pix.h, SCENE_H);
+    assert.equal(a.pix.hash(), composeScene(r.id, 'env-1').pix.hash(), `${r.id} is deterministic`);
+    assert.notEqual(a.pix.hash(), composeScene(r.id, 'env-2').pix.hash(), `${r.id} differs per world`);
+    // every pixel painted, the sky above the ground never open
+    assert.ok(a.pix.px.every((c) => c >>> 24 === 255), `${r.id} is fully painted`);
+    let open = 0;
+    for (let y = 0; y < SCENE_H; y++) for (let x = 0; x < SCENE_W; x++) if (a.open[y * SCENE_W + x]) { open++; assert.ok(y >= a.top); }
+    assert.ok(a.top >= 60 && a.top < 140, `${r.id} ground starts at ${a.top}`);
+    assert.ok(open > (SCENE_H - a.top) * SCENE_W * 0.25, `${r.id} has room to grow (${open} px)`);
+  }
+  const river = composeScene('river', 'env-1');
+  for (let y = 120; y < SCENE_H; y += 7) { const [c] = river.meta.river.rows[y]; assert.equal(river.open[y * SCENE_W + c], 0, 'nothing grows in the river'); }
+  const crags = composeScene('crags', 'env-1');
+  for (let y = 120; y < SCENE_H; y += 7) { const [c] = crags.meta.flow[y]; assert.equal(crags.open[y * SCENE_W + c], 0, 'nothing grows in the lava'); }
+});
+
+test('plants stand on open ground, never behind scenery, with room round them; taps pick the plant in front', () => {
+  for (const r of REGIONS) {
+    const st = GameState.create('place-1', { tutorial: false });
+    const ground = new PlantGround(r.id, st.seed), sc = sceneOf(r.id, st.seed);
+    const plants = [];
+    for (const d of st.deposits.filter((x) => x.region === r.id)) {
+      const m = st.lookup(d.materialId);
+      for (const p of depositStatus(st.gathering, d).plants) plants.push({ ...p, m });
+    }
+    const spots = ground.place(plants, (p) => silhouetteOf(p.m));
+    let overlap = 0;
+    const taken = new Uint8Array(SCENE_W * SCENE_H);
+    for (const p of plants) {
+      const s = spots[p.id], ax = Math.round(s.x * SCENE_W), ay = Math.round(s.y * SCENE_H), sil = silhouetteOf(p.m);
+      assert.ok(sc.open[ay * SCENE_W + ax], `${r.id}: ${p.id} stands on open ground`);
+      for (let j = 0; j < sil.h; j++) for (let i = 0; i < sil.w; i++) {
+        if (!sil.m[j * sil.w + i]) continue;
+        const k = (ay - sil.ay + j) * SCENE_W + ax - sil.ax + i;
+        assert.ok(sc.depth[k] <= ay, `${r.id}: ${p.id} is not behind scenery`);
+        if (taken[k]) overlap++;
+        taken[k] = 1;
+      }
+    }
+    assert.ok(overlap < 40, `${r.id}: plants hardly touch (${overlap} px)`);
+    // the same plants keep their spots
+    assert.deepEqual(ground.place(plants, (p) => silhouetteOf(p.m)), spots);
+  }
+  // hit testing: the nearer plant wins where boxes overlap; a tiny plant still has a fair target
+  const f = { w: 10, h: 10, ax: 5, ay: 9 };
+  const back = { x: 100 / SCENE_W, y: 150 / SCENE_H }, front = { x: 104 / SCENE_W, y: 160 / SCENE_H };
+  assert.equal(hitPlant([back, front], () => f, 103, 145), front);
+  const b = plantBox(back, f);
+  assert.ok(b.x1 - b.x0 >= MIN_HIT && b.y1 - b.y0 >= MIN_HIT);
+  assert.equal(hitPlant([back], () => f, 10, 10), null, 'the scenery takes no tap');
+  assert.ok(plantFrameOf(wild(generateWorld('place-1'))[0], 'mature', { hover: true }));
+});
+
+test('the identity record alone rebuilds the same pictures on another device', () => {
+  const m = wild(generateWorld('trade-1')).find((x) => x.wild.key === 'starquartz');
+  const sent = encodeIdentity(m.vis), got = decodeIdentity(sent);
+  assert.equal(iconFrame(describe(got)).pix.hash(), iconFrame(describe(m.vis)).pix.hash());
+  assert.equal(plantFrame(describe(got), 2).pix.hash(), plantFrame(describe(m.vis), 2).pix.hash());
+  assert.equal(got.origin, 'trade-1', 'it remembers its world of origin');
+  assert.equal(WILD_SPECS.length, 36);
+});

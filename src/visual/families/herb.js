@@ -32,12 +32,13 @@ export function size(d) {
 /** A herb leaf with its vein marks. */
 function hleaf(m, d, x, y, ang, len, rng, tone = 0) {
   const P = d.m;
-  leaf(m, x, y, ang, len, len * P.broad, { shape: P.leafShape, teeth: P.teeth, curl: P.curl, tone, asym: d.tr.asym * 0.3 });
+  // the leaf is the ingredient: it is drawn in the species' own colour
+  leaf(m, x, y, ang, len, len * P.broad, { shape: P.leafShape, teeth: P.teeth, curl: P.curl, tone, asym: d.tr.asym * 0.3, mat: 'main' });
   if (P.veinMark && len > 6) {
     const c = Math.cos(ang), s = Math.sin(ang);
     for (const f of [0.35, 0.55]) for (const side of [-1, 1]) {
       const bx = x + c * len * f, by = y + s * len * f, a = ang + side * 0.8;
-      m.line([[bx, by], [bx + Math.cos(a) * len * 0.22, by + Math.sin(a) * len * 0.22]], d.tr.droop > 0.3 ? 'mark' : 'leaf', { lum: d.tr.droop > 0.3 ? 0.15 : 0.7 });
+      m.line([[bx, by], [bx + Math.cos(a) * len * 0.22, by + Math.sin(a) * len * 0.22]], d.tr.droop > 0.3 ? 'mark' : 'main', { lum: d.tr.droop > 0.3 ? 0.15 : 0.7 });
     }
   }
   if (len > 5) marks(m, d, rng, x + Math.cos(ang) * len * 0.5, y + Math.sin(ang) * len * 0.5, len * 0.3, len * 0.2);

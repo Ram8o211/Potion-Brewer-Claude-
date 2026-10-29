@@ -101,6 +101,12 @@ export function skinCell(skin) {
 /** @type {Map<number, Uint32Array>} */
 const palettes = new Map();
 
+/** Drop every palette and fitted piece read from the atlas (after its pixels were replaced, e.g. by a test's stand-in). */
+export function forgetPieces() {
+  palettes.clear();
+  for (const fn of listeners) fn('');
+}
+
 /**
  * Every opaque pixel of a piece, the palette for grains whose own spot in
  * it falls outside the drawing.
