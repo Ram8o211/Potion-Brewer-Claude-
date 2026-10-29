@@ -8,7 +8,7 @@
 //     look grainy and the texture moves with the material (no screen-space
 //     "swimming" noise); liquid on its way to freezing turns to slush;
 //   • powders are drawn as clusters of small, irregular chips (darker when
-//     damp), an ingredient's in the colours of its painted pieces;
+//     damp), an ingredient's in the colours of its procedural pieces;
 //   • frozen blocks get a compact, crisp icy body with a frosty rim that
 //     clears as they melt;
 //   • whole solid ingredients (roots, stones, crystals…) are drawn as their
@@ -287,7 +287,7 @@ export class FluidRenderer {
       } else if (ph === POWDER) {
         // a few small, irregular chips and a stray speck or two: each chip a
         // lobed blob with a ragged edge, lit from the upper left. A grain of
-        // an ingredient with painted pieces takes its chips' colours from its
+        // an ingredient with procedural pieces takes its chips' colours from its
         // spot in its piece (a crushed object's grains carry the colours of
         // the part they broke from), blending toward the brew's colour as it
         // dissolves away.
@@ -540,7 +540,7 @@ export class FluidRenderer {
             const hv = hash01(sd + (u + 4096) * 37 + (v + 4096) * 1013);
             const pc = art && p.skin[bi] ? piece(p.skin[bi]) : null;
             if (pc) {
-              // its painted piece, read where this pixel falls in it (each
+              // its piece, read where this pixel falls in it (each
               // particle knows its own spot, so broken-off bits keep theirs);
               // the blob around the piece's outline stays clear
               const tx = Math.floor(pc.ax + (p.skinU[bi] + ox / SIM.SPACING) * pc.ppu);

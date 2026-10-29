@@ -1,4 +1,4 @@
-// A brew takes its colour from the painted pieces of what went into it.
+// A brew takes its colour from the procedural pieces of what went into it.
 // Every species that comes from a painted ingredient — the ingredient
 // itself, its awakened form, and what it is steeped, infused or extracted
 // into — dyes the liquid with its painting's dominant colour (the shade

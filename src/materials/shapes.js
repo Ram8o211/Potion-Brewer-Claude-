@@ -110,7 +110,7 @@ const TEMPLATES = {
 /**
  * Particle offsets (in particle spacings) of one whole object of a solid
  * material, at most `max` of them (a part-dose takes the compact core): its
- * painted piece `variant` (0..3) where it has pieces, else its template.
+ * procedural piece `variant` (0..3) where it has pieces, else its template.
  * @param {any} def @param {number} max @param {number} [variant]
  * @returns {number[][]}
  */
@@ -126,7 +126,7 @@ export function chunkTemplate(def, max, variant = -1) {
 /** The first skin id of each species: four per ingredient, in key order. */
 const SKIN_BASE = Object.fromEntries(PIECE_KEYS.map((key, n) => [key, 1 + n * 4]));
 
-/** Whether whole objects of a material are drawn as its painted pieces. @param {any} def */
+/** Whether whole objects of a material are drawn as its procedural pieces. @param {any} def */
 export function hasPieces(def) {
   return !!def && def.form === 'solid' && !def.shape && !!def.wild && def.wild.key in SKIN_BASE;
 }
@@ -159,7 +159,7 @@ const fitted = [];
 onPiecesChanged((key) => { const b = SKIN_BASE[key]; for (let v = 0; v < 4; v++) fitted[b + v] = undefined; });
 
 /**
- * A painted piece fitted with particles: hex lattices of every spacing and
+ * A piece fitted with particles: hex lattices of every spacing and
  * offset are laid over its silhouette, and of those holding exactly as many
  * particles as the material's template, the one whose rendered blob best
  * matches the silhouette wins (computed once per piece, on first use).
