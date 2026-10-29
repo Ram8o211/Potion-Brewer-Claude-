@@ -18,7 +18,7 @@ export function compose(cv, seed) {
   }), s('pal'), 1);
   sky(cv, 0, 150, ['#4a7cbc', '#7aa6d6', '#b8d2e8', '#e4ecec'], 10);
   const cr = s('clouds');
-  for (let i = 0; i < 3 + cr.int(0, 2); i++) cv.stamp(cloud(cr, cr.int(30, 60), cr.int(7, 12)), pal, cr.int(0, W), cr.int(14, 50), { outline: false });
+  for (let i = 0; i < 3 + cr.int(0, 2); i++) cv.stamp(cloud(cr, cr.int(30, 60), cr.int(7, 12)), pal, cr.int(0, W), cr.int(14, 50), { outline: false, texture: 0 });
   silhouette(cv, { base: 78, amp: 24, freq: 0.01, seed: s('m').int(0, 1e9), fill: '#8a9ec0', rim: '#c8d4e4', peaks: 0.6 });
   const pines = silhouette(cv, { base: 116, amp: 8, freq: 0.02, seed: s('p').int(0, 1e9), fill: '#4e7a6a' });
   const pr = s('pines');

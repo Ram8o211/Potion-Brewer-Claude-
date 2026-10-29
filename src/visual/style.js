@@ -1,6 +1,8 @@
-// The house style of the procedural pixel art, after Noita: flat colours in
-// a few tones per material (a shadow, a body, a light and a rare glint),
-// no dither and no per-pixel grain, and crisp near-black outlines round
+// The house style of the procedural pixel art, after Noita: everything is
+// painted as a material, like the wilds' ground — a flat body colour (and a
+// shadow where it turns away from the light), broad blotches a step
+// lighter, a few grains, a bright crust along edges open to the sky and
+// dark rims elsewhere — with no dither, and crisp near-black outlines round
 // everything that can be picked up, so an ingredient reads against the
 // ground at a glance.
 
@@ -21,6 +23,22 @@ export function toneOf(n, l) {
   let b = 0;
   while (l >= BANDS[b]) b++;
   return Math.round(AT[b] * (n - 1));
+}
+
+/**
+ * The ramp index of a pixel painted as a material: its lightness picks the
+ * shadow, the body or (only for real highlights) the light; a blotch
+ * (blot > 0.56) lifts the body a step; a grain (h near 0 or 1) darkens or
+ * lightens it. `g` (0..1+) scales blotches and grains (0: plain).
+ * @param {number} n ramp length @param {number} l lightness @param {number} blot 0..1 @param {number} h 0..1 @param {number} g
+ */
+export function materialTone(n, l, blot, h, g) {
+  const top = n - 1;
+  let i = l < 0.36 ? Math.round(top * 0.15) : l < 0.84 ? Math.round(top * 0.45) : Math.round(top * 0.85);
+  if (l >= 0.36 && l < 0.84 && blot > 0.56 && g > 0) i++;
+  if (g > 0 && h > 1 - 0.035 * g) i += 2;
+  else if (g > 0 && h < 0.03 * g) i -= 2;
+  return Math.max(0, Math.min(top, i));
 }
 
 /**

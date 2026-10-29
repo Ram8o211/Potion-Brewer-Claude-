@@ -3603,6 +3603,14 @@ let b = 0;
 while (l >= BANDS[b]) b++;
 return Math.round(AT[b] * (n - 1));
 }
+function materialTone(n, l, blot, h, g) {
+const top = n - 1;
+let i = l < 0.36 ? Math.round(top * 0.15) : l < 0.84 ? Math.round(top * 0.45) : Math.round(top * 0.85);
+if (l >= 0.36 && l < 0.84 && blot > 0.56 && g > 0) i++;
+if (g > 0 && h > 1 - 0.035 * g) i += 2;
+else if (g > 0 && h < 0.03 * g) i -= 2;
+return Math.max(0, Math.min(top, i));
+}
 function inked(src) {
 const w = src.w + 2, h = src.h + 2, p = new Pixels(w, h);
 const op = (x, y) => x >= 0 && y >= 0 && x < src.w && y < src.h && src.px[y * src.w + x] >>> 24;
@@ -3613,14 +3621,14 @@ if (op(x - 2, y - 1) || op(x, y - 1) || op(x - 1, y - 2) || op(x - 1, y)) p.px[y
 p.draw(src, 1, 1);
 return p;
 }
-return { INK, toneOf, inked };
+return { INK, toneOf, materialTone, inked };
 })();
 // src/visual/raster.js
 const __m40 = (() => {
 const { Pixels } = __m41;
-const { noise2 } = __m42;
+const { noise2, hash2 } = __m42;
 const { mixPacked } = __m24;
-const { INK, toneOf } = __m43;
+const { INK, materialTone, toneOf } = __m43;
 const L = (() => { const v = [-0.55, -0.72, 0.62], n = Math.hypot(...v); return v.map((x) => x / n); })();
 function inside(x, y, pts) {
 let c = false;
@@ -3661,7 +3669,7 @@ S.n = m; S.mat = new Int16Array(m); S.lum = new Float32Array(m); S.tex = new Flo
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 const lit = (nx, ny, nz) => clamp01(0.47 + 0.6 * (nx * L[0] + ny * L[1] + nz * L[2]));
 function rasterize(model, w, h, pal, o = {}) {
-const N = w * h, seed = o.seed ?? 1, texAmp = o.texture ?? 0.06;
+const N = w * h, seed = o.seed ?? 1, texAmp = o.texture ?? 1;
 grow(N);
 const mat = S.mat.subarray(0, N).fill(-1), lum = S.lum.subarray(0, N), tex = S.tex.subarray(0, N);
 const part = new Int16Array(N).fill(-1);
@@ -3781,8 +3789,8 @@ for (let y = 0; y < h; y++) {
 for (let x = 0; x < w; x++) {
 const k = y * w + x, mi = mat[k];
 if (mi < 0) continue;
-const t = lum[k] + (noise2(x / 3.5, y / 3.5, seed + mi * 977) - 0.5) * texAmp * 2 * tex[k];
-idx[k] = toneOf(ramps[mi].length, t);
+const g = tex[k] * texAmp;
+idx[k] = materialTone(ramps[mi].length, lum[k], g > 0 ? noise2(x / 3.5, y / 3.5, seed + mi * 977) : 0, g > 0 ? hash2(x, y, seed + mi * 31) : 0.5, g);
 }
 }
 const flat = (/** @type {number} */ pi) => parts[pi].t === 'line' || parts[pi].t === 'dot';
@@ -3810,10 +3818,10 @@ let i = idx[k];
 if (sep[k]) i = toneOf(r.length, 0);
 let c = r[i];
 const pp = parts[part[k]];
-if (outline && !pp.noOutline && !flat(part[k])) {
+if (!pp.noOutline && !flat(part[k])) {
 const up = y === 0 || mat[k - w] < 0, left = x === 0 || mat[k - 1] < 0, down = y === h - 1 || mat[k + w] < 0, right = x === w - 1 || mat[k + 1] < 0;
-if (down || right) c = mixPacked(r[0], INK, 0.6);
-else if (up || left) c = mixPacked(r[0], INK, 0.35);
+if (up && !sep[k]) c = r[Math.min(r.length - 1, Math.max(i + 2, Math.round((r.length - 1) * 0.8)))];
+else if (outline && (down || left || right)) c = mixPacked(r[0], INK, 0.55);
 }
 pix.px[k] = c;
 }
@@ -16559,6 +16567,12 @@ const __m98 = (() => {
 const { fbm1, fbm2, hash2, noise2 } = __m42;
 const { mixPacked, pack, hex } = __m24;
 const col = (h) => pack(hex(h));
+function far(c, x, y, seed) {
+const g = hash2(x >> 1, y >> 1, seed + 7);
+if (g > 0.975) return mixPacked(c, 0xffffffff, 0.12);
+if (g < 0.02) return mixPacked(c, 0xff000000, 0.18);
+return fbm2(x * 0.05, y * 0.07, seed, 2) > 0.55 ? mixPacked(c, 0xffffffff, 0.06) : c;
+}
 function heights(W, seed, o) {
 const top = new Float32Array(W), step = o.step ?? 2, f = o.freq ?? 0.012;
 for (let x = 0; x < W; x++) top[x] = Math.round((o.base + (fbm1(x * f, seed, 3) - 0.5) * 2 * o.amp) / step) * step;
@@ -16663,7 +16677,7 @@ function hanging(cv, o) {
 const fill = col(o.fill), rim = o.rim ? col(o.rim) : fill, line = new Float32Array(cv.W);
 for (let x = 0; x < cv.W; x++) {
 line[x] = Math.round(o.base + (fbm1(x * o.freq, o.seed, 4) - 0.5) * 2 * o.amp + (o.rough ? (hash2(x >> 1, 1, o.seed) - 0.5) * o.rough : 0));
-for (let y = 0; y <= Math.min(cv.H - 1, line[x]); y++) cv.set(x, y, y === line[x] ? rim : fill);
+for (let y = 0; y <= Math.min(cv.H - 1, line[x]); y++) cv.set(x, y, y === line[x] ? rim : far(fill, x, y, o.seed));
 }
 return line;
 }
@@ -16742,13 +16756,13 @@ for (let x = 0; x < cv.W; x++) {
 let v = fbm1(x * o.freq, o.seed, 4);
 if (o.peaks) v = Math.pow(v, 1 / (1 + o.peaks));
 line[x] = Math.round(o.base - (v - 0.5) * 2 * o.amp - (o.rough ? (hash2(x >> 1, 0, o.seed) - 0.5) * o.rough : 0));
-for (let y = Math.max(0, line[x]); y < (o.bottom ?? cv.H); y++) cv.set(x, y, y === line[x] ? rim : fill);
+for (let y = Math.max(0, line[x]); y < (o.bottom ?? cv.H); y++) cv.set(x, y, y === line[x] ? rim : far(fill, x, y, o.seed));
 }
 return line;
 }
 function treeShape(cv, x, y, h, kind, c, seed) {
 const fill = col(c), tw = Math.max(1, Math.round(h / 14));
-const put = (px, py) => { if (px >= 0 && py >= 0 && px < cv.W && py < cv.H) cv.pix.px[py * cv.W + px] = fill; };
+const put = (px, py) => { if (px >= 0 && py >= 0 && px < cv.W && py < cv.H) cv.pix.px[py * cv.W + px] = far(fill, px, py, seed); };
 for (let j = 0; j < h * (kind === 'pine' ? 0.9 : 0.6); j++) for (let i = -tw; i < tw; i++) put(Math.round(x + i), Math.round(y - j));
 if (kind === 'pine') {
 for (let j = 0; j < h * 0.85; j++) {
@@ -16782,7 +16796,7 @@ if (fall > 6) out.push([x, y + 1, fall - 1]);
 }
 return out.filter((_, i) => i % Math.max(1, Math.floor(out.length / n)) === 0).slice(0, n);
 }
-return { col, heights, dip, raise, fillSolid, blob, paintTerrain, hanging, pool, markOpen, ledges, surfaceAt, silhouette, treeShape, glow, drips };
+return { col, far, heights, dip, raise, fillSolid, blob, paintTerrain, hanging, pool, markOpen, ledges, surfaceAt, silhouette, treeShape, glow, drips };
 })();
 // src/visual/env/objects.js
 const __m99 = (() => {
@@ -17039,7 +17053,7 @@ const sx = 290 + s('sun').int(-60, 40), sy = 26;
 for (let y = sy - 9; y <= sy + 9; y++) for (let x = sx - 9; x <= sx + 9; x++) if (Math.hypot(x - sx, y - sy) <= 8.5) cv.set(x, y, Math.hypot(x - sx, y - sy) < 6.5 ? pack([1, 0.99, 0.9]) : pack([1, 0.94, 0.7]));
 glow(cv, sx, sy, 60, [1, 0.95, 0.75], 0.3);
 const cr = s('clouds');
-for (let i = 0; i < 3 + cr.int(0, 2); i++) cv.stamp(cloud(cr, cr.int(30, 70), cr.int(8, 14)), pal, cr.int(0, W), cr.int(18, 60), { outline: false });
+for (let i = 0; i < 3 + cr.int(0, 2); i++) cv.stamp(cloud(cr, cr.int(30, 70), cr.int(8, 14)), pal, cr.int(0, W), cr.int(18, 60), { outline: false, texture: 0 });
 silhouette(cv, { base: 96, amp: 16, freq: 0.007, seed: s('h1').int(0, 1e9), fill: '#86b0a4', rim: '#a4c8b4' });
 const near = silhouette(cv, { base: 116, amp: 12, freq: 0.011, seed: s('h2').int(0, 1e9), fill: '#5f9a5a', rim: '#7ab26a' });
 const tr = s('far');
@@ -17097,7 +17111,7 @@ return { compose };
 const __m100 = (() => {
 const { sky } = __m95;
 const { palette, vary, streamOf } = __m97;
-const { heights, raise, fillSolid, blob, paintTerrain, markOpen, surfaceAt, hanging, glow, col, drips, ledges } = __m98;
+const { heights, raise, fillSolid, blob, paintTerrain, markOpen, surfaceAt, hanging, glow, col, drips, ledges, far } = __m98;
 const { tree, fern, log, stump, crown } = __m99;
 const { Model } = __m28;
 const { hash2 } = __m42;
@@ -17114,7 +17128,7 @@ rows.forEach((r, k) => {
 const rr = s('row' + k), fill = col(r.c);
 for (let i = 0; i < r.n; i++) {
 const x0 = Math.round((i + rr.next() * 0.7) * (W / r.n)), w = r.w + rr.int(0, 2);
-for (let y = 0; y < H; y++) for (let x = x0; x < x0 + w; x++) if (x >= 0 && x < W) cv.pix.px[y * W + x] = fill;
+for (let y = 0; y < H; y++) for (let x = x0; x < x0 + w; x++) if (x >= 0 && x < W) cv.pix.px[y * W + x] = far(fill, x, y, k * 97 + i);
 }
 hanging(cv, { base: r.can, amp: 10, freq: 0.03, seed: rr.int(0, 1e9), fill: r.c, rough: 4 });
 });
@@ -17184,7 +17198,7 @@ cattail: '#6a4428', timber: '#7a5a3a',
 }), s('pal'), 1);
 sky(cv, 0, 150, ['#4a7cbc', '#7aa6d6', '#b8d2e8', '#e4ecec'], 10);
 const cr = s('clouds');
-for (let i = 0; i < 3 + cr.int(0, 2); i++) cv.stamp(cloud(cr, cr.int(30, 60), cr.int(7, 12)), pal, cr.int(0, W), cr.int(14, 50), { outline: false });
+for (let i = 0; i < 3 + cr.int(0, 2); i++) cv.stamp(cloud(cr, cr.int(30, 60), cr.int(7, 12)), pal, cr.int(0, W), cr.int(14, 50), { outline: false, texture: 0 });
 silhouette(cv, { base: 78, amp: 24, freq: 0.01, seed: s('m').int(0, 1e9), fill: '#8a9ec0', rim: '#c8d4e4', peaks: 0.6 });
 const pines = silhouette(cv, { base: 116, amp: 8, freq: 0.02, seed: s('p').int(0, 1e9), fill: '#4e7a6a' });
 const pr = s('pines');
@@ -17241,7 +17255,7 @@ cloud: ['#eef0f0', { spread: 0.3 }], seamC: ['#e8c040', { spread: 0.4, n: 4 }],
 }), s('pal'), 0.8);
 sky(cv, 0, 140, ['#6a96c8', '#a8c4dc', '#e0dccc'], 8);
 const cr = s('clouds');
-for (let i = 0; i < 3; i++) cv.stamp(cloud(cr, cr.int(26, 50), cr.int(6, 10)), pal, cr.int(0, W), cr.int(10, 34), { outline: false });
+for (let i = 0; i < 3; i++) cv.stamp(cloud(cr, cr.int(26, 50), cr.int(6, 10)), pal, cr.int(0, W), cr.int(10, 34), { outline: false, texture: 0 });
 silhouette(cv, { base: 70, amp: 14, freq: 0.012, seed: s('far').int(0, 1e9), fill: '#b8aca0', rim: '#d4cabc', peaks: 0.3 });
 silhouette(cv, { base: 96, amp: 8, freq: 0.02, seed: s('far2').int(0, 1e9), fill: '#9a8e82', rim: '#b0a496', rough: 3 });
 const ts = s('terrain'), top = new Float32Array(W), right = ts.next() < 0.5;
@@ -17383,7 +17397,7 @@ return { compose };
 const __m104 = (() => {
 const { sky } = __m95;
 const { palette, vary, streamOf } = __m97;
-const { heights, dip, raise, fillSolid, blob, ledges, paintTerrain, pool, markOpen, surfaceAt, silhouette, glow, drips, col } = __m98;
+const { heights, dip, raise, fillSolid, blob, ledges, paintTerrain, pool, markOpen, surfaceAt, silhouette, glow, drips, col, far } = __m98;
 const { tree, cloud, basalt, spire } = __m99;
 const { Model, lumpy } = __m28;
 const { hash2 } = __m42;
@@ -17395,13 +17409,13 @@ gem: ['#ff8a3a', { spread: 0.55 }], wood: '#3a2a20',
 }), s('pal'), 0.6);
 sky(cv, 0, H, ['#140608', '#2e0e10', '#6a2216', '#b84a22', '#e07a34'], 10);
 const cr = s('clouds');
-for (let i = 0; i < 4; i++) cv.stamp(cloud(cr, cr.int(40, 90), cr.int(8, 16)), pal, cr.int(0, W), cr.int(10, 50), { outline: false });
+for (let i = 0; i < 4; i++) cv.stamp(cloud(cr, cr.int(40, 90), cr.int(8, 16)), pal, cr.int(0, W), cr.int(10, 50), { outline: false, texture: 0 });
 const vx = s('cone').int(110, 270), coneC = col('#3a2226'), rim = col('#5a3030'), lavaC = col('#ff8a2a'), lavaL = col('#ffd060');
 const cone = new Float32Array(W);
 for (let x = 0; x < W; x++) {
 const d = Math.abs(x - vx);
 cone[x] = Math.round(d < 12 ? 44 : 44 + (d - 12) * 0.6 + (hash2(x >> 2, 0, 5) - 0.5) * 3);
-for (let y = Math.max(0, cone[x]); y < 130; y++) cv.set(x, y, y === cone[x] ? rim : coneC);
+for (let y = Math.max(0, cone[x]); y < 130; y++) cv.set(x, y, y === cone[x] ? rim : far(coneC, x, y, vx));
 }
 const lv = s('lavaruns');
 for (let k = 0; k < 3; k++) {

@@ -7,7 +7,7 @@
 
 import { sky } from './paint.js';
 import { palette, vary, streamOf } from './kit.js';
-import { heights, dip, raise, fillSolid, blob, ledges, paintTerrain, pool, markOpen, surfaceAt, silhouette, glow, drips, col } from './side.js';
+import { heights, dip, raise, fillSolid, blob, ledges, paintTerrain, pool, markOpen, surfaceAt, silhouette, glow, drips, col, far } from './side.js';
 import { tree, cloud, basalt, spire } from './objects.js';
 import { Model, lumpy } from '../geometry.js';
 import { hash2 } from '../noise.js';
@@ -20,14 +20,14 @@ export function compose(cv, seed) {
   }), s('pal'), 0.6);
   sky(cv, 0, H, ['#140608', '#2e0e10', '#6a2216', '#b84a22', '#e07a34'], 10);
   const cr = s('clouds');
-  for (let i = 0; i < 4; i++) cv.stamp(cloud(cr, cr.int(40, 90), cr.int(8, 16)), pal, cr.int(0, W), cr.int(10, 50), { outline: false });
+  for (let i = 0; i < 4; i++) cv.stamp(cloud(cr, cr.int(40, 90), cr.int(8, 16)), pal, cr.int(0, W), cr.int(10, 50), { outline: false, texture: 0 });
   // the cone: a flat dark silhouette, its crater glowing, lava running down
   const vx = s('cone').int(110, 270), coneC = col('#3a2226'), rim = col('#5a3030'), lavaC = col('#ff8a2a'), lavaL = col('#ffd060');
   const cone = new Float32Array(W);
   for (let x = 0; x < W; x++) {
     const d = Math.abs(x - vx);
     cone[x] = Math.round(d < 12 ? 44 : 44 + (d - 12) * 0.6 + (hash2(x >> 2, 0, 5) - 0.5) * 3);
-    for (let y = Math.max(0, cone[x]); y < 130; y++) cv.set(x, y, y === cone[x] ? rim : coneC);
+    for (let y = Math.max(0, cone[x]); y < 130; y++) cv.set(x, y, y === cone[x] ? rim : far(coneC, x, y, vx));
   }
   const lv = s('lavaruns');
   for (let k = 0; k < 3; k++) {

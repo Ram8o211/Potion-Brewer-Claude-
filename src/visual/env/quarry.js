@@ -19,7 +19,7 @@ export function compose(cv, seed) {
   }), s('pal'), 0.8);
   sky(cv, 0, 140, ['#6a96c8', '#a8c4dc', '#e0dccc'], 8);
   const cr = s('clouds');
-  for (let i = 0; i < 3; i++) cv.stamp(cloud(cr, cr.int(26, 50), cr.int(6, 10)), pal, cr.int(0, W), cr.int(10, 34), { outline: false });
+  for (let i = 0; i < 3; i++) cv.stamp(cloud(cr, cr.int(26, 50), cr.int(6, 10)), pal, cr.int(0, W), cr.int(10, 34), { outline: false, texture: 0 });
   silhouette(cv, { base: 70, amp: 14, freq: 0.012, seed: s('far').int(0, 1e9), fill: '#b8aca0', rim: '#d4cabc', peaks: 0.3 });
   silhouette(cv, { base: 96, amp: 8, freq: 0.02, seed: s('far2').int(0, 1e9), fill: '#9a8e82', rim: '#b0a496', rough: 3 });
   // the benches: steps cut down from one side, each a level shelf over a sheer face

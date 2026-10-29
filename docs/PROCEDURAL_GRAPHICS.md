@@ -38,13 +38,17 @@ still limited.
   of its hour), as its icon (shelf, shop, book, recipes, deposit card,
   inspector) and as its four pieces in the cauldron, whose colours also dye
   the brew and its powder.
-* **A simple, Noita-like pixel style.** Everything is painted in a few
-  flat tones per material — a shadow, a body, a light and a rare glint —
-  with no dithering and no per-pixel grain. Skies are hard-edged bands,
-  hills flat silhouettes, the ground broad plain patches with only a few
-  chunky flecks, light and haze fall off in hard steps. Ingredients (on the
-  ground and as icons) are ringed in a near-black outline, so on the plain
-  ground they read at a glance and look like their icon.
+* **A simple, Noita-like pixel style, one for everything.** Ingredients
+  (on the ground, as icons and as cauldron pieces), trees, rocks,
+  timberwork and the distant silhouettes are all painted as a *material*,
+  the way the ground is: a flat body colour (and a shadow where a form
+  turns from the light; a light tone only for real highlights such as a
+  crystal facet), broad blotches a step lighter, a few grains, a bright
+  crust along edges open to the sky and dark rims along the others — no
+  dithering, no gradients. The background is the same material, fainter.
+  Skies are hard-edged bands and light falls off in hard steps.
+  Ingredients are ringed in a near-black outline, so they read at a
+  glance against the ground and look like their icon.
 * **Stones, crystals and shells do not grow.** Only living plants pass
   through sprout, ripe and mature. An inorganic deposit has one picture:
   once it has formed again it simply lies there whole (until then nothing
@@ -66,9 +70,9 @@ src/visual/                     pure, DOM-free, deterministic
   geometry.js     Model: ordered parts (filled outlines, tapering strokes,
                   1-px lines, dots) + shape helpers (blades, lumps, Béziers)
   raster.js       pixel-art rasterizer: scanline fill, round/fold/facet/
-                  cylinder shading reduced to a few flat tones, inner
-                  outline, occlusion lines
-  style.js        the house style: the tone bands, the outline ink and the
+                  cylinder shading painted as a material (tones, blotches,
+                  grains, sky-lit crust, rims), occlusion lines
+  style.js        the house style: material tones, the outline ink and the
                   ink ring round plants and icons
   taxonomy.js     shape → family, botanical families, habitat traits, effect tints
   identity.js     the visual identity record (versioned, portable)
