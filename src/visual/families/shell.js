@@ -25,7 +25,15 @@ export function valve(m, d, rng, x, y, ang, len, tone = 0) {
   const P = d.m, prof = PROFILES[P.outline] || PROFILES.round;
   const c = Math.cos(ang), s = Math.sin(ang);
   m.poly(blade([x, y], ang, len, len * 0.55, prof), 'main', { shade: 'round', tone });
-  if (P.rings || d.form === 'scale') {
+  if (d.form === 'scale') {
+    // imbricate texture: staggered rows of tiny overlapping scales, each a dark lower edge under a lit crown
+    const step = Math.max(2, len * 0.16);
+    for (let u = step; u < len * 0.9; u += step) for (let v = -len * 0.45; v <= len * 0.45; v += step) {
+      const vv = v + ((u / step) % 2 ? step / 2 : 0), px = x + c * u - s * vv, py = y + s * u + c * vv;
+      m.dot(px, py, 'main', { lum: 0.18 });
+      m.dot(px - c, py - s, 'main', { lum: 0.85 });
+    }
+  } else if (P.rings) {
     for (let k = 1; k <= 2; k++) {
       const f = k / 3;
       m.line([[x + c * len * f - s * len * 0.4 * f, y + s * len * f + c * len * 0.4 * f], [x + c * len * f + s * len * 0.4 * f, y + s * len * f - c * len * 0.4 * f]], 'main', { lum: 0.2 });
@@ -36,7 +44,7 @@ export function valve(m, d, rng, x, y, ang, len, tone = 0) {
       m.line([[x + c * 1.5, y + s * 1.5], [x + Math.cos(a) * len * 0.9, y + Math.sin(a) * len * 0.9]], 'main', { lum: k % 2 ? 0.25 : 0.75 });
     }
   }
-  if (d.form === 'scale') m.line([[x + c * 1, y + s * 1], [x + c * len * 0.85, y + s * len * 0.85]], 'accent', { lum: 0.85, glow: d.tr.warm > 0.3 });
+  if (d.form === 'scale') m.line([[x + c * len * 0.2, y + s * len * 0.2], [x + c * len * 0.7, y + s * len * 0.7]], 'accent', { lum: 0.8, glow: d.tr.warm > 0.3 });
   m.glints.push([x + c * len * 0.6 - s * 1.5, y + s * len * 0.6 + c * 1.5]);
   marks(m, d, rng, x + c * len * 0.5, y + s * len * 0.5, len * 0.3, len * 0.25);
 }
@@ -58,6 +66,8 @@ export function plant(d, stage, o = {}) {
     const x = (n === 1 ? 0 : i / (n - 1) - 0.5) * W * 0.6, y = d.form === 'scale' ? -H * 0.45 : -0.5;
     const len = H * 0.95 * g * (i % 2 ? 0.8 : 1);
     if (d.form !== 'scale' && P.open && i === n - 1 && stage === 2) openShell(m, d, rng, x, y, len);
+    // shells stand hinge-down in the sand; shed scales lie overlapped across their stone
+    else if (d.form === 'scale') valve(m, d, rng, x - len * 0.4, y + (i % 2) * 1.5, -0.35 + (i % 2) * 0.25 + (rng.next() - 0.5) * 0.3, len * 0.9, i % 2 ? -0.06 : 0);
     else valve(m, d, rng, x, y, -Math.PI / 2 + (i - (n - 1) / 2) * 0.5, len, i % 2 ? -0.06 : 0);
   }
   return m;

@@ -108,9 +108,10 @@ export function marks(m, d, rng, cx, cy, rx, ry) {
     const x = cx + (rng.next() - 0.5) * rx * 1.4, y = cy + (rng.next() - 0.5) * ry * 1.4;
     m.line([[x, y], [x + 1 + rng.next() * 2, y]], 'accent', { lum: 0.85 });
   }
-  for (let i = 0; i < n(t.irid * 2); i++) {
-    const y = cy + (rng.next() - 0.5) * ry;
-    m.line([[cx - rx * 0.6, y], [cx + rx * 0.6, y - ry * 0.3]], 'iris', { lum: 0.6 });
+  for (let i = 0; i < n(t.irid * (2 + area * 0.04)); i++) {
+    // short oily sheens, not stripes across the whole body
+    const x = cx + (rng.next() - 0.5) * rx * 1.2, y = cy + (rng.next() - 0.5) * ry * 1.2, L = 1 + Math.min(3, rx * 0.3);
+    m.line([[x, y], [x + L, y - L * 0.4]], 'iris', { lum: 0.7 });
   }
   if (t.glow > 0.2) for (let i = 0; i < n(1 + t.glow * 3); i++) {
     const x = cx + (rng.next() - 0.5) * rx * 1.2, y = cy + (rng.next() - 0.5) * ry * 1.2;
