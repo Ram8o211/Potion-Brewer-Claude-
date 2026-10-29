@@ -8,15 +8,30 @@ still limited.
 ## What changed for the player
 
 * **Every world looks different.** The six regions are generated from the
-  world seed: layout, palette variation and seed-chosen features (autumn
-  woods, a meadow pond, standing stones or beehives, a footbridge over the
-  river, the path, the oaks, the vents and lava flows…). The regions keep
-  their identity: the open, warm Sunlit Meadow; Whisperwood's deep rows of
-  trunks, closed canopy, litter and light shafts; Willow Bank's river with
-  chalky banks, reeds and weeping willows; Ironstone Quarry's terraced cut
-  faces, mineral seams, crane, ladder, cart track and lantern; Moonfen's
-  moonlit pools, moss-hung willows, glowing crystals and mist; the Ember
-  Crags' smoking cone, lava flow, basalt columns and vents.
+  world seed: the lie of the ground, its ledges and caves, palette
+  variation and seed-chosen features (autumn woods, a meadow pond, standing
+  stones or beehives, a footbridge over the river, the oaks, the vents…).
+  The regions keep their identity: the open, warm Sunlit Meadow;
+  Whisperwood's rows of trunks, closed canopy, roots and light shafts;
+  Willow Bank's river between chalky banks, reeds and weeping willows;
+  Ironstone Quarry's benches cut in steps, strata and mineral seams, adit,
+  crane, ladder, cart and lantern; Moonfen's black pools, moss-hung
+  willows, glowing crystals and mist; the Ember Crags' smoking cone, lava
+  pool, basalt columns and vents.
+* **A side view, after Noita.** No perspective: each region is a flat
+  banded sky, flat silhouettes of the distance (hills, mountains, rows of
+  trunks, a volcano), and in front a cross-section of the ground itself —
+  a mottled material (two colours in broad blotches, a few stones, seams
+  and grains, darker the deeper it goes) under a crust of grass, moss,
+  gravel or ash, with ledges in two tiers (most of them on a column of
+  rock), overhangs and cave pockets. Water and lava lie in the hollows as
+  flat pools. Plants grow only on the dry surfaces — the ground and the
+  ledges — and big trees stand behind them. The strength of the picture is
+  in its light and particles: glows round the sun, the moon, lanterns, lava
+  and crystals, and at run time flickering lights, pollen, motes in the
+  light shafts, falling leaves, fireflies and wisps, grit trickling from
+  overhangs, shimmering water, popping lava bubbles, rising embers, ash and
+  steam.
 * **Every ingredient has its own look in each world**, derived from its
   family, habitat, colour, rarity and alchemy. The same species is drawn
   from one descriptor on the ground (sprout, ripe, mature, and closed out
@@ -64,8 +79,11 @@ src/visual/                     pure, DOM-free, deterministic
   render.js       descriptor → plant frames, icon, piece + silhouette grid
   pieces.js       the cauldron's piece atlas (skin layout unchanged)
   env/            the six region composers on a shared kit (paint.js:
-                  canvas, open-ground map, scenery depth map, sky, ridges,
-                  perspective ground; objects.js: trees, shrubs, rocks,
+                  canvas — pixels, ground, liquid, cave, open-ground and
+                  scenery depth maps — banded sky, stepped light;
+                  side.js: the side view's ground line, hollows, mounds,
+                  ledges, caves, mottled terrain painting, pools, flat
+                  silhouettes, glows; objects.js: trees, shrubs, rocks,
                   reeds, ferns, logs, clouds, crane, cart…; scene.js: cache)
 src/rendering/
   species-sprites.js   cached plant/icon frames and canvases, silhouettes,
@@ -171,9 +189,10 @@ font, interface and effects are untouched.
   stages; a full icon; four solid pieces); one ingredient's colours shared
   by its plant, icon and pieces and its pieces dyeing like its icon;
   palette-only changes never moving the morphology; the six environments
-  deterministic, varying per world, fully painted, with room to grow and
-  nothing growing in river or lava; placement on open ground, never behind
-  scenery, hardly touching; hit testing of the front plant.
+  deterministic, varying per world, fully painted, open ground only on dry
+  surfaces with room to grow and nothing growing in the river or the lava;
+  placement on open ground, never behind scenery nor into the ground,
+  hardly touching; hit testing of the front plant.
 * `tests/gathering.test.mjs`: watering raises moisture and speeds growth;
   dry soil slows but never stops it; capped acceleration; no instant
   maturity; drying back; checkpoints compose exactly; no growth from a

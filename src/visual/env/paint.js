@@ -1,15 +1,13 @@
 // Painting helpers for the procedural wild environments: the canvas they
-// compose into (a Pixels buffer plus the map of where a plant's foot may
-// rest), banded skies, noise-built silhouettes, perspective ground in broad
-// flat patches, and the stamping of rasterized scenery models
+// compose into (a Pixels buffer, the side view's ground, liquid and cave
+// maps and the map of where a plant's foot may rest), banded skies, flat
+// washes of light, and the stamping of rasterized scenery models
 // (visual/raster.js), so scenery and species share one pixel scale and one
 // flat style (visual/style.js).
 
 import { Pixels } from '../pixels.js';
 import { rasterize } from '../raster.js';
-import { noise2, fbm1, fbm2, bayer, hash2 } from '../noise.js';
 import { ramp, hex, mixPacked, pack, unpack } from '../color.js';
-import { toneOf } from '../style.js';
 
 /** Scene size in art pixels. */
 export const SCENE_W = 384;
@@ -30,6 +28,12 @@ export class Canvas {
     this.open = new Uint8Array(SCENE_W * SCENE_H);
     /** the foot row of the scenery covering each pixel (0: none): a plant standing above that row would be behind it */
     this.depth = new Uint16Array(SCENE_W * SCENE_H);
+    /** 1 where there is ground (the side view's terrain), liquid, or a cave hollowed out of the ground */
+    this.solid = new Uint8Array(SCENE_W * SCENE_H);
+    this.liquid = new Uint8Array(SCENE_W * SCENE_H);
+    this.cave = new Uint8Array(SCENE_W * SCENE_H);
+    /** the main ground's surface row in each column (side.js fillSolid), if the scene has one @type {Float32Array | null} */
+    this.ground = null;
     this.seed = seed >>> 0;
     /** things the animation overlay needs (vents, pools, lights…) */
     this.meta = /** @type {Record<string, any>} */ ({});
@@ -54,10 +58,12 @@ export class Canvas {
   /**
    * Rasterize a scenery model and stamp it with its foot (model origin) at
    * (x, y). `haze` [packed colour, amount] fades it into the distance; `flip`
-   * mirrors it; `foot` blocks the ground under it (an ellipse rx × ry).
+   * mirrors it; `foot` blocks the ground under it (an ellipse rx × ry) and
+   * keeps plants from standing behind it; `roots` only blocks the ground at
+   * its foot, so plants may stand in front of it (a tree in the side view).
    * @param {import('../geometry.js').Model} model @param {Record<string, number[]>} pal
    * @param {number} x @param {number} y
-   * @param {{haze?:[number, number], outline?:boolean, foot?:[number, number], seed?:number, texture?:number, dark?:number}} [o]
+   * @param {{haze?:[number, number], outline?:boolean, foot?:[number, number], roots?:[number, number], seed?:number, texture?:number, dark?:number}} [o]
    */
   stamp(model, pal, x, y, o = {}) {
     const b = model.bounds();
@@ -77,6 +83,7 @@ export class Canvas {
     }
     const X = Math.round(x) + left, Y = Math.round(y) + top;
     this.pix.draw(p, X, Y);
+    if (o.roots) this.blockEllipse(Math.round(x), Math.round(y) - 1, o.roots[0], o.roots[1]);
     if (o.foot) {
       this.blockEllipse(Math.round(x), Math.round(y), o.foot[0], o.foot[1]);
       // the scenery covers what stands behind it; and nothing grows out of it
@@ -133,67 +140,4 @@ export function sky(cv, y0, y1, stops, bands = 12) {
   }
 }
 
-/**
- * A silhouette whose top follows fractal noise from `base` (± amp), filled
- * down to `bottom`, textured with clusters of its ramp and lit along its rim.
- * Returns its height line.
- * @param {Canvas} cv @param {{base:number, amp:number, freq:number, bottom:number, ramp:number[], seed:number, rough?:number, rim?:number, tex?:number, peaks?:number}} o
- */
-export function ridge(cv, o) {
-  const top = new Float32Array(cv.W);
-  for (let x = 0; x < cv.W; x++) {
-    let v = fbm1(x * o.freq, o.seed, 5);
-    if (o.peaks) v = Math.pow(v, 1 / (1 + o.peaks));
-    top[x] = o.base - (v - 0.5) * 2 * o.amp - (o.rough ? (fbm1(x * o.freq * 6, o.seed + 9, 2) - 0.5) * o.rough : 0);
-  }
-  const R = o.ramp, n = R.length;
-  for (let x = 0; x < cv.W; x++) {
-    const t0 = Math.round(top[x]);
-    for (let y = Math.max(0, t0); y < Math.min(cv.H, o.bottom); y++) {
-      const depth = (y - t0) / Math.max(1, o.bottom - t0);
-      // slopes facing the light are lighter
-      const slope = (top[Math.max(0, x - 2)] - top[Math.min(cv.W - 1, x + 2)]) * 0.25;
-      let l = 0.5 - depth * 0.2 - slope * 0.25 + (fbm2(x * 0.04, y * 0.06, o.seed + 3, 2) - 0.5) * (o.tex ?? 0.5) * 0.6;
-      if (y - t0 < (o.rim ?? 1)) l += 0.35;
-      cv.set(x, y, R[toneOf(n, l)]);
-    }
-  }
-  return top;
-}
-
-/**
- * Ground below a horizon line, textured in perspective: noise clusters are
- * stretched flat toward the horizon and grow toward the viewer.
- * @param {Canvas} cv @param {Float32Array|number[]} horizon y of the ground's top per column
- * @param {(x:number, y:number, depth:number, n:number)=>number} colour packed colour of a ground pixel (n: clustered noise 0..1)
- * @param {number} seed @param {boolean} [open] mark it as open ground
- */
-export function ground(cv, horizon, colour, seed, open = true) {
-  for (let x = 0; x < cv.W; x++) {
-    const h0 = Math.round(horizon[x]);
-    for (let y = Math.max(0, h0); y < cv.H; y++) {
-      const depth = (y - h0 + 1) / (cv.H - h0 + 1);
-      // broad patches: low-frequency noise, sampled on 2-pixel cells
-      const cx = x & ~1, sx = cx * (0.03 + depth * 0.05), sy = y * (0.06 + depth * 0.08);
-      const n = fbm2(sx, sy * 1.6, seed, 2);
-      cv.set(x, y, colour(x, y, depth, n));
-      if (open) cv.open[y * cv.W + x] = 1;
-    }
-  }
-}
-
-/**
- * Grass texture (−0.5..0.5): broad soft swells with, here and there, a
- * short vertical strand that lengthens toward the viewer.
- */
-export function blades(x, y, depth, seed) {
-  const L = 2 + Math.floor(depth * 4), strand = hash2(x >> 1, Math.floor((y + hash2(x >> 1, 0, seed) * 8) / L), seed);
-  return (strand > 0.9 ? 0.3 : strand < 0.06 ? -0.3 : 0) + (noise2(x * 0.08, y * 0.06, seed + 1) - 0.5) * 0.35;
-}
-
-/** Pick a ramp colour from a lightness (0..1), reduced to the style's flat tones. */
-export function shadeOf(R, l, x, y) {
-  return R[toneOf(R.length, l)];
-}
-
-export { ramp, hex, mixPacked, pack, unpack, noise2, fbm1, fbm2, bayer, hash2 };
+export { ramp, hex, mixPacked, pack, unpack };
