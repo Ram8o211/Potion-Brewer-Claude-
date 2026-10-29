@@ -56,7 +56,7 @@ export function compose(cv, seed) {
     const crack = Math.abs(noise2(x * 0.04, y * 0.1, gs + 9) - 0.5) < (0.004 + depth * 0.006) * (fbm2(x * 0.02, y * 0.04, gs + 13, 2) > 0.5 ? 2.2 : 0.4);
     if (crack) return pal.lava[4 + (hash2(x, y, gs) > 0.6 ? 1 : 0)];
     if (ash > 0.6) return shadeOf(pal.ash, 0.25 + n * 0.5, x, y);
-    return shadeOf(pal.basalt, 0.2 + n * 0.45 + (hash2(x >> 1, y >> 1, gs) > 0.85 ? 0.18 : 0), x, y);
+    return shadeOf(pal.basalt, 0.25 + n * 0.35 + (hash2(x >> 1, y >> 1, gs) > 0.96 ? 0.3 : 0), x, y);
   }, gs);
   for (let y = 108; y < H; y++) for (let x = 0; x < W; x++) if (inLava(x, y) || inLava(x - 2, y) || inLava(x + 2, y) || inLava(x, y + 2)) cv.open[y * W + x] = 0;
   // the lava's glow on everything near it

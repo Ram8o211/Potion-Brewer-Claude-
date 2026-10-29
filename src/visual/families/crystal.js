@@ -75,9 +75,10 @@ function cluster(m, d, rng, W, H, amount, seedRock = true) {
   marks(m, d, rng, 0, -H * 0.5, W * 0.3, H * 0.3);
 }
 
+/** The cluster on the ground. A crystal does not grow: it is there whole, whatever the stage. */
 export function plant(d, stage, o = {}) {
-  const m = new Model(), rng = stream(d, 'plant' + stage);
-  cluster(m, d, rng, d.size.w, d.size.h, [0.3, 0.65, 1][stage]);
+  const m = new Model(), rng = stream(d, 'plant');
+  cluster(m, d, rng, d.size.w, d.size.h, 1);
   return m;
 }
 

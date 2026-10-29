@@ -13,6 +13,7 @@ import { plantFrame, iconFrame, ICON_PX } from '../visual/render.js';
 import { identityKey, validIdentity } from '../visual/identity.js';
 import { archetypeIdentity } from '../visual/pieces.js';
 import { Pixels } from '../visual/pixels.js';
+import { isBotanical } from '../visual/taxonomy.js';
 import { rawSprite } from './scenes.js';
 
 export { ICON_PX };
@@ -68,7 +69,8 @@ function rimmed(f) {
 export function plantFrameOf(m, stage, o = {}) {
   const id = identityOfMaterial(m);
   if (!id) return null;
-  const st = STAGE[stage] ?? 2, closed = !!o.closed && st === 2;
+  // stones, crystals and shells do not grow: one picture, whole, at every stage
+  const st = isBotanical(id.shape) ? STAGE[stage] ?? 2 : 2, closed = !!o.closed && st === 2;
   const base = cached(`p|${identityKey(id)}|${st}|${closed ? 1 : 0}`, () => plantFrame(describe(id), st, { closed }));
   return o.hover ? cached(`h|${identityKey(id)}|${st}|${closed ? 1 : 0}`, () => rimmed(base)) : base;
 }

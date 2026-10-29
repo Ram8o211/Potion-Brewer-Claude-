@@ -79,11 +79,11 @@ export function compose(cv, seed) {
   // the pit floor: dust and gravel, pebbles and rubble
   const gs = s('floor').int(0, 1e9);
   ground(cv, floorLine, (x, y, depth, n) => {
-    const sc = depth > 0.55 ? 2 : 1, gx = Math.floor(x / sc), gy = Math.floor(y / sc), gravel = hash2(gx, gy, gs), above = hash2(gx, gy - 1, gs);
-    // pebbles: a lit top and a shadow under each
-    const peb = gravel > 0.9 ? 0.28 : above > 0.9 ? -0.3 : gravel < 0.06 ? -0.2 : 0;
+    const sc = depth > 0.55 ? 3 : 2, gx = Math.floor(x / sc), gy = Math.floor(y / sc), gravel = hash2(gx, gy, gs), above = hash2(gx, gy - 1, gs);
+    // a few chunky pebbles: a lit top and a shadow under each
+    const peb = gravel > 0.97 ? 0.3 : above > 0.97 ? -0.3 : 0;
     const wheel = fbm2(x * 0.012, y * 0.04, gs + 5, 2);
-    return shadeOf(pal.floor, 0.24 + n * 0.4 + peb + (wheel - 0.5) * 0.5 - (1 - depth) * 0.04, x, y);
+    return shadeOf(pal.floor, 0.35 + n * 0.25 + peb + (wheel - 0.5) * 0.4 - (1 - depth) * 0.04, x, y);
   }, gs);
   // the cart track: two rails converging toward the face
   const tr = s('track'), tx0 = tr.int(60, 320), tx1 = tr.int(120, 260);

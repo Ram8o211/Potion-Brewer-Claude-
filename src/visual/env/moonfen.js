@@ -51,7 +51,7 @@ export function compose(cv, seed) {
       return shadeOf(pal.water, (rim ? 0.75 : 0.25 + n * 0.25) + refl + star, x, y);
     }
     const tussock = fbm2(x * 0.06, y * 0.14, gs + 3, 3);
-    return shadeOf(pal.bog, 0.18 + n * 0.4 + (tussock > 0.6 ? 0.25 : 0) + (hash2(x, y, gs) > 0.9 ? 0.15 : 0), x, y);
+    return shadeOf(pal.bog, 0.25 + n * 0.3 + (tussock > 0.6 ? 0.25 : 0), x, y);
   }, gs);
   for (let y = 112; y < H; y++) for (let x = 0; x < W; x++) if (pool(x, y) || pool(x, y + 1) || pool(x - 1, y) || pool(x + 1, y)) cv.open[y * W + x] = 0;
   cv.meta.pools = true;
