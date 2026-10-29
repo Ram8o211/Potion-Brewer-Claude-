@@ -581,6 +581,7 @@ function ripen(g, d, now) {
  */
 function soak(g, d, now) {
   const s = standOf(g, d, now), sky = g.sky || 'clear';
+  /** @type {Plant[]} */
   const plants = s.plants.map((p) => { const q = checkpoint(d, p, now, sky); return { ...q, g: Math.min(1, /** @type {number} */ (q.g) + 0.5), w: 1 }; });
   while (plants.length < d.slots) plants.push({ ...sprout(g, d, s.seq++, now), g: SPROUT_SHARE, w: 1 });
   g.nodes[d.id] = { plants, due: null, seq: s.seq };

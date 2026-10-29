@@ -90,7 +90,7 @@ export const identityKey = (v) => `${v.v}|${v.key}|${v.shape}|${v.region}|${v.se
  */
 export function encodeIdentity(v) {
   const json = JSON.stringify([v.v, v.key, v.shape, v.region, v.origin, v.seed, v.rare ? 1 : 0, v.color, v.fx, v.arc, v.glow]);
-  const b64 = typeof btoa === 'function' ? btoa(unescape(encodeURIComponent(json))) : Buffer.from(json, 'utf8').toString('base64');
+  const b64 = typeof btoa === 'function' ? btoa(unescape(encodeURIComponent(json))) : /** @type {any} */ (globalThis).Buffer.from(json, 'utf8').toString('base64');
   return 'pv' + b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
@@ -102,7 +102,7 @@ export function decodeIdentity(s) {
   if (typeof s !== 'string' || !s.startsWith('pv')) return null;
   try {
     const b64 = s.slice(2).replace(/-/g, '+').replace(/_/g, '/');
-    const json = typeof atob === 'function' ? decodeURIComponent(escape(atob(b64))) : Buffer.from(b64, 'base64').toString('utf8');
+    const json = typeof atob === 'function' ? decodeURIComponent(escape(atob(b64))) : /** @type {any} */ (globalThis).Buffer.from(b64, 'base64').toString('utf8');
     const [v, key, shape, region, origin, seed, rare, color, fx, arc, glow] = JSON.parse(json);
     const id = { v, key, shape, region, origin, seed, rare: !!rare, color, fx, arc, glow: glow || 0 };
     return validIdentity(id) ? id : null;

@@ -86,11 +86,11 @@ export function plant(d, stage, o = {}) {
 
 export function icon(d) {
   const m = new Model(), P = d.m, rng = stream(d, 'icon');
-  // a sprig of three leaves on a cut stem
-  m.stroke([[-8, 12], [-2, 4], [2, -6]], [2, 1.4], 'stem');
-  hleaf(m, d, -2, 4, -Math.PI + 0.5, 13, rng, -0.05);
-  hleaf(m, d, 0, 0, -0.25, 13, rng, 0);
-  hleaf(m, d, 2, -6, -Math.PI / 2 - 0.2, 15, rng, 0.05);
+  // a bunch of three broad leaves on a cut stub
+  m.stroke([[0, 14], [0, 8]], 2.4, 'stem');
+  hleaf(m, d, 0, 9, -Math.PI + 0.75, 17, rng, -0.05);
+  hleaf(m, d, 0, 9, -0.75, 17, rng, -0.02);
+  hleaf(m, d, 0, 9, -Math.PI / 2 + 0.05, 20, rng, 0.05);
   if (P.fruit === 'berry') for (let k = 0; k < 3; k++) m.ellipse(-4 + k * 3, 10 + (k % 2) * 2, 2.2, 2.2, 'main');
   else if (P.fruit === 'bell') { m.poly(ellipse(-5, 10, 2.5, 3.2), 'main', {}); m.dot(-5, 13, 'main', { lum: 0.1 }); }
   return m;

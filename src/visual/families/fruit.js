@@ -54,13 +54,13 @@ export function fruit(m, d, rng, x, y, s, ripe = true, ang = Math.PI / 2) {
 }
 
 /** A dry umbel: spokes from a stem top, each ending in a cluster of seeds. */
-function umbel(m, d, rng, x, y, r, ripe) {
+function umbel(m, d, rng, x, y, r, ripe, s = 1) {
   const P = d.m;
   for (let i = 0; i < P.rays; i++) {
     const a = -Math.PI / 2 + ((i / (P.rays - 1)) - 0.5) * 2.4;
     const ex = x + Math.cos(a) * r, ey = y + Math.sin(a) * r * 0.55;
     m.line([[x, y], [ex, ey]], 'stem', { lum: 0.55, clip: false });
-    for (let k = 0; k < 3; k++) fruit(m, d, rng, ex + (k - 1) * 1.5, ey - (k % 2), ripe ? 1 : 0.75, ripe);
+    for (let k = 0; k < 3; k++) fruit(m, d, rng, ex + (k - 1) * 1.5 * s, ey - (k % 2) * s, (ripe ? 1 : 0.75) * s, ripe);
   }
   marks(m, d, rng, x, y - r * 0.4, r * 0.8, r * 0.4);
 }
@@ -83,7 +83,7 @@ export function plant(d, stage, o = {}) {
   // a little shrub: woody stems fanning out, leaves at their joints, fruit hanging below
   const stems = P.woody ? 3 : 2;
   for (let b = 0; b < stems; b++) {
-    const f = stems === 1 ? 0 : b / (stems - 1) - 0.5;
+    const f = b / (stems - 1) - 0.5;
     const tx = f * W * 0.8 * g, ty = -H * g * (1 - Math.abs(f) * 0.4);
     const pts = stemPts(0, 0, tx, ty, f * 0.6);
     m.stroke(pts, [2 + d.tr.thick * 1.5, 1], P.woody ? 'wood' : 'stem', { noOutline: true });
@@ -104,7 +104,7 @@ export function plant(d, stage, o = {}) {
 
 export function icon(d) {
   const m = new Model(), P = d.m, rng = stream(d, 'icon');
-  if (d.form === 'seed') { m.stroke([[0, 16], [0, 0]], 2, 'stem'); umbel(m, d, rng, 0, 0, 13, true); return m; }
+  if (d.form === 'seed') { m.stroke([[0, 9], [0, 0]], 2, 'stem'); umbel(m, d, rng, 0, 0, 12, true, 1.7); return m; }
   m.stroke([[-10, -10], [0, -6], [6, -12]], 1.6, P.woody ? 'wood' : 'stem');
   leaf(m, 0, -6, -0.9, 12, 4.5, { shape: P.leafShape, teeth: P.teeth });
   if (d.form === 'berry') {

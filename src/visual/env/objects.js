@@ -152,7 +152,7 @@ export function fern(rng, size, o = {}) {
     for (let i = 0; i <= 8; i++) { const t = i / 8, bend = t * t * 0.9 * Math.sign(a + Math.PI / 2 || 1); pts.push([Math.cos(a + bend) * size * t, Math.sin(a + bend) * size * t * 0.85]); }
     m.stroke(/** @type {any} */ (pts), [1.4, 0.8], o.leaf || 'leaf', { noOutline: true, tone: -0.1 });
     for (let i = 2; i < 8; i++) {
-      const q = pts[i], s = 1.8 * (1 - i / 10);
+      const q = /** @type {[number, number]} */ (pts[i]), s = 1.8 * (1 - i / 10);
       m.poly(blade(q, a - 1.2, size * 0.18 * (1 - i / 10) + 1, s, PROFILES.lance), o.leaf || 'leaf', { shade: 'fold', tone: 0.04 });
       m.poly(blade(q, a + 1.2, size * 0.18 * (1 - i / 10) + 1, s, PROFILES.lance), o.leaf || 'leaf', { shade: 'fold', tone: -0.04 });
     }

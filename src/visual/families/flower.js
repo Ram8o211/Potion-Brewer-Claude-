@@ -81,7 +81,7 @@ export function head(m, d, x, y, r, o = {}) {
     const ww = wid * (0.7 + 0.3 * Math.abs(Math.cos(p.a))) * (1 - p.L * 0.2);
     const mat = p.L ? 'main2' : 'main';
     m.poly(blade([x, y], ang, pl, ww, prof, { curl: kind === 'star' ? 0.3 : 0 }), mat, { shade: 'round', tone: p.back ? -0.12 : p.L ? 0.05 : 0 });
-    const tip = [x + Math.cos(ang) * pl, y + Math.sin(ang) * pl];
+    const tip = /** @type {[number, number]} */ ([x + Math.cos(ang) * pl, y + Math.sin(ang) * pl]);
     if (P.petalMark === 'tip' && pl > 3) m.line([[x + Math.cos(ang) * pl * 0.7, y + Math.sin(ang) * pl * 0.7], tip], 'accent', { lum: 0.65 });
     if (P.petalMark === 'stripe' && pl > 3) m.line([[x + Math.cos(ang) * pl * 0.25, y + Math.sin(ang) * pl * 0.25], [x + Math.cos(ang) * pl * 0.75, y + Math.sin(ang) * pl * 0.75]], 'mark', { lum: 0.4 });
   }
@@ -253,9 +253,9 @@ export function icon(d) {
     head(m, d, 2, -3, 9, { seed: 0 });
     return m;
   }
-  m.stroke([[-6, 18], [-3, 8], [0, 0]], [2, 1.6], 'stem');
-  leaf(m, -4, 11, -Math.PI + 0.6, 11, 3.6, { shape: P.leafShape, teeth: P.teeth });
-  head(m, d, 0, 0, 12, { view: 'front', seed: 0 });
+  m.stroke([[-4, 13], [-2, 6], [0, 0]], [2.4, 1.8], 'stem');
+  leaf(m, -3, 9, -Math.PI + 0.5, 10, 3.8, { shape: P.leafShape, teeth: P.teeth });
+  head(m, d, 0, 0, 13, { view: 'front', seed: 0 });
   return m;
 }
 
