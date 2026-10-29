@@ -90,28 +90,38 @@ export class WildsView {
     // the scene and its caption form one column, so a landscape phone can
     // keep the scene in view beside the deposit list
     el.append(this.tabs, h('div', { class: 'wilds-scene' }, h('div', { class: 'scene-wrap' }, this.canvas), this.info), h('div', { class: 'wilds-list' }, this.sky, this.list, this.foot));
+    // the last moment the player touched this room (pre-generation waits for a pause)
+    this.lastInput = 0;
+    this.warmTimer = 0;
+    for (const ev of ['pointerdown', 'pointermove', 'wheel', 'keydown']) el.addEventListener(ev, () => { this.lastInput = performance.now(); }, { passive: true });
     this.refresh();
-    this.prewarm();
   }
 
   /**
-   * Generate the regions the player can travel to, and their plants'
-   * sprites, while the browser is idle — one region at a time — so opening
-   * a region later only draws what is already made.
+   * Generate the other regions the player can travel to, and their plants'
+   * sprites, while the Wilds room is open and the player has paused — one
+   * region per idle moment, never during input or in another room — so
+   * travelling to them later only draws what is already made.
    */
   prewarm() {
+    if (this.warmTimer) return;
     const st = this.lab.state, seed = st.seed;
-    const todo = REGIONS.filter((r) => this.unlocked(r)).map((r) => r.id);
-    const idle = typeof requestIdleCallback === 'function' ? (fn) => requestIdleCallback(fn, { timeout: 4000 }) : (fn) => setTimeout(fn, 200);
-    const next = () => {
-      if (this.lab.state !== st) return;
-      const region = todo.shift();
-      if (!region) return;
-      sceneCanvas(region, seed);
-      for (const d of st.deposits.filter((x) => x.region === region)) silhouetteOf(st.lookup(d.materialId));
-      idle(next);
+    const todo = REGIONS.filter((r) => this.unlocked(r) && r.id !== this.region).map((r) => r.id);
+    const idle = typeof requestIdleCallback === 'function' ? (fn) => requestIdleCallback(fn) : (fn) => setTimeout(fn, 50);
+    const tick = () => {
+      this.warmTimer = 0;
+      if (this.lab.state !== st || !todo.length) return;
+      // only while this room is shown and nobody is touching it
+      if (this.lab.view !== 'wilds' || performance.now() - this.lastInput < 1500) { this.warmTimer = setTimeout(tick, 1500); return; }
+      idle(() => {
+        if (this.lab.view !== 'wilds' || performance.now() - this.lastInput < 1500) { this.warmTimer = setTimeout(tick, 1500); return; }
+        const region = /** @type {string} */ (todo.shift());
+        sceneCanvas(region, seed);
+        for (const d of st.deposits.filter((x) => x.region === region)) silhouetteOf(st.lookup(d.materialId));
+        if (todo.length) this.warmTimer = setTimeout(tick, 400);
+      });
     };
-    idle(next);
+    this.warmTimer = setTimeout(tick, 1500);
   }
 
   unlocked(r) {
@@ -192,6 +202,7 @@ export class WildsView {
     clear(this.foot).append(`Room for ${st.cap.storage} ml of each ingredient. ${st.has('satchel') ? 'Your satchel carries half as much again. ' : ''}Only mature plants can be harvested. New sprouts come up at random spots until the ground is full again, even while the game is closed, and each new day brings every plant on. Living plants grow faster in damp soil: water them (rain does it for you), and they drink it up over a few hours — a riverbank or a bog stays damp far longer than a meadow or the crags. Stones, crystals and shells come back with time and the weather.`);
     this.paintBg();
     this.grow();
+    this.prewarm();
   }
 
   /** What a stand holds, in words. @param {any} d @param {any} s status */

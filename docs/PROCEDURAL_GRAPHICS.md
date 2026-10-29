@@ -183,19 +183,24 @@ file.
 Generation happens outside the animation loop: a region's scene is
 composed once per world and cached as a canvas (the last six); species
 frames, icons and pieces are rasterized once and cached (LRU of 500
-frames). After the Wilds view is built, the regions the player can reach
-and their species are pre-generated one per idle callback, so opening a
-region normally only draws cached canvases. Per frame the view draws the
+frames). While the Wilds room is open and the player has paused for
+1.5 s, the other regions they can travel to and their species are
+pre-generated, one per idle callback — never during input and never in
+another room (an earlier version pre-generated at game start and was
+caught by the browser tests delaying a drag in the Trials room), so
+travelling between regions normally only draws cached canvases. Per frame the view draws the
 cached scene, its plants' cached canvases and a few dozen animated pixels.
 The rasterizer fills polygons by scanline spans and strokes segment by
 segment, with reused scratch buffers.
 
 ## Limitations
 
-* Generation is synchronous on the main thread. Pre-generation in idle time
-  hides it in normal play, but a slow phone switching to a region before it
-  was pre-generated pays the cold cost once (see *Measured*). A Web Worker
-  would remove that hitch; it was not needed to keep frame times low.
+* Generation is synchronous on the main thread. The first region shown in
+  a session is generated when the Wilds room opens (tens to a couple of
+  hundred milliseconds on desktop, several times that on a slow phone);
+  the others are pre-generated during pauses in that room. Moving
+  generation into a Web Worker would remove the remaining one-off hitch,
+  but the build's single-entry bundler would need a second bundle for it.
 * The environments are composed from a fixed repertoire per region (with
   seed-chosen features and palettes); they vary clearly between worlds but
   do not invent new kinds of landmark.
@@ -233,8 +238,9 @@ Chromium (desktop, this development container), from the in-game probe
   are gone); source art in the repository: 31 MB → 1.4 MB.
 
 On a mid-range phone expect roughly three to five times these generation
-times; with idle pre-generation they are paid while the player is in
-another room, and never inside the animation loop.
+times; they are paid once per region and world, when a region is first
+shown or during a pause in the Wilds room, never inside the animation
+loop.
 
 ## Screenshots
 
