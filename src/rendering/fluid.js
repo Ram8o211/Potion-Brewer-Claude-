@@ -15,7 +15,7 @@
 //     own material — fibres, speckles, facets, veins — with cracks where the
 //     pestle has damaged them, so they break down as the simulation does; a
 //     wild ingredient's object is painted from the piece it was poured as
-//     (one of its four in the piece atlas, rendering/pieces-art.js), turning
+//     (one of its four procedural pieces, visual/pieces.js), turning
 //     with it and eaten away particle by particle;
 //   • a brew takes the dominant colour of the painted ingredients in it,
 //     blending into gradients as it diffuses (brew-palette.js);
@@ -38,8 +38,7 @@
 
 import { PHASE, SIM } from '../simulation/constants.js';
 import { LOOK, piece } from '../materials/shapes.js';
-import { PIECE_ART, loadPieceArt, piecePalette } from './pieces-art.js';
-import { PIECE_CELL } from '../materials/pieces.js';
+import { PIECE_ART, PIECE_CELL, piecePalette } from '../visual/pieces.js';
 import { NE } from '../alchemy/effects.js';
 import { MAX_SPECIES } from '../reactions/species.js';
 import { PotionParticles } from './potion-fx.js';
@@ -213,8 +212,7 @@ export class FluidRenderer {
       if (p.glow[i] > 0.02 || p.burn[i] > 0.02) anyGlow = true;
       if (p.auraI[i] > 0.002) for (let k = 0, o = i * NE; k < NE; k++) if (p.auraFx[o + k] > 0) fxMask |= 1 << k;
     }
-    // the atlas also holds the palettes brews take from their painted ingredients
-    if (!PIECE_ART.loading) loadPieceArt();
+    // the pieces' atlas also holds the palettes brews take from their ingredients
     const painted = preparePalettes(sim);
     // awakened forms are drawn with the glow of what they woke from
     const vis = anyGlow ? drawnGlowTable(sim) : null;

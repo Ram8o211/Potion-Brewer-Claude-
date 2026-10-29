@@ -13,6 +13,18 @@
 // runs per frame, so the wilds cost nothing while the player brews (and
 // grow while the game is closed). A new shop day also brings every stand on.
 //
+// Living plants drink. Each keeps the moisture of the soil round it: the
+// habitat's own wetness (a riverbank or a bog stays damp, a meadow dries out,
+// the crags are parched), raised by rain and fog and lowered by a heatwave;
+// watering lifts it, and it then dries back toward the habitat's level over
+// hours (a wet habitat keeps it longer). How fast a plant grows follows how
+// moist its soil is for its kind — slowly when dry, never stopping
+// completely, up to half again its usual pace when well watered, and no
+// faster however much it is watered. Growth and moisture are saved as a
+// checkpoint and resolved in closed form, so resolving at any moments in
+// any order gives the same plant. Stones, crystals, crusts and shells do not
+// drink: they come back with time and the weather, as they always have.
+//
 // How much one harvest brings depends on what the player does and when:
 //   • the method each ingredient needs (pick, dig, chip, scrape, sweep) and
 //     whether the right tool is in the satchel — by hand, half as much;
@@ -27,6 +39,7 @@
 //     until it is saturated again.
 
 import { Rng, hashString } from '../core/rng.js';
+import { isBotanical, familyOf, habitatOf } from '../visual/taxonomy.js';
 
 /**
  * @typedef {Object} Region
@@ -66,6 +79,8 @@ export const REGION_BY_ID = Object.fromEntries(REGIONS.map((r) => [r.id, r]));
  * @property {number} rank       guild rank needed
  * @property {boolean} rare
  * @property {string} [place]    a name for the spot
+ * @property {boolean} botanical a living plant that drinks (else a mineral or shell that comes back with time)
+ * @property {number} thirst     how much moisture it needs to grow at full pace (0..1)
  */
 
 /**
@@ -74,6 +89,9 @@ export const REGION_BY_ID = Object.fromEntries(REGIONS.map((r) => [r.id, r]));
  * @property {number} x      0..1 where it sprouted in the region scene
  * @property {number} y      0..1
  * @property {number} born   wall-clock time it sprouted
+ * @property {number} [g]    a living plant's growth (0..1) at its checkpoint `t`
+ * @property {number} [t]    its checkpoint time
+ * @property {number} [w]    the moisture of its soil (0..1) at `t`
  */
 
 /** Names of spots within each region (so two deposits read apart). */
@@ -129,10 +147,19 @@ export function generateDeposits(world, lookup) {
         take,
         rank: Math.max(region.rank, m.wild.rank || 0),
         rare,
+        botanical: isBotanical(m.wild.shape),
+        thirst: thirstOf(m.wild.shape, region.id),
       });
     });
   }
   return out;
+}
+
+/** How much moisture a kind of plant needs to grow at full pace (0..1): mosses, reeds and fungi most, wood least; crag plants are hardy. */
+export function thirstOf(shape, region) {
+  const f = familyOf(shape);
+  const base = f === 'moss' || f === 'reed' || f === 'fungus' ? 0.62 : f === 'bark' ? 0.36 : f === 'root' ? 0.42 : 0.48;
+  return Math.round(Math.max(0.15, Math.min(0.8, base + (region === 'crags' ? -0.25 : region === 'river' || region === 'moonfen' ? 0.08 : 0))) * 100) / 100;
 }
 
 /**
@@ -155,8 +182,11 @@ export function generateDeposits(world, lookup) {
 
 /** Fresh gathering state: every stand saturated, some of it already mature. */
 export function createGathering(now = Date.now()) {
-  return { nodes: /** @type {Record<string, Stand>} */ ({}), marks: /** @type {Mark[]} */ ([]), total: 0, trips: 0, created: now };
+  return { v: GATHER_VERSION, nodes: /** @type {Record<string, Stand>} */ ({}), marks: /** @type {Mark[]} */ ([]), total: 0, trips: 0, created: now, sky: 'clear', watered: 0 };
 }
+
+/** Version of the gathering state: 2 adds the moisture and growth checkpoints of living plants. */
+export const GATHER_VERSION = 2;
 
 const finite = (/** @type {any} */ v) => typeof v === 'number' && Number.isFinite(v);
 
@@ -170,7 +200,8 @@ export function normalizeGathering(g, now = Date.now()) {
       // a stand saved before plants grew one by one (stock in ml) starts afresh, saturated
       if (!v || typeof v !== 'object' || !Array.isArray(v.plants)) continue;
       const plants = v.plants.filter((p) => p && typeof p.id === 'string' && finite(p.x) && finite(p.y) && finite(p.born))
-        .map((p) => ({ id: p.id, x: Math.min(1, Math.max(0, p.x)), y: Math.min(1, Math.max(0, p.y)), born: Math.min(p.born, now) }));
+        .map((p) => ({ id: p.id, x: Math.min(1, Math.max(0, p.x)), y: Math.min(1, Math.max(0, p.y)), born: Math.min(p.born, now),
+          ...(finite(p.g) && finite(p.t) ? { g: Math.min(1, Math.max(0, p.g)), t: Math.min(p.t, now), w: finite(p.w) ? Math.min(1, Math.max(0, p.w)) : 0.5 } : {}) }));
       out.nodes[id] = { plants, due: finite(v.due) ? v.due : null, seq: finite(v.seq) ? v.seq : plants.length, ...(v.scar ? { scar: true } : {}) };
     }
   }
@@ -180,13 +211,97 @@ export function normalizeGathering(g, now = Date.now()) {
   }
   out.total = Number.isFinite(g.total) ? g.total : 0;
   out.trips = Number.isFinite(g.trips) ? g.trips : 0;
+  out.watered = Number.isFinite(g.watered) ? g.watered : 0;
+  // a save from before plants drank (v1) is brought up to date by migrateGathering, which knows the deposits
+  out.v = Number.isFinite(g.v) ? g.v : 1;
+  if (typeof g.sky === 'string') out.sky = g.sky;
   return out;
 }
 
-/** A new sprout of a stand, somewhere random in its region. @param {ReturnType<typeof createGathering>} g @param {Deposit} d @param {number} seq @param {number} born @returns {Plant} */
-function sprout(g, d, seq, born) {
+// ------------------------------------------------------------------ moisture and growth
+
+/** A dry plant still grows at this share of its usual pace; a well-watered one at most at GROW_MAX. */
+export const GROW_FLOOR = 0.2;
+export const GROW_MAX = 1.5;
+/** How much one watering raises the moisture of a plant's soil. */
+export const WATER_DOSE = 0.5;
+
+/**
+ * The moisture conditions of a deposit under the day's weather: the level
+ * its soil settles at (base), how long watered soil takes to dry back
+ * (tau, ms), the moisture below which it grows at its slowest (lo) and from
+ * which at its fastest (hi), and a pace factor for the cold (k).
+ * @param {Deposit} d @param {string} [sky] weather id
+ */
+export function moistureEnv(d, sky = 'clear') {
+  const hab = habitatOf(d.region);
+  let base = hab.wet, tau = hab.retain * 3600000, k = 1;
+  if (sky === 'rain' || sky === 'storm') base = Math.max(base, 0.92);
+  else if (sky === 'fog') base = Math.min(1, base + 0.1);
+  else if (sky === 'heat') { base = Math.max(0.05, base - 0.15); tau *= 0.6; }
+  else if (sky === 'frost') k = 0.6;
+  const lo = (d.thirst ?? 0.45) * 0.6;
+  return { base, tau, lo, hi: lo + 0.35, k };
+}
+
+/** ∫₀^S clamp((w(s) − lo)/(hi − lo), 0, 1) ds for w(s) = b + (w0 − b)·e^(−s/τ), in closed form. */
+function wetIntegral(w0, b, tau, lo, hi, S) {
+  if (S <= 0) return 0;
+  const wAt = (s) => b + (w0 - b) * Math.exp(-s / tau);
+  const cuts = [0, S];
+  if (Math.abs(w0 - b) > 1e-9) for (const x of [lo, hi]) {
+    const r = (x - b) / (w0 - b);
+    if (r > 0 && r < 1) { const sx = -tau * Math.log(r); if (sx > 0 && sx < S) cuts.push(sx); }
+  }
+  cuts.sort((p, q) => p - q);
+  let tot = 0;
+  for (let i = 0; i < cuts.length - 1; i++) {
+    const sa = cuts[i], sb = cuts[i + 1], wm = wAt((sa + sb) / 2);
+    if (wm <= lo) continue;
+    if (wm >= hi) { tot += sb - sa; continue; }
+    tot += ((b - lo) * (sb - sa) + tau * (w0 - b) * (Math.exp(-sa / tau) - Math.exp(-sb / tau))) / (hi - lo);
+  }
+  return tot;
+}
+
+/**
+ * A plant's growth (0..1) and the moisture of its soil now: a living plant
+ * from its checkpoint (or, never checkpointed, from when it sprouted, in
+ * soil at the habitat's level); a mineral or shell simply by time.
+ * @param {Deposit} d @param {Plant} p @param {number} now @param {string} [sky]
+ */
+export function growthOf(d, p, now, sky = 'clear') {
+  if (!d.botanical) return { g: Math.max(0, Math.min(1, (now - p.born) / d.growMs)), w: null };
+  const e = moistureEnv(d, sky);
+  const t0 = p.t ?? p.born, g0 = p.g ?? 0, w0 = p.w ?? e.base;
+  // a clock set back never undoes growth, nor grows anything
+  const S = Math.max(0, now - t0);
+  const w = e.base + (w0 - e.base) * Math.exp(-S / e.tau);
+  const grown = (e.k / d.growMs) * (GROW_FLOOR * S + (GROW_MAX - GROW_FLOOR) * wetIntegral(w0, e.base, e.tau, e.lo, e.hi, S));
+  return { g: Math.min(1, g0 + grown), w };
+}
+
+/** Time until a plant is mature (0 if it is), under today's weather. @param {Deposit} d @param {Plant} p @param {number} now @param {string} [sky] */
+export function matureIn(d, p, now, sky = 'clear') {
+  if (!d.botanical) return Math.max(0, p.born + d.growMs - now);
+  if (growthOf(d, p, now, sky).g >= 1) return 0;
+  let lo = 0, hi = d.growMs / (GROW_FLOOR * moistureEnv(d, sky).k) + 1;
+  for (let i = 0; i < 40; i++) { const mid = (lo + hi) / 2; if (growthOf(d, p, now + mid, sky).g >= 1) hi = mid; else lo = mid; }
+  return Math.ceil(hi);
+}
+
+/** The plant with its state written down at `now` (a checkpoint): what is saved when anything changes it. @param {Deposit} d @param {Plant} p @param {number} now @param {string} [sky] */
+export function checkpoint(d, p, now, sky = 'clear') {
+  if (!d.botanical) return { id: p.id, x: p.x, y: p.y, born: p.born };
+  const { g, w } = growthOf(d, p, now, sky);
+  return { id: p.id, x: p.x, y: p.y, born: p.born, g: Math.round(g * 1e6) / 1e6, t: Math.max(now, p.t ?? -Infinity), w: Math.round(/** @type {number} */ (w) * 1e6) / 1e6 };
+}
+
+/** A new sprout of a stand, somewhere random in its region (a living one in soil at the habitat's level). @param {ReturnType<typeof createGathering>} g @param {Deposit} d @param {number} seq @param {number} born @param {number} [grown] @returns {Plant} */
+function sprout(g, d, seq, born, grown = 0) {
   const rng = new Rng(hashString(`sprout:${g.created}:${d.id}:${seq}`));
-  return { id: `${d.id}#${seq}`, x: Math.round(rng.range(0.06, 0.94) * 1000) / 1000, y: Math.round(rng.range(0.56, 0.9) * 1000) / 1000, born: Math.round(born) };
+  const p = { id: `${d.id}#${seq}`, x: Math.round(rng.range(0.06, 0.94) * 1000) / 1000, y: Math.round(rng.range(0.56, 0.9) * 1000) / 1000, born: Math.round(born) };
+  return d.botanical ? { ...p, g: grown, t: p.born, w: moistureEnv(d, g.sky).base } : p;
 }
 
 /**
@@ -197,7 +312,12 @@ function sprout(g, d, seq, born) {
 function untouched(g, d, now) {
   const t0 = Math.min(g.created, now), rng = new Rng(hashString(`stand:${g.created}:${d.id}`));
   const plants = [];
-  for (let k = 0; k < d.slots; k++) plants.push(sprout(g, d, k, t0 - d.growMs * (k === 0 ? 1.2 : rng.range(0.1, 1.6))));
+  for (let k = 0; k < d.slots; k++) {
+    const age = d.growMs * (k === 0 ? 1.2 : rng.range(0.1, 1.6));
+    const p = sprout(g, d, k, t0 - age);
+    // a living plant's growth so far is written at the moment the wilds were first walked
+    plants.push(d.botanical ? { ...p, g: Math.min(1, age / d.growMs), t: t0 } : p);
+  }
   return { plants, due: null, seq: d.slots };
 }
 
@@ -221,10 +341,18 @@ export function standOf(g, d, now = Date.now()) {
   return s;
 }
 
-/** A plant's stage and how far it has grown (0..1). @param {Deposit} d @param {Plant} p @param {number} [now] */
-export function plantStage(d, p, now = Date.now()) {
-  const grown = Math.max(0, Math.min(1, (now - p.born) / d.growMs));
-  return { stage: grown >= 1 ? 'mature' : grown >= SPROUT_SHARE ? 'ripe' : 'sprout', grown, matureIn: Math.max(0, p.born + d.growMs - now) };
+/**
+ * A plant's stage, how far it has grown (0..1), how moist its soil is and
+ * when it will be mature.
+ * @param {Deposit} d @param {Plant} p @param {number} [now] @param {string} [sky]
+ */
+export function plantStage(d, p, now = Date.now(), sky = 'clear') {
+  const { g: grown, w } = growthOf(d, p, now, sky);
+  const e = d.botanical ? moistureEnv(d, sky) : null;
+  return {
+    stage: grown >= 1 ? 'mature' : grown >= SPROUT_SHARE ? 'ripe' : 'sprout', grown, matureIn: matureIn(d, p, now, sky),
+    moisture: w, thirsty: !!e && grown < 1 && /** @type {number} */ (w) < e.lo + (e.hi - e.lo) * 0.25,
+  };
 }
 
 /**
@@ -234,20 +362,78 @@ export function plantStage(d, p, now = Date.now()) {
  * @param {ReturnType<typeof createGathering>} g @param {Deposit} d @param {number} [now]
  */
 export function depositStatus(g, d, now = Date.now()) {
-  const s = standOf(g, d, now);
-  const plants = s.plants.map((p) => ({ ...p, ...plantStage(d, p, now) }));
+  const s = standOf(g, d, now), sky = g.sky || 'clear';
+  const plants = s.plants.map((p) => ({ ...p, ...plantStage(d, p, now, sky) }));
   const mature = plants.filter((p) => p.stage === 'mature').length;
-  // the sprouts still to come, then the last of them growing up
+  // the sprouts still to come, then the last of them growing up (in soil at the habitat's level)
   const missing = d.slots - plants.length;
+  const fresh = missing > 0 && s.due !== null ? matureIn(d, sprout(g, d, s.seq, s.due), s.due, sky) : 0;
   const lastSprout = missing > 0 && s.due !== null ? s.due + (missing - 1) * every(d, s) : now;
-  const fullAt = Math.max(now, lastSprout + (missing > 0 ? d.growMs : 0), ...plants.map((p) => p.born + d.growMs));
-  const nextAt = mature ? now : Math.min(...plants.map((p) => p.born + d.growMs), s.due !== null ? s.due + d.growMs : Infinity);
+  const fullAt = Math.max(now, lastSprout + fresh, ...plants.map((p) => now + p.matureIn));
+  const nextAt = mature ? now : Math.min(...plants.map((p) => now + p.matureIn), s.due !== null ? s.due + fresh : Infinity);
   const stock = mature * d.take;
+  const growing = plants.filter((p) => p.stage !== 'mature');
   return {
     plants, mature, stock, available: stock,
     fraction: plants.reduce((a, p) => a + p.grown, 0) / d.slots,
     fullIn: fullAt - now, nextIn: Math.max(0, nextAt - now), scarred: !!s.scar,
+    // how damp the growing plants' soil is (null for minerals), and how many of them are thirsty
+    moisture: d.botanical && growing.length ? growing.reduce((a, p) => a + /** @type {number} */ (p.moisture), 0) / growing.length : null,
+    thirsty: growing.filter((p) => p.thirsty).length,
   };
+}
+
+/**
+ * Water living plants: the moisture of each one's soil rises by WATER_DOSE
+ * (to at most 1). Their state is checkpointed first, so nothing grows twice.
+ * Returns how many plants drank (0 for a mineral deposit).
+ * @param {ReturnType<typeof createGathering>} g @param {Deposit} d @param {string[]|null} ids the plants to water (null: every growing one) @param {number} [now]
+ */
+export function water(g, d, ids = null, now = Date.now()) {
+  if (!d.botanical) return 0;
+  const s = standOf(g, d, now), sky = g.sky || 'clear';
+  let n = 0;
+  const plants = s.plants.map((p) => {
+    const q = checkpoint(d, p, now, sky);
+    if ((ids ? ids.includes(p.id) : /** @type {number} */ (q.g) < 1) && /** @type {number} */ (q.w) < 0.999) { q.w = Math.min(1, /** @type {number} */ (q.w) + WATER_DOSE); n++; }
+    return q;
+  });
+  g.nodes[d.id] = { plants, due: s.due, seq: s.seq, ...(s.scar ? { scar: true } : {}) };
+  if (n) g.watered = (g.watered || 0) + n;
+  return n;
+}
+
+/**
+ * Write every living plant's state down now and change the weather it
+ * grows under (the day has changed). Minerals need nothing.
+ * @param {ReturnType<typeof createGathering>} g @param {Deposit[]} deposits @param {string} sky @param {number} [now]
+ */
+export function setSky(g, deposits, sky, now = Date.now()) {
+  if ((g.sky || 'clear') !== sky) for (const d of deposits) {
+    if (!d.botanical) continue;
+    const s = standOf(g, d, now);
+    g.nodes[d.id] = { plants: s.plants.map((p) => checkpoint(d, p, now, g.sky || 'clear')), due: s.due, seq: s.seq, ...(s.scar ? { scar: true } : {}) };
+  }
+  g.sky = sky;
+}
+
+/**
+ * Bring a save from before plants drank (gathering v1) up to date: every
+ * saved living plant keeps exactly the growth it had (by its age), written
+ * as a checkpoint now in soil at the habitat's level, so nothing ripe is
+ * lost and nothing grows twice.
+ * @param {ReturnType<typeof createGathering>} g @param {Deposit[]} deposits @param {number} [now]
+ */
+export function migrateGathering(g, deposits, now = Date.now()) {
+  if ((g.v || 1) >= GATHER_VERSION) return g;
+  for (const d of deposits) {
+    const node = g.nodes[d.id];
+    if (!node || !d.botanical) continue;
+    const base = moistureEnv(d, g.sky).base;
+    node.plants = node.plants.map((p) => (p.t !== undefined ? p : { ...p, g: Math.max(0, Math.min(1, (now - p.born) / d.growMs)), t: now, w: base }));
+  }
+  g.v = GATHER_VERSION;
+  return g;
 }
 
 /** A thoroughly dug stand sprouts this many times slower until it is saturated again. */
@@ -328,7 +514,6 @@ export function weatherOn(seed, day) {
   return WEATHERS.find((w) => w.id === id) || WEATHERS[0];
 }
 
-const PLANT_SHAPES = new Set(['root', 'leaf', 'petal', 'flower', 'clover', 'moss', 'cap', 'bean', 'pepper', 'bark', 'berry', 'bracket', 'sprig', 'spike', 'seed', 'lily', 'toadstool', 'reed']);
 const FLOWER_SHAPES = new Set(['petal', 'flower', 'clover', 'spike', 'lily']);
 
 /**
@@ -376,8 +561,8 @@ export function harvestable(g, d, plan, now = Date.now()) {
 }
 
 /**
- * A stand grown back at once: its plants all mature, its empty slots filled
- * with mature plants at new spots.
+ * A mineral seam grown back at once: its pieces all formed, its empty slots
+ * filled with formed pieces at new spots.
  * @param {ReturnType<typeof createGathering>} g @param {Deposit} d @param {number} now
  */
 function ripen(g, d, now) {
@@ -389,15 +574,29 @@ function ripen(g, d, now) {
 }
 
 /**
- * A new day's weather acts on the deposits: rain grows the plants back in
- * full, a storm the crystal seams.
+ * A night of rain soaks the living plants: their soil is wet through, each
+ * grows on by half its growing time, and an empty slot comes up already
+ * half-grown — a bounty, but not every plant ripe at once.
+ * @param {ReturnType<typeof createGathering>} g @param {Deposit} d @param {number} now
+ */
+function soak(g, d, now) {
+  const s = standOf(g, d, now), sky = g.sky || 'clear';
+  const plants = s.plants.map((p) => { const q = checkpoint(d, p, now, sky); return { ...q, g: Math.min(1, /** @type {number} */ (q.g) + 0.5), w: 1 }; });
+  while (plants.length < d.slots) plants.push({ ...sprout(g, d, s.seq++, now), g: SPROUT_SHARE, w: 1 });
+  g.nodes[d.id] = { plants, due: null, seq: s.seq };
+}
+
+/**
+ * A night's weather acts on the deposits: rain soaks the living plants
+ * (their soil, their growth), a storm recharges the crystal seams.
  * @param {ReturnType<typeof createGathering>} g @param {Deposit[]} deposits @param {Weather} weather @param {(id:string)=>any} lookup @param {number} [now]
  */
 export function weatherRegrowth(g, deposits, weather, lookup, now = Date.now()) {
   for (const d of deposits) {
     const m = lookup(d.materialId);
     const shape = m && m.wild ? m.wild.shape : '';
-    if ((weather.id === 'rain' && PLANT_SHAPES.has(shape)) || (weather.id === 'storm' && (shape === 'crystal' || shape === 'shard'))) ripen(g, d, now);
+    if (weather.id === 'rain' && d.botanical) soak(g, d, now);
+    else if (weather.id === 'storm' && (shape === 'crystal' || shape === 'shard')) ripen(g, d, now);
   }
 }
 
@@ -419,15 +618,16 @@ export function harvest(st, d, opts = {}) {
   const s = standOf(g, d, now);
   const have = st.inventory[d.materialId] ?? 0;
   const room = isFinite(have) ? Math.max(0, st.cap.storage - have) : 0;
-  const ripe = s.plants.filter((p) => plantStage(d, p, now).stage === 'mature').sort((a, b) => a.born - b.born);
+  const sky = g.sky || 'clear';
+  const ripe = s.plants.filter((p) => plantStage(d, p, now, sky).stage === 'mature').sort((a, b) => a.born - b.born);
   const p = opts.plant ? s.plants.find((q) => q.id === opts.plant) : ripe[0];
   if (!p || !ripe.includes(p)) {
     const status = depositStatus(g, d, now);
-    return { ok: false, amount: 0, reason: p ? 'growing' : opts.plant ? 'gone' : 'depleted', nextIn: p ? plantStage(d, p, now).matureIn : status.nextIn };
+    return { ok: false, amount: 0, reason: p ? 'growing' : opts.plant ? 'gone' : 'depleted', nextIn: p ? matureIn(d, p, now, sky) : status.nextIn };
   }
   const amount = Math.floor(Math.min(d.take, room) / 5) * 5;
   if (amount <= 0) return { ok: false, amount: 0, reason: 'full' };
-  const plants = s.plants.filter((q) => q !== p);
+  const plants = s.plants.filter((q) => q !== p).map((q) => checkpoint(d, q, now, sky));
   const scar = !!(opts.thorough || s.scar);
   g.nodes[d.id] = { plants, due: s.due ?? now + every(d, { scar }), seq: s.seq, ...(scar ? { scar: true } : {}) };
   g.marks = g.marks.filter((k) => now - k.at < MARK_MS * 2);
@@ -441,14 +641,20 @@ export function harvest(st, d, opts = {}) {
  * A new shop day: every plant grows on by half its growing time and a stand
  * below its slots puts up half of its missing sprouts (a scarred one, a
  * quarter), on top of wall-clock growth, so a quick player is never stuck
- * waiting.
+ * waiting. (Living plants are checkpointed first, so their growth so far is
+ * kept under the weather it happened in.)
  * @param {ReturnType<typeof createGathering>} g @param {Deposit[]} deposits @param {number} [now]
  */
 export function newDayRegrowth(g, deposits, now = Date.now()) {
+  const sky = g.sky || 'clear';
   for (const d of deposits) {
-    if (!g.nodes[d.id]) continue;
+    if (!g.nodes[d.id] && !d.botanical) continue;
     const s = standOf(g, d, now);
-    const plants = s.plants.map((p) => ({ ...p, born: p.born - d.growMs / 2 }));
+    const plants = s.plants.map((p) => {
+      if (!d.botanical) return { ...p, born: p.born - d.growMs / 2 };
+      const q = checkpoint(d, p, now, sky);
+      return { ...q, g: Math.min(1, /** @type {number} */ (q.g) + 0.5) };
+    });
     const add = Math.ceil((d.slots - plants.length) * (s.scar ? 0.25 : 0.5));
     for (let k = 0; k < add; k++) plants.push(sprout(g, d, s.seq++, now));
     const full = plants.length >= d.slots;

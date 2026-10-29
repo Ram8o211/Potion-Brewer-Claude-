@@ -6,12 +6,13 @@
 // rather than its plain base colour, mixed with the rest of the brew by
 // Beer–Lambert, as derived.js mixes colours.
 //
-// Render-side only: the painting's pixels exist once the atlas has loaded
-// (rendering/pieces-art.js); until then particles keep their own colour.
+// Render-side only: the pieces are drawn procedurally from each species'
+// visual identity (visual/pieces.js); every wild species in the brew is
+// registered here, so its pieces show the look of the world it came from.
 
 import { MAX_SPECIES } from '../reactions/species.js';
 import { srgbToLinear, linearToSrgb } from '../core/color.js';
-import { PIECE_ART, piecePalette } from './pieces-art.js';
+import { PIECE_ART, piecePalette, registerSpecies, onPiecesChanged } from '../visual/pieces.js';
 import { grainSkinOf } from '../materials/shapes.js';
 import { STAIN } from '../simulation/derived.js';
 
@@ -24,6 +25,7 @@ import { STAIN } from '../simulation/derived.js';
 const bySpecies = new WeakMap();
 /** @type {Map<number, number[]|null>} */
 const bySkin = new Map();
+onPiecesChanged(() => bySkin.clear());
 
 /** The painted ingredient a material's colours come from, or null. */
 function paintedSource(def, sim, depth = 0) {
@@ -131,7 +133,7 @@ export function preparePalettes(sim) {
   any = false;
   for (let s = 0; s < sp.count; s++) {
     const d = sp.defs[s];
-    if (d !== slotDef[s]) { slotDef[s] = d; slots[s] = speciesPalette(d, sim); }
+    if (d !== slotDef[s]) { slotDef[s] = d; registerSpecies(d); slots[s] = speciesPalette(d, sim); }
     if (slots[s]) any = true;
   }
   return any;
