@@ -46,7 +46,8 @@ export class PlantGround {
     this.region = region;
     this.open = sc.open;
     this.depth = sc.depth;
-    this.top = Math.max(1, sc.top);
+    // plants are drawn at one size: they grow on the nearer ground, not out on the horizon
+    this.top = Math.max(1, Math.round(sc.top + (SCENE_H - sc.top) * 0.2));
     /** plant id → its spot in scene pixels and the silhouette it was placed with @type {Map<string, {x:number, y:number, s:Silhouette}>} */
     this.spots = new Map();
   }
