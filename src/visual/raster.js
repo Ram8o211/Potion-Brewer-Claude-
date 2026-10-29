@@ -10,11 +10,19 @@
 // and a dark rim along the others. A part lying behind another gets a
 // one-pixel shadow line where they meet, so overlapping petals and leaves
 // read apart.
+//
+// Like Noita's, the texture is coarse: blotches and grains are sampled on a
+// grid of `grain`-pixel cells, and scenery can be drawn whole on a coarser
+// grid (`cell`): every shape is filled in `cell`-pixel squares, so its
+// edges step in blocks and its crust and rims are a block thick.
 
 import { Pixels } from './pixels.js';
 import { noise2, hash2 } from './noise.js';
 import { mixPacked } from './color.js';
 import { INK, materialTone, toneOf } from './style.js';
+
+/** The size of a texture cell (pixels): a blotch's edge and a grain step in squares this big. */
+export const GRAIN = 2;
 
 /** Direction toward the light: from the upper left and in front. */
 const L = (() => { const v = [-0.55, -0.72, 0.62], n = Math.hypot(...v); return v.map((x) => x / n); })();
@@ -86,12 +94,15 @@ const lit = (nx, ny, nz) => clamp01(0.47 + 0.6 * (nx * L[0] + ny * L[1] + nz * L
  * @param {number} w @param {number} h
  * @param {Record<string, number[]>} pal  material → ramp (packed colours, darkest first)
  *   outline: ink the silhouette's inner edge (default); texture: how far a
- *   part's texture roughens the borders between its tones
- * @param {{seed?:number, outline?:boolean, texture?:number}} [o]
+ *   part's texture roughens the borders between its tones; grain: the size
+ *   of a texture cell (pixels, default GRAIN); cell: the size of the squares
+ *   the whole model is filled in (default 1)
+ * @param {{seed?:number, outline?:boolean, texture?:number, grain?:number, cell?:number}} [o]
  * @returns {Raster}
  */
 export function rasterize(model, w, h, pal, o = {}) {
-  const N = w * h, seed = o.seed ?? 1, texAmp = o.texture ?? 1;
+  if ((o.cell ?? 1) > 1) return coarse(model, w, h, pal, o);
+  const N = w * h, seed = o.seed ?? 1, texAmp = o.texture ?? 1, gr = Math.max(1, o.grain ?? GRAIN);
   grow(N);
   const mat = S.mat.subarray(0, N).fill(-1), lum = S.lum.subarray(0, N), tex = S.tex.subarray(0, N);
   // (the part map is returned, so it is the caller's own)
@@ -220,8 +231,8 @@ export function rasterize(model, w, h, pal, o = {}) {
     for (let x = 0; x < w; x++) {
       const k = y * w + x, mi = mat[k];
       if (mi < 0) continue;
-      const g = tex[k] * texAmp;
-      idx[k] = materialTone(ramps[mi].length, lum[k], g > 0 ? noise2(x / 3.5, y / 3.5, seed + mi * 977) : 0, g > 0 ? hash2(x, y, seed + mi * 31) : 0.5, g);
+      const g = tex[k] * texAmp, gx = Math.floor(x / gr), gy = Math.floor(y / gr);
+      idx[k] = materialTone(ramps[mi].length, lum[k], g > 0 ? noise2(gx / (3.5 / gr), gy / (3.5 / gr), seed + mi * 977) : 0, g > 0 ? hash2(gx, gy, seed + mi * 31) : 0.5, g);
     }
   }
   // a part lying behind another darkens a step where they meet
@@ -261,4 +272,22 @@ export function rasterize(model, w, h, pal, o = {}) {
   }
   const glints = model.glints.map(([x, y]) => [Math.floor(x), Math.floor(y)]).filter(([x, y]) => x >= 0 && y >= 0 && x < w && y < h && mat[y * w + x] >= 0);
   return { pix, part, glints: glints.concat(glow.filter((_, i) => i % 3 === 0)) };
+}
+
+/**
+ * A model filled in cell × cell squares: rasterized on the coarse grid (its
+ * texture one square per grain) and every square blown up.
+ * @param {import('./geometry.js').Model} model @param {number} w @param {number} h @param {Record<string, number[]>} pal @param {any} o
+ * @returns {Raster}
+ */
+function coarse(model, w, h, pal, o) {
+  const c = Math.round(o.cell), cw = Math.ceil(w / c), ch = Math.ceil(h / c);
+  const m = model.clone().transform(1 / c, 0, 0, 1 / c, 0, 0, 1 / c);
+  const r = rasterize(m, cw, ch, pal, { ...o, cell: 1, grain: 1 });
+  const pix = new Pixels(w, h), part = new Int16Array(w * h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const s = Math.floor(y / c) * cw + Math.floor(x / c), k = y * w + x;
+    pix.px[k] = r.pix.px[s]; part[k] = r.part[s];
+  }
+  return { pix, part, glints: r.glints.map(([x, y]) => [x * c + (c >> 1), y * c + (c >> 1)]) };
 }

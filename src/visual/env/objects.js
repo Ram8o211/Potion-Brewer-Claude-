@@ -10,21 +10,46 @@ import { Model, blade, PROFILES, bezier, lumpy, ellipse, polygon } from '../geom
 const R = (rng) => () => rng.next();
 
 /**
- * A crown of foliage: dark inner masses, mid clusters, lit clusters toward
- * the upper left and a ragged rim of single leaves.
+ * A block of leaves: a rectangle with its corners cut in a step, its sides
+ * nudged in and out a little (the crown is built of these, not of discs).
+ * @param {number} x @param {number} y @param {number} hw @param {number} hh @param {() => number} rnd
+ */
+export function leafBlock(x, y, hw, hh, rnd) {
+  const c = Math.max(1, Math.round(Math.min(hw, hh) * 0.4)), j = () => Math.round((rnd() - 0.5) * 2);
+  const x0 = Math.round(x - hw) + j(), x1 = Math.round(x + hw) + j(), y0 = Math.round(y - hh) + j(), y1 = Math.round(y + hh) + j();
+  return /** @type {import('../geometry.js').Pt[]} */ ([
+    [x0 + c, y0], [x1 - c, y0], [x1 - c, y0 + c], [x1, y0 + c], [x1, y1 - c], [x1 - c, y1 - c], [x1 - c, y1],
+    [x0 + c, y1], [x0 + c, y1 - c], [x0, y1 - c], [x0, y0 + c], [x0 + c, y0 + c],
+  ]);
+}
+
+/**
+ * A crown of foliage built of blocks: dark inner masses, mid blocks, lit
+ * blocks toward the upper left and a ragged rim of small square tufts.
  */
 export function crown(m, rng, cx, cy, rx, ry, mat = 'leaf', o = {}) {
-  const n = o.n ?? Math.max(5, Math.round((rx + ry) / 3.5));
+  const n = o.n ?? Math.max(5, Math.round((rx + ry) / 3.5)), rnd = R(rng);
   const blobs = [];
   for (let i = 0; i < n; i++) {
     const a = rng.next() * Math.PI * 2, q = Math.sqrt(rng.next());
     blobs.push([cx + Math.cos(a) * rx * 0.62 * q, cy + Math.sin(a) * ry * 0.55 * q, (0.38 + rng.next() * 0.25) * Math.min(rx, ry * 1.4)]);
   }
-  // back to front: the lower, darker clusters behind the lit upper ones
+  // smaller blocks heaped on the outside of the crown, so its edge steps in leafy squares
+  for (let i = 0; i < n * 2; i++) {
+    const a = rng.next() * Math.PI * 2, q = 0.75 + rng.next() * 0.3;
+    blobs.push([cx + Math.cos(a) * rx * 0.8 * q, cy + Math.sin(a) * ry * 0.72 * q, (0.16 + rng.next() * 0.12) * Math.min(rx, ry * 1.4)]);
+  }
+  // back to front: the lower, darker blocks behind the lit upper ones
   blobs.sort((p, q) => q[1] - p[1] + (q[0] - p[0]) * 0.2);
-  // the crown is lit as one mass (upper left bright, underside in shade), each cluster only a little rounded
-  for (const [x, y, r] of blobs) m.poly(lumpy(x, y, r, r * 0.82, R(rng), 0.32, 8), mat, { shade: 'round', tex: 1.8, tone: ((cy - y) / ry) * 0.28 + ((cx - x) / rx) * 0.1 - 0.08 });
-  // shadowed hollows between clusters
+  // the crown is lit as one mass (upper left bright, underside in shade), each block only a little rounded
+  for (const [x, y, r] of blobs) m.poly(leafBlock(x, y, r * (0.95 + rng.next() * 0.25), r * (0.7 + rng.next() * 0.2), rnd), mat, { shade: 'round', tex: 1.8, tone: ((cy - y) / ry) * 0.28 + ((cx - x) / rx) * 0.1 - 0.08 });
+  // square tufts of leaves breaking the rim
+  for (let i = 0; i < n; i++) {
+    const a = Math.PI * (0.9 + rng.next() * 1.2), t = 1.5 + rng.next() * 1.5;
+    const x = cx + Math.cos(a) * rx * 0.85, y = cy + Math.sin(a) * ry * 0.8;
+    m.poly([[x - t, y - t], [x + t, y - t], [x + t, y + t], [x - t, y + t]], mat, { shade: 'flat', tex: 1.2, tone: Math.sin(a) < 0 ? 0.1 : -0.12 });
+  }
+  // shadowed hollows between blocks
   for (let i = 0; i < n; i++) {
     const x = cx + (rng.next() - 0.5) * rx * 1.2, y = cy + rng.next() * ry * 0.5;
     m.dot(x, y, mat, { lum: 0.05 }); m.dot(x + 1, y, mat, { lum: 0.12 });

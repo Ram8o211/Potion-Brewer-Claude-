@@ -47,8 +47,8 @@ function hleaf(m, d, x, y, ang, len, rng, tone = 0) {
 export function plant(d, stage, o = {}) {
   const m = new Model(), P = d.m, rng = stream(d, 'plant' + stage), H = d.size.h, W = d.size.w;
   mound(m, W * 0.6, stream(d, 'mound'));
-  if (stage === 0) return sprout(m, d, Math.max(5, H * 0.32), { shape: P.leafShape, teeth: P.teeth });
-  const g = stage === 1 ? 0.65 : 1;
+  if (stage === 0) return sprout(m, d, Math.max(4, H * 0.3), { shape: P.leafShape, teeth: P.teeth });
+  const g = stage === 1 ? (P.habit === 'rosette' ? 0.85 : 0.65) : 1;
   if (P.habit === 'rosette') {
     const n = Math.round(P.leaves * (stage === 1 ? 0.6 : 1));
     const items = [];

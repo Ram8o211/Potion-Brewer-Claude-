@@ -12,6 +12,10 @@
 
 import { fbm1, fbm2, hash2, noise2 } from '../noise.js';
 import { mixPacked, pack, hex } from '../color.js';
+import { CELL } from './paint.js';
+
+/** A coordinate snapped down to the scene's grid of CELL squares. @param {number} v */
+const snap = (v) => v - (((v % CELL) + CELL) % CELL);
 
 /** Packed colour from '#rrggbb'. @param {string} h */
 export const col = (h) => pack(hex(h));
@@ -22,10 +26,10 @@ export const col = (h) => pack(hex(h));
  * @param {number} c packed colour @param {number} x @param {number} y @param {number} seed
  */
 export function far(c, x, y, seed) {
-  const g = hash2(x >> 1, y >> 1, seed + 7);
+  const g = hash2(Math.floor(x / CELL), Math.floor(y / CELL), seed + 7);
   if (g > 0.975) return mixPacked(c, 0xffffffff, 0.12);
   if (g < 0.02) return mixPacked(c, 0xff000000, 0.18);
-  return fbm2(x * 0.05, y * 0.07, seed, 2) > 0.55 ? mixPacked(c, 0xffffffff, 0.06) : c;
+  return fbm2(snap(x) * 0.05, snap(y) * 0.07, seed, 2) > 0.55 ? mixPacked(c, 0xffffffff, 0.06) : c;
 }
 
 /**
@@ -55,8 +59,13 @@ export function raise(top, x0, x1, y, slope = 4) {
   }
 }
 
-/** Fill the ground below a surface line (kept as the scene's ground line). @param {any} cv @param {Float32Array} top */
+/**
+ * Fill the ground below a surface line (kept as the scene's ground line),
+ * its steps snapped to the grid, a whole square wide and deep.
+ * @param {any} cv @param {Float32Array} top
+ */
 export function fillSolid(cv, top) {
+  for (let x = 0; x < cv.W; x++) top[x] = snap(Math.round(top[snap(x)]));
   cv.ground = top;
   for (let x = 0; x < cv.W; x++) for (let y = Math.max(0, Math.round(top[x])); y < cv.H; y++) cv.solid[y * cv.W + x] = 1;
 }
@@ -66,14 +75,18 @@ export function fillSolid(cv, top) {
  * carved out of it (v = 0: a cave pocket, marked as cave).
  */
 export function blob(cv, cx, cy, rx, ry, seed, v = 1, rough = 0.35) {
-  for (let y = Math.floor(cy - ry * 1.4); y <= Math.ceil(cy + ry * 1.4); y++) for (let x = Math.floor(cx - rx * 1.4); x <= Math.ceil(cx + rx * 1.4); x++) {
-    if (x < 0 || y < 0 || x >= cv.W || y >= cv.H) continue;
-    const e = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 + (fbm2(x * 0.08, y * 0.12, seed, 2) - 0.5) * rough * 2;
+  for (let Y = snap(Math.floor(cy - ry * 1.4)); Y <= Math.ceil(cy + ry * 1.4); Y += CELL) for (let X = snap(Math.floor(cx - rx * 1.4)); X <= Math.ceil(cx + rx * 1.4); X += CELL) {
+    // one square at a time, judged at its centre
+    const x = X + CELL / 2, y = Y + CELL / 2;
+    const e = (Math.abs(x - cx) / rx) ** 3 + (Math.abs(y - cy) / ry) ** 3 + (fbm2(x * 0.08, y * 0.12, seed, 2) - 0.5) * rough * 2;
     if (e > 1) continue;
     // a ledge has a level top: its upper third is cut flat
     if (v && y < cy - ry * 0.55) continue;
-    const k = y * cv.W + x;
-    if (v) cv.solid[k] = 1; else if (cv.solid[k]) { cv.solid[k] = 0; cv.cave[k] = 1; }
+    for (let yy = Y; yy < Y + CELL; yy++) for (let xx = X; xx < X + CELL; xx++) {
+      if (xx < 0 || yy < 0 || xx >= cv.W || yy >= cv.H) continue;
+      const k = yy * cv.W + xx;
+      if (v) cv.solid[k] = 1; else if (cv.solid[k]) { cv.solid[k] = 0; cv.cave[k] = 1; }
+    }
   }
 }
 
@@ -99,7 +112,7 @@ export function paintTerrain(cv, o) {
         d = 0;
         if (cv.cave[k]) {
           // the back wall of a cave: the material in deep shade
-          const m = fbm2(x * blot, y * blot * 1.3, o.seed + 5, 2) > 0.5;
+          const m = fbm2(snap(x) * blot, snap(y) * blot * 1.3, o.seed + 5, 2) > 0.5;
           cv.set(x, y, mixPacked(m ? B : A, cave, 0.78));
         }
         continue;
@@ -107,20 +120,24 @@ export function paintTerrain(cv, o) {
       const airAbove = y === 0 || !S[k - W];
       if (airAbove) d = 0; else d++;
       let c;
+      // the material is sampled square by square, so its blotches step in blocks
+      const qx = snap(x), qy = snap(y);
       if (d < ch) c = crust[Math.min(crust.length - 1, d)];
       else {
-        const m = o.strata ? (Math.floor((y + fbm1(x * 0.02, o.seed, 2) * 14) / 7) % 2 ? 0.6 : 0.4) + (fbm2(x * blot, y * blot, o.seed, 2) - 0.5) * 0.3
-          : fbm2(x * blot, y * blot * 1.3, o.seed, 2) + (noise2(x * 0.3, y * 0.3, o.seed + 9) - 0.5) * 0.08;
+        const m = o.strata ? (Math.floor((qy + fbm1(qx * 0.02, o.seed, 2) * 14) / 8) % 2 ? 0.6 : 0.4) + (fbm2(qx * blot, qy * blot, o.seed, 2) - 0.5) * 0.3
+          : fbm2(qx * blot, qy * blot * 1.3, o.seed, 2) + (noise2(qx * 0.3, qy * 0.3, o.seed + 9) - 0.5) * 0.08;
         c = m > 0.52 ? B : A;
-        const g = hash2(x >> 1, y >> 1, o.seed + 3);
+        const g = hash2(Math.floor(x / CELL), Math.floor(y / CELL), o.seed + 3);
         if (g > 0.955) c = G; else if (g < 0.03) c = D;
         // deeper is darker, in flat steps (measured from the main ground, so a ledge's column leaves no streak)
         const dd = cv.ground ? Math.min(d, Math.max(0, y - cv.ground[x])) : d;
         const t = Math.min(4, Math.floor((dd - ch) / 14));
         if (t > 0) c = mixPacked(c, deep, t * 0.16);
       }
-      // rims against air at the sides and below
-      const below = y < H - 1 && !S[k + W], side = (x > 0 && !S[k - 1]) || (x < W - 1 && !S[k + 1]);
+      // rims, a square thick, against air at the sides and below
+      const air = (/** @type {number} */ dx, /** @type {number} */ dy) => { const xx = x + dx, yy = y + dy; return xx >= 0 && xx < W && yy < H && !S[yy * W + xx]; };
+      let below = false, side = false;
+      for (let j = 1; j <= CELL; j++) { below ||= air(0, j); side ||= air(-j, 0) || air(j, 0); }
       if (below || (side && d >= ch)) c = mixPacked(c, D, 0.55);
       cv.set(x, y, c);
     }
@@ -146,9 +163,11 @@ function inclusions(cv, r, ch, seed) {
     const rx = 2 + hash2(i, 3, seed + 40) * (r.r ?? 5), ry = rx * (0.5 + hash2(i, 4, seed + 40) * 0.3);
     for (let y = Math.floor(cy - ry); y <= cy + ry; y++) for (let x = Math.floor(cx - rx); x <= cx + rx; x++) {
       if (x < 0 || y < 0 || x >= cv.W || y >= cv.H || !cv.solid[y * cv.W + x]) continue;
-      const e = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 + (hash2(x >> 1, y >> 1, seed + i) - 0.5) * 0.5;
+      // judged square by square: a blocky stone
+      const qx = snap(x) + CELL / 2, qy = snap(y) + CELL / 2;
+      const e = (Math.abs(qx - cx) / rx) ** 3 + (Math.abs(qy - cy) / ry) ** 3 + (hash2(Math.floor(x / CELL), Math.floor(y / CELL), seed + i) - 0.5) * 0.5;
       if (e > 1) continue;
-      cv.set(x, y, y < cy - ry * 0.45 ? lit : e > 0.7 && y > cy ? dark : mid);
+      cv.set(x, y, qy < cy - ry * 0.45 ? lit : e > 0.6 && qy > cy ? dark : mid);
     }
   }
 }
@@ -160,8 +179,8 @@ function seams(cv, sm, ch, seed) {
     const y0 = Math.floor(hash2(i, 5, seed + 50) * cv.H), x0 = Math.floor(hash2(i, 6, seed + 50) * cv.W), len = 20 + Math.floor(hash2(i, 7, seed + 50) * 60);
     const c = cols[i % cols.length];
     for (let x = x0; x < Math.min(cv.W, x0 + len); x++) {
-      const y = Math.round(y0 + (fbm1(x * 0.05, seed + i, 2) - 0.5) * 8);
-      for (const yy of [y, y + (hash2(x, i, seed) > 0.6 ? 1 : 0)]) if (yy > 0 && yy < cv.H && cv.solid[yy * cv.W + x] && depthAt(cv, x, yy) >= ch + 2) cv.set(x, yy, c);
+      const y = snap(Math.round(y0 + (fbm1(snap(x) * 0.05, seed + i, 2) - 0.5) * 8));
+      for (const yy of [y, y + 1, ...(hash2(Math.floor(x / CELL), i, seed) > 0.6 ? [y + 2, y + 3] : [])]) if (yy > 0 && yy < cv.H && cv.solid[yy * cv.W + x] && depthAt(cv, x, yy) >= ch + 2) cv.set(x, yy, c);
     }
   }
 }
@@ -170,8 +189,9 @@ function seams(cv, sm, ch, seed) {
 export function hanging(cv, o) {
   const fill = col(o.fill), rim = o.rim ? col(o.rim) : fill, line = new Float32Array(cv.W);
   for (let x = 0; x < cv.W; x++) {
-    line[x] = Math.round(o.base + (fbm1(x * o.freq, o.seed, 4) - 0.5) * 2 * o.amp + (o.rough ? (hash2(x >> 1, 1, o.seed) - 0.5) * o.rough : 0));
-    for (let y = 0; y <= Math.min(cv.H - 1, line[x]); y++) cv.set(x, y, y === line[x] ? rim : far(fill, x, y, o.seed));
+    const qx = snap(x);
+    line[x] = snap(Math.round(o.base + (fbm1(qx * o.freq, o.seed, 4) - 0.5) * 2 * o.amp + (o.rough ? (hash2(qx >> 1, 1, o.seed) - 0.5) * o.rough : 0))) + CELL - 1;
+    for (let y = 0; y <= Math.min(cv.H - 1, line[x]); y++) cv.set(x, y, y > line[x] - CELL ? rim : far(fill, x, y, o.seed));
   }
   return line;
 }
@@ -182,11 +202,12 @@ function grass(cv, g, seed) {
   for (let x = 0; x < cv.W; x++) for (let y = 1; y < cv.H; y++) {
     const k = y * cv.W + x;
     if (!cv.solid[k] || cv.solid[k - cv.W] || cv.liquid[k - cv.W]) continue;
-    const r = hash2(x, y, seed + 21);
+    // a blade is a square wide: both columns of a square draw the same one
+    const bx = Math.floor(x / CELL), r = hash2(bx, y, seed + 21);
     if (r > rate) continue;
-    const h = 1 + Math.floor(hash2(x, y, seed + 22) * tall);
+    const h = 1 + Math.floor(hash2(bx, y, seed + 22) * tall);
     for (let j = 1; j <= h; j++) if (y - j >= 0 && !cv.solid[k - j * cv.W]) cv.set(x, y - j, cols[(j + (r > rate * 0.5 ? 1 : 0)) % cols.length]);
-    if (fl.length && hash2(x, y, seed + 23) < 0.025) cv.set(x, y - h - 1, fl[Math.floor(hash2(x, y, seed + 24) * fl.length)]);
+    if (fl.length && hash2(bx, y, seed + 23) < 0.025) for (const yy of [y - h - 1, y - h - 2]) cv.set(x, yy, fl[Math.floor(hash2(bx, y, seed + 24) * fl.length)]);
   }
 }
 
@@ -238,33 +259,78 @@ export function markOpen(cv, minY = 30) {
  * Ledges jutting out over the ground, spread across the scene in two tiers
  * so more can grow: n about 32–46 pixels above the ground under them (clear
  * of the columns in `keep`, [x0, x1] ranges such as pools; `rise` sets
- * other heights), most of them on a column of rock, and over the middle
- * ones a higher tier of n − 2, 42 pixels higher again, which may hang over
- * anything.
+ * other heights), and over the middle ones a higher tier of n − 2, 42
+ * pixels higher again. None floats: each stands on a buttress of rock, off
+ * centre and leaning, reaching down to the ground or to a ledge below, and
+ * the shapes are joined as one mass of ground (a smooth union), so a
+ * buttress flares into the ledge it holds and into the ground it stands on.
  */
 export function ledges(cv, top, rng, n, o = {}) {
   const keep = o.keep || [], r0 = o.rise || [32, 46];
-  for (const [tier, count, rise] of /** @type {[number, number, number[]][]} */ ([[0, n, r0], [1, n - 2, [r0[0] + 42, r0[1] + 42]]])) for (let i = 0; i < count; i++) {
-    const x = Math.round((tier ? i + 1.5 : i + 0.5) * cv.W / n + rng.int(-14, 14)), rx = rng.int(18, 26);
-    if (!tier && keep.some(([a, b]) => x + rx > a && x - rx < b)) continue;
-    const ground = Math.min(top[Math.max(0, x - rx)], top[Math.min(cv.W - 1, x)], top[Math.min(cv.W - 1, x + rx)]);
-    // never so high that what grows on it would reach out of the scene
-    const y = Math.max(60, Math.round(ground) - rng.int(rise[0], rise[1]));
-    if (ground - y < 24) continue;
-    blob(cv, x, y, rx, rng.int(6, 8), rng.int(0, 1e9), 1);
-    // most low ledges stand on a column of rock at one end: an overhang, not an island
-    if (!tier && rng.next() < 0.7) column(cv, x + (rng.next() < 0.5 ? -1 : 1) * Math.round(rx * 0.55), y + 2, rng.int(4, 7), rng.int(0, 1e9));
+  /** @type {((x:number, y:number) => number)[]} distance fields of the shapes so far (< 0 inside) */
+  const shapes = [];
+  for (const [tier, count, rise] of /** @type {[number, number, number[]][]} */ ([[0, n, r0], [1, n - 2, [r0[0] + 42, r0[1] + 42]]])) {
+    let x0 = cv.W, x1 = 0, y0 = cv.H;
+    for (let i = 0; i < count; i++) {
+      const x = Math.round((tier ? i + 1.5 : i + 0.5) * cv.W / n + rng.int(-14, 14)), rx = rng.int(18, 26);
+      if (!tier && keep.some(([a, b]) => x + rx > a && x - rx < b)) continue;
+      const ground = Math.min(top[Math.max(0, x - rx)], top[Math.min(cv.W - 1, x)], top[Math.min(cv.W - 1, x + rx)]);
+      // never so high that what grows on it would reach out of the scene
+      const y = snap(Math.max(60, Math.round(ground) - rng.int(rise[0], rise[1])));
+      if (ground - y < 24) continue;
+      const ry = rng.int(7, 10), seed = rng.int(0, 1e9);
+      shapes.push(slab(x, y, rx, ry, seed));
+      // the buttress: under one end of the ledge, leaning a little, down to whatever lies below
+      const side = rng.next() < 0.5 ? -1 : 1, bx = x + side * Math.round(rx * (0.2 + rng.next() * 0.35));
+      const lean = side * rng.int(0, 8), fx = Math.max(2, Math.min(cv.W - 3, bx + lean));
+      let land = Math.round(y + ry);
+      while (land < cv.H - 1 && !cv.solid[land * cv.W + fx]) land++;
+      const w0 = Math.round(rx * (tier ? 0.45 : 0.38)) + rng.int(0, 3), w1 = w0 + rng.int(6, 12);
+      shapes.push(buttress(bx, y + ry * 0.6, fx, land + 3, w0, w1, seed));
+      x0 = Math.min(x0, x - rx - 12, fx - w1 - 12); x1 = Math.max(x1, x + rx + 12, fx + w1 + 12); y0 = Math.min(y0, y - ry * 2);
+    }
+    // fill every square inside the union of the shapes and the ground; never fill a cave
+    const ground = (/** @type {number} */ x, /** @type {number} */ y) => top[Math.max(0, Math.min(cv.W - 1, Math.round(x)))] - y;
+    for (let Y = snap(Math.max(0, Math.floor(y0))); Y < cv.H; Y += CELL) for (let X = snap(Math.max(0, x0)); X < Math.min(cv.W, x1); X += CELL) {
+      const x = X + CELL / 2, y = Y + CELL / 2;
+      let d = ground(x, y);
+      for (const f of shapes) d = smin(d, f(x, y), 6);
+      if (d >= 0) continue;
+      for (let yy = Y; yy < Math.min(cv.H, Y + CELL); yy++) for (let xx = X; xx < Math.min(cv.W, X + CELL); xx++) {
+        const k = yy * cv.W + xx;
+        if (!cv.cave[k]) cv.solid[k] = 1;
+      }
+    }
   }
 }
 
-/** A column of ground from (x, y) down to the ground, widening toward its foot, its edges ragged. */
-function column(cv, x, y, w, seed) {
-  for (let yy = y; yy < cv.H; yy++) {
-    const ground = cv.ground ? cv.ground[Math.max(0, Math.min(cv.W - 1, x))] : cv.H;
-    if (yy > ground + 2) break;
-    const t = (yy - y) / Math.max(1, ground - y), hw = w / 2 + t * t * w * 0.8 + (hash2(yy >> 1, 0, seed) - 0.5) * 2;
-    for (let xx = Math.round(x - hw); xx <= Math.round(x + hw); xx++) if (xx >= 0 && xx < cv.W) cv.solid[yy * cv.W + xx] = 1;
-  }
+/** Smooth minimum of two distances: their union, with a fillet of radius about k where they meet. */
+function smin(a, b, k) {
+  const h = Math.max(k - Math.abs(a - b), 0) / k;
+  return Math.min(a, b) - h * h * k * 0.25;
+}
+
+/**
+ * A ledge's distance field: a squared-off slab (a superellipse) with its
+ * upper third cut level, its edge ragged.
+ */
+function slab(cx, cy, rx, ry, seed) {
+  const cut = cy - ry * 0.55;
+  return (/** @type {number} */ x, /** @type {number} */ y) => {
+    const e = Math.pow(Math.abs(x - cx) / rx, 4) + Math.pow(Math.abs(y - cy) / ry, 3);
+    const d = (Math.pow(e, 0.28) - 1) * ry + (fbm2(x * 0.08, y * 0.12, seed, 2) - 0.5) * 4;
+    return Math.max(d, cut - y);
+  };
+}
+
+/** A buttress's distance field: a ragged column from (x0, y0) to (x1, y1), w0 wide at the top widening to w1 at its foot. */
+function buttress(x0, y0, x1, y1, w0, w1, seed) {
+  const vx = x1 - x0, vy = y1 - y0, ll = vx * vx + vy * vy || 1;
+  return (/** @type {number} */ x, /** @type {number} */ y) => {
+    const t = Math.max(0, Math.min(1, ((x - x0) * vx + (y - y0) * vy) / ll));
+    const r = (w0 + (w1 - w0) * t * t) / 2 + (hash2(Math.floor(y / 4), 0, seed) - 0.5) * 1.6;
+    return Math.hypot(x - x0 - vx * t, y - y0 - vy * t) - r;
+  };
 }
 
 /** The row of the main ground's surface in a column (where trees and the like stand; ledges above it are ignored). */
@@ -283,10 +349,11 @@ export function surfaceAt(cv, x) {
 export function silhouette(cv, o) {
   const fill = col(o.fill), rim = o.rim ? col(o.rim) : fill, line = new Float32Array(cv.W);
   for (let x = 0; x < cv.W; x++) {
-    let v = fbm1(x * o.freq, o.seed, 4);
+    const qx = snap(x);
+    let v = fbm1(qx * o.freq, o.seed, 4);
     if (o.peaks) v = Math.pow(v, 1 / (1 + o.peaks));
-    line[x] = Math.round(o.base - (v - 0.5) * 2 * o.amp - (o.rough ? (hash2(x >> 1, 0, o.seed) - 0.5) * o.rough : 0));
-    for (let y = Math.max(0, line[x]); y < (o.bottom ?? cv.H); y++) cv.set(x, y, y === line[x] ? rim : far(fill, x, y, o.seed));
+    line[x] = snap(Math.round(o.base - (v - 0.5) * 2 * o.amp - (o.rough ? (hash2(qx >> 1, 0, o.seed) - 0.5) * o.rough : 0)));
+    for (let y = Math.max(0, line[x]); y < (o.bottom ?? cv.H); y++) cv.set(x, y, y < line[x] + CELL ? rim : far(fill, x, y, o.seed));
   }
   return line;
 }
@@ -294,7 +361,11 @@ export function silhouette(cv, o) {
 /** A flat silhouette of a tree (pine, round-crowned or bare) standing at (x, y). */
 export function treeShape(cv, x, y, h, kind, c, seed) {
   const fill = col(c), tw = Math.max(1, Math.round(h / 14));
-  const put = (px, py) => { if (px >= 0 && py >= 0 && px < cv.W && py < cv.H) cv.pix.px[py * cv.W + px] = far(fill, px, py, seed); };
+  // drawn a square at a time
+  const put = (px, py) => {
+    const X = snap(px), Y = snap(py);
+    for (let j = Y; j < Y + CELL; j++) for (let i = X; i < X + CELL; i++) if (i >= 0 && j >= 0 && i < cv.W && j < cv.H) cv.pix.px[j * cv.W + i] = far(fill, i, j, seed);
+  };
   for (let j = 0; j < h * (kind === 'pine' ? 0.9 : 0.6); j++) for (let i = -tw; i < tw; i++) put(Math.round(x + i), Math.round(y - j));
   if (kind === 'pine') {
     for (let j = 0; j < h * 0.85; j++) {
@@ -309,7 +380,7 @@ export function treeShape(cv, x, y, h, kind, c, seed) {
   } else {
     const r = h * 0.3, cy = y - h * 0.65;
     for (let j = -r; j <= r; j++) for (let i = -r * 1.2; i <= r * 1.2; i++) {
-      if ((i / 1.2) ** 2 + j ** 2 + (hash2(Math.round(x + i) >> 1, Math.round(cy + j) >> 1, seed) - 0.5) * r * 1.2 <= r * r) put(Math.round(x + i), Math.round(cy + j));
+      if ((Math.abs(i / 1.2) ** 3 + Math.abs(j) ** 3) / r + (hash2(Math.round(x + i) >> 2, Math.round(cy + j) >> 2, seed) - 0.5) * r * 1.4 <= r * r) put(Math.round(x + i), Math.round(cy + j));
     }
   }
 }

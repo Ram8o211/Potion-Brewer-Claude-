@@ -80,7 +80,7 @@ function tuft(m, d, rng, x, y, len, n) {
 
 export function plant(d, stage, o = {}) {
   const m = new Model(), P = d.m, rng = stream(d, 'plant' + stage), H = d.size.h, W = d.size.w;
-  if (stage === 0) { mound(m, W * 0.5, stream(d, 'mound')); return sprout(m, d, Math.max(5, H * 0.3), { shape: P.leafShape, teeth: P.teeth }); }
+  if (stage === 0) { mound(m, W * 0.5, stream(d, 'mound')); return sprout(m, d, Math.max(4, H * 0.3), { shape: P.leafShape, teeth: P.teeth }); }
   const g = stage === 1 ? 0.7 : 1;
   mound(m, W * 0.85 * g, stream(d, 'mound'));
   tuft(m, d, rng, 0, -H * 0.22 * g, H * 0.6 * g, Math.round(P.tuft * g));
