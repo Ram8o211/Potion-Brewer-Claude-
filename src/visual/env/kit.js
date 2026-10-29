@@ -64,6 +64,8 @@ export function inPool(x, y, horizon, H, seed, thr) {
 
 /** Scattered single-pixel details over open ground: flowers, pebbles, sparkles. */
 export function speckle(cv, rng, n, y0, y1, colours, o = {}) {
+  // sparse: the ground stays plain, so what grows on it stands out
+  n = Math.round(n * 0.3);
   for (let i = 0; i < n; i++) {
     const x = rng.int(0, cv.W - 1), y = rng.int(y0, y1 - 1);
     if (o.onOpen && !cv.open[y * cv.W + x]) continue;

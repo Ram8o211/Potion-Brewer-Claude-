@@ -2689,10 +2689,11 @@ function plant(d, stage, o = {}) {
 const m = new Model(), P = d.m, rng = stream(d, 'plant' + stage), H = d.size.h, W = d.size.w;
 if (stage === 0) { mound(m, W * 0.5, stream(d, 'mound')); return sprout(m, d, Math.max(5, H * 0.3), { shape: P.leafShape, teeth: P.teeth }); }
 const g = stage === 1 ? 0.7 : 1;
-tuft(m, d, rng, 0, -2 * g, H * 0.75 * g, Math.round(P.tuft * g));
-m.poly(ellipseTop(0, 0, W * P.girth * 0.9 * g, H * 0.2 * g), 'main', { shade: 'round' });
-m.dot(-1, -H * 0.12 * g, 'main', { lum: 0.15 });
 mound(m, W * 0.85 * g, stream(d, 'mound'));
+tuft(m, d, rng, 0, -H * 0.22 * g, H * 0.6 * g, Math.round(P.tuft * g));
+const rx = W * Math.max(0.24, P.girth) * g, ry = H * 0.34 * g;
+m.poly(ellipseTop(0, 0.5, rx, ry), 'main', { shade: 'round' });
+for (let k = 1; k <= 2; k++) m.line([[-rx * 0.7, -ry * k * 0.3], [rx * 0.6, -ry * k * 0.3 + 0.6]], 'main', { lum: 0.15 });
 return m;
 }
 function ellipseTop(cx, cy, rx, ry) {
@@ -3207,8 +3208,8 @@ for (const it of items) prism(m, d, rng, it.x, it.y, it.ang, it.len, it.wid, it.
 marks(m, d, rng, 0, -H * 0.5, W * 0.3, H * 0.3);
 }
 function plant(d, stage, o = {}) {
-const m = new Model(), rng = stream(d, 'plant' + stage);
-cluster(m, d, rng, d.size.w, d.size.h, [0.3, 0.65, 1][stage]);
+const m = new Model(), rng = stream(d, 'plant');
+cluster(m, d, rng, d.size.w, d.size.h, 1);
 return m;
 }
 function icon(d) {
@@ -3278,21 +3279,20 @@ if (i % 3 === 0) m.glints.push([cx + Math.cos(a) * L, cy + Math.sin(a) * L]);
 }
 }
 function plant(d, stage, o = {}) {
-const m = new Model(), P = d.m, rng = stream(d, 'plant' + stage), W = d.size.w, H = d.size.h;
-const g = [0.4, 0.7, 1][stage];
+const m = new Model(), P = d.m, rng = stream(d, 'plant'), W = d.size.w, H = d.size.h;
 if (d.form === 'powder') {
 rock(m, -W * 0.25, -H * 0.4, W * 0.3, H * 0.4, stream(d, 'host'), 'rock', -0.05);
-heap(m, d, rng, W * 0.9 * g, H * 0.7 * g + 1, g);
+heap(m, d, rng, W * 0.9, H * 0.7 + 1, 1);
 return m;
 }
 if (d.form === 'crust') {
 rock(m, 0, -H * 0.35, W * 0.45, H * 0.35, stream(d, 'host'));
-for (let k = 0; k < (stage === 2 ? 3 : stage === 1 ? 2 : 1); k++) bloom(m, d, rng, (k - 1) * W * 0.22, -H * 0.55, H * 0.6, g);
+for (let k = 0; k < 3; k++) bloom(m, d, rng, (k - 1) * W * 0.22, -H * 0.55, H * 0.6, 1);
 return m;
 }
-const n = stage === 0 ? 1 : stage === 1 ? Math.max(1, P.lumps - 1) : P.lumps;
+const n = P.lumps;
 for (let i = n - 1; i >= 0; i--) {
-const r = W * 0.26 * g * (i === 0 ? 1 : 0.7 - i * 0.1);
+const r = W * 0.26 * (i === 0 ? 1 : 0.7 - i * 0.1);
 lump(m, d, rng, i === 0 ? 0 : (i % 2 ? 1 : -1) * W * 0.28, -r * P.flat * 0.7 - (i ? 1 : 0), r, i ? -0.06 : 0);
 }
 return m;
@@ -3358,15 +3358,14 @@ m.poly(blade([x + 1, y], -Math.PI / 2 + 0.55, len * 0.92, len * 0.5, PROFILES[d.
 m.ellipse(x + len * 0.25, y - len * 0.45, 1.2, 1.2, 'pale', { shade: 'flat' });
 }
 function plant(d, stage, o = {}) {
-const m = new Model(), P = d.m, rng = stream(d, 'plant' + stage), W = d.size.w, H = d.size.h;
-const g = [0.45, 0.75, 1][stage];
+const m = new Model(), P = d.m, rng = stream(d, 'plant'), W = d.size.w, H = d.size.h;
 if (d.form === 'scale') rock(m, 0, -H * 0.3, W * 0.45, H * 0.35, stream(d, 'host'));
 else m.ellipse(0, -0.5, W * 0.48, 2.2, 'soil', { shade: 'flat', noOutline: true, tone: 0.15 });
-const n = stage === 0 ? 1 : stage === 1 ? Math.max(1, P.count - 1) : P.count;
+const n = P.count;
 for (let i = 0; i < n; i++) {
 const x = (n === 1 ? 0 : i / (n - 1) - 0.5) * W * 0.6, y = d.form === 'scale' ? -H * 0.45 : -0.5;
-const len = H * 0.95 * g * (i % 2 ? 0.8 : 1);
-if (d.form !== 'scale' && P.open && i === n - 1 && stage === 2) openShell(m, d, rng, x, y, len);
+const len = H * 0.95 * (i % 2 ? 0.8 : 1);
+if (d.form !== 'scale' && P.open && i === n - 1) openShell(m, d, rng, x, y, len);
 else if (d.form === 'scale') valve(m, d, rng, x - len * 0.4, y + (i % 2) * 1.5, -0.35 + (i % 2) * 0.25 + (rng.next() - 0.5) * 0.3, len * 0.9, i % 2 ? -0.06 : 0);
 else valve(m, d, rng, x, y, -Math.PI / 2 + (i - (n - 1) / 2) * 0.5, len, i % 2 ? -0.06 : 0);
 }
@@ -3593,13 +3592,36 @@ const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 const bayer = (x, y) => (BAYER4[(x & 3) + (y & 3) * 4] + 0.5) / 16;
 return { hash3, hash2, noise2, noise1, fbm2, fbm1, bayer };
 })();
+// src/visual/style.js
+const __m43 = (() => {
+const { Pixels } = __m41;
+const INK = 0xff1a1016;
+const BANDS = [0.3, 0.6, 0.9, Infinity];
+const AT = [0.1, 0.45, 0.78, 1];
+function toneOf(n, l) {
+let b = 0;
+while (l >= BANDS[b]) b++;
+return Math.round(AT[b] * (n - 1));
+}
+function inked(src) {
+const w = src.w + 2, h = src.h + 2, p = new Pixels(w, h);
+const op = (x, y) => x >= 0 && y >= 0 && x < src.w && y < src.h && src.px[y * src.w + x] >>> 24;
+for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+if (op(x - 1, y - 1)) continue;
+if (op(x - 2, y - 1) || op(x, y - 1) || op(x - 1, y - 2) || op(x - 1, y)) p.px[y * w + x] = INK;
+}
+p.draw(src, 1, 1);
+return p;
+}
+return { INK, toneOf, inked };
+})();
 // src/visual/raster.js
 const __m40 = (() => {
 const { Pixels } = __m41;
-const { noise2, bayer } = __m42;
+const { noise2 } = __m42;
 const { mixPacked } = __m24;
+const { INK, toneOf } = __m43;
 const L = (() => { const v = [-0.55, -0.72, 0.62], n = Math.hypot(...v); return v.map((x) => x / n); })();
-const INK = 0xff1c1218;
 function inside(x, y, pts) {
 let c = false;
 for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
@@ -3639,7 +3661,7 @@ S.n = m; S.mat = new Int16Array(m); S.lum = new Float32Array(m); S.tex = new Flo
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 const lit = (nx, ny, nz) => clamp01(0.47 + 0.6 * (nx * L[0] + ny * L[1] + nz * L[2]));
 function rasterize(model, w, h, pal, o = {}) {
-const N = w * h, seed = o.seed ?? 1, texAmp = o.texture ?? 0.2, dith = o.dither ?? 0.16;
+const N = w * h, seed = o.seed ?? 1, texAmp = o.texture ?? 0.06;
 grow(N);
 const mat = S.mat.subarray(0, N).fill(-1), lum = S.lum.subarray(0, N), tex = S.tex.subarray(0, N);
 const part = new Int16Array(N).fill(-1);
@@ -3759,9 +3781,8 @@ for (let y = 0; y < h; y++) {
 for (let x = 0; x < w; x++) {
 const k = y * w + x, mi = mat[k];
 if (mi < 0) continue;
-const n = ramps[mi].length;
-const t = lum[k] + (noise2(x / 2.3, y / 2.3, seed + mi * 977) - 0.5) * texAmp * 2 * tex[k] + (bayer(x, y) - 0.5) * dith;
-idx[k] = Math.max(0, Math.min(n - 1, Math.floor(t * n)));
+const t = lum[k] + (noise2(x / 3.5, y / 3.5, seed + mi * 977) - 0.5) * texAmp * 2 * tex[k];
+idx[k] = toneOf(ramps[mi].length, t);
 }
 }
 const flat = (/** @type {number} */ pi) => parts[pi].t === 'line' || parts[pi].t === 'dot';
@@ -3786,13 +3807,13 @@ const k = y * w + x, mi = mat[k];
 if (mi < 0) continue;
 const r = ramps[mi];
 let i = idx[k];
-if (sep[k]) i = Math.max(0, i - 2);
+if (sep[k]) i = toneOf(r.length, 0);
 let c = r[i];
 const pp = parts[part[k]];
 if (outline && !pp.noOutline && !flat(part[k])) {
 const up = y === 0 || mat[k - w] < 0, left = x === 0 || mat[k - 1] < 0, down = y === h - 1 || mat[k + w] < 0, right = x === w - 1 || mat[k + 1] < 0;
-if (down || right) c = mixPacked(r[0], INK, 0.45);
-else if (up || left) c = mixPacked(r[Math.min(1, r.length - 1)], INK, 0.25);
+if (down || right) c = mixPacked(r[0], INK, 0.6);
+else if (up || left) c = mixPacked(r[0], INK, 0.35);
 }
 pix.px[k] = c;
 }
@@ -3807,6 +3828,7 @@ const __m39 = (() => {
 const { FAMILIES } = __m25;
 const { rasterize } = __m40;
 const { Pixels } = __m41;
+const { inked } = __m43;
 const ICON_PX = 32;
 const PIECE_PX = 40;
 const PIECE_GRID = 20;
@@ -3817,14 +3839,14 @@ const left = Math.floor(b.x0) - 1, top = Math.floor(b.y0) - 1;
 const w = Math.max(1, Math.ceil(b.x1) + 2 - left), h = Math.max(1, Math.ceil(Math.max(b.y1, 0)) + 2 - top);
 const ax = -left, ay = -top;
 model.transform(1, 0, 0, 1, ax, ay, 1);
-const r = rasterize(model, w, h, d.pal, { seed: d.seeds.surface });
-return { pix: r.pix, ax, ay, glints: r.glints };
+const r = rasterize(model, w, h, d.pal, { seed: d.seeds.surface, outline: false });
+return { pix: inked(r.pix), ax: ax + 1, ay: ay + 1, glints: r.glints.map(([x, y]) => [x + 1, y + 1]) };
 }
 function iconFrame(d) {
 const model = FAMILIES[d.family].icon(d);
-model.fit(ICON_PX, ICON_PX, { margin: 1.5 });
-const r = rasterize(model, ICON_PX, ICON_PX, d.pal, { seed: d.seeds.surface ^ 0x1c0 });
-return { pix: r.pix, ax: ICON_PX / 2, ay: ICON_PX, glints: r.glints };
+model.fit(ICON_PX - 2, ICON_PX - 2, { margin: 0.5 });
+const r = rasterize(model, ICON_PX - 2, ICON_PX - 2, d.pal, { seed: d.seeds.surface ^ 0x1c0, outline: false });
+return { pix: inked(r.pix), ax: ICON_PX / 2, ay: ICON_PX, glints: r.glints.map(([x, y]) => [x + 1, y + 1]) };
 }
 function pieceFrame(d, v) {
 const model = FAMILIES[d.family].piece(d, v & 3);
@@ -4236,7 +4258,7 @@ return [0, 1, 2].map((k) => -Math.log(Math.max(0.003, srgbToLinear(def.color[k])
 return { MAX_SPECIES, NO_BOIL, SpeciesTable, absorbance };
 })();
 // src/reactions/mixture.js
-const __m43 = (() => {
+const __m44 = (() => {
 const { MAX_SPECIES, NO_BOIL } = __m19;
 const { rgbToOklab, linearToSrgb } = __m9;
 function granularFraction(sp, comp, off, T) {
@@ -4337,7 +4359,7 @@ return { granularFraction, suspensionLnMult, mixtureProps, zeroComposition };
 // src/game/predict.js
 const __m18 = (() => {
 const { SpeciesTable, MAX_SPECIES } = __m19;
-const { mixtureProps } = __m43;
+const { mixtureProps } = __m44;
 const { compositionEffects, extractedEffects, NE } = __m14;
 const { isMagical, awakenedId, thresholdToCelsius } = __m16;
 const ACTIVATION_MARGIN = 6;
@@ -4483,7 +4505,7 @@ return c;
 return { ACTIVATION_MARGIN, predictPlan, reduceTemp, arcaneRegime, activationMargin, planCost };
 })();
 // src/game/customers.js
-const __m44 = (() => {
+const __m45 = (() => {
 const { Rng } = __m6;
 const ARCHETYPES = [
 {
@@ -4612,7 +4634,7 @@ return ARCHETYPES.find((a) => a.key === key) || ARCHETYPES[0];
 return { ARCHETYPES, shortName, makeCustomer, archetypeOf, Rng };
 })();
 // src/game/evaluate.js
-const __m45 = (() => {
+const __m46 = (() => {
 const { EFFECTS, EFFECT_INDEX, EFFECT_KEYS, NE } = __m14;
 const PROPERTY_LABELS = {
 temperature: 'Temperature', quantity: 'Quantity', purity: 'Purity', ...Object.fromEntries(EFFECTS.map((e) => [e.key, e.label])),
@@ -4704,7 +4726,7 @@ return { rows, quality, stars, perfect, payment, repDelta };
 return { PROPERTY_LABELS, strongestUnwanted, isEffectKey, scoreRequirement, describeValue, evaluatePotion };
 })();
 // src/simulation/constants.js
-const __m46 = (() => {
+const __m47 = (() => {
 const PHASE = Object.freeze({ LIQUID: 0, POWDER: 1, PASTE: 2, SOLID: 3, GAS: 4 });
 const PHASE_NAMES = ['liquid', 'powder', 'paste', 'solid', 'gas'];
 const SIM = Object.freeze({
@@ -4745,7 +4767,7 @@ return PHASE.LIQUID;
 return { PHASE, PHASE_NAMES, SIM, TUNE, formPhase };
 })();
 // src/game/requests.js
-const __m47 = (() => {
+const __m48 = (() => {
 const REQUESTS = [
 { id: 'healing', title: 'Healing Draught', fx: [{ key: 'vitality' }], who: ['healer', 'farmer', 'innkeeper', 'knight', 'hunter'], minTier: 0,
 story: ['My patients are wasting with fever. I need something that truly heals — and nothing else in it.', 'The goats are poorly and so is my back. A healing draught, plain and honest.', 'A traveller collapsed in my common room. Something to bring the colour back to his face.'] },
@@ -4800,13 +4822,13 @@ const __m17 = (() => {
 const { Rng } = __m6;
 const { describeColor } = __m9;
 const { predictPlan, planCost, arcaneRegime, ACTIVATION_MARGIN } = __m18;
-const { ARCHETYPES, makeCustomer, archetypeOf } = __m44;
-const { evaluatePotion } = __m45;
-const { SIM } = __m46;
+const { ARCHETYPES, makeCustomer, archetypeOf } = __m45;
+const { evaluatePotion } = __m46;
+const { SIM } = __m47;
 const { EFFECT_INDEX, EFFECT_BY_KEY, EFFECT_KEYS, NE, interact } = __m14;
 const { thresholdToCelsius, isMagical } = __m16;
 const { compatFactor } = __m15;
-const { REQUESTS, TIER_TARGET, PURITY_LIMIT, requestById } = __m47;
+const { REQUESTS, TIER_TARGET, PURITY_LIMIT, requestById } = __m48;
 function effectRequirement(key, sign, min) {
 if (sign < 0) {
 const max = -Math.max(3, Math.round(min));
@@ -5408,7 +5430,7 @@ return /^[aeiou]/i.test(w) ? 'an' : 'a';
 return { purityRequirement, coldFloor, TEST_MARGIN, checkSupply, TECHNIQUES, techniqueById, migrateTechniques, generateCommission, TUTORIAL_HERBS, tutorialCommission, unwantedMax };
 })();
 // src/game/equipment.js
-const __m48 = (() => {
+const __m49 = (() => {
 const EQUIPMENT = [
 { id: 'hearth', name: 'Stone Hearth', category: 'heat', price: 0, rank: 0, icon: 'fire', mechanics: ['steeping', 'concentration', 'awakening'], desc: 'A wood fire under the cauldron. It brings a pot to the boil in seconds and takes lamp oil past 200°C — every steep, boil and heat-awakening in the guild’s books.', effect: { maxFlame: 340, heatPower: 3.5 } },
 { id: 'basin', name: 'Cold-Water Basin', category: 'cold', price: 0, rank: 0, icon: 'basin', mechanics: ['cold-extraction'], desc: 'Cool well water under the cauldron: chills a brew to about 9°C — cold enough for most ice-cold steeps, never colder.', effect: { minCool: 4, coolPower: 4 } },
@@ -5491,7 +5513,7 @@ return cap;
 return { EQUIPMENT, STARTING_EQUIPMENT, BASE_STORAGE, BASE_BOTTLES, BASE_HUTCH, RETIRED_EQUIPMENT, equipmentById, RANKS, rankIndex, capabilities };
 })();
 // src/game/colony.js
-const __m50 = (() => {
+const __m51 = (() => {
 const { EFFECT_INDEX } = __m14;
 const { Rng, hashString } = __m6;
 const RABBIT_MARKS = ['vitality', 'strength', 'love', 'arcana', 'transformation', 'fire', 'frost', 'acid', 'alkali', 'toxicity', 'death'];
@@ -6259,10 +6281,10 @@ return trials;
 return { RABBIT_MARKS, MARK_INDEX, KIT_DAYS, ADULT_DAYS, ELDER_DAYS, LIFESPAN_DAYS, FOUNDER_BORN, GESTATION_DAYS, DOSE_LIMIT, MEMORIAL_LIMIT, LEVEL_AT, TRAIT_AT, DEGEN_AT, MARK_MAX, LETHAL, AGGRO, FERAL, AGGRO_AT, LOVE_MATE, MATE_EVERY, MARK_TAU, BURNS, BURN_RATE, MAX_BONUS, DEGEN_RISE, ATTACK_EVERY, TRAITS, TRAIT_EXCLUSIVE, TRAIT_WORDS, COATS, rollLook, inheritLook, lookFromSeed, visibleLevel, stageOf, maxHealthOf, degenOf, degenAt, degenRate, aggroAt, aggroOf, isFeral, burnRate, mateEvery, mateCost, RABBIT_BIAS, rabbitSensitivity, rabbitSnap, encodeSnap, defaultSnap, decodeSnap, NAMES, createColony, findRabbit, livingRabbits, bodies, focusRabbit, pickName, makeRabbit, addBoughtRabbit, recordDose, related, STAGE_ERR, MARK_DECAY, rabbitResponse, colonyTick, purgeRabbit, cullRabbit, colonyDay, retireRabbit, trimMemorial, remainsSource, causeWord, rabbitCondition, normalizeRabbit, normalizeColony, installRabbitAlias };
 })();
 // src/game/experiments.js
-const __m49 = (() => {
+const __m50 = (() => {
 const { EFFECTS, EFFECT_KEYS, EFFECT_INDEX, NE, potencyWord } = __m14;
 const { Rng, hashString } = __m6;
-const { createColony, normalizeColony, installRabbitAlias, rabbitResponse, findRabbit, focusRabbit, recordDose, rabbitSnap, encodeSnap, stageOf, addBoughtRabbit, STAGE_ERR, rabbitSensitivity, RABBIT_BIAS, maxHealthOf } = __m50;
+const { createColony, normalizeColony, installRabbitAlias, rabbitResponse, findRabbit, focusRabbit, recordDose, rabbitSnap, encodeSnap, stageOf, addBoughtRabbit, STAGE_ERR, rabbitSensitivity, RABBIT_BIAS, maxHealthOf } = __m51;
 function readingSteadiness(rabbit, day) {
 const stage = STAGE_ERR[stageOf(rabbit, day)] || 1;
 const max = Math.max(1, maxHealthOf(rabbit, day ?? 1));
@@ -6519,7 +6541,7 @@ return `${e.label} ${Math.round(v)} (${potencyWord(v, key)})`;
 return { readingSteadiness, SUBJECTS, SUBJECT_BY_ID, RECORD_LIMIT, DOSES, DOSE_NOISE, READ_NOISE, driftTolerance, createTrials, normalizeTrials, rabbitReading, doseErr, EVIDENCE_LEVELS, EVIDENCE_TEXT, evidenceRank, summarize, effectEvidence, requirementEvidence, EVIDENCE_STATE_TEXT, addSamples, runTrial, resetSubject, certification, requiredEffects, missingEffects, suggestSubjects, knownLaws, describeReading };
 })();
 // src/game/gathering.js
-const __m51 = (() => {
+const __m52 = (() => {
 const { Rng, hashString } = __m6;
 const { isBotanical, familyOf, habitatOf } = __m23;
 const REGIONS = [
@@ -6884,9 +6906,9 @@ return `${Math.floor(m / 60)} h ${m % 60} min`;
 return { REGIONS, REGION_BY_ID, STAGES, SPROUT_SHARE, MARK_MS, generateDeposits, thirstOf, createGathering, GATHER_VERSION, normalizeGathering, GROW_FLOOR, GROW_MAX, WATER_DOSE, moistureEnv, growthOf, matureIn, checkpoint, standOf, plantStage, depositStatus, water, setSky, migrateGathering, SCAR_SLOWDOWN, marksIn, METHODS, methodOf, dayPart, DAY_PART_NAME, DAY_PART_HINT, WEATHERS, weatherOn, gatherPlan, harvestable, weatherRegrowth, harvest, newDayRegrowth, formatWait };
 })();
 // src/simulation/particles.js
-const __m54 = (() => {
+const __m55 = (() => {
 const { MAX_SPECIES } = __m19;
-const { PHASE } = __m46;
+const { PHASE } = __m47;
 const { NE } = __m14;
 const STATE_FIELDS_F32 = ['x', 'y', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet', 'q', 'skinU', 'skinV'];
 const STATE_FIELDS_I32 = ['group'];
@@ -7009,7 +7031,7 @@ return this.phase[i] !== PHASE.GAS;
 return { STATE_FIELDS_F32, STATE_FIELDS_I32, STATE_FIELDS_U8, STATE_FIELDS_U16, STATE_FIELDS_U32, DERIVED_FIELDS, ARC_NONE, Particles };
 })();
 // src/simulation/grid.js
-const __m55 = (() => {
+const __m56 = (() => {
 class NeighborGrid {
 constructor(minX, minY, maxX, maxY, cell, capacity) {
 this.minX = minX;
@@ -7109,8 +7131,8 @@ for (let a = cellStart[c]; a < cellStart[c + 1]; a++) fn(sorted[a]);
 return { NeighborGrid };
 })();
 // src/simulation/cauldron.js
-const __m56 = (() => {
-const { SIM } = __m46;
+const __m57 = (() => {
+const { SIM } = __m47;
 const CAULDRON_SIZES = {
 pot: { key: 'pot', label: 'Iron Pot', mouth: 0.8, belly: 1.0, neck: 0.5, depth: 1.55, capacity: 310 },
 copper: { key: 'copper', label: 'Copper Cauldron', mouth: 0.95, belly: 1.2, neck: 0.6, depth: 1.8, capacity: 440 },
@@ -7346,13 +7368,13 @@ return s / this.lidCells;
 return { CAULDRON_SIZES, COLUMN, Cauldron };
 })();
 // src/simulation/derived.js
-const __m57 = (() => {
+const __m58 = (() => {
 const { MAX_SPECIES, NO_BOIL } = __m19;
-const { granularFraction, suspensionLnMult } = __m43;
+const { granularFraction, suspensionLnMult } = __m44;
 const { rgbToOklab, linearToSrgb } = __m9;
-const { PHASE } = __m46;
+const { PHASE } = __m47;
 const { compositionEffects, EFFECTS, NE } = __m14;
-const { ARC_NONE } = __m54;
+const { ARC_NONE } = __m55;
 const AURA_W = EFFECTS.map((e) => (e.kind === 'magic' ? 1 : 0.55));
 const AURA_COL = EFFECTS.map((e) => e.color);
 const auraFx = new Float64Array(NE);
@@ -7499,8 +7521,8 @@ p.auraI[i] = I / 100;
 return { STAIN, GAS_MASS, refreshParticle, refreshAura };
 })();
 // src/simulation/rigid.js
-const __m58 = (() => {
-const { PHASE } = __m46;
+const __m59 = (() => {
+const { PHASE } = __m47;
 const MAX_GROUPS = 2048;
 const BOND = 0.135;
 const FRESH = -2;
@@ -7693,8 +7715,8 @@ return this.active.length;
 return { FRESH, RigidBodies };
 })();
 // src/simulation/thermal.js
-const __m59 = (() => {
-const { PHASE, SIM } = __m46;
+const __m60 = (() => {
+const { PHASE, SIM } = __m47;
 const KPP = 34; // particle–particle conductance (game-scaled)
 const KW = 24; // particle–wall conductance
 const KA = 0.35; // free-surface loss to air
@@ -7810,11 +7832,11 @@ for (let k = 0; k < M + L; k++) Tw[k] += flow[k] / Cw[k];
 return { thermalStep, wallStep };
 })();
 // src/simulation/phase.js
-const __m60 = (() => {
-const { PHASE, PHASE_NAMES } = __m46;
+const __m61 = (() => {
+const { PHASE, PHASE_NAMES } = __m47;
 const { MAX_SPECIES, NO_BOIL } = __m19;
-const { refreshParticle } = __m57;
-const { FRESH } = __m58;
+const { refreshParticle } = __m58;
+const { FRESH } = __m59;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const BOIL_VOLATILE = 0.8;
 const DRY_MIN = 0.12;
@@ -8099,8 +8121,8 @@ classifyFluid(sim, j);
 return { classifyFluid, isFrozenGrain, dominantId, phaseStep };
 })();
 // src/reactions/diffusion.js
-const __m61 = (() => {
-const { PHASE } = __m46;
+const __m62 = (() => {
+const { PHASE } = __m47;
 const { MAX_SPECIES } = __m19;
 const { compatFactor } = __m15;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
@@ -8256,10 +8278,10 @@ return w > 0 ? s / w : 0;
 return { diffusionStep };
 })();
 // src/simulation/arcane.js
-const __m63 = (() => {
+const __m64 = (() => {
 const { MAX_SPECIES } = __m19;
 const { ARCANE_SCALE, ARCANE_ZERO, awakenedId } = __m16;
-const { ARC_NONE } = __m54;
+const { ARC_NONE } = __m55;
 const RATE = 0.55;
 const HEAT = 24;
 const TAIL = 0.002;
@@ -8338,11 +8360,11 @@ return a;
 return { arcaneStep, awakeSlot };
 })();
 // src/reactions/reactions.js
-const __m62 = (() => {
+const __m63 = (() => {
 const { MAX_SPECIES } = __m19;
-const { PHASE } = __m46;
+const { PHASE } = __m47;
 const { awakenedId } = __m16;
-const { awakeSlot } = __m63;
+const { awakeSlot } = __m64;
 const { GAS, SOLID } = PHASE;
 class ReactionSystem {
 constructor(sim, rules) {
@@ -8617,8 +8639,8 @@ return best;
 return { ReactionSystem };
 })();
 // src/simulation/tools.js
-const __m64 = (() => {
-const { PHASE, SIM } = __m46;
+const __m65 = (() => {
+const { PHASE, SIM } = __m47;
 const { MAX_SPECIES } = __m19;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const TOOL_SPECS = {
@@ -8863,9 +8885,9 @@ if (victims.length) sim.emit({ type: 'skim', count: victims.length, x: t.x, y: t
 return { TOOL_SPECS, ToolState, clampToInterior, toolForces, toolConstraints, LIQUID };
 })();
 // src/simulation/emitter.js
-const __m65 = (() => {
-const { PHASE, SIM, formPhase } = __m46;
-const { COLUMN } = __m56;
+const __m66 = (() => {
+const { PHASE, SIM, formPhase } = __m47;
+const { COLUMN } = __m57;
 const { chunkTemplate, chunkSize, hasPieces, skinOf, grainSkinOf, piece } = __m20;
 const { registerSpecies } = __m21;
 class Emitter {
@@ -9034,8 +9056,8 @@ return true;
 return { Emitter };
 })();
 // src/simulation/electric.js
-const __m66 = (() => {
-const { PHASE } = __m46;
+const __m67 = (() => {
+const { PHASE } = __m47;
 const KQ = 26; // conduction rate (game scaled)
 const RE = 0.16; // contact distance
 const JOULE = 140; // heat per unit of charge moved per unit of potential difference
@@ -9082,22 +9104,22 @@ return s;
 return { electricStep, totalCharge };
 })();
 // src/simulation/world.js
-const __m53 = (() => {
-const { PHASE, SIM, TUNE, formPhase } = __m46;
-const { Particles } = __m54;
-const { NeighborGrid } = __m55;
-const { Cauldron, COLUMN } = __m56;
+const __m54 = (() => {
+const { PHASE, SIM, TUNE, formPhase } = __m47;
+const { Particles } = __m55;
+const { NeighborGrid } = __m56;
+const { Cauldron, COLUMN } = __m57;
 const { SpeciesTable, MAX_SPECIES } = __m19;
-const { refreshParticle } = __m57;
-const { RigidBodies } = __m58;
-const { thermalStep } = __m59;
-const { phaseStep, classifyFluid } = __m60;
-const { diffusionStep } = __m61;
-const { ReactionSystem } = __m62;
-const { ToolState, toolForces, toolConstraints } = __m64;
-const { Emitter } = __m65;
-const { electricStep } = __m66;
-const { arcaneStep } = __m63;
+const { refreshParticle } = __m58;
+const { RigidBodies } = __m59;
+const { thermalStep } = __m60;
+const { phaseStep, classifyFluid } = __m61;
+const { diffusionStep } = __m62;
+const { ReactionSystem } = __m63;
+const { ToolState, toolForces, toolConstraints } = __m65;
+const { Emitter } = __m66;
+const { electricStep } = __m67;
+const { arcaneStep } = __m64;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const MODE = Object.freeze({ PBF: 0, GRAN: 1, COH: 2, RIGID: 3, GAS: 4 });
 const M_PBF = 0, M_GRAN = 1, M_COH = 2, M_RIGID = 3, M_GAS = 4;
@@ -9917,9 +9939,9 @@ if (p.sleep[i] >= SLEEP_STEPS) p.sleep[i] = 0;
 return { MODE, SLEEP_STEPS, Simulation, formPhase };
 })();
 // src/game/measure.js
-const __m67 = (() => {
+const __m68 = (() => {
 const { MAX_SPECIES } = __m19;
-const { PHASE, SIM } = __m46;
+const { PHASE, SIM } = __m47;
 const { compatFactor } = __m15;
 const { oklabToRgb } = __m9;
 const { sampleEffects } = __m14;
@@ -10044,12 +10066,12 @@ return stability >= 90 ? 'evenly mixed' : stability >= 70 ? 'a little uneven' : 
 return { measureParticles, tapSelection, probeSelection, viscosityClass, densityWord, evennessWord };
 })();
 // src/game/vial.js
-const __m52 = (() => {
-const { Simulation } = __m53;
-const { PHASE, SIM } = __m46;
+const __m53 = (() => {
+const { Simulation } = __m54;
+const { PHASE, SIM } = __m47;
 const { MAX_SPECIES } = __m19;
-const { measureParticles } = __m67;
-const { refreshParticle } = __m57;
+const { measureParticles } = __m68;
+const { refreshParticle } = __m58;
 const ROOM = SIM.AMBIENT;
 const COOL_TAU = 480;
 function makeVial(sim, indices, meta) {
@@ -10226,12 +10248,12 @@ return { ...v, species, particles, ml: n * SIM.ML_PER_PARTICLE, bottledMl: v.bot
 return { makeVial, appendParticles, measureVial, updateVial, takeDose, pourBack, pourBackParts, relaxVial, vialInventory, migrateVial };
 })();
 // src/game/commerce.js
-const __m68 = (() => {
+const __m69 = (() => {
 const { Rng, hashString } = __m6;
 const { EFFECT_KEYS, EFFECT_INDEX, NE, EFFECT_BY_KEY } = __m14;
-const { evaluatePotion, strongestUnwanted, PROPERTY_LABELS } = __m45;
-const { PURITY_LIMIT } = __m47;
-const { summarize, evidenceRank, EVIDENCE_TEXT } = __m49;
+const { evaluatePotion, strongestUnwanted, PROPERTY_LABELS } = __m46;
+const { PURITY_LIMIT } = __m48;
+const { summarize, evidenceRank, EVIDENCE_TEXT } = __m50;
 function draftLabel(vial, theory, day) {
 const claims = {};
 const cert = vial.cert || {}, recs = vial.certRecords || {};
@@ -10549,7 +10571,7 @@ return (Math.round(v * 10) / 10).toLocaleString('en-US', { maximumFractionDigits
 return { draftLabel, applyTrials, evidenceOf, STAR_STEPS, MAX_STARS, accuracyStars, claimSigma, claimStars, labelStars, trialClaim, sameClaim, editClaim, claimedEffects, relevantEffects, EVIDENCE_WEIGHT, trustReport, labelTrust, unprovenWanted, proofGaps, claimedMeasurement, openNegotiation, proposePrice, acceptOffer, recordSale, resolveFollowUp, EVIDENCE_TEXT };
 })();
 // src/materials/remains.js
-const __m69 = (() => {
+const __m70 = (() => {
 const { completeMaterial } = __m10;
 const { arcaneProfile, jitter } = __m12;
 function remainsId(rabbitId, part) {
@@ -10648,7 +10670,7 @@ return m;
 return { remainsId, isRemains, remainsPlan, remainsMaterials };
 })();
 // src/game/patrons.js
-const __m70 = (() => {
+const __m71 = (() => {
 const RETURN_CHANCE = 0.3;
 const BANNED_TRUST = -0.75;
 const clamp1 = (v) => Math.max(-1, Math.min(1, v));
@@ -10716,7 +10738,7 @@ return Math.round(v * 100) / 100;
 return { RETURN_CHANCE, BANNED_TRUST, notePatron, patronVerdict, returningPatron, welcomePatron, recentStyles, noveltyFactor };
 })();
 // src/game/recipes.js
-const __m71 = (() => {
+const __m72 = (() => {
 const TRACE_DT = 1;
 const TRACE_MAX = 1200;
 const HOLD_MIN = 6, HOLD_BAND = 4, ROOM = 20;
@@ -10954,19 +10976,19 @@ const { Rng, hashString } = __m6;
 const { generateWorld, makeLookup, addAlchemy, LAB_ROLES } = __m7;
 const { serializeMaterial, deserializeMaterial } = __m10;
 const { generateCommission, tutorialCommission } = __m17;
-const { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById, RETIRED_EQUIPMENT } = __m48;
-const { SIM } = __m46;
-const { createTrials, normalizeTrials, runTrial, SUBJECT_BY_ID, knownLaws, certification, summarize } = __m49;
-const { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth, depositStatus, migrateGathering, setSky, water } = __m51;
+const { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById, RETIRED_EQUIPMENT } = __m49;
+const { SIM } = __m47;
+const { createTrials, normalizeTrials, runTrial, SUBJECT_BY_ID, knownLaws, certification, summarize } = __m50;
+const { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth, depositStatus, migrateGathering, setSky, water } = __m52;
 const { predictPlan } = __m18;
 const { EFFECT_INDEX, EFFECT_KEYS } = __m14;
-const { migrateVial } = __m52;
-const { recordSale, resolveFollowUp, applyTrials, evidenceOf } = __m68;
-const { colonyDay, colonyTick, livingRabbits, findRabbit, addBoughtRabbit, retireRabbit, remainsSource, purgeRabbit, cullRabbit, maxHealthOf, FOUNDER_BORN } = __m50;
-const { remainsMaterials, remainsPlan, isRemains } = __m69;
-const { returningPatron, welcomePatron, recentStyles, notePatron, patronVerdict, noveltyFactor } = __m70;
+const { migrateVial } = __m53;
+const { recordSale, resolveFollowUp, applyTrials, evidenceOf } = __m69;
+const { colonyDay, colonyTick, livingRabbits, findRabbit, addBoughtRabbit, retireRabbit, remainsSource, purgeRabbit, cullRabbit, maxHealthOf, FOUNDER_BORN } = __m51;
+const { remainsMaterials, remainsPlan, isRemains } = __m70;
+const { returningPatron, welcomePatron, recentStyles, notePatron, patronVerdict, noveltyFactor } = __m71;
 const { techniqueById, migrateTechniques } = __m17;
-const { migrateRecipe } = __m71;
+const { migrateRecipe } = __m72;
 const SAVE_VERSION = 6;
 const PURGE_PRICE = 8;
 const PURGE_BREW_COST = 1;
@@ -11959,7 +11981,7 @@ return Math.round(v * 10) / 10;
 return { SAVE_VERSION, PURGE_PRICE, PURGE_BREW_COST, PURGE_BREW_TIME, WORLD_GEN_VERSION, STARTER_HERBS, MARKET_EVENTS, ACHIEVEMENTS, GameState, migrateCommission, migrate, retireEquipment, retireRequirements, EQUIPMENT, SIM };
 })();
 // src/game/persistence.js
-const __m72 = (() => {
+const __m73 = (() => {
 const { GameState } = __m5;
 const KEYS = {
 save: 'alchemist-shop.save',
@@ -12083,11 +12105,11 @@ if (s) s.removeItem(key);
 return { KEYS, storageAvailable, saveGame, loadGame, hasSave, deleteSave, exportSave, parseImport, loadJSON, saveJSON, removeKey };
 })();
 // src/simulation/snapshot.js
-const __m74 = (() => {
+const __m75 = (() => {
 const { MAX_SPECIES } = __m19;
-const { refreshParticle } = __m57;
-const { Simulation } = __m53;
-const { CAULDRON_SIZES } = __m56;
+const { refreshParticle } = __m58;
+const { Simulation } = __m54;
+const { CAULDRON_SIZES } = __m57;
 const F32_FIELDS_V1 = ['x', 'y', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet'];
 const F32_FIELDS = [...F32_FIELDS_V1, 'q'];
 const SNAPSHOT_VERSION = 2;
@@ -12218,7 +12240,7 @@ for (let i = 0; i < n; i++) if (p.group[i] >= 0) sim.rigid.used[p.group[i]] = 1;
 return { SNAPSHOT_VERSION, toBase64, fromBase64, snapshotSim, restoreSim, applySnapshot };
 })();
 // src/rendering/art.js
-const __m76 = (() => {
+const __m77 = (() => {
 const { Rng } = __m6;
 const PAL = {
 night0: '#0d0a10', night1: '#17121c', night2: '#221a28',
@@ -12735,7 +12757,7 @@ for (let k = 0; k < 14; k++) R(ctx, Math.round(v.ox + rng.range(-0.6, 0.6) * c.b
 return { PAL, hex2rgb, rgbStr, mixHex, paintBackground, drawJar, renderCauldron, renderLid, renderLidAside, makeCanvas, paintHearth, rect: R };
 })();
 // src/rendering/potion-fx.js
-const __m78 = (() => {
+const __m79 = (() => {
 const { EFFECTS, NE } = __m14;
 const K = Object.fromEntries(EFFECTS.map((e, k) => [e.key, k]));
 const MAX = 1400;
@@ -13130,12 +13152,12 @@ break;
 return { PotionParticles };
 })();
 // src/rendering/brew-palette.js
-const __m79 = (() => {
+const __m80 = (() => {
 const { MAX_SPECIES } = __m19;
 const { srgbToLinear, linearToSrgb } = __m9;
 const { PIECE_ART, piecePalette, registerSpecies, onPiecesChanged } = __m21;
 const { grainSkinOf } = __m20;
-const { STAIN } = __m57;
+const { STAIN } = __m58;
 const bySpecies = new WeakMap();
 const bySkin = new Map();
 onPiecesChanged(() => bySkin.clear());
@@ -13254,14 +13276,14 @@ return true;
 return { dominantColour, preparePalettes, pc, paletteColour };
 })();
 // src/rendering/fluid.js
-const __m77 = (() => {
-const { PHASE, SIM } = __m46;
+const __m78 = (() => {
+const { PHASE, SIM } = __m47;
 const { LOOK, piece } = __m20;
 const { PIECE_ART, PIECE_CELL, piecePalette } = __m21;
 const { NE } = __m14;
 const { MAX_SPECIES } = __m19;
-const { PotionParticles } = __m78;
-const { preparePalettes, paletteColour, pc: palCol } = __m79;
+const { PotionParticles } = __m79;
+const { preparePalettes, paletteColour, pc: palCol } = __m80;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const LS = 9;
 const LC = 6;
@@ -14009,8 +14031,8 @@ return v < 0 ? 0 : v > 255 ? 255 : v | 0;
 return { drawnGlow, drawnGlowTable, FluidRenderer };
 })();
 // src/rendering/effects.js
-const __m80 = (() => {
-const { PAL, hex2rgb } = __m76;
+const __m81 = (() => {
+const { PAL, hex2rgb } = __m77;
 const MAX = 900;
 const FIRE_RAMP = [PAL.fire5, PAL.fire4, PAL.fire3, PAL.fire2, PAL.fire1, PAL.fire0].map(hex2rgb);
 class Effects {
@@ -14123,12 +14145,12 @@ ctx.globalAlpha = 1;
 return { Effects };
 })();
 // src/rendering/renderer.js
-const __m75 = (() => {
-const { PAL, paintBackground, renderCauldron, renderLid, renderLidAside, paintHearth, makeCanvas, rgbStr, hex2rgb, drawJar, rect } = __m76;
-const { FluidRenderer, drawnGlow, drawnGlowTable } = __m77;
-const { Effects } = __m80;
-const { COLUMN } = __m56;
-const { PHASE } = __m46;
+const __m76 = (() => {
+const { PAL, paintBackground, renderCauldron, renderLid, renderLidAside, paintHearth, makeCanvas, rgbStr, hex2rgb, drawJar, rect } = __m77;
+const { FluidRenderer, drawnGlow, drawnGlowTable } = __m78;
+const { Effects } = __m81;
+const { COLUMN } = __m57;
+const { PHASE } = __m47;
 const { compositionEffects, dominantEffect, EFFECTS, NE } = __m14;
 const auraScratch = new Float64Array(NE);
 const VIEW_TOP = -1.25;
@@ -14522,7 +14544,7 @@ rect(ctx, x, y + h - 1, w, 1, 'rgba(0,0,0,0.4)');
 return { Renderer, drawBottle, PHASE };
 })();
 // src/rendering/portraits.js
-const __m81 = (() => {
+const __m82 = (() => {
 const { Rng } = __m6;
 const S = 32;
 const shade = (c, f) => `rgb(${Math.round(Math.min(255, c[0] * 255 * f))},${Math.round(Math.min(255, c[1] * 255 * f))},${Math.round(Math.min(255, c[2] * 255 * f))})`;
@@ -14640,7 +14662,7 @@ if (rng.chance(0.5)) P(hx - 1, 8, 2, 10, hc);
 return { drawPortrait };
 })();
 // src/rendering/scenes.js
-const __m83 = (() => {
+const __m84 = (() => {
 function R(ctx, x, y, w, h, c) {
 ctx.fillStyle = c;
 ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
@@ -14692,13 +14714,14 @@ return cv;
 return { drawRaw, rawSprite };
 })();
 // src/rendering/species-sprites.js
-const __m82 = (() => {
+const __m83 = (() => {
 const { describe } = __m22;
 const { plantFrame, iconFrame, ICON_PX } = __m39;
 const { identityKey, validIdentity } = __m8;
 const { archetypeIdentity } = __m21;
 const { Pixels } = __m41;
-const { rawSprite } = __m83;
+const { isBotanical } = __m23;
+const { rawSprite } = __m84;
 const MIN_HIT = 26;
 const STAGE = { sprout: 0, ripe: 1, mature: 2 };
 function identityOfMaterial(m) {
@@ -14732,7 +14755,7 @@ return { pix: p, ax: f.ax + 1, ay: f.ay + 1, glints: f.glints.map(([x, y]) => [x
 function plantFrameOf(m, stage, o = {}) {
 const id = identityOfMaterial(m);
 if (!id) return null;
-const st = STAGE[stage] ?? 2, closed = !!o.closed && st === 2;
+const st = isBotanical(id.shape) ? STAGE[stage] ?? 2 : 2, closed = !!o.closed && st === 2;
 const base = cached(`p|${identityKey(id)}|${st}|${closed ? 1 : 0}`, () => plantFrame(describe(id), st, { closed }));
 return o.hover ? cached(`h|${identityKey(id)}|${st}|${closed ? 1 : 0}`, () => rimmed(base)) : base;
 }
@@ -14769,7 +14792,7 @@ return cv;
 return { MIN_HIT, identityOfMaterial, speciesOf, plantFrameOf, plantCanvas, silhouetteOf, iconFrameOf, ingredientSprite, ICON_PX };
 })();
 // src/game/journal.js
-const __m84 = (() => {
+const __m85 = (() => {
 function processEvent(state, e) {
 const entries = [];
 const achievements = [];
@@ -14882,8 +14905,8 @@ return { entries, achievements };
 return { processEvent };
 })();
 // src/game/autobrew.js
-const __m85 = (() => {
-const { PHASE, SIM } = __m46;
+const __m86 = (() => {
+const { PHASE, SIM } = __m47;
 const { MAX_SPECIES } = __m19;
 function condensedCount(sim) {
 const p = sim.p;
@@ -15166,7 +15189,7 @@ return t / Math.max(1, sim.p.count);
 return { condensedCount, stageGoal, AutoBrewer, runPlanHeadless, speciesFraction };
 })();
 // src/game/mechanics.js
-const __m87 = (() => {
+const __m88 = (() => {
 const MECHANICS = [
 { id: 'formulation', name: 'Formulation and neutralisation', role: 'core', stage: 'formulation', rank: 0,
 decision: 'Which natural ingredients, in what proportions, to carry the wanted effects and cancel their side effects.',
@@ -15252,26 +15275,26 @@ const SANDBOX_CONTROLS = ['skimmer', 'alembic', 'heatmap', 'readouts'];
 return { MECHANICS, MECHANIC_BY_ID, IMMERSION, SANDBOX_CONTROLS };
 })();
 // src/ui/panels.js
-const __m86 = (() => {
-const { recipeConfidence, CONFIDENCE_TEXT, describeStep } = __m71;
-const { MECHANIC_BY_ID } = __m87;
-const { evidenceRank } = __m49;
+const __m87 = (() => {
+const { recipeConfidence, CONFIDENCE_TEXT, describeStep } = __m72;
+const { MECHANIC_BY_ID } = __m88;
+const { evidenceRank } = __m50;
 const { h, btn, modal, toast, coins, starsText, confirmDialog, clear } = __m2;
 const { icon } = __m3;
-const { drawPortrait } = __m81;
-const { drawJar } = __m76;
-const { EQUIPMENT, RANKS } = __m48;
+const { drawPortrait } = __m82;
+const { drawJar } = __m77;
+const { EQUIPMENT, RANKS } = __m49;
 const { ACHIEVEMENTS } = __m5;
-const { viscosityClass, densityWord, evennessWord } = __m67;
+const { viscosityClass, densityWord, evennessWord } = __m68;
 const { EFFECTS, EFFECT_BY_KEY, EFFECT_KEYS, dominantEffect } = __m14;
-const { ingredientSprite } = __m82;
+const { ingredientSprite } = __m83;
 const { compatFactor } = __m15;
 const { describeColor, rgbToHex } = __m9;
-const { SIM } = __m46;
-const { exportSave, parseImport, saveGame } = __m72;
+const { SIM } = __m47;
+const { exportSave, parseImport, saveGame } = __m73;
 const { audio } = __m4;
 const { isMagical } = __m16;
-const { causeWord } = __m50;
+const { causeWord } = __m51;
 const CAT_LABEL = { heat: 'Fire', cold: 'Cooling', vessel: 'Cauldrons', tool: 'Tools', instrument: 'Instruments', trials: 'Trials room', gathering: 'Foraging', storage: 'Potion storage', guild: 'Guild' };
 function jarCanvas(m, w = 22, hh = 30) {
 if ((m.wild || m.remains) && m.form === 'solid') {
@@ -15836,15 +15859,15 @@ h('div', { class: 'small muted credits', text: 'The Alchemist’s Shop — all a
 return { jarCanvas, fxChips, openShop, openIngredient, openHint, openBottleSize, showDaySummary, showAnalysis, openRecipes, renderRecipes, openJournal, renderJournal, openPause, openReceiver, openHelp, openSettings };
 })();
 // src/ui/trade.js
-const __m88 = (() => {
+const __m89 = (() => {
 const { h, btn, modal, toast, coins, clear, starsText } = __m2;
 const { icon } = __m3;
-const { drawPortrait } = __m81;
+const { drawPortrait } = __m82;
 const { audio } = __m4;
 const { EFFECTS, EFFECT_BY_KEY } = __m14;
-const { draftLabel, openNegotiation: beginNegotiation, proposePrice, acceptOffer, relevantEffects, trustReport, editClaim, proofGaps, claimSigma, claimStars, labelStars, MAX_STARS } = __m68;
-const { PURITY_LIMIT } = __m47;
-const { shortName } = __m44;
+const { draftLabel, openNegotiation: beginNegotiation, proposePrice, acceptOffer, relevantEffects, trustReport, editClaim, proofGaps, claimSigma, claimStars, labelStars, MAX_STARS } = __m69;
+const { PURITY_LIMIT } = __m48;
+const { shortName } = __m45;
 function openIdentify(lab, vial, onDone) {
 const st = lab.state;
 const draft = vial.label ? JSON.parse(JSON.stringify(vial.label)) : draftLabel(vial, lab.vialTheory(vial), st.day);
@@ -16058,11 +16081,11 @@ return `${n === null ? '' : starsText(n, MAX_STARS) + ' '}${claimSummary(label.c
 return { openIdentify, openNegotiation, showDeal, followUpCard, claimSummary, accuracyTitle, labelLine, EFFECT_BY_KEY };
 })();
 // src/ui/tutorial.js
-const __m89 = (() => {
+const __m90 = (() => {
 const { h, btn, placeToasts } = __m2;
-const { PHASE } = __m46;
+const { PHASE } = __m47;
 const { TUTORIAL_HERBS } = __m17;
-const { shortName } = __m44;
+const { shortName } = __m45;
 class Tutorial {
 constructor(lab) {
 this.lab = lab;
@@ -16205,22 +16228,22 @@ if (t && t !== this.target) { if (this.target) this.target.classList.remove('hig
 return { Tutorial };
 })();
 // src/ui/views/counter.js
-const __m90 = (() => {
+const __m91 = (() => {
 const { h, btn, clear, coins, confirmDialog, starsText } = __m2;
 const { icon } = __m3;
-const { drawPortrait } = __m81;
-const { drawBottle } = __m75;
-const { PROPERTY_LABELS, scoreRequirement } = __m45;
+const { drawPortrait } = __m82;
+const { drawBottle } = __m76;
+const { PROPERTY_LABELS, scoreRequirement } = __m46;
 const { techniqueById } = __m17;
 const { EFFECT_INDEX, NE } = __m14;
 const { EFFECT_BY_KEY } = __m14;
-const { missingEffects, summarize, requirementEvidence } = __m49;
-const { labelStars, MAX_STARS } = __m68;
-const trade = __m88;
+const { missingEffects, summarize, requirementEvidence } = __m50;
+const { labelStars, MAX_STARS } = __m69;
+const trade = __m89;
 const { describeColor, rgbToHex } = __m9;
-const { viscosityClass } = __m67;
-const panels = __m86;
-const { shortName } = __m44;
+const { viscosityClass } = __m68;
+const panels = __m87;
+const { shortName } = __m45;
 class CounterView {
 constructor(lab) {
 this.lab = lab;
@@ -16413,13 +16436,15 @@ unseen ? h('span', { class: 'muted', text: ` ${seen.length ? '· ' : ''}${unseen
 return { CounterView };
 })();
 // src/visual/env/paint.js
-const __m94 = (() => {
+const __m95 = (() => {
 const { Pixels } = __m41;
 const { rasterize } = __m40;
 const { noise2, fbm1, fbm2, bayer, hash2 } = __m42;
 const { ramp, hex, mixPacked, pack, unpack } = __m24;
+const { toneOf } = __m43;
 const SCENE_W = 384;
 const SCENE_H = 216;
+const step = (t) => Math.floor(t / 0.07) * 0.07;
 class Canvas {
 constructor(seed) {
 this.W = SCENE_W; this.H = SCENE_H;
@@ -16473,7 +16498,7 @@ return { x: X, y: Y, w, h, raster: r };
 }
 wash(c, f, y0 = 0, y1 = this.H) {
 for (let y = Math.max(0, y0); y < Math.min(this.H, y1); y++) for (let x = 0; x < this.W; x++) {
-const t = f(x, y);
+const t = step(f(x, y));
 if (t <= 0.004) continue;
 const k = y * this.W + x;
 this.pix.px[k] = mixPacked(this.pix.px[k], c, Math.min(1, t));
@@ -16481,7 +16506,7 @@ this.pix.px[k] = mixPacked(this.pix.px[k], c, Math.min(1, t));
 }
 light(rgb, f, y0 = 0, y1 = this.H) {
 for (let y = Math.max(0, y0); y < Math.min(this.H, y1); y++) for (let x = 0; x < this.W; x++) {
-const t = f(x, y);
+const t = step(f(x, y));
 if (t <= 0.004) continue;
 const k = y * this.W + x, c = this.pix.px[k];
 const r = Math.min(255, (c & 255) + rgb[0] * 255 * t), g = Math.min(255, ((c >>> 8) & 255) + rgb[1] * 255 * t), b = Math.min(255, ((c >>> 16) & 255) + rgb[2] * 255 * t);
@@ -16490,15 +16515,15 @@ this.pix.px[k] = ((255 << 24) | (Math.round(b) << 16) | (Math.round(g) << 8) | M
 }
 }
 function sky(cv, y0, y1, stops, bands = 12) {
-const cols = stops.map(hex);
+const cols = stops.map(hex), n = Math.max(3, Math.min(6, Math.round(bands / 2)));
 const at = (t) => {
 const f = Math.min(cols.length - 1.0001, t * (cols.length - 1)), i = Math.floor(f), u = f - i;
 return cols[i].map((v, k) => v + (cols[i + 1][k] - v) * u);
 };
-const steps = Array.from({ length: bands + 1 }, (_, i) => pack(at(i / bands)));
+const steps = Array.from({ length: n }, (_, i) => pack(at(i / (n - 1))));
 for (let y = y0; y < y1; y++) {
-const t = (y - y0) / Math.max(1, y1 - y0 - 1), b = t * bands, lo = Math.floor(b), fr = b - lo;
-for (let x = 0; x < cv.W; x++) cv.set(x, y, fr > bayer(x, y) ? steps[Math.min(bands, lo + 1)] : steps[lo]);
+const t = (y - y0) / Math.max(1, y1 - y0 - 1), b = Math.min(n - 1, Math.floor(Math.pow(t, 0.8) * n));
+for (let x = 0; x < cv.W; x++) cv.set(x, y, steps[b]);
 }
 }
 function ridge(cv, o) {
@@ -16514,10 +16539,9 @@ const t0 = Math.round(top[x]);
 for (let y = Math.max(0, t0); y < Math.min(cv.H, o.bottom); y++) {
 const depth = (y - t0) / Math.max(1, o.bottom - t0);
 const slope = (top[Math.max(0, x - 2)] - top[Math.min(cv.W - 1, x + 2)]) * 0.25;
-let l = 0.55 - depth * 0.25 - slope * 0.3 + (fbm2(x * 0.08, y * 0.12, o.seed + 3, 3) - 0.5) * (o.tex ?? 0.5);
+let l = 0.5 - depth * 0.2 - slope * 0.25 + (fbm2(x * 0.04, y * 0.06, o.seed + 3, 2) - 0.5) * (o.tex ?? 0.5) * 0.6;
 if (y - t0 < (o.rim ?? 1)) l += 0.35;
-const i = Math.max(0, Math.min(n - 1, Math.floor((l + (bayer(x, y) - 0.5) * 0.15) * n)));
-cv.set(x, y, R[i]);
+cv.set(x, y, R[toneOf(n, l)]);
 }
 }
 return top;
@@ -16527,26 +16551,25 @@ for (let x = 0; x < cv.W; x++) {
 const h0 = Math.round(horizon[x]);
 for (let y = Math.max(0, h0); y < cv.H; y++) {
 const depth = (y - h0 + 1) / (cv.H - h0 + 1);
-const sx = x * (0.06 + depth * 0.1), sy = y * (0.12 + depth * 0.16);
-const n = fbm2(sx, sy * 1.6, seed, 3);
+const cx = x & ~1, sx = cx * (0.03 + depth * 0.05), sy = y * (0.06 + depth * 0.08);
+const n = fbm2(sx, sy * 1.6, seed, 2);
 cv.set(x, y, colour(x, y, depth, n));
 if (open) cv.open[y * cv.W + x] = 1;
 }
 }
 }
 function blades(x, y, depth, seed) {
-const L = 1 + Math.floor(depth * 4);
-return (hash2(x, Math.floor((y + hash2(x, 0, seed) * 8) / L), seed) - 0.5) * 0.75 + (noise2(x * 0.22, y * 0.1, seed + 1) - 0.5) * 0.5;
+const L = 2 + Math.floor(depth * 4), strand = hash2(x >> 1, Math.floor((y + hash2(x >> 1, 0, seed) * 8) / L), seed);
+return (strand > 0.9 ? 0.3 : strand < 0.06 ? -0.3 : 0) + (noise2(x * 0.08, y * 0.06, seed + 1) - 0.5) * 0.35;
 }
-function shadeOf(R, l, x, y, dith = 0.12) {
-const n = R.length;
-return R[Math.max(0, Math.min(n - 1, Math.floor((l + (bayer(x, y) - 0.5) * dith) * n)))];
+function shadeOf(R, l, x, y) {
+return R[toneOf(R.length, l)];
 }
 return { SCENE_W, SCENE_H, Canvas, sky, ridge, ground, blades, shadeOf, ramp, hex, mixPacked, pack, unpack, noise2, fbm1, fbm2, bayer, hash2 };
 })();
 // src/visual/env/kit.js
-const __m96 = (() => {
-const { ramp, hex, mixPacked, noise2, fbm2, bayer, hash2 } = __m94;
+const __m97 = (() => {
+const { ramp, hex, mixPacked, noise2, fbm2, bayer, hash2 } = __m95;
 const { Rng, hashString } = __m6;
 const { shift } = __m24;
 function palette(spec) {
@@ -16584,6 +16607,7 @@ if (t <= 0.02) return false;
 return fbm2(x * (0.025 + t * 0.012), y * (0.07 + t * 0.03), seed, 3) > thr;
 }
 function speckle(cv, rng, n, y0, y1, colours, o = {}) {
+n = Math.round(n * 0.3);
 for (let i = 0; i < n; i++) {
 const x = rng.int(0, cv.W - 1), y = rng.int(y0, y1 - 1);
 if (o.onOpen && !cv.open[y * cv.W + x]) continue;
@@ -16596,7 +16620,7 @@ if (o.big && y > y0 + (y1 - y0) * 0.5) { cv.set(x + 1, y, c); if (o.stem) cv.set
 return { palette, vary, streamOf, nearness, scaleAt, hazeAt, band, inPool, speckle, mixPacked, noise2, fbm2, bayer, hash2, Rng };
 })();
 // src/visual/env/objects.js
-const __m97 = (() => {
+const __m98 = (() => {
 const { Model, blade, PROFILES, bezier, lumpy, ellipse, polygon } = __m28;
 const R = (rng) => () => rng.next();
 function crown(m, rng, cx, cy, rx, ry, mat = 'leaf', o = {}) {
@@ -16832,10 +16856,10 @@ return m;
 return { crown, tree, branch, bush, boulder, reeds, fern, tuft, log, stump, cloud, beam, crane, ladder, cart, crate, fence, skep, basalt, spire, cairn };
 })();
 // src/visual/env/meadow.js
-const __m95 = (() => {
-const { sky, ridge, ground, shadeOf, blades } = __m94;
-const { palette, vary, streamOf, scaleAt, hazeAt, band, speckle, fbm2, hash2 } = __m96;
-const { tree, bush, boulder, cloud, fence, skep, tuft, reeds } = __m97;
+const __m96 = (() => {
+const { sky, ridge, ground, shadeOf, blades } = __m95;
+const { palette, vary, streamOf, scaleAt, hazeAt, band, speckle, fbm2, hash2 } = __m97;
+const { tree, bush, boulder, cloud, fence, skep, tuft, reeds } = __m98;
 const { Model, lumpy } = __m28;
 const { hex, pack } = __m24;
 function compose(cv, seed) {
@@ -16926,10 +16950,10 @@ cv.meta.sun = [sx, sy];
 return { compose };
 })();
 // src/visual/env/forest.js
-const __m98 = (() => {
-const { sky, ground, shadeOf, blades } = __m94;
-const { palette, vary, streamOf, scaleAt, hazeAt, speckle, fbm2, hash2 } = __m96;
-const { tree, bush, boulder, fern, log, stump, crown, tuft } = __m97;
+const __m99 = (() => {
+const { sky, ground, shadeOf, blades } = __m95;
+const { palette, vary, streamOf, scaleAt, hazeAt, speckle, fbm2, hash2 } = __m97;
+const { tree, bush, boulder, fern, log, stump, crown, tuft } = __m98;
 const { Model } = __m28;
 const { hex, pack } = __m24;
 function compose(cv, seed) {
@@ -16959,10 +16983,10 @@ for (let x = 0; x < W; x++) hz[x] = 118 + (fbm2(x * 0.015, 0, hs, 3) - 0.5) * 8;
 const gs = s('floor').int(0, 1e9);
 const dapple = (x, y) => fbm2(x * 0.035, y * 0.08, gs + 33, 3);
 ground(cv, hz, (x, y, depth, n) => {
-const litter = fbm2(x * 0.03, y * 0.07, gs + 11, 3) + (hash2(x, y, gs + 2) - 0.5) * 0.08, lightSpot = dapple(x, y) > 0.6 ? 0.2 : dapple(x, y) > 0.56 ? 0.08 : 0;
-const fleck = hash2(x >> (depth > 0.5 ? 1 : 0), y, gs + 3);
-if (litter > 0.56) return shadeOf(pal.litter, 0.2 + n * 0.4 + lightSpot + (fleck > 0.8 ? 0.25 : fleck < 0.15 ? -0.2 : 0), x, y);
-return shadeOf(pal.floor, 0.12 + n * 0.45 + lightSpot + (fleck > 0.9 ? 0.2 : 0) + blades(x, y, depth, gs + 5) * depth * 0.25 - (1 - depth) * 0.1, x, y);
+const litter = fbm2(x * 0.03, y * 0.07, gs + 11, 3), lightSpot = dapple(x, y) > 0.6 ? 0.2 : 0;
+const fleck = hash2(x >> 1, y >> 1, gs + 3);
+if (litter > 0.56) return shadeOf(pal.litter, 0.3 + n * 0.3 + lightSpot + (fleck > 0.94 ? 0.3 : 0), x, y);
+return shadeOf(pal.floor, 0.25 + n * 0.3 + lightSpot + blades(x, y, depth, gs + 5) * depth * 0.25 - (1 - depth) * 0.1, x, y);
 }, gs);
 const mr = s('midtrees');
 for (let i = 0; i < 2; i++) {
@@ -16999,10 +17023,10 @@ cv.meta.horizon = 118;
 return { compose };
 })();
 // src/visual/env/river.js
-const __m99 = (() => {
-const { sky, ridge, ground, shadeOf, blades } = __m94;
-const { palette, vary, streamOf, scaleAt, hazeAt, band, speckle, fbm2, hash2, noise2 } = __m96;
-const { tree, bush, boulder, cloud, reeds, tuft, fern } = __m97;
+const __m100 = (() => {
+const { sky, ridge, ground, shadeOf, blades } = __m95;
+const { palette, vary, streamOf, scaleAt, hazeAt, band, speckle, fbm2, hash2, noise2 } = __m97;
+const { tree, bush, boulder, cloud, reeds, tuft, fern } = __m98;
 const { hex, pack } = __m24;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'river', p);
@@ -17032,10 +17056,10 @@ if (e < 0) {
 const mid = Math.min(1, -e / Math.max(2, riv[y].hw));
 const rip = noise2(x * 0.08, y * 0.9, ws + 3);
 let l = 0.62 - mid * 0.35 + (rip > 0.72 ? 0.3 : rip < 0.25 ? -0.08 : 0) + (1 - depth) * 0.18;
-return shadeOf(pal.water, l, x, y, 0.2);
+return shadeOf(pal.water, l, x, y);
 }
 if (e < 2 + depth * 3) return shadeOf(pal.mud, 0.25 + n * 0.4, x, y);
-if (e < 4 + depth * 6) return shadeOf(pal.chalk, 0.3 + n * 0.5 + (hash2(x, y, gs) > 0.85 ? 0.2 : 0), x, y);
+if (e < 4 + depth * 6) return shadeOf(pal.chalk, 0.3 + n * 0.5 + (hash2(x >> 1, y >> 1, gs) > 0.95 ? 0.2 : 0), x, y);
 return shadeOf(pal.grass, 0.2 + n * 0.45 + blades(x, y, depth, gs + 5) * (0.25 + depth * 0.35) + (fbm2(x * 0.02, y * 0.05, gs + 9, 2) - 0.5) * 0.4, x, y);
 }, gs);
 for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (edge(x, y) < 2.5 + (y > 96 ? (y - 96) / (H - 96) * 4 : 0)) cv.open[y * W + x] = 0;
@@ -17082,10 +17106,10 @@ cv.meta.horizon = 96;
 return { compose };
 })();
 // src/visual/env/quarry.js
-const __m100 = (() => {
-const { sky, ridge, ground, shadeOf } = __m94;
-const { palette, vary, streamOf, scaleAt, hazeAt, speckle, fbm2, hash2, noise2, mixPacked } = __m96;
-const { boulder, cloud, crane, ladder, cart, crate, bush, beam } = __m97;
+const __m101 = (() => {
+const { sky, ridge, ground, shadeOf } = __m95;
+const { palette, vary, streamOf, scaleAt, hazeAt, speckle, fbm2, hash2, noise2, mixPacked } = __m97;
+const { boulder, cloud, crane, ladder, cart, crate, bush, beam } = __m98;
 const { Model, lumpy } = __m28;
 const { hex, pack } = __m24;
 function compose(cv, seed) {
@@ -17150,10 +17174,10 @@ if (k === 2) for (let i = 0; i < W; i++) floorLine[i] = b.bot + (fbm2(i * 0.05, 
 });
 const gs = s('floor').int(0, 1e9);
 ground(cv, floorLine, (x, y, depth, n) => {
-const sc = depth > 0.55 ? 2 : 1, gx = Math.floor(x / sc), gy = Math.floor(y / sc), gravel = hash2(gx, gy, gs), above = hash2(gx, gy - 1, gs);
-const peb = gravel > 0.9 ? 0.28 : above > 0.9 ? -0.3 : gravel < 0.06 ? -0.2 : 0;
+const sc = depth > 0.55 ? 3 : 2, gx = Math.floor(x / sc), gy = Math.floor(y / sc), gravel = hash2(gx, gy, gs), above = hash2(gx, gy - 1, gs);
+const peb = gravel > 0.97 ? 0.3 : above > 0.97 ? -0.3 : 0;
 const wheel = fbm2(x * 0.012, y * 0.04, gs + 5, 2);
-return shadeOf(pal.floor, 0.24 + n * 0.4 + peb + (wheel - 0.5) * 0.5 - (1 - depth) * 0.04, x, y);
+return shadeOf(pal.floor, 0.35 + n * 0.25 + peb + (wheel - 0.5) * 0.4 - (1 - depth) * 0.04, x, y);
 }, gs);
 const tr = s('track'), tx0 = tr.int(60, 320), tx1 = tr.int(120, 260);
 for (let y = Math.round(floorLine[tx1]) + 2; y < H; y++) {
@@ -17194,10 +17218,10 @@ cv.meta.horizon = 124;
 return { compose };
 })();
 // src/visual/env/moonfen.js
-const __m101 = (() => {
-const { sky, ridge, ground, shadeOf } = __m94;
-const { palette, vary, streamOf, scaleAt, hazeAt, inPool, speckle, fbm2, hash2, noise2, mixPacked } = __m96;
-const { tree, reeds, boulder, spire, cairn, crown, tuft } = __m97;
+const __m102 = (() => {
+const { sky, ridge, ground, shadeOf } = __m95;
+const { palette, vary, streamOf, scaleAt, hazeAt, inPool, speckle, fbm2, hash2, noise2, mixPacked } = __m97;
+const { tree, reeds, boulder, spire, cairn, crown, tuft } = __m98;
 const { Model, lumpy } = __m28;
 const { hex, pack } = __m24;
 function compose(cv, seed) {
@@ -17236,7 +17260,7 @@ const star = hash2(x, y, gs + 9) > 0.993 ? 0.6 : 0;
 return shadeOf(pal.water, (rim ? 0.75 : 0.25 + n * 0.25) + refl + star, x, y);
 }
 const tussock = fbm2(x * 0.06, y * 0.14, gs + 3, 3);
-return shadeOf(pal.bog, 0.18 + n * 0.4 + (tussock > 0.6 ? 0.25 : 0) + (hash2(x, y, gs) > 0.9 ? 0.15 : 0), x, y);
+return shadeOf(pal.bog, 0.25 + n * 0.3 + (tussock > 0.6 ? 0.25 : 0), x, y);
 }, gs);
 for (let y = 112; y < H; y++) for (let x = 0; x < W; x++) if (pool(x, y) || pool(x, y + 1) || pool(x - 1, y) || pool(x + 1, y)) cv.open[y * W + x] = 0;
 cv.meta.pools = true;
@@ -17279,10 +17303,10 @@ cv.meta.moon = [mx, my];
 return { compose, mixPacked, lumpy };
 })();
 // src/visual/env/crags.js
-const __m102 = (() => {
-const { sky, ridge, ground, shadeOf } = __m94;
-const { palette, vary, streamOf, scaleAt, hazeAt, band, fbm2, hash2, noise2 } = __m96;
-const { tree, boulder, cloud, basalt, spire } = __m97;
+const __m103 = (() => {
+const { sky, ridge, ground, shadeOf } = __m95;
+const { palette, vary, streamOf, scaleAt, hazeAt, band, fbm2, hash2, noise2 } = __m97;
+const { tree, boulder, cloud, basalt, spire } = __m98;
 const { Model, lumpy } = __m28;
 const { hex, pack } = __m24;
 function compose(cv, seed) {
@@ -17327,7 +17351,7 @@ const ash = fbm2(x * 0.025, y * 0.07, gs + 7, 3);
 const crack = Math.abs(noise2(x * 0.04, y * 0.1, gs + 9) - 0.5) < (0.004 + depth * 0.006) * (fbm2(x * 0.02, y * 0.04, gs + 13, 2) > 0.5 ? 2.2 : 0.4);
 if (crack) return pal.lava[4 + (hash2(x, y, gs) > 0.6 ? 1 : 0)];
 if (ash > 0.6) return shadeOf(pal.ash, 0.25 + n * 0.5, x, y);
-return shadeOf(pal.basalt, 0.2 + n * 0.45 + (hash2(x >> 1, y >> 1, gs) > 0.85 ? 0.18 : 0), x, y);
+return shadeOf(pal.basalt, 0.25 + n * 0.35 + (hash2(x >> 1, y >> 1, gs) > 0.96 ? 0.3 : 0), x, y);
 }, gs);
 for (let y = 108; y < H; y++) for (let x = 0; x < W; x++) if (inLava(x, y) || inLava(x - 2, y) || inLava(x + 2, y) || inLava(x, y + 2)) cv.open[y * W + x] = 0;
 cv.light([0.9, 0.35, 0.08], (x, y) => {
@@ -17364,15 +17388,15 @@ cv.meta.horizon = 108;
 return { compose };
 })();
 // src/visual/env/scene.js
-const __m93 = (() => {
-const { Canvas, SCENE_W, SCENE_H } = __m94;
+const __m94 = (() => {
+const { Canvas, SCENE_W, SCENE_H } = __m95;
 const { hashString } = __m6;
-const meadow = __m95;
-const forest = __m98;
-const river = __m99;
-const quarry = __m100;
-const moonfen = __m101;
-const crags = __m102;
+const meadow = __m96;
+const forest = __m99;
+const river = __m100;
+const quarry = __m101;
+const moonfen = __m102;
+const crags = __m103;
 const ENV_VERSION = 1;
 const COMPOSERS = { meadow, forest, river, quarry, moonfen, crags };
 const cache = new Map();
@@ -17400,9 +17424,9 @@ return s;
 return { ENV_VERSION, composeScene, sceneOf, SCENE_W, SCENE_H };
 })();
 // src/rendering/wild-scene.js
-const __m92 = (() => {
-const { sceneOf, SCENE_W, SCENE_H } = __m93;
-const { MIN_HIT } = __m82;
+const __m93 = (() => {
+const { sceneOf, SCENE_W, SCENE_H } = __m94;
+const { MIN_HIT } = __m83;
 const canvases = new Map();
 function sceneCanvas(region, seed) {
 const k = region + ':' + seed;
@@ -17442,7 +17466,7 @@ for (const p of fresh) {
 const s = /** @type {Silhouette} */ (shapeOf(p)), sw = Math.max(3, Math.round(s.w * 0.3));
 const fits = (taken, ax, ay) => {
 const left = ax - s.ax, top = ay - s.ay;
-if (ay < this.top || ay > H - 3 || left < 1 || left + s.w > W - 1 || top < 1) return false;
+if (ay < this.top || ay > H - 3 || left < 1 || left + s.w > W - 1 || top < 1 || top + s.h > H) return false;
 for (let y = ay - 1; y <= ay; y++) for (let x = ax - (sw >> 1); x < ax - (sw >> 1) + sw; x++) if (!G[y * W + x]) return false;
 for (let j = 0; j < s.h; j++) for (let i = 0; i < s.w; i++) {
 if (!s.m[j * s.w + i]) continue;
@@ -17569,15 +17593,15 @@ if (r && Math.sin(t * 4 + i * 1.9) > 0.2) px(ctx, r[0] + Math.sin(i * 1.7) * r[1
 return { sceneCanvas, PlantGround, plantBox, hitPlant, animateRegion, SCENE_W, SCENE_H };
 })();
 // src/ui/views/wilds.js
-const __m91 = (() => {
+const __m92 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, marksIn, moistureEnv, DAY_PART_NAME } = __m51;
-const { equipmentById } = __m48;
-const { RANKS } = __m48;
-const { sceneCanvas, animateRegion, PlantGround, plantBox, hitPlant, SCENE_W, SCENE_H } = __m92;
-const { plantCanvas, plantFrameOf, silhouetteOf, ingredientSprite, speciesOf } = __m82;
+const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, marksIn, moistureEnv, DAY_PART_NAME } = __m52;
+const { equipmentById } = __m49;
+const { RANKS } = __m49;
+const { sceneCanvas, animateRegion, PlantGround, plantBox, hitPlant, SCENE_W, SCENE_H } = __m93;
+const { plantCanvas, plantFrameOf, silhouetteOf, ingredientSprite, speciesOf } = __m83;
 const { EFFECT_BY_KEY } = __m14;
 function sparkle(ctx, x, y, u) {
 const q = 1, L = [0, 1, 2, 3, 2, 1, 0][Math.min(6, Math.floor(u * 7))] * q;
@@ -17690,7 +17714,7 @@ const can = lab.sandbox ? d.take : harvestable(st.gathering, d, plan, now);
 const take = lab.sandbox ? d.take : can || plan.take;
 const fx = Object.entries(m.effects || {}).filter(([, v]) => Math.abs(v) >= 5).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 3);
 const stock = lab.sandbox ? '∞' : this.stockText(d, s);
-const when = lab.sandbox ? 'never runs out' : this.when(s, can);
+const when = lab.sandbox ? 'never runs out' : this.when(s, can, d);
 this.can[d.id] = locked || can >= 5;
 this.closed[d.id] = !lab.sandbox && !plan.open;
 const g = btn(locked ? RANKS[d.rank].name : `${plan.method.verb} +${take} ml`, () => this.gather(d), { cls: 'gold', icon: locked ? 'lock' : plan.method.icon, disabled: locked || (!lab.sandbox && can < 5), act: 'gather-' + d.id });
@@ -17719,12 +17743,13 @@ card.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') th
 card.addEventListener('pointerleave', () => { if (this.hover === d.id) this.setHover(null); });
 list.appendChild(card);
 }
-clear(this.foot).append(`Room for ${st.cap.storage} ml of each ingredient. ${st.has('satchel') ? 'Your satchel carries half as much again. ' : ''}Only mature plants can be harvested. New sprouts come up at random spots until the ground is full again, even while the game is closed, and each new day brings every plant on. Living plants grow faster in damp soil: water them (rain does it for you), and they drink it up over a few hours — a riverbank or a bog stays damp far longer than a meadow or the crags. Stones, crystals and shells come back with time and the weather.`);
+clear(this.foot).append(`Room for ${st.cap.storage} ml of each ingredient. ${st.has('satchel') ? 'Your satchel carries half as much again. ' : ''}Only mature plants can be harvested. New sprouts come up at random spots until the ground is full again, even while the game is closed, and each new day brings every plant on. Living plants grow faster in damp soil: water them (rain does it for you), and they drink it up over a few hours — a riverbank or a bog stays damp far longer than a meadow or the crags. Stones, crystals and shells do not grow: they turn up again whole, with time and the weather.`);
 this.paintBg();
 this.grow();
 this.prewarm();
 }
 stockText(d, s) {
+if (!d.botanical) return `${s.mature} of ${d.slots} found · ${d.take} ml each`;
 return `${s.mature} of ${d.slots} mature${s.plants.length > s.mature ? ` · ${s.plants.length - s.mature} growing` : ''} · ${d.take} ml each`;
 }
 soilText(d, s) {
@@ -17753,13 +17778,13 @@ return p.m && p.m.wild ? silhouetteOf(p.m) : null;
 }
 grow() {
 if (!this.ground) return;
-const st = this.lab.state, now = Date.now();
+const lab = this.lab, st = lab.state, now = Date.now();
 const plants = [];
 for (const d of this.shown()) {
 const m = st.lookup(d.materialId);
 const key = m && m.wild ? m.wild.key : null;
 const s = depositStatus(st.gathering, d, now);
-for (const p of s.plants) plants.push({ ...p, dep: d, m, key, stage: this.lab.sandbox ? 'mature' : p.stage, grown: this.lab.sandbox ? 1 : p.grown });
+for (const p of s.plants) if (lab.sandbox || d.botanical || p.stage === 'mature') plants.push({ ...p, dep: d, m, key, stage: lab.sandbox ? 'mature' : p.stage, grown: lab.sandbox ? 1 : p.grown });
 }
 plants.sort((a, b) => a.born - b.born || (a.id < b.id ? -1 : 1));
 const spots = this.ground.place(plants, (p) => this.shapeOf(p));
@@ -17801,7 +17826,8 @@ if (!r.ok) {
 audio.play('error');
 const why = r.reason === 'full' ? `Your shelves are full of ${m.name}.` : r.reason === 'locked' ? 'You may not gather here yet.'
 : r.reason === 'growing' ? `Still growing — only a mature plant can be harvested. This one matures in ${formatWait(r.nextIn || 60000)}.`
-: `Nothing is mature yet. The next plant matures in ${formatWait(r.nextIn || 60000)}.`;
+: d.botanical ? `Nothing is mature yet. The next plant matures in ${formatWait(r.nextIn || 60000)}.`
+: `Nothing to be found here yet. The next one turns up in ${formatWait(r.nextIn || 60000)}.`;
 toast(r.reason === 'growing' ? 'Not ripe yet' : 'Nothing to gather', why, 'satchel');
 return;
 }
@@ -17991,11 +18017,12 @@ ctx.fillStyle = 'rgba(255,200,90,0.1)';
 ctx.fillRect(0, 0, SCENE_W, SCENE_H);
 }
 }
-when(s, can) {
-if (s.fullIn <= 0) return 'fully grown';
-const growing = `growing back${s.scarred ? ' slowly' : ''} · full in ${formatWait(s.fullIn)}`;
+when(s, can, d) {
+const living = d.botanical;
+if (s.fullIn <= 0) return living ? 'fully grown' : 'all found';
+const growing = `${living ? 'growing back' : 'turning up again'}${s.scarred ? ' slowly' : ''} · full in ${formatWait(s.fullIn)}`;
 if (can >= 5) return growing;
-return `next ripe in ${formatWait(s.nextIn)} · ${growing}`;
+return `next ${living ? 'ripe' : 'one'} in ${formatWait(s.nextIn)} · ${growing}`;
 }
 tick() {
 const lab = this.lab, st = lab.state;
@@ -18008,7 +18035,7 @@ const s = depositStatus(st.gathering, d, now);
 const plan = gatherPlan(st, d, st.lookup(d.materialId), { thorough: this.thorough });
 const can = harvestable(st.gathering, d, plan, now);
 row.barI.style.width = Math.round(s.fraction * 100) + '%';
-row.meta.textContent = `${this.stockText(d, s)} · ${this.when(s, can)}`;
+row.meta.textContent = `${this.stockText(d, s)} · ${this.when(s, can, d)}`;
 if (row.soil) row.soil.textContent = this.soilText(d, s);
 if (row.wbtn) row.wbtn.disabled = s.plants.every((p) => p.stage === 'mature');
 row.g.disabled = row.locked || can < 5;
@@ -18022,10 +18049,10 @@ this.grow();
 return { WildsView };
 })();
 // src/rendering/rabbit.js
-const __m104 = (() => {
+const __m105 = (() => {
 const { Rng, hashString } = __m6;
-const { PAL, makeCanvas } = __m76;
-const { RABBIT_MARKS } = __m50;
+const { PAL, makeCanvas } = __m77;
+const { RABBIT_MARKS } = __m51;
 const RABBIT_W = 48;
 const RABBIT_H = 40;
 const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
@@ -18968,7 +18995,7 @@ ctx.fillRect(fx, fy, RABBIT_W, RABBIT_H);
 return { RABBIT_W, RABBIT_H, rabbitLevels, rabbitPose, rabbitPace, rabbitAnchors, rabbitSpriteKey, drawRabbitSprite, clearRabbitSprites, drawRabbit };
 })();
 // src/rendering/hutch-ground.js
-const __m107 = (() => {
+const __m108 = (() => {
 const GROUND_Y0 = 56;
 const GROUND = [
 [[18,156]],
@@ -18995,11 +19022,11 @@ const GROUND = [
 return { GROUND_Y0, GROUND };
 })();
 // src/rendering/hutch-scene.js
-const __m106 = (() => {
+const __m107 = (() => {
 const { Rng, hashString } = __m6;
-const { PAL, makeCanvas } = __m76;
-const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m104;
-const { GROUND, GROUND_Y0 } = __m107;
+const { PAL, makeCanvas } = __m77;
+const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m105;
+const { GROUND, GROUND_Y0 } = __m108;
 const HUTCH_W = 224;
 const HUTCH_H = 92;
 const HUTCH_BODIES = 3;
@@ -19375,15 +19402,15 @@ ctx.drawImage(this.bg, 0, 0);
 return { HUTCH_W, HUTCH_H, HUTCH_BODIES, paintHutch, paintHutchFront, onGround, HutchScene };
 })();
 // src/ui/views/hutch.js
-const __m105 = (() => {
-const { readingSteadiness } = __m49;
+const __m106 = (() => {
+const { readingSteadiness } = __m50;
 const { h, btn, clear, toast, modal, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { drawRabbit, RABBIT_W, RABBIT_H } = __m104;
-const { HutchScene, HUTCH_W, HUTCH_H } = __m106;
+const { drawRabbit, RABBIT_W, RABBIT_H } = __m105;
+const { HutchScene, HUTCH_W, HUTCH_H } = __m107;
 const { EFFECT_BY_KEY } = __m14;
-const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral, RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE, BURNS } = __m50;
+const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral, RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE, BURNS } = __m51;
 const { PURGE_BREW_TIME } = __m5;
 const STAGE_WORD = { kit: 'kit', young: 'youngster', adult: 'adult', elder: 'elder' };
 const CHANNELS = RABBIT_MARKS.map((k) => {
@@ -19710,21 +19737,21 @@ if (this._live >= 0.25) { this._live = 0; this.live(); }
 return { CHANNELS, HutchPanel };
 })();
 // src/ui/views/trials.js
-const __m103 = (() => {
+const __m104 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { SUBJECT_BY_ID, DOSES, missingEffects } = __m49;
+const { SUBJECT_BY_ID, DOSES, missingEffects } = __m50;
 const { EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, EFFECT_KEYS, potencyWord } = __m14;
-const { SIM } = __m46;
-const { applyTrials } = __m68;
-const { summarize, addSamples, EVIDENCE_TEXT, evidenceRank, requirementEvidence } = __m49;
-const { evidenceOf } = __m68;
-const { shortName } = __m44;
+const { SIM } = __m47;
+const { applyTrials } = __m69;
+const { summarize, addSamples, EVIDENCE_TEXT, evidenceRank, requirementEvidence } = __m50;
+const { evidenceOf } = __m69;
+const { shortName } = __m45;
 const LEVEL_SHORT = { preliminary: '1 reading', repeated: 'repeated', corroborated: 'corroborated', certified: 'certified' };
-const { drawRabbit } = __m104;
-const { focusRabbit, findRabbit, rabbitSnap, decodeSnap, lookFromSeed, RABBIT_MARKS } = __m50;
-const { HutchPanel } = __m105;
+const { drawRabbit } = __m105;
+const { focusRabbit, findRabbit, rabbitSnap, decodeSnap, lookFromSeed, RABBIT_MARKS } = __m51;
+const { HutchPanel } = __m106;
 const REPLAY_T = 3.2;
 class TrialsView {
 constructor(lab) {
@@ -20101,12 +20128,12 @@ return `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2
 return { TrialsView, EFFECTS, EFFECT_INDEX };
 })();
 // src/ui/views/book.js
-const __m108 = (() => {
+const __m109 = (() => {
 const { h, btn, clear } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const panels = __m86;
-const { SUBJECT_BY_ID } = __m49;
+const panels = __m87;
+const { SUBJECT_BY_ID } = __m50;
 const { EFFECTS, EFFECT_BY_KEY, EFFECT_KEYS } = __m14;
 const { rgbToHex } = __m9;
 const TABS = [
@@ -20205,43 +20232,43 @@ body.appendChild(list);
 return { BookView };
 })();
 // src/ui/lab.js
-const __m73 = (() => {
-const { Simulation } = __m53;
-const { PHASE, SIM } = __m46;
-const { snapshotSim, applySnapshot } = __m74;
-const { clampToInterior } = __m64;
+const __m74 = (() => {
+const { Simulation } = __m54;
+const { PHASE, SIM } = __m47;
+const { snapshotSim, applySnapshot } = __m75;
+const { clampToInterior } = __m65;
 const { MAX_SPECIES } = __m19;
 const { compatFactor } = __m15;
-const { Renderer } = __m75;
-const { drawPortrait } = __m81;
-const { drawJar } = __m76;
-const { ingredientSprite } = __m82;
-const { measureParticles, tapSelection, probeSelection, viscosityClass, densityWord } = __m67;
-const { scoreRequirement, PROPERTY_LABELS } = __m45;
-const { processEvent } = __m84;
-const { saveGame, saveJSON, KEYS } = __m72;
-const { AutoBrewer, condensedCount } = __m85;
-const { traceSample, buildProcedure, procedureLimits, matchRecipe, compareRecipe, checkReproduction, TRACE_DT } = __m71;
-const { proofGaps, draftLabel, applyTrials, evidenceOf } = __m68;
-const { RANKS } = __m48;
-const { certification, missingEffects, requirementEvidence } = __m49;
+const { Renderer } = __m76;
+const { drawPortrait } = __m82;
+const { drawJar } = __m77;
+const { ingredientSprite } = __m83;
+const { measureParticles, tapSelection, probeSelection, viscosityClass, densityWord } = __m68;
+const { scoreRequirement, PROPERTY_LABELS } = __m46;
+const { processEvent } = __m85;
+const { saveGame, saveJSON, KEYS } = __m73;
+const { AutoBrewer, condensedCount } = __m86;
+const { traceSample, buildProcedure, procedureLimits, matchRecipe, compareRecipe, checkReproduction, TRACE_DT } = __m72;
+const { proofGaps, draftLabel, applyTrials, evidenceOf } = __m69;
+const { RANKS } = __m49;
+const { certification, missingEffects, requirementEvidence } = __m50;
 const { sandboxIngredients } = __m7;
-const { makeVial, appendParticles, updateVial, takeDose, pourBack, pourBackParts, relaxVial } = __m52;
+const { makeVial, appendParticles, updateVial, takeDose, pourBack, pourBackParts, relaxVial } = __m53;
 const { theoryOf, EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, dominantEffect, NE } = __m14;
 const { awakenParts, describeThreshold } = __m16;
-const { ARC_NONE } = __m54;
+const { ARC_NONE } = __m55;
 const { describeColor, rgbToHex } = __m9;
 const { h, btn, clear, toast, coins, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const panels = __m86;
-const trade = __m88;
-const { Tutorial } = __m89;
-const { CounterView } = __m90;
-const { WildsView } = __m91;
-const { TrialsView } = __m103;
-const { BookView } = __m108;
-const { shortName } = __m44;
+const panels = __m87;
+const trade = __m89;
+const { Tutorial } = __m90;
+const { CounterView } = __m91;
+const { WildsView } = __m92;
+const { TrialsView } = __m104;
+const { BookView } = __m109;
+const { shortName } = __m45;
 const REQ_ICON = { temperature: 'thermo', quantity: 'flask', purity: 'pure' };
 const TOOL_DEFS = [
 { id: 'spoon', label: 'Stir', icon: 'spoon', key: '2', title: 'Spoon: drag in the brew to stir' },
@@ -21978,7 +22005,7 @@ void dominantEffect;
 return { VIEWS, LabScreen };
 })();
 // src/materials/reference.js
-const __m110 = (() => {
+const __m111 = (() => {
 const { completeMaterial } = __m10;
 const REF = {};
 const add = (d) => (REF[d.id] = completeMaterial(d));
@@ -22016,12 +22043,12 @@ const refLookup = (id) => REF[id];
 return { REF, refLookup };
 })();
 // src/ui/menu.js
-const __m109 = (() => {
+const __m110 = (() => {
 const { h, btn } = __m2;
-const { Renderer } = __m75;
-const { Simulation } = __m53;
-const { REF, refLookup } = __m110;
-const { hasSave, loadGame } = __m72;
+const { Renderer } = __m76;
+const { Simulation } = __m54;
+const { REF, refLookup } = __m111;
+const { hasSave, loadGame } = __m73;
 const { audio } = __m4;
 class MenuScreen {
 constructor(app) {
@@ -22106,13 +22133,13 @@ const { icon } = __m3;
 const { audio } = __m4;
 const { GameState } = __m5;
 const { sandboxIngredients } = __m7;
-const { EQUIPMENT } = __m48;
-const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m72;
-const { LabScreen } = __m73;
-const { MenuScreen } = __m109;
-const { openSettings, openHelp } = __m86;
+const { EQUIPMENT } = __m49;
+const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m73;
+const { LabScreen } = __m74;
+const { MenuScreen } = __m110;
+const { openSettings, openHelp } = __m87;
 const { Rng } = __m6;
-const { normalizeTrials } = __m49;
+const { normalizeTrials } = __m50;
 const DEFAULT_SETTINGS = { master: 0.8, sfx: 0.8, music: 0.35, musicOn: true, muted: false, quality: 'auto', showFps: false };
 const SEED_WORDS = ['amber', 'ashen', 'brine', 'copper', 'dusk', 'elder', 'fen', 'gloam', 'hollow', 'iron', 'juniper', 'kelp', 'lantern', 'moon', 'nettle', 'oak', 'pewter', 'quill', 'raven', 'sage', 'thorn', 'umber', 'vale', 'willow', 'wyrm', 'yarrow'];
 class App {
@@ -22226,7 +22253,7 @@ openHelp();
 return { App, icon };
 })();
 // src/ui/textures.js
-const __m111 = (() => {
+const __m112 = (() => {
 const { Rng } = __m6;
 function texture(w, h, paint) {
 const cv = document.createElement('canvas');
@@ -22270,7 +22297,7 @@ return { installTextures };
 // src/main.js
 const __m0 = (() => {
 const { App } = __m1;
-const { installTextures } = __m111;
+const { installTextures } = __m112;
 installTextures();
 const root = document.getElementById('app');
 const app = new App(root);

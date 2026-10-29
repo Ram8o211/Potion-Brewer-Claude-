@@ -6,6 +6,7 @@
 import { FAMILIES } from './families/index.js';
 import { rasterize } from './raster.js';
 import { Pixels } from './pixels.js';
+import { inked } from './style.js';
 
 /** Icon size (art pixels, square). */
 export const ICON_PX = 32;
@@ -34,16 +35,17 @@ export function plantFrame(d, stage, o = {}) {
   // the foot sits at an integer pixel in the middle of the frame width
   const ax = -left, ay = -top;
   model.transform(1, 0, 0, 1, ax, ay, 1);
-  const r = rasterize(model, w, h, d.pal, { seed: d.seeds.surface });
-  return { pix: r.pix, ax, ay, glints: r.glints };
+  const r = rasterize(model, w, h, d.pal, { seed: d.seeds.surface, outline: false });
+  // ringed in ink, so it stands out of the ground it grows in
+  return { pix: inked(r.pix), ax: ax + 1, ay: ay + 1, glints: r.glints.map(([x, y]) => [x + 1, y + 1]) };
 }
 
 /** The ingredient's icon (ICON_PX square). @param {import('./descriptor.js').Descriptor} d @returns {Frame} */
 export function iconFrame(d) {
   const model = FAMILIES[d.family].icon(d);
-  model.fit(ICON_PX, ICON_PX, { margin: 1.5 });
-  const r = rasterize(model, ICON_PX, ICON_PX, d.pal, { seed: d.seeds.surface ^ 0x1c0 });
-  return { pix: r.pix, ax: ICON_PX / 2, ay: ICON_PX, glints: r.glints };
+  model.fit(ICON_PX - 2, ICON_PX - 2, { margin: 0.5 });
+  const r = rasterize(model, ICON_PX - 2, ICON_PX - 2, d.pal, { seed: d.seeds.surface ^ 0x1c0, outline: false });
+  return { pix: inked(r.pix), ax: ICON_PX / 2, ay: ICON_PX, glints: r.glints.map(([x, y]) => [x + 1, y + 1]) };
 }
 
 /**

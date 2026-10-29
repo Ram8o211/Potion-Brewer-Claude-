@@ -1,17 +1,22 @@
 // Painting helpers for the procedural wild environments: the canvas they
 // compose into (a Pixels buffer plus the map of where a plant's foot may
-// rest), dithered skies, noise-built silhouettes, perspective ground
-// textures, and the stamping of rasterized scenery models (visual/raster.js)
-// so scenery and species share one pixel scale and one way of shading.
+// rest), banded skies, noise-built silhouettes, perspective ground in broad
+// flat patches, and the stamping of rasterized scenery models
+// (visual/raster.js), so scenery and species share one pixel scale and one
+// flat style (visual/style.js).
 
 import { Pixels } from '../pixels.js';
 import { rasterize } from '../raster.js';
 import { noise2, fbm1, fbm2, bayer, hash2 } from '../noise.js';
 import { ramp, hex, mixPacked, pack, unpack } from '../color.js';
+import { toneOf } from '../style.js';
 
 /** Scene size in art pixels. */
 export const SCENE_W = 384;
 export const SCENE_H = 216;
+
+/** A wash or light's strength in flat steps, so it falls off in hard-edged bands, not a gradient. @param {number} t */
+const step = (t) => Math.floor(t / 0.07) * 0.07;
 
 /**
  * The canvas a region is composed on.
@@ -88,20 +93,20 @@ export class Canvas {
     return { x: X, y: Y, w, h, raster: r };
   }
 
-  /** Mix a colour over every painted pixel in a band, fading with `f(x, y)` (0..1). */
+  /** Mix a colour over every painted pixel in a band, fading with `f(x, y)` (0..1) in flat steps. */
   wash(c, f, y0 = 0, y1 = this.H) {
     for (let y = Math.max(0, y0); y < Math.min(this.H, y1); y++) for (let x = 0; x < this.W; x++) {
-      const t = f(x, y);
+      const t = step(f(x, y));
       if (t <= 0.004) continue;
       const k = y * this.W + x;
       this.pix.px[k] = mixPacked(this.pix.px[k], c, Math.min(1, t));
     }
   }
 
-  /** Brighten pixels additively by colour c × t(x, y) (light, glow). */
+  /** Brighten pixels additively by colour c × t(x, y) (light, glow), in flat steps. */
   light(rgb, f, y0 = 0, y1 = this.H) {
     for (let y = Math.max(0, y0); y < Math.min(this.H, y1); y++) for (let x = 0; x < this.W; x++) {
-      const t = f(x, y);
+      const t = step(f(x, y));
       if (t <= 0.004) continue;
       const k = y * this.W + x, c = this.pix.px[k];
       const r = Math.min(255, (c & 255) + rgb[0] * 255 * t), g = Math.min(255, ((c >>> 8) & 255) + rgb[1] * 255 * t), b = Math.min(255, ((c >>> 16) & 255) + rgb[2] * 255 * t);
@@ -111,20 +116,20 @@ export class Canvas {
 }
 
 /**
- * A sky: vertical colour stops quantised into bands, dithered where they
- * meet (the pixel artist's gradient).
+ * A sky: vertical colour stops quantised into a few flat bands with hard
+ * edges, each band a little taller than the one above it.
  * @param {Canvas} cv @param {number} y0 @param {number} y1 @param {string[]} stops @param {number} [bands]
  */
 export function sky(cv, y0, y1, stops, bands = 12) {
-  const cols = stops.map(hex);
+  const cols = stops.map(hex), n = Math.max(3, Math.min(6, Math.round(bands / 2)));
   const at = (t) => {
     const f = Math.min(cols.length - 1.0001, t * (cols.length - 1)), i = Math.floor(f), u = f - i;
     return cols[i].map((v, k) => v + (cols[i + 1][k] - v) * u);
   };
-  const steps = Array.from({ length: bands + 1 }, (_, i) => pack(at(i / bands)));
+  const steps = Array.from({ length: n }, (_, i) => pack(at(i / (n - 1))));
   for (let y = y0; y < y1; y++) {
-    const t = (y - y0) / Math.max(1, y1 - y0 - 1), b = t * bands, lo = Math.floor(b), fr = b - lo;
-    for (let x = 0; x < cv.W; x++) cv.set(x, y, fr > bayer(x, y) ? steps[Math.min(bands, lo + 1)] : steps[lo]);
+    const t = (y - y0) / Math.max(1, y1 - y0 - 1), b = Math.min(n - 1, Math.floor(Math.pow(t, 0.8) * n));
+    for (let x = 0; x < cv.W; x++) cv.set(x, y, steps[b]);
   }
 }
 
@@ -148,10 +153,9 @@ export function ridge(cv, o) {
       const depth = (y - t0) / Math.max(1, o.bottom - t0);
       // slopes facing the light are lighter
       const slope = (top[Math.max(0, x - 2)] - top[Math.min(cv.W - 1, x + 2)]) * 0.25;
-      let l = 0.55 - depth * 0.25 - slope * 0.3 + (fbm2(x * 0.08, y * 0.12, o.seed + 3, 3) - 0.5) * (o.tex ?? 0.5);
+      let l = 0.5 - depth * 0.2 - slope * 0.25 + (fbm2(x * 0.04, y * 0.06, o.seed + 3, 2) - 0.5) * (o.tex ?? 0.5) * 0.6;
       if (y - t0 < (o.rim ?? 1)) l += 0.35;
-      const i = Math.max(0, Math.min(n - 1, Math.floor((l + (bayer(x, y) - 0.5) * 0.15) * n)));
-      cv.set(x, y, R[i]);
+      cv.set(x, y, R[toneOf(n, l)]);
     }
   }
   return top;
@@ -169,8 +173,9 @@ export function ground(cv, horizon, colour, seed, open = true) {
     const h0 = Math.round(horizon[x]);
     for (let y = Math.max(0, h0); y < cv.H; y++) {
       const depth = (y - h0 + 1) / (cv.H - h0 + 1);
-      const sx = x * (0.06 + depth * 0.1), sy = y * (0.12 + depth * 0.16);
-      const n = fbm2(sx, sy * 1.6, seed, 3);
+      // broad patches: low-frequency noise, sampled on 2-pixel cells
+      const cx = x & ~1, sx = cx * (0.03 + depth * 0.05), sy = y * (0.06 + depth * 0.08);
+      const n = fbm2(sx, sy * 1.6, seed, 2);
       cv.set(x, y, colour(x, y, depth, n));
       if (open) cv.open[y * cv.W + x] = 1;
     }
@@ -178,19 +183,17 @@ export function ground(cv, horizon, colour, seed, open = true) {
 }
 
 /**
- * Grass-blade texture (−0.5..0.5): thin vertical strokes that lengthen and
- * thicken toward the viewer.
+ * Grass texture (−0.5..0.5): broad soft swells with, here and there, a
+ * short vertical strand that lengthens toward the viewer.
  */
 export function blades(x, y, depth, seed) {
-  // vertical strands, a strand per column, as long as the grass is near
-  const L = 1 + Math.floor(depth * 4);
-  return (hash2(x, Math.floor((y + hash2(x, 0, seed) * 8) / L), seed) - 0.5) * 0.75 + (noise2(x * 0.22, y * 0.1, seed + 1) - 0.5) * 0.5;
+  const L = 2 + Math.floor(depth * 4), strand = hash2(x >> 1, Math.floor((y + hash2(x >> 1, 0, seed) * 8) / L), seed);
+  return (strand > 0.9 ? 0.3 : strand < 0.06 ? -0.3 : 0) + (noise2(x * 0.08, y * 0.06, seed + 1) - 0.5) * 0.35;
 }
 
-/** Pick a ramp colour from a lightness (0..1) with a soft dither. */
-export function shadeOf(R, l, x, y, dith = 0.12) {
-  const n = R.length;
-  return R[Math.max(0, Math.min(n - 1, Math.floor((l + (bayer(x, y) - 0.5) * dith) * n)))];
+/** Pick a ramp colour from a lightness (0..1), reduced to the style's flat tones. */
+export function shadeOf(R, l, x, y) {
+  return R[toneOf(R.length, l)];
 }
 
 export { ramp, hex, mixPacked, pack, unpack, noise2, fbm1, fbm2, bayer, hash2 };

@@ -41,10 +41,10 @@ export function compose(cv, seed) {
       const mid = Math.min(1, -e / Math.max(2, riv[y].hw));
       const rip = noise2(x * 0.08, y * 0.9, ws + 3);
       let l = 0.62 - mid * 0.35 + (rip > 0.72 ? 0.3 : rip < 0.25 ? -0.08 : 0) + (1 - depth) * 0.18;
-      return shadeOf(pal.water, l, x, y, 0.2);
+      return shadeOf(pal.water, l, x, y);
     }
     if (e < 2 + depth * 3) return shadeOf(pal.mud, 0.25 + n * 0.4, x, y);
-    if (e < 4 + depth * 6) return shadeOf(pal.chalk, 0.3 + n * 0.5 + (hash2(x, y, gs) > 0.85 ? 0.2 : 0), x, y);
+    if (e < 4 + depth * 6) return shadeOf(pal.chalk, 0.3 + n * 0.5 + (hash2(x >> 1, y >> 1, gs) > 0.95 ? 0.2 : 0), x, y);
     return shadeOf(pal.grass, 0.2 + n * 0.45 + blades(x, y, depth, gs + 5) * (0.25 + depth * 0.35) + (fbm2(x * 0.02, y * 0.05, gs + 9, 2) - 0.5) * 0.4, x, y);
   }, gs);
   // water is not ground; neither is the wet edge

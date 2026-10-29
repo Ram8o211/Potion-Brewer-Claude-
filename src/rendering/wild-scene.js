@@ -78,7 +78,7 @@ export class PlantGround {
         /** @param {Uint8Array} taken @param {number} ax @param {number} ay */
         const fits = (taken, ax, ay) => {
           const left = ax - s.ax, top = ay - s.ay;
-          if (ay < this.top || ay > H - 3 || left < 1 || left + s.w > W - 1 || top < 1) return false;
+          if (ay < this.top || ay > H - 3 || left < 1 || left + s.w > W - 1 || top < 1 || top + s.h > H) return false;
           for (let y = ay - 1; y <= ay; y++) for (let x = ax - (sw >> 1); x < ax - (sw >> 1) + sw; x++) if (!G[y * W + x]) return false;
           for (let j = 0; j < s.h; j++) for (let i = 0; i < s.w; i++) {
             if (!s.m[j * s.w + i]) continue;

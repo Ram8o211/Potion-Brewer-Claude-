@@ -40,11 +40,11 @@ export function compose(cv, seed) {
   const gs = s('floor').int(0, 1e9);
   const dapple = (x, y) => fbm2(x * 0.035, y * 0.08, gs + 33, 3);
   ground(cv, hz, (x, y, depth, n) => {
-    const litter = fbm2(x * 0.03, y * 0.07, gs + 11, 3) + (hash2(x, y, gs + 2) - 0.5) * 0.08, lightSpot = dapple(x, y) > 0.6 ? 0.2 : dapple(x, y) > 0.56 ? 0.08 : 0;
-    // fallen leaves: flecks of light and dark, thinning out at the litter's edge
-    const fleck = hash2(x >> (depth > 0.5 ? 1 : 0), y, gs + 3);
-    if (litter > 0.56) return shadeOf(pal.litter, 0.2 + n * 0.4 + lightSpot + (fleck > 0.8 ? 0.25 : fleck < 0.15 ? -0.2 : 0), x, y);
-    return shadeOf(pal.floor, 0.12 + n * 0.45 + lightSpot + (fleck > 0.9 ? 0.2 : 0) + blades(x, y, depth, gs + 5) * depth * 0.25 - (1 - depth) * 0.1, x, y);
+    const litter = fbm2(x * 0.03, y * 0.07, gs + 11, 3), lightSpot = dapple(x, y) > 0.6 ? 0.2 : 0;
+    // fallen leaves: a few chunky flecks in the litter
+    const fleck = hash2(x >> 1, y >> 1, gs + 3);
+    if (litter > 0.56) return shadeOf(pal.litter, 0.3 + n * 0.3 + lightSpot + (fleck > 0.94 ? 0.3 : 0), x, y);
+    return shadeOf(pal.floor, 0.25 + n * 0.3 + lightSpot + blades(x, y, depth, gs + 5) * depth * 0.25 - (1 - depth) * 0.1, x, y);
   }, gs);
   // a mid-distance trunk or two standing in the clearing's far side
   const mr = s('midtrees');

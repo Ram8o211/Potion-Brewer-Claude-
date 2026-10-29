@@ -82,11 +82,12 @@ export function plant(d, stage, o = {}) {
   const m = new Model(), P = d.m, rng = stream(d, 'plant' + stage), H = d.size.h, W = d.size.w;
   if (stage === 0) { mound(m, W * 0.5, stream(d, 'mound')); return sprout(m, d, Math.max(5, H * 0.3), { shape: P.leafShape, teeth: P.teeth }); }
   const g = stage === 1 ? 0.7 : 1;
-  tuft(m, d, rng, 0, -2 * g, H * 0.75 * g, Math.round(P.tuft * g));
-  // the shoulder of the root breaking the soil
-  m.poly(ellipseTop(0, 0, W * P.girth * 0.9 * g, H * 0.2 * g), 'main', { shade: 'round' });
-  m.dot(-1, -H * 0.12 * g, 'main', { lum: 0.15 });
   mound(m, W * 0.85 * g, stream(d, 'mound'));
+  tuft(m, d, rng, 0, -H * 0.22 * g, H * 0.6 * g, Math.round(P.tuft * g));
+  // the shoulder of the root standing out of the soil, in its own colour, ringed like the root itself
+  const rx = W * Math.max(0.24, P.girth) * g, ry = H * 0.34 * g;
+  m.poly(ellipseTop(0, 0.5, rx, ry), 'main', { shade: 'round' });
+  for (let k = 1; k <= 2; k++) m.line([[-rx * 0.7, -ry * k * 0.3], [rx * 0.6, -ry * k * 0.3 + 0.6]], 'main', { lum: 0.15 });
   return m;
 }
 

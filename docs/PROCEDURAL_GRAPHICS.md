@@ -23,6 +23,18 @@ still limited.
   of its hour), as its icon (shelf, shop, book, recipes, deposit card,
   inspector) and as its four pieces in the cauldron, whose colours also dye
   the brew and its powder.
+* **A simple, Noita-like pixel style.** Everything is painted in a few
+  flat tones per material — a shadow, a body, a light and a rare glint —
+  with no dithering and no per-pixel grain. Skies are hard-edged bands,
+  hills flat silhouettes, the ground broad plain patches with only a few
+  chunky flecks, light and haze fall off in hard steps. Ingredients (on the
+  ground and as icons) are ringed in a near-black outline, so on the plain
+  ground they read at a glance and look like their icon.
+* **Stones, crystals and shells do not grow.** Only living plants pass
+  through sprout, ripe and mature. An inorganic deposit has one picture:
+  once it has formed again it simply lies there whole (until then nothing
+  shows at its spot), and its card counts how many are *found* and when the
+  next one *turns up*.
 * **Watering matters.** Living plants grow with the moisture of their soil;
   the Wilds have a *Tap to: Harvest | Water* control, a *Water* button on
   each living stand's card, damp-earth and thirsty-plant feedback, drops
@@ -39,8 +51,10 @@ src/visual/                     pure, DOM-free, deterministic
   geometry.js     Model: ordered parts (filled outlines, tapering strokes,
                   1-px lines, dots) + shape helpers (blades, lumps, Béziers)
   raster.js       pixel-art rasterizer: scanline fill, round/fold/facet/
-                  cylinder shading quantised onto ramps, clustered texture,
-                  soft dither, selective outline, occlusion lines
+                  cylinder shading reduced to a few flat tones, inner
+                  outline, occlusion lines
+  style.js        the house style: the tone bands, the outline ink and the
+                  ink ring round plants and icons
   taxonomy.js     shape → family, botanical families, habitat traits, effect tints
   identity.js     the visual identity record (versioned, portable)
   descriptor.js   identity → canonical descriptor (traits, palette, morphology)

@@ -2,21 +2,21 @@
 //
 // Every part is filled at pixel centres into a material/lightness buffer:
 // filled outlines are shaded as rounded bodies, folded blades or flat facets
-// lit from the upper left, strokes as cylinders. Lightness is then quantised
-// onto the material's ramp, with a little clustered surface texture and a
-// faint ordered dither where it changes, so shading reads as hand-placed
-// clusters rather than gradients. Finally the silhouette is inked with the
-// ramp's own darkest colours (lighter along the lit edges — a selective
-// outline) and a part lying behind another gets a one-pixel shadow line
-// where they meet, so overlapping petals and leaves read apart.
+// lit from the upper left, strokes as cylinders. Lightness is then reduced
+// to a few flat tones of the material's ramp (visual/style.js) — no dither,
+// no per-pixel grain; a part's texture only roughens the borders between
+// its tones into broad clusters. Finally the silhouette is inked dark (a
+// little lighter along the lit edges) and a part lying behind another gets
+// a one-pixel shadow line where they meet, so overlapping petals and leaves
+// read apart.
 
 import { Pixels } from './pixels.js';
-import { noise2, bayer } from './noise.js';
+import { noise2 } from './noise.js';
 import { mixPacked } from './color.js';
+import { INK, toneOf } from './style.js';
 
 /** Direction toward the light: from the upper left and in front. */
 const L = (() => { const v = [-0.55, -0.72, 0.62], n = Math.hypot(...v); return v.map((x) => x / n); })();
-const INK = 0xff1c1218;
 
 /** @param {number} x @param {number} y @param {import('./geometry.js').Pt[]} pts */
 function inside(x, y, pts) {
@@ -84,11 +84,13 @@ const lit = (nx, ny, nz) => clamp01(0.47 + 0.6 * (nx * L[0] + ny * L[1] + nz * L
  * @param {import('./geometry.js').Model} model
  * @param {number} w @param {number} h
  * @param {Record<string, number[]>} pal  material → ramp (packed colours, darkest first)
- * @param {{seed?:number, outline?:boolean, dither?:number, texture?:number}} [o]
+ *   outline: ink the silhouette's inner edge (default); texture: how far a
+ *   part's texture roughens the borders between its tones
+ * @param {{seed?:number, outline?:boolean, texture?:number}} [o]
  * @returns {Raster}
  */
 export function rasterize(model, w, h, pal, o = {}) {
-  const N = w * h, seed = o.seed ?? 1, texAmp = o.texture ?? 0.2, dith = o.dither ?? 0.16;
+  const N = w * h, seed = o.seed ?? 1, texAmp = o.texture ?? 0.06;
   grow(N);
   const mat = S.mat.subarray(0, N).fill(-1), lum = S.lum.subarray(0, N), tex = S.tex.subarray(0, N);
   // (the part map is returned, so it is the caller's own)
@@ -210,16 +212,15 @@ export function rasterize(model, w, h, pal, o = {}) {
     }
   }
 
-  // ---- lightness onto the ramps, with clustered texture and a soft dither
+  // ---- lightness onto a few flat tones of the ramps, their borders roughened into broad clusters
   const idx = S.idx.subarray(0, N).fill(-1);
   const ramps = mats.map((m) => pal[m] || pal.default || [0xff808080]);
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const k = y * w + x, mi = mat[k];
       if (mi < 0) continue;
-      const n = ramps[mi].length;
-      const t = lum[k] + (noise2(x / 2.3, y / 2.3, seed + mi * 977) - 0.5) * texAmp * 2 * tex[k] + (bayer(x, y) - 0.5) * dith;
-      idx[k] = Math.max(0, Math.min(n - 1, Math.floor(t * n)));
+      const t = lum[k] + (noise2(x / 3.5, y / 3.5, seed + mi * 977) - 0.5) * texAmp * 2 * tex[k];
+      idx[k] = toneOf(ramps[mi].length, t);
     }
   }
   // a part lying behind another darkens a step where they meet
@@ -245,13 +246,13 @@ export function rasterize(model, w, h, pal, o = {}) {
       if (mi < 0) continue;
       const r = ramps[mi];
       let i = idx[k];
-      if (sep[k]) i = Math.max(0, i - 2);
+      if (sep[k]) i = toneOf(r.length, 0);
       let c = r[i];
       const pp = parts[part[k]];
       if (outline && !pp.noOutline && !flat(part[k])) {
         const up = y === 0 || mat[k - w] < 0, left = x === 0 || mat[k - 1] < 0, down = y === h - 1 || mat[k + w] < 0, right = x === w - 1 || mat[k + 1] < 0;
-        if (down || right) c = mixPacked(r[0], INK, 0.45);
-        else if (up || left) c = mixPacked(r[Math.min(1, r.length - 1)], INK, 0.25);
+        if (down || right) c = mixPacked(r[0], INK, 0.6);
+        else if (up || left) c = mixPacked(r[0], INK, 0.35);
       }
       pix.px[k] = c;
     }

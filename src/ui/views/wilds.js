@@ -168,7 +168,7 @@ export class WildsView {
       const take = lab.sandbox ? d.take : can || plan.take;
       const fx = Object.entries(m.effects || {}).filter(([, v]) => Math.abs(v) >= 5).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 3);
       const stock = lab.sandbox ? '∞' : this.stockText(d, s);
-      const when = lab.sandbox ? 'never runs out' : this.when(s, can);
+      const when = lab.sandbox ? 'never runs out' : this.when(s, can, d);
       this.can[d.id] = locked || can >= 5;
       this.closed[d.id] = !lab.sandbox && !plan.open;
       const g = btn(locked ? RANKS[d.rank].name : `${plan.method.verb} +${take} ml`, () => this.gather(d), { cls: 'gold', icon: locked ? 'lock' : plan.method.icon, disabled: locked || (!lab.sandbox && can < 5), act: 'gather-' + d.id });
@@ -199,7 +199,7 @@ export class WildsView {
       card.addEventListener('pointerleave', () => { if (this.hover === d.id) this.setHover(null); });
       list.appendChild(card);
     }
-    clear(this.foot).append(`Room for ${st.cap.storage} ml of each ingredient. ${st.has('satchel') ? 'Your satchel carries half as much again. ' : ''}Only mature plants can be harvested. New sprouts come up at random spots until the ground is full again, even while the game is closed, and each new day brings every plant on. Living plants grow faster in damp soil: water them (rain does it for you), and they drink it up over a few hours — a riverbank or a bog stays damp far longer than a meadow or the crags. Stones, crystals and shells come back with time and the weather.`);
+    clear(this.foot).append(`Room for ${st.cap.storage} ml of each ingredient. ${st.has('satchel') ? 'Your satchel carries half as much again. ' : ''}Only mature plants can be harvested. New sprouts come up at random spots until the ground is full again, even while the game is closed, and each new day brings every plant on. Living plants grow faster in damp soil: water them (rain does it for you), and they drink it up over a few hours — a riverbank or a bog stays damp far longer than a meadow or the crags. Stones, crystals and shells do not grow: they turn up again whole, with time and the weather.`);
     this.paintBg();
     this.grow();
     this.prewarm();
@@ -207,6 +207,7 @@ export class WildsView {
 
   /** What a stand holds, in words. @param {any} d @param {any} s status */
   stockText(d, s) {
+    if (!d.botanical) return `${s.mature} of ${d.slots} found · ${d.take} ml each`;
     return `${s.mature} of ${d.slots} mature${s.plants.length > s.mature ? ` · ${s.plants.length - s.mature} growing` : ''} · ${d.take} ml each`;
   }
 
@@ -246,15 +247,15 @@ export class WildsView {
   /** The plants of the region now: each at its spot in the scene and its stage. */
   grow() {
     if (!this.ground) return;
-    const st = this.lab.state, now = Date.now();
+    const lab = this.lab, st = lab.state, now = Date.now();
     /** @type {any[]} */
     const plants = [];
     for (const d of this.shown()) {
       const m = st.lookup(d.materialId);
       const key = m && m.wild ? m.wild.key : null;
       const s = depositStatus(st.gathering, d, now);
-      // in the sandbox every plant stands mature
-      for (const p of s.plants) plants.push({ ...p, dep: d, m, key, stage: this.lab.sandbox ? 'mature' : p.stage, grown: this.lab.sandbox ? 1 : p.grown });
+      // in the sandbox every plant stands mature; a stone, crystal or shell does not grow, it is simply there once it has formed again
+      for (const p of s.plants) if (lab.sandbox || d.botanical || p.stage === 'mature') plants.push({ ...p, dep: d, m, key, stage: lab.sandbox ? 'mature' : p.stage, grown: lab.sandbox ? 1 : p.grown });
     }
     plants.sort((a, b) => a.born - b.born || (a.id < b.id ? -1 : 1));
     const spots = this.ground.place(plants, (p) => this.shapeOf(p));
@@ -309,7 +310,8 @@ export class WildsView {
       audio.play('error');
       const why = r.reason === 'full' ? `Your shelves are full of ${m.name}.` : r.reason === 'locked' ? 'You may not gather here yet.'
         : r.reason === 'growing' ? `Still growing — only a mature plant can be harvested. This one matures in ${formatWait(r.nextIn || 60000)}.`
-        : `Nothing is mature yet. The next plant matures in ${formatWait(r.nextIn || 60000)}.`;
+        : d.botanical ? `Nothing is mature yet. The next plant matures in ${formatWait(r.nextIn || 60000)}.`
+        : `Nothing to be found here yet. The next one turns up in ${formatWait(r.nextIn || 60000)}.`;
       toast(r.reason === 'growing' ? 'Not ripe yet' : 'Nothing to gather', why, 'satchel');
       return;
     }
@@ -541,12 +543,13 @@ export class WildsView {
     }
   }
 
-  /** How a deposit is doing, in words. @param {any} s status @param {number} can */
-  when(s, can) {
-    if (s.fullIn <= 0) return 'fully grown';
-    const growing = `growing back${s.scarred ? ' slowly' : ''} · full in ${formatWait(s.fullIn)}`;
+  /** How a deposit is doing, in words (stones, crystals and shells turn up again rather than grow). @param {any} s status @param {number} can @param {any} d */
+  when(s, can, d) {
+    const living = d.botanical;
+    if (s.fullIn <= 0) return living ? 'fully grown' : 'all found';
+    const growing = `${living ? 'growing back' : 'turning up again'}${s.scarred ? ' slowly' : ''} · full in ${formatWait(s.fullIn)}`;
     if (can >= 5) return growing;
-    return `next ripe in ${formatWait(s.nextIn)} · ${growing}`;
+    return `next ${living ? 'ripe' : 'one'} in ${formatWait(s.nextIn)} · ${growing}`;
   }
 
   tick() {
@@ -560,7 +563,7 @@ export class WildsView {
       const plan = gatherPlan(st, d, st.lookup(d.materialId), { thorough: this.thorough });
       const can = harvestable(st.gathering, d, plan, now);
       row.barI.style.width = Math.round(s.fraction * 100) + '%';
-      row.meta.textContent = `${this.stockText(d, s)} · ${this.when(s, can)}`;
+      row.meta.textContent = `${this.stockText(d, s)} · ${this.when(s, can, d)}`;
       if (row.soil) row.soil.textContent = this.soilText(d, s);
       if (row.wbtn) row.wbtn.disabled = s.plants.every((p) => p.stage === 'mature');
       row.g.disabled = row.locked || can < 5;
