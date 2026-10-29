@@ -9,6 +9,7 @@
 // derived from the reactants (densities are stoichiometric blends, so mass
 // is conserved through every reaction).
 
+import { attachVisuals } from '../visual/identity.js';
 import { Rng } from '../core/rng.js';
 import { hslToRgb } from '../core/color.js';
 import { completeMaterial } from './schema.js';
@@ -419,6 +420,8 @@ export function addAlchemy(world) {
     if (!world.laws) world.laws = w.laws;
   }
   if (!world.laws) world.laws = generateLaws(world.seed);
+  // a save from before the procedural graphics: its ingredients get the identity their world would give them
+  attachVisuals(world);
   // older worlds stocked prepared reagents (essences, salts, crystals…):
   // only the solvents, the wild ingredients and recovered remains stay
   const keep = new Set([...SOLVENT_ROLES.map((r) => world.roles[r]), ...world.wild]);

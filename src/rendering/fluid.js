@@ -8,14 +8,14 @@
 //     look grainy and the texture moves with the material (no screen-space
 //     "swimming" noise); liquid on its way to freezing turns to slush;
 //   • powders are drawn as clusters of small, irregular chips (darker when
-//     damp), an ingredient's in the colours of its painted pieces;
+//     damp), an ingredient's in the colours of its procedural pieces;
 //   • frozen blocks get a compact, crisp icy body with a frosty rim that
 //     clears as they melt;
 //   • whole solid ingredients (roots, stones, crystals…) are drawn as their
 //     own material — fibres, speckles, facets, veins — with cracks where the
 //     pestle has damaged them, so they break down as the simulation does; a
 //     wild ingredient's object is painted from the piece it was poured as
-//     (one of its four in the piece atlas, rendering/pieces-art.js), turning
+//     (one of its four procedural pieces, visual/pieces.js), turning
 //     with it and eaten away particle by particle;
 //   • a brew takes the dominant colour of the painted ingredients in it,
 //     blending into gradients as it diffuses (brew-palette.js);
@@ -38,8 +38,7 @@
 
 import { PHASE, SIM } from '../simulation/constants.js';
 import { LOOK, piece } from '../materials/shapes.js';
-import { PIECE_ART, loadPieceArt, piecePalette } from './pieces-art.js';
-import { PIECE_CELL } from '../materials/pieces.js';
+import { PIECE_ART, PIECE_CELL, piecePalette } from '../visual/pieces.js';
 import { NE } from '../alchemy/effects.js';
 import { MAX_SPECIES } from '../reactions/species.js';
 import { PotionParticles } from './potion-fx.js';
@@ -213,8 +212,7 @@ export class FluidRenderer {
       if (p.glow[i] > 0.02 || p.burn[i] > 0.02) anyGlow = true;
       if (p.auraI[i] > 0.002) for (let k = 0, o = i * NE; k < NE; k++) if (p.auraFx[o + k] > 0) fxMask |= 1 << k;
     }
-    // the atlas also holds the palettes brews take from their painted ingredients
-    if (!PIECE_ART.loading) loadPieceArt();
+    // the pieces' atlas also holds the palettes brews take from their ingredients
     const painted = preparePalettes(sim);
     // awakened forms are drawn with the glow of what they woke from
     const vis = anyGlow ? drawnGlowTable(sim) : null;
@@ -289,7 +287,7 @@ export class FluidRenderer {
       } else if (ph === POWDER) {
         // a few small, irregular chips and a stray speck or two: each chip a
         // lobed blob with a ragged edge, lit from the upper left. A grain of
-        // an ingredient with painted pieces takes its chips' colours from its
+        // an ingredient with procedural pieces takes its chips' colours from its
         // spot in its piece (a crushed object's grains carry the colours of
         // the part they broke from), blending toward the brew's colour as it
         // dissolves away.
@@ -542,7 +540,7 @@ export class FluidRenderer {
             const hv = hash01(sd + (u + 4096) * 37 + (v + 4096) * 1013);
             const pc = art && p.skin[bi] ? piece(p.skin[bi]) : null;
             if (pc) {
-              // its painted piece, read where this pixel falls in it (each
+              // its piece, read where this pixel falls in it (each
               // particle knows its own spot, so broken-off bits keep theirs);
               // the blob around the piece's outline stays clear
               const tx = Math.floor(pc.ax + (p.skinU[bi] + ox / SIM.SPACING) * pc.ppu);

@@ -7,6 +7,7 @@
 import { PHASE, SIM, formPhase } from './constants.js';
 import { COLUMN } from './cauldron.js';
 import { chunkTemplate, chunkSize, hasPieces, skinOf, grainSkinOf, piece } from '../materials/shapes.js';
+import { registerSpecies } from '../visual/pieces.js';
 
 export class Emitter {
   /** @param {import('./world.js').Simulation} sim */
@@ -139,13 +140,14 @@ export class Emitter {
   }
 
   /**
-   * A grain of a powder (or a ground solid) with painted pieces is drawn in
+   * A grain of a powder (or a ground solid) with pieces is drawn in
    * their colours: it takes a spot in one of them, picked from its seed (so
    * the simulation's random stream is untouched).
    * @param {any} def @param {number} i
    */
   _grainSkin(def, i) {
     const p = this.sim.p, sd = p.seed[i];
+    registerSpecies(def);
     const skin = grainSkinOf(def, sd >>> 30);
     const pc = skin ? piece(skin) : null;
     if (!pc) return;

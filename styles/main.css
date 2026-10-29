@@ -230,7 +230,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
   background: var(--wood2); box-shadow: 0 0 0 var(--px) var(--wood0), inset 0 var(--px) 0 var(--wood4);
 }
 .jar canvas { width: 26px; height: 34px; }
-.jar canvas.raw { width: 32px; height: 32px; margin-bottom: 2px; }
+.jar canvas.raw { width: 40px; height: 40px; margin-bottom: 1px; image-rendering: pixelated; }
 .jar.wild { background: #3f4a26; box-shadow: 0 0 0 var(--px) var(--wood0), inset 0 var(--px) 0 #6d7f3a; }
 .jar .jname { font-size: var(--fs-s); line-height: 1; max-width: 58px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .jar .jstock { position: absolute; top: 1px; right: 3px; font-size: 13px; color: var(--parch1); }
@@ -455,10 +455,13 @@ canvas.scene { display: block; width: 100%; aspect-ratio: 16 / 9; height: auto; 
 .deposit .bar { height: 5px; margin: 2px 0; background: rgba(43, 29, 20, 0.25); box-shadow: none; }
 .deposit .bar > i { background: linear-gradient(#9fd06a, #4f7a31); }
 .deposit .btn { min-height: 48px; }
+.deposit .dep-acts { display: flex; flex-direction: column; gap: 4px; align-items: stretch; }
 /* narrow screens: the gather button goes under the deposit, so its notes keep their width */
 @media (max-width: 600px) {
   .deposit { grid-template-columns: 52px minmax(0, 1fr); }
-  .deposit > .btn { grid-column: 1 / -1; }
+  .deposit > .btn, .deposit > .dep-acts { grid-column: 1 / -1; }
+  .deposit > .dep-acts { flex-direction: row; }
+  .deposit > .dep-acts .btn { flex: 1; }
 }
 .deposit.locked { opacity: 0.6; }
 /* nothing mature to gather: its picture fades, as the harvested plant would */
@@ -514,7 +517,7 @@ canvas.scene { display: block; width: 100%; aspect-ratio: 16 / 9; height: auto; 
   .shelf .jar { touch-action: pan-y; }
   .jar { width: 86px; height: 88px; }
   .jar canvas { width: 30px; height: 40px; }
-  .jar canvas.raw { width: 40px; height: 40px; }
+  .jar canvas.raw { width: 48px; height: 48px; }
   .jar .jname { max-width: 82px; }
   .dose { flex-wrap: wrap; padding: 0 0 6px; }
   .dose .sel-name { flex-basis: 100%; }
@@ -551,7 +554,9 @@ canvas.scene { display: block; width: 100%; aspect-ratio: 16 / 9; height: auto; 
   .tools .btn { min-width: 44px; padding: 2px; }
   .tools .btn .lbl { font-size: 11px; }
   .deposit { grid-template-columns: 52px minmax(0, 1fr); }
-  .deposit > .btn { grid-column: 1 / -1; }
+  .deposit > .btn, .deposit > .dep-acts { grid-column: 1 / -1; }
+  .deposit > .dep-acts { flex-direction: row; }
+  .deposit > .dep-acts .btn { flex: 1; }
   .topbar { padding: 1px 6px; }
   .topbar .btn { min-height: 44px; min-width: 44px; }
   .tabbar { flex-direction: column; padding: 4px 4px; gap: 3px; overflow-y: auto; }
@@ -744,3 +749,8 @@ details.steps summary { cursor: pointer; min-height: 24px; }
 .why-chip.good { background: rgba(76, 138, 42, 0.16); }
 .why-chip.bad { background: rgba(168, 58, 42, 0.16); }
 .recipe-partial { margin: 2px 0; }
+
+/* the wilds: watering */
+.deposit .meta.soil { color: #3a5a7a; }
+.view-wilds .tap-mode .btn.active { box-shadow: 0 0 0 var(--px) #1a0f26, 0 0 0 calc(var(--px) * 2) var(--brass); }
+.deposit .meta.soil:empty { display: none; }

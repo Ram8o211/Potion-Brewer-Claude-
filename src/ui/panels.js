@@ -12,7 +12,7 @@ import { EQUIPMENT, RANKS } from '../game/equipment.js';
 import { ACHIEVEMENTS } from '../game/state.js';
 import { viscosityClass, densityWord, evennessWord } from '../game/measure.js';
 import { EFFECTS, EFFECT_BY_KEY, EFFECT_KEYS, dominantEffect } from '../alchemy/effects.js';
-import { ingredientSprite } from '../rendering/wild-sprites.js';
+import { ingredientSprite } from '../rendering/species-sprites.js';
 import { compatFactor } from '../reactions/compatibility.js';
 import { describeColor, rgbToHex } from '../core/color.js';
 import { SIM } from '../simulation/constants.js';

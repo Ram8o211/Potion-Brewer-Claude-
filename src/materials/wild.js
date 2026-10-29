@@ -15,6 +15,7 @@ import { hslToRgb } from '../core/color.js';
 import { completeMaterial } from './schema.js';
 import { EFFECT_INDEX } from '../alchemy/effects.js';
 import { arcaneProfile } from './profiles.js';
+import { identityOf } from '../visual/identity.js';
 
 /** @typedef {import('./schema.js').MaterialDef} MaterialDef */
 
@@ -226,6 +227,8 @@ export function generateWild(seed, base) {
     mm.charge = s.charge ?? 0;
     mm.wild = { key: s.key, shape: s.shape, region: s.region, rank: s.rank, rare: !!s.rare, gatherOnly: s.buy === null, gather: s.gather || 'pick', dusk: !!s.dusk, dawn: !!s.dawn };
     if (s.form === 'solid') mm.crushable = true;
+    // its visual identity in this world: what its plant, icon and pieces are drawn from (visual/)
+    mm.vis = identityOf(mm, seed);
     materials.push(m);
     ids[s.key] = id;
   }

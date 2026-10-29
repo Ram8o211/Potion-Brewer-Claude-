@@ -21,7 +21,7 @@ import { compatFactor } from '../reactions/compatibility.js';
 import { Renderer } from '../rendering/renderer.js';
 import { drawPortrait } from '../rendering/portraits.js';
 import { drawJar } from '../rendering/art.js';
-import { ingredientSprite } from '../rendering/wild-sprites.js';
+import { ingredientSprite } from '../rendering/species-sprites.js';
 import { measureParticles, tapSelection, probeSelection, viscosityClass, densityWord } from '../game/measure.js';
 import { scoreRequirement, PROPERTY_LABELS } from '../game/evaluate.js';
 import { processEvent } from '../game/journal.js';

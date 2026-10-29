@@ -8,8 +8,8 @@
 // speckles, facets, veins…). Crushing removes particles from the object, so
 // the silhouette breaks down exactly as the simulated damage does.
 //
-// A wild ingredient has four painted pieces (materials/pieces.js, cut from
-// art/icons/pieces_sheet.png); every object poured takes one of them at
+// A wild ingredient has four pieces, drawn procedurally from its visual
+// identity (visual/pieces.js); every object poured takes one of them at
 // random, and its particles are laid out over that piece's silhouette (as
 // many as its template has, so a dose weighs the same), so what tumbles and
 // collides is the piece the cauldron draws on it (rendering/fluid.js).
@@ -20,7 +20,7 @@ export const LOOK = Object.freeze({
   BARK: 10, BERRY: 11, GILLS: 12, SEED: 13, SHELL: 14, METAL: 15, GLASS: 16, SPOTS: 17, REED: 18, FLORET: 19,
 });
 
-import { PIECES, PIECE_CELL, PIECE_MASK } from './pieces.js';
+import { PIECE_KEYS, PIECE_CELL, PIECE_MASK, pieceMask, skinCell, onPiecesChanged, registerSpecies } from '../visual/pieces.js';
 import { WILD_BY_KEY } from './wild.js';
 
 const SHAPE_LOOK = {
@@ -110,23 +110,23 @@ const TEMPLATES = {
 /**
  * Particle offsets (in particle spacings) of one whole object of a solid
  * material, at most `max` of them (a part-dose takes the compact core): its
- * painted piece `variant` (0..3) where it has pieces, else its template.
+ * procedural piece `variant` (0..3) where it has pieces, else its template.
  * @param {any} def @param {number} max @param {number} [variant]
  * @returns {number[][]}
  */
 export function chunkTemplate(def, max, variant = -1) {
+  if (variant >= 0) registerSpecies(def);
   const pc = variant >= 0 ? piece(skinOf(def, variant)) : null;
   const t = pc ? pc.pts : TEMPLATES[shapeOf(def)] || TEMPLATES.stone;
   return t.slice(0, Math.max(1, Math.min(max, t.length)));
 }
 
-// ------------------------------------------------------------ painted pieces
+// ------------------------------------------------------------ pieces
 
-/** Every painted piece by skin id − 1: four per ingredient, in key order. */
-const SKINS = Object.keys(PIECES).sort().flatMap((key) => PIECES[key].map((_, v) => ({ key, v })));
-const SKIN_BASE = Object.fromEntries(Object.keys(PIECES).sort().map((key, n) => [key, 1 + n * 4]));
+/** The first skin id of each species: four per ingredient, in key order. */
+const SKIN_BASE = Object.fromEntries(PIECE_KEYS.map((key, n) => [key, 1 + n * 4]));
 
-/** Whether whole objects of a material are drawn as its painted pieces. @param {any} def */
+/** Whether whole objects of a material are drawn as its procedural pieces. @param {any} def */
 export function hasPieces(def) {
   return !!def && def.form === 'solid' && !def.shape && !!def.wild && def.wild.key in SKIN_BASE;
 }
@@ -156,9 +156,10 @@ export function skinOf(def, variant) {
  */
 /** @type {(Piece|null|undefined)[]} */
 const fitted = [];
+onPiecesChanged((key) => { const b = SKIN_BASE[key]; for (let v = 0; v < 4; v++) fitted[b + v] = undefined; });
 
 /**
- * A painted piece fitted with particles: hex lattices of every spacing and
+ * A piece fitted with particles: hex lattices of every spacing and
  * offset are laid over its silhouette, and of those holding exactly as many
  * particles as the material's template, the one whose rendered blob best
  * matches the silhouette wins (computed once per piece, on first use).
@@ -167,16 +168,12 @@ const fitted = [];
  */
 export function piece(skin) {
   if (!skin) return null;
-  if (fitted[skin] !== undefined) return /** @type {Piece|null} */ (fitted[skin]);
-  const sk = SKINS[skin - 1];
+  const sk = skinCell(skin);
   if (!sk) return null;
-  const [fx, fy, hexRows] = PIECES[sk.key][sk.v];
-  const M = PIECE_MASK, D = (M + 3) >> 2;
-  const mask = new Uint8Array(M * M);
-  for (let y = 0; y < M; y++) {
-    const row = parseInt(hexRows.slice(y * D, (y + 1) * D), 16);
-    for (let x = 0; x < M; x++) mask[y * M + x] = (row >>> (D * 4 - 1 - x)) & 1;
-  }
+  // (drawing the species' pieces first: a change of look drops what was fitted to the old ones)
+  const mask = /** @type {Uint8Array} */ (pieceMask(sk.key, sk.v));
+  if (fitted[skin] !== undefined) return /** @type {Piece|null} */ (fitted[skin]);
+  const M = PIECE_MASK, fx = sk.cx, fy = sk.cy;
   let area = 0;
   for (const m of mask) area += m;
   const spec = WILD_BY_KEY[sk.key];

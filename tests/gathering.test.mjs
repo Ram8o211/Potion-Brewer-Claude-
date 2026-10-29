@@ -4,7 +4,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { GameState } from '../src/game/state.js';
-import { gatherPlan, dayPart, weatherOn, WEATHERS, depositStatus, normalizeGathering, SCAR_SLOWDOWN, weatherRegrowth, harvestable, standOf, plantStage, marksIn, MARK_MS, SPROUT_SHARE, REGIONS } from '../src/game/gathering.js';
+import { gatherPlan, dayPart, weatherOn, WEATHERS, depositStatus, normalizeGathering, SCAR_SLOWDOWN, weatherRegrowth, harvestable, standOf, plantStage, marksIn, MARK_MS, SPROUT_SHARE, REGIONS, growthOf, checkpoint, moistureEnv, water, matureIn, GATHER_VERSION, GROW_FLOOR, WATER_DOSE } from '../src/game/gathering.js';
 
 const fresh = (seed = 'gather-1') => GameState.create(seed, { tutorial: false });
 const depositOf = (st, key) => st.deposits.find((d) => st.lookup(d.materialId).wild.key === key);
@@ -59,7 +59,8 @@ test('weather is deterministic per world and day, and acts on regrowth', () => {
   for (const d of [leaf, stone]) st.gathering.nodes[d.id] = { plants: [], due: now + d.spawnMs, seq: d.slots };
   weatherRegrowth(st.gathering, st.deposits, WEATHERS.find((w) => w.id === 'rain'), st.lookup, now);
   const wet = depositStatus(st.gathering, leaf, now);
-  assert.equal(wet.mature, leaf.slots, 'rain grows the plants back, every one mature');
+  assert.equal(wet.plants.length, leaf.slots, 'rain brings up every empty slot');
+  assert.ok(wet.plants.every((p) => p.stage === 'ripe' && p.moisture >= 0.999), 'half-grown, in soaked soil');
   assert.equal(depositStatus(st.gathering, stone, now).plants.length, 0, 'but not the stones');
 });
 
@@ -187,6 +188,98 @@ test('the night after a rainy day regrows the plants', () => {
   const leaf = depositOf(st, 'silverleaf');
   st.gathering.nodes[leaf.id] = { plants: [], due: Date.now() + leaf.spawnMs, seq: leaf.slots };
   st.current = null;
+  const t = Date.now();
   st.endDay();
-  assert.equal(depositStatus(st.gathering, leaf).mature, leaf.slots, 'the rain that fell today grows the plants back tonight');
+  const s = depositStatus(st.gathering, leaf, t + 1000);
+  assert.equal(s.plants.length, leaf.slots, 'the rain that fell today fills the stand tonight');
+  assert.ok(s.plants.every((p) => p.grown >= 0.89), 'and grows every plant well on (soaked, then the new day)');
+  assert.ok(s.mature >= 1 || s.plants.every((p) => p.matureIn < leaf.growMs * 0.3), 'nearly ready');
+});
+
+// ------------------------------------------------------------------ moisture and growth
+
+/** A stand of one fresh sprout at t0, in soil at the habitat's level. */
+function seedling(st, key, t0) {
+  const d = depositOf(st, key);
+  const base = moistureEnv(d, st.gathering.sky).base;
+  st.gathering.nodes[d.id] = { plants: [{ id: d.id + '#x', x: 0.5, y: 0.7, born: t0, g: 0, t: t0, w: base }], due: null, seq: 99 };
+  return d;
+}
+
+test('living plants drink: watering wets their soil, damp soil grows them faster, dry soil slows them, and more water never helps beyond full', () => {
+  const t0 = Date.now();
+  const a = fresh('drink-1'), b = fresh('drink-1');
+  a.gathering.sky = b.gathering.sky = 'clear';
+  const da = seedling(a, 'sunthistle', t0), db = seedling(b, 'sunthistle', t0);
+  assert.ok(da.botanical);
+  assert.equal(a.water(da.id, null, t0), 1, 'the sprout drinks');
+  const pa = a.gathering.nodes[da.id].plants[0];
+  assert.ok(pa.w > moistureEnv(da, 'clear').base + WATER_DOSE * 0.99 - 1e-9 || pa.w === 1, 'its soil is wetter');
+  const t1 = t0 + da.growMs * 0.4;
+  const ga = growthOf(da, pa, t1, 'clear').g, gb = growthOf(db, b.gathering.nodes[db.id].plants[0], t1, 'clear').g;
+  assert.ok(ga > gb * 1.3, `watered grows faster (${ga.toFixed(3)} vs ${gb.toFixed(3)})`);
+  // a dry plant still grows, slowly — never stuck
+  assert.ok(gb >= GROW_FLOOR * 0.4 * 0.99, 'dry soil slows but never stops it');
+  // watering again and again: moisture is capped, growth no faster than at full
+  for (let k = 0; k < 5; k++) a.water(da.id, null, t0);
+  const capped = a.gathering.nodes[da.id].plants[0];
+  assert.ok(capped.w <= 1);
+  assert.ok(growthOf(da, capped, t1, 'clear').g <= 1.5 * 0.4 + 1e-6, 'never beyond the full pace');
+  // watering never matures a plant at once
+  assert.equal(plantStage(da, capped, t0 + 1000, 'clear').stage, 'sprout');
+  // its soil dries back toward the habitat's level
+  const later = growthOf(da, capped, t0 + 48 * 3600000, 'clear');
+  assert.ok(Math.abs(later.w - moistureEnv(da, 'clear').base) < 0.01);
+});
+
+test('growth resolves the same however often it is checked, never runs backwards, and survives a save', () => {
+  const st = fresh('drink-2');
+  const t0 = Date.now(), d = seedling(st, 'frostcap', t0);
+  st.water(d.id, null, t0);
+  const p = st.gathering.nodes[d.id].plants[0];
+  const direct = growthOf(d, p, t0 + d.growMs, 'clear');
+  let q = p;
+  for (let k = 1; k <= 10; k++) q = checkpoint(d, q, t0 + (d.growMs * k) / 10, 'clear');
+  const stepped = growthOf(d, q, t0 + d.growMs, 'clear');
+  assert.ok(Math.abs(direct.g - stepped.g) < 1e-5 && Math.abs(direct.w - stepped.w) < 1e-5, 'no growth counted twice');
+  // a clock set back neither grows nor shrinks it
+  assert.equal(growthOf(d, p, t0 - 3600000, 'clear').g, p.g);
+  // the time it says it needs is the time it takes
+  const left = matureIn(d, p, t0, 'clear');
+  assert.equal(plantStage(d, p, t0 + left + 1, 'clear').stage, 'mature');
+  assert.notEqual(plantStage(d, p, t0 + left * 0.9, 'clear').stage, 'mature');
+  // the checkpoint is saved
+  const back = normalizeGathering(JSON.parse(JSON.stringify(st.gathering)), t0 + 1);
+  assert.deepEqual(back.nodes[d.id].plants, st.gathering.nodes[d.id].plants);
+  assert.equal(back.v, GATHER_VERSION);
+});
+
+test('wet habitats keep their soil damp; stones, crystals and shells do not drink', () => {
+  const st = fresh('drink-3');
+  const fen = st.deposits.find((x) => x.region === 'moonfen' && x.botanical), crag = st.deposits.find((x) => x.region === 'crags' && x.botanical);
+  const meadow = st.deposits.find((x) => x.region === 'meadow' && x.botanical), river = st.deposits.find((x) => x.region === 'river' && x.botanical);
+  assert.ok(moistureEnv(fen).base > moistureEnv(meadow).base && moistureEnv(river).base > moistureEnv(meadow).base);
+  assert.ok(moistureEnv(fen).tau > moistureEnv(crag).tau, 'a bog holds water longer than the crags');
+  assert.ok(moistureEnv(meadow, 'rain').base > 0.9 && moistureEnv(meadow, 'heat').base < moistureEnv(meadow).base, 'rain wets it, a heatwave dries it');
+  for (const key of ['riverchalk', 'emberflint', 'cinnabar', 'riverpearl', 'mica']) {
+    const d = depositOf(st, key);
+    assert.equal(d.botanical, false, `${key} is not a plant`);
+    assert.equal(water(st.gathering, d, null), 0, `${key} takes no water`);
+    const p = { id: 'x', x: 0.5, y: 0.7, born: 1000 };
+    assert.equal(growthOf(d, p, 1000 + d.growMs / 2).g, 0.5, `${key} comes back with time alone`);
+  }
+});
+
+test('an old save’s plants keep every bit of their growth when they start to drink', () => {
+  const st = fresh('drink-4');
+  const d = depositOf(st, 'silverleaf'), now = Date.now();
+  const raw = JSON.parse(JSON.stringify(st.toJSON()));
+  // gathering as saved before plants drank: plants by age only, no version
+  raw.gathering = { nodes: { [d.id]: { plants: [{ id: d.id + '#0', x: 0.3, y: 0.7, born: now - d.growMs * 2 }, { id: d.id + '#1', x: 0.6, y: 0.7, born: now - d.growMs * 0.5 }], due: null, seq: 2 } }, marks: [], total: 40, trips: 1, created: now - 1e7 };
+  const back = GameState.fromJSON(raw);
+  const s = depositStatus(back.gathering, d, now);
+  assert.equal(s.mature, 1, 'the ripe plant is still ripe');
+  assert.ok(Math.abs(s.plants.find((p) => p.id === d.id + '#1').grown - 0.5) < 0.02, 'the half-grown one still half-grown');
+  assert.equal(back.gathering.total, 40, 'the record kept');
+  assert.equal(back.gathering.v, GATHER_VERSION);
 });

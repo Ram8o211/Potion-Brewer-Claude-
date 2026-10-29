@@ -609,21 +609,23 @@ into the new vessel's shape instead of being dropped.
     and a shadow line add shape.
   * Powders are drawn as speckled grain clusters, darker when damp.
   * Frozen blocks get a crisp body with a frosty rim.
-  * A whole ingredient is drawn with its own surface, laid out in the
-    body's frame so it tumbles with it (`materials/shapes.js` LOOK): root
-    fibres, leaf veins, stone speckle, crystal facets, mushroom caps,
-    glossy beans and scales, bark plates split by fissures, glossy berries,
-    fungus gills, ribbed seeds, pearly shell rings, metallic bands, black
-    glass glints, spotted toadstool caps, velvet reeds and froths of
-    florets. Each shape also has its own 16×16 sprite (`scenes.js`).
+  * A whole wild ingredient is drawn from the procedural piece it was
+    poured as (`visual/pieces.js`, four per species, drawn from its visual
+    identity), laid out in the body's frame so it tumbles with it and is
+    eaten away particle by particle; other solids keep their surface by
+    look (`materials/shapes.js` LOOK).
   * Vapour is a soft fog.
   * Glowing and burning matter emits light.
 * **`portraits.js`** draws procedural customer portraits.
-* **`scenes.js`** paints the wilds (sky, hills, trees, rocks, water and
-  the deposits' plants and minerals, with a little ambient animation),
-  raw-ingredient sprites for the shelf, and the trial subjects with their
-  marks (growth, glow, frost, etching, love). Static layers are cached and
-  only redrawn when the region or a deposit changes.
+* **`src/visual/`** is the procedural graphics pipeline (see
+  [PROCEDURAL_GRAPHICS.md](PROCEDURAL_GRAPHICS.md)): visual identities and
+  descriptors, family geometry, the pixel-art rasterizer, the cauldron's
+  pieces and the six wild environments (`env/`), all pure and
+  deterministic. **`species-sprites.js`** caches each species' plant
+  frames and icon (every list's picture of a wild ingredient);
+  **`wild-scene.js`** caches each region's scene, places plants on its
+  open ground, hit-tests them and animates the scene. **`scenes.js`** keeps
+  the little sprites of the rabbits' remains.
 * Effects show in the brew: a potion with a strong effect gets a faint
   aura of that effect's colour, and charged matter crackles with sparks.
 * Quality presets: **High quality**, **Balanced** and **Battery saver**
@@ -655,7 +657,8 @@ into the new vessel's shape instead of being dropped.
 * **`views/`** holds the other rooms: `counter.js` (customer, full order
   with verified effects, the vial, serving, and the potion shelves: a grid
   of bottle places, each bottle taken down, poured back or discarded), `wilds.js` (regions, the
-  painted scene with tappable deposits, the deposit list), `trials.js`
+  procedural scene with tappable plants, harvesting and watering, the
+  deposit list), `trials.js`
   (subjects, the draggable dropper, dose size and source, reports with
   theory vs observation) and `book.js` (recipes, trial log, laws,
   journal, ingredients, awards, sales).

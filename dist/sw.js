@@ -1,7 +1,7 @@
 // Service worker: cache-first offline support. The build script replaces
 // the asset list and version; in development it simply caches as it goes.
-const VERSION = '2.3.0-3f4598dacc';
-const ASSETS = ["./","app.3abafb7d57.js","assets/backdrops/crags.png","assets/backdrops/forest.png","assets/backdrops/meadow.png","assets/backdrops/moonfen.png","assets/backdrops/quarry.png","assets/backdrops/river.png","assets/fonts/alchemist-pixel.ttf","assets/growth/atlas.png","assets/hutch/pen-front.png","assets/hutch/pen.png","assets/icons/icon-192.png","assets/icons/icon-512.png","assets/icons/ingredients.png","assets/icons/pieces.png","assets/meadow/atlas.png","assets/wilds/crags.png","assets/wilds/forest.png","assets/wilds/moonfen.png","assets/wilds/quarry.png","assets/wilds/river.png","index.html","manifest.webmanifest","styles/main.3b8ea78d83.css"];
+const VERSION = '2.3.0-09664b6f16';
+const ASSETS = ["./","app.fe663d7b00.js","assets/fonts/alchemist-pixel.ttf","assets/hutch/pen-front.png","assets/hutch/pen.png","assets/icons/icon-192.png","assets/icons/icon-512.png","index.html","manifest.webmanifest","styles/main.d2b208a314.css"];
 // The origin may be shared — <owner>.github.io hosts every Pages site of an
 // account, and a branch deploy exposes this game both at the root and at
 // /dist/ — so cache names carry this worker's scope, and each worker only

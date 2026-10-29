@@ -9,7 +9,7 @@ import { generateCommission, tutorialCommission } from './commissions.js';
 import { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById, RETIRED_EQUIPMENT } from './equipment.js';
 import { SIM } from '../simulation/constants.js';
 import { createTrials, normalizeTrials, runTrial, SUBJECT_BY_ID, knownLaws, certification, summarize } from './experiments.js';
-import { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth, depositStatus } from './gathering.js';
+import { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth, depositStatus, migrateGathering, setSky, water } from './gathering.js';
 import { predictPlan } from './predict.js';
 import { EFFECT_INDEX, EFFECT_KEYS } from '../alchemy/effects.js';
 import { migrateVial } from './vial.js';
@@ -148,6 +148,9 @@ export class GameState {
     this.lookup = makeLookup(this.world);
     /** @type {import('./gathering.js').Deposit[]|null} */
     this._deposits = null;
+    // plants that drink: an older save's plants keep their growth, and grow under today's weather
+    migrateGathering(this.gathering, this.deposits);
+    setSky(this.gathering, this.deposits, weatherOn(this.seed, this.day).id);
     const col = this.trials.colony;
     if (!col.seed) col.seed = String(this.seed);
     if (!col.day) {
@@ -269,6 +272,17 @@ export class GameState {
       if (this.stats.gathered >= 1000) /** @type {any} */ (r).events.push(...this.unlock('forage1k'));
     }
     return r;
+  }
+
+  /**
+   * Water living plants of a deposit (the ones given, else every growing
+   * one): the moisture of their soil rises and they grow faster for hours.
+   * Returns how many drank.
+   * @param {string} depositId @param {string[]|null} [plants] @param {number} [now]
+   */
+  water(depositId, plants = null, now = Date.now()) {
+    const d = this.deposits.find((x) => x.id === depositId);
+    return d ? water(this.gathering, d, plants, now) : 0;
   }
 
   // ------------------------------------------------------------ trials
@@ -1020,6 +1034,7 @@ export class GameState {
     this.customersPerDay = 3 + Math.floor(this.rank / 2);
     this.rollMarket();
     newDayRegrowth(this.gathering, this.deposits);
+    setSky(this.gathering, this.deposits, weatherOn(this.seed, this.day).id);
     // a night in the hutch: marks fade, the sick get worse or better, kits are born
     const colony = colonyDay(this.colony, { seed: this.seed, day: this.day, cap: this.cap.hutch });
     /** @type {any[]} */

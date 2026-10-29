@@ -6,29 +6,32 @@
 // saturated again. Nothing here runs while you brew. What a harvest brings
 // depends on the method and tool, the hour (dawn / midday / dusk follow the
 // shop's customers), the weather and how thoroughly you dig (game/gathering.js).
-// The plants are drawn from the growth atlas (rendering/wild-sprites.js) at
-// their stage on the open ground of the region's painted backdrop; only
-// plants take taps — the scenery is part of the cached background.
+// The region is a procedural environment generated from the world seed
+// (visual/env) and each plant is its species' procedural sprite at its
+// stage (rendering/species-sprites.js), standing on the scene's open ground;
+// only plants take taps — the scenery is part of the cached background.
+// Living plants drink: in watering mode a tap waters the plants round it
+// (and a card's Water button its whole stand); damp soil shows dark round
+// a plant, and a thirsty one carries a little drop until it is watered.
 
 import { h, btn, clear, toast } from '../dom.js';
 import { icon } from '../icons.js';
 import { audio } from '../../audio/audio.js';
-import { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, marksIn, DAY_PART_NAME } from '../../game/gathering.js';
+import { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, marksIn, moistureEnv, DAY_PART_NAME } from '../../game/gathering.js';
 import { equipmentById } from '../../game/equipment.js';
 import { RANKS } from '../../game/equipment.js';
-import { drawRaw } from '../../rendering/scenes.js';
-import { paintRegion, animateRegion, PlantGround, BACKDROPS, SCENE_W, SCENE_H } from '../../rendering/regions.js';
-import { GATHERABLES, GROWTH, CRYSTALS, REGION_ATLAS, growthFrame, glintSpots, plantBox, hitPlant, ingredientSprite } from '../../rendering/wild-sprites.js';
+import { sceneCanvas, animateRegion, PlantGround, plantBox, hitPlant, SCENE_W, SCENE_H } from '../../rendering/wild-scene.js';
+import { plantCanvas, plantFrameOf, silhouetteOf, ingredientSprite, speciesOf } from '../../rendering/species-sprites.js';
 import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
 
 /**
- * A four-pointed sparkle on a crystal's edge: thin arms (half an art pixel,
- * the long ones up and down) that grow out of a white point and draw back
- * in over its life `u` (0..1).
+ * A four-pointed sparkle on a crystal's edge or a magical glimmer: thin
+ * arms (the long ones up and down) that grow out of a white point and draw
+ * back in over its life `u` (0..1).
  * @param {CanvasRenderingContext2D} ctx @param {number} x @param {number} y @param {number} u
  */
 function sparkle(ctx, x, y, u) {
-  const q = 0.5, L = [1, 2, 4, 6, 4, 2, 1][Math.min(6, Math.floor(u * 7))] * q;
+  const q = 1, L = [0, 1, 2, 3, 2, 1, 0][Math.min(6, Math.floor(u * 7))] * q;
   const cx = Math.round(x / q) * q, cy = Math.round(y / q) * q;
   ctx.fillStyle = 'rgba(255,250,225,0.75)';
   ctx.fillRect(cx, cy - L * 1.5, q, L * 1.5);
@@ -64,19 +67,19 @@ export class WildsView {
     this.can = {};
     /** deposit id → whether it is a dawn or dusk plant out of its hour */
     this.closed = {};
-    /** the sprite atlases this view waits on */
-    this.waiting = new Set();
+    /** what a tap in the scene does: harvest a mature plant, or water the plants round it */
+    this.mode = 'harvest';
+    /** drops of water and splashes in flight @type {{x:number, y:number, vx:number, vy:number, t:number, life:number, gy:number}[]} */
+    this.drops = [];
   }
 
   build() {
     const el = clear(this.el);
     this.tabs = h('div', { class: 'region-tabs', role: 'tablist' });
     this.sky = h('div', { class: 'wilds-sky small' });
-    // the scene is drawn in art pixels on a canvas of twice the resolution, so
-    // the plants (kept at that resolution) and the sparkles are finer than the backdrop
-    this.canvas = /** @type {HTMLCanvasElement} */ (h('canvas', { width: String(SCENE_W * GROWTH.res), height: String(SCENE_H * GROWTH.res), class: 'scene', 'aria-label': 'Region scene: tap a deposit to gather' }));
+    // the scene, its plants and their effects share one pixel size
+    this.canvas = /** @type {HTMLCanvasElement} */ (h('canvas', { width: String(SCENE_W), height: String(SCENE_H), class: 'scene', 'aria-label': 'Region scene: tap a plant to gather it, or to water it in watering mode' }));
     this.ctx = /** @type {CanvasRenderingContext2D} */ (this.canvas.getContext('2d'));
-    this.ctx.setTransform(GROWTH.res, 0, 0, GROWTH.res, 0, 0);
     this.ctx.imageSmoothingEnabled = false;
     this.canvas.addEventListener('pointerdown', (e) => this.tapScene(e));
     this.canvas.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') this.setHover(this.depositAt(e)); });
@@ -87,16 +90,38 @@ export class WildsView {
     // the scene and its caption form one column, so a landscape phone can
     // keep the scene in view beside the deposit list
     el.append(this.tabs, h('div', { class: 'wilds-scene' }, h('div', { class: 'scene-wrap' }, this.canvas), this.info), h('div', { class: 'wilds-list' }, this.sky, this.list, this.foot));
+    // the last moment the player touched this room (pre-generation waits for a pause)
+    this.lastInput = 0;
+    this.warmTimer = 0;
+    for (const ev of ['pointerdown', 'pointermove', 'wheel', 'keydown']) el.addEventListener(ev, () => { this.lastInput = performance.now(); }, { passive: true });
     this.refresh();
   }
 
-  /** A region's backdrop, its sprites and the growth atlas arrive in the background; repaint once they have. */
-  loadSprites() {
-    for (const atlas of [BACKDROPS[this.region], REGION_ATLAS[this.region], GROWTH]) {
-      if (!atlas || atlas.ready || this.waiting.has(atlas)) continue;
-      this.waiting.add(atlas);
-      atlas.load().then((ok) => { if (ok) { this.bgKey = ''; this.refresh(); } });
-    }
+  /**
+   * Generate the other regions the player can travel to, and their plants'
+   * sprites, while the Wilds room is open and the player has paused — one
+   * region per idle moment, never during input or in another room — so
+   * travelling to them later only draws what is already made.
+   */
+  prewarm() {
+    if (this.warmTimer) return;
+    const st = this.lab.state, seed = st.seed;
+    const todo = REGIONS.filter((r) => this.unlocked(r) && r.id !== this.region).map((r) => r.id);
+    const idle = typeof requestIdleCallback === 'function' ? (fn) => requestIdleCallback(fn) : (fn) => setTimeout(fn, 50);
+    const tick = () => {
+      this.warmTimer = 0;
+      if (this.lab.state !== st || !todo.length) return;
+      // only while this room is shown and nobody is touching it
+      if (this.lab.view !== 'wilds' || performance.now() - this.lastInput < 1500) { this.warmTimer = setTimeout(tick, 1500); return; }
+      idle(() => {
+        if (this.lab.view !== 'wilds' || performance.now() - this.lastInput < 1500) { this.warmTimer = setTimeout(tick, 1500); return; }
+        const region = /** @type {string} */ (todo.shift());
+        sceneCanvas(region, seed);
+        for (const d of st.deposits.filter((x) => x.region === region)) silhouetteOf(st.lookup(d.materialId));
+        if (todo.length) this.warmTimer = setTimeout(tick, 400);
+      });
+    };
+    this.warmTimer = setTimeout(tick, 1500);
   }
 
   unlocked(r) {
@@ -106,7 +131,6 @@ export class WildsView {
   refresh() {
     const lab = this.lab, st = lab.state;
     if (!this.tabs) return;
-    this.loadSprites();
     const tabs = clear(this.tabs);
     for (const r of REGIONS) {
       const ok = this.unlocked(r);
@@ -128,8 +152,12 @@ export class WildsView {
         lab.sandbox ? null : h('span', { class: 'muted', text: part === 'dawn' ? '(until you open the shop)' : part === 'dusk' ? '(after the last customer, until you close)' : '(the shop is open)' }),
         h('span', { class: 'spacer' }), icon(weather.icon, 'sm'), h('b', { text: lab.sandbox ? '' : weather.name })),
       lab.sandbox || weather.id === 'clear' ? null : h('div', { class: 'muted', text: weather.desc }),
-      h('div', { class: 'row wrap seg harvest-mode' }, h('span', { text: 'Harvest:' }), mode('Careful', false, 'harvest-careful'), mode('Thorough ×2', true, 'harvest-thorough'),
-        this.thorough ? h('span', { class: 'muted', text: 'digs the plant out whole: its kind sprouts at half pace' }) : null)].filter(Boolean));
+      h('div', { class: 'row wrap seg tap-mode' }, h('span', { text: 'Tap to:' }),
+        btn('Harvest', () => { this.mode = 'harvest'; audio.play('click'); this.refresh(); }, { cls: 'small' + (this.mode === 'harvest' ? ' active' : ''), icon: 'rose', act: 'mode-harvest' }),
+        btn('Water', () => { this.mode = 'water'; audio.play('click'); this.refresh(); }, { cls: 'small' + (this.mode === 'water' ? ' active' : ''), icon: 'drop', act: 'mode-water' }),
+        this.mode === 'water' ? h('span', { class: 'muted', text: 'tap the scene to water the plants round it' }) : null),
+      this.mode === 'harvest' ? h('div', { class: 'row wrap seg harvest-mode' }, h('span', { text: 'Harvest:' }), mode('Careful', false, 'harvest-careful'), mode('Thorough ×2', true, 'harvest-thorough'),
+        this.thorough ? h('span', { class: 'muted', text: 'digs the plant out whole: its kind sprouts at half pace' }) : null) : null].filter(Boolean));
     this.rows = {};
     for (const d of this.deposits()) {
       const m = st.lookup(d.materialId);
@@ -146,7 +174,9 @@ export class WildsView {
       const g = btn(locked ? RANKS[d.rank].name : `${plan.method.verb} +${take} ml`, () => this.gather(d), { cls: 'gold', icon: locked ? 'lock' : plan.method.icon, disabled: locked || (!lab.sandbox && can < 5), act: 'gather-' + d.id });
       const barI = h('i', { style: { width: Math.round((lab.sandbox ? 1 : s.fraction) * 100) + '%' } });
       const meta = h('div', { class: 'meta', text: `${stock} · ${when}` });
-      this.rows[d.id] = { barI, meta, g, locked, take, card: /** @type {HTMLElement | null} */ (null) };
+      const soil = d.botanical && !lab.sandbox ? h('div', { class: 'meta soil', text: this.soilText(d, s) }) : null;
+      const wbtn = d.botanical && !lab.sandbox && !locked ? btn('Water', () => this.waterStand(d), { cls: 'small water', icon: 'drop', disabled: s.plants.every((p) => p.stage === 'mature'), act: 'water-' + d.id, title: 'Water every growing plant of this stand' }) : null;
+      this.rows[d.id] = { barI, meta, g, locked, take, soil, wbtn, card: /** @type {HTMLElement | null} */ (null) };
       const notes = lab.sandbox ? [] : plan.factors.filter((f) => f.why !== 'satchel' && !f.why.startsWith('thorough')).map((f) => f.why);
       const tool = plan.method.tool ? equipmentById(plan.method.tool) : null;
       const card = h('div', { class: 'deposit parch' + (locked ? ' locked' : '') + (s.scarred ? ' scarred' : '') + (this.can[d.id] ? '' : ' spent'), 'data-deposit': d.id },
@@ -157,20 +187,22 @@ export class WildsView {
           d.place ? h('div', { class: 'meta place', text: d.place }) : null,
           h('div', { class: 'bar' }, barI),
           meta,
+          soil,
           notes.length ? h('div', { class: 'meta note', text: notes.join(' · ') }) : null,
           !lab.sandbox && tool && !plan.hasTool ? h('div', { class: 'meta muted', text: `${tool.name}: ${tool.price} coins at the shop` }) : null,
           h('div', { class: 'meta fx' }, ...fx.map(([k, v]) => h('span', { class: 'fx-chip', title: EFFECT_BY_KEY[k].label }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(v)}`)),
             h('span', { class: 'muted', text: ` · in stores: ${Math.round(st.stock(m.id))} ml` }))),
-        g);
+        wbtn ? h('div', { class: 'dep-acts' }, wbtn, g) : g);
       this.rows[d.id].card = card;
       // pointing at a card picks out its deposit in the scene
       card.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') this.setHover(d.id); });
       card.addEventListener('pointerleave', () => { if (this.hover === d.id) this.setHover(null); });
       list.appendChild(card);
     }
-    clear(this.foot).append(`Room for ${st.cap.storage} ml of each ingredient. ${st.has('satchel') ? 'Your satchel carries half as much again. ' : ''}Only mature plants can be harvested. New sprouts come up at random spots until the ground is full again, even while the game is closed, and each new day brings every plant on.`);
+    clear(this.foot).append(`Room for ${st.cap.storage} ml of each ingredient. ${st.has('satchel') ? 'Your satchel carries half as much again. ' : ''}Only mature plants can be harvested. New sprouts come up at random spots until the ground is full again, even while the game is closed, and each new day brings every plant on. Living plants grow faster in damp soil: water them (rain does it for you), and they drink it up over a few hours — a riverbank or a bog stays damp far longer than a meadow or the crags. Stones, crystals and shells come back with time and the weather.`);
     this.paintBg();
     this.grow();
+    this.prewarm();
   }
 
   /** What a stand holds, in words. @param {any} d @param {any} s status */
@@ -178,19 +210,25 @@ export class WildsView {
     return `${s.mature} of ${d.slots} mature${s.plants.length > s.mature ? ` · ${s.plants.length - s.mature} growing` : ''} · ${d.take} ml each`;
   }
 
+  /** How damp a stand's soil is, in words. @param {any} d @param {any} s status */
+  soilText(d, s) {
+    // a stand with nothing growing has nothing to say about its soil
+    if (s.moisture === null) return '';
+    const e = moistureEnv(d, this.lab.state.gathering.sky);
+    const w = s.moisture, word = w < e.lo ? 'dry — growing slowly' : w < e.hi ? 'damp' : 'well watered — growing fast';
+    return `soil ${word}${s.thirsty ? ` · ${s.thirsty} thirsty` : ''}`;
+  }
+
   deposits() {
     return this.lab.state.deposits.filter((d) => d.region === this.region);
   }
 
   paintBg() {
-    const backdrop = BACKDROPS[this.region];
-    const key = this.region + ':' + this.lab.state.seed + ':' + !!(backdrop && backdrop.ready) + ':' + GROWTH.ready;
+    const key = this.region + ':' + this.lab.state.seed;
     if (key === this.bgKey) return;
     this.bgKey = key;
-    this.bg = document.createElement('canvas');
-    this.bg.width = SCENE_W; this.bg.height = SCENE_H;
-    paintRegion(/** @type {CanvasRenderingContext2D} */ (this.bg.getContext('2d')), this.region, this.lab.state.seed);
-    this.ground = new PlantGround(this.region);
+    this.bg = sceneCanvas(this.region, this.lab.state.seed);
+    this.ground = new PlantGround(this.region, this.lab.state.seed);
     this.field = [];
   }
 
@@ -200,17 +238,9 @@ export class WildsView {
     return this.deposits().filter((d) => lab.sandbox || d.rank <= lab.state.rank);
   }
 
-  /** The silhouette a plant grows into (every frame of it), once the growth atlas can be read. @param {{key:string|null}} p */
+  /** The silhouette a plant grows into (every stage of it). @param {{m:any}} p */
   shapeOf(p) {
-    if (!p.key || !GROWTH.ready) return null;
-    const f = GROWTH.frame(p.key + '_mature_hover');
-    if (!f) return null;
-    const m = new Uint8Array(f[2] * f[3]);
-    for (const stage of ['sprout', 'ripe', 'mature', 'mature_hover']) {
-      const mm = GROWTH.mask(`${p.key}_${stage}`);
-      if (mm && mm.length === m.length) for (let k = 0; k < m.length; k++) m[k] |= mm[k];
-    }
-    return { w: f[2], h: f[3], m };
+    return p.m && p.m.wild ? silhouetteOf(p.m) : null;
   }
 
   /** The plants of the region now: each at its spot in the scene and its stage. */
@@ -221,7 +251,7 @@ export class WildsView {
     const plants = [];
     for (const d of this.shown()) {
       const m = st.lookup(d.materialId);
-      const key = m && m.wild && GATHERABLES[m.wild.key] ? m.wild.key : null;
+      const key = m && m.wild ? m.wild.key : null;
       const s = depositStatus(st.gathering, d, now);
       // in the sandbox every plant stands mature
       for (const p of s.plants) plants.push({ ...p, dep: d, m, key, stage: this.lab.sandbox ? 'mature' : p.stage, grown: this.lab.sandbox ? 1 : p.grown });
@@ -248,9 +278,10 @@ export class WildsView {
     if (this.canvas) this.canvas.style.cursor = p ? (p.stage === 'mature' ? 'pointer' : 'help') : 'default';
   }
 
-  /** The growth frame a plant shows now, if the art is in. @param {any} p */
+  /** The frame a plant shows now (its stage, closed out of its hour, rimmed under the pointer), as a box for hit testing. @param {any} p */
   frameOf(p) {
-    return p.key && GROWTH.ready ? growthFrame(p.key, p.stage, this.hover === p.id || this.hover === p.dep.id) : null;
+    const f = p.key ? plantFrameOf(p.m, p.stage, { closed: p.stage === 'mature' && !!this.closed[p.dep.id], hover: this.hover === p.id || this.hover === p.dep.id }) : null;
+    return f ? { w: f.pix.w, h: f.pix.h, ax: f.ax, ay: f.ay } : null;
   }
 
   /** The plant under a pointer event, if any. @param {PointerEvent} e */
@@ -259,7 +290,7 @@ export class WildsView {
     const x = ((e.clientX - r.left) / r.width) * SCENE_W, y = ((e.clientY - r.top) / r.height) * SCENE_H;
     // a mature plant before a growing one in front of it
     const ripe = this.field.filter((p) => p.stage === 'mature');
-    return hitPlant(ripe, (p) => this.frameOf(p), x, y, SCENE_W, SCENE_H) || hitPlant(this.field, (p) => this.frameOf(p), x, y, SCENE_W, SCENE_H);
+    return hitPlant(ripe, (p) => this.frameOf(p), x, y) || hitPlant(this.field, (p) => this.frameOf(p), x, y);
   }
 
   /** @param {PointerEvent} e */
@@ -288,8 +319,8 @@ export class WildsView {
     // the mark it leaves lies where the plant was drawn (the scene moved it onto open ground)
     const mark = st.gathering.marks[st.gathering.marks.length - 1];
     if (!lab.sandbox && mark && r.plant && at.key) { mark.x = at.x; mark.y = at.y; }
-    const f = at.key && GROWTH.ready ? GROWTH.frame(at.key + '_mature') : null;
-    this.floaters.push({ x: at.x * SCENE_W, y: at.y * SCENE_H - Math.max(0, (f ? f[3] : 16) - 16), t: 0, text: `+${r.amount}`, color: m.look || m.color, shape: m.wild ? m.wild.shape : 'stone' });
+    const f = at.key ? plantFrameOf(m, 'mature') : null;
+    this.floaters.push({ x: at.x * SCENE_W, y: at.y * SCENE_H - Math.max(0, (f ? f.ay : 16) - 12), t: 0, text: `+${r.amount}`, color: m.look || m.color });
     for (const e of r.events || []) lab.announce(e);
     if (lab.tutorial) lab.tutorial.notify('gather', d.materialId);
     // a first find gets its own place on the shelf
@@ -300,8 +331,53 @@ export class WildsView {
 
   /** @param {PointerEvent} e */
   tapScene(e) {
+    if (this.mode === 'water') { this.waterAt(e); return; }
     const p = this.plantAt(e);
     if (p) this.gather(p.dep, p);
+  }
+
+  /** Splash water where the pointer is: every growing plant within reach drinks. @param {PointerEvent} e */
+  waterAt(e) {
+    const r = this.canvas.getBoundingClientRect();
+    const x = ((e.clientX - r.left) / r.width) * SCENE_W, y = ((e.clientY - r.top) / r.height) * SCENE_H;
+    const reach = 24, lab = this.lab;
+    /** @type {Map<any, string[]>} */
+    const by = new Map();
+    for (const p of this.field) {
+      if (!p.dep.botanical || p.stage === 'mature') continue;
+      const px = p.x * SCENE_W, py = p.y * SCENE_H;
+      if (Math.hypot(px - x, (py - y) * 1.4) > reach) continue;
+      if (!by.has(p.dep)) by.set(p.dep, []);
+      by.get(p.dep).push(p.id);
+    }
+    this.splash(x, y, 14);
+    audio.play('pour');
+    if (lab.sandbox) return;
+    let n = 0;
+    for (const [d, ids] of by) n += lab.state.water(d.id, ids);
+    if (!n) {
+      const near = this.field.some((p) => Math.hypot(p.x * SCENE_W - x, (p.y * SCENE_H - y) * 1.4) <= reach);
+      toast('Nothing to water here', near ? 'Only growing plants drink — mature ones are ready to harvest, and stones, crystals and shells need no water.' : 'Tap close to a growing plant to water it.', 'drop');
+      return;
+    }
+    lab.save();
+    this.tick();
+  }
+
+  /** Water every growing plant of a stand (its card's button). @param {any} d */
+  waterStand(d) {
+    const lab = this.lab;
+    const n = lab.state.water(d.id, null);
+    for (const p of this.field) if (p.dep === d && p.stage !== 'mature') this.splash(p.x * SCENE_W, p.y * SCENE_H, 6);
+    audio.play(n ? 'pour' : 'error');
+    if (!n) { toast('Already watered', 'Its soil is as wet as it gets — more water would not make it grow any faster.', 'drop'); return; }
+    lab.save();
+    this.refresh();
+  }
+
+  /** Drops of water falling onto (x, y) and splashing. */
+  splash(x, y, n) {
+    for (let i = 0; i < n; i++) this.drops.push({ x: x + (Math.random() - 0.5) * 16, y: y - 18 - Math.random() * 10, vx: (Math.random() - 0.5) * 6, vy: 30 + Math.random() * 20, t: 0, life: 0.5 + Math.random() * 0.2, gy: y + (Math.random() - 0.5) * 6 });
   }
 
   /** @param {number} dt */
@@ -310,19 +386,12 @@ export class WildsView {
     this.time += dt;
     const ctx = this.ctx, st = this.lab.state, now = Date.now();
     ctx.drawImage(this.bg, 0, 0);
-    animateRegion(ctx, this.region, this.time);
+    animateRegion(ctx, this.region, this.time, st.seed);
     // the marks of past harvests, fading into the ground, then the plants, the far ones first
     for (const k of marksIn(st.gathering, this.region, now)) this.drawMark(ctx, k);
-    for (const p of this.field.slice().sort((a, b) => a.y - b.y)) {
-      const name = this.frameOf(p);
-      if (name) { this.drawPlant(ctx, p, name); continue; }
-      const x = Math.round(p.x * SCENE_W) - 8, y = Math.round(p.y * SCENE_H) - 14;
-      ctx.fillStyle = 'rgba(0,0,0,0.25)';
-      ctx.fillRect(x + 3, y + 14, 10, 2);
-      drawRaw(ctx, x, y, p.m.wild ? p.m.wild.shape : 'stone', p.m.look || p.m.color, 0.25 + p.grown * 0.75);
-      if (p.stage === 'mature' && Math.sin(this.time * 3 + p.x * 20) > 0.92) { ctx.fillStyle = '#fff6e0'; ctx.fillRect(x + 12, y + 1, 1, 1); }
-    }
+    for (const p of this.field.slice().sort((a, b) => a.y - b.y)) if (p.key) this.drawPlant(ctx, p);
     this.paintSky(ctx, dt);
+    this.drawDrops(ctx, dt);
     for (const f of this.floaters) {
       f.t += dt;
       const a = Math.max(0, 1 - f.t / 1.2);
@@ -344,32 +413,64 @@ export class WildsView {
   }
 
   /**
-   * A plant at its stage: a ground shadow, then its growth frame, springing
-   * up a pixel as it reaches a new stage; a mature crystal glints now and
-   * then at the tips of its facets (the scene's decorative motes stay
-   * fainter than this).
-   * @param {CanvasRenderingContext2D} ctx @param {any} p @param {string} name
+   * A plant at its stage: damp soil darkening round its foot when it has
+   * been watered, a ground shadow, then its sprite, springing up a pixel as
+   * it reaches a new stage; a thirsty growing plant carries a little drop
+   * (always in watering mode, now and then otherwise); a mature crystal or
+   * a magical plant glimmers now and then at its bright spots.
+   * @param {CanvasRenderingContext2D} ctx @param {any} p
    */
-  drawPlant(ctx, p, name) {
+  drawPlant(ctx, p) {
+    const closed = p.stage === 'mature' && !!this.closed[p.dep.id], hover = this.hover === p.id || this.hover === p.dep.id;
+    const sp = plantCanvas(p.m, p.stage, { closed, hover });
+    if (!sp) return;
     const x = Math.round(p.x * SCENE_W), y = Math.round(p.y * SCENE_H);
-    const f = /** @type {number[]} */ (GROWTH.frame(name));
-    const body = GROWTH.frame(p.key + '_' + p.stage);
     const since = this.time - (this.grewAt[p.id + ':' + p.stage] ?? -9);
-    const sw = Math.max(4, Math.round((body ? body[2] : f[2]) * (p.stage === 'sprout' ? 0.3 : p.stage === 'ripe' ? 0.45 : 0.55)));
-    // a soft shadow it stands in: darkest under its foot, fading out to the sides
-    ctx.fillStyle = 'rgba(10,30,8,0.2)';
-    ctx.fillRect(x - Math.floor(sw / 2), y - 1, sw, 2);
-    ctx.fillRect(x - Math.floor(sw / 2) + 2, y, Math.max(2, sw - 4), 1);
-    ctx.fillRect(x - Math.floor(sw / 4), y - 1, Math.max(2, Math.floor(sw / 2)), 2);
-    GROWTH.draw(ctx, name, x, y - (since < 0.3 ? 1 : 0));
-    if (p.stage === 'mature' && CRYSTALS.has(p.key) && this.hover !== p.id && !this.closed[p.dep.id]) {
-      const spots = glintSpots(GROWTH, name);
-      const cycle = this.time * 0.6 + p.x * 7.3 + p.y * 3.1, phase = cycle % 2;
-      if (spots.length && phase < 0.5) {
-        const [dx, dy] = spots[Math.floor(cycle / 2) % spots.length];
-        sparkle(ctx, x + dx, y + dy, phase / 0.5);
+    const sw = Math.max(4, Math.round(sp.w * (p.stage === 'sprout' ? 0.5 : 0.6)));
+    if (p.moisture !== null && p.moisture !== undefined && !this.lab.sandbox) {
+      // damp earth: a dark patch, wider and darker the wetter it is above the habitat's own level
+      const e = moistureEnv(p.dep, this.lab.state.gathering.sky), wet = Math.max(0, Math.min(1, (p.moisture - e.base) / Math.max(0.05, 1 - e.base)));
+      if (wet > 0.05) {
+        ctx.fillStyle = `rgba(20,14,30,${(0.12 + wet * 0.25).toFixed(3)})`;
+        const ww = Math.round(sw * (1 + wet * 0.8));
+        ctx.fillRect(x - (ww >> 1), y - 1, ww, 3);
+        ctx.fillRect(x - (ww >> 1) + 2, y + 2, Math.max(2, ww - 4), 1);
       }
     }
+    // a soft shadow it stands in: darkest under its foot, fading out to the sides
+    ctx.fillStyle = 'rgba(10,20,8,0.22)';
+    ctx.fillRect(x - Math.floor(sw / 2), y - 1, sw, 2);
+    ctx.fillRect(x - Math.floor(sw / 4), y - 1, Math.max(2, Math.floor(sw / 2)), 2);
+    ctx.drawImage(sp.cv, x - sp.ax, y - sp.ay - (since < 0.3 ? 1 : 0));
+    if (p.thirsty && !this.lab.sandbox && (this.mode === 'water' || Math.sin(this.time * 2 + p.x * 9) > 0.6)) {
+      // a drop over its head asks for water
+      const dx = x + Math.round(sp.w / 2 - sp.ax) - 1, dy = y - sp.ay - 5 + Math.round(Math.sin(this.time * 4 + p.x * 5));
+      ctx.fillStyle = '#1a2a48'; ctx.fillRect(dx - 1, dy, 4, 4); ctx.fillRect(dx, dy - 1, 2, 1);
+      ctx.fillStyle = '#6ab8f0'; ctx.fillRect(dx, dy, 2, 3); ctx.fillStyle = '#d8f0ff'; ctx.fillRect(dx, dy, 1, 1);
+    }
+    const d = speciesOf(p.m);
+    if (p.stage === 'mature' && d && sp.glints.length && (d.family === 'crystal' || d.family === 'mineral' || d.tr.glow > 0.3) && !hover && !closed) {
+      const cycle = this.time * 0.6 + p.x * 7.3 + p.y * 3.1, phase = cycle % 2;
+      if (phase < 0.5) {
+        const [gx, gy] = sp.glints[Math.floor(cycle / 2) % sp.glints.length];
+        sparkle(ctx, x - sp.ax + gx, y - sp.ay + gy, phase / 0.5);
+      }
+    }
+  }
+
+  /** The water drops in flight: falling, then a little splash where each lands. @param {CanvasRenderingContext2D} ctx @param {number} dt */
+  drawDrops(ctx, dt) {
+    for (const d of this.drops) {
+      d.t += dt;
+      if (d.y < d.gy) { d.vy += 120 * dt; d.x += d.vx * dt; d.y += d.vy * dt; ctx.fillStyle = '#9ad4ff'; ctx.fillRect(Math.round(d.x), Math.round(d.y), 1, 2); }
+      else {
+        const k = Math.min(3, Math.floor((d.t - 0.3) * 12));
+        ctx.fillStyle = 'rgba(200,236,255,0.85)';
+        ctx.fillRect(Math.round(d.x) - k, Math.round(d.gy) - 1, 1, 1); ctx.fillRect(Math.round(d.x) + k, Math.round(d.gy) - 1, 1, 1);
+        ctx.fillRect(Math.round(d.x), Math.round(d.gy) - 1 - Math.max(0, 2 - k), 1, 1);
+      }
+    }
+    this.drops = this.drops.filter((d) => d.t < d.life + 0.3);
   }
 
   /**
@@ -379,9 +480,9 @@ export class WildsView {
    * @param {CanvasRenderingContext2D} ctx @param {any} k a mark (gathering.js marksIn)
    */
   drawMark(ctx, k) {
-    const f = k.key && GROWTH.ready ? GROWTH.frame(k.key + '_mature') : null;
+    const sil = k.key ? silhouetteOf(this.lab.state.lookup('wild-' + k.key)) : null;
     const x = Math.round(k.x * SCENE_W), y = Math.round(k.y * SCENE_H);
-    const w = Math.max(8, Math.round((f ? f[2] : 16) * 0.75)), hw = Math.floor(w / 2);
+    const w = Math.max(8, Math.round((sil ? sil.w : 16) * 0.6)), hw = Math.floor(w / 2);
     const stone = this.region === 'quarry' || this.region === 'crags';
     const [soil, dark, clod] = stone ? ['#6e6258', '#3a322c', '#a09280'] : this.region === 'moonfen' ? ['#3a3228', '#16120e', '#5a5040'] : ['#7a5230', '#3a2412', '#a07a4a'];
     ctx.globalAlpha = Math.ceil((1 - k.faded) * 4) / 4;
@@ -460,6 +561,8 @@ export class WildsView {
       const can = harvestable(st.gathering, d, plan, now);
       row.barI.style.width = Math.round(s.fraction * 100) + '%';
       row.meta.textContent = `${this.stockText(d, s)} · ${this.when(s, can)}`;
+      if (row.soil) row.soil.textContent = this.soilText(d, s);
+      if (row.wbtn) row.wbtn.disabled = s.plants.every((p) => p.stage === 'mature');
       row.g.disabled = row.locked || can < 5;
       this.can[d.id] = row.locked || can >= 5;
       if (row.card) row.card.classList.toggle('spent', !this.can[d.id]);
