@@ -17624,22 +17624,29 @@ this.info = h('div', { class: 'region-info small' });
 this.list = h('div', { class: 'deposits' });
 this.foot = h('div', { class: 'small muted wilds-foot' });
 el.append(this.tabs, h('div', { class: 'wilds-scene' }, h('div', { class: 'scene-wrap' }, this.canvas), this.info), h('div', { class: 'wilds-list' }, this.sky, this.list, this.foot));
+this.lastInput = 0;
+this.warmTimer = 0;
+for (const ev of ['pointerdown', 'pointermove', 'wheel', 'keydown']) el.addEventListener(ev, () => { this.lastInput = performance.now(); }, { passive: true });
 this.refresh();
-this.prewarm();
 }
 prewarm() {
+if (this.warmTimer) return;
 const st = this.lab.state, seed = st.seed;
-const todo = REGIONS.filter((r) => this.unlocked(r)).map((r) => r.id);
-const idle = typeof requestIdleCallback === 'function' ? (fn) => requestIdleCallback(fn, { timeout: 4000 }) : (fn) => setTimeout(fn, 200);
-const next = () => {
-if (this.lab.state !== st) return;
-const region = todo.shift();
-if (!region) return;
+const todo = REGIONS.filter((r) => this.unlocked(r) && r.id !== this.region).map((r) => r.id);
+const idle = typeof requestIdleCallback === 'function' ? (fn) => requestIdleCallback(fn) : (fn) => setTimeout(fn, 50);
+const tick = () => {
+this.warmTimer = 0;
+if (this.lab.state !== st || !todo.length) return;
+if (this.lab.view !== 'wilds' || performance.now() - this.lastInput < 1500) { this.warmTimer = setTimeout(tick, 1500); return; }
+idle(() => {
+if (this.lab.view !== 'wilds' || performance.now() - this.lastInput < 1500) { this.warmTimer = setTimeout(tick, 1500); return; }
+const region = /** @type {string} */ (todo.shift());
 sceneCanvas(region, seed);
 for (const d of st.deposits.filter((x) => x.region === region)) silhouetteOf(st.lookup(d.materialId));
-idle(next);
+if (todo.length) this.warmTimer = setTimeout(tick, 400);
+});
 };
-idle(next);
+this.warmTimer = setTimeout(tick, 1500);
 }
 unlocked(r) {
 return this.lab.sandbox || r.rank <= this.lab.state.rank;
@@ -17715,6 +17722,7 @@ list.appendChild(card);
 clear(this.foot).append(`Room for ${st.cap.storage} ml of each ingredient. ${st.has('satchel') ? 'Your satchel carries half as much again. ' : ''}Only mature plants can be harvested. New sprouts come up at random spots until the ground is full again, even while the game is closed, and each new day brings every plant on. Living plants grow faster in damp soil: water them (rain does it for you), and they drink it up over a few hours — a riverbank or a bog stays damp far longer than a meadow or the crags. Stones, crystals and shells come back with time and the weather.`);
 this.paintBg();
 this.grow();
+this.prewarm();
 }
 stockText(d, s) {
 return `${s.mature} of ${d.slots} mature${s.plants.length > s.mature ? ` · ${s.plants.length - s.mature} growing` : ''} · ${d.take} ml each`;
