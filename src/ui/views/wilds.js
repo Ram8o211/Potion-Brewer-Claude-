@@ -91,6 +91,27 @@ export class WildsView {
     // keep the scene in view beside the deposit list
     el.append(this.tabs, h('div', { class: 'wilds-scene' }, h('div', { class: 'scene-wrap' }, this.canvas), this.info), h('div', { class: 'wilds-list' }, this.sky, this.list, this.foot));
     this.refresh();
+    this.prewarm();
+  }
+
+  /**
+   * Generate the regions the player can travel to, and their plants'
+   * sprites, while the browser is idle — one region at a time — so opening
+   * a region later only draws what is already made.
+   */
+  prewarm() {
+    const st = this.lab.state, seed = st.seed;
+    const todo = REGIONS.filter((r) => this.unlocked(r)).map((r) => r.id);
+    const idle = typeof requestIdleCallback === 'function' ? (fn) => requestIdleCallback(fn, { timeout: 4000 }) : (fn) => setTimeout(fn, 200);
+    const next = () => {
+      if (this.lab.state !== st) return;
+      const region = todo.shift();
+      if (!region) return;
+      sceneCanvas(region, seed);
+      for (const d of st.deposits.filter((x) => x.region === region)) silhouetteOf(st.lookup(d.materialId));
+      idle(next);
+    };
+    idle(next);
   }
 
   unlocked(r) {

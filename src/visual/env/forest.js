@@ -11,9 +11,11 @@ import { hex, pack } from '../color.js';
 
 export function compose(cv, seed) {
   const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'forest', p);
+  // some worlds' woods are in their autumn
+  const autumn = s('season').next() < 0.3;
   const pal = vary(palette({
-    leaf: ['#2f5e26', { spread: 0.6 }], canopy: ['#1f4220', { spread: 0.5 }], bark: ['#4e3622', { spread: 0.55 }], wood: '#a87a48', rock: '#6e7270',
-    moss: ['#5a8a34', { spread: 0.5 }], floor: ['#33501f', { spread: 0.55, n: 7 }], litter: ['#6a4a28', { spread: 0.45, n: 5 }], fern: ['#5e9e3c', { spread: 0.55 }],
+    leaf: [autumn ? '#8a5a1e' : '#2f5e26', { spread: 0.6 }], canopy: [autumn ? '#5a3418' : '#1f4220', { spread: 0.5 }], bark: ['#4e3622', { spread: 0.55 }], wood: '#a87a48', rock: '#6e7270',
+    moss: ['#5a8a34', { spread: 0.5 }], floor: [autumn ? '#4a4a1f' : '#33501f', { spread: 0.55, n: 7 }], litter: [autumn ? '#8a4a1e' : '#6a4a28', { spread: 0.45, n: 5 }], fern: [autumn ? '#9a7a2a' : '#5e9e3c', { spread: 0.55 }],
     far: ['#4a7a6a', { spread: 0.3, n: 4 }], mid: ['#30574a', { spread: 0.35, n: 4 }],
   }), s('pal'), 1);
   const haze = pack(hex('#8ab8a8')), deep = pack(hex('#5c8a7c'));

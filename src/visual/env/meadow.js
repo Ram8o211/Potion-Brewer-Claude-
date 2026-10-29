@@ -5,7 +5,8 @@
 
 import { sky, ridge, ground, shadeOf, blades } from './paint.js';
 import { palette, vary, streamOf, scaleAt, hazeAt, band, speckle, fbm2, hash2 } from './kit.js';
-import { tree, bush, boulder, cloud, fence, skep, tuft } from './objects.js';
+import { tree, bush, boulder, cloud, fence, skep, tuft, reeds } from './objects.js';
+import { Model, lumpy } from '../geometry.js';
 import { hex, pack } from '../color.js';
 
 export function compose(cv, seed) {
@@ -51,12 +52,38 @@ export function compose(cv, seed) {
     const y = hz[Math.max(0, Math.min(W - 1, x))] + 1;
     cv.stamp(bush(hr, hr.int(7, 12), hr.int(5, 8), { leaf: 'hedge', dots: hr.next() < 0.3 ? 'straw' : undefined }), pal, x, y, { haze: [haze, 0.2], foot: [9, 3] });
   }
-  // fence and beehives
-  const fr = s('fence'), fx = fr.int(60, 180), fy = fr.int(112, 120);
-  cv.stamp(fence(fr.int(70, 110), 14), pal, fx, fy, { haze: hazeAt(fy, 104, H, haze, 0.3) });
-  cv.block(fx - 55, fy - 2, fx + 55, fy + 2);
-  const bx = fr.next() < 0.5 ? fr.int(250, 330) : fr.int(20, 60);
-  for (let i = 0; i < 2 + fr.int(0, 1); i++) { cv.stamp(skep(9), pal, bx + i * 13, 116 + i, { foot: [7, 3] }); }
+  // what the world's meadow holds: a fence and beehives, a ring of old standing stones, or a pond
+  const fr = s('fence'), feature = fr.weighted(['hives', 'stones', 'pond'], [1.2, 0.8, 0.8]);
+  const fx = fr.int(60, 180), fy = fr.int(112, 120);
+  if (feature !== 'stones') {
+    cv.stamp(fence(fr.int(70, 110), 14), pal, fx, fy, { haze: hazeAt(fy, 104, H, haze, 0.3) });
+    cv.block(fx - 55, fy - 2, fx + 55, fy + 2);
+  }
+  if (feature === 'hives') {
+    const bx = fr.next() < 0.5 ? fr.int(250, 330) : fr.int(20, 60);
+    for (let i = 0; i < 2 + fr.int(0, 1); i++) cv.stamp(skep(9), pal, bx + i * 13, 116 + i, { foot: [7, 3] });
+  } else if (feature === 'stones') {
+    const cx = fr.int(110, 270), cy = fr.int(116, 124);
+    for (let i = 0; i < 7; i++) {
+      const a = (i / 7) * Math.PI * 2, x = cx + Math.cos(a) * 30, y = cy + Math.sin(a) * 6;
+      const m = new Model(), hh = fr.int(8, 14);
+      m.poly(lumpy(0, -hh / 2, 3 + fr.next() * 1.5, hh / 2, () => fr.next(), 0.12, 5), 'rock', { shade: 'round', tex: 1.4 });
+      cv.stamp(m, pal, x, y, { foot: [4, 2], haze: hazeAt(y, 104, H, haze, 0.25) });
+    }
+  } else {
+    // a pond: water open to the sky, with a reedy rim
+    const px = fr.int(80, 300), py = fr.int(140, 170), rx = fr.int(28, 44), ry = rx * 0.28;
+    const water = palette({ w: ['#3a6a9a', { spread: 0.4, n: 6 }] }).w;
+    for (let y = Math.floor(py - ry - 2); y <= py + ry + 2; y++) for (let x = Math.floor(px - rx - 3); x <= px + rx + 3; x++) {
+      const e = ((x - px) / rx) ** 2 + ((y - py) / ry) ** 2;
+      if (e > 1.25) continue;
+      if (e > 1) { cv.set(x, y, pal.soil[1]); continue; }
+      cv.set(x, y, water[Math.min(5, Math.floor(1 + (1 - e) * 2 + (hash2(x >> 2, y, 7) > 0.8 ? 2 : 0) + (y - py < -ry * 0.5 ? 1 : 0)))]);
+    }
+    cv.blockEllipse(px, py, rx + 4, ry + 3);
+    for (let i = 0; i < 6; i++) { const a = fr.next() * Math.PI * 2; cv.stamp(reeds(fr, 10, 4, { heads: 0.4, leaf: 'grass', head: 'bark' }), pal, px + Math.cos(a) * (rx + 2), py + Math.abs(Math.sin(a)) * (ry + 2), { foot: [3, 2] }); }
+    cv.meta.pond = [px, py, rx, ry];
+  }
   // oaks: one near, maybe one further off
   const or = s('oaks'), left = or.next() < 0.5;
   const ox = left ? or.int(18, 60) : or.int(324, 366), oy = or.int(150, 172);

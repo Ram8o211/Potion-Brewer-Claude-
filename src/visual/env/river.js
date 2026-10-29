@@ -50,6 +50,19 @@ export function compose(cv, seed) {
   // water is not ground; neither is the wet edge
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (edge(x, y) < 2.5 + (y > 96 ? (y - 96) / (H - 96) * 4 : 0)) cv.open[y * W + x] = 0;
   cv.meta.river = { rows: riv.map((r) => [Math.round(r.c), Math.round(r.hw)]) };
+  // in some worlds a plank footbridge crosses the stream
+  const fb = s('bridge');
+  if (fb.next() < 0.5) {
+    const y = fb.int(130, 170), r = riv[y], x0 = Math.round(r.c - r.hw - 6), x1 = Math.round(r.c + r.hw + 6);
+    for (let x = x0; x <= x1; x++) {
+      const plank = Math.floor((x - x0) / 4) % 2;
+      for (let j = 0; j < 4; j++) cv.set(x, y - 4 + j, pal.timber ? pal.timber[2] : (j === 0 ? pal.wood[4] : plank ? pal.wood[2] : pal.wood[3]));
+      cv.set(x, y, pal.bark[0]);
+      if ((x - x0) % 10 === 0) for (let j = 0; j < 9; j++) { cv.set(x, y - 12 + j, pal.bark[2]); cv.set(x + 1, y - 12 + j, pal.bark[0]); }
+      cv.set(x, y - 10, pal.wood[3]);
+    }
+    cv.block(x0 - 1, y - 13, x1 + 2, y + 2);
+  }
   // stones in the stream, a gravel bar
   const sr = s('stones');
   for (let i = 0; i < 4; i++) {

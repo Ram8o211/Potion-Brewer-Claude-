@@ -28,6 +28,47 @@ function inside(x, y, pts) {
   return c;
 }
 
+/**
+ * The pixels whose centres lie inside a polygon (even-odd), row by row from
+ * the edge crossings — as [x, y, x, y…].
+ * @param {import('./geometry.js').Pt[]} pts @param {number} w @param {number} h @param {number} y0 @param {number} y1
+ */
+/** Scratch buffers reused by every rasterization (it runs synchronously, one at a time). */
+let covBuf = new Int32Array(4096);
+const xsBuf = [];
+/** @param {number} n */
+function covRoom(n) { if (n > covBuf.length) { const b = new Int32Array(Math.max(n, covBuf.length * 2)); b.set(covBuf); covBuf = b; } }
+
+function spans(pts, w, h, y0, y1) {
+  const xs = xsBuf, n = pts.length;
+  let len = 0;
+  for (let y = Math.max(0, Math.floor(y0)); y <= Math.min(h - 1, Math.ceil(y1)); y++) {
+    const cy = y + 0.5;
+    xs.length = 0;
+    for (let i = 0, j = n - 1; i < n; j = i++) {
+      const yi = pts[i][1], yj = pts[j][1];
+      if ((yi > cy) !== (yj > cy)) xs.push(pts[i][0] + ((pts[j][0] - pts[i][0]) * (cy - yi)) / (yj - yi));
+    }
+    xs.sort((a, b) => a - b);
+    for (let k = 0; k + 1 < xs.length; k += 2) {
+      // pixel centres x + 0.5 in [xa, xb)
+      const xa = Math.max(0, Math.ceil(xs[k] - 0.5)), xb = Math.min(w - 1, Math.ceil(xs[k + 1] - 0.5) - 1);
+      covRoom(len + (xb - xa + 1) * 2 + 2);
+      for (let x = xa; x <= xb; x++) { covBuf[len++] = x; covBuf[len++] = y; }
+    }
+  }
+  return covBuf.subarray(0, len);
+}
+
+/** Per-pixel scratch of the last rasterization, grown as needed. */
+const S = { n: 0, mat: new Int16Array(0), lum: new Float32Array(0), tex: new Float32Array(0), idx: new Int8Array(0), sep: new Uint8Array(0) };
+/** @param {number} n */
+function grow(n) {
+  if (n <= S.n) return;
+  const m = Math.max(n, S.n * 2, 4096);
+  S.n = m; S.mat = new Int16Array(m); S.lum = new Float32Array(m); S.tex = new Float32Array(m); S.idx = new Int8Array(m); S.sep = new Uint8Array(m);
+}
+
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 const lit = (nx, ny, nz) => clamp01(0.47 + 0.6 * (nx * L[0] + ny * L[1] + nz * L[2]));
 
@@ -48,7 +89,10 @@ const lit = (nx, ny, nz) => clamp01(0.47 + 0.6 * (nx * L[0] + ny * L[1] + nz * L
  */
 export function rasterize(model, w, h, pal, o = {}) {
   const N = w * h, seed = o.seed ?? 1, texAmp = o.texture ?? 0.2, dith = o.dither ?? 0.16;
-  const mat = new Int16Array(N).fill(-1), part = new Int16Array(N).fill(-1), lum = new Float32Array(N), tex = new Float32Array(N);
+  grow(N);
+  const mat = S.mat.subarray(0, N).fill(-1), lum = S.lum.subarray(0, N), tex = S.tex.subarray(0, N);
+  // (the part map is returned, so it is the caller's own)
+  const part = new Int16Array(N).fill(-1);
   /** @type {string[]} */
   const mats = [];
   const matId = (/** @type {string} */ m) => { let k = mats.indexOf(m); if (k < 0) { k = mats.length; mats.push(m); } return k; };
@@ -63,12 +107,11 @@ export function rasterize(model, w, h, pal, o = {}) {
       if (!pts || pts.length < 3) continue;
       let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
       for (const [x, y] of pts) { if (x < x0) x0 = x; if (y < y0) y0 = y; if (x > x1) x1 = x; if (y > y1) y1 = y; }
-      const cov = [];
-      for (let y = Math.max(0, Math.floor(y0)); y <= Math.min(h - 1, Math.ceil(y1)); y++) for (let x = Math.max(0, Math.floor(x0)); x <= Math.min(w - 1, Math.ceil(x1)); x++) if (inside(x + 0.5, y + 0.5, pts)) cov.push(x, y);
+      let cov = spans(pts, w, h, y0, y1);
       // a sliver too thin to cover a pixel centre still shows as its nearest pixel
       if (!cov.length) {
         const cx = Math.floor((x0 + x1) / 2), cy = Math.floor((y0 + y1) / 2);
-        if (cx >= 0 && cy >= 0 && cx < w && cy < h) cov.push(cx, cy); else continue;
+        if (cx >= 0 && cy >= 0 && cx < w && cy < h) cov = Int32Array.of(cx, cy); else continue;
       }
       const n = cov.length / 2;
       let mx = 0, my = 0;
@@ -105,25 +148,38 @@ export function rasterize(model, w, h, pal, o = {}) {
       const ws = Array.isArray(p.w) ? p.w : pts.map(() => /** @type {number} */ (p.w || 1));
       let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, wm = 0;
       for (let i = 0; i < pts.length; i++) { const [x, y] = pts[i]; x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); wm = Math.max(wm, ws[i] ?? ws[ws.length - 1]); }
-      const R = wm / 2 + 1;
-      for (let y = Math.max(0, Math.floor(y0 - R)); y <= Math.min(h - 1, Math.ceil(y1 + R)); y++) {
-        for (let x = Math.max(0, Math.floor(x0 - R)); x <= Math.min(w - 1, Math.ceil(x1 + R)); x++) {
+      // nearest segment per pixel, each segment visiting only its own box
+      const bx0 = Math.max(0, Math.floor(x0 - wm / 2 - 1)), by0 = Math.max(0, Math.floor(y0 - wm / 2 - 1));
+      const bw = Math.min(w - 1, Math.ceil(x1 + wm / 2 + 1)) - bx0 + 1, bh = Math.min(h - 1, Math.ceil(y1 + wm / 2 + 1)) - by0 + 1;
+      if (bw <= 0 || bh <= 0) continue;
+      const best = new Float32Array(bw * bh).fill(Infinity), nxs = new Float32Array(bw * bh), nys = new Float32Array(bw * bh);
+      const segs = Math.max(1, pts.length - 1);
+      for (let i = 0; i < segs; i++) {
+        const a = pts[i], b = pts[Math.min(pts.length - 1, i + 1)];
+        const wa = ws[i] ?? ws[ws.length - 1], wb = ws[Math.min(ws.length - 1, i + 1)] ?? ws[ws.length - 1];
+        const r = Math.max(wa, wb) / 2 + 1;
+        const vx = b[0] - a[0], vy = b[1] - a[1], ll = vx * vx + vy * vy, ang = Math.atan2(vy, vx), sa = -Math.sin(ang), ca = Math.cos(ang);
+        const sx0 = Math.max(bx0, Math.floor(Math.min(a[0], b[0]) - r)), sx1 = Math.min(bx0 + bw - 1, Math.ceil(Math.max(a[0], b[0]) + r));
+        const sy0 = Math.max(by0, Math.floor(Math.min(a[1], b[1]) - r)), sy1 = Math.min(by0 + bh - 1, Math.ceil(Math.max(a[1], b[1]) + r));
+        for (let y = sy0; y <= sy1; y++) for (let x = sx0; x <= sx1; x++) {
           const px = x + 0.5, py = y + 0.5;
-          let best = Infinity, side = 0, ang = 0;
-          for (let i = 0; i < Math.max(1, pts.length - 1); i++) {
-            const a = pts[i], b = pts[Math.min(pts.length - 1, i + 1)];
-            const vx = b[0] - a[0], vy = b[1] - a[1], ll = vx * vx + vy * vy;
-            const t = ll > 0 ? clamp01(((px - a[0]) * vx + (py - a[1]) * vy) / ll) : 0;
-            const qx = a[0] + vx * t - px, qy = a[1] + vy * t - py;
-            const hw = Math.max(0.5, ((ws[i] ?? ws[ws.length - 1]) * (1 - t) + (ws[Math.min(ws.length - 1, i + 1)] ?? ws[ws.length - 1]) * t) / 2);
-            const d = Math.hypot(qx, qy) / hw;
-            if (d < best) { best = d; side = (vx * -qy - vy * -qx) >= 0 ? 1 : -1; ang = Math.atan2(vy, vx); }
+          const t = ll > 0 ? clamp01(((px - a[0]) * vx + (py - a[1]) * vy) / ll) : 0;
+          const qx = a[0] + vx * t - px, qy = a[1] + vy * t - py;
+          const hw = Math.max(0.5, (wa * (1 - t) + wb * t) / 2);
+          const d = Math.hypot(qx, qy) / hw, k = (y - by0) * bw + x - bx0;
+          if (d < best[k]) {
+            best[k] = d;
+            const side = (vx * -qy - vy * -qx) >= 0 ? 1 : -1, sN = Math.min(0.95, d) * side;
+            nxs[k] = sa * sN; nys[k] = ca * sN;
           }
-          if (best > 1) continue;
-          const sN = Math.min(0.95, best) * side, nx = -Math.sin(ang) * sN, ny = Math.cos(ang) * sN;
-          put(y * w + x, p.shade === 'flat' ? 0.55 : lit(nx, ny, Math.sqrt(1 - sN * sN)));
-          if (p.glow) glow.push([x, y]);
         }
+      }
+      for (let j = 0; j < bh; j++) for (let i = 0; i < bw; i++) {
+        const k = j * bw + i;
+        if (!(best[k] <= 1)) continue;
+        const nx = nxs[k], ny = nys[k], sN2 = nx * nx + ny * ny;
+        put((by0 + j) * w + bx0 + i, p.shade === 'flat' ? 0.55 : lit(nx, ny, Math.sqrt(Math.max(0, 1 - sN2))));
+        if (p.glow) glow.push([bx0 + i, by0 + j]);
       }
     } else if (p.t === 'line') {
       const pts = /** @type {import('./geometry.js').Pt[]} */ (p.pts);
@@ -155,7 +211,7 @@ export function rasterize(model, w, h, pal, o = {}) {
   }
 
   // ---- lightness onto the ramps, with clustered texture and a soft dither
-  const idx = new Int8Array(N).fill(-1);
+  const idx = S.idx.subarray(0, N).fill(-1);
   const ramps = mats.map((m) => pal[m] || pal.default || [0xff808080]);
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
@@ -168,7 +224,7 @@ export function rasterize(model, w, h, pal, o = {}) {
   }
   // a part lying behind another darkens a step where they meet
   const flat = (/** @type {number} */ pi) => parts[pi].t === 'line' || parts[pi].t === 'dot';
-  const sep = new Uint8Array(N);
+  const sep = S.sep.subarray(0, N).fill(0);
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const k = y * w + x, a = part[k];
