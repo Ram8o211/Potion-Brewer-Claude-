@@ -69,7 +69,7 @@ function umbel(m, d, rng, x, y, r, ripe, s = 1) {
 export function plant(d, stage, o = {}) {
   const m = new Model(), P = d.m, rng = stream(d, 'plant' + stage), H = d.size.h, W = d.size.w;
   mound(m, W * 0.7, stream(d, 'mound'));
-  if (stage === 0) return sprout(m, d, Math.max(5, H * 0.3), { shape: P.leafShape, teeth: P.teeth });
+  if (stage === 0) return sprout(m, d, Math.max(4, H * 0.3), { shape: P.leafShape, teeth: P.teeth });
   const g = stage === 1 ? 0.7 : 1, ripe = stage === 2;
   if (d.form === 'seed') {
     const pts = stemPts(0, 0, (rng.next() - 0.5) * 3, -H * g, 0.1);

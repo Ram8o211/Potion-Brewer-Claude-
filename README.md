@@ -246,15 +246,16 @@ computed from the particles that actually run out of the tap. What a
   Quarry, Moonfen and the Ember Crags — is generated from the world seed
   as a Noita-like side view: a banded sky and flat silhouettes of the
   distance behind a cross-section of the ground (mottled earth, rock or
-  peat under a crust of grass, moss, gravel or ash, with ledges, overhangs
-  and caves), pools of water or lava in its hollows, trees, rocks and
+  peat under a crust of grass, moss, gravel or ash, with ledges standing
+  on buttresses that grow out of the ground, overhangs and caves), pools of water or lava in its hollows, trees, rocks and
   timberwork, glowing lights and, as it runs, particles (pollen, motes,
   leaves, fireflies, wisps, trickling grit, shimmer, embers, ash, steam),
   plus seed-chosen features such as autumn woods, a meadow pond or
   standing stones, a footbridge. Plants grow only on its dry surfaces,
   never in water or lava and never behind scenery; stones, crystals and
   shells do not grow but turn up again whole. Everything is drawn in a
-  simple flat style — a few tones per material, no dithering — with
+  simple flat style — a few tones per material, no dithering, chunky
+  2-pixel texture and scenery pixels, shapes built of squares — with
   ingredients ringed in a dark outline so they read at a glance. Every wild ingredient carries a small, versioned *visual
   identity* (`material.vis`: world of origin, species, family, habitat,
   rarity, colour, alchemical profile and a variation seed) from which its

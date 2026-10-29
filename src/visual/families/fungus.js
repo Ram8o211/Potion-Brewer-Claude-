@@ -94,10 +94,10 @@ export function plant(d, stage, o = {}) {
   }
   if (stage === 0) {
     // pins: little round knobs just out of the ground
-    for (let i = 0; i < 3; i++) mushroom(m, d, rng, (i - 1) * 3, 0, 1.6 + (i % 2) * 0.6);
+    for (let i = 0; i < 3; i++) mushroom(m, d, rng, (i - 1) * 3, 0, 1.4 + (i % 2) * 0.5);
     return m;
   }
-  const g = stage === 1 ? 0.65 : 1, n = stage === 1 ? Math.max(1, P.count - 1) : P.count;
+  const g = stage === 1 ? 0.8 : 1, n = stage === 1 ? Math.max(1, P.count - 1) : P.count;
   const sizes = [1, 0.7, 0.55, 0.45].slice(0, n);
   // the small ones behind, the big one in front
   for (let i = n - 1; i >= 0; i--) {

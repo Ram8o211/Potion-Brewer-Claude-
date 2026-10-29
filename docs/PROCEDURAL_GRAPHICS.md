@@ -23,8 +23,11 @@ still limited.
   trunks, a volcano), and in front a cross-section of the ground itself —
   a mottled material (two colours in broad blotches, a few stones, seams
   and grains, darker the deeper it goes) under a crust of grass, moss,
-  gravel or ash, with ledges in two tiers (most of them on a column of
-  rock), overhangs and cave pockets. Water and lava lie in the hollows as
+  gravel or ash, with ledges in two tiers, overhangs and cave pockets.
+  No ledge floats: each stands on a leaning buttress of rock reaching down
+  to the ground or to a ledge below, and ledges, buttresses and ground are
+  joined as one mass (a smooth union of their shapes), so a buttress flares
+  into the ledge it holds and into the ground it stands on. Water and lava lie in the hollows as
   flat pools. Plants grow only on the dry surfaces — the ground and the
   ledges — and big trees stand behind them. The strength of the picture is
   in its light and particles: glows round the sun, the moon, lanterns, lava
@@ -49,6 +52,18 @@ still limited.
   Skies are hard-edged bands and light falls off in hard steps.
   Ingredients are ringed in a near-black outline, so they read at a
   glance against the ground and look like their icon.
+* **Chunky pixels and square shapes.** Textures are coarse: blotches and
+  grains step in 2 × 2 squares (`raster.js` `GRAIN`), and the scenery —
+  ground, ledges, trees, rocks, timberwork, clouds, silhouettes — is drawn
+  whole on a grid of 2-pixel squares (`paint.js` `CELL`), crust and rims
+  a square thick. Shapes are built of squares rather than circles: every
+  "ellipse" and lump is a squircle (`geometry.js` `SQUARE`), so berries,
+  caps, stones and pieces read as blocks, and tree crowns are heaps of
+  leaf blocks with stepped corners and square tufts round their rim.
+* **Proportions.** Ingredients are sized against the scenery: a herb or a
+  flower stands knee-high to an oak (about a tenth of the scene's height),
+  a stone or a shell a hand across, a crystal cluster no bigger than a
+  bush (`descriptor.js`, with a scale per family).
 * **Stones, crystals and shells do not grow.** Only living plants pass
   through sprout, ripe and mature. An inorganic deposit has one picture:
   once it has formed again it simply lies there whole (until then nothing

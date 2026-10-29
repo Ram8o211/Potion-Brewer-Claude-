@@ -13,6 +13,13 @@ import { ramp, hex, mixPacked, pack, unpack } from '../color.js';
 export const SCENE_W = 384;
 export const SCENE_H = 216;
 
+/**
+ * The scenery's pixel, in art pixels: trees, rocks, timberwork and the
+ * ground's shapes and texture are drawn in squares this big, on one grid
+ * across the scene, so the painting has Noita's chunky pixels.
+ */
+export const CELL = 2;
+
 /** A wash or light's strength in flat steps, so it falls off in hard-edged bands, not a gradient. @param {number} t */
 const step = (t) => Math.floor(t / 0.07) * 0.07;
 
@@ -61,17 +68,21 @@ export class Canvas {
    * mirrors it; `foot` blocks the ground under it (an ellipse rx × ry) and
    * keeps plants from standing behind it; `roots` only blocks the ground at
    * its foot, so plants may stand in front of it (a tree in the side view).
+   * It is drawn in `cell`-pixel squares (default CELL) on the scene's grid.
    * @param {import('../geometry.js').Model} model @param {Record<string, number[]>} pal
    * @param {number} x @param {number} y
-   * @param {{haze?:[number, number], outline?:boolean, foot?:[number, number], roots?:[number, number], seed?:number, texture?:number, dark?:number}} [o]
+   * @param {{haze?:[number, number], outline?:boolean, foot?:[number, number], roots?:[number, number], seed?:number, texture?:number, dark?:number, cell?:number}} [o]
    */
   stamp(model, pal, x, y, o = {}) {
-    const b = model.bounds();
-    const left = Math.floor(b.x0) - 1, top = Math.floor(b.y0) - 1;
-    const w = Math.ceil(b.x1) + 2 - left, h = Math.ceil(b.y1) + 2 - top;
+    const b = model.bounds(), cell = o.cell ?? CELL, mod = (v) => ((v % cell) + cell) % cell;
+    let left = Math.floor(b.x0) - 1, top = Math.floor(b.y0) - 1;
+    // the frame's corner on the scene's grid, so its squares line up with the ground's
+    left -= mod(Math.round(x) + left); top -= mod(Math.round(y) + top);
+    let w = Math.ceil(b.x1) + 2 - left, h = Math.ceil(b.y1) + 2 - top;
+    w += mod(-w); h += mod(-h);
     if (w <= 0 || h <= 0 || w > 2000 || h > 2000) return null;
     model.transform(1, 0, 0, 1, -left, -top, 1);
-    const r = rasterize(model, w, h, pal, { seed: o.seed ?? this.seed, outline: o.outline, texture: o.texture });
+    const r = rasterize(model, w, h, pal, { seed: o.seed ?? this.seed, outline: o.outline, texture: o.texture, cell });
     const p = r.pix;
     if (o.haze || o.dark) for (let k = 0; k < p.px.length; k++) {
       const c = p.px[k];

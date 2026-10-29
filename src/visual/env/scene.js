@@ -14,7 +14,7 @@ import * as moonfen from './moonfen.js';
 import * as crags from './crags.js';
 
 /** Version of the environment generator (scenes are not saved; this only names caches). */
-export const ENV_VERSION = 2;
+export const ENV_VERSION = 3;
 
 const COMPOSERS = { meadow, forest, river, quarry, moonfen, crags };
 

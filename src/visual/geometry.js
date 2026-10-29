@@ -107,12 +107,25 @@ export class Model {
 
 // ------------------------------------------------------------------ shape helpers
 
-/** An ellipse outline. */
+/**
+ * How square the round shapes are: the exponent of the superellipse every
+ * "ellipse" and lump is drawn as (2 would be a true ellipse; 4 a squircle),
+ * so bodies, berries, caps and stones read as blocks, after Noita.
+ */
+export const SQUARE = 4;
+
+/** A point of the unit superellipse at angle a: [x, y]. @param {number} a */
+export function sq(a) {
+  const c = Math.cos(a), s = Math.sin(a), e = 2 / SQUARE;
+  return [Math.sign(c) * Math.pow(Math.abs(c), e), Math.sign(s) * Math.pow(Math.abs(s), e)];
+}
+
+/** An ellipse outline (squared off: a superellipse, see SQUARE). */
 export function ellipse(cx, cy, rx, ry, rot = 0, n = 0) {
-  n = n || Math.max(10, Math.round((rx + ry) * 2.2));
+  n = n || Math.max(12, Math.round((rx + ry) * 2.4));
   const c = Math.cos(rot), s = Math.sin(rot), out = /** @type {Pt[]} */ ([]);
   for (let i = 0; i < n; i++) {
-    const a = (i / n) * Math.PI * 2, x = Math.cos(a) * rx, y = Math.sin(a) * ry;
+    const a = (i / n) * Math.PI * 2, [ux, uy] = sq(a), x = ux * rx, y = uy * ry;
     out.push([cx + x * c - y * s, cy + x * s + y * c]);
   }
   return out;
@@ -186,16 +199,16 @@ export function roughen(pts, rnd, amt) {
   return pts.map((q) => /** @type {Pt} */ ([q[0] + (rnd() - 0.5) * 2 * amt, q[1] + (rnd() - 0.5) * 2 * amt]));
 }
 
-/** A lumpy closed outline around a centre: radius r × (1 ± lump) over `k` bumps. */
+/** A lumpy closed outline around a centre: a squared-off body (see SQUARE), radius r × (1 ± lump) over `k` bumps. */
 export function lumpy(cx, cy, rx, ry, rnd, lump = 0.15, k = 7, n = 0) {
   n = n || Math.max(12, Math.round((rx + ry) * 2.5));
   const amps = Array.from({ length: k }, () => 1 + (rnd() - 0.5) * 2 * lump);
-  const off = rnd() * Math.PI * 2;
+  rnd(); // (the old rotation's draw: keeps every later draw of the stream in place)
   const out = /** @type {Pt[]} */ ([]);
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2, f = (i / n) * k, i0 = Math.floor(f) % k, i1 = (i0 + 1) % k, u = f - Math.floor(f);
-    const r = amps[i0] + (amps[i1] - amps[i0]) * (u * u * (3 - 2 * u));
-    out.push([cx + Math.cos(a + off) * rx * r, cy + Math.sin(a + off) * ry * r]);
+    const r = amps[i0] + (amps[i1] - amps[i0]) * (u * u * (3 - 2 * u)), [ux, uy] = sq(a);
+    out.push([cx + ux * rx * r, cy + uy * ry * r]);
   }
   return out;
 }

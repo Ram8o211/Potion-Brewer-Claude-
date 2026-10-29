@@ -182,7 +182,7 @@ function layout(d, stage) {
 export function plant(d, stage, o = {}) {
   const m = new Model(), P = d.m, rng = stream(d, 'plant' + stage), H = d.size.h;
   mound(m, d.size.w * 0.7, stream(d, 'mound'));
-  if (stage === 0) return sprout(m, d, Math.max(5, H * 0.3), { shape: P.leafShape, teeth: P.teeth });
+  if (stage === 0) return sprout(m, d, Math.max(4, H * 0.3), { shape: P.leafShape, teeth: P.teeth });
   const g = stage === 1 ? 0.7 : 1, hr = d.size.w * 0.26 * (stage === 1 ? 0.75 : 1);
   const stems = layout(d, stage);
   if (P.kind === 'clover') {

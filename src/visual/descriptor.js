@@ -57,6 +57,9 @@ export function describe(id) {
 }
 
 /** @param {VisualIdentity} id @returns {Descriptor} */
+/** Each family's size on the ground relative to the others (a crystal or a shell is smaller than a flowering stem). */
+const FAMILY_SCALE = { crystal: 0.8, shell: 0.85, mineral: 0.9, moss: 0.9, bark: 0.9, fruit: 0.88, fungus: 0.95 };
+
 function build(id) {
   const family = familyOf(id.shape), hab = habitatOf(id.region);
   const seeds = { morph: (id.seed ^ 0x5a17) >>> 0, palette: (id.seed ^ 0xc01d) >>> 0, surface: (id.seed ^ 0x7e57) >>> 0 };
@@ -77,8 +80,9 @@ function build(id) {
   const d = { id, family, form: id.shape, botanical: isBotanical(id.shape), hab, tr, main, side, pal, m: {}, size: { w: 24, h: 24 }, seeds };
   d.m = F.params(mrng, d);
   const base = F.size(d);
-  // (scaled so a plant reads at a glance in the side-view scene, about a sixth of its height, and a dozen fit along its ground)
-  const k = 1.05 * (id.rare ? 1.15 : 1) * (0.92 + mrng.next() * 0.16) * (1 + tr.thick * 0.08 + tr.lush * 0.06);
+  // (scaled to the scene's trees and rocks: a herb or a flower knee-high to an oak, about a tenth of the scene's height,
+  // a stone or a shell a hand across, a crystal cluster no bigger than a bush — and still big enough to read and tap)
+  const k = 0.68 * (FAMILY_SCALE[family] ?? 1) * (id.rare ? 1.12 : 1) * (0.92 + mrng.next() * 0.16) * (1 + tr.thick * 0.08 + tr.lush * 0.06);
   d.size = { w: Math.round(base.w * k), h: Math.round(base.h * k) };
   return d;
 }
