@@ -2,18 +2,19 @@
 //
 // Every part is filled at pixel centres into a material/lightness buffer:
 // filled outlines are shaded as rounded bodies, folded blades or flat facets
-// lit from the upper left, strokes as cylinders. Lightness is then reduced
-// to a few flat tones of the material's ramp (visual/style.js) — no dither,
-// no per-pixel grain; a part's texture only roughens the borders between
-// its tones into broad clusters. Finally the silhouette is inked dark (a
-// little lighter along the lit edges) and a part lying behind another gets
-// a one-pixel shadow line where they meet, so overlapping petals and leaves
+// lit from the upper left, strokes as cylinders. Each pixel is then painted
+// as a material, the way the wilds paint their ground (visual/style.js):
+// a shadow or a body tone of the part's ramp (a light one only for real
+// highlights such as a facet facing the light), broad blotches a step
+// lighter, a few grains, a bright crust along every edge open to the sky
+// and a dark rim along the others. A part lying behind another gets a
+// one-pixel shadow line where they meet, so overlapping petals and leaves
 // read apart.
 
 import { Pixels } from './pixels.js';
-import { noise2 } from './noise.js';
+import { noise2, hash2 } from './noise.js';
 import { mixPacked } from './color.js';
-import { INK, toneOf } from './style.js';
+import { INK, materialTone, toneOf } from './style.js';
 
 /** Direction toward the light: from the upper left and in front. */
 const L = (() => { const v = [-0.55, -0.72, 0.62], n = Math.hypot(...v); return v.map((x) => x / n); })();
@@ -90,7 +91,7 @@ const lit = (nx, ny, nz) => clamp01(0.47 + 0.6 * (nx * L[0] + ny * L[1] + nz * L
  * @returns {Raster}
  */
 export function rasterize(model, w, h, pal, o = {}) {
-  const N = w * h, seed = o.seed ?? 1, texAmp = o.texture ?? 0.06;
+  const N = w * h, seed = o.seed ?? 1, texAmp = o.texture ?? 1;
   grow(N);
   const mat = S.mat.subarray(0, N).fill(-1), lum = S.lum.subarray(0, N), tex = S.tex.subarray(0, N);
   // (the part map is returned, so it is the caller's own)
@@ -212,15 +213,15 @@ export function rasterize(model, w, h, pal, o = {}) {
     }
   }
 
-  // ---- lightness onto a few flat tones of the ramps, their borders roughened into broad clusters
+  // ---- each pixel as a material: its tone, a blotch a step lighter, now and then a grain
   const idx = S.idx.subarray(0, N).fill(-1);
   const ramps = mats.map((m) => pal[m] || pal.default || [0xff808080]);
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const k = y * w + x, mi = mat[k];
       if (mi < 0) continue;
-      const t = lum[k] + (noise2(x / 3.5, y / 3.5, seed + mi * 977) - 0.5) * texAmp * 2 * tex[k];
-      idx[k] = toneOf(ramps[mi].length, t);
+      const g = tex[k] * texAmp;
+      idx[k] = materialTone(ramps[mi].length, lum[k], g > 0 ? noise2(x / 3.5, y / 3.5, seed + mi * 977) : 0, g > 0 ? hash2(x, y, seed + mi * 31) : 0.5, g);
     }
   }
   // a part lying behind another darkens a step where they meet
@@ -249,10 +250,11 @@ export function rasterize(model, w, h, pal, o = {}) {
       if (sep[k]) i = toneOf(r.length, 0);
       let c = r[i];
       const pp = parts[part[k]];
-      if (outline && !pp.noOutline && !flat(part[k])) {
+      if (!pp.noOutline && !flat(part[k])) {
         const up = y === 0 || mat[k - w] < 0, left = x === 0 || mat[k - 1] < 0, down = y === h - 1 || mat[k + w] < 0, right = x === w - 1 || mat[k + 1] < 0;
-        if (down || right) c = mixPacked(r[0], INK, 0.6);
-        else if (up || left) c = mixPacked(r[0], INK, 0.35);
+        // a crust of light along the edges open to the sky, a dark rim along the others (where the outline is drawn here)
+        if (up && !sep[k]) c = r[Math.min(r.length - 1, Math.max(i + 2, Math.round((r.length - 1) * 0.8)))];
+        else if (outline && (down || left || right)) c = mixPacked(r[0], INK, 0.55);
       }
       pix.px[k] = c;
     }

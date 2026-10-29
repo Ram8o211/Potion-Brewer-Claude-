@@ -8,7 +8,7 @@
 
 import { sky } from './paint.js';
 import { palette, vary, streamOf } from './kit.js';
-import { heights, raise, fillSolid, blob, paintTerrain, markOpen, surfaceAt, hanging, glow, col, drips, ledges } from './side.js';
+import { heights, raise, fillSolid, blob, paintTerrain, markOpen, surfaceAt, hanging, glow, col, drips, ledges, far } from './side.js';
 import { tree, fern, log, stump, crown } from './objects.js';
 import { Model } from '../geometry.js';
 import { hash2 } from '../noise.js';
@@ -28,7 +28,7 @@ export function compose(cv, seed) {
     const rr = s('row' + k), fill = col(r.c);
     for (let i = 0; i < r.n; i++) {
       const x0 = Math.round((i + rr.next() * 0.7) * (W / r.n)), w = r.w + rr.int(0, 2);
-      for (let y = 0; y < H; y++) for (let x = x0; x < x0 + w; x++) if (x >= 0 && x < W) cv.pix.px[y * W + x] = fill;
+      for (let y = 0; y < H; y++) for (let x = x0; x < x0 + w; x++) if (x >= 0 && x < W) cv.pix.px[y * W + x] = far(fill, x, y, k * 97 + i);
     }
     hanging(cv, { base: r.can, amp: 10, freq: 0.03, seed: rr.int(0, 1e9), fill: r.c, rough: 4 });
   });

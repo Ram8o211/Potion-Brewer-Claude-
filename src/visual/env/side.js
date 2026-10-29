@@ -17,6 +17,18 @@ import { mixPacked, pack, hex } from '../color.js';
 export const col = (h) => pack(hex(h));
 
 /**
+ * A pixel of a distant flat material, painted like the ground but fainter:
+ * its colour, in broad blotches a shade lighter, with a rare grain.
+ * @param {number} c packed colour @param {number} x @param {number} y @param {number} seed
+ */
+export function far(c, x, y, seed) {
+  const g = hash2(x >> 1, y >> 1, seed + 7);
+  if (g > 0.975) return mixPacked(c, 0xffffffff, 0.12);
+  if (g < 0.02) return mixPacked(c, 0xff000000, 0.18);
+  return fbm2(x * 0.05, y * 0.07, seed, 2) > 0.55 ? mixPacked(c, 0xffffffff, 0.06) : c;
+}
+
+/**
  * A surface line across the scene: base ± amp of low noise, with plateaus
  * (heights rounded to `step` pixels) so plants find level ground.
  * @param {number} W @param {number} seed @param {{base:number, amp:number, freq?:number, step?:number}} o
@@ -159,7 +171,7 @@ export function hanging(cv, o) {
   const fill = col(o.fill), rim = o.rim ? col(o.rim) : fill, line = new Float32Array(cv.W);
   for (let x = 0; x < cv.W; x++) {
     line[x] = Math.round(o.base + (fbm1(x * o.freq, o.seed, 4) - 0.5) * 2 * o.amp + (o.rough ? (hash2(x >> 1, 1, o.seed) - 0.5) * o.rough : 0));
-    for (let y = 0; y <= Math.min(cv.H - 1, line[x]); y++) cv.set(x, y, y === line[x] ? rim : fill);
+    for (let y = 0; y <= Math.min(cv.H - 1, line[x]); y++) cv.set(x, y, y === line[x] ? rim : far(fill, x, y, o.seed));
   }
   return line;
 }
@@ -274,7 +286,7 @@ export function silhouette(cv, o) {
     let v = fbm1(x * o.freq, o.seed, 4);
     if (o.peaks) v = Math.pow(v, 1 / (1 + o.peaks));
     line[x] = Math.round(o.base - (v - 0.5) * 2 * o.amp - (o.rough ? (hash2(x >> 1, 0, o.seed) - 0.5) * o.rough : 0));
-    for (let y = Math.max(0, line[x]); y < (o.bottom ?? cv.H); y++) cv.set(x, y, y === line[x] ? rim : fill);
+    for (let y = Math.max(0, line[x]); y < (o.bottom ?? cv.H); y++) cv.set(x, y, y === line[x] ? rim : far(fill, x, y, o.seed));
   }
   return line;
 }
@@ -282,7 +294,7 @@ export function silhouette(cv, o) {
 /** A flat silhouette of a tree (pine, round-crowned or bare) standing at (x, y). */
 export function treeShape(cv, x, y, h, kind, c, seed) {
   const fill = col(c), tw = Math.max(1, Math.round(h / 14));
-  const put = (px, py) => { if (px >= 0 && py >= 0 && px < cv.W && py < cv.H) cv.pix.px[py * cv.W + px] = fill; };
+  const put = (px, py) => { if (px >= 0 && py >= 0 && px < cv.W && py < cv.H) cv.pix.px[py * cv.W + px] = far(fill, px, py, seed); };
   for (let j = 0; j < h * (kind === 'pine' ? 0.9 : 0.6); j++) for (let i = -tw; i < tw; i++) put(Math.round(x + i), Math.round(y - j));
   if (kind === 'pine') {
     for (let j = 0; j < h * 0.85; j++) {

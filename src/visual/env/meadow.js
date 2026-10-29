@@ -22,7 +22,7 @@ export function compose(cv, seed) {
   for (let y = sy - 9; y <= sy + 9; y++) for (let x = sx - 9; x <= sx + 9; x++) if (Math.hypot(x - sx, y - sy) <= 8.5) cv.set(x, y, Math.hypot(x - sx, y - sy) < 6.5 ? pack([1, 0.99, 0.9]) : pack([1, 0.94, 0.7]));
   glow(cv, sx, sy, 60, [1, 0.95, 0.75], 0.3);
   const cr = s('clouds');
-  for (let i = 0; i < 3 + cr.int(0, 2); i++) cv.stamp(cloud(cr, cr.int(30, 70), cr.int(8, 14)), pal, cr.int(0, W), cr.int(18, 60), { outline: false });
+  for (let i = 0; i < 3 + cr.int(0, 2); i++) cv.stamp(cloud(cr, cr.int(30, 70), cr.int(8, 14)), pal, cr.int(0, W), cr.int(18, 60), { outline: false, texture: 0 });
   // the distance: two rows of hills, the far one bluest, trees along the near one
   silhouette(cv, { base: 96, amp: 16, freq: 0.007, seed: s('h1').int(0, 1e9), fill: '#86b0a4', rim: '#a4c8b4' });
   const near = silhouette(cv, { base: 116, amp: 12, freq: 0.011, seed: s('h2').int(0, 1e9), fill: '#5f9a5a', rim: '#7ab26a' });
