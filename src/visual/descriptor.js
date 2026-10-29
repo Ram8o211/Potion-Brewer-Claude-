@@ -77,8 +77,8 @@ function build(id) {
   const d = { id, family, form: id.shape, botanical: isBotanical(id.shape), hab, tr, main, side, pal, m: {}, size: { w: 24, h: 24 }, seeds };
   d.m = F.params(mrng, d);
   const base = F.size(d);
-  // (scaled so a plant reads at a glance in the scene, about a sixth of its height)
-  const k = 1.35 * (id.rare ? 1.15 : 1) * (0.92 + mrng.next() * 0.16) * (1 + tr.thick * 0.08 + tr.lush * 0.06);
+  // (scaled so a plant reads at a glance in the side-view scene, about a sixth of its height, and a dozen fit along its ground)
+  const k = 1.05 * (id.rare ? 1.15 : 1) * (0.92 + mrng.next() * 0.16) * (1 + tr.thick * 0.08 + tr.lush * 0.06);
   d.size = { w: Math.round(base.w * k), h: Math.round(base.h * k) };
   return d;
 }

@@ -244,11 +244,18 @@ computed from the particles that actually run out of the tap. What a
   [docs/PROCEDURAL_GRAPHICS.md](docs/PROCEDURAL_GRAPHICS.md)). Each of the
   six regions — the Sunlit Meadow, Whisperwood, Willow Bank, Ironstone
   Quarry, Moonfen and the Ember Crags — is generated from the world seed
-  (sky, silhouettes, perspective ground, water, lava, trees, rocks,
-  timberwork, light and mist, plus seed-chosen features such as autumn
-  woods, a meadow pond or standing stones, a footbridge) with a map of
-  the open ground where plants may grow, never in water or lava and never
-  behind scenery. Every wild ingredient carries a small, versioned *visual
+  as a Noita-like side view: a banded sky and flat silhouettes of the
+  distance behind a cross-section of the ground (mottled earth, rock or
+  peat under a crust of grass, moss, gravel or ash, with ledges, overhangs
+  and caves), pools of water or lava in its hollows, trees, rocks and
+  timberwork, glowing lights and, as it runs, particles (pollen, motes,
+  leaves, fireflies, wisps, trickling grit, shimmer, embers, ash, steam),
+  plus seed-chosen features such as autumn woods, a meadow pond or
+  standing stones, a footbridge. Plants grow only on its dry surfaces,
+  never in water or lava and never behind scenery; stones, crystals and
+  shells do not grow but turn up again whole. Everything is drawn in a
+  simple flat style — a few tones per material, no dithering — with
+  ingredients ringed in a dark outline so they read at a glance. Every wild ingredient carries a small, versioned *visual
   identity* (`material.vis`: world of origin, species, family, habitat,
   rarity, colour, alchemical profile and a variation seed) from which its
   plant at each growth stage, its icon on the shelf, in the shop, the book

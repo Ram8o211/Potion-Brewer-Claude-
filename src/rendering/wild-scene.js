@@ -25,7 +25,7 @@ export function sceneCanvas(region, seed) {
 }
 
 /** The room a plant keeps round itself where the ground allows (scene pixels). */
-const ROOM = 3;
+const ROOM = 2;
 
 /**
  * @typedef {{w:number, h:number, ax:number, ay:number, m:Uint8Array}} Silhouette
@@ -46,8 +46,8 @@ export class PlantGround {
     this.region = region;
     this.open = sc.open;
     this.depth = sc.depth;
-    // plants are drawn at one size: they grow on the nearer ground, not out on the horizon
-    this.top = Math.max(1, Math.round(sc.top + (SCENE_H - sc.top) * 0.2));
+    this.solid = sc.solid;
+    this.top = Math.max(1, sc.top);
     /** plant id → its spot in scene pixels and the silhouette it was placed with @type {Map<string, {x:number, y:number, s:Silhouette}>} */
     this.spots = new Map();
   }
@@ -59,7 +59,7 @@ export class PlantGround {
    * @returns {Record<string, {x:number, y:number}>}
    */
   place(plants, shapeOf) {
-    const W = SCENE_W, H = SCENE_H, G = this.open, D = this.depth;
+    const W = SCENE_W, H = SCENE_H, G = this.open, D = this.depth, S = this.solid;
     /** @type {Record<string, {x:number, y:number}>} */
     const out = {};
     for (const p of plants) out[p.id] = { x: p.x, y: p.y };
@@ -67,7 +67,7 @@ export class PlantGround {
     for (const id of [...this.spots.keys()]) if (!here.has(id)) this.spots.delete(id);
     const fresh = plants.filter((p) => !this.spots.has(p.id) && shapeOf(p));
     if (fresh.length) {
-      const roomy = new Uint8Array(W * H), tight = new Uint8Array(W * H);
+      const roomy = new Uint8Array(W * H), tight = new Uint8Array(W * H), free = new Uint8Array(W * H);
       const mark = (/** @type {{x:number, y:number, s:Silhouette}} */ q) => {
         stampMask(roomy, q.s, q.x, q.y, ROOM);
         stampMask(tight, q.s, q.x, q.y, 0);
@@ -83,18 +83,20 @@ export class PlantGround {
           for (let j = 0; j < s.h; j++) for (let i = 0; i < s.w; i++) {
             if (!s.m[j * s.w + i]) continue;
             const k = (top + j) * W + left + i;
-            if (taken[k] || D[k] > ay) return false;
+            // never behind scenery, and never into the ground above its own foot (an overhang, a slope, a cave's roof)
+            if (taken[k] || D[k] > ay || (S[k] && top + j < ay - 1)) return false;
           }
           return true;
         };
-        // where it came up (gathering.js sprouts at 0.56..0.9 of the scene's height) maps onto this region's own ground
-        const ox = Math.round(p.x * W), oy = Math.round(this.top + Math.max(0, Math.min(1, (p.y - 0.56) / 0.34)) * (H - 4 - this.top));
+        // where it came up (gathering.js sprouts at 0.56..0.9 of the scene's height) maps onto this region's own ground,
+        // mostly its lower half: the main ground and the low ledges fill before the high ones
+        const ox = Math.round(p.x * W), oy = Math.round(this.top + (0.35 + 0.65 * Math.max(0, Math.min(1, (p.y - 0.56) / 0.34))) * (H - 4 - this.top));
         /** @type {[number, number, number][]} */
-        const tries = [[0, ox, oy]];
-        for (let y = this.top; y <= H - 3; y += 2) for (let x = (y + ox) & 1; x < W; x += 3) if (G[y * W + x]) tries.push([(x - ox) ** 2 + ((y - oy) * 1.6) ** 2, x, y]);
+        const tries = [];
+        for (let y = this.top; y <= H - 3; y++) for (let x = (y + ox) % 3; x < W; x += 3) if (G[y * W + x] && G[(y - 1) * W + x]) tries.push([(x - ox) ** 2 + ((y - oy) * 1.6) ** 2, x, y]);
         tries.sort((a, b) => a[0] - b[0]);
-        // no roomy ground left: the nearest spot it fits at all, else where it came up
-        const spot = tries.find(([, x, y]) => fits(roomy, x, y)) || tries.find(([, x, y]) => fits(tight, x, y));
+        // no roomy ground left: the nearest spot it fits at all, else one where it only crowds another plant, else the nearest open ground
+        const spot = tries.find(([, x, y]) => fits(roomy, x, y)) || tries.find(([, x, y]) => fits(tight, x, y)) || tries.find(([, x, y]) => fits(free, x, y)) || tries[0];
         const [, x, y] = spot || [0, ox, oy];
         const q = { x, y, s };
         mark(q);
@@ -153,18 +155,56 @@ export function hitPlant(plants, frameOf, px, py, W = SCENE_W, H = SCENE_H, slop
 /** @param {CanvasRenderingContext2D} ctx */
 function px(ctx, x, y, c, w = 1, h = 1) { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); }
 
-/** A soft disc of light. @param {CanvasRenderingContext2D} ctx */
+/** A disc of light added over the scene in flat rings (the pixel artist's glow). @param {CanvasRenderingContext2D} ctx */
 function halo(ctx, x, y, r, c, a) {
-  ctx.globalAlpha = a;
-  for (let k = r; k > 0; k -= 2) { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(Math.round(x), Math.round(y), k, 0, Math.PI * 2); ctx.fill(); }
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.fillStyle = c;
+  for (let k = 3; k >= 1; k--) {
+    ctx.globalAlpha = a * (4 - k) / 3;
+    ctx.beginPath(); ctx.arc(Math.round(x), Math.round(y), Math.max(1, Math.round(r * k / 3)), 0, Math.PI * 2); ctx.fill();
+  }
   ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
 }
 
+/** A cheap repeatable pseudo-random number in [0, 1) for particle i. */
+const rnd = (i, k = 0) => { const v = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return v - Math.floor(v); };
+
 const STEAM = ['#fff0b0', '#f49e39', '#e56522', '#8a4a50', '#6a4457', '#4e3040'];
+const EMBER = ['#fff4b0', '#ffd060', '#ff9a3a', '#e05a18', '#8a2a14'];
+
+/** Grains of loose earth trickling from an overhang and landing in a puff. @param {CanvasRenderingContext2D} ctx */
+function trickles(ctx, list, t, c, dust) {
+  list.forEach(([x, y, fall], j) => {
+    // each spout runs in bursts
+    if (Math.sin(t * 0.7 + j * 2.3) < 0.2) return;
+    for (let i = 0; i < 6; i++) {
+      const age = (t * 0.9 + i / 6 + j * 0.37) % 1, d = age * age * fall;
+      px(ctx, x + (rnd(i, j) > 0.7 ? 1 : 0), y + d, i % 2 ? c : dust);
+    }
+    if (Math.sin(t * 9 + j) > 0) px(ctx, x - 1 + Math.round(rnd(Math.floor(t * 9), j) * 2), y + fall - 1, dust);
+  });
+}
+
+/** Shimmer on a liquid's surface: bright pixels sliding along it; lava bubbles that swell and pop. @param {CanvasRenderingContext2D} ctx */
+function surface(ctx, p, t, c, lava) {
+  if (!p) return;
+  const w = p.x1 - p.x0;
+  for (let i = 0; i < Math.max(3, w / 10); i++) {
+    const x = p.x0 + ((rnd(i) * w + t * (lava ? 2 : 6) * (i % 2 ? 1 : -1)) % w + w) % w;
+    if (lava) {
+      const ph = (t * 0.8 + rnd(i, 3)) % 1;
+      if (ph < 0.6) px(ctx, x, p.level - Math.floor(ph * 4), ph < 0.45 ? c : '#fff4b0', ph < 0.3 ? 2 : 1, 1);
+    } else px(ctx, x, p.level + (i % 3), c, 2 + (i % 2), 1);
+  }
+}
 
 /**
- * The moving parts of a region, drawn over its painting each frame. Cheap:
- * a few dozen pixels, positions from the time alone (no state).
+ * The moving parts of a region, drawn over its painting each frame: its
+ * particles (pollen, motes, falling leaves, fireflies, wisps, embers, ash,
+ * steam, trickling grit, the shimmer of water and lava) and its lights
+ * flickering. Cheap: a few dozen pixels, positions from the time alone
+ * (no state).
  * @param {CanvasRenderingContext2D} ctx @param {string} region @param {number} t seconds @param {string} seed
  */
 export function animateRegion(ctx, region, t, seed) {
@@ -176,39 +216,62 @@ export function animateRegion(ctx, region, t, seed) {
       for (const [dx, dy] of [[0, 0], [-1, -up], [1, -up], [-2, 1 - up * 2], [2, 1 - up * 2]]) px(ctx, x + dx, y + dy, '#2a2024');
     }
   }
-  if (region === 'meadow') for (let i = 0; i < 5; i++) {
-    // butterflies over the flowers
-    const x = W * (0.12 + i * 0.18) + Math.sin(t * 0.8 + i * 3) * 22, y = H * 0.68 + Math.sin(t * 1.6 + i) * 12, open = Math.sin(t * 13 + i) > 0;
-    const c = ['#ffe58a', '#ff9fc7', '#ffffff', '#c9b7ff', '#ffb070'][i];
-    px(ctx, x - (open ? 2 : 1), y, c, open ? 2 : 1, 2); px(ctx, x + 1, y, c, open ? 2 : 1, 2); px(ctx, x, y, '#2a1a12', 1, 2);
+  if (region === 'meadow') {
+    for (let i = 0; i < 5; i++) {
+      // butterflies over the field
+      const x = W * (0.12 + i * 0.18) + Math.sin(t * 0.8 + i * 3) * 22, y = H * 0.6 + Math.sin(t * 1.6 + i) * 14, open = Math.sin(t * 13 + i) > 0;
+      const c = ['#ffe58a', '#ff9fc7', '#ffffff', '#c9b7ff', '#ffb070'][i];
+      px(ctx, x - (open ? 2 : 1), y, c, open ? 2 : 1, 2); px(ctx, x + 1, y, c, open ? 2 : 1, 2); px(ctx, x, y, '#2a1a12', 1, 2);
+    }
+    // pollen drifting up in the sun
+    for (let i = 0; i < 18; i++) { const age = (t * 0.06 + rnd(i)) % 1; px(ctx, rnd(i, 1) * W + Math.sin(t + i) * 6, H * 0.8 - age * 120, age < 0.8 ? '#fff4c0' : '#e8d890'); }
+    if (meta.hives) for (let i = 0; i < 6; i++) px(ctx, meta.hives[0] + Math.sin(t * 3 + i * 1.7) * 12, meta.hives[1] + Math.cos(t * 4.3 + i) * 6, i % 2 ? '#ffd040' : '#2a1a12');
+    surface(ctx, meta.pond, t, '#ffffff', false);
   }
-  if (region === 'forest') for (let i = 0; i < 16; i++) {
-    // motes drifting in the light, and the odd leaf falling
-    const x = (i * 41 + Math.sin(t * 0.5 + i) * 8) % W, y = 40 + ((i * 29 + t * 5) % 120);
-    if (Math.sin(t * 2 + i * 1.7) > 0.3) px(ctx, x, y, '#fff2b0');
-    if (i < 3) { const ly = ((t * 9 + i * 70) % (H + 20)) - 10, lx = (i * 120 + 60 + Math.sin(t * 1.3 + i) * 14) % W; px(ctx, lx, ly, i % 2 ? '#c88a2a' : '#8aa83a', 2, 1); }
+  if (region === 'forest') {
+    // motes in the light shaft, and leaves falling, swaying
+    const sx = meta.shaft || W / 2;
+    for (let i = 0; i < 20; i++) {
+      const y = (rnd(i) * H + t * 3) % H, x = sx + y * 0.45 + rnd(i, 2) * 50 + Math.sin(t * 0.6 + i) * 3;
+      if (Math.sin(t * 2 + i * 1.7) > -0.2) px(ctx, x, y, '#fff2b0');
+    }
+    for (let i = 0; i < 5; i++) {
+      const y = ((t * 8 + i * 47) % (H + 20)) - 10, x = (rnd(i, 4) * W + Math.sin(t * 1.3 + i) * 14) % W, flat = Math.sin(t * 3 + i) > 0;
+      px(ctx, x, y, i % 2 ? '#c88a2a' : '#8aa83a', flat ? 2 : 1, flat ? 1 : 2);
+    }
+    trickles(ctx, meta.trickles || [], t, '#5a3a24', '#3a2618');
   }
-  if (region === 'river' && meta.river) for (let i = 0; i < 14; i++) {
-    // glints carried down the stream
-    const rows = meta.river.rows, y0 = Math.max(meta.horizon || 96, 100), span = H - y0;
-    const y = Math.round(y0 + ((t * (6 + (i % 3) * 2) + i * 17) % span)), r = rows[Math.min(H - 1, y)];
-    if (!r) continue;
-    const x = r[0] + Math.sin(i * 2.3) * r[1] * 0.7;
-    px(ctx, x, y, '#dff4ff', 2 + Math.round((y - y0) / span * 3), 1);
+  if (region === 'river') {
+    surface(ctx, meta.river, t, '#e4f4ff', false);
+    // now and then a fish leaps from the stream in an arc
+    if (meta.river) {
+      const ph = (t * 0.25) % 1, r = meta.river, fx = r.x0 + (r.x1 - r.x0) * rnd(Math.floor(t * 0.25), 5);
+      if (ph < 0.25) { const u = ph / 0.25; px(ctx, fx + u * 14, r.level - Math.sin(u * Math.PI) * 10, '#c8d8e0', 2, 1); }
+    }
+    // dragonflies over the water
+    for (let i = 0; i < 2; i++) { const r = meta.river || { x0: 0, x1: W, level: H / 2 }; px(ctx, r.x0 + (r.x1 - r.x0) * (0.3 + 0.4 * i) + Math.sin(t * 2.1 + i) * 20, r.level - 14 + Math.sin(t * 5 + i * 3) * 4, '#4ad0e0', 3, 1); }
   }
   if (region === 'quarry') {
-    for (let i = 0; i < 8; i++) { const x = (i * 47 + t * 6) % W, y = 80 + Math.sin(t * 0.8 + i) * 12 + i * 8; ctx.globalAlpha = 0.6; px(ctx, x, y, '#fff0d8'); ctx.globalAlpha = 1; }
-    if (meta.lantern) halo(ctx, meta.lantern[0], meta.lantern[1], 10, '#ffc060', 0.06 + 0.04 * Math.sin(t * 9));
+    trickles(ctx, meta.trickles || [], t, '#b8a688', '#8a7e70');
+    for (let i = 0; i < 10; i++) { const age = (t * 0.05 + rnd(i)) % 1; ctx.globalAlpha = 0.7; px(ctx, rnd(i, 1) * W + age * 30, 60 + rnd(i, 2) * 120 - age * 20, '#fff0d8'); ctx.globalAlpha = 1; }
+    if (meta.lantern) halo(ctx, meta.lantern[0], meta.lantern[1], 12, '#ffb050', 0.1 + 0.05 * Math.sin(t * 9) + 0.03 * Math.sin(t * 23));
+    if (meta.adit) halo(ctx, meta.adit[0], meta.adit[1], 7, '#ff9a40', 0.08 + 0.04 * Math.sin(t * 5));
   }
   if (region === 'moonfen') {
-    for (let i = 0; i < 8; i++) {
-      // wisps drifting over the pools
-      const x = W * (0.08 + i * 0.12) + Math.sin(t * 0.6 + i * 2) * 14, y = H * (0.6 + 0.07 * (i % 3)) + Math.sin(t * 1.2 + i) * 7;
-      halo(ctx, x, y, 7, '#5fd4e8', 0.07);
+    for (let i = 0; i < 6; i++) {
+      // wisps drifting over the bog
+      const x = W * (0.08 + i * 0.16) + Math.sin(t * 0.6 + i * 2) * 14, y = H * 0.6 + Math.sin(t * 1.2 + i) * 9;
+      halo(ctx, x, y, 8, '#5fd4e8', 0.12);
       px(ctx, x - 1, y - 2, '#8fe0ff', 2, 4); px(ctx, x - 1, y, '#e9fbff', 2, 2); px(ctx, x, y - 4 + Math.round(Math.sin(t * 8 + i)), '#5fd4e8', 1, 2);
     }
-    for (const [gx, gy] of meta.glows || []) halo(ctx, gx, gy, 9, '#b090ff', 0.05 + 0.04 * Math.sin(t * 2 + gx));
-    for (let i = 0; i < 10; i++) if (Math.sin(t * 3 + i * 2.1) > 0.6) px(ctx, (i * 53 + Math.sin(t + i) * 10) % W, 120 + (i * 31) % 90, '#d8ff8a');
+    // fireflies blinking
+    for (let i = 0; i < 14; i++) {
+      if (Math.sin(t * 2.5 + i * 2.1) < 0.4) continue;
+      const x = (rnd(i) * W + Math.sin(t * 0.4 + i) * 12) % W, y = 110 + rnd(i, 1) * 80 + Math.sin(t * 0.9 + i) * 5;
+      halo(ctx, x, y, 4, '#d8ff8a', 0.15); px(ctx, x, y, '#f4ffc0');
+    }
+    for (const [gx, gy] of meta.glows || []) halo(ctx, gx, gy, 12, '#b090ff', 0.08 + 0.05 * Math.sin(t * 2 + gx));
+    for (const p of meta.pools || []) surface(ctx, p, t, '#d8e4ff', false);
   }
   if (region === 'crags') {
     for (const v of meta.vents || []) {
@@ -230,15 +293,15 @@ export function animateRegion(ctx, region, t, seed) {
       ctx.beginPath(); ctx.arc(Math.round(meta.crater[0] + age * 30), Math.round(meta.crater[1] - age * 36), Math.round(3 + age * 9), 0, Math.PI * 2); ctx.fill();
     }
     ctx.globalAlpha = 1;
-    for (let i = 0; i < 16; i++) {
-      // embers rising from the lava
-      const y = H * 0.95 - ((t * 14 + i * 13) % 110), x = W * (0.04 + i * 0.06) + Math.sin(t + i) * 5;
-      px(ctx, x, y, i % 3 ? '#ffb444' : '#ff7a1c');
+    // embers rising from the lava, cooling as they climb; ash falling
+    const lava = meta.lava;
+    for (let i = 0; i < 22; i++) {
+      const age = (t * 0.3 + rnd(i)) % 1, x0 = lava ? lava.x0 + rnd(i, 1) * (lava.x1 - lava.x0) : rnd(i, 1) * W, y0 = lava ? lava.level : H * 0.8;
+      px(ctx, x0 + Math.sin(t * 2 + i) * 4 * age + age * 8, y0 - age * 90, EMBER[Math.min(EMBER.length - 1, Math.floor(age * EMBER.length))]);
     }
-    if (meta.flow) for (let i = 0; i < 10; i++) {
-      // the lava's surface churns
-      const y = Math.round(110 + ((i * 23 + t * 4) % 100)), r = meta.flow[y];
-      if (r && Math.sin(t * 4 + i * 1.9) > 0.2) px(ctx, r[0] + Math.sin(i * 1.7) * r[1] * 0.6, y, '#ffe680', 2, 1);
-    }
+    for (let i = 0; i < 12; i++) { const age = (t * 0.04 + rnd(i, 7)) % 1; px(ctx, (rnd(i, 8) * W + Math.sin(t * 0.7 + i) * 10) % W, age * H, '#6a5e5a'); }
+    surface(ctx, lava, t, '#ffe680', true);
+    if (lava) halo(ctx, (lava.x0 + lava.x1) / 2, lava.level, (lava.x1 - lava.x0) / 2 + 10, '#ff6a20', 0.06 + 0.03 * Math.sin(t * 3) + 0.02 * Math.sin(t * 11));
+    trickles(ctx, meta.trickles || [], t, '#5a4e4c', '#3e3438');
   }
 }

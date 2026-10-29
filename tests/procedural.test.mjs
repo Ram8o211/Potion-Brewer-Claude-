@@ -124,7 +124,7 @@ test('the alchemy leaves clues: a species\' colour inputs change its palette but
   assert.ok(deadly.tr.droop > 0.9 && d.tr.droop === 0);
 });
 
-test('the six environments are generated deterministically, differ per world and keep water, lava, cliffs and sky free of plants', () => {
+test('the six environments are side views, generated deterministically, differing per world, with plants only on dry ground surfaces', () => {
   for (const r of REGIONS) {
     const t0 = performance.now();
     const a = composeScene(r.id, 'env-1');
@@ -134,17 +134,29 @@ test('the six environments are generated deterministically, differ per world and
     assert.equal(a.pix.h, SCENE_H);
     assert.equal(a.pix.hash(), composeScene(r.id, 'env-1').pix.hash(), `${r.id} is deterministic`);
     assert.notEqual(a.pix.hash(), composeScene(r.id, 'env-2').pix.hash(), `${r.id} differs per world`);
-    // every pixel painted, the sky above the ground never open
     assert.ok(a.pix.px.every((c) => c >>> 24 === 255), `${r.id} is fully painted`);
+    // open ground is only ever a surface: the top of the ground, or the air just above it — never in a liquid
     let open = 0;
-    for (let y = 0; y < SCENE_H; y++) for (let x = 0; x < SCENE_W; x++) if (a.open[y * SCENE_W + x]) { open++; assert.ok(y >= a.top); }
-    assert.ok(a.top >= 60 && a.top < 140, `${r.id} ground starts at ${a.top}`);
-    assert.ok(open > (SCENE_H - a.top) * SCENE_W * 0.25, `${r.id} has room to grow (${open} px)`);
+    for (let y = 1; y < SCENE_H - 1; y++) for (let x = 0; x < SCENE_W; x++) {
+      const k = y * SCENE_W + x;
+      if (!a.open[k]) continue;
+      open++;
+      assert.ok(y >= a.top);
+      assert.equal(a.liquid[k], 0, `${r.id}: nothing grows in water or lava`);
+      const surface = (a.solid[k] && !a.solid[k - SCENE_W]) || (!a.solid[k] && a.solid[k + SCENE_W]);
+      assert.ok(surface, `${r.id}: (${x}, ${y}) is open but not a surface`);
+    }
+    assert.ok(a.top >= 40 && a.top < 190, `${r.id} ground starts at ${a.top}`);
+    assert.ok(open > SCENE_W * 0.8, `${r.id} has room to grow (${open} px)`);
   }
-  const river = composeScene('river', 'env-1');
-  for (let y = 120; y < SCENE_H; y += 7) { const [c] = river.meta.river.rows[y]; assert.equal(river.open[y * SCENE_W + c], 0, 'nothing grows in the river'); }
-  const crags = composeScene('crags', 'env-1');
-  for (let y = 120; y < SCENE_H; y += 7) { const [c] = crags.meta.flow[y]; assert.equal(crags.open[y * SCENE_W + c], 0, 'nothing grows in the lava'); }
+  // the river and the lava lie in their beds, and nothing grows in them
+  for (const [region, key] of [['river', 'river'], ['crags', 'lava']]) {
+    const sc = composeScene(region, 'env-1'), p = sc.meta[key];
+    assert.ok(p && p.x1 > p.x0, `${region} has its ${key}`);
+    const mid = Math.round((p.x0 + p.x1) / 2);
+    assert.equal(sc.liquid[(p.level + 1) * SCENE_W + mid], 1, `${region}: its ${key} fills its bed`);
+    for (let x = p.x0; x <= p.x1; x++) for (let y = p.level - 1; y < SCENE_H; y++) if (sc.liquid[y * SCENE_W + x]) assert.equal(sc.open[y * SCENE_W + x], 0);
+  }
 });
 
 test('plants stand on open ground, never behind scenery, with room round them; taps pick the plant in front', () => {
