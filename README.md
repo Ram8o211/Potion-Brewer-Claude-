@@ -47,19 +47,20 @@ computed from the particles that actually run out of the tap. What a
   craft is balancing ingredients against each other — Sunthistle's fire
   cancels Silverleaf's frost, River Chalk settles Nettle's acid — until
   only what the customer asked for remains. Long-press an ingredient to see
-  its side effects and what cancels them. Each kind of ingredient has its
-  own sprite and its own surface in the cauldron (bark plates, glossy
-  berries, fungus gills, ribbed seeds, pearly shells, metallic nuggets,
-  black glass, spotted caps, velvet reeds…).
+  its side effects and what cancels them. Each ingredient is drawn procedurally
+  from its own visual identity — the same species on the ground, as an
+  icon and as the pieces tumbling in the cauldron (bark strips, glossy
+  berries, gilled caps, ribbed seeds, pearly shells, metallic lumps,
+  faceted shards, spotted toadstools, velvet reed heads…).
 * **Arcane awakening.** Magical ingredients carry a hidden activation
   threshold (−1000…+1000, mapped onto temperature). Heat or chill a
   well-mixed brew past the volume-weighted threshold of its magic and that
   magic awakens — several times stronger, and it stays awake through
   cooling, bottling and saving. Magic never recolours a brew: awakening
   shows only as its effects' particles growing denser and bolder.
-  A brew takes the dominant colour of the painted ingredients crushed
-  into it (the shade covering most of the painting, not a blend of all
-  its textures), blending into gradients as it diffuses. Each effect
+  A brew takes the dominant colour of the pieces of the ingredients crushed
+  into it (the shade covering most of them, not a blend of all their
+  textures), blending into gradients as it diffuses. Each effect
   also fills the brew with its own swarm of pixel-art particles, as many
   as its share of the magic, each in the effect's own colour so it reads
   at a glance: red healing crosses rising and swelling on a heartbeat for
@@ -233,48 +234,40 @@ computed from the particles that actually run out of the tap. What a
     desktop layouts.
   * Installable and fully offline, with saves on the device and
     export/import.
-* **Pixel art painted in code:** layered wilds panoramas, shown until a
-  region's backdrop has loaded (lit oak
-  canopies and light shafts, a willow river, terraced quarry faces with a
-  crane and lantern, a moonlit bog of willows, crystals and wisps, smoking
-  volcanic crags), a furnished workshop (brick wall, shelves of jars and
-  plants, drying herbs, ivy, barrel, sack, firewood under the cauldron), a
-  hutch with a hay rack, a thatched hide box and a fence, shaded rabbits,
-  and wood-grain, parchment and nail textures on the interface.
-* **Painted wilds:** each of the six regions — the Sunlit Meadow,
-  Whisperwood, Willow Bank, Ironstone Quarry, Moonfen and the Ember Crags —
-  is shown as one painted pixel-art backdrop (`assets/backdrops/<region>.png`,
-  256 × 144, 39–54 KB each): the meadow's oak and split-rail fence, the
-  ancient oaks round a sunlit clearing, the willow river, the quarry's
-  cliff, scaffolds and crane, the moonlit fen and its pools, the smoking
-  crags and their lava. The plants grow on top of it, on the ground: each
-  region has a map of its open ground (`src/rendering/backdrops-ground.js`)
-  drawn round the scenery and, by colour, clear of water, lava and rock, and
-  a new sprout takes the open ground nearest the spot it came up at, where
-  its foot rests on that ground and it keeps a few pixels of room from
-  every other plant, so even a full region never crowds into a clump. Every
-  ingredient is an outlined sprite with hover and depleted (harvested)
-  frames; the dusk Nightshade, Grave Moss and Siren Reed
-  and the dawn Moonlily show their closed state out of their hour, and each
-  has one icon, the same on the deposit card, the shelf, in the shop and in
-  the book. Only plants
-  take taps. Built from `art/backdrops/` by
-  `python scripts/make-backdrops.py` (needs Pillow and NumPy), which brings
-  each picture down to the scene's pixels and writes its ground map;
-  `art/backdrops/README.md` says how. The cards and icons come from each
-  region's atlas (`assets/wilds/<region>.png`, built from `art/wilds/` by
-  `python scripts/make-wilds.py`; `art/wilds/README.md` lists which sprite
-  went where).
-* **Sunlit Meadow sprites:** the meadow's atlas (`assets/meadow/atlas.png`,
-  53 KB) holds the birds that fly over its backdrop. Each meadow
-  ingredient (Heartpetal, Sunthistle, Nettle, Dreamclover, Bee Balm,
-  Hemlock Seed) is an outlined sprite with hover and depleted frames; the
-  dawn Dreamclover and the dusk Hemlock show their closed buds and seed
-  pods out of their hour. The same art gives every meadow ingredient its
-  one icon, on the deposit card, the shelf, in the shop and in the book. Built from
-  `art/meadow/` by `python scripts/make-meadow.py` (needs Pillow and
-  NumPy); `art/meadow/README.md` lists which sprite went where and how it
-  was changed.
+* **Pixel art painted in code:** a furnished workshop (brick wall,
+  shelves of jars and plants, drying herbs, ivy, barrel, sack, firewood
+  under the cauldron), a hutch with a hay rack, a thatched hide box and a
+  fence, shaded rabbits, and wood-grain, parchment and nail textures on the
+  interface.
+* **Procedural wilds and ingredients:** every world grows its own
+  ecosystem (`src/visual/`, see
+  [docs/PROCEDURAL_GRAPHICS.md](docs/PROCEDURAL_GRAPHICS.md)). Each of the
+  six regions — the Sunlit Meadow, Whisperwood, Willow Bank, Ironstone
+  Quarry, Moonfen and the Ember Crags — is generated from the world seed
+  (sky, silhouettes, perspective ground, water, lava, trees, rocks,
+  timberwork, light and mist, plus seed-chosen features such as autumn
+  woods, a meadow pond or standing stones, a footbridge) with a map of
+  the open ground where plants may grow, never in water or lava and never
+  behind scenery. Every wild ingredient carries a small, versioned *visual
+  identity* (`material.vis`: world of origin, species, family, habitat,
+  rarity, colour, alchemical profile and a variation seed) from which its
+  plant at each growth stage, its icon on the shelf, in the shop, the book
+  and its deposit card, and its four pieces in the cauldron are all drawn,
+  so it is recognisable everywhere; each family (flowers, herbs, roots,
+  fungi, mosses, fruit, reeds, bark, crystals, minerals, shells) has its own
+  construction grammar, and the magic it carries shows as clues (spots,
+  dark veins, warm edges, frost, violet glimmers, iridescence) without
+  giving numbers away. The same archetype looks different in another world.
+  `node scripts/gallery.mjs out.png <seed>` and
+  `node scripts/scenes.mjs outdir <seed>` render them for inspection.
+* **Watering:** living plants grow with the moisture of their soil — the
+  habitat's own (a bog stays damp, the crags are parched), rain and fog,
+  and the water you bring. In the Wilds, *Tap to: Water* waters the plants
+  round a tap and each card's *Water* button its whole stand; damp earth
+  darkens round a watered plant and a thirsty one shows a drop. Watering
+  speeds growth up to half again (never instantly, never more however much
+  you water); dry soil slows it but never stops it. Stones, crystals,
+  crusts and shells come back with time and the weather, as before.
 * **Everything is original and bundled:** pixel art drawn in code (plus
   the wilds' sprites from the project's own concept-art packs), a
   pixel font, synthesised sound effects and music. No third-party runtime
@@ -383,19 +376,20 @@ Keyboard: `C` `V` `W` `T` `J` rooms, `1`–`5` tools, `G` ground, `L` lid,
 ## Project layout
 
 ```
-index.html, styles/, assets/     page shell, stylesheet, pixel font, icons, Whisperwood and Meadow sprite atlases
-art/                             source art for generated assets (not shipped)
+index.html, styles/, assets/     page shell, stylesheet, pixel font, app icons, the hutch's pen
+art/                             source art of the hutch's pen (not shipped)
 src/core/                        seeded RNG, colour science (Beer–Lambert, OKLab), maths
 src/alchemy/                     effects: extraction, hidden resonance laws, oppositions, theory
 src/materials/                   material schema, procedural world generator, effect profiles, wild ingredients, names
 src/reactions/                   species table, mixture laws, diffusion, reactions & combustion
 src/simulation/                  particle world: solver, grid, cauldron, thermal, electricity, phases, rigid blocks, tools
 src/game/                        world state, commissions, prediction, measurement, scoring, trials, gathering, economy, saves
-src/rendering/                   fine-pixel fluid renderer, procedural pixel art, effects, portraits, wilds panoramas, the hutch and its rabbits
+src/visual/                      procedural graphics: identities, taxonomy, descriptors, family geometry, rasterizer, pieces, env/ (the six regions)
+src/rendering/                   fine-pixel fluid renderer, procedural pixel art, effects, portraits, species sprites and the wilds scene, the hutch and its rabbits
 src/ui/                          shell and Brew room, views/ (counter, wilds, trials, book), panels, tutorial, input
 src/audio/                       synthesised sound effects and music (WebAudio)
 sw.js, manifest.webmanifest      offline support / installable app
-scripts/                         dev server, build, benchmarks, playtest, asset generators
+scripts/                         dev server, build, benchmarks, playtest, the hutch's asset generator, species and scene galleries
 tests/                           headless tests (node --test) and browser tests (Playwright)
 docs/                            architecture, report, checklist, measured results
 ```

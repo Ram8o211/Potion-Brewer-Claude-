@@ -201,7 +201,8 @@ export class WildsView {
 
   /** How damp a stand's soil is, in words. @param {any} d @param {any} s status */
   soilText(d, s) {
-    if (s.moisture === null) return 'every plant mature';
+    // a stand with nothing growing has nothing to say about its soil
+    if (s.moisture === null) return '';
     const e = moistureEnv(d, this.lab.state.gathering.sky);
     const w = s.moisture, word = w < e.lo ? 'dry — growing slowly' : w < e.hi ? 'damp' : 'well watered — growing fast';
     return `soil ${word}${s.thirsty ? ` · ${s.thirsty} thirsty` : ''}`;
