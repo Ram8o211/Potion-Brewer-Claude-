@@ -282,11 +282,20 @@ computed from the particles that actually run out of the tap. What a
 * **Watering:** living plants grow with the moisture of their soil — the
   habitat's own (a bog stays damp, the crags are parched), rain and fog,
   and the water you bring. In the Wilds, *Tap to: Water* waters the plants
-  round a tap and each card's *Water* button its whole stand; damp earth
+  round a tap (or every one along a finger dragged across the scene) and
+  each card's *Water* button its whole stand; damp earth
   darkens round a watered plant and a thirsty one shows a drop. Watering
   speeds growth up to half again (never instantly, never more however much
   you water); dry soil slows it but never stops it. Stones, crystals,
   crusts and shells come back with time and the weather, as before.
+* **Gathering by touch:** sliding a finger across the Wilds shakes only
+  what grows there (the painted scenery sways with the wind alone); a
+  ripe plant shaken hard enough lets go of its ingredient, which falls as
+  the very pixels it grew as and is gathered with a tap (a fingertip may
+  roll a little and still tap). In the Free Experiment the stores are
+  bottomless, but a harvest still takes the plant: its stand sprouts again
+  at random spots and grows back within a minute or two, and can be
+  watered like the shop's.
 * **Everything is original and bundled:** pixel art drawn in code (plus
   the wilds' sprites from the project's own concept-art packs), a
   pixel font, synthesised sound effects and music. No third-party runtime

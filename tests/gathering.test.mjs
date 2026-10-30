@@ -4,7 +4,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { GameState } from '../src/game/state.js';
-import { gatherPlan, dayPart, weatherOn, WEATHERS, depositStatus, normalizeGathering, SCAR_SLOWDOWN, weatherRegrowth, harvestable, standOf, plantStage, marksIn, MARK_MS, SPROUT_SHARE, REGIONS, growthOf, checkpoint, moistureEnv, water, matureIn, GATHER_VERSION, GROW_FLOOR, WATER_DOSE } from '../src/game/gathering.js';
+import { gatherPlan, dayPart, weatherOn, WEATHERS, depositStatus, normalizeGathering, SCAR_SLOWDOWN, weatherRegrowth, harvestable, standOf, plantStage, marksIn, MARK_MS, SPROUT_SHARE, REGIONS, growthOf, checkpoint, moistureEnv, water, matureIn, GATHER_VERSION, GROW_FLOOR, WATER_DOSE, sandboxWilds, SANDBOX_PACE } from '../src/game/gathering.js';
 
 const fresh = (seed = 'gather-1') => GameState.create(seed, { tutorial: false });
 const depositOf = (st, key) => st.deposits.find((d) => st.lookup(d.materialId).wild.key === key);
@@ -296,4 +296,43 @@ test('the Netherwood, the cavern under the Whisperwood, grows Witch’s Ear and 
   for (const m of w.materials) if (m.wild && (m.wild.key === 'witchear' || m.wild.key === 'mandrake')) m.wild.region = 'forest';
   addAlchemy(w);
   for (const m of w.materials) if (m.wild && (m.wild.key === 'witchear' || m.wild.key === 'mandrake')) assert.equal(m.wild.region, 'netherwood');
+});
+
+test('the Free Experiment’s wilds start grown, and a harvest there takes the plant: it sprouts again at a random spot and grows back quickly, drinking', () => {
+  const t0 = Date.now();
+  const st = fresh('sandbox-wilds-1'), ref = fresh('sandbox-wilds-1');
+  sandboxWilds(st.gathering, st.deposits, t0);
+  const d = depositOf(st, 'silverleaf'), d0 = depositOf(ref, 'silverleaf');
+  assert.equal(d.growMs, Math.round(d0.growMs / SANDBOX_PACE), 'it grows faster');
+  assert.equal(d.spawnMs, Math.round(d0.spawnMs / SANDBOX_PACE), 'and sprouts faster');
+  for (const x of st.deposits) assert.equal(depositStatus(st.gathering, x, t0).mature, x.slots, `${x.id}: every plant stands grown`);
+  // bottomless stores: nothing is stored or counted, and no rank is asked
+  st.inventory[d.materialId] = Infinity;
+  const far = st.deposits.find((x) => x.rank > st.rank);
+  if (far) assert.equal(st.gather(far.id, { free: true, now: t0 }).ok, true, 'every region is open');
+  const stand0 = depositStatus(st.gathering, d, t0).plants, before = stand0.map((p) => p.id);
+  const r = st.gather(d.id, { free: true, now: t0 });
+  const taken = /** @type {any} */ (stand0.find((p) => p.id === r.plant));
+  assert.equal(r.ok, true);
+  assert.equal(r.amount, d.take);
+  assert.equal(st.inventory[d.materialId], Infinity);
+  assert.equal(st.found[d.materialId], undefined, 'nothing is recorded in the shop');
+  assert.ok(before.includes(r.plant));
+  const after = depositStatus(st.gathering, d, t0);
+  assert.equal(after.plants.length, d.slots - 1, 'the plant is gone');
+  assert.ok(!after.plants.some((p) => p.id === r.plant));
+  // a new sprout comes up at a spot of its own and grows up within a few minutes
+  const later = depositStatus(st.gathering, d, t0 + d.spawnMs + 1);
+  assert.equal(later.plants.length, d.slots, 'a new sprout came up');
+  const fresh1 = later.plants.find((p) => !before.includes(p.id));
+  assert.ok(fresh1 && fresh1.stage === 'sprout');
+  assert.notDeepEqual([fresh1.x, fresh1.y], [taken.x, taken.y], 'somewhere new');
+  assert.ok(depositStatus(st.gathering, d, t0 + d.spawnMs + d.growMs / GROW_FLOOR + 1).mature === d.slots, 'grown back in minutes, not hours');
+  // the sprout drinks, and watered it grows faster
+  const tw = t0 + d.spawnMs + 1;
+  const dry = growthOf(d, depositStatus(st.gathering, d, tw).plants.find((p) => p.id === fresh1.id), tw + d.growMs * 0.3, 'clear').g;
+  assert.equal(st.water(d.id, [fresh1.id], tw), 1);
+  const wet = growthOf(d, st.gathering.nodes[d.id].plants.find((p) => p.id === fresh1.id), tw + d.growMs * 0.3, 'clear').g;
+  assert.ok(wet > dry, `watered grows faster (${wet.toFixed(3)} vs ${dry.toFixed(3)})`);
+  assert.equal(st.water(d.id, [r.plant], tw), 0, 'a plant taken drinks nothing');
 });

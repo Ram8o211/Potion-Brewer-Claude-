@@ -610,13 +610,16 @@ export function weatherRegrowth(g, deposits, weather, lookup, now = Date.now()) 
  * plant can be taken; it leaves a mark on the ground that fades, and the
  * stand starts sprouting again (at random spots) until it is saturated.
  * Respects shelf storage; returns what was gathered (0 if nothing could be).
+ * `free` (the Free Experiment) takes the plant all the same — the stand grows
+ * back as it would — but its shelves are bottomless: nothing is stored, no
+ * rank is asked for and the plant gives its full `take`.
  * @param {{rank:number, inventory:Record<string,number>, cap:{storage:number}, gathering:any}} st
  * @param {Deposit} d `take` is what the plant gives (gatherPlan)
- * @param {{now?:number, unlimited?:boolean, thorough?:boolean, plant?:string, key?:string}} [opts]
+ * @param {{now?:number, unlimited?:boolean, free?:boolean, thorough?:boolean, plant?:string, key?:string}} [opts]
  */
 export function harvest(st, d, opts = {}) {
   const now = opts.now ?? Date.now();
-  if (d.rank > st.rank && !opts.unlimited) return { ok: false, amount: 0, reason: 'locked' };
+  if (d.rank > st.rank && !opts.unlimited && !opts.free) return { ok: false, amount: 0, reason: 'locked' };
   if (opts.unlimited) return { ok: true, amount: d.take, remaining: d.capacity };
   const g = st.gathering;
   const s = standOf(g, d, now);
@@ -629,15 +632,14 @@ export function harvest(st, d, opts = {}) {
     const status = depositStatus(g, d, now);
     return { ok: false, amount: 0, reason: p ? 'growing' : opts.plant ? 'gone' : 'depleted', nextIn: p ? matureIn(d, p, now, sky) : status.nextIn };
   }
-  const amount = Math.floor(Math.min(d.take, room) / 5) * 5;
+  const amount = opts.free ? d.take : Math.floor(Math.min(d.take, room) / 5) * 5;
   if (amount <= 0) return { ok: false, amount: 0, reason: 'full' };
   const plants = s.plants.filter((q) => q !== p).map((q) => checkpoint(d, q, now, sky));
   const scar = !!(opts.thorough || s.scar);
   g.nodes[d.id] = { plants, due: s.due ?? now + every(d, { scar }), seq: s.seq, ...(scar ? { scar: true } : {}) };
   g.marks = g.marks.filter((k) => now - k.at < MARK_MS * 2);
   g.marks.push({ region: d.region, key: opts.key || '', x: p.x, y: p.y, at: now, ...(opts.thorough ? { deep: true } : {}) });
-  st.inventory[d.materialId] = have + amount;
-  g.total += amount;
+  if (!opts.free) { st.inventory[d.materialId] = have + amount; g.total += amount; }
   return { ok: true, amount, plant: p.id, remaining: (ripe.length - 1) * d.take };
 }
 
@@ -664,6 +666,32 @@ export function newDayRegrowth(g, deposits, now = Date.now()) {
     const full = plants.length >= d.slots;
     g.nodes[d.id] = { plants, due: full ? null : s.due, seq: s.seq, ...(s.scar && !full ? { scar: true } : {}) };
   }
+}
+
+/** How many times faster the Free Experiment's wilds grow: a harvested plant is back within a minute or two, not an hour. */
+export const SANDBOX_PACE = 8;
+
+/**
+ * Make a gathering state the Free Experiment's wilds: every stand grows and
+ * sprouts SANDBOX_PACE times faster, under a clear sky (the sandbox has no
+ * weather), and is found saturated and fully grown. A harvest there takes
+ * the plant (harvest `free`), so new sprouts come up at random spots and
+ * grow, drinking, as they do in the shop's wilds. Changes the deposits given
+ * (the sandbox's own, never saved).
+ * @param {ReturnType<typeof createGathering>} g @param {Deposit[]} deposits @param {number} [now]
+ */
+export function sandboxWilds(g, deposits, now = Date.now()) {
+  for (const d of deposits) {
+    d.growMs = Math.round(d.growMs / SANDBOX_PACE);
+    d.spawnMs = Math.round(d.spawnMs / SANDBOX_PACE);
+    d.regrowMs = d.spawnMs * (d.slots - 1) + d.growMs;
+  }
+  // walked long enough ago that every untouched plant has grown up
+  g.nodes = {};
+  g.marks = [];
+  g.created = now - 3600000;
+  g.sky = 'clear';
+  return g;
 }
 
 /** Human readable duration. @param {number} ms */

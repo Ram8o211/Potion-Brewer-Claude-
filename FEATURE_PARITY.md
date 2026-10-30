@@ -132,7 +132,7 @@ as written. These differences were resolved first:
 | G7 | Recipe book | tested vs untested formulas | recipe book with prepare and homunculus | partial | recipes record certification status and verified effects | done: recipes store their verified effects and show "Tested" |
 | G8 | Journal and achievements | — | discoveries, encyclopedia, achievements | better in target | trials, laws and gathering achievements added | done: trial, law, foraging and certification achievements; laws in the journal |
 | G9 | Tutorial | 7 steps | 11 steps, each advancing on real simulation events | better in target | a guided tour of every room and control around the first brew: the top bar and rooms, the order, pouring, balancing, stirring, heat, tools, a trial, the hutch, bottling, selling, shelves, the Wilds, the Book and the Shop | done: 30 steps, docked so they never cover a control |
-| G10 | Free / sandbox mode | infinite ingredients, separate save | Free Experiment, separate save | equivalent | kept; also unlocks every wild reagent, subjects and region | done: unlimited wilds, every region, free subject replacement |
+| G10 | Free / sandbox mode | infinite ingredients, separate save | Free Experiment, separate save | equivalent | kept; also unlocks every wild reagent, subjects and region | done: unlimited stores, every region (its plants grow back quickly after each harvest), free subject replacement |
 | G11 | Audio | minimal | synthesised effects, loops and music | better in target | kept; gathering and trial sounds added | done |
 
 ## H. Mobile, delivery, persistence, performance
