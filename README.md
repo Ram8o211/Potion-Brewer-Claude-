@@ -289,9 +289,9 @@ computed from the particles that actually run out of the tap. What a
   you water); dry soil slows it but never stops it. Stones, crystals,
   crusts and shells come back with time and the weather, as before.
 * **An interactive wilds:** a finger dragged through the scene pushes
-  what it passes, physically. Leaf clumps, bushes and canopies bend its way
-  and spring back; vines hanging from the boughs or the cave's roof swing on
-  for seconds; a plant not ready to be gathered bends and rings. A ripe
+  what it passes: vines hanging from the boughs or the cave's roof swing on
+  for seconds, and a plant not ready to be gathered bends and rings (the
+  trees and bushes of the background move with the wind alone). A ripe
   plant shaken hard enough lets go of its ingredient as a ragdoll cut from
   its own sprite (one to three jointed pieces, drawn with its own pixels,
   never resampled): it is thrown the way the finger went, tumbles,

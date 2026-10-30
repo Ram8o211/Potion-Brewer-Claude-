@@ -10,8 +10,8 @@
 // the ingredient keeps its texture however it lands. Pure (no DOM) except
 // `draw`, so the physics runs in Node too.
 
-/** Pull of gravity, scene pixels per second². */
-export const GRAVITY = 260;
+/** Pull of gravity, scene pixels per second² (a scene pixel is a hand's breadth: things drop briskly). */
+export const GRAVITY = 640;
 /** The physics step (seconds): a few substeps per frame. */
 export const STEP = 1 / 120;
 
@@ -166,8 +166,8 @@ export class Ragdoll {
       hit = true;
       // a flick along the finger's way, and a little up off the ground
       const s = Math.min(1, Math.sqrt(L2) / 12);
-      this.ox[j] -= Math.max(-70, Math.min(70, dx * 9)) * s * STEP;
-      this.oy[j] -= (Math.max(-60, Math.min(20, dy * 6)) - 40 * s) * STEP;
+      this.ox[j] -= Math.max(-110, Math.min(110, dx * 14)) * s * STEP;
+      this.oy[j] -= (Math.max(-90, Math.min(30, dy * 9)) - 60 * s) * STEP;
     }
     if (hit) { this.asleep = false; this.still = 0; this.ground = 0; }
     return hit;

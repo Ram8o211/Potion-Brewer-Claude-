@@ -31,13 +31,13 @@ test('sandbox wilds: shake, gather by tap, regrow at random spots, water by drag
   for (let k = 0; k <= 8; k++) pts.push(at(sx + 30 - k * 7.5, mid.y));
   await drag(page, pts, 12);
   await page.waitForFunction((id) => { const it = window.__alchemist.screen.views.wilds.fallen[id]; return it && it.landed; }, ripe.id);
-  // the finger pushes the scenery too: a stroke across the meadow's foliage sets it springing
+  // the finger sets the scenery's hanging strands swinging (the trees and bushes behind stay put)
   const leaves = await page.evaluate(async () => {
     const S = await import(new URL('src/rendering/wild-scene.js', document.baseURI).href);
     const st = window.__alchemist.screen.state, t = S.sceneTouch('meadow', st.seed);
     if (!t) return null;
     const ys = [];
-    for (let g = 0; g < t.G; g++) if (t.amp[g] || t.hang[g]) ys.push((t.box[g * 4 + 1] + t.box[g * 4 + 3]) / 2);
+    for (let g = 0; g < t.G; g++) if (t.hang[g] > 0) ys.push((t.box[g * 4 + 1] + t.box[g * 4 + 3]) / 2);
     return ys.length ? ys[Math.floor(ys.length / 2)] : null;
   });
   if (leaves !== null) {
@@ -51,7 +51,14 @@ test('sandbox wilds: shake, gather by tap, regrow at random spots, water by drag
       for (let g = 0; g < t.G; g++) if (t.pos[g] || t.vel[g]) n++;
       return n;
     });
-    expect(moving, 'the foliage the finger went through is moving').toBeGreaterThan(0);
+    expect(moving, 'the strands the finger went through are swinging').toBeGreaterThan(0);
+    expect(await page.evaluate(async () => {
+      const S = await import(new URL('src/rendering/wild-scene.js', document.baseURI).href);
+      const t = S.sceneTouch('meadow', window.__alchemist.screen.state.seed);
+      let n = 0;
+      for (let g = 0; g < t.G; g++) if (!(t.hang[g] > 0) && (t.pos[g] || t.vel[g])) n++;
+      return n;
+    }), 'no tree or bush was moved').toBe(0);
   }
   // (and whatever it knocked along has come to rest again)
   await page.waitForFunction((id) => { const it = window.__alchemist.screen.views.wilds.fallen[id]; return it && it.landed; }, ripe.id);

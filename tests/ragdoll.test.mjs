@@ -54,44 +54,47 @@ test('a piece of fruit falls off a ledge and rests on what is below; a draw uses
   for (const p of ps) assert.equal(p.sw, 7);
 });
 
-test('the finger pushes the scenery: leaves spring back within a second or two, a hanging strand swings on', () => {
+test('the finger sets a hanging strand swinging on and on; the trees and bushes behind stay as the wind has them', () => {
   const sw = { amp: Float32Array.from([1, 0]), hang: Float32Array.from([0, 1.2]), k: Int32Array.from([10 * SCENE_W + 20, 11 * SCENE_W + 21, 40 * SCENE_W + 100, 60 * SCENE_W + 100]), g: Int32Array.from([0, 0, 1, 1]) };
   const t = new SceneTouch(/** @type {any} */ (sw));
-  assert.equal(t.push(0, 10, 60, 10), 1, 'only the clump it crossed');
-  assert.ok(t.awake && t.vel[0] > 0 && t.vel[1] === 0);
-  assert.equal(t.push(90, 50, 110, 50), 1, 'then the strand');
-  let maxLeaf = 0, maxVine = 0, leafStill = -1, vineAt3 = 0, flips = 0, prev = 0;
+  assert.equal(t.push(0, 10, 60, 10), 0, 'a clump of leaves is not pushed');
+  assert.equal(t.awake, false);
+  assert.equal(t.push(90, 50, 110, 50), 1, 'a strand is');
+  let maxVine = 0, vineAt3 = 0, flips = 0, prev = 0;
   for (let k = 1; k <= 360; k++) {
     t.step(1 / 60);
-    maxLeaf = Math.max(maxLeaf, Math.abs(t.pos[0])); maxVine = Math.max(maxVine, Math.abs(t.pos[1]));
-    if (leafStill < 0 && t.pos[0] === 0) leafStill = k / 60;
+    assert.equal(t.pos[0], 0, 'the leaves never move');
+    maxVine = Math.max(maxVine, Math.abs(t.pos[1]));
     if (k === 180) vineAt3 = Math.abs(t.pos[1]) + Math.abs(t.vel[1]);
     if (Math.sign(t.pos[1]) && Math.sign(t.pos[1]) !== Math.sign(prev)) flips++;
     prev = t.pos[1] || prev;
   }
-  assert.ok(maxLeaf > 0.8, 'the leaves bend visibly');
-  assert.ok(leafStill > 0 && leafStill < 3, `and are still again (${leafStill}s)`);
   assert.ok(maxVine > 1, 'the strand swings');
   assert.ok(vineAt3 > 0.3, 'still swinging three seconds on');
   assert.ok(flips >= 3, 'back and forth');
   assert.ok(crosses(0, 0, 10, 10, 4, 4, 6, 6) && !crosses(0, 0, 10, 0, 4, 4, 6, 6));
 });
 
-test('a real scene: a swipe through its foliage moves those pixels, and only while it rings', () => {
-  const sc = sceneOf('forest', 'touch-1');
-  assert.ok(sc.sway, 'the Whisperwood sways');
+test('a real scene: a swipe through the cave’s hanging vines moves only them, and only while they swing', () => {
+  const sc = sceneOf('netherwood', 'touch-1');
+  assert.ok(sc.sway, 'the Netherwood sways');
   const t = new SceneTouch(sc.sway);
   const calm = new Uint32Array(SCENE_W * SCENE_H), pushed = new Uint32Array(SCENE_W * SCENE_H);
   swayPixels(sc.sway, calm, 5, sc.meta.wind ?? 1, 0, t);
   let n = 0;
   for (let y = 10; y < SCENE_H - 10 && !n; y += 6) n = t.push(0, y, SCENE_W, y);
-  assert.ok(n > 0, 'a stroke across the scene meets some foliage');
+  assert.ok(n > 0, 'a stroke across the scene meets some vines');
   for (let k = 0; k < 6; k++) t.step(1 / 60);
   swayPixels(sc.sway, pushed, 5, sc.meta.wind ?? 1, 0, t);
   let diff = 0;
   for (let i = 0; i < calm.length; i++) if (calm[i] !== pushed[i]) diff++;
-  assert.ok(diff > 20, `the pushed leaves moved (${diff} px)`);
-  for (let k = 0; k < 60 * 12 && t.awake; k++) t.step(1 / 60);
+  assert.ok(diff > 20, `the pushed vines moved (${diff} px)`);
+  // every pixel that moved belongs to a hanging strand
+  const still = new Uint32Array(SCENE_W * SCENE_H), zero = new SceneTouch(sc.sway);
+  for (let i = 0; i < sc.sway.k.length; i++) if (!(sc.sway.hang[sc.sway.g[i]] > 0)) assert.equal(t.pos[sc.sway.g[i]], 0);
+  swayPixels(sc.sway, still, 5, sc.meta.wind ?? 1, 0, zero);
+  assert.deepEqual(still, calm);
+  for (let k = 0; k < 60 * 25 && t.awake; k++) t.step(1 / 60);
   assert.equal(t.awake, false, 'and it all comes to rest');
   swayPixels(sc.sway, pushed, 5, sc.meta.wind ?? 1, 0, t);
   assert.deepEqual(pushed, calm, 'back exactly as the wind alone has it');
@@ -106,4 +109,13 @@ test('dropped straight down onto its foot, a long body does not stay standing on
     assert.ok(rise < span, `it lies down (rise ${rise.toFixed(1)}, span ${span.toFixed(1)})`);
     doll.pieces().forEach((p, i) => assert.ok(Math.abs(doll.py[i + 1] - doll.py[i]) <= Math.abs(doll.px[i + 1] - doll.px[i]) * 1.25 + 1, `piece ${i} lies down`));
   }
+});
+
+test('what is let go of drops briskly, not in slow motion', () => {
+  // a fruit hanging 40 px above the ground, snapped off its hold
+  const doll = new Ragdoll({ w: 6, h: 10, ax: 3, ay: 0 }, 60, FLOOR - 50, { W, H, vy: 45 });
+  let t = 0;
+  while (t < 2 && !doll.knock) { doll.step(1 / 60, floor); t += 1 / 60; }
+  assert.ok(doll.knock > 0, 'it hit the ground');
+  assert.ok(t < 0.35, `within a third of a second (${t.toFixed(2)} s)`);
 });
