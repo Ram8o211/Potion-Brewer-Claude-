@@ -6,7 +6,7 @@
 // Fruit outline, count, gloss and how they hang vary per world; ripe fruit
 // is green and swells into the species' colour at maturity.
 
-import { Model, stream, pick, leaf, stemPts, sprout, mound, marks, LEAF_SHAPES, ellipse, blade, PROFILES } from './common.js';
+import { Model, stream, pick, leaf, marks, LEAF_SHAPES, ellipse, blade, PROFILES } from './common.js';
 
 export function params(rng, d) {
   const t = d.tr;
@@ -64,43 +64,6 @@ function umbel(m, d, rng, x, y, r, ripe, s = 1) {
     for (let k = 0; k < (s > 1 ? 4 : 3); k++) fruit(m, d, rng, ex + ((k % 3) - 1) * 1.5 * s, ey - (k % 2) * s - (k > 2 ? 2 * s : 0), (ripe ? 1 : 0.75) * s, ripe);
   }
   marks(m, d, rng, x, y - r * 0.4, r * 0.8, r * 0.4);
-}
-
-export function plant(d, stage, o = {}) {
-  const m = new Model(), P = d.m, rng = stream(d, 'plant' + stage), H = d.size.h, W = d.size.w;
-  mound(m, W * 0.7, stream(d, 'mound'));
-  if (stage === 0) return sprout(m, d, Math.max(4, H * 0.3), { shape: P.leafShape, teeth: P.teeth });
-  const g = stage === 1 ? 0.7 : 1, ripe = stage === 2;
-  if (d.form === 'seed') {
-    const pts = stemPts(0, 0, (rng.next() - 0.5) * 3, -H * g, 0.1);
-    m.stroke(pts, [2 + d.tr.thick, 1.1], 'stem', { noOutline: true });
-    // the spotted stem of the hemlocks
-    if (d.tr.droop > 0.3 || d.tr.spots > 0.2) for (let i = 2; i < pts.length - 2; i += 2) m.dot(pts[i][0], pts[i][1], 'accent', { lum: 0.3 });
-    for (let j = 2; j < pts.length - 3; j += 3) leaf(m, pts[j][0], pts[j][1], -Math.PI / 2 + (j % 2 ? 1.2 : -1.2), H * 0.3 * g, H * 0.06, { shape: 'lance', teeth: 7, tone: j % 2 ? -0.05 : 0 });
-    const top = pts[pts.length - 1];
-    umbel(m, d, rng, top[0], top[1], W * 0.55 * g, ripe, 1.3);
-    return m;
-  }
-  // a little shrub: woody stems fanning out, leaves at their joints, fruit hanging below
-  const stems = P.woody ? 3 : 2;
-  for (let b = 0; b < stems; b++) {
-    const f = b / (stems - 1) - 0.5;
-    const tx = f * W * 0.8 * g, ty = -H * g * (1 - Math.abs(f) * 0.4);
-    const pts = stemPts(0, 0, tx, ty, f * 0.6);
-    m.stroke(pts, [2 + d.tr.thick * 1.5, 1], P.woody ? 'wood' : 'stem', { noOutline: true });
-    for (let j = 3; j < pts.length; j += 2) leaf(m, pts[j][0], pts[j][1], -Math.PI / 2 + (j % 4 === 1 ? 1 : -1) * (1 + rng.next() * 0.4) + f, H * 0.32 * g, H * 0.12 * g, { shape: P.leafShape, teeth: P.teeth, tone: j % 4 === 1 ? -0.05 : 0.04 });
-  }
-  // the fruit, in front
-  const n = (stage === 1 ? 1 : P.bunches) * (d.form === 'berry' ? 1 : 1);
-  for (let b = 0; b < n; b++) {
-    const x = ((b + 0.5) / n - 0.5) * W * 0.7, y = -H * (0.35 + 0.3 * (b % 2)) * g;
-    if (d.form === 'berry') {
-      m.line([[x, y - 3], [x, y]], 'stem', { lum: 0.5, clip: false });
-      for (let k = 0; k < (ripe ? P.bunch : 2); k++) fruit(m, d, rng, x + ((k % 3) - 1) * 2.6, y + Math.floor(k / 3) * 2.6 + (k % 2), 1, ripe);
-    } else for (let k = 0; k < (ripe ? 2 : 1); k++) fruit(m, d, rng, x + k * 3, y, ripe ? 1 : 0.7, ripe);
-  }
-  marks(m, d, rng, 0, -H * 0.45, W * 0.3, H * 0.25);
-  return m;
 }
 
 export function icon(d) {

@@ -5,7 +5,7 @@
 // small hanging bells or berries (nightshades). Leaf outline, teeth, vein
 // colour, phyllotaxis and branching vary per world.
 
-import { Model, stream, pick, leaf, stemPts, sprout, mound, marks, LEAF_SHAPES, ellipse } from './common.js';
+import { Model, stream, pick, leaf, marks, LEAF_SHAPES, ellipse } from './common.js';
 
 export function params(rng, d) {
   const t = d.tr;
@@ -42,47 +42,6 @@ function hleaf(m, d, x, y, ang, len, rng, tone = 0) {
     }
   }
   if (len > 5) marks(m, d, rng, x + Math.cos(ang) * len * 0.5, y + Math.sin(ang) * len * 0.5, len * 0.3, len * 0.2);
-}
-
-export function plant(d, stage, o = {}) {
-  const m = new Model(), P = d.m, rng = stream(d, 'plant' + stage), H = d.size.h, W = d.size.w;
-  mound(m, W * 0.6, stream(d, 'mound'));
-  if (stage === 0) return sprout(m, d, Math.max(4, H * 0.3), { shape: P.leafShape, teeth: P.teeth });
-  const g = stage === 1 ? (P.habit === 'rosette' ? 0.85 : 0.65) : 1;
-  if (P.habit === 'rosette') {
-    const n = Math.round(P.leaves * (stage === 1 ? 0.6 : 1));
-    const items = [];
-    for (let i = 0; i < n; i++) items.push(-Math.PI / 2 + ((i + 0.5) / n - 0.5) * 3.1 + (rng.next() - 0.5) * 0.25);
-    // the outer, flatter leaves first
-    items.sort((a, b) => Math.abs(b + Math.PI / 2) - Math.abs(a + Math.PI / 2));
-    for (const a of items) hleaf(m, d, 0, -1, a, W * 0.48 * g * (0.75 + rng.next() * 0.3) * (Math.abs(a + Math.PI / 2) > 1 ? 1 : 0.8), rng, Math.abs(a + Math.PI / 2) > 1 ? -0.06 : 0.04);
-    return m;
-  }
-  if (P.habit === 'bush') {
-    for (let b = 0; b < 3; b++) {
-      const tx = (b - 1) * W * 0.32 * g, ty = -H * g * (b === 1 ? 1 : 0.75);
-      const pts = stemPts(0, 0, tx, ty, (b - 1) * 0.3);
-      m.stroke(pts, [1.8 + d.tr.thick, 1], 'stem', { noOutline: true });
-      for (let j = 3; j < pts.length; j += 2) hleaf(m, d, pts[j][0], pts[j][1], -Math.PI / 2 + (j % 4 ? 1 : -1) * (1 + rng.next() * 0.4) + (b - 1) * 0.3, H * 0.3 * g, rng, j % 4 ? -0.04 : 0.03);
-      if (stage === 2) {
-        const q = pts[pts.length - 2];
-        if (P.fruit === 'berry') for (let k = 0; k < 3; k++) m.ellipse(q[0] + (k - 1) * 2, q[1] + 2 + (k % 2) * 2, 1.6, 1.6, 'main');
-        else { m.poly(ellipse(q[0] + 1, q[1] + 3, 1.8, 2.4), 'main', {}); m.dot(q[0] + 1, q[1] + 5, 'main', { lum: 0.1 }); }
-      }
-    }
-    return m;
-  }
-  // upright: a stem with pairs (or alternate leaves) shrinking to the top
-  const top = -H * g, pts = stemPts(0, 0, (rng.next() - 0.5) * 3, top, 0.15);
-  m.stroke(pts, [2 + d.tr.thick, 1.2], 'stem', { noOutline: true });
-  const pairs = stage === 1 ? P.pairs - 1 : P.pairs;
-  for (let j = 0; j < pairs; j++) {
-    const q = pts[Math.min(pts.length - 1, 2 + Math.round((j / pairs) * (pts.length - 3)))];
-    const len = H * 0.3 * g * (1 - j / (pairs + 2));
-    for (const side of P.habit === 'opposite' ? [-1, 1] : [j % 2 ? 1 : -1]) hleaf(m, d, q[0], q[1], -Math.PI / 2 + side * (1.05 + d.tr.droop * 0.4), len, rng, side > 0 ? -0.05 : 0.03);
-  }
-  hleaf(m, d, pts[pts.length - 1][0], pts[pts.length - 1][1] + 1, -Math.PI / 2, H * 0.18 * g, rng, 0.06);
-  return m;
 }
 
 export function icon(d) {

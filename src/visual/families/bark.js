@@ -6,7 +6,7 @@
 // resinous species bead with glowing sap. The icon and the pieces are
 // curled strips and plates of that bark.
 
-import { Model, stream, pick, leaf, mound, marks, LEAF_SHAPES } from './common.js';
+import { Model, stream, pick, marks, LEAF_SHAPES } from './common.js';
 
 export function params(rng, d) {
   return {
@@ -41,30 +41,6 @@ function barkTexture(m, d, rng, x0, x1, y0, y1) {
   }
   if (P.resin) for (let i = 0; i < 2; i++) { const x = x0 + w * (0.3 + rng.next() * 0.4), y = y0 + (y1 - y0) * (0.3 + rng.next() * 0.5); m.dot(x, y, 'accent', { lum: 0.85, glow: true }); m.dot(x, y + 1, 'accent', { lum: 0.5 }); }
   marks(m, d, rng, (x0 + x1) / 2, (y0 + y1) / 2, w * 0.4, (y1 - y0) * 0.35);
-}
-
-export function plant(d, stage, o = {}) {
-  const m = new Model(), P = d.m, rng = stream(d, 'plant' + stage), H = d.size.h, W = d.size.w;
-  mound(m, W * 0.85, stream(d, 'mound'));
-  const g = [0.45, 0.75, 1][stage], tw = W * P.girth * (stage === 0 ? 0.7 : 1), th = H * (P.habit === 'stump' ? 0.5 : 0.75) * g;
-  const lean = P.lean * th;
-  // the trunk with flared roots
-  const trunk = [[-tw / 2 - 2, 0], [-tw / 2, -th * 0.2], [-tw / 2 + lean, -th], [tw / 2 + lean, -th], [tw / 2, -th * 0.2], [tw / 2 + 2, 0]];
-  m.poly(/** @type {any} */ (trunk), 'wood', { shade: 'round', tex: 1.4 });
-  barkTexture(m, d, rng, -tw / 2 + 0.5, tw / 2 - 0.5, -th, -1);
-  if (P.habit === 'stump' || P.habit === 'pollard') m.ellipse(lean, -th, tw / 2 + 0.5, 1.6, 'pale', { shade: 'flat', tone: 0.05 });
-  // shoots and their leaves
-  const shoots = stage === 0 ? 1 : stage === 1 ? Math.max(1, P.shoots - 1) : P.shoots;
-  for (let i = 0; i < shoots; i++) {
-    const f = shoots === 1 ? 0 : i / (shoots - 1) - 0.5, bx = lean + f * tw * 0.8, by = -th + 1;
-    const ex = bx + f * W * 0.6, ey = by - H * 0.3 * g;
-    m.stroke([[bx, by], [(bx + ex) / 2, by - H * 0.18 * g], [ex, ey]], [1.6, 1], 'wood', { noOutline: true });
-    for (let k = 0; k < (P.weep ? 3 : 2); k++) {
-      const a = P.weep ? Math.PI / 2 + (k - 1) * 0.35 + f : -Math.PI / 2 + (k ? 1 : -1) * 0.9 + f * 0.6;
-      leaf(m, ex, ey, a, H * (P.weep ? 0.32 : 0.22) * g, H * (P.weep ? 0.05 : 0.08) * g, { shape: P.weep ? 'linear' : P.leafShape, tone: k ? -0.05 : 0.03 });
-    }
-  }
-  return m;
 }
 
 /** A curled strip of bark: outer face with its texture, the pale inner face showing at the curl. */

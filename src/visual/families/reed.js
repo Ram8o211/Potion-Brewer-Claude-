@@ -4,7 +4,7 @@
 // flowering heads — velvet cattail cylinders, feathery plumes or nodding
 // tassels. Blade count, arch, head form and spikelet tip vary per world.
 
-import { Model, stream, pick, mound, marks, blade, PROFILES, stemPts } from './common.js';
+import { Model, stream, pick, marks, blade, PROFILES } from './common.js';
 
 export function params(rng, d) {
   return {
@@ -34,28 +34,6 @@ function headAt(m, d, rng, x, y, s, ripe) {
   }
   marks(m, d, rng, x, y + 3 * s, 1.5 * s, 3 * s);
   m.glints.push([x - 0.5, y + 1.5 * s]);
-}
-
-/** A long blade arching from (x, 0). */
-function bladeAt(m, d, x, len, ang, arch, tone) {
-  m.poly(blade([x, 0], ang, len, Math.max(1, len * 0.06), PROFILES.linear, { curl: arch }), 'leaf', { shade: 'fold', tone });
-}
-
-export function plant(d, stage, o = {}) {
-  const m = new Model(), P = d.m, rng = stream(d, 'plant' + stage), H = d.size.h, W = d.size.w;
-  mound(m, W * 0.7, stream(d, 'mound'));
-  const g = [0.35, 0.7, 1][stage];
-  const n = Math.round(P.blades * (stage === 0 ? 0.5 : stage === 1 ? 0.8 : 1));
-  for (let i = 0; i < n; i++) {
-    const f = (i + 0.5) / n - 0.5;
-    bladeAt(m, d, f * W * 0.3, H * g * (0.6 + rng.next() * 0.35), -Math.PI / 2 + f * 0.9, f * P.arch * (1 + d.tr.droop), i % 2 ? -0.05 : 0.04);
-  }
-  if (stage > 0) for (let s = 0; s < (stage === 1 ? 1 : P.stalks); s++) {
-    const x = (s - (P.stalks - 1) / 2) * 3, top = -H * g * (0.95 + s * 0.05);
-    m.stroke(stemPts(x * 0.5, 0, x, top, 0.05), [1.4 + d.tr.thick * 0.5, 1], 'stem', { noOutline: true });
-    headAt(m, d, rng, x, top, stage === 2 ? 1.1 : 0.8, stage === 2 && !o.closed);
-  }
-  return m;
 }
 
 export function icon(d) {

@@ -17,7 +17,7 @@ import { familyOf, BOTANICAL } from '../src/visual/taxonomy.js';
 import { FAMILIES } from '../src/visual/families/index.js';
 import { composeScene, sceneOf, SCENE_W, SCENE_H } from '../src/visual/env/scene.js';
 import { PlantGround, plantBox, hitPlant, swayPixels } from '../src/rendering/wild-scene.js';
-import { silhouetteOf, plantFrameOf, MIN_HIT } from '../src/rendering/species-sprites.js';
+import { silhouetteOf, plantFrameOf, mountsOf, variantOf, MIN_HIT } from '../src/rendering/species-sprites.js';
 import { dominantColour } from '../src/rendering/brew-palette.js';
 import { rgbToOklab, deltaE } from '../src/core/color.js';
 import { GameState } from '../src/game/state.js';
@@ -205,7 +205,8 @@ test('scenery is set down where it fits: never into another piece, a tree, the c
   }
 });
 
-test('plants stand on open ground, never behind scenery, with room round them; taps pick the plant in front', () => {
+test('plants grow where their species is found — on open ground, hanging from boughs and rock, out of rock faces and trunks — never behind scenery, with room round them; taps pick the plant in front', () => {
+  const mounts = new Set();
   for (const r of REGIONS) {
     const st = GameState.create('place-1', { tutorial: false });
     const ground = new PlantGround(r.id, st.seed), sc = sceneOf(r.id, st.seed);
@@ -214,24 +215,37 @@ test('plants stand on open ground, never behind scenery, with room round them; t
       const m = st.lookup(d.materialId);
       for (const p of depositStatus(st.gathering, d).plants) plants.push({ ...p, m });
     }
-    const spots = ground.place(plants, (p) => silhouetteOf(p.m));
+    const shape = (p, mount, flip) => silhouetteOf(p.m, { mount, variant: variantOf(p.id), flip });
+    const spots = ground.place(plants, shape, (p) => mountsOf(p.m));
     let overlap = 0;
     const taken = new Uint8Array(SCENE_W * SCENE_H);
+    const at = (x, y) => y * SCENE_W + x;
     for (const p of plants) {
-      const s = spots[p.id], ax = Math.round(s.x * SCENE_W), ay = Math.round(s.y * SCENE_H), sil = silhouetteOf(p.m);
-      assert.ok(sc.open[ay * SCENE_W + ax], `${r.id}: ${p.id} stands on open ground`);
+      const s = spots[p.id], ax = Math.round(s.x * SCENE_W), ay = Math.round(s.y * SCENE_H), sil = shape(p, s.mount, s.flip);
+      mounts.add(s.mount);
+      assert.ok(mountsOf(p.m).some(([k]) => k === s.mount), `${r.id}: ${p.m.wild.key} is found on ${s.mount}`);
+      const stone = (k) => sc.solid[k] || sc.rock[k];
+      if (s.mount === 'ground') assert.ok(sc.open[at(ax, ay)], `${r.id}: ${p.id} stands on open ground`);
+      else if (s.mount === 'bough') assert.ok(sc.trees[at(ax, ay - 1)], `${r.id}: ${p.id} hangs from a tree`);
+      else if (s.mount === 'ceiling') assert.ok(stone(at(ax, ay - 1)), `${r.id}: ${p.id} hangs from the rock`);
+      else if (s.mount === 'hang') assert.ok(stone(at(ax, ay - 1)) || sc.trees[at(ax, ay - 1)], `${r.id}: ${p.id} hangs from something`);
+      else if (s.mount === 'wall') assert.ok(stone(at(ax + (s.flip ? 1 : -1), ay)), `${r.id}: ${p.id} juts from a rock face`);
+      else if (s.mount === 'trunk') assert.ok(sc.trees[at(ax + (s.flip ? 1 : -1), ay)], `${r.id}: ${p.id} grows on a trunk`);
       for (let j = 0; j < sil.h; j++) for (let i = 0; i < sil.w; i++) {
         if (!sil.m[j * sil.w + i]) continue;
-        const k = (ay - sil.ay + j) * SCENE_W + ax - sil.ax + i;
-        assert.ok(sc.depth[k] <= ay, `${r.id}: ${p.id} is not behind scenery`);
+        const k = at(ax - sil.ax + i, ay - sil.ay + j);
+        assert.ok(!sc.liquid[k], `${r.id}: ${p.id} is not in the water`);
+        if (s.mount === 'ground') assert.ok(sc.depth[k] <= ay, `${r.id}: ${p.id} is not behind scenery`);
         if (taken[k]) overlap++;
         taken[k] = 1;
       }
     }
-    assert.ok(overlap < 40, `${r.id}: plants hardly touch (${overlap} px)`);
+    assert.ok(overlap < 60, `${r.id}: plants hardly touch (${overlap} px)`);
     // the same plants keep their spots
-    assert.deepEqual(ground.place(plants, (p) => silhouetteOf(p.m)), spots);
+    assert.deepEqual(ground.place(plants, shape, (p) => mountsOf(p.m)), spots);
   }
+  for (const k of ['ground', 'wall']) assert.ok(mounts.has(k), `something grows on ${k}: ${[...mounts]}`);
+  assert.ok(mounts.has('bough') || mounts.has('hang') || mounts.has('ceiling'), `something hangs: ${[...mounts]}`);
   // hit testing: the nearer plant wins where boxes overlap; a tiny plant still has a fair target
   const f = { w: 10, h: 10, ax: 5, ay: 9 };
   const back = { x: 100 / SCENE_W, y: 150 / SCENE_H }, front = { x: 104 / SCENE_W, y: 160 / SCENE_H };

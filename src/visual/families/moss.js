@@ -56,15 +56,6 @@ export function growth(m, d, rng, cx, cy, r, amount = 1) {
   m.glints.push([cx - r * 0.3, cy - r * 0.3]);
 }
 
-export function plant(d, stage, o = {}) {
-  const m = new Model(), P = d.m, rng = stream(d, 'plant' + stage), W = d.size.w, H = d.size.h;
-  const sw = W * 0.5 * P.stone, sh = H * 0.5;
-  rock(m, 0, -sh * 0.55, sw, sh * 0.6, stream(d, 'stone'));
-  const amt = [0.35, 0.7, 1][stage];
-  growth(m, d, rng, (rng.next() - 0.5) * 2, -sh * 0.95, W * 0.48 * amt + 2, o.closed ? 0.7 : amt);
-  return m;
-}
-
 export function icon(d) {
   const m = new Model(), rng = stream(d, 'icon');
   rock(m, 0, 6, 13, 7, stream(d, 'stone'));

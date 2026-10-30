@@ -6,7 +6,7 @@
 // shows with the shoulder of the root breaking the soil; the icon and the
 // cauldron pieces show the root itself.
 
-import { Model, stream, pick, leaf, sprout, mound, marks, LEAF_SHAPES, bezier } from './common.js';
+import { Model, stream, leaf, marks, LEAF_SHAPES, bezier } from './common.js';
 
 export function params(rng, d) {
   const t = d.tr;
@@ -76,26 +76,6 @@ function tuft(m, d, rng, x, y, len, n) {
     const a = -Math.PI / 2 + ((i + 0.5) / n - 0.5) * 2.2 + (rng.next() - 0.5) * 0.2;
     leaf(m, x, y, a + d.tr.droop * 0.4 * Math.sign(a + Math.PI / 2), len * (0.75 + rng.next() * 0.35), len * 0.28, { shape: P.leafShape, teeth: P.teeth, tone: i % 2 ? -0.05 : 0.03 });
   }
-}
-
-export function plant(d, stage, o = {}) {
-  const m = new Model(), P = d.m, rng = stream(d, 'plant' + stage), H = d.size.h, W = d.size.w;
-  if (stage === 0) { mound(m, W * 0.5, stream(d, 'mound')); return sprout(m, d, Math.max(4, H * 0.3), { shape: P.leafShape, teeth: P.teeth }); }
-  const g = stage === 1 ? 0.7 : 1;
-  mound(m, W * 0.85 * g, stream(d, 'mound'));
-  tuft(m, d, rng, 0, -H * 0.22 * g, H * 0.6 * g, Math.round(P.tuft * g));
-  // the shoulder of the root standing out of the soil, in its own colour, ringed like the root itself
-  const rx = W * Math.max(0.24, P.girth) * g, ry = H * 0.34 * g;
-  m.poly(ellipseTop(0, 0.5, rx, ry), 'main', { shade: 'round' });
-  for (let k = 1; k <= 2; k++) m.line([[-rx * 0.7, -ry * k * 0.3], [rx * 0.6, -ry * k * 0.3 + 0.6]], 'main', { lum: 0.15 });
-  return m;
-}
-
-/** The top half of an ellipse standing on y. */
-function ellipseTop(cx, cy, rx, ry) {
-  const out = [];
-  for (let i = 0; i <= 12; i++) { const a = Math.PI + (i / 12) * Math.PI; out.push([cx + Math.cos(a) * rx, cy + Math.sin(a) * ry]); }
-  return /** @type {[number, number][]} */ (out);
 }
 
 export function icon(d) {

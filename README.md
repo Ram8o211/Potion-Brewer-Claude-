@@ -48,10 +48,16 @@ computed from the particles that actually run out of the tap. What a
   cancels Silverleaf's frost, River Chalk settles Nettle's acid — until
   only what the customer asked for remains. Long-press an ingredient to see
   its side effects and what cancels them. Each ingredient is drawn procedurally
-  from its own visual identity — the same species on the ground, as an
+  from its own visual identity — the same species where it grows, as an
   icon and as the pieces tumbling in the cauldron (bark strips, glossy
   berries, gilled caps, ribbed seeds, pearly shells, metallic lumps,
-  faceted shards, spotted toadstools, velvet reed heads…).
+  faceted shards, spotted toadstools, velvet reed heads…). In the wilds
+  each plant is grown from a stem, branches and leaves, flowers, fruit or
+  caps, each a variant of its kind, and attached where its kind is found:
+  berries and pods hanging from the boughs, vines and roots trailing from
+  the canopy and the cave's roof, shelf fungi and bark on the trunks,
+  crystals and crusts jutting from cliff faces and hanging from the rock.
+  Hanging things swing in the wind.
 * **Arcane awakening.** Magical ingredients carry a hidden activation
   threshold (−1000…+1000, mapped onto temperature). Heat or chill a
   well-mixed brew past the volume-weighted threshold of its magic and that

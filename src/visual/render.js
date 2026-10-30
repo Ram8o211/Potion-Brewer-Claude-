@@ -7,6 +7,7 @@ import { FAMILIES } from './families/index.js';
 import { rasterize } from './raster.js';
 import { Pixels } from './pixels.js';
 import { inked } from './style.js';
+import { growFrame } from './growth.js';
 
 /** Icon size (art pixels, square). */
 export const ICON_PX = 32;
@@ -23,21 +24,15 @@ export const PIECE_GRID = 20;
  */
 
 /**
- * The plant (or deposit) on the ground at a stage.
- * @param {import('./descriptor.js').Descriptor} d @param {number} stage 0 sprout, 1 ripe, 2 mature @param {{closed?:boolean}} [o]
+ * The plant (or deposit) where it is found, at a stage: grown procedurally
+ * (visual/growth.js) on its mount — the ground, hanging, or jutting from a
+ * rock face or a trunk — in one of its variants.
+ * @param {import('./descriptor.js').Descriptor} d @param {number} stage 0 sprout, 1 ripe, 2 mature
+ * @param {{closed?:boolean, mount?:string, variant?:number, flip?:boolean}} [o]
  * @returns {Frame}
  */
 export function plantFrame(d, stage, o = {}) {
-  const model = FAMILIES[d.family].plant(d, stage, o);
-  const b = model.bounds();
-  const left = Math.floor(b.x0) - 1, top = Math.floor(b.y0) - 1;
-  const w = Math.max(1, Math.ceil(b.x1) + 2 - left), h = Math.max(1, Math.ceil(Math.max(b.y1, 0)) + 2 - top);
-  // the foot sits at an integer pixel in the middle of the frame width
-  const ax = -left, ay = -top;
-  model.transform(1, 0, 0, 1, ax, ay, 1);
-  const r = rasterize(model, w, h, d.pal, { seed: d.seeds.surface, outline: false });
-  // ringed in ink, so it stands out of the ground it grows in
-  return { pix: inked(r.pix), ax: ax + 1, ay: ay + 1, glints: r.glints.map(([x, y]) => [x + 1, y + 1]) };
+  return growFrame(d, stage, o);
 }
 
 /** The ingredient's icon (ICON_PX square). @param {import('./descriptor.js').Descriptor} d @returns {Frame} */

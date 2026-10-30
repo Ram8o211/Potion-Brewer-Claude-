@@ -9,7 +9,7 @@
 // outline, layering, tilt, markings and the centre vary per world; the
 // species' colour and its alchemical tints stay.
 
-import { Model, PROFILES, stream, pick, leaf, stemPts, sprout, mound, marks, LEAF_SHAPES, blade, ellipse } from './common.js';
+import { Model, PROFILES, stream, pick, leaf, stemPts, marks, LEAF_SHAPES, blade, ellipse } from './common.js';
 
 export function params(rng, d) {
   const t = d.tr, form = d.form;
@@ -177,44 +177,6 @@ function layout(d, stage) {
     out.push({ x: f * W * P.spread * 1.4 + (rng.next() - 0.5) * 2, y: -hh, bend: P.bend + f * 0.4, seed: i });
   }
   return out;
-}
-
-export function plant(d, stage, o = {}) {
-  const m = new Model(), P = d.m, rng = stream(d, 'plant' + stage), H = d.size.h;
-  mound(m, d.size.w * 0.7, stream(d, 'mound'));
-  if (stage === 0) return sprout(m, d, Math.max(4, H * 0.3), { shape: P.leafShape, teeth: P.teeth });
-  const g = stage === 1 ? 0.7 : 1, hr = d.size.w * 0.26 * (stage === 1 ? 0.75 : 1);
-  const stems = layout(d, stage);
-  if (P.kind === 'clover') {
-    // a mat of trefoils with heads on short stalks above them
-    for (let i = 0; i < 3 + P.leaves; i++) {
-      const lx = (rng.next() - 0.5) * d.size.w * 0.8 * g, ly = -2 - rng.next() * H * 0.35 * g;
-      m.stroke([[lx * 0.6, 0], [lx, ly]], 1, 'stem', { noOutline: true });
-      trefoil(m, d, lx, ly, H * 0.2 * g, rng, i % 2 ? -0.06 : 0);
-    }
-    for (const s of stems) {
-      m.stroke(stemPts(s.x * 0.3, 0, s.x, s.y, s.bend), [1.4, 1], 'stem', { noOutline: true });
-      head(m, d, s.x, s.y, hr, { open: stage === 2 && !o.closed ? 1 : 0.3, seed: s.seed });
-    }
-    return m;
-  }
-  // basal leaves first (behind the stems)
-  if (P.basal) for (let i = 0; i < P.leaves + 1; i++) {
-    const a = -Math.PI / 2 + ((i / Math.max(1, P.leaves)) - 0.5) * 2.6 + (rng.next() - 0.5) * 0.2;
-    leaf(m, 0, -1, a, H * 0.34 * g * (0.8 + rng.next() * 0.3), H * 0.1 * g, { shape: P.leafShape, teeth: P.teeth, tone: Math.sin(a) > -0.5 ? -0.05 : 0.03 });
-  }
-  for (const s of stems) {
-    const pts = stemPts(s.x * 0.25, 0, s.x, s.y, s.bend);
-    const thick = 1.6 + d.tr.thick * 1.2;
-    if (P.kind === 'whorl' || P.kind === 'raceme') spike(m, d, pts, stage, o, rng);
-    else m.stroke(pts, [thick, thick * 0.65], 'stem', { noOutline: thick < 2.5 });
-    if (!P.basal) for (let j = 0; j < Math.max(1, Math.round(P.leaves / stems.length)); j++) {
-      const q = pts[Math.min(pts.length - 1, 3 + j * 2)], side = j % 2 ? 1 : -1;
-      leaf(m, q[0], q[1], -Math.PI / 2 + side * (1.05 + rng.next() * 0.3) + d.tr.droop * 0.5 * side, H * 0.28 * g, H * 0.09 * g, { shape: P.leafShape, teeth: P.teeth, tone: side > 0 ? -0.04 : 0.02 });
-    }
-    if (P.kind !== 'whorl' && P.kind !== 'raceme') head(m, d, s.x, s.y, hr, { open: stage === 2 && !o.closed ? 1 : stage === 2 ? 0.35 : 0.3, seed: s.seed });
-  }
-  return m;
 }
 
 /** A spike of florets up the top of a stem (bee balm, lupins…). */

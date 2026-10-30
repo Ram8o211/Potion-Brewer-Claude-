@@ -20,9 +20,10 @@ import { audio } from '../../audio/audio.js';
 import { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, marksIn, moistureEnv, DAY_PART_NAME } from '../../game/gathering.js';
 import { equipmentById } from '../../game/equipment.js';
 import { RANKS } from '../../game/equipment.js';
-import { sceneCanvas, sceneFrame, animateRegion, PlantGround, plantBox, hitPlant, SCENE_W, SCENE_H } from '../../rendering/wild-scene.js';
-import { plantCanvas, plantFrameOf, plantGlow, silhouetteOf, ingredientSprite, speciesOf } from '../../rendering/species-sprites.js';
+import { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, SCENE_W, SCENE_H } from '../../rendering/wild-scene.js';
+import { plantCanvas, plantFrameOf, plantGlow, silhouetteOf, ingredientSprite, speciesOf, mountsOf, variantOf } from '../../rendering/species-sprites.js';
 import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
+import { hashString } from '../../core/rng.js';
 
 /**
  * A four-pointed sparkle on a crystal's edge or a magical glimmer: thin
@@ -239,9 +240,9 @@ export class WildsView {
     return this.deposits().filter((d) => lab.sandbox || d.rank <= lab.state.rank);
   }
 
-  /** The silhouette a plant grows into (every stage of it). @param {{m:any}} p */
-  shapeOf(p) {
-    return p.m && p.m.wild ? silhouetteOf(p.m) : null;
+  /** The silhouette a plant grows into (every stage of it) on a mount. @param {{id:string, m:any}} p @param {string} [mount] @param {boolean} [flip] */
+  shapeOf(p, mount = 'ground', flip = false) {
+    return p.m && p.m.wild ? silhouetteOf(p.m, { mount, variant: variantOf(p.id), flip }) : null;
   }
 
   /** The plants of the region now: each at its spot in the scene and its stage. */
@@ -258,11 +259,12 @@ export class WildsView {
       for (const p of s.plants) if (lab.sandbox || d.botanical || p.stage === 'mature') plants.push({ ...p, dep: d, m, key, stage: lab.sandbox ? 'mature' : p.stage, grown: lab.sandbox ? 1 : p.grown });
     }
     plants.sort((a, b) => a.born - b.born || (a.id < b.id ? -1 : 1));
-    const spots = this.ground.place(plants, (p) => this.shapeOf(p));
+    // each plant on the ground, hanging from a bough or the rock, or jutting from a rock face or a trunk, as its species is found
+    const spots = this.ground.place(plants, (p, mount, flip) => this.shapeOf(p, mount, flip), (p) => mountsOf(p.m));
     /** @type {Record<string, number>} */
     const grewAt = {};
     for (const p of plants) {
-      Object.assign(p, spots[p.id]);
+      Object.assign(p, spots[p.id], { variant: variantOf(p.id) });
       // what was already growing when the scene was painted stands still; what sprouts or grows since springs up
       const tag = p.id + ':' + p.stage;
       grewAt[tag] = this.grewAt[tag] ?? (this.field.length ? this.time : -9);
@@ -279,9 +281,14 @@ export class WildsView {
     if (this.canvas) this.canvas.style.cursor = p ? (p.stage === 'mature' ? 'pointer' : 'help') : 'default';
   }
 
-  /** The frame a plant shows now (its stage, closed out of its hour, rimmed under the pointer), as a box for hit testing. @param {any} p */
+  /** How a plant is drawn now: its mount and variant, closed out of its hour, rimmed under the pointer. @param {any} p */
+  look(p) {
+    return { closed: p.stage === 'mature' && !!this.closed[p.dep.id], hover: this.hover === p.id || this.hover === p.dep.id, mount: p.mount, variant: p.variant, flip: p.flip };
+  }
+
+  /** The frame a plant shows now, as a box for hit testing. @param {any} p */
   frameOf(p) {
-    const f = p.key ? plantFrameOf(p.m, p.stage, { closed: p.stage === 'mature' && !!this.closed[p.dep.id], hover: this.hover === p.id || this.hover === p.dep.id }) : null;
+    const f = p.key ? plantFrameOf(p.m, p.stage, this.look(p)) : null;
     return f ? { w: f.pix.w, h: f.pix.h, ax: f.ax, ay: f.ay } : null;
   }
 
@@ -320,9 +327,11 @@ export class WildsView {
     const at = this.field.find((p) => p.id === r.plant) || { x: d.x, y: d.y, key: null, stage: 'mature' };
     // the mark it leaves lies where the plant was drawn (the scene moved it onto open ground)
     const mark = st.gathering.marks[st.gathering.marks.length - 1];
-    if (!lab.sandbox && mark && r.plant && at.key) { mark.x = at.x; mark.y = at.y; }
-    const f = at.key ? plantFrameOf(m, 'mature') : null;
-    this.floaters.push({ x: at.x * SCENE_W, y: at.y * SCENE_H - Math.max(0, (f ? f.ay : 16) - 12), t: 0, text: `+${r.amount}`, color: m.look || m.color });
+    if (!lab.sandbox && mark && r.plant && at.key) { mark.x = at.x; mark.y = at.y; if (at.mount && at.mount !== 'ground') mark.mount = at.mount; }
+    const f = at.key ? plantFrameOf(m, 'mature', { mount: at.mount, variant: at.variant, flip: at.flip }) : null;
+    // the count rises from the middle of what was picked
+    const fy = f ? at.y * SCENE_H - f.ay + f.pix.h * 0.5 : at.y * SCENE_H;
+    this.floaters.push({ x: at.x * SCENE_W, y: Math.max(20, fy), t: 0, text: `+${r.amount}`, color: m.look || m.color });
     for (const e of r.events || []) lab.announce(e);
     if (lab.tutorial) lab.tutorial.notify('gather', d.materialId);
     // a first find gets its own place on the shelf
@@ -425,13 +434,13 @@ export class WildsView {
    * @param {CanvasRenderingContext2D} ctx @param {any} p
    */
   drawPlant(ctx, p) {
-    const closed = p.stage === 'mature' && !!this.closed[p.dep.id], hover = this.hover === p.id || this.hover === p.dep.id;
-    const sp = plantCanvas(p.m, p.stage, { closed, hover });
+    const look = this.look(p), { closed, hover } = look;
+    const sp = plantCanvas(p.m, p.stage, look);
     if (!sp) return;
-    const x = Math.round(p.x * SCENE_W), y = Math.round(p.y * SCENE_H);
+    const x = Math.round(p.x * SCENE_W), y = Math.round(p.y * SCENE_H), onGround = !p.mount || p.mount === 'ground';
     const since = this.time - (this.grewAt[p.id + ':' + p.stage] ?? -9);
     const sw = Math.max(4, Math.round(sp.w * (p.stage === 'sprout' ? 0.5 : 0.6)));
-    if (p.moisture !== null && p.moisture !== undefined && !this.lab.sandbox) {
+    if (onGround && p.moisture !== null && p.moisture !== undefined && !this.lab.sandbox) {
       // damp earth: a dark patch, wider and darker the wetter it is above the habitat's own level
       const e = moistureEnv(p.dep, this.lab.state.gathering.sky), wet = Math.max(0, Math.min(1, (p.moisture - e.base) / Math.max(0.05, 1 - e.base)));
       if (wet > 0.05) {
@@ -441,10 +450,12 @@ export class WildsView {
         ctx.fillRect(x - (ww >> 1) + 2, y + 2, Math.max(2, ww - 4), 1);
       }
     }
-    // a soft shadow it stands in: darkest under its foot, fading out to the sides
-    ctx.fillStyle = 'rgba(10,20,8,0.22)';
-    ctx.fillRect(x - Math.floor(sw / 2), y - 1, sw, 2);
-    ctx.fillRect(x - Math.floor(sw / 4), y - 1, Math.max(2, Math.floor(sw / 2)), 2);
+    if (onGround) {
+      // a soft shadow it stands in: darkest under its foot, fading out to the sides
+      ctx.fillStyle = 'rgba(10,20,8,0.22)';
+      ctx.fillRect(x - Math.floor(sw / 2), y - 1, sw, 2);
+      ctx.fillRect(x - Math.floor(sw / 4), y - 1, Math.max(2, Math.floor(sw / 2)), 2);
+    }
     // a slight glow of its own colour about it, breathing, so it reads in the scene without standing out of it
     const tint = plantGlow(p.m), lift = since < 0.3 ? 1 : 0;
     if (tint && !hover) {
@@ -456,7 +467,8 @@ export class WildsView {
       ctx.fillStyle = g; ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
       ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
     }
-    ctx.drawImage(sp.cv, x - sp.ax, y - sp.ay - lift);
+    if (p.mount === 'bough' || p.mount === 'hang' || p.mount === 'ceiling') this.drawHanging(ctx, p, sp, x, y);
+    else ctx.drawImage(sp.cv, x - sp.ax, y - sp.ay - lift);
     if (p.thirsty && !this.lab.sandbox && (this.mode === 'water' || Math.sin(this.time * 2 + p.x * 9) > 0.6)) {
       // a drop over its head asks for water
       const dx = x + Math.round(sp.w / 2 - sp.ax) - 1, dy = y - sp.ay - 5 + Math.round(Math.sin(this.time * 4 + p.x * 5));
@@ -470,6 +482,22 @@ export class WildsView {
         const [gx, gy] = sp.glints[Math.floor(cycle / 2) % sp.glints.length];
         sparkle(ctx, x - sp.ax + gx, y - sp.ay + gy, phase / 0.5);
       }
+    }
+  }
+
+  /**
+   * Something hanging (from a bough, a ledge or the roof) swings in the
+   * wind about where it holds on: each row of it is moved sideways the
+   * further the lower it hangs, so it bends rather than sliding. A plant on
+   * a tree sways with its leaves; one hanging from the rock barely stirs.
+   * @param {CanvasRenderingContext2D} ctx @param {any} p @param {{cv:HTMLCanvasElement, ax:number, ay:number, w:number, h:number}} sp @param {number} x @param {number} y
+   */
+  drawHanging(ctx, p, sp, x, y) {
+    const st = this.lab.state, wind = windAt(x, this.time, (hashString(st.seed) % 1000) / 100) * (p.mount === 'bough' ? 1 : 0.35);
+    const swing = wind + 0.35 * Math.sin(this.time * 1.7 + p.x * 23), below = sp.h - sp.ay;
+    for (let r = 0; r < sp.h; r++) {
+      const d = Math.max(0, r - sp.ay) / Math.max(1, below), dx = Math.round(swing * 2.2 * d * d);
+      ctx.drawImage(sp.cv, 0, r, sp.w, 1, x - sp.ax + dx, y - sp.ay + r, sp.w, 1);
     }
   }
 
@@ -495,6 +523,8 @@ export class WildsView {
    * @param {CanvasRenderingContext2D} ctx @param {any} k a mark (gathering.js marksIn)
    */
   drawMark(ctx, k) {
+    // what hung or jutted from a hold leaves no turned earth
+    if (k.mount && k.mount !== 'ground') return;
     const sil = k.key ? silhouetteOf(this.lab.state.lookup('wild-' + k.key)) : null;
     const x = Math.round(k.x * SCENE_W), y = Math.round(k.y * SCENE_H);
     const w = Math.max(8, Math.round((sil ? sil.w : 16) * 0.6)), hw = Math.floor(w / 2);

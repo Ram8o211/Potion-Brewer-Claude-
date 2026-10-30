@@ -1,16 +1,13 @@
 // Shared construction rules for the family modules: random streams, stems,
-// leaves, sprouts, the bit of ground a plant stands in, host rocks and the
-// alchemical markings laid over a part.
+// leaves, host rocks and the alchemical markings laid over a part.
 //
-// Every family module exports the same five functions:
+// Every family module exports the same four functions:
 //   params(rng, d)        its morphology parameters (stored in the descriptor)
-//   size(d)               its mature size on the ground, in scene pixels
-//   plant(d, stage, o)    a Model of the living plant or deposit at a growth
-//                         stage (0 sprout, 1 ripe, 2 mature), its foot at
-//                         (0, 0) and growing up (negative y); o.closed for a
-//                         dawn or dusk plant out of its hour
+//   size(d)               its size relative to the other families
 //   icon(d)               a close-up composition of the ingredient itself
 //   piece(d, v)           one of four whole pieces poured into the cauldron
+//
+// The plant itself, where it grows in the wilds, is grown by visual/growth.js.
 
 import { Rng, hashString } from '../../core/rng.js';
 import { Model, blade, PROFILES, bezier, lumpy, ellipse, polygon } from '../geometry.js';
@@ -48,28 +45,6 @@ export function leaf(m, x, y, ang, len, wid, o = {}) {
 export function stemPts(x0, y0, tx, ty, bend = 0) {
   const dx = tx - x0, dy = ty - y0;
   return bezier([x0, y0], [x0 + dx * 0.1 + dy * bend * 0.3, y0 + dy * 0.35], [tx - dx * 0.2 - dy * bend * 0.3, y0 + dy * 0.72], [tx, ty], 10);
-}
-
-/**
- * A sprout: a seed-leaf pair on a short stem and, once it has begun, a
- * first true leaf in the species' own shape.
- * @param {Model} m @param {any} d @param {number} h height @param {{shape?:string, teeth?:number, mat?:string, true?:boolean}} [o]
- */
-export function sprout(m, d, h, o = {}) {
-  const lean = (stream(d, 'sprout').next() - 0.5) * 0.6;
-  const top = /** @type {[number, number]} */ ([lean * h, -h]);
-  m.stroke(stemPts(0, 0, top[0], top[1], lean), [1.6, 1.2], 'stem', { noOutline: true });
-  const cot = Math.max(2.5, h * 0.42);
-  leaf(m, top[0], top[1] + 0.5, -Math.PI + 0.45, cot, cot * 0.42, { shape: 'spoon', vein: false, mat: o.mat || 'leaf', tone: 0.04 });
-  leaf(m, top[0], top[1] + 0.5, -0.45, cot, cot * 0.42, { shape: 'spoon', vein: false, mat: o.mat || 'leaf' });
-  if (o.true !== false) leaf(m, top[0], top[1], -Math.PI / 2 - lean * 0.5, cot * 0.9, cot * 0.4, { shape: o.shape, teeth: o.teeth, mat: o.mat || 'leaf', vein: false, tone: 0.06 });
-  return m;
-}
-
-/** The ground a plant stands in: a low mound of its habitat's soil (moss and grit on top). */
-export function mound(m, w, rng, mat = 'soil') {
-  m.poly(lumpy(0, 0.2, w / 2, Math.max(1.4, w * 0.1), () => rng.next(), 0.2, 5), mat, { shade: 'round', noOutline: true, tex: 1.4, tone: -0.1 });
-  return m;
 }
 
 /** A host rock: a lumpy, lit boulder. */
@@ -119,8 +94,5 @@ export function marks(m, d, rng, cx, cy, rx, ry) {
   }
   return m;
 }
-
-/** A soft round glimmer spot list (where magic glints). */
-export function glintAt(m, x, y) { m.glints.push([x, y]); return m; }
 
 export { ellipse, blade, lumpy, bezier, polygon };

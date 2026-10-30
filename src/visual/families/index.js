@@ -12,5 +12,5 @@ import * as crystal from './crystal.js';
 import * as mineral from './mineral.js';
 import * as shell from './shell.js';
 
-/** @type {Record<string, {params:Function, size:Function, plant:Function, icon:Function, piece:Function}>} */
+/** @type {Record<string, {params:Function, size:Function, icon:Function, piece:Function}>} */
 export const FAMILIES = { flower, herb, root, fungus, moss, fruit, reed, bark, crystal, mineral, shell };

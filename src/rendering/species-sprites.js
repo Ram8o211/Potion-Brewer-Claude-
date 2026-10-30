@@ -15,6 +15,8 @@ import { archetypeIdentity } from '../visual/pieces.js';
 import { Pixels } from '../visual/pixels.js';
 import { isBotanical } from '../visual/taxonomy.js';
 import { rawSprite } from './scenes.js';
+import { mountsOfForm, frameMount } from '../visual/growth.js';
+import { hashString } from '../core/rng.js';
 
 export { ICON_PX };
 
@@ -60,10 +62,25 @@ function rimmed(f) {
   return { pix: p, ax: f.ax + 1, ay: f.ay + 1, glints: f.glints.map(([x, y]) => [x + 1, y + 1]) };
 }
 
+/** Which of its species' four variants a plant grows as (from its id: a plant keeps its look). @param {string} id */
+export const variantOf = (id) => hashString('variant:' + id) & 3;
+
+/** Where a material is found: its mounts with their weights, the ground last (visual/growth.js). @param {any} m @returns {[string, number][]} */
+export function mountsOf(m) {
+  const id = identityOfMaterial(m);
+  return id ? mountsOfForm(id.shape) : [['ground', 1]];
+}
+
 /**
- * A plant's frame at a stage (pure pixels), optionally closed (a dawn or dusk
- * plant out of its hour) or rimmed (under the pointer).
- * @param {any} m material @param {string} stage @param {{closed?:boolean, hover?:boolean}} [o]
+ * @typedef {{closed?:boolean, hover?:boolean, mount?:string, variant?:number, flip?:boolean}} FrameOpts
+ */
+
+/**
+ * A plant's frame at a stage (pure pixels), on its mount (the ground,
+ * hanging, a rock face or a trunk; mirrored for a face on its right), as
+ * one of its variants, optionally closed (a dawn or dusk plant out of its
+ * hour) or rimmed (under the pointer).
+ * @param {any} m material @param {string} stage @param {FrameOpts} [o]
  * @returns {import('../visual/render.js').Frame|null}
  */
 export function plantFrameOf(m, stage, o = {}) {
@@ -71,11 +88,13 @@ export function plantFrameOf(m, stage, o = {}) {
   if (!id) return null;
   // stones, crystals and shells do not grow: one picture, whole, at every stage
   const st = isBotanical(id.shape) ? STAGE[stage] ?? 2 : 2, closed = !!o.closed && st === 2;
-  const base = cached(`p|${identityKey(id)}|${st}|${closed ? 1 : 0}`, () => plantFrame(describe(id), st, { closed }));
-  return o.hover ? cached(`h|${identityKey(id)}|${st}|${closed ? 1 : 0}`, () => rimmed(base)) : base;
+  const mount = frameMount(o.mount), variant = (o.variant ?? 0) & 3, flip = !!o.flip && mount === 'wall';
+  const k = `${identityKey(id)}|${st}|${closed ? 1 : 0}|${mount}|${variant}|${flip ? 1 : 0}`;
+  const base = cached('p|' + k, () => plantFrame(describe(id), st, { closed, mount, variant, flip }));
+  return o.hover ? cached('h|' + k, () => rimmed(base)) : base;
 }
 
-/** The canvas of a plant frame (browser), cached with it. @param {any} m @param {string} stage @param {{closed?:boolean, hover?:boolean}} [o] */
+/** The canvas of a plant frame (browser), cached with it. @param {any} m @param {string} stage @param {FrameOpts} [o] */
 export function plantCanvas(m, stage, o = {}) {
   const f = plantFrameOf(m, stage, o);
   if (!f) return null;
@@ -100,15 +119,18 @@ export function plantGlow(m) {
 }
 
 /**
- * Everything a plant may ever cover (all its stages, rimmed), relative to its
- * foot: what the ground keeps clear for it.
- * @param {any} m @returns {{w:number, h:number, ax:number, ay:number, m:Uint8Array}|null}
+ * Everything a plant may ever cover (all its stages, rimmed) on a mount, as
+ * one of its variants, relative to the point it is attached at: what the
+ * scene keeps clear for it.
+ * @param {any} m @param {{mount?:string, variant?:number, flip?:boolean}} [o]
+ * @returns {{w:number, h:number, ax:number, ay:number, m:Uint8Array}|null}
  */
-export function silhouetteOf(m) {
+export function silhouetteOf(m, o = {}) {
   const id = identityOfMaterial(m);
   if (!id) return null;
-  return cached(`s|${identityKey(id)}`, () => {
-    const frames = ['sprout', 'ripe', 'mature'].flatMap((s) => [plantFrameOf(m, s, { hover: true }), plantFrameOf(m, s, { hover: true, closed: true })]).filter(Boolean);
+  const mount = frameMount(o.mount), variant = (o.variant ?? 0) & 3, flip = !!o.flip && mount === 'wall';
+  return cached(`s|${identityKey(id)}|${mount}|${variant}|${flip ? 1 : 0}`, () => {
+    const frames = ['sprout', 'ripe', 'mature'].flatMap((s) => [false, true].map((closed) => plantFrameOf(m, s, { hover: true, closed, mount, variant, flip }))).filter(Boolean);
     let x0 = 0, y0 = 0, x1 = 0, y1 = 0;
     for (const f of frames) { x0 = Math.min(x0, -f.ax); y0 = Math.min(y0, -f.ay); x1 = Math.max(x1, f.pix.w - f.ax); y1 = Math.max(y1, f.pix.h - f.ay); }
     const w = x1 - x0, h = y1 - y0, mask = new Uint8Array(w * h);

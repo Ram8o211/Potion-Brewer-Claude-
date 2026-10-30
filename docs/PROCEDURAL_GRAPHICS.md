@@ -115,14 +115,52 @@ still limited.
   way. Ledges are sparser — three quarters as many, half as many above
   them, spread along the dry ground between pools — and keep clear of each
   other, with room to grow between one and the next above it.
+* **Ingredients grow where they are found** (`visual/growth.js`). A
+  plant is no longer a fixed picture: it is built the way a pixel artist
+  builds one — a base structure (a stem, trunk or strand walking from its
+  hold with jitter, curling, drooping under its own weight), branches
+  forking off by chance, then the elements along it and at its tips
+  (leaves of five outlines, petals, thistle brushes, florets, nodding
+  bells, buds, berries in bunches, pods, peppers, umbels of seed heads,
+  mushroom caps over their gills, zoned shelves, moss tufts, cattail
+  heads, curls of bark with beads of resin). Each species draws its
+  variation parameters — height, stems, branch chance and angle, leaf and
+  petal type, droopiness, symmetry, cluster sizes, cap shape, crystal fan
+  — from its morphology stream and the clues of its effects; each plant
+  is one of four variants of it (chosen by its id), so a stand is never a
+  row of copies. Inorganic finds follow build rules of their own: a
+  crystal grows spikes from a knot of host rock into a fanned cluster, a
+  shard juts with a skewed point, a fiery stone fractures into dark chunks
+  with embers glowing in their cracks, chalk erodes into a pitted stack, a
+  crust blooms into needles, a powder lies in a glittering heap, a nugget
+  sits in its matrix of rock, mussels lie half-sunk with one open on its
+  pearl, scales overlap like shingles in the ash.
+* **…and are attached to the world.** Every form is found on its own
+  mounts, weighted (`MOUNTS`): berries and bean pods hang from the trees'
+  boughs, nightshade trails from the canopy, roots and moss dangle from
+  ledges and the cave's roof, crystals and saltpetre hang from the rock
+  and jut from cliff faces, Witch's Ear and the barks grow on tree
+  trunks, flints, nuggets and sulphur crust sit in the rock faces. The
+  scene is searched for holds (`wild-scene.js` `findAnchors`): the
+  undersides of branches and leaves (*bough*), of ledges and the roof
+  (*ceiling*), either (*hang*), the sides of sheer rock (*wall*) and of
+  narrow upright runs of wood that carry on down (*trunk*), each with air
+  before it. A plant tries the mount its id picks first, then the others,
+  at the hold nearest where it came up with room for its whole silhouette
+  (clear of the rock, water, props and other plants); a plant of the
+  ground roots in a crevice of a rock face when the ground has no room
+  left, and only then crowds. What hangs swings about its hold in the
+  wind — from a tree with the leaves, from the rock barely — bending
+  rather than sliding (each row moved further the lower it hangs).
+  Only what grew on the ground leaves turned earth when it is harvested.
 * **Ingredients glow slightly.** In the wilds each plant keeps its own
   size and look, with a faint breathing glow of its own colour about it
   (`species-sprites.js` `plantGlow`), so it reads in the scene without
   standing out of it.
 * **Every ingredient has its own look in each world**, derived from its
   family, habitat, colour, rarity and alchemy. The same species is drawn
-  from one descriptor on the ground (sprout, ripe, mature, and closed out
-  of its hour), as its icon (shelf, shop, book, recipes, deposit card,
+  from one descriptor where it grows (sprout, ripe, mature, and closed out
+  of its hour, on each of its mounts), as its icon (shelf, shop, book, recipes, deposit card,
   inspector) and as its four pieces in the cauldron, whose colours also dye
   the brew and its powder.
 * **A simple, Noita-like pixel style, one for everything.** Ingredients
@@ -174,7 +212,9 @@ src/visual/                     pure, DOM-free, deterministic
   descriptor.js   identity → canonical descriptor (traits, palette, morphology)
   families/       one construction grammar per family: flower, herb, root,
                   fungus, moss, fruit, reed, bark, crystal, mineral, shell —
-                  each exports params, size, plant(stage), icon, piece(v)
+                  each exports params, size, icon, piece(v)
+  growth.js       the plant in the wilds, grown procedurally on its mount
+                  (ground, hanging, a rock face, a trunk) in four variants
   render.js       descriptor → plant frames, icon, piece + silhouette grid
   pieces.js       the cauldron's piece atlas (skin layout unchanged)
   env/            the six region composers on a shared kit (paint.js:
@@ -194,7 +234,8 @@ src/visual/                     pure, DOM-free, deterministic
 src/rendering/
   species-sprites.js   cached plant/icon frames and canvases, silhouettes,
                        ingredientSprite (every list's picture)
-  wild-scene.js        scene canvas cache, PlantGround placement, hit testing,
+  wild-scene.js        scene canvas cache, holds (findAnchors), PlantGround
+                       placement on every mount, hit testing,
                        per-frame animation (drips, falls, torches, birds,
                        motes, glints, wisps, embers, steam)
 src/game/gathering.js  moisture-driven growth, watering, migration
@@ -297,8 +338,10 @@ font, interface and effects are untouched.
   palette-only changes never moving the morphology; the six environments
   deterministic, varying per world, fully painted, open ground only on dry
   surfaces with room to grow and nothing growing in the river or the lava;
-  placement on open ground, never behind scenery nor into the ground,
-  hardly touching; hit testing of the front plant.
+  placement on each species' own mounts (open ground; a bough, a ceiling;
+  a rock face, a trunk — each checked against what holds it), never behind
+  scenery nor into the ground or the water, hardly touching; hit testing
+  of the front plant.
 * `tests/gathering.test.mjs`: watering raises moisture and speeds growth;
   dry soil slows but never stops it; capped acceleration; no instant
   maturity; drying back; checkpoints compose exactly; no growth from a
@@ -389,8 +432,13 @@ loop.
 * `env/<region>-<seed>.png` — all six environments for two worlds
   (`amber-hollow`, `7-ravens`), 2× art pixels, from `scripts/scenes.mjs`.
 * `species-<seed>.png` — every species of those worlds, one row each:
-  sprout, ripe, mature, closed (dawn/dusk plants), icon, four pieces,
-  from `scripts/gallery.mjs`.
+  sprout, ripe, mature, three more variants, the mature plant on each of
+  its other mounts (hanging from the top of its cell, on a wall from its
+  left side), closed (dawn/dusk plants), icon, four pieces, from
+  `scripts/gallery.mjs`.
+* `placement/wilds-<region>-<seed>.png` — every region of those worlds
+  with fuller stands placed as the game places them, every plant grown,
+  from `scripts/wilds.mjs`.
 * `game-<seed>-<region>.png` — each region's scene in the running game,
   with its plants, for both worlds.
 * `desktop-wilds-<region>.png`, `phone-portrait-wilds-meadow.png`,

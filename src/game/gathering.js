@@ -180,6 +180,7 @@ export function thirstOf(shape, region) {
  * @property {number} y
  * @property {number} at
  * @property {boolean} [deep] dug out by a thorough harvest
+ * @property {string} [mount] what it grew on, when not the ground (a hanging or jutting plant leaves no turned earth)
  */
 
 /** Fresh gathering state: every stand saturated, some of it already mature. */
