@@ -119,3 +119,44 @@ test('what is let go of drops briskly, not in slow motion', () => {
   assert.ok(doll.knock > 0, 'it hit the ground');
   assert.ok(t < 0.35, `within a third of a second (${t.toFixed(2)} s)`);
 });
+
+test('a fruit hanging in front of a ledge falls on through it at full speed and lands on the ground below', () => {
+  // a rock ledge from y = 60 to 80 the fruit overlaps; open ground at FLOOR
+  const scene = (x, y) => y >= FLOOR || (y >= 60 && y < 80 && x > 40 && x < 80);
+  const doll = new Ragdoll({ w: 8, h: 26, ax: 4, ay: 0 }, 60, 50, { W, H, vy: 45, front: true });
+  let t = 0;
+  while (t < 2 && Math.max(...doll.py) + doll.r < FLOOR - 1) { doll.step(1 / 60, scene); t += 1 / 60; }
+  assert.ok(t < 0.4, `it reached the ground below quickly (${t.toFixed(2)} s)`);
+  run(doll, 8, scene);
+  assert.ok(doll.asleep && doll.centre().y > 85, 'and rests there');
+});
+
+test('a plant pulled up from the ground lands back on that ground, never through it', () => {
+  const doll = new Ragdoll({ w: 9, h: 20, ax: 4, ay: 19 }, 60, FLOOR - 1, { W, H, vy: -75, vx: 20, spin: 40 });
+  run(doll, 8);
+  assert.ok(doll.asleep);
+  for (let j = 0; j < doll.px.length; j++) assert.ok(doll.py[j] + doll.r <= FLOOR + 0.5, 'on the ground, not under it');
+});
+
+test('uneven frames do not slow it: it falls as fast whatever the frame rate', () => {
+  // frames a little off 1/60 s (as they always are in a browser)
+  const fall = (frames) => {
+    const doll = new Ragdoll({ w: 6, h: 10, ax: 3, ay: 0 }, 60, 10, { W, H: 400, vy: 0 });
+    let t = 0, k = 0;
+    for (;;) { const dt = frames[k++ % frames.length]; if (t + dt > 0.5 + 1e-9) break; doll.step(dt, () => false); t += dt; }
+    doll.step(0.5 - t, () => false);
+    return doll.centre().y - 15;
+  };
+  const even = fall([1 / 60]), ragged = fall([0.0167, 0.0171, 0.0158, 0.0175, 0.0162]), slow = fall([1 / 30]);
+  const free = 0.5 * 640 * 0.25;
+  for (const [name, d] of /** @type {[string, number][]} */ ([['even', even], ['ragged', ragged], ['30 fps', slow]])) assert.ok(Math.abs(d - free) < free * 0.12, `${name} frames: ${d.toFixed(1)} px of ${free} in half a second`);
+  assert.ok(Math.abs(ragged - even) < 2 && Math.abs(slow - even) < 2, 'the same however the frames fall');
+});
+
+test('a plant pulled up hops a little and keels over; it does not leap', () => {
+  const doll = new Ragdoll({ w: 9, h: 20, ax: 4, ay: 19 }, 60, FLOOR, { W, H, vy: -75, spin: 110 });
+  let top = FLOOR;
+  for (let t = 0; t < 2; t += 1 / 60) { doll.step(1 / 60, floor); top = Math.min(top, ...doll.py); }
+  assert.ok(top > FLOOR - 19 - 8, `it rose at most a few pixels (top ${top.toFixed(1)})`);
+  assert.ok(doll.asleep, 'and lies down within two seconds');
+});

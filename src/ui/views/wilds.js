@@ -543,15 +543,15 @@ export class WildsView {
     const fling = Math.max(-1, Math.min(1, dx / 10)), up = Math.max(-1, Math.min(1, dy / 10));
     const away = juts ? (p.flip ? -1 : 1) : 0;
     const doll = new Ragdoll(sp, x, y, {
-      W: SCENE_W, H: SCENE_H,
+      W: SCENE_W, H: SCENE_H, front: hangs || juts,
       vx: fling * 72 + away * 28 + (Math.random() - 0.5) * 16,
       // (a fruit snaps off its hold and drops at once; a ground plant is pulled up with a jerk)
       vy: hangs ? 45 + up * 30 : juts ? -20 + up * 30 : -75 + Math.min(0, up) * 45,
-      // (the top flies out further than the foot: it tumbles)
-      spin: hangs ? fling * 45 : fling * 90 + (Math.random() - 0.5) * 30,
+      // (the top flies out further than the foot: it tumbles — a plant pulled up always keels over one way or the other)
+      spin: hangs ? fling * 45 : juts ? fling * 90 : (fling || (Math.random() < 0.5 ? -1 : 1)) * 110 + (Math.random() - 0.5) * 30,
     });
-    // clear of the face or the ground it grew from
-    for (let k = 0; k < 8 && !doll.clear((xx, yy) => this.solidAt(xx, yy)); k++) doll.shift(away, -1);
+    // clear of the face it juts from (what began in front of the scenery falls on through it)
+    if (juts) for (let k = 0; k < 8 && !doll.clear((xx, yy) => this.solidAt(xx, yy)); k++) doll.shift(away, 0);
     this.fallen[p.id] = { doll, sp, landed: false, rung: 0 };
     this.shakes[p.id] = { a: (this.shakes[p.id] ? Math.sign(this.shakes[p.id].a) : 1) * 3.4, t0: this.time };
     const m = p.m, c = m ? `rgb(${Math.round((m.look || m.color)[0] * 255)},${Math.round((m.look || m.color)[1] * 255)},${Math.round((m.look || m.color)[2] * 255)})` : '#8c8';
