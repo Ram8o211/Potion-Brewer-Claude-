@@ -260,16 +260,18 @@ export class GameState {
   /**
    * Harvest a mature plant of a deposit (the one given, else the oldest)
    * into the inventory. The yield follows the method and tool, the hour, the
-   * weather and the care taken (gathering.js).
-   * @param {string} depositId @param {{now?:number, unlimited?:boolean, thorough?:boolean, plant?:string}} [opts]
+   * weather and the care taken (gathering.js). `free`: the Free
+   * Experiment's harvest, which takes the plant (its stand grows back) but
+   * stores, records and earns nothing.
+   * @param {string} depositId @param {{now?:number, unlimited?:boolean, free?:boolean, thorough?:boolean, plant?:string}} [opts]
    */
   gather(depositId, opts = {}) {
     const d = this.deposits.find((x) => x.id === depositId);
     if (!d) return { ok: false, amount: 0, reason: 'unknown' };
     const m = this.lookup(d.materialId);
-    const { take } = gatherPlan(this, d, m, { thorough: opts.thorough });
+    const { take } = opts.free ? d : gatherPlan(this, d, m, { thorough: opts.thorough });
     const r = harvest(this, { ...d, take }, { ...opts, key: m && m.wild ? m.wild.key : '' });
-    if (r.ok && !opts.unlimited) {
+    if (r.ok && !opts.unlimited && !opts.free) {
       this.found[d.materialId] = 1;
       this.stats.gathered = (this.stats.gathered || 0) + r.amount;
       /** @type {any} */ (r).events = [...this.unlock('forage1')];

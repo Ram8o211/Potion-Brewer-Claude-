@@ -56,7 +56,7 @@ test('harvesting a mature plant fills the stores and leaves a mark; growing ones
   await page.waitForFunction((id) => { const it = window.__alchemist.screen.views.wilds.fallen[id]; return it && it.landed; }, ripe.id);
   expect(await lab(page, (l, id) => l.state.stock(id), ripe.materialId), 'shaken, not yet gathered').toBe(s0);
   const it = await lab(page, (l, id) => l.views.wilds.fallen[id], ripe.id);
-  const sw = await page.evaluate(() => document.querySelector('.view-wilds canvas.scene').width);
+  const sw = await page.evaluate(() => /** @type {HTMLCanvasElement} */ (document.querySelector('.view-wilds canvas.scene')).width);
   await drag(page, [{ x: cv.x + it.x / sw * cv.width, y: cv.y + it.y / 216 * cv.height }, { x: cv.x + it.x / sw * cv.width, y: cv.y + it.y / 216 * cv.height }], 30);
   expect(await lab(page, (l, id) => l.state.stock(id), ripe.materialId), 'tapping the fallen plant gathered').toBeGreaterThan(s0);
   expect(await page.locator(`[data-deposit="${ripe.dep}"]`).count(), 'and its ingredient is listed from now on').toBe(1);
@@ -102,7 +102,13 @@ test('harvesting a mature plant fills the stores and leaves a mark; growing ones
   // (the page may have moved with the new region's cards)
   await page.locator('.view-wilds canvas.scene').scrollIntoViewIfNeeded();
   Object.assign(cv, await page.locator('.view-wilds canvas.scene').boundingBox());
+  // a tap shakes it loose, a second tap on what fell gathers it
   await drag(page, [tapAt(m0), tapAt(m0)], 30);
+  await page.waitForFunction((id) => !!window.__alchemist.screen.views.wilds.fallen[id], m0.id);
+  const it0 = await lab(page, (l, id) => { const q = l.views.wilds.fallen[id]; return { x: q.x - q.sp.ax + q.sp.w / 2, y: q.y - q.sp.ay + q.sp.h / 2 }; }, m0.id);
+  const sw0 = await page.evaluate(() => /** @type {HTMLCanvasElement} */ (document.querySelector('.view-wilds canvas.scene')).width);
+  const t0 = { x: cv.x + it0.x / sw0 * cv.width, y: cv.y + it0.y / 216 * cv.height };
+  await drag(page, [t0, t0], 30);
   expect(await lab(page, (l, id) => l.state.stock(id), m0.materialId), 'tapping a meadow plant gathered').toBeGreaterThan(ms0);
   expect(await page.evaluate(() => [...document.querySelectorAll('.view-wilds .deposit canvas')].some((c) => /** @type {HTMLCanvasElement} */ (c).width === 32)), 'a card shows the same 32 px procedural icon as the shelf and the book').toBe(true);
   // the icon on a card is the same picture as the one on the shelf
@@ -191,6 +197,8 @@ test('watering: a tap in watering mode wets the soil round a growing plant, its 
     const st = l.state, d = st.deposits.find((x) => x.region === 'meadow' && x.botanical && x.rank === 0);
     const now = Date.now();
     st.gathering.nodes[d.id] = { plants: [0, 1].map((k) => ({ id: `${d.id}#w${k}`, x: 0.3 + k * 0.3, y: 0.75, born: now, g: 0.1, t: now, w: 0.2 })), due: null, seq: 50 };
+    // (its card is listed once it has been gathered before)
+    st.found[d.materialId] = 1;
     l.views.wilds.refresh();
     l.views.wilds.grow();
     return d;

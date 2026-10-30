@@ -13,6 +13,7 @@ import { MenuScreen } from './menu.js';
 import { openSettings, openHelp } from './panels.js';
 import { Rng } from '../core/rng.js';
 import { normalizeTrials } from '../game/experiments.js';
+import { sandboxWilds } from '../game/gathering.js';
 
 const DEFAULT_SETTINGS = { master: 0.8, sfx: 0.8, music: 0.35, musicOn: true, muted: false, quality: 'auto', showFps: false };
 const SEED_WORDS = ['amber', 'ashen', 'brine', 'copper', 'dusk', 'elder', 'fen', 'gloam', 'hollow', 'iron', 'juniper', 'kelp', 'lantern', 'moon', 'nettle', 'oak', 'pewter', 'quill', 'raven', 'sage', 'thorn', 'umber', 'vale', 'willow', 'wyrm', 'yarrow'];
@@ -120,6 +121,8 @@ export class App {
     st.equipment = EQUIPMENT.map((e) => e.id);
     st.reputation = 99999;
     st.current = null;
+    // its wilds stand fully grown and grow back quickly after every harvest
+    sandboxWilds(st.gathering, st.deposits);
     if (saved && saved.seed === seed && saved.cauldron) st.cauldron = saved.cauldron;
     // the sandbox keeps its own trial history, separate from the shop's
     if (saved && saved.seed === seed && saved.trials) {
