@@ -32,19 +32,19 @@ import { pack } from './color.js';
 
 const TAU = Math.PI * 2, UP = -Math.PI / 2, DOWN = Math.PI / 2;
 
+/** The forms that hang from the roof on a vine: glowing crystal drops, bells, orbs, tears, nets, jellies and puffs. */
+export const DANGLERS = ['icicle', 'bellbloom', 'orb', 'teardrop', 'bluebell', 'netpod', 'jelly', 'puffbloom'];
+
 /**
  * Where each form of ingredient is found, and how often: on the ground; hanging
- * (only vines hang: from the boughs, the leaves, a ledge's underside or the
+ * (only the dangling vines hang: from the boughs, a ledge's underside or the
  * cave's roof); out of a rock face (wall) or a tree's trunk (trunk). The
  * ground is always the last resort.
  * @type {Record<string, [string, number][]>}
  */
 export const MOUNTS = {
-  leaf: [['ground', 0.55], ['hang', 0.45]],
   bracket: [['trunk', 0.65], ['wall', 0.35]],
-  moss: [['wall', 0.4], ['hang', 0.35], ['ground', 0.25]],
-  berry: [['hang', 0.75], ['ground', 0.25]],
-  bean: [['hang', 0.7], ['ground', 0.3]],
+  moss: [['wall', 0.6], ['ground', 0.4]],
   bark: [['trunk', 0.85], ['ground', 0.15]],
   crystal: [['ground', 0.5], ['wall', 0.5]],
   shard: [['ground', 0.6], ['wall', 0.4]],
@@ -53,6 +53,7 @@ export const MOUNTS = {
   crust: [['wall', 0.75], ['ground', 0.25]],
   nugget: [['wall', 0.6], ['ground', 0.4]],
   scale: [['ground', 0.6], ['wall', 0.4]],
+  ...Object.fromEntries(DANGLERS.map((k) => [k, [['hang', 1]]])),
 };
 
 /**
@@ -523,26 +524,22 @@ const BUILD = {
   },
 
   herb(c) {
-    const { sk, d, P, g, H, rng, pal, mount, closed } = c, vine = mount === 'hang', big = d.form === 'leaf', sprig = d.form === 'sprig';
-    const n = vine ? (g < 0.5 ? 1 : 2) : g < 0.5 ? 1 : Math.min(3, P.stems + (big ? 1 : 0));
-    if (vine) sk.later(0, () => blob(sk, 0, 0, 3, 1.6, pal.leaf, { bumps: 0.2 }));
+    const { sk, d, P, g, H, rng, pal, closed } = c, big = d.form === 'leaf', sprig = d.form === 'sprig';
+    const n = g < 0.5 ? 1 : Math.min(3, P.stems + (big ? 1 : 0));
     for (let s = 0; s < n; s++) {
       const off = s - (n - 1) / 2;
-      const a0 = vine ? DOWN + off * 0.4 + (rng.next() - 0.5) * 0.4 : UP + off * P.spread + P.tilt + (rng.next() - 0.5) * 0.3;
-      const len = H * (vine ? 1.3 : 1) * (s === Math.floor(n / 2) ? 1 : 0.68 + rng.next() * 0.2);
-      const pts = stem(sk, rng, off * 1.5, 0, a0, len, 1 + (g > 0.9 ? P.thick : 0), 1, pal.stem, { jitter: P.jitter * (vine ? 1.7 : 1), droop: vine ? 0 : P.droop * 0.5, curl: vine ? (rng.next() - 0.5) * 0.12 : 0 });
+      const a0 = UP + off * P.spread + P.tilt + (rng.next() - 0.5) * 0.3;
+      const len = H * (s === Math.floor(n / 2) ? 1 : 0.68 + rng.next() * 0.2);
+      const pts = stem(sk, rng, off * 1.5, 0, a0, len, 1 + (g > 0.9 ? P.thick : 0), 1, pal.stem, { jitter: P.jitter, droop: P.droop * 0.5 });
       nodes(pts, sprig ? 2 : P.node, (x, y, a, t, i) => {
         if (t < 0.12) return;
-        const ll = (big ? P.leafLen * 1.45 : P.leafLen) * (vine ? 1 - t * 0.35 : 1 - t * 0.5) * Math.min(1, 0.45 + g * 0.6);
+        const ll = (big ? P.leafLen * 1.45 : P.leafLen) * (1 - t * 0.5) * Math.min(1, 0.45 + g * 0.6);
         const sides = sprig ? [-1, 1] : [P.sym ? (i % 2 ? 1 : -1) : rng.next() < 0.5 ? 1 : -1];
         for (const sd of sides) {
-          const la = vine ? a + sd * 1.25 + (rng.next() - 0.5) * 0.3 : a + sd * (sprig ? 0.9 : 1.05) + (rng.next() - 0.5) * 0.3;
-          // a hanging leaf turns its blade down
-          sk.later(2, () => leaf(sk, x, y, vine ? la + turn(la, DOWN) * 0.35 : la, ll, (big ? P.leafW * 1.45 : P.leafW) * (closed ? 0.55 : 1), pal.main, big ? P.leaf : 'lance', { serrate: sprig, rib: pal.mark }));
+          const la = a + sd * (sprig ? 0.9 : 1.05) + (rng.next() - 0.5) * 0.3;
+          sk.later(2, () => leaf(sk, x, y, la, ll, (big ? P.leafW * 1.45 : P.leafW) * (closed ? 0.55 : 1), pal.main, big ? P.leaf : 'lance', { serrate: sprig, rib: pal.mark }));
         }
-        if (g >= 0.95 && d.tr.spots > 0.3 && rng.next() < 0.4) sk.later(3, () => bunch(sk, rng, x, y, 3, 1, pal.accent, vine && P.glow && !closed ? pal.glow : null));
-        // a vine hangs globes from its nodes, glowing if its kind does
-        if (vine && g >= 0.7 && i % 2 === 1 && t > 0.3) sk.later(3, () => { stroke(sk, [[x, y], [x, y + 2]], 1, 1, pal.stem); globe(sk, x, y + 3.2, 1.3, pal.accent, P.glow && !closed ? pal.glow : null); });
+        if (g >= 0.95 && d.tr.spots > 0.3 && rng.next() < 0.4) sk.later(3, () => bunch(sk, rng, x, y, 3, 1, pal.accent, null));
         if (g >= 0.95 && sprig && t > 0.4 && rng.next() < 0.5) sk.later(3, () => stroke(sk, walk(rng, x, y, DOWN + (rng.next() - 0.5) * 0.8, 3, { jitter: 0.3 }), 1, 1, pal.accent));
       });
       const ta = tipAngle(pts), [tx, ty] = pts[pts.length - 1];
@@ -668,23 +665,6 @@ const BUILD = {
       }
       return;
     }
-    if (mount === 'hang') {
-      // a curtain of strands, tufted along their length
-      const n = [2, 4, 5 + Math.round(P.lush * 3)][st], spanX = H * 0.35 * (0.5 + g * 0.5);
-      sk.later(0, () => blob(sk, 0, 0.5, spanX + 1.5, 1.8, pal.main, { bumps: 0.2, grain: 0.8 }));
-      for (let i = 0; i < n; i++) {
-        const x = (i / Math.max(1, n - 1) - 0.5) * 2 * spanX + (rng.next() - 0.5), len = H * (0.35 + rng.next() * 0.75) * (0.5 + g * 0.6);
-        const p = walk(rng, x, 1, DOWN + (rng.next() - 0.5) * 0.2, len, { jitter: 0.3 });
-        sk.later(1, () => {
-          stroke(sk, p, 1.6, 1, pal.main);
-          for (let j = 2; j < p.length - 1; j += 2) if (rng.next() < 0.6) disc(sk, p[j][0] + (rng.next() < 0.5 ? -1 : 1), p[j][1], 0.8, pal.main);
-          const [ex, ey] = p[p.length - 1];
-          disc(sk, ex, ey + 1, 0.8, bead);
-          if (P.glow && !closed) sk.emit(ex, ey + 1, at(pal.glow, 1));
-        });
-      }
-      return;
-    }
     // a cushion on the ground, its spore stalks rising from it
     const rx = 2 + H * 0.45 * g, ry = 1.5 + H * 0.3 * g;
     sk.later(1, () => blob(sk, 0, 0, rx, ry, pal.main, { bumps: 0.12, grain: 1, ph: [rng.next() * 6, 1, 2] }));
@@ -695,30 +675,9 @@ const BUILD = {
   },
 
   fruit(c) {
-    const { sk, d, P, g, H, rng, pal, mount, st, closed } = c;
+    const { sk, d, P, g, H, rng, pal, st, closed } = c;
     const fruitPal = g < 0.95 ? pal.leaf : pal.main;
     const gl = P.glow && !closed && g >= 0.95 ? pal.glow : null;
-    if (d.form === 'berry' && mount === 'hang') {
-      // a vine trailing from its hold, leaves along it and round berries hanging on short threads
-      const pts = stem(sk, rng, 0, 0, DOWN + (rng.next() - 0.5) * 0.4, H * 1.35, 1.4, 1, pal.stem, { jitter: 0.4, curl: (rng.next() - 0.5) * 0.12 });
-      nodes(pts, 2, (x, y, a, t, i) => {
-        const side = i % 2 ? 1 : -1;
-        sk.later(2, () => leaf(sk, x, y, a + side * 1.15, P.leafLen * 0.8 * Math.min(1, g + 0.3), P.leafW * 1.1, pal.leaf, P.leaf));
-        if (g >= 0.5 && i % 2 === 0 && t > 0.2) sk.later(3, () => { stroke(sk, [[x, y], [x - side * 0.5, y + 2]], 1, 1, pal.stem); globe(sk, x - side * 0.5, y + 2 + P.berryR, P.berryR * (0.7 + g * 0.3), fruitPal, gl); });
-      });
-      const [tx, ty] = pts[pts.length - 1];
-      sk.later(3, () => globe(sk, tx, ty + 1, P.berryR * (0.7 + g * 0.3), fruitPal, gl));
-      return;
-    }
-    if ((d.form === 'bean') && mount === 'hang') {
-      // a vine trailing down, trefoil leaves along it and pods hanging from it
-      const pts = stem(sk, rng, 0, 0, DOWN + (rng.next() - 0.5) * 0.5, H * 1.15, 1.4, 1, pal.stem, { jitter: 0.45, curl: (rng.next() - 0.5) * 0.15 });
-      nodes(pts, 3, (x, y, a, t, i) => {
-        if (i % 2 === 0) sk.later(2, () => { for (const s of [-1, 0, 1]) leaf(sk, x, y, a + s * 0.9 + (i % 4 ? 0.8 : -0.8), P.leafLen * 0.75 * Math.min(1, g + 0.3), P.leafW, pal.leaf, 'oval', { rib: null }); });
-        else if (g > 0.5) sk.later(3, () => { leaf(sk, x, y, DOWN + (rng.next() - 0.5) * 0.5, P.podLen * g, 1.3, fruitPal, 'pod', { rib: null, gloss: true }); if (gl) sk.emit(x, y + P.podLen * g * 0.55, at(gl, 0.8)); });
-      });
-      return;
-    }
     if (d.form === 'seed') {
       // an umbel: a spotted stem, feathery leaves, rays fanning to seed heads
       const pts = stem(sk, rng, 0, 0, UP + P.tilt, H, 1 + (g > 0.6 ? 1 : 0), 1, pal.stem, { jitter: P.jitter * 0.6 });
@@ -936,6 +895,131 @@ const BUILD = {
   },
 };
 
+// ------------------------------------------------------- the dangling vines
+
+/**
+ * Pendants: what hangs at the end of a dangling vine's threads, each drawn
+ * from its anchor (x, y) downward at scale r. Every one gives light of its
+ * own unless its hour is closed.
+ * @type {Record<string, (sk:any, rng:Rng, x:number, y:number, r:number, pal:any, lit:boolean, ripe:boolean) => void>}
+ */
+const PENDANT = {
+  // a faceted crystal point-down, a spark of dust beneath it
+  icicle(sk, rng, x, y, r, pal, lit) {
+    const rp = pal.crystal || pal.main, len = 3.4 * r, wid = Math.max(1.6, 1.5 * r);
+    prism(sk, x, y, DOWN, len, wid, rp, { tip: 1.6 });
+    if (lit) sk.emit(x, y + len * 0.45, at(pal.glow, 0.9));
+    sk.set(x + (rng.next() < 0.5 ? -1 : 1) * (1 + r * 0.6), y + len + 1.5 + r * 0.8, at(pal.glow, 0.7));
+  },
+  // a drooping tulip: three petals closing over a pale throat
+  bellbloom(sk, rng, x, y, r, pal, lit) {
+    for (const a of [DOWN - 0.55, DOWN + 0.55, DOWN]) leaf(sk, x, y, a, 3.4 * r, 1.25 * r, pal.main, 'oval', { rib: null });
+    leaf(sk, x, y, DOWN, 2.2 * r, 0.8 * r, pal.accent, 'lance', { rib: null });
+    if (lit) sk.emit(x, y + 2.6 * r, at(pal.glow, 0.75));
+    sk.set(x + (rng.next() < 0.5 ? -1 : 1), y + 4.2 * r, at(pal.main, 0.9));
+  },
+  // a clear bubble: dark rim, bright glint, a drop swelling beneath
+  orb(sk, rng, x, y, r, pal, lit) {
+    const R = 1.3 * r + 0.4;
+    disc(sk, x, y + R, R, pal.main);
+    for (let a = 0; a < 8; a++) sk.set(x + Math.cos(a * TAU / 8) * R, y + R + Math.sin(a * TAU / 8) * R, at(pal.main, 0.2));
+    sk.set(x - R * 0.45, y + R - R * 0.45, at(pal.main, 1));
+    if (lit) sk.emit(x + 0.5, y + R + 0.5, at(pal.glow, 0.7));
+    sk.set(x, y + 2 * R + 1, at(pal.main, 0.7));
+  },
+  // a teardrop of molten light, still dripping
+  teardrop(sk, rng, x, y, r, pal, lit) {
+    const L = 4.4 * r;
+    leaf(sk, x, y, DOWN, L, 1.5 * r, pal.main, 'pod', { rib: null, gloss: true });
+    for (let j = 0; j < L * 0.55; j++) sk.set(x, y + L * 0.3 + j, at(pal.accent, 0.55 + 0.35 * (j / (L * 0.55))));
+    if (lit) sk.emit(x, y + L * 0.62, at(pal.glow, 0.95));
+    drip(sk, x, y + L + 0.5, 1 + Math.round(r), pal.main);
+  },
+  // a few bells on a nodding sprig, each flaring at its lip
+  bluebell(sk, rng, x, y, r, pal, lit) {
+    const n = 2 + Math.round(r), sg = rng.next() < 0.5 ? -1 : 1;
+    for (let i = 0; i < n; i++) {
+      const bx = x + sg * i * 1.5, by = y + 1.5 + i * 2.6 * r;
+      stroke(sk, [[x, by - 1], [bx, by]], 1, 1, pal.stem);
+      blob(sk, bx, by + 1.4, 1.2 * r + 0.2, 1.5 * r, pal.main);
+      for (const f of [-1, 1]) sk.set(bx + f * (1.4 * r + 0.8), by + 1.4 + 1.5 * r, at(pal.main, 0.7));
+      if (lit && i === n - 1) sk.emit(bx, by + 2.4, at(pal.glow, 0.8));
+    }
+  },
+  // a netted pod: a lattice of two tones, tailing off into a drip
+  netpod(sk, rng, x, y, r, pal, lit) {
+    const R = 1.5 * r + 0.4, cy = y + R + 0.5;
+    disc(sk, x, cy, R, pal.main);
+    for (let j = -Math.ceil(R); j <= Math.ceil(R); j++) for (let i = -Math.ceil(R); i <= Math.ceil(R); i++) {
+      if (i * i + j * j > R * R) continue;
+      if ((i + j + 40) % 2 === 0) sk.set(x + i, cy + j, at(pal.main, 0.3));
+    }
+    sk.set(x - R * 0.4, cy - R * 0.4, at(pal.main, 1));
+    if (lit) sk.emit(x, cy, at(pal.glow, 0.75));
+    drip(sk, x, cy + R, 1 + Math.round(r * 1.5), pal.main);
+  },
+  // a bell of jelly trailing its tentacles
+  jelly(sk, rng, x, y, r, pal, lit) {
+    const R = 1.6 * r + 0.3, cy = y + R;
+    blob(sk, x, cy, R, R * 0.85, pal.main, { keep: (i, j) => j <= 1 });
+    sk.set(x - R * 0.4, cy - R * 0.5, at(pal.main, 1));
+    if (lit) sk.emit(x, cy - 0.5, at(pal.glow, 0.85));
+    const n = 2 + Math.round(r);
+    for (let i = 0; i < n; i++) {
+      const tx = x + (i / (n - 1) - 0.5) * R * 1.4;
+      stroke(sk, walk(rng, tx, cy + 1, DOWN, 3 + r * 3 + rng.next() * 2, { jitter: 0.35 }), 1, 1, pal.main);
+    }
+  },
+  // a puff of soft blossoms heaped round a core
+  puffbloom(sk, rng, x, y, r, pal, lit) {
+    const cy = y + 2.2 * r;
+    for (let i = 0; i < 6; i++) {
+      const a = i * TAU / 6 + rng.next() * 0.4, d = 1.5 * r;
+      disc(sk, x + Math.cos(a) * d, cy + Math.sin(a) * d * 0.9, 1.2 * r + 0.2, pal.pale);
+    }
+    disc(sk, x, cy, 1.1 * r, pal.pale, { lift: 0.2 });
+    if (lit) sk.emit(x, cy, at(pal.glow, 0.9));
+    sk.glint(x - r, cy - r);
+    sk.set(x + (rng.next() < 0.5 ? -1 : 1) * 2, y + 5.5 * r, at(pal.pale, 0.9));
+  },
+};
+
+/**
+ * A dangling vine: a clump on the roof, a thread winding down with a few
+ * small leaves and side threads, and the pendants of its kind hanging along
+ * it, the largest at the lowest thread. On any other mount it grows upward
+ * (only when no roof has room), drawn mirrored.
+ * @param {Ctx} c
+ */
+function dangle(c) {
+  const { d, P, g, st, H, rng, pal, mount, closed } = c, dir = mount === 'hang' ? 1 : -1;
+  const sk = /** @type {Sketch} */ (dir === 1 ? c.sk : /** @type {any} */ ({
+    seed: c.sk.seed, set: (x, y, k) => c.sk.set(x, -y, k), has: (x, y) => c.sk.has(x, -y), emit: (x, y, k) => c.sk.emit(x, -y, k),
+    glint: (x, y) => c.sk.glint(x, -y), later: (z, fn) => c.sk.later(z, fn),
+  }));
+  const lit = !closed, pend = PENDANT[d.form] || PENDANT.orb, L = H * (1.05 + g * 0.5);
+  // the clump it hangs from, on the roof
+  sk.later(0, () => blob(sk, 0, 0, 2.4 + g, 1.4, pal.rock, { rough: 0.25, bumps: 0.1, ph: [rng.next() * 6, 1, 2] }));
+  const pts = stem(sk, rng, 0, 0, DOWN + (rng.next() - 0.5) * 0.3, L, 1.4, 1, pal.stem, { jitter: 0.3 + P.jitter * 0.4, curl: (rng.next() - 0.5) * 0.14 });
+  nodes(pts, 3, (x, y, a, t, i) => {
+    if (t < 0.12 || t > 0.9) return;
+    const side = i % 2 ? 1 : -1;
+    sk.later(2, () => leaf(sk, x, y, a + side * 1.1, P.leafLen * 0.55 * Math.min(1, g + 0.3), P.leafW * 0.7, pal.leaf, P.leaf, { rib: null }));
+  });
+  // the pendants, from the thread's lower half down; ripe and mature ones grow bigger and brighter
+  const m = [1, 2, 3 + (P.cluster > 4 ? 1 : 0)][st], base = 0.8 + g * 0.55;
+  for (let k = 0; k < m; k++) {
+    const t = m === 1 ? 1 : 0.42 + (k / (m - 1)) * 0.58, i = Math.min(pts.length - 1, Math.round(t * (pts.length - 1)));
+    const [px, py] = pts[i], side = k % 2 ? 1 : -1, r = base * (0.6 + 0.55 * t) * (0.92 + rng.next() * 0.16);
+    // the last hangs straight from the tip; the others on a short thread to one side
+    const ox = k === m - 1 ? 0 : side * (1.5 + rng.next() * 1.5), oy = k === m - 1 ? 0.5 : 1.5 + rng.next() * 1.5;
+    sk.later(3, () => {
+      if (ox || oy > 1) stroke(sk, [[px, py], [px + ox * 0.4, py + oy * 0.6], [px + ox, py + oy]], 1, 1, pal.stem);
+      pend(sk, rng, px + ox, py + oy, r, pal, lit, g >= 0.95);
+    });
+  }
+}
+
 const MOUNT_CODE = { ground: 0, hang: 1, wall: 2 };
 
 /**
@@ -956,7 +1040,7 @@ export function growFrame(d, stage, o = {}) {
   const sk = new Sketch(mount, seed);
   /** @type {Ctx} */
   const c = { sk, d, P, g, st, H: Math.min(26, P.h * vk * (mount === 'hang' ? 1.1 : 1) * (0.45 + 0.55 * g)), rng: new Rng(seed), pal: d.pal, mount, closed: !!o.closed };
-  (BUILD[d.family] || BUILD.mineral)(c);
+  (DANGLERS.includes(d.form) ? dangle : BUILD[d.family] || BUILD.mineral)(c);
   sk.flush();
   return sk.frame(!!o.flip);
 }
