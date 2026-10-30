@@ -1,5 +1,5 @@
-// Moonfen, a haunted bog in a cavern open to the night: through a rent in
-// the roof a starry sky and a haloed moon; below, ruined columns and
+// Moonfen, a haunted bog under the night sky, or in a cavern open to it
+// through a rent in its roof: a starry sky and a haloed moon; below, ruined columns and
 // arches standing in the blue dark and the mist; and in front the bog in
 // cross-section — grey-blue cobbles under a crust of moss, mossy pillars
 // dripping moss, still pools of black water holding the moon's light,
@@ -8,8 +8,8 @@
 
 import { sky } from './paint.js';
 import { palette, vary, streamOf } from './kit.js';
-import { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, glow } from './side.js';
-import { caveFrame, farPillars, fog, vines, moss, ruins, glowShrooms } from './cave.js';
+import { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, glow, silhouette, treeShape } from './side.js';
+import { caveFrame, farPillars, fog, vines, moss, ruins, glowShrooms, veins, WATER_VEINS } from './cave.js';
 import { tree, reeds, spire, cairn } from './objects.js';
 import { fbm2 } from '../noise.js';
 import { pack } from '../color.js';
@@ -20,13 +20,13 @@ export function compose(cv, seed) {
     leaf: ['#1e3e34', { spread: 0.45 }], moss: ['#2e5a46', { spread: 0.5 }], bark: ['#2a2420', { spread: 0.4 }], wood: '#5a4a3a', rock: ['#3e4250', { spread: 0.45 }],
     reed: ['#2e4a34', { spread: 0.45 }], cattail: '#3a2a1e', gem: ['#6ac8f0', { spread: 0.6 }],
   }), s('pal'), 0.8);
-  sky(cv, 0, H, ['#04050e', '#0a0f2a', '#121a40', '#1a2250'], 10);
+  sky(cv, 0, H, ['#04050e', '#0a0f2a', '#121a40', '#1a2250']);
   // stars, a few bright ones crossed
   const st = s('stars');
   for (let i = 0; i < 140; i++) { const x = st.int(0, W - 1), y = st.int(0, 110), b = st.next(); cv.set(x, y, pack(b > 0.8 ? [0.95, 0.95, 1] : b > 0.4 ? [0.7, 0.72, 0.95] : [0.45, 0.48, 0.75])); }
   for (let i = 0; i < 5; i++) { const x = st.int(4, W - 4), y = st.int(4, 70), c = pack([0.85, 0.9, 1]); for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [0, 0]]) cv.set(x + dx, y + dy, c); }
   // the moon and its halo, in the rent of the roof
-  const fs = s('frame'), o0 = fs.int(70, 150), o1 = o0 + fs.int(140, 200);
+  const fs = s('frame'), cave = fs.next() < 0.4, o0 = fs.int(70, 150), o1 = o0 + fs.int(140, 200);
   const mx = Math.round((o0 + o1) / 2) + s('moon').int(-30, 30), my = s('moon2').int(30, 44), mr = 12;
   glow(cv, mx, my, 80, [0.45, 0.5, 0.8], 0.4);
   const ms = s('craters').int(0, 1e9);
@@ -36,15 +36,22 @@ export function compose(cv, seed) {
     cv.set(x, y, pack([0.86 * l + 0.1, 0.9 * l + 0.08, l]));
   }
   // the dark beyond: far pillars, ruined columns and arches, mist between
-  farPillars(cv, { n: 8, fill: '#0e1430', rim: '#141c3e', seed: s('far1').int(0, 1e9), w: [10, 20], floor: 180 });
+  if (cave) farPillars(cv, { n: 8, fill: '#0e1430', rim: '#141c3e', seed: s('far1').int(0, 1e9), w: [10, 20], floor: 180 });
+  else {
+    // the open bog: a black treeline against the night
+    const tl = s('tl'), line = silhouette(cv, { base: 132, amp: 6, freq: 0.03, seed: tl.int(0, 1e9), fill: '#0e1430', rough: 3 });
+    for (let x = 2; x < W; x += tl.int(7, 15)) treeShape(cv, x, line[x] + 2, tl.int(12, 26), tl.next() < 0.3 ? 'dead' : 'oak', '#0e1430', tl.int(0, 1e9));
+  }
   fog(cv, '#2a3466', 90, 200, 0.3, s('fog1').int(0, 1e9));
   ruins(cv, { n: 5, fill: '#1a2246', line: '#0e1430', rim: '#2a3460', seed: s('ruins').int(0, 1e9), floor: 178 });
   fog(cv, '#30407a', 120, 210, 0.22, s('fog2').int(0, 1e9));
-  const frame = caveFrame(cv, {
-    seed: fs.int(0, 1e9), stones: ['#2a2e40', '#22263a', '#30344a'], mortar: '#08080e', dark: 0.4, roof: [26, 50], walls: [12, 14], open: [o0, o1],
-    stal: { n: 14, len: [6, 28], w: [2, 6] }, lip: ['#2e6a56', '#1e4a3c'],
-  });
-  vines(cv, frame.roof, { cols: ['#2e6a56', '#1e4a3c', '#14322a'], leaf: '#3e8a6a', flower: '#8ff0ff', seed: fs.int(0, 1e9), rate: 0.3, len: [4, 50] });
+  if (cave) {
+    const frame = caveFrame(cv, {
+      seed: fs.int(0, 1e9), stones: ['#2a2e40', '#22263a', '#30344a'], mortar: '#08080e', dark: 0.4, roof: [26, 50], walls: [12, 14], open: [o0, o1],
+      stal: { n: 14, len: [6, 28], w: [2, 6] }, lip: ['#2e6a56', '#1e4a3c'],
+    });
+    vines(cv, frame.roof, { cols: ['#2e6a56', '#1e4a3c', '#14322a'], leaf: '#3e8a6a', flower: '#8ff0ff', seed: fs.int(0, 1e9), rate: 0.3, len: [4, 50] });
+  }
   // the bog: low ground, tussocks and a barrow, pools in its hollows
   const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 166, amp: 8, freq: 0.02 });
   const bx = ts.int(40, W - 100);
@@ -68,6 +75,7 @@ export function compose(cv, seed) {
   });
   moss(cv, { cols: ['#3e8a6a', '#2e6a52', '#1e4a3c', '#14322a'], seed: ss + 1, drape: 10, rate: 0.25, len: 14 });
   cv.meta.pools = pools.map((p) => pool(cv, p.x - p.hw, p.x + p.hw, p.level, { surface: '#b0c4f0', body: ['#22346a', '#1a2a58', '#142046', '#0e1834'], see: 0.15, bed: ['#0e1a14', '#16261e', '#0a0e0c'] }));
+  cv.meta.pools.forEach((p, i) => veins(cv, p, { ...WATER_VEINS(ss + 4 + i), core: ['#2e4a74', '#26405e', '#1e344e', '#182a40'], tint: '#0c1428' }));
   markOpen(cv);
   // willows hung with moss, a dead tree, reeds at the pools
   const wr = s('willows');

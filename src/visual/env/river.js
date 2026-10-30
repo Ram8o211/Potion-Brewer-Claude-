@@ -1,4 +1,4 @@
-// Willow Bank, a river cave: dark teal water running along the cave floor
+// Willow Bank, a river under the sky or through a cave: dark teal water running along the cave floor
 // under chalky pillars of cobbled stone, their mossy caps hung with moss
 // and crowned with cattails; mushrooms glowing cyan in the dark, a
 // weeping willow on the bank, a roof of stalactites dripping vines, and
@@ -7,29 +7,40 @@
 
 import { sky } from './paint.js';
 import { palette, vary, streamOf } from './kit.js';
-import { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt } from './side.js';
-import { caveFrame, farPillars, fog, vines, moss, glowShrooms, ledgeTops } from './cave.js';
-import { tree, reeds, beam } from './objects.js';
+import { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, silhouette, treeShape } from './side.js';
+import { caveFrame, farPillars, fog, vines, moss, glowShrooms, ledgeTops, veins, WATER_VEINS } from './cave.js';
+import { tree, reeds, beam, cloud } from './objects.js';
 import { Model } from '../geometry.js';
 
 export function compose(cv, seed) {
   const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'river', p);
   const pal = vary(palette({
     leaf: ['#4a7a2a', { spread: 0.55 }], bark: ['#4a3a2a', { spread: 0.5 }], reed: ['#4e7a2e', { spread: 0.5 }],
-    cattail: '#7a3a22', timber: '#6a4a2e',
+    cattail: '#7a3a22', timber: '#6a4a2e', cloud: ['#eef2f4', { spread: 0.3 }],
   }), s('pal'), 1);
-  // the cave's depths: a dark teal back wall, far pillars in two rows with mist between
-  sky(cv, 0, H, ['#05090c', '#08121a', '#0c1c20', '#102624'], 10);
-  farPillars(cv, { n: 8, fill: '#0f1e1e', rim: '#162a28', seed: s('far1').int(0, 1e9), w: [10, 20], floor: 180, caps: true });
-  fog(cv, '#1e4040', 90, 200, 0.35, s('fog1').int(0, 1e9));
-  farPillars(cv, { n: 5, fill: '#142824', rim: '#1e3a32', seed: s('far2').int(0, 1e9), w: [16, 28], floor: 185, caps: true });
-  fog(cv, '#24504a', 120, 210, 0.25, s('fog2').int(0, 1e9));
-  const fs = s('frame');
-  const frame = caveFrame(cv, {
-    seed: fs.int(0, 1e9), stones: ['#3e443c', '#4a4c40', '#343a34'], mortar: '#101412', dark: 0.42, roof: [10, 30], walls: [8, 12],
-    stal: { n: 18, len: [8, 36], w: [3, 7] }, lip: ['#4e8a2e', '#2e5a22'],
-  });
-  vines(cv, frame.roof, { cols: ['#4e8a2a', '#34621e', '#22401a'], leaf: '#5e9a32', seed: fs.int(0, 1e9), rate: 0.22, len: [4, 50] });
+  // some worlds' river runs through a cave, most under the open sky
+  const fs = s('frame'), cave = fs.next() < 0.5;
+  if (cave) {
+    sky(cv, 0, H, ['#05090c', '#08121a', '#0c1c20', '#102624']);
+    farPillars(cv, { n: 8, fill: '#0f1e1e', rim: '#162a28', seed: s('far1').int(0, 1e9), w: [10, 20], floor: 180, caps: true });
+    fog(cv, '#1e4040', 90, 200, 0.35, s('fog1').int(0, 1e9));
+    farPillars(cv, { n: 5, fill: '#142824', rim: '#1e3a32', seed: s('far2').int(0, 1e9), w: [16, 28], floor: 185, caps: true });
+    fog(cv, '#24504a', 120, 210, 0.25, s('fog2').int(0, 1e9));
+    const frame = caveFrame(cv, {
+      seed: fs.int(0, 1e9), stones: ['#3e443c', '#4a4c40', '#343a34'], mortar: '#101412', dark: 0.42, roof: [10, 30], walls: [8, 12],
+      stal: { n: 18, len: [8, 36], w: [3, 7] }, lip: ['#4e8a2e', '#2e5a22'],
+    });
+    vines(cv, frame.roof, { cols: ['#4e8a2a', '#34621e', '#22401a'], leaf: '#5e9a32', seed: fs.int(0, 1e9), rate: 0.22, len: [4, 50] });
+  } else {
+    sky(cv, 0, 170, ['#3a6eb4', '#6a9ad0', '#a8c8e0', '#d8e6e4']);
+    const cr = s('clouds');
+    for (let i = 0; i < 3 + cr.int(0, 2); i++) cv.stamp(cloud(cr, cr.int(30, 60), cr.int(7, 12)), pal, cr.int(0, W), cr.int(14, 50), { outline: false, texture: 0 });
+    silhouette(cv, { base: 84, amp: 24, freq: 0.01, seed: s('m').int(0, 1e9), fill: '#8a9ec0', rim: '#c8d4e4', peaks: 0.6 });
+    fog(cv, '#c8d8e4', 80, 130, 0.3, s('haze').int(0, 1e9));
+    const pines = silhouette(cv, { base: 122, amp: 8, freq: 0.02, seed: s('p').int(0, 1e9), fill: '#4e7a6a' });
+    const pr = s('pines');
+    for (let x = 2; x < W; x += pr.int(5, 11)) treeShape(cv, x, pines[x] + 2, pr.int(12, 22), 'pine', '#3e6a5a', pr.int(0, 1e9));
+  }
   // the banks, the river bed between them, pillars rising from both
   const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 168, amp: 8, freq: 0.012 });
   const rx = ts.int(150, 240), hw = ts.int(48, 64);
@@ -48,6 +59,7 @@ export function compose(cv, seed) {
   moss(cv, { cols: ['#7ac04a', '#4e8a34', '#3a6e2a', '#2a5020'], seed: ss + 1, drape: 9, rate: 0.22, len: 12 });
   const level = Math.round(Math.max(top[rx - hw], top[rx + hw])) + 5;
   cv.meta.river = pool(cv, rx - hw, rx + hw, level, { surface: '#8ae0d8', body: ['#2a6a68', '#1e5654', '#164442', '#0e3232', '#0a2424'], see: 0.3, bed: ['#2a3a2e', '#34463a', '#1e2a22'] });
+  veins(cv, cv.meta.river, WATER_VEINS(ss + 4));
   markOpen(cv);
   // cattails on the pillars and at the water's edge
   const rr = s('reeds');
@@ -69,7 +81,7 @@ export function compose(cv, seed) {
     cv.stamp(m, pal, 0, 0, { dark: 0.2 });
     cv.meta.bridge = [x0, x1, y];
   }
-  cv.meta.glows = glowShrooms(cv, { n: 9, cap: '#2ab8d8', lit: '#b0f4ff', stem: '#c8dcd4', rgb: [0.25, 0.75, 0.95], seed: s('shrooms').int(0, 1e9) });
-  cv.meta.vignette = 0.6;
+  cv.meta.glows = glowShrooms(cv, { n: cave ? 9 : 4, cap: '#2ab8d8', lit: '#b0f4ff', stem: '#c8dcd4', rgb: [0.25, 0.75, 0.95], seed: s('shrooms').int(0, 1e9) });
+  cv.meta.vignette = cave ? 0.6 : 0.3;
   cv.meta.horizon = 116;
 }

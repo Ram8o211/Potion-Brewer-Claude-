@@ -1,33 +1,43 @@
-// Ironstone Quarry, a mine worked deep in a cavern: brown gloom with far
-// pillars of rock, a roof of stalactites dripping rusty water, and in
+// Ironstone Quarry, an open pit under a pale sky and far cliffs, or a mine
+// worked deep in a cavern under a roof of stalactites dripping rust; in
 // front the worked rock in cross-section — benches cut down in steps, dark
-// cobbled stone run through with seams of rust, quartz and sulphur and
+// cobbled stone holding pockets of rust, gold and quartz and
 // flecked with ore, pillars left standing; timber scaffolds and a winding
 // wheel, a mine adit framed in timber, a crane, a ladder against a face, a
 // cart on its rails, crates, and torches and a lantern burning in the dark.
 
 import { sky } from './paint.js';
 import { palette, vary, streamOf } from './kit.js';
-import { fillSolid, blob, ledges, paintTerrain, markOpen, surfaceAt, glow, drips } from './side.js';
+import { fillSolid, blob, ledges, paintTerrain, markOpen, surfaceAt, glow, drips, silhouette } from './side.js';
 import { caveFrame, farPillars, fog, moss, torch, ledgeTops } from './cave.js';
-import { crane, ladder, cart, crate, beam, boulder, scaffold, wheel } from './objects.js';
+import { crane, ladder, cart, crate, beam, boulder, scaffold, wheel, cloud } from './objects.js';
 import { Model } from '../geometry.js';
 
 export function compose(cv, seed) {
   const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'quarry', p);
   const pal = vary(palette({
     rock: ['#5a5048', { spread: 0.55 }], timber: ['#6a4428', { spread: 0.5 }], rope: '#4a3a2a', ore: ['#5a4a46', { spread: 0.5 }], metal: '#5a5a62',
-    seamC: ['#e8c040', { spread: 0.4, n: 4 }],
+    seamC: ['#e8c040', { spread: 0.4, n: 4 }], cloud: ['#eef0f0', { spread: 0.3 }],
   }), s('pal'), 0.8);
-  sky(cv, 0, H, ['#070504', '#0e0a08', '#16100c', '#1c140e'], 10);
-  farPillars(cv, { n: 7, fill: '#1a130e', rim: '#241a12', seed: s('far1').int(0, 1e9), w: [12, 24], floor: 180 });
-  fog(cv, '#3a2a1c', 80, 200, 0.3, s('fog1').int(0, 1e9));
-  farPillars(cv, { n: 4, fill: '#22180f', rim: '#30221a', seed: s('far2').int(0, 1e9), w: [20, 34], floor: 185, caps: true });
-  const fs = s('frame');
-  caveFrame(cv, {
-    seed: fs.int(0, 1e9), stones: ['#3a3028', '#2e2620', '#463a2e'], mortar: '#0c0806', dark: 0.4, roof: [10, 34], walls: [10, 12],
-    stal: { n: 18, len: [6, 34], w: [3, 7], tip: '#c8702a' }, lip: ['#5a4a36', '#3a2e22'],
-  });
+  // an open pit under the sky, or a mine worked deep in a cavern
+  const fs = s('frame'), cave = fs.next() < 0.5;
+  if (cave) {
+    sky(cv, 0, H, ['#070504', '#0e0a08', '#16100c', '#1c140e']);
+    farPillars(cv, { n: 7, fill: '#1a130e', rim: '#241a12', seed: s('far1').int(0, 1e9), w: [12, 24], floor: 180 });
+    fog(cv, '#3a2a1c', 80, 200, 0.3, s('fog1').int(0, 1e9));
+    farPillars(cv, { n: 4, fill: '#22180f', rim: '#30221a', seed: s('far2').int(0, 1e9), w: [20, 34], floor: 185, caps: true });
+    caveFrame(cv, {
+      seed: fs.int(0, 1e9), stones: ['#3a3028', '#2e2620', '#463a2e'], mortar: '#0c0806', dark: 0.4, roof: [10, 34], walls: [10, 12],
+      stal: { n: 18, len: [6, 34], w: [3, 7], tip: '#c8702a' }, lip: ['#5a4a36', '#3a2e22'],
+    });
+  } else {
+    sky(cv, 0, 150, ['#5a8ac0', '#8ab0d4', '#c8d8e0', '#e8e0d0']);
+    const cr = s('clouds');
+    for (let i = 0; i < 3; i++) cv.stamp(cloud(cr, cr.int(26, 50), cr.int(6, 10)), pal, cr.int(0, W), cr.int(10, 34), { outline: false, texture: 0 });
+    silhouette(cv, { base: 76, amp: 14, freq: 0.012, seed: s('far').int(0, 1e9), fill: '#b0a498', rim: '#ccc2b4', peaks: 0.3 });
+    fog(cv, '#e0d8cc', 70, 120, 0.25, s('haze').int(0, 1e9));
+    silhouette(cv, { base: 100, amp: 8, freq: 0.02, seed: s('far2').int(0, 1e9), fill: '#8a7e72', rim: '#a09486', rough: 3 });
+  }
   // the benches: steps cut down from one side, each a level shelf over a sheer face
   const ts = s('terrain'), top = new Float32Array(W), right = ts.next() < 0.5;
   const steps = [ts.int(108, 118), ts.int(128, 138), ts.int(148, 156), ts.int(166, 176)];
@@ -51,12 +61,19 @@ export function compose(cv, seed) {
     a: '#5a5048', b: '#4e463e', grain: '#8a7e70', dark: '#1e1812', deep: '#0e0a08', cave: '#060404',
     crust: ['#9a8a6e', '#7a6c56', '#5a4e40'], crustH: 3, seed: ss,
     cobble: { stones: ['#5e5246', '#4e443a', '#6a5c4c', '#463e36', '#584c40', '#6a5236'], mortar: '#16100c', s: 4 },
-    seams: { cols: ['#a0502a', '#b8b0a0', '#c09a3a', '#c87a2a'], n: 14 },
   });
   moss(cv, { cols: ['#8a7a5e', '#6a5c48', '#4a4034'], seed: ss + 1, drape: 5, rate: 0.08, len: 6 });
-  // flecks of ore glinting in the rock
-  const fl = s('flecks');
-  for (let i = 0; i < 160; i++) {
+  // pockets of ore in the rock — rust, gold, quartz — and stray flecks glinting
+  const fl = s('flecks'), ores = [[0xff2a5aa8, 0xff3a7ac8], [0xff3ab0e8, 0xff2a7ad0], [0xffd8e0e4, 0xffa8b0b4]];
+  for (let i = 0; i < 18; i++) {
+    const cx = fl.int(0, W - 1), cy = fl.int(100, H - 4), ore = ores[i % ores.length], r = fl.int(3, 6);
+    for (let k = 0; k < r * r * 1.6; k++) {
+      const a = fl.next() * Math.PI * 2, d = Math.sqrt(fl.next()) * r, xx = Math.round(cx + Math.cos(a) * d * 1.4), yy = Math.round(cy + Math.sin(a) * d);
+      if (xx < 0 || xx >= W || yy < 0 || yy >= H || !cv.solid[yy * W + xx] || !cv.solid[(yy - 3) * W + xx]) continue;
+      cv.set(xx, yy, ore[fl.next() < 0.7 ? 0 : 1]);
+    }
+  }
+  for (let i = 0; i < 90; i++) {
     const xx = fl.int(0, W - 1), yy = fl.int(0, H - 1);
     if (!cv.solid[yy * W + xx]) continue;
     cv.set(xx, yy, fl.next() < 0.6 ? 0xff3ab0e8 : 0xff2a7ad0);
@@ -99,6 +116,6 @@ export function compose(cv, seed) {
   for (const [x0, y0] of ledgeTops(cv, 3, tr.int(0, 1e9), 8)) { torch(cv, x0, y0, tr.int(8, 12)); cv.block(x0 - 3, y0 - 14, x0 + 4, y0 + 1); }
   cv.meta.lantern = [lx + 6, ly - 21];
   cv.meta.trickles = drips(cv, ss, 5);
-  cv.meta.vignette = 0.6;
+  cv.meta.vignette = cave ? 0.6 : 0.3;
   cv.meta.horizon = 100;
 }

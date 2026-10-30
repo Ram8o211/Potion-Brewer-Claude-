@@ -20,8 +20,6 @@ export const SCENE_H = 216;
  */
 export const CELL = 1;
 
-/** A wash or light's strength in flat steps, so it falls off in hard-edged bands, not a gradient. @param {number} t */
-const step = (t) => Math.floor(t / 0.035) * 0.035;
 
 /**
  * The canvas a region is composed on.
@@ -114,8 +112,8 @@ export class Canvas {
   }
 
   /**
-   * A light from a source: a disc fading out to radius r, added in flat
-   * steps when the scene is finished (cave.js finish), so it lights what is
+   * A light from a source: a disc fading smoothly out to radius r, added
+   * when the scene is finished (cave.js finish), so it lights what is
    * painted after it too. Recorded in meta.lights for the animation.
    * @param {number} x @param {number} y @param {number} r @param {number[]} rgb @param {number} k
    */
@@ -124,20 +122,20 @@ export class Canvas {
     (this.meta.lights ||= []).push([Math.round(x), Math.round(y), r, rgb]);
   }
 
-  /** Mix a colour over every painted pixel in a band, fading with `f(x, y)` (0..1) in flat steps. */
+  /** Mix a colour over every painted pixel in a band, fading smoothly with `f(x, y)` (0..1). */
   wash(c, f, y0 = 0, y1 = this.H) {
     for (let y = Math.max(0, y0); y < Math.min(this.H, y1); y++) for (let x = 0; x < this.W; x++) {
-      const t = step(f(x, y));
+      const t = f(x, y);
       if (t <= 0.004) continue;
       const k = y * this.W + x;
       this.pix.px[k] = mixPacked(this.pix.px[k], c, Math.min(1, t));
     }
   }
 
-  /** Brighten pixels additively by colour c × t(x, y) (light, glow), in flat steps. */
+  /** Brighten pixels additively by colour c × t(x, y) (light, glow), smoothly. */
   light(rgb, f, y0 = 0, y1 = this.H) {
     for (let y = Math.max(0, y0); y < Math.min(this.H, y1); y++) for (let x = 0; x < this.W; x++) {
-      const t = step(f(x, y));
+      const t = f(x, y);
       if (t <= 0.004) continue;
       const k = y * this.W + x, c = this.pix.px[k];
       const r = Math.min(255, (c & 255) + rgb[0] * 255 * t), g = Math.min(255, ((c >>> 8) & 255) + rgb[1] * 255 * t), b = Math.min(255, ((c >>> 16) & 255) + rgb[2] * 255 * t);
@@ -147,20 +145,23 @@ export class Canvas {
 }
 
 /**
- * A sky: vertical colour stops quantised into a few flat bands with hard
- * edges, each band a little taller than the one above it.
- * @param {Canvas} cv @param {number} y0 @param {number} y1 @param {string[]} stops @param {number} [bands]
+ * A sky (or a cave's back wall): a smooth vertical gradient through the
+ * colour stops, a faint ordered dither keeping it free of banding.
+ * @param {Canvas} cv @param {number} y0 @param {number} y1 @param {string[]} stops @param {number} [_bands] (unused: the gradient is smooth)
  */
-export function sky(cv, y0, y1, stops, bands = 12) {
-  const cols = stops.map(hex), n = Math.max(3, Math.min(6, Math.round(bands / 2)));
+export function sky(cv, y0, y1, stops, _bands) {
+  const cols = stops.map(hex);
   const at = (t) => {
-    const f = Math.min(cols.length - 1.0001, t * (cols.length - 1)), i = Math.floor(f), u = f - i;
+    const f = Math.min(cols.length - 1.0001, Math.max(0, t) * (cols.length - 1)), i = Math.floor(f), u = f - i;
     return cols[i].map((v, k) => v + (cols[i + 1][k] - v) * u);
   };
-  const steps = Array.from({ length: n }, (_, i) => pack(at(i / (n - 1))));
+  const B = [0, 0.5, 0.125, 0.625, 0.75, 0.25, 0.875, 0.375];
   for (let y = y0; y < y1; y++) {
-    const t = (y - y0) / Math.max(1, y1 - y0 - 1), b = Math.min(n - 1, Math.floor(Math.pow(t, 0.8) * n));
-    for (let x = 0; x < cv.W; x++) cv.set(x, y, steps[b]);
+    const c = at(Math.pow((y - y0) / Math.max(1, y1 - y0 - 1), 0.9));
+    for (let x = 0; x < cv.W; x++) {
+      const d = (B[(x & 3) + ((y & 1) << 2)] - 0.5) / 255;
+      cv.set(x, y, pack([c[0] + d, c[1] + d, c[2] + d]));
+    }
   }
 }
 
