@@ -27,6 +27,38 @@ export function sceneCanvas(region, seed) {
 }
 
 /**
+ * Where a finger has swept through the scene: each a push at column x of
+ * strength `a` (signed: the way it went) at time t0, ringing in the foliage
+ * round it for a few seconds. Fed by the view (ui/views/wilds.js), read by windAt.
+ * @type {{x:number, a:number, t0:number}[]}
+ */
+const pushes = [];
+
+/** The seconds a push rings for. */
+const RING = 3.2;
+
+/** Push the foliage round column x (scene pixels) at time t: a swipe's sweep. @param {number} x @param {number} a signed strength @param {number} t */
+export function disturb(x, a, t) {
+  while (pushes.length && (t - pushes[0].t0 > RING || t < pushes[0].t0)) pushes.shift();
+  if (pushes.length > 24) pushes.shift();
+  pushes.push({ x, a, t0: t });
+}
+
+/** Forget every push (a new scene). */
+export function calm() { pushes.length = 0; }
+
+/** The push of what the finger has swept at column x and time t: a damped oscillation, strongest where it passed. @param {number} x @param {number} t */
+export function shakeAt(x, t) {
+  let v = 0;
+  for (const p of pushes) {
+    const u = t - p.t0;
+    if (u < 0 || u > RING) continue;
+    v += p.a * Math.exp(-(((x - p.x) / 34) ** 2)) * Math.exp(-u * 1.5) * Math.sin(u * 11);
+  }
+  return v;
+}
+
+/**
  * The wind over a region at column x and time t (seconds): a breeze slowly
  * rising, falling and turning about, waves running along with it through
  * the leaves, and now and then a gust sweeping across the scene, each of
@@ -44,7 +76,7 @@ export function windAt(x, t, ph) {
     const fx = dir > 0 ? -90 + u * (SCENE_W + 180) : SCENE_W + 90 - u * (SCENE_W + 180);
     gust += (s - 0.2) * 1.5 * Math.exp(-(((x - fx) / 60) ** 2));
   }
-  return breeze + wave * (0.5 + Math.abs(breeze)) + dir * gust;
+  return breeze + wave * (0.5 + Math.abs(breeze)) + dir * gust + shakeAt(x, t);
 }
 
 /** Per sway group, its shift this frame: of the whole group, and further at a hanging strand's end. */
@@ -66,7 +98,7 @@ export function swayPixels(sw, out, t, wind = 1, ph = 0) {
   if (shiftBuf.length < G) { shiftBuf = new Float32Array(G); tipBuf = new Float32Array(G); }
   for (let g = 0; g < G; g++) {
     const x = sw.gx[g], v = windAt(x, t, ph) * wind, a = sw.amp[g];
-    shiftBuf[g] = a ? Math.max(-1.8, Math.min(1.8, a * (v * 0.7 + 0.15 * wind * Math.sin(t * (2.6 + (g % 5) * 0.37) + g * 1.7)))) : 0;
+    shiftBuf[g] = a ? Math.max(-3, Math.min(3, a * (v * 0.7 + 0.15 * wind * Math.sin(t * (2.6 + (g % 5) * 0.37) + g * 1.7)))) : 0;
     // a strand's end follows the wind a moment late, whipping a little
     tipBuf[g] = sw.hang[g] * (windAt(x, t - 0.4, ph) * wind * 0.9 + 0.25 * wind * Math.sin(t * 2.1 + g * 2.3));
   }

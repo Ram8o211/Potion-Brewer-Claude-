@@ -35,8 +35,8 @@ const TAU = Math.PI * 2, UP = -Math.PI / 2, DOWN = Math.PI / 2;
 /** The forms that hang from the roof on a vine: glowing crystal drops, bells, orbs, tears, nets, jellies and puffs. */
 export const DANGLERS = ['icicle', 'bellbloom', 'orb', 'teardrop', 'bluebell', 'netpod', 'jelly', 'puffbloom'];
 
-/** The forms that grow on trees, out of the trunk's bark: orchids, glowing fruit on the trunk, lichen rosettes. */
-export const TREEBORN = ['orchid', 'trunkfruit', 'lichen'];
+/** The forms that grow among the leaves of a tree: round fruit on short stalks, apples, pears and plums. */
+export const ORCHARD = ['apple', 'pear', 'plum'];
 
 /**
  * Where each form of ingredient is found, and how often: on the ground; hanging
@@ -57,7 +57,7 @@ export const MOUNTS = {
   nugget: [['wall', 0.6], ['ground', 0.4]],
   scale: [['ground', 0.6], ['wall', 0.4]],
   ...Object.fromEntries(DANGLERS.map((k) => [k, [['hang', 1]]])),
-  ...Object.fromEntries(TREEBORN.map((k) => [k, [['trunk', 1]]])),
+  ...Object.fromEntries(ORCHARD.map((k) => [k, [['bough', 1]]])),
 };
 
 /**
@@ -1029,64 +1029,54 @@ function dangle(c) {
   }
 }
 
-// ------------------------------------------------------- what grows on trees
+// ------------------------------------------------------- fruit among the leaves
 
 /**
- * A tree-borne plant: a mossy patch on the trunk's bark, and out of it an
- * orchid's arching spike of glowing blooms, clusters of glowing fruit on
- * short stalks, or rosettes of glowing lichen. Drawn out from a wall (+x);
- * on the ground (only when no trunk has room) it stands up instead.
+ * A fruiting twig: a leafy sprig hanging from a bough of the tree, and on
+ * short stalks the round fruit of its kind — an apple (round, dimpled at the
+ * stalk), a pear (a narrow neck swelling into a heavy base) or a plum (small,
+ * in a pair or three, with a pale bloom). Green and small while ripening;
+ * the species' colour, glossy, when mature. On the ground (only when no tree
+ * has room) the twig lies mirrored.
  * @param {Ctx} c
  */
-function epiphyte(c) {
-  const { d, P, g, st, H, rng, pal, mount, closed } = c;
-  const sk = /** @type {Sketch} */ (mount === 'wall' ? c.sk : /** @type {any} */ ({
-    seed: c.sk.seed, set: (x, y, k) => c.sk.set(y, -x, k), has: (x, y) => c.sk.has(y, -x), emit: (x, y, k) => c.sk.emit(y, -x, k),
-    glint: (x, y) => c.sk.glint(y, -x), later: (z, fn) => c.sk.later(z, fn),
+function orchard(c) {
+  const { d, P, g, st, H, rng, pal, mount, closed } = c, dir = mount === 'bough' || mount === 'hang' ? 1 : -1;
+  const sk = /** @type {Sketch} */ (dir === 1 ? c.sk : /** @type {any} */ ({
+    seed: c.sk.seed, set: (x, y, k) => c.sk.set(x, -y, k), has: (x, y) => c.sk.has(x, -y), emit: (x, y, k) => c.sk.emit(x, -y, k),
+    glint: (x, y) => c.sk.glint(x, -y), later: (z, fn) => c.sk.later(z, fn),
   }));
-  const lit = !closed, gl = lit ? pal.glow : null;
-  // the patch of moss it grips the bark with
-  sk.later(0, () => blob(sk, 0.5, 0, 1.6, 2.2 + g * 1.4, pal.leaf, { bumps: 0.2, grain: 0.7, ph: [rng.next() * 6, 0, 0] }));
-  if (d.form === 'orchid') {
-    for (let i = 0; i < 2 + st; i++) {
-      const dy = (i - (1 + st) / 2) * 1.6, a = (i % 2 ? 0.5 : -0.2) + dy * 0.12;
-      sk.later(1, () => leaf(sk, 1, dy, a, P.leafLen * (0.9 + g * 0.8), P.leafW * 0.8, pal.leaf, 'lance', { rib: null }));
-    }
-    if (st === 0) return;
-    const pts = stem(sk, rng, 1, -1, -0.7 + (rng.next() - 0.5) * 0.3, H * (1.2 + g * 0.5), 1.2, 1, pal.stem, { jitter: 0.1, droop: 0.9 });
-    const m = [0, 2, 3 + (P.cluster > 4 ? 1 : 0)][st];
-    nodes(pts, 3, (x, y, a, t) => {
-      if (t < 0.3) return;
-      sk.later(3, () => {
-        for (let k = 0; k < 5; k++) leaf(sk, x, y, k * TAU / 5 + 0.3, 2.4 * (0.7 + g * 0.4), 1.15, pal.main, 'oval', { rib: null });
-        disc(sk, x, y, 0.9, pal.accent);
-        if (gl) { sk.emit(x, y, at(gl, 1)); sk.emit(x + 1, y + 1, at(gl, 0.7)); }
-      });
-    });
-    const [tx, ty] = pts[pts.length - 1];
-    sk.later(3, () => { disc(sk, tx, ty, 1.1, pal.main); if (gl) sk.emit(tx, ty, at(gl, 1)); });
-    return void m;
-  }
-  if (d.form === 'lichen') {
-    const n = [2, 4, 6][st];
-    for (let i = 0; i < n; i++) {
-      const y = (i / Math.max(1, n - 1) - 0.5) * H * 1.7, r = 2 + rng.next() * (1 + g * 1.6), x = 0.5 + rng.next() * 3.5 * (0.5 + g * 0.5);
-      sk.later(1 + (i % 2), () => {
-        blob(sk, x + r * 0.4, y, r, r * 1.1, pal.main, { bumps: 0.28, grain: 0.8, ph: [rng.next() * 6, 0, 0] });
-        disc(sk, x + r * 0.5, y, Math.max(0.7, r * 0.35), pal.pale);
-        if (gl) { sk.emit(x + r * 0.5, y, at(gl, 1)); for (let k = 0; k < r; k++) if (hash2(k, i, c.sk.seed) < 0.6) sk.emit(x + r * (0.2 + hash2(i, k, 3)), y + (hash2(k, k, i) - 0.5) * r * 1.6, at(gl, 0.7)); }
-      });
-    }
-    return;
-  }
-  // trunkfruit: clusters of fruit hanging on short stalks from the bark
-  const n = [1, 2, 3][st];
-  for (let i = 0; i < n; i++) {
-    const y = (i - (n - 1) / 2) * H * 0.7, a = (i % 2 ? 0.5 : -0.2) + (rng.next() - 0.5) * 0.3, len = 3 + rng.next() * 2 + g * 3;
-    const ex = 1 + Math.cos(a) * len, ey = y + Math.sin(a) * len;
-    sk.later(2, () => {
-      stroke(sk, [[0.5, y], [(0.5 + ex) / 2, y + 0.4], [ex, ey]], 1.2, 1, pal.stem);
-      bunch(sk, rng, ex, ey, [2, 3, 5][st], P.berryR * (0.8 + g * 0.4), g < 0.95 ? pal.leaf : pal.main, gl);
+  const ripe = g >= 0.95, body = ripe ? pal.main : pal.leaf, gl = ripe && !closed && P.glow ? pal.glow : null;
+  // the twig: a short woody sprig with leaves, hanging from the bough
+  const L = H * (0.7 + g * 0.3), pts = stem(sk, rng, 0, 0, DOWN + (rng.next() - 0.5) * 0.5, L, 1.3, 1, pal.wood, { jitter: 0.25, curl: (rng.next() - 0.5) * 0.12 });
+  sk.later(0, () => blob(sk, 0, 0, 2.2, 1.2, pal.leaf, { bumps: 0.2 }));
+  nodes(pts, 2, (x, y, a, t, i) => {
+    if (t < 0.15) return;
+    const side = i % 2 ? 1 : -1;
+    sk.later(2, () => leaf(sk, x, y, a + side * 1.0, 3 * Math.min(1, g + 0.4), 1.5, pal.leaf, 'oval', { rib: pal.mark }));
+  });
+  const n = d.form === 'plum' ? [1, 2, 3][st] : [1, 1, 2][st], R = (d.form === 'plum' ? 2.5 : 3.6) * (0.55 + 0.45 * g) * (0.92 + P.berryR * 0.08);
+  for (let k = 0; k < n; k++) {
+    const t = n === 1 ? 0.95 : 0.55 + (k / (n - 1)) * 0.45, [px, py] = pts[Math.min(pts.length - 1, Math.round(t * (pts.length - 1)))];
+    const side = k % 2 ? 1 : -1, ox = k === n - 1 ? side * 1.5 : side * (2.5 + rng.next() * 1.5), len = 1.5 + rng.next(), fy = py + len + R, fx = px + ox;
+    sk.later(3, () => {
+      stroke(sk, [[px, py], [px + ox * 0.5, py + len * 0.6], [fx, fy - R * 0.8]], 1, 1, pal.wood);
+      if (d.form === 'pear') {
+        // narrow neck, heavy base
+        disc(sk, fx, fy - R * 0.55, R * 0.62, body);
+        disc(sk, fx, fy + R * 0.3, R * 0.95, body);
+      } else if (d.form === 'plum') {
+        blob(sk, fx, fy, R * 0.9, R, body);
+        for (let j = 0; j < R * 1.6; j++) sk.set(fx, fy - R + 0.5 + j, at(body, 0.25));
+      } else {
+        disc(sk, fx, fy, R, body);
+        sk.set(fx, fy - R + 0.5, at(body, 0.1));
+      }
+      const hy = d.form === 'pear' ? fy + R * 0.1 : fy;
+      if (ripe) { sk.set(fx - R * 0.45, hy - R * 0.45, at(body, 1)); sk.set(fx - R * 0.2, hy - R * 0.5, at(body, 0.9)); if (d.form === 'plum') sk.set(fx + R * 0.35, hy + R * 0.2, at(pal.pale, 0.7)); }
+      if (gl) { sk.emit(fx, hy, at(gl, 0.8)); sk.emit(fx + 1, hy + 1, at(gl, 0.6)); }
+      else sk.glint(fx - R * 0.45, hy - R * 0.45);
+      if (k === 0 && ripe) leaf(sk, px + ox * 0.5, py + len * 0.4, -side * 0.6 + DOWN * 0.4, 2.6, 1.2, pal.leaf, 'oval', { rib: null });
     });
   }
 }
@@ -1111,7 +1101,7 @@ export function growFrame(d, stage, o = {}) {
   const sk = new Sketch(mount, seed);
   /** @type {Ctx} */
   const c = { sk, d, P, g, st, H: Math.min(26, P.h * vk * (mount === 'hang' ? 1.1 : 1) * (0.45 + 0.55 * g)), rng: new Rng(seed), pal: d.pal, mount, closed: !!o.closed };
-  (DANGLERS.includes(d.form) ? dangle : TREEBORN.includes(d.form) ? epiphyte : BUILD[d.family] || BUILD.mineral)(c);
+  (DANGLERS.includes(d.form) ? dangle : ORCHARD.includes(d.form) ? orchard : BUILD[d.family] || BUILD.mineral)(c);
   sk.flush();
   return sk.frame(!!o.flip);
 }

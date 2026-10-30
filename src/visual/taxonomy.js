@@ -18,8 +18,8 @@ export const FAMILY_OF = Object.freeze({
   shell: 'shell', scale: 'shell',
   // hanging vines (visual/growth.js DANGLERS)
   icicle: 'crystal', bellbloom: 'flower', bluebell: 'flower', puffbloom: 'flower',
-  // tree-borne (visual/growth.js TREEBORN)
-  orchid: 'flower', lichen: 'moss', trunkfruit: 'fruit',
+  // fruit among a tree's leaves (visual/growth.js ORCHARD)
+  apple: 'fruit', pear: 'fruit', plum: 'fruit',
   orb: 'fruit', teardrop: 'fruit', netpod: 'fruit', jelly: 'fruit',
 });
 

@@ -117,6 +117,8 @@ export class GameState {
     /** @type {Record<string, number>} */ this.achievements = data.achievements;
     /** @type {any} */ this.current = data.current;
     /** @type {{served:number, perfect:number, earned:number, spent:number, brews:number, declined:number, bestQuality:number, gathered?:number, trials?:number, refunds?:number, disputesWon?:number, bred?:number, recovered?:number, culled?:number}} */
+    /** wild ingredients gathered at least once (material id → 1): only these are listed in the Wilds; saves from before it keep what they already hold @type {Record<string, number>} */
+    this.found = data.found || Object.fromEntries(Object.entries(data.inventory || {}).filter(([id, n]) => id.startsWith('wild-') && Number(n) > 0).map(([id]) => [id, 1]));
     this.stats = { served: 0, perfect: 0, earned: 0, spent: 0, brews: 0, declined: 0, bestQuality: 0, ...(data.stats || {}) };
     /** @type {{active:boolean, step:number, done:boolean, tips?:Record<string, boolean>}} */ this.tutorial = { active: false, step: 0, done: true, ...(data.tutorial || {}) };
     /** @type {{event:string, mods:Record<string, number>}} */ this.market = data.market || { event: 'none', mods: {} };
@@ -198,6 +200,7 @@ export class GameState {
       history: [],
       achievements: {},
       current: null,
+      found: {},
       stats: { served: 0, perfect: 0, earned: 0, spent: 0, brews: 0, declined: 0, bestQuality: 0 },
       tutorial: { active: opts.tutorial !== false, step: 0, done: opts.tutorial === false },
       market: { event: 'none', mods: {} },
@@ -267,6 +270,7 @@ export class GameState {
     const { take } = gatherPlan(this, d, m, { thorough: opts.thorough });
     const r = harvest(this, { ...d, take }, { ...opts, key: m && m.wild ? m.wild.key : '' });
     if (r.ok && !opts.unlimited) {
+      this.found[d.materialId] = 1;
       this.stats.gathered = (this.stats.gathered || 0) + r.amount;
       /** @type {any} */ (r).events = [...this.unlock('forage1')];
       if (this.stats.gathered >= 1000) /** @type {any} */ (r).events.push(...this.unlock('forage1k'));
@@ -1154,6 +1158,7 @@ export class GameState {
       history: this.history,
       achievements: this.achievements,
       current: this.current,
+      found: this.found,
       stats: this.stats,
       tutorial: this.tutorial,
       market: this.market,

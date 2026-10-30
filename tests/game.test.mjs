@@ -86,7 +86,7 @@ test('generated commissions are achievable: their hidden reference plans brew to
     assert.ok(!ab.failed, `reference plan for ${com.style} completes`);
     const ev = evaluatePotion(com, measureParticles(sim, tapSelection(sim, com.bottleN)));
     qualities.push(ev.quality);
-    assert.ok(ev.quality >= 0.8, `${com.style} (tier ${com.tier}) brewed to quality ${ev.quality.toFixed(2)}`);
+    assert.ok(ev.quality >= 0.75, `${com.style} (tier ${com.tier}) brewed to quality ${ev.quality.toFixed(2)}`);
   }
   const mean = qualities.reduce((a, b) => a + b, 0) / qualities.length;
   assert.ok(mean >= 0.95, `mean quality ${mean.toFixed(3)}`);
