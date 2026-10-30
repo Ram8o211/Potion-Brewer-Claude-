@@ -33,39 +33,36 @@ import { pack } from './color.js';
 const TAU = Math.PI * 2, UP = -Math.PI / 2, DOWN = Math.PI / 2;
 
 /**
- * Where each form of ingredient is found, and how often: on the ground;
- * hanging from a tree's boughs and leaves (bough), from the rock of a
- * ledge's underside or a cave's roof (ceiling), or from either (hang); out
- * of a rock face (wall) or a tree's trunk (trunk). The ground is always the
- * last resort.
+ * Where each form of ingredient is found, and how often: on the ground; hanging
+ * (only vines hang: from the boughs, the leaves, a ledge's underside or the
+ * cave's roof); out of a rock face (wall) or a tree's trunk (trunk). The
+ * ground is always the last resort.
  * @type {Record<string, [string, number][]>}
  */
 export const MOUNTS = {
-  leaf: [['ground', 0.6], ['bough', 0.4]],
-  root: [['ground', 0.6], ['hang', 0.4]],
+  leaf: [['ground', 0.55], ['hang', 0.45]],
   bracket: [['trunk', 0.65], ['wall', 0.35]],
   moss: [['wall', 0.4], ['hang', 0.35], ['ground', 0.25]],
-  berry: [['bough', 0.7], ['ground', 0.3]],
-  bean: [['bough', 0.6], ['ground', 0.4]],
+  berry: [['hang', 0.75], ['ground', 0.25]],
+  bean: [['hang', 0.7], ['ground', 0.3]],
   bark: [['trunk', 0.85], ['ground', 0.15]],
-  crystal: [['ground', 0.4], ['wall', 0.35], ['ceiling', 0.25]],
+  crystal: [['ground', 0.5], ['wall', 0.5]],
   shard: [['ground', 0.6], ['wall', 0.4]],
   stone: [['ground', 0.75], ['wall', 0.25]],
   powder: [['ground', 0.5], ['wall', 0.5]],
-  crust: [['wall', 0.6], ['ceiling', 0.2], ['ground', 0.2]],
+  crust: [['wall', 0.75], ['ground', 0.25]],
   nugget: [['wall', 0.6], ['ground', 0.4]],
   scale: [['ground', 0.6], ['wall', 0.4]],
 };
 
 /**
- * The mounts a form can take, with their weights. A plant of the ground can
- * also root in a crevice of a rock face where the ground has no room left
- * (weight 0: never by choice); anything can stand on the ground.
+ * The mounts a form can take, with their weights; anything can stand on the
+ * ground (weight 0 where it is not found there: only when nowhere else has room).
  * @param {string} form @returns {[string, number][]}
  */
 export function mountsOfForm(form) {
   const m = MOUNTS[form];
-  if (!m) return [['ground', 1], ['wall', 0]];
+  if (!m) return [['ground', 1]];
   return m.some(([k]) => k === 'ground') ? m : [...m, ['ground', 0]];
 }
 
@@ -73,7 +70,7 @@ export function mountsOfForm(form) {
 export const frameMount = (mount) => (mount === 'hang' || mount === 'bough' || mount === 'ceiling' ? 'hang' : mount === 'wall' || mount === 'trunk' ? 'wall' : 'ground');
 
 /** Mature height (scene pixels) of each family before its own variation. */
-const BASE_H = { flower: 22, herb: 18, root: 21, fungus: 16, moss: 15, fruit: 19, reed: 27, bark: 14, crystal: 17, mineral: 13, shell: 12 };
+const BASE_H = { flower: 15, herb: 12, root: 14, fungus: 11, moss: 10, fruit: 13, reed: 19, bark: 10, crystal: 14, mineral: 12.5, shell: 12 };
 
 // ---------------------------------------------------------------- the sketch
 
@@ -113,6 +110,8 @@ class Sketch {
     this.seed = seed;
     /** @type {number[][]} */
     this.glints = [];
+    /** pixels that give light (glowing caps, berries, crystal tips) @type {number[][]} */
+    this.glows = [];
     /** @type {[number, number, Function][]} */
     this.jobs = [];
   }
@@ -126,6 +125,9 @@ class Sketch {
 
   /** Whether a pixel is painted. */
   has(x, y) { return !!(this.pix.get(Math.round(x) + this.o, Math.round(y) + this.o) >>> 24); }
+
+  /** A pixel that gives light of its own: painted in a colour the lighting leaves alone, and a halo is drawn round it. */
+  emit(x, y, c) { this.set(x, y, c); this.glows.push([Math.round(x), Math.round(y)]); }
 
   /** A pixel that may glimmer. */
   glint(x, y) { this.glints.push([Math.round(x), Math.round(y)]); }
@@ -152,14 +154,16 @@ class Sketch {
     const w = x1 - x0 + 1, h = y1 - y0 + 1, out = new Pixels(w, h);
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) out.px[y * w + (flip ? w - 1 - x : x)] = src[(y + y0) * N + x + x0];
     const fx = (x) => (flip ? w - 1 - (x + o - x0) : x + o - x0);
-    const seen = new Set();
-    const glints = this.glints.map(([x, y]) => [fx(x), y + o - y0]).filter(([x, y]) => {
-      const k = y * w + x;
-      if (x < 0 || y < 0 || x >= w || y >= h || !(out.px[k] >>> 24) || seen.has(k)) return false;
-      seen.add(k);
-      return true;
-    });
-    return { pix: inked(out), ax: fx(0) + 1, ay: o - y0 + 1, glints: glints.map(([x, y]) => [x + 1, y + 1]) };
+    const within = (list) => {
+      const seen = new Set();
+      return list.map(([x, y]) => [fx(x), y + o - y0]).filter(([x, y]) => {
+        const k = y * w + x;
+        if (x < 0 || y < 0 || x >= w || y >= h || !(out.px[k] >>> 24) || seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      }).map(([x, y]) => [x + 1, y + 1]);
+    };
+    return { pix: inked(out), ax: fx(0) + 1, ay: o - y0 + 1, glints: within(this.glints), glows: within(this.glows) };
   }
 }
 
@@ -343,17 +347,25 @@ function tuft(sk, rng, x, y, size, rp, a0 = UP) {
   for (let i = 0; i < n; i++) leaf(sk, x, y, a0 + (i / (n - 1) - 0.5) * 2.6 + (rng.next() - 0.5) * 0.4, size * (0.7 + rng.next() * 0.5), Math.max(0.8, size * 0.35), rp, 'oval', { rib: null });
 }
 
-/** A hanging bunch of berries below (x, y): rows widening, then narrowing to a point. @param {Sketch} sk @param {number[]} rp */
-function bunch(sk, rng, x, y, n, r, rp) {
+/** A round fruit: lit from the upper left, a glint on it, and, if it glows, a core that gives light. @param {Sketch} sk @param {number[]} rp @param {number[]|null} [gl] the glow ramp */
+function globe(sk, x, y, r, rp, gl = null) {
+  disc(sk, x, y, r, rp);
+  sk.set(x - r * 0.4, y - r * 0.4, at(rp, 1));
+  if (gl) {
+    sk.emit(x, y, at(gl, 0.8));
+    if (r >= 1.5) sk.set(x + 1, y, at(gl, 0.45));
+  } else sk.glint(x - r * 0.4, y - r * 0.4);
+}
+
+/** A hanging bunch of berries below (x, y): rows widening, then narrowing to a point. @param {Sketch} sk @param {number[]} rp @param {number[]|null} [gl] */
+function bunch(sk, rng, x, y, n, r, rp, gl = null) {
   const rows = [1, 2, 3, 2, 2, 1, 1];
   let k = 0;
   for (let row = 0; k < n && row < rows.length; row++) {
     const m = Math.min(rows[row], n - k);
     for (let i = 0; i < m; i++, k++) {
       const bx = x + (i - (m - 1) / 2) * r * 1.7 + (rng.next() - 0.5) * 0.6, by = y + r + row * r * 1.5;
-      disc(sk, bx, by, r, rp);
-      sk.set(bx - r * 0.4, by - r * 0.4, at(rp, 1));
-      if (i === 0 && row % 2 === 0) sk.glint(bx - r * 0.4, by - r * 0.4);
+      globe(sk, bx, by, r, rp, gl && (i + row) % 2 === 0 ? gl : null);
     }
   }
 }
@@ -384,11 +396,11 @@ export function growthParams(d) {
     droop: 0.04 + f() * 0.16 + tr.droop * 0.5,
     node: 2 + Math.floor(f() * 2),
     leaf: leafs[Math.floor(f() * leafs.length)],
-    leafLen: (3 + f() * 2.5) * (1 + tr.lush * 0.3),
-    leafW: 1 + f() * 0.8,
+    leafLen: (2.4 + f() * 1.8) * (1 + tr.lush * 0.3),
+    leafW: 0.9 + f() * 0.6,
     branchP: 0.25 + f() * 0.45 + tr.lush * 0.2,
     branchAng: 0.4 + f() * 0.35,
-    head: (2.6 + f() * 1.6) * (1 + tr.round * 0.2),
+    head: (2.1 + f() * 1.2) * (1 + tr.round * 0.2),
     petals: 4 + Math.floor(f() * 3) + (tr.round > 0.5 ? 1 : 0),
     petal: tr.sharp > 0.4 ? 'lance' : tr.round > 0.4 ? 'round' : f() < 0.5 ? 'oval' : 'lance',
     sym: tr.asym < 0.25 && f() < 0.4,
@@ -400,13 +412,16 @@ export function growthParams(d) {
     rings: 2 + Math.floor(f() * 3),
     prisms: 3 + Math.floor(f() * 4), fan: 0.8 + f() * 0.6, cw: 2.2 + f() * 1.6,
     chunks: 2 + Math.floor(f() * 2),
-    berryR: 1.1 + f() * 0.5 + tr.round * 0.3,
-    podLen: 4 + f() * 3,
+    berryR: 1 + f() * 0.4 + tr.round * 0.25,
+    podLen: 3.2 + f() * 2.2,
     tilt: (f() - 0.5) * 0.3,
     mandrake: tr.asym > 0.45,
     hot: tr.warm > 0.4,
-    glow: tr.glow > 0.3,
+    glow: false,
   };
+  // what glows: every mushroom and berry, the lichens of the dark regions, the arcane and the luminous, and a few others
+  const dark = d.id.region === 'netherwood' || d.id.region === 'moonfen';
+  P.glow = tr.glow > 0.25 || d.family === 'fungus' || d.form === 'berry' || (d.family === 'moss' && dark) || (d.family === 'crystal' && tr.glow > 0.1) || (dark && d.family !== 'mineral' && f() < 0.35) || f() < 0.08;
   PARAMS.set(d, P);
   return P;
 }
@@ -466,14 +481,14 @@ function head(c, pts, k) {
         const mx = x + Math.cos(nod) * r * 1.2, my = y + Math.sin(nod) * r * 1.2;
         for (const s of [-1, 0, 1]) leaf(sk, mx, my, nod + s * 1.1, r * 0.7, r * 0.3, pal.main, 'lance', { rib: null });
         sk.set(mx + Math.cos(nod) * 1.5, my + Math.sin(nod) * 1.5, at(pal.accent, 0.8));
-        if (P.glow) sk.glint(mx, my);
+        if (P.glow) sk.emit(mx, my, at(pal.glow, 1));
         break;
       }
       default: {
         // open petals round a heart
         for (let i = 0; i < P.petals; i++) leaf(sk, x, y, rot + (i * TAU) / P.petals, r, r * 0.5, pal.main, P.petal, { rib: pal.mark });
         disc(sk, x, y, Math.max(0.7, r * 0.28), pal.center);
-        if (P.glow) sk.glint(x, y);
+        if (P.glow) sk.emit(x, y, at(pal.glow, 1));
       }
     }
   });
@@ -525,7 +540,9 @@ const BUILD = {
           // a hanging leaf turns its blade down
           sk.later(2, () => leaf(sk, x, y, vine ? la + turn(la, DOWN) * 0.35 : la, ll, (big ? P.leafW * 1.45 : P.leafW) * (closed ? 0.55 : 1), pal.main, big ? P.leaf : 'lance', { serrate: sprig, rib: pal.mark }));
         }
-        if (g >= 0.95 && d.tr.spots > 0.3 && rng.next() < 0.4) sk.later(3, () => bunch(sk, rng, x, y, 3, 1, pal.accent));
+        if (g >= 0.95 && d.tr.spots > 0.3 && rng.next() < 0.4) sk.later(3, () => bunch(sk, rng, x, y, 3, 1, pal.accent, vine && P.glow && !closed ? pal.glow : null));
+        // a vine hangs globes from its nodes, glowing if its kind does
+        if (vine && g >= 0.7 && i % 2 === 1 && t > 0.3) sk.later(3, () => { stroke(sk, [[x, y], [x, y + 2]], 1, 1, pal.stem); globe(sk, x, y + 3.2, 1.3, pal.accent, P.glow && !closed ? pal.glow : null); });
         if (g >= 0.95 && sprig && t > 0.4 && rng.next() < 0.5) sk.later(3, () => stroke(sk, walk(rng, x, y, DOWN + (rng.next() - 0.5) * 0.8, 3, { jitter: 0.3 }), 1, 1, pal.accent));
       });
       const ta = tipAngle(pts), [tx, ty] = pts[pts.length - 1];
@@ -534,20 +551,7 @@ const BUILD = {
   },
 
   root(c) {
-    const { sk, P, g, H, rng, pal, mount } = c;
-    if (mount === 'hang') {
-      // roots dangling through the roof: strands that fork and thin to hairs
-      const n = [2, 3, 4 + (P.stems > 1 ? 1 : 0)][c.st];
-      sk.later(0, () => blob(sk, 0, 0.5, 3 + g * 2, 1.6, pal.soil, { rough: 0.3, grain: 0.5 }));
-      for (let i = 0; i < n; i++) {
-        const x0 = (i - (n - 1) / 2) * 2.2 + (rng.next() - 0.5);
-        const pts = stem(sk, rng, x0, 0, DOWN + (rng.next() - 0.5) * 0.5, H * (0.55 + rng.next() * 0.6), 1.2 + g * 0.8 + P.thick * 0.5, 1, pal.main, { jitter: 0.4 + P.jitter });
-        nodes(pts, 3, (x, y, a, t) => {
-          if (rng.next() < 0.35 + g * 0.2) stem(sk, rng, x, y, a + (rng.next() < 0.5 ? -1 : 1) * (0.5 + rng.next() * 0.5), H * 0.25 * (1 - t), 1, 1, pal.main, { jitter: 0.5 });
-        });
-      }
-      return;
-    }
+    const { sk, P, g, H, rng, pal } = c;
     if (P.mandrake) {
       // a mandrake half pulled from the ground: a forked body under a rosette
       const by = -(2.5 + g * 3.5), rx = 1.5 + g * 1.8, ry = 2 + g * 2.6;
@@ -569,7 +573,7 @@ const BUILD = {
     const pts = stem(sk, rng, 0, 0, UP + P.tilt + (rng.next() - 0.5) * 0.5, H, w, 1.2, pal.main, { jitter: 0.45 + P.jitter, curl: (rng.next() - 0.5) * 0.1 });
     for (const s of [-1, 1]) sk.later(1, () => stroke(sk, [[0, -1.5], [s * (1.5 + g), -0.6], [s * (3 + g * 2.5), 0]], Math.max(1.5, w * 0.8), 1, pal.main));
     nodes(pts, 3, (x, y, a, t) => {
-      if (t < 0.35 || rng.next() > 0.45 + g * 0.2) return;
+      if (t < 0.35 || g < 0.95 || rng.next() > 0.65) return;
       const b = stem(sk, rng, x, y, a + (rng.next() < 0.5 ? -1 : 1) * (0.7 + rng.next() * 0.4), H * (0.25 + rng.next() * 0.15) * g, Math.max(1, w * 0.5), 1, pal.main, { jitter: 0.5 });
       const [bx, by] = b[b.length - 1];
       sk.later(3, () => tuft(sk, rng, bx, by, 1.5 + g * 1.5, pal.leaf, tipAngle(b)));
@@ -604,7 +608,7 @@ const BUILD = {
             if (dd > 1) continue;
             const ring = Math.floor(Math.sqrt(dd) * P.rings);
             const col = dd > 0.78 ? at(pal.pale, 0.7) : j >= Math.ceil(ry * 0.35) ? at(pal.gill, 0.2) : at(pal.main, ring % 2 ? 0.45 : j < -ry * 0.4 ? 0.75 : 0.6);
-            sk.set(x0 + x, y + j, col);
+            if (P.glow && !c.closed && dd > 0.78 && x > 0) sk.emit(x0 + x, y + j, at(pal.glow, 0.7)); else sk.set(x0 + x, y + j, col);
           }
         });
         if (x0) sk.later(2 + i, () => {
@@ -630,14 +634,19 @@ const BUILD = {
           const t = -j / hh, hw = r * Math.pow(Math.max(0, 1 - t * t), flat);
           for (let x = -Math.round(hw); x <= Math.round(hw); x++) sk.set(tx + x, ty + j, tone(pal.main, lit(x / (r + 0.01), -t) * 1.2 + 0.15));
         }
-        for (let x = -Math.round(r) + 1; x <= Math.round(r) - 1; x++) sk.set(tx + x, ty + 1, at(pal.gill, Math.abs(x) % 2 ? 0.25 : 0.5));
+        const shine = P.glow && !c.closed;
+        for (let x = -Math.round(r) + 1; x <= Math.round(r) - 1; x++) {
+          if (shine && x % 2 === 0) sk.emit(tx + x, ty + 1, at(pal.glow, 0.75));
+          else sk.set(tx + x, ty + 1, at(pal.gill, Math.abs(x) % 2 ? 0.25 : 0.5));
+        }
+        if (shine) { sk.emit(tx - Math.round(r), ty, at(pal.glow, 1)); sk.emit(tx + Math.round(r), ty, at(pal.glow, 1)); }
         if (g >= 0.95 && (toad || d.tr.spots > 0.3)) for (let s = 0; s < 2 + Math.round(r); s++) {
           const sx = tx + Math.round((rng.next() - 0.5) * r * 1.3), sy = ty - 1 - Math.floor(rng.next() * hh * 0.8);
           if (sk.has(sx, sy)) { sk.set(sx, sy, at(pal.pale, 0.9)); if (r > 3 && sk.has(sx + 1, sy)) sk.set(sx + 1, sy, at(pal.pale, 0.7)); }
         }
-        if (P.glow && !c.closed) for (let s = 0; s < 2; s++) {
-          const sx = tx + Math.round((rng.next() - 0.5) * r), sy = ty - Math.floor(rng.next() * hh);
-          if (sk.has(sx, sy)) { sk.set(sx, sy, at(pal.glow, 1)); sk.glint(sx, sy); }
+        if (shine) for (let s = 0; s < 2 + Math.round(r / 3); s++) {
+          const sx = tx + Math.round((rng.next() - 0.5) * r * 1.2), sy = ty - 1 - Math.floor(rng.next() * hh * 0.8);
+          if (sk.has(sx, sy)) sk.emit(sx, sy, at(pal.glow, 1));
         }
       });
     });
@@ -655,7 +664,7 @@ const BUILD = {
       }
       for (let i = 0; i < [0, 1, 3][st]; i++) {
         const x = 1 + rng.next() * 2, y = H * 0.35 * g;
-        sk.later(2, () => { const p = walk(rng, x, y, DOWN, 3 + rng.next() * H * 0.6, { jitter: 0.25 }); stroke(sk, p, 1, 1, pal.main); disc(sk, p[p.length - 1][0], p[p.length - 1][1], 0.8, bead); sk.glint(p[p.length - 1][0], p[p.length - 1][1]); });
+        sk.later(2, () => { const p = walk(rng, x, y, DOWN, 3 + rng.next() * H * 0.6, { jitter: 0.25 }); stroke(sk, p, 1, 1, pal.main); disc(sk, p[p.length - 1][0], p[p.length - 1][1], 0.8, bead); if (P.glow && !closed) sk.emit(p[p.length - 1][0], p[p.length - 1][1], at(pal.glow, 1)); else sk.glint(p[p.length - 1][0], p[p.length - 1][1]); });
       }
       return;
     }
@@ -671,7 +680,7 @@ const BUILD = {
           for (let j = 2; j < p.length - 1; j += 2) if (rng.next() < 0.6) disc(sk, p[j][0] + (rng.next() < 0.5 ? -1 : 1), p[j][1], 0.8, pal.main);
           const [ex, ey] = p[p.length - 1];
           disc(sk, ex, ey + 1, 0.8, bead);
-          if (P.glow && !closed) sk.glint(ex, ey + 1);
+          if (P.glow && !closed) sk.emit(ex, ey + 1, at(pal.glow, 1));
         });
       }
       return;
@@ -681,22 +690,24 @@ const BUILD = {
     sk.later(1, () => blob(sk, 0, 0, rx, ry, pal.main, { bumps: 0.12, grain: 1, ph: [rng.next() * 6, 1, 2] }));
     for (let i = 0; i < [0, 2, 3 + Math.round(P.lush * 2)][st]; i++) {
       const x = (rng.next() - 0.5) * rx * 1.4, p = walk(rng, x, -ry * 0.6, UP + (rng.next() - 0.5) * 0.6, H * (0.35 + rng.next() * 0.35), { jitter: 0.15 });
-      sk.later(2, () => { stroke(sk, p, 1, 1, pal.stem); const [ex, ey] = p[p.length - 1]; disc(sk, ex, ey, 0.9, bead); if (P.glow && !closed) sk.glint(ex, ey); });
+      sk.later(2, () => { stroke(sk, p, 1, 1, pal.stem); const [ex, ey] = p[p.length - 1]; disc(sk, ex, ey, 0.9, bead); if (P.glow && !closed) sk.emit(ex, ey, at(pal.glow, 1)); });
     }
   },
 
   fruit(c) {
     const { sk, d, P, g, H, rng, pal, mount, st, closed } = c;
     const fruitPal = g < 0.95 ? pal.leaf : pal.main;
+    const gl = P.glow && !closed && g >= 0.95 ? pal.glow : null;
     if (d.form === 'berry' && mount === 'hang') {
-      // a stalk with leaves, bunches of berries hanging from it
-      const p = stem(sk, rng, 0, 0, DOWN + (rng.next() - 0.5) * 0.4, 3 + H * 0.2 * g, 1.6, 1, pal.wood, { jitter: 0.3 });
-      for (const s of [-1, 1]) sk.later(3, () => leaf(sk, 0, 1, DOWN + s * (1.1 + rng.next() * 0.3), P.leafLen * (0.7 + g * 0.5), P.leafW * 1.2, pal.leaf, P.leaf));
-      const m = [1, 2, 2 + (P.cluster > 3 ? 1 : 0)][st];
-      for (let i = 0; i < m; i++) {
-        const [x, y] = p[Math.min(p.length - 1, p.length - 1 - i * 2)], sx = x + (i ? (i % 2 ? 2.5 : -2.5) : 0);
-        sk.later(2, () => { stroke(sk, [[x, y], [sx, y + 2]], 1, 1, pal.stem); bunch(sk, rng, sx, y + 2, [2, 3, 4 + Math.round(H / 14)][st], P.berryR * (0.6 + g * 0.25), fruitPal); });
-      }
+      // a vine trailing from its hold, leaves along it and round berries hanging on short threads
+      const pts = stem(sk, rng, 0, 0, DOWN + (rng.next() - 0.5) * 0.4, H * 1.35, 1.4, 1, pal.stem, { jitter: 0.4, curl: (rng.next() - 0.5) * 0.12 });
+      nodes(pts, 2, (x, y, a, t, i) => {
+        const side = i % 2 ? 1 : -1;
+        sk.later(2, () => leaf(sk, x, y, a + side * 1.15, P.leafLen * 0.8 * Math.min(1, g + 0.3), P.leafW * 1.1, pal.leaf, P.leaf));
+        if (g >= 0.5 && i % 2 === 0 && t > 0.2) sk.later(3, () => { stroke(sk, [[x, y], [x - side * 0.5, y + 2]], 1, 1, pal.stem); globe(sk, x - side * 0.5, y + 2 + P.berryR, P.berryR * (0.7 + g * 0.3), fruitPal, gl); });
+      });
+      const [tx, ty] = pts[pts.length - 1];
+      sk.later(3, () => globe(sk, tx, ty + 1, P.berryR * (0.7 + g * 0.3), fruitPal, gl));
       return;
     }
     if ((d.form === 'bean') && mount === 'hang') {
@@ -704,7 +715,7 @@ const BUILD = {
       const pts = stem(sk, rng, 0, 0, DOWN + (rng.next() - 0.5) * 0.5, H * 1.15, 1.4, 1, pal.stem, { jitter: 0.45, curl: (rng.next() - 0.5) * 0.15 });
       nodes(pts, 3, (x, y, a, t, i) => {
         if (i % 2 === 0) sk.later(2, () => { for (const s of [-1, 0, 1]) leaf(sk, x, y, a + s * 0.9 + (i % 4 ? 0.8 : -0.8), P.leafLen * 0.75 * Math.min(1, g + 0.3), P.leafW, pal.leaf, 'oval', { rib: null }); });
-        else if (g > 0.5) sk.later(3, () => leaf(sk, x, y, DOWN + (rng.next() - 0.5) * 0.5, P.podLen * g, 1.3, fruitPal, 'pod', { rib: null, gloss: true }));
+        else if (g > 0.5) sk.later(3, () => { leaf(sk, x, y, DOWN + (rng.next() - 0.5) * 0.5, P.podLen * g, 1.3, fruitPal, 'pod', { rib: null, gloss: true }); if (gl) sk.emit(x, y + P.podLen * g * 0.55, at(gl, 0.8)); });
       });
       return;
     }
@@ -736,7 +747,7 @@ const BUILD = {
         if (g < 0.5 || i % 2 === 0) return;
         if (pepper) sk.later(3, () => { disc(sk, x, y + 0.5, 0.8, pal.stem); leaf(sk, x, y + 1, DOWN + (rng.next() - 0.5) * 0.5, P.podLen * (0.6 + g * 0.4) * 1.2, 1.7, fruitPal, 'cone', { rib: null, gloss: true }); });
         else if (d.form === 'bean') sk.later(3, () => leaf(sk, x, y, DOWN + (rng.next() - 0.5) * 0.6, P.podLen * g, 1.3, fruitPal, 'pod', { rib: null, gloss: true }));
-        else sk.later(3, () => bunch(sk, rng, x, y, [0, 2, 3 + Math.round(P.lush * 2)][st], P.berryR * (0.7 + g * 0.3), fruitPal));
+        else sk.later(3, () => bunch(sk, rng, x, y, [0, 2, 3 + Math.round(P.lush * 2)][st], P.berryR * (0.7 + g * 0.3), fruitPal, gl));
       });
       const [tx, ty] = pts[pts.length - 1];
       sk.later(2, () => leaf(sk, tx, ty, tipAngle(pts), P.leafLen * 0.7, P.leafW * 0.9, pal.leaf, P.leaf));
@@ -759,7 +770,7 @@ const BUILD = {
           stroke(sk, pts.slice(from, k), 1, 1, pal.main);
           const [tx, ty] = pts[k], a = tipAngle(pts);
           stroke(sk, [[tx, ty], [tx + Math.cos(a) * 3, ty + Math.sin(a) * 3]], 1, 1, pal.stem);
-          if (P.glow && !closed) sk.glint(pts[from + 1][0], pts[from + 1][1]);
+          if (P.glow && !closed) { sk.emit(pts[from + 1][0], pts[from + 1][1], at(pal.glow, 1)); sk.emit(pts[from + 2][0] + 1, pts[from + 2][1], at(pal.glow, 0.8)); }
         });
       }
     });
@@ -803,23 +814,23 @@ const BUILD = {
 
   crystal(c) {
     const { sk, d, P, g, H, rng, pal, mount } = c, shard = d.form === 'shard';
-    const nrm = mount === 'hang' ? DOWN : mount === 'wall' ? -0.3 : UP, tan = nrm + Math.PI / 2;
+    const nrm = mount === 'wall' ? -0.3 : UP, tan = nrm + Math.PI / 2;
     // the seed: a knot of host rock it grows out of
-    const bx = mount === 'wall' ? 1 : 0, by = mount === 'ground' ? -1 : mount === 'hang' ? 1 : 0;
+    const bx = mount === 'wall' ? 1 : 0, by = mount === 'ground' ? -1 : 0;
     sk.later(0, () => blob(sk, bx, by, 2.5 + g * 2, 1.5 + g * 1.2, pal.rock, { rough: 0.3, facets: 6, ph: [rng.next() * 6, rng.next() * 6, 1] }));
     const n = shard ? 2 + (P.chunks > 2 ? 1 : 0) : P.prisms;
     const spikes = [];
     for (let i = 0; i < n; i++) {
       const off = n === 1 ? 0 : i / (n - 1) - 0.5, ang = nrm + off * (shard ? 0.7 : P.fan) + (rng.next() - 0.5) * 0.25 + (mount === 'ground' ? P.tilt : 0);
-      spikes.push({ off, ang, len: H * g * (1 - Math.abs(off) * 0.9) * (0.75 + rng.next() * 0.3), wid: (shard ? P.cw + 1.2 : P.cw) * (0.75 + rng.next() * 0.45) * (0.7 + g * 0.3) });
+      spikes.push({ off, ang, len: H * g * (shard ? 1.25 : 1) * (1 - Math.abs(off) * 0.9) * (0.75 + rng.next() * 0.3), wid: (shard ? P.cw + 1.2 : P.cw) * (0.75 + rng.next() * 0.45) * (0.7 + g * 0.3) });
     }
     spikes.sort((a, b) => a.len - b.len);
-    spikes.forEach((s, i) => sk.later(1 + i, () => prism(sk, bx + Math.cos(tan) * s.off * 3, by + Math.sin(tan) * s.off * 3, s.ang, Math.max(3, s.len), Math.max(1.5, s.wid), pal.crystal, shard ? { tip: 1.6, skew: rng.next() < 0.5 ? -0.7 : 0.7 } : {})));
+    spikes.forEach((s, i) => sk.later(1 + i, () => { const L = Math.max(3, s.len), x0 = bx + Math.cos(tan) * s.off * 3, y0 = by + Math.sin(tan) * s.off * 3; prism(sk, x0, y0, s.ang, L, Math.max(1.5, s.wid), pal.crystal, shard ? { tip: 1.6, skew: rng.next() < 0.5 ? -0.7 : 0.7 } : {}); if (P.glow) sk.emit(x0 + Math.cos(s.ang) * (L - 2.5), y0 + Math.sin(s.ang) * (L - 2.5), at(pal.glow, 0.9)); }));
   },
 
   mineral(c) {
-    const { sk, d, P, g, H, rng, pal, mount } = c, wall = mount === 'wall', hang = mount === 'hang';
-    const nrm = hang ? DOWN : wall ? 0 : UP, tan = nrm + Math.PI / 2;
+    const { sk, d, P, g, H, rng, pal, mount } = c, wall = mount === 'wall';
+    const nrm = wall ? 0 : UP, tan = nrm + Math.PI / 2;
     const ph = () => [rng.next() * 6, rng.next() * 6, rng.next() * 6];
     switch (d.form) {
       case 'powder': {
@@ -827,20 +838,20 @@ const BUILD = {
           // a crust on the rock face, grains trickling from it
           sk.later(1, () => blob(sk, 1.2, 0, 2.2 + g, H * 0.45, pal.main, { rough: 0.25, grain: 1.4, ph: ph() }));
           sk.later(2, () => { for (let i = 0; i < 4; i++) sk.set(1 + (i % 2), H * 0.45 + 1 + i * 1.5, at(pal.main, 0.8)); });
-        } else sk.later(1, () => blob(sk, 0, -H * 0.2, H * 0.55, H * 0.55, pal.main, { rough: 0.15, grain: 1.4, ph: ph() }));
+        } else sk.later(1, () => blob(sk, 0, -H * 0.25, H * 0.55, H * 0.62, pal.main, { rough: 0.15, grain: 1.4, ph: ph() }));
         sk.later(3, () => { for (let i = 0; i < 6; i++) { const x = (rng.next() - 0.5) * (wall ? 3 : H), y = wall ? (rng.next() - 0.5) * H * 0.8 : -rng.next() * H * 0.3; if (sk.has(x, y)) { sk.set(x, y, at(pal.main, 1)); if (i < 3) sk.glint(x, y); } } });
         return;
       }
       case 'crust': {
         // needles blooming from the rock in tufts
         const m = 3 + (P.chunks > 2 ? 1 : 0);
-        sk.later(0, () => blob(sk, wall ? 1 : 0, hang ? 1 : wall ? 0 : -1, wall ? 1.6 : H * 0.45, wall ? H * 0.45 : 1.6, pal.rock, { rough: 0.3, ph: ph() }));
+        sk.later(0, () => blob(sk, wall ? 1 : 0, wall ? 0 : -1, wall ? 1.6 : H * 0.45, wall ? H * 0.45 : 1.6, pal.rock, { rough: 0.3, ph: ph() }));
         for (let i = 0; i < m; i++) {
           const off = (i / (m - 1) - 0.5) * H * 0.8, ox = Math.cos(tan) * off + (wall ? 1 : 0), oy = Math.sin(tan) * off;
           sk.later(1, () => {
             const k = 4 + Math.floor(rng.next() * 4);
             for (let j = 0; j < k; j++) {
-              const a = nrm + (j / (k - 1) - 0.5) * 1.8, l = (3 + rng.next() * H * 0.5) * (0.6 + g * 0.4);
+              const a = nrm + (j / (k - 1) - 0.5) * 1.8, l = (4.5 + rng.next() * H * 0.5) * (0.65 + g * 0.35);
               for (let u = 0; u <= l; u += 0.5) sk.set(ox + Math.cos(a) * u, oy + Math.sin(a) * u, at(pal.main, u > l - 1 ? 1 : j % 2 ? 0.55 : 0.75));
               if (j % 3 === 0) sk.glint(ox + Math.cos(a) * l, oy + Math.sin(a) * l);
             }
@@ -850,8 +861,8 @@ const BUILD = {
       }
       case 'nugget': {
         // lumps of metal set in their matrix of rock
-        const cx = wall ? 2 : 0, cy = wall ? 0 : -3;
-        sk.later(0, () => blob(sk, cx, cy, wall ? 3 : H * 0.55, wall ? H * 0.55 : 4, pal.rock, { rough: 0.25, facets: 7, ph: ph() }));
+        const cx = wall ? 2 : 0, cy = wall ? 0 : -3.6;
+        sk.later(0, () => blob(sk, cx, cy, wall ? 3 : H * 0.55, wall ? H * 0.55 : 4.8, pal.rock, { rough: 0.25, facets: 7, ph: ph() }));
         const m = 2 + P.chunks - 1;
         for (let i = 0; i < m; i++) {
           const off = (i / Math.max(1, m - 1) - 0.5) * H * 0.6, x = cx + Math.cos(tan) * off + Math.cos(nrm) * 1.5, y = cy + Math.sin(tan) * off + Math.sin(nrm) * 1.5, r = 1.4 + rng.next() * 1.4;
@@ -911,14 +922,14 @@ const BUILD = {
       const x = (i - (m - 1) / 2) * H * 0.7, a = (rng.next() - 0.5) * 0.8 + (i % 2 ? 0.3 : -0.3), open = i === Math.floor(m / 2);
       sk.later(1 + (open ? 1 : 0), () => {
         if (open) {
-          blob(sk, x - 1.5, -2.6, H * 0.4, H * 0.24, pal.main, { ang: a - 0.7 });
-          blob(sk, x + 1.5, -2.6, H * 0.4, H * 0.24, pal.main, { ang: a + 0.7 });
-          disc(sk, x, -2.6, 1.3, pal.pale, { lift: 0.3 });
-          sk.set(x - 0.5, -3.2, at(pal.iris, 1));
-          sk.glint(x - 0.5, -3.2);
+          blob(sk, x - 1.5, -3.6, H * 0.4, Math.max(3.2, H * 0.3), pal.main, { ang: a - 0.7 });
+          blob(sk, x + 1.5, -3.6, H * 0.4, Math.max(3.2, H * 0.3), pal.main, { ang: a + 0.7 });
+          disc(sk, x, -3.2, 1.3, pal.pale, { lift: 0.3 });
+          sk.set(x - 0.5, -3.8, at(pal.iris, 1));
+          sk.glint(x - 0.5, -3.8);
         } else {
-          blob(sk, x, -2.5, H * 0.48, H * 0.32, pal.main, { ang: a });
-          for (let u = -2; u <= 2; u += 2) sk.set(x + u * Math.cos(a), -2.5 + u * Math.sin(a), at(pal.main, 0.2));
+          blob(sk, x, -3.4, H * 0.46, Math.max(3.4, H * 0.4), pal.main, { ang: a });
+          for (let u = -2; u <= 2; u += 2) sk.set(x + u * Math.cos(a), -3 + u * Math.sin(a), at(pal.main, 0.2));
         }
       });
     }
@@ -933,7 +944,7 @@ const MOUNT_CODE = { ground: 0, hang: 1, wall: 2 };
  * it is the same at every stage.
  * @param {any} d descriptor @param {number} stage 0 sprout, 1 ripe, 2 mature
  * @param {{closed?:boolean, mount?:string, variant?:number, flip?:boolean}} [o]
- * @returns {{pix:Pixels, ax:number, ay:number, glints:number[][]}}
+ * @returns {{pix:Pixels, ax:number, ay:number, glints:number[][], glows:number[][]}}
  */
 export function growFrame(d, stage, o = {}) {
   const mount = frameMount(o.mount), st = d.botanical ? Math.max(0, Math.min(2, stage | 0)) : 2, variant = (o.variant ?? 0) & 3;
@@ -944,7 +955,7 @@ export function growFrame(d, stage, o = {}) {
   const g = [0.4, 0.7, 1][st];
   const sk = new Sketch(mount, seed);
   /** @type {Ctx} */
-  const c = { sk, d, P, g, st, H: Math.min(36, P.h * vk * (mount === 'hang' ? 1.1 : 1) * (0.45 + 0.55 * g)), rng: new Rng(seed), pal: d.pal, mount, closed: !!o.closed };
+  const c = { sk, d, P, g, st, H: Math.min(26, P.h * vk * (mount === 'hang' ? 1.1 : 1) * (0.45 + 0.55 * g)), rng: new Rng(seed), pal: d.pal, mount, closed: !!o.closed };
   (BUILD[d.family] || BUILD.mineral)(c);
   sk.flush();
   return sk.frame(!!o.flip);

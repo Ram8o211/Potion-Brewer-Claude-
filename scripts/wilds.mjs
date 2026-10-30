@@ -10,7 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { sceneOf, SCENE_W, SCENE_H } from '../src/visual/env/scene.js';
 import { PlantGround } from '../src/rendering/wild-scene.js';
-import { silhouetteOf, plantFrameOf, mountsOf, variantOf } from '../src/rendering/species-sprites.js';
+import { silhouetteOf, plantFrameOf, mountsOf, variantOf, emitColour } from '../src/rendering/species-sprites.js';
 import { GameState } from '../src/game/state.js';
 import { REGIONS, depositStatus } from '../src/game/gathering.js';
 import { Pixels } from '../src/visual/pixels.js';
@@ -41,12 +41,30 @@ for (const seed of seeds) {
     pix.px.set(sc.pix.px);
     const placed = plants.map((p) => ({ ...p, ...spots[p.id] })).sort((a, b) => a.y - b.y);
     const count = {};
+    /** @type {number[][]} */
+    const halos = [];
     for (const p of placed) {
       count[p.mount] = (count[p.mount] || 0) + 1;
-      const f = plantFrameOf(p.m, 'mature', { mount: p.mount, variant: p.variant, flip: p.flip });
+      const f = plantFrameOf(p.m, 'mature', { mount: p.mount, variant: p.variant, flip: p.flip, light: p.light });
       const x = Math.round(p.x * SCENE_W), y = Math.round(p.y * SCENE_H);
+      if (p.mount === 'ground') {
+        // its shadow, cast to the right
+        const hw = Math.max(3, Math.round(f.pix.w * 0.34)), ox = Math.round(hw * 0.3) + 1;
+        for (const [dx, dy, w] of [[-hw + ox, -1, hw * 2], [-hw + ox + 1, 0, hw * 2 - 2], [-(hw >> 1) + ox, 1, hw]]) for (let i = 0; i < w; i++) pix.blend(x + dx + i, y + dy, 0xff10100a, 0.35);
+      }
       pix.draw(f.pix, x - f.ax, y - f.ay);
+      const c = emitColour(p.m);
+      if (c) for (const [gx, gy] of f.glows.filter((_, i) => i % Math.ceil(f.glows.length / 8) === 0)) halos.push([x - f.ax + gx, y - f.ay + gy, ...c.match(/\d+/g).map(Number)]);
       if (marks) pix.set(x, y, p.mount === 'ground' ? 0xff0000ff : p.mount === 'hang' ? 0xffffff00 : 0xff00ffff);
+    }
+    // what glows lights its surroundings
+    for (const [hx, hy, r, g, b] of halos) for (let j = -5; j <= 5; j++) for (let i = -5; i <= 5; i++) {
+      const d = Math.hypot(i, j);
+      if (d > 5) continue;
+      const x = hx + i, y = hy + j, k = y * SCENE_W + x;
+      if (x < 0 || y < 0 || x >= SCENE_W || y >= SCENE_H) continue;
+      const c = pix.px[k], a = 0.17 * (1 - d / 5) ** 1.5;
+      pix.px[k] = (0xff000000 | (Math.min(255, ((c >>> 16) & 255) + b * a) << 16) | (Math.min(255, ((c >>> 8) & 255) + g * a) << 8) | Math.min(255, (c & 255) + r * a)) >>> 0;
     }
     const big = new Uint8Array(SCENE_W * S * SCENE_H * S * 4);
     for (let y = 0; y < SCENE_H * S; y++) for (let x = 0; x < SCENE_W * S; x++) {

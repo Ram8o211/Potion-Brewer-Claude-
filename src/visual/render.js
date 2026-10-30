@@ -21,6 +21,7 @@ export const PIECE_GRID = 20;
  * @property {number} ax   foot (bottom centre) within the frame
  * @property {number} ay
  * @property {number[][]} glints  [x, y] pixels that may glimmer
+ * @property {number[][]} [glows]  [x, y] pixels that give light (glowing caps, berries, crystal tips)
  */
 
 /**

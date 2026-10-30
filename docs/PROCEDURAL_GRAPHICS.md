@@ -136,23 +136,44 @@ still limited.
   sits in its matrix of rock, mussels lie half-sunk with one open on its
   pearl, scales overlap like shingles in the ash.
 * **…and are attached to the world.** Every form is found on its own
-  mounts, weighted (`MOUNTS`): berries and bean pods hang from the trees'
-  boughs, nightshade trails from the canopy, roots and moss dangle from
-  ledges and the cave's roof, crystals and saltpetre hang from the rock
-  and jut from cliff faces, Witch's Ear and the barks grow on tree
-  trunks, flints, nuggets and sulphur crust sit in the rock faces. The
-  scene is searched for holds (`wild-scene.js` `findAnchors`): the
-  undersides of branches and leaves (*bough*), of ledges and the roof
-  (*ceiling*), either (*hang*), the sides of sheer rock (*wall*) and of
-  narrow upright runs of wood that carry on down (*trunk*), each with air
-  before it. A plant tries the mount its id picks first, then the others,
-  at the hold nearest where it came up with room for its whole silhouette
-  (clear of the rock, water, props and other plants); a plant of the
-  ground roots in a crevice of a rock face when the ground has no room
-  left, and only then crowds. What hangs swings about its hold in the
-  wind — from a tree with the leaves, from the rock barely — bending
-  rather than sliding (each row moved further the lower it hangs).
-  Only what grew on the ground leaves turned earth when it is harvested.
+  mounts, weighted (`MOUNTS`). Only vines hang: owlberries and bogbeans
+  trail from the boughs, the canopy, the ledges and the cave's roof as
+  long vines with leaves along them and round fruit on short threads;
+  nightshade and silverleaf as leafy vines hung with globes; moss as
+  trailing strands. Roots, flowers, mushrooms, stones and crystals never
+  hang. Shelf fungus and the barks grow on tree trunks, moss, crystals,
+  flints, crusts and nuggets sit on cliff faces (faces of the ground
+  itself, not the backdrop's far columns). The scene is searched for
+  holds (`wild-scene.js` `findAnchors`): the undersides of branches,
+  leaves, ledges and the roof (*hang*), the sides of sheer ground (*wall*)
+  and of narrow upright runs of wood that carry on down (*trunk*), each
+  with air before it. A plant tries the mount its id picks first, then
+  the others, at the hold nearest where it came up with room for its
+  whole silhouette (clear of the rock, water, props and other plants);
+  only a plant that is found nowhere with room crowds the ground. A vine
+  swings about its hold in the wind, bending rather than sliding (each row
+  moved further the lower it hangs). Only what grew on the ground leaves
+  turned earth when it is harvested.
+* **Proportions.** Living plants stand knee-high to the trees, about a
+  tenth of the scene (a flower 15 px of its 216, a herb 12, a reed 19,
+  a mushroom 11), stones and crystals a hand across (`BASE_H`).
+* **Lit by their surroundings.** Each plant is lit by the painting where
+  it stands (`PlantGround.lightAt`): the average brightness of the scene
+  round its silhouette against the region's own gives how dim or bright it
+  is, a third of the surroundings' colour is mixed in (warm in the lava's
+  glow, cold in the fen, golden in the sun), quantized so a stand shares a
+  few tints. It is a step darker within two pixels of what holds it (its
+  foot in the soil, the point it hangs from, the side against a face), and
+  a plant on the ground casts a shadow to its right (the light comes from
+  the upper left like the painting's), tinted by the region.
+* **Glowing plants** (`growthParams` `glow`): every mushroom (gills, rim
+  and spots), every berry (a core in each fruit, on hanging vines too),
+  the lichens of the dark regions, the arcane and the luminous, a share of
+  the dark regions' other plants, and a few more. Their glowing pixels are
+  painted in a colour the lighting leaves alone and each lights its
+  surroundings with a breathing halo (`Sketch.emit`, `wilds.js` `GLOW_IN`):
+  strongest in the Netherwood and Moonfen, faint in the open meadow. A
+  flower out of its hour does not glow.
 * **Ingredients glow slightly.** In the wilds each plant keeps its own
   size and look, with a faint breathing glow of its own colour about it
   (`species-sprites.js` `plantGlow`), so it reads in the scene without
@@ -178,10 +199,6 @@ still limited.
   `CELL` = 1), so its stones, vines and moss are fine-grained; tree crowns
   are heaps of leafy clumps. Ingredients keep their coarser texture
   (`raster.js` `GRAIN`) and squircle shapes (`geometry.js` `SQUARE`).
-* **Proportions.** Ingredients are sized against the scenery: a herb or a
-  flower stands knee-high to an oak (about a tenth of the scene's height),
-  a stone or a shell a hand across, a crystal cluster no bigger than a
-  bush (`descriptor.js`, with a scale per family).
 * **Stones, crystals and shells do not grow.** Only living plants pass
   through sprout, ripe and mature. An inorganic deposit has one picture:
   once it has formed again it simply lies there whole (until then nothing
@@ -338,8 +355,8 @@ font, interface and effects are untouched.
   palette-only changes never moving the morphology; the six environments
   deterministic, varying per world, fully painted, open ground only on dry
   surfaces with room to grow and nothing growing in the river or the lava;
-  placement on each species' own mounts (open ground; a bough, a ceiling;
-  a rock face, a trunk — each checked against what holds it), never behind
+  placement on each species' own mounts (open ground; a vine from a bough
+  or a roof; a rock face, a trunk — each checked against what holds it), never behind
   scenery nor into the ground or the water, hardly touching; hit testing
   of the front plant.
 * `tests/gathering.test.mjs`: watering raises moisture and speeds growth;

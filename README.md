@@ -54,10 +54,10 @@ computed from the particles that actually run out of the tap. What a
   faceted shards, spotted toadstools, velvet reed heads…). In the wilds
   each plant is grown from a stem, branches and leaves, flowers, fruit or
   caps, each a variant of its kind, and attached where its kind is found:
-  berries and pods hanging from the boughs, vines and roots trailing from
-  the canopy and the cave's roof, shelf fungi and bark on the trunks,
-  crystals and crusts jutting from cliff faces and hanging from the rock.
-  Hanging things swing in the wind.
+  vines of berries and pods hanging from the boughs and the cave's roof,
+  shelf fungi and bark on the trunks, crystals and crusts on cliff faces.
+  Plants are lit and shaded by their surroundings and cast shadows, and
+  mushrooms, berries and more glow, lighting the dark regions.
 * **Arcane awakening.** Magical ingredients carry a hidden activation
   threshold (−1000…+1000, mapped onto temperature). Heat or chill a
   well-mixed brew past the volume-weighted threshold of its magic and that

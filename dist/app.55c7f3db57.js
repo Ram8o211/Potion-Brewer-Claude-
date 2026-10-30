@@ -3619,28 +3619,27 @@ const { inked } = __m43;
 const { pack } = __m24;
 const TAU = Math.PI * 2, UP = -Math.PI / 2, DOWN = Math.PI / 2;
 const MOUNTS = {
-leaf: [['ground', 0.6], ['bough', 0.4]],
-root: [['ground', 0.6], ['hang', 0.4]],
+leaf: [['ground', 0.55], ['hang', 0.45]],
 bracket: [['trunk', 0.65], ['wall', 0.35]],
 moss: [['wall', 0.4], ['hang', 0.35], ['ground', 0.25]],
-berry: [['bough', 0.7], ['ground', 0.3]],
-bean: [['bough', 0.6], ['ground', 0.4]],
+berry: [['hang', 0.75], ['ground', 0.25]],
+bean: [['hang', 0.7], ['ground', 0.3]],
 bark: [['trunk', 0.85], ['ground', 0.15]],
-crystal: [['ground', 0.4], ['wall', 0.35], ['ceiling', 0.25]],
+crystal: [['ground', 0.5], ['wall', 0.5]],
 shard: [['ground', 0.6], ['wall', 0.4]],
 stone: [['ground', 0.75], ['wall', 0.25]],
 powder: [['ground', 0.5], ['wall', 0.5]],
-crust: [['wall', 0.6], ['ceiling', 0.2], ['ground', 0.2]],
+crust: [['wall', 0.75], ['ground', 0.25]],
 nugget: [['wall', 0.6], ['ground', 0.4]],
 scale: [['ground', 0.6], ['wall', 0.4]],
 };
 function mountsOfForm(form) {
 const m = MOUNTS[form];
-if (!m) return [['ground', 1], ['wall', 0]];
+if (!m) return [['ground', 1]];
 return m.some(([k]) => k === 'ground') ? m : [...m, ['ground', 0]];
 }
 const frameMount = (mount) => (mount === 'hang' || mount === 'bough' || mount === 'ceiling' ? 'hang' : mount === 'wall' || mount === 'trunk' ? 'wall' : 'ground');
-const BASE_H = { flower: 22, herb: 18, root: 21, fungus: 16, moss: 15, fruit: 19, reed: 27, bark: 14, crystal: 17, mineral: 13, shell: 12 };
+const BASE_H = { flower: 15, herb: 12, root: 14, fungus: 11, moss: 10, fruit: 13, reed: 19, bark: 10, crystal: 14, mineral: 12.5, shell: 12 };
 const hash2 = (x, y, s) => {
 let h = (Math.imul(x | 0, 374761393) + Math.imul(y | 0, 668265263) + Math.imul(s | 0, 1274126177)) | 0;
 h = Math.imul(h ^ (h >>> 13), 1103515245);
@@ -3660,6 +3659,7 @@ this.pix = new Pixels(this.N, this.N);
 this.mount = mount;
 this.seed = seed;
 this.glints = [];
+this.glows = [];
 this.jobs = [];
 }
 set(x, y, c) {
@@ -3668,6 +3668,7 @@ if ((this.mount === 'ground' && y > 0) || (this.mount === 'hang' && y < 0) || (t
 this.pix.set(x + this.o, y + this.o, c);
 }
 has(x, y) { return !!(this.pix.get(Math.round(x) + this.o, Math.round(y) + this.o) >>> 24); }
+emit(x, y, c) { this.set(x, y, c); this.glows.push([Math.round(x), Math.round(y)]); }
 glint(x, y) { this.glints.push([Math.round(x), Math.round(y)]); }
 later(z, fn) { this.jobs.push([z, this.jobs.length, fn]); }
 flush() {
@@ -3687,14 +3688,16 @@ if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
 const w = x1 - x0 + 1, h = y1 - y0 + 1, out = new Pixels(w, h);
 for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) out.px[y * w + (flip ? w - 1 - x : x)] = src[(y + y0) * N + x + x0];
 const fx = (x) => (flip ? w - 1 - (x + o - x0) : x + o - x0);
+const within = (list) => {
 const seen = new Set();
-const glints = this.glints.map(([x, y]) => [fx(x), y + o - y0]).filter(([x, y]) => {
+return list.map(([x, y]) => [fx(x), y + o - y0]).filter(([x, y]) => {
 const k = y * w + x;
 if (x < 0 || y < 0 || x >= w || y >= h || !(out.px[k] >>> 24) || seen.has(k)) return false;
 seen.add(k);
 return true;
-});
-return { pix: inked(out), ax: fx(0) + 1, ay: o - y0 + 1, glints: glints.map(([x, y]) => [x + 1, y + 1]) };
+}).map(([x, y]) => [x + 1, y + 1]);
+};
+return { pix: inked(out), ax: fx(0) + 1, ay: o - y0 + 1, glints: within(this.glints), glows: within(this.glows) };
 }
 }
 function disc(sk, x, y, r, rp, o = {}) {
@@ -3824,16 +3827,22 @@ function tuft(sk, rng, x, y, size, rp, a0 = UP) {
 const n = 3 + Math.round(size);
 for (let i = 0; i < n; i++) leaf(sk, x, y, a0 + (i / (n - 1) - 0.5) * 2.6 + (rng.next() - 0.5) * 0.4, size * (0.7 + rng.next() * 0.5), Math.max(0.8, size * 0.35), rp, 'oval', { rib: null });
 }
-function bunch(sk, rng, x, y, n, r, rp) {
+function globe(sk, x, y, r, rp, gl = null) {
+disc(sk, x, y, r, rp);
+sk.set(x - r * 0.4, y - r * 0.4, at(rp, 1));
+if (gl) {
+sk.emit(x, y, at(gl, 0.8));
+if (r >= 1.5) sk.set(x + 1, y, at(gl, 0.45));
+} else sk.glint(x - r * 0.4, y - r * 0.4);
+}
+function bunch(sk, rng, x, y, n, r, rp, gl = null) {
 const rows = [1, 2, 3, 2, 2, 1, 1];
 let k = 0;
 for (let row = 0; k < n && row < rows.length; row++) {
 const m = Math.min(rows[row], n - k);
 for (let i = 0; i < m; i++, k++) {
 const bx = x + (i - (m - 1) / 2) * r * 1.7 + (rng.next() - 0.5) * 0.6, by = y + r + row * r * 1.5;
-disc(sk, bx, by, r, rp);
-sk.set(bx - r * 0.4, by - r * 0.4, at(rp, 1));
-if (i === 0 && row % 2 === 0) sk.glint(bx - r * 0.4, by - r * 0.4);
+globe(sk, bx, by, r, rp, gl && (i + row) % 2 === 0 ? gl : null);
 }
 }
 }
@@ -3852,11 +3861,11 @@ jitter: 0.1 + f() * 0.22 + tr.asym * 0.3,
 droop: 0.04 + f() * 0.16 + tr.droop * 0.5,
 node: 2 + Math.floor(f() * 2),
 leaf: leafs[Math.floor(f() * leafs.length)],
-leafLen: (3 + f() * 2.5) * (1 + tr.lush * 0.3),
-leafW: 1 + f() * 0.8,
+leafLen: (2.4 + f() * 1.8) * (1 + tr.lush * 0.3),
+leafW: 0.9 + f() * 0.6,
 branchP: 0.25 + f() * 0.45 + tr.lush * 0.2,
 branchAng: 0.4 + f() * 0.35,
-head: (2.6 + f() * 1.6) * (1 + tr.round * 0.2),
+head: (2.1 + f() * 1.2) * (1 + tr.round * 0.2),
 petals: 4 + Math.floor(f() * 3) + (tr.round > 0.5 ? 1 : 0),
 petal: tr.sharp > 0.4 ? 'lance' : tr.round > 0.4 ? 'round' : f() < 0.5 ? 'oval' : 'lance',
 sym: tr.asym < 0.25 && f() < 0.4,
@@ -3868,13 +3877,15 @@ tiers: 2 + Math.floor(f() * 3),
 rings: 2 + Math.floor(f() * 3),
 prisms: 3 + Math.floor(f() * 4), fan: 0.8 + f() * 0.6, cw: 2.2 + f() * 1.6,
 chunks: 2 + Math.floor(f() * 2),
-berryR: 1.1 + f() * 0.5 + tr.round * 0.3,
-podLen: 4 + f() * 3,
+berryR: 1 + f() * 0.4 + tr.round * 0.25,
+podLen: 3.2 + f() * 2.2,
 tilt: (f() - 0.5) * 0.3,
 mandrake: tr.asym > 0.45,
 hot: tr.warm > 0.4,
-glow: tr.glow > 0.3,
+glow: false,
 };
+const dark = d.id.region === 'netherwood' || d.id.region === 'moonfen';
+P.glow = tr.glow > 0.25 || d.family === 'fungus' || d.form === 'berry' || (d.family === 'moss' && dark) || (d.family === 'crystal' && tr.glow > 0.1) || (dark && d.family !== 'mineral' && f() < 0.35) || f() < 0.08;
 PARAMS.set(d, P);
 return P;
 }
@@ -3924,13 +3935,13 @@ leaf(sk, x, y, nod, r * 1.3, r * 0.55, pal.main, 'round', { rib: null });
 const mx = x + Math.cos(nod) * r * 1.2, my = y + Math.sin(nod) * r * 1.2;
 for (const s of [-1, 0, 1]) leaf(sk, mx, my, nod + s * 1.1, r * 0.7, r * 0.3, pal.main, 'lance', { rib: null });
 sk.set(mx + Math.cos(nod) * 1.5, my + Math.sin(nod) * 1.5, at(pal.accent, 0.8));
-if (P.glow) sk.glint(mx, my);
+if (P.glow) sk.emit(mx, my, at(pal.glow, 1));
 break;
 }
 default: {
 for (let i = 0; i < P.petals; i++) leaf(sk, x, y, rot + (i * TAU) / P.petals, r, r * 0.5, pal.main, P.petal, { rib: pal.mark });
 disc(sk, x, y, Math.max(0.7, r * 0.28), pal.center);
-if (P.glow) sk.glint(x, y);
+if (P.glow) sk.emit(x, y, at(pal.glow, 1));
 }
 }
 });
@@ -3978,7 +3989,8 @@ for (const sd of sides) {
 const la = vine ? a + sd * 1.25 + (rng.next() - 0.5) * 0.3 : a + sd * (sprig ? 0.9 : 1.05) + (rng.next() - 0.5) * 0.3;
 sk.later(2, () => leaf(sk, x, y, vine ? la + turn(la, DOWN) * 0.35 : la, ll, (big ? P.leafW * 1.45 : P.leafW) * (closed ? 0.55 : 1), pal.main, big ? P.leaf : 'lance', { serrate: sprig, rib: pal.mark }));
 }
-if (g >= 0.95 && d.tr.spots > 0.3 && rng.next() < 0.4) sk.later(3, () => bunch(sk, rng, x, y, 3, 1, pal.accent));
+if (g >= 0.95 && d.tr.spots > 0.3 && rng.next() < 0.4) sk.later(3, () => bunch(sk, rng, x, y, 3, 1, pal.accent, vine && P.glow && !closed ? pal.glow : null));
+if (vine && g >= 0.7 && i % 2 === 1 && t > 0.3) sk.later(3, () => { stroke(sk, [[x, y], [x, y + 2]], 1, 1, pal.stem); globe(sk, x, y + 3.2, 1.3, pal.accent, P.glow && !closed ? pal.glow : null); });
 if (g >= 0.95 && sprig && t > 0.4 && rng.next() < 0.5) sk.later(3, () => stroke(sk, walk(rng, x, y, DOWN + (rng.next() - 0.5) * 0.8, 3, { jitter: 0.3 }), 1, 1, pal.accent));
 });
 const ta = tipAngle(pts), [tx, ty] = pts[pts.length - 1];
@@ -3986,19 +3998,7 @@ sk.later(2, () => leaf(sk, tx, ty, ta, P.leafLen * (big ? 1.1 : 0.8) * Math.min(
 }
 },
 root(c) {
-const { sk, P, g, H, rng, pal, mount } = c;
-if (mount === 'hang') {
-const n = [2, 3, 4 + (P.stems > 1 ? 1 : 0)][c.st];
-sk.later(0, () => blob(sk, 0, 0.5, 3 + g * 2, 1.6, pal.soil, { rough: 0.3, grain: 0.5 }));
-for (let i = 0; i < n; i++) {
-const x0 = (i - (n - 1) / 2) * 2.2 + (rng.next() - 0.5);
-const pts = stem(sk, rng, x0, 0, DOWN + (rng.next() - 0.5) * 0.5, H * (0.55 + rng.next() * 0.6), 1.2 + g * 0.8 + P.thick * 0.5, 1, pal.main, { jitter: 0.4 + P.jitter });
-nodes(pts, 3, (x, y, a, t) => {
-if (rng.next() < 0.35 + g * 0.2) stem(sk, rng, x, y, a + (rng.next() < 0.5 ? -1 : 1) * (0.5 + rng.next() * 0.5), H * 0.25 * (1 - t), 1, 1, pal.main, { jitter: 0.5 });
-});
-}
-return;
-}
+const { sk, P, g, H, rng, pal } = c;
 if (P.mandrake) {
 const by = -(2.5 + g * 3.5), rx = 1.5 + g * 1.8, ry = 2 + g * 2.6;
 for (const s of [-1, 1]) sk.later(1, () => stroke(sk, [[s * rx * 0.4, by + ry * 0.6], [s * (rx * 0.7 + 1), -0.5], [s * (rx + 1.6), 0]], 2, 1, pal.main));
@@ -4018,7 +4018,7 @@ const w = 1.8 + g * (1.6 + P.thick);
 const pts = stem(sk, rng, 0, 0, UP + P.tilt + (rng.next() - 0.5) * 0.5, H, w, 1.2, pal.main, { jitter: 0.45 + P.jitter, curl: (rng.next() - 0.5) * 0.1 });
 for (const s of [-1, 1]) sk.later(1, () => stroke(sk, [[0, -1.5], [s * (1.5 + g), -0.6], [s * (3 + g * 2.5), 0]], Math.max(1.5, w * 0.8), 1, pal.main));
 nodes(pts, 3, (x, y, a, t) => {
-if (t < 0.35 || rng.next() > 0.45 + g * 0.2) return;
+if (t < 0.35 || g < 0.95 || rng.next() > 0.65) return;
 const b = stem(sk, rng, x, y, a + (rng.next() < 0.5 ? -1 : 1) * (0.7 + rng.next() * 0.4), H * (0.25 + rng.next() * 0.15) * g, Math.max(1, w * 0.5), 1, pal.main, { jitter: 0.5 });
 const [bx, by] = b[b.length - 1];
 sk.later(3, () => tuft(sk, rng, bx, by, 1.5 + g * 1.5, pal.leaf, tipAngle(b)));
@@ -4050,7 +4050,7 @@ const dd = (x / rx) ** 2 + (j / ry) ** 2;
 if (dd > 1) continue;
 const ring = Math.floor(Math.sqrt(dd) * P.rings);
 const col = dd > 0.78 ? at(pal.pale, 0.7) : j >= Math.ceil(ry * 0.35) ? at(pal.gill, 0.2) : at(pal.main, ring % 2 ? 0.45 : j < -ry * 0.4 ? 0.75 : 0.6);
-sk.set(x0 + x, y + j, col);
+if (P.glow && !c.closed && dd > 0.78 && x > 0) sk.emit(x0 + x, y + j, at(pal.glow, 0.7)); else sk.set(x0 + x, y + j, col);
 }
 });
 if (x0) sk.later(2 + i, () => {
@@ -4074,14 +4074,19 @@ for (let j = -Math.ceil(hh); j <= 0; j++) {
 const t = -j / hh, hw = r * Math.pow(Math.max(0, 1 - t * t), flat);
 for (let x = -Math.round(hw); x <= Math.round(hw); x++) sk.set(tx + x, ty + j, tone(pal.main, lit(x / (r + 0.01), -t) * 1.2 + 0.15));
 }
-for (let x = -Math.round(r) + 1; x <= Math.round(r) - 1; x++) sk.set(tx + x, ty + 1, at(pal.gill, Math.abs(x) % 2 ? 0.25 : 0.5));
+const shine = P.glow && !c.closed;
+for (let x = -Math.round(r) + 1; x <= Math.round(r) - 1; x++) {
+if (shine && x % 2 === 0) sk.emit(tx + x, ty + 1, at(pal.glow, 0.75));
+else sk.set(tx + x, ty + 1, at(pal.gill, Math.abs(x) % 2 ? 0.25 : 0.5));
+}
+if (shine) { sk.emit(tx - Math.round(r), ty, at(pal.glow, 1)); sk.emit(tx + Math.round(r), ty, at(pal.glow, 1)); }
 if (g >= 0.95 && (toad || d.tr.spots > 0.3)) for (let s = 0; s < 2 + Math.round(r); s++) {
 const sx = tx + Math.round((rng.next() - 0.5) * r * 1.3), sy = ty - 1 - Math.floor(rng.next() * hh * 0.8);
 if (sk.has(sx, sy)) { sk.set(sx, sy, at(pal.pale, 0.9)); if (r > 3 && sk.has(sx + 1, sy)) sk.set(sx + 1, sy, at(pal.pale, 0.7)); }
 }
-if (P.glow && !c.closed) for (let s = 0; s < 2; s++) {
-const sx = tx + Math.round((rng.next() - 0.5) * r), sy = ty - Math.floor(rng.next() * hh);
-if (sk.has(sx, sy)) { sk.set(sx, sy, at(pal.glow, 1)); sk.glint(sx, sy); }
+if (shine) for (let s = 0; s < 2 + Math.round(r / 3); s++) {
+const sx = tx + Math.round((rng.next() - 0.5) * r * 1.2), sy = ty - 1 - Math.floor(rng.next() * hh * 0.8);
+if (sk.has(sx, sy)) sk.emit(sx, sy, at(pal.glow, 1));
 }
 });
 });
@@ -4097,7 +4102,7 @@ sk.later(1, () => blob(sk, r * 0.6, y, r, r * 1.1, pal.main, { bumps: 0.15, grai
 }
 for (let i = 0; i < [0, 1, 3][st]; i++) {
 const x = 1 + rng.next() * 2, y = H * 0.35 * g;
-sk.later(2, () => { const p = walk(rng, x, y, DOWN, 3 + rng.next() * H * 0.6, { jitter: 0.25 }); stroke(sk, p, 1, 1, pal.main); disc(sk, p[p.length - 1][0], p[p.length - 1][1], 0.8, bead); sk.glint(p[p.length - 1][0], p[p.length - 1][1]); });
+sk.later(2, () => { const p = walk(rng, x, y, DOWN, 3 + rng.next() * H * 0.6, { jitter: 0.25 }); stroke(sk, p, 1, 1, pal.main); disc(sk, p[p.length - 1][0], p[p.length - 1][1], 0.8, bead); if (P.glow && !closed) sk.emit(p[p.length - 1][0], p[p.length - 1][1], at(pal.glow, 1)); else sk.glint(p[p.length - 1][0], p[p.length - 1][1]); });
 }
 return;
 }
@@ -4112,7 +4117,7 @@ stroke(sk, p, 1.6, 1, pal.main);
 for (let j = 2; j < p.length - 1; j += 2) if (rng.next() < 0.6) disc(sk, p[j][0] + (rng.next() < 0.5 ? -1 : 1), p[j][1], 0.8, pal.main);
 const [ex, ey] = p[p.length - 1];
 disc(sk, ex, ey + 1, 0.8, bead);
-if (P.glow && !closed) sk.glint(ex, ey + 1);
+if (P.glow && !closed) sk.emit(ex, ey + 1, at(pal.glow, 1));
 });
 }
 return;
@@ -4121,27 +4126,29 @@ const rx = 2 + H * 0.45 * g, ry = 1.5 + H * 0.3 * g;
 sk.later(1, () => blob(sk, 0, 0, rx, ry, pal.main, { bumps: 0.12, grain: 1, ph: [rng.next() * 6, 1, 2] }));
 for (let i = 0; i < [0, 2, 3 + Math.round(P.lush * 2)][st]; i++) {
 const x = (rng.next() - 0.5) * rx * 1.4, p = walk(rng, x, -ry * 0.6, UP + (rng.next() - 0.5) * 0.6, H * (0.35 + rng.next() * 0.35), { jitter: 0.15 });
-sk.later(2, () => { stroke(sk, p, 1, 1, pal.stem); const [ex, ey] = p[p.length - 1]; disc(sk, ex, ey, 0.9, bead); if (P.glow && !closed) sk.glint(ex, ey); });
+sk.later(2, () => { stroke(sk, p, 1, 1, pal.stem); const [ex, ey] = p[p.length - 1]; disc(sk, ex, ey, 0.9, bead); if (P.glow && !closed) sk.emit(ex, ey, at(pal.glow, 1)); });
 }
 },
 fruit(c) {
 const { sk, d, P, g, H, rng, pal, mount, st, closed } = c;
 const fruitPal = g < 0.95 ? pal.leaf : pal.main;
+const gl = P.glow && !closed && g >= 0.95 ? pal.glow : null;
 if (d.form === 'berry' && mount === 'hang') {
-const p = stem(sk, rng, 0, 0, DOWN + (rng.next() - 0.5) * 0.4, 3 + H * 0.2 * g, 1.6, 1, pal.wood, { jitter: 0.3 });
-for (const s of [-1, 1]) sk.later(3, () => leaf(sk, 0, 1, DOWN + s * (1.1 + rng.next() * 0.3), P.leafLen * (0.7 + g * 0.5), P.leafW * 1.2, pal.leaf, P.leaf));
-const m = [1, 2, 2 + (P.cluster > 3 ? 1 : 0)][st];
-for (let i = 0; i < m; i++) {
-const [x, y] = p[Math.min(p.length - 1, p.length - 1 - i * 2)], sx = x + (i ? (i % 2 ? 2.5 : -2.5) : 0);
-sk.later(2, () => { stroke(sk, [[x, y], [sx, y + 2]], 1, 1, pal.stem); bunch(sk, rng, sx, y + 2, [2, 3, 4 + Math.round(H / 14)][st], P.berryR * (0.6 + g * 0.25), fruitPal); });
-}
+const pts = stem(sk, rng, 0, 0, DOWN + (rng.next() - 0.5) * 0.4, H * 1.35, 1.4, 1, pal.stem, { jitter: 0.4, curl: (rng.next() - 0.5) * 0.12 });
+nodes(pts, 2, (x, y, a, t, i) => {
+const side = i % 2 ? 1 : -1;
+sk.later(2, () => leaf(sk, x, y, a + side * 1.15, P.leafLen * 0.8 * Math.min(1, g + 0.3), P.leafW * 1.1, pal.leaf, P.leaf));
+if (g >= 0.5 && i % 2 === 0 && t > 0.2) sk.later(3, () => { stroke(sk, [[x, y], [x - side * 0.5, y + 2]], 1, 1, pal.stem); globe(sk, x - side * 0.5, y + 2 + P.berryR, P.berryR * (0.7 + g * 0.3), fruitPal, gl); });
+});
+const [tx, ty] = pts[pts.length - 1];
+sk.later(3, () => globe(sk, tx, ty + 1, P.berryR * (0.7 + g * 0.3), fruitPal, gl));
 return;
 }
 if ((d.form === 'bean') && mount === 'hang') {
 const pts = stem(sk, rng, 0, 0, DOWN + (rng.next() - 0.5) * 0.5, H * 1.15, 1.4, 1, pal.stem, { jitter: 0.45, curl: (rng.next() - 0.5) * 0.15 });
 nodes(pts, 3, (x, y, a, t, i) => {
 if (i % 2 === 0) sk.later(2, () => { for (const s of [-1, 0, 1]) leaf(sk, x, y, a + s * 0.9 + (i % 4 ? 0.8 : -0.8), P.leafLen * 0.75 * Math.min(1, g + 0.3), P.leafW, pal.leaf, 'oval', { rib: null }); });
-else if (g > 0.5) sk.later(3, () => leaf(sk, x, y, DOWN + (rng.next() - 0.5) * 0.5, P.podLen * g, 1.3, fruitPal, 'pod', { rib: null, gloss: true }));
+else if (g > 0.5) sk.later(3, () => { leaf(sk, x, y, DOWN + (rng.next() - 0.5) * 0.5, P.podLen * g, 1.3, fruitPal, 'pod', { rib: null, gloss: true }); if (gl) sk.emit(x, y + P.podLen * g * 0.55, at(gl, 0.8)); });
 });
 return;
 }
@@ -4171,7 +4178,7 @@ sk.later(2, () => leaf(sk, x, y, a + side * 1.0, P.leafLen * 0.85 * Math.min(1, 
 if (g < 0.5 || i % 2 === 0) return;
 if (pepper) sk.later(3, () => { disc(sk, x, y + 0.5, 0.8, pal.stem); leaf(sk, x, y + 1, DOWN + (rng.next() - 0.5) * 0.5, P.podLen * (0.6 + g * 0.4) * 1.2, 1.7, fruitPal, 'cone', { rib: null, gloss: true }); });
 else if (d.form === 'bean') sk.later(3, () => leaf(sk, x, y, DOWN + (rng.next() - 0.5) * 0.6, P.podLen * g, 1.3, fruitPal, 'pod', { rib: null, gloss: true }));
-else sk.later(3, () => bunch(sk, rng, x, y, [0, 2, 3 + Math.round(P.lush * 2)][st], P.berryR * (0.7 + g * 0.3), fruitPal));
+else sk.later(3, () => bunch(sk, rng, x, y, [0, 2, 3 + Math.round(P.lush * 2)][st], P.berryR * (0.7 + g * 0.3), fruitPal, gl));
 });
 const [tx, ty] = pts[pts.length - 1];
 sk.later(2, () => leaf(sk, tx, ty, tipAngle(pts), P.leafLen * 0.7, P.leafW * 0.9, pal.leaf, P.leaf));
@@ -4193,7 +4200,7 @@ stroke(sk, pts.slice(from, k), 2.8 * (0.7 + g * 0.3), 2.6 * (0.7 + g * 0.3), P.g
 stroke(sk, pts.slice(from, k), 1, 1, pal.main);
 const [tx, ty] = pts[k], a = tipAngle(pts);
 stroke(sk, [[tx, ty], [tx + Math.cos(a) * 3, ty + Math.sin(a) * 3]], 1, 1, pal.stem);
-if (P.glow && !closed) sk.glint(pts[from + 1][0], pts[from + 1][1]);
+if (P.glow && !closed) { sk.emit(pts[from + 1][0], pts[from + 1][1], at(pal.glow, 1)); sk.emit(pts[from + 2][0] + 1, pts[from + 2][1], at(pal.glow, 0.8)); }
 });
 }
 });
@@ -4233,40 +4240,40 @@ if (g >= 0.95 && resin) sk.later(3, () => drip(sk, Math.round(w * 0.3), -h, 1, p
 },
 crystal(c) {
 const { sk, d, P, g, H, rng, pal, mount } = c, shard = d.form === 'shard';
-const nrm = mount === 'hang' ? DOWN : mount === 'wall' ? -0.3 : UP, tan = nrm + Math.PI / 2;
-const bx = mount === 'wall' ? 1 : 0, by = mount === 'ground' ? -1 : mount === 'hang' ? 1 : 0;
+const nrm = mount === 'wall' ? -0.3 : UP, tan = nrm + Math.PI / 2;
+const bx = mount === 'wall' ? 1 : 0, by = mount === 'ground' ? -1 : 0;
 sk.later(0, () => blob(sk, bx, by, 2.5 + g * 2, 1.5 + g * 1.2, pal.rock, { rough: 0.3, facets: 6, ph: [rng.next() * 6, rng.next() * 6, 1] }));
 const n = shard ? 2 + (P.chunks > 2 ? 1 : 0) : P.prisms;
 const spikes = [];
 for (let i = 0; i < n; i++) {
 const off = n === 1 ? 0 : i / (n - 1) - 0.5, ang = nrm + off * (shard ? 0.7 : P.fan) + (rng.next() - 0.5) * 0.25 + (mount === 'ground' ? P.tilt : 0);
-spikes.push({ off, ang, len: H * g * (1 - Math.abs(off) * 0.9) * (0.75 + rng.next() * 0.3), wid: (shard ? P.cw + 1.2 : P.cw) * (0.75 + rng.next() * 0.45) * (0.7 + g * 0.3) });
+spikes.push({ off, ang, len: H * g * (shard ? 1.25 : 1) * (1 - Math.abs(off) * 0.9) * (0.75 + rng.next() * 0.3), wid: (shard ? P.cw + 1.2 : P.cw) * (0.75 + rng.next() * 0.45) * (0.7 + g * 0.3) });
 }
 spikes.sort((a, b) => a.len - b.len);
-spikes.forEach((s, i) => sk.later(1 + i, () => prism(sk, bx + Math.cos(tan) * s.off * 3, by + Math.sin(tan) * s.off * 3, s.ang, Math.max(3, s.len), Math.max(1.5, s.wid), pal.crystal, shard ? { tip: 1.6, skew: rng.next() < 0.5 ? -0.7 : 0.7 } : {})));
+spikes.forEach((s, i) => sk.later(1 + i, () => { const L = Math.max(3, s.len), x0 = bx + Math.cos(tan) * s.off * 3, y0 = by + Math.sin(tan) * s.off * 3; prism(sk, x0, y0, s.ang, L, Math.max(1.5, s.wid), pal.crystal, shard ? { tip: 1.6, skew: rng.next() < 0.5 ? -0.7 : 0.7 } : {}); if (P.glow) sk.emit(x0 + Math.cos(s.ang) * (L - 2.5), y0 + Math.sin(s.ang) * (L - 2.5), at(pal.glow, 0.9)); }));
 },
 mineral(c) {
-const { sk, d, P, g, H, rng, pal, mount } = c, wall = mount === 'wall', hang = mount === 'hang';
-const nrm = hang ? DOWN : wall ? 0 : UP, tan = nrm + Math.PI / 2;
+const { sk, d, P, g, H, rng, pal, mount } = c, wall = mount === 'wall';
+const nrm = wall ? 0 : UP, tan = nrm + Math.PI / 2;
 const ph = () => [rng.next() * 6, rng.next() * 6, rng.next() * 6];
 switch (d.form) {
 case 'powder': {
 if (wall) {
 sk.later(1, () => blob(sk, 1.2, 0, 2.2 + g, H * 0.45, pal.main, { rough: 0.25, grain: 1.4, ph: ph() }));
 sk.later(2, () => { for (let i = 0; i < 4; i++) sk.set(1 + (i % 2), H * 0.45 + 1 + i * 1.5, at(pal.main, 0.8)); });
-} else sk.later(1, () => blob(sk, 0, -H * 0.2, H * 0.55, H * 0.55, pal.main, { rough: 0.15, grain: 1.4, ph: ph() }));
+} else sk.later(1, () => blob(sk, 0, -H * 0.25, H * 0.55, H * 0.62, pal.main, { rough: 0.15, grain: 1.4, ph: ph() }));
 sk.later(3, () => { for (let i = 0; i < 6; i++) { const x = (rng.next() - 0.5) * (wall ? 3 : H), y = wall ? (rng.next() - 0.5) * H * 0.8 : -rng.next() * H * 0.3; if (sk.has(x, y)) { sk.set(x, y, at(pal.main, 1)); if (i < 3) sk.glint(x, y); } } });
 return;
 }
 case 'crust': {
 const m = 3 + (P.chunks > 2 ? 1 : 0);
-sk.later(0, () => blob(sk, wall ? 1 : 0, hang ? 1 : wall ? 0 : -1, wall ? 1.6 : H * 0.45, wall ? H * 0.45 : 1.6, pal.rock, { rough: 0.3, ph: ph() }));
+sk.later(0, () => blob(sk, wall ? 1 : 0, wall ? 0 : -1, wall ? 1.6 : H * 0.45, wall ? H * 0.45 : 1.6, pal.rock, { rough: 0.3, ph: ph() }));
 for (let i = 0; i < m; i++) {
 const off = (i / (m - 1) - 0.5) * H * 0.8, ox = Math.cos(tan) * off + (wall ? 1 : 0), oy = Math.sin(tan) * off;
 sk.later(1, () => {
 const k = 4 + Math.floor(rng.next() * 4);
 for (let j = 0; j < k; j++) {
-const a = nrm + (j / (k - 1) - 0.5) * 1.8, l = (3 + rng.next() * H * 0.5) * (0.6 + g * 0.4);
+const a = nrm + (j / (k - 1) - 0.5) * 1.8, l = (4.5 + rng.next() * H * 0.5) * (0.65 + g * 0.35);
 for (let u = 0; u <= l; u += 0.5) sk.set(ox + Math.cos(a) * u, oy + Math.sin(a) * u, at(pal.main, u > l - 1 ? 1 : j % 2 ? 0.55 : 0.75));
 if (j % 3 === 0) sk.glint(ox + Math.cos(a) * l, oy + Math.sin(a) * l);
 }
@@ -4275,8 +4282,8 @@ if (j % 3 === 0) sk.glint(ox + Math.cos(a) * l, oy + Math.sin(a) * l);
 return;
 }
 case 'nugget': {
-const cx = wall ? 2 : 0, cy = wall ? 0 : -3;
-sk.later(0, () => blob(sk, cx, cy, wall ? 3 : H * 0.55, wall ? H * 0.55 : 4, pal.rock, { rough: 0.25, facets: 7, ph: ph() }));
+const cx = wall ? 2 : 0, cy = wall ? 0 : -3.6;
+sk.later(0, () => blob(sk, cx, cy, wall ? 3 : H * 0.55, wall ? H * 0.55 : 4.8, pal.rock, { rough: 0.25, facets: 7, ph: ph() }));
 const m = 2 + P.chunks - 1;
 for (let i = 0; i < m; i++) {
 const off = (i / Math.max(1, m - 1) - 0.5) * H * 0.6, x = cx + Math.cos(tan) * off + Math.cos(nrm) * 1.5, y = cy + Math.sin(tan) * off + Math.sin(nrm) * 1.5, r = 1.4 + rng.next() * 1.4;
@@ -4331,14 +4338,14 @@ for (let i = 0; i < m; i++) {
 const x = (i - (m - 1) / 2) * H * 0.7, a = (rng.next() - 0.5) * 0.8 + (i % 2 ? 0.3 : -0.3), open = i === Math.floor(m / 2);
 sk.later(1 + (open ? 1 : 0), () => {
 if (open) {
-blob(sk, x - 1.5, -2.6, H * 0.4, H * 0.24, pal.main, { ang: a - 0.7 });
-blob(sk, x + 1.5, -2.6, H * 0.4, H * 0.24, pal.main, { ang: a + 0.7 });
-disc(sk, x, -2.6, 1.3, pal.pale, { lift: 0.3 });
-sk.set(x - 0.5, -3.2, at(pal.iris, 1));
-sk.glint(x - 0.5, -3.2);
+blob(sk, x - 1.5, -3.6, H * 0.4, Math.max(3.2, H * 0.3), pal.main, { ang: a - 0.7 });
+blob(sk, x + 1.5, -3.6, H * 0.4, Math.max(3.2, H * 0.3), pal.main, { ang: a + 0.7 });
+disc(sk, x, -3.2, 1.3, pal.pale, { lift: 0.3 });
+sk.set(x - 0.5, -3.8, at(pal.iris, 1));
+sk.glint(x - 0.5, -3.8);
 } else {
-blob(sk, x, -2.5, H * 0.48, H * 0.32, pal.main, { ang: a });
-for (let u = -2; u <= 2; u += 2) sk.set(x + u * Math.cos(a), -2.5 + u * Math.sin(a), at(pal.main, 0.2));
+blob(sk, x, -3.4, H * 0.46, Math.max(3.4, H * 0.4), pal.main, { ang: a });
+for (let u = -2; u <= 2; u += 2) sk.set(x + u * Math.cos(a), -3 + u * Math.sin(a), at(pal.main, 0.2));
 }
 });
 }
@@ -4352,7 +4359,7 @@ const seed = (d.seeds.morph ^ Math.imul(variant + 1, 0x9e3779b1) ^ Math.imul(MOU
 const vk = variant ? 0.84 + new Rng((d.seeds.morph + variant * 7919) >>> 0).next() * 0.3 : 1;
 const g = [0.4, 0.7, 1][st];
 const sk = new Sketch(mount, seed);
-const c = { sk, d, P, g, st, H: Math.min(36, P.h * vk * (mount === 'hang' ? 1.1 : 1) * (0.45 + 0.55 * g)), rng: new Rng(seed), pal: d.pal, mount, closed: !!o.closed };
+const c = { sk, d, P, g, st, H: Math.min(26, P.h * vk * (mount === 'hang' ? 1.1 : 1) * (0.45 + 0.55 * g)), rng: new Rng(seed), pal: d.pal, mount, closed: !!o.closed };
 (BUILD[d.family] || BUILD.mineral)(c);
 sk.flush();
 return sk.frame(!!o.flip);
@@ -15254,7 +15261,7 @@ const { archetypeIdentity } = __m21;
 const { Pixels } = __m41;
 const { isBotanical } = __m23;
 const { rawSprite } = __m85;
-const { mountsOfForm, frameMount } = __m44;
+const { mountsOfForm, frameMount, growthParams } = __m44;
 const { hashString } = __m6;
 const MIN_HIT = 26;
 const STAGE = { sprout: 0, ripe: 1, mature: 2 };
@@ -15284,7 +15291,19 @@ if (op(x - 1, y - 1)) continue;
 if (op(x - 2, y - 1) || op(x, y - 1) || op(x - 1, y - 2) || op(x - 1, y)) p.px[y * w + x] = 0xffa8f0ff;
 }
 p.draw(src, 1, 1);
-return { pix: p, ax: f.ax + 1, ay: f.ay + 1, glints: f.glints.map(([x, y]) => [x + 1, y + 1]) };
+return { pix: p, ax: f.ax + 1, ay: f.ay + 1, glints: f.glints.map(([x, y]) => [x + 1, y + 1]), glows: (f.glows || []).map(([x, y]) => [x + 1, y + 1]) };
+}
+function lit(f, light, mount, own) {
+const src = f.pix, p = new Pixels(src.w, src.h), glow = new Set(own);
+for (let y = 0; y < src.h; y++) for (let x = 0; x < src.w; x++) {
+const c = src.px[y * src.w + x];
+if (!(c >>> 24)) continue;
+if (glow.has(c)) { p.px[y * src.w + x] = c; continue; }
+const near = mount === 'hang' ? y - f.ay < 3 : mount === 'wall' || mount === 'trunk' ? Math.abs(x - f.ax) < 3 : y > f.ay - 3;
+const k = near ? 0.82 : 1;
+p.px[y * src.w + x] = (c & 0xff000000) | (Math.min(255, Math.round(((c >>> 16) & 255) * light[2] * k)) << 16) | (Math.min(255, Math.round(((c >>> 8) & 255) * light[1] * k)) << 8) | Math.min(255, Math.round((c & 255) * light[0] * k));
+}
+return { pix: p, ax: f.ax, ay: f.ay, glints: f.glints, glows: f.glows || [] };
 }
 const variantOf = (id) => hashString('variant:' + id) & 3;
 function mountsOf(m) {
@@ -15296,8 +15315,12 @@ const id = identityOfMaterial(m);
 if (!id) return null;
 const st = isBotanical(id.shape) ? STAGE[stage] ?? 2 : 2, closed = !!o.closed && st === 2;
 const mount = frameMount(o.mount), variant = (o.variant ?? 0) & 3, flip = !!o.flip && mount === 'wall';
-const k = `${identityKey(id)}|${st}|${closed ? 1 : 0}|${mount}|${variant}|${flip ? 1 : 0}`;
-const base = cached('p|' + k, () => plantFrame(describe(id), st, { closed, mount, variant, flip }));
+const light = o.light && o.light.some((v) => Math.abs(v - 1) > 0.02) ? o.light : null;
+const k = `${identityKey(id)}|${st}|${closed ? 1 : 0}|${mount}|${variant}|${flip ? 1 : 0}|${light ? light.join(',') : ''}`;
+const base = cached('p|' + k, () => {
+const d = describe(id), f = plantFrame(d, st, { closed, mount, variant, flip });
+return light ? lit(f, light, mount, d.pal.glow) : f;
+});
 return o.hover ? cached('h|' + k, () => rimmed(base)) : base;
 }
 function plantCanvas(m, stage, o = {}) {
@@ -15305,7 +15328,7 @@ const f = plantFrameOf(m, stage, o);
 if (!f) return null;
 const any = /** @type {any} */ (f);
 if (!any.cv) any.cv = f.pix.toCanvas();
-return { cv: /** @type {HTMLCanvasElement} */ (any.cv), ax: f.ax, ay: f.ay, w: f.pix.w, h: f.pix.h, glints: f.glints };
+return { cv: /** @type {HTMLCanvasElement} */ (any.cv), ax: f.ax, ay: f.ay, w: f.pix.w, h: f.pix.h, glints: f.glints, glows: f.glows || [] };
 }
 function plantGlow(m) {
 const id = identityOfMaterial(m);
@@ -15314,6 +15337,16 @@ return cached(`g|${identityKey(id)}`, () => {
 const ramp = describe(id).pal.main || [0xffc0c0c0], c = ramp[Math.max(0, ramp.length - 2)];
 const rgb = [c & 255, (c >>> 8) & 255, (c >>> 16) & 255].map((v) => Math.round(v + (255 - v) * 0.4));
 return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+});
+}
+function emitColour(m) {
+const id = identityOfMaterial(m);
+if (!id) return null;
+return cached(`e|${identityKey(id)}`, () => {
+const d = describe(id);
+if (!growthParams(d).glow) return null;
+const c = d.pal.glow[d.pal.glow.length - 1];
+return `rgb(${c & 255},${(c >>> 8) & 255},${(c >>> 16) & 255})`;
 });
 }
 function silhouetteOf(m, o = {}) {
@@ -15340,7 +15373,7 @@ const cv = f.pix.toCanvas();
 cv.style.imageRendering = 'pixelated';
 return cv;
 }
-return { MIN_HIT, identityOfMaterial, speciesOf, variantOf, mountsOf, plantFrameOf, plantCanvas, plantGlow, silhouetteOf, iconFrameOf, ingredientSprite, ICON_PX };
+return { MIN_HIT, identityOfMaterial, speciesOf, variantOf, mountsOf, plantFrameOf, plantCanvas, plantGlow, emitColour, silhouetteOf, iconFrameOf, ingredientSprite, ICON_PX };
 })();
 // src/game/journal.js
 const __m86 = (() => {
@@ -19287,7 +19320,7 @@ out.hang.push(a);
 out[tree(x, y) ? 'bough' : 'ceiling'].push(a);
 }
 for (const dir of [1, -1]) {
-if (stone(x, y) && stone(x, y - 3) && stone(x, y + 3) && air(x + dir, y) && air(x + dir, y - 2) && air(x + dir, y + 2) && air(x + dir * 4, y)) out.wall.push({ x: x + dir, y, flip: dir < 0, sup: k });
+if (S[k] && S[k - 3 * W] && S[k + 3 * W] && air(x + dir, y) && air(x + dir, y - 2) && air(x + dir, y + 2) && air(x + dir * 4, y)) out.wall.push({ x: x + dir, y, flip: dir < 0, sup: k });
 if (tree(x, y) && tree(x, y + 4) && tree(x, y + 8) && tree(x, y + 14) && air(x + dir, y) && air(x + dir * 4, y) && air(x + dir, y - 2) && air(x + dir, y + 2)) {
 let run = 0;
 for (let i = 0; i < 10 && tree(x - dir * i, y); i++) run++;
@@ -19308,11 +19341,28 @@ this.solid = sc.solid;
 this.top = Math.max(1, sc.top);
 this.anchors = null;
 this.spots = new Map();
+this.mean = null;
+}
+lightAt(x, y, mount, s) {
+const px = this.sc.pix.px, W = SCENE_W, H = SCENE_H;
+if (this.mean === null) {
+let sum = 0, n = 0;
+for (let k = 0; k < px.length; k += 7) { const c = px[k]; sum += (c & 255) * 0.3 + ((c >>> 8) & 255) * 0.59 + ((c >>> 16) & 255) * 0.11; n++; }
+this.mean = Math.max(20, sum / n);
+}
+const x0 = Math.max(0, x - s.ax - 4), x1 = Math.min(W - 1, x - s.ax + s.w + 4), y0 = Math.max(0, y - s.ay - 3), y1 = Math.min(H - 1, y - s.ay + s.h + 3);
+let r = 0, g = 0, b = 0, n = 0;
+for (let j = y0; j <= y1; j += 2) for (let i = x0; i <= x1; i += 2) { const c = px[j * W + i]; r += c & 255; g += (c >>> 8) & 255; b += (c >>> 16) & 255; n++; }
+if (!n) return [1, 1, 1];
+r /= n; g /= n; b /= n;
+const luma = Math.max(1, r * 0.3 + g * 0.59 + b * 0.11), bright = Math.max(0.62, Math.min(1.12, 0.6 + 0.4 * (luma / this.mean)));
+const q = (v) => Math.round(v * 12) / 12;
+return [q(bright * (1 + 0.35 * (r / luma - 1))), q(bright * (1 + 0.35 * (g / luma - 1))), q(bright * (1 + 0.35 * (b / luma - 1)))];
 }
 place(plants, shapeOf, mountsOf = GROUND_ONLY) {
 const W = SCENE_W, H = SCENE_H;
 const out = {};
-for (const p of plants) out[p.id] = { x: p.x, y: p.y, mount: 'ground', flip: false };
+for (const p of plants) out[p.id] = { x: p.x, y: p.y, mount: 'ground', flip: false, light: [1, 1, 1] };
 const here = new Set(plants.map((p) => p.id));
 for (const id of [...this.spots.keys()]) if (!here.has(id)) this.spots.delete(id);
 const fresh = plants.filter((p) => !this.spots.has(p.id) && shapeOf(p));
@@ -19333,10 +19383,10 @@ if (spot) break;
 if (!spot) spot = this.onGround(p, shapeOf, ox, oy, roomy, tight, free);
 const q = spot || { x: ox, y: oy, s: /** @type {Silhouette} */ (shapeOf(p)), mount: 'ground', flip: false };
 mark(q);
-this.spots.set(p.id, q);
+this.spots.set(p.id, { ...q, light: this.lightAt(q.x, q.y, q.mount, q.s) });
 }
 }
-for (const [id, q] of this.spots) out[id] = { x: q.x / W, y: q.y / H, mount: q.mount, flip: q.flip };
+for (const [id, q] of this.spots) out[id] = { x: q.x / W, y: q.y / H, mount: q.mount, flip: q.flip, light: q.light };
 return out;
 }
 onGround(p, shapeOf, ox, oy, roomy, tight, free) {
@@ -19407,7 +19457,7 @@ const ax = Math.round(p.x * W), ay = Math.round(p.y * H);
 const w = f ? f.w : 16, h = f ? f.h : 16, x0 = ax - (f ? f.ax : w / 2), y0 = ay - (f ? f.ay : h);
 const cx = x0 + w / 2, cy = y0 + h / 2, hw = Math.max(w, MIN_HIT) / 2, hh = Math.max(h, MIN_HIT) / 2;
 const ground = !p.mount || p.mount === 'ground';
-return { ax, ay, w, h, x0: cx - hw, x1: cx + hw, y0: ground ? Math.min(cy - hh, ay - MIN_HIT) : cy - hh, y1: ground ? ay + 3 : cy + hh, front: y0 + h };
+return { ax, ay, w, h, x0: Math.min(cx - hw, ax - 8), x1: Math.max(cx + hw, ax + 8), y0: ground ? Math.min(cy - hh, ay - MIN_HIT) : Math.min(cy - hh, ay - 10), y1: ground ? ay + 3 : Math.max(cy + hh, ay + 3), front: y0 + h };
 }
 function hitPlant(plants, frameOf, px, py, W = SCENE_W, H = SCENE_H, slop = 5) {
 let best = null, bestY = -Infinity, near = null, nearD = slop * slop;
@@ -19588,9 +19638,11 @@ const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, we
 const { equipmentById } = __m50;
 const { RANKS } = __m50;
 const { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, SCENE_W, SCENE_H } = __m94;
-const { plantCanvas, plantFrameOf, plantGlow, silhouetteOf, ingredientSprite, speciesOf, mountsOf, variantOf } = __m84;
+const { plantCanvas, plantFrameOf, plantGlow, emitColour, silhouetteOf, ingredientSprite, speciesOf, mountsOf, variantOf } = __m84;
 const { EFFECT_BY_KEY } = __m14;
 const { hashString } = __m6;
+const SHADOW = { forest: 'rgba(8,16,10,0.32)', netherwood: 'rgba(6,4,16,0.4)', meadow: 'rgba(24,30,10,0.26)', river: 'rgba(4,14,16,0.34)', quarry: 'rgba(26,18,10,0.3)', moonfen: 'rgba(2,6,18,0.42)', crags: 'rgba(30,6,4,0.4)' };
+const GLOW_IN = { forest: 0.85, netherwood: 1.3, meadow: 0.45, river: 0.9, quarry: 0.7, moonfen: 1.4, crags: 0.7 };
 function sparkle(ctx, x, y, u) {
 const q = 1, L = [0, 1, 2, 3, 2, 1, 0][Math.min(6, Math.floor(u * 7))] * q;
 const cx = Math.round(x / q) * q, cy = Math.round(y / q) * q;
@@ -19792,7 +19844,7 @@ const p = id && this.field.find((q) => q.id === id);
 if (this.canvas) this.canvas.style.cursor = p ? (p.stage === 'mature' ? 'pointer' : 'help') : 'default';
 }
 look(p) {
-return { closed: p.stage === 'mature' && !!this.closed[p.dep.id], hover: this.hover === p.id || this.hover === p.dep.id, mount: p.mount, variant: p.variant, flip: p.flip };
+return { closed: p.stage === 'mature' && !!this.closed[p.dep.id], hover: this.hover === p.id || this.hover === p.dep.id, mount: p.mount, variant: p.variant, flip: p.flip, light: p.light };
 }
 frameOf(p) {
 const f = p.key ? plantFrameOf(p.m, p.stage, this.look(p)) : null;
@@ -19923,9 +19975,12 @@ ctx.fillRect(x - (ww >> 1) + 2, y + 2, Math.max(2, ww - 4), 1);
 }
 }
 if (onGround) {
-ctx.fillStyle = 'rgba(10,20,8,0.22)';
-ctx.fillRect(x - Math.floor(sw / 2), y - 1, sw, 2);
-ctx.fillRect(x - Math.floor(sw / 4), y - 1, Math.max(2, Math.floor(sw / 2)), 2);
+const hw = Math.max(3, Math.round(sp.w * 0.34)), ox = Math.round(hw * 0.3) + 1;
+ctx.fillStyle = SHADOW[this.region] || SHADOW.forest;
+ctx.fillRect(x - hw + ox, y - 1, hw * 2, 1);
+ctx.fillRect(x - hw + ox + 1, y, hw * 2 - 2, 1);
+ctx.fillRect(x - Math.floor(hw / 2) + ox, y + 1, hw, 1);
+ctx.fillRect(x - Math.floor(hw / 2), y - 2, hw, 1);
 }
 const tint = plantGlow(p.m), lift = since < 0.3 ? 1 : 0;
 if (tint && !hover) {
@@ -19937,8 +19992,21 @@ ctx.globalAlpha = 0.13 + 0.04 * Math.sin(this.time * 1.6 + p.x * 17);
 ctx.fillStyle = g; ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
 ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
 }
-if (p.mount === 'bough' || p.mount === 'hang' || p.mount === 'ceiling') this.drawHanging(ctx, p, sp, x, y);
-else ctx.drawImage(sp.cv, x - sp.ax, y - sp.ay - lift);
+const dxAt = p.mount === 'hang' ? this.drawHanging(ctx, p, sp, x, y) : null;
+if (!dxAt) ctx.drawImage(sp.cv, x - sp.ax, y - sp.ay - lift);
+const emit = emitColour(p.m);
+if (emit && !closed && sp.glows.length) {
+const dark = GLOW_IN[this.region] ?? 0.6, shown = sp.glows.length > 8 ? sp.glows.filter((_, i) => i % Math.ceil(sp.glows.length / 8) === 0) : sp.glows;
+ctx.globalCompositeOperation = 'lighter';
+shown.forEach(([gx, gy], i) => {
+const r = 4 + Math.min(4, sp.glows.length * 0.5), cx = x - sp.ax + gx + (dxAt ? dxAt(gy) : 0), cy = y - sp.ay + gy - lift;
+const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+g.addColorStop(0, emit); g.addColorStop(1, 'rgba(0,0,0,0)');
+ctx.globalAlpha = Math.min(0.4, 0.13 * dark * (0.75 + 0.25 * Math.sin(this.time * 1.4 + i * 1.9 + p.x * 11)) * (p.stage === 'sprout' ? 0.6 : 1));
+ctx.fillStyle = g; ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+});
+ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+}
 if (p.thirsty && !this.lab.sandbox && (this.mode === 'water' || Math.sin(this.time * 2 + p.x * 9) > 0.6)) {
 const dx = x + Math.round(sp.w / 2 - sp.ax) - 1, dy = y - sp.ay - 5 + Math.round(Math.sin(this.time * 4 + p.x * 5));
 ctx.fillStyle = '#1a2a48'; ctx.fillRect(dx - 1, dy, 4, 4); ctx.fillRect(dx, dy - 1, 2, 1);
@@ -19954,12 +20022,11 @@ sparkle(ctx, x - sp.ax + gx, y - sp.ay + gy, phase / 0.5);
 }
 }
 drawHanging(ctx, p, sp, x, y) {
-const st = this.lab.state, wind = windAt(x, this.time, (hashString(st.seed) % 1000) / 100) * (p.mount === 'bough' ? 1 : 0.35);
+const st = this.lab.state, wind = windAt(x, this.time, (hashString(st.seed) % 1000) / 100) * 0.8;
 const swing = wind + 0.35 * Math.sin(this.time * 1.7 + p.x * 23), below = sp.h - sp.ay;
-for (let r = 0; r < sp.h; r++) {
-const d = Math.max(0, r - sp.ay) / Math.max(1, below), dx = Math.round(swing * 2.2 * d * d);
-ctx.drawImage(sp.cv, 0, r, sp.w, 1, x - sp.ax + dx, y - sp.ay + r, sp.w, 1);
-}
+const dxAt = (/** @type {number} */ r) => Math.round(swing * 2.2 * (Math.max(0, r - sp.ay) / Math.max(1, below)) ** 2);
+for (let r = 0; r < sp.h; r++) ctx.drawImage(sp.cv, 0, r, sp.w, 1, x - sp.ax + dxAt(r), y - sp.ay + r, sp.w, 1);
+return dxAt;
 }
 drawDrops(ctx, dt) {
 for (const d of this.drops) {
