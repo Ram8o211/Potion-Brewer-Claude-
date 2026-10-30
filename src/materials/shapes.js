@@ -107,7 +107,7 @@ const TEMPLATES = {
   shell: [[0, 0], [1, 0], [-1, 0], [0.5, -0.86], [-0.5, -0.86], [1.5, -0.86], [-1.5, -0.86], [0, -1.73], [1, -1.73], [-1, -1.73]],
 };
 // the hanging vines' pieces are cut like their families'
-for (const [k, v] of Object.entries({ icicle: 'crystal', bellbloom: 'flower', bluebell: 'flower', puffbloom: 'flower', orb: 'stone', teardrop: 'stone', netpod: 'stone', jelly: 'moss' })) TEMPLATES[k] = TEMPLATES[v];
+for (const [k, v] of Object.entries({ icicle: 'crystal', bellbloom: 'flower', bluebell: 'flower', puffbloom: 'flower', orb: 'stone', teardrop: 'stone', netpod: 'stone', jelly: 'moss', orchid: 'flower', lichen: 'moss', trunkfruit: 'stone' })) TEMPLATES[k] = TEMPLATES[v];
 
 /**
  * Particle offsets (in particle spacings) of one whole object of a solid

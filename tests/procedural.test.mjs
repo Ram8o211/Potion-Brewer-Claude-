@@ -262,5 +262,5 @@ test('the identity record alone rebuilds the same pictures on another device', (
   assert.equal(iconFrame(describe(got)).pix.hash(), iconFrame(describe(m.vis)).pix.hash());
   assert.equal(plantFrame(describe(got), 2).pix.hash(), plantFrame(describe(m.vis), 2).pix.hash());
   assert.equal(got.origin, 'trade-1', 'it remembers its world of origin');
-  assert.equal(WILD_SPECS.length, 52);
+  assert.equal(WILD_SPECS.length, 59);
 });
