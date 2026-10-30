@@ -172,6 +172,39 @@ export const WILD_SPECS = [
     fx: { strength: 32, death: 8, fire: 6 }, arc: [900, 2.6], price: 34, gather: 'mine',
     steep: { name: 'Obsidian Water', into: 'water', lo: [75, 80], hi: [150, 160] },
     lore: 'Black volcanic glass with an edge like a razor: unyielding strength, a smouldering heat and a whisper of death. It gives itself up only to water near the boil.' },
+  // Hanging vines (regions with a roof or boughs): glowing pendants on threads from the ceiling
+  { key: 'glimmerdrop', noun: 'Glimmerdrop', shape: 'icicle', region: 'quarry', rank: 1, buy: null, hue: [190, 0.7, 0.62], late: true, form: 'solid', density: 1.3, hardness: 0.55, sol: 0.1, solT: 0.002, glow: 0.6,
+    fx: { frost: 22, arcana: 10, toxicity: 5 }, arc: [480, 3], price: 16, gather: 'pick',
+    steep: { name: 'Glimmerdrop Tincture', into: 'spirit', lo: [20, 25], hi: [55, 60] },
+    lore: 'Pale blue crystal drops that grow on threads from the quarry roof. Cold and clear-minded, with a faint poison; warmth and life cancel the chill and the bite.' },
+  { key: 'rosebell', noun: 'Rosebell', shape: 'bellbloom', region: 'netherwood', rank: 1, buy: null, hue: [330, 0.6, 0.6], late: true, form: 'solid', density: 0.62, hardness: 0.15, sol: 0.2, solT: 0.001, glow: 0.35,
+    fx: { love: 24, vitality: 8, fire: 5 }, arc: [400, 3], price: 14, gather: 'pick',
+    steep: { name: 'Rosebell Infusion', into: 'water', lo: [30, 35], hi: [60, 65] },
+    lore: 'Pink bells that nod from the roots above the Netherwood. They stir affection and mend a little, with a faint warmth.' },
+  { key: 'dewglobe', noun: 'Dewglobe', shape: 'orb', region: 'netherwood', rank: 1, buy: null, hue: [125, 0.5, 0.6], late: true, form: 'solid', density: 0.95, hardness: 0.1, sol: 0.2, solT: 0.0015, glow: 0.4,
+    fx: { vitality: 22, transformation: 8, frost: 5 }, arc: [420, 3], price: 13, gather: 'pick',
+    steep: { name: 'Dewglobe Cordial', into: 'water', lo: [25, 30], hi: [55, 60] },
+    lore: 'Green bubbles of living dew, hanging in pairs from slender vines. They heal and quietly shift whatever they touch, leaving a cool film.' },
+  { key: 'embertear', noun: 'Embertear', shape: 'teardrop', region: 'crags', rank: 3, buy: null, hue: [28, 0.9, 0.55], late: true, form: 'solid', density: 1.05, hardness: 0.2, sol: 0.18, solT: 0.0015, glow: 0.7,
+    fx: { fire: 28, strength: 10, acidity: 6 }, arc: [520, 3], price: 24, gather: 'pick',
+    steep: { name: 'Embertear Draught', into: 'spirit', lo: [40, 45], hi: [75, 80] },
+    lore: 'Amber teardrops of molten sap that never quite fall from the crags’ roof. Fierce warmth and might, with a sour bite that alkali tames.' },
+  { key: 'duskbell', noun: 'Duskbell', shape: 'bluebell', region: 'moonfen', rank: 2, buy: null, hue: [255, 0.4, 0.72], late: true, form: 'solid', density: 0.6, hardness: 0.12, sol: 0.22, solT: 0.001, glow: 0.4, dusk: true,
+    fx: { arcana: 20, love: 8, frost: 6 }, arc: [-500, 2.5], price: 20, gather: 'pick',
+    steep: { name: 'Duskbell Tea', into: 'water', lo: [10, 15], hi: [40, 45] },
+    lore: 'Lavender bells that ring only at dusk, trailing from the fen’s overhangs. They sharpen the mind and soften the heart, with a cold breath.' },
+  { key: 'bloodnet', noun: 'Bloodnet', shape: 'netpod', region: 'netherwood', rank: 2, buy: null, hue: [355, 0.6, 0.52], late: true, form: 'solid', density: 1.1, hardness: 0.2, sol: 0.2, solT: 0.0012, glow: 0.3,
+    fx: { strength: 20, toxicity: 12, fire: 6 }, arc: [380, 3], price: 17, gather: 'pick',
+    steep: { name: 'Bloodnet Tincture', into: 'spirit', lo: [30, 35], hi: [60, 65] },
+    lore: 'Red netted pods, heavy and warm, that sweat a bitter sap. They lend strength and poison in equal measure; something healing must mend the bite.' },
+  { key: 'driftjelly', noun: 'Drift Jelly', shape: 'jelly', region: 'moonfen', rank: 2, buy: null, hue: [205, 0.75, 0.6], late: true, form: 'solid', density: 0.9, hardness: 0.08, sol: 0.18, solT: 0.0015, glow: 0.8, dusk: true,
+    fx: { transformation: 22, frost: 12, death: 6 }, arc: [-450, 2.5], price: 22, gather: 'scrape',
+    steep: { name: 'Drift Jelly Broth', into: 'water', lo: [0, 5], hi: [30, 35] },
+    lore: 'Blue bells of living jelly that drift on their threads in the fen’s dark. They change what they touch and chill it, with a grave taint.' },
+  { key: 'pearlpuff', noun: 'Pearlpuff', shape: 'puffbloom', region: 'forest', rank: 0, buy: null, hue: [48, 0.25, 0.86], late: true, form: 'solid', density: 0.5, hardness: 0.1, sol: 0.2, solT: 0.001, glow: 0.5,
+    fx: { vitality: 16, love: 10, acidity: -5 }, arc: [430, 3], price: 15, gather: 'pick',
+    steep: { name: 'Pearlpuff Milk', into: 'water', lo: [25, 30], hi: [55, 60] },
+    lore: 'Creamy blossoms that cluster in puffs under the boughs of the Whisperwood. Gently healing and soothing, faintly alkaline.' },
 ];
 
 /** @type {Record<string, typeof WILD_SPECS[number]>} */
@@ -190,7 +223,10 @@ export const WILD_FX_VERSION = 4;
  * @param {{materials: MaterialDef[], roles: Record<string,string>}} base existing world (water/spirit/oil ids)
  */
 export function generateWild(seed, base) {
-  const rng = new Rng('wild:' + seed);
+  const mainRng = new Rng('wild:' + seed);
+  // the hanging vines (`late`) draw from a stream of their own, so adding them never shifts what the older ingredients drew
+  const lateRng = new Rng('wild+:' + seed);
+  let rng = mainRng;
   // names never depend on wild materials already in the world, so an old
   // save regenerates exactly the names a fresh world of its seed gets
   const used = new Set(base.materials.filter((m) => !m.id.startsWith('wild-')).map((m) => m.name));
@@ -199,6 +235,7 @@ export function generateWild(seed, base) {
   /** @type {Record<string, string>} */
   const ids = {};
   for (const s of WILD_SPECS) {
+    rng = s.late ? lateRng : mainRng;
     const id = 'wild-' + s.key;
     const [h, sat, l] = s.hue;
     const color = hslToRgb((h + rng.range(-8, 8) + 360) % 360, Math.min(1, sat * rng.range(0.9, 1.1)), Math.min(0.92, l * rng.range(0.94, 1.06)));
@@ -237,6 +274,7 @@ export function generateWild(seed, base) {
   // ---- reactions of wild ingredients (they start where the reagents meet)
   /** @type {import('../reactions/reactions.js').ReactionRule[]} */
   const reactions = [];
+  rng = mainRng;
   const t5 = (lo, hi) => Math.round(rng.range(lo, hi) / 5) * 5;
   /**
    * A product of a wild ingredient: its awakening profile follows its source.
@@ -303,6 +341,7 @@ export function generateWild(seed, base) {
   // the right solvent inside its own temperature window
   for (const s of WILD_SPECS) {
     if (!s.steep) continue;
+    rng = s.late ? lateRng : mainRng;
     const st = s.steep;
     const solvent = st.into === 'spirit' ? spirit : st.into === 'oil' ? oil : water;
     const solv = base.materials.find((m) => m.id === solvent);

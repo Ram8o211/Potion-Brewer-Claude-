@@ -16,6 +16,9 @@ export const FAMILY_OF = Object.freeze({
   crystal: 'crystal', shard: 'crystal',
   stone: 'mineral', nugget: 'mineral', powder: 'mineral', crust: 'mineral',
   shell: 'shell', scale: 'shell',
+  // hanging vines (visual/growth.js DANGLERS)
+  icicle: 'crystal', bellbloom: 'flower', bluebell: 'flower', puffbloom: 'flower',
+  orb: 'fruit', teardrop: 'fruit', netpod: 'fruit', jelly: 'fruit',
 });
 
 /** Families of living plants: they drink, and grow with the moisture of their soil. */
