@@ -1,7 +1,7 @@
 // Service worker: cache-first offline support. The build script replaces
 // the asset list and version; in development it simply caches as it goes.
-const VERSION = '2.3.0-68a0631ee1';
-const ASSETS = ["./","app.2708a273e9.js","assets/fonts/alchemist-pixel.ttf","assets/hutch/pen-front.png","assets/hutch/pen.png","assets/icons/icon-192.png","assets/icons/icon-512.png","index.html","manifest.webmanifest","styles/main.d2b208a314.css"];
+const VERSION = '2.3.0-98c4e5ea4c';
+const ASSETS = ["./","app.8690d0d837.js","assets/fonts/alchemist-pixel.ttf","assets/hutch/pen-front.png","assets/hutch/pen.png","assets/icons/icon-192.png","assets/icons/icon-512.png","index.html","manifest.webmanifest","styles/main.d2b208a314.css"];
 // The origin may be shared — <owner>.github.io hosts every Pages site of an
 // account, and a branch deploy exposes this game both at the root and at
 // /dist/ — so cache names carry this worker's scope, and each worker only

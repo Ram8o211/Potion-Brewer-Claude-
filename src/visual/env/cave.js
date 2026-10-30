@@ -321,20 +321,24 @@ export function ledgeTops(cv, n, seed, rise = 12) {
 
 /**
  * Veins seeping from a pool into the ground round it, continuing the pool
- * itself: the rock of its bed takes on the pool's deep colour, fading
- * smoothly out through the ground; and a few veins leave the bed as wide
- * as the pool's own edge, in its colours, wandering out and down, thinning
- * and sinking into the rock's colour toward their tips. Lava veins glow and
- * light the rock round them; water veins shine a little and wet it.
+ * itself: the fluid filters into the rock rather than lying on it. The bed
+ * soaks, its rock stained toward the pool's deep colour and its cracks
+ * brimming with the fluid, fading out through the ground; and a few winding
+ * seams leave the bed, wandering out and down, along which the fluid fills
+ * the mortar and crevices between the stones (the stones themselves only
+ * darkened and stained), thinning and sinking into the rock's colour toward
+ * their tips. Lava veins glow and light the rock round them; water veins
+ * shine a little and wet it.
  * @param {any} cv @param {{x0:number, x1:number, level:number}} p
  * @param {{from:string[], to:string, seed:number, n?:number, reach?:number, soak?:number, k?:number, w?:number, branch?:number, rgb?:number[], glow?:number}} o
  *   from: the vein's colours from the pool outward (start with the pool's own); to: the colour the
- *   soaked rock turns toward; soak: how far the bed soaks; k: how strongly; w: a vein's width at the pool
+ *   soaked rock turns toward; soak: how far the bed soaks; k: how strongly; w: a seam's width at the pool
  */
 export function veins(cv, p, o) {
   const W = cv.W, H = cv.H, S = cv.solid, L = cv.liquid, seed = o.seed, reach = o.reach ?? 60, soak = o.soak ?? 10, k = o.k ?? 0.7;
   const from = o.from.map(col), to = col(o.to), w0 = o.w ?? 3;
   const x0 = Math.max(0, p.x0 - reach), x1 = Math.min(W - 1, p.x1 + reach), y0 = Math.max(0, p.level - 4);
+  const px = cv.pix.px;
   // distance from the pool through the ground (a two-pass chamfer in a box round it)
   const dist = new Float32Array(W * H).fill(1e3);
   for (let y = y0; y < H; y++) for (let x = x0; x <= x1; x++) if (L[y * W + x]) dist[y * W + x] = 0;
@@ -355,8 +359,9 @@ export function veins(cv, p, o) {
       }
     }
   }
-  // the veins: t (0 at the pool, 1 at the tip) and how wide, per pixel
-  const vt = new Float32Array(W * H).fill(2);
+  // the seams: how wet each pixel is (1 on a seam's line at the pool, falling off
+  // across it and along it) and t there (0 at the pool, 1 at the tip)
+  const wet = new Float32Array(W * H), vt = new Float32Array(W * H).fill(1);
   const n = o.n ?? 6, walkers = [];
   for (let v = 0; v < n; v++) {
     const sx = Math.round(p.x0 + (v + 0.2 + hash2(v, 1, seed) * 0.6) / n * (p.x1 - p.x0));
@@ -371,35 +376,57 @@ export function veins(cv, p, o) {
       const xi = Math.round(x), yi = Math.round(y);
       if (xi < 1 || xi >= W - 1 || yi >= H - 1 || yi < 0) break;
       if (!S[yi * W + xi] && !L[yi * W + xi]) break;
-      const u = t0 + (1 - t0) * (t / len), r = Math.max(0.5, wd * (1 - u) ** 2);
-      for (let j = -Math.ceil(r); j <= Math.ceil(r); j++) for (let i = -Math.ceil(r); i <= Math.ceil(r); i++) {
-        if (i * i + j * j > r * r + 0.3) continue;
+      // a band a few stones wide round the line, the fluid soaking out through it
+      const u = t0 + (1 - t0) * (t / len), r = 1.5 + wd * 1.6 * (1 - u), R = Math.ceil(r);
+      for (let j = -R; j <= R; j++) for (let i = -R; i <= R; i++) {
         const q = (yi + j) * W + xi + i;
-        if (q >= 0 && q < W * H && S[q]) vt[q] = Math.min(vt[q], u + Math.sqrt(i * i + j * j) / (r + 1) * 0.25);
+        if (q < 0 || q >= W * H || !S[q]) continue;
+        const e = 1 - Math.sqrt(i * i + j * j) / (r + 0.5);
+        if (e <= 0) continue;
+        const v = e * (1 - u * 0.75);
+        if (v > wet[q]) { wet[q] = v; vt[q] = u; }
       }
       a += (hash2(id, t, seed + 5) - 0.5) * 0.75 + (Math.PI / 2 - a) * 0.025;
       x += Math.cos(a); y += Math.max(-0.2, Math.sin(a));
       if (hash2(id, t, seed + 6) < (o.branch ?? 0.015) && t > 4 && walkers.length < n * 3) walkers.push([x, y, a + (hash2(id, t, seed + 7) < 0.5 ? -0.7 : 0.7), (len - t) * 0.6, u, wd * (1 - u) * 0.8, id * 31 + t]);
     }
   }
+  // how deep a crack each pixel sits in: darker than the rock round it (the
+  // mortar between the stones, their shaded undersides, pits) — where the fluid gathers
+  const lum = (/** @type {number} */ c) => (c & 255) * 0.3 + ((c >>> 8) & 255) * 0.59 + ((c >>> 16) & 255) * 0.11;
+  const crev = new Float32Array(W * H);
+  for (let y = y0; y < H; y++) for (let x = x0; x <= x1; x++) {
+    const i = y * W + x;
+    if (!S[i] || (dist[i] >= soak && wet[i] <= 0)) continue;
+    let sum = 0, m = 0;
+    for (let j = -2; j <= 2; j++) for (let ii = -2; ii <= 2; ii++) {
+      const xx = x + ii, yy = y + j;
+      if (xx < 0 || xx >= W || yy < 0 || yy >= H || !S[yy * W + xx]) continue;
+      sum += lum(px[yy * W + xx]); m++;
+    }
+    const avg = sum / m;
+    crev[i] = Math.max(0, Math.min(1, (avg - lum(px[i])) / (avg * 0.18 + 4)));
+  }
   const grad = (/** @type {number} */ u) => { const f = Math.min(from.length - 1.001, u * (from.length - 1)), i = Math.floor(f); return mixPacked(from[i], from[i + 1], f - i); };
   const light = new Float32Array(W * H);
   for (let y = y0; y < H; y++) for (let x = x0; x <= x1; x++) {
     const i = y * W + x;
     if (!S[i]) continue;
-    // the bed soaks: the pool's colour fading out with distance
+    // the bed soaks: its rock stained, its cracks brimming, fading out with distance
     const d = dist[i];
-    if (d < soak) {
-      const f = (1 - d / soak) ** 1.6;
-      cv.pix.px[i] = mixPacked(cv.pix.px[i], mixPacked(to, from[Math.min(from.length - 1, 1)], f * 0.6), Math.min(0.9, f * k));
-      light[i] = Math.max(light[i], f * 0.6);
-    }
-    const u = vt[i];
-    if (u <= 1) {
-      // the vein: the pool's colours along it, sinking into the rock toward its tip
-      cv.pix.px[i] = mixPacked(grad(u), cv.pix.px[i], Math.min(0.9, 0.15 + u * 0.8));
-      light[i] = Math.max(light[i], (1 - u) * 0.9);
-    }
+    let bed = 0;
+    if (d < soak) bed = (1 - d / soak) ** 1.6 * (0.75 + fbm2(x * 0.15, y * 0.15, seed + 9, 2) * 0.5);
+    // along a seam: patchy, so the fluid reads as filtering through rather than drawn on
+    const s = wet[i] * (0.6 + fbm2(x * 0.2, y * 0.2, seed + 11, 2) * 0.8);
+    if (bed <= 0 && s <= 0) continue;
+    const c = crev[i], u = Math.min(1, vt[i] + (1 - Math.min(1, s)) * 0.3);
+    // the stone: darkened and stained toward the soaked colour
+    const stain = Math.min(0.85, (bed * 0.7 + s * 0.45) * k);
+    px[i] = mixPacked(px[i], to, stain);
+    // the cracks: filled with the fluid itself
+    const fill = Math.min(0.95, bed * c * 1.1 + Math.max(0, s * (c * 1.7 + 0.08) - 0.12) + bed * bed * 0.2);
+    if (fill > 0) px[i] = mixPacked(px[i], s > bed ? grad(u) : from[Math.min(from.length - 1, 1)], fill);
+    light[i] = Math.max(bed * 0.5, fill * (1 - u * 0.6));
   }
   if (o.rgb) {
     const g = o.glow ?? 0.4, rgb = o.rgb, R = 4;

@@ -38,12 +38,15 @@ still limited.
   pillar reaching down to the ground or a ledge below, joined to them as
   one mass, moss running down its sides and hanging from its underside.
 * **Pools seep into the ground.** Water and lava lie in the hollows, their
-  bodies darkening smoothly with depth, and continue into the rock: the
-  bed takes on the pool's deep colour, fading smoothly out through the
-  ground, and a few veins leave the bed as wide as the pool's edge and in
-  its own colours, wandering out and down, thinning and sinking into the
-  rock's colour toward their tips. Lava veins (about five) glow and light
-  the rock round them; water veins shine faintly and wet it. In the Ember
+  bodies darkening smoothly with depth, and filter into the rock rather
+  than lying on it: the bed's stones are stained toward the pool's deep
+  colour and the cracks between them brim with the fluid, fading out
+  through the ground; and a few winding seams leave the bed, wandering out
+  and down, along which the fluid fills the mortar and crevices between the
+  stones (found as the pixels darker than the rock round them) while the
+  stones themselves are only darkened, thinning toward their tips. Lava
+  seams (about five) glow and light the rock round them; water seams shine
+  faintly and wet it. In the Ember
   Crags lava also pours in falls from the roof and the ledges.
 * **Light.** Skies, fog and every light fall off smoothly (no bands): the
   sun, the moon, mushrooms glowing cyan, ember-orange or cold white,
