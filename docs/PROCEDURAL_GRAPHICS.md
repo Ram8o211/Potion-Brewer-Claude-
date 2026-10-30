@@ -38,11 +38,13 @@ still limited.
   pillar reaching down to the ground or a ledge below, joined to them as
   one mass, moss running down its sides and hanging from its underside.
 * **Pools seep into the ground.** Water and lava lie in the hollows, their
-  bodies darkening smoothly with depth. Each pool soaks the rock of its
-  bed (its colour fading out with distance through the ground) and sends
-  branching veins wandering out and down from it: lava veins glow and
-  light the rock round them, water veins are faint wet threads. In the
-  Ember Crags lava also pours in falls from the roof and the ledges.
+  bodies darkening smoothly with depth, and continue into the rock: the
+  bed takes on the pool's deep colour, fading smoothly out through the
+  ground, and a few veins leave the bed as wide as the pool's edge and in
+  its own colours, wandering out and down, thinning and sinking into the
+  rock's colour toward their tips. Lava veins (about five) glow and light
+  the rock round them; water veins shine faintly and wet it. In the Ember
+  Crags lava also pours in falls from the roof and the ledges.
 * **Light.** Skies, fog and every light fall off smoothly (no bands): the
   sun, the moon, mushrooms glowing cyan, ember-orange or cold white,
   torches and a lantern, lava, crystals, shafts through the leaves —
@@ -51,15 +53,26 @@ still limited.
   stalactites, running falls, flickering torches, breathing mushrooms,
   pollen, motes, leaves, fireflies, wisps, trickling grit, shimmering
   water, lava bubbles, embers, ash and steam.
-* **Trees** are clean and regular: round leaf clumps laid on a staggered
-  grid over a darker mass, each a flat body with a lighter cap toward the
-  light, the lower clumps in shade; bark nearly flat. They are modest in
-  size so a wood holds many — Whisperwood has five to seven across its
-  floor, a larger one at an edge and two rows fading behind.
-* **Ingredients stand out.** In the wilds each plant stands in a soft
-  halo of its own colour and has a faint rim of light round its
-  silhouette (`species-sprites.js` `plantRim`), so it reads against dark
-  rock and bright grass alike.
+* **Trees, after a branch concept** (`objects.js` `branchTree`): a
+  sinuous trunk, branches forking off it on alternating sides, rising and
+  tapering, a long one forking again, and a foliage pad at every tip and
+  at the top — a cloud of leaves wider than tall, a dark mass under
+  rounded bumps lit from the upper left, moss dripping from its
+  underside. Three habits: tall (a column of short branches), spread (a
+  short trunk, long reaching branches) and lean (an S-curved trunk).
+* **Two kinds of trees** (`env/trees.js`). Background trees stand in rows
+  behind the terrain, all of one habit and nearly one size, faded into
+  the distance: a homogeneous wood. Terrain trees grow on the terrain, in
+  its plane: each takes a dry spot on the ground or a ledge's top and a
+  height that fits there — shrinking until it does, or giving the spot up
+  — so that none of it overlaps the terrain above its foot, the cave's
+  rock, a liquid or another tree. Whisperwood grows up to nine, of every
+  habit and height; the other regions a few (willows by the water, dead
+  trees in the bog and the crags).
+* **Ingredients glow slightly.** In the wilds each plant keeps its own
+  size and look, with a faint breathing glow of its own colour about it
+  (`species-sprites.js` `plantGlow`), so it reads in the scene without
+  standing out of it.
 * **Every ingredient has its own look in each world**, derived from its
   family, habitat, colour, rarity and alchemy. The same species is drawn
   from one descriptor on the ground (sprout, ripe, mature, and closed out
@@ -127,8 +140,10 @@ src/visual/                     pure, DOM-free, deterministic
                   far pillars, ruins, mist, roof, stalactites, walls,
                   vines, moss, glowing mushrooms, torches, falls, veins
                   seeping from pools, the vignette and lights; stone.js: the cobbled stone;
-                  objects.js: trees, shrubs, rocks, reeds, ferns, logs,
-                  clouds, crane, cart, scaffolds, wheel…; scene.js: cache)
+                  objects.js: branch trees and foliage pads, willows,
+                  shrubs, rocks, reeds, ferns, logs, clouds, crane, cart,
+                  scaffolds, wheel…; trees.js: background rows and
+                  terrain trees fitted to the terrain; scene.js: cache)
 src/rendering/
   species-sprites.js   cached plant/icon frames and canvases, silhouettes,
                        ingredientSprite (every list's picture)
@@ -298,21 +313,20 @@ Chromium (desktop, this development container), from the in-game probe
 
 | region | first (ms) | again, another seed (ms) |
 | --- | ---: | ---: |
-| Sunlit Meadow | 238 | 136 |
-| Whisperwood | 225 | 168 |
-| Willow Bank | 126 | 92 |
-| Ironstone Quarry | 98 | 97 |
-| Moonfen | 146 | 102 |
-| Ember Crags | 66 | 56 |
+| Sunlit Meadow | 335 | 165 |
+| Whisperwood | 310 | 205 |
+| Willow Bank | 192 | 141 |
+| Ironstone Quarry | 76 | 71 |
+| Moonfen | 205 | 168 |
+| Ember Crags | 47 | 41 |
 
 * All 36 species of a new world — three growth stages, icon and four
   pieces each (288 rasters): **99 ms** in total, once per world.
 * One frame of the Wilds view (Whisperwood, its plants, the animated
   overlay, weather): **0.17 ms** — it draws only cached canvases.
-* Node 22 (no warm-up): 80–320 ms per region the first time, 90–240 ms
-  after; the test bounds every region at 4 s. The cavern costs about
-  twice the earlier flat side view: the scenery is now rasterized at the
-  scene's own pixel rather than in 2-pixel squares.
+* Node 22 (no warm-up): 50–350 ms per region the first time, 40–250 ms
+  after; the test bounds every region at 4 s. The terrain trees cost the
+  most: each is rasterized again at every size tried until it fits.
 * Shipped assets: 1.2 MB → 76 KB (the wilds' and ingredients' PNG atlases
   are gone); source art in the repository: 31 MB → 1.4 MB.
 

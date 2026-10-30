@@ -9,7 +9,8 @@ import { sky } from './paint.js';
 import { palette, vary, streamOf } from './kit.js';
 import { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, surfaceAt, silhouette, treeShape, glow, drips, ledges } from './side.js';
 import { caveFrame, fog, vines, moss, veins, WATER_VEINS } from './cave.js';
-import { tree, cloud, fence, skep, boulder } from './objects.js';
+import { cloud, fence, skep, boulder } from './objects.js';
+import { terrainTrees } from './trees.js';
 import { Model, lumpy } from '../geometry.js';
 import { pack } from '../color.js';
 
@@ -66,14 +67,11 @@ export function compose(cv, seed) {
   moss(cv, { cols: ['#8ccf4a', '#5ea83a', '#3f7e2c', '#2e5a22'], seed: ss + 1, drape: 9, rate: 0.2, len: 10 });
   if (pond) {
     cv.meta.pond = pool(cv, pond.x - pond.hw, pond.x + pond.hw, pond.level, { surface: '#cfe8ff', body: ['#3a6a98', '#2e5a86', '#244a72', '#1a3a5e'], see: 0.2, bed: ['#3a2e20', '#4a3a28', '#2a2018'] });
-    veins(cv, cv.meta.pond, WATER_VEINS(ss + 4));
+    veins(cv, cv.meta.pond, WATER_VEINS(ss + 4, ['#7aa8d8', '#3a6a98', '#2e5a86', '#244a72']));
   }
   markOpen(cv);
   // the oaks: one framing the mouth, maybe another in the field
-  const or = s('oaks'), left = or.next() < 0.5;
-  const ox = left ? or.int(14, 40) : or.int(344, 370);
-  cv.stamp(tree(or, 'oak', or.int(130, 150), or.int(12, 15), { lean: left ? 0.04 : -0.04 }), pal, ox, surfaceAt(cv, ox) + 2, { roots: [16, 3], dark: 0.2 });
-  if (or.next() < 0.7) { const o2 = left ? or.int(250, 320) : or.int(70, 130); cv.stamp(tree(or, 'oak', or.int(60, 80), or.int(5, 7)), pal, o2, surfaceAt(cv, o2) + 1, { roots: [8, 2] }); }
+  terrainTrees(cv, s('oaks'), pal, { n: 3, kinds: ['oak'], shapes: ['spread', 'lean'], h: [60, 130], gap: 60, ledges: true });
   if (feature === 'hives') {
     const fx = fr.int(70, 300), fy = surfaceAt(cv, fx) + 1;
     cv.stamp(fence(fr.int(50, 80), 14), pal, fx, fy, { foot: [40, 2] });

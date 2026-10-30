@@ -21,7 +21,7 @@ import { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, w
 import { equipmentById } from '../../game/equipment.js';
 import { RANKS } from '../../game/equipment.js';
 import { sceneCanvas, animateRegion, PlantGround, plantBox, hitPlant, SCENE_W, SCENE_H } from '../../rendering/wild-scene.js';
-import { plantCanvas, plantFrameOf, plantRim, silhouetteOf, ingredientSprite, speciesOf } from '../../rendering/species-sprites.js';
+import { plantCanvas, plantFrameOf, plantGlow, silhouetteOf, ingredientSprite, speciesOf } from '../../rendering/species-sprites.js';
 import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
 
 /**
@@ -416,8 +416,8 @@ export class WildsView {
 
   /**
    * A plant at its stage: damp soil darkening round its foot when it has
-   * been watered, a ground shadow, a soft halo and a rim of light in its
-   * own colour setting it off the scene, then its sprite, springing up a pixel as
+   * been watered, a ground shadow, a slight glow of its own colour, then
+   * its sprite, springing up a pixel as
    * it reaches a new stage; a thirsty growing plant carries a little drop
    * (always in watering mode, now and then otherwise); a mature crystal or
    * a magical plant glimmers now and then at its bright spots.
@@ -444,14 +444,16 @@ export class WildsView {
     ctx.fillStyle = 'rgba(10,20,8,0.22)';
     ctx.fillRect(x - Math.floor(sw / 2), y - 1, sw, 2);
     ctx.fillRect(x - Math.floor(sw / 4), y - 1, Math.max(2, Math.floor(sw / 2)), 2);
-    // set off the scene: a soft halo of its own colour behind it, a faint rim of light round it
-    const lit = plantRim(p.m, p.stage, { closed, hover }), lift = since < 0.3 ? 1 : 0;
-    if (lit && !hover) {
-      const cx = x - sp.ax + sp.w / 2, cy = y - sp.ay + sp.h * 0.55, r = Math.max(sp.w, sp.h) * 0.75 + 4;
+    // a slight glow of its own colour about it, breathing, so it reads in the scene without standing out of it
+    const tint = plantGlow(p.m), lift = since < 0.3 ? 1 : 0;
+    if (tint && !hover) {
+      const cx = x - sp.ax + sp.w / 2, cy = y - sp.ay + sp.h * 0.5, r = Math.max(sp.w, sp.h) * 0.6 + 2;
       const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-      g.addColorStop(0, lit.tint); g.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.globalAlpha = 0.32; ctx.fillStyle = g; ctx.fillRect(cx - r, cy - r, r * 2, r * 2); ctx.globalAlpha = 1;
-      ctx.drawImage(lit.cv, x - sp.ax - 1, y - sp.ay - 1 - lift);
+      g.addColorStop(0, tint); g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = 0.13 + 0.04 * Math.sin(this.time * 1.6 + p.x * 17);
+      ctx.fillStyle = g; ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+      ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
     }
     ctx.drawImage(sp.cv, x - sp.ax, y - sp.ay - lift);
     if (p.thirsty && !this.lab.sandbox && (this.mode === 'water' || Math.sin(this.time * 2 + p.x * 9) > 0.6)) {

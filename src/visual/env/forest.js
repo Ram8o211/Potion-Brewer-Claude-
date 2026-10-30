@@ -10,9 +10,9 @@ import { sky } from './paint.js';
 import { palette, vary, streamOf } from './kit.js';
 import { heights, raise, fillSolid, blob, paintTerrain, markOpen, surfaceAt, col, drips, ledges, hanging } from './side.js';
 import { caveFrame, farPillars, fog, vines, moss, glowShrooms } from './cave.js';
-import { tree, fern, log, stump } from './objects.js';
+import { fern, log, stump } from './objects.js';
+import { treeRow, terrainTrees } from './trees.js';
 import { hash2 } from '../noise.js';
-import { hex, pack } from '../color.js';
 
 export function compose(cv, seed) {
   const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'forest', p);
@@ -33,14 +33,12 @@ export function compose(cv, seed) {
   // the ground line the trees stand on
   const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 172, amp: 8, freq: 0.012 });
   // rows of trees fading into the mist, the far rows smallest and palest
-  const rows = s('rows');
-  for (const [k, h, haze] of /** @type {[number, number[], number][]} */ ([[0, [40, 56], 0.7], [1, [50, 70], 0.45]])) {
-    for (let x = rows.int(-6, 6); x < W + 10; x += rows.int(16, 26)) {
-      const m = tree(rows, rows.next() < 0.2 ? 'pine' : 'oak', rows.int(h[0], h[1]), rows.int(3, 5));
-      cv.stamp(m, pal, x, Math.round(top[Math.max(0, Math.min(W - 1, x))]) - 14 + k * 8, { haze: [pack(hex(back)), haze], outline: false });
-    }
-    fog(cv, cave ? '#24402a' : '#b8d0b8', 60, 190, cave ? 0.2 : 0.3, rows.int(0, 1e9));
-  }
+  // the background wood: rows of alike trees, the far row smaller and paler
+  const rows = s('rows'), far = top.map((v) => v - 14), mid = top.map((v) => v - 6);
+  treeRow(cv, rows, pal, { line: far, gap: [20, 26], h: [50, 58], haze: back, fade: 0.68, shape: 'tall' });
+  fog(cv, cave ? '#24402a' : '#b8d0b8', 60, 190, cave ? 0.2 : 0.3, rows.int(0, 1e9));
+  treeRow(cv, rows, pal, { line: mid, gap: [26, 34], h: [64, 74], haze: back, fade: 0.45, shape: 'tall' });
+  fog(cv, cave ? '#24402a' : '#b8d0b8', 80, 200, cave ? 0.15 : 0.2, rows.int(0, 1e9));
   if (cave) {
     const fs = s('frame');
     const frame = caveFrame(cv, {
@@ -79,14 +77,8 @@ export function compose(cv, seed) {
     }
   }
   markOpen(cv);
-  // the wood itself: many modest trees across the floor, a larger one at an edge
-  const or = s('oaks'), n = or.int(5, 7);
-  for (let i = 0; i < n; i++) {
-    const x = Math.round(((i + 0.5) / n) * W + or.int(-14, 14)), kind = or.next() < 0.25 ? 'pine' : or.next() < 0.2 ? 'birch' : 'oak';
-    cv.stamp(tree(or, kind, or.int(60, 88), or.int(4, 6)), pal, x, surfaceAt(cv, x) + 2, { roots: [7, 2] });
-  }
-  const left = or.next() < 0.5, ex = left ? or.int(10, 30) : or.int(354, 374);
-  cv.stamp(tree(or, 'oak', or.int(104, 120), or.int(8, 10), { lean: left ? 0.05 : -0.05 }), pal, ex, surfaceAt(cv, ex) + 2, { roots: [11, 3] });
+  // the wood's own trees, growing on the ground and the ledges where they fit
+  terrainTrees(cv, s('oaks'), pal, { n: 9, kinds: ['oak'], shapes: ['tall', 'spread', 'lean'], h: [44, 116], gap: 20, ledges: true });
   // a fallen log, a stump, ferns
   const lr = s('logs'), gx = lr.int(90, 290);
   cv.stamp(log(lr, lr.int(34, 48), lr.int(4, 6), { moss: 'moss' }), pal, gx, surfaceAt(cv, gx) + 2, { foot: [22, 3] });

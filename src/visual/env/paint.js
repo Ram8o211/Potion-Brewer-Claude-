@@ -37,6 +37,10 @@ export class Canvas {
     this.solid = new Uint8Array(SCENE_W * SCENE_H);
     this.liquid = new Uint8Array(SCENE_W * SCENE_H);
     this.cave = new Uint8Array(SCENE_W * SCENE_H);
+    /** 1 where the cave's roof or walls are painted (cave.js caveFrame) */
+    this.rock = new Uint8Array(SCENE_W * SCENE_H);
+    /** 1 where a tree standing on the terrain is drawn (trees.js) */
+    this.trees = new Uint8Array(SCENE_W * SCENE_H);
     /** the main ground's surface row in each column (side.js fillSolid), if the scene has one @type {Float32Array | null} */
     this.ground = null;
     this.seed = seed >>> 0;
@@ -71,7 +75,8 @@ export class Canvas {
    * It is drawn in `cell`-pixel squares (default CELL) on the scene's grid.
    * @param {import('../geometry.js').Model} model @param {Record<string, number[]>} pal
    * @param {number} x @param {number} y
-   * @param {{haze?:[number, number], outline?:boolean, foot?:[number, number], roots?:[number, number], seed?:number, texture?:number, dark?:number, cell?:number}} [o]
+   * `test(pixels, X, Y)` may refuse the placement (nothing is drawn, null returned).
+   * @param {{haze?:[number, number], outline?:boolean, foot?:[number, number], roots?:[number, number], seed?:number, texture?:number, dark?:number, cell?:number, test?:(p:import('../pixels.js').Pixels, X:number, Y:number)=>boolean}} [o]
    */
   stamp(model, pal, x, y, o = {}) {
     const b = model.bounds(), cell = o.cell ?? CELL, mod = (v) => ((v % cell) + cell) % cell;
@@ -93,6 +98,7 @@ export class Canvas {
       p.px[k] = q;
     }
     const X = Math.round(x) + left, Y = Math.round(y) + top;
+    if (o.test && !o.test(p, X, Y)) return null;
     this.pix.draw(p, X, Y);
     if (o.roots) this.blockEllipse(Math.round(x), Math.round(y) - 1, o.roots[0], o.roots[1]);
     if (o.foot) {

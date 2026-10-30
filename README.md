@@ -249,7 +249,8 @@ computed from the particles that actually run out of the tap. What a
   cross-section of the ground — cobbled stone under a crust of grass,
   moss, gravel or ash, with mushroom-capped pillars dripping moss,
   overhangs and caves — pools of water or lava whose veins seep into the
-  rock around them, lava falls, clean pixel-art trees, rocks and
+  rock around them, lava falls, branching trees (a homogeneous wood
+  behind, and trees fitted to the ground and ledges in front), rocks and
   timberwork, glowing mushrooms, torches and crystals, smooth skies and
   light and, as it runs, particles (pollen, motes, leaves, fireflies,
   wisps, drips, trickling grit, shimmer, embers, ash, steam), plus
