@@ -21,9 +21,15 @@ import { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, w
 import { equipmentById } from '../../game/equipment.js';
 import { RANKS } from '../../game/equipment.js';
 import { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, SCENE_W, SCENE_H } from '../../rendering/wild-scene.js';
-import { plantCanvas, plantFrameOf, plantGlow, silhouetteOf, ingredientSprite, speciesOf, mountsOf, variantOf } from '../../rendering/species-sprites.js';
+import { plantCanvas, plantFrameOf, plantGlow, emitColour, silhouetteOf, ingredientSprite, speciesOf, mountsOf, variantOf } from '../../rendering/species-sprites.js';
 import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
 import { hashString } from '../../core/rng.js';
+
+/** The shadow a plant casts on its ground, by region (the crags' is warm and deep, the fens' cold). */
+const SHADOW = { forest: 'rgba(8,16,10,0.32)', netherwood: 'rgba(6,4,16,0.4)', meadow: 'rgba(24,30,10,0.26)', river: 'rgba(4,14,16,0.34)', quarry: 'rgba(26,18,10,0.3)', moonfen: 'rgba(2,6,18,0.42)', crags: 'rgba(30,6,4,0.4)' };
+
+/** How strongly what glows lights its surroundings in each region: little in the open meadow, fully in the dark fens and caves. */
+const GLOW_IN = { forest: 0.85, netherwood: 1.3, meadow: 0.45, river: 0.9, quarry: 0.7, moonfen: 1.4, crags: 0.7 };
 
 /**
  * A four-pointed sparkle on a crystal's edge or a magical glimmer: thin
@@ -283,7 +289,7 @@ export class WildsView {
 
   /** How a plant is drawn now: its mount and variant, closed out of its hour, rimmed under the pointer. @param {any} p */
   look(p) {
-    return { closed: p.stage === 'mature' && !!this.closed[p.dep.id], hover: this.hover === p.id || this.hover === p.dep.id, mount: p.mount, variant: p.variant, flip: p.flip };
+    return { closed: p.stage === 'mature' && !!this.closed[p.dep.id], hover: this.hover === p.id || this.hover === p.dep.id, mount: p.mount, variant: p.variant, flip: p.flip, light: p.light };
   }
 
   /** The frame a plant shows now, as a box for hit testing. @param {any} p */
@@ -451,10 +457,14 @@ export class WildsView {
       }
     }
     if (onGround) {
-      // a soft shadow it stands in: darkest under its foot, fading out to the sides
-      ctx.fillStyle = 'rgba(10,20,8,0.22)';
-      ctx.fillRect(x - Math.floor(sw / 2), y - 1, sw, 2);
-      ctx.fillRect(x - Math.floor(sw / 4), y - 1, Math.max(2, Math.floor(sw / 2)), 2);
+      // the shadow it casts: the light comes from the upper left, so it lies to the right, as wide as the plant
+      // is (a sprout casts a small one), darkest under its foot, dimmer where it is thin
+      const hw = Math.max(3, Math.round(sp.w * 0.34)), ox = Math.round(hw * 0.3) + 1;
+      ctx.fillStyle = SHADOW[this.region] || SHADOW.forest;
+      ctx.fillRect(x - hw + ox, y - 1, hw * 2, 1);
+      ctx.fillRect(x - hw + ox + 1, y, hw * 2 - 2, 1);
+      ctx.fillRect(x - Math.floor(hw / 2) + ox, y + 1, hw, 1);
+      ctx.fillRect(x - Math.floor(hw / 2), y - 2, hw, 1);
     }
     // a slight glow of its own colour about it, breathing, so it reads in the scene without standing out of it
     const tint = plantGlow(p.m), lift = since < 0.3 ? 1 : 0;
@@ -467,8 +477,23 @@ export class WildsView {
       ctx.fillStyle = g; ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
       ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
     }
-    if (p.mount === 'bough' || p.mount === 'hang' || p.mount === 'ceiling') this.drawHanging(ctx, p, sp, x, y);
-    else ctx.drawImage(sp.cv, x - sp.ax, y - sp.ay - lift);
+    // a vine hangs and sways; the rest stands, juts or lies still
+    const dxAt = p.mount === 'hang' ? this.drawHanging(ctx, p, sp, x, y) : null;
+    if (!dxAt) ctx.drawImage(sp.cv, x - sp.ax, y - sp.ay - lift);
+    // what glows lights its surroundings, breathing, the more so the darker the region
+    const emit = emitColour(p.m);
+    if (emit && !closed && sp.glows.length) {
+      const dark = GLOW_IN[this.region] ?? 0.6, shown = sp.glows.length > 8 ? sp.glows.filter((_, i) => i % Math.ceil(sp.glows.length / 8) === 0) : sp.glows;
+      ctx.globalCompositeOperation = 'lighter';
+      shown.forEach(([gx, gy], i) => {
+        const r = 4 + Math.min(4, sp.glows.length * 0.5), cx = x - sp.ax + gx + (dxAt ? dxAt(gy) : 0), cy = y - sp.ay + gy - lift;
+        const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        g.addColorStop(0, emit); g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.globalAlpha = Math.min(0.4, 0.13 * dark * (0.75 + 0.25 * Math.sin(this.time * 1.4 + i * 1.9 + p.x * 11)) * (p.stage === 'sprout' ? 0.6 : 1));
+        ctx.fillStyle = g; ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+      });
+      ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+    }
     if (p.thirsty && !this.lab.sandbox && (this.mode === 'water' || Math.sin(this.time * 2 + p.x * 9) > 0.6)) {
       // a drop over its head asks for water
       const dx = x + Math.round(sp.w / 2 - sp.ax) - 1, dy = y - sp.ay - 5 + Math.round(Math.sin(this.time * 4 + p.x * 5));
@@ -490,15 +515,16 @@ export class WildsView {
    * wind about where it holds on: each row of it is moved sideways the
    * further the lower it hangs, so it bends rather than sliding. A plant on
    * a tree sways with its leaves; one hanging from the rock barely stirs.
+   * Returns how far each row of the sprite was moved.
    * @param {CanvasRenderingContext2D} ctx @param {any} p @param {{cv:HTMLCanvasElement, ax:number, ay:number, w:number, h:number}} sp @param {number} x @param {number} y
+   * @returns {(row:number)=>number}
    */
   drawHanging(ctx, p, sp, x, y) {
-    const st = this.lab.state, wind = windAt(x, this.time, (hashString(st.seed) % 1000) / 100) * (p.mount === 'bough' ? 1 : 0.35);
+    const st = this.lab.state, wind = windAt(x, this.time, (hashString(st.seed) % 1000) / 100) * 0.8;
     const swing = wind + 0.35 * Math.sin(this.time * 1.7 + p.x * 23), below = sp.h - sp.ay;
-    for (let r = 0; r < sp.h; r++) {
-      const d = Math.max(0, r - sp.ay) / Math.max(1, below), dx = Math.round(swing * 2.2 * d * d);
-      ctx.drawImage(sp.cv, 0, r, sp.w, 1, x - sp.ax + dx, y - sp.ay + r, sp.w, 1);
-    }
+    const dxAt = (/** @type {number} */ r) => Math.round(swing * 2.2 * (Math.max(0, r - sp.ay) / Math.max(1, below)) ** 2);
+    for (let r = 0; r < sp.h; r++) ctx.drawImage(sp.cv, 0, r, sp.w, 1, x - sp.ax + dxAt(r), y - sp.ay + r, sp.w, 1);
+    return dxAt;
   }
 
   /** The water drops in flight: falling, then a little splash where each lands. @param {CanvasRenderingContext2D} ctx @param {number} dt */

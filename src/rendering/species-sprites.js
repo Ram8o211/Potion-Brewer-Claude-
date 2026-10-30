@@ -15,7 +15,7 @@ import { archetypeIdentity } from '../visual/pieces.js';
 import { Pixels } from '../visual/pixels.js';
 import { isBotanical } from '../visual/taxonomy.js';
 import { rawSprite } from './scenes.js';
-import { mountsOfForm, frameMount } from '../visual/growth.js';
+import { mountsOfForm, frameMount, growthParams } from '../visual/growth.js';
 import { hashString } from '../core/rng.js';
 
 export { ICON_PX };
@@ -59,7 +59,30 @@ function rimmed(f) {
     if (op(x - 2, y - 1) || op(x, y - 1) || op(x - 1, y - 2) || op(x - 1, y)) p.px[y * w + x] = 0xffa8f0ff;
   }
   p.draw(src, 1, 1);
-  return { pix: p, ax: f.ax + 1, ay: f.ay + 1, glints: f.glints.map(([x, y]) => [x + 1, y + 1]) };
+  return { pix: p, ax: f.ax + 1, ay: f.ay + 1, glints: f.glints.map(([x, y]) => [x + 1, y + 1]), glows: (f.glows || []).map(([x, y]) => [x + 1, y + 1]) };
+}
+
+/**
+ * A frame lit by its surroundings: every colour multiplied by the light
+ * where it stands (`light`: the tint and brightness of the scene round it,
+ * so a plant under the lava's glow is warm, one in a dark cave dim), and
+ * shaded where it meets what holds it (its foot in the soil, the point it
+ * hangs from, the side against a rock face or a trunk). What gives light of
+ * its own (the glow ramp) is left as it is.
+ * @param {import('../visual/render.js').Frame} f @param {number[]} light @param {string} mount @param {number[]} own colours that glow
+ */
+function lit(f, light, mount, own) {
+  const src = f.pix, p = new Pixels(src.w, src.h), glow = new Set(own);
+  for (let y = 0; y < src.h; y++) for (let x = 0; x < src.w; x++) {
+    const c = src.px[y * src.w + x];
+    if (!(c >>> 24)) continue;
+    if (glow.has(c)) { p.px[y * src.w + x] = c; continue; }
+    // occlusion: a step darker within two pixels of the hold
+    const near = mount === 'hang' ? y - f.ay < 3 : mount === 'wall' || mount === 'trunk' ? Math.abs(x - f.ax) < 3 : y > f.ay - 3;
+    const k = near ? 0.82 : 1;
+    p.px[y * src.w + x] = (c & 0xff000000) | (Math.min(255, Math.round(((c >>> 16) & 255) * light[2] * k)) << 16) | (Math.min(255, Math.round(((c >>> 8) & 255) * light[1] * k)) << 8) | Math.min(255, Math.round((c & 255) * light[0] * k));
+  }
+  return { pix: p, ax: f.ax, ay: f.ay, glints: f.glints, glows: f.glows || [] };
 }
 
 /** Which of its species' four variants a plant grows as (from its id: a plant keeps its look). @param {string} id */
@@ -72,7 +95,7 @@ export function mountsOf(m) {
 }
 
 /**
- * @typedef {{closed?:boolean, hover?:boolean, mount?:string, variant?:number, flip?:boolean}} FrameOpts
+ * @typedef {{closed?:boolean, hover?:boolean, mount?:string, variant?:number, flip?:boolean, light?:number[]|null}} FrameOpts
  */
 
 /**
@@ -89,8 +112,12 @@ export function plantFrameOf(m, stage, o = {}) {
   // stones, crystals and shells do not grow: one picture, whole, at every stage
   const st = isBotanical(id.shape) ? STAGE[stage] ?? 2 : 2, closed = !!o.closed && st === 2;
   const mount = frameMount(o.mount), variant = (o.variant ?? 0) & 3, flip = !!o.flip && mount === 'wall';
-  const k = `${identityKey(id)}|${st}|${closed ? 1 : 0}|${mount}|${variant}|${flip ? 1 : 0}`;
-  const base = cached('p|' + k, () => plantFrame(describe(id), st, { closed, mount, variant, flip }));
+  const light = o.light && o.light.some((v) => Math.abs(v - 1) > 0.02) ? o.light : null;
+  const k = `${identityKey(id)}|${st}|${closed ? 1 : 0}|${mount}|${variant}|${flip ? 1 : 0}|${light ? light.join(',') : ''}`;
+  const base = cached('p|' + k, () => {
+    const d = describe(id), f = plantFrame(d, st, { closed, mount, variant, flip });
+    return light ? lit(f, light, mount, d.pal.glow) : f;
+  });
   return o.hover ? cached('h|' + k, () => rimmed(base)) : base;
 }
 
@@ -100,7 +127,7 @@ export function plantCanvas(m, stage, o = {}) {
   if (!f) return null;
   const any = /** @type {any} */ (f);
   if (!any.cv) any.cv = f.pix.toCanvas();
-  return { cv: /** @type {HTMLCanvasElement} */ (any.cv), ax: f.ax, ay: f.ay, w: f.pix.w, h: f.pix.h, glints: f.glints };
+  return { cv: /** @type {HTMLCanvasElement} */ (any.cv), ax: f.ax, ay: f.ay, w: f.pix.w, h: f.pix.h, glints: f.glints, glows: f.glows || [] };
 }
 
 /**
@@ -115,6 +142,21 @@ export function plantGlow(m) {
     const ramp = describe(id).pal.main || [0xffc0c0c0], c = ramp[Math.max(0, ramp.length - 2)];
     const rgb = [c & 255, (c >>> 8) & 255, (c >>> 16) & 255].map((v) => Math.round(v + (255 - v) * 0.4));
     return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+  });
+}
+
+/**
+ * The colour a glowing plant lights its surroundings with (cached per species), or null if it does not glow.
+ * @param {any} m @returns {string|null}
+ */
+export function emitColour(m) {
+  const id = identityOfMaterial(m);
+  if (!id) return null;
+  return cached(`e|${identityKey(id)}`, () => {
+    const d = describe(id);
+    if (!growthParams(d).glow) return null;
+    const c = d.pal.glow[d.pal.glow.length - 1];
+    return `rgb(${c & 255},${(c >>> 8) & 255},${(c >>> 16) & 255})`;
   });
 }
 

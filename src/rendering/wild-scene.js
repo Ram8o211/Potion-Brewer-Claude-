@@ -145,8 +145,8 @@ export function findAnchors(sc) {
       out[tree(x, y) ? 'bough' : 'ceiling'].push(a);
     }
     for (const dir of [1, -1]) {
-      // a sheer rock face: rock above and below, open air off it
-      if (stone(x, y) && stone(x, y - 3) && stone(x, y + 3) && air(x + dir, y) && air(x + dir, y - 2) && air(x + dir, y + 2) && air(x + dir * 4, y)) out.wall.push({ x: x + dir, y, flip: dir < 0, sup: k });
+      // a sheer face of the ground: ground above and below, open air off it (not the far columns of the backdrop)
+      if (S[k] && S[k - 3 * W] && S[k + 3 * W] && air(x + dir, y) && air(x + dir, y - 2) && air(x + dir, y + 2) && air(x + dir * 4, y)) out.wall.push({ x: x + dir, y, flip: dir < 0, sup: k });
       // a trunk: a narrow upright run of wood, open air off it
       // (a trunk, not a twig: the wood runs on down a good way)
       if (tree(x, y) && tree(x, y + 4) && tree(x, y + 8) && tree(x, y + 14) && air(x + dir, y) && air(x + dir * 4, y) && air(x + dir, y - 2) && air(x + dir, y + 2)) {
@@ -185,8 +185,37 @@ export class PlantGround {
     this.top = Math.max(1, sc.top);
     /** the holds other than the ground, found when first needed @type {Record<string, Anchor[]>|null} */
     this.anchors = null;
-    /** plant id → its spot in scene pixels, its mount and the silhouette it was placed with @type {Map<string, {x:number, y:number, s:Silhouette, mount:string, flip:boolean}>} */
+    /** plant id → its spot in scene pixels, its mount and the silhouette it was placed with @type {Map<string, {x:number, y:number, s:Silhouette, mount:string, flip:boolean, light:number[]}>} */
     this.spots = new Map();
+    /** the average brightness of the whole painting (what a spot is lit relative to), found when first needed @type {number|null} */
+    this.mean = null;
+  }
+
+  /**
+   * The light a plant stands in: how much brighter or darker the painting is
+   * round its spot than the region on average, and the colour it is
+   * (the lava's red, the fen's cold blue, the sun's gold), as the multiplier
+   * to give its colours. Quantized, so a stand shares a few tints.
+   * @param {number} x @param {number} y @param {string} mount @param {Silhouette} s
+   * @returns {number[]}
+   */
+  lightAt(x, y, mount, s) {
+    const px = this.sc.pix.px, W = SCENE_W, H = SCENE_H;
+    if (this.mean === null) {
+      let sum = 0, n = 0;
+      for (let k = 0; k < px.length; k += 7) { const c = px[k]; sum += (c & 255) * 0.3 + ((c >>> 8) & 255) * 0.59 + ((c >>> 16) & 255) * 0.11; n++; }
+      this.mean = Math.max(20, sum / n);
+    }
+    // the painting where the plant is: the box its silhouette covers, a little wider
+    const x0 = Math.max(0, x - s.ax - 4), x1 = Math.min(W - 1, x - s.ax + s.w + 4), y0 = Math.max(0, y - s.ay - 3), y1 = Math.min(H - 1, y - s.ay + s.h + 3);
+    let r = 0, g = 0, b = 0, n = 0;
+    for (let j = y0; j <= y1; j += 2) for (let i = x0; i <= x1; i += 2) { const c = px[j * W + i]; r += c & 255; g += (c >>> 8) & 255; b += (c >>> 16) & 255; n++; }
+    if (!n) return [1, 1, 1];
+    r /= n; g /= n; b /= n;
+    const luma = Math.max(1, r * 0.3 + g * 0.59 + b * 0.11), bright = Math.max(0.62, Math.min(1.12, 0.6 + 0.4 * (luma / this.mean)));
+    // the colour of the light: the surroundings' own, a third of the way from white
+    const q = (v) => Math.round(v * 12) / 12;
+    return [q(bright * (1 + 0.35 * (r / luma - 1))), q(bright * (1 + 0.35 * (g / luma - 1))), q(bright * (1 + 0.35 * (b / luma - 1)))];
   }
 
   /**
@@ -194,13 +223,13 @@ export class PlantGround {
    * @param {{id:string, x:number, y:number}[]} plants oldest first
    * @param {(p:any, mount?:string, flip?:boolean)=>Silhouette|null} shapeOf
    * @param {(p:any)=>[string, number][]} [mountsOf] the mounts a plant's species takes, weighted
-   * @returns {Record<string, {x:number, y:number, mount:string, flip:boolean}>}
+   * @returns {Record<string, {x:number, y:number, mount:string, flip:boolean, light:number[]}>}
    */
   place(plants, shapeOf, mountsOf = GROUND_ONLY) {
     const W = SCENE_W, H = SCENE_H;
-    /** @type {Record<string, {x:number, y:number, mount:string, flip:boolean}>} */
+    /** @type {Record<string, {x:number, y:number, mount:string, flip:boolean, light:number[]}>} */
     const out = {};
-    for (const p of plants) out[p.id] = { x: p.x, y: p.y, mount: 'ground', flip: false };
+    for (const p of plants) out[p.id] = { x: p.x, y: p.y, mount: 'ground', flip: false, light: [1, 1, 1] };
     const here = new Set(plants.map((p) => p.id));
     for (const id of [...this.spots.keys()]) if (!here.has(id)) this.spots.delete(id);
     const fresh = plants.filter((p) => !this.spots.has(p.id) && shapeOf(p));
@@ -224,10 +253,10 @@ export class PlantGround {
         if (!spot) spot = this.onGround(p, shapeOf, ox, oy, roomy, tight, free);
         const q = spot || { x: ox, y: oy, s: /** @type {Silhouette} */ (shapeOf(p)), mount: 'ground', flip: false };
         mark(q);
-        this.spots.set(p.id, q);
+        this.spots.set(p.id, { ...q, light: this.lightAt(q.x, q.y, q.mount, q.s) });
       }
     }
-    for (const [id, q] of this.spots) out[id] = { x: q.x / W, y: q.y / H, mount: q.mount, flip: q.flip };
+    for (const [id, q] of this.spots) out[id] = { x: q.x / W, y: q.y / H, mount: q.mount, flip: q.flip, light: q.light };
     return out;
   }
 
@@ -335,7 +364,8 @@ export function plantBox(p, f, W = SCENE_W, H = SCENE_H) {
   const w = f ? f.w : 16, h = f ? f.h : 16, x0 = ax - (f ? f.ax : w / 2), y0 = ay - (f ? f.ay : h);
   const cx = x0 + w / 2, cy = y0 + h / 2, hw = Math.max(w, MIN_HIT) / 2, hh = Math.max(h, MIN_HIT) / 2;
   const ground = !p.mount || p.mount === 'ground';
-  return { ax, ay, w, h, x0: cx - hw, x1: cx + hw, y0: ground ? Math.min(cy - hh, ay - MIN_HIT) : cy - hh, y1: ground ? ay + 3 : cy + hh, front: y0 + h };
+  // (a hanging or jutting plant's box also reaches the hold it is attached to)
+  return { ax, ay, w, h, x0: Math.min(cx - hw, ax - 8), x1: Math.max(cx + hw, ax + 8), y0: ground ? Math.min(cy - hh, ay - MIN_HIT) : Math.min(cy - hh, ay - 10), y1: ground ? ay + 3 : Math.max(cy + hh, ay + 3), front: y0 + h };
 }
 
 /**
