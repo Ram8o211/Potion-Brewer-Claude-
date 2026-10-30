@@ -22,7 +22,7 @@ export function compose(cv, seed) {
   const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'crags', p);
   const pal = vary(palette({
     rock: ['#3a2e34', { spread: 0.5 }], lava: ['#e05a18', { spread: 0.7, n: 7, warm: 0.6 }], bark: ['#2a1e1a', { spread: 0.35 }],
-    gem: ['#ff8a3a', { spread: 0.55 }], wood: '#3a2a20', cloud: ['#4a3a3e', { spread: 0.4 }],
+    gem: ['#ff8a3a', { spread: 0.55 }], leaf: ['#4e4c1c', { spread: 0.5 }], leaf2: ['#6e6420', { spread: 0.5 }], bloom: ['#f08a2a', { spread: 0.4 }], wood: '#3a2a20', cloud: ['#4a3a3e', { spread: 0.4 }],
   }), s('pal'), 0.6);
   // a volcanic cavern, or the open slopes under a smoking cone
   const fs = s('frame'), cave = fs.next() < 0.5;
@@ -109,6 +109,8 @@ export function compose(cv, seed) {
   const gr = s('glass');
   for (let i = 0; i < 2; i++) cv.place(spire(gr, gr.int(8, 13)), pal, gr.int(10, W - 10), { foot: [4, 2], range: 30 });
   const dr = s('brush');
+  // a gnarled tree or two holding on in the heat, then the charred brush
+  terrainTrees(cv, dr, pal, { n: 2, kinds: ['gnarl', 'sparse'], h: [34, 64], gap: 60, ledges: true, look: { mats: ['leaf', 'leaf2'], bloom: { mat: 'bloom', rate: 0.08 } } });
   terrainTrees(cv, dr, pal, { n: 3, kinds: ['dead'], h: [18, 34], gap: 30, ledges: true });
   // the vents: rock mounds with glowing throats (their steam is animated)
   const vr = s('vents'), vents = [];
@@ -124,5 +126,6 @@ export function compose(cv, seed) {
   cv.meta.vents = vents;
   cv.meta.trickles = drips(cv, ss, 4);
   cv.meta.vignette = cave ? 0.55 : 0.35;
+  cv.meta.wind = cave ? 0.3 : 0.6;
   cv.meta.horizon = 120;
 }

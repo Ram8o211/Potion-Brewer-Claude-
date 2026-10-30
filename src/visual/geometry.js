@@ -22,6 +22,9 @@
  * @property {boolean} [soft]          no dark seam where this part lies over an earlier one (its edge outside is still inked)
  * @property {number} [tex]            surface texture strength (default 1)
  * @property {boolean} [glow]          a spot that can glimmer (magic)
+ * @property {number} [sa]             scenery: sways in the wind, this far (pixels) in a full gust (env/foliage.js)
+ * @property {number} [sg]             scenery: the sway group it moves with
+ * @property {number} [sh]             scenery: how much further it swings toward its lowest pixels (a hanging strand)
  */
 
 export class Model {

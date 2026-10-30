@@ -16,25 +16,28 @@ import { pack, hex } from '../color.js';
  * so the ground and ledges cover their feet): one kind, sizes within a
  * narrow band, evenly spaced, faded toward `haze`.
  * @param {any} cv @param {any} rng @param {Record<string, number[]>} pal
- * @param {{line:ArrayLike<number>, gap:[number, number], h:[number, number], haze:string, fade:number, shape?:string, kind?:string, dy?:number}} o
+ * @param {{line:ArrayLike<number>, gap:[number, number], h:[number, number], haze:string, fade:number, shape?:string, kind?:string, dy?:number, look?:any}} o
  */
 export function treeRow(cv, rng, pal, o) {
   const haze = pack(hex(o.haze));
   for (let x = rng.int(-6, 6); x < cv.W + 10; x += rng.int(o.gap[0], o.gap[1])) {
     const h = rng.int(o.h[0], o.h[1]), xi = Math.max(0, Math.min(cv.W - 1, x));
-    const m = o.kind ? tree(rng, o.kind, h, Math.max(2, h / 16)) : branchTree(rng, h, Math.max(2, h / 12), { shape: o.shape || 'tall' });
-    cv.stamp(m, pal, x, Math.round(o.line[xi]) + (o.dy ?? 0), { haze: [haze, o.fade], outline: false });
+    const m = o.kind ? tree(rng, o.kind, h, Math.max(2, h / 16), { look: o.look }) : branchTree(rng, h, Math.max(2, h / 12), { shape: o.shape || 'tall', mats: o.look?.mats });
+    // the far trees sway less: the wind barely shows at that distance
+    cv.stamp(m, pal, x, Math.round(o.line[xi]) + (o.dy ?? 0), { haze: [haze, o.fade], outline: false, sway: 1 - o.fade * 0.8 });
   }
 }
 
 /**
  * Terrain trees: up to n trees on the dry surfaces, each fitted to its spot.
- * kinds: tree kinds to choose from ('oak' is the branch tree; 'willow',
- * 'dead', 'pine' the others); h: the height range (a tree shrinks to fit,
+ * kinds: tree kinds to choose from (objects.js tree: 'oak' is the branch
+ * tree; 'gnarl', 'tiers', 'willow', 'wisteria', 'sparse' the gnarled trees
+ * of leaf clusters; 'dead', 'pine'); look: the region's leaves (their
+ * ramps, blossoms and hanging strands); h: the height range (a tree shrinks to fit,
  * down to 45% of the height drawn for it); gap: least distance between
  * two feet; ledges: whether ledge tops are spots too.
  * @param {any} cv @param {any} rng @param {Record<string, number[]>} pal
- * @param {{n:number, kinds:string[], h:[number, number], gap?:number, ledges?:boolean, dark?:number, x?:[number, number], shapes?:string[]}} o
+ * @param {{n:number, kinds:string[], h:[number, number], gap?:number, ledges?:boolean, dark?:number, x?:[number, number], shapes?:string[], look?:any}} o
  * @returns {[number, number, number][]} the trees placed: foot x, foot y, height
  */
 export function terrainTrees(cv, rng, pal, o) {
@@ -51,7 +54,7 @@ export function terrainTrees(cv, rng, pal, o) {
   }
   /** @type {[number, number, number][]} */
   const out = [];
-  for (let tries = 0; tries < Math.min(60, o.n * 8) && out.length < o.n && spots.length; tries++) {
+  for (let tries = 0; tries < Math.min(60, Math.max(30, o.n * 8)) && out.length < o.n && spots.length; tries++) {
     const [x, y] = spots[Math.floor(rng.next() * spots.length)];
     if (out.some(([a, b]) => Math.abs(a - x) < gap && Math.abs(b - y) < 30)) continue;
     const kind = o.kinds[Math.floor(rng.next() * o.kinds.length)], shape = o.shapes ? o.shapes[Math.floor(rng.next() * o.shapes.length)] : undefined;
@@ -59,7 +62,7 @@ export function terrainTrees(cv, rng, pal, o) {
     for (let f = 1; f >= 0.45; f *= 0.8) {
       const h = Math.round(h0 * f), tw = Math.max(2, Math.round(h / 11)), fy = y + 2;
       // the same tree at every size tried (its own stream), scaled
-      const m = tree(new Rng(seed), kind, h, tw, { shape });
+      const m = tree(new Rng(seed), kind, h, tw, { shape, look: o.look });
       const ok = cv.stamp(m, pal, x, fy, {
         roots: [Math.max(4, tw * 1.5), 2], dark: o.dark,
         test: (p, X, Y) => {

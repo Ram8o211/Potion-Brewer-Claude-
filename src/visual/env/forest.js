@@ -19,7 +19,7 @@ export function compose(cv, seed) {
   // some worlds' woods are in their autumn
   const autumn = s('season').next() < 0.3;
   const pal = vary(palette({
-    leaf: [autumn ? '#8a5a20' : '#2e6a2a', { spread: 0.6 }], bark: ['#4a3422', { spread: 0.5 }], wood: '#a87a48', rock: '#5e625c',
+    leaf: [autumn ? '#8a5a20' : '#2e6a2a', { spread: 0.6 }], leaf2: [autumn ? '#9a4a1e' : '#1e5a3a', { spread: 0.55 }], bark: ['#4a3422', { spread: 0.5 }], wood: '#a87a48', rock: '#5e625c',
     moss: ['#4e7a30', { spread: 0.5 }], fern: [autumn ? '#8a6a26' : '#4e8a34', { spread: 0.55 }],
   }), s('pal'), 1);
   const back = '#9ab8a0';
@@ -28,9 +28,10 @@ export function compose(cv, seed) {
   const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 172, amp: 8, freq: 0.012 });
   // the background wood: rows of alike trees, the far row smaller and paler
   const rows = s('rows'), far = top.map((v) => v - 14), mid = top.map((v) => v - 6);
-  treeRow(cv, rows, pal, { line: far, gap: [20, 26], h: [50, 58], haze: back, fade: 0.68, shape: 'tall' });
+  const look = { mats: ['leaf', 'leaf2'], hang: { mat: 'moss', rate: 0.6, len: /** @type {[number, number]} */ ([4, 16]) } };
+  treeRow(cv, rows, pal, { line: far, gap: [20, 26], h: [50, 58], haze: back, fade: 0.68, shape: 'tall', look });
   fog(cv, '#b8d0b8', 60, 190, 0.3, rows.int(0, 1e9));
-  treeRow(cv, rows, pal, { line: mid, gap: [26, 34], h: [64, 74], haze: back, fade: 0.45, shape: 'tall' });
+  treeRow(cv, rows, pal, { line: mid, gap: [26, 34], h: [64, 74], haze: back, fade: 0.45, shape: 'tall', look });
   fog(cv, '#b8d0b8', 80, 200, 0.2, rows.int(0, 1e9));
   // the canopy closing over the top
   hanging(cv, { base: 14, amp: 10, freq: 0.03, seed: s('canopy').int(0, 1e9), fill: autumn ? '#5a3e1a' : '#1e3e22', rim: autumn ? '#7a5422' : '#2a5230', rough: 4 });
@@ -53,7 +54,7 @@ export function compose(cv, seed) {
   markOpen(cv);
   // the wood's own trees, growing on the ground and the ledges where they fit
   litter(cv, s, pal);
-  terrainTrees(cv, s('oaks'), pal, { n: 8, kinds: ['oak'], shapes: ['tall', 'spread', 'lean'], h: [44, 116], gap: 22, ledges: true });
+  terrainTrees(cv, s('oaks'), pal, { n: 8, kinds: ['oak', 'gnarl', 'gnarl', 'tiers'], shapes: ['tall', 'spread', 'lean'], h: [44, 116], gap: 22, ledges: true, look });
   ferns(cv, s, pal);
   // soft shafts of light through the leaves, and mushrooms glowing in the shade
   const shafts = s('shafts'), sx0 = shafts.int(110, 230);
@@ -67,6 +68,7 @@ export function compose(cv, seed) {
   cv.meta.glows = glowShrooms(cv, { n: 5, cap: '#e8642a', lit: '#ffc070', stem: '#e0d0b0', rgb: [1, 0.5, 0.18], seed: s('shrooms').int(0, 1e9) });
   cv.meta.trickles = drips(cv, ss, 4);
   cv.meta.vignette = 0.35;
+  cv.meta.wind = 0.9;
   cv.meta.horizon = 120;
 }
 

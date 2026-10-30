@@ -18,7 +18,7 @@ import { roots, litter, ferns } from './forest.js';
 export function compose(cv, seed) {
   const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'netherwood', p);
   const pal = vary(palette({
-    leaf: ['#1e4a46', { spread: 0.55 }], bark: ['#2e2630', { spread: 0.45 }], wood: '#7a6a5a', rock: '#4a4a56',
+    leaf: ['#1e4a46', { spread: 0.55 }], leaf2: ['#24405a', { spread: 0.5 }], bloom: ['#b080f0', { spread: 0.4 }], bark: ['#2e2630', { spread: 0.45 }], wood: '#7a6a5a', rock: '#4a4a56',
     moss: ['#2e6a5a', { spread: 0.5 }], fern: ['#2a6a5e', { spread: 0.5 }],
     stem: ['#c8c0d0', { spread: 0.4 }], cap: ['#6a3aa0', { spread: 0.6 }],
   }), s('pal'), 1);
@@ -29,9 +29,10 @@ export function compose(cv, seed) {
   // the ground line, and the ghostly wood behind
   const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 172, amp: 8, freq: 0.012 });
   const rows = s('rows'), far = top.map((v) => v - 14), mid = top.map((v) => v - 6);
-  treeRow(cv, rows, pal, { line: far, gap: [22, 30], h: [48, 58], haze: back, fade: 0.72, shape: 'tall' });
+  const look = { mats: ['leaf', 'leaf2'], bloom: { mat: 'bloom', rate: 0.04 }, hang: { mat: 'moss', rate: 0.5, len: /** @type {[number, number]} */ ([4, 14]) } };
+  treeRow(cv, rows, pal, { line: far, gap: [22, 30], h: [48, 58], haze: back, fade: 0.72, shape: 'tall', look });
   fog(cv, '#1c2c40', 60, 190, 0.22, rows.int(0, 1e9));
-  treeRow(cv, rows, pal, { line: mid, gap: [28, 38], h: [60, 72], haze: back, fade: 0.55, shape: 'lean' });
+  treeRow(cv, rows, pal, { line: mid, gap: [28, 38], h: [60, 72], haze: back, fade: 0.55, shape: 'lean', look });
   fog(cv, '#24344a', 80, 200, 0.15, rows.int(0, 1e9));
   // the roof, the roots of the wood above hanging through it
   const fs = s('frame');
@@ -69,7 +70,7 @@ export function compose(cv, seed) {
   markOpen(cv);
   // a log and a stump, dark trees where they fit, then giant mushrooms between them, glowing under their caps
   litter(cv, s, pal);
-  terrainTrees(cv, s('trees'), pal, { n: 5, kinds: ['oak'], shapes: ['tall', 'lean'], h: [44, 100], gap: 30, ledges: true, dark: 0.15 });
+  terrainTrees(cv, s('trees'), pal, { n: 5, kinds: ['oak', 'gnarl', 'willow'], shapes: ['tall', 'lean'], h: [44, 100], gap: 30, ledges: true, dark: 0.15, look });
   const mr = s('mushrooms'), glows = [];
   for (let i = 0; i < 3; i++) {
     const h = mr.int(18, 34), r = Math.round(h * mr.range(0.4, 0.55));
@@ -83,5 +84,7 @@ export function compose(cv, seed) {
   cv.meta.glows = glows;
   cv.meta.trickles = drips(cv, ss, 4);
   cv.meta.vignette = 0.6;
+  // only the cavern's draughts stir its leaves
+  cv.meta.wind = 0.3;
   cv.meta.horizon = 120;
 }

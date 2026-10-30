@@ -16,7 +16,7 @@ import { Model } from '../geometry.js';
 export function compose(cv, seed) {
   const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'river', p);
   const pal = vary(palette({
-    leaf: ['#4a7a2a', { spread: 0.55 }], bark: ['#4a3a2a', { spread: 0.5 }], reed: ['#4e7a2e', { spread: 0.5 }],
+    leaf: ['#4a7a2a', { spread: 0.55 }], leaf2: ['#5e7a46', { spread: 0.5 }], bark: ['#4a3a2a', { spread: 0.5 }], reed: ['#4e7a2e', { spread: 0.5 }],
     cattail: '#7a3a22', timber: '#6a4a2e', cloud: ['#eef2f4', { spread: 0.3 }],
   }), s('pal'), 1);
   // some worlds' river runs through a cave, most under the open sky
@@ -82,9 +82,11 @@ export function compose(cv, seed) {
   }
   // the weeping willow on the far bank
   const wr = s('willow');
-  terrainTrees(cv, wr, pal, { n: 1, kinds: ['willow'], h: [96, 126], dark: 0.15, x: rx < W / 2 ? [rx + hw + 20, W - 10] : [10, rx - hw - 20] });
-  terrainTrees(cv, wr, pal, { n: 3, kinds: ['oak'], shapes: ['spread', 'lean', 'tall'], h: [36, 80], gap: 40, ledges: true });
+  const look = { mats: ['leaf', 'leaf2'] };
+  terrainTrees(cv, wr, pal, { n: 1, kinds: ['willow'], h: [70, 126], dark: 0.15, ledges: true, x: rx < W / 2 ? [rx + hw + 20, W - 10] : [10, rx - hw - 20], look });
+  terrainTrees(cv, wr, pal, { n: 3, kinds: ['oak', 'gnarl'], shapes: ['spread', 'lean', 'tall'], h: [36, 80], gap: 40, ledges: true, look });
   cv.meta.glows = glowShrooms(cv, { n: cave ? 9 : 4, cap: '#2ab8d8', lit: '#b0f4ff', stem: '#c8dcd4', rgb: [0.25, 0.75, 0.95], seed: s('shrooms').int(0, 1e9) });
   cv.meta.vignette = cave ? 0.6 : 0.3;
+  cv.meta.wind = cave ? 0.35 : 1;
   cv.meta.horizon = 116;
 }

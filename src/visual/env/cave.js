@@ -136,15 +136,17 @@ export function vines(cv, line, o) {
     if (hash2(x, 1, o.seed) > rate * cluster * 2) continue;
     const L = Math.round(o.len[0] + (o.len[1] - o.len[0]) * hash2(x, 2, o.seed) * cluster * 1.6);
     let vx = x;
+    // each vine swings from the roof, its end the furthest
+    const g = cv.swayGroup(0, 1 + L * 0.05);
     for (let j = 1; j <= L; j++) {
       const y = y0 + j;
       if (y >= cv.H || cv.solid[y * W + vx] || cv.liquid[y * W + vx]) break;
       if (hash2(x, j >> 3, o.seed + 5) > 0.85 && j % 8 === 0) vx += hash2(x, j, o.seed) < 0.5 ? -1 : 1;
       if (vx < 0 || vx >= W) break;
       const c = cols[Math.min(cols.length - 1, Math.floor((j / Math.max(1, L)) * cols.length))];
-      cv.set(vx, y, c);
-      if (j % 3 === 0) { const s = (j / 3) % 2 ? 1 : -1; if (vx + s >= 0 && vx + s < W) cv.set(vx + s, y, leaf); }
-      if (fl && j === L && hash2(x, 3, o.seed) < 0.15) cv.set(vx, y + 1, fl);
+      cv.swaySet(vx, y, c, g);
+      if (j % 3 === 0) { const s = (j / 3) % 2 ? 1 : -1; if (vx + s >= 0 && vx + s < W) cv.swaySet(vx + s, y, leaf, g); }
+      if (fl && j === L && hash2(x, 3, o.seed) < 0.15) cv.swaySet(vx, y + 1, fl, g);
     }
   }
 }
@@ -168,7 +170,12 @@ export function moss(cv, o) {
       // and in strands from the underside of a cap
       if (y + 1 < H && !S[k + W] && !cv.liquid[k + W] && y - top < 24 && hash2(x, y, o.seed + 1) < rate) {
         const L = 1 + Math.floor(hash2(x, y, o.seed + 2) ** 2 * len);
-        for (let j = 1; j <= L && y + j < H && !S[k + j * W] && !cv.liquid[k + j * W]; j++) cv.set(x, y + j, cols[Math.min(cols.length - 1, Math.floor((j / L) * cols.length))]);
+        // a strand long enough to swing sways from its cap
+        const g = L >= 4 ? cv.swayGroup(0, 0.5 + L * 0.06) : -1;
+        for (let j = 1; j <= L && y + j < H && !S[k + j * W] && !cv.liquid[k + j * W]; j++) {
+          const c = cols[Math.min(cols.length - 1, Math.floor((j / L) * cols.length))];
+          if (g >= 0) cv.swaySet(x, y + j, c, g); else cv.set(x, y + j, c);
+        }
       }
     }
   }
@@ -232,7 +239,7 @@ export function fall(cv, x, y0, o) {
       const xx = x + dx + wob;
       if (xx < 0 || xx >= W) continue;
       const k = yy * W + xx, a = Math.abs(dx) / (w + 0.5);
-      cv.pix.px[k] = cols[Math.min(cols.length - 1, Math.floor(a * cols.length + (hash2(xx, yy >> 1, o.seed) > 0.8 ? 1 : 0)))];
+      cv.paint(k, cols[Math.min(cols.length - 1, Math.floor(a * cols.length + (hash2(xx, yy >> 1, o.seed) > 0.8 ? 1 : 0)))]);
       cv.liquid[k] = 1; cv.open[k] = 0;
     }
   }
@@ -293,10 +300,10 @@ export function ruins(cv, o) {
  */
 export function finish(cv, k = 0.55) {
   const W = cv.W, H = cv.H;
-  if (k > 0) for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+  if (k > 0) cv.wash(0xff000000, (x, y) => {
     const u = (x - W / 2) / (W * 0.62), v = (y - H * 0.55) / (H * 0.75), t = Math.max(0, u * u + v * v - 0.3) * k;
-    if (t > 0.01) cv.pix.px[y * W + x] = mixPacked(cv.pix.px[y * W + x], 0xff000000, Math.min(0.8, t));
-  }
+    return t > 0.01 ? Math.min(0.8, t) : 0;
+  });
   for (const [x, y, r, rgb, s] of cv.pending) cv.light(rgb, (px, py) => { const d = Math.hypot(px - x, py - y) / r; return d >= 1 ? 0 : (1 - d) * (1 - d) * s; }, Math.floor(y - r), Math.ceil(y + r));
   cv.pending = [];
 }
@@ -428,10 +435,10 @@ export function veins(cv, p, o) {
     const c = crev[i], u = Math.min(1, vt[i] + (1 - Math.min(1, s)) * 0.3);
     // the stone: darkened and stained toward the soaked colour
     const stain = Math.min(0.85, (bed * 0.7 + s * 0.45) * k);
-    px[i] = mixPacked(px[i], to, stain);
+    cv.paint(i, mixPacked(px[i], to, stain));
     // the cracks: filled with the fluid itself
     const fill = Math.min(0.95, bed * c * 1.7 + Math.max(0, s * (c * 1.7 + 0.08) - 0.12) + bed * bed * 0.2);
-    if (fill > 0) px[i] = mixPacked(px[i], s > bed ? grad(u) : from[Math.min(from.length - 1, 1)], fill);
+    if (fill > 0) cv.paint(i, mixPacked(px[i], s > bed ? grad(u) : from[Math.min(from.length - 1, 1)], fill));
     light[i] = Math.max(bed * 0.5, fill * (1 - u * 0.6));
   }
   if (o.rgb) {

@@ -11,6 +11,7 @@ import { palette, vary, streamOf } from './kit.js';
 import { fillSolid, blob, ledges, paintTerrain, markOpen, glow, drips, silhouette } from './side.js';
 import { caveFrame, farPillars, fog, moss, torch, ledgeTops } from './cave.js';
 import { crane, ladder, cart, crate, beam, boulder, scaffold, wheel, cloud } from './objects.js';
+import { terrainTrees } from './trees.js';
 import { Model } from '../geometry.js';
 import { Rng } from '../../core/rng.js';
 
@@ -18,7 +19,7 @@ export function compose(cv, seed) {
   const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'quarry', p);
   const pal = vary(palette({
     rock: ['#5a5048', { spread: 0.55 }], timber: ['#6a4428', { spread: 0.5 }], rope: '#4a3a2a', ore: ['#5a4a46', { spread: 0.5 }], metal: '#5a5a62',
-    seamC: ['#e8c040', { spread: 0.4, n: 4 }], cloud: ['#eef0f0', { spread: 0.3 }],
+    seamC: ['#e8c040', { spread: 0.4, n: 4 }], leaf: ['#56603e', { spread: 0.5 }], leaf2: ['#6e6a4c', { spread: 0.45 }], bark: ['#4a3e34', { spread: 0.45 }], cloud: ['#eef0f0', { spread: 0.3 }],
   }), s('pal'), 0.8);
   // an open pit under the sky, or a mine worked deep in a cavern
   const fs = s('frame'), cave = fs.next() < 0.5;
@@ -107,6 +108,8 @@ export function compose(cv, seed) {
   cv.place(wheel(tm, tm.int(10, 14), tm.int(30, 40)), pal, wx, { roots: [8, 2], range: 80 });
   for (let i = 0; i < 2; i++) cv.place(scaffold(tm, tm.int(16, 26), tm.int(16, 30)), pal, tm.int(60, W - 60), { foot: [12, 2], range: 100 });
   for (let i = 0; i < 2; i++) cv.place(crate(tm.int(8, 11)), pal, tm.int(30, W - 30), { foot: [6, 2] });
+  // sparse, dusty trees clinging to the benches
+  terrainTrees(cv, s('trees'), pal, { n: cave ? 1 : 3, kinds: ['sparse', 'sparse', 'gnarl'], h: [30, 64], gap: 50, ledges: true, dark: cave ? 0.3 : 0, look: { mats: ['leaf', 'leaf2'] } });
   const br = s('rubble');
   for (let i = 0; i < 4; i++) cv.place(boulder(br, br.int(3, 6), br.int(2, 4)), pal, br.int(10, W - 10), { foot: [5, 1], range: 30 });
   // a lantern on its post, and torches on the shelves
@@ -127,5 +130,6 @@ export function compose(cv, seed) {
   }
   cv.meta.trickles = drips(cv, ss, 5);
   cv.meta.vignette = cave ? 0.6 : 0.3;
+  cv.meta.wind = cave ? 0.3 : 0.8;
   cv.meta.horizon = 100;
 }

@@ -16483,6 +16483,7 @@ return { CounterView };
 const __m95 = (() => {
 const { Pixels } = __m41;
 const { rasterize } = __m40;
+const { Model } = __m28;
 const { ramp, hex, mixPacked, pack, unpack } = __m24;
 const SCENE_W = 384;
 const SCENE_H = 216;
@@ -16504,8 +16505,38 @@ this.ground = null;
 this.seed = seed >>> 0;
 this.meta = /** @type {Record<string, any>} */ ({});
 this.pending = [];
+this.sw = null;
 }
-set(x, y, c) { this.pix.set(x, y, c); }
+set(x, y, c) {
+this.pix.set(x, y, c);
+const s = this.sw;
+x |= 0; y |= 0;
+if (s && x >= 0 && y >= 0 && x < this.W && y < this.H) { const k = y * this.W + x; s.bare[k] = c; s.layer[k] = ++s.seq; }
+}
+paint(k, c) {
+this.pix.px[k] = c;
+const s = this.sw;
+if (s) { s.bare[k] = c; s.layer[k] = ++s.seq; }
+}
+swayStart() {
+if (!this.sw) this.sw = { bare: this.pix.px.slice(), layer: new Uint32Array(this.W * this.H), seq: 0, k: [], c: [], s: [], g: [], amp: [], hang: [], gx: [], gn: [], y0: [], y1: [] };
+return this.sw;
+}
+swayGroup(amp, hang = 0) {
+const s = this.swayStart();
+s.amp.push(amp); s.hang.push(hang); s.gx.push(0); s.gn.push(0); s.y0.push(this.H); s.y1.push(0);
+return s.amp.length - 1;
+}
+swaySet(x, y, c, g, seq) {
+x |= 0; y |= 0;
+if (x < 0 || y < 0 || x >= this.W || y >= this.H) return;
+const s = this.swayStart(), k = y * this.W + x;
+this.pix.px[k] = c;
+s.k.push(k); s.c.push(c); s.s.push(seq ?? ++s.seq); s.g.push(g);
+s.gx[g] += x; s.gn[g]++;
+if (y < s.y0[g]) s.y0[g] = y;
+if (y > s.y1[g]) s.y1[g] = y;
+}
 block(x0, y0, x1, y1, v = 0) {
 for (let y = Math.max(0, Math.floor(y0)); y < Math.min(this.H, Math.ceil(y1)); y++) for (let x = Math.max(0, Math.floor(x0)); x < Math.min(this.W, Math.ceil(x1)); x++) this.open[y * this.W + x] = v;
 }
@@ -16530,21 +16561,16 @@ let w = Math.ceil(b.x1) + 2 - left, h = Math.ceil(b.y1) + 2 - top;
 w += mod(-w); h += mod(-h);
 if (w <= 0 || h <= 0 || w > 2000 || h > 2000) return null;
 model.transform(1, 0, 0, 1, -left, -top, 1);
-const r = rasterize(model, w, h, pal, { seed: o.seed ?? this.seed, outline: o.outline, texture: o.texture, cell, grain: cell });
-const p = r.pix;
-if (o.haze || o.dark) for (let k = 0; k < p.px.length; k++) {
-const c = p.px[k];
-if (!(c >>> 24)) continue;
-let q = c;
-if (o.haze) q = mixPacked(q, o.haze[0], o.haze[1]);
-if (o.dark) q = mixPacked(q, 0xff000000, o.dark);
-p.px[k] = q;
-}
-return { raster: r, left, top, w, h };
+const ro = { seed: o.seed ?? this.seed, outline: o.outline, texture: o.texture, cell, grain: cell };
+const r = rasterize(model, w, h, pal, ro);
+tint(r.pix, o);
+return { raster: r, left, top, w, h, model, pal, ro, tint: { haze: o.haze, dark: o.dark } };
 }
 put(r, x, y, o = {}) {
 const p = r.raster.pix, w = r.w, h = r.h, X = Math.round(x) + r.left, Y = Math.round(y) + r.top;
-this.pix.draw(p, X, Y);
+const parts = r.model ? r.model.parts : [], sways = o.sway !== 0 && parts.some((q) => q.sa !== undefined);
+if (sways || this.sw) this.putSway(r, X, Y, sways ? o.sway ?? 1 : 0);
+else this.pix.draw(p, X, Y);
 if (o.roots) this.blockEllipse(Math.round(x), Math.round(y) - 1, o.roots[0], o.roots[1]);
 if (o.foot) this.blockEllipse(Math.round(x), Math.round(y), o.foot[0], o.foot[1]);
 const fy = Math.round(y), id = o.claim ?? 0;
@@ -16559,6 +16585,72 @@ if (fy > this.depth[k]) this.depth[k] = fy;
 this.open[k] = 0;
 }
 return { x: X, y: Y, w, h, raster: r.raster };
+}
+putSway(r, X, Y, mult) {
+const p = r.raster.pix, part = r.raster.part, w = r.w, h = r.h, W = this.W, px = this.pix.px;
+const s = this.swayStart(), seq = ++s.seq, parts = r.model ? r.model.parts : [];
+let under = null;
+if (mult) {
+const bm = new Model();
+bm.parts = parts.filter((q) => q.sa === undefined);
+under = rasterize(bm, w, h, r.pal, r.ro).pix;
+tint(under, r.tint);
+}
+const leafy = new Uint8Array(w * h);
+if (mult) for (let k = 0; k < w * h; k++) { const q = part && part[k] >= 0 ? parts[part[k]] : null; if (p.px[k] >>> 24 && q && q.sa !== undefined) leafy[k] = 1; }
+const inside = (/** @type {number} */ i, /** @type {number} */ j) => {
+for (let b = -2; b <= 2; b++) for (let a = -2; a <= 2; a++) {
+const ii = i + a, jj = j + b;
+if (ii < 0 || jj < 0 || ii >= w || jj >= h || !leafy[jj * w + ii]) return false;
+}
+return true;
+};
+const groups = new Map();
+for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+let c = p.px[j * w + i];
+const a = c >>> 24, xx = X + i, yy = Y + j;
+if (!a || xx < 0 || yy < 0 || xx >= W || yy >= this.H) continue;
+const k = yy * W + xx;
+if (a < 255) c = mixPacked(px[k] | 0xff000000, c | 0xff000000, a / 255);
+const q = part ? parts[part[j * w + i]] : null;
+if (mult && q && q.sa !== undefined) {
+const key = q.sg ?? 0;
+let g = groups.get(key);
+if (g === undefined) { g = this.swayGroup(q.sa * mult, (q.sh || 0) * mult); groups.set(key, g); }
+const u = /** @type {any} */ (under).px[j * w + i];
+if (u >>> 24) { s.bare[k] = u; s.layer[k] = seq; }
+else if (inside(i, j)) { s.bare[k] = mixPacked(c, 0xff000000, 0.5); s.layer[k] = seq; }
+this.swaySet(xx, yy, c, g, seq);
+} else { px[k] = c; s.bare[k] = c; s.layer[k] = seq; }
+}
+}
+swayData() {
+const s = this.sw;
+if (!s || !s.k.length) return null;
+const n = s.k.length, f = new Float32Array(n), home = new Uint8Array(this.W * this.H);
+for (let i = 0; i < n; i++) home[s.k[i]] = 1;
+for (let k = 0; k < home.length; k++) if (!home[k]) s.bare[k] = this.pix.px[k];
+for (let i = 0; i < n; i++) { const g = s.g[i], y = Math.floor(s.k[i] / this.W); f[i] = s.hang[g] ? (y - s.y0[g]) / Math.max(1, s.y1[g] - s.y0[g]) : 0; }
+return {
+bare: s.bare, layer: s.layer, k: Int32Array.from(s.k), c: Uint32Array.from(s.c), s: Uint32Array.from(s.s), g: Int32Array.from(s.g), f,
+amp: Float32Array.from(s.amp), hang: Float32Array.from(s.hang), gx: Float32Array.from(s.gx, (v, g) => v / Math.max(1, s.gn[g])), gy: Float32Array.from(s.y0),
+};
+}
+each(f, op, y0 = 0, y1 = this.H) {
+const W = this.W, px = this.pix.px, s = this.sw, a = Math.max(0, y0), b = Math.min(this.H, y1);
+for (let y = a; y < b; y++) for (let x = 0; x < W; x++) {
+const t = f(x, y);
+if (t <= 0.004) continue;
+const k = y * W + x;
+px[k] = op(px[k], t);
+if (s) s.bare[k] = op(s.bare[k], t);
+}
+if (s) for (let i = 0; i < s.k.length; i++) {
+const y = Math.floor(s.k[i] / W);
+if (y < a || y >= b) continue;
+const t = f(s.k[i] - y * W, y);
+if (t > 0.004) s.c[i] = op(s.c[i], t);
+}
 }
 place(model, pal, x, o = {}) {
 const r = this.raster(model, pal, o);
@@ -16631,21 +16723,23 @@ this.pending.push([x, y, r, rgb, k]);
 (this.meta.lights ||= []).push([Math.round(x), Math.round(y), r, rgb]);
 }
 wash(c, f, y0 = 0, y1 = this.H) {
-for (let y = Math.max(0, y0); y < Math.min(this.H, y1); y++) for (let x = 0; x < this.W; x++) {
-const t = f(x, y);
-if (t <= 0.004) continue;
-const k = y * this.W + x;
-this.pix.px[k] = mixPacked(this.pix.px[k], c, Math.min(1, t));
-}
+this.each(f, (q, t) => mixPacked(q, c, Math.min(1, t)), y0, y1);
 }
 light(rgb, f, y0 = 0, y1 = this.H) {
-for (let y = Math.max(0, y0); y < Math.min(this.H, y1); y++) for (let x = 0; x < this.W; x++) {
-const t = f(x, y);
-if (t <= 0.004) continue;
-const k = y * this.W + x, c = this.pix.px[k];
+this.each(f, (c, t) => {
 const r = Math.min(255, (c & 255) + rgb[0] * 255 * t), g = Math.min(255, ((c >>> 8) & 255) + rgb[1] * 255 * t), b = Math.min(255, ((c >>> 16) & 255) + rgb[2] * 255 * t);
-this.pix.px[k] = ((255 << 24) | (Math.round(b) << 16) | (Math.round(g) << 8) | Math.round(r)) >>> 0;
+return ((255 << 24) | (Math.round(b) << 16) | (Math.round(g) << 8) | Math.round(r)) >>> 0;
+}, y0, y1);
 }
+}
+function tint(p, o) {
+if (o.haze || o.dark) for (let k = 0; k < p.px.length; k++) {
+const c = p.px[k];
+if (!(c >>> 24)) continue;
+let q = c;
+if (o.haze) q = mixPacked(q, o.haze[0], o.haze[1]);
+if (o.dark) q = mixPacked(q, 0xff000000, o.dark);
+p.px[k] = q;
 }
 }
 function sky(cv, y0, y1, stops, _bands) {
@@ -16848,7 +16942,7 @@ const k = y * cv.W + x;
 if (cv.solid[k]) break;
 cv.liquid[k] = 1;
 const d = y - level, f = Math.min(body.length - 1, d / 5), i = Math.floor(f), c = d === 0 ? surf : i >= body.length - 1 ? body[i] : mixPacked(body[i], body[i + 1], f - i);
-cv.pix.px[k] = mixPacked(c, cv.pix.px[k], d === 0 ? 0 : see);
+cv.paint(k, mixPacked(c, cv.pix.px[k], d === 0 ? 0 : see));
 }
 }
 if (bed.length) for (let y = level; y < cv.H; y++) for (let x = Math.max(0, x0 - 3); x <= Math.min(cv.W - 1, x1 + 3); x++) {
@@ -16859,7 +16953,7 @@ for (let j = -3; j <= 0; j++) for (let i = -3; i <= 3; i++) {
 const xx = x + i, yy = y + j;
 if (xx >= 0 && yy >= 0 && xx < cv.W && cv.liquid[yy * cv.W + xx]) near = Math.min(near, Math.max(Math.abs(i), -j));
 }
-if (near < 3) cv.pix.px[k] = bed[Math.min(bed.length - 1, near + (hash2(x, y, 77) > 0.8 ? 1 : 0))];
+if (near < 3) cv.paint(k, bed[Math.min(bed.length - 1, near + (hash2(x, y, 77) > 0.8 ? 1 : 0))]);
 }
 return { x0, x1, level };
 }
@@ -16968,7 +17062,7 @@ function treeShape(cv, x, y, h, kind, c, seed) {
 const fill = col(c), tw = Math.max(1, Math.round(h / 14));
 const put = (px, py) => {
 const X = snap(px), Y = snap(py);
-for (let j = Y; j < Y + CELL; j++) for (let i = X; i < X + CELL; i++) if (i >= 0 && j >= 0 && i < cv.W && j < cv.H) cv.pix.px[j * cv.W + i] = far(fill, i, j, seed);
+for (let j = Y; j < Y + CELL; j++) for (let i = X; i < X + CELL; i++) if (i >= 0 && j >= 0 && i < cv.W && j < cv.H) cv.paint(j * cv.W + i, far(fill, i, j, seed));
 };
 for (let j = 0; j < h * (kind === 'pine' ? 0.9 : 0.6); j++) for (let i = -tw; i < tw; i++) put(Math.round(x + i), Math.round(y - j));
 if (kind === 'pine') {
@@ -17104,15 +17198,16 @@ const cluster = fbm1(x * 0.06, o.seed, 2);
 if (hash2(x, 1, o.seed) > rate * cluster * 2) continue;
 const L = Math.round(o.len[0] + (o.len[1] - o.len[0]) * hash2(x, 2, o.seed) * cluster * 1.6);
 let vx = x;
+const g = cv.swayGroup(0, 1 + L * 0.05);
 for (let j = 1; j <= L; j++) {
 const y = y0 + j;
 if (y >= cv.H || cv.solid[y * W + vx] || cv.liquid[y * W + vx]) break;
 if (hash2(x, j >> 3, o.seed + 5) > 0.85 && j % 8 === 0) vx += hash2(x, j, o.seed) < 0.5 ? -1 : 1;
 if (vx < 0 || vx >= W) break;
 const c = cols[Math.min(cols.length - 1, Math.floor((j / Math.max(1, L)) * cols.length))];
-cv.set(vx, y, c);
-if (j % 3 === 0) { const s = (j / 3) % 2 ? 1 : -1; if (vx + s >= 0 && vx + s < W) cv.set(vx + s, y, leaf); }
-if (fl && j === L && hash2(x, 3, o.seed) < 0.15) cv.set(vx, y + 1, fl);
+cv.swaySet(vx, y, c, g);
+if (j % 3 === 0) { const s = (j / 3) % 2 ? 1 : -1; if (vx + s >= 0 && vx + s < W) cv.swaySet(vx + s, y, leaf, g); }
+if (fl && j === L && hash2(x, 3, o.seed) < 0.15) cv.swaySet(vx, y + 1, fl, g);
 }
 }
 }
@@ -17128,7 +17223,11 @@ const side = !S[k - 1] || !S[k + 1];
 if (side && d > 0 && d < drape * (0.4 + hash2(x >> 1, top, o.seed))) cv.set(x, y, cols[Math.min(cols.length - 1, 1 + (d > drape * 0.6 ? 1 : 0))]);
 if (y + 1 < H && !S[k + W] && !cv.liquid[k + W] && y - top < 24 && hash2(x, y, o.seed + 1) < rate) {
 const L = 1 + Math.floor(hash2(x, y, o.seed + 2) ** 2 * len);
-for (let j = 1; j <= L && y + j < H && !S[k + j * W] && !cv.liquid[k + j * W]; j++) cv.set(x, y + j, cols[Math.min(cols.length - 1, Math.floor((j / L) * cols.length))]);
+const g = L >= 4 ? cv.swayGroup(0, 0.5 + L * 0.06) : -1;
+for (let j = 1; j <= L && y + j < H && !S[k + j * W] && !cv.liquid[k + j * W]; j++) {
+const c = cols[Math.min(cols.length - 1, Math.floor((j / L) * cols.length))];
+if (g >= 0) cv.swaySet(x, y + j, c, g); else cv.set(x, y + j, c);
+}
 }
 }
 }
@@ -17176,7 +17275,7 @@ for (let dx = -w; dx <= w; dx++) {
 const xx = x + dx + wob;
 if (xx < 0 || xx >= W) continue;
 const k = yy * W + xx, a = Math.abs(dx) / (w + 0.5);
-cv.pix.px[k] = cols[Math.min(cols.length - 1, Math.floor(a * cols.length + (hash2(xx, yy >> 1, o.seed) > 0.8 ? 1 : 0)))];
+cv.paint(k, cols[Math.min(cols.length - 1, Math.floor(a * cols.length + (hash2(xx, yy >> 1, o.seed) > 0.8 ? 1 : 0)))]);
 cv.liquid[k] = 1; cv.open[k] = 0;
 }
 }
@@ -17221,10 +17320,10 @@ cv.set(x, y, (Math.floor(Math.atan2(y - y0, x - cx) * 9) % 2 === 0 && Math.abs(d
 }
 function finish(cv, k = 0.55) {
 const W = cv.W, H = cv.H;
-if (k > 0) for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+if (k > 0) cv.wash(0xff000000, (x, y) => {
 const u = (x - W / 2) / (W * 0.62), v = (y - H * 0.55) / (H * 0.75), t = Math.max(0, u * u + v * v - 0.3) * k;
-if (t > 0.01) cv.pix.px[y * W + x] = mixPacked(cv.pix.px[y * W + x], 0xff000000, Math.min(0.8, t));
-}
+return t > 0.01 ? Math.min(0.8, t) : 0;
+});
 for (const [x, y, r, rgb, s] of cv.pending) cv.light(rgb, (px, py) => { const d = Math.hypot(px - x, py - y) / r; return d >= 1 ? 0 : (1 - d) * (1 - d) * s; }, Math.floor(y - r), Math.ceil(y + r));
 cv.pending = [];
 }
@@ -17321,9 +17420,9 @@ const s = wet[i] * gap * (0.7 + (1 - vt[i]) * 0.3);
 if (bed <= 0 && s <= 0) continue;
 const c = crev[i], u = Math.min(1, vt[i] + (1 - Math.min(1, s)) * 0.3);
 const stain = Math.min(0.85, (bed * 0.7 + s * 0.45) * k);
-px[i] = mixPacked(px[i], to, stain);
+cv.paint(i, mixPacked(px[i], to, stain));
 const fill = Math.min(0.95, bed * c * 1.7 + Math.max(0, s * (c * 1.7 + 0.08) - 0.12) + bed * bed * 0.2);
-if (fill > 0) px[i] = mixPacked(px[i], s > bed ? grad(u) : from[Math.min(from.length - 1, 1)], fill);
+if (fill > 0) cv.paint(i, mixPacked(px[i], s > bed ? grad(u) : from[Math.min(from.length - 1, 1)], fill));
 light[i] = Math.max(bed * 0.5, fill * (1 - u * 0.6));
 }
 if (o.rgb) {
@@ -17367,9 +17466,148 @@ return out;
 const streamOf = (seed, region, part) => new Rng(hashString(`env:${seed}:${region}:${part}`));
 return { palette, vary, streamOf };
 })();
+// src/visual/env/foliage.js
+const __m102 = (() => {
+const { Model, bezier } = __m28;
+let groups = 0;
+const swayGroup = () => ++groups;
+const SHAPES = [
+(a) => 1 + 0.08 * Math.sin(a * 5),
+(a) => 0.8 + 0.28 * Math.abs(Math.cos(a * 1.5)),
+(a) => 0.85 + 0.2 * Math.cos(a * 2),
+(a) => 0.78 + 0.26 * Math.abs(Math.cos(a * 2)),
+(a) => 1 - 0.28 * Math.cos(a + Math.PI / 2),
+];
+function leaf(rnd, x, y, r) {
+const f = SHAPES[Math.floor(rnd() * SHAPES.length)], rot = rnd() * Math.PI * 2, sy = 0.7 + rnd() * 0.45, n = 10;
+const crop = rnd() < 0.2 ? 0.35 + rnd() * 0.4 : 2, ca = rnd() * Math.PI * 2, cx = Math.cos(ca), cy = Math.sin(ca);
+const pts = [];
+for (let i = 0; i < n; i++) {
+const a = (i / n) * Math.PI * 2, rr = r * f(a) * (1 + (rnd() - 0.5) * 0.25);
+let u = Math.cos(a) * rr, v = Math.sin(a) * rr * sy;
+const d = u * cx + v * cy - crop * r;
+if (d > 0) { u -= d * cx; v -= d * cy; }
+pts.push([x + u * Math.cos(rot) - v * Math.sin(rot), y + u * Math.sin(rot) + v * Math.cos(rot)]);
+}
+return pts;
+}
+function oval(x, y, rx, ry, rnd) {
+const n = Math.max(10, Math.round((rx + ry) * 1.5)), ph = rnd() * 6;
+const pts = [];
+for (let i = 0; i < n; i++) {
+const a = (i / n) * Math.PI * 2, r = 1 + 0.12 * Math.sin(a * 3 + ph) + (rnd() - 0.5) * 0.16;
+pts.push([x + Math.cos(a) * rx * r, y + Math.sin(a) * ry * r]);
+}
+return pts;
+}
+const pick = (rnd, mats) => (mats.length < 2 || rnd() < 0.6 ? mats[0] : mats[1 + Math.floor(rnd() * (mats.length - 1))]);
+function cluster(m, rng, x, y, rx, ry, o = {}) {
+const rnd = () => rng.next(), mats = o.mats || ['leaf'], tone = o.tone ?? 0, sw = { sa: o.amp ?? 1, sg: swayGroup() };
+const lr = o.leaf ?? Math.max(1.4, Math.min(2.9, Math.min(rx, ry) * 0.34));
+m.poly(oval(x, y + ry * 0.12, rx * 0.74, ry * (o.flat ? 0.62 : 0.72), rnd), mats[0], { shade: 'flat', tex: 1.2, tone: tone - 0.26, ...sw });
+const n = Math.max(3, Math.round(((rx * ry) / (lr * lr)) * 1.25 * (o.dense ?? 1)));
+const at = [];
+for (let i = 0; i < n; i++) {
+const a = rnd() * Math.PI * 2, q = Math.sqrt(rnd());
+let ly = y + Math.sin(a) * ry * q * 0.9 - ry * 0.05;
+if (o.flat) ly = Math.min(ly, y + ry * 0.35);
+at.push([x + Math.cos(a) * rx * q * 0.92, ly]);
+}
+at.sort((p, q) => q[1] - p[1]);
+for (const [lx, ly] of at) {
+const up = (y - ly) / ry, left = (x - lx) / rx, mat = pick(rnd, mats);
+m.poly(leaf(rnd, lx, ly, lr * (0.7 + rnd() * 0.6)), mat, { shade: 'round', soft: true, tex: 0.8, tone: tone - 0.06 + up * 0.17 + left * 0.06 + (rnd() - 0.5) * 0.14, ...sw });
+if (up > 0.05 && rnd() < 0.4) m.dot(lx - lr * 0.3, ly - lr * 0.35, mat, { lum: 0.78 + rnd() * 0.17, ...sw });
+}
+for (let i = 0; i < n * 0.45; i++) {
+const a = rnd() * Math.PI * 2, q = 0.92 + rnd() * 0.22;
+m.dot(x + Math.cos(a) * rx * q, y + Math.sin(a) * ry * q * (o.flat && Math.sin(a) > 0 ? 0.6 : 1), pick(rnd, mats), { clip: false, lum: 0.3 + rnd() * 0.35, ...sw });
+}
+if (o.bloom) for (let i = 0; i < n * o.bloom.rate; i++) {
+const a = rnd() * Math.PI * 2, q = Math.sqrt(rnd()) * 0.85, bx = x + Math.cos(a) * rx * q, by = y + Math.sin(a) * ry * q * 0.85 - ry * 0.1;
+m.dot(bx, by, o.bloom.mat, { clip: false, lum: 0.62 + rnd() * 0.33, ...sw });
+if (rnd() < 0.35) m.dot(bx + 1, by, o.bloom.mat, { clip: false, lum: 0.5, ...sw });
+}
+return sw.sg;
+}
+function strand(m, rng, x, y, len, o = {}) {
+const rnd = () => rng.next(), mat = o.mat || 'leaf', sw = { sa: o.amp ?? 1, sh: 1.2 + len * 0.07, sg: swayGroup() };
+const ph = rnd() * 6, wv = 0.4 + rnd() * 0.6, tone = o.tone ?? 0;
+const pts = [];
+for (let k = 0; k <= Math.ceil(len / 3); k++) { const t = Math.min(1, (k * 3) / len); pts.push([x + Math.sin(ph + t * 4) * wv * t, y + t * len]); }
+m.stroke(pts, [1.3, 1], mat, { tone: tone - 0.12, noOutline: true, tex: 0.5, ...sw });
+const step = o.leaves ?? 2.2;
+for (let d = 1.5, s = rnd() < 0.5 ? -1 : 1; d < len - (o.bloom ? len * 0.35 : 0); d += step + rnd(), s = -s) {
+const t = d / len, lx = x + Math.sin(ph + t * 4) * wv * t + s * 0.9, ly = y + d;
+m.poly(leaf(rnd, lx, ly, 0.9 + rnd() * 0.6 * (1 - t * 0.5)), mat, { shade: 'round', soft: true, noOutline: true, tex: 0.6, tone: tone + 0.02 - t * 0.14 + (rnd() - 0.5) * 0.1, ...sw });
+}
+if (o.bloom) {
+const b0 = len * 0.6;
+for (let d = b0; d <= len + 1; d += 1) {
+const t = (d - b0) / Math.max(1, len + 1 - b0), w = 1.6 * (1 - t) + 0.4, cx = x + Math.sin(ph + (d / len) * 4) * wv * (d / len);
+for (let i = -Math.round(w); i <= Math.round(w); i++) if (rnd() < 0.8) m.dot(cx + i, y + d, o.bloom, { clip: false, lum: 0.5 + rnd() * 0.4 - t * 0.12, ...sw });
+}
+}
+return sw.sg;
+}
+function grove(rng, h, tw, o = {}) {
+const m = new Model(), rnd = () => rng.next(), bark = o.bark || 'bark', style = o.style || 'dome';
+const dir = o.dir ?? (rnd() < 0.5 ? -1 : 1), mats = o.mats || ['leaf'];
+const th = h * (style === 'weep' ? 0.62 : style === 'tiers' ? 0.66 : style === 'sparse' ? 0.7 : 0.6);
+const sw1 = (0.1 + rnd() * 0.1) * h, sw2 = (0.06 + rnd() * 0.1) * h;
+const spine = bezier([0, 0], [dir * sw1, -th * 0.35], [-dir * sw2, -th * 0.7], [dir * (rnd() - 0.3) * h * 0.12, -th], 14);
+const ws = spine.map((_, i) => Math.max(1.2, tw * (1 - (i / (spine.length - 1)) * 0.55) * (i === 0 ? 1.25 : 1)));
+for (const s of [-1, 1]) m.stroke([[s * tw * 0.2, -tw * 0.7], [s * tw * 0.9, -1], [s * tw * 1.7, 1]], [tw * 0.45, tw * 0.25, 1.2], bark, { tone: s > 0 ? -0.08 : 0 });
+m.stroke(spine, ws, bark, { tex: 0.8 });
+m.line(/** @type {any} */ (spine.slice(1, -2).map((q, i) => [q[0] - ws[i + 1] * 0.25, q[1]])), bark, { lum: 0.78 });
+m.line(/** @type {any} */ (spine.slice(2, -3).map((q, i) => [q[0] + ws[i + 2] * 0.3, q[1]])), bark, { lum: 0.14 });
+const tops = [];
+const nb = style === 'sparse' ? 2 + Math.round(rnd()) : style === 'tiers' ? 3 + Math.round(rnd()) : 3 + Math.round(rnd() * 2);
+for (let b = 0; b < nb; b++) {
+const t = 0.5 + (b / Math.max(1, nb - 1)) * 0.42, i = Math.min(spine.length - 2, Math.round(t * (spine.length - 1))), [sx, sy] = spine[i];
+const side = (b % 2 ? 1 : -1) * dir, L = h * (style === 'tiers' ? 0.26 + rnd() * 0.14 : style === 'sparse' ? 0.2 + rnd() * 0.1 : 0.2 + rnd() * 0.14);
+const a = style === 'tiers' ? 0.12 + rnd() * 0.25 : 0.35 + rnd() * 0.5, ex = sx + side * L * Math.cos(a), ey = sy - L * Math.sin(a);
+m.stroke([[sx, sy], [sx + side * L * 0.4, sy - L * 0.08 + (rnd() - 0.3) * L * 0.2], [ex, ey]], [ws[i] * 0.6, Math.max(1, ws[i] * 0.3)], bark, { tex: 0.6 });
+const r = h * (style === 'sparse' ? 0.1 + rnd() * 0.04 : style === 'tiers' ? 0.13 + rnd() * 0.04 : 0.12 + rnd() * 0.05);
+tops.push([ex, ey - r * 0.2, r * (style === 'tiers' ? 1.3 : 1), r * (style === 'tiers' ? 0.5 : 0.72)]);
+if (L > h * 0.24 && style !== 'sparse') {
+const fx = sx + side * L * 0.55, fy = sy - L * 0.25, gx = fx + side * L * 0.18, gy = fy - L * 0.45;
+m.stroke([[fx, fy], [gx, gy]], [Math.max(1, ws[i] * 0.32), 1], bark, {});
+tops.push([gx, gy - r * 0.2, r * 0.75, r * 0.55]);
+}
+}
+const top = spine[spine.length - 1], tr = h * (style === 'sparse' ? 0.12 : style === 'tiers' ? 0.15 : 0.17 + rnd() * 0.04);
+tops.push([top[0], top[1] - tr * 0.3, tr * (style === 'tiers' ? 1.3 : 1.1), tr * (style === 'tiers' ? 0.55 : 0.75)]);
+if (style === 'dome' || style === 'weep' || style === 'wisteria') {
+const xs = tops.map((q) => q[0]), ys = tops.map((q) => q[1]), cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+const cw = (Math.max(...xs) - Math.min(...xs)) / 2 + 1, ch = (Math.max(...ys) - Math.min(...ys)) / 2 + 1;
+for (let i = 0; i < 2 + Math.round(rnd() * 2); i++) {
+const a = rnd() * Math.PI * 2, q = Math.sqrt(rnd()) * 0.8;
+tops.push([cx + Math.cos(a) * cw * q, cy + Math.sin(a) * ch * q, h * (0.1 + rnd() * 0.05), h * (0.08 + rnd() * 0.03)]);
+}
+}
+const amp = (/** @type {number} */ y) => 0.7 + Math.min(1, -y / h) * 0.5;
+const hang = o.hang || (style === 'weep' ? { rate: 1, len: /** @type {[number, number]} */ ([h * 0.12, h * 0.4]) } : style === 'wisteria' ? { rate: 0.8, len: /** @type {[number, number]} */ ([6, 18]) } : null);
+if (hang) for (const [x, y, rx, ry] of tops) {
+const n = Math.round(rx * 0.7 * hang.rate);
+for (let i = 0; i < n; i++) {
+const u = style === 'weep' ? (Math.floor(rnd() * 4) / 3 - 0.5) * 1.5 + (rnd() - 0.5) * 0.3 : (rnd() - 0.5) * 1.7;
+const sx = x + u * rx, sy = y + ry * (0.3 + rnd() * 0.4), L = hang.len[0] + rnd() * (hang.len[1] - hang.len[0]);
+const bloom = style === 'wisteria' && o.bloom && rnd() < 0.7 ? o.bloom.mat : hang.bloom;
+strand(m, rng, sx, sy, L, { mat: hang.mat || mats[0], amp: amp(y), bloom, tone: style === 'weep' ? 0.04 : -0.04 });
+}
+}
+tops.sort((p, q) => q[1] - p[1]);
+const bloom = style === 'wisteria' ? undefined : o.bloom;
+for (const [x, y, rx, ry] of tops) cluster(m, rng, x, y, rx, ry, { mats, bloom, amp: amp(y), flat: style === 'tiers', dense: style === 'sparse' ? 0.7 : 1 });
+return m;
+}
+return { swayGroup, leaf, cluster, strand, grove };
+})();
 // src/visual/env/objects.js
 const __m101 = (() => {
 const { Model, blade, PROFILES, bezier, lumpy, ellipse, polygon } = __m28;
+const { cluster, strand, grove, swayGroup } = __m102;
 const R = (rng) => () => rng.next();
 function leafBlock(x, y, hw, hh, rnd) {
 const c = Math.max(1, Math.round(Math.min(hw, hh) * 0.4)), j = () => Math.round((rnd() - 0.5) * 2);
@@ -17380,8 +17618,8 @@ return /** @type {import('../geometry.js').Pt[]} */ ([
 ]);
 }
 function crown(m, rng, cx, cy, rx, ry, mat = 'leaf', o = {}) {
-const rnd = R(rng), r = o.r ?? Math.max(2.5, Math.min(rx * 0.5, ry * 0.62, 9));
-m.poly(lumpy(cx, cy + r * 0.2, rx * 0.92, ry * 0.88, rnd, 0.06, 7), mat, { shade: 'flat', tex: 0.3, tone: -0.22 });
+const rnd = R(rng), r = o.r ?? Math.max(2.5, Math.min(rx * 0.5, ry * 0.62, 9)), mats = [mat, ...(o.mats || []).filter((q) => q !== mat)];
+m.poly(lumpy(cx, cy + r * 0.2, rx * 0.92, ry * 0.88, rnd, 0.06, 7), mat, { shade: 'flat', tex: 0.3, tone: -0.24, sa: (o.amp ?? 1) * 0.85, sg: swayGroup() });
 const sx = r * 1.5, sy = r * 1.15, clumps = [];
 for (let row = -Math.ceil(ry / sy); row <= Math.ceil(ry / sy); row++) for (let col = -Math.ceil(rx / sx) - 1; col <= Math.ceil(rx / sx) + 1; col++) {
 const x = cx + col * sx + ((row & 1) ? sx / 2 : 0) + (rng.next() - 0.5) * r * 0.25, y = cy + row * sy + (rng.next() - 0.5) * r * 0.2;
@@ -17389,26 +17627,21 @@ if (((x - cx) / (rx - r * 0.4)) ** 2 + ((y - cy) / (ry - r * 0.3)) ** 2 > 1) con
 clumps.push([x, y]);
 }
 clumps.sort((a, b) => b[1] - a[1] || a[0] - b[0]);
-for (const [x, y] of clumps) {
-const up = (cy - y) / ry, left = (cx - x) / rx;
-m.poly(lumpy(x, y, r, r * 0.9, rnd, 0.1, 7), mat, { shade: 'round', tex: 0.3, tone: -0.04 + up * 0.14 + left * 0.05, soft: true });
-if (up > -0.3) m.poly(lumpy(x - r * 0.25, y - r * 0.35, r * 0.45, r * 0.3, rnd, 0.06, 5), mat, { shade: 'flat', tex: 0, tone: 0.16 + up * 0.1 + left * 0.04, noOutline: true });
-}
+for (const [x, y] of clumps) cluster(m, rng, x, y, r * 1.05, r * 0.9, { mats, bloom: o.bloom, amp: (o.amp ?? 1) * (0.9 + Math.max(0, (cy - y) / ry) * 0.2), tone: ((cx - x) / rx) * 0.04 });
 return m;
 }
 function pad(m, rng, x, y, rx, ry, mat = 'leaf', o = {}) {
-const rnd = R(rng);
-m.poly(lumpy(x, y + ry * 0.15, rx, ry * 0.8, rnd, 0.14, 7), mat, { shade: 'flat', tex: 1, tone: -0.2 });
+const mats = [mat, ...(o.mats || []).filter((q) => q !== mat)], amp = o.amp ?? 1;
+cluster(m, rng, x, y + ry * 0.12, rx, ry * 0.8, { mats, amp: amp * 0.9, flat: true, dense: 0.8 });
 const n = Math.max(2, Math.round(rx / (ry * 0.9)));
 for (let i = 0; i < n; i++) {
 const u = n === 1 ? 0 : i / (n - 1) - 0.5, bx = x + u * rx * 1.25, by = y - ry * (0.15 + (0.5 - Math.abs(u)) * 0.4), r = ry * (0.75 + rng.next() * 0.25);
-m.poly(lumpy(bx, by, r * 1.15, r * 0.85, rnd, 0.12, 6), mat, { shade: 'flat', tex: 1, tone: -0.04 - u * 0.06, soft: true });
-m.poly(lumpy(bx - r * 0.3, by - r * 0.35, r * 0.55, r * 0.35, rnd, 0.1, 5), mat, { shade: 'flat', tex: 0.6, tone: 0.14 - u * 0.05, soft: true, noOutline: true });
+cluster(m, rng, bx, by, r * 1.15, r * 0.85, { mats, amp, bloom: o.bloom, tone: -u * 0.06 });
 }
 const drips = o.drips ?? Math.round(rx / 4);
 for (let i = 0; i < drips; i++) {
 const dx = x + (rng.next() - 0.5) * rx * 1.4, L = 2 + rng.next() * ry * 1.6;
-m.stroke([[dx, y + ry * 0.6], [dx + (rng.next() - 0.5), y + ry * 0.6 + L]], [1.6, 1], o.drip || mat, { tone: o.drip ? 0 : 0.18, noOutline: true });
+strand(m, rng, dx, y + ry * 0.55, L, { mat: o.drip || mat, amp, tone: o.drip ? 0 : 0.1, leaves: o.drip ? 3 : 2.2 });
 }
 return m;
 }
@@ -17443,13 +17676,16 @@ pads.push([gx, gy - pr * 0.25, pr * 0.8, pr * 0.52]);
 const top = spine[spine.length - 1], tr = h * (shape === 'tall' ? 0.17 : 0.2 + rng.next() * 0.05);
 pads.push([top[0], top[1] - tr * 0.3, tr, tr * 0.62]);
 pads.sort((p, q) => q[1] - p[1]);
-for (const [x, y, rx, ry] of pads) pad(m, rng, x, y, rx, ry, leaf, { drip: o.drip });
+for (const [x, y, rx, ry] of pads) pad(m, rng, x, y, rx, ry, leaf, { drip: o.drip, mats: o.mats, bloom: o.bloom, amp: 0.7 + Math.min(1, -y / h) * 0.5 });
 return m;
 }
+const GROVES = { gnarl: 'dome', tiers: 'tiers', willow: 'weep', wisteria: 'wisteria', sparse: 'sparse' };
 function tree(rng, kind, h, tw, o = {}) {
-if (kind === 'oak' || kind === 'birch') return branchTree(rng, h, tw, { ...o, shape: o.shape || (kind === 'birch' ? 'tall' : undefined) });
+const look = o.look || {};
+if (kind === 'oak' || kind === 'birch') return branchTree(rng, h, tw, { ...o, ...look, drip: look.hang?.mat, shape: o.shape || (kind === 'birch' ? 'tall' : undefined) });
+if (GROVES[kind]) return grove(rng, h, tw, { ...o, ...look, hang: kind === 'willow' || kind === 'wisteria' ? undefined : look.hang, style: GROVES[kind] });
 const m = new Model(), lean = (o.lean ?? (rng.next() - 0.5) * 0.15) * h;
-const trunkTop = kind === 'pine' ? h * 0.95 : kind === 'willow' ? h * 0.6 : kind === 'dead' ? h * 0.75 : h * 0.55;
+const trunkTop = kind === 'pine' ? h * 0.95 : kind === 'dead' ? h * 0.75 : h * 0.55;
 const spine = bezier([0, 0], [0, -trunkTop * 0.4], [lean * 0.6, -trunkTop * 0.75], [lean, -trunkTop], 12);
 const ws = spine.map((_, i) => tw * (1 - (i / spine.length) * (kind === 'pine' ? 0.8 : 0.45)) * (i === 0 ? 1.25 : 1));
 for (const s of [-1, 1]) m.stroke([[s * tw * 0.2, -tw * 0.6], [s * tw * 0.9, -1], [s * tw * 1.5, 1]], [tw * 0.45, tw * 0.25, 1.2], o.bark || 'bark', { tone: s > 0 ? -0.08 : 0 });
@@ -17472,23 +17708,14 @@ for (let i = 0; i < tiers; i++) {
 const t = i / (tiers - 1), y = -h * 0.28 - t * h * 0.7, w = h * 0.3 * (1 - t * 0.85) + 2;
 const pts = [[lean * (0.3 + t * 0.7) - w, y + h * 0.06], [lean * (0.3 + t * 0.7), y - h * 0.12], [lean * (0.3 + t * 0.7) + w, y + h * 0.06]];
 for (let k = 5; k >= 1; k--) pts.push([lean * (0.3 + t * 0.7) - w + (k / 6) * w * 2, y + h * 0.06 - (k % 2) * h * 0.025]);
-m.poly(/** @type {any} */ (pts), o.leaf || 'leaf', { shade: 'fold', tex: 1.4, tone: -0.04 + t * 0.06 });
+m.poly(/** @type {any} */ (pts), o.leaf || 'leaf', { shade: 'fold', tex: 1.4, tone: -0.04 + t * 0.06, sa: 0.3 + t * 0.6, sg: swayGroup() });
 }
 return m;
 }
-const cw = kind === 'birch' ? h * 0.24 : kind === 'willow' ? h * 0.42 : h * 0.36;
+const cw = kind === 'birch' ? h * 0.24 : h * 0.36;
 for (const s of [-1, 1]) m.stroke([[top[0], top[1] + 3], [top[0] + s * cw * 0.35, top[1] - h * 0.08], [top[0] + s * cw * 0.6, top[1] - h * 0.18]], [tw * 0.5, tw * 0.25], o.bark || 'bark', {});
-const cy = top[1] - h * (kind === 'willow' ? 0.12 : 0.2);
-if (kind === 'oak') { crown(m, rng, top[0] - cw * 0.5, cy + h * 0.07, cw * 0.55, h * 0.16, o.leaf || 'leaf'); crown(m, rng, top[0] + cw * 0.55, cy + h * 0.09, cw * 0.5, h * 0.15, o.leaf || 'leaf'); }
-crown(m, rng, top[0], kind === 'willow' ? cy - h * 0.06 : cy, kind === 'willow' ? cw * 0.75 : cw, h * (kind === 'birch' ? 0.3 : kind === 'willow' ? 0.17 : 0.28), o.leaf || 'leaf');
-if (kind === 'willow') {
-for (let i = 0; i < Math.round(cw * 0.9); i++) {
-const x0 = top[0] + (rng.next() - 0.5) * cw * 1.8, y0 = cy + (rng.next() - 0.2) * h * 0.12, len = h * (0.18 + rng.next() * 0.28);
-const pts = [];
-for (let k = 0; k <= 6; k++) pts.push([x0 + Math.sin(k * 0.6 + i) * 0.7 + (x0 - top[0]) * k * 0.025, y0 + (k / 6) * len]);
-m.stroke(/** @type {any} */ (pts), [3.2, 2.2, 1.2], o.leaf || 'leaf', { tone: -0.12 + (i % 3) * 0.08, tex: 2 });
-}
-}
+const cy = top[1] - h * 0.2;
+crown(m, rng, top[0], cy, cw, h * (kind === 'birch' ? 0.3 : 0.28), o.leaf || 'leaf', look);
 if (kind === 'birch') for (let i = 2; i < spine.length - 1; i += 2) m.line([[spine[i][0] - ws[i] * 0.4, spine[i][1]], [spine[i][0] + ws[i] * 0.1, spine[i][1]]], o.bark || 'bark', { lum: 0.08 });
 return m;
 }
@@ -17500,7 +17727,7 @@ return m;
 }
 function bush(rng, rx, ry, o = {}) {
 const m = new Model();
-crown(m, rng, 0, -ry * 0.7, rx, ry, o.leaf || 'leaf');
+crown(m, rng, 0, -ry * 0.7, rx, ry, o.leaf || 'leaf', { amp: 0.4, mats: o.mats });
 if (o.dots) for (let i = 0; i < rx * 0.8; i++) {
 const a = Math.PI + rng.next() * Math.PI, q = Math.sqrt(rng.next()) * 0.8;
 m.dot(Math.cos(a) * rx * q, -ry * 0.7 + Math.sin(a) * ry * q * 0.8, o.dots, { lum: rng.next() < 0.5 ? 0.85 : 0.55 });
@@ -17694,7 +17921,7 @@ return m;
 return { leafBlock, crown, pad, branchTree, tree, branch, bush, boulder, reeds, fern, tuft, log, stump, mushroom, cloud, beam, crane, ladder, cart, crate, fence, skep, basalt, spire, cairn, scaffold, wheel };
 })();
 // src/visual/env/trees.js
-const __m102 = (() => {
+const __m103 = (() => {
 const { branchTree, tree } = __m101;
 const { Rng } = __m6;
 const { pack, hex } = __m24;
@@ -17702,8 +17929,8 @@ function treeRow(cv, rng, pal, o) {
 const haze = pack(hex(o.haze));
 for (let x = rng.int(-6, 6); x < cv.W + 10; x += rng.int(o.gap[0], o.gap[1])) {
 const h = rng.int(o.h[0], o.h[1]), xi = Math.max(0, Math.min(cv.W - 1, x));
-const m = o.kind ? tree(rng, o.kind, h, Math.max(2, h / 16)) : branchTree(rng, h, Math.max(2, h / 12), { shape: o.shape || 'tall' });
-cv.stamp(m, pal, x, Math.round(o.line[xi]) + (o.dy ?? 0), { haze: [haze, o.fade], outline: false });
+const m = o.kind ? tree(rng, o.kind, h, Math.max(2, h / 16), { look: o.look }) : branchTree(rng, h, Math.max(2, h / 12), { shape: o.shape || 'tall', mats: o.look?.mats });
+cv.stamp(m, pal, x, Math.round(o.line[xi]) + (o.dy ?? 0), { haze: [haze, o.fade], outline: false, sway: 1 - o.fade * 0.8 });
 }
 }
 function terrainTrees(cv, rng, pal, o) {
@@ -17718,14 +17945,14 @@ for (let i = -5; i <= 5 && !wet; i++) wet = x + i >= 0 && x + i < W && (cv.liqui
 if (!wet) spots.push([x, y]);
 }
 const out = [];
-for (let tries = 0; tries < Math.min(60, o.n * 8) && out.length < o.n && spots.length; tries++) {
+for (let tries = 0; tries < Math.min(60, Math.max(30, o.n * 8)) && out.length < o.n && spots.length; tries++) {
 const [x, y] = spots[Math.floor(rng.next() * spots.length)];
 if (out.some(([a, b]) => Math.abs(a - x) < gap && Math.abs(b - y) < 30)) continue;
 const kind = o.kinds[Math.floor(rng.next() * o.kinds.length)], shape = o.shapes ? o.shapes[Math.floor(rng.next() * o.shapes.length)] : undefined;
 const h0 = rng.int(o.h[0], o.h[1]), seed = rng.int(0, 1e9);
 for (let f = 1; f >= 0.45; f *= 0.8) {
 const h = Math.round(h0 * f), tw = Math.max(2, Math.round(h / 11)), fy = y + 2;
-const m = tree(new Rng(seed), kind, h, tw, { shape });
+const m = tree(new Rng(seed), kind, h, tw, { shape, look: o.look });
 const ok = cv.stamp(m, pal, x, fy, {
 roots: [Math.max(4, tw * 1.5), 2], dark: o.dark,
 test: (p, X, Y) => {
@@ -17761,13 +17988,13 @@ const { palette, vary, streamOf } = __m100;
 const { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, silhouette, treeShape, glow, drips, ledges } = __m97;
 const { caveFrame, fog, vines, moss, veins, WATER_VEINS } = __m96;
 const { cloud, fence, skep, boulder } = __m101;
-const { terrainTrees } = __m102;
+const { terrainTrees } = __m103;
 const { Model, lumpy } = __m28;
 const { pack } = __m24;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'meadow', p);
 const pal = vary(palette({
-leaf: ['#3a6e2a', { spread: 0.6 }], bark: '#4e3420', rock: '#7a7a72', cloud: ['#c8d4e4', { spread: 0.3, cool: 0.5 }],
+leaf: ['#3e7a2a', { spread: 0.6 }], leaf2: ['#78a02e', { spread: 0.6 }], bloom: ['#f0d040', { spread: 0.4 }], bark: '#4e3420', rock: '#7a7a72', cloud: ['#c8d4e4', { spread: 0.3, cool: 0.5 }],
 timber: '#6a4a2e', straw: ['#c8a050', { spread: 0.45 }], moss: '#5a8a34',
 }), s('pal'), 1);
 sky(cv, 0, 160, ['#2a5aa0', '#4a82c4', '#86b4dc', '#cfe2e8'], 10);
@@ -17838,39 +18065,44 @@ const at = cv.place(m, pal, x, { sink: 2, foot: [4, 2], range: 20, step: 2, grou
 x = (at ? at.fx : x) + fr.int(12, 18);
 }
 }
-terrainTrees(cv, s('oaks'), pal, { n: 3, kinds: ['oak'], shapes: ['spread', 'lean'], h: [60, 130], gap: 60, ledges: true });
+terrainTrees(cv, s('oaks'), pal, {
+n: 3, kinds: ['gnarl', 'tiers', 'oak'], shapes: ['spread', 'lean'], h: [60, 130], gap: 60, ledges: true,
+look: { mats: ['leaf', 'leaf2'], bloom: { mat: 'bloom', rate: 0.2 } },
+});
 const rr = s('rocks');
 for (let i = 0; i < 2; i++) cv.place(boulder(rr, rr.int(5, 9), rr.int(3, 5), { moss: 'moss' }), pal, rr.int(10, W - 10), { sink: 2, foot: [8, 2] });
 cv.meta.sun = [sx, sy];
 cv.meta.trickles = drips(cv, ss, 3);
 cv.meta.vignette = cave ? 0.45 : 0.3;
+cv.meta.wind = cave ? 0.8 : 1;
 cv.meta.horizon = 120;
 }
 return { compose };
 })();
 // src/visual/env/forest.js
-const __m103 = (() => {
+const __m104 = (() => {
 const { sky } = __m95;
 const { palette, vary, streamOf } = __m100;
 const { heights, raise, fillSolid, blob, paintTerrain, markOpen, surfaceAt, col, drips, ledges, hanging } = __m97;
 const { fog, moss, glowShrooms } = __m96;
 const { fern, log, stump } = __m101;
-const { treeRow, terrainTrees } = __m102;
+const { treeRow, terrainTrees } = __m103;
 const { hash2 } = __m42;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'forest', p);
 const autumn = s('season').next() < 0.3;
 const pal = vary(palette({
-leaf: [autumn ? '#8a5a20' : '#2e6a2a', { spread: 0.6 }], bark: ['#4a3422', { spread: 0.5 }], wood: '#a87a48', rock: '#5e625c',
+leaf: [autumn ? '#8a5a20' : '#2e6a2a', { spread: 0.6 }], leaf2: [autumn ? '#9a4a1e' : '#1e5a3a', { spread: 0.55 }], bark: ['#4a3422', { spread: 0.5 }], wood: '#a87a48', rock: '#5e625c',
 moss: ['#4e7a30', { spread: 0.5 }], fern: [autumn ? '#8a6a26' : '#4e8a34', { spread: 0.55 }],
 }), s('pal'), 1);
 const back = '#9ab8a0';
 sky(cv, 0, H, ['#c8dcc0', '#b0ccb0', '#90b49c', '#78a088']);
 const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 172, amp: 8, freq: 0.012 });
 const rows = s('rows'), far = top.map((v) => v - 14), mid = top.map((v) => v - 6);
-treeRow(cv, rows, pal, { line: far, gap: [20, 26], h: [50, 58], haze: back, fade: 0.68, shape: 'tall' });
+const look = { mats: ['leaf', 'leaf2'], hang: { mat: 'moss', rate: 0.6, len: /** @type {[number, number]} */ ([4, 16]) } };
+treeRow(cv, rows, pal, { line: far, gap: [20, 26], h: [50, 58], haze: back, fade: 0.68, shape: 'tall', look });
 fog(cv, '#b8d0b8', 60, 190, 0.3, rows.int(0, 1e9));
-treeRow(cv, rows, pal, { line: mid, gap: [26, 34], h: [64, 74], haze: back, fade: 0.45, shape: 'tall' });
+treeRow(cv, rows, pal, { line: mid, gap: [26, 34], h: [64, 74], haze: back, fade: 0.45, shape: 'tall', look });
 fog(cv, '#b8d0b8', 80, 200, 0.2, rows.int(0, 1e9));
 hanging(cv, { base: 14, amp: 10, freq: 0.03, seed: s('canopy').int(0, 1e9), fill: autumn ? '#5a3e1a' : '#1e3e22', rim: autumn ? '#7a5422' : '#2a5230', rough: 4 });
 const kx = ts.int(60, W - 140);
@@ -17890,7 +18122,7 @@ moss(cv, { cols: autumn ? ['#c88a2a', '#9a6a22', '#6a4a1a', '#3e2e14'] : ['#6aa8
 roots(cv, s('roots'), '#4a3020', '#6a4630');
 markOpen(cv);
 litter(cv, s, pal);
-terrainTrees(cv, s('oaks'), pal, { n: 8, kinds: ['oak'], shapes: ['tall', 'spread', 'lean'], h: [44, 116], gap: 22, ledges: true });
+terrainTrees(cv, s('oaks'), pal, { n: 8, kinds: ['oak', 'gnarl', 'gnarl', 'tiers'], shapes: ['tall', 'spread', 'lean'], h: [44, 116], gap: 22, ledges: true, look });
 ferns(cv, s, pal);
 const shafts = s('shafts'), sx0 = shafts.int(110, 230);
 cv.light([1, 0.95, 0.7], (x, y) => {
@@ -17903,6 +18135,7 @@ cv.meta.shaft = sx0;
 cv.meta.glows = glowShrooms(cv, { n: 5, cap: '#e8642a', lit: '#ffc070', stem: '#e0d0b0', rgb: [1, 0.5, 0.18], seed: s('shrooms').int(0, 1e9) });
 cv.meta.trickles = drips(cv, ss, 4);
 cv.meta.vignette = 0.35;
+cv.meta.wind = 0.9;
 cv.meta.horizon = 120;
 }
 function roots(cv, rt, dark, lit) {
@@ -17929,18 +18162,18 @@ for (let i = 0, n = 0; i < 14 && n < 6; i++) if (cv.place(fern(fr, fr.int(8, 13)
 return { compose, roots, litter, ferns };
 })();
 // src/visual/env/river.js
-const __m104 = (() => {
+const __m105 = (() => {
 const { sky } = __m95;
 const { palette, vary, streamOf } = __m100;
 const { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, silhouette, treeShape } = __m97;
 const { caveFrame, farPillars, fog, vines, moss, glowShrooms, ledgeTops, veins, WATER_VEINS } = __m96;
 const { reeds, beam, cloud } = __m101;
-const { terrainTrees } = __m102;
+const { terrainTrees } = __m103;
 const { Model } = __m28;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'river', p);
 const pal = vary(palette({
-leaf: ['#4a7a2a', { spread: 0.55 }], bark: ['#4a3a2a', { spread: 0.5 }], reed: ['#4e7a2e', { spread: 0.5 }],
+leaf: ['#4a7a2a', { spread: 0.55 }], leaf2: ['#5e7a46', { spread: 0.5 }], bark: ['#4a3a2a', { spread: 0.5 }], reed: ['#4e7a2e', { spread: 0.5 }],
 cattail: '#7a3a22', timber: '#6a4a2e', cloud: ['#eef2f4', { spread: 0.3 }],
 }), s('pal'), 1);
 const fs = s('frame'), cave = fs.next() < 0.5;
@@ -18000,28 +18233,31 @@ while (cv.liquid[(surfaceAt(cv, x) - 1) * W + x] && x > 0 && x < W - 1) x += sid
 cv.place(reeds(rr, rr.int(12, 20), rr.int(4, 7), { heads: 0.6 }), pal, x + side * 4, { range: 30, step: 2, x: side < 0 ? [2, x + 4] : [x - 4, W - 3] });
 }
 const wr = s('willow');
-terrainTrees(cv, wr, pal, { n: 1, kinds: ['willow'], h: [96, 126], dark: 0.15, x: rx < W / 2 ? [rx + hw + 20, W - 10] : [10, rx - hw - 20] });
-terrainTrees(cv, wr, pal, { n: 3, kinds: ['oak'], shapes: ['spread', 'lean', 'tall'], h: [36, 80], gap: 40, ledges: true });
+const look = { mats: ['leaf', 'leaf2'] };
+terrainTrees(cv, wr, pal, { n: 1, kinds: ['willow'], h: [70, 126], dark: 0.15, ledges: true, x: rx < W / 2 ? [rx + hw + 20, W - 10] : [10, rx - hw - 20], look });
+terrainTrees(cv, wr, pal, { n: 3, kinds: ['oak', 'gnarl'], shapes: ['spread', 'lean', 'tall'], h: [36, 80], gap: 40, ledges: true, look });
 cv.meta.glows = glowShrooms(cv, { n: cave ? 9 : 4, cap: '#2ab8d8', lit: '#b0f4ff', stem: '#c8dcd4', rgb: [0.25, 0.75, 0.95], seed: s('shrooms').int(0, 1e9) });
 cv.meta.vignette = cave ? 0.6 : 0.3;
+cv.meta.wind = cave ? 0.35 : 1;
 cv.meta.horizon = 116;
 }
 return { compose };
 })();
 // src/visual/env/quarry.js
-const __m105 = (() => {
+const __m106 = (() => {
 const { sky } = __m95;
 const { palette, vary, streamOf } = __m100;
 const { fillSolid, blob, ledges, paintTerrain, markOpen, glow, drips, silhouette } = __m97;
 const { caveFrame, farPillars, fog, moss, torch, ledgeTops } = __m96;
 const { crane, ladder, cart, crate, beam, boulder, scaffold, wheel, cloud } = __m101;
+const { terrainTrees } = __m103;
 const { Model } = __m28;
 const { Rng } = __m6;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'quarry', p);
 const pal = vary(palette({
 rock: ['#5a5048', { spread: 0.55 }], timber: ['#6a4428', { spread: 0.5 }], rope: '#4a3a2a', ore: ['#5a4a46', { spread: 0.5 }], metal: '#5a5a62',
-seamC: ['#e8c040', { spread: 0.4, n: 4 }], cloud: ['#eef0f0', { spread: 0.3 }],
+seamC: ['#e8c040', { spread: 0.4, n: 4 }], leaf: ['#56603e', { spread: 0.5 }], leaf2: ['#6e6a4c', { spread: 0.45 }], bark: ['#4a3e34', { spread: 0.45 }], cloud: ['#eef0f0', { spread: 0.3 }],
 }), s('pal'), 0.8);
 const fs = s('frame'), cave = fs.next() < 0.5;
 if (cave) {
@@ -18099,6 +18335,7 @@ const wx = right ? tm.int(40, 120) : tm.int(W - 120, W - 40);
 cv.place(wheel(tm, tm.int(10, 14), tm.int(30, 40)), pal, wx, { roots: [8, 2], range: 80 });
 for (let i = 0; i < 2; i++) cv.place(scaffold(tm, tm.int(16, 26), tm.int(16, 30)), pal, tm.int(60, W - 60), { foot: [12, 2], range: 100 });
 for (let i = 0; i < 2; i++) cv.place(crate(tm.int(8, 11)), pal, tm.int(30, W - 30), { foot: [6, 2] });
+terrainTrees(cv, s('trees'), pal, { n: cave ? 1 : 3, kinds: ['sparse', 'sparse', 'gnarl'], h: [30, 64], gap: 50, ledges: true, dark: cave ? 0.3 : 0, look: { mats: ['leaf', 'leaf2'] } });
 const br = s('rubble');
 for (let i = 0; i < 4; i++) cv.place(boulder(br, br.int(3, 6), br.int(2, 4)), pal, br.int(10, W - 10), { foot: [5, 1], range: 30 });
 const lp = new Model();
@@ -18118,24 +18355,25 @@ torch(cv, x0, y0, h); cv.block(x0 - 3, y0 - 14, x0 + 4, y0 + 1);
 }
 cv.meta.trickles = drips(cv, ss, 5);
 cv.meta.vignette = cave ? 0.6 : 0.3;
+cv.meta.wind = cave ? 0.3 : 0.8;
 cv.meta.horizon = 100;
 }
 return { compose };
 })();
 // src/visual/env/moonfen.js
-const __m106 = (() => {
+const __m107 = (() => {
 const { sky } = __m95;
 const { palette, vary, streamOf } = __m100;
 const { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, glow, silhouette, treeShape } = __m97;
 const { caveFrame, farPillars, fog, vines, moss, ruins, glowShrooms, veins, WATER_VEINS } = __m96;
 const { reeds, spire, cairn } = __m101;
-const { terrainTrees } = __m102;
+const { terrainTrees } = __m103;
 const { fbm2 } = __m42;
 const { pack } = __m24;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'moonfen', p);
 const pal = vary(palette({
-leaf: ['#1e3e34', { spread: 0.45 }], moss: ['#2e5a46', { spread: 0.5 }], bark: ['#2a2420', { spread: 0.4 }], wood: '#5a4a3a', rock: ['#3e4250', { spread: 0.45 }],
+leaf: ['#24483c', { spread: 0.5 }], leaf2: ['#224658', { spread: 0.5 }], bloom: ['#c860a8', { spread: 0.5 }], moss: ['#2e5a46', { spread: 0.5 }], bark: ['#2a2420', { spread: 0.4 }], wood: '#5a4a3a', rock: ['#3e4250', { spread: 0.45 }],
 reed: ['#2e4a34', { spread: 0.45 }], cattail: '#3a2a1e', gem: ['#6ac8f0', { spread: 0.6 }],
 }), s('pal'), 0.8);
 sky(cv, 0, H, ['#04050e', '#0a0f2a', '#121a40', '#1a2250']);
@@ -18191,8 +18429,9 @@ cv.meta.pools = pools.map((p) => pool(cv, p.x - p.hw, p.x + p.hw, p.level, { sur
 cv.meta.pools.forEach((p, i) => veins(cv, p, { ...WATER_VEINS(ss + 4 + i, ['#5a74b0', '#2a3e78', '#22346a', '#1a2a58']), to: '#0c1428', n: 3, reach: 40, rgb: [0.35, 0.45, 0.85] }));
 markOpen(cv);
 const wr = s('willows');
-terrainTrees(cv, wr, pal, { n: 2, kinds: ['willow'], h: [84, 120], dark: 0.25, gap: 120 });
-terrainTrees(cv, wr, pal, { n: 2, kinds: ['dead', 'oak'], shapes: ['lean', 'tall'], h: [36, 70], dark: 0.2, gap: 40, ledges: true });
+const look = { mats: ['leaf', 'leaf2'], bloom: { mat: 'bloom', rate: 0.05 }, hang: { mat: 'moss', rate: 0.4, len: /** @type {[number, number]} */ ([4, 12]) } };
+terrainTrees(cv, wr, pal, { n: 2, kinds: ['wisteria', 'willow'], h: [64, 116], dark: 0.25, gap: 120, look });
+terrainTrees(cv, wr, pal, { n: 2, kinds: ['dead', 'wisteria', 'gnarl'], shapes: ['lean', 'tall'], h: [36, 70], dark: 0.2, gap: 40, ledges: true, look });
 const rr = s('reeds');
 for (const p of pools) for (const side of [-1, 1]) {
 let x = p.x + side * p.hw;
@@ -18217,18 +18456,19 @@ return band * (fbm2(x * 0.02, y * 0.05, fm, 3) > 0.5 ? 1 : 0.5);
 cv.meta.glows = glows;
 cv.meta.moon = [mx, my];
 cv.meta.vignette = 0.6;
+cv.meta.wind = cave ? 0.4 : 0.7;
 cv.meta.horizon = 124;
 }
 return { compose };
 })();
 // src/visual/env/crags.js
-const __m107 = (() => {
+const __m108 = (() => {
 const { sky } = __m95;
 const { palette, vary, streamOf } = __m100;
 const { heights, dip, raise, fillSolid, blob, ledges, paintTerrain, pool, markOpen, glow, drips, silhouette, col, far } = __m97;
 const { caveFrame, farPillars, fog, moss, fall, ledgeTops, veins, LAVA_VEINS } = __m96;
 const { basalt, spire, cloud } = __m101;
-const { terrainTrees } = __m102;
+const { terrainTrees } = __m103;
 const { fbm1 } = __m42;
 const { Model, lumpy } = __m28;
 const LAVA = ['#fff0a0', '#ffc040', '#ff8a2a', '#e05a18', '#a8320e'];
@@ -18236,7 +18476,7 @@ function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'crags', p);
 const pal = vary(palette({
 rock: ['#3a2e34', { spread: 0.5 }], lava: ['#e05a18', { spread: 0.7, n: 7, warm: 0.6 }], bark: ['#2a1e1a', { spread: 0.35 }],
-gem: ['#ff8a3a', { spread: 0.55 }], wood: '#3a2a20', cloud: ['#4a3a3e', { spread: 0.4 }],
+gem: ['#ff8a3a', { spread: 0.55 }], leaf: ['#4e4c1c', { spread: 0.5 }], leaf2: ['#6e6420', { spread: 0.5 }], bloom: ['#f08a2a', { spread: 0.4 }], wood: '#3a2a20', cloud: ['#4a3a3e', { spread: 0.4 }],
 }), s('pal'), 0.6);
 const fs = s('frame'), cave = fs.next() < 0.5;
 let frame = null;
@@ -18316,6 +18556,7 @@ x = at.fx + 6;
 const gr = s('glass');
 for (let i = 0; i < 2; i++) cv.place(spire(gr, gr.int(8, 13)), pal, gr.int(10, W - 10), { foot: [4, 2], range: 30 });
 const dr = s('brush');
+terrainTrees(cv, dr, pal, { n: 2, kinds: ['gnarl', 'sparse'], h: [34, 64], gap: 60, ledges: true, look: { mats: ['leaf', 'leaf2'], bloom: { mat: 'bloom', rate: 0.08 } } });
 terrainTrees(cv, dr, pal, { n: 3, kinds: ['dead'], h: [18, 34], gap: 30, ledges: true });
 const vr = s('vents'), vents = [];
 for (let i = 0; i < 2; i++) {
@@ -18330,23 +18571,24 @@ vents.push({ x: at.fx, y: at.fy - 10, r: 4 });
 cv.meta.vents = vents;
 cv.meta.trickles = drips(cv, ss, 4);
 cv.meta.vignette = cave ? 0.55 : 0.35;
+cv.meta.wind = cave ? 0.3 : 0.6;
 cv.meta.horizon = 120;
 }
 return { compose };
 })();
 // src/visual/env/netherwood.js
-const __m108 = (() => {
+const __m109 = (() => {
 const { sky } = __m95;
 const { palette, vary, streamOf } = __m100;
 const { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, drips, ledges, glow } = __m97;
 const { caveFrame, farPillars, fog, vines, moss, glowShrooms, veins, WATER_VEINS } = __m96;
 const { mushroom } = __m101;
-const { treeRow, terrainTrees } = __m102;
-const { roots, litter, ferns } = __m103;
+const { treeRow, terrainTrees } = __m103;
+const { roots, litter, ferns } = __m104;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'netherwood', p);
 const pal = vary(palette({
-leaf: ['#1e4a46', { spread: 0.55 }], bark: ['#2e2630', { spread: 0.45 }], wood: '#7a6a5a', rock: '#4a4a56',
+leaf: ['#1e4a46', { spread: 0.55 }], leaf2: ['#24405a', { spread: 0.5 }], bloom: ['#b080f0', { spread: 0.4 }], bark: ['#2e2630', { spread: 0.45 }], wood: '#7a6a5a', rock: '#4a4a56',
 moss: ['#2e6a5a', { spread: 0.5 }], fern: ['#2a6a5e', { spread: 0.5 }],
 stem: ['#c8c0d0', { spread: 0.4 }], cap: ['#6a3aa0', { spread: 0.6 }],
 }), s('pal'), 1);
@@ -18356,9 +18598,10 @@ farPillars(cv, { n: 8, fill: '#0c141c', rim: '#121c26', seed: s('far1').int(0, 1
 fog(cv, '#1c2c40', 80, 200, 0.3, s('fog1').int(0, 1e9));
 const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 172, amp: 8, freq: 0.012 });
 const rows = s('rows'), far = top.map((v) => v - 14), mid = top.map((v) => v - 6);
-treeRow(cv, rows, pal, { line: far, gap: [22, 30], h: [48, 58], haze: back, fade: 0.72, shape: 'tall' });
+const look = { mats: ['leaf', 'leaf2'], bloom: { mat: 'bloom', rate: 0.04 }, hang: { mat: 'moss', rate: 0.5, len: /** @type {[number, number]} */ ([4, 14]) } };
+treeRow(cv, rows, pal, { line: far, gap: [22, 30], h: [48, 58], haze: back, fade: 0.72, shape: 'tall', look });
 fog(cv, '#1c2c40', 60, 190, 0.22, rows.int(0, 1e9));
-treeRow(cv, rows, pal, { line: mid, gap: [28, 38], h: [60, 72], haze: back, fade: 0.55, shape: 'lean' });
+treeRow(cv, rows, pal, { line: mid, gap: [28, 38], h: [60, 72], haze: back, fade: 0.55, shape: 'lean', look });
 fog(cv, '#24344a', 80, 200, 0.15, rows.int(0, 1e9));
 const fs = s('frame');
 const frame = caveFrame(cv, {
@@ -18393,7 +18636,7 @@ veins(cv, cv.meta.pool, { ...WATER_VEINS(ss + 4, ['#6a5ab0', '#2e2a5a', '#1e1e3a
 }
 markOpen(cv);
 litter(cv, s, pal);
-terrainTrees(cv, s('trees'), pal, { n: 5, kinds: ['oak'], shapes: ['tall', 'lean'], h: [44, 100], gap: 30, ledges: true, dark: 0.15 });
+terrainTrees(cv, s('trees'), pal, { n: 5, kinds: ['oak', 'gnarl', 'willow'], shapes: ['tall', 'lean'], h: [44, 100], gap: 30, ledges: true, dark: 0.15, look });
 const mr = s('mushrooms'), glows = [];
 for (let i = 0; i < 3; i++) {
 const h = mr.int(18, 34), r = Math.round(h * mr.range(0.4, 0.55));
@@ -18407,6 +18650,7 @@ glows.push(...glowShrooms(cv, { n: 9, cap: '#9a5ae8', lit: '#f0c8ff', stem: '#c8
 cv.meta.glows = glows;
 cv.meta.trickles = drips(cv, ss, 4);
 cv.meta.vignette = 0.6;
+cv.meta.wind = 0.3;
 cv.meta.horizon = 120;
 }
 return { compose };
@@ -18417,13 +18661,13 @@ const { Canvas, SCENE_W, SCENE_H } = __m95;
 const { hashString } = __m6;
 const { finish } = __m96;
 const meadow = __m99;
-const forest = __m103;
-const river = __m104;
-const quarry = __m105;
-const moonfen = __m106;
-const crags = __m107;
-const netherwood = __m108;
-const ENV_VERSION = 5;
+const forest = __m104;
+const river = __m105;
+const quarry = __m106;
+const moonfen = __m107;
+const crags = __m108;
+const netherwood = __m109;
+const ENV_VERSION = 6;
 const COMPOSERS = { meadow, forest, netherwood, river, quarry, moonfen, crags };
 const cache = new Map();
 function composeScene(region, seed) {
@@ -18431,12 +18675,13 @@ const id = COMPOSERS[region] ? region : 'forest';
 const cv = new Canvas(hashString(`scene:${seed}:${id}`));
 COMPOSERS[id].compose(cv, String(seed));
 finish(cv, cv.meta.vignette ?? 0.55);
-const px = cv.pix.px;
+for (const px of cv.sw ? [cv.pix.px, cv.sw.bare] : [cv.pix.px]) {
 for (let y = 1; y < SCENE_H; y++) for (let x = 0; x < SCENE_W; x++) if (!(px[y * SCENE_W + x] >>> 24)) px[y * SCENE_W + x] = px[(y - 1) * SCENE_W + x] | 0xff000000;
+}
 for (let x = 0; x < SCENE_W; x++) { cv.open[x] = 0; cv.open[(SCENE_H - 1) * SCENE_W + x] = 0; cv.open[(SCENE_H - 2) * SCENE_W + x] = 0; }
 let top = SCENE_H;
 for (let k = 0; k < cv.open.length; k++) if (cv.open[k]) { top = Math.floor(k / SCENE_W); break; }
-return { pix: cv.pix, open: cv.open, depth: cv.depth, solid: cv.solid, liquid: cv.liquid, rock: cv.rock, trees: cv.trees, props: cv.props, top, meta: cv.meta };
+return { pix: cv.pix, open: cv.open, depth: cv.depth, solid: cv.solid, liquid: cv.liquid, rock: cv.rock, trees: cv.trees, props: cv.props, top, meta: cv.meta, sway: cv.swayData() };
 }
 function sceneOf(region, seed) {
 const id = COMPOSERS[region] ? region : 'forest';
@@ -18454,6 +18699,7 @@ return { ENV_VERSION, composeScene, sceneOf, SCENE_W, SCENE_H };
 const __m93 = (() => {
 const { sceneOf, SCENE_W, SCENE_H } = __m94;
 const { MIN_HIT } = __m83;
+const { hashString } = __m6;
 const canvases = new Map();
 function sceneCanvas(region, seed) {
 const k = region + ':' + seed;
@@ -18464,6 +18710,58 @@ if (canvases.size >= 6) canvases.delete(/** @type {string} */ (canvases.keys().n
 canvases.set(k, cv);
 }
 return cv;
+}
+function windAt(x, t, ph) {
+const breeze = 0.55 * Math.sin(t * 0.11 + ph) + 0.25 * Math.sin(t * 0.37 + ph * 2.1) + 0.15, dir = breeze >= 0 ? 1 : -1;
+const wave = 0.3 * Math.sin(t * 1.4 - dir * x * 0.03 + ph) + 0.15 * Math.sin(t * 2.7 - dir * x * 0.07 + ph * 3);
+let gust = 0;
+for (let i = 0; i < 2; i++) {
+const period = 9 + i * 5.3, at = (t + i * 3.7 + ph) / period, c = Math.floor(at), u = at - c, s = rnd(c * 2 + i, ph);
+if (s < 0.35) continue;
+const fx = dir > 0 ? -90 + u * (SCENE_W + 180) : SCENE_W + 90 - u * (SCENE_W + 180);
+gust += (s - 0.2) * 1.5 * Math.exp(-(((x - fx) / 60) ** 2));
+}
+return breeze + wave * (0.5 + Math.abs(breeze)) + dir * gust;
+}
+let shiftBuf = new Float32Array(0), tipBuf = new Float32Array(0);
+function swayPixels(sw, out, t, wind = 1, ph = 0) {
+out.set(sw.bare);
+const G = sw.amp.length, W = SCENE_W;
+if (shiftBuf.length < G) { shiftBuf = new Float32Array(G); tipBuf = new Float32Array(G); }
+for (let g = 0; g < G; g++) {
+const x = sw.gx[g], v = windAt(x, t, ph) * wind, a = sw.amp[g];
+shiftBuf[g] = a ? Math.max(-1.8, Math.min(1.8, a * (v * 0.7 + 0.15 * wind * Math.sin(t * (2.6 + (g % 5) * 0.37) + g * 1.7)))) : 0;
+tipBuf[g] = sw.hang[g] * (windAt(x, t - 0.4, ph) * wind * 0.9 + 0.25 * wind * Math.sin(t * 2.1 + g * 2.3));
+}
+for (let i = 0; i < sw.k.length; i++) {
+const g = sw.g[i], k = sw.k[i], dx = Math.round(shiftBuf[g] + tipBuf[g] * sw.f[i]), x = k % W + dx;
+if (x < 0 || x >= W) continue;
+if (sw.layer[k + dx] > sw.s[i]) continue;
+out[k + dx] = sw.c[i];
+}
+}
+const frames = new Map();
+const SWAY_RATE = 12;
+function sceneFrame(region, seed, t) {
+const sc = sceneOf(region, seed);
+if (!sc.sway) return sceneCanvas(region, seed);
+const key = region + ':' + seed;
+let f = frames.get(key);
+if (!f) {
+const cv = document.createElement('canvas');
+cv.width = SCENE_W; cv.height = SCENE_H;
+const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')), img = ctx.createImageData(SCENE_W, SCENE_H);
+f = { cv, ctx, img, buf: new Uint32Array(img.data.buffer), step: -1 };
+if (frames.size >= 3) frames.delete(/** @type {string} */ (frames.keys().next().value));
+frames.set(key, f);
+}
+const step = Math.floor(t * SWAY_RATE);
+if (step !== f.step) {
+f.step = step;
+swayPixels(sc.sway, f.buf, step / SWAY_RATE, sc.meta.wind ?? 1, (hashString(seed) % 1000) / 100);
+f.ctx.putImageData(f.img, 0, 0);
+}
+return f.cv;
 }
 const ROOM = 2;
 class PlantGround {
@@ -18699,7 +18997,7 @@ if (lava) halo(ctx, (lava.x0 + lava.x1) / 2, lava.level, (lava.x1 - lava.x0) / 2
 trickles(ctx, meta.trickles || [], t, '#5a4e4c', '#3e3438');
 }
 }
-return { sceneCanvas, PlantGround, plantBox, hitPlant, animateRegion, SCENE_W, SCENE_H };
+return { sceneCanvas, windAt, swayPixels, sceneFrame, PlantGround, plantBox, hitPlant, animateRegion, SCENE_W, SCENE_H };
 })();
 // src/ui/views/wilds.js
 const __m92 = (() => {
@@ -18709,7 +19007,7 @@ const { audio } = __m4;
 const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, marksIn, moistureEnv, DAY_PART_NAME } = __m52;
 const { equipmentById } = __m49;
 const { RANKS } = __m49;
-const { sceneCanvas, animateRegion, PlantGround, plantBox, hitPlant, SCENE_W, SCENE_H } = __m93;
+const { sceneCanvas, sceneFrame, animateRegion, PlantGround, plantBox, hitPlant, SCENE_W, SCENE_H } = __m93;
 const { plantCanvas, plantFrameOf, plantGlow, silhouetteOf, ingredientSprite, speciesOf } = __m83;
 const { EFFECT_BY_KEY } = __m14;
 function sparkle(ctx, x, y, u) {
@@ -18999,7 +19297,7 @@ frame(dt) {
 if (!this.ctx || !this.bg) return;
 this.time += dt;
 const ctx = this.ctx, st = this.lab.state, now = Date.now();
-ctx.drawImage(this.bg, 0, 0);
+ctx.drawImage(sceneFrame(this.region, st.seed, this.time), 0, 0);
 animateRegion(ctx, this.region, this.time, st.seed);
 for (const k of marksIn(st.gathering, this.region, now)) this.drawMark(ctx, k);
 for (const p of this.field.slice().sort((a, b) => a.y - b.y)) if (p.key) this.drawPlant(ctx, p);
@@ -19168,7 +19466,7 @@ this.grow();
 return { WildsView };
 })();
 // src/rendering/rabbit.js
-const __m110 = (() => {
+const __m111 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m77;
 const { RABBIT_MARKS } = __m51;
@@ -20114,7 +20412,7 @@ ctx.fillRect(fx, fy, RABBIT_W, RABBIT_H);
 return { RABBIT_W, RABBIT_H, rabbitLevels, rabbitPose, rabbitPace, rabbitAnchors, rabbitSpriteKey, drawRabbitSprite, clearRabbitSprites, drawRabbit };
 })();
 // src/rendering/hutch-ground.js
-const __m113 = (() => {
+const __m114 = (() => {
 const GROUND_Y0 = 56;
 const GROUND = [
 [[18,156]],
@@ -20141,11 +20439,11 @@ const GROUND = [
 return { GROUND_Y0, GROUND };
 })();
 // src/rendering/hutch-scene.js
-const __m112 = (() => {
+const __m113 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m77;
-const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m110;
-const { GROUND, GROUND_Y0 } = __m113;
+const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m111;
+const { GROUND, GROUND_Y0 } = __m114;
 const HUTCH_W = 224;
 const HUTCH_H = 92;
 const HUTCH_BODIES = 3;
@@ -20521,13 +20819,13 @@ ctx.drawImage(this.bg, 0, 0);
 return { HUTCH_W, HUTCH_H, HUTCH_BODIES, paintHutch, paintHutchFront, onGround, HutchScene };
 })();
 // src/ui/views/hutch.js
-const __m111 = (() => {
+const __m112 = (() => {
 const { readingSteadiness } = __m50;
 const { h, btn, clear, toast, modal, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { drawRabbit, RABBIT_W, RABBIT_H } = __m110;
-const { HutchScene, HUTCH_W, HUTCH_H } = __m112;
+const { drawRabbit, RABBIT_W, RABBIT_H } = __m111;
+const { HutchScene, HUTCH_W, HUTCH_H } = __m113;
 const { EFFECT_BY_KEY } = __m14;
 const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral, RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE, BURNS } = __m51;
 const { PURGE_BREW_TIME } = __m5;
@@ -20856,7 +21154,7 @@ if (this._live >= 0.25) { this._live = 0; this.live(); }
 return { CHANNELS, HutchPanel };
 })();
 // src/ui/views/trials.js
-const __m109 = (() => {
+const __m110 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
@@ -20868,9 +21166,9 @@ const { summarize, addSamples, EVIDENCE_TEXT, evidenceRank, requirementEvidence 
 const { evidenceOf } = __m69;
 const { shortName } = __m45;
 const LEVEL_SHORT = { preliminary: '1 reading', repeated: 'repeated', corroborated: 'corroborated', certified: 'certified' };
-const { drawRabbit } = __m110;
+const { drawRabbit } = __m111;
 const { focusRabbit, findRabbit, rabbitSnap, decodeSnap, lookFromSeed, RABBIT_MARKS } = __m51;
-const { HutchPanel } = __m111;
+const { HutchPanel } = __m112;
 const REPLAY_T = 3.2;
 class TrialsView {
 constructor(lab) {
@@ -21247,7 +21545,7 @@ return `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2
 return { TrialsView, EFFECTS, EFFECT_INDEX };
 })();
 // src/ui/views/book.js
-const __m114 = (() => {
+const __m115 = (() => {
 const { h, btn, clear } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
@@ -21385,8 +21683,8 @@ const trade = __m89;
 const { Tutorial } = __m90;
 const { CounterView } = __m91;
 const { WildsView } = __m92;
-const { TrialsView } = __m109;
-const { BookView } = __m114;
+const { TrialsView } = __m110;
+const { BookView } = __m115;
 const { shortName } = __m45;
 const REQ_ICON = { temperature: 'thermo', quantity: 'flask', purity: 'pure' };
 const TOOL_DEFS = [
@@ -23124,7 +23422,7 @@ void dominantEffect;
 return { VIEWS, LabScreen };
 })();
 // src/materials/reference.js
-const __m116 = (() => {
+const __m117 = (() => {
 const { completeMaterial } = __m10;
 const REF = {};
 const add = (d) => (REF[d.id] = completeMaterial(d));
@@ -23162,11 +23460,11 @@ const refLookup = (id) => REF[id];
 return { REF, refLookup };
 })();
 // src/ui/menu.js
-const __m115 = (() => {
+const __m116 = (() => {
 const { h, btn } = __m2;
 const { Renderer } = __m76;
 const { Simulation } = __m54;
-const { REF, refLookup } = __m116;
+const { REF, refLookup } = __m117;
 const { hasSave, loadGame } = __m73;
 const { audio } = __m4;
 class MenuScreen {
@@ -23255,7 +23553,7 @@ const { sandboxIngredients } = __m7;
 const { EQUIPMENT } = __m49;
 const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m73;
 const { LabScreen } = __m74;
-const { MenuScreen } = __m115;
+const { MenuScreen } = __m116;
 const { openSettings, openHelp } = __m87;
 const { Rng } = __m6;
 const { normalizeTrials } = __m50;
@@ -23372,7 +23670,7 @@ openHelp();
 return { App, icon };
 })();
 // src/ui/textures.js
-const __m117 = (() => {
+const __m118 = (() => {
 const { Rng } = __m6;
 function texture(w, h, paint) {
 const cv = document.createElement('canvas');
@@ -23416,7 +23714,7 @@ return { installTextures };
 // src/main.js
 const __m0 = (() => {
 const { App } = __m1;
-const { installTextures } = __m117;
+const { installTextures } = __m118;
 installTextures();
 const root = document.getElementById('app');
 const app = new App(root);

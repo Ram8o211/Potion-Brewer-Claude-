@@ -20,7 +20,7 @@ import { audio } from '../../audio/audio.js';
 import { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, marksIn, moistureEnv, DAY_PART_NAME } from '../../game/gathering.js';
 import { equipmentById } from '../../game/equipment.js';
 import { RANKS } from '../../game/equipment.js';
-import { sceneCanvas, animateRegion, PlantGround, plantBox, hitPlant, SCENE_W, SCENE_H } from '../../rendering/wild-scene.js';
+import { sceneCanvas, sceneFrame, animateRegion, PlantGround, plantBox, hitPlant, SCENE_W, SCENE_H } from '../../rendering/wild-scene.js';
 import { plantCanvas, plantFrameOf, plantGlow, silhouetteOf, ingredientSprite, speciesOf } from '../../rendering/species-sprites.js';
 import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
 
@@ -387,7 +387,8 @@ export class WildsView {
     if (!this.ctx || !this.bg) return;
     this.time += dt;
     const ctx = this.ctx, st = this.lab.state, now = Date.now();
-    ctx.drawImage(this.bg, 0, 0);
+    // the painting, its leaves swaying in the wind
+    ctx.drawImage(sceneFrame(this.region, st.seed, this.time), 0, 0);
     animateRegion(ctx, this.region, this.time, st.seed);
     // the marks of past harvests, fading into the ground, then the plants, the far ones first
     for (const k of marksIn(st.gathering, this.region, now)) this.drawMark(ctx, k);

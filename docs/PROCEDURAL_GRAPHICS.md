@@ -76,6 +76,32 @@ still limited.
   rock, a liquid, a prop or another tree. Whisperwood grows up to eight, of every
   habit and height; the other regions a few (willows by the water, dead
   trees in the bog and the crags).
+* **Leaf clusters** (`env/foliage.js`). Foliage follows the pixel
+  artist's recipe: a few simple leaf shapes, each turned, scaled, its
+  outline nudged pixel by pixel and sometimes cropped; coloured with a
+  little jitter from two of the region's leaf ramps; laid at slightly
+  different offsets into clusters (a dark mass in shade, the leaves lit
+  from the upper left, lit flecks, loose leaves at the fringe, the
+  region's blossoms). Pads and crowns are built of clusters, and the
+  gnarled trees (`grove`) put them at the tips of a twisted trunk's
+  branches in five styles: dome, tiers, weeping willow, wisteria and
+  sparse. Each region has its own look: Whisperwood dark green hung with
+  moss, the Meadow bright with yellow blossom, Willow Bank muted with a
+  weeping willow, Moonfen cold blue-green with pink wisteria, the Crags
+  olive flecked with orange, the Quarry sparse and dusty, the Netherwood
+  teal with violet specks.
+* **Leaves swaying in the wind** (`swayPixels` in
+  `rendering/wild-scene.js`). Every foliage part carries its sway (a
+  cluster moves as one, higher ones more; a hanging strand — moss,
+  frond, vine, blossom — bends further toward its end). While stamping,
+  the canvas keeps the swaying pixels apart from a *bare* painting (what
+  lies behind them; inside a crown, its shade) and the stamp that last
+  painted each pixel, so a leaf only moves over what was painted before
+  it. Each frame (12 a second) the wind — a breeze slowly rising,
+  falling and turning, waves running through the leaves and gusts of
+  random strength sweeping across — shifts every group sideways. Open-air
+  regions blow hardest; caverns only stir in their draughts. With no wind
+  the frame is the painting exactly.
 * **Scenery set down where it fits** (`Canvas.place` in `env/paint.js`).
   Logs, stumps, ferns, fences, hives, standing stones, boulders, reeds,
   the quarry's timberwork, cairns, crystals, basalt columns, vents and
@@ -160,7 +186,8 @@ src/visual/                     pure, DOM-free, deterministic
                   far pillars, ruins, mist, roof, stalactites, walls,
                   vines, moss, glowing mushrooms, torches, falls, veins
                   seeping from pools, the vignette and lights; stone.js: the cobbled stone;
-                  objects.js: branch trees and foliage pads, willows,
+                  objects.js: branch trees and foliage pads, pines,
+                  foliage.js: leaf clusters, hanging strands, gnarled trees,
                   shrubs, rocks, reeds, ferns, logs, clouds, crane, cart,
                   scaffolds, wheel…; trees.js: background rows and
                   terrain trees fitted to the terrain; scene.js: cache)
