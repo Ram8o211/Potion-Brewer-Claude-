@@ -20,7 +20,8 @@ import { audio } from '../../audio/audio.js';
 import { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, marksIn, moistureEnv, DAY_PART_NAME } from '../../game/gathering.js';
 import { equipmentById } from '../../game/equipment.js';
 import { RANKS } from '../../game/equipment.js';
-import { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, SCENE_W, SCENE_H } from '../../rendering/wild-scene.js';
+import { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, disturb, calm, SCENE_W, SCENE_H } from '../../rendering/wild-scene.js';
+import { sceneOf } from '../../visual/env/scene.js';
 import { plantCanvas, plantFrameOf, plantGlow, emitColour, silhouetteOf, ingredientSprite, speciesOf, mountsOf, variantOf } from '../../rendering/species-sprites.js';
 import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
 import { hashString } from '../../core/rng.js';
@@ -78,6 +79,18 @@ export class WildsView {
     this.mode = 'harvest';
     /** drops of water and splashes in flight @type {{x:number, y:number, vx:number, vy:number, t:number, life:number, gy:number}[]} */
     this.drops = [];
+    /** what a swipe has shaken loose: plant id → the fruit, bloom or piece falling to the ground, then lying there to be tapped @type {Record<string, {x:number, y:number, vx:number, vy:number, gy:number, landed:boolean, bounces:number, t:number}>} */
+    this.fallen = {};
+    /** plant id → the push it was given (signed strength, scene time): it bends and rings for a few seconds @type {Record<string, {a:number, t0:number}>} */
+    this.shakes = {};
+    /** plant id → how much it has been shaken; a ripe one lets go at 1 @type {Record<string, number>} */
+    this.energy = {};
+    /** bits of leaf and pulp in flight @type {{x:number, y:number, vx:number, vy:number, t:number, c:string}[]} */
+    this.bits = [];
+    /** the pointer being dragged over the scene @type {{x:number, y:number, dist:number}|null} */
+    this.drag = null;
+    /** material id → its picture as a small fallen thing @type {Record<string, HTMLCanvasElement>} */
+    this.itemCv = {};
   }
 
   build() {
@@ -88,9 +101,13 @@ export class WildsView {
     this.canvas = /** @type {HTMLCanvasElement} */ (h('canvas', { width: String(SCENE_W), height: String(SCENE_H), class: 'scene', 'aria-label': 'Region scene: tap a plant to gather it, or to water it in watering mode' }));
     this.ctx = /** @type {CanvasRenderingContext2D} */ (this.canvas.getContext('2d'));
     this.ctx.imageSmoothingEnabled = false;
-    this.canvas.addEventListener('pointerdown', (e) => this.tapScene(e));
-    this.canvas.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') this.setHover(this.depositAt(e)); });
-    this.canvas.addEventListener('pointerleave', () => this.setHover(null));
+    // a finger sliding over the scene shakes what grows in it; a tap picks what has fallen
+    this.canvas.style.touchAction = 'none';
+    this.canvas.addEventListener('pointerdown', (e) => this.pressScene(e));
+    this.canvas.addEventListener('pointermove', (e) => this.moveScene(e));
+    this.canvas.addEventListener('pointerup', (e) => this.releaseScene(e));
+    this.canvas.addEventListener('pointercancel', () => { this.drag = null; });
+    this.canvas.addEventListener('pointerleave', () => { this.setHover(null); });
     this.info = h('div', { class: 'region-info small' });
     this.list = h('div', { class: 'deposits' });
     this.foot = h('div', { class: 'small muted wilds-foot' });
@@ -143,7 +160,7 @@ export class WildsView {
       const ok = this.unlocked(r);
       tabs.appendChild(btn(r.name, () => {
         if (!ok) { toast(r.name, `The guild grants passage at the rank of ${RANKS[r.rank].name}.`, 'lock'); return; }
-        this.region = r.id; this.bgKey = ''; audio.play('page'); this.refresh();
+        this.region = r.id; this.bgKey = ''; this.fallen = {}; this.shakes = {}; this.energy = {}; calm(); audio.play('page'); this.refresh();
       }, { cls: (this.region === r.id ? 'active ' : '') + (ok ? '' : 'locked'), icon: ok ? (r.magical ? 'wisp' : r.id === 'quarry' ? 'pick' : r.id === 'river' ? 'drop' : r.id === 'meadow' ? 'rose' : r.id === 'netherwood' ? 'shroom' : 'tree') : 'lock', act: 'region-' + r.id }));
     }
     const region = REGIONS.find((r) => r.id === this.region);
@@ -178,6 +195,8 @@ export class WildsView {
       const when = lab.sandbox ? 'never runs out' : this.when(s, can, d);
       this.can[d.id] = locked || can >= 5;
       this.closed[d.id] = !lab.sandbox && !plan.open;
+      // an ingredient is listed once it has been gathered for the first time (its plants still grow in the scene)
+      if (!lab.sandbox && !st.found[d.materialId]) continue;
       const g = btn(locked ? RANKS[d.rank].name : `${plan.method.verb} +${take} ml`, () => this.gather(d), { cls: 'gold', icon: locked ? 'lock' : plan.method.icon, disabled: locked || (!lab.sandbox && can < 5), act: 'gather-' + d.id });
       const barI = h('i', { style: { width: Math.round((lab.sandbox ? 1 : s.fraction) * 100) + '%' } });
       const meta = h('div', { class: 'meta', text: `${stock} · ${when}` });
@@ -206,6 +225,7 @@ export class WildsView {
       card.addEventListener('pointerleave', () => { if (this.hover === d.id) this.setHover(null); });
       list.appendChild(card);
     }
+    if (!list.childElementCount) list.appendChild(h('div', { class: 'muted small empty-list', text: 'Nothing gathered here yet. Slide a finger across a ripe plant to shake its fruit loose, then tap what falls. Each ingredient is listed here once you have gathered it for the first time.' }));
     clear(this.foot).append(`Room for ${st.cap.storage} ml of each ingredient. ${st.has('satchel') ? 'Your satchel carries half as much again. ' : ''}Only mature plants can be harvested. New sprouts come up at random spots until the ground is full again, even while the game is closed, and each new day brings every plant on. Living plants grow faster in damp soil: water them (rain does it for you), and they drink it up over a few hours — a riverbank or a bog stays damp far longer than a meadow or the crags. Stones, crystals and shells do not grow: they turn up again whole, with time and the weather.`);
     this.paintBg();
     this.grow();
@@ -303,8 +323,8 @@ export class WildsView {
     const r = this.canvas.getBoundingClientRect();
     const x = ((e.clientX - r.left) / r.width) * SCENE_W, y = ((e.clientY - r.top) / r.height) * SCENE_H;
     // a mature plant before a growing one in front of it
-    const ripe = this.field.filter((p) => p.stage === 'mature');
-    return hitPlant(ripe, (p) => this.frameOf(p), x, y) || hitPlant(this.field, (p) => this.frameOf(p), x, y);
+    const here = this.field.filter((p) => !this.fallen[p.id]), ripe = here.filter((p) => p.stage === 'mature');
+    return hitPlant(ripe, (p) => this.frameOf(p), x, y) || hitPlant(here, (p) => this.frameOf(p), x, y);
   }
 
   /** @param {PointerEvent} e */
@@ -326,7 +346,7 @@ export class WildsView {
         : d.botanical ? `Nothing is mature yet. The next plant matures in ${formatWait(r.nextIn || 60000)}.`
         : `Nothing to be found here yet. The next one turns up in ${formatWait(r.nextIn || 60000)}.`;
       toast(r.reason === 'growing' ? 'Not ripe yet' : 'Nothing to gather', why, 'satchel');
-      return;
+      return false;
     }
     audio.play(plan.method.sound);
     setTimeout(() => audio.play('select'), 140);
@@ -342,15 +362,111 @@ export class WildsView {
     if (lab.tutorial) lab.tutorial.notify('gather', d.materialId);
     // a first find gets its own place on the shelf
     if (!lab.jarEls[d.materialId]) lab.buildShelf(); else lab.updateShelf();
+    if (r.plant) { delete this.fallen[r.plant]; delete this.shakes[r.plant]; delete this.energy[r.plant]; }
     lab.save();
     this.refresh();
+    return true;
+  }
+
+  /** The scene position of a pointer event. @param {PointerEvent} e */
+  scenePoint(e) {
+    const r = this.canvas.getBoundingClientRect();
+    return { x: ((e.clientX - r.left) / r.width) * SCENE_W, y: ((e.clientY - r.top) / r.height) * SCENE_H };
+  }
+
+  /** The fallen thing under a point, if any (a generous box: it is small). @param {number} x @param {number} y */
+  itemAt(x, y) {
+    for (const [id, it] of Object.entries(this.fallen)) if (Math.abs(x - it.x) <= 9 && Math.abs(y - it.y) <= 10) return this.field.find((p) => p.id === id) || null;
+    return null;
+  }
+
+  /** @param {PointerEvent} e */
+  pressScene(e) {
+    if (this.mode === 'water') { this.waterAt(e); return; }
+    const q = this.scenePoint(e);
+    this.drag = { x: q.x, y: q.y, dist: 0 };
+    try { this.canvas.setPointerCapture(e.pointerId); } catch { /* a synthetic pointer */ }
+  }
+
+  /** @param {PointerEvent} e */
+  moveScene(e) {
+    const q = this.scenePoint(e);
+    if (this.drag) {
+      const len = Math.hypot(q.x - this.drag.x, q.y - this.drag.y);
+      this.drag.dist += len;
+      // moving fast enough to shake something
+      if (len > 0.8) this.sweep(this.drag.x, this.drag.y, q.x, q.y);
+      this.drag.x = q.x; this.drag.y = q.y;
+      return;
+    }
+    if (e.pointerType === 'mouse') {
+      this.setHover(this.depositAt(e));
+      if (this.itemAt(q.x, q.y)) this.canvas.style.cursor = 'pointer';
+    }
+  }
+
+  /** @param {PointerEvent} e */
+  releaseScene(e) {
+    const d = this.drag;
+    this.drag = null;
+    if (d && d.dist < 6) this.tapScene(e);
+  }
+
+  /**
+   * A finger slid from (x0, y0) to (x1, y1): the leaves round it swing, every
+   * plant it brushes bends and rings (further the faster the slide) and a
+   * ripe one shaken hard enough lets go of what it bears.
+   */
+  sweep(x0, y0, x1, y1) {
+    const dx = x1 - x0, speed = Math.hypot(dx, y1 - y0), dir = dx === 0 ? (this.time * 7 % 2 < 1 ? 1 : -1) : Math.sign(dx);
+    const a = dir * Math.min(3.2, 0.5 + speed * 0.45);
+    disturb((x0 + x1) / 2, a * 0.9, this.time);
+    for (const p of this.field) {
+      if (this.fallen[p.id]) continue;
+      const f = this.frameOf(p);
+      if (!f) continue;
+      const left = p.x * SCENE_W - f.ax - 5, top = p.y * SCENE_H - f.ay - 5, right = left + f.w + 10, bottom = top + f.h + 10;
+      const hit = [0, 0.5, 1].some((t) => { const px = x0 + (x1 - x0) * t, py = y0 + (y1 - y0) * t; return px >= left && px <= right && py >= top && py <= bottom; });
+      if (!hit) continue;
+      const cur = this.shakes[p.id];
+      if (!cur || Math.abs(a) >= Math.abs(cur.a) * Math.exp(-(this.time - cur.t0) * 1.5)) this.shakes[p.id] = { a, t0: this.time };
+      this.energy[p.id] = (this.energy[p.id] || 0) + speed / 7;
+      if (p.stage === 'mature' && !this.closed[p.dep.id] && this.energy[p.id] >= 1) this.detach(p);
+    }
+  }
+
+  /** A ripe plant lets go of what it bears: it falls from where it grew to the ground below. @param {any} p */
+  detach(p) {
+    const f = this.frameOf(p);
+    if (!f || this.fallen[p.id]) return;
+    const hangs = p.mount === 'hang' || p.mount === 'bough' || p.mount === 'ceiling';
+    const x = Math.round(p.x * SCENE_W - f.ax + f.w / 2 + (p.mount === 'wall' || p.mount === 'trunk' ? (p.flip ? -2 : 2) : 0));
+    const y = Math.round(p.y * SCENE_H - f.ay + f.h * (hangs ? 0.78 : 0.45));
+    const sc = sceneOf(this.region, this.lab.state.seed);
+    const xi = Math.max(0, Math.min(SCENE_W - 1, x));
+    let gy = SCENE_H - 8;
+    for (let yy = Math.max(0, y); yy < SCENE_H - 1; yy++) if (sc.solid[(yy + 1) * SCENE_W + xi] || sc.rock[(yy + 1) * SCENE_W + xi]) { gy = yy; break; }
+    // it comes to rest on the ground, never behind where it hung
+    const rest = Math.max(y, gy - 6);
+    this.fallen[p.id] = { x, y, vx: (Math.random() - 0.5) * 16, vy: hangs ? 6 : -34, gy: rest, landed: false, bounces: 0, t: 0 };
+    this.shakes[p.id] = { a: (this.shakes[p.id] ? Math.sign(this.shakes[p.id].a) : 1) * 3.4, t0: this.time };
+    const m = p.m, c = m ? `rgb(${Math.round((m.look || m.color)[0] * 255)},${Math.round((m.look || m.color)[1] * 255)},${Math.round((m.look || m.color)[2] * 255)})` : '#8c8';
+    for (let i = 0; i < 7; i++) this.bits.push({ x: x + (Math.random() - 0.5) * 8, y: y + (Math.random() - 0.5) * 6, vx: (Math.random() - 0.5) * 30, vy: -10 + Math.random() * 14, t: 0, c: i % 2 ? c : '#6fa84a' });
+    audio.play('click');
   }
 
   /** @param {PointerEvent} e */
   tapScene(e) {
     if (this.mode === 'water') { this.waterAt(e); return; }
+    const q = this.scenePoint(e);
+    // what lies fallen on the ground is gathered by tapping it
+    const fallenAt = this.itemAt(q.x, q.y);
+    if (fallenAt) { const it = this.fallen[fallenAt.id]; if (it && it.landed) this.gather(fallenAt.dep, fallenAt); return; }
     const p = this.plantAt(e);
-    if (p) this.gather(p.dep, p);
+    if (!p) return;
+    // a ripe plant tapped is shaken: what it bears falls, and is tapped in turn
+    if (p.stage === 'mature' && !this.closed[p.dep.id]) { this.shakes[p.id] = { a: 2.6 * (q.x < p.x * SCENE_W ? 1 : -1), t0: this.time }; this.energy[p.id] = 1; this.detach(p); disturb(q.x, 1.5, this.time); return; }
+    this.gather(p.dep, p);
   }
 
   /** Splash water where the pointer is: every growing plant within reach drinks. @param {PointerEvent} e */
@@ -407,7 +523,8 @@ export class WildsView {
     animateRegion(ctx, this.region, this.time, st.seed);
     // the marks of past harvests, fading into the ground, then the plants, the far ones first
     for (const k of marksIn(st.gathering, this.region, now)) this.drawMark(ctx, k);
-    for (const p of this.field.slice().sort((a, b) => a.y - b.y)) if (p.key) this.drawPlant(ctx, p);
+    for (const p of this.field.slice().sort((a, b) => a.y - b.y)) if (p.key && !this.fallen[p.id]) this.drawPlant(ctx, p);
+    this.drawFallen(ctx, dt);
     this.paintSky(ctx, dt);
     this.drawDrops(ctx, dt);
     for (const f of this.floaters) {
@@ -478,7 +595,7 @@ export class WildsView {
       ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
     }
     // a vine hangs and sways; the rest stands, juts or lies still
-    const dxAt = p.mount === 'hang' ? this.drawHanging(ctx, p, sp, x, y) : null;
+    const dxAt = this.drawBent(ctx, p, sp, x, y, lift);
     if (!dxAt) ctx.drawImage(sp.cv, x - sp.ax, y - sp.ay - lift);
     // what glows lights its surroundings, breathing, the more so the darker the region
     const emit = emitColour(p.m);
@@ -511,20 +628,78 @@ export class WildsView {
   }
 
   /**
-   * Something hanging (from a bough, a ledge or the roof) swings in the
-   * wind about where it holds on: each row of it is moved sideways the
-   * further the lower it hangs, so it bends rather than sliding. A plant on
-   * a tree sways with its leaves; one hanging from the rock barely stirs.
-   * Returns how far each row of the sprite was moved.
-   * @param {CanvasRenderingContext2D} ctx @param {any} p @param {{cv:HTMLCanvasElement, ax:number, ay:number, w:number, h:number}} sp @param {number} x @param {number} y
-   * @returns {(row:number)=>number}
+   * A plant moved by wind and by fingers. Something hanging (from a bough, a
+   * ledge or the roof) swings about where it holds on, each row of it moved
+   * sideways the further the lower it hangs, so it bends rather than slides;
+   * something standing bends from its foot, its top furthest. A swipe's push
+   * rings in it for a few seconds. A plant on rock or a trunk stays rigid.
+   * Returns how far each row of the sprite was moved, or null if it was not
+   * (and so has still to be drawn).
+   * @param {CanvasRenderingContext2D} ctx @param {any} p @param {{cv:HTMLCanvasElement, ax:number, ay:number, w:number, h:number}} sp @param {number} x @param {number} y @param {number} lift
+   * @returns {((row:number)=>number)|null}
    */
-  drawHanging(ctx, p, sp, x, y) {
+  drawBent(ctx, p, sp, x, y, lift) {
+    const hangs = p.mount === 'hang' || p.mount === 'bough' || p.mount === 'ceiling';
+    if (!hangs && p.mount && p.mount !== 'ground') return null;
+    let ring = 0;
+    const sh = this.shakes[p.id];
+    if (sh) {
+      const u = this.time - sh.t0;
+      if (u > 3.2) delete this.shakes[p.id]; else ring = sh.a * Math.exp(-u * 1.5) * Math.sin(u * 11) * 1.7;
+    }
+    if (!hangs) {
+      if (Math.abs(ring) < 0.3) return null;
+      const dxAt = (/** @type {number} */ r) => (r > sp.ay ? 0 : Math.round(ring * 2.2 * ((sp.ay - r) / Math.max(1, sp.ay)) ** 2));
+      for (let r = 0; r < sp.h; r++) ctx.drawImage(sp.cv, 0, r, sp.w, 1, x - sp.ax + dxAt(r), y - sp.ay + r - lift, sp.w, 1);
+      return dxAt;
+    }
     const st = this.lab.state, wind = windAt(x, this.time, (hashString(st.seed) % 1000) / 100) * 0.8;
-    const swing = wind + 0.35 * Math.sin(this.time * 1.7 + p.x * 23), below = sp.h - sp.ay;
+    const swing = wind + 0.35 * Math.sin(this.time * 1.7 + p.x * 23) + ring, below = sp.h - sp.ay;
     const dxAt = (/** @type {number} */ r) => Math.round(swing * 2.2 * (Math.max(0, r - sp.ay) / Math.max(1, below)) ** 2);
     for (let r = 0; r < sp.h; r++) ctx.drawImage(sp.cv, 0, r, sp.w, 1, x - sp.ax + dxAt(r), y - sp.ay + r, sp.w, 1);
     return dxAt;
+  }
+
+  /**
+   * What has been shaken loose: falling with a little bounce onto the ground,
+   * then lying there with a glint, waiting to be tapped. Bits of leaf and
+   * pulp fly from where it let go.
+   * @param {CanvasRenderingContext2D} ctx @param {number} dt
+   */
+  drawFallen(ctx, dt) {
+    for (const id of Object.keys(this.fallen)) if (!this.field.some((p) => p.id === id)) delete this.fallen[id];
+    for (const [id, it] of Object.entries(this.fallen)) {
+      const p = this.field.find((q) => q.id === id);
+      if (!p) continue;
+      it.t += dt;
+      if (!it.landed) {
+        it.vy += 260 * dt; it.x += it.vx * dt; it.y += it.vy * dt;
+        if (it.y >= it.gy) {
+          it.y = it.gy;
+          if (Math.abs(it.vy) > 50 && it.bounces < 2) { it.vy = -it.vy * 0.35; it.vx *= 0.6; it.bounces++; } else { it.landed = true; it.vx = it.vy = 0; audio.play('click'); }
+        }
+      }
+      let cv = this.itemCv[p.m.id];
+      if (!cv) { const c = ingredientSprite(p.m, 1); if (c instanceof HTMLCanvasElement) cv = this.itemCv[p.m.id] = c; }
+      if (!cv) continue;
+      const sz = 16, ix = Math.round(it.x - sz / 2), iy = Math.round(it.y - sz / 2), g = ctx.globalAlpha;
+      // its shadow on the ground
+      ctx.fillStyle = 'rgba(0,0,0,0.28)';
+      const sh = Math.max(3, 8 - Math.round((it.gy - it.y) / 6));
+      ctx.fillRect(Math.round(it.x - sh / 2), Math.round(it.gy + 7), sh, 1);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(cv, ix, iy, sz, sz);
+      ctx.globalAlpha = g;
+      if (it.landed) {
+        const u = (this.time * 0.9 + p.x * 5) % 2;
+        if (u < 0.6) sparkle(ctx, it.x + 5, it.y - 5, u / 0.6);
+      }
+    }
+    for (const b of this.bits) {
+      b.t += dt; b.vy += 120 * dt; b.x += b.vx * dt; b.y += b.vy * dt;
+      ctx.fillStyle = b.c; ctx.fillRect(Math.round(b.x), Math.round(b.y), 1, 1);
+    }
+    this.bits = this.bits.filter((b) => b.t < 0.9);
   }
 
   /** The water drops in flight: falling, then a little splash where each lands. @param {CanvasRenderingContext2D} ctx @param {number} dt */
@@ -627,9 +802,9 @@ export class WildsView {
     const now = Date.now();
     for (const d of this.deposits()) {
       const row = this.rows[d.id];
-      if (!row) continue;
-      const s = depositStatus(st.gathering, d, now);
       const plan = gatherPlan(st, d, st.lookup(d.materialId), { thorough: this.thorough });
+      if (!row) { this.closed[d.id] = !plan.open; continue; }
+      const s = depositStatus(st.gathering, d, now);
       const can = harvestable(st.gathering, d, plan, now);
       row.barI.style.width = Math.round(s.fraction * 100) + '%';
       row.meta.textContent = `${this.stockText(d, s)} · ${this.when(s, can, d)}`;

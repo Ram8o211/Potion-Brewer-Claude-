@@ -12,6 +12,9 @@ test('harvesting a mature plant fills the stores and leaves a mark; growing ones
   await expect(page.locator('.view-wilds canvas.scene')).toBeVisible();
   const dep = await lab(page, (l) => l.state.deposits.find((d) => d.region === 'forest' && d.rank === 0));
   const before = await lab(page, (l, id) => l.state.stock(id), dep.materialId);
+  // the list holds only what has been gathered before: the first find of an ingredient adds it
+  expect(await page.locator(`[data-act="gather-${dep.id}"]`).count(), 'an ingredient never gathered is not listed').toBe(0);
+  await lab(page, (l, id) => { l.state.found[id] = 1; l.views.wilds.refresh(); }, dep.materialId);
   // the button names the method and the yield (which depends on tool, hour and weather)
   const label = await page.locator(`[data-act="gather-${dep.id}"]`).innerText();
   const promised = Number(/\+(\d+) ml/.exec(label)?.[1]);
@@ -45,8 +48,18 @@ test('harvesting a mature plant fills the stores and leaves a mark; growing ones
   const tapAt = (p) => ({ x: cv.x + p.x * cv.width, y: cv.y + (p.y * 216 - 8) / 216 * cv.height });
   const ripe = field.find((p) => p.stage === 'mature' && p.dep !== dep.id);
   const s0 = await lab(page, (l, id) => l.state.stock(id), ripe.materialId);
-  await drag(page, [tapAt(ripe), tapAt(ripe)], 30);
-  expect(await lab(page, (l, id) => l.state.stock(id), ripe.materialId), 'tapping the mature plant gathered').toBeGreaterThan(s0);
+  expect(await page.locator(`[data-deposit="${ripe.dep}"]`).count(), 'its ingredient is not yet listed').toBe(0);
+  // sliding a finger across it shakes it: what it bears falls to the ground, and a tap there gathers it
+  const a = tapAt(ripe);
+  await drag(page, [{ x: a.x - 14, y: a.y }, { x: a.x + 14, y: a.y }], 6);
+  await drag(page, [{ x: a.x + 14, y: a.y }, { x: a.x - 14, y: a.y }], 6);
+  await page.waitForFunction((id) => { const it = window.__alchemist.screen.views.wilds.fallen[id]; return it && it.landed; }, ripe.id);
+  expect(await lab(page, (l, id) => l.state.stock(id), ripe.materialId), 'shaken, not yet gathered').toBe(s0);
+  const it = await lab(page, (l, id) => l.views.wilds.fallen[id], ripe.id);
+  const sw = await page.evaluate(() => document.querySelector('.view-wilds canvas.scene').width);
+  await drag(page, [{ x: cv.x + it.x / sw * cv.width, y: cv.y + it.y / 216 * cv.height }, { x: cv.x + it.x / sw * cv.width, y: cv.y + it.y / 216 * cv.height }], 30);
+  expect(await lab(page, (l, id) => l.state.stock(id), ripe.materialId), 'tapping the fallen plant gathered').toBeGreaterThan(s0);
+  expect(await page.locator(`[data-deposit="${ripe.dep}"]`).count(), 'and its ingredient is listed from now on').toBe(1);
   expect(await lab(page, (l, id) => l.views.wilds.field.some((p) => p.id === id), ripe.id), 'and it is gone from the ground').toBe(false);
   await shot(page, info, 'wilds-gathered');
   // a plant still growing cannot be taken
