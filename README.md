@@ -288,10 +288,15 @@ computed from the particles that actually run out of the tap. What a
   speeds growth up to half again (never instantly, never more however much
   you water); dry soil slows it but never stops it. Stones, crystals,
   crusts and shells come back with time and the weather, as before.
-* **Gathering by touch:** sliding a finger across the Wilds shakes only
-  what grows there (the painted scenery sways with the wind alone); a
-  ripe plant shaken hard enough lets go of its ingredient, which falls as
-  the very pixels it grew as and is gathered with a tap (a fingertip may
+* **An interactive wilds:** a finger dragged through the scene pushes
+  what it passes, physically. Leaf clumps, bushes and canopies bend its way
+  and spring back; vines hanging from the boughs or the cave's roof swing on
+  for seconds; a plant not ready to be gathered bends and rings. A ripe
+  plant shaken hard enough lets go of its ingredient as a ragdoll cut from
+  its own sprite (one to three jointed pieces, drawn with its own pixels,
+  never resampled): it is thrown the way the finger went, tumbles,
+  bounces, tips over and comes to rest on the ground, a ledge or the water,
+  and can be flicked along again before a tap gathers it (a fingertip may
   roll a little and still tap). In the Free Experiment the stores are
   bottomless, but a harvest still takes the plant: its stand sprouts again
   at random spots and grows back within a minute or two, and can be

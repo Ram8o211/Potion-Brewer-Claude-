@@ -624,7 +624,11 @@ into the new vessel's shape instead of being dropped.
   deterministic. **`species-sprites.js`** caches each species' plant
   frames and icon (every list's picture of a wild ingredient);
   **`wild-scene.js`** caches each region's scene, places plants on its
-  open ground, hit-tests them and animates the scene. **`scenes.js`** keeps
+  open ground, hit-tests them and animates the scene, its foliage moved by
+  the wind and by the finger (`SceneTouch`: a damped spring per sway group,
+  vines a slow pendulum); **`ragdoll.js`** is what a ripe plant lets go of —
+  a Verlet chain of pieces cut from its sprite that tumbles and settles on
+  the scene's ground. **`scenes.js`** keeps
   the little sprites of the rabbits' remains.
 * Effects show in the brew: a potion with a strong effect gets a faint
   aura of that effect's colour, and charged matter crackles with sparks.

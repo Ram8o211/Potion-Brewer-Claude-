@@ -10,10 +10,14 @@
 // (visual/env) and each plant is its species' procedural sprite at its
 // stage (rendering/species-sprites.js), standing on the scene's open ground;
 // only plants take taps — the scenery is part of the cached background.
-// A finger sliding over the scene shakes only what grows in it (the
-// painting's own leaves sway with the wind alone); a ripe plant shaken hard
-// enough lets go of its ingredient, which falls as the very pixels it grew
-// as and is gathered with a tap.
+// A finger sliding over the scene pushes what it passes physically: the
+// painting's leaf clumps, bushes and canopies bend its way and spring back,
+// vines hanging from a bough or the cave's roof swing on for seconds, and
+// a plant not ready to be gathered bends and rings. A ripe plant shaken hard
+// enough lets go of its ingredient, which falls as a ragdoll cut from the
+// very pixels it grew as (rendering/ragdoll.js) — tumbling, bouncing, coming
+// to rest on the ground or the water, knocked about again by the finger —
+// and is gathered with a tap.
 // Living plants drink: in watering mode a tap waters the plants round it, a
 // finger dragged across the scene waters everything along its path (and a
 // card's Water button its whole stand); damp soil shows dark round a plant,
@@ -28,7 +32,8 @@ import { audio } from '../../audio/audio.js';
 import { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, marksIn, moistureEnv, DAY_PART_NAME } from '../../game/gathering.js';
 import { equipmentById } from '../../game/equipment.js';
 import { RANKS } from '../../game/equipment.js';
-import { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, SCENE_W, SCENE_H } from '../../rendering/wild-scene.js';
+import { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, sceneTouch, crosses, SCENE_W, SCENE_H } from '../../rendering/wild-scene.js';
+import { Ragdoll } from '../../rendering/ragdoll.js';
 import { sceneOf } from '../../visual/env/scene.js';
 import { plantCanvas, plantFrameOf, plantGlow, emitColour, silhouetteOf, ingredientSprite, speciesOf, mountsOf, variantOf, MIN_HIT } from '../../rendering/species-sprites.js';
 import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
@@ -93,7 +98,7 @@ export class WildsView {
     this.mode = 'harvest';
     /** drops of water and splashes in flight @type {{x:number, y:number, vx:number, vy:number, t:number, life:number, gy:number}[]} */
     this.drops = [];
-    /** what a swipe has shaken loose: plant id → the fruit, bloom or piece falling to the ground, then lying there to be tapped; drawn with the very sprite it grew as (`sp`), its anchor at (x, y) @type {Record<string, {x:number, y:number, vx:number, vy:number, gy:number, landed:boolean, bounces:number, t:number, sp:{cv:HTMLCanvasElement, ax:number, ay:number, w:number, h:number}}>} */
+    /** what a swipe has shaken loose: plant id → the fruit, bloom or piece as a ragdoll cut from the very sprite it grew as (`sp`), falling, then lying there to be tapped (`landed` once it has come to rest) @type {Record<string, {doll:Ragdoll, sp:{cv:HTMLCanvasElement, ax:number, ay:number, w:number, h:number}, landed:boolean, rung:number}>} */
     this.fallen = {};
     /** plant id → the push it was given (signed strength, scene time): it bends and rings for a few seconds @type {Record<string, {a:number, t0:number}>} */
     this.shakes = {};
@@ -402,13 +407,21 @@ export class WildsView {
   itemAt(x, y) {
     let best = null, bestD = Infinity;
     for (const [id, it] of Object.entries(this.fallen)) {
-      const { sp } = it, cx = it.x - sp.ax + sp.w / 2, cy = it.y - sp.ay + sp.h / 2;
-      const hw = Math.max(sp.w + 4, MIN_HIT * 0.8) / 2, hh = Math.max(sp.h + 4, MIN_HIT * 0.8) / 2;
+      const b = it.doll.box(2), c = it.doll.centre();
+      // (grown to a fingertip round its middle where it is small)
+      const hw = Math.max((b.x1 - b.x0) / 2, MIN_HIT * 0.4), hh = Math.max((b.y1 - b.y0) / 2, MIN_HIT * 0.4);
+      const cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
       if (Math.abs(x - cx) > hw || Math.abs(y - cy) > hh) continue;
-      const dd = (x - cx) ** 2 + (y - cy) ** 2;
+      const dd = (x - c.x) ** 2 + (y - c.y) ** 2;
       if (dd < bestD) { bestD = dd; best = id; }
     }
     return best ? this.field.find((p) => p.id === best) || null : null;
+  }
+
+  /** Where a fallen thing lies now (its middle, scene pixels), or null. @param {string} id */
+  itemCentre(id) {
+    const it = this.fallen[id];
+    return it ? it.doll.centre() : null;
   }
 
   /** @param {PointerEvent} e */
@@ -459,63 +472,87 @@ export class WildsView {
     if (d.dist <= (TAP_SLOP[d.type] ?? TAP_SLOP.mouse)) this.tapScene(e);
   }
 
-  /** Whether a scene segment from (x0, y0) to (x1, y1) passes through a box. */
-  static crosses(x0, y0, x1, y1, left, top, right, bottom) {
-    // clip the segment against the box, one side after another (Liang–Barsky)
-    let t0 = 0, t1 = 1;
-    const dx = x1 - x0, dy = y1 - y0;
-    for (const [p, q] of [[-dx, x0 - left], [dx, right - x0], [-dy, y0 - top], [dy, bottom - y0]]) {
-      if (p === 0) { if (q < 0) return false; continue; }
-      const r = q / p;
-      if (p < 0) { if (r > t1) return false; if (r > t0) t0 = r; } else { if (r < t0) return false; if (r < t1) t1 = r; }
-    }
-    return true;
-  }
-
   /**
-   * A finger slid from (x0, y0) to (x1, y1): every plant it brushes bends
-   * and rings (further the faster the slide) and a ripe one shaken hard
-   * enough lets go of what it bears. Only what grows moves — the painting
-   * behind it sways with the wind alone.
+   * A finger slid from (x0, y0) to (x1, y1), pushing what it passes: the
+   * scenery's leaves and vines are knocked its way (they bend and spring
+   * back, a hanging strand swings), every plant it brushes bends and rings
+   * (further the faster the slide), what lies fallen is flicked along, and
+   * a ripe plant shaken hard enough lets go of what it bears.
    */
   sweep(x0, y0, x1, y1) {
     const dx = x1 - x0, speed = Math.hypot(dx, y1 - y0), dir = dx === 0 ? (this.time * 7 % 2 < 1 ? 1 : -1) : Math.sign(dx);
     const a = dir * Math.min(3.2, 0.5 + speed * 0.45);
+    const touch = sceneTouch(this.region, this.lab.state.seed);
+    if (touch) touch.push(x0, y0, x1, y1);
+    for (const it of Object.values(this.fallen)) it.doll.kick(x0, y0, x1, y1, 3);
     for (const p of this.field) {
       if (this.fallen[p.id]) continue;
       const f = this.frameOf(p);
       if (!f) continue;
       const left = p.x * SCENE_W - f.ax - 5, top = p.y * SCENE_H - f.ay - 5, right = left + f.w + 10, bottom = top + f.h + 10;
-      if (!WildsView.crosses(x0, y0, x1, y1, left, top, right, bottom)) continue;
+      if (!crosses(x0, y0, x1, y1, left, top, right, bottom)) continue;
       const cur = this.shakes[p.id];
       if (!cur || Math.abs(a) >= Math.abs(cur.a) * Math.exp(-(this.time - cur.t0) * 1.5)) this.shakes[p.id] = { a, t0: this.time };
       // (a slow drag shakes too, only it takes longer)
       this.energy[p.id] = (this.energy[p.id] || 0) + Math.max(0.08, speed / 7);
-      if (p.stage === 'mature' && !this.closed[p.dep.id] && this.energy[p.id] >= 1) this.detach(p);
+      if (p.stage === 'mature' && !this.closed[p.dep.id] && this.energy[p.id] >= 1) this.detach(p, dx, y1 - y0);
     }
   }
 
   /**
-   * A ripe plant lets go of what it bears: the very sprite it grew as —
-   * the same pixels, lit as they were where it grew — falls from where it
-   * hung or stood to the ground below and comes to rest there.
-   * @param {any} p
+   * A plant's sprite cut down to what shows of it (its frame keeps room
+   * round it): the body a ragdoll is made of, so it rests on its own
+   * pixels. Cached with the sprite's canvas.
+   * @param {{cv:HTMLCanvasElement, ax:number, ay:number, w:number, h:number}} sp
    */
-  detach(p) {
+  static trimmed(sp) {
+    const any = /** @type {any} */ (sp.cv);
+    if (any.trim) return { ...any.trim };
+    const data = /** @type {CanvasRenderingContext2D} */ (sp.cv.getContext('2d')).getImageData(0, 0, sp.w, sp.h).data;
+    let x0 = sp.w, y0 = sp.h, x1 = -1, y1 = -1;
+    for (let y = 0; y < sp.h; y++) for (let x = 0; x < sp.w; x++) if (data[(y * sp.w + x) * 4 + 3]) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    if (x1 < 0 || (x0 === 0 && y0 === 0 && x1 === sp.w - 1 && y1 === sp.h - 1)) { any.trim = sp; return { ...sp }; }
+    const cv = document.createElement('canvas');
+    cv.width = x1 - x0 + 1; cv.height = y1 - y0 + 1;
+    /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')).drawImage(sp.cv, -x0, -y0);
+    any.trim = { cv, w: cv.width, h: cv.height, ax: sp.ax - x0, ay: sp.ay - y0 };
+    return { ...any.trim };
+  }
+
+  /** Whether a scene pixel is something a fallen thing rests on: the ground, rock, or the surface of water or lava. @param {number} x @param {number} y */
+  solidAt(x, y) {
+    if (x < 0 || x >= SCENE_W || y < 0) return false;
+    if (y >= SCENE_H) return true;
+    const sc = sceneOf(this.region, this.lab.state.seed), k = y * SCENE_W + x;
+    return !!(sc.solid[k] || sc.rock[k] || sc.liquid[k]);
+  }
+
+  /**
+   * A ripe plant lets go of what it bears: a ragdoll cut from the very
+   * sprite it grew as — the same pixels, lit as they were where it grew —
+   * thrown the way the finger went (dx, dy: its last stroke, scene pixels),
+   * a ground plant pulled up, a hanging one dropping from its hold.
+   * @param {any} p @param {number} [dx] @param {number} [dy]
+   */
+  detach(p, dx = 0, dy = 0) {
     if (this.fallen[p.id]) return;
-    const sp = plantCanvas(p.m, p.stage, { ...this.look(p), hover: false });
-    if (!sp) return;
-    const hangs = p.mount === 'hang' || p.mount === 'bough' || p.mount === 'ceiling';
+    const whole = plantCanvas(p.m, p.stage, { ...this.look(p), hover: false });
+    if (!whole) return;
+    const sp = WildsView.trimmed(whole);
+    const hangs = p.mount === 'hang' || p.mount === 'bough' || p.mount === 'ceiling', juts = p.mount === 'wall' || p.mount === 'trunk';
     const x = Math.round(p.x * SCENE_W), y = Math.round(p.y * SCENE_H);
-    // the ground below it: the first solid row under the bottom of its sprite, in the column of its middle
-    const sc = sceneOf(this.region, this.lab.state.seed);
-    const xi = Math.max(0, Math.min(SCENE_W - 1, Math.round(x - sp.ax + sp.w / 2)));
-    const foot = y - sp.ay + sp.h;
-    let ground = SCENE_H - 4;
-    for (let yy = Math.max(0, foot); yy < SCENE_H - 1; yy++) if (sc.solid[(yy + 1) * SCENE_W + xi] || sc.rock[(yy + 1) * SCENE_W + xi]) { ground = yy + 1; break; }
-    // it comes to rest with its bottom on the ground, never behind where it was
-    const rest = Math.max(y, ground - (sp.h - sp.ay));
-    this.fallen[p.id] = { x, y, vx: (Math.random() - 0.5) * 16, vy: hangs ? 6 : -34, gy: Math.min(SCENE_H - (sp.h - sp.ay), rest), landed: false, bounces: 0, t: 0, sp };
+    const fling = Math.max(-1, Math.min(1, dx / 10)), up = Math.max(-1, Math.min(1, dy / 10));
+    const away = juts ? (p.flip ? -1 : 1) : 0;
+    const doll = new Ragdoll(sp, x, y, {
+      W: SCENE_W, H: SCENE_H,
+      vx: fling * 46 + away * 18 + (Math.random() - 0.5) * 10,
+      vy: hangs ? 4 + up * 20 : juts ? -12 + up * 20 : -48 + Math.min(0, up) * 30,
+      // (the top flies out further than the foot: it tumbles)
+      spin: hangs ? fling * 30 : fling * 60 + (Math.random() - 0.5) * 20,
+    });
+    // clear of the face or the ground it grew from
+    for (let k = 0; k < 8 && !doll.clear((xx, yy) => this.solidAt(xx, yy)); k++) doll.shift(away, -1);
+    this.fallen[p.id] = { doll, sp, landed: false, rung: 0 };
     this.shakes[p.id] = { a: (this.shakes[p.id] ? Math.sign(this.shakes[p.id].a) : 1) * 3.4, t0: this.time };
     const m = p.m, c = m ? `rgb(${Math.round((m.look || m.color)[0] * 255)},${Math.round((m.look || m.color)[1] * 255)},${Math.round((m.look || m.color)[2] * 255)})` : '#8c8';
     const bx = x - sp.ax + sp.w / 2, by = y - sp.ay + sp.h * (hangs ? 0.2 : 0.8);
@@ -532,7 +569,7 @@ export class WildsView {
     const p = this.plantAt(e);
     if (!p) return;
     // a ripe plant tapped is shaken: what it bears falls, and is tapped in turn
-    if (p.stage === 'mature' && !this.closed[p.dep.id]) { this.shakes[p.id] = { a: 2.6 * (q.x < p.x * SCENE_W ? 1 : -1), t0: this.time }; this.energy[p.id] = 1; this.detach(p); return; }
+    if (p.stage === 'mature' && !this.closed[p.dep.id]) { const side = q.x < p.x * SCENE_W ? 1 : -1; this.shakes[p.id] = { a: 2.6 * side, t0: this.time }; this.energy[p.id] = 1; this.detach(p, side * 3, 0); return; }
     this.gather(p.dep, p);
   }
 
@@ -613,6 +650,8 @@ export class WildsView {
     this.time += dt;
     const ctx = this.ctx, st = this.lab.state, now = Date.now();
     // the painting, its leaves swaying in the wind
+    const touch = sceneTouch(this.region, st.seed);
+    if (touch) touch.step(dt);
     ctx.drawImage(sceneFrame(this.region, st.seed, this.time), 0, 0);
     animateRegion(ctx, this.region, this.time, st.seed);
     // the marks of past harvests, fading into the ground, then the plants, the far ones first
@@ -755,34 +794,35 @@ export class WildsView {
   }
 
   /**
-   * What has been shaken loose: falling with a little bounce onto the ground,
-   * then lying there with a glint, waiting to be tapped. Bits of leaf and
-   * pulp fly from where it let go.
+   * What has been shaken loose: ragdolls tumbling down, knocking against the
+   * ground, then lying there with a glint, waiting to be tapped. Bits of
+   * leaf and pulp fly from where it let go.
    * @param {CanvasRenderingContext2D} ctx @param {number} dt
    */
   drawFallen(ctx, dt) {
     for (const id of Object.keys(this.fallen)) if (!this.field.some((p) => p.id === id)) delete this.fallen[id];
+    const solid = (/** @type {number} */ x, /** @type {number} */ y) => this.solidAt(x, y);
     for (const [id, it] of Object.entries(this.fallen)) {
       const p = this.field.find((q) => q.id === id);
       if (!p) continue;
-      it.t += dt;
-      if (!it.landed) {
-        it.vy += 260 * dt; it.x += it.vx * dt; it.y += it.vy * dt;
-        if (it.y >= it.gy) {
-          it.y = it.gy;
-          if (Math.abs(it.vy) > 50 && it.bounces < 2) { it.vy = -it.vy * 0.35; it.vx *= 0.6; it.bounces++; } else { it.landed = true; it.vx = it.vy = 0; audio.play('click'); }
-        }
-      }
-      // the same pixels it grew as, unscaled, on whole pixels: its texture stays as it was on the plant
-      const { sp } = it, ix = Math.round(it.x - sp.ax), iy = Math.round(it.y - sp.ay), bottom = it.gy - sp.ay + sp.h;
-      // its shadow on the ground, smaller the higher it still is
+      const { doll, sp } = it;
+      doll.step(dt, solid);
+      // a knock against the ground is heard (not every little one)
+      if (doll.knock > 70 && this.time - it.rung > 0.18) { audio.play('click'); it.rung = this.time; }
+      doll.knock = 0;
+      it.landed = doll.asleep;
+      // its shadow on the ground below it
+      const c = doll.centre(), b = doll.box();
+      let gy = Math.round(b.y1);
+      while (gy < SCENE_H - 1 && !this.solidAt(Math.round(c.x), gy + 1)) gy++;
+      const sh = Math.max(3, Math.round((b.x1 - b.x0) * 0.7) - Math.round((gy - b.y1) / 5));
       ctx.fillStyle = 'rgba(0,0,0,0.28)';
-      const sh = Math.max(3, Math.round(sp.w * 0.6) - Math.round((it.gy - it.y) / 6));
-      ctx.fillRect(Math.round(ix + sp.w / 2 - sh / 2), Math.round(bottom), sh, 1);
-      ctx.drawImage(sp.cv, ix, iy);
+      ctx.fillRect(Math.round(c.x - sh / 2), gy, sh, 1);
+      // the same pixels it grew as, each piece turned as it lies, never smoothed: its texture stays as it was on the plant
+      doll.draw(ctx, sp.cv);
       if (it.landed) {
         const u = (this.time * 0.9 + p.x * 5) % 2;
-        if (u < 0.6) sparkle(ctx, ix + sp.w - 2, iy + 1, u / 0.6);
+        if (u < 0.6) sparkle(ctx, b.x1 - 3, b.y0 + 2, u / 0.6);
       }
     }
     for (const b of this.bits) {

@@ -44,18 +44,21 @@ test('harvesting a mature plant fills the stores and leaves a mark; growing ones
   // (each plant stands where the scene's ground put it, clear of the scenery)
   await page.waitForFunction(() => !!window.__alchemist.screen.views.wilds.bg);
   await lab(page, (l) => l.views.wilds.grow());
-  const field = await lab(page, (l) => l.views.wilds.field.map((p) => ({ id: p.id, dep: p.dep.id, materialId: p.dep.materialId, x: p.x, y: p.y, stage: p.stage })));
-  const tapAt = (p) => ({ x: cv.x + p.x * cv.width, y: cv.y + (p.y * 216 - 8) / 216 * cv.height });
-  const ripe = field.find((p) => p.stage === 'mature' && p.dep !== dep.id);
+  // (each plant's middle: a fruit hangs below its hold, a flower stands above its foot)
+  const field = await lab(page, (l) => l.views.wilds.field.map((p) => { const f = l.views.wilds.frameOf(p); return { id: p.id, dep: p.dep.id, materialId: p.dep.materialId, x: p.x, y: p.y, stage: p.stage, closed: !!l.views.wilds.closed[p.dep.id], mx: p.x * 384 - f.ax + f.w / 2, my: p.y * 216 - f.ay + f.h / 2 }; }));
+  const tapAt = (p) => ({ x: cv.x + p.mx / 384 * cv.width, y: cv.y + p.my / 216 * cv.height });
+  // (one open now: a dawn or dusk flower out of its hour stays shut and only bends)
+  const ripe = field.find((p) => p.stage === 'mature' && !p.closed && p.dep !== dep.id);
   const s0 = await lab(page, (l, id) => l.state.stock(id), ripe.materialId);
   expect(await page.locator(`[data-deposit="${ripe.dep}"]`).count(), 'its ingredient is not yet listed').toBe(0);
   // sliding a finger across it shakes it: what it bears falls to the ground, and a tap there gathers it
-  const a = tapAt(ripe);
-  await drag(page, [{ x: a.x - 14, y: a.y }, { x: a.x + 14, y: a.y }], 6);
-  await drag(page, [{ x: a.x + 14, y: a.y }, { x: a.x - 14, y: a.y }], 6);
+  // (kept within the scene where the plant grows by an edge)
+  const a = tapAt(ripe), ax = Math.max(cv.x + 16, Math.min(cv.x + cv.width - 16, a.x));
+  await drag(page, [{ x: ax - 14, y: a.y }, { x: ax + 14, y: a.y }], 6);
+  await drag(page, [{ x: ax + 14, y: a.y }, { x: ax - 14, y: a.y }], 6);
   await page.waitForFunction((id) => { const it = window.__alchemist.screen.views.wilds.fallen[id]; return it && it.landed; }, ripe.id);
   expect(await lab(page, (l, id) => l.state.stock(id), ripe.materialId), 'shaken, not yet gathered').toBe(s0);
-  const it = await lab(page, (l, id) => l.views.wilds.fallen[id], ripe.id);
+  const it = await lab(page, (l, id) => l.views.wilds.itemCentre(id), ripe.id);
   const sw = await page.evaluate(() => /** @type {HTMLCanvasElement} */ (document.querySelector('.view-wilds canvas.scene')).width);
   await drag(page, [{ x: cv.x + it.x / sw * cv.width, y: cv.y + it.y / 216 * cv.height }, { x: cv.x + it.x / sw * cv.width, y: cv.y + it.y / 216 * cv.height }], 30);
   expect(await lab(page, (l, id) => l.state.stock(id), ripe.materialId), 'tapping the fallen plant gathered').toBeGreaterThan(s0);
@@ -87,7 +90,7 @@ test('harvesting a mature plant fills the stores and leaves a mark; growing ones
   if (far) expect(await lab(page, (l, id) => l.views.wilds.field.some((p) => p.dep.id === id), far.id)).toBe(false);
   // pointing at a mature plant highlights it
   if (info.project.name === 'desktop') {
-    const p3 = await lab(page, (l) => { const p = l.views.wilds.field.find((q) => q.stage === 'mature'); return p && { id: p.id, x: p.x, y: p.y }; });
+    const p3 = await lab(page, (l) => { const p = l.views.wilds.field.find((q) => q.stage === 'mature'), f = p && l.views.wilds.frameOf(p); return p && { id: p.id, mx: p.x * 384 - f.ax + f.w / 2, my: p.y * 216 - f.ay + f.h / 2 }; });
     if (p3) {
       await page.mouse.move(tapAt(p3).x, tapAt(p3).y);
       await expect.poll(() => lab(page, (l) => l.views.wilds.hover)).toBe(p3.id);
@@ -97,7 +100,7 @@ test('harvesting a mature plant fills the stores and leaves a mark; growing ones
   await page.click('[data-act=region-meadow]');
   await page.waitForFunction(() => { const w = window.__alchemist.screen.views.wilds; return w.region === 'meadow' && !!w.bg; });
   await lab(page, (l) => l.views.wilds.grow());
-  const m0 = await lab(page, (l) => { const p = l.views.wilds.field.find((q) => q.stage === 'mature'); return { id: p.id, materialId: p.dep.materialId, x: p.x, y: p.y }; });
+  const m0 = await lab(page, (l) => { const p = l.views.wilds.field.find((q) => q.stage === 'mature' && !l.views.wilds.closed[q.dep.id]), f = l.views.wilds.frameOf(p); return { id: p.id, materialId: p.dep.materialId, mx: p.x * 384 - f.ax + f.w / 2, my: p.y * 216 - f.ay + f.h / 2 }; });
   const ms0 = await lab(page, (l, id) => l.state.stock(id), m0.materialId);
   // (the page may have moved with the new region's cards)
   await page.locator('.view-wilds canvas.scene').scrollIntoViewIfNeeded();
@@ -105,7 +108,8 @@ test('harvesting a mature plant fills the stores and leaves a mark; growing ones
   // a tap shakes it loose, a second tap on what fell gathers it
   await drag(page, [tapAt(m0), tapAt(m0)], 30);
   await page.waitForFunction((id) => !!window.__alchemist.screen.views.wilds.fallen[id], m0.id);
-  const it0 = await lab(page, (l, id) => { const q = l.views.wilds.fallen[id]; return { x: q.x - q.sp.ax + q.sp.w / 2, y: q.y - q.sp.ay + q.sp.h / 2 }; }, m0.id);
+  // (where it has got to as it tumbles)
+  const it0 = await lab(page, (l, id) => l.views.wilds.itemCentre(id), m0.id);
   const sw0 = await page.evaluate(() => /** @type {HTMLCanvasElement} */ (document.querySelector('.view-wilds canvas.scene')).width);
   const t0 = { x: cv.x + it0.x / sw0 * cv.width, y: cv.y + it0.y / 216 * cv.height };
   await drag(page, [t0, t0], 30);
