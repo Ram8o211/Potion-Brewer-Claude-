@@ -8,7 +8,7 @@
 import { sky } from './paint.js';
 import { palette, vary, streamOf } from './kit.js';
 import { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, surfaceAt, silhouette, treeShape, glow, drips, ledges } from './side.js';
-import { caveFrame, fog, vines, moss } from './cave.js';
+import { caveFrame, fog, vines, moss, veins, WATER_VEINS } from './cave.js';
 import { tree, cloud, fence, skep, boulder } from './objects.js';
 import { Model, lumpy } from '../geometry.js';
 import { pack } from '../color.js';
@@ -19,7 +19,7 @@ export function compose(cv, seed) {
     leaf: ['#3a6e2a', { spread: 0.6 }], bark: '#4e3420', rock: '#7a7a72', cloud: ['#c8d4e4', { spread: 0.3, cool: 0.5 }],
     timber: '#6a4a2e', straw: ['#c8a050', { spread: 0.45 }], moss: '#5a8a34',
   }), s('pal'), 1);
-  sky(cv, 0, 160, ['#1e3a6e', '#2e5a92', '#5a88b8', '#9cc0d8'], 10);
+  sky(cv, 0, 160, ['#2a5aa0', '#4a82c4', '#86b4dc', '#cfe2e8'], 10);
   const sx = 230 + s('sun').int(-50, 50), sy = 34;
   for (let y = sy - 10; y <= sy + 10; y++) for (let x = sx - 10; x <= sx + 10; x++) if (Math.hypot(x - sx, y - sy) <= 9.5) cv.set(x, y, Math.hypot(x - sx, y - sy) < 7.5 ? pack([1, 0.98, 0.86]) : pack([1, 0.92, 0.66]));
   glow(cv, sx, sy, 70, [1, 0.92, 0.7], 0.35);
@@ -32,13 +32,16 @@ export function compose(cv, seed) {
   const tr = s('far');
   for (let x = 4; x < W; x += tr.int(5, 12)) treeShape(cv, x, wood[x] + 2, tr.int(12, 24), tr.next() < 0.4 ? 'pine' : 'oak', tr.next() < 0.5 ? '#1e3e30' : '#24482f', tr.int(0, 1e9));
   silhouette(cv, { base: 140, amp: 6, freq: 0.02, seed: s('h3').int(0, 1e9), fill: '#2e5a32', rim: '#3e7238' });
-  // the cave mouth framing it
-  const fs = s('frame'), o0 = fs.int(40, 80), o1 = W - fs.int(30, 70);
-  const frame = caveFrame(cv, {
-    seed: fs.int(0, 1e9), stones: ['#4a3e30', '#3e3428', '#4a4a34'], mortar: '#140e0a', dark: 0.35, roof: [40, 70], walls: [26, 22], open: [o0, o1],
-    stal: { n: 10, len: [4, 18], w: [2, 5] }, lip: ['#5a9a34', '#3a6e26'],
-  });
-  vines(cv, frame.roof, { cols: ['#5a9a30', '#3e7226', '#2a5020'], leaf: '#6ab83a', flower: '#ff9fc7', seed: fs.int(0, 1e9), rate: 0.3, len: [4, 50] });
+  // most meadows lie open under the sky; some are seen from a cave mouth framing it
+  const fs = s('frame'), cave = fs.next() < 0.25;
+  if (cave) {
+    const o0 = fs.int(40, 80), o1 = W - fs.int(30, 70);
+    const frame = caveFrame(cv, {
+      seed: fs.int(0, 1e9), stones: ['#4a3e30', '#3e3428', '#4a4a34'], mortar: '#140e0a', dark: 0.35, roof: [40, 70], walls: [26, 22], open: [o0, o1],
+      stal: { n: 10, len: [4, 18], w: [2, 5] }, lip: ['#5a9a34', '#3a6e26'],
+    });
+    vines(cv, frame.roof, { cols: ['#5a9a30', '#3e7226', '#2a5020'], leaf: '#6ab83a', flower: '#ff9fc7', seed: fs.int(0, 1e9), rate: 0.3, len: [4, 50] });
+  }
   // the field: rolling ground, a grassy knoll, sometimes a pond in a hollow
   const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 166, amp: 10, freq: 0.01 });
   const kx = ts.int(40, W - 120);
@@ -63,6 +66,7 @@ export function compose(cv, seed) {
   moss(cv, { cols: ['#8ccf4a', '#5ea83a', '#3f7e2c', '#2e5a22'], seed: ss + 1, drape: 9, rate: 0.2, len: 10 });
   if (pond) {
     cv.meta.pond = pool(cv, pond.x - pond.hw, pond.x + pond.hw, pond.level, { surface: '#cfe8ff', body: ['#3a6a98', '#2e5a86', '#244a72', '#1a3a5e'], see: 0.2, bed: ['#3a2e20', '#4a3a28', '#2a2018'] });
+    veins(cv, cv.meta.pond, WATER_VEINS(ss + 4));
   }
   markOpen(cv);
   // the oaks: one framing the mouth, maybe another in the field
@@ -88,6 +92,6 @@ export function compose(cv, seed) {
   for (let i = 0; i < 2; i++) { const x = rr.int(10, W - 10); cv.stamp(boulder(rr, rr.int(5, 9), rr.int(3, 5), { moss: 'moss' }), pal, x, surfaceAt(cv, x) + 2, { foot: [8, 2] }); }
   cv.meta.sun = [sx, sy];
   cv.meta.trickles = drips(cv, ss, 3);
-  cv.meta.vignette = 0.45;
+  cv.meta.vignette = cave ? 0.45 : 0.3;
   cv.meta.horizon = 120;
 }

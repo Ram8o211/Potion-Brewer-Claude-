@@ -85,6 +85,30 @@ export function plantCanvas(m, stage, o = {}) {
 }
 
 /**
+ * What sets a plant off the scene it stands in (browser): a faint rim of
+ * light one pixel round its silhouette and the colour of its soft halo,
+ * both a pale tint of its own body colour — so each ingredient reads
+ * against dark rock or bright grass alike. Cached with the frame.
+ * @param {any} m @param {string} stage @param {{closed?:boolean, hover?:boolean}} [o]
+ * @returns {{cv:HTMLCanvasElement, tint:string}|null}
+ */
+export function plantRim(m, stage, o = {}) {
+  const f = plantFrameOf(m, stage, o), d = speciesOf(m);
+  if (!f || !d) return null;
+  const any = /** @type {any} */ (f);
+  if (!any.rim) {
+    const ramp = d.pal.main || [0xffc0c0c0], c = ramp[Math.max(0, ramp.length - 2)];
+    const rgb = [c & 255, (c >>> 8) & 255, (c >>> 16) & 255].map((v) => Math.round(v + (255 - v) * 0.6));
+    const w = f.pix.w + 2, h = f.pix.h + 2, p = new Pixels(w, h), src = f.pix;
+    const op = (x, y) => x >= 0 && y >= 0 && x < src.w && y < src.h && src.px[y * src.w + x] >>> 24;
+    const rim = ((0xd8 << 24) | (rgb[2] << 16) | (rgb[1] << 8) | rgb[0]) >>> 0;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (!op(x - 1, y - 1) && (op(x - 2, y - 1) || op(x, y - 1) || op(x - 1, y - 2) || op(x - 1, y))) p.px[y * w + x] = rim;
+    any.rim = { cv: p.toCanvas(), tint: `rgb(${rgb[0]},${rgb[1]},${rgb[2]})` };
+  }
+  return any.rim;
+}
+
+/**
  * Everything a plant may ever cover (all its stages, rimmed), relative to its
  * foot: what the ground keeps clear for it.
  * @param {any} m @returns {{w:number, h:number, ax:number, ay:number, m:Uint8Array}|null}

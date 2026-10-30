@@ -244,15 +244,16 @@ computed from the particles that actually run out of the tap. What a
   [docs/PROCEDURAL_GRAPHICS.md](docs/PROCEDURAL_GRAPHICS.md)). Each of the
   six regions — the Sunlit Meadow, Whisperwood, Willow Bank, Ironstone
   Quarry, Moonfen and the Ember Crags — is generated from the world seed
-  as a side view of a cavern: a dark back wall with far pillars fading
-  into mist, a roof hung with stalactites and curtains of vines (or a cave
-  mouth framing the sky), and in front a cross-section of the ground —
-  cobbled stone under a crust of grass, moss, gravel or ash, with
-  mushroom-capped pillars dripping moss, overhangs and caves — pools of
-  water or lava in its hollows, lava falls, trees, rocks and timberwork,
-  glowing mushrooms, torches and crystals and, as it runs, particles
-  (pollen, motes, leaves, fireflies, wisps, drips, trickling grit,
-  shimmer, embers, ash, steam), plus seed-chosen features such as autumn
+  as a side view, under the open sky or in a cavern (a roof hung with
+  stalactites and vines, far pillars fading into mist): in front a
+  cross-section of the ground — cobbled stone under a crust of grass,
+  moss, gravel or ash, with mushroom-capped pillars dripping moss,
+  overhangs and caves — pools of water or lava whose veins seep into the
+  rock around them, lava falls, clean pixel-art trees, rocks and
+  timberwork, glowing mushrooms, torches and crystals, smooth skies and
+  light and, as it runs, particles (pollen, motes, leaves, fireflies,
+  wisps, drips, trickling grit, shimmer, embers, ash, steam), plus
+  seed-chosen features such as autumn
   woods, a meadow pond or
   standing stones, a footbridge. Plants grow only on its dry surfaces,
   never in water or lava and never behind scenery; stones, crystals and

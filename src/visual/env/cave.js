@@ -316,3 +316,95 @@ export function ledgeTops(cv, n, seed, rise = 12) {
   }
   return out;
 }
+
+/**
+ * Veins seeping from a pool into the ground round it: the rock next to the
+ * pool's bed soaks up its colour, fading smoothly with distance, and
+ * branching veins wander out and down from the bed, brightest where they
+ * leave the pool and thinning to nothing. Lava veins glow (`rgb`) and light
+ * the rock round them; water veins only darken and tint it.
+ * @param {any} cv @param {{x0:number, x1:number, level:number}} p
+ * @param {{core:string[], tint:string, seed:number, n?:number, reach?:number, soak?:number, k?:number, mix?:number, rgb?:number[]}} o
+ *   core: the vein's colours from its source to its tip; tint: what the soaked rock turns toward;
+ *   soak: how far the pool's colour spreads into the bed; k: how strongly;
+ *   mix: how much of the rock shows through a vein
+ */
+export function veins(cv, p, o) {
+  const W = cv.W, H = cv.H, S = cv.solid, L = cv.liquid, seed = o.seed, reach = o.reach ?? 60, soak = o.soak ?? 10, k = o.k ?? 0.7;
+  const core = o.core.map(col), tint = col(o.tint);
+  const heat = new Float32Array(W * H), vein = new Float32Array(W * H);
+  const x0 = Math.max(0, p.x0 - reach), x1 = Math.min(W - 1, p.x1 + reach), y0 = Math.max(0, p.level - 4);
+  // the soak: distance from the pool, through the ground, in a box round it
+  const dist = new Float32Array(W * H).fill(1e3);
+  for (let y = y0; y < H; y++) for (let x = x0; x <= x1; x++) if (L[y * W + x]) dist[y * W + x] = 0;
+  for (let pass = 0; pass < 2; pass++) {
+    const fwd = pass === 0;
+    for (let yy = 0; yy < H - y0; yy++) {
+      const y = fwd ? y0 + yy : H - 1 - yy;
+      for (let xx = 0; xx <= x1 - x0; xx++) {
+        const x = fwd ? x0 + xx : x1 - xx, i = y * W + x;
+        if (!S[i]) continue;
+        const dy = fwd ? -1 : 1, dx = fwd ? -1 : 1;
+        let d = dist[i];
+        if (x + dx >= x0 && x + dx <= x1) d = Math.min(d, dist[i + dx] + 1);
+        if (y + dy >= y0 && y + dy < H) { d = Math.min(d, dist[i + dy * W] + 1); if (x + dx >= x0 && x + dx <= x1) d = Math.min(d, dist[i + dy * W + dx] + 1.41); }
+        dist[i] = d;
+      }
+    }
+  }
+  for (let y = y0; y < H; y++) for (let x = x0; x <= x1; x++) {
+    const i = y * W + x;
+    if (S[i] && dist[i] < soak) heat[i] += (1 - dist[i] / soak) ** 2;
+  }
+  // the veins: walkers leaving the bed, wandering out and down, branching
+  const n = o.n ?? 8, walkers = [];
+  for (let v = 0; v < n; v++) {
+    const sx = Math.round(p.x0 + hash2(v, 1, seed) * (p.x1 - p.x0));
+    let sy = p.level;
+    while (sy < H - 1 && !S[sy * W + sx]) sy++;
+    const out = (sx - (p.x0 + p.x1) / 2) / Math.max(1, (p.x1 - p.x0) / 2);
+    walkers.push([sx, sy, Math.PI / 2 - out * 0.9 + (hash2(v, 2, seed) - 0.5) * 0.8, reach * (0.5 + hash2(v, 3, seed) * 0.5), 1, v]);
+  }
+  for (let w = 0; w < walkers.length && w < 60; w++) {
+    let [x, y, a, len, s0, id] = walkers[w];
+    for (let t = 0; t < len; t++) {
+      const xi = Math.round(x), yi = Math.round(y);
+      if (xi < 1 || xi >= W - 1 || yi >= H - 1 || yi < 0) break;
+      const i = yi * W + xi;
+      if (!S[i] && !L[i]) break;
+      const f = s0 * (1 - t / len);
+      if (S[i]) { vein[i] = Math.max(vein[i], f); if (f > 0.55) vein[i + 1] = Math.max(vein[i + 1], f * 0.8); }
+      a += (hash2(id, t, seed + 5) - 0.5) * 0.7 + (Math.PI / 2 - a) * 0.04;
+      x += Math.cos(a); y += Math.max(-0.3, Math.sin(a));
+      if (hash2(id, t, seed + 6) < 0.035 && walkers.length < 60) walkers.push([x, y, a + (hash2(id, t, seed + 7) < 0.5 ? -0.8 : 0.8), (len - t) * 0.6, f, id * 31 + t]);
+    }
+  }
+  // the glow of the veins spreads into the rock round them
+  const R = 5;
+  for (let y = y0; y < H; y++) for (let x = x0; x <= x1; x++) {
+    const v = vein[y * W + x];
+    if (v <= 0) continue;
+    for (let j = -R; j <= R; j++) for (let i = -R; i <= R; i++) {
+      const xx = x + i, yy = y + j;
+      if (xx < 0 || xx >= W || yy < 0 || yy >= H) continue;
+      heat[yy * W + xx] += v * 0.09 * Math.exp(-(i * i + j * j) / 6);
+    }
+  }
+  for (let y = y0; y < H; y++) for (let x = x0; x <= x1; x++) {
+    const i = y * W + x;
+    if (!S[i]) continue;
+    const v = vein[i];
+    if (v > 0.06) cv.pix.px[i] = mixPacked(core[Math.min(core.length - 1, Math.floor((1 - v) * core.length))], cv.pix.px[i], Math.min(0.9, (o.mix ?? 0) + (v > 0.3 ? 0 : 0.4)));
+    else if (heat[i] > 0.01) cv.pix.px[i] = mixPacked(cv.pix.px[i], tint, Math.min(0.85, heat[i] * k));
+  }
+  if (o.rgb) {
+    const rgb = o.rgb;
+    cv.light(rgb, (x, y) => { const i = y * W + x; return S[i] ? Math.min(0.5, heat[i] * 0.35) : 0; }, y0, H);
+  }
+}
+
+/** Veins of water seeping from a pool: the bed darkened and tinted, faint wet threads. @param {number} seed */
+export const WATER_VEINS = (seed) => ({ core: ['#3a6a7a', '#2e5866', '#244652', '#1c3640'], tint: '#14262e', seed, n: 5, reach: 40, soak: 10, k: 0.5, mix: 0.45 });
+
+/** Veins of lava spreading from a pool: glowing, lighting the rock round them. @param {number} seed */
+export const LAVA_VEINS = (seed) => ({ core: ['#fff0a0', '#ffc040', '#ff8a2a', '#e05a18', '#a8320e', '#5a1a0c'], tint: '#b8401a', seed, n: 11, reach: 90, soak: 13, k: 0.75, rgb: [1, 0.42, 0.12] });

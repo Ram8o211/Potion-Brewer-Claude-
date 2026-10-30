@@ -3811,7 +3811,7 @@ for (const [dx, dy] of [[1, 0], [0, 1], [-1, 0], [0, -1]]) {
 const xx = x + dx, yy = y + dy;
 if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
 const b = part[yy * w + xx];
-if (b > a && !flat(b) && !parts[b].noOutline) { sep[k] = 1; break; }
+if (b > a && !flat(b) && !parts[b].noOutline && !parts[b].soft) { sep[k] = 1; break; }
 }
 }
 }
@@ -14793,6 +14793,21 @@ const any = /** @type {any} */ (f);
 if (!any.cv) any.cv = f.pix.toCanvas();
 return { cv: /** @type {HTMLCanvasElement} */ (any.cv), ax: f.ax, ay: f.ay, w: f.pix.w, h: f.pix.h, glints: f.glints };
 }
+function plantRim(m, stage, o = {}) {
+const f = plantFrameOf(m, stage, o), d = speciesOf(m);
+if (!f || !d) return null;
+const any = /** @type {any} */ (f);
+if (!any.rim) {
+const ramp = d.pal.main || [0xffc0c0c0], c = ramp[Math.max(0, ramp.length - 2)];
+const rgb = [c & 255, (c >>> 8) & 255, (c >>> 16) & 255].map((v) => Math.round(v + (255 - v) * 0.6));
+const w = f.pix.w + 2, h = f.pix.h + 2, p = new Pixels(w, h), src = f.pix;
+const op = (x, y) => x >= 0 && y >= 0 && x < src.w && y < src.h && src.px[y * src.w + x] >>> 24;
+const rim = ((0xd8 << 24) | (rgb[2] << 16) | (rgb[1] << 8) | rgb[0]) >>> 0;
+for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (!op(x - 1, y - 1) && (op(x - 2, y - 1) || op(x, y - 1) || op(x - 1, y - 2) || op(x - 1, y))) p.px[y * w + x] = rim;
+any.rim = { cv: p.toCanvas(), tint: `rgb(${rgb[0]},${rgb[1]},${rgb[2]})` };
+}
+return any.rim;
+}
 function silhouetteOf(m) {
 const id = identityOfMaterial(m);
 if (!id) return null;
@@ -14816,7 +14831,7 @@ const cv = f.pix.toCanvas();
 cv.style.imageRendering = 'pixelated';
 return cv;
 }
-return { MIN_HIT, identityOfMaterial, speciesOf, plantFrameOf, plantCanvas, silhouetteOf, iconFrameOf, ingredientSprite, ICON_PX };
+return { MIN_HIT, identityOfMaterial, speciesOf, plantFrameOf, plantCanvas, plantRim, silhouetteOf, iconFrameOf, ingredientSprite, ICON_PX };
 })();
 // src/game/journal.js
 const __m85 = (() => {
@@ -16470,7 +16485,6 @@ const { ramp, hex, mixPacked, pack, unpack } = __m24;
 const SCENE_W = 384;
 const SCENE_H = 216;
 const CELL = 1;
-const step = (t) => Math.floor(t / 0.035) * 0.035;
 class Canvas {
 constructor(seed) {
 this.W = SCENE_W; this.H = SCENE_H;
@@ -16536,7 +16550,7 @@ this.pending.push([x, y, r, rgb, k]);
 }
 wash(c, f, y0 = 0, y1 = this.H) {
 for (let y = Math.max(0, y0); y < Math.min(this.H, y1); y++) for (let x = 0; x < this.W; x++) {
-const t = step(f(x, y));
+const t = f(x, y);
 if (t <= 0.004) continue;
 const k = y * this.W + x;
 this.pix.px[k] = mixPacked(this.pix.px[k], c, Math.min(1, t));
@@ -16544,7 +16558,7 @@ this.pix.px[k] = mixPacked(this.pix.px[k], c, Math.min(1, t));
 }
 light(rgb, f, y0 = 0, y1 = this.H) {
 for (let y = Math.max(0, y0); y < Math.min(this.H, y1); y++) for (let x = 0; x < this.W; x++) {
-const t = step(f(x, y));
+const t = f(x, y);
 if (t <= 0.004) continue;
 const k = y * this.W + x, c = this.pix.px[k];
 const r = Math.min(255, (c & 255) + rgb[0] * 255 * t), g = Math.min(255, ((c >>> 8) & 255) + rgb[1] * 255 * t), b = Math.min(255, ((c >>> 16) & 255) + rgb[2] * 255 * t);
@@ -16552,16 +16566,19 @@ this.pix.px[k] = ((255 << 24) | (Math.round(b) << 16) | (Math.round(g) << 8) | M
 }
 }
 }
-function sky(cv, y0, y1, stops, bands = 12) {
-const cols = stops.map(hex), n = Math.max(3, Math.min(6, Math.round(bands / 2)));
+function sky(cv, y0, y1, stops, _bands) {
+const cols = stops.map(hex);
 const at = (t) => {
-const f = Math.min(cols.length - 1.0001, t * (cols.length - 1)), i = Math.floor(f), u = f - i;
+const f = Math.min(cols.length - 1.0001, Math.max(0, t) * (cols.length - 1)), i = Math.floor(f), u = f - i;
 return cols[i].map((v, k) => v + (cols[i + 1][k] - v) * u);
 };
-const steps = Array.from({ length: n }, (_, i) => pack(at(i / (n - 1))));
+const B = [0, 0.5, 0.125, 0.625, 0.75, 0.25, 0.875, 0.375];
 for (let y = y0; y < y1; y++) {
-const t = (y - y0) / Math.max(1, y1 - y0 - 1), b = Math.min(n - 1, Math.floor(Math.pow(t, 0.8) * n));
-for (let x = 0; x < cv.W; x++) cv.set(x, y, steps[b]);
+const c = at(Math.pow((y - y0) / Math.max(1, y1 - y0 - 1), 0.9));
+for (let x = 0; x < cv.W; x++) {
+const d = (B[(x & 3) + ((y & 1) << 2)] - 0.5) / 255;
+cv.set(x, y, pack([c[0] + d, c[1] + d, c[2] + d]));
+}
 }
 }
 return { SCENE_W, SCENE_H, CELL, Canvas, sky, ramp, hex, mixPacked, pack, unpack };
@@ -16748,7 +16765,7 @@ for (let y = level; y < cv.H; y++) {
 const k = y * cv.W + x;
 if (cv.solid[k]) break;
 cv.liquid[k] = 1;
-const d = y - level, c = d === 0 ? surf : body[Math.min(body.length - 1, Math.floor(d / 4))];
+const d = y - level, f = Math.min(body.length - 1, d / 5), i = Math.floor(f), c = d === 0 ? surf : i >= body.length - 1 ? body[i] : mixPacked(body[i], body[i + 1], f - i);
 cv.pix.px[k] = mixPacked(c, cv.pix.px[k], d === 0 ? 0 : see);
 }
 }
@@ -17119,7 +17136,79 @@ if (!out.some(([x, y]) => Math.abs(x - p[0]) < 14 && Math.abs(y - p[1]) < 10)) o
 }
 return out;
 }
-return { farPillars, fog, caveFrame, vines, moss, glowShrooms, torch, fall, ruins, finish, ledgeTops };
+function veins(cv, p, o) {
+const W = cv.W, H = cv.H, S = cv.solid, L = cv.liquid, seed = o.seed, reach = o.reach ?? 60, soak = o.soak ?? 10, k = o.k ?? 0.7;
+const core = o.core.map(col), tint = col(o.tint);
+const heat = new Float32Array(W * H), vein = new Float32Array(W * H);
+const x0 = Math.max(0, p.x0 - reach), x1 = Math.min(W - 1, p.x1 + reach), y0 = Math.max(0, p.level - 4);
+const dist = new Float32Array(W * H).fill(1e3);
+for (let y = y0; y < H; y++) for (let x = x0; x <= x1; x++) if (L[y * W + x]) dist[y * W + x] = 0;
+for (let pass = 0; pass < 2; pass++) {
+const fwd = pass === 0;
+for (let yy = 0; yy < H - y0; yy++) {
+const y = fwd ? y0 + yy : H - 1 - yy;
+for (let xx = 0; xx <= x1 - x0; xx++) {
+const x = fwd ? x0 + xx : x1 - xx, i = y * W + x;
+if (!S[i]) continue;
+const dy = fwd ? -1 : 1, dx = fwd ? -1 : 1;
+let d = dist[i];
+if (x + dx >= x0 && x + dx <= x1) d = Math.min(d, dist[i + dx] + 1);
+if (y + dy >= y0 && y + dy < H) { d = Math.min(d, dist[i + dy * W] + 1); if (x + dx >= x0 && x + dx <= x1) d = Math.min(d, dist[i + dy * W + dx] + 1.41); }
+dist[i] = d;
+}
+}
+}
+for (let y = y0; y < H; y++) for (let x = x0; x <= x1; x++) {
+const i = y * W + x;
+if (S[i] && dist[i] < soak) heat[i] += (1 - dist[i] / soak) ** 2;
+}
+const n = o.n ?? 8, walkers = [];
+for (let v = 0; v < n; v++) {
+const sx = Math.round(p.x0 + hash2(v, 1, seed) * (p.x1 - p.x0));
+let sy = p.level;
+while (sy < H - 1 && !S[sy * W + sx]) sy++;
+const out = (sx - (p.x0 + p.x1) / 2) / Math.max(1, (p.x1 - p.x0) / 2);
+walkers.push([sx, sy, Math.PI / 2 - out * 0.9 + (hash2(v, 2, seed) - 0.5) * 0.8, reach * (0.5 + hash2(v, 3, seed) * 0.5), 1, v]);
+}
+for (let w = 0; w < walkers.length && w < 60; w++) {
+let [x, y, a, len, s0, id] = walkers[w];
+for (let t = 0; t < len; t++) {
+const xi = Math.round(x), yi = Math.round(y);
+if (xi < 1 || xi >= W - 1 || yi >= H - 1 || yi < 0) break;
+const i = yi * W + xi;
+if (!S[i] && !L[i]) break;
+const f = s0 * (1 - t / len);
+if (S[i]) { vein[i] = Math.max(vein[i], f); if (f > 0.55) vein[i + 1] = Math.max(vein[i + 1], f * 0.8); }
+a += (hash2(id, t, seed + 5) - 0.5) * 0.7 + (Math.PI / 2 - a) * 0.04;
+x += Math.cos(a); y += Math.max(-0.3, Math.sin(a));
+if (hash2(id, t, seed + 6) < 0.035 && walkers.length < 60) walkers.push([x, y, a + (hash2(id, t, seed + 7) < 0.5 ? -0.8 : 0.8), (len - t) * 0.6, f, id * 31 + t]);
+}
+}
+const R = 5;
+for (let y = y0; y < H; y++) for (let x = x0; x <= x1; x++) {
+const v = vein[y * W + x];
+if (v <= 0) continue;
+for (let j = -R; j <= R; j++) for (let i = -R; i <= R; i++) {
+const xx = x + i, yy = y + j;
+if (xx < 0 || xx >= W || yy < 0 || yy >= H) continue;
+heat[yy * W + xx] += v * 0.09 * Math.exp(-(i * i + j * j) / 6);
+}
+}
+for (let y = y0; y < H; y++) for (let x = x0; x <= x1; x++) {
+const i = y * W + x;
+if (!S[i]) continue;
+const v = vein[i];
+if (v > 0.06) cv.pix.px[i] = mixPacked(core[Math.min(core.length - 1, Math.floor((1 - v) * core.length))], cv.pix.px[i], Math.min(0.9, (o.mix ?? 0) + (v > 0.3 ? 0 : 0.4)));
+else if (heat[i] > 0.01) cv.pix.px[i] = mixPacked(cv.pix.px[i], tint, Math.min(0.85, heat[i] * k));
+}
+if (o.rgb) {
+const rgb = o.rgb;
+cv.light(rgb, (x, y) => { const i = y * W + x; return S[i] ? Math.min(0.5, heat[i] * 0.35) : 0; }, y0, H);
+}
+}
+const WATER_VEINS = (seed) => ({ core: ['#3a6a7a', '#2e5866', '#244652', '#1c3640'], tint: '#14262e', seed, n: 5, reach: 40, soak: 10, k: 0.5, mix: 0.45 });
+const LAVA_VEINS = (seed) => ({ core: ['#fff0a0', '#ffc040', '#ff8a2a', '#e05a18', '#a8320e', '#5a1a0c'], tint: '#b8401a', seed, n: 11, reach: 90, soak: 13, k: 0.75, rgb: [1, 0.42, 0.12] });
+return { farPillars, fog, caveFrame, vines, moss, glowShrooms, torch, fall, ruins, finish, ledgeTops, veins, WATER_VEINS, LAVA_VEINS };
 })();
 // src/visual/env/kit.js
 const __m100 = (() => {
@@ -17157,32 +17246,19 @@ return /** @type {import('../geometry.js').Pt[]} */ ([
 ]);
 }
 function crown(m, rng, cx, cy, rx, ry, mat = 'leaf', o = {}) {
-const n = o.n ?? Math.max(5, Math.round((rx + ry) / 3.5)), rnd = R(rng);
-const blobs = [];
-for (let i = 0; i < n; i++) {
-const a = rng.next() * Math.PI * 2, q = Math.sqrt(rng.next());
-blobs.push([cx + Math.cos(a) * rx * 0.62 * q, cy + Math.sin(a) * ry * 0.55 * q, (0.38 + rng.next() * 0.25) * Math.min(rx, ry * 1.4)]);
+const rnd = R(rng), r = o.r ?? Math.max(2.5, Math.min(rx * 0.5, ry * 0.62, 9));
+m.poly(lumpy(cx, cy + r * 0.2, rx * 0.92, ry * 0.88, rnd, 0.06, 7), mat, { shade: 'flat', tex: 0.3, tone: -0.22 });
+const sx = r * 1.5, sy = r * 1.15, clumps = [];
+for (let row = -Math.ceil(ry / sy); row <= Math.ceil(ry / sy); row++) for (let col = -Math.ceil(rx / sx) - 1; col <= Math.ceil(rx / sx) + 1; col++) {
+const x = cx + col * sx + ((row & 1) ? sx / 2 : 0) + (rng.next() - 0.5) * r * 0.25, y = cy + row * sy + (rng.next() - 0.5) * r * 0.2;
+if (((x - cx) / (rx - r * 0.4)) ** 2 + ((y - cy) / (ry - r * 0.3)) ** 2 > 1) continue;
+clumps.push([x, y]);
 }
-for (let i = 0; i < n * 2; i++) {
-const a = rng.next() * Math.PI * 2, q = 0.75 + rng.next() * 0.3;
-blobs.push([cx + Math.cos(a) * rx * 0.8 * q, cy + Math.sin(a) * ry * 0.72 * q, (0.16 + rng.next() * 0.12) * Math.min(rx, ry * 1.4)]);
-}
-blobs.sort((p, q) => q[1] - p[1] + (q[0] - p[0]) * 0.2);
-for (const [x, y, r] of blobs) m.poly(lumpy(x, y, r * (0.95 + rng.next() * 0.25), r * (0.7 + rng.next() * 0.2), rnd, 0.22, 7), mat, { shade: 'round', tex: 2.2, tone: ((cy - y) / ry) * 0.28 + ((cx - x) / rx) * 0.1 - 0.08 });
-for (let i = 0; i < n; i++) {
-const a = Math.PI * (0.9 + rng.next() * 1.2), t = 1.5 + rng.next() * 1.5;
-const x = cx + Math.cos(a) * rx * 0.85, y = cy + Math.sin(a) * ry * 0.8;
-m.poly(lumpy(x, y, t, t, rnd, 0.3, 5), mat, { shade: 'flat', tex: 1.2, tone: Math.sin(a) < 0 ? 0.1 : -0.12 });
-}
-for (let i = 0; i < n; i++) {
-const x = cx + (rng.next() - 0.5) * rx * 1.2, y = cy + rng.next() * ry * 0.5;
-m.dot(x, y, mat, { lum: 0.05 }); m.dot(x + 1, y, mat, { lum: 0.12 });
-}
-for (let i = 0; i < n * 2; i++) {
-const a = Math.PI + rng.next() * Math.PI * 0.9, q = 0.3 + rng.next() * 0.6;
-const x = cx + Math.cos(a) * rx * q * 0.8 - rx * 0.1, y = cy + Math.sin(a) * ry * q * 0.7;
-m.dot(x, y, mat, { lum: 0.92 });
-if (i % 2) m.dot(x + 1, y, mat, { lum: 0.8 });
+clumps.sort((a, b) => b[1] - a[1] || a[0] - b[0]);
+for (const [x, y] of clumps) {
+const up = (cy - y) / ry, left = (cx - x) / rx;
+m.poly(lumpy(x, y, r, r * 0.9, rnd, 0.1, 7), mat, { shade: 'round', tex: 0.3, tone: -0.04 + up * 0.14 + left * 0.05, soft: true });
+if (up > -0.3) m.poly(lumpy(x - r * 0.25, y - r * 0.35, r * 0.45, r * 0.3, rnd, 0.06, 5), mat, { shade: 'flat', tex: 0, tone: 0.16 + up * 0.1 + left * 0.04, noOutline: true });
 }
 return m;
 }
@@ -17192,7 +17268,7 @@ const trunkTop = kind === 'pine' ? h * 0.95 : kind === 'willow' ? h * 0.6 : kind
 const spine = bezier([0, 0], [0, -trunkTop * 0.4], [lean * 0.6, -trunkTop * 0.75], [lean, -trunkTop], 12);
 const ws = spine.map((_, i) => tw * (1 - (i / spine.length) * (kind === 'pine' ? 0.8 : 0.45)) * (i === 0 ? 1.25 : 1));
 for (const s of [-1, 1]) m.stroke([[s * tw * 0.2, -tw * 0.6], [s * tw * 0.9, -1], [s * tw * 1.5, 1]], [tw * 0.45, tw * 0.25, 1.2], o.bark || 'bark', { tone: s > 0 ? -0.08 : 0 });
-m.stroke(spine, ws, o.bark || 'bark', { tex: 1.5 });
+m.stroke(spine, ws, o.bark || 'bark', { tex: 0.5 });
 for (let k = 0; k < Math.max(1, Math.round(tw / 3)); k++) {
 const f = (k + 0.5) / Math.max(1, Math.round(tw / 3)) - 0.5, pts = [];
 for (let i = 1; i < spine.length - 1; i += 1) pts.push([spine[i][0] + f * ws[i] * 0.7 + (rng.next() - 0.5) * 0.8, spine[i][1]]);
@@ -17215,11 +17291,11 @@ m.poly(/** @type {any} */ (pts), o.leaf || 'leaf', { shade: 'fold', tex: 1.4, to
 }
 return m;
 }
-const cw = kind === 'birch' ? h * 0.28 : kind === 'willow' ? h * 0.42 : h * 0.45;
+const cw = kind === 'birch' ? h * 0.24 : kind === 'willow' ? h * 0.42 : h * 0.36;
 for (const s of [-1, 1]) m.stroke([[top[0], top[1] + 3], [top[0] + s * cw * 0.35, top[1] - h * 0.08], [top[0] + s * cw * 0.6, top[1] - h * 0.18]], [tw * 0.5, tw * 0.25], o.bark || 'bark', {});
 const cy = top[1] - h * (kind === 'willow' ? 0.12 : 0.2);
-crown(m, rng, top[0], kind === 'willow' ? cy - h * 0.06 : cy, kind === 'willow' ? cw * 0.75 : cw, h * (kind === 'birch' ? 0.32 : kind === 'willow' ? 0.17 : 0.26), o.leaf || 'leaf');
-if (kind === 'oak') { crown(m, rng, top[0] - cw * 0.5, cy + h * 0.06, cw * 0.55, h * 0.16, o.leaf || 'leaf'); crown(m, rng, top[0] + cw * 0.55, cy + h * 0.08, cw * 0.5, h * 0.15, o.leaf || 'leaf'); }
+if (kind === 'oak') { crown(m, rng, top[0] - cw * 0.5, cy + h * 0.07, cw * 0.55, h * 0.16, o.leaf || 'leaf'); crown(m, rng, top[0] + cw * 0.55, cy + h * 0.09, cw * 0.5, h * 0.15, o.leaf || 'leaf'); }
+crown(m, rng, top[0], kind === 'willow' ? cy - h * 0.06 : cy, kind === 'willow' ? cw * 0.75 : cw, h * (kind === 'birch' ? 0.3 : kind === 'willow' ? 0.17 : 0.28), o.leaf || 'leaf');
 if (kind === 'willow') {
 for (let i = 0; i < Math.round(cw * 0.9); i++) {
 const x0 = top[0] + (rng.next() - 0.5) * cw * 1.8, y0 = cy + (rng.next() - 0.2) * h * 0.12, len = h * (0.18 + rng.next() * 0.28);
@@ -17239,7 +17315,7 @@ return m;
 }
 function bush(rng, rx, ry, o = {}) {
 const m = new Model();
-crown(m, rng, 0, -ry * 0.7, rx, ry, o.leaf || 'leaf', { n: Math.max(4, Math.round(rx / 2.5)) });
+crown(m, rng, 0, -ry * 0.7, rx, ry, o.leaf || 'leaf');
 if (o.dots) for (let i = 0; i < rx * 0.8; i++) {
 const a = Math.PI + rng.next() * Math.PI, q = Math.sqrt(rng.next()) * 0.8;
 m.dot(Math.cos(a) * rx * q, -ry * 0.7 + Math.sin(a) * ry * q * 0.8, o.dots, { lum: rng.next() < 0.5 ? 0.85 : 0.55 });
@@ -17422,7 +17498,7 @@ const __m99 = (() => {
 const { sky } = __m95;
 const { palette, vary, streamOf } = __m100;
 const { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, surfaceAt, silhouette, treeShape, glow, drips, ledges } = __m97;
-const { caveFrame, fog, vines, moss } = __m96;
+const { caveFrame, fog, vines, moss, veins, WATER_VEINS } = __m96;
 const { tree, cloud, fence, skep, boulder } = __m101;
 const { Model, lumpy } = __m28;
 const { pack } = __m24;
@@ -17432,7 +17508,7 @@ const pal = vary(palette({
 leaf: ['#3a6e2a', { spread: 0.6 }], bark: '#4e3420', rock: '#7a7a72', cloud: ['#c8d4e4', { spread: 0.3, cool: 0.5 }],
 timber: '#6a4a2e', straw: ['#c8a050', { spread: 0.45 }], moss: '#5a8a34',
 }), s('pal'), 1);
-sky(cv, 0, 160, ['#1e3a6e', '#2e5a92', '#5a88b8', '#9cc0d8'], 10);
+sky(cv, 0, 160, ['#2a5aa0', '#4a82c4', '#86b4dc', '#cfe2e8'], 10);
 const sx = 230 + s('sun').int(-50, 50), sy = 34;
 for (let y = sy - 10; y <= sy + 10; y++) for (let x = sx - 10; x <= sx + 10; x++) if (Math.hypot(x - sx, y - sy) <= 9.5) cv.set(x, y, Math.hypot(x - sx, y - sy) < 7.5 ? pack([1, 0.98, 0.86]) : pack([1, 0.92, 0.66]));
 glow(cv, sx, sy, 70, [1, 0.92, 0.7], 0.35);
@@ -17444,12 +17520,15 @@ const wood = silhouette(cv, { base: 124, amp: 8, freq: 0.014, seed: s('h2').int(
 const tr = s('far');
 for (let x = 4; x < W; x += tr.int(5, 12)) treeShape(cv, x, wood[x] + 2, tr.int(12, 24), tr.next() < 0.4 ? 'pine' : 'oak', tr.next() < 0.5 ? '#1e3e30' : '#24482f', tr.int(0, 1e9));
 silhouette(cv, { base: 140, amp: 6, freq: 0.02, seed: s('h3').int(0, 1e9), fill: '#2e5a32', rim: '#3e7238' });
-const fs = s('frame'), o0 = fs.int(40, 80), o1 = W - fs.int(30, 70);
+const fs = s('frame'), cave = fs.next() < 0.25;
+if (cave) {
+const o0 = fs.int(40, 80), o1 = W - fs.int(30, 70);
 const frame = caveFrame(cv, {
 seed: fs.int(0, 1e9), stones: ['#4a3e30', '#3e3428', '#4a4a34'], mortar: '#140e0a', dark: 0.35, roof: [40, 70], walls: [26, 22], open: [o0, o1],
 stal: { n: 10, len: [4, 18], w: [2, 5] }, lip: ['#5a9a34', '#3a6e26'],
 });
 vines(cv, frame.roof, { cols: ['#5a9a30', '#3e7226', '#2a5020'], leaf: '#6ab83a', flower: '#ff9fc7', seed: fs.int(0, 1e9), rate: 0.3, len: [4, 50] });
+}
 const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 166, amp: 10, freq: 0.01 });
 const kx = ts.int(40, W - 120);
 raise(top, kx, kx + ts.int(40, 70), Math.min(...top) - ts.int(10, 18), 3);
@@ -17473,6 +17552,7 @@ grass: { cols: ['#6ab83e', '#8ccf4a', '#4e9a34'], tall: 4, rate: 0.7, flowers: [
 moss(cv, { cols: ['#8ccf4a', '#5ea83a', '#3f7e2c', '#2e5a22'], seed: ss + 1, drape: 9, rate: 0.2, len: 10 });
 if (pond) {
 cv.meta.pond = pool(cv, pond.x - pond.hw, pond.x + pond.hw, pond.level, { surface: '#cfe8ff', body: ['#3a6a98', '#2e5a86', '#244a72', '#1a3a5e'], see: 0.2, bed: ['#3a2e20', '#4a3a28', '#2a2018'] });
+veins(cv, cv.meta.pond, WATER_VEINS(ss + 4));
 }
 markOpen(cv);
 const or = s('oaks'), left = or.next() < 0.5;
@@ -17497,7 +17577,7 @@ const rr = s('rocks');
 for (let i = 0; i < 2; i++) { const x = rr.int(10, W - 10); cv.stamp(boulder(rr, rr.int(5, 9), rr.int(3, 5), { moss: 'moss' }), pal, x, surfaceAt(cv, x) + 2, { foot: [8, 2] }); }
 cv.meta.sun = [sx, sy];
 cv.meta.trickles = drips(cv, ss, 3);
-cv.meta.vignette = 0.45;
+cv.meta.vignette = cave ? 0.45 : 0.3;
 cv.meta.horizon = 120;
 }
 return { compose };
@@ -17506,29 +17586,45 @@ return { compose };
 const __m102 = (() => {
 const { sky } = __m95;
 const { palette, vary, streamOf } = __m100;
-const { heights, raise, fillSolid, blob, paintTerrain, markOpen, surfaceAt, col, drips, ledges } = __m97;
+const { heights, raise, fillSolid, blob, paintTerrain, markOpen, surfaceAt, col, drips, ledges, hanging } = __m97;
 const { caveFrame, farPillars, fog, vines, moss, glowShrooms } = __m96;
 const { tree, fern, log, stump } = __m101;
 const { hash2 } = __m42;
+const { hex, pack } = __m24;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'forest', p);
-const autumn = s('season').next() < 0.3;
+const autumn = s('season').next() < 0.3, cave = s('kind').next() < 0.35;
 const pal = vary(palette({
-leaf: [autumn ? '#7a5220' : '#2e5426', { spread: 0.6 }], bark: ['#4a3422', { spread: 0.55 }], wood: '#a87a48', rock: '#5e625c',
+leaf: [autumn ? '#8a5a20' : '#2e6a2a', { spread: 0.6 }], bark: ['#4a3422', { spread: 0.5 }], wood: '#a87a48', rock: '#5e625c',
 moss: ['#4e7a30', { spread: 0.5 }], fern: [autumn ? '#8a6a26' : '#4e8a34', { spread: 0.55 }],
 }), s('pal'), 1);
-sky(cv, 0, H, ['#050806', '#08100a', '#0c160e', '#101c12'], 10);
+const back = cave ? '#0e1a12' : '#9ab8a0';
+if (cave) {
+sky(cv, 0, H, ['#050806', '#08100a', '#0c160e', '#101c12']);
 farPillars(cv, { n: 8, fill: '#0f1a10', rim: '#152416', seed: s('far1').int(0, 1e9), w: [10, 22], floor: 180, caps: true });
 fog(cv, '#24402a', 80, 200, 0.3, s('fog1').int(0, 1e9));
-farPillars(cv, { n: 5, fill: '#14221a', rim: '#1e3222', seed: s('far2').int(0, 1e9), w: [18, 30], floor: 185 });
-fog(cv, '#2a4a2e', 110, 210, 0.2, s('fog2').int(0, 1e9));
+} else {
+sky(cv, 0, H, ['#c8dcc0', '#b0ccb0', '#90b49c', '#78a088']);
+}
+const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 172, amp: 8, freq: 0.012 });
+const rows = s('rows');
+for (const [k, h, haze] of /** @type {[number, number[], number][]} */ ([[0, [40, 56], 0.7], [1, [50, 70], 0.45]])) {
+for (let x = rows.int(-6, 6); x < W + 10; x += rows.int(16, 26)) {
+const m = tree(rows, rows.next() < 0.2 ? 'pine' : 'oak', rows.int(h[0], h[1]), rows.int(3, 5));
+cv.stamp(m, pal, x, Math.round(top[Math.max(0, Math.min(W - 1, x))]) - 14 + k * 8, { haze: [pack(hex(back)), haze], outline: false });
+}
+fog(cv, cave ? '#24402a' : '#b8d0b8', 60, 190, cave ? 0.2 : 0.3, rows.int(0, 1e9));
+}
+if (cave) {
 const fs = s('frame');
 const frame = caveFrame(cv, {
 seed: fs.int(0, 1e9), stones: ['#3a3428', '#2e2a22', '#3e4430'], mortar: '#0c0a08', dark: 0.4, roof: [12, 36], walls: [10, 12],
 stal: { n: 14, len: [8, 30], w: [3, 7] }, lip: [autumn ? '#9a6a22' : '#4e8a2e', '#2e5a22'],
 });
 vines(cv, frame.roof, { cols: autumn ? ['#9a6a22', '#6a4a1a', '#3e2e14'] : ['#4a8a2a', '#30601e', '#1e3e16'], leaf: autumn ? '#c88a2a' : '#5e9a32', flower: '#e86a9a', seed: fs.int(0, 1e9), rate: 0.25, len: [4, 44] });
-const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 172, amp: 8, freq: 0.012 });
+} else {
+hanging(cv, { base: 14, amp: 10, freq: 0.03, seed: s('canopy').int(0, 1e9), fill: autumn ? '#5a3e1a' : '#1e3e22', rim: autumn ? '#7a5422' : '#2a5230', rough: 4 });
+}
 const kx = ts.int(60, W - 140);
 raise(top, kx, kx + ts.int(30, 60), Math.min(...top) - ts.int(8, 14), 3);
 fillSolid(cv, top);
@@ -17554,26 +17650,30 @@ x += dx; if (hash2(x, y, i) < 0.45) y++;
 }
 }
 markOpen(cv);
-const or = s('oaks'), left = or.next() < 0.6;
-const lx = left ? or.int(14, 40) : or.int(344, 370);
-cv.stamp(tree(or, 'oak', or.int(170, 190), or.int(16, 22), { lean: left ? 0.06 : -0.06 }), pal, lx, surfaceAt(cv, lx) + 3, { roots: [22, 4] });
-const rx = left ? or.int(330, 372) : or.int(12, 50);
-cv.stamp(tree(or, 'oak', or.int(100, 130), or.int(9, 12), { lean: left ? -0.04 : 0.04 }), pal, rx, surfaceAt(cv, rx) + 2, { roots: [12, 3], dark: 0.25 });
+const or = s('oaks'), n = or.int(5, 7);
+for (let i = 0; i < n; i++) {
+const x = Math.round(((i + 0.5) / n) * W + or.int(-14, 14)), kind = or.next() < 0.25 ? 'pine' : or.next() < 0.2 ? 'birch' : 'oak';
+cv.stamp(tree(or, kind, or.int(60, 88), or.int(4, 6)), pal, x, surfaceAt(cv, x) + 2, { roots: [7, 2] });
+}
+const left = or.next() < 0.5, ex = left ? or.int(10, 30) : or.int(354, 374);
+cv.stamp(tree(or, 'oak', or.int(104, 120), or.int(8, 10), { lean: left ? 0.05 : -0.05 }), pal, ex, surfaceAt(cv, ex) + 2, { roots: [11, 3] });
 const lr = s('logs'), gx = lr.int(90, 290);
-cv.stamp(log(lr, lr.int(40, 60), lr.int(5, 7), { moss: 'moss' }), pal, gx, surfaceAt(cv, gx) + 2, { foot: [26, 3] });
+cv.stamp(log(lr, lr.int(34, 48), lr.int(4, 6), { moss: 'moss' }), pal, gx, surfaceAt(cv, gx) + 2, { foot: [22, 3] });
 const sx = lr.int(60, 320);
-cv.stamp(stump(lr, lr.int(10, 14), lr.int(7, 10)), pal, sx, surfaceAt(cv, sx) + 1, { foot: [8, 2] });
+cv.stamp(stump(lr, lr.int(9, 12), lr.int(6, 9)), pal, sx, surfaceAt(cv, sx) + 1, { foot: [7, 2] });
 const fr = s('ferns');
 for (let i = 0; i < 6; i++) { const x = fr.int(10, W - 10); cv.stamp(fern(fr, fr.int(8, 13), { leaf: 'fern' }), pal, x, surfaceAt(cv, x) + 1); }
 const shafts = s('shafts'), sx0 = shafts.int(110, 230);
-cv.light([0.7, 0.9, 0.6], (x, y) => {
-const u = x - sx0 - y * 0.3, v = ((u % 30) + 30) % 30, k = Math.floor(u / 30);
-return k >= 0 && k < 2 && v < 8 - k * 3 ? 0.1 * (1 - y / H) : 0;
+cv.light(cave ? [0.7, 0.9, 0.6] : [1, 0.95, 0.7], (x, y) => {
+const u = x - sx0 - y * 0.35, c = 14 + (y / H) * 10;
+let t = 0;
+for (let k = 0; k < 3; k++) { const d = Math.abs(u - k * 34) / c; if (d < 1) t = Math.max(t, (1 - d * d) * (1 - k * 0.25)); }
+return t * (cave ? 0.09 : 0.16) * (1 - y / H);
 }, 0, H);
 cv.meta.shaft = sx0;
-cv.meta.glows = glowShrooms(cv, { n: 9, cap: '#e8642a', lit: '#ffc070', stem: '#e0d0b0', rgb: [1, 0.5, 0.18], seed: s('shrooms').int(0, 1e9) });
+cv.meta.glows = glowShrooms(cv, { n: cave ? 9 : 5, cap: '#e8642a', lit: '#ffc070', stem: '#e0d0b0', rgb: [1, 0.5, 0.18], seed: s('shrooms').int(0, 1e9) });
 cv.meta.trickles = drips(cv, ss, 4);
-cv.meta.vignette = 0.6;
+cv.meta.vignette = cave ? 0.6 : 0.35;
 cv.meta.horizon = 120;
 }
 return { compose };
@@ -17582,27 +17682,38 @@ return { compose };
 const __m103 = (() => {
 const { sky } = __m95;
 const { palette, vary, streamOf } = __m100;
-const { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt } = __m97;
-const { caveFrame, farPillars, fog, vines, moss, glowShrooms, ledgeTops } = __m96;
-const { tree, reeds, beam } = __m101;
+const { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, silhouette, treeShape } = __m97;
+const { caveFrame, farPillars, fog, vines, moss, glowShrooms, ledgeTops, veins, WATER_VEINS } = __m96;
+const { tree, reeds, beam, cloud } = __m101;
 const { Model } = __m28;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'river', p);
 const pal = vary(palette({
 leaf: ['#4a7a2a', { spread: 0.55 }], bark: ['#4a3a2a', { spread: 0.5 }], reed: ['#4e7a2e', { spread: 0.5 }],
-cattail: '#7a3a22', timber: '#6a4a2e',
+cattail: '#7a3a22', timber: '#6a4a2e', cloud: ['#eef2f4', { spread: 0.3 }],
 }), s('pal'), 1);
-sky(cv, 0, H, ['#05090c', '#08121a', '#0c1c20', '#102624'], 10);
+const fs = s('frame'), cave = fs.next() < 0.5;
+if (cave) {
+sky(cv, 0, H, ['#05090c', '#08121a', '#0c1c20', '#102624']);
 farPillars(cv, { n: 8, fill: '#0f1e1e', rim: '#162a28', seed: s('far1').int(0, 1e9), w: [10, 20], floor: 180, caps: true });
 fog(cv, '#1e4040', 90, 200, 0.35, s('fog1').int(0, 1e9));
 farPillars(cv, { n: 5, fill: '#142824', rim: '#1e3a32', seed: s('far2').int(0, 1e9), w: [16, 28], floor: 185, caps: true });
 fog(cv, '#24504a', 120, 210, 0.25, s('fog2').int(0, 1e9));
-const fs = s('frame');
 const frame = caveFrame(cv, {
 seed: fs.int(0, 1e9), stones: ['#3e443c', '#4a4c40', '#343a34'], mortar: '#101412', dark: 0.42, roof: [10, 30], walls: [8, 12],
 stal: { n: 18, len: [8, 36], w: [3, 7] }, lip: ['#4e8a2e', '#2e5a22'],
 });
 vines(cv, frame.roof, { cols: ['#4e8a2a', '#34621e', '#22401a'], leaf: '#5e9a32', seed: fs.int(0, 1e9), rate: 0.22, len: [4, 50] });
+} else {
+sky(cv, 0, 170, ['#3a6eb4', '#6a9ad0', '#a8c8e0', '#d8e6e4']);
+const cr = s('clouds');
+for (let i = 0; i < 3 + cr.int(0, 2); i++) cv.stamp(cloud(cr, cr.int(30, 60), cr.int(7, 12)), pal, cr.int(0, W), cr.int(14, 50), { outline: false, texture: 0 });
+silhouette(cv, { base: 84, amp: 24, freq: 0.01, seed: s('m').int(0, 1e9), fill: '#8a9ec0', rim: '#c8d4e4', peaks: 0.6 });
+fog(cv, '#c8d8e4', 80, 130, 0.3, s('haze').int(0, 1e9));
+const pines = silhouette(cv, { base: 122, amp: 8, freq: 0.02, seed: s('p').int(0, 1e9), fill: '#4e7a6a' });
+const pr = s('pines');
+for (let x = 2; x < W; x += pr.int(5, 11)) treeShape(cv, x, pines[x] + 2, pr.int(12, 22), 'pine', '#3e6a5a', pr.int(0, 1e9));
+}
 const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 168, amp: 8, freq: 0.012 });
 const rx = ts.int(150, 240), hw = ts.int(48, 64);
 dip(top, rx, hw, 28, 0.45);
@@ -17620,6 +17731,7 @@ grass: { cols: ['#5a9a3a', '#7ac04a', '#4a8a30'], tall: 4, rate: 0.6, flowers: [
 moss(cv, { cols: ['#7ac04a', '#4e8a34', '#3a6e2a', '#2a5020'], seed: ss + 1, drape: 9, rate: 0.22, len: 12 });
 const level = Math.round(Math.max(top[rx - hw], top[rx + hw])) + 5;
 cv.meta.river = pool(cv, rx - hw, rx + hw, level, { surface: '#8ae0d8', body: ['#2a6a68', '#1e5654', '#164442', '#0e3232', '#0a2424'], see: 0.3, bed: ['#2a3a2e', '#34463a', '#1e2a22'] });
+veins(cv, cv.meta.river, WATER_VEINS(ss + 4));
 markOpen(cv);
 const rr = s('reeds');
 for (const [x, y] of ledgeTops(cv, 5, rr.int(0, 1e9))) cv.stamp(reeds(rr, rr.int(10, 16), rr.int(3, 5), { heads: 0.7 }), pal, x, y + 1);
@@ -17638,8 +17750,8 @@ beam(m, [x0, y - 8], [x1, y - 8], 1.4);
 cv.stamp(m, pal, 0, 0, { dark: 0.2 });
 cv.meta.bridge = [x0, x1, y];
 }
-cv.meta.glows = glowShrooms(cv, { n: 9, cap: '#2ab8d8', lit: '#b0f4ff', stem: '#c8dcd4', rgb: [0.25, 0.75, 0.95], seed: s('shrooms').int(0, 1e9) });
-cv.meta.vignette = 0.6;
+cv.meta.glows = glowShrooms(cv, { n: cave ? 9 : 4, cap: '#2ab8d8', lit: '#b0f4ff', stem: '#c8dcd4', rgb: [0.25, 0.75, 0.95], seed: s('shrooms').int(0, 1e9) });
+cv.meta.vignette = cave ? 0.6 : 0.3;
 cv.meta.horizon = 116;
 }
 return { compose };
@@ -17648,25 +17760,34 @@ return { compose };
 const __m104 = (() => {
 const { sky } = __m95;
 const { palette, vary, streamOf } = __m100;
-const { fillSolid, blob, ledges, paintTerrain, markOpen, surfaceAt, glow, drips } = __m97;
+const { fillSolid, blob, ledges, paintTerrain, markOpen, surfaceAt, glow, drips, silhouette } = __m97;
 const { caveFrame, farPillars, fog, moss, torch, ledgeTops } = __m96;
-const { crane, ladder, cart, crate, beam, boulder, scaffold, wheel } = __m101;
+const { crane, ladder, cart, crate, beam, boulder, scaffold, wheel, cloud } = __m101;
 const { Model } = __m28;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'quarry', p);
 const pal = vary(palette({
 rock: ['#5a5048', { spread: 0.55 }], timber: ['#6a4428', { spread: 0.5 }], rope: '#4a3a2a', ore: ['#5a4a46', { spread: 0.5 }], metal: '#5a5a62',
-seamC: ['#e8c040', { spread: 0.4, n: 4 }],
+seamC: ['#e8c040', { spread: 0.4, n: 4 }], cloud: ['#eef0f0', { spread: 0.3 }],
 }), s('pal'), 0.8);
-sky(cv, 0, H, ['#070504', '#0e0a08', '#16100c', '#1c140e'], 10);
+const fs = s('frame'), cave = fs.next() < 0.5;
+if (cave) {
+sky(cv, 0, H, ['#070504', '#0e0a08', '#16100c', '#1c140e']);
 farPillars(cv, { n: 7, fill: '#1a130e', rim: '#241a12', seed: s('far1').int(0, 1e9), w: [12, 24], floor: 180 });
 fog(cv, '#3a2a1c', 80, 200, 0.3, s('fog1').int(0, 1e9));
 farPillars(cv, { n: 4, fill: '#22180f', rim: '#30221a', seed: s('far2').int(0, 1e9), w: [20, 34], floor: 185, caps: true });
-const fs = s('frame');
 caveFrame(cv, {
 seed: fs.int(0, 1e9), stones: ['#3a3028', '#2e2620', '#463a2e'], mortar: '#0c0806', dark: 0.4, roof: [10, 34], walls: [10, 12],
 stal: { n: 18, len: [6, 34], w: [3, 7], tip: '#c8702a' }, lip: ['#5a4a36', '#3a2e22'],
 });
+} else {
+sky(cv, 0, 150, ['#5a8ac0', '#8ab0d4', '#c8d8e0', '#e8e0d0']);
+const cr = s('clouds');
+for (let i = 0; i < 3; i++) cv.stamp(cloud(cr, cr.int(26, 50), cr.int(6, 10)), pal, cr.int(0, W), cr.int(10, 34), { outline: false, texture: 0 });
+silhouette(cv, { base: 76, amp: 14, freq: 0.012, seed: s('far').int(0, 1e9), fill: '#b0a498', rim: '#ccc2b4', peaks: 0.3 });
+fog(cv, '#e0d8cc', 70, 120, 0.25, s('haze').int(0, 1e9));
+silhouette(cv, { base: 100, amp: 8, freq: 0.02, seed: s('far2').int(0, 1e9), fill: '#8a7e72', rim: '#a09486', rough: 3 });
+}
 const ts = s('terrain'), top = new Float32Array(W), right = ts.next() < 0.5;
 const steps = [ts.int(108, 118), ts.int(128, 138), ts.int(148, 156), ts.int(166, 176)];
 let x = 0;
@@ -17687,11 +17808,18 @@ paintTerrain(cv, {
 a: '#5a5048', b: '#4e463e', grain: '#8a7e70', dark: '#1e1812', deep: '#0e0a08', cave: '#060404',
 crust: ['#9a8a6e', '#7a6c56', '#5a4e40'], crustH: 3, seed: ss,
 cobble: { stones: ['#5e5246', '#4e443a', '#6a5c4c', '#463e36', '#584c40', '#6a5236'], mortar: '#16100c', s: 4 },
-seams: { cols: ['#a0502a', '#b8b0a0', '#c09a3a', '#c87a2a'], n: 14 },
 });
 moss(cv, { cols: ['#8a7a5e', '#6a5c48', '#4a4034'], seed: ss + 1, drape: 5, rate: 0.08, len: 6 });
-const fl = s('flecks');
-for (let i = 0; i < 160; i++) {
+const fl = s('flecks'), ores = [[0xff2a5aa8, 0xff3a7ac8], [0xff3ab0e8, 0xff2a7ad0], [0xffd8e0e4, 0xffa8b0b4]];
+for (let i = 0; i < 18; i++) {
+const cx = fl.int(0, W - 1), cy = fl.int(100, H - 4), ore = ores[i % ores.length], r = fl.int(3, 6);
+for (let k = 0; k < r * r * 1.6; k++) {
+const a = fl.next() * Math.PI * 2, d = Math.sqrt(fl.next()) * r, xx = Math.round(cx + Math.cos(a) * d * 1.4), yy = Math.round(cy + Math.sin(a) * d);
+if (xx < 0 || xx >= W || yy < 0 || yy >= H || !cv.solid[yy * W + xx] || !cv.solid[(yy - 3) * W + xx]) continue;
+cv.set(xx, yy, ore[fl.next() < 0.7 ? 0 : 1]);
+}
+}
+for (let i = 0; i < 90; i++) {
 const xx = fl.int(0, W - 1), yy = fl.int(0, H - 1);
 if (!cv.solid[yy * W + xx]) continue;
 cv.set(xx, yy, fl.next() < 0.6 ? 0xff3ab0e8 : 0xff2a7ad0);
@@ -17730,7 +17858,7 @@ const tr = s('torches');
 for (const [x0, y0] of ledgeTops(cv, 3, tr.int(0, 1e9), 8)) { torch(cv, x0, y0, tr.int(8, 12)); cv.block(x0 - 3, y0 - 14, x0 + 4, y0 + 1); }
 cv.meta.lantern = [lx + 6, ly - 21];
 cv.meta.trickles = drips(cv, ss, 5);
-cv.meta.vignette = 0.6;
+cv.meta.vignette = cave ? 0.6 : 0.3;
 cv.meta.horizon = 100;
 }
 return { compose };
@@ -17739,8 +17867,8 @@ return { compose };
 const __m105 = (() => {
 const { sky } = __m95;
 const { palette, vary, streamOf } = __m100;
-const { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, glow } = __m97;
-const { caveFrame, farPillars, fog, vines, moss, ruins, glowShrooms } = __m96;
+const { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, glow, silhouette, treeShape } = __m97;
+const { caveFrame, farPillars, fog, vines, moss, ruins, glowShrooms, veins, WATER_VEINS } = __m96;
 const { tree, reeds, spire, cairn } = __m101;
 const { fbm2 } = __m42;
 const { pack } = __m24;
@@ -17750,11 +17878,11 @@ const pal = vary(palette({
 leaf: ['#1e3e34', { spread: 0.45 }], moss: ['#2e5a46', { spread: 0.5 }], bark: ['#2a2420', { spread: 0.4 }], wood: '#5a4a3a', rock: ['#3e4250', { spread: 0.45 }],
 reed: ['#2e4a34', { spread: 0.45 }], cattail: '#3a2a1e', gem: ['#6ac8f0', { spread: 0.6 }],
 }), s('pal'), 0.8);
-sky(cv, 0, H, ['#04050e', '#0a0f2a', '#121a40', '#1a2250'], 10);
+sky(cv, 0, H, ['#04050e', '#0a0f2a', '#121a40', '#1a2250']);
 const st = s('stars');
 for (let i = 0; i < 140; i++) { const x = st.int(0, W - 1), y = st.int(0, 110), b = st.next(); cv.set(x, y, pack(b > 0.8 ? [0.95, 0.95, 1] : b > 0.4 ? [0.7, 0.72, 0.95] : [0.45, 0.48, 0.75])); }
 for (let i = 0; i < 5; i++) { const x = st.int(4, W - 4), y = st.int(4, 70), c = pack([0.85, 0.9, 1]); for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [0, 0]]) cv.set(x + dx, y + dy, c); }
-const fs = s('frame'), o0 = fs.int(70, 150), o1 = o0 + fs.int(140, 200);
+const fs = s('frame'), cave = fs.next() < 0.4, o0 = fs.int(70, 150), o1 = o0 + fs.int(140, 200);
 const mx = Math.round((o0 + o1) / 2) + s('moon').int(-30, 30), my = s('moon2').int(30, 44), mr = 12;
 glow(cv, mx, my, 80, [0.45, 0.5, 0.8], 0.4);
 const ms = s('craters').int(0, 1e9);
@@ -17763,15 +17891,21 @@ if (Math.hypot(x - mx, y - my) > mr + 0.3) continue;
 const l = fbm2(x * 0.25, y * 0.25, ms, 2) > 0.58 ? 0.8 : 0.95;
 cv.set(x, y, pack([0.86 * l + 0.1, 0.9 * l + 0.08, l]));
 }
-farPillars(cv, { n: 8, fill: '#0e1430', rim: '#141c3e', seed: s('far1').int(0, 1e9), w: [10, 20], floor: 180 });
+if (cave) farPillars(cv, { n: 8, fill: '#0e1430', rim: '#141c3e', seed: s('far1').int(0, 1e9), w: [10, 20], floor: 180 });
+else {
+const tl = s('tl'), line = silhouette(cv, { base: 132, amp: 6, freq: 0.03, seed: tl.int(0, 1e9), fill: '#0e1430', rough: 3 });
+for (let x = 2; x < W; x += tl.int(7, 15)) treeShape(cv, x, line[x] + 2, tl.int(12, 26), tl.next() < 0.3 ? 'dead' : 'oak', '#0e1430', tl.int(0, 1e9));
+}
 fog(cv, '#2a3466', 90, 200, 0.3, s('fog1').int(0, 1e9));
 ruins(cv, { n: 5, fill: '#1a2246', line: '#0e1430', rim: '#2a3460', seed: s('ruins').int(0, 1e9), floor: 178 });
 fog(cv, '#30407a', 120, 210, 0.22, s('fog2').int(0, 1e9));
+if (cave) {
 const frame = caveFrame(cv, {
 seed: fs.int(0, 1e9), stones: ['#2a2e40', '#22263a', '#30344a'], mortar: '#08080e', dark: 0.4, roof: [26, 50], walls: [12, 14], open: [o0, o1],
 stal: { n: 14, len: [6, 28], w: [2, 6] }, lip: ['#2e6a56', '#1e4a3c'],
 });
 vines(cv, frame.roof, { cols: ['#2e6a56', '#1e4a3c', '#14322a'], leaf: '#3e8a6a', flower: '#8ff0ff', seed: fs.int(0, 1e9), rate: 0.3, len: [4, 50] });
+}
 const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 166, amp: 8, freq: 0.02 });
 const bx = ts.int(40, W - 100);
 raise(top, bx, bx + ts.int(30, 50), Math.min(...top) - ts.int(10, 16), 4);
@@ -17794,6 +17928,7 @@ grass: { cols: ['#2e6a52', '#3e8a6a', '#1e4a3c'], tall: 4, rate: 0.55, flowers: 
 });
 moss(cv, { cols: ['#3e8a6a', '#2e6a52', '#1e4a3c', '#14322a'], seed: ss + 1, drape: 10, rate: 0.25, len: 14 });
 cv.meta.pools = pools.map((p) => pool(cv, p.x - p.hw, p.x + p.hw, p.level, { surface: '#b0c4f0', body: ['#22346a', '#1a2a58', '#142046', '#0e1834'], see: 0.15, bed: ['#0e1a14', '#16261e', '#0a0e0c'] }));
+cv.meta.pools.forEach((p, i) => veins(cv, p, { ...WATER_VEINS(ss + 4 + i), core: ['#2e4a74', '#26405e', '#1e344e', '#182a40'], tint: '#0c1428' }));
 markOpen(cv);
 const wr = s('willows');
 for (const x of [wr.int(10, 40), wr.int(344, 374)]) cv.stamp(tree(wr, 'willow', wr.int(100, 124), wr.int(8, 11)), pal, x, surfaceAt(cv, x) + 2, { roots: [12, 3], dark: 0.25 });
@@ -17832,28 +17967,53 @@ return { compose };
 const __m106 = (() => {
 const { sky } = __m95;
 const { palette, vary, streamOf } = __m100;
-const { heights, dip, raise, fillSolid, blob, ledges, paintTerrain, pool, markOpen, surfaceAt, glow, drips } = __m97;
-const { caveFrame, farPillars, fog, moss, fall, ledgeTops } = __m96;
-const { tree, basalt, spire } = __m101;
+const { heights, dip, raise, fillSolid, blob, ledges, paintTerrain, pool, markOpen, surfaceAt, glow, drips, silhouette, col, far } = __m97;
+const { caveFrame, farPillars, fog, moss, fall, ledgeTops, veins, LAVA_VEINS } = __m96;
+const { tree, basalt, spire, cloud } = __m101;
+const { fbm1 } = __m42;
 const { Model, lumpy } = __m28;
 const LAVA = ['#fff0a0', '#ffc040', '#ff8a2a', '#e05a18', '#a8320e'];
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'crags', p);
 const pal = vary(palette({
 rock: ['#3a2e34', { spread: 0.5 }], lava: ['#e05a18', { spread: 0.7, n: 7, warm: 0.6 }], bark: ['#2a1e1a', { spread: 0.35 }],
-gem: ['#ff8a3a', { spread: 0.55 }], wood: '#3a2a20',
+gem: ['#ff8a3a', { spread: 0.55 }], wood: '#3a2a20', cloud: ['#4a3a3e', { spread: 0.4 }],
 }), s('pal'), 0.6);
-sky(cv, 0, H, ['#080303', '#120505', '#1c0807', '#260c08'], 10);
+const fs = s('frame'), cave = fs.next() < 0.5;
+let frame = null;
+if (cave) {
+sky(cv, 0, H, ['#080303', '#120505', '#1c0807', '#260c08']);
 farPillars(cv, { n: 8, fill: '#1a0a08', rim: '#2a0e0a', seed: s('far1').int(0, 1e9), w: [10, 22], floor: 180 });
 fog(cv, '#5a180c', 80, 210, 0.35, s('fog1').int(0, 1e9));
 farPillars(cv, { n: 5, fill: '#24100c', rim: '#381610', seed: s('far2').int(0, 1e9), w: [18, 30], floor: 185, caps: true });
 fog(cv, '#6a2210', 130, 216, 0.25, s('fog2').int(0, 1e9));
-const fs = s('frame');
-const frame = caveFrame(cv, {
+frame = caveFrame(cv, {
 seed: fs.int(0, 1e9), stones: ['#2e2220', '#3a2a26', '#24191a'], mortar: '#080404', dark: 0.35, roof: [10, 32], walls: [10, 12],
 stal: { n: 18, len: [6, 34], w: [3, 7], tip: '#ff6a20' }, lip: ['#5a2a1a', '#3a1a12'],
 });
 for (const [x, y] of cv.meta.tips) glow(cv, x, y, 10, [1, 0.4, 0.12], 0.4);
+} else {
+sky(cv, 0, H, ['#1a080a', '#3a1010', '#7a2a18', '#c8582a', '#e88a40']);
+const cr = s('clouds');
+for (let i = 0; i < 4; i++) cv.stamp(cloud(cr, cr.int(40, 90), cr.int(8, 16)), pal, cr.int(0, W), cr.int(10, 50), { outline: false, texture: 0 });
+const vx = s('cone').int(110, 270), coneC = col('#3a2226'), rim = col('#5a3030'), lavaC = col('#ff8a2a'), lavaL = col('#ffd060');
+const cone = new Float32Array(W);
+for (let x = 0; x < W; x++) {
+const d = Math.abs(x - vx);
+cone[x] = Math.round(d < 12 ? 44 : 44 + (d - 12) * 0.6 + (fbm1(x * 0.1, 5, 2) - 0.5) * 4);
+for (let y = Math.max(0, cone[x]); y < 140; y++) cv.set(x, y, y === cone[x] ? rim : far(coneC, x, y, vx));
+}
+const lv = s('lavaruns');
+for (let k = 0; k < 3; k++) {
+let x = vx + lv.int(-8, 8);
+for (let y = 45; y < 130; y++) { x += lv.range(-0.8, 0.8) + (x < vx ? -0.4 : 0.4); const xi = Math.round(x); if (xi < 0 || xi >= W || y < cone[xi] + 1) continue; cv.set(xi, y, lavaC); if (y % 3 === 0) cv.set(xi, y, lavaL); }
+}
+for (let x = vx - 11; x <= vx + 11; x++) cv.set(x, 44, lavaL);
+glow(cv, vx, 42, 60, [1, 0.45, 0.15], 0.5);
+cv.meta.crater = [vx, 42];
+silhouette(cv, { base: 124, amp: 10, freq: 0.02, seed: s('r1').int(0, 1e9), fill: '#24161a', rim: '#3a2024', rough: 4, peaks: 0.4 });
+fog(cv, '#8a3a1a', 100, 170, 0.25, s('haze').int(0, 1e9));
+}
 const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 168, amp: 10, freq: 0.014 });
 const px = ts.int(90, W - 90), hw = ts.int(30, 46);
 dip(top, px, hw, 22, 0.3);
@@ -17867,17 +18027,17 @@ paintTerrain(cv, {
 a: '#2a2228', b: '#352a30', grain: '#5a3a36', dark: '#100a0a', deep: '#060304', cave: '#040203',
 crust: ['#6a6a2e', '#4e4e24', '#3a3a1e', '#2a2418'], crustH: 4, seed: ss,
 cobble: { stones: ['#3e2e2a', '#32241f', '#4a3630', '#2a1e1c', '#3a2a2a', '#4e2a1e'], mortar: '#0c0606', s: 4 },
-seams: { cols: ['#e05a18', '#ff9a3a'], n: 14 },
 grass: { cols: ['#5a5a26', '#6a6a2e', '#4a4420'], tall: 3, rate: 0.45, flowers: ['#ff5a2a', '#ff8a3a', '#e0302a'] },
 });
 moss(cv, { cols: ['#6a6a2e', '#4e4e24', '#3a3a1e', '#2a2418'], seed: ss + 1, drape: 8, rate: 0.18, len: 10 });
 const level = Math.round(Math.max(top[px - hw], top[px + hw])) + 4;
 cv.meta.lava = pool(cv, px - hw, px + hw, level, { surface: '#ffe680', body: ['#ffb040', '#ff8a2a', '#e05a18', '#b03a10'], see: 0, bed: ['#ffd060', '#e05a18', '#5a2a1a'] });
+veins(cv, cv.meta.lava, LAVA_VEINS(ss + 4));
 glow(cv, px, level, hw + 50, [1, 0.42, 0.12], 0.6);
 markOpen(cv);
 const lf = s('falls'), falls = [];
 const fx = px + lf.int(-hw + 8, hw - 8);
-falls.push(fall(cv, fx, Math.max(0, frame.roof[fx]) + 1, { w: 2, cols: LAVA, rgb: [1, 0.45, 0.12], seed: lf.int(0, 1e9) }));
+if (frame) falls.push(fall(cv, fx, Math.max(0, frame.roof[fx]) + 1, { w: 2, cols: LAVA, rgb: [1, 0.45, 0.12], seed: lf.int(0, 1e9) }));
 for (const [x0, y0] of ledgeTops(cv, 2, lf.int(0, 1e9), 16)) {
 const dir = lf.next() < 0.5 ? -1 : 1;
 let x = x0;
@@ -17907,7 +18067,7 @@ vents.push({ x, y: y - 10, r: 4 });
 }
 cv.meta.vents = vents;
 cv.meta.trickles = drips(cv, ss, 4);
-cv.meta.vignette = 0.55;
+cv.meta.vignette = cave ? 0.55 : 0.35;
 cv.meta.horizon = 120;
 }
 return { compose };
@@ -18202,7 +18362,7 @@ const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, we
 const { equipmentById } = __m49;
 const { RANKS } = __m49;
 const { sceneCanvas, animateRegion, PlantGround, plantBox, hitPlant, SCENE_W, SCENE_H } = __m93;
-const { plantCanvas, plantFrameOf, silhouetteOf, ingredientSprite, speciesOf } = __m83;
+const { plantCanvas, plantFrameOf, plantRim, silhouetteOf, ingredientSprite, speciesOf } = __m83;
 const { EFFECT_BY_KEY } = __m14;
 function sparkle(ctx, x, y, u) {
 const q = 1, L = [0, 1, 2, 3, 2, 1, 0][Math.min(6, Math.floor(u * 7))] * q;
@@ -18534,7 +18694,15 @@ ctx.fillRect(x - (ww >> 1) + 2, y + 2, Math.max(2, ww - 4), 1);
 ctx.fillStyle = 'rgba(10,20,8,0.22)';
 ctx.fillRect(x - Math.floor(sw / 2), y - 1, sw, 2);
 ctx.fillRect(x - Math.floor(sw / 4), y - 1, Math.max(2, Math.floor(sw / 2)), 2);
-ctx.drawImage(sp.cv, x - sp.ax, y - sp.ay - (since < 0.3 ? 1 : 0));
+const lit = plantRim(p.m, p.stage, { closed, hover }), lift = since < 0.3 ? 1 : 0;
+if (lit && !hover) {
+const cx = x - sp.ax + sp.w / 2, cy = y - sp.ay + sp.h * 0.55, r = Math.max(sp.w, sp.h) * 0.75 + 4;
+const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+g.addColorStop(0, lit.tint); g.addColorStop(1, 'rgba(0,0,0,0)');
+ctx.globalAlpha = 0.32; ctx.fillStyle = g; ctx.fillRect(cx - r, cy - r, r * 2, r * 2); ctx.globalAlpha = 1;
+ctx.drawImage(lit.cv, x - sp.ax - 1, y - sp.ay - 1 - lift);
+}
+ctx.drawImage(sp.cv, x - sp.ax, y - sp.ay - lift);
 if (p.thirsty && !this.lab.sandbox && (this.mode === 'water' || Math.sin(this.time * 2 + p.x * 9) > 0.6)) {
 const dx = x + Math.round(sp.w / 2 - sp.ax) - 1, dy = y - sp.ay - 5 + Math.round(Math.sin(this.time * 4 + p.x * 5));
 ctx.fillStyle = '#1a2a48'; ctx.fillRect(dx - 1, dy, 4, 4); ctx.fillRect(dx, dy - 1, 2, 1);

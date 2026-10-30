@@ -222,7 +222,7 @@ function grass(cv, g, seed) {
 
 /**
  * A pool: every pixel of air in [x0, x1] from `level` down to the ground
- * becomes liquid — a bright surface line, the body in flat bands, faintly
+ * becomes liquid — a bright surface line, the body darkening smoothly, faintly
  * showing what lies behind it.
  * Its bed (the ground it touches) is repainted in `bed` (mud, silt, slag).
  * @param {any} cv @param {{surface:string, body:string[], see?:number, bed?:string[]}} o
@@ -234,7 +234,7 @@ export function pool(cv, x0, x1, level, o) {
       const k = y * cv.W + x;
       if (cv.solid[k]) break;
       cv.liquid[k] = 1;
-      const d = y - level, c = d === 0 ? surf : body[Math.min(body.length - 1, Math.floor(d / 4))];
+      const d = y - level, f = Math.min(body.length - 1, d / 5), i = Math.floor(f), c = d === 0 ? surf : i >= body.length - 1 ? body[i] : mixPacked(body[i], body[i + 1], f - i);
       cv.pix.px[k] = mixPacked(c, cv.pix.px[k], d === 0 ? 0 : see);
     }
   }

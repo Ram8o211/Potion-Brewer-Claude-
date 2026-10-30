@@ -19,6 +19,7 @@
  * @property {number} [lum]            fixed lightness for 'facet' parts (0..1)
  * @property {boolean} [clip]          lines and dots only over what is already drawn
  * @property {boolean} [noOutline]     the edge of this part is not inked
+ * @property {boolean} [soft]          no dark seam where this part lies over an earlier one (its edge outside is still inked)
  * @property {number} [tex]            surface texture strength (default 1)
  * @property {boolean} [glow]          a spot that can glimmer (magic)
  */

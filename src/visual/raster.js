@@ -246,7 +246,7 @@ export function rasterize(model, w, h, pal, o = {}) {
         const xx = x + dx, yy = y + dy;
         if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
         const b = part[yy * w + xx];
-        if (b > a && !flat(b) && !parts[b].noOutline) { sep[k] = 1; break; }
+        if (b > a && !flat(b) && !parts[b].noOutline && !parts[b].soft) { sep[k] = 1; break; }
       }
     }
   }

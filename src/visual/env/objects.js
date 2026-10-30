@@ -24,42 +24,28 @@ export function leafBlock(x, y, hw, hh, rnd) {
 }
 
 /**
- * A crown of foliage built of leafy clumps: dark inner masses, mid clumps,
- * lit clumps toward the upper left and a ragged rim of small tufts.
+ * A crown of foliage, clean and regular: round leaf clumps laid on a
+ * staggered grid inside the crown's outline over a darker mass, each clump
+ * a flat body with a lighter cap toward the light (upper left), the lower
+ * clumps in shade — the way a pixel artist builds a tree.
  */
 export function crown(m, rng, cx, cy, rx, ry, mat = 'leaf', o = {}) {
-  const n = o.n ?? Math.max(5, Math.round((rx + ry) / 3.5)), rnd = R(rng);
-  const blobs = [];
-  for (let i = 0; i < n; i++) {
-    const a = rng.next() * Math.PI * 2, q = Math.sqrt(rng.next());
-    blobs.push([cx + Math.cos(a) * rx * 0.62 * q, cy + Math.sin(a) * ry * 0.55 * q, (0.38 + rng.next() * 0.25) * Math.min(rx, ry * 1.4)]);
+  const rnd = R(rng), r = o.r ?? Math.max(2.5, Math.min(rx * 0.5, ry * 0.62, 9));
+  // the mass behind the clumps fills the gaps between them
+  m.poly(lumpy(cx, cy + r * 0.2, rx * 0.92, ry * 0.88, rnd, 0.06, 7), mat, { shade: 'flat', tex: 0.3, tone: -0.22 });
+  const sx = r * 1.5, sy = r * 1.15, clumps = [];
+  for (let row = -Math.ceil(ry / sy); row <= Math.ceil(ry / sy); row++) for (let col = -Math.ceil(rx / sx) - 1; col <= Math.ceil(rx / sx) + 1; col++) {
+    const x = cx + col * sx + ((row & 1) ? sx / 2 : 0) + (rng.next() - 0.5) * r * 0.25, y = cy + row * sy + (rng.next() - 0.5) * r * 0.2;
+    if (((x - cx) / (rx - r * 0.4)) ** 2 + ((y - cy) / (ry - r * 0.3)) ** 2 > 1) continue;
+    clumps.push([x, y]);
   }
-  // smaller blocks heaped on the outside of the crown, so its edge steps in leafy squares
-  for (let i = 0; i < n * 2; i++) {
-    const a = rng.next() * Math.PI * 2, q = 0.75 + rng.next() * 0.3;
-    blobs.push([cx + Math.cos(a) * rx * 0.8 * q, cy + Math.sin(a) * ry * 0.72 * q, (0.16 + rng.next() * 0.12) * Math.min(rx, ry * 1.4)]);
-  }
-  // back to front: the lower, darker blocks behind the lit upper ones
-  blobs.sort((p, q) => q[1] - p[1] + (q[0] - p[0]) * 0.2);
-  // the crown is lit as one mass (upper left bright, underside in shade), each block only a little rounded
-  for (const [x, y, r] of blobs) m.poly(lumpy(x, y, r * (0.95 + rng.next() * 0.25), r * (0.7 + rng.next() * 0.2), rnd, 0.22, 7), mat, { shade: 'round', tex: 2.2, tone: ((cy - y) / ry) * 0.28 + ((cx - x) / rx) * 0.1 - 0.08 });
-  // square tufts of leaves breaking the rim
-  for (let i = 0; i < n; i++) {
-    const a = Math.PI * (0.9 + rng.next() * 1.2), t = 1.5 + rng.next() * 1.5;
-    const x = cx + Math.cos(a) * rx * 0.85, y = cy + Math.sin(a) * ry * 0.8;
-    m.poly(lumpy(x, y, t, t, rnd, 0.3, 5), mat, { shade: 'flat', tex: 1.2, tone: Math.sin(a) < 0 ? 0.1 : -0.12 });
-  }
-  // shadowed hollows between blocks
-  for (let i = 0; i < n; i++) {
-    const x = cx + (rng.next() - 0.5) * rx * 1.2, y = cy + rng.next() * ry * 0.5;
-    m.dot(x, y, mat, { lum: 0.05 }); m.dot(x + 1, y, mat, { lum: 0.12 });
-  }
-  // leaf clumps catching the light on the upper left
-  for (let i = 0; i < n * 2; i++) {
-    const a = Math.PI + rng.next() * Math.PI * 0.9, q = 0.3 + rng.next() * 0.6;
-    const x = cx + Math.cos(a) * rx * q * 0.8 - rx * 0.1, y = cy + Math.sin(a) * ry * q * 0.7;
-    m.dot(x, y, mat, { lum: 0.92 });
-    if (i % 2) m.dot(x + 1, y, mat, { lum: 0.8 });
+  // the lower clumps first, so each higher one overlaps the one below it
+  clumps.sort((a, b) => b[1] - a[1] || a[0] - b[0]);
+  for (const [x, y] of clumps) {
+    const up = (cy - y) / ry, left = (cx - x) / rx;
+    m.poly(lumpy(x, y, r, r * 0.9, rnd, 0.1, 7), mat, { shade: 'round', tex: 0.3, tone: -0.04 + up * 0.14 + left * 0.05, soft: true });
+    // a lit cap on the clump's upper left
+    if (up > -0.3) m.poly(lumpy(x - r * 0.25, y - r * 0.35, r * 0.45, r * 0.3, rnd, 0.06, 5), mat, { shade: 'flat', tex: 0, tone: 0.16 + up * 0.1 + left * 0.04, noOutline: true });
   }
   return m;
 }
@@ -75,7 +61,7 @@ export function tree(rng, kind, h, tw, o = {}) {
   const ws = spine.map((_, i) => tw * (1 - (i / spine.length) * (kind === 'pine' ? 0.8 : 0.45)) * (i === 0 ? 1.25 : 1));
   // root flares
   for (const s of [-1, 1]) m.stroke([[s * tw * 0.2, -tw * 0.6], [s * tw * 0.9, -1], [s * tw * 1.5, 1]], [tw * 0.45, tw * 0.25, 1.2], o.bark || 'bark', { tone: s > 0 ? -0.08 : 0 });
-  m.stroke(spine, ws, o.bark || 'bark', { tex: 1.5 });
+  m.stroke(spine, ws, o.bark || 'bark', { tex: 0.5 });
   // bark fissures
   for (let k = 0; k < Math.max(1, Math.round(tw / 3)); k++) {
     const f = (k + 0.5) / Math.max(1, Math.round(tw / 3)) - 0.5, pts = [];
@@ -101,11 +87,12 @@ export function tree(rng, kind, h, tw, o = {}) {
     return m;
   }
   // limbs reaching into the crown
-  const cw = kind === 'birch' ? h * 0.28 : kind === 'willow' ? h * 0.42 : h * 0.45;
+  const cw = kind === 'birch' ? h * 0.24 : kind === 'willow' ? h * 0.42 : h * 0.36;
   for (const s of [-1, 1]) m.stroke([[top[0], top[1] + 3], [top[0] + s * cw * 0.35, top[1] - h * 0.08], [top[0] + s * cw * 0.6, top[1] - h * 0.18]], [tw * 0.5, tw * 0.25], o.bark || 'bark', {});
   const cy = top[1] - h * (kind === 'willow' ? 0.12 : 0.2);
-  crown(m, rng, top[0], kind === 'willow' ? cy - h * 0.06 : cy, kind === 'willow' ? cw * 0.75 : cw, h * (kind === 'birch' ? 0.32 : kind === 'willow' ? 0.17 : 0.26), o.leaf || 'leaf');
-  if (kind === 'oak') { crown(m, rng, top[0] - cw * 0.5, cy + h * 0.06, cw * 0.55, h * 0.16, o.leaf || 'leaf'); crown(m, rng, top[0] + cw * 0.55, cy + h * 0.08, cw * 0.5, h * 0.15, o.leaf || 'leaf'); }
+  // an oak's lower side crowns behind its main one
+  if (kind === 'oak') { crown(m, rng, top[0] - cw * 0.5, cy + h * 0.07, cw * 0.55, h * 0.16, o.leaf || 'leaf'); crown(m, rng, top[0] + cw * 0.55, cy + h * 0.09, cw * 0.5, h * 0.15, o.leaf || 'leaf'); }
+  crown(m, rng, top[0], kind === 'willow' ? cy - h * 0.06 : cy, kind === 'willow' ? cw * 0.75 : cw, h * (kind === 'birch' ? 0.3 : kind === 'willow' ? 0.17 : 0.28), o.leaf || 'leaf');
   if (kind === 'willow') {
     // fronds weeping from the crown: leafy curtains, darker toward their tips
     for (let i = 0; i < Math.round(cw * 0.9); i++) {
@@ -130,7 +117,7 @@ export function branch(m, rng, x, y, ang, len, w, depth, mat) {
 /** A shrub: a mound of foliage, optionally hung with berries or flowers. */
 export function bush(rng, rx, ry, o = {}) {
   const m = new Model();
-  crown(m, rng, 0, -ry * 0.7, rx, ry, o.leaf || 'leaf', { n: Math.max(4, Math.round(rx / 2.5)) });
+  crown(m, rng, 0, -ry * 0.7, rx, ry, o.leaf || 'leaf');
   if (o.dots) for (let i = 0; i < rx * 0.8; i++) {
     const a = Math.PI + rng.next() * Math.PI, q = Math.sqrt(rng.next()) * 0.8;
     m.dot(Math.cos(a) * rx * q, -ry * 0.7 + Math.sin(a) * ry * q * 0.8, o.dots, { lum: rng.next() < 0.5 ? 0.85 : 0.55 });
