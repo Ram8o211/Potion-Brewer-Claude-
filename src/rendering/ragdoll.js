@@ -3,9 +3,14 @@
 // The ingredient's own sprite is cut along its long axis into one to three
 // pieces (a short berry is one stiff piece; a tall flower its head, its
 // stem and its foot) joined end to end. Each joint is a point mass moved by
-// Verlet integration under gravity; the pieces keep their lengths, a joint
-// bends only so far, and every point collides with the scene's ground, rock
-// and water surface, bouncing a little and sliding to rest with friction.
+// Verlet integration under gravity; the pieces keep their lengths and a
+// joint bends only so far. The terrain (ground, rock, a water surface) is
+// impenetrable: every joint is a small disc and every piece a row of them,
+// swept along its path each step so nothing tunnels through a thin ledge;
+// what meets the terrain stops at its surface, bounces a little off it and
+// slides along it with friction, and anything that would still overlap it
+// goes back to where it last was clear. A body that starts overlapping the
+// scenery (a fruit hung in front of a ledge) is first set down clear of it.
 // The pieces are drawn rotated with their own pixels, never resampled, so
 // the ingredient keeps its texture however it lands. Pure (no DOM) except
 // `draw`, so the physics runs in Node too.
@@ -17,6 +22,10 @@ export const STEP = 1 / 120;
 /** How hard the ground brakes what slides on it (pixels per second²): it stops, it does not stick. */
 export const FRICTION = 380;
 
+/** Points round a disc's rim (unit), and finer: what the terrain is tested at, the first straight up. */
+const RING = Array.from({ length: 8 }, (_, i) => [Math.sin((i * Math.PI) / 4), -Math.cos((i * Math.PI) / 4)]);
+const RING16 = Array.from({ length: 16 }, (_, i) => [Math.sin((i * Math.PI) / 8), -Math.cos((i * Math.PI) / 8)]);
+
 /**
  * @typedef {{w:number, h:number, ax:number, ay:number}} SpriteBox  a sprite's size and the point it hangs or stands by
  * @typedef {(x:number, y:number) => boolean} SolidAt  whether the scene pixel (x, y) is something to rest on
@@ -26,7 +35,7 @@ export class Ragdoll {
   /**
    * A body made from a sprite whose anchor stands at scene point (x, y).
    * @param {SpriteBox} sp @param {number} x @param {number} y
-   * @param {{vx?:number, vy?:number, spin?:number, W:number, H:number, front?:boolean}} o its push (pixels per second; spin: how much faster its top flies than its foot), the scene's size, and whether it hung or jutted in front of the scenery (it falls on in front of what it overlapped)
+   * @param {{vx?:number, vy?:number, spin?:number, W:number, H:number}} o its push (pixels per second; spin: how much faster its top flies than its foot) and the scene's size
    */
   constructor(sp, x, y, o) {
     this.sp = sp;
@@ -68,11 +77,12 @@ export class Ragdoll {
     this.t = 0;
     /** time not yet stepped (less than a step) */
     this.acc = 0;
-    /** what it hung or stood in front of: no surface above this row stops it until it has first come to ground below (Infinity once it has) */
-    this.front = !!o.front;
-    this.over = this.front ? Math.round(Math.max(...this.py) + this.r) + 1 : Infinity;
-    /** joints that began inside the scenery (a fruit hanging in front of a ledge): they fall on through it, in front of it, until they are clear (null till the first step) @type {Uint8Array|null} */
-    this.deep = null;
+    /** where its middle was at the last look, and how long since (to tell a trembling body at rest) @type {{x:number, y:number}|null} */
+    this.mark = null;
+    this.watch = 0;
+    /** each joint's last place clear of the terrain (null till the body has been set down clear of it) */
+    /** @type {Float64Array|null} */ this.qx = null;
+    /** @type {Float64Array|null} */ this.qy = null;
   }
 
   /**
@@ -93,61 +103,145 @@ export class Ragdoll {
     }
   }
 
+  /** Whether a disc of radius r at (x, y) overlaps the terrain. @param {number} x @param {number} y @param {number} r @param {SolidAt} solid */
+  static hits(x, y, r, solid) {
+    if (solid(Math.round(x), Math.round(y))) return true;
+    for (const [cx, cy] of RING) if (solid(Math.round(x + cx * r), Math.round(y + cy * r))) return true;
+    return false;
+  }
+
+  /** The way out of the terrain at (x, y): away from what is solid round it (up where it cannot tell). @param {number} x @param {number} y @param {number} r @param {SolidAt} solid */
+  static normal(x, y, r, solid) {
+    let nx = 0, ny = 0;
+    for (const [cx, cy] of RING16) if (solid(Math.round(x + cx * (r + 1.5)), Math.round(y + cy * (r + 1.5)))) { nx -= cx; ny -= cy; }
+    const d = Math.hypot(nx, ny);
+    return d > 1e-6 ? [nx / d, ny / d] : [0, -1];
+  }
+
+  /** The shortest move (up first, where moves tie) that takes a disc at (x, y) clear of the terrain, within `far` pixels, or null. @param {number} x @param {number} y @param {number} r @param {number} far @param {SolidAt} solid */
+  static out(x, y, r, far, solid) {
+    for (let d = 0.5; d <= far; d += 0.5) for (const [cx, cy] of RING16) if (!Ragdoll.hits(x + cx * d, y + cy * d, r, solid)) return [cx * d, cy * d];
+    return null;
+  }
+
+  /** The points along piece i where it is tested against the terrain (between its joints), as fractions of it. @param {number} i */
+  samples(i) {
+    const m = Math.max(1, Math.ceil(this.len[i] / 2)), out = [];
+    for (let k = 1; k < m; k++) out.push(k / m);
+    return out;
+  }
+
+  /** Whether the body as it is now overlaps the terrain anywhere (a joint, or a point along a piece). @param {SolidAt} solid */
+  overlaps(solid) {
+    const { px, py, r } = this, rs = r * 0.8;
+    for (let j = 0; j < px.length; j++) if (Ragdoll.hits(px[j], py[j], r, solid)) return true;
+    for (let i = 0; i < this.len.length; i++) for (const u of this.samples(i)) if (Ragdoll.hits(px[i] + (px[i + 1] - px[i]) * u, py[i] + (py[i + 1] - py[i]) * u, rs, solid)) return true;
+    return false;
+  }
+
+  /** Set the body down clear of the terrain: the nearest place, up first where places tie, keeping its speed. @param {SolidAt} solid */
+  settle(solid) {
+    if (this.overlaps(solid)) {
+      found: for (let d = 1; d <= 28; d++) for (const [cx, cy] of RING16) {
+        const dx = Math.round(cx * d), dy = Math.round(cy * d);
+        this.shift(dx, dy);
+        if (!this.overlaps(solid)) break found;
+        this.shift(-dx, -dy);
+      }
+    }
+    this.qx = Float64Array.from(this.px); this.qy = Float64Array.from(this.py);
+  }
+
+  /**
+   * Joint j would move from where it was last clear to where it is now: it
+   * goes as far along that way as the terrain lets it, then slides along the
+   * surface it met; meeting one, it loses its speed into the surface (a
+   * quick fall keeps a little of it as a bounce) and is braked along it.
+   * Returns whether it met the terrain.
+   * @param {number} j @param {SolidAt} solid
+   */
+  sweep(j, solid) {
+    const { px, py, ox, oy, r } = this, qx = /** @type {Float64Array} */ (this.qx), qy = /** @type {Float64Array} */ (this.qy);
+    const tx = px[j], ty = py[j];
+    if (!Ragdoll.hits(tx, ty, r, solid)) return false;
+    // as far as it gets, in steps of half a pixel
+    const dx = tx - qx[j], dy = ty - qy[j], dist = Math.hypot(dx, dy), n = Math.max(1, Math.ceil(dist / 0.5));
+    let cx = qx[j], cy = qy[j];
+    for (let k = 1; k <= n; k++) {
+      const x = qx[j] + (dx * k) / n, y = qy[j] + (dy * k) / n;
+      if (Ragdoll.hits(x, y, r, solid)) break;
+      cx = x; cy = y;
+    }
+    const [nx, ny] = Ragdoll.normal(tx, ty, r, solid);
+    // the rest of the way, along the surface
+    const rx = tx - cx, ry = ty - cy, along = rx * -ny + ry * nx;
+    const sx = cx + -ny * along, sy = cy + nx * along;
+    if (!Ragdoll.hits(sx, sy, r, solid)) { cx = sx; cy = sy; }
+    px[j] = cx; py[j] = cy;
+    // its speed: none into the surface (a little back out of it after a quick fall), braked along it
+    const vx = tx - ox[j], vy = ty - oy[j], vn = vx * nx + vy * ny;
+    let wx = vx, wy = vy;
+    if (vn < 0) {
+      this.knock = Math.max(this.knock, -vn / STEP);
+      const back = -vn > 0.25 ? -vn * 0.3 : 0;
+      wx = vx - vn * nx + back * nx; wy = vy - vn * ny + back * ny;
+    }
+    const vt = wx * -ny + wy * nx, brake = FRICTION * STEP * STEP, vt2 = Math.sign(vt) * Math.max(0, Math.abs(vt) - brake);
+    wx += (vt2 - vt) * -ny; wy += (vt2 - vt) * nx;
+    ox[j] = px[j] - wx; oy[j] = py[j] - wy;
+    return true;
+  }
+
   /** One substep. @param {number} h @param {SolidAt} solid */
   sub(h, solid) {
     const n = this.px.length, { px, py, ox, oy, r } = this;
+    if (!this.qx) this.settle(solid);
+    const qx = /** @type {Float64Array} */ (this.qx), qy = /** @type {Float64Array} */ (this.qy);
     let moved = 0, touching = false;
-    if (!this.deep) {
-      this.deep = Uint8Array.from({ length: n }, (_, j) => (this.front && this.buried(px[j], py[j], solid) ? 1 : 0));
-      // what stood with its foot in the soil comes out of it whole, gaining no speed from being lifted
-      if (!this.front) {
-        let lift = 0;
-        for (let j = 0; j < n; j++) {
-          const cx = Math.round(px[j]), row = Math.round(py[j] + r);
-          let k = 0;
-          while (k <= 16 && solid(cx, row - k)) k++;
-          if (k && k <= 16) lift = Math.max(lift, py[j] - (row - k + 0.49 - r));
-        }
-        if (lift > 0) this.shift(0, -lift);
-      }
-    }
-    const deep = this.deep;
     for (let j = 0; j < n; j++) {
       const vx = (px[j] - ox[j]) * 0.999, vy = (py[j] - oy[j]) * 0.999;
       ox[j] = px[j]; oy[j] = py[j];
       px[j] += vx * (h / STEP); py[j] += vy * (h / STEP) + GRAVITY * h * h;
     }
-    // the pieces keep their lengths; a joint bends at most so far
-    for (let it = 0; it < 4; it++) {
+    const rs = r * 0.8;
+    for (let it = 0; it < 3; it++) {
+      // the pieces keep their lengths; a joint bends at most so far
       for (let i = 0; i < n - 1; i++) this.keep(i, i + 1, this.len[i], this.len[i]);
       for (let i = 0; i < n - 2; i++) { const L = this.len[i] + this.len[i + 1]; this.keep(i, i + 2, L * 0.72, L); }
-    }
-    for (let j = 0; j < n; j++) {
       // the scene's edges
-      if (px[j] < 1) { px[j] = 1; ox[j] = px[j] + (px[j] - ox[j]) * 0.3; }
-      if (px[j] > this.W - 2) { px[j] = this.W - 2; ox[j] = px[j] + (px[j] - ox[j]) * 0.3; }
-      if (py[j] + r > this.H - 1) { this.land(j, this.H - 1 - r); touching = true; }
-      const cx = Math.round(px[j]), row = Math.round(py[j] + r);
-      // (one that began inside the scenery falls on in front of it until it is out)
-      if (deep[j]) { if (!solid(cx, row)) deep[j] = 0; }
-      else if (row < this.over && this.over !== Infinity) { /* in front of what it grew over */ }
-      else if (solid(cx, row)) {
+      for (let j = 0; j < n; j++) {
+        if (px[j] < 1 + r) { px[j] = 1 + r; ox[j] = px[j] + (px[j] - ox[j]) * 0.3; }
+        if (px[j] > this.W - 2 - r) { px[j] = this.W - 2 - r; ox[j] = px[j] + (px[j] - ox[j]) * 0.3; }
+        if (py[j] > this.H - 1 - r) { py[j] = this.H - 1 - r; oy[j] = py[j]; touching = true; }
+      }
+      // the joints meet the terrain
+      for (let j = 0; j < n; j++) if (this.sweep(j, solid)) touching = true;
+      // and so does every piece along its length: one pressed into it is pushed out at both ends
+      for (let i = 0; i < n - 1; i++) for (const u of this.samples(i)) {
+        const x = px[i] + (px[i + 1] - px[i]) * u, y = py[i] + (py[i + 1] - py[i]) * u;
+        if (!Ragdoll.hits(x, y, rs, solid)) continue;
         touching = true;
-        // onto the surface just above (exactly on it, so it lies still), else back where it was (it ran into a face)
-        // (what stood in the ground, its foot in the soil, is lifted out of it however deep)
-        const reach = this.front || this.t > 0.05 ? 6 : 16;
-        let k = 1;
-        while (k <= reach && solid(cx, row - k)) k++;
-        if (k <= reach) this.land(j, row - k + 0.49 - r);
-        else if (!this.front || Math.abs(px[j] - ox[j]) > Math.abs(py[j] - oy[j])) {
-          // it ran sideways into a face: back where it was, bouncing off
-          const vx = px[j] - ox[j]; px[j] = ox[j]; py[j] = oy[j]; ox[j] = px[j] + vx * 0.3;
-        } else { deep[j] = 1; touching = false; }
-      } else if (solid(cx, row + 1) && py[j] + r > row + 0.3) touching = true;
+        const d = Ragdoll.out(x, y, rs, 4, solid);
+        if (!d) continue;
+        const k = 1 / ((1 - u) * (1 - u) + u * u);
+        px[i] += d[0] * (1 - u) * k; py[i] += d[1] * (1 - u) * k;
+        px[i + 1] += d[0] * u * k; py[i + 1] += d[1] * u * k;
+      }
+    }
+    // nothing ever stays in the terrain: a joint, or a piece, still in it goes back to where it last was clear, stopped
+    for (let j = 0; j < n; j++) if (Ragdoll.hits(px[j], py[j], r, solid)) { px[j] = qx[j]; py[j] = qy[j]; ox[j] = px[j]; oy[j] = py[j]; touching = true; }
+    for (let i = 0; i < n - 1; i++) for (const u of this.samples(i)) {
+      if (!Ragdoll.hits(px[i] + (px[i + 1] - px[i]) * u, py[i] + (py[i + 1] - py[i]) * u, rs, solid)) continue;
+      for (const j of [i, i + 1]) { px[j] = qx[j]; py[j] = qy[j]; ox[j] = px[j]; oy[j] = py[j]; }
+      touching = true;
+      break;
+    }
+    // resting on it counts as touching it
+    if (!touching) for (let j = 0; j < n && !touching; j++) if (Ragdoll.hits(px[j], py[j] + 1, r, solid)) touching = true;
+    for (let j = 0; j < n; j++) {
+      if (!Ragdoll.hits(px[j], py[j], r, solid)) { qx[j] = px[j]; qy[j] = py[j]; }
       moved = Math.max(moved, Math.abs(px[j] - ox[j]), Math.abs(py[j] - oy[j]));
     }
-    // (once down, every surface counts: kicked up onto a ledge, it lands on it)
-    if (touching) this.over = Infinity;
     // standing up it tips over: gravity's pull round its foot (point masses alone would balance forever) —
     // the whole body one way, so a zigzag of pieces cannot prop itself up
     let upright = false;
@@ -167,28 +261,15 @@ export class Ragdoll {
     // (and one creeping down a slope or rocking on a bump, after a while on the ground)
     this.ground = touching ? this.ground + h : 0;
     if (this.still > (upright ? 0.6 : 0.35) || (this.ground > 2 && moved < 0.4)) this.asleep = true;
-  }
-
-  /** Whether a joint at (x, y) is inside the scenery rather than on its surface (nothing open within reach above). @param {number} x @param {number} y @param {SolidAt} solid */
-  buried(x, y, solid) {
-    const cx = Math.round(x), row = Math.round(y + this.r);
-    if (!solid(cx, row)) return false;
-    for (let k = 1; k <= 6; k++) if (!solid(cx, row - k)) return false;
-    return true;
-  }
-
-  /** Joint j comes to the surface at height y: it bounces a little and slides with friction. @param {number} j @param {number} y */
-  land(j, y) {
-    const vx = this.px[j] - this.ox[j], vy = this.py[j] - this.oy[j];
-    this.knock = Math.max(this.knock, Math.abs(vy) / STEP);
-    this.py[j] = y;
-    // (a quick fall bounces back up a little, a slow one just stops, and one
-    // already on its way up — pulled from the ground — goes on up; along the
-    // ground it slides on, braked steadily — it does not stick, so what lies
-    // over an edge slips off it)
-    this.oy[j] = vy < 0 ? y - vy : y + (vy > 0.25 ? vy * 0.3 : 0);
-    const brake = FRICTION * STEP * STEP;
-    this.ox[j] = this.px[j] - Math.sign(vx) * Math.max(0, Math.abs(vx) - brake);
+    // (and one that only trembles where it lies — wedged between faces — once it has not got anywhere in half a second)
+    if (touching && !this.asleep) {
+      this.watch += h;
+      if (this.watch >= 0.5) {
+        const c = this.centre();
+        if (this.mark && Math.hypot(c.x - this.mark.x, c.y - this.mark.y) < 0.8 && this.ground > 1) this.asleep = true;
+        this.mark = c; this.watch = 0;
+      }
+    } else { this.watch = 0; this.mark = null; }
   }
 
   /** Keep joints a and b between lo and hi apart, moving both. @param {number} a @param {number} b @param {number} lo @param {number} hi */
@@ -218,14 +299,13 @@ export class Ragdoll {
       this.ox[j] -= Math.max(-110, Math.min(110, dx * 14)) * s * STEP;
       this.oy[j] -= (Math.max(-90, Math.min(30, dy * 9)) - 60 * s) * STEP;
     }
-    if (hit) { this.asleep = false; this.still = 0; this.ground = 0; }
+    if (hit) { this.asleep = false; this.still = 0; this.ground = 0; this.watch = 0; this.mark = null; }
     return hit;
   }
 
-  /** Whether no joint is in something solid. @param {SolidAt} solid */
+  /** Whether the body is clear of the terrain. @param {SolidAt} solid */
   clear(solid) {
-    for (let j = 0; j < this.px.length; j++) if (solid(Math.round(this.px[j]), Math.round(this.py[j] + this.r))) return false;
-    return true;
+    return !this.overlaps(solid);
   }
 
   /** Move the whole body, its speed kept. @param {number} dx @param {number} dy */

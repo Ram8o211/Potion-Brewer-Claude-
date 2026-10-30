@@ -106,7 +106,7 @@ export class WildsView {
     this.energy = {};
     /** bits of leaf and pulp in flight @type {{x:number, y:number, vx:number, vy:number, t:number, c:string}[]} */
     this.bits = [];
-    /** the pointer pressed on the scene: where it is, how far it has gone (CSS px), and in watering mode where it last watered and how many drank @type {{id:number, type:string, x:number, y:number, cx:number, cy:number, dist:number, water:boolean, wx:number, wy:number, drank:number, near:boolean, pours:number}|null} */
+    /** the pointer pressed on the scene: where it is, where it came down (sx, sy), how far it has gone (CSS px), and in watering mode where it last watered and how many drank @type {{id:number, type:string, x:number, y:number, cx:number, cy:number, sx:number, sy:number, dist:number, water:boolean, wx:number, wy:number, drank:number, near:boolean, pours:number}|null} */
     this.drag = null;
   }
 
@@ -342,7 +342,7 @@ export class WildsView {
     return f ? { w: f.pix.w, h: f.pix.h, ax: f.ax, ay: f.ay } : null;
   }
 
-  /** The plant under a pointer event, if any. @param {PointerEvent} e */
+  /** The plant under a pointer event, if any. @param {{clientX:number, clientY:number}} e */
   plantAt(e) {
     const r = this.canvas.getBoundingClientRect();
     const x = ((e.clientX - r.left) / r.width) * SCENE_W, y = ((e.clientY - r.top) / r.height) * SCENE_H;
@@ -431,7 +431,7 @@ export class WildsView {
     if (this.drag && this.drag.id !== e.pointerId && !e.isPrimary) return;
     if (e.cancelable) e.preventDefault();
     const q = this.scenePoint(e);
-    this.drag = { id: e.pointerId, type: e.pointerType || 'mouse', x: q.x, y: q.y, cx: e.clientX, cy: e.clientY, dist: 0, water: this.mode === 'water', wx: q.x, wy: q.y, drank: 0, near: false, pours: 0 };
+    this.drag = { id: e.pointerId, type: e.pointerType || 'mouse', x: q.x, y: q.y, cx: e.clientX, cy: e.clientY, sx: e.clientX, sy: e.clientY, dist: 0, water: this.mode === 'water', wx: q.x, wy: q.y, drank: 0, near: false, pours: 0 };
     try { this.canvas.setPointerCapture(e.pointerId); } catch { /* a synthetic pointer */ }
     // the watering can pours at once where the finger comes down
     if (this.drag.water) this.pourAt(q.x, q.y, this.drag);
@@ -469,7 +469,8 @@ export class WildsView {
     if (!d || e.pointerId !== d.id) return;
     this.drag = null;
     if (d.water) { this.endPour(d); return; }
-    if (d.dist <= (TAP_SLOP[d.type] ?? TAP_SLOP.mouse)) this.tapScene(e);
+    // a tap is where the finger came down (a fingertip rolls a little as it lifts)
+    if (d.dist <= (TAP_SLOP[d.type] ?? TAP_SLOP.mouse)) this.tapScene({ clientX: d.sx, clientY: d.sy });
   }
 
   /**
@@ -543,15 +544,16 @@ export class WildsView {
     const fling = Math.max(-1, Math.min(1, dx / 10)), up = Math.max(-1, Math.min(1, dy / 10));
     const away = juts ? (p.flip ? -1 : 1) : 0;
     const doll = new Ragdoll(sp, x, y, {
-      W: SCENE_W, H: SCENE_H, front: hangs || juts,
+      W: SCENE_W, H: SCENE_H,
       vx: fling * 72 + away * 28 + (Math.random() - 0.5) * 16,
       // (a fruit snaps off its hold and drops at once; a ground plant is pulled up with a jerk)
       vy: hangs ? 45 + up * 30 : juts ? -20 + up * 30 : -75 + Math.min(0, up) * 45,
       // (the top flies out further than the foot: it tumbles — a plant pulled up always keels over one way or the other)
       spin: hangs ? fling * 45 : juts ? fling * 90 : (fling || (Math.random() < 0.5 ? -1 : 1)) * 110 + (Math.random() - 0.5) * 30,
     });
-    // clear of the face it juts from (what began in front of the scenery falls on through it)
+    // clear of the face it juts from, and of whatever else it overlapped (the terrain is never passed through)
     if (juts) for (let k = 0; k < 8 && !doll.clear((xx, yy) => this.solidAt(xx, yy)); k++) doll.shift(away, 0);
+    doll.settle((xx, yy) => this.solidAt(xx, yy));
     this.fallen[p.id] = { doll, sp, landed: false, rung: 0 };
     this.shakes[p.id] = { a: (this.shakes[p.id] ? Math.sign(this.shakes[p.id].a) : 1) * 3.4, t0: this.time };
     const m = p.m, c = m ? `rgb(${Math.round((m.look || m.color)[0] * 255)},${Math.round((m.look || m.color)[1] * 255)},${Math.round((m.look || m.color)[2] * 255)})` : '#8c8';
@@ -560,7 +562,7 @@ export class WildsView {
     audio.play('click');
   }
 
-  /** @param {PointerEvent} e */
+  /** @param {{clientX:number, clientY:number}} e where the tap came down */
   tapScene(e) {
     const q = this.scenePoint(e);
     // what lies fallen on the ground (or is still falling) is gathered by tapping it
