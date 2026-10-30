@@ -3,6 +3,10 @@
 // where each plant stands on its open ground, which plant a tap lands on,
 // and the moving parts drawn over the still painting every frame (birds,
 // motes, river glints, wisps, embers, the steam of the crags' vents).
+// A finger pushes the scenery physically: every swaying group it passes
+// through (a leaf clump, a bush, a canopy pad, a vine hanging from the
+// cave's roof) is a damped spring it knocks along its way — the leaves bend
+// and spring back, a hanging strand swings on for seconds (SceneTouch).
 
 import { sceneOf, SCENE_W, SCENE_H } from '../visual/env/scene.js';
 import { MIN_HIT } from './species-sprites.js';
@@ -47,6 +51,114 @@ export function windAt(x, t, ph) {
   return breeze + wave * (0.5 + Math.abs(breeze)) + dir * gust;
 }
 
+/**
+ * Whether the segment from (x0, y0) to (x1, y1) passes through the box
+ * [left, right] × [top, bottom] (clipping it side by side, Liang–Barsky).
+ */
+export function crosses(x0, y0, x1, y1, left, top, right, bottom) {
+  let t0 = 0, t1 = 1;
+  const dx = x1 - x0, dy = y1 - y0;
+  for (const [p, q] of [[-dx, x0 - left], [dx, right - x0], [-dy, y0 - top], [dy, bottom - y0]]) {
+    if (p === 0) { if (q < 0) return false; continue; }
+    const r = q / p;
+    if (p < 0) { if (r > t1) return false; if (r > t0) t0 = r; } else { if (r < t0) return false; if (r < t1) t1 = r; }
+  }
+  return true;
+}
+
+/**
+ * The finger's hold on a scene's scenery: each sway group a damped spring
+ * (its offset in pixels and its speed). A clump of leaves is stiff and
+ * springs back within a second; a strand hanging from its top is a slow,
+ * lightly damped pendulum that swings on for several seconds. Pure: the
+ * view knocks it as the finger passes and steps it every frame.
+ */
+export class SceneTouch {
+  /** @param {NonNullable<import('../visual/env/scene.js').Scene['sway']>} sw */
+  constructor(sw) {
+    const G = sw.amp.length;
+    this.G = G;
+    this.pos = new Float32Array(G);
+    this.vel = new Float32Array(G);
+    this.hang = sw.hang;
+    this.amp = sw.amp;
+    /** each group's box [x0, y0, x1, y1] */
+    this.box = new Float32Array(G * 4);
+    for (let g = 0; g < G; g++) { this.box[g * 4] = this.box[g * 4 + 1] = Infinity; this.box[g * 4 + 2] = this.box[g * 4 + 3] = -Infinity; }
+    for (let i = 0; i < sw.k.length; i++) {
+      const g = sw.g[i], k = sw.k[i], x = k % SCENE_W, y = (k - x) / SCENE_W, b = g * 4;
+      if (x < this.box[b]) this.box[b] = x;
+      if (y < this.box[b + 1]) this.box[b + 1] = y;
+      if (x > this.box[b + 2]) this.box[b + 2] = x;
+      if (y > this.box[b + 3]) this.box[b + 3] = y;
+    }
+    /** something is still moving */
+    this.awake = false;
+  }
+
+  /**
+   * The finger passed from (x0, y0) to (x1, y1) (scene pixels) within a
+   * moment: every group it went through is knocked its way, the harder the
+   * faster it went. Returns how many were.
+   */
+  push(x0, y0, x1, y1) {
+    const dx = x1 - x0, speed = Math.hypot(dx, y1 - y0);
+    if (speed < 0.5) return 0;
+    // (a vertical stroke still shoves sideways, a little)
+    const dir = Math.abs(dx) > 0.3 ? dx / speed : 0.4 * (y1 > y0 ? 1 : -1);
+    let n = 0;
+    for (let g = 0; g < this.G; g++) {
+      if (!this.amp[g] && !this.hang[g]) continue;
+      const b = g * 4;
+      if (!crosses(x0, y0, x1, y1, this.box[b] - 2, this.box[b + 1] - 2, this.box[b + 2] + 2, this.box[b + 3] + 2)) continue;
+      const hangs = this.hang[g] > 0, give = Math.max(0.5, Math.min(1.6, this.amp[g] || 1));
+      const v = this.vel[g] + dir * Math.min(hangs ? 26 : 34, 4 + speed * (hangs ? 2.2 : 3)) * give;
+      this.vel[g] = Math.max(-60, Math.min(60, v));
+      n++;
+    }
+    if (n) this.awake = true;
+    return n;
+  }
+
+  /** Let the springs move on by dt seconds. @param {number} dt */
+  step(dt) {
+    if (!this.awake) return;
+    let left = Math.min(dt, 0.1), live = false;
+    while (left > 1e-6) {
+      const h = Math.min(1 / 120, left);
+      left -= h;
+      live = false;
+      for (let g = 0; g < this.G; g++) {
+        const p = this.pos[g], v = this.vel[g];
+        if (p === 0 && v === 0) continue;
+        // leaves: stiff (≈1.5 Hz) and well damped; a hanging strand: a slow pendulum (≈0.6 Hz), barely damped
+        const hangs = this.hang[g] > 0, k = hangs ? 14 : 90, c = hangs ? 0.45 : 3.6;
+        const nv = v + (-k * p - c * v) * h, np = Math.max(-6, Math.min(6, p + nv * h));
+        if (Math.abs(np) < 0.03 && Math.abs(nv) < 0.08) { this.pos[g] = 0; this.vel[g] = 0; continue; }
+        this.pos[g] = np; this.vel[g] = nv; live = true;
+      }
+    }
+    this.awake = live;
+  }
+}
+
+/** @type {Map<string, SceneTouch>} */
+const touches = new Map();
+
+/** The finger's hold on a region's scenery (null where nothing sways). @param {string} region @param {string} seed */
+export function sceneTouch(region, seed) {
+  const k = region + ':' + seed;
+  let t = touches.get(k);
+  if (!t) {
+    const sw = sceneOf(region, seed).sway;
+    if (!sw) return null;
+    t = new SceneTouch(sw);
+    if (touches.size >= 3) touches.delete(/** @type {string} */ (touches.keys().next().value));
+    touches.set(k, t);
+  }
+  return t;
+}
+
 /** Per sway group, its shift this frame: of the whole group, and further at a hanging strand's end. */
 let shiftBuf = new Float32Array(0), tipBuf = new Float32Array(0);
 
@@ -59,8 +171,9 @@ let shiftBuf = new Float32Array(0), tipBuf = new Float32Array(0);
  * Pure: the same time paints the same pixels.
  * @param {NonNullable<import('../visual/env/scene.js').Scene['sway']>} sw @param {Uint32Array} out @param {number} t
  * @param {number} [wind] the region's wind strength (meta.wind) @param {number} [ph] the world's weather
+ * @param {SceneTouch|null} [touch] the finger's push on top of the wind (a clump moves as one, a strand most at its end)
  */
-export function swayPixels(sw, out, t, wind = 1, ph = 0) {
+export function swayPixels(sw, out, t, wind = 1, ph = 0, touch = null) {
   out.set(sw.bare);
   const G = sw.amp.length, W = SCENE_W;
   if (shiftBuf.length < G) { shiftBuf = new Float32Array(G); tipBuf = new Float32Array(G); }
@@ -69,6 +182,9 @@ export function swayPixels(sw, out, t, wind = 1, ph = 0) {
     shiftBuf[g] = a ? Math.max(-3, Math.min(3, a * (v * 0.7 + 0.15 * wind * Math.sin(t * (2.6 + (g % 5) * 0.37) + g * 1.7)))) : 0;
     // a strand's end follows the wind a moment late, whipping a little
     tipBuf[g] = sw.hang[g] * (windAt(x, t - 0.4, ph) * wind * 0.9 + 0.25 * wind * Math.sin(t * 2.1 + g * 2.3));
+    // the finger's push: a clump bends as one; a strand swings from its top, its end furthest
+    const q = touch ? touch.pos[g] : 0;
+    if (q) { if (sw.hang[g] > 0) { shiftBuf[g] += q * 0.15; tipBuf[g] += q * 1.1; } else shiftBuf[g] += q; }
   }
   for (let i = 0; i < sw.k.length; i++) {
     const g = sw.g[i], k = sw.k[i], dx = Math.round(shiftBuf[g] + tipBuf[g] * sw.f[i]), x = k % W + dx;
@@ -78,11 +194,13 @@ export function swayPixels(sw, out, t, wind = 1, ph = 0) {
   }
 }
 
-/** @type {Map<string, {cv:HTMLCanvasElement, ctx:CanvasRenderingContext2D, img:ImageData, buf:Uint32Array, step:number}>} */
+/** @type {Map<string, {cv:HTMLCanvasElement, ctx:CanvasRenderingContext2D, img:ImageData, buf:Uint32Array, step:number, live:boolean}>} */
 const frames = new Map();
 
-/** How often the leaves are moved (per second): the wind's pixel steps are coarse, so this is plenty. */
+/** How often the leaves are moved (per second): the wind's pixel steps are coarse, so this is plenty — */
 const SWAY_RATE = 12;
+/** — but what a finger has set moving is followed closely. */
+const TOUCH_RATE = 30;
 
 /**
  * A region's painting at time t with its foliage swaying in the wind
@@ -98,14 +216,17 @@ export function sceneFrame(region, seed, t) {
     const cv = document.createElement('canvas');
     cv.width = SCENE_W; cv.height = SCENE_H;
     const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')), img = ctx.createImageData(SCENE_W, SCENE_H);
-    f = { cv, ctx, img, buf: new Uint32Array(img.data.buffer), step: -1 };
+    f = { cv, ctx, img, buf: new Uint32Array(img.data.buffer), step: -1, live: false };
     if (frames.size >= 3) frames.delete(/** @type {string} */ (frames.keys().next().value));
     frames.set(key, f);
   }
-  const step = Math.floor(t * SWAY_RATE);
+  const touch = touches.get(key), live = !!touch && (touch.awake || f.live);
+  const step = live ? Math.floor(t * TOUCH_RATE) * 1e3 + 1 : Math.floor(t * SWAY_RATE);
   if (step !== f.step) {
     f.step = step;
-    swayPixels(sc.sway, f.buf, step / SWAY_RATE, sc.meta.wind ?? 1, (hashString(seed) % 1000) / 100);
+    // (one more frame once the springs are still, to lay them back at rest)
+    f.live = !!touch && touch.awake;
+    swayPixels(sc.sway, f.buf, live ? Math.floor(t * TOUCH_RATE) / TOUCH_RATE : step / SWAY_RATE, sc.meta.wind ?? 1, (hashString(seed) % 1000) / 100, touch);
     f.ctx.putImageData(f.img, 0, 0);
   }
   return f.cv;

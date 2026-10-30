@@ -25,33 +25,58 @@ test('sandbox wilds: shake, gather by tap, regrow at random spots, water by drag
   // a ripe plant on the ground, shaken by a single fast swipe across it
   const ripe = field.find((p) => p.mount === 'ground') || field[0];
   const mid = await lab(page, (l, id) => { const w = l.views.wilds, p = w.field.find((q) => q.id === id), f = w.frameOf(p); return { x: p.x * 384 - f.ax + f.w / 2, y: p.y * 216 - f.ay + f.h / 2 }; }, ripe.id);
-  const pts = [];
-  for (let k = 0; k <= 8; k++) pts.push(at(mid.x - 30 + k * 7.5, mid.y));
-  for (let k = 0; k <= 8; k++) pts.push(at(mid.x + 30 - k * 7.5, mid.y));
+  // (a stroke across it and back, kept within the scene where it grows by an edge)
+  const sx = Math.max(32, Math.min(W - 32, mid.x)), pts = [];
+  for (let k = 0; k <= 8; k++) pts.push(at(sx - 30 + k * 7.5, mid.y));
+  for (let k = 0; k <= 8; k++) pts.push(at(sx + 30 - k * 7.5, mid.y));
   await drag(page, pts, 12);
   await page.waitForFunction((id) => { const it = window.__alchemist.screen.views.wilds.fallen[id]; return it && it.landed; }, ripe.id);
-  // it falls as the very sprite it grew as: what lies on the ground shows its pixels unscaled
-  await page.waitForTimeout(1000);
-  const same = await lab(page, (l, id) => {
-    const w = l.views.wilds, it = w.fallen[id], sp = it.sp;
-    const src = sp.cv.getContext('2d').getImageData(0, 0, sp.w, sp.h).data;
-    const ix = Math.round(it.x - sp.ax), iy = Math.round(it.y - sp.ay);
-    const dst = w.ctx.getImageData(ix, iy, sp.w, sp.h).data;
-    let n = 0, ok = 0;
-    for (let i = 0; i < src.length; i += 4) {
-      if (src[i + 3] < 255) continue;
-      n++;
-      if (Math.abs(src[i] - dst[i]) + Math.abs(src[i + 1] - dst[i + 1]) + Math.abs(src[i + 2] - dst[i + 2]) < 6) ok++;
-    }
-    const f = w.frameOf(w.field.find((q) => q.id === id));
-    return { n, share: ok / Math.max(1, n), w: sp.w, h: sp.h, fw: f.w, fh: f.h };
+  // the finger pushes the scenery too: a stroke across the meadow's foliage sets it springing
+  const leaves = await page.evaluate(async () => {
+    const S = await import(new URL('src/rendering/wild-scene.js', document.baseURI).href);
+    const st = window.__alchemist.screen.state, t = S.sceneTouch('meadow', st.seed);
+    if (!t) return null;
+    const ys = [];
+    for (let g = 0; g < t.G; g++) if (t.amp[g] || t.hang[g]) ys.push((t.box[g * 4 + 1] + t.box[g * 4 + 3]) / 2);
+    return ys.length ? ys[Math.floor(ys.length / 2)] : null;
+  });
+  if (leaves !== null) {
+    const row = [];
+    for (let k = 0; k <= 24; k++) row.push(at(4 + k * (W - 8) / 24, leaves));
+    await drag(page, row, 12);
+    const moving = await page.evaluate(async () => {
+      const S = await import(new URL('src/rendering/wild-scene.js', document.baseURI).href);
+      const t = S.sceneTouch('meadow', window.__alchemist.screen.state.seed);
+      let n = 0;
+      for (let g = 0; g < t.G; g++) if (t.pos[g] || t.vel[g]) n++;
+      return n;
+    });
+    expect(moving, 'the foliage the finger went through is moving').toBeGreaterThan(0);
+  }
+  // (and whatever it knocked along has come to rest again)
+  await page.waitForFunction((id) => { const it = window.__alchemist.screen.views.wilds.fallen[id]; return it && it.landed; }, ripe.id);
+  // it falls as a ragdoll cut from the very sprite it grew as: what lies on the ground shows its own pixels, turned but never resampled
+  await page.waitForTimeout(400);
+  const same = await page.evaluate(async (id) => {
+    const S = await import(new URL('src/rendering/species-sprites.js', document.baseURI).href);
+    const w = window.__alchemist.screen.views.wilds, it = w.fallen[id], sp = it.sp, p = w.field.find((q) => q.id === id);
+    const opaque = (cv) => { const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data, out = []; for (let i = 0; i < d.length; i += 4) if (d[i + 3] === 255) out.push((d[i] << 16) | (d[i + 1] << 8) | d[i + 2]); return out; };
+    // the body is the plant's own sprite, cut down to what shows of it
+    const grown = S.plantCanvas(p.m, p.stage, { ...w.look(p), hover: false });
+    const mine = opaque(sp.cv), theirs = opaque(grown.cv);
+    const own = new Set(mine);
+    const b = it.doll.box(1), x0 = Math.max(0, Math.floor(b.x0)), y0 = Math.max(0, Math.floor(b.y0));
+    const dst = w.ctx.getImageData(x0, y0, Math.max(1, Math.ceil(b.x1) - x0), Math.max(1, Math.ceil(b.y1) - y0)).data;
+    let found = 0;
+    for (let i = 0; i < dst.length; i += 4) if (own.has((dst[i] << 16) | (dst[i + 1] << 8) | dst[i + 2])) found++;
+    return { n: mine.length, grown: theirs.length, same: mine.join() === theirs.join(), found, pieces: it.doll.len.length };
   }, ripe.id);
   expect(same.n).toBeGreaterThan(10);
-  expect([same.w, same.h], 'the fallen piece is the plant’s own sprite, not a shrunken icon').toEqual([same.fw, same.fh]);
-  expect(same.share, 'and its pixels are drawn as they were').toBeGreaterThan(0.85);
+  expect(same.same, 'the fallen body is the plant’s own sprite, pixel for pixel, not a shrunken icon').toBe(true);
+  expect(same.found / same.n, 'and it is drawn with its own colours as it lies').toBeGreaterThan(0.7);
   await shot(page, info, 'sandbox-wilds-fallen');
   // a fingertip that rolls a little is still a tap: it gathers what fell
-  const it = await lab(page, (l, id) => { const q = l.views.wilds.fallen[id]; return { x: q.x - q.sp.ax + q.sp.w / 2, y: q.y - q.sp.ay + q.sp.h / 2 }; }, ripe.id);
+  const it = await lab(page, (l, id) => l.views.wilds.itemCentre(id), ripe.id);
   const t = at(it.x, it.y), touch = !!info.project.use.hasTouch, wob = touch ? 4 : 1.5;
   await drag(page, [t, { x: t.x + wob, y: t.y + wob * 0.75 }, { x: t.x + wob * 1.8, y: t.y + wob * 0.5 }], 30);
   await expect.poll(() => lab(page, (l, id) => l.views.wilds.field.some((p) => p.id === id), ripe.id), { message: 'gathered: the plant is gone' }).toBe(false);
@@ -83,8 +108,10 @@ test('sandbox wilds: shake, gather by tap, regrow at random spots, water by drag
   Object.assign(cv, await page.locator('.view-wilds canvas.scene').boundingBox());
   const spots = await lab(page, (l, id) => l.views.wilds.field.filter((p) => p.dep.id === id).map((p) => ({ x: p.x * 384, y: p.y * 216 })), dep.id);
   spots.sort((a, b) => a.x - b.x);
+  // (a finger wandering from one plant to the next, a little above each one's foot)
   const path = [];
-  for (let k = 0; k <= 30; k++) { const u = k / 30, x = spots[0].x - 6 + (spots[spots.length - 1].x + 6 - spots[0].x + 6) * u, y = spots[0].y + (spots[spots.length - 1].y - spots[0].y) * u - 4; path.push(at(x, y)); }
+  for (let i = 0; i < spots.length - 1; i++) for (let k = 0; k < 12; k++) { const u = k / 12; path.push(at(spots[i].x + (spots[i + 1].x - spots[i].x) * u, spots[i].y - 4 + (spots[i + 1].y - spots[i].y) * u)); }
+  path.push(at(spots[spots.length - 1].x, spots[spots.length - 1].y - 4));
   await drag(page, path, 16);
   const ws = await lab(page, (l, id) => l.state.gathering.nodes[id].plants.map((q) => q.w), dep.id);
   expect(ws.length).toBe(3);
