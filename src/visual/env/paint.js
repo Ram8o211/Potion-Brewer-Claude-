@@ -18,10 +18,10 @@ export const SCENE_H = 216;
  * ground's shapes and texture are drawn in squares this big, on one grid
  * across the scene, so the painting has Noita's chunky pixels.
  */
-export const CELL = 2;
+export const CELL = 1;
 
 /** A wash or light's strength in flat steps, so it falls off in hard-edged bands, not a gradient. @param {number} t */
-const step = (t) => Math.floor(t / 0.07) * 0.07;
+const step = (t) => Math.floor(t / 0.035) * 0.035;
 
 /**
  * The canvas a region is composed on.
@@ -44,6 +44,8 @@ export class Canvas {
     this.seed = seed >>> 0;
     /** things the animation overlay needs (vents, pools, lights…) */
     this.meta = /** @type {Record<string, any>} */ ({});
+    /** lights to add when the scene is finished: [x, y, r, rgb, strength] @type {[number, number, number, number[], number][]} */
+    this.pending = [];
   }
 
   /** @param {number} x @param {number} y @param {number} c */
@@ -82,7 +84,7 @@ export class Canvas {
     w += mod(-w); h += mod(-h);
     if (w <= 0 || h <= 0 || w > 2000 || h > 2000) return null;
     model.transform(1, 0, 0, 1, -left, -top, 1);
-    const r = rasterize(model, w, h, pal, { seed: o.seed ?? this.seed, outline: o.outline, texture: o.texture, cell });
+    const r = rasterize(model, w, h, pal, { seed: o.seed ?? this.seed, outline: o.outline, texture: o.texture, cell, grain: cell });
     const p = r.pix;
     if (o.haze || o.dark) for (let k = 0; k < p.px.length; k++) {
       const c = p.px[k];
@@ -109,6 +111,17 @@ export class Canvas {
       }
     }
     return { x: X, y: Y, w, h, raster: r };
+  }
+
+  /**
+   * A light from a source: a disc fading out to radius r, added in flat
+   * steps when the scene is finished (cave.js finish), so it lights what is
+   * painted after it too. Recorded in meta.lights for the animation.
+   * @param {number} x @param {number} y @param {number} r @param {number[]} rgb @param {number} k
+   */
+  glow(x, y, r, rgb, k) {
+    this.pending.push([x, y, r, rgb, k]);
+    (this.meta.lights ||= []).push([Math.round(x), Math.round(y), r, rgb]);
   }
 
   /** Mix a colour over every painted pixel in a band, fading with `f(x, y)` (0..1) in flat steps. */

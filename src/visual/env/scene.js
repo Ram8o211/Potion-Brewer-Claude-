@@ -6,6 +6,7 @@
 
 import { Canvas, SCENE_W, SCENE_H } from './paint.js';
 import { hashString } from '../../core/rng.js';
+import { finish } from './cave.js';
 import * as meadow from './meadow.js';
 import * as forest from './forest.js';
 import * as river from './river.js';
@@ -14,7 +15,7 @@ import * as moonfen from './moonfen.js';
 import * as crags from './crags.js';
 
 /** Version of the environment generator (scenes are not saved; this only names caches). */
-export const ENV_VERSION = 3;
+export const ENV_VERSION = 4;
 
 const COMPOSERS = { meadow, forest, river, quarry, moonfen, crags };
 
@@ -40,6 +41,7 @@ export function composeScene(region, seed) {
   const id = COMPOSERS[region] ? region : 'forest';
   const cv = new Canvas(hashString(`scene:${seed}:${id}`));
   COMPOSERS[id].compose(cv, String(seed));
+  finish(cv, cv.meta.vignette ?? 0.55);
   // a gap the composition left (a dip below its sky) takes the colour above it
   const px = cv.pix.px;
   for (let y = 1; y < SCENE_H; y++) for (let x = 0; x < SCENE_W; x++) if (!(px[y * SCENE_W + x] >>> 24)) px[y * SCENE_W + x] = px[(y - 1) * SCENE_W + x] | 0xff000000;

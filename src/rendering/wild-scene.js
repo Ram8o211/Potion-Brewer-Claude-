@@ -199,6 +199,38 @@ function surface(ctx, p, t, c, lava) {
   }
 }
 
+/** Drip colours of each region's stalactites: [drop, splash]. */
+const DRIP = { meadow: ['#8ac0e0', '#c8e4f4'], forest: ['#6aa0a0', '#a0d0c8'], river: ['#7ad8d0', '#c8f4f0'], quarry: ['#c8803a', '#e8b070'], moonfen: ['#8ab0f0', '#d0e0ff'], crags: ['#ffb040', '#fff0a0'] };
+
+/**
+ * What every cavern has moving in it: drops falling from the stalactites'
+ * tips, its falls (lava, water) running, its torches flickering and its
+ * glowing mushrooms breathing light. @param {CanvasRenderingContext2D} ctx
+ */
+function cavern(ctx, region, t, meta) {
+  const [drop, splash] = DRIP[region] || DRIP.river;
+  (meta.tips || []).forEach(([x, y], j) => {
+    if (j % 3) return;
+    const ph = (t * 0.35 + rnd(j, 11)) % 1, H = SCENE_H, d = ph * ph * (H - y);
+    if (ph < 0.12) px(ctx, x, y, drop);
+    else if (y + d < H - 2) px(ctx, x, y + d, drop, 1, 2);
+    else px(ctx, x - 1, H - 3, splash, 3, 1);
+  });
+  for (const [x, y0, y1, w] of meta.falls || []) {
+    // bright streaks running down the fall
+    for (let i = 0; i < Math.max(2, (y1 - y0) / 12); i++) {
+      const y = y0 + ((t * 40 + rnd(i, x) * (y1 - y0)) % Math.max(1, y1 - y0));
+      px(ctx, x - w + Math.floor(rnd(i, 2) * (w * 2 + 1)), y, '#fff4c0', 1, 3);
+    }
+    halo(ctx, x, y1 - 3, 8, '#ff8a2a', 0.06 + 0.04 * Math.sin(t * 7 + x));
+  }
+  for (const [x, y] of meta.torches || []) {
+    halo(ctx, x, y, 12, '#ffb050', 0.1 + 0.05 * Math.sin(t * 9 + x) + 0.03 * Math.sin(t * 23 + x));
+    if (Math.sin(t * 13 + x) > 0.3) px(ctx, x + (Math.sin(t * 5 + x) > 0 ? 1 : 0), y - 4, '#fff4b0');
+  }
+  if (region !== 'moonfen') for (const [x, y] of meta.glows || []) halo(ctx, x, y, 8, region === 'forest' ? '#ff9a40' : '#4ad8f0', 0.06 + 0.04 * Math.sin(t * 1.7 + x));
+}
+
 /**
  * The moving parts of a region, drawn over its painting each frame: its
  * particles (pollen, motes, falling leaves, fireflies, wisps, embers, ash,
@@ -209,8 +241,9 @@ function surface(ctx, p, t, c, lava) {
  */
 export function animateRegion(ctx, region, t, seed) {
   const W = SCENE_W, H = SCENE_H, meta = sceneOf(region, seed).meta;
-  if (region === 'meadow' || region === 'river' || region === 'quarry') {
-    // birds crossing the sky, two wingbeats apart
+  cavern(ctx, region, t, meta);
+  if (region === 'meadow') {
+    // birds crossing the sky beyond the cave mouth, two wingbeats apart
     for (let i = 0; i < 3; i++) {
       const x = ((t * (7 + i * 2) + i * 130) % (W + 30)) - 15, y = 16 + i * 11 + Math.sin(t * 1.5 + i) * 3, up = Math.sin(t * 9 + i * 2) > 0 ? 1 : 0;
       for (const [dx, dy] of [[0, 0], [-1, -up], [1, -up], [-2, 1 - up * 2], [2, 1 - up * 2]]) px(ctx, x + dx, y + dy, '#2a2024');
@@ -270,7 +303,7 @@ export function animateRegion(ctx, region, t, seed) {
       const x = (rnd(i) * W + Math.sin(t * 0.4 + i) * 12) % W, y = 110 + rnd(i, 1) * 80 + Math.sin(t * 0.9 + i) * 5;
       halo(ctx, x, y, 4, '#d8ff8a', 0.15); px(ctx, x, y, '#f4ffc0');
     }
-    for (const [gx, gy] of meta.glows || []) halo(ctx, gx, gy, 12, '#b090ff', 0.08 + 0.05 * Math.sin(t * 2 + gx));
+    for (const [gx, gy] of meta.glows || []) halo(ctx, gx, gy, 12, '#70c8ff', 0.08 + 0.05 * Math.sin(t * 2 + gx));
     for (const p of meta.pools || []) surface(ctx, p, t, '#d8e4ff', false);
   }
   if (region === 'crags') {

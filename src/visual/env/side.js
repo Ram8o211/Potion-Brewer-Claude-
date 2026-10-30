@@ -13,6 +13,7 @@
 import { fbm1, fbm2, hash2, noise2 } from '../noise.js';
 import { mixPacked, pack, hex } from '../color.js';
 import { CELL } from './paint.js';
+import { cobble } from './stone.js';
 
 /** A coordinate snapped down to the scene's grid of CELL squares. @param {number} v */
 const snap = (v) => v - (((v % CELL) + CELL) % CELL);
@@ -95,15 +96,17 @@ export function blob(cv, cx, cy, rx, ry, seed, v = 1, rough = 0.35) {
  * in steps with depth, stones and grains in it, dark rims where it meets
  * the air at its sides and underneath, and caves as a dark hollow.
  * @param {any} cv
+ *   cobble: the body is cobbled stone (cave.js cobble) instead of blotches;
  *   rocks: stones set in the ground (lit on top); strata: horizontal bands
  *   of the second colour instead of blotches; seams: streaks of ore
  * @param {{a:string, b:string, grain:string, dark:string, crust:string[], crustH?:number, deep:string, cave:string, seed:number, blot?:number,
- *   grass?:{cols:string[], tall?:number, flowers?:string[], rate?:number}, rocks?:{cols:string[], n:number, r?:number}, strata?:boolean, seams?:{cols:string[], n:number}}} o
+ *   grass?:{cols:string[], tall?:number, flowers?:string[], rate?:number}, cobble?:{stones:string[], mortar:string, s?:number, flat?:number}, rocks?:{cols:string[], n:number, r?:number}, strata?:boolean, seams?:{cols:string[], n:number}}} o
  */
 export function paintTerrain(cv, o) {
   const W = cv.W, H = cv.H, S = cv.solid;
   const A = col(o.a), B = col(o.b), G = col(o.grain), D = col(o.dark), deep = col(o.deep), cave = col(o.cave), crust = o.crust.map(col);
   const ch = o.crustH ?? 3, blot = o.blot ?? 0.06;
+  const tex = o.cobble ? { stones: o.cobble.stones.map(col), mortar: col(o.cobble.mortar), s: o.cobble.s ?? 6, seed: o.seed, flat: o.cobble.flat } : null;
   for (let x = 0; x < W; x++) {
     let d = 0;
     for (let y = 0; y < H; y++) {
@@ -123,7 +126,13 @@ export function paintTerrain(cv, o) {
       // the material is sampled square by square, so its blotches step in blocks
       const qx = snap(x), qy = snap(y);
       if (d < ch) c = crust[Math.min(crust.length - 1, d)];
-      else {
+      else if (tex) {
+        c = cobble(x, y, tex);
+        // lit from above: darker down a pillar and deeper in the ground, in flat steps
+        const dd = cv.ground ? Math.min(d, Math.max(0, y - cv.ground[x]) + 10) : d;
+        const t = Math.min(7, Math.floor((dd - ch) / 8));
+        if (t > 0) c = mixPacked(c, deep, t * 0.09);
+      } else {
         const m = o.strata ? (Math.floor((qy + fbm1(qx * 0.02, o.seed, 2) * 14) / 8) % 2 ? 0.6 : 0.4) + (fbm2(qx * blot, qy * blot, o.seed, 2) - 0.5) * 0.3
           : fbm2(qx * blot, qy * blot * 1.3, o.seed, 2) + (noise2(qx * 0.3, qy * 0.3, o.seed + 9) - 0.5) * 0.08;
         c = m > 0.52 ? B : A;
@@ -281,11 +290,13 @@ export function ledges(cv, top, rng, n, o = {}) {
       const ry = rng.int(7, 10), seed = rng.int(0, 1e9);
       shapes.push(slab(x, y, rx, ry, seed));
       // the buttress: under one end of the ledge, leaning a little, down to whatever lies below
-      const side = rng.next() < 0.5 ? -1 : 1, bx = x + side * Math.round(rx * (0.2 + rng.next() * 0.35));
-      const lean = side * rng.int(0, 8), fx = Math.max(2, Math.min(cv.W - 3, bx + lean));
+      const side = rng.next() < 0.5 ? -1 : 1, bx = x + side * Math.round(rx * rng.next() * 0.25);
+      const lean = side * rng.int(0, 4), fx = Math.max(2, Math.min(cv.W - 3, bx + lean));
+      // no buttress stands in a pool
+      if (keep.some(([a, b]) => fx + rx * 0.5 > a && fx - rx * 0.5 < b)) { shapes.pop(); continue; }
       let land = Math.round(y + ry);
       while (land < cv.H - 1 && !cv.solid[land * cv.W + fx]) land++;
-      const w0 = Math.round(rx * (tier ? 0.45 : 0.38)) + rng.int(0, 3), w1 = w0 + rng.int(6, 12);
+      const w0 = Math.round(rx * (tier ? 0.42 : 0.4)) + rng.int(0, 3), w1 = w0 + rng.int(4, 10);
       shapes.push(buttress(bx, y + ry * 0.6, fx, land + 3, w0, w1, seed));
       x0 = Math.min(x0, x - rx - 12, fx - w1 - 12); x1 = Math.max(x1, x + rx + 12, fx + w1 + 12); y0 = Math.min(y0, y - ry * 2);
     }
@@ -294,7 +305,7 @@ export function ledges(cv, top, rng, n, o = {}) {
     for (let Y = snap(Math.max(0, Math.floor(y0))); Y < cv.H; Y += CELL) for (let X = snap(Math.max(0, x0)); X < Math.min(cv.W, x1); X += CELL) {
       const x = X + CELL / 2, y = Y + CELL / 2;
       let d = ground(x, y);
-      for (const f of shapes) d = smin(d, f(x, y), 6);
+      for (const f of shapes) d = smin(d, f(x, y), 8);
       if (d >= 0) continue;
       for (let yy = Y; yy < Math.min(cv.H, Y + CELL); yy++) for (let xx = X; xx < Math.min(cv.W, X + CELL); xx++) {
         const k = yy * cv.W + xx;
@@ -317,6 +328,8 @@ function smin(a, b, k) {
 function slab(cx, cy, rx, ry, seed) {
   const cut = cy - ry * 0.55;
   return (/** @type {number} */ x, /** @type {number} */ y) => {
+    // well clear of it: far enough that the union takes no fillet from it
+    if (Math.abs(x - cx) > rx + 16 || Math.abs(y - cy) > ry + 16) return 1e3;
     const e = Math.pow(Math.abs(x - cx) / rx, 4) + Math.pow(Math.abs(y - cy) / ry, 3);
     const d = (Math.pow(e, 0.28) - 1) * ry + (fbm2(x * 0.08, y * 0.12, seed, 2) - 0.5) * 4;
     return Math.max(d, cut - y);
@@ -326,7 +339,9 @@ function slab(cx, cy, rx, ry, seed) {
 /** A buttress's distance field: a ragged column from (x0, y0) to (x1, y1), w0 wide at the top widening to w1 at its foot. */
 function buttress(x0, y0, x1, y1, w0, w1, seed) {
   const vx = x1 - x0, vy = y1 - y0, ll = vx * vx + vy * vy || 1;
+  const lx = Math.min(x0, x1) - w1 - 16, hx = Math.max(x0, x1) + w1 + 16, ly = Math.min(y0, y1) - w1 - 16, hy = Math.max(y0, y1) + w1 + 16;
   return (/** @type {number} */ x, /** @type {number} */ y) => {
+    if (x < lx || x > hx || y < ly || y > hy) return 1e3;
     const t = Math.max(0, Math.min(1, ((x - x0) * vx + (y - y0) * vy) / ll));
     const r = (w0 + (w1 - w0) * t * t) / 2 + (hash2(Math.floor(y / 4), 0, seed) - 0.5) * 1.6;
     return Math.hypot(x - x0 - vx * t, y - y0 - vy * t) - r;
@@ -386,13 +401,12 @@ export function treeShape(cv, x, y, h, kind, c, seed) {
 }
 
 /**
- * Light from a source, added in flat steps: a disc fading out to radius r.
- * Recorded in meta.lights for the flicker the animation adds.
+ * Light from a source, added in flat steps when the scene is finished: a
+ * disc fading out to radius r (Canvas.glow).
  * @param {any} cv @param {number} x @param {number} y @param {number} r @param {number[]} rgb @param {number} k
  */
 export function glow(cv, x, y, r, rgb, k) {
-  cv.light(rgb, (px, py) => { const d = Math.hypot(px - x, py - y) / r; return d >= 1 ? 0 : (1 - d) * (1 - d) * k; }, Math.floor(y - r), Math.ceil(y + r));
-  (cv.meta.lights ||= []).push([Math.round(x), Math.round(y), r, rgb]);
+  cv.glow(x, y, r, rgb, k);
 }
 
 /**

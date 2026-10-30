@@ -1,16 +1,15 @@
-// Whisperwood, seen from the side: a pale green mist between rows of trunk
-// silhouettes, each row nearer and darker, under a canopy that closes over
-// the top of the scene; great oaks framing it, their crowns meeting the
-// canopy; and in front the forest floor in cross-section — dark loam
-// threaded with roots and stones under a crust of moss, mossy ledges and a
-// root-hung hollow, a fallen log and a stump, and shafts of light falling
-// through the leaves.
+// Whisperwood, a forest grown into a cave: a dark green gloom of far
+// pillars and mist, a roof of mossy rock hung with stalactites and ivy,
+// and in front the forest floor in cross-section — dark cobbled stone
+// threaded with roots under a crust of moss, mossy pillars dripping moss,
+// a great gnarled oak reaching up into the roof, a fallen log and a stump,
+// ferns, and mushrooms glowing ember-orange in the dark.
 
 import { sky } from './paint.js';
 import { palette, vary, streamOf } from './kit.js';
-import { heights, raise, fillSolid, blob, paintTerrain, markOpen, surfaceAt, hanging, glow, col, drips, ledges, far } from './side.js';
-import { tree, fern, log, stump, crown } from './objects.js';
-import { Model } from '../geometry.js';
+import { heights, raise, fillSolid, blob, paintTerrain, markOpen, surfaceAt, col, drips, ledges } from './side.js';
+import { caveFrame, farPillars, fog, vines, moss, glowShrooms } from './cave.js';
+import { tree, fern, log, stump } from './objects.js';
 import { hash2 } from '../noise.js';
 
 export function compose(cv, seed) {
@@ -18,22 +17,22 @@ export function compose(cv, seed) {
   // some worlds' woods are in their autumn
   const autumn = s('season').next() < 0.3;
   const pal = vary(palette({
-    leaf: [autumn ? '#8a5a1e' : '#2f5e26', { spread: 0.6 }], bark: ['#4e3622', { spread: 0.55 }], wood: '#a87a48', rock: '#6e7270',
-    moss: ['#5a8a34', { spread: 0.5 }], fern: [autumn ? '#9a7a2a' : '#5e9e3c', { spread: 0.55 }],
+    leaf: [autumn ? '#7a5220' : '#2e5426', { spread: 0.6 }], bark: ['#4a3422', { spread: 0.55 }], wood: '#a87a48', rock: '#5e625c',
+    moss: ['#4e7a30', { spread: 0.5 }], fern: [autumn ? '#8a6a26' : '#4e8a34', { spread: 0.55 }],
   }), s('pal'), 1);
-  sky(cv, 0, H, ['#c4dcc8', '#a8ccb4', '#88b49c'], 8);
-  // rows of trunks, the far ones palest, under canopies hanging from the top
-  const rows = [{ c: '#94bca4', w: 3, n: 22, can: 30 }, { c: '#6e9a82', w: 5, n: 14, can: 22 }, { c: '#4a7660', w: 8, n: 9, can: 14 }];
-  rows.forEach((r, k) => {
-    const rr = s('row' + k), fill = col(r.c);
-    for (let i = 0; i < r.n; i++) {
-      const x0 = Math.round((i + rr.next() * 0.7) * (W / r.n)), w = r.w + rr.int(0, 2);
-      for (let y = 0; y < H; y++) for (let x = x0; x < x0 + w; x++) if (x >= 0 && x < W) cv.pix.px[y * W + x] = far(fill, x, y, k * 97 + i);
-    }
-    hanging(cv, { base: r.can, amp: 10, freq: 0.03, seed: rr.int(0, 1e9), fill: r.c, rough: 4 });
+  sky(cv, 0, H, ['#050806', '#08100a', '#0c160e', '#101c12'], 10);
+  farPillars(cv, { n: 8, fill: '#0f1a10', rim: '#152416', seed: s('far1').int(0, 1e9), w: [10, 22], floor: 180, caps: true });
+  fog(cv, '#24402a', 80, 200, 0.3, s('fog1').int(0, 1e9));
+  farPillars(cv, { n: 5, fill: '#14221a', rim: '#1e3222', seed: s('far2').int(0, 1e9), w: [18, 30], floor: 185 });
+  fog(cv, '#2a4a2e', 110, 210, 0.2, s('fog2').int(0, 1e9));
+  const fs = s('frame');
+  const frame = caveFrame(cv, {
+    seed: fs.int(0, 1e9), stones: ['#3a3428', '#2e2a22', '#3e4430'], mortar: '#0c0a08', dark: 0.4, roof: [12, 36], walls: [10, 12],
+    stal: { n: 14, len: [8, 30], w: [3, 7] }, lip: [autumn ? '#9a6a22' : '#4e8a2e', '#2e5a22'],
   });
-  // the forest floor: a low rise, a mossy ledge or two and a hollow under the roots
-  const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 168, amp: 10, freq: 0.012 });
+  vines(cv, frame.roof, { cols: autumn ? ['#9a6a22', '#6a4a1a', '#3e2e14'] : ['#4a8a2a', '#30601e', '#1e3e16'], leaf: autumn ? '#c88a2a' : '#5e9a32', flower: '#e86a9a', seed: fs.int(0, 1e9), rate: 0.25, len: [4, 44] });
+  // the forest floor: a low rise, mossy pillars and a hollow under the roots
+  const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 172, amp: 8, freq: 0.012 });
   const kx = ts.int(60, W - 140);
   raise(top, kx, kx + ts.int(30, 60), Math.min(...top) - ts.int(8, 14), 3);
   fillSolid(cv, top);
@@ -42,32 +41,30 @@ export function compose(cv, seed) {
   blob(cv, hx, top[hx] + 20, ts.int(14, 22), 8, ts.int(0, 1e9), 0);
   const ss = ts.int(0, 1e9);
   paintTerrain(cv, {
-    a: '#3e2a1c', b: '#4c3422', grain: '#6e5034', dark: '#1e140c', deep: '#120c08', cave: '#0a0806',
-    crust: [autumn ? '#c88a2a' : '#6aa83a', autumn ? '#9a6a22' : '#4a8a2c', '#2e5a22'], crustH: 3, seed: ss,
-    grass: { cols: autumn ? ['#b07a24', '#8a5a1e'] : ['#4e9a34', '#6ab83e', '#3a7a2a'], tall: 3, rate: 0.5, flowers: ['#f0e0a0', '#e88aa0'] },
-    rocks: { cols: ['#9a9e98', '#6e7270', '#3e4240'], n: 30, r: 6 },
+    a: '#3e2a1c', b: '#4c3422', grain: '#6e5034', dark: '#1a120c', deep: '#0a0806', cave: '#070605',
+    crust: [autumn ? '#c88a2a' : '#6aa83a', autumn ? '#9a6a22' : '#4a8a2c', '#2e5a22', '#22401a'], crustH: 4, seed: ss,
+    cobble: { stones: ['#5e584a', '#4e4a3e', '#6a6250', '#44483a', '#56604a', '#3e3a30'], mortar: '#16120c', s: 4 },
+    grass: { cols: autumn ? ['#b07a24', '#8a5a1e'] : ['#4e9a34', '#6ab83e', '#3a7a2a'], tall: 3, rate: 0.5, flowers: ['#f08ab0', '#e85a8a', '#f0e0a0'] },
   });
+  moss(cv, { cols: autumn ? ['#c88a2a', '#9a6a22', '#6a4a1a', '#3e2e14'] : ['#6aa83a', '#4a8a2c', '#30601e', '#1e3e16'], seed: ss + 1, drape: 10, rate: 0.25, len: 14 });
   // roots threading the ground under the surface
-  const rt = s('roots'), root = col('#5a3a24'), rootLit = col('#7a5232');
+  const rt = s('roots'), root = col('#4a3020'), rootLit = col('#6a4630');
   for (let i = 0; i < 14; i++) {
     let x = rt.int(0, W - 1), y = surfaceAt(cv, x) + rt.int(3, 8);
     const dx = rt.next() < 0.5 ? -1 : 1;
     for (let k = 0; k < rt.int(12, 30); k++) {
       if (x < 0 || x >= W || y >= H) break;
-      if (cv.solid[y * W + x]) cv.set(x, y, k % 5 ? root : rootLit);
-      else if (cv.cave[y * W + x]) { cv.set(x, y, root); }
+      if (cv.solid[y * W + x] || cv.cave[y * W + x]) { cv.set(x, y, k % 5 ? root : rootLit); if (y + 1 < H) cv.set(x, y + 1, root); }
       x += dx; if (hash2(x, y, i) < 0.45) y++;
     }
   }
   markOpen(cv);
-  // the great oaks framing the scene, their crowns meeting the canopy
-  const or = s('oaks');
-  const lx = or.int(4, 30), rx = or.int(350, 378);
-  cv.stamp(tree(or, 'oak', or.int(170, 190), or.int(18, 24), { lean: 0.03 }), pal, lx, surfaceAt(cv, lx) + 3, { roots: [22, 4] });
-  cv.stamp(tree(or, 'oak', or.int(165, 185), or.int(16, 22), { lean: -0.03 }), pal, rx, surfaceAt(cv, rx) + 3, { roots: [20, 4] });
-  const canopy = new Model();
-  for (let x = -30; x < W + 30; x += or.int(22, 34)) crown(canopy, or, x, or.int(-16, 0), or.int(26, 38), or.int(16, 22), 'leaf', { n: 6 });
-  cv.stamp(canopy, pal, 0, 0);
+  // the great gnarled oak reaching into the roof, and a lesser one
+  const or = s('oaks'), left = or.next() < 0.6;
+  const lx = left ? or.int(14, 40) : or.int(344, 370);
+  cv.stamp(tree(or, 'oak', or.int(170, 190), or.int(16, 22), { lean: left ? 0.06 : -0.06 }), pal, lx, surfaceAt(cv, lx) + 3, { roots: [22, 4] });
+  const rx = left ? or.int(330, 372) : or.int(12, 50);
+  cv.stamp(tree(or, 'oak', or.int(100, 130), or.int(9, 12), { lean: left ? -0.04 : 0.04 }), pal, rx, surfaceAt(cv, rx) + 2, { roots: [12, 3], dark: 0.25 });
   // a fallen log, a stump, ferns
   const lr = s('logs'), gx = lr.int(90, 290);
   cv.stamp(log(lr, lr.int(40, 60), lr.int(5, 7), { moss: 'moss' }), pal, gx, surfaceAt(cv, gx) + 2, { foot: [26, 3] });
@@ -75,14 +72,15 @@ export function compose(cv, seed) {
   cv.stamp(stump(lr, lr.int(10, 14), lr.int(7, 10)), pal, sx, surfaceAt(cv, sx) + 1, { foot: [8, 2] });
   const fr = s('ferns');
   for (let i = 0; i < 6; i++) { const x = fr.int(10, W - 10); cv.stamp(fern(fr, fr.int(8, 13), { leaf: 'fern' }), pal, x, surfaceAt(cv, x) + 1); }
-  // shafts of light through a gap in the canopy
+  // a pale shaft from a crack in the roof, and mushrooms glowing in the dark
   const shafts = s('shafts'), sx0 = shafts.int(110, 230);
-  cv.light([1, 0.95, 0.7], (x, y) => {
-    const u = x - sx0 - y * 0.45, k = Math.floor(u / 22), v = ((u % 22) + 22) % 22;
-    return k >= 0 && k < 3 && v < 9 - k * 2 ? 0.21 * (1 - y / H) : 0;
+  cv.light([0.7, 0.9, 0.6], (x, y) => {
+    const u = x - sx0 - y * 0.3, v = ((u % 30) + 30) % 30, k = Math.floor(u / 30);
+    return k >= 0 && k < 2 && v < 8 - k * 3 ? 0.1 * (1 - y / H) : 0;
   }, 0, H);
-  glow(cv, sx0 + 30, 20, 50, [1, 0.95, 0.7], 0.2);
   cv.meta.shaft = sx0;
+  cv.meta.glows = glowShrooms(cv, { n: 9, cap: '#e8642a', lit: '#ffc070', stem: '#e0d0b0', rgb: [1, 0.5, 0.18], seed: s('shrooms').int(0, 1e9) });
   cv.meta.trickles = drips(cv, ss, 4);
+  cv.meta.vignette = 0.6;
   cv.meta.horizon = 120;
 }
