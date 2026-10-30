@@ -141,7 +141,8 @@ export function findAnchors(sc) {
     // a hold underneath: air below for a good drop
     if ((stone(x, y) || tree(x, y)) && air(x, y + 1) && air(x, y + 3) && air(x, y + 8) && air(x - 1, y + 2) && air(x + 1, y + 2)) {
       const a = { x, y: y + 1, flip: false, sup: k };
-      out.hang.push(a);
+      // only the cave's rock holds the hanging vines' plants, not a bough
+      if (!tree(x, y)) out.hang.push(a);
       out[tree(x, y) ? 'bough' : 'ceiling'].push(a);
     }
     for (const dir of [1, -1]) {
