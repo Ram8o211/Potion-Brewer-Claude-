@@ -1016,6 +1016,11 @@ function dangle(c) {
     sk.later(3, () => {
       if (ox || oy > 1) stroke(sk, [[px, py], [px + ox * 0.4, py + oy * 0.6], [px + ox, py + oy]], 1, 1, pal.stem);
       pend(sk, rng, px + ox, py + oy, r, pal, lit, g >= 0.95);
+      // they shine: a share of the pendant's own pixels gives light
+      if (lit) for (let j = 0; j < 7 * r + 2; j++) for (let i = -4; i <= 4; i++) {
+        const X = px + ox + i, Y = py + oy + j;
+        if (sk.has(X, Y) && hash2(X, Y, c.sk.seed) < 0.22) sk.emit(X, Y, at(pal.glow, 0.6 + 0.4 * hash2(Y, X, 7)));
+      }
     });
   }
 }
