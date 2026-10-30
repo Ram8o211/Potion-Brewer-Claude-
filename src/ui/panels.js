@@ -87,6 +87,7 @@ function renderReagents(lab, body, rerender) {
   for (const id of st.world.ingredients) {
     const mt = st.lookup(id);
     if (mt.wild && mt.wild.gatherOnly) continue; // only found in the wilds
+    if (!st.knows(id)) continue; // a wild ingredient never gathered is unknown
     if (mt.remains) continue; // recovered from a rabbit, never sold
     const locked = mt.tier > st.rank;
     const price = st.priceOf(id);
@@ -500,7 +501,7 @@ export function renderJournal(lab, container, tab = 'journal') {
       const ids = st.world.ingredients.concat(st.world.materials.filter((x) => x.product && (st.knowledge[x.id] || {}).seen).map((x) => x.id));
       for (const id of ids) {
         const mt = st.lookup(id);
-        const known = mt.tier <= st.rank || (st.knowledge[id] || {}).seen;
+        const known = (mt.tier <= st.rank && st.knows(id)) || (st.knowledge[id] || {}).seen;
         list.appendChild(h('div', { class: 'item parch' + (known ? '' : ' locked') }, jarCanvas(mt, 14, 18),
           h('div', {}, h('div', { class: 'title', text: known ? mt.name : '???' }), h('div', { class: 'meta', text: known ? mt.description : 'Not yet available.' })),
           known ? btn('', () => openIngredient(lab, id), { icon: 'lens', cls: 'icon', title: 'Inspect' }) : icon('lock'),

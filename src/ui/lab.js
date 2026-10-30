@@ -463,7 +463,7 @@ export class LabScreen {
     const sh = clear(this.shelfEl);
     this.jarEls = {};
     const st = this.state;
-    const ids = this.sandbox ? sandboxIngredients(st.world) : st.world.ingredients.filter((id) => st.lookup(id).tier <= st.rank || st.stock(id) > 0);
+    const ids = this.sandbox ? sandboxIngredients(st.world) : st.world.ingredients.filter((id) => st.knows(id) && (st.lookup(id).tier <= st.rank || st.stock(id) > 0));
     const labels = shelfLabels(ids.map((id) => st.lookup(id).name));
     for (const [n, id] of ids.entries()) {
       const m = st.lookup(id);

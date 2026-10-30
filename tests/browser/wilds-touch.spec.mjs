@@ -14,7 +14,7 @@ test('sandbox wilds: shake, gather by tap, regrow at random spots, water by drag
   await page.waitForFunction(() => { const w = window.__alchemist.screen.views.wilds; return w.region === 'meadow' && !!w.bg; });
   await lab(page, (l) => l.views.wilds.grow());
   // every plant of the Free Experiment's wilds stands grown
-  const field = await lab(page, (l) => l.views.wilds.field.map((p) => ({ id: p.id, dep: p.dep.id, x: p.x, y: p.y, stage: p.stage, mount: p.mount || 'ground' })));
+  const field = await lab(page, (l) => l.views.wilds.field.map((p) => ({ id: p.id, dep: p.dep.id, x: p.x, y: p.y, stage: p.stage, mount: p.mount || 'ground', fused: l.views.wilds.fused(p) })));
   expect(field.length).toBeGreaterThan(2);
   expect(field.every((p) => p.stage === 'mature'), 'every plant is grown').toBe(true);
   await page.locator('.view-wilds canvas.scene').scrollIntoViewIfNeeded();
@@ -23,7 +23,7 @@ test('sandbox wilds: shake, gather by tap, regrow at random spots, water by drag
   const H = 216, W = await page.evaluate(() => /** @type {HTMLCanvasElement} */ (document.querySelector('.view-wilds canvas.scene')).width);
   const at = (x, y) => ({ x: cv.x + x / W * cv.width, y: cv.y + y / H * cv.height });
   // a ripe plant on the ground, shaken by a single fast swipe across it
-  const ripe = field.find((p) => p.mount === 'ground') || field[0];
+  const ripe = field.find((p) => p.mount === 'ground' && !p.fused) || field.find((p) => !p.fused) || field[0];
   const mid = await lab(page, (l, id) => { const w = l.views.wilds, p = w.field.find((q) => q.id === id), f = w.frameOf(p); return { x: p.x * 384 - f.ax + f.w / 2, y: p.y * 216 - f.ay + f.h / 2 }; }, ripe.id);
   // (a stroke across it and back, kept within the scene where it grows by an edge)
   const sx = Math.max(32, Math.min(W - 32, mid.x)), pts = [];
@@ -134,5 +134,34 @@ test('sandbox wilds: shake, gather by tap, regrow at random spots, water by drag
   await drag(page, [at(4, 6), at(4, 6)], 30);
   await expect(page.locator('.toast', { hasText: 'Nothing to water here' })).toBeVisible();
   await shot(page, info, 'sandbox-wilds-watered');
+  expect(errors).toEqual([]);
+});
+
+test('sandbox wilds: a crystal fused into its rock breaks free only after several blows', async ({ page }) => {
+  const errors = watchErrors(page);
+  await startSandbox(page);
+  await page.click('[data-act=tab-wilds]');
+  // the region whose plants include a crystal
+  const region = await lab(page, async (l) => {
+    const w = l.views.wilds;
+    for (const r of ['quarry', 'moonfen', 'crags', 'river', 'forest', 'meadow', 'netherwood']) {
+      w.region = r; w.bgKey = ''; w.refresh(); w.grow();
+      if (w.field.some((p) => w.fused(p))) return r;
+    }
+    return null;
+  });
+  test.skip(!region, 'this world grows no crystal');
+  const out = await lab(page, (l) => {
+    const w = l.views.wilds, r = w.canvas.getBoundingClientRect();
+    // (a tap on the middle of a crystal no other plant stands in front of)
+    const p = w.field.filter((q) => w.fused(q)).find((q) => { const f = w.frameOf(q); return w.plantAt({ clientX: r.left + (q.x * 384 - f.ax + f.w / 2) / 384 * r.width, clientY: r.top + (q.y * 216 - f.ay + f.h / 2) / 216 * r.height }) === q; });
+    const f = w.frameOf(p), e = { clientX: r.left + (p.x * 384 - f.ax + f.w / 2) / 384 * r.width, clientY: r.top + (p.y * 216 - f.ay + f.h / 2) / 216 * r.height };
+    const loose = [];
+    for (let k = 0; k < w.strikesFor(p); k++) { w.time += 1; w.tapScene(e); loose.push(!!w.fallen[p.id]); }
+    return { need: w.strikesFor(p), loose };
+  });
+  expect(out.need, 'it takes several blows').toBeGreaterThanOrEqual(3);
+  expect(out.loose.slice(0, -1).every((v) => !v), 'still fused after every blow but the last').toBe(true);
+  expect(out.loose[out.loose.length - 1], 'the last blow breaks it free').toBe(true);
   expect(errors).toEqual([]);
 });

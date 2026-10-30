@@ -300,7 +300,13 @@ computed from the particles that actually run out of the tap. What a
   bounces, tips over and comes to rest on the ground, a ledge or the water
   — the terrain is impenetrable: no part of it ever goes into the ground,
   and can be flicked along again before a tap gathers it (a fingertip may
-  roll a little and still tap). In the Free Experiment the stores are
+  roll a little and still tap); a harvest leaves nothing on the ground.
+  A crystal is fused into its rock: it is not shaken loose but struck —
+  each tap (or hard swipe) chips the rock and cracks it further — and
+  breaks free after four to six blows (one fewer with the Forager's Kit).
+  Every wild ingredient is unknown in a new world — off the shelf, out of
+  the shop and *???* in the book — until it is first gathered (or held,
+  as the first satchel of herbs is). In the Free Experiment the stores are
   bottomless, but a harvest still takes the plant: its stand sprouts again
   at random spots and grows back within a minute or two, and can be
   watered like the shop's.
