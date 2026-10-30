@@ -10,10 +10,10 @@
 // (visual/env) and each plant is its species' procedural sprite at its
 // stage (rendering/species-sprites.js), standing on the scene's open ground;
 // only plants take taps — the scenery is part of the cached background.
-// A finger sliding over the scene pushes what it passes physically: the
-// painting's leaf clumps, bushes and canopies bend its way and spring back,
-// vines hanging from a bough or the cave's roof swing on for seconds, and
-// a plant not ready to be gathered bends and rings. A ripe plant shaken hard
+// A finger sliding over the scene pushes what it passes: vines hanging from
+// a bough or the cave's roof swing on for seconds and a plant not ready to
+// be gathered bends and rings (the trees and bushes behind move with the
+// wind alone). A ripe plant shaken hard
 // enough lets go of its ingredient, which falls as a ragdoll cut from the
 // very pixels it grew as (rendering/ragdoll.js) — tumbling, bouncing, coming
 // to rest on the ground or the water, knocked about again by the finger —
@@ -474,8 +474,7 @@ export class WildsView {
 
   /**
    * A finger slid from (x0, y0) to (x1, y1), pushing what it passes: the
-   * scenery's leaves and vines are knocked its way (they bend and spring
-   * back, a hanging strand swings), every plant it brushes bends and rings
+   * scenery's hanging strands are knocked its way and swing, every plant it brushes bends and rings
    * (further the faster the slide), what lies fallen is flicked along, and
    * a ripe plant shaken hard enough lets go of what it bears.
    */
@@ -545,10 +544,11 @@ export class WildsView {
     const away = juts ? (p.flip ? -1 : 1) : 0;
     const doll = new Ragdoll(sp, x, y, {
       W: SCENE_W, H: SCENE_H,
-      vx: fling * 46 + away * 18 + (Math.random() - 0.5) * 10,
-      vy: hangs ? 4 + up * 20 : juts ? -12 + up * 20 : -48 + Math.min(0, up) * 30,
+      vx: fling * 72 + away * 28 + (Math.random() - 0.5) * 16,
+      // (a fruit snaps off its hold and drops at once; a ground plant is pulled up with a jerk)
+      vy: hangs ? 45 + up * 30 : juts ? -20 + up * 30 : -75 + Math.min(0, up) * 45,
       // (the top flies out further than the foot: it tumbles)
-      spin: hangs ? fling * 30 : fling * 60 + (Math.random() - 0.5) * 20,
+      spin: hangs ? fling * 45 : fling * 90 + (Math.random() - 0.5) * 30,
     });
     // clear of the face or the ground it grew from
     for (let k = 0; k < 8 && !doll.clear((xx, yy) => this.solidAt(xx, yy)); k++) doll.shift(away, -1);
@@ -808,7 +808,7 @@ export class WildsView {
       const { doll, sp } = it;
       doll.step(dt, solid);
       // a knock against the ground is heard (not every little one)
-      if (doll.knock > 70 && this.time - it.rung > 0.18) { audio.play('click'); it.rung = this.time; }
+      if (doll.knock > 110 && this.time - it.rung > 0.18) { audio.play('click'); it.rung = this.time; }
       doll.knock = 0;
       it.landed = doll.asleep;
       // its shadow on the ground below it

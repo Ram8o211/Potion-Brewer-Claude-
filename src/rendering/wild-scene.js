@@ -3,10 +3,10 @@
 // where each plant stands on its open ground, which plant a tap lands on,
 // and the moving parts drawn over the still painting every frame (birds,
 // motes, river glints, wisps, embers, the steam of the crags' vents).
-// A finger pushes the scenery physically: every swaying group it passes
-// through (a leaf clump, a bush, a canopy pad, a vine hanging from the
-// cave's roof) is a damped spring it knocks along its way — the leaves bend
-// and spring back, a hanging strand swings on for seconds (SceneTouch).
+// A finger sets the hanging strands of the scenery swinging (a vine from
+// the cave's roof or a bough): each a slow damped pendulum it knocks along
+// its way, swinging on for seconds (SceneTouch). The trees and bushes of the
+// painting stay put: they move with the wind alone.
 
 import { sceneOf, SCENE_W, SCENE_H } from '../visual/env/scene.js';
 import { MIN_HIT } from './species-sprites.js';
@@ -67,11 +67,11 @@ export function crosses(x0, y0, x1, y1, left, top, right, bottom) {
 }
 
 /**
- * The finger's hold on a scene's scenery: each sway group a damped spring
- * (its offset in pixels and its speed). A clump of leaves is stiff and
- * springs back within a second; a strand hanging from its top is a slow,
- * lightly damped pendulum that swings on for several seconds. Pure: the
- * view knocks it as the finger passes and steps it every frame.
+ * The finger's hold on a scene's hanging strands: each a slow, lightly
+ * damped pendulum (its offset in pixels and its speed) that swings on for
+ * several seconds once knocked. Clumps of leaves, canopies and bushes are
+ * background and are left to the wind. Pure: the view knocks it as the
+ * finger passes and steps it every frame.
  */
 export class SceneTouch {
   /** @param {NonNullable<import('../visual/env/scene.js').Scene['sway']>} sw */
@@ -108,7 +108,8 @@ export class SceneTouch {
     const dir = Math.abs(dx) > 0.3 ? dx / speed : 0.4 * (y1 > y0 ? 1 : -1);
     let n = 0;
     for (let g = 0; g < this.G; g++) {
-      if (!this.amp[g] && !this.hang[g]) continue;
+      // (only what hangs: the trees and bushes behind stay as the wind has them)
+      if (!(this.hang[g] > 0)) continue;
       const b = g * 4;
       if (!crosses(x0, y0, x1, y1, this.box[b] - 2, this.box[b + 1] - 2, this.box[b + 2] + 2, this.box[b + 3] + 2)) continue;
       const hangs = this.hang[g] > 0, give = Math.max(0.5, Math.min(1.6, this.amp[g] || 1));
@@ -131,10 +132,11 @@ export class SceneTouch {
       for (let g = 0; g < this.G; g++) {
         const p = this.pos[g], v = this.vel[g];
         if (p === 0 && v === 0) continue;
-        // leaves: stiff (≈1.5 Hz) and well damped; a hanging strand: a slow pendulum (≈0.6 Hz), barely damped
-        const hangs = this.hang[g] > 0, k = hangs ? 14 : 90, c = hangs ? 0.45 : 3.6;
+        // a hanging strand: a slow pendulum (≈0.6 Hz), lightly damped (anything else: stiff and well damped)
+        const hangs = this.hang[g] > 0, k = hangs ? 14 : 90, c = hangs ? 0.65 : 3.6;
         const nv = v + (-k * p - c * v) * h, np = Math.max(-6, Math.min(6, p + nv * h));
-        if (Math.abs(np) < 0.03 && Math.abs(nv) < 0.08) { this.pos[g] = 0; this.vel[g] = 0; continue; }
+        // (still once it no longer moves it a pixel anywhere)
+        if (Math.abs(np) < 0.2 && Math.abs(nv) < 0.4) { this.pos[g] = 0; this.vel[g] = 0; continue; }
         this.pos[g] = np; this.vel[g] = nv; live = true;
       }
     }
