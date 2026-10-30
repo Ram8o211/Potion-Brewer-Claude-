@@ -69,28 +69,6 @@ function bloom(m, d, rng, cx, cy, r, amount) {
   }
 }
 
-/** The deposit on the ground. A mineral does not grow: it is there whole, whatever the stage. */
-export function plant(d, stage, o = {}) {
-  const m = new Model(), P = d.m, rng = stream(d, 'plant'), W = d.size.w, H = d.size.h;
-  if (d.form === 'powder') {
-    rock(m, -W * 0.25, -H * 0.4, W * 0.3, H * 0.4, stream(d, 'host'), 'rock', -0.05);
-    heap(m, d, rng, W * 0.9, H * 0.7 + 1, 1);
-    return m;
-  }
-  if (d.form === 'crust') {
-    rock(m, 0, -H * 0.35, W * 0.45, H * 0.35, stream(d, 'host'));
-    for (let k = 0; k < 3; k++) bloom(m, d, rng, (k - 1) * W * 0.22, -H * 0.55, H * 0.6, 1);
-    return m;
-  }
-  // lumps sunk in the ground, the biggest in front
-  const n = P.lumps;
-  for (let i = n - 1; i >= 0; i--) {
-    const r = W * 0.26 * (i === 0 ? 1 : 0.7 - i * 0.1);
-    lump(m, d, rng, i === 0 ? 0 : (i % 2 ? 1 : -1) * W * 0.28, -r * P.flat * 0.7 - (i ? 1 : 0), r, i ? -0.06 : 0);
-  }
-  return m;
-}
-
 export function icon(d) {
   const m = new Model(), rng = stream(d, 'icon');
   if (d.form === 'powder') { heap(m, d, rng, 30, 14, 1); return m; }

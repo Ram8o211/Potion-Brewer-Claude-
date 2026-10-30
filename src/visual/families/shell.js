@@ -6,7 +6,7 @@
 // rounded plate with a raised keel and a bright rim. Outline, ribbing and
 // how many lie together vary per world.
 
-import { Model, stream, pick, rock, marks, blade, PROFILES } from './common.js';
+import { Model, stream, pick, marks, blade, PROFILES } from './common.js';
 
 export function params(rng, d) {
   return {
@@ -54,23 +54,6 @@ function openShell(m, d, rng, x, y, len) {
   valve(m, d, rng, x, y, -Math.PI / 2 - 0.5, len, -0.05);
   m.poly(blade([x + 1, y], -Math.PI / 2 + 0.55, len * 0.92, len * 0.5, PROFILES[d.m.outline] || PROFILES.round), 'iris', { shade: 'round' });
   m.ellipse(x + len * 0.25, y - len * 0.45, 1.2, 1.2, 'pale', { shade: 'flat' });
-}
-
-/** The shells on the ground. Shells do not grow: they lie there whole, whatever the stage. */
-export function plant(d, stage, o = {}) {
-  const m = new Model(), P = d.m, rng = stream(d, 'plant'), W = d.size.w, H = d.size.h;
-  if (d.form === 'scale') rock(m, 0, -H * 0.3, W * 0.45, H * 0.35, stream(d, 'host'));
-  else m.ellipse(0, -0.5, W * 0.48, 2.2, 'soil', { shade: 'flat', noOutline: true, tone: 0.15 });
-  const n = P.count;
-  for (let i = 0; i < n; i++) {
-    const x = (n === 1 ? 0 : i / (n - 1) - 0.5) * W * 0.6, y = d.form === 'scale' ? -H * 0.45 : -0.5;
-    const len = H * 0.95 * (i % 2 ? 0.8 : 1);
-    if (d.form !== 'scale' && P.open && i === n - 1) openShell(m, d, rng, x, y, len);
-    // shells stand hinge-down in the sand; shed scales lie overlapped across their stone
-    else if (d.form === 'scale') valve(m, d, rng, x - len * 0.4, y + (i % 2) * 1.5, -0.35 + (i % 2) * 0.25 + (rng.next() - 0.5) * 0.3, len * 0.9, i % 2 ? -0.06 : 0);
-    else valve(m, d, rng, x, y, -Math.PI / 2 + (i - (n - 1) / 2) * 0.5, len, i % 2 ? -0.06 : 0);
-  }
-  return m;
 }
 
 export function icon(d) {

@@ -6,7 +6,7 @@
 // bracket fungi, tiers of banded half-moon shelves on a stub of dead wood.
 // Warts, scales, spots and the rim's colour follow the species.
 
-import { Model, stream, pick, mound, marks, ellipse, lumpy } from './common.js';
+import { Model, stream, pick, marks, ellipse, lumpy } from './common.js';
 
 export function params(rng, d) {
   const t = d.tr;
@@ -80,31 +80,6 @@ function stub(m, rng, x, h, w) {
   m.poly(lumpy(x, -h / 2, w / 2, h / 2 + 1, () => rng.next(), 0.08, 5), 'wood', { shade: 'round', tone: -0.05 });
   for (let i = 0; i < 3; i++) { const xx = x - w / 2 + 1 + (i + 0.5) * (w / 3); m.line([[xx, -h + 1], [xx + (rng.next() - 0.5) * 2, -1]], 'wood', { lum: 0.12 }); }
   m.ellipse(x, -h, w / 2, 1.4, 'wood', { shade: 'flat', tone: 0.15 });
-}
-
-export function plant(d, stage, o = {}) {
-  const m = new Model(), P = d.m, rng = stream(d, 'plant' + stage), H = d.size.h, W = d.size.w;
-  mound(m, W * 0.75, stream(d, 'mound'));
-  if (d.form === 'bracket') {
-    const sh = H * (stage === 0 ? 0.6 : 1);
-    stub(m, rng, -W * 0.18, sh, W * 0.34);
-    const n = stage === 0 ? 1 : stage === 1 ? Math.max(1, P.count - 1) : P.count;
-    for (let i = 0; i < n; i++) shelf(m, d, rng, -W * 0.05, -sh * (0.3 + i * 0.25), W * (0.42 - i * 0.07) * (stage === 0 ? 0.45 : stage === 1 ? 0.75 : 1), i % 2 ? -0.05 : 0);
-    return m;
-  }
-  if (stage === 0) {
-    // pins: little round knobs just out of the ground
-    for (let i = 0; i < 3; i++) mushroom(m, d, rng, (i - 1) * 3, 0, 1.4 + (i % 2) * 0.5);
-    return m;
-  }
-  const g = stage === 1 ? 0.8 : 1, n = stage === 1 ? Math.max(1, P.count - 1) : P.count;
-  const sizes = [1, 0.7, 0.55, 0.45].slice(0, n);
-  // the small ones behind, the big one in front
-  for (let i = n - 1; i >= 0; i--) {
-    const x = i === 0 ? 0 : (i % 2 ? 1 : -1) * W * (0.22 + i * 0.07);
-    mushroom(m, d, rng, x, i === 0 ? 0 : -1, W * 0.3 * g * sizes[i], i === 0 ? 0 : -0.06);
-  }
-  return m;
 }
 
 export function icon(d) {

@@ -7,6 +7,7 @@
 import { sceneOf, SCENE_W, SCENE_H } from '../visual/env/scene.js';
 import { MIN_HIT } from './species-sprites.js';
 import { hashString } from '../core/rng.js';
+import { frameMount } from '../visual/growth.js';
 
 export { SCENE_W, SCENE_H };
 
@@ -115,40 +116,91 @@ const ROOM = 2;
 
 /**
  * @typedef {{w:number, h:number, ax:number, ay:number, m:Uint8Array}} Silhouette
+ * @typedef {{x:number, y:number, flip:boolean, sup:number}} Anchor  a point something can be attached at: the open pixel next to its support (sup), facing away from it
  */
 
+/** How the ground decides where a plant may stand: its mounts, weighted (the ground by default). */
+const GROUND_ONLY = () => /** @type {[string, number][]} */ ([['ground', 1]]);
+
 /**
- * Where the plants of a region stand. A plant keeps its spot once it has
- * one, so it grows in place; a new sprout takes the open ground nearest the
- * random spot it came up at: its foot on open ground (never in water, lava,
- * a rock or a cliff), its whole grown silhouette in front of any scenery it
- * overlaps (never peeking out from behind a trunk or a bush), and a little
- * room from every other plant, so a stand never crowds into a clump.
+ * The points of a scene where an ingredient can be attached other than the
+ * open ground: the undersides of branches and leaves (bough), of ledges and
+ * the cave's roof (ceiling) and of either (hang), the sides of upright rock
+ * faces (wall) and of tree trunks (trunk), each with open air before it.
+ * @param {import('../visual/env/scene.js').Scene} sc @returns {Record<string, Anchor[]>}
+ */
+export function findAnchors(sc) {
+  const W = SCENE_W, H = SCENE_H, S = sc.solid, R = sc.rock, T = sc.trees, L = sc.liquid, P = sc.props;
+  const stone = (x, y) => x >= 0 && y >= 0 && x < W && y < H && !!(S[y * W + x] || R[y * W + x]);
+  const tree = (x, y) => x >= 0 && y >= 0 && x < W && y < H && !!T[y * W + x];
+  const air = (x, y) => x >= 0 && y >= 0 && x < W && y < H && !(S[y * W + x] || R[y * W + x] || T[y * W + x] || L[y * W + x] || P[y * W + x]);
+  /** @type {Record<string, Anchor[]>} */
+  const out = { hang: [], bough: [], ceiling: [], wall: [], trunk: [] };
+  for (let y = 4; y < H - 12; y++) for (let x = 3; x < W - 3; x++) {
+    const k = y * W + x;
+    // a hold underneath: air below for a good drop
+    if ((stone(x, y) || tree(x, y)) && air(x, y + 1) && air(x, y + 3) && air(x, y + 8) && air(x - 1, y + 2) && air(x + 1, y + 2)) {
+      const a = { x, y: y + 1, flip: false, sup: k };
+      out.hang.push(a);
+      out[tree(x, y) ? 'bough' : 'ceiling'].push(a);
+    }
+    for (const dir of [1, -1]) {
+      // a sheer rock face: rock above and below, open air off it
+      if (stone(x, y) && stone(x, y - 3) && stone(x, y + 3) && air(x + dir, y) && air(x + dir, y - 2) && air(x + dir, y + 2) && air(x + dir * 4, y)) out.wall.push({ x: x + dir, y, flip: dir < 0, sup: k });
+      // a trunk: a narrow upright run of wood, open air off it
+      // (a trunk, not a twig: the wood runs on down a good way)
+      if (tree(x, y) && tree(x, y + 4) && tree(x, y + 8) && tree(x, y + 14) && air(x + dir, y) && air(x + dir * 4, y) && air(x + dir, y - 2) && air(x + dir, y + 2)) {
+        let run = 0;
+        for (let i = 0; i < 10 && tree(x - dir * i, y); i++) run++;
+        if (run < 9 && !tree(x - dir * 9, y + 4) && !tree(x - dir * 9, y + 10)) out.trunk.push({ x: x + dir, y, flip: dir < 0, sup: k });
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Where the plants of a region grow. A plant keeps its spot once it has
+ * one, so it grows in place. A new one takes one of the mounts its species
+ * is found on (chosen by its id, weighted): on the ground, the open ground
+ * nearest the random spot it came up at — its foot on open ground (never in
+ * water, lava, a rock or a cliff) and its whole grown silhouette in front
+ * of any scenery it overlaps (never peeking out from behind a trunk or a
+ * bush); hanging from a branch, the leaves, a ledge or the roof; out of a
+ * rock face or a tree's trunk — the nearest such hold with room below or
+ * before it for the whole of its silhouette, clear of the rock, the water
+ * and other scenery. Every plant keeps a little room from every other, so
+ * a stand never crowds into a clump; a mount with no room left gives way
+ * to the next, the ground last.
  */
 export class PlantGround {
   /** @param {string} region @param {string} seed */
   constructor(region, seed) {
     const sc = sceneOf(region, seed);
     this.region = region;
+    this.sc = sc;
     this.open = sc.open;
     this.depth = sc.depth;
     this.solid = sc.solid;
     this.top = Math.max(1, sc.top);
-    /** plant id → its spot in scene pixels and the silhouette it was placed with @type {Map<string, {x:number, y:number, s:Silhouette}>} */
+    /** the holds other than the ground, found when first needed @type {Record<string, Anchor[]>|null} */
+    this.anchors = null;
+    /** plant id → its spot in scene pixels, its mount and the silhouette it was placed with @type {Map<string, {x:number, y:number, s:Silhouette, mount:string, flip:boolean}>} */
     this.spots = new Map();
   }
 
   /**
-   * Each plant's spot, as fractions of the scene.
+   * Each plant's spot, as fractions of the scene, and the mount it grows on.
    * @param {{id:string, x:number, y:number}[]} plants oldest first
-   * @param {(p:any)=>Silhouette|null} shapeOf
-   * @returns {Record<string, {x:number, y:number}>}
+   * @param {(p:any, mount?:string, flip?:boolean)=>Silhouette|null} shapeOf
+   * @param {(p:any)=>[string, number][]} [mountsOf] the mounts a plant's species takes, weighted
+   * @returns {Record<string, {x:number, y:number, mount:string, flip:boolean}>}
    */
-  place(plants, shapeOf) {
-    const W = SCENE_W, H = SCENE_H, G = this.open, D = this.depth, S = this.solid;
-    /** @type {Record<string, {x:number, y:number}>} */
+  place(plants, shapeOf, mountsOf = GROUND_ONLY) {
+    const W = SCENE_W, H = SCENE_H;
+    /** @type {Record<string, {x:number, y:number, mount:string, flip:boolean}>} */
     const out = {};
-    for (const p of plants) out[p.id] = { x: p.x, y: p.y };
+    for (const p of plants) out[p.id] = { x: p.x, y: p.y, mount: 'ground', flip: false };
     const here = new Set(plants.map((p) => p.id));
     for (const id of [...this.spots.keys()]) if (!here.has(id)) this.spots.delete(id);
     const fresh = plants.filter((p) => !this.spots.has(p.id) && shapeOf(p));
@@ -160,38 +212,106 @@ export class PlantGround {
       };
       for (const q of this.spots.values()) mark(q);
       for (const p of fresh) {
-        const s = /** @type {Silhouette} */ (shapeOf(p)), sw = Math.max(3, Math.round(s.w * 0.3));
-        /** @param {Uint8Array} taken @param {number} ax @param {number} ay */
-        const fits = (taken, ax, ay) => {
-          const left = ax - s.ax, top = ay - s.ay;
-          if (ay < this.top || ay > H - 3 || left < 1 || left + s.w > W - 1 || top < 1 || top + s.h > H) return false;
-          for (let y = ay - 1; y <= ay; y++) for (let x = ax - (sw >> 1); x < ax - (sw >> 1) + sw; x++) if (!G[y * W + x]) return false;
-          for (let j = 0; j < s.h; j++) for (let i = 0; i < s.w; i++) {
-            if (!s.m[j * s.w + i]) continue;
-            const k = (top + j) * W + left + i;
-            // never behind scenery, and never into the ground above its own foot (an overhang, a slope, a cave's roof)
-            if (taken[k] || D[k] > ay || (S[k] && top + j < ay - 1)) return false;
-          }
-          return true;
-        };
         // where it came up (gathering.js sprouts at 0.56..0.9 of the scene's height) maps onto this region's own ground,
         // mostly its lower half: the main ground and the low ledges fill before the high ones
         const ox = Math.round(p.x * W), oy = Math.round(this.top + (0.35 + 0.65 * Math.max(0, Math.min(1, (p.y - 0.56) / 0.34))) * (H - 4 - this.top));
-        /** @type {[number, number, number][]} */
-        const tries = [];
-        for (let y = this.top; y <= H - 3; y++) for (let x = (y + ox) % 3; x < W; x += 3) if (G[y * W + x] && G[(y - 1) * W + x]) tries.push([(x - ox) ** 2 + ((y - oy) * 1.6) ** 2, x, y]);
-        tries.sort((a, b) => a[0] - b[0]);
-        // no roomy ground left: the nearest spot it fits at all, else one where it only crowds another plant, else the nearest open ground
-        const spot = tries.find(([, x, y]) => fits(roomy, x, y)) || tries.find(([, x, y]) => fits(tight, x, y)) || tries.find(([, x, y]) => fits(free, x, y)) || tries[0];
-        const [, x, y] = spot || [0, ox, oy];
-        const q = { x, y, s };
+        let spot = null;
+        for (const mount of mountOrder(p.id, mountsOf(p))) {
+          spot = mount === 'ground' ? this.onGround(p, shapeOf, ox, oy, roomy, tight, null) : this.onHold(p, shapeOf, mount, ox, oy, roomy, tight);
+          if (spot) break;
+        }
+        // no room anywhere: the nearest open ground it fits at all, crowding the others
+        if (!spot) spot = this.onGround(p, shapeOf, ox, oy, roomy, tight, free);
+        const q = spot || { x: ox, y: oy, s: /** @type {Silhouette} */ (shapeOf(p)), mount: 'ground', flip: false };
         mark(q);
         this.spots.set(p.id, q);
       }
     }
-    for (const [id, q] of this.spots) out[id] = { x: q.x / W, y: q.y / H };
+    for (const [id, q] of this.spots) out[id] = { x: q.x / W, y: q.y / H, mount: q.mount, flip: q.flip };
     return out;
   }
+
+  /**
+   * The nearest open ground a plant fits on with room round it, else one
+   * where it only crowds another plant — or, given `free`, else one where it
+   * overlaps others, else the nearest open ground at all.
+   * @param {any} p @param {Function} shapeOf @param {number} ox @param {number} oy @param {Uint8Array} roomy @param {Uint8Array} tight @param {Uint8Array|null} free
+   */
+  onGround(p, shapeOf, ox, oy, roomy, tight, free) {
+    const W = SCENE_W, H = SCENE_H, G = this.open, D = this.depth, S = this.solid, L = this.sc.liquid;
+    const s = /** @type {Silhouette} */ (shapeOf(p, 'ground', false));
+    if (!s) return null;
+    const sw = Math.max(3, Math.round(s.w * 0.3));
+    /** @param {Uint8Array} taken @param {number} ax @param {number} ay */
+    const fits = (taken, ax, ay) => {
+      const left = ax - s.ax, top = ay - s.ay;
+      if (ay < this.top || ay > H - 3 || left < 1 || left + s.w > W - 1 || top < 1 || top + s.h > H) return false;
+      for (let y = ay - 1; y <= ay; y++) for (let x = ax - (sw >> 1); x < ax - (sw >> 1) + sw; x++) if (!G[y * W + x]) return false;
+      for (let j = 0; j < s.h; j++) for (let i = 0; i < s.w; i++) {
+        if (!s.m[j * s.w + i]) continue;
+        const k = (top + j) * W + left + i;
+        // never behind scenery, never into the ground above its own foot (an overhang, a slope, a cave's roof), never into water or lava
+        if (taken[k] || D[k] > ay || (S[k] && top + j < ay - 1) || L[k]) return false;
+      }
+      return true;
+    };
+    /** @type {[number, number, number][]} */
+    const tries = [];
+    for (let y = this.top; y <= H - 3; y++) for (let x = (y + ox) % 3; x < W; x += 3) if (G[y * W + x] && G[(y - 1) * W + x]) tries.push([(x - ox) ** 2 + ((y - oy) * 1.6) ** 2, x, y]);
+    tries.sort((a, b) => a[0] - b[0]);
+    const spot = tries.find(([, x, y]) => fits(roomy, x, y)) || tries.find(([, x, y]) => fits(tight, x, y)) || (free && (tries.find(([, x, y]) => fits(free, x, y)) || tries[0]));
+    return spot ? { x: spot[1], y: spot[2], s, mount: 'ground', flip: false } : null;
+  }
+
+  /**
+   * The nearest hold of a mount (hang, wall, trunk) a plant fits at, with
+   * room round it (else crowding another plant), or null where there is none.
+   * @param {any} p @param {Function} shapeOf @param {string} mount @param {number} ox @param {number} oy @param {Uint8Array} roomy @param {Uint8Array} tight
+   */
+  onHold(p, shapeOf, mount, ox, oy, roomy, tight) {
+    const W = SCENE_W, H = SCENE_H, sc = this.sc, D = this.depth;
+    if (!this.anchors) this.anchors = findAnchors(sc);
+    const holds = this.anchors[mount];
+    if (!holds || !holds.length) return null;
+    const hangs = frameMount(mount) === 'hang';
+    /** @type {Record<string, Silhouette|null>} */
+    const shapes = { L: shapeOf(p, mount, true), R: shapeOf(p, mount, false) };
+    /** @param {Uint8Array} taken @param {Anchor} a */
+    const fits = (taken, a) => {
+      const s = shapes[a.flip ? 'L' : 'R'];
+      if (!s) return false;
+      const left = a.x - s.ax, top = a.y - s.ay, onTree = !!sc.trees[a.sup], ref = D[a.sup];
+      if (left < 1 || left + s.w > W - 1 || top < 1 || top + s.h > H - 1) return false;
+      for (let j = 0; j < s.h; j++) for (let i = 0; i < s.w; i++) {
+        if (!s.m[j * s.w + i]) continue;
+        // what holds it on (it may lie a pixel or two into a ceiling or face that is not quite flat), and right round the hold
+        const X = left + i, Y = top + j, k = Y * W + X, near = (hangs ? Y - a.y <= 2 : (a.flip ? a.x - X : X - a.x) <= 2) || Math.abs(X - a.x) + Math.abs(Y - a.y) <= 3;
+        if (taken[k] || sc.liquid[k] || sc.props[k]) return false;
+        // clear of the rock and the trees but where it holds on; on a tree, never behind what stands before that tree
+        if (!near && (sc.solid[k] || sc.rock[k] || (sc.trees[k] && !onTree))) return false;
+        if (onTree && D[k] > ref) return false;
+      }
+      return true;
+    };
+    // the holds nearest where it came up, along the scene more than up or down it
+    const tries = holds.map((a) => /** @type {[number, Anchor]} */ ([(a.x - ox) ** 2 + ((a.y - oy) * 0.35) ** 2, a])).sort((u, v) => u[0] - v[0]);
+    const hit = tries.find(([, a]) => fits(roomy, a)) || tries.find(([, a]) => fits(tight, a));
+    if (!hit) return null;
+    const a = hit[1];
+    return { x: a.x, y: a.y, s: /** @type {Silhouette} */ (shapes[a.flip ? 'L' : 'R']), mount, flip: a.flip };
+  }
+}
+
+/**
+ * The order a plant tries its species' mounts in: one chosen by its id
+ * (weighted) first, then the others by weight.
+ * @param {string} id @param {[string, number][]} prefs
+ */
+export function mountOrder(id, prefs) {
+  const total = prefs.reduce((s, [, w]) => s + Math.max(0, w), 0);
+  let u = ((hashString('mount:' + id) % 10000) / 10000) * total, first = prefs[0][0];
+  for (const [k, w] of prefs) { if (u < w) { first = k; break; } u -= Math.max(0, w); }
+  return [first, ...prefs.filter(([k]) => k !== first).sort((a, b) => b[1] - a[1]).map(([k]) => k)];
 }
 
 /** Mark a silhouette standing at (ax, ay), grown by `grow`, in a scene grid. */
@@ -204,22 +324,25 @@ function stampMask(grid, s, ax, ay, grow) {
 }
 
 /**
- * Where a plant stands and what can be tapped: its frame's box anchored at
- * its foot, grown to at least MIN_HIT square.
- * @param {{x:number, y:number}} p @param {{w:number, h:number, ax:number, ay:number}|null} f its frame @param {number} W @param {number} H
+ * Where a plant is and what can be tapped: its frame's box placed by its
+ * anchor (its foot, or the point it hangs or juts from), grown round its
+ * middle to at least MIN_HIT square; `front` is its lowest row (what stands
+ * nearer). A plant on the ground keeps a little more below its foot.
+ * @param {{x:number, y:number, mount?:string}} p @param {{w:number, h:number, ax:number, ay:number}|null} f its frame @param {number} W @param {number} H
  */
 export function plantBox(p, f, W = SCENE_W, H = SCENE_H) {
   const ax = Math.round(p.x * W), ay = Math.round(p.y * H);
-  const w = f ? f.w : 16, h = f ? f.h : 16;
-  const hw = Math.max(w, MIN_HIT) / 2, hh = Math.max(h, MIN_HIT);
-  return { ax, ay, w, h, x0: ax - hw, x1: ax + hw, y0: ay - hh, y1: ay + 3 };
+  const w = f ? f.w : 16, h = f ? f.h : 16, x0 = ax - (f ? f.ax : w / 2), y0 = ay - (f ? f.ay : h);
+  const cx = x0 + w / 2, cy = y0 + h / 2, hw = Math.max(w, MIN_HIT) / 2, hh = Math.max(h, MIN_HIT) / 2;
+  const ground = !p.mount || p.mount === 'ground';
+  return { ax, ay, w, h, x0: cx - hw, x1: cx + hw, y0: ground ? Math.min(cy - hh, ay - MIN_HIT) : cy - hh, y1: ground ? ay + 3 : cy + hh, front: y0 + h };
 }
 
 /**
  * The plant under a scene point: the front-most (lowest on screen) box that
  * contains it, else the nearest box within `slop` pixels. Only plants are ever
  * hit — the scenery is part of the painting and never takes a tap.
- * @template {{x:number, y:number}} P
+ * @template {{x:number, y:number, mount?:string}} P
  * @param {P[]} plants @param {(p:P)=>{w:number, h:number, ax:number, ay:number}|null} frameOf @param {number} px @param {number} py @param {number} [W] @param {number} [H] @param {number} [slop]
  * @returns {P | null}
  */
@@ -229,7 +352,7 @@ export function hitPlant(plants, frameOf, px, py, W = SCENE_W, H = SCENE_H, slop
   for (const p of plants) {
     const b = plantBox(p, frameOf(p), W, H);
     if (px >= b.x0 && px <= b.x1 && py >= b.y0 && py <= b.y1) {
-      if (b.ay > bestY) { bestY = b.ay; best = p; }
+      if (b.front > bestY) { bestY = b.front; best = p; }
       continue;
     }
     const dx = Math.max(b.x0 - px, 0, px - b.x1), dy = Math.max(b.y0 - py, 0, py - b.y1), dd = dx * dx + dy * dy;
