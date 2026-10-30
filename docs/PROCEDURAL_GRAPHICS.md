@@ -44,7 +44,9 @@ still limited.
   through the ground; and a few winding seams leave the bed, wandering out
   and down, along which the fluid fills the mortar and crevices between the
   stones (found as the pixels darker than the rock round them) while the
-  stones themselves are only darkened, thinning toward their tips. Lava
+  stones themselves are only darkened. The seams are thin and break up as
+  they go: every crack round the pool glows, farther out only isolated
+  pockets between the stones. Lava
   seams (about five) glow and light the rock round them; water seams shine
   faintly and wet it. In the Ember
   Crags lava also pours in falls from the roof and the ledges.
