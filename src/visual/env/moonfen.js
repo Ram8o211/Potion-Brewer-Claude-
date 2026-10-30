@@ -86,18 +86,17 @@ export function compose(cv, seed) {
   for (const p of pools) for (const side of [-1, 1]) {
     let x = p.x + side * p.hw;
     while (x > 0 && x < W - 1 && cv.liquid[(surfaceAt(cv, x) - 1) * W + x]) x += side;
-    cv.stamp(reeds(rr, rr.int(10, 18), rr.int(3, 5), { heads: 0.4 }), pal, x + side * 2, surfaceAt(cv, x + side * 2) + 1);
+    cv.place(reeds(rr, rr.int(10, 18), rr.int(3, 5), { heads: 0.4 }), pal, x + side * 4, { range: 24, step: 2, x: side < 0 ? [2, x + 4] : [x - 4, W - 3] });
   }
   // a cairn on the barrow, crystals glowing in the dark, star-flowers on the pillars
-  const sr = s('stones'), cx = bx + sr.int(5, 25);
-  cv.stamp(cairn(sr, 6), pal, cx, surfaceAt(cv, cx) + 1, { foot: [6, 2] });
+  const sr = s('stones');
+  cv.place(cairn(sr, 6), pal, bx + sr.int(5, 25), { foot: [6, 2], range: 30 });
   const glows = [];
   for (let i = 0; i < 3; i++) {
-    const x = sr.int(16, W - 16), y = surfaceAt(cv, x);
-    if (cv.liquid[(y - 1) * W + x]) continue;
-    cv.stamp(spire(sr, sr.int(8, 14)), pal, x, y + 1, { foot: [4, 2] });
-    glow(cv, x, y - 6, 30, [0.3, 0.6, 0.95], 0.4);
-    glows.push([x, y - 6]);
+    const at = cv.place(spire(sr, sr.int(8, 14)), pal, sr.int(16, W - 16), { foot: [4, 2], range: 30 });
+    if (!at) continue;
+    glow(cv, at.fx, at.fy - 7, 30, [0.3, 0.6, 0.95], 0.4);
+    glows.push([at.fx, at.fy - 7]);
   }
   glows.push(...glowShrooms(cv, { n: 7, cap: '#7ae0f0', lit: '#e8ffff', stem: '#5a8a8a', rgb: [0.4, 0.85, 1], seed: s('flowers').int(0, 1e9) }));
   // banks of mist lying low over the bog, in flat bands

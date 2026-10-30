@@ -200,7 +200,7 @@ function surface(ctx, p, t, c, lava) {
 }
 
 /** Drip colours of each region's stalactites: [drop, splash]. */
-const DRIP = { meadow: ['#8ac0e0', '#c8e4f4'], forest: ['#6aa0a0', '#a0d0c8'], river: ['#7ad8d0', '#c8f4f0'], quarry: ['#c8803a', '#e8b070'], moonfen: ['#8ab0f0', '#d0e0ff'], crags: ['#ffb040', '#fff0a0'] };
+const DRIP = { meadow: ['#8ac0e0', '#c8e4f4'], forest: ['#6aa0a0', '#a0d0c8'], netherwood: ['#8a7ac8', '#d0c0ff'], river: ['#7ad8d0', '#c8f4f0'], quarry: ['#c8803a', '#e8b070'], moonfen: ['#8ab0f0', '#d0e0ff'], crags: ['#ffb040', '#fff0a0'] };
 
 /**
  * What every cavern has moving in it: drops falling from the stalactites'
@@ -228,7 +228,7 @@ function cavern(ctx, region, t, meta) {
     halo(ctx, x, y, 12, '#ffb050', 0.1 + 0.05 * Math.sin(t * 9 + x) + 0.03 * Math.sin(t * 23 + x));
     if (Math.sin(t * 13 + x) > 0.3) px(ctx, x + (Math.sin(t * 5 + x) > 0 ? 1 : 0), y - 4, '#fff4b0');
   }
-  if (region !== 'moonfen') for (const [x, y] of meta.glows || []) halo(ctx, x, y, 8, region === 'forest' ? '#ff9a40' : '#4ad8f0', 0.06 + 0.04 * Math.sin(t * 1.7 + x));
+  if (region !== 'moonfen') for (const [x, y] of meta.glows || []) halo(ctx, x, y, 8, region === 'forest' ? '#ff9a40' : region === 'netherwood' ? '#b070ff' : '#4ad8f0', 0.06 + 0.04 * Math.sin(t * 1.7 + x));
 }
 
 /**
@@ -273,6 +273,15 @@ export function animateRegion(ctx, region, t, seed) {
       px(ctx, x, y, i % 2 ? '#c88a2a' : '#8aa83a', flat ? 2 : 1, flat ? 1 : 2);
     }
     trickles(ctx, meta.trickles || [], t, '#5a3a24', '#3a2618');
+  }
+  if (region === 'netherwood') {
+    // spores drifting up from the glowing fungi, flickering as they rise
+    for (let i = 0; i < 24; i++) {
+      const age = (t * 0.04 + rnd(i)) % 1, x = rnd(i, 1) * W + Math.sin(t * 0.7 + i * 1.3) * 8, y = H * 0.85 - age * H * 0.7;
+      if (Math.sin(t * 3 + i * 2.3) > -0.3) px(ctx, x, y, age < 0.7 ? (i % 3 ? '#d8b8ff' : '#a8f0ff') : '#7a6aa8');
+    }
+    if (meta.pool) surface(ctx, meta.pool, t, '#c8c0ff', false);
+    trickles(ctx, meta.trickles || [], t, '#4a3a44', '#2e2430');
   }
   if (region === 'river') {
     surface(ctx, meta.river, t, '#e4f4ff', false);

@@ -51,11 +51,12 @@ export const WILD_SPECS = [
     fx: { love: 20, toxicity: 6, fire: 5 }, arc: [380, 3], price: 9, gather: 'pick',
     steep: { name: 'Owlberry Cordial', into: 'water', lo: [30, 35], hi: [65, 70] },
     lore: 'Dark berries the owls guard jealously. Sweet with affection, warm on the tongue and faintly poisonous.' },
-  { key: 'witchear', noun: 'Witch’s Ear', shape: 'bracket', region: 'forest', rank: 1, buy: 2, hue: [32, 0.35, 0.3], form: 'solid', density: 0.8, hardness: 0.3, sol: 0.15, solT: 0.0012,
+  // Netherwood (the cavern forest under the Whisperwood, guild rank 1)
+  { key: 'witchear', noun: 'Witch’s Ear', shape: 'bracket', region: 'netherwood', rank: 1, buy: 2, hue: [32, 0.35, 0.3], form: 'solid', density: 0.8, hardness: 0.3, sol: 0.15, solT: 0.0012,
     fx: { arcana: 20, death: 7 }, arc: [420, 3], price: 14, gather: 'scrape',
     steep: { name: 'Witch’s Ear Broth', into: 'water', lo: [25, 30], hi: [60, 65] },
     lore: 'A leathery shelf fungus that grows on dead oaks. It sharpens the mind but carries the dead tree’s chill of decay; life cancels it.' },
-  { key: 'mandrake', noun: 'Mandrake', shape: 'root', region: 'forest', rank: 2, buy: null, hue: [38, 0.5, 0.6], form: 'solid', density: 1.15, hardness: 0.45, sol: 0.12, solT: 0.0015, rare: true,
+  { key: 'mandrake', noun: 'Mandrake', shape: 'root', region: 'netherwood', rank: 2, buy: null, hue: [38, 0.5, 0.6], form: 'solid', density: 1.15, hardness: 0.45, sol: 0.12, solT: 0.0015, rare: true,
     fx: { transformation: 34, strength: 12, toxicity: 7 }, arc: [420, 3], price: 30, gather: 'dig', lore: 'A rare screaming root of transformation, with strength in it and a poisonous skin. Old grimoires say it wakes fully only in warm spirits.' },
   // Sunlit Meadow
   { key: 'heartpetal', noun: 'Heartpetal', shape: 'petal', region: 'meadow', rank: 0, buy: 1, hue: [335, 0.6, 0.72], form: 'solid', density: 0.6, hardness: 0.15, sol: 0.2, solT: 0.001,

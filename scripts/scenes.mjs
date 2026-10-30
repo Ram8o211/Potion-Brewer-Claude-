@@ -15,7 +15,7 @@ const only = opt('--region', null), S = Number(opt('--scale', 2)), showGround = 
 const seeds = args.length ? args : ['scenes'];
 fs.mkdirSync(out, { recursive: true });
 for (const seed of seeds) {
-  for (const region of only ? [only] : ['meadow', 'forest', 'river', 'quarry', 'moonfen', 'crags']) {
+  for (const region of only ? [only] : ['meadow', 'forest', 'netherwood', 'river', 'quarry', 'moonfen', 'crags']) {
     const t0 = performance.now();
     const sc = sceneOf(region, seed);
     const ms = performance.now() - t0;

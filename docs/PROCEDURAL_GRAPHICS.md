@@ -7,12 +7,14 @@ still limited.
 
 ## What changed for the player
 
-* **Every world looks different.** The six regions are generated from the
+* **Every world looks different.** The seven regions are generated from the
   world seed: the lie of the ground, its ledges and caves, palette
   variation and seed-chosen features (autumn woods, a meadow pond, standing
   stones or beehives, a footbridge over the river, the oaks, the vents…).
   The regions keep their identity: the open, warm Sunlit Meadow;
-  Whisperwood's rows of trunks, closed canopy, roots and light shafts;
+  Whisperwood's rows of trunks, closed canopy, roots and light shafts,
+  always in the open air; the Netherwood, its cavern twin below, with
+  roots hanging through the roof, giant mushrooms and violet glowing fungi;
   Willow Bank's river between chalky banks, reeds and weeping willows;
   Ironstone Quarry's benches cut in steps, strata and mineral seams, adit,
   crane, ladder, cart and lantern; Moonfen's black pools, moss-hung
@@ -71,9 +73,22 @@ still limited.
   its plane: each takes a dry spot on the ground or a ledge's top and a
   height that fits there — shrinking until it does, or giving the spot up
   — so that none of it overlaps the terrain above its foot, the cave's
-  rock, a liquid or another tree. Whisperwood grows up to nine, of every
+  rock, a liquid, a prop or another tree. Whisperwood grows up to eight, of every
   habit and height; the other regions a few (willows by the water, dead
   trees in the bog and the crags).
+* **Scenery set down where it fits** (`Canvas.place` in `env/paint.js`).
+  Logs, stumps, ferns, fences, hives, standing stones, boulders, reeds,
+  the quarry's timberwork, cairns, crystals, basalt columns, vents and
+  giant mushrooms are each rasterized once and tried at spots stepping
+  outward from where they were meant to go. A spot fits when nothing of
+  the piece runs into the terrain above its foot, the cave's rock, a
+  liquid, a tree or another piece, and the ground under its whole base is
+  solid (resting on the highest ground under it, never bridging a hollow
+  or overhanging an edge); where nothing fits it is left out. Pieces drawn
+  pixel by pixel (glowing mushrooms, torches) claim their room the same
+  way. Ledges are sparser — three quarters as many, half as many above
+  them, spread along the dry ground between pools — and keep clear of each
+  other, with room to grow between one and the next above it.
 * **Ingredients glow slightly.** In the wilds each plant keeps its own
   size and look, with a faint breathing glow of its own colour about it
   (`species-sprites.js` `plantGlow`), so it reads in the scene without

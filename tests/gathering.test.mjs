@@ -283,3 +283,17 @@ test('an old save’s plants keep every bit of their growth when they start to d
   assert.equal(back.gathering.total, 40, 'the record kept');
   assert.equal(back.gathering.v, GATHER_VERSION);
 });
+
+test('the Netherwood, the cavern under the Whisperwood, grows Witch’s Ear and Mandrake — also in a world saved before it was found', async () => {
+  const { addAlchemy } = await import('../src/materials/generator.js');
+  const st = fresh();
+  const nether = REGIONS.find((r) => r.id === 'netherwood');
+  assert.ok(nether && nether.rank === 1, 'a region of its own, opened at the first guild rank');
+  for (const key of ['witchear', 'mandrake']) assert.equal(depositOf(st, key).region, 'netherwood', `${key} grows in the Netherwood`);
+  assert.ok(st.deposits.filter((d) => d.region === 'forest').every((d) => d.rank === 0), 'the Whisperwood keeps its everyday plants');
+  // a save whose world still has them in the Whisperwood finds them in the Netherwood
+  const w = JSON.parse(JSON.stringify(st.world));
+  for (const m of w.materials) if (m.wild && (m.wild.key === 'witchear' || m.wild.key === 'mandrake')) m.wild.region = 'forest';
+  addAlchemy(w);
+  for (const m of w.materials) if (m.wild && (m.wild.key === 'witchear' || m.wild.key === 'mandrake')) assert.equal(m.wild.region, 'netherwood');
+});

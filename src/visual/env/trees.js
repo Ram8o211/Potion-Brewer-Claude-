@@ -4,7 +4,7 @@
 // plane of the ground and its ledges: each takes a spot on a dry surface
 // (the ground or a ledge's top) and a height and shape that fit there, and
 // is placed only where none of it overlaps the terrain above its foot, the
-// cave's rock or another terrain tree — a tall one where there is room, a
+// cave's rock, a prop or another terrain tree — a tall one where there is room, a
 // small one under a ledge, none at all where nothing fits.
 
 import { branchTree, tree } from './objects.js';
@@ -69,8 +69,8 @@ export function terrainTrees(cv, rng, pal, o) {
             if (yy < 1 || xx < 0 || xx >= W) return false;
             if (yy >= H) continue;
             const k = yy * W + xx;
-            // nothing of it in the terrain above its foot, the cave's rock, a liquid or another tree
-            if ((S[k] && yy < fy - 3 - tw) || cv.rock[k] || cv.liquid[k] || cv.trees[k]) return false;
+            // nothing of it in the terrain above its foot, the cave's rock, a liquid, a prop or another tree
+            if ((S[k] && yy < fy - 3 - tw) || cv.rock[k] || cv.liquid[k] || cv.trees[k] || cv.props[k]) return false;
           }
           return true;
         },

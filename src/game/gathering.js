@@ -54,6 +54,7 @@ import { isBotanical, familyOf, habitatOf } from '../visual/taxonomy.js';
 /** @type {Region[]} */
 export const REGIONS = [
   { id: 'forest', name: 'Whisperwood', rank: 0, magical: false, desc: 'Old oaks and ferns. Roots and leaves grow in the shade.', sky: [0.36, 0.52, 0.42] },
+  { id: 'netherwood', name: 'Netherwood', rank: 1, magical: false, desc: 'A forest grown in a cavern under the Whisperwood, lit by glowing fungi. Shelf fungi and screaming roots thrive in the dark.', sky: [0.1, 0.12, 0.18] },
   { id: 'meadow', name: 'Sunlit Meadow', rank: 0, magical: false, desc: 'Flowers and clover under an open sky.', sky: [0.55, 0.72, 0.9] },
   { id: 'river', name: 'Willow Bank', rank: 0, magical: false, desc: 'Chalky banks, mushrooms and bog plants along the slow river.', sky: [0.5, 0.66, 0.78] },
   { id: 'quarry', name: 'Ironstone Quarry', rank: 0, magical: false, desc: 'Cut rock faces, mineral crusts and glittering dust.', sky: [0.62, 0.6, 0.58] },
@@ -97,6 +98,7 @@ export const REGION_BY_ID = Object.fromEntries(REGIONS.map((r) => [r.id, r]));
 /** Names of spots within each region (so two deposits read apart). */
 const PLACES = {
   forest: ['by the old oak', 'in the fern hollow', 'under the beeches', 'at the mossy stump', 'by the woodcutter’s path', 'in the deep shade', 'along the brook'],
+  netherwood: ['under the hanging roots', 'by the giant toadstool', 'in the glowing hollow', 'at the black pool', 'on the root stair'],
   meadow: ['by the stile', 'on the sunny slope', 'near the beehives', 'along the hedgerow', 'in the long grass', 'by the well'],
   river: ['under the willow', 'on the chalk bank', 'by the ford', 'in the reeds', 'at the mill race', 'on the gravel bar'],
   quarry: ['on the east face', 'in the spoil heap', 'by the cart track', 'in the old cutting', 'under the crane', 'at the seam', 'by the powder store'],
@@ -128,7 +130,7 @@ export function generateDeposits(world, lookup) {
     mats.forEach((m, k) => {
       const rare = !!m.wild.rare;
       // a crowded region grows fewer of each ingredient, so its ground does not overflow
-      const slots = rare ? 1 + (mats.length <= 5 ? 1 : 0) : mats.length > 5 ? 2 : 3;
+      const slots = rare ? 1 + (mats.length < 5 ? 1 : 0) : mats.length >= 5 ? 2 : 3;
       const take = rare ? rng.int(3, 4) * 10 : rng.int(5, 8) * 10;
       const growMs = Math.round((rare ? rng.range(18, 30) : rng.range(4, 8)) * 60000);
       const spawnMs = Math.round((rare ? rng.range(15, 25) : rng.range(3, 5)) * 60000);
@@ -159,7 +161,7 @@ export function generateDeposits(world, lookup) {
 export function thirstOf(shape, region) {
   const f = familyOf(shape);
   const base = f === 'moss' || f === 'reed' || f === 'fungus' ? 0.62 : f === 'bark' ? 0.36 : f === 'root' ? 0.42 : 0.48;
-  return Math.round(Math.max(0.15, Math.min(0.8, base + (region === 'crags' ? -0.25 : region === 'river' || region === 'moonfen' ? 0.08 : 0))) * 100) / 100;
+  return Math.round(Math.max(0.15, Math.min(0.8, base + (region === 'crags' ? -0.25 : region === 'river' || region === 'moonfen' || region === 'netherwood' ? 0.08 : 0))) * 100) / 100;
 }
 
 /**

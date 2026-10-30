@@ -2,9 +2,10 @@
 // from which its plant (at each growth stage), icon and cauldron pieces are
 // drawn; the same world always paints the same pixels, other worlds paint
 // other species; one ingredient looks like itself wherever it is shown; the
-// identity travels between devices; the six environments are generated
+// identity travels between devices; the seven environments are generated
 // deterministically with open ground for plants (never water, lava or
-// scenery in front), and plants are placed and hit-tested on it.
+// scenery in front), their scenery set down where it fits, and plants are
+// placed and hit-tested on it.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { generateWorld, addAlchemy } from '../src/materials/generator.js';
@@ -156,6 +157,24 @@ test('the six environments are side views, generated deterministically, differin
     const mid = Math.round((p.x0 + p.x1) / 2);
     assert.equal(sc.liquid[(p.level + 1) * SCENE_W + mid], 1, `${region}: its ${key} fills its bed`);
     for (let x = p.x0; x <= p.x1; x++) for (let y = p.level - 1; y < SCENE_H; y++) if (sc.liquid[y * SCENE_W + x]) assert.equal(sc.open[y * SCENE_W + x], 0);
+  }
+});
+
+test('scenery is set down where it fits: never into another piece, a tree, the cave\'s rock or a liquid, and standing on ground', () => {
+  for (const r of REGIONS) for (const seed of ['fit-1', 'fit-2', 'fit-3']) {
+    const sc = composeScene(r.id, seed);
+    let pieces = 0;
+    for (let k = 0; k < sc.props.length; k++) {
+      if (!sc.props[k]) continue;
+      pieces = Math.max(pieces, sc.props[k]);
+      assert.ok(!sc.trees[k] && !sc.rock[k], `${r.id}/${seed}: a prop at (${k % SCENE_W}, ${Math.floor(k / SCENE_W)}) overlaps a tree or the rock`);
+    }
+    assert.ok(pieces > 0, `${r.id}/${seed} has scenery`);
+  }
+  // the Whisperwood always lies in the open air; the Netherwood is its cavern under a roof of rock
+  for (const seed of ['fit-1', 'fit-2', 'fit-3', 'fit-4', 'fit-5', 'fit-6']) {
+    assert.equal(composeScene('forest', seed).rock.some((v) => v), false, `the Whisperwood of ${seed} has no cave roof`);
+    assert.ok(composeScene('netherwood', seed).rock.some((v) => v), `the Netherwood of ${seed} is a cavern`);
   }
 });
 

@@ -62,27 +62,28 @@ export function compose(cv, seed) {
   cv.meta.river = pool(cv, rx - hw, rx + hw, level, { surface: '#8ae0d8', body: ['#2a6a68', '#1e5654', '#164442', '#0e3232', '#0a2424'], see: 0.3, bed: ['#2a3a2e', '#34463a', '#1e2a22'] });
   veins(cv, cv.meta.river, WATER_VEINS(ss + 4, ['#5a9a98', '#2a6a68', '#1e5654', '#164442']));
   markOpen(cv);
-  // cattails on the pillars and at the water's edge
-  const rr = s('reeds');
-  for (const [x, y] of ledgeTops(cv, 5, rr.int(0, 1e9))) cv.stamp(reeds(rr, rr.int(10, 16), rr.int(3, 5), { heads: 0.7 }), pal, x, y + 1);
-  for (const side of [-1, 1]) {
-    let x = rx + side * (hw - rr.int(2, 10));
-    while (cv.liquid[(surfaceAt(cv, x) - 1) * W + x] && x > 0 && x < W - 1) x += side;
-    cv.stamp(reeds(rr, rr.int(12, 20), rr.int(4, 7), { heads: 0.6 }), pal, x, surfaceAt(cv, x) + 1);
-  }
-  // the weeping willow on the far bank
-  const wr = s('willow');
-  terrainTrees(cv, wr, pal, { n: 1, kinds: ['willow'], h: [96, 126], dark: 0.15, x: rx < W / 2 ? [rx + hw + 20, W - 10] : [10, rx - hw - 20] });
-  terrainTrees(cv, wr, pal, { n: 3, kinds: ['oak'], shapes: ['spread', 'lean', 'tall'], h: [36, 80], gap: 40, ledges: true });
-  if (wr.next() < 0.5) {
+  if (s('bridge').next() < 0.5) {
     // a footbridge from bank to bank
     const y = level - 4, m = new Model(), x0 = rx - hw - 4, x1 = rx + hw + 4;
     beam(m, [x0, y], [x1, y], 3);
     for (let x = x0 + 8; x < x1; x += 16) beam(m, [x, y - 8], [x, y + 1], 1.6);
     beam(m, [x0, y - 8], [x1, y - 8], 1.4);
-    cv.stamp(m, pal, 0, 0, { dark: 0.2 });
+    cv.stamp(m, pal, 0, 0, { dark: 0.2, claim: ++cv.nprops });
     cv.meta.bridge = [x0, x1, y];
   }
+  // cattails on the pillars and at the water's edge
+  const rr = s('reeds');
+  for (const [x, y] of ledgeTops(cv, 5, rr.int(0, 1e9))) cv.place(reeds(rr, rr.int(10, 16), rr.int(3, 5), { heads: 0.7 }), pal, x, { y, range: 9 });
+  for (const side of [-1, 1]) {
+    let x = rx + side * (hw - rr.int(2, 10));
+    while (cv.liquid[(surfaceAt(cv, x) - 1) * W + x] && x > 0 && x < W - 1) x += side;
+    // on the bank, at the water's edge or as near it as there is room
+    cv.place(reeds(rr, rr.int(12, 20), rr.int(4, 7), { heads: 0.6 }), pal, x + side * 4, { range: 30, step: 2, x: side < 0 ? [2, x + 4] : [x - 4, W - 3] });
+  }
+  // the weeping willow on the far bank
+  const wr = s('willow');
+  terrainTrees(cv, wr, pal, { n: 1, kinds: ['willow'], h: [96, 126], dark: 0.15, x: rx < W / 2 ? [rx + hw + 20, W - 10] : [10, rx - hw - 20] });
+  terrainTrees(cv, wr, pal, { n: 3, kinds: ['oak'], shapes: ['spread', 'lean', 'tall'], h: [36, 80], gap: 40, ledges: true });
   cv.meta.glows = glowShrooms(cv, { n: cave ? 9 : 4, cap: '#2ab8d8', lit: '#b0f4ff', stem: '#c8dcd4', rgb: [0.25, 0.75, 0.95], seed: s('shrooms').int(0, 1e9) });
   cv.meta.vignette = cave ? 0.6 : 0.3;
   cv.meta.horizon = 116;

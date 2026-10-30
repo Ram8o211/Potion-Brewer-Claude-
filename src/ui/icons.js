@@ -90,6 +90,7 @@ const ICONS = {
   stone: ['............', '............', '....kkkkk...', '..kkWWWsskk.', '.kWWsssssSk.', '.kWssssssSSk', 'kWsssssssSSk', 'kssssssssSSk', 'kSssssssSSSk', '.kSSSSSSSSk.', '..kkkkkkkk..', '............'],
   wisp: ['.....k......', '....kck.....', '....kcck....', '...kcwck....', '..kcwwwck...', '..kcwlwck...', '.kcwwlwwck..', '.kcwlllwck..', '.kcwwlwwck..', '..kcwwwck...', '...kccck....', '....kkk.....'],
   satchel: ['...kkkkkk...', '..kN....Nk..', '.kN......Nk.', 'kkkkkkkkkkkk', 'knnnnnnnnnnk', 'knnnkyykknnk', 'knnnkyykknnk', 'knnnnkknnnNk', 'knnnnnnnnnNk', 'knnnnnnnnNNk', '.kNNNNNNNNk.', '..kkkkkkkk..'],
+  shroom: ['............', '...kkkkkk...', '..kpPpppPk..', '.kppwpppwppk', 'kpPppppppPpk', 'kkkkkkkkkkkk', '....kwwk....', '....kwWk....', '....kwWk....', '...kwwwWk...', '..kkkkkkkk..', '............'],
   tree: ['....kkkk....', '..kkgggGkk..', '.kgggggggGk.', 'kgggGgggggGk', 'kggggggGgggk', 'kgGgggggggGk', '.kgggggGgGk.', '..kkkNnkkk..', '.....kNk....', '.....kNk....', '....kNnNk...', '..kkkkkkkk..'],
   stall: ['kkkkkkkkkkkk', 'krrwwrrwwrrk', 'krrwwrrwwrrk', '.kkkkkkkkkk.', '.kn......nk.', '.kn.kmk..nk.', '.kn.kmk..nk.', 'kkkkkkkkkkkk', 'knnnnnnnnnnk', 'knNnnnnnNnnk', 'knnnnnnnnnnk', 'kkkkkkkkkkkk'],
   dropper: ['..........kk', '.........kmk', '........kmmk', '.......kmmk.', '......kwWk..', '.....kwWk...', '....kwWk....', '...kwWk.....', '..kwWk......', '.kcWk.......', '.kck........', '..k.........'],

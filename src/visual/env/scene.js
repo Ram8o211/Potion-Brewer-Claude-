@@ -13,11 +13,12 @@ import * as river from './river.js';
 import * as quarry from './quarry.js';
 import * as moonfen from './moonfen.js';
 import * as crags from './crags.js';
+import * as netherwood from './netherwood.js';
 
 /** Version of the environment generator (scenes are not saved; this only names caches). */
-export const ENV_VERSION = 4;
+export const ENV_VERSION = 5;
 
-const COMPOSERS = { meadow, forest, river, quarry, moonfen, crags };
+const COMPOSERS = { meadow, forest, netherwood, river, quarry, moonfen, crags };
 
 /**
  * @typedef {Object} Scene
@@ -26,6 +27,9 @@ const COMPOSERS = { meadow, forest, river, quarry, moonfen, crags };
  * @property {Uint16Array} depth  foot row of the scenery covering each pixel (0: none)
  * @property {Uint8Array} solid    1 where there is ground (nothing grows into it)
  * @property {Uint8Array} liquid   1 where there is water or lava
+ * @property {Uint8Array} rock     1 where the cave's roof and walls are
+ * @property {Uint8Array} trees    1 where a tree standing on the terrain is
+ * @property {Uint16Array} props   the piece of scenery covering each pixel (0: none)
  * @property {number} top          first row with open ground
  * @property {Record<string, any>} meta  what the animation needs (horizon, vents, pools…)
  */
@@ -49,7 +53,7 @@ export function composeScene(region, seed) {
   for (let x = 0; x < SCENE_W; x++) { cv.open[x] = 0; cv.open[(SCENE_H - 1) * SCENE_W + x] = 0; cv.open[(SCENE_H - 2) * SCENE_W + x] = 0; }
   let top = SCENE_H;
   for (let k = 0; k < cv.open.length; k++) if (cv.open[k]) { top = Math.floor(k / SCENE_W); break; }
-  return { pix: cv.pix, open: cv.open, depth: cv.depth, solid: cv.solid, liquid: cv.liquid, top, meta: cv.meta };
+  return { pix: cv.pix, open: cv.open, depth: cv.depth, solid: cv.solid, liquid: cv.liquid, rock: cv.rock, trees: cv.trees, props: cv.props, top, meta: cv.meta };
 }
 
 /**

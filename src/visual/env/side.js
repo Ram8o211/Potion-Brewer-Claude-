@@ -266,28 +266,53 @@ export function markOpen(cv, minY = 30) {
 
 /**
  * Ledges jutting out over the ground, spread across the scene in two tiers
- * so more can grow: n about 32–46 pixels above the ground under them (clear
- * of the columns in `keep`, [x0, x1] ranges such as pools; `rise` sets
- * other heights), and over the middle ones a higher tier of n − 2, 42
- * pixels higher again. None floats: each stands on a buttress of rock, off
- * centre and leaning, reaching down to the ground or to a ledge below, and
- * the shapes are joined as one mass of ground (a smooth union), so a
- * buttress flares into the ledge it holds and into the ground it stands on.
+ * so more can grow: about three quarters of n, 32–46 pixels above the
+ * ground under them (clear of the columns in `keep`, [x0, x1] ranges such
+ * as pools; `rise` sets other heights), and a higher tier of half as many,
+ * 42 pixels higher again. A ledge is left out where it would crowd
+ * another: any two keep a clear gap beside each other, and one above
+ * another leaves room for what grows on the lower one. None floats: each
+ * stands on a buttress of rock, off centre and leaning, reaching down to
+ * the ground or to a ledge below, and the shapes are joined as one mass of
+ * ground (a smooth union), so a buttress flares into the ledge it holds and
+ * into the ground it stands on.
  */
 export function ledges(cv, top, rng, n, o = {}) {
   const keep = o.keep || [], r0 = o.rise || [32, 46];
   /** @type {((x:number, y:number) => number)[]} distance fields of the shapes so far (< 0 inside) */
   const shapes = [];
-  for (const [tier, count, rise] of /** @type {[number, number, number[]][]} */ ([[0, n, r0], [1, n - 2, [r0[0] + 42, r0[1] + 42]]])) {
+  /** @type {[number, number, number, number][]} the ledges so far: x0, top, x1, underside */
+  const boxes = [];
+  const n0 = Math.max(3, Math.round(n * 0.75)), n1 = Math.max(1, Math.round(n0 / 2));
+  // the dry stretches between the kept columns: the ledges are spread along them, not over the pools
+  /** @type {[number, number][]} */
+  const dry = [];
+  let a = 0;
+  for (const [k0, k1] of [...keep].sort((p, q) => p[0] - q[0])) { if (k0 > a) dry.push([a, k0]); a = Math.max(a, k1); }
+  if (a < cv.W) dry.push([a, cv.W]);
+  const span = dry.reduce((t, [p, q]) => t + q - p, 0);
+  /** the column a fraction u of the way along the dry stretches, nudged by dx but kept a ledge's half width r inside its stretch */
+  const along = (/** @type {number} */ u, /** @type {number} */ dx, /** @type {number} */ r) => {
+    let d = u * span;
+    for (const [p, q] of dry) {
+      if (d <= q - p) return Math.round(q - p > 2 * r ? Math.max(p + r, Math.min(q - r, p + d + dx)) : (p + q) / 2);
+      d -= q - p;
+    }
+    return cv.W / 2;
+  };
+  for (const [tier, count, rise] of /** @type {[number, number, number[]][]} */ ([[0, n0, r0], [1, n1, [r0[0] + 42, r0[1] + 42]]])) {
     let x0 = cv.W, x1 = 0, y0 = cv.H;
     for (let i = 0; i < count; i++) {
-      const x = Math.round((tier ? i + 1.5 : i + 0.5) * cv.W / n + rng.int(-14, 14)), rx = rng.int(18, 26);
+      const rx = rng.int(22, 30), x = along(tier ? (i + 1) / (count + 1) : (i + 0.5) / count, rng.int(-14, 14), rx + (keep.length ? 4 : -rx));
       if (!tier && keep.some(([a, b]) => x + rx > a && x - rx < b)) continue;
       const ground = Math.min(top[Math.max(0, x - rx)], top[Math.min(cv.W - 1, x)], top[Math.min(cv.W - 1, x + rx)]);
       // never so high that what grows on it would reach out of the scene
       const y = snap(Math.max(60, Math.round(ground) - rng.int(rise[0], rise[1])));
       if (ground - y < 24) continue;
       const ry = rng.int(7, 10), seed = rng.int(0, 1e9);
+      // a clear gap beside every other ledge, and room to grow between one and the next above or below it
+      const box = /** @type {[number, number, number, number]} */ ([x - rx, y - ry * 0.55, x + rx, y + ry]);
+      if (boxes.some((b) => box[0] < b[2] + 12 && box[2] > b[0] - 12 && box[1] < b[3] + 26 && box[3] + 26 > b[1])) continue;
       shapes.push(slab(x, y, rx, ry, seed));
       // the buttress: under one end of the ledge, leaning a little, down to whatever lies below
       const side = rng.next() < 0.5 ? -1 : 1, bx = x + side * Math.round(rx * rng.next() * 0.25);
@@ -298,6 +323,7 @@ export function ledges(cv, top, rng, n, o = {}) {
       while (land < cv.H - 1 && !cv.solid[land * cv.W + fx]) land++;
       const w0 = Math.round(rx * (tier ? 0.42 : 0.4)) + rng.int(0, 3), w1 = w0 + rng.int(4, 10);
       shapes.push(buttress(bx, y + ry * 0.6, fx, land + 3, w0, w1, seed));
+      boxes.push(box);
       x0 = Math.min(x0, x - rx - 12, fx - w1 - 12); x1 = Math.max(x1, x + rx + 12, fx + w1 + 12); y0 = Math.min(y0, y - ry * 2);
     }
     // fill every square inside the union of the shapes and the ground; never fill a cave
