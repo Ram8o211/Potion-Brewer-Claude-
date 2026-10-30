@@ -14,6 +14,8 @@
 export const GRAVITY = 640;
 /** The physics step (seconds): a few substeps per frame. */
 export const STEP = 1 / 120;
+/** How hard the ground brakes what slides on it (pixels per second²): it stops, it does not stick. */
+export const FRICTION = 380;
 
 /**
  * @typedef {{w:number, h:number, ax:number, ay:number}} SpriteBox  a sprite's size and the point it hangs or stands by
@@ -24,7 +26,7 @@ export class Ragdoll {
   /**
    * A body made from a sprite whose anchor stands at scene point (x, y).
    * @param {SpriteBox} sp @param {number} x @param {number} y
-   * @param {{vx?:number, vy?:number, spin?:number, W:number, H:number}} o its push (pixels per second; spin: how much faster its top flies than its foot) and the scene's size
+   * @param {{vx?:number, vy?:number, spin?:number, W:number, H:number, front?:boolean}} o its push (pixels per second; spin: how much faster its top flies than its foot), the scene's size, and whether it hung or jutted in front of the scenery (it falls on in front of what it overlapped)
    */
   constructor(sp, x, y, o) {
     this.sp = sp;
@@ -64,6 +66,13 @@ export class Ragdoll {
     /** the hardest knock against the ground since last read (pixels per second), for a sound */
     this.knock = 0;
     this.t = 0;
+    /** time not yet stepped (less than a step) */
+    this.acc = 0;
+    /** what it hung or stood in front of: no surface above this row stops it until it has first come to ground below (Infinity once it has) */
+    this.front = !!o.front;
+    this.over = this.front ? Math.round(Math.max(...this.py) + this.r) + 1 : Infinity;
+    /** joints that began inside the scenery (a fruit hanging in front of a ledge): they fall on through it, in front of it, until they are clear (null till the first step) @type {Uint8Array|null} */
+    this.deep = null;
   }
 
   /**
@@ -72,12 +81,15 @@ export class Ragdoll {
    */
   step(dt, solid) {
     if (this.asleep) return;
-    let left = Math.min(dt, 0.1);
-    while (left > 1e-6) {
-      const h = Math.min(STEP, left);
-      left -= h;
-      this.t += h;
-      this.sub(h, solid);
+    // whole steps only, the rest carried to the next frame: a Verlet body
+    // keeps its speed as the distance of its last step, so a sliver of a
+    // step would all but stop it (frames are never exactly 1/120 s apart)
+    this.acc += Math.min(dt, 0.1);
+    while (this.acc >= STEP) {
+      this.acc -= STEP;
+      this.t += STEP;
+      this.sub(STEP, solid);
+      if (this.asleep) { this.acc = 0; break; }
     }
   }
 
@@ -85,6 +97,21 @@ export class Ragdoll {
   sub(h, solid) {
     const n = this.px.length, { px, py, ox, oy, r } = this;
     let moved = 0, touching = false;
+    if (!this.deep) {
+      this.deep = Uint8Array.from({ length: n }, (_, j) => (this.front && this.buried(px[j], py[j], solid) ? 1 : 0));
+      // what stood with its foot in the soil comes out of it whole, gaining no speed from being lifted
+      if (!this.front) {
+        let lift = 0;
+        for (let j = 0; j < n; j++) {
+          const cx = Math.round(px[j]), row = Math.round(py[j] + r);
+          let k = 0;
+          while (k <= 16 && solid(cx, row - k)) k++;
+          if (k && k <= 16) lift = Math.max(lift, py[j] - (row - k + 0.49 - r));
+        }
+        if (lift > 0) this.shift(0, -lift);
+      }
+    }
+    const deep = this.deep;
     for (let j = 0; j < n; j++) {
       const vx = (px[j] - ox[j]) * 0.999, vy = (py[j] - oy[j]) * 0.999;
       ox[j] = px[j]; oy[j] = py[j];
@@ -101,16 +128,26 @@ export class Ragdoll {
       if (px[j] > this.W - 2) { px[j] = this.W - 2; ox[j] = px[j] + (px[j] - ox[j]) * 0.3; }
       if (py[j] + r > this.H - 1) { this.land(j, this.H - 1 - r); touching = true; }
       const cx = Math.round(px[j]), row = Math.round(py[j] + r);
-      if (solid(cx, row)) {
+      // (one that began inside the scenery falls on in front of it until it is out)
+      if (deep[j]) { if (!solid(cx, row)) deep[j] = 0; }
+      else if (row < this.over && this.over !== Infinity) { /* in front of what it grew over */ }
+      else if (solid(cx, row)) {
         touching = true;
         // onto the surface just above (exactly on it, so it lies still), else back where it was (it ran into a face)
+        // (what stood in the ground, its foot in the soil, is lifted out of it however deep)
+        const reach = this.front || this.t > 0.05 ? 6 : 16;
         let k = 1;
-        while (k <= 6 && solid(cx, row - k)) k++;
-        if (k <= 6) this.land(j, row - k + 0.49 - r);
-        else { const vx = px[j] - ox[j]; px[j] = ox[j]; py[j] = oy[j]; ox[j] = px[j] + vx * 0.3; }
+        while (k <= reach && solid(cx, row - k)) k++;
+        if (k <= reach) this.land(j, row - k + 0.49 - r);
+        else if (!this.front || Math.abs(px[j] - ox[j]) > Math.abs(py[j] - oy[j])) {
+          // it ran sideways into a face: back where it was, bouncing off
+          const vx = px[j] - ox[j]; px[j] = ox[j]; py[j] = oy[j]; ox[j] = px[j] + vx * 0.3;
+        } else { deep[j] = 1; touching = false; }
       } else if (solid(cx, row + 1) && py[j] + r > row + 0.3) touching = true;
       moved = Math.max(moved, Math.abs(px[j] - ox[j]), Math.abs(py[j] - oy[j]));
     }
+    // (once down, every surface counts: kicked up onto a ledge, it lands on it)
+    if (touching) this.over = Infinity;
     // standing up it tips over: gravity's pull round its foot (point masses alone would balance forever) —
     // the whole body one way, so a zigzag of pieces cannot prop itself up
     let upright = false;
@@ -121,15 +158,23 @@ export class Ragdoll {
       if (rise > total * 0.18 && rise > Math.abs(lean) * 0.8) {
         upright = true;
         const dir = Math.abs(lean) > 0.3 ? Math.sign(lean) : this.side;
-        for (let j = 0; j < n; j++) if (j !== foot) ox[j] -= dir * GRAVITY * 0.6 * h * h * Math.min(1, (py[foot] - py[j]) / Math.max(1, rise * 2));
+        for (let j = 0; j < n; j++) if (j !== foot) ox[j] -= dir * GRAVITY * 1.6 * h * h * Math.min(1, (py[foot] - py[j]) / Math.max(1, rise));
       }
     }
-    // at rest once it has lain still a moment
-    // (never while it still stands: it is going over)
-    this.still = touching && !upright && moved < 0.05 ? this.still + h : 0;
+    // at rest once it has lain still a moment (one still standing, a while
+    // longer: it may be going over — or propped against a face, and staying)
+    this.still = touching && moved < 0.05 ? this.still + h : 0;
     // (and one creeping down a slope or rocking on a bump, after a while on the ground)
     this.ground = touching ? this.ground + h : 0;
-    if (this.still > 0.35 || (this.ground > (upright ? 6 : 3) && moved < 0.4)) this.asleep = true;
+    if (this.still > (upright ? 0.6 : 0.35) || (this.ground > 2 && moved < 0.4)) this.asleep = true;
+  }
+
+  /** Whether a joint at (x, y) is inside the scenery rather than on its surface (nothing open within reach above). @param {number} x @param {number} y @param {SolidAt} solid */
+  buried(x, y, solid) {
+    const cx = Math.round(x), row = Math.round(y + this.r);
+    if (!solid(cx, row)) return false;
+    for (let k = 1; k <= 6; k++) if (!solid(cx, row - k)) return false;
+    return true;
   }
 
   /** Joint j comes to the surface at height y: it bounces a little and slides with friction. @param {number} j @param {number} y */
@@ -137,9 +182,13 @@ export class Ragdoll {
     const vx = this.px[j] - this.ox[j], vy = this.py[j] - this.oy[j];
     this.knock = Math.max(this.knock, Math.abs(vy) / STEP);
     this.py[j] = y;
-    // (a quick fall bounces back up a little, a slow one just stops)
-    this.oy[j] = y + (vy > 0.25 ? vy * 0.3 : 0);
-    this.ox[j] = this.px[j] - vx * 0.6;
+    // (a quick fall bounces back up a little, a slow one just stops, and one
+    // already on its way up — pulled from the ground — goes on up; along the
+    // ground it slides on, braked steadily — it does not stick, so what lies
+    // over an edge slips off it)
+    this.oy[j] = vy < 0 ? y - vy : y + (vy > 0.25 ? vy * 0.3 : 0);
+    const brake = FRICTION * STEP * STEP;
+    this.ox[j] = this.px[j] - Math.sign(vx) * Math.max(0, Math.abs(vx) - brake);
   }
 
   /** Keep joints a and b between lo and hi apart, moving both. @param {number} a @param {number} b @param {number} lo @param {number} hi */
