@@ -31,6 +31,28 @@ test('sandbox wilds: shake, gather by tap, regrow at random spots, water by drag
   for (let k = 0; k <= 8; k++) pts.push(at(sx + 30 - k * 7.5, mid.y));
   await drag(page, pts, 12);
   await page.waitForFunction((id) => { const it = window.__alchemist.screen.views.wilds.fallen[id]; return it && it.landed; }, ripe.id);
+  // it falls as a ragdoll cut from the very sprite it grew as: what lies on the ground shows its own pixels, turned but never resampled
+  await page.waitForTimeout(400);
+  const same = await page.evaluate(async (id) => {
+    const S = await import(new URL('src/rendering/species-sprites.js', document.baseURI).href);
+    const w = window.__alchemist.screen.views.wilds, it = w.fallen[id], sp = it.sp, p = w.field.find((q) => q.id === id);
+    const opaque = (cv) => { const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data, out = []; for (let i = 0; i < d.length; i += 4) if (d[i + 3] === 255) out.push((d[i] << 16) | (d[i + 1] << 8) | d[i + 2]); return out; };
+    // the body is the plant's own sprite, cut down to what shows of it
+    const grown = S.plantCanvas(p.m, p.stage, { ...w.look(p), hover: false });
+    const mine = opaque(sp.cv), theirs = opaque(grown.cv);
+    const own = new Set(mine);
+    const b = it.doll.box(1), x0 = Math.max(0, Math.floor(b.x0)), y0 = Math.max(0, Math.floor(b.y0));
+    const dst = w.ctx.getImageData(x0, y0, Math.max(1, Math.ceil(b.x1) - x0), Math.max(1, Math.ceil(b.y1) - y0)).data;
+    let found = 0;
+    for (let i = 0; i < dst.length; i += 4) if (own.has((dst[i] << 16) | (dst[i + 1] << 8) | dst[i + 2])) found++;
+    // (fallen bodies pass in front of one another: another lying over this one would hide it)
+    const covered = Object.entries(w.fallen).some(([k, o]) => { if (k === id) return false; const c = o.doll.box(1); return c.x0 < b.x1 && c.x1 > b.x0 && c.y0 < b.y1 && c.y1 > b.y0; });
+    return { n: mine.length, grown: theirs.length, same: mine.join() === theirs.join(), found, covered, pieces: it.doll.len.length };
+  }, ripe.id);
+  expect(same.n).toBeGreaterThan(10);
+  expect(same.same, 'the fallen body is the plant’s own sprite, pixel for pixel, not a shrunken icon').toBe(true);
+  // (turned to any angle, a piece shows each of its pixels once, a few twice or not at all; resampled, its exact colours would be all but gone)
+  if (!same.covered) expect(same.found / same.n, 'and it is drawn with its own colours as it lies').toBeGreaterThan(0.55);
   // the finger sets the scenery's hanging strands swinging (the trees and bushes behind stay put)
   const leaves = await page.evaluate(async () => {
     const S = await import(new URL('src/rendering/wild-scene.js', document.baseURI).href);
@@ -48,7 +70,7 @@ test('sandbox wilds: shake, gather by tap, regrow at random spots, water by drag
       const S = await import(new URL('src/rendering/wild-scene.js', document.baseURI).href);
       const t = S.sceneTouch('meadow', window.__alchemist.screen.state.seed);
       let n = 0;
-      for (let g = 0; g < t.G; g++) if (t.pos[g] || t.vel[g]) n++;
+      for (let g = 0; g < t.G; g++) if (t.moving(g)) n++;
       return n;
     });
     expect(moving, 'the strands the finger went through are swinging').toBeGreaterThan(0);
@@ -56,31 +78,14 @@ test('sandbox wilds: shake, gather by tap, regrow at random spots, water by drag
       const S = await import(new URL('src/rendering/wild-scene.js', document.baseURI).href);
       const t = S.sceneTouch('meadow', window.__alchemist.screen.state.seed);
       let n = 0;
-      for (let g = 0; g < t.G; g++) if (!(t.hang[g] > 0) && (t.pos[g] || t.vel[g])) n++;
+      for (let g = 0; g < t.G; g++) if (!(t.hang[g] > 0) && t.moving(g)) n++;
       return n;
     }), 'no tree or bush was moved').toBe(0);
   }
   // (and whatever it knocked along has come to rest again)
   await page.waitForFunction((id) => { const it = window.__alchemist.screen.views.wilds.fallen[id]; return it && it.landed; }, ripe.id);
-  // it falls as a ragdoll cut from the very sprite it grew as: what lies on the ground shows its own pixels, turned but never resampled
-  await page.waitForTimeout(400);
-  const same = await page.evaluate(async (id) => {
-    const S = await import(new URL('src/rendering/species-sprites.js', document.baseURI).href);
-    const w = window.__alchemist.screen.views.wilds, it = w.fallen[id], sp = it.sp, p = w.field.find((q) => q.id === id);
-    const opaque = (cv) => { const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data, out = []; for (let i = 0; i < d.length; i += 4) if (d[i + 3] === 255) out.push((d[i] << 16) | (d[i + 1] << 8) | d[i + 2]); return out; };
-    // the body is the plant's own sprite, cut down to what shows of it
-    const grown = S.plantCanvas(p.m, p.stage, { ...w.look(p), hover: false });
-    const mine = opaque(sp.cv), theirs = opaque(grown.cv);
-    const own = new Set(mine);
-    const b = it.doll.box(1), x0 = Math.max(0, Math.floor(b.x0)), y0 = Math.max(0, Math.floor(b.y0));
-    const dst = w.ctx.getImageData(x0, y0, Math.max(1, Math.ceil(b.x1) - x0), Math.max(1, Math.ceil(b.y1) - y0)).data;
-    let found = 0;
-    for (let i = 0; i < dst.length; i += 4) if (own.has((dst[i] << 16) | (dst[i + 1] << 8) | dst[i + 2])) found++;
-    return { n: mine.length, grown: theirs.length, same: mine.join() === theirs.join(), found, pieces: it.doll.len.length };
-  }, ripe.id);
-  expect(same.n).toBeGreaterThan(10);
-  expect(same.same, 'the fallen body is the plant’s own sprite, pixel for pixel, not a shrunken icon').toBe(true);
-  expect(same.found / same.n, 'and it is drawn with its own colours as it lies').toBeGreaterThan(0.7);
+  // nothing that fell is anywhere in the terrain
+  expect(await lab(page, (l) => { const w = l.views.wilds; return Object.values(w.fallen).filter((it) => it.doll.overlaps((x, y) => w.solidAt(x, y))).length; }), 'no fallen body overlaps the terrain').toBe(0);
   await shot(page, info, 'sandbox-wilds-fallen');
   // a fingertip that rolls a little is still a tap: it gathers what fell
   const it = await lab(page, (l, id) => l.views.wilds.itemCentre(id), ripe.id);

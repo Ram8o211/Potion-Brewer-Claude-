@@ -107,8 +107,8 @@ test('harvesting a mature plant fills the stores and leaves a mark; growing ones
   Object.assign(cv, await page.locator('.view-wilds canvas.scene').boundingBox());
   // a tap shakes it loose, a second tap on what fell gathers it
   await drag(page, [tapAt(m0), tapAt(m0)], 30);
-  await page.waitForFunction((id) => !!window.__alchemist.screen.views.wilds.fallen[id], m0.id);
-  // (where it has got to as it tumbles)
+  // (where it has come to rest)
+  await page.waitForFunction((id) => { const it = window.__alchemist.screen.views.wilds.fallen[id]; return it && it.landed; }, m0.id);
   const it0 = await lab(page, (l, id) => l.views.wilds.itemCentre(id), m0.id);
   const sw0 = await page.evaluate(() => /** @type {HTMLCanvasElement} */ (document.querySelector('.view-wilds canvas.scene')).width);
   const t0 = { x: cv.x + it0.x / sw0 * cv.width, y: cv.y + it0.y / 216 * cv.height };

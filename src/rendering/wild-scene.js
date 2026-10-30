@@ -4,8 +4,9 @@
 // and the moving parts drawn over the still painting every frame (birds,
 // motes, river glints, wisps, embers, the steam of the crags' vents).
 // A finger sets the hanging strands of the scenery swinging (a vine from
-// the cave's roof or a bough): each a slow damped pendulum it knocks along
-// its way, swinging on for seconds (SceneTouch). The trees and bushes of the
+// the cave's roof or a bough): each a hanging chain of links it pushes
+// where it touches, bending there, the wave running down to its end and
+// swinging on for seconds (SceneTouch). The trees and bushes of the
 // painting stay put: they move with the wind alone.
 
 import { sceneOf, SCENE_W, SCENE_H } from '../visual/env/scene.js';
@@ -66,20 +67,26 @@ export function crosses(x0, y0, x1, y1, left, top, right, bottom) {
   return true;
 }
 
+/** Pull on a hanging strand, scene pixels per second² (what sets how slowly a long vine swings). */
+const ROPE_G = 520;
+/** How far apart a strand's links are (scene pixels): a vine bends at every one. */
+const LINK = 4;
+
 /**
- * The finger's hold on a scene's hanging strands: each a slow, lightly
- * damped pendulum (its offset in pixels and its speed) that swings on for
- * several seconds once knocked. Clumps of leaves, canopies and bushes are
- * background and are left to the wind. Pure: the view knocks it as the
- * finger passes and steps it every frame.
+ * The finger's hold on a scene's hanging strands (vines from a bough or
+ * the cave's roof). Each strand is a hanging chain of links held at its
+ * top: every link swings sideways under the pull of the links below it, so
+ * a knock runs down the vine as a wave, its end whips, and it settles back
+ * slowly. The finger pushes the links it passes — the vine bends where it
+ * was touched and is dragged along with a slow finger. The trees and
+ * bushes of the painting are left to the wind. Pure: the view pushes it as
+ * the finger moves and steps it every frame.
  */
 export class SceneTouch {
   /** @param {NonNullable<import('../visual/env/scene.js').Scene['sway']>} sw */
   constructor(sw) {
     const G = sw.amp.length;
     this.G = G;
-    this.pos = new Float32Array(G);
-    this.vel = new Float32Array(G);
     this.hang = sw.hang;
     this.amp = sw.amp;
     /** each group's box [x0, y0, x1, y1] */
@@ -92,55 +99,111 @@ export class SceneTouch {
       if (x > this.box[b + 2]) this.box[b + 2] = x;
       if (y > this.box[b + 3]) this.box[b + 3] = y;
     }
+    /** per strand: its first link's index in the arrays below and how many links it has (0: not a strand) */
+    this.first = new Int32Array(G);
+    this.links = new Uint8Array(G);
+    let n = 0;
+    for (let g = 0; g < G; g++) {
+      if (!(this.hang[g] > 0)) continue;
+      const len = this.box[g * 4 + 3] - this.box[g * 4 + 1] + 1;
+      this.first[g] = n;
+      this.links[g] = Math.max(2, Math.min(14, Math.round(len / LINK)));
+      n += this.links[g];
+    }
+    /** each link's sideways offset (pixels) and speed */
+    this.u = new Float32Array(n);
+    this.w = new Float32Array(n);
+    /** each strand's column (where its line hangs) */
+    this.cx = new Float32Array(G);
+    for (let g = 0; g < G; g++) this.cx[g] = (this.box[g * 4] + this.box[g * 4 + 2]) / 2;
+    /** the strands swinging now */
+    this.live = new Set();
     /** something is still moving */
     this.awake = false;
   }
 
+  /** How far a strand is moved at height f (0 at its top, 1 at its end), in pixels. @param {number} g @param {number} f */
+  offset(g, f) {
+    const N = this.links[g];
+    if (!N) return 0;
+    const s = Math.max(0, Math.min(1, f)) * N, i = Math.floor(s), t = s - i, a = this.first[g];
+    const at = (/** @type {number} */ j) => (j <= 0 ? 0 : this.u[a + Math.min(N, j) - 1]);
+    return at(i) + (at(i + 1) - at(i)) * t;
+  }
+
+  /** Whether strand g is moving. @param {number} g */
+  moving(g) { return this.live.has(g); }
+
   /**
    * The finger passed from (x0, y0) to (x1, y1) (scene pixels) within a
-   * moment: every group it went through is knocked its way, the harder the
-   * faster it went. Returns how many were.
+   * frame: every link of a strand it came within reach of is pushed along
+   * with it (to the side of the finger it was knocked to). Returns how many
+   * strands it touched.
    */
   push(x0, y0, x1, y1) {
-    const dx = x1 - x0, speed = Math.hypot(dx, y1 - y0);
-    if (speed < 0.5) return 0;
-    // (a vertical stroke still shoves sideways, a little)
-    const dir = Math.abs(dx) > 0.3 ? dx / speed : 0.4 * (y1 > y0 ? 1 : -1);
+    const dx = x1 - x0, dy = y1 - y0, L2 = dx * dx + dy * dy;
+    if (L2 < 0.25) return 0;
+    // the finger's own speed sideways (a stroke is about a frame long)
+    const vf = Math.max(-180, Math.min(180, dx * 60)), reach = 3.5;
     let n = 0;
     for (let g = 0; g < this.G; g++) {
-      // (only what hangs: the trees and bushes behind stay as the wind has them)
-      if (!(this.hang[g] > 0)) continue;
-      const b = g * 4;
-      if (!crosses(x0, y0, x1, y1, this.box[b] - 2, this.box[b + 1] - 2, this.box[b + 2] + 2, this.box[b + 3] + 2)) continue;
-      const hangs = this.hang[g] > 0, give = Math.max(0.5, Math.min(1.6, this.amp[g] || 1));
-      const v = this.vel[g] + dir * Math.min(hangs ? 26 : 34, 4 + speed * (hangs ? 2.2 : 3)) * give;
-      this.vel[g] = Math.max(-60, Math.min(60, v));
-      n++;
+      const N = this.links[g];
+      if (!N) continue;
+      const b = g * 4, len = this.box[b + 3] - this.box[b + 1] + 1, lk = len / N;
+      // (quickly: only a strand whose reach the stroke crosses)
+      const sw = Math.abs(this.offset(g, 1)) + 3;
+      if (!crosses(x0, y0, x1, y1, this.box[b] - sw, this.box[b + 1] - 2, this.box[b + 2] + sw, this.box[b + 3] + 2)) continue;
+      let hit = false;
+      for (let i = 0; i < N; i++) {
+        const k = this.first[g] + i, nx = this.cx[g] + this.u[k], ny = this.box[b + 1] + (i + 1) * lk;
+        const t = Math.max(0, Math.min(1, ((nx - x0) * dx + (ny - y0) * dy) / L2));
+        const qx = x0 + dx * t, qy = y0 + dy * t;
+        if (Math.hypot(nx - qx, ny - qy) > reach) continue;
+        hit = true;
+        // carried along at the finger's speed, and put out of its way on the side it is going
+        this.w[k] += (vf - this.w[k]) * 0.75;
+        if (Math.abs(dx) > 0.2) {
+          const side = Math.sign(dx), want = x1 + side * reach * 0.6 - this.cx[g];
+          if ((want - this.u[k]) * side > 0) this.u[k] += (want - this.u[k]) * 0.6;
+        }
+      }
+      if (hit) { this.live.add(g); n++; }
     }
     if (n) this.awake = true;
     return n;
   }
 
-  /** Let the springs move on by dt seconds. @param {number} dt */
+  /** Let the strands swing on by dt seconds. @param {number} dt */
   step(dt) {
     if (!this.awake) return;
-    let left = Math.min(dt, 0.1), live = false;
-    while (left > 1e-6) {
-      const h = Math.min(1 / 120, left);
-      left -= h;
-      live = false;
-      for (let g = 0; g < this.G; g++) {
-        const p = this.pos[g], v = this.vel[g];
-        if (p === 0 && v === 0) continue;
-        // a hanging strand: a slow pendulum (≈0.6 Hz), lightly damped (anything else: stiff and well damped)
-        const hangs = this.hang[g] > 0, k = hangs ? 14 : 90, c = hangs ? 0.65 : 3.6;
-        const nv = v + (-k * p - c * v) * h, np = Math.max(-6, Math.min(6, p + nv * h));
-        // (still once it no longer moves it a pixel anywhere)
-        if (Math.abs(np) < 0.2 && Math.abs(nv) < 0.4) { this.pos[g] = 0; this.vel[g] = 0; continue; }
-        this.pos[g] = np; this.vel[g] = nv; live = true;
+    const h = 1 / 120, steps = Math.max(1, Math.round(Math.min(dt, 0.1) / h));
+    for (const g of this.live) {
+      const N = this.links[g], a = this.first[g], b = g * 4, lk = (this.box[b + 3] - this.box[b + 1] + 1) / N, u = this.u, w = this.w;
+      const maxU = (this.box[b + 3] - this.box[b + 1]) * 0.45 + 2;
+      for (let s = 0; s < steps; s++) {
+        // a hanging chain: each link pulled toward its neighbours, the more the more chain hangs below it
+        for (let i = 0; i < N; i++) {
+          const k = a + i, up = i ? u[k - 1] : 0, below = N - i, acc = (ROPE_G / lk) * (below * (up - u[k]) - (i < N - 1 ? (below - 1) * (u[k] - u[k + 1]) : 0));
+          // (air slows it, and a link moving apart from its neighbours more)
+          const wUp = i ? w[k - 1] : 0, wDn = i < N - 1 ? w[k + 1] : w[k];
+          w[k] += (acc - 0.45 * w[k] + 0.6 * (wUp + wDn - 2 * w[k])) * h;
+        }
+        for (let i = 0; i < N; i++) {
+          const k = a + i;
+          u[k] += w[k] * h;
+          // a link stays a link: never pulled further sideways from the one above than it is long
+          const up = i ? u[k - 1] : 0, gap = lk * 0.75;
+          if (u[k] - up > gap) { u[k] = up + gap; if (w[k] > (i ? w[k - 1] : 0)) w[k] = i ? w[k - 1] : 0; }
+          if (up - u[k] > gap) { u[k] = up - gap; if (w[k] < (i ? w[k - 1] : 0)) w[k] = i ? w[k - 1] : 0; }
+          if (u[k] > maxU) u[k] = maxU; if (u[k] < -maxU) u[k] = -maxU;
+        }
       }
+      // still once it no longer moves a pixel anywhere
+      let quiet = true;
+      for (let i = 0; i < N && quiet; i++) if (Math.abs(u[a + i]) > 0.25 || Math.abs(w[a + i]) > 0.6) quiet = false;
+      if (quiet) { for (let i = 0; i < N; i++) { u[a + i] = 0; w[a + i] = 0; } this.live.delete(g); }
     }
-    this.awake = live;
+    this.awake = this.live.size > 0;
   }
 }
 
@@ -173,7 +236,7 @@ let shiftBuf = new Float32Array(0), tipBuf = new Float32Array(0);
  * Pure: the same time paints the same pixels.
  * @param {NonNullable<import('../visual/env/scene.js').Scene['sway']>} sw @param {Uint32Array} out @param {number} t
  * @param {number} [wind] the region's wind strength (meta.wind) @param {number} [ph] the world's weather
- * @param {SceneTouch|null} [touch] the finger's push on top of the wind (a clump moves as one, a strand most at its end)
+ * @param {SceneTouch|null} [touch] the finger's push on top of the wind (a strand bends link by link)
  */
 export function swayPixels(sw, out, t, wind = 1, ph = 0, touch = null) {
   out.set(sw.bare);
@@ -184,12 +247,11 @@ export function swayPixels(sw, out, t, wind = 1, ph = 0, touch = null) {
     shiftBuf[g] = a ? Math.max(-3, Math.min(3, a * (v * 0.7 + 0.15 * wind * Math.sin(t * (2.6 + (g % 5) * 0.37) + g * 1.7)))) : 0;
     // a strand's end follows the wind a moment late, whipping a little
     tipBuf[g] = sw.hang[g] * (windAt(x, t - 0.4, ph) * wind * 0.9 + 0.25 * wind * Math.sin(t * 2.1 + g * 2.3));
-    // the finger's push: a clump bends as one; a strand swings from its top, its end furthest
-    const q = touch ? touch.pos[g] : 0;
-    if (q) { if (sw.hang[g] > 0) { shiftBuf[g] += q * 0.15; tipBuf[g] += q * 1.1; } else shiftBuf[g] += q; }
   }
   for (let i = 0; i < sw.k.length; i++) {
-    const g = sw.g[i], k = sw.k[i], dx = Math.round(shiftBuf[g] + tipBuf[g] * sw.f[i]), x = k % W + dx;
+    const g = sw.g[i], k = sw.k[i];
+    // (a strand the finger set swinging bends link by link)
+    const dx = Math.round(shiftBuf[g] + tipBuf[g] * sw.f[i] + (touch && touch.live.has(g) ? touch.offset(g, sw.f[i]) : 0)), x = k % W + dx;
     if (x < 0 || x >= W) continue;
     if (sw.layer[k + dx] > sw.s[i]) continue;
     out[k + dx] = sw.c[i];

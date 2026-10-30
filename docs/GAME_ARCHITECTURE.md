@@ -625,10 +625,11 @@ into the new vessel's shape instead of being dropped.
   frames and icon (every list's picture of a wild ingredient);
   **`wild-scene.js`** caches each region's scene, places plants on its
   open ground, hit-tests them and animates the scene, its foliage moved by
-  the wind, its hanging strands also by the finger (`SceneTouch`: a slow
-  damped pendulum per strand); **`ragdoll.js`** is what a ripe plant lets go of —
+  the wind, its hanging strands also by the finger (`SceneTouch`: a hanging
+  chain of links per strand, pushed where the finger touches it); **`ragdoll.js`** is what a ripe plant lets go of —
   a Verlet chain of pieces cut from its sprite that tumbles and settles on
-  the scene's ground. **`scenes.js`** keeps
+  the scene's ground, its joints and pieces discs swept against the terrain
+  so it never enters it. **`scenes.js`** keeps
   the little sprites of the rabbits' remains.
 * Effects show in the brew: a potion with a strong effect gets a faint
   aura of that effect's colour, and charged matter crackles with sparks.

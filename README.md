@@ -289,13 +289,16 @@ computed from the particles that actually run out of the tap. What a
   you water); dry soil slows it but never stops it. Stones, crystals,
   crusts and shells come back with time and the weather, as before.
 * **An interactive wilds:** a finger dragged through the scene pushes
-  what it passes: vines hanging from the boughs or the cave's roof swing on
-  for seconds, and a plant not ready to be gathered bends and rings (the
-  trees and bushes of the background move with the wind alone). A ripe
+  what it passes: vines hanging from the boughs or the cave's roof are
+  chains of links that bend where the finger touches them, are dragged
+  along by a slow one and swing on for seconds, the wave running down to
+  their ends; a plant not ready to be gathered bends and rings (the trees
+  and bushes of the background move with the wind alone). A ripe
   plant shaken hard enough lets go of its ingredient as a ragdoll cut from
   its own sprite (one to three jointed pieces, drawn with its own pixels,
   never resampled): it is thrown the way the finger went, tumbles,
-  bounces, tips over and comes to rest on the ground, a ledge or the water,
+  bounces, tips over and comes to rest on the ground, a ledge or the water
+  — the terrain is impenetrable: no part of it ever goes into the ground,
   and can be flicked along again before a tap gathers it (a fingertip may
   roll a little and still tap). In the Free Experiment the stores are
   bottomless, but a harvest still takes the plant: its stand sprouts again
