@@ -137,7 +137,7 @@ export class WildsView {
       tabs.appendChild(btn(r.name, () => {
         if (!ok) { toast(r.name, `The guild grants passage at the rank of ${RANKS[r.rank].name}.`, 'lock'); return; }
         this.region = r.id; this.bgKey = ''; audio.play('page'); this.refresh();
-      }, { cls: (this.region === r.id ? 'active ' : '') + (ok ? '' : 'locked'), icon: ok ? (r.magical ? 'wisp' : r.id === 'quarry' ? 'pick' : r.id === 'river' ? 'drop' : r.id === 'meadow' ? 'rose' : 'tree') : 'lock', act: 'region-' + r.id }));
+      }, { cls: (this.region === r.id ? 'active ' : '') + (ok ? '' : 'locked'), icon: ok ? (r.magical ? 'wisp' : r.id === 'quarry' ? 'pick' : r.id === 'river' ? 'drop' : r.id === 'meadow' ? 'rose' : r.id === 'netherwood' ? 'shroom' : 'tree') : 'lock', act: 'region-' + r.id }));
     }
     const region = REGIONS.find((r) => r.id === this.region);
     clear(this.info).append(h('b', { text: region.name }), ' — ' + region.desc);
@@ -498,7 +498,7 @@ export class WildsView {
     const x = Math.round(k.x * SCENE_W), y = Math.round(k.y * SCENE_H);
     const w = Math.max(8, Math.round((sil ? sil.w : 16) * 0.6)), hw = Math.floor(w / 2);
     const stone = this.region === 'quarry' || this.region === 'crags';
-    const [soil, dark, clod] = stone ? ['#6e6258', '#3a322c', '#a09280'] : this.region === 'moonfen' ? ['#3a3228', '#16120e', '#5a5040'] : ['#7a5230', '#3a2412', '#a07a4a'];
+    const [soil, dark, clod] = stone ? ['#6e6258', '#3a322c', '#a09280'] : this.region === 'moonfen' || this.region === 'netherwood' ? ['#3a3228', '#16120e', '#5a5040'] : ['#7a5230', '#3a2412', '#a07a4a'];
     ctx.globalAlpha = Math.ceil((1 - k.faded) * 4) / 4;
     // the turned earth: a low mound, darker along its foot
     ctx.fillStyle = soil;

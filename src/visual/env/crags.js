@@ -9,7 +9,7 @@
 
 import { sky } from './paint.js';
 import { palette, vary, streamOf } from './kit.js';
-import { heights, dip, raise, fillSolid, blob, ledges, paintTerrain, pool, markOpen, surfaceAt, glow, drips, silhouette, col, far } from './side.js';
+import { heights, dip, raise, fillSolid, blob, ledges, paintTerrain, pool, markOpen, glow, drips, silhouette, col, far } from './side.js';
 import { caveFrame, farPillars, fog, moss, fall, ledgeTops, veins, LAVA_VEINS } from './cave.js';
 import { basalt, spire, cloud } from './objects.js';
 import { terrainTrees } from './trees.js';
@@ -97,25 +97,29 @@ export function compose(cv, seed) {
   // basalt columns, fire-glass, charred brush
   const br = s('basalt');
   for (let g = 0; g < 2; g++) {
-    const gx = br.int(20, W - 40);
-    if (Math.abs(gx - px) < hw + 20) continue;
-    for (let i = 0; i < br.int(3, 5); i++) { const x = gx + i * 6; cv.stamp(basalt(br, 6, br.int(10, 24)), pal, x, surfaceAt(cv, x) + 2, { foot: [3, 2] }); }
+    // a group of columns side by side: each may touch its neighbours, nothing else
+    let x = br.int(20, W - 40);
+    const group = ++cv.nprops;
+    for (let i = 0; i < br.int(3, 5); i++) {
+      const at = cv.place(basalt(br, 6, br.int(10, 24)), pal, x, { sink: 2, foot: [3, 2], range: i ? 2 : 40, step: 1, group });
+      if (!at) break;
+      x = at.fx + 6;
+    }
   }
   const gr = s('glass');
-  for (let i = 0; i < 2; i++) { const x = gr.int(10, W - 10); if (cv.liquid[(surfaceAt(cv, x) - 1) * W + x]) continue; cv.stamp(spire(gr, gr.int(8, 13)), pal, x, surfaceAt(cv, x) + 1, { foot: [4, 2] }); }
+  for (let i = 0; i < 2; i++) cv.place(spire(gr, gr.int(8, 13)), pal, gr.int(10, W - 10), { foot: [4, 2], range: 30 });
   const dr = s('brush');
   terrainTrees(cv, dr, pal, { n: 3, kinds: ['dead'], h: [18, 34], gap: 30, ledges: true });
   // the vents: rock mounds with glowing throats (their steam is animated)
   const vr = s('vents'), vents = [];
   for (let i = 0; i < 2; i++) {
-    const x = vr.int(30, W - 30);
-    if (Math.abs(x - px) < hw + 12) continue;
-    const y = surfaceAt(cv, x) + 1, m = new Model();
+    const m = new Model();
     m.poly(lumpy(0, -4, 9, 5, () => vr.next(), 0.2, 6), 'rock', { shade: 'round' });
     m.ellipse(0, -9, 2.5, 1, 'lava', { shade: 'flat', tone: 0.3 });
-    cv.stamp(m, pal, x, y, { foot: [9, 2] });
-    glow(cv, x, y - 9, 16, [1, 0.5, 0.2], 0.4);
-    vents.push({ x, y: y - 10, r: 4 });
+    const at = cv.place(m, pal, vr.int(30, W - 30), { foot: [9, 2], range: 40 });
+    if (!at) continue;
+    glow(cv, at.fx, at.fy - 9, 16, [1, 0.5, 0.2], 0.4);
+    vents.push({ x: at.fx, y: at.fy - 10, r: 4 });
   }
   cv.meta.vents = vents;
   cv.meta.trickles = drips(cv, ss, 4);

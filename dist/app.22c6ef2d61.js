@@ -88,6 +88,7 @@ seedling: ['............', '...kk..kk...', '..kgGkkgGk..', '..kggGkggk..', '...k
 stone: ['............', '............', '....kkkkk...', '..kkWWWsskk.', '.kWWsssssSk.', '.kWssssssSSk', 'kWsssssssSSk', 'kssssssssSSk', 'kSssssssSSSk', '.kSSSSSSSSk.', '..kkkkkkkk..', '............'],
 wisp: ['.....k......', '....kck.....', '....kcck....', '...kcwck....', '..kcwwwck...', '..kcwlwck...', '.kcwwlwwck..', '.kcwlllwck..', '.kcwwlwwck..', '..kcwwwck...', '...kccck....', '....kkk.....'],
 satchel: ['...kkkkkk...', '..kN....Nk..', '.kN......Nk.', 'kkkkkkkkkkkk', 'knnnnnnnnnnk', 'knnnkyykknnk', 'knnnkyykknnk', 'knnnnkknnnNk', 'knnnnnnnnnNk', 'knnnnnnnnNNk', '.kNNNNNNNNk.', '..kkkkkkkk..'],
+shroom: ['............', '...kkkkkk...', '..kpPpppPk..', '.kppwpppwppk', 'kpPppppppPpk', 'kkkkkkkkkkkk', '....kwwk....', '....kwWk....', '....kwWk....', '...kwwwWk...', '..kkkkkkkk..', '............'],
 tree: ['....kkkk....', '..kkgggGkk..', '.kgggggggGk.', 'kgggGgggggGk', 'kggggggGgggk', 'kgGgggggggGk', '.kgggggGgGk.', '..kkkNnkkk..', '.....kNk....', '.....kNk....', '....kNnNk...', '..kkkkkkkk..'],
 stall: ['kkkkkkkkkkkk', 'krrwwrrwwrrk', 'krrwwrrwwrrk', '.kkkkkkkkkk.', '.kn......nk.', '.kn.kmk..nk.', '.kn.kmk..nk.', 'kkkkkkkkkkkk', 'knnnnnnnnnnk', 'knNnnnnnNnnk', 'knnnnnnnnnnk', 'kkkkkkkkkkkk'],
 dropper: ['..........kk', '.........kmk', '........kmmk', '.......kmmk.', '......kwWk..', '.....kwWk...', '....kwWk....', '...kwWk.....', '..kwWk......', '.kcWk.......', '.kck........', '..k.........'],
@@ -1220,11 +1221,11 @@ lore: 'Resinous red bark that smoulders in the mouth. It warms, but its sap is a
 fx: { love: 20, toxicity: 6, fire: 5 }, arc: [380, 3], price: 9, gather: 'pick',
 steep: { name: 'Owlberry Cordial', into: 'water', lo: [30, 35], hi: [65, 70] },
 lore: 'Dark berries the owls guard jealously. Sweet with affection, warm on the tongue and faintly poisonous.' },
-{ key: 'witchear', noun: 'Witch’s Ear', shape: 'bracket', region: 'forest', rank: 1, buy: 2, hue: [32, 0.35, 0.3], form: 'solid', density: 0.8, hardness: 0.3, sol: 0.15, solT: 0.0012,
+{ key: 'witchear', noun: 'Witch’s Ear', shape: 'bracket', region: 'netherwood', rank: 1, buy: 2, hue: [32, 0.35, 0.3], form: 'solid', density: 0.8, hardness: 0.3, sol: 0.15, solT: 0.0012,
 fx: { arcana: 20, death: 7 }, arc: [420, 3], price: 14, gather: 'scrape',
 steep: { name: 'Witch’s Ear Broth', into: 'water', lo: [25, 30], hi: [60, 65] },
 lore: 'A leathery shelf fungus that grows on dead oaks. It sharpens the mind but carries the dead tree’s chill of decay; life cancels it.' },
-{ key: 'mandrake', noun: 'Mandrake', shape: 'root', region: 'forest', rank: 2, buy: null, hue: [38, 0.5, 0.6], form: 'solid', density: 1.15, hardness: 0.45, sol: 0.12, solT: 0.0015, rare: true,
+{ key: 'mandrake', noun: 'Mandrake', shape: 'root', region: 'netherwood', rank: 2, buy: null, hue: [38, 0.5, 0.6], form: 'solid', density: 1.15, hardness: 0.45, sol: 0.12, solT: 0.0015, rare: true,
 fx: { transformation: 34, strength: 12, toxicity: 7 }, arc: [420, 3], price: 30, gather: 'dig', lore: 'A rare screaming root of transformation, with strength in it and a poisonous skin. Old grimoires say it wakes fully only in warm spirits.' },
 { key: 'heartpetal', noun: 'Heartpetal', shape: 'petal', region: 'meadow', rank: 0, buy: 1, hue: [335, 0.6, 0.72], form: 'solid', density: 0.6, hardness: 0.15, sol: 0.2, solT: 0.001,
 fx: { love: 26, fire: 6 }, arc: null, price: 10, gather: 'pick',
@@ -1593,7 +1594,7 @@ const { hslToRgb } = __m9;
 const { completeMaterial } = __m10;
 const { makeName, makeProductName } = __m11;
 const { applyProfile } = __m12;
-const { generateWild, generateLaws, WILD_FX_VERSION } = __m13;
+const { generateWild, generateLaws, WILD_FX_VERSION, WILD_BY_KEY } = __m13;
 const { withAwakened } = __m16;
 const r2 = (v) => Math.round(v * 100) / 100;
 function generateWorld(seed) {
@@ -1924,6 +1925,10 @@ for (const id of world.wild) if (!world.ingredients.includes(id)) world.ingredie
 if (!world.laws) world.laws = w.laws;
 }
 if (!world.laws) world.laws = generateLaws(world.seed);
+for (const m of world.materials) {
+const w = /** @type {any} */ (m).wild, spec = w && WILD_BY_KEY[w.key];
+if (spec && w.region !== spec.region) /** @type {any} */ (m).wild = { ...w, region: spec.region };
+}
 attachVisuals(world);
 const keep = new Set([...SOLVENT_ROLES.map((r) => world.roles[r]), ...world.wild]);
 world.ingredients = world.ingredients.filter((id) => keep.has(id) || world.materials.some((m) => m.id === id && m.remains));
@@ -1974,6 +1979,7 @@ const familyOf = (shape) => FAMILY_OF[shape] || 'mineral';
 const isBotanical = (shape) => BOTANICAL.has(familyOf(shape));
 const HABITATS = {
 forest: { wet: 0.5, retain: 3, light: [1, 0.93, 0.7], lightK: 0.1, sat: 0.95, dark: -0.03, wear: 0.5, crystal: 0.1, lush: 0.8, leaf: [0.2, 0.42, 0.16], rock: [0.42, 0.44, 0.44], soil: [0.32, 0.22, 0.13] },
+netherwood: { wet: 0.62, retain: 5, light: [0.75, 0.6, 1], lightK: 0.16, sat: 0.85, dark: -0.07, wear: 0.6, crystal: 0.2, lush: 0.6, leaf: [0.12, 0.3, 0.28], rock: [0.3, 0.29, 0.34], soil: [0.2, 0.15, 0.16] },
 meadow: { wet: 0.38, retain: 2, light: [1, 0.95, 0.72], lightK: 0.12, sat: 1.1, dark: 0.03, wear: 0.3, crystal: 0.05, lush: 0.7, leaf: [0.3, 0.55, 0.18], rock: [0.55, 0.54, 0.5], soil: [0.4, 0.28, 0.16] },
 river: { wet: 0.78, retain: 6, light: [0.85, 0.95, 1], lightK: 0.08, sat: 0.9, dark: 0, wear: 0.7, crystal: 0.15, lush: 0.6, leaf: [0.28, 0.45, 0.2], rock: [0.62, 0.64, 0.64], soil: [0.36, 0.3, 0.2] },
 quarry: { wet: 0.25, retain: 1.5, light: [1, 0.92, 0.8], lightK: 0.08, sat: 0.85, dark: 0, wear: 0.6, crystal: 0.6, lush: 0.3, leaf: [0.36, 0.45, 0.22], rock: [0.55, 0.5, 0.45], soil: [0.5, 0.4, 0.28] },
@@ -6573,6 +6579,7 @@ const { Rng, hashString } = __m6;
 const { isBotanical, familyOf, habitatOf } = __m23;
 const REGIONS = [
 { id: 'forest', name: 'Whisperwood', rank: 0, magical: false, desc: 'Old oaks and ferns. Roots and leaves grow in the shade.', sky: [0.36, 0.52, 0.42] },
+{ id: 'netherwood', name: 'Netherwood', rank: 1, magical: false, desc: 'A forest grown in a cavern under the Whisperwood, lit by glowing fungi. Shelf fungi and screaming roots thrive in the dark.', sky: [0.1, 0.12, 0.18] },
 { id: 'meadow', name: 'Sunlit Meadow', rank: 0, magical: false, desc: 'Flowers and clover under an open sky.', sky: [0.55, 0.72, 0.9] },
 { id: 'river', name: 'Willow Bank', rank: 0, magical: false, desc: 'Chalky banks, mushrooms and bog plants along the slow river.', sky: [0.5, 0.66, 0.78] },
 { id: 'quarry', name: 'Ironstone Quarry', rank: 0, magical: false, desc: 'Cut rock faces, mineral crusts and glittering dust.', sky: [0.62, 0.6, 0.58] },
@@ -6582,6 +6589,7 @@ const REGIONS = [
 const REGION_BY_ID = Object.fromEntries(REGIONS.map((r) => [r.id, r]));
 const PLACES = {
 forest: ['by the old oak', 'in the fern hollow', 'under the beeches', 'at the mossy stump', 'by the woodcutter’s path', 'in the deep shade', 'along the brook'],
+netherwood: ['under the hanging roots', 'by the giant toadstool', 'in the glowing hollow', 'at the black pool', 'on the root stair'],
 meadow: ['by the stile', 'on the sunny slope', 'near the beehives', 'along the hedgerow', 'in the long grass', 'by the well'],
 river: ['under the willow', 'on the chalk bank', 'by the ford', 'in the reeds', 'at the mill race', 'on the gravel bar'],
 quarry: ['on the east face', 'in the spoil heap', 'by the cart track', 'in the old cutting', 'under the crane', 'at the seam', 'by the powder store'],
@@ -6598,7 +6606,7 @@ for (const region of REGIONS) {
 const mats = (world.wild || []).map(lookup).filter((m) => m && m.wild && m.wild.region === region.id);
 mats.forEach((m, k) => {
 const rare = !!m.wild.rare;
-const slots = rare ? 1 + (mats.length <= 5 ? 1 : 0) : mats.length > 5 ? 2 : 3;
+const slots = rare ? 1 + (mats.length < 5 ? 1 : 0) : mats.length >= 5 ? 2 : 3;
 const take = rare ? rng.int(3, 4) * 10 : rng.int(5, 8) * 10;
 const growMs = Math.round((rare ? rng.range(18, 30) : rng.range(4, 8)) * 60000);
 const spawnMs = Math.round((rare ? rng.range(15, 25) : rng.range(3, 5)) * 60000);
@@ -6627,7 +6635,7 @@ return out;
 function thirstOf(shape, region) {
 const f = familyOf(shape);
 const base = f === 'moss' || f === 'reed' || f === 'fungus' ? 0.62 : f === 'bark' ? 0.36 : f === 'root' ? 0.42 : 0.48;
-return Math.round(Math.max(0.15, Math.min(0.8, base + (region === 'crags' ? -0.25 : region === 'river' || region === 'moonfen' ? 0.08 : 0))) * 100) / 100;
+return Math.round(Math.max(0.15, Math.min(0.8, base + (region === 'crags' ? -0.25 : region === 'river' || region === 'moonfen' || region === 'netherwood' ? 0.08 : 0))) * 100) / 100;
 }
 function createGathering(now = Date.now()) {
 return { v: GATHER_VERSION, nodes: /** @type {Record<string, Stand>} */ ({}), marks: /** @type {Mark[]} */ ([]), total: 0, trips: 0, created: now, sky: 'clear', watered: 0 };
@@ -15546,7 +15554,7 @@ const show = () => {
 const ref = com.reference;
 const main = ref.ingredients.slice().sort((a, b) => b.n - a.n).map((i) => st.lookup(i.id)).find((x) => x && x.effects && Object.values(x.effects).some((v) => Math.abs(v) >= 12));
 const tips = [];
-if (main) tips.push(`A guild alchemist would start from ${main.name}${main.wild ? ` (it grows in the ${main.wild.region === 'forest' ? 'Whisperwood' : main.wild.region === 'meadow' ? 'Sunlit Meadow' : main.wild.region === 'river' ? 'Willow Bank' : main.wild.region === 'quarry' ? 'Ironstone Quarry' : main.wild.region === 'moonfen' ? 'Moonfen' : 'Ember Crags'})` : ''}.`);
+if (main) tips.push(`A guild alchemist would start from ${main.name}${main.wild ? ` (it grows in the ${main.wild.region === 'forest' ? 'Whisperwood' : main.wild.region === 'netherwood' ? 'Netherwood' : main.wild.region === 'meadow' ? 'Sunlit Meadow' : main.wild.region === 'river' ? 'Willow Bank' : main.wild.region === 'quarry' ? 'Ironstone Quarry' : main.wild.region === 'moonfen' ? 'Moonfen' : 'Ember Crags'})` : ''}.`);
 if (ref.ingredients.some((i) => i.ground)) tips.push('Crush what is whole with the pestle — only what dissolves takes effect.');
 if (ref.steep && ref.steep.T < 15) tips.push('Part of this wants ice-cold water, not heat — cold, but not frozen.');
 else if ((ref.heatTo ?? 20) > 40 && !com.activation) tips.push('Patience and gentle heat draw out more than stirring alone.');
@@ -16490,6 +16498,8 @@ this.liquid = new Uint8Array(SCENE_W * SCENE_H);
 this.cave = new Uint8Array(SCENE_W * SCENE_H);
 this.rock = new Uint8Array(SCENE_W * SCENE_H);
 this.trees = new Uint8Array(SCENE_W * SCENE_H);
+this.props = new Uint16Array(SCENE_W * SCENE_H);
+this.nprops = 0;
 this.ground = null;
 this.seed = seed >>> 0;
 this.meta = /** @type {Record<string, any>} */ ({});
@@ -16506,9 +16516,16 @@ if (((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1) this.open[y * this.W + x] 
 }
 }
 stamp(model, pal, x, y, o = {}) {
+const r = this.raster(model, pal, o);
+if (!r) return null;
+const X = Math.round(x) + r.left, Y = Math.round(y) + r.top;
+if (o.test && !o.test(r.raster.pix, X, Y)) return null;
+return this.put(r, x, y, o);
+}
+raster(model, pal, o = {}) {
 const b = model.bounds(), cell = o.cell ?? CELL, mod = (v) => ((v % cell) + cell) % cell;
 let left = Math.floor(b.x0) - 1, top = Math.floor(b.y0) - 1;
-left -= mod(Math.round(x) + left); top -= mod(Math.round(y) + top);
+left -= mod(left); top -= mod(top);
 let w = Math.ceil(b.x1) + 2 - left, h = Math.ceil(b.y1) + 2 - top;
 w += mod(-w); h += mod(-h);
 if (w <= 0 || h <= 0 || w > 2000 || h > 2000) return null;
@@ -16523,23 +16540,91 @@ if (o.haze) q = mixPacked(q, o.haze[0], o.haze[1]);
 if (o.dark) q = mixPacked(q, 0xff000000, o.dark);
 p.px[k] = q;
 }
-const X = Math.round(x) + left, Y = Math.round(y) + top;
-if (o.test && !o.test(p, X, Y)) return null;
+return { raster: r, left, top, w, h };
+}
+put(r, x, y, o = {}) {
+const p = r.raster.pix, w = r.w, h = r.h, X = Math.round(x) + r.left, Y = Math.round(y) + r.top;
 this.pix.draw(p, X, Y);
 if (o.roots) this.blockEllipse(Math.round(x), Math.round(y) - 1, o.roots[0], o.roots[1]);
-if (o.foot) {
-this.blockEllipse(Math.round(x), Math.round(y), o.foot[0], o.foot[1]);
-const fy = Math.round(y);
+if (o.foot) this.blockEllipse(Math.round(x), Math.round(y), o.foot[0], o.foot[1]);
+const fy = Math.round(y), id = o.claim ?? 0;
 for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
 if (!(p.px[j * w + i] >>> 24)) continue;
 const xx = X + i, yy = Y + j;
 if (xx < 0 || yy < 0 || xx >= this.W || yy >= this.H) continue;
 const k = yy * this.W + xx;
+if (id) this.props[k] = id;
+if (!o.foot) continue;
 if (fy > this.depth[k]) this.depth[k] = fy;
 this.open[k] = 0;
 }
+return { x: X, y: Y, w, h, raster: r.raster };
 }
-return { x: X, y: Y, w, h, raster: r };
+place(model, pal, x, o = {}) {
+const r = this.raster(model, pal, o);
+if (!r) return null;
+const W = this.W, H = this.H, p = r.raster.pix, sink = o.sink ?? 1, range = o.range ?? 40, step = o.step ?? 3;
+const [xa, xb] = o.x || [2, W - 3], id = o.group ?? ++this.nprops;
+const base = [];
+for (let i = 0; i < r.w; i++) for (let j = r.h - 1; j >= 0; j--) if (p.px[j * r.w + i] >>> 24) { base.push([i, j]); break; }
+const bottom = Math.max(...base.map(([, j]) => j)), low = base.filter(([, j]) => j >= bottom - 3);
+const surfaceAt = (/** @type {number} */ cx) => {
+if (cx < 0 || cx >= W) return -1;
+if (o.y === undefined) return this.ground ? Math.round(this.ground[cx]) : -1;
+for (let d = 0; d <= 6; d++) for (const yy of [o.y + d, o.y - d]) {
+const k = yy * W + cx;
+if (yy > 0 && yy < H && this.solid[k] && !this.solid[k - W]) return yy;
+}
+return -1;
+};
+const surface = (/** @type {number} */ cx) => {
+let top = H;
+for (const [i] of low) { const y = surfaceAt(cx + r.left + i); if (y >= 0) top = Math.min(top, y); }
+return top < H ? top : -1;
+};
+const fits = (/** @type {number} */ cx, /** @type {number} */ fy) => {
+const X = cx + r.left, Y = fy + r.top;
+for (let j = 0; j < r.h; j++) for (let i = 0; i < r.w; i++) {
+if (!(p.px[j * r.w + i] >>> 24)) continue;
+const xx = X + i, yy = Y + j;
+if (xx < 0 || xx >= W || yy < 1) return false;
+if (yy >= H) continue;
+const k = yy * W + xx;
+if (this.rock[k] || this.liquid[k] || this.trees[k] || (this.props[k] && this.props[k] !== id)) return false;
+if (this.solid[k] && yy < fy - sink) return false;
+}
+for (const [i, j] of low) {
+const xx = X + i, yy = Math.max(Y + j, fy - sink);
+let under = false;
+for (let d = 0; d <= 4 && !under; d++) { const k = (yy + d) * W + xx; under = yy + d < H && !!this.solid[k] && !this.liquid[k]; }
+if (!under) return false;
+}
+return true;
+};
+for (let d = 0; d <= range; d += step) for (const s of d ? [1, -1] : [1]) {
+const cx = Math.round(x) + s * d;
+if (cx < xa || cx > xb) continue;
+const fy0 = surface(cx);
+if (fy0 < 0) continue;
+const fy = fy0 + sink;
+if (!o.free && !fits(cx, fy)) continue;
+return { ...this.put(r, cx, fy, { ...o, claim: id }), fx: cx, fy };
+}
+return null;
+}
+clear(x0, y0, x1, y1) {
+for (let y = Math.max(0, y0); y <= Math.min(this.H - 1, y1); y++) for (let x = Math.max(0, x0); x <= Math.min(this.W - 1, x1); x++) {
+const k = y * this.W + x;
+if (this.solid[k] || this.rock[k] || this.liquid[k] || this.trees[k] || this.props[k]) return false;
+}
+return x0 >= 0 && y0 >= 0 && x1 < this.W && y1 < this.H;
+}
+claim(x0, y0, x1, y1) {
+const id = ++this.nprops;
+for (let y = Math.max(0, y0); y <= Math.min(this.H - 1, y1); y++) for (let x = Math.max(0, x0); x <= Math.min(this.W - 1, x1); x++) {
+const k = y * this.W + x;
+if (!this.solid[k]) this.props[k] = id;
+}
 }
 glow(x, y, r, rgb, k) {
 this.pending.push([x, y, r, rgb, k]);
@@ -16789,15 +16874,32 @@ cv.open[k] = 1; cv.open[k - W] = 1;
 function ledges(cv, top, rng, n, o = {}) {
 const keep = o.keep || [], r0 = o.rise || [32, 46];
 const shapes = [];
-for (const [tier, count, rise] of /** @type {[number, number, number[]][]} */ ([[0, n, r0], [1, n - 2, [r0[0] + 42, r0[1] + 42]]])) {
+const boxes = [];
+const n0 = Math.max(3, Math.round(n * 0.75)), n1 = Math.max(1, Math.round(n0 / 2));
+const dry = [];
+let a = 0;
+for (const [k0, k1] of [...keep].sort((p, q) => p[0] - q[0])) { if (k0 > a) dry.push([a, k0]); a = Math.max(a, k1); }
+if (a < cv.W) dry.push([a, cv.W]);
+const span = dry.reduce((t, [p, q]) => t + q - p, 0);
+const along = (/** @type {number} */ u, /** @type {number} */ dx, /** @type {number} */ r) => {
+let d = u * span;
+for (const [p, q] of dry) {
+if (d <= q - p) return Math.round(q - p > 2 * r ? Math.max(p + r, Math.min(q - r, p + d + dx)) : (p + q) / 2);
+d -= q - p;
+}
+return cv.W / 2;
+};
+for (const [tier, count, rise] of /** @type {[number, number, number[]][]} */ ([[0, n0, r0], [1, n1, [r0[0] + 42, r0[1] + 42]]])) {
 let x0 = cv.W, x1 = 0, y0 = cv.H;
 for (let i = 0; i < count; i++) {
-const x = Math.round((tier ? i + 1.5 : i + 0.5) * cv.W / n + rng.int(-14, 14)), rx = rng.int(18, 26);
+const rx = rng.int(22, 30), x = along(tier ? (i + 1) / (count + 1) : (i + 0.5) / count, rng.int(-14, 14), rx + (keep.length ? 4 : -rx));
 if (!tier && keep.some(([a, b]) => x + rx > a && x - rx < b)) continue;
 const ground = Math.min(top[Math.max(0, x - rx)], top[Math.min(cv.W - 1, x)], top[Math.min(cv.W - 1, x + rx)]);
 const y = snap(Math.max(60, Math.round(ground) - rng.int(rise[0], rise[1])));
 if (ground - y < 24) continue;
 const ry = rng.int(7, 10), seed = rng.int(0, 1e9);
+const box = /** @type {[number, number, number, number]} */ ([x - rx, y - ry * 0.55, x + rx, y + ry]);
+if (boxes.some((b) => box[0] < b[2] + 12 && box[2] > b[0] - 12 && box[1] < b[3] + 26 && box[3] + 26 > b[1])) continue;
 shapes.push(slab(x, y, rx, ry, seed));
 const side = rng.next() < 0.5 ? -1 : 1, bx = x + side * Math.round(rx * rng.next() * 0.25);
 const lean = side * rng.int(0, 4), fx = Math.max(2, Math.min(cv.W - 3, bx + lean));
@@ -16806,6 +16908,7 @@ let land = Math.round(y + ry);
 while (land < cv.H - 1 && !cv.solid[land * cv.W + fx]) land++;
 const w0 = Math.round(rx * (tier ? 0.42 : 0.4)) + rng.int(0, 3), w1 = w0 + rng.int(4, 10);
 shapes.push(buttress(bx, y + ry * 0.6, fx, land + 3, w0, w1, seed));
+boxes.push(box);
 x0 = Math.min(x0, x - rx - 12, fx - w1 - 12); x1 = Math.max(x1, x + rx + 12, fx + w1 + 12); y0 = Math.min(y0, y - ry * 2);
 }
 const ground = (/** @type {number} */ x, /** @type {number} */ y) => top[Math.max(0, Math.min(cv.W - 1, Math.round(x)))] - y;
@@ -17034,9 +17137,10 @@ function glowShrooms(cv, o) {
 const W = cv.W, cap = col(o.cap), lit = col(o.lit), stem = col(o.stem), spots = [];
 for (let k = 0; k < cv.open.length; k++) if (cv.open[k] && cv.solid[k] && Math.floor(k / W) >= (o.minY ?? 0)) spots.push(k);
 const out = [];
-for (let i = 0; i < o.n && spots.length; i++) {
+for (let i = 0; i < o.n * 4 && out.length < o.n && spots.length; i++) {
 const k = spots[Math.floor(hash2(i, 1, o.seed) * spots.length)], x = k % W, y = Math.floor(k / W);
 if (out.some(([a, b]) => Math.abs(a - x) < 10 && Math.abs(b - y) < 6)) continue;
+if (!cv.clear(x - 4, y - 8, x + 4, y - 1) || !cv.solid[k - 4] || !cv.solid[k + 4]) continue;
 const n = 1 + Math.floor(hash2(i, 2, o.seed) * 3);
 for (let m = 0; m < n; m++) {
 const mx = x + (m - (n - 1) / 2) * 3, h = 2 + Math.floor(hash2(i, m + 3, o.seed) * 4), r = 1 + (m === 0 ? 1 : 0);
@@ -17046,6 +17150,7 @@ for (let dx = -r + 1; dx <= r - 1; dx++) cv.set(mx + dx, y - h - 2, lit);
 cv.set(mx - r, y - h - 2, cap);
 }
 cv.block(x - 4, y - 8, x + 5, y + 1);
+cv.claim(x - 4, y - 8, x + 4, y - 1);
 cv.glow(x, y - 4, 16, o.rgb, 0.5);
 out.push([x, y - 4]);
 }
@@ -17057,6 +17162,7 @@ for (let j = 0; j < h; j++) { cv.set(x, y - j, wood); cv.set(x + 1, y - j, j % 3
 for (let dx = -1; dx <= 2; dx++) cv.set(x + dx, y - h, iron);
 const flame = [[0, 1, 0], [-1, 1, 1], [0, 0, 0], [1, 0, 1], [0, 2, 1], [1, 1, 0], [-1, 2, 2], [2, 1, 2], [0, 3, 2], [1, 2, 1], [1, 3, 3], [0, 4, 3]];
 for (const [dx, dy, t] of flame) cv.set(x + dx, y - h - dy, fl[t]);
+cv.claim(x - 1, y - h - 4, x + 2, y);
 cv.glow(x + 0.5, y - h - 2, 34, [1, 0.6, 0.25], 0.6);
 (cv.meta.torches ||= []).push([x, y - h - 2]);
 }
@@ -17466,6 +17572,21 @@ m.ellipse(0, -h, w / 2, Math.max(1.5, w * 0.18), o.wood || 'wood', { shade: 'fla
 m.ellipse(0, -h, w / 4, Math.max(0.8, w * 0.09), o.wood || 'wood', { shade: 'flat', tone: -0.2 });
 return m;
 }
+function mushroom(rng, h, r, o = {}) {
+const m = new Model(), stem = o.stem || 'stem', cap = o.cap || 'cap', lean = (rng.next() - 0.5) * h * 0.3;
+const spine = bezier([0, 0], [0, -h * 0.4], [lean * 0.5, -h * 0.8], [lean, -h], 10);
+for (const s of [-1, 1]) m.stroke([[s * r * 0.08, -3], [s * r * 0.3, 0]], [r * 0.2, 1.2], stem, { tone: s > 0 ? -0.1 : 0 });
+m.stroke(spine, spine.map((_, i) => Math.max(1.5, r * 0.3 * (1 - (i / spine.length) * 0.3))), stem, { tex: 0.6 });
+m.poly(lumpy(lean, -h + r * 0.1, r * 0.92, r * 0.16, R(rng), 0.05, 6), cap, { shade: 'flat', tone: -0.35 });
+const dome = [];
+for (let i = 0; i <= 14; i++) { const a = Math.PI + (i / 14) * Math.PI; dome.push([lean + Math.cos(a) * r, -h + Math.sin(a) * r * 0.6 * (1 + (rng.next() - 0.5) * 0.06)]); }
+m.poly(dome, cap, { shade: 'round', tex: 0.5 });
+for (let i = 0; i < Math.round(r / 3); i++) {
+const u = (rng.next() - 0.5) * 1.4, v = 0.25 + rng.next() * 0.5;
+m.ellipse(lean + u * r * 0.7, -h - v * r * 0.5, 1.3, 1, o.spot || stem, { shade: 'flat', tone: 0.2, noOutline: true });
+}
+return m;
+}
 function cloud(rng, w, h, mat = 'cloud') {
 const m = new Model(), n = Math.max(3, Math.round(w / 9));
 for (let i = 0; i < n; i++) {
@@ -17570,7 +17691,7 @@ for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI + rng.next() * 0.1; be
 m.ellipse(0, -h, 1.8, 1.8, 'metal', {});
 return m;
 }
-return { leafBlock, crown, pad, branchTree, tree, branch, bush, boulder, reeds, fern, tuft, log, stump, cloud, beam, crane, ladder, cart, crate, fence, skep, basalt, spire, cairn, scaffold, wheel };
+return { leafBlock, crown, pad, branchTree, tree, branch, bush, boulder, reeds, fern, tuft, log, stump, mushroom, cloud, beam, crane, ladder, cart, crate, fence, skep, basalt, spire, cairn, scaffold, wheel };
 })();
 // src/visual/env/trees.js
 const __m102 = (() => {
@@ -17614,7 +17735,7 @@ const xx = X + i, yy = Y + j;
 if (yy < 1 || xx < 0 || xx >= W) return false;
 if (yy >= H) continue;
 const k = yy * W + xx;
-if ((S[k] && yy < fy - 3 - tw) || cv.rock[k] || cv.liquid[k] || cv.trees[k]) return false;
+if ((S[k] && yy < fy - 3 - tw) || cv.rock[k] || cv.liquid[k] || cv.trees[k] || cv.props[k]) return false;
 }
 return true;
 },
@@ -17637,7 +17758,7 @@ return { treeRow, terrainTrees };
 const __m99 = (() => {
 const { sky } = __m95;
 const { palette, vary, streamOf } = __m100;
-const { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, surfaceAt, silhouette, treeShape, glow, drips, ledges } = __m97;
+const { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, silhouette, treeShape, glow, drips, ledges } = __m97;
 const { caveFrame, fog, vines, moss, veins, WATER_VEINS } = __m96;
 const { cloud, fence, skep, boulder } = __m101;
 const { terrainTrees } = __m102;
@@ -17696,23 +17817,30 @@ cv.meta.pond = pool(cv, pond.x - pond.hw, pond.x + pond.hw, pond.level, { surfac
 veins(cv, cv.meta.pond, WATER_VEINS(ss + 4, ['#7aa8d8', '#3a6a98', '#2e5a86', '#244a72']));
 }
 markOpen(cv);
-terrainTrees(cv, s('oaks'), pal, { n: 3, kinds: ['oak'], shapes: ['spread', 'lean'], h: [60, 130], gap: 60, ledges: true });
 if (feature === 'hives') {
-const fx = fr.int(70, 300), fy = surfaceAt(cv, fx) + 1;
-cv.stamp(fence(fr.int(50, 80), 14), pal, fx, fy, { foot: [40, 2] });
-const bx = fr.int(20, W - 60);
-for (let i = 0; i < 2 + fr.int(0, 1); i++) cv.stamp(skep(9), pal, bx + i * 13, surfaceAt(cv, bx + i * 13) + 1, { foot: [6, 2] });
-cv.meta.hives = [bx + 6, surfaceAt(cv, bx) - 8];
+const fx = fr.int(70, 300), len = fr.int(36, 60);
+cv.place(fence(len, 14), pal, fx, { foot: [len * 0.6, 2], range: 240, x: [6, W - len - 6] });
+let bx = fr.int(20, W - 60), hives = null;
+for (let i = 0; i < 2 + fr.int(0, 1); i++) {
+const at = cv.place(skep(9), pal, bx, { foot: [6, 2], range: 30, step: 2 });
+if (!at) continue;
+hives ||= [at.fx + 6, at.fy - 9];
+bx = at.fx + 13;
+}
+if (hives) cv.meta.hives = hives;
 } else if (feature === 'stones') {
-const cx = fr.int(80, 300);
+let x = fr.int(80, 300);
+const ring = ++cv.nprops;
 for (let i = 0; i < 4; i++) {
-const x = cx + i * fr.int(12, 18), m = new Model(), hh = fr.int(10, 18);
+const m = new Model(), hh = fr.int(10, 18);
 m.poly(lumpy(0, -hh / 2, 3 + fr.next() * 1.5, hh / 2, () => fr.next(), 0.12, 5), 'rock', { shade: 'round' });
-cv.stamp(m, pal, x, surfaceAt(cv, x) + 2, { foot: [4, 2] });
+const at = cv.place(m, pal, x, { sink: 2, foot: [4, 2], range: 20, step: 2, group: ring });
+x = (at ? at.fx : x) + fr.int(12, 18);
 }
 }
+terrainTrees(cv, s('oaks'), pal, { n: 3, kinds: ['oak'], shapes: ['spread', 'lean'], h: [60, 130], gap: 60, ledges: true });
 const rr = s('rocks');
-for (let i = 0; i < 2; i++) { const x = rr.int(10, W - 10); cv.stamp(boulder(rr, rr.int(5, 9), rr.int(3, 5), { moss: 'moss' }), pal, x, surfaceAt(cv, x) + 2, { foot: [8, 2] }); }
+for (let i = 0; i < 2; i++) cv.place(boulder(rr, rr.int(5, 9), rr.int(3, 5), { moss: 'moss' }), pal, rr.int(10, W - 10), { sink: 2, foot: [8, 2] });
 cv.meta.sun = [sx, sy];
 cv.meta.trickles = drips(cv, ss, 3);
 cv.meta.vignette = cave ? 0.45 : 0.3;
@@ -17725,41 +17853,26 @@ const __m103 = (() => {
 const { sky } = __m95;
 const { palette, vary, streamOf } = __m100;
 const { heights, raise, fillSolid, blob, paintTerrain, markOpen, surfaceAt, col, drips, ledges, hanging } = __m97;
-const { caveFrame, farPillars, fog, vines, moss, glowShrooms } = __m96;
+const { fog, moss, glowShrooms } = __m96;
 const { fern, log, stump } = __m101;
 const { treeRow, terrainTrees } = __m102;
 const { hash2 } = __m42;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'forest', p);
-const autumn = s('season').next() < 0.3, cave = s('kind').next() < 0.35;
+const autumn = s('season').next() < 0.3;
 const pal = vary(palette({
 leaf: [autumn ? '#8a5a20' : '#2e6a2a', { spread: 0.6 }], bark: ['#4a3422', { spread: 0.5 }], wood: '#a87a48', rock: '#5e625c',
 moss: ['#4e7a30', { spread: 0.5 }], fern: [autumn ? '#8a6a26' : '#4e8a34', { spread: 0.55 }],
 }), s('pal'), 1);
-const back = cave ? '#0e1a12' : '#9ab8a0';
-if (cave) {
-sky(cv, 0, H, ['#050806', '#08100a', '#0c160e', '#101c12']);
-farPillars(cv, { n: 8, fill: '#0f1a10', rim: '#152416', seed: s('far1').int(0, 1e9), w: [10, 22], floor: 180, caps: true });
-fog(cv, '#24402a', 80, 200, 0.3, s('fog1').int(0, 1e9));
-} else {
+const back = '#9ab8a0';
 sky(cv, 0, H, ['#c8dcc0', '#b0ccb0', '#90b49c', '#78a088']);
-}
 const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 172, amp: 8, freq: 0.012 });
 const rows = s('rows'), far = top.map((v) => v - 14), mid = top.map((v) => v - 6);
 treeRow(cv, rows, pal, { line: far, gap: [20, 26], h: [50, 58], haze: back, fade: 0.68, shape: 'tall' });
-fog(cv, cave ? '#24402a' : '#b8d0b8', 60, 190, cave ? 0.2 : 0.3, rows.int(0, 1e9));
+fog(cv, '#b8d0b8', 60, 190, 0.3, rows.int(0, 1e9));
 treeRow(cv, rows, pal, { line: mid, gap: [26, 34], h: [64, 74], haze: back, fade: 0.45, shape: 'tall' });
-fog(cv, cave ? '#24402a' : '#b8d0b8', 80, 200, cave ? 0.15 : 0.2, rows.int(0, 1e9));
-if (cave) {
-const fs = s('frame');
-const frame = caveFrame(cv, {
-seed: fs.int(0, 1e9), stones: ['#3a3428', '#2e2a22', '#3e4430'], mortar: '#0c0a08', dark: 0.4, roof: [12, 36], walls: [10, 12],
-stal: { n: 14, len: [8, 30], w: [3, 7] }, lip: [autumn ? '#9a6a22' : '#4e8a2e', '#2e5a22'],
-});
-vines(cv, frame.roof, { cols: autumn ? ['#9a6a22', '#6a4a1a', '#3e2e14'] : ['#4a8a2a', '#30601e', '#1e3e16'], leaf: autumn ? '#c88a2a' : '#5e9a32', flower: '#e86a9a', seed: fs.int(0, 1e9), rate: 0.25, len: [4, 44] });
-} else {
+fog(cv, '#b8d0b8', 80, 200, 0.2, rows.int(0, 1e9));
 hanging(cv, { base: 14, amp: 10, freq: 0.03, seed: s('canopy').int(0, 1e9), fill: autumn ? '#5a3e1a' : '#1e3e22', rim: autumn ? '#7a5422' : '#2a5230', rough: 4 });
-}
 const kx = ts.int(60, W - 140);
 raise(top, kx, kx + ts.int(30, 60), Math.min(...top) - ts.int(8, 14), 3);
 fillSolid(cv, top);
@@ -17774,7 +17887,26 @@ cobble: { stones: ['#5e584a', '#4e4a3e', '#6a6250', '#44483a', '#56604a', '#3e3a
 grass: { cols: autumn ? ['#b07a24', '#8a5a1e'] : ['#4e9a34', '#6ab83e', '#3a7a2a'], tall: 3, rate: 0.5, flowers: ['#f08ab0', '#e85a8a', '#f0e0a0'] },
 });
 moss(cv, { cols: autumn ? ['#c88a2a', '#9a6a22', '#6a4a1a', '#3e2e14'] : ['#6aa83a', '#4a8a2c', '#30601e', '#1e3e16'], seed: ss + 1, drape: 10, rate: 0.25, len: 14 });
-const rt = s('roots'), root = col('#4a3020'), rootLit = col('#6a4630');
+roots(cv, s('roots'), '#4a3020', '#6a4630');
+markOpen(cv);
+litter(cv, s, pal);
+terrainTrees(cv, s('oaks'), pal, { n: 8, kinds: ['oak'], shapes: ['tall', 'spread', 'lean'], h: [44, 116], gap: 22, ledges: true });
+ferns(cv, s, pal);
+const shafts = s('shafts'), sx0 = shafts.int(110, 230);
+cv.light([1, 0.95, 0.7], (x, y) => {
+const u = x - sx0 - y * 0.35, c = 14 + (y / H) * 10;
+let t = 0;
+for (let k = 0; k < 3; k++) { const d = Math.abs(u - k * 34) / c; if (d < 1) t = Math.max(t, (1 - d * d) * (1 - k * 0.25)); }
+return t * 0.16 * (1 - y / H);
+}, 0, H);
+cv.meta.shaft = sx0;
+cv.meta.glows = glowShrooms(cv, { n: 5, cap: '#e8642a', lit: '#ffc070', stem: '#e0d0b0', rgb: [1, 0.5, 0.18], seed: s('shrooms').int(0, 1e9) });
+cv.meta.trickles = drips(cv, ss, 4);
+cv.meta.vignette = 0.35;
+cv.meta.horizon = 120;
+}
+function roots(cv, rt, dark, lit) {
+const W = cv.W, H = cv.H, root = col(dark), rootLit = col(lit);
 for (let i = 0; i < 14; i++) {
 let x = rt.int(0, W - 1), y = surfaceAt(cv, x) + rt.int(3, 8);
 const dx = rt.next() < 0.5 ? -1 : 1;
@@ -17784,28 +17916,17 @@ if (cv.solid[y * W + x] || cv.cave[y * W + x]) { cv.set(x, y, k % 5 ? root : roo
 x += dx; if (hash2(x, y, i) < 0.45) y++;
 }
 }
-markOpen(cv);
-terrainTrees(cv, s('oaks'), pal, { n: 9, kinds: ['oak'], shapes: ['tall', 'spread', 'lean'], h: [44, 116], gap: 20, ledges: true });
-const lr = s('logs'), gx = lr.int(90, 290);
-cv.stamp(log(lr, lr.int(34, 48), lr.int(4, 6), { moss: 'moss' }), pal, gx, surfaceAt(cv, gx) + 2, { foot: [22, 3] });
-const sx = lr.int(60, 320);
-cv.stamp(stump(lr, lr.int(9, 12), lr.int(6, 9)), pal, sx, surfaceAt(cv, sx) + 1, { foot: [7, 2] });
-const fr = s('ferns');
-for (let i = 0; i < 6; i++) { const x = fr.int(10, W - 10); cv.stamp(fern(fr, fr.int(8, 13), { leaf: 'fern' }), pal, x, surfaceAt(cv, x) + 1); }
-const shafts = s('shafts'), sx0 = shafts.int(110, 230);
-cv.light(cave ? [0.7, 0.9, 0.6] : [1, 0.95, 0.7], (x, y) => {
-const u = x - sx0 - y * 0.35, c = 14 + (y / H) * 10;
-let t = 0;
-for (let k = 0; k < 3; k++) { const d = Math.abs(u - k * 34) / c; if (d < 1) t = Math.max(t, (1 - d * d) * (1 - k * 0.25)); }
-return t * (cave ? 0.09 : 0.16) * (1 - y / H);
-}, 0, H);
-cv.meta.shaft = sx0;
-cv.meta.glows = glowShrooms(cv, { n: cave ? 9 : 5, cap: '#e8642a', lit: '#ffc070', stem: '#e0d0b0', rgb: [1, 0.5, 0.18], seed: s('shrooms').int(0, 1e9) });
-cv.meta.trickles = drips(cv, ss, 4);
-cv.meta.vignette = cave ? 0.6 : 0.35;
-cv.meta.horizon = 120;
 }
-return { compose };
+function litter(cv, s, pal) {
+const lr = s('logs');
+cv.place(log(lr, lr.int(30, 44), lr.int(4, 6), { moss: 'moss' }), pal, lr.int(90, 290), { sink: 2, foot: [20, 3], range: 200 });
+cv.place(stump(lr, lr.int(9, 12), lr.int(6, 9)), pal, lr.int(60, 320), { foot: [7, 2], range: 120 });
+}
+function ferns(cv, s, pal) {
+const W = cv.W, fr = s('ferns');
+for (let i = 0, n = 0; i < 14 && n < 6; i++) if (cv.place(fern(fr, fr.int(8, 13), { leaf: 'fern' }), pal, fr.int(10, W - 10), { roots: [5, 1], range: 24 })) n++;
+}
+return { compose, roots, litter, ferns };
 })();
 // src/visual/env/river.js
 const __m104 = (() => {
@@ -17863,24 +17984,24 @@ const level = Math.round(Math.max(top[rx - hw], top[rx + hw])) + 5;
 cv.meta.river = pool(cv, rx - hw, rx + hw, level, { surface: '#8ae0d8', body: ['#2a6a68', '#1e5654', '#164442', '#0e3232', '#0a2424'], see: 0.3, bed: ['#2a3a2e', '#34463a', '#1e2a22'] });
 veins(cv, cv.meta.river, WATER_VEINS(ss + 4, ['#5a9a98', '#2a6a68', '#1e5654', '#164442']));
 markOpen(cv);
-const rr = s('reeds');
-for (const [x, y] of ledgeTops(cv, 5, rr.int(0, 1e9))) cv.stamp(reeds(rr, rr.int(10, 16), rr.int(3, 5), { heads: 0.7 }), pal, x, y + 1);
-for (const side of [-1, 1]) {
-let x = rx + side * (hw - rr.int(2, 10));
-while (cv.liquid[(surfaceAt(cv, x) - 1) * W + x] && x > 0 && x < W - 1) x += side;
-cv.stamp(reeds(rr, rr.int(12, 20), rr.int(4, 7), { heads: 0.6 }), pal, x, surfaceAt(cv, x) + 1);
-}
-const wr = s('willow');
-terrainTrees(cv, wr, pal, { n: 1, kinds: ['willow'], h: [96, 126], dark: 0.15, x: rx < W / 2 ? [rx + hw + 20, W - 10] : [10, rx - hw - 20] });
-terrainTrees(cv, wr, pal, { n: 3, kinds: ['oak'], shapes: ['spread', 'lean', 'tall'], h: [36, 80], gap: 40, ledges: true });
-if (wr.next() < 0.5) {
+if (s('bridge').next() < 0.5) {
 const y = level - 4, m = new Model(), x0 = rx - hw - 4, x1 = rx + hw + 4;
 beam(m, [x0, y], [x1, y], 3);
 for (let x = x0 + 8; x < x1; x += 16) beam(m, [x, y - 8], [x, y + 1], 1.6);
 beam(m, [x0, y - 8], [x1, y - 8], 1.4);
-cv.stamp(m, pal, 0, 0, { dark: 0.2 });
+cv.stamp(m, pal, 0, 0, { dark: 0.2, claim: ++cv.nprops });
 cv.meta.bridge = [x0, x1, y];
 }
+const rr = s('reeds');
+for (const [x, y] of ledgeTops(cv, 5, rr.int(0, 1e9))) cv.place(reeds(rr, rr.int(10, 16), rr.int(3, 5), { heads: 0.7 }), pal, x, { y, range: 9 });
+for (const side of [-1, 1]) {
+let x = rx + side * (hw - rr.int(2, 10));
+while (cv.liquid[(surfaceAt(cv, x) - 1) * W + x] && x > 0 && x < W - 1) x += side;
+cv.place(reeds(rr, rr.int(12, 20), rr.int(4, 7), { heads: 0.6 }), pal, x + side * 4, { range: 30, step: 2, x: side < 0 ? [2, x + 4] : [x - 4, W - 3] });
+}
+const wr = s('willow');
+terrainTrees(cv, wr, pal, { n: 1, kinds: ['willow'], h: [96, 126], dark: 0.15, x: rx < W / 2 ? [rx + hw + 20, W - 10] : [10, rx - hw - 20] });
+terrainTrees(cv, wr, pal, { n: 3, kinds: ['oak'], shapes: ['spread', 'lean', 'tall'], h: [36, 80], gap: 40, ledges: true });
 cv.meta.glows = glowShrooms(cv, { n: cave ? 9 : 4, cap: '#2ab8d8', lit: '#b0f4ff', stem: '#c8dcd4', rgb: [0.25, 0.75, 0.95], seed: s('shrooms').int(0, 1e9) });
 cv.meta.vignette = cave ? 0.6 : 0.3;
 cv.meta.horizon = 116;
@@ -17891,10 +18012,11 @@ return { compose };
 const __m105 = (() => {
 const { sky } = __m95;
 const { palette, vary, streamOf } = __m100;
-const { fillSolid, blob, ledges, paintTerrain, markOpen, surfaceAt, glow, drips, silhouette } = __m97;
+const { fillSolid, blob, ledges, paintTerrain, markOpen, glow, drips, silhouette } = __m97;
 const { caveFrame, farPillars, fog, moss, torch, ledgeTops } = __m96;
 const { crane, ladder, cart, crate, beam, boulder, scaffold, wheel, cloud } = __m101;
 const { Model } = __m28;
+const { Rng } = __m6;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'quarry', p);
 const pal = vary(palette({
@@ -17958,36 +18080,42 @@ cv.set(xx, yy, fl.next() < 0.6 ? 0xff3ab0e8 : 0xff2a7ad0);
 markOpen(cv);
 const fm = new Model();
 beam(fm, [-9, 0], [-9, -15], 2.4); beam(fm, [9, 0], [9, -15], 2.4); beam(fm, [-11, -15], [11, -15], 2.6);
-cv.stamp(fm, pal, ax, steps[ak + 1], {});
+cv.stamp(fm, pal, ax, steps[ak + 1], { claim: ++cv.nprops });
 cv.meta.adit = [ax, ay];
 const tm = s('timber');
-const cx = right ? tm.int(W - 50, W - 24) : tm.int(24, 50);
-cv.stamp(crane(tm, tm.int(60, 72)), pal, cx, surfaceAt(cv, cx) + 1, { roots: [6, 2] });
-const lk = tm.int(1, 2), lxx = right ? edges[lk] - 6 : edges[lk] + 6;
-cv.stamp(ladder(steps[lk + 1] - steps[lk] + 6, 0.05), pal, lxx, steps[lk + 1] + 1, {});
-const wx = right ? tm.int(40, 120) : tm.int(W - 120, W - 40);
-cv.stamp(wheel(tm, tm.int(10, 14), tm.int(30, 40)), pal, wx, surfaceAt(cv, wx) + 1, { roots: [8, 2] });
-for (let i = 0; i < 2; i++) {
-const xx = tm.int(60, W - 60);
-cv.stamp(scaffold(tm, tm.int(16, 26), tm.int(16, 30)), pal, xx, surfaceAt(cv, xx) + 1, { foot: [12, 2] });
-}
-for (let i = 0; i < 2; i++) { const xx = tm.int(30, W - 30); cv.stamp(crate(tm.int(8, 11)), pal, xx, surfaceAt(cv, xx) + 1, { foot: [6, 2] }); }
+const lk = ak === 1 ? 2 : ak === 2 ? 1 : tm.int(1, 2), lxx = right ? edges[lk] - 6 : edges[lk] + 6;
+cv.stamp(ladder(steps[lk + 1] - steps[lk] + 6, 0.05), pal, lxx, steps[lk + 1] + 1, { claim: ++cv.nprops });
 const r0 = right ? 0 : edges[2], r1 = right ? edges[2] : W, ry = steps[3] - 1;
 for (let i = r0; i < r1; i++) { cv.set(i, ry, pal.metal[4]); if (i % 6 === 0) { cv.set(i, ry, pal.timber[1]); cv.set(i + 1, ry, pal.timber[1]); } }
 const tcx = Math.round((r0 + r1) / 2) + tm.int(-30, 30);
-cv.stamp(cart(tm, 24), pal, tcx, ry, { foot: [13, 2] });
+cv.place(cart(tm, 24), pal, tcx, { y: steps[3], sink: 0, foot: [13, 2], range: 60, x: [r0 + 16, r1 - 16] });
+const cx = right ? tm.int(W - 50, W - 24) : tm.int(24, 50), ch = tm.int(60, 72), cseed = tm.int(0, 1e9);
+for (let h = ch; h >= 36; h -= 8) {
+const cm = crane(new Rng(cseed), h);
+if (right) cm.transform(-1, 0, 0, 1, 0, 0, 1);
+if (cv.place(cm, pal, cx, { roots: [6, 2], range: 50, x: right ? [edges[0] + 4, W - 3] : [2, edges[0] - 4] })) break;
+}
+const wx = right ? tm.int(40, 120) : tm.int(W - 120, W - 40);
+cv.place(wheel(tm, tm.int(10, 14), tm.int(30, 40)), pal, wx, { roots: [8, 2], range: 80 });
+for (let i = 0; i < 2; i++) cv.place(scaffold(tm, tm.int(16, 26), tm.int(16, 30)), pal, tm.int(60, W - 60), { foot: [12, 2], range: 100 });
+for (let i = 0; i < 2; i++) cv.place(crate(tm.int(8, 11)), pal, tm.int(30, W - 30), { foot: [6, 2] });
 const br = s('rubble');
-for (let i = 0; i < 4; i++) { const xx = br.int(10, W - 10); cv.stamp(boulder(br, br.int(3, 6), br.int(2, 4)), pal, xx, surfaceAt(cv, xx) + 1, { foot: [5, 1] }); }
-const lx = tm.int(40, W - 40), ly = surfaceAt(cv, lx) + 1;
+for (let i = 0; i < 4; i++) cv.place(boulder(br, br.int(3, 6), br.int(2, 4)), pal, br.int(10, W - 10), { foot: [5, 1], range: 30 });
 const lp = new Model();
 beam(lp, [0, 0], [0, -26], 2.4); beam(lp, [0, -26], [6, -26], 1.6);
 lp.poly([[4, -24], [8, -24], [8, -18], [4, -18]], 'seamC', { shade: 'flat', tone: 0.3 });
-cv.stamp(lp, pal, lx, ly, { foot: [3, 2] });
-glow(cv, lx + 6, ly - 21, 40, [1, 0.7, 0.3], 0.55);
+const lat = cv.place(lp, pal, tm.int(40, W - 40), { foot: [3, 2], range: 80 });
+if (lat) {
+glow(cv, lat.fx + 6, lat.fy - 22, 40, [1, 0.7, 0.3], 0.55);
+cv.meta.lantern = [lat.fx + 6, lat.fy - 22];
+}
 glow(cv, ax, ay, 20, [1, 0.6, 0.25], 0.35);
 const tr = s('torches');
-for (const [x0, y0] of ledgeTops(cv, 3, tr.int(0, 1e9), 8)) { torch(cv, x0, y0, tr.int(8, 12)); cv.block(x0 - 3, y0 - 14, x0 + 4, y0 + 1); }
-cv.meta.lantern = [lx + 6, ly - 21];
+for (const [x0, y0] of ledgeTops(cv, 3, tr.int(0, 1e9), 8)) {
+const h = tr.int(8, 12);
+if (!cv.clear(x0 - 1, y0 - h - 4, x0 + 2, y0 - 1)) continue;
+torch(cv, x0, y0, h); cv.block(x0 - 3, y0 - 14, x0 + 4, y0 + 1);
+}
 cv.meta.trickles = drips(cv, ss, 5);
 cv.meta.vignette = cave ? 0.6 : 0.3;
 cv.meta.horizon = 100;
@@ -18069,17 +18197,16 @@ const rr = s('reeds');
 for (const p of pools) for (const side of [-1, 1]) {
 let x = p.x + side * p.hw;
 while (x > 0 && x < W - 1 && cv.liquid[(surfaceAt(cv, x) - 1) * W + x]) x += side;
-cv.stamp(reeds(rr, rr.int(10, 18), rr.int(3, 5), { heads: 0.4 }), pal, x + side * 2, surfaceAt(cv, x + side * 2) + 1);
+cv.place(reeds(rr, rr.int(10, 18), rr.int(3, 5), { heads: 0.4 }), pal, x + side * 4, { range: 24, step: 2, x: side < 0 ? [2, x + 4] : [x - 4, W - 3] });
 }
-const sr = s('stones'), cx = bx + sr.int(5, 25);
-cv.stamp(cairn(sr, 6), pal, cx, surfaceAt(cv, cx) + 1, { foot: [6, 2] });
+const sr = s('stones');
+cv.place(cairn(sr, 6), pal, bx + sr.int(5, 25), { foot: [6, 2], range: 30 });
 const glows = [];
 for (let i = 0; i < 3; i++) {
-const x = sr.int(16, W - 16), y = surfaceAt(cv, x);
-if (cv.liquid[(y - 1) * W + x]) continue;
-cv.stamp(spire(sr, sr.int(8, 14)), pal, x, y + 1, { foot: [4, 2] });
-glow(cv, x, y - 6, 30, [0.3, 0.6, 0.95], 0.4);
-glows.push([x, y - 6]);
+const at = cv.place(spire(sr, sr.int(8, 14)), pal, sr.int(16, W - 16), { foot: [4, 2], range: 30 });
+if (!at) continue;
+glow(cv, at.fx, at.fy - 7, 30, [0.3, 0.6, 0.95], 0.4);
+glows.push([at.fx, at.fy - 7]);
 }
 glows.push(...glowShrooms(cv, { n: 7, cap: '#7ae0f0', lit: '#e8ffff', stem: '#5a8a8a', rgb: [0.4, 0.85, 1], seed: s('flowers').int(0, 1e9) }));
 const fm = s('mist').int(0, 1e9), mist = pack([0.4, 0.48, 0.72]);
@@ -18098,7 +18225,7 @@ return { compose };
 const __m107 = (() => {
 const { sky } = __m95;
 const { palette, vary, streamOf } = __m100;
-const { heights, dip, raise, fillSolid, blob, ledges, paintTerrain, pool, markOpen, surfaceAt, glow, drips, silhouette, col, far } = __m97;
+const { heights, dip, raise, fillSolid, blob, ledges, paintTerrain, pool, markOpen, glow, drips, silhouette, col, far } = __m97;
 const { caveFrame, farPillars, fog, moss, fall, ledgeTops, veins, LAVA_VEINS } = __m96;
 const { basalt, spire, cloud } = __m101;
 const { terrainTrees } = __m102;
@@ -18178,28 +18305,108 @@ fall(cv, x + dir * 3, y0 + 2, { w: 1, cols: LAVA, rgb: [1, 0.45, 0.12], seed: lf
 }
 const br = s('basalt');
 for (let g = 0; g < 2; g++) {
-const gx = br.int(20, W - 40);
-if (Math.abs(gx - px) < hw + 20) continue;
-for (let i = 0; i < br.int(3, 5); i++) { const x = gx + i * 6; cv.stamp(basalt(br, 6, br.int(10, 24)), pal, x, surfaceAt(cv, x) + 2, { foot: [3, 2] }); }
+let x = br.int(20, W - 40);
+const group = ++cv.nprops;
+for (let i = 0; i < br.int(3, 5); i++) {
+const at = cv.place(basalt(br, 6, br.int(10, 24)), pal, x, { sink: 2, foot: [3, 2], range: i ? 2 : 40, step: 1, group });
+if (!at) break;
+x = at.fx + 6;
+}
 }
 const gr = s('glass');
-for (let i = 0; i < 2; i++) { const x = gr.int(10, W - 10); if (cv.liquid[(surfaceAt(cv, x) - 1) * W + x]) continue; cv.stamp(spire(gr, gr.int(8, 13)), pal, x, surfaceAt(cv, x) + 1, { foot: [4, 2] }); }
+for (let i = 0; i < 2; i++) cv.place(spire(gr, gr.int(8, 13)), pal, gr.int(10, W - 10), { foot: [4, 2], range: 30 });
 const dr = s('brush');
 terrainTrees(cv, dr, pal, { n: 3, kinds: ['dead'], h: [18, 34], gap: 30, ledges: true });
 const vr = s('vents'), vents = [];
 for (let i = 0; i < 2; i++) {
-const x = vr.int(30, W - 30);
-if (Math.abs(x - px) < hw + 12) continue;
-const y = surfaceAt(cv, x) + 1, m = new Model();
+const m = new Model();
 m.poly(lumpy(0, -4, 9, 5, () => vr.next(), 0.2, 6), 'rock', { shade: 'round' });
 m.ellipse(0, -9, 2.5, 1, 'lava', { shade: 'flat', tone: 0.3 });
-cv.stamp(m, pal, x, y, { foot: [9, 2] });
-glow(cv, x, y - 9, 16, [1, 0.5, 0.2], 0.4);
-vents.push({ x, y: y - 10, r: 4 });
+const at = cv.place(m, pal, vr.int(30, W - 30), { foot: [9, 2], range: 40 });
+if (!at) continue;
+glow(cv, at.fx, at.fy - 9, 16, [1, 0.5, 0.2], 0.4);
+vents.push({ x: at.fx, y: at.fy - 10, r: 4 });
 }
 cv.meta.vents = vents;
 cv.meta.trickles = drips(cv, ss, 4);
 cv.meta.vignette = cave ? 0.55 : 0.35;
+cv.meta.horizon = 120;
+}
+return { compose };
+})();
+// src/visual/env/netherwood.js
+const __m108 = (() => {
+const { sky } = __m95;
+const { palette, vary, streamOf } = __m100;
+const { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, drips, ledges, glow } = __m97;
+const { caveFrame, farPillars, fog, vines, moss, glowShrooms, veins, WATER_VEINS } = __m96;
+const { mushroom } = __m101;
+const { treeRow, terrainTrees } = __m102;
+const { roots, litter, ferns } = __m103;
+function compose(cv, seed) {
+const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'netherwood', p);
+const pal = vary(palette({
+leaf: ['#1e4a46', { spread: 0.55 }], bark: ['#2e2630', { spread: 0.45 }], wood: '#7a6a5a', rock: '#4a4a56',
+moss: ['#2e6a5a', { spread: 0.5 }], fern: ['#2a6a5e', { spread: 0.5 }],
+stem: ['#c8c0d0', { spread: 0.4 }], cap: ['#6a3aa0', { spread: 0.6 }],
+}), s('pal'), 1);
+const back = '#0e1820';
+sky(cv, 0, H, ['#030408', '#060a10', '#0a1018', '#0e1620']);
+farPillars(cv, { n: 8, fill: '#0c141c', rim: '#121c26', seed: s('far1').int(0, 1e9), w: [10, 22], floor: 180, caps: true });
+fog(cv, '#1c2c40', 80, 200, 0.3, s('fog1').int(0, 1e9));
+const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 172, amp: 8, freq: 0.012 });
+const rows = s('rows'), far = top.map((v) => v - 14), mid = top.map((v) => v - 6);
+treeRow(cv, rows, pal, { line: far, gap: [22, 30], h: [48, 58], haze: back, fade: 0.72, shape: 'tall' });
+fog(cv, '#1c2c40', 60, 190, 0.22, rows.int(0, 1e9));
+treeRow(cv, rows, pal, { line: mid, gap: [28, 38], h: [60, 72], haze: back, fade: 0.55, shape: 'lean' });
+fog(cv, '#24344a', 80, 200, 0.15, rows.int(0, 1e9));
+const fs = s('frame');
+const frame = caveFrame(cv, {
+seed: fs.int(0, 1e9), stones: ['#2e2a30', '#26222a', '#34343a'], mortar: '#08080a', dark: 0.42, roof: [12, 34], walls: [10, 12],
+stal: { n: 12, len: [8, 28], w: [3, 6] }, lip: ['#3e7a6a', '#24504a'],
+});
+vines(cv, frame.roof, { cols: ['#5a4232', '#46321f', '#2e2016'], leaf: '#6a4e3a', flower: '#c8a0ff', seed: fs.int(0, 1e9), rate: 0.22, len: [6, 48] });
+const kx = ts.int(60, W - 140);
+raise(top, kx, kx + ts.int(30, 60), Math.min(...top) - ts.int(8, 14), 3);
+let still = null;
+if (ts.next() < 0.5) {
+const px = kx < W / 2 ? ts.int(230, 320) : ts.int(60, 140), hw = ts.int(22, 32);
+still = { x: px, hw, level: Math.round(top[px]) + 2 };
+dip(top, px, hw, 14);
+}
+fillSolid(cv, top);
+ledges(cv, top, ts, 6, { keep: still ? [[still.x - still.hw - 6, still.x + still.hw + 6]] : [] });
+const hx = ts.int(60, W - 60);
+if (!still || Math.abs(hx - still.x) > still.hw + 30) blob(cv, hx, top[hx] + 20, ts.int(14, 22), 8, ts.int(0, 1e9), 0);
+const ss = ts.int(0, 1e9);
+paintTerrain(cv, {
+a: '#2a2228', b: '#342a30', grain: '#54465a', dark: '#100c10', deep: '#060408', cave: '#040305',
+crust: ['#5aa08a', '#3e7a6a', '#2a5a4e', '#1e4038'], crustH: 4, seed: ss,
+cobble: { stones: ['#4a4652', '#3e3a46', '#54505c', '#36343e', '#464e52', '#3a3640'], mortar: '#0e0c12', s: 4 },
+grass: { cols: ['#3e7a6a', '#5aa08a', '#2a5a4e'], tall: 3, rate: 0.45, flowers: ['#c8a0ff', '#8ff0ff', '#f0c8ff'] },
+});
+moss(cv, { cols: ['#5aa08a', '#3e7a6a', '#2a5a4e', '#1e4038'], seed: ss + 1, drape: 10, rate: 0.25, len: 14 });
+roots(cv, s('roots'), '#3a2a24', '#5a4232');
+if (still) {
+cv.meta.pool = pool(cv, still.x - still.hw, still.x + still.hw, still.level, { surface: '#a8a0e0', body: ['#1e1e3a', '#16162e', '#101024', '#0a0a1a'], see: 0.15, bed: ['#1a1620', '#241e2a', '#120e16'] });
+veins(cv, cv.meta.pool, { ...WATER_VEINS(ss + 4, ['#6a5ab0', '#2e2a5a', '#1e1e3a', '#16162e']), to: '#100c1e', n: 4, reach: 44, rgb: [0.5, 0.4, 0.95] });
+}
+markOpen(cv);
+litter(cv, s, pal);
+terrainTrees(cv, s('trees'), pal, { n: 5, kinds: ['oak'], shapes: ['tall', 'lean'], h: [44, 100], gap: 30, ledges: true, dark: 0.15 });
+const mr = s('mushrooms'), glows = [];
+for (let i = 0; i < 3; i++) {
+const h = mr.int(18, 34), r = Math.round(h * mr.range(0.4, 0.55));
+const at = cv.place(mushroom(mr, h, r), pal, mr.int(30, W - 30), { sink: 2, roots: [r * 0.4, 2], range: 60 });
+if (!at) continue;
+glow(cv, at.fx, at.fy - h + r * 0.2, r * 2.4, [0.6, 0.35, 1], 0.35);
+glows.push([at.fx, Math.round(at.fy - h + r * 0.3)]);
+}
+ferns(cv, s, pal);
+glows.push(...glowShrooms(cv, { n: 9, cap: '#9a5ae8', lit: '#f0c8ff', stem: '#c8c0d0', rgb: [0.62, 0.38, 1], seed: s('shrooms').int(0, 1e9) }));
+cv.meta.glows = glows;
+cv.meta.trickles = drips(cv, ss, 4);
+cv.meta.vignette = 0.6;
 cv.meta.horizon = 120;
 }
 return { compose };
@@ -18215,8 +18422,9 @@ const river = __m104;
 const quarry = __m105;
 const moonfen = __m106;
 const crags = __m107;
-const ENV_VERSION = 4;
-const COMPOSERS = { meadow, forest, river, quarry, moonfen, crags };
+const netherwood = __m108;
+const ENV_VERSION = 5;
+const COMPOSERS = { meadow, forest, netherwood, river, quarry, moonfen, crags };
 const cache = new Map();
 function composeScene(region, seed) {
 const id = COMPOSERS[region] ? region : 'forest';
@@ -18228,7 +18436,7 @@ for (let y = 1; y < SCENE_H; y++) for (let x = 0; x < SCENE_W; x++) if (!(px[y *
 for (let x = 0; x < SCENE_W; x++) { cv.open[x] = 0; cv.open[(SCENE_H - 1) * SCENE_W + x] = 0; cv.open[(SCENE_H - 2) * SCENE_W + x] = 0; }
 let top = SCENE_H;
 for (let k = 0; k < cv.open.length; k++) if (cv.open[k]) { top = Math.floor(k / SCENE_W); break; }
-return { pix: cv.pix, open: cv.open, depth: cv.depth, solid: cv.solid, liquid: cv.liquid, top, meta: cv.meta };
+return { pix: cv.pix, open: cv.open, depth: cv.depth, solid: cv.solid, liquid: cv.liquid, rock: cv.rock, trees: cv.trees, props: cv.props, top, meta: cv.meta };
 }
 function sceneOf(region, seed) {
 const id = COMPOSERS[region] ? region : 'forest';
@@ -18371,7 +18579,7 @@ if (ph < 0.6) px(ctx, x, p.level - Math.floor(ph * 4), ph < 0.45 ? c : '#fff4b0'
 } else px(ctx, x, p.level + (i % 3), c, 2 + (i % 2), 1);
 }
 }
-const DRIP = { meadow: ['#8ac0e0', '#c8e4f4'], forest: ['#6aa0a0', '#a0d0c8'], river: ['#7ad8d0', '#c8f4f0'], quarry: ['#c8803a', '#e8b070'], moonfen: ['#8ab0f0', '#d0e0ff'], crags: ['#ffb040', '#fff0a0'] };
+const DRIP = { meadow: ['#8ac0e0', '#c8e4f4'], forest: ['#6aa0a0', '#a0d0c8'], netherwood: ['#8a7ac8', '#d0c0ff'], river: ['#7ad8d0', '#c8f4f0'], quarry: ['#c8803a', '#e8b070'], moonfen: ['#8ab0f0', '#d0e0ff'], crags: ['#ffb040', '#fff0a0'] };
 function cavern(ctx, region, t, meta) {
 const [drop, splash] = DRIP[region] || DRIP.river;
 (meta.tips || []).forEach(([x, y], j) => {
@@ -18392,7 +18600,7 @@ for (const [x, y] of meta.torches || []) {
 halo(ctx, x, y, 12, '#ffb050', 0.1 + 0.05 * Math.sin(t * 9 + x) + 0.03 * Math.sin(t * 23 + x));
 if (Math.sin(t * 13 + x) > 0.3) px(ctx, x + (Math.sin(t * 5 + x) > 0 ? 1 : 0), y - 4, '#fff4b0');
 }
-if (region !== 'moonfen') for (const [x, y] of meta.glows || []) halo(ctx, x, y, 8, region === 'forest' ? '#ff9a40' : '#4ad8f0', 0.06 + 0.04 * Math.sin(t * 1.7 + x));
+if (region !== 'moonfen') for (const [x, y] of meta.glows || []) halo(ctx, x, y, 8, region === 'forest' ? '#ff9a40' : region === 'netherwood' ? '#b070ff' : '#4ad8f0', 0.06 + 0.04 * Math.sin(t * 1.7 + x));
 }
 function animateRegion(ctx, region, t, seed) {
 const W = SCENE_W, H = SCENE_H, meta = sceneOf(region, seed).meta;
@@ -18424,6 +18632,14 @@ const y = ((t * 8 + i * 47) % (H + 20)) - 10, x = (rnd(i, 4) * W + Math.sin(t * 
 px(ctx, x, y, i % 2 ? '#c88a2a' : '#8aa83a', flat ? 2 : 1, flat ? 1 : 2);
 }
 trickles(ctx, meta.trickles || [], t, '#5a3a24', '#3a2618');
+}
+if (region === 'netherwood') {
+for (let i = 0; i < 24; i++) {
+const age = (t * 0.04 + rnd(i)) % 1, x = rnd(i, 1) * W + Math.sin(t * 0.7 + i * 1.3) * 8, y = H * 0.85 - age * H * 0.7;
+if (Math.sin(t * 3 + i * 2.3) > -0.3) px(ctx, x, y, age < 0.7 ? (i % 3 ? '#d8b8ff' : '#a8f0ff') : '#7a6aa8');
+}
+if (meta.pool) surface(ctx, meta.pool, t, '#c8c0ff', false);
+trickles(ctx, meta.trickles || [], t, '#4a3a44', '#2e2430');
 }
 if (region === 'river') {
 surface(ctx, meta.river, t, '#e4f4ff', false);
@@ -18577,7 +18793,7 @@ const ok = this.unlocked(r);
 tabs.appendChild(btn(r.name, () => {
 if (!ok) { toast(r.name, `The guild grants passage at the rank of ${RANKS[r.rank].name}.`, 'lock'); return; }
 this.region = r.id; this.bgKey = ''; audio.play('page'); this.refresh();
-}, { cls: (this.region === r.id ? 'active ' : '') + (ok ? '' : 'locked'), icon: ok ? (r.magical ? 'wisp' : r.id === 'quarry' ? 'pick' : r.id === 'river' ? 'drop' : r.id === 'meadow' ? 'rose' : 'tree') : 'lock', act: 'region-' + r.id }));
+}, { cls: (this.region === r.id ? 'active ' : '') + (ok ? '' : 'locked'), icon: ok ? (r.magical ? 'wisp' : r.id === 'quarry' ? 'pick' : r.id === 'river' ? 'drop' : r.id === 'meadow' ? 'rose' : r.id === 'netherwood' ? 'shroom' : 'tree') : 'lock', act: 'region-' + r.id }));
 }
 const region = REGIONS.find((r) => r.id === this.region);
 clear(this.info).append(h('b', { text: region.name }), ' — ' + region.desc);
@@ -18869,7 +19085,7 @@ const sil = k.key ? silhouetteOf(this.lab.state.lookup('wild-' + k.key)) : null;
 const x = Math.round(k.x * SCENE_W), y = Math.round(k.y * SCENE_H);
 const w = Math.max(8, Math.round((sil ? sil.w : 16) * 0.6)), hw = Math.floor(w / 2);
 const stone = this.region === 'quarry' || this.region === 'crags';
-const [soil, dark, clod] = stone ? ['#6e6258', '#3a322c', '#a09280'] : this.region === 'moonfen' ? ['#3a3228', '#16120e', '#5a5040'] : ['#7a5230', '#3a2412', '#a07a4a'];
+const [soil, dark, clod] = stone ? ['#6e6258', '#3a322c', '#a09280'] : this.region === 'moonfen' || this.region === 'netherwood' ? ['#3a3228', '#16120e', '#5a5040'] : ['#7a5230', '#3a2412', '#a07a4a'];
 ctx.globalAlpha = Math.ceil((1 - k.faded) * 4) / 4;
 ctx.fillStyle = soil;
 ctx.fillRect(x - hw, y - 3, w, 4);
@@ -18952,7 +19168,7 @@ this.grow();
 return { WildsView };
 })();
 // src/rendering/rabbit.js
-const __m109 = (() => {
+const __m110 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m77;
 const { RABBIT_MARKS } = __m51;
@@ -19898,7 +20114,7 @@ ctx.fillRect(fx, fy, RABBIT_W, RABBIT_H);
 return { RABBIT_W, RABBIT_H, rabbitLevels, rabbitPose, rabbitPace, rabbitAnchors, rabbitSpriteKey, drawRabbitSprite, clearRabbitSprites, drawRabbit };
 })();
 // src/rendering/hutch-ground.js
-const __m112 = (() => {
+const __m113 = (() => {
 const GROUND_Y0 = 56;
 const GROUND = [
 [[18,156]],
@@ -19925,11 +20141,11 @@ const GROUND = [
 return { GROUND_Y0, GROUND };
 })();
 // src/rendering/hutch-scene.js
-const __m111 = (() => {
+const __m112 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m77;
-const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m109;
-const { GROUND, GROUND_Y0 } = __m112;
+const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m110;
+const { GROUND, GROUND_Y0 } = __m113;
 const HUTCH_W = 224;
 const HUTCH_H = 92;
 const HUTCH_BODIES = 3;
@@ -20305,13 +20521,13 @@ ctx.drawImage(this.bg, 0, 0);
 return { HUTCH_W, HUTCH_H, HUTCH_BODIES, paintHutch, paintHutchFront, onGround, HutchScene };
 })();
 // src/ui/views/hutch.js
-const __m110 = (() => {
+const __m111 = (() => {
 const { readingSteadiness } = __m50;
 const { h, btn, clear, toast, modal, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { drawRabbit, RABBIT_W, RABBIT_H } = __m109;
-const { HutchScene, HUTCH_W, HUTCH_H } = __m111;
+const { drawRabbit, RABBIT_W, RABBIT_H } = __m110;
+const { HutchScene, HUTCH_W, HUTCH_H } = __m112;
 const { EFFECT_BY_KEY } = __m14;
 const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral, RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE, BURNS } = __m51;
 const { PURGE_BREW_TIME } = __m5;
@@ -20640,7 +20856,7 @@ if (this._live >= 0.25) { this._live = 0; this.live(); }
 return { CHANNELS, HutchPanel };
 })();
 // src/ui/views/trials.js
-const __m108 = (() => {
+const __m109 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
@@ -20652,9 +20868,9 @@ const { summarize, addSamples, EVIDENCE_TEXT, evidenceRank, requirementEvidence 
 const { evidenceOf } = __m69;
 const { shortName } = __m45;
 const LEVEL_SHORT = { preliminary: '1 reading', repeated: 'repeated', corroborated: 'corroborated', certified: 'certified' };
-const { drawRabbit } = __m109;
+const { drawRabbit } = __m110;
 const { focusRabbit, findRabbit, rabbitSnap, decodeSnap, lookFromSeed, RABBIT_MARKS } = __m51;
-const { HutchPanel } = __m110;
+const { HutchPanel } = __m111;
 const REPLAY_T = 3.2;
 class TrialsView {
 constructor(lab) {
@@ -21031,7 +21247,7 @@ return `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2
 return { TrialsView, EFFECTS, EFFECT_INDEX };
 })();
 // src/ui/views/book.js
-const __m113 = (() => {
+const __m114 = (() => {
 const { h, btn, clear } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
@@ -21169,8 +21385,8 @@ const trade = __m89;
 const { Tutorial } = __m90;
 const { CounterView } = __m91;
 const { WildsView } = __m92;
-const { TrialsView } = __m108;
-const { BookView } = __m113;
+const { TrialsView } = __m109;
+const { BookView } = __m114;
 const { shortName } = __m45;
 const REQ_ICON = { temperature: 'thermo', quantity: 'flask', purity: 'pure' };
 const TOOL_DEFS = [
@@ -22908,7 +23124,7 @@ void dominantEffect;
 return { VIEWS, LabScreen };
 })();
 // src/materials/reference.js
-const __m115 = (() => {
+const __m116 = (() => {
 const { completeMaterial } = __m10;
 const REF = {};
 const add = (d) => (REF[d.id] = completeMaterial(d));
@@ -22946,11 +23162,11 @@ const refLookup = (id) => REF[id];
 return { REF, refLookup };
 })();
 // src/ui/menu.js
-const __m114 = (() => {
+const __m115 = (() => {
 const { h, btn } = __m2;
 const { Renderer } = __m76;
 const { Simulation } = __m54;
-const { REF, refLookup } = __m115;
+const { REF, refLookup } = __m116;
 const { hasSave, loadGame } = __m73;
 const { audio } = __m4;
 class MenuScreen {
@@ -23039,7 +23255,7 @@ const { sandboxIngredients } = __m7;
 const { EQUIPMENT } = __m49;
 const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m73;
 const { LabScreen } = __m74;
-const { MenuScreen } = __m114;
+const { MenuScreen } = __m115;
 const { openSettings, openHelp } = __m87;
 const { Rng } = __m6;
 const { normalizeTrials } = __m50;
@@ -23156,7 +23372,7 @@ openHelp();
 return { App, icon };
 })();
 // src/ui/textures.js
-const __m116 = (() => {
+const __m117 = (() => {
 const { Rng } = __m6;
 function texture(w, h, paint) {
 const cv = document.createElement('canvas');
@@ -23200,7 +23416,7 @@ return { installTextures };
 // src/main.js
 const __m0 = (() => {
 const { App } = __m1;
-const { installTextures } = __m116;
+const { installTextures } = __m117;
 installTextures();
 const root = document.getElementById('app');
 const app = new App(root);

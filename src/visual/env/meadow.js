@@ -7,7 +7,7 @@
 
 import { sky } from './paint.js';
 import { palette, vary, streamOf } from './kit.js';
-import { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, surfaceAt, silhouette, treeShape, glow, drips, ledges } from './side.js';
+import { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, silhouette, treeShape, glow, drips, ledges } from './side.js';
 import { caveFrame, fog, vines, moss, veins, WATER_VEINS } from './cave.js';
 import { cloud, fence, skep, boulder } from './objects.js';
 import { terrainTrees } from './trees.js';
@@ -70,24 +70,33 @@ export function compose(cv, seed) {
     veins(cv, cv.meta.pond, WATER_VEINS(ss + 4, ['#7aa8d8', '#3a6a98', '#2e5a86', '#244a72']));
   }
   markOpen(cv);
-  // the oaks: one framing the mouth, maybe another in the field
-  terrainTrees(cv, s('oaks'), pal, { n: 3, kinds: ['oak'], shapes: ['spread', 'lean'], h: [60, 130], gap: 60, ledges: true });
+  // each piece set down where it fits, clear of the pillars, the trees and the pond
   if (feature === 'hives') {
-    const fx = fr.int(70, 300), fy = surfaceAt(cv, fx) + 1;
-    cv.stamp(fence(fr.int(50, 80), 14), pal, fx, fy, { foot: [40, 2] });
-    const bx = fr.int(20, W - 60);
-    for (let i = 0; i < 2 + fr.int(0, 1); i++) cv.stamp(skep(9), pal, bx + i * 13, surfaceAt(cv, bx + i * 13) + 1, { foot: [6, 2] });
-    cv.meta.hives = [bx + 6, surfaceAt(cv, bx) - 8];
+    const fx = fr.int(70, 300), len = fr.int(36, 60);
+    cv.place(fence(len, 14), pal, fx, { foot: [len * 0.6, 2], range: 240, x: [6, W - len - 6] });
+    let bx = fr.int(20, W - 60), hives = null;
+    for (let i = 0; i < 2 + fr.int(0, 1); i++) {
+      // the skeps in a row, each just past the last
+      const at = cv.place(skep(9), pal, bx, { foot: [6, 2], range: 30, step: 2 });
+      if (!at) continue;
+      hives ||= [at.fx + 6, at.fy - 9];
+      bx = at.fx + 13;
+    }
+    if (hives) cv.meta.hives = hives;
   } else if (feature === 'stones') {
-    const cx = fr.int(80, 300);
+    let x = fr.int(80, 300);
+    const ring = ++cv.nprops;
     for (let i = 0; i < 4; i++) {
-      const x = cx + i * fr.int(12, 18), m = new Model(), hh = fr.int(10, 18);
+      const m = new Model(), hh = fr.int(10, 18);
       m.poly(lumpy(0, -hh / 2, 3 + fr.next() * 1.5, hh / 2, () => fr.next(), 0.12, 5), 'rock', { shade: 'round' });
-      cv.stamp(m, pal, x, surfaceAt(cv, x) + 2, { foot: [4, 2] });
+      const at = cv.place(m, pal, x, { sink: 2, foot: [4, 2], range: 20, step: 2, group: ring });
+      x = (at ? at.fx : x) + fr.int(12, 18);
     }
   }
+  // the oaks: one framing the mouth, maybe another in the field
+  terrainTrees(cv, s('oaks'), pal, { n: 3, kinds: ['oak'], shapes: ['spread', 'lean'], h: [60, 130], gap: 60, ledges: true });
   const rr = s('rocks');
-  for (let i = 0; i < 2; i++) { const x = rr.int(10, W - 10); cv.stamp(boulder(rr, rr.int(5, 9), rr.int(3, 5), { moss: 'moss' }), pal, x, surfaceAt(cv, x) + 2, { foot: [8, 2] }); }
+  for (let i = 0; i < 2; i++) cv.place(boulder(rr, rr.int(5, 9), rr.int(3, 5), { moss: 'moss' }), pal, rr.int(10, W - 10), { sink: 2, foot: [8, 2] });
   cv.meta.sun = [sx, sy];
   cv.meta.trickles = drips(cv, ss, 3);
   cv.meta.vignette = cave ? 0.45 : 0.3;

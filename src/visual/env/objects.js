@@ -1,5 +1,6 @@
 // Scenery models for the wild environments: trees of several growth habits,
-// shrubs, boulders, reeds, ferns, logs, clouds and the quarry's timberwork.
+// shrubs, boulders, reeds, ferns, logs, giant mushrooms, clouds and the
+// quarry's timberwork.
 // Each is a geometry Model (visual/geometry.js) standing on its foot at
 // (0, 0), built from a random stream and painted in the region's ramps by
 // Canvas.stamp — the same rasterizer and shading as the species.
@@ -270,6 +271,29 @@ export function stump(rng, w, h, o = {}) {
   m.poly([[-w / 2 - 2, 0], [-w / 2, -h], [w / 2, -h], [w / 2 + 2, 0]], o.bark || 'bark', { shade: 'round', tex: 1.5 });
   m.ellipse(0, -h, w / 2, Math.max(1.5, w * 0.18), o.wood || 'wood', { shade: 'flat' });
   m.ellipse(0, -h, w / 4, Math.max(0.8, w * 0.09), o.wood || 'wood', { shade: 'flat', tone: -0.2 });
+  return m;
+}
+
+/**
+ * A giant mushroom of the deep: a pale stalk curving up from a flared foot,
+ * a broad domed cap lit along its top with the gills in shade beneath it,
+ * and a few pale spots on the dome.
+ */
+export function mushroom(rng, h, r, o = {}) {
+  const m = new Model(), stem = o.stem || 'stem', cap = o.cap || 'cap', lean = (rng.next() - 0.5) * h * 0.3;
+  const spine = bezier([0, 0], [0, -h * 0.4], [lean * 0.5, -h * 0.8], [lean, -h], 10);
+  for (const s of [-1, 1]) m.stroke([[s * r * 0.08, -3], [s * r * 0.3, 0]], [r * 0.2, 1.2], stem, { tone: s > 0 ? -0.1 : 0 });
+  m.stroke(spine, spine.map((_, i) => Math.max(1.5, r * 0.3 * (1 - (i / spine.length) * 0.3))), stem, { tex: 0.6 });
+  // the gills: a dark band under the cap
+  m.poly(lumpy(lean, -h + r * 0.1, r * 0.92, r * 0.16, R(rng), 0.05, 6), cap, { shade: 'flat', tone: -0.35 });
+  /** @type {[number, number][]} */
+  const dome = [];
+  for (let i = 0; i <= 14; i++) { const a = Math.PI + (i / 14) * Math.PI; dome.push([lean + Math.cos(a) * r, -h + Math.sin(a) * r * 0.6 * (1 + (rng.next() - 0.5) * 0.06)]); }
+  m.poly(dome, cap, { shade: 'round', tex: 0.5 });
+  for (let i = 0; i < Math.round(r / 3); i++) {
+    const u = (rng.next() - 0.5) * 1.4, v = 0.25 + rng.next() * 0.5;
+    m.ellipse(lean + u * r * 0.7, -h - v * r * 0.5, 1.3, 1, o.spot || stem, { shade: 'flat', tone: 0.2, noOutline: true });
+  }
   return m;
 }
 

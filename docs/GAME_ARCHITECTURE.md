@@ -539,8 +539,8 @@ into the new vessel's shape instead of being dropped.
   (the lookup re-indexes itself), are saved with the world, and are masked
   from the guild theory, the shop, the inspector, the book and order
   planning: only trials reveal them.
-* **`gathering.js`** is the wilds: six regions with 36 ingredients (four open from the start,
-  two magical ones from Adept and Expert), deposits generated from the
+* **`gathering.js`** is the wilds: seven regions with 36 ingredients (four open from the start,
+  the Netherwood from Journeyman, two magical ones from Adept and Expert), deposits generated from the
   seed (never saved), and per-deposit stock plus a timestamp in the save.
   Stock is resolved lazily from elapsed wall-clock time when a deposit is
   shown or gathered, so nothing runs per frame and deposits regrow while

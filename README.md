@@ -163,7 +163,7 @@ computed from the particles that actually run out of the tap. What a
   price, drink the real potion and come back the next day: pleased, with a
   fair complaint, or a dishonest one you can dispute with your trial
   records. Many orders forbid any side effect above 1.2 %.
-* **The wilds.** Six regions, two of them magical and opened by rank, with
+* **The wilds.** Seven regions, the Netherwood and two magical ones opened by rank, with
   36 natural ingredients between them. Each
   ingredient is picked, dug, chipped, scraped or swept (without the
   Forager's Kit half of what you dig, chip, scrape or sweep is spoiled), some only open at dawn (before
@@ -242,8 +242,8 @@ computed from the particles that actually run out of the tap. What a
 * **Procedural wilds and ingredients:** every world grows its own
   ecosystem (`src/visual/`, see
   [docs/PROCEDURAL_GRAPHICS.md](docs/PROCEDURAL_GRAPHICS.md)). Each of the
-  six regions — the Sunlit Meadow, Whisperwood, Willow Bank, Ironstone
-  Quarry, Moonfen and the Ember Crags — is generated from the world seed
+  seven regions — the Sunlit Meadow, Whisperwood, the Netherwood under it,
+  Willow Bank, Ironstone Quarry, Moonfen and the Ember Crags — is generated from the world seed
   as a side view, under the open sky or in a cavern (a roof hung with
   stalactites and vines, far pillars fading into mist): in front a
   cross-section of the ground — cobbled stone under a crust of grass,
@@ -397,7 +397,7 @@ src/materials/                   material schema, procedural world generator, ef
 src/reactions/                   species table, mixture laws, diffusion, reactions & combustion
 src/simulation/                  particle world: solver, grid, cauldron, thermal, electricity, phases, rigid blocks, tools
 src/game/                        world state, commissions, prediction, measurement, scoring, trials, gathering, economy, saves
-src/visual/                      procedural graphics: identities, taxonomy, descriptors, family geometry, rasterizer, pieces, env/ (the six regions)
+src/visual/                      procedural graphics: identities, taxonomy, descriptors, family geometry, rasterizer, pieces, env/ (the seven regions)
 src/rendering/                   fine-pixel fluid renderer, procedural pixel art, effects, portraits, species sprites and the wilds scene, the hutch and its rabbits
 src/ui/                          shell and Brew room, views/ (counter, wilds, trials, book), panels, tutorial, input
 src/audio/                       synthesised sound effects and music (WebAudio)

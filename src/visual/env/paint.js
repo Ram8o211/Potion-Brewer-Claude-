@@ -22,6 +22,11 @@ export const CELL = 1;
 
 
 /**
+ * @typedef {{haze?:[number, number], outline?:boolean, foot?:[number, number], roots?:[number, number], seed?:number, texture?:number, dark?:number, cell?:number,
+ *   claim?:number, test?:(p:import('../pixels.js').Pixels, X:number, Y:number)=>boolean}} StampOptions
+ */
+
+/**
  * The canvas a region is composed on.
  * pix: the painting; open: 1 where a plant's foot may rest (open ground);
  * floor: 1 where there is ground at all (not sky, water, lava or cliff).
@@ -41,6 +46,9 @@ export class Canvas {
     this.rock = new Uint8Array(SCENE_W * SCENE_H);
     /** 1 where a tree standing on the terrain is drawn (trees.js) */
     this.trees = new Uint8Array(SCENE_W * SCENE_H);
+    /** which prop (a piece of scenery set down by `place`, numbered from 1) covers each pixel (0: none) */
+    this.props = new Uint16Array(SCENE_W * SCENE_H);
+    this.nprops = 0;
     /** the main ground's surface row in each column (side.js fillSolid), if the scene has one @type {Float32Array | null} */
     this.ground = null;
     this.seed = seed >>> 0;
@@ -76,13 +84,26 @@ export class Canvas {
    * @param {import('../geometry.js').Model} model @param {Record<string, number[]>} pal
    * @param {number} x @param {number} y
    * `test(pixels, X, Y)` may refuse the placement (nothing is drawn, null returned).
-   * @param {{haze?:[number, number], outline?:boolean, foot?:[number, number], roots?:[number, number], seed?:number, texture?:number, dark?:number, cell?:number, test?:(p:import('../pixels.js').Pixels, X:number, Y:number)=>boolean}} [o]
+   * @param {StampOptions} [o]
    */
   stamp(model, pal, x, y, o = {}) {
+    const r = this.raster(model, pal, o);
+    if (!r) return null;
+    const X = Math.round(x) + r.left, Y = Math.round(y) + r.top;
+    if (o.test && !o.test(r.raster.pix, X, Y)) return null;
+    return this.put(r, x, y, o);
+  }
+
+  /**
+   * A scenery model rasterized once, its frame on the scene's grid: what
+   * `stamp` draws, and what `place` tries at several spots.
+   * @param {import('../geometry.js').Model} model @param {Record<string, number[]>} pal @param {StampOptions} [o]
+   */
+  raster(model, pal, o = {}) {
     const b = model.bounds(), cell = o.cell ?? CELL, mod = (v) => ((v % cell) + cell) % cell;
+    // with CELL = 1 the frame is the same wherever the model is set down
     let left = Math.floor(b.x0) - 1, top = Math.floor(b.y0) - 1;
-    // the frame's corner on the scene's grid, so its squares line up with the ground's
-    left -= mod(Math.round(x) + left); top -= mod(Math.round(y) + top);
+    left -= mod(left); top -= mod(top);
     let w = Math.ceil(b.x1) + 2 - left, h = Math.ceil(b.y1) + 2 - top;
     w += mod(-w); h += mod(-h);
     if (w <= 0 || h <= 0 || w > 2000 || h > 2000) return null;
@@ -97,24 +118,121 @@ export class Canvas {
       if (o.dark) q = mixPacked(q, 0xff000000, o.dark);
       p.px[k] = q;
     }
-    const X = Math.round(x) + left, Y = Math.round(y) + top;
-    if (o.test && !o.test(p, X, Y)) return null;
+    return { raster: r, left, top, w, h };
+  }
+
+  /**
+   * Draw a rasterized model with its foot at (x, y) and mark what it covers.
+   * @param {{raster:any, left:number, top:number, w:number, h:number}} r @param {number} x @param {number} y @param {StampOptions} [o]
+   */
+  put(r, x, y, o = {}) {
+    const p = r.raster.pix, w = r.w, h = r.h, X = Math.round(x) + r.left, Y = Math.round(y) + r.top;
     this.pix.draw(p, X, Y);
     if (o.roots) this.blockEllipse(Math.round(x), Math.round(y) - 1, o.roots[0], o.roots[1]);
-    if (o.foot) {
-      this.blockEllipse(Math.round(x), Math.round(y), o.foot[0], o.foot[1]);
+    if (o.foot) this.blockEllipse(Math.round(x), Math.round(y), o.foot[0], o.foot[1]);
+    const fy = Math.round(y), id = o.claim ?? 0;
+    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+      if (!(p.px[j * w + i] >>> 24)) continue;
+      const xx = X + i, yy = Y + j;
+      if (xx < 0 || yy < 0 || xx >= this.W || yy >= this.H) continue;
+      const k = yy * this.W + xx;
+      // a prop's pixels are its own: nothing else is set down on them
+      if (id) this.props[k] = id;
+      if (!o.foot) continue;
       // the scenery covers what stands behind it; and nothing grows out of it
-      const fy = Math.round(y);
-      for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
-        if (!(p.px[j * w + i] >>> 24)) continue;
-        const xx = X + i, yy = Y + j;
-        if (xx < 0 || yy < 0 || xx >= this.W || yy >= this.H) continue;
-        const k = yy * this.W + xx;
-        if (fy > this.depth[k]) this.depth[k] = fy;
-        this.open[k] = 0;
-      }
+      if (fy > this.depth[k]) this.depth[k] = fy;
+      this.open[k] = 0;
     }
-    return { x: X, y: Y, w, h, raster: r };
+    return { x: X, y: Y, w, h, raster: r.raster };
+  }
+
+  /**
+   * Set a piece of scenery down where it fits, near column x: on the main
+   * ground (or, with `y`, on the surface nearest that row — a ledge's top),
+   * its foot sunk `sink` rows into the ground. A spot fits when nothing of
+   * the piece runs into the terrain above its foot, the cave's rock, a
+   * liquid, a tree or another prop, and the ground under its whole base is
+   * solid (it neither overhangs an edge nor bridges a hollow). The spots
+   * tried step outward from x up to `range` pixels either side; where none
+   * fits, nothing is drawn and null is returned.
+   * @param {import('../geometry.js').Model} model @param {Record<string, number[]>} pal @param {number} x
+   * @param {StampOptions & {y?:number, sink?:number, range?:number, step?:number, group?:number, x?:[number, number], free?:boolean}} [o]
+   */
+  place(model, pal, x, o = {}) {
+    const r = this.raster(model, pal, o);
+    if (!r) return null;
+    const W = this.W, H = this.H, p = r.raster.pix, sink = o.sink ?? 1, range = o.range ?? 40, step = o.step ?? 3;
+    const [xa, xb] = o.x || [2, W - 3], id = o.group ?? ++this.nprops;
+    // the piece's base: the lowest opaque row of each of its columns; the low
+    // columns (near its bottom) are what it stands on
+    /** @type {[number, number][]} */
+    const base = [];
+    for (let i = 0; i < r.w; i++) for (let j = r.h - 1; j >= 0; j--) if (p.px[j * r.w + i] >>> 24) { base.push([i, j]); break; }
+    const bottom = Math.max(...base.map(([, j]) => j)), low = base.filter(([, j]) => j >= bottom - 3);
+    /** the surface row in a column: the main ground, or with `y` the surface nearest that row (-1: none) */
+    const surfaceAt = (/** @type {number} */ cx) => {
+      if (cx < 0 || cx >= W) return -1;
+      if (o.y === undefined) return this.ground ? Math.round(this.ground[cx]) : -1;
+      for (let d = 0; d <= 6; d++) for (const yy of [o.y + d, o.y - d]) {
+        const k = yy * W + cx;
+        if (yy > 0 && yy < H && this.solid[k] && !this.solid[k - W]) return yy;
+      }
+      return -1;
+    };
+    // on uneven ground it rests on the highest ground under its base
+    const surface = (/** @type {number} */ cx) => {
+      let top = H;
+      for (const [i] of low) { const y = surfaceAt(cx + r.left + i); if (y >= 0) top = Math.min(top, y); }
+      return top < H ? top : -1;
+    };
+    const fits = (/** @type {number} */ cx, /** @type {number} */ fy) => {
+      const X = cx + r.left, Y = fy + r.top;
+      for (let j = 0; j < r.h; j++) for (let i = 0; i < r.w; i++) {
+        if (!(p.px[j * r.w + i] >>> 24)) continue;
+        const xx = X + i, yy = Y + j;
+        if (xx < 0 || xx >= W || yy < 1) return false;
+        if (yy >= H) continue;
+        const k = yy * W + xx;
+        if (this.rock[k] || this.liquid[k] || this.trees[k] || (this.props[k] && this.props[k] !== id)) return false;
+        if (this.solid[k] && yy < fy - sink) return false;
+      }
+      // standing on ground across its whole base: no gap under it deeper than a few rows
+      for (const [i, j] of low) {
+        const xx = X + i, yy = Math.max(Y + j, fy - sink);
+        let under = false;
+        for (let d = 0; d <= 4 && !under; d++) { const k = (yy + d) * W + xx; under = yy + d < H && !!this.solid[k] && !this.liquid[k]; }
+        if (!under) return false;
+      }
+      return true;
+    };
+    for (let d = 0; d <= range; d += step) for (const s of d ? [1, -1] : [1]) {
+      const cx = Math.round(x) + s * d;
+      if (cx < xa || cx > xb) continue;
+      const fy0 = surface(cx);
+      if (fy0 < 0) continue;
+      const fy = fy0 + sink;
+      if (!o.free && !fits(cx, fy)) continue;
+      return { ...this.put(r, cx, fy, { ...o, claim: id }), fx: cx, fy };
+    }
+    return null;
+  }
+
+  /** Whether a rectangle is free of terrain, rock, liquid, trees and props (for pieces drawn pixel by pixel). */
+  clear(x0, y0, x1, y1) {
+    for (let y = Math.max(0, y0); y <= Math.min(this.H - 1, y1); y++) for (let x = Math.max(0, x0); x <= Math.min(this.W - 1, x1); x++) {
+      const k = y * this.W + x;
+      if (this.solid[k] || this.rock[k] || this.liquid[k] || this.trees[k] || this.props[k]) return false;
+    }
+    return x0 >= 0 && y0 >= 0 && x1 < this.W && y1 < this.H;
+  }
+
+  /** Claim a rectangle for a prop drawn pixel by pixel (where air is), so nothing else is set down on it. */
+  claim(x0, y0, x1, y1) {
+    const id = ++this.nprops;
+    for (let y = Math.max(0, y0); y <= Math.min(this.H - 1, y1); y++) for (let x = Math.max(0, x0); x <= Math.min(this.W - 1, x1); x++) {
+      const k = y * this.W + x;
+      if (!this.solid[k]) this.props[k] = id;
+    }
   }
 
   /**

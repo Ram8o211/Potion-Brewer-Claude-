@@ -183,9 +183,11 @@ export function glowShrooms(cv, o) {
   const W = cv.W, cap = col(o.cap), lit = col(o.lit), stem = col(o.stem), spots = [];
   for (let k = 0; k < cv.open.length; k++) if (cv.open[k] && cv.solid[k] && Math.floor(k / W) >= (o.minY ?? 0)) spots.push(k);
   const out = [];
-  for (let i = 0; i < o.n && spots.length; i++) {
+  for (let i = 0; i < o.n * 4 && out.length < o.n && spots.length; i++) {
     const k = spots[Math.floor(hash2(i, 1, o.seed) * spots.length)], x = k % W, y = Math.floor(k / W);
     if (out.some(([a, b]) => Math.abs(a - x) < 10 && Math.abs(b - y) < 6)) continue;
+    // a cluster on level ground, clear of trees, props and overhangs
+    if (!cv.clear(x - 4, y - 8, x + 4, y - 1) || !cv.solid[k - 4] || !cv.solid[k + 4]) continue;
     const n = 1 + Math.floor(hash2(i, 2, o.seed) * 3);
     for (let m = 0; m < n; m++) {
       const mx = x + (m - (n - 1) / 2) * 3, h = 2 + Math.floor(hash2(i, m + 3, o.seed) * 4), r = 1 + (m === 0 ? 1 : 0);
@@ -195,6 +197,7 @@ export function glowShrooms(cv, o) {
       cv.set(mx - r, y - h - 2, cap);
     }
     cv.block(x - 4, y - 8, x + 5, y + 1);
+    cv.claim(x - 4, y - 8, x + 4, y - 1);
     cv.glow(x, y - 4, 16, o.rgb, 0.5);
     out.push([x, y - 4]);
   }
@@ -208,6 +211,7 @@ export function torch(cv, x, y, h = 10) {
   for (let dx = -1; dx <= 2; dx++) cv.set(x + dx, y - h, iron);
   const flame = [[0, 1, 0], [-1, 1, 1], [0, 0, 0], [1, 0, 1], [0, 2, 1], [1, 1, 0], [-1, 2, 2], [2, 1, 2], [0, 3, 2], [1, 2, 1], [1, 3, 3], [0, 4, 3]];
   for (const [dx, dy, t] of flame) cv.set(x + dx, y - h - dy, fl[t]);
+  cv.claim(x - 1, y - h - 4, x + 2, y);
   cv.glow(x + 0.5, y - h - 2, 34, [1, 0.6, 0.25], 0.6);
   (cv.meta.torches ||= []).push([x, y - h - 2]);
 }

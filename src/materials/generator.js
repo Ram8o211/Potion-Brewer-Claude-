@@ -15,7 +15,7 @@ import { hslToRgb } from '../core/color.js';
 import { completeMaterial } from './schema.js';
 import { makeName, makeProductName } from './names.js';
 import { applyProfile } from './profiles.js';
-import { generateWild, generateLaws, WILD_FX_VERSION } from './wild.js';
+import { generateWild, generateLaws, WILD_FX_VERSION, WILD_BY_KEY } from './wild.js';
 import { withAwakened } from '../alchemy/arcane.js';
 
 /** @typedef {import('./schema.js').MaterialDef} MaterialDef */
@@ -420,6 +420,12 @@ export function addAlchemy(world) {
     if (!world.laws) world.laws = w.laws;
   }
   if (!world.laws) world.laws = generateLaws(world.seed);
+  // an ingredient grows in the region its archetype names now (Witch's Ear and
+  // Mandrake moved from the Whisperwood into the Netherwood); its look stays
+  for (const m of world.materials) {
+    const w = /** @type {any} */ (m).wild, spec = w && WILD_BY_KEY[w.key];
+    if (spec && w.region !== spec.region) /** @type {any} */ (m).wild = { ...w, region: spec.region };
+  }
   // a save from before the procedural graphics: its ingredients get the identity their world would give them
   attachVisuals(world);
   // older worlds stocked prepared reagents (essences, salts, crystals…):

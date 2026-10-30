@@ -18,7 +18,7 @@ const opt = (k, dflt) => { const i = args.indexOf(k); if (i < 0) return dflt; co
 const fam = opt('--family', null), scale = Number(opt('--scale', 3)), only = opt('--key', null);
 const seeds = args.length ? args : ['gallery'];
 
-const BG = { forest: [46, 74, 40], meadow: [86, 128, 60], river: [70, 96, 92], quarry: [112, 98, 84], moonfen: [26, 34, 48], crags: [48, 30, 30] };
+const BG = { forest: [46, 74, 40], netherwood: [24, 26, 40], meadow: [86, 128, 60], river: [70, 96, 92], quarry: [112, 98, 84], moonfen: [26, 34, 48], crags: [48, 30, 30] };
 const rows = [];
 for (const seed of seeds) {
   const world = generateWorld(seed);
