@@ -24,8 +24,8 @@ export function leafBlock(x, y, hw, hh, rnd) {
 }
 
 /**
- * A crown of foliage built of blocks: dark inner masses, mid blocks, lit
- * blocks toward the upper left and a ragged rim of small square tufts.
+ * A crown of foliage built of leafy clumps: dark inner masses, mid clumps,
+ * lit clumps toward the upper left and a ragged rim of small tufts.
  */
 export function crown(m, rng, cx, cy, rx, ry, mat = 'leaf', o = {}) {
   const n = o.n ?? Math.max(5, Math.round((rx + ry) / 3.5)), rnd = R(rng);
@@ -42,12 +42,12 @@ export function crown(m, rng, cx, cy, rx, ry, mat = 'leaf', o = {}) {
   // back to front: the lower, darker blocks behind the lit upper ones
   blobs.sort((p, q) => q[1] - p[1] + (q[0] - p[0]) * 0.2);
   // the crown is lit as one mass (upper left bright, underside in shade), each block only a little rounded
-  for (const [x, y, r] of blobs) m.poly(leafBlock(x, y, r * (0.95 + rng.next() * 0.25), r * (0.7 + rng.next() * 0.2), rnd), mat, { shade: 'round', tex: 1.8, tone: ((cy - y) / ry) * 0.28 + ((cx - x) / rx) * 0.1 - 0.08 });
+  for (const [x, y, r] of blobs) m.poly(lumpy(x, y, r * (0.95 + rng.next() * 0.25), r * (0.7 + rng.next() * 0.2), rnd, 0.22, 7), mat, { shade: 'round', tex: 2.2, tone: ((cy - y) / ry) * 0.28 + ((cx - x) / rx) * 0.1 - 0.08 });
   // square tufts of leaves breaking the rim
   for (let i = 0; i < n; i++) {
     const a = Math.PI * (0.9 + rng.next() * 1.2), t = 1.5 + rng.next() * 1.5;
     const x = cx + Math.cos(a) * rx * 0.85, y = cy + Math.sin(a) * ry * 0.8;
-    m.poly([[x - t, y - t], [x + t, y - t], [x + t, y + t], [x - t, y + t]], mat, { shade: 'flat', tex: 1.2, tone: Math.sin(a) < 0 ? 0.1 : -0.12 });
+    m.poly(lumpy(x, y, t, t, rnd, 0.3, 5), mat, { shade: 'flat', tex: 1.2, tone: Math.sin(a) < 0 ? 0.1 : -0.12 });
   }
   // shadowed hollows between blocks
   for (let i = 0; i < n; i++) {
@@ -318,5 +318,29 @@ export function spire(rng, h, mat = 'gem') {
 export function cairn(rng, s) {
   const m = new Model();
   for (let i = 0; i < 3; i++) m.poly(lumpy(0, -s * 0.3 - i * s * 0.55, s * (0.7 - i * 0.15), s * 0.32, R(rng), 0.2, 5), 'rock', { shade: 'round', tone: i * 0.04 });
+  return m;
+}
+
+/** A timber scaffold: two posts, a deck across their tops, a rail and crossed braces. */
+export function scaffold(rng, w, h) {
+  const m = new Model();
+  for (const x of [-w / 2, w / 2]) beam(m, [x, 1], [x, -h - 6], 2.4);
+  beam(m, [-w / 2 - 3, -h], [w / 2 + 3, -h], 2.6);
+  beam(m, [-w / 2, -h - 6], [w / 2, -h - 6], 1.4);
+  beam(m, [-w / 2, -2], [w / 2, -h + 2], 1.6);
+  if (rng.next() < 0.6) beam(m, [w / 2, -2], [-w / 2, -h + 2], 1.6);
+  if (h > 20) beam(m, [-w / 2, -h / 2], [w / 2, -h / 2], 1.6);
+  return m;
+}
+
+/** A winding wheel on its frame (a mine's headgear): a rim with spokes, raised on two legs. */
+export function wheel(rng, r, h) {
+  const m = new Model();
+  beam(m, [-r * 0.7, 0], [0, -h], 2.4); beam(m, [r * 0.7, 0], [0, -h], 2.4);
+  const n = 16, pts = [];
+  for (let i = 0; i <= n; i++) pts.push([Math.cos((i / n) * Math.PI * 2) * r, -h + Math.sin((i / n) * Math.PI * 2) * r]);
+  for (let i = 0; i < n; i++) beam(m, pts[i], pts[i + 1], 1.8);
+  for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI + rng.next() * 0.1; beam(m, [Math.cos(a) * r, -h + Math.sin(a) * r], [-Math.cos(a) * r, -h - Math.sin(a) * r], 1.2); }
+  m.ellipse(0, -h, 1.8, 1.8, 'metal', {});
   return m;
 }

@@ -1,63 +1,75 @@
-// Willow Bank, seen from the side: blue mountains and dark pines as flat
-// silhouettes, and in front the river in cross-section — clear water lying
-// in its bed between two banks of chalky clay and gravel under a crust of
-// grass, reeds and cattails at the water's edge, weeping willows, and in
-// some worlds a footbridge over the stream.
+// Willow Bank, a river cave: dark teal water running along the cave floor
+// under chalky pillars of cobbled stone, their mossy caps hung with moss
+// and crowned with cattails; mushrooms glowing cyan in the dark, a
+// weeping willow on the bank, a roof of stalactites dripping vines, and
+// far pillars fading into the river mist. In some worlds a footbridge
+// crosses the stream.
 
 import { sky } from './paint.js';
 import { palette, vary, streamOf } from './kit.js';
-import { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, silhouette, treeShape } from './side.js';
-import { tree, cloud, reeds, beam } from './objects.js';
+import { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt } from './side.js';
+import { caveFrame, farPillars, fog, vines, moss, glowShrooms, ledgeTops } from './cave.js';
+import { tree, reeds, beam } from './objects.js';
 import { Model } from '../geometry.js';
 
 export function compose(cv, seed) {
   const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'river', p);
   const pal = vary(palette({
-    leaf: ['#5a8a34', { spread: 0.55 }], bark: '#4a3826', cloud: ['#eef2f4', { spread: 0.3 }], reed: ['#6a8a3a', { spread: 0.5 }],
-    cattail: '#6a4428', timber: '#7a5a3a',
+    leaf: ['#4a7a2a', { spread: 0.55 }], bark: ['#4a3a2a', { spread: 0.5 }], reed: ['#4e7a2e', { spread: 0.5 }],
+    cattail: '#7a3a22', timber: '#6a4a2e',
   }), s('pal'), 1);
-  sky(cv, 0, 150, ['#4a7cbc', '#7aa6d6', '#b8d2e8', '#e4ecec'], 10);
-  const cr = s('clouds');
-  for (let i = 0; i < 3 + cr.int(0, 2); i++) cv.stamp(cloud(cr, cr.int(30, 60), cr.int(7, 12)), pal, cr.int(0, W), cr.int(14, 50), { outline: false, texture: 0 });
-  silhouette(cv, { base: 78, amp: 24, freq: 0.01, seed: s('m').int(0, 1e9), fill: '#8a9ec0', rim: '#c8d4e4', peaks: 0.6 });
-  const pines = silhouette(cv, { base: 116, amp: 8, freq: 0.02, seed: s('p').int(0, 1e9), fill: '#4e7a6a' });
-  const pr = s('pines');
-  for (let x = 2; x < W; x += pr.int(5, 11)) treeShape(cv, x, pines[x] + 2, pr.int(12, 22), 'pine', '#3e6a5a', pr.int(0, 1e9));
-  // the banks and the river bed between them
-  const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 156, amp: 10, freq: 0.012 });
-  const rx = ts.int(140, 250), hw = ts.int(38, 50);
-  dip(top, rx, hw, 34, 0.35);
+  // the cave's depths: a dark teal back wall, far pillars in two rows with mist between
+  sky(cv, 0, H, ['#05090c', '#08121a', '#0c1c20', '#102624'], 10);
+  farPillars(cv, { n: 8, fill: '#0f1e1e', rim: '#162a28', seed: s('far1').int(0, 1e9), w: [10, 20], floor: 180, caps: true });
+  fog(cv, '#1e4040', 90, 200, 0.35, s('fog1').int(0, 1e9));
+  farPillars(cv, { n: 5, fill: '#142824', rim: '#1e3a32', seed: s('far2').int(0, 1e9), w: [16, 28], floor: 185, caps: true });
+  fog(cv, '#24504a', 120, 210, 0.25, s('fog2').int(0, 1e9));
+  const fs = s('frame');
+  const frame = caveFrame(cv, {
+    seed: fs.int(0, 1e9), stones: ['#3e443c', '#4a4c40', '#343a34'], mortar: '#101412', dark: 0.42, roof: [10, 30], walls: [8, 12],
+    stal: { n: 18, len: [8, 36], w: [3, 7] }, lip: ['#4e8a2e', '#2e5a22'],
+  });
+  vines(cv, frame.roof, { cols: ['#4e8a2a', '#34621e', '#22401a'], leaf: '#5e9a32', seed: fs.int(0, 1e9), rate: 0.22, len: [4, 50] });
+  // the banks, the river bed between them, pillars rising from both
+  const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 168, amp: 8, freq: 0.012 });
+  const rx = ts.int(150, 240), hw = ts.int(48, 64);
+  dip(top, rx, hw, 28, 0.45);
   const bank = ts.next() < 0.5 ? ts.int(20, 90) : ts.int(300, 360);
   raise(top, bank, bank + ts.int(20, 40), Math.min(...top) - ts.int(6, 12), 3);
   fillSolid(cv, top);
   ledges(cv, top, ts, 7, { keep: [[rx - hw - 6, rx + hw + 6]] });
   const ss = ts.int(0, 1e9);
   paintTerrain(cv, {
-    a: '#8a7a62', b: '#c8c0a8', grain: '#e8e4d4', dark: '#3a3226', deep: '#2a261e', cave: '#12100c',
-    crust: ['#7ab84a', '#5a9a3a', '#3e7a2e'], crustH: 3, seed: ss, blot: 0.08,
-    grass: { cols: ['#5a9a3a', '#7ab84a', '#4a8a30'], tall: 4, rate: 0.6, flowers: ['#ffe58a', '#ffffff'] },
-    rocks: { cols: ['#c8ccc8', '#8a8e8c', '#4a4e4c'], n: 26, r: 5 },
+    a: '#8a7a62', b: '#c8c0a8', grain: '#e8e4d4', dark: '#2a2a22', deep: '#141612', cave: '#0a0c0a',
+    crust: ['#7ac04a', '#5a9a3a', '#3e7a2e', '#2e5a26'], crustH: 4, seed: ss,
+    cobble: { stones: ['#9a9684', '#7e7a68', '#aaa692', '#66645a', '#8a8a78', '#74786a'], mortar: '#2a2a22', s: 4 },
+    grass: { cols: ['#5a9a3a', '#7ac04a', '#4a8a30'], tall: 4, rate: 0.6, flowers: ['#ffe58a', '#ffffff'] },
   });
-  const level = Math.round(Math.max(top[rx - hw], top[rx + hw])) + 6;
-  cv.meta.river = pool(cv, rx - hw, rx + hw, level, { surface: '#e4f4ff', body: ['#6aa4d8', '#5a90c8', '#4a7ab0', '#3a6496', '#2e5078'], see: 0.25, bed: ['#5a4a36', '#6e5e48', '#4a3e2e'] });
+  moss(cv, { cols: ['#7ac04a', '#4e8a34', '#3a6e2a', '#2a5020'], seed: ss + 1, drape: 9, rate: 0.22, len: 12 });
+  const level = Math.round(Math.max(top[rx - hw], top[rx + hw])) + 5;
+  cv.meta.river = pool(cv, rx - hw, rx + hw, level, { surface: '#8ae0d8', body: ['#2a6a68', '#1e5654', '#164442', '#0e3232', '#0a2424'], see: 0.3, bed: ['#2a3a2e', '#34463a', '#1e2a22'] });
   markOpen(cv);
-  // reeds at the water's edge, a willow on a bank
+  // cattails on the pillars and at the water's edge
   const rr = s('reeds');
-  for (const side of [-1, 1]) for (let i = 0; i < 2; i++) {
-    let x = rx + side * (hw - rr.int(2, 12));
+  for (const [x, y] of ledgeTops(cv, 5, rr.int(0, 1e9))) cv.stamp(reeds(rr, rr.int(10, 16), rr.int(3, 5), { heads: 0.7 }), pal, x, y + 1);
+  for (const side of [-1, 1]) {
+    let x = rx + side * (hw - rr.int(2, 10));
     while (cv.liquid[(surfaceAt(cv, x) - 1) * W + x] && x > 0 && x < W - 1) x += side;
-    cv.stamp(reeds(rr, rr.int(12, 20), rr.int(4, 7), { heads: 0.5 }), pal, x, surfaceAt(cv, x) + 1);
+    cv.stamp(reeds(rr, rr.int(12, 20), rr.int(4, 7), { heads: 0.6 }), pal, x, surfaceAt(cv, x) + 1);
   }
-  const wr = s('willow'), wx = rx < W / 2 ? wr.int(300, 360) : wr.int(24, 80);
-  cv.stamp(tree(wr, 'willow', wr.int(90, 110), wr.int(8, 11)), pal, wx, surfaceAt(cv, wx) + 2, { roots: [12, 3] });
-  if (wr.next() < 0.6) {
+  // the weeping willow on the far bank
+  const wr = s('willow'), wx = rx < W / 2 ? wr.int(320, 366) : wr.int(18, 64);
+  cv.stamp(tree(wr, 'willow', wr.int(110, 130), wr.int(9, 12)), pal, wx, surfaceAt(cv, wx) + 2, { roots: [12, 3], dark: 0.15 });
+  if (wr.next() < 0.5) {
     // a footbridge from bank to bank
     const y = level - 4, m = new Model(), x0 = rx - hw - 4, x1 = rx + hw + 4;
     beam(m, [x0, y], [x1, y], 3);
     for (let x = x0 + 8; x < x1; x += 16) beam(m, [x, y - 8], [x, y + 1], 1.6);
     beam(m, [x0, y - 8], [x1, y - 8], 1.4);
-    cv.stamp(m, pal, 0, 0);
+    cv.stamp(m, pal, 0, 0, { dark: 0.2 });
     cv.meta.bridge = [x0, x1, y];
   }
+  cv.meta.glows = glowShrooms(cv, { n: 9, cap: '#2ab8d8', lit: '#b0f4ff', stem: '#c8dcd4', rgb: [0.25, 0.75, 0.95], seed: s('shrooms').int(0, 1e9) });
+  cv.meta.vignette = 0.6;
   cv.meta.horizon = 116;
 }

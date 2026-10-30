@@ -18,23 +18,36 @@ still limited.
   crane, ladder, cart and lantern; Moonfen's black pools, moss-hung
   willows, glowing crystals and mist; the Ember Crags' smoking cone, lava
   pool, basalt columns and vents.
-* **A side view, after Noita.** No perspective: each region is a flat
-  banded sky, flat silhouettes of the distance (hills, mountains, rows of
-  trunks, a volcano), and in front a cross-section of the ground itself —
-  a mottled material (two colours in broad blotches, a few stones, seams
-  and grains, darker the deeper it goes) under a crust of grass, moss,
-  gravel or ash, with ledges in two tiers, overhangs and cave pockets.
-  No ledge floats: each stands on a leaning buttress of rock reaching down
-  to the ground or to a ledge below, and ledges, buttresses and ground are
-  joined as one mass (a smooth union of their shapes), so a buttress flares
-  into the ledge it holds and into the ground it stands on. Water and lava lie in the hollows as
-  flat pools. Plants grow only on the dry surfaces — the ground and the
-  ledges — and big trees stand behind them. The strength of the picture is
-  in its light and particles: glows round the sun, the moon, lanterns, lava
-  and crystals, and at run time flickering lights, pollen, motes in the
-  light shafts, falling leaves, fireflies and wisps, grit trickling from
-  overhangs, shimmering water, popping lava bubbles, rising embers, ash and
-  steam.
+* **A cavern diorama.** No perspective: each region is a cut through a
+  cavern (`env/cave.js`). Behind, a dark back wall in the region's
+  colour with rows of far pillars (some capped like mushrooms, some only a
+  stalactite or a stalagmite; Moonfen's are ruined columns and arches)
+  fading into bands of mist. Over it, the cave's frame: a roof of darker
+  cobbled rock with a mossy lip, stalactites (glowing at their tips in
+  the Ember Crags) and curtains of vines, and side walls — or, in the
+  Sunlit Meadow and Moonfen, a cave mouth or rent in the roof opening on
+  the sky (the sun, clouds, blue mountains and a dark wood; the moon and
+  stars). In front, a cross-section of the ground itself: cobbled stone
+  (rounded stones of a few colours in a dark mortar, lit on their upper
+  left, speckled; darker down each pillar and deeper in the ground) under
+  a crust of grass, moss, gravel or ash, with ledges in two tiers,
+  overhangs and cave pockets. No ledge floats: each is a mushroom cap on
+  a near-upright pillar reaching down to the ground or to a ledge below,
+  joined to them as one mass (a smooth union), so a pillar flares into
+  the cap it holds and into the ground it stands on; moss runs down the
+  sides of every cap and hangs in strands from its underside. Water and
+  lava lie in the hollows as flat pools, and in the Ember Crags lava pours
+  in falls from the roof and the edges of the ledges. Plants grow only on
+  the dry surfaces — the ground and the ledges — and big trees stand
+  behind them. The strength of the picture is in its light: the scene is
+  dark, closed by a vignette, and lit in soft steps by its sources —
+  mushrooms glowing cyan, ember-orange or cold white, torches and a
+  lantern, lava, crystals, the sun and the moon — all added last, so they
+  light the scenery too. At run time: drops falling from the
+  stalactites, falls running, torches flickering, mushrooms breathing,
+  pollen, motes, falling leaves, fireflies and wisps, grit trickling from
+  overhangs, shimmering water, popping lava bubbles, rising embers, ash
+  and steam.
 * **Every ingredient has its own look in each world**, derived from its
   family, habitat, colour, rarity and alchemy. The same species is drawn
   from one descriptor on the ground (sprout, ripe, mature, and closed out
@@ -52,14 +65,10 @@ still limited.
   Skies are hard-edged bands and light falls off in hard steps.
   Ingredients are ringed in a near-black outline, so they read at a
   glance against the ground and look like their icon.
-* **Chunky pixels and square shapes.** Textures are coarse: blotches and
-  grains step in 2 × 2 squares (`raster.js` `GRAIN`), and the scenery —
-  ground, ledges, trees, rocks, timberwork, clouds, silhouettes — is drawn
-  whole on a grid of 2-pixel squares (`paint.js` `CELL`), crust and rims
-  a square thick. Shapes are built of squares rather than circles: every
-  "ellipse" and lump is a squircle (`geometry.js` `SQUARE`), so berries,
-  caps, stones and pieces read as blocks, and tree crowns are heaps of
-  leaf blocks with stepped corners and square tufts round their rim.
+* **Pixels.** The scenery is drawn at the scene's own pixel (`paint.js`
+  `CELL` = 1), so its stones, vines and moss are fine-grained; tree crowns
+  are heaps of leafy clumps. Ingredients keep their coarser texture
+  (`raster.js` `GRAIN`) and squircle shapes (`geometry.js` `SQUARE`).
 * **Proportions.** Ingredients are sized against the scenery: a herb or a
   flower stands knee-high to an oak (about a tenth of the scene's height),
   a stone or a shell a hand across, a crystal cluster no bigger than a
@@ -102,14 +111,18 @@ src/visual/                     pure, DOM-free, deterministic
                   scenery depth maps — banded sky, stepped light;
                   side.js: the side view's ground line, hollows, mounds,
                   ledges, caves, mottled terrain painting, pools, flat
-                  silhouettes, glows; objects.js: trees, shrubs, rocks,
-                  reeds, ferns, logs, clouds, crane, cart…; scene.js: cache)
+                  silhouettes, glows; cave.js: the cavern — back wall,
+                  far pillars, ruins, mist, roof, stalactites, walls,
+                  vines, moss, glowing mushrooms, torches, falls, the
+                  vignette and lights; stone.js: the cobbled stone;
+                  objects.js: trees, shrubs, rocks, reeds, ferns, logs,
+                  clouds, crane, cart, scaffolds, wheel…; scene.js: cache)
 src/rendering/
   species-sprites.js   cached plant/icon frames and canvases, silhouettes,
                        ingredientSprite (every list's picture)
   wild-scene.js        scene canvas cache, PlantGround placement, hit testing,
-                       per-frame animation (birds, motes, glints, wisps,
-                       embers, steam)
+                       per-frame animation (drips, falls, torches, birds,
+                       motes, glints, wisps, embers, steam)
 src/game/gathering.js  moisture-driven growth, watering, migration
 src/ui/views/wilds.js  scene, harvesting, watering, feedback
 ```
@@ -273,19 +286,21 @@ Chromium (desktop, this development container), from the in-game probe
 
 | region | first (ms) | again, another seed (ms) |
 | --- | ---: | ---: |
-| Sunlit Meadow | 116 | 83 |
-| Whisperwood | 197 | 158 |
-| Willow Bank | 57 | 49 |
-| Ironstone Quarry | 49 | 28 |
-| Moonfen | 85 | 57 |
-| Ember Crags | 58 | 33 |
+| Sunlit Meadow | 229 | 228 |
+| Whisperwood | 180 | 206 |
+| Willow Bank | 165 | 122 |
+| Ironstone Quarry | 125 | 95 |
+| Moonfen | 130 | 132 |
+| Ember Crags | 107 | 88 |
 
 * All 36 species of a new world — three growth stages, icon and four
   pieces each (288 rasters): **99 ms** in total, once per world.
 * One frame of the Wilds view (Whisperwood, its plants, the animated
   overlay, weather): **0.17 ms** — it draws only cached canvases.
-* Node 22 (`tests/procedural.test.mjs`, no warm-up): 49–560 ms per region
-  the first time, 40–280 ms after; the test bounds every region at 4 s.
+* Node 22 (no warm-up): 90–350 ms per region the first time, 90–320 ms
+  after; the test bounds every region at 4 s. The cavern costs about
+  twice the earlier flat side view: the scenery is now rasterized at the
+  scene's own pixel rather than in 2-pixel squares.
 * Shipped assets: 1.2 MB → 76 KB (the wilds' and ingredients' PNG atlases
   are gone); source art in the repository: 31 MB → 1.4 MB.
 

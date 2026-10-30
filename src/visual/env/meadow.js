@@ -1,12 +1,14 @@
-// Sunlit Meadow, seen from the side: a bright banded sky and sun, rolling
-// hills and far trees as flat silhouettes, and in front a cross-section of
-// the field — dark loam under a thick grass crust dotted with flowers,
-// rising into a grassy knoll, an oak or two, and what the world's meadow
-// holds: a fence with straw beehives, a ring of standing stones, or a pond.
+// Sunlit Meadow, seen from a cave mouth: the rock arches over a view of
+// the open sky — the sun, clouds, blue mountains and a dark wood — and in
+// front the meadow's floor in cross-section: earthy cobbles under a thick
+// crust of grass dotted with flowers, mossy pillars dripping moss, an oak
+// or two, vines curtaining the mouth, and what the world's meadow holds: a
+// fence with straw beehives, a ring of standing stones, or a pond.
 
 import { sky } from './paint.js';
 import { palette, vary, streamOf } from './kit.js';
 import { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, surfaceAt, silhouette, treeShape, glow, drips, ledges } from './side.js';
+import { caveFrame, fog, vines, moss } from './cave.js';
 import { tree, cloud, fence, skep, boulder } from './objects.js';
 import { Model, lumpy } from '../geometry.js';
 import { pack } from '../color.js';
@@ -14,22 +16,31 @@ import { pack } from '../color.js';
 export function compose(cv, seed) {
   const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'meadow', p);
   const pal = vary(palette({
-    leaf: ['#3f7a2c', { spread: 0.6 }], bark: '#5a3c24', rock: '#8a8a84', cloud: ['#e8eef4', { spread: 0.3, cool: 0.5 }],
-    timber: '#7a5432', straw: ['#c8a050', { spread: 0.45 }], moss: '#6a9a3a',
+    leaf: ['#3a6e2a', { spread: 0.6 }], bark: '#4e3420', rock: '#7a7a72', cloud: ['#c8d4e4', { spread: 0.3, cool: 0.5 }],
+    timber: '#6a4a2e', straw: ['#c8a050', { spread: 0.45 }], moss: '#5a8a34',
   }), s('pal'), 1);
-  sky(cv, 0, 150, ['#3466b4', '#5a92d4', '#9cc6e8', '#d8ecdc'], 10);
-  const sx = 290 + s('sun').int(-60, 40), sy = 26;
-  for (let y = sy - 9; y <= sy + 9; y++) for (let x = sx - 9; x <= sx + 9; x++) if (Math.hypot(x - sx, y - sy) <= 8.5) cv.set(x, y, Math.hypot(x - sx, y - sy) < 6.5 ? pack([1, 0.99, 0.9]) : pack([1, 0.94, 0.7]));
-  glow(cv, sx, sy, 60, [1, 0.95, 0.75], 0.3);
+  sky(cv, 0, 160, ['#1e3a6e', '#2e5a92', '#5a88b8', '#9cc0d8'], 10);
+  const sx = 230 + s('sun').int(-50, 50), sy = 34;
+  for (let y = sy - 10; y <= sy + 10; y++) for (let x = sx - 10; x <= sx + 10; x++) if (Math.hypot(x - sx, y - sy) <= 9.5) cv.set(x, y, Math.hypot(x - sx, y - sy) < 7.5 ? pack([1, 0.98, 0.86]) : pack([1, 0.92, 0.66]));
+  glow(cv, sx, sy, 70, [1, 0.92, 0.7], 0.35);
   const cr = s('clouds');
-  for (let i = 0; i < 3 + cr.int(0, 2); i++) cv.stamp(cloud(cr, cr.int(30, 70), cr.int(8, 14)), pal, cr.int(0, W), cr.int(18, 60), { outline: false, texture: 0 });
-  // the distance: two rows of hills, the far one bluest, trees along the near one
-  silhouette(cv, { base: 96, amp: 16, freq: 0.007, seed: s('h1').int(0, 1e9), fill: '#86b0a4', rim: '#a4c8b4' });
-  const near = silhouette(cv, { base: 116, amp: 12, freq: 0.011, seed: s('h2').int(0, 1e9), fill: '#5f9a5a', rim: '#7ab26a' });
+  for (let i = 0; i < 4 + cr.int(0, 2); i++) cv.stamp(cloud(cr, cr.int(30, 70), cr.int(8, 14)), pal, cr.int(40, W - 40), cr.int(26, 70), { outline: false, texture: 0 });
+  // the view: blue mountains, then a dark wood, then nearer hills
+  silhouette(cv, { base: 100, amp: 18, freq: 0.009, seed: s('h1').int(0, 1e9), fill: '#4a6a94', rim: '#6a8ab0', peaks: 0.5 });
+  fog(cv, '#9ab8d0', 96, 140, 0.25, s('haze').int(0, 1e9));
+  const wood = silhouette(cv, { base: 124, amp: 8, freq: 0.014, seed: s('h2').int(0, 1e9), fill: '#1e3e30', rim: '#2a5038' });
   const tr = s('far');
-  for (let x = 4; x < W; x += tr.int(9, 22)) if (tr.next() < 0.6) treeShape(cv, x, near[x] + 2, tr.int(10, 18), tr.next() < 0.3 ? 'pine' : 'oak', '#4a8248', tr.int(0, 1e9));
+  for (let x = 4; x < W; x += tr.int(5, 12)) treeShape(cv, x, wood[x] + 2, tr.int(12, 24), tr.next() < 0.4 ? 'pine' : 'oak', tr.next() < 0.5 ? '#1e3e30' : '#24482f', tr.int(0, 1e9));
+  silhouette(cv, { base: 140, amp: 6, freq: 0.02, seed: s('h3').int(0, 1e9), fill: '#2e5a32', rim: '#3e7238' });
+  // the cave mouth framing it
+  const fs = s('frame'), o0 = fs.int(40, 80), o1 = W - fs.int(30, 70);
+  const frame = caveFrame(cv, {
+    seed: fs.int(0, 1e9), stones: ['#4a3e30', '#3e3428', '#4a4a34'], mortar: '#140e0a', dark: 0.35, roof: [40, 70], walls: [26, 22], open: [o0, o1],
+    stal: { n: 10, len: [4, 18], w: [2, 5] }, lip: ['#5a9a34', '#3a6e26'],
+  });
+  vines(cv, frame.roof, { cols: ['#5a9a30', '#3e7226', '#2a5020'], leaf: '#6ab83a', flower: '#ff9fc7', seed: fs.int(0, 1e9), rate: 0.3, len: [4, 50] });
   // the field: rolling ground, a grassy knoll, sometimes a pond in a hollow
-  const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 160, amp: 12, freq: 0.01 });
+  const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 166, amp: 10, freq: 0.01 });
   const kx = ts.int(40, W - 120);
   raise(top, kx, kx + ts.int(40, 70), Math.min(...top) - ts.int(10, 18), 3);
   const fr = s('feature'), feature = fr.weighted(['hives', 'stones', 'pond'], [1.2, 0.8, 0.8]);
@@ -40,23 +51,24 @@ export function compose(cv, seed) {
     dip(top, px, hw, 16);
   }
   fillSolid(cv, top);
-  // a little cave under the knoll, and grassy ledges jutting out over the field
   if (ts.next() < 0.6) blob(cv, kx + 20, top[kx + 20] + 18, 12, 6, ts.int(0, 1e9), 0);
   ledges(cv, top, ts, 6, { keep: pond ? [[pond.x - pond.hw, pond.x + pond.hw]] : [] });
   const ss = ts.int(0, 1e9);
   paintTerrain(cv, {
-    a: '#6a4a30', b: '#7e5a3a', grain: '#a08060', dark: '#3a2618', deep: '#2a1a12', cave: '#140c08',
-    crust: ['#8ccf4a', '#5ea83a', '#3f7e2c', '#4a6a2c'], crustH: 4, seed: ss,
+    a: '#6a4a30', b: '#7e5a3a', grain: '#a08060', dark: '#2a1c12', deep: '#140c08', cave: '#100a06',
+    crust: ['#8ccf4a', '#5ea83a', '#3f7e2c', '#2e5a22'], crustH: 4, seed: ss,
+    cobble: { stones: ['#7a6a52', '#6a5a44', '#8a7a5e', '#5a4e3c', '#76705a', '#64604a'], mortar: '#2a2018', s: 4 },
     grass: { cols: ['#6ab83e', '#8ccf4a', '#4e9a34'], tall: 4, rate: 0.7, flowers: ['#fff4c0', '#ffe066', '#ff9fc7', '#c9b0ff', '#ffffff', '#ff7a6a'] },
   });
+  moss(cv, { cols: ['#8ccf4a', '#5ea83a', '#3f7e2c', '#2e5a22'], seed: ss + 1, drape: 9, rate: 0.2, len: 10 });
   if (pond) {
-    cv.meta.pond = pool(cv, pond.x - pond.hw, pond.x + pond.hw, pond.level, { surface: '#cfe8ff', body: ['#5a8ac8', '#4a74b0', '#3a5e94', '#2e4a78'], see: 0.2, bed: ['#4a3a26', '#5a4630', '#3a2a1c'] });
+    cv.meta.pond = pool(cv, pond.x - pond.hw, pond.x + pond.hw, pond.level, { surface: '#cfe8ff', body: ['#3a6a98', '#2e5a86', '#244a72', '#1a3a5e'], see: 0.2, bed: ['#3a2e20', '#4a3a28', '#2a2018'] });
   }
   markOpen(cv);
-  // the oaks
+  // the oaks: one framing the mouth, maybe another in the field
   const or = s('oaks'), left = or.next() < 0.5;
-  const ox = left ? or.int(16, 50) : or.int(334, 368);
-  cv.stamp(tree(or, 'oak', or.int(100, 120), or.int(9, 12)), pal, ox, surfaceAt(cv, ox) + 2, { roots: [14, 3] });
+  const ox = left ? or.int(14, 40) : or.int(344, 370);
+  cv.stamp(tree(or, 'oak', or.int(130, 150), or.int(12, 15), { lean: left ? 0.04 : -0.04 }), pal, ox, surfaceAt(cv, ox) + 2, { roots: [16, 3], dark: 0.2 });
   if (or.next() < 0.7) { const o2 = left ? or.int(250, 320) : or.int(70, 130); cv.stamp(tree(or, 'oak', or.int(60, 80), or.int(5, 7)), pal, o2, surfaceAt(cv, o2) + 1, { roots: [8, 2] }); }
   if (feature === 'hives') {
     const fx = fr.int(70, 300), fy = surfaceAt(cv, fx) + 1;
@@ -76,5 +88,6 @@ export function compose(cv, seed) {
   for (let i = 0; i < 2; i++) { const x = rr.int(10, W - 10); cv.stamp(boulder(rr, rr.int(5, 9), rr.int(3, 5), { moss: 'moss' }), pal, x, surfaceAt(cv, x) + 2, { foot: [8, 2] }); }
   cv.meta.sun = [sx, sy];
   cv.meta.trickles = drips(cv, ss, 3);
+  cv.meta.vignette = 0.45;
   cv.meta.horizon = 120;
 }
