@@ -18,7 +18,7 @@ import { pack } from '../color.js';
 export function compose(cv, seed) {
   const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'moonfen', p);
   const pal = vary(palette({
-    leaf: ['#1e3e34', { spread: 0.45 }], moss: ['#2e5a46', { spread: 0.5 }], bark: ['#2a2420', { spread: 0.4 }], wood: '#5a4a3a', rock: ['#3e4250', { spread: 0.45 }],
+    leaf: ['#24483c', { spread: 0.5 }], leaf2: ['#224658', { spread: 0.5 }], bloom: ['#c860a8', { spread: 0.5 }], moss: ['#2e5a46', { spread: 0.5 }], bark: ['#2a2420', { spread: 0.4 }], wood: '#5a4a3a', rock: ['#3e4250', { spread: 0.45 }],
     reed: ['#2e4a34', { spread: 0.45 }], cattail: '#3a2a1e', gem: ['#6ac8f0', { spread: 0.6 }],
   }), s('pal'), 0.8);
   sky(cv, 0, H, ['#04050e', '#0a0f2a', '#121a40', '#1a2250']);
@@ -80,8 +80,9 @@ export function compose(cv, seed) {
   markOpen(cv);
   // willows hung with moss, a dead tree, reeds at the pools
   const wr = s('willows');
-  terrainTrees(cv, wr, pal, { n: 2, kinds: ['willow'], h: [84, 120], dark: 0.25, gap: 120 });
-  terrainTrees(cv, wr, pal, { n: 2, kinds: ['dead', 'oak'], shapes: ['lean', 'tall'], h: [36, 70], dark: 0.2, gap: 40, ledges: true });
+  const look = { mats: ['leaf', 'leaf2'], bloom: { mat: 'bloom', rate: 0.05 }, hang: { mat: 'moss', rate: 0.4, len: /** @type {[number, number]} */ ([4, 12]) } };
+  terrainTrees(cv, wr, pal, { n: 2, kinds: ['wisteria', 'willow'], h: [64, 116], dark: 0.25, gap: 120, look });
+  terrainTrees(cv, wr, pal, { n: 2, kinds: ['dead', 'wisteria', 'gnarl'], shapes: ['lean', 'tall'], h: [36, 70], dark: 0.2, gap: 40, ledges: true, look });
   const rr = s('reeds');
   for (const p of pools) for (const side of [-1, 1]) {
     let x = p.x + side * p.hw;
@@ -108,5 +109,6 @@ export function compose(cv, seed) {
   cv.meta.glows = glows;
   cv.meta.moon = [mx, my];
   cv.meta.vignette = 0.6;
+  cv.meta.wind = cave ? 0.4 : 0.7;
   cv.meta.horizon = 124;
 }

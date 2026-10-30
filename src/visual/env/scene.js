@@ -16,7 +16,7 @@ import * as crags from './crags.js';
 import * as netherwood from './netherwood.js';
 
 /** Version of the environment generator (scenes are not saved; this only names caches). */
-export const ENV_VERSION = 5;
+export const ENV_VERSION = 6;
 
 const COMPOSERS = { meadow, forest, netherwood, river, quarry, moonfen, crags };
 
@@ -32,6 +32,7 @@ const COMPOSERS = { meadow, forest, netherwood, river, quarry, moonfen, crags };
  * @property {Uint16Array} props   the piece of scenery covering each pixel (0: none)
  * @property {number} top          first row with open ground
  * @property {Record<string, any>} meta  what the animation needs (horizon, vents, pools…)
+ * @property {ReturnType<import('./paint.js').Canvas['swayData']>} sway  the foliage the wind moves (wild-scene.js), apart from the painting
  */
 
 /** @type {Map<string, Scene>} */
@@ -47,13 +48,14 @@ export function composeScene(region, seed) {
   COMPOSERS[id].compose(cv, String(seed));
   finish(cv, cv.meta.vignette ?? 0.55);
   // a gap the composition left (a dip below its sky) takes the colour above it
-  const px = cv.pix.px;
-  for (let y = 1; y < SCENE_H; y++) for (let x = 0; x < SCENE_W; x++) if (!(px[y * SCENE_W + x] >>> 24)) px[y * SCENE_W + x] = px[(y - 1) * SCENE_W + x] | 0xff000000;
+  for (const px of cv.sw ? [cv.pix.px, cv.sw.bare] : [cv.pix.px]) {
+    for (let y = 1; y < SCENE_H; y++) for (let x = 0; x < SCENE_W; x++) if (!(px[y * SCENE_W + x] >>> 24)) px[y * SCENE_W + x] = px[(y - 1) * SCENE_W + x] | 0xff000000;
+  }
   // no plant at the very edges of the painting
   for (let x = 0; x < SCENE_W; x++) { cv.open[x] = 0; cv.open[(SCENE_H - 1) * SCENE_W + x] = 0; cv.open[(SCENE_H - 2) * SCENE_W + x] = 0; }
   let top = SCENE_H;
   for (let k = 0; k < cv.open.length; k++) if (cv.open[k]) { top = Math.floor(k / SCENE_W); break; }
-  return { pix: cv.pix, open: cv.open, depth: cv.depth, solid: cv.solid, liquid: cv.liquid, rock: cv.rock, trees: cv.trees, props: cv.props, top, meta: cv.meta };
+  return { pix: cv.pix, open: cv.open, depth: cv.depth, solid: cv.solid, liquid: cv.liquid, rock: cv.rock, trees: cv.trees, props: cv.props, top, meta: cv.meta, sway: cv.swayData() };
 }
 
 /**

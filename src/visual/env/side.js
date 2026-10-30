@@ -235,7 +235,7 @@ export function pool(cv, x0, x1, level, o) {
       if (cv.solid[k]) break;
       cv.liquid[k] = 1;
       const d = y - level, f = Math.min(body.length - 1, d / 5), i = Math.floor(f), c = d === 0 ? surf : i >= body.length - 1 ? body[i] : mixPacked(body[i], body[i + 1], f - i);
-      cv.pix.px[k] = mixPacked(c, cv.pix.px[k], d === 0 ? 0 : see);
+      cv.paint(k, mixPacked(c, cv.pix.px[k], d === 0 ? 0 : see));
     }
   }
   if (bed.length) for (let y = level; y < cv.H; y++) for (let x = Math.max(0, x0 - 3); x <= Math.min(cv.W - 1, x1 + 3); x++) {
@@ -246,7 +246,7 @@ export function pool(cv, x0, x1, level, o) {
       const xx = x + i, yy = y + j;
       if (xx >= 0 && yy >= 0 && xx < cv.W && cv.liquid[yy * cv.W + xx]) near = Math.min(near, Math.max(Math.abs(i), -j));
     }
-    if (near < 3) cv.pix.px[k] = bed[Math.min(bed.length - 1, near + (hash2(x, y, 77) > 0.8 ? 1 : 0))];
+    if (near < 3) cv.paint(k, bed[Math.min(bed.length - 1, near + (hash2(x, y, 77) > 0.8 ? 1 : 0))]);
   }
   return { x0, x1, level };
 }
@@ -405,7 +405,7 @@ export function treeShape(cv, x, y, h, kind, c, seed) {
   // drawn a square at a time
   const put = (px, py) => {
     const X = snap(px), Y = snap(py);
-    for (let j = Y; j < Y + CELL; j++) for (let i = X; i < X + CELL; i++) if (i >= 0 && j >= 0 && i < cv.W && j < cv.H) cv.pix.px[j * cv.W + i] = far(fill, i, j, seed);
+    for (let j = Y; j < Y + CELL; j++) for (let i = X; i < X + CELL; i++) if (i >= 0 && j >= 0 && i < cv.W && j < cv.H) cv.paint(j * cv.W + i, far(fill, i, j, seed));
   };
   for (let j = 0; j < h * (kind === 'pine' ? 0.9 : 0.6); j++) for (let i = -tw; i < tw; i++) put(Math.round(x + i), Math.round(y - j));
   if (kind === 'pine') {

@@ -7,6 +7,7 @@
 
 import { Pixels } from '../pixels.js';
 import { rasterize } from '../raster.js';
+import { Model } from '../geometry.js';
 import { ramp, hex, mixPacked, pack, unpack } from '../color.js';
 
 /** Scene size in art pixels. */
@@ -23,7 +24,7 @@ export const CELL = 1;
 
 /**
  * @typedef {{haze?:[number, number], outline?:boolean, foot?:[number, number], roots?:[number, number], seed?:number, texture?:number, dark?:number, cell?:number,
- *   claim?:number, test?:(p:import('../pixels.js').Pixels, X:number, Y:number)=>boolean}} StampOptions
+ *   claim?:number, sway?:number, test?:(p:import('../pixels.js').Pixels, X:number, Y:number)=>boolean}} StampOptions
  */
 
 /**
@@ -56,10 +57,67 @@ export class Canvas {
     this.meta = /** @type {Record<string, any>} */ ({});
     /** lights to add when the scene is finished: [x, y, r, rgb, strength] @type {[number, number, number, number[], number][]} */
     this.pending = [];
+    /**
+     * The foliage that sways in the wind, kept apart from the rest of the
+     * painting from the first swaying piece on (null till then): `bare` is
+     * the painting with none of it (what shows through where a leaf moves
+     * off), `layer` the stamp that last painted each pixel of the rest (a
+     * leaf only ever moves over what was painted before it, never in front
+     * of what stands in front of it), and per swaying pixel its home pixel,
+     * colour, stamp and group (the clump or strand it moves with).
+     * @type {null | {bare:Uint32Array, layer:Uint32Array, seq:number, k:number[], c:number[], s:number[], g:number[],
+     *   amp:number[], hang:number[], gx:number[], gn:number[], y0:number[], y1:number[]}}
+     */
+    this.sw = null;
   }
 
   /** @param {number} x @param {number} y @param {number} c */
-  set(x, y, c) { this.pix.set(x, y, c); }
+  set(x, y, c) {
+    this.pix.set(x, y, c);
+    const s = this.sw;
+    x |= 0; y |= 0;
+    if (s && x >= 0 && y >= 0 && x < this.W && y < this.H) { const k = y * this.W + x; s.bare[k] = c; s.layer[k] = ++s.seq; }
+  }
+
+  /** Paint pixel k (an index into the scene) outright. @param {number} k @param {number} c */
+  paint(k, c) {
+    this.pix.px[k] = c;
+    const s = this.sw;
+    if (s) { s.bare[k] = c; s.layer[k] = ++s.seq; }
+  }
+
+  /** Start keeping the swaying foliage apart (see `sw`). */
+  swayStart() {
+    if (!this.sw) this.sw = { bare: this.pix.px.slice(), layer: new Uint32Array(this.W * this.H), seq: 0, k: [], c: [], s: [], g: [], amp: [], hang: [], gx: [], gn: [], y0: [], y1: [] };
+    return this.sw;
+  }
+
+  /**
+   * A group of swaying pixels moving together: `amp` how far (pixels) the
+   * whole of it moves in a full gust, `hang` how much further its lowest
+   * pixels swing than its top (a strand hanging from its top).
+   * @param {number} amp @param {number} [hang]
+   */
+  swayGroup(amp, hang = 0) {
+    const s = this.swayStart();
+    s.amp.push(amp); s.hang.push(hang); s.gx.push(0); s.gn.push(0); s.y0.push(this.H); s.y1.push(0);
+    return s.amp.length - 1;
+  }
+
+  /**
+   * Paint a swaying pixel of group g (what was there stays in the bare painting).
+   * @param {number} x @param {number} y @param {number} c @param {number} g @param {number} [seq] the stamp it belongs to (default: a stamp of its own)
+   */
+  swaySet(x, y, c, g, seq) {
+    x |= 0; y |= 0;
+    if (x < 0 || y < 0 || x >= this.W || y >= this.H) return;
+    const s = this.swayStart(), k = y * this.W + x;
+    this.pix.px[k] = c;
+    s.k.push(k); s.c.push(c); s.s.push(seq ?? ++s.seq); s.g.push(g);
+    s.gx[g] += x; s.gn[g]++;
+    if (y < s.y0[g]) s.y0[g] = y;
+    if (y > s.y1[g]) s.y1[g] = y;
+  }
 
   /** Mark a rectangle as not open ground (or open, with v = 1). */
   block(x0, y0, x1, y1, v = 0) {
@@ -108,26 +166,21 @@ export class Canvas {
     w += mod(-w); h += mod(-h);
     if (w <= 0 || h <= 0 || w > 2000 || h > 2000) return null;
     model.transform(1, 0, 0, 1, -left, -top, 1);
-    const r = rasterize(model, w, h, pal, { seed: o.seed ?? this.seed, outline: o.outline, texture: o.texture, cell, grain: cell });
-    const p = r.pix;
-    if (o.haze || o.dark) for (let k = 0; k < p.px.length; k++) {
-      const c = p.px[k];
-      if (!(c >>> 24)) continue;
-      let q = c;
-      if (o.haze) q = mixPacked(q, o.haze[0], o.haze[1]);
-      if (o.dark) q = mixPacked(q, 0xff000000, o.dark);
-      p.px[k] = q;
-    }
-    return { raster: r, left, top, w, h };
+    const ro = { seed: o.seed ?? this.seed, outline: o.outline, texture: o.texture, cell, grain: cell };
+    const r = rasterize(model, w, h, pal, ro);
+    tint(r.pix, o);
+    return { raster: r, left, top, w, h, model, pal, ro, tint: { haze: o.haze, dark: o.dark } };
   }
 
   /**
    * Draw a rasterized model with its foot at (x, y) and mark what it covers.
-   * @param {{raster:any, left:number, top:number, w:number, h:number}} r @param {number} x @param {number} y @param {StampOptions} [o]
+   * @param {{raster:any, left:number, top:number, w:number, h:number, model?:any, pal?:any, ro?:any, tint?:any}} r @param {number} x @param {number} y @param {StampOptions} [o]
    */
   put(r, x, y, o = {}) {
     const p = r.raster.pix, w = r.w, h = r.h, X = Math.round(x) + r.left, Y = Math.round(y) + r.top;
-    this.pix.draw(p, X, Y);
+    const parts = r.model ? r.model.parts : [], sways = o.sway !== 0 && parts.some((q) => q.sa !== undefined);
+    if (sways || this.sw) this.putSway(r, X, Y, sways ? o.sway ?? 1 : 0);
+    else this.pix.draw(p, X, Y);
     if (o.roots) this.blockEllipse(Math.round(x), Math.round(y) - 1, o.roots[0], o.roots[1]);
     if (o.foot) this.blockEllipse(Math.round(x), Math.round(y), o.foot[0], o.foot[1]);
     const fy = Math.round(y), id = o.claim ?? 0;
@@ -144,6 +197,97 @@ export class Canvas {
       this.open[k] = 0;
     }
     return { x: X, y: Y, w, h, raster: r.raster };
+  }
+
+  /**
+   * Draw a rasterized model keeping its swaying parts apart (see `sw`):
+   * each of its sway groups (parts sharing `sg`) moves as one, `sa` and `sh`
+   * (times `mult`) giving its sway and its hang; what lies under the leaves
+   * of the model itself (its branches) goes into the bare painting.
+   * @param {{raster:any, w:number, h:number, model?:any, pal?:any, ro?:any, tint?:any}} r @param {number} X @param {number} Y @param {number} mult
+   */
+  putSway(r, X, Y, mult) {
+    const p = r.raster.pix, part = r.raster.part, w = r.w, h = r.h, W = this.W, px = this.pix.px;
+    const s = this.swayStart(), seq = ++s.seq, parts = r.model ? r.model.parts : [];
+    let under = null;
+    if (mult) {
+      const bm = new Model();
+      bm.parts = parts.filter((q) => q.sa === undefined);
+      under = rasterize(bm, w, h, r.pal, r.ro).pix;
+      tint(under, r.tint);
+    }
+    // the foliage's own pixels: deep inside it, what shows through a gap between
+    // two clusters moving apart is the crown's shade, not the sky behind it
+    const leafy = new Uint8Array(w * h);
+    if (mult) for (let k = 0; k < w * h; k++) { const q = part && part[k] >= 0 ? parts[part[k]] : null; if (p.px[k] >>> 24 && q && q.sa !== undefined) leafy[k] = 1; }
+    const inside = (/** @type {number} */ i, /** @type {number} */ j) => {
+      for (let b = -2; b <= 2; b++) for (let a = -2; a <= 2; a++) {
+        const ii = i + a, jj = j + b;
+        if (ii < 0 || jj < 0 || ii >= w || jj >= h || !leafy[jj * w + ii]) return false;
+      }
+      return true;
+    };
+    /** @type {Map<number, number>} */
+    const groups = new Map();
+    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+      let c = p.px[j * w + i];
+      const a = c >>> 24, xx = X + i, yy = Y + j;
+      if (!a || xx < 0 || yy < 0 || xx >= W || yy >= this.H) continue;
+      const k = yy * W + xx;
+      if (a < 255) c = mixPacked(px[k] | 0xff000000, c | 0xff000000, a / 255);
+      const q = part ? parts[part[j * w + i]] : null;
+      if (mult && q && q.sa !== undefined) {
+        const key = q.sg ?? 0;
+        let g = groups.get(key);
+        if (g === undefined) { g = this.swayGroup(q.sa * mult, (q.sh || 0) * mult); groups.set(key, g); }
+        const u = /** @type {any} */ (under).px[j * w + i];
+        if (u >>> 24) { s.bare[k] = u; s.layer[k] = seq; }
+        else if (inside(i, j)) { s.bare[k] = mixPacked(c, 0xff000000, 0.5); s.layer[k] = seq; }
+        this.swaySet(xx, yy, c, g, seq);
+      } else { px[k] = c; s.bare[k] = c; s.layer[k] = seq; }
+    }
+  }
+
+  /**
+   * The swaying foliage, done: per pixel its home, colour, stamp, how far it
+   * hangs below its group's top (0..1), and per group its sway, hang and
+   * centre column — or null if nothing in the scene sways.
+   */
+  swayData() {
+    const s = this.sw;
+    if (!s || !s.k.length) return null;
+    const n = s.k.length, f = new Float32Array(n), home = new Uint8Array(this.W * this.H);
+    // (the bare painting is the painting itself wherever no leaf sits)
+    for (let i = 0; i < n; i++) home[s.k[i]] = 1;
+    for (let k = 0; k < home.length; k++) if (!home[k]) s.bare[k] = this.pix.px[k];
+    for (let i = 0; i < n; i++) { const g = s.g[i], y = Math.floor(s.k[i] / this.W); f[i] = s.hang[g] ? (y - s.y0[g]) / Math.max(1, s.y1[g] - s.y0[g]) : 0; }
+    return {
+      bare: s.bare, layer: s.layer, k: Int32Array.from(s.k), c: Uint32Array.from(s.c), s: Uint32Array.from(s.s), g: Int32Array.from(s.g), f,
+      amp: Float32Array.from(s.amp), hang: Float32Array.from(s.hang), gx: Float32Array.from(s.gx, (v, g) => v / Math.max(1, s.gn[g])), gy: Float32Array.from(s.y0),
+    };
+  }
+
+  /**
+   * Apply op(colour, t) to every pixel of rows [y0, y1) where f(x, y) is
+   * above nothing — to the painting, the bare painting and the swaying
+   * pixels alike (light and haze fall on the leaves wherever they move).
+   * @param {(x:number, y:number) => number} f @param {(c:number, t:number) => number} op
+   */
+  each(f, op, y0 = 0, y1 = this.H) {
+    const W = this.W, px = this.pix.px, s = this.sw, a = Math.max(0, y0), b = Math.min(this.H, y1);
+    for (let y = a; y < b; y++) for (let x = 0; x < W; x++) {
+      const t = f(x, y);
+      if (t <= 0.004) continue;
+      const k = y * W + x;
+      px[k] = op(px[k], t);
+      if (s) s.bare[k] = op(s.bare[k], t);
+    }
+    if (s) for (let i = 0; i < s.k.length; i++) {
+      const y = Math.floor(s.k[i] / W);
+      if (y < a || y >= b) continue;
+      const t = f(s.k[i] - y * W, y);
+      if (t > 0.004) s.c[i] = op(s.c[i], t);
+    }
   }
 
   /**
@@ -248,23 +392,27 @@ export class Canvas {
 
   /** Mix a colour over every painted pixel in a band, fading smoothly with `f(x, y)` (0..1). */
   wash(c, f, y0 = 0, y1 = this.H) {
-    for (let y = Math.max(0, y0); y < Math.min(this.H, y1); y++) for (let x = 0; x < this.W; x++) {
-      const t = f(x, y);
-      if (t <= 0.004) continue;
-      const k = y * this.W + x;
-      this.pix.px[k] = mixPacked(this.pix.px[k], c, Math.min(1, t));
-    }
+    this.each(f, (q, t) => mixPacked(q, c, Math.min(1, t)), y0, y1);
   }
 
   /** Brighten pixels additively by colour c × t(x, y) (light, glow), smoothly. */
   light(rgb, f, y0 = 0, y1 = this.H) {
-    for (let y = Math.max(0, y0); y < Math.min(this.H, y1); y++) for (let x = 0; x < this.W; x++) {
-      const t = f(x, y);
-      if (t <= 0.004) continue;
-      const k = y * this.W + x, c = this.pix.px[k];
+    this.each(f, (c, t) => {
       const r = Math.min(255, (c & 255) + rgb[0] * 255 * t), g = Math.min(255, ((c >>> 8) & 255) + rgb[1] * 255 * t), b = Math.min(255, ((c >>> 16) & 255) + rgb[2] * 255 * t);
-      this.pix.px[k] = ((255 << 24) | (Math.round(b) << 16) | (Math.round(g) << 8) | Math.round(r)) >>> 0;
-    }
+      return ((255 << 24) | (Math.round(b) << 16) | (Math.round(g) << 8) | Math.round(r)) >>> 0;
+    }, y0, y1);
+  }
+}
+
+/** Fade a raster's pixels into the distance (haze) and darken them (dark). @param {Pixels} p @param {StampOptions} o */
+function tint(p, o) {
+  if (o.haze || o.dark) for (let k = 0; k < p.px.length; k++) {
+    const c = p.px[k];
+    if (!(c >>> 24)) continue;
+    let q = c;
+    if (o.haze) q = mixPacked(q, o.haze[0], o.haze[1]);
+    if (o.dark) q = mixPacked(q, 0xff000000, o.dark);
+    p.px[k] = q;
   }
 }
 

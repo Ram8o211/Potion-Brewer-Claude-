@@ -1,11 +1,12 @@
 // The wilds' scene in the interface: each region's procedural environment
-// (visual/env/scene.js) as a cached canvas, where each plant stands on its
-// open ground, which plant a tap lands on, and the moving parts drawn over
-// the still painting every frame (birds, motes, river glints, wisps,
-// embers, the steam of the crags' vents).
+// (visual/env/scene.js) as a cached canvas, its foliage swaying in the wind,
+// where each plant stands on its open ground, which plant a tap lands on,
+// and the moving parts drawn over the still painting every frame (birds,
+// motes, river glints, wisps, embers, the steam of the crags' vents).
 
 import { sceneOf, SCENE_W, SCENE_H } from '../visual/env/scene.js';
 import { MIN_HIT } from './species-sprites.js';
+import { hashString } from '../core/rng.js';
 
 export { SCENE_W, SCENE_H };
 
@@ -22,6 +23,91 @@ export function sceneCanvas(region, seed) {
     canvases.set(k, cv);
   }
   return cv;
+}
+
+/**
+ * The wind over a region at column x and time t (seconds): a breeze slowly
+ * rising, falling and turning about, waves running along with it through
+ * the leaves, and now and then a gust sweeping across the scene, each of
+ * its own strength (some cycles stay calm). About −1…2: what a group with a
+ * sway of one pixel moves. `ph` sets the world's own weather.
+ * @param {number} x @param {number} t @param {number} ph
+ */
+export function windAt(x, t, ph) {
+  const breeze = 0.55 * Math.sin(t * 0.11 + ph) + 0.25 * Math.sin(t * 0.37 + ph * 2.1) + 0.15, dir = breeze >= 0 ? 1 : -1;
+  const wave = 0.3 * Math.sin(t * 1.4 - dir * x * 0.03 + ph) + 0.15 * Math.sin(t * 2.7 - dir * x * 0.07 + ph * 3);
+  let gust = 0;
+  for (let i = 0; i < 2; i++) {
+    const period = 9 + i * 5.3, at = (t + i * 3.7 + ph) / period, c = Math.floor(at), u = at - c, s = rnd(c * 2 + i, ph);
+    if (s < 0.35) continue;
+    const fx = dir > 0 ? -90 + u * (SCENE_W + 180) : SCENE_W + 90 - u * (SCENE_W + 180);
+    gust += (s - 0.2) * 1.5 * Math.exp(-(((x - fx) / 60) ** 2));
+  }
+  return breeze + wave * (0.5 + Math.abs(breeze)) + dir * gust;
+}
+
+/** Per sway group, its shift this frame: of the whole group, and further at a hanging strand's end. */
+let shiftBuf = new Float32Array(0), tipBuf = new Float32Array(0);
+
+/**
+ * Paint a region's painting with its foliage moved by the wind at time t
+ * into `out` (packed pixels, SCENE_W × SCENE_H): the bare painting, then
+ * every swaying pixel shifted sideways with its group — a cluster as one,
+ * a strand bending more toward its end, each fluttering a little on its own
+ * — over what was painted behind it, never over what stands in front of it.
+ * Pure: the same time paints the same pixels.
+ * @param {NonNullable<import('../visual/env/scene.js').Scene['sway']>} sw @param {Uint32Array} out @param {number} t
+ * @param {number} [wind] the region's wind strength (meta.wind) @param {number} [ph] the world's weather
+ */
+export function swayPixels(sw, out, t, wind = 1, ph = 0) {
+  out.set(sw.bare);
+  const G = sw.amp.length, W = SCENE_W;
+  if (shiftBuf.length < G) { shiftBuf = new Float32Array(G); tipBuf = new Float32Array(G); }
+  for (let g = 0; g < G; g++) {
+    const x = sw.gx[g], v = windAt(x, t, ph) * wind, a = sw.amp[g];
+    shiftBuf[g] = a ? Math.max(-1.8, Math.min(1.8, a * (v * 0.7 + 0.15 * wind * Math.sin(t * (2.6 + (g % 5) * 0.37) + g * 1.7)))) : 0;
+    // a strand's end follows the wind a moment late, whipping a little
+    tipBuf[g] = sw.hang[g] * (windAt(x, t - 0.4, ph) * wind * 0.9 + 0.25 * wind * Math.sin(t * 2.1 + g * 2.3));
+  }
+  for (let i = 0; i < sw.k.length; i++) {
+    const g = sw.g[i], k = sw.k[i], dx = Math.round(shiftBuf[g] + tipBuf[g] * sw.f[i]), x = k % W + dx;
+    if (x < 0 || x >= W) continue;
+    if (sw.layer[k + dx] > sw.s[i]) continue;
+    out[k + dx] = sw.c[i];
+  }
+}
+
+/** @type {Map<string, {cv:HTMLCanvasElement, ctx:CanvasRenderingContext2D, img:ImageData, buf:Uint32Array, step:number}>} */
+const frames = new Map();
+
+/** How often the leaves are moved (per second): the wind's pixel steps are coarse, so this is plenty. */
+const SWAY_RATE = 12;
+
+/**
+ * A region's painting at time t with its foliage swaying in the wind
+ * (browser): the still painting where nothing in it sways.
+ * @param {string} region @param {string} seed @param {number} t seconds
+ */
+export function sceneFrame(region, seed, t) {
+  const sc = sceneOf(region, seed);
+  if (!sc.sway) return sceneCanvas(region, seed);
+  const key = region + ':' + seed;
+  let f = frames.get(key);
+  if (!f) {
+    const cv = document.createElement('canvas');
+    cv.width = SCENE_W; cv.height = SCENE_H;
+    const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')), img = ctx.createImageData(SCENE_W, SCENE_H);
+    f = { cv, ctx, img, buf: new Uint32Array(img.data.buffer), step: -1 };
+    if (frames.size >= 3) frames.delete(/** @type {string} */ (frames.keys().next().value));
+    frames.set(key, f);
+  }
+  const step = Math.floor(t * SWAY_RATE);
+  if (step !== f.step) {
+    f.step = step;
+    swayPixels(sc.sway, f.buf, step / SWAY_RATE, sc.meta.wind ?? 1, (hashString(seed) % 1000) / 100);
+    f.ctx.putImageData(f.img, 0, 0);
+  }
+  return f.cv;
 }
 
 /** The room a plant keeps round itself where the ground allows (scene pixels). */

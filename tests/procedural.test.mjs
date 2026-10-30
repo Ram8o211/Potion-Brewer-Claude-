@@ -16,7 +16,7 @@ import { plantFrame, iconFrame, pieceFrame, ICON_PX, PIECE_GRID } from '../src/v
 import { familyOf, BOTANICAL } from '../src/visual/taxonomy.js';
 import { FAMILIES } from '../src/visual/families/index.js';
 import { composeScene, sceneOf, SCENE_W, SCENE_H } from '../src/visual/env/scene.js';
-import { PlantGround, plantBox, hitPlant } from '../src/rendering/wild-scene.js';
+import { PlantGround, plantBox, hitPlant, swayPixels } from '../src/rendering/wild-scene.js';
 import { silhouetteOf, plantFrameOf, MIN_HIT } from '../src/rendering/species-sprites.js';
 import { dominantColour } from '../src/rendering/brew-palette.js';
 import { rgbToOklab, deltaE } from '../src/core/color.js';
@@ -157,6 +157,33 @@ test('the six environments are side views, generated deterministically, differin
     const mid = Math.round((p.x0 + p.x1) / 2);
     assert.equal(sc.liquid[(p.level + 1) * SCENE_W + mid], 1, `${region}: its ${key} fills its bed`);
     for (let x = p.x0; x <= p.x1; x++) for (let y = p.level - 1; y < SCENE_H; y++) if (sc.liquid[y * SCENE_W + x]) assert.equal(sc.open[y * SCENE_W + x], 0);
+  }
+});
+
+test('the leaves sway in the wind: still in a calm, moving in a gust, the same at the same moment, only over what lies behind them', () => {
+  for (const r of REGIONS) {
+    const sc = sceneOf(r.id, 'env-1'), sw = sc.sway;
+    // (a mine deep in a cavern may have no room for a tree: only its moss sways)
+    const few = r.id === 'quarry';
+    assert.ok(sw && sw.k.length > (few ? 0 : 200), `${r.id} has foliage that sways`);
+    const out = new Uint32Array(SCENE_W * SCENE_H);
+    // no wind: the painting exactly
+    swayPixels(sw, out, 5, 0);
+    assert.ok(out.every((c, k) => c === sc.pix.px[k]), `${r.id}: in a calm the leaves rest where they were painted`);
+    // wind: some leaves move, and only leaves (and what they uncover)
+    let moved = 0;
+    for (const t of [3, 11, 19, 27]) {
+      swayPixels(sw, out, t, 1, 0.5);
+      const again = new Uint32Array(out.length);
+      swayPixels(sw, again, t, 1, 0.5);
+      assert.ok(again.every((c, k) => c === out[k]), `${r.id}: the wind is the same at the same moment`);
+      for (let k = 0; k < out.length; k++) if (out[k] !== sc.pix.px[k]) moved++;
+    }
+    assert.ok(moved > (few ? 0 : 50), `${r.id}: the wind moves the leaves (${moved} px)`);
+    const near = new Uint8Array(SCENE_W * SCENE_H);
+    for (const k of sw.k) for (let d = -4; d <= 4; d++) { const x = (k % SCENE_W) + d; if (x >= 0 && x < SCENE_W) near[k + d] = 1; }
+    swayPixels(sw, out, 27, 1, 0.5);
+    for (let k = 0; k < out.length; k++) if (out[k] !== sc.pix.px[k]) assert.ok(near[k], `${r.id}: only the foliage moves (pixel ${k})`);
   }
 });
 

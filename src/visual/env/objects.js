@@ -6,6 +6,7 @@
 // Canvas.stamp — the same rasterizer and shading as the species.
 
 import { Model, blade, PROFILES, bezier, lumpy, ellipse, polygon } from '../geometry.js';
+import { cluster, strand, grove, swayGroup } from './foliage.js';
 
 /** @param {any} rng */
 const R = (rng) => () => rng.next();
@@ -25,51 +26,42 @@ export function leafBlock(x, y, hw, hh, rnd) {
 }
 
 /**
- * A crown of foliage, clean and regular: round leaf clumps laid on a
- * staggered grid inside the crown's outline over a darker mass, each clump
- * a flat body with a lighter cap toward the light (upper left), the lower
- * clumps in shade — the way a pixel artist builds a tree.
+ * A crown of foliage: leaf clusters laid on a staggered grid inside the
+ * crown's outline over a darker mass, the lower ones first so each higher
+ * one overlaps the one below it (foliage.js cluster).
  */
 export function crown(m, rng, cx, cy, rx, ry, mat = 'leaf', o = {}) {
-  const rnd = R(rng), r = o.r ?? Math.max(2.5, Math.min(rx * 0.5, ry * 0.62, 9));
-  // the mass behind the clumps fills the gaps between them
-  m.poly(lumpy(cx, cy + r * 0.2, rx * 0.92, ry * 0.88, rnd, 0.06, 7), mat, { shade: 'flat', tex: 0.3, tone: -0.22 });
+  const rnd = R(rng), r = o.r ?? Math.max(2.5, Math.min(rx * 0.5, ry * 0.62, 9)), mats = [mat, ...(o.mats || []).filter((q) => q !== mat)];
+  m.poly(lumpy(cx, cy + r * 0.2, rx * 0.92, ry * 0.88, rnd, 0.06, 7), mat, { shade: 'flat', tex: 0.3, tone: -0.24, sa: (o.amp ?? 1) * 0.85, sg: swayGroup() });
   const sx = r * 1.5, sy = r * 1.15, clumps = [];
   for (let row = -Math.ceil(ry / sy); row <= Math.ceil(ry / sy); row++) for (let col = -Math.ceil(rx / sx) - 1; col <= Math.ceil(rx / sx) + 1; col++) {
     const x = cx + col * sx + ((row & 1) ? sx / 2 : 0) + (rng.next() - 0.5) * r * 0.25, y = cy + row * sy + (rng.next() - 0.5) * r * 0.2;
     if (((x - cx) / (rx - r * 0.4)) ** 2 + ((y - cy) / (ry - r * 0.3)) ** 2 > 1) continue;
     clumps.push([x, y]);
   }
-  // the lower clumps first, so each higher one overlaps the one below it
   clumps.sort((a, b) => b[1] - a[1] || a[0] - b[0]);
-  for (const [x, y] of clumps) {
-    const up = (cy - y) / ry, left = (cx - x) / rx;
-    m.poly(lumpy(x, y, r, r * 0.9, rnd, 0.1, 7), mat, { shade: 'round', tex: 0.3, tone: -0.04 + up * 0.14 + left * 0.05, soft: true });
-    // a lit cap on the clump's upper left
-    if (up > -0.3) m.poly(lumpy(x - r * 0.25, y - r * 0.35, r * 0.45, r * 0.3, rnd, 0.06, 5), mat, { shade: 'flat', tex: 0, tone: 0.16 + up * 0.1 + left * 0.04, noOutline: true });
-  }
+  for (const [x, y] of clumps) cluster(m, rng, x, y, r * 1.05, r * 0.9, { mats, bloom: o.bloom, amp: (o.amp ?? 1) * (0.9 + Math.max(0, (cy - y) / ry) * 0.2), tone: ((cx - x) / rx) * 0.04 });
   return m;
 }
 
 /**
- * A foliage pad: a cloud of leaves wider than tall, flat underneath — a dark
- * leafy mass, rounded bumps along its top lit from the upper left, and
- * strands of moss dripping from its underside.
+ * A foliage pad: a cloud of leaves wider than tall, flat underneath — leaf
+ * clusters heaped along its top over a dark mass, and strands of moss (or
+ * leaves) hanging from its underside.
  */
 export function pad(m, rng, x, y, rx, ry, mat = 'leaf', o = {}) {
-  const rnd = R(rng);
-  m.poly(lumpy(x, y + ry * 0.15, rx, ry * 0.8, rnd, 0.14, 7), mat, { shade: 'flat', tex: 1, tone: -0.2 });
+  const mats = [mat, ...(o.mats || []).filter((q) => q !== mat)], amp = o.amp ?? 1;
+  cluster(m, rng, x, y + ry * 0.12, rx, ry * 0.8, { mats, amp: amp * 0.9, flat: true, dense: 0.8 });
   const n = Math.max(2, Math.round(rx / (ry * 0.9)));
   for (let i = 0; i < n; i++) {
     const u = n === 1 ? 0 : i / (n - 1) - 0.5, bx = x + u * rx * 1.25, by = y - ry * (0.15 + (0.5 - Math.abs(u)) * 0.4), r = ry * (0.75 + rng.next() * 0.25);
-    m.poly(lumpy(bx, by, r * 1.15, r * 0.85, rnd, 0.12, 6), mat, { shade: 'flat', tex: 1, tone: -0.04 - u * 0.06, soft: true });
-    m.poly(lumpy(bx - r * 0.3, by - r * 0.35, r * 0.55, r * 0.35, rnd, 0.1, 5), mat, { shade: 'flat', tex: 0.6, tone: 0.14 - u * 0.05, soft: true, noOutline: true });
+    cluster(m, rng, bx, by, r * 1.15, r * 0.85, { mats, amp, bloom: o.bloom, tone: -u * 0.06 });
   }
-  // moss dripping from the underside
+  // strands dripping from the underside
   const drips = o.drips ?? Math.round(rx / 4);
   for (let i = 0; i < drips; i++) {
     const dx = x + (rng.next() - 0.5) * rx * 1.4, L = 2 + rng.next() * ry * 1.6;
-    m.stroke([[dx, y + ry * 0.6], [dx + (rng.next() - 0.5), y + ry * 0.6 + L]], [1.6, 1], o.drip || mat, { tone: o.drip ? 0 : 0.18, noOutline: true });
+    strand(m, rng, dx, y + ry * 0.55, L, { mat: o.drip || mat, amp, tone: o.drip ? 0 : 0.1, leaves: o.drip ? 3 : 2.2 });
   }
   return m;
 }
@@ -81,7 +73,7 @@ export function pad(m, rng, x, y, rx, ry, mat = 'leaf', o = {}) {
  * short branches and small pads), 'spread' (a short trunk with long
  * reaching branches), 'lean' (an S-curved trunk leaning off its foot).
  * @param {any} rng @param {number} h height @param {number} tw trunk width
- * @param {{shape?:string, dir?:number, bark?:string, leaf?:string, drip?:string}} [o]
+ * @param {{shape?:string, dir?:number, bark?:string, leaf?:string, drip?:string, mats?:string[], bloom?:{mat:string, rate:number}}} [o]
  */
 export function branchTree(rng, h, tw, o = {}) {
   const m = new Model(), bark = o.bark || 'bark', leaf = o.leaf || 'leaf';
@@ -117,18 +109,26 @@ export function branchTree(rng, h, tw, o = {}) {
   const top = spine[spine.length - 1], tr = h * (shape === 'tall' ? 0.17 : 0.2 + rng.next() * 0.05);
   pads.push([top[0], top[1] - tr * 0.3, tr, tr * 0.62]);
   pads.sort((p, q) => q[1] - p[1]);
-  for (const [x, y, rx, ry] of pads) pad(m, rng, x, y, rx, ry, leaf, { drip: o.drip });
+  for (const [x, y, rx, ry] of pads) pad(m, rng, x, y, rx, ry, leaf, { drip: o.drip, mats: o.mats, bloom: o.bloom, amp: 0.7 + Math.min(1, -y / h) * 0.5 });
   return m;
 }
 
+/** The gnarled trees (foliage.js grove) by kind, and their crown's style. */
+const GROVES = { gnarl: 'dome', tiers: 'tiers', willow: 'weep', wisteria: 'wisteria', sparse: 'sparse' };
+
 /**
- * A tree. kind: oak (broad crown), pine (tiers), willow (weeping fronds),
- * birch (pale, slender), dead (bare branches). Height h, trunk width tw.
+ * A tree. kind: oak (pads on branches), gnarl (a twisted trunk under a
+ * dome of leaf clusters), tiers (flat layered clusters), willow (weeping
+ * fronds), wisteria (hung with blossom), sparse (a few dusty clusters),
+ * pine (tiers), birch (pale, slender), dead (bare branches). Height h,
+ * trunk width tw; o.look: the region's leaves (mats, bloom, hang).
  */
 export function tree(rng, kind, h, tw, o = {}) {
-  if (kind === 'oak' || kind === 'birch') return branchTree(rng, h, tw, { ...o, shape: o.shape || (kind === 'birch' ? 'tall' : undefined) });
+  const look = o.look || {};
+  if (kind === 'oak' || kind === 'birch') return branchTree(rng, h, tw, { ...o, ...look, drip: look.hang?.mat, shape: o.shape || (kind === 'birch' ? 'tall' : undefined) });
+  if (GROVES[kind]) return grove(rng, h, tw, { ...o, ...look, hang: kind === 'willow' || kind === 'wisteria' ? undefined : look.hang, style: GROVES[kind] });
   const m = new Model(), lean = (o.lean ?? (rng.next() - 0.5) * 0.15) * h;
-  const trunkTop = kind === 'pine' ? h * 0.95 : kind === 'willow' ? h * 0.6 : kind === 'dead' ? h * 0.75 : h * 0.55;
+  const trunkTop = kind === 'pine' ? h * 0.95 : kind === 'dead' ? h * 0.75 : h * 0.55;
   const spine = bezier([0, 0], [0, -trunkTop * 0.4], [lean * 0.6, -trunkTop * 0.75], [lean, -trunkTop], 12);
   const ws = spine.map((_, i) => tw * (1 - (i / spine.length) * (kind === 'pine' ? 0.8 : 0.45)) * (i === 0 ? 1.25 : 1));
   // root flares
@@ -154,26 +154,15 @@ export function tree(rng, kind, h, tw, o = {}) {
       const pts = [[lean * (0.3 + t * 0.7) - w, y + h * 0.06], [lean * (0.3 + t * 0.7), y - h * 0.12], [lean * (0.3 + t * 0.7) + w, y + h * 0.06]];
       // a jagged lower edge
       for (let k = 5; k >= 1; k--) pts.push([lean * (0.3 + t * 0.7) - w + (k / 6) * w * 2, y + h * 0.06 - (k % 2) * h * 0.025]);
-      m.poly(/** @type {any} */ (pts), o.leaf || 'leaf', { shade: 'fold', tex: 1.4, tone: -0.04 + t * 0.06 });
+      m.poly(/** @type {any} */ (pts), o.leaf || 'leaf', { shade: 'fold', tex: 1.4, tone: -0.04 + t * 0.06, sa: 0.3 + t * 0.6, sg: swayGroup() });
     }
     return m;
   }
   // limbs reaching into the crown
-  const cw = kind === 'birch' ? h * 0.24 : kind === 'willow' ? h * 0.42 : h * 0.36;
+  const cw = kind === 'birch' ? h * 0.24 : h * 0.36;
   for (const s of [-1, 1]) m.stroke([[top[0], top[1] + 3], [top[0] + s * cw * 0.35, top[1] - h * 0.08], [top[0] + s * cw * 0.6, top[1] - h * 0.18]], [tw * 0.5, tw * 0.25], o.bark || 'bark', {});
-  const cy = top[1] - h * (kind === 'willow' ? 0.12 : 0.2);
-  // an oak's lower side crowns behind its main one
-  if (kind === 'oak') { crown(m, rng, top[0] - cw * 0.5, cy + h * 0.07, cw * 0.55, h * 0.16, o.leaf || 'leaf'); crown(m, rng, top[0] + cw * 0.55, cy + h * 0.09, cw * 0.5, h * 0.15, o.leaf || 'leaf'); }
-  crown(m, rng, top[0], kind === 'willow' ? cy - h * 0.06 : cy, kind === 'willow' ? cw * 0.75 : cw, h * (kind === 'birch' ? 0.3 : kind === 'willow' ? 0.17 : 0.28), o.leaf || 'leaf');
-  if (kind === 'willow') {
-    // fronds weeping from the crown: leafy curtains, darker toward their tips
-    for (let i = 0; i < Math.round(cw * 0.9); i++) {
-      const x0 = top[0] + (rng.next() - 0.5) * cw * 1.8, y0 = cy + (rng.next() - 0.2) * h * 0.12, len = h * (0.18 + rng.next() * 0.28);
-      const pts = [];
-      for (let k = 0; k <= 6; k++) pts.push([x0 + Math.sin(k * 0.6 + i) * 0.7 + (x0 - top[0]) * k * 0.025, y0 + (k / 6) * len]);
-      m.stroke(/** @type {any} */ (pts), [3.2, 2.2, 1.2], o.leaf || 'leaf', { tone: -0.12 + (i % 3) * 0.08, tex: 2 });
-    }
-  }
+  const cy = top[1] - h * 0.2;
+  crown(m, rng, top[0], cy, cw, h * (kind === 'birch' ? 0.3 : 0.28), o.leaf || 'leaf', look);
   if (kind === 'birch') for (let i = 2; i < spine.length - 1; i += 2) m.line([[spine[i][0] - ws[i] * 0.4, spine[i][1]], [spine[i][0] + ws[i] * 0.1, spine[i][1]]], o.bark || 'bark', { lum: 0.08 });
   return m;
 }
@@ -189,7 +178,7 @@ export function branch(m, rng, x, y, ang, len, w, depth, mat) {
 /** A shrub: a mound of foliage, optionally hung with berries or flowers. */
 export function bush(rng, rx, ry, o = {}) {
   const m = new Model();
-  crown(m, rng, 0, -ry * 0.7, rx, ry, o.leaf || 'leaf');
+  crown(m, rng, 0, -ry * 0.7, rx, ry, o.leaf || 'leaf', { amp: 0.4, mats: o.mats });
   if (o.dots) for (let i = 0; i < rx * 0.8; i++) {
     const a = Math.PI + rng.next() * Math.PI, q = Math.sqrt(rng.next()) * 0.8;
     m.dot(Math.cos(a) * rx * q, -ry * 0.7 + Math.sin(a) * ry * q * 0.8, o.dots, { lum: rng.next() < 0.5 ? 0.85 : 0.55 });
