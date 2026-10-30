@@ -9,7 +9,8 @@ import { sky } from './paint.js';
 import { palette, vary, streamOf } from './kit.js';
 import { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, silhouette, treeShape } from './side.js';
 import { caveFrame, farPillars, fog, vines, moss, glowShrooms, ledgeTops, veins, WATER_VEINS } from './cave.js';
-import { tree, reeds, beam, cloud } from './objects.js';
+import { reeds, beam, cloud } from './objects.js';
+import { terrainTrees } from './trees.js';
 import { Model } from '../geometry.js';
 
 export function compose(cv, seed) {
@@ -59,7 +60,7 @@ export function compose(cv, seed) {
   moss(cv, { cols: ['#7ac04a', '#4e8a34', '#3a6e2a', '#2a5020'], seed: ss + 1, drape: 9, rate: 0.22, len: 12 });
   const level = Math.round(Math.max(top[rx - hw], top[rx + hw])) + 5;
   cv.meta.river = pool(cv, rx - hw, rx + hw, level, { surface: '#8ae0d8', body: ['#2a6a68', '#1e5654', '#164442', '#0e3232', '#0a2424'], see: 0.3, bed: ['#2a3a2e', '#34463a', '#1e2a22'] });
-  veins(cv, cv.meta.river, WATER_VEINS(ss + 4));
+  veins(cv, cv.meta.river, WATER_VEINS(ss + 4, ['#5a9a98', '#2a6a68', '#1e5654', '#164442']));
   markOpen(cv);
   // cattails on the pillars and at the water's edge
   const rr = s('reeds');
@@ -70,8 +71,9 @@ export function compose(cv, seed) {
     cv.stamp(reeds(rr, rr.int(12, 20), rr.int(4, 7), { heads: 0.6 }), pal, x, surfaceAt(cv, x) + 1);
   }
   // the weeping willow on the far bank
-  const wr = s('willow'), wx = rx < W / 2 ? wr.int(320, 366) : wr.int(18, 64);
-  cv.stamp(tree(wr, 'willow', wr.int(110, 130), wr.int(9, 12)), pal, wx, surfaceAt(cv, wx) + 2, { roots: [12, 3], dark: 0.15 });
+  const wr = s('willow');
+  terrainTrees(cv, wr, pal, { n: 1, kinds: ['willow'], h: [96, 126], dark: 0.15, x: rx < W / 2 ? [rx + hw + 20, W - 10] : [10, rx - hw - 20] });
+  terrainTrees(cv, wr, pal, { n: 3, kinds: ['oak'], shapes: ['spread', 'lean', 'tall'], h: [36, 80], gap: 40, ledges: true });
   if (wr.next() < 0.5) {
     // a footbridge from bank to bank
     const y = level - 4, m = new Model(), x0 = rx - hw - 4, x1 = rx + hw + 4;

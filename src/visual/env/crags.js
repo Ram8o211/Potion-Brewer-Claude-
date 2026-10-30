@@ -11,7 +11,8 @@ import { sky } from './paint.js';
 import { palette, vary, streamOf } from './kit.js';
 import { heights, dip, raise, fillSolid, blob, ledges, paintTerrain, pool, markOpen, surfaceAt, glow, drips, silhouette, col, far } from './side.js';
 import { caveFrame, farPillars, fog, moss, fall, ledgeTops, veins, LAVA_VEINS } from './cave.js';
-import { tree, basalt, spire, cloud } from './objects.js';
+import { basalt, spire, cloud } from './objects.js';
+import { terrainTrees } from './trees.js';
 import { fbm1 } from '../noise.js';
 import { Model, lumpy } from '../geometry.js';
 
@@ -103,7 +104,7 @@ export function compose(cv, seed) {
   const gr = s('glass');
   for (let i = 0; i < 2; i++) { const x = gr.int(10, W - 10); if (cv.liquid[(surfaceAt(cv, x) - 1) * W + x]) continue; cv.stamp(spire(gr, gr.int(8, 13)), pal, x, surfaceAt(cv, x) + 1, { foot: [4, 2] }); }
   const dr = s('brush');
-  for (let i = 0; i < 3; i++) { const x = dr.int(0, W); cv.stamp(tree(dr, 'dead', dr.int(16, 30), 1.6), pal, x, surfaceAt(cv, x) + 1, { roots: [3, 2] }); }
+  terrainTrees(cv, dr, pal, { n: 3, kinds: ['dead'], h: [18, 34], gap: 30, ledges: true });
   // the vents: rock mounds with glowing throats (their steam is animated)
   const vr = s('vents'), vents = [];
   for (let i = 0; i < 2; i++) {

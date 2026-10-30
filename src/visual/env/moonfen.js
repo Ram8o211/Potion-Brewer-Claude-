@@ -10,7 +10,8 @@ import { sky } from './paint.js';
 import { palette, vary, streamOf } from './kit.js';
 import { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, glow, silhouette, treeShape } from './side.js';
 import { caveFrame, farPillars, fog, vines, moss, ruins, glowShrooms, veins, WATER_VEINS } from './cave.js';
-import { tree, reeds, spire, cairn } from './objects.js';
+import { reeds, spire, cairn } from './objects.js';
+import { terrainTrees } from './trees.js';
 import { fbm2 } from '../noise.js';
 import { pack } from '../color.js';
 
@@ -75,13 +76,12 @@ export function compose(cv, seed) {
   });
   moss(cv, { cols: ['#3e8a6a', '#2e6a52', '#1e4a3c', '#14322a'], seed: ss + 1, drape: 10, rate: 0.25, len: 14 });
   cv.meta.pools = pools.map((p) => pool(cv, p.x - p.hw, p.x + p.hw, p.level, { surface: '#b0c4f0', body: ['#22346a', '#1a2a58', '#142046', '#0e1834'], see: 0.15, bed: ['#0e1a14', '#16261e', '#0a0e0c'] }));
-  cv.meta.pools.forEach((p, i) => veins(cv, p, { ...WATER_VEINS(ss + 4 + i), core: ['#2e4a74', '#26405e', '#1e344e', '#182a40'], tint: '#0c1428' }));
+  cv.meta.pools.forEach((p, i) => veins(cv, p, { ...WATER_VEINS(ss + 4 + i, ['#5a74b0', '#2a3e78', '#22346a', '#1a2a58']), to: '#0c1428', n: 3, reach: 40, rgb: [0.35, 0.45, 0.85] }));
   markOpen(cv);
   // willows hung with moss, a dead tree, reeds at the pools
   const wr = s('willows');
-  for (const x of [wr.int(10, 40), wr.int(344, 374)]) cv.stamp(tree(wr, 'willow', wr.int(100, 124), wr.int(8, 11)), pal, x, surfaceAt(cv, x) + 2, { roots: [12, 3], dark: 0.25 });
-  const dx = wr.int(120, 260);
-  cv.stamp(tree(wr, 'dead', wr.int(50, 70), wr.int(4, 6)), pal, dx, surfaceAt(cv, dx) + 1, { roots: [5, 2] });
+  terrainTrees(cv, wr, pal, { n: 2, kinds: ['willow'], h: [84, 120], dark: 0.25, gap: 120 });
+  terrainTrees(cv, wr, pal, { n: 2, kinds: ['dead', 'oak'], shapes: ['lean', 'tall'], h: [36, 70], dark: 0.2, gap: 40, ledges: true });
   const rr = s('reeds');
   for (const p of pools) for (const side of [-1, 1]) {
     let x = p.x + side * p.hw;

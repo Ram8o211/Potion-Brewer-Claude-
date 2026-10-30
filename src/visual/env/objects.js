@@ -51,10 +51,81 @@ export function crown(m, rng, cx, cy, rx, ry, mat = 'leaf', o = {}) {
 }
 
 /**
+ * A foliage pad: a cloud of leaves wider than tall, flat underneath — a dark
+ * leafy mass, rounded bumps along its top lit from the upper left, and
+ * strands of moss dripping from its underside.
+ */
+export function pad(m, rng, x, y, rx, ry, mat = 'leaf', o = {}) {
+  const rnd = R(rng);
+  m.poly(lumpy(x, y + ry * 0.15, rx, ry * 0.8, rnd, 0.14, 7), mat, { shade: 'flat', tex: 1, tone: -0.2 });
+  const n = Math.max(2, Math.round(rx / (ry * 0.9)));
+  for (let i = 0; i < n; i++) {
+    const u = n === 1 ? 0 : i / (n - 1) - 0.5, bx = x + u * rx * 1.25, by = y - ry * (0.15 + (0.5 - Math.abs(u)) * 0.4), r = ry * (0.75 + rng.next() * 0.25);
+    m.poly(lumpy(bx, by, r * 1.15, r * 0.85, rnd, 0.12, 6), mat, { shade: 'flat', tex: 1, tone: -0.04 - u * 0.06, soft: true });
+    m.poly(lumpy(bx - r * 0.3, by - r * 0.35, r * 0.55, r * 0.35, rnd, 0.1, 5), mat, { shade: 'flat', tex: 0.6, tone: 0.14 - u * 0.05, soft: true, noOutline: true });
+  }
+  // moss dripping from the underside
+  const drips = o.drips ?? Math.round(rx / 4);
+  for (let i = 0; i < drips; i++) {
+    const dx = x + (rng.next() - 0.5) * rx * 1.4, L = 2 + rng.next() * ry * 1.6;
+    m.stroke([[dx, y + ry * 0.6], [dx + (rng.next() - 0.5), y + ry * 0.6 + L]], [1.6, 1], o.drip || mat, { tone: o.drip ? 0 : 0.18, noOutline: true });
+  }
+  return m;
+}
+
+/**
+ * A tree after the branch concept: a sinuous trunk, branches forking off it
+ * (alternating sides, rising, tapering), and a foliage pad at the tip of
+ * every branch and at the top of the trunk. shape: 'tall' (a column of
+ * short branches and small pads), 'spread' (a short trunk with long
+ * reaching branches), 'lean' (an S-curved trunk leaning off its foot).
+ * @param {any} rng @param {number} h height @param {number} tw trunk width
+ * @param {{shape?:string, dir?:number, bark?:string, leaf?:string, drip?:string}} [o]
+ */
+export function branchTree(rng, h, tw, o = {}) {
+  const m = new Model(), bark = o.bark || 'bark', leaf = o.leaf || 'leaf';
+  const shape = o.shape || ['tall', 'spread', 'lean'][Math.floor(rng.next() * 3)], dir = o.dir ?? (rng.next() < 0.5 ? -1 : 1);
+  const th = shape === 'spread' ? h * 0.62 : shape === 'tall' ? h * 0.86 : h * 0.8;
+  const w1 = shape === 'lean' ? h * 0.14 : h * 0.05, w2 = shape === 'lean' ? -h * 0.04 : -h * 0.05;
+  const lean = shape === 'lean' ? h * 0.16 : (rng.next() - 0.5) * h * 0.1;
+  const spine = bezier([0, 0], [dir * w1, -th * 0.35], [dir * w2, -th * 0.7], [dir * lean, -th], 14);
+  const ws = spine.map((_, i) => Math.max(1.2, tw * (1 - (i / (spine.length - 1)) * 0.55) * (i === 0 ? 1.2 : 1)));
+  for (const s of [-1, 1]) m.stroke([[s * tw * 0.2, -tw * 0.7], [s * tw * 0.9, -1], [s * tw * 1.6, 1]], [tw * 0.45, tw * 0.25, 1.2], bark, { tone: s > 0 ? -0.08 : 0 });
+  m.stroke(spine, ws, bark, { tex: 0.7 });
+  // a lit stripe up the trunk's left side, a shaded one down its right
+  m.line(/** @type {any} */ (spine.slice(1, -2).map((q, i) => [q[0] - ws[i + 1] * 0.25, q[1]])), bark, { lum: 0.78 });
+  /** @type {[number, number, number, number][]} pads: x, y, rx, ry */
+  const pads = [];
+  const nb = shape === 'tall' ? 3 + Math.round(rng.next()) : shape === 'spread' ? 2 + Math.round(rng.next()) : 2 + Math.round(rng.next() * 2);
+  for (let b = 0; b < nb; b++) {
+    const t = shape === 'tall' ? 0.3 + (b / Math.max(1, nb - 1)) * 0.55 : shape === 'spread' ? 0.55 + (b / Math.max(1, nb - 1)) * 0.35 : 0.45 + (b / Math.max(1, nb - 1)) * 0.4;
+    const i = Math.min(spine.length - 2, Math.round(t * (spine.length - 1))), [sx, sy] = spine[i], side = (b % 2 ? 1 : -1) * dir;
+    const L = h * (shape === 'spread' ? 0.28 + rng.next() * 0.12 : shape === 'tall' ? 0.16 + rng.next() * 0.08 : 0.2 + rng.next() * 0.12);
+    const a = (0.25 + rng.next() * 0.45), ex = sx + side * L * Math.cos(a), ey = sy - L * Math.sin(a);
+    const pts = /** @type {[number, number][]} */ ([[sx, sy], [sx + side * L * 0.45, sy - L * 0.05 - (rng.next() - 0.3) * L * 0.25], [ex, ey]]);
+    m.stroke(pts, [ws[i] * 0.6, Math.max(1, ws[i] * 0.28)], bark, { tex: 0.5 });
+    const pr = h * (shape === 'tall' ? 0.14 + rng.next() * 0.04 : 0.16 + rng.next() * 0.05);
+    pads.push([ex, ey - pr * 0.25, pr, pr * 0.62]);
+    // a long branch forks once, rising
+    if (L > h * 0.24) {
+      const fx = sx + side * L * 0.55, fy = sy - L * 0.3, gx = fx + side * L * 0.25, gy = fy - L * 0.45;
+      m.stroke([[fx, fy], [gx, gy]], [Math.max(1, ws[i] * 0.35), 1], bark, {});
+      pads.push([gx, gy - pr * 0.25, pr * 0.8, pr * 0.52]);
+    }
+  }
+  const top = spine[spine.length - 1], tr = h * (shape === 'tall' ? 0.17 : 0.2 + rng.next() * 0.05);
+  pads.push([top[0], top[1] - tr * 0.3, tr, tr * 0.62]);
+  pads.sort((p, q) => q[1] - p[1]);
+  for (const [x, y, rx, ry] of pads) pad(m, rng, x, y, rx, ry, leaf, { drip: o.drip });
+  return m;
+}
+
+/**
  * A tree. kind: oak (broad crown), pine (tiers), willow (weeping fronds),
  * birch (pale, slender), dead (bare branches). Height h, trunk width tw.
  */
 export function tree(rng, kind, h, tw, o = {}) {
+  if (kind === 'oak' || kind === 'birch') return branchTree(rng, h, tw, { ...o, shape: o.shape || (kind === 'birch' ? 'tall' : undefined) });
   const m = new Model(), lean = (o.lean ?? (rng.next() - 0.5) * 0.15) * h;
   const trunkTop = kind === 'pine' ? h * 0.95 : kind === 'willow' ? h * 0.6 : kind === 'dead' ? h * 0.75 : h * 0.55;
   const spine = bezier([0, 0], [0, -trunkTop * 0.4], [lean * 0.6, -trunkTop * 0.75], [lean, -trunkTop], 12);

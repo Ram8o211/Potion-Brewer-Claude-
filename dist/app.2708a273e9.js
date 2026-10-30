@@ -14793,20 +14793,14 @@ const any = /** @type {any} */ (f);
 if (!any.cv) any.cv = f.pix.toCanvas();
 return { cv: /** @type {HTMLCanvasElement} */ (any.cv), ax: f.ax, ay: f.ay, w: f.pix.w, h: f.pix.h, glints: f.glints };
 }
-function plantRim(m, stage, o = {}) {
-const f = plantFrameOf(m, stage, o), d = speciesOf(m);
-if (!f || !d) return null;
-const any = /** @type {any} */ (f);
-if (!any.rim) {
-const ramp = d.pal.main || [0xffc0c0c0], c = ramp[Math.max(0, ramp.length - 2)];
-const rgb = [c & 255, (c >>> 8) & 255, (c >>> 16) & 255].map((v) => Math.round(v + (255 - v) * 0.6));
-const w = f.pix.w + 2, h = f.pix.h + 2, p = new Pixels(w, h), src = f.pix;
-const op = (x, y) => x >= 0 && y >= 0 && x < src.w && y < src.h && src.px[y * src.w + x] >>> 24;
-const rim = ((0xd8 << 24) | (rgb[2] << 16) | (rgb[1] << 8) | rgb[0]) >>> 0;
-for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (!op(x - 1, y - 1) && (op(x - 2, y - 1) || op(x, y - 1) || op(x - 1, y - 2) || op(x - 1, y))) p.px[y * w + x] = rim;
-any.rim = { cv: p.toCanvas(), tint: `rgb(${rgb[0]},${rgb[1]},${rgb[2]})` };
-}
-return any.rim;
+function plantGlow(m) {
+const id = identityOfMaterial(m);
+if (!id) return null;
+return cached(`g|${identityKey(id)}`, () => {
+const ramp = describe(id).pal.main || [0xffc0c0c0], c = ramp[Math.max(0, ramp.length - 2)];
+const rgb = [c & 255, (c >>> 8) & 255, (c >>> 16) & 255].map((v) => Math.round(v + (255 - v) * 0.4));
+return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+});
 }
 function silhouetteOf(m) {
 const id = identityOfMaterial(m);
@@ -14831,7 +14825,7 @@ const cv = f.pix.toCanvas();
 cv.style.imageRendering = 'pixelated';
 return cv;
 }
-return { MIN_HIT, identityOfMaterial, speciesOf, plantFrameOf, plantCanvas, plantRim, silhouetteOf, iconFrameOf, ingredientSprite, ICON_PX };
+return { MIN_HIT, identityOfMaterial, speciesOf, plantFrameOf, plantCanvas, plantGlow, silhouetteOf, iconFrameOf, ingredientSprite, ICON_PX };
 })();
 // src/game/journal.js
 const __m85 = (() => {
@@ -16494,6 +16488,8 @@ this.depth = new Uint16Array(SCENE_W * SCENE_H);
 this.solid = new Uint8Array(SCENE_W * SCENE_H);
 this.liquid = new Uint8Array(SCENE_W * SCENE_H);
 this.cave = new Uint8Array(SCENE_W * SCENE_H);
+this.rock = new Uint8Array(SCENE_W * SCENE_H);
+this.trees = new Uint8Array(SCENE_W * SCENE_H);
 this.ground = null;
 this.seed = seed >>> 0;
 this.meta = /** @type {Record<string, any>} */ ({});
@@ -16528,6 +16524,7 @@ if (o.dark) q = mixPacked(q, 0xff000000, o.dark);
 p.px[k] = q;
 }
 const X = Math.round(x) + left, Y = Math.round(y) + top;
+if (o.test && !o.test(p, X, Y)) return null;
 this.pix.draw(p, X, Y);
 if (o.roots) this.blockEllipse(Math.round(x), Math.round(y) - 1, o.roots[0], o.roots[1]);
 if (o.foot) {
@@ -16961,6 +16958,7 @@ for (let y = 0; y < H; y++) {
 const l = wallL(y), r = wallR(y);
 for (let x = 0; x < W; x++) {
 if (!(y <= roof[x] || x < l || x > r)) continue;
+cv.rock[y * W + x] = 1;
 const under = !inRock(x, y + 1) || !inRock(x, y + 2), inner = (x < l && !inRock(x + 2, y)) || (x > r && !inRock(x - 2, y));
 let c = mixPacked(cobble(x, y, tex), 0xff000000, dark);
 if (under && lip.length && y <= roof[x]) c = lip[!inRock(x, y + 1) ? 0 : 1];
@@ -16985,6 +16983,7 @@ let c = mixPacked(cobble(x, y, { ...tex, s: 3 }), 0xff000000, dark);
 if (x < cx - hw + 1.5) c = mixPacked(c, 0xffffffff, 0.12); else if (x > cx + hw - 1.5) c = mixPacked(c, 0xff000000, 0.35);
 if (tip && u > 0.8) c = mixPacked(c, tip, (u - 0.8) * 4);
 cv.set(x, y, c);
+cv.rock[y * W + x] = 1;
 }
 }
 tips.push([Math.round(x0 + bend), Math.round(y0 + L)]);
@@ -17138,76 +17137,86 @@ return out;
 }
 function veins(cv, p, o) {
 const W = cv.W, H = cv.H, S = cv.solid, L = cv.liquid, seed = o.seed, reach = o.reach ?? 60, soak = o.soak ?? 10, k = o.k ?? 0.7;
-const core = o.core.map(col), tint = col(o.tint);
-const heat = new Float32Array(W * H), vein = new Float32Array(W * H);
+const from = o.from.map(col), to = col(o.to), w0 = o.w ?? 3;
 const x0 = Math.max(0, p.x0 - reach), x1 = Math.min(W - 1, p.x1 + reach), y0 = Math.max(0, p.level - 4);
 const dist = new Float32Array(W * H).fill(1e3);
 for (let y = y0; y < H; y++) for (let x = x0; x <= x1; x++) if (L[y * W + x]) dist[y * W + x] = 0;
 for (let pass = 0; pass < 2; pass++) {
-const fwd = pass === 0;
+const fwd = pass === 0, d1 = fwd ? -1 : 1;
 for (let yy = 0; yy < H - y0; yy++) {
 const y = fwd ? y0 + yy : H - 1 - yy;
 for (let xx = 0; xx <= x1 - x0; xx++) {
 const x = fwd ? x0 + xx : x1 - xx, i = y * W + x;
 if (!S[i]) continue;
-const dy = fwd ? -1 : 1, dx = fwd ? -1 : 1;
 let d = dist[i];
-if (x + dx >= x0 && x + dx <= x1) d = Math.min(d, dist[i + dx] + 1);
-if (y + dy >= y0 && y + dy < H) { d = Math.min(d, dist[i + dy * W] + 1); if (x + dx >= x0 && x + dx <= x1) d = Math.min(d, dist[i + dy * W + dx] + 1.41); }
+const sx = x + d1 >= x0 && x + d1 <= x1, sy = y + d1 >= y0 && y + d1 < H;
+if (sx) d = Math.min(d, dist[i + d1] + 1);
+if (sy) d = Math.min(d, dist[i + d1 * W] + 1);
+if (sx && sy) d = Math.min(d, dist[i + d1 * W + d1] + 1.41);
+if (sx && y - d1 >= y0 && y - d1 < H) d = Math.min(d, dist[i - d1 * W + d1] + 1.41);
 dist[i] = d;
 }
 }
 }
-for (let y = y0; y < H; y++) for (let x = x0; x <= x1; x++) {
-const i = y * W + x;
-if (S[i] && dist[i] < soak) heat[i] += (1 - dist[i] / soak) ** 2;
-}
-const n = o.n ?? 8, walkers = [];
+const vt = new Float32Array(W * H).fill(2);
+const n = o.n ?? 6, walkers = [];
 for (let v = 0; v < n; v++) {
-const sx = Math.round(p.x0 + hash2(v, 1, seed) * (p.x1 - p.x0));
+const sx = Math.round(p.x0 + (v + 0.2 + hash2(v, 1, seed) * 0.6) / n * (p.x1 - p.x0));
 let sy = p.level;
 while (sy < H - 1 && !S[sy * W + sx]) sy++;
 const out = (sx - (p.x0 + p.x1) / 2) / Math.max(1, (p.x1 - p.x0) / 2);
-walkers.push([sx, sy, Math.PI / 2 - out * 0.9 + (hash2(v, 2, seed) - 0.5) * 0.8, reach * (0.5 + hash2(v, 3, seed) * 0.5), 1, v]);
+walkers.push([sx, sy - 1, Math.PI / 2 - out * 1.1 + (hash2(v, 2, seed) - 0.5) * 0.6, reach * (0.55 + hash2(v, 3, seed) * 0.45), 0, w0, v]);
 }
-for (let w = 0; w < walkers.length && w < 60; w++) {
-let [x, y, a, len, s0, id] = walkers[w];
+for (let wi = 0; wi < walkers.length && wi < n * 3; wi++) {
+let [x, y, a, len, t0, wd, id] = walkers[wi];
 for (let t = 0; t < len; t++) {
 const xi = Math.round(x), yi = Math.round(y);
 if (xi < 1 || xi >= W - 1 || yi >= H - 1 || yi < 0) break;
-const i = yi * W + xi;
-if (!S[i] && !L[i]) break;
-const f = s0 * (1 - t / len);
-if (S[i]) { vein[i] = Math.max(vein[i], f); if (f > 0.55) vein[i + 1] = Math.max(vein[i + 1], f * 0.8); }
-a += (hash2(id, t, seed + 5) - 0.5) * 0.7 + (Math.PI / 2 - a) * 0.04;
-x += Math.cos(a); y += Math.max(-0.3, Math.sin(a));
-if (hash2(id, t, seed + 6) < 0.035 && walkers.length < 60) walkers.push([x, y, a + (hash2(id, t, seed + 7) < 0.5 ? -0.8 : 0.8), (len - t) * 0.6, f, id * 31 + t]);
+if (!S[yi * W + xi] && !L[yi * W + xi]) break;
+const u = t0 + (1 - t0) * (t / len), r = Math.max(0.5, wd * (1 - u) ** 2);
+for (let j = -Math.ceil(r); j <= Math.ceil(r); j++) for (let i = -Math.ceil(r); i <= Math.ceil(r); i++) {
+if (i * i + j * j > r * r + 0.3) continue;
+const q = (yi + j) * W + xi + i;
+if (q >= 0 && q < W * H && S[q]) vt[q] = Math.min(vt[q], u + Math.sqrt(i * i + j * j) / (r + 1) * 0.25);
+}
+a += (hash2(id, t, seed + 5) - 0.5) * 0.75 + (Math.PI / 2 - a) * 0.025;
+x += Math.cos(a); y += Math.max(-0.2, Math.sin(a));
+if (hash2(id, t, seed + 6) < (o.branch ?? 0.015) && t > 4 && walkers.length < n * 3) walkers.push([x, y, a + (hash2(id, t, seed + 7) < 0.5 ? -0.7 : 0.7), (len - t) * 0.6, u, wd * (1 - u) * 0.8, id * 31 + t]);
 }
 }
-const R = 5;
-for (let y = y0; y < H; y++) for (let x = x0; x <= x1; x++) {
-const v = vein[y * W + x];
-if (v <= 0) continue;
-for (let j = -R; j <= R; j++) for (let i = -R; i <= R; i++) {
-const xx = x + i, yy = y + j;
-if (xx < 0 || xx >= W || yy < 0 || yy >= H) continue;
-heat[yy * W + xx] += v * 0.09 * Math.exp(-(i * i + j * j) / 6);
-}
-}
+const grad = (/** @type {number} */ u) => { const f = Math.min(from.length - 1.001, u * (from.length - 1)), i = Math.floor(f); return mixPacked(from[i], from[i + 1], f - i); };
+const light = new Float32Array(W * H);
 for (let y = y0; y < H; y++) for (let x = x0; x <= x1; x++) {
 const i = y * W + x;
 if (!S[i]) continue;
-const v = vein[i];
-if (v > 0.06) cv.pix.px[i] = mixPacked(core[Math.min(core.length - 1, Math.floor((1 - v) * core.length))], cv.pix.px[i], Math.min(0.9, (o.mix ?? 0) + (v > 0.3 ? 0 : 0.4)));
-else if (heat[i] > 0.01) cv.pix.px[i] = mixPacked(cv.pix.px[i], tint, Math.min(0.85, heat[i] * k));
+const d = dist[i];
+if (d < soak) {
+const f = (1 - d / soak) ** 1.6;
+cv.pix.px[i] = mixPacked(cv.pix.px[i], mixPacked(to, from[Math.min(from.length - 1, 1)], f * 0.6), Math.min(0.9, f * k));
+light[i] = Math.max(light[i], f * 0.6);
+}
+const u = vt[i];
+if (u <= 1) {
+cv.pix.px[i] = mixPacked(grad(u), cv.pix.px[i], Math.min(0.9, 0.15 + u * 0.8));
+light[i] = Math.max(light[i], (1 - u) * 0.9);
+}
 }
 if (o.rgb) {
-const rgb = o.rgb;
-cv.light(rgb, (x, y) => { const i = y * W + x; return S[i] ? Math.min(0.5, heat[i] * 0.35) : 0; }, y0, H);
+const g = o.glow ?? 0.4, rgb = o.rgb, R = 4;
+const spread = new Float32Array(W * H);
+for (let y = y0; y < H; y++) for (let x = x0; x <= x1; x++) {
+const v = light[y * W + x];
+if (v < 0.05) continue;
+for (let j = -R; j <= R; j++) for (let i = -R; i <= R; i++) {
+const xx = x + i, yy = y + j;
+if (xx >= 0 && xx < W && yy >= 0 && yy < H) spread[yy * W + xx] += v * 0.05 * Math.exp(-(i * i + j * j) / 5);
 }
 }
-const WATER_VEINS = (seed) => ({ core: ['#3a6a7a', '#2e5866', '#244652', '#1c3640'], tint: '#14262e', seed, n: 5, reach: 40, soak: 10, k: 0.5, mix: 0.45 });
-const LAVA_VEINS = (seed) => ({ core: ['#fff0a0', '#ffc040', '#ff8a2a', '#e05a18', '#a8320e', '#5a1a0c'], tint: '#b8401a', seed, n: 11, reach: 90, soak: 13, k: 0.75, rgb: [1, 0.42, 0.12] });
+cv.light(rgb, (x, y) => Math.min(0.6, spread[y * W + x] * g), y0, H);
+}
+}
+const WATER_VEINS = (seed, from = ['#6aaac8', '#4a8aa8', '#36708c', '#2a5a70']) => ({ from, to: '#14262e', seed, n: 6, reach: 54, soak: 11, k: 0.6, w: 1.8, branch: 0.025, rgb: [0.35, 0.65, 0.8], glow: 0.35 });
+const LAVA_VEINS = (seed) => ({ from: ['#ffd060', '#ffb040', '#ff8a2a', '#e05a18', '#a8320e', '#5a1a0c'], to: '#8a2a10', seed, n: 5, reach: 80, soak: 12, k: 0.75, w: 2.2, branch: 0.02, rgb: [1, 0.45, 0.14], glow: 0.8 });
 return { farPillars, fog, caveFrame, vines, moss, glowShrooms, torch, fall, ruins, finish, ledgeTops, veins, WATER_VEINS, LAVA_VEINS };
 })();
 // src/visual/env/kit.js
@@ -17262,7 +17271,58 @@ if (up > -0.3) m.poly(lumpy(x - r * 0.25, y - r * 0.35, r * 0.45, r * 0.3, rnd, 
 }
 return m;
 }
+function pad(m, rng, x, y, rx, ry, mat = 'leaf', o = {}) {
+const rnd = R(rng);
+m.poly(lumpy(x, y + ry * 0.15, rx, ry * 0.8, rnd, 0.14, 7), mat, { shade: 'flat', tex: 1, tone: -0.2 });
+const n = Math.max(2, Math.round(rx / (ry * 0.9)));
+for (let i = 0; i < n; i++) {
+const u = n === 1 ? 0 : i / (n - 1) - 0.5, bx = x + u * rx * 1.25, by = y - ry * (0.15 + (0.5 - Math.abs(u)) * 0.4), r = ry * (0.75 + rng.next() * 0.25);
+m.poly(lumpy(bx, by, r * 1.15, r * 0.85, rnd, 0.12, 6), mat, { shade: 'flat', tex: 1, tone: -0.04 - u * 0.06, soft: true });
+m.poly(lumpy(bx - r * 0.3, by - r * 0.35, r * 0.55, r * 0.35, rnd, 0.1, 5), mat, { shade: 'flat', tex: 0.6, tone: 0.14 - u * 0.05, soft: true, noOutline: true });
+}
+const drips = o.drips ?? Math.round(rx / 4);
+for (let i = 0; i < drips; i++) {
+const dx = x + (rng.next() - 0.5) * rx * 1.4, L = 2 + rng.next() * ry * 1.6;
+m.stroke([[dx, y + ry * 0.6], [dx + (rng.next() - 0.5), y + ry * 0.6 + L]], [1.6, 1], o.drip || mat, { tone: o.drip ? 0 : 0.18, noOutline: true });
+}
+return m;
+}
+function branchTree(rng, h, tw, o = {}) {
+const m = new Model(), bark = o.bark || 'bark', leaf = o.leaf || 'leaf';
+const shape = o.shape || ['tall', 'spread', 'lean'][Math.floor(rng.next() * 3)], dir = o.dir ?? (rng.next() < 0.5 ? -1 : 1);
+const th = shape === 'spread' ? h * 0.62 : shape === 'tall' ? h * 0.86 : h * 0.8;
+const w1 = shape === 'lean' ? h * 0.14 : h * 0.05, w2 = shape === 'lean' ? -h * 0.04 : -h * 0.05;
+const lean = shape === 'lean' ? h * 0.16 : (rng.next() - 0.5) * h * 0.1;
+const spine = bezier([0, 0], [dir * w1, -th * 0.35], [dir * w2, -th * 0.7], [dir * lean, -th], 14);
+const ws = spine.map((_, i) => Math.max(1.2, tw * (1 - (i / (spine.length - 1)) * 0.55) * (i === 0 ? 1.2 : 1)));
+for (const s of [-1, 1]) m.stroke([[s * tw * 0.2, -tw * 0.7], [s * tw * 0.9, -1], [s * tw * 1.6, 1]], [tw * 0.45, tw * 0.25, 1.2], bark, { tone: s > 0 ? -0.08 : 0 });
+m.stroke(spine, ws, bark, { tex: 0.7 });
+m.line(/** @type {any} */ (spine.slice(1, -2).map((q, i) => [q[0] - ws[i + 1] * 0.25, q[1]])), bark, { lum: 0.78 });
+const pads = [];
+const nb = shape === 'tall' ? 3 + Math.round(rng.next()) : shape === 'spread' ? 2 + Math.round(rng.next()) : 2 + Math.round(rng.next() * 2);
+for (let b = 0; b < nb; b++) {
+const t = shape === 'tall' ? 0.3 + (b / Math.max(1, nb - 1)) * 0.55 : shape === 'spread' ? 0.55 + (b / Math.max(1, nb - 1)) * 0.35 : 0.45 + (b / Math.max(1, nb - 1)) * 0.4;
+const i = Math.min(spine.length - 2, Math.round(t * (spine.length - 1))), [sx, sy] = spine[i], side = (b % 2 ? 1 : -1) * dir;
+const L = h * (shape === 'spread' ? 0.28 + rng.next() * 0.12 : shape === 'tall' ? 0.16 + rng.next() * 0.08 : 0.2 + rng.next() * 0.12);
+const a = (0.25 + rng.next() * 0.45), ex = sx + side * L * Math.cos(a), ey = sy - L * Math.sin(a);
+const pts = /** @type {[number, number][]} */ ([[sx, sy], [sx + side * L * 0.45, sy - L * 0.05 - (rng.next() - 0.3) * L * 0.25], [ex, ey]]);
+m.stroke(pts, [ws[i] * 0.6, Math.max(1, ws[i] * 0.28)], bark, { tex: 0.5 });
+const pr = h * (shape === 'tall' ? 0.14 + rng.next() * 0.04 : 0.16 + rng.next() * 0.05);
+pads.push([ex, ey - pr * 0.25, pr, pr * 0.62]);
+if (L > h * 0.24) {
+const fx = sx + side * L * 0.55, fy = sy - L * 0.3, gx = fx + side * L * 0.25, gy = fy - L * 0.45;
+m.stroke([[fx, fy], [gx, gy]], [Math.max(1, ws[i] * 0.35), 1], bark, {});
+pads.push([gx, gy - pr * 0.25, pr * 0.8, pr * 0.52]);
+}
+}
+const top = spine[spine.length - 1], tr = h * (shape === 'tall' ? 0.17 : 0.2 + rng.next() * 0.05);
+pads.push([top[0], top[1] - tr * 0.3, tr, tr * 0.62]);
+pads.sort((p, q) => q[1] - p[1]);
+for (const [x, y, rx, ry] of pads) pad(m, rng, x, y, rx, ry, leaf, { drip: o.drip });
+return m;
+}
 function tree(rng, kind, h, tw, o = {}) {
+if (kind === 'oak' || kind === 'birch') return branchTree(rng, h, tw, { ...o, shape: o.shape || (kind === 'birch' ? 'tall' : undefined) });
 const m = new Model(), lean = (o.lean ?? (rng.next() - 0.5) * 0.15) * h;
 const trunkTop = kind === 'pine' ? h * 0.95 : kind === 'willow' ? h * 0.6 : kind === 'dead' ? h * 0.75 : h * 0.55;
 const spine = bezier([0, 0], [0, -trunkTop * 0.4], [lean * 0.6, -trunkTop * 0.75], [lean, -trunkTop], 12);
@@ -17491,7 +17551,68 @@ for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI + rng.next() * 0.1; be
 m.ellipse(0, -h, 1.8, 1.8, 'metal', {});
 return m;
 }
-return { leafBlock, crown, tree, branch, bush, boulder, reeds, fern, tuft, log, stump, cloud, beam, crane, ladder, cart, crate, fence, skep, basalt, spire, cairn, scaffold, wheel };
+return { leafBlock, crown, pad, branchTree, tree, branch, bush, boulder, reeds, fern, tuft, log, stump, cloud, beam, crane, ladder, cart, crate, fence, skep, basalt, spire, cairn, scaffold, wheel };
+})();
+// src/visual/env/trees.js
+const __m102 = (() => {
+const { branchTree, tree } = __m101;
+const { Rng } = __m6;
+const { pack, hex } = __m24;
+function treeRow(cv, rng, pal, o) {
+const haze = pack(hex(o.haze));
+for (let x = rng.int(-6, 6); x < cv.W + 10; x += rng.int(o.gap[0], o.gap[1])) {
+const h = rng.int(o.h[0], o.h[1]), xi = Math.max(0, Math.min(cv.W - 1, x));
+const m = o.kind ? tree(rng, o.kind, h, Math.max(2, h / 16)) : branchTree(rng, h, Math.max(2, h / 12), { shape: o.shape || 'tall' });
+cv.stamp(m, pal, x, Math.round(o.line[xi]) + (o.dy ?? 0), { haze: [haze, o.fade], outline: false });
+}
+}
+function terrainTrees(cv, rng, pal, o) {
+const W = cv.W, H = cv.H, S = cv.solid, gap = o.gap ?? 22, [xa, xb] = o.x || [4, W - 5];
+const spots = [];
+for (let y = 20; y < H - 2; y++) for (let x = xa; x <= xb; x++) {
+const k = y * W + x;
+if (!S[k] || S[k - W] || cv.liquid[k - W] || cv.rock[k - W]) continue;
+if (!o.ledges && cv.ground && y < cv.ground[x] - 4) continue;
+let wet = false;
+for (let i = -5; i <= 5 && !wet; i++) wet = x + i >= 0 && x + i < W && (cv.liquid[k - W + i] || cv.liquid[k + i]);
+if (!wet) spots.push([x, y]);
+}
+const out = [];
+for (let tries = 0; tries < Math.min(60, o.n * 8) && out.length < o.n && spots.length; tries++) {
+const [x, y] = spots[Math.floor(rng.next() * spots.length)];
+if (out.some(([a, b]) => Math.abs(a - x) < gap && Math.abs(b - y) < 30)) continue;
+const kind = o.kinds[Math.floor(rng.next() * o.kinds.length)], shape = o.shapes ? o.shapes[Math.floor(rng.next() * o.shapes.length)] : undefined;
+const h0 = rng.int(o.h[0], o.h[1]), seed = rng.int(0, 1e9);
+for (let f = 1; f >= 0.45; f *= 0.8) {
+const h = Math.round(h0 * f), tw = Math.max(2, Math.round(h / 11)), fy = y + 2;
+const m = tree(new Rng(seed), kind, h, tw, { shape });
+const ok = cv.stamp(m, pal, x, fy, {
+roots: [Math.max(4, tw * 1.5), 2], dark: o.dark,
+test: (p, X, Y) => {
+for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) {
+if (!(p.px[j * p.w + i] >>> 24)) continue;
+const xx = X + i, yy = Y + j;
+if (yy < 1 || xx < 0 || xx >= W) return false;
+if (yy >= H) continue;
+const k = yy * W + xx;
+if ((S[k] && yy < fy - 3 - tw) || cv.rock[k] || cv.liquid[k] || cv.trees[k]) return false;
+}
+return true;
+},
+});
+if (!ok) continue;
+const p = ok.raster.pix;
+for (let j = 0; j < p.h; j++) for (let i = 0; i < p.w; i++) {
+const xx = ok.x + i, yy = ok.y + j;
+if (xx >= 0 && yy >= 0 && xx < W && yy < H && p.px[j * p.w + i] >>> 24) cv.trees[yy * W + xx] = 1;
+}
+out.push([x, fy, h]);
+break;
+}
+}
+return out;
+}
+return { treeRow, terrainTrees };
 })();
 // src/visual/env/meadow.js
 const __m99 = (() => {
@@ -17499,7 +17620,8 @@ const { sky } = __m95;
 const { palette, vary, streamOf } = __m100;
 const { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, surfaceAt, silhouette, treeShape, glow, drips, ledges } = __m97;
 const { caveFrame, fog, vines, moss, veins, WATER_VEINS } = __m96;
-const { tree, cloud, fence, skep, boulder } = __m101;
+const { cloud, fence, skep, boulder } = __m101;
+const { terrainTrees } = __m102;
 const { Model, lumpy } = __m28;
 const { pack } = __m24;
 function compose(cv, seed) {
@@ -17552,13 +17674,10 @@ grass: { cols: ['#6ab83e', '#8ccf4a', '#4e9a34'], tall: 4, rate: 0.7, flowers: [
 moss(cv, { cols: ['#8ccf4a', '#5ea83a', '#3f7e2c', '#2e5a22'], seed: ss + 1, drape: 9, rate: 0.2, len: 10 });
 if (pond) {
 cv.meta.pond = pool(cv, pond.x - pond.hw, pond.x + pond.hw, pond.level, { surface: '#cfe8ff', body: ['#3a6a98', '#2e5a86', '#244a72', '#1a3a5e'], see: 0.2, bed: ['#3a2e20', '#4a3a28', '#2a2018'] });
-veins(cv, cv.meta.pond, WATER_VEINS(ss + 4));
+veins(cv, cv.meta.pond, WATER_VEINS(ss + 4, ['#7aa8d8', '#3a6a98', '#2e5a86', '#244a72']));
 }
 markOpen(cv);
-const or = s('oaks'), left = or.next() < 0.5;
-const ox = left ? or.int(14, 40) : or.int(344, 370);
-cv.stamp(tree(or, 'oak', or.int(130, 150), or.int(12, 15), { lean: left ? 0.04 : -0.04 }), pal, ox, surfaceAt(cv, ox) + 2, { roots: [16, 3], dark: 0.2 });
-if (or.next() < 0.7) { const o2 = left ? or.int(250, 320) : or.int(70, 130); cv.stamp(tree(or, 'oak', or.int(60, 80), or.int(5, 7)), pal, o2, surfaceAt(cv, o2) + 1, { roots: [8, 2] }); }
+terrainTrees(cv, s('oaks'), pal, { n: 3, kinds: ['oak'], shapes: ['spread', 'lean'], h: [60, 130], gap: 60, ledges: true });
 if (feature === 'hives') {
 const fx = fr.int(70, 300), fy = surfaceAt(cv, fx) + 1;
 cv.stamp(fence(fr.int(50, 80), 14), pal, fx, fy, { foot: [40, 2] });
@@ -17583,14 +17702,14 @@ cv.meta.horizon = 120;
 return { compose };
 })();
 // src/visual/env/forest.js
-const __m102 = (() => {
+const __m103 = (() => {
 const { sky } = __m95;
 const { palette, vary, streamOf } = __m100;
 const { heights, raise, fillSolid, blob, paintTerrain, markOpen, surfaceAt, col, drips, ledges, hanging } = __m97;
 const { caveFrame, farPillars, fog, vines, moss, glowShrooms } = __m96;
-const { tree, fern, log, stump } = __m101;
+const { fern, log, stump } = __m101;
+const { treeRow, terrainTrees } = __m102;
 const { hash2 } = __m42;
-const { hex, pack } = __m24;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'forest', p);
 const autumn = s('season').next() < 0.3, cave = s('kind').next() < 0.35;
@@ -17607,14 +17726,11 @@ fog(cv, '#24402a', 80, 200, 0.3, s('fog1').int(0, 1e9));
 sky(cv, 0, H, ['#c8dcc0', '#b0ccb0', '#90b49c', '#78a088']);
 }
 const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 172, amp: 8, freq: 0.012 });
-const rows = s('rows');
-for (const [k, h, haze] of /** @type {[number, number[], number][]} */ ([[0, [40, 56], 0.7], [1, [50, 70], 0.45]])) {
-for (let x = rows.int(-6, 6); x < W + 10; x += rows.int(16, 26)) {
-const m = tree(rows, rows.next() < 0.2 ? 'pine' : 'oak', rows.int(h[0], h[1]), rows.int(3, 5));
-cv.stamp(m, pal, x, Math.round(top[Math.max(0, Math.min(W - 1, x))]) - 14 + k * 8, { haze: [pack(hex(back)), haze], outline: false });
-}
+const rows = s('rows'), far = top.map((v) => v - 14), mid = top.map((v) => v - 6);
+treeRow(cv, rows, pal, { line: far, gap: [20, 26], h: [50, 58], haze: back, fade: 0.68, shape: 'tall' });
 fog(cv, cave ? '#24402a' : '#b8d0b8', 60, 190, cave ? 0.2 : 0.3, rows.int(0, 1e9));
-}
+treeRow(cv, rows, pal, { line: mid, gap: [26, 34], h: [64, 74], haze: back, fade: 0.45, shape: 'tall' });
+fog(cv, cave ? '#24402a' : '#b8d0b8', 80, 200, cave ? 0.15 : 0.2, rows.int(0, 1e9));
 if (cave) {
 const fs = s('frame');
 const frame = caveFrame(cv, {
@@ -17650,13 +17766,7 @@ x += dx; if (hash2(x, y, i) < 0.45) y++;
 }
 }
 markOpen(cv);
-const or = s('oaks'), n = or.int(5, 7);
-for (let i = 0; i < n; i++) {
-const x = Math.round(((i + 0.5) / n) * W + or.int(-14, 14)), kind = or.next() < 0.25 ? 'pine' : or.next() < 0.2 ? 'birch' : 'oak';
-cv.stamp(tree(or, kind, or.int(60, 88), or.int(4, 6)), pal, x, surfaceAt(cv, x) + 2, { roots: [7, 2] });
-}
-const left = or.next() < 0.5, ex = left ? or.int(10, 30) : or.int(354, 374);
-cv.stamp(tree(or, 'oak', or.int(104, 120), or.int(8, 10), { lean: left ? 0.05 : -0.05 }), pal, ex, surfaceAt(cv, ex) + 2, { roots: [11, 3] });
+terrainTrees(cv, s('oaks'), pal, { n: 9, kinds: ['oak'], shapes: ['tall', 'spread', 'lean'], h: [44, 116], gap: 20, ledges: true });
 const lr = s('logs'), gx = lr.int(90, 290);
 cv.stamp(log(lr, lr.int(34, 48), lr.int(4, 6), { moss: 'moss' }), pal, gx, surfaceAt(cv, gx) + 2, { foot: [22, 3] });
 const sx = lr.int(60, 320);
@@ -17679,12 +17789,13 @@ cv.meta.horizon = 120;
 return { compose };
 })();
 // src/visual/env/river.js
-const __m103 = (() => {
+const __m104 = (() => {
 const { sky } = __m95;
 const { palette, vary, streamOf } = __m100;
 const { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, silhouette, treeShape } = __m97;
 const { caveFrame, farPillars, fog, vines, moss, glowShrooms, ledgeTops, veins, WATER_VEINS } = __m96;
-const { tree, reeds, beam, cloud } = __m101;
+const { reeds, beam, cloud } = __m101;
+const { terrainTrees } = __m102;
 const { Model } = __m28;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'river', p);
@@ -17731,7 +17842,7 @@ grass: { cols: ['#5a9a3a', '#7ac04a', '#4a8a30'], tall: 4, rate: 0.6, flowers: [
 moss(cv, { cols: ['#7ac04a', '#4e8a34', '#3a6e2a', '#2a5020'], seed: ss + 1, drape: 9, rate: 0.22, len: 12 });
 const level = Math.round(Math.max(top[rx - hw], top[rx + hw])) + 5;
 cv.meta.river = pool(cv, rx - hw, rx + hw, level, { surface: '#8ae0d8', body: ['#2a6a68', '#1e5654', '#164442', '#0e3232', '#0a2424'], see: 0.3, bed: ['#2a3a2e', '#34463a', '#1e2a22'] });
-veins(cv, cv.meta.river, WATER_VEINS(ss + 4));
+veins(cv, cv.meta.river, WATER_VEINS(ss + 4, ['#5a9a98', '#2a6a68', '#1e5654', '#164442']));
 markOpen(cv);
 const rr = s('reeds');
 for (const [x, y] of ledgeTops(cv, 5, rr.int(0, 1e9))) cv.stamp(reeds(rr, rr.int(10, 16), rr.int(3, 5), { heads: 0.7 }), pal, x, y + 1);
@@ -17740,8 +17851,9 @@ let x = rx + side * (hw - rr.int(2, 10));
 while (cv.liquid[(surfaceAt(cv, x) - 1) * W + x] && x > 0 && x < W - 1) x += side;
 cv.stamp(reeds(rr, rr.int(12, 20), rr.int(4, 7), { heads: 0.6 }), pal, x, surfaceAt(cv, x) + 1);
 }
-const wr = s('willow'), wx = rx < W / 2 ? wr.int(320, 366) : wr.int(18, 64);
-cv.stamp(tree(wr, 'willow', wr.int(110, 130), wr.int(9, 12)), pal, wx, surfaceAt(cv, wx) + 2, { roots: [12, 3], dark: 0.15 });
+const wr = s('willow');
+terrainTrees(cv, wr, pal, { n: 1, kinds: ['willow'], h: [96, 126], dark: 0.15, x: rx < W / 2 ? [rx + hw + 20, W - 10] : [10, rx - hw - 20] });
+terrainTrees(cv, wr, pal, { n: 3, kinds: ['oak'], shapes: ['spread', 'lean', 'tall'], h: [36, 80], gap: 40, ledges: true });
 if (wr.next() < 0.5) {
 const y = level - 4, m = new Model(), x0 = rx - hw - 4, x1 = rx + hw + 4;
 beam(m, [x0, y], [x1, y], 3);
@@ -17757,7 +17869,7 @@ cv.meta.horizon = 116;
 return { compose };
 })();
 // src/visual/env/quarry.js
-const __m104 = (() => {
+const __m105 = (() => {
 const { sky } = __m95;
 const { palette, vary, streamOf } = __m100;
 const { fillSolid, blob, ledges, paintTerrain, markOpen, surfaceAt, glow, drips, silhouette } = __m97;
@@ -17864,12 +17976,13 @@ cv.meta.horizon = 100;
 return { compose };
 })();
 // src/visual/env/moonfen.js
-const __m105 = (() => {
+const __m106 = (() => {
 const { sky } = __m95;
 const { palette, vary, streamOf } = __m100;
 const { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, glow, silhouette, treeShape } = __m97;
 const { caveFrame, farPillars, fog, vines, moss, ruins, glowShrooms, veins, WATER_VEINS } = __m96;
-const { tree, reeds, spire, cairn } = __m101;
+const { reeds, spire, cairn } = __m101;
+const { terrainTrees } = __m102;
 const { fbm2 } = __m42;
 const { pack } = __m24;
 function compose(cv, seed) {
@@ -17928,12 +18041,11 @@ grass: { cols: ['#2e6a52', '#3e8a6a', '#1e4a3c'], tall: 4, rate: 0.55, flowers: 
 });
 moss(cv, { cols: ['#3e8a6a', '#2e6a52', '#1e4a3c', '#14322a'], seed: ss + 1, drape: 10, rate: 0.25, len: 14 });
 cv.meta.pools = pools.map((p) => pool(cv, p.x - p.hw, p.x + p.hw, p.level, { surface: '#b0c4f0', body: ['#22346a', '#1a2a58', '#142046', '#0e1834'], see: 0.15, bed: ['#0e1a14', '#16261e', '#0a0e0c'] }));
-cv.meta.pools.forEach((p, i) => veins(cv, p, { ...WATER_VEINS(ss + 4 + i), core: ['#2e4a74', '#26405e', '#1e344e', '#182a40'], tint: '#0c1428' }));
+cv.meta.pools.forEach((p, i) => veins(cv, p, { ...WATER_VEINS(ss + 4 + i, ['#5a74b0', '#2a3e78', '#22346a', '#1a2a58']), to: '#0c1428', n: 3, reach: 40, rgb: [0.35, 0.45, 0.85] }));
 markOpen(cv);
 const wr = s('willows');
-for (const x of [wr.int(10, 40), wr.int(344, 374)]) cv.stamp(tree(wr, 'willow', wr.int(100, 124), wr.int(8, 11)), pal, x, surfaceAt(cv, x) + 2, { roots: [12, 3], dark: 0.25 });
-const dx = wr.int(120, 260);
-cv.stamp(tree(wr, 'dead', wr.int(50, 70), wr.int(4, 6)), pal, dx, surfaceAt(cv, dx) + 1, { roots: [5, 2] });
+terrainTrees(cv, wr, pal, { n: 2, kinds: ['willow'], h: [84, 120], dark: 0.25, gap: 120 });
+terrainTrees(cv, wr, pal, { n: 2, kinds: ['dead', 'oak'], shapes: ['lean', 'tall'], h: [36, 70], dark: 0.2, gap: 40, ledges: true });
 const rr = s('reeds');
 for (const p of pools) for (const side of [-1, 1]) {
 let x = p.x + side * p.hw;
@@ -17964,12 +18076,13 @@ cv.meta.horizon = 124;
 return { compose };
 })();
 // src/visual/env/crags.js
-const __m106 = (() => {
+const __m107 = (() => {
 const { sky } = __m95;
 const { palette, vary, streamOf } = __m100;
 const { heights, dip, raise, fillSolid, blob, ledges, paintTerrain, pool, markOpen, surfaceAt, glow, drips, silhouette, col, far } = __m97;
 const { caveFrame, farPillars, fog, moss, fall, ledgeTops, veins, LAVA_VEINS } = __m96;
-const { tree, basalt, spire, cloud } = __m101;
+const { basalt, spire, cloud } = __m101;
+const { terrainTrees } = __m102;
 const { fbm1 } = __m42;
 const { Model, lumpy } = __m28;
 const LAVA = ['#fff0a0', '#ffc040', '#ff8a2a', '#e05a18', '#a8320e'];
@@ -18053,7 +18166,7 @@ for (let i = 0; i < br.int(3, 5); i++) { const x = gx + i * 6; cv.stamp(basalt(b
 const gr = s('glass');
 for (let i = 0; i < 2; i++) { const x = gr.int(10, W - 10); if (cv.liquid[(surfaceAt(cv, x) - 1) * W + x]) continue; cv.stamp(spire(gr, gr.int(8, 13)), pal, x, surfaceAt(cv, x) + 1, { foot: [4, 2] }); }
 const dr = s('brush');
-for (let i = 0; i < 3; i++) { const x = dr.int(0, W); cv.stamp(tree(dr, 'dead', dr.int(16, 30), 1.6), pal, x, surfaceAt(cv, x) + 1, { roots: [3, 2] }); }
+terrainTrees(cv, dr, pal, { n: 3, kinds: ['dead'], h: [18, 34], gap: 30, ledges: true });
 const vr = s('vents'), vents = [];
 for (let i = 0; i < 2; i++) {
 const x = vr.int(30, W - 30);
@@ -18078,11 +18191,11 @@ const { Canvas, SCENE_W, SCENE_H } = __m95;
 const { hashString } = __m6;
 const { finish } = __m96;
 const meadow = __m99;
-const forest = __m102;
-const river = __m103;
-const quarry = __m104;
-const moonfen = __m105;
-const crags = __m106;
+const forest = __m103;
+const river = __m104;
+const quarry = __m105;
+const moonfen = __m106;
+const crags = __m107;
 const ENV_VERSION = 4;
 const COMPOSERS = { meadow, forest, river, quarry, moonfen, crags };
 const cache = new Map();
@@ -18362,7 +18475,7 @@ const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, we
 const { equipmentById } = __m49;
 const { RANKS } = __m49;
 const { sceneCanvas, animateRegion, PlantGround, plantBox, hitPlant, SCENE_W, SCENE_H } = __m93;
-const { plantCanvas, plantFrameOf, plantRim, silhouetteOf, ingredientSprite, speciesOf } = __m83;
+const { plantCanvas, plantFrameOf, plantGlow, silhouetteOf, ingredientSprite, speciesOf } = __m83;
 const { EFFECT_BY_KEY } = __m14;
 function sparkle(ctx, x, y, u) {
 const q = 1, L = [0, 1, 2, 3, 2, 1, 0][Math.min(6, Math.floor(u * 7))] * q;
@@ -18694,13 +18807,15 @@ ctx.fillRect(x - (ww >> 1) + 2, y + 2, Math.max(2, ww - 4), 1);
 ctx.fillStyle = 'rgba(10,20,8,0.22)';
 ctx.fillRect(x - Math.floor(sw / 2), y - 1, sw, 2);
 ctx.fillRect(x - Math.floor(sw / 4), y - 1, Math.max(2, Math.floor(sw / 2)), 2);
-const lit = plantRim(p.m, p.stage, { closed, hover }), lift = since < 0.3 ? 1 : 0;
-if (lit && !hover) {
-const cx = x - sp.ax + sp.w / 2, cy = y - sp.ay + sp.h * 0.55, r = Math.max(sp.w, sp.h) * 0.75 + 4;
+const tint = plantGlow(p.m), lift = since < 0.3 ? 1 : 0;
+if (tint && !hover) {
+const cx = x - sp.ax + sp.w / 2, cy = y - sp.ay + sp.h * 0.5, r = Math.max(sp.w, sp.h) * 0.6 + 2;
 const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-g.addColorStop(0, lit.tint); g.addColorStop(1, 'rgba(0,0,0,0)');
-ctx.globalAlpha = 0.32; ctx.fillStyle = g; ctx.fillRect(cx - r, cy - r, r * 2, r * 2); ctx.globalAlpha = 1;
-ctx.drawImage(lit.cv, x - sp.ax - 1, y - sp.ay - 1 - lift);
+g.addColorStop(0, tint); g.addColorStop(1, 'rgba(0,0,0,0)');
+ctx.globalCompositeOperation = 'lighter';
+ctx.globalAlpha = 0.13 + 0.04 * Math.sin(this.time * 1.6 + p.x * 17);
+ctx.fillStyle = g; ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
 }
 ctx.drawImage(sp.cv, x - sp.ax, y - sp.ay - lift);
 if (p.thirsty && !this.lab.sandbox && (this.mode === 'water' || Math.sin(this.time * 2 + p.x * 9) > 0.6)) {
@@ -18818,7 +18933,7 @@ this.grow();
 return { WildsView };
 })();
 // src/rendering/rabbit.js
-const __m108 = (() => {
+const __m109 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m77;
 const { RABBIT_MARKS } = __m51;
@@ -19764,7 +19879,7 @@ ctx.fillRect(fx, fy, RABBIT_W, RABBIT_H);
 return { RABBIT_W, RABBIT_H, rabbitLevels, rabbitPose, rabbitPace, rabbitAnchors, rabbitSpriteKey, drawRabbitSprite, clearRabbitSprites, drawRabbit };
 })();
 // src/rendering/hutch-ground.js
-const __m111 = (() => {
+const __m112 = (() => {
 const GROUND_Y0 = 56;
 const GROUND = [
 [[18,156]],
@@ -19791,11 +19906,11 @@ const GROUND = [
 return { GROUND_Y0, GROUND };
 })();
 // src/rendering/hutch-scene.js
-const __m110 = (() => {
+const __m111 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m77;
-const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m108;
-const { GROUND, GROUND_Y0 } = __m111;
+const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m109;
+const { GROUND, GROUND_Y0 } = __m112;
 const HUTCH_W = 224;
 const HUTCH_H = 92;
 const HUTCH_BODIES = 3;
@@ -20171,13 +20286,13 @@ ctx.drawImage(this.bg, 0, 0);
 return { HUTCH_W, HUTCH_H, HUTCH_BODIES, paintHutch, paintHutchFront, onGround, HutchScene };
 })();
 // src/ui/views/hutch.js
-const __m109 = (() => {
+const __m110 = (() => {
 const { readingSteadiness } = __m50;
 const { h, btn, clear, toast, modal, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { drawRabbit, RABBIT_W, RABBIT_H } = __m108;
-const { HutchScene, HUTCH_W, HUTCH_H } = __m110;
+const { drawRabbit, RABBIT_W, RABBIT_H } = __m109;
+const { HutchScene, HUTCH_W, HUTCH_H } = __m111;
 const { EFFECT_BY_KEY } = __m14;
 const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral, RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE, BURNS } = __m51;
 const { PURGE_BREW_TIME } = __m5;
@@ -20506,7 +20621,7 @@ if (this._live >= 0.25) { this._live = 0; this.live(); }
 return { CHANNELS, HutchPanel };
 })();
 // src/ui/views/trials.js
-const __m107 = (() => {
+const __m108 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
@@ -20518,9 +20633,9 @@ const { summarize, addSamples, EVIDENCE_TEXT, evidenceRank, requirementEvidence 
 const { evidenceOf } = __m69;
 const { shortName } = __m45;
 const LEVEL_SHORT = { preliminary: '1 reading', repeated: 'repeated', corroborated: 'corroborated', certified: 'certified' };
-const { drawRabbit } = __m108;
+const { drawRabbit } = __m109;
 const { focusRabbit, findRabbit, rabbitSnap, decodeSnap, lookFromSeed, RABBIT_MARKS } = __m51;
-const { HutchPanel } = __m109;
+const { HutchPanel } = __m110;
 const REPLAY_T = 3.2;
 class TrialsView {
 constructor(lab) {
@@ -20897,7 +21012,7 @@ return `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2
 return { TrialsView, EFFECTS, EFFECT_INDEX };
 })();
 // src/ui/views/book.js
-const __m112 = (() => {
+const __m113 = (() => {
 const { h, btn, clear } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
@@ -21035,8 +21150,8 @@ const trade = __m89;
 const { Tutorial } = __m90;
 const { CounterView } = __m91;
 const { WildsView } = __m92;
-const { TrialsView } = __m107;
-const { BookView } = __m112;
+const { TrialsView } = __m108;
+const { BookView } = __m113;
 const { shortName } = __m45;
 const REQ_ICON = { temperature: 'thermo', quantity: 'flask', purity: 'pure' };
 const TOOL_DEFS = [
@@ -22774,7 +22889,7 @@ void dominantEffect;
 return { VIEWS, LabScreen };
 })();
 // src/materials/reference.js
-const __m114 = (() => {
+const __m115 = (() => {
 const { completeMaterial } = __m10;
 const REF = {};
 const add = (d) => (REF[d.id] = completeMaterial(d));
@@ -22812,11 +22927,11 @@ const refLookup = (id) => REF[id];
 return { REF, refLookup };
 })();
 // src/ui/menu.js
-const __m113 = (() => {
+const __m114 = (() => {
 const { h, btn } = __m2;
 const { Renderer } = __m76;
 const { Simulation } = __m54;
-const { REF, refLookup } = __m114;
+const { REF, refLookup } = __m115;
 const { hasSave, loadGame } = __m73;
 const { audio } = __m4;
 class MenuScreen {
@@ -22905,7 +23020,7 @@ const { sandboxIngredients } = __m7;
 const { EQUIPMENT } = __m49;
 const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m73;
 const { LabScreen } = __m74;
-const { MenuScreen } = __m113;
+const { MenuScreen } = __m114;
 const { openSettings, openHelp } = __m87;
 const { Rng } = __m6;
 const { normalizeTrials } = __m50;
@@ -23022,7 +23137,7 @@ openHelp();
 return { App, icon };
 })();
 // src/ui/textures.js
-const __m115 = (() => {
+const __m116 = (() => {
 const { Rng } = __m6;
 function texture(w, h, paint) {
 const cv = document.createElement('canvas');
@@ -23066,7 +23181,7 @@ return { installTextures };
 // src/main.js
 const __m0 = (() => {
 const { App } = __m1;
-const { installTextures } = __m115;
+const { installTextures } = __m116;
 installTextures();
 const root = document.getElementById('app');
 const app = new App(root);
