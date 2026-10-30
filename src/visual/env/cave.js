@@ -377,7 +377,7 @@ export function veins(cv, p, o) {
       if (xi < 1 || xi >= W - 1 || yi >= H - 1 || yi < 0) break;
       if (!S[yi * W + xi] && !L[yi * W + xi]) break;
       // a band a few stones wide round the line, the fluid soaking out through it
-      const u = t0 + (1 - t0) * (t / len), r = 1.5 + wd * 1.6 * (1 - u), R = Math.ceil(r);
+      const u = t0 + (1 - t0) * (t / len), r = 0.9 + wd * 1.1 * (1 - u) ** 1.5, R = Math.ceil(r);
       for (let j = -R; j <= R; j++) for (let i = -R; i <= R; i++) {
         const q = (yi + j) * W + xi + i;
         if (q < 0 || q >= W * H || !S[q]) continue;
@@ -416,15 +416,17 @@ export function veins(cv, p, o) {
     const d = dist[i];
     let bed = 0;
     if (d < soak) bed = (1 - d / soak) ** 1.6 * (0.75 + fbm2(x * 0.15, y * 0.15, seed + 9, 2) * 0.5);
-    // along a seam: patchy, so the fluid reads as filtering through rather than drawn on
-    const s = wet[i] * (0.6 + fbm2(x * 0.2, y * 0.2, seed + 11, 2) * 0.8);
+    // along a seam: every crack filled by the pool, thinning out farther along
+    // into isolated pockets of fluid, so it reads as filtering through rather than drawn on
+    const gap = Math.min(1, Math.max(0, (fbm2(x * 0.3, y * 0.3, seed + 11, 2) - vt[i] * 0.95 + 0.1) / 0.1));
+    const s = wet[i] * gap * (0.7 + (1 - vt[i]) * 0.3);
     if (bed <= 0 && s <= 0) continue;
     const c = crev[i], u = Math.min(1, vt[i] + (1 - Math.min(1, s)) * 0.3);
     // the stone: darkened and stained toward the soaked colour
     const stain = Math.min(0.85, (bed * 0.7 + s * 0.45) * k);
     px[i] = mixPacked(px[i], to, stain);
     // the cracks: filled with the fluid itself
-    const fill = Math.min(0.95, bed * c * 1.1 + Math.max(0, s * (c * 1.7 + 0.08) - 0.12) + bed * bed * 0.2);
+    const fill = Math.min(0.95, bed * c * 1.7 + Math.max(0, s * (c * 1.7 + 0.08) - 0.12) + bed * bed * 0.2);
     if (fill > 0) px[i] = mixPacked(px[i], s > bed ? grad(u) : from[Math.min(from.length - 1, 1)], fill);
     light[i] = Math.max(bed * 0.5, fill * (1 - u * 0.6));
   }
