@@ -16,7 +16,7 @@ import * as crags from './crags.js';
 import * as netherwood from './netherwood.js';
 
 /** Version of the environment generator (scenes are not saved; this only names caches). */
-export const ENV_VERSION = 6;
+export const ENV_VERSION = 7;
 
 const COMPOSERS = { meadow, forest, netherwood, river, quarry, moonfen, crags };
 

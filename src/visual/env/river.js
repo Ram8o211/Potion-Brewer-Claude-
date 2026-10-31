@@ -44,12 +44,12 @@ export function compose(cv, seed) {
   }
   // the banks, the river bed between them, pillars rising from both
   const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 168, amp: 8, freq: 0.012 });
-  const rx = ts.int(150, 240), hw = ts.int(48, 64);
+  const rx = ts.int(150, 240), hw = ts.int(30, 38);
   dip(top, rx, hw, 28, 0.45);
   const bank = ts.next() < 0.5 ? ts.int(20, 90) : ts.int(300, 360);
   raise(top, bank, bank + ts.int(20, 40), Math.min(...top) - ts.int(6, 12), 3);
   fillSolid(cv, top);
-  ledges(cv, top, ts, 7, { keep: [[rx - hw - 6, rx + hw + 6]] });
+  ledges(cv, top, ts, 8, { keep: [[rx - hw - 6, rx + hw + 6]], high: 1 });
   const ss = ts.int(0, 1e9);
   paintTerrain(cv, {
     a: '#8a7a62', b: '#c8c0a8', grain: '#e8e4d4', dark: '#2a2a22', deep: '#141612', cave: '#0a0c0a',

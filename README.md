@@ -261,7 +261,7 @@ computed from the particles that actually run out of the tap. What a
   stalactites and vines, far pillars fading into mist): in front a
   cross-section of the ground — cobbled stone under a crust of grass,
   moss, gravel or ash, with mushroom-capped pillars dripping moss,
-  overhangs and caves — pools of water or lava whose veins seep into the
+  overhangs and caves, a few ledges standing out of mostly low ground — pools of water or lava whose veins seep into the
   rock around them, lava falls, branching trees (a homogeneous wood
   behind, and trees fitted to the ground and ledges in front), rocks and
   timberwork, glowing mushrooms, torches and crystals, smooth skies and
@@ -324,12 +324,27 @@ computed from the particles that actually run out of the tap. What a
   each tap (or hard swipe) flashes, puffs dust and knocks off pieces of
   rock that jump, bounce and roll to a stop, cracking it further — and
   breaks free after four to six blows (one fewer with the Forager's Kit).
+  Broken free, a crystal — like a stone, a shell or an icicle — falls as
+  one rigid piece: it tumbles and lands whole, it never bends.
   Every wild ingredient is unknown in a new world — off the shelf, out of
   the shop and *???* in the book — until it is first gathered (or held,
   as the first satchel of herbs is). In the Free Experiment the stores are
   bottomless, but a harvest still takes the plant: its stand sprouts again
   at random spots and grows back within a minute or two, and can be
   watered like the shop's.
+* **Wild rabbits:** a few rabbits hop about every region's open ground,
+  grazing and resting between calm hops (`src/game/wild-rabbits.js`). A
+  tap wounds one: blood bursts from where it was struck, and from then on
+  it bleeds — drips as it runs, spurts with its heartbeat, a splash where
+  it lands — every drop a particle that stains the ground and rock it
+  meets (and clouds the water) for as long as you stay in the wilds. From
+  the first attempt on its life (even a tap that misses close by) it is
+  frantic: long, fast bounds away from you, hardly stopping, zigzagging.
+  Three wounds bring it down; a tap then catches it alive and carries it to
+  the hutch, weak from its wounds. Left lying it bleeds out (and with the
+  hutch full a tap finishes it); its body can then be carried home with a
+  tap, where its remains can be recovered. New rabbits come in from the
+  edges of the scene.
 * **Everything is original and bundled:** pixel art drawn in code (plus
   the wilds' sprites from the project's own concept-art packs), a
   pixel font, synthesised sound effects and music. No third-party runtime

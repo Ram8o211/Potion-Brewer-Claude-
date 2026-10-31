@@ -53,12 +53,12 @@ export function compose(cv, seed) {
     });
     vines(cv, frame.roof, { cols: ['#2e6a56', '#1e4a3c', '#14322a'], leaf: '#3e8a6a', flower: '#8ff0ff', seed: fs.int(0, 1e9), rate: 0.3, len: [4, 50] });
   }
-  // the bog: low ground, tussocks and a barrow, pools in its hollows
+  // the bog: low ground, tussocks and a barrow, a pool in a hollow (dry ground is scarce here: one pool, a ledge or two more)
   const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 166, amp: 8, freq: 0.02 });
   const bx = ts.int(40, W - 100);
   raise(top, bx, bx + ts.int(30, 50), Math.min(...top) - ts.int(10, 16), 4);
   const pools = [];
-  for (let i = 0; i < 6 && pools.length < 3; i++) {
+  for (let i = 0; i < 6 && pools.length < 1; i++) {
     const px = ts.int(30, W - 30), hw = ts.int(18, 30);
     if (px + hw > bx - 8 && px - hw < bx + 60) continue;
     if (pools.some((q) => Math.abs(q.x - px) < q.hw + hw + 16)) continue;
@@ -66,7 +66,7 @@ export function compose(cv, seed) {
     dip(top, px, hw, ts.int(10, 16));
   }
   fillSolid(cv, top);
-  ledges(cv, top, ts, 7, { keep: pools.map((p) => [p.x - p.hw - 4, p.x + p.hw + 4]) });
+  ledges(cv, top, ts, 8, { keep: pools.map((p) => [p.x - p.hw - 4, p.x + p.hw + 4]), high: 1 });
   const ss = ts.int(0, 1e9);
   paintTerrain(cv, {
     a: '#1e1a18', b: '#2a2420', grain: '#4a4038', dark: '#0a0a10', deep: '#050508', cave: '#030305',

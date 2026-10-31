@@ -27,6 +27,13 @@
 // In the Free Experiment the stores are bottomless, but a harvest still takes
 // the plant: its stand sprouts again at random spots and grows back quickly
 // (game/gathering.js sandboxWilds).
+// Wild rabbits hop about every region (game/wild-rabbits.js). A tap wounds
+// one: blood bursts from it and stains the ground, rock and water it lands
+// on, and the rabbit flees bleeding, leaving a trail — frantic from the
+// first attempt on its life, in fast long bounds. Brought down, it is caught
+// alive with a tap and carried to the hutch; left to bleed out (or struck
+// with the hutch full) it dies, and its body is carried home with a tap, for
+// its remains.
 
 import { h, btn, clear, toast } from '../dom.js';
 import { icon } from '../icons.js';
@@ -40,6 +47,9 @@ import { sceneOf } from '../../visual/env/scene.js';
 import { plantCanvas, plantFrameOf, plantGlow, emitColour, silhouetteOf, ingredientSprite, speciesOf, mountsOf, variantOf, MIN_HIT } from '../../rendering/species-sprites.js';
 import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
 import { hashString } from '../../core/rng.js';
+import { Warren, warrenSpots, BLOOD } from '../../game/wild-rabbits.js';
+import { drawRabbit, RABBIT_W, RABBIT_H } from '../../rendering/rabbit.js';
+import { defaultSnap, livingRabbits } from '../../game/colony.js';
 
 /** The shadow a plant casts on its ground, by region (the crags' is warm and deep, the fens' cold). */
 const SHADOW = { forest: 'rgba(8,16,10,0.32)', netherwood: 'rgba(6,4,16,0.4)', meadow: 'rgba(24,30,10,0.26)', river: 'rgba(4,14,16,0.34)', quarry: 'rgba(26,18,10,0.3)', moonfen: 'rgba(2,6,18,0.42)', crags: 'rgba(30,6,4,0.4)' };
@@ -53,6 +63,9 @@ const ZOOM_KEY = 'alchemist.wildsZoom';
 
 /** How far apart (scene pixels) a finger dragged in watering mode waters along its path. */
 const WATER_STEP = 12;
+
+/** The shapes that are hard things (besides crystals): broken loose, they fall whole and stiff. */
+const STIFF = new Set(['crystal', 'shard', 'stone', 'nugget', 'shell', 'icicle', 'scale']);
 
 /** How many blows a crystal fused into its rock takes to break free (the Forager's Kit's hammer saves one): a few more for some. */
 const STRIKES = [4, 5, 6];
@@ -141,6 +154,16 @@ export class WildsView {
     this.pops = [];
     /** the flash of a blow on rock @type {{x:number, y:number, t:number}[]} */
     this.flashes = [];
+    /** whether wild rabbits are about (tests aimed at the plants alone turn them off) */
+    this.wildlife = true;
+    /** the wild rabbits of each region visited (kept while the game is open) @type {Map<string, Warren>} */
+    this.warrens = new Map();
+    /** each region's blood: a layer over its painting that the stains are painted into @type {Map<string, HTMLCanvasElement>} */
+    this.gore = new Map();
+    /** the frame a rabbit is drawn in before it is set into the scene @type {HTMLCanvasElement|null} */
+    this.bunny = null;
+    /** hints given once a session (a rabbit down, the hutch full) @type {Set<string>} */
+    this.told = new Set();
     /** the pointer pressed on the scene: where it is, where it came down (sx, sy), how far it has gone (CSS px), and in watering mode where it last watered and how many drank @type {{id:number, type:string, x:number, y:number, cx:number, cy:number, sx:number, sy:number, dist:number, water:boolean, wx:number, wy:number, drank:number, near:boolean, pours:number}|null} */
     this.drag = null;
   }
@@ -599,6 +622,8 @@ export class WildsView {
       const q = this.scenePoint(e);
       this.setHover(this.depositAt(e));
       if (this.itemAt(q.x, q.y)) this.canvas.style.cursor = 'pointer';
+      const w = this.wildlife ? this.warrens.get(this.region) : null, rb = w ? w.at(q.x, q.y) : null;
+      if (rb) this.canvas.style.cursor = rb.running ? 'crosshair' : 'pointer';
     }
   }
 
@@ -625,6 +650,9 @@ export class WildsView {
     const touch = sceneTouch(this.region, this.lab.state.seed);
     if (touch) touch.push(x0, y0, x1, y1);
     for (const it of Object.values(this.fallen)) it.doll.kick(x0, y0, x1, y1, 3);
+    // a rabbit the finger sweeps across bolts
+    const warren = this.wildlife ? this.warrens.get(this.region) : null;
+    if (warren) for (const r of warren.rabbits) { const b = r.box(2); if (r.running && crosses(x0, y0, x1, y1, b.x0, b.y0, b.x1, b.y1)) warren.scare(r, x0); }
     for (const p of this.field) {
       if (this.fallen[p.id]) continue;
       const f = this.frameOf(p);
@@ -685,8 +713,9 @@ export class WildsView {
     const x = Math.round(p.x * SCENE_W), y = Math.round(p.y * SCENE_H);
     const fling = Math.max(-1, Math.min(1, dx / 10)), up = Math.max(-1, Math.min(1, dy / 10));
     const away = juts ? (p.flip ? -1 : 1) : 0;
+    // a crystal is rock: broken free, it falls and lands as one stiff piece, it never goes limp
     const doll = new Ragdoll(sp, x, y, {
-      W: SCENE_W, H: SCENE_H,
+      W: SCENE_W, H: SCENE_H, rigid: WildsView.stiff(p),
       vx: fling * 72 + away * 28 + (Math.random() - 0.5) * 16,
       // (a fruit snaps off its hold and drops at once; a ground plant is pulled up with a jerk)
       vy: hangs ? 45 + up * 30 : juts ? -20 + up * 30 : -75 + Math.min(0, up) * 45,
@@ -707,6 +736,12 @@ export class WildsView {
   /** Whether a plant is a crystal still fused into its rock (struck free, not shaken). @param {any} p */
   fused(p) {
     return p.stage === 'mature' && !this.fallen[p.id] && WildsView.gem(p);
+  }
+
+  /** Whether what a plant lets go of is hard — a crystal, a stone, a shell, an icicle: it falls as one stiff piece and never bends. @param {any} p */
+  static stiff(p) {
+    const sh = p.m && p.m.wild ? p.m.wild.shape : '';
+    return WildsView.gem(p) || STIFF.has(sh);
   }
 
   /** Whether a plant is a crystal grown out of rock (not a crystal drop on a vine): rigid, it neither bends nor swings. @param {any} p */
@@ -772,6 +807,132 @@ export class WildsView {
       // (out of the rock face it was struck from, never inside it)
       const b = this.rubble[this.rubble.length - 1];
       for (let k = 0; k < 24 && this.solidAt(Math.round(b.x), Math.round(b.y)); k++) b.y--;
+    }
+  }
+
+  /** The wild rabbits of the region shown, made the first time it is seen. */
+  warren() {
+    if (!this.wildlife) return null;
+    let w = this.warrens.get(this.region);
+    if (w) return w;
+    const sc = sceneOf(this.region, this.lab.state.seed), W = SCENE_W, H = SCENE_H;
+    const inside = (/** @type {number} */ x, /** @type {number} */ y) => x >= 0 && x < W && y >= 0 && y < H;
+    w = new Warren(this.region, this.lab.state.seed, {
+      W, H,
+      solid: (x, y) => (y >= H ? true : inside(x, y) && !!(sc.solid[y * W + x] || sc.rock[y * W + x])),
+      liquid: (x, y) => inside(x, y) && !!sc.liquid[y * W + x],
+      spots: warrenSpots(sc, W, H),
+    });
+    this.warrens.set(this.region, w);
+    return w;
+  }
+
+  /**
+   * The region's blood layer, with what has been spilt since the last frame
+   * painted into it: each stained pixel of ground or rock darkens red, the
+   * more so where blood has fallen on it again.
+   * @param {Warren|null} w
+   */
+  goreLayer(w) {
+    if (!w) return null;
+    let cv = this.gore.get(this.region);
+    const fresh = w.takeStains();
+    if (!cv) {
+      if (!fresh.length) return null;
+      cv = document.createElement('canvas');
+      cv.width = SCENE_W; cv.height = SCENE_H;
+      this.gore.set(this.region, cv);
+    }
+    if (fresh.length) {
+      const g = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
+      g.globalAlpha = 0.8;
+      for (const st of fresh) { g.fillStyle = st.c; g.fillRect(st.x, st.y, 1, 1); }
+      g.globalAlpha = 1;
+    }
+    return cv;
+  }
+
+  /**
+   * A tap on a rabbit: a blow while it runs (it bleeds and bolts, frantic);
+   * once it is down, caught alive and carried to the hutch (or, the hutch
+   * full, finished); its body carried home.
+   * @param {Warren} w @param {import('../../game/wild-rabbits.js').WildRabbit} r @param {number} x @param {number} y
+   */
+  hunt(w, r, x, y) {
+    const lab = this.lab, st = lab.state;
+    if (r.dead || r.down) {
+      const room = r.dead || livingRabbits(st.colony).length < st.cap.hutch;
+      if (!room) {
+        // no place for it alive: it is put out of its misery, and its body can go home
+        w.strike(r, x, y);
+        audio.play('thump');
+        this.tell('full', 'The hutch is full', 'There is no place for it alive, so it was finished where it lay. Tap the body to carry it home for its remains, or buy more places in the Shop.', 'rabbit');
+        return;
+      }
+      const res = st.bringWildRabbit({ look: r.look, sex: r.sex, dead: r.dead, health: Math.max(10, 45 - r.hits * 8 - r.downT * 2) });
+      if (!res.ok) { audio.play('error'); toast('No room', res.reason, 'rabbit'); return; }
+      w.remove(r);
+      const name = res.rabbit.name;
+      this.pops.push({ cv: /** @type {any} */ (null), w: 0, h: 0, x: r.x, y: r.y - 6, t: 0, c: r.dead ? BLOOD[1] : '#f0e0c0' });
+      audio.play(r.dead ? 'dig' : 'squeak');
+      setTimeout(() => audio.play('select'), 140);
+      toast(r.dead ? 'A body for the hutch' : 'Caught!', r.dead
+        ? `The rabbit is carried home. You named it ${name}: its body waits in the hutch, where its remains can be recovered.`
+        : `${name} is carried home to the hutch, weak from its wounds — it will mend there.`, 'rabbit');
+      lab.save();
+      return;
+    }
+    const was = r.hits;
+    const out = w.strike(r, x, y);
+    audio.play('squeak');
+    audio.play(out === 'down' ? 'thump' : 'crush');
+    if (!was) this.tell('hurt', 'It bolts, bleeding', 'Wounded, a rabbit flees in quick long bounds. Bring it down and tap it to catch it before it bleeds out.', 'rabbit');
+    if (out === 'down') this.tell('down', 'It is down', 'Tap it to catch it alive and carry it to the hutch. Left lying, it bleeds out — its body can still be carried home.', 'rabbit');
+  }
+
+  /** A hint, once a session. @param {string} key @param {string} title @param {string} text @param {string} ic */
+  tell(key, title, text, ic) {
+    if (this.told.has(key)) return;
+    this.told.add(key);
+    toast(title, text, ic, 5000);
+  }
+
+  /**
+   * The rabbits, the far ones first: each in its pose (hopping off the
+   * ground, grazing, rearing, lying down), facing the way it goes, its
+   * wounds red on its coat; then the blood in flight and the clouds of it
+   * in the water.
+   * @param {CanvasRenderingContext2D} ctx @param {Warren} w
+   */
+  drawWarren(ctx, w) {
+    // each rabbit is drawn as in the hutch into a frame of its own, then set into the scene at half that size
+    if (!this.bunny) { this.bunny = document.createElement('canvas'); this.bunny.width = RABBIT_W; this.bunny.height = RABBIT_H; }
+    const b = /** @type {CanvasRenderingContext2D} */ (this.bunny.getContext('2d'));
+    b.imageSmoothingEnabled = false;
+    for (const r of w.rabbits.slice().sort((a, c) => a.y - c.y)) {
+      const snap = { ...defaultSnap(), hp: r.band, alive: !r.dead, cause: r.dead ? 'hunted' : null };
+      const pose = r.air ? 'hop' : r.running && !r.alarm ? r.pose || undefined : undefined;
+      const x = Math.round(r.x), y = Math.round(r.y);
+      b.clearRect(0, 0, RABBIT_W, RABBIT_H);
+      drawRabbit(b, r.look, snap, r.t, r.react, { x: 0, y: 0, clear: false, floor: false, hop: false, mirror: r.face < 0, pose, flash: false });
+      ctx.drawImage(this.bunny, 0, 0, RABBIT_W, RABBIT_H, x - RABBIT_W / 4, y - 16, RABBIT_W / 2, RABBIT_H / 2);
+      // its wounds: dark red where it was struck, wet and bright at the middle, running down its coat
+      const lying = r.dead || r.down;
+      r.wounds.forEach(([wx, wy], i) => {
+        const px = Math.round(x + wx * r.face), py = Math.round(y + (lying ? Math.max(-4, wy * 0.5) : wy));
+        ctx.fillStyle = BLOOD[2]; ctx.fillRect(px - 1, py, 2, 2);
+        ctx.fillStyle = BLOOD[0]; ctx.fillRect(px, py, 1, 1);
+        if (!lying) { ctx.fillStyle = BLOOD[1]; ctx.fillRect(px - (i % 2), py + 2, 1, 1 + ((i + r.hits) % 3)); }
+      });
+    }
+    for (const d of w.drops) { ctx.fillStyle = d.c; ctx.fillRect(Math.round(d.x), Math.round(d.y), d.s, d.s); }
+    for (const c of w.clouds) {
+      const u = c.t / 4, rr = c.r + u * 6;
+      ctx.globalAlpha = 0.35 * (1 - u);
+      ctx.fillStyle = BLOOD[0];
+      ctx.fillRect(Math.round(c.x - rr), Math.round(c.y), Math.round(rr * 2), 1);
+      ctx.fillRect(Math.round(c.x - rr * 0.6), Math.round(c.y + 1), Math.round(rr * 1.2), 1);
+      ctx.globalAlpha = 1;
     }
   }
 
@@ -863,6 +1024,10 @@ export class WildsView {
   /** @param {{clientX:number, clientY:number}} e where the tap came down */
   tapScene(e) {
     const q = this.scenePoint(e);
+    // a rabbit is struck (or, once it is down, caught; its body carried home); one close by bolts
+    const warren = this.warren(), rb = warren ? warren.at(q.x, q.y) : null;
+    if (rb) { this.hunt(warren, rb, q.x, q.y); return; }
+    if (warren) for (const r of warren.near(q.x, q.y)) warren.scare(r, q.x);
     // what lies fallen on the ground (or is still falling) is gathered by tapping it
     const fallenAt = this.itemAt(q.x, q.y);
     if (fallenAt) { this.gather(fallenAt.dep, fallenAt); return; }
@@ -962,9 +1127,15 @@ export class WildsView {
     if (touch) touch.step(dt);
     ctx.drawImage(sceneFrame(this.region, st.seed, this.time), 0, 0);
     animateRegion(ctx, this.region, this.time, st.seed);
+    // the blood spilt here, on the ground and the rock
+    const warren = this.warren();
+    if (warren) warren.step(dt);
+    const gore = this.goreLayer(warren);
+    if (gore) ctx.drawImage(gore, 0, 0);
     // the plants, the far ones first
     for (const p of this.field.slice().sort((a, b) => a.y - b.y)) if (p.key && !this.fallen[p.id]) this.drawPlant(ctx, p);
     this.drawFallen(ctx, dt);
+    if (warren) this.drawWarren(ctx, warren);
     this.drawEffects(ctx, dt);
     this.paintSky(ctx, dt);
     this.drawDrops(ctx, dt);

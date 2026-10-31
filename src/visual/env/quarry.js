@@ -53,7 +53,7 @@ export function compose(cv, seed) {
   }
   fillSolid(cv, top);
   // pillars of rock left standing, their shelves jutting from the faces
-  ledges(cv, top, ts, 6, { rise: [26, 34] });
+  ledges(cv, top, ts, 8, { rise: [26, 34] });
   // a mine adit cut into one of the faces
   const ak = ts.int(0, 2), ax = right ? edges[ak] - 14 : edges[ak] + 14, ay = steps[ak + 1] - 8;
   blob(cv, ax, ay, 9, 7, ts.int(0, 1e9), 0, 0.1);

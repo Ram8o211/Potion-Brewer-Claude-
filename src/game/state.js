@@ -14,7 +14,7 @@ import { predictPlan } from './predict.js';
 import { EFFECT_INDEX, EFFECT_KEYS } from '../alchemy/effects.js';
 import { migrateVial } from './vial.js';
 import { recordSale, resolveFollowUp, applyTrials, evidenceOf } from './commerce.js';
-import { colonyDay, colonyTick, livingRabbits, findRabbit, addBoughtRabbit, retireRabbit, remainsSource, purgeRabbit, cullRabbit, maxHealthOf, FOUNDER_BORN } from './colony.js';
+import { colonyDay, colonyTick, livingRabbits, findRabbit, addBoughtRabbit, addWildRabbit, retireRabbit, remainsSource, purgeRabbit, cullRabbit, maxHealthOf, FOUNDER_BORN } from './colony.js';
 import { remainsMaterials, remainsPlan, isRemains } from '../materials/remains.js';
 import { returningPatron, welcomePatron, recentStyles, notePatron, patronVerdict, noveltyFactor } from './patrons.js';
 import { techniqueById, migrateTechniques } from './commissions.js';
@@ -116,7 +116,7 @@ export class GameState {
     /** @type {any[]} */ this.history = data.history;
     /** @type {Record<string, number>} */ this.achievements = data.achievements;
     /** @type {any} */ this.current = data.current;
-    /** @type {{served:number, perfect:number, earned:number, spent:number, brews:number, declined:number, bestQuality:number, gathered?:number, trials?:number, refunds?:number, disputesWon?:number, bred?:number, recovered?:number, culled?:number}} */
+    /** @type {{served:number, perfect:number, earned:number, spent:number, brews:number, declined:number, bestQuality:number, gathered?:number, trials?:number, refunds?:number, disputesWon?:number, bred?:number, recovered?:number, culled?:number, hunted?:number, caught?:number}} */
     /** wild ingredients gathered at least once (material id → 1): only these are listed in the Wilds; saves from before it keep what they already hold @type {Record<string, number>} */
     this.found = data.found || Object.fromEntries(Object.entries(data.inventory || {}).filter(([id, n]) => id.startsWith('wild-') && Number(n) > 0).map(([id]) => [id, 1]));
     this.stats = { served: 0, perfect: 0, earned: 0, spent: 0, brews: 0, declined: 0, bestQuality: 0, ...(data.stats || {}) };
@@ -398,6 +398,20 @@ export class GameState {
     const rabbit = addBoughtRabbit(c, { day: this.day });
     c.focus = rabbit.id;
     return { ok: true, cost, rabbit };
+  }
+
+  /**
+   * A wild rabbit brought home from the wilds: caught alive (it needs a free
+   * place in the hutch) or its body, which is kept for its remains.
+   * @param {{look:any, sex:'f'|'m', dead?:boolean, health?:number}} o
+   */
+  bringWildRabbit(o) {
+    const c = this.colony, cap = this.cap.hutch;
+    if (!o.dead && livingRabbits(c).length >= cap) return { ok: false, reason: `The hutch is full (${cap} places). More places are sold in the Shop.` };
+    const rabbit = addWildRabbit(c, { day: this.day, look: o.look, sex: o.sex, dead: !!o.dead, health: o.health });
+    if (o.dead) this.stats.hunted = (this.stats.hunted || 0) + 1;
+    else this.stats.caught = (this.stats.caught || 0) + 1;
+    return { ok: true, rabbit };
   }
 
   /** Choose the rabbit the next dose goes to. @param {string} id */

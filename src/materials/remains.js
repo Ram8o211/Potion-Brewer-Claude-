@@ -105,7 +105,7 @@ function partColor(part, src) {
 function describe(part, src) {
   const she = src.sex === 'f' ? 'she' : 'he';
   const kind = src.sex === 'f' ? 'a doe' : 'a buck';
-  const how = src.cause && src.cause !== 'unknown' ? ` that died ${{ poison: 'of poison', death: 'of death magic', fire: 'in fire', frost: 'of cold', acid: 'of acid burns', alkali: 'of lye burns', change: 'of a violent change', arcana: 'of a magical surfeit', age: 'of old age', frail: 'of weakness' }[src.cause] || ''}` : '';
+  const how = src.cause && src.cause !== 'unknown' ? ` that died ${{ poison: 'of poison', death: 'of death magic', fire: 'in fire', frost: 'of cold', acid: 'of acid burns', alkali: 'of lye burns', change: 'of a violent change', arcana: 'of a magical surfeit', age: 'of old age', frail: 'of weakness', hunted: 'in the wilds' }[src.cause] || ''}` : '';
   const when = Number.isFinite(src.diedDay) ? ` on day ${src.diedDay}` : '';
   const what = { bone: 'The cleaned bones', fur: 'The pelt', ash: 'The ashes', residue: 'A residue scraped from the remains' }[part];
   const traits = part === 'bone' && src.traits.some((t) => ['horns', 'antlers', 'unihorn'].includes(t)) ? ' The skull bears its horns.' : part === 'bone' && src.traits.includes('wings') ? ' Fine wing bones are among them.' : '';
