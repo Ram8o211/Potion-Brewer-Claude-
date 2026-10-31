@@ -76,6 +76,18 @@ function sparkle(ctx, x, y, u) {
   ctx.fillRect(cx, cy, q, q);
 }
 
+/** A material's colour as CSS. @param {any} m */
+function colourOf(m) {
+  const c = m ? m.look || m.color : null;
+  return c ? `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2] * 255)})` : '#cde';
+}
+
+/** A #rrggbb colour lightened (k > 0) or darkened (k < 0). @param {string} hex @param {number} k */
+function shade(hex, k) {
+  const n = parseInt(hex.slice(1), 16), ch = (/** @type {number} */ v) => Math.round(k > 0 ? v + (255 - v) * k : v * (1 + k));
+  return `rgb(${ch((n >> 16) & 255)},${ch((n >> 8) & 255)},${ch(n & 255)})`;
+}
+
 export class WildsView {
   /** @param {import('../lab.js').LabScreen} lab */
   constructor(lab) {
@@ -115,6 +127,14 @@ export class WildsView {
     this.hits = {};
     /** bits of leaf and pulp in flight @type {{x:number, y:number, vx:number, vy:number, t:number, c:string}[]} */
     this.bits = [];
+    /** pieces of rock struck off a crystal's seam, bouncing on the terrain until they settle and fade @type {{x:number, y:number, vx:number, vy:number, t:number, life:number, s:number, c:string, hi:string, spin:number, rest:boolean}[]} */
+    this.rubble = [];
+    /** puffs of dust where a blow lands @type {{x:number, y:number, t:number, r:number, c:string}[]} */
+    this.puffs = [];
+    /** what was just gathered: its sprite springing up and shrinking away, a ring of its colour spreading round it @type {{cv:HTMLCanvasElement, w:number, h:number, x:number, y:number, t:number, c:string}[]} */
+    this.pops = [];
+    /** the flash of a blow on rock @type {{x:number, y:number, t:number}[]} */
+    this.flashes = [];
     /** the pointer pressed on the scene: where it is, where it came down (sx, sy), how far it has gone (CSS px), and in watering mode where it last watered and how many drank @type {{id:number, type:string, x:number, y:number, cx:number, cy:number, sx:number, sy:number, dist:number, water:boolean, wx:number, wy:number, drank:number, near:boolean, pours:number}|null} */
     this.drag = null;
   }
@@ -191,7 +211,7 @@ export class WildsView {
       const ok = this.unlocked(r);
       tabs.appendChild(btn(r.name, () => {
         if (!ok) { toast(r.name, `The guild grants passage at the rank of ${RANKS[r.rank].name}.`, 'lock'); return; }
-        this.region = r.id; this.bgKey = ''; this.fallen = {}; this.shakes = {}; this.energy = {}; this.hits = {}; this.drag = null; audio.play('page'); this.refresh();
+        this.region = r.id; this.bgKey = ''; this.fallen = {}; this.shakes = {}; this.energy = {}; this.hits = {}; this.rubble = []; this.puffs = []; this.pops = []; this.flashes = []; this.drag = null; audio.play('page'); this.refresh();
       }, { cls: (this.region === r.id ? 'active ' : '') + (ok ? '' : 'locked'), icon: ok ? (r.magical ? 'wisp' : r.id === 'quarry' ? 'pick' : r.id === 'river' ? 'drop' : r.id === 'meadow' ? 'rose' : r.id === 'netherwood' ? 'shroom' : 'tree') : 'lock', act: 'region-' + r.id }));
     }
     const region = REGIONS.find((r) => r.id === this.region);
@@ -386,9 +406,12 @@ export class WildsView {
     setTimeout(() => audio.play('select'), 140);
     const at = this.field.find((p) => p.id === r.plant) || { x: d.x, y: d.y, key: null, stage: 'mature' };
     const f = at.key ? plantFrameOf(m, 'mature', { mount: at.mount, variant: at.variant, flip: at.flip }) : null;
-    // the count rises from the middle of what was picked
-    const fy = f ? at.y * SCENE_H - f.ay + f.pix.h * 0.5 : at.y * SCENE_H;
-    this.floaters.push({ x: at.x * SCENE_W, y: Math.max(20, fy), t: 0, text: `+${r.amount}`, color: m.look || m.color });
+    // where it was taken: what lies fallen where it came to rest, else the middle of the plant
+    const it = r.plant ? this.fallen[r.plant] : null;
+    const c = it ? it.doll.centre() : { x: at.x * SCENE_W, y: f ? at.y * SCENE_H - f.ay + f.pix.h * 0.5 : at.y * SCENE_H };
+    this.collect(c.x, c.y, m, it ? it.sp : at.key ? plantCanvas(m, 'mature', { mount: at.mount, variant: at.variant, flip: at.flip }) : null);
+    // the count rises from what was picked
+    this.floaters.push({ x: c.x, y: Math.max(20, c.y), t: 0, text: `+${r.amount}`, color: m.look || m.color });
     for (const e of r.events || []) lab.announce(e);
     if (lab.tutorial) lab.tutorial.notify('gather', d.materialId);
     // a first find gets its own place on the shelf
@@ -397,6 +420,23 @@ export class WildsView {
     lab.save();
     this.refresh();
     return true;
+  }
+
+  /**
+   * The moment of gathering at (x, y): what was taken springs up and shrinks
+   * away into the satchel, a ring of its colour spreads, and sparks of it
+   * and of light fly up and twinkle.
+   * @param {number} x @param {number} y @param {any} m @param {{cv:HTMLCanvasElement, w:number, h:number}|null} sp
+   */
+  collect(x, y, m, sp) {
+    const c = colourOf(m);
+    if (sp) this.pops.push({ cv: sp.cv, w: sp.w, h: sp.h, x, y, t: 0, c });
+    else this.pops.push({ cv: /** @type {any} */ (null), w: 0, h: 0, x, y, t: 0, c });
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2 + Math.random() * 0.3, v = 22 + Math.random() * 30;
+      this.bits.push({ x: x + Math.cos(a) * 2, y: y + Math.sin(a) * 2, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 40, t: 0, c: i % 3 ? c : '#fff6d0' });
+    }
+    for (let i = 0; i < 3; i++) this.flashes.push({ x: x + (Math.random() - 0.5) * 14, y: y - 4 - Math.random() * 10, t: -i * 0.12 });
   }
 
   /** The scene position of a pointer event. @param {{clientX:number, clientY:number}} e */
@@ -598,10 +638,14 @@ export class WildsView {
     const sp = plantCanvas(p.m, p.stage, { ...this.look(p), hover: false });
     const x = Math.round(p.x * SCENE_W), y = Math.round(p.y * SCENE_H);
     const rock = this.rockColour();
-    const m = p.m, c = m ? `rgb(${Math.round((m.look || m.color)[0] * 255)},${Math.round((m.look || m.color)[1] * 255)},${Math.round((m.look || m.color)[2] * 255)})` : '#cde';
+    const c = colourOf(p.m);
     const by = sp ? y - Math.round(sp.ay * 0.25) : y - 2;
-    for (let i = 0; i < 6; i++) this.bits.push({ x: x + (Math.random() - 0.5) * 8, y: by + (Math.random() - 0.5) * 3, vx: -side * (8 + Math.random() * 24) + (Math.random() - 0.5) * 10, vy: -20 - Math.random() * 30, t: 0, c: i % 3 ? rock : c });
-    if (hit.n >= this.strikesFor(p)) {
+    const last = hit.n >= this.strikesFor(p);
+    // the blow flashes, dust puffs out, and pieces of the rock (and a splinter or two of the crystal) jump off and bounce about
+    this.flashes.push({ x: x - side * 2, y: by, t: 0 });
+    this.puffs.push({ x, y: by + 1, t: 0, r: last ? 16 : 9, c: rock });
+    this.chips(x, by, side, last ? 14 : 5, rock, c, last);
+    if (last) {
       delete this.hits[p.id];
       this.energy[p.id] = 1;
       this.detach(p, side * 3, -4);
@@ -609,6 +653,107 @@ export class WildsView {
       return;
     }
     audio.play('click');
+  }
+
+  /**
+   * Pieces of rock knocked off at (x, y), thrown away from the blow (`side`)
+   * and up: some big, some grains, a few of the crystal's own colour; they
+   * fall, bounce on whatever is solid, roll to a stop and fade.
+   * @param {number} x @param {number} y @param {number} side @param {number} n @param {string} rock @param {string} gem @param {boolean} burst the blow that breaks it free throws them every way, higher
+   */
+  chips(x, y, side, n, rock, gem, burst) {
+    for (let i = 0; i < n; i++) {
+      const dir = burst ? (Math.random() < 0.5 ? -1 : 1) : -side * (Math.random() < 0.8 ? 1 : -1);
+      const q = Math.random(), s = q < (burst ? 0.35 : 0.2) ? 3 : q < 0.75 ? 2 : 1, isGem = i % 4 === 3;
+      this.rubble.push({
+        x: x + (Math.random() - 0.5) * 6, y: y + (Math.random() - 0.5) * 3,
+        vx: dir * (14 + Math.random() * (burst ? 46 : 32)), vy: -(30 + Math.random() * (burst ? 70 : 45)),
+        t: 0, life: 1.6 + Math.random() * 1.2, s, c: isGem ? gem : shade(rock, Math.random() * 0.3 - 0.15), hi: isGem ? '#ffffff' : shade(rock, 0.35),
+        spin: 6 + Math.random() * 10, rest: false,
+      });
+      // (out of the rock face it was struck from, never inside it)
+      const b = this.rubble[this.rubble.length - 1];
+      for (let k = 0; k < 24 && this.solidAt(Math.round(b.x), Math.round(b.y)); k++) b.y--;
+    }
+  }
+
+  /**
+   * The effects in flight: rock pieces bouncing on the terrain, puffs of
+   * dust, the flashes of blows and what was just gathered springing away.
+   * @param {CanvasRenderingContext2D} ctx @param {number} dt
+   */
+  drawEffects(ctx, dt) {
+    const solid = (/** @type {number} */ x, /** @type {number} */ y) => this.solidAt(Math.round(x), Math.round(y));
+    for (const b of this.rubble) {
+      b.t += dt;
+      if (!b.rest) {
+        b.vy += 220 * dt;
+        const nx = b.x + b.vx * dt, ny = b.y + b.vy * dt;
+        // a wall turns it back; the ground bounces it, lower each time, until it rolls to a stop
+        if (solid(nx, b.y)) b.vx = -b.vx * 0.5; else b.x = nx;
+        if (b.vy > 0 && solid(b.x, ny)) {
+          if (b.vy > 40 && Math.random() < 0.15) audio.play('click');
+          b.vy = -b.vy * 0.42; b.vx *= 0.7;
+          if (Math.abs(b.vy) < 14) { b.vy = 0; b.rest = true; }
+        } else if (b.vy < 0 && solid(b.x, ny)) b.vy = 0;
+        else b.y = ny;
+        if (b.x < -4 || b.x > SCENE_W + 4 || b.y > SCENE_H + 4) b.t = b.life;
+      } else {
+        b.vx *= Math.max(0, 1 - dt * 8);
+        if (Math.abs(b.vx) > 1 && !solid(b.x + b.vx * dt, b.y)) b.x += b.vx * dt;
+        // (the ground dropping away under a rolling piece: it falls again)
+        if (!solid(b.x, b.y + 1)) b.rest = false;
+      }
+      const fade = Math.max(0, Math.min(1, (b.life - b.t) / 0.5));
+      ctx.globalAlpha = Math.ceil(fade * 3) / 3;
+      // it tumbles: a piece lies long one way, then the other, until it settles
+      const flip = !b.rest && Math.floor(b.t * b.spin) % 2 === 1;
+      const w = b.s === 1 ? 1 : flip ? b.s - 1 : b.s, h = b.s === 1 ? 1 : flip ? b.s : b.s - 1;
+      const px = Math.round(b.x), py = Math.round(b.y) - h + 1;
+      if (b.s > 1) {
+        // a dark edge below and to the right, so it reads against sky and stone alike, and a lit corner
+        ctx.fillStyle = 'rgba(16,10,8,0.85)'; ctx.fillRect(px, py, w + 1, h + 1);
+        ctx.fillStyle = b.c; ctx.fillRect(px, py, w, h);
+        ctx.fillStyle = b.hi; ctx.fillRect(px, py, 1, 1);
+      } else { ctx.fillStyle = b.c; ctx.fillRect(px, py, 1, 1); }
+    }
+    ctx.globalAlpha = 1;
+    this.rubble = this.rubble.filter((b) => b.t < b.life);
+    for (const d of this.puffs) {
+      d.t += dt;
+      const u = d.t / 0.55, rr = 2 + u * d.r;
+      ctx.globalAlpha = Math.max(0, 0.55 * (1 - u));
+      ctx.fillStyle = shade(d.c, 0.35);
+      for (let k = 0; k < 10; k++) {
+        const a = (k / 10) * Math.PI * 2 + d.x;
+        ctx.fillRect(Math.round(d.x + Math.cos(a) * rr), Math.round(d.y + Math.sin(a) * rr * 0.45 - u * 4), u < 0.5 ? 2 : 1, 1);
+      }
+    }
+    ctx.globalAlpha = 1;
+    this.puffs = this.puffs.filter((d) => d.t < 0.55);
+    for (const f of this.flashes) {
+      f.t += dt;
+      if (f.t >= 0 && f.t < 0.25) sparkle(ctx, f.x, f.y, f.t / 0.25);
+    }
+    this.flashes = this.flashes.filter((f) => f.t < 0.25);
+    for (const p of this.pops) {
+      p.t += dt;
+      const u = Math.min(1, p.t / 0.5);
+      // a ring of its colour spreading out
+      const rr = 3 + u * 16;
+      ctx.globalAlpha = Math.ceil((1 - u) * 3) / 3;
+      ctx.fillStyle = p.c;
+      for (let k = 0; k < 20; k++) { const a = (k / 20) * Math.PI * 2; ctx.fillRect(Math.round(p.x + Math.cos(a) * rr), Math.round(p.y + Math.sin(a) * rr * 0.6), 1, 1); }
+      // the thing itself: it springs up, then shrinks away
+      if (p.cv) {
+        const sc = u < 0.2 ? 1 + u * 1.2 : 1.24 * (1 - (u - 0.2) / 0.8), rise = Math.round(u * 18);
+        const w = Math.max(1, Math.round(p.w * sc)), h = Math.max(1, Math.round(p.h * sc));
+        ctx.globalAlpha = u < 0.6 ? 1 : Math.ceil((1 - u) / 0.4 * 3) / 3;
+        if (sc > 0.05) ctx.drawImage(p.cv, Math.round(p.x - w / 2), Math.round(p.y - h / 2 - rise), w, h);
+      }
+      ctx.globalAlpha = 1;
+    }
+    this.pops = this.pops.filter((p) => p.t < 0.5);
   }
 
   /** The colour of the region's rock (chips struck off a crystal's seam). */
@@ -716,6 +861,7 @@ export class WildsView {
     // the plants, the far ones first
     for (const p of this.field.slice().sort((a, b) => a.y - b.y)) if (p.key && !this.fallen[p.id]) this.drawPlant(ctx, p);
     this.drawFallen(ctx, dt);
+    this.drawEffects(ctx, dt);
     this.paintSky(ctx, dt);
     this.drawDrops(ctx, dt);
     for (const f of this.floaters) {
