@@ -395,13 +395,19 @@ export class PlantGround {
     // the painting where the plant is: the box its silhouette covers, a little wider
     const x0 = Math.max(0, x - s.ax - 4), x1 = Math.min(W - 1, x - s.ax + s.w + 4), y0 = Math.max(0, y - s.ay - 3), y1 = Math.min(H - 1, y - s.ay + s.h + 3);
     let r = 0, g = 0, b = 0, n = 0;
-    for (let j = y0; j <= y1; j += 2) for (let i = x0; i <= x1; i += 2) { const c = px[j * W + i]; r += c & 255; g += (c >>> 8) & 255; b += (c >>> 16) & 255; n++; }
+    /** @type {number[]} */
+    const samples = [];
+    for (let j = y0; j <= y1; j += 2) for (let i = x0; i <= x1; i += 2) { const c = px[j * W + i]; r += c & 255; g += (c >>> 8) & 255; b += (c >>> 16) & 255; n++; samples.push(c); }
     if (!n) return [1, 1, 1];
     r /= n; g /= n; b /= n;
     const luma = Math.max(1, r * 0.3 + g * 0.59 + b * 0.11), bright = Math.max(0.62, Math.min(1.12, 0.6 + 0.4 * (luma / this.mean)));
-    // the colour of the light: the surroundings' own, a third of the way from white
+    // the colour of the light: the surroundings' own, half way from white
     const q = (v) => Math.round(v * 12) / 12;
-    return [q(bright * (1 + 0.35 * (r / luma - 1))), q(bright * (1 + 0.35 * (g / luma - 1))), q(bright * (1 + 0.35 * (b / luma - 1)))];
+    // and the colour of the shadows round it (the darkest quarter of the painting there), which its outline takes on
+    const lum = (/** @type {number} */ c) => (c & 255) * 0.3 + ((c >>> 8) & 255) * 0.59 + ((c >>> 16) & 255) * 0.11;
+    const dark = samples.sort((u, v) => lum(u) - lum(v)).slice(0, Math.max(1, samples.length >> 2));
+    const dk = [0, 8, 16].map((sh) => Math.round(dark.reduce((a, c) => a + ((c >>> sh) & 255), 0) / dark.length / 255 * 16) / 16);
+    return [q(bright * (1 + 0.5 * (r / luma - 1))), q(bright * (1 + 0.5 * (g / luma - 1))), q(bright * (1 + 0.5 * (b / luma - 1))), ...dk];
   }
 
   /**

@@ -295,6 +295,16 @@ computed from the particles that actually run out of the tap. What a
   speeds growth up to half again (never instantly, never more however much
   you water); dry soil slows it but never stops it. Stones, crystals,
   crusts and shells come back with time and the weather, as before.
+* **Of a piece with its ground:** each plant is lit by the painting round
+  its spot (its light, its colour, its shadows, which its outline takes on),
+  and stands in the ground rather than on it — the crust under it (grass,
+  moss, gravel, ash) comes up over its foot in an uneven fringe. Every list
+  (the shelf, the shop, the book, the Wilds' cards) shows an ingredient as
+  the very picture it has in the wilds.
+* **Zoom:** the scene opens a little closer than the whole region; the −,
+  + and fit buttons under it, a trackpad pinch or Ctrl and the wheel, or
+  two fingers pinching and dragging zoom in and out and pan (the zoom is
+  remembered).
 * **An interactive wilds:** a finger dragged through the scene pushes
   what it passes: vines hanging from the boughs or the cave's roof are
   chains of links that bend where the finger touches them, are dragged

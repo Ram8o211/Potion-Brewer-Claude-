@@ -10,6 +10,8 @@ test('sandbox wilds: shake, gather by tap, regrow at random spots, water by drag
   const errors = watchErrors(page);
   await startSandbox(page);
   await page.click('[data-act=tab-wilds]');
+  // (the whole region in view: taps below are aimed from the scene's own coordinates)
+  await lab(page, (l) => l.views.wilds.setZoom(1));
   await page.click('[data-act=region-meadow]');
   await page.waitForFunction(() => { const w = window.__alchemist.screen.views.wilds; return w.region === 'meadow' && !!w.bg; });
   await lab(page, (l) => l.views.wilds.grow());
@@ -141,6 +143,8 @@ test('sandbox wilds: a crystal fused into its rock breaks free only after severa
   const errors = watchErrors(page);
   await startSandbox(page);
   await page.click('[data-act=tab-wilds]');
+  // (the whole region in view: taps below are aimed from the scene's own coordinates)
+  await lab(page, (l) => l.views.wilds.setZoom(1));
   // the region whose plants include a crystal
   const region = await lab(page, async (l) => {
     const w = l.views.wilds;
@@ -163,5 +167,39 @@ test('sandbox wilds: a crystal fused into its rock breaks free only after severa
   expect(out.need, 'it takes several blows').toBeGreaterThanOrEqual(3);
   expect(out.loose.slice(0, -1).every((v) => !v), 'still fused after every blow but the last').toBe(true);
   expect(out.loose[out.loose.length - 1], 'the last blow breaks it free').toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test('sandbox wilds: the scene zooms in and out, starting a little closer, and a tap still finds the plant under it', async ({ page }) => {
+  const errors = watchErrors(page);
+  // (a first visit: no zoom kept from before — only on the first load, not the reload below)
+  await page.addInitScript(() => { try { if (!sessionStorage.getItem('zoomed')) { localStorage.removeItem('alchemist.wildsZoom'); sessionStorage.setItem('zoomed', '1'); } } catch { /* none */ } });
+  await startSandbox(page);
+  await page.click('[data-act=tab-wilds]');
+  await page.waitForFunction(() => !!window.__alchemist.screen.views.wilds.bg);
+  const z0 = await lab(page, (l) => l.views.wilds.zoom);
+  expect(z0, 'it starts closer than the whole region').toBeGreaterThan(1);
+  await page.click('[data-act=zoom-in]');
+  const z1 = await lab(page, (l) => l.views.wilds.zoom);
+  expect(z1).toBeGreaterThan(z0);
+  await page.click('[data-act=zoom-fit]');
+  expect(await lab(page, (l) => l.views.wilds.zoom)).toBe(1);
+  await expect(page.locator('[data-act=zoom-out]')).toBeDisabled();
+  await page.click('[data-act=zoom-in]'); await page.click('[data-act=zoom-in]');
+  // zoomed in, the window shows part of the scene, and a point in it maps onto the same scene pixel
+  const probe = await lab(page, (l) => {
+    const w = l.views.wilds, v = w.view.getBoundingClientRect(), c = w.canvas.getBoundingClientRect();
+    const p = w.scenePoint({ clientX: v.left + v.width / 2, clientY: v.top + v.height / 2 });
+    const want = { x: (v.left + v.width / 2 - c.left) / c.width * 384, y: (v.top + v.height / 2 - c.top) / c.height * 216 };
+    return { wider: c.width > v.width * 1.4, dx: Math.abs(p.x - want.x), dy: Math.abs(p.y - want.y) };
+  });
+  expect(probe.wider).toBe(true);
+  expect(probe.dx + probe.dy).toBeLessThan(0.01);
+  // the zoom is kept for next time
+  await page.reload();
+  await page.click('[data-act=sandbox]');
+  await page.waitForSelector('canvas.view-canvas');
+  await page.click('[data-act=tab-wilds]');
+  expect(await lab(page, (l) => l.views.wilds.zoom)).toBeCloseTo(1.25 * 1.25, 2);
   expect(errors).toEqual([]);
 });

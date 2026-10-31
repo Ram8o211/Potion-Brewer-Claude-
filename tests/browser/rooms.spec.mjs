@@ -9,6 +9,8 @@ test('harvesting a mature plant fills the stores and leaves nothing behind; grow
   const errors = watchErrors(page);
   await newGame(page, { tutorial: false, seed: 'gather-seed-1' });
   await page.click('[data-act=tab-wilds]');
+  // (the whole region in view: taps below are aimed from the scene's own coordinates)
+  await lab(page, (l) => l.views.wilds.setZoom(1));
   await expect(page.locator('.view-wilds canvas.scene')).toBeVisible();
   const dep = await lab(page, (l) => l.state.deposits.find((d) => d.region === 'forest' && d.rank === 0));
   const before = await lab(page, (l, id) => l.state.stock(id), dep.materialId);
@@ -114,13 +116,14 @@ test('harvesting a mature plant fills the stores and leaves nothing behind; grow
   const t0 = { x: cv.x + it0.x / sw0 * cv.width, y: cv.y + it0.y / 216 * cv.height };
   await drag(page, [t0, t0], 30);
   expect(await lab(page, (l, id) => l.state.stock(id), m0.materialId), 'tapping a meadow plant gathered').toBeGreaterThan(ms0);
-  expect(await page.evaluate(() => [...document.querySelectorAll('.view-wilds .deposit canvas')].some((c) => /** @type {HTMLCanvasElement} */ (c).width === 32)), 'a card shows the same 32 px procedural icon as the shelf and the book').toBe(true);
-  // the icon on a card is the same picture as the one on the shelf
+  // a card shows the ingredient as it grows in the wilds — the same picture as its jar on the shelf
   const same = await page.evaluate((id) => {
-    const a = /** @type {HTMLCanvasElement|null} */ (document.querySelector(`.view-wilds .deposit[data-deposit] canvas`));
-    return !!a && a.width === 32;
+    const lab = /** @type {any} */ (window).__alchemist.screen, dep = lab.state.deposits.find((d) => d.materialId === id);
+    const a = /** @type {HTMLCanvasElement|null} */ (document.querySelector(`.view-wilds .deposit[data-deposit="${dep.id}"] canvas`));
+    const b = /** @type {HTMLCanvasElement|null} */ (document.querySelector(`.jar[data-id="${id}"] canvas`));
+    return !!a && !!b && a.width === a.height && a.toDataURL() === b.toDataURL();
   }, m0.materialId);
-  expect(same).toBe(true);
+  expect(same, 'the card and the shelf show the same picture of it').toBe(true);
   // (the screenshot without the toasts of the first gathering over the scene)
   await page.evaluate(() => document.querySelectorAll('.toast').forEach((t) => t.remove()));
   await shot(page, info, 'wilds-meadow');
@@ -194,6 +197,8 @@ test('watering: a tap in watering mode wets the soil round a growing plant, its 
   const errors = watchErrors(page);
   await newGame(page, { tutorial: false, seed: 'water-seed-1' });
   await page.click('[data-act=tab-wilds]');
+  // (the whole region in view: taps below are aimed from the scene's own coordinates)
+  await lab(page, (l) => l.views.wilds.setZoom(1));
   await page.click('[data-act=region-meadow]');
   await page.waitForFunction(() => !!window.__alchemist.screen.views.wilds.bg);
   // a stand of the meadow with fresh sprouts in it

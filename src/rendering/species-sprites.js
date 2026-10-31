@@ -17,6 +17,7 @@ import { isBotanical } from '../visual/taxonomy.js';
 import { rawSprite } from './scenes.js';
 import { mountsOfForm, frameMount, growthParams } from '../visual/growth.js';
 import { hashString } from '../core/rng.js';
+import { INK } from '../visual/style.js';
 
 export { ICON_PX };
 
@@ -73,10 +74,13 @@ function rimmed(f) {
  */
 function lit(f, light, mount, own) {
   const src = f.pix, p = new Pixels(src.w, src.h), glow = new Set(own);
+  // the outline takes on the shadows of where it stands (a little), so it sits in the painting rather than on it
+  const ink = light.length >= 6 ? (0xff000000 | [0, 1, 2].reduce((a, i) => a | (Math.round(((INK >>> (i * 8)) & 255) * 0.55 + light[3 + i] * 255 * 0.5 * 0.45) << (i * 8)), 0)) >>> 0 : INK;
   for (let y = 0; y < src.h; y++) for (let x = 0; x < src.w; x++) {
     const c = src.px[y * src.w + x];
     if (!(c >>> 24)) continue;
     if (glow.has(c)) { p.px[y * src.w + x] = c; continue; }
+    if (c === INK) { p.px[y * src.w + x] = ink; continue; }
     // occlusion: a step darker within two pixels of the hold
     const near = mount === 'hang' ? y - f.ay < 3 : mount === 'wall' || mount === 'trunk' ? Math.abs(x - f.ax) < 3 : y > f.ay - 3;
     const k = near ? 0.82 : 1;
@@ -113,7 +117,7 @@ export function plantFrameOf(m, stage, o = {}) {
   // grows: a seed, an elongated point split in two, then its full habit)
   const st = isBotanical(id.shape) || id.shape === 'crystal' || id.shape === 'shard' ? STAGE[stage] ?? 2 : 2, closed = !!o.closed && st === 2;
   const mount = frameMount(o.mount), variant = (o.variant ?? 0) & 3, flip = !!o.flip && mount === 'wall';
-  const light = o.light && o.light.some((v) => Math.abs(v - 1) > 0.02) ? o.light : null;
+  const light = o.light && (o.light.length > 3 || o.light.some((v) => Math.abs(v - 1) > 0.02)) ? o.light : null;
   const k = `${identityKey(id)}|${st}|${closed ? 1 : 0}|${mount}|${variant}|${flip ? 1 : 0}|${light ? light.join(',') : ''}`;
   const base = cached('p|' + k, () => {
     const d = describe(id), f = plantFrame(d, st, { closed, mount, variant, flip });
@@ -190,8 +194,8 @@ export function iconFrameOf(m) {
 
 /**
  * A square picture of a raw ingredient for every list it appears in (the
- * shelf, the shop, the book, recipes and its deposit card): its procedural
- * icon — a close-up of the same species that grows in the wilds — or, for
+ * shelf, the shop, the book, recipes and its deposit card): the grown
+ * plant exactly as it stands in the wilds, the same pixels — or, for
  * a rabbit's remains, its little sprite. A new canvas each call (it goes
  * into the page).
  * @param {any} m material @param {number} [fill] 0..1 (unused by icons; remains shrink with it)
@@ -199,7 +203,17 @@ export function iconFrameOf(m) {
 export function ingredientSprite(m, fill = 1) {
   const f = m && m.wild ? iconFrameOf(m) : null;
   if (!f) return rawSprite(m.shape || 'stone', m.look || m.color, fill);
-  const cv = f.pix.toCanvas();
+  // the very picture it has in the wilds: the grown plant (or crystal, stone, shell) on the mount its species is found on
+  // first, whole, in a square canvas just round it (the lists show it at their own size, so it fills their slot)
+  const mount = mountsOf(m)[0][0];
+  const sp = plantCanvas(m, 'mature', { mount, variant: 0 });
+  const cv = /** @type {HTMLCanvasElement} */ (document.createElement('canvas'));
   cv.style.imageRendering = 'pixelated';
+  if (!sp) { const g = f.pix.toCanvas(); cv.width = g.width; cv.height = g.height; /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')).drawImage(g, 0, 0); return cv; }
+  const S = Math.max(16, sp.w, sp.h) + 2;
+  cv.width = S; cv.height = S;
+  const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
+  // (what hangs from its hold hangs from the top of the box; the rest stands on its floor)
+  ctx.drawImage(sp.cv, Math.round((S - sp.w) / 2), frameMount(mount) === 'hang' ? 1 : S - 1 - sp.h);
   return cv;
 }
