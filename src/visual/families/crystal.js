@@ -46,6 +46,11 @@ export function prism(m, d, rng, x, y, ang, len, wid, tone = 0) {
   m.poly([at(0, hw * 0.3), at(body + tip * 0.15, hw * 0.3), at(body, hw), at(0, hw)], 'crystal', { shade: 'facet', lum: 0.28 + tone });
   m.poly([at(body, -hw), at(len, 0), at(body + tip * 0.15, hw * 0.3), at(body + tip * 0.15, -hw * 0.35)], 'crystal', { shade: 'facet', lum: 0.95 + tone });
   m.poly([at(body + tip * 0.15, hw * 0.3), at(len, 0), at(body, hw)], 'crystal', { shade: 'facet', lum: 0.45 + tone });
+  // the bright ridge between the lit and middle faces running up into the apex, and the shadowed edge of the far face
+  m.line([at(len * 0.18, -hw * 0.35), at(body + tip * 0.15, -hw * 0.35), at(len, 0)], 'crystal', { lum: 1 });
+  m.line([at(len * 0.25, hw * 0.3), at(body + tip * 0.15, hw * 0.3)], 'crystal', { lum: 0.4 });
+  // a luminous heart down the middle of a glowing one
+  if (d.tr.glow > 0.1) m.line([at(body * 0.3, 0), at(body * 0.9, 0)], 'glow', { lum: 0.9, glow: true });
   // inclusions and the iridescent heart of the stone
   for (let i = 0; i < P.inclusions; i++) {
     const u = body * (0.2 + rng.next() * 0.6), v = (rng.next() - 0.5) * hw;
