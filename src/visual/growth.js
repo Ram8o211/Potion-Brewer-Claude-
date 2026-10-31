@@ -17,8 +17,11 @@
 //      plant of it its own variant (one of four), so a stand is never a row
 //      of copies.
 //
-// Inorganic finds follow their own build rules: a crystal grows spikes from
-// a seed into a fanned cluster, a mineral fractures into chunks (embers glow
+// Inorganic finds follow their own build rules: a crystal grows from a seed
+// that elongates, splits and clusters into its habit (a shard, a spike, a
+// cluster, a fan, a tall prism, or points hanging from a cave's roof), each
+// point a cut gem of lit, middle and shadowed faces with a bright ridge, two
+// tip facets and a glowing heart, a mineral fractures into chunks (embers glow
 // in the cracks of a fiery one), chalk erodes into pitted stacks, a crust
 // blooms into needles, a nugget sits in its matrix of rock.
 //
@@ -49,8 +52,8 @@ export const MOUNTS = {
   bracket: [['trunk', 0.65], ['wall', 0.35]],
   moss: [['wall', 0.6], ['ground', 0.4]],
   bark: [['trunk', 0.85], ['ground', 0.15]],
-  crystal: [['ground', 0.5], ['wall', 0.5]],
-  shard: [['ground', 0.6], ['wall', 0.4]],
+  crystal: [['ground', 0.45], ['wall', 0.35], ['ceiling', 0.2]],
+  shard: [['ground', 0.55], ['wall', 0.3], ['ceiling', 0.15]],
   stone: [['ground', 0.75], ['wall', 0.25]],
   powder: [['ground', 0.5], ['wall', 0.5]],
   crust: [['wall', 0.75], ['ground', 0.25]],
@@ -75,7 +78,7 @@ export function mountsOfForm(form) {
 export const frameMount = (mount) => (mount === 'hang' || mount === 'bough' || mount === 'ceiling' ? 'hang' : mount === 'wall' || mount === 'trunk' ? 'wall' : 'ground');
 
 /** Mature height (scene pixels) of each family before its own variation. */
-const BASE_H = { flower: 15, herb: 12, root: 14, fungus: 11, moss: 10, fruit: 13, reed: 19, bark: 10, crystal: 14, mineral: 12.5, shell: 12 };
+const BASE_H = { flower: 15, herb: 12, root: 14, fungus: 11, moss: 10, fruit: 13, reed: 19, bark: 10, crystal: 20, mineral: 12.5, shell: 12 };
 
 // ---------------------------------------------------------------- the sketch
 
@@ -284,6 +287,61 @@ function prism(sk, x, y, a, len, wid, rp, o = {}) {
   sk.glint(x + ca * (len - 1), y + sa * (len - 1));
 }
 
+/**
+ * A cut crystal point from (x, y) along a, in the way of a pixel artist's
+ * gem: a column of three faces — the one toward the light pale, the middle
+ * one bright, the far one deep — with a bright ridge between the first two
+ * and a shadowed edge on the far side, darker where it roots in the rock;
+ * a termination of two facets (lit and shadowed) meeting at a white apex;
+ * a heart of its glow colour down the middle of a luminous one; and here
+ * and there a fracture across it. `skew` sets the apex off-centre (a shard).
+ * @param {Sketch} sk @param {number[]} rp @param {number[]|null} glow
+ * @param {{tip?:number, skew?:number, crack?:number, seed?:number}} [o]
+ */
+function gem(sk, x, y, a, len, wid, rp, glow, o = {}) {
+  const ca = Math.cos(a), sa = Math.sin(a), hw = Math.max(1, wid / 2), sgn = lit(-sa, ca) >= 0 ? 1 : -1, skew = o.skew || 0;
+  const tip = Math.min(len * 0.6, Math.max(2, wid * (o.tip ?? 0.85))), body = len - tip, c0 = skew * hw;
+  const P = (u, v) => [x + ca * u - sa * v, y + sa * u + ca * v];
+  // first its own dark outline, so a point standing before another is cut clear of it
+  const ink = at(rp, 0);
+  for (let u = 0.5; u <= len + 1; u += 0.5) {
+    const inTip = u > body, tt = inTip ? Math.max(0, (len + 1 - u) / (tip + 1)) : 1, e = hw + 1;
+    for (let v = -e; v <= e; v += 0.5) {
+      if (inTip && (v < c0 - (c0 + e) * tt || v > c0 + (e - c0) * tt)) continue;
+      const [px, py] = P(u, v);
+      sk.set(px, py, ink);
+    }
+  }
+  for (let u = 0; u <= len; u += 0.5) {
+    const inTip = u > body, tt = inTip ? (len - u) / tip : 1;
+    for (let v = -hw; v <= hw; v += 0.5) {
+      // the point: both edges close in toward the apex
+      if (inTip && (v < c0 - (c0 + hw) * tt || v > c0 + (hw - c0) * tt)) continue;
+      const s = ((v - (inTip ? c0 * (1 - tt) : 0)) * sgn) / hw;
+      let t;
+      if (inTip) t = s > 0.08 ? 0.96 : s > -0.12 ? 1 : 0.46;
+      else t = s > 0.62 ? 0.8 : s > 0.28 ? 1 : s > -0.3 ? 0.62 : s > -0.78 ? 0.32 : 0.16;
+      // rooted in the rock: the foot is in shadow
+      if (u < len * 0.16) t -= 0.24; else if (u < len * 0.3) t -= 0.08;
+      const [px, py] = P(u, v);
+      sk.set(px, py, at(rp, t));
+    }
+  }
+  // a fracture across the column, catching the light on its far lip
+  if (o.crack && body > 6) {
+    const u = body * (0.45 + ((o.seed || 0) % 5) * 0.06);
+    for (let v = -hw; v <= hw; v += 0.5) { const [px, py] = P(u + v * 0.35 * sgn, v); sk.set(px, py, at(rp, 0.28)); const [qx, qy] = P(u + 1 + v * 0.35 * sgn, v); if (v * sgn > 0) sk.set(qx, qy, at(rp, 1)); }
+  }
+  // a luminous heart down the middle, brightest toward the point
+  if (glow && body > 3) for (let u = len * 0.3; u < body; u += 1) { const [px, py] = P(u, -0.25 * sgn); sk.set(px, py, at(glow, 0.45 + 0.5 * (u / body))); }
+  const [ax, ay] = P(len - 0.5, c0);
+  sk.set(ax, ay, at(rp, 1));
+  sk.glint(ax, ay);
+  const [rx, ry] = P(body * 0.6, hw * 0.45 * sgn);
+  sk.glint(rx, ry);
+  if (glow) sk.emit(...P(Math.max(1, len - tip * 0.6), c0 * 0.5), at(glow, 0.95));
+}
+
 /** A drop of resin or dew running down from (x, y): a thread swelling into a bead. @param {Sketch} sk @param {number[]} rp */
 function drip(sk, x, y, len, rp) {
   for (let i = 0; i < len; i++) {
@@ -426,7 +484,10 @@ export function growthParams(d) {
   };
   // what glows: every mushroom and berry, the lichens of the dark regions, the arcane and the luminous, and a few others
   const dark = d.id.region === 'netherwood' || d.id.region === 'moonfen';
-  P.glow = tr.glow > 0.25 || d.family === 'fungus' || d.form === 'berry' || (d.family === 'moss' && dark) || (d.family === 'crystal' && tr.glow > 0.1) || (dark && d.family !== 'mineral' && f() < 0.35) || f() < 0.08;
+  P.glow = tr.glow > 0.25 || d.family === 'fungus' || d.form === 'berry' || (d.family === 'moss' && dark) || d.family === 'crystal' || (dark && d.family !== 'mineral' && f() < 0.35) || f() < 0.08;
+  // a crystal's habit, its points' girth, how slender, how fractured (drawn last, so no other plant changes)
+  P.habit = d.form === 'shard' ? ['shard', 'spike', 'shard', 'fan'][Math.floor(f() * 4)] : ['cluster', 'fan', 'spike', 'prism', 'cluster'][Math.floor(f() * 5)];
+  P.gw = 4.8 + f() * 2 + tr.thick * 1.2; P.slim = 0.8 + f() * 0.45 - tr.thick * 0.15; P.cracks = f() < 0.35 + tr.sharp * 0.3;
   PARAMS.set(d, P);
   return P;
 }
@@ -776,19 +837,44 @@ const BUILD = {
   },
 
   crystal(c) {
-    const { sk, d, P, g, H, rng, pal, mount } = c, shard = d.form === 'shard';
-    const nrm = mount === 'wall' ? -0.3 : UP, tan = nrm + Math.PI / 2;
+    const { sk, P, g, st, H, rng, pal, mount } = c, wall = mount === 'wall', hang = mount === 'hang';
+    // a cave's roof grows its points hanging; a rock face, leaning out and up
+    const habit = hang ? 'hanging' : P.habit, nrm = hang ? DOWN : wall ? -0.45 : UP, tan = nrm + Math.PI / 2;
+    const shardy = habit === 'shard';
     // the seed: a knot of host rock it grows out of
-    const bx = mount === 'wall' ? 1 : 0, by = mount === 'ground' ? -1 : 0;
-    sk.later(0, () => blob(sk, bx, by, 2.5 + g * 2, 1.5 + g * 1.2, pal.rock, { rough: 0.3, facets: 6, ph: [rng.next() * 6, rng.next() * 6, 1] }));
-    const n = shard ? 2 + (P.chunks > 2 ? 1 : 0) : P.prisms;
+    const bx = wall ? 1 : 0, by = mount === 'ground' ? -1 : hang ? 1 : 0;
+    sk.later(0, () => blob(sk, bx, by, 2.5 + g * 2.2, 1.4 + g * 1.2, pal.rock, { rough: 0.3, facets: 6, ph: [rng.next() * 6, rng.next() * 6, 1] }));
+    // the habit: how many points, how widely fanned, how long the side ones are against the main one
+    const H0 = H * (habit === 'prism' ? 1.12 : habit === 'spike' ? 1.15 : habit === 'fan' ? 0.85 : 1);
+    const plan = {
+      shard: { n: 2 + (P.chunks > 2 ? 1 : 0), spread: 0.75, side: 0.7, w: 0.75 },
+      spike: { n: 3, spread: 0.9, side: 0.38, w: 0.8 },
+      prism: { n: 2, spread: 0.7, side: 0.42, w: 1.3 },
+      cluster: { n: Math.max(4, P.prisms), spread: P.fan * 1.05, side: 0.62, w: 1 },
+      fan: { n: Math.max(5, P.prisms + 1), spread: 1.5 + P.fan * 0.3, side: 0.85, w: 0.85 },
+      hanging: { n: Math.max(3, P.prisms - 1), spread: 0.85, side: 0.6, w: 0.95 },
+    }[habit];
+    // it grows: a seed point, then it elongates and splits, then clusters into its full habit
+    const n = st === 0 ? 1 : st === 1 ? Math.min(plan.n, 2 + (plan.n > 4 ? 1 : 0)) : plan.n;
     const spikes = [];
     for (let i = 0; i < n; i++) {
-      const off = n === 1 ? 0 : i / (n - 1) - 0.5, ang = nrm + off * (shard ? 0.7 : P.fan) + (rng.next() - 0.5) * 0.25 + (mount === 'ground' ? P.tilt : 0);
-      spikes.push({ off, ang, len: H * g * (shard ? 1.25 : 1) * (1 - Math.abs(off) * 0.9) * (0.75 + rng.next() * 0.3), wid: (shard ? P.cw + 1.2 : P.cw) * (0.75 + rng.next() * 0.45) * (0.7 + g * 0.3) });
+      // the main point in the middle, the others alternating out to either side
+      const k = i === 0 ? 0 : Math.ceil(i / 2) * (i % 2 ? -1 : 1), off = plan.n === 1 ? 0 : k / Math.max(1, plan.n - 1);
+      const main = i === 0, ang = nrm + off * plan.spread + (rng.next() - 0.5) * 0.18 + (mount === 'ground' ? P.tilt : 0);
+      const len = H0 * (main ? 1 : plan.side * (1 - Math.abs(off) * 0.45) * (0.8 + rng.next() * 0.3)) * (st === 0 ? 0.62 : 1);
+      const wid = P.gw * plan.w * P.slim * (main ? 1 : 0.72 + rng.next() * 0.15) * (0.7 + g * 0.3);
+      spikes.push({ off, ang, len, wid, main });
     }
+    // the short side points behind the main one
+    const mainW = Math.max(2, spikes[0].wid);
     spikes.sort((a, b) => a.len - b.len);
-    spikes.forEach((s, i) => sk.later(1 + i, () => { const L = Math.max(3, s.len), x0 = bx + Math.cos(tan) * s.off * 3, y0 = by + Math.sin(tan) * s.off * 3; prism(sk, x0, y0, s.ang, L, Math.max(1.5, s.wid), pal.crystal, shard ? { tip: 1.6, skew: rng.next() < 0.5 ? -0.7 : 0.7 } : {}); if (P.glow) sk.emit(x0 + Math.cos(s.ang) * (L - 2.5), y0 + Math.sin(s.ang) * (L - 2.5), at(pal.glow, 0.9)); }));
+    spikes.forEach((s, i) => sk.later(1 + i, () => {
+      // (each side point rooted beside the main one, clear of its girth)
+      const L = Math.max(3, s.len), sp = s.main ? 0 : s.off * (mainW + 2), x0 = bx + Math.cos(tan) * sp, y0 = by + Math.sin(tan) * sp;
+      gem(sk, x0, y0, s.ang, L, Math.max(2, s.wid), pal.crystal, P.glow ? pal.glow : null, { tip: shardy ? 1.7 : habit === 'spike' ? 1.4 : 0.85, skew: shardy ? (rng.next() < 0.5 ? -0.7 : 0.7) : 0, crack: P.cracks && s.main && st === 2 ? 1 : 0, seed: i + 3 });
+    }));
+    // grains of crystal scattered at the foot of a grown one
+    if (st === 2 && !hang) sk.later(1, () => { for (const sx of [-1, 1]) { const gx = bx + Math.cos(tan) * sx * (4 + rng.next() * 2), gy = by + Math.sin(tan) * sx * (4 + rng.next() * 2); sk.set(gx, gy - 1, at(pal.crystal, 0.9)); sk.set(gx, gy, at(pal.crystal, 0.5)); } });
   },
 
   mineral(c) {
@@ -1085,14 +1171,14 @@ const MOUNT_CODE = { ground: 0, hang: 1, wall: 2 };
 
 /**
  * The plant (or deposit) of a species in the wilds at a growth stage, on its
- * mount and in one of its variants. A stone, crystal or shell does not grow:
- * it is the same at every stage.
+ * mount and in one of its variants. A stone or shell does not grow: it is
+ * the same at every stage; a crystal grows from a seed into its habit.
  * @param {any} d descriptor @param {number} stage 0 sprout, 1 ripe, 2 mature
  * @param {{closed?:boolean, mount?:string, variant?:number, flip?:boolean}} [o]
  * @returns {{pix:Pixels, ax:number, ay:number, glints:number[][], glows:number[][]}}
  */
 export function growFrame(d, stage, o = {}) {
-  const mount = frameMount(o.mount), st = d.botanical ? Math.max(0, Math.min(2, stage | 0)) : 2, variant = (o.variant ?? 0) & 3;
+  const mount = frameMount(o.mount), st = d.botanical || d.form === 'crystal' || d.form === 'shard' ? Math.max(0, Math.min(2, stage | 0)) : 2, variant = (o.variant ?? 0) & 3;
   const P = growthParams(d);
   const seed = (d.seeds.morph ^ Math.imul(variant + 1, 0x9e3779b1) ^ Math.imul(MOUNT_CODE[mount] + 1, 0x85ebca6b)) >>> 0;
   // each variant a little taller or shorter than the next

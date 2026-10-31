@@ -56,6 +56,13 @@ computed from the particles that actually run out of the tap. What a
   caps, each a variant of its kind, and attached where its kind is found:
   vines of berries and pods hanging from the boughs and the cave's roof,
   shelf fungi and bark on the trunks, crystals and crusts on cliff faces.
+  Crystals are cut gems in the pixel artist's way — lit, middle and
+  shadowed faces with a bright ridge, two tip facets, a white apex, a
+  glowing heart and here and there a fracture, each point outlined clear
+  of the next — in a habit of their own per world (a shard, a spike, a
+  cluster, a fan, a tall prism, or points hanging from a ledge or a
+  cave's roof), and they grow: a seed, an elongated point split in two,
+  then the full habit.
   Plants are lit and shaded by their surroundings and cast shadows, and
   mushrooms, berries and more glow, lighting the dark regions.
 * **Arcane awakening.** Magical ingredients carry a hidden activation

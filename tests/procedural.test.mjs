@@ -76,7 +76,7 @@ test('within a world every species is its own: distinct icons, plants and pieces
   assert.equal(pieces.size, s.length);
 });
 
-test('every species follows its family grammar: a living plant grows in three distinct stages, a stone, crystal or shell lies there whole; a full icon and four solid pieces', () => {
+test('every species follows its family grammar: a living plant or a crystal grows in three distinct stages, a stone or shell lies there whole; a full icon and four solid pieces', () => {
   for (const seed of ['grammar-1', 'grammar-2']) for (const { m, d } of species(seed)) {
     const key = m.wild.key;
     assert.equal(d.family, familyOf(m.wild.shape));
@@ -84,7 +84,7 @@ test('every species follows its family grammar: a living plant grows in three di
     assert.equal(d.botanical, BOTANICAL.has(d.family));
     const area = [0, 1, 2].map((st) => plantFrame(d, st).pix.mask().reduce((a, v) => a + v, 0));
     const h = [0, 1, 2].map((st) => plantFrame(d, st));
-    if (d.botanical) {
+    if (d.botanical || d.form === 'crystal' || d.form === 'shard') {
       assert.ok(area[0] < area[1] && area[1] < area[2], `${key} grows: ${area}`);
       assert.ok(new Set(h.map((f) => f.pix.hash())).size === 3, `${key}: each stage has its own form`);
     } else assert.ok(new Set(h.map((f) => f.pix.hash())).size === 1, `${key}: inorganic, it does not grow`);

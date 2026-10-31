@@ -334,8 +334,9 @@ export class WildsView {
       const m = st.lookup(d.materialId);
       const key = m && m.wild ? m.wild.key : null;
       const s = depositStatus(st.gathering, d, now);
-      // a stone, crystal or shell does not grow: it is simply there once it has formed again
-      for (const p of s.plants) if (d.botanical || p.stage === 'mature') plants.push({ ...p, dep: d, m, key });
+      // a stone or shell does not grow: it is simply there once it has formed again; a crystal grows from its seed
+      const grows = d.botanical || (m && m.wild && (m.wild.shape === 'crystal' || m.wild.shape === 'shard'));
+      for (const p of s.plants) if (grows || p.stage === 'mature') plants.push({ ...p, dep: d, m, key });
     }
     plants.sort((a, b) => a.born - b.born || (a.id < b.id ? -1 : 1));
     // each plant on the ground, hanging from a bough or the rock, or jutting from a rock face or a trunk, as its species is found
@@ -974,22 +975,24 @@ export class WildsView {
   drawFusion(ctx, p, sp, x, y) {
     const seed = hashString(p.id), rock = this.rockColour();
     const hw = Math.max(4, Math.round(sp.w * 0.32)), hits = this.hits[p.id] ? this.hits[p.id].n : 0, need = this.strikesFor(p);
-    // the collar: a low, uneven lump of rock, lit along its top, dark at its foot
+    // a crystal hanging from a roof is held by rock above it: its collar hangs and its cracks run down
+    const hangs = p.mount === 'hang' || p.mount === 'ceiling', dir = hangs ? 1 : -1;
+    // the collar: a low, uneven lump of rock, lit along its top, dark at its foot (or its underside)
     for (let i = -hw; i <= hw; i++) {
       const edge = 1 - Math.abs(i) / (hw + 1), top = Math.round(1 + edge * 3 + ((seed >> ((i + hw) % 24)) & 1));
-      ctx.fillStyle = rock; ctx.fillRect(x + i, y - top, 1, top + 1);
-      ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.fillRect(x + i, y - top, 1, 1);
-      ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x + i, y, 1, 1);
+      ctx.fillStyle = rock; ctx.fillRect(x + i, hangs ? y : y - top, 1, top + 1);
+      ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.fillRect(x + i, hangs ? y : y - top, 1, 1);
+      ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x + i, hangs ? y + top : y, 1, 1);
     }
     // the cracks of the blows so far
     ctx.fillStyle = 'rgba(14,10,12,0.85)';
-    const reach = Math.round(sp.ay * 0.5 * (hits / need)) + 3;
+    const reach = Math.round((hangs ? sp.h - sp.ay : sp.ay) * 0.5 * (hits / need)) + 3;
     for (let k = 0; k < hits; k++) {
-      let cx = x + (((seed >> (k * 3)) & 7) - 3.5) * hw / 4, cy = y - 1;
+      let cx = x + (((seed >> (k * 3)) & 7) - 3.5) * hw / 4, cy = y + dir;
       const lean = ((seed >> (k * 2 + 5)) & 1) ? 1 : -1;
       for (let s = 0; s < reach; s++) {
         ctx.fillRect(Math.round(cx), Math.round(cy), 1, 1);
-        cy -= 1;
+        cy += dir;
         if (((seed >> ((k * 5 + s) % 28)) & 3) === 0) cx += lean;
       }
     }

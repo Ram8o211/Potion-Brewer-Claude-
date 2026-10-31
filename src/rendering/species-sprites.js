@@ -109,8 +109,9 @@ export function mountsOf(m) {
 export function plantFrameOf(m, stage, o = {}) {
   const id = identityOfMaterial(m);
   if (!id) return null;
-  // stones, crystals and shells do not grow: one picture, whole, at every stage
-  const st = isBotanical(id.shape) ? STAGE[stage] ?? 2 : 2, closed = !!o.closed && st === 2;
+  // stones and shells do not grow: one picture, whole, at every stage (a crystal
+  // grows: a seed, an elongated point split in two, then its full habit)
+  const st = isBotanical(id.shape) || id.shape === 'crystal' || id.shape === 'shard' ? STAGE[stage] ?? 2 : 2, closed = !!o.closed && st === 2;
   const mount = frameMount(o.mount), variant = (o.variant ?? 0) & 3, flip = !!o.flip && mount === 'wall';
   const light = o.light && o.light.some((v) => Math.abs(v - 1) > 0.02) ? o.light : null;
   const k = `${identityKey(id)}|${st}|${closed ? 1 : 0}|${mount}|${variant}|${flip ? 1 : 0}|${light ? light.join(',') : ''}`;
