@@ -613,9 +613,13 @@ export class WildsView {
 
   /** Whether a plant is a crystal still fused into its rock (struck free, not shaken). @param {any} p */
   fused(p) {
-    if (p.stage !== 'mature' || this.fallen[p.id]) return false;
-    const d = speciesOf(p.m);
-    return !!d && d.family === 'crystal';
+    return p.stage === 'mature' && !this.fallen[p.id] && WildsView.gem(p);
+  }
+
+  /** Whether a plant is a crystal grown out of rock (not a crystal drop on a vine): rigid, it neither bends nor swings. @param {any} p */
+  static gem(p) {
+    const sh = p.m && p.m.wild ? p.m.wild.shape : '';
+    return sh === 'crystal' || sh === 'shard';
   }
 
   /** How many blows a crystal takes to break free. @param {any} p */
@@ -967,23 +971,16 @@ export class WildsView {
   }
 
   /**
-   * The rock a crystal is fused into: a jagged collar of the region's stone
-   * round its foot, and a crack for every blow it has taken, running from
-   * the rock up into the crystal, longer the closer it is to breaking free.
+   * A crystal fused into its rock (the rock is part of its own picture): a
+   * crack for every blow it has taken, running from the rock into the
+   * crystal, longer the closer it is to breaking free.
    * @param {CanvasRenderingContext2D} ctx @param {any} p @param {{w:number, h:number, ax:number, ay:number}} sp @param {number} x @param {number} y
    */
   drawFusion(ctx, p, sp, x, y) {
-    const seed = hashString(p.id), rock = this.rockColour();
+    const seed = hashString(p.id);
     const hw = Math.max(4, Math.round(sp.w * 0.32)), hits = this.hits[p.id] ? this.hits[p.id].n : 0, need = this.strikesFor(p);
-    // a crystal hanging from a roof is held by rock above it: its collar hangs and its cracks run down
+    // a crystal hanging from a roof is held by rock above it: its cracks run down
     const hangs = p.mount === 'hang' || p.mount === 'ceiling', dir = hangs ? 1 : -1;
-    // the collar: a low, uneven lump of rock, lit along its top, dark at its foot (or its underside)
-    for (let i = -hw; i <= hw; i++) {
-      const edge = 1 - Math.abs(i) / (hw + 1), top = Math.round(1 + edge * 3 + ((seed >> ((i + hw) % 24)) & 1));
-      ctx.fillStyle = rock; ctx.fillRect(x + i, hangs ? y : y - top, 1, top + 1);
-      ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.fillRect(x + i, hangs ? y : y - top, 1, 1);
-      ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x + i, hangs ? y + top : y, 1, 1);
-    }
     // the cracks of the blows so far
     ctx.fillStyle = 'rgba(14,10,12,0.85)';
     const reach = Math.round((hangs ? sp.h - sp.ay : sp.ay) * 0.5 * (hits / need)) + 3;
@@ -1011,7 +1008,8 @@ export class WildsView {
    */
   drawBent(ctx, p, sp, x, y, lift) {
     const hangs = p.mount === 'hang' || p.mount === 'bough' || p.mount === 'ceiling';
-    if (!hangs && p.mount && p.mount !== 'ground') return null;
+    // a crystal is rock: fingers and wind leave it standing (or hanging) still
+    if (WildsView.gem(p) || (!hangs && p.mount && p.mount !== 'ground')) return null;
     let ring = 0;
     const sh = this.shakes[p.id];
     if (sh) {
