@@ -47,6 +47,10 @@ const SHADOW = { forest: 'rgba(8,16,10,0.32)', netherwood: 'rgba(6,4,16,0.4)', m
 /** How far (CSS pixels) a press may wander and still be a tap: a finger rolls further than a mouse. */
 const TAP_SLOP = { mouse: 6, pen: 8, touch: 14 };
 
+/** How far the scene can be zoomed in, and how close it starts (a little closer than the whole region). */
+const ZOOM_MIN = 1, ZOOM_MAX = 3, ZOOM_START = 1.35, ZOOM_STEP = 1.25;
+const ZOOM_KEY = 'alchemist.wildsZoom';
+
 /** How far apart (scene pixels) a finger dragged in watering mode waters along its path. */
 const WATER_STEP = 12;
 
@@ -125,6 +129,8 @@ export class WildsView {
     this.energy = {};
     /** crystal id → the blows it has taken and when the last one landed (scene time) @type {Record<string, {n:number, t:number}>} */
     this.hits = {};
+    /** the ground fringe over each plant's foot, by region, plant and spot @type {Map<string, any[]>} */
+    this.soilCache = new Map();
     /** bits of leaf and pulp in flight @type {{x:number, y:number, vx:number, vy:number, t:number, c:string}[]} */
     this.bits = [];
     /** pieces of rock struck off a crystal's seam, bouncing on the terrain until they settle and fade @type {{x:number, y:number, vx:number, vy:number, t:number, life:number, s:number, c:string, hi:string, spin:number, rest:boolean}[]} */
@@ -153,23 +159,90 @@ export class WildsView {
     this.canvas.addEventListener('pointermove', (e) => this.moveScene(e));
     this.canvas.addEventListener('pointerup', (e) => this.releaseScene(e));
     // a gesture taken away (the browser's, or capture lost) ends quietly, keeping what was watered
-    const drop = (/** @type {PointerEvent} */ e) => { const d = this.drag; if (d && d.id === e.pointerId) { this.drag = null; if (d.water && d.drank) this.lab.save(); } };
+    const drop = (/** @type {PointerEvent} */ e) => { this.endTouch(e); const d = this.drag; if (d && d.id === e.pointerId) { this.drag = null; if (d.water && d.drank) this.lab.save(); } };
     this.canvas.addEventListener('pointercancel', drop);
     this.canvas.addEventListener('lostpointercapture', drop);
     this.canvas.addEventListener('pointerleave', () => { this.setHover(null); });
     // a long press is not a menu or a text selection
     this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    // the scene is seen through a window that can be zoomed into and panned:
+    // the − / + / fit buttons, a trackpad pinch or Ctrl and the wheel, two fingers pinching and dragging
+    this.view = h('div', { class: 'scene-view' }, this.canvas);
+    this.zoom = ZOOM_START;
+    try { const z = Number(localStorage.getItem(ZOOM_KEY)); if (z >= ZOOM_MIN && z <= ZOOM_MAX) this.zoom = z; } catch { /* no storage */ }
+    this.zoomPlaced = false;
+    /** the fingers on the scene (pointer id → where) and a pinch under way @type {Map<number, {x:number, y:number}>} */
+    this.touches = new Map();
+    /** @type {{d0:number, z0:number, mx:number, my:number}|null} */
+    this.pinch = null;
+    this.view.addEventListener('wheel', (e) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      this.setZoom(this.zoom * Math.exp(-e.deltaY * 0.0025), e.clientX, e.clientY);
+    }, { passive: false });
+    const zbtn = (t, ic, act, fn) => btn('', fn, { cls: 'icon', icon: ic, act, title: t });
+    this.zoomCtl = h('div', { class: 'zoom-ctl' },
+      zbtn('Zoom out', 'minus', 'zoom-out', () => this.setZoom(this.zoom / ZOOM_STEP)),
+      zbtn('Zoom in', 'plus', 'zoom-in', () => this.setZoom(this.zoom * ZOOM_STEP)),
+      zbtn('See the whole region', 'fit', 'zoom-fit', () => this.setZoom(ZOOM_MIN)));
+    this.applyZoom();
     this.info = h('div', { class: 'region-info small' });
     this.list = h('div', { class: 'deposits' });
     this.foot = h('div', { class: 'small muted wilds-foot' });
     // the scene and its caption form one column, so a landscape phone can
     // keep the scene in view beside the deposit list
-    el.append(this.tabs, h('div', { class: 'wilds-scene' }, h('div', { class: 'scene-wrap' }, this.canvas), this.info), h('div', { class: 'wilds-list' }, this.sky, this.list, this.foot));
+    el.append(this.tabs, h('div', { class: 'wilds-scene' }, h('div', { class: 'scene-wrap' }, this.view), h('div', { class: 'scene-bar' }, this.info, this.zoomCtl)), h('div', { class: 'wilds-list' }, this.sky, this.list, this.foot));
     // the last moment the player touched this room (pre-generation waits for a pause)
     this.lastInput = 0;
     this.warmTimer = 0;
     for (const ev of ['pointerdown', 'pointermove', 'wheel', 'keydown']) el.addEventListener(ev, () => { this.lastInput = performance.now(); }, { passive: true });
     this.refresh();
+  }
+
+  /** Size the scene to the zoom (the window shows a part of it, scrolled). */
+  applyZoom() {
+    this.canvas.style.width = `${(this.zoom * 100).toFixed(2)}%`;
+    if (this.zoomCtl) {
+      const [out, inn] = this.zoomCtl.querySelectorAll('button');
+      /** @type {HTMLButtonElement} */ (out).disabled = this.zoom <= ZOOM_MIN + 1e-3;
+      /** @type {HTMLButtonElement} */ (inn).disabled = this.zoom >= ZOOM_MAX - 1e-3;
+    }
+  }
+
+  /**
+   * Zoom the scene to `z`, keeping the point under (cx, cy) (client
+   * pixels; the middle of the window by default) where it is.
+   * @param {number} z @param {number} [cx] @param {number} [cy]
+   */
+  setZoom(z, cx, cy) {
+    z = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z));
+    const v = this.view, r = v.getBoundingClientRect();
+    const ox = (cx ?? r.left + r.width / 2) - r.left, oy = (cy ?? r.top + r.height / 2) - r.top;
+    const w0 = Math.max(1, v.scrollWidth), h0 = Math.max(1, v.scrollHeight);
+    const fx = (v.scrollLeft + ox) / w0, fy = (v.scrollTop + oy) / h0;
+    this.zoom = z;
+    this.applyZoom();
+    v.scrollLeft = fx * v.scrollWidth - ox;
+    v.scrollTop = fy * v.scrollHeight - oy;
+    try { localStorage.setItem(ZOOM_KEY, String(Math.round(z * 1000) / 1000)); } catch { /* no storage */ }
+  }
+
+  /** A finger lifted: a pinch ends once both are off (the one left does nothing). Whether it was part of a pinch. @param {PointerEvent} e */
+  endTouch(e) {
+    if (!this.touches.delete(e.pointerId)) return false;
+    if (!this.pinch) return false;
+    if (!this.touches.size) this.pinch = null;
+    return true;
+  }
+
+  /** A pinch: two fingers on the scene zoom by how far apart they are and pan by where their middle goes. */
+  pinchMove() {
+    const pts = [...this.touches.values()];
+    if (!this.pinch || pts.length < 2) return;
+    const d = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y), mx = (pts[0].x + pts[1].x) / 2, my = (pts[0].y + pts[1].y) / 2;
+    this.view.scrollLeft -= mx - this.pinch.mx; this.view.scrollTop -= my - this.pinch.my;
+    this.pinch.mx = mx; this.pinch.my = my;
+    this.setZoom(this.pinch.z0 * d / Math.max(10, this.pinch.d0), mx, my);
   }
 
   /**
@@ -473,6 +546,21 @@ export class WildsView {
 
   /** @param {PointerEvent} e */
   pressScene(e) {
+    if (e.pointerType === 'touch') {
+      this.touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      // a second finger: the gesture becomes a pinch (zoom and pan) and the first finger's stroke ends
+      if (this.touches.size === 2) {
+        const d = this.drag;
+        this.drag = null;
+        if (d && d.water && d.drank) this.lab.save();
+        const [a, b] = [...this.touches.values()];
+        this.pinch = { d0: Math.hypot(a.x - b.x, a.y - b.y), z0: this.zoom, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
+        try { this.canvas.setPointerCapture(e.pointerId); } catch { /* a synthetic pointer */ }
+        if (e.cancelable) e.preventDefault();
+        return;
+      }
+      if (this.pinch) return;
+    }
     // one finger at a time: a second one resting on the scene does nothing
     // (a first finger always starts afresh, should a gesture's end have been lost)
     if (this.drag && this.drag.id !== e.pointerId && !e.isPrimary) return;
@@ -486,6 +574,10 @@ export class WildsView {
 
   /** @param {PointerEvent} e */
   moveScene(e) {
+    if (this.touches.has(e.pointerId)) {
+      this.touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (this.pinch) { this.pinchMove(); return; }
+    }
     const d = this.drag;
     if (d) {
       if (e.pointerId !== d.id) return;
@@ -512,6 +604,7 @@ export class WildsView {
 
   /** @param {PointerEvent} e */
   releaseScene(e) {
+    if (this.endTouch(e)) return;
     const d = this.drag;
     if (!d || e.pointerId !== d.id) return;
     this.drag = null;
@@ -857,6 +950,12 @@ export class WildsView {
   frame(dt) {
     if (!this.ctx || !this.bg) return;
     this.time += dt;
+    // (the first time the window has a size, it looks at the middle of the region, a little toward its ground)
+    if (!this.zoomPlaced && this.view.clientWidth) {
+      this.zoomPlaced = true;
+      this.view.scrollLeft = (this.view.scrollWidth - this.view.clientWidth) / 2;
+      this.view.scrollTop = (this.view.scrollHeight - this.view.clientHeight) * 0.65;
+    }
     const ctx = this.ctx, st = this.lab.state, now = Date.now();
     // the painting, its leaves swaying in the wind
     const touch = sceneTouch(this.region, st.seed);
@@ -939,6 +1038,7 @@ export class WildsView {
     // a vine hangs and sways; the rest stands, juts or lies still
     const dxAt = this.drawBent(ctx, p, sp, x, y, lift);
     if (!dxAt) ctx.drawImage(sp.cv, x - sp.ax, y - sp.ay - lift);
+    if (onGround) this.drawSoil(ctx, p, sp, x, y);
     if (this.fused(p)) this.drawFusion(ctx, p, sp, x, y);
     // what glows lights its surroundings, breathing, the more so the darker the region
     const emit = emitColour(p.m);
@@ -968,6 +1068,42 @@ export class WildsView {
         sparkle(ctx, x - sp.ax + gx, y - sp.ay + gy, phase / 0.5);
       }
     }
+  }
+
+  /**
+   * The ground a plant stands in, over its foot: the crust of the painting
+   * just under it (grass, moss, gravel, ash — whatever the region's ground
+   * is there) brought up a pixel or two in an uneven fringe, so what grows
+   * there comes up out of the ground rather than standing on it. Cached per
+   * plant and spot.
+   * @param {CanvasRenderingContext2D} ctx @param {any} p @param {{w:number}} sp @param {number} x @param {number} y
+   */
+  drawSoil(ctx, p, sp, x, y) {
+    const key = `${this.region}|${p.id}|${x}|${y}|${sp.w}`;
+    let cells = this.soilCache.get(key);
+    if (!cells) {
+      const sc = sceneOf(this.region, this.lab.state.seed), px = sc.pix.px, seed = hashString(p.id);
+      const hw = Math.max(2, Math.round(sp.w * (WildsView.gem(p) ? 0.45 : 0.3)));
+      cells = [];
+      for (let dx = -hw; dx <= hw; dx++) {
+        const X = x + dx;
+        if (X < 0 || X >= SCENE_W) continue;
+        // the top of the ground in this column, at or just below the foot
+        let G = -1;
+        for (let k = 0; k <= 3 && y + k < SCENE_H; k++) if (sc.solid[(y + k) * SCENE_W + X] || sc.rock[(y + k) * SCENE_W + X]) { G = y + k; break; }
+        if (G < 0) continue;
+        const hgt = Math.abs(dx) >= hw - 1 ? 1 : 1 + (((seed >>> ((dx + hw) % 27)) & 3) === 0 ? 1 : 0) + (((seed >>> ((dx + hw + 5) % 27)) & 7) === 0 ? 1 : 0);
+        // the crust's own colours, from the column itself and, higher up, a neighbour's (the painting's grain carries over)
+        for (let k = 1; k <= hgt; k++) {
+          const c = px[G * SCENE_W + Math.max(0, Math.min(SCENE_W - 1, X + (k > 1 ? (dx < 0 ? -1 : 1) : 0)))];
+          if (!(c >>> 24)) continue;
+          cells.push([X, G - k, `rgb(${c & 255},${(c >>> 8) & 255},${(c >>> 16) & 255})`]);
+        }
+      }
+      if (this.soilCache.size > 400) this.soilCache.clear();
+      this.soilCache.set(key, cells);
+    }
+    for (const [cx, cy, c] of cells) { ctx.fillStyle = c; ctx.fillRect(cx, cy, 1, 1); }
   }
 
   /**

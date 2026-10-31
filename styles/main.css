@@ -445,7 +445,16 @@ canvas.hutch-scene { display: block; width: 100%; height: auto; aspect-ratio: 22
 .region-tabs .btn img.ico { width: 28px; height: 28px; }
 .region-tabs .btn.locked { opacity: 0.55; }
 .scene-wrap { position: relative; box-shadow: 0 0 0 var(--px) var(--wood0), 0 0 0 calc(var(--px) * 2) var(--wood3); }
-canvas.scene { display: block; width: 100%; aspect-ratio: 16 / 9; height: auto; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; cursor: pointer; }
+/* the window onto the scene: zoomed in, the scene is wider than it and scrolls */
+.scene-view { width: 100%; aspect-ratio: 16 / 9; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--wood3) transparent; }
+/* under the scene, beside its caption (never over a plant) */
+.scene-bar { display: flex; align-items: flex-start; gap: calc(var(--px) * 2); }
+.scene-bar .region-info { flex: 1; min-width: 0; }
+.zoom-ctl { display: flex; gap: var(--px); flex: none; margin-top: calc(var(--px) * 2); }
+.zoom-ctl button { min-width: 32px; min-height: 32px; padding: calc(var(--px) * 1); }
+/* (fingers need bigger targets) */
+@media (pointer: coarse) { .zoom-ctl button { min-width: 44px; min-height: 44px; } }
+canvas.scene { display: block; flex: none; max-width: none; aspect-ratio: 16 / 9; height: auto; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; cursor: pointer; }
 .region-info { margin: 6px 2px; color: var(--parch2); line-height: 1.35; }
 .deposits { display: flex; flex-direction: column; gap: 6px; }
 .deposit { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 8px 10px; }
