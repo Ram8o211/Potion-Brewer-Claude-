@@ -9,6 +9,8 @@ test('harvesting a mature plant fills the stores and leaves nothing behind; grow
   const errors = watchErrors(page);
   await newGame(page, { tutorial: false, seed: 'gather-seed-1' });
   await page.click('[data-act=tab-wilds]');
+  // (no wild rabbits hopping in front of the plants these taps are aimed at)
+  await lab(page, (l) => { l.views.wilds.wildlife = false; });
   // (the whole region in view: taps below are aimed from the scene's own coordinates)
   await lab(page, (l) => l.views.wilds.setZoom(1));
   await expect(page.locator('.view-wilds canvas.scene')).toBeVisible();
@@ -197,6 +199,8 @@ test('watering: a tap in watering mode wets the soil round a growing plant, its 
   const errors = watchErrors(page);
   await newGame(page, { tutorial: false, seed: 'water-seed-1' });
   await page.click('[data-act=tab-wilds]');
+  // (no wild rabbits hopping in front of the plants these taps are aimed at)
+  await lab(page, (l) => { l.views.wilds.wildlife = false; });
   // (the whole region in view: taps below are aimed from the scene's own coordinates)
   await lab(page, (l) => l.views.wilds.setZoom(1));
   await page.click('[data-act=region-meadow]');

@@ -531,6 +531,19 @@ export function addBoughtRabbit(c, o) {
   return makeRabbit(c, { born: o.day - (ADULT_DAYS + 2), sex, look: rollLook(rng) }, rng);
 }
 
+/**
+ * A rabbit brought home from the wilds: caught alive, weak from its wounds
+ * (`health`), or killed there — its body, for its remains or burial.
+ * @param {Colony} c @param {{day:number, look:RabbitLook, sex:'f'|'m', dead?:boolean, health?:number}} o
+ */
+export function addWildRabbit(c, o) {
+  const rng = new Rng(hashString(`${c.seed}:wild:${c.serial}`));
+  const r = makeRabbit(c, { born: o.day - (ADULT_DAYS + rng.int(0, 12)), sex: o.sex, look: o.look }, rng);
+  if (o.dead) { r.alive = false; r.health = 0; r.cause = 'hunted'; r.diedDay = o.day; }
+  else r.health = round1(clamp(fin(o.health, 40), 5, 100));
+  return r;
+}
+
 /** Append a dose to a rabbit's log (capped). @param {Rabbit} r @param {DoseEntry} d */
 export function recordDose(r, d) {
   r.doses.push(d);
@@ -1017,7 +1030,7 @@ export function remainsSource(r, day) {
 
 // ------------------------------------------------------------------ words (never numbers)
 
-const CAUSE_WORDS = { culled: 'put down', mauled: 'mauled by an aggressive rabbit', love: 'worn out by love', growth: 'burst with wild growth', strain: 'its heart gave out from the strain', poison: 'poisoned', death: 'withered by death magic', fire: 'burned', frost: 'frozen', acid: 'eaten by acid', alkali: 'scalded by lye', change: 'torn apart by change', arcana: 'overwhelmed by magic', age: 'died of old age', frail: 'too frail', unknown: 'died' };
+const CAUSE_WORDS = { culled: 'put down', hunted: 'killed in the wilds', mauled: 'mauled by an aggressive rabbit', love: 'worn out by love', growth: 'burst with wild growth', strain: 'its heart gave out from the strain', poison: 'poisoned', death: 'withered by death magic', fire: 'burned', frost: 'frozen', acid: 'eaten by acid', alkali: 'scalded by lye', change: 'torn apart by change', arcana: 'overwhelmed by magic', age: 'died of old age', frail: 'too frail', unknown: 'died' };
 
 /** @param {string|null} cause */
 export function causeWord(cause) {

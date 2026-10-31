@@ -4,12 +4,14 @@
 // again at random spots; and a finger dragged in watering mode waters every
 // growing plant along its path.
 import { test, expect } from '@playwright/test';
-import { watchErrors, shot, startSandbox, lab, drag } from './helpers.mjs';
+import { watchErrors, shot, startSandbox, newGame, lab, drag } from './helpers.mjs';
 
 test('sandbox wilds: shake, gather by tap, regrow at random spots, water by dragging', async ({ page }, info) => {
   const errors = watchErrors(page);
   await startSandbox(page);
   await page.click('[data-act=tab-wilds]');
+  // (no wild rabbits hopping in front of the plants these taps are aimed at)
+  await lab(page, (l) => { l.views.wilds.wildlife = false; });
   // (the whole region in view: taps below are aimed from the scene's own coordinates)
   await lab(page, (l) => l.views.wilds.setZoom(1));
   await page.click('[data-act=region-meadow]');
@@ -143,6 +145,8 @@ test('sandbox wilds: a crystal fused into its rock breaks free only after severa
   const errors = watchErrors(page);
   await startSandbox(page);
   await page.click('[data-act=tab-wilds]');
+  // (no wild rabbits hopping in front of the plants these taps are aimed at)
+  await lab(page, (l) => { l.views.wilds.wildlife = false; });
   // (the whole region in view: taps below are aimed from the scene's own coordinates)
   await lab(page, (l) => l.views.wilds.setZoom(1));
   // the region whose plants include a crystal
@@ -176,6 +180,8 @@ test('sandbox wilds: the scene zooms in and out, starting a little closer, and a
   await page.addInitScript(() => { try { if (!sessionStorage.getItem('zoomed')) { localStorage.removeItem('alchemist.wildsZoom'); sessionStorage.setItem('zoomed', '1'); } } catch { /* none */ } });
   await startSandbox(page);
   await page.click('[data-act=tab-wilds]');
+  // (no wild rabbits hopping in front of the plants these taps are aimed at)
+  await lab(page, (l) => { l.views.wilds.wildlife = false; });
   await page.waitForFunction(() => !!window.__alchemist.screen.views.wilds.bg);
   const z0 = await lab(page, (l) => l.views.wilds.zoom);
   expect(z0, 'it starts closer than the whole region').toBeGreaterThan(1);
@@ -200,6 +206,56 @@ test('sandbox wilds: the scene zooms in and out, starting a little closer, and a
   await page.click('[data-act=sandbox]');
   await page.waitForSelector('canvas.view-canvas');
   await page.click('[data-act=tab-wilds]');
+  // (no wild rabbits hopping in front of the plants these taps are aimed at)
+  await lab(page, (l) => { l.views.wilds.wildlife = false; });
   expect(await lab(page, (l) => l.views.wilds.zoom)).toBeCloseTo(1.25 * 1.25, 2);
+  expect(errors).toEqual([]);
+});
+
+test('wild rabbits: tapped, one bleeds over the ground and bolts faster; brought down, a tap carries it to the hutch', async ({ page }) => {
+  const errors = watchErrors(page);
+  await newGame(page, { tutorial: false });
+  await page.click('[data-act=tab-wilds]');
+  await lab(page, (l) => l.views.wilds.setZoom(1));
+  await page.waitForFunction(() => { const w = window.__alchemist.screen.views.wilds; return !!w.bg && !!w.warren() && w.warren().rabbits.length > 0; });
+  await page.locator('.view-wilds canvas.scene').scrollIntoViewIfNeeded();
+  const before = await lab(page, (l) => l.state.colony.rabbits.length);
+  // a real tap on a rabbit (the warren held still while it is aimed at)
+  const tapRabbit = async () => {
+    const pt = await lab(page, (l) => {
+      const w = l.views.wilds, wr = w.warren(), r = wr.rabbits.find((q) => !q.dead) || wr.rabbits[0], c = w.canvas.getBoundingClientRect();
+      wr.held = wr.step; wr.step = () => {};
+      return { x: c.left + r.x / 384 * c.width, y: c.top + (r.y - 4) / 216 * c.height, id: r.id };
+    });
+    await page.mouse.click(pt.x, pt.y);
+    await lab(page, (l) => { const wr = l.views.wilds.warren(); wr.step = wr.held; });
+    return pt.id;
+  };
+  const id = await tapRabbit();
+  const hurt = await lab(page, (l, i) => { const r = l.views.wilds.warren().rabbits.find((q) => q.id === i); return { hits: r.hits, alarm: r.alarm, drops: l.views.wilds.warren().drops.length }; }, id);
+  expect(hurt.hits).toBe(1);
+  expect(hurt.alarm, 'frantic after the first blow').toBe(true);
+  expect(hurt.drops, 'blood bursts from it').toBeGreaterThan(10);
+  await page.waitForTimeout(2500);
+  // its blood colours the scene where it ran
+  const red = await lab(page, (l) => {
+    const cv = l.views.wilds.gore.get(l.views.wilds.region);
+    if (!cv) return 0;
+    const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
+    let n = 0;
+    for (let i = 0; i < d.length; i += 4) if (d[i + 3] && d[i] > d[i + 1] * 2) n++;
+    return n;
+  });
+  expect(red, 'the ground is stained').toBeGreaterThan(15);
+  // two more blows bring it down; a tap then catches it, and it is in the hutch
+  await lab(page, (l, i) => { const w = l.views.wilds, wr = w.warren(), r = wr.rabbits.find((q) => q.id === i); wr.strike(r, r.x, r.y - 5); wr.strike(r, r.x, r.y - 5); }, id);
+  expect(await lab(page, (l, i) => l.views.wilds.warren().rabbits.find((q) => q.id === i).down, id)).toBe(true);
+  await page.waitForTimeout(600);
+  await lab(page, (l, i) => { const wr = l.views.wilds.warren(); for (const q of wr.rabbits) if (q.id !== i) wr.remove(q); }, id);
+  await tapRabbit();
+  const after = await lab(page, (l) => ({ n: l.state.colony.rabbits.length, last: l.state.colony.rabbits[l.state.colony.rabbits.length - 1] }));
+  expect(after.n).toBe(before + 1);
+  expect(after.last.alive, 'caught alive').toBe(true);
+  expect(after.last.health).toBeLessThan(50);
   expect(errors).toEqual([]);
 });

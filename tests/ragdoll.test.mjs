@@ -209,3 +209,16 @@ test('a plant pulled up hops a little and keels over; it does not leap', () => {
   assert.ok(top > FLOOR - 19 - 8, `it rose at most a few pixels (top ${top.toFixed(1)})`);
   assert.ok(doll.asleep, 'and lies down within two seconds');
 });
+
+test('a rigid body (a crystal broken free) is one stiff piece: it tumbles and lands whole, never bending', () => {
+  const doll = new Ragdoll({ w: 8, h: 30, ax: 4, ay: 29 }, 60, 40, { W, H, vx: 50, vy: -40, spin: 80, rigid: true });
+  assert.equal(doll.len.length, 1, 'one piece, however long');
+  const L = doll.len[0];
+  for (let t = 0; t < 8 && !doll.asleep; t += 1 / 60) {
+    doll.step(1 / 60, floor);
+    assert.ok(Math.abs(Math.hypot(doll.px[1] - doll.px[0], doll.py[1] - doll.py[0]) - L) < 0.6, 'it keeps its whole length');
+  }
+  assert.ok(doll.asleep, 'it comes to rest');
+  const soft = new Ragdoll({ w: 8, h: 30, ax: 4, ay: 29 }, 60, 40, { W, H });
+  assert.equal(soft.len.length, 3, 'a plant of the same size is three pieces');
+});

@@ -2,7 +2,8 @@
 //
 // The ingredient's own sprite is cut along its long axis into one to three
 // pieces (a short berry is one stiff piece; a tall flower its head, its
-// stem and its foot) joined end to end. Each joint is a point mass moved by
+// stem and its foot) joined end to end; a rigid body (a crystal broken from
+// its rock) is always one stiff piece, however long. Each joint is a point mass moved by
 // Verlet integration under gravity; the pieces keep their lengths and a
 // joint bends only so far. The terrain (ground, rock, a water surface) is
 // impenetrable: every joint is a small disc and every piece a row of them,
@@ -35,7 +36,7 @@ export class Ragdoll {
   /**
    * A body made from a sprite whose anchor stands at scene point (x, y).
    * @param {SpriteBox} sp @param {number} x @param {number} y
-   * @param {{vx?:number, vy?:number, spin?:number, W:number, H:number}} o its push (pixels per second; spin: how much faster its top flies than its foot) and the scene's size
+   * @param {{vx?:number, vy?:number, spin?:number, W:number, H:number, rigid?:boolean}} o its push (pixels per second; spin: how much faster its top flies than its foot) and the scene's size; `rigid`: one stiff piece that never bends (a crystal, a stone)
    */
   constructor(sp, x, y, o) {
     this.sp = sp;
@@ -43,7 +44,9 @@ export class Ragdoll {
     /** the long axis: down the sprite (a stem, a hanging fruit), or across it (something jutting from a face) */
     this.vertical = sp.h >= sp.w;
     const len = this.vertical ? sp.h : sp.w, thick = this.vertical ? sp.w : sp.h;
-    const n = len >= 24 ? 3 : len >= 12 ? 2 : 1;
+    /** a rigid body is a single stiff piece: it tumbles and lands whole, it never bends */
+    this.rigid = !!o.rigid;
+    const n = this.rigid ? 1 : len >= 24 ? 3 : len >= 12 ? 2 : 1;
     /** where each piece starts along the long axis (sprite pixels), and the end */
     this.cuts = Array.from({ length: n + 1 }, (_, j) => Math.round((j * len) / n));
     /** half the thickness of the body: what keeps it from sinking into the ground */

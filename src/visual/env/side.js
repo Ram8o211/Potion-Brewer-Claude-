@@ -265,11 +265,10 @@ export function markOpen(cv, minY = 30) {
 }
 
 /**
- * Ledges jutting out over the ground, spread across the scene in two tiers
- * so more can grow: about three quarters of n, 32–46 pixels above the
- * ground under them (clear of the columns in `keep`, [x0, x1] ranges such
- * as pools; `rise` sets other heights), and a higher tier of half as many,
- * 42 pixels higher again. A ledge is left out where it would crowd
+ * A few ledges jutting out over the ground: about three fifths of n,
+ * 32–46 pixels above the ground under them (clear of the columns in
+ * `keep`, [x0, x1] ranges such as pools; `rise` sets other heights), and
+ * `high` more (none by default) 42 pixels higher again. A ledge is left out where it would crowd
  * another: any two keep a clear gap beside each other, and one above
  * another leaves room for what grows on the lower one. None floats: each
  * stands on a buttress of rock, off centre and leaning, reaching down to
@@ -283,7 +282,8 @@ export function ledges(cv, top, rng, n, o = {}) {
   const shapes = [];
   /** @type {[number, number, number, number][]} the ledges so far: x0, top, x1, underside */
   const boxes = [];
-  const n0 = Math.max(3, Math.round(n * 0.75)), n1 = Math.max(1, Math.round(n0 / 2));
+  // (few of them: the regions are mostly low ground, a ledge or two standing out of it)
+  const n0 = Math.max(3, Math.round(n * 0.6)), n1 = o.high || 0;
   // the dry stretches between the kept columns: the ledges are spread along them, not over the pools
   /** @type {[number, number][]} */
   const dry = [];
