@@ -78,7 +78,7 @@ export function mountsOfForm(form) {
 export const frameMount = (mount) => (mount === 'hang' || mount === 'bough' || mount === 'ceiling' ? 'hang' : mount === 'wall' || mount === 'trunk' ? 'wall' : 'ground');
 
 /** Mature height (scene pixels) of each family before its own variation. */
-const BASE_H = { flower: 15, herb: 12, root: 14, fungus: 11, moss: 10, fruit: 13, reed: 19, bark: 10, crystal: 20, mineral: 12.5, shell: 12 };
+const BASE_H = { flower: 15, herb: 12, root: 14, fungus: 11, moss: 10, fruit: 13, reed: 19, bark: 10, crystal: 19, mineral: 12.5, shell: 12 };
 
 // ---------------------------------------------------------------- the sketch
 
@@ -487,7 +487,7 @@ export function growthParams(d) {
   P.glow = tr.glow > 0.25 || d.family === 'fungus' || d.form === 'berry' || (d.family === 'moss' && dark) || d.family === 'crystal' || (dark && d.family !== 'mineral' && f() < 0.35) || f() < 0.08;
   // a crystal's habit, its points' girth, how slender, how fractured (drawn last, so no other plant changes)
   P.habit = d.form === 'shard' ? ['shard', 'spike', 'shard', 'fan'][Math.floor(f() * 4)] : ['cluster', 'fan', 'spike', 'prism', 'cluster'][Math.floor(f() * 5)];
-  P.gw = 4.8 + f() * 2 + tr.thick * 1.2; P.slim = 0.8 + f() * 0.45 - tr.thick * 0.15; P.cracks = f() < 0.35 + tr.sharp * 0.3;
+  P.gw = 4 + f() * 1.6 + tr.thick; P.slim = 0.8 + f() * 0.45 - tr.thick * 0.15; P.cracks = f() < 0.35 + tr.sharp * 0.3;
   PARAMS.set(d, P);
   return P;
 }
@@ -841,18 +841,29 @@ const BUILD = {
     // a cave's roof grows its points hanging; a rock face, leaning out and up
     const habit = hang ? 'hanging' : P.habit, nrm = hang ? DOWN : wall ? -0.45 : UP, tan = nrm + Math.PI / 2;
     const shardy = habit === 'shard';
-    // the seed: a knot of host rock it grows out of
-    const bx = wall ? 1 : 0, by = mount === 'ground' ? -1 : hang ? 1 : 0;
-    sk.later(0, () => blob(sk, bx, by, 2.5 + g * 2.2, 1.4 + g * 1.2, pal.rock, { rough: 0.3, facets: 6, ph: [rng.next() * 6, rng.next() * 6, 1] }));
+    // the seed: the host rock it grows out of — a broken, faceted stone half sunk in the ground (or the face or roof it
+    // grows from), a smaller one leaning on it, a pebble or two, grainy, lit from the upper left
+    const bx = wall ? 1 : 0, by = mount === 'ground' ? 0 : hang ? 1 : 0;
+    const rr = (2.6 + g * 2.4) * (0.9 + P.gw * 0.04), side = rng.next() < 0.5 ? -1 : 1, ph = () => [rng.next() * 6, rng.next() * 6, rng.next() * 6];
+    const along = (k) => [bx + Math.cos(tan) * k, by + Math.sin(tan) * k], out = hang ? 1 : wall ? 0 : -1;
+    const stones = [[0, rr * 0.8, rr * 0.62], [side * rr * 0.9, rr * 0.55, rr * 0.55], [-side * rr * 0.85, rr * 0.42, rr * 0.4]];
+    // (in front of the crystal's foot, sunk into what it grows from: the points come up out of the stone)
+    stones.forEach(([k, rx, ry], i) => {
+      if (i && g < 0.6 * i) return;
+      const [sx, sy] = along(k), lift = (i ? -0.25 : -0.12) + (rng.next() - 0.5) * 0.15, sink = -out * ry * 0.12;
+      const o = { ang: tan + (rng.next() - 0.5) * 0.5, rough: 0.35, facets: 5 + i, grain: 0.6, lift, ph: ph(), seed: i * 31 };
+      sk.later(i ? 40 : 41, () => blob(sk, sx - (wall ? rx * 0.35 : 0), sy + (wall ? 0 : sink), rx, ry, pal.rock, o));
+    });
+    if (g >= 0.95) sk.later(42, () => { const [px, py] = along(-1.3 * rr * side), dy = hang ? 0.5 : -0.5; sk.set(px, py + dy, at(pal.rock, 0.7)); sk.set(px + 1, py + dy, at(pal.rock, 0.4)); sk.set(px, py + dy * 3, at(pal.rock, 0.5)); sk.set(px + 1, py + dy * 3, at(pal.rock, 0.3)); });
     // the habit: how many points, how widely fanned, how long the side ones are against the main one
-    const H0 = H * (habit === 'prism' ? 1.12 : habit === 'spike' ? 1.15 : habit === 'fan' ? 0.85 : 1);
+    const H0 = H * (habit === 'prism' ? 1.08 : habit === 'spike' ? 1.12 : habit === 'fan' ? 0.85 : 1);
     const plan = {
-      shard: { n: 2 + (P.chunks > 2 ? 1 : 0), spread: 0.75, side: 0.7, w: 0.75 },
-      spike: { n: 3, spread: 0.9, side: 0.38, w: 0.8 },
-      prism: { n: 2, spread: 0.7, side: 0.42, w: 1.3 },
-      cluster: { n: Math.max(4, P.prisms), spread: P.fan * 1.05, side: 0.62, w: 1 },
-      fan: { n: Math.max(5, P.prisms + 1), spread: 1.5 + P.fan * 0.3, side: 0.85, w: 0.85 },
-      hanging: { n: Math.max(3, P.prisms - 1), spread: 0.85, side: 0.6, w: 0.95 },
+      shard: { n: 2 + (P.chunks > 2 ? 1 : 0), spread: 0.7, side: 0.72, w: 0.7 },
+      spike: { n: 3, spread: 0.8, side: 0.48, w: 0.72 },
+      prism: { n: 3, spread: 0.6, side: 0.5, w: 1.05 },
+      cluster: { n: Math.max(4, P.prisms), spread: P.fan * 0.95, side: 0.68, w: 0.85 },
+      fan: { n: Math.max(5, P.prisms + 1), spread: 1.35 + P.fan * 0.3, side: 0.82, w: 0.72 },
+      hanging: { n: Math.max(3, P.prisms - 1), spread: 0.75, side: 0.66, w: 0.82 },
     }[habit];
     // it grows: a seed point, then it elongates and splits, then clusters into its full habit
     const n = st === 0 ? 1 : st === 1 ? Math.min(plan.n, 2 + (plan.n > 4 ? 1 : 0)) : plan.n;
@@ -862,7 +873,8 @@ const BUILD = {
       const k = i === 0 ? 0 : Math.ceil(i / 2) * (i % 2 ? -1 : 1), off = plan.n === 1 ? 0 : k / Math.max(1, plan.n - 1);
       const main = i === 0, ang = nrm + off * plan.spread + (rng.next() - 0.5) * 0.18 + (mount === 'ground' ? P.tilt : 0);
       const len = H0 * (main ? 1 : plan.side * (1 - Math.abs(off) * 0.45) * (0.8 + rng.next() * 0.3)) * (st === 0 ? 0.62 : 1);
-      const wid = P.gw * plan.w * P.slim * (main ? 1 : 0.72 + rng.next() * 0.15) * (0.7 + g * 0.3);
+      // a point is three to five times as long as it is wide (a seed is stubbier), never wider than a third of its length
+      const wid = Math.min(len * 0.34, P.gw * plan.w * P.slim * (main ? 1 : 0.75 + rng.next() * 0.15) * (0.75 + g * 0.25));
       spikes.push({ off, ang, len, wid, main });
     }
     // the short side points behind the main one
@@ -871,10 +883,8 @@ const BUILD = {
     spikes.forEach((s, i) => sk.later(1 + i, () => {
       // (each side point rooted beside the main one, clear of its girth)
       const L = Math.max(3, s.len), sp = s.main ? 0 : s.off * (mainW + 2), x0 = bx + Math.cos(tan) * sp, y0 = by + Math.sin(tan) * sp;
-      gem(sk, x0, y0, s.ang, L, Math.max(2, s.wid), pal.crystal, P.glow ? pal.glow : null, { tip: shardy ? 1.7 : habit === 'spike' ? 1.4 : 0.85, skew: shardy ? (rng.next() < 0.5 ? -0.7 : 0.7) : 0, crack: P.cracks && s.main && st === 2 ? 1 : 0, seed: i + 3 });
+      gem(sk, x0, y0, s.ang, L, Math.max(2, s.wid), pal.crystal, P.glow ? pal.glow : null, { tip: shardy ? 1.8 : habit === 'spike' ? 1.6 : 1.1, skew: shardy ? (rng.next() < 0.5 ? -0.7 : 0.7) : 0, crack: P.cracks && s.main && st === 2 ? 1 : 0, seed: i + 3 });
     }));
-    // grains of crystal scattered at the foot of a grown one
-    if (st === 2 && !hang) sk.later(1, () => { for (const sx of [-1, 1]) { const gx = bx + Math.cos(tan) * sx * (4 + rng.next() * 2), gy = by + Math.sin(tan) * sx * (4 + rng.next() * 2); sk.set(gx, gy - 1, at(pal.crystal, 0.9)); sk.set(gx, gy, at(pal.crystal, 0.5)); } });
   },
 
   mineral(c) {
