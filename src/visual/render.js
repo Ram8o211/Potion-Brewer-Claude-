@@ -51,15 +51,18 @@ export function iconFrame(d) {
  */
 export function pieceFrame(d, v) {
   const model = FAMILIES[d.family].piece(d, v & 3);
-  model.fit(PIECE_PX, PIECE_PX, { margin: 2 });
-  const r = rasterize(model, PIECE_PX, PIECE_PX, d.pal, { seed: d.seeds.surface ^ (0x91ece + v) });
+  // drawn as the icons and the plants in the wilds are: one pixel smaller
+  // on every side, then ringed with the same ink
+  model.fit(PIECE_PX - 2, PIECE_PX - 2, { margin: 1 });
+  const r = rasterize(model, PIECE_PX - 2, PIECE_PX - 2, d.pal, { seed: d.seeds.surface ^ (0x91ece + v), outline: false });
+  const pix = inked(r.pix);
   const k = PIECE_PX / PIECE_GRID, mask = new Uint8Array(PIECE_GRID * PIECE_GRID);
   for (let y = 0; y < PIECE_GRID; y++) for (let x = 0; x < PIECE_GRID; x++) {
     let n = 0;
-    for (let j = 0; j < k; j++) for (let i = 0; i < k; i++) if (r.pix.px[(y * k + j) * PIECE_PX + x * k + i] >>> 24) n++;
+    for (let j = 0; j < k; j++) for (let i = 0; i < k; i++) if (pix.px[(y * k + j) * PIECE_PX + x * k + i] >>> 24) n++;
     mask[y * PIECE_GRID + x] = n * 2 >= k * k ? 1 : 0;
   }
-  return { pix: r.pix, mask };
+  return { pix, mask };
 }
 
 export { Pixels };
