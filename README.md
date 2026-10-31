@@ -71,13 +71,19 @@ computed from the particles that actually run out of the tap. What a
   magic awakens — several times stronger, and it stays awake through
   cooling, bottling and saving. Magic never recolours a brew: awakening
   shows only as its effects' particles growing denser and bolder.
+  A wild ingredient poured whole is drawn as its own piece sprite, inked
+  and shaded exactly as its icon in the menus and its plant in the wilds:
+  one art pixel to a whole number of screen pixels, turned with the body
+  (smoothed RotSprite-style so its lines stay whole) and eaten away where
+  the pestle or the brew takes its particles.
   A brew takes the dominant colour of the pieces of the ingredients crushed
   into it (the shade covering most of them, not a blend of all their
   textures), blending into gradients as it diffuses. The liquid itself
   is drawn as a swarm of pixel particles: every drop carries its own 1–2 px
   speck of lighter or darker brew that travels with it (a few catch the
   light and twinkle), and its colour deepens downward in dithered
-  pixel-art bands. Each effect also fills the brew with its own swarm of
+  pixel-art bands, measured from a surface eased across columns so a
+  stirred-up wave never cuts straight walls of colour down through it. Each effect also fills the brew with its own swarm of
   tiny pixel particles — no icons — as many as its share of the magic,
   each in a palette of its own so it reads at a glance by colour and
   motion: crimson-to-rose motes swelling on a heartbeat with white sparks

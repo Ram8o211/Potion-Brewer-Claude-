@@ -41,7 +41,7 @@
 
 import { PHASE, SIM } from '../simulation/constants.js';
 import { LOOK, piece } from '../materials/shapes.js';
-import { PIECE_ART, PIECE_CELL, piecePalette } from '../visual/pieces.js';
+import { PIECE_ART, PIECE_CELL, piecePalette, onPiecesChanged } from '../visual/pieces.js';
 import { NE } from '../alchemy/effects.js';
 import { MAX_SPECIES } from '../reactions/species.js';
 import { PotionParticles } from './potion-fx.js';
@@ -120,6 +120,37 @@ export function drawnGlowTable(sim) {
   return vis;
 }
 
+/** Scale2x (EPX) of a w×h pixel image: edges stay crisp and diagonals smooth. @param {Uint32Array} a @param {number} w @param {number} h */
+function scale2x(a, w, h) {
+  const o = new Uint32Array(w * h * 4), W = w * 2;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const P = a[y * w + x], A = y > 0 ? a[(y - 1) * w + x] : P, B = x < w - 1 ? a[y * w + x + 1] : P;
+    const C = x > 0 ? a[y * w + x - 1] : P, D = y < h - 1 ? a[(y + 1) * w + x] : P;
+    const k = y * 2 * W + x * 2;
+    o[k] = C === A && C !== D && A !== B ? A : P;
+    o[k + 1] = A === B && A !== C && B !== D ? B : P;
+    o[k + W] = D === C && D !== B && C !== A ? C : P;
+    o[k + W + 1] = B === D && B !== A && D !== C ? D : P;
+  }
+  return o;
+}
+/** skin → its piece's cell upscaled 4× by Scale2x twice, for turning it without breaking its lines (as RotSprite does) */
+const SMOOTH = new Map();
+onPiecesChanged(() => SMOOTH.clear());
+/** @param {number} skin @param {{cx:number, cy:number}} pc @param {Uint32Array} art @param {number} artW */
+function smoothCell(skin, pc, art, artW) {
+  let got = SMOOTH.get(skin);
+  if (got) return got;
+  const C = PIECE_CELL, cell = new Uint32Array(C * C);
+  for (let y = 0; y < C; y++) for (let x = 0; x < C; x++) {
+    const c = art[(pc.cy + y) * artW + pc.cx + x];
+    cell[y * C + x] = c >>> 31 ? c : 0;
+  }
+  got = scale2x(scale2x(cell, C, C), C * 2, C * 2);
+  SMOOTH.set(skin, got);
+  return got;
+}
+
 /** Add the current particle's magic, weight q, to pixel `px` of a per-effect field. */
 function addMagic(mfx, px, q) {
   const o = px * NE;
@@ -162,6 +193,8 @@ export class FluidRenderer {
       this.mfx = new Float32Array(n * NE); // emitted magic, per effect
       this.solBest = new Float32Array(n); // strongest solid particle at a pixel…
       this.solIdx = new Int32Array(n); // …and its index
+      this.pieceCol = new Uint32Array(n); // a whole ingredient's painted pixel (0 = none)…
+      this.pieceIdx = new Int32Array(n); // …and a particle of its body (for the pestle's cracks)
       this.wl = new Float32Array(n); // liquid weight, contiguous (blur, neighbours)
       this.wb = new Float32Array(n); // smoothed liquid weight (surface shape)
       this.wt = new Float32Array(n); // blur scratch
@@ -473,6 +506,10 @@ export class FluidRenderer {
       }
     }
 
+    // whole ingredients: each body painted as its piece's sprite
+    const pieces = anySolid && art ? this._paintPieces(sim, view, bx, by, w, h, art, artW) : false;
+    const pieceCol = this.pieceCol, pieceIdx = this.pieceIdx;
+
     // ------------------------------------------------------------ compose
     const data = this.image.data;
     const lc = this.lc;
@@ -520,6 +557,23 @@ export class FluidRenderer {
       win.sort((a, b) => a - b);
       surf[x] = win[win.length >> 1];
     }
+    // the depth shading is measured down from it, so it must not jump from
+    // one column to the next: a wave stirred up steep, or the spoon's
+    // vortex, would draw straight walls of darker and lighter brew down
+    // through the pool. Two wide box passes ease the level across columns
+    // (columns with no brew are left out).
+    if (!this.surfF || this.surfF.length < w) { this.surfF = new Float32Array(w); this.surfG = new Float32Array(w); }
+    const sf = this.surfF, sg = this.surfG, SB = Math.max(3, Math.round(0.35 * s));
+    for (let x = 0; x < w; x++) sf[x] = surf[x];
+    for (let pass = 0; pass < 2; pass++) {
+      const src = pass ? sg : sf, dst = pass ? sf : sg;
+      for (let x = 0; x < w; x++) {
+        if (surf[x] >= h) { dst[x] = h; continue; }
+        let sum = 0, cnt = 0;
+        for (let xx = Math.max(0, x - SB), xe = Math.min(w - 1, x + SB); xx <= xe; xx++) if (surf[xx] < h) { sum += src[xx]; cnt++; }
+        dst[x] = sum / cnt;
+      }
+    }
     const depthScale = 1 / Math.max(6, 0.9 * s);
     const thermal = this.thermal;
     const twinkle = time * 3.1;
@@ -535,7 +589,15 @@ export class FluidRenderer {
         }
         // solid bodies: frozen ice or a whole ingredient
         const sw = anySolid ? sol[k * 4] : 0;
-        if (sw > 0.45) {
+        const pcol = pieces ? pieceCol[k] : 0;
+        if (pcol) {
+          // a whole ingredient's own sprite pixel, cracked by the pestle
+          const bi = pieceIdx[k];
+          let l = 1;
+          const dmg = sim.dmg[bi] / (0.25 + p.hardness[bi] * 1.5);
+          if (dmg > 0.12 && hash01(p.seed[bi] * 3 + x * 7 + y * 131) < dmg * 0.4) l = 0.42;
+          R = (pcol & 255) / 255 * l; G = ((pcol >>> 8) & 255) / 255 * l; B = ((pcol >>> 16) & 255) / 255 * l; A = 1;
+        } else if (sw > 0.45 && !(pieces && p.whole[solIdx[k]] > 0.5 && p.group[solIdx[k]] >= 0 && p.skin[solIdx[k]])) {
           const bi = solIdx[k];
           const up = y > 0 ? sol[(k - w) * 4] : 0, left = x > 0 ? sol[(k - 1) * 4] : 0, down = y < h - 1 ? sol[(k + w) * 4] : 0, right = x < w - 1 ? sol[(k + 1) * 4] : 0;
           const edgeHi = up < 0.45 || left < 0.45, edgeLo = down < 0.45 || right < 0.45;
@@ -689,7 +751,7 @@ export class FluidRenderer {
           // of the pixel is paste: a stirred brew interleaves the two, and
           // a hard switch between them would draw sharp colour edges.
           const tP = paste <= 0.2 ? 0 : paste >= 0.8 ? 1 : ((paste - 0.2) / 0.6) * ((paste - 0.2) / 0.6) * (3 - 2 * ((paste - 0.2) / 0.6));
-          const depth = Math.max(0, (y - surf[x]) * depthScale);
+          const depth = Math.max(0, (y - sf[x]) * depthScale);
           // ordered dither threshold of this pixel (4×4 Bayer), for pixel-art bands
           const bay = BAYER[(y & 3) * 4 + (x & 3)];
           let rL = r, gL = g, bL = b, lL = 1, rP = r, gP = g, bP = b, lP = 1;
@@ -821,6 +883,91 @@ export class FluidRenderer {
     this.ctx.putImageData(this.image, 0, 0);
     const halo = anyGlow && this.halo && !thermal ? this._halo(w, h) : null;
     return { canvas: this.canvas, x: bx, y: by, halo };
+  }
+
+  /**
+   * Paint every whole ingredient (a rigid body of a poured piece) as its
+   * piece's sprite, as the menus' icons and the plants in the wilds are
+   * drawn: one art pixel to a whole number of screen pixels (the nearest to
+   * the size the physics gives it), its ink outline and shading intact, laid
+   * out in the body's own frame so it tumbles with it, and only where the
+   * body still has particles (the pestle and dissolving eat it away).
+   * Fills pieceCol/pieceIdx; false when nothing was painted.
+   * @param {import('../simulation/world.js').Simulation} sim @param {{scale:number, ox:number, oy:number}} view
+   * @param {number} bx @param {number} by @param {number} w @param {number} h @param {Uint32Array} art @param {number} artW
+   */
+  _paintPieces(sim, view, bx, by, w, h, art, artW) {
+    const p = sim.p, n = p.count, s = view.scale, SP = SIM.SPACING;
+    // gather each body: its centre (rho-weighted, as its rest shape is), and
+    // the offset between its particles' spots in the piece and their rest places
+    const G = this._pg || (this._pg = { used: [], cx: new Float64Array(2048), cy: new Float64Array(2048), m: new Float64Array(2048), u: new Float64Array(2048), v: new Float64Array(2048), k: new Int32Array(2048), skin: new Int32Array(2048), first: new Int32Array(2048), seen: new Uint8Array(2048) });
+    const used = G.used;
+    used.length = 0;
+    for (let i = 0; i < n; i++) {
+      if (p.phase[i] !== SOLID || p.whole[i] <= 0.5 || !p.skin[i]) continue;
+      const g = p.group[i];
+      if (g < 0 || g >= 2048) continue;
+      if (!G.seen[g]) { G.seen[g] = 1; used.push(g); G.cx[g] = 0; G.cy[g] = 0; G.m[g] = 0; G.u[g] = 0; G.v[g] = 0; G.k[g] = 0; G.skin[g] = p.skin[i]; G.first[g] = i; }
+      const r = p.rho[i];
+      G.cx[g] += p.x[i] * r; G.cy[g] += p.y[i] * r; G.m[g] += r;
+      if (p.skin[i] === G.skin[g]) { G.u[g] += p.skinU[i] - p.restX[i] / SP; G.v[g] += p.skinV[i] - p.restY[i] / SP; G.k[g]++; }
+    }
+    if (!used.length) return false;
+    const N = w * h;
+    this.pieceCol.fill(0, 0, N);
+    // which art pixels of the piece are still held by a particle
+    const C = PIECE_CELL;
+    const held = this._held || (this._held = new Int32Array(C * C));
+    let painted = false;
+    for (const g of used) {
+      G.seen[g] = 0;
+      const pc = piece(G.skin[g]);
+      if (!pc || !G.k[g] || G.m[g] <= 0) continue;
+      const gen = (this._gen = ((this._gen || 0) + 1) & 0x3fffffff);
+      // one art pixel to a whole number of screen pixels
+      const m = Math.max(1, Math.round((s * SP) / pc.ppu));
+      const U0 = G.u[g] / G.k[g], V0 = G.v[g] / G.k[g];
+      const cx = (G.cx[g] / G.m[g]) * s + view.ox - bx, cy = (G.cy[g] / G.m[g]) * s + view.oy - by;
+      const th = sim.rigid.angle[g], ct = Math.cos(th), st = Math.sin(th);
+      // mark the art around each particle of the body (its share of the piece)
+      const rr = Math.max(1.5, 0.78 * pc.ppu), r2 = rr * rr;
+      for (let i = G.first[g]; i < n; i++) {
+        if (p.group[i] !== g || p.skin[i] !== G.skin[g] || p.phase[i] !== SOLID) continue;
+        const ax = pc.ax + p.skinU[i] * pc.ppu - pc.cx, ay = pc.ay + p.skinV[i] * pc.ppu - pc.cy;
+        const x0 = Math.max(0, Math.floor(ax - rr)), x1 = Math.min(C - 1, Math.ceil(ax + rr));
+        const y0 = Math.max(0, Math.floor(ay - rr)), y1 = Math.min(C - 1, Math.ceil(ay + rr));
+        for (let yy = y0; yy <= y1; yy++) for (let xx = x0; xx <= x1; xx++) {
+          const dx = xx + 0.5 - ax, dy = yy + 0.5 - ay;
+          if (dx * dx + dy * dy <= r2) held[yy * C + xx] = gen;
+        }
+      }
+      // the art origin of the body's centre, then every screen pixel the piece may cover
+      const ox0 = pc.ax + U0 * pc.ppu, oy0 = pc.ay + V0 * pc.ppu;
+      const R = Math.ceil(C * m * 0.75) + 1;
+      const xa = Math.max(0, Math.floor(cx - R)), xb = Math.min(w - 1, Math.ceil(cx + R));
+      const ya = Math.max(0, Math.floor(cy - R)), yb = Math.min(h - 1, Math.ceil(cy + R));
+      const im = 1 / m, fi = G.first[g];
+      // upright (as in the menus and the wilds) it is read straight from the
+      // atlas; turned, from its smoothed 4× copy so its lines stay whole
+      const turned = Math.abs(Math.sin(th * 2)) > 0.02 || ct < 0;
+      const sm = turned ? smoothCell(G.skin[g], pc, art, artW) : null, C4 = C * 4;
+      for (let y = ya; y <= yb; y++) {
+        const dy = y + 0.5 - cy;
+        for (let x = xa; x <= xb; x++) {
+          const dx = x + 0.5 - cx;
+          // into the body's rest frame (undo its rotation), in art pixels
+          const fx = ox0 - pc.cx + (ct * dx + st * dy) * im, fy = oy0 - pc.cy + (-st * dx + ct * dy) * im;
+          const lx = Math.floor(fx), ly = Math.floor(fy);
+          if (lx < 0 || ly < 0 || lx >= C || ly >= C || held[ly * C + lx] !== gen) continue;
+          const c = sm ? sm[Math.floor(fy * 4) * C4 + Math.floor(fx * 4)] : art[(ly + pc.cy) * artW + lx + pc.cx];
+          if (!(c >>> 31)) continue;
+          const k = y * w + x;
+          this.pieceCol[k] = c | 0xff000000; this.pieceIdx[k] = fi;
+          painted = true;
+        }
+      }
+    }
+    return painted;
   }
 
   /**
