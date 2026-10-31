@@ -1,23 +1,29 @@
 // The look of each effect inside a brew: particles. Every effect a potion
-// carries keeps a swarm of little pixel-art particles in the liquid where it
-// is, as many as its share of the magic there (awakening, several times the
-// magic, packs them denser and draws them bolder). Each effect has its own
-// colour (the effect bars'), shape and way of moving, so it reads at a glance:
-//   vitality        red healing crosses rising slowly, swelling on a double
-//                   heartbeat, with motes of life darting up
-//   strength        golden dumbbells heaving up and thumping down, gold glints
-//   love            pink hearts, large and small, beating as they rise and sway
-//   arcana          violet four-pointed stars drifting and twinkling, the odd
-//                   shooting star
-//   transformation  teal shapes circling, turning circle → square → triangle →
-//                   diamond and changing colour as they go
-//   fire            flames licking up from the depths, white-hot to red to
-//                   smoke, sparks flying out of the surface
-//   frost           snowflakes turning and tumbling down, glints of ice
-//   acidity         a fast fizz of tiny bubbles, popping into droplets at the
-//                   surface
-//   toxicity        fat ringed green bubbles that swell and burst, little skulls
-//   death           dark smoke sinking and pale ghosts wavering up
+// carries keeps a swarm of tiny pixel particles in the liquid where it is,
+// as many as its share of the magic there (awakening, several times the
+// magic, packs them denser and draws them bolder). No icons: each effect is
+// a swarm of 1–2 px motes in a palette of its own, moving its own way, so it
+// reads at a glance by colour and motion:
+//   vitality        crimson-to-rose motes of life rising, swelling and
+//                   brightening together on a double heartbeat, quick white
+//                   sparks darting up with a trail
+//   strength        chunky gold and bronze nuggets heaving up and thumping
+//                   down, flashing white on each thump, gold glints
+//   love            rose and pink motes swaying upward, pulsing with a soft
+//                   glow and leaving a pale trail
+//   arcana          violet and indigo specks that twinkle into cyan-white
+//                   sparkles, the odd shooting streak
+//   transformation  comets circling, their colour sliding through the
+//                   spectrum along their tails
+//   fire            embers licking up from the depths, white-hot to yellow,
+//                   orange, red and smoke, sparks flying out of the surface
+//   frost           ice-blue and white crystals drifting down, glinting
+//   acidity         a fast lime-to-yellow fizz rising, popping into droplets
+//                   at the surface
+//   toxicity        murky green globs swelling until they burst, sickly
+//                   green and violet motes drifting
+//   death           dark smoke sinking in loose clumps and pale lavender
+//                   wisps wavering up
 // Particles live in screen pixels (so they stay crisp pixel art) and are
 // carried by the liquid they swim in: each frame the brew's own velocity
 // where a particle is moves it by as far as the simulation ran, so they swirl
@@ -30,47 +36,37 @@
 import { EFFECTS, NE } from '../alchemy/effects.js';
 
 const K = Object.fromEntries(EFFECTS.map((e, k) => [e.key, k]));
-const MAX = 1400;
+const MAX = 2400;
 /** Particles per 1000 px of liquid at full strength, by effect. */
 const DENSITY = {
-  vitality: 9, strength: 7, love: 8, arcana: 12, transformation: 6,
-  fire: 26, frost: 11, acidity: 34, toxicity: 5, death: 8,
+  vitality: 22, strength: 12, love: 30, arcana: 34, transformation: 18,
+  fire: 34, frost: 32, acidity: 40, toxicity: 12, death: 22,
 };
 /** Most particles of one effect. */
-const CAP = 220;
+const CAP = 360;
 
-// colours of each effect: its own, a highlight, an outline, white
-const COL = EFFECTS.map((e) => e.color.slice());
-const HI = COL.map((c) => c.map((v) => v + (1 - v) * 0.6));
-const OUT = COL.map((c) => c.map((v) => v * 0.38));
-const WHITE = [1, 1, 0.96], INK = [0.06, 0.04, 0.08];
-const FIRE_RAMP = [[1, 0.98, 0.8], [1, 0.88, 0.35], [1, 0.56, 0.2], [0.86, 0.22, 0.1], [0.35, 0.3, 0.32]];
-const SHIFT = [[0.4, 0.9, 0.79], [0.85, 0.55, 1], [1, 0.84, 0.38], [0.45, 0.7, 1]];
-const TOX_DARK = [0.16, 0.3, 0.12], SMOKE = [0.14, 0.1, 0.2], GHOST = [0.92, 0.88, 1];
+const WHITE = [1, 1, 0.96];
+/** Each effect's palette, darkest to brightest. */
+const RAMP = {
+  vitality: [[0.42, 0.04, 0.1], [0.78, 0.1, 0.18], [0.97, 0.3, 0.32], [1, 0.62, 0.6], [1, 0.9, 0.86]],
+  strength: [[0.45, 0.26, 0.06], [0.78, 0.52, 0.12], [0.98, 0.76, 0.28], [1, 0.9, 0.55], [1, 0.98, 0.84]],
+  love: [[0.62, 0.1, 0.38], [0.92, 0.28, 0.56], [1, 0.5, 0.74], [1, 0.74, 0.88], [1, 0.93, 0.97]],
+  arcana: [[0.22, 0.1, 0.55], [0.42, 0.28, 0.9], [0.62, 0.52, 1], [0.7, 0.86, 1], [0.95, 0.98, 1]],
+  fire: [[0.35, 0.3, 0.32], [0.86, 0.22, 0.1], [1, 0.56, 0.2], [1, 0.88, 0.35], [1, 0.98, 0.8]],
+  frost: [[0.24, 0.46, 0.8], [0.4, 0.7, 0.98], [0.55, 0.87, 1], [0.8, 0.96, 1], [0.97, 1, 1]],
+  acidity: [[0.34, 0.5, 0.06], [0.58, 0.8, 0.12], [0.8, 0.95, 0.3], [0.94, 1, 0.55], [1, 1, 0.85]],
+  toxicity: [[0.12, 0.26, 0.07], [0.26, 0.5, 0.12], [0.45, 0.76, 0.22], [0.66, 0.92, 0.36], [0.6, 0.32, 0.7]],
+  death: [[0.06, 0.03, 0.1], [0.2, 0.1, 0.3], [0.42, 0.3, 0.6], [0.7, 0.6, 0.92], [0.9, 0.88, 1]],
+};
+const P = EFFECTS.map((e) => RAMP[e.key] || [e.color, e.color, e.color, e.color, WHITE]);
+const FIRE_RAMP = RAMP.fire.slice().reverse(); // white-hot first, smoke last
 
-// pixel masks, top row first; letters pick a colour (c own, h highlight,
-// o outline, w white, k ink), '.' is empty; every mask gets a 1px outline
-const M = (rows) => rows.map((r) => r.split(''));
-const PLUS_L = M(['..cc..', '..hc..', 'hhhhcc', 'cchcco', '..co..', '..oo..']);
-const PLUS_B = M(['..ccc..', '..chc..', 'ccchccc', 'chhwhhc', 'ccchcco', '..cco..', '..ooo..']);
-const HEART_S = M(['c.c', 'hcc', '.c.']);
-const HEART_M = M(['.c.c.', 'chccc', 'ccccc', '.ccc.', '..c..']);
-const HEART_L = M(['.cc.cc.', 'chhcccc', 'chccccc', 'ccccccc', '.ccccc.', '..ccc..', '...c...']);
-const DUMBBELL = M(['hc...hc', 'hcccchc', 'cc...cc']);
-const SKULL = M(['.hcc.', 'ccccc', 'ckckc', '.ccc.', '.c.c.']);
-const GHOST_A = M(['.hcc.', 'hcccc', 'ckckc', 'ccccc', 'ccccc', 'c.c.c']);
-const GHOST_B = M(['.hcc.', 'hcccc', 'ckckc', 'ccccc', 'ccccc', '.c.c.']);
-const CIRCLE = M(['.ccc.', 'chhcc', 'chccc', 'ccccc', '.ccc.']);
-const SQUARE = M(['ccccc', 'chhcc', 'chccc', 'ccccc', 'ccccc']);
-const TRIANGLE = M(['..c..', '..h..', '.hcc.', '.cccc', 'ccccc']);
-const DIAMOND = M(['..c..', '.hcc.', 'chccc', '.ccc.', '..c..']);
-// flames by size, tip first: a white-hot core (3), yellow (2), orange (1), its rim (0)
-const FLAME = [
-  ['1', '0'],
-  ['.0.', '.1.', '010', '121', '.0.'],
-  ['..0..', '..1..', '.010.', '.121.', '01210', '12321', '.121.', '..0..'],
-];
-const SHAPES = [CIRCLE, SQUARE, TRIANGLE, DIAMOND];
+/** Hue h (0..1) at full saturation, brightness l, as rgb 0..1. */
+const hue = (h, l = 1) => {
+  h = ((h % 1) + 1) % 1;
+  const f = (n) => { const k = (n + h * 6) % 6; return l * (1 - 0.75 * Math.max(0, Math.min(k, 4 - k, 1))); };
+  return [f(5), f(3), f(1)];
+};
 
 /** The liquid's displacement at a particle (PotionParticles._carry). */
 let FX = 0, FY = 0;
@@ -153,6 +149,13 @@ export class PotionParticles {
     return Math.min(1.6, Math.sqrt(f.mfx[q * NE + e] / Math.max(ew, 0.6)) * 1.5);
   }
 
+  /** Is image pixel q liquid with liquid two pixels out on every side? */
+  static inner(f, q) {
+    const { w, liquid } = f, x = q % w;
+    return x >= 2 && x < w - 2 && q >= 2 * w && q < liquid.length - 2 * w &&
+      liquid[q - 2] === 1 && liquid[q + 2] === 1 && liquid[q - 2 * w] === 1 && liquid[q + 2 * w] === 1;
+  }
+
   /** Keep each effect's swarm at its size: its density times its strength over the liquid. */
   _spawn(dt, f) {
     const npix = f.npix;
@@ -169,7 +172,7 @@ export class PotionParticles {
       const first = !this.warm[e];
       if (first) { make = deficit; this.warm[e] = 1; }
       else {
-        this.credit[e] += deficit * dt * 4;
+        this.credit[e] += deficit * dt * 12;
         make = Math.floor(this.credit[e]);
         this.credit[e] -= make;
       }
@@ -178,6 +181,8 @@ export class PotionParticles {
         for (let tries = 0; tries < 16; tries++) {
           const q = f.pix[(this.rand() * npix) | 0], A = PotionParticles.strength(f, q, e);
           if (A <= 0.03 || this.rand() * 1.6 > A) continue;
+          // not on the brew's very rim, where it would be gone at once
+          if (!PotionParticles.inner(f, q)) continue;
           this._add(e, (q % f.w) + f.bx, ((q / f.w) | 0) + f.by, A, first);
           break;
         }
@@ -335,7 +340,7 @@ export class PotionParticles {
     const e = this.k[i], v = this.v[i], free = this.free[i] === 1;
     const t = this.age[i] / this.life[i];
     // fade in and out, stronger where the effect is stronger
-    const fade = Math.min(1, t * 6, (1 - t) * 5) * Math.min(1, 0.55 + this.amp[i] * 0.5);
+    const fade = Math.min(1, t * 6, (1 - t) * 5) * Math.min(1, 0.6 + this.amp[i] * 0.5);
     const X = Math.round(this.x[i]) - bx, Y = Math.round(this.y[i]) - by;
     const cover = this.cover;
     /** @param {number} x @param {number} y @param {number[]} c @param {number} a */
@@ -355,142 +360,171 @@ export class PotionParticles {
       }
       cover[q] = 1;
     };
-    const C = COL[e], H = HI[e], O = OUT[e];
-    /** stamp a mask centred on (cx, cy) with its outline (none when pal.o is null) @param {string[][]} m @param {number} cx @param {number} cy @param {number} a @param {any} [pal] */
-    const stamp = (m, cx, cy, a, pal = null) => {
-      const mh = m.length, mw = m[0].length, x0 = -((mw - 1) >> 1) + cx, y0 = -((mh - 1) >> 1) + cy;
-      const on = (x, y) => x >= 0 && y >= 0 && x < mw && y < mh && m[y][x] !== '.';
-      const oc = pal ? pal.o : O;
-      if (oc) for (let y = -1; y <= mh; y++) for (let x = -1; x <= mw; x++) {
-        if (on(x, y)) continue;
-        if (on(x - 1, y) || on(x + 1, y) || on(x, y - 1) || on(x, y + 1)) px(x0 + x, y0 + y, oc, a * 0.75);
-      }
-      for (let y = 0; y < mh; y++) for (let x = 0; x < mw; x++) {
-        const ch = m[y][x];
-        if (ch === '.') continue;
-        const col = ch === 'h' ? (pal ? pal.h : H) : ch === 'w' ? WHITE : ch === 'k' ? INK : ch === 'o' ? oc || (pal && pal.s) || O : pal ? pal.c : C;
-        px(x0 + x, y0 + y, col, a);
-      }
+    /** a mote: a core pixel and, at strength g, a soft glow on its four sides @param {number} x @param {number} y @param {number[]} core @param {number[]} rim @param {number} a @param {number} g */
+    const mote = (x, y, core, rim, a, g) => {
+      if (g > 0.05) { px(x - 1, y, rim, a * g); px(x + 1, y, rim, a * g); px(x, y - 1, rim, a * g); px(x, y + 1, rim, a * g); }
+      px(x, y, core, a);
     };
-    /** draw a list of [x, y, colour] pixels with a soft outline around them @param {any[]} list @param {number} a */
-    const shape = (list, a) => {
-      const on = new Set(list.map(([x, y]) => x * 64 + y));
-      for (const [x, y] of list) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-        const q = (x + dx) * 64 + y + dy;
-        if (!on.has(q)) { on.add(q); px(x + dx, y + dy, O, a * 0.6); }
+    /** a square blob of n×n pixels around (0, 0): its core, a brighter corner lit from the upper left and, at strength g, a soft rim of glow @param {number} n @param {number[]} core @param {number[]} hi @param {number[]} rim @param {number} a @param {number} g */
+    const blob = (n, core, hi, rim, a, g) => {
+      const o = -((n - 1) >> 1);
+      if (g > 0.05) for (let s = 0; s < n; s++) {
+        px(o + s, o - 1, rim, a * g); px(o + s, o + n, rim, a * g);
+        px(o - 1, o + s, rim, a * g); px(o + n, o + s, rim, a * g);
       }
-      for (const [x, y, c] of list) px(x, y, c, a);
+      for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) px(o + x, o + y, x + y === 0 && n > 1 ? hi : core, a);
     };
+    /** a 2×2 nugget lit from the upper left @param {number} x @param {number} y @param {number[][]} c [dark, mid, light] @param {number} a */
+    const nug = (x, y, c, a) => { px(x, y, c[2], a); px(x + 1, y, c[1], a); px(x, y + 1, c[1], a); px(x + 1, y + 1, c[0], a); };
+    /** a trail of n pixels behind a mote moving (dx, dy) per pixel, fading through the palette @param {number} dx @param {number} dy @param {number} n @param {number[][]} cols @param {number} a */
+    const trail = (dx, dy, n, cols, a) => {
+      for (let s = 1; s <= n; s++) px(Math.round(-dx * s), Math.round(-dy * s), cols[Math.min(cols.length - 1, s - 1)], a * (1 - s / (n + 1)));
+    };
+    const C = P[e];
     if (free) {
-      // sparks glow yellow to red; droplets in the effect's colour
-      const col = e === K.fire ? FIRE_RAMP[Math.min(3, Math.floor(t * 4))] : e === K.toxicity ? C : H;
+      // sparks glow yellow to red; droplets in the effect's colours
+      const col = e === K.fire ? FIRE_RAMP[Math.min(3, Math.floor(t * 4))] : C[t < 0.5 ? 3 : 2];
       px(0, 0, col, 1 - t * 0.6);
       return;
     }
+    // a slow shimmer of its own
+    const sh = Math.sin(time * (2 + v * 3) + v * 60);
     switch (e) {
       case K.vitality: {
-        if (v < 0.35) { px(0, 0, Math.sin(time * 9 + v * 40) > 0 ? WHITE : H, fade); px(0, 1, C, fade * 0.6); break; }
-        const beat = heartbeat(time + v * 0.3);
-        // a healing cross with no outline, shaded on its lower side
-        stamp(beat > 0.5 && v > 0.6 ? PLUS_B : PLUS_L, 0, 0, fade * (0.8 + 0.2 * Math.min(1, beat)), { c: C, h: H, o: null, s: O });
+        if (v < 0.35) {
+          // a quick spark of life darting up
+          px(0, 0, sh > 0 ? WHITE : C[4], fade);
+          trail(0, -1, 3, [C[3], C[2], C[1]], fade);
+          break;
+        }
+        // motes of life swelling and brightening together on the heartbeat
+        const beat = Math.min(1, heartbeat(time + v * 0.15));
+        const lv = 1 + Math.round(beat * 2);
+        const n = v > 0.8 ? (beat > 0.5 ? 3 : 2) : v > 0.5 ? 2 : beat > 0.5 ? 2 : 1;
+        blob(n, C[Math.min(4, lv + (v > 0.7 ? 1 : 0))], C[4], C[lv - 1], fade, 0.4 + beat * 0.5);
+        if (v > 0.6) trail(0, -1, 1, [C[1]], fade);
         break;
       }
       case K.strength: {
-        if (v < 0.3) { const s = Math.sin(time * 6 + v * 50) > 0; px(0, 0, WHITE, fade); if (s) { px(-1, 0, H, fade * 0.8); px(1, 0, H, fade * 0.8); px(0, -1, H, fade * 0.8); px(0, 1, H, fade * 0.8); } break; }
-        stamp(DUMBBELL, 0, 0, fade);
+        if (v < 0.3) {
+          // a gold glint, flaring into a small cross
+          mote(0, 0, sh > 0.3 ? WHITE : C[3], C[2], fade, sh > 0.6 ? 0.9 : 0.4);
+          if (sh > 0.6) { px(-2, 0, C[1], fade * 0.5); px(2, 0, C[1], fade * 0.5); px(0, -2, C[1], fade * 0.5); px(0, 2, C[1], fade * 0.5); }
+          break;
+        }
+        // a nugget heaving up and thumping down: it flashes as it lands
+        const lift = Math.abs(Math.sin(time * 2.4 + v * 9));
+        const land = lift < 0.18;
+        const n = v > 0.45 ? 3 : 2;
+        blob(n, land ? C[3] : v > 0.65 ? C[1] : C[2], land ? WHITE : C[3], land ? C[3] : C[1], fade, land ? 0.9 : 0.6);
+        if (land) { px(-2, n, C[3], fade * 0.6); px(n, n, C[3], fade * 0.6); px(-3, n, C[2], fade * 0.4); px(n + 1, n, C[2], fade * 0.4); }
+        else for (let s = 0; s < n; s++) px(s - ((n - 1) >> 1), -((n - 1) >> 1) - 2, C[1], fade * lift * 0.7);
         break;
       }
       case K.love: {
-        const beat = Math.sin(time * 5 + v * 20) > 0.2;
-        if (v > 0.55) stamp(beat ? HEART_L : HEART_M, 0, 0, fade);
-        else stamp(beat ? HEART_M : HEART_S, 0, 0, fade);
-        // a sparkle trailing under it
-        if (Math.sin(time * 8 + v * 60) > 0.4) px(0, v > 0.55 ? 6 : 4, WHITE, fade * 0.8);
+        // rose motes pulsing as they sway up, a pale trail beneath
+        const beat = Math.sin(time * 5 + v * 20) > 0.2 ? 1 : 0;
+        const big = v > 0.55;
+        if (big) blob(2 + (beat && v > 0.8 ? 1 : 0), beat ? C[3] : C[2], C[4], C[1], fade, 0.5 + 0.4 * beat);
+        else mote(0, 0, beat ? C[4] : C[3], C[1], fade, 0.3 + 0.4 * beat);
+        trail(Math.cos(time * 2.2 + v * 30) * 0.5, -1, 2, [C[2], C[1]], fade * 0.8);
         break;
       }
       case K.arcana: {
         if (v < 0.06) {
-          // a shooting star and its tail
-          for (let s = 0; s < 7; s++) px(-Math.round(s * 0.94), -Math.round(s * 0.35), s === 0 ? WHITE : s < 3 ? H : C, fade * (1 - s / 8));
+          // a shooting streak and its tail
+          for (let s = 0; s < 7; s++) px(-Math.round(s * 0.94), -Math.round(s * 0.35), s === 0 ? WHITE : s < 3 ? C[3] : C[2], fade * (1 - s / 8));
           break;
         }
+        // specks that twinkle up into sparkles
         const tw = 0.5 + 0.5 * Math.sin(time * (1.6 + v * 2.4) + v * 40);
-        const L = Math.round((1 + Math.floor(v * 3.99)) * (0.35 + 0.65 * tw));
-        const diag = Math.sin(time * 1.3 + v * 25) > 0.6;
-        const pts = [[0, 0, WHITE]];
-        for (let s = 1; s <= L; s++) {
-          const col = s === 1 ? H : C;
-          if (diag) pts.push([s, s, col], [-s, s, col], [s, -s, col], [-s, -s, col]);
-          else pts.push([s, 0, col], [-s, 0, col], [0, s, col], [0, -s, col]);
-        }
-        shape(pts, fade);
+        if (tw > 0.75) {
+          const L = tw > 0.92 && v > 0.5 ? 2 : 1, diag = v > 0.8;
+          px(0, 0, WHITE, fade);
+          for (let s = 1; s <= L; s++) {
+            const c = s === 1 ? C[3] : C[2], a = fade * (s === 1 ? 0.9 : 0.55);
+            if (diag) { px(s, s, c, a); px(-s, s, c, a); px(s, -s, c, a); px(-s, -s, c, a); }
+            else { px(s, 0, c, a); px(-s, 0, c, a); px(0, s, c, a); px(0, -s, c, a); }
+          }
+        } else if (v > 0.45) blob(2, tw > 0.4 ? C[2] : C[1], C[3], C[0], fade * (0.6 + tw * 0.5), 0.3);
+        else mote(0, 0, tw > 0.4 ? C[3] : C[2], C[0], fade * (0.6 + tw * 0.5), 0.4);
         break;
       }
       case K.transformation: {
-        const j = Math.floor(time * 0.9 + v * 4) % 4;
-        const c = SHIFT[j];
-        stamp(SHAPES[j], 0, 0, fade, { c, h: c.map((x) => x + (1 - x) * 0.6), o: c.map((x) => x * 0.35) });
+        // a comet circling, its colour sliding through the spectrum down its tail
+        const R = 3 + v * 6, dir = v < 0.5 ? 1 : -1, sp = (1.2 + v) * dir;
+        const ang = this.age[i] * sp + v * 20, h0 = time * 0.35 + v;
+        blob(2, hue(h0, 1), WHITE, hue(h0 - 0.1, 0.7), fade, 0.35);
+        for (let s = 1; s <= 6; s++) {
+          const a2 = ang - s * 0.3 * dir;
+          const dx = Math.round(Math.cos(a2) * R - Math.cos(ang) * R), dy = Math.round((Math.sin(a2) - Math.sin(ang)) * R * 0.6);
+          const c = hue(h0 + s * 0.1, 1 - s * 0.06), a = fade * (1 - s * 0.13);
+          px(dx, dy, c, a);
+          if (s < 4) px(dx + 1, dy, c, a * 0.8);
+        }
         break;
       }
       case K.fire: {
-        // a tongue of flame, shrinking and cooling as it rises: white-hot,
-        // yellow, orange, red, then a wisp of smoke; its tip flickers
-        const s = t < 0.4 ? 2 : t < 0.8 ? 1 : 0, m = FLAME[v < 0.3 ? Math.min(s, 1) : s], cool = Math.floor(t * 2.5);
-        const lean = Math.sin(time * 15 + v * 30) > 0 ? 1 : 0;
-        for (let y = 0; y < m.length; y++) for (let x = 0; x < m[y].length; x++) {
-          const ch = m[y][x];
-          if (ch === '.') continue;
-          px(x - (m[y].length >> 1) + (y < 2 ? lean : 0), y - m.length + 2, FIRE_RAMP[Math.min(4, 3 - +ch + cool)], fade);
-        }
+        // an ember licking up, cooling as it rises: white-hot, yellow, orange,
+        // red, then a wisp of smoke; it flickers
+        const lv = Math.min(4, Math.floor(t * 4.2 + (sh > 0.7 ? 1 : 0)));
+        const col = FIRE_RAMP[lv], tail = FIRE_RAMP[Math.min(4, lv + 1)];
+        if (t < 0.5 && v > 0.25) blob(t < 0.2 && v > 0.6 ? 3 : 2, FIRE_RAMP[Math.min(4, lv + 1)], col, FIRE_RAMP[Math.min(4, lv + 2)], fade, 0.4);
+        else mote(0, 0, col, tail, fade, 0.3);
+        trail(Math.sin(time * 15 + v * 30) > 0 ? 0.5 : -0.5, -1, t < 0.6 ? 2 : 1, [tail, FIRE_RAMP[Math.min(4, lv + 2)]], fade * 0.85);
         break;
       }
       case K.frost: {
-        if (v < 0.3) { if (Math.sin(time * 4 + v * 70) > 0.3) { px(0, 0, WHITE, fade); px(1, 0, H, fade * 0.5); px(-1, 0, H, fade * 0.5); } break; }
-        const R = v > 0.65 ? 3 : 2;
-        const tilt = Math.sin(time * (1 + v) + v * 30) > 0;
-        const pts = [[0, 0, WHITE]];
-        for (let s = 1; s <= R; s++) {
-          const col = s === R ? H : C;
-          if (tilt) pts.push([0, s, col], [0, -s, col], [s, s, col], [-s, -s, col], [s, -s, col], [-s, s, col]);
-          else pts.push([s, 0, col], [-s, 0, col], [0, s, col], [0, -s, col], [s, s, col], [-s, -s, col]);
-        }
-        shape(pts, fade);
+        // ice crystals drifting down, glinting white now and then
+        const gl = Math.sin(time * 4 + v * 70);
+        if (gl > 0.8 && v > 0.5) {
+          px(0, 0, WHITE, fade);
+          for (const [x, y] of [[1, 1], [-1, -1], [1, -1], [-1, 1]]) px(x, y, C[3], fade * 0.7);
+        } else if (v > 0.45) blob(v > 0.85 ? 3 : 2, C[2], C[4], C[0], fade, 0.35);
+        else mote(0, 0, gl > 0.3 ? C[4] : C[3], C[1], fade, 0.35);
+        trail(0, 1, 1, [C[1]], fade * 0.6);
         break;
       }
       case K.acidity: {
-        // a bubble swelling as it rises: a bright speck, then a ring with a glint
-        if (t < 0.3 || v < 0.35) { px(0, 0, v < 0.15 ? WHITE : H, fade); px(0, 1, O, fade * 0.7); px(1, 0, O, fade * 0.5); break; }
-        for (const [x, y] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) px(x, y, C, fade);
-        for (const [x, y] of [[-2, 0], [2, 0], [0, -2], [0, 2], [-1, -1], [1, -1], [-1, 1], [1, 1]]) px(x, y, O, fade * 0.7);
-        px(0, 0, H, fade * 0.35); px(-1, -1, WHITE, fade);
+        // a fast fizz: a bright bead with a streak below, swelling as it rises
+        const col = v < 0.2 ? C[4] : v < 0.6 ? C[3] : C[2];
+        if (v > 0.5) blob(t > 0.5 ? 2 : 1 + (v > 0.8 ? 1 : 0), C[2], C[4], C[1], fade, 0.4);
+        else mote(0, 0, col, C[1], fade, 0.3);
+        trail(Math.sin(time * 14 + v * 30) * 0.4, -1, 2, [C[2], C[1]], fade * 0.7);
         break;
       }
       case K.toxicity: {
-        if (v < 0.25) { stamp(SKULL, 0, 0, fade, { c: C, h: HI[e], o: TOX_DARK }); break; }
-        // a fat ringed bubble swelling until it bursts
-        const R = 1.6 + t * 3.2 + Math.sin(time * 3 + v * 30) * 0.3, Ri = Math.ceil(R + 1);
+        if (v < 0.25) {
+          // sickly motes: green with a violet tinge
+          px(0, 0, (v * 37) % 1 < 0.4 ? C[4] : C[3], fade);
+          px(1, 1, C[1], fade * 0.6);
+          break;
+        }
+        // a murky glob swelling until it bursts, dithered greens with a glint
+        const R = 0.9 + t * 2.6 + sh * 0.25, Ri = Math.ceil(R);
         for (let y = -Ri; y <= Ri; y++) for (let x = -Ri; x <= Ri; x++) {
           const d = Math.hypot(x, y);
-          if (d > R + 0.5) continue;
-          if (d > R - 0.7) px(x, y, TOX_DARK, fade * 0.9);
-          else if (x < 0 && y < 0 && d > R * 0.3 && d < R * 0.75) px(x, y, WHITE, fade * 0.8);
-          else px(x, y, C, fade * 0.45);
+          if (d > R + 0.3) continue;
+          const c = d > R - 0.8 ? C[0] : ((x + y) & 1) ? C[1] : C[2];
+          px(x, y, c, fade * (d > R - 0.8 ? 0.85 : 0.6));
         }
+        px(-Math.max(0, Ri - 1), -Math.max(0, Ri - 1), C[3], fade);
         break;
       }
       case K.death: {
         if (v < 0.4) {
-          stamp(Math.sin(time * 6 + v * 40) > 0 ? GHOST_A : GHOST_B, 0, 0, fade * 0.85, { c: GHOST, h: WHITE, o: SMOKE });
+          // a pale wisp wavering up
+          mote(0, 0, sh > 0.5 ? C[4] : C[3], C[2], fade * 0.9, 0.35);
+          trail(Math.sin(time * 3 + v * 40) * 0.8, -1, 3, [C[3], C[2], C[1]], fade * 0.75);
           break;
         }
-        // a sinking puff of dark smoke, spreading and thinning
-        const R = 1 + t * 2.5;
-        for (let y = -3; y <= 3; y++) for (let x = -3; x <= 3; x++) {
-          const d = Math.hypot(x, y * 1.2);
-          if (d > R) continue;
-          px(x, y, d < R * 0.5 ? SMOKE : O, fade * (0.85 - t * 0.4));
+        // a loose clump of dark smoke sinking, spreading and thinning
+        const R = 1 + t * 2.2;
+        for (let s = 0; s < 10; s++) {
+          const h1 = (v * 7919 + s * 0.618) % 1, an = h1 * 6.2832, d = R * ((s * 0.37 + v) % 1);
+          px(Math.round(Math.cos(an) * d), Math.round(Math.sin(an) * d * 0.8), s < 2 ? C[0] : C[1], fade * (0.85 - t * 0.4));
         }
-        if ((v * 97) % 1 < 0.3) px(0, 0, C, fade * 0.7);
+        if ((v * 97) % 1 < 0.3) px(0, 0, C[2], fade * 0.7);
         break;
       }
     }
