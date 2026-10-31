@@ -20,9 +20,12 @@
 //   • a brew takes the dominant colour of the painted ingredients in it,
 //     blending into gradients as it diffuses (brew-palette.js);
 //   • every effect a brew carries keeps a swarm of particles in it, as
-//     many as its share there, each in its own colour, shape and motion:
-//     hearts for love, flames for fire, snowflakes for frost, a fizz for
-//     acid… (potion-fx.js);
+//     many as its share there, tiny pixel motes in the effect's own
+//     palette and motion: rose motes for love, embers for fire, ice
+//     crystals for frost, a lime fizz for acid… (potion-fx.js);
+//   • liquid reads as pixel particles: each particle carries its own 1–2 px
+//     speck of lighter or darker brew (a few twinkle), and depth shading
+//     falls in ordered-dither bands;
 //   • liquids have depth: light crosses more of the brew the deeper it is,
 //     so the colour deepens and saturates downward, channel by channel
 //     (Beer–Lambert), under a bright thin surface layer and its meniscus;
@@ -168,6 +171,7 @@ export class FluidRenderer {
       this.fxLiq = new Uint8Array(n); // liquid the effects' particles may swim in…
       this.fxPix = new Int32Array(n); // …and the list of those pixels
       this.flow = new Float32Array(n * 2); // the liquid's velocity (screen px per simulated second), weighted
+      this.dot = new Float32Array(n); // a liquid particle's own pixel grain (0 none, else 3 + its tone)
     }
     if (w !== this.w || h !== this.h || !this.canvas) {
       this.w = w;
@@ -226,6 +230,8 @@ export class FluidRenderer {
     const { liq, sol, gas, grain, emit, mfx, solBest, solIdx } = this;
     // only the fields of phases that are present need clearing and reading
     liq.fill(0, 0, N * LS);
+    this.dot.fill(0, 0, N);
+    const dot = this.dot;
     if (anySolid) { sol.fill(0, 0, N * 4); solBest.fill(0, 0, N); }
     if (anyGas) { gas.fill(0, 0, this.hw * this.hh * 4); this.mote.fill(0, 0, N * 4); }
     if (anyGrain) grain.fill(0, 0, N);
@@ -262,6 +268,18 @@ export class FluidRenderer {
         const inv = 1 / (rl * rl), rl2 = rl * rl;
         // its velocity on screen, which carries the effects' particles along
         const fvx = p.vx[i] * s, fvy = p.vy[i] * s;
+        // its own grain: a 1–2 px speck of lighter or darker liquid that
+        // travels with it, so the brew reads as a swarm of pixel particles;
+        // a few catch the light and twinkle
+        if (!isPaste) {
+          const hd = hash01(seed * 7 + 3), hs = hash01(seed * 13 + 5);
+          const tone = hd < 0.07 ? 2 : hd < 0.5 ? -1 + hd * 1.2 : (hd - 0.5) * 2;
+          const sz = hs > 0.4 ? 2 : 1, dx0 = Math.floor(fx - sz * 0.5), dy0 = Math.floor(fy - sz * 0.5);
+          for (let yy = dy0; yy < dy0 + sz; yy++) {
+            if (yy < 0 || yy >= h) continue;
+            for (let xx = dx0; xx < dx0 + sz; xx++) if (xx >= 0 && xx < w) dot[yy * w + xx] = 3 + tone + (tone === 2 ? hs * 0.5 : 0);
+          }
+        }
         for (let dy = -RL; dy <= RL; dy++) {
           const yy = cy + dy;
           if (yy < 0 || yy >= h) continue;
@@ -672,6 +690,8 @@ export class FluidRenderer {
           // a hard switch between them would draw sharp colour edges.
           const tP = paste <= 0.2 ? 0 : paste >= 0.8 ? 1 : ((paste - 0.2) / 0.6) * ((paste - 0.2) / 0.6) * (3 - 2 * ((paste - 0.2) / 0.6));
           const depth = Math.max(0, (y - surf[x]) * depthScale);
+          // ordered dither threshold of this pixel (4×4 Bayer), for pixel-art bands
+          const bay = BAYER[(y & 3) * 4 + (x & 3)];
           let rL = r, gL = g, bL = b, lL = 1, rP = r, gP = g, bP = b, lP = 1;
           if (tP < 1) {
             // light crosses more of the brew the deeper it is: each channel
@@ -681,11 +701,19 @@ export class FluidRenderer {
             // heart. Clear liquids deepen faster (the dark iron shows
             // through); opaque ones keep more of their colour.
             const clear = Math.max(0, 1 - opac);
-            const path = Math.min(4.5, 0.75 + depth * (0.9 + 2 * clear));
+            // in dithered steps, so the colour deepens in pixel-art bands
+            const path = Math.min(4.5, Math.floor((0.75 + depth * (0.9 + 2 * clear)) * 5 + bay) / 5);
             rL = Math.pow(Math.max(0.02, r), path); gL = Math.pow(Math.max(0.02, g), path); bL = Math.pow(Math.max(0.02, b), path);
             // texture carried by the particles: currents show as soft light
             // and shade moving with the brew
-            lL = (1 + tex * 0.07) * (1 - clear * 0.18) * (1 - Math.min(0.3, depth * 0.1));
+            lL = (1 + Math.floor(tex * 1.5 + bay) * 0.035) * (1 - clear * 0.18) * (1 - Math.min(0.3, depth * 0.1));
+            // each particle's own speck of grain
+            const dv = dot[k];
+            // (fading out where the brew thickens into paste)
+            if (dv > 0 && paste < 0.25) {
+              const tone = dv - 3, gr = 1 - paste * 4;
+              lL *= 1 + gr * (tone >= 2 ? 0.1 + 0.16 * Math.max(0, Math.sin(twinkle * 1.3 + tone * 40)) : tone * 0.12);
+            }
             if (up <= thr) lL = 1.32; // meniscus highlight
             else if (y > 1 && wb[k - 2 * w] <= thr) lL = 1.16; // sheen just under the surface
             else if (y > 2 && wb[k - 3 * w] <= thr) lL *= 1.07;
@@ -946,6 +974,9 @@ function makeCanvas(w, h) {
 }
 
 /** @param {number} v */
+/** 4×4 Bayer ordered-dither thresholds, 0..1. */
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => (v + 0.5) / 16);
+
 function clamp255(v) {
   return v < 0 ? 0 : v > 255 ? 255 : v | 0;
 }

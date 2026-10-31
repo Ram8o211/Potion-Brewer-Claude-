@@ -73,19 +73,24 @@ computed from the particles that actually run out of the tap. What a
   shows only as its effects' particles growing denser and bolder.
   A brew takes the dominant colour of the pieces of the ingredients crushed
   into it (the shade covering most of them, not a blend of all their
-  textures), blending into gradients as it diffuses. Each effect
-  also fills the brew with its own swarm of pixel-art particles, as many
-  as its share of the magic, each in the effect's own colour so it reads
-  at a glance: red healing crosses rising and swelling on a heartbeat for
-  vitality, golden dumbbells heaving up and thumping down for strength,
-  beating pink hearts swaying upward for love, twinkling violet stars and
-  the odd shooting star for arcana, circling shapes that turn circle,
-  square, triangle, diamond and change colour for transformation, flames
-  licking up from white-hot to smoke and throwing sparks for fire,
-  snowflakes turning as they tumble down for frost, a fizz of bubbles
-  popping into droplets at the surface for acid, fat green bubbles that
-  swell and burst among little skulls for poison, sinking dark smoke and
-  wavering ghosts for death.
+  textures), blending into gradients as it diffuses. The liquid itself
+  is drawn as a swarm of pixel particles: every drop carries its own 1–2 px
+  speck of lighter or darker brew that travels with it (a few catch the
+  light and twinkle), and its colour deepens downward in dithered
+  pixel-art bands. Each effect also fills the brew with its own swarm of
+  tiny pixel particles — no icons — as many as its share of the magic,
+  each in a palette of its own so it reads at a glance by colour and
+  motion: crimson-to-rose motes swelling on a heartbeat with white sparks
+  darting up for vitality, chunky gold nuggets heaving up and flashing as
+  they thump down for strength, rose and pink motes pulsing as they sway
+  upward for love, violet specks twinkling into cyan-white sparkles (and
+  the odd shooting streak) for arcana, circling comets whose tails slide
+  through the spectrum for transformation, embers cooling from white-hot
+  to smoke and throwing sparks for fire, ice-blue crystals drifting down
+  and glinting for frost, a lime-to-yellow fizz popping into droplets at
+  the surface for acid, murky green globs swelling and bursting among
+  sickly green-and-violet motes for poison, and sinking clumps of dark
+  smoke with pale lavender wisps wavering up for death.
 * **A living rabbit colony.** Your Moon Rabbits are individuals with
   names, inherited coats, ages and family trees. Every dose acts on the
   rabbit's body and shows — muscles, hearts, frost, flames, acid burns, a
