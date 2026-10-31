@@ -1,11 +1,11 @@
 // The Wilds and the Trials room through real input: harvesting a mature
-// plant fills the stores and leaves a mark where it stood, a dragged
+// plant fills the stores and leaves nothing on the ground, a dragged
 // dropper doses a subject, a spent subject is replaced for coins, and all
 // of it survives a reload.
 import { test, expect } from '@playwright/test';
 import { watchErrors, shot, newGame, lab, drag, pourDose, crushInPot } from './helpers.mjs';
 
-test('harvesting a mature plant fills the stores and leaves a mark; growing ones cannot be taken', async ({ page }, info) => {
+test('harvesting a mature plant fills the stores and leaves nothing behind; growing ones cannot be taken', async ({ page }, info) => {
   const errors = watchErrors(page);
   await newGame(page, { tutorial: false, seed: 'gather-seed-1' });
   await page.click('[data-act=tab-wilds]');
@@ -25,7 +25,7 @@ test('harvesting a mature plant fills the stores and leaves a mark; growing ones
   const node = await lab(page, (l, id) => l.state.gathering.nodes[id], dep.id);
   expect(node.plants.length, 'one plant was taken').toBe(dep.slots - 1);
   expect(node.due, 'and the stand is sprouting again').toBeGreaterThan(Date.now() - 1000);
-  expect(await lab(page, (l) => l.state.gathering.marks.length), 'it left a mark on the ground').toBe(1);
+  expect(await lab(page, (l) => l.state.gathering.marks), 'it left no mark on the ground').toBeUndefined();
   // buying the Forager's Kit raises the yield of everything that is not simply picked
   const tool = await lab(page, (l, id) => { const m = l.state.lookup(id); return m.wild.gather; }, dep.materialId);
   if (tool !== 'pick') {
@@ -45,10 +45,10 @@ test('harvesting a mature plant fills the stores and leaves a mark; growing ones
   await page.waitForFunction(() => !!window.__alchemist.screen.views.wilds.bg);
   await lab(page, (l) => l.views.wilds.grow());
   // (each plant's middle: a fruit hangs below its hold, a flower stands above its foot)
-  const field = await lab(page, (l) => l.views.wilds.field.map((p) => { const f = l.views.wilds.frameOf(p); return { id: p.id, dep: p.dep.id, materialId: p.dep.materialId, x: p.x, y: p.y, stage: p.stage, closed: !!l.views.wilds.closed[p.dep.id], mx: p.x * 384 - f.ax + f.w / 2, my: p.y * 216 - f.ay + f.h / 2 }; }));
+  const field = await lab(page, (l) => l.views.wilds.field.map((p) => { const f = l.views.wilds.frameOf(p); return { id: p.id, dep: p.dep.id, materialId: p.dep.materialId, x: p.x, y: p.y, stage: p.stage, closed: !!l.views.wilds.closed[p.dep.id], fused: l.views.wilds.fused(p), mx: p.x * 384 - f.ax + f.w / 2, my: p.y * 216 - f.ay + f.h / 2 }; }));
   const tapAt = (p) => ({ x: cv.x + p.mx / 384 * cv.width, y: cv.y + p.my / 216 * cv.height });
-  // (one open now: a dawn or dusk flower out of its hour stays shut and only bends)
-  const ripe = field.find((p) => p.stage === 'mature' && !p.closed && p.dep !== dep.id);
+  // (one open now: a dawn or dusk flower out of its hour stays shut and only bends; a crystal is struck free, not shaken)
+  const ripe = field.find((p) => p.stage === 'mature' && !p.closed && !p.fused && p.dep !== dep.id);
   const s0 = await lab(page, (l, id) => l.state.stock(id), ripe.materialId);
   expect(await page.locator(`[data-deposit="${ripe.dep}"]`).count(), 'its ingredient is not yet listed').toBe(0);
   // sliding a finger across it shakes it: what it bears falls to the ground, and a tap there gathers it
@@ -100,7 +100,7 @@ test('harvesting a mature plant fills the stores and leaves a mark; growing ones
   await page.click('[data-act=region-meadow]');
   await page.waitForFunction(() => { const w = window.__alchemist.screen.views.wilds; return w.region === 'meadow' && !!w.bg; });
   await lab(page, (l) => l.views.wilds.grow());
-  const m0 = await lab(page, (l) => { const p = l.views.wilds.field.find((q) => q.stage === 'mature' && !l.views.wilds.closed[q.dep.id]), f = l.views.wilds.frameOf(p); return { id: p.id, materialId: p.dep.materialId, mx: p.x * 384 - f.ax + f.w / 2, my: p.y * 216 - f.ay + f.h / 2 }; });
+  const m0 = await lab(page, (l) => { const p = l.views.wilds.field.find((q) => q.stage === 'mature' && !l.views.wilds.closed[q.dep.id] && !l.views.wilds.fused(q)), f = l.views.wilds.frameOf(p); return { id: p.id, materialId: p.dep.materialId, mx: p.x * 384 - f.ax + f.w / 2, my: p.y * 216 - f.ay + f.h / 2 }; });
   const ms0 = await lab(page, (l, id) => l.state.stock(id), m0.materialId);
   // (the page may have moved with the new region's cards)
   await page.locator('.view-wilds canvas.scene').scrollIntoViewIfNeeded();

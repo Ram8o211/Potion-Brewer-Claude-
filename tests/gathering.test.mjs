@@ -1,10 +1,10 @@
 // Gathering depth: methods and tools, the hour, the weather, careful or
-// thorough harvests; plants that sprout, ripen and mature, the marks a
-// harvest leaves and the stands growing back to saturation.
+// thorough harvests; plants that sprout, ripen and mature, harvests that
+// leave nothing behind and the stands growing back to saturation.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { GameState } from '../src/game/state.js';
-import { gatherPlan, dayPart, weatherOn, WEATHERS, depositStatus, normalizeGathering, SCAR_SLOWDOWN, weatherRegrowth, harvestable, standOf, plantStage, marksIn, MARK_MS, SPROUT_SHARE, REGIONS, growthOf, checkpoint, moistureEnv, water, matureIn, GATHER_VERSION, GROW_FLOOR, WATER_DOSE, sandboxWilds, SANDBOX_PACE } from '../src/game/gathering.js';
+import { gatherPlan, dayPart, weatherOn, WEATHERS, depositStatus, normalizeGathering, SCAR_SLOWDOWN, weatherRegrowth, harvestable, standOf, plantStage, SPROUT_SHARE, REGIONS, growthOf, checkpoint, moistureEnv, water, matureIn, GATHER_VERSION, GROW_FLOOR, WATER_DOSE, sandboxWilds, SANDBOX_PACE } from '../src/game/gathering.js';
 
 const fresh = (seed = 'gather-1') => GameState.create(seed, { tutorial: false });
 const depositOf = (st, key) => st.deposits.find((d) => st.lookup(d.materialId).wild.key === key);
@@ -127,7 +127,7 @@ test('plants sprout, ripen and mature; only a mature one can be harvested', () =
   assert.equal(st.gather(chalk.id, { now: t1 + chalk.growMs, plant: kid.id }).reason, 'gone');
 });
 
-test('a harvest leaves a mark that fades; new sprouts grow back at random spots until the region is saturated', () => {
+test('a harvest leaves nothing on the ground; new sprouts grow back at random spots until the region is saturated', () => {
   const st = fresh('gather-3');
   st.customerIndex = 1; st.opened = true;
   const t0 = Date.now() + 60 * 60000;
@@ -137,13 +137,8 @@ test('a harvest leaves a mark that fades; new sprouts grow back at random spots 
   const r = st.gather(d.id, { now: t0 });
   assert.ok(r.ok);
   const gone = before.plants.find((p) => p.id === r.plant);
-  const marks = marksIn(st.gathering, 'forest', t0);
-  assert.equal(marks.length, 1);
-  assert.deepEqual([marks[0].x, marks[0].y], [gone.x, gone.y], 'the mark is where the plant stood');
-  assert.equal(marks[0].key, st.lookup(d.materialId).wild.key);
-  assert.ok(marksIn(st.gathering, 'forest', t0 + MARK_MS / 2)[0].faded > 0.4, 'it fades');
-  assert.equal(marksIn(st.gathering, 'forest', t0 + MARK_MS).length, 0, 'and disappears');
-  assert.equal(marksIn(st.gathering, 'meadow', t0).length, 0, 'only in its own region');
+  assert.ok(gone, 'the plant was taken');
+  assert.equal(/** @type {any} */ (st.gathering).marks, undefined, 'and no mark of it is kept on the ground');
   // strip the stand, then let it grow back: never past its slots, at new spots
   while (st.gather(d.id, { now: t0 }).ok);
   const later = standOf(st.gathering, d, t0 + d.spawnMs * (d.slots + 5));
@@ -166,7 +161,7 @@ test('a harvest leaves a mark that fades; new sprouts grow back at random spots 
   const again = st.gather(d.id, { now: t0 + d.spawnMs * (d.slots + 5) + d.growMs * 2 });
   assert.ok(again.ok);
   assert.ok(st.gathering.nodes[d.id].due !== null, 'sprouting again');
-  // plants and marks survive a save
+  // plants survive a save
   const back = normalizeGathering(JSON.parse(JSON.stringify(st.gathering)), t0 + 1e9);
   assert.deepEqual(back.nodes[d.id].plants, st.gathering.nodes[d.id].plants);
   assert.equal(back.created, st.gathering.created);
@@ -176,7 +171,7 @@ test('an old save’s stock-in-ml stands start afresh, saturated', () => {
   const g = normalizeGathering({ nodes: { 'forest:ironroot:0': { stock: 10, at: 5 } }, created: 100 }, 1000);
   assert.deepEqual(g.nodes, {});
   assert.equal(g.created, 100);
-  assert.deepEqual(g.marks, []);
+  assert.equal(/** @type {any} */ (g).marks, undefined, 'marks an old save kept are dropped');
 });
 
 test('the night after a rainy day regrows the plants', () => {

@@ -1,9 +1,9 @@
 // The wilds: travel between regions, tap a mature plant in the scene (or use
 // the list) to gather raw ingredients into the shop's stores. Each
 // ingredient grows as a stand of plants that sprout at random spots, ripen
-// and mature with real time; only a mature one can be harvested, it leaves a
-// mark on the ground that fades, and new sprouts come up until the region is
-// saturated again. Nothing here runs while you brew. What a harvest brings
+// and mature with real time; only a mature one can be harvested, it is taken
+// whole (nothing is left on the ground), and new sprouts come up until the
+// region is saturated again. Nothing here runs while you brew. What a harvest brings
 // depends on the method and tool, the hour (dawn / midday / dusk follow the
 // shop's customers), the weather and how thoroughly you dig (game/gathering.js).
 // The region is a procedural environment generated from the world seed
@@ -17,7 +17,9 @@
 // enough lets go of its ingredient, which falls as a ragdoll cut from the
 // very pixels it grew as (rendering/ragdoll.js) — tumbling, bouncing, coming
 // to rest on the ground or the water, knocked about again by the finger —
-// and is gathered with a tap.
+// and is gathered with a tap. A crystal is fused into its rock: it is not
+// shaken loose but struck — each tap (or hard swipe) chips the rock and
+// cracks it further — and breaks free only after several blows.
 // Living plants drink: in watering mode a tap waters the plants round it, a
 // finger dragged across the scene waters everything along its path (and a
 // card's Water button its whole stand); damp soil shows dark round a plant,
@@ -29,7 +31,7 @@
 import { h, btn, clear, toast } from '../dom.js';
 import { icon } from '../icons.js';
 import { audio } from '../../audio/audio.js';
-import { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, marksIn, moistureEnv, DAY_PART_NAME } from '../../game/gathering.js';
+import { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, moistureEnv, DAY_PART_NAME } from '../../game/gathering.js';
 import { equipmentById } from '../../game/equipment.js';
 import { RANKS } from '../../game/equipment.js';
 import { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, sceneTouch, crosses, SCENE_W, SCENE_H } from '../../rendering/wild-scene.js';
@@ -47,6 +49,11 @@ const TAP_SLOP = { mouse: 6, pen: 8, touch: 14 };
 
 /** How far apart (scene pixels) a finger dragged in watering mode waters along its path. */
 const WATER_STEP = 12;
+
+/** How many blows a crystal fused into its rock takes to break free (the Forager's Kit's hammer saves one): a few more for some. */
+const STRIKES = [4, 5, 6];
+/** How fast a swipe must go (scene pixels per move) to strike a crystal, and how soon after a blow another lands. */
+const STRIKE_SPEED = 2.5, STRIKE_GAP = 0.18;
 
 /** How strongly what glows lights its surroundings in each region: little in the open meadow, fully in the dark fens and caves. */
 const GLOW_IN = { forest: 0.85, netherwood: 1.3, meadow: 0.45, river: 0.9, quarry: 0.7, moonfen: 1.4, crags: 0.7 };
@@ -104,6 +111,8 @@ export class WildsView {
     this.shakes = {};
     /** plant id → how much it has been shaken; a ripe one lets go at 1 @type {Record<string, number>} */
     this.energy = {};
+    /** crystal id → the blows it has taken and when the last one landed (scene time) @type {Record<string, {n:number, t:number}>} */
+    this.hits = {};
     /** bits of leaf and pulp in flight @type {{x:number, y:number, vx:number, vy:number, t:number, c:string}[]} */
     this.bits = [];
     /** the pointer pressed on the scene: where it is, where it came down (sx, sy), how far it has gone (CSS px), and in watering mode where it last watered and how many drank @type {{id:number, type:string, x:number, y:number, cx:number, cy:number, sx:number, sy:number, dist:number, water:boolean, wx:number, wy:number, drank:number, near:boolean, pours:number}|null} */
@@ -182,7 +191,7 @@ export class WildsView {
       const ok = this.unlocked(r);
       tabs.appendChild(btn(r.name, () => {
         if (!ok) { toast(r.name, `The guild grants passage at the rank of ${RANKS[r.rank].name}.`, 'lock'); return; }
-        this.region = r.id; this.bgKey = ''; this.fallen = {}; this.shakes = {}; this.energy = {}; this.drag = null; audio.play('page'); this.refresh();
+        this.region = r.id; this.bgKey = ''; this.fallen = {}; this.shakes = {}; this.energy = {}; this.hits = {}; this.drag = null; audio.play('page'); this.refresh();
       }, { cls: (this.region === r.id ? 'active ' : '') + (ok ? '' : 'locked'), icon: ok ? (r.magical ? 'wisp' : r.id === 'quarry' ? 'pick' : r.id === 'river' ? 'drop' : r.id === 'meadow' ? 'rose' : r.id === 'netherwood' ? 'shroom' : 'tree') : 'lock', act: 'region-' + r.id }));
     }
     const region = REGIONS.find((r) => r.id === this.region);
@@ -376,9 +385,6 @@ export class WildsView {
     audio.play(plan.method.sound);
     setTimeout(() => audio.play('select'), 140);
     const at = this.field.find((p) => p.id === r.plant) || { x: d.x, y: d.y, key: null, stage: 'mature' };
-    // the mark it leaves lies where the plant was drawn (the scene moved it onto open ground)
-    const mark = st.gathering.marks[st.gathering.marks.length - 1];
-    if (mark && r.plant && at.key) { mark.x = at.x; mark.y = at.y; if (at.mount && at.mount !== 'ground') mark.mount = at.mount; }
     const f = at.key ? plantFrameOf(m, 'mature', { mount: at.mount, variant: at.variant, flip: at.flip }) : null;
     // the count rises from the middle of what was picked
     const fy = f ? at.y * SCENE_H - f.ay + f.pix.h * 0.5 : at.y * SCENE_H;
@@ -387,7 +393,7 @@ export class WildsView {
     if (lab.tutorial) lab.tutorial.notify('gather', d.materialId);
     // a first find gets its own place on the shelf
     if (!lab.jarEls[d.materialId]) lab.buildShelf(); else lab.updateShelf();
-    if (r.plant) { delete this.fallen[r.plant]; delete this.shakes[r.plant]; delete this.energy[r.plant]; }
+    if (r.plant) { delete this.fallen[r.plant]; delete this.shakes[r.plant]; delete this.energy[r.plant]; delete this.hits[r.plant]; }
     lab.save();
     this.refresh();
     return true;
@@ -493,6 +499,8 @@ export class WildsView {
       if (!crosses(x0, y0, x1, y1, left, top, right, bottom)) continue;
       const cur = this.shakes[p.id];
       if (!cur || Math.abs(a) >= Math.abs(cur.a) * Math.exp(-(this.time - cur.t0) * 1.5)) this.shakes[p.id] = { a, t0: this.time };
+      // a crystal fused into its rock is not shaken loose: a hard swipe strikes it
+      if (this.fused(p)) { if (speed >= STRIKE_SPEED) this.strike(p, dx); continue; }
       // (a slow drag shakes too, only it takes longer)
       this.energy[p.id] = (this.energy[p.id] || 0) + Math.max(0.08, speed / 7);
       if (p.stage === 'mature' && !this.closed[p.dep.id] && this.energy[p.id] >= 1) this.detach(p, dx, y1 - y0);
@@ -562,6 +570,53 @@ export class WildsView {
     audio.play('click');
   }
 
+  /** Whether a plant is a crystal still fused into its rock (struck free, not shaken). @param {any} p */
+  fused(p) {
+    if (p.stage !== 'mature' || this.fallen[p.id]) return false;
+    const d = speciesOf(p.m);
+    return !!d && d.family === 'crystal';
+  }
+
+  /** How many blows a crystal takes to break free. @param {any} p */
+  strikesFor(p) {
+    const n = STRIKES[hashString(p.id) % STRIKES.length];
+    return this.lab.sandbox || this.lab.state.has('kit') ? n - 1 : n;
+  }
+
+  /**
+   * A blow on a crystal fused into its rock: the rock cracks further and
+   * chips of it fly; the blow that finishes the cracks breaks it free, and
+   * it falls like anything shaken loose. `dir`: the way the blow went.
+   * @param {any} p @param {number} dir
+   */
+  strike(p, dir) {
+    const hit = this.hits[p.id] || (this.hits[p.id] = { n: 0, t: -9 });
+    if (this.time - hit.t < STRIKE_GAP) return;
+    hit.n++; hit.t = this.time;
+    const side = Math.sign(dir) || 1;
+    this.shakes[p.id] = { a: 0.7 * side, t0: this.time };
+    const sp = plantCanvas(p.m, p.stage, { ...this.look(p), hover: false });
+    const x = Math.round(p.x * SCENE_W), y = Math.round(p.y * SCENE_H);
+    const rock = this.rockColour();
+    const m = p.m, c = m ? `rgb(${Math.round((m.look || m.color)[0] * 255)},${Math.round((m.look || m.color)[1] * 255)},${Math.round((m.look || m.color)[2] * 255)})` : '#cde';
+    const by = sp ? y - Math.round(sp.ay * 0.25) : y - 2;
+    for (let i = 0; i < 6; i++) this.bits.push({ x: x + (Math.random() - 0.5) * 8, y: by + (Math.random() - 0.5) * 3, vx: -side * (8 + Math.random() * 24) + (Math.random() - 0.5) * 10, vy: -20 - Math.random() * 30, t: 0, c: i % 3 ? rock : c });
+    if (hit.n >= this.strikesFor(p)) {
+      delete this.hits[p.id];
+      this.energy[p.id] = 1;
+      this.detach(p, side * 3, -4);
+      audio.play('crack');
+      return;
+    }
+    audio.play('click');
+  }
+
+  /** The colour of the region's rock (chips struck off a crystal's seam). */
+  rockColour() {
+    const stone = this.region === 'quarry' || this.region === 'crags';
+    return this.region === 'crags' ? '#4a3c40' : stone ? '#8c8072' : this.region === 'moonfen' || this.region === 'netherwood' ? '#4c4a58' : '#7c7c78';
+  }
+
   /** @param {{clientX:number, clientY:number}} e where the tap came down */
   tapScene(e) {
     const q = this.scenePoint(e);
@@ -570,6 +625,8 @@ export class WildsView {
     if (fallenAt) { this.gather(fallenAt.dep, fallenAt); return; }
     const p = this.plantAt(e);
     if (!p) return;
+    // a crystal is struck: it breaks free of its rock after several blows
+    if (this.fused(p)) { this.strike(p, q.x < p.x * SCENE_W ? 1 : -1); return; }
     // a ripe plant tapped is shaken: what it bears falls, and is tapped in turn
     if (p.stage === 'mature' && !this.closed[p.dep.id]) { const side = q.x < p.x * SCENE_W ? 1 : -1; this.shakes[p.id] = { a: 2.6 * side, t0: this.time }; this.energy[p.id] = 1; this.detach(p, side * 3, 0); return; }
     this.gather(p.dep, p);
@@ -656,8 +713,7 @@ export class WildsView {
     if (touch) touch.step(dt);
     ctx.drawImage(sceneFrame(this.region, st.seed, this.time), 0, 0);
     animateRegion(ctx, this.region, this.time, st.seed);
-    // the marks of past harvests, fading into the ground, then the plants, the far ones first
-    for (const k of marksIn(st.gathering, this.region, now)) this.drawMark(ctx, k);
+    // the plants, the far ones first
     for (const p of this.field.slice().sort((a, b) => a.y - b.y)) if (p.key && !this.fallen[p.id]) this.drawPlant(ctx, p);
     this.drawFallen(ctx, dt);
     this.paintSky(ctx, dt);
@@ -732,6 +788,7 @@ export class WildsView {
     // a vine hangs and sways; the rest stands, juts or lies still
     const dxAt = this.drawBent(ctx, p, sp, x, y, lift);
     if (!dxAt) ctx.drawImage(sp.cv, x - sp.ax, y - sp.ay - lift);
+    if (this.fused(p)) this.drawFusion(ctx, p, sp, x, y);
     // what glows lights its surroundings, breathing, the more so the darker the region
     const emit = emitColour(p.m);
     if (emit && !closed && sp.glows.length) {
@@ -758,6 +815,36 @@ export class WildsView {
       if (phase < 0.5) {
         const [gx, gy] = sp.glints[Math.floor(cycle / 2) % sp.glints.length];
         sparkle(ctx, x - sp.ax + gx, y - sp.ay + gy, phase / 0.5);
+      }
+    }
+  }
+
+  /**
+   * The rock a crystal is fused into: a jagged collar of the region's stone
+   * round its foot, and a crack for every blow it has taken, running from
+   * the rock up into the crystal, longer the closer it is to breaking free.
+   * @param {CanvasRenderingContext2D} ctx @param {any} p @param {{w:number, h:number, ax:number, ay:number}} sp @param {number} x @param {number} y
+   */
+  drawFusion(ctx, p, sp, x, y) {
+    const seed = hashString(p.id), rock = this.rockColour();
+    const hw = Math.max(4, Math.round(sp.w * 0.32)), hits = this.hits[p.id] ? this.hits[p.id].n : 0, need = this.strikesFor(p);
+    // the collar: a low, uneven lump of rock, lit along its top, dark at its foot
+    for (let i = -hw; i <= hw; i++) {
+      const edge = 1 - Math.abs(i) / (hw + 1), top = Math.round(1 + edge * 3 + ((seed >> ((i + hw) % 24)) & 1));
+      ctx.fillStyle = rock; ctx.fillRect(x + i, y - top, 1, top + 1);
+      ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.fillRect(x + i, y - top, 1, 1);
+      ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x + i, y, 1, 1);
+    }
+    // the cracks of the blows so far
+    ctx.fillStyle = 'rgba(14,10,12,0.85)';
+    const reach = Math.round(sp.ay * 0.5 * (hits / need)) + 3;
+    for (let k = 0; k < hits; k++) {
+      let cx = x + (((seed >> (k * 3)) & 7) - 3.5) * hw / 4, cy = y - 1;
+      const lean = ((seed >> (k * 2 + 5)) & 1) ? 1 : -1;
+      for (let s = 0; s < reach; s++) {
+        ctx.fillRect(Math.round(cx), Math.round(cy), 1, 1);
+        cy -= 1;
+        if (((seed >> ((k * 5 + s) % 28)) & 3) === 0) cx += lean;
       }
     }
   }
@@ -847,42 +934,6 @@ export class WildsView {
       }
     }
     this.drops = this.drops.filter((d) => d.t < d.life + 0.3);
-  }
-
-  /**
-   * The mark a harvest leaves: a patch of turned earth (rubble on stone
-   * ground) as wide as the plant was, with a cut stem — or, dug out whole, a
-   * dark hole ringed with clods — fading back into the ground in steps.
-   * @param {CanvasRenderingContext2D} ctx @param {any} k a mark (gathering.js marksIn)
-   */
-  drawMark(ctx, k) {
-    // what hung or jutted from a hold leaves no turned earth
-    if (k.mount && k.mount !== 'ground') return;
-    const sil = k.key ? silhouetteOf(this.lab.state.lookup('wild-' + k.key)) : null;
-    const x = Math.round(k.x * SCENE_W), y = Math.round(k.y * SCENE_H);
-    const w = Math.max(8, Math.round((sil ? sil.w : 16) * 0.6)), hw = Math.floor(w / 2);
-    const stone = this.region === 'quarry' || this.region === 'crags';
-    const [soil, dark, clod] = stone ? ['#6e6258', '#3a322c', '#a09280'] : this.region === 'moonfen' || this.region === 'netherwood' ? ['#3a3228', '#16120e', '#5a5040'] : ['#7a5230', '#3a2412', '#a07a4a'];
-    ctx.globalAlpha = Math.ceil((1 - k.faded) * 4) / 4;
-    // the turned earth: a low mound, darker along its foot
-    ctx.fillStyle = soil;
-    ctx.fillRect(x - hw, y - 3, w, 4);
-    ctx.fillRect(x - hw + 2, y - 4, w - 4, 1);
-    ctx.fillStyle = dark;
-    ctx.fillRect(x - hw + 1, y + 1, w - 2, 1);
-    if (k.deep) {
-      // dug out whole: a dark hole in the middle
-      ctx.fillRect(x - Math.floor(hw / 2), y - 2, Math.max(3, hw), 2);
-    }
-    ctx.fillStyle = clod;
-    for (let i = 0; i < 4; i++) ctx.fillRect(x - hw + 1 + ((i * 7 + Math.round(k.x * 97)) % Math.max(1, w - 2)), y - 4 + (i % 3) * 2, 1, 1);
-    if (!k.deep && !stone) {
-      // what is left of the stems
-      ctx.fillStyle = '#4a6a22';
-      ctx.fillRect(x - 2, y - 6, 1, 3);
-      ctx.fillRect(x + 1, y - 5, 1, 2);
-    }
-    ctx.globalAlpha = 1;
   }
 
   /** Light of the hour and the day's weather over the scene. @param {CanvasRenderingContext2D} ctx @param {number} dt */

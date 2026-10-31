@@ -5,9 +5,9 @@
 // seed, so it never needs saving or migrating. Each ingredient has a stand
 // of plants (crystals, stones, shells...) that come up as sprouts at random
 // spots, ripen and mature; only a mature plant can be harvested. Harvesting
-// one leaves a mark on the ground that fades, and the stand sprouts again
-// until it is back to its share of the region's saturation. Only each
-// stand's plants (where and when each sprouted) and the marks are saved;
+// one takes it whole, leaving nothing on the ground, and the stand sprouts
+// again until it is back to its share of the region's saturation. Only each
+// stand's plants (where and when each sprouted) are saved;
 // what has grown since is resolved lazily from elapsed wall-clock time
 // whenever a stand is shown or gathered — there are no timers and nothing
 // runs per frame, so the wilds cost nothing while the player brews (and
@@ -110,8 +110,6 @@ const PLACES = {
 export const STAGES = /** @type {const} */ (['sprout', 'ripe', 'mature']);
 /** The share of its growing time a plant spends as a sprout. */
 export const SPROUT_SHARE = 0.4;
-/** How long the mark a harvest leaves on the ground takes to fade (a dug-out plant's, twice as long). */
-export const MARK_MS = 4 * 60000;
 
 /**
  * Deterministic deposits for a world: one stand of each wild ingredient in
@@ -172,20 +170,9 @@ export function thirstOf(shape, region) {
  * @property {boolean} [scar]    dug out thoroughly: sprouts come at half pace until it is saturated again
  */
 
-/**
- * @typedef {Object} Mark  the trace a harvest leaves on the ground
- * @property {string} region
- * @property {string} key    the plant's wild key (its size on the ground)
- * @property {number} x
- * @property {number} y
- * @property {number} at
- * @property {boolean} [deep] dug out by a thorough harvest
- * @property {string} [mount] what it grew on, when not the ground (a hanging or jutting plant leaves no turned earth)
- */
-
 /** Fresh gathering state: every stand saturated, some of it already mature. */
 export function createGathering(now = Date.now()) {
-  return { v: GATHER_VERSION, nodes: /** @type {Record<string, Stand>} */ ({}), marks: /** @type {Mark[]} */ ([]), total: 0, trips: 0, created: now, sky: 'clear', watered: 0 };
+  return { v: GATHER_VERSION, nodes: /** @type {Record<string, Stand>} */ ({}), total: 0, trips: 0, created: now, sky: 'clear', watered: 0 };
 }
 
 /** Version of the gathering state: 2 adds the moisture and growth checkpoints of living plants. */
@@ -208,10 +195,7 @@ export function normalizeGathering(g, now = Date.now()) {
       out.nodes[id] = { plants, due: finite(v.due) ? v.due : null, seq: finite(v.seq) ? v.seq : plants.length, ...(v.scar ? { scar: true } : {}) };
     }
   }
-  if (Array.isArray(g.marks)) {
-    out.marks = g.marks.filter((k) => k && typeof k.region === 'string' && typeof k.key === 'string' && finite(k.x) && finite(k.y) && finite(k.at) && now - k.at < MARK_MS * 2)
-      .map((k) => ({ region: k.region, key: k.key, x: k.x, y: k.y, at: Math.min(k.at, now), ...(k.deep ? { deep: true } : {}) }));
-  }
+  // (the marks harvests once left on the ground are dropped: a harvest leaves nothing behind)
   out.total = Number.isFinite(g.total) ? g.total : 0;
   out.trips = Number.isFinite(g.trips) ? g.trips : 0;
   out.watered = Number.isFinite(g.watered) ? g.watered : 0;
@@ -442,11 +426,6 @@ export function migrateGathering(g, deposits, now = Date.now()) {
 /** A thoroughly dug stand sprouts this many times slower until it is saturated again. */
 export const SCAR_SLOWDOWN = 2;
 
-/** The harvest marks still showing in a region, each with how far it has faded (0..1). @param {ReturnType<typeof createGathering>} g @param {string} region @param {number} [now] */
-export function marksIn(g, region, now = Date.now()) {
-  return g.marks.filter((k) => k.region === region).map((k) => ({ ...k, faded: (now - k.at) / (MARK_MS * (k.deep ? 2 : 1)) })).filter((k) => k.faded < 1);
-}
-
 // ------------------------------------------------------------------ methods, tools, hours and weather
 
 /**
@@ -607,15 +586,15 @@ export function weatherRegrowth(g, deposits, weather, lookup, now = Date.now()) 
 /**
  * Harvest one mature plant of a deposit into the shop inventory: the plant
  * given (`plant`, a plant id) or else the oldest mature one. Only a mature
- * plant can be taken; it leaves a mark on the ground that fades, and the
- * stand starts sprouting again (at random spots) until it is saturated.
+ * plant can be taken; it is taken whole, leaving nothing on the ground, and
+ * the stand starts sprouting again (at random spots) until it is saturated.
  * Respects shelf storage; returns what was gathered (0 if nothing could be).
  * `free` (the Free Experiment) takes the plant all the same — the stand grows
  * back as it would — but its shelves are bottomless: nothing is stored, no
  * rank is asked for and the plant gives its full `take`.
  * @param {{rank:number, inventory:Record<string,number>, cap:{storage:number}, gathering:any}} st
  * @param {Deposit} d `take` is what the plant gives (gatherPlan)
- * @param {{now?:number, unlimited?:boolean, free?:boolean, thorough?:boolean, plant?:string, key?:string}} [opts]
+ * @param {{now?:number, unlimited?:boolean, free?:boolean, thorough?:boolean, plant?:string}} [opts]
  */
 export function harvest(st, d, opts = {}) {
   const now = opts.now ?? Date.now();
@@ -637,8 +616,6 @@ export function harvest(st, d, opts = {}) {
   const plants = s.plants.filter((q) => q !== p).map((q) => checkpoint(d, q, now, sky));
   const scar = !!(opts.thorough || s.scar);
   g.nodes[d.id] = { plants, due: s.due ?? now + every(d, { scar }), seq: s.seq, ...(scar ? { scar: true } : {}) };
-  g.marks = g.marks.filter((k) => now - k.at < MARK_MS * 2);
-  g.marks.push({ region: d.region, key: opts.key || '', x: p.x, y: p.y, at: now, ...(opts.thorough ? { deep: true } : {}) });
   if (!opts.free) { st.inventory[d.materialId] = have + amount; g.total += amount; }
   return { ok: true, amount, plant: p.id, remaining: (ripe.length - 1) * d.take };
 }
@@ -688,7 +665,6 @@ export function sandboxWilds(g, deposits, now = Date.now()) {
   }
   // walked long enough ago that every untouched plant has grown up
   g.nodes = {};
-  g.marks = [];
   g.created = now - 3600000;
   g.sky = 'clear';
   return g;

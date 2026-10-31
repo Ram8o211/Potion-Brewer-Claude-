@@ -250,6 +250,18 @@ export class GameState {
     return this._deposits;
   }
 
+  /**
+   * Whether an ingredient is known: everything the market deals in is, but
+   * a wild ingredient is unknown in every world until it is first gathered
+   * (or is already in the stores, as the first satchel of herbs is).
+   * @param {string} id
+   */
+  knows(id) {
+    const m = this.lookup(id);
+    if (!m || !m.wild) return true;
+    return !!this.found[id] || this.stock(id) > 0;
+  }
+
   /** Wild ingredient ids with a deposit the player can reach. */
   gatherableSet() {
     const s = new Set();
@@ -270,7 +282,7 @@ export class GameState {
     if (!d) return { ok: false, amount: 0, reason: 'unknown' };
     const m = this.lookup(d.materialId);
     const { take } = opts.free ? d : gatherPlan(this, d, m, { thorough: opts.thorough });
-    const r = harvest(this, { ...d, take }, { ...opts, key: m && m.wild ? m.wild.key : '' });
+    const r = harvest(this, { ...d, take }, opts);
     if (r.ok && !opts.unlimited && !opts.free) {
       this.found[d.materialId] = 1;
       this.stats.gathered = (this.stats.gathered || 0) + r.amount;
