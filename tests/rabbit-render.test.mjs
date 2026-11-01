@@ -195,3 +195,16 @@ test('every kind but the rabbit has an enclosure of its own: built level, determ
   const a = penOf('toad').back.hash();
   assert.equal(penOf('toad').back.hash(), a);
 });
+
+test('an animal set into the wilds stands out: its tones spread, its outline inked, a pale halo beyond', async () => {
+  const { punchSprite } = await import('../src/rendering/punch.js');
+  const w = 8, h = 8, d = new Uint8ClampedArray(w * h * 4);
+  // a 4×4 body, two greys close together
+  for (let y = 2; y < 6; y++) for (let x = 2; x < 6; x++) { const p = (y * w + x) * 4; d.set(x < 4 ? [110, 100, 90, 255] : [130, 120, 110, 255], p); }
+  punchSprite(d, w, h);
+  const at = (x, y) => Array.from(d.slice((y * w + x) * 4, (y * w + x) * 4 + 4));
+  assert.ok(at(4, 3)[0] - at(2, 3)[0] > 20 * 1.3, 'the two tones are further apart');
+  assert.ok(at(1, 3)[0] < 40 && at(1, 3)[3] > 200, 'inked next to the body');
+  assert.ok(at(0, 3)[0] > 200 && at(0, 3)[3] > 0 && at(0, 3)[3] < 128, 'a faint pale halo beyond the ink');
+  assert.equal(at(0, 0)[3], 0, 'beyond the halo nothing is touched');
+});
