@@ -431,7 +431,7 @@ export class HutchPanel {
     const low = this.lab.effectiveQuality() === 'low';
     this.scene.update(dt);
     this.scene.draw(this.ctx, t, { selected: this.st.colony.focus, hover: this.hover, low });
-    if (this.crisp) { this.crisp.enabled = !low; this.crisp.present(); }
+    if (this.crisp) { this.crisp.enabled = this.lab.smoothPixels(); this.crisp.present(); }
     this._acc += dt;
     if (this._acc >= (low ? 0.2 : 0.1)) { this._acc = 0; this.drawTiles(t); }
     this._live += dt;

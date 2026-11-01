@@ -594,6 +594,11 @@ export class LabScreen {
   }
 
   /** @returns {'high'|'medium'|'low'} */
+  /** Whether pixel art is shown with sharp-bilinear smoothing (rendering/crisp.js): the setting, and never in battery saver. */
+  smoothPixels() {
+    return this.app.settings.smoothPixels !== false && this.effectiveQuality() !== 'low';
+  }
+
   effectiveQuality() {
     const q = this.app.settings.quality;
     return q === 'auto' || !q ? this.autoQuality : q;

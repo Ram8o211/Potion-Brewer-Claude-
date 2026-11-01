@@ -7,11 +7,10 @@
 // fall, and fine texture shimmers as it moves. Plain smoothing blurs it all.
 //
 // The cure the emulators use: scale the art up by a whole number with
-// nearest-neighbour (every pixel the same size, edges sharp), to just past
-// the size it is shown at, then down the last fraction with bilinear
-// filtering. Every art pixel comes out the same size; only the one screen
-// pixel along its edge is blended with its neighbour — anti-aliased —
-// so every detail is drawn whole and none is lost.
+// nearest-neighbour (every pixel the same size, edges sharp), then the last
+// fraction with bilinear filtering. Every art pixel comes out the same size;
+// only the one screen pixel along its edge is blended with its neighbour —
+// anti-aliased — so every detail is drawn whole and none is lost.
 //
 // CrispCanvas does this for a canvas already in the page, which stays the
 // target of the pointer and keeps its art-resolution drawing: a second
@@ -19,9 +18,23 @@
 // painted from it each time present() is called. Where nearest-neighbour is
 // already even (a whole-number scale) or the pixels are big enough that a
 // screen pixel more or less is not seen, it steps aside.
+//
+// It is cheap per frame: the layout (where the art is, how big, what part
+// is in view) is measured only when something moves or resizes, never in
+// the frame; the two canvases are opaque and kept at their size; a frame is
+// two GPU copies of the part in view and nothing else.
 
 /** From this many screen pixels per art pixel, plain nearest-neighbour is even enough. */
-const MAX_SCALE = 7;
+const MAX_SCALE = 6;
+
+/**
+ * @typedef {Object} Geo
+ * @property {boolean} on
+ * @property {number} ax0 @property {number} ay0 @property {number} aw @property {number} ah  the art in view
+ * @property {number} k     the whole-number upscale
+ * @property {number} dx @property {number} dy @property {number} dw @property {number} dh  where it lands on the overlay (device px)
+ * @property {boolean} cover  whether it covers the whole overlay (nothing to clear)
+ */
 
 export class CrispCanvas {
   /**
@@ -35,17 +48,26 @@ export class CrispCanvas {
     this.viewport = viewport || src;
     this.on = false;
     this.enabled = true;
+    /** @type {Geo|null} the layout, measured when it changes (null: measure before the next frame) */
+    this.geo = null;
     this.out = /** @type {HTMLCanvasElement} */ (document.createElement('canvas'));
     this.out.className = 'crisp-overlay';
     this.out.setAttribute('aria-hidden', 'true');
     Object.assign(this.out.style, { position: 'absolute', pointerEvents: 'none', display: 'none', imageRendering: 'auto', left: '0', top: '0' });
     if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
     host.appendChild(this.out);
-    /** the art scaled up by a whole number @type {HTMLCanvasElement} */
+    // both opaque (the art always is): cheaper to fill and to composite
+    this.octx = /** @type {CanvasRenderingContext2D} */ (this.out.getContext('2d', { alpha: false }));
+    /** the art scaled up by a whole number */
     this.mid = document.createElement('canvas');
-    // a scrolled window shows another part: paint it at once
-    this.onScroll = () => this.present();
+    this.mctx = /** @type {CanvasRenderingContext2D} */ (this.mid.getContext('2d', { alpha: false }));
+    // measure again only when something moves: a scroll, a resize, a change of zoom or screen
+    this.dirty = () => { this.geo = null; };
+    this.onScroll = () => { this.geo = null; this.present(); };
     if (this.viewport !== src) this.viewport.addEventListener('scroll', this.onScroll, { passive: true });
+    window.addEventListener('resize', this.dirty);
+    this.ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(this.dirty) : null;
+    if (this.ro) for (const el of new Set([src, host, this.viewport])) this.ro.observe(el);
   }
 
   /** Stop and remove the overlay. */
@@ -53,6 +75,8 @@ export class CrispCanvas {
     this.off();
     this.out.remove();
     if (this.viewport !== this.src) this.viewport.removeEventListener('scroll', this.onScroll);
+    window.removeEventListener('resize', this.dirty);
+    if (this.ro) this.ro.disconnect();
   }
 
   /** Show the art canvas itself. */
@@ -63,53 +87,56 @@ export class CrispCanvas {
     this.src.style.opacity = '';
   }
 
-  /** Paint the overlay from the art canvas as it is now. */
-  present() {
-    const src = this.src;
-    if (!this.enabled || !src.isConnected || !src.width) { this.off(); return; }
+  /** Measure the layout: what part of the art is in view, at what scale, where. @returns {Geo} */
+  measure() {
+    const src = this.src, no = /** @type {Geo} */ ({ on: false });
+    if (!src.isConnected || !src.width) return no;
     const dpr = window.devicePixelRatio || 1;
     const sr = src.getBoundingClientRect();
-    if (!sr.width || !sr.height) { this.off(); return; }
+    if (!sr.width || !sr.height) return no;
     // screen pixels per art pixel
     const s = (sr.width / src.width) * dpr;
-    if (s < 1 || s >= MAX_SCALE || Math.abs(s - Math.round(s)) < 0.04) { this.off(); return; }
+    if (s < 1 || s >= MAX_SCALE || Math.abs(s - Math.round(s)) < 0.04) return no;
     // the part in view: the window's inner box, or the canvas
     const vp = this.viewport, own = vp === src;
     const vr = own ? sr : vp.getBoundingClientRect();
     const left = own ? sr.left : vr.left + vp.clientLeft, top = own ? sr.top : vr.top + vp.clientTop;
     const cw = own ? sr.width : vp.clientWidth, ch = own ? sr.height : vp.clientHeight;
-    if (cw <= 0 || ch <= 0) { this.off(); return; }
+    if (cw <= 0 || ch <= 0) return no;
     const ux = src.width / sr.width, uy = src.height / sr.height;
     const ax0 = Math.max(0, Math.floor((left - sr.left) * ux)), ay0 = Math.max(0, Math.floor((top - sr.top) * uy));
     const ax1 = Math.min(src.width, Math.ceil((left + cw - sr.left) * ux)), ay1 = Math.min(src.height, Math.ceil((top + ch - sr.top) * uy));
     const aw = ax1 - ax0, ah = ay1 - ay0;
-    if (aw <= 0 || ah <= 0) { this.off(); return; }
-    // nearest-neighbour up by a whole number, to just past the size shown
-    const k = Math.ceil(s), mid = this.mid;
-    if (mid.width < aw * k || mid.height < ah * k) { mid.width = Math.max(mid.width, aw * k); mid.height = Math.max(mid.height, ah * k); }
-    const m = /** @type {CanvasRenderingContext2D} */ (mid.getContext('2d'));
-    m.imageSmoothingEnabled = false;
-    m.clearRect(0, 0, aw * k, ah * k);
-    m.drawImage(src, ax0, ay0, aw, ah, 0, 0, aw * k, ah * k);
-    // then down the last fraction, filtered, onto the overlay laid over the view
-    const hr = this.host.getBoundingClientRect();
-    const W = Math.max(1, Math.round(cw * dpr)), H = Math.max(1, Math.round(ch * dpr)), out = this.out;
+    if (aw <= 0 || ah <= 0) return no;
+    // up by a whole number: past the size shown while that is small, else just under it (fewer pixels to fill)
+    const k = s < 3 ? Math.ceil(s) : Math.floor(s);
+    if (this.mid.width < aw * k || this.mid.height < ah * k) { this.mid.width = Math.max(this.mid.width, aw * k); this.mid.height = Math.max(this.mid.height, ah * k); }
+    // the overlay laid over the view, a device pixel to a pixel
+    const hr = this.host.getBoundingClientRect(), out = this.out, st = out.style;
+    const W = Math.max(1, Math.round(cw * dpr)), H = Math.max(1, Math.round(ch * dpr));
     if (out.width !== W || out.height !== H) { out.width = W; out.height = H; }
-    const st = out.style, L = `${left - hr.left - this.host.clientLeft}px`, T = `${top - hr.top - this.host.clientTop}px`;
-    if (st.left !== L) st.left = L;
-    if (st.top !== T) st.top = T;
-    const wcss = `${cw}px`, hcss = `${ch}px`;
-    if (st.width !== wcss) st.width = wcss;
-    if (st.height !== hcss) st.height = hcss;
-    const o = /** @type {CanvasRenderingContext2D} */ (out.getContext('2d'));
+    st.left = `${left - hr.left - this.host.clientLeft}px`; st.top = `${top - hr.top - this.host.clientTop}px`;
+    st.width = `${cw}px`; st.height = `${ch}px`;
+    const dx = (sr.left + ax0 / ux - left) * dpr, dy = (sr.top + ay0 / uy - top) * dpr, dw = (aw / ux) * dpr, dh = (ah / uy) * dpr;
+    const cover = dx <= 0 && dy <= 0 && dx + dw >= W && dy + dh >= H;
+    return { on: true, ax0, ay0, aw, ah, k, dx, dy, dw, dh, cover };
+  }
+
+  /** Paint the overlay from the art canvas as it is now (call after drawing it). */
+  present() {
+    if (!this.enabled) { this.off(); return; }
+    const g = this.geo || (this.geo = this.measure());
+    if (!g.on) { this.off(); return; }
+    const m = this.mctx, o = this.octx, kw = g.aw * g.k, kh = g.ah * g.k;
+    m.imageSmoothingEnabled = false;
+    m.drawImage(this.src, g.ax0, g.ay0, g.aw, g.ah, 0, 0, kw, kh);
     o.imageSmoothingEnabled = true;
     o.imageSmoothingQuality = 'low';
-    o.clearRect(0, 0, W, H);
-    const dx = (sr.left + ax0 / ux - left) * dpr, dy = (sr.top + ay0 / uy - top) * dpr;
-    o.drawImage(mid, 0, 0, aw * k, ah * k, dx, dy, (aw / ux) * dpr, (ah / uy) * dpr);
+    if (!g.cover) o.clearRect(0, 0, this.out.width, this.out.height);
+    o.drawImage(this.mid, 0, 0, kw, kh, g.dx, g.dy, g.dw, g.dh);
     if (!this.on) {
       this.on = true;
-      st.display = 'block';
+      this.out.style.display = 'block';
       // the art canvas stays, unseen, under the pointer
       this.src.style.opacity = '0';
     }
