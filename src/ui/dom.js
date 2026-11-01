@@ -107,10 +107,70 @@ export function placeToasts() {
 }
 
 /**
+ * The game's notes, kept for the "recent notes" list (newest last).
+ * @type {{title:string, text:string, icon:string, at:number}[]}
+ */
+const noteLog = [];
+export const NOTE_LOG_MAX = 30;
+/** @type {HTMLElement|null} */
+let noteDock = null;
+/** @type {any} */
+let noteTimer = 0;
+
+/**
+ * Where notes go while a game is open: a dock in the top bar with its own
+ * space, never over a control. Elsewhere (the title menu) notes float.
+ * @param {HTMLElement|null} el
+ */
+export function setNoteDock(el) {
+  noteDock = el;
+}
+
+/** The recent notes, newest first. */
+export function recentNotes() {
+  return noteLog.slice().reverse();
+}
+
+/**
+ * Show a note in the dock: it lights up while fresh (longer for a longer
+ * note), then stays there, dimmed, until the next one, so it can be read
+ * without stopping. A note too long for its line scrolls through once.
+ * @param {string} title @param {string} text @param {string} iconName @param {number} ms
+ */
+function dockNote(title, text, iconName, ms) {
+  const d = /** @type {HTMLElement} */ (noteDock);
+  const body = h('span', { class: 'note-body' }, h('b', { text: title }), text ? h('span', { class: 'note-text', text }) : null);
+  const wrap = h('span', { class: 'note-clip' }, body);
+  clear(d).append(icon(iconName, 'sm'), wrap);
+  d.title = text ? `${title}: ${text}` : title;
+  d.classList.remove('fresh', 'old', 'idle');
+  void d.offsetWidth; // restart the light-up
+  d.classList.add('fresh');
+  const n = noteLog.length;
+  const count = h('span', { class: 'note-count', text: String(n), title: 'Recent notes' });
+  d.append(count);
+  const read = Math.max(ms, 2200 + 55 * (title.length + text.length));
+  // a line too short for the note: it scrolls through slowly once it has been seen
+  requestAnimationFrame(() => {
+    const over = body.scrollWidth - wrap.clientWidth;
+    if (over > 4 && getComputedStyle(body).whiteSpace === 'nowrap') {
+      body.style.setProperty('--note-shift', `${-over - 8}px`);
+      body.style.setProperty('--note-time', `${Math.max(4, over / 34 + 3)}s`);
+      body.classList.add('scroll');
+    }
+  });
+  clearTimeout(noteTimer);
+  noteTimer = setTimeout(() => { d.classList.remove('fresh'); d.classList.add('old'); }, read);
+}
+
+/**
  * Small notification.
  * @param {string} title @param {string} [text] @param {string} [iconName] @param {number} [ms]
  */
 export function toast(title, text = '', iconName = 'star', ms = 3200) {
+  noteLog.push({ title, text, icon: iconName, at: Date.now() });
+  if (noteLog.length > NOTE_LOG_MAX) noteLog.splice(0, noteLog.length - NOTE_LOG_MAX);
+  if (noteDock && noteDock.isConnected) { dockNote(title, text, iconName, ms); return; }
   if (!toastBox) return;
   placeToasts();
   const t = h('div', { class: 'toast parch' }, icon(iconName), h('div', {}, h('b', { text: title }), text));

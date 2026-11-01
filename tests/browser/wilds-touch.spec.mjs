@@ -132,11 +132,11 @@ test('sandbox wilds: shake, gather by tap, regrow at random spots, water by drag
   const ws = await lab(page, (l, id) => l.state.gathering.nodes[id].plants.map((q) => q.w), dep.id);
   expect(ws.length).toBe(3);
   expect(Math.min(...ws), 'each plant along the drag drank').toBeGreaterThan(0.6);
-  await expect(page.locator('.toast', { hasText: 'Nothing to water here' })).toHaveCount(0);
+  await expect(page.locator('.toast, .note-dock', { hasText: 'Nothing to water here' })).toHaveCount(0);
   await expect(page.locator(`[data-deposit="${dep.id}"] .soil`)).toBeVisible();
   // a tap far from any plant says so
   await drag(page, [at(4, 6), at(4, 6)], 30);
-  await expect(page.locator('.toast', { hasText: 'Nothing to water here' })).toBeVisible();
+  await expect(page.locator('.toast, .note-dock', { hasText: 'Nothing to water here' })).toBeVisible();
   await shot(page, info, 'sandbox-wilds-watered');
   expect(errors).toEqual([]);
 });
