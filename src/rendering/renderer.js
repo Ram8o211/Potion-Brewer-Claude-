@@ -440,11 +440,11 @@ export class Renderer {
     const s = this.view.scale;
     switch (e.type) {
       case 'reaction': this.fx.burst(4, x, y, 14, s * 0.6, [255, 230, 140], 1); break;
-      case 'crush': this.fx.burst(3, x, y, 4, s * 0.3, [210, 210, 220], 0.6); break;
+      case 'crush': this.fx.burst(3, x, y, 10, s * 0.3, [210, 210, 220], 0.6); break;
       case 'ignite': this.fx.burst(1, x, y, 10, s * 0.8, hex2rgb(PAL.fire3), 1); break;
       case 'phase':
         if (e.to === 'solid') this.fx.burst(5, x, y, 3, s * 0.2, hex2rgb(PAL.frost3), 0.3);
-        else if (e.to === 'gas' && this.fx.rand() < 0.5) this.fx.add(6, x, y, (this.fx.rand() - 0.5) * s * 0.4, -s * 0.6, 0.35, 1, [235, 240, 250]);
+        else if (e.to === 'gas') for (let j = 0; j < 2; j++) this.fx.add(6, x, y, (this.fx.rand() - 0.5) * s * 0.4, -s * 0.6, 0.35, 1, [235, 240, 250]);
         break;
       case 'paste': if (this.fx.rand() < 0.2) this.fx.burst(4, x, y, 2, s * 0.2, [255, 240, 210], 0.3); break;
       case 'dissolve': this.fx.burst(4, x, y, 2, s * 0.15, [220, 240, 255], 0.3); break;
@@ -455,22 +455,84 @@ export class Renderer {
   }
 }
 
-/** @param {CanvasRenderingContext2D} ctx */
+/**
+ * A potion bottle in pixel art: a chunky flask on a grid of whole "art
+ * pixels" (bigger bottles get bigger pixels, never a smoother outline),
+ * a dark outline, a cork, flat glass, and the brew in four flat tones —
+ * a bright surface line, its colour, a dithered shadow down the right and
+ * a dark base row — with a couple of bubbles and a stepped glint.
+ * @param {CanvasRenderingContext2D} ctx
+ */
 export function drawBottle(ctx, x, y, w, h, color, fill) {
-  x = Math.round(x); y = Math.round(y);
-  const neck = Math.max(2, Math.round(w * 0.35));
-  const nh = Math.round(h * 0.3);
-  rect(ctx, x + (w - neck) / 2, y, neck, nh, 'rgba(170,220,240,0.35)');
-  rect(ctx, x + (w - neck) / 2, y - 2, neck, 2, PAL.wood4);
-  rect(ctx, x, y + nh, w, h - nh, 'rgba(170,220,240,0.28)');
-  const fh = Math.round((h - nh - 1) * Math.max(0, Math.min(1, fill)));
-  if (fh > 0) {
-    rect(ctx, x + 1, y + h - 1 - fh, w - 2, fh, rgbStr(color));
-    rect(ctx, x + 1, y + h - 1 - fh, w - 2, 1, rgbStr(color, 1.3));
+  const u = Math.max(1, Math.floor(Math.min(w / 11, h / 15)));
+  const W = Math.max(6, Math.floor(w / u)), H = Math.max(9, Math.floor(h / u));
+  const ox = Math.round(x + (w - W * u) / 2), oy = Math.round(y + h - H * u);
+  // the shape, row by row: [left, right) in art pixels, and what the row is
+  let neck = Math.max(2, Math.round(W * 0.4));
+  if ((W - neck) & 1) neck++;
+  const corkH = Math.max(1, Math.round(H * 0.1)), neckH = Math.max(2, Math.round(H * 0.18));
+  const step = W >= 12 ? 2 : 1; // how far the shoulder widens each row
+  /** @type {Array<[number, number, number]>} */
+  const rows = [];
+  const span = (wd, kind) => { const l = (W - wd) >> 1; rows.push([l, l + wd, kind]); };
+  for (let r = 0; r < corkH; r++) span(neck, 2); // cork
+  span(Math.min(W, neck + 2), 3); // lip
+  for (let r = 0; r < neckH; r++) span(neck, 1);
+  let sw = neck;
+  while (sw < W - 2 && rows.length < H - 3) { sw = Math.min(W - 2, sw + step * 2); span(sw, 4); }
+  const bodyTop = rows.length;
+  while (rows.length < H - 1) span(W, 4);
+  span(W - 2, 4); // rounded base
+  const at = (cx, cy) => {
+    if (cy < 0 || cy >= rows.length) return 0;
+    const rw = rows[cy];
+    return cx >= rw[0] && cx < rw[1] ? rw[2] : 0;
+  };
+  // the brew: whole rows of the flask's belly, filled from the base
+  const shTop = corkH + 1 + neckH;
+  const inner = rows.length - 1 - shTop; // rows inside the outline below the neck
+  const f = Math.max(0, Math.min(1, fill || 0));
+  const fr = f > 0 ? Math.max(1, Math.round(inner * f)) : 0;
+  const top = rows.length - 1 - fr; // first brew row
+  const c = color || [0.5, 0.5, 0.5];
+  const m = c[0] <= 1 && c[1] <= 1 && c[2] <= 1 ? 255 : 1;
+  const tone = (k, add = 0) => `rgb(${Math.round(Math.max(0, Math.min(255, c[0] * m * k + add)))},${Math.round(Math.max(0, Math.min(255, c[1] * m * k + add)))},${Math.round(Math.max(0, Math.min(255, c[2] * m * k + add)))})`;
+  const liq = tone(1), liqHi = tone(1.25, 40), liqLo = tone(0.68), liqDk = tone(0.45);
+  const OUT = '#1b1320', GLASS = '#5b7f92', GLASS_D = '#3f5a6b', GLASS_HI = '#e9fbff', GLASS_MID = '#a9dbec';
+  for (let cy = 0; cy < rows.length; cy++) {
+    const [l, r, kind] = rows[cy];
+    for (let cx = l; cx < r; cx++) {
+      const edge = !at(cx - 1, cy) || !at(cx + 1, cy) || !at(cx, cy - 1) || !at(cx, cy + 1);
+      let col;
+      if (kind === 2 ? cx === l || cx === r - 1 : edge) col = OUT;
+      else if (kind === 2) col = cx === l + 1 ? PAL.wood5 : cx === r - 2 ? PAL.wood2 : PAL.wood4;
+      else if (kind === 3) col = cx === l + 1 ? GLASS_MID : GLASS;
+      else if (cy >= top && cy > shTop - 1 && fr > 0) {
+        // the brew in flat tones
+        const fromR = r - 1 - cx;
+        if (cy === top) col = liqHi;
+        else if (cy === rows.length - 2) col = liqDk;
+        else if (fromR <= 1) col = liqLo;
+        else if (fromR === 2) col = (cx + cy) & 1 ? liqLo : liq;
+        else col = liq;
+      } else col = (r - 1 - cx) <= 1 ? GLASS_D : GLASS;
+      ctx.fillStyle = col;
+      ctx.fillRect(ox + cx * u, oy + cy * u, u, u);
+    }
   }
-  rect(ctx, x, y + nh, 1, h - nh, 'rgba(255,255,255,0.55)');
-  rect(ctx, x + w - 1, y + nh, 1, h - nh, 'rgba(0,0,0,0.35)');
-  rect(ctx, x, y + h - 1, w, 1, 'rgba(0,0,0,0.4)');
+  const px = (cx, cy, col) => { if (at(cx, cy)) { ctx.fillStyle = col; ctx.fillRect(ox + cx * u, oy + cy * u, u, u); } };
+  // bubbles rising in the brew
+  if (fr >= 3) {
+    const bl = rows[rows.length - 2][0] + 2;
+    px(bl + 1, rows.length - 3, liqHi);
+    if (fr >= 5) px(bl + 2 + ((W - 4) >> 2), top + 2, liqHi);
+  }
+  // a stepped glint down the glass's left side
+  const g0 = Math.max(shTop, bodyTop - 1), gx = rows[Math.min(rows.length - 2, g0 + 1)][0] + 1;
+  const gl = Math.max(1, Math.round((rows.length - g0) * 0.35));
+  for (let k = 0; k < gl; k++) px(gx, g0 + 1 + k, GLASS_HI);
+  px(gx, g0 + gl + 2, GLASS_HI);
+  if (W >= 9) px(gx + 1, g0 + 1, GLASS_HI);
 }
 
 export { PHASE };
