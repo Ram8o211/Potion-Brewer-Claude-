@@ -350,13 +350,14 @@ export class FluidRenderer {
         // is a chunky 2–3 px fleck spread a little past the particle, so a heap
         // reads as solid, full-bodied sand while every grain stays distinct.
         const sand = !!pc && !frozen;
-        const chips = sand ? 8 + (seed & 3) : 3 + (seed & 1);
-        for (let c = 0; c < chips + 2; c++) {
+        const chips = sand ? 14 + (seed & 3) : 6 + (seed & 1);
+        const specks = sand ? 5 : 3;
+        for (let c = 0; c < chips + specks; c++) {
           const h1 = hash01(seed + c * 7919), h2 = hash01(seed * 3 + c * 104729 + 1), h3 = hash01(seed * 7 + c * 1299709 + 2);
           const speck = c >= chips;
           const an = h1 * 6.2832;
-          const dist = speck ? rgrain * ((sand ? 1 : 0.85) + 0.45 * h2) : c === 0 ? 0 : Math.sqrt(h2) * rgrain * (sand ? 1.15 : 0.6);
-          const rc = speck ? 0.5 : sand ? (h3 < 0.55 ? 0.95 : h3 < 0.9 ? 1.2 : 1.45) : Math.max(0.8, rgrain * (0.36 + 0.2 * h3));
+          const dist = speck ? rgrain * ((sand ? 1 : 0.85) + 0.45 * h2) : c === 0 ? 0 : Math.sqrt(h2) * rgrain * (sand ? 1.15 : 0.75);
+          const rc = speck ? 0.5 : sand ? (h3 < 0.55 ? 0.95 : h3 < 0.9 ? 1.2 : 1.45) : Math.max(0.8, rgrain * (0.3 + 0.18 * h3));
           const ccx = fx + Math.cos(an) * dist, ccy = fy + Math.sin(an) * dist;
           // a second, smaller lobe makes the chip irregular rather than round
           const lcx = ccx + Math.cos(h3 * 6.2832) * rc * 0.65, lcy = ccy + Math.sin(h3 * 6.2832) * rc * 0.65;
@@ -446,7 +447,7 @@ export class FluidRenderer {
         // its own cycle, then appears again elsewhere around its particle
         const mote = this.mote, R0 = rgas * 1.7, rise = 0.07 * s;
         const mr = r * 0.6 + 0.4, mg = g * 0.6 + 0.4, mb = b * 0.6 + 0.4;
-        const nm = 5 + (seed & 3);
+        const nm = 12 + (seed & 7);
         for (let m = 0; m < nm; m++) {
           const h1 = hash01(seed + m * 7919), h2 = hash01(seed * 3 + m * 104729 + 1), h3 = hash01(seed * 7 + m * 1299709 + 2);
           const t = time * (0.3 + 0.35 * h2) + h1;
@@ -457,7 +458,7 @@ export class FluidRenderer {
           const mx = fx + Math.cos(an) * dist + Math.sin(time * 1.7 + h3 * 6.2832) * 1.2;
           const my = fy + Math.sin(an) * dist * 0.8 - ph * rise;
           const a = Math.min(1, Math.sin(ph * Math.PI) * 1.4) * (0.55 + 0.45 * h3);
-          const sz = h2 > 0.78 ? 2 : 1;
+          const sz = h2 > 0.7 ? 2 : 1;
           const x0 = Math.floor(mx), y0 = Math.floor(my);
           for (let yy = y0; yy < y0 + sz; yy++) {
             if (yy < 0 || yy >= h) continue;
@@ -830,7 +831,7 @@ export class FluidRenderer {
           if (gw > 0.03) {
             const inv = 1 / gw;
             // only a faint haze: the vapour reads as its droplets (below)
-            const a = Math.min(0.34, 0.4 * (1 - Math.exp(-gw * 0.5)));
+            const a = Math.min(0.42, 0.5 * (1 - Math.exp(-gw * 0.6)));
             const r = (gas[k00 + 1] * w00 + gas[k10 + 1] * w10 + gas[k01 + 1] * w01 + gas[k11 + 1] * w11) * inv;
             const g = (gas[k00 + 2] * w00 + gas[k10 + 2] * w10 + gas[k01 + 2] * w01 + gas[k11 + 2] * w11) * inv;
             const b = (gas[k00 + 3] * w00 + gas[k10 + 3] * w10 + gas[k01 + 3] * w01 + gas[k11 + 3] * w11) * inv;
