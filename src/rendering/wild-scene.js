@@ -104,7 +104,8 @@ export class SceneTouch {
     this.links = new Uint8Array(G);
     let n = 0;
     for (let g = 0; g < G; g++) {
-      if (!(this.hang[g] > 0)) continue;
+      // (only the scenery in front can be touched: the background trees are out of reach)
+      if (!(this.hang[g] > 0) || (sw.far && sw.far[g])) continue;
       const len = this.box[g * 4 + 3] - this.box[g * 4 + 1] + 1;
       this.first[g] = n;
       this.links[g] = Math.max(2, Math.min(14, Math.round(len / LINK)));
