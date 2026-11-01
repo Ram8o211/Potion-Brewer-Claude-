@@ -41,7 +41,7 @@
 
 import { PHASE, SIM } from '../simulation/constants.js';
 import { LOOK, piece } from '../materials/shapes.js';
-import { PIECE_ART, PIECE_CELL, piecePalette, onPiecesChanged } from '../visual/pieces.js';
+import { PIECE_ART, PIECE_CELL, piecePalette, pieceSprite } from '../visual/pieces.js';
 import { NE } from '../alchemy/effects.js';
 import { MAX_SPECIES } from '../reactions/species.js';
 import { PotionParticles } from './potion-fx.js';
@@ -134,20 +134,16 @@ function scale2x(a, w, h) {
   }
   return o;
 }
-/** skin → its piece's cell upscaled 4× by Scale2x twice, for turning it without breaking its lines (as RotSprite does) */
-const SMOOTH = new Map();
-onPiecesChanged(() => SMOOTH.clear());
-/** @param {number} skin @param {{cx:number, cy:number}} pc @param {Uint32Array} art @param {number} artW */
-function smoothCell(skin, pc, art, artW) {
-  let got = SMOOTH.get(skin);
+/** a piece's sprite upscaled 4× by Scale2x twice, for turning it without breaking its lines (as RotSprite does) */
+const SMOOTH = new WeakMap();
+/** @param {number} skin @param {{px:Uint32Array, size:number}} spr */
+function smoothSprite(skin, spr) {
+  let got = SMOOTH.get(spr);
   if (got) return got;
-  const C = PIECE_CELL, cell = new Uint32Array(C * C);
-  for (let y = 0; y < C; y++) for (let x = 0; x < C; x++) {
-    const c = art[(pc.cy + y) * artW + pc.cx + x];
-    cell[y * C + x] = c >>> 31 ? c : 0;
-  }
-  got = scale2x(scale2x(cell, C, C), C * 2, C * 2);
-  SMOOTH.set(skin, got);
+  const S = spr.size, cell = new Uint32Array(S * S);
+  for (let k = 0; k < S * S; k++) { const c = spr.px[k]; cell[k] = c >>> 31 ? c : 0; }
+  got = scale2x(scale2x(cell, S, S), S * 2, S * 2);
+  SMOOTH.set(spr, got);
   return got;
 }
 
@@ -349,13 +345,16 @@ export class FluidRenderer {
         const pal = pc ? piecePalette(p.skin[i]) : null;
         const wArt = pc ? Math.max(0, Math.min(1, (p.whole[i] - 0.3) * 2)) : 0;
         const rx = Math.round(fx), ry = Math.round(fy);
-        const chips = 3 + (seed & 1);
+        // an ingredient ground with the pestle (or a powder of one) is sand:
+        // many fine grains in the colours of its piece, not a few chips
+        const sand = !!pc && !frozen;
+        const chips = sand ? 7 + (seed & 3) : 3 + (seed & 1);
         for (let c = 0; c < chips + 2; c++) {
           const h1 = hash01(seed + c * 7919), h2 = hash01(seed * 3 + c * 104729 + 1), h3 = hash01(seed * 7 + c * 1299709 + 2);
           const speck = c >= chips;
           const an = h1 * 6.2832;
-          const dist = speck ? rgrain * (0.85 + 0.45 * h2) : c === 0 ? 0 : Math.sqrt(h2) * rgrain * 0.6;
-          const rc = speck ? 0.5 : Math.max(0.8, rgrain * (0.36 + 0.2 * h3));
+          const dist = speck ? rgrain * (0.85 + 0.45 * h2) : c === 0 ? 0 : Math.sqrt(h2) * rgrain * (sand ? 0.95 : 0.6);
+          const rc = speck ? 0.5 : sand ? (h3 < 0.7 ? 0.5 : 0.75) : Math.max(0.8, rgrain * (0.36 + 0.2 * h3));
           const ccx = fx + Math.cos(an) * dist, ccy = fy + Math.sin(an) * dist;
           // a second, smaller lobe makes the chip irregular rather than round
           const lcx = ccx + Math.cos(h3 * 6.2832) * rc * 0.65, lcy = ccy + Math.sin(h3 * 6.2832) * rc * 0.65;
@@ -595,7 +594,8 @@ export class FluidRenderer {
           const bi = pieceIdx[k];
           let l = 1;
           const dmg = sim.dmg[bi] / (0.25 + p.hardness[bi] * 1.5);
-          if (dmg > 0.12 && hash01(p.seed[bi] * 3 + x * 7 + y * 131) < dmg * 0.4) l = 0.42;
+          // worn, not shattered: a few soft scuffs where the pestle grinds it
+          if (dmg > 0.2 && hash01(p.seed[bi] * 3 + (x >> 1) * 7 + (y >> 1) * 131) < (dmg - 0.2) * 0.25) l = 0.78;
           R = (pcol & 255) / 255 * l; G = ((pcol >>> 8) & 255) / 255 * l; B = ((pcol >>> 16) & 255) / 255 * l; A = 1;
         } else if (sw > 0.45 && !(pieces && p.whole[solIdx[k]] > 0.5 && p.group[solIdx[k]] >= 0 && p.skin[solIdx[k]])) {
           const bi = solIdx[k];
@@ -888,8 +888,8 @@ export class FluidRenderer {
   /**
    * Paint every whole ingredient (a rigid body of a poured piece) as its
    * piece's sprite, as the menus' icons and the plants in the wilds are
-   * drawn: one art pixel to a whole number of screen pixels (the nearest to
-   * the size the physics gives it), its ink outline and shading intact, laid
+   * drawn: rasterized at the size the physics gives it, one of its pixels
+   * to one screen pixel, its ink outline, shading and texture intact, laid
    * out in the body's own frame so it tumbles with it, and only where the
    * body still has particles (the pestle and dissolving eat it away).
    * Fills pieceCol/pieceIdx; false when nothing was painted.
@@ -924,8 +924,11 @@ export class FluidRenderer {
       const pc = piece(G.skin[g]);
       if (!pc || !G.k[g] || G.m[g] <= 0) continue;
       const gen = (this._gen = ((this._gen || 0) + 1) & 0x3fffffff);
-      // one art pixel to a whole number of screen pixels
-      const m = Math.max(1, Math.round((s * SP) / pc.ppu));
+      // drawn at the size it is shown at: one of its pixels to one screen pixel
+      const size = Math.max(8, Math.round(C * (s * SP) / pc.ppu));
+      const spr = pieceSprite(G.skin[g], size);
+      if (!spr) continue;
+      const q = spr.size / C; // sprite pixels per atlas pixel
       const U0 = G.u[g] / G.k[g], V0 = G.v[g] / G.k[g];
       const cx = (G.cx[g] / G.m[g]) * s + view.ox - bx, cy = (G.cy[g] / G.m[g]) * s + view.oy - by;
       const th = sim.rigid.angle[g], ct = Math.cos(th), st = Math.sin(th);
@@ -943,23 +946,24 @@ export class FluidRenderer {
       }
       // the art origin of the body's centre, then every screen pixel the piece may cover
       const ox0 = pc.ax + U0 * pc.ppu, oy0 = pc.ay + V0 * pc.ppu;
-      const R = Math.ceil(C * m * 0.75) + 1;
+      const R = Math.ceil(spr.size * 0.75) + 1;
       const xa = Math.max(0, Math.floor(cx - R)), xb = Math.min(w - 1, Math.ceil(cx + R));
       const ya = Math.max(0, Math.floor(cy - R)), yb = Math.min(h - 1, Math.ceil(cy + R));
-      const im = 1 / m, fi = G.first[g];
-      // upright (as in the menus and the wilds) it is read straight from the
-      // atlas; turned, from its smoothed 4× copy so its lines stay whole
+      const fi = G.first[g], S0 = spr.size, sx0 = (ox0 - pc.cx) * q, sy0 = (oy0 - pc.cy) * q, iq = 1 / q;
+      // upright (as in the menus and the wilds) it is read straight from its
+      // sprite; turned, from a smoothed 4× copy so its lines stay whole
       const turned = Math.abs(Math.sin(th * 2)) > 0.02 || ct < 0;
-      const sm = turned ? smoothCell(G.skin[g], pc, art, artW) : null, C4 = C * 4;
+      const sm = turned ? smoothSprite(G.skin[g], spr) : null, S4 = S0 * 4;
       for (let y = ya; y <= yb; y++) {
         const dy = y + 0.5 - cy;
         for (let x = xa; x <= xb; x++) {
           const dx = x + 0.5 - cx;
-          // into the body's rest frame (undo its rotation), in art pixels
-          const fx = ox0 - pc.cx + (ct * dx + st * dy) * im, fy = oy0 - pc.cy + (-st * dx + ct * dy) * im;
-          const lx = Math.floor(fx), ly = Math.floor(fy);
-          if (lx < 0 || ly < 0 || lx >= C || ly >= C || held[ly * C + lx] !== gen) continue;
-          const c = sm ? sm[Math.floor(fy * 4) * C4 + Math.floor(fx * 4)] : art[(ly + pc.cy) * artW + lx + pc.cx];
+          // into the body's rest frame (undo its rotation), in sprite pixels
+          const fx = sx0 + (ct * dx + st * dy), fy = sy0 + (-st * dx + ct * dy);
+          if (fx < 0 || fy < 0 || fx >= S0 || fy >= S0) continue;
+          const lx = Math.floor(fx * iq), ly = Math.floor(fy * iq);
+          if (lx >= C || ly >= C || held[ly * C + lx] !== gen) continue;
+          const c = sm ? sm[Math.floor(fy * 4) * S4 + Math.floor(fx * 4)] : spr.px[Math.floor(fy) * S0 + Math.floor(fx)];
           if (!(c >>> 31)) continue;
           const k = y * w + x;
           this.pieceCol[k] = c | 0xff000000; this.pieceIdx[k] = fi;
