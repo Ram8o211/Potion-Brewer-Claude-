@@ -19,7 +19,8 @@
 //                     frost cancel, life and death cancel, vitality
 //                     neutralises toxicity, acids and alkalis neutralise
 //                     (acidity is signed: negative means alkaline);
-//   4. saturation   — very strong values are compressed (diminishing returns).
+//   4. saturation   — very strong values are compressed (diminishing returns);
+//   5. cut-off      — anything under 1% potency (|v| < 1) is switched to zero.
 //
 // Reactions, evaporation and dilution change the composition itself, so they
 // change effects through the same function. The commission generator uses
@@ -69,6 +70,17 @@ const LEACH_WET = 0.12;
 const LEACH_DRY = 0.05;
 /** Above this a value is compressed (diminishing returns). */
 const KNEE = 40;
+/** Effects weaker than this (1% potency, either sign) are switched to zero. */
+export const EFFECT_CUTOFF = 1;
+
+/**
+ * Switch every channel under the 1% cut-off to zero, in place.
+ * @param {Float64Array|number[]} e
+ */
+export function cutoffEffects(e) {
+  for (let k = 0; k < NE; k++) if (Math.abs(e[k]) < EFFECT_CUTOFF) e[k] = 0;
+  return e;
+}
 
 /**
  * Effect vector of a material definition as an array of NE numbers.
@@ -216,7 +228,8 @@ export function interact(e, laws, trace) {
     const s = v < 0 ? -1 : 1, av = Math.abs(v);
     e[k] = av <= KNEE ? v : s * (KNEE + 60 * (1 - Math.exp(-(av - KNEE) / 60)));
   }
-  return e;
+  // 4. cut-off: traces under 1% do nothing
+  return cutoffEffects(e);
 }
 
 const scratch = new Float64Array(NE);
@@ -280,6 +293,8 @@ export function sampleEffects(sim, indices) {
     for (let k = 0; k < NE; k++) sum[k] /= n;
     for (let r = 0; r < trace.length; r++) trace[r] /= n;
   }
+  // a sip may average traces below the cut-off: those do nothing either
+  cutoffEffects(sum);
   return { effects: sum, resonance: trace };
 }
 
