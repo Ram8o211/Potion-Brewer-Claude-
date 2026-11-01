@@ -43,6 +43,7 @@ export function iconFrame(d) {
   const model = FAMILIES[d.family].icon(d);
   model.fit(ICON_PX - 2, ICON_PX - 2, { margin: 0.5 });
   const r = rasterize(model, ICON_PX - 2, ICON_PX - 2, d.pal, { seed: d.seeds.surface ^ 0x1c0, outline: false });
+  iconRasters.set(d, r.pix);
   return { pix: inked(r.pix), ax: ICON_PX / 2, ay: ICON_PX, glints: r.glints.map(([x, y]) => [x + 1, y + 1]) };
 }
 
@@ -109,47 +110,49 @@ function shardAt(sh, u, v) {
 
 /**
  * Piece v drawn size square (art pixels): a shard of the ingredient's icon,
- * its own pixels — the icon's model, palette and surface rasterized at the
- * scale that makes the shard fill the square, so it has the icons' grain —
- * cut along its break lines (its largest connected part kept) and ringed
- * with ink.
+ * cut from the icon's very pixels — the same raster the menus show — along
+ * its break lines (its largest connected part kept), magnified to fill the
+ * square by nearest sampling (so it has exactly the icon's colours and
+ * texture, only bigger), and ringed with ink.
  * @param {import('./descriptor.js').Descriptor} d @param {number} v 0..3 @param {number} size
  * @returns {Pixels}
  */
 function shardArt(d, v, size) {
-  const sh = shardsOf(d), want = v & 3;
-  // the shard's extent in the icon, from a fine sampling of the icon's square
-  const lo = shardsLow(d);
-  // (its largest connected part: the one that is kept)
-  const part = new Pixels(ICON_IN, ICON_IN);
-  for (let y = 0; y < ICON_IN; y++) for (let x = 0; x < ICON_IN; x++) {
-    if (lo[y * ICON_IN + x] && shardAt(sh, (x + 0.5) / ICON_IN, (y + 0.5) / ICON_IN) === want) part.px[y * ICON_IN + x] = 0xffffffff;
+  const sh = shardsOf(d), want = v & 3, icon = iconRaster(d), N = ICON_IN;
+  const part = new Pixels(N, N);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const c = icon.px[y * N + x];
+    if (c >>> 24 && shardAt(sh, (x + 0.5) / N, (y + 0.5) / N) === want) part.px[y * N + x] = c;
   }
   keepLargest(part);
-  let u0 = 1, u1 = 0, v0 = 1, v1 = 0;
-  for (let y = 0; y < ICON_IN; y++) for (let x = 0; x < ICON_IN; x++) {
-    if (!part.px[y * ICON_IN + x]) continue;
-    u0 = Math.min(u0, x / ICON_IN); u1 = Math.max(u1, (x + 1) / ICON_IN);
-    v0 = Math.min(v0, y / ICON_IN); v1 = Math.max(v1, (y + 1) / ICON_IN);
+  let x0 = N, x1 = 0, y0 = N, y1 = 0;
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    if (!(part.px[y * N + x] >>> 24)) continue;
+    x0 = Math.min(x0, x); x1 = Math.max(x1, x + 1); y0 = Math.min(y0, y); y1 = Math.max(y1, y + 1);
   }
-  if (u1 <= u0) { u0 = 0; u1 = 1; v0 = 0; v1 = 1; }
-  const inner = size - 2, mg = Math.max(1, Math.round(size / PIECE_PX));
-  const R = Math.max(4, Math.round((inner - mg * 2) / Math.max(u1 - u0, v1 - v0)));
-  const model = FAMILIES[d.family].icon(d);
-  model.fit(R, R, { margin: (0.5 * R) / ICON_IN });
-  const r = rasterize(model, R, R, d.pal, { seed: d.seeds.surface ^ 0x1c0, outline: false });
-  // the shard's centre at the square's centre
-  const ox = Math.round(((u0 + u1) / 2) * R - inner / 2), oy = Math.round(((v0 + v1) / 2) * R - inner / 2);
-  const out = new Pixels(inner, inner);
+  const inner = size - 2, out = new Pixels(inner, inner);
+  if (x1 <= x0) return inked(out);
+  const mg = Math.max(1, Math.round(size / PIECE_PX)), bw = x1 - x0, bh = y1 - y0;
+  const f = (inner - mg * 2) / Math.max(bw, bh), ox = (inner - bw * f) / 2, oy = (inner - bh * f) / 2;
   for (let y = 0; y < inner; y++) for (let x = 0; x < inner; x++) {
-    const X = x + ox, Y = y + oy;
-    if (X < 0 || Y < 0 || X >= R || Y >= R) continue;
-    const c = r.pix.px[Y * R + X];
-    if (!(c >>> 24) || shardAt(sh, (X + 0.5) / R, (Y + 0.5) / R) !== want) continue;
-    out.px[y * inner + x] = c;
+    const X = x0 + Math.floor((x + 0.5 - ox) / f), Y = y0 + Math.floor((y + 0.5 - oy) / f);
+    if (X < x0 || Y < y0 || X >= x1 || Y >= y1) continue;
+    out.px[y * inner + x] = part.px[Y * N + X];
   }
-  keepLargest(out);
   return inked(out);
+}
+
+/** descriptor → the icon's raster, uninked (iconFrame's inner square) @type {WeakMap<object, Pixels>} */
+const iconRasters = new WeakMap();
+/** @param {import('./descriptor.js').Descriptor} d */
+function iconRaster(d) {
+  let p = iconRasters.get(d);
+  if (p) return p;
+  const model = FAMILIES[d.family].icon(d);
+  model.fit(ICON_IN, ICON_IN, { margin: 0.5 });
+  p = rasterize(model, ICON_IN, ICON_IN, d.pal, { seed: d.seeds.surface ^ 0x1c0, outline: false }).pix;
+  iconRasters.set(d, p);
+  return p;
 }
 
 /** descriptor → the icon's opaque pixels in its inner square @type {WeakMap<object, Uint8Array>} */
@@ -158,9 +161,7 @@ const lowMasks = new WeakMap();
 function shardsLow(d) {
   let m = lowMasks.get(d);
   if (m) return m;
-  const model = FAMILIES[d.family].icon(d);
-  model.fit(ICON_IN, ICON_IN, { margin: 0.5 });
-  m = rasterize(model, ICON_IN, ICON_IN, d.pal, { seed: d.seeds.surface ^ 0x1c0, outline: false }).pix.mask();
+  m = iconRaster(d).mask();
   lowMasks.set(d, m);
   return m;
 }

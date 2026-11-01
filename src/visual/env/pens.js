@@ -31,7 +31,7 @@ export const GROUND_Y0 = 69;
 const GROUND_Y1 = 86;
 
 /** Version of the pens' painting (names caches only). */
-export const PENS_VERSION = 4;
+export const PENS_VERSION = 5;
 
 /**
  * @typedef {Object} Pen
@@ -45,6 +45,7 @@ export const PENS_VERSION = 4;
  * @property {[number, number][]} slots   where the bodies lie
  * @property {[number, number, number, number]} cloth  the cloth they lie on (x, y, w, h)
  * @property {[number, number, number, number]} nest   where nest straw goes while a female is expecting (x0, y0, x1, y1)
+ * @property {{type:string, [k:string]:any}[]} anim  what moves in it (drawn each frame by rendering/pen-anim.js)
  */
 
 /** Ramps of the farm's materials, darkest first. */
@@ -1049,7 +1050,7 @@ const hutchBox = prop(hutchBox_);
 
 /** @typedef {{cv:Canvas, fg:Canvas, seed:number, block:(x0:number, y0:number, x1:number, y1:number)=>void}} Ctx */
 
-/** @type {Record<string, {title:string, fringe?:string, compose:(c:Ctx)=>{rack:{x:number,y:number}, nest:[number,number,number,number]}}>} */
+/** @type {Record<string, {title:string, fringe?:string, compose:(c:Ctx)=>{rack:{x:number,y:number}, nest:[number,number,number,number], anim?:import('../../rendering/pen-anim.js').PenAnim[]}}>} */
 const PENS = {
   rabbit: {
     title: 'The hutch',
@@ -1072,7 +1073,7 @@ const PENS = {
       bowl(cv, 102, GROUND_Y0 + 5, 9, '#6eae3a');
       block(80, GROUND_Y0 - 2, 110, GROUND_Y0 + 6);
       flowers(cv, 52, 74, BACK + 3, ['#ffffff', '#f0a0c0'], seed + 8, 4);
-      return { rack: { x: 42, y: GROUND_Y0 + 1 }, nest: [168, BACK - 3, 196, BACK + 1] };
+      return { rack: { x: 42, y: GROUND_Y0 + 1 }, nest: [168, BACK - 3, 196, BACK + 1], anim: [{ type: 'butterflies', n: 2, x0: 50, x1: 150, y0: 30, y1: 60, colors: ['#f6d26a', '#ffffff'] }] };
     },
   },
   cat: {
@@ -1100,7 +1101,7 @@ const PENS = {
       barrel(cv, 9, BACK + 1, 12, 15);
       hay(cv, 32, BACK + 2, 34, 13, seed + 1);
       barrel(cv, 112, BACK + 1, 9, 10);
-      return { rack: { x: 54, y: GROUND_Y0 + 1 }, nest: [20, BACK - 4, 44, BACK] };
+      return { rack: { x: 54, y: GROUND_Y0 + 1 }, nest: [20, BACK - 4, 44, BACK], anim: [{ type: 'lantern', x: 82, y: 20 }, { type: 'motes', n: 10, x: 82, y: 32, r: 20 }] };
     },
   },
   toad: {
@@ -1120,7 +1121,11 @@ const PENS = {
       block(80, GROUND_Y0 - 3, 190, GROUND_Y0 + 2);
       pump(cv, 204, BACK);
       flowers(cv, 6, 30, BACK, ['#f0a0c0', '#ffffff', '#e86a8a'], seed + 5, 8);
-      return { rack: { x: 40, y: GROUND_Y0 + 1 }, nest: [30, BACK - 3, 50, BACK] };
+      return { rack: { x: 40, y: GROUND_Y0 + 1 }, nest: [30, BACK - 3, 50, BACK], anim: [
+        { type: 'waterfall', x0: 150, x1: 156, y0: BACK - 15, y1: BACK - 6 },
+        { type: 'shimmer', n: 6, x0: 96, x1: 176, y0: BACK - 6, y1: BACK + 2 },
+        { type: 'butterflies', n: 1, x0: 10, x1: 80, y0: 30, y1: 58, colors: ['#f07aa0'] },
+      ] };
     },
   },
   salamander: {
@@ -1136,13 +1141,8 @@ const PENS = {
         if (y < 42 && u * u + v * v > 1) return 0;
         return mixPacked(col('#3a1a10'), col('#0e0606'), clampI((BACK - y) / 30, 0, 1));
       });
-      // the fire: tongues of flame over a bed of embers
-      for (let x = cx - 16; x < cx + 16; x++) {
-        const h = Math.round(4 + 10 * Math.pow(Math.max(0, 1 - Math.abs(x - cx) / 16), 0.8) * (0.5 + noise2(x * 0.4, 0, seed)));
-        for (let j = 0; j < h; j++) cv.set(x, BACK - 5 - j, col(j < h * 0.3 ? '#fff0a0' : j < h * 0.6 ? '#ffb43a' : j < h - 1 ? '#f0641e' : '#a02a10'));
-      }
+      // a bed of embers (the fire on it is animated: rendering/pen-anim.js)
       fill(cv, cx - 22, BACK - 5, cx + 22, BACK - 3, (x, y) => col(noise2(x * 0.6, y, seed) > 0.5 ? '#ff9a3a' : '#7a2410'));
-      for (let k = 0; k < 14; k++) cv.set(cx - 14 + Math.floor(hash2(k, 1, seed) * 28), 26 + Math.floor(hash2(k, 2, seed) * 14), col(k & 1 ? '#ffd060' : '#ff8a30'));
       rect(cv, cx - 30, BACK - 3, cx + 30, BACK, P.stone[3]);
       rect(cv, cx - 30, BACK - 3, cx + 30, BACK - 2, P.stone[5]);
       cv.glow(cx, BACK - 10, 70, [1, 0.5, 0.2], 0.6);
@@ -1152,7 +1152,7 @@ const PENS = {
       railFence(cv, 122, 222, BACK, 15, P.oak, { gap: 24, rails: 2 });
       barrel(cv, 168, BACK - 3, 10, 13);
       ground(cv, BACK, 'cobble', seed + 2);
-      return { rack: { x: 40, y: GROUND_Y0 + 1 }, nest: [196, BACK - 3, 216, BACK] };
+      return { rack: { x: 40, y: GROUND_Y0 + 1 }, nest: [196, BACK - 3, 216, BACK], anim: [{ type: 'fire', cx, base: BACK - 5, w: 17, h: 12 }, { type: 'lantern', x: 186, y: 18 }] };
     },
   },
   deer: {
@@ -1171,7 +1171,7 @@ const PENS = {
       block(84, GROUND_Y0 - 3, 124, GROUND_Y0 + 5);
       flowers(cv, 8, 70, GROUND_Y0 + 2, ['#ffffff', '#f4e4a0', '#f0a0c0'], seed + 5, 9);
       flowers(cv, 126, 146, GROUND_Y0 + 1, ['#ffffff', '#f4e4a0'], seed + 6, 3);
-      return { rack: { x: 40, y: GROUND_Y0 + 2 }, nest: [168, BACK - 6, 196, BACK - 2] };
+      return { rack: { x: 40, y: GROUND_Y0 + 2 }, nest: [168, BACK - 6, 196, BACK - 2], anim: [{ type: 'butterflies', n: 2, x0: 10, x1: 140, y0: 50, y1: 68, colors: ['#ffffff', '#f6d26a'] }, { type: 'shimmer', n: 2, x0: 89, x1: 119, y0: GROUND_Y0 - 3, y1: GROUND_Y0 - 2 }] };
     },
   },
   badger: {
@@ -1189,7 +1189,7 @@ const PENS = {
       mushroom(cv, 86, BACK, 5); mushroom(cv, 91, BACK, 4); mushroom(cv, 142, BACK, 4, '#c8a050');
       ground(cv, BACK, 'soil', seed + 5);
       tufts(cv, 0, cv.W, BACK + 1, seed + 6, 0.22);
-      return { rack: { x: 40, y: GROUND_Y0 + 1 }, nest: [54, BACK - 3, 72, BACK] };
+      return { rack: { x: 40, y: GROUND_Y0 + 1 }, nest: [54, BACK - 3, 72, BACK], anim: [{ type: 'butterflies', n: 2, x0: 10, x1: 214, y0: 4, y1: 16, colors: ['#f0a0c0', '#ffffff'] }] };
     },
   },
   dove: {
@@ -1215,7 +1215,7 @@ const PENS = {
       crate(cv, 176, BACK, 13);
       ground(cv, BACK, 'flags', seed + 8, { joint: '#3a3638' });
       flowers(cv, 196, 220, BACK, ['#b070d0', '#d0a0f0', '#8a50b0'], seed + 10, 9);
-      return { rack: { x: 58, y: GROUND_Y0 + 1 }, nest: [140, BACK - 3, 160, BACK] };
+      return { rack: { x: 58, y: GROUND_Y0 + 1 }, nest: [140, BACK - 3, 160, BACK], anim: [{ type: 'butterflies', n: 1, x0: 180, x1: 220, y0: 46, y1: 62, colors: ['#d0a0f0'] }] };
     },
   },
   fox: {
@@ -1232,7 +1232,7 @@ const PENS = {
       trough(cv, 90, 120, GROUND_Y0 + 3, 6);
       block(88, GROUND_Y0 - 3, 122, GROUND_Y0 + 4);
       hay(cv, 40, GROUND_Y0 + 2, 18, 3, seed + 4);
-      return { rack: { x: 50, y: GROUND_Y0 + 1 }, nest: [160, BACK - 4, 188, BACK] };
+      return { rack: { x: 50, y: GROUND_Y0 + 1 }, nest: [160, BACK - 4, 188, BACK], anim: [{ type: 'fireflies', n: 9, x0: 4, x1: 220, y0: 20, y1: 64 }] };
     },
   },
   ermine: {
@@ -1251,8 +1251,8 @@ const PENS = {
       wood(cv, 104, BACK - 4, 132, BACK + 1, P.wood, { seed: 5 });
       snowcap(cv, 104, 132, BACK - 5, seed + 5);
       block(102, GROUND_Y0 - 3, 134, GROUND_Y0 - 1);
-      flakes(cv, BACK, seed + 6, 70);
-      return { rack: { x: 52, y: GROUND_Y0 + 1 }, nest: [152, BACK - 3, 168, BACK + 1] };
+      flakes(cv, 28, seed + 6, 14);
+      return { rack: { x: 52, y: GROUND_Y0 + 1 }, nest: [152, BACK - 3, 168, BACK + 1], anim: [{ type: 'snow', n: 60, y1: 92 }] };
     },
   },
   snail: {
@@ -1273,7 +1273,7 @@ const PENS = {
       railFence(cv, 0, cv.W, BACK + 1, 14, P.wood, { gap: 36, rails: 2 });
       ground(cv, BACK + 1, 'soil', seed + 3);
       tufts(cv, 0, cv.W, BACK + 2, seed + 4, 0.3);
-      return { rack: { x: 40, y: GROUND_Y0 + 1 }, nest: [160, BACK - 2, 186, BACK] };
+      return { rack: { x: 40, y: GROUND_Y0 + 1 }, nest: [160, BACK - 2, 186, BACK], anim: [{ type: 'butterflies', n: 3, x0: 20, x1: 200, y0: 30, y1: 60, colors: ['#ffffff', '#f6d26a', '#f0a0c0'] }] };
     },
   },
   rat: {
@@ -1289,7 +1289,7 @@ const PENS = {
       lantern(cv, 114, 0, 14);
       overgrowth(cv, 98, 132, 0, P.moss, seed + 3, { rate: 0.3, len: [4, 12] });
       ground(cv, BACK, 'cobble', seed + 4);
-      return { rack: { x: 44, y: GROUND_Y0 + 1 }, nest: [54, BACK - 3, 70, BACK] };
+      return { rack: { x: 44, y: GROUND_Y0 + 1 }, nest: [54, BACK - 3, 70, BACK], anim: [{ type: 'lantern', x: 114, y: 14 }, { type: 'motes', n: 8, x: 114, y: 28, r: 18 }, { type: 'drip', x: 104, y0: 10, y1: BACK + 2, every: 3.2 }, { type: 'drip', x: 126, y0: 8, y1: BACK + 2, every: 4.5 }] };
     },
   },
 };
@@ -1335,7 +1335,7 @@ export function penOf(kind) {
   }
   p = {
     kind, title: def.title, back: cv.pix, front: fg.pix, y0: GROUND_Y0, ground,
-    rack: out.rack, nest: out.nest,
+    rack: out.rack, nest: out.nest, anim: out.anim || [],
     cloth: [160, 80, 46, 11],
     slots: [[170, 86], [190, 87], [180, 89]],
   };

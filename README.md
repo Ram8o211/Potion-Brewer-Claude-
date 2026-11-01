@@ -268,7 +268,10 @@ computed from the particles that actually run out of the tap. What a
   rabbits' wire-fenced run with a hay rack and a hutch on legs, a barn
   loft, a toad pond, a hearth, a paddock, a sett, a dovecote, a fox run, a
   snow run, a vegetable garden and a cellar, each with clouds, shaded tree
-  groves, fieldstone, timber and hay painted procedurally — shaded rabbits,
+  groves, fieldstone, timber and hay painted procedurally, and alive: the
+  hearth's fire licks and sparks, lanterns flicker, a spring spills into the
+  pond, snow falls, butterflies and fireflies flit — shaded rabbits and
+  animals that walk in a four-beat stride and stretch out when they leap,
   and wood-grain, parchment and nail textures on the interface.
 * **Procedural wilds and ingredients:** every world grows its own
   ecosystem (`src/visual/`, see
@@ -296,8 +299,9 @@ computed from the particles that actually run out of the tap. What a
   identity* (`material.vis`: world of origin, species, family, habitat,
   rarity, colour, alchemical profile and a variation seed) from which its
   plant at each growth stage, its icon on the shelf, in the shop, the book
-  and its deposit card, and its four pieces in the cauldron are all drawn,
-  so it is recognisable everywhere; each family (flowers, herbs, roots,
+  and its deposit card, and its four pieces in the cauldron are all drawn
+  (each piece a shard cut from the icon's very pixels, enlarged, so it has
+  exactly the icon's colours and texture), so it is recognisable everywhere; each family (flowers, herbs, roots,
   fungi, mosses, fruit, reeds, bark, crystals, minerals, shells) has its own
   construction grammar, and the magic it carries shows as clues (spots,
   dark veins, warm edges, frost, violet glimmers, iridescence) without
@@ -358,11 +362,14 @@ computed from the particles that actually run out of the tap. What a
   meets (and clouds the water) for as long as you stay in the wilds. From
   the first attempt on its life (even a tap that misses close by) it is
   frantic: long, fast bounds away from you, hardly stopping, zigzagging.
-  Three wounds bring it down; a tap then catches it alive and carries it to
-  the hutch, weak from its wounds. Left lying it bleeds out (and with the
-  hutch full a tap finishes it); its body can then be carried home with a
-  tap, where its remains can be recovered. New rabbits come in from the
-  edges of the scene.
+  It bleeds out fast — four seconds after the first wound it drops dead —
+  so be quick: a meter over it shows the blood it has left and the taps
+  landed, and a third tap before it dies catches it alive and carries it to
+  the hutch, weak from its wounds (with the hutch full it is finished
+  instead). Its body can be carried home with a tap, where its remains can
+  be recovered. Each kind's enclosure holds at most ten animals, living and
+  dead together: recover a body's remains to make room. New rabbits come in
+  from the edges of the scene.
 * **Everything is original and bundled:** pixel art drawn in code (plus
   the wilds' sprites from the project's own concept-art packs), a
   pixel font, synthesised sound effects and music. No third-party runtime

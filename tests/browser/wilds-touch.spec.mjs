@@ -236,7 +236,7 @@ test('wild rabbits: tapped, one bleeds over the ground and bolts faster; brought
   expect(hurt.hits).toBe(1);
   expect(hurt.alarm, 'frantic after the first blow').toBe(true);
   expect(hurt.drops, 'blood bursts from it').toBeGreaterThan(10);
-  await page.waitForTimeout(2500);
+  await page.waitForTimeout(1200);
   // its blood colours the scene where it ran
   const red = await lab(page, (l) => {
     const cv = l.views.wilds.gore.get(l.views.wilds.region);
@@ -247,10 +247,9 @@ test('wild rabbits: tapped, one bleeds over the ground and bolts faster; brought
     return n;
   });
   expect(red, 'the ground is stained').toBeGreaterThan(15);
-  // two more blows bring it down; a tap then catches it, and it is in the hutch
+  // two more blows before it bleeds out catch it; a tap carries it to the hutch
   await lab(page, (l, i) => { const w = l.views.wilds, wr = w.warren(), r = wr.rabbits.find((q) => q.id === i); wr.strike(r, r.x, r.y - 5); wr.strike(r, r.x, r.y - 5); }, id);
   expect(await lab(page, (l, i) => l.views.wilds.warren().rabbits.find((q) => q.id === i).down, id)).toBe(true);
-  await page.waitForTimeout(600);
   await lab(page, (l, i) => { const wr = l.views.wilds.warren(); for (const q of wr.rabbits) if (q.id !== i) wr.remove(q); }, id);
   await tapRabbit();
   const after = await lab(page, (l) => ({ n: l.state.colony.rabbits.length, last: l.state.colony.rabbits[l.state.colony.rabbits.length - 1] }));

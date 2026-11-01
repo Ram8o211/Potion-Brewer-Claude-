@@ -14,7 +14,8 @@ import { predictPlan } from './predict.js';
 import { EFFECT_INDEX, EFFECT_KEYS } from '../alchemy/effects.js';
 import { migrateVial } from './vial.js';
 import { recordSale, resolveFollowUp, applyTrials, evidenceOf } from './commerce.js';
-import { colonyDay, colonyTick, livingRabbits, findRabbit, addBoughtRabbit, addWildRabbit, retireRabbit, remainsSource, purgeRabbit, cullRabbit, maxHealthOf, FOUNDER_BORN } from './colony.js';
+import { colonyDay, colonyTick, livingRabbits, findRabbit, addBoughtRabbit, addWildRabbit, penHasRoom, PEN_MAX, retireRabbit, remainsSource, purgeRabbit, cullRabbit, maxHealthOf, FOUNDER_BORN } from './colony.js';
+import { kindOf } from './kinds.js';
 import { remainsMaterials, remainsPlan, isRemains } from '../materials/remains.js';
 import { returningPatron, welcomePatron, recentStyles, notePatron, patronVerdict, noveltyFactor } from './patrons.js';
 import { techniqueById, migrateTechniques } from './commissions.js';
@@ -390,6 +391,7 @@ export class GameState {
     const c = this.colony;
     const cap = this.cap.hutch;
     if (livingRabbits(c).length >= cap) return { ok: false, reason: `The hutch is full (${cap} places). More places are sold in the Shop.` };
+    if (!penHasRoom(c, 'rabbit')) return { ok: false, reason: `The rabbits' enclosure is full (${PEN_MAX} animals, living and dead): recover the remains of a body to make room.` };
     const cost = free ? 0 : this.rabbitPrice();
     if (cost > this.coins + 1e-9) return { ok: false, reason: `A new rabbit costs ${cost} coins.` };
     this.coins = round1(this.coins - cost);
@@ -407,7 +409,8 @@ export class GameState {
    */
   bringWildRabbit(o) {
     const c = this.colony, cap = this.cap.hutch;
-    if (!o.dead && livingRabbits(c).length >= cap) return { ok: false, reason: `The hutch is full (${cap} places). More places are sold in the Shop.` };
+    if (!penHasRoom(c, kindOf(o.look))) return { ok: false, full: 'pen', reason: `Its enclosure is full (${PEN_MAX} animals, living and dead): recover the remains of a body to make room.` };
+    if (!o.dead && livingRabbits(c).length >= cap) return { ok: false, full: 'hutch', reason: `The hutch is full (${cap} places). More places are sold in the Shop.` };
     const rabbit = addWildRabbit(c, { day: this.day, look: o.look, sex: o.sex, dead: !!o.dead, health: o.health });
     if (o.dead) this.stats.hunted = (this.stats.hunted || 0) + 1;
     else this.stats.caught = (this.stats.caught || 0) + 1;
@@ -522,7 +525,7 @@ export class GameState {
     const r = this.buyRabbit(free);
     if (r.ok) return r;
     const alive = livingRabbits(this.colony)[0];
-    if (alive && livingRabbits(this.colony).length >= this.cap.hutch) { this.colony.focus = alive.id; return { ok: true, cost: 0, reselected: true }; }
+    if (alive && (livingRabbits(this.colony).length >= this.cap.hutch || !penHasRoom(this.colony, 'rabbit'))) { this.colony.focus = alive.id; return { ok: true, cost: 0, reselected: true }; }
     return r;
   }
 
