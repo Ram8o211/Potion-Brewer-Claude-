@@ -160,10 +160,10 @@ test('the sheet poses: standing, sitting up, leaping, grazing, startled and lyin
   }
 });
 
-test('every kind but the rabbit has an enclosure of its own: built level, deterministic, with room to walk, eat and lie', async () => {
+test('every kind, the rabbit too, has an enclosure of its own: built level, deterministic, with room to walk, eat and lie', async () => {
   const { penOf, PEN_KINDS, PEN_W, PEN_H } = await import('../src/visual/env/pens.js');
   const { KIND_IDS, kindLook } = await import('../src/game/kinds.js');
-  assert.deepEqual([...PEN_KINDS].sort(), KIND_IDS.filter((k) => k !== 'rabbit').sort(), 'one pen per caught kind');
+  assert.deepEqual([...PEN_KINDS].sort(), [...KIND_IDS].sort(), 'one pen per kind');
   const titles = new Set();
   for (const kind of PEN_KINDS) {
     const p = penOf(kind);

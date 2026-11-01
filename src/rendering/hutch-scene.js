@@ -1,13 +1,10 @@
-// The farm's enclosures as 224×92 pixel-art scenes: the Moon Rabbits' hutch,
-// and for every other kind caught in the wilds a pen of its own, painted
-// procedurally in the wilds' style (visual/env/pens.js; setPen picks which
-// one a scene shows, each with its own floor, feeder, nest and cloth).
-// The hutch: the colony's pen. The painted pen
-// (assets/hutch/pen.png, scripts/make-hutch.py: a plank wall, a hay rack, a
-// hide box, straw and two bowls) makes a cached background (nest straw fills
-// the hide box's door while a doe is expecting, a linen cloth lies in front of
-// it while there are bodies) and its front rail is drawn over the rabbits;
-// feet only ever rest on the straw (hutch-ground.js). Each living rabbit
+// The farm's enclosures as 224×92 pixel-art scenes: for every kind — the
+// Moon Rabbits' hutch among them — a pen of its own, painted procedurally
+// (visual/env/pens.js; setPen picks which one a scene shows, each with its
+// own floor, feeder, nest and cloth). The pen makes a cached background
+// (nest straw where a female is expecting, a linen cloth while there are
+// bodies) and its fringe of grass or snow is drawn over the animals; feet
+// only ever rest on its ground. Each living rabbit
 // runs a small behaviour machine — idling, hopping, grooming, eating at the rack, sniffing, and the moods its visible state
 // gives it (flops when lovestruck or vital, zoomies on fire or vitality 3,
 // rearing to flex its strength, loafing when sick, frozen solid, floating on
@@ -24,7 +21,6 @@
 import { Rng, hashString } from '../core/rng.js';
 import { PAL, makeCanvas } from './art.js';
 import { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } from './rabbit.js';
-import { GROUND, GROUND_Y0 } from './hutch-ground.js';
 import { kindOf } from '../game/kinds.js';
 import { penOf } from '../visual/env/pens.js';
 
@@ -36,12 +32,8 @@ export const HUTCH_H = 92;
 /** Bodies shown on the cloth; the UI counts any beyond. */
 export const HUTCH_BODIES = 3;
 
-/** Back edge of the straw floor. */
-const FLOOR_Y = 54;
-/** Where an eating rabbit stands, facing the hay rack. */
-const RACK = { x: 30, y: 57 };
-/** Feet positions of the bodies on the cloth. */
-const SLOTS = [[182, 68], [202, 71], [190, 74]];
+/** Back edge of the floor in the stand-in painted without a DOM. */
+const FLOOR_Y = 67;
 
 /**
  * An enclosure as the scene uses it: the ground's runs, where to eat, where
@@ -57,12 +49,12 @@ function penDef(p) {
   return { ...p, roam: { x0: Math.min(...flat.map((r) => r[0])), x1: Math.max(...flat.map((r) => r[1] - 1)), y0: p.y0, y1: p.y0 + p.ground.length - 1 } };
 }
 
-/** The Moon Rabbits' hutch: the painted pen. */
-const HUTCH_PEN = penDef({ kind: 'rabbit', y0: GROUND_Y0, ground: GROUND, rack: RACK, slots: SLOTS, cloth: [170, 64, 46, 13], nest: [186, 54, 203, 60] });
+/** The Moon Rabbits' hutch. */
+const HUTCH_PEN = penDef(penOf('rabbit'));
 /** @type {Map<string, PenDef>} */
 const PENS = new Map([['rabbit', HUTCH_PEN]]);
 
-/** The enclosure of a kind (the rabbits' hutch for a rabbit, or for a kind without a pen of its own). @param {string} kind */
+/** The enclosure of a kind (the rabbits' hutch for a kind without a pen of its own). @param {string} kind */
 export function penFor(kind) {
   let p = PENS.get(kind);
   if (p) return p;
@@ -71,8 +63,6 @@ export function penFor(kind) {
   PENS.set(kind, p);
   return p;
 }
-/** Top of the front rail (drawn over the rabbits). */
-const RAIL_Y = 76;
 
 /** @param {number} v @param {number} lo @param {number} hi */
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -120,38 +110,16 @@ function R(ctx, x, y, w, h, c) {
  * @property {any} an
  */
 
-// hutch palette: dark oiled planks, golden straw (the stand-in painted until the picture has loaded)
+// the stand-in painted without a DOM: dark oiled planks, golden straw
 const HW = { k: '#1a1218', p1: '#3a2212', p3: '#5a371d', p5: '#8a5c33' };
 const STRAW = ['#7a5a24', '#9a7630', '#b8923c', '#d2ae52', '#e8cc74', '#f6e2a0'];
 
-/** The painted pen (scripts/make-hutch.py): the whole picture, and its front rail alone. */
-const PEN = { back: lazyImage('assets/hutch/pen.png'), front: lazyImage('assets/hutch/pen-front.png') };
-
-/** An image loaded on first use; never loads without a DOM. @param {string} url */
-function lazyImage(url) {
-  /** @type {{ready:boolean, img:any, get:() => any}} */
-  const o = {
-    ready: false, img: null,
-    get() {
-      if (!o.img && typeof Image !== 'undefined') {
-        const img = new Image();
-        img.onload = () => { o.ready = true; };
-        img.src = url;
-        o.img = img;
-      }
-      return o.ready ? o.img : null;
-    },
-  };
-  return o;
-}
-
 /**
- * Paint an enclosure's background into a 224×92 context: the rabbits'
- * painted pen or a kind's procedural one (or a plain stand-in until the
- * picture has loaded, and without a DOM), with a nest where a female is
- * expecting and a linen cloth for the bodies when asked.
+ * Paint an enclosure's background into a 224×92 context: a kind's
+ * procedural pen (or a plain stand-in without a DOM), with a nest where a
+ * female is expecting and a linen cloth for the bodies when asked.
  * @param {CanvasRenderingContext2D} ctx @param {{nest?:boolean, cloth?:boolean, pen?:any, def?:PenDef}} [o]
- *   pen: the picture, once loaded; def: the enclosure (the hutch by default)
+ *   pen: the pen's painting as a canvas; def: the enclosure (the hutch by default)
  */
 export function paintHutch(ctx, o = {}) {
   const W = HUTCH_W, H = HUTCH_H, rng = new Rng('hutch-bg-3'), def = o.def || HUTCH_PEN;
@@ -174,18 +142,14 @@ export function paintHutch(ctx, o = {}) {
 }
 
 /**
- * The front rail of the pen, drawn over the rabbits.
- * @param {CanvasRenderingContext2D} ctx @param {any} [pen] the painted rail, once loaded
+ * What of the pen is drawn over the animals (its fringe of grass or snow).
+ * @param {CanvasRenderingContext2D} ctx @param {any} [pen] the fringe as a canvas (nothing without a DOM)
  */
 export function paintHutchFront(ctx, pen) {
-  const W = HUTCH_W, H = HUTCH_H;
-  if (pen) { ctx.drawImage(pen, 0, 0); return; }
-  R(ctx, 0, RAIL_Y - 1, W, H - RAIL_Y + 1, HW.k);
-  R(ctx, 0, RAIL_Y, W, H - RAIL_Y, HW.p3);
-  R(ctx, 0, RAIL_Y, W, 1, HW.p5);
+  if (pen) ctx.drawImage(pen, 0, 0);
 }
 
-/** Whether a rabbit's feet may rest at a point: on the straw, off the bowls and the hide box. @param {number} x @param {number} y */
+/** Whether a rabbit's feet may rest at a point: on the pen's ground, off what was set down on it. @param {number} x @param {number} y */
 export function onGround(x, y, pen = HUTCH_PEN) {
   const row = pen.ground[Math.round(y) - pen.y0], xi = Math.round(x);
   return !!row && row.some(([x0, x1]) => xi >= x0 && xi < x1);
@@ -652,11 +616,9 @@ export class HutchScene {
     return [...this.actors.values()].filter((a) => !a.hidden).sort((p, q) => p.y - q.y || (p.id < q.id ? -1 : p.id > q.id ? 1 : 0));
   }
 
-  /** The picture of this enclosure's back or front: the rabbits' painted pen, or a kind's procedural one. @param {'back'|'front'} part */
+  /** The painting of this enclosure's back or front, as a canvas (null without a DOM). @param {'back'|'front'} part */
   _art(part) {
-    const p = this.pen;
-    if (p.back) return canvasOf(part === 'back' ? p.back : p.front);
-    return (part === 'back' ? PEN.back : PEN.front).get();
+    return canvasOf(part === 'back' ? this.pen.back : this.pen.front);
   }
 
   /** @param {CanvasRenderingContext2D} ctx */
