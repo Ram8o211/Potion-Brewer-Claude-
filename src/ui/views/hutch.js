@@ -22,7 +22,7 @@ import { CrispCanvas } from '../../rendering/crisp.js';
 import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
 import {
   livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral,
-  RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE, BURNS, PEN_MAX, penHasRoom } from '../../game/colony.js';
+  RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE, BURNS, PEN_MAX, penHasRoom, livingOf } from '../../game/colony.js';
 import { PURGE_BREW_TIME } from '../../game/state.js';
 
 const STAGE_WORD = { kit: 'kit', young: 'youngster', adult: 'adult', elder: 'elder' };
@@ -68,15 +68,15 @@ export class HutchPanel {
     const live = livingRabbits(c);
     const cap = st.cap.hutch;
     const price = lab.sandbox ? 0 : st.rabbitPrice();
-    const full = live.length >= cap || !penHasRoom(c, 'rabbit');
+    const rabbits = livingOf(c, 'rabbit'), full = rabbits >= cap || !penHasRoom(c, 'rabbit');
     const fed = c.fedDay === st.day;
     const feral = live.filter((r) => isFeral(r));
     // ---- head: room, buying, feeding, breeding
     el.append(h('div', { class: 'row wrap hutch-head' },
-      icon('rabbit'), h('b', { text: 'The hutch' }), h('span', { class: 'small muted', text: `${live.length} of ${cap} places` }),
+      icon('rabbit'), h('b', { text: 'The hutch' }), h('span', { class: 'small muted', text: `${rabbits} of ${cap} places for rabbits` }),
       feral.length ? h('span', { class: 'feral-warn small' }, icon('claw', 'sm'), ` ${feral.map((r) => r.name).join(', ')} attacking the others!`) : null));
     const manage = [h('div', { class: 'hutch-actions' },
-      btn(price ? `Buy · ${price}` : 'Buy', () => this.buy(), { icon: 'plus', act: 'colony-buy', disabled: full || (!lab.sandbox && st.coins < price), title: full ? (live.length >= cap ? `The hutch is full (${cap} places): more places are sold in the Shop.` : `The rabbits' enclosure is full (${PEN_MAX} animals, living and dead): recover the remains of a body to make room.`) : 'Buy an adult rabbit from the breeder' }),
+      btn(price ? `Buy · ${price}` : 'Buy', () => this.buy(), { icon: 'plus', act: 'colony-buy', disabled: full || (!lab.sandbox && st.coins < price), title: full ? (rabbits >= cap ? `The hutch is full (${cap} places): more places are sold in the Shop.` : `The rabbits' enclosure is full (${PEN_MAX} animals, living and dead): recover the remains of a body to make room.`) : 'Buy an adult rabbit from the breeder' }),
       btn(fed ? 'Fed' : lab.sandbox ? 'Feed' : `Feed · ${st.feedCost()}`, () => this.feed(), { icon: 'leaf', act: 'colony-feed', disabled: fed || !live.length, title: 'Hay and greens: they recover faster and pair up more readily tonight' }),
       btn(c.breed ? 'Breeding on' : 'Breeding off', () => this.toggleBreed(), { icon: 'nest', cls: c.breed ? 'active' : '', act: 'colony-breed', title: 'Let healthy, unrelated adults pair up overnight' }),
       lab.sandbox ? btn('Next day', () => this.nextDay(), { icon: 'clock', act: 'colony-day', title: 'Let a night pass in the hutch' }) : null)];
