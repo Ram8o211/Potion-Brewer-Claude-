@@ -4,6 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { refLookup, PHASE } from './helpers.mjs';
 import { Simulation } from '../src/simulation/world.js';
+import { SIM } from '../src/simulation/constants.js';
 import { FluidRenderer } from '../src/rendering/fluid.js';
 import { EFFECTS, NE } from '../src/alchemy/effects.js';
 import { PIECE_ART, registerSpecies, ensurePieces, forgetPieces } from '../src/visual/pieces.js';
@@ -234,22 +235,35 @@ test('parcels of different colour and texture meet in gradients, not hard edges'
     fr.halo = false;
     const out = fr.render(sim, view, 0);
     assert.ok(out);
+    // the brew is drawn in droplet-sized cells, each with its own light or
+    // dark tone: compare neighbouring 2×2-cell windows, so the droplets'
+    // grain averages out and what is left is how the parcels meet
+    const PQ = Math.max(2, Math.round(SIM.SPACING * view.scale * 0.6)), d = fr.image.data;
+    /** mean colour of a 2×2-cell window, or null where it isn't all brew @param {number} x @param {number} y */
+    const win = (x, y) => {
+      let r = 0, g = 0, b = 0, n = 0;
+      for (let yy = y; yy < y + 2 * PQ; yy++) for (let xx = x; xx < x + 2 * PQ; xx++) {
+        const o = (yy * fr.w + xx) * 4;
+        if (d[o + 3] < 200) return null;
+        r += d[o]; g += d[o + 1]; b += d[o + 2]; n++;
+      }
+      return [r / n, g / n, b / n];
+    };
     let worst = 0;
     for (const wy of [3.0, 3.2, 3.4]) {
       const y = Math.round(wy * view.scale + view.oy - out.y);
-      for (let wx = -0.5; wx < 0.5; wx += 1 / view.scale) {
-        const x = Math.round(wx * view.scale + view.ox - out.x), o = (y * fr.w + x) * 4;
-        const d = fr.image.data;
-        if (d[o + 3] < 200 || d[o + 7] < 200) continue;
-        worst = Math.max(worst, Math.abs(d[o] - d[o + 4]) + Math.abs(d[o + 1] - d[o + 5]) + Math.abs(d[o + 2] - d[o + 6]));
+      for (let x = Math.round(-0.5 * view.scale + view.ox - out.x), xe = Math.round(0.5 * view.scale + view.ox - out.x); x < xe; x += PQ) {
+        const a1 = win(x, y), a2 = win(x + PQ, y);
+        if (!a1 || !a2) continue;
+        worst = Math.max(worst, Math.abs(a1[0] - a2[0]) + Math.abs(a1[1] - a2[1]) + Math.abs(a1[2] - a2[2]));
       }
     }
     return worst;
   };
   const c = edge('colour'), pst = edge('paste');
-  // (a hard switch measured ≈105 and ≈110)
-  assert.ok(c < 85, `two colours meet softly (step ${c})`);
-  assert.ok(pst < 75, `paste and liquid meet softly (step ${pst})`);
+  // (unsoftened colour measured ≈152, and a hard paste switch ≈54)
+  assert.ok(c < 125, `two colours meet softly (step ${c})`);
+  assert.ok(pst < 51, `paste and liquid meet softly (step ${pst})`);
 });
 
 test('effect particles: each effect in its own colour, a swarm that lives on from frame to frame, and gone with the magic', () => {
