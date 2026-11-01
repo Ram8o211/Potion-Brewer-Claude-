@@ -52,6 +52,8 @@ export class Canvas {
     /** which prop (a piece of scenery set down by `place`, numbered from 1) covers each pixel (0: none) */
     this.props = new Uint16Array(N);
     this.nprops = 0;
+    /** 1 on the very pixels a prop or a small thing painted (props marks whole claimed boxes; this only what was drawn) */
+    this.things = new Uint8Array(N);
     /** the main ground's surface row in each column (side.js fillSolid), if the scene has one @type {Float32Array | null} */
     this.ground = null;
     this.seed = seed >>> 0;
@@ -192,7 +194,7 @@ export class Canvas {
       if (xx < 0 || yy < 0 || xx >= this.W || yy >= this.H) continue;
       const k = yy * this.W + xx;
       // a prop's pixels are its own: nothing else is set down on them
-      if (id) this.props[k] = id;
+      if (id) { this.props[k] = id; this.things[k] = 1; }
       if (!o.foot) continue;
       // the scenery covers what stands behind it; and nothing grows out of it
       if (fy > this.depth[k]) this.depth[k] = fy;
@@ -370,6 +372,13 @@ export class Canvas {
       if (this.solid[k] || this.rock[k] || this.liquid[k] || this.trees[k] || this.props[k]) return false;
     }
     return x0 >= 0 && y0 >= 0 && x1 < this.W && y1 < this.H;
+  }
+
+  /** Paint a pixel of a small thing drawn pixel by pixel (a mushroom, a torch): it counts as a thing standing in the scene. @param {number} x @param {number} y @param {number} c */
+  setThing(x, y, c) {
+    this.set(x, y, c);
+    x = Math.round(x); y = Math.round(y);
+    if (x >= 0 && y >= 0 && x < this.W && y < this.H) this.things[y * this.W + x] = 1;
   }
 
   /** Claim a rectangle for a prop drawn pixel by pixel (where air is), so nothing else is set down on it. */
