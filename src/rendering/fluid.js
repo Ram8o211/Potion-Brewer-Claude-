@@ -346,15 +346,17 @@ export class FluidRenderer {
         const wArt = pc ? Math.max(0, Math.min(1, (p.whole[i] - 0.3) * 2)) : 0;
         const rx = Math.round(fx), ry = Math.round(fy);
         // an ingredient ground with the pestle (or a powder of one) is sand:
-        // many fine grains in the colours of its piece, not a few chips
+        // many grains in the colours of its piece, not a few chips. Each grain
+        // is a chunky 2–3 px fleck spread a little past the particle, so a heap
+        // reads as solid, full-bodied sand while every grain stays distinct.
         const sand = !!pc && !frozen;
-        const chips = sand ? 7 + (seed & 3) : 3 + (seed & 1);
+        const chips = sand ? 8 + (seed & 3) : 3 + (seed & 1);
         for (let c = 0; c < chips + 2; c++) {
           const h1 = hash01(seed + c * 7919), h2 = hash01(seed * 3 + c * 104729 + 1), h3 = hash01(seed * 7 + c * 1299709 + 2);
           const speck = c >= chips;
           const an = h1 * 6.2832;
-          const dist = speck ? rgrain * (0.85 + 0.45 * h2) : c === 0 ? 0 : Math.sqrt(h2) * rgrain * (sand ? 0.95 : 0.6);
-          const rc = speck ? 0.5 : sand ? (h3 < 0.7 ? 0.5 : 0.75) : Math.max(0.8, rgrain * (0.36 + 0.2 * h3));
+          const dist = speck ? rgrain * ((sand ? 1 : 0.85) + 0.45 * h2) : c === 0 ? 0 : Math.sqrt(h2) * rgrain * (sand ? 1.15 : 0.6);
+          const rc = speck ? 0.5 : sand ? (h3 < 0.55 ? 0.95 : h3 < 0.9 ? 1.2 : 1.45) : Math.max(0.8, rgrain * (0.36 + 0.2 * h3));
           const ccx = fx + Math.cos(an) * dist, ccy = fy + Math.sin(an) * dist;
           // a second, smaller lobe makes the chip irregular rather than round
           const lcx = ccx + Math.cos(h3 * 6.2832) * rc * 0.65, lcy = ccy + Math.sin(h3 * 6.2832) * rc * 0.65;
