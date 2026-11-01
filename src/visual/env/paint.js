@@ -70,7 +70,7 @@ export class Canvas {
      * of what stands in front of it), and per swaying pixel its home pixel,
      * colour, stamp and group (the clump or strand it moves with).
      * @type {null | {bare:Uint32Array, layer:Uint32Array, seq:number, k:number[], c:number[], s:number[], g:number[],
-     *   amp:number[], hang:number[], gx:number[], gn:number[], y0:number[], y1:number[]}}
+     *   amp:number[], hang:number[], gx:number[], gn:number[], y0:number[], y1:number[], far:number[]}}
      */
     this.sw = null;
   }
@@ -92,18 +92,21 @@ export class Canvas {
 
   /** Start keeping the swaying foliage apart (see `sw`). */
   swayStart() {
-    if (!this.sw) this.sw = { bare: this.pix.px.slice(), layer: new Uint32Array(this.W * this.H), seq: 0, k: [], c: [], s: [], g: [], amp: [], hang: [], gx: [], gn: [], y0: [], y1: [] };
+    if (!this.sw) this.sw = { bare: this.pix.px.slice(), layer: new Uint32Array(this.W * this.H), seq: 0, k: [], c: [], s: [], g: [], amp: [], hang: [], gx: [], gn: [], y0: [], y1: [], far: [] };
     return this.sw;
   }
 
   /**
    * A group of swaying pixels moving together: `amp` how far (pixels) the
    * whole of it moves in a full gust, `hang` how much further its lowest
-   * pixels swing than its top (a strand hanging from its top).
-   * @param {number} amp @param {number} [hang]
+   * pixels swing than its top (a strand hanging from its top); `far` that it
+   * belongs to the backdrop (a hazed background tree): the wind moves it,
+   * the player's finger never does.
+   * @param {number} amp @param {number} [hang] @param {boolean} [far]
    */
-  swayGroup(amp, hang = 0) {
+  swayGroup(amp, hang = 0, far = false) {
     const s = this.swayStart();
+    s.far.push(far ? 1 : 0);
     s.amp.push(amp); s.hang.push(hang); s.gx.push(0); s.gn.push(0); s.y0.push(this.H); s.y1.push(0);
     return s.amp.length - 1;
   }
@@ -183,7 +186,7 @@ export class Canvas {
   put(r, x, y, o = {}) {
     const p = r.raster.pix, w = r.w, h = r.h, X = Math.round(x) + r.left, Y = Math.round(y) + r.top;
     const parts = r.model ? r.model.parts : [], sways = o.sway !== 0 && parts.some((q) => q.sa !== undefined);
-    if (sways || this.sw) this.putSway(r, X, Y, sways ? o.sway ?? 1 : 0);
+    if (sways || this.sw) this.putSway(r, X, Y, sways ? o.sway ?? 1 : 0, !!o.haze);
     else this.pix.draw(p, X, Y);
     if (o.roots) this.blockEllipse(Math.round(x), Math.round(y) - 1, o.roots[0], o.roots[1]);
     if (o.foot) this.blockEllipse(Math.round(x), Math.round(y), o.foot[0], o.foot[1]);
@@ -209,8 +212,9 @@ export class Canvas {
    * (times `mult`) giving its sway and its hang; what lies under the leaves
    * of the model itself (its branches) goes into the bare painting.
    * @param {{raster:any, w:number, h:number, model?:any, pal?:any, ro?:any, tint?:any}} r @param {number} X @param {number} Y @param {number} mult
+   * @param {boolean} [far] it is part of the backdrop (hazed): its groups are far
    */
-  putSway(r, X, Y, mult) {
+  putSway(r, X, Y, mult, far = false) {
     const p = r.raster.pix, part = r.raster.part, w = r.w, h = r.h, W = this.W, px = this.pix.px;
     const s = this.swayStart(), seq = ++s.seq, parts = r.model ? r.model.parts : [];
     let under = null;
@@ -243,7 +247,7 @@ export class Canvas {
       if (mult && q && q.sa !== undefined) {
         const key = q.sg ?? 0;
         let g = groups.get(key);
-        if (g === undefined) { g = this.swayGroup(q.sa * mult, (q.sh || 0) * mult); groups.set(key, g); }
+        if (g === undefined) { g = this.swayGroup(q.sa * mult, (q.sh || 0) * mult, far); groups.set(key, g); }
         const u = /** @type {any} */ (under).px[j * w + i];
         if (u >>> 24) { s.bare[k] = u; s.layer[k] = seq; }
         else if (inside(i, j)) { s.bare[k] = mixPacked(c, 0xff000000, 0.5); s.layer[k] = seq; }
@@ -267,7 +271,7 @@ export class Canvas {
     for (let i = 0; i < n; i++) { const g = s.g[i], y = Math.floor(s.k[i] / this.W); f[i] = s.hang[g] ? (y - s.y0[g]) / Math.max(1, s.y1[g] - s.y0[g]) : 0; }
     return {
       bare: s.bare, layer: s.layer, k: Int32Array.from(s.k), c: Uint32Array.from(s.c), s: Uint32Array.from(s.s), g: Int32Array.from(s.g), f,
-      amp: Float32Array.from(s.amp), hang: Float32Array.from(s.hang), gx: Float32Array.from(s.gx, (v, g) => v / Math.max(1, s.gn[g])), gy: Float32Array.from(s.y0),
+      amp: Float32Array.from(s.amp), hang: Float32Array.from(s.hang), far: Uint8Array.from(s.far), gx: Float32Array.from(s.gx, (v, g) => v / Math.max(1, s.gn[g])), gy: Float32Array.from(s.y0),
     };
   }
 

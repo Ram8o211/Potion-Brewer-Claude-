@@ -264,3 +264,24 @@ test('the identity record alone rebuilds the same pictures on another device', (
   assert.equal(got.origin, 'trade-1', 'it remembers its world of origin');
   assert.equal(WILD_SPECS.length, 58);
 });
+
+test('the finger reaches only the scenery in front: background trees sway in the wind but cannot be pushed', async () => {
+  const { SceneTouch } = await import('../src/rendering/wild-scene.js');
+  let farStrands = 0, nearStrands = 0;
+  for (const id of ['forest', 'netherwood']) {
+    const sw = sceneOf(id, 'touch-1').sway;
+    assert.ok(sw && sw.far, `${id}: its foliage knows what is far`);
+    const t = new SceneTouch(sw);
+    for (let g = 0; g < sw.amp.length; g++) {
+      if (!(sw.hang[g] > 0)) continue;
+      // a swipe straight across the strand's middle
+      const b = g * 4, x0 = t.box[b] - 6, x1 = t.box[b + 2] + 6, y = (t.box[b + 1] + t.box[b + 3]) / 2;
+      t.push(x0, y, x1, y);
+      if (sw.far[g]) { farStrands++; assert.ok(!t.moving(g), `${id}: background strand ${g} stays put`); }
+      else if (t.moving(g)) nearStrands++;
+    }
+    assert.ok(sw.far.some((f, g) => f && sw.amp[g] > 0), `${id}: its background trees still sway in the wind`);
+  }
+  assert.ok(farStrands > 0, 'there were background strands to try');
+  assert.ok(nearStrands > 0, 'while strands in front are moved by the finger');
+});
