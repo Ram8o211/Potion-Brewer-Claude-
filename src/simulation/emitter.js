@@ -98,7 +98,8 @@ export class Emitter {
     if (form === 'solid') {
       this.chunkTimer -= dt;
       if (this.chunkTimer > 0) return;
-      this.chunkTimer = 0.36;
+      // (pieces are smaller, so they come a little faster: the same pour rate)
+      this.chunkTimer = hasPieces(a.def) ? 0.26 : 0.36;
       const size = Math.min(a.remaining, chunkSize(a.def));
       if (this._spawnChunk(a, size)) {
         a.remaining -= size;

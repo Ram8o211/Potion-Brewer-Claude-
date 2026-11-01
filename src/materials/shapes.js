@@ -179,7 +179,7 @@ export function piece(skin) {
   let area = 0;
   for (const m of mask) area += m;
   const spec = WILD_BY_KEY[sk.key];
-  const n = (TEMPLATES[spec ? spec.shape : 'stone'] || TEMPLATES.stone).length;
+  const n = pieceSize((TEMPLATES[spec ? spec.shape : 'stone'] || TEMPLATES.stone).length);
   const inside = (x, y) => x >= 0 && y >= 0 && x < M && y < M && mask[(y | 0) * M + (x | 0)] === 1;
   /** @type {number[][]|null} */
   let best = null;
@@ -216,7 +216,13 @@ export function piece(skin) {
   return (fitted[skin] = { pts, ax: fx + mx * r, ay: fy + my * r, ppu: bestK * r, cx: fx, cy: fy });
 }
 
+/** Pieces (shards of an ingredient's icon) are a bit smaller than its template: this share of its particles. */
+const PIECE_SHARE = 0.7;
+/** @param {number} n template size */
+const pieceSize = (n) => Math.max(4, Math.round(n * PIECE_SHARE));
+
 /** Largest object size of a material (particles). @param {any} def */
 export function chunkSize(def) {
-  return (TEMPLATES[shapeOf(def)] || TEMPLATES.stone).length;
+  const n = (TEMPLATES[shapeOf(def)] || TEMPLATES.stone).length;
+  return hasPieces(def) ? pieceSize(n) : n;
 }
