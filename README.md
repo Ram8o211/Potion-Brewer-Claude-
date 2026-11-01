@@ -264,9 +264,12 @@ computed from the particles that actually run out of the tap. What a
     export/import.
 * **Pixel art painted in code:** a furnished workshop (brick wall,
   shelves of jars and plants, drying herbs, ivy, barrel, sack, firewood
-  under the cauldron), a hutch with a hay rack, a thatched hide box and a
-  fence, shaded rabbits, and wood-grain, parchment and nail textures on the
-  interface.
+  under the cauldron), an enclosure for every kind of animal — the
+  rabbits' wire-fenced run with a hay rack and a hutch on legs, a barn
+  loft, a toad pond, a hearth, a paddock, a sett, a dovecote, a fox run, a
+  snow run, a vegetable garden and a cellar, each with clouds, shaded tree
+  groves, fieldstone, timber and hay painted procedurally — shaded rabbits,
+  and wood-grain, parchment and nail textures on the interface.
 * **Procedural wilds and ingredients:** every world grows its own
   ecosystem (`src/visual/`, see
   [docs/PROCEDURAL_GRAPHICS.md](docs/PROCEDURAL_GRAPHICS.md)). Each of the

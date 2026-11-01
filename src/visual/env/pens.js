@@ -1,6 +1,6 @@
-// The enclosures of the farm: one for every kind of animal caught in the
-// wilds (the Moon Rabbits keep their painted hutch, rendering/hutch-scene.js),
-// each a 224 × 92 scene painted procedurally — pure functions of a seed,
+// The enclosures of the farm: one for every kind of animal, the Moon
+// Rabbits' hutch among them (a wire-fenced run with a hutch on legs), each
+// a 224 × 92 scene painted procedurally — pure functions of a seed,
 // no picture files — in the farm's own look: dusky skies over layered
 // tree lines, timber frames with braced posts, lanterns glowing warm,
 // heaps of hay, rail fences, open thatched shelters, stone and brick laid in
@@ -31,7 +31,7 @@ export const GROUND_Y0 = 69;
 const GROUND_Y1 = 86;
 
 /** Version of the pens' painting (names caches only). */
-export const PENS_VERSION = 3;
+export const PENS_VERSION = 4;
 
 /**
  * @typedef {Object} Pen
@@ -56,6 +56,7 @@ const P = {
   stone: ['#1a1a24', '#363844', '#525460', '#6e7078', '#92929a', '#bcbcc0'].map(col),
   brick: ['#1e0e10', '#42201a', '#6a3224', '#8a4630', '#ae6242', '#d08a60'].map(col),
   plaster: ['#3a2c3c', '#584658', '#766676', '#968696', '#b4a8b2', '#d2c8cc'].map(col),
+  beige: ['#5a4434', '#8a7058', '#b49c80', '#cdb898', '#e0d0b2', '#f2e8d0'].map(col),
   lime: ['#6e6a66', '#948e84', '#b4ac9e', '#cec6b4', '#e4dccc', '#f8f4e8'].map(col),
   earth: ['#180c0c', '#301c14', '#4c3020', '#6a462a', '#8a6238', '#ae8450'].map(col),
   dirt: ['#2a1a1a', '#4a3226', '#6a4c34', '#8a6644', '#ac8656', '#cca870'].map(col),
@@ -606,6 +607,363 @@ function arch(cv, cx, base, r, legs, seed) {
   });
 }
 
+// ------------------------------------------------------------------ skies, groves and stone
+
+/**
+ * Clouds: rounded puffs along a flat base, white where the light catches
+ * their tops, a cool shade in their bellies.
+ * @param {{lit?:string, mid?:string, dark?:string}} [o]
+ */
+function clouds(cv, y0, y1, seed, n, o = {}) {
+  const r = new Rng(seed), lit = col(o.lit ?? '#ffffff'), mid = col(o.mid ?? '#e2eaf6'), dark = col(o.dark ?? '#aebcd8');
+  for (let c = 0; c < n; c++) {
+    const cx = Math.round((c + 0.2 + r.next() * 0.6) * (cv.W / n)), cy = r.int(y0, y1), w = r.int(16, 30), k = r.int(3, 5);
+    /** @type {number[][]} */
+    const puffs = [];
+    for (let j = 0; j < k; j++) {
+      const t = (j + 0.5) / k, mid_ = 1 - Math.abs(t - 0.5) * 1.5;
+      puffs.push([cx - w / 2 + t * w + r.range(-1.5, 1.5), cy - 1 - mid_ * r.range(1, 3), 2.2 + mid_ * r.range(2.5, 4.5)]);
+    }
+    fill(cv, cx - w / 2 - 8, cy - 12, cx + w / 2 + 8, cy + 2, (x, y) => {
+      let best = -1e9, nx = 0, ny = 0;
+      for (const [px, py, pr] of puffs) { const dx = x + 0.5 - px, dy = y + 0.5 - py, d = pr - Math.hypot(dx, dy); if (d > best) { best = d; nx = dx / pr; ny = dy / pr; } }
+      if (best < 0 || y > cy + 1) return 0;
+      if (y >= cy) return dark;
+      const l = -ny * 0.9 - nx * 0.35;
+      return l > 0.4 ? lit : l > -0.25 ? mid : dark;
+    });
+  }
+}
+
+/** A round-crowned tree: a trunk under a cluster of leafy lobes, each lit on its upper left. */
+function crown(cv, x, base, h, R, seed) {
+  const r = new Rng(seed), rad = h * 0.34, cy = base - h + rad;
+  rect(cv, x - 1, cy, x + 1, base, P.oak[2]); rect(cv, x, cy, x + 1, base, P.oak[1]);
+  const blobs = [[x, cy, rad]];
+  for (let k = 0; k < 6; k++) blobs.push([x + r.range(-rad * 0.75, rad * 0.75), cy + r.range(-rad * 0.55, rad * 0.45), rad * r.range(0.5, 0.75)]);
+  fill(cv, x - rad * 1.8, cy - rad * 1.6, x + rad * 1.8, cy + rad * 1.5, (px, py) => {
+    let best = -1e9, nx = 0, ny = 0;
+    for (const [bx, by, br] of blobs) { const dx = (px + 0.5 - bx) / br, dy = (py + 0.5 - by) / br, d = 1 - Math.hypot(dx, dy); if (d > best) { best = d; nx = dx; ny = dy; } }
+    if (best + (hash2(px, py, seed) - 0.5) * 0.22 < 0) return 0;
+    const lit = -(nx * 0.55 + ny * 0.85), n = noise2(px * 0.42, py * 0.42, seed);
+    let i = 2 + (lit > 0.5 ? 2 : lit > 0.05 ? 1 : lit < -0.45 ? -1 : 0) + (n > 0.68 ? 1 : n < 0.28 ? -1 : 0);
+    if (best < 0.12 && ny > 0.2) i--;
+    return R[clampI(i, 0, 5)];
+  });
+}
+
+/** A fir: tiers of boughs, lit on the left, shaded under each tier (snowed on along its tiers when asked). */
+function pine(cv, x, base, h, R, seed, snow) {
+  rect(cv, x - 1, base - 3, x + 1, base, P.oak[1]);
+  const tiers = Math.max(3, Math.round(h / 5)), th = Math.round(h / tiers) + 3;
+  for (let t = 0; t < tiers; t++) {
+    const ty = base - 2 - Math.round((t * (h - th)) / (tiers - 1)), w = Math.round((1 - t / tiers) * h * 0.3) + 2;
+    for (let j = 0; j < th; j++) {
+      const half = Math.round((w * (j + 1)) / th), y = ty - th + 1 + j;
+      for (let i = -half; i <= half; i++) {
+        let k = i < -half * 0.35 ? 3 : i > half * 0.45 ? 1 : 2;
+        if (j === th - 1) k = Math.min(k, 1);
+        else if (i === -half && j > 1) k = 4;
+        if (noise2((x + i) * 0.6, y * 0.6, seed) > 0.72) k++;
+        let c = R[clampI(k, 0, 5)];
+        if (snow && (i === -half || i === -half + 1) && j < th - 1 && hash2(x + i, y, seed) > 0.25) c = snow;
+        cv.set(x + i, y, c);
+      }
+    }
+  }
+}
+
+/**
+ * A grove along a line: round crowns and firs packed side by side, the ones
+ * behind drawn first, the ground under them filled down to `bottom`.
+ * @param {number[]} R a 6-step leaf ramp @param {{h?:number[], pines?:number, gap?:number[], bottom?:number, snow?:string}} [o]
+ */
+function grove(cv, base, R, seed, o = {}) {
+  const r = new Rng(seed), h = o.h ?? [12, 20], gap = o.gap ?? [7, 12];
+  const trees = [];
+  for (let x = -6; x < cv.W + 8; x += r.int(gap[0], gap[1])) trees.push({ x, h: r.int(h[0], h[1]), pine: r.next() < (o.pines ?? 0.35), y: base + r.int(0, 2) });
+  const order = [...trees.filter((_, i) => i % 2), ...trees.filter((_, i) => !(i % 2))];
+  for (const t of order) {
+    if (t.pine) pine(cv, t.x, t.y, t.h, R, seed + t.x, o.snow ? col(o.snow) : 0);
+    else crown(cv, t.x, t.y, t.h, R, seed + t.x);
+  }
+  fill(cv, 0, base, cv.W, o.bottom ?? base + 6, (x, y) => R[noise2(x * 0.3, y * 0.5, seed) > 0.6 ? 2 : 1]);
+}
+
+/** A leaf ramp faded toward a colour (distance). @param {number[]} R @param {string} c @param {number} k */
+const haze = (R, c, k) => R.map((q) => mixPacked(q, col(c), k));
+
+/**
+ * Fieldstone laid in courses: rounded stones of uneven length in a dark
+ * mortar, each lit on its upper left and shaded along its underside, moss
+ * in some joints when asked.
+ * @param {number[]} R @param {{h?:number, mortar?:number, moss?:number}} [o]
+ */
+function rocks(cv, x0, y0, x1, y1, R, seed, o = {}) {
+  const sh = o.h ?? 9, r = new Rng(seed), mortar = o.mortar ?? R[0];
+  fill(cv, x0, y0, x1, y1, (x, y) => (o.moss && hash2(x >> 1, y >> 1, seed + 8) < o.moss ? P.moss[1] : mortar));
+  for (let ry = y0 - 2; ry < y1; ry += sh) {
+    let sx = x0 - r.int(2, 10);
+    while (sx < x1) {
+      const w = r.int(Math.round(sh * 1.15), Math.round(sh * 2)), hh = sh + r.int(-1, 1), tone = r.int(-1, 1), sq = r.range(2.1, 3);
+      const cx = sx + w / 2, cy = ry + sh / 2 + r.range(-0.6, 0.6), rx = w / 2 - 0.3, rv = hh / 2 - 0.3;
+      fill(cv, Math.max(sx, x0), Math.max(ry - 1, y0), Math.min(sx + w, x1), Math.min(ry + hh + 1, y1), (x, y) => {
+        const u = (x + 0.5 - cx) / rx, v = (y + 0.5 - cy) / rv, e = Math.abs(u) ** sq + Math.abs(v) ** sq;
+        if (e > 1) return 0;
+        const lit = -(u * 0.5 + v * 0.9);
+        let i = 2 + tone + (lit > 0.55 ? 2 : lit > 0.1 ? 1 : lit < -0.5 ? -1 : 0);
+        const n = noise2(x * 0.45, y * 0.45, seed + 3);
+        if (n > 0.72) i++; else if (n < 0.2) i--;
+        if (e > 0.7 && v > 0.3) i = Math.min(i, 1);
+        if (hash2(x, y, seed + 5) > 0.97) i--;
+        return R[clampI(i, 1, 5)];
+      });
+      sx += w;
+    }
+  }
+}
+
+/** Loose pebbles on the ground: little rounded stones, lit on top, a shadow under them. */
+function pebbles(cv, x0, x1, y0, y1, seed, n) {
+  const r = new Rng(seed);
+  for (let i = 0; i < n; i++) {
+    const x = r.int(x0, x1), y = r.int(y0, y1), w = r.int(2, 4), t = r.int(0, 1);
+    for (let k = 0; k < w; k++) {
+      cv.set(x + k, y, P.stone[4 + (k === 0 && t ? 1 : 0) - (k === w - 1 ? 1 : 0)]);
+      cv.set(x + k, y + 1, P.stone[k === w - 1 ? 1 : 2]);
+      if (w > 2 && k > 0 && k < w - 1) cv.set(x + k, y - 1, P.stone[4]);
+    }
+    cv.set(x + w, y + 1, mixPacked(cv.pix.get(x + w, y + 1) || P.ink, 0xff000000, 0.35));
+  }
+}
+
+// ------------------------------------------------------------------ small things
+
+/** A lone rounded stone set in earth, lit on its upper left. */
+function stone_(cv, cx, cy, w, seed) {
+  const rx = w / 2, ry = w * 0.36;
+  fill(cv, cx - rx - 1, cy - ry - 1, cx + rx + 1, cy + ry + 1, (x, y) => {
+    const u = (x + 0.5 - cx) / rx, v = (y + 0.5 - cy) / ry, e = u * u + v * v;
+    if (e > 1) return 0;
+    const lit = -(u * 0.5 + v * 0.9);
+    return P.stone[clampI(2 + (lit > 0.5 ? 2 : lit > 0 ? 1 : lit < -0.5 ? -1 : 0) + (noise2(x * 0.6, y * 0.6, seed) > 0.7 ? 1 : 0), 1, 5)];
+  });
+}
+
+/** A mushroom: a pale stem under a spotted cap. */
+function mushroom_(cv, x, base, h, cap = '#d0302a') {
+  const C = col(cap), D = mixPacked(C, 0xff000000, 0.35), L = mixPacked(C, 0xffffffff, 0.3);
+  rect(cv, x, base - h + 2, x + 2, base, P.lime[4]); cv.set(x + 1, base - 1, P.lime[2]);
+  for (let i = -2; i <= 3; i++) { cv.set(x + i, base - h + 1, i > 1 ? D : C); if (i > -2 && i < 3) cv.set(x + i, base - h, i < 1 ? L : C); }
+  cv.set(x - 1, base - h + 1, P.lime[5]); cv.set(x + 1, base - h, P.lime[5]);
+}
+
+/** Roots hanging from the top of a bank: thin strands wandering down, forking now and then. */
+function roots(cv, x0, x1, y, seed, rate = 0.08) {
+  const r = new Rng(seed), C = [col('#3a2414'), col('#7a5430'), col('#a87a48')];
+  for (let x = x0; x < x1; x++) {
+    if (r.next() > rate) continue;
+    const L = r.int(6, 16);
+    const strand = (sx, sy, L, d) => {
+      let px = sx;
+      for (let j = 0; j < L; j++) {
+        cv.set(px, sy + j, C[j < L - 3 ? 2 : 1]); cv.set(px + 1, sy + j, C[0]);
+        if (r.next() < 0.3) px += r.next() < 0.5 ? -1 : 1;
+        if (d < 2 && j > 2 && r.next() < 0.12) strand(px + (r.next() < 0.5 ? -1 : 1), sy + j, Math.round((L - j) * 0.7), d + 1);
+      }
+    };
+    strand(x, y, L, 0);
+  }
+}
+
+/** A glass bottle: a body of coloured liquid, a neck, a cork, a glint. @param {'tall'|'round'|'jar'} shape */
+function bottle_(cv, x, base, liquid, shape = 'tall') {
+  const L = col(liquid), D = mixPacked(L, 0xff000000, 0.4), H = mixPacked(L, 0xffffffff, 0.45), glass = col('#c8dce6');
+  const w = shape === 'jar' ? 6 : 5, h = shape === 'tall' ? 7 : 5;
+  fill(cv, x, base - h, x + w, base, (px, py) => {
+    const u = px - x, v = py - (base - h);
+    if (shape === 'round' && v === 0 && (u === 0 || u === w - 1)) return 0;
+    if (u === 0 || v === 0) return v < 2 ? glass : D;
+    if (u === w - 1 || py === base - 1) return P.ink;
+    return v < 2 && shape !== 'jar' ? mixPacked(glass, L, 0.4) : u === 1 && v < h - 2 ? H : L;
+  });
+  if (shape === 'jar') { rect(cv, x, base - h - 1, x + w, base - h, col('#8a5a2c')); rect(cv, x + 1, base - h - 2, x + w - 1, base - h - 1, col('#b88242')); return; }
+  rect(cv, x + 1, base - h - 2, x + w - 2, base - h, glass); cv.set(x + w - 2, base - h - 2, P.ink);
+  rect(cv, x + 1, base - h - 4, x + w - 2, base - h - 2, col('#9a6a34')); cv.set(x + 1, base - h - 4, col('#d09a5a'));
+}
+
+/** A stack of split logs, their ends showing rings. */
+function woodpile_(cv, x0, base, cols_, rows) {
+  for (let row = 0; row < rows; row++) for (let c = 0; c < cols_ - row; c++) {
+    const cx = x0 + c * 5 + row * 2.5 + 2.5, cy = base - 2.5 - row * 4.5;
+    fill(cv, cx - 3, cy - 3, cx + 3, cy + 3, (x, y) => {
+      const d = Math.hypot(x + 0.5 - cx, (y + 0.5 - cy) * 1.1);
+      if (d > 2.7) return 0;
+      if (d > 2) return P.oak[x + 0.5 < cx && y + 0.5 < cy ? 3 : 1];
+      return d < 0.8 ? P.wood[3] : P.wood[d < 1.5 ? 5 : 4];
+    });
+  }
+}
+
+/** A row of carrots: orange shoulders in the soil, feathery green tops. */
+function carrots(cv, x0, x1, base, seed) {
+  const r = new Rng(seed);
+  for (let x = x0; x < x1; x += 6) {
+    const h = r.int(5, 8);
+    for (let j = 1; j <= h; j++) for (const s of [-1, 0, 1]) if (hash2(x + s, j, seed) > (s ? 0.45 : 0)) cv.set(x + s + (j > h - 2 ? s : 0), base - 2 - j, P.moss[clampI(2 + (j > h / 2 ? 1 : 0) + (s < 0 ? 1 : 0), 0, 5)]);
+    rect(cv, x - 1, base - 3, x + 2, base, col('#e2741e')); cv.set(x - 1, base - 3, col('#ffa64a')); cv.set(x + 1, base - 1, col('#a04a14'));
+  }
+}
+
+/** A cabbage: a round head of leaves, lit on top, veins pale. */
+function cabbage_(cv, cx, base, rad) {
+  fill(cv, cx - rad - 1, base - rad * 1.7, cx + rad + 1, base, (x, y) => {
+    const u = (x + 0.5 - cx) / (rad + 0.5), v = (y + 0.5 - (base - rad * 0.85)) / (rad * 0.85);
+    if (u * u + v * v > 1) return 0;
+    if (Math.abs(u * 2.4 + v) < 0.18 || Math.abs(u * -2.4 + v) < 0.18) return P.moss[5];
+    const lit = -(u * 0.5 + v * 0.85);
+    return P.moss[clampI(2 + (lit > 0.45 ? 2 : lit > 0 ? 1 : lit < -0.5 ? -1 : 0), 0, 5)];
+  });
+}
+
+/** A trellis of poles and crossbars, vines climbing it, red fruit hanging in the leaves. */
+function trellis_(cv, x0, x1, top, base, seed) {
+  const r = new Rng(seed);
+  for (let x = x0 + 3; x < x1 - 3; x++) for (let y = top + 3; y < base - 2; y++) {
+    const n = noise2(x * 0.35, y * 0.25, seed);
+    if (n > 0.42) cv.set(x, y, P.leaf[n > 0.7 ? 4 : n > 0.56 ? 3 : 2]);
+  }
+  for (const x of [x0, Math.round((x0 + x1) / 2) - 1, x1 - 3]) wood(cv, x, top, x + 3, base, P.wood, { vertical: true, seed: x });
+  for (const y of [top + 2, Math.round((top + base) / 2)]) wood(cv, x0, y, x1, y + 2, P.wood, { seed: y });
+  for (let k = 0; k < (x1 - x0) / 3; k++) {
+    const x = r.int(x0 + 3, x1 - 5), y = r.int(top + 6, base - 6);
+    rect(cv, x, y, x + 3, y + 3, col('#c8281e')); cv.set(x, y, col('#ff7a5a')); cv.set(x + 2, y + 2, col('#7a1010')); cv.set(x + 1, y - 1, P.leaf[4]);
+  }
+}
+
+/** A watering can: a tin body, a spout up to the left, a handle over it. */
+function wateringCan_(cv, x, base) {
+  fill(cv, x, base - 8, x + 9, base, (px, py) => P.stone[px === x ? 5 : px === x + 8 || py === base - 1 ? 2 : py === base - 8 ? 5 : 4]);
+  for (let i = 0; i < 6; i++) { cv.set(x - 1 - i, base - 4 - i, P.stone[4]); cv.set(x - 1 - i, base - 3 - i, P.stone[2]); }
+  rect(cv, x - 8, base - 11, x - 5, base - 9, P.stone[5]);
+  for (let i = 1; i < 8; i++) cv.set(x + i, base - 11 + (i === 1 || i === 7 ? 1 : 0) + (i === 8 ? 2 : 0), P.stone[3]);
+  rect(cv, x + 1, base - 10, x + 2, base - 8, P.stone[3]); rect(cv, x + 7, base - 10, x + 8, base - 8, P.stone[3]);
+}
+
+/** A pitchfork leaning against something: a long handle, three tines. */
+function pitchfork_(cv, x, base, h) {
+  for (let j = 0; j < h; j++) { const px = x + Math.round(j * 0.18); cv.set(px, base - 1 - j, P.wood[4]); cv.set(px + 1, base - 1 - j, P.wood[2]); }
+  const tx = x + Math.round(h * 0.18), ty = base - h;
+  rect(cv, tx - 2, ty, tx + 4, ty + 1, P.iron[3]);
+  for (const i of [-2, 0, 2]) for (let j = 1; j < 6; j++) cv.set(tx + i + 1, ty - j, P.iron[j === 5 ? 2 : 3]);
+}
+
+/** A wooden bucket bound with iron, water in it. */
+function bucket_(cv, cx, base, w = 8, h = 7) {
+  barrel_(cv, cx, base, w, h);
+  rect(cv, cx - w / 2 + 1, base - h, cx + w / 2 - 1, base - h + 1, P.water[4]);
+  for (let i = -w / 2; i <= w / 2; i++) cv.set(Math.round(cx + i), Math.round(base - h - 3 + Math.abs(i) * 0.5), P.iron[2]);
+}
+
+/** A shallow bowl. @param {string} [content] what is in it */
+function bowl_(cv, cx, base, w, content) {
+  const x0 = Math.round(cx - w / 2), C = [col('#5a2e1e'), col('#8a4630'), col('#b4653e'), col('#d88a58')];
+  for (let i = 0; i < w; i++) {
+    const x = x0 + i, inset = i === 0 || i === w - 1;
+    cv.set(x, base - 5, inset ? C[1] : C[3]);
+    cv.set(x, base - 4, inset ? C[1] : content ? (i === 1 ? mixPacked(col(content), 0xffffffff, 0.35) : col(content)) : C[0]);
+    for (let j = 1; j < 4; j++) if (!(j === 1 && inset)) cv.set(x, base - j, C[i < w / 3 ? 2 : i > (w * 2) / 3 ? 1 : 2] );
+    if (i > 0 && i < w - 1) cv.set(x, base - 3, C[i < w / 3 ? 3 : 2]);
+  }
+}
+
+/**
+ * Wire mesh, a diamond lattice of fine bright wire, over whatever is behind
+ * it (the stretch of a rabbit fence between its posts).
+ */
+function mesh(cv, x0, x1, y0, y1) {
+  const wire = col('#d4d8e2'), shade = col('#5a5e6a');
+  for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
+    const a = (x + y) % 6 === 0, b = (((x - y) % 6) + 6) % 6 === 0;
+    if (!(a || b)) continue;
+    const q = cv.pix.get(x, y);
+    cv.set(x, y, mixPacked(q, a && b ? wire : y % 2 ? shade : wire, a && b ? 0.75 : 0.45));
+  }
+}
+
+/**
+ * The rabbits' fence: stout posts with lit caps, three rails, and wire
+ * mesh stretched between them down to the ground.
+ */
+function rabbitFence(cv, x0, x1, top, base, seed) {
+  mesh(cv, x0, x1, top + 3, base);
+  layer(cv, () => {
+    for (const y of [top + 2, Math.round((top + base) / 2) - 1, base - 4]) wood(cv, x0, y, x1, y + 3, P.wood, { seed: y + seed });
+    for (let x = x0 + 2; x < x1; x += 30) {
+      wood(cv, x, top - 2, x + 5, base + 1, P.wood, { vertical: true, seed: x + seed });
+      rect(cv, x - 1, top - 3, x + 6, top - 1, P.wood[4]); rect(cv, x - 1, top - 3, x + 6, top - 2, P.wood[5]);
+    }
+  });
+}
+
+/** A hay rack hung on the fence: a slatted V of wood, hay bristling out of its top. */
+function hayRack_(cv, x0, x1, top, h, seed) {
+  hay_(cv, (x0 + x1) / 2, top + 3, x1 - x0 + 2, 6, seed);
+  fill(cv, x0, top + 2, x1, top + h, (x, y) => {
+    const v = (y - top) / h, inset = Math.round(v * (x1 - x0) * 0.22);
+    if (x < x0 + inset || x >= x1 - inset) return 0;
+    if ((x - x0) % 4 === 0) return P.wood[(x - x0) % 8 === 0 ? 4 : 3];
+    return P.straw[noise2(x * 0.8, y * 0.5, seed) > 0.5 ? 3 : 2];
+  });
+  wood(cv, x0 - 1, top + 2, x1 + 1, top + 4, P.wood, { seed: 31 });
+  wood(cv, x0 + Math.round((x1 - x0) * 0.2), top + h - 1, x1 - Math.round((x1 - x0) * 0.2), top + h + 1, P.wood, { seed: 33 });
+}
+
+/**
+ * A rabbit hutch on legs: a plank box under a shingled roof, its left half
+ * fronted with wire, its right a solid door with a latch, a ramp down to
+ * the run from a little round door in its side.
+ */
+function hutchBox_(cv, x0, x1, base, h, seed) {
+  const legs = 7, bot = base - legs, top = base - h, mid = Math.round(x0 + (x1 - x0) * 0.55);
+  for (const lx of [x0 + 1, x1 - 5]) wood(cv, lx, bot - 2, lx + 4, base, P.oak, { vertical: true, seed: lx });
+  // the box
+  fill(cv, x0, top, x1, bot, (x, y) => {
+    const b = Math.floor((y - top) / 4), at = (y - top) % 4;
+    if (at === 3) return P.wood[1];
+    const t = hash2(b, 1, seed) > 0.6 ? 1 : 0;
+    return P.wood[(at === 0 ? 4 : 3) - t - (noise2(x * 0.2, y * 2, seed) > 0.7 ? 1 : 0)];
+  });
+  // the wired front: dark inside, straw on its floor, the wire over it
+  fill(cv, x0 + 3, top + 3, mid - 1, bot - 3, (x, y) => (y >= bot - 5 ? P.straw[hash2(x, y, seed) > 0.5 ? 3 : 2] : mixPacked(col('#2a1a14'), col('#120a0c'), (y - top) / h)));
+  mesh(cv, x0 + 3, mid - 1, top + 3, bot - 3);
+  wood(cv, x0, top, x1, top + 3, P.wood, { seed: 41 }); wood(cv, x0, bot - 3, x1, bot, P.wood, { seed: 43 });
+  wood(cv, x0, top, x0 + 3, bot, P.wood, { vertical: true, seed: 45 }); wood(cv, mid - 1, top, mid + 2, bot, P.wood, { vertical: true, seed: 47 }); wood(cv, x1 - 3, top, x1, bot, P.wood, { vertical: true, seed: 49 });
+  // the door: a Z-brace, hinges, a latch
+  brace(cv, mid + 3, bot - 5, x1 - 4, top + 4, 2, P.wood);
+  for (const y of [top + 5, bot - 7]) rect(cv, mid + 2, y, mid + 6, y + 2, P.iron[2]);
+  rect(cv, x1 - 7, Math.round((top + bot) / 2), x1 - 4, Math.round((top + bot) / 2) + 2, P.iron[3]);
+  // the roof: shingles in rows, overhanging, lit along their lower lips
+  const rt = top - 7;
+  for (let y = rt; y < top + 1; y++) {
+    const over = 4 - Math.round(((y - rt) / 7) * 1), xs = x0 - over - (y - rt) * 0.3, xe = x1 + over + (y - rt) * 0.3;
+    for (let x = Math.floor(xs); x < xe; x++) {
+      const row = Math.floor((y - rt) / 3), at = (y - rt) % 3, sx = (x + row * 3) % 6;
+      let i = at === 2 ? 1 : sx === 0 ? 1 : at === 0 ? 4 : 3;
+      if (hash2(Math.floor((x + row * 3) / 6), row, seed) > 0.75 && i > 1) i--;
+      cv.set(x, y, P.tile[i]);
+    }
+  }
+  rect(cv, x0 - 5, rt - 1, x1 + 5, rt, P.tile[5]);
+  rect(cv, x0 - 2, top + 1, x1 + 2, top + 2, mixPacked(P.wood[1], 0xff000000, 0.4));
+  // a ramp down to the ground
+  for (let i = 0; i < legs + 7; i++) {
+    const y = bot - 2 + Math.round(i * 0.6);
+    for (let j = 0; j < 4; j++) cv.set(x0 - 1 - i, y + j, P.wood[j === 0 ? 5 : j === 3 ? 1 : 3]);
+    if (i % 4 === 1) { cv.set(x0 - 1 - i, y - 1, P.wood[4]); cv.set(x0 - 1 - i, y, P.wood[1]); }
+  }
+}
+
 // ------------------------------------------------------------------ the ground
 
 /**
@@ -635,19 +993,18 @@ function ground(cv, y0, style, seed, o = {}) {
       if (style === 'soil') i++;
       // single-pixel specks of lighter and darker, so the ground reads as a texture
       const g = hash2(x, y, seed + 2);
-      if (g > 0.955) i += 2; else if (g < 0.04) i -= 2;
+      if (g > 0.975) i += 1; else if (g < 0.03) i -= 1;
       c = R[clampI(i, 0, 5)];
       if (style !== 'snow' && style !== 'grass') {
         // pebbles: two pixels, lit above, dark below
-        const pb = hash2(x >> 1, (y - 1) >> 1, seed + 4);
-        if (pb > 0.975) c = (y & 1) ? P.stone[1] : P.stone[pb > 0.9875 ? 5 : 4];
       }
-      if (o.straw && hash2(x, y, seed + 6) > 0.972) c = P.straw[hash2(x, y, seed + 7) > 0.5 ? 5 : 3];
+      if (o.straw && hash2(x, y, seed + 6) > 0.984) c = P.straw[hash2(x, y, seed + 7) > 0.5 ? 5 : 3];
     }
     // in the shade of the back
     if (d < 5) c = mixPacked(c, 0xff000000, (5 - d) * 0.07);
     return c;
   });
+  if (style === 'dirt' || style === 'soil') pebbles(cv, 0, cv.W - 4, y0 + 4, cv.H - 3, seed + 11, o.pebbles ?? 16);
 }
 
 /** What stands in front of the feet: a fringe along the bottom edge (grass blades, snow, or nothing). */
@@ -675,6 +1032,18 @@ const pump = prop(pump_);
 const planter = prop(planter_);
 const bench = prop(bench_);
 const pond = prop(pond_);
+const mushroom = prop(mushroom_);
+const stone = prop(stone_);
+const bottle = prop(bottle_);
+const woodpile = prop(woodpile_);
+const cabbage = prop(cabbage_);
+const trellis = prop(trellis_);
+const wateringCan = prop(wateringCan_);
+const pitchfork = prop(pitchfork_);
+const bucket = prop(bucket_);
+const bowl = prop(bowl_);
+const hayRack = prop(hayRack_);
+const hutchBox = prop(hutchBox_);
 
 // ------------------------------------------------------------------ the pens
 
@@ -682,44 +1051,75 @@ const pond = prop(pond_);
 
 /** @type {Record<string, {title:string, fringe?:string, compose:(c:Ctx)=>{rack:{x:number,y:number}, nest:[number,number,number,number]}}>} */
 const PENS = {
+  rabbit: {
+    title: 'The hutch',
+    fringe: 'grass',
+    compose({ cv, seed, block }) {
+      // a run in the open: a blue sky, a grove beyond, the rabbits' wire fence, their hutch on its legs
+      sky(cv, 46, rgb('#3e6cb8'), rgb('#a8cce8'));
+      clouds(cv, 7, 15, seed + 1, 4);
+      grove(cv, 33, haze(P.leaf, '#86a8cc', 0.5), seed + 2, { h: [9, 15], bottom: 40, pines: 0.5 });
+      grove(cv, 41, P.leaf, seed + 3, { h: [12, 21], bottom: 48 });
+      ground(cv, 46, 'grass', seed + 4);
+      flowers(cv, 4, cv.W - 4, 47, ['#ffffff', '#f6d26a', '#f0a0c0'], seed + 10, 14);
+      rabbitFence(cv, 0, cv.W, 35, BACK - 1, seed + 5);
+      hayRack(cv, 12, 38, 46, 13, seed + 6);
+      hutchBox(cv, 154, 210, BACK + 2, 36, seed + 7);
+      // the run's things: a bowl of water, a bowl of greens, a crate of carrots
+      crate(cv, 120, BACK + 1, 12);
+      for (const [x, y] of [[121, BACK - 12], [126, BACK - 13], [124, BACK - 11]]) { rect(cv, x, y, x + 5, y + 2, col('#e2741e')); cv.set(x, y, col('#ffa64a')); cv.set(x + 5, y, P.moss[4]); cv.set(x + 6, y - 1, P.moss[3]); }
+      bowl(cv, 88, GROUND_Y0 + 5, 11, '#6a9ccc');
+      bowl(cv, 102, GROUND_Y0 + 5, 9, '#6eae3a');
+      block(80, GROUND_Y0 - 2, 110, GROUND_Y0 + 6);
+      flowers(cv, 52, 74, BACK + 3, ['#ffffff', '#f0a0c0'], seed + 8, 4);
+      return { rack: { x: 42, y: GROUND_Y0 + 1 }, nest: [168, BACK - 3, 196, BACK + 1] };
+    },
+  },
   cat: {
     title: 'The cattery',
     compose({ cv, seed }) {
       // a loft: a plastered wall under the dark of the roof, a frame of beams
       fill(cv, 0, 0, cv.W, BACK, (x, y) => {
-        // plaster in patches, flecked, a hairline crack here and there
-        const m = patch(x, y, seed, 0.06), g = hash2(x, y, seed + 5);
-        let i = m > 0.6 ? 4 : m > 0.42 ? 3 : 2;
-        if (g > 0.95) i++; else if (g < 0.05) i--;
-        if (Math.abs(noise2(x * 0.05, y * 0.2, seed + 9) - 0.5) < 0.004 && hash2(x >> 3, y >> 3, seed) > 0.5) i = 1;
-        return P.plaster[clampI(i, 0, 5)];
+        // plaster in soft patches, flecked, a hairline crack here and there
+        const m = patch(x, y, seed, 0.05), g = hash2(x, y, seed + 5);
+        let i = m > 0.6 ? 4 : 3;
+        if (g > 0.985) i++; else if (g < 0.015) i--;
+        if (Math.abs(noise2(x * 0.05, y * 0.2, seed + 9) - 0.5) < 0.004 && hash2(x >> 3, y >> 3, seed) > 0.5) i = 2;
+        return P.beige[clampI(i, 0, 5)];
       });
       fill(cv, 0, 0, cv.W, 24, (x, y) => (y < 7 + Math.floor(patch(x, 0, seed + 3, 0.2) * 16 * (hash2(x >> 2, 1, seed) > 0.4 ? 1 : 0.4)) ? col('#24181e') : 0));
       wainscot(cv, 0, cv.W, 40, BACK, P.oak, seed);
       frame(cv, 4, [30, 120, 210], P.wood);
       lantern(cv, 82, 9, 20);
-      table(cv, 40, 98, 40, BACK, P.wood); item(cv, 54, 40, 'pot'); item(cv, 80, 40, 'bread');
-      shelf(cv, 150, 196, 28, P.wood); item(cv, 168, 28, 'cloth'); item(cv, 156, 28, 'bread');
+      table(cv, 50, 104, 42, BACK, P.wood); bottle(cv, 60, 42, '#e0a030', 'jar'); item(cv, 84, 42, 'bread');
+      shelf(cv, 146, 196, 28, P.wood);
+      bottle(cv, 152, 28, '#d04a7a', 'round'); bottle(cv, 162, 28, '#4ab86a', 'tall'); bottle(cv, 172, 28, '#6a8ae0', 'tall'); crate(cv, 182, 28, 9);
       ropePost(cv, 120, 9, BACK);
       railFence(cv, 130, 222, BACK, 16, P.wood, { gap: 30, rails: 3 });
       ground(cv, BACK - 1, 'dirt', seed + 2, { straw: true });
-      hay(cv, 18, BACK + 1, 30, 10, seed + 1);
-      return { rack: { x: 36, y: GROUND_Y0 + 1 }, nest: [8, BACK - 4, 28, BACK] };
+      barrel(cv, 9, BACK + 1, 12, 15);
+      hay(cv, 32, BACK + 2, 34, 13, seed + 1);
+      barrel(cv, 112, BACK + 1, 9, 10);
+      return { rack: { x: 54, y: GROUND_Y0 + 1 }, nest: [20, BACK - 4, 44, BACK] };
     },
   },
   toad: {
     title: 'The toad pond',
     compose({ cv, seed, block }) {
-      sky(cv, 36, rgb('#2a3a6a'), rgb('#4a6a9a'));
-      treeline(cv, 28, '#1e3226', seed, { h: [8, 18], bottom: 36 });
-      stonewall(cv, 0, 26, cv.W, BACK, P.stone, seed + 1, 9);
+      sky(cv, 36, rgb('#3a64b0'), rgb('#9cc4e8'));
+      clouds(cv, 4, 10, seed + 9, 3);
+      grove(cv, 27, P.leaf, seed, { h: [9, 18], bottom: 32 });
+      rocks(cv, 0, 26, cv.W, BACK, P.stone, seed + 1, { h: 9, moss: 0.05 });
       overgrowth(cv, 0, cv.W, 25, P.moss, seed + 2, { rate: 0.2, len: [3, 16], flower: '#e86a8a' });
       flowers(cv, 60, 80, 25, ['#d84a6a', '#f07aa0'], seed + 3, 4);
       ground(cv, BACK, 'flags', seed + 7, { joint: '#26301e' });
       pond(cv, 92, 178, BACK - 7, BACK + 3, seed + 4);
+      // a spring spilling from the wall into the pond
+      fill(cv, 150, BACK - 16, 156, BACK - 6, (x, y) => P.water[(x + y * 2 + (y >> 1)) % 4 === 0 ? 5 : x === 150 ? 3 : 4]);
+      rect(cv, 148, BACK - 17, 158, BACK - 15, P.stone[4]);
       block(80, GROUND_Y0 - 3, 190, GROUND_Y0 + 2);
       pump(cv, 204, BACK);
-      flowers(cv, 6, 26, BACK, ['#f0a0c0', '#ffffff', '#e86a8a'], seed + 5, 6);
+      flowers(cv, 6, 30, BACK, ['#f0a0c0', '#ffffff', '#e86a8a'], seed + 5, 8);
       return { rack: { x: 40, y: GROUND_Y0 + 1 }, nest: [30, BACK - 3, 50, BACK] };
     },
   },
@@ -742,12 +1142,14 @@ const PENS = {
         for (let j = 0; j < h; j++) cv.set(x, BACK - 5 - j, col(j < h * 0.3 ? '#fff0a0' : j < h * 0.6 ? '#ffb43a' : j < h - 1 ? '#f0641e' : '#a02a10'));
       }
       fill(cv, cx - 22, BACK - 5, cx + 22, BACK - 3, (x, y) => col(noise2(x * 0.6, y, seed) > 0.5 ? '#ff9a3a' : '#7a2410'));
+      for (let k = 0; k < 14; k++) cv.set(cx - 14 + Math.floor(hash2(k, 1, seed) * 28), 26 + Math.floor(hash2(k, 2, seed) * 14), col(k & 1 ? '#ffd060' : '#ff8a30'));
       rect(cv, cx - 30, BACK - 3, cx + 30, BACK, P.stone[3]);
       rect(cv, cx - 30, BACK - 3, cx + 30, BACK - 2, P.stone[5]);
       cv.glow(cx, BACK - 10, 70, [1, 0.5, 0.2], 0.6);
       barrel(cv, 14, BACK, 12, 16); crate(cv, 22, BACK, 11);
+      woodpile(cv, 98, BACK, 4, 3);
       lantern(cv, 186, 7, 18);
-      railFence(cv, 110, 222, BACK, 15, P.oak, { gap: 24, rails: 2 });
+      railFence(cv, 122, 222, BACK, 15, P.oak, { gap: 24, rails: 2 });
       barrel(cv, 168, BACK - 3, 10, 13);
       ground(cv, BACK, 'cobble', seed + 2);
       return { rack: { x: 40, y: GROUND_Y0 + 1 }, nest: [196, BACK - 3, 216, BACK] };
@@ -757,32 +1159,37 @@ const PENS = {
     title: 'The paddock',
     fringe: 'grass',
     compose({ cv, seed, block }) {
-      sky(cv, 50, rgb('#4a6ab0'), rgb('#8aa4d4'));
-      hills(cv, 26, 6, '#5a6e9e', '#6a80ae', seed);
-      treeline(cv, 40, '#3a5868', seed + 1, { h: [8, 14], bottom: 46 });
-      treeline(cv, 48, '#2a4434', seed + 2, { h: [6, 12], bottom: 58 });
+      sky(cv, 50, rgb('#3e66b4'), rgb('#9cc0e4'));
+      clouds(cv, 5, 14, seed + 9, 3);
+      hills(cv, 28, 6, '#5a74a8', '#7088b8', seed);
+      grove(cv, 42, haze(P.leaf, '#7a98c4', 0.5), seed + 1, { h: [8, 14], bottom: 48, pines: 0.6 });
+      grove(cv, 50, P.leaf, seed + 2, { h: [9, 16], bottom: 58, gap: [6, 10] });
       ground(cv, 54, 'grass', seed + 3);
       railFence(cv, 0, cv.W, BACK - 4, 20, P.wood, { gap: 34 });
       shelter(cv, 150, 210, BACK - 2, 34, seed + 4);
       trough(cv, 86, 122, GROUND_Y0 + 4, 7);
       block(84, GROUND_Y0 - 3, 124, GROUND_Y0 + 5);
-      flowers(cv, 10, 30, GROUND_Y0 + 2, ['#ffffff', '#f4e4a0'], seed + 5, 4);
+      flowers(cv, 8, 70, GROUND_Y0 + 2, ['#ffffff', '#f4e4a0', '#f0a0c0'], seed + 5, 9);
+      flowers(cv, 126, 146, GROUND_Y0 + 1, ['#ffffff', '#f4e4a0'], seed + 6, 3);
       return { rack: { x: 40, y: GROUND_Y0 + 2 }, nest: [168, BACK - 6, 196, BACK - 2] };
     },
   },
   badger: {
     title: 'The sett',
     compose({ cv, seed }) {
-      sky(cv, 24, rgb('#2e4474'), rgb('#5a72a0'));
-      treeline(cv, 16, '#1e3424', seed, { h: [8, 16], bottom: 24 });
+      sky(cv, 24, rgb('#2e4a84'), rgb('#6a8cc0'));
+      grove(cv, 16, P.leaf, seed, { h: [8, 16], bottom: 22 });
       earthbank(cv, 0, 18, cv.W, BACK + 2, P.earth, seed + 1);
+      roots(cv, 0, cv.W, 20, seed + 7, 0.07);
+      for (const [x, y, w] of [[18, 52, 9], [104, 36, 7], [124, 58, 6], [204, 46, 8], [100, 60, 5]]) stone(cv, x, y, w, seed + x);
       overgrowth(cv, 0, cv.W, 17, P.moss, seed + 2, { rate: 0.22, len: [3, 18] });
-      burrow(cv, 64, BACK, 30, 22, seed + 3);
-      burrow(cv, 162, BACK, 26, 19, seed + 4);
-      for (const [x, y] of [[30, 56], [112, 40], [200, 50]]) { rect(cv, x, y, x + 4, y + 3, P.stone[3]); rect(cv, x, y, x + 4, y + 1, P.stone[5]); }
+      flowers(cv, 0, cv.W, 17, ['#f0a0c0', '#ffffff', '#e86a8a'], seed + 8, 12);
+      burrow(cv, 62, BACK, 36, 27, seed + 3);
+      burrow(cv, 164, BACK, 32, 24, seed + 4);
+      mushroom(cv, 86, BACK, 5); mushroom(cv, 91, BACK, 4); mushroom(cv, 142, BACK, 4, '#c8a050');
       ground(cv, BACK, 'soil', seed + 5);
       tufts(cv, 0, cv.W, BACK + 1, seed + 6, 0.22);
-      return { rack: { x: 40, y: GROUND_Y0 + 1 }, nest: [56, BACK - 3, 72, BACK] };
+      return { rack: { x: 40, y: GROUND_Y0 + 1 }, nest: [54, BACK - 3, 72, BACK] };
     },
   },
   dove: {
@@ -793,7 +1200,7 @@ const PENS = {
         const edge = Math.min(x, cv.W - 1 - x) / 40;
         if (patch(x, y, seed, 0.07) - edge * 0.5 > 0.42) return 0;
         const m = patch(x, y, seed + 1, 0.05);
-        return P.lime[m > 0.62 ? 4 : m > 0.4 ? 3 : 2];
+        return P.lime[m > 0.62 ? 4 : 3];
       });
       const under = new Canvas(seed, cv.W, BACK);
       bricks(under, 0, 0, cv.W, BACK, P.brick, seed + 2, { h: 4, w: 9, mortar: P.lime[1] });
@@ -802,38 +1209,44 @@ const PENS = {
       overgrowth(cv, 0, 40, 12, P.moss, seed + 4, { rate: 0.4, len: [6, 20] });
       overgrowth(cv, 190, cv.W, 12, P.moss, seed + 5, { rate: 0.4, len: [6, 18] });
       pigeonholes(cv, 34, 196, 18, 2, seed + 6);
-      bench(cv, 18, 46, BACK);
-      hay(cv, 150, BACK, 26, 7, seed + 7);
+      table(cv, 18, 52, BACK - 10, BACK, P.wood); bottle(cv, 28, BACK - 10, '#8a5a2c', 'jar');
+      planter(cv, 4, 16, BACK, 6, seed + 9);
+      hay(cv, 150, BACK, 28, 8, seed + 7);
       crate(cv, 176, BACK, 13);
       ground(cv, BACK, 'flags', seed + 8, { joint: '#3a3638' });
-      return { rack: { x: 52, y: GROUND_Y0 + 1 }, nest: [140, BACK - 3, 160, BACK] };
+      flowers(cv, 196, 220, BACK, ['#b070d0', '#d0a0f0', '#8a50b0'], seed + 10, 9);
+      return { rack: { x: 58, y: GROUND_Y0 + 1 }, nest: [140, BACK - 3, 160, BACK] };
     },
   },
   fox: {
     title: 'The fox run',
     compose({ cv, seed, block }) {
-      sky(cv, 34, rgb('#a85a50'), rgb('#e8a070'));
-      treeline(cv, 26, '#3a2a30', seed, { h: [10, 18], bottom: 36 });
+      sky(cv, 34, rgb('#4a3a74'), rgb('#f2a070'));
+      clouds(cv, 4, 12, seed + 9, 3, { lit: '#ffc8a0', mid: '#d88a8a', dark: '#8a5a80' });
+      grove(cv, 27, haze(P.leaf, '#3a2a48', 0.72), seed, { h: [10, 18], bottom: 36 });
       boardFence(cv, 0, cv.W, 30, BACK, P.oak, seed + 1);
       shelter(cv, 142, 204, BACK, 36, seed + 2);
+      pitchfork(cv, 148, BACK, 26);
       ground(cv, BACK, 'dirt', seed + 3, { straw: true });
+      barrel(cv, 12, BACK + 1, 12, 15); crate(cv, 20, BACK + 1, 10);
       trough(cv, 90, 120, GROUND_Y0 + 3, 6);
       block(88, GROUND_Y0 - 3, 122, GROUND_Y0 + 4);
-      hay(cv, 26, GROUND_Y0 + 2, 18, 3, seed + 4);
-      return { rack: { x: 44, y: GROUND_Y0 + 1 }, nest: [160, BACK - 4, 188, BACK] };
+      hay(cv, 40, GROUND_Y0 + 2, 18, 3, seed + 4);
+      return { rack: { x: 50, y: GROUND_Y0 + 1 }, nest: [160, BACK - 4, 188, BACK] };
     },
   },
   ermine: {
     title: 'The snow run',
     fringe: 'snow',
     compose({ cv, seed, block }) {
-      sky(cv, 34, rgb('#5a6a8a'), rgb('#9aa8c0'));
-      treeline(cv, 26, '#3a4858', seed, { h: [10, 18], bottom: 34, pines: 0.85, snow: '#c8d4e4' });
-      stonewall(cv, 0, 30, cv.W, BACK, P.stone, seed + 1, 9);
+      sky(cv, 34, rgb('#2e3e6a'), rgb('#8a9ec0'));
+      grove(cv, 27, haze(P.leaf, '#4a5a78', 0.5), seed, { h: [11, 19], bottom: 34, pines: 0.9, snow: '#e4ecf6' });
+      rocks(cv, 0, 30, cv.W, BACK, P.stone, seed + 1, { h: 9 });
       snowcap(cv, 0, cv.W, 29, seed + 2);
       ground(cv, BACK - 2, 'snow', seed + 3);
       doghouse(cv, 160, BACK + 2, 30, 18, { snow: true });
       crate(cv, 30, BACK + 1, 13);
+      hay(cv, 36, BACK - 3, 9, 3, seed + 7);
       snowcap(cv, 30, 43, BACK - 12, seed + 4);
       wood(cv, 104, BACK - 4, 132, BACK + 1, P.wood, { seed: 5 });
       snowcap(cv, 104, 132, BACK - 5, seed + 5);
@@ -845,12 +1258,21 @@ const PENS = {
   snail: {
     title: 'The snail garden',
     compose({ cv, seed }) {
-      sky(cv, 16, rgb('#5a8aa8'), rgb('#9ab8c8'));
-      foliage(cv, 4, BACK, seed);
-      railFence(cv, 0, cv.W, BACK, 18, P.wood, { gap: 36, rails: 2 });
-      planter(cv, 150, 196, BACK, 9, seed + 2);
-      ground(cv, BACK, 'soil', seed + 3);
-      tufts(cv, 0, cv.W, BACK + 1, seed + 4, 0.3);
+      sky(cv, 26, rgb('#3e6cb8'), rgb('#9cc4e4'));
+      clouds(cv, 3, 7, seed + 9, 3);
+      grove(cv, 22, P.leaf, seed + 1, { h: [10, 18], bottom: 28 });
+      foliage(cv, 18, 46, seed);
+      // the beds: furrowed soil, a row of carrots, cabbages, a trellis of tomatoes
+      fill(cv, 0, 44, cv.W, BACK + 1, (x, y) => P.earth[(y - 44) % 6 === 0 ? 1 : patch(x, y, seed + 5, 0.1) > 0.55 ? 3 : 2]);
+      trellis(cv, 152, 204, 24, BACK - 2, seed + 6);
+      carrots(cv, 28, 98, 56, seed + 7);
+      for (let x = 104; x < 146; x += 14) cabbage(cv, x, 58, 5);
+      for (let x = 34; x < 140; x += 18) cabbage(cv, x, BACK - 1, 4);
+      crate(cv, 4, 58, 14);
+      wateringCan(cv, 8, 44);
+      railFence(cv, 0, cv.W, BACK + 1, 14, P.wood, { gap: 36, rails: 2 });
+      ground(cv, BACK + 1, 'soil', seed + 3);
+      tufts(cv, 0, cv.W, BACK + 2, seed + 4, 0.3);
       return { rack: { x: 40, y: GROUND_Y0 + 1 }, nest: [160, BACK - 2, 186, BACK] };
     },
   },
@@ -860,9 +1282,10 @@ const PENS = {
       bricks(cv, 0, 0, cv.W, BACK, P.brick.map((c) => mixPacked(c, 0xff000000, 0.2)), seed, { h: 4, w: 10 });
       for (const cx of [62, 166]) arch(cv, cx, BACK, 36, 18, seed + cx);
       // in the vaults: crates, hay, a low fence
-      crate(cv, 34, BACK, 13); crate(cv, 82, BACK, 10); hay(cv, 62, BACK, 20, 5, seed + 1);
+      railFence(cv, 36, 92, BACK, 11, P.oak, { gap: 18, rails: 2 });
+      crate(cv, 30, BACK, 13); crate(cv, 84, BACK, 10); hay(cv, 62, BACK, 22, 6, seed + 1);
       railFence(cv, 140, 190, BACK, 11, P.oak, { gap: 16, rails: 2 });
-      crate(cv, 190, BACK, 12); hay(cv, 150, BACK, 16, 4, seed + 2);
+      crate(cv, 190, BACK, 12); hay(cv, 160, BACK, 26, 6, seed + 2);
       lantern(cv, 114, 0, 14);
       overgrowth(cv, 98, 132, 0, P.moss, seed + 3, { rate: 0.3, len: [4, 12] });
       ground(cv, BACK, 'cobble', seed + 4);
@@ -875,14 +1298,13 @@ const PENS = {
 export const PEN_KINDS = Object.keys(PENS);
 
 /** The title of a kind's enclosure. @param {string} kind */
-export const penTitle = (kind) => (PENS[kind] ? PENS[kind].title : 'The hutch');
+export const penTitle = (kind) => (PENS[kind] || PENS.rabbit).title;
 
 /** @type {Map<string, Pen>} */
 const cache = new Map();
 
 /**
- * A kind's enclosure (cached), or null for a kind that has none (the
- * rabbits keep their hutch).
+ * A kind's enclosure (cached), or null for a kind that has none.
  * @param {string} kind @returns {Pen|null}
  */
 export function penOf(kind) {
