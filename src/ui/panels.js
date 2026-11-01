@@ -534,6 +534,7 @@ export function openPause(lab) {
     btn('How to play', () => { m.close(); openHelp(); }, { icon: 'help', act: 'help' }),
   ];
   if (!lab.sandbox) items.push(btn('Guided tour', () => { m.close(); if (lab.tutorial) { lab.tutorial.start(true); lab.showView('brew'); } }, { icon: 'bulb', act: 'tour', title: 'Walk through every part of the shop again' }));
+  items.push(btn('Recent notes', () => { m.close(); lab.openNotes(); }, { icon: 'scroll', act: 'notes-log', title: 'Everything the game has told you lately, in full' }));
   items.push(btn('Settings & saves', () => { m.close(); openSettings(app, lab); }, { icon: 'gear', act: 'settings' }));
   if (lab.sandbox && lab.receiver && lab.receiver.count) items.push(btn('Pour back distillate', () => { lab.pourReceiver(); m.close(); }, { icon: 'alembic' }));
   items.push(btn(lab.sandbox ? 'Leave the experiment' : 'Save & quit to title', () => { m.close(); app.showMenu(); }, { icon: 'door', act: 'quit' }));

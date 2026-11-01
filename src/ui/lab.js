@@ -250,8 +250,8 @@ export class LabScreen {
     this.dayEl = h('div', { class: 'day' });
     // the game's notes have a place of their own in the top bar (a line under it on narrow screens):
     // they never cover a control, and the last one stays readable until the next
-    this.noteDock = h('button', { class: 'note-dock idle', 'data-act': 'notes', 'aria-live': 'polite', 'aria-label': 'Recent notes', title: 'Recent notes' });
-    this.noteDock.addEventListener('click', () => { audio.play('click'); this.openNotes(); });
+    // (it shows, it takes no taps: the full list of recent notes is in the menu, and N opens it)
+    this.noteDock = h('div', { class: 'note-dock idle', role: 'status', 'data-note': 'dock', 'aria-live': 'polite', title: 'The latest note (all recent notes: Menu → Recent notes, or N)' });
     setNoteDock(this.noteDock);
     this.topbar = h('header', { class: 'topbar frame' },
       btn('', () => panels.openPause(this), { icon: 'menu', cls: 'icon', title: 'Menu: help, settings, tour (Esc)', act: 'menu' }),
@@ -729,6 +729,7 @@ export class LabScreen {
     else if (k === 's' && !this.sandbox) panels.openShop(this);
     else if (k === 'r' && !this.sandbox) { this.showView('book'); this.views.book.open('recipes'); }
     else if (k === 'a') this.setAutoStir(!this.autoStir);
+    else if (k === 'n') this.openNotes();
     else if (k === 'h' && this.sandbox) this.toggleThermal();
     else if (k === 'escape') panels.openPause(this);
     else if (k === 'arrowup' || k === 'arrowright') { this.setFurnace(Math.min(1, this.sim.furnace.setting + 0.1)); }
