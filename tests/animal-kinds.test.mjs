@@ -6,7 +6,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Warren } from '../src/game/wild-rabbits.js';
-import { KINDS, HABITAT, kindOf, biasSpread, pickKind, kindLook, STEADY_SPREAD } from '../src/game/kinds.js';
+import { KINDS, KIND_IDS, HABITAT, kindOf, biasSpread, pickKind, kindLook, STEADY_SPREAD } from '../src/game/kinds.js';
+import { EFFECT_KEYS } from '../src/alchemy/effects.js';
 import { createColony, addWildRabbit, rabbitSensitivity, inheritLook, normalizeColony, colonyDay, rollLook } from '../src/game/colony.js';
 import { rabbitReading, summarize } from '../src/game/experiments.js';
 import { NE, EFFECT_INDEX } from '../src/alchemy/effects.js';
@@ -148,14 +149,78 @@ test('arcana measured on cats is certified sooner, and with a narrower margin', 
 test('every kind is drawn inside its frame in every pose', () => {
   const rng = new Rng(3);
   const snap = (alive) => ({ stage: 'adult', hp: 0, alive, preg: false, lv: new Array(11).fill(0), sc: [0, 0, 0, 0, 0], traits: [], cause: alive ? null : 'hunted' });
-  for (const kind of ['cat', 'toad', 'salamander']) {
+  for (const kind of KIND_IDS.filter((k) => k !== 'rabbit')) {
     for (let n = 0; n < 6; n++) {
       const look = { ...kindLook(/** @type {any} */ (kind), rng), size: n % 2 ? 1.15 : 0.85 };
-      for (const pose of ['idle', 'walk1', 'walk2', 'eat', 'rear', 'loaf', 'hop', 'hurt', undefined]) {
+      for (const pose of ['idle', 'walk1', 'walk2', 'eat', 'rear', 'loaf', 'hop', 'hurt', 'fly1', 'fly2', undefined]) {
         const a = rabbitAnchors(look, snap(pose !== undefined), pose);
         assert.equal(a.kind, kind);
         assert.ok(a.box.x0 >= -1 && a.box.x1 <= RABBIT_W && a.box.y0 >= -1 && a.box.y1 <= RABBIT_H, `${kind} ${pose} ${JSON.stringify(a.box)}`);
       }
     }
   }
+});
+
+test('there is one kind of animal steady on each effect, and each lives somewhere in the wilds', () => {
+  const steady = KIND_IDS.map((k) => KINDS[k].steady).filter(Boolean);
+  assert.deepEqual([...steady].sort(), [...EFFECT_KEYS].sort(), 'one steady kind per effect');
+  for (const key of EFFECT_KEYS) {
+    const k = KIND_IDS.find((id) => KINDS[id].steady === key);
+    assert.equal(biasSpread({ kind: k }, key), STEADY_SPREAD, `${k} reads ${key} steadily`);
+    assert.ok(Object.values(HABITAT).some((h) => h.some(([x]) => x === k)), `${k} lives somewhere`);
+    // and each is drawn as itself, with its own coat
+    const look = kindLook(/** @type {any} */ (k), new Rng(1));
+    assert.equal(kindOf(look), k);
+  }
+});
+
+test('the new kinds keep their own ways: deer graze and bound off, doves take wing, snails hide, rats dash, ermines bound', () => {
+  const deer = watch(field('deer'), 30), badger = watch(field('badger'), 30), rat = watch(field('rat'), 30), ermine = watch(field('ermine'), 30), snail = watch(field('snail'), 30);
+  assert.ok(deer.walk > 0.1 && deer.air === 0, 'calm deer step about and never leap');
+  const deerFled = watch(field('deer'), 3, true);
+  assert.ok(deerFled.air > 0.5 && deerFled.speed > deer.speed * 5, `frightened, deer bound away (${deerFled.air.toFixed(2)} of the time in the air)`);
+  assert.ok(badger.walk > 0.2 && badger.air === 0, 'badgers trundle and never leave the ground');
+  assert.ok(watch(field('badger'), 3, true).speed < watch(field('fox'), 3, true).speed, 'a fleeing badger is slower than a fleeing fox');
+  assert.equal(ermine.walk, 0, 'ermines never walk: they bound');
+  assert.ok(ermine.air > 0.05);
+  assert.ok(snail.speed < 2.5 && snail.air === 0, `snails glide ever so slowly (${snail.speed.toFixed(2)} px/s)`);
+  // a rat's walks are short dashes; a cat's are long strolls
+  const segments = (kind) => {
+    const w = field(kind); let n = 0, len = 0, was = new Map();
+    for (let t = 0; t < 30; t += 1 / 60) { w.step(1 / 60); for (const r of w.rabbits) { const k = r.walking; if (k) len += 1 / 60; if (k && !was.get(r)) n++; was.set(r, k); } }
+    return len / Math.max(1, n);
+  };
+  assert.ok(segments('rat') < segments('cat') / 2, 'rats move in short dashes');
+  assert.ok(rat.speed > 0);
+  // frightened, a snail does not flee: it draws into its shell and stays put
+  const ws = field('snail'), s0 = ws.rabbits.map((r) => r.x);
+  for (const r of ws.rabbits) ws.scare(r, r.x - 10);
+  for (let t = 0; t < 3; t += 1 / 60) ws.step(1 / 60);
+  ws.rabbits.forEach((r, i) => { assert.ok(Math.abs(r.x - s0[i]) < 1, 'it stays where it was'); assert.equal(r.drawPose, 'loaf', 'withdrawn into its shell'); });
+  // frightened, a dove flies: high above the ground, wings beating, for seconds, then lands again
+  const wd = field('dove');
+  for (const r of wd.rabbits) wd.scare(r, r.x - 10);
+  let high = 0, flapping = new Set(), flew = 0;
+  for (let t = 0; t < 2; t += 1 / 60) {
+    wd.step(1 / 60);
+    for (const r of wd.rabbits) { if (r.flying) { flew++; flapping.add(r.drawPose); } high = Math.max(high, FLOOR - 1 - r.y); }
+  }
+  assert.ok(high > 25, `it climbs well above the ground (${high.toFixed(0)} px)`);
+  assert.ok(flapping.has('fly1') && flapping.has('fly2'), 'beating its wings');
+  assert.ok(flew > 0);
+  const landed = new Set();
+  for (let t = 0; t < 10; t += 1 / 60) {
+    wd.step(1 / 60);
+    for (const r of wd.rabbits) if (!r.flying && !r.air && Math.abs(r.y - (FLOOR - 1)) < 1e-6) landed.add(r);
+  }
+  assert.equal(landed.size, wd.rabbits.length, 'and comes down to land');
+  // struck down in flight, it falls
+  const wf = field('dove'), d = wf.rabbits[0];
+  wf.scare(d, d.x - 10);
+  for (let t = 0; t < 0.6; t += 1 / 60) wf.step(1 / 60);
+  assert.ok(d.flying);
+  for (let k = 0; k < 3; k++) wf.strike(d, d.x, d.y - 4);
+  assert.ok(d.down && !d.flying);
+  for (let t = 0; t < 4; t += 1 / 60) wf.step(1 / 60);
+  assert.ok(!d.air && Math.abs(d.y - (FLOOR - 1)) < 1e-6, 'it lies on the ground');
 });

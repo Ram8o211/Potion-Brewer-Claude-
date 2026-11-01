@@ -110,8 +110,8 @@ export const TRAIT_WORDS = {
  * @typedef {Object} RabbitLook
  * @property {number[]} coat    sRGB 0..1
  * @property {number[]} coat2   sRGB 0..1 (pattern colour)
- * @property {'solid'|'dutch'|'spotted'|'hooded'|'points'|'agouti'|'tabby'|'warts'|'blotched'} pattern
- * @property {'upright'|'lop'|'half'|'short'|'cat'|'none'} ear
+ * @property {'solid'|'dutch'|'spotted'|'hooded'|'points'|'agouti'|'tabby'|'warts'|'blotched'|'dapple'|'badger'|'dove'|'fox'|'ermine'|'spiral'} pattern
+ * @property {'upright'|'lop'|'half'|'short'|'cat'|'none'|'deer'|'round'|'fox'|'stalk'} ear
  * @property {number} size      0.85..1.15
  * @property {'dark'|'ruby'|'green'|'amber'} eye
  * @property {0|1|2} tail       fluff size
@@ -150,8 +150,8 @@ export const COATS = [
 ];
 const PATTERNS = /** @type {const} */ (['solid', 'dutch', 'spotted', 'hooded', 'points', 'agouti']);
 /** Patterns of the other kinds (kinds.js kindLook): a cat's stripes, a toad's warts, a salamander's blotches. */
-const KIND_PATTERNS = ['tabby', 'warts', 'blotched'];
-const KIND_EARS = ['cat', 'none'];
+const KIND_PATTERNS = ['tabby', 'warts', 'blotched', 'dapple', 'badger', 'dove', 'fox', 'ermine', 'spiral'];
+const KIND_EARS = ['cat', 'none', 'deer', 'round', 'fox', 'stalk'];
 const KIND_EYES = ['green', 'amber'];
 const PATTERN_W = [4, 2, 2, 1, 1, 2];
 const EARS = /** @type {const} */ (['upright', 'lop', 'half', 'short']);
