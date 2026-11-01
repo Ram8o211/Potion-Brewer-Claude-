@@ -33,22 +33,24 @@ export const CELL = 1;
  * floor: 1 where there is ground at all (not sky, water, lava or cliff).
  */
 export class Canvas {
-  constructor(seed) {
-    this.W = SCENE_W; this.H = SCENE_H;
-    this.pix = new Pixels(SCENE_W, SCENE_H);
-    this.open = new Uint8Array(SCENE_W * SCENE_H);
+  /** @param {number} seed @param {number} [w] @param {number} [h] (a region's scene by default; the enclosures are smaller) */
+  constructor(seed, w = SCENE_W, h = SCENE_H) {
+    this.W = w; this.H = h;
+    const N = w * h;
+    this.pix = new Pixels(w, h);
+    this.open = new Uint8Array(N);
     /** the foot row of the scenery covering each pixel (0: none): a plant standing above that row would be behind it */
-    this.depth = new Uint16Array(SCENE_W * SCENE_H);
+    this.depth = new Uint16Array(N);
     /** 1 where there is ground (the side view's terrain), liquid, or a cave hollowed out of the ground */
-    this.solid = new Uint8Array(SCENE_W * SCENE_H);
-    this.liquid = new Uint8Array(SCENE_W * SCENE_H);
-    this.cave = new Uint8Array(SCENE_W * SCENE_H);
+    this.solid = new Uint8Array(N);
+    this.liquid = new Uint8Array(N);
+    this.cave = new Uint8Array(N);
     /** 1 where the cave's roof or walls are painted (cave.js caveFrame) */
-    this.rock = new Uint8Array(SCENE_W * SCENE_H);
+    this.rock = new Uint8Array(N);
     /** 1 where a tree standing on the terrain is drawn (trees.js) */
-    this.trees = new Uint8Array(SCENE_W * SCENE_H);
+    this.trees = new Uint8Array(N);
     /** which prop (a piece of scenery set down by `place`, numbered from 1) covers each pixel (0: none) */
-    this.props = new Uint16Array(SCENE_W * SCENE_H);
+    this.props = new Uint16Array(N);
     this.nprops = 0;
     /** the main ground's surface row in each column (side.js fillSolid), if the scene has one @type {Float32Array | null} */
     this.ground = null;

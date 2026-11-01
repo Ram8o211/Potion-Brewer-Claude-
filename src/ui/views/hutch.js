@@ -1,5 +1,6 @@
-// The farm: the colony of Moon Rabbits is where every potion is tested. The
-// hutch scene (tap a rabbit to choose it, or drag the dropper onto it), a
+// The farm: the colony of Moon Rabbits is where every potion is tested. Each
+// kind kept has its own enclosure (a tab for each when there are several);
+// the scene (tap a rabbit to choose it, or drag the dropper onto it), a
 // roster of every rabbit and body with its health, and the chosen rabbit up
 // close: its health, a bar per effect channel showing how much of it is
 // active in the rabbit right now (where that rabbit degenerates or turns
@@ -10,12 +11,14 @@
 // live in the head of the panel.
 
 import { readingSteadiness } from '../../game/experiments.js';
-import { kindDef } from '../../game/kinds.js';
+import { kindDef, kindOf, KINDS, KIND_IDS } from '../../game/kinds.js';
 import { h, btn, clear, toast, modal, confirmDialog } from '../dom.js';
 import { icon } from '../icons.js';
 import { audio } from '../../audio/audio.js';
 import { drawRabbit, RABBIT_W, RABBIT_H } from '../../rendering/rabbit.js';
 import { HutchScene, HUTCH_W, HUTCH_H } from '../../rendering/hutch-scene.js';
+import { penTitle } from '../../visual/env/pens.js';
+import { CrispCanvas } from '../../rendering/crisp.js';
 import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
 import {
   livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral,
@@ -40,6 +43,12 @@ export class HutchPanel {
     this.lab = view.lab;
     this.el = h('div', { class: 'card parch hutch' });
     this.scene = new HutchScene();
+    /** the kind whose enclosure is shown, and the chosen animal it last followed */
+    /** @type {import('../../game/kinds.js').AnimalKind} */
+    this.pen = 'rabbit';
+    this.penFocus = /** @type {string|null} */ (null);
+    /** @type {CrispCanvas|null} */
+    this.crisp = null;
     /** @type {Record<string, {tile:HTMLElement, cv:HTMLCanvasElement, ctx:CanvasRenderingContext2D, key:string, hp:HTMLElement}>} */
     this.tiles = {};
     this.hover = null;
@@ -83,13 +92,32 @@ export class HutchPanel {
         ? btn(brewing ? 'Brewing…' : 'Brew · 1', () => this.brewPurge(), { icon: 'alembic', act: 'purge-brew', disabled: brewing || st.coins < 1, title: 'Brew a purging draught in your still' })
         : h('span', { class: 'small muted', text: 'Brew your own with a Purging Still (Shop)' })),
       this.d.still));
-    // ---- the scene: rabbits going about their lives
-    this.canvas = /** @type {HTMLCanvasElement} */ (h('canvas', { width: String(HUTCH_W), height: String(HUTCH_H), class: 'hutch-scene', role: 'img', 'aria-label': `The hutch: ${live.length} rabbits${bodies(c).length ? ` and ${bodies(c).length} bodies` : ''}. Tap a rabbit to choose it.` }));
+    // ---- the enclosures: one for each kind kept, the chosen animal's open
+    const kinds = KIND_IDS.filter((k) => c.rabbits.some((r) => kindOf(r.look) === k));
+    if (!kinds.length) kinds.push('rabbit');
+    const focus = findRabbit(c, c.focus);
+    if (focus && c.focus !== this.penFocus) this.pen = kindOf(focus.look);
+    this.penFocus = c.focus;
+    if (!kinds.includes(this.pen)) this.pen = kinds[0];
+    const pen = this.pen, inPen = c.rabbits.filter((r) => kindOf(r.look) === pen);
+    if (kinds.length > 1) {
+      el.append(h('div', { class: 'pen-tabs', role: 'tablist', 'aria-label': 'Enclosures' }, ...kinds.map((k) => {
+        const n = c.rabbits.filter((r) => r.alive && kindOf(r.look) === k).length, word = KINDS[k].plural;
+        return btn(`${word[0].toUpperCase()}${word.slice(1)} · ${n}`, () => this.showPen(k), { cls: k === pen ? 'active' : '', act: 'pen-' + k, title: penTitle(k) });
+      })));
+    }
+    // ---- the scene: the animals of this enclosure going about their lives
+    const nLive = inPen.filter((r) => r.alive).length, nDead = inPen.length - nLive;
+    this.scene.setPen(pen);
+    this.canvas = /** @type {HTMLCanvasElement} */ (h('canvas', { width: String(HUTCH_W), height: String(HUTCH_H), class: 'hutch-scene', 'data-pen': pen, role: 'img', 'aria-label': `${penTitle(pen)}: ${nLive} ${nLive === 1 ? KINDS[pen].noun : KINDS[pen].plural}${nDead ? ` and ${nDead} bodies` : ''}. Tap one to choose it.` }));
     this.ctx = /** @type {CanvasRenderingContext2D} */ (this.canvas.getContext('2d'));
     this.canvas.addEventListener('pointerdown', (e) => this.tapScene(e));
     this.canvas.addEventListener('pointermove', (e) => { this.hover = this.hitAt(e); });
     this.canvas.addEventListener('pointerleave', () => { this.hover = null; });
-    el.append(h('div', { class: 'hutch-scene-wrap' }, this.canvas));
+    const wrap = h('div', { class: 'hutch-scene-wrap' }, this.canvas);
+    el.append(wrap, h('div', { class: 'small muted pen-title', text: penTitle(pen) }));
+    if (this.crisp) this.crisp.dispose();
+    this.crisp = new CrispCanvas(this.canvas, wrap);
     this.syncScene();
     // ---- dose the chosen rabbit right here
     const chosen = findRabbit(c, c.focus);
@@ -231,7 +259,15 @@ export class HutchPanel {
 
   syncScene() {
     const st = this.st;
-    this.scene.sync(st.colony.rabbits.map((r) => ({ id: r.id, look: r.look, snap: rabbitSnap(r, st.day), mother: r.parents ? r.parents[0] : undefined })));
+    this.scene.sync(st.colony.rabbits.filter((r) => kindOf(r.look) === this.pen).map((r) => ({ id: r.id, look: r.look, snap: rabbitSnap(r, st.day), mother: r.parents ? r.parents[0] : undefined })));
+  }
+
+  /** Open a kind's enclosure. @param {import('../../game/kinds.js').AnimalKind} kind */
+  showPen(kind) {
+    if (kind === this.pen) return;
+    this.pen = kind;
+    audio.play('click');
+    this.view.refresh();
   }
 
   /** A dosed rabbit hops and flashes in the scene. @param {string} id @param {string[]} channels */
@@ -395,6 +431,7 @@ export class HutchPanel {
     const low = this.lab.effectiveQuality() === 'low';
     this.scene.update(dt);
     this.scene.draw(this.ctx, t, { selected: this.st.colony.focus, hover: this.hover, low });
+    if (this.crisp) { this.crisp.enabled = !low; this.crisp.present(); }
     this._acc += dt;
     if (this._acc >= (low ? 0.2 : 0.1)) { this._acc = 0; this.drawTiles(t); }
     this._live += dt;

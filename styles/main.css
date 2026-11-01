@@ -356,6 +356,11 @@ canvas.portrait.big { width: 88px; height: 88px; box-shadow: 0 0 0 var(--px) var
 .hutch-head { align-items: center; gap: 6px; }
 .hutch-head .btn { min-height: 44px; font-size: var(--fs-s); }
 .hutch-scene-wrap { width: 100%; max-width: 760px; align-self: center; }
+.hutch-scene-wrap .crisp-overlay { box-shadow: 0 0 0 var(--px) var(--ink2); }
+.pen-tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px 0 4px; }
+.pen-tabs::-webkit-scrollbar { display: none; }
+.pen-tabs .btn { flex: none; min-height: 44px; font-size: var(--fs-s); padding-left: 10px; padding-right: 12px; }
+.pen-title { text-align: center; margin-top: -2px; }
 canvas.hutch-scene { display: block; width: 100%; height: auto; aspect-ratio: 224 / 92; image-rendering: pixelated; box-shadow: 0 0 0 var(--px) var(--ink2); touch-action: manipulation; cursor: pointer; }
 .rabbit-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 6px; }
 .rabbit-tile { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 44px; min-height: 44px; padding: 4px; border: none; cursor: pointer; font-family: inherit; color: var(--ink); background: var(--parch1); box-shadow: 0 0 0 1px var(--ink2); }

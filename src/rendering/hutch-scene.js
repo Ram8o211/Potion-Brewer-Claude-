@@ -1,4 +1,8 @@
-// The hutch: the colony's pen as a 224×92 pixel-art scene. The painted pen
+// The farm's enclosures as 224×92 pixel-art scenes: the Moon Rabbits' hutch,
+// and for every other kind caught in the wilds a pen of its own, painted
+// procedurally in the wilds' style (visual/env/pens.js; setPen picks which
+// one a scene shows, each with its own floor, feeder, nest and cloth).
+// The hutch: the colony's pen. The painted pen
 // (assets/hutch/pen.png, scripts/make-hutch.py: a plank wall, a hay rack, a
 // hide box, straw and two bowls) makes a cached background (nest straw fills
 // the hide box's door while a doe is expecting, a linen cloth lies in front of
@@ -22,6 +26,7 @@ import { PAL, makeCanvas } from './art.js';
 import { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } from './rabbit.js';
 import { GROUND, GROUND_Y0 } from './hutch-ground.js';
 import { kindOf } from '../game/kinds.js';
+import { penOf } from '../visual/env/pens.js';
 
 /** Walking speed in the hutch (px/s) of the kinds that walk rather than hop (rabbits, toads and ermines hop). */
 const WALKERS = { cat: 12, salamander: 5, deer: 10, badger: 8, dove: 8, fox: 14, snail: 1.5, rat: 16 };
@@ -33,12 +38,39 @@ export const HUTCH_BODIES = 3;
 
 /** Back edge of the straw floor. */
 const FLOOR_Y = 54;
-/** The ground's bounds: every foot is inside, and only on its runs (onGround). */
-const ROAM = { x0: Math.min(...GROUND.flat().map((r) => r[0])), x1: Math.max(...GROUND.flat().map((r) => r[1] - 1)), y0: GROUND_Y0, y1: GROUND_Y0 + GROUND.length - 1 };
 /** Where an eating rabbit stands, facing the hay rack. */
 const RACK = { x: 30, y: 57 };
 /** Feet positions of the bodies on the cloth. */
 const SLOTS = [[182, 68], [202, 71], [190, 74]];
+
+/**
+ * An enclosure as the scene uses it: the ground's runs, where to eat, where
+ * the bodies lie, and (for the kinds' procedural pens, visual/env/pens.js)
+ * the painted back and front.
+ * @typedef {{kind:string, y0:number, ground:number[][][], rack:{x:number, y:number}, slots:number[][], cloth:number[], nest:number[],
+ *   roam:{x0:number, x1:number, y0:number, y1:number}, back?:any, front?:any}} PenDef
+ */
+
+/** @param {any} p @returns {PenDef} */
+function penDef(p) {
+  const flat = p.ground.flat();
+  return { ...p, roam: { x0: Math.min(...flat.map((r) => r[0])), x1: Math.max(...flat.map((r) => r[1] - 1)), y0: p.y0, y1: p.y0 + p.ground.length - 1 } };
+}
+
+/** The Moon Rabbits' hutch: the painted pen. */
+const HUTCH_PEN = penDef({ kind: 'rabbit', y0: GROUND_Y0, ground: GROUND, rack: RACK, slots: SLOTS, cloth: [170, 64, 46, 13], nest: [186, 54, 203, 60] });
+/** @type {Map<string, PenDef>} */
+const PENS = new Map([['rabbit', HUTCH_PEN]]);
+
+/** The enclosure of a kind (the rabbits' hutch for a rabbit, or for a kind without a pen of its own). @param {string} kind */
+export function penFor(kind) {
+  let p = PENS.get(kind);
+  if (p) return p;
+  const pen = penOf(kind);
+  p = pen ? penDef(pen) : HUTCH_PEN;
+  PENS.set(kind, p);
+  return p;
+}
 /** Top of the front rail (drawn over the rabbits). */
 const RAIL_Y = 76;
 
@@ -114,13 +146,15 @@ function lazyImage(url) {
 }
 
 /**
- * Paint the hutch background into a 224×92 context: the painted pen (or a
- * plain stand-in for it until it has loaded, and without a DOM), with a nest
- * in the hide box's door and a linen cloth for the bodies when asked.
- * @param {CanvasRenderingContext2D} ctx @param {{nest?:boolean, cloth?:boolean, pen?:any}} [o]
+ * Paint an enclosure's background into a 224×92 context: the rabbits'
+ * painted pen or a kind's procedural one (or a plain stand-in until the
+ * picture has loaded, and without a DOM), with a nest where a female is
+ * expecting and a linen cloth for the bodies when asked.
+ * @param {CanvasRenderingContext2D} ctx @param {{nest?:boolean, cloth?:boolean, pen?:any, def?:PenDef}} [o]
+ *   pen: the picture, once loaded; def: the enclosure (the hutch by default)
  */
 export function paintHutch(ctx, o = {}) {
-  const W = HUTCH_W, H = HUTCH_H, rng = new Rng('hutch-bg-3');
+  const W = HUTCH_W, H = HUTCH_H, rng = new Rng('hutch-bg-3'), def = o.def || HUTCH_PEN;
   if (o.pen) ctx.drawImage(o.pen, 0, 0);
   else {
     R(ctx, 0, 0, W, FLOOR_Y, HW.p3);
@@ -128,12 +162,14 @@ export function paintHutch(ctx, o = {}) {
     R(ctx, 0, FLOOR_Y, W, H - FLOOR_Y, STRAW[2]);
     R(ctx, 0, FLOOR_Y, W, 1, HW.k);
   }
-  // nest straw and down in the hide box's door
-  if (o.nest) for (let k = 0; k < 22; k++) R(ctx, rng.int(186, 201), rng.int(54, 59), rng.int(2, 3), 1, rng.pick([STRAW[4], STRAW[5], '#f6ead0', '#e6d3a5']));
-  // ---- linen cloth on the straw in front of the hide box, where the bodies are laid
+  // nest straw and down where the young will be born
+  const [nx0, ny0, nx1, ny1] = def.nest;
+  if (o.nest) for (let k = 0; k < 22; k++) R(ctx, rng.int(nx0, nx1 - 2), rng.int(ny0, ny1 - 1), rng.int(2, 3), 1, rng.pick([STRAW[4], STRAW[5], '#f6ead0', '#e6d3a5']));
+  // ---- a linen cloth on the floor, where the bodies are laid
   if (o.cloth) {
-    R(ctx, 170, 64, 46, 13, PAL.parch0); R(ctx, 171, 64, 44, 12, PAL.parch1); R(ctx, 171, 64, 44, 1, PAL.parch2);
-    for (let x = 177; x < 214; x += 9) { R(ctx, x, 66, 1, 4, PAL.parch0); R(ctx, x + 1, 70, 1, 4, PAL.parch0); }
+    const [cx, cy, cw, ch] = def.cloth;
+    R(ctx, cx, cy, cw, ch, PAL.parch0); R(ctx, cx + 1, cy, cw - 2, ch - 1, PAL.parch1); R(ctx, cx + 1, cy, cw - 2, 1, PAL.parch2);
+    for (let x = cx + 7; x < cx + cw - 2; x += 9) { R(ctx, x, cy + 2, 1, 4, PAL.parch0); R(ctx, x + 1, cy + 6, 1, Math.max(1, ch - 9), PAL.parch0); }
   }
 }
 
@@ -150,9 +186,18 @@ export function paintHutchFront(ctx, pen) {
 }
 
 /** Whether a rabbit's feet may rest at a point: on the straw, off the bowls and the hide box. @param {number} x @param {number} y */
-export function onGround(x, y) {
-  const row = GROUND[Math.round(y) - GROUND_Y0], xi = Math.round(x);
+export function onGround(x, y, pen = HUTCH_PEN) {
+  const row = pen.ground[Math.round(y) - pen.y0], xi = Math.round(x);
   return !!row && row.some(([x0, x1]) => xi >= x0 && xi < x1);
+}
+
+/** Pixels (visual/pixels.js) as a canvas, once per buffer. @type {WeakMap<object, any>} */
+const asCanvas = new WeakMap();
+/** @param {any} pix */
+function canvasOf(pix) {
+  let c = asCanvas.get(pix);
+  if (!c && typeof document !== 'undefined') { c = pix.toCanvas(); asCanvas.set(pix, c); }
+  return c || null;
 }
 
 /**
@@ -161,14 +206,17 @@ export function onGround(x, y) {
  */
 export class HutchScene {
   /**
-   * @param {{canvas?:(w:number, h:number) => any, sprites?:boolean}} [opts]
+   * @param {{canvas?:(w:number, h:number) => any, sprites?:boolean, kind?:string}} [opts]
    *   canvas: canvas maker for the cached background and the rabbit sprites
    *   (default makeCanvas when a DOM exists; without one the background is
    *   painted straight into the target every frame); sprites: false draws
-   *   every rabbit rect by rect (tests).
+   *   every rabbit rect by rect (tests); kind: whose enclosure it shows
+   *   (the rabbits' hutch by default; setPen changes it).
    */
   constructor(opts = {}) {
     this.factory = opts.canvas || null;
+    /** the enclosure shown */
+    this.pen = penFor(opts.kind || 'rabbit');
     this.sprites = opts.sprites !== false;
     /** @type {Map<string, Actor>} */
     this.actors = new Map();
@@ -184,6 +232,24 @@ export class HutchScene {
     /** claw marks where an aggressive rabbit struck (or hearts where two mated): art pixels and age (s) */
     /** @type {{x:number, y:number, t:number, love?:boolean}[]} */
     this.clashes = [];
+  }
+
+  /**
+   * Show another kind's enclosure: its animals are synced afresh into it.
+   * @param {string} kind
+   */
+  setPen(kind) {
+    const p = penFor(kind);
+    if (p === this.pen) return;
+    this.pen = p;
+    this.actors.clear();
+    this.clashes = [];
+    this.bg = null; this.fg = null; this.bgKey = ''; this.fgPen = false;
+  }
+
+  /** Whether a foot may rest at a point of this enclosure. @param {number} x @param {number} y */
+  onGround(x, y) {
+    return onGround(x, y, this.pen);
   }
 
   /**
@@ -207,7 +273,7 @@ export class HutchScene {
       a.mother = e.mother != null ? String(e.mother) : Array.isArray(e.parents) && e.parents[0] ? String(e.parents[0]) : null;
       const alive = e.snap.alive !== false;
       if (!alive) {
-        const slot = SLOTS[bodies++];
+        const slot = this.pen.slots[bodies++];
         a.hidden = !slot;
         if (slot) { a.x = slot[0]; a.y = slot[1]; }
         a.act = 'dead'; a.pose = null; a.face = 1; a.hops = 0;
@@ -381,7 +447,7 @@ export class HutchScene {
       hops: 0, hopT: 0.34, hopH: 4, step: 8, sx: 0, sy: 0, tx: 0, ty: 0, gx: 0, gy: 0, next: null,
       n: 0, phase: r.range(0, 10), react: 0, reactCh: [], anSnap: null, anPose: null, an: null,
     };
-    const p = this._roam(r.int(ROAM.x0, ROAM.x1), r.int(ROAM.y0, ROAM.y1));
+    const R0 = this.pen.roam, p = this._roam(r.int(R0.x0, R0.x1), r.int(R0.y0, R0.y1));
     a.x = p.x; a.y = p.y;
     return a;
   }
@@ -389,7 +455,7 @@ export class HutchScene {
   /** Put a rabbit back on the straw (it came back from the cloth). @param {Actor} a */
   _place(a) {
     const r = new Rng(hashString(`hutch:place:${a.id}:${a.n++}`));
-    const p = this._roam(r.int(ROAM.x0, ROAM.x1), r.int(ROAM.y0, ROAM.y1));
+    const R0 = this.pen.roam, p = this._roam(r.int(R0.x0, R0.x1), r.int(R0.y0, R0.y1));
     a.x = p.x; a.y = p.y;
     a.act = 'idle'; a.at = 0; a.dur = 1; a.pose = null; a.hops = 0;
   }
@@ -406,7 +472,15 @@ export class HutchScene {
       const dx = a.gx - a.x, dy = a.gy - a.y, d = Math.hypot(dx, dy);
       const v = (WALKERS[kindOf(a.look)] || 10) * (a.act === 'run' ? 3 : 1) * (a.snap.stage === 'kit' ? 0.7 : 1);
       const s = Math.min(d, v * dt * rabbitPace(snap));
-      if (d > 0.5) { a.x += (dx / d) * s; a.y += (dy / d) * s; if (Math.abs(dx) > 0.3) a.face = dx > 0 ? 1 : -1; }
+      if (d > 0.5) {
+        // round whatever stands in the way (a pond, a log, a den): slide along it, or give up the walk
+        const nx = a.x + (dx / d) * s, ny = a.y + (dy / d) * s;
+        if (this.onGround(nx, ny)) { a.x = nx; a.y = ny; }
+        else if (this.onGround(nx, a.y)) a.x = nx;
+        else if (this.onGround(a.x, a.y + Math.sign(dy || 1) * s)) a.y += Math.sign(dy || 1) * s;
+        else { a.next = null; this._decide(a); return; }
+        if (Math.abs(dx) > 0.3) a.face = dx > 0 ? 1 : -1;
+      }
       a.stride = (a.stride || 0) + s;
       a.pose = Math.floor(a.stride / 2) & 1 ? 'walk2' : 'walk1';
       if (d <= 0.5 || a.at > 12) {
@@ -427,7 +501,7 @@ export class HutchScene {
     if (a.act === 'float') {
       const dx = a.gx - a.x, dy = a.gy - a.y, d = Math.hypot(dx, dy), s = Math.min(d, 6 * dt);
       // it drifts toward its goal, but never settles over a bowl or the hide box
-      if (d > 0.5 && onGround(a.x + (dx / d) * s, a.y + (dy / d) * s)) { a.x += (dx / d) * s; a.y += (dy / d) * s; if (Math.abs(dx) > 1) a.face = dx > 0 ? 1 : -1; }
+      if (d > 0.5 && this.onGround(a.x + (dx / d) * s, a.y + (dy / d) * s)) { a.x += (dx / d) * s; a.y += (dy / d) * s; if (Math.abs(dx) > 1) a.face = dx > 0 ? 1 : -1; }
     }
     if (a.at >= a.dur) this._decide(a);
   }
@@ -458,10 +532,10 @@ export class HutchScene {
     const pick = r.weighted(['idle', 'hop', 'groom', 'eat', 'sniff'], w);
     if (pick === 'hop') return this._hopTo(a, this._goal(a, r, 30), kit ? 2 : r.int(1, 3), false);
     if (pick === 'eat') {
-      const dx = RACK.x - a.x, dy = RACK.y - a.y;
+      const rack = this.pen.rack, dx = rack.x - a.x, dy = rack.y - a.y;
       if (Math.hypot(dx, dy) <= 4) return this._begin(a, 'eat', r.range(2, 3.5));
       a.next = 'eat';
-      return this._hopTo(a, { x: RACK.x + r.int(-3, 3), y: RACK.y + r.int(0, 3) }, 16, false);
+      return this._hopTo(a, this._roam(rack.x + r.int(-3, 3), rack.y + r.int(0, 3)), 16, false);
     }
     const dur = pick === 'idle' ? r.range(1.2, 3.5) * (kit ? 0.6 : 1) : pick === 'groom' ? r.range(1.5, 2.5) : r.range(0.8, 1.4);
     return this._begin(a, pick, dur);
@@ -494,10 +568,11 @@ export class HutchScene {
 
   /** The point of the ground nearest to (x, y). @param {number} x @param {number} y */
   _roam(x, y) {
-    if (onGround(x, y)) return { x, y };
-    let best = { x: RACK.x, y: RACK.y }, bd = Infinity;
-    GROUND.forEach((row, i) => {
-      const gy = GROUND_Y0 + i;
+    if (this.onGround(x, y)) return { x, y };
+    const pen = this.pen;
+    let best = { x: pen.rack.x, y: pen.rack.y }, bd = Infinity;
+    pen.ground.forEach((row, i) => {
+      const gy = pen.y0 + i;
       for (const [x0, x1] of row) {
         const gx = clamp(x, x0, x1 - 1), d = (gx - x) ** 2 + (gy - y) ** 2;
         if (d < bd) { bd = d; best = { x: gx, y: gy }; }
@@ -577,10 +652,17 @@ export class HutchScene {
     return [...this.actors.values()].filter((a) => !a.hidden).sort((p, q) => p.y - q.y || (p.id < q.id ? -1 : p.id > q.id ? 1 : 0));
   }
 
+  /** The picture of this enclosure's back or front: the rabbits' painted pen, or a kind's procedural one. @param {'back'|'front'} part */
+  _art(part) {
+    const p = this.pen;
+    if (p.back) return canvasOf(part === 'back' ? p.back : p.front);
+    return (part === 'back' ? PEN.back : PEN.front).get();
+  }
+
   /** @param {CanvasRenderingContext2D} ctx */
   _front(ctx) {
     const factory = this.factory || (typeof document !== 'undefined' ? makeCanvas : null);
-    const pen = PEN.front.get();
+    const pen = this._art('front');
     if (!factory) { paintHutchFront(ctx, pen); return; }
     if (!this.fg || this.fgPen !== !!pen) { this.fg = factory(HUTCH_W, HUTCH_H); paintHutchFront(this.fg.getContext('2d'), pen); this.fgPen = !!pen; }
     ctx.drawImage(this.fg, 0, 0);
@@ -588,10 +670,10 @@ export class HutchScene {
 
   /** @param {CanvasRenderingContext2D} ctx */
   _background(ctx) {
-    const o = { nest: this.nest, cloth: this.cloth, pen: PEN.back.get() };
+    const o = { nest: this.nest, cloth: this.cloth, pen: this._art('back'), def: this.pen };
     const factory = this.factory || (typeof document !== 'undefined' ? makeCanvas : null);
     if (!factory) { paintHutch(ctx, o); return; }
-    const key = `${o.nest ? 1 : 0}${o.cloth ? 1 : 0}${o.pen ? 1 : 0}`;
+    const key = `${this.pen.kind}${o.nest ? 1 : 0}${o.cloth ? 1 : 0}${o.pen ? 1 : 0}`;
     if (!this.bg || this.bgKey !== key) {
       this.bg = factory(HUTCH_W, HUTCH_H);
       paintHutch(this.bg.getContext('2d'), o);

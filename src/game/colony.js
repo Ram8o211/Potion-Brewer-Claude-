@@ -832,7 +832,8 @@ export function colonyTick(c, dt, o = {}) {
     const fury = Math.max(...angry.map((k) => r.marks[k]));
     const t = clamp(Math.max(...angry.map((k) => (r.marks[k] - aggroAt(r, k)) / Math.max(1, MARK_MAX - aggroAt(r, k)))), 0, 1);
     r.cd = round1((ATTACK_EVERY[0] + (ATTACK_EVERY[1] - ATTACK_EVERY[0]) * t) * rng.range(0.8, 1.25));
-    const prey = c.rabbits.filter((x) => x.alive && x.id !== r.id);
+    // each kind has its own enclosure: only those penned with it are in reach
+    const prey = c.rabbits.filter((x) => x.alive && x.id !== r.id && kindOf(x.look) === kindOf(r.look));
     if (!prey.length) continue;
     const v = rng.pick(prey);
     const dmg = round1((8 + 14 * fury / 100 + 0.1 * (r.marks.strength || 0)) * rng.range(0.8, 1.2) * (r.traits.includes('giant') ? 1.3 : 1));
@@ -852,10 +853,10 @@ export function colonyTick(c, dt, o = {}) {
     r.mc = (r.mc || mateEvery(love)) - dt;
     if (r.mc > 0) continue;
     r.mc = round1(Math.max(0.5, mateEvery(love) * rng.range(0.8, 1.2)));
-    const others = c.rabbits.filter((x) => x.alive && x.id !== r.id && stageOf(x, day) !== 'kit');
+    // only those penned with it (its own kind) are in reach
+    const others = c.rabbits.filter((x) => x.alive && x.id !== r.id && stageOf(x, day) !== 'kit' && kindOf(x.look) === kindOf(r.look));
     if (!others.length) continue;
-    // only a partner of its own kind can sire young
-    const mates = others.filter((x) => x.sex !== r.sex && kindOf(x.look) === kindOf(r.look));
+    const mates = others.filter((x) => x.sex !== r.sex);
     const p = rng.pick(mates.length ? mates : others);
     let conceived = false;
     if (p.sex !== r.sex && kindOf(p.look) === kindOf(r.look)) {
