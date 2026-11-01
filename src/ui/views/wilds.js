@@ -54,7 +54,7 @@ import { plantCanvas, plantFrameOf, plantGlow, emitColour, silhouetteOf, ingredi
 import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
 import { hashString } from '../../core/rng.js';
 import { Warren, warrenSpots, BLOOD } from '../../game/wild-rabbits.js';
-import { drawRabbit, RABBIT_W, RABBIT_H } from '../../rendering/rabbit.js';
+import { drawRabbit, rabbitSpriteKey, RABBIT_W, RABBIT_H } from '../../rendering/rabbit.js';
 import { defaultSnap, livingRabbits } from '../../game/colony.js';
 import { KINDS } from '../../game/kinds.js';
 
@@ -169,8 +169,10 @@ export class WildsView {
     this.gore = new Map();
     /** the frame a rabbit is drawn in before it is set into the scene @type {HTMLCanvasElement|null} */
     this.bunny = null;
-    /** that frame at the size it is set into the scene, made to stand out @type {HTMLCanvasElement|null} */
+    /** that frame at half size, read back to make it stand out (once per look and pose) @type {HTMLCanvasElement|null} */
     this.bunnyHalf = null;
+    /** wild animals as set into the scene, by look, state, pose and facing @type {Map<string, HTMLCanvasElement>|null} */
+    this.wildSprites = null;
     /** hints given once a session (a rabbit down, the hutch full) @type {Set<string>} */
     this.told = new Set();
     /** the pointer pressed on the scene: where it is, where it came down (sx, sy), how far it has gone (CSS px), and in watering mode where it last watered and how many drank @type {{id:number, type:string, x:number, y:number, cx:number, cy:number, sx:number, sy:number, dist:number, water:boolean, wx:number, wy:number, drank:number, near:boolean, pours:number}|null} */
@@ -910,6 +912,40 @@ export class WildsView {
   }
 
   /**
+   * A wild animal as it is set into the scene (cached): drawn as in the hutch
+   * into a frame of its own, at half that size, then made to stand out
+   * (rendering/punch.js) — its pixels read back once per look, state, pose and
+   * facing, never in the frame.
+   * @param {any} look @param {any} snap @param {string|undefined} pose @param {boolean} mirror
+   * @returns {HTMLCanvasElement}
+   */
+  wildSprite(look, snap, pose, mirror) {
+    const key = rabbitSpriteKey(look, snap, pose) + (mirror ? '|m' : '');
+    const cache = this.wildSprites || (this.wildSprites = new Map());
+    let cv = cache.get(key);
+    if (cv) return cv;
+    if (cache.size > 160) cache.clear();
+    if (!this.bunny) { this.bunny = document.createElement('canvas'); this.bunny.width = RABBIT_W; this.bunny.height = RABBIT_H; }
+    const b = /** @type {CanvasRenderingContext2D} */ (this.bunny.getContext('2d'));
+    b.imageSmoothingEnabled = false;
+    b.clearRect(0, 0, RABBIT_W, RABBIT_H);
+    drawRabbit(b, look, snap, 0, 0, { x: 0, y: 0, clear: false, floor: false, hop: false, mirror, pose, flash: false });
+    const hw = RABBIT_W / 2 + 4, hh = RABBIT_H / 2 + 4;
+    // (read back on a scratch canvas kept for reading; the sprite itself is a plain canvas, cheap to draw)
+    if (!this.bunnyHalf) { this.bunnyHalf = document.createElement('canvas'); this.bunnyHalf.width = hw; this.bunnyHalf.height = hh; }
+    const hb = /** @type {CanvasRenderingContext2D} */ (this.bunnyHalf.getContext('2d', { willReadFrequently: true }));
+    hb.imageSmoothingEnabled = false;
+    hb.clearRect(0, 0, hw, hh);
+    hb.drawImage(this.bunny, 0, 0, RABBIT_W, RABBIT_H, 2, 2, RABBIT_W / 2, RABBIT_H / 2);
+    const img = hb.getImageData(0, 0, hw, hh);
+    punchSprite(img.data, hw, hh);
+    cv = document.createElement('canvas'); cv.width = hw; cv.height = hh;
+    /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')).putImageData(img, 0, 0);
+    cache.set(key, cv);
+    return cv;
+  }
+
+  /**
    * The rabbits, the far ones first: each in its pose (hopping off the
    * ground, grazing, rearing, lying down), facing the way it goes, its
    * wounds red on its coat; then the blood in flight and the clouds of it
@@ -917,27 +953,23 @@ export class WildsView {
    * @param {CanvasRenderingContext2D} ctx @param {Warren} w
    */
   drawWarren(ctx, w) {
-    // each rabbit is drawn as in the hutch into a frame of its own, then set into the scene at half that size
-    if (!this.bunny) { this.bunny = document.createElement('canvas'); this.bunny.width = RABBIT_W; this.bunny.height = RABBIT_H; }
-    const b = /** @type {CanvasRenderingContext2D} */ (this.bunny.getContext('2d'));
-    b.imageSmoothingEnabled = false;
     for (const r of w.rabbits.slice().sort((a, c) => a.y - c.y)) {
       const snap = { ...defaultSnap(), hp: r.band, alive: !r.dead, cause: r.dead ? 'hunted' : null };
       const pose = r.drawPose;
       const x = Math.round(r.x), y = Math.round(r.y);
-      b.clearRect(0, 0, RABBIT_W, RABBIT_H);
-      drawRabbit(b, r.look, snap, r.t, r.react, { x: 0, y: 0, clear: false, floor: false, hop: false, mirror: r.face < 0, pose, flash: false });
-      // at half size, with a pixel of margin, its tones spread and its outline inked so it stands out from the scenery
-      const hw = RABBIT_W / 2 + 4, hh = RABBIT_H / 2 + 4;
-      if (!this.bunnyHalf) { this.bunnyHalf = document.createElement('canvas'); this.bunnyHalf.width = hw; this.bunnyHalf.height = hh; }
-      const hb = /** @type {CanvasRenderingContext2D} */ (this.bunnyHalf.getContext('2d', { willReadFrequently: true }));
-      hb.imageSmoothingEnabled = false;
-      hb.clearRect(0, 0, hw, hh);
-      hb.drawImage(this.bunny, 0, 0, RABBIT_W, RABBIT_H, 2, 2, RABBIT_W / 2, RABBIT_H / 2);
-      const img = hb.getImageData(0, 0, hw, hh);
-      punchSprite(img.data, hw, hh);
-      hb.putImageData(img, 0, 0);
-      ctx.drawImage(this.bunnyHalf, x - RABBIT_W / 4 - 2, y - 18);
+      // set into the scene at half size, its tones spread and its outline inked so it stands out
+      // from the scenery: made once for each look, state, pose and facing, then only copied
+      const spr = this.wildSprite(r.look, snap, pose, r.face < 0);
+      const sx = x - RABBIT_W / 4 - 2, sy = y - 18;
+      ctx.drawImage(spr, sx, sy);
+      if (r.react > 0) {
+        // the flash of a blow: the sprite added over itself, brightening it
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = Math.min(1, r.react) * 0.5;
+        ctx.drawImage(spr, sx, sy);
+        ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = 'source-over';
+      }
       // its wounds: dark red where it was struck, wet and bright at the middle, running down its coat
       const lying = r.dead || r.down;
       r.wounds.forEach(([wx, wy], i) => {
