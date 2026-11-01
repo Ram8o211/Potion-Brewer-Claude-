@@ -14,7 +14,8 @@ const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 
 export const TOOL_SPECS = {
   spoon: { core: SIM.SPOON_CORE, reach: SIM.SPOON_RADIUS, entrain: [0.2, 0.09, 0.3, 0.035, 0.12], drag: 0.55 },
-  pestle: { core: SIM.PESTLE_RADIUS, reach: 0.26, entrain: [0.12, 0.12, 0.2, 0.08, 0.06], drag: 0.35 },
+  // the pestle grinds: it barely drags grains along and never lifts them
+  pestle: { core: SIM.PESTLE_RADIUS, reach: 0.26, entrain: [0.12, 0.025, 0.2, 0.03, 0.06], drag: 0.35 },
   skimmer: { core: 0.08, reach: 0.24, entrain: [0.05, 0.05, 0.05, 0.02, 0.05], drag: 0.2 },
 };
 
@@ -113,16 +114,26 @@ export function toolForces(sim, dt) {
   const p = sim.p, n = p.count;
   const R = spec.reach, R2 = R * R;
   const sf = Math.min(1, t.speed / 0.35);
+  const pestle = t.type === 'pestle', RB2 = (R * 1.8) ** 2;
   for (let i = 0; i < n; i++) {
     const dx = p.x[i] - t.x, dy = p.y[i] - t.y;
     const d2 = dx * dx + dy * dy;
+    // grains around the pestle settle like sand: squeezed between it and
+    // the iron they shift, they do not spray (the bed soaks up the blow)
+    if (pestle && d2 < RB2 && p.phase[i] === POWDER) {
+      const v = Math.hypot(p.vx[i], p.vy[i]);
+      if (v > 0.7) { p.vx[i] *= 0.7 / v; p.vy[i] *= 0.7 / v; }
+      if (p.vy[i] < -0.3) p.vy[i] = -0.3;
+    }
     if (d2 >= R2) continue;
     p.sleep[i] = 0;
     if (sf <= 0) continue;
     const f = 1 - Math.sqrt(d2) / R;
     const k = spec.entrain[p.phase[i]] * f * f * sf;
     p.vx[i] += (t.vx - p.vx[i]) * k;
-    p.vy[i] += (t.vy - p.vy[i]) * k;
+    // (a pestle drawn up out of grains leaves them lying)
+    const tvy = t.type === 'pestle' && p.phase[i] === POWDER ? Math.max(0, t.vy) : t.vy;
+    p.vy[i] += (tvy - p.vy[i]) * k;
   }
   if (t.type === 'skimmer') skim(sim, dt);
 }
@@ -172,25 +183,33 @@ export function toolConstraints(sim, dt) {
     const drag = ph === PASTE ? spec.drag * 1.3 : ph === POWDER ? spec.drag * 0.8 : spec.drag;
     p.x[i] += tx * drag;
     p.y[i] += ty * drag;
+    // the pestle ploughs grains aside like sand, it does not fling them:
+    // most of the shove is not turned into speed
+    if (pestle && ph === POWDER) {
+      p.px[i] += (nx * pen + tx * drag) * 0.8;
+      p.py[i] += (ny * pen + ty * drag) * 0.8;
+    }
     if (pestle && (ph === SOLID || ph === POWDER)) crush(sim, i, pen, t.speed, dt);
   }
 }
 
 /**
- * Pestle crushing. Blows build up damage in the particles they actually hit,
- * scaled by the material's hardness. A body cracks first: a chip breaks off
- * where it was struck (or a blow to the middle splits it in two), and the
- * pieces are rigid bodies of their own. Further blows break small pieces
- * and badly damaged particles down to grains. Only the contacted parts are
- * affected; material and its properties are always conserved (only the
- * phase and body membership change).
+ * Pestle crushing: grinding, more than smashing. Blows build up damage in the
+ * particles they actually hit, scaled by the material's hardness, and the
+ * struck surface is worn down into sand grain by grain (each grain left
+ * where it was, at rest, and the blow bruising the particles bonded around
+ * it so the grinding eats on into the body). Only a hard blow on a large
+ * body cracks it, gently: a chip breaks off where it was struck (or a blow
+ * to the middle splits it in two), the pieces rigid bodies of their own.
+ * Only the contacted parts are affected; material and its properties are
+ * always conserved (only the phase and body membership change).
  */
 function crush(sim, i, pen, speed, dt) {
   const p = sim.p;
   if (p.phase[i] !== SOLID) return;
   const hard = p.hardness[i];
-  const crackAt = 0.16 + hard * 0.85;
-  const grindAt = 0.25 + hard * 1.5;
+  const crackAt = 0.5 + hard * 1.8;
+  const grindAt = 0.18 + hard * 0.9;
   sim.dmg[i] += (pen * 40 + speed * 1.2) * dt * 3;
   const g = p.group[i];
   const size = g >= 0 ? bodySize(sim, g) : 1;
@@ -207,12 +226,13 @@ function crush(sim, i, pen, speed, dt) {
   p.phase[i] = POWDER;
   p.sleep[i] = 0;
   p.dirty[i] = 1;
-  p.vx[i] += (sim.rand() - 0.5) * 0.6;
-  p.vy[i] -= sim.rand() * 0.4;
+  // worn off where it was, at rest: sand, not shrapnel
+  p.px[i] = p.x[i]; p.py[i] = p.y[i];
+  p.vx[i] = 0; p.vy[i] = 0;
   sim.emit({ type: 'crush', x: p.x[i], y: p.y[i] });
   // the blow bruises the particles bonded to it
   sim.grid.query(p.x[i], p.y[i], 0.14, (j) => {
-    if (p.phase[j] === SOLID && p.group[j] === g && g >= 0) sim.dmg[j] += grindAt * 0.25;
+    if (p.phase[j] === SOLID && p.group[j] === g && g >= 0) sim.dmg[j] += grindAt * 0.35;
   });
 }
 
@@ -260,8 +280,8 @@ function crack(sim, i, g) {
     p.group[k] = ng;
     p.sleep[k] = 0;
     // the pieces part gently — a crack, not an explosion
-    p.vx[k] += dx * 0.35;
-    p.vy[k] += dy * 0.35 - 0.1;
+    p.vx[k] += dx * 0.08;
+    p.vy[k] += dy * 0.08;
   }
   for (const k of rest) p.sleep[k] = 0;
   sim.rigid.markDirty(g);

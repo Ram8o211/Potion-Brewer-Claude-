@@ -107,7 +107,7 @@ test('every wild solid has four procedural pieces, each fitted with exactly its 
   }
 });
 
-test('the pestle cracks a body into fragments where it strikes, then grinds them; untouched parts stay whole', () => {
+test('the pestle grinds a body into sand where it strikes, rather than shattering it; untouched parts stay whole', () => {
   const s = sim();
   pour(s, R.water, 120);
   const n = chunkSize(lookup('wild-riverchalk'));
@@ -131,7 +131,7 @@ test('the pestle cracks a body into fragments where it strikes, then grinds them
   }
   t.setTarget(0, 0.5, false);
   run(s, 2);
-  assert.ok(sawFragments > 3, `the struck pebble broke into fragments first (${sawFragments} bodies)`);
+  assert.ok(sawFragments <= 4, `the struck pebble is worn down, not shattered into chunks (${sawFragments} bodies)`);
   // ground chalk: grains, which the pestle's stirring kneads into chalk milk
   const slot = s.species.slotOf.get('wild-riverchalk');
   let released = 0;

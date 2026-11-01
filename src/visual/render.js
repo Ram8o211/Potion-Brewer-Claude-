@@ -45,6 +45,20 @@ export function iconFrame(d) {
 }
 
 /**
+ * A piece drawn at another size (size square, art pixels): the same model,
+ * palette and surface as pieceFrame, rasterized at the size it is shown
+ * at, so its texture has the grain of the icons and the plants in the wilds
+ * rather than their pixels blown up.
+ * @param {import('./descriptor.js').Descriptor} d @param {number} v 0..3 @param {number} size
+ */
+export function pieceArt(d, v, size) {
+  const model = FAMILIES[d.family].piece(d, v & 3);
+  model.fit(size - 2, size - 2, { margin: Math.max(1, Math.round(size / PIECE_PX)) });
+  const r = rasterize(model, size - 2, size - 2, d.pal, { seed: d.seeds.surface ^ (0x91ece + v), outline: false });
+  return inked(r.pix);
+}
+
+/**
  * One of the four whole pieces poured into the cauldron (PIECE_PX square),
  * and its silhouette on the PIECE_GRID grid.
  * @param {import('./descriptor.js').Descriptor} d @param {number} v 0..3

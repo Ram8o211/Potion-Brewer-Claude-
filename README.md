@@ -17,7 +17,10 @@ computed from the particles that actually run out of the tap. What a
   never leave gaps. Powders pile up at an angle of repose and settle to
   sleep. Dough forms only when a binding powder is kneaded into a liquid,
   and more liquid thins it back to a paste. Frozen liquid becomes one rigid
-  block that the pestle crushes into grains. Vapour rises, collects under
+  block that the pestle crushes into grains. The pestle grinds rather than
+  smashes: it wears what it strikes down into fine sand, grain by grain,
+  which it ploughs aside without flinging; only a hard blow on a large
+  body cracks it, gently. Vapour rises, collects under
   the lid and condenses back on the cooler iron. Mixing starts where two
   liquids touch and spreads; stirring speeds it up dramatically. A paste
   wicks in the brew around it, so its grains take on the brew's dye. Heat comes
@@ -72,10 +75,11 @@ computed from the particles that actually run out of the tap. What a
   cooling, bottling and saving. Magic never recolours a brew: awakening
   shows only as its effects' particles growing denser and bolder.
   A wild ingredient poured whole is drawn as its own piece sprite, inked
-  and shaded exactly as its icon in the menus and its plant in the wilds:
-  one art pixel to a whole number of screen pixels, turned with the body
-  (smoothed RotSprite-style so its lines stay whole) and eaten away where
-  the pestle or the brew takes its particles.
+  and textured exactly as its icon in the menus and its plant in the
+  wilds: rasterized at the size it is shown at, one of its pixels to one
+  screen pixel, turned with the body (smoothed RotSprite-style so its lines
+  stay whole) and worn away where the pestle or the brew takes its
+  particles; what the pestle grinds off is sand in the piece's colours.
   A brew takes the dominant colour of the pieces of the ingredients crushed
   into it (the shade covering most of them, not a blend of all their
   textures), blending into gradients as it diffuses. The liquid itself

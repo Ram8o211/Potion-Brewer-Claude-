@@ -14,7 +14,7 @@ import { WILD_SPECS } from '../materials/wild.js';
 import { hslToRgb } from '../core/color.js';
 import { identityOf, identityKey, validIdentity } from './identity.js';
 import { describe } from './descriptor.js';
-import { pieceFrame, PIECE_PX, PIECE_GRID } from './render.js';
+import { pieceFrame, pieceArt, PIECE_PX, PIECE_GRID } from './render.js';
 
 /** Cell size in the atlas (art pixels) and the silhouette grid of a piece. */
 export const PIECE_CELL = PIECE_PX;
@@ -83,6 +83,30 @@ export function ensurePieces(key) {
   palettes.clear();
   if (changed) for (const fn of listeners) fn(key);
   return out;
+}
+
+/** skin|size → a piece drawn at that size @type {Map<string, {px:Uint32Array, size:number}>} */
+const sized = new Map();
+
+/**
+ * Piece `skin` drawn at `size` art pixels (square), as the menus' icons
+ * and the wilds' plants are drawn: one art pixel to one screen pixel at the
+ * size the cauldron shows it (cached; redrawn when the species' look changes).
+ * @param {number} skin @param {number} size
+ */
+export function pieceSprite(skin, size) {
+  const c = skinCell(skin);
+  if (!c) return null;
+  ensurePieces(c.key);
+  const k = `${skin}|${size}|${painted[c.key]}`;
+  let got = sized.get(k);
+  if (!got) {
+    if (sized.size > 256) sized.clear();
+    const f = pieceArt(describe(shown[c.key]), c.v, size);
+    got = { px: f.px, size: f.w };
+    sized.set(k, got);
+  }
+  return got;
 }
 
 /** The silhouette of piece v of a species (PIECE_MASK square, 1 = solid). @param {string} key @param {number} v */
