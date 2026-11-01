@@ -642,6 +642,8 @@ export function openSettings(app, lab) {
       h('div', { class: 'card parch' }, h('h3', { text: 'Sound' }), vol('master', 'Volume'), vol('sfx', 'Effects'), vol('music', 'Music'), check('muted', 'Mute everything')),
       h('div', { class: 'card parch' }, h('h3', { text: 'Display' }), h('div', { class: 'toggle-row' }, h('span', { text: 'Graphics' }), quality),
         h('div', { class: 'small muted', text: 'Automatic lowers the detail when the game runs slowly. Battery saver draws 30 frames a second without lighting. The brewing itself is identical in every mode.' }),
+        check('smoothPixels', 'Smooth pixel art'),
+        h('div', { class: 'small muted', text: 'Draws the wilds and the enclosures with every pixel the same size, their edges softened, at any window size. Off: plain sharp scaling, a little faster.' }),
         check('showFps', 'Show frame rate')),
       saveSection,
       h('div', { class: 'small muted credits', text: 'The Alchemist’s Shop — all art, sound, font and code made for this game. Runs fully offline.' }),

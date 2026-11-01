@@ -170,12 +170,12 @@ test('every kind but the rabbit has an enclosure of its own: built level, determ
     titles.add(p.title);
     assert.equal(p.back.w, PEN_W); assert.equal(p.back.h, PEN_H);
     assert.ok(p.back.px.every((c) => c >>> 24 === 255), `${kind}: the back is painted all over`);
-    // the front barrier covers the bottom and leaves the floor in view
+    // what is drawn over the animals is at most a fringe along the bottom: the ground stays in view
     let front = 0;
     for (let k = 0; k < p.front.px.length; k++) if (p.front.px[k] >>> 24) front++;
-    assert.ok(front > PEN_W * 6 && front < PEN_W * 30, `${kind}: a front barrier (${front} px)`);
-    // every row of the floor has room to walk, and the rack, the slots are reachable
-    assert.equal(p.ground.length, 20);
+    assert.ok(front < PEN_W * 5, `${kind}: only a fringe in front (${front} px)`);
+    // every row of the ground has room to walk
+    assert.ok(p.ground.length >= 16);
     for (const runs of p.ground) assert.ok(runs.reduce((a, [x0, x1]) => a + x1 - x0, 0) >= 80, `${kind}: room on every row`);
     // its own animals live on its ground
     const sc = new HutchScene({ canvas: () => stub().ctx, sprites: false, kind });

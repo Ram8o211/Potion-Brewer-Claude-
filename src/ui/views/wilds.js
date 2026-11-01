@@ -1163,7 +1163,7 @@ export class WildsView {
       ctx.globalAlpha = 1;
     }
     this.floaters = this.floaters.filter((f) => f.t < 1.2);
-    if (this.crisp) { this.crisp.enabled = this.lab.effectiveQuality() !== 'low'; this.crisp.present(); }
+    if (this.crisp) { this.crisp.enabled = this.lab.smoothPixels(); this.crisp.present(); }
     // live stock and timers, updated in place about once a second
     this._acc = (this._acc || 0) + dt;
     if (this._acc > 1) { this._acc = 0; this.tick(); }
