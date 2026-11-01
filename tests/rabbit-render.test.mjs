@@ -159,3 +159,39 @@ test('the sheet poses: standing, sitting up, leaping, grazing, startled and lyin
     }
   }
 });
+
+test('every kind but the rabbit has an enclosure of its own: built level, deterministic, with room to walk, eat and lie', async () => {
+  const { penOf, PEN_KINDS, PEN_W, PEN_H } = await import('../src/visual/env/pens.js');
+  const { KIND_IDS, kindLook } = await import('../src/game/kinds.js');
+  assert.deepEqual([...PEN_KINDS].sort(), KIND_IDS.filter((k) => k !== 'rabbit').sort(), 'one pen per caught kind');
+  const titles = new Set();
+  for (const kind of PEN_KINDS) {
+    const p = penOf(kind);
+    titles.add(p.title);
+    assert.equal(p.back.w, PEN_W); assert.equal(p.back.h, PEN_H);
+    assert.ok(p.back.px.every((c) => c >>> 24 === 255), `${kind}: the back is painted all over`);
+    // the front barrier covers the bottom and leaves the floor in view
+    let front = 0;
+    for (let k = 0; k < p.front.px.length; k++) if (p.front.px[k] >>> 24) front++;
+    assert.ok(front > PEN_W * 6 && front < PEN_W * 30, `${kind}: a front barrier (${front} px)`);
+    // every row of the floor has room to walk, and the rack, the slots are reachable
+    assert.equal(p.ground.length, 20);
+    for (const runs of p.ground) assert.ok(runs.reduce((a, [x0, x1]) => a + x1 - x0, 0) >= 80, `${kind}: room on every row`);
+    // its own animals live on its ground
+    const sc = new HutchScene({ canvas: () => stub().ctx, sprites: false, kind });
+    const entries = [0, 1, 2, 3].map((i) => ({ id: `${kind}${i}`, look: kindLook(kind, new Rng(`${kind}-${i}`)), snap: snap() }));
+    sc.sync(entries);
+    for (let k = 0; k < 300; k++) {
+      sc.update(0.1);
+      for (const e of entries) {
+        const w = sc.where(e.id);
+        if (['hop', 'zoom', 'float'].includes(w.act)) continue;
+        assert.ok(sc.onGround(w.x, w.y), `${kind}: ${e.id} ${w.act} on its floor at step ${k} (${w.x}, ${w.y})`);
+      }
+    }
+  }
+  assert.equal(titles.size, PEN_KINDS.length, 'each its own place');
+  // the same kind always gets the same pen
+  const a = penOf('toad').back.hash();
+  assert.equal(penOf('toad').back.hash(), a);
+});

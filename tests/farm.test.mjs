@@ -202,6 +202,21 @@ test('aggression comes from the effect itself, past its own threshold — degene
   assert.equal(killed.by, r.name);
 });
 
+test('each kind lives in its own enclosure: an aggressive animal only reaches those penned with it', () => {
+  const c = createColony();
+  const r = c.rabbits[0];
+  // every other animal is a cat, in the cattery
+  for (const o of c.rabbits.slice(1)) o.look = { ...o.look, kind: 'cat' };
+  const at = aggroAt(r, 'strength');
+  let attacks = 0;
+  for (let s = 0; s < 120; s++) {
+    r.marks.strength = Math.max(r.marks.strength, at + 20);
+    attacks += colonyTick(c, 1).attacks.length;
+  }
+  assert.equal(attacks, 0, 'no other rabbit in the hutch: nothing to strike');
+  assert.ok(c.rabbits.slice(1).every((o) => o.alive));
+});
+
 test('love makes a rabbit mate with the others, faster and faster, until too much of it kills', () => {
   assert.ok(mateEvery(LOVE_MATE - 1) === Infinity);
   assert.ok(mateEvery(90) < mateEvery(50) && mateEvery(50) < mateEvery(LOVE_MATE));

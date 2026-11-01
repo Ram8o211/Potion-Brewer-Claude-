@@ -39,6 +39,7 @@
 // with the hutch full) it dies, and its body is carried home with a tap, for
 // its remains.
 
+import { CrispCanvas } from '../../rendering/crisp.js';
 import { h, btn, clear, toast } from '../dom.js';
 import { icon } from '../icons.js';
 import { audio } from '../../audio/audio.js';
@@ -219,7 +220,10 @@ export class WildsView {
     this.foot = h('div', { class: 'small muted wilds-foot' });
     // the scene and its caption form one column, so a landscape phone can
     // keep the scene in view beside the deposit list
-    el.append(this.tabs, h('div', { class: 'wilds-scene' }, h('div', { class: 'scene-wrap' }, this.view), h('div', { class: 'scene-bar' }, this.info, this.zoomCtl)), h('div', { class: 'wilds-list' }, this.sky, this.list, this.foot));
+    const wrap = h('div', { class: 'scene-wrap' }, this.view);
+    el.append(this.tabs, h('div', { class: 'wilds-scene' }, wrap, h('div', { class: 'scene-bar' }, this.info, this.zoomCtl)), h('div', { class: 'wilds-list' }, this.sky, this.list, this.foot));
+    // shown at any zoom with every art pixel the same size, its edges anti-aliased (rendering/crisp.js)
+    this.crisp = new CrispCanvas(this.canvas, wrap, this.view);
     // the last moment the player touched this room (pre-generation waits for a pause)
     this.lastInput = 0;
     this.warmTimer = 0;
@@ -1159,6 +1163,7 @@ export class WildsView {
       ctx.globalAlpha = 1;
     }
     this.floaters = this.floaters.filter((f) => f.t < 1.2);
+    if (this.crisp) { this.crisp.enabled = this.lab.effectiveQuality() !== 'low'; this.crisp.present(); }
     // live stock and timers, updated in place about once a second
     this._acc = (this._acc || 0) + dt;
     if (this._acc > 1) { this._acc = 0; this.tick(); }
