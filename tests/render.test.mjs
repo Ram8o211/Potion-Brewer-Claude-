@@ -4,8 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { refLookup, PHASE } from './helpers.mjs';
 import { Simulation } from '../src/simulation/world.js';
-import { SIM } from '../src/simulation/constants.js';
-import { FluidRenderer } from '../src/rendering/fluid.js';
+import { FluidRenderer, dropletCell } from '../src/rendering/fluid.js';
 import { EFFECTS, NE } from '../src/alchemy/effects.js';
 import { PIECE_ART, registerSpecies, ensurePieces, forgetPieces } from '../src/visual/pieces.js';
 import { dominantColour } from '../src/rendering/brew-palette.js';
@@ -238,7 +237,7 @@ test('parcels of different colour and texture meet in gradients, not hard edges'
     // the brew is drawn in droplet-sized cells, each with its own light or
     // dark tone: compare neighbouring 2×2-cell windows, so the droplets'
     // grain averages out and what is left is how the parcels meet
-    const PQ = Math.max(2, Math.round(SIM.SPACING * view.scale * 0.6)), d = fr.image.data;
+    const PQ = dropletCell(view.scale), d = fr.image.data;
     /** mean colour of a 2×2-cell window, or null where it isn't all brew @param {number} x @param {number} y */
     const win = (x, y) => {
       let r = 0, g = 0, b = 0, n = 0;
