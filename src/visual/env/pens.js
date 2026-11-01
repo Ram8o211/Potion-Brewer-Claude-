@@ -31,7 +31,7 @@ export const GROUND_Y0 = 69;
 const GROUND_Y1 = 86;
 
 /** Version of the pens' painting (names caches only). */
-export const PENS_VERSION = 2;
+export const PENS_VERSION = 3;
 
 /**
  * @typedef {Object} Pen
@@ -49,25 +49,25 @@ export const PENS_VERSION = 2;
 
 /** Ramps of the farm's materials, darkest first. */
 const P = {
-  wood: ['#2e1c14', '#4a2e1e', '#6a4428', '#855a34', '#a07444', '#b88c58'].map(col),
-  oak: ['#24160f', '#3a2618', '#523622', '#6a482e', '#82603e', '#9a7650'].map(col),
-  straw: ['#5a3e16', '#8a6420', '#b4862c', '#d4a63a', '#ecc85a', '#f8e08e'].map(col),
-  thatch: ['#4a3418', '#7a5a2a', '#a07a3a', '#c09a4e', '#d8b866', '#ecd28a'].map(col),
-  stone: ['#2a2a30', '#44444c', '#5a5a62', '#707078', '#8a8a90', '#a4a4a8'].map(col),
-  brick: ['#2a1612', '#48261c', '#643628', '#7c4632', '#945a40', '#ac7050'].map(col),
-  plaster: ['#4a3c48', '#625262', '#7a6a7a', '#908090', '#a698a4', '#bcb0b8'].map(col),
-  lime: ['#8a8278', '#a49c90', '#bcb4a6', '#d0c8b8', '#e0d8c8', '#eee8da'].map(col),
-  earth: ['#24160e', '#3a2616', '#4e3420', '#64442a', '#7a5636', '#906a44'].map(col),
-  dirt: ['#3a2a1e', '#523c2a', '#6a4e36', '#806042', '#967450', '#aa8862'].map(col),
-  grass: ['#1e3a1e', '#2a5226', '#3a6a2e', '#4e8436', '#68a040', '#86b850'].map(col),
-  leaf: ['#16301e', '#204226', '#2e5a30', '#40743a', '#5a9044', '#7aaa52'].map(col),
-  moss: ['#2a4a1e', '#3e6a26', '#5a8a30', '#78a83a', '#98c04a', '#b4d460'].map(col),
-  snow: ['#8a9ab4', '#a8b6cc', '#c4d0e0', '#dce4ee', '#eef2f8', '#ffffff'].map(col),
-  water: ['#14284a', '#1e3a66', '#2a5084', '#3a6aa0', '#6a9ac8', '#b8d8f0'].map(col),
-  tile: ['#3a1410', '#5a2018', '#7a3022', '#94402c', '#ac5438', '#c46c48'].map(col),
-  iron: ['#14141a', '#24242c', '#363640', '#4a4a56'].map(col),
-  red: ['#3a0e10', '#5e1a1a', '#8a2a24', '#a83c2c'].map(col),
-  ink: col('#140c10'),
+  wood: ['#1e1018', '#40241a', '#68401f', '#8e5c2c', '#b88242', '#e0b070'].map(col),
+  oak: ['#160c14', '#2e1c1a', '#4a3020', '#684828', '#8c6a3c', '#b4945c'].map(col),
+  straw: ['#4a2a12', '#82561a', '#b8862a', '#e0ae3a', '#f6d260', '#fff2b0'].map(col),
+  thatch: ['#3a2414', '#6e4c22', '#9c7432', '#c49e48', '#e2c46a', '#f8e4a0'].map(col),
+  stone: ['#1a1a24', '#363844', '#525460', '#6e7078', '#92929a', '#bcbcc0'].map(col),
+  brick: ['#1e0e10', '#42201a', '#6a3224', '#8a4630', '#ae6242', '#d08a60'].map(col),
+  plaster: ['#3a2c3c', '#584658', '#766676', '#968696', '#b4a8b2', '#d2c8cc'].map(col),
+  lime: ['#6e6a66', '#948e84', '#b4ac9e', '#cec6b4', '#e4dccc', '#f8f4e8'].map(col),
+  earth: ['#180c0c', '#301c14', '#4c3020', '#6a462a', '#8a6238', '#ae8450'].map(col),
+  dirt: ['#2a1a1a', '#4a3226', '#6a4c34', '#8a6644', '#ac8656', '#cca870'].map(col),
+  grass: ['#122a1c', '#1e4a24', '#30682a', '#4a8a30', '#6eae3a', '#9ccc52'].map(col),
+  leaf: ['#0e2218', '#183a22', '#265630', '#3a7438', '#5a9840', '#88bc56'].map(col),
+  moss: ['#1e3a1a', '#336022', '#4e862a', '#72aa34', '#9ccc44', '#ccec6c'].map(col),
+  snow: ['#6a7a98', '#94a4c0', '#bccadc', '#dae2ee', '#eef2f8', '#ffffff'].map(col),
+  water: ['#0c1c3a', '#16305c', '#22487e', '#36649e', '#6a9ccc', '#c8e6fa'].map(col),
+  tile: ['#2a0c0e', '#521a16', '#7a2a20', '#9c3e2a', '#c05a3a', '#e08458'].map(col),
+  iron: ['#0c0c12', '#1e1e28', '#34343e', '#52525e'].map(col),
+  red: ['#2e0a0e', '#5a1418', '#8e2622', '#c4402e'].map(col),
+  ink: col('#100810'),
 };
 
 const clampI = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -128,6 +128,34 @@ function flakes(cv, y1, seed, n) {
   }
 }
 
+// ------------------------------------------------------------------ separation
+
+/**
+ * Draw a piece of the scene so it stands apart from what is behind it:
+ * whatever `draw` paints is outlined — a dark contour on what lies round it,
+ * deeper below and to the right where its shadow falls (the light comes
+ * from the upper left), fainter above and to the left — so wood against
+ * wood, hay against earth or stone against stone never run together.
+ * @param {Canvas} cv @param {() => void} draw
+ */
+function layer(cv, draw) {
+  const px = cv.pix.px, W = cv.W, H = cv.H, before = px.slice();
+  draw();
+  const m = new Uint8Array(W * H);
+  for (let k = 0; k < m.length; k++) if (px[k] !== before[k]) m[k] = 1;
+  const shade = col('#0c0610');
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const k = y * W + x;
+    if (m[k]) continue;
+    // its shadow, cast down and to the right
+    if ((x > 0 && m[k - 1]) || (y > 0 && m[k - W]) || (x > 0 && y > 0 && m[k - W - 1])) cv.paint(k, mixPacked(px[k], shade, 0.5));
+    else if ((x < W - 1 && m[k + 1]) || (y < H - 1 && m[k + W])) cv.paint(k, mixPacked(px[k], shade, 0.28));
+  }
+}
+
+/** A drawing function made into one that draws a piece standing apart (layer). @template {Function} F @param {F} fn @returns {F} */
+const prop = (fn) => /** @type {any} */ ((cv, ...a) => { let out; layer(cv, () => { out = fn(cv, ...a); }); return out; });
+
 // ------------------------------------------------------------------ timber
 
 /**
@@ -137,12 +165,24 @@ function flakes(cv, y1, seed, n) {
  */
 function wood(cv, x0, y0, x1, y1, R, o = {}) {
   const v = !!o.vertical, seed = o.seed ?? 7, th = Math.round(v ? x1 - x0 : y1 - y0);
+  // each piece its own shade of the wood, a little lighter or darker than the next
+  const tone = Math.floor(hash2(Math.round(x0), Math.round(y0), seed + 77) * 3) - 1;
   fill(cv, x0, y0, x1, y1, (x, y) => {
     const along = v ? y : x, across = Math.floor(v ? x - x0 : y - y0);
-    let i = 2;
-    if (across === 0) i = 4; else if (across === th - 1) i = 0; else if (across === 1 && th > 3) i = 3;
-    else if (noise2(along * 0.18, (across + seed) * 1.7, seed) > 0.66) i = 1;
-    if (i >= 2 && hash2(x, y, seed) > 0.985) i = 1;
+    if (across === 0) return R[5];
+    if (across === th - 1) return R[0];
+    let i = 2 + (tone > 0 && th > 2 ? 1 : 0);
+    if (across === 1 && th > 3) i = 4;
+    else {
+      // grain: dark streaks and pale ones running along it
+      const g = noise2(along * 0.2, (across + seed) * 1.9, seed);
+      if (g > 0.68) i = 1; else if (g < 0.2) i = Math.min(4, i + 1);
+      if (tone < 0 && i > 1) i--;
+    }
+    // a knot now and then: a dark eye ringed lighter
+    const kn = hash2(Math.floor(along / 9), Math.floor(across / 4), seed + 3);
+    if (kn > 0.93 && th > 3 && across > 0 && across < th - 1 && along % 9 === 4) return R[0];
+    if (i >= 2 && hash2(x, y, seed) > 0.975) i = 1;
     return R[i];
   });
 }
@@ -161,7 +201,7 @@ function brace(cv, ax, ay, bx, by, w, R) {
 }
 
 /** A timber frame across the top: a beam, posts down to the back line, knee braces. */
-function frame(cv, beamY, posts, R, o = {}) {
+function frame_(cv, beamY, posts, R, o = {}) {
   wood(cv, 0, beamY, cv.W, beamY + 5, R, { seed: 11 });
   for (const x of posts) {
     wood(cv, x - 2, beamY + 5, x + 3, o.foot ?? BACK, R, { vertical: true, seed: x });
@@ -174,7 +214,7 @@ function frame(cv, beamY, posts, R, o = {}) {
 }
 
 /** A lantern hanging on a chain from row y0, its glass at (x, y), its light on everything round it. */
-function lantern(cv, x, y0, y) {
+function lantern_(cv, x, y0, y) {
   for (let j = y0; j < y - 3; j++) cv.set(x, j, (j & 1) ? P.iron[2] : P.iron[1]);
   rect(cv, x - 2, y - 3, x + 3, y - 1, P.iron[1]);
   cv.set(x - 1, y - 3, P.iron[3]);
@@ -188,7 +228,7 @@ function lantern(cv, x, y0, y) {
 }
 
 /** A rail fence along the back: posts with caps lit, `rails` rails between them. */
-function railFence(cv, x0, x1, base, h, R, o = {}) {
+function railFence_(cv, x0, x1, base, h, R, o = {}) {
   const gap = o.gap ?? 26, rails = o.rails ?? 2;
   for (let r = 0; r < rails; r++) {
     const y = base - h + 4 + Math.round((r * (h - 9)) / Math.max(1, rails - 1));
@@ -202,7 +242,7 @@ function railFence(cv, x0, x1, base, h, R, o = {}) {
 }
 
 /** A tall fence of boards side by side, on posts and two rails. */
-function boardFence(cv, x0, x1, top, base, R, seed) {
+function boardFence_(cv, x0, x1, top, base, R, seed) {
   for (let x = x0; x < x1; x += 6) {
     const t = top + (hash2(x, 1, seed) > 0.6 ? 1 : 0);
     wood(cv, x, t, x + 6, base, R, { vertical: true, seed: x + seed });
@@ -214,40 +254,42 @@ function boardFence(cv, x0, x1, top, base, R, seed) {
 
 /** A board wainscot: upright boards of uneven height along the wall's foot. */
 function wainscot(cv, x0, x1, top, base, R, seed) {
+  // it is the wall: a shade deeper than the furniture standing against it
+  const D = R.map((c) => mixPacked(c, col('#140a14'), 0.3));
   for (let x = x0; x < x1; x += 5) {
     const t = top + Math.floor(hash2(x, 2, seed) * 3);
-    wood(cv, x, t, x + 5, base, R, { vertical: true, seed: x + seed });
+    wood(cv, x, t, x + 5, base, D, { vertical: true, seed: x + seed });
   }
 }
 
 /** A post wound with rope. */
-function ropePost(cv, x, top, base) {
+function ropePost_(cv, x, top, base) {
   wood(cv, x - 2, top, x + 3, base, P.wood, { vertical: true, seed: x });
   for (let y = top + 2; y < base - 1; y += 3) for (let i = -2; i < 3; i++) { cv.set(x + i, y, P.straw[i < 0 ? 4 : 3]); cv.set(x + i, y + 1, P.straw[2]); }
 }
 
 /** A table: a top of planks on legs. */
-function table(cv, x0, x1, top, base, R) {
+function table_(cv, x0, x1, top, base, R) {
   for (const lx of [x0 + 2, x1 - 6]) wood(cv, lx, top + 3, lx + 4, base, R, { vertical: true, seed: lx });
   wood(cv, x0, top, x1, top + 4, R, { seed: 21 });
   rect(cv, x0, top + 4, x1, top + 5, R[0]);
 }
 
 /** A shelf on two brackets. */
-function shelf(cv, x0, x1, y, R) {
+function shelf_(cv, x0, x1, y, R) {
   wood(cv, x0, y, x1, y + 3, R, { seed: x0 });
   for (const bx of [x0 + 4, x1 - 8]) wood(cv, bx, y + 3, bx + 3, y + 9, R, { vertical: true, seed: bx });
 }
 
 /** A bundle of red cloth, a loaf, a pot: small things on a shelf or a table. @param {'cloth'|'bread'|'pot'} what */
-function item(cv, x, y, what) {
+function item_(cv, x, y, what) {
   if (what === 'cloth') { rect(cv, x, y - 3, x + 10, y, P.red[2]); rect(cv, x, y - 3, x + 10, y - 2, P.red[3]); rect(cv, x, y - 1, x + 10, y, P.red[1]); }
   else if (what === 'bread') { for (let i = 0; i < 6; i++) { cv.set(x + i, y - 1, P.straw[3]); if (i > 0 && i < 5) cv.set(x + i, y - 2, P.straw[4]); } }
   else { rect(cv, x, y - 5, x + 6, y, P.iron[2]); rect(cv, x + 1, y - 5, x + 5, y - 4, P.iron[3]); rect(cv, x - 1, y - 5, x + 7, y - 4, P.iron[1]); }
 }
 
 /** An upright barrel: staves rounded by the light, two iron hoops. */
-function barrel(cv, cx, base, w, h) {
+function barrel_(cv, cx, base, w, h) {
   fill(cv, cx - w / 2, base - h, cx + w / 2, base, (x, y) => {
     const u = (x + 0.5 - cx) / (w / 2), j = base - y;
     let i = u < -0.5 ? 3 : u < 0.1 ? 4 : u < 0.6 ? 2 : 1;
@@ -259,7 +301,7 @@ function barrel(cv, cx, base, w, h) {
 }
 
 /** A crate: a frame of boards with a cross brace. */
-function crate(cv, x0, base, s, R = P.wood) {
+function crate_(cv, x0, base, s, R = P.wood) {
   const y0 = base - s;
   fill(cv, x0, y0, x0 + s, base, (x, y) => {
     const e = Math.min(x - x0, x0 + s - 1 - x, y - y0, base - 1 - y);
@@ -271,7 +313,7 @@ function crate(cv, x0, base, s, R = P.wood) {
 }
 
 /** A heap of hay: a lumpy mound of strands, lit on top, a few loose wisps round it. */
-function hay(cv, cx, base, w, h, seed) {
+function hay_(cv, cx, base, w, h, seed) {
   const hw = w / 2;
   for (let x = Math.floor(cx - hw - 3); x <= cx + hw + 3; x++) {
     const u = (x + 0.5 - cx) / hw;
@@ -309,7 +351,7 @@ function thatch(cv, x0, y0, x1, y1, t, seed) {
 }
 
 /** An open-fronted shelter: a thatched roof sloping one way, posts, a dark plank back, hay inside. */
-function shelter(cv, x0, x1, base, h, seed, o = {}) {
+function shelter_(cv, x0, x1, base, h, seed, o = {}) {
   const top = base - h;
   // the inside: a dark plank back wall and its shade
   fill(cv, x0 + 3, top + 4, x1 - 3, base, (x, y) => {
@@ -328,7 +370,7 @@ function shelter(cv, x0, x1, base, h, seed, o = {}) {
 }
 
 /** A water trough: a box of planks, the water's surface catching the sky. */
-function trough(cv, x0, x1, base, h) {
+function trough_(cv, x0, x1, base, h) {
   wood(cv, x0, base - h, x1, base, P.wood, { seed: 9 });
   rect(cv, x0 + 2, base - h, x1 - 2, base - h + 2, P.water[3]);
   rect(cv, x0 + 3, base - h, x1 - 6, base - h + 1, P.water[5]);
@@ -336,7 +378,7 @@ function trough(cv, x0, x1, base, h) {
 }
 
 /** A dog house: plank walls, a pitched roof (snowed on, or tiled), an arched dark door. */
-function doghouse(cv, cx, base, w, h, o = {}) {
+function doghouse_(cv, cx, base, w, h, o = {}) {
   const x0 = cx - w / 2, x1 = cx + w / 2, top = base - h;
   fill(cv, x0, top, x1, base, (x, y) => P.dirt[(y - top) % 4 === 0 ? 3 : (x - x0) > w * 0.7 ? 4 : 5]);
   // the door
@@ -368,6 +410,9 @@ function bricks(cv, x0, y0, x1, y1, R, seed, o = {}) {
     const t = hash2(b, row, seed);
     let i = t < 0.25 ? 1 : t > 0.8 ? 3 : 2;
     if (at === 0 && bx < bw - 1) i++;
+    // the brick's own grain: a few flecks lighter and darker
+    const g = hash2(x, y, seed + 4);
+    if (g > 0.93) i++; else if (g < 0.06) i--;
     return R[clampI(i, 0, 5)];
   });
 }
@@ -432,7 +477,7 @@ function burrow(cv, cx, base, w, h, seed) {
 }
 
 /** A pond in a basin of stone blocks, its water still. */
-function pond(cv, x0, x1, top, base, seed) {
+function pond_(cv, x0, x1, top, base, seed) {
   fill(cv, x0, top, x1, base, (x, y) => {
     const d = y - top;
     let i = d === 0 ? 4 : d < 3 ? 3 : d < 6 ? 2 : 1;
@@ -443,7 +488,7 @@ function pond(cv, x0, x1, top, base, seed) {
 }
 
 /** A hand pump on a post, spout and handle, a bucket under it. */
-function pump(cv, x, base) {
+function pump_(cv, x, base) {
   wood(cv, x, base - 22, x + 4, base, P.wood, { vertical: true, seed: x });
   rect(cv, x - 1, base - 23, x + 5, base - 21, P.iron[2]);
   rect(cv, x - 8, base - 21, x, base - 19, P.iron[2]);
@@ -493,7 +538,7 @@ function foliage(cv, y0, y1, seed) {
 }
 
 /** A raised planter of boards with greens growing in it. */
-function planter(cv, x0, x1, base, h, seed) {
+function planter_(cv, x0, x1, base, h, seed) {
   const r = new Rng(seed);
   for (let x = x0 + 2; x < x1 - 2; x += 4) {
     const ph = r.int(7, 13);
@@ -509,7 +554,7 @@ function planter(cv, x0, x1, base, h, seed) {
 }
 
 /** A bench of planks. */
-function bench(cv, x0, x1, base) {
+function bench_(cv, x0, x1, base) {
   wood(cv, x0, base - 8, x1, base - 5, P.wood, { seed: 17 });
   for (const lx of [x0 + 2, x1 - 5]) wood(cv, lx, base - 5, lx + 3, base, P.wood, { vertical: true, seed: lx });
   wood(cv, x0 + 1, base - 13, x0 + 4, base - 8, P.wood, { vertical: true, seed: 2 });
@@ -588,9 +633,16 @@ function ground(cv, y0, style, seed, o = {}) {
       } else if (style === 'snow') i += 2;
       if (style === 'soil' && d % 5 === 0) i = Math.max(0, i - 1);
       if (style === 'soil') i++;
+      // single-pixel specks of lighter and darker, so the ground reads as a texture
+      const g = hash2(x, y, seed + 2);
+      if (g > 0.955) i += 2; else if (g < 0.04) i -= 2;
       c = R[clampI(i, 0, 5)];
-      if (style !== 'snow' && style !== 'grass' && hash2(x >> 1, y >> 1, seed + 4) > 0.985) c = P.stone[3];
-      if (o.straw && hash2(x, y, seed + 6) > 0.975) c = P.straw[hash2(x, y, seed + 7) > 0.5 ? 4 : 3];
+      if (style !== 'snow' && style !== 'grass') {
+        // pebbles: two pixels, lit above, dark below
+        const pb = hash2(x >> 1, (y - 1) >> 1, seed + 4);
+        if (pb > 0.975) c = (y & 1) ? P.stone[1] : P.stone[pb > 0.9875 ? 5 : 4];
+      }
+      if (o.straw && hash2(x, y, seed + 6) > 0.972) c = P.straw[hash2(x, y, seed + 7) > 0.5 ? 5 : 3];
     }
     // in the shade of the back
     if (d < 5) c = mixPacked(c, 0xff000000, (5 - d) * 0.07);
@@ -604,6 +656,26 @@ function fringe(fg, style, seed) {
   else if (style === 'snow') for (let x = 0; x < fg.W; x++) { const h = 1 + Math.floor(patch(x, 0, seed, 0.3) * 3); for (let j = 1; j <= h; j++) fg.set(x, fg.H - j, P.snow[j === h ? 5 : 4]); }
 }
 
+// each piece of furniture and scenery drawn standing apart from what is behind it
+const frame = prop(frame_);
+const lantern = prop(lantern_);
+const railFence = prop(railFence_);
+const boardFence = prop(boardFence_);
+const ropePost = prop(ropePost_);
+const table = prop(table_);
+const shelf = prop(shelf_);
+const item = prop(item_);
+const barrel = prop(barrel_);
+const crate = prop(crate_);
+const hay = prop(hay_);
+const shelter = prop(shelter_);
+const trough = prop(trough_);
+const doghouse = prop(doghouse_);
+const pump = prop(pump_);
+const planter = prop(planter_);
+const bench = prop(bench_);
+const pond = prop(pond_);
+
 // ------------------------------------------------------------------ the pens
 
 /** @typedef {{cv:Canvas, fg:Canvas, seed:number, block:(x0:number, y0:number, x1:number, y1:number)=>void}} Ctx */
@@ -615,8 +687,12 @@ const PENS = {
     compose({ cv, seed }) {
       // a loft: a plastered wall under the dark of the roof, a frame of beams
       fill(cv, 0, 0, cv.W, BACK, (x, y) => {
-        const m = patch(x, y, seed, 0.06);
-        return P.plaster[m > 0.6 ? 4 : m > 0.42 ? 3 : 2];
+        // plaster in patches, flecked, a hairline crack here and there
+        const m = patch(x, y, seed, 0.06), g = hash2(x, y, seed + 5);
+        let i = m > 0.6 ? 4 : m > 0.42 ? 3 : 2;
+        if (g > 0.95) i++; else if (g < 0.05) i--;
+        if (Math.abs(noise2(x * 0.05, y * 0.2, seed + 9) - 0.5) < 0.004 && hash2(x >> 3, y >> 3, seed) > 0.5) i = 1;
+        return P.plaster[clampI(i, 0, 5)];
       });
       fill(cv, 0, 0, cv.W, 24, (x, y) => (y < 7 + Math.floor(patch(x, 0, seed + 3, 0.2) * 16 * (hash2(x >> 2, 1, seed) > 0.4 ? 1 : 0.4)) ? col('#24181e') : 0));
       wainscot(cv, 0, cv.W, 40, BACK, P.oak, seed);

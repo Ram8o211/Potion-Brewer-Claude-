@@ -39,6 +39,7 @@
 // with the hutch full) it dies, and its body is carried home with a tap, for
 // its remains.
 
+import { punchSprite } from '../../rendering/punch.js';
 import { CrispCanvas } from '../../rendering/crisp.js';
 import { h, btn, clear, toast } from '../dom.js';
 import { icon } from '../icons.js';
@@ -168,6 +169,8 @@ export class WildsView {
     this.gore = new Map();
     /** the frame a rabbit is drawn in before it is set into the scene @type {HTMLCanvasElement|null} */
     this.bunny = null;
+    /** that frame at the size it is set into the scene, made to stand out @type {HTMLCanvasElement|null} */
+    this.bunnyHalf = null;
     /** hints given once a session (a rabbit down, the hutch full) @type {Set<string>} */
     this.told = new Set();
     /** the pointer pressed on the scene: where it is, where it came down (sx, sy), how far it has gone (CSS px), and in watering mode where it last watered and how many drank @type {{id:number, type:string, x:number, y:number, cx:number, cy:number, sx:number, sy:number, dist:number, water:boolean, wx:number, wy:number, drank:number, near:boolean, pours:number}|null} */
@@ -924,7 +927,17 @@ export class WildsView {
       const x = Math.round(r.x), y = Math.round(r.y);
       b.clearRect(0, 0, RABBIT_W, RABBIT_H);
       drawRabbit(b, r.look, snap, r.t, r.react, { x: 0, y: 0, clear: false, floor: false, hop: false, mirror: r.face < 0, pose, flash: false });
-      ctx.drawImage(this.bunny, 0, 0, RABBIT_W, RABBIT_H, x - RABBIT_W / 4, y - 16, RABBIT_W / 2, RABBIT_H / 2);
+      // at half size, with a pixel of margin, its tones spread and its outline inked so it stands out from the scenery
+      const hw = RABBIT_W / 2 + 4, hh = RABBIT_H / 2 + 4;
+      if (!this.bunnyHalf) { this.bunnyHalf = document.createElement('canvas'); this.bunnyHalf.width = hw; this.bunnyHalf.height = hh; }
+      const hb = /** @type {CanvasRenderingContext2D} */ (this.bunnyHalf.getContext('2d', { willReadFrequently: true }));
+      hb.imageSmoothingEnabled = false;
+      hb.clearRect(0, 0, hw, hh);
+      hb.drawImage(this.bunny, 0, 0, RABBIT_W, RABBIT_H, 2, 2, RABBIT_W / 2, RABBIT_H / 2);
+      const img = hb.getImageData(0, 0, hw, hh);
+      punchSprite(img.data, hw, hh);
+      hb.putImageData(img, 0, 0);
+      ctx.drawImage(this.bunnyHalf, x - RABBIT_W / 4 - 2, y - 18);
       // its wounds: dark red where it was struck, wet and bright at the middle, running down its coat
       const lying = r.dead || r.down;
       r.wounds.forEach(([wx, wy], i) => {
