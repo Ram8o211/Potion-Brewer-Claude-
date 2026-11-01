@@ -70,6 +70,8 @@ export class SpeciesTable {
     this.arcMag = new Uint8Array(S);
     /** 1 = an awakened form */
     this.isAwake = new Uint8Array(S);
+    /** an awakened form's gain over its dormant base (1 for everything else) */
+    this.arcGain = f();
     /** slot of the awakened form of a magical slot (-1 until first needed) */
     this.awakeSlot = new Int16Array(S).fill(-1);
     /** a supplied-whole solid ingredient (roots, stones…), as opposed to a powder */
@@ -161,6 +163,7 @@ export class SpeciesTable {
     this.arcMag[slot] = mag ? 1 : 0;
     this.arcThr[slot] = mag ? def.arcane.thr : 0;
     this.isAwake[slot] = def.awakened ? 1 : 0;
+    this.arcGain[slot] = def.awakened && def.arcane && def.arcane.gain > 0 ? def.arcane.gain : 1;
     this.awakeSlot[slot] = -1;
     this.isWhole[slot] = def.form === 'solid' ? 1 : 0;
     this.look[slot] = solidLook(def);

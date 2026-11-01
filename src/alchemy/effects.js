@@ -113,14 +113,31 @@ export function fromRecord(rec) {
 }
 
 /**
+ * Switch to zero every channel of `e` whose *dormant* strength — what it
+ * would be with nothing awakened — is under the cut-off, in place. A trace
+ * that was already cut off cannot come back by being awakened: awakening
+ * multiplies a substance's magic, and nothing multiplied from nothing is
+ * still nothing.
+ * @param {Float64Array|number[]} e @param {ArrayLike<number>} dormant
+ */
+export function cutoffDormant(e, dormant) {
+  for (let k = 0; k < NE; k++) if (Math.abs(dormant[k]) < EFFECT_CUTOFF) e[k] = 0;
+  return e;
+}
+
+/**
  * Raw (pre-interaction) effect vector of one composition at temperature T,
- * counting only what is extracted into solution.
+ * counting only what is extracted into solution. With `dormant`, also the
+ * same vector with every awakened substance counted at its dormant strength
+ * (its effects divided by its gain).
  * @param {import('../reactions/species.js').SpeciesTable} sp
  * @param {ArrayLike<number>} comp @param {number} off
  * @param {number} T @param {Float64Array|number[]} out length NE (overwritten)
+ * @param {Float64Array|number[]} [dormant] length NE (overwritten)
  */
-export function extractedEffects(sp, comp, off, T, out) {
+export function extractedEffects(sp, comp, off, T, out, dormant) {
   for (let k = 0; k < NE; k++) out[k] = 0;
+  if (dormant) for (let k = 0; k < NE; k++) dormant[k] = 0;
   const n = sp.count;
   let tot = 0, liquid = 0, nl = 0;
   for (let s = 0; s < n; s++) {
@@ -147,13 +164,17 @@ export function extractedEffects(sp, comp, off, T, out) {
       avail = dissolved + (solvent / tot > 0.05 ? LEACH_WET : LEACH_DRY) * (f - dissolved);
     }
     const base = s * NE;
+    const dg = dormant ? 1 / (sp.arcGain[s] || 1) : 0;
     for (let k = 0; k < NE; k++) {
       const e = sp.eff[base + k];
-      if (e !== 0) out[k] += avail * e;
+      if (e === 0) continue;
+      out[k] += avail * e;
+      if (dormant) dormant[k] += avail * e * dg;
     }
   }
   const inv = 1 / tot;
   for (let k = 0; k < NE; k++) out[k] *= inv;
+  if (dormant) for (let k = 0; k < NE; k++) dormant[k] *= inv;
   return liquid / tot;
 }
 /** scratch: liquid slots of the composition being extracted */
@@ -233,19 +254,23 @@ export function interact(e, laws, trace) {
 }
 
 const scratch = new Float64Array(NE);
+const dormantScratch = new Float64Array(NE);
 
 /**
  * Full effect vector of a composition (one particle, or a homogeneous bulk).
+ * A channel under the cut-off before anything awakened stays at zero after.
  * @param {import('../reactions/species.js').SpeciesTable} sp
  * @param {ArrayLike<number>} comp @param {number} off @param {number} T
  * @param {Resonance[]} laws @param {Float64Array|number[]} out
  * @param {Float64Array|number[]} [trace]
+ * @param {Float64Array|number[]} [dormant] receives the dormant raw vector (see extractedEffects)
  */
-export function compositionEffects(sp, comp, off, T, laws, out, trace) {
-  extractedEffects(sp, comp, off, T, scratch);
+export function compositionEffects(sp, comp, off, T, laws, out, trace, dormant) {
+  const d = dormant || dormantScratch;
+  extractedEffects(sp, comp, off, T, scratch, d);
   for (let k = 0; k < NE; k++) out[k] = scratch[k];
   interact(out, laws, trace);
-  return out;
+  return cutoffDormant(out, d);
 }
 
 /**
@@ -262,14 +287,16 @@ export function theoryOf(parts, lookup, knownLaws = []) {
   let tot = 0;
   for (const p of parts) tot += p.ml;
   if (tot <= 0) return v;
+  const dormant = new Float64Array(NE);
   for (const p of parts) {
     const d = lookup(p.id);
     // a rabbit's remains are unknown to the guild: they only dilute the theory
     if (!d || d.remains) continue;
     const ev = effectVector(d);
-    for (let k = 0; k < NE; k++) v[k] += (ev[k] * p.ml) / tot;
+    const dg = d.awakened && d.arcane && d.arcane.gain > 0 ? 1 / d.arcane.gain : 1;
+    for (let k = 0; k < NE; k++) { v[k] += (ev[k] * p.ml) / tot; dormant[k] += (ev[k] * dg * p.ml) / tot; }
   }
-  return interact(v, knownLaws);
+  return cutoffDormant(interact(v, knownLaws), dormant);
 }
 
 /**
@@ -282,19 +309,19 @@ export function sampleEffects(sim, indices) {
   const p = sim.p, sp = sim.species, laws = sim.laws || [], S = p.S;
   const sum = new Float64Array(NE);
   const trace = new Float64Array(laws.length);
-  const one = new Float64Array(NE);
+  const one = new Float64Array(NE), dorm = new Float64Array(NE), dsum = new Float64Array(NE);
   const n = indices.length;
   for (let q = 0; q < n; q++) {
     const i = indices[q];
-    compositionEffects(sp, p.comp, i * S, p.temp[i], laws, one, trace);
-    for (let k = 0; k < NE; k++) sum[k] += one[k];
+    compositionEffects(sp, p.comp, i * S, p.temp[i], laws, one, trace, dorm);
+    for (let k = 0; k < NE; k++) { sum[k] += one[k]; dsum[k] += dorm[k]; }
   }
   if (n) {
-    for (let k = 0; k < NE; k++) sum[k] /= n;
+    for (let k = 0; k < NE; k++) { sum[k] /= n; dsum[k] /= n; }
     for (let r = 0; r < trace.length; r++) trace[r] /= n;
   }
-  // a sip may average traces below the cut-off: those do nothing either
-  cutoffEffects(sum);
+  // a sip may average traces below the cut-off, dormant or awakened: those do nothing either
+  cutoffDormant(cutoffEffects(sum), dsum);
   return { effects: sum, resonance: trace };
 }
 
