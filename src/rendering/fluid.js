@@ -23,7 +23,8 @@
 //     many as its share there, tiny pixel motes in the effect's own
 //     palette and motion: rose motes for love, embers for fire, ice
 //     crystals for frost, a lime fizz for acid… (potion-fx.js);
-//   • liquid reads as pixel particles: each particle carries its own 1–2 px
+//   • liquid reads as pixel particles: it is drawn in droplet-sized cells,
+//     one flat colour each, and every particle gives its cell its own
 //     speck of lighter or darker brew (a few twinkle), and depth shading
 //     falls in ordered-dither bands;
 //   • liquids have depth: light crosses more of the brew the deeper it is,
@@ -302,12 +303,11 @@ export class FluidRenderer {
         // a few catch the light and twinkle
         if (!isPaste) {
           const hd = hash01(seed * 7 + 3), hs = hash01(seed * 13 + 5);
-          const tone = hd < 0.07 ? 2 : hd < 0.5 ? -1 + hd * 1.2 : (hd - 0.5) * 2;
-          const sz = hs > 0.4 ? 2 : 1, dx0 = Math.floor(fx - sz * 0.5), dy0 = Math.floor(fy - sz * 0.5);
-          for (let yy = dy0; yy < dy0 + sz; yy++) {
-            if (yy < 0 || yy >= h) continue;
-            for (let xx = dx0; xx < dx0 + sz; xx++) if (xx >= 0 && xx < w) dot[yy * w + xx] = 3 + tone + (tone === 2 ? hs * 0.5 : 0);
-          }
+          const tone = hd < 0.07 ? 2 : hd < 0.5 ? -1 + hd * 1.6 : (hd - 0.5) * 2;
+          // its cell's centre, where the compose pass reads the cell from
+          const PQ = Math.max(2, Math.round(SIM.SPACING * s * 0.6));
+          const qx = Math.floor((fx + bx) / PQ) * PQ - bx + (PQ >> 1), qy = Math.floor((fy + by) / PQ) * PQ - by + (PQ >> 1);
+          if (qx >= 0 && qx < w && qy >= 0 && qy < h) dot[qy * w + qx] = 3 + tone + (tone === 2 ? hs * 0.5 : 0);
         }
         for (let dy = -RL; dy <= RL; dy++) {
           const yy = cy + dy;
@@ -488,7 +488,9 @@ export class FluidRenderer {
     // the colour is softened over a few pixels more than the particles'
     // own kernels: a brew half stirred holds parcels of different colours
     // side by side, and they should meet in gradients, not hard edges
-    this._softenColour(w, h);
+    // (spread in steps of most of a droplet cell, so colours meet across
+    // several cells, not inside one)
+    this._softenColour(w, h, Math.max(1, Math.round(Math.max(2, Math.round(SIM.SPACING * s * 0.6)) * 0.75)));
     for (let y = 0; y < h; y++) {
       const row = y * w;
       for (let x = 0; x < w; x++) {
@@ -516,6 +518,8 @@ export class FluidRenderer {
     const data = this.image.data;
     const lc = this.lc;
     const thr = 0.3; // liquid surface threshold
+    // one droplet, one pixel: the brew is drawn in cells about a particle across
+    const PQ = Math.max(2, Math.round(SIM.SPACING * s * 0.6)), PW = PQ * w;
     // first liquid pixel of every column → depth below the surface (Beer–Lambert style darkening)
     if (!this.surf || this.surf.length < w) this.surf = new Int32Array(w);
     const surf = this.surf;
@@ -726,8 +730,11 @@ export class FluidRenderer {
           }
           R = R * (1 - a) + r * l * a; G = G * (1 - a) + g * l * a; B = B * (1 - a) + b * l * a; A = A + (1 - A) * a;
         }
-        // liquid / paste
-        if (wb[k] > thr) {
+        // liquid / paste, drawn in droplet-sized pixel cells: the whole
+        // cell takes the colour, shading and grain read at its centre
+        const qx = Math.max(0, Math.min(w - 1, x - (((x + bx) % PQ) + PQ) % PQ + (PQ >> 1))), qy = Math.max(0, Math.min(h - 1, y - (((y + by) % PQ) + PQ) % PQ + (PQ >> 1)));
+        if (wb[qy * w + qx] > thr) {
+          const x = qx, y = qy, k = qy * w + qx;
           // colour from this pixel, or from the strongest neighbour in the
           // small gaps the smoothing fills in
           let kc = k, lw = wl[k];
@@ -747,8 +754,8 @@ export class FluidRenderer {
           const opac = lc[c6 + 4] * ic;
           let a = Math.min(0.96, 0.7 + 0.3 * opac);
           const tex = liq[c9 + 6] * inv;
-          const up = y > 0 ? wb[k - w] : 0;
-          const down = y < h - 1 ? wb[k + w] : 0;
+          const up = y >= PQ ? wb[k - PW] : 0;
+          const down = y < h - PQ ? wb[k + PW] : 0;
           let l = 1;
           // Liquid and paste are shaded their own ways, blended by how much
           // of the pixel is paste: a stirred brew interleaves the two, and
@@ -756,7 +763,7 @@ export class FluidRenderer {
           const tP = paste <= 0.2 ? 0 : paste >= 0.8 ? 1 : ((paste - 0.2) / 0.6) * ((paste - 0.2) / 0.6) * (3 - 2 * ((paste - 0.2) / 0.6));
           const depth = Math.max(0, (y - sf[x]) * depthScale);
           // ordered dither threshold of this pixel (4×4 Bayer), for pixel-art bands
-          const bay = BAYER[(y & 3) * 4 + (x & 3)];
+          const bay = BAYER[(Math.floor((y + by) / PQ) & 3) * 4 + (Math.floor((x + bx) / PQ) & 3)];
           let rL = r, gL = g, bL = b, lL = 1, rP = r, gP = g, bP = b, lP = 1;
           if (tP < 1) {
             // light crosses more of the brew the deeper it is: each channel
@@ -777,11 +784,11 @@ export class FluidRenderer {
             // (fading out where the brew thickens into paste)
             if (dv > 0 && paste < 0.25) {
               const tone = dv - 3, gr = 1 - paste * 4;
-              lL *= 1 + gr * (tone >= 2 ? 0.1 + 0.16 * Math.max(0, Math.sin(twinkle * 1.3 + tone * 40)) : tone * 0.12);
+              lL *= 1 + gr * (tone >= 2 ? 0.12 + 0.18 * Math.max(0, Math.sin(twinkle * 1.3 + tone * 40)) : tone * 0.15);
             }
             if (up <= thr) lL = 1.32; // meniscus highlight
-            else if (y > 1 && wb[k - 2 * w] <= thr) lL = 1.16; // sheen just under the surface
-            else if (y > 2 && wb[k - 3 * w] <= thr) lL *= 1.07;
+            else if (y >= 2 * PQ && wb[k - 2 * PW] <= thr) lL = 1.16; // sheen just under the surface
+            else if (y >= 3 * PQ && wb[k - 3 * PW] <= thr) lL *= 1.07;
             // the lower edge against the iron gets a thin shadow line
             if (down <= thr) lL *= 0.7;
           }
@@ -792,7 +799,7 @@ export class FluidRenderer {
             rP = Math.pow(Math.max(0.02, r), path); gP = Math.pow(Math.max(0.02, g), path); bP = Math.pow(Math.max(0.02, b), path);
             lP = (0.92 + tex * 0.09) * (1 - Math.min(0.2, depth * 0.06));
             if (up <= thr) lP = 1.12;
-            else if (down <= thr || (x > 0 && wb[k - 1] <= thr) || (x < w - 1 && wb[k + 1] <= thr)) lP = 0.7;
+            else if (down <= thr || (x >= PQ && wb[k - PQ] <= thr) || (x < w - PQ && wb[k + PQ] <= thr)) lP = 0.7;
           }
           r = rL + (rP - rL) * tP; g = gL + (gP - gL) * tP; b = bL + (bP - bL) * tP;
           l = lL + (lP - lL) * tP;
@@ -983,7 +990,7 @@ export class FluidRenderer {
    * them and the empty space around the brew adds nothing.
    * @param {number} w @param {number} h
    */
-  _softenColour(w, h) {
+  _softenColour(w, h, st = 1) {
     const liq = this.liq, a = this.lct, b = this.lc, N = w * h;
     const K = [1, 8, 28, 56, 70, 56, 28, 8, 1], R = 4, norm = 1 / 256;
     for (let k = 0; k < N; k++) {
@@ -997,7 +1004,7 @@ export class FluidRenderer {
         const o = (row + x) * LC;
         let s0 = 0, s1 = 0, s2 = 0, s3 = 0, s4 = 0, s5 = 0;
         for (let d = -R; d <= R; d++) {
-          const xx = x + d;
+          const xx = x + d * st;
           if (xx < 0 || xx >= w) continue;
           const q = (row + xx) * LC;
           if (a[q] <= 0) continue;
@@ -1013,7 +1020,7 @@ export class FluidRenderer {
         const o = (y * w + x) * LC;
         let s0 = 0, s1 = 0, s2 = 0, s3 = 0, s4 = 0, s5 = 0;
         for (let d = -R; d <= R; d++) {
-          const yy = y + d;
+          const yy = y + d * st;
           if (yy < 0 || yy >= h) continue;
           const q = (yy * w + x) * LC;
           if (b[q] <= 0) continue;
