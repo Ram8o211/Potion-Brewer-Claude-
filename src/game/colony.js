@@ -43,6 +43,7 @@
 
 import { EFFECT_INDEX } from '../alchemy/effects.js';
 import { Rng, hashString } from '../core/rng.js';
+import { kindOf, biasSpread, kindLook, RABBIT_SPREAD } from './kinds.js';
 
 /** Visible / exposure channels: the ten effects with acidity split by sign. */
 export const RABBIT_MARKS = ['vitality', 'strength', 'love', 'arcana', 'transformation', 'fire', 'frost', 'acid', 'alkali', 'toxicity', 'death'];
@@ -109,12 +110,13 @@ export const TRAIT_WORDS = {
  * @typedef {Object} RabbitLook
  * @property {number[]} coat    sRGB 0..1
  * @property {number[]} coat2   sRGB 0..1 (pattern colour)
- * @property {'solid'|'dutch'|'spotted'|'hooded'|'points'|'agouti'} pattern
- * @property {'upright'|'lop'|'half'|'short'} ear
+ * @property {'solid'|'dutch'|'spotted'|'hooded'|'points'|'agouti'|'tabby'|'warts'|'blotched'} pattern
+ * @property {'upright'|'lop'|'half'|'short'|'cat'|'none'} ear
  * @property {number} size      0.85..1.15
- * @property {'dark'|'ruby'} eye
+ * @property {'dark'|'ruby'|'green'|'amber'} eye
  * @property {0|1|2} tail       fluff size
  * @property {number} seed      1..2^31-1 (spot layout, hop rhythm, mark placement)
+ * @property {import('./kinds.js').AnimalKind} [kind]  absent: a rabbit (kinds.js)
  */
 
 /**
@@ -147,6 +149,10 @@ export const COATS = [
   [[0.78, 0.78, 0.8], 1], // silver
 ];
 const PATTERNS = /** @type {const} */ (['solid', 'dutch', 'spotted', 'hooded', 'points', 'agouti']);
+/** Patterns of the other kinds (kinds.js kindLook): a cat's stripes, a toad's warts, a salamander's blotches. */
+const KIND_PATTERNS = ['tabby', 'warts', 'blotched'];
+const KIND_EARS = ['cat', 'none'];
+const KIND_EYES = ['green', 'amber'];
 const PATTERN_W = [4, 2, 2, 1, 1, 2];
 const EARS = /** @type {const} */ (['upright', 'lop', 'half', 'short']);
 const EAR_W = [5, 2, 1, 1];
@@ -174,8 +180,10 @@ export function rollLook(rng) {
 
 /** A kit's look from its parents, with rare mutations. @param {RabbitLook} a mother @param {RabbitLook} b father @param {Rng} rng */
 export function inheritLook(a, b, rng) {
+  const kind = kindOf(a);
   const from = rng.chance(0.5) ? a : b;
-  const fresh = rollLook(rng);
+  // a mutation draws from the mother's own kind
+  const fresh = kind === 'rabbit' ? rollLook(rng) : /** @type {any} */ (kindLook(kind, rng));
   const coatFrom = rng.chance(0.1) ? fresh : from;
   const pick = (k) => (rng.chance(0.08) ? fresh[k] : (rng.chance(0.5) ? a[k] : b[k]));
   const coat = coatFrom.coat.slice();
@@ -184,9 +192,10 @@ export function inheritLook(a, b, rng) {
     coat, coat2: coatFrom.coat2.slice(),
     pattern: pick('pattern'), ear: pick('ear'),
     size: r2(Math.max(0.85, Math.min(1.15, (a.size + b.size) / 2 + rng.range(-0.05, 0.05)))),
-    eye: /** @type {'dark'|'ruby'} */ (white && (a.eye === 'ruby' || b.eye === 'ruby' || rng.chance(0.25)) ? 'ruby' : 'dark'),
+    eye: /** @type {any} */ (kind !== 'rabbit' ? pick('eye') : white && (a.eye === 'ruby' || b.eye === 'ruby' || rng.chance(0.25)) ? 'ruby' : 'dark'),
     tail: pick('tail'),
     seed: 1 + rng.int(0, 2147483000),
+    ...(kind !== 'rabbit' ? { kind } : {}),
   };
 }
 
@@ -287,7 +296,7 @@ export function mateCost(love) {
 }
 
 /** Relative spread of the rabbits' lifelong sensitivity (one sigma). */
-export const RABBIT_BIAS = 0.1;
+export const RABBIT_BIAS = RABBIT_SPREAD;
 
 /**
  * How strongly one rabbit shows one effect, relative to the potion's real
@@ -298,7 +307,8 @@ export const RABBIT_BIAS = 0.1;
  */
 export function rabbitSensitivity(r, key) {
   const rng = new Rng(hashString(`sens:${r.id}:${r.look ? r.look.seed : 0}:${key}`));
-  return Math.round(clamp(Math.exp(RABBIT_BIAS * rng.gauss()), 0.6, 1.6) * 1000) / 1000;
+  // each kind has its own spread per channel (kinds.js): a cat's arcana barely varies
+  return Math.round(clamp(Math.exp(biasSpread(r.look, key) * rng.gauss()), 0.6, 1.6) * 1000) / 1000;
 }
 
 /**
@@ -844,10 +854,11 @@ export function colonyTick(c, dt, o = {}) {
     r.mc = round1(Math.max(0.5, mateEvery(love) * rng.range(0.8, 1.2)));
     const others = c.rabbits.filter((x) => x.alive && x.id !== r.id && stageOf(x, day) !== 'kit');
     if (!others.length) continue;
-    const mates = others.filter((x) => x.sex !== r.sex);
+    // only a partner of its own kind can sire young
+    const mates = others.filter((x) => x.sex !== r.sex && kindOf(x.look) === kindOf(r.look));
     const p = rng.pick(mates.length ? mates : others);
     let conceived = false;
-    if (p.sex !== r.sex) {
+    if (p.sex !== r.sex && kindOf(p.look) === kindOf(r.look)) {
       const doe = r.sex === 'f' ? r : p, buck = r.sex === 'f' ? p : r;
       const room = !Number.isFinite(o.cap) || living + pending < /** @type {number} */ (o.cap);
       if (!doe.pregnant && stageOf(doe, day) !== 'kit' && room && rng.chance(0.35)) {
@@ -960,7 +971,7 @@ export function colonyDay(c, o) {
     for (const doe of c.rabbits) {
       if (doe.sex !== 'f' || doe.pregnant || !eligible(doe)) continue;
       if (living + pending >= o.cap) break;
-      const buck = bucks.find((b) => !related(doe, b));
+      const buck = bucks.find((b) => !related(doe, b) && kindOf(b.look) === kindOf(doe.look));
       if (!buck) continue;
       const p = 0.3 + 0.4 * Math.min(1, Math.max(doe.marks.love, buck.marks.love) / 50) + (fed ? 0.1 : 0);
       if (rng.chance(p)) {
@@ -1081,14 +1092,17 @@ function normalizeLook(d, id) {
   const fb = lookFromSeed(String(id || 'x'));
   if (!d || typeof d !== 'object') return fb;
   const col = (v, f) => (Array.isArray(v) && v.length === 3 && v.every((x) => Number.isFinite(x)) ? v.map((x) => clamp(x, 0, 1)) : f);
+  const kind = kindOf(d);
+  const other = kind !== 'rabbit';
   return {
     coat: col(d.coat, fb.coat), coat2: col(d.coat2, fb.coat2),
-    pattern: PATTERNS.includes(d.pattern) ? d.pattern : fb.pattern,
-    ear: EARS.includes(d.ear) ? d.ear : fb.ear,
+    pattern: PATTERNS.includes(d.pattern) || (other && KIND_PATTERNS.includes(d.pattern)) ? d.pattern : fb.pattern,
+    ear: EARS.includes(d.ear) || (other && KIND_EARS.includes(d.ear)) ? d.ear : fb.ear,
     size: clamp(fin(d.size, 1), 0.85, 1.15),
-    eye: /** @type {'dark'|'ruby'} */ (d.eye === 'ruby' ? 'ruby' : 'dark'),
+    eye: /** @type {any} */ (d.eye === 'ruby' ? 'ruby' : other && KIND_EYES.includes(d.eye) ? d.eye : 'dark'),
     tail: /** @type {0|1|2} */ ([0, 1, 2].includes(d.tail) ? d.tail : 1),
     seed: Number.isFinite(d.seed) && d.seed > 0 ? Math.floor(d.seed) : fb.seed,
+    ...(other ? { kind } : {}),
   };
 }
 

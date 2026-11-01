@@ -27,6 +27,10 @@
 // In the Free Experiment the stores are bottomless, but a harvest still takes
 // the plant: its stand sprouts again at random spots and grows back quickly
 // (game/gathering.js sandboxWilds).
+// Wild animals live in every region (game/wild-rabbits.js): rabbits hop
+// about everywhere, and cats, toads and fire salamanders keep to their own
+// habitats, each moving in its own way (game/kinds.js tells what each is
+// good for in the trials).
 // Wild rabbits hop about every region (game/wild-rabbits.js). A tap wounds
 // one: blood bursts from it and stains the ground, rock and water it lands
 // on, and the rabbit flees bleeding, leaving a trail — frantic from the
@@ -50,6 +54,7 @@ import { hashString } from '../../core/rng.js';
 import { Warren, warrenSpots, BLOOD } from '../../game/wild-rabbits.js';
 import { drawRabbit, RABBIT_W, RABBIT_H } from '../../rendering/rabbit.js';
 import { defaultSnap, livingRabbits } from '../../game/colony.js';
+import { KINDS } from '../../game/kinds.js';
 
 /** The shadow a plant casts on its ground, by region (the crags' is warm and deep, the fens' cold). */
 const SHADOW = { forest: 'rgba(8,16,10,0.32)', netherwood: 'rgba(6,4,16,0.4)', meadow: 'rgba(24,30,10,0.26)', river: 'rgba(4,14,16,0.34)', quarry: 'rgba(26,18,10,0.3)', moonfen: 'rgba(2,6,18,0.42)', crags: 'rgba(30,6,4,0.4)' };
@@ -872,13 +877,13 @@ export class WildsView {
       const res = st.bringWildRabbit({ look: r.look, sex: r.sex, dead: r.dead, health: Math.max(10, 45 - r.hits * 8 - r.downT * 2) });
       if (!res.ok) { audio.play('error'); toast('No room', res.reason, 'rabbit'); return; }
       w.remove(r);
-      const name = res.rabbit.name;
+      const name = res.rabbit.name, kd = KINDS[r.kind] || KINDS.rabbit;
       this.pops.push({ cv: /** @type {any} */ (null), w: 0, h: 0, x: r.x, y: r.y - 6, t: 0, c: r.dead ? BLOOD[1] : '#f0e0c0' });
       audio.play(r.dead ? 'dig' : 'squeak');
       setTimeout(() => audio.play('select'), 140);
       toast(r.dead ? 'A body for the hutch' : 'Caught!', r.dead
-        ? `The rabbit is carried home. You named it ${name}: its body waits in the hutch, where its remains can be recovered.`
-        : `${name} is carried home to the hutch, weak from its wounds — it will mend there.`, 'rabbit');
+        ? `The ${kd.noun} is carried home. You named it ${name}: its body waits in the hutch, where its remains can be recovered.`
+        : `${name} the ${kd.noun} is carried home to the hutch, weak from its wounds — it will mend there.${kd.steady ? ` ${kd.lore}` : ''}`, 'rabbit');
       lab.save();
       return;
     }
@@ -886,7 +891,7 @@ export class WildsView {
     const out = w.strike(r, x, y);
     audio.play('squeak');
     audio.play(out === 'down' ? 'thump' : 'crush');
-    if (!was) this.tell('hurt', 'It bolts, bleeding', 'Wounded, a rabbit flees in quick long bounds. Bring it down and tap it to catch it before it bleeds out.', 'rabbit');
+    if (!was) this.tell('hurt', 'It bolts, bleeding', 'Wounded, it flees — a rabbit in long bounds, a cat at a sprint, a toad in quick hops, a salamander scurrying. Bring it down and tap it to catch it before it bleeds out.', 'rabbit');
     if (out === 'down') this.tell('down', 'It is down', 'Tap it to catch it alive and carry it to the hutch. Left lying, it bleeds out — its body can still be carried home.', 'rabbit');
   }
 
@@ -911,7 +916,7 @@ export class WildsView {
     b.imageSmoothingEnabled = false;
     for (const r of w.rabbits.slice().sort((a, c) => a.y - c.y)) {
       const snap = { ...defaultSnap(), hp: r.band, alive: !r.dead, cause: r.dead ? 'hunted' : null };
-      const pose = r.air ? 'hop' : r.running && !r.alarm ? r.pose || undefined : undefined;
+      const pose = r.drawPose;
       const x = Math.round(r.x), y = Math.round(r.y);
       b.clearRect(0, 0, RABBIT_W, RABBIT_H);
       drawRabbit(b, r.look, snap, r.t, r.react, { x: 0, y: 0, clear: false, floor: false, hop: false, mirror: r.face < 0, pose, flash: false });

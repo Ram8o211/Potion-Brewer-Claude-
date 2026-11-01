@@ -3,6 +3,7 @@
 // confirmed by experiment), the journal, the ingredient encyclopedia with
 // each plain ingredient's known effects, achievements and sales.
 
+import { KINDS } from '../../game/kinds.js';
 import { h, btn, clear } from '../dom.js';
 import { icon } from '../icons.js';
 import { audio } from '../../audio/audio.js';
@@ -79,7 +80,7 @@ export class BookView {
   renderLaws(body) {
     const st = this.lab.state;
     body.appendChild(h('div', { class: 'card parch' }, h('h3', { text: 'The Guild Primer' }),
-      ...['Fire and frost cancel each other where they meet.', 'Life (vitality) and death cancel each other.', 'Vitality neutralises toxicity: two parts of healing cure one part of poison.', 'Acids and alkalis neutralise. Acidity below zero means alkaline.', 'Only what dissolves takes effect: whole roots and stones do nothing until crushed or ground, and grains beyond what the liquid can hold barely count. Heat helps many things dissolve.', 'Effects act where substances meet. Layers that never mix never interact — stir!', 'Strong effects show diminishing returns.']
+      ...['Fire and frost cancel each other where they meet.', 'Life (vitality) and death cancel each other.', 'Vitality neutralises toxicity: two parts of healing cure one part of poison.', 'Acids and alkalis neutralise. Acidity below zero means alkaline.', 'Only what dissolves takes effect: whole roots and stones do nothing until crushed or ground, and grains beyond what the liquid can hold barely count. Heat helps many things dissolve.', 'Effects act where substances meet. Layers that never mix never interact — stir!', 'Strong effects show diminishing returns.', ...Object.values(KINDS).map((k) => k.lore)]
         .map((t) => h('div', { class: 'small', text: '• ' + t }))));
     const laws = st.world.laws || [];
     const found = laws.filter((L) => st.trials.laws[L.id] && st.trials.laws[L.id].found !== null);

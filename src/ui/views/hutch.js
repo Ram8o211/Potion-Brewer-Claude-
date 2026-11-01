@@ -10,6 +10,7 @@
 // live in the head of the panel.
 
 import { readingSteadiness } from '../../game/experiments.js';
+import { kindDef } from '../../game/kinds.js';
 import { h, btn, clear, toast, modal, confirmDialog } from '../dom.js';
 import { icon } from '../icons.js';
 import { audio } from '../../audio/audio.js';
@@ -123,7 +124,7 @@ export class HutchPanel {
       const tile = h('button', {
         class: 'rabbit-tile' + (sel ? ' selected' : '') + (r.alive ? '' : ' dead') + (stageOf(r, st.day) === 'kit' ? ' kit' : '') + (isFeral(r) ? ' feral' : degenOf(r).length ? ' degen' : ''),
         'data-rabbit': r.id, 'data-subject': 'rabbit', role: 'option', 'aria-selected': sel ? 'true' : 'false',
-        'aria-label': `${r.name}, ${r.sex === 'f' ? 'doe' : 'buck'}: ${rabbitCondition(r, st.day).join(', ')}`,
+        'aria-label': `${r.name}, ${kindDef(r.look).id === 'rabbit' ? (r.sex === 'f' ? 'doe' : 'buck') : `${r.sex === 'f' ? 'female' : 'male'} ${kindDef(r.look).noun}`}: ${rabbitCondition(r, st.day).join(', ')}`,
       }, cv, h('span', { class: 'rt-name', text: r.name }), r.alive ? h('span', { class: 'bar hp rt-hp' }, hp) : null, h('span', { class: 'rt-tags' }, ...tags));
       tile.addEventListener('click', () => this.view.select(r.id));
       this.tiles[r.id] = { tile, cv, ctx: /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')), key: '', hp };
@@ -185,10 +186,11 @@ export class HutchPanel {
       h('div', { class: 'rd-top' },
         portrait,
         h('div', { class: 'rd-info' },
-          h('div', { class: 'rd-title' }, h('b', { text: r.name }), h('span', { class: 'small muted', text: ` ${r.sex === 'f' ? 'doe' : 'buck'} · ${STAGE_WORD[stage]}${r.alive ? ` · ${age >= 0 ? `${age} day${age === 1 ? '' : 's'} old` : 'grown'}` : ''}` })),
+          h('div', { class: 'rd-title' }, h('b', { text: r.name }), h('span', { class: 'small muted', text: ` ${kindDef(r.look).id === 'rabbit' ? (r.sex === 'f' ? 'doe' : 'buck') : `${kindDef(r.look).noun} · ${r.sex === 'f' ? 'female' : 'male'}`} · ${STAGE_WORD[stage]}${r.alive ? ` · ${age >= 0 ? `${age} day${age === 1 ? '' : 's'} old` : 'grown'}` : ''}` })),
           h('div', { class: 'small', text: words.join(' · ') }),
           r.alive ? h('div', { class: 'rd-hp' }, icon('heart', 'sm'), h('span', { class: 'bar hp big' }, hpFill), hpText) : null,
           h('div', { class: 'small muted', text: `${r.trials} trial${r.trials === 1 ? '' : 's'}${parents.length ? ` · child of ${parents.join(' and ')}` : ''}` }),
+          kindDef(r.look).steady ? h('div', { class: 'small kind-steady', 'data-kind': kindDef(r.look).id, title: kindDef(r.look).lore, text: `Reads ${EFFECT_BY_KEY[kindDef(r.look).steady].label.toLowerCase()} steadily: one ${kindDef(r.look).noun} is as good as many` }) : null,
           r.alive ? (() => { const k = readingSteadiness(r, st.day); return h('div', { class: 'small steadiness ' + (k <= 1.02 ? 'ok' : 'warn'), 'data-steadiness': String(Math.round(k * 100) / 100), title: 'How steady its readings are, from its age and health (its own hidden sensitivity is not in it)', text: k <= 1.02 ? 'Readings: steady' : k <= 1.2 ? 'Readings: a little unsteady' : 'Readings: shaky — hurt or very young or old' }); })() : null)),
       r.alive ? effects : null,
       h('div', { class: 'row wrap rd-actions' }, ...actions));
