@@ -95,7 +95,7 @@ test('a damaged save falls back to the backup instead of crashing', async ({ pag
   await page.reload();
   await page.click('[data-act=continue]');
   await page.waitForSelector('canvas.view-canvas');
-  await expect(page.locator('.toast', { hasText: 'damaged' })).toBeVisible();
+  await expect(page.locator('.toast, .note-dock', { hasText: 'damaged' })).toBeVisible();
   expect(await lab(page, (l) => l.state.coins)).toBe(50);
 });
 

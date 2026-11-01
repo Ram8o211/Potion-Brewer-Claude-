@@ -110,7 +110,7 @@ test('a second tab saving the shop makes a stale tab step back instead of overwr
   await other.locator('canvas.view-canvas').waitFor();
   await other.evaluate(() => { const l = window.__alchemist.screen; l.state.coins = 99; l.save(); });
   // the stale tab notices, goes back to the menu and does not save over it
-  await expect(page.locator('.toast', { hasText: 'opened elsewhere' })).toBeVisible();
+  await expect(page.locator('.toast, .note-dock', { hasText: 'opened elsewhere' })).toBeVisible();
   await expect(page.locator('[data-act=continue]')).toBeVisible();
   await page.close({ runBeforeUnload: true });
   const coins = await other.evaluate(() => JSON.parse(localStorage.getItem('alchemist-shop.save') || '{}').coins);

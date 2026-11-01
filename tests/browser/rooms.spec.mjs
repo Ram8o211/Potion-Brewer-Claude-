@@ -81,7 +81,7 @@ test('harvesting a mature plant fills the stores and leaves nothing behind; grow
     return !!p;
   });
   if (young) {
-    await expect(page.locator('.toast', { hasText: 'Not ripe yet' })).toBeVisible();
+    await expect(page.locator('.toast, .note-dock', { hasText: 'Not ripe yet' })).toBeVisible();
     expect(await lab(page, (l) => l.state.gathering.total)).toBe(total);
   }
   // Whisperwood is generated from the world seed; only plants take taps — a
@@ -131,7 +131,7 @@ test('harvesting a mature plant fills the stores and leaves nothing behind; grow
   await shot(page, info, 'wilds-meadow');
   // a magical region is closed to an apprentice
   await page.click('[data-act=region-moonfen]');
-  await expect(page.locator('.toast', { hasText: 'Moonfen' })).toBeVisible();
+  await expect(page.locator('.toast, .note-dock', { hasText: 'Moonfen' })).toBeVisible();
   // the gathered herb is on the shelf
   await page.click('[data-act=tab-brew]');
   await expect(page.locator(`.jar[data-id="${dep.materialId}"]`)).toBeVisible();

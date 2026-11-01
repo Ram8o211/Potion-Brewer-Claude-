@@ -159,7 +159,7 @@ test('a customer who insists on proof will not buy until the vial is tested; tes
   expect(await page.locator('.label-row .src.trial').count(), 'nothing is marked tested before a trial').toBe(0);
   await page.click('[data-act=label-seal]');
   await page.click('[data-act=serve]');
-  await expect(page.locator('.toast').last()).toContainText('wants proof');
+  await expect(page.locator('.toast, .note-dock').last()).toContainText('wants proof');
   await expect(page.locator('.haggle-log')).toHaveCount(0);
   // test a dose of the sealed vial itself
   await page.click('[data-act=test-vial]');
@@ -173,7 +173,7 @@ test('a customer who insists on proof will not buy until the vial is tested; tes
   await page.click('[data-act=tab-counter]');
   // one reading is not proof enough for this customer: they want it read on a second rabbit
   await page.click('[data-act=serve]');
-  await expect(page.locator('.toast').last()).toContainText('second rabbit');
+  await expect(page.locator('.toast, .note-dock').last()).toContainText('second rabbit');
   await expect(page.locator('.haggle-log')).toHaveCount(0);
   await page.click('[data-act=test-vial]');
   await lab(page, (l) => { const st = l.state; const other = st.colony.rabbits.find((r) => r.alive && r.id !== st.colony.focus); st.selectRabbit(other.id); l.views.trials.refresh(); });

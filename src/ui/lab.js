@@ -37,7 +37,7 @@ import { theoryOf, EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, dominantEffect, NE } fr
 import { awakenParts, describeThreshold } from '../alchemy/arcane.js';
 import { ARC_NONE } from '../simulation/particles.js';
 import { describeColor, rgbToHex } from '../core/color.js';
-import { h, btn, clear, toast, coins, confirmDialog } from './dom.js';
+import { h, btn, clear, toast, coins, confirmDialog, modal, setNoteDock, recentNotes } from './dom.js';
 import { icon } from './icons.js';
 import { audio } from '../audio/audio.js';
 import * as panels from './panels.js';
@@ -188,7 +188,17 @@ export class LabScreen {
     return new Simulation({ size, lookup: st.lookup, reactions: st.world.reactions, laws: st.world.laws });
   }
 
+  /** The recent notes, newest first, to read at leisure. */
+  openNotes() {
+    const list = recentNotes();
+    const body = list.length
+      ? h('ul', { class: 'note-log' }, ...list.map((n) => h('li', { class: 'card parch' }, icon(n.icon, 'sm'), h('div', {}, h('b', { text: n.title }), n.text ? h('div', { class: 'small', text: n.text }) : null))))
+      : h('div', { class: 'card parch', text: 'Nothing to tell yet.' });
+    modal({ title: 'Recent notes', body });
+  }
+
   unmount() {
+    setNoteDock(null);
     this.save();
     this.running = false;
     cancelAnimationFrame(this._raf);
@@ -238,6 +248,11 @@ export class LabScreen {
     this.rankName = h('div', { class: 'rankname' });
     this.rankBar = h('i');
     this.dayEl = h('div', { class: 'day' });
+    // the game's notes have a place of their own in the top bar (a line under it on narrow screens):
+    // they never cover a control, and the last one stays readable until the next
+    this.noteDock = h('button', { class: 'note-dock idle', 'data-act': 'notes', 'aria-live': 'polite', 'aria-label': 'Recent notes', title: 'Recent notes' });
+    this.noteDock.addEventListener('click', () => { audio.play('click'); this.openNotes(); });
+    setNoteDock(this.noteDock);
     this.topbar = h('header', { class: 'topbar frame' },
       btn('', () => panels.openPause(this), { icon: 'menu', cls: 'icon', title: 'Menu: help, settings, tour (Esc)', act: 'menu' }),
       this.sandbox
@@ -245,7 +260,7 @@ export class LabScreen {
         : h('div', { class: 'stat', title: 'Coins' }, icon('coin'), this.coinEl),
       this.sandbox ? null : h('div', { class: 'rankrow' }, h('div', { class: 'stat rankbox' }, this.rankName, h('div', { class: 'bar' }, this.rankBar))),
       this.sandbox ? null : this.dayEl,
-      h('div', { class: 'spacer' }),
+      this.noteDock,
       this.sandbox ? null : btn('Shop', () => panels.openShop(this), { icon: 'bag', cls: 'shop-btn', title: 'Shop: ingredients and equipment (S)', act: 'shop' }),
     );
     // ---- brew room
