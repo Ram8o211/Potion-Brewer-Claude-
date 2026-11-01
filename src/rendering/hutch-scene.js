@@ -23,8 +23,8 @@ import { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } from '.
 import { GROUND, GROUND_Y0 } from './hutch-ground.js';
 import { kindOf } from '../game/kinds.js';
 
-/** Walking speed in the hutch (px/s) of the kinds that walk rather than hop. */
-const WALKERS = { cat: 12, salamander: 5 };
+/** Walking speed in the hutch (px/s) of the kinds that walk rather than hop (rabbits, toads and ermines hop). */
+const WALKERS = { cat: 12, salamander: 5, deer: 10, badger: 8, dove: 8, fox: 14, snail: 1.5, rat: 16 };
 
 export const HUTCH_W = 224;
 export const HUTCH_H = 92;
@@ -454,7 +454,7 @@ export class HutchScene {
     if ((L.love >= 2 || L.vitality >= 2) && a.snap.hp === 0 && r.chance(0.25)) return this._begin(a, 'flop', r.range(2.5, 4.5));
     const kind = kindOf(a.look);
     // a cat sits about and grooms, a toad mostly squats still, a salamander basks
-    const w = kind === 'cat' ? [3, 2.5, 2.5, 1.2, 1] : kind === 'toad' ? [6, 2, 0.5, 1.2, 0.8] : kind === 'salamander' ? [5, 3, 0.3, 1, 1] : [3, 3, 1.5, 1.2, 1.5];
+    const w = { cat: [3, 2.5, 2.5, 1.2, 1], toad: [6, 2, 0.5, 1.2, 0.8], salamander: [5, 3, 0.3, 1, 1], snail: [6, 3, 0.2, 1.5, 0.5], rat: [1.5, 4, 1, 1.5, 3], dove: [2, 3, 1.5, 3, 1], deer: [3, 2, 1, 3, 1], badger: [3, 2.5, 0.8, 2, 2], fox: [3, 3, 2, 1, 1.5], ermine: [2, 4, 1.5, 1, 2.5] }[kind] || [3, 3, 1.5, 1.2, 1.5];
     const pick = r.weighted(['idle', 'hop', 'groom', 'eat', 'sniff'], w);
     if (pick === 'hop') return this._hopTo(a, this._goal(a, r, 30), kit ? 2 : r.int(1, 3), false);
     if (pick === 'eat') {
@@ -525,6 +525,7 @@ export class HutchScene {
     a.hopT = zoom ? 0.17 : 0.34; a.hopH = kit ? 2 : zoom ? 5 : 4;
     a.step = (kit ? 5 : 8) * (zoom ? 1.7 : 1);
     if (toad) { a.hopH = Math.max(2, a.hopH - 1); a.step *= 0.6; a.hopT *= 0.85; } // a toad's hops are short and low
+    else if (kindOf(a.look) === 'ermine') { a.hopH = Math.max(2, a.hopH - 1); a.hopT *= 0.7; } // an ermine's bounds are quick and low
     if (!this._nextHop(a)) this._begin(a, 'idle', 0.6);
   }
 

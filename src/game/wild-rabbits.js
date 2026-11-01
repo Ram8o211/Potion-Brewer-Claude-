@@ -1,8 +1,13 @@
 // Wild animals in the wilds: a few hop, prowl or creep about each region's
 // open ground — rabbits everywhere, and, by habitat (game/kinds.js), cats
 // that stroll, sit and pounce, toads that squat and make short hops, fire
-// salamanders that creep slowly and bask. Each kind moves in its own way,
-// calm and alarmed (`hop` and `walkStep` below); wounds, blood, the catch
+// salamanders that creep slowly and bask, deer that graze and bound away,
+// badgers that trundle and root, doves that peck and take wing, foxes that
+// trot and pounce high, ermines that bound and stand up to look about,
+// snails that glide and hide in their shells, and rats that scurry in
+// short dashes. Each kind moves in its own way,
+// calm and alarmed (`hop`, `kindMove`, `walkStep` and `flyStep` below;
+// GAITS sets each kind's speeds, leaps, rests and what fright makes it do); wounds, blood, the catch
 // and the body are the same for all of them.
 //
 // Wild rabbits in the wilds: a few hop about each region's open ground,
@@ -34,7 +39,7 @@ export const BLEED_OUT = 10;
 /** How close (scene pixels) a tap that misses must come to set a rabbit running. */
 export const NEAR_MISS = 24;
 /** How many rabbits a region keeps, and how soon (seconds) a new one comes in from the edge. */
-export const WARREN_SIZE = { forest: 4, meadow: 5, river: 3, netherwood: 3, quarry: 2, moonfen: 3, crags: 2 };
+export const WARREN_SIZE = { forest: 6, meadow: 6, river: 5, netherwood: 5, quarry: 4, moonfen: 5, crags: 4 };
 export const RESPAWN = 25;
 
 /** The blood's colours, fresh to dark. */
@@ -60,19 +65,44 @@ export function wildLook(rng) {
 }
 
 /**
- * How each kind gets about (scene pixels and seconds): calm walking speed
- * (0: it only hops), alarmed running speed, the calm and alarmed hop, and
- * how long it rests between moves.
- * @type {Record<string, {walk:[number, number], run:[number, number], hop:[number, number, number, number]|null, flee:[number, number, number, number]|null, rest:[number, number], climb:number}>}
+ * How each kind gets about (scene pixels and seconds).
+ *   walk / run   calm and fleeing ground speed ([0, 0]: it does not walk)
+ *   walkT        how long a stroll lasts
+ *   hop          a calm leap [vx lo, vx hi, vy lo, vy hi] (a toad's hop, a fox's or a cat's pounce, an ermine's bound), and its chance
+ *   flee         a fleeing leap, and the chance a fleeing step is one
+ *   pWalk        the chance that, rested, it sets off walking
+ *   poses        what it does when it rests, by weight (null: just stands)
+ *   rest         seconds it rests between moves
+ *   climb        the highest step it walks up or down
+ *   alarm        what fright makes it do: 'run' (or leap), 'bound' (leaps
+ *                only), 'fly' (a dove takes wing), 'hide' (a snail draws
+ *                into its shell)
+ *   fly          the chance a calm dove takes a short flight
+ * @typedef {{walk:[number, number], run:[number, number], walkT:[number, number], hop:number[]|null, pHop:number, flee:number[]|null, pFlee:number, pWalk:number, poses:[string|null, number][], rest:[number, number], climb:number, alarm:'run'|'bound'|'fly'|'hide', fly?:number, leapsWalls?:boolean}} Gait
+ * @type {Record<string, Gait>}
  */
 export const GAITS = {
-  rabbit: { walk: [0, 0], run: [0, 0], hop: [16, 30, 42, 58], flee: [78, 100, 82, 108], rest: [0.8, 3.2], climb: 4 },
+  rabbit: { walk: [0, 0], run: [0, 0], walkT: [0, 0], hop: [16, 30, 42, 58], pHop: 1, flee: [78, 100, 82, 108], pFlee: 1, pWalk: 0, poses: [['eat', 35], ['rear', 10], [null, 55]], rest: [0.8, 3.2], climb: 4, alarm: 'bound' },
   // strolls, sits, grooms and now and then pounces; flees at a sprint, leaping what is in the way
-  cat: { walk: [11, 17], run: [80, 100], hop: [44, 58, 52, 66], flee: [90, 110, 70, 90], rest: [1.2, 4], climb: 4 },
+  cat: { walk: [11, 17], run: [80, 100], walkT: [1.2, 4], hop: [44, 58, 52, 66], pHop: 0.12, flee: [90, 110, 70, 90], pFlee: 0.15, pWalk: 0.68, poses: [['rear', 40], ['loaf', 30], ['eat', 15], [null, 15]], rest: [1.2, 4], climb: 4, alarm: 'run', leapsWalls: true },
   // squats a long while, then a short low hop; frightened, quick little hops
-  toad: { walk: [0, 0], run: [0, 0], hop: [10, 18, 30, 40], flee: [40, 56, 52, 68], rest: [2, 5.5], climb: 3 },
+  toad: { walk: [0, 0], run: [0, 0], walkT: [0, 0], hop: [10, 18, 30, 40], pHop: 0.55, flee: [40, 56, 52, 68], pFlee: 1, pWalk: 0, poses: [['eat', 50], ['rear', 15], [null, 35]], rest: [2, 5.5], climb: 3, alarm: 'bound' },
   // creeps along slowly and basks; frightened, it scurries
-  salamander: { walk: [5, 9], run: [36, 46], hop: null, flee: null, rest: [1.5, 5], climb: 3 },
+  salamander: { walk: [5, 9], run: [36, 46], walkT: [1.2, 5], hop: null, pHop: 0, flee: null, pFlee: 0, pWalk: 0.65, poses: [[null, 50], ['rear', 25], ['eat', 25]], rest: [1.5, 5], climb: 3, alarm: 'run' },
+  // grazes and steps on slowly, raises its head to look about; frightened, it bounds away in great leaps
+  deer: { walk: [7, 11], run: [0, 0], walkT: [1, 3], hop: null, pHop: 0, flee: [80, 100, 95, 115], pFlee: 1, pWalk: 0.45, poses: [['eat', 55], ['rear', 25], ['loaf', 8], [null, 12]], rest: [1.5, 4.5], climb: 4, alarm: 'bound', leapsWalls: true },
+  // trundles about and roots in the ground; frightened, a heavy, not very fast run
+  badger: { walk: [6, 10], run: [44, 54], walkT: [1.5, 4], hop: null, pHop: 0, flee: null, pFlee: 0, pWalk: 0.55, poses: [['eat', 55], ['rear', 15], [null, 30]], rest: [1.5, 4], climb: 3, alarm: 'run' },
+  // walks with a bobbing head and pecks; flutters up a little now and then, and takes wing when frightened
+  dove: { walk: [5, 9], run: [0, 0], walkT: [0.8, 2.5], hop: [10, 18, 40, 52], pHop: 0.08, flee: null, pFlee: 0, pWalk: 0.5, poses: [['eat', 60], ['rear', 15], [null, 25]], rest: [0.8, 2.5], climb: 3, alarm: 'fly', fly: 0.07 },
+  // trots about, sits, curls up, and pounces high on mice; flees at a long run
+  fox: { walk: [12, 18], run: [100, 120], walkT: [1.5, 4], hop: [25, 40, 95, 110], pHop: 0.15, flee: [100, 120, 70, 85], pFlee: 0.12, pWalk: 0.6, poses: [['rear', 35], ['loaf', 30], ['eat', 20], [null, 15]], rest: [1, 3.5], climb: 4, alarm: 'run', leapsWalls: true },
+  // restless: quick low bounds, and up on its hind legs to look about; frightened, long fast bounds
+  ermine: { walk: [0, 0], run: [0, 0], walkT: [0, 0], hop: [20, 34, 40, 52], pHop: 0.65, flee: [85, 105, 60, 80], pFlee: 1, pWalk: 0, poses: [['rear', 50], ['eat', 15], [null, 35]], rest: [0.4, 1.6], climb: 4, alarm: 'bound' },
+  // glides along ever so slowly; frightened, or struck, it draws into its shell a while
+  snail: { walk: [1.2, 2.2], run: [0, 0], walkT: [3, 8], hop: null, pHop: 0, flee: null, pFlee: 0, pWalk: 0.75, poses: [['eat', 40], ['rear', 20], [null, 40]], rest: [2, 6], climb: 2, alarm: 'hide' },
+  // scurries in short dashes, stopping to sniff up on its hind legs; frightened, it bolts
+  rat: { walk: [14, 22], run: [90, 110], walkT: [0.3, 1], hop: null, pHop: 0, flee: null, pFlee: 0, pWalk: 0.6, poses: [['rear', 40], ['eat', 30], [null, 30]], rest: [0.3, 1.5], climb: 3, alarm: 'run' },
 };
 
 export class WildRabbit {
@@ -115,6 +145,12 @@ export class WildRabbit {
     this.walkV = 0;
     /** distance walked (the stride of its legs) */
     this.stride = 0;
+    /** a dove's flight: seconds of it left, the height it makes for, and its speed */
+    this.fly = 0;
+    this.flyY = 0;
+    this.flyV = 0;
+    /** a snail's time drawn into its shell */
+    this.hide = 0;
     this.t = rng.range(0, 10);
   }
 
@@ -128,8 +164,16 @@ export class WildRabbit {
     return this.running && !this.air && this.walkT > 0;
   }
 
+  /** Whether it is flying (a dove on the wing). */
+  get flying() {
+    return this.running && this.fly > 0;
+  }
+
   /** Its pose as drawn: off the ground, striding, or what it does while resting. */
   get drawPose() {
+    // a dove beats its wings in flight and spreads them to glide down
+    if (this.kind === 'dove' && this.fly > 0) return Math.floor(this.t * 9) & 1 ? 'fly1' : 'fly2';
+    if (this.kind === 'snail' && this.hide > 0 && this.running) return 'loaf';
     if (this.air) return 'hop';
     if (this.walking) return Math.floor(this.stride / (this.kind === 'cat' ? 3 : 2)) & 1 ? 'walk2' : 'walk1';
     return this.running && !this.alarm ? this.pose || undefined : undefined;
@@ -144,7 +188,7 @@ export class WildRabbit {
   box(pad = 0) {
     const lying = this.dead || this.down;
     // (a wild animal is drawn at half the hutch's size: about 18 scene pixels long; a salamander and a toad keep low)
-    const tall = this.kind === 'salamander' ? 6 : this.kind === 'toad' ? 8 : this.kind === 'cat' ? 12 : 11;
+    const tall = { salamander: 6, toad: 8, snail: 8, rat: 7, ermine: 8, badger: 9, dove: 9, cat: 12, fox: 12, deer: 17 }[this.kind] ?? 11;
     return lying
       ? { x0: this.x - 8 - pad, y0: this.y - 6 - pad, x1: this.x + 8 + pad, y1: this.y + 1 + pad }
       : { x0: this.x - 7 - pad, y0: this.y - tall - pad, x1: this.x + 7 + pad, y1: this.y + 1 + pad };
@@ -251,6 +295,8 @@ export class Warren {
     r.pose = null;
     r.walkT = 0;
     if (r.hits >= WILD_HP) {
+      // (a dove struck down out of the air falls)
+      if (r.fly > 0) { r.fly = 0; r.air = true; r.vy = Math.max(0, r.vy); }
       r.down = true;
       r.downT = 0;
       r.vx *= 0.3;
@@ -356,41 +402,86 @@ export class Warren {
   }
 
   /**
-   * The next move of a cat, a toad or a salamander standing on the ground.
-   * Calm: a cat strolls a while, sits up, grooms or settles into a loaf, and
-   * now and then pounces (a low, long leap); a toad sits a long time,
-   * snaps at something and makes a short hop; a salamander creeps a few
-   * body lengths and basks. Alarmed: the cat sprints off, leaping what is
-   * in its way; the toad flees in quick low hops; the salamander scurries.
-   * @param {WildRabbit} r @param {typeof GAITS.cat} G
+   * The next move of any kind but the rabbit, standing on the ground, from
+   * its gait (GAITS): calm, it walks a while, makes its leap (a toad's hop,
+   * a pounce, an ermine's bound), a dove now and then takes a short flight,
+   * or it rests in one of its poses; frightened, it runs, bounds, takes
+   * wing, or — a snail — draws into its shell.
+   * @param {WildRabbit} r @param {Gait} G
    */
   kindMove(r, G) {
     const rng = this.rng;
     r.pose = null;
     if (r.alarm) {
+      if (G.alarm === 'hide') {
+        // into the shell for a while; then, calmer, it creeps on
+        r.hide = rng.range(4, 8) + 2 * r.hits;
+        r.rest = r.hide;
+        r.alarm = false;
+        return;
+      }
       r.face = r.x < r.from ? -1 : 1;
       if (rng.chance(r.kind === 'toad' ? 0.2 : 0.1)) r.face = -r.face;
-      if (G.flee && (r.kind === 'toad' || rng.chance(0.15))) return this.leap(r, G.flee, 1 + 0.12 * Math.min(2, r.hits));
+      if (G.alarm === 'fly') return this.takeOff(r, true);
+      if (G.flee && (G.alarm === 'bound' || rng.chance(G.pFlee))) return this.leap(r, G.flee, 1 + 0.12 * Math.min(2, r.hits));
       r.walkV = rng.range(G.run[0], G.run[1]) * (1 + 0.1 * Math.min(2, r.hits));
       r.walkT = rng.range(0.6, 1.4);
       return;
     }
     if (rng.chance(0.3)) r.face = -r.face;
-    if (r.kind === 'toad') {
-      if (rng.chance(0.55)) return this.leap(r, G.hop, 1);
-      r.pose = rng.chance(0.5) ? 'eat' : rng.chance(0.3) ? 'rear' : null; // a snap at a fly, or sitting up
-      r.rest = rng.range(G.rest[0], G.rest[1]);
-      return;
-    }
-    if (r.kind === 'cat' && G.hop && rng.chance(0.12)) return this.leap(r, G.hop, 1); // a pounce
-    if (rng.chance(r.kind === 'cat' ? 0.6 : 0.65)) {
+    if (G.fly && rng.chance(G.fly)) return this.takeOff(r, false);
+    if (G.hop && rng.chance(G.pHop)) return this.leap(r, G.hop, 1);
+    if (G.walk[1] > 0 && rng.chance(G.pWalk)) {
       r.walkV = rng.range(G.walk[0], G.walk[1]);
-      r.walkT = rng.range(1.2, r.kind === 'cat' ? 4 : 5);
+      r.walkT = rng.range(G.walkT[0], G.walkT[1]);
       return;
     }
-    const u = rng.next();
-    r.pose = r.kind === 'cat' ? (u < 0.4 ? 'rear' : u < 0.7 ? 'loaf' : u < 0.85 ? 'eat' : null) : u < 0.5 ? null : u < 0.75 ? 'rear' : 'eat';
+    r.pose = rng.weighted(G.poses.map((p) => p[0]), G.poses.map((p) => p[1]));
     r.rest = rng.range(G.rest[0], G.rest[1]);
+  }
+
+  /**
+   * A dove takes wing: up to a height well above where it was (frightened,
+   * higher, faster and longer), then on across the scene until it glides
+   * down to land.
+   * @param {WildRabbit} r @param {boolean} scared
+   */
+  takeOff(r, scared) {
+    const rng = this.rng;
+    r.fly = scared ? rng.range(2.2, 4) : rng.range(0.8, 1.6);
+    r.flyY = Math.max(8, r.y - (scared ? rng.range(35, 70) : rng.range(12, 24)));
+    r.flyV = scared ? rng.range(70, 90) * (1 + 0.1 * Math.min(2, r.hits)) : rng.range(30, 45);
+    r.air = true; r.vx = r.face * r.flyV; r.vy = -60;
+    r.pose = null; r.walkT = 0;
+    if (r.hits) this.bleed(r, 2 + r.hits, 0.6);
+  }
+
+  /**
+   * A dove in flight, by dt: wings beating, it climbs to its height and flies
+   * on, turning back from rock and the scene's edges; when the flight is
+   * spent it glides down (the ordinary fall lands it), but never onto water.
+   * @param {WildRabbit} r @param {number} dt
+   */
+  flyStep(r, dt) {
+    const solid = this.solid;
+    r.fly -= dt;
+    r.vy += ((r.flyY - r.y) * 2.5 - r.vy) * Math.min(1, dt * 4);
+    r.vx = r.face * r.flyV;
+    const nx = r.x + r.vx * dt, ny = r.y + r.vy * dt;
+    if (nx < 6 || nx > this.W - 6 || solid(Math.round(nx), Math.round(r.y) - 3) || solid(Math.round(nx), Math.round(r.y))) { r.face = -r.face; r.vx = -r.vx; }
+    else r.x = nx;
+    if (!(r.vy < 0 && solid(Math.round(r.x), Math.round(ny) - 6)) && !solid(Math.round(r.x), Math.round(ny) + 1)) r.y = Math.max(4, ny);
+    else r.vy = 0;
+    // a wounded one drips blood as it flies
+    if (r.hits && this.rng.chance(dt * 6)) this.bleed(r, 1);
+    if (r.fly <= 0) {
+      // over water it flies on a little longer; otherwise it glides down
+      if (this.wet(r.x, r.y)) { r.fly = 0.4; return; }
+      r.fly = 0;
+      r.vx = r.face * Math.min(r.flyV, 30);
+      r.vy = 0;
+      if (!r.alarm || !r.hits) r.alarm = false;
+    }
   }
 
   /** A leap: [vx lo, vx hi, vy lo, vy hi] in the way it faces. @param {WildRabbit} r @param {number[]} v @param {number} k */
@@ -422,14 +513,14 @@ export class Warren {
     let y = Math.round(r.y), k = 0;
     while (k <= G.climb && solid(X, y)) { y--; k++; }
     if (k > G.climb) {
-      if (r.kind === 'cat' && r.alarm && G.flee) return this.leap(r, G.flee, 1);
+      if (G.leapsWalls && r.alarm && G.flee) return this.leap(r, G.flee, 1);
       return turn();
     }
     if (k === 0) {
       let d = 0;
       while (d <= G.climb && !solid(X, y + 1)) { y++; d++; }
       if (d > G.climb) {
-        if (r.kind === 'cat' && r.alarm) { r.x = nx; r.air = true; r.vx = r.face * r.walkV * 0.8; r.vy = 0; r.walkT = 0; return; }
+        if (G.leapsWalls && r.alarm) { r.x = nx; r.air = true; r.vx = r.face * r.walkV * 0.8; r.vy = 0; r.walkT = 0; return; }
         return turn();
       }
     }
@@ -494,6 +585,8 @@ export class Warren {
       r.downT += dt;
       if (r.downT >= BLEED_OUT) this.kill(r);
     }
+    if (r.fly > 0 && r.running) { this.flyStep(r, dt); return; }
+    if (r.hide > 0) r.hide -= dt;
     if (r.air) {
       r.vy += HOP_GRAVITY * dt;
       const nx = r.x + r.vx * dt;
@@ -523,7 +616,7 @@ export class Warren {
           r.vx = 0; r.vy = 0;
           const G = GAITS[r.kind] || GAITS.rabbit;
           r.rest = r.alarm ? this.rng.range(0.03, r.kind === 'toad' ? 0.25 : 0.14) : this.rng.range(G.rest[0], G.rest[1]);
-          if (!r.alarm) { const u = this.rng.next(); r.pose = u < 0.35 ? 'eat' : u < 0.45 ? 'rear' : null; }
+          if (!r.alarm) { const u = this.rng.next(); r.pose = r.kind === 'rabbit' ? (u < 0.35 ? 'eat' : u < 0.45 ? 'rear' : null) : u < 0.4 ? this.rng.weighted(G.poses.map((p) => p[0]), G.poses.map((p) => p[1])) : null; }
           // where a bleeding one lands it leaves blood on the ground
           if (r.hits) { this.stain(r.x - r.face * this.rng.int(0, 3), r.y + 1, BLOOD[this.rng.int(0, 2)], r.hits * 2 + 2); if (hard > 60) this.bleed(r, r.hits * 2, 0.5); }
         }
