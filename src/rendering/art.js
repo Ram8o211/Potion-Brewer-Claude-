@@ -65,14 +65,86 @@ export function paintBackground(ctx, W, H, L) {
 
 const DK = '#140e12';
 
+/** A small integer hash → [0, 1). */
+function hash01(x, y, s = 0) {
+  let n = Math.imul(x | 0, 0x27d4eb2d) ^ Math.imul(y | 0, 0x165667b1) ^ Math.imul(s | 0, 0x9e3779b1);
+  n = Math.imul(n ^ (n >>> 15), 0x2c1b3c6d);
+  n ^= n >>> 13;
+  return (n >>> 0) / 4294967296;
+}
+
+/**
+ * Grit over a painted region, so no surface is one flat colour: single
+ * pixels a little lighter or darker, and (rate2) pairs of darker pixels
+ * like pits. Works on the pixels in place.
+ * @param {CanvasRenderingContext2D} g
+ */
+function grit(g, x0, y0, w, h, rate, seed) {
+  if (w <= 0 || h <= 0 || typeof g.getImageData !== 'function') return;
+  const img = g.getImageData(x0, y0, w, h), d = img.data;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const v = hash01(x + x0, y + y0, seed), p = (y * w + x) * 4;
+    if (!d[p + 3]) continue;
+    const k = v < rate ? 0.78 : v > 1 - rate ? 1.18 : 1;
+    if (k !== 1) for (let c = 0; c < 3; c++) d[p + c] = Math.min(255, d[p + c] * k);
+  }
+  g.putImageData(img, x0, y0);
+}
+
+/**
+ * The backdrop set back and the things on it brought forward (as in the
+ * farm's pens and the wilds): the wall, beam and floor lose a little
+ * colour and contrast toward their own ambient tone; the things — shelves
+ * and what stands on them, the barrel, the sack, the mortar, the plants —
+ * are ringed in ink (deeper below and to the right) and kept vivid, then
+ * laid over the backdrop.
+ * @param {CanvasRenderingContext2D} g the backdrop @param {any} things a canvas of the things, transparent elsewhere
+ */
+function separate(g, things, W, H) {
+  if (typeof g.getImageData !== 'function') { g.drawImage(things, 0, 0); return; }
+  const img = g.getImageData(0, 0, W, H), d = img.data;
+  let r = 0, gg = 0, b = 0, n = 0;
+  for (let p = 0; p < d.length; p += 16) { r += d[p]; gg += d[p + 1]; b += d[p + 2]; n++; }
+  r /= n; gg /= n; b /= n;
+  const mean = 0.3 * r + 0.59 * gg + 0.11 * b;
+  for (let p = 0; p < d.length; p += 4) {
+    const l = 0.3 * d[p] + 0.59 * d[p + 1] + 0.11 * d[p + 2], L = l + (mean - l) * 0.12;
+    for (let c = 0; c < 3; c++) {
+      const v = L + (d[p + c] - l) * 0.8, a = c === 0 ? r : c === 1 ? gg : b;
+      d[p + c] = v + (a - v) * 0.08;
+    }
+  }
+  g.putImageData(img, 0, 0);
+  const tg = things.getContext('2d', { willReadFrequently: true }), ti = tg.getImageData(0, 0, W, H), t = ti.data;
+  const solid = new Uint8Array(W * H);
+  for (let k = 0; k < W * H; k++) solid[k] = t[k * 4 + 3] > 96 ? 1 : 0;
+  for (let k = 0; k < W * H; k++) {
+    const p = k * 4;
+    if (solid[k]) {
+      const l = 0.3 * t[p] + 0.59 * t[p + 1] + 0.11 * t[p + 2];
+      for (let c = 0; c < 3; c++) t[p + c] = l + (t[p + c] - l) * 1.12;
+      continue;
+    }
+    const x = k % W, y = (k - x) / W;
+    const deep = (x > 0 && solid[k - 1]) || (y > 0 && solid[k - W]) || (x > 0 && y > 0 && solid[k - W - 1]);
+    const soft = !deep && ((x < W - 1 && solid[k + 1]) || (y < H - 1 && solid[k + W]));
+    if (!deep && !soft) continue;
+    t[p] = 16; t[p + 1] = 8; t[p + 2] = 16; t[p + 3] = Math.max(t[p + 3], deep ? 230 : 150);
+  }
+  tg.putImageData(ti, 0, 0);
+  g.drawImage(things, 0, 0);
+}
+
 /** @param {CanvasRenderingContext2D} g */
 function paintWorkshop(g, W, H, L) {
   const rng = new Rng('backdrop-2');
   const s = L.s, cx = L.cx, fy = L.floorY;
-  // ---- brick wall
-  R(g, 0, 0, W, fy, '#1e1a22');
+  // the things standing in the room are painted apart, then inked and laid over the backdrop (separate)
+  const thingsCv = makeCanvas(W, H), o = /** @type {CanvasRenderingContext2D} */ (thingsCv.getContext('2d'));
+  // ---- brick wall: warm old bricks, each its own tone, chipped, cracked, sooty or mossy here and there
+  R(g, 0, 0, W, fy, '#221a20');
   const bh = Math.max(4, Math.round(s * 0.2)), bw = bh * 2 + 3;
-  const bricks = ['#2c2632', '#332c3a', '#3a3341', '#2a2430', '#403848'];
+  const bricks = ['#3a2c32', '#45343a', '#4e3c40', '#36282e', '#56424a', '#4a3236'];
   for (let y = 0, row = 0; y < fy; y += bh, row++) {
     const off = row % 2 ? Math.round(bw / 2) : 0;
     for (let x = -off; x < W; x += bw) {
@@ -83,8 +155,13 @@ function paintWorkshop(g, W, H, L) {
       R(g, x + 1, y + 1, 1, bh - 2, mixHex(c, '#6a6070', 0.2));
       if (rng.chance(0.3)) R(g, x + 2 + rng.int(0, bw - 5), y + 2 + rng.int(0, Math.max(0, bh - 4)), rng.int(1, 2), 1, mixHex(c, '#0a080c', 0.5));
       if (rng.chance(0.06)) R(g, x + rng.int(1, bw - 3), y + bh - 2, rng.int(2, 4), 1, '#3f5a2a');
+      // a chipped corner, a hairline crack, a pale efflorescence
+      if (rng.chance(0.18)) R(g, rng.chance(0.5) ? x + 1 : x + bw - 2, y + 1, 1, 1, '#1a1418');
+      if (rng.chance(0.08)) { const kx = x + 3 + rng.int(0, Math.max(0, bw - 7)); R(g, kx, y + 1, 1, Math.max(1, bh - 3), mixHex(c, '#0a080c', 0.55)); R(g, kx + 1, y + 1, 1, Math.max(1, bh - 3), mixHex(c, '#8a7a80', 0.25)); }
+      if (rng.chance(0.05)) R(g, x + 2, y + bh - 3, bw - 4, 1, mixHex(c, '#b0a8a0', 0.3));
     }
   }
+  grit(g, 0, 0, W, fy, 0.05, 11);
   // soot above the hearth and darkness toward the top
   for (let y = 0; y < fy; y++) {
     const a = 0.35 * Math.max(0, 1 - y / (fy * 0.4));
@@ -99,7 +176,7 @@ function paintWorkshop(g, W, H, L) {
   for (let k = 0; k < 9; k++) {
     const hx = Math.round((k + 0.5) * (W / 9) + rng.range(-4, 4));
     if (!clear(hx, 2)) continue;
-    herbBundle(g, rng, hx, by + bth, Math.round(s * rng.range(0.45, 0.75)), rng.pick([['#2f5a24', '#4f8a32', '#7da447'], ['#4a3a6a', '#7a5aa8', '#a88ad8'], ['#5a6a24', '#8a9a32', '#b8c84a']]));
+    herbBundle(o, rng, hx, by + bth, Math.round(s * rng.range(0.45, 0.75)), rng.pick([['#2f5a24', '#4f8a32', '#7da447'], ['#4a3a6a', '#7a5aa8', '#a88ad8'], ['#5a6a24', '#8a9a32', '#b8c84a']]));
   }
   for (const side of [-1, 1]) {
     const x0 = side < 0 ? rng.int(1, 4) : W - rng.int(2, 5);
@@ -125,18 +202,27 @@ function paintWorkshop(g, W, H, L) {
   let ji = 0;
   for (const [sx, sy, sw, side] of shelves) {
     if (sw < 8) continue;
-    shelf(g, sx, sy, sw);
+    shelf(o, sx, sy, sw);
     let x = sx + 2;
     while (x < sx + sw - 4) {
       const kind = rng.next();
       const jar = L.jars.length ? L.jars[ji++ % L.jars.length] : { color: [0.5, 0.6, 0.8], form: 'liquid' };
-      if (kind < 0.55) { const jw = Math.max(4, Math.round(s * rng.range(0.16, 0.24))), jh = Math.max(5, Math.round(s * rng.range(0.24, 0.36))); if (x + jw > sx + sw - 2) break; drawJar(g, x, sy - 1 - jh, jw, jh, jar.color, jar.form); x += jw + 1 + rng.int(0, 1); }
-      else if (kind < 0.7) { const bw2 = Math.max(4, Math.round(s * 0.2)); if (x + bw2 > sx + sw - 2) break; bottle(g, x, sy - 1, bw2, Math.round(s * rng.range(0.38, 0.5)), jar.color); x += bw2 + 2; }
-      else if (kind < 0.85) { const n = rng.int(2, 4); for (let b = 0; b < n && x < sx + sw - 5; b++) { const bh2 = Math.round(s * rng.range(0.24, 0.32)); const c = rng.pick([PAL.copper1, PAL.leaf1, PAL.frost0, '#5a2340', PAL.wood2]); R(g, x - 1, sy - 2 - bh2, 4, bh2 + 1, DK); R(g, x, sy - 1 - bh2, 2, bh2, c); R(g, x, sy - bh2 + 1, 2, 1, PAL.brass); x += 3; } x += 2; }
-      else { const pw = Math.max(5, Math.round(s * 0.26)); if (x + pw > sx + sw - 2) break; pottedPlant(g, rng, x, sy - 1, pw); x += pw + 2; }
+      if (kind < 0.55) { const jw = Math.max(4, Math.round(s * rng.range(0.16, 0.24))), jh = Math.max(5, Math.round(s * rng.range(0.24, 0.36))); if (x + jw > sx + sw - 2) break; drawJar(o, x, sy - 1 - jh, jw, jh, jar.color, jar.form); x += jw + 1 + rng.int(0, 1); }
+      else if (kind < 0.7) { const bw2 = Math.max(4, Math.round(s * 0.2)); if (x + bw2 > sx + sw - 2) break; bottle(o, x, sy - 1, bw2, Math.round(s * rng.range(0.38, 0.5)), jar.color); x += bw2 + 2; }
+      else if (kind < 0.85) {
+        // books: each its own colour, a lighter top edge, a band on the spine
+        const n = rng.int(2, 4);
+        for (let b = 0; b < n && x < sx + sw - 5; b++) {
+          const bh2 = Math.round(s * rng.range(0.24, 0.32)); const c = rng.pick([PAL.copper1, PAL.leaf1, PAL.frost0, '#5a2340', PAL.wood2, '#2a3a6a']);
+          R(o, x - 1, sy - 2 - bh2, 4, bh2 + 1, DK); R(o, x, sy - 1 - bh2, 2, bh2, c); R(o, x, sy - 1 - bh2, 2, 1, mixHex(c, '#ffffff', 0.35)); R(o, x, sy - bh2 + 1, 2, 1, PAL.brass); R(o, x + 1, sy - 2 - Math.round(bh2 * 0.3), 1, 1, PAL.brass);
+          x += 3;
+        }
+        x += 2;
+      }
+      else { const pw = Math.max(5, Math.round(s * 0.26)); if (x + pw > sx + sw - 2) break; pottedPlant(o, rng, x, sy - 1, pw); x += pw + 2; }
     }
     // ivy trailing off the outer end of the shelf
-    ivy(g, rng, side < 0 ? sx + 1 : sx + sw - 2, sy + 2, Math.round(s * rng.range(0.4, 0.9)));
+    ivy(o, rng, side < 0 ? sx + 1 : sx + sw - 2, sy + 2, Math.round(s * rng.range(0.4, 0.9)));
   }
   // ---- the floor: big flagstones
   R(g, 0, fy, W, H - fy, '#2a2430');
@@ -144,18 +230,34 @@ function paintWorkshop(g, W, H, L) {
   for (let y = fy, row = 0; y < H; y += fh, row++) {
     const fw = fh * 3 + row;
     for (let x = -(row * 7) % fw; x < W; x += fw) {
-      const c = rng.pick(['#3d3844', '#4a4252', '#433b4a', '#38323f']);
+      // warm worn flags, apart from the wall's brick: each its own tone, lit along its top, a crack or a chip now and then
+      const c = rng.pick(['#4a4038', '#55493e', '#4e4440', '#433a34', '#5c5044']);
       R(g, x + 1, y + 1, fw - 1, fh - 1, c);
-      R(g, x + 1, y + 1, fw - 2, 1, mixHex(c, '#8a8296', 0.3));
+      R(g, x + 1, y + 1, fw - 2, 1, mixHex(c, '#b0a090', 0.3));
+      R(g, x + 1, y + fh - 1, fw - 1, 1, mixHex(c, '#0a080c', 0.35));
+      if (rng.chance(0.25)) { let kx = x + rng.int(3, Math.max(3, fw - 4)); for (let j = 1; j < fh - 1; j++) { R(g, kx, y + j, 1, 1, mixHex(c, '#0a080c', 0.5)); kx += rng.int(-1, 1); } }
+      if (rng.chance(0.2)) R(g, x + fw - 2, y + 1, 1, 1, '#1a1418');
+      if (rng.chance(0.1)) R(g, x + rng.int(2, Math.max(2, fw - 4)), y + fh - 2, 2, 1, '#3a5228');
     }
   }
+  grit(g, 0, fy, W, H - fy, 0.06, 23);
   R(g, 0, fy, W, 1, '#0d0a10'); R(g, 0, fy + 1, W, 1, 'rgba(0,0,0,0.4)');
   // ---- props on the floor, clear of the cauldron
   const lx = cx - L.half * 0.95, rx = cx + L.half * 0.95;
-  if (lx > s * 0.7) barrel(g, Math.round(lx - s * 0.75), fy + 1, Math.round(s * 0.62), Math.round(s * 0.8));
-  if (lx > s * 1.6) { stoneBlock(g, Math.round(lx - s * 1.5), fy + 1, Math.round(s * 0.55), Math.round(s * 0.36)); mortar(g, Math.round(lx - s * 1.38), fy + 1 - Math.round(s * 0.36), Math.round(s * 0.3)); }
-  if (W - rx > s * 0.8) sack(g, rng, Math.round(rx + s * 0.25), fy + 1, Math.round(s * 0.62), Math.round(s * 0.66));
-  if (W - rx > s * 1.6) pottedPlant(g, rng, Math.round(rx + s * 1.05), fy + 1, Math.round(s * 0.4));
+  if (lx > s * 0.7) barrel(o, Math.round(lx - s * 0.75), fy + 1, Math.round(s * 0.62), Math.round(s * 0.8));
+  if (lx > s * 1.6) { stoneBlock(o, Math.round(lx - s * 1.5), fy + 1, Math.round(s * 0.55), Math.round(s * 0.36)); mortar(o, Math.round(lx - s * 1.38), fy + 1 - Math.round(s * 0.36), Math.round(s * 0.3)); }
+  if (W - rx > s * 0.8) sack(o, rng, Math.round(rx + s * 0.25), fy + 1, Math.round(s * 0.62), Math.round(s * 0.66));
+  if (W - rx > s * 1.6) pottedPlant(o, rng, Math.round(rx + s * 1.05), fy + 1, Math.round(s * 0.4));
+  // the things given grain of their own, then inked and laid over the receded backdrop
+  grit(o, 0, 0, W, H, 0.04, 37);
+  separate(g, thingsCv, W, H);
+  // a warm light on the wall behind the cauldron, so its dark iron stands out against it
+  const back = g.createRadialGradient(cx, (L.top + fy) / 2, s * 0.6, cx, (L.top + fy) / 2, L.half * 1.6);
+  back.addColorStop(0, 'rgba(255,170,90,0.16)');
+  back.addColorStop(0.6, 'rgba(255,140,70,0.06)');
+  back.addColorStop(1, 'rgba(255,140,70,0)');
+  g.fillStyle = back;
+  g.fillRect(0, 0, W, fy);
   // ---- hearth glow and vignette
   const gl = g.createRadialGradient(cx, fy, s * 0.2, cx, fy, s * 4.2);
   gl.addColorStop(0, 'rgba(255,150,60,0.22)');
@@ -631,14 +733,24 @@ export function paintHearth(ctx, c, v) {
   const top = Math.round(v.oy + (c.depth + 0.25) * s), bot = Math.round(v.oy + (c.depth + 0.7) * s);
   const rng = new Rng('hearth');
   const sw = Math.max(5, Math.round(s * 0.32)), sh = Math.max(3, Math.round(s * 0.16));
+  // the hearth: dressed sandstone, apart from the wall's brick and the floor's flags — each stone its own
+  // tone, lit along its top, shaded along its foot and right side, chipped now and then, sooted toward the fire
+  R(ctx, left, top, right - left, bot - top, '#1a1214');
   for (let y = top, row = 0; y < bot; y += sh, row++) {
     for (let x = left - (row % 2 ? sw / 2 : 0); x < right; x += sw) {
-      const c0 = rng.pick([PAL.stone2, PAL.stone3, PAL.stone2, PAL.stone4]);
+      let c0 = rng.pick(['#8a7458', '#9a8262', '#7e6a50', '#a48c6a', '#8e7a5c']);
+      const soot = Math.max(0, 1 - Math.abs(x + sw / 2 - v.ox) / (c.belly * s * 0.8));
+      if (soot > 0) c0 = mixHex(c0, '#2a1e1a', soot * 0.45);
       R(ctx, x + 1, y + 1, sw - 1, sh - 1, c0);
-      R(ctx, x + 1, y + 1, sw - 2, 1, PAL.stone4);
+      R(ctx, x + 1, y + 1, sw - 2, 1, mixHex(c0, '#f0e0c0', 0.35));
+      R(ctx, x + 1, y + sh - 1, sw - 1, 1, mixHex(c0, '#1a1214', 0.4));
+      R(ctx, x + sw - 1, y + 2, 1, sh - 2, mixHex(c0, '#1a1214', 0.3));
+      if (rng.chance(0.2)) R(ctx, x + 1, y + 1, 1, 1, '#1a1214');
+      if (rng.chance(0.15)) { const kx = x + 2 + rng.int(0, Math.max(0, sw - 5)); R(ctx, kx, y + 2, 1, Math.max(1, sh - 3), mixHex(c0, '#1a1214', 0.5)); }
     }
   }
-  R(ctx, left, top, right - left, 1, PAL.stone4);
+  grit(ctx, Math.max(0, left), Math.max(0, top), right - left, bot - top, 0.06, 41);
+  R(ctx, left, top, right - left, 1, '#c8b08a');
   // firewood under the cauldron: split logs with pale end grain, and coals
   const fy = Math.round(v.oy + (c.depth + 0.2) * s), lw = Math.round(c.belly * 0.5 * s), lh = Math.max(3, Math.round(s * 0.11));
   for (const [dx, dy, ww] of [[-0.55, 0, 1], [0.05, 0, 1], [-0.25, -1, 0.9]]) {

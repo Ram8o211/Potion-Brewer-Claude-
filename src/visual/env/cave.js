@@ -198,10 +198,10 @@ export function glowShrooms(cv, o) {
     const n = 1 + Math.floor(hash2(i, 2, o.seed) * 3);
     for (let m = 0; m < n; m++) {
       const mx = x + (m - (n - 1) / 2) * 3, h = 2 + Math.floor(hash2(i, m + 3, o.seed) * 4), r = 1 + (m === 0 ? 1 : 0);
-      for (let j = 1; j <= h; j++) cv.set(mx, y - j, stem);
-      for (let dx = -r; dx <= r; dx++) cv.set(mx + dx, y - h - 1, cap);
-      for (let dx = -r + 1; dx <= r - 1; dx++) cv.set(mx + dx, y - h - 2, lit);
-      cv.set(mx - r, y - h - 2, cap);
+      for (let j = 1; j <= h; j++) cv.setThing(mx, y - j, stem);
+      for (let dx = -r; dx <= r; dx++) cv.setThing(mx + dx, y - h - 1, cap);
+      for (let dx = -r + 1; dx <= r - 1; dx++) cv.setThing(mx + dx, y - h - 2, lit);
+      cv.setThing(mx - r, y - h - 2, cap);
     }
     cv.block(x - 4, y - 8, x + 5, y + 1);
     cv.claim(x - 4, y - 8, x + 4, y - 1);
@@ -214,8 +214,8 @@ export function glowShrooms(cv, o) {
 /** A torch on a short post: its flame and a warm light round it. */
 export function torch(cv, x, y, h = 10) {
   const wood = col('#4a3020'), woodL = col('#6a4830'), iron = col('#2a2624'), fl = [col('#fff4b0'), col('#ffc040'), col('#ff7a20'), col('#c03a10')];
-  for (let j = 0; j < h; j++) { cv.set(x, y - j, wood); cv.set(x + 1, y - j, j % 3 ? woodL : wood); }
-  for (let dx = -1; dx <= 2; dx++) cv.set(x + dx, y - h, iron);
+  for (let j = 0; j < h; j++) { cv.setThing(x, y - j, wood); cv.setThing(x + 1, y - j, j % 3 ? woodL : wood); }
+  for (let dx = -1; dx <= 2; dx++) cv.setThing(x + dx, y - h, iron);
   const flame = [[0, 1, 0], [-1, 1, 1], [0, 0, 0], [1, 0, 1], [0, 2, 1], [1, 1, 0], [-1, 2, 2], [2, 1, 2], [0, 3, 2], [1, 2, 1], [1, 3, 3], [0, 4, 3]];
   for (const [dx, dy, t] of flame) cv.set(x + dx, y - h - dy, fl[t]);
   cv.claim(x - 1, y - h - 4, x + 2, y);
