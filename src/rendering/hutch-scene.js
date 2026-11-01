@@ -21,6 +21,10 @@ import { Rng, hashString } from '../core/rng.js';
 import { PAL, makeCanvas } from './art.js';
 import { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } from './rabbit.js';
 import { GROUND, GROUND_Y0 } from './hutch-ground.js';
+import { kindOf } from '../game/kinds.js';
+
+/** Walking speed in the hutch (px/s) of the kinds that walk rather than hop. */
+const WALKERS = { cat: 12, salamander: 5 };
 
 export const HUTCH_W = 224;
 export const HUTCH_H = 92;
@@ -63,6 +67,7 @@ function R(ctx, x, y, w, h, c) {
  * @property {number} at       seconds into the act (scaled by pace)
  * @property {number} dur
  * @property {string|null} pose  pose asked of drawRabbit
+ * @property {number} [stride] px walked (a walker's legs)
  * @property {number} hops     hops left in a run
  * @property {number} hopT     seconds per hop
  * @property {number} hopH     hop height
@@ -396,6 +401,20 @@ export class HutchScene {
     if (L.frost === 3) { a.act = 'frozen'; a.pose = null; return; } // frozen stiff
     if (a.act === 'collapse' || a.act === 'frozen') this._begin(a, 'idle', 0.5);
     a.at += dt * rabbitPace(snap);
+    if (a.act === 'walk' || a.act === 'run') {
+      // a cat or a salamander walks to its goal, striding as it goes
+      const dx = a.gx - a.x, dy = a.gy - a.y, d = Math.hypot(dx, dy);
+      const v = (WALKERS[kindOf(a.look)] || 10) * (a.act === 'run' ? 3 : 1) * (a.snap.stage === 'kit' ? 0.7 : 1);
+      const s = Math.min(d, v * dt * rabbitPace(snap));
+      if (d > 0.5) { a.x += (dx / d) * s; a.y += (dy / d) * s; if (Math.abs(dx) > 0.3) a.face = dx > 0 ? 1 : -1; }
+      a.stride = (a.stride || 0) + s;
+      a.pose = Math.floor(a.stride / 2) & 1 ? 'walk2' : 'walk1';
+      if (d <= 0.5 || a.at > 12) {
+        a.x = a.gx; a.y = a.gy;
+        if (a.next === 'eat') { a.next = null; this._begin(a, 'eat', 2.6); } else this._decide(a);
+      }
+      return;
+    }
     if (a.act === 'hop' || a.act === 'zoom') {
       const p = Math.min(1, a.at / a.hopT);
       a.x = a.sx + (a.tx - a.sx) * p;
@@ -433,7 +452,10 @@ export class HutchScene {
     if ((L.fire === 3 || L.vitality === 3) && r.chance(0.4)) return this._hopTo(a, this._goal(a, r, 60), 4, true);
     if (L.strength >= 2 && r.chance(0.3)) return this._begin(a, 'flex', r.range(1.2, 2));
     if ((L.love >= 2 || L.vitality >= 2) && a.snap.hp === 0 && r.chance(0.25)) return this._begin(a, 'flop', r.range(2.5, 4.5));
-    const pick = r.weighted(['idle', 'hop', 'groom', 'eat', 'sniff'], [3, 3, 1.5, 1.2, 1.5]);
+    const kind = kindOf(a.look);
+    // a cat sits about and grooms, a toad mostly squats still, a salamander basks
+    const w = kind === 'cat' ? [3, 2.5, 2.5, 1.2, 1] : kind === 'toad' ? [6, 2, 0.5, 1.2, 0.8] : kind === 'salamander' ? [5, 3, 0.3, 1, 1] : [3, 3, 1.5, 1.2, 1.5];
+    const pick = r.weighted(['idle', 'hop', 'groom', 'eat', 'sniff'], w);
     if (pick === 'hop') return this._hopTo(a, this._goal(a, r, 30), kit ? 2 : r.int(1, 3), false);
     if (pick === 'eat') {
       const dx = RACK.x - a.x, dy = RACK.y - a.y;
@@ -449,6 +471,8 @@ export class HutchScene {
   _begin(a, act, dur) {
     a.act = act; a.at = 0; a.dur = dur; a.hops = 0;
     a.pose = act === 'loaf' ? 'loaf' : act === 'flex' ? 'rear' : act === 'flop' ? 'flop' : act === 'eat' ? 'eat' : null;
+    // a cat grooms sitting up
+    if (act === 'groom' && kindOf(a.look) === 'cat') a.pose = 'rear';
     if (act === 'eat') a.face = -1;
   }
 
@@ -485,10 +509,22 @@ export class HutchScene {
   /** Start a run of hops toward a goal. @param {Actor} a @param {{x:number, y:number}} goal @param {number} n @param {boolean} zoom */
   _hopTo(a, goal, n, zoom) {
     const kit = a.snap.stage === 'kit';
+    if (WALKERS[kindOf(a.look)]) {
+      // walkers stroll (or, zooming, run) the whole way instead of hopping
+      a.act = zoom ? 'run' : 'walk'; a.at = 0; a.hops = 0;
+      a.gx = goal.x; a.gy = goal.y;
+      if (Math.hypot(goal.x - a.x, goal.y - a.y) < 0.5) {
+        // a poke: a startled step on the spot
+        a.gx = this._roam(a.x + a.face * 3, a.y).x;
+      }
+      return;
+    }
+    const toad = kindOf(a.look) === 'toad';
     a.act = zoom ? 'zoom' : 'hop'; a.pose = null;
     a.gx = goal.x; a.gy = goal.y; a.hops = n;
     a.hopT = zoom ? 0.17 : 0.34; a.hopH = kit ? 2 : zoom ? 5 : 4;
     a.step = (kit ? 5 : 8) * (zoom ? 1.7 : 1);
+    if (toad) { a.hopH = Math.max(2, a.hopH - 1); a.step *= 0.6; a.hopT *= 0.85; } // a toad's hops are short and low
     if (!this._nextHop(a)) this._begin(a, 'idle', 0.6);
   }
 

@@ -1,3 +1,10 @@
+// Wild animals in the wilds: a few hop, prowl or creep about each region's
+// open ground — rabbits everywhere, and, by habitat (game/kinds.js), cats
+// that stroll, sit and pounce, toads that squat and make short hops, fire
+// salamanders that creep slowly and bask. Each kind moves in its own way,
+// calm and alarmed (`hop` and `walkStep` below); wounds, blood, the catch
+// and the body are the same for all of them.
+//
 // Wild rabbits in the wilds: a few hop about each region's open ground,
 // grazing and resting between calm hops. A tap on one wounds it: blood
 // bursts from where it was struck, and from then on it bleeds — drips as it
@@ -16,6 +23,7 @@
 
 import { Rng, hashString } from '../core/rng.js';
 import { rollLook } from './colony.js';
+import { pickKind, kindLook } from './kinds.js';
 
 /** Pull of gravity on a rabbit and on blood, scene pixels per second². */
 export const HOP_GRAVITY = 300, BLOOD_GRAVITY = 260;
@@ -51,11 +59,31 @@ export function wildLook(rng) {
   return look;
 }
 
+/**
+ * How each kind gets about (scene pixels and seconds): calm walking speed
+ * (0: it only hops), alarmed running speed, the calm and alarmed hop, and
+ * how long it rests between moves.
+ * @type {Record<string, {walk:[number, number], run:[number, number], hop:[number, number, number, number]|null, flee:[number, number, number, number]|null, rest:[number, number], climb:number}>}
+ */
+export const GAITS = {
+  rabbit: { walk: [0, 0], run: [0, 0], hop: [16, 30, 42, 58], flee: [78, 100, 82, 108], rest: [0.8, 3.2], climb: 4 },
+  // strolls, sits, grooms and now and then pounces; flees at a sprint, leaping what is in the way
+  cat: { walk: [11, 17], run: [80, 100], hop: [44, 58, 52, 66], flee: [90, 110, 70, 90], rest: [1.2, 4], climb: 4 },
+  // squats a long while, then a short low hop; frightened, quick little hops
+  toad: { walk: [0, 0], run: [0, 0], hop: [10, 18, 30, 40], flee: [40, 56, 52, 68], rest: [2, 5.5], climb: 3 },
+  // creeps along slowly and basks; frightened, it scurries
+  salamander: { walk: [5, 9], run: [36, 46], hop: null, flee: null, rest: [1.5, 5], climb: 3 },
+};
+
 export class WildRabbit {
-  /** @param {string} id @param {number} x @param {number} y its feet (scene pixels) @param {Rng} rng */
-  constructor(id, x, y, rng) {
+  /**
+   * @param {string} id @param {number} x @param {number} y its feet (scene pixels) @param {Rng} rng
+   * @param {import('./kinds.js').AnimalKind} [kind]
+   */
+  constructor(id, x, y, rng, kind = 'rabbit') {
     this.id = id;
-    this.look = wildLook(rng);
+    this.kind = kind;
+    this.look = kind === 'rabbit' ? wildLook(rng) : kindLook(kind, rng);
     /** @type {'f'|'m'} */
     this.sex = rng.chance(0.5) ? 'f' : 'm';
     this.x = x; this.y = y; this.vx = 0; this.vy = 0;
@@ -82,12 +110,29 @@ export class WildRabbit {
     this.spurt = 0.6;
     /** the flinch of a blow (fades) */
     this.react = 0;
+    /** walking on the ground (cats, salamanders): seconds of it left, and its speed */
+    this.walkT = 0;
+    this.walkV = 0;
+    /** distance walked (the stride of its legs) */
+    this.stride = 0;
     this.t = rng.range(0, 10);
   }
 
   /** How badly it is hurt, as the renderer's health band (0 healthy … 3 down). */
   get band() {
     return this.dead || this.down ? 3 : Math.min(2, this.hits);
+  }
+
+  /** Whether it is walking along the ground just now. */
+  get walking() {
+    return this.running && !this.air && this.walkT > 0;
+  }
+
+  /** Its pose as drawn: off the ground, striding, or what it does while resting. */
+  get drawPose() {
+    if (this.air) return 'hop';
+    if (this.walking) return Math.floor(this.stride / (this.kind === 'cat' ? 3 : 2)) & 1 ? 'walk2' : 'walk1';
+    return this.running && !this.alarm ? this.pose || undefined : undefined;
   }
 
   /** Whether it is still up and about. */
@@ -98,10 +143,11 @@ export class WildRabbit {
   /** The box it is struck in (scene pixels): its body round its feet. @param {number} [pad] */
   box(pad = 0) {
     const lying = this.dead || this.down;
-    // (a wild rabbit is drawn at half the hutch's size: about 18 scene pixels long)
+    // (a wild animal is drawn at half the hutch's size: about 18 scene pixels long; a salamander and a toad keep low)
+    const tall = this.kind === 'salamander' ? 6 : this.kind === 'toad' ? 8 : this.kind === 'cat' ? 12 : 11;
     return lying
       ? { x0: this.x - 8 - pad, y0: this.y - 6 - pad, x1: this.x + 8 + pad, y1: this.y + 1 + pad }
-      : { x0: this.x - 7 - pad, y0: this.y - 11 - pad, x1: this.x + 7 + pad, y1: this.y + 1 + pad };
+      : { x0: this.x - 7 - pad, y0: this.y - tall - pad, x1: this.x + 7 + pad, y1: this.y + 1 + pad };
   }
 }
 
@@ -109,13 +155,15 @@ export class Warren {
   /**
    * The rabbits of a region.
    * @param {string} region @param {string} seed
-   * @param {{solid:Test, liquid:Test, W:number, H:number, spots:[number, number][]}} scene its ground and the spots a rabbit may start on
+   * @param {{solid:Test, liquid:Test, W:number, H:number, spots:[number, number][], habitat?:[string, number][]}} scene its ground, the spots an animal may start on, and (optionally) which kinds live there
    */
   constructor(region, seed, scene) {
     this.region = region;
     this.solid = scene.solid; this.liquid = scene.liquid;
     this.W = scene.W; this.H = scene.H;
     this.spots = scene.spots;
+    /** which kinds live here, by weight (kinds.js HABITAT unless given) */
+    this.habitat = scene.habitat || null;
     this.rng = new Rng(hashString(`warren:${seed}:${region}`));
     this.serial = 0;
     /** @type {WildRabbit[]} */
@@ -141,7 +189,9 @@ export class Warren {
       const left = this.rng.chance(0.5);
       at = this.spots.reduce((b, s) => (left ? s[0] < b[0] : s[0] > b[0]) ? s : b, at);
     }
-    const r = new WildRabbit(`${this.region}-${++this.serial}`, at[0], at[1], this.rng);
+    const h = this.habitat;
+    const kind = /** @type {import('./kinds.js').AnimalKind} */ (h ? this.rng.weighted(h.map((x) => x[0]), h.map((x) => x[1])) : pickKind(this.region, this.rng));
+    const r = new WildRabbit(`${this.region}-${++this.serial}`, at[0], at[1], this.rng, kind);
     if (edge) { r.face = at[0] < this.W / 2 ? 1 : -1; r.rest = 0.1; }
     this.rabbits.push(r);
     return r;
@@ -173,6 +223,7 @@ export class Warren {
     r.alarm = true;
     r.from = x;
     r.pose = null;
+    r.walkT = 0;
     if (!r.air) r.rest = 0;
   }
 
@@ -198,6 +249,7 @@ export class Warren {
     r.alarm = true;
     r.from = x;
     r.pose = null;
+    r.walkT = 0;
     if (r.hits >= WILD_HP) {
       r.down = true;
       r.downT = 0;
@@ -280,7 +332,8 @@ export class Warren {
    * @param {WildRabbit} r
    */
   hop(r) {
-    const rng = this.rng;
+    const rng = this.rng, G = GAITS[r.kind] || GAITS.rabbit;
+    if (r.kind !== 'rabbit') return this.kindMove(r, G);
     if (r.alarm) {
       // away from where the blow came from, zigzagging; a wall or the scene's edge turns it
       r.face = r.x < r.from ? -1 : 1;
@@ -300,6 +353,94 @@ export class Warren {
     r.pose = null;
     // a wounded one throws blood off as it bounds
     if (r.hits) this.bleed(r, 2 + r.hits * 2, 0.7);
+  }
+
+  /**
+   * The next move of a cat, a toad or a salamander standing on the ground.
+   * Calm: a cat strolls a while, sits up, grooms or settles into a loaf, and
+   * now and then pounces (a low, long leap); a toad sits a long time,
+   * snaps at something and makes a short hop; a salamander creeps a few
+   * body lengths and basks. Alarmed: the cat sprints off, leaping what is
+   * in its way; the toad flees in quick low hops; the salamander scurries.
+   * @param {WildRabbit} r @param {typeof GAITS.cat} G
+   */
+  kindMove(r, G) {
+    const rng = this.rng;
+    r.pose = null;
+    if (r.alarm) {
+      r.face = r.x < r.from ? -1 : 1;
+      if (rng.chance(r.kind === 'toad' ? 0.2 : 0.1)) r.face = -r.face;
+      if (G.flee && (r.kind === 'toad' || rng.chance(0.15))) return this.leap(r, G.flee, 1 + 0.12 * Math.min(2, r.hits));
+      r.walkV = rng.range(G.run[0], G.run[1]) * (1 + 0.1 * Math.min(2, r.hits));
+      r.walkT = rng.range(0.6, 1.4);
+      return;
+    }
+    if (rng.chance(0.3)) r.face = -r.face;
+    if (r.kind === 'toad') {
+      if (rng.chance(0.55)) return this.leap(r, G.hop, 1);
+      r.pose = rng.chance(0.5) ? 'eat' : rng.chance(0.3) ? 'rear' : null; // a snap at a fly, or sitting up
+      r.rest = rng.range(G.rest[0], G.rest[1]);
+      return;
+    }
+    if (r.kind === 'cat' && G.hop && rng.chance(0.12)) return this.leap(r, G.hop, 1); // a pounce
+    if (rng.chance(r.kind === 'cat' ? 0.6 : 0.65)) {
+      r.walkV = rng.range(G.walk[0], G.walk[1]);
+      r.walkT = rng.range(1.2, r.kind === 'cat' ? 4 : 5);
+      return;
+    }
+    const u = rng.next();
+    r.pose = r.kind === 'cat' ? (u < 0.4 ? 'rear' : u < 0.7 ? 'loaf' : u < 0.85 ? 'eat' : null) : u < 0.5 ? null : u < 0.75 ? 'rear' : 'eat';
+    r.rest = rng.range(G.rest[0], G.rest[1]);
+  }
+
+  /** A leap: [vx lo, vx hi, vy lo, vy hi] in the way it faces. @param {WildRabbit} r @param {number[]} v @param {number} k */
+  leap(r, v, k) {
+    const rng = this.rng;
+    r.vx = r.face * rng.range(v[0], v[1]) * k;
+    r.vy = -rng.range(v[2], v[3]);
+    const flight = (2 * -r.vy) / HOP_GRAVITY, lx = r.x + r.vx * flight;
+    if (lx < 8 || lx > this.W - 8 || this.wet(lx, r.y)) { r.face = -r.face; r.vx = -r.vx; }
+    r.air = true;
+    r.pose = null;
+    r.walkT = 0;
+    if (r.hits) this.bleed(r, 2 + r.hits * 2, 0.7);
+  }
+
+  /**
+   * One step of walking along the ground: it follows the surface up and
+   * down small steps; a drop, a wall, water or the scene's edge turns it
+   * back — but a fleeing cat leaps up walls and down drops.
+   * @param {WildRabbit} r @param {number} dt
+   */
+  walkStep(r, dt) {
+    const G = GAITS[r.kind] || GAITS.rabbit, solid = this.solid;
+    r.walkT -= dt;
+    const nx = r.x + r.face * r.walkV * dt, X = Math.round(nx);
+    const turn = () => { r.face = -r.face; if (!r.alarm) r.walkT = Math.min(r.walkT, 0.3); };
+    if (nx < 6 || nx > this.W - 6 || this.wet(nx + r.face * 4, r.y)) return turn();
+    // the surface under the next column: climb a step, or step down one
+    let y = Math.round(r.y), k = 0;
+    while (k <= G.climb && solid(X, y)) { y--; k++; }
+    if (k > G.climb) {
+      if (r.kind === 'cat' && r.alarm && G.flee) return this.leap(r, G.flee, 1);
+      return turn();
+    }
+    if (k === 0) {
+      let d = 0;
+      while (d <= G.climb && !solid(X, y + 1)) { y++; d++; }
+      if (d > G.climb) {
+        if (r.kind === 'cat' && r.alarm) { r.x = nx; r.air = true; r.vx = r.face * r.walkV * 0.8; r.vy = 0; r.walkT = 0; return; }
+        return turn();
+      }
+    }
+    r.stride += Math.abs(nx - r.x);
+    r.x = nx; r.y = y;
+    // a wounded one drips as it goes
+    if (r.hits && Math.floor(r.stride / 6) !== Math.floor((r.stride - r.walkV * dt) / 6)) this.bleed(r, 1);
+    if (r.walkT <= 0) {
+      r.walkT = 0;
+      r.rest = r.alarm ? this.rng.range(0.02, 0.1) : this.rng.range(G.rest[0], G.rest[1]) * 0.6;
+    }
   }
 
   /** Whether the ground round column x near row y is water (or lava). @param {number} x @param {number} y */
@@ -380,7 +521,8 @@ export class Warren {
           r.y = Math.round(r.y);
           const hard = r.vy;
           r.vx = 0; r.vy = 0;
-          r.rest = r.alarm ? this.rng.range(0.03, 0.14) : this.rng.range(0.8, 3.2);
+          const G = GAITS[r.kind] || GAITS.rabbit;
+          r.rest = r.alarm ? this.rng.range(0.03, r.kind === 'toad' ? 0.25 : 0.14) : this.rng.range(G.rest[0], G.rest[1]);
           if (!r.alarm) { const u = this.rng.next(); r.pose = u < 0.35 ? 'eat' : u < 0.45 ? 'rear' : null; }
           // where a bleeding one lands it leaves blood on the ground
           if (r.hits) { this.stain(r.x - r.face * this.rng.int(0, 3), r.y + 1, BLOOD[this.rng.int(0, 2)], r.hits * 2 + 2); if (hard > 60) this.bleed(r, r.hits * 2, 0.5); }
@@ -390,7 +532,8 @@ export class Warren {
     }
     // standing: it falls if the ground went from under it
     if (!solid(Math.round(r.x), Math.round(r.y) + 1)) { r.air = true; r.vx = 0; r.vy = 0; return; }
-    if (!r.running) return;
+    if (!r.running) { r.walkT = 0; return; }
+    if (r.walkT > 0) { this.walkStep(r, dt); return; }
     r.rest -= dt;
     if (r.rest <= 0) this.hop(r);
   }

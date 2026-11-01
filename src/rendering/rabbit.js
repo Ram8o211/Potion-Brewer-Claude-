@@ -226,12 +226,12 @@ export function rabbitPose(snap, want) {
   if (!snap || snap.alive === false) return 'dead';
   const L = rabbitLevels(snap);
   if (L.death === 3 || snap.hp >= 3) return 'collapse';
-  if (want === 'loaf' || want === 'rear' || want === 'flop' || want === 'eat' || want === 'hop' || want === 'hurt') return want;
+  if (want === 'loaf' || want === 'rear' || want === 'flop' || want === 'eat' || want === 'hop' || want === 'hurt' || want === 'walk1' || want === 'walk2') return want;
   if (L.toxicity >= 2) return 'sick';
   if (snap.hp >= 2) return 'hurt';
   return 'idle';
 }
-/** @typedef {'idle'|'sick'|'hurt'|'loaf'|'rear'|'flop'|'eat'|'hop'|'collapse'|'dead'} RabbitPose */
+/** @typedef {'idle'|'sick'|'hurt'|'loaf'|'rear'|'flop'|'eat'|'hop'|'walk1'|'walk2'|'collapse'|'dead'} RabbitPose */
 
 /** How fast a rabbit lives (bob, hops, behaviours): slowed by death, poison and age, quickened by vitality or fire. @param {any} snap */
 export function rabbitPace(snap) {
@@ -247,10 +247,12 @@ const STAGE_G = { kit: 0.62, young: 0.82, adult: 1, elder: 0.97 };
  * An ear. 'up': y is its base row and it rises len rows, leaning back one
  * pixel every `lean` rows; 'lop': y is its top row and it hangs len rows;
  * 'flat' (lying poses): x is the tip and it lies len px to the right.
- * @typedef {{kind:'up'|'lop'|'flat', far:boolean, x:number, y:number, len:number, w:number, lean:number}} Ear
+ * 'cat': a pointed ear, x its left base column, y its base row, rising len rows.
+ * @typedef {{kind:'up'|'lop'|'flat'|'cat', far:boolean, x:number, y:number, len:number, w:number, lean:number}} Ear
  */
 /**
  * @typedef {Object} RabbitAnchors
+ * @property {import('../game/kinds.js').AnimalKind} kind
  * @property {RabbitPose} pose
  * @property {boolean} lying   lying poses (flop, collapse, dead)
  * @property {number} g        body scale (stage × size × traits × muscle)
@@ -279,6 +281,83 @@ const STAGE_G = { kit: 0.62, young: 0.82, adult: 1, elder: 0.97 };
  * @property {{x0:number,y0:number,x1:number,y1:number}} box  everything static, in frame pixels
  */
 
+/** How high a cat's tail curls above its root. */
+const CAT_TAIL_RISE = 6;
+
+/** @param {any} look @returns {import('../game/kinds.js').AnimalKind} */
+const kindOfLook = (look) => (look && (look.kind === 'cat' || look.kind === 'toad' || look.kind === 'salamander') ? look.kind : 'rabbit');
+
+/**
+ * The build of a cat, a toad or a salamander in a standing pose: body,
+ * chest and head, and its legs (a cat stands on four legs and strides
+ * through 'walk1'/'walk2'; a toad squats; a salamander creeps low on four
+ * splayed feet).
+ * @param {string} kind @param {RabbitPose} pose @param {number} ox @param {number} oy
+ * @param {number} g @param {number} hs @param {number} bulk @param {number} preg
+ */
+function kindBody(kind, pose, ox, oy, g, hs, bulk, preg) {
+  /** @type {{x:number,y:number,w:number,h:number}[]} */
+  const legs = [];
+  const walk = pose === 'walk1' ? 1 : pose === 'walk2' ? -1 : 0;
+  let haunch, chest, head;
+  if (kind === 'cat') {
+    if (pose === 'rear') {
+      // sitting upright, tail round its feet
+      haunch = E(ox + 11 * g, oy - 5 * g, 6.5 * g, 5 * g + preg);
+      chest = E(ox + 16 * g, oy - 10 * g, 4.5 * g + bulk, 6 * g);
+      head = E(ox + 18 * g, oy - 17 * g, 4.5 * hs, 4 * hs);
+      legs.push({ x: Math.round(chest.cx + 1), y: chest.cy + 2, w: 2, h: Math.max(1, oy - 1 - chest.cy - 2) });
+    } else if (pose === 'loaf' || pose === 'sick') {
+      // a tucked loaf, paws under it
+      haunch = E(ox + 11 * g, oy - 4 * g, 8 * g, 4 * g + preg);
+      chest = E(ox + 18 * g, oy - 4 * g, 5 * g + bulk, 4 * g);
+      head = E(ox + 24 * g, oy - (pose === 'sick' ? 6 : 8) * g, 4.5 * hs, 4 * hs);
+    } else {
+      // on four legs: a level back, head up (down to the ground when eating, pulled back when hurt)
+      const lh = Math.max(3, Math.round(6 * g));
+      const by = oy - lh;
+      haunch = E(ox + 11 * g, by - 3.5 * g, 6.5 * g, 4 * g + preg);
+      chest = E(ox + 19 * g, by - 4 * g + (pose === 'hurt' ? -g : 0), 5 * g + bulk, 4 * g + bulk * 0.5);
+      head = pose === 'eat' ? E(ox + 26 * g, oy - 4 * hs, 4.8 * hs, 4.2 * hs) : E(ox + (pose === 'hurt' ? 24 : 25) * g, by - (pose === 'hurt' ? 11 : 9) * g, 4.8 * hs, 4.2 * hs);
+      const step = Math.round(2 * g) * walk;
+      const hx = Math.round(haunch.cx - 2 * g), fx = Math.round(chest.cx + 1 * g);
+      const top = (e) => e.cy + e.ry - 2;
+      // far pair and near pair, out of step with each other
+      legs.push({ x: hx + step, y: top(haunch), w: 2, h: oy - 1 - top(haunch) });
+      legs.push({ x: hx + 3 - step, y: top(haunch), w: 2, h: oy - 1 - top(haunch) });
+      legs.push({ x: fx - step, y: top(chest), w: 2, h: oy - 1 - top(chest) });
+      legs.push({ x: fx + 3 + step, y: top(chest), w: 2, h: oy - 1 - top(chest) });
+    }
+  } else if (kind === 'toad') {
+    if (pose === 'rear') {
+      haunch = E(ox + 11 * g, oy - 5 * g, 7 * g, 5 * g + preg);
+      chest = E(ox + 17 * g, oy - 8 * g, 5 * g + bulk, 5.5 * g);
+      head = E(ox + 21 * g, oy - 13 * g, 5 * hs, 3.5 * hs);
+    } else {
+      const low = pose === 'loaf' || pose === 'sick' ? 1 : 0;
+      haunch = E(ox + 11 * g, oy - 5 * g + low, 8.5 * g, 5 * g + preg - low);
+      chest = E(ox + 18 * g, oy - 4.5 * g + low, 6 * g + bulk, 4.5 * g - low);
+      head = E(ox + 23 * g, oy - (pose === 'eat' ? 4 : 6) * g + low, 5 * hs, 3.5 * hs);
+    }
+    // a splayed forelimb
+    legs.push({ x: Math.round(chest.cx + chest.rx - 3), y: oy - 3, w: 2, h: 2 });
+  } else {
+    // salamander: long and low, belly near the ground, head raised a little when rearing
+    const rise = pose === 'rear' ? 3 : pose === 'hurt' ? 2 : 0;
+    haunch = E(ox + 12 * g, oy - 3 * g - 3, 7 * g, 2.8 * g + preg);
+    chest = E(ox + 20 * g, oy - 3 * g - 3 - rise * 0.5, 5.5 * g + bulk, 2.8 * g);
+    head = E(ox + 27 * g, oy - (pose === 'eat' ? 2.5 : 3.5) * g - 3 - rise, 3.6 * hs, 2.6 * hs);
+    // four short splayed legs, walking in diagonal pairs
+    const step = Math.round(1.5 * g) * walk;
+    const ly = Math.min(haunch.cy + haunch.ry - 1, oy - 3);
+    legs.push({ x: Math.round(haunch.cx - 3 * g) + step, y: ly, w: 2, h: oy - 1 - ly });
+    legs.push({ x: Math.round(haunch.cx + 1 * g) - step, y: ly, w: 2, h: oy - 1 - ly });
+    legs.push({ x: Math.round(chest.cx - 1 * g) - step, y: ly, w: 2, h: oy - 1 - ly });
+    legs.push({ x: Math.round(chest.cx + 3 * g) + step, y: ly, w: 2, h: oy - 1 - ly });
+  }
+  return { haunch, chest, head, legs };
+}
+
 /**
  * Pure geometry of a rabbit facing right in a 48×40 frame (feet on row 33,
  * straw at 34..37). Every combination of stage, size, traits, strength and
@@ -294,7 +373,9 @@ export function rabbitAnchors(look, snap, want) {
   const kit = stage === 'kit', elder = stage === 'elder';
   const mus = L.strength;
   const size = clamp(Number(look.size) || 1, 0.85, 1.15);
-  const g = clamp(size * STAGE_G[stage] * (1 + 0.04 * mus) * (tr.has('giant') ? 1.18 : tr.has('tiny') ? 0.8 : 1), 0.5, 1.3);
+  // (a toad is a smaller beast than a rabbit or a cat)
+  const kindG = look.kind === 'toad' ? 0.8 : 1;
+  const g = clamp(size * STAGE_G[stage] * kindG * (1 + 0.04 * mus) * (tr.has('giant') ? 1.18 : tr.has('tiny') ? 0.8 : 1), 0.5, 1.3);
   const hs = kit ? 0.95 * Math.max(g, 0.8) : 0.25 + 0.75 * g;
   const lying = pose === 'dead' || pose === 'collapse' || pose === 'flop';
   const preg = snap && snap.preg ? 1 : 0;
@@ -344,9 +425,19 @@ export function rabbitAnchors(look, snap, want) {
     head = E(hcx, hcy, 5 * hs, headRy);
     if (pose === 'hurt') legs.push({ x: chest.cx + chest.rx - 1, y: chest.cy, w: Math.max(2, Math.round(3 * g)), h: 2 });
   }
-  // the muzzle: a round snout at the front of the head
-  const mr = Math.max(1, Math.round(2.4 * hs));
-  const muzzle = E(Math.min(head.cx + 3 * hs, RABBIT_W - 2 - mr), Math.min(head.cy + 1.5 * hs, oy - mr), mr, mr);
+  // the other kinds (game/kinds.js) stand, squat or creep in their own build
+  const kind = kindOfLook(look);
+  if (kind !== 'rabbit' && !lying && pose !== 'hop') {
+    const kb = kindBody(kind, pose, ox, oy, g, hs, bulk, preg);
+    haunch = kb.haunch; chest = kb.chest; head = kb.head;
+    legs.length = 0;
+    legs.push(...kb.legs);
+  }
+  // the muzzle: a round snout at the front of the head (a cat's is small, a toad's and a salamander's hardly there)
+  const mr = kind === 'rabbit' ? Math.max(1, Math.round(2.4 * hs)) : kind === 'cat' ? Math.max(1, Math.round(1.7 * hs)) : 1;
+  const muzzle = kind === 'rabbit' || kind === 'cat'
+    ? E(Math.min(head.cx + (kind === 'cat' ? 3.4 : 3) * hs, RABBIT_W - 2 - mr), Math.min(head.cy + (kind === 'cat' ? 1.2 : 1.5) * hs, oy - mr), mr, mr)
+    : E(Math.min(head.cx + head.rx - 1, RABBIT_W - 3), head.cy + 1, 1, 1);
   /** @type {Ell[]} */
   const bulges = [];
   if (mus >= 2) bulges.push(E(chest.cx + chest.rx - 1, chest.cy + chest.ry - 2, 2 * g + 0.4, 2 * g + 0.4)); // forearm
@@ -354,6 +445,10 @@ export function rabbitAnchors(look, snap, want) {
     bulges.push(E(chest.cx - 1, chest.cy - chest.ry + 2, 3.2 * g, 2.2 * g)); // shoulder
     bulges.push(E(haunch.cx + 3 * g, haunch.cy - haunch.ry + 2.5 * g, 4.2 * g, 3 * g)); // thigh
     bulges.push(E((chest.cx + head.cx) / 2, (chest.cy - chest.ry + head.cy + head.ry) / 2 + 1, 2.4 * g, 2 * g)); // neck
+  }
+  if (kind === 'toad' && !lying) {
+    bulges.push(E(haunch.cx + 2 * g, haunch.cy + 1, 3.6 * g, 2.6 * g)); // the folded hind leg
+    bulges.push(E(head.cx + 1, head.cy - head.ry + 1, 1.6 * hs + 0.4, 1.6 * hs + 0.4)); // the bulging eye
   }
   const parts = [haunch, chest, ...bulges, head, muzzle];
 
@@ -364,7 +459,19 @@ export function rabbitAnchors(look, snap, want) {
   const shift = tr.has('eye3') ? 1 : 0;
   /** @type {Ear[]} */
   const ears = [];
-  if (lying) {
+  if (kind === 'toad' || kind === 'salamander') {
+    // no ears at all
+  } else if (kind === 'cat') {
+    // short pointed ears on the crown; laid back flat when lying, hurt or sick
+    const len = clamp(Math.round(4 * hs) - (droop ? 1 : 0), 2, 6), w = hs >= 0.9 ? 5 : 4;
+    if (lying) {
+      ears.push({ kind: 'cat', far: true, x: head.cx - 4 - shift, y: top + 1, len: 2, w: 4, lean: 0 });
+      ears.push({ kind: 'cat', far: false, x: head.cx - 1 - shift, y: top + 1, len: 2, w: 4, lean: 0 });
+    } else {
+      ears.push({ kind: 'cat', far: true, x: head.cx - 4 - shift, y: top + 1, len, w, lean: 0 });
+      ears.push({ kind: 'cat', far: false, x: head.cx - 1 - shift, y: top + 1, len, w, lean: 0 });
+    }
+  } else if (lying) {
     const len = Math.max(3, Math.round(8 * hs * earK));
     ears.push({ kind: 'flat', far: true, x: head.cx - 2 - len, y: top - 1, len, w: 2, lean: 0 });
     ears.push({ kind: 'flat', far: false, x: head.cx - 1 - len, y: top + 1, len, w: 2, lean: 0 });
@@ -385,25 +492,30 @@ export function rabbitAnchors(look, snap, want) {
   }
 
   // face and appendage anchors
-  const eye = { x: head.cx + Math.max(1, Math.round(1.6 * hs)), y: head.cy - 1 };
+  const eye = kind === 'toad' && !lying ? { x: head.cx + 1, y: head.cy - head.ry + 1 }
+    : kind === 'salamander' ? { x: head.cx + Math.max(1, Math.round(1.2 * hs)), y: head.cy - 1 }
+      : { x: head.cx + Math.max(1, Math.round(1.6 * hs)), y: head.cy - 1 };
   const nose = { x: muzzle.cx + muzzle.rx, y: muzzle.cy - 1 };
   const tailR = Math.max(1, Math.round([1, 2, 3][look.tail === 0 || look.tail === 2 ? look.tail : 1] * Math.min(1, g + 0.25)));
   const tx = haunch.cx - haunch.rx;
-  const tail = { x: tx, y: haunch.cy - (lying ? 1 : 2), r: tailR, len: clamp(Math.round(9 * g), 3, tx - 1) };
+  const tail = kind === 'cat' ? { x: tx + 1, y: haunch.cy - Math.max(1, haunch.ry - 2), r: 1, len: clamp(Math.round(12 * g), 4, tx - 1) }
+    : kind === 'salamander' ? { x: tx + 1, y: haunch.cy, r: 1, len: clamp(Math.round(13 * g), 4, tx - 1) }
+      : { x: tx, y: haunch.cy - (lying ? 1 : 2), r: kind === 'toad' ? 0 : tailR, len: clamp(Math.round(9 * g), 3, tx - 1) };
   const prx = Math.max(2, Math.round(3 * Math.min(g, 1.1)));
   const plume = E(Math.max(prx + 2, tx - 1), tail.y - Math.max(2, Math.round(2.5 * g)), prx, Math.max(2, Math.round(2.2 * Math.min(g, 1.1))));
   const wing = lying ? { x: haunch.cx - 2, y: haunch.cy - haunch.ry - 2 } : { x: chest.cx - chest.rx - 3, y: chest.cy - chest.ry - 4 };
 
   // bounding box of everything static (tests and the hutch's hit boxes)
   let x0 = Math.min(haunch.cx - haunch.rx, tx - tailR) - 1;
-  if (tr.has('tail-lizard')) x0 = Math.min(x0, tx - tail.len - 1);
+  if (tr.has('tail-lizard') || kind === 'cat' || kind === 'salamander') x0 = Math.min(x0, tail.x - tail.len - 1);
   if (tr.has('tail-plume')) x0 = Math.min(x0, plume.cx - plume.rx - 1);
   for (const l of legs) x0 = Math.min(x0, l.x - 1);
   let x1 = 0;
   for (const e of parts) x1 = Math.max(x1, e.cx + e.rx + 1);
   for (const l of legs) x1 = Math.max(x1, l.x + l.w);
   let y0 = top - 1;
-  for (const e of ears) y0 = Math.min(y0, e.kind === 'up' ? e.y - e.len + 1 : e.y - 1);
+  for (const e of ears) y0 = Math.min(y0, e.kind === 'up' || e.kind === 'cat' ? e.y - e.len + 1 : e.y - 1);
+  if (kind === 'cat' && !lying) y0 = Math.min(y0, tail.y - CAT_TAIL_RISE - 1);
   if (tr.has('ears2')) y0 = Math.min(y0, ...ears.map((e) => (e.kind === 'flat' ? e.y - 3 : y0)));
   if (hornH) y0 = Math.min(y0, top + 1 - hornH);
   if (tr.has('wings')) y0 = Math.min(y0, wing.y - 1);
@@ -411,7 +523,7 @@ export function rabbitAnchors(look, snap, want) {
   if (tr.has('spines')) y0 = Math.min(y0, Math.min(haunch.cy - haunch.ry, chest.cy - chest.ry) - 5);
 
   return {
-    pose, lying, g, hs, haunch, chest, head, muzzle, bulges, parts, ears, legs,
+    kind, pose, lying, g, hs, haunch, chest, head, muzzle, bulges, parts, ears, legs,
     eye, eye3: { x: head.cx + 1, y: top + 1 }, nose, cheek: { x: eye.x, y: eye.y + 3 },
     brow: { x: head.cx - 1 - shift, y: top }, tail, plume, wing,
     back: { x0: haunch.cx - haunch.rx + 2, x1: chest.cx, y: haunch.cy - haunch.ry },
@@ -558,15 +670,40 @@ function farLayer(S) {
 /** @param {Paint} S */
 function tailLayer(S) {
   const { P, a, tr, C2 } = S, t = a.tail;
-  if (tr.has('tail-lizard')) {
+  if (a.kind === 'toad' && !tr.has('tail-lizard') && !tr.has('tail-plume')) return;
+  if (a.kind === 'cat' && !tr.has('tail-lizard') && !tr.has('tail-plume')) {
+    // a long tail: out behind, curling up at its end (lying along the straw when lying down)
+    const n = t.len, pts = [];
+    for (let i = 0; i < n; i++) {
+      const u = i / Math.max(1, n - 1);
+      const dy = a.lying ? Math.round(u * 2) : -Math.round(CAT_TAIL_RISE * Math.max(0, (u - 0.35) / 0.65) ** 1.4) + Math.round(Math.sin(u * Math.PI) * 1.5);
+      pts.push([t.x - i, t.y + dy]);
+    }
+    for (const [x, y] of pts) P(x - 1, y - 1, 3, 4, K);
+    const tip = S.pattern === 'tabby' ? C2.body : S.pattern === 'points' ? C2.body : S.C.body;
+    pts.forEach(([x, y], i) => {
+      const ring = S.pattern === 'tabby' && i % 3 === 2;
+      P(x, y, 1, 2, i >= n - 2 ? tip : ring ? C2.body : S.C.body);
+      if (!ring && i < n - 2) P(x, y + 1, 1, 1, S.C.shade);
+    });
+    return;
+  }
+  if (tr.has('tail-lizard') || a.kind === 'salamander') {
+    const scaly = tr.has('tail-lizard');
     // a tapering scaly tail, 3px at the root to 1px, sloping down to the straw
-    const n = t.len, drop = Math.max(0, a.feetY - 2 - t.y);
-    const body = css(mix(S.fur, [0.42, 0.58, 0.38], 0.45), 0.8), dark = css(mix(S.fur, [0.42, 0.58, 0.38], 0.45), 0.6);
+    const n = t.len, drop = Math.max(0, a.feetY - 2 - t.y) * (a.kind === 'salamander' ? 0.3 : 1);
+    // (a salamander's own tail is its body's colour, blotched like its back)
+    const body = scaly ? css(mix(S.fur, [0.42, 0.58, 0.38], 0.45), 0.8) : S.C.body, dark = scaly ? css(mix(S.fur, [0.42, 0.58, 0.38], 0.45), 0.6) : S.C.dark;
     const cols = [];
     for (let i = 0; i < n; i++) cols.push([t.x - i, t.y - 1 + Math.round((drop * i) / n), i < n / 3 ? 3 : i < (2 * n) / 3 ? 2 : 1]);
     for (const [x, y, th] of cols) P(x, y - 1, 1, th + 2, K);
     P(t.x - n, cols[n - 1][1], 1, 1, K);
-    for (const [x, y, th] of cols) { P(x, y, 1, th, body); if ((x + y) & 1) P(x, y + th - 1, 1, 1, dark); }
+    const r = new Rng(hashString(`${S.seed}:tailspots`));
+    for (const [x, y, th] of cols) {
+      P(x, y, 1, th, body);
+      if (!scaly && S.pattern === 'blotched' && r.chance(0.35)) P(x, y, 1, Math.max(1, th - 1), C2.body);
+      else if ((x + y) & 1) P(x, y + th - 1, 1, 1, dark);
+    }
     return;
   }
   if (tr.has('tail-plume')) {
@@ -600,6 +737,17 @@ function earArt(S, e, side) {
   if (!S.dead) for (let i = 0; i < L.frost; i++) tips.push(C_RIME);
   const markN = sc[0] >= 2 ? sc[0] : sc[2];
   for (let i = 0; i < markN; i++) tips.push(sc[0] >= 2 ? C_SOOT : PAL.frost0);
+  if (e.kind === 'cat') {
+    // a pointed ear: narrowing to its tip, the near one lined in pink
+    for (let i = 0; i < e.len; i++) {
+      const y = e.y - i, w = Math.max(1, Math.round(e.w * (1 - i / e.len))), x = e.x + Math.floor((e.w - w) / 2);
+      P(x - 1, y, w + 2, 1, K);
+      if (i === e.len - 1) { P(x - 1, y - 1, w + 2, 1, K); }
+      P(x, y, w, 1, tips[e.len - 1 - i] || fill);
+      if (inner && w >= 3 && i < e.len - 1 && !tips[e.len - 1 - i]) P(x + 1, y, w - 2, 1, inner);
+    }
+    return;
+  }
   if (e.kind === 'up') {
     // a rounded tip; the near ear lined in pink from its base to below the tip
     for (let i = 0; i < e.len; i++) {
@@ -664,12 +812,12 @@ function fillLayer(S) {
   ell(P, a.chest, 0, C.body);
   for (const b of a.bulges) ell(P, b, 0, C.body);
   ell(P, { cx: h.cx, cy: h.cy + Math.round(h.ry / 2), rx: Math.max(1, h.rx - 2), ry: Math.max(1, Math.round(h.ry / 3)) }, 0, C.shade);
-  ell(P, { cx: a.belly.x, cy: a.belly.y, rx: Math.max(1, Math.round(3 * a.g)), ry: Math.max(1, Math.round(2 * a.g)) }, 0, C.hi);
+  if (a.kind === 'rabbit') ell(P, { cx: a.belly.x, cy: a.belly.y, rx: Math.max(1, Math.round(3 * a.g)), ry: Math.max(1, Math.round(2 * a.g)) }, 0, C.hi);
   ell(P, a.head, 0, S.pattern === 'hooded' ? C2.body : C.body);
   // the muzzle: the Dutch blaze, paler on agouti and plain coats, the points' dark nose
   const m = a.muzzle;
   ell(P, m, 0, S.pattern === 'dutch' ? C2.body : S.pattern === 'hooded' ? C2.body : C.body);
-  if (S.pattern === 'agouti' || S.pattern === 'solid') ell(P, { cx: m.cx, cy: m.cy + 1, rx: Math.max(1, m.rx - 1), ry: Math.max(1, m.ry - 1) }, 0, C.hi);
+  if ((S.pattern === 'agouti' || S.pattern === 'solid') && a.kind === 'rabbit') ell(P, { cx: m.cx, cy: m.cy + 1, rx: Math.max(1, m.rx - 1), ry: Math.max(1, m.ry - 1) }, 0, C.hi);
   if (S.pattern === 'spotted' && (S.seed % 3) === 0) ell(P, { cx: a.eye.x, cy: a.eye.y, rx: 2, ry: 2 }, 0, C2.body); // an eye patch
 }
 
@@ -677,6 +825,30 @@ function fillLayer(S) {
 function pawLayer(S) {
   const { P, a, C, C2 } = S;
   if (a.lying || a.pose === 'hop') return;
+  if (a.kind === 'cat' || a.kind === 'salamander') {
+    // a little paw at the foot of each leg (the loaf's are tucked under it)
+    const col = S.pattern === 'points' || S.pattern === 'dutch' ? C2 : C;
+    // a salamander's splayed legs show in front of its low belly
+    if (a.kind === 'salamander') a.legs.forEach((l, i) => { if (i & 1) { P(l.x - 1, l.y, l.w + 2, l.h + 1, K); P(l.x, l.y, l.w, l.h, C.body); } });
+    for (const l of a.legs) {
+      if (l.y + l.h < a.feetY - 1) continue;
+      const w = a.kind === 'cat' ? 3 : 4, x = a.kind === 'cat' ? l.x : l.x - 1;
+      P(x - 1, a.feetY, w + 2, 2, K);
+      P(x, a.feetY, w, 1, col.shade);
+      if (a.kind === 'salamander') P(x + (w >> 1), a.feetY, 1, 1, K); // splayed toes
+    }
+    if (a.kind === 'cat' && (a.pose === 'loaf' || a.pose === 'sick')) { P(a.chest.cx + 2, a.feetY, 4, 1, K); P(a.chest.cx + 2, a.feetY - 1, 3, 1, col.shade); }
+    return;
+  }
+  if (a.kind === 'toad') {
+    // the big webbed hind foot under the folded leg, the forefoot splayed in front
+    const y = a.feetY;
+    const hx = a.haunch.cx - 1;
+    P(hx - 1, y - 1, 8, 3, K); P(hx, y, 6, 1, C.shade); P(hx + 1, y - 1, 1, 1, K); P(hx + 4, y - 1, 1, 1, K);
+    const fx = a.legs.length ? a.legs[0].x : a.chest.cx + 2;
+    P(fx - 1, y, 5, 2, K); P(fx, y, 3, 1, C.shade);
+    return;
+  }
   const foot = S.pattern === 'points' ? C2 : S.pattern === 'dutch' ? C2 : C, y = a.feetY - 1;
   const paw = (x, w) => { P(x - 1, y, 1, 2, K); P(x, y - 1, w, 1, K); P(x + w, y, 1, 2, K); P(x, y, w, 1, foot.shade); P(x, y + 1, w, 1, foot.dark); };
   const hw = Math.max(3, Math.round(6 * a.g)), hx = a.haunch.cx - Math.round(a.g);
@@ -714,6 +886,42 @@ function shadeLayer(S) {
 /** Dutch band, spots and agouti ticking (hooded and points colour their parts as they are drawn). @param {Paint} S */
 function patternLayer(S) {
   const { P, a, C2 } = S, body = [a.haunch, a.chest];
+  if (S.pattern === 'tabby') {
+    // a cat's stripes: dark bars down from the spine, a striped brow, a paler belly
+    const [x0, x1] = xRange(body);
+    for (let x = x0 + 1; x <= x1; x++) {
+      if (mod(x + (S.seed & 3), 4) > 1) continue;
+      const y0 = colEdge(body, x, -1), y1 = colEdge(body, x, 1);
+      if (y0 === null || y1 === null) continue;
+      const len = Math.max(1, Math.round((y1 - y0) * 0.55));
+      P(x, y0, 1, len, C2.body);
+    }
+    for (const [y, l, r] of rowsOf(body)) if (y >= a.chest.cy + 2) P(l + 1, y, Math.max(0, r - l - 1), 1, css(mix(S.fur, [1, 0.95, 0.85], 0.35)));
+    const h = a.head;
+    P(h.cx - 1, h.cy - h.ry + 1, 1, 2, C2.body); P(h.cx + 1, h.cy - h.ry + 1, 1, 1, C2.body);
+    return;
+  }
+  if (S.pattern === 'warts' || S.pattern === 'blotched') {
+    // a toad's warts (dark, each with a pale glint) or a salamander's bright blotches, on the head too
+    const warts = S.pattern === 'warts';
+    const r = new Rng(hashString(`${S.seed}:${S.pattern}`)), n = warts ? 12 : 6;
+    const parts = [a.haunch, a.chest, a.head];
+    for (let i = 0; i < n; i++) {
+      const e = parts[i % 3 === 2 && !warts ? 2 : i % 2];
+      const ang = r.range(0, Math.PI * 2), rad = Math.sqrt(r.next()) * 0.7;
+      const px = Math.round(e.cx + Math.cos(ang) * e.rx * rad), py = Math.round(e.cy + Math.sin(ang) * e.ry * rad);
+      if (warts) { P(px, py, 1, 1, C2.body); if (r.chance(0.5)) P(px - 1, py - 1, 1, 1, S.C.hi); continue; }
+      const w = 1 + r.int(1, 2), hh = 1 + r.int(0, 1);
+      for (let yy = 0; yy < hh; yy++) {
+        const s = spanOf(e, py + yy);
+        if (!s) continue;
+        const l = Math.max(s[0], px), rr = Math.min(s[1], px + w - 1);
+        if (rr >= l) P(l, py + yy, rr - l + 1, 1, C2.body);
+      }
+    }
+    if (warts) for (const [y, l, rr] of rowsOf(body)) if (y >= a.chest.cy + 2) P(l + 1, y, Math.max(0, rr - l - 1), 1, css(mix(S.fur, [0.95, 0.9, 0.7], 0.4)));
+    return;
+  }
   if (S.pattern === 'dutch') {
     // the pale band: the chest and shoulders forward of a seam slanting back toward the belly
     const seam = a.chest.cx - Math.round(a.chest.rx * 0.5), y0 = a.chest.cy - a.chest.ry;
@@ -901,7 +1109,16 @@ function faceLayer(S) {
   else if (L.love === 3) heart(P, e.x - 1, e.y - 1, C_HEART);
   else if (a.pose === 'collapse' || a.pose === 'loaf' || L.toxicity === 3) { P(e.x - 1, e.y - 1, 3, 1, C.dark); P(e.x - 1, e.y, 2, 1, K); }
   else if (L.love === 2) { P(e.x - 1, e.y, 1, 1, K); P(e.x, e.y - 1, 1, 1, K); P(e.x + 1, e.y, 1, 1, K); }
-  else {
+  else if (a.kind !== 'rabbit') {
+    // a cat's eye: green or amber with a slit pupil; a toad's: a gold bulb with a bar of a pupil; a salamander's: small and black
+    const arc = L.arcana >= 2 || sc[4] >= 2;
+    const iris = arc ? C_RUNE_HI : S.eyeCol === 'green' ? '#8fd14f' : S.eyeCol === 'amber' ? '#f0b84a' : K;
+    if (a.kind === 'cat') { P(e.x, e.y - 1, 2, 2, iris); P(e.x + (arc ? 0 : 1), e.y - 1, 1, 2, K); }
+    else if (a.kind === 'toad') { P(e.x - 1, e.y - 1, 3, 2, iris); P(e.x - 1, e.y, 3, 1, K); P(e.x + 1, e.y - 1, 1, 1, C_CREAM); }
+    else { P(e.x, e.y, 2, 1, arc ? C_RUNE_HI : K); P(e.x + 1, e.y, 1, 1, arc ? '#ffffff' : '#5a5050'); }
+    if (arc) P(e.x - 2, e.y, 1, 1, C_RUNE);
+    else if (L.arcana === 1) P(e.x, e.y - 2, 1, 1, C_RUNE);
+  } else {
     // a big round eye with a glint
     const arc = L.arcana >= 2 || sc[4] >= 2, col = arc ? C_RUNE_HI : S.eyeCol === 'ruby' ? C_RUBY : K;
     if (big) { P(e.x, e.y - 1, 2, 3, col); P(e.x + 1, e.y - 1, 1, 1, arc ? '#ffffff' : C_CREAM); }
@@ -909,13 +1126,21 @@ function faceLayer(S) {
     if (arc) P(e.x - 2, e.y, 1, 1, C_RUNE);
     else if (L.arcana === 1) P(e.x, e.y - 2, 1, 1, C_RUNE);
   }
-  P(n.x, n.y, 1, 1, dead ? '#b07890' : C_NOSE);
-  if (!dead) P(n.x - 1, n.y + 2, 1, 1, C.dark); // the mouth
+  if (a.kind === 'toad' || a.kind === 'salamander') {
+    // a nostril and the wide lipless mouth
+    P(n.x, n.y, 1, 1, K);
+    P(a.head.cx - 1, a.head.cy + Math.max(1, a.head.ry - 1), a.head.rx + 1, 1, C.dark);
+  } else {
+    P(n.x, n.y, 1, 1, dead ? '#b07890' : C_NOSE);
+    if (!dead) P(n.x - 1, n.y + 2, 1, 1, C.dark); // the mouth
+    // a cat's whiskers
+    if (a.kind === 'cat' && !dead) { P(n.x + 1, n.y + 1, 2, 1, 'rgba(255,255,255,0.7)'); P(n.x, n.y + 2, 2, 1, 'rgba(255,255,255,0.5)'); }
+  }
   if (a.pose === 'eat') grassTuft(P, n.x - 2, a.feetY);
   if (dead) { if (S.tr.has('eye3')) P(a.eye3.x, a.eye3.y, 2, 1, K); return; }
   if (L.vitality >= 2) P(n.x - 1, n.y, 1, 1, '#ff8fb8');
-  // a blush below the eye, deeper and wider with love
-  P(a.cheek.x, a.cheek.y, L.love >= 1 ? (L.love === 3 ? 3 : 2) + 1 : 2, 1, L.love >= 2 ? C_HEART : C_BLUSH);
+  // a blush below the eye, deeper and wider with love (a cold-blooded hide only blushes for love)
+  if (a.kind === 'rabbit' || a.kind === 'cat' || L.love >= 1) P(a.cheek.x, a.cheek.y, L.love >= 1 ? (L.love === 3 ? 3 : 2) + 1 : 2, 1, L.love >= 2 ? C_HEART : C_BLUSH);
   if (L.love >= 1) P(a.cheek.x + 1, a.cheek.y - 1, 1, 1, C_BLUSH);
   if (L.toxicity === 3) { P(n.x - 1, n.y + 1, 1, 1, C_BLUSH); P(n.x, n.y + 1, 1, 2, C_SLIME); }
   if (L.alkali === 3) { P(n.x + 1, n.y - 1, 2, 1, C_CREAM); P(n.x + 1, n.y + 1, 2, 1, C_CREAM); }
@@ -1150,7 +1375,7 @@ function motion(look, snap, a, t, react, hop) {
   const seed = (look.seed >>> 0) || 1, ts = t * rabbitPace(snap);
   const slumped = a.pose === 'sick' || a.pose === 'loaf' || a.pose === 'hurt';
   let dx = 0, dy = 0;
-  if (hop && a.pose === 'idle') {
+  if (hop && a.pose === 'idle' && (a.kind === 'rabbit' || a.kind === 'toad')) {
     const per = (4 + (seed % 300) / 100) * (snap.stage === 'kit' ? 0.6 : 1), ph = mod(ts + (seed % 7), per);
     if (ph < 0.4) dy = -Math.round(Math.min(4, Math.max(1, a.top)) * Math.sin((Math.PI * ph) / 0.4));
   }
@@ -1180,7 +1405,7 @@ export function rabbitSpriteKey(look, snap, want) {
   const s = snap || {};
   const lv = Array.isArray(s.lv) ? s.lv.join('') : '', sc = Array.isArray(s.sc) ? s.sc.join('') : '';
   const tr = Array.isArray(s.traits) ? s.traits.join(',') : '';
-  return `${c(look.coat)}|${c(look.coat2)}|${look.pattern}|${look.ear}|${look.size}|${look.eye}|${look.tail}|${look.seed}|${s.stage}${s.hp}${s.alive === false ? 0 : 1}${s.preg ? 1 : 0}|${lv}|${sc}|${tr}|${s.cause || ''}|${rabbitPose(snap, want)}`;
+  return `${look.kind || ''}|${c(look.coat)}|${c(look.coat2)}|${look.pattern}|${look.ear}|${look.size}|${look.eye}|${look.tail}|${look.seed}|${s.stage}${s.hp}${s.alive === false ? 0 : 1}${s.preg ? 1 : 0}|${lv}|${sc}|${tr}|${s.cause || ''}|${rabbitPose(snap, want)}`;
 }
 
 /**

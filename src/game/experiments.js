@@ -24,6 +24,7 @@ import {
   createColony, normalizeColony, installRabbitAlias, rabbitResponse, findRabbit, focusRabbit, recordDose,
   rabbitSnap, encodeSnap, stageOf, addBoughtRabbit, STAGE_ERR, rabbitSensitivity, RABBIT_BIAS, maxHealthOf,
 } from './colony.js';
+import { biasSpread, noiseFactor, kindOf } from './kinds.js';
 
 /**
  * How unsteady a rabbit's readings are (a factor on the dose noise), from
@@ -121,14 +122,16 @@ export function rabbitReading(rabbit, effects, o) {
     const v = Number(effects[k]) || 0;
     const g1 = rng.gauss(), g2 = rng.gauss();
     if (Math.abs(v) < 0.3) continue;
-    const f = rabbitSensitivity(rabbit, EFFECT_KEYS[k]) * Math.max(0.3, 1 + DOSE_NOISE * errK * g1);
-    out[k] = v * f + READ_NOISE * errK * g2;
+    // each kind reads its own steady channel with far less noise (kinds.js)
+    const nk = errK * noiseFactor(rabbit.look, EFFECT_KEYS[k]);
+    const f = rabbitSensitivity(rabbit, EFFECT_KEYS[k]) * Math.max(0.3, 1 + DOSE_NOISE * nk * g1);
+    out[k] = v * f + READ_NOISE * nk * g2;
     if (Math.sign(out[k]) !== Math.sign(v)) out[k] = 0;
   }
   return out;
 }
 
-/** @typedef {{v:number, r:string, rec:string, e?:number, u?:number}} Sample one reading: value, rabbit id, record id, noise factor of its dose (√(10 ml / dose), 1 if absent), its own one-reading uncertainty (record err) */
+/** @typedef {{v:number, r:string, rec:string, e?:number, u?:number, b?:number, f?:number}} Sample one reading: value, rabbit id, record id, noise factor of its dose (√(10 ml / dose), 1 if absent), its own one-reading uncertainty (record err), the bias spread and noise factor of the animal's kind on this channel (kinds.js; rabbit when absent) */
 
 /** Noise factor of a dose of `ml`. @param {number} ml */
 export const doseErr = (ml) => Math.round(Math.sqrt(10 / Math.max(1, Number(ml) || 10)) * 1000) / 1000;
@@ -151,6 +154,9 @@ export const EVIDENCE_TEXT = {
 };
 /** @param {string} level */
 export const evidenceRank = (level) => EVIDENCE_LEVELS.indexOf(level);
+
+/** A bias spread this small (a kind's steady channel, kinds.js) needs no second animal to average it out. */
+const STEADY_BIAS = 0.03;
 
 /** Weight of the noise the guild expects, against the spread actually seen, when pooling few readings. */
 const PRIOR_WEIGHT = 2;
@@ -193,18 +199,21 @@ export function summarize(samples) {
     first[key] = N === 1;
     unseen[key] = list.every((s) => s.v === 0);
     // expected per-dose noise (without the rabbit's bias), from each reading's own margin
-    const bias = RABBIT_BIAS * Math.abs(mean);
+    // the animals' own bias: each kind its own spread on this channel (a cat's arcana barely varies)
+    const bias = Math.sqrt(list.reduce((a, s) => a + (s.b ?? RABBIT_BIAS) ** 2, 0) / N) * Math.abs(mean);
     let prior2 = 0;
     for (const s of list) {
-      const e = s.e ?? 1;
-      const u = s.u ?? Math.sqrt((DOSE_NOISE * e * Math.abs(mean)) ** 2 + (READ_NOISE * e) ** 2 + bias ** 2);
-      prior2 += Math.max((READ_NOISE * e * 0.5) ** 2, u * u - bias * bias);
+      const e = (s.e ?? 1) * (s.f ?? 1), b = (s.b ?? RABBIT_BIAS) * Math.abs(mean);
+      const u = s.u ?? Math.sqrt((DOSE_NOISE * e * Math.abs(mean)) ** 2 + (READ_NOISE * e) ** 2 + b ** 2);
+      prior2 += Math.max((READ_NOISE * e * 0.5) ** 2, u * u - b * b);
     }
     prior2 /= N;
     const s2 = (PRIOR_WEIGHT * prior2 + (N - 1) * sd * sd) / (PRIOR_WEIGHT + N - 1);
     const se = Math.sqrt(s2 / N + (bias * bias) / R);
     unc[key] = Math.round(1.96 * se * 10) / 10;
-    level[key] = N === 1 ? 'preliminary' : R === 1 ? 'repeated' : N >= 3 && unc[key] <= Math.max(2.5, 0.2 * Math.abs(mean)) ? 'certified' : 'corroborated';
+    // animals of a kind that is steady on this channel all read it alike: one of them is as good as several
+    const steady = list.every((s) => (s.b ?? RABBIT_BIAS) <= STEADY_BIAS);
+    level[key] = N === 1 ? 'preliminary' : R === 1 && !steady ? 'repeated' : N >= 3 && unc[key] <= Math.max(2.5, 0.2 * Math.abs(mean)) ? 'certified' : 'corroborated';
   }
   return { values, spread, unc, level, n, rabbits, records, first, unseen };
 }
@@ -279,11 +288,23 @@ export const EVIDENCE_STATE_TEXT = {
   corroborated: 'corroborated on several rabbits',
 };
 
+/**
+ * What a reading's animal adds to its sample: the bias spread (`b`) and
+ * dose-noise factor (`f`) of its kind for that channel (rabbits: nothing,
+ * the defaults).
+ * @param {any} rec @param {string} key
+ */
+function kindSample(rec, key) {
+  if (!rec.kind || rec.kind === 'rabbit') return {};
+  const o = { kind: rec.kind };
+  return { b: biasSpread(o, key), f: noiseFactor(o, key) };
+}
+
 /** Add one record's readings to a sample set (newest last). @param {Record<string, Sample[]>} samples @param {any} rec */
 export function addSamples(samples, rec) {
   for (const key of rec.revealed || []) {
     if (rec.values[key] === undefined) continue;
-    (samples[key] ||= []).push({ v: rec.values[key], r: rec.rabbitId || rec.subjectId, rec: rec.id, e: doseErr(rec.ml), ...(rec.err && rec.err[key] !== undefined ? { u: rec.err[key] } : {}) });
+    (samples[key] ||= []).push({ v: rec.values[key], r: rec.rabbitId || rec.subjectId, rec: rec.id, e: doseErr(rec.ml), ...kindSample(rec, key), ...(rec.err && rec.err[key] !== undefined ? { u: rec.err[key] } : {}) });
   }
   return samples;
 }
@@ -346,7 +367,8 @@ export function runTrial(trials, subjectId, dose, ctx) {
     const val = Math.round(felt[k] * 10) / 10;
     values[key] = Math.abs(val) < 0.5 ? 0 : val;
     tv[key] = Math.round((Number(dose.effects[k]) || 0) * 10) / 10;
-    err[key] = Math.round(Math.sqrt((RABBIT_BIAS * Math.abs(values[key])) ** 2 + (DOSE_NOISE * errK * Math.abs(values[key])) ** 2 + (READ_NOISE * errK) ** 2) * 10) / 10;
+    const nk = errK * noiseFactor(st.look, key);
+    err[key] = Math.round(Math.sqrt((biasSpread(st.look, key) * Math.abs(values[key])) ** 2 + (DOSE_NOISE * nk * Math.abs(values[key])) ** 2 + (READ_NOISE * nk) ** 2) * 10) / 10;
     theory[key] = Math.round((ctx.theory?.[k] ?? 0) * 10) / 10;
     if (Math.abs(values[key] - theory[key]) > Math.max(4, 0.35 * Math.abs(theory[key]))) anomalies.push(key);
   }
@@ -370,7 +392,7 @@ export function runTrial(trials, subjectId, dose, ctx) {
     observations: rr.observations, anomalies, lawsFound,
     look: { color: (dose.color || [0.5, 0.5, 0.5]).map((c) => Math.round(c * 1000) / 1000), temperature: Math.round(dose.temperature ?? 20) },
     parts: (ctx.parts || []).map((p) => ({ id: p.id, ml: Math.round(p.ml) })), died: !after.alive, err,
-    rabbitId: st.id, rabbitName: st.name,
+    rabbitId: st.id, rabbitName: st.name, ...(kindOf(st.look) !== 'rabbit' ? { kind: kindOf(st.look) } : {}),
     replay: { b: encodeSnap(rabbitSnap(st, ctx.day)), a: encodeSnap(rabbitSnap(after, ctx.day)), rx: rr.react.join(',') },
     degen: rr.degen,
   };
@@ -412,7 +434,7 @@ export function certification(trials, batch, current) {
       if (r.values[key] === undefined) continue;
       const ref = r.tv && r.tv[key] !== undefined ? r.tv[key] : r.values[key];
       if (current && Math.abs(current[EFFECT_INDEX[key]] - ref) > driftTolerance(ref)) { stale.add(key); continue; }
-      (samples[key] ||= []).push({ v: r.values[key], r: r.rabbitId || r.subjectId, rec: r.id, e: doseErr(r.ml), ...(r.err && r.err[key] !== undefined ? { u: r.err[key] } : {}) });
+      (samples[key] ||= []).push({ v: r.values[key], r: r.rabbitId || r.subjectId, rec: r.id, e: doseErr(r.ml), ...kindSample(r, key), ...(r.err && r.err[key] !== undefined ? { u: r.err[key] } : {}) });
     }
   }
   // readings a poured-back bottle brought with it (resumeBatch), checked
