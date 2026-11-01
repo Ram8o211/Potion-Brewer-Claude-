@@ -34,10 +34,11 @@
 // Wild rabbits hop about every region (game/wild-rabbits.js). A tap wounds
 // one: blood bursts from it and stains the ground, rock and water it lands
 // on, and the rabbit flees bleeding, leaving a trail — frantic from the
-// first attempt on its life, in fast long bounds. Brought down, it is caught
-// alive with a tap and carried to the hutch; left to bleed out (or struck
-// with the hutch full) it dies, and its body is carried home with a tap, for
-// its remains.
+// first attempt on its life, in fast long bounds. It bleeds out within a
+// few seconds (a meter over it shows the blood it has left and the taps
+// landed): a third tap before then catches it alive and carries it to the
+// hutch; otherwise it dies, and its body is carried home with a tap, for
+// its remains. Each kind's enclosure holds ten animals, living and dead.
 
 import { punchSprite } from '../../rendering/punch.js';
 import { CrispCanvas } from '../../rendering/crisp.js';
@@ -53,9 +54,9 @@ import { sceneOf } from '../../visual/env/scene.js';
 import { plantCanvas, plantFrameOf, plantGlow, emitColour, silhouetteOf, ingredientSprite, speciesOf, mountsOf, variantOf, MIN_HIT } from '../../rendering/species-sprites.js';
 import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
 import { hashString } from '../../core/rng.js';
-import { Warren, warrenSpots, BLOOD } from '../../game/wild-rabbits.js';
+import { Warren, warrenSpots, BLOOD, WILD_HP } from '../../game/wild-rabbits.js';
 import { drawRabbit, rabbitSpriteKey, RABBIT_W, RABBIT_H } from '../../rendering/rabbit.js';
-import { defaultSnap, livingRabbits } from '../../game/colony.js';
+import { defaultSnap, livingRabbits, penHasRoom, PEN_MAX } from '../../game/colony.js';
 import { KINDS } from '../../game/kinds.js';
 
 /** The shadow a plant casts on its ground, by region (the crags' is warm and deep, the fens' cold). */
@@ -867,41 +868,60 @@ export class WildsView {
   }
 
   /**
-   * A tap on a rabbit: a blow while it runs (it bleeds and bolts, frantic);
-   * once it is down, caught alive and carried to the hutch (or, the hutch
-   * full, finished); its body carried home.
+   * A tap on a wild animal: a blow while it runs (it bleeds and bolts,
+   * frantic, bleeding out fast); the third tap catches it alive and carries
+   * it home (or, with no place for it, finishes it); its body carried home
+   * with a tap.
    * @param {Warren} w @param {import('../../game/wild-rabbits.js').WildRabbit} r @param {number} x @param {number} y
    */
   hunt(w, r, x, y) {
-    const lab = this.lab, st = lab.state;
-    if (r.dead || r.down) {
-      const room = r.dead || livingRabbits(st.colony).length < st.cap.hutch;
-      if (!room) {
-        // no place for it alive: it is put out of its misery, and its body can go home
-        w.strike(r, x, y);
-        audio.play('thump');
-        this.tell('full', 'The hutch is full', 'There is no place for it alive, so it was finished where it lay. Tap the body to carry it home for its remains, or buy more places in the Shop.', 'rabbit');
-        return;
-      }
-      const res = st.bringWildRabbit({ look: r.look, sex: r.sex, dead: r.dead, health: Math.max(10, 45 - r.hits * 8 - r.downT * 2) });
-      if (!res.ok) { audio.play('error'); toast('No room', res.reason, 'rabbit'); return; }
-      w.remove(r);
-      const name = res.rabbit.name, kd = KINDS[r.kind] || KINDS.rabbit;
-      this.pops.push({ cv: /** @type {any} */ (null), w: 0, h: 0, x: r.x, y: r.y - 6, t: 0, c: r.dead ? BLOOD[1] : '#f0e0c0' });
-      audio.play(r.dead ? 'dig' : 'squeak');
-      setTimeout(() => audio.play('select'), 140);
-      toast(r.dead ? 'A body for the hutch' : 'Caught!', r.dead
-        ? `The ${kd.noun} is carried home. You named it ${name}: its body waits in the hutch, where its remains can be recovered.`
-        : `${name} the ${kd.noun} is carried home to the hutch, weak from its wounds — it will mend there.${kd.steady ? ` ${kd.lore}` : ''}`, 'rabbit');
-      lab.save();
-      return;
-    }
+    const lab = this.lab, st = lab.state, kd = KINDS[r.kind] || KINDS.rabbit;
+    if (r.dead) { this.takeHome(w, r); return; }
+    if (r.down) { this.takeHome(w, r); return; }
     const was = r.hits;
     const out = w.strike(r, x, y);
     audio.play('squeak');
-    audio.play(out === 'down' ? 'thump' : 'crush');
-    if (!was) this.tell('hurt', 'It bolts, bleeding', 'Wounded, it flees — a rabbit in long bounds, a cat at a sprint, a toad in quick hops, a salamander scurrying. Bring it down and tap it to catch it before it bleeds out.', 'rabbit');
-    if (out === 'down') this.tell('down', 'It is down', 'Tap it to catch it alive and carry it to the hutch. Left lying, it bleeds out — its body can still be carried home.', 'rabbit');
+    audio.play(out === 'caught' ? 'thump' : 'crush');
+    if (out === 'caught') {
+      if (!penHasRoom(st.colony, r.kind)) {
+        // no place for it at all: it is let die where it lies
+        w.kill(r);
+        this.tell('pen-full', 'The enclosure is full', `The ${kd.plural}' enclosure holds ${PEN_MAX} animals, living and dead. Recover the remains of a body in the hutch to make room.`, 'rabbit');
+        return;
+      }
+      if (livingRabbits(st.colony).length >= st.cap.hutch) {
+        // no place for it alive: it is put out of its misery, and its body can go home
+        w.kill(r);
+        this.tell('full', 'The hutch is full', 'There is no place for it alive, so it was finished where it lay. Tap the body to carry it home for its remains, or buy more places in the Shop.', 'rabbit');
+        return;
+      }
+      this.takeHome(w, r);
+      return;
+    }
+    if (!was) this.tell('hurt', 'Quick — it is bleeding out!', `Wounded, it flees and bleeds out in a few seconds. Tap it ${WILD_HP - 1} more times before it dies to catch it alive.`, 'rabbit');
+  }
+
+  /**
+   * Carry a caught animal (or a body) home to its enclosure, if there is room.
+   * @param {Warren} w @param {import('../../game/wild-rabbits.js').WildRabbit} r
+   */
+  takeHome(w, r) {
+    const lab = this.lab, st = lab.state, kd = KINDS[r.kind] || KINDS.rabbit;
+    const res = st.bringWildRabbit({ look: r.look, sex: r.sex, dead: r.dead, health: Math.max(10, Math.round(50 * r.blood) - r.hits * 4) });
+    if (!res.ok) {
+      if (!r.dead) w.kill(r);
+      audio.play('error'); toast(res.full === 'pen' ? 'The enclosure is full' : 'No room', res.reason, 'rabbit');
+      return;
+    }
+    w.remove(r);
+    const name = res.rabbit.name;
+    this.pops.push({ cv: /** @type {any} */ (null), w: 0, h: 0, x: r.x, y: r.y - 6, t: 0, c: r.dead ? BLOOD[1] : '#f0e0c0' });
+    audio.play(r.dead ? 'dig' : 'squeak');
+    setTimeout(() => audio.play('select'), 140);
+    toast(r.dead ? 'A body for the hutch' : 'Caught!', r.dead
+      ? `The ${kd.noun} is carried home. You named it ${name}: its body waits in the hutch, where its remains can be recovered.`
+      : `${name} the ${kd.noun} is carried home to the hutch, weak from its wounds — it will mend there.${kd.steady ? ` ${kd.lore}` : ''}`, 'rabbit');
+    lab.save();
   }
 
   /** A hint, once a session. @param {string} key @param {string} title @param {string} text @param {string} ic */
@@ -938,7 +958,8 @@ export class WildsView {
     hb.clearRect(0, 0, hw, hh);
     hb.drawImage(this.bunny, 0, 0, RABBIT_W, RABBIT_H, 2, 2, RABBIT_W / 2, RABBIT_H / 2);
     const img = hb.getImageData(0, 0, hw, hh);
-    punchSprite(img.data, hw, hh);
+    // (its colours already graded with every other sprite's: only its ink and halo are added here)
+    punchSprite(img.data, hw, hh, { contrast: 1, saturate: 1 });
     cv = document.createElement('canvas'); cv.width = hw; cv.height = hh;
     /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')).putImageData(img, 0, 0);
     cache.set(key, cv);
@@ -978,6 +999,18 @@ export class WildsView {
         ctx.fillStyle = BLOOD[0]; ctx.fillRect(px, py, 1, 1);
         if (!lying) { ctx.fillStyle = BLOOD[1]; ctx.fillRect(px - (i % 2), py + 2, 1, 1 + ((i + r.hits) % 3)); }
       });
+      // wounded and still alive: the blood it has left, and the taps landed of the three that catch it
+      if (r.hits && r.running) {
+        const bw = 14, bx = x - bw / 2, by = sy - 4, left = Math.ceil(r.blood * (bw - 2));
+        ctx.fillStyle = '#100810'; ctx.fillRect(bx, by, bw, 3);
+        ctx.fillStyle = BLOOD[2]; ctx.fillRect(bx + 1, by + 1, bw - 2, 1);
+        ctx.fillStyle = r.blood < 0.35 && (Math.floor(r.t * 8) & 1) ? '#ff6a5a' : BLOOD[3];
+        ctx.fillRect(bx + 1, by + 1, left, 1);
+        for (let k = 0; k < WILD_HP; k++) {
+          ctx.fillStyle = '#100810'; ctx.fillRect(bx + 2 + k * 4, by - 4, 3, 3);
+          ctx.fillStyle = k < r.hits ? '#f6d26a' : '#5a4a50'; ctx.fillRect(bx + 3 + k * 4, by - 3, 1, 1);
+        }
+      }
     }
     for (const d of w.drops) { ctx.fillStyle = d.c; ctx.fillRect(Math.round(d.x), Math.round(d.y), d.s, d.s); }
     for (const c of w.clouds) {

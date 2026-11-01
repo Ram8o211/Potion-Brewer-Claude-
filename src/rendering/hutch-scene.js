@@ -23,6 +23,7 @@ import { PAL, makeCanvas } from './art.js';
 import { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } from './rabbit.js';
 import { kindOf } from '../game/kinds.js';
 import { penOf } from '../visual/env/pens.js';
+import { drawPenAnim } from './pen-anim.js';
 
 /** Walking speed in the hutch (px/s) of the kinds that walk rather than hop (rabbits, toads and ermines hop). */
 const WALKERS = { cat: 12, salamander: 5, deer: 10, badger: 8, dove: 8, fox: 14, snail: 1.5, rat: 16 };
@@ -40,7 +41,7 @@ const FLOOR_Y = 67;
  * the bodies lie, and (for the kinds' procedural pens, visual/env/pens.js)
  * the painted back and front.
  * @typedef {{kind:string, y0:number, ground:number[][][], rack:{x:number, y:number}, slots:number[][], cloth:number[], nest:number[],
- *   roam:{x0:number, x1:number, y0:number, y1:number}, back?:any, front?:any}} PenDef
+ *   roam:{x0:number, x1:number, y0:number, y1:number}, back?:any, front?:any, anim?:any[]}} PenDef
  */
 
 /** @param {any} p @returns {PenDef} */
@@ -322,6 +323,8 @@ export class HutchScene {
   draw(ctx, t, o = {}) {
     const low = !!o.low;
     this._background(ctx);
+    // what moves in the enclosure: fire, water, lamplight, snow, butterflies
+    drawPenAnim(ctx, this.pen.anim, t);
     const list = this._visible();
     for (const a of list) {
       const f = this._frame(a);
@@ -446,7 +449,9 @@ export class HutchScene {
         if (Math.abs(dx) > 0.3) a.face = dx > 0 ? 1 : -1;
       }
       a.stride = (a.stride || 0) + s;
-      a.pose = Math.floor(a.stride / 2) & 1 ? 'walk2' : 'walk1';
+      // four beats to a stride, each a step's length on (a long-legged kind's steps longer)
+      const beatLen = ({ deer: 2.6, cat: 2.2, fox: 2.2, dove: 1.2, snail: 1.5 })[kindOf(a.look)] || 1.6;
+      a.pose = /** @type {any} */ (`walk${(Math.floor(a.stride / beatLen) % 4) + 1}`);
       if (d <= 0.5 || a.at > 12) {
         a.x = a.gx; a.y = a.gy;
         if (a.next === 'eat') { a.next = null; this._begin(a, 'eat', 2.6); } else this._decide(a);
@@ -457,6 +462,8 @@ export class HutchScene {
       const p = Math.min(1, a.at / a.hopT);
       a.x = a.sx + (a.tx - a.sx) * p;
       a.y = a.sy + (a.ty - a.sy) * p;
+      // stretched out in the air, gathered up again to take off and land
+      a.pose = p > 0.18 && p < 0.82 && a.tx !== a.sx ? 'hop' : null;
       if (p < 1) return;
       if (--a.hops > 0 && this._nextHop(a)) return;
       if (a.next === 'eat') { a.next = null; this._begin(a, 'eat', 2.6); } else this._decide(a);

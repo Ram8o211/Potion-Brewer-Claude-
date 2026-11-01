@@ -15,10 +15,10 @@
 // bursts from where it was struck, and from then on it bleeds — drips as it
 // runs, spurts as it lands, a trail of it on the ground behind — and it
 // flees in long, quick bounds that hardly stop (even a tap that misses close
-// by sets it running so). Three wounds bring it down: it lies there
-// bleeding, still alive, and is caught by a tap (it goes home to the hutch,
-// weak from its wounds); left lying, or struck again with the hutch full,
-// it dies, and its body can be carried home for its remains.
+// by sets it running so). It bleeds out fast: BLEED_OUT seconds after the
+// first wound it drops dead. Tapped a third time before then it is caught
+// alive (it goes home to the hutch, weak from its wounds); otherwise its
+// body can be carried home for its remains.
 //
 // Every drop of blood is a particle under gravity; where it meets the
 // ground, rock or a trunk it stains it (`stains`, painted by the view onto
@@ -32,10 +32,10 @@ import { pickKind, kindLook } from './kinds.js';
 
 /** Pull of gravity on a rabbit and on blood, scene pixels per second². */
 export const HOP_GRAVITY = 300, BLOOD_GRAVITY = 260;
-/** Wounds that bring a rabbit down. */
+/** Taps that catch an animal (the first two wound it). */
 export const WILD_HP = 3;
-/** Seconds a downed rabbit lives on, bleeding, before it dies. */
-export const BLEED_OUT = 10;
+/** Seconds a wounded animal lives on, bleeding, after its first wound. */
+export const BLEED_OUT = 4;
 /** How close (scene pixels) a tap that misses must come to set a rabbit running. */
 export const NEAR_MISS = 24;
 /** How many rabbits a region keeps, and how soon (seconds) a new one comes in from the edge. */
@@ -125,6 +125,8 @@ export class WildRabbit {
     /** what it does while resting: sit, graze or rear up */
     this.pose = /** @type {string|null} */ (null);
     this.hits = 0;
+    /** seconds it has bled since its first wound (it dies at BLEED_OUT) */
+    this.bleedT = 0;
     /** frantic since the first attempt on its life: it bounds about fast and hardly stops */
     this.alarm = false;
     /** where the danger came from (it flees away from it) */
@@ -159,6 +161,11 @@ export class WildRabbit {
     return this.dead || this.down ? 3 : Math.min(2, this.hits);
   }
 
+  /** The blood it has left, 1 unhurt … 0 dead. */
+  get blood() {
+    return this.dead ? 0 : this.hits ? Math.max(0, 1 - this.bleedT / BLEED_OUT) : 1;
+  }
+
   /** Whether it is walking along the ground just now. */
   get walking() {
     return this.running && !this.air && this.walkT > 0;
@@ -175,7 +182,7 @@ export class WildRabbit {
     if (this.kind === 'dove' && this.fly > 0) return Math.floor(this.t * 9) & 1 ? 'fly1' : 'fly2';
     if (this.kind === 'snail' && this.hide > 0 && this.running) return 'loaf';
     if (this.air) return 'hop';
-    if (this.walking) return Math.floor(this.stride / (this.kind === 'cat' ? 3 : 2)) & 1 ? 'walk2' : 'walk1';
+    if (this.walking) return `walk${(Math.floor(this.stride / ({ cat: 2.2, fox: 2.2, deer: 2.6 }[this.kind] || 1.6)) % 4) + 1}`;
     return this.running && !this.alarm ? this.pose || undefined : undefined;
   }
 
@@ -273,10 +280,11 @@ export class Warren {
 
   /**
    * A blow on a rabbit at (x, y): blood bursts from the wound, away from the
-   * blow and up; it flees; the third wound brings it down, and a blow on one
-   * already down kills it.
+   * blow and up; it flees, bleeding out fast; the third tap catches it (it
+   * goes limp, 'caught': the view takes it home), and a blow on one already
+   * down kills it.
    * @param {WildRabbit} r @param {number} x @param {number} y
-   * @returns {'wounded'|'down'|'killed'|null}
+   * @returns {'wounded'|'caught'|'killed'|null}
    */
   strike(r, x, y) {
     if (r.dead) return null;
@@ -300,7 +308,7 @@ export class Warren {
       r.down = true;
       r.downT = 0;
       r.vx *= 0.3;
-      return 'down';
+      return 'caught';
     }
     // it leaps away at once
     if (!r.air) r.rest = 0;
@@ -312,6 +320,7 @@ export class Warren {
     if (r.dead) return;
     r.dead = true; r.down = false;
     r.react = 0.6;
+    r.vx *= 0.3; r.fly = 0; r.walkT = 0;
     this.burst(r.x, r.y - 3, 0, 16, 0.6);
   }
 
@@ -581,9 +590,11 @@ export class Warren {
       r.downT += dt;
       if (Math.floor((r.downT - dt) * 5) !== Math.floor(r.downT * 5)) this.stain(r.x + this.rng.int(-6, 6), this.floor(r.x, r.y) + 1, BLOOD[this.rng.int(1, 4)], 1);
     }
-    if (r.down) {
-      r.downT += dt;
-      if (r.downT >= BLEED_OUT) this.kill(r);
+    if (r.hits && !r.dead) {
+      // it bleeds out fast from its first wound
+      r.bleedT += dt;
+      if (r.down) r.downT += dt;
+      if (r.bleedT >= BLEED_OUT) this.kill(r);
     }
     if (r.fly > 0 && r.running) { this.flyStep(r, dt); return; }
     if (r.hide > 0) r.hide -= dt;

@@ -32,6 +32,7 @@ import { Rng, hashString } from '../core/rng.js';
 import { PAL, makeCanvas } from './art.js';
 import { RABBIT_MARKS } from '../game/colony.js';
 import { KINDS } from '../game/kinds.js';
+import { punchSprite } from './punch.js';
 
 export const RABBIT_W = 48;
 export const RABBIT_H = 40;
@@ -230,12 +231,12 @@ export function rabbitPose(snap, want) {
   if (!snap || snap.alive === false) return 'dead';
   const L = rabbitLevels(snap);
   if (L.death === 3 || snap.hp >= 3) return 'collapse';
-  if (want === 'loaf' || want === 'rear' || want === 'flop' || want === 'eat' || want === 'hop' || want === 'hurt' || want === 'walk1' || want === 'walk2' || want === 'fly1' || want === 'fly2') return want;
+  if (want === 'loaf' || want === 'rear' || want === 'flop' || want === 'eat' || want === 'hop' || want === 'hurt' || want === 'walk1' || want === 'walk2' || want === 'walk3' || want === 'walk4' || want === 'fly1' || want === 'fly2') return want;
   if (L.toxicity >= 2) return 'sick';
   if (snap.hp >= 2) return 'hurt';
   return 'idle';
 }
-/** @typedef {'idle'|'sick'|'hurt'|'loaf'|'rear'|'flop'|'eat'|'hop'|'walk1'|'walk2'|'fly1'|'fly2'|'collapse'|'dead'} RabbitPose */
+/** @typedef {'idle'|'sick'|'hurt'|'loaf'|'rear'|'flop'|'eat'|'hop'|'walk1'|'walk2'|'walk3'|'walk4'|'fly1'|'fly2'|'collapse'|'dead'} RabbitPose */
 
 /** How fast a rabbit lives (bob, hops, behaviours): slowed by death, poison and age, quickened by vitality or fire. @param {any} snap */
 export function rabbitPace(snap) {
@@ -270,7 +271,7 @@ const STAGE_G = { kit: 0.62, young: 0.82, adult: 1, elder: 0.97 };
  * @property {Ell[]} bulges    strength musculature (forearm, shoulder, thigh, neck)
  * @property {Ell[]} parts     every body ellipse, back to front
  * @property {Ear[]} ears      far first
- * @property {{x:number,y:number,w:number,h:number}[]} legs  legs off the ground: leaping, a raised paw, a hind leg kicked out
+ * @property {{x:number,y:number,w:number,h:number,seg?:boolean,foot?:boolean}[]} legs  legs off the ground: leaping, a raised paw, a hind leg kicked out
  * @property {{x:number,y:number}} eye
  * @property {{x:number,y:number}} eye3
  * @property {{x:number,y:number}} nose
@@ -318,19 +319,64 @@ const QUAD = {
 };
 
 /**
+ * Where a walker is in its stride: 'walk1'…'walk4' are the four beats of a
+ * walk (-1 standing). In each beat one leg is lifted and swung forward
+ * while the other three are planted and push back.
+ * @param {string} pose
+ */
+function walkBeat(pose) {
+  const m = /^walk([1-4])$/.exec(pose);
+  return m ? Number(m[1]) - 1 : -1;
+}
+
+/**
+ * A leg's place in the stride: 0 planted forward, 1 under its hip, 2 pushed
+ * back, 3 lifted and swinging forward. The legs take turns as a walking
+ * animal's do — far hind, far fore, near hind, near fore.
+ * @param {number} beat @param {number} leg 0 far hind, 1 far fore, 2 near hind, 3 near fore
+ */
+const legPhase = (beat, leg) => (beat + 3 - leg) % 4;
+
+/**
+ * A leg from its hip down to its foot as a column of pixel runs: slanting
+ * forward or back with the stride, the knee (a fore leg's) or the hock (a
+ * hind leg's) bending as it lifts. The last run is the foot.
+ * @param {number} x hip @param {number} y0 top @param {number} y1 the ground row it stands on
+ * @param {number} w @param {number} phase legPhase (-1 standing) @param {number} s stride (px) @param {boolean} fore
+ * @returns {{x:number,y:number,w:number,h:number,seg?:boolean,foot?:boolean}[]}
+ */
+function strideLeg(x, y0, y1, w, phase, s, fore) {
+  if (phase < 0) return [{ x, y: y0, w, h: y1 - y0 + 1 }];
+  const dx = phase === 0 ? s : phase === 2 ? -s : phase === 3 ? (fore ? 1 : -1) : 0;
+  const lift = phase === 3 ? Math.max(1, Math.round(s * 0.75)) : 0;
+  const bend = phase === 3 ? (fore ? 1.5 : -1.5) : phase === 2 && !fore ? -0.6 : 0;
+  const end = y1 - lift, n = Math.max(1, end - y0);
+  /** @type {{x:number,y:number,w:number,h:number,seg?:boolean,foot?:boolean}[]} */
+  const out = [];
+  for (let y = y0; y <= end; y++) {
+    const t = (y - y0) / n, lx = Math.round(x + dx * t + bend * Math.sin(Math.PI * Math.min(1, t * 1.15)));
+    const last = out[out.length - 1];
+    if (last && last.x === lx && y !== end) last.h++;
+    else out.push({ x: lx, y, w, h: 1, seg: true });
+  }
+  out[out.length - 1].foot = true;
+  return out;
+}
+
+/**
  * The build of every kind but the rabbit in a pose: body, chest and head,
  * its snout, its legs (striding through 'walk1'/'walk2') and extra parts
  * (a deer's neck, a toad's folded leg and bulging eye).
  * @param {string} kind @param {RabbitPose} pose @param {number} ox @param {number} oy
  * @param {number} g @param {number} hs @param {number} bulk @param {number} preg
- * @returns {{haunch:Ell, chest:Ell, head:Ell, snout:Ell|null, legs:{x:number,y:number,w:number,h:number}[], extra:Ell[]}}
+ * @returns {{haunch:Ell, chest:Ell, head:Ell, snout:Ell|null, legs:{x:number,y:number,w:number,h:number,seg?:boolean,foot?:boolean}[], extra:Ell[]}}
  */
 function kindBody(kind, pose, ox, oy, g, hs, bulk, preg) {
-  /** @type {{x:number,y:number,w:number,h:number}[]} */
+  /** @type {{x:number,y:number,w:number,h:number,seg?:boolean,foot?:boolean}[]} */
   const legs = [];
   /** @type {Ell[]} */
   const extra = [];
-  const walk = pose === 'walk1' ? 1 : pose === 'walk2' ? -1 : 0;
+  const beat = walkBeat(pose), walk = beat < 0 ? 0 : beat < 2 ? 1 : -1;
   /** @type {Ell} */ let haunch;
   /** @type {Ell} */ let chest;
   /** @type {Ell} */ let head;
@@ -359,22 +405,32 @@ function kindBody(kind, pose, ox, oy, g, hs, bulk, preg) {
     } else {
       // on four legs: the back level, the head up (down to the ground when it eats, pulled back when hurt, raised when alert)
       const lh = Math.max(2, Math.round(Q.leg * g));
-      const by = oy - lh;
+      // the back rises a pixel as the planted legs pass under it
+      const by = oy - lh - (beat === 1 || beat === 3 ? (lh >= 5 ? 1 : 0) : 0);
       const alert = pose === 'rear' ? 1 : 0, hurt = pose === 'hurt' ? 1 : 0;
       haunch = E(ox + Q.hx * g, by - 0.85 * Q.hry * g, Q.hrx * g, Q.hry * g + preg);
       chest = E(ox + Q.cx * g, by - 0.9 * Q.cry * g - hurt * g, Q.crx * g + bulk, Q.cry * g + bulk * 0.5);
       head = pose === 'eat'
         ? E(ox + (Q.hdx + 1) * g, oy - Q.hryH * hs - (kind === 'deer' ? 0 : 0.5), Q.hrxH * hs, Q.hryH * hs)
-        : E(ox + (Q.hdx - hurt - alert) * g, by - (Q.hdy + 2 * hurt + 3 * alert) * g, Q.hrxH * hs, Q.hryH * hs);
-      const step = Math.round((Q.leg >= 6 ? 2 : 1.4) * g) * walk;
+        : E(ox + (Q.hdx - hurt - alert) * g, by - (Q.hdy + 2 * hurt + 3 * alert) * g + (beat === 0 || beat === 2 ? 0.6 : 0), Q.hrxH * hs, Q.hryH * hs);
+      const s = Math.max(1, Math.round((Q.leg >= 6 ? 2 : 1.4) * g));
       const hx = Math.round(haunch.cx - 2 * g), fx = Math.round(chest.cx + 1 * g);
-      const top = (/** @type {Ell} */ e) => e.cy + e.ry - 2;
-      // far pair and near pair, out of step with each other (a deer's legs slender)
-      const lw = kind === 'deer' ? 1 : 2;
-      legs.push({ x: hx + step, y: top(haunch), w: lw, h: oy - 1 - top(haunch) });
-      legs.push({ x: hx + 3 - step, y: top(haunch), w: lw, h: oy - 1 - top(haunch) });
-      legs.push({ x: fx - step, y: top(chest), w: lw, h: oy - 1 - top(chest) });
-      legs.push({ x: fx + 3 + step, y: top(chest), w: lw, h: oy - 1 - top(chest) });
+      const top = (/** @type {Ell} */ e) => Math.round(e.cy + e.ry - 2);
+      // four legs, each in its own place in the stride (a deer's slender); the far pair first, behind
+      const lw = kind === 'deer' ? 1 : 2, ph = (/** @type {number} */ k) => (beat < 0 ? -1 : legPhase(beat, k));
+      if (pose === 'hop') {
+        // in mid-leap: stretched out, fore legs reaching ahead, hind legs flung back
+        const r = Math.max(2, Math.round(lh * 0.8)), y1 = oy - 1 - Math.max(1, Math.round(lh * 0.35));
+        legs.push(...strideLeg(hx - 1, top(haunch), y1, lw, 2, r, false));
+        legs.push(...strideLeg(fx, top(chest), y1, lw, 0, r, true));
+        legs.push(...strideLeg(hx + 2, top(haunch), y1, lw, 2, r + 1, false));
+        legs.push(...strideLeg(fx + 3, top(chest), y1, lw, 0, r + 1, true));
+      } else {
+        legs.push(...strideLeg(hx, top(haunch), oy - 1, lw, ph(0), s, false));
+        legs.push(...strideLeg(fx, top(chest), oy - 1, lw, ph(1), s, true));
+        legs.push(...strideLeg(hx + 3, top(haunch), oy - 1, lw, ph(2), s, false));
+        legs.push(...strideLeg(fx + 3, top(chest), oy - 1, lw, ph(3), s, true));
+      }
     }
     // (room above the head for its ears, inside the frame)
     if (head.cy - head.ry < 7) head = E(head.cx, head.ry + 7, head.rx, head.ry);
@@ -401,7 +457,7 @@ function kindBody(kind, pose, ox, oy, g, hs, bulk, preg) {
     const fly = pose === 'hop' || pose === 'fly1' || pose === 'fly2';
     const lh = fly ? 0 : pose === 'loaf' || pose === 'sick' ? 0 : Math.max(2, Math.round(3 * g));
     const by = oy - lh - (fly ? 6 * g : 0);
-    const bob = walk > 0 ? 1 : 0;
+    const bob = beat === 0 || beat === 2 ? 1 : 0;
     haunch = E(ox + 14 * g, by - 4 * g, 7.5 * g, 4.2 * g + preg);
     chest = E(ox + 20 * g, by - 4.6 * g - (pose === 'rear' ? 1 : 0), (pose === 'rear' ? 5.5 : 4.6) * g + bulk * 0.5, (pose === 'rear' ? 5 : 4.2) * g);
     head = pose === 'eat'
@@ -409,8 +465,10 @@ function kindBody(kind, pose, ox, oy, g, hs, bulk, preg) {
       : E(ox + (24 + bob) * g, by - 10.5 * g + (fly ? 3 * g : 0), 2.8 * hs, 2.6 * hs);
     snout = E(head.cx + head.rx + 0.5, head.cy + 0.5, 1.2, 1);
     if (!fly && lh) {
-      legs.push({ x: Math.round(haunch.cx + 2 * g) + walk, y: by, w: 1, h: lh - 1 });
-      legs.push({ x: Math.round(chest.cx - 1 * g) - walk, y: by, w: 1, h: lh - 1 });
+      // a bird's walk: one foot lifted and set down ahead of the other, the head bobbing
+      const st = (/** @type {number} */ k) => (beat < 0 ? 0 : [1, 0, -1, 0][(beat + k * 2) % 4]), up = (/** @type {number} */ k) => (beat >= 0 && (beat + k * 2) % 4 === 3 ? 1 : 0);
+      legs.push({ x: Math.round(haunch.cx + 2 * g) + st(0), y: by, w: 1, h: lh - 1 - up(0) });
+      legs.push({ x: Math.round(chest.cx - 1 * g) + st(1), y: by, w: 1, h: lh - 1 - up(1) });
     }
   } else if (kind === 'snail') {
     // a banded shell riding on a long flat foot; withdrawn, only the shell and a lip of foot show
@@ -427,12 +485,15 @@ function kindBody(kind, pose, ox, oy, g, hs, bulk, preg) {
     chest = E(ox + 20 * g, oy - 3 * g - 3 - rise * 0.5, 5.5 * g + bulk, 2.8 * g);
     head = E(ox + 27 * g, oy - (pose === 'eat' ? 2.5 : 3.5) * g - 3 - rise, 3.6 * hs, 2.6 * hs);
     // four short splayed legs, walking in diagonal pairs
-    const step = Math.round(1.5 * g) * walk;
-    const ly = Math.min(haunch.cy + haunch.ry - 1, oy - 3);
-    legs.push({ x: Math.round(haunch.cx - 3 * g) + step, y: ly, w: 2, h: oy - 1 - ly });
-    legs.push({ x: Math.round(haunch.cx + 1 * g) - step, y: ly, w: 2, h: oy - 1 - ly });
-    legs.push({ x: Math.round(chest.cx - 1 * g) - step, y: ly, w: 2, h: oy - 1 - ly });
-    legs.push({ x: Math.round(chest.cx + 3 * g) + step, y: ly, w: 2, h: oy - 1 - ly });
+    // four short splayed legs, in a sprawling diagonal walk: each reaches forward, plants, pushes back
+    const s = Math.max(1, Math.round(1.5 * g)), ly = Math.min(haunch.cy + haunch.ry - 1, oy - 3);
+    const leg = (/** @type {number} */ x, /** @type {number} */ k) => {
+      const p = beat < 0 ? -1 : legPhase(beat, k), dx = p === 0 ? s : p === 2 ? -s : 0, up = p === 3 ? 1 : 0;
+      legs.push({ x: Math.round(x) + dx, y: ly - up, w: 2, h: oy - 1 - ly });
+    };
+    leg(haunch.cx - 3 * g, 0); leg(haunch.cx + 1 * g, 2); leg(chest.cx - 1 * g, 3); leg(chest.cx + 3 * g, 1);
+    // the body sways from side to side as it goes: the tail end and head swing a pixel
+    if (beat === 1 || beat === 3) head = E(head.cx, head.cy + (beat === 1 ? -0.6 : 0.6), head.rx, head.ry);
   }
   return { haunch, chest, head, snout, legs, extra };
 }
@@ -511,7 +572,7 @@ export function rabbitAnchors(look, snap, want) {
   let kindExtra = [];
   /** @type {Ell|null} */
   let snout = null;
-  if (kind !== 'rabbit' && (!lying || kind === 'snail') && (pose !== 'hop' || kind === 'dove' || kind === 'snail')) {
+  if (kind !== 'rabbit' && (!lying || kind === 'snail') && (pose !== 'hop' || kind === 'dove' || kind === 'snail' || kind in QUAD)) {
     const kb = kindBody(kind, pose, ox, oy, g, hs, bulk, preg);
     haunch = kb.haunch; chest = kb.chest; head = kb.head; snout = kb.snout; kindExtra = kb.extra;
     legs.length = 0;
@@ -759,10 +820,13 @@ function farLayer(S) {
   const { P, a, tr, C, C2 } = S;
   // (a fox's legs are black-stockinged, a badger's dark; a dove's are drawn with its feet)
   const legCol = a.kind === 'fox' ? FOX_LEG : S.pattern === 'points' || a.kind === 'badger' ? C2 : C;
-  if (a.kind !== 'dove') for (const l of a.legs) {
-    P(l.x - 1, l.y - 1, l.w + 2, l.h + 2, K);
-    P(l.x, l.y, l.w, l.h, legCol.body);
-    P(l.x, l.y + l.h - 1, l.w, 1, legCol.shade);
+  if (a.kind !== 'dove') {
+    // (a leg drawn as runs of pixels down a slant: every outline first, so none covers the leg above it)
+    for (const l of a.legs) P(l.x - 1, l.y - 1, l.w + 2, l.h + 2, K);
+    for (const l of a.legs) {
+      P(l.x, l.y, l.w, l.h, legCol.body);
+      if (!l.seg || l.foot) P(l.x, l.y + l.h - 1, l.w, 1, legCol.shade);
+    }
   }
   if (tr.has('wings')) wingArt(S, true);
   tailLayer(S);
@@ -1011,12 +1075,15 @@ function pawLayer(S) {
     // a salamander's splayed legs show in front of its low belly
     if (a.kind === 'salamander') a.legs.forEach((l, i) => { if (i & 1) { P(l.x - 1, l.y, l.w + 2, l.h + 1, K); P(l.x, l.y, l.w, l.h, C.body); } });
     for (const l of a.legs) {
-      if (l.y + l.h < a.feetY - 1) continue;
+      if (l.seg && !l.foot) continue;
+      // a planted paw on the ground; a lifted one where its leg ends
+      const fy = Math.min(a.feetY, l.y + l.h);
+      if (fy < a.feetY - 3) continue;
       const w = a.kind === 'salamander' ? 4 : a.kind === 'deer' ? 2 : 3, x = a.kind === 'salamander' ? l.x - 1 : a.kind === 'deer' ? l.x : l.x;
-      P(x - 1, a.feetY, w + 2, 2, K);
-      P(x, a.feetY, w, 1, a.kind === 'deer' ? '#3a2a20' : col.shade);
-      if (a.kind === 'badger') P(x + w, a.feetY, 1, 1, C_CREAM); // claws
-      if (a.kind === 'salamander') P(x + (w >> 1), a.feetY, 1, 1, K); // splayed toes
+      P(x - 1, fy, w + 2, 2, K);
+      P(x, fy, w, 1, a.kind === 'deer' ? '#3a2a20' : col.shade);
+      if (a.kind === 'badger') P(x + w, fy, 1, 1, C_CREAM); // claws
+      if (a.kind === 'salamander') P(x + (w >> 1), fy, 1, 1, K); // splayed toes
     }
     if (a.kind !== 'salamander' && a.kind !== 'deer' && (a.pose === 'loaf' || a.pose === 'sick')) { P(a.chest.cx + 2, a.feetY, 4, 1, K); P(a.chest.cx + 2, a.feetY - 1, 3, 1, col.shade); }
     return;
@@ -1698,9 +1765,27 @@ function spriteFor(look, snap, pose, low, factory) {
   let cv = SPRITES.get(key);
   if (cv) { SPRITES.delete(key); SPRITES.set(key, cv); return cv; }
   cv = drawRabbitSprite(look, snap, factory, { pose, quality: low ? 'low' : 'high' });
+  gradeSprite(cv);
   SPRITES.set(key, cv);
   if (SPRITES.size > SPRITE_MAX) SPRITES.delete(SPRITES.keys().next().value);
   return cv;
+}
+
+/**
+ * Give a sprite the game's one look for animals (rendering/punch.js): its
+ * tones spread and its colours deepened, as the wilds show them. Canvases
+ * that cannot be read back (tests' stand-ins) are left as drawn.
+ * @param {any} cv
+ */
+function gradeSprite(cv) {
+  try {
+    const g = cv.getContext('2d', { willReadFrequently: true });
+    if (!g || typeof g.getImageData !== 'function') return;
+    const img = g.getImageData(0, 0, RABBIT_W, RABBIT_H);
+    if (!img || !img.data) return;
+    punchSprite(img.data, RABBIT_W, RABBIT_H, { ink: false });
+    g.putImageData(img, 0, 0);
+  } catch { /* not readable */ }
 }
 
 /** The straw floor of a subject card (a straw strip). @param {CanvasRenderingContext2D} ctx @param {number} fx @param {number} fy */

@@ -40,33 +40,39 @@ test('a blow wounds a rabbit: its blood stains the ground, and it flees faster f
   assert.ok(r.alarm && r.wounds.length === 1);
   assert.ok(w.drops.length > 10, 'blood bursts from it');
   let stained = 0, airborne = 0, moved = 0, last = r.x;
-  for (let t = 0; t < 6; t += 1 / 60) {
+  const T = BLEED_OUT * 0.9;
+  for (let t = 0; t < T; t += 1 / 60) {
     w.step(1 / 60);
     stained += w.takeStains().length;
     if (r.air) airborne++;
     moved += Math.abs(r.x - last); last = r.x;
   }
   assert.ok(stained > 20, `its blood colours the ground (${stained})`);
-  assert.ok(moved > 6 * (before || 20), `it runs much faster than it hopped (${moved.toFixed(0)} px in 6 s, calm hops at ${before.toFixed(0)} px/s)`);
-  assert.ok(airborne > 6 * 60 * 0.6, 'and hardly stops between bounds');
+  assert.ok(moved > T * (before || 20), `it runs much faster than it hopped (${moved.toFixed(0)} px in ${T} s, calm hops at ${before.toFixed(0)} px/s)`);
+  assert.ok(airborne > T * 60 * 0.6, 'and hardly stops between bounds');
   // a tap that misses close by sets another one running too
   const o = w.rabbits[1];
   w.scare(o, o.x + 10);
   assert.ok(o.alarm);
 });
 
-test('three blows bring a rabbit down; it bleeds out where it lies; struck while down it dies', () => {
+test('wounded, an animal bleeds out within seconds; the third tap before then catches it', () => {
   const w = flat(), r = w.rabbits[0];
-  for (let k = 1; k < WILD_HP; k++) assert.equal(w.strike(r, r.x, r.y - 6), 'wounded');
-  assert.equal(w.strike(r, r.x, r.y - 6), 'down');
-  assert.ok(r.down && !r.dead && !r.running);
-  run(w, BLEED_OUT + 1);
-  assert.ok(r.dead, 'left lying, it bleeds out');
+  assert.equal(w.strike(r, r.x, r.y - 6), 'wounded');
+  assert.ok(r.blood < 1.0001 && r.running);
+  run(w, BLEED_OUT * 0.5);
+  assert.ok(r.running && r.blood > 0 && r.blood < 0.6, `half its blood is gone (${r.blood.toFixed(2)})`);
+  run(w, BLEED_OUT * 0.5 + 0.2);
+  assert.ok(r.dead, 'it bleeds out quickly');
+  assert.ok(BLEED_OUT <= 5, 'the death from blood loss is quick');
+  assert.equal(w.at(r.x, r.y - 3), r, 'its body can be tapped');
+  // three quick taps catch one alive
   const q = w.rabbits[1];
-  for (let k = 0; k < WILD_HP; k++) w.strike(q, q.x, q.y - 6);
+  for (let k = 1; k < WILD_HP; k++) { assert.equal(w.strike(q, q.x, q.y - 6), 'wounded'); run(w, 0.5); }
+  assert.ok(q.running, 'still alive after two wounds and a second of running');
+  assert.equal(w.strike(q, q.x, q.y - 6), 'caught');
+  assert.ok(q.down && !q.dead);
   assert.equal(w.strike(q, q.x, q.y - 6), 'killed');
-  assert.ok(q.dead);
-  assert.equal(w.at(q.x, q.y - 3), q, 'its body can be tapped');
 });
 
 test('a rabbit from the wilds joins the hutch: alive and weak, or as a body for its remains', () => {
@@ -85,6 +91,31 @@ test('a rabbit from the wilds joins the hutch: alive and weak, or as a body for 
   while (livingRabbits(st.colony).length < st.cap.hutch) st.bringWildRabbit({ look: r.look, sex: 'f' });
   assert.equal(st.bringWildRabbit({ look: r.look, sex: 'f' }).ok, false);
   assert.ok(st.bringWildRabbit({ look: r.look, sex: 'f', dead: true }).ok);
+});
+
+test('each enclosure holds at most ten animals, living and dead', async () => {
+  const { PEN_MAX, penCount, colonyTick, colonyDay } = await import('../src/game/colony.js');
+  assert.equal(PEN_MAX, 10);
+  const st = GameState.create('pen-cap', { tutorial: false });
+  Object.defineProperty(st, 'cap', { get: () => ({ hutch: 99 }) });
+  const w = flat(), look = w.rabbits[0].look;
+  for (let k = 0; penCount(st.colony, 'rabbit') < PEN_MAX; k++) assert.ok(st.bringWildRabbit({ look, sex: 'f', dead: k % 2 === 0 }).ok);
+  assert.equal(st.bringWildRabbit({ look, sex: 'f' }).ok, false, 'no room alive');
+  assert.equal(st.bringWildRabbit({ look, sex: 'f', dead: true }).ok, false, 'nor for a body');
+  assert.equal(st.buyRabbit(true).ok, false, 'nor bought');
+  // other kinds have enclosures of their own
+  const { kindLook } = await import('../src/game/kinds.js');
+  const { Rng } = await import('../src/core/rng.js');
+  assert.ok(st.bringWildRabbit({ look: kindLook('cat', new Rng('c')), sex: 'f' }).ok);
+  // recovering a body's remains makes room
+  const body = st.colony.rabbits.find((x) => !x.alive && penCount(st.colony, 'rabbit') && x.look.kind !== 'cat');
+  assert.ok(st.processRemains(body.id).ok);
+  assert.ok(st.bringWildRabbit({ look, sex: 'f' }).ok);
+  // and nights in it never breed it past ten
+  for (const x of st.colony.rabbits) if (x.alive) { x.marks.love = 80; x.health = 100; }
+  st.colony.rabbits.find((x) => x.alive && !x.look.kind).sex = 'm';
+  for (let d = 1; d < 12; d++) { colonyTick(st.colony, 60, { day: st.day + d, cap: 99 }); colonyDay(st.colony, { day: st.day + d, cap: 99 }); }
+  assert.ok(penCount(st.colony, 'rabbit') <= PEN_MAX);
 });
 
 test('every region has open ground for its rabbits to start on', () => {
