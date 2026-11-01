@@ -19,15 +19,24 @@ export function linearToSrgb(c) {
  * @returns {[number, number, number]}
  */
 export function rgbToOklab(r, g, b) {
+  return rgbToOklabInto(r, g, b, [0, 0, 0]);
+}
+
+/**
+ * sRGB (0..1) → OKLab, written into `out` (no allocation, for hot loops).
+ * @template {ArrayLike<number> & {[k: number]: number}} T
+ * @param {number} r @param {number} g @param {number} b @param {T} out
+ * @returns {T}
+ */
+export function rgbToOklabInto(r, g, b, out) {
   const lr = srgbToLinear(r), lg = srgbToLinear(g), lb = srgbToLinear(b);
   const l = Math.cbrt(0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb);
   const m = Math.cbrt(0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb);
   const s = Math.cbrt(0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb);
-  return [
-    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
-    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
-    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
-  ];
+  out[0] = 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s;
+  out[1] = 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s;
+  out[2] = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s;
+  return out;
 }
 
 /**

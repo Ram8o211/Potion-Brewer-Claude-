@@ -3,7 +3,7 @@
 
 import { MAX_SPECIES, NO_BOIL } from '../reactions/species.js';
 import { granularFraction, suspensionLnMult } from '../reactions/mixture.js';
-import { rgbToOklab, linearToSrgb } from '../core/color.js';
+import { rgbToOklabInto, linearToSrgb } from '../core/color.js';
 import { PHASE } from './constants.js';
 import { compositionEffects, EFFECTS, NE } from '../alchemy/effects.js';
 import { ARC_NONE } from './particles.js';
@@ -18,6 +18,9 @@ export const STAIN = 1;
 
 /** Mass assigned to gas particles for constraint weighting (they yield to condensed matter). */
 export const GAS_MASS = 0.05;
+
+/** scratch for a particle's colour in OKLab */
+const LAB = new Float64Array(3);
 
 /**
  * @param {import('./world.js').Simulation} sim
@@ -128,7 +131,7 @@ export function refreshParticle(sim, i) {
   }
   const cr = linearToSrgb(Math.exp(-aR * inv)), cg = linearToSrgb(Math.exp(-aG * inv)), cb = linearToSrgb(Math.exp(-aB * inv));
   sim.colR[i] = cr; sim.colG[i] = cg; sim.colB[i] = cb;
-  const lab = rgbToOklab(cr, cg, cb);
+  const lab = rgbToOklabInto(cr, cg, cb, LAB);
   p.colL[i] = lab[0]; p.colA[i] = lab[1]; p.colB[i] = lab[2];
   p.opacity[i] = op * inv;
   p.flam[i] = flam * inv;
