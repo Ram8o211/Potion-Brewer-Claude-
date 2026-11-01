@@ -499,6 +499,11 @@ export function penCount(c, kind) {
   return c.rabbits.filter((r) => kindOf(r.look) === kind).length;
 }
 
+/** Living animals of a kind (the Shop's places count per enclosure). @param {Colony} c @param {string} kind */
+export function livingOf(c, kind) {
+  return c.rabbits.filter((r) => r.alive && kindOf(r.look) === kind).length;
+}
+
 /** Young on the way in a kind's enclosure (two counted for each expecting female). @param {Colony} c @param {string} kind */
 function penPending(c, kind) {
   return 2 * c.rabbits.filter((r) => r.alive && r.pregnant && kindOf(r.look) === kind).length;
@@ -879,7 +884,8 @@ export function colonyTick(c, dt, o = {}) {
     let conceived = false;
     if (p.sex !== r.sex && kindOf(p.look) === kindOf(r.look)) {
       const doe = r.sex === 'f' ? r : p, buck = r.sex === 'f' ? p : r;
-      const room = (!Number.isFinite(o.cap) || living + pending < /** @type {number} */ (o.cap)) && penCount(c, kindOf(doe.look)) + penPending(c, kindOf(doe.look)) < PEN_MAX;
+      const kd = kindOf(doe.look);
+      const room = (!Number.isFinite(o.cap) || livingOf(c, kd) + penPending(c, kd) < /** @type {number} */ (o.cap)) && penCount(c, kd) + penPending(c, kd) < PEN_MAX;
       if (!doe.pregnant && stageOf(doe, day) !== 'kit' && room && rng.chance(0.35)) {
         doe.pregnant = { sire: buck.id, due: (Number.isFinite(day) ? /** @type {number} */ (day) : c.day || 0) + GESTATION_DAYS };
         pending += 2;
@@ -973,7 +979,7 @@ export function colonyDay(c, o) {
     const sireId = doe.pregnant.sire;
     const sire = findRabbit(c, sireId) || c.memorial.find((x) => x.id === sireId) || doe;
     const litter = rng.int(1, 3);
-    const n = Math.max(0, Math.min(litter, o.cap - living, PEN_MAX - penCount(c, kindOf(doe.look))));
+    const n = Math.max(0, Math.min(litter, o.cap - livingOf(c, kindOf(doe.look)), PEN_MAX - penCount(c, kindOf(doe.look))));
     rep.lost += litter - n;
     for (let k = 0; k < n; k++) {
       const kit = makeRabbit(c, { born: day, sex: rng.chance(0.5) ? 'f' : 'm', look: inheritLook(doe.look, sire.look, rng), parents: [doe.id, sireId] }, rng);
@@ -989,10 +995,11 @@ export function colonyDay(c, o) {
     let pending = 2 * c.rabbits.filter((r) => r.alive && r.pregnant).length;
     for (const doe of c.rabbits) {
       if (doe.sex !== 'f' || doe.pregnant || !eligible(doe)) continue;
-      if (living + pending >= o.cap) break;
-      const buck = bucks.find((b) => !related(doe, b) && kindOf(b.look) === kindOf(doe.look));
+      const kd = kindOf(doe.look);
+      if (livingOf(c, kd) + penPending(c, kd) >= o.cap) continue;
+      const buck = bucks.find((b) => !related(doe, b) && kindOf(b.look) === kd);
       if (!buck) continue;
-      if (penCount(c, kindOf(doe.look)) + penPending(c, kindOf(doe.look)) >= PEN_MAX) continue;
+      if (penCount(c, kd) + penPending(c, kd) >= PEN_MAX) continue;
       const p = 0.3 + 0.4 * Math.min(1, Math.max(doe.marks.love, buck.marks.love) / 50) + (fed ? 0.1 : 0);
       if (rng.chance(p)) {
         doe.pregnant = { sire: buck.id, due: day + GESTATION_DAYS };

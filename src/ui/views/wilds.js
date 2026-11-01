@@ -56,7 +56,7 @@ import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
 import { hashString } from '../../core/rng.js';
 import { Warren, warrenSpots, BLOOD, WILD_HP } from '../../game/wild-rabbits.js';
 import { drawRabbit, rabbitSpriteKey, RABBIT_W, RABBIT_H } from '../../rendering/rabbit.js';
-import { defaultSnap, livingRabbits, penHasRoom, PEN_MAX } from '../../game/colony.js';
+import { defaultSnap, penHasRoom, PEN_MAX } from '../../game/colony.js';
 import { KINDS } from '../../game/kinds.js';
 
 /** The shadow a plant casts on its ground, by region (the crags' is warm and deep, the fens' cold). */
@@ -884,17 +884,13 @@ export class WildsView {
     audio.play(out === 'caught' ? 'thump' : 'crush');
     if (out === 'caught') {
       if (!penHasRoom(st.colony, r.kind)) {
-        // no place for it at all: it is let die where it lies
+        // no place for it at all: it is let die where it lies (said every time, so it is never a surprise)
         w.kill(r);
-        this.tell('pen-full', 'The enclosure is full', `The ${kd.plural}' enclosure holds ${PEN_MAX} animals, living and dead. Recover the remains of a body in the hutch to make room.`, 'rabbit');
+        audio.play('error');
+        toast('The enclosure is full', `The ${kd.plural}' enclosure holds ${PEN_MAX} animals, living and dead, so this one could not be kept alive. Recover the remains of a body in the hutch to make room.`, 'rabbit', 5000);
         return;
       }
-      if (livingRabbits(st.colony).length >= st.cap.hutch) {
-        // no place for it alive: it is put out of its misery, and its body can go home
-        w.kill(r);
-        this.tell('full', 'The hutch is full', 'There is no place for it alive, so it was finished where it lay. Tap the body to carry it home for its remains, or buy more places in the Shop.', 'rabbit');
-        return;
-      }
+      // caught alive: carried straight home
       this.takeHome(w, r);
       return;
     }

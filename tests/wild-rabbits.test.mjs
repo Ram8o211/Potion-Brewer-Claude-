@@ -87,10 +87,29 @@ test('a rabbit from the wilds joins the hutch: alive and weak, or as a body for 
   assert.ok(body.ok && !body.rabbit.alive);
   assert.equal(causeWord(body.rabbit.cause), 'killed in the wilds');
   assert.ok(st.processRemains(body.rabbit.id).ok, 'its remains can be recovered');
-  // a full hutch takes no more living rabbits (bodies still come home)
-  while (livingRabbits(st.colony).length < st.cap.hutch) st.bringWildRabbit({ look: r.look, sex: 'f' });
-  assert.equal(st.bringWildRabbit({ look: r.look, sex: 'f' }).ok, false);
-  assert.ok(st.bringWildRabbit({ look: r.look, sex: 'f', dead: true }).ok);
+});
+
+test('caught alive is kept alive: the Shop\'s places never turn a catch into a body, only a full enclosure does', async () => {
+  const { penCount, PEN_MAX } = await import('../src/game/colony.js');
+  const { kindLook } = await import('../src/game/kinds.js');
+  const { Rng } = await import('../src/core/rng.js');
+  const st = GameState.create('catch-alive', { tutorial: false });
+  const w = flat(), live0 = livingRabbits(st.colony).length;
+  // more catches than the starting hutch's places: every one comes home alive
+  for (let i = 0; i < st.cap.hutch + 2; i++) {
+    const r = w.rabbits[i % w.rabbits.length];
+    const res = st.bringWildRabbit({ look: r.look, sex: 'f', health: 20 });
+    assert.ok(res.ok && res.rabbit.alive, `catch ${i + 1} comes home alive`);
+  }
+  assert.equal(livingRabbits(st.colony).length, live0 + st.cap.hutch + 2);
+  assert.ok(st.bringWildRabbit({ look: kindLook('cat', new Rng('c')), sex: 'm', health: 20 }).rabbit.alive, 'and other kinds too');
+  // only a full enclosure (ten, living and dead) refuses one
+  while (penCount(st.colony, 'rabbit') < PEN_MAX) assert.ok(st.bringWildRabbit({ look: w.rabbits[0].look, sex: 'f' }).ok);
+  const no = st.bringWildRabbit({ look: w.rabbits[0].look, sex: 'f' });
+  assert.equal(no.ok, false);
+  assert.equal(no.full, 'pen');
+  // buying from the breeder still respects the Shop's places for rabbits
+  assert.equal(st.buyRabbit(true).ok, false);
 });
 
 test('each enclosure holds at most ten animals, living and dead', async () => {

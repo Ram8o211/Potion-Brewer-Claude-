@@ -365,10 +365,11 @@ computed from the particles that actually run out of the tap. What a
   It bleeds out fast — four seconds after the first wound it drops dead —
   so be quick: a meter over it shows the blood it has left and the taps
   landed, and a third tap before it dies catches it alive and carries it to
-  the hutch, weak from its wounds (with the hutch full it is finished
-  instead). Its body can be carried home with a tap, where its remains can
-  be recovered. Each kind's enclosure holds at most ten animals, living and
-  dead together: recover a body's remains to make room. New rabbits come in
+  its enclosure, weak from its wounds. Left to bleed out, its body can be
+  carried home with a tap, where its remains can be recovered. Each kind's
+  enclosure holds at most ten animals, living and dead together (only then
+  is a catch lost): recover a body's remains to make room. The Shop's
+  places in the hutch are for rabbits bought from the breeder and bred. New rabbits come in
   from the edges of the scene.
 * **Everything is original and bundled:** pixel art drawn in code (plus
   the wilds' sprites from the project's own concept-art packs), a
