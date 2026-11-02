@@ -20,15 +20,13 @@ let stage = 2, variant = 0, kind = 'plant', mount = 'ground', fragment = 0;
 let tool = 'draw', brushSize = 1, ink = '#ddc38c';
 let activeComponent = -1, painting = false;
 let undo = [], redo = [];
-let draggingBefore = null;
 const canvas = $('editor'), ctx = canvas.getContext('2d', { willReadFrequently: true });
 ctx.imageSmoothingEnabled = false;
 const status = (message) => { $('status').textContent = message; };
 const clone = (x) => JSON.parse(JSON.stringify(x));
 const safeNum = (x, fallback) => Number.isFinite(Number(x)) ? Number(x) : fallback;
 const rgb = (hex) => [1, 3, 5].map(i => parseInt(hex.slice(i, i+2), 16) / 255);
-const pack = (hex) => (0xff000000 | parseInt(hex.slice(1, 7), 16)) >>> 0;
-const unpack = (n) => '#' + (n & 0xffffff).toString(16).padStart(6, '0');
+const unpack = (n) => '#' + [n & 255, (n >>> 8) & 255, (n >>> 16) & 255].map(v => v.toString(16).padStart(2, '0')).join('');
 const key = (k = kind, s = stage, v = variant, m = mount, p = fragment) =>
   k === 'plant' ? `plant|${s}|${v}|${m}` : k === 'icon' ? 'icon' : `piece|${p}`;
 
