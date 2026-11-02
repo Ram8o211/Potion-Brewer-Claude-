@@ -25,7 +25,8 @@ export const ORDER_REWARD = 1.8;
 /** At most this many commissions open at once. */
 export const ORDER_MAX = 3;
 /** Quality from which a commission is paid in full, and below which nothing. */
-export const ORDER_FULL = 0.85, ORDER_PART = 0.55;
+export const ORDER_FULL = 0.85;
+export const ORDER_PART = 0.55;
 
 /**
  * Does this customer come with a commission rather than a counter order?

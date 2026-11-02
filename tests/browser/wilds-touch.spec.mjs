@@ -1,12 +1,11 @@
 // The wilds by touch, in the Free Experiment: a swipe shakes a ripe plant's
 // ingredient loose, which falls as the very pixels it grew as; a tap (even a
-// wobbly fingertip's) gathers it; the plant is gone and its stand sprouts
-// again at random spots; and a finger dragged in watering mode waters every
-// growing plant along its path.
+// wobbly fingertip's) gathers it; the plant is gone for good, until a new
+// expedition finds new ground; an exotic land's wonder answers the finger.
 import { test, expect } from '@playwright/test';
 import { watchErrors, shot, startSandbox, newGame, lab, drag } from './helpers.mjs';
 
-test('sandbox wilds: shake, gather by tap, regrow at random spots, water by dragging', async ({ page }, info) => {
+test('sandbox wilds: shake, gather by tap, nothing grows back, an expedition finds new ground; the isles bob', async ({ page }, info) => {
   const errors = watchErrors(page);
   await startSandbox(page);
   await page.click('[data-act=tab-wilds]');
@@ -96,48 +95,41 @@ test('sandbox wilds: shake, gather by tap, regrow at random spots, water by drag
   const t = at(it.x, it.y), touch = !!info.project.use.hasTouch, wob = touch ? 4 : 1.5;
   await drag(page, [t, { x: t.x + wob, y: t.y + wob * 0.75 }, { x: t.x + wob * 1.8, y: t.y + wob * 0.5 }], 30);
   await expect.poll(() => lab(page, (l, id) => l.views.wilds.field.some((p) => p.id === id), ripe.id), { message: 'gathered: the plant is gone' }).toBe(false);
-  // the stand sprouts again, at a spot of its own, and grows back within minutes
-  const regrow = await page.evaluate(async ([depId, gone]) => {
+  // nothing grows back, however long one waits
+  const left = await page.evaluate(async ([depId]) => {
     const G = await import(new URL('src/game/gathering.js', document.baseURI).href);
     const st = window.__alchemist.screen.state, d = st.deposits.find((x) => x.id === depId), now = Date.now();
-    const s0 = G.depositStatus(st.gathering, d, now), s1 = G.depositStatus(st.gathering, d, now + d.spawnMs + 1);
-    const s2 = G.depositStatus(st.gathering, d, now + d.spawnMs + d.growMs * 6);
-    const fresh = s1.plants.find((p) => !s0.plants.some((q) => q.id === p.id));
-    return { slots: d.slots, n0: s0.plants.length, n1: s1.plants.length, fresh: fresh && { stage: fresh.stage, id: fresh.id }, grown: s2.mature, gone: s1.plants.some((p) => p.id === gone), minutes: (d.spawnMs + d.growMs) / 60000 };
-  }, [ripe.dep, ripe.id]);
-  expect(regrow.n0).toBe(regrow.slots - 1);
-  expect(regrow.n1, 'a new sprout came up').toBe(regrow.slots);
-  expect(regrow.fresh && regrow.fresh.stage).toBe('sprout');
-  expect(regrow.gone).toBe(false);
-  expect(regrow.grown).toBe(regrow.slots);
-  expect(regrow.minutes).toBeLessThan(6);
-  // watering: a finger dragged across the scene waters every growing plant on its path
-  const dep = await lab(page, (l) => {
-    const st = l.state, d = st.deposits.find((x) => x.region === 'meadow' && x.botanical), now = Date.now();
-    st.gathering.nodes[d.id] = { plants: [0, 1, 2].map((k) => ({ id: `${d.id}#t${k}`, x: 0.25 + k * 0.22, y: 0.8, born: now, g: 0.1, t: now, w: 0.2 })), due: null, seq: 60 };
-    l.views.wilds.refresh();
-    l.views.wilds.grow();
-    return d;
-  });
-  await page.click('[data-act=mode-water]');
+    return { slots: d.slots, n0: G.depositStatus(st.gathering, d, now).plants.length, n1: G.depositStatus(st.gathering, d, now + 86400000).plants.length };
+  }, [ripe.dep]);
+  expect(left.n0).toBe(left.slots - 1);
+  expect(left.n1, 'nothing sprouts again').toBe(left.slots - 1);
+  // a new expedition (free in the Free Experiment) finds new ground
+  const gen0 = await lab(page, (l) => l.state.gathering.gens.meadow | 0);
+  await page.click('[data-act=expedition]');
+  await page.waitForFunction((g) => (window.__alchemist.screen.state.gathering.gens.meadow | 0) === g + 1, gen0);
+  await lab(page, (l) => l.views.wilds.grow());
+  expect(await lab(page, (l, id) => l.views.wilds.field.some((p) => p.dep.id === id), ripe.dep), 'the old stand is left behind').toBe(false);
+  // the Skydrift Isles: a flick sends a floating isle swinging round its rest
+  await page.click('[data-act=region-skydrift]');
+  await page.waitForFunction(() => { const w = window.__alchemist.screen.views.wilds; return w.region === 'skydrift' && !!w.bg; });
   await page.locator('.view-wilds canvas.scene').scrollIntoViewIfNeeded();
   Object.assign(cv, await page.locator('.view-wilds canvas.scene').boundingBox());
-  const spots = await lab(page, (l, id) => l.views.wilds.field.filter((p) => p.dep.id === id).map((p) => ({ x: p.x * 384, y: p.y * 216 })), dep.id);
-  spots.sort((a, b) => a.x - b.x);
-  // (a finger wandering from one plant to the next, a little above each one's foot)
-  const path = [];
-  for (let i = 0; i < spots.length - 1; i++) for (let k = 0; k < 12; k++) { const u = k / 12; path.push(at(spots[i].x + (spots[i + 1].x - spots[i].x) * u, spots[i].y - 4 + (spots[i + 1].y - spots[i].y) * u)); }
-  path.push(at(spots[spots.length - 1].x, spots[spots.length - 1].y - 4));
-  await drag(page, path, 16);
-  const ws = await lab(page, (l, id) => l.state.gathering.nodes[id].plants.map((q) => q.w), dep.id);
-  expect(ws.length).toBe(3);
-  expect(Math.min(...ws), 'each plant along the drag drank').toBeGreaterThan(0.6);
-  await expect(page.locator('.toast, .note-dock', { hasText: 'Nothing to water here' })).toHaveCount(0);
-  await expect(page.locator(`[data-deposit="${dep.id}"] .soil`)).toBeVisible();
-  // a tap far from any plant says so
-  await drag(page, [at(4, 6), at(4, 6)], 30);
-  await expect(page.locator('.toast, .note-dock', { hasText: 'Nothing to water here' })).toBeVisible();
-  await shot(page, info, 'sandbox-wilds-watered');
+  const isle = await page.evaluate(async () => {
+    const S = await import(new URL('src/rendering/wild-scene.js', document.baseURI).href);
+    const w = window.__alchemist.screen.views.wilds, won = S.sceneWonder('skydrift', w.sceneSeed());
+    const i = won.isles[0];
+    return i ? { x: i.x, y: i.y } : null;
+  });
+  if (isle) {
+    await drag(page, [at(isle.x - 18, isle.y), at(isle.x + 18, isle.y)], 4);
+    const moved = await page.evaluate(async () => {
+      const S = await import(new URL('src/rendering/wild-scene.js', document.baseURI).href);
+      const w = window.__alchemist.screen.views.wilds, i = S.sceneWonder('skydrift', w.sceneSeed()).isles[0];
+      return Math.hypot(i.vx, i.vy) + Math.hypot(i.ox, i.oy);
+    });
+    expect(moved, 'the isle swings').toBeGreaterThan(0.5);
+  }
+  await shot(page, info, 'sandbox-wilds-isles');
   expect(errors).toEqual([]);
 });
 
@@ -212,7 +204,7 @@ test('sandbox wilds: the scene zooms in and out, starting a little closer, and a
   expect(errors).toEqual([]);
 });
 
-test('wild rabbits: tapped, one bleeds over the ground and bolts faster; brought down, a tap carries it to the hutch', async ({ page }) => {
+test('wild animals: tapped, one bleeds over the ground and bolts faster; brought down, a tap carries it to the hutch', async ({ page }) => {
   const errors = watchErrors(page);
   await newGame(page, { tutorial: false });
   await page.click('[data-act=tab-wilds]');
@@ -239,7 +231,7 @@ test('wild rabbits: tapped, one bleeds over the ground and bolts faster; brought
   await page.waitForTimeout(1200);
   // its blood colours the scene where it ran
   const red = await lab(page, (l) => {
-    const cv = l.views.wilds.gore.get(l.views.wilds.region);
+    const cv = l.views.wilds.gore.get(l.views.wilds.region + ':' + l.views.wilds.sceneSeed());
     if (!cv) return 0;
     const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
     let n = 0;

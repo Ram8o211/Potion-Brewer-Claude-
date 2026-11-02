@@ -441,7 +441,7 @@ export class WildsView {
       this.closed[d.id] = !lab.sandbox && !plan.open;
       // an ingredient is listed once it has been gathered for the first time (its plants still grow in the scene)
       if (!lab.sandbox && !st.found[d.materialId]) continue;
-      const g = btn(`+${take}`, () => this.gather(d), { cls: 'gold small', icon: plan.method.icon, disabled: can < 5, act: 'gather-' + d.id, title: `${plan.method.verb} ${take} ml` });
+      const g = btn(`+${take} ml`, () => this.gather(d), { cls: 'gold small', icon: plan.method.icon, disabled: can < 5, act: 'gather-' + d.id, title: `${plan.method.verb} ${take} ml` });
       const meta = h('div', { class: 'meta', text: this.stockText(d, s) });
       this.rows[d.id] = { meta, g, take, card: /** @type {HTMLElement | null} */ (null) };
       const notes = lab.sandbox ? [] : plan.factors.filter((f) => f.why !== 'satchel').map((f) => f.why);

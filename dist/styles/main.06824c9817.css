@@ -120,7 +120,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 .topbar > .stat { flex: none; }
 .topbar .rankrow { display: flex; align-items: center; gap: 4px; min-width: 0; flex: 0 1 auto; max-width: 220px; overflow: hidden; }
 .topbar .rankname { max-width: 100%; text-align: left; }
-.topbar .shop-btn { padding: 4px 10px; gap: 4px; }
+.topbar .shop-btn { padding: 4px 10px; gap: 4px; margin-left: auto; }
 .bar { height: 6px; background: var(--wood0); box-shadow: 0 0 0 1px #000; position: relative; overflow: hidden; }
 .bar > i { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(var(--brassHi), var(--brass)); }
 .topbar .day { font-size: var(--fs-s); display: flex; flex-direction: column; line-height: 1.2; white-space: nowrap; min-width: 0; flex: 0 1 auto; overflow: hidden; padding-left: 6px; border-left: 2px solid rgba(26, 18, 24, 0.45); }
@@ -188,7 +188,8 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 .chip { padding: 2px 6px; font-size: var(--fs-s); background: rgba(13, 10, 16, 0.75); box-shadow: 0 0 0 1px var(--wood3); }
 /* the pour hint sits in the top-left corner, over the wall — clear of the cauldron, the tap and the buttons */
 .stage .pour-hint { position: absolute; left: 6px; top: 6px; font-size: var(--fs-s); padding: 3px 8px; pointer-events: none; max-width: calc(100% - 200px); line-height: 1.25; }
-.stage .fab { position: absolute; right: 8px; bottom: 8px; min-height: 52px; padding: 6px 14px; z-index: 3; }
+/* the Bottle button stands at the bottom left: the tap and the vial filling under it are on the right */
+.stage .fab { position: absolute; left: 8px; bottom: 8px; min-height: 48px; padding: 6px 12px; z-index: 3; }
 .stage .brew-panel { position: absolute; right: 6px; top: 56px; width: min(320px, calc(100% - 12px)); max-height: calc(100% - 124px); overflow-y: auto; padding: 8px 10px; font-size: var(--fs-s); z-index: 4; line-height: 1.35; }
 .brew-panel .row.small { gap: 6px; }
 .know { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 3px; align-items: center; }
@@ -356,6 +357,11 @@ canvas.portrait.big { width: 88px; height: 88px; box-shadow: 0 0 0 var(--px) var
 .hutch-head { align-items: center; gap: 6px; }
 .hutch-head .btn { min-height: 44px; font-size: var(--fs-s); }
 .hutch-scene-wrap { width: 100%; max-width: 760px; align-self: center; }
+.hutch-scene-wrap .crisp-overlay { box-shadow: 0 0 0 var(--px) var(--ink2); }
+.pen-tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px 0 4px; }
+.pen-tabs::-webkit-scrollbar { display: none; }
+.pen-tabs .btn { flex: none; min-height: 44px; font-size: var(--fs-s); padding-left: 10px; padding-right: 12px; }
+.pen-title { text-align: center; margin-top: -2px; }
 canvas.hutch-scene { display: block; width: 100%; height: auto; aspect-ratio: 224 / 92; image-rendering: pixelated; box-shadow: 0 0 0 var(--px) var(--ink2); touch-action: manipulation; cursor: pointer; }
 .rabbit-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 6px; }
 .rabbit-tile { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 44px; min-height: 44px; padding: 4px; border: none; cursor: pointer; font-family: inherit; color: var(--ink); background: var(--parch1); box-shadow: 0 0 0 1px var(--ink2); }
@@ -445,7 +451,16 @@ canvas.hutch-scene { display: block; width: 100%; height: auto; aspect-ratio: 22
 .region-tabs .btn img.ico { width: 28px; height: 28px; }
 .region-tabs .btn.locked { opacity: 0.55; }
 .scene-wrap { position: relative; box-shadow: 0 0 0 var(--px) var(--wood0), 0 0 0 calc(var(--px) * 2) var(--wood3); }
-canvas.scene { display: block; width: 100%; aspect-ratio: 16 / 9; height: auto; touch-action: manipulation; cursor: pointer; }
+/* the window onto the scene: zoomed in, the scene is wider than it and scrolls */
+.scene-view { width: 100%; aspect-ratio: 16 / 9; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--wood3) transparent; }
+/* under the scene, beside its caption (never over a plant) */
+.scene-bar { display: flex; align-items: flex-start; gap: calc(var(--px) * 2); }
+.scene-bar .region-info { flex: 1; min-width: 0; }
+.zoom-ctl { display: flex; gap: var(--px); flex: none; margin-top: calc(var(--px) * 2); }
+.zoom-ctl button { min-width: 32px; min-height: 32px; padding: calc(var(--px) * 1); }
+/* (fingers need bigger targets) */
+@media (pointer: coarse) { .zoom-ctl button { min-width: 44px; min-height: 44px; } }
+canvas.scene { display: block; flex: none; max-width: none; aspect-ratio: 16 / 9; height: auto; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; cursor: pointer; }
 .region-info { margin: 6px 2px; color: var(--parch2); line-height: 1.35; }
 .deposits { display: flex; flex-direction: column; gap: 6px; }
 .deposit { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 8px 10px; }
@@ -655,6 +670,39 @@ input[type=checkbox] { width: 22px; height: 22px; accent-color: #6a4b9a; }
 @keyframes toastin { from { transform: translateY(-10px); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes toastout { to { transform: translateY(-10px); opacity: 0; } }
 
+/* the notes' dock: the game's messages in a place of their own in the top bar (a slim line under it on
+   narrow screens), never over a control; the newest lights up, then stays, dimmed, until the next */
+.topbar .note-dock {
+  flex: 1 1 0; min-width: 0; align-self: stretch; display: flex; align-items: center; gap: 6px;
+  margin: 2px 2px; padding: 2px 8px; border: none; font: inherit; font-size: var(--fs-s); line-height: 1.25;
+  text-align: left; color: var(--parch1); background: rgba(10, 6, 12, 0.28); box-shadow: inset 0 0 0 1px rgba(255, 240, 210, 0.08);
+  overflow: hidden; transition: opacity .6s, background-color .6s;
+}
+.topbar .note-dock.idle { background: transparent; box-shadow: none; }
+.topbar .note-dock > img { flex: none; }
+.note-dock .note-clip { flex: 1 1 auto; min-width: 0; overflow: hidden; }
+.note-dock .note-body { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.note-dock .note-body b { font-weight: normal; color: var(--brassHi); margin-right: 0.45em; }
+.note-dock .note-text { color: var(--parch2); }
+.note-dock .note-count { flex: none; min-width: 20px; padding: 0 4px; text-align: center; font-size: 12px; color: var(--ink); background: var(--parch2); opacity: 0.7; }
+.note-dock.fresh { background: rgba(255, 214, 120, 0.16); box-shadow: inset 0 0 0 1px rgba(255, 214, 120, 0.45); animation: notein .45s; }
+.note-dock.old { opacity: 0.6; }
+.note-dock:hover { opacity: 1; }
+@keyframes notein { from { background-color: rgba(255, 214, 120, 0.45); } }
+@keyframes notescroll { 0%, 18% { transform: none; } 85%, 100% { transform: translateX(var(--note-shift)); } }
+.note-log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.note-log li { display: flex; gap: 8px; align-items: flex-start; padding: 6px 8px; font-size: var(--fs-s); line-height: 1.35; }
+.note-log li b { font-weight: normal; display: block; }
+@media (max-width: 959px), (max-aspect-ratio: 1/1) {
+  /* narrow screens: the notes take a slim line of their own under the top bar's buttons, always there (nothing jumps
+     when a note comes), one line high; a longer note scrolls through slowly */
+  .topbar { flex-wrap: wrap; row-gap: 0; }
+  .topbar .note-dock { order: 10; flex: 1 0 100%; height: 24px; margin: 1px 0 0; }
+  .note-dock .note-body { display: inline-block; white-space: nowrap; overflow: visible; }
+  .note-dock .note-body.scroll { animation: notescroll var(--note-time, 6s) linear 1 forwards; }
+}
+@media (prefers-reduced-motion: reduce) { .note-dock .note-body.scroll { animation: none; } .note-dock.fresh { animation: none; } }
+
 /* the guided tour: a strip of its own between the top bar and the rooms (never over a control) */
 .tutor-slot { grid-area: tutor; min-width: 0; z-index: 5; }
 .tutor { margin: 4px 6px 2px; padding: 6px 10px; font-size: var(--fs-s); line-height: 1.35; max-height: 32vh; overflow-y: auto; box-shadow: 0 0 0 var(--px) var(--brass), inset 0 0 0 var(--px) var(--parch3); }
@@ -754,3 +802,66 @@ details.steps summary { cursor: pointer; min-height: 24px; }
 .deposit .meta.soil { color: #3a5a7a; }
 .view-wilds .tap-mode .btn.active { box-shadow: 0 0 0 var(--px) #1a0f26, 0 0 0 calc(var(--px) * 2) var(--brass); }
 .deposit .meta.soil:empty { display: none; }
+
+/* ---------- v3: biomes, expeditions, commissions, patience (compact) ---------- */
+.region-tabs { gap: 4px; padding: 6px 6px 8px; align-items: center; }
+.region-tabs .btn { min-height: 42px; padding-left: 8px; padding-right: 10px; font-size: var(--fs-s); position: relative; }
+.region-tabs .btn img.ico { width: 22px; height: 22px; }
+.region-tabs .btn.exotic:not(.locked) { background: #3a2a5a; box-shadow: 0 0 0 var(--px) #120a1e, inset 0 var(--px) 0 0 #8a6ad0, inset 0 calc(var(--px) * -2) 0 0 #1e1230; }
+.region-tabs .btn.active { background: #5a3a7a; }
+.region-tabs .tab-price { position: absolute; right: 2px; bottom: 1px; font-size: 12px; color: var(--brassHi); text-shadow: 1px 1px 0 #000; }
+.realm-tag { flex: none; writing-mode: vertical-rl; transform: rotate(180deg); font-size: 12px; color: var(--parch1); letter-spacing: 1px; padding: 0 1px; opacity: 0.8; }
+.realm-tag.exotic { color: #c8a8ff; }
+.wilds-sky .sky-row { gap: 6px; align-items: center; }
+.wilds-sky .chip { display: inline-flex; gap: 3px; align-items: center; padding: 1px 6px; background: rgba(255, 255, 255, 0.06); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4); color: var(--parch2); }
+.wilds-sky .weather-note { margin-top: 2px; }
+.travel-purse { display: inline-flex; gap: 1px; align-items: center; }
+.travel-purse img.ico { width: 16px; height: 16px; }
+.travel-purse img.ico.spent { opacity: 0.25; filter: grayscale(1); }
+.travel-next { font-size: 13px; }
+.deposit { grid-template-columns: 44px minmax(0, 1fr) auto; gap: 6px; padding: 6px 8px; }
+.deposit canvas { width: 40px; height: 40px; }
+.deposit .title { font-size: 18px; }
+.deposit .btn { min-height: 40px; }
+.deposit .meta.fx { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; }
+.fx-chip { display: inline-flex; align-items: center; gap: 1px; padding: 0 3px; background: rgba(43, 29, 20, 0.08); }
+.fx-chip.main { background: rgba(120, 200, 90, 0.25); box-shadow: 0 0 0 1px rgba(60, 120, 40, 0.5); }
+.fx-chip img.ico { width: 14px; height: 14px; }
+@media (max-width: 600px) { .deposit { grid-template-columns: 44px minmax(0, 1fr) auto; } .deposit > .btn { grid-column: auto; } }
+
+/* the customer card, compact */
+.customer-card { padding: 8px 10px; }
+.customer-card .cust-top { grid-template-columns: auto 1fr; gap: 8px; align-items: start; }
+.customer-card .cust-face { display: flex; flex-direction: column; gap: 3px; align-items: stretch; }
+.customer-card .cust-name { font-size: 19px; line-height: 1.05; }
+.customer-card .tags { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 2px; }
+.customer-card .tag.ok { background: rgba(120, 200, 90, 0.3); }
+.customer-card .tag.warn { background: rgba(224, 64, 44, 0.25); }
+.customer-card .speech { margin: 6px 0 4px; padding: 4px 6px; line-height: 1.3; max-height: 5.4em; overflow: auto; }
+.customer-card .potion-name { font-size: 19px; margin: 2px 0 4px; }
+.customer-card.offer { box-shadow: 0 0 0 var(--px) #6a4a12, inset 0 0 0 var(--px) var(--brassHi); }
+.req-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 3px; margin: 2px 0 4px; }
+.req-cell { display: grid; grid-template-columns: 14px auto 1fr; gap: 4px; align-items: center; font-size: var(--fs-s); padding: 2px 4px; background: rgba(43, 29, 20, 0.07); }
+.req-cell b { font-weight: normal; color: var(--ink); white-space: nowrap; }
+.req-cell .tgt { color: var(--ink2); white-space: nowrap; }
+.req-cell .fx-status { grid-column: 1 / -1; font-size: 13px; }
+.req-cell.limit b { color: #7a2a22; }
+.req-cell img.ico { width: 14px; height: 14px; }
+.cust-actions { gap: 6px; margin-top: 4px; }
+.cust-actions .btn { flex: 1 1 auto; min-height: 42px; }
+
+/* patience: a draining bar under the portrait */
+.patience { height: 5px; background: var(--wood0); box-shadow: 0 0 0 1px #000; position: relative; overflow: hidden; }
+.patience > i { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: linear-gradient(#a8e06a, #5a9a32); transition: width 0.4s linear; }
+.patience.low > i { background: linear-gradient(#ffd060, #d0901a); }
+.patience.critical > i { background: linear-gradient(#ff7a5a, #c03a22); animation: patience-blink 0.8s steps(2) infinite; }
+@keyframes patience-blink { 50% { opacity: 0.4; } }
+.order-strip .strip-who { display: flex; flex-direction: column; gap: 2px; }
+.order-strip .patience { height: 4px; }
+
+/* the order book */
+.orders-card { padding: 8px 10px; display: grid; gap: 6px; }
+.order-row { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 6px; align-items: center; padding: 4px 6px; background: rgba(43, 29, 20, 0.07); }
+.order-row.due { background: rgba(255, 200, 90, 0.28); box-shadow: 0 0 0 1px rgba(160, 110, 20, 0.6); }
+.order-row b { font-weight: normal; font-size: 18px; color: var(--ink); }
+.order-row .btn { min-height: 40px; }

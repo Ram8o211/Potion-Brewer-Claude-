@@ -9,15 +9,15 @@ test('first commission: brew, test on a subject, bottle and serve', async ({ pag
   await newGame(page, { tutorial: true });
   await page.click('[data-act=tutorial-next]');
   await page.waitForTimeout(200);
-  await page.click('[data-act=tutorial-next]').catch(() => {});
+  await page.click('[data-act=tutorial-next]', { timeout: 1000 }).catch(() => {});
   const roles = await lab(page, (l) => l.state.world.roles);
-  const leaf = 'wild-silverleaf', sun = 'wild-sunthistle';
+  const leaf = 'wild-silverleaf', sun = 'wild-emberbark';
   const before = await lab(page, (l, id) => ({ coins: l.state.coins, rep: l.state.reputation, leaf: l.state.stock(id) }), leaf);
-  // 125 ml of water, 50 ml of whole Silverleaf (healing with a frosty bite), 25 ml of Sunthistle to cancel the frost
+  // 125 ml of water, 50 ml of whole Silverleaf (healing with a frosty bite), 50 ml of Emberbark (healing with a warmth that cancels the frost)
   await pourDose(page, roles.water, [100, 25]);
   await pourDose(page, leaf, [50]);
-  await pourDose(page, sun, [25]);
-  expect(await lab(page, (l) => l.sim.p.count * 5)).toBe(200);
+  await pourDose(page, sun, [25, 25]);
+  expect(await lab(page, (l) => l.sim.p.count * 5)).toBe(225);
   expect(await lab(page, (l, id) => l.state.stock(id), leaf), 'poured herbs are charged to the inventory').toBe(before.leaf - 50);
   await shot(page, info, 'tutorial-poured');
   // the herbs went in whole: crush them with the pestle
@@ -115,8 +115,8 @@ test('first commission: brew, test on a subject, bottle and serve', async ({ pag
   await expect(page.locator('.view-book .item', { hasText: 'Mabry' })).toBeVisible();
   await expect(page.locator('.view-book .item', { hasText: 'Mabry' })).toContainText('Tested');
   await page.locator('.view-book [data-act=prepare]').first().click();
-  await page.waitForFunction(() => window.__alchemist.screen.sim.p.count >= 40 && !window.__alchemist.screen.sim.emitter.pouring, null, { timeout: 30_000 });
-  expect(await lab(page, (l) => l.sim.p.count * 5)).toBe(200);
+  await page.waitForFunction(() => window.__alchemist.screen.sim.p.count >= 45 && !window.__alchemist.screen.sim.emitter.pouring, null, { timeout: 30_000 });
+  expect(await lab(page, (l) => l.sim.p.count * 5)).toBe(225);
   expect(await lab(page, (l, id) => l.state.stock(id), leaf)).toBe(stock0 - 50);
   // the recipe keeps its procedure: the book lists the steps, heating included
   await expect(page.locator('.view-book .item', { hasText: 'Mabry' }).locator('.recipe-steps li', { hasText: 'Heat to' }).first()).toBeAttached();
