@@ -59,9 +59,22 @@ still limited.
   against the air, so the scene reads crisp and vivid; applied alike to
   the painting and the swaying foliage. Boulders are solid stones in
   five flat tones, the cobbles' mortar never showing through them.
-* **Mountains** (side.js `mountains`) are ranges of jagged peaks, each lit
-  on its left face and shaded and creased on its right, the tallest
-  capped with snow whose ragged edge runs down the creases.
+* **Mountains** (side.js `mountains`) are ranges whose crest is broken at
+  three scales into summits, shoulders and notches; their rock (side.js
+  `rockFace`) is lit left of a ridge wandering down from each summit and
+  shaded right of it, scored by gullies radiating from the summit, and
+  the tallest are capped with snow reaching down the gullies. The Ember
+  Crags' volcano is painted the same way: concave flanks under a ragged,
+  notched crater rim glowing in its throat, lava running down from the
+  notch a row at a time (meandering, splitting, cooling), and a painted
+  plume of shaded smoke puffs over it; the animated smoke and steam are
+  pixel-art puffs too. Far hills and treelines (`silhouette`) have a crest
+  broken at a finer scale and a lit rim of varying depth over a shaded band.
+* **Leaves** (foliage.js `cluster`) are rounded clumps after the pixel
+  artist's recipe: a dark mass, scalloped puffs each in its own flat tones
+  — body, lit cap, highlight — picked as exact steps on the leaf ramp (a
+  part's `step`), single leaves catching the light or in shade, and leaf
+  tufts breaking the outline.
 * **Pools seep into the ground.** Water and lava lie in the hollows, their
   bodies darkening smoothly with depth, and filter into the rock rather
   than lying on it: the bed's stones are stained toward the pool's deep

@@ -19,7 +19,7 @@ export function compose(cv, seed) {
   // some worlds' woods are in their autumn
   const autumn = s('season').next() < 0.3;
   const pal = vary(palette({
-    leaf: [autumn ? '#8a5a20' : '#2e6a2a', { spread: 0.6 }], leaf2: [autumn ? '#9a4a1e' : '#1e5a3a', { spread: 0.55 }], bark: ['#4a3422', { spread: 0.5 }], wood: '#a87a48', rock: '#5e625c',
+    leaf: [autumn ? '#9a6424' : '#3a7c30', { spread: 0.6 }], leaf2: [autumn ? '#a85422' : '#2a6c40', { spread: 0.55 }], bark: ['#4a3422', { spread: 0.5 }], wood: '#a87a48', rock: '#5e625c',
     moss: ['#4e7a30', { spread: 0.5 }], fern: [autumn ? '#8a6a26' : '#4e8a34', { spread: 0.55 }],
   }), s('pal'), 1);
   const back = '#9ab8a0';

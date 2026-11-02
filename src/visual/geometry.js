@@ -16,6 +16,7 @@
  * @property {string} mat              palette ramp
  * @property {'round'|'fold'|'flat'|'cyl'|'facet'} [shade]
  * @property {number} [tone]           lightness offset (−1..1)
+ * @property {number} [step]           the step on its ramp outright (0 darkest … 1 lightest), instead of a tone from its lightness
  * @property {number} [lum]            fixed lightness for 'facet' parts (0..1)
  * @property {boolean} [clip]          lines and dots only over what is already drawn
  * @property {boolean} [noOutline]     the edge of this part is not inked
