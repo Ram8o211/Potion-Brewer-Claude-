@@ -8,6 +8,7 @@ import { Canvas, SCENE_W, SCENE_H } from './paint.js';
 import { hashString } from '../../core/rng.js';
 import { finish } from './cave.js';
 import { legible } from './legible.js';
+import { flourish } from './flourish.js';
 import * as meadow from './meadow.js';
 import * as forest from './forest.js';
 import * as river from './river.js';
@@ -17,7 +18,7 @@ import * as crags from './crags.js';
 import * as netherwood from './netherwood.js';
 
 /** Version of the environment generator (scenes are not saved; this only names caches). */
-export const ENV_VERSION = 9;
+export const ENV_VERSION = 10;
 
 const COMPOSERS = { meadow, forest, netherwood, river, quarry, moonfen, crags };
 
@@ -49,6 +50,8 @@ export function composeScene(region, seed) {
   COMPOSERS[id].compose(cv, String(seed));
   // what stands in it told apart from what is behind it, and the ground given detail
   legible(cv, id);
+  // the ground's own flora and creepers on the rock faces
+  flourish(cv, id);
   finish(cv, cv.meta.vignette ?? 0.55);
   // a gap the composition left (a dip below its sky) takes the colour above it
   for (const px of cv.sw ? [cv.pix.px, cv.sw.bare] : [cv.pix.px]) {

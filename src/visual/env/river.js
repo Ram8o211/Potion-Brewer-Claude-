@@ -54,10 +54,10 @@ export function compose(cv, seed) {
   paintTerrain(cv, {
     a: '#8a7a62', b: '#c8c0a8', grain: '#e8e4d4', dark: '#2a2a22', deep: '#141612', cave: '#0a0c0a',
     crust: ['#7ac04a', '#5a9a3a', '#3e7a2e', '#2e5a26'], crustH: 4, seed: ss,
-    cobble: { stones: ['#9a9684', '#7e7a68', '#aaa692', '#66645a', '#8a8a78', '#74786a'], mortar: '#2a2a22', s: 4 },
+    cobble: { stones: ['#807e70', '#6a685c', '#8e8c7c', '#56554c', '#747466', '#62665a'], mortar: '#1c1c18', s: 6 },
     grass: { cols: ['#5a9a3a', '#7ac04a', '#4a8a30'], tall: 4, rate: 0.6, flowers: ['#ffe58a', '#ffffff'] },
   });
-  moss(cv, { cols: ['#7ac04a', '#4e8a34', '#3a6e2a', '#2a5020'], seed: ss + 1, drape: 9, rate: 0.22, len: 12 });
+  moss(cv, { cols: ['#7ac04a', '#4e8a34', '#3a6e2a', '#2a5020'], seed: ss + 1, drape: 12, rate: 0.3, len: 15 });
   const level = Math.round(Math.max(top[rx - hw], top[rx + hw])) + 5;
   cv.meta.river = pool(cv, rx - hw, rx + hw, level, { surface: '#8ae0d8', body: ['#2a6a68', '#1e5654', '#164442', '#0e3232', '#0a2424'], see: 0.3, bed: ['#2a3a2e', '#34463a', '#1e2a22'] });
   veins(cv, cv.meta.river, WATER_VEINS(ss + 4, ['#5a9a98', '#2a6a68', '#1e5654', '#164442']));

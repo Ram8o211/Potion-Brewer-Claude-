@@ -285,7 +285,10 @@ computed from the particles that actually run out of the tap. What a
   overhangs and caves, a few ledges standing out of mostly low ground — pools of water or lava whose veins seep into the
   rock around them, lava falls, branching trees (a homogeneous wood
   behind, and trees fitted to the ground and ledges in front), rocks and
-  timberwork, glowing mushrooms, torches and crystals, smooth skies and
+  timberwork, glowing mushrooms, torches and crystals, each region's own
+  little flora (tufts, daisies, lavender, ferns, cattails, puffballs,
+  glowing caps) along its surfaces and creepers down its rock faces,
+  domed cobbles and pale boulders bedded in the rock, smooth skies and
   light and, as it runs, particles (pollen, motes, leaves, fireflies,
   wisps, drips, trickling grit, shimmer, embers, ash, steam), plus
   seed-chosen features such as autumn

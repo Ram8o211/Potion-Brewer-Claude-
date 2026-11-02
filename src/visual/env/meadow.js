@@ -61,10 +61,10 @@ export function compose(cv, seed) {
   paintTerrain(cv, {
     a: '#6a4a30', b: '#7e5a3a', grain: '#a08060', dark: '#2a1c12', deep: '#140c08', cave: '#100a06',
     crust: ['#8ccf4a', '#5ea83a', '#3f7e2c', '#2e5a22'], crustH: 4, seed: ss,
-    cobble: { stones: ['#7a6a52', '#6a5a44', '#8a7a5e', '#5a4e3c', '#76705a', '#64604a'], mortar: '#2a2018', s: 4 },
+    cobble: { stones: ['#625a4c', '#544c40', '#6e6656', '#4a443a', '#5e5c4e', '#524e44'], mortar: '#16120e', s: 6 },
     grass: { cols: ['#6ab83e', '#8ccf4a', '#4e9a34'], tall: 4, rate: 0.7, flowers: ['#fff4c0', '#ffe066', '#ff9fc7', '#c9b0ff', '#ffffff', '#ff7a6a'] },
   });
-  moss(cv, { cols: ['#8ccf4a', '#5ea83a', '#3f7e2c', '#2e5a22'], seed: ss + 1, drape: 9, rate: 0.2, len: 10 });
+  moss(cv, { cols: ['#8ccf4a', '#5ea83a', '#3f7e2c', '#2e5a22'], seed: ss + 1, drape: 12, rate: 0.32, len: 14 });
   if (pond) {
     cv.meta.pond = pool(cv, pond.x - pond.hw, pond.x + pond.hw, pond.level, { surface: '#cfe8ff', body: ['#3a6a98', '#2e5a86', '#244a72', '#1a3a5e'], see: 0.2, bed: ['#3a2e20', '#4a3a28', '#2a2018'] });
     veins(cv, cv.meta.pond, WATER_VEINS(ss + 4, ['#7aa8d8', '#3a6a98', '#2e5a86', '#244a72']));

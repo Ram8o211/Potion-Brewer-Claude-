@@ -71,7 +71,7 @@ export function compose(cv, seed) {
   paintTerrain(cv, {
     a: '#1e1a18', b: '#2a2420', grain: '#4a4038', dark: '#0a0a10', deep: '#050508', cave: '#030305',
     crust: ['#3e8a6a', '#2e6a52', '#1e4a3c', '#16382e'], crustH: 4, seed: ss,
-    cobble: { stones: ['#4a5064', '#3e4456', '#585e72', '#34384a', '#465a5a', '#3a3e4e'], mortar: '#10121a', s: 4 },
+    cobble: { stones: ['#4a5064', '#3e4456', '#585e72', '#34384a', '#465a5a', '#3a3e4e'], mortar: '#10121a', s: 6 },
     grass: { cols: ['#2e6a52', '#3e8a6a', '#1e4a3c'], tall: 4, rate: 0.55, flowers: ['#8ff0ff', '#d8ff8a'] },
   });
   moss(cv, { cols: ['#3e8a6a', '#2e6a52', '#1e4a3c', '#14322a'], seed: ss + 1, drape: 10, rate: 0.25, len: 14 });

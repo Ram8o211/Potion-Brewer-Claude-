@@ -39,6 +39,16 @@ still limited.
   pockets. No ledge floats: each is a mushroom cap on a near-upright
   pillar reaching down to the ground or a ledge below, joined to them as
   one mass, moss running down its sides and hanging from its underside.
+  Each stone is a low dome (a bright cap, a lit shoulder, a shaded
+  underside, a dark rim where it beds into the mortar), and paler
+  boulders lie bedded in the rock, apart from one another.
+* **The flourish** (flourish.js), after the legibility pass: each
+  region's own little flora along its dry surfaces — grass tufts,
+  daisies, lavender spikes, small ferns and mushrooms, cattails,
+  puffballs, pale crystals, glowing caps lighting the dark — kept small
+  so the ingredients among them still read, and creepers climbing down
+  the rock faces of the ledges and pillars with a leaf or a berry. The
+  far woods' oaks are crowns of round clumps, each lit on its upper left.
 * **Pools seep into the ground.** Water and lava lie in the hollows, their
   bodies darkening smoothly with depth, and filter into the rock rather
   than lying on it: the bed's stones are stained toward the pool's deep
@@ -243,6 +253,7 @@ src/visual/                     pure, DOM-free, deterministic
                   far pillars, ruins, mist, roof, stalactites, walls,
                   vines, moss, glowing mushrooms, torches, falls, veins
                   seeping from pools, the vignette and lights; stone.js: the cobbled stone;
+                  flourish.js: the ground's flora and the rock faces' creepers;
                   objects.js: branch trees and foliage pads, pines,
                   foliage.js: leaf clusters, hanging strands, gnarled trees,
                   shrubs, rocks, reeds, ferns, logs, clouds, crane, cart,

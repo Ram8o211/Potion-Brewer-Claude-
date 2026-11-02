@@ -46,10 +46,10 @@ export function compose(cv, seed) {
   paintTerrain(cv, {
     a: '#3e2a1c', b: '#4c3422', grain: '#6e5034', dark: '#1a120c', deep: '#0a0806', cave: '#070605',
     crust: [autumn ? '#c88a2a' : '#6aa83a', autumn ? '#9a6a22' : '#4a8a2c', '#2e5a22', '#22401a'], crustH: 4, seed: ss,
-    cobble: { stones: ['#5e584a', '#4e4a3e', '#6a6250', '#44483a', '#56604a', '#3e3a30'], mortar: '#16120c', s: 4 },
+    cobble: { stones: ['#5e584a', '#4e4a3e', '#6a6250', '#44483a', '#56604a', '#3e3a30'], mortar: '#16120c', s: 6 },
     grass: { cols: autumn ? ['#b07a24', '#8a5a1e'] : ['#4e9a34', '#6ab83e', '#3a7a2a'], tall: 3, rate: 0.5, flowers: ['#f08ab0', '#e85a8a', '#f0e0a0'] },
   });
-  moss(cv, { cols: autumn ? ['#c88a2a', '#9a6a22', '#6a4a1a', '#3e2e14'] : ['#6aa83a', '#4a8a2c', '#30601e', '#1e3e16'], seed: ss + 1, drape: 10, rate: 0.25, len: 14 });
+  moss(cv, { cols: autumn ? ['#c88a2a', '#9a6a22', '#6a4a1a', '#3e2e14'] : ['#6aa83a', '#4a8a2c', '#30601e', '#1e3e16'], seed: ss + 1, drape: 12, rate: 0.32, len: 16 });
   roots(cv, s('roots'), '#4a3020', '#6a4630');
   markOpen(cv);
   // the wood's own trees, growing on the ground and the ledges where they fit
