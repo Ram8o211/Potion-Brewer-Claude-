@@ -243,14 +243,70 @@ export function tuft(rng, h, o = {}) {
   return m;
 }
 
-/** A fallen log lying across the ground. */
+/**
+ * A fallen log lying across the ground: a round trunk lit along its top,
+ * tapering a little from its root end (a flare of root stubs) to the cut
+ * end, which shows its pale face with rings; bark furrows broken into
+ * short dashes along it, a snapped branch stub on its back and patches of
+ * moss lying on top.
+ */
 export function log(rng, len, r, o = {}) {
-  const m = new Model();
-  m.stroke([[-len / 2, -r], [len / 2, -r - (rng.next() - 0.5) * 2]], r * 2, o.bark || 'bark', { tex: 1.5 });
-  for (let i = 0; i < 3; i++) m.line([[-len / 2 + 2, -r * (0.5 + i * 0.4)], [len / 2 - 2, -r * (0.5 + i * 0.4)]], o.bark || 'bark', { lum: 0.15 });
-  m.ellipse(len / 2, -r, r * 0.5, r, o.wood || 'wood', { shade: 'flat' });
-  m.ellipse(len / 2, -r, r * 0.25, r * 0.5, o.wood || 'wood', { shade: 'flat', tone: -0.2 });
-  if (o.moss) for (let i = 0; i < len; i++) m.dot(-len / 2 + rng.next() * len, -r * 2 + rng.next() * 2, o.moss, { lum: 0.4 + rng.next() * 0.5 });
+  const m = new Model(), bark = o.bark || 'bark', wood = o.wood || 'wood', rnd = R(rng);
+  const x0 = -len / 2 + r * 0.6, x1 = len / 2 - r * 0.6, sag = (rng.next() - 0.5) * 1.2;
+  const hw = (/** @type {number} */ t) => r * (1.05 - 0.18 * t);
+  /** @type {import('../geometry.js').Pt[]} */
+  const pts = [];
+  const ws = [];
+  for (let i = 0; i <= 8; i++) {
+    const t = i / 8;
+    pts.push([x0 + t * (x1 - x0), -hw(t) + Math.sin(t * Math.PI) * sag]);
+    ws.push(hw(t) * 2);
+  }
+  const at = (/** @type {number} */ t) => { const f = t * 8, i = Math.min(7, Math.floor(f)), u = f - i; return [pts[i][0] + (pts[i + 1][0] - pts[i][0]) * u, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * u]; };
+  // root stubs splaying from the thick end, behind the trunk
+  for (const [dy, a, l] of [[0.55, 2.7, 1.1], [0.1, 3.0, 1.3], [-0.45, 3.4, 0.9]]) {
+    const bx = x0 + r * 0.2, by = pts[0][1] + dy * r, ex = bx + Math.cos(a) * r * l, ey = Math.min(-0.5, by - Math.sin(a) * r * l * 0.4);
+    m.stroke([[bx, by], [ex, ey]], [r * 0.75, r * 0.3], bark, { tex: 1, tone: -0.06 });
+  }
+  m.stroke(pts, ws, bark, { tex: 1.2 });
+  // a snapped branch on its back, leaning toward the cut end
+  const bt = 0.45 + rng.next() * 0.2, [bxp, byp] = at(bt), bl = r * (0.9 + rng.next() * 0.4);
+  const tip = /** @type {import('../geometry.js').Pt} */ ([bxp + bl * 0.6, byp - hw(bt) - bl * 0.75]);
+  m.stroke([[bxp - r * 0.1, byp - hw(bt) * 0.4], tip], [r * 0.8, r * 0.5], bark, { tex: 1 });
+  m.ellipse(tip[0], tip[1], r * 0.28, r * 0.2, wood, { shade: 'flat', tone: 0.05 });
+  // bark furrows: short dark dashes running along the trunk, staggered row to row
+  for (const [v, lum] of [[-0.35, 0.42], [0.15, 0.34], [0.55, 0.28]]) {
+    let t = rng.next() * 0.08;
+    while (t < 0.94) {
+      const l = (0.06 + rng.next() * 0.1), t2 = Math.min(0.96, t + l);
+      const [ax, ay] = at(t), [bx2, by2] = at(t2);
+      m.line([[ax, ay + v * hw(t)], [bx2, by2 + v * hw(t2) + (rnd() < 0.3 ? 1 : 0)]], bark, { lum });
+      t = t2 + 0.03 + rng.next() * 0.08;
+    }
+  }
+  // a lit edge along the top of the bark
+  for (let t = 0.05; t < 0.9; t += 0.1 + rng.next() * 0.1) {
+    const [ax, ay] = at(t), [bx2, by2] = at(Math.min(0.95, t + 0.05 + rng.next() * 0.06));
+    m.line([[ax, ay - hw(t) * 0.72], [bx2, by2 - hw(t) * 0.72]], bark, { lum: 0.86 });
+  }
+  // the cut end: a ring of bark round the pale face, its rings and a crack
+  const ex = x1 + hw(1) * 0.35, ey = pts[8][1], fr = hw(1);
+  m.ellipse(ex, ey, fr * 0.62, fr * 1.0, bark, { shade: 'flat', tone: -0.12, soft: true });
+  m.ellipse(ex + 0.3, ey, fr * 0.5, fr * 0.84, wood, { shade: 'flat', tone: 0.08, noOutline: true });
+  m.ellipse(ex + 0.3, ey, fr * 0.3, fr * 0.5, wood, { shade: 'flat', tone: -0.1, noOutline: true });
+  m.ellipse(ex + 0.3, ey, fr * 0.14, fr * 0.22, wood, { shade: 'flat', tone: 0.04, noOutline: true });
+  m.line([[ex + 0.3, ey], [ex + fr * 0.3, ey - fr * 0.6]], wood, { lum: 0.15 });
+  // moss lying on top in a patch or two, a few threads hanging down its side
+  if (o.moss) {
+    for (let k = 0, n = 1 + Math.round(rng.next()); k < n; k++) {
+      const t = 0.12 + (k / n) * 0.6 + rng.next() * 0.15, [mx, my] = at(t), mw = len * (0.1 + rng.next() * 0.08), top = my - hw(t);
+      m.poly(lumpy(mx, top + 0.8, mw, 1.6, rnd, 0.25, 6), o.moss, { shade: 'round', tex: 0.6, tone: 0.08 });
+      for (let i = 0; i < mw * 0.8; i++) {
+        const dx = (rnd() - 0.5) * mw * 1.6, dl = 1 + Math.floor(rnd() * hw(t) * 0.7);
+        m.line([[mx + dx, top + 1], [mx + dx, top + 1 + dl]], o.moss, { lum: 0.3 + rnd() * 0.3 });
+      }
+    }
+  }
   return m;
 }
 

@@ -49,8 +49,7 @@ still limited.
   so the ingredients among them still read, and creepers climbing down
   the rock faces of the ledges and pillars with a leaf or a berry. The
   far woods' oaks are crowns of round clumps, each lit on its upper left.
-  Each region has its extras: the Ember Crags' rock threaded with a few
-  thin veins of lava, a pixel wide and faintly glowing, the quarry's rock studded with
+  Each region has its extras: the quarry's rock studded with
   outlined gold nuggets and quartz, glowing bells hanging on long stems
   from the Netherwood's and Moonfen's roofs.
 * **The grade** (grade.js), the very last pass: an S-curve deepening the
@@ -88,7 +87,8 @@ still limited.
   pockets between the stones. Lava
   seams (about five) glow and light the rock round them; water seams shine
   faintly and wet it. In the Ember
-  Crags lava also pours in falls from the roof and the ledges.
+  Crags' cavern lava also pours from the roof into the pool; the rock
+  holds no lava but the pool's own seepage.
 * **Light.** Skies, fog and every light fall off smoothly (no bands): the
   sun, the moon, mushrooms glowing cyan, ember-orange or cold white,
   torches and a lantern, lava, crystals, shafts through the leaves —
@@ -126,7 +126,11 @@ still limited.
   moss, the Meadow bright with yellow blossom, Willow Bank muted with a
   weeping willow, Moonfen cold blue-green with pink wisteria, the Crags
   olive flecked with orange, the Quarry sparse and dusty, the Netherwood
-  teal with violet specks.
+  teal with violet specks. The legibility pass (legible.js) then lifts
+  every crown clear of what lies behind it: its leaves scaled lighter
+  against a dark cavern or night sky, darker against a pale sky or haze,
+  by just what that crown needs (its own light and shade kept), with a
+  lit rim on its upper edge in the dark; trunks keep their bark.
 * **Leaves swaying in the wind** (`swayPixels` in
   `rendering/wild-scene.js`). Every foliage part carries its sway (a
   cluster moves as one, higher ones more; a hanging strand — moss,

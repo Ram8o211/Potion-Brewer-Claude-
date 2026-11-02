@@ -1,16 +1,16 @@
 // Ember Crags: a volcanic cavern (red-black gloom, far pillars in a haze
 // of heat, a roof of stalactites with glowing tips, lava pouring from it)
-// or the open slopes under a smoking cone. Lava falls from the edges of
-// the ledges, and in front the volcanic ground in cross-section — dark
-// cobbled basalt with glowing veins seeping from the lava pool into the
-// rock under a crust of ash and scorched moss, pillars dripping moss, a
-// lava tube, the pool lighting everything round it, basalt columns,
-// fire-glass, charred brush and the steaming vents.
+// or the open slopes under a smoking cone. In front the volcanic ground in
+// cross-section — dark cobbled basalt with glowing veins seeping from the
+// lava pool into the rock under a crust of ash and scorched moss, pillars
+// dripping moss, a lava tube, the pool lighting everything round it,
+// basalt columns, fire-glass, charred brush and the steaming vents. All
+// the lava in the ground is the pool's: no seams of it elsewhere.
 
 import { sky } from './paint.js';
 import { palette, vary, streamOf } from './kit.js';
 import { heights, dip, raise, fillSolid, blob, ledges, paintTerrain, pool, markOpen, glow, drips, silhouette, col, rockFace } from './side.js';
-import { caveFrame, farPillars, fog, moss, fall, ledgeTops, veins, LAVA_VEINS } from './cave.js';
+import { caveFrame, farPillars, fog, moss, fall, veins, LAVA_VEINS } from './cave.js';
 import { basalt, spire, cloud } from './objects.js';
 import { terrainTrees } from './trees.js';
 import { fbm1, hash2 } from '../noise.js';
@@ -75,17 +75,10 @@ export function compose(cv, seed) {
   veins(cv, cv.meta.lava, LAVA_VEINS(ss + 4));
   glow(cv, px, level, hw + 50, [1, 0.42, 0.12], 0.6);
   markOpen(cv);
-  // lava falls: from the roof into the pool, and from the edges of ledges
-  const lf = s('falls'), falls = [];
+  // in the cavern, a fall of lava from the roof into the pool (all the lava there is pours into or lies in the pool)
+  const lf = s('falls');
   const fx = px + lf.int(-hw + 8, hw - 8);
-  if (frame) falls.push(fall(cv, fx, Math.max(0, frame.roof[fx]) + 1, { w: 2, cols: LAVA, rgb: [1, 0.45, 0.12], seed: lf.int(0, 1e9) }));
-  for (const [x0, y0] of ledgeTops(cv, 2, lf.int(0, 1e9), 16)) {
-    // walk to the cap's edge and pour over it
-    const dir = lf.next() < 0.5 ? -1 : 1;
-    let x = x0;
-    while (x > 2 && x < W - 3 && cv.solid[(y0 + 1) * W + x + dir]) x += dir;
-    fall(cv, x + dir * 3, y0 + 2, { w: 1, cols: LAVA, rgb: [1, 0.45, 0.12], seed: lf.int(0, 1e9) });
-  }
+  if (frame) fall(cv, fx, Math.max(0, frame.roof[fx]) + 1, { w: 2, cols: LAVA, rgb: [1, 0.45, 0.12], seed: lf.int(0, 1e9) });
   // basalt columns, fire-glass, charred brush
   const br = s('basalt');
   for (let g = 0; g < 2; g++) {

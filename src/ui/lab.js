@@ -37,7 +37,7 @@ import { theoryOf, EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, dominantEffect, NE } fr
 import { awakenParts, describeThreshold } from '../alchemy/arcane.js';
 import { ARC_NONE } from '../simulation/particles.js';
 import { describeColor, rgbToHex } from '../core/color.js';
-import { h, btn, clear, toast, coins, confirmDialog, modal, setNoteDock, recentNotes } from './dom.js';
+import { h, btn, clear, keepScroll, toast, coins, confirmDialog, modal, setNoteDock, recentNotes } from './dom.js';
 import { icon } from './icons.js';
 import { audio } from '../audio/audio.js';
 import * as panels from './panels.js';
@@ -457,6 +457,10 @@ export class LabScreen {
   }
 
   buildTools() {
+    keepScroll(this.toolsEl, () => this.fillTools());
+  }
+
+  fillTools() {
     const t = clear(this.toolsEl);
     this.toolBtns = {};
     for (const d of TOOL_DEFS) {
@@ -474,7 +478,12 @@ export class LabScreen {
     if (this.tool) this.selectTool(this.tool, true);
   }
 
+  /** The ingredient shelf, rebuilt where it was scrolled to (a jar gathered in the wilds or bought does not send it back to its start). */
   buildShelf() {
+    keepScroll(this.shelfEl, () => this.fillShelf());
+  }
+
+  fillShelf() {
     const sh = clear(this.shelfEl);
     this.jarEls = {};
     const st = this.state;

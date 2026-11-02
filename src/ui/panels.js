@@ -4,7 +4,7 @@
 import { recipeConfidence, CONFIDENCE_TEXT, describeStep } from '../game/recipes.js';
 import { MECHANIC_BY_ID } from '../game/mechanics.js';
 import { evidenceRank } from '../game/experiments.js';
-import { h, btn, modal, toast, coins, starsText, confirmDialog, clear } from './dom.js';
+import { h, btn, modal, toast, coins, starsText, confirmDialog, clear, keepScroll } from './dom.js';
 import { icon } from './icons.js';
 import { drawPortrait } from '../rendering/portraits.js';
 import { drawJar } from '../rendering/art.js';
@@ -61,12 +61,12 @@ export function openShop(lab, tab = 'reagents') {
   m.el.insertBefore(tabs, m.body);
   const coinLine = h('div', { class: 'row', style: { justifyContent: 'flex-end', padding: '0 12px' } });
   m.el.insertBefore(coinLine, m.body);
-  const renderTabs = () => {
+  const renderTabs = () => keepScroll(tabs, () => {
     clear(tabs);
     for (const [k, label, ic] of [['reagents', 'Buy', 'jar'], ['equipment', 'Equipment', 'gear'], ['sell', 'Sell', 'coin']]) {
       tabs.appendChild(btn(label, () => { current = k; render(); }, { icon: ic, cls: current === k ? 'active' : '', act: 'shop-tab-' + k }));
     }
-  };
+  });
   const render = () => {
     renderTabs();
     clear(coinLine).append(icon('coin'), h('span', { text: coins(st.coins) + ' coins' }), ...(st.marketEvent.key !== 'none' ? [h('span', { class: 'muted small', text: ` · today: ${st.marketEvent.name}` })] : []));

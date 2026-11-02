@@ -97,6 +97,7 @@ export function flourish(cv, region) {
       const fx = r(9) < 0.5 ? -1 : 1;
       const drawn = PLANTS[kind]?.(put, x, y - 1, r, cols, fx);
       if (drawn && f.glow && (kind === 'glowcap' || kind === 'shard')) glows.push([x, y - 3]);
+      if (drawn && (kind === 'tuft' || kind === 'fern')) cv.grass[k] = 1;
       last[y] = x;
     }
   }
@@ -105,9 +106,8 @@ export function flourish(cv, region) {
   EXTRAS[region]?.(cv, seed + 11, swaying);
 }
 
-/** What a region has besides: lava cracks, ore, glowing bells hanging from the roof. @type {Record<string, (cv:any, seed:number, swaying:Uint8Array) => void>} */
+/** What a region has besides: ore, glowing bells hanging from the roof. @type {Record<string, (cv:any, seed:number, swaying:Uint8Array) => void>} */
 const EXTRAS = {
-  crags: (cv, seed) => cracks(cv, seed),
   quarry: (cv, seed) => ore(cv, seed),
   netherwood: (cv, seed, sw) => bells(cv, seed, sw, { cols: [['#c03a6a', '#ff7aa8', '#ffd0e0'], ['#c8862a', '#ffc860', '#fff0c0']], stem: ['#2e5a3a', '#4a2e22'], rgb: [[1, 0.45, 0.65], [1, 0.75, 0.35]], n: 6 }),
   moonfen: (cv, seed, sw) => bells(cv, seed, sw, { cols: [['#6a3ac0', '#a878ff', '#e8d0ff'], ['#2a7ab0', '#6ad0ff', '#d8f8ff']], stem: ['#1e4a3c', '#2e6a52'], rgb: [[0.7, 0.45, 1], [0.4, 0.85, 1]], n: 5 }),
@@ -118,39 +118,6 @@ function depthOf(cv, x, y) {
   let d = 0;
   while (y - d - 1 >= 0 && cv.solid[(y - d - 1) * cv.W + x] && d < 40) d++;
   return d;
-}
-
-/**
- * Thin veins of lava threading the rock: a few long, wavering seams a
- * single pixel wide, a hot core with now and then a dim pixel of burnt
- * rock beside it, splitting rarely into a short thread. No blots, only
- * a faint glow along them.
- */
-function cracks(cv, seed) {
-  const W = cv.W, H = cv.H, core = col('#ffc850'), hot = col('#ff8a2a'), edge = col('#8a2e14');
-  const ok = (x, y) => x >= 0 && y >= 0 && x < W && y < H && cv.solid[y * W + x] && !cv.liquid[y * W + x] && !cv.rock[y * W + x] && !cv.things[y * W + x];
-  const walkers = [];
-  for (let i = 0; i < 40 && walkers.length < 4; i++) {
-    const x = Math.floor(hash2(i, 1, seed) * W), y = Math.floor(170 + hash2(i, 2, seed) * (H - 178));
-    if (!ok(x, y) || depthOf(cv, x, y) < 8 || walkers.some(([a, b]) => Math.abs(a - x) < 70 && Math.abs(b - y) < 20)) continue;
-    walkers.push([x, y, hash2(i, 3, seed) < 0.5 ? -1 : 1, 40 + Math.floor(hash2(i, 4, seed) * 50), 1]);
-  }
-  for (let w = 0; w < walkers.length && w < 8; w++) {
-    let [x, y, dir, len, main] = walkers[w];
-    for (let t = 0; t < len; t++) {
-      if (!ok(x, y)) break;
-      cv.set(x, y, main && t > 3 && t < len - 6 ? core : hot);
-      // a dim pixel of burnt rock beside it, now and then
-      const e = hash2(x, y, seed + 6);
-      if (e < 0.18 && ok(x, y - 1)) cv.set(x, y - 1, edge); else if (e > 0.85 && ok(x, y + 1)) cv.set(x, y + 1, edge);
-      if (main && t % 22 === 11) cv.glow(x, y, 9, [1, 0.42, 0.12], 0.16);
-      // wander along the rock: mostly sideways, drifting up or down a pixel
-      const r = hash2(x * 7 + w, y, seed + 5);
-      x += dir;
-      if (r < 0.22) y++; else if (r > 0.82) y--;
-      if (hash2(t, w, seed + 8) < 0.015 && walkers.length < 8) walkers.push([x, y + 1, dir, Math.floor(8 + hash2(t, w, seed + 9) * 14), 0]);
-    }
-  }
 }
 
 /** Ore in the rock: clusters of gold nuggets, each outlined and lit on top, and a few nests of white quartz. */

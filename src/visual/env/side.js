@@ -215,6 +215,7 @@ function grass(cv, g, seed) {
     const bx = Math.floor(x / CELL), r = hash2(bx, y, seed + 21);
     if (r > rate) continue;
     const h = 1 + Math.floor(hash2(bx, y, seed + 22) * tall);
+    if (cv.grass) cv.grass[k] = 1;
     for (let j = 1; j <= h; j++) if (y - j >= 0 && !cv.solid[k - j * cv.W]) cv.set(x, y - j, cols[(j + (r > rate * 0.5 ? 1 : 0)) % cols.length]);
     if (fl.length && hash2(bx, y, seed + 23) < 0.025) for (const yy of [y - h - 1, y - h - 2]) cv.set(x, yy, fl[Math.floor(hash2(bx, y, seed + 24) * fl.length)]);
   }

@@ -42,7 +42,7 @@
 
 import { punchSprite } from '../../rendering/punch.js';
 import { CrispCanvas } from '../../rendering/crisp.js';
-import { h, btn, clear, toast } from '../dom.js';
+import { h, btn, clear, toast, keepScroll } from '../dom.js';
 import { icon } from '../icons.js';
 import { audio } from '../../audio/audio.js';
 import { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, moistureEnv, DAY_PART_NAME } from '../../game/gathering.js';
@@ -314,7 +314,13 @@ export class WildsView {
     return this.lab.sandbox || r.rank <= this.lab.state.rank;
   }
 
+  /** Rebuild the tabs, the caption and the deposit list (the rows and the page keep where they were scrolled to). */
   refresh() {
+    if (!this.tabs) return;
+    keepScroll(this.el, () => this.rebuild());
+  }
+
+  rebuild() {
     const lab = this.lab, st = lab.state;
     if (!this.tabs) return;
     const tabs = clear(this.tabs);
@@ -933,10 +939,11 @@ export class WildsView {
    * (rendering/punch.js) — its pixels read back once per look, state, pose and
    * facing, never in the frame.
    * @param {any} look @param {any} snap @param {string|undefined} pose @param {boolean} mirror
+   * @param {boolean} [grass] grazing where grass grows (a tuft at its mouth), or on bare ground
    * @returns {HTMLCanvasElement}
    */
-  wildSprite(look, snap, pose, mirror) {
-    const key = rabbitSpriteKey(look, snap, pose) + (mirror ? '|m' : '');
+  wildSprite(look, snap, pose, mirror, grass = true) {
+    const key = rabbitSpriteKey(look, snap, pose) + (mirror ? '|m' : '') + (grass ? '' : '|bare');
     const cache = this.wildSprites || (this.wildSprites = new Map());
     let cv = cache.get(key);
     if (cv) return cv;
@@ -945,7 +952,7 @@ export class WildsView {
     const b = /** @type {CanvasRenderingContext2D} */ (this.bunny.getContext('2d'));
     b.imageSmoothingEnabled = false;
     b.clearRect(0, 0, RABBIT_W, RABBIT_H);
-    drawRabbit(b, look, snap, 0, 0, { x: 0, y: 0, clear: false, floor: false, hop: false, mirror, pose, flash: false });
+    drawRabbit(b, look, snap, 0, 0, { x: 0, y: 0, clear: false, floor: false, hop: false, mirror, pose, flash: false, grass });
     const hw = RABBIT_W / 2 + 4, hh = RABBIT_H / 2 + 4;
     // (read back on a scratch canvas kept for reading; the sprite itself is a plain canvas, cheap to draw)
     if (!this.bunnyHalf) { this.bunnyHalf = document.createElement('canvas'); this.bunnyHalf.width = hw; this.bunnyHalf.height = hh; }
@@ -963,6 +970,20 @@ export class WildsView {
   }
 
   /**
+   * Whether grass grows on the ground round (x, y) (an animal's mouth as it grazes): blades or a tuft on the surface within a few pixels.
+   * @param {number} x @param {number} y
+   */
+  grassAt(x, y) {
+    const sc = sceneOf(this.region, this.lab.state.seed), W = SCENE_W, H = SCENE_H;
+    if (!sc.grass) return true;
+    for (let dy = -3; dy <= 3; dy++) for (let dx = -4; dx <= 4; dx++) {
+      const xx = Math.round(x) + dx, yy = Math.round(y) + dy;
+      if (xx >= 0 && yy >= 0 && xx < W && yy < H && sc.grass[yy * W + xx]) return true;
+    }
+    return false;
+  }
+
+  /**
    * The rabbits, the far ones first: each in its pose (hopping off the
    * ground, grazing, rearing, lying down), facing the way it goes, its
    * wounds red on its coat; then the blood in flight and the clouds of it
@@ -976,7 +997,8 @@ export class WildsView {
       const x = Math.round(r.x), y = Math.round(r.y);
       // set into the scene at half size, its tones spread and its outline inked so it stands out
       // from the scenery: made once for each look, state, pose and facing, then only copied
-      const spr = this.wildSprite(r.look, snap, pose, r.face < 0);
+      // grazing: a tuft of grass at its mouth only where grass grows under it
+      const spr = this.wildSprite(r.look, snap, pose, r.face < 0, pose !== 'eat' || this.grassAt(x + r.face * 8, y));
       const sx = x - RABBIT_W / 4 - 2, sy = y - 18;
       ctx.drawImage(spr, sx, sy);
       if (r.react > 0) {
