@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Potion Brewer · Procedural Art Studio</title>
+<link rel="stylesheet" href="./editor.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="brand-icon">✦</span><div><strong>PROCEDURAL ART STUDIO</strong><small>POTION BREWER · isolated prototype</small></div></div>
+  <div class="top-actions">
+    <button id="regenerate" title="Change deterministic variation">↻ New variation</button>
+    <button id="savePNG">Export PNG</button>
+    <button id="saveJSON" class="primary">Export project JSON</button>
+  </div>
+</header>
+<div class="workspace">
+  <aside class="sidebar left">
+    <h2>Species identity</h2>
+    <label>Form<select id="shape"></select></label>
+    <label>Habitat<select id="region"></select></label>
+    <label>Variation seed<input id="seed" type="number" min="0" max="4294967295" step="1"></label>
+    <label>Base pigment<input id="color" type="color" value="#9b80cb"></label>
+    <label>Magical influence<select id="effect"><option value="arcana">Arcana</option><option value="vitality">Vitality</option><option value="strength">Strength</option><option value="love">Love</option><option value="fire">Fire</option><option value="frost">Frost</option><option value="toxicity">Toxicity</option><option value="death">Death</option><option value="transformation">Transformation</option><option value="acidity">Acidity</option></select></label>
+    <label>Effect intensity <output id="effectValue">20</output><input id="intensity" type="range" min="0" max="35" value="20"></label>
+    <label>Glow <output id="glowValue">0.4</output><input id="glow" type="range" min="0" max="100" value="40"></label>
+    <hr>
+    <h2>Generated morphology <button id="resetMorph" class="tiny">Reset</button></h2>
+    <p class="hint">These values are passed into Potion Brewer's actual family generator, not a mock illustration.</p>
+    <div id="morphControls" class="morph-list"></div>
+    <hr>
+    <h2>Reference environment</h2>
+    <canvas id="environment" width="384" height="216"></canvas>
+    <p class="hint">The original deterministic environment, not yet editable in this prototype.</p>
+  </aside>
+  <main class="main">
+    <div class="section-head">
+      <div><h1>Ingredient workbench</h1><p>Edit a generated result, preserve manual overrides, compare growth stages and exported fragments.</p></div>
+      <div class="select-row"><label>Frame<select id="frameKind"><option value="plant">Wild appearance</option><option value="icon">Inventory icon</option><option value="piece">Cauldron fragment</option></select></label><label>Mount<select id="mount"><option value="ground">Ground</option><option value="hang">Hanging</option><option value="wall">Wall</option></select></label></div>
+    </div>
+    <div class="toolrow">
+      <span class="minor-label">PIXEL TOOLS</span>
+      <button class="tool active" data-tool="draw">✎ Draw</button>
+      <button class="tool" data-tool="erase">⌫ Erase</button>
+      <button class="tool" data-tool="pick">◉ Pick</button>
+      <button class="tool" data-tool="stamp">▧ Stamp component</button>
+      <label class="colorlabel">Ink <input id="ink" type="color" value="#dabb8b"></label>
+      <label class="inline">Brush <select id="brush"><option>1</option><option>2</option><option>3</option><option>5</option></select></label>
+      <button id="undo" title="Undo Ctrl+Z">↶</button><button id="redo" title="Redo Ctrl+Y">↷</button>
+      <label class="inline"><input type="checkbox" id="showGrid"> Grid</label>
+    </div>
+    <div class="editing-area">
+      <div class="artboard-wrap"><div class="artboard" id="artboard"><canvas id="editor" width="96" height="96" aria-label="Pixel editing canvas"></canvas><div class="crosshair">96 × 96 art pixels</div></div></div>
+      <div class="preview-panel">
+        <h3>Procedural variants</h3>
+        <div class="variants" id="variants"></div>
+        <h3>Inventory and fragments</h3>
+        <div class="fragments" id="fragments"></div>
+        <p class="hint">Brush strokes are frame-specific, editable overlays. They do not automatically rewrite the procedural grammar or the other views.</p>
+      </div>
+    </div>
+    <div class="stagebar"><div class="stage-head"><h3>Growth stages</h3><span>Click to edit a stage independently</span></div><div id="stages" class="stages"></div></div>
+    <div class="status" id="status">Ready</div>
+  </main>
+  <aside class="sidebar right">
+    <h2>Reusable components</h2>
+    <p class="hint">Capture a cropped sprite from the canvas; stamp it on other growth stages as an editable pixel overlay.</p>
+    <label>Component name<input type="text" id="componentName" value="Custom component" maxlength="48"></label>
+    <button id="captureComponent" class="wide">＋ Capture visible sprite</button>
+    <div id="components" class="component-list"></div>
+    <hr>
+    <h2>Project</h2>
+    <button id="importJSON" class="wide">Import project JSON</button>
+    <input type="file" id="projectFile" accept="application/json,.json" hidden>
+    <button id="clearFrame" class="wide danger">Clear manual edits in this frame</button>
+    <p class="hint">The project JSON stores parameter overrides, manual pixel edits and reusable components. It is a prototype format; game runtime integration is a separate step.</p>
+    <h2>Keyboard</h2>
+    <div class="shortcuts"><span>Ctrl / Cmd + Z</span><span>Undo</span><span>Ctrl / Cmd + Y</span><span>Redo</span></div>
+  </aside>
+</div>
+<script type="module" src="./editor.js"></script>
+</body>
+</html>
