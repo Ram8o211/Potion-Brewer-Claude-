@@ -67,6 +67,11 @@ export function compose(cv, seed) {
     crust: ['#8ccf4a', '#5ea83a', '#3f7e2c', '#2e5a22'], crustH: 4, seed: ss,
     cobble: { stones: ['#625a4c', '#544c40', '#6e6656', '#4a443a', '#5e5c4e', '#524e44'], mortar: '#16120e', s: 6 },
     grass: { cols: ['#6ab83e', '#8ccf4a', '#4e9a34'], tall: 4, rate: 0.7, flowers: ['#fff4c0', '#ffe066', '#ff9fc7', '#c9b0ff', '#ffffff', '#ff7a6a'] },
+    // under the turf: brown topsoil with pebbles, then bands of orange clay, then the stone
+    layers: [
+      { kind: 'soil', cols: ['#6e4c30', '#5e4028', '#a89070', '#4a3424'], h: [8, 14] },
+      { kind: 'clay', cols: ['#9a6a42', '#8a5c38', '#a87a4e'], h: [5, 10] },
+    ],
   });
   moss(cv, { cols: ['#8ccf4a', '#5ea83a', '#3f7e2c', '#2e5a22'], seed: ss + 1, drape: 12, rate: 0.32, len: 14 });
   if (pond) {

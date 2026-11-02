@@ -7,7 +7,7 @@ import { mixPacked } from '../color.js';
 /**
  * The cobbled stone texture: rounded stones of a few colours packed in a
  * darker mortar, each lit along its upper left and shaded underneath, with
- * single-pixel speckles. A pure function of the pixel.
+ * a rare single-pixel speckle (the stones kept clean). A pure function of the pixel.
  * @param {number} x @param {number} y
  * @param {{stones:number[], mortar:number, s:number, seed:number, flat?:number}} o
  */
@@ -33,6 +33,6 @@ export function cobble(x, y, o) {
   else if (lit < -0.5) c = mixPacked(c, 0xff000000, 0.24);
   else if (lit < -0.15) c = mixPacked(c, 0xff000000, 0.1);
   const g = hash2(x, y, o.seed + 9);
-  if (g > 0.975) c = mixPacked(c, 0xffffffff, 0.12); else if (g < 0.025) c = mixPacked(c, 0xff000000, 0.22);
+  if (g > 0.993) c = mixPacked(c, 0xffffffff, 0.12); else if (g < 0.007) c = mixPacked(c, 0xff000000, 0.22);
   return c;
 }

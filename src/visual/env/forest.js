@@ -48,6 +48,11 @@ export function compose(cv, seed) {
     crust: [autumn ? '#c88a2a' : '#6aa83a', autumn ? '#9a6a22' : '#4a8a2c', '#2e5a22', '#22401a'], crustH: 4, seed: ss,
     cobble: { stones: ['#5e584a', '#4e4a3e', '#6a6250', '#44483a', '#56604a', '#3e3a30'], mortar: '#16120c', s: 6 },
     grass: { cols: autumn ? ['#b07a24', '#8a5a1e'] : ['#4e9a34', '#6ab83e', '#3a7a2a'], tall: 3, rate: 0.5, flowers: ['#f08ab0', '#e85a8a', '#f0e0a0'] },
+    // under the moss: black humus of rotted leaves, then brown loam with pebbles, then the stone
+    layers: [
+      { kind: 'peat', cols: ['#2e2218', '#261c14', '#5a4630'], h: [6, 11] },
+      { kind: 'soil', cols: ['#5a4430', '#4c3826', '#8a7a62', '#3a2c20'], h: [6, 11] },
+    ],
   });
   moss(cv, { cols: autumn ? ['#c88a2a', '#9a6a22', '#6a4a1a', '#3e2e14'] : ['#6aa83a', '#4a8a2c', '#30601e', '#1e3e16'], seed: ss + 1, drape: 12, rate: 0.32, len: 16 });
   roots(cv, s('roots'), '#4a3020', '#6a4630');

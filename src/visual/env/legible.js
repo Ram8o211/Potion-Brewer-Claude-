@@ -67,7 +67,7 @@ export function legible(cv, region) {
       const x = k % W, y = (k - x) / W;
       if (ground(k)) {
         const d = depth[k];
-        if (d < 3) continue; // the crust and grass on top stay as painted
+        if (d < 3 || (cv.stratum && cv.stratum[k])) continue; // the crust and grass on top, and the strata, stay as painted
         // layers lying roughly level, each a shade lighter or darker — clean bands, no dither
         const lay = Math.floor((y + noise2(x * 0.025, 0, seed + 3) * 10) / 12), which = hash2(lay, 7, seed);
         px[k] = which > 0.7 ? mixPacked(c, WHITE, 0.06) : which < 0.3 ? mixPacked(c, BLACK, 0.09) : c;
@@ -90,6 +90,8 @@ export function legible(cv, region) {
     const cx = rng.int(4, W - 5), cy = rng.int(4, H - 3), k0 = cy * W + cx;
     const rx = rng.range(3, 8.5), ry = rx * rng.range(0.5, 0.7);
     if (!ground(k0) || depth[k0] < ry + 5) continue;
+    // (bedded in the rock under the strata, never in the sand or soil)
+    if (cv.stratum && (cv.stratum[k0] || cv.stratum[Math.max(0, k0 - Math.ceil(ry + 1) * W)])) continue;
     // a boulder apart from the others
     if (bedded.some(([x, y, r]) => Math.abs(x - cx) < r + rx + 2 && Math.abs(y - cy) < (r + rx) * 0.6 + 2)) continue;
     bedded.push([cx, cy, rx]);

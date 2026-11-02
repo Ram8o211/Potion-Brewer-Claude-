@@ -53,9 +53,16 @@ export function compose(cv, seed) {
   const ss = ts.int(0, 1e9);
   paintTerrain(cv, {
     a: '#8a7a62', b: '#c8c0a8', grain: '#e8e4d4', dark: '#2a2a22', deep: '#141612', cave: '#0a0c0a',
-    crust: ['#7ac04a', '#5a9a3a', '#3e7a2e', '#2e5a26'], crustH: 4, seed: ss,
+    // a bank of sand: pale on top, a sparse grass growing in it
+    crust: ['#f0e2b4', '#e4d2a0', '#d6c08c', '#c8b07c'], crustH: 3, seed: ss,
     cobble: { stones: ['#807e70', '#6a685c', '#8e8c7c', '#56554c', '#747466', '#62665a'], mortar: '#1c1c18', s: 6 },
-    grass: { cols: ['#5a9a3a', '#7ac04a', '#4a8a30'], tall: 4, rate: 0.6, flowers: ['#ffe58a', '#ffffff'] },
+    grass: { cols: ['#5a9a3a', '#7ac04a', '#4a8a30'], tall: 4, rate: 0.32, flowers: ['#ffe58a', '#ffffff'] },
+    // under the sand: river gravel, then grey silt, then the river stones
+    layers: [
+      { kind: 'sand', cols: ['#e6d6a6', '#d4be8c', '#bea676', '#9a8460'], h: [8, 14] },
+      { kind: 'gravel', cols: ['#c4bca4', '#9a927c', '#6e6858', '#4a463a'], h: [5, 8] },
+      { kind: 'clay', cols: ['#7a7c74', '#6a6e66', '#868880'], h: [5, 8] },
+    ],
   });
   moss(cv, { cols: ['#7ac04a', '#4e8a34', '#3a6e2a', '#2a5020'], seed: ss + 1, drape: 12, rate: 0.3, len: 15 });
   const level = Math.round(Math.max(top[rx - hw], top[rx + hw])) + 5;

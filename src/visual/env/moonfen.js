@@ -75,6 +75,11 @@ export function compose(cv, seed) {
     crust: ['#3e8a6a', '#2e6a52', '#1e4a3c', '#16382e'], crustH: 4, seed: ss,
     cobble: { stones: ['#4a5064', '#3e4456', '#585e72', '#34384a', '#465a5a', '#3a3e4e'], mortar: '#10121a', s: 6 },
     grass: { cols: ['#2e6a52', '#3e8a6a', '#1e4a3c'], tall: 4, rate: 0.55, flowers: ['#8ff0ff', '#d8ff8a'] },
+    // under the bog moss: black peat, then cold blue clay, then the stone
+    layers: [
+      { kind: 'peat', cols: ['#2a2420', '#211c1a', '#4e4636'], h: [8, 14] },
+      { kind: 'clay', cols: ['#3e4858', '#343c4c', '#4a5466'], h: [5, 10] },
+    ],
   });
   moss(cv, { cols: ['#3e8a6a', '#2e6a52', '#1e4a3c', '#14322a'], seed: ss + 1, drape: 10, rate: 0.25, len: 14 });
   cv.meta.pools = pools.map((p) => pool(cv, p.x - p.hw, p.x + p.hw, p.level, { surface: '#b0c4f0', body: ['#22346a', '#1a2a58', '#142046', '#0e1834'], see: 0.15, bed: ['#0e1a14', '#16261e', '#0a0e0c'] }));

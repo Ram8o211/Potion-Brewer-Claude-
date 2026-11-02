@@ -18,7 +18,7 @@ import { audio } from '../../audio/audio.js';
 import { drawRabbit, RABBIT_W, RABBIT_H } from '../../rendering/rabbit.js';
 import { HutchScene, HUTCH_W, HUTCH_H } from '../../rendering/hutch-scene.js';
 import { penTitle } from '../../visual/env/pens.js';
-import { CrispCanvas } from '../../rendering/crisp.js';
+import { UpscaledCanvas } from '../../rendering/crisp.js';
 import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
 import {
   livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral,
@@ -46,7 +46,7 @@ export class HutchPanel {
     /** @type {import('../../game/kinds.js').AnimalKind} */
     this.pen = 'rabbit';
     this.penFocus = /** @type {string|null} */ (null);
-    /** @type {CrispCanvas|null} */
+    /** @type {UpscaledCanvas|null} */
     this.crisp = null;
     /** @type {Record<string, {tile:HTMLElement, cv:HTMLCanvasElement, ctx:CanvasRenderingContext2D, key:string, hp:HTMLElement}>} */
     this.tiles = {};
@@ -120,7 +120,7 @@ export class HutchPanel {
     const wrap = h('div', { class: 'hutch-scene-wrap' }, this.canvas);
     el.append(wrap, h('div', { class: 'small muted pen-title', text: `${penTitle(pen)} · ${inPen.length} of ${PEN_MAX} (living and dead)` }));
     if (this.crisp) this.crisp.dispose();
-    this.crisp = new CrispCanvas(this.canvas, wrap);
+    this.crisp = new UpscaledCanvas(this.canvas, wrap);
     this.syncScene();
     // ---- dose the chosen rabbit right here
     const chosen = findRabbit(c, c.focus);
@@ -434,7 +434,7 @@ export class HutchPanel {
     const low = this.lab.effectiveQuality() === 'low';
     this.scene.update(dt);
     this.scene.draw(this.ctx, t, { selected: this.st.colony.focus, hover: this.hover, low });
-    if (this.crisp) { this.crisp.enabled = this.lab.smoothPixels(); this.crisp.present(); }
+    if (this.crisp) { this.crisp.factor = this.lab.resolution(); this.crisp.present(); }
     this._acc += dt;
     if (this._acc >= (low ? 0.2 : 0.1)) { this._acc = 0; this.drawTiles(t); }
     this._live += dt;

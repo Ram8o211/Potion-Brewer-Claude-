@@ -98,15 +98,28 @@ export function blob(cv, cx, cy, rx, ry, seed, v = 1, rough = 0.35) {
  * @param {any} cv
  *   cobble: the body is cobbled stone (cave.js cobble) instead of blotches;
  *   rocks: stones set in the ground (lit on top); strata: horizontal bands
- *   of the second colour instead of blotches; seams: streaks of ore
+ *   of the second colour instead of blotches; seams: streaks of ore;
+ *   layers: the region's strata under the crust, top down (sand, soil, clay,
+ *   gravel, peat, ash, banded rock… see STRATA), each `h` rows deep (a range:
+ *   its floor wavers along the ground), the body (cobble or blotches) below
+ *   the last; each layer's top edge is drawn as a clean line
  * @param {{a:string, b:string, grain:string, dark:string, crust:string[], crustH?:number, deep:string, cave:string, seed:number, blot?:number,
- *   grass?:{cols:string[], tall?:number, flowers?:string[], rate?:number}, cobble?:{stones:string[], mortar:string, s?:number, flat?:number}, rocks?:{cols:string[], n:number, r?:number}, strata?:boolean, seams?:{cols:string[], n:number}}} o
+ *   grass?:{cols:string[], tall?:number, flowers?:string[], rate?:number}, cobble?:{stones:string[], mortar:string, s?:number, flat?:number}, rocks?:{cols:string[], n:number, r?:number}, strata?:boolean, seams?:{cols:string[], n:number},
+ *   layers?:{kind:string, cols:string[], h:[number, number]}[]}} o
  */
 export function paintTerrain(cv, o) {
   const W = cv.W, H = cv.H, S = cv.solid;
   const A = col(o.a), B = col(o.b), G = col(o.grain), D = col(o.dark), deep = col(o.deep), cave = col(o.cave), crust = o.crust.map(col);
   const ch = o.crustH ?? 3, blot = o.blot ?? 0.06;
   const tex = o.cobble ? { stones: o.cobble.stones.map(col), mortar: col(o.cobble.mortar), s: o.cobble.s ?? 6, seed: o.seed, flat: o.cobble.flat } : null;
+  const layers = (o.layers || []).map((l, i) => ({ ...l, c: l.cols.map(col), paint: STRATA[l.kind] || STRATA.soil, seed: o.seed + 101 * (i + 1) }));
+  /** where each layer ends in a column, rows below the crust (its floor wavers gently along the ground) */
+  const floors = layers.length ? new Float32Array(W * layers.length) : null;
+  if (floors) for (let x = 0; x < W; x++) {
+    let acc = 0;
+    layers.forEach((l, i) => { acc += l.h[0] + (l.h[1] - l.h[0]) * fbm1(x * 0.035, l.seed, 2); floors[x * layers.length + i] = Math.round(acc); });
+  }
+  const strat = cv.stratum || (cv.stratum = new Uint8Array(W * H));
   for (let x = 0; x < W; x++) {
     let d = 0;
     for (let y = 0; y < H; y++) {
@@ -125,8 +138,22 @@ export function paintTerrain(cv, o) {
       let c;
       // the material is sampled square by square, so its blotches step in blocks
       const qx = snap(x), qy = snap(y);
+      // the strata under the crust: which one this row is in, and how far into it
+      let li = -1, into = 0;
+      if (d >= ch && floors) {
+        // (in the main ground the strata lie level with its surface, running on under the pillars that
+        // stand on it; in a ledge they follow the ledge's own top)
+        const g = cv.ground ? Math.round(cv.ground[x]) : -1, e = g >= 0 && y >= g ? y - g - ch : d - ch;
+        for (let i = 0, top = 0; i < layers.length; top = floors[x * layers.length + i], i++) if (e >= 0 && e < floors[x * layers.length + i]) { li = i; into = e - top; break; }
+      }
       if (d < ch) c = crust[Math.min(crust.length - 1, d)];
-      else if (tex) {
+      else if (li >= 0) {
+        const l = layers[li];
+        c = l.paint(x, y, into, l.c, l.seed);
+        // its top edge a clean, darker line: the boundary between two strata reads at a glance
+        if (into === 0 && li > 0) c = mixPacked(c, D, 0.4);
+        strat[k] = li + 1;
+      } else if (tex) {
         c = cobble(x, y, tex);
         // lit from above: darker down a pillar and deeper in the ground, in flat steps
         const dd = cv.ground ? Math.min(d, Math.max(0, y - cv.ground[x]) + 10) : d;
@@ -155,6 +182,59 @@ export function paintTerrain(cv, o) {
   if (o.seams) seams(cv, o.seams, ch, o.seed);
   if (o.grass) grass(cv, o.grass, o.seed);
 }
+
+/**
+ * The strata a region's ground is layered in, each painted in its own clean
+ * pixel texture (flat tones, no dither): (x, y) the pixel, `into` its row
+ * within the layer (0 at its top), `c` the layer's colours, `seed`.
+ * @type {Record<string, (x:number, y:number, into:number, c:number[], seed:number) => number>}
+ */
+export const STRATA = {
+  // sand: pale ripples lying level, a light skin on top, a dark grain here and there — c: light, mid, dark, grain
+  sand(x, y, into, c, seed) {
+    if (into === 0) return c[0];
+    const band = Math.floor((y + fbm1(x * 0.07, seed, 2) * 4) / 3) % 3;
+    const g = hash2(x, y, seed + 1);
+    if (g < 0.05) return c[3];
+    if (g > 0.975) return c[0];
+    return band === 0 ? c[0] : band === 1 ? c[1] : (hash2(x >> 2, y, seed + 2) < 0.5 ? c[1] : c[2]);
+  },
+  // soil: two tones in soft blotches, small pebbles bedded in it, each lit on top — c: a, b, pebble lit, pebble shade
+  soil(x, y, into, c, seed) {
+    const cx = Math.floor(x / 5), cy = Math.floor((y + (cx & 1) * 2) / 4);
+    if (hash2(cx, cy, seed + 3) < 0.16) {
+      const px = cx * 5 + 1 + Math.floor(hash2(cx, cy, seed + 4) * 2), py = cy * 4 - (cx & 1) * 2 + 1;
+      if (x >= px && x <= px + 1 && y >= py && y <= py + 1) return y === py ? c[2] : c[3];
+    }
+    return fbm2(x * 0.09, y * 0.14, seed, 2) > 0.52 ? c[1] : c[0];
+  },
+  // clay: thin smooth bands, gently wavering — c: the bands' colours in turn
+  clay(x, y, into, c, seed) {
+    const v = y + fbm1(x * 0.03, seed, 2) * 5;
+    return c[Math.floor(v / 2) % c.length];
+  },
+  // banded rock (sandstone, shale): broader bands of a few colours, each band's top edge lit — c: the bands' colours in turn
+  banded(x, y, into, c, seed) {
+    const v = y + fbm1(x * 0.025, seed, 2) * 7, b = Math.floor(v / 4);
+    const t = c[((b % c.length) + c.length) % c.length];
+    return v - b * 4 < 1 ? mixPacked(t, 0xffffffff, 0.12) : t;
+  },
+  // gravel: small rounded stones of uneven sizes packed close, each lit on its upper left, grit between — c: lit, mid, shade, the grit
+  gravel(x, y, into, c, seed) {
+    return cobble(x, y, { stones: [c[1], c[1], c[0], c[2]], mortar: c[3], s: 3.4, seed, flat: 1.15 });
+  },
+  // peat: dark, with paler fibres lying in short horizontal streaks — c: a, b, fibre
+  peat(x, y, into, c, seed) {
+    const s = hash2(Math.floor(x / 5), y, seed + 7);
+    if (s < 0.14) return c[2];
+    return fbm2(x * 0.08, y * 0.2, seed, 2) > 0.5 ? c[1] : c[0];
+  },
+  // ash: fine pale specks in faint level bands — c: a, b, speck
+  ash(x, y, into, c, seed) {
+    if (hash2(x, y, seed + 5) < 0.07) return c[2];
+    return Math.floor((y + fbm1(x * 0.05, seed, 2) * 3) / 3) % 2 ? c[1] : c[0];
+  },
+};
 
 /** Depth below the surface of a ground pixel (rows of ground above it). */
 function depthAt(cv, x, y) {

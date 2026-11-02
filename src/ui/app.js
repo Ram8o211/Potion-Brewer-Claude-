@@ -15,7 +15,7 @@ import { Rng } from '../core/rng.js';
 import { normalizeTrials } from '../game/experiments.js';
 import { sandboxWilds } from '../game/gathering.js';
 
-const DEFAULT_SETTINGS = { master: 0.8, sfx: 0.8, music: 0.35, musicOn: true, muted: false, quality: 'auto', showFps: false, smoothPixels: true };
+const DEFAULT_SETTINGS = { master: 0.8, sfx: 0.8, music: 0.35, musicOn: true, muted: false, quality: 'auto', showFps: false, resolution: 3 };
 const SEED_WORDS = ['amber', 'ashen', 'brine', 'copper', 'dusk', 'elder', 'fen', 'gloam', 'hollow', 'iron', 'juniper', 'kelp', 'lantern', 'moon', 'nettle', 'oak', 'pewter', 'quill', 'raven', 'sage', 'thorn', 'umber', 'vale', 'willow', 'wyrm', 'yarrow'];
 
 export class App {
@@ -26,6 +26,9 @@ export class App {
     // music is on whenever its volume is above zero (an old "music off" switch becomes volume 0)
     if (this.settings.musicOn === false) this.settings.music = 0;
     this.settings.musicOn = this.settings.music > 0;
+    // (the old "smooth pixel art" switch is gone: the wilds are shown at a chosen resolution instead)
+    delete this.settings.smoothPixels;
+    if (!(this.settings.resolution >= 1 && this.settings.resolution <= 4)) this.settings.resolution = DEFAULT_SETTINGS.resolution;
     this.screen = null;
     setOverlayRoot(root);
     setToastRoot(root);

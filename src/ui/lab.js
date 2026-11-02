@@ -603,9 +603,10 @@ export class LabScreen {
   }
 
   /** @returns {'high'|'medium'|'low'} */
-  /** Whether pixel art is shown with sharp-bilinear smoothing (rendering/crisp.js): the setting, and never in battery saver. */
-  smoothPixels() {
-    return this.app.settings.smoothPixels !== false && this.effectiveQuality() !== 'low';
+  /** The resolution the wilds and the enclosures are shown at (rendering/crisp.js): the setting, at most ×2 in battery saver. */
+  resolution() {
+    const r = Math.max(1, Math.min(4, Math.round(Number(this.app.settings.resolution) || 3)));
+    return this.effectiveQuality() === 'low' ? Math.min(2, r) : r;
   }
 
   effectiveQuality() {
