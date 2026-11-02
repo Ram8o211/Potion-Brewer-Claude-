@@ -121,32 +121,34 @@ function depthOf(cv, x, y) {
 }
 
 /**
- * Cracks in the rock glowing with the lava under it: branching seams
- * wandering down through the ground, a molten core in a burnt edge.
+ * Thin veins of lava threading the rock: a few long, wavering seams a
+ * single pixel wide, a hot core with now and then a dim pixel of burnt
+ * rock beside it, splitting rarely into a short thread. No blots, only
+ * a faint glow along them.
  */
 function cracks(cv, seed) {
-  const W = cv.W, H = cv.H, core = col('#ffe080'), hot = col('#ff9a2a'), edge = col('#c8441a'), burnt = col('#5a1e10');
+  const W = cv.W, H = cv.H, core = col('#ffc850'), hot = col('#ff8a2a'), edge = col('#8a2e14');
   const ok = (x, y) => x >= 0 && y >= 0 && x < W && y < H && cv.solid[y * W + x] && !cv.liquid[y * W + x] && !cv.rock[y * W + x] && !cv.things[y * W + x];
   const walkers = [];
-  for (let i = 0; i < 40 && walkers.length < 9; i++) {
-    const x = Math.floor(hash2(i, 1, seed) * W), y = Math.floor(160 + hash2(i, 2, seed) * (H - 170));
-    if (!ok(x, y) || depthOf(cv, x, y) < 6) continue;
-    walkers.push([x, y, hash2(i, 3, seed) < 0.5 ? -1 : 1, 18 + Math.floor(hash2(i, 4, seed) * 40), 1]);
+  for (let i = 0; i < 40 && walkers.length < 4; i++) {
+    const x = Math.floor(hash2(i, 1, seed) * W), y = Math.floor(170 + hash2(i, 2, seed) * (H - 178));
+    if (!ok(x, y) || depthOf(cv, x, y) < 8 || walkers.some(([a, b]) => Math.abs(a - x) < 70 && Math.abs(b - y) < 20)) continue;
+    walkers.push([x, y, hash2(i, 3, seed) < 0.5 ? -1 : 1, 40 + Math.floor(hash2(i, 4, seed) * 50), 1]);
   }
-  for (let w = 0; w < walkers.length && w < 30; w++) {
-    let [x, y, dir, len, wd] = walkers[w];
+  for (let w = 0; w < walkers.length && w < 8; w++) {
+    let [x, y, dir, len, main] = walkers[w];
     for (let t = 0; t < len; t++) {
       if (!ok(x, y)) break;
+      cv.set(x, y, main && t > 3 && t < len - 6 ? core : hot);
+      // a dim pixel of burnt rock beside it, now and then
+      const e = hash2(x, y, seed + 6);
+      if (e < 0.18 && ok(x, y - 1)) cv.set(x, y - 1, edge); else if (e > 0.85 && ok(x, y + 1)) cv.set(x, y + 1, edge);
+      if (main && t % 22 === 11) cv.glow(x, y, 9, [1, 0.42, 0.12], 0.16);
+      // wander along the rock: mostly sideways, drifting up or down a pixel
       const r = hash2(x * 7 + w, y, seed + 5);
-      for (const [dx, dy, c, m] of [[-1, 0, edge, 1], [1, 0, edge, 1], [0, -1, edge, 0.6], [0, 1, edge, 0.6], [-2, 0, burnt, 0.5], [2, 0, burnt, 0.5]]) {
-        if (ok(x + dx, y + dy) && hash2(x + dx, y + dy, seed + 6) < m) cv.set(x + dx, y + dy, c);
-      }
-      cv.set(x, y, wd && t < len * 0.7 ? core : hot);
-      if (t % 9 === 4) cv.glow(x, y, 12, [1, 0.42, 0.12], 0.32);
-      // wander: mostly down, now sideways, now and then a branch
-      if (r < 0.45) y++; else if (r < 0.8) x += dir; else { x += dir; y++; }
-      if (hash2(t, w, seed + 7) < 0.08) dir = -dir;
-      if (hash2(t, w, seed + 8) < 0.05 && walkers.length < 30) walkers.push([x, y, -dir, Math.floor((len - t) * 0.6), 0]);
+      x += dir;
+      if (r < 0.22) y++; else if (r > 0.82) y--;
+      if (hash2(t, w, seed + 8) < 0.015 && walkers.length < 8) walkers.push([x, y + 1, dir, Math.floor(8 + hash2(t, w, seed + 9) * 14), 0]);
     }
   }
 }

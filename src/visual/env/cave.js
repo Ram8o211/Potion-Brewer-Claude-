@@ -461,4 +461,4 @@ export function veins(cv, p, o) {
 export const WATER_VEINS = (seed, from = ['#6aaac8', '#4a8aa8', '#36708c', '#2a5a70']) => ({ from, to: '#14262e', seed, n: 6, reach: 54, soak: 11, k: 0.6, w: 1.8, branch: 0.025, rgb: [0.35, 0.65, 0.8], glow: 0.35 });
 
 /** Veins of lava spreading from a pool (its colours first): glowing, lighting the rock round them. @param {number} seed */
-export const LAVA_VEINS = (seed) => ({ from: ['#ffd060', '#ffb040', '#ff8a2a', '#e05a18', '#a8320e', '#5a1a0c'], to: '#8a2a10', seed, n: 5, reach: 80, soak: 12, k: 0.75, w: 2.2, branch: 0.02, rgb: [1, 0.45, 0.14], glow: 0.8 });
+export const LAVA_VEINS = (seed) => ({ from: ['#ffd060', '#ffb040', '#ff8a2a', '#e05a18', '#a8320e', '#5a1a0c'], to: '#8a2a10', seed, n: 4, reach: 60, soak: 5, k: 0.6, w: 1, branch: 0.012, rgb: [1, 0.45, 0.14], glow: 0.35 });

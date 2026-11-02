@@ -49,8 +49,8 @@ still limited.
   so the ingredients among them still read, and creepers climbing down
   the rock faces of the ledges and pillars with a leaf or a berry. The
   far woods' oaks are crowns of round clumps, each lit on its upper left.
-  Each region has its extras: the Ember Crags' rock seamed with branching
-  lava cracks glowing in a burnt edge, the quarry's rock studded with
+  Each region has its extras: the Ember Crags' rock threaded with a few
+  thin veins of lava, a pixel wide and faintly glowing, the quarry's rock studded with
   outlined gold nuggets and quartz, glowing bells hanging on long stems
   from the Netherwood's and Moonfen's roofs.
 * **The grade** (grade.js), the very last pass: an S-curve deepening the
@@ -70,11 +70,12 @@ still limited.
   plume of shaded smoke puffs over it; the animated smoke and steam are
   pixel-art puffs too. Far hills and treelines (`silhouette`) have a crest
   broken at a finer scale and a lit rim of varying depth over a shaded band.
-* **Leaves** (foliage.js `cluster`) are rounded clumps after the pixel
-  artist's recipe: a dark mass, scalloped puffs each in its own flat tones
-  — body, lit cap, highlight — picked as exact steps on the leaf ramp (a
-  part's `step`), single leaves catching the light or in shade, and leaf
-  tufts breaking the outline.
+* **Leaves** (foliage.js `cluster`) are many small rounded clumps over a
+  deep-green mass that shows between them (no ink round leaves): each
+  clump a scalloped puff with small leaves heaped on its upper left and
+  the topmost brightest, in flat tones picked as exact steps on the leaf
+  ramp (a part's `step`), a leaf in shade under it, and leaf tufts
+  breaking the crown's outline.
 * **Pools seep into the ground.** Water and lava lie in the hollows, their
   bodies darkening smoothly with depth, and filter into the rock rather
   than lying on it: the bed's stones are stained toward the pool's deep
