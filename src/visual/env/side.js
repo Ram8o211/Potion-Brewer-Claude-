@@ -130,8 +130,8 @@ export function paintTerrain(cv, o) {
         c = cobble(x, y, tex);
         // lit from above: darker down a pillar and deeper in the ground, in flat steps
         const dd = cv.ground ? Math.min(d, Math.max(0, y - cv.ground[x]) + 10) : d;
-        const t = Math.min(7, Math.floor((dd - ch) / 8));
-        if (t > 0) c = mixPacked(c, deep, t * 0.09);
+        const t = Math.min(4, Math.floor((dd - ch) / 10));
+        if (t > 0) c = mixPacked(c, deep, t * 0.07);
       } else {
         const m = o.strata ? (Math.floor((qy + fbm1(qx * 0.02, o.seed, 2) * 14) / 8) % 2 ? 0.6 : 0.4) + (fbm2(qx * blot, qy * blot, o.seed, 2) - 0.5) * 0.3
           : fbm2(qx * blot, qy * blot * 1.3, o.seed, 2) + (noise2(qx * 0.3, qy * 0.3, o.seed + 9) - 0.5) * 0.08;

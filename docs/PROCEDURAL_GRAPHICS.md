@@ -53,6 +53,12 @@ still limited.
   lava cracks glowing in a burnt edge, the quarry's rock studded with
   outlined gold nuggets and quartz, glowing bells hanging on long stems
   from the Netherwood's and Moonfen's roofs.
+* **The grade** (grade.js), the very last pass: an S-curve deepening the
+  shadows and lifting the lights, saturation raised most in the dull
+  mid-tones, and the rock's sides and undersides inked a pixel darker
+  against the air, so the scene reads crisp and vivid; applied alike to
+  the painting and the swaying foliage. Boulders are solid stones in
+  five flat tones, the cobbles' mortar never showing through them.
 * **Mountains** (side.js `mountains`) are ranges of jagged peaks, each lit
   on its left face and shaded and creased on its right, the tallest
   capped with snow whose ragged edge runs down the creases.
@@ -261,6 +267,7 @@ src/visual/                     pure, DOM-free, deterministic
                   vines, moss, glowing mushrooms, torches, falls, veins
                   seeping from pools, the vignette and lights; stone.js: the cobbled stone;
                   flourish.js: the ground's flora and the rock faces' creepers;
+                  grade.js: the final contrast, colour and inked edges;
                   objects.js: branch trees and foliage pads, pines,
                   foliage.js: leaf clusters, hanging strands, gnarled trees,
                   shrubs, rocks, reeds, ferns, logs, clouds, crane, cart,
