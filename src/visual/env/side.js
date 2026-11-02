@@ -104,14 +104,14 @@ export function blob(cv, cx, cy, rx, ry, seed, v = 1, rough = 0.35) {
  *   its floor wavers along the ground), the body (cobble or blotches) below
  *   the last; each layer's top edge is drawn as a clean line
  * @param {{a:string, b:string, grain:string, dark:string, crust:string[], crustH?:number, deep:string, cave:string, seed:number, blot?:number,
- *   grass?:{cols:string[], tall?:number, flowers?:string[], rate?:number}, cobble?:{stones:string[], mortar:string, s?:number, flat?:number}, rocks?:{cols:string[], n:number, r?:number}, strata?:boolean, seams?:{cols:string[], n:number},
+ *   grass?:{cols:string[], tall?:number, flowers?:string[], rate?:number}, cobble?:{stones:string[], mortar:string, s?:number, flat?:number, moss?:string[]}, rocks?:{cols:string[], n:number, r?:number}, strata?:boolean, seams?:{cols:string[], n:number},
  *   layers?:{kind:string, cols:string[], h:[number, number]}[]}} o
  */
 export function paintTerrain(cv, o) {
   const W = cv.W, H = cv.H, S = cv.solid;
   const A = col(o.a), B = col(o.b), G = col(o.grain), D = col(o.dark), deep = col(o.deep), cave = col(o.cave), crust = o.crust.map(col);
   const ch = o.crustH ?? 3, blot = o.blot ?? 0.06;
-  const tex = o.cobble ? { stones: o.cobble.stones.map(col), mortar: col(o.cobble.mortar), s: o.cobble.s ?? 6, seed: o.seed, flat: o.cobble.flat, round: true } : null;
+  const tex = o.cobble ? { stones: o.cobble.stones.map(col), mortar: col(o.cobble.mortar), s: o.cobble.s ?? 6, seed: o.seed, flat: o.cobble.flat, round: true, moss: o.cobble.moss ? o.cobble.moss.map(col) : undefined } : null;
   const layers = (o.layers || []).map((l, i) => ({ ...l, c: l.cols.map(col), paint: STRATA[l.kind] || STRATA.soil, seed: o.seed + 101 * (i + 1) }));
   /** where each layer ends in a column, rows below the crust (its floor wavers gently along the ground) */
   const floors = layers.length ? new Float32Array(W * layers.length) : null;
@@ -146,7 +146,10 @@ export function paintTerrain(cv, o) {
         const g = cv.ground ? Math.round(cv.ground[x]) : -1, e = g >= 0 && y >= g ? y - g - ch : d - ch;
         for (let i = 0, top = 0; i < layers.length; top = floors[x * layers.length + i], i++) if (e >= 0 && e < floors[x * layers.length + i]) { li = i; into = e - top; thick = floors[x * layers.length + i] - top; break; }
       }
+      // the crust's lower edge uneven: here and there it hangs a pixel or two into what lies under it, in drips two pixels wide
+      const drip = hash2(x >> 1, 5, o.seed) < 0.32 ? 1 + Math.floor(hash2(x >> 1, 6, o.seed) * 2) : 0;
       if (d < ch) c = crust[Math.min(crust.length - 1, d)];
+      else if (d < ch + drip && floors) c = crust[Math.min(crust.length - 1, d - 1)];
       else if (li >= 0) {
         const l = layers[li];
         c = l.paint(x, y, into, l.c, l.seed, thick);

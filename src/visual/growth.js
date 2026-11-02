@@ -110,9 +110,14 @@ const turn = (a, b) => Math.atan2(Math.sin(b - a), Math.cos(b - a));
  * queued by layer and painted back to front.
  */
 class Sketch {
-  /** @param {string} mount 'ground' | 'hang' | 'wall' @param {number} seed */
-  constructor(mount, seed) {
-    this.N = 160; this.o = 80;
+  /**
+   * @param {string} mount 'ground' | 'hang' | 'wall' @param {number} seed
+   * @param {number} [k] its definition: k pixels to a unit of the plant (2: twice the scene's resolution,
+   *   for the wilds' detail layer — every shape sampled in finer steps, so it has more pixels, not bigger ones)
+   */
+  constructor(mount, seed, k = 1) {
+    this.k = k;
+    this.N = 160 * k; this.o = 80 * k;
     this.pix = new Pixels(this.N, this.N);
     this.mount = mount;
     this.seed = seed;
@@ -124,15 +129,27 @@ class Sketch {
     this.jobs = [];
   }
 
-  /** Paint a pixel (anchor-relative), never into the surface it grows from. */
+  /** Paint a pixel (anchor-relative, in units), never into the surface it grows from (at k > 1, its k × k cell). */
   set(x, y, c) {
     x = Math.round(x); y = Math.round(y);
     if ((this.mount === 'ground' && y > 0) || (this.mount === 'hang' && y < 0) || (this.mount === 'wall' && x < 0)) return;
-    this.pix.set(x + this.o, y + this.o, c);
+    const k = this.k;
+    if (k === 1) { this.pix.set(x + this.o, y + this.o, c); return; }
+    const h = (k - 1) >> 1;
+    for (let j = 0; j < k; j++) for (let i = 0; i < k; i++) this.pix.set(x * k - h + i + this.o, y * k - h + j + this.o, c);
+  }
+
+  /** Paint one pixel of the fine grid at (x, y) in units (a pixel at k = 1), never into the surface it grows from. */
+  fine(x, y, c) {
+    const k = this.k;
+    if (k === 1) { this.set(x, y, c); return; }
+    const fx = Math.round(x * k), fy = Math.round(y * k), lim = (k - 1) >> 1;
+    if ((this.mount === 'ground' && fy > lim) || (this.mount === 'hang' && fy < -lim) || (this.mount === 'wall' && fx < -lim)) return;
+    this.pix.set(fx + this.o, fy + this.o, c);
   }
 
   /** Whether a pixel is painted. */
-  has(x, y) { return !!(this.pix.get(Math.round(x) + this.o, Math.round(y) + this.o) >>> 24); }
+  has(x, y) { return !!(this.pix.get(Math.round(x * this.k) + this.o, Math.round(y * this.k) + this.o) >>> 24); }
 
   /** A pixel that gives light of its own: painted in a colour the lighting leaves alone, and a halo is drawn round it. */
   emit(x, y, c) { this.set(x, y, c); this.glows.push([Math.round(x), Math.round(y)]); }
@@ -164,14 +181,15 @@ class Sketch {
     const fx = (x) => (flip ? w - 1 - (x + o - x0) : x + o - x0);
     const within = (list) => {
       const seen = new Set();
-      return list.map(([x, y]) => [fx(x), y + o - y0]).filter(([x, y]) => {
+      const k = this.k;
+      return list.map(([x, y]) => [fx(x * k), y * k + o - y0]).filter(([x, y]) => {
         const k = y * w + x;
         if (x < 0 || y < 0 || x >= w || y >= h || !(out.px[k] >>> 24) || seen.has(k)) return false;
         seen.add(k);
         return true;
       }).map(([x, y]) => [x + 1, y + 1]);
     };
-    return { pix: inked(out), ax: fx(0) + 1, ay: o - y0 + 1, glints: within(this.glints), glows: within(this.glows) };
+    return { pix: inked(out), ax: fx(0) + 1, ay: o - y0 + 1, glints: within(this.glints), glows: within(this.glows), k: this.k };
   }
 }
 
@@ -179,10 +197,11 @@ class Sketch {
 
 /** A round dab, lit from the upper left. @param {Sketch} sk @param {number[]} rp */
 function disc(sk, x, y, r, rp, o = {}) {
-  const R = Math.max(0.5, r), k = Math.ceil(R), cx = Math.round(x), cy = Math.round(y);
+  const K = sk.k, R = Math.max(0.5, r), k = Math.ceil(R * K), cx = Math.round(x * K) / K, cy = Math.round(y * K) / K;
   for (let j = -k; j <= k; j++) for (let i = -k; i <= k; i++) {
-    if (i * i + j * j > R * R + R * 0.6) continue;
-    sk.set(cx + i, cy + j, o.flat !== undefined ? at(rp, o.flat) : tone(rp, lit(i / R, j / R) * 1.15 + (o.lift || 0)));
+    const u = i / K, v = j / K;
+    if (u * u + v * v > R * R + R * 0.6 / K) continue;
+    sk.fine(cx + u, cy + v, o.flat !== undefined ? at(rp, o.flat) : tone(rp, lit(u / R, v / R) * 1.15 + (o.lift || 0)));
   }
 }
 
@@ -196,18 +215,19 @@ function disc(sk, x, y, r, rp, o = {}) {
 function blob(sk, x, y, rx, ry, rp, o = {}) {
   const a = o.ang || 0, ca = Math.cos(a), sa = Math.sin(a), ph = o.ph || [0.3, 1.7, 2.9], am = o.rough || 0, bm = o.bumps || 0;
   const R = (th) => 1 + am * (0.6 * Math.cos(2 * th + ph[0]) + 0.4 * Math.cos(3 * th + ph[1]) + 0.3 * Math.cos(5 * th + ph[2])) + bm * Math.cos(9 * th + ph[0] * 3);
-  const ext = Math.ceil(Math.max(rx, ry) * (1 + am + bm) + 1), cx = Math.round(x), cy = Math.round(y);
-  for (let j = -ext; j <= ext; j++) for (let i = -ext; i <= ext; i++) {
+  const K = sk.k, ext = Math.ceil((Math.max(rx, ry) * (1 + am + bm) + 1) * K), cx = Math.round(x * K) / K, cy = Math.round(y * K) / K;
+  for (let jj = -ext; jj <= ext; jj++) for (let ii = -ext; ii <= ext; ii++) {
+    const i = ii / K, j = jj / K;
     const u = (i * ca + j * sa) / Math.max(0.5, rx), v = (-i * sa + j * ca) / Math.max(0.5, ry), d = Math.hypot(u, v), th = Math.atan2(v, u), r = R(th);
-    if (d > r || (o.keep && !o.keep(i, j))) continue;
+    if (d > r || (o.keep && !o.keep(Math.round(i), Math.round(j)))) continue;
     let nu = u / r, nv = v / r;
     if (o.facets) {
       const fa = Math.round(th / (TAU / o.facets)) * (TAU / o.facets), m = d / r;
       nu = Math.cos(fa) * m; nv = Math.sin(fa) * m;
     }
     let l = lit(nu * ca - nv * sa, nu * sa + nv * ca) * 1.15 + (o.lift || 0);
-    if (o.grain) l += (hash2(cx + i, cy + j, sk.seed + (o.seed || 0)) - 0.5) * o.grain;
-    sk.set(cx + i, cy + j, tone(rp, l));
+    if (o.grain) l += (hash2(Math.round((cx + i) * K), Math.round((cy + j) * K), sk.seed + (o.seed || 0)) - 0.5) * o.grain;
+    sk.fine(cx + i, cy + j, tone(rp, l));
   }
 }
 
@@ -221,11 +241,14 @@ function stroke(sk, pts, w0, w1, rp) {
   for (let i = 1; i < pts.length; i++) total += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
   let s = 0;
   for (let i = 1; i < pts.length; i++) {
-    const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], len = Math.hypot(x1 - x0, y1 - y0), n = Math.max(1, Math.ceil(len * 2));
+    const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], len = Math.hypot(x1 - x0, y1 - y0), n = Math.max(1, Math.ceil(len * 2 * sk.k));
     for (let k = 0; k <= n; k++) {
       const t = k / n, w = w0 + (w1 - w0) * ((s + len * t) / (total || 1)), x = x0 + (x1 - x0) * t, y = y0 + (y1 - y0) * t;
-      if (w <= 1.25) sk.set(x, y, at(rp, 0.45));
-      else disc(sk, x, y, w / 2, rp);
+      // a hair: one pixel, or at a finer definition a little over a unit wide, lit on its left
+      if (w <= 1.25) {
+        if (sk.k === 1) sk.set(x, y, at(rp, 0.45));
+        else { sk.fine(x - 0.25, y, at(rp, 0.6)); sk.fine(x + 0.25, y, at(rp, 0.38)); }
+      } else disc(sk, x, y, w / 2, rp);
     }
     s += len;
   }
@@ -252,17 +275,19 @@ function leaf(sk, x, y, a, len, wid, rp, shape = 'oval', o = {}) {
   if (len < 0.8) return;
   const ca = Math.cos(a), sa = Math.sin(a), f = LEAF[shape] || LEAF.oval;
   const side = lit(-sa, ca) >= 0 ? 1 : -1;
-  for (let u = 0; u <= len; u += 0.5) {
+  const st = 0.5 / sk.k;
+  for (let u = 0; u <= len; u += st) {
     const t = u / len;
     let hw = wid * f(t);
     if (o.serrate) hw *= Math.floor(u) % 2 ? 1.2 : 0.75;
-    for (let v = -hw; v <= hw + 0.01; v += 0.5) {
-      const c = v * side > 0.4 ? at(rp, 0.8) : v * side < -hw + 0.6 && hw > 1.2 ? at(rp, 0.3) : at(rp, 0.5);
-      sk.set(x + ca * u - sa * v, y + sa * u + ca * v, c);
+    for (let v = -hw; v <= hw + 0.01; v += st) {
+      // at a finer definition the leaf has a lit edge, a body and a shaded edge, and a vein-side tone between
+      const c = v * side > 0.4 ? at(rp, sk.k > 1 && v * side > hw - 0.5 ? 0.92 : 0.8) : v * side < -hw + 0.6 && hw > 1.2 ? at(rp, 0.3) : at(rp, sk.k > 1 && v * side < -0.2 ? 0.42 : 0.5);
+      sk.fine(x + ca * u - sa * v, y + sa * u + ca * v, c);
     }
   }
-  if (o.rib !== null && len >= 5 && wid >= 1.2) for (let u = len * 0.15; u < len * 0.8; u += 0.5) sk.set(x + ca * u, y + sa * u, at(o.rib || rp, 0.2));
-  if (o.gloss) sk.set(x + ca * len * 0.3 - sa * wid * 0.3 * side, y + sa * len * 0.3 + ca * wid * 0.3 * side, at(rp, 1));
+  if (o.rib !== null && len >= 5 && wid >= 1.2) for (let u = len * 0.15; u < len * 0.8; u += st) sk.fine(x + ca * u, y + sa * u, at(o.rib || rp, 0.2));
+  if (o.gloss) sk.fine(x + ca * len * 0.3 - sa * wid * 0.3 * side, y + sa * len * 0.3 + ca * wid * 0.3 * side, at(rp, 1));
 }
 
 /**
@@ -273,15 +298,16 @@ function leaf(sk, x, y, a, len, wid, rp, shape = 'oval', o = {}) {
  */
 function prism(sk, x, y, a, len, wid, rp, o = {}) {
   const ca = Math.cos(a), sa = Math.sin(a), tip = Math.max(1.5, wid * (o.tip ?? 0.9)), sgn = lit(-sa, ca) >= 0 ? 1 : -1, skew = o.skew || 0;
-  for (let u = 0; u <= len; u += 0.5) {
+  const stp = 0.5 / sk.k;
+  for (let u = 0; u <= len; u += stp) {
     const tt = (len - u) / tip, hw = wid / 2, inTip = u > len - tip;
-    for (let v = -hw; v <= hw; v += 0.5) {
+    for (let v = -hw; v <= hw; v += stp) {
       // the point: both edges close in, toward a tip set off by the skew
       if (inTip) { const c = skew * hw; if (v < c - (c + hw) * tt || v > c + (hw - c) * tt) continue; }
       const s = v * sgn;
       let t = s > 0.6 ? 0.66 : s < -0.4 ? 0.33 : 0.85;
       if (u < len * 0.22) t -= 0.17;
-      sk.set(x + ca * u - sa * v, y + sa * u + ca * v, at(rp, t));
+      sk.fine(x + ca * u - sa * v, y + sa * u + ca * v, at(rp, t));
     }
   }
   sk.glint(x + ca * (len - 1), y + sa * (len - 1));
@@ -303,18 +329,18 @@ function gem(sk, x, y, a, len, wid, rp, glow, o = {}) {
   const tip = Math.min(len * 0.6, Math.max(2, wid * (o.tip ?? 0.85))), body = len - tip, c0 = skew * hw;
   const P = (u, v) => [x + ca * u - sa * v, y + sa * u + ca * v];
   // first its own dark outline, so a point standing before another is cut clear of it
-  const ink = at(rp, 0);
-  for (let u = 0.5; u <= len + 1; u += 0.5) {
-    const inTip = u > body, tt = inTip ? Math.max(0, (len + 1 - u) / (tip + 1)) : 1, e = hw + 1;
-    for (let v = -e; v <= e; v += 0.5) {
+  const ink = at(rp, 0), gs = 0.5 / sk.k, ew = 1 / sk.k;
+  for (let u = gs; u <= len + ew; u += gs) {
+    const inTip = u > body, tt = inTip ? Math.max(0, (len + ew - u) / (tip + ew)) : 1, e = hw + ew;
+    for (let v = -e; v <= e; v += gs) {
       if (inTip && (v < c0 - (c0 + e) * tt || v > c0 + (e - c0) * tt)) continue;
       const [px, py] = P(u, v);
-      sk.set(px, py, ink);
+      sk.fine(px, py, ink);
     }
   }
-  for (let u = 0; u <= len; u += 0.5) {
+  for (let u = 0; u <= len; u += gs) {
     const inTip = u > body, tt = inTip ? (len - u) / tip : 1;
-    for (let v = -hw; v <= hw; v += 0.5) {
+    for (let v = -hw; v <= hw; v += gs) {
       // the point: both edges close in toward the apex
       if (inTip && (v < c0 - (c0 + hw) * tt || v > c0 + (hw - c0) * tt)) continue;
       const s = ((v - (inTip ? c0 * (1 - tt) : 0)) * sgn) / hw;
@@ -324,18 +350,18 @@ function gem(sk, x, y, a, len, wid, rp, glow, o = {}) {
       // rooted in the rock: the foot is in shadow
       if (u < len * 0.16) t -= 0.24; else if (u < len * 0.3) t -= 0.08;
       const [px, py] = P(u, v);
-      sk.set(px, py, at(rp, t));
+      sk.fine(px, py, at(rp, t));
     }
   }
   // a fracture across the column, catching the light on its far lip
   if (o.crack && body > 6) {
     const u = body * (0.45 + ((o.seed || 0) % 5) * 0.06);
-    for (let v = -hw; v <= hw; v += 0.5) { const [px, py] = P(u + v * 0.35 * sgn, v); sk.set(px, py, at(rp, 0.28)); const [qx, qy] = P(u + 1 + v * 0.35 * sgn, v); if (v * sgn > 0) sk.set(qx, qy, at(rp, 1)); }
+    for (let v = -hw; v <= hw; v += gs) { const [px, py] = P(u + v * 0.35 * sgn, v); sk.fine(px, py, at(rp, 0.28)); const [qx, qy] = P(u + 1 / sk.k + v * 0.35 * sgn, v); if (v * sgn > 0) sk.fine(qx, qy, at(rp, 1)); }
   }
   // a luminous heart down the middle, brightest toward the point
-  if (glow && body > 3) for (let u = len * 0.3; u < body; u += 1) { const [px, py] = P(u, -0.25 * sgn); sk.set(px, py, at(glow, 0.45 + 0.5 * (u / body))); }
+  if (glow && body > 3) for (let u = len * 0.3; u < body; u += 1 / sk.k) { const [px, py] = P(u, -0.25 * sgn); sk.fine(px, py, at(glow, 0.45 + 0.5 * (u / body))); }
   const [ax, ay] = P(len - 0.5, c0);
-  sk.set(ax, ay, at(rp, 1));
+  sk.fine(ax, ay, at(rp, 1));
   sk.glint(ax, ay);
   const [rx, ry] = P(body * 0.6, hw * 0.45 * sgn);
   sk.glint(rx, ry);
@@ -413,7 +439,8 @@ function tuft(sk, rng, x, y, size, rp, a0 = UP) {
 /** A round fruit: lit from the upper left, a glint on it, and, if it glows, a core that gives light. @param {Sketch} sk @param {number[]} rp @param {number[]|null} [gl] the glow ramp */
 function globe(sk, x, y, r, rp, gl = null) {
   disc(sk, x, y, r, rp);
-  sk.set(x - r * 0.4, y - r * 0.4, at(rp, 1));
+  sk.fine(x - r * 0.4, y - r * 0.4, at(rp, 1));
+  if (sk.k > 1 && r >= 1.2) { sk.fine(x - r * 0.4 + 0.5, y - r * 0.4, at(rp, 0.85)); sk.fine(x + r * 0.45, y + r * 0.5, at(rp, 0.12)); }
   if (gl) {
     sk.emit(x, y, at(gl, 0.8));
     if (r >= 1.5) sk.set(x + 1, y, at(gl, 0.45));
@@ -1094,7 +1121,7 @@ const PENDANT = {
 function dangle(c) {
   const { d, P, g, st, H, rng, pal, mount, closed } = c, dir = mount === 'hang' ? 1 : -1;
   const sk = /** @type {Sketch} */ (dir === 1 ? c.sk : /** @type {any} */ ({
-    seed: c.sk.seed, set: (x, y, k) => c.sk.set(x, -y, k), has: (x, y) => c.sk.has(x, -y), emit: (x, y, k) => c.sk.emit(x, -y, k),
+    seed: c.sk.seed, k: c.sk.k, set: (x, y, k) => c.sk.set(x, -y, k), fine: (x, y, k) => c.sk.fine(x, -y, k), has: (x, y) => c.sk.has(x, -y), emit: (x, y, k) => c.sk.emit(x, -y, k),
     glint: (x, y) => c.sk.glint(x, -y), later: (z, fn) => c.sk.later(z, fn),
   }));
   const lit = !closed, pend = PENDANT[d.form] || PENDANT.orb, L = H * (1.05 + g * 0.5);
@@ -1139,7 +1166,7 @@ function dangle(c) {
 function orchard(c) {
   const { d, P, g, st, H, rng, pal, mount, closed } = c, dir = mount === 'bough' || mount === 'hang' ? 1 : -1;
   const sk = /** @type {Sketch} */ (dir === 1 ? c.sk : /** @type {any} */ ({
-    seed: c.sk.seed, set: (x, y, k) => c.sk.set(x, -y, k), has: (x, y) => c.sk.has(x, -y), emit: (x, y, k) => c.sk.emit(x, -y, k),
+    seed: c.sk.seed, k: c.sk.k, set: (x, y, k) => c.sk.set(x, -y, k), fine: (x, y, k) => c.sk.fine(x, -y, k), has: (x, y) => c.sk.has(x, -y), emit: (x, y, k) => c.sk.emit(x, -y, k),
     glint: (x, y) => c.sk.glint(x, -y), later: (z, fn) => c.sk.later(z, fn),
   }));
   const ripe = g >= 0.95, body = ripe ? pal.main : pal.leaf, gl = ripe && !closed && P.glow ? pal.glow : null;
@@ -1184,8 +1211,8 @@ const MOUNT_CODE = { ground: 0, hang: 1, wall: 2 };
  * mount and in one of its variants. A stone or shell does not grow: it is
  * the same at every stage; a crystal grows from a seed into its habit.
  * @param {any} d descriptor @param {number} stage 0 sprout, 1 ripe, 2 mature
- * @param {{closed?:boolean, mount?:string, variant?:number, flip?:boolean}} [o]
- * @returns {{pix:Pixels, ax:number, ay:number, glints:number[][], glows:number[][]}}
+ * @param {{closed?:boolean, mount?:string, variant?:number, flip?:boolean, k?:number}} [o] k: its definition (2: twice the scene's resolution)
+ * @returns {{pix:Pixels, ax:number, ay:number, glints:number[][], glows:number[][], k:number}}
  */
 export function growFrame(d, stage, o = {}) {
   const mount = frameMount(o.mount), st = d.botanical || d.form === 'crystal' || d.form === 'shard' ? Math.max(0, Math.min(2, stage | 0)) : 2, variant = (o.variant ?? 0) & 3;
@@ -1194,7 +1221,7 @@ export function growFrame(d, stage, o = {}) {
   // each variant a little taller or shorter than the next
   const vk = variant ? 0.84 + new Rng((d.seeds.morph + variant * 7919) >>> 0).next() * 0.3 : 1;
   const g = [0.4, 0.7, 1][st];
-  const sk = new Sketch(mount, seed);
+  const sk = new Sketch(mount, seed, o.k ?? 1);
   /** @type {Ctx} */
   const c = { sk, d, P, g, st, H: Math.min(26, P.h * vk * (mount === 'hang' ? 1.1 : 1) * (0.45 + 0.55 * g)), rng: new Rng(seed), pal: d.pal, mount, closed: !!o.closed };
   (DANGLERS.includes(d.form) ? dangle : ORCHARD.includes(d.form) ? orchard : BUILD[d.family] || BUILD.mineral)(c);

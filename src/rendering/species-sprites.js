@@ -99,7 +99,8 @@ export function mountsOf(m) {
 }
 
 /**
- * @typedef {{closed?:boolean, hover?:boolean, mount?:string, variant?:number, flip?:boolean, light?:number[]|null}} FrameOpts
+ * @typedef {{closed?:boolean, hover?:boolean, mount?:string, variant?:number, flip?:boolean, light?:number[]|null, k?:number}} FrameOpts
+ *   k: the definition, pixels to a scene pixel (2: for the wilds' detail layer)
  */
 
 /**
@@ -118,12 +119,15 @@ export function plantFrameOf(m, stage, o = {}) {
   const st = isBotanical(id.shape) || id.shape === 'crystal' || id.shape === 'shard' ? STAGE[stage] ?? 2 : 2, closed = !!o.closed && st === 2;
   const mount = frameMount(o.mount), variant = (o.variant ?? 0) & 3, flip = !!o.flip && mount === 'wall';
   const light = o.light && (o.light.length > 3 || o.light.some((v) => Math.abs(v - 1) > 0.02)) ? o.light : null;
-  const k = `${identityKey(id)}|${st}|${closed ? 1 : 0}|${mount}|${variant}|${flip ? 1 : 0}|${light ? light.join(',') : ''}`;
+  const def = o.k ?? 1;
+  const k = `${identityKey(id)}|${st}|${closed ? 1 : 0}|${mount}|${variant}|${flip ? 1 : 0}|${light ? light.join(',') : ''}|${def}`;
   const base = cached('p|' + k, () => {
-    const d = describe(id), f = plantFrame(d, st, { closed, mount, variant, flip });
+    const d = describe(id), f = plantFrame(d, st, { closed, mount, variant, flip, k: def });
     return light ? lit(f, light, mount, d.pal.glow) : f;
   });
-  return o.hover ? cached('h|' + k, () => rimmed(base)) : base;
+  const out = o.hover ? cached('h|' + k, () => rimmed(base)) : base;
+  /** @type {any} */ (out).k = def;
+  return out;
 }
 
 /** The canvas of a plant frame (browser), cached with it. @param {any} m @param {string} stage @param {FrameOpts} [o] */
@@ -132,7 +136,7 @@ export function plantCanvas(m, stage, o = {}) {
   if (!f) return null;
   const any = /** @type {any} */ (f);
   if (!any.cv) any.cv = f.pix.toCanvas();
-  return { cv: /** @type {HTMLCanvasElement} */ (any.cv), ax: f.ax, ay: f.ay, w: f.pix.w, h: f.pix.h, glints: f.glints, glows: f.glows || [] };
+  return { cv: /** @type {HTMLCanvasElement} */ (any.cv), ax: f.ax, ay: f.ay, w: f.pix.w, h: f.pix.h, glints: f.glints, glows: f.glows || [], k: any.k || 1 };
 }
 
 /**

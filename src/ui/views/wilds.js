@@ -1296,20 +1296,22 @@ export class WildsView {
     if (warren) warren.step(dt);
     const gore = this.goreLayer(warren);
     if (gore) ctx.drawImage(gore, 0, 0);
-    // the plants, the far ones first
-    for (const p of this.field.slice().sort((a, b) => a.y - b.y)) if (p.key && !this.fallen[p.id]) this.drawPlant(ctx, p);
-    this.drawFallen(ctx, dt);
-    // the animals: at the higher resolutions, at their own full size into the detail layer laid over the
-    // scene at twice its resolution (rendering/crisp.js); otherwise at half size into the scene itself
+    // the plants and the animals: at the higher resolutions, at twice the scene's definition into the detail
+    // layer laid over it (rendering/crisp.js) — the plants grown at k = 2, the animals at their own full
+    // size; otherwise into the scene itself (the animals at half size)
     if (this.crisp) this.crisp.factor = this.lab.resolution();
-    const dc = warren && this.crisp && this.crisp.ready() ? this.detailContext() : null;
+    const dc = this.crisp && this.crisp.ready() ? this.detailContext() : null;
     if (this.crisp) this.crisp.detail = dc ? dc.canvas : null;
     if (dc) {
       dc.setTransform(1, 0, 0, 1, 0, 0);
       dc.clearRect(0, 0, dc.canvas.width, dc.canvas.height);
       dc.setTransform(2, 0, 0, 2, 0, 0);
-      this.drawWarren(dc, /** @type {Warren} */ (warren), true);
-    } else if (warren) this.drawWarren(ctx, warren);
+    }
+    // the plants, the far ones first
+    for (const p of this.field.slice().sort((a, b) => a.y - b.y)) if (p.key && !this.fallen[p.id]) this.drawPlant(ctx, p, dc);
+    this.drawFallen(ctx, dt);
+    if (dc && warren) this.drawWarren(dc, warren, true);
+    else if (warren) this.drawWarren(ctx, warren);
     this.drawEffects(ctx, dt);
     this.paintSky(ctx, dt);
     // (the hour's light falls on the animals in the detail layer too)
@@ -1345,10 +1347,12 @@ export class WildsView {
    * a magical plant glimmers now and then at its bright spots.
    * @param {CanvasRenderingContext2D} ctx @param {any} p
    */
-  drawPlant(ctx, p) {
+  drawPlant(ctx, p, dc = null) {
     const look = this.look(p), { closed, hover } = look;
     const sp = plantCanvas(p.m, p.stage, look);
     if (!sp) return;
+    // (the plant itself, and what is drawn over it, into the detail layer at twice the definition when there is one)
+    const tc = dc || ctx, spd = dc ? plantCanvas(p.m, p.stage, { ...look, k: 2 }) || sp : sp;
     const x = Math.round(p.x * SCENE_W), y = Math.round(p.y * SCENE_H), onGround = !p.mount || p.mount === 'ground';
     const since = this.time - (this.grewAt[p.id + ':' + p.stage] ?? -9);
     const sw = Math.max(4, Math.round(sp.w * (p.stage === 'sprout' ? 0.5 : 0.6)));
@@ -1384,10 +1388,10 @@ export class WildsView {
       ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
     }
     // a vine hangs and sways; the rest stands, juts or lies still
-    const dxAt = this.drawBent(ctx, p, sp, x, y, lift);
-    if (!dxAt) ctx.drawImage(sp.cv, x - sp.ax, y - sp.ay - lift);
-    if (onGround) this.drawSoil(ctx, p, sp, x, y);
-    if (this.fused(p)) this.drawFusion(ctx, p, sp, x, y);
+    const dxAt = this.drawBent(tc, p, sp, x, y, lift, spd);
+    if (!dxAt) tc.drawImage(spd.cv, x - spd.ax / spd.k, y - spd.ay / spd.k - lift, spd.w / spd.k, spd.h / spd.k);
+    if (onGround) this.drawSoil(tc, p, sp, x, y);
+    if (this.fused(p)) this.drawFusion(tc, p, sp, x, y);
     // what glows lights its surroundings, breathing, the more so the darker the region
     const emit = emitColour(p.m);
     if (emit && !closed && sp.glows.length) {
@@ -1405,15 +1409,15 @@ export class WildsView {
     if (p.thirsty && (this.mode === 'water' || Math.sin(this.time * 2 + p.x * 9) > 0.6)) {
       // a drop over its head asks for water
       const dx = x + Math.round(sp.w / 2 - sp.ax) - 1, dy = y - sp.ay - 5 + Math.round(Math.sin(this.time * 4 + p.x * 5));
-      ctx.fillStyle = '#1a2a48'; ctx.fillRect(dx - 1, dy, 4, 4); ctx.fillRect(dx, dy - 1, 2, 1);
-      ctx.fillStyle = '#6ab8f0'; ctx.fillRect(dx, dy, 2, 3); ctx.fillStyle = '#d8f0ff'; ctx.fillRect(dx, dy, 1, 1);
+      tc.fillStyle = '#1a2a48'; tc.fillRect(dx - 1, dy, 4, 4); tc.fillRect(dx, dy - 1, 2, 1);
+      tc.fillStyle = '#6ab8f0'; tc.fillRect(dx, dy, 2, 3); tc.fillStyle = '#d8f0ff'; tc.fillRect(dx, dy, 1, 1);
     }
     const d = speciesOf(p.m);
     if (p.stage === 'mature' && d && sp.glints.length && (d.family === 'crystal' || d.family === 'mineral' || d.tr.glow > 0.3) && !hover && !closed) {
       const cycle = this.time * 0.6 + p.x * 7.3 + p.y * 3.1, phase = cycle % 2;
       if (phase < 0.5) {
         const [gx, gy] = sp.glints[Math.floor(cycle / 2) % sp.glints.length];
-        sparkle(ctx, x - sp.ax + gx, y - sp.ay + gy, phase / 0.5);
+        sparkle(tc, x - sp.ax + gx, y - sp.ay + gy, phase / 0.5);
       }
     }
   }
@@ -1487,10 +1491,14 @@ export class WildsView {
    * rings in it for a few seconds. A plant on rock or a trunk stays rigid.
    * Returns how far each row of the sprite was moved, or null if it was not
    * (and so has still to be drawn).
-   * @param {CanvasRenderingContext2D} ctx @param {any} p @param {{cv:HTMLCanvasElement, ax:number, ay:number, w:number, h:number}} sp @param {number} x @param {number} y @param {number} lift
+   * @param {CanvasRenderingContext2D} ctx @param {any} p @param {{cv:HTMLCanvasElement, ax:number, ay:number, w:number, h:number, k?:number}} sp @param {number} x @param {number} y @param {number} lift @param {{cv:HTMLCanvasElement, ax:number, ay:number, w:number, h:number, k?:number}} [spd] the frame drawn (at a finer definition k)
    * @returns {((row:number)=>number)|null}
    */
-  drawBent(ctx, p, sp, x, y, lift) {
+  drawBent(ctx, p, sp, x, y, lift, spd = sp) {
+    // (spd: the frame drawn, perhaps at a finer definition k; its rows are fractions of a scene row)
+    const k = spd.k || 1, rows = (/** @type {(r:number) => number} */ dxAt, /** @type {number} */ ly) => {
+      for (let r = 0; r < spd.h; r++) ctx.drawImage(spd.cv, 0, r, spd.w, 1, x - spd.ax / k + dxAt(Math.round(sp.ay + (r - spd.ay) / k)), y - spd.ay / k + r / k - ly, spd.w / k, 1 / k);
+    };
     const hangs = p.mount === 'hang' || p.mount === 'bough' || p.mount === 'ceiling';
     // a crystal is rock: fingers and wind leave it standing (or hanging) still
     if (WildsView.gem(p) || (!hangs && p.mount && p.mount !== 'ground')) return null;
@@ -1503,13 +1511,13 @@ export class WildsView {
     if (!hangs) {
       if (Math.abs(ring) < 0.3) return null;
       const dxAt = (/** @type {number} */ r) => (r > sp.ay ? 0 : Math.round(ring * 2.2 * ((sp.ay - r) / Math.max(1, sp.ay)) ** 2));
-      for (let r = 0; r < sp.h; r++) ctx.drawImage(sp.cv, 0, r, sp.w, 1, x - sp.ax + dxAt(r), y - sp.ay + r - lift, sp.w, 1);
+      rows(dxAt, lift);
       return dxAt;
     }
     const st = this.lab.state, wind = windAt(x, this.time, (hashString(st.seed) % 1000) / 100) * 0.8;
     const swing = wind + 0.35 * Math.sin(this.time * 1.7 + p.x * 23) + ring, below = sp.h - sp.ay;
     const dxAt = (/** @type {number} */ r) => Math.round(swing * 2.2 * (Math.max(0, r - sp.ay) / Math.max(1, below)) ** 2);
-    for (let r = 0; r < sp.h; r++) ctx.drawImage(sp.cv, 0, r, sp.w, 1, x - sp.ax + dxAt(r), y - sp.ay + r, sp.w, 1);
+    rows(dxAt, 0);
     return dxAt;
   }
 

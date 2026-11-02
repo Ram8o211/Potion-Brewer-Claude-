@@ -55,7 +55,7 @@ export function compose(cv, seed) {
     a: '#8a7a62', b: '#c8c0a8', grain: '#e8e4d4', dark: '#2a2a22', deep: '#141612', cave: '#0a0c0a',
     // a bank of sand: pale on top, a sparse grass growing in it
     crust: ['#fefbc7', '#fce199', '#fbd88d', '#f6d187'], crustH: 3, seed: ss,
-    cobble: { stones: ['#57524a', '#4a463e', '#625e54', '#3e3a34', '#56544a', '#4c4a42'], mortar: '#080807', s: 10 },
+    cobble: { stones: ['#57524a', '#4a463e', '#625e54', '#3e3a34', '#56544a', '#4c4a42'], mortar: '#080807', s: 10, moss: ['#3e7226', '#6aa83a'] },
     grass: { cols: ['#5a9a3a', '#7ac04a', '#4a8a30'], tall: 4, rate: 0.32, flowers: ['#ffe58a', '#ffffff'] },
     // under the sand a seam of grey rock, then the river stones
     layers: [
