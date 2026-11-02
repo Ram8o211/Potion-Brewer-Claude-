@@ -17,7 +17,7 @@ import { pack } from '../color.js';
 export function compose(cv, seed) {
   const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'meadow', p);
   const pal = vary(palette({
-    leaf: ['#3e7a2a', { spread: 0.6 }], leaf2: ['#78a02e', { spread: 0.6 }], bloom: ['#f0d040', { spread: 0.4 }], bark: '#4e3420', rock: '#7a7a72', cloud: ['#c8d4e4', { spread: 0.3, cool: 0.5 }],
+    leaf: ['#4e9a2c', { spread: 0.8, warm: 0.45 }], leaf2: ['#6aa82e', { spread: 0.75, warm: 0.45 }], bloom: ['#f0d040', { spread: 0.4 }], bark: '#4e3420', rock: '#7a7a72', cloud: ['#c8d4e4', { spread: 0.3, cool: 0.5 }],
     timber: '#6a4a2e', straw: ['#c8a050', { spread: 0.45 }], moss: '#5a8a34',
   }), s('pal'), 1);
   sky(cv, 0, 160, ['#2a5aa0', '#4a82c4', '#86b4dc', '#cfe2e8'], 10);
@@ -99,8 +99,8 @@ export function compose(cv, seed) {
   }
   // the oaks: one framing the mouth, maybe another in the field
   terrainTrees(cv, s('oaks'), pal, {
-    n: 3, kinds: ['gnarl', 'tiers', 'oak'], shapes: ['spread', 'lean'], h: [60, 130], gap: 60, ledges: true,
-    look: { mats: ['leaf', 'leaf2'], bloom: { mat: 'bloom', rate: 0.2 } },
+    n: 3, kinds: ['gnarl', 'gnarl', 'gnarl', 'oak'], shapes: ['spread', 'lean'], h: [60, 130], gap: 60, ledges: true,
+    look: { mats: ['leaf', 'leaf2'], bloom: { mat: 'bloom', rate: 0.05 } },
   });
   const rr = s('rocks');
   for (let i = 0; i < 2; i++) cv.place(boulder(rr, rr.int(5, 9), rr.int(3, 5), { moss: 'moss' }), pal, rr.int(10, W - 10), { sink: 2, foot: [8, 2] });
