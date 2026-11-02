@@ -80,18 +80,26 @@ export function legible(cv, region) {
   const rng = new Rng(seed ^ 0x51ab);
   const put = (x, y, c) => { if (x < 0 || y < 0 || x >= W || y >= H) return; const k = y * W + x; if (!ground(k) || depth[k] < 3) return; for (const px of layers) px[k] = c; };
   const shade = (x, y, t, toward = BLACK) => { if (x < 0 || y < 0 || x >= W || y >= H) return; const k = y * W + x; if (!ground(k) || depth[k] < 3) return; for (const px of layers) px[k] = mixPacked(px[k], toward, t); };
-  for (let i = 0; i < N / 900; i++) {
+  /** @type {number[][]} */
+  const bedded = [];
+  for (let i = 0; i < N / 520; i++) {
     const cx = rng.int(4, W - 5), cy = rng.int(4, H - 3), k0 = cy * W + cx;
-    if (!ground(k0) || depth[k0] < 8) continue;
-    const rx = rng.range(2.5, 6), ry = rx * rng.range(0.5, 0.75);
+    const rx = rng.range(3, 8.5), ry = rx * rng.range(0.5, 0.7);
+    if (!ground(k0) || depth[k0] < ry + 5) continue;
+    // a boulder apart from the others
+    if (bedded.some(([x, y, r]) => Math.abs(x - cx) < r + rx + 2 && Math.abs(y - cy) < (r + rx) * 0.6 + 2)) continue;
+    bedded.push([cx, cy, rx]);
     for (let y = Math.floor(cy - ry - 1); y <= cy + ry + 1; y++) for (let x = Math.floor(cx - rx - 1); x <= cx + rx + 1; x++) {
       const u = (x + 0.5 - cx) / rx, v = (y + 0.5 - cy) / ry, e = u * u + v * v;
       if (e > 1.3) continue;
-      if (e > 1) { shade(x, y, v > 0 ? 0.45 : 0.25, INK); continue; }
-      // a boulder of paler rock, lit on its upper left, its underside in shade
-      const lit = -(u * 0.5 + v * 0.9);
-      shade(x, y, 0.3, BOULDER);
-      shade(x, y, lit > 0.45 ? 0.35 : lit > 0 ? 0.15 : lit < -0.45 ? 0.35 : 0.08, lit > 0 ? WHITE : BLACK);
+      if (e > 1) { shade(x, y, v > 0 ? 0.5 : 0.3, INK); continue; }
+      // a boulder of paler rock, a dome lit on its upper left: a bright cap, a lit shoulder, its underside in shade
+      const lit = -(u * 0.5 + v * 0.9) + (1 - e) * 0.25;
+      shade(x, y, 0.26, BOULDER);
+      if (lit > 0.75 && e < 0.45) shade(x, y, 0.3, WHITE);
+      else shade(x, y, lit > 0.4 ? 0.26 : lit > 0.05 ? 0.12 : lit < -0.45 ? 0.38 : 0.16, lit > 0.05 ? WHITE : BLACK);
+      // a crack or a pit now and then
+      if (e < 0.8 && hash2(x, y, seed + 31) < 0.03) shade(x, y, 0.3, BLACK);
     }
   }
   if (ROOTED.has(region)) {

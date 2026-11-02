@@ -24,10 +24,15 @@ export function cobble(x, y, o) {
   const edge = Math.sqrt(d2) - Math.sqrt(d1);
   if (edge < 0.9) return o.mortar;
   let c = o.stones[Math.floor(hash2(id, 3, o.seed) * o.stones.length)];
-  const r = s * 0.45;
-  if (by < -r * 0.3 && bx < r * 0.4) c = mixPacked(c, 0xffffffff, by < -r * 0.6 ? 0.2 : 0.11);
-  else if (by > r * 0.3 || edge < 1.6) c = mixPacked(c, 0xff000000, 0.22);
+  // each stone a low dome lit from the upper left: a bright cap, a lit
+  // shoulder, a shaded underside and a dark rim where it beds into the mortar
+  const r = s * 0.5, lit = -((bx / r) * 0.55 + (by / r) * 0.85);
+  if (edge < 1.7 && by > -r * 0.2) c = mixPacked(c, 0xff000000, 0.32);
+  else if (lit > 0.6) c = mixPacked(c, 0xffffffff, 0.24);
+  else if (lit > 0.22) c = mixPacked(c, 0xffffffff, 0.11);
+  else if (lit < -0.5) c = mixPacked(c, 0xff000000, 0.24);
+  else if (lit < -0.15) c = mixPacked(c, 0xff000000, 0.1);
   const g = hash2(x, y, o.seed + 9);
-  if (g > 0.94) c = mixPacked(c, 0xffffffff, 0.14); else if (g < 0.06) c = mixPacked(c, 0xff000000, 0.25);
+  if (g > 0.975) c = mixPacked(c, 0xffffffff, 0.12); else if (g < 0.025) c = mixPacked(c, 0xff000000, 0.22);
   return c;
 }

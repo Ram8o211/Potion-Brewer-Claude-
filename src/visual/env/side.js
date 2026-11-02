@@ -28,8 +28,8 @@ export const col = (h) => pack(hex(h));
  */
 export function far(c, x, y, seed) {
   const g = hash2(Math.floor(x / CELL), Math.floor(y / CELL), seed + 7);
-  if (g > 0.975) return mixPacked(c, 0xffffffff, 0.12);
-  if (g < 0.02) return mixPacked(c, 0xff000000, 0.18);
+  if (g > 0.993) return mixPacked(c, 0xffffffff, 0.1);
+  if (g < 0.006) return mixPacked(c, 0xff000000, 0.14);
   return fbm2(snap(x) * 0.05, snap(y) * 0.07, seed, 2) > 0.55 ? mixPacked(c, 0xffffffff, 0.06) : c;
 }
 
@@ -419,9 +419,23 @@ export function treeShape(cv, x, y, h, kind, c, seed) {
       for (let i = 0; i < h * 0.2; i++) put(Math.round(x + s * i), Math.round(y0 - i * 0.7));
     }
   } else {
-    const r = h * 0.3, cy = y - h * 0.65;
-    for (let j = -r; j <= r; j++) for (let i = -r * 1.2; i <= r * 1.2; i++) {
-      if ((Math.abs(i / 1.2) ** 3 + Math.abs(j) ** 3) / r + (hash2(Math.round(x + i) >> 2, Math.round(cy + j) >> 2, seed) - 0.5) * r * 1.4 <= r * r) put(Math.round(x + i), Math.round(cy + j));
+    // a crown of round clumps, each lit on its upper left and shaded under,
+    // the back ones first so the front ones overlap them
+    const r = h * 0.3, cy = y - h * 0.65, lit = mixPacked(fill, 0xffffffff, 0.14), shade = mixPacked(fill, 0xff000000, 0.22);
+    const n = 4 + Math.floor(hash2(x, 3, seed) * 3), clumps = [];
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + hash2(i, 1, seed) * 0.8, d = r * (0.35 + hash2(i, 2, seed) * 0.35);
+      clumps.push([x + Math.cos(a) * d * 1.2, cy + Math.sin(a) * d * 0.8, r * (0.45 + hash2(i, 4, seed) * 0.25)]);
+    }
+    clumps.sort((p, q) => p[1] - q[1]);
+    clumps.push([x, cy - r * 0.1, r * 0.62]);
+    for (const [ccx, ccy, cr] of clumps) for (let j = Math.floor(-cr); j <= cr; j++) for (let i = Math.floor(-cr); i <= cr; i++) {
+      const e = (i * i + j * j) / (cr * cr) + (hash2(Math.round(ccx + i), Math.round(ccy + j), seed) - 0.5) * 0.25;
+      if (e > 1) continue;
+      const px = Math.round(ccx + i), py = Math.round(ccy + j);
+      if (px < 0 || py < 0 || px >= cv.W || py >= cv.H) continue;
+      const l = -(i / cr) * 0.5 - (j / cr) * 0.85;
+      cv.paint(py * cv.W + px, l > 0.55 && e > 0.25 ? lit : l < -0.5 ? shade : far(fill, px, py, seed));
     }
   }
 }
