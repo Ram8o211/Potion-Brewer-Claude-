@@ -262,6 +262,7 @@ const STAGE_G = { kit: 0.62, young: 0.82, adult: 1, elder: 0.97 };
  * @property {import('../game/kinds.js').AnimalKind} kind
  * @property {RabbitPose} pose
  * @property {boolean} lying   lying poses (flop, collapse, dead)
+ * @property {boolean} [bare]  grazing bare ground: no tuft of grass at its mouth
  * @property {number} g        body scale (stage × size × traits × muscle)
  * @property {number} hs       head scale
  * @property {Ell} haunch
@@ -316,6 +317,18 @@ const QUAD = {
   rat: { leg: 2, hx: 12, hrx: 6.5, hry: 4.5, cx: 18, crx: 4, cry: 3.5, hdx: 23, hdy: 3.5, hrxH: 3.6, hryH: 3, sn: [3, 2.2, 1.4], rear: 'stand' },
   deer: { leg: 11, hx: 12, hrx: 6.5, hry: 4, cx: 20, crx: 4.8, cry: 4.2, hdx: 27, hdy: 11, hrxH: 3.6, hryH: 3.2, sn: [3, 2.2, 1.6], rear: 'alert' },
   ermine: { leg: 3, hx: 12, hrx: 7.5, hry: 3, cx: 20, crx: 5, cry: 3, hdx: 26, hdy: 4, hrxH: 3.6, hryH: 3, sn: [2.6, 1.6, 1.2], rear: 'stand' },
+};
+
+/**
+ * Each kind's build lying on its side (dead, collapsed, flopped), in body
+ * units like QUAD's: haunch, chest and head, and how long its legs are.
+ */
+const LIE = {
+  rabbit: { hx: 11, hrx: 9.5, hry: 5.6, cx: 20, crx: 5.2, cry: 4.6, hdx: 27, hrxH: 4.8, hryH: 4, leg: 5 },
+  toad: { hx: 11, hrx: 8.5, hry: 4.6, cx: 18, crx: 6, cry: 4.2, hdx: 23.5, hrxH: 5, hryH: 3.4, leg: 4 },
+  salamander: { hx: 12, hrx: 7, hry: 2.8, cx: 20, crx: 5.5, cry: 2.8, hdx: 27, hrxH: 3.6, hryH: 2.6, leg: 2 },
+  dove: { hx: 14, hrx: 7.5, hry: 4.2, cx: 20, crx: 4.6, cry: 4, hdx: 25, hrxH: 2.8, hryH: 2.6, leg: 2 },
+  ...Object.fromEntries(Object.entries(QUAD).map(([k, q]) => [k, { hx: q.hx, hrx: q.hrx + 0.5, hry: q.hry + 0.8, cx: q.cx, crx: q.crx, cry: q.cry + 0.4, hdx: q.hdx + 1.5, hrxH: q.hrxH, hryH: q.hryH, leg: q.leg }])),
 };
 
 /**
@@ -528,19 +541,53 @@ export function rabbitAnchors(look, snap, want) {
   let haunch, chest, head;
   /** legs: stretched hind legs and reaching paws (hop), a raised paw (hurt, rear), a hind leg kicked out (flop, dead) */
   const legs = [];
+  const kind = kindOfLook(look);
+  /** @type {Ell|null} */
+  let snout = null;
   if (lying) {
-    // stretched out low on the straw, head resting at the front
-    const hry = Math.round(4.2 * g) + preg, cry = Math.round(3.6 * g + bulk * 0.5);
-    haunch = E(ox + 11 * g, oy - hry, 11 * g, hry);
-    chest = E(ox + 21 * g, oy - cry, 5 * g + bulk, cry);
-    head = E(ox + 27 * g, oy - headRy, 4.6 * hs, headRy);
-    legs.push({ x: haunch.cx - haunch.rx - 2, y: oy - 3, w: Math.max(3, Math.round(5 * g)), h: 2 });
+    // lying on its side: as deep in the body as it stands (never squashed flat), the head
+    // resting on the ground in front, the legs stiff and stretched out behind and ahead
+    const D = LIE[kind] || LIE.rabbit, Q = QUAD[kind];
+    const hry = Math.round(D.hry * g) + preg, cry = Math.round(D.cry * g + bulk * 0.5);
+    haunch = E(ox + D.hx * g, oy - hry, D.hrx * g, hry);
+    chest = E(ox + D.cx * g, oy - cry, D.crx * g + bulk, cry);
+    const hry2 = Math.max(2, Math.round(D.hryH * hs)), hrx2 = D.hrxH * hs;
+    // the head on the ground just ahead of the chest, its own round shape rather than the body's end
+    head = E(Math.min(RABBIT_W - 3 - hrx2 - (QUAD[kind]?.sn[0] ? 3 : 0), Math.max(ox + D.hdx * g, chest.cx + chest.rx + hrx2 * 0.3)), oy - hry2, hrx2, hry2);
+    if (Q && Q.sn[0]) snout = E(Math.min(head.cx + Q.sn[0] * hs, RABBIT_W - 2 - Q.sn[1] * hs), head.cy + 1, Q.sn[1] * hs, Q.sn[2] * hs);
+    if (kind === 'dove') snout = E(head.cx + head.rx + 0.5, head.cy + 0.5, 1.2, 1);
+    const ll = Math.max(2, Math.round(D.leg * g)), lw = kind === 'deer' ? 1 : 2;
+    if (pose === 'dead' && kind !== 'dove' && kind !== 'snail' && kind !== 'salamander') {
+      // dead: rolled onto its back, its legs stiff in the air, splayed a little
+      const up = Math.max(4, Math.round(ll * 0.75)) + 1;
+      const leg = (/** @type {number} */ x, /** @type {number} */ base, /** @type {number} */ len, /** @type {number} */ lean) => {
+        for (let i = 0; i < len; i++) {
+          const lx = Math.round(x + (lean * i) / len), last = legs[legs.length - 1];
+          if (i && last && last.x === lx) { last.y--; last.h++; } else legs.push({ x: lx, y: base - i, w: lw, h: 1, seg: true });
+        }
+      };
+      const ht = haunch.cy - haunch.ry + 2, ct = chest.cy - chest.ry + 2;
+      leg(haunch.cx - Math.round(haunch.rx * 0.2), ht, up + 1, -2);
+      leg(haunch.cx + Math.round(haunch.rx * 0.25), ht, up, -1);
+      leg(chest.cx - 1, ct, up, 1);
+      leg(chest.cx + Math.round(chest.rx * 0.5), ct, up + 1, 2);
+    } else {
+    // the hind legs kicked out behind, one over the other
+    legs.push({ x: haunch.cx - haunch.rx - Math.round(ll * 0.55), y: oy - 3, w: Math.round(ll * 0.55) + 3, h: lw });
+    if (kind !== 'dove' && kind !== 'snail') legs.push({ x: haunch.cx - haunch.rx - Math.round(ll * 0.35), y: oy - 3 - lw - 1, w: Math.round(ll * 0.35) + 3, h: lw });
+    // the forelegs reaching out ahead of the chest (the long-legged kinds' past the muzzle)
+    if (kind !== 'dove' && kind !== 'snail' && kind !== 'rabbit') {
+      const fx = chest.cx + Math.round(chest.rx * 0.3), fw = Math.min(RABBIT_W - 2 - fx, Math.round(chest.rx * 0.7 + ll));
+      legs.push({ x: fx, y: oy - 2, w: fw, h: lw });
+      legs.push({ x: fx - 1, y: oy - 2 - lw - 1, w: Math.max(2, fw - 2), h: lw });
+    }
+    }
   } else if (pose === 'hop') {
-    // mid-leap: long and level, hind legs thrown back, forepaws reaching
-    haunch = E(ox + 10 * g, oy - 8 * g, 9 * g, 5 * g + preg);
-    chest = E(ox + 19 * g, oy - 8 * g, 6 * g + bulk, 4.5 * g + bulk * 0.5);
-    head = E(ox + 25 * g, oy - 12 * g, 5 * hs, headRy);
-    legs.push({ x: haunch.cx - haunch.rx - Math.round(3 * g), y: haunch.cy + Math.round(2 * g), w: Math.max(3, Math.round(6 * g)), h: 2 });
+    // mid-leap: the back arched, the haunch round and lifted, hind legs thrown back, forepaws reaching
+    haunch = E(ox + 10 * g, oy - 9 * g, 8 * g, 6 * g + preg);
+    chest = E(ox + 18 * g, oy - 10 * g, 5.5 * g + bulk, 5 * g + bulk * 0.5);
+    head = E(ox + 24 * g, oy - 15 * g, 5 * hs, headRy);
+    legs.push({ x: haunch.cx - haunch.rx - Math.round(3 * g), y: haunch.cy + Math.round(3 * g), w: Math.max(3, Math.round(6 * g)), h: 2 });
     legs.push({ x: chest.cx + chest.rx - 2, y: chest.cy + chest.ry - 1, w: Math.max(2, Math.round(4 * g)), h: 2 });
   } else if (pose === 'rear') {
     // sitting up: as high as the frame allows above the ears or horns
@@ -567,11 +614,8 @@ export function rabbitAnchors(look, snap, want) {
   }
   // the other kinds (game/kinds.js) stand, squat, creep or fly in their own build
   // (a snail lies as it withdraws; a dove in the air is a bird in flight, not a leaping rabbit)
-  const kind = kindOfLook(look);
   /** @type {Ell[]} */
   let kindExtra = [];
-  /** @type {Ell|null} */
-  let snout = null;
   if (kind !== 'rabbit' && (!lying || kind === 'snail') && (pose !== 'hop' || kind === 'dove' || kind === 'snail' || kind in QUAD)) {
     const kb = kindBody(kind, pose, ox, oy, g, hs, bulk, preg);
     haunch = kb.haunch; chest = kb.chest; head = kb.head; snout = kb.snout; kindExtra = kb.extra;
@@ -1469,7 +1513,7 @@ function faceLayer(S) {
     // a cat's whiskers
     if ((a.kind === 'cat' || a.kind === 'rat') && !dead) { P(n.x + 1, n.y + 1, 2, 1, 'rgba(255,255,255,0.7)'); P(n.x, n.y + 2, 2, 1, 'rgba(255,255,255,0.5)'); }
   }
-  if (a.pose === 'eat') grassTuft(P, n.x - 2, a.feetY);
+  if (a.pose === 'eat' && !a.bare) grassTuft(P, n.x - 2, a.feetY);
   if (dead) { if (S.tr.has('eye3')) P(a.eye3.x, a.eye3.y, 2, 1, K); return; }
   if (L.vitality >= 2) P(n.x - 1, n.y, 1, 1, '#ff8fb8');
   // a blush below the eye, deeper and wider with love (a cold-blooded hide only blushes for love)
@@ -1745,12 +1789,14 @@ export function rabbitSpriteKey(look, snap, want) {
  * Paint a rabbit's static body into a new 48×40 canvas.
  * @param {any} look @param {any} snap
  * @param {(w:number, h:number) => any} [factory] canvas maker (makeCanvas in the browser)
- * @param {{pose?:string, quality?:'low'|'high'}} [opts]
+ * @param {{pose?:string, quality?:'low'|'high', grass?:boolean}} [opts] grass: false when it grazes bare ground
  */
 export function drawRabbitSprite(look, snap, factory = makeCanvas, opts = {}) {
   const cv = factory(RABBIT_W, RABBIT_H);
   const ctx = cv.getContext('2d');
-  drawBody(pen(ctx, 0, 0, 0, 0, false), look, snap, rabbitAnchors(look, snap, opts.pose), opts.quality === 'low');
+  const a = rabbitAnchors(look, snap, opts.pose);
+  if (opts.grass === false) a.bare = true;
+  drawBody(pen(ctx, 0, 0, 0, 0, false), look, snap, a, opts.quality === 'low');
   return cv;
 }
 
@@ -1759,12 +1805,12 @@ export function clearRabbitSprites() {
   SPRITES.clear();
 }
 
-/** @param {any} look @param {any} snap @param {string} pose @param {boolean} low @param {(w:number, h:number) => any} factory */
-function spriteFor(look, snap, pose, low, factory) {
-  const key = rabbitSpriteKey(look, snap, pose) + (low ? '|lo' : '');
+/** @param {any} look @param {any} snap @param {string} pose @param {boolean} low @param {(w:number, h:number) => any} factory @param {boolean} [grass] */
+function spriteFor(look, snap, pose, low, factory, grass = true) {
+  const key = rabbitSpriteKey(look, snap, pose) + (low ? '|lo' : '') + (grass ? '' : '|bare');
   let cv = SPRITES.get(key);
   if (cv) { SPRITES.delete(key); SPRITES.set(key, cv); return cv; }
-  cv = drawRabbitSprite(look, snap, factory, { pose, quality: low ? 'low' : 'high' });
+  cv = drawRabbitSprite(look, snap, factory, { pose, quality: low ? 'low' : 'high', grass });
   gradeSprite(cv);
   SPRITES.set(key, cv);
   if (SPRITES.size > SPRITE_MAX) SPRITES.delete(SPRITES.keys().next().value);
@@ -1818,6 +1864,7 @@ function drawFloor(ctx, fx, fy) {
  * @param {number} [opts.lift] px the body is raised off the ground (a hop arc); the shadow stays
  * @param {boolean} [opts.flash] the white reaction flash over the frame (default true)
  * @param {boolean} [opts.clip] clip to the frame (default true; the hutch lets ears pass its top)
+ * @param {boolean} [opts.grass] a tuft of grass at its mouth while it grazes (default true; false on bare ground)
  */
 export function drawRabbit(ctx, look, snap, t, react = 0, opts = {}) {
   const fx = Math.round(opts.x || 0), fy = Math.round(opts.y || 0);
@@ -1832,6 +1879,8 @@ export function drawRabbit(ctx, look, snap, t, react = 0, opts = {}) {
   let a = rabbitAnchors(look, snap, opts.pose || (rx > 0.25 && acted.some((c) => HARM.includes(c)) ? 'hurt' : undefined));
   const m = motion(look, snap, a, time, rx, opts.hop !== false);
   if ((a.pose === 'idle' || a.pose === 'sick') && ((opts.lift || 0) > 0 || m.dy < -1)) a = rabbitAnchors(look, snap, 'hop');
+  const grass = opts.grass !== false;
+  if (!grass) a.bare = true;
   const dy = m.dy - Math.round(opts.lift || 0);
   // the ground shadow stays put while the body hops or floats
   const shadowP = pen(ctx, fx, fy, m.dx, 0, mirror, clip);
@@ -1840,7 +1889,7 @@ export function drawRabbit(ctx, look, snap, t, react = 0, opts = {}) {
   shadowP(sx0 + 2, a.feetY + 2, sx1 - sx0 - 4, 1, 'rgba(0,0,0,0.12)');
   const factory = opts.factory || (typeof document !== 'undefined' ? makeCanvas : null);
   if (opts.cache !== false && factory) {
-    const sprite = spriteFor(look, snap, a.pose, low, factory);
+    const sprite = spriteFor(look, snap, a.pose, low, factory, grass);
     if (mirror) {
       ctx.save();
       ctx.translate(fx + RABBIT_W - m.dx, fy + dy);

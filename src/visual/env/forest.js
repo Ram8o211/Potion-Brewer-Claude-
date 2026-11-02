@@ -19,7 +19,7 @@ export function compose(cv, seed) {
   // some worlds' woods are in their autumn
   const autumn = s('season').next() < 0.3;
   const pal = vary(palette({
-    leaf: [autumn ? '#9a6424' : '#3a7c30', { spread: 0.6 }], leaf2: [autumn ? '#a85422' : '#2a6c40', { spread: 0.55 }], bark: ['#4a3422', { spread: 0.5 }], wood: '#a87a48', rock: '#5e625c',
+    leaf: [autumn ? '#9a6424' : '#3a7c30', { spread: 0.6 }], leaf2: [autumn ? '#a85422' : '#2a6c40', { spread: 0.55 }], bark: ['#4a3422', { spread: 0.5 }], logbark: ['#6e4c2e', { spread: 0.5 }], wood: '#a87a48', rock: '#5e625c',
     moss: ['#4e7a30', { spread: 0.5 }], fern: [autumn ? '#8a6a26' : '#4e8a34', { spread: 0.55 }],
   }), s('pal'), 1);
   const back = '#9ab8a0';
@@ -93,7 +93,7 @@ export function roots(cv, rt, dark, lit) {
  */
 export function litter(cv, s, pal) {
   const lr = s('logs');
-  cv.place(log(lr, lr.int(30, 44), lr.int(4, 6), { moss: 'moss' }), pal, lr.int(90, 290), { sink: 2, foot: [20, 3], range: 200 });
+  cv.place(log(lr, lr.int(36, 48), lr.int(5, 7), { moss: 'moss', bark: pal.logbark ? 'logbark' : 'bark' }), pal, lr.int(90, 290), { sink: 2, foot: [22, 3], range: 200 });
   cv.place(stump(lr, lr.int(9, 12), lr.int(6, 9)), pal, lr.int(60, 320), { foot: [7, 2], range: 120 });
 }
 

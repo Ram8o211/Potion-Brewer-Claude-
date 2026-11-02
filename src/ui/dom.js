@@ -47,6 +47,57 @@ export function clear(el) {
   return el;
 }
 
+/**
+ * Rebuild what is inside `root` without anything jumping: a row of tabs or
+ * a shelf rebuilt by a tap on one of its own buttons keeps where it was
+ * scrolled to (emptied, it would fall back to its start), and so do the
+ * panels scrolling round it. Rows are matched old to new by their classes;
+ * a row of tabs then brings its active tab into view if it is out of it.
+ * @template T @param {HTMLElement} root @param {() => T} fill @returns {T}
+ */
+export function keepScroll(root, fill) {
+  /** @type {[HTMLElement, number, number][]} */
+  const outer = [];
+  for (let p = root.parentElement; p; p = p.parentElement) if (p.scrollTop || p.scrollLeft) outer.push([p, p.scrollLeft, p.scrollTop]);
+  /** @type {Map<string, [number, number][]>} */
+  const rows = new Map();
+  const scrolled = (/** @type {Element} */ e) => e.scrollLeft || e.scrollTop;
+  const keyOf = (/** @type {Element} */ e) => e.tagName + '.' + String(e.className).split(/\s+/).filter((c) => c && c !== 'active' && c !== 'collapsed').sort().join('.');
+  for (const e of [root, ...root.querySelectorAll('*')]) if (scrolled(e)) {
+    const k = keyOf(e);
+    if (!rows.has(k)) rows.set(k, []);
+    /** @type {[number, number][]} */ (rows.get(k)).push([e.scrollLeft, e.scrollTop]);
+  }
+  const out = fill();
+  for (const [p, x, y] of outer) { p.scrollLeft = x; p.scrollTop = y; }
+  if (rows.size) {
+    /** @type {Map<string, number>} */
+    const seen = new Map();
+    for (const e of /** @type {HTMLElement[]} */ ([root, ...root.querySelectorAll('*')])) {
+      const k = keyOf(e), list = rows.get(k);
+      if (!list) continue;
+      const i = seen.get(k) || 0;
+      seen.set(k, i + 1);
+      if (i >= list.length) continue;
+      e.scrollLeft = list[i][0]; e.scrollTop = list[i][1];
+    }
+  }
+  for (const row of /** @type {HTMLElement[]} */ ([...root.querySelectorAll('[role="tablist"]')])) reveal(row);
+  return out;
+}
+
+/**
+ * Scroll a sideways row just enough to show its active item.
+ * @param {HTMLElement} row
+ */
+export function reveal(row) {
+  const a = row.querySelector('.active');
+  if (!a || row.scrollWidth <= row.clientWidth) return;
+  const r = row.getBoundingClientRect(), b = a.getBoundingClientRect();
+  if (b.left < r.left) row.scrollLeft -= r.left - b.left + 8;
+  else if (b.right > r.right) row.scrollLeft += b.right - r.right + 8;
+}
+
 let overlayRoot = null;
 /** @param {HTMLElement} root */
 export function setOverlayRoot(root) {

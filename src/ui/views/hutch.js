@@ -12,7 +12,7 @@
 
 import { readingSteadiness } from '../../game/experiments.js';
 import { kindDef, kindOf, KINDS, KIND_IDS } from '../../game/kinds.js';
-import { h, btn, clear, toast, modal, confirmDialog } from '../dom.js';
+import { h, btn, clear, toast, modal, confirmDialog, keepScroll } from '../dom.js';
 import { icon } from '../icons.js';
 import { audio } from '../../audio/audio.js';
 import { drawRabbit, RABBIT_W, RABBIT_H } from '../../rendering/rabbit.js';
@@ -61,8 +61,12 @@ export class HutchPanel {
     return this.lab.state;
   }
 
-  /** Rebuild the panel from the colony (event-driven, not per frame). */
+  /** Rebuild the panel from the colony (event-driven, not per frame): the enclosure tabs and the page keep where they were scrolled to. */
   render() {
+    keepScroll(this.el, () => this.rebuild());
+  }
+
+  rebuild() {
     const lab = this.lab, st = this.st, c = st.colony;
     const el = clear(this.el);
     const live = livingRabbits(c);

@@ -44,6 +44,8 @@ export class Canvas {
     /** 1 where there is ground (the side view's terrain), liquid, or a cave hollowed out of the ground */
     this.solid = new Uint8Array(N);
     this.liquid = new Uint8Array(N);
+    /** 1 on the surface pixels where grass grows (blades or a tuft standing on them): where an animal may graze */
+    this.grass = new Uint8Array(N);
     this.cave = new Uint8Array(N);
     /** 1 where the cave's roof or walls are painted (cave.js caveFrame) */
     this.rock = new Uint8Array(N);
