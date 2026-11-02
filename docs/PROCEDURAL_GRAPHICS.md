@@ -70,7 +70,23 @@ still limited.
   at a corner share a colour the corner's sub-pixel takes it, so stair
   steps become finer edges and curves rounder, while every pixel stays one
   of the art's own colours — nothing is blurred. ×1 shows the art pixels
-  as they are (nearest-neighbour).
+  as they are (nearest-neighbour). At ×2 and above the overlay also takes
+  a *detail layer* at twice the scene's resolution: the wild animals are
+  drawn there at their own full size (their 48 × 40 frame, every pixel of
+  fur, eye and ear), lit by the light where they stand like the plants (its
+  brightness and a little of its colour; their outline toward the colours
+  of the shadows round them) instead of being ringed in ink and a pale
+  halo. An animal's shadow is cast on the ground only while it touches it.
+* **Leaf clumps** (foliage.js cluster), after the reference sheets: many
+  round clumps, the lower first, each in four clean tones — a dark rim on
+  its lower right where it overlaps the clump below, its body, a lit
+  crescent on its upper left and a bright highlight — with a leaf or two
+  standing out of its top. Trunks: a lit band down the left, a shaded band
+  down the right, short staggered furrows between, little noise.
+* **The enclosures** (pens.js) share the wilds' look: the same grade
+  (contrast curve and colour), rounded stones in their walls and floors,
+  a dark line on the backdrop round every prop, and ground laid in clean
+  flat patches instead of ordered dither.
 * **The flourish** (flourish.js), after the legibility pass: each
   region's own little flora along its dry surfaces — grass tufts,
   daisies, lavender spikes, small ferns and mushrooms, cattails,

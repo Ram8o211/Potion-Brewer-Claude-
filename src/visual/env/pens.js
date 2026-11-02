@@ -18,6 +18,7 @@
 import { Canvas } from './paint.js';
 import { col, silhouette, treeShape } from './side.js';
 import { finish } from './cave.js';
+import { grade } from './grade.js';
 import { cobble } from './stone.js';
 import { fbm1, fbm2, hash2, noise2 } from '../noise.js';
 import { mixPacked } from '../color.js';
@@ -31,7 +32,7 @@ export const GROUND_Y0 = 69;
 const GROUND_Y1 = 86;
 
 /** Version of the pens' painting (names caches only). */
-export const PENS_VERSION = 6;
+export const PENS_VERSION = 7;
 
 /**
  * @typedef {Object} Pen
@@ -218,6 +219,24 @@ function recede(cv) {
     const l = luma(q), t = (mean - l) * 0.12;
     q = mixPacked(q, t > 0 ? 0xffffffff : 0xff000000, Math.min(0.3, Math.abs(t) / 255));
     px[k] = mixPacked(q, amb, 0.12);
+  }
+}
+
+/**
+ * As in the wilds (legible.js): what stands in the pen gets a dark line on
+ * the backdrop round it, deeper under and to the left of it, so a crate, a
+ * trough or a hutch reads apart from the wall or the grass behind it.
+ * @param {any} cv
+ */
+function inkThings(cv) {
+  if (!MARK) return;
+  const W = cv.W, H = cv.H, px = cv.pix.px, T = MARK.thing, src = px.slice(), INK = 0xff100810;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const k = y * W + x;
+    if (T[k]) continue;
+    const l = x > 0 && T[k - 1], r = x < W - 1 && T[k + 1], u = y > 0 && T[k - W], d = y < H - 1 && T[k + W];
+    if (l || u) px[k] = mixPacked(src[k], INK, 0.5);
+    else if (r || d) px[k] = mixPacked(src[k], INK, 0.3);
   }
 }
 
@@ -518,7 +537,7 @@ function plaster(cv, x0, y0, x1, y1, R, seed, o = {}) {
 
 /** Stone laid in courses: big rounded stones in a dark mortar, each lit on top. */
 function stonewall(cv, x0, y0, x1, y1, R, seed, s = 9) {
-  const t = { stones: [R[2], R[3], R[2], R[4], R[3]], mortar: R[0], s, seed, flat: 1.9 };
+  const t = { stones: [R[2], R[3], R[2], R[4], R[3]], mortar: mixPacked(R[0], 0xff000000, 0.5), s: s + 1, seed, flat: 1.6, round: true };
   fill(cv, x0, y0, x1, y1, (x, y) => cobble(x, y, t));
 }
 
@@ -1110,7 +1129,7 @@ function hutchBox_(cv, x0, x1, base, h, seed) {
  */
 function ground(cv, y0, style, seed, o = {}) {
   const R = o.R || (style === 'grass' ? P.grass : style === 'snow' ? P.snow : style === 'soil' ? P.earth : style === 'flags' || style === 'cobble' ? P.flag : P.dirt);
-  const s = { stones: [R[2], R[3], R[2], R[4]], mortar: R[0], s: 6, seed, flat: 1.4 };
+  const s = { stones: [R[2], R[3], R[2], R[4]], mortar: mixPacked(R[0], 0xff000000, 0.5), s: 8, seed, flat: 1.3, round: true };
   const H = cv.H, depth = Math.max(1, H - y0);
   fill(cv, 0, y0, cv.W, H, (x, y) => {
     const d = y - y0, near = d / depth;
@@ -1122,14 +1141,14 @@ function ground(cv, y0, style, seed, o = {}) {
       else {
         // each slab its own tone, worn paler in its middle, pitted, a chip off a corner now and then
         let i = (hash2(slab, row, seed) > 0.6 ? 3 : 2) + (at === 0 ? 1 : 0);
-        if (noise2(x * 0.3, y * 0.6, seed + slab) + bayer(x, y) * 0.25 > 0.85) i++;
-        if (hash2(x, y, seed + 3) > 0.96) i--;
+        if (noise2(x * 0.3, y * 0.6, seed + slab) > 0.72) i++;
+        if (hash2(x, y, seed + 3) > 0.985) i--;
         if ((v % w === 1 || v % w === w - 1) && at === rh - 2 && hash2(slab, row, seed + 5) > 0.5) i = 0;
         c = R[clampI(i, 0, 5)];
       }
     } else {
-      // two tones of the ground stepped by an ordered dither, so its patches shade into each other in pixels, not in blocks
-      const m = fbm2(x * 0.045, y * 0.11, seed, 3) * 2.2 + bayer(x, y) * 0.55 - 0.15;
+      // the ground's tones in clean flat patches (no dither), as the wilds' ground is laid
+      const m = fbm2(x * 0.045, y * 0.11, seed, 3) * 2.2 + 0.12;
       let i = 1 + clampI(Math.floor(m), 0, 2);
       if (style === 'snow') i += 2;
       else if (style === 'soil') { i++; if ((d + Math.round(noise2(x * 0.05, 0, seed) * 3)) % 6 === 0) i--; }
@@ -1139,7 +1158,7 @@ function ground(cv, y0, style, seed, o = {}) {
         if (hash2(col_, Math.floor(y / 4), seed + 8) > 0.35) i = at === 0 ? Math.min(5, i + 2) : at < bh - 1 ? i + 1 : Math.max(0, i - 1);
       }
       const g = hash2(x, y, seed + 2);
-      if (g > 0.985) i += 1; else if (g < 0.015) i -= 1;
+      if (g > 0.993) i += 1; else if (g < 0.007) i -= 1;
       c = R[clampI(i, 0, 5)];
     }
     // in the shade of the back
@@ -1506,9 +1525,13 @@ export function penOf(kind) {
   try {
     out = def.compose({ cv, fg, seed, block });
     recede(cv);
+    inkThings(cv);
   } finally { MARK = null; }
   finish(cv, 0.3);
   fringe(fg, def.fringe || '', seed + 9);
+  // the wilds' grade, so a pen looks like the same world as the wilds: deeper shadows, brighter lights, richer colour
+  grade(cv, 'pen');
+  grade(fg, 'pen');
   /** @type {number[][][]} */
   const ground = [];
   for (let y = GROUND_Y0; y <= GROUND_Y1; y++) {

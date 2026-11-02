@@ -227,7 +227,7 @@ function crowns(cv, layers) {
       if (b < 110) {
         // a dark backdrop: the crown lighter, up to the contrast it needs
         if (t < b + CONTRAST) { f = Math.min(2.3, (b + CONTRAST) / Math.max(12, t)); add = Math.max(0, (b + CONTRAST - t * f)) * 0.6; }
-      } else if (t > b - CONTRAST) f = Math.max(0.62, (b - CONTRAST) / Math.max(1, t));
+      } else if (t > b - CONTRAST) f = Math.max(0.88, (b - CONTRAST) / Math.max(1, t));
       // its edge toward the light, against the backdrop, lit a little more
       if (lit(x, y) && b < 110) { f *= 1.12; add += 6; }
       if (f !== 1 || add) L[k] = saturate(scale(c, f, add), f > 1 ? 1.05 : 1);

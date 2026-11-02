@@ -40,7 +40,6 @@
 // hutch; otherwise it dies, and its body is carried home with a tap, for
 // its remains. Each kind's enclosure holds ten animals, living and dead.
 
-import { punchSprite } from '../../rendering/punch.js';
 import { UpscaledCanvas } from '../../rendering/crisp.js';
 import { h, btn, clear, toast, keepScroll } from '../dom.js';
 import { icon } from '../icons.js';
@@ -61,6 +60,26 @@ import { KINDS } from '../../game/kinds.js';
 
 /** The shadow a plant casts on its ground, by region (the crags' is warm and deep, the fens' cold). */
 const SHADOW = { forest: 'rgba(8,16,10,0.32)', netherwood: 'rgba(6,4,16,0.4)', meadow: 'rgba(24,30,10,0.26)', river: 'rgba(4,14,16,0.34)', quarry: 'rgba(26,18,10,0.3)', moonfen: 'rgba(2,6,18,0.42)', crags: 'rgba(30,6,4,0.4)' };
+
+/**
+ * An animal's sprite lit like the plants beside it (species-sprites.js lit):
+ * its colours multiplied by the light where it stands, and its dark outline
+ * mixed half way toward the colour of the shadows round it, so it belongs
+ * to the painting instead of lying on it like a sticker.
+ * @param {Uint8ClampedArray} d RGBA, modified in place @param {number[]} light [r, g, b, shadow r, g, b] (PlantGround.lightAt)
+ */
+function litSprite(d, light) {
+  const dark = light.length >= 6 ? [light[3] * 255, light[4] * 255, light[5] * 255] : null;
+  // (an animal takes the brightness where it stands and only a little of its colour: a grey coat stays grey in a green wood)
+  const m = (light[0] + light[1] + light[2]) / 3;
+  light = [m + (light[0] - m) * 0.35, m + (light[1] - m) * 0.35, m + (light[2] - m) * 0.35];
+  for (let p = 0; p < d.length; p += 4) {
+    if (d[p + 3] < 8) continue;
+    const r = d[p], g = d[p + 1], b = d[p + 2];
+    if (dark && r + g + b < 120) { d[p] = r * 0.55 + dark[0] * 0.45; d[p + 1] = g * 0.55 + dark[1] * 0.45; d[p + 2] = b * 0.55 + dark[2] * 0.45; continue; }
+    d[p] = r * light[0]; d[p + 1] = g * light[1]; d[p + 2] = b * light[2];
+  }
+}
 
 /** How far (CSS pixels) a press may wander and still be a tap: a finger rolls further than a mouse. */
 const TAP_SLOP = { mouse: 6, pen: 8, touch: 14 };
@@ -935,38 +954,62 @@ export class WildsView {
 
   /**
    * A wild animal as it is set into the scene (cached): drawn as in the hutch
-   * into a frame of its own, at half that size, then made to stand out
-   * (rendering/punch.js) — its pixels read back once per look, state, pose and
-   * facing, never in the frame.
+   * into a frame of its own — at its full size for the scene's detail layer
+   * (shown at twice the scene's resolution, rendering/crisp.js), or at half
+   * that size into the scene itself — and lit by the light where it stands
+   * like the plants are (its colours multiplied by the scene's tint and
+   * brightness round it, its outline taking on the colour of the shadows
+   * there), so it sits in the painting rather than on it: no extra ring of
+   * ink, no halo. Its shadow is not in it: that is cast on the ground only
+   * when it stands there (drawWarren). Its pixels are read back once per
+   * look, state, pose, facing and light, never in the frame.
    * @param {any} look @param {any} snap @param {string|undefined} pose @param {boolean} mirror
    * @param {boolean} [grass] grazing where grass grows (a tuft at its mouth), or on bare ground
+   * @param {number[]|null} [light] the light where it stands (PlantGround.lightAt)
+   * @param {boolean} [full] at its full size (the detail layer) rather than half
    * @returns {HTMLCanvasElement}
    */
-  wildSprite(look, snap, pose, mirror, grass = true) {
-    const key = rabbitSpriteKey(look, snap, pose) + (mirror ? '|m' : '') + (grass ? '' : '|bare');
+  wildSprite(look, snap, pose, mirror, grass = true, light = null, full = false) {
+    const key = rabbitSpriteKey(look, snap, pose) + (mirror ? '|m' : '') + (grass ? '' : '|bare') + (light ? '|' + light.join(',') : '') + (full ? '|f' : '');
     const cache = this.wildSprites || (this.wildSprites = new Map());
     let cv = cache.get(key);
     if (cv) return cv;
-    if (cache.size > 160) cache.clear();
+    if (cache.size > 400) cache.clear();
     if (!this.bunny) { this.bunny = document.createElement('canvas'); this.bunny.width = RABBIT_W; this.bunny.height = RABBIT_H; }
     const b = /** @type {CanvasRenderingContext2D} */ (this.bunny.getContext('2d'));
     b.imageSmoothingEnabled = false;
     b.clearRect(0, 0, RABBIT_W, RABBIT_H);
-    drawRabbit(b, look, snap, 0, 0, { x: 0, y: 0, clear: false, floor: false, hop: false, mirror, pose, flash: false, grass });
-    const hw = RABBIT_W / 2 + 4, hh = RABBIT_H / 2 + 4;
+    drawRabbit(b, look, snap, 0, 0, { x: 0, y: 0, clear: false, floor: false, hop: false, mirror, pose, flash: false, grass, shadow: false });
+    const w = full ? RABBIT_W : RABBIT_W / 2 + 4, h = full ? RABBIT_H : RABBIT_H / 2 + 4;
     // (read back on a scratch canvas kept for reading; the sprite itself is a plain canvas, cheap to draw)
-    if (!this.bunnyHalf) { this.bunnyHalf = document.createElement('canvas'); this.bunnyHalf.width = hw; this.bunnyHalf.height = hh; }
-    const hb = /** @type {CanvasRenderingContext2D} */ (this.bunnyHalf.getContext('2d', { willReadFrequently: true }));
+    if (!this.bunnyRead || this.bunnyRead.width !== w) { this.bunnyRead = document.createElement('canvas'); this.bunnyRead.width = w; this.bunnyRead.height = h; }
+    const hb = /** @type {CanvasRenderingContext2D} */ (this.bunnyRead.getContext('2d', { willReadFrequently: true }));
     hb.imageSmoothingEnabled = false;
-    hb.clearRect(0, 0, hw, hh);
-    hb.drawImage(this.bunny, 0, 0, RABBIT_W, RABBIT_H, 2, 2, RABBIT_W / 2, RABBIT_H / 2);
-    const img = hb.getImageData(0, 0, hw, hh);
-    // (its colours already graded with every other sprite's: only its ink and halo are added here)
-    punchSprite(img.data, hw, hh, { contrast: 1, saturate: 1 });
-    cv = document.createElement('canvas'); cv.width = hw; cv.height = hh;
+    hb.clearRect(0, 0, w, h);
+    if (full) hb.drawImage(this.bunny, 0, 0);
+    else hb.drawImage(this.bunny, 0, 0, RABBIT_W, RABBIT_H, 2, 2, RABBIT_W / 2, RABBIT_H / 2);
+    const img = hb.getImageData(0, 0, w, h);
+    if (light) litSprite(img.data, light);
+    cv = document.createElement('canvas'); cv.width = w; cv.height = h;
     /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')).putImageData(img, 0, 0);
     cache.set(key, cv);
     return cv;
+  }
+
+  /**
+   * The light an animal stands in at (x, y) (PlantGround.lightAt over the box its body covers), cached by 4-pixel cell.
+   * @param {number} x @param {number} y @returns {number[]|null}
+   */
+  animalLight(x, y) {
+    if (!this.ground) return null;
+    const k = `${this.region}:${x >> 2}:${y >> 2}`, c = this.lights || (this.lights = new Map());
+    let l = c.get(k);
+    if (!l) {
+      if (c.size > 2000) c.clear();
+      l = this.ground.lightAt((x & ~3) + 2, (y & ~3) + 2, 'ground', /** @type {any} */ ({ ax: 10, ay: 14, w: 20, h: 14 }));
+      c.set(k, l);
+    }
+    return l;
   }
 
   /**
@@ -984,28 +1027,44 @@ export class WildsView {
   }
 
   /**
+   * The shadow an animal casts where it stands: a soft dark band on the
+   * ground under its body, the light being above and to the left, as wide
+   * as it is long (a lying body's longer), darkest under its middle.
+   * @param {CanvasRenderingContext2D} ctx @param {any} r @param {number} x @param {number} y
+   */
+  castShadow(ctx, r, x, y) {
+    const b = r.box(), hw = Math.max(3, Math.round((b.x1 - b.x0) / 2) - 1), ox = 1;
+    ctx.fillStyle = SHADOW[this.region] || SHADOW.forest;
+    ctx.fillRect(x - hw + ox, y, hw * 2, 1);
+    ctx.fillRect(x - hw + ox + 2, y + 1, Math.max(2, hw * 2 - 4), 1);
+  }
+
+  /**
    * The rabbits, the far ones first: each in its pose (hopping off the
    * ground, grazing, rearing, lying down), facing the way it goes, its
    * wounds red on its coat; then the blood in flight and the clouds of it
    * in the water.
    * @param {CanvasRenderingContext2D} ctx @param {Warren} w
    */
-  drawWarren(ctx, w) {
+  drawWarren(ctx, w, full = false) {
     for (const r of w.rabbits.slice().sort((a, c) => a.y - c.y)) {
       const snap = { ...defaultSnap(), hp: r.band, alive: !r.dead, cause: r.dead ? 'hunted' : null };
       const pose = r.drawPose;
       const x = Math.round(r.x), y = Math.round(r.y);
-      // set into the scene at half size, its tones spread and its outline inked so it stands out
-      // from the scenery: made once for each look, state, pose and facing, then only copied
+      // its shadow on the ground, only while it touches the ground (never under it in the air)
+      if (!r.air && !r.flying) this.castShadow(ctx, r, x, y);
+      // lit by the light where it stands; made once for each look, state, pose, facing and light, then only copied
       // grazing: a tuft of grass at its mouth only where grass grows under it
-      const spr = this.wildSprite(r.look, snap, pose, r.face < 0, pose !== 'eat' || this.grassAt(x + r.face * 8, y));
+      const spr = this.wildSprite(r.look, snap, pose, r.face < 0, pose !== 'eat' || this.grassAt(x + r.face * 8, y), this.animalLight(x, y), full);
       const sx = x - RABBIT_W / 4 - 2, sy = y - 18;
-      ctx.drawImage(spr, sx, sy);
+      // (at full size into the detail layer, its frame half a scene pixel to one of its own)
+      const put = () => full ? ctx.drawImage(spr, sx + 2, sy + 2, RABBIT_W / 2, RABBIT_H / 2) : ctx.drawImage(spr, sx, sy);
+      put();
       if (r.react > 0) {
         // the flash of a blow: the sprite added over itself, brightening it
         ctx.globalCompositeOperation = 'lighter';
         ctx.globalAlpha = Math.min(1, r.react) * 0.5;
-        ctx.drawImage(spr, sx, sy);
+        put();
         ctx.globalAlpha = 1;
         ctx.globalCompositeOperation = 'source-over';
       }
@@ -1240,9 +1299,21 @@ export class WildsView {
     // the plants, the far ones first
     for (const p of this.field.slice().sort((a, b) => a.y - b.y)) if (p.key && !this.fallen[p.id]) this.drawPlant(ctx, p);
     this.drawFallen(ctx, dt);
-    if (warren) this.drawWarren(ctx, warren);
+    // the animals: at the higher resolutions, at their own full size into the detail layer laid over the
+    // scene at twice its resolution (rendering/crisp.js); otherwise at half size into the scene itself
+    if (this.crisp) this.crisp.factor = this.lab.resolution();
+    const dc = warren && this.crisp && this.crisp.ready() ? this.detailContext() : null;
+    if (this.crisp) this.crisp.detail = dc ? dc.canvas : null;
+    if (dc) {
+      dc.setTransform(1, 0, 0, 1, 0, 0);
+      dc.clearRect(0, 0, dc.canvas.width, dc.canvas.height);
+      dc.setTransform(2, 0, 0, 2, 0, 0);
+      this.drawWarren(dc, /** @type {Warren} */ (warren), true);
+    } else if (warren) this.drawWarren(ctx, warren);
     this.drawEffects(ctx, dt);
     this.paintSky(ctx, dt);
+    // (the hour's light falls on the animals in the detail layer too)
+    if (dc) { dc.globalCompositeOperation = 'source-atop'; this.skyTint(dc); dc.globalCompositeOperation = 'source-over'; }
     this.drawDrops(ctx, dt);
     for (const f of this.floaters) {
       f.t += dt;
@@ -1259,7 +1330,7 @@ export class WildsView {
       ctx.globalAlpha = 1;
     }
     this.floaters = this.floaters.filter((f) => f.t < 1.2);
-    if (this.crisp) { this.crisp.factor = this.lab.resolution(); this.crisp.present(); }
+    if (this.crisp) this.crisp.present();
     // live stock and timers, updated in place about once a second
     this._acc = (this._acc || 0) + dt;
     if (this._acc > 1) { this._acc = 0; this.tick(); }
@@ -1497,7 +1568,19 @@ export class WildsView {
   }
 
   /** Light of the hour and the day's weather over the scene. @param {CanvasRenderingContext2D} ctx @param {number} dt */
-  paintSky(ctx, dt) {
+  /** A canvas twice the scene's size for the detail layer (the animals at full size), made once. */
+  detailContext() {
+    if (!this.detailCv) {
+      this.detailCv = document.createElement('canvas');
+      this.detailCv.width = SCENE_W * 2; this.detailCv.height = SCENE_H * 2;
+    }
+    const c = /** @type {CanvasRenderingContext2D} */ (this.detailCv.getContext('2d'));
+    c.imageSmoothingEnabled = false;
+    return c;
+  }
+
+  /** The tint of the hour and of the weather over the whole scene. @param {CanvasRenderingContext2D} ctx */
+  skyTint(ctx) {
     const st = this.lab.state;
     if (this.lab.sandbox) return;
     const part = dayPart(st), weather = weatherOn(st.seed, st.day);
@@ -1506,6 +1589,14 @@ export class WildsView {
       ctx.fillRect(0, 0, SCENE_W, SCENE_H);
       if (part === 'dusk') { ctx.fillStyle = 'rgba(255,140,60,0.12)'; ctx.fillRect(0, Math.round(SCENE_H * 0.35), SCENE_W, Math.round(SCENE_H * 0.2)); }
     }
+    if (weather.id === 'heat') { ctx.fillStyle = 'rgba(255,200,90,0.1)'; ctx.fillRect(0, 0, SCENE_W, SCENE_H); }
+  }
+
+  paintSky(ctx, dt) {
+    const st = this.lab.state;
+    if (this.lab.sandbox) return;
+    const weather = weatherOn(st.seed, st.day);
+    this.skyTint(ctx);
     if (weather.id === 'fog') {
       for (let k = 0; k < 4; k++) {
         ctx.fillStyle = `rgba(225,225,235,${0.12 + 0.04 * k})`;
@@ -1524,9 +1615,6 @@ export class WildsView {
         ctx.fillRect(Math.round(r.x), Math.round(r.y), 1, snow ? 1 : 3);
       }
       if (weather.id === 'storm' && Math.sin(this.time * 0.9) > 0.995) { ctx.fillStyle = 'rgba(255,255,240,0.35)'; ctx.fillRect(0, 0, SCENE_W, SCENE_H); }
-    } else if (weather.id === 'heat') {
-      ctx.fillStyle = 'rgba(255,200,90,0.1)';
-      ctx.fillRect(0, 0, SCENE_W, SCENE_H);
     }
   }
 

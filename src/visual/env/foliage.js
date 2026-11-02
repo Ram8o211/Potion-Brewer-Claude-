@@ -101,36 +101,34 @@ export function cluster(m, rng, x, y, rx, ry, o = {}) {
   const leafy = { shade: /** @type {'flat'} */ ('flat'), noOutline: true, ...sw };
   // the shade at its heart and underside, showing between the clumps
   m.poly(oval(x + rx * 0.04, y + ry * 0.12, rx * 0.9, ry * (o.flat ? 0.68 : 0.84), rnd), mats[0], { ...leafy, step: st(0.2) });
-  // small clumps, many of them, the lower ones first
-  const pr = Math.max(2, Math.min(5, Math.min(rx, ry) * 0.5)), n = Math.max(3, Math.round(((rx * ry) / (pr * pr)) * 1.1 * (o.dense ?? 1)));
+  // round clumps, the lower ones first, each drawn as the reference sheets draw them: a dark rim
+  // on its lower right (where it overlaps the clump below, so every clump reads apart), its body,
+  // a lit crescent on its upper left and a bright highlight there — four clean tones, no speckle
+  const pr = Math.max(2.2, Math.min(4.2, Math.min(rx, ry) * 0.45)), n = Math.max(3, Math.round(((rx * ry) / (pr * pr)) * 1.05 * (o.dense ?? 1)));
   /** @type {[number, number, number][]} */
   const at = [];
   for (let i = 0; i < n; i++) {
     const a = rnd() * Math.PI * 2, q = Math.sqrt(rnd()) * 0.86;
     let py = y + Math.sin(a) * (ry - pr * 0.6) * q - ry * 0.05;
     if (o.flat) py = Math.min(py, y + ry * 0.22);
-    at.push([x + Math.cos(a) * (rx - pr * 0.5) * q, py, pr * (0.75 + rnd() * 0.5)]);
+    at.push([x + Math.cos(a) * (rx - pr * 0.5) * q, py, pr * (0.8 + rnd() * 0.4)]);
   }
   at.sort((p, q) => q[1] - p[1]);
   for (const [px, py, r] of at) {
     // the higher and further left, the more of it in the light
-    const up = (y - py) / ry, left = (x - px) / rx, mat = pick(rnd, mats), b = 0.38 + up * 0.14 + left * 0.06 + (rnd() - 0.5) * 0.08;
+    const up = (y - py) / ry, left = (x - px) / rx, mat = pick(rnd, mats), b = 0.36 + up * 0.14 + left * 0.06 + (rnd() - 0.5) * 0.06;
+    m.poly(puff(px + r * 0.12, py + r * 0.18, r + 0.8, rnd, 0.82), mat, { ...leafy, step: st(b - 0.34) });
     m.poly(puff(px, py, r, rnd), mat, { ...leafy, step: st(b) });
-    // its lit side: small leaves heaped on its upper left, the topmost brightest
-    const k = Math.max(2, Math.round(r * 1.7));
-    for (let j = 0; j < k; j++) {
-      const a = Math.PI * (1.0 + rnd() * 0.75), d = r * (0.15 + rnd() * 0.5);
-      m.poly(puff(px + Math.cos(a) * d, py + Math.sin(a) * d * 0.9, r * (0.32 + rnd() * 0.18), rnd, 0.8), mat, { ...leafy, step: st(b + 0.24) });
+    m.poly(puff(px - r * 0.22, py - r * 0.26, r * 0.66, rnd, 0.8), mat, { ...leafy, step: st(b + 0.2) });
+    m.poly(puff(px - r * 0.36, py - r * 0.42, Math.max(0.9, r * 0.3), rnd, 0.6), mat, { ...leafy, step: st(b + 0.42) });
+    // a leaf or two standing out of its top edge
+    for (let j = 0; j < Math.max(1, Math.round(r * 0.35)); j++) {
+      const a = Math.PI * (1.15 + rnd() * 0.6);
+      m.poly(leaf(rnd, px + Math.cos(a) * r * 0.95, py + Math.sin(a) * r * 0.9, 0.7 + rnd() * 0.4), mat, { ...leafy, step: st(b + 0.3) });
     }
-    for (let j = 0; j < Math.max(1, Math.round(r * 0.6)); j++) {
-      const a = Math.PI * (1.15 + rnd() * 0.5), d = r * (0.35 + rnd() * 0.35);
-      m.poly(leaf(rnd, px + Math.cos(a) * d, py + Math.sin(a) * d * 0.9, 0.7 + rnd() * 0.5), mat, { ...leafy, step: st(b + 0.5) });
-    }
-    // and a leaf or two in shade under it
-    if (rnd() < 0.6) m.dot(px + (rnd() - 0.3) * r * 0.8, py + r * (0.45 + rnd() * 0.3), mat, { step: st(b - 0.16), ...sw });
   }
   // leaf tufts breaking the outline: small leaves round the edge, lit above, dark below
-  const tufts = Math.round((rx + ry) * 1.1);
+  const tufts = Math.round((rx + ry) * 0.6);
   for (let i = 0; i < tufts; i++) {
     const a = rnd() * Math.PI * 2, q = 0.9 + rnd() * 0.14, lx = x + Math.cos(a) * rx * q, ly = y + Math.sin(a) * ry * q * (o.flat && Math.sin(a) > 0 ? 0.64 : 1);
     const lit = -Math.sin(a) * 0.7 - Math.cos(a) * 0.3;
@@ -200,9 +198,17 @@ export function grove(rng, h, tw, o = {}) {
   const spine = bezier([0, 0], [dir * sw1, -th * 0.35], [-dir * sw2, -th * 0.7], [dir * (rnd() - 0.3) * h * 0.12, -th], 14);
   const ws = spine.map((_, i) => Math.max(1.2, tw * (1 - (i / (spine.length - 1)) * 0.55) * (i === 0 ? 1.25 : 1)));
   for (const s of [-1, 1]) m.stroke([[s * tw * 0.2, -tw * 0.7], [s * tw * 0.9, -1], [s * tw * 1.7, 1]], [tw * 0.45, tw * 0.25, 1.2], bark, { tone: s > 0 ? -0.08 : 0 });
-  m.stroke(spine, ws, bark, { tex: 0.8 });
-  m.line(/** @type {any} */ (spine.slice(1, -2).map((q, i) => [q[0] - ws[i + 1] * 0.25, q[1]])), bark, { lum: 0.78 });
+  m.stroke(spine, ws, bark, { tex: 0.35 });
+  // the bark as the reference sheets draw it: a lit band down its left side, a shaded one down its right,
+  // and short dark furrows between them, staggered — clean strokes rather than noise
+  m.line(/** @type {any} */ (spine.slice(1, -2).map((q, i) => [q[0] - ws[i + 1] * 0.28, q[1]])), bark, { lum: 0.8 });
+  m.line(/** @type {any} */ (spine.slice(1, -2).map((q, i) => [q[0] - ws[i + 1] * 0.12, q[1]])), bark, { lum: 0.66 });
   m.line(/** @type {any} */ (spine.slice(2, -3).map((q, i) => [q[0] + ws[i + 2] * 0.3, q[1]])), bark, { lum: 0.14 });
+  for (let i = 1; i < spine.length - 2; i++) {
+    if (ws[i] < 3) continue;
+    const [ax, ay] = spine[i], [bx, by] = spine[i + 1], off = (i % 2 ? 0.05 : 0.18) * ws[i], mid = 0.4 + rnd() * 0.3;
+    m.line([[ax + off, ay], [ax + (bx - ax) * mid + off, ay + (by - ay) * mid]], bark, { lum: 0.24 });
+  }
   /** @type {[number, number, number, number][]} clusters: x, y, rx, ry */
   const tops = [];
   const nb = style === 'sparse' ? 2 + Math.round(rnd()) : style === 'tiers' ? 3 + Math.round(rnd()) : 3 + Math.round(rnd() * 2);
