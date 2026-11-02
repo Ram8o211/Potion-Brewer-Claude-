@@ -288,7 +288,9 @@ computed from the particles that actually run out of the tap. What a
   timberwork, glowing mushrooms, torches and crystals, each region's own
   little flora (tufts, daisies, lavender, ferns, cattails, puffballs,
   glowing caps) along its surfaces and creepers down its rock faces,
-  domed cobbles and pale boulders bedded in the rock, smooth skies and
+  domed cobbles and pale boulders bedded in the rock, lava cracks glowing
+  through the crags, gold ore in the quarry, glowing bells hanging from the
+  caverns' roofs, snow-capped ranges of lit peaks, smooth skies and
   light and, as it runs, particles (pollen, motes, leaves, fireflies,
   wisps, drips, trickling grit, shimmer, embers, ash, steam), plus
   seed-chosen features such as autumn

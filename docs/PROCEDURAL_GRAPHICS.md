@@ -49,6 +49,13 @@ still limited.
   so the ingredients among them still read, and creepers climbing down
   the rock faces of the ledges and pillars with a leaf or a berry. The
   far woods' oaks are crowns of round clumps, each lit on its upper left.
+  Each region has its extras: the Ember Crags' rock seamed with branching
+  lava cracks glowing in a burnt edge, the quarry's rock studded with
+  outlined gold nuggets and quartz, glowing bells hanging on long stems
+  from the Netherwood's and Moonfen's roofs.
+* **Mountains** (side.js `mountains`) are ranges of jagged peaks, each lit
+  on its left face and shaded and creased on its right, the tallest
+  capped with snow whose ragged edge runs down the creases.
 * **Pools seep into the ground.** Water and lava lie in the hollows, their
   bodies darkening smoothly with depth, and filter into the rock rather
   than lying on it: the bed's stones are stained toward the pool's deep

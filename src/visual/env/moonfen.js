@@ -30,9 +30,11 @@ export function compose(cv, seed) {
   const fs = s('frame'), cave = fs.next() < 0.4, o0 = fs.int(70, 150), o1 = o0 + fs.int(140, 200);
   const mx = Math.round((o0 + o1) / 2) + s('moon').int(-30, 30), my = s('moon2').int(30, 44), mr = 12;
   glow(cv, mx, my, 80, [0.45, 0.5, 0.8], 0.4);
-  const ms = s('craters').int(0, 1e9);
+  const ms = s('craters').int(0, 1e9), crescent = s('phase').next() < 0.5;
   for (let y = my - mr; y <= my + mr; y++) for (let x = mx - mr; x <= mx + mr; x++) {
     if (Math.hypot(x - mx, y - my) > mr + 0.3) continue;
+    // in some worlds a crescent: the dark of the moon is the sky behind it
+    if (crescent && Math.hypot(x - mx - mr * 0.55, y - my + mr * 0.3) < mr * 0.95) continue;
     const l = fbm2(x * 0.25, y * 0.25, ms, 2) > 0.58 ? 0.8 : 0.95;
     cv.set(x, y, pack([0.86 * l + 0.1, 0.9 * l + 0.08, l]));
   }
