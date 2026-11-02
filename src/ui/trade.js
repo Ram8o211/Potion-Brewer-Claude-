@@ -2,6 +2,7 @@
 // customer over several rounds, the deal, and the customers who come back
 // the next day — pleased, or with a complaint to settle.
 
+import { patienceFactor } from '../game/orders.js';
 import { h, btn, modal, toast, coins, clear, starsText } from './dom.js';
 import { icon } from './icons.js';
 import { drawPortrait } from '../rendering/portraits.js';
@@ -111,7 +112,7 @@ export function openNegotiation(lab, com, vial, onEnd) {
   const log = h('div', { class: 'haggle-log' });
   const why = h('div', { class: 'haggle-why small' }, h('b', { text: 'What they weigh: ' }),
     ...(n.reasons || []).map((r) => h('span', { class: 'why-chip why-' + r.k + (r.v >= 85 ? ' good' : r.v < 55 ? ' bad' : ''), title: r.text, text: `${WHY[r.k] || r.k} ${r.k === 'temper' ? '' : r.v + '%'} — ${r.text}` })));
-  let ask = Math.round(Math.max(n.offer * 1.25, com.budget * 0.9));
+  let ask = Math.round(Math.max(n.offer * 1.25, com.budget * patienceFactor(com) * 0.9));
   const askEl = h('b', { class: 'ask' });
   const offerEl = h('div', { class: 'offer' });
   const roundsEl = h('div', { class: 'small muted' });

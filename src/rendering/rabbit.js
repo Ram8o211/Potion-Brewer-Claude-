@@ -31,7 +31,7 @@
 import { Rng, hashString } from '../core/rng.js';
 import { PAL, makeCanvas } from './art.js';
 import { RABBIT_MARKS } from '../game/colony.js';
-import { KINDS } from '../game/kinds.js';
+import { KINDS, anatomyOf } from '../game/kinds.js';
 import { punchSprite } from './punch.js';
 
 export const RABBIT_W = 48;
@@ -247,6 +247,12 @@ function heart(P, x, y, c) {
   P(x, y, 1, 1, c); P(x + 2, y, 1, 1, c); P(x, y + 1, 3, 1, c); P(x + 1, y + 2, 1, 1, c);
 }
 /** @param {Pen} P @param {number} x @param {number} y @param {string} c 3×3 plus centred on x,y */
+/** '#rrggbb' with an alpha, as rgba(). @param {string} hex @param {number} al */
+function hexA(hex, al) {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${Math.max(0, Math.min(1, al)).toFixed(3)})`;
+}
+
 function plus(P, x, y, c) {
   P(x - 1, y, 3, 1, c); P(x, y - 1, 1, 3, c);
 }
@@ -264,7 +270,13 @@ export function rabbitLevels(snap) {
 /** Permanent marks [singe, acid burns, frostbite, grey, rune], 0..3. @param {any} snap */
 const scarsOf = (snap) => { const s = (snap && snap.sc) || []; return [lvl(s[0]), lvl(s[1]), lvl(s[2]), lvl(s[3]), lvl(s[4])]; };
 /** @param {any} snap @returns {Set<string>} */
-const traitsOf = (snap) => new Set(snap && Array.isArray(snap.traits) ? snap.traits : []);
+const traitsOf = (snap, look) => {
+  const t = new Set(snap && Array.isArray(snap.traits) ? snap.traits : []);
+  // an exotic creature is born with its features (a sky hare's wings, a moon lynx's third eye)
+  const inn = look && look.kind && KINDS[look.kind] ? KINDS[look.kind].innate : null;
+  if (inn && !(snap && snap.stage === 'kit' && inn.includes('antlers'))) for (const x of inn) t.add(x);
+  return t;
+};
 
 /**
  * The pose a snapshot is drawn in. Death and collapse always win; a caller
@@ -288,7 +300,8 @@ export function rabbitPose(snap, want) {
 /** How fast a rabbit lives (bob, hops, behaviours): slowed by death, poison and age, quickened by vitality or fire. @param {any} snap */
 export function rabbitPace(snap) {
   const L = rabbitLevels(snap);
-  return (L.death >= 2 ? 0.5 : L.death === 1 ? 0.8 : 1) * (L.toxicity === 3 ? 0.6 : 1) * (snap && snap.stage === 'elder' ? 0.7 : 1) * (L.vitality === 3 || L.fire === 3 ? 1.6 : 1);
+  return (L.death >= 2 ? 0.5 : L.death === 1 ? 0.8 : 1) * (L.toxicity === 3 ? 0.6 : 1) * (snap && snap.stage === 'elder' ? 0.7 : 1) * (L.vitality === 3 || L.fire === 3 ? 1.6 : 1)
+    * [1, 1.4, 1.9, 2.6][L.swiftness || 0] * [1, 0.8, 0.5, 0.3][L.dream || 0];
 }
 
 // ------------------------------------------------------------------ anchors (pure geometry)
@@ -344,7 +357,9 @@ const DOVE_WING = 9;
 const LONG_TAIL = new Set(['cat', 'salamander', 'fox', 'rat', 'ermine', 'dove']);
 
 /** @param {any} look @returns {import('../game/kinds.js').AnimalKind} */
-const kindOfLook = (look) => (look && look.kind && Object.prototype.hasOwnProperty.call(KINDS, look.kind) ? look.kind : 'rabbit');
+const kindOfLook = (look) => (look && look.kind && Object.prototype.hasOwnProperty.call(KINDS, look.kind) ? /** @type {any} */ (anatomyOf(look.kind)) : 'rabbit');
+/** The creature's own kind (an exotic one, not its anatomy). @param {any} look */
+const trueKind = (look) => (look && look.kind && Object.prototype.hasOwnProperty.call(KINDS, look.kind) ? look.kind : 'rabbit');
 
 /** Overall scale of each kind against a rabbit (a toad, a rat, a snail are small beasts). */
 const KIND_G = { toad: 0.8, rat: 0.78, snail: 0.82, dove: 0.82, ermine: 0.85 };
@@ -567,7 +582,7 @@ function kindBody(kind, pose, ox, oy, g, hs, bulk, preg) {
  */
 export function rabbitAnchors(look, snap, want) {
   look = look || {};
-  const L = rabbitLevels(snap), tr = traitsOf(snap);
+  const L = rabbitLevels(snap), tr = traitsOf(snap, look);
   const pose = rabbitPose(snap, want);
   const stage = snap && STAGE_G[snap.stage] ? snap.stage : 'adult';
   const kit = stage === 'kit', elder = stage === 'elder';
@@ -867,7 +882,7 @@ function drawBody(P, look, snap, a, low) {
   const fur2 = tintCoat(kit ? mix(coat2, coat, 0.5) : coat2, L, sc, dead, cause);
   /** @type {Paint} */
   const S = {
-    P, a, L, sc, tr: traitsOf(snap), dead, cause, pattern: look.pattern || 'solid', eyeCol: look.eye || 'dark',
+    P, a, L, sc, tr: traitsOf(snap, look), dead, cause, pattern: look.pattern || 'solid', eyeCol: look.eye || 'dark',
     seed: (look.seed >>> 0) || 1, fur, C: shades(fur), C2: shades(fur2),
   };
   if (!low && !dead) auraLayer(S);
@@ -1773,6 +1788,41 @@ function drawFx(P, look, snap, a, t, react, acted, low) {
     const y = a.back.y - 1 - Math.round(mod(tt * 0.35 + i * 0.33, 1) * 12), c = v === 1 ? 'rgba(180,145,238,0.35)' : 'rgba(180,145,238,0.6)';
     P(x, y, 1, 2, c); P(x + (Math.sin(tt * 2 + i) > 0 ? 1 : -1), y - 1, 1, 1, c);
   }
+  v = lv('swiftness');
+  if (v) for (let i = 0, n = cnt('swiftness', [0, 2, 3, 4][v]); i < n; i++) { // speed lines streaming off behind it
+    const y = a.back.y + 2 + ((i * 5 + seed) % Math.max(1, a.feetY - a.back.y - 2));
+    const len = 3 + v + ((i + Math.floor(tt * 6)) % 3), x = bx0 - 2 - len - Math.round(mod(tt * 9 + i * 2, 3));
+    P(x, y, len, 1, i & 1 ? 'rgba(160,250,190,0.75)' : 'rgba(240,255,245,0.7)');
+  }
+  v = lv('levitation');
+  if (v) for (let i = 0, n = cnt('levitation', v + 1); i < n; i++) { // motes of light drifting down under it
+    const age = mod(tt * 0.6 + i / (v + 1), 1);
+    P(bx0 + 3 + ((i * 7 + seed) % Math.max(1, bx1 - bx0 - 6)), a.feetY - 4 + Math.round(age * 7), 1, 1, age < 0.6 ? '#fff6d0' : 'rgba(255,240,190,0.5)');
+  }
+  v = lv('invisibility');
+  if (v) for (let i = 0, n = cnt('invisibility', [0, 1, 3, 5][v]); i < n; i++) { // a shimmer where its outline catches the light
+    if (Math.sin(tt * 3 + i * 1.7) < -0.3) continue;
+    const x = bx0 + ((i * 11 + seed) % Math.max(1, bx1 - bx0)), y = backTop(x) + 1 + (i % 3);
+    P(x, y, 1, 1, i & 1 ? 'rgba(255,255,255,0.8)' : 'rgba(200,220,255,0.7)');
+  }
+  if (v) P(a.head.cx - 1, a.head.cy - a.head.ry - 1, v, 1, 'rgba(230,240,255,0.65)'); // a halo of light over its head, wider as it fades
+  v = lv('storm');
+  if (v) { // sparks jumping between the tips of its fur, a bolt at level 3
+    for (let i = 0, n = cnt('storm', v + 1); i < n; i++) {
+      if (Math.sin(tt * 23 + i * 3.7) < 0.2) continue;
+      const x = bx0 + 2 + ((i * 9 + seed + Math.floor(tt * 7)) % Math.max(1, bx1 - bx0 - 4)), y = backTop(x) - 1;
+      P(x, y - 1, 1, 1, '#e8f4ff'); P(x + 1, y - 2, 1, 1, '#7ab0ff'); P(x - 1, y - 2, 1, 1, '#7ab0ff');
+    }
+    // its fur standing on end: a crackling crest along the back, taller the stronger the storm
+    for (let x = a.back.x0 + 2; x < a.back.x1 - 1; x += 4) P(x, backTop(x) - v, 1, v, v >= 3 ? '#9ac8ff' : 'rgba(150,190,255,0.6)');
+    if (v >= 3 && mod(tt, 1.7) < 0.12) { let x = a.head.cx, y = headTop - 9; for (let k = 0; k < 7; k++) { P(x, y, 1, 1, k & 1 ? '#7ab0ff' : '#ffffff'); y++; x += k & 1 ? 1 : -1; } }
+  }
+  v = lv('dream');
+  if (v) for (let i = 0, n = cnt('dream', [0, 1, 2, 3][v]); i < n; i++) { // little z's floating up from its head
+    const age = mod(tt / 2.2 + i / Math.max(1, v), 1);
+    const x = a.head.cx + 2 + Math.round(age * 6 + Math.sin(tt * 2 + i) * 1.2), y = headTop - 2 - Math.round(age * 9), c = age < 0.7 ? '#f6c8ff' : 'rgba(240,190,255,0.5)';
+    P(x, y, 3, 1, c); P(x + 1, y + 1, 1, 1, c); P(x, y + 2, 3, 1, c);
+  }
 }
 
 /** The dead are still, but for a smoking char, a glint of rime or flies. @param {Pen} P @param {RabbitAnchors} a @param {string|null} cause @param {number} t */
@@ -1818,6 +1868,11 @@ function motion(look, snap, a, t, react, hop) {
   if (L.transformation === 3 && mod(t, 2.5) < 0.12) dx += 1;
   if (L.love === 3) dx += Math.round(Math.sin(t * 0.9) * 0.6);
   if (L.arcana === 3) dy -= 2 + (Math.sin(t * 1.5) > 0 ? 1 : 0);
+  // levitation floats it off the ground, bobbing; a sky hare hovers a little on its own
+  const lev = L.levitation + (look && look.kind === 'skyhare' ? 0.5 : 0);
+  if (lev > 0) dy -= Math.round(lev * 3 + Math.sin(t * 1.7 + (seed % 5)) * (1 + lev * 0.5));
+  if (L.swiftness >= 2 && mod(t, 0.5) < 0.12) dx += 1;
+  if (L.dream >= 2) dy = Math.max(dy, 0);
   return { dx: dx + shake, dy };
 }
 
@@ -1948,6 +2003,21 @@ export function drawRabbit(ctx, look, snap, t, react = 0, opts = {}) {
     shadowP(sx0 + 2, a.feetY + 2, sx1 - sx0 - 4, 1, 'rgba(0,0,0,0.12)');
   }
   const factory = opts.factory || (typeof document !== 'undefined' ? makeCanvas : null);
+  // an exotic creature's own glow, under it
+  const kd = KINDS[trueKind(look)];
+  if (kd && kd.glow && snap.alive !== false && !low && typeof ctx.createRadialGradient === 'function') {
+    const cx = fx + m.dx + (mirror ? RABBIT_W - a.cx : a.cx), cy = fy + dy + Math.round((a.back.y + a.feetY) / 2), R = 16 + 3 * Math.sin(time * 1.6 + (look.seed % 7));
+    const g = ctx.createRadialGradient(cx, cy, 1, cx, cy, R);
+    g.addColorStop(0, hexA(kd.aura || '#ffffff', 0.35 * kd.glow));
+    g.addColorStop(1, hexA(kd.aura || '#ffffff', 0));
+    ctx.fillStyle = g;
+    ctx.fillRect(cx - R, cy - R, 2 * R, 2 * R);
+  }
+  // invisibility (and a veil stoat's own nature) makes it see-through
+  const Lx = rabbitLevels(snap);
+  const ghost = snap.alive === false ? 0 : Math.min(0.8, (kd && kd.ghost ? kd.ghost : 0) + [0, 0.25, 0.5, 0.72][Lx.invisibility || 0]);
+  const alpha0 = ctx.globalAlpha;
+  if (ghost > 0) ctx.globalAlpha = alpha0 * (1 - ghost * (0.85 + 0.15 * Math.sin(time * 2.3 + (look.seed % 9))));
   if (opts.cache !== false && factory) {
     const sprite = spriteFor(look, snap, a.pose, low, factory, grass, opts.k || 1);
     if (mirror) {
@@ -1958,6 +2028,7 @@ export function drawRabbit(ctx, look, snap, t, react = 0, opts = {}) {
       ctx.restore();
     } else ctx.drawImage(sprite, fx + m.dx, fy + dy, RABBIT_W, RABBIT_H);
   } else drawBody(pen(ctx, fx, fy, m.dx, dy, mirror, clip), look, snap, a, low);
+  ctx.globalAlpha = alpha0;
   drawFx(pen(ctx, fx, fy, m.dx, dy, mirror, clip), look, snap, a, time, rx, acted, low);
   if (rx > 0 && opts.flash !== false) {
     ctx.fillStyle = `rgba(255,255,255,${(rx * 0.35).toFixed(3)})`;

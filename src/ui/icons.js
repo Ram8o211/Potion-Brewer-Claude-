@@ -10,6 +10,13 @@ const PAL = {
 
 /** @type {Record<string, string[]>} */
 const ICONS = {
+  wind: ['............', '..kkkkkkk...', '.kgggggggk..', '..kkkkkkgk..', '........kk..', '.kkkkkkkkkk.', 'kggggggggggk', '.kkkkkkkkgk.', '.......kkk..', '...kkkkk....', '..kgggggk...', '...kkkkk....'],
+  feather: ['.........kk.', '........kwlk', '.......kwllk', '......kwllWk', '.....kwllWk.', '....kwllWk..', '...kwllWk...', '..kwllWk....', '..kwlWk.....', '.kNkkk......', 'kNk.........', 'kk..........'],
+  ghost: ['...kkkkkk...', '..kwwwwwwk..', '.kwwwwwwwWk.', '.kwkkwwkkWk.', '.kwkkwwkkWk.', '.kwwwwwwwWk.', '.kwwwkkwwWk.', '.kwwwwwwwWk.', '.kwwwwwwWWk.', '.kwWkwWkwWk.', '.kWk.kk.kWk.', '.kk......kk.'],
+  storm: ['...kkkk.....', '..kWWWWkkk..', '.kWssssWWWk.', 'kWsssssssSWk', 'kssssssssSSk', '.kkkkyykkkk.', '....kyyk....', '...kyyk.....', '..kyyyykk...', '....kyyk....', '....kyk.....', '....kk......'],
+  moon: ['....kkkk....', '..kkppppk...', '.kpppkkk..kk', 'kpppk....kwk', 'kppk.....kk.', 'kppk....kk..', 'kppk...kwk..', 'kpppk..kk...', '.kpppkkk....', '..kkPPPPk...', '....kkkk....', '............'],
+  compass: ['....kkkk....', '..kkyyyykk..', '.kyyyykyyyk.', '.kyyykrkyyk.', 'kyyyykrkyyyk', 'kykrrrwbbbyk', 'kyyyykbkyyYk', 'kyyyykbkyyYk', '.kyyyykyyYk.', '.kyYYYYYYyk.', '..kkyyyykk..', '....kkkk....'],
+  hourglass: ['kkkkkkkkkkkk', '.knnnnnnnnk.', '..kwwwwwwk..', '..kwyyyywk..', '...kwyywk...', '....kwyk....', '....kwyk....', '...kwwywk...', '..kwwyywwk..', '..kwyyyywk..', '.knnnnnnnnk.', 'kkkkkkkkkkkk'],
   purge: ['.....kk..l..', '....kWWk.l..', '....kwck.l..', '...kkwckk...', '..kwcccccK..', '.kwcccwcccK.', 'kwcccwwwcccK', 'kwccccwcccBk', 'kwcccccccBBk', '.kwccccccBk.', '..kkkkkkkk..', '............'],
   knife: ['..........kk', '.........kWk', '........kWsk', '.......kWsk.', '......kWsk..', '.....kWsk...', '....kWsk....', '..kkkkk.....', '..kNnk......', '.kNnk.......', 'kNnk........', 'kkk.........'],
   claw: ['k...k...k...', 'rk..rk..rk..', '.rk..rk..rk.', '.rrk.rrk.rrk', '..rk..rk..rk', '..rrk.rrk.rr', '...rk..rk..r', '...rrk.rrk..', '....rk..rk..', '....Rk..Rk..', '.....k...k..', '............'],

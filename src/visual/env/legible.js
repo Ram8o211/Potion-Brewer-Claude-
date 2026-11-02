@@ -34,7 +34,7 @@ function saturate(c, k) {
 const INK = 0xff100810, WHITE = 0xffffffff, BLACK = 0xff000000, BOULDER = 0xff8c949c;
 
 /** Regions whose ground is held together by roots. */
-const ROOTED = new Set(['forest', 'meadow', 'river', 'netherwood', 'moonfen']);
+const ROOTED = new Set(['forest', 'meadow', 'river', 'netherwood', 'moonfen', 'skydrift', 'veilmist', 'dreamspire']);
 
 /**
  * Make a composed region read: see the head of the file.

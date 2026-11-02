@@ -21,7 +21,7 @@
 import { Rng, hashString } from '../core/rng.js';
 import { PAL, makeCanvas } from './art.js';
 import { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } from './rabbit.js';
-import { kindOf } from '../game/kinds.js';
+import { kindOf, anatomyOf } from '../game/kinds.js';
 import { penOf } from '../visual/env/pens.js';
 import { drawPenAnim } from './pen-anim.js';
 
@@ -442,7 +442,7 @@ export class HutchScene {
     if (a.act === 'walk' || a.act === 'run') {
       // a cat or a salamander walks to its goal, striding as it goes
       const dx = a.gx - a.x, dy = a.gy - a.y, d = Math.hypot(dx, dy);
-      const v = (WALKERS[kindOf(a.look)] || 10) * (a.act === 'run' ? 3 : 1) * (a.snap.stage === 'kit' ? 0.7 : 1);
+      const v = (WALKERS[anatomyOf(kindOf(a.look))] || 10) * (a.act === 'run' ? 3 : 1) * (a.snap.stage === 'kit' ? 0.7 : 1);
       const s = Math.min(d, v * dt * rabbitPace(snap));
       if (d > 0.5) {
         // round whatever stands in the way (a pond, a log, a den): slide along it, or give up the walk
@@ -455,7 +455,7 @@ export class HutchScene {
       }
       a.stride = (a.stride || 0) + s;
       // four beats to a stride, each a step's length on (a long-legged kind's steps longer)
-      const beatLen = ({ deer: 2.6, cat: 2.2, fox: 2.2, dove: 1.2, snail: 1.5 })[kindOf(a.look)] || 1.6;
+      const beatLen = ({ deer: 2.6, cat: 2.2, fox: 2.2, dove: 1.2, snail: 1.5 })[anatomyOf(kindOf(a.look))] || 1.6;
       a.pose = /** @type {any} */ (`walk${(Math.floor(a.stride / beatLen) % 4) + 1}`);
       if (d <= 0.5 || a.at > 12) {
         a.x = a.gx; a.y = a.gy;
@@ -502,7 +502,7 @@ export class HutchScene {
     if ((L.fire === 3 || L.vitality === 3) && r.chance(0.4)) return this._hopTo(a, this._goal(a, r, 60), 4, true);
     if (L.strength >= 2 && r.chance(0.3)) return this._begin(a, 'flex', r.range(1.2, 2));
     if ((L.love >= 2 || L.vitality >= 2) && a.snap.hp === 0 && r.chance(0.25)) return this._begin(a, 'flop', r.range(2.5, 4.5));
-    const kind = kindOf(a.look);
+    const kind = anatomyOf(kindOf(a.look));
     // a cat sits about and grooms, a toad mostly squats still, a salamander basks
     const w = { cat: [3, 2.5, 2.5, 1.2, 1], toad: [6, 2, 0.5, 1.2, 0.8], salamander: [5, 3, 0.3, 1, 1], snail: [6, 3, 0.2, 1.5, 0.5], rat: [1.5, 4, 1, 1.5, 3], dove: [2, 3, 1.5, 3, 1], deer: [3, 2, 1, 3, 1], badger: [3, 2.5, 0.8, 2, 2], fox: [3, 3, 2, 1, 1.5], ermine: [2, 4, 1.5, 1, 2.5] }[kind] || [3, 3, 1.5, 1.2, 1.5];
     const pick = r.weighted(['idle', 'hop', 'groom', 'eat', 'sniff'], w);
@@ -522,7 +522,7 @@ export class HutchScene {
     a.act = act; a.at = 0; a.dur = dur; a.hops = 0;
     a.pose = act === 'loaf' ? 'loaf' : act === 'flex' ? 'rear' : act === 'flop' ? 'flop' : act === 'eat' ? 'eat' : null;
     // a cat grooms sitting up
-    if (act === 'groom' && kindOf(a.look) === 'cat') a.pose = 'rear';
+    if (act === 'groom' && anatomyOf(kindOf(a.look)) === 'cat') a.pose = 'rear';
     if (act === 'eat') a.face = -1;
   }
 
@@ -560,7 +560,7 @@ export class HutchScene {
   /** Start a run of hops toward a goal. @param {Actor} a @param {{x:number, y:number}} goal @param {number} n @param {boolean} zoom */
   _hopTo(a, goal, n, zoom) {
     const kit = a.snap.stage === 'kit';
-    if (WALKERS[kindOf(a.look)]) {
+    if (WALKERS[anatomyOf(kindOf(a.look))]) {
       // walkers stroll (or, zooming, run) the whole way instead of hopping
       a.act = zoom ? 'run' : 'walk'; a.at = 0; a.hops = 0;
       a.gx = goal.x; a.gy = goal.y;
@@ -570,13 +570,13 @@ export class HutchScene {
       }
       return;
     }
-    const toad = kindOf(a.look) === 'toad';
+    const toad = anatomyOf(kindOf(a.look)) === 'toad';
     a.act = zoom ? 'zoom' : 'hop'; a.pose = null;
     a.gx = goal.x; a.gy = goal.y; a.hops = n;
     a.hopT = zoom ? 0.17 : 0.34; a.hopH = kit ? 2 : zoom ? 5 : 4;
     a.step = (kit ? 5 : 8) * (zoom ? 1.7 : 1);
     if (toad) { a.hopH = Math.max(2, a.hopH - 1); a.step *= 0.6; a.hopT *= 0.85; } // a toad's hops are short and low
-    else if (kindOf(a.look) === 'ermine') { a.hopH = Math.max(2, a.hopH - 1); a.hopT *= 0.7; } // an ermine's bounds are quick and low
+    else if (anatomyOf(kindOf(a.look)) === 'ermine') { a.hopH = Math.max(2, a.hopH - 1); a.hopT *= 0.7; } // an ermine's bounds are quick and low
     if (!this._nextHop(a)) this._begin(a, 'idle', 0.6);
   }
 

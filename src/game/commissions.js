@@ -73,6 +73,7 @@ import { REQUESTS, TIER_TARGET, PURITY_LIMIT, requestById } from './requests.js'
  * @property {(id:string)=>boolean} [buyable] may it be bought at the market now
  * @property {(id:string)=>number} [stock]    ml on the shelf
  * @property {Set<string>} [avoid]      ingredients the plan must do without
+ * @property {Set<string>} [effects]    effects customers may ask for (the dominant effects of the opened biomes)
  */
 
 /**
@@ -570,10 +571,12 @@ function planError(pred, wanted, wIdx, exclude) {
 // ------------------------------------------------------------------ generation
 
 /** Requests a customer may bring at a tier (recently sold ones only when there is nothing else). */
-function requestsFor(arch, tier, event, recent = []) {
-  let list = REQUESTS.filter((r) => r.minTier <= tier && r.who.includes(arch.key));
-  const bonus = { winter: ['warming', 'hearth', 'forgefire'], plague: ['healing', 'recovery', 'fevercure'], conclave: ['insight', 'meditation', 'shapeshift'], festival: ['love', 'blessing', 'hearth'] }[event];
-  if (bonus) list = list.concat(REQUESTS.filter((r) => bonus.includes(r.id) && r.minTier <= tier));
+function requestsFor(arch, tier, event, recent = [], effects = null, single = false) {
+  // only the effects of the biomes the shop has opened (its maps), single effects while it is new
+  const ok = (r) => r.minTier <= tier && (!effects || r.fx.every((f) => effects.has(f.key))) && (!single || r.fx.length === 1);
+  let list = REQUESTS.filter((r) => ok(r) && r.who.includes(arch.key));
+  const bonus = { winter: ['warming', 'hearth', 'forgefire'], plague: ['healing', 'recovery', 'healingsleep'], conclave: ['insight', 'seersleep', 'shapeshift'], festival: ['love', 'blessing', 'hearth'] }[event];
+  if (bonus) list = list.concat(REQUESTS.filter((r) => bonus.includes(r.id) && ok(r)));
   const fresh = list.filter((r) => !recent.slice(0, 4).some((s) => s && s.split('+')[0] === r.id));
   return fresh.length ? fresh : list;
 }
@@ -680,20 +683,22 @@ export function migrateTechniques(ids) {
  * Generate a commission.
  * @param {CommissionContext} ctx
  * @param {Rng} rng
- * @param {{tier?: number, archetype?: string, request?: string, contract?: boolean, techniques?: string[], simple?: boolean, patron?: any, recent?: string[]}} [opts]
+ * @param {{tier?: number, archetype?: string, request?: string, contract?: boolean, techniques?: string[], simple?: boolean, patron?: any, recent?: string[], single?: boolean}} [opts]
  */
 export function generateCommission(ctx, rng, opts = {}) {
   const tier = Math.max(0, Math.min(4, opts.tier ?? Math.min(4, ctx.rank)));
-  const archetypes = ARCHETYPES.filter((a) => a.minRank <= ctx.rank);
+  // (only customers who could ask for something the shop's lands provide)
+  const archetypes = ARCHETYPES.filter((a) => a.minRank <= ctx.rank && (opts.request || opts.simple || requestsFor(a, tier, ctx.event, [], ctx.effects || null, !!opts.single).length));
   const archKey = opts.archetype || (opts.patron && opts.patron.archetype);
+  if (!archKey && !archetypes.length) return null;
   for (let attempt = 0; attempt < (opts.simple ? 12 : 30); attempt++) {
     const arch = archKey ? archetypeOf(archKey) : rng.pick(archetypes);
     const bottleMl = [100, 150, 200, 250, 300][tier] * (opts.contract ? 1.5 : 1);
     const bottleN = Math.round(bottleMl / SIM.ML_PER_PARTICLE);
     const vessel = { pot: 310, copper: 440, grand: 600, small: 1400, medium: 2000, large: 2700 }[ctx.cap.size] || 310;
     const totalN = Math.min(Math.round(bottleN * rng.range(1.7, 2.3)), Math.floor(vessel * 0.45));
-    let requests = opts.request ? [requestById(opts.request)].filter(Boolean) : requestsFor(arch, tier, ctx.event, opts.recent);
-    if (opts.simple) requests = REQUESTS.filter((r) => r.minTier === 0 && r.fx.length === 1);
+    let requests = opts.request ? [requestById(opts.request)].filter(Boolean) : requestsFor(arch, tier, ctx.event, opts.recent, ctx.effects || null, !!opts.single);
+    if (opts.simple) requests = REQUESTS.filter((r) => r.minTier === 0 && r.fx.length === 1 && (!ctx.effects || r.fx.every((f) => ctx.effects.has(f.key))));
     if (!requests.length) continue;
     const com = effectCommission(rng.pick(requests), arch, tier, ctx, rng, totalN, bottleMl, bottleN, opts);
     if (com) return com;
@@ -836,12 +841,12 @@ function finalize({ style, request, title, arch, tier, ctx, rng, plan, pred, req
   return com;
 }
 
-/** The two herbs of the tutorial's healing tonic: a healer that leaves frost, and a warming one that cancels it. */
-export const TUTORIAL_HERBS = { healer: 'wild-silverleaf', warmer: 'wild-sunthistle' };
+/** The two herbs of the tutorial's healing tonic, both from the Whisperwood: a healer that leaves frost, and a warming healer that cancels it. */
+export const TUTORIAL_HERBS = { healer: 'wild-silverleaf', warmer: 'wild-emberbark' };
 
 /**
  * Fixed, gentle first commission used by the tutorial: a warm healing tonic
- * of Silverleaf (healing with a frosty bite) balanced by Sunthistle (whose
+ * of Silverleaf (healing with a frosty bite) balanced by Emberbark (whose
  * fire cancels the frost and adds a little more healing).
  */
 export function tutorialCommission(ctx, rng) {

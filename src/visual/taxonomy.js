@@ -57,6 +57,11 @@ export const HABITATS = {
   quarry: { wet: 0.25, retain: 1.5, light: [1, 0.92, 0.8], lightK: 0.08, sat: 0.85, dark: 0, wear: 0.6, crystal: 0.6, lush: 0.3, leaf: [0.36, 0.45, 0.22], rock: [0.55, 0.5, 0.45], soil: [0.5, 0.4, 0.28] },
   moonfen: { wet: 0.85, retain: 8, light: [0.62, 0.75, 1], lightK: 0.2, sat: 0.75, dark: -0.08, wear: 0.8, crystal: 0.7, lush: 0.55, leaf: [0.14, 0.33, 0.27], rock: [0.3, 0.32, 0.38], soil: [0.15, 0.17, 0.14] },
   crags: { wet: 0.18, retain: 1, light: [1, 0.6, 0.35], lightK: 0.18, sat: 0.95, dark: -0.05, wear: 0.4, crystal: 0.8, lush: 0.25, leaf: [0.32, 0.33, 0.16], rock: [0.2, 0.17, 0.2], soil: [0.22, 0.14, 0.12] },
+  skydrift: { wet: 0.42, retain: 2, light: [1, 0.97, 0.86], lightK: 0.1, sat: 1.08, dark: 0.04, wear: 0.3, crystal: 0.4, lush: 0.65, leaf: [0.3, 0.58, 0.3], rock: [0.62, 0.6, 0.56], soil: [0.46, 0.34, 0.22] },
+  veilmist: { wet: 0.7, retain: 6, light: [0.86, 0.92, 1], lightK: 0.16, sat: 0.62, dark: 0.06, wear: 0.5, crystal: 0.5, lush: 0.6, leaf: [0.46, 0.6, 0.6], rock: [0.62, 0.66, 0.72], soil: [0.4, 0.42, 0.46] },
+  reef: { wet: 0.9, retain: 8, light: [0.72, 1, 0.95], lightK: 0.16, sat: 1.2, dark: 0, wear: 0.6, crystal: 0.6, lush: 0.7, leaf: [0.18, 0.6, 0.55], rock: [0.82, 0.72, 0.62], soil: [0.84, 0.76, 0.56] },
+  stormspire: { wet: 0.6, retain: 3, light: [0.72, 0.82, 1], lightK: 0.2, sat: 0.82, dark: -0.06, wear: 0.7, crystal: 0.8, lush: 0.35, leaf: [0.22, 0.36, 0.34], rock: [0.3, 0.32, 0.4], soil: [0.24, 0.24, 0.3] },
+  dreamspire: { wet: 0.55, retain: 4, light: [1, 0.82, 0.96], lightK: 0.2, sat: 1.1, dark: 0.02, wear: 0.4, crystal: 0.5, lush: 0.7, leaf: [0.4, 0.36, 0.62], rock: [0.5, 0.44, 0.6], soil: [0.42, 0.32, 0.46] },
 };
 
 /** @param {string} region */
@@ -74,4 +79,9 @@ export const EFFECT_TINT = {
   acidity: { h: 115, c: 0.17, L: 0.82 },
   toxicity: { h: 125, c: 0.16, L: 0.62 },
   death: { h: 300, c: 0.03, L: 0.35 },
+  swiftness: { h: 150, c: 0.15, L: 0.75 },
+  levitation: { h: 90, c: 0.08, L: 0.92 },
+  invisibility: { h: 260, c: 0.02, L: 0.9 },
+  storm: { h: 260, c: 0.18, L: 0.6 },
+  dream: { h: 320, c: 0.17, L: 0.7 },
 };

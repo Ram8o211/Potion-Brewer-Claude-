@@ -81,15 +81,15 @@ test('extraction: a whole root does nothing; ground and stirred it releases its 
   pour(whole, R.water, 36);
   pour(whole, 'wild-ironroot', 8);
   run(whole, 3);
-  const wholeStr = fx(whole).effects[V.strength];
+  const wholeStr = fx(whole).effects[V.vitality];
   const ground = sim();
   pour(ground, R.water, 36);
   pour(ground, 'wild-ironroot', 8, { ground: true });
   run(ground, 1);
-  const unstirred = fx(ground).effects[V.strength];
+  const unstirred = fx(ground).effects[V.vitality];
   stir(ground, 8);
   run(ground, 2);
-  const stirred = fx(ground).effects[V.strength];
+  const stirred = fx(ground).effects[V.vitality];
   ground.furnace.setting = 0.45;
   run(ground, 25);
   stir(ground, 6);
@@ -97,7 +97,7 @@ test('extraction: a whole root does nothing; ground and stirred it releases its 
   run(ground, 30);
   ground.furnace.setting = 0;
   run(ground, 3);
-  const steeped = fx(ground).effects[V.strength];
+  const steeped = fx(ground).effects[V.vitality];
   const steepId = 'wild-p-steeped-ironroot';
   const slot = ground.species.slotOf.get(steepId);
   assert.ok(slot !== undefined, 'the steeping reaction produced a liquid extract');
@@ -109,7 +109,7 @@ test('extraction: a whole root does nothing; ground and stirred it releases its 
 test('effects interact only where the substances meet: fire and frost layers cancel once stirred together', () => {
   const s = sim([]);
   pour(s, R.essenceB, 24, { x: -0.8 }); // fire essence
-  pour(s, 'wild-frostcap', 6, { ground: true, x: 0.8 });
+  pour(s, 'wild-saltpetre', 24, { x: 0.8 });
   pour(s, R.water, 20, { x: 0.8 });
   run(s, 2);
   // effect per particle averaged, before mixing

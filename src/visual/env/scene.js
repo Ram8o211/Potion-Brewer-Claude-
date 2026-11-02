@@ -17,11 +17,16 @@ import * as quarry from './quarry.js';
 import * as moonfen from './moonfen.js';
 import * as crags from './crags.js';
 import * as netherwood from './netherwood.js';
+import * as skydrift from './skydrift.js';
+import * as veilmist from './veilmist.js';
+import * as reef from './reef.js';
+import * as stormspire from './stormspire.js';
+import * as dreamspire from './dreamspire.js';
 
 /** Version of the environment generator (scenes are not saved; this only names caches). */
-export const ENV_VERSION = 12;
+export const ENV_VERSION = 13;
 
-const COMPOSERS = { meadow, forest, netherwood, river, quarry, moonfen, crags };
+const COMPOSERS = { meadow, forest, netherwood, river, quarry, moonfen, crags, skydrift, veilmist, reef, stormspire, dreamspire };
 
 /**
  * @typedef {Object} Scene

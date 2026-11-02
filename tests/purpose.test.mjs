@@ -83,7 +83,9 @@ test('cold steeps are only planned where the equipment can hold them, never froz
       st.reputation = RANKS[1].rep;
       st.coins = 300;
       st.equipment.push('kit', ...eq);
-      const com = generateCommission(st.commissionContext(), new Rng(`c${k}`), { tier: 1, request: 'cooling' });
+      // Willow Bank's Frostcap steeps only in ice-cold water: swiftness orders there may be planned cold
+      st.biomes = ['forest', 'river'];
+      const com = generateCommission(st.commissionContext(), new Rng(`c${k}`), { tier: 1, request: 'fleetfoot' });
       const s = com && com.reference.steep;
       if (!s || s.T >= 20) continue;
       cold++;
@@ -92,7 +94,7 @@ test('cold steeps are only planned where the equipment can hold them, never froz
       if (rx) assert.ok(s.T <= rx.maxT - 3, 'well inside its window');
     }
   }
-  assert.ok(cold > 0, 'cooling orders are planned with cold steeps');
+  assert.ok(cold > 0, 'some orders are planned with cold steeps');
 });
 
 /** A v5 save holding every retired item, an order with retired requirements and a distilling recipe. */

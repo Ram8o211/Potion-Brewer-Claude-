@@ -53,6 +53,33 @@ const FLORA = {
     creep: { cols: ['#14322a', '#1e4a3c', '#2e6a52'], leaf: '#4a9a78', berry: '#8ff0ff', rate: 0.4 },
     glow: [0.45, 0.8, 1],
   },
+  skydrift: {
+    kinds: [['tuft', 4], ['daisy', 3], ['bloom', 2], ['fern', 1]], rate: 0.28,
+    cols: { blade: ['#3a8a2a', '#5aaa3a', '#7ac84a', '#a8e46a'], petal: ['#ffffff', '#fff4c0', '#d8f0ff'], eye: ['#ffd040'], bloom: ['#ffe066', '#a8d8ff', '#ffffff', '#ffb0d0'] },
+    creep: { cols: ['#2e6a22', '#4a9a32', '#6ab83e'], leaf: '#9ade5a', berry: '#ffe066', rate: 0.4 },
+  },
+  veilmist: {
+    kinds: [['tuft', 3], ['daisy', 2], ['puff', 1.6], ['shard', 1], ['fern', 1]], rate: 0.22,
+    cols: { blade: ['#6a9084', '#88b0a0', '#aed0c0', '#d4ece0'], petal: ['#ffffff', '#eef4ff'], eye: ['#d0e0f0'], puff: ['#e8f0f8', '#ffffff'], shard: ['#a8c0d8', '#d8f0ff', '#ffffff'] },
+    creep: { cols: ['#6a9084', '#88b0a0', '#aed0c0'], leaf: '#d4ece0', berry: '#ffffff', rate: 0.35 },
+    glow: [0.85, 0.95, 1],
+  },
+  reef: {
+    kinds: [['tuft', 2], ['glowcap', 1.2], ['shard', 1], ['bloom', 1.4]], rate: 0.16,
+    cols: { blade: ['#14584a', '#1e7a5e', '#2a9a7a', '#4ac898'], bloom: ['#ff9ac0', '#fff08a', '#8af0e0', '#c8a8ff'], cap: ['#2a8a8a', '#6af0e0', '#e0fffa'], shard: ['#a87ac8', '#e0c8f4', '#ffffff'] },
+    glow: [0.4, 1, 0.9],
+  },
+  stormspire: {
+    kinds: [['tuft', 3], ['shard', 1.2], ['cap', 0.5]], rate: 0.1,
+    cols: { blade: ['#1e3232', '#2a4444', '#3a5a5a', '#4a7070'], shard: ['#3a6ad8', '#9ac8ff', '#ffffff'], cap: ['#3a4a6a', '#6a8ab0', '#c0d8ff'] },
+    glow: [0.5, 0.7, 1],
+  },
+  dreamspire: {
+    kinds: [['tuft', 3], ['daisy', 2], ['bloom', 2.4], ['glowcap', 1.2], ['puff', 1]], rate: 0.26,
+    cols: { blade: ['#8456a0', '#a870c0', '#d090e0', '#f0b8f0'], petal: ['#ffffff', '#ffe0f4'], eye: ['#fff0a0'], bloom: ['#ff8ad0', '#a0f0ff', '#fff0a0', '#c8a8ff'], cap: ['#c050a0', '#ff8ad0', '#ffe0f4'], puff: ['#ffe0ff', '#ffffff'] },
+    creep: { cols: ['#7a4e8a', '#a870c0', '#d090e0'], leaf: '#f0b8f0', berry: '#fff0a0', rate: 0.45 },
+    glow: [1, 0.55, 0.85],
+  },
   crags: {
     kinds: [['tuft', 4], ['bloom', 1.4], ['cap', 0.6]], rate: 0.12,
     cols: { blade: ['#3a3418', '#5a5a26', '#7a7a34', '#a09a48'], bloom: ['#ff5a2a', '#ff8a3a', '#ffd060'], cap: ['#6a2a14', '#c04a1e', '#ffb060'] },

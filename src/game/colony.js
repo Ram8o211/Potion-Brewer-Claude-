@@ -45,8 +45,8 @@ import { EFFECT_INDEX } from '../alchemy/effects.js';
 import { Rng, hashString } from '../core/rng.js';
 import { kindOf, biasSpread, kindLook, RABBIT_SPREAD } from './kinds.js';
 
-/** Visible / exposure channels: the ten effects with acidity split by sign. */
-export const RABBIT_MARKS = ['vitality', 'strength', 'love', 'arcana', 'transformation', 'fire', 'frost', 'acid', 'alkali', 'toxicity', 'death'];
+/** Visible / exposure channels: the fifteen effects with acidity split by sign (the five added with the exotic biomes last, so older snapshots keep their order). */
+export const RABBIT_MARKS = ['vitality', 'strength', 'love', 'arcana', 'transformation', 'fire', 'frost', 'acid', 'alkali', 'toxicity', 'death', 'swiftness', 'levitation', 'invisibility', 'storm', 'dream'];
 /** @type {Record<string, number>} */
 export const MARK_INDEX = Object.fromEntries(RABBIT_MARKS.map((k, i) => [k, i]));
 
@@ -71,7 +71,7 @@ export const MARK_MAX = 100;
 /** Channels whose degeneration eats the rabbit's health on the way up. */
 export const LETHAL = ['toxicity', 'death', 'acid', 'alkali', 'fire', 'frost'];
 /** Channels that make a rabbit attack the others once past its own aggression threshold (aggroAt). */
-export const AGGRO = ['vitality', 'strength', 'arcana', 'transformation'];
+export const AGGRO = ['vitality', 'strength', 'arcana', 'transformation', 'storm'];
 /** @deprecated the old name of AGGRO */
 export const FERAL = AGGRO;
 /** The usual aggression threshold (each rabbit has its own, per channel, independent of degenAt). */
@@ -362,6 +362,8 @@ export function decodeSnap(str) {
   const stage = CH_STAGE[p[0][0]];
   const lv = p[1].split('').map(Number);
   const sc = p[2].split('').map(Number);
+  // an older replay has fewer channels: the new ones were not there yet
+  while (lv.length < RABBIT_MARKS.length && lv.length >= 11) lv.push(0);
   if (!stage || lv.length !== RABBIT_MARKS.length || lv.some((v) => !(v >= 0 && v <= 3)) || sc.some((v) => !(v >= 0 && v <= 3))) return defaultSnap();
   while (sc.length < 5) sc.push(0);
   const hp = Number(p[0][1]);
@@ -600,7 +602,7 @@ const STAGE_SENS = { kit: 1.6, young: 1.25, adult: 1, elder: 1.15 };
 /** Reading uncertainty grows for small and frail subjects. */
 export const STAGE_ERR = { kit: 1.4, young: 1.15, adult: 1, elder: 1.1 };
 /** Daily fading of each transient mark. */
-export const MARK_DECAY = { vitality: 0.5, strength: 0.8, love: 0.6, arcana: 0.7, transformation: 0.75, fire: 0.4, frost: 0.4, acid: 0.7, alkali: 0.6, toxicity: 0.75, death: 0.85 };
+export const MARK_DECAY = { vitality: 0.5, strength: 0.8, love: 0.6, arcana: 0.7, transformation: 0.75, fire: 0.4, frost: 0.4, acid: 0.7, alkali: 0.6, toxicity: 0.75, death: 0.85, swiftness: 0.4, levitation: 0.5, invisibility: 0.5, storm: 0.45, dream: 0.55 };
 /** What a trait favours: weights by the other effects in the same dose. */
 const TRAIT_AFF = {
   ears2: { love: 1 }, horns: { fire: 1, strength: 1 }, antlers: { vitality: 1, arcana: 0.5 }, unihorn: { vitality: 0.8, arcana: 1 },
@@ -613,7 +615,7 @@ const TRAIT_LINES = {
   'tail-lizard': 'Its tail stretches into a scaly lizard tail!', 'tail-plume': 'Its tail blooms into a long feathery plume!', giant: 'It swells to twice its size!',
   tiny: 'It shrinks to the size of a kitten!', eye3: 'A third eye opens on its forehead!', wings: 'Little membrane wings unfold from its shoulders!',
 };
-const CAUSE_OF = { toxicity: 'poison', death: 'death', fire: 'fire', frost: 'frost', acid: 'acid', alkali: 'alkali', transformation: 'change', arcana: 'arcana', vitality: 'growth', strength: 'strain', love: 'love' };
+const CAUSE_OF = { toxicity: 'poison', death: 'death', fire: 'fire', frost: 'frost', acid: 'acid', alkali: 'alkali', transformation: 'change', arcana: 'arcana', vitality: 'growth', strength: 'strain', love: 'love', swiftness: 'exhaustion', levitation: 'a fall', invisibility: 'fading', storm: 'lightning', dream: 'endless sleep' };
 /** What the player sees when a channel goes out of control. */
 const DEGEN_LINES = {
   toxicity: 'The poison has taken hold: it is spreading through its blood on its own!',
@@ -627,6 +629,11 @@ const DEGEN_LINES = {
   love: 'Its passion will not cool: it chases the others to mate, faster and faster!',
   arcana: 'The magic in it runs wild and keeps building!',
   transformation: 'The change will not stop — it keeps twisting into something new!',
+  swiftness: 'It cannot stop running — round and round, faster and faster!',
+  levitation: 'It drifts higher and higher and cannot come down!',
+  invisibility: 'It is fading away — you can barely see it any more!',
+  storm: 'Lightning builds in it and will not discharge!',
+  dream: 'It sinks into a sleep it cannot wake from!',
 };
 /** What the player sees when an effect makes a rabbit turn on the others. */
 const AGGRO_LINES = {
@@ -634,6 +641,7 @@ const AGGRO_LINES = {
   strength: 'Swollen with strength, it starts shoving and biting the others!',
   arcana: 'Sparks lash out of it at the other rabbits!',
   transformation: 'Something feral wakes in it — it goes for the others!',
+  storm: 'Sparks leap from it and strike the others!',
 };
 
 /** Exclusive partners of a trait. @param {string} t */
@@ -688,6 +696,8 @@ export function rabbitResponse(before, effects, ml, o = {}) {
     vitality: Math.max(0, e('vitality')), strength: Math.max(0, e('strength')), love: Math.max(0, e('love')), arcana: Math.max(0, e('arcana')),
     transformation: Math.max(0, e('transformation')), fire: Math.max(0, e('fire')), frost: Math.max(0, e('frost')),
     acid: Math.max(0, acidity), alkali: Math.max(0, -acidity), toxicity: Math.max(0, e('toxicity')), death: Math.max(0, e('death')),
+    swiftness: Math.max(0, e('swiftness')), levitation: Math.max(0, e('levitation')), invisibility: Math.max(0, e('invisibility')),
+    storm: Math.max(0, e('storm')), dream: Math.max(0, e('dream')),
   };
   const m = r.marks;
   const add = (k, v) => { m[k] = clamp(m[k] + v, 0, 100); };
@@ -702,6 +712,11 @@ export function rabbitResponse(before, effects, ml, o = {}) {
   add('alkali', 0.9 * a.alkali - 0.5 * a.acid);
   add('toxicity', a.toxicity - 0.5 * a.vitality);
   add('death', 1.5 * a.death - 0.3 * a.vitality);
+  add('swiftness', 1.2 * a.swiftness - 0.4 * a.dream);
+  add('levitation', 1.2 * a.levitation - 0.3 * a.strength);
+  add('invisibility', 1.2 * a.invisibility);
+  add('storm', 1.2 * a.storm);
+  add('dream', 1.2 * a.dream - 0.4 * a.swiftness);
   const e0 = r.exposure.transformation;
   for (const k of RABBIT_MARKS) r.exposure[k] = round1(r.exposure[k] + a[k]);
   // harm, by channel (the largest one names the cause of a death)
@@ -711,6 +726,7 @@ export function rabbitResponse(before, effects, ml, o = {}) {
     fire: a.fire > 18 ? (a.fire - 18) * 0.8 : 0, frost: a.frost > 18 ? (a.frost - 18) * 0.7 : 0,
     acid: a.acid > 12 ? (a.acid - 12) * 0.8 : 0, alkali: a.alkali > 20 ? (a.alkali - 20) * 0.5 : 0,
     transformation: a.transformation > 30 ? (a.transformation - 30) * 0.3 : 0, arcana: a.arcana > 40 ? (a.arcana - 40) * 0.3 : 0,
+    storm: a.storm > 22 ? (a.storm - 22) * 0.6 : 0, swiftness: a.swiftness > 40 ? (a.swiftness - 40) * 0.25 : 0,
   };
   const harm = Object.values(hurt).reduce((p, v) => p + v, 0);
   r.scar = Math.min(80, round1(r.scar + 0.2 * Math.max(0, harm - 5)));
@@ -742,6 +758,11 @@ export function rabbitResponse(before, effects, ml, o = {}) {
   if (a.alkali > 1) say('acidity', a.alkali > 20 ? 'bad' : 'neutral', a.alkali > 20 ? 'A chalky crust cakes its fur and cracks its skin.' : 'A chalky film dulls its coat.');
   if (a.toxicity > 1) say('toxicity', 'bad', a.toxicity > 15 ? 'It staggers, sick and trembling.' : 'It looks queasy.');
   if (a.death > 1) say('death', 'bad', a.death > 15 ? 'A grey pallor creeps over it.' : 'It grows still and cold for a moment.');
+  if (a.swiftness > 1) say('swiftness', 'good', big(a.swiftness) ? 'It tears round the pen in a blur!' : 'It darts about, quick on its feet.');
+  if (a.levitation > 1) say('levitation', 'neutral', big(a.levitation) ? 'It floats up off the straw and bobs in the air!' : 'Its paws barely touch the ground.');
+  if (a.invisibility > 1) say('invisibility', 'neutral', big(a.invisibility) ? 'It fades until only its eyes are left!' : 'It turns faintly see-through.');
+  if (a.storm > 1) say('storm', a.storm > 22 ? 'bad' : 'neutral', a.storm > 22 ? 'Lightning crackles over it; its fur stands on end and it yelps.' : 'Its fur bristles with static sparks.');
+  if (a.dream > 1) say('dream', 'neutral', big(a.dream) ? 'It curls up and dreams deeply, paws twitching.' : 'Its eyelids droop; it yawns.');
   const newTraits = growTraits(r, e0, r.exposure.transformation, a);
   for (const t of newTraits) say('transformation', 'neutral', TRAIT_LINES[t]);
   const degen = r.alive ? startDegeneration(r) : [];
@@ -1107,6 +1128,11 @@ export function rabbitCondition(r, day) {
   pick('alkali', ['dusty', 'crusted', 'caked in lye']);
   pick('toxicity', ['queasy', 'sick', 'poisoned']);
   pick('death', ['pale', 'grey and cold', 'barely clinging on']);
+  pick('swiftness', ['quick', 'darting', 'a blur']);
+  pick('levitation', ['light-footed', 'floating', 'adrift in the air']);
+  pick('invisibility', ['faint', 'see-through', 'nearly invisible']);
+  pick('storm', ['bristling', 'crackling', 'thundering']);
+  pick('dream', ['drowsy', 'dozing', 'deep in dreams']);
   if (r.alive && r.pregnant) w.push('expecting kits');
   if (r.traits.length) w.push(r.traits.map((t) => TRAIT_WORDS[t] || t).join(', '));
   return w;

@@ -163,8 +163,8 @@ test('the six environments are side views, generated deterministically, differin
 test('the leaves sway in the wind: still in a calm, moving in a gust, the same at the same moment, only over what lies behind them', () => {
   for (const r of REGIONS) {
     const sc = sceneOf(r.id, 'env-1'), sw = sc.sway;
-    // (a mine deep in a cavern may have no room for a tree: only its moss sways)
-    const few = r.id === 'quarry';
+    // (a mine deep in a cavern may have no room for a tree: only its moss sways; the reef's corals and the storm's dead trees stand still)
+    const few = r.id === 'quarry' || r.id === 'reef' || r.id === 'stormspire';
     assert.ok(sw && sw.k.length > (few ? 0 : 200), `${r.id} has foliage that sways`);
     const out = new Uint32Array(SCENE_W * SCENE_H);
     // no wind: the painting exactly
@@ -262,7 +262,7 @@ test('the identity record alone rebuilds the same pictures on another device', (
   assert.equal(iconFrame(describe(got)).pix.hash(), iconFrame(describe(m.vis)).pix.hash());
   assert.equal(plantFrame(describe(got), 2).pix.hash(), plantFrame(describe(m.vis), 2).pix.hash());
   assert.equal(got.origin, 'trade-1', 'it remembers its world of origin');
-  assert.equal(WILD_SPECS.length, 58);
+  assert.equal(WILD_SPECS.length, 91);
 });
 
 test('the finger reaches only the scenery in front: background trees sway in the wind but cannot be pushed', async () => {

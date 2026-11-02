@@ -133,6 +133,51 @@ const DRAW = {
       if (Math.sin(t * 1.3 + i) > -0.3) px(ctx, x, y, '#fff2c8');
     }
   },
+  /** rain slanting down through the whole pen */
+  rain(ctx, a, t) {
+    for (let i = 0; i < a.n; i++) {
+      const sp = 110 + hash(i, 1) * 50, y = (hash(i, 2) * 120 + t * sp) % 100 - 6, x = ((hash(i, 3) * 260 - y * 0.3 + t * 20) % 240 + 240) % 240 - 8;
+      px(ctx, x, y, hash(i, 4) > 0.6 ? 'rgba(220,230,255,0.7)' : 'rgba(160,180,220,0.5)', 1, 3);
+    }
+  },
+  /** sparks crackling over crystal rods (a: points [[x, y]]) */
+  sparks(ctx, a, t) {
+    a.at.forEach(([x, y], i) => {
+      pool(ctx, x, y, 6, '#7ab0ff', 0.18 + 0.08 * Math.sin(t * 7 + i));
+      if (Math.sin(t * 19 + i * 3) > 0.4) { px(ctx, x + Math.round(Math.sin(t * 31 + i) * 2), y - 1, '#ffffff'); px(ctx, x - 1, y + 1, '#9ac8ff'); }
+    });
+    // now and then a bolt between the first two rods
+    if (a.at.length > 1 && (t * 0.4) % 1 < 0.05) {
+      const [[x0, y0], [x1, y1]] = a.at;
+      for (let k = 0; k <= 12; k++) px(ctx, x0 + (x1 - x0) * k / 12, y0 + (y1 - y0) * k / 12 + (hash(k, Math.floor(t * 8)) - 0.5) * 4, '#e0f0ff');
+    }
+  },
+  /** bubbles rising and wobbling (a: x0, x1, y0 where they start, y1 where they pop, colors) */
+  bubbles(ctx, a, t) {
+    for (let i = 0; i < a.n; i++) {
+      const sp = 6 + hash(i, 1) * 8, span = a.y0 - a.y1, ph = (hash(i, 2) * span + t * sp) % span;
+      const x = a.x0 + hash(i, 3) * (a.x1 - a.x0) + Math.sin(t * 1.5 + i) * 2, y = a.y0 - ph, c = a.colors[i % a.colors.length];
+      const r = hash(i, 4) > 0.6 ? 2 : 1;
+      px(ctx, x - r, y, c, 1, 1); px(ctx, x + r, y, c, 1, 1); px(ctx, x, y - r, c, 1, 1); px(ctx, x, y + r, c, 1, 1);
+      if (r > 1) px(ctx, x - 1, y - 1, '#ffffff');
+    }
+  },
+  /** stars twinkling in a night sky (a: n, y1 the sky's bottom) */
+  stars(ctx, a, t) {
+    for (let i = 0; i < a.n; i++) {
+      const b = Math.sin(t * (1 + hash(i, 1) * 2) + i * 2.3);
+      if (b < 0.3) continue;
+      px(ctx, hash(i, 2) * 224, hash(i, 3) * a.y1, b > 0.8 ? '#ffffff' : '#c8d0ff');
+    }
+  },
+  /** wisps of light drifting and bobbing (a: n, x0, x1, y0, y1, color) */
+  wisps(ctx, a, t) {
+    for (let i = 0; i < a.n; i++) {
+      const s = t * 0.2 + hash(i, 1) * 20, x = a.x0 + (a.x1 - a.x0) * wave(s + i * 3), y = a.y0 + (a.y1 - a.y0) * wave(s * 1.4 + i * 7 + 50);
+      pool(ctx, x, y, 5, a.color, 0.22);
+      px(ctx, x, y, '#ffffff'); px(ctx, x, y + 1, a.color);
+    }
+  },
   /** a drop gathering and falling now and then */
   drip(ctx, a, t) {
     const per = a.every, ph = (t + a.x * 0.37) % per, fall = Math.sqrt((2 * (a.y1 - a.y0)) / 160);

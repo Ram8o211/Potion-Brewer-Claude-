@@ -1,8 +1,17 @@
 // Kinds of test animal: the Moon Rabbit and the creatures of the wilds that
-// can be caught and kept in the hutch beside it — one for every effect:
-// deer (vitality), badgers (strength), doves (love), cats (arcana), foxes
-// (transformation), fire salamanders (fire), ermines (frost), snails
-// (acidity), toads (toxicity) and rats (death).
+// can be caught and kept in the hutch beside it. Every biome has its own
+// creature, steady on the biome's dominant effect: foxes in the Whisperwood
+// (vitality), doves in the Sunlit Meadow (love), otters at Willow Bank
+// (swiftness), badgers in the Ironstone Quarry (strength), rats in the
+// Netherwood (death), fire salamanders in the Ember Crags (fire); and the
+// exotic creatures of the exotic biomes: moon lynxes (arcana), sky hares
+// (levitation), veil stoats (invisibility), chroma newts (transformation),
+// storm stags (storm) and dream snails (dream). Cats, toads, deer, ermines
+// and snails no longer live in any biome but still live on in older shops.
+//
+// An exotic creature is drawn on the anatomy of a familiar kind (ANATOMY)
+// with innate features of its own (horns, wings, a third eye, a glow, a
+// translucent body…), so the renderer needs no new skeleton.
 //
 // A kind is stored in the animal's look (`look.kind`; absent means a
 // rabbit), so every place that already draws, breeds, saves or replays a
@@ -21,7 +30,7 @@
 import { Rng } from '../core/rng.js';
 
 /**
- * @typedef {'rabbit'|'cat'|'toad'|'salamander'|'deer'|'badger'|'dove'|'fox'|'ermine'|'snail'|'rat'} AnimalKind
+ * @typedef {'rabbit'|'cat'|'toad'|'salamander'|'deer'|'badger'|'dove'|'fox'|'ermine'|'snail'|'rat'|'otter'|'mooncat'|'skyhare'|'veilstoat'|'chromanewt'|'stormstag'|'dreamsnail'} AnimalKind
  * @typedef {Object} KindDef
  * @property {AnimalKind} id
  * @property {string} noun        singular, lower case
@@ -32,6 +41,11 @@ import { Rng } from '../core/rng.js';
  * @property {Record<string, number>} noise  factor on the per-dose noise, per effect key (default 1)
  * @property {string|null} steady  the effect it reads steadily (null: none in particular)
  * @property {string} lore
+ * @property {boolean} [exotic]   a creature of the exotic biomes
+ * @property {string[]} [innate]  features every one of them is born with (colony.js TRAITS)
+ * @property {number} [glow]      how brightly it glows (0..1)
+ * @property {number} [ghost]     how see-through it is (0..1)
+ * @property {string} [aura]      the colour of its glow
  */
 
 /** Relative spread of a rabbit's lifelong sensitivity (one sigma), every channel. */
@@ -79,8 +93,8 @@ export const KINDS = {
   },
   fox: {
     id: 'fox', noun: 'fox', plural: 'foxes', young: 'kit',
-    biasAll: RABBIT_SPREAD, bias: { transformation: STEADY_SPREAD, arcana: 0.13 }, noise: { transformation: STEADY_NOISE, arcana: 1.2 }, steady: 'transformation',
-    lore: 'Foxes, the old shape-shifters, all feel transformation alike, within about 1 %, and steadily. Their arcana is capricious.',
+    biasAll: RABBIT_SPREAD, bias: { vitality: STEADY_SPREAD, death: 0.13 }, noise: { vitality: STEADY_NOISE, death: 1.2 }, steady: 'vitality',
+    lore: 'The Whisperwood’s foxes all feel vitality alike, within about 1 %, and steadily: the surest measure of healing. Death unsettles them.',
   },
   ermine: {
     id: 'ermine', noun: 'ermine', plural: 'ermines', young: 'kit',
@@ -97,8 +111,48 @@ export const KINDS = {
     biasAll: RABBIT_SPREAD, bias: { death: STEADY_SPREAD, vitality: 0.14 }, noise: { death: STEADY_NOISE, vitality: 1.2 }, steady: 'death',
     lore: 'Rats all feel death alike, within about 1 %, and steadily: the surest measure of death. Healing takes them unevenly.',
   },
+  otter: {
+    id: 'otter', noun: 'otter', plural: 'otters', young: 'pup',
+    biasAll: RABBIT_SPREAD, bias: { swiftness: STEADY_SPREAD, dream: 0.14 }, noise: { swiftness: STEADY_NOISE, dream: 1.2 }, steady: 'swiftness',
+    lore: 'Otters, the quickest swimmers of the river, all feel swiftness alike, within about 1 %, and steadily. Sleep sits oddly on them.',
+  },
+  mooncat: {
+    id: 'mooncat', noun: 'moon lynx', plural: 'moon lynxes', young: 'kitten', exotic: true, innate: ['eye3'], glow: 0.55, aura: '#b49cff',
+    biasAll: RABBIT_SPREAD, bias: { arcana: STEADY_SPREAD, love: 0.16 }, noise: { arcana: STEADY_NOISE, love: 1.2 }, steady: 'arcana',
+    lore: 'Moon lynxes of the Moonfen, starry-coated and three-eyed, all feel arcana alike, within about 1 %, and steadily.',
+  },
+  skyhare: {
+    id: 'skyhare', noun: 'sky hare', plural: 'sky hares', young: 'leveret', exotic: true, innate: ['wings', 'tail-plume'], glow: 0.2, aura: '#fff0c0',
+    biasAll: RABBIT_SPREAD, bias: { levitation: STEADY_SPREAD, strength: 0.14 }, noise: { levitation: STEADY_NOISE, strength: 1.2 }, steady: 'levitation',
+    lore: 'Sky hares glide between the drifting isles on feathered wings; they all feel levitation alike, within about 1 %, and steadily.',
+  },
+  veilstoat: {
+    id: 'veilstoat', noun: 'veil stoat', plural: 'veil stoats', young: 'kit', exotic: true, innate: [], ghost: 0.45, glow: 0.25, aura: '#dce6ff',
+    biasAll: RABBIT_SPREAD, bias: { invisibility: STEADY_SPREAD, arcana: 0.13 }, noise: { invisibility: STEADY_NOISE, arcana: 1.2 }, steady: 'invisibility',
+    lore: 'Veil stoats are half there at the best of times; they all feel invisibility alike, within about 1 %, and steadily.',
+  },
+  chromanewt: {
+    id: 'chromanewt', noun: 'chroma newt', plural: 'chroma newts', young: 'eft', exotic: true, innate: ['spines'], glow: 0.35, aura: '#6ff0d0',
+    biasAll: RABBIT_SPREAD, bias: { transformation: STEADY_SPREAD, toxicity: 0.12 }, noise: { transformation: STEADY_NOISE, toxicity: 1.1 }, steady: 'transformation',
+    lore: 'Chroma newts of the Shifting Reef change colour with every breath; they all feel transformation alike, within about 1 %, and steadily.',
+  },
+  stormstag: {
+    id: 'stormstag', noun: 'storm stag', plural: 'storm stags', young: 'fawn', exotic: true, innate: ['antlers'], glow: 0.5, aura: '#7ab0ff',
+    biasAll: RABBIT_SPREAD, bias: { storm: STEADY_SPREAD, frost: 0.14 }, noise: { storm: STEADY_NOISE, frost: 1.2 }, steady: 'storm',
+    lore: 'Storm stags carry lightning in their antlers; they all feel storm alike, within about 1 %, and steadily.',
+  },
+  dreamsnail: {
+    id: 'dreamsnail', noun: 'dream snail', plural: 'dream snails', young: 'hatchling', exotic: true, innate: [], glow: 0.5, aura: '#f0a0ff',
+    biasAll: RABBIT_SPREAD, bias: { dream: STEADY_SPREAD, swiftness: 0.14 }, noise: { dream: STEADY_NOISE, swiftness: 1.2 }, steady: 'dream',
+    lore: 'Dream snails sleep in starry shells and wake only to graze; they all feel dream alike, within about 1 %, and steadily.',
+  },
 };
 export const KIND_IDS = /** @type {AnimalKind[]} */ (Object.keys(KINDS));
+
+/** The familiar anatomy each kind is drawn on (an exotic creature on a familiar skeleton). @type {Record<string, string>} */
+export const ANATOMY = { otter: 'ermine', mooncat: 'cat', skyhare: 'rabbit', veilstoat: 'ermine', chromanewt: 'salamander', stormstag: 'deer', dreamsnail: 'snail' };
+/** @param {string} kind */
+export const anatomyOf = (kind) => ANATOMY[kind] || kind;
 
 /** The kind of an animal, from its look (or the animal itself). @param {any} o @returns {AnimalKind} */
 export function kindOf(o) {
@@ -126,24 +180,28 @@ export function aNoun(o) {
 }
 
 /**
- * Which kinds live in each region of the wilds, by weight. Rabbits are
- * everywhere; cats prowl the woods and the crags, toads keep to water, fire
- * salamanders to warm stone and the netherwood's embers.
+ * Which kinds live in each biome of the wilds, by weight: every biome has
+ * its own creature, steady on its dominant effect.
  * @type {Record<string, [AnimalKind, number][]>}
  */
 export const HABITAT = {
-  meadow: [['rabbit', 4], ['cat', 1], ['deer', 2], ['dove', 2], ['badger', 1], ['fox', 1]],
-  forest: [['rabbit', 3], ['cat', 2], ['toad', 1], ['deer', 2], ['badger', 2], ['fox', 2], ['snail', 1]],
-  netherwood: [['rabbit', 2], ['cat', 2], ['salamander', 1], ['fox', 2], ['rat', 2]],
-  river: [['rabbit', 2], ['toad', 3], ['dove', 1], ['snail', 2], ['rat', 1]],
-  quarry: [['rabbit', 1], ['salamander', 2], ['rat', 2], ['ermine', 1]],
-  moonfen: [['rabbit', 1], ['toad', 3], ['salamander', 1], ['snail', 2], ['rat', 1], ['ermine', 1]],
-  crags: [['rabbit', 1], ['cat', 1], ['salamander', 2], ['ermine', 2], ['dove', 1]],
+  forest: [['fox', 1]],
+  meadow: [['dove', 1]],
+  river: [['otter', 1]],
+  quarry: [['badger', 1]],
+  netherwood: [['rat', 1]],
+  crags: [['salamander', 1]],
+  moonfen: [['mooncat', 1]],
+  skydrift: [['skyhare', 1]],
+  veilmist: [['veilstoat', 1]],
+  reef: [['chromanewt', 1]],
+  stormspire: [['stormstag', 1]],
+  dreamspire: [['dreamsnail', 1]],
 };
 
 /** Pick a kind for a newcomer to a region. @param {string} region @param {Rng} rng @returns {AnimalKind} */
 export function pickKind(region, rng) {
-  const h = HABITAT[region] || [['rabbit', 1]];
+  const h = HABITAT[region] || [['fox', 1]];
   return rng.weighted(h.map((x) => x[0]), h.map((x) => x[1]));
 }
 
@@ -201,6 +259,38 @@ export function kindLook(kind, rng) {
   if (kind === 'rat') {
     const c = pick([[0.45, 0.4, 0.37], [0.3, 0.27, 0.26], [0.58, 0.54, 0.48]]);
     return { kind, coat: c.slice(), coat2: [Math.min(1, c[0] + 0.25), Math.min(1, c[1] + 0.25), Math.min(1, c[2] + 0.22)].map(r2), pattern: 'solid', ear: 'round', size, eye: 'dark', tail: 1, seed };
+  }
+  if (kind === 'otter') {
+    // a sleek brown otter with a pale throat
+    const c = pick([[0.42, 0.28, 0.17], [0.36, 0.25, 0.16], [0.48, 0.33, 0.2]]);
+    return { kind, coat: c.slice(), coat2: [0.86, 0.76, 0.6], pattern: 'ermine', ear: 'round', size: r2(size * 1.06), eye: 'dark', tail: 1, seed };
+  }
+  if (kind === 'mooncat') {
+    // a midnight coat strewn with glowing star-spots
+    const c = pick([[0.16, 0.16, 0.34], [0.2, 0.18, 0.4], [0.12, 0.14, 0.28]]);
+    return { kind, coat: c.slice(), coat2: pick([[0.72, 0.62, 1], [0.6, 0.84, 1], [0.9, 0.86, 1]]).slice(), pattern: 'spotted', ear: 'cat', size, eye: 'amber', tail: 1, seed };
+  }
+  if (kind === 'skyhare') {
+    // cloud-white or dawn-gold, with sky-blue tips
+    const c = pick([[0.97, 0.96, 0.92], [0.98, 0.9, 0.72], [0.9, 0.93, 0.98]]);
+    return { kind, coat: c.slice(), coat2: pick([[0.56, 0.74, 0.96], [0.98, 0.78, 0.5]]).slice(), pattern: 'points', ear: 'upright', size, eye: 'dark', tail: 2, seed };
+  }
+  if (kind === 'veilstoat') {
+    // pale as mist, a silver back
+    return { kind, coat: pick([[0.9, 0.93, 0.98], [0.84, 0.88, 0.96]]).slice(), coat2: [0.66, 0.72, 0.86], pattern: 'ermine', ear: 'round', size, eye: 'dark', tail: 1, seed };
+  }
+  if (kind === 'chromanewt') {
+    // a vivid newt: teal, magenta or gold, blotched in a clashing colour
+    const c = pick([[0.12, 0.62, 0.62], [0.78, 0.2, 0.6], [0.92, 0.66, 0.12], [0.3, 0.3, 0.86]]);
+    return { kind, coat: c.slice(), coat2: pick([[0.98, 0.86, 0.2], [0.3, 0.96, 0.7], [0.98, 0.42, 0.7]]).slice(), pattern: 'blotched', ear: 'none', size, eye: 'dark', tail: 2, seed };
+  }
+  if (kind === 'stormstag') {
+    // slate-grey, dappled with electric blue
+    return { kind, coat: pick([[0.32, 0.34, 0.42], [0.26, 0.28, 0.38]]).slice(), coat2: [0.5, 0.78, 1], pattern: 'dapple', ear: 'deer', size, eye: 'dark', tail: 1, seed };
+  }
+  if (kind === 'dreamsnail') {
+    // a pearly foot under a pastel, starry shell
+    return { kind, coat: pick([[0.86, 0.8, 0.92], [0.92, 0.84, 0.88]]).slice(), coat2: pick([[0.78, 0.5, 0.94], [0.96, 0.6, 0.82], [0.56, 0.6, 0.98]]).slice(), pattern: 'spiral', ear: 'stalk', size, eye: 'dark', tail: 0, seed };
   }
   // fire salamander: glossy black with yellow or orange blotches
   const spot = rng.chance(0.65) ? [0.98, 0.78, 0.16] : [0.96, 0.46, 0.12];

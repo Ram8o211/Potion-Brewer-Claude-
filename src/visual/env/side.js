@@ -61,11 +61,41 @@ export function raise(top, x0, x1, y, slope = 4) {
 }
 
 /**
+ * Soften a surface line in place: no step is steeper than `max` rows per
+ * column (a cliff or a terrace edge becomes a slope, the height it loses on
+ * one side gained on the other, so the ground keeps its mass), then its
+ * corners are rounded (a few passes of a small blur), so the ground rolls
+ * from one level to the next instead of stepping.
+ * @param {Float32Array} top @param {number} [max] @param {number} [round]
+ */
+export function smoothTop(top, max = 0.7, round = 4) {
+  const W = top.length;
+  for (let pass = 0; pass < 240; pass++) {
+    let moved = false;
+    for (let x = 0; x < W - 1; x++) {
+      const d = top[x + 1] - top[x], a = Math.abs(d);
+      if (a <= max + 1e-3) continue;
+      const e = (a - max) / 2 * Math.sign(d);
+      top[x] += e; top[x + 1] -= e;
+      moved = true;
+    }
+    if (!moved) break;
+  }
+  const tmp = new Float32Array(W);
+  for (let r = 0; r < round; r++) {
+    for (let x = 0; x < W; x++) tmp[x] = (top[Math.max(0, x - 1)] + 2 * top[x] + top[Math.min(W - 1, x + 1)]) / 4;
+    top.set(tmp);
+  }
+  return top;
+}
+
+/**
  * Fill the ground below a surface line (kept as the scene's ground line),
  * its steps snapped to the grid, a whole square wide and deep.
  * @param {any} cv @param {Float32Array} top
  */
 export function fillSolid(cv, top) {
+  smoothTop(top);
   for (let x = 0; x < cv.W; x++) top[x] = snap(Math.round(top[snap(x)]));
   cv.ground = top;
   for (let x = 0; x < cv.W; x++) for (let y = Math.max(0, Math.round(top[x])); y < cv.H; y++) cv.solid[y * cv.W + x] = 1;
@@ -147,7 +177,8 @@ export function paintTerrain(cv, o) {
         for (let i = 0, top = 0; i < layers.length; top = floors[x * layers.length + i], i++) if (e >= 0 && e < floors[x * layers.length + i]) { li = i; into = e - top; thick = floors[x * layers.length + i] - top; break; }
       }
       // the crust's lower edge uneven: here and there it hangs a pixel or two into what lies under it, in drips two pixels wide
-      const drip = hash2(x >> 1, 5, o.seed) < 0.32 ? 1 + Math.floor(hash2(x >> 1, 6, o.seed) * 2) : 0;
+      // (a smooth wave, not a ragged fringe: the boundary between two materials reads as one clean line)
+      const drip = Math.max(0, Math.round((fbm1(x * 0.16, o.seed + 31, 2) - 0.42) * 6));
       if (d < ch) c = crust[Math.min(crust.length - 1, d)];
       else if (d < ch + drip && floors) c = crust[Math.min(crust.length - 1, d - 1)];
       else if (li >= 0) {
@@ -155,6 +186,8 @@ export function paintTerrain(cv, o) {
         c = l.paint(x, y, into, l.c, l.seed, thick);
         // its top edge a clean, darker line: the boundary between two strata reads at a glance
         if (into === 0 && li > 0) c = mixPacked(c, D, 0.4);
+        // and the last one's floor, where the stone begins, a soft shade
+        else if (li === layers.length - 1 && into >= thick - 1) c = mixPacked(c, D, 0.3);
         strat[k] = li + 1;
       } else if (tex) {
         c = cobble(x, y, tex);
@@ -222,11 +255,11 @@ export const STRATA = {
   sand(x, y, into, c, seed) {
     if (into === 0) return c[0];
     const g = hash2(x, y, seed + 1);
-    if (g < 0.035) return c[3];
-    if (g > 0.985) return c[0];
-    // long faint ripples of shade lying level, the sand between them flat
-    const v = y + fbm1(x * 0.05, seed, 2) * 5;
-    return Math.floor(v / 4) % 3 === 2 && hash2(x >> 3, Math.floor(v / 4), seed + 2) < 0.7 ? c[2] : c[1];
+    if (g < 0.03) return c[3];
+    if (g > 0.988) return c[0];
+    // long soft ripples of shade following the ground, the sand between them flat
+    const v = into + fbm1(x * 0.04, seed, 2) * 3;
+    return Math.floor(v / 4) % 3 === 2 && hash2(x >> 4, Math.floor(v / 4), seed + 2) < 0.75 ? c[2] : c[1];
   },
   // soil: two tones in soft blotches, small pebbles bedded in it, each lit on top — c: a, b, pebble lit, pebble shade
   soil(x, y, into, c, seed) {
@@ -239,16 +272,18 @@ export const STRATA = {
   },
   // clay: thin smooth bands, gently wavering — c: the bands' colours in turn
   clay(x, y, into, c, seed) {
-    const v = y + fbm1(x * 0.03, seed, 2) * 5;
-    return c[Math.floor(v / 2) % c.length];
+    const v = into + fbm1(x * 0.03, seed, 2) * 3;
+    return c[Math.floor(v / 3) % c.length];
   },
   // banded rock (sandstone, shale): wavering beds of a few colours, each lit along its top, a thin
   // dark bedding line under each that breaks off now and then — c: the beds' colours in turn, then the line's
   banded(x, y, into, c, seed) {
-    const n = c.length - 1, v = y + fbm1(x * 0.025, seed, 2) * 7 + fbm1(x * 0.11, seed + 3, 2) * 1.5, h = 4, b = Math.floor(v / h), f = v - b * h;
-    const t = c[((b % n) + n) % n];
-    if (f >= h - 1 && hash2(x >> 2, b, seed + 4) < 0.8) return c[n];
-    return f < 1 ? mixPacked(t, 0xffffffff, 0.14) : t;
+    // broad beds draped along the ground (they follow its slopes), each 4–6 rows of one flat colour,
+    // a lit row along its top and a thin bedding line under it: few tones, read at a glance
+    const n = c.length - 1, v = into + fbm1(x * 0.02, seed, 2) * 4, bed = Math.floor(v / 5), f = v - bed * 5;
+    const t = c[((bed % n) + n) % n];
+    if (f >= 4.2) return c[n];
+    return f < 1 ? mixPacked(t, 0xffffffff, 0.16) : t;
   },
   // gravel: small rounded stones of uneven sizes packed close, each lit on its upper left, grit between — c: lit, mid, shade, the grit
   gravel(x, y, into, c, seed) {
@@ -262,8 +297,8 @@ export const STRATA = {
   },
   // ash: fine pale specks in faint level bands — c: a, b, speck
   ash(x, y, into, c, seed) {
-    if (hash2(x, y, seed + 5) < 0.07) return c[2];
-    return Math.floor((y + fbm1(x * 0.05, seed, 2) * 3) / 3) % 2 ? c[1] : c[0];
+    if (hash2(x, y, seed + 5) < 0.05) return c[2];
+    return Math.floor((into + fbm1(x * 0.04, seed, 2) * 2) / 4) % 2 ? c[1] : c[0];
   },
 };
 

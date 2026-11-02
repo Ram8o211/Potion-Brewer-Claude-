@@ -40,7 +40,7 @@ test('the market sells only solvents and the herbalist’s common herbs, never g
     const m = st.lookup(id);
     assert.ok(id === R.water || id === R.oil || id === R.spirit || (m.wild && !m.wild.gatherOnly), `${id} on sale is a solvent or a common herb`);
   }
-  const shade = 'wild-nightshade';
+  const shade = 'wild-foxglove';
   assert.ok(st.lookup(shade).wild.gatherOnly);
   const coins = st.coins;
   const r = st.buy(shade, 100);
@@ -61,7 +61,9 @@ test('commissions only need what the shop can gather, hold or legally buy today'
     st.reputation = RANKS[k % 3].rep;
     st.coins = 30;
     const ctx = st.commissionContext();
-    const com = generateCommission(ctx, new Rng(`s${k}`), { tier: k % 3 });
+    // (as the shop does: a customer whose order cannot be met today asks for an easier one)
+    let com = null;
+    for (let t = k % 3; !com && t >= 0; t--) com = generateCommission(ctx, new Rng(`s${k}`), { tier: t });
     assert.ok(com, 'a commission was generated');
     const sup = checkSupply(com.reference, ctx);
     assert.ok(sup.ok, `${com.style}: every ingredient obtainable (${sup.short.join(',')}) within the purse (${sup.cost})`);

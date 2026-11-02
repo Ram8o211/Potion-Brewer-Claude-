@@ -9,9 +9,9 @@ import { generateCommission, tutorialCommission } from './commissions.js';
 import { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById, RETIRED_EQUIPMENT } from './equipment.js';
 import { SIM } from '../simulation/constants.js';
 import { createTrials, normalizeTrials, runTrial, SUBJECT_BY_ID, knownLaws, certification, summarize } from './experiments.js';
-import { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth, depositStatus, migrateGathering, setSky, water } from './gathering.js';
+import { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, depositStatus, setSky, regenerate, REGION_BY_ID, REGIONS, FIRST_REGION } from './gathering.js';
 import { predictPlan } from './predict.js';
-import { EFFECT_INDEX, EFFECT_KEYS } from '../alchemy/effects.js';
+import { EFFECT_INDEX, EFFECT_KEYS, NE, padEffects } from '../alchemy/effects.js';
 import { migrateVial } from './vial.js';
 import { recordSale, resolveFollowUp, applyTrials, evidenceOf } from './commerce.js';
 import { colonyDay, colonyTick, livingRabbits, livingOf, findRabbit, addBoughtRabbit, addWildRabbit, penHasRoom, PEN_MAX, retireRabbit, remainsSource, purgeRabbit, cullRabbit, maxHealthOf, FOUNDER_BORN } from './colony.js';
@@ -20,16 +20,22 @@ import { remainsMaterials, remainsPlan, isRemains } from '../materials/remains.j
 import { returningPatron, welcomePatron, recentStyles, notePatron, patronVerdict, noveltyFactor } from './patrons.js';
 import { techniqueById, migrateTechniques } from './commissions.js';
 import { migrateRecipe } from './recipes.js';
+import { wantsCommission, asCommission, patienceFor, ORDER_FULL, ORDER_PART } from './orders.js';
+import { evaluatePotion } from './evaluate.js';
 
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 /** A purging draught at the apothecary, and brewed in the still. */
 export const PURGE_PRICE = 8;
 export const PURGE_BREW_COST = 1;
 export const PURGE_BREW_TIME = 40;
-export const WORLD_GEN_VERSION = 2;
+export const WORLD_GEN_VERSION = 3;
 
-/** What a new shop's shelves hold (ml): a healer's and a hedge-witch's basics. */
-export const STARTER_HERBS = { silverleaf: 200, sunthistle: 150, heartpetal: 150, ironroot: 150, emberbark: 100, frostcap: 100, riverchalk: 100, nettle: 100 };
+/** What a new shop's shelves hold (ml): a healer's basics from the Whisperwood, the one biome a new shop knows. */
+export const STARTER_HERBS = { silverleaf: 150, emberbark: 120, ironroot: 100, owlberry: 100 };
+/** Traveller coins: how many the purse holds, and how long one takes to come back (real time). */
+export const TRAVEL_MAX = 3;
+export const TRAVEL_MAX_COMPASS = 5;
+export const TRAVEL_REFILL_MS = 20 * 60000;
 /** old aspect requirement keys → effect keys (v2 saves) */
 const ASPECT_KEY_MAP = { vitality: 'vitality', ardor: 'fire', arcana: 'arcana', fortitude: 'strength' };
 
@@ -148,11 +154,16 @@ export class GameState {
     /** identity of the brew in the cauldron: a new id when it is emptied, rev++ on every addition; `carried` what a poured-back bottle brought (resumeBatch) */
     /** @type {{id:string, rev:number, carried?:{samples:Record<string, any[]>, ref?:number[], label?:any}}} */
     this.batch = data.batch && typeof data.batch.id === 'string' ? { id: data.batch.id, rev: data.batch.rev | 0, ...(data.batch.carried && typeof data.batch.carried === 'object' ? { carried: data.batch.carried } : {}) } : newBatch();
+    /** biomes whose map the shop owns (only the Whisperwood in a new shop) @type {string[]} */
+    this.biomes = Array.isArray(data.biomes) && data.biomes.length ? data.biomes.filter((id) => REGION_BY_ID[id]) : [FIRST_REGION];
+    if (!this.biomes.includes(FIRST_REGION)) this.biomes.unshift(FIRST_REGION);
+    /** traveller coins: how many are in the purse and when the next refill was counted from @type {{coins:number, at:number}} */
+    this.travel = data.travel && Number.isFinite(data.travel.coins) ? { coins: Math.max(0, data.travel.coins | 0), at: Number(data.travel.at) || Date.now() } : { coins: TRAVEL_MAX, at: Date.now() };
+    /** commissions accepted from customers who come back for them on a later day (orders.js) @type {any[]} */
+    this.orders = Array.isArray(data.orders) ? data.orders : [];
     this.lookup = makeLookup(this.world);
     /** @type {import('./gathering.js').Deposit[]|null} */
     this._deposits = null;
-    // plants that drink: an older save's plants keep their growth, and grow under today's weather
-    migrateGathering(this.gathering, this.deposits);
     setSky(this.gathering, this.deposits, weatherOn(this.seed, this.day).id);
     const col = this.trials.colony;
     if (!col.seed) col.seed = String(this.seed);
@@ -234,7 +245,87 @@ export class GameState {
 
   /** Ingredients the player may buy now (unlocked by rank). */
   purchasable() {
-    return this.world.ingredients.filter((id) => { const m = this.lookup(id); return m && !isRemains(m) && !(m.wild && m.wild.gatherOnly) && !m.product && (m.tier || 0) <= this.rank; });
+    return this.world.ingredients.filter((id) => { const m = this.lookup(id); return m && !isRemains(m) && !(m.wild && m.wild.gatherOnly) && !m.product && (m.tier || 0) <= this.rank && (!m.wild || this.biomeOpen(m.wild.region)); });
+  }
+
+  // ------------------------------------------------------------ biomes and traveller coins
+  /** Is a biome's map owned? @param {string} id */
+  biomeOpen(id) {
+    return this.biomes.includes(id);
+  }
+
+  /** Why a biome's map cannot be bought now, or null. @param {string} id */
+  mapBlocked(id) {
+    const r = REGION_BY_ID[id];
+    if (!r) return 'Unknown land.';
+    if (this.biomeOpen(id)) return 'You already have its map.';
+    if (r.rank > this.rank) return `The guild sells its map from the rank of ${RANKS[r.rank].name}.`;
+    if (this.coins + 1e-9 < r.price) return `Its map costs ${r.price} coins.`;
+    return null;
+  }
+
+  /** Buy a biome's map: it opens, at its first expedition. @param {string} id */
+  buyMap(id) {
+    const why = this.mapBlocked(id);
+    if (why) return { ok: false, reason: why };
+    const r = REGION_BY_ID[id];
+    this.coins = round1(this.coins - r.price);
+    this.stats.spent += r.price;
+    this.daySpending += r.price;
+    this.biomes.push(id);
+    this.biomes.sort((a, b) => REGIONS.findIndex((x) => x.id === a) - REGIONS.findIndex((x) => x.id === b));
+    return { ok: true, region: r };
+  }
+
+  /** The most traveller coins the purse holds. */
+  get travelMax() {
+    return this.has('compass') ? TRAVEL_MAX_COMPASS : TRAVEL_MAX;
+  }
+
+  /**
+   * Traveller coins now, after the refills real time has brought since they
+   * were last counted (one every TRAVEL_REFILL_MS, up to the purse's size).
+   * @param {number} [now]
+   */
+  travelCoins(now = Date.now()) {
+    const t = this.travel, max = this.travelMax;
+    if (t.coins >= max) { t.at = now; return t.coins; }
+    const n = Math.floor(Math.max(0, now - t.at) / TRAVEL_REFILL_MS);
+    if (n > 0) { t.coins = Math.min(max, t.coins + n); t.at = t.coins >= max ? now : t.at + n * TRAVEL_REFILL_MS; }
+    return t.coins;
+  }
+
+  /** Time until the next traveller coin comes back (0: the purse is full). @param {number} [now] */
+  travelNextIn(now = Date.now()) {
+    if (this.travelCoins(now) >= this.travelMax) return 0;
+    return Math.max(0, this.travel.at + TRAVEL_REFILL_MS - now);
+  }
+
+  /** A traveller coin given (a happy customer's gift): it may overfill the purse by one. @param {number} [n] */
+  giftTravelCoin(n = 1) {
+    this.travelCoins();
+    this.travel.coins = Math.min(this.travelMax + 1, this.travel.coins + n);
+    return this.travel.coins;
+  }
+
+  /**
+   * Spend a traveller coin on a new expedition to an open biome: new ground,
+   * a new selection of its species, new creatures. `free`: the Free
+   * Experiment's, which costs nothing.
+   * @param {string} id @param {{free?:boolean, now?:number}} [o]
+   */
+  regenerateBiome(id, o = {}) {
+    if (!this.biomeOpen(id) && !o.free) return { ok: false, reason: 'You have no map of it.' };
+    if (!o.free && this.travelCoins(o.now) < 1) return { ok: false, reason: 'No traveller coin left.' };
+    if (!o.free) {
+      const full = this.travel.coins >= this.travelMax;
+      this.travel.coins--;
+      if (full) this.travel.at = o.now ?? Date.now();
+    }
+    const gen = regenerate(this.gathering, id);
+    this._deposits = null;
+    this.gathering.trips = (this.gathering.trips || 0) + 1;
+    return { ok: true, gen };
   }
 
   /** Ingredient ids that are buyable or in stock. */
@@ -247,7 +338,7 @@ export class GameState {
   // ------------------------------------------------------------ the wilds
   /** Deposits of this world (deterministic from the seed). */
   get deposits() {
-    if (!this._deposits) this._deposits = generateDeposits(this.world, this.lookup);
+    if (!this._deposits) this._deposits = generateDeposits(this.world, this.lookup, this.gathering.gens);
     return this._deposits;
   }
 
@@ -266,7 +357,7 @@ export class GameState {
   /** Wild ingredient ids with a deposit the player can reach. */
   gatherableSet() {
     const s = new Set();
-    for (const d of this.deposits) if (d.rank <= this.rank) s.add(d.materialId);
+    for (const d of this.deposits) if (this.biomeOpen(d.region) && depositStatus(this.gathering, d).mature > 0) s.add(d.materialId);
     return s;
   }
 
@@ -281,6 +372,7 @@ export class GameState {
   gather(depositId, opts = {}) {
     const d = this.deposits.find((x) => x.id === depositId);
     if (!d) return { ok: false, amount: 0, reason: 'unknown' };
+    if (!this.biomeOpen(d.region) && !opts.free && !opts.unlimited) return { ok: false, amount: 0, reason: 'locked' };
     const m = this.lookup(d.materialId);
     const { take } = opts.free ? d : gatherPlan(this, d, m, { thorough: opts.thorough });
     const r = harvest(this, { ...d, take }, opts);
@@ -291,17 +383,6 @@ export class GameState {
       if (this.stats.gathered >= 1000) /** @type {any} */ (r).events.push(...this.unlock('forage1k'));
     }
     return r;
-  }
-
-  /**
-   * Water living plants of a deposit (the ones given, else every growing
-   * one): the moisture of their soil rises and they grow faster for hours.
-   * Returns how many drank.
-   * @param {string} depositId @param {string[]|null} [plants] @param {number} [now]
-   */
-  water(depositId, plants = null, now = Date.now()) {
-    const d = this.deposits.find((x) => x.id === depositId);
-    return d ? water(this.gathering, d, plants, now) : 0;
   }
 
   // ------------------------------------------------------------ trials
@@ -634,6 +715,7 @@ export class GameState {
     if (m.wild && m.wild.gatherOnly) return { ok: false, reason: `${m.name} is only found in the wilds.` };
     if (!this.world.ingredients.includes(id) || m.product) return { ok: false, reason: 'The market does not sell that.' };
     if ((m.tier || 0) > this.rank) return { ok: false, reason: `The herbalist sells ${m.name} from the rank of ${(RANKS[m.tier] || RANKS[RANKS.length - 1]).name}.` };
+    if (m.wild && !this.biomeOpen(m.wild.region)) return { ok: false, reason: `${m.name} comes from ${REGION_BY_ID[m.wild.region]?.name || 'a land you have no map of'}.` };
     return { ok: true };
   }
 
@@ -795,7 +877,7 @@ export class GameState {
     if (!isFinite(stock)) return Infinity;
     let wild = 0;
     for (const d of this.deposits) {
-      if (d.materialId !== id || d.rank > this.rank) continue;
+      if (d.materialId !== id || !this.biomeOpen(d.region)) continue;
       const plan = gatherPlan(this, d, this.lookup(id));
       // a careful harvest of every mature plant
       wild += depositStatus(this.gathering, d, now).mature * plan.take;
@@ -824,6 +906,8 @@ export class GameState {
       supply: (id) => { if (!supplies.has(id)) supplies.set(id, this.supplyOf(id, now)); return /** @type {number} */ (supplies.get(id)); },
       buyable: (id) => this.canBuy(id).ok,
       stock: (id) => this.stock(id),
+      // customers only ask for the dominant effects of the lands on the shop's maps
+      effects: new Set(this.biomes.map((id) => REGION_BY_ID[id] && REGION_BY_ID[id].effect).filter(Boolean)),
     };
   }
 
@@ -857,8 +941,13 @@ export class GameState {
       // difficulty follows rank, with some easier and harder requests mixed in
       const tier = Math.max(0, Math.min(4, this.rank + (rng.chance(0.25) ? -1 : 0) + (rng.chance(0.15) ? 1 : 0)));
       const patron = returningPatron(this, rng);
-      const opts = { tier: Math.min(tier, this.rank + 1), contract, patron, recent: recentStyles(this) };
+      // a new shop is asked for single effects; combinations come with experience
+      const single = this.stats.served < 6 || this.rank < 1;
+      // now and then a customer wants something harder, to collect on a later day
+      const commission = !contract && wantsCommission(this, rng);
+      const opts = { tier: Math.min(commission ? tier + 1 : tier, this.rank + 1, 4), contract: contract || commission, patron, recent: recentStyles(this), single: single && !commission };
       com = generateCommission(ctx, rng, opts);
+      if (com && commission) { asCommission(com, this.day, rng); return com; }
       // fallback: the same customer with an easier need, then the plainest order of all
       for (let t = opts.tier - 1; !com && t >= 0; t--) com = generateCommission(ctx, rng, { ...opts, tier: t, contract: false });
       if (!com) com = generateCommission(ctx, rng, { tier: 0, simple: true });
@@ -871,6 +960,8 @@ export class GameState {
         com.dialogue = `A friend told me your potions really work. ${com.dialogue}`;
       }
     }
+    // how long they will wait at the counter (seconds of play)
+    if (com && !com.tutorial && !com.commission) com.wait = { limit: patienceFor(com, rng), used: 0 };
     return com || null;
   }
 
@@ -894,6 +985,84 @@ export class GameState {
     this.current = null;
     this.customerIndex++;
     this.stats.declined++;
+  }
+
+  /**
+   * Take the commission offered at the counter: it goes into the order book
+   * and the customer leaves, to come back on its day.
+   */
+  acceptCommission() {
+    const com = this.current;
+    if (!com || !com.commission) return null;
+    const o = { id: 'o' + com.id, com, accepted: this.day, due: com.commission.due, reward: com.commission.reward, status: 'open', late: false };
+    this.orders.push(o);
+    this.current = null;
+    this.customerIndex++;
+    this.stats.commissions = (this.stats.commissions || 0) + 1;
+    return o;
+  }
+
+  /** Accepted commissions whose customer has come to collect. */
+  dueOrders() {
+    return this.orders.filter((o) => o.status === 'open' && o.due <= this.day);
+  }
+
+  /** Accepted commissions still waiting (due or not). */
+  openOrders() {
+    return this.orders.filter((o) => o.status === 'open');
+  }
+
+  /**
+   * Hand the counter's vial to a commission's customer. They inspect it
+   * (the real potion, judged by the order's own requirements): a potion that
+   * meets the order earns the full reward, a near miss part of it, a poor
+   * one nothing — they keep waiting until the end of the day.
+   * @param {string} id @param {any} truth measurement of the vial
+   */
+  deliverOrder(id, truth) {
+    const o = this.orders.find((x) => x.id === id && x.status === 'open');
+    if (!o || !this.vial) return null;
+    const ev = evaluatePotion(o.com, truth);
+    const q = ev.quality;
+    if (q < ORDER_PART) return { ok: false, quality: q, paid: 0, rep: 0, events: /** @type {any[]} */ ([]), ev };
+    const full = q >= ORDER_FULL;
+    const paid = Math.round(o.reward * (full ? 1 : 0.4 + 0.5 * (q - ORDER_PART) / (ORDER_FULL - ORDER_PART)));
+    const rep = full ? 8 + 2 * (o.com.tier || 0) : 2;
+    o.status = 'done';
+    o.paid = paid;
+    o.quality = q;
+    this.vial = null;
+    this.coins = round1(this.coins + paid);
+    this.stats.earned += paid;
+    this.dayEarnings += paid;
+    this.stats.served++;
+    this.history.unshift({ day: this.day, customer: o.com.customer.name, title: o.com.customer.title, potion: o.com.potionName, quality: q, stars: ev.stars, paid, color: truth.color, ml: truth.ml });
+    if (this.history.length > 60) this.history.length = 60;
+    const events = [...this.adjustReputation(rep), ...this._verdict(q, ev.perfect, false)];
+    // a delighted customer leaves a traveller coin as a tip
+    if (full) { this.giftTravelCoin(); events.push({ type: 'travel-gift', name: o.com.customer.name }); }
+    return { ok: true, quality: q, paid, rep, events, ev, full };
+  }
+
+  /**
+   * Time passes for the customer at the counter (seconds of play). Returns
+   * true when they have run out of patience (they leave: see walkOut).
+   * @param {number} dt
+   */
+  tickPatience(dt) {
+    const com = this.current;
+    if (!com || !com.wait || com.tutorial || !(dt > 0)) return false;
+    com.wait.used = Math.min(com.wait.limit, com.wait.used + dt);
+    return com.wait.used >= com.wait.limit;
+  }
+
+  /** The customer at the counter gives up waiting and leaves (a small loss of reputation). */
+  walkOut() {
+    if (!this.current || this.current.tutorial) return [];
+    this.current = null;
+    this.customerIndex++;
+    this.stats.walkouts = (this.stats.walkouts || 0) + 1;
+    return this.adjustReputation(-1);
   }
 
   /**
@@ -1002,6 +1171,8 @@ export class GameState {
     if (r.coins < 0) { this.stats.refunds = (this.stats.refunds || 0) + 1; this.daySpending -= r.coins; }
     else this.dayEarnings += r.coins;
     if (f.kind === 'praise' && f.referral) this.referrals++;
+    // a delighted customer sometimes leaves a traveller coin for the alchemist
+    if (f.kind === 'praise' && action === 'thank' && (f.referral || hashString(f.id) % 2 === 0)) { this.giftTravelCoin(); r.travel = 1; }
     const events = this.adjustReputation(r.rep);
     if (action === 'dispute' && r.rep > 0) { this.stats.disputesWon = (this.stats.disputesWon || 0) + 1; events.push(...this.unlock('dispute')); }
     const sale = this.sales.find((s) => s.id === f.saleId);
@@ -1057,9 +1228,17 @@ export class GameState {
       if (f.day < this.day) settled.push({ f, r: this.settleFollowUp(f.id, f.kind === 'praise' ? 'thank' : 'dismiss') });
     }
     this.followUps = this.followUps.filter((f) => !f.resolved || f.day >= this.day - 6);
-    const summary = { day: this.day, earned: this.dayEarnings, spent: this.daySpending, served: this.servedToday, settled: settled.length };
-    // tonight's weather is the weather of the day now ending (as forecast)
-    weatherRegrowth(this.gathering, this.deposits, weatherOn(this.seed, this.day), this.lookup);
+    // commissions not collected today: one more day at three quarters of the reward, then they give up
+    const lapsed = [];
+    for (const o of this.orders) {
+      if (o.status !== 'open' || o.due > this.day) continue;
+      if (!o.late) { o.late = true; o.due = this.day + 1; o.reward = Math.round(o.reward * 0.75); continue; }
+      o.status = 'failed';
+      lapsed.push(o);
+      this.adjustReputation(-6);
+    }
+    this.orders = this.orders.filter((o) => o.status === 'open' || o.accepted >= this.day - 10);
+    const summary = { day: this.day, earned: this.dayEarnings, spent: this.daySpending, served: this.servedToday, settled: settled.length, lapsed: lapsed.length };
     this.day++;
     this.customerIndex = 0;
     this.servedToday = 0;
@@ -1069,7 +1248,6 @@ export class GameState {
     this.opened = false;
     this.customersPerDay = 3 + Math.floor(this.rank / 2);
     this.rollMarket();
-    newDayRegrowth(this.gathering, this.deposits);
     setSky(this.gathering, this.deposits, weatherOn(this.seed, this.day).id);
     // a night in the hutch: marks fade, the sick get worse or better, kits are born
     const colony = colonyDay(this.colony, { seed: this.seed, day: this.day, cap: this.cap.hutch });
@@ -1209,6 +1387,9 @@ export class GameState {
       referrals: this.referrals,
       opened: this.opened,
       patrons: this.patrons,
+      biomes: this.biomes,
+      travel: this.travel,
+      orders: this.orders,
       savedAt: Date.now(),
     };
   }
@@ -1225,6 +1406,8 @@ export class GameState {
     addAlchemy(world);
     const inventory = Object.fromEntries(Object.entries(data.inventory).map(([k, v]) => [k, v === 'inf' ? Infinity : Number(v)]));
     for (const id of world.wild || []) if (!(id in inventory)) inventory[id] = 0;
+    // wild ingredients that no longer grow anywhere leave the shelves
+    for (const id of Object.keys(inventory)) if (/^wild-(?!p-)/.test(id) && !(world.wild || []).includes(id)) delete inventory[id];
     for (const [k, v] of Object.entries(inventory)) if (!Number.isFinite(v) && v !== Infinity) inventory[k] = 0;
     const st = new GameState({ ...data, world, inventory });
     if (data._migratedFrom !== undefined && data._migratedFrom < 3) st.genVersion = WORLD_GEN_VERSION;
@@ -1344,6 +1527,20 @@ export function migrate(raw) {
     delete d.receiver;
     d.version = 6;
   }
+  if (d.version < 7) {
+    // v7: twelve biomes with a dominant effect each, expeditions instead of
+    // regrowth, five new effects. Effect vectors grow from ten channels to
+    // fifteen (the new ones zero); the biomes the shop could reach by its
+    // rank stay open; the wilds start a fresh expedition everywhere.
+    padEffectArrays(d.current); padEffectArrays(d.vial); padEffectArrays(d.bottles); padEffectArrays(d.sales);
+    padEffectArrays(d.followUps); padEffectArrays(d.recipes); padEffectArrays(d.trials); padEffectArrays(d.cauldron);
+    const rank = rankIndex(Number(d.reputation) || 0);
+    d.biomes = REGIONS.filter((r) => r.price === 0 || (r.realm === 'natural' && r.rank <= rank) || (r.id === 'moonfen' && rank >= 2)).map((r) => r.id);
+    d.orders = [];
+    d.journal['note:v7'] = { key: 'note:v7', kind: 'note', title: 'The guild redrew its maps', day: d.day | 0,
+      text: 'Every land now has its own dominant magic and creature. The wilds no longer grow back: a traveller coin buys a new expedition. The lands your rank already reached are on your maps.' };
+    d.version = 7;
+  }
   // every shop owns the starting kit (the pestle joined it in v6)
   for (const id of STARTING_EQUIPMENT) if (!d.equipment.includes(id)) d.equipment = [...d.equipment, id];
   // the free starter mortar is retired: solids go in whole and the pestle crushes them
@@ -1411,6 +1608,20 @@ export function retireRequirements(com) {
   if (typeof com.style === 'string') com.style = [com.style.split('+')[0], ...com.techniques.slice().sort()].join('+');
   com.effectOrder = com.requirements.some((r) => r.effect);
   return com;
+}
+
+/**
+ * Pad every effect vector (an array called `effects` or `fx`) inside a saved
+ * structure to the current number of channels, in place.
+ * @param {any} o
+ */
+export function padEffectArrays(o, depth = 0) {
+  if (!o || typeof o !== 'object' || depth > 12) return;
+  if (Array.isArray(o)) { for (const x of o) padEffectArrays(x, depth + 1); return; }
+  for (const [k, v] of Object.entries(o)) {
+    if ((k === 'effects' || k === 'fx' || k === 'ref' || k === 'raw') && Array.isArray(v) && v.length >= 10 && v.length < NE && v.every((x) => typeof x === 'number')) o[k] = padEffects(v);
+    else if (v && typeof v === 'object') padEffectArrays(v, depth + 1);
+  }
 }
 
 /** @param {number} v */

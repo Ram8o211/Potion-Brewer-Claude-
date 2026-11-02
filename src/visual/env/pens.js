@@ -32,7 +32,7 @@ export const GROUND_Y0 = 69;
 const GROUND_Y1 = 86;
 
 /** Version of the pens' painting (names caches only). */
-export const PENS_VERSION = 7;
+export const PENS_VERSION = 8;
 
 /**
  * @typedef {Object} Pen
@@ -1508,7 +1508,149 @@ const PENS = {
       return { rack: { x: 44, y: GROUND_Y0 + 1 }, nest: [54, BACK - 3, 70, BACK], anim: [{ type: 'lantern', x: 114, y: 14 }, { type: 'motes', n: 8, x: 114, y: 28, r: 18 }, { type: 'drip', x: 104, y0: 10, y1: BACK + 2, every: 3.2 }, { type: 'drip', x: 126, y0: 8, y1: BACK + 2, every: 4.5 }] };
     },
   },
+  otter: {
+    title: 'The otter pool',
+    compose({ cv, seed, block }) {
+      sky(cv, 34, rgb('#3a6ab8'), rgb('#a8d0ec'));
+      clouds(cv, 4, 12, seed + 9, 3);
+      grove(cv, 27, haze(P.leaf, '#5a7aa8', 0.35), seed, { h: [10, 18], bottom: 32 });
+      rocks(cv, 0, 28, cv.W, BACK, P.stone, seed + 1, { h: 8, moss: 0.08 });
+      overgrowth(cv, 0, cv.W, 27, P.moss, seed + 2, { rate: 0.25, len: [3, 14] });
+      ground(cv, BACK, 'sand', seed + 3, { R: P.sand });
+      // a deep pool with a slide of smooth log into it, a spring tumbling over the rocks
+      pond(cv, 70, 170, BACK - 8, BACK + 4, seed + 4);
+      wood(cv, 44, BACK - 14, 84, BACK - 10, P.cask, { seed: 4 });
+      brace(cv, 46, BACK - 10, 46, BACK + 1, 2, P.cask);
+      fill(cv, 120, BACK - 20, 125, BACK - 7, (x, y) => P.water[(x + y * 2 + (y >> 1)) % 4 === 0 ? 5 : x === 120 ? 3 : 4]);
+      block(64, GROUND_Y0 - 3, 176, GROUND_Y0 + 3);
+      for (const [x, w] of [[190, 8], [206, 6], [18, 7]]) stone(cv, x, BACK - 2, w, seed + x);
+      flowers(cv, 180, 220, BACK, ['#ffffff', '#f4e4a0'], seed + 5, 6);
+      return { rack: { x: 30, y: GROUND_Y0 + 1 }, nest: [186, BACK - 3, 206, BACK], anim: [
+        { type: 'waterfall', x0: 120, x1: 125, y0: BACK - 20, y1: BACK - 7 },
+        { type: 'shimmer', n: 7, x0: 74, x1: 166, y0: BACK - 7, y1: BACK + 3 },
+        { type: 'butterflies', n: 1, x0: 180, x1: 220, y0: 40, y1: 60, colors: ['#f6d26a'] },
+      ] };
+    },
+  },
+  mooncat: {
+    title: 'The moon lynx observatory',
+    compose({ cv, seed, block }) {
+      sky(cv, 46, rgb('#06081e'), rgb('#22285a'));
+      // a round window on the night: stars and the moon in it
+      for (let y = 4; y < 44; y++) for (let x = 0; x < cv.W; x++) if (hash2(x, y, seed) > 0.985) cv.set(x, y, col(hash2(x, y, seed + 1) > 0.5 ? '#ffffff' : '#aab4ff'));
+      fill(cv, 150, 8, 174, 32, (x, y) => (Math.hypot(x - 162, y - 20) < 10 ? col(Math.hypot(x - 166, y - 17) < 9 ? '#22285a' : '#f0f0ff') : 0));
+      stonewall(cv, 0, 40, cv.W, BACK, P.stone.map((c) => mixPacked(c, col('#2a2a5a'), 0.35)), seed + 1, 8);
+      for (const cx of [56, 168]) arch(cv, cx, BACK, 30, 14, seed + cx);
+      // a brass telescope on its stand, crystals glowing on the sills
+      brace(cv, 100, BACK, 108, BACK - 16, 2, P.oak);
+      brace(cv, 116, BACK, 108, BACK - 16, 2, P.oak);
+      fill(cv, 96, BACK - 26, 124, BACK - 20, (x, y) => col(y === BACK - 26 ? '#fff0a0' : (x + y) % 5 ? '#c8a040' : '#8a6a20'));
+      for (const [x, c] of /** @type {[number, string][]} */ ([[30, '#a878ff'], [196, '#6ad0ff']])) fill(cv, x, BACK - 12, x + 4, BACK - 1, (xx, y) => col(xx === x ? '#ffffff' : y % 3 ? c : '#5a3aa8'));
+      cushion(cv, 140, 176, BACK - 1, '#5a3a8a', '#8a6ac8');
+      ground(cv, BACK, 'flags', seed + 3, { joint: '#14162a', R: P.stone.map((c) => mixPacked(c, col('#3a3a7a'), 0.3)) });
+      block(94, GROUND_Y0 - 3, 126, GROUND_Y0);
+      return { rack: { x: 40, y: GROUND_Y0 + 1 }, nest: [142, BACK - 3, 174, BACK], anim: [{ type: 'stars', n: 30, y1: 40 }, { type: 'wisps', n: 3, x0: 10, x1: 214, y0: 46, y1: 64, color: '#a878ff' }] };
+    },
+  },
+  skyhare: {
+    title: 'The sky hare aerie',
+    compose({ cv, seed, block }) {
+      sky(cv, BACK, rgb('#4a8ae0'), rgb('#e8f4ff'));
+      clouds(cv, 6, 30, seed + 9, 5);
+      // little isles floating in the distance
+      for (const [x, y, w] of /** @type {[number, number, number][]} */ ([[30, 26, 22], [120, 16, 16], [190, 34, 26]])) fill(cv, x - w / 2, y, x + w / 2, y + w * 0.5, (xx, yy) => { const u = (xx - x) / (w / 2), b = y + (w * 0.5) * (1 - u * u); return yy <= b ? col(yy === y ? '#a8dc8a' : yy < y + 2 ? '#6ab86a' : u < 0 ? '#9aa8c0' : '#7a88a8') : 0; });
+      // a cloud bank to stand on, a perch of driftwood, bells chiming
+      fill(cv, 0, BACK - 6, cv.W, BACK + 1, (x, y) => col(y === BACK - 6 + Math.round(Math.sin(x * 0.2) * 1.5) ? '#ffffff' : y < BACK - 3 ? '#f0f6ff' : '#d8e6f8'));
+      wood(cv, 150, BACK - 22, 200, BACK - 18, P.weathered, { seed: 6 });
+      brace(cv, 160, BACK - 18, 156, BACK, 2, P.weathered); brace(cv, 190, BACK - 18, 194, BACK, 2, P.weathered);
+      for (const x of [166, 176, 186]) { rect(cv, x, BACK - 18, x + 1, BACK - 12, P.iron[2]); rect(cv, x - 1, BACK - 12, x + 2, BACK - 9, col('#e8c060')); }
+      ground(cv, BACK, 'grass', seed + 3);
+      flowers(cv, 0, cv.W, BACK, ['#ffffff', '#fff4a0', '#b8e0ff'], seed + 5, 14);
+      block(148, GROUND_Y0 - 3, 202, GROUND_Y0);
+      return { rack: { x: 40, y: GROUND_Y0 + 1 }, nest: [60, BACK - 3, 84, BACK], anim: [{ type: 'butterflies', n: 3, x0: 10, x1: 214, y0: 20, y1: 56, colors: ['#ffffff', '#fff4a0', '#b8e0ff'] }] };
+    },
+  },
+  veilstoat: {
+    title: 'The veil stoat glasshouse',
+    fringe: 'snow',
+    compose({ cv, seed, block }) {
+      sky(cv, BACK, rgb('#a8b8cc'), rgb('#eef2f6'));
+      // panes of misted glass in a white frame
+      for (let x = 0; x < cv.W; x += 28) { rect(cv, x, 0, x + 2, BACK, col('#f4f6fa')); rect(cv, x + 2, 0, x + 3, BACK, col('#c4ccd8')); }
+      for (const y of [20, 44]) { rect(cv, 0, y, cv.W, y + 2, col('#f4f6fa')); rect(cv, 0, y + 2, cv.W, y + 3, col('#c4ccd8')); }
+      fill(cv, 0, 0, cv.W, BACK, (x, y) => (hash2(x >> 2, y >> 2, seed) > 0.975 && (x + y) % 3 === 0 ? col('#ffffff') : 0));
+      // pale ferns in pots, a glass bell jar
+      for (const x of [20, 70, 190]) { planter(cv, x, x + 16, BACK, 5, seed + x); }
+      fill(cv, 110, BACK - 22, 134, BACK, (x, y) => { const d = Math.hypot((x - 122) / 12, (y - (BACK - 10)) / 12); return d < 1 && (d > 0.85 || (x - 122) + (y - BACK + 10) < -10) ? col(d > 0.85 ? '#c4d4e8' : '#ffffff') : 0; });
+      ground(cv, BACK, 'flags', seed + 3, { joint: '#8a94a4', R: P.lime });
+      block(108, GROUND_Y0 - 3, 136, GROUND_Y0);
+      return { rack: { x: 50, y: GROUND_Y0 + 1 }, nest: [150, BACK - 3, 176, BACK], anim: [{ type: 'motes', n: 14, x: 112, y: 40, r: 60 }] };
+    },
+  },
+  chromanewt: {
+    title: 'The chroma newt tank',
+    compose({ cv, seed, block }) {
+      // a great glass tank of glowing water, coral and weed
+      fill(cv, 0, 0, cv.W, BACK, (x, y) => { const t = y / BACK; return col(t < 0.3 ? '#0e3a52' : t < 0.6 ? '#145a70' : '#1e7a86'); });
+      for (let i = 0; i < 4; i++) { const x0 = 20 + i * 56; fill(cv, x0, 0, x0 + 12, BACK, (x, y) => (Math.abs(x - x0 - y * 0.2) < 4 && hash2(x, y, seed) > 0.4 ? col('#2a8a96') : 0)); }
+      for (const [x, h, c] of /** @type {[number, number, string[]][]} */ ([[30, 26, ['#e04a7a', '#ff9ac0']], [70, 18, ['#f08a2a', '#ffc070']], [150, 30, ['#8a5ae0', '#c8a8ff']], [200, 20, ['#2ac8b0', '#8af0e0']]])) {
+        for (let j = 0; j < h; j++) { const w = Math.max(1, Math.round(3 - j / h * 2)); fill(cv, x - w + Math.round(Math.sin(j * 0.3) * 2), BACK - j, x + w + Math.round(Math.sin(j * 0.3) * 2), BACK - j + 1, (xx) => col(xx === x - w + Math.round(Math.sin(j * 0.3) * 2) ? c[1] : c[0])); }
+      }
+      for (let x = 96; x < 132; x += 4) for (let j = 0; j < 20 + (x % 7); j++) cv.set(x + Math.round(Math.sin(j * 0.25 + x) * 1.5), BACK - j, col(j % 5 ? '#2a8a4a' : '#5ac06a'));
+      ground(cv, BACK, 'sand', seed + 3, { R: P.sand });
+      for (const [x, w] of [[16, 6], [182, 8]]) stone(cv, x, BACK, w, seed + x);
+      block(94, GROUND_Y0 - 3, 134, GROUND_Y0);
+      return { rack: { x: 50, y: GROUND_Y0 + 1 }, nest: [150, BACK - 3, 176, BACK], anim: [{ type: 'bubbles', n: 14, x0: 8, x1: 216, y0: BACK + 2, y1: 2, colors: ['#c8fff4', '#ffffff', '#8af0e0'] }, { type: 'shimmer', n: 6, x0: 4, x1: 220, y0: 2, y1: 14 }] };
+    },
+  },
+  stormstag: {
+    title: 'The storm stag paddock',
+    compose({ cv, seed, block }) {
+      sky(cv, 40, rgb('#0e1222'), rgb('#3a4458'));
+      clouds(cv, 2, 18, seed + 9, 6, { lit: '#5a6478', mid: '#3a4256', dark: '#22283a' });
+      hills(cv, 32, 8, '#1e2432', '#2c3446', seed);
+      rocks(cv, 0, 38, cv.W, BACK, P.stone.map((c) => mixPacked(c, col('#1a2030'), 0.4)), seed + 1, { h: 9 });
+      // two crystal lightning rods on iron feet, a fence of black rails
+      for (const x of [40, 184]) {
+        fill(cv, x - 2, BACK - 34, x + 3, BACK, (xx, y) => col(y < BACK - 30 ? '#ffffff' : xx === x - 2 ? '#9ac8ff' : xx === x + 2 ? '#1e3a7a' : '#3a6ad8'));
+        rect(cv, x - 4, BACK - 3, x + 5, BACK, P.iron[2]);
+      }
+      railFence(cv, 60, 170, BACK, 14, P.iron.concat(P.iron), { gap: 22, rails: 2 });
+      ground(cv, BACK, 'cobble', seed + 3, { R: P.stone.map((c) => mixPacked(c, col('#1a2030'), 0.3)) });
+      block(34, GROUND_Y0 - 3, 46, GROUND_Y0); block(178, GROUND_Y0 - 3, 190, GROUND_Y0);
+      return { rack: { x: 100, y: GROUND_Y0 + 1 }, nest: [130, BACK - 3, 160, BACK], anim: [{ type: 'rain', n: 50 }, { type: 'sparks', at: [[40, BACK - 33], [184, BACK - 33]] }] };
+    },
+  },
+  dreamsnail: {
+    title: 'The dream snail pillow garden',
+    compose({ cv, seed, block }) {
+      sky(cv, 40, rgb('#2a1e4e'), rgb('#f0a8c8'));
+      clouds(cv, 6, 24, seed + 9, 4, { lit: '#ffd0e8', mid: '#e0a0c8', dark: '#a070a8' });
+      hills(cv, 34, 6, '#7a4a8a', '#9a6aaa', seed);
+      // giant drowsing flowers, heaped pillows, a little lantern
+      for (const [x, h, c] of /** @type {[number, number, string][]} */ ([[24, 30, '#c05aa0'], [196, 34, '#6a6ad8'], [120, 24, '#f08ad0']])) {
+        for (let j = 0; j < h; j++) rect(cv, x + Math.round((j / h) ** 2 * 6), BACK - j, x + Math.round((j / h) ** 2 * 6) + 2, BACK - j + 1, col('#4a8a4a'));
+        fill(cv, x, BACK - h - 4, x + 14, BACK - h + 8, (xx, y) => (Math.hypot((xx - x - 7) / 7, (y - (BACK - h + 2)) / 6) < 1 ? col((xx + y) % 4 ? c : '#ffd0f0') : 0));
+      }
+      cushion(cv, 60, 96, BACK - 1, '#a870c0', '#f0b8f0');
+      cushion(cv, 140, 180, BACK - 1, '#6a6ad8', '#a8a8ff');
+      ground(cv, BACK, 'grass', seed + 3, { R: ['#3a1e4a', '#5a3a6a', '#8456a0', '#a870c0', '#d090e0', '#f0b8f0'].map(col) });
+      flowers(cv, 0, cv.W, BACK, ['#ffffff', '#fff0a0', '#a0f0ff'], seed + 5, 14);
+      block(58, GROUND_Y0 - 3, 98, GROUND_Y0);
+      return { rack: { x: 30, y: GROUND_Y0 + 1 }, nest: [142, BACK - 3, 178, BACK], anim: [{ type: 'bubbles', n: 8, x0: 20, x1: 210, y0: BACK - 10, y1: 4, colors: ['#ffc8f0', '#c8f0ff', '#fff0a0'] }, { type: 'stars', n: 16, y1: 30 }] };
+    },
+  },
 };
+
+/** A heaped cushion on the ground: lit on its top, a seam, shaded under. @param {Canvas} cv @param {number} x0 @param {number} x1 @param {number} base @param {string} dark @param {string} light */
+function cushion(cv, x0, x1, base, dark, light) {
+  const D = col(dark), L = col(light), M = mixPacked(D, L, 0.5), h = Math.round((x1 - x0) * 0.22);
+  fill(cv, x0, base - h, x1, base + 1, (x, y) => {
+    const u = (x - x0) / (x1 - x0), top = base - h * Math.sin(u * Math.PI) ** 0.6;
+    if (y < top) return 0;
+    return y < top + 2 ? L : x === Math.round((x0 + x1) / 2) ? D : y > base - 2 ? D : M;
+  });
+}
 
 /** Kinds with a pen of their own. */
 export const PEN_KINDS = Object.keys(PENS);

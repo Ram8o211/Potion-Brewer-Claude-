@@ -1,7 +1,7 @@
 // Magical and chemical effects.
 //
 // An effect is a property of each *species* (water has none, troll moss
-// carries strength, nightshade carries toxicity…), stored as a 10-channel
+// carries strength, nightshade carries toxicity…), stored as a 15-channel
 // vector on the 0..100 potency scale of the pure material. What a potion
 // does is never looked up from a recipe: it is computed from the matter the
 // customer actually drinks, particle by particle:
@@ -33,23 +33,38 @@
  * @property {string} icon     UI icon name
  * @property {number[]} color  sRGB 0..1 (aura / bars)
  * @property {'magic'|'chemical'} kind
+ * @property {'natural'|'exotic'} realm  natural effects grow in the six natural biomes, exotic ones only in the exotic biomes
  * @property {boolean} [signed]
  * @property {string} desc
  * @property {boolean} [harmful]
  */
 
-/** @type {EffectDef[]} */
+/**
+ * The fifteen effects. The first ten keep their old indices (saves and
+ * effect vectors stay index-compatible); the five added with the exotic
+ * biomes come after them. Natural effects grow in the natural biomes —
+ * vitality, strength, love, fire, frost, swiftness, and the chemical and
+ * grave ones that come along as side effects; exotic effects (arcana,
+ * transformation, levitation, invisibility, storm, dream) only in the exotic
+ * biomes, each the dominant magic of one of them.
+ * @type {EffectDef[]}
+ */
 export const EFFECTS = [
-  { key: 'vitality', label: 'Vitality', icon: 'heart', color: [0.92, 0.3, 0.32], kind: 'magic', desc: 'Healing and life: mends wounds, restores energy.' },
-  { key: 'strength', label: 'Strength', icon: 'fist', color: [0.96, 0.76, 0.36], kind: 'magic', desc: 'Might and toughness of body (or of stone).' },
-  { key: 'love', label: 'Love', icon: 'rose', color: [1, 0.5, 0.74], kind: 'magic', desc: 'Attraction, affection and calm.' },
-  { key: 'arcana', label: 'Arcana', icon: 'eye', color: [0.62, 0.52, 1], kind: 'magic', desc: 'Insight and raw magical potency; makes things shine.' },
-  { key: 'transformation', label: 'Transformation', icon: 'swirl', color: [0.4, 0.9, 0.79], kind: 'magic', desc: 'Change of shape, colour or nature.' },
-  { key: 'fire', label: 'Fire', icon: 'flame', color: [1, 0.56, 0.3], kind: 'magic', desc: 'Burning warmth. Opposes frost.' },
-  { key: 'frost', label: 'Frost', icon: 'snow', color: [0.55, 0.87, 1], kind: 'magic', desc: 'Freezing cold. Opposes fire.' },
-  { key: 'acidity', label: 'Acidity', icon: 'acid', color: [0.84, 0.91, 0.45], kind: 'chemical', signed: true, harmful: true, desc: 'Corrosive acid. Negative values are alkaline; acids and alkalis neutralise.' },
-  { key: 'toxicity', label: 'Toxicity', icon: 'skull', color: [0.57, 0.8, 0.44], kind: 'chemical', harmful: true, desc: 'Poison. Vitality neutralises it.' },
-  { key: 'death', label: 'Death', icon: 'death', color: [0.71, 0.57, 0.93], kind: 'magic', harmful: true, desc: 'Necromantic decay. Opposes vitality.' },
+  { key: 'vitality', label: 'Vitality', icon: 'heart', color: [0.92, 0.3, 0.32], kind: 'magic', realm: 'natural', desc: 'Healing and life: mends wounds, restores energy.' },
+  { key: 'strength', label: 'Strength', icon: 'fist', color: [0.96, 0.76, 0.36], kind: 'magic', realm: 'natural', desc: 'Might and toughness of body (or of stone).' },
+  { key: 'love', label: 'Love', icon: 'rose', color: [1, 0.5, 0.74], kind: 'magic', realm: 'natural', desc: 'Attraction, affection and calm.' },
+  { key: 'arcana', label: 'Arcana', icon: 'eye', color: [0.62, 0.52, 1], kind: 'magic', realm: 'exotic', desc: 'Insight and raw magical potency; makes things shine.' },
+  { key: 'transformation', label: 'Transformation', icon: 'swirl', color: [0.4, 0.9, 0.79], kind: 'magic', realm: 'exotic', desc: 'Change of shape, colour or nature.' },
+  { key: 'fire', label: 'Fire', icon: 'flame', color: [1, 0.56, 0.3], kind: 'magic', realm: 'natural', desc: 'Burning warmth. Opposes frost.' },
+  { key: 'frost', label: 'Frost', icon: 'snow', color: [0.55, 0.87, 1], kind: 'magic', realm: 'natural', desc: 'Freezing cold. Opposes fire.' },
+  { key: 'acidity', label: 'Acidity', icon: 'acid', color: [0.84, 0.91, 0.45], kind: 'chemical', realm: 'natural', signed: true, harmful: true, desc: 'Corrosive acid. Negative values are alkaline; acids and alkalis neutralise.' },
+  { key: 'toxicity', label: 'Toxicity', icon: 'skull', color: [0.57, 0.8, 0.44], kind: 'chemical', realm: 'natural', harmful: true, desc: 'Poison. Vitality neutralises it.' },
+  { key: 'death', label: 'Death', icon: 'death', color: [0.71, 0.57, 0.93], kind: 'magic', realm: 'natural', harmful: true, desc: 'Necromantic decay. Opposes vitality.' },
+  { key: 'swiftness', label: 'Swiftness', icon: 'wind', color: [0.4, 0.92, 0.58], kind: 'magic', realm: 'natural', desc: 'Quick feet and quick hands: the speed of a hare.' },
+  { key: 'levitation', label: 'Levitation', icon: 'feather', color: [1, 0.93, 0.7], kind: 'magic', realm: 'exotic', desc: 'Lightness: the drinker floats free of the ground.' },
+  { key: 'invisibility', label: 'Invisibility', icon: 'ghost', color: [0.8, 0.84, 0.92], kind: 'magic', realm: 'exotic', desc: 'The drinker fades from sight, like mist in the sun.' },
+  { key: 'storm', label: 'Storm', icon: 'storm', color: [0.32, 0.56, 1], kind: 'magic', realm: 'exotic', desc: 'Living lightning: crackling power in the veins.' },
+  { key: 'dream', label: 'Dream', icon: 'moon', color: [0.88, 0.48, 0.96], kind: 'magic', realm: 'exotic', desc: 'Sleep and visions: deep rest and prophetic dreams.' },
 ];
 
 export const NE = EFFECTS.length;
@@ -58,7 +73,21 @@ export const EFFECT_KEYS = EFFECTS.map((e) => e.key);
 export const EFFECT_INDEX = Object.fromEntries(EFFECT_KEYS.map((k, i) => [k, i]));
 /** @type {Record<string, EffectDef>} */
 export const EFFECT_BY_KEY = Object.fromEntries(EFFECTS.map((e) => [e.key, e]));
-export const E = Object.freeze({ VIT: 0, STR: 1, LOVE: 2, ARC: 3, TRANS: 4, FIRE: 5, FROST: 6, ACID: 7, TOX: 8, DEATH: 9 });
+export const E = Object.freeze({ VIT: 0, STR: 1, LOVE: 2, ARC: 3, TRANS: 4, FIRE: 5, FROST: 6, ACID: 7, TOX: 8, DEATH: 9, SWIFT: 10, LEV: 11, INVIS: 12, STORM: 13, DREAM: 14 });
+/** Effect keys of each realm. */
+export const NATURAL_EFFECTS = EFFECTS.filter((e) => e.realm === 'natural').map((e) => e.key);
+export const EXOTIC_EFFECTS = EFFECTS.filter((e) => e.realm === 'exotic').map((e) => e.key);
+
+/**
+ * An effect vector of any length (an older save's ten channels) as NE
+ * numbers: missing channels are zero.
+ * @param {ArrayLike<number>|null|undefined} v @returns {number[]}
+ */
+export function padEffects(v) {
+  const out = new Array(NE).fill(0);
+  if (v) for (let k = 0; k < Math.min(NE, v.length); k++) out[k] = Number(v[k]) || 0;
+  return out;
+}
 
 /** Old four-aspect model → effect channels (save migration and generator). */
 export const ASPECT_TO_EFFECT = ['vitality', 'fire', 'arcana', 'strength'];

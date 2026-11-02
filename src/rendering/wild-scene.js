@@ -13,11 +13,30 @@ import { sceneOf, SCENE_W, SCENE_H } from '../visual/env/scene.js';
 import { MIN_HIT } from './species-sprites.js';
 import { hashString } from '../core/rng.js';
 import { frameMount } from '../visual/growth.js';
+import { makeWonder } from './wonders.js';
 
 export { SCENE_W, SCENE_H };
 
 /** @type {Map<string, HTMLCanvasElement>} */
 const canvases = new Map();
+
+/** @type {Map<string, any>} */
+const wonders = new Map();
+
+/**
+ * The living wonder of an exotic land's scene (rendering/wonders.js): what
+ * answers the finger there. One per world, region and expedition; null in a
+ * natural land.
+ * @param {string} region @param {string} seed
+ */
+export function sceneWonder(region, seed) {
+  const k = region + ':' + seed;
+  if (wonders.has(k)) return wonders.get(k);
+  const w = makeWonder(region, sceneOf(region, seed).meta, hashString(String(seed)));
+  if (wonders.size >= 8) wonders.delete(/** @type {string} */ (wonders.keys().next().value));
+  wonders.set(k, w);
+  return w;
+}
 
 /** A region's painted scene as a canvas (browser), made once per world and region. @param {string} region @param {string} seed */
 export function sceneCanvas(region, seed) {
@@ -760,12 +779,6 @@ export function animateRegion(ctx, region, t, seed) {
     if (meta.adit) halo(ctx, meta.adit[0], meta.adit[1], 7, '#ff9a40', 0.08 + 0.04 * Math.sin(t * 5));
   }
   if (region === 'moonfen') {
-    for (let i = 0; i < 6; i++) {
-      // wisps drifting over the bog
-      const x = W * (0.08 + i * 0.16) + Math.sin(t * 0.6 + i * 2) * 14, y = H * 0.6 + Math.sin(t * 1.2 + i) * 9;
-      halo(ctx, x, y, 8, '#5fd4e8', 0.12);
-      px(ctx, x - 1, y - 2, '#8fe0ff', 2, 4); px(ctx, x - 1, y, '#e9fbff', 2, 2); px(ctx, x, y - 4 + Math.round(Math.sin(t * 8 + i)), '#5fd4e8', 1, 2);
-    }
     // fireflies blinking
     for (let i = 0; i < 14; i++) {
       if (Math.sin(t * 2.5 + i * 2.1) < 0.4) continue;
@@ -807,4 +820,55 @@ export function animateRegion(ctx, region, t, seed) {
     if (lava) halo(ctx, (lava.x0 + lava.x1) / 2, lava.level, (lava.x1 - lava.x0) / 2 + 10, '#ff6a20', 0.06 + 0.03 * Math.sin(t * 3) + 0.02 * Math.sin(t * 11));
     trickles(ctx, meta.trickles || [], t, '#5a4e4c', '#3e3438');
   }
+  if (region === 'skydrift') {
+    // birds far off, wingbeats apart; seeds and down drifting on the wind
+    for (let i = 0; i < 4; i++) {
+      const x = ((t * (9 + i * 3) + i * 97) % (W + 30)) - 15, y = 24 + i * 13 + Math.sin(t * 1.3 + i) * 4, up = Math.sin(t * 8 + i * 2) > 0 ? 1 : 0;
+      for (const [dx, dy] of [[0, 0], [-1, -up], [1, -up], [-2, 1 - up * 2], [2, 1 - up * 2]]) px(ctx, x + dx, y + dy, '#3a4a6a');
+    }
+    for (let i = 0; i < 16; i++) { const age = (t * 0.05 + rnd(i)) % 1; px(ctx, (rnd(i, 1) * W + t * 12 + Math.sin(t + i) * 8) % W, H * 0.85 - age * 140, age < 0.8 ? '#ffffff' : '#e8f0ff'); }
+  }
+  if (region === 'veilmist') {
+    // pale motes hanging in the still air, blinking in and out
+    for (let i = 0; i < 22; i++) {
+      if (Math.sin(t * 1.4 + i * 2.3) < 0.1) continue;
+      const x = (rnd(i) * W + Math.sin(t * 0.3 + i) * 10) % W, y = 60 + rnd(i, 1) * 120 + Math.sin(t * 0.5 + i) * 6;
+      halo(ctx, x, y, 3, '#ffffff', 0.18); px(ctx, x, y, '#ffffff');
+    }
+    for (const p of meta.pools || []) surface(ctx, p, t, '#ffffff', false);
+  }
+  if (region === 'reef') {
+    // bubbles rising through the water, little fish darting in a shoal
+    for (let i = 0; i < 20; i++) {
+      const age = (t * 0.12 + rnd(i)) % 1, x = rnd(i, 1) * W + Math.sin(t * 2 + i) * 2, y = H * 0.9 - age * H;
+      px(ctx, x, y, age < 0.85 ? '#c8fff4' : '#ffffff', i % 4 ? 1 : 2, i % 4 ? 1 : 2);
+    }
+    const fx = (t * 18) % (W + 80) - 40, fy = 70 + Math.sin(t * 0.7) * 20;
+    for (let k = 0; k < 9; k++) {
+      const x = fx - (k % 3) * 6 - Math.floor(k / 3) * 3, y = fy + Math.floor(k / 3) * 4 + Math.sin(t * 6 + k) * 1.2;
+      px(ctx, x, y, '#ffd04a', 2, 1); px(ctx, x - 1, y, '#ff8a2a');
+    }
+  }
+  if (region === 'stormspire') {
+    // rain sheeting across, a far flash now and then
+    for (let i = 0; i < 70; i++) {
+      const sp = 220 + rnd(i, 2) * 80, y = ((t * sp + rnd(i) * H * 2) % (H + 20)) - 10, x = ((rnd(i, 1) * (W + 60) - y * 0.35 + t * 30) % (W + 60) + W + 60) % (W + 60) - 30;
+      ctx.fillStyle = i % 3 ? 'rgba(170,190,230,0.45)' : 'rgba(220,230,255,0.6)';
+      ctx.fillRect(Math.round(x), Math.round(y), 1, 4);
+    }
+    const ph = (t * 0.13) % 1;
+    if (ph < 0.025) { ctx.fillStyle = `rgba(200,215,255,${(0.18 * (1 - ph / 0.025)).toFixed(3)})`; ctx.fillRect(0, 0, W, H * 0.7); }
+  }
+  if (region === 'dreamspire') {
+    // twinkling stars and petals drifting down, turning
+    for (let i = 0; i < 30; i++) if (Math.sin(t * 2 + i * 1.9) > 0.6) px(ctx, rnd(i, 3) * W, rnd(i, 4) * 80, '#ffffff');
+    for (let i = 0; i < 10; i++) {
+      const age = (t * 0.06 + rnd(i)) % 1, x = (rnd(i, 1) * W + Math.sin(t * 0.9 + i) * 16 + t * 6) % W, y = age * H, flat = Math.sin(t * 3 + i) > 0;
+      px(ctx, x, y, i % 2 ? '#ffc8f0' : '#f0e0ff', flat ? 2 : 1, flat ? 1 : 2);
+    }
+    for (const p of meta.pools || []) surface(ctx, p, t, '#ffe0ff', false);
+  }
+  // the land's living wonder, on top of everything
+  const wonder = sceneWonder(region, seed);
+  if (wonder) wonder.draw(ctx, t);
 }

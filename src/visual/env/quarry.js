@@ -70,20 +70,22 @@ export function compose(cv, seed) {
     ],
   });
   moss(cv, { cols: ['#8a7a5e', '#6a5c48', '#4a4034'], seed: ss + 1, drape: 5, rate: 0.08, len: 6 });
-  // pockets of ore in the rock — rust, gold, quartz — and stray flecks glinting
-  const fl = s('flecks'), ores = [[0xff2a5aa8, 0xff3a7ac8], [0xff3ab0e8, 0xff2a7ad0], [0xffd8e0e4, 0xffa8b0b4]];
-  for (let i = 0; i < 18; i++) {
-    const cx = fl.int(0, W - 1), cy = fl.int(100, H - 4), ore = ores[i % ores.length], r = fl.int(3, 6);
-    for (let k = 0; k < r * r * 1.6; k++) {
-      const a = fl.next() * Math.PI * 2, d = Math.sqrt(fl.next()) * r, xx = Math.round(cx + Math.cos(a) * d * 1.4), yy = Math.round(cy + Math.sin(a) * d);
-      if (xx < 0 || xx >= W || yy < 0 || yy >= H || !cv.solid[yy * W + xx] || !cv.solid[(yy - 3) * W + xx]) continue;
-      cv.set(xx, yy, ore[fl.next() < 0.7 ? 0 : 1]);
+  // nuggets of ore set in the rock — gold, rust, quartz — each a small rounded lump lit on its upper
+  // left and outlined dark, a few together in a pocket, so they read at a glance among the stones
+  const fl = s('flecks'), ores = [[0xff40c8f0, 0xff2090d8, 0xff8af0ff], [0xff2a5ab8, 0xff1a3a88, 0xff4a8ae0], [0xffe4ecee, 0xffa8b4b8, 0xffffffff]];
+  for (let i = 0; i < 9; i++) {
+    const cx = fl.int(8, W - 8), cy = fl.int(118, H - 8), ore = ores[i % ores.length];
+    if (!cv.solid[cy * W + cx] || !cv.solid[(cy - 8) * W + cx]) continue;
+    for (let k = 0, n = fl.int(2, 4); k < n; k++) {
+      const nx = cx + fl.int(-6, 6), ny = cy + fl.int(-3, 3), w = fl.int(2, 3), hh = 2;
+      for (let yy = ny - 1; yy <= ny + hh; yy++) for (let xx = nx - 1; xx <= nx + w; xx++) {
+        if (xx < 0 || xx >= W || yy < 0 || yy >= H || !cv.solid[yy * W + xx]) continue;
+        const edge = xx === nx - 1 || xx === nx + w || yy === ny - 1 || yy === ny + hh;
+        const corner = (xx === nx - 1 || xx === nx + w) && (yy === ny - 1 || yy === ny + hh);
+        if (corner) continue;
+        cv.set(xx, yy, edge ? 0xff0c0a0a : xx === nx && yy === ny ? ore[2] : yy === ny + hh - 1 ? ore[1] : ore[0]);
+      }
     }
-  }
-  for (let i = 0; i < 90; i++) {
-    const xx = fl.int(0, W - 1), yy = fl.int(0, H - 1);
-    if (!cv.solid[yy * W + xx]) continue;
-    cv.set(xx, yy, fl.next() < 0.6 ? 0xff3ab0e8 : 0xff2a7ad0);
   }
   markOpen(cv);
   // the adit's timber frame

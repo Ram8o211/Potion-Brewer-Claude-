@@ -31,6 +31,7 @@ export const EQUIPMENT = [
   // gathering
   { id: 'kit', name: 'Forager’s Kit', category: 'gathering', price: 60, rank: 0, icon: 'trowel', mechanics: ['gathering'], desc: 'Trowel, rock hammer, sickle and brush: roots, mineral seams, mosses and fine dust come up whole. Without it you scrabble up half as much of anything you cannot simply pick.' },
   { id: 'satchel', name: 'Forager’s Satchel', category: 'gathering', price: 80, rank: 1, icon: 'satchel', mechanics: ['gathering'], desc: 'Carry more from the wilds: each harvest gathers half as much again.' },
+  { id: 'compass', name: 'Traveller’s Compass', category: 'gathering', price: 120, rank: 1, icon: 'compass', mechanics: ['gathering'], desc: 'A brass compass that always points somewhere new: your purse holds five traveller coins instead of three.' },
   // potion storage: shelves of sealed glass bottles
   { id: 'rack1', name: 'Bottle Shelf', category: 'storage', price: 40, rank: 0, icon: 'shelf', mechanics: ['storage'], desc: 'A plank shelf with a lip: room for 6 sealed bottles of potion.', effect: { bottles: 6 } },
   { id: 'rack2', name: 'Potion Cabinet', category: 'storage', price: 150, rank: 1, icon: 'shelf2', requires: ['rack1'], mechanics: ['storage'], desc: 'A glass-fronted cabinet: room for 12 sealed bottles.', effect: { bottles: 12 } },

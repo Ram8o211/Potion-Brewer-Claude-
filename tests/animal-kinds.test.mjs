@@ -6,7 +6,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Warren } from '../src/game/wild-rabbits.js';
-import { KINDS, KIND_IDS, HABITAT, kindOf, biasSpread, pickKind, kindLook, STEADY_SPREAD } from '../src/game/kinds.js';
+import { KINDS, KIND_IDS, HABITAT, kindOf, biasSpread, pickKind, kindLook, STEADY_SPREAD, anatomyOf } from '../src/game/kinds.js';
+import { REGIONS } from '../src/game/gathering.js';
 import { EFFECT_KEYS } from '../src/alchemy/effects.js';
 import { createColony, addWildRabbit, rabbitSensitivity, inheritLook, normalizeColony, colonyDay, rollLook } from '../src/game/colony.js';
 import { rabbitReading, summarize } from '../src/game/experiments.js';
@@ -41,16 +42,17 @@ function watch(w, sec, alarm = false) {
   return { air: air / steps, walk: walk / steps, maxFlight, speed: dist / (sec * w.rabbits.length) };
 }
 
-test('every kind lives where its habitat says, and the wilds hold more than rabbits', () => {
+test('every biome has its own creature, and only it lives there', () => {
   const rng = new Rng(5);
   for (const [region, h] of Object.entries(HABITAT)) {
     const seen = new Set();
     for (let i = 0; i < 200; i++) seen.add(pickKind(region, rng));
     assert.deepEqual([...seen].sort(), h.map((x) => x[0]).sort(), region);
   }
-  const all = new Set(Object.values(HABITAT).flatMap((h) => h.map((x) => x[0])));
-  for (const k of Object.keys(KINDS)) assert.ok(all.has(k), `${k} lives somewhere`);
-  assert.ok(HABITAT.river.some(([k]) => k === 'toad') && HABITAT.quarry.some(([k]) => k === 'salamander'));
+  for (const r of REGIONS) assert.deepEqual(HABITAT[r.id].map((x) => x[0]), [r.creature], `${r.name}: ${r.creature}`);
+  // twelve biomes, twelve different creatures
+  assert.equal(new Set(REGIONS.map((r) => r.creature)).size, REGIONS.length);
+  assert.ok(HABITAT.forest.some(([k]) => k === 'fox') && HABITAT.crags.some(([k]) => k === 'salamander'));
 });
 
 test('each kind moves in its own way: rabbits bound, cats stroll and pounce, toads squat and hop short, salamanders creep', () => {
@@ -154,23 +156,25 @@ test('every kind is drawn inside its frame in every pose', () => {
       const look = { ...kindLook(/** @type {any} */ (kind), rng), size: n % 2 ? 1.15 : 0.85 };
       for (const pose of ['idle', 'walk1', 'walk2', 'eat', 'rear', 'loaf', 'hop', 'hurt', 'fly1', 'fly2', undefined]) {
         const a = rabbitAnchors(look, snap(pose !== undefined), pose);
-        assert.equal(a.kind, kind);
+        assert.equal(a.kind, anatomyOf(kind));
         assert.ok(a.box.x0 >= -1 && a.box.x1 <= RABBIT_W && a.box.y0 >= -1 && a.box.y1 <= RABBIT_H, `${kind} ${pose} ${JSON.stringify(a.box)}`);
       }
     }
   }
 });
 
-test('there is one kind of animal steady on each effect, and each lives somewhere in the wilds', () => {
-  const steady = KIND_IDS.map((k) => KINDS[k].steady).filter(Boolean);
-  assert.deepEqual([...steady].sort(), [...EFFECT_KEYS].sort(), 'one steady kind per effect');
-  for (const key of EFFECT_KEYS) {
-    const k = KIND_IDS.find((id) => KINDS[id].steady === key);
-    assert.equal(biasSpread({ kind: k }, key), STEADY_SPREAD, `${k} reads ${key} steadily`);
-    assert.ok(Object.values(HABITAT).some((h) => h.some(([x]) => x === k)), `${k} lives somewhere`);
+test('every effect has a kind that reads it steadily; every biome\'s creature reads its dominant effect steadily', () => {
+  const steady = new Set(KIND_IDS.map((k) => KINDS[k].steady).filter(Boolean));
+  for (const key of EFFECT_KEYS) assert.ok(steady.has(key), `a steady kind for ${key}`);
+  for (const r of REGIONS) {
+    const k = r.creature;
+    assert.equal(KINDS[k].steady, r.effect, `${r.name}: the ${k} reads ${r.effect}`);
+    assert.equal(biasSpread({ kind: k }, r.effect), STEADY_SPREAD, `${k} reads ${r.effect} steadily`);
     // and each is drawn as itself, with its own coat
     const look = kindLook(/** @type {any} */ (k), new Rng(1));
     assert.equal(kindOf(look), k);
+    // exotic creatures are exotic, natural ones natural
+    assert.equal(!!KINDS[k].exotic, r.realm === 'exotic', k);
   }
 });
 

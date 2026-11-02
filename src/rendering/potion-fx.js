@@ -24,6 +24,12 @@
 //                   green and violet motes drifting
 //   death           dark smoke sinking in loose clumps and pale lavender
 //                   wisps wavering up
+//   swiftness       spring-green streaks darting sideways, long thin tails
+//   levitation      cream feathers of light rising slowly in lazy spirals
+//   invisibility    silver motes that blink in and out of sight
+//   storm           tiny blue-white zig-zag bolts flashing, static crackle
+//   dream           orchid bubbles rising and swelling until they pop,
+//                   with a twinkle of star-dust
 // Particles live in screen pixels (so they stay crisp pixel art) and are
 // carried by the liquid they swim in: each frame the brew's own velocity
 // where a particle is moves it by as far as the simulation ran, so they swirl
@@ -41,6 +47,7 @@ const MAX = 2400;
 const DENSITY = {
   vitality: 22, strength: 12, love: 30, arcana: 34, transformation: 18,
   fire: 34, frost: 32, acidity: 40, toxicity: 12, death: 22,
+  swiftness: 30, levitation: 40, invisibility: 64, storm: 40, dream: 20,
 };
 /** Most particles of one effect. */
 const CAP = 360;
@@ -57,6 +64,11 @@ const RAMP = {
   acidity: [[0.34, 0.5, 0.06], [0.58, 0.8, 0.12], [0.8, 0.95, 0.3], [0.94, 1, 0.55], [1, 1, 0.85]],
   toxicity: [[0.12, 0.26, 0.07], [0.26, 0.5, 0.12], [0.45, 0.76, 0.22], [0.66, 0.92, 0.36], [0.6, 0.32, 0.7]],
   death: [[0.06, 0.03, 0.1], [0.2, 0.1, 0.3], [0.42, 0.3, 0.6], [0.7, 0.6, 0.92], [0.9, 0.88, 1]],
+  swiftness: [[0.08, 0.4, 0.22], [0.16, 0.66, 0.36], [0.4, 0.92, 0.58], [0.72, 1, 0.8], [0.95, 1, 0.96]],
+  levitation: [[0.6, 0.5, 0.32], [0.86, 0.76, 0.5], [1, 0.93, 0.7], [1, 0.98, 0.88], [1, 1, 1]],
+  invisibility: [[0.36, 0.4, 0.5], [0.56, 0.6, 0.7], [0.8, 0.84, 0.92], [0.92, 0.95, 1], [1, 1, 1]],
+  storm: [[0.08, 0.16, 0.5], [0.16, 0.36, 0.9], [0.32, 0.56, 1], [0.66, 0.84, 1], [0.97, 1, 1]],
+  dream: [[0.4, 0.12, 0.5], [0.66, 0.26, 0.8], [0.88, 0.48, 0.96], [0.98, 0.74, 1], [1, 0.94, 1]],
 };
 const P = EFFECTS.map((e) => RAMP[e.key] || [e.color, e.color, e.color, e.color, WHITE]);
 const FIRE_RAMP = RAMP.fire.slice().reverse(); // white-hot first, smoke last
@@ -210,6 +222,11 @@ export class PotionParticles {
       case K.acidity: life = 1.2 + r * 1.2; this.vy[i] = -22 - r * 18; break;
       case K.toxicity: life = 2.5 + r * 2; this.vy[i] = r < 0.25 ? -3 : -5 - r * 4; break;
       case K.death: life = 3 + r * 2; this.vy[i] = r < 0.4 ? -4 - r * 3 : 3 + r * 2; break;
+      case K.swiftness: life = 0.5 + r * 0.5; this.vx[i] = (r < 0.5 ? -1 : 1) * (34 + r * 30); this.vy[i] = (this.rand() - 0.5) * 3; break;
+      case K.levitation: life = 4 + r * 3; this.vy[i] = -2.5 - r * 3; break;
+      case K.invisibility: life = 2.5 + r * 2.5; this.vx[i] = (this.rand() - 0.5) * 2; this.vy[i] = (this.rand() - 0.5) * 2; break;
+      case K.storm: life = r < 0.55 ? 0.3 + r * 0.4 : 1.2 + r; this.vx[i] = (this.rand() - 0.5) * 4; this.vy[i] = (this.rand() - 0.5) * 4; break;
+      case K.dream: life = 3 + r * 3; this.vy[i] = -3 - r * 2.5; break;
     }
     this.life[i] = life;
     // the first swarm of a brew is already under way
@@ -309,6 +326,9 @@ export class PotionParticles {
           else if (e === K.acidity) sx = Math.sin(time * 14 + v * 30) * 0.7;
           else if (e === K.toxicity) sx = Math.sin(time * 1.1 + v * 30) * 1.5;
           else if (e === K.death) sx = v < 0.4 ? Math.sin(time * 2 + v * 30) * 2.5 : Math.cos(time * 0.8 + v * 30) * 2;
+          else if (e === K.levitation) sx = Math.sin(time * 1.4 + v * 30) * 3.5;
+          else if (e === K.dream) sx = Math.sin(time * 0.9 + v * 30) * 2;
+          else if (e === K.storm) sx = (Math.sin(time * 37 + v * 90) > 0.6 ? 1 : 0);
           this.x[i] = this.ox[i] + sx; this.y[i] = this.oy[i];
         }
       }
@@ -525,6 +545,59 @@ export class PotionParticles {
           px(Math.round(Math.cos(an) * d), Math.round(Math.sin(an) * d * 0.8), s < 2 ? C[0] : C[1], fade * (0.85 - t * 0.4));
         }
         if ((v * 97) % 1 < 0.3) px(0, 0, C[2], fade * 0.7);
+        break;
+      }
+      case K.swiftness: {
+        // a streak darting sideways, a long thin tail behind it
+        const dir = this.vx[i] < 0 ? -1 : 1;
+        mote(0, 0, v < 0.3 ? WHITE : C[3], C[2], fade, 0.3);
+        trail(dir, 0, 6 + Math.round(v * 4), [C[3], C[2], C[2], C[1], C[1], C[0]], fade * 0.9);
+        if (v > 0.6) px(-dir * 2, -1, C[2], fade * 0.5);
+        break;
+      }
+      case K.levitation: {
+        // a feather of light: a pale quill tilted by the sway, rising slowly
+        const tilt = Math.sin(time * 1.4 + v * 30) > 0 ? 1 : -1;
+        if (v > 0.2) {
+          // a quill of light three pixels long with soft barbs
+          px(0, 0, C[4], fade); px(tilt, -1, C[4], fade); px(-tilt, 1, C[3], fade);
+          px(tilt * 2, -2, C[3], fade * 0.8); px(-tilt * 2, 2, C[2], fade * 0.7);
+          px(1, 0, C[2], fade * 0.6); px(-1, 0, C[2], fade * 0.6); px(tilt + 1, -1, C[1], fade * 0.5);
+        } else blob(2, C[3], C[4], C[1], fade, 0.5);
+        break;
+      }
+      case K.invisibility: {
+        // a silver mote blinking in and out of sight
+        const on = 0.5 + 0.5 * Math.sin(time * (2.2 + v * 3) + v * 50);
+        const a = fade * (on > 0.3 ? Math.min(1, on * 1.3) : on * 0.4);
+        // a ring of silver, empty in the middle: there and not there
+        if (v > 0.4) { px(-1, 0, C[0], a); px(1, 0, C[1], a); px(0, -1, C[0], a); px(0, 1, C[1], a); px(0, 0, WHITE, a * 0.7); px(-1, -1, C[3], a * 0.8); }
+        else mote(0, 0, on > 0.85 ? WHITE : C[1], C[0], a, 0.5);
+        break;
+      }
+      case K.storm: {
+        if (v < 0.55) {
+          // a tiny bolt: a zig-zag of four flashing steps
+          const fl = Math.sin(time * 40 + v * 99) > -0.2 ? 1 : 0.3;
+          let x = 0, y = -3;
+          for (let s = 0; s < 6; s++) { px(x, y, s % 2 ? C[3] : WHITE, fade * fl); y++; x += s % 2 ? 1 : -1; }
+          px(0, 0, C[2], fade * fl * 0.6);
+          break;
+        }
+        // static: a crackling speck that jumps a pixel now and then
+        const j = Math.sin(time * 23 + v * 77) > 0.7 ? 1 : 0;
+        mote(j, 0, Math.sin(time * 31 + v * 50) > 0.3 ? C[4] : C[2], C[1], fade, 0.5);
+        break;
+      }
+      case K.dream: {
+        // a bubble swelling as it rises, then a pop of star-dust
+        if (v < 0.25) { px(0, 0, Math.sin(time * 6 + v * 40) > 0 ? WHITE : C[3], fade); break; }
+        const R = 1 + Math.round(t * 2.2);
+        for (let y = -R; y <= R; y++) for (let x = -R; x <= R; x++) {
+          const d = Math.hypot(x, y);
+          if (Math.abs(d - R) < 0.6) px(x, y, (x + y) < 0 ? C[3] : C[2], fade * 0.9);
+        }
+        px(-Math.max(0, R - 1), -Math.max(0, R - 1), WHITE, fade * 0.8);
         break;
       }
     }
