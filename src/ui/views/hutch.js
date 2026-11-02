@@ -433,8 +433,22 @@ export class HutchPanel {
     if (!this.ctx) return;
     const low = this.lab.effectiveQuality() === 'low';
     this.scene.update(dt);
-    this.scene.draw(this.ctx, t, { selected: this.st.colony.focus, hover: this.hover, low });
-    if (this.crisp) { this.crisp.factor = this.lab.resolution(); this.crisp.present(); }
+    // at the higher resolutions the animals are drawn at twice the definition into a detail layer over the pen
+    let detail = null;
+    if (this.crisp) {
+      this.crisp.factor = this.lab.resolution();
+      if (this.crisp.ready()) {
+        if (!this.detailCv) { this.detailCv = document.createElement('canvas'); this.detailCv.width = HUTCH_W * 2; this.detailCv.height = HUTCH_H * 2; }
+        detail = /** @type {CanvasRenderingContext2D} */ (this.detailCv.getContext('2d'));
+        detail.setTransform(1, 0, 0, 1, 0, 0);
+        detail.clearRect(0, 0, HUTCH_W * 2, HUTCH_H * 2);
+        detail.imageSmoothingEnabled = false;
+        detail.setTransform(2, 0, 0, 2, 0, 0);
+      }
+      this.crisp.detail = detail ? detail.canvas : null;
+    }
+    this.scene.draw(this.ctx, t, { selected: this.st.colony.focus, hover: this.hover, low, detail });
+    if (this.crisp) this.crisp.present();
     this._acc += dt;
     if (this._acc >= (low ? 0.2 : 0.1)) { this._acc = 0; this.drawTiles(t); }
     this._live += dt;

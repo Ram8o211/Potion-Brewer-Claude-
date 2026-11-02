@@ -73,7 +73,7 @@ export function compose(cv, seed) {
   paintTerrain(cv, {
     a: '#1e1a18', b: '#2a2420', grain: '#4a4038', dark: '#0a0a10', deep: '#050508', cave: '#030305',
     crust: ['#3e8a6a', '#2e6a52', '#1e4a3c', '#16382e'], crustH: 4, seed: ss,
-    cobble: { stones: ['#283247', '#323850', '#3b425b', '#454f68', '#2e3a4c', '#3a4658'], mortar: '#020308', s: 10 },
+    cobble: { stones: ['#283247', '#323850', '#3b425b', '#454f68', '#2e3a4c', '#3a4658'], mortar: '#020308', s: 10, moss: ['#1e4a3c', '#3e8a6a'] },
     grass: { cols: ['#2e6a52', '#3e8a6a', '#1e4a3c'], tall: 4, rate: 0.55, flowers: ['#8ff0ff', '#d8ff8a'] },
     // under the bog moss a dark peaty earth with pale pebbles, a seam of blue-grey rock, then the stones
     layers: [

@@ -58,7 +58,7 @@ export function compose(cv, seed) {
   paintTerrain(cv, {
     a: '#2a2228', b: '#342a30', grain: '#54465a', dark: '#100c10', deep: '#060408', cave: '#040305',
     crust: ['#5aa08a', '#3e7a6a', '#2a5a4e', '#1e4038'], crustH: 4, seed: ss,
-    cobble: { stones: ['#3a3444', '#443c4e', '#4e4658', '#36303e', '#48405a', '#3e3848'], mortar: '#050408', s: 10 },
+    cobble: { stones: ['#3a3444', '#443c4e', '#4e4658', '#36303e', '#48405a', '#3e3848'], mortar: '#050408', s: 10, moss: ['#2a5a4e', '#4e8a7a'] },
     grass: { cols: ['#3e7a6a', '#5aa08a', '#2a5a4e'], tall: 3, rate: 0.45, flowers: ['#c8a0ff', '#8ff0ff', '#f0c8ff'] },
     // under the moss a dark violet loam with pale pebbles, then the stones
     layers: [

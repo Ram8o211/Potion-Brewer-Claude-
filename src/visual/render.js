@@ -31,7 +31,7 @@ export const PIECE_GRID = 20;
  * (visual/growth.js) on its mount — the ground, hanging, or jutting from a
  * rock face or a trunk — in one of its variants.
  * @param {import('./descriptor.js').Descriptor} d @param {number} stage 0 sprout, 1 ripe, 2 mature
- * @param {{closed?:boolean, mount?:string, variant?:number, flip?:boolean}} [o]
+ * @param {{closed?:boolean, mount?:string, variant?:number, flip?:boolean, k?:number}} [o]
  * @returns {Frame}
  */
 export function plantFrame(d, stage, o = {}) {

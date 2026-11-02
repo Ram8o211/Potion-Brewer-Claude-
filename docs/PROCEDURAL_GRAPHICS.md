@@ -56,12 +56,16 @@ still limited.
   lie level with its surface and run on under the pillars; on a ledge
   they follow its own top, so ledges are slabs of the top soil on stone
   pillars. Boulders bed only in the rock below.
-* **The wilds' stone** (`pebble` in stone.js): big rounded stones of
-  uneven sizes, each an egg a little wider than tall, in rows settled
-  half a stone apart, set in a thick near-black mortar that shows round
-  every one, each shaded in five flat tones as a lit dome (a bright cap
-  on its upper left, a lit shoulder, its body, a shaded flank, a deep
-  shadow along its underside), with no speckle. The ground, pillars, cave
+* **The wilds' stone** (`pebble` in stone.js): rounded stones of mixed
+  sizes (cobbles, and now and then a big stone among them on a coarser
+  grid), each an egg a little wider than tall, in rows settled half a
+  stone apart, set in a thick near-black mortar that shows round every
+  one, each shaded in five flat tones as a lit dome (a bright cap on its
+  upper left, a lit shoulder, its body, a shaded flank, a deep shadow
+  along its underside), mottled in broad soft patches a tone lighter or
+  darker, a few cracked across, and in the green regions a tuft of moss
+  on the tops of some. The grass crust hangs a pixel or two into the soil
+  under it in small drips. The ground, pillars, cave
   roofs and walls share it; the enclosures keep their packed cobbles.
 * **Shown at a higher resolution** (rendering/crisp.js, the *Wilds
   resolution* setting: ×1 to ×4, ×3 by default). A WebGL overlay draws
@@ -77,6 +81,15 @@ still limited.
   brightness and a little of its colour; their outline toward the colours
   of the shadows round them) instead of being ringed in ink and a pale
   halo. An animal's shadow is cast on the ground only while it touches it.
+  The ingredients growing in the wilds go into the detail layer too, grown
+  at twice the definition (growth.js `Sketch` with k = 2: every disc,
+  blob, stem, leaf, prism and gem sampled in half-pixel steps on a grid
+  twice as fine, so their curves, stems, veins and facets have more pixels
+  and their outline is half as thick). The enclosures have the same layer:
+  their animals are drawn from 96 × 80 sprites (rabbit.js with k = 2: the
+  body's ellipses and their outline rastered on the fine grid, the coat's
+  patterns and shading clipped to that smooth silhouette), with what lies
+  over them (the pen's front, markers) drawn after them there.
 * **Leaf clumps** (foliage.js cluster), after the reference sheets: many
   round clumps, the lower first, each in four clean tones — a dark rim on
   its lower right where it overlaps the clump below, its body, a lit
@@ -86,7 +99,9 @@ still limited.
 * **The enclosures** (pens.js) share the wilds' look: the same grade
   (contrast curve and colour), rounded stones in their walls and floors,
   a dark line on the backdrop round every prop, and ground laid in clean
-  flat patches instead of ordered dither.
+  flat patches instead of ordered dither; grass as tufts of lit blades on
+  plain turf; timber with ringed knots and nail heads at the ends of each
+  piece.
 * **The flourish** (flourish.js), after the legibility pass: each
   region's own little flora along its dry surfaces — grass tufts,
   daisies, lavender spikes, small ferns and mushrooms, cattails,

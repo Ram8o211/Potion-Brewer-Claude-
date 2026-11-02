@@ -82,7 +82,11 @@ function rgbOf(v, fallback) {
   return Array.isArray(v) && v.length >= 3 ? [clamp(+v[0] || 0, 0, 1), clamp(+v[1] || 0, 0, 1), clamp(+v[2] || 0, 0, 1)] : fallback;
 }
 
-/** @typedef {(x:number, y:number, w:number, h:number, c:string) => void} Pen */
+/**
+ * @typedef {((x:number, y:number, w:number, h:number, c:string) => void) & {k?:number, f?:(x:number, y:number, w:number, h:number, c:string) => void, clip?:(rows:number[][]) => void, unclip?:() => void}} Pen
+ *   k: the definition (pixels to a frame pixel); f: a rect on the fine grid (fine pixels, frame-relative);
+ *   clip/unclip: confine what is painted to fine rows [y, x0, x1) (the body's smooth silhouette), and release
+ */
 
 /**
  * The one rect painter: rounds to integers (minimum size 1), adds the motion
@@ -92,8 +96,9 @@ function rgbOf(v, fallback) {
  * @param {number} dx @param {number} dy motion offset @param {boolean} mirror @param {boolean} [clip]
  * @returns {Pen}
  */
-function pen(ctx, fx, fy, dx, dy, mirror, clip = true) {
-  return (x, y, w, h, c) => {
+function pen(ctx, fx, fy, dx, dy, mirror, clip = true, k = 1) {
+  /** @type {Pen} */
+  const P = (x, y, w, h, c) => {
     let X = Math.round(x) + dx, Y = Math.round(y) + dy;
     let W = Math.max(1, Math.round(w)), H = Math.max(1, Math.round(h));
     if (clip) {
@@ -104,8 +109,48 @@ function pen(ctx, fx, fy, dx, dy, mirror, clip = true) {
       if (W <= 0 || H <= 0) return;
     }
     ctx.fillStyle = c;
-    ctx.fillRect(fx + (mirror ? RABBIT_W - X - W : X), fy + Y, W, H);
+    ctx.fillRect(fx + (mirror ? RABBIT_W - X - W : X) * k, fy + Y * k, W * k, H * k);
   };
+  P.k = k;
+  if (k > 1) {
+    // a rect of the fine grid, in fine pixels from the frame's corner
+    P.f = (x, y, w, h, c) => {
+      let X = Math.round(x) + dx * k, Y = Math.round(y) + dy * k, W = Math.round(w), H = Math.round(h);
+      if (clip) {
+        if (X < 0) { W += X; X = 0; }
+        if (Y < 0) { H += Y; Y = 0; }
+        if (X + W > RABBIT_W * k) W = RABBIT_W * k - X;
+        if (Y + H > RABBIT_H * k) H = RABBIT_H * k - Y;
+      }
+      if (W <= 0 || H <= 0) return;
+      ctx.fillStyle = c;
+      ctx.fillRect(fx + (mirror ? RABBIT_W * k - X - W : X), fy + Y, W, H);
+    };
+    P.clip = (rows) => {
+      const path = new Path2D();
+      for (const [y, x0, x1] of rows) { const X = x0 + dx * k; path.rect(fx + (mirror ? RABBIT_W * k - X - (x1 - x0) : X), fy + y + dy * k, x1 - x0, 1); }
+      ctx.save();
+      ctx.clip(path);
+    };
+    P.unclip = () => ctx.restore();
+  }
+  return P;
+}
+
+/**
+ * An ellipse's rows on the fine grid (k pixels to a frame pixel): [y, x0, x1) in fine pixels, the
+ * ellipse grown by `grow` frame pixels — the same extent as its frame-pixel rows, its curve smooth.
+ * @param {Ell} e @param {number} grow @param {number} k
+ */
+function fineRows(e, grow, k) {
+  const Rx = e.rx + 0.5 + grow, Ry = e.ry + 0.5 + grow, cx = e.cx + 0.5, cy = e.cy + 0.5, out = [];
+  for (let fy = Math.floor((cy - Ry) * k); fy < Math.ceil((cy + Ry) * k); fy++) {
+    const t = ((fy + 0.5) / k - cy) / Ry;
+    if (t * t >= 1) continue;
+    const hw = Rx * Math.sqrt(1 - t * t), x0 = Math.round((cx - hw) * k), x1 = Math.round((cx + hw) * k);
+    if (x1 > x0) out.push([fy, x0, x1]);
+  }
+  return out;
 }
 
 /** @typedef {{cx:number, cy:number, rx:number, ry:number}} Ell */
@@ -116,6 +161,8 @@ const half = (e, dy) => Math.round(e.rx * Math.sqrt(Math.max(0, 1 - (dy * dy) / 
 
 /** A filled pixel ellipse, row by row, grown by `grow` (the outline pass uses 1). @param {Pen} P @param {Ell} e @param {number} grow @param {string} col */
 function ell(P, e, grow, col) {
+  // on a fine grid: the ellipse's own smooth rows; an outline (grow) a single fine pixel thick
+  if (P.f && P.k) { for (const [y, x0, x1] of fineRows(e, grow ? grow * 0.5 : 0, P.k)) P.f(x0, y, x1 - x0, 1, col); return; }
   const g = { rx: e.rx + grow, ry: e.ry + grow };
   for (let yy = -g.ry; yy <= g.ry; yy++) {
     const w = half(g, yy);
@@ -826,9 +873,12 @@ function drawBody(P, look, snap, a, low) {
   if (!low && !dead) auraLayer(S);
   farLayer(S);
   for (const e of a.parts) ell(P, e, 1, K); // outline pass
+  // on a fine grid, the coat keeps to the body's smooth silhouette (its patterns and shading are laid in frame pixels)
+  if (P.clip && P.k) P.clip(a.parts.flatMap((e) => fineRows(e, 0, /** @type {number} */ (P.k))));
   fillLayer(S);
   patternLayer(S);
   shadeLayer(S);
+  if (P.unclip) P.unclip();
   strengthMarks(S);
   if (S.tr.has('scales')) scaleMarks(S);
   coatMarks(S);
@@ -866,7 +916,11 @@ function farLayer(S) {
   const legCol = a.kind === 'fox' ? FOX_LEG : S.pattern === 'points' || a.kind === 'badger' ? C2 : C;
   if (a.kind !== 'dove') {
     // (a leg drawn as runs of pixels down a slant: every outline first, so none covers the leg above it)
-    for (const l of a.legs) P(l.x - 1, l.y - 1, l.w + 2, l.h + 2, K);
+    for (const l of a.legs) {
+      const k = P.k || 1;
+      if (P.f) P.f((l.x - 0.5) * k, (l.y - 0.5) * k, (l.w + 1) * k, (l.h + 1) * k, K);
+      else P(l.x - 1, l.y - 1, l.w + 2, l.h + 2, K);
+    }
     for (const l of a.legs) {
       P(l.x, l.y, l.w, l.h, legCol.body);
       if (!l.seg || l.foot) P(l.x, l.y + l.h - 1, l.w, 1, legCol.shade);
@@ -1789,14 +1843,15 @@ export function rabbitSpriteKey(look, snap, want) {
  * Paint a rabbit's static body into a new 48×40 canvas.
  * @param {any} look @param {any} snap
  * @param {(w:number, h:number) => any} [factory] canvas maker (makeCanvas in the browser)
- * @param {{pose?:string, quality?:'low'|'high', grass?:boolean}} [opts] grass: false when it grazes bare ground
+ * @param {{pose?:string, quality?:'low'|'high', grass?:boolean, k?:number}} [opts] grass: false when it grazes bare ground;
+ *   k: its definition, pixels to a frame pixel (2: a 96×80 sprite, its body's curves and outline on the finer grid)
  */
 export function drawRabbitSprite(look, snap, factory = makeCanvas, opts = {}) {
-  const cv = factory(RABBIT_W, RABBIT_H);
+  const k = opts.k || 1, cv = factory(RABBIT_W * k, RABBIT_H * k);
   const ctx = cv.getContext('2d');
   const a = rabbitAnchors(look, snap, opts.pose);
   if (opts.grass === false) a.bare = true;
-  drawBody(pen(ctx, 0, 0, 0, 0, false), look, snap, a, opts.quality === 'low');
+  drawBody(pen(ctx, 0, 0, 0, 0, false, true, k), look, snap, a, opts.quality === 'low');
   return cv;
 }
 
@@ -1806,11 +1861,11 @@ export function clearRabbitSprites() {
 }
 
 /** @param {any} look @param {any} snap @param {string} pose @param {boolean} low @param {(w:number, h:number) => any} factory @param {boolean} [grass] */
-function spriteFor(look, snap, pose, low, factory, grass = true) {
-  const key = rabbitSpriteKey(look, snap, pose) + (low ? '|lo' : '') + (grass ? '' : '|bare');
+function spriteFor(look, snap, pose, low, factory, grass = true, k = 1) {
+  const key = rabbitSpriteKey(look, snap, pose) + (low ? '|lo' : '') + (grass ? '' : '|bare') + (k > 1 ? '|k' + k : '');
   let cv = SPRITES.get(key);
   if (cv) { SPRITES.delete(key); SPRITES.set(key, cv); return cv; }
-  cv = drawRabbitSprite(look, snap, factory, { pose, quality: low ? 'low' : 'high', grass });
+  cv = drawRabbitSprite(look, snap, factory, { pose, quality: low ? 'low' : 'high', grass, k });
   gradeSprite(cv);
   SPRITES.set(key, cv);
   if (SPRITES.size > SPRITE_MAX) SPRITES.delete(SPRITES.keys().next().value);
@@ -1827,9 +1882,9 @@ function gradeSprite(cv) {
   try {
     const g = cv.getContext('2d', { willReadFrequently: true });
     if (!g || typeof g.getImageData !== 'function') return;
-    const img = g.getImageData(0, 0, RABBIT_W, RABBIT_H);
+    const img = g.getImageData(0, 0, cv.width, cv.height);
     if (!img || !img.data) return;
-    punchSprite(img.data, RABBIT_W, RABBIT_H, { ink: false });
+    punchSprite(img.data, cv.width, cv.height, { ink: false });
     g.putImageData(img, 0, 0);
   } catch { /* not readable */ }
 }
@@ -1865,6 +1920,7 @@ function drawFloor(ctx, fx, fy) {
  * @param {boolean} [opts.flash] the white reaction flash over the frame (default true)
  * @param {boolean} [opts.clip] clip to the frame (default true; the hutch lets ears pass its top)
  * @param {boolean} [opts.shadow] its shadow on the ground under it (default true; drawn only while it touches the ground)
+ * @param {number} [opts.k] the sprite's definition (2: drawn from a 96×80 sprite into a context scaled ×2, its curves finer)
  * @param {boolean} [opts.grass] a tuft of grass at its mouth while it grazes (default true; false on bare ground)
  */
 export function drawRabbit(ctx, look, snap, t, react = 0, opts = {}) {
@@ -1893,14 +1949,14 @@ export function drawRabbit(ctx, look, snap, t, react = 0, opts = {}) {
   }
   const factory = opts.factory || (typeof document !== 'undefined' ? makeCanvas : null);
   if (opts.cache !== false && factory) {
-    const sprite = spriteFor(look, snap, a.pose, low, factory, grass);
+    const sprite = spriteFor(look, snap, a.pose, low, factory, grass, opts.k || 1);
     if (mirror) {
       ctx.save();
       ctx.translate(fx + RABBIT_W - m.dx, fy + dy);
       ctx.scale(-1, 1);
-      ctx.drawImage(sprite, 0, 0);
+      ctx.drawImage(sprite, 0, 0, RABBIT_W, RABBIT_H);
       ctx.restore();
-    } else ctx.drawImage(sprite, fx + m.dx, fy + dy);
+    } else ctx.drawImage(sprite, fx + m.dx, fy + dy, RABBIT_W, RABBIT_H);
   } else drawBody(pen(ctx, fx, fy, m.dx, dy, mirror, clip), look, snap, a, low);
   drawFx(pen(ctx, fx, fy, m.dx, dy, mirror, clip), look, snap, a, time, rx, acted, low);
   if (rx > 0 && opts.flash !== false) {

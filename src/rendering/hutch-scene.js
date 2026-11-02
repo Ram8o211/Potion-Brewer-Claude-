@@ -318,20 +318,25 @@ export class HutchScene {
    * Paint the hutch.
    * @param {CanvasRenderingContext2D} ctx a 224×92 art-resolution context
    * @param {number} t seconds
-   * @param {{selected?:string|null, hover?:string|null, low?:boolean}} [o]
+   * @param {{selected?:string|null, hover?:string|null, low?:boolean, detail?:CanvasRenderingContext2D|null}} [o]
+   *   detail: a context twice the hutch's size, scaled ×2, laid over it at its own resolution (rendering/crisp.js):
+   *   the animals are drawn there from sprites of twice the definition, and with them what lies over them
    */
   draw(ctx, t, o = {}) {
     const low = !!o.low;
     this._background(ctx);
     // what moves in the enclosure: fire, water, lamplight, snow, butterflies
     drawPenAnim(ctx, this.pen.anim, t);
+    // the animals and all that lies over them, at twice the definition when there is a detail layer
+    const k = o.detail ? 2 : 1;
+    if (o.detail) ctx = o.detail;
     const list = this._visible();
     for (const a of list) {
       const f = this._frame(a);
       drawRabbit(ctx, a.look, a.snap, t + a.phase, a.react, {
         x: f.x, y: f.y, lift: f.lift, mirror: f.mirror, pose: a.pose || undefined, react: a.reactCh,
         quality: low ? 'low' : 'high', clear: false, floor: false, clip: false, flash: false, hop: false,
-        cache: this.sprites, factory: this.factory || undefined,
+        cache: this.sprites, factory: this.factory || undefined, k,
       });
     }
     // feral rabbits: a red glare over the head; claw marks where they struck

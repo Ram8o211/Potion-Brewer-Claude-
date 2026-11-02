@@ -267,10 +267,16 @@ function wood(cv, x0, y0, x1, y1, R, o = {}) {
       if (g > 0.68) i = 1; else if (g < 0.2) i = Math.min(4, i + 1);
       if (tone < 0 && i > 1) i--;
     }
-    // a knot now and then: a dark eye ringed lighter
-    const kn = hash2(Math.floor(along / 9), Math.floor(across / 4), seed + 3);
-    if (kn > 0.93 && th > 3 && across > 0 && across < th - 1 && along % 9 === 4) return R[0];
-    if (i >= 2 && hash2(x, y, seed) > 0.975) i = 1;
+    // a knot now and then: a dark eye, ringed lighter along the grain
+    const kc = Math.floor(along / 11), kn = hash2(kc, Math.floor(across / 4), seed + 3), ka = kc * 11 + 5, kr = Math.floor(th / 2);
+    if (kn > 0.86 && th > 3 && across > 0 && across < th - 1) {
+      const dA = Math.abs(along - ka), dC = Math.abs(across - kr);
+      if (dA === 0 && dC === 0) return R[0];
+      if (dA <= 2 && dC <= 1 && dA + dC <= 2) return dC === 0 && dA === 2 ? R[1] : R[Math.min(5, i + 1)];
+    }
+    // nail heads near each end of a piece across the grain: a dark dot with a lit pixel on it
+    const len = Math.round(v ? y1 - y0 : x1 - x0), at = Math.round(along - (v ? y0 : x0));
+    if (th >= 4 && (at === 2 || at === len - 3) && (across === 1 || across === th - 2)) return across === 1 ? R[5] : R[0];
     return R[i];
   });
 }
@@ -1153,9 +1159,17 @@ function ground(cv, y0, style, seed, o = {}) {
       if (style === 'snow') i += 2;
       else if (style === 'soil') { i++; if ((d + Math.round(noise2(x * 0.05, 0, seed) * 3)) % 6 === 0) i--; }
       if (style === 'grass') {
-        // blades: upright strokes two to four pixels tall, dark at the root, lit at the tip
-        const col_ = x, bh = 2 + Math.floor(hash2(col_, Math.floor((y + hash2(col_, 0, seed) * 4) / 4), seed + 1) * 3), at = (y + Math.floor(hash2(col_, 0, seed) * 4)) % 4;
-        if (hash2(col_, Math.floor(y / 4), seed + 8) > 0.35) i = at === 0 ? Math.min(5, i + 2) : at < bh - 1 ? i + 1 : Math.max(0, i - 1);
+        // as the wilds' grass: clean patches, and the blades in tufts — a few upright strokes together,
+        // two to four pixels tall, lit at the tip, dark at the root — with plain turf between them
+        const cxT = Math.floor(x / 7), cyT = Math.floor((y + (cxT & 1) * 3) / 6);
+        if (hash2(cxT, cyT, seed + 8) < 0.42) {
+          const tx = cxT * 7 + 3, ty = cyT * 6 - (cxT & 1) * 3 + 5, dx = x - tx, up = ty - y;
+          if (Math.abs(dx) <= 2 && up >= 0) {
+            const bh = 2 + Math.floor(hash2(x, cyT, seed + 1) * 3) - (Math.abs(dx) === 2 ? 1 : 0);
+            if (up < bh && (dx & 1) === 0) i = up === bh - 1 ? Math.min(5, i + 2) : up === 0 ? Math.max(0, i - 1) : i + 1;
+            else if (up === 0) i = Math.max(0, i - 1);
+          }
+        }
       }
       const g = hash2(x, y, seed + 2);
       if (g > 0.993) i += 1; else if (g < 0.007) i -= 1;
