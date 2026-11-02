@@ -394,7 +394,53 @@ export function silhouette(cv, o) {
     let v = fbm1(qx * o.freq, o.seed, 4);
     if (o.peaks) v = Math.pow(v, 1 / (1 + o.peaks));
     line[x] = snap(Math.round(o.base - (v - 0.5) * 2 * o.amp - (o.rough ? (hash2(qx >> 1, 0, o.seed) - 0.5) * o.rough : 0)));
-    for (let y = Math.max(0, line[x]); y < (o.bottom ?? cv.H); y++) cv.set(x, y, y < line[x] + CELL ? rim : far(fill, x, y, o.seed));
+  }
+  for (let x = 0; x < cv.W; x++) for (let y = Math.max(0, line[x]); y < (o.bottom ?? cv.H); y++) cv.set(x, y, y < line[x] + CELL ? rim : far(fill, x, y, o.seed));
+  return line;
+}
+
+/**
+ * A range of mountains: jagged peaks, each lit on its face toward the
+ * light (the left) and shaded on the other, creased by ridges running down
+ * from its summit, the tallest capped with snow whose ragged edge runs
+ * down the gullies. Returns the line of the crests.
+ * @param {any} cv @param {{base:number, amp:number, n:number, seed:number, fill:string, lit?:string, dark?:string, snow?:string, snowAt?:number, bottom?:number}} o
+ */
+export function mountains(cv, o) {
+  const W = cv.W, fill = col(o.fill), lit = col(o.lit ?? '#ffffff'), dark = col(o.dark ?? '#000000');
+  const L = o.lit ? lit : mixPacked(fill, 0xffffffff, 0.18), D = o.dark ? dark : mixPacked(fill, 0xff000000, 0.18);
+  const snow = o.snow ? col(o.snow) : 0, snowD = o.snow ? mixPacked(snow, D, 0.3) : 0;
+  const peaks = [];
+  for (let i = 0; i < o.n; i++) {
+    const px = ((i + 0.15 + hash2(i, 1, o.seed) * 0.7) / o.n) * (W + 80) - 40, h = o.amp * (0.45 + hash2(i, 2, o.seed) * 0.55);
+    peaks.push([px, h, h * (1.4 + hash2(i, 3, o.seed) * 1.2)]);
+  }
+  const line = new Float32Array(W), own = new Int16Array(W);
+  for (let x = 0; x < W; x++) {
+    let best = -1e9, bi = 0;
+    for (let i = 0; i < peaks.length; i++) {
+      const [px, h, w] = peaks[i], u = Math.min(1, Math.abs(x - px) / w);
+      // a slope a little concave, broken by a jag
+      const v = h * (1 - u) * (1 - u * 0.25) + (fbm1(x * 0.12, o.seed + i, 2) - 0.5) * h * 0.18;
+      if (v > best) { best = v; bi = i; }
+    }
+    line[x] = Math.round(o.base - Math.max(0, best));
+    own[x] = bi;
+  }
+  for (let x = 0; x < W; x++) {
+    const [px, h] = peaks[own[x]], apex = o.base - h;
+    for (let y = Math.max(0, line[x]); y < (o.bottom ?? cv.H); y++) {
+      const d = y - line[x];
+      // the face this pixel is on; ridges: creases slanting down from the summit, each lit on its left
+      const side = x < px ? -1 : 1, cr = (x - px) - side * (y - apex) * 0.55, crease = hash2(Math.floor(cr / 7), own[x], o.seed + 7);
+      let c = side < 0 ? L : (crease < 0.3 ? fill : D);
+      if (side < 0 && crease < 0.3 && ((cr % 7) + 7) % 7 > 4) c = fill;
+      if (d > h * 0.9 + (fbm1(x * 0.05, o.seed + 9, 2) - 0.5) * 10) c = fill;
+      if (d === 0) c = side < 0 ? mixPacked(L, 0xffffffff, 0.15) : c;
+      // snow on what stands above the snow line, its edge ragged down the creases
+      if (snow && y < (o.snowAt ?? o.base - o.amp * 0.62) + (crease - 0.5) * 8 + (hash2(Math.floor(x / 2), 3, o.seed) - 0.5) * 3) c = side < 0 ? snow : snowD;
+      cv.set(x, y, c);
+    }
   }
   return line;
 }

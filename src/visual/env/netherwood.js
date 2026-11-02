@@ -20,7 +20,7 @@ export function compose(cv, seed) {
   const pal = vary(palette({
     leaf: ['#1e4a46', { spread: 0.55 }], leaf2: ['#24405a', { spread: 0.5 }], bloom: ['#b080f0', { spread: 0.4 }], bark: ['#2e2630', { spread: 0.45 }], wood: '#7a6a5a', rock: '#4a4a56',
     moss: ['#2e6a5a', { spread: 0.5 }], fern: ['#2a6a5e', { spread: 0.5 }],
-    stem: ['#c8c0d0', { spread: 0.4 }], cap: ['#6a3aa0', { spread: 0.6 }],
+    stem: ['#d8d0ec', { spread: 0.4 }], cap: ['#9a5ae0', { spread: 0.6 }], spot: '#f4e8ff',
   }), s('pal'), 1);
   const back = '#0e1820';
   sky(cv, 0, H, ['#030408', '#060a10', '#0a1018', '#0e1620']);
@@ -72,12 +72,16 @@ export function compose(cv, seed) {
   litter(cv, s, pal);
   terrainTrees(cv, s('trees'), pal, { n: 5, kinds: ['oak', 'gnarl', 'willow'], shapes: ['tall', 'lean'], h: [44, 100], gap: 30, ledges: true, dark: 0.15, look });
   const mr = s('mushrooms'), glows = [];
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0, n = 0; i < 10 && n < 3; i++) {
     const h = mr.int(18, 34), r = Math.round(h * mr.range(0.4, 0.55));
-    const at = cv.place(mushroom(mr, h, r), pal, mr.int(30, W - 30), { sink: 2, roots: [r * 0.4, 2], range: 60 });
+    const at = cv.place(mushroom(mr, h, r, { spot: 'spot' }), pal, mr.int(30, W - 30), { sink: 2, roots: [r * 0.4, 2], range: 120 });
     if (!at) continue;
-    glow(cv, at.fx, at.fy - h + r * 0.2, r * 2.4, [0.6, 0.35, 1], 0.35);
+    glow(cv, at.fx, at.fy - h + r * 0.2, r * 3.4, [0.6, 0.35, 1], 0.55);
+    // its stem lit from under the cap, a pool of light where it stands
+    glow(cv, at.fx, at.fy - h * 0.45, h * 0.6, [0.75, 0.55, 1], 0.4);
+    glow(cv, at.fx, at.fy - 1, r * 1.6, [0.6, 0.35, 1], 0.3);
     glows.push([at.fx, Math.round(at.fy - h + r * 0.3)]);
+    n++;
   }
   ferns(cv, s, pal);
   glows.push(...glowShrooms(cv, { n: 9, cap: '#9a5ae8', lit: '#f0c8ff', stem: '#c8c0d0', rgb: [0.62, 0.38, 1], seed: s('shrooms').int(0, 1e9) }));

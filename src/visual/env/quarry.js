@@ -8,7 +8,7 @@
 
 import { sky } from './paint.js';
 import { palette, vary, streamOf } from './kit.js';
-import { fillSolid, blob, ledges, paintTerrain, markOpen, glow, drips, silhouette } from './side.js';
+import { fillSolid, blob, ledges, paintTerrain, markOpen, glow, drips, silhouette, mountains } from './side.js';
 import { caveFrame, farPillars, fog, moss, torch, ledgeTops } from './cave.js';
 import { crane, ladder, cart, crate, beam, boulder, scaffold, wheel, cloud } from './objects.js';
 import { terrainTrees } from './trees.js';
@@ -36,7 +36,7 @@ export function compose(cv, seed) {
     sky(cv, 0, 150, ['#5a8ac0', '#8ab0d4', '#c8d8e0', '#e8e0d0']);
     const cr = s('clouds');
     for (let i = 0; i < 3; i++) cv.stamp(cloud(cr, cr.int(26, 50), cr.int(6, 10)), pal, cr.int(0, W), cr.int(10, 34), { outline: false, texture: 0 });
-    silhouette(cv, { base: 76, amp: 14, freq: 0.012, seed: s('far').int(0, 1e9), fill: '#b0a498', rim: '#ccc2b4', peaks: 0.3 });
+    mountains(cv, { base: 104, amp: 44, n: 8, seed: s('far').int(0, 1e9), fill: '#b0a498', lit: '#c8beb0', dark: '#9a8e82' });
     fog(cv, '#e0d8cc', 70, 120, 0.25, s('haze').int(0, 1e9));
     silhouette(cv, { base: 100, amp: 8, freq: 0.02, seed: s('far2').int(0, 1e9), fill: '#8a7e72', rim: '#a09486', rough: 3 });
   }
