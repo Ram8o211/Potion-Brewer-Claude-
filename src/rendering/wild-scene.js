@@ -603,6 +603,34 @@ function halo(ctx, x, y, r, c, a) {
 const rnd = (i, k = 0) => { const v = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return v - Math.floor(v); };
 
 const STEAM = ['#fff0b0', '#f49e39', '#e56522', '#8a4a50', '#6a4457', '#4e3040'];
+
+/** @type {Map<string, HTMLCanvasElement>} */
+const puffs = new Map();
+/**
+ * A puff of smoke or steam as pixel art (cached): a scalloped disc of
+ * radius r in its colour, lit on its upper left, shaded underneath, a
+ * dark rim along its lower edge — no soft edges.
+ * @param {number} r @param {string} c
+ */
+function puffSprite(r, c) {
+  const k = r + c;
+  let cv = puffs.get(k);
+  if (cv) return cv;
+  const n = r * 2 + 3, base = [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
+  const tone = (/** @type {number} */ f) => `rgb(${base.map((v) => Math.round(f > 1 ? v + (255 - v) * (f - 1) : v * f)).join(',')})`;
+  cv = document.createElement('canvas');
+  cv.width = cv.height = n;
+  const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const u = (x + 0.5 - n / 2) / r, v = (y + 0.5 - n / 2) / r, a = Math.atan2(v, u), e = u * u + v * v - 0.1 * Math.abs(Math.sin(a * 3 + r));
+    if (e > 1) continue;
+    const lit = -(u * 0.6 + v * 0.8) + (1 - e) * 0.3;
+    ctx.fillStyle = e > 0.78 && v > 0.15 ? tone(0.7) : lit > 0.55 ? tone(1.18) : lit > 0.05 ? tone(1.06) : lit > -0.45 ? tone(0.92) : tone(0.8);
+    ctx.fillRect(x, y, 1, 1);
+  }
+  puffs.set(k, cv);
+  return cv;
+}
 const EMBER = ['#fff4b0', '#ffd060', '#ff9a3a', '#e05a18', '#8a2a14'];
 
 /** Grains of loose earth trickling from an overhang and landing in a puff. @param {CanvasRenderingContext2D} ctx */
@@ -754,17 +782,18 @@ export function animateRegion(ctx, region, t, seed) {
         const age = (t * 0.18 + k / 14) % 1, x = v.x + age * 10 + Math.sin(age * 5 + k) * (1 + age * 2), y = v.y - age * 46;
         const r = Math.max(2, Math.round(v.r * (0.6 + age * 1.3)));
         ctx.globalAlpha = age < 0.55 ? 0.75 : ((1 - age) / 0.45) * 0.75;
-        ctx.fillStyle = STEAM[Math.min(STEAM.length - 1, Math.floor(Math.sqrt(age) * STEAM.length))];
-        ctx.beginPath(); ctx.arc(Math.round(x), Math.round(y), r, 0, Math.PI * 2); ctx.fill();
+        const sp = puffSprite(r, STEAM[Math.min(STEAM.length - 1, Math.floor(Math.sqrt(age) * STEAM.length))]);
+        ctx.drawImage(sp, Math.round(x - sp.width / 2), Math.round(y - sp.height / 2));
       }
       ctx.globalAlpha = 1;
       px(ctx, v.x - 1, v.y - 1 - (Math.sin(t * 9) > 0 ? 1 : 0), STEAM[0], 2, 2);
     }
     if (meta.crater) for (let k = 0; k < 6; k++) {
       const age = (t * 0.07 + k / 6) % 1;
-      ctx.globalAlpha = 0.35 * (1 - age);
-      ctx.fillStyle = '#3a2a2e';
-      ctx.beginPath(); ctx.arc(Math.round(meta.crater[0] + age * 30), Math.round(meta.crater[1] - age * 36), Math.round(3 + age * 9), 0, Math.PI * 2); ctx.fill();
+      // smoke billowing up the painted plume, fading as it climbs
+      ctx.globalAlpha = 0.6 * (1 - age) * Math.min(1, age * 6);
+      const sp = puffSprite(Math.round(3 + age * 8), age < 0.2 ? '#8a4a3a' : '#5a4a50');
+      ctx.drawImage(sp, Math.round(meta.crater[0] + age * age * 34 - sp.width / 2 + Math.sin(t * 0.5 + k) * 2), Math.round(meta.crater[1] - age * 44 - sp.height / 2));
     }
     ctx.globalAlpha = 1;
     // embers rising from the lava, cooling as they climb; ash falling

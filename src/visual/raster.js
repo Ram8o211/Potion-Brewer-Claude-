@@ -232,7 +232,10 @@ export function rasterize(model, w, h, pal, o = {}) {
       const k = y * w + x, mi = mat[k];
       if (mi < 0) continue;
       const g = tex[k] * texAmp, gx = Math.floor(x / gr), gy = Math.floor(y / gr);
-      idx[k] = materialTone(ramps[mi].length, lum[k], g > 0 ? noise2(gx / (3.5 / gr), gy / (3.5 / gr), seed + mi * 977) : 0, g > 0 ? hash2(gx, gy, seed + mi * 31) : 0.5, g);
+      // a part may name its step on the ramp outright (0 darkest … 1 lightest): foliage painted in more than three tones
+      const st = parts[part[k]].step;
+      idx[k] = st !== undefined ? Math.max(0, Math.min(ramps[mi].length - 1, Math.round(st * (ramps[mi].length - 1))))
+        : materialTone(ramps[mi].length, lum[k], g > 0 ? noise2(gx / (3.5 / gr), gy / (3.5 / gr), seed + mi * 977) : 0, g > 0 ? hash2(gx, gy, seed + mi * 31) : 0.5, g);
     }
   }
   // a part lying behind another darkens a step where they meet

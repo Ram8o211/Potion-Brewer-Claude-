@@ -393,56 +393,92 @@ export function silhouette(cv, o) {
     const qx = snap(x);
     let v = fbm1(qx * o.freq, o.seed, 4);
     if (o.peaks) v = Math.pow(v, 1 / (1 + o.peaks));
-    line[x] = snap(Math.round(o.base - (v - 0.5) * 2 * o.amp - (o.rough ? (hash2(qx >> 1, 0, o.seed) - 0.5) * o.rough : 0)));
+    // a crest broken at a finer scale too: knolls and dips along it, never a smooth curve
+    line[x] = snap(Math.round(o.base - (v - 0.5) * 2 * o.amp - (fbm1(qx * 0.11, o.seed + 5, 2) - 0.5) * Math.max(2, o.amp * 0.35) - (o.rough ? (hash2(qx >> 1, 0, o.seed) - 0.5) * o.rough : 0)));
   }
-  for (let x = 0; x < cv.W; x++) for (let y = Math.max(0, line[x]); y < (o.bottom ?? cv.H); y++) cv.set(x, y, y < line[x] + CELL ? rim : far(fill, x, y, o.seed));
+  // lit along its crest (a rim one to three pixels deep, thickest on the slopes facing the light), shaded in a band under that
+  const shade = mixPacked(fill, 0xff000000, 0.12);
+  for (let x = 0; x < cv.W; x++) {
+    const rise = line[Math.max(0, x - 2)] - line[Math.min(cv.W - 1, x + 2)], deep = 1 + (rise < 0 ? 2 : rise === 0 ? 1 : 0) + (hash2(x >> 1, 9, o.seed) < 0.3 ? -1 : 0);
+    const band = 3 + Math.round(fbm1(x * 0.08, o.seed + 6, 2) * 5);
+    for (let y = Math.max(0, line[x]); y < (o.bottom ?? cv.H); y++) {
+      const d = y - line[x];
+      cv.set(x, y, d < Math.max(1, deep) ? rim : d < deep + band && rise > 0 ? shade : far(fill, x, y, o.seed));
+    }
+  }
   return line;
 }
 
 /**
- * A range of mountains: jagged peaks, each lit on its face toward the
- * light (the left) and shaded on the other, creased by ridges running down
- * from its summit, the tallest capped with snow whose ragged edge runs
- * down the gullies. Returns the line of the crests.
+ * A range of mountains: a crest broken at several scales into summits,
+ * shoulders and notches, its slopes uneven, and the rock below painted by
+ * rockFace — lit on the faces toward the light, shaded on the others,
+ * scored by gullies running down from every summit, the tallest capped
+ * with snow that reaches down the gullies. Returns the crest line.
  * @param {any} cv @param {{base:number, amp:number, n:number, seed:number, fill:string, lit?:string, dark?:string, snow?:string, snowAt?:number, bottom?:number}} o
  */
 export function mountains(cv, o) {
-  const W = cv.W, fill = col(o.fill), lit = col(o.lit ?? '#ffffff'), dark = col(o.dark ?? '#000000');
-  const L = o.lit ? lit : mixPacked(fill, 0xffffffff, 0.18), D = o.dark ? dark : mixPacked(fill, 0xff000000, 0.18);
-  const snow = o.snow ? col(o.snow) : 0, snowD = o.snow ? mixPacked(snow, D, 0.3) : 0;
-  const peaks = [];
+  const W = cv.W, peaks = [];
   for (let i = 0; i < o.n; i++) {
     const px = ((i + 0.15 + hash2(i, 1, o.seed) * 0.7) / o.n) * (W + 80) - 40, h = o.amp * (0.45 + hash2(i, 2, o.seed) * 0.55);
-    peaks.push([px, h, h * (1.4 + hash2(i, 3, o.seed) * 1.2)]);
+    // each side its own steepness
+    peaks.push([px, h, h * (1.2 + hash2(i, 3, o.seed) * 1.1), h * (1.2 + hash2(i, 4, o.seed) * 1.1)]);
   }
   const line = new Float32Array(W), own = new Int16Array(W);
   for (let x = 0; x < W; x++) {
     let best = -1e9, bi = 0;
     for (let i = 0; i < peaks.length; i++) {
-      const [px, h, w] = peaks[i], u = Math.min(1, Math.abs(x - px) / w);
-      // a slope a little concave, broken by a jag
-      const v = h * (1 - u) * (1 - u * 0.25) + (fbm1(x * 0.12, o.seed + i, 2) - 0.5) * h * 0.18;
+      const [px, h, wl, wr] = peaks[i], u = Math.min(1, Math.abs(x - px) / (x < px ? wl : wr));
+      const v = h * (1 - u) * (1 - u * 0.3);
       if (v > best) { best = v; bi = i; }
     }
+    // shoulders, notches and crags: the crest broken at three scales
+    const h = peaks[bi][1];
+    best += (fbm1(x * 0.045, o.seed + 11, 3) - 0.5) * h * 0.34 + (fbm1(x * 0.19, o.seed + 12, 2) - 0.5) * h * 0.1 + (hash2(x >> 1, 7, o.seed) - 0.5) * 1.4;
     line[x] = Math.round(o.base - Math.max(0, best));
     own[x] = bi;
   }
+  rockFace(cv, line, own, peaks.map(([px, h]) => [px, o.base - h, h]), o);
+  return line;
+}
+
+/**
+ * The rock of a mountain or a volcano below its crest line: every pixel on
+ * the face of the summit that owns its column (`own`), lit left of a ridge
+ * wandering down from that summit and shaded right of it, scored by
+ * gullies radiating down from the summit (darker grooves, paler ribs),
+ * fading into the plain body colour lower down; snow above the snow line,
+ * deepest in the gullies.
+ * @param {any} cv @param {Float32Array} line @param {Int16Array} own @param {number[][]} tops [x, y, height] of each summit
+ * @param {{seed:number, fill:string, lit?:string, dark?:string, snow?:string, snowAt?:number, bottom?:number, base?:number, amp?:number, deep?:number}} o
+ */
+export function rockFace(cv, line, own, tops, o) {
+  const W = cv.W, fill = col(o.fill), L = o.lit ? col(o.lit) : mixPacked(fill, 0xffffffff, 0.18), D = o.dark ? col(o.dark) : mixPacked(fill, 0xff000000, 0.18);
+  const LL = mixPacked(L, 0xffffffff, 0.16), DD = mixPacked(D, 0xff000000, 0.2);
+  const snow = o.snow ? col(o.snow) : 0, snowS = o.snow ? mixPacked(snow, D, 0.32) : 0, snowL = o.snow ? mixPacked(snow, L, 0.18) : 0;
+  const snowAt = o.snowAt ?? (o.base !== undefined && o.amp !== undefined ? o.base - o.amp * 0.6 : -1e9);
   for (let x = 0; x < W; x++) {
-    const [px, h] = peaks[own[x]], apex = o.base - h;
+    const i = own[x], [px, py, h] = tops[i];
     for (let y = Math.max(0, line[x]); y < (o.bottom ?? cv.H); y++) {
-      const d = y - line[x];
-      // the face this pixel is on; ridges: creases slanting down from the summit, each lit on its left
-      const side = x < px ? -1 : 1, cr = (x - px) - side * (y - apex) * 0.55, crease = hash2(Math.floor(cr / 7), own[x], o.seed + 7);
-      let c = side < 0 ? L : (crease < 0.3 ? fill : D);
-      if (side < 0 && crease < 0.3 && ((cr % 7) + 7) % 7 > 4) c = fill;
-      if (d > h * 0.9 + (fbm1(x * 0.05, o.seed + 9, 2) - 0.5) * 10) c = fill;
-      if (d === 0) c = side < 0 ? mixPacked(L, 0xffffffff, 0.15) : c;
-      // snow on what stands above the snow line, its edge ragged down the creases
-      if (snow && y < (o.snowAt ?? o.base - o.amp * 0.62) + (crease - 0.5) * 8 + (hash2(Math.floor(x / 2), 3, o.seed) - 0.5) * 3) c = side < 0 ? snow : snowD;
+      const d = y - line[x], below = Math.max(1, y - py);
+      // the ridge down from the summit, wandering
+      const rx = px + (fbm1(y * 0.05, o.seed + i * 13, 3) - 0.5) * Math.min(1, below / 24) * h * 0.7;
+      const lit = x < rx;
+      // gullies: grooves radiating from the summit, broken along their length
+      const ang = (x - px) / (below + 6), g = fbm2(ang * 9, y * 0.035, o.seed + i * 7, 2);
+      let c = lit ? L : D;
+      if (g > 0.6) c = lit ? fill : DD; else if (g < 0.32) c = lit ? LL : fill;
+      // the face fades into the body of the mountain lower down, raggedly
+      const deep = (o.deep ?? 0.95) * h + (fbm1(x * 0.04, o.seed + 9, 2) - 0.5) * h * 0.5;
+      if (d > deep) c = g > 0.66 ? D : fill;
+      if (d === 0) c = lit ? LL : c;
+      if (snow) {
+        const edge = snowAt + (g - 0.45) * 22 + (hash2(x >> 1, y >> 2, o.seed + 3) - 0.5) * 3;
+        if (y < edge) c = lit ? (g < 0.35 ? snowL : snow) : snowS;
+      }
       cv.set(x, y, c);
     }
   }
-  return line;
 }
 
 /** A flat silhouette of a tree (pine, round-crowned or bare) standing at (x, y). */

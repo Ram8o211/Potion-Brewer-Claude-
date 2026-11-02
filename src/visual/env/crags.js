@@ -9,11 +9,12 @@
 
 import { sky } from './paint.js';
 import { palette, vary, streamOf } from './kit.js';
-import { heights, dip, raise, fillSolid, blob, ledges, paintTerrain, pool, markOpen, glow, drips, silhouette, col, far } from './side.js';
+import { heights, dip, raise, fillSolid, blob, ledges, paintTerrain, pool, markOpen, glow, drips, silhouette, col, rockFace } from './side.js';
 import { caveFrame, farPillars, fog, moss, fall, ledgeTops, veins, LAVA_VEINS } from './cave.js';
 import { basalt, spire, cloud } from './objects.js';
 import { terrainTrees } from './trees.js';
-import { fbm1 } from '../noise.js';
+import { fbm1, hash2 } from '../noise.js';
+import { mixPacked } from '../color.js';
 import { Model, lumpy } from '../geometry.js';
 
 const LAVA = ['#fff0a0', '#ffc040', '#ff8a2a', '#e05a18', '#a8320e'];
@@ -43,21 +44,12 @@ export function compose(cv, seed) {
     const cr = s('clouds');
     for (let i = 0; i < 4; i++) cv.stamp(cloud(cr, cr.int(40, 90), cr.int(8, 16)), pal, cr.int(0, W), cr.int(10, 50), { outline: false, texture: 0 });
     // the cone: a dark silhouette, its crater glowing, lava running down its flanks
-    const vx = s('cone').int(110, 270), coneC = col('#3a2226'), rim = col('#5a3030'), lavaC = col('#ff8a2a'), lavaL = col('#ffd060');
-    const cone = new Float32Array(W);
-    for (let x = 0; x < W; x++) {
-      const d = Math.abs(x - vx);
-      cone[x] = Math.round(d < 12 ? 44 : 44 + (d - 12) * 0.6 + (fbm1(x * 0.1, 5, 2) - 0.5) * 4);
-      for (let y = Math.max(0, cone[x]); y < 140; y++) cv.set(x, y, y === cone[x] ? rim : far(coneC, x, y, vx));
-    }
-    const lv = s('lavaruns');
-    for (let k = 0; k < 3; k++) {
-      let x = vx + lv.int(-8, 8);
-      for (let y = 45; y < 130; y++) { x += lv.range(-0.8, 0.8) + (x < vx ? -0.4 : 0.4); const xi = Math.round(x); if (xi < 0 || xi >= W || y < cone[xi] + 1) continue; cv.set(xi, y, lavaC); if (y % 3 === 0) cv.set(xi, y, lavaL); }
-    }
-    for (let x = vx - 11; x <= vx + 11; x++) cv.set(x, 44, lavaL);
-    glow(cv, vx, 42, 60, [1, 0.45, 0.15], 0.5);
-    cv.meta.crater = [vx, 42];
+    const cs = s('cone'), vx = cs.int(110, 270), cseed = cs.int(0, 1e9);
+    const cone = volcano(cv, vx, cseed);
+    const top = cone[vx];
+    glow(cv, vx, top - 2, 60, [1, 0.45, 0.15], 0.5);
+    plume(cv, vx, top - 1, cseed + 5);
+    cv.meta.crater = [vx, top - 4];
     silhouette(cv, { base: 124, amp: 10, freq: 0.02, seed: s('r1').int(0, 1e9), fill: '#24161a', rim: '#3a2024', rough: 4, peaks: 0.4 });
     fog(cv, '#8a3a1a', 100, 170, 0.25, s('haze').int(0, 1e9));
   }
@@ -128,4 +120,89 @@ export function compose(cv, seed) {
   cv.meta.vignette = cave ? 0.55 : 0.35;
   cv.meta.wind = cave ? 0.3 : 0.6;
   cv.meta.horizon = 120;
+}
+
+/**
+ * The volcano behind the crags: a cone whose flanks sweep out concave from
+ * a broad, ragged crater rim (notched where the lava spills), its rock
+ * shaded and gullied like the mountains (side.js rockFace), and lava
+ * running down the gullies from the notch — meandering, splitting,
+ * cooling from a bright core to dark crust as it goes. Returns its crest.
+ * @param {any} cv @param {number} vx @param {number} seed
+ */
+function volcano(cv, vx, seed) {
+  const W = cv.W, top = 46, cr = 13 + Math.round(hash2(1, 1, seed) * 5), line = new Float32Array(W), own = new Int16Array(W);
+  for (let x = 0; x < W; x++) {
+    const d = Math.abs(x - vx), side = x < vx ? 0 : 1;
+    // concave flanks: steep under the rim, flattening into the plain
+    let y = d < cr ? top + (cr - d < 4 ? 0 : 2) : top + 96 * (1 - Math.exp(-(d - cr) / (side ? 78 : 66)));
+    // the crater: a dip between two rims, one higher than the other
+    if (d < cr - 3) y = top + 3 + Math.round((1 - d / cr) * 2) - (x < vx ? 1 : 0);
+    y += (fbm1(x * 0.06, seed + 2, 3) - 0.5) * 9 * Math.min(1, d / 30 + 0.3) + (fbm1(x * 0.25, seed + 3, 2) - 0.5) * 3;
+    line[x] = Math.round(y);
+  }
+  rockFace(cv, line, own, [[vx, top, 96]], { seed, fill: '#3e2628', lit: '#5a3634', dark: '#2c1a1e', bottom: 140, deep: 1.2 });
+  // the crater's throat glowing between the rims
+  const glowC = [col('#ffe680'), col('#ffb040'), col('#e0601e')];
+  for (let x = vx - cr + 4; x <= vx + cr - 4; x++) {
+    const y = line[x];
+    cv.set(x, y, glowC[Math.abs(x - vx) < cr * 0.4 ? 0 : 1]);
+    cv.set(x, y + 1, glowC[2]);
+    if (hash2(x, 3, seed) < 0.5) cv.set(x, y - 1, glowC[2]);
+  }
+  // lava runs from the notch, following the slope, meandering and splitting
+  const runs = [[vx + (hash2(2, 1, seed) < 0.5 ? -1 : 1) * (cr - 4), 1, 0]];
+  for (let r = 0; r < runs.length && r < 7; r++) {
+    let [x, alive, gen, y0] = runs[r];
+    const dir = x < vx ? -1 : 1, len = gen ? 30 + hash2(r, 6, seed) * 40 : 90;
+    let y = y0 ?? line[Math.round(x)] + 1, px = Math.round(x);
+    for (let k = 0; k < len && alive; k++, y++) {
+      // down a row, and across the slope at most a pixel (the run stays joined)
+      x += dir * (0.25 + fbm1(k * 0.07, seed + r * 9, 2) * 0.6) + (hash2(k, r, seed + 4) - 0.5) * 0.5;
+      let xi = Math.round(x);
+      xi = Math.max(px - 1, Math.min(px + 1, xi)); x = Math.max(x - 1, Math.min(x + 1, x));
+      if (xi < 1 || xi >= W - 1 || y >= 138) break;
+      // never above the flank (it runs on the surface or just under its crest)
+      if (y < line[xi]) y = line[xi];
+      const t = k / 90, core = t < 0.4 ? glowC[0] : t < 0.7 ? glowC[1] : glowC[2], edge = mixPacked(glowC[2], col('#3e2628'), 0.25 + t * 0.55);
+      cv.set(xi, y, core);
+      if (xi !== px) cv.set(px, y, core);
+      cv.set(xi + dir, y, edge);
+      if (gen === 0 && t < 0.4) cv.set(xi - dir, y, edge);
+      px = xi;
+      if (k > 10 && hash2(k, r, seed + 5) < 0.03 && runs.length < 7) runs.push([x, 1, gen + 1, y]);
+      if (k % 18 === 9) cv.glow(xi, y, 10, [1, 0.45, 0.15], 0.22);
+    }
+  }
+  return line;
+}
+
+/**
+ * A plume of smoke over the crater, painted: billowing puffs rising and
+ * leaning with the wind, each lit on its upper left and shaded under,
+ * the lowest lit orange from the crater's fire.
+ * @param {any} cv @param {number} x0 @param {number} y0 @param {number} seed
+ */
+function plume(cv, x0, y0, seed) {
+  const W = cv.W, cols = ['#2a1e22', '#3e3036', '#56464c', '#706068'].map(col), fire = [col('#7a3a24'), col('#b8582a')];
+  const puffs = [];
+  for (let i = 0; i < 9; i++) {
+    const t = i / 8, r = 4 + t * 9 + hash2(i, 1, seed) * 3;
+    puffs.push([x0 + t * t * 34 + (hash2(i, 2, seed) - 0.5) * 6, y0 - 3 - t * 40, r, t]);
+  }
+  // the furthest first, the nearest (lowest) last
+  for (let i = puffs.length - 1; i >= 0; i--) {
+    const [cx, cy, r, t] = puffs[i];
+    for (let y = Math.floor(cy - r); y <= cy + r; y++) for (let x = Math.floor(cx - r * 1.2); x <= cx + r * 1.2; x++) {
+      if (x < 0 || y < 0 || x >= W) continue;
+      const u = (x - cx) / (r * 1.2), v = (y - cy) / r, a = Math.atan2(v, u), e = u * u + v * v - 0.12 * Math.abs(Math.sin(a * 4 + i));
+      if (e > 1) continue;
+      const lit = -(u * 0.6 + v * 0.8) + (1 - e) * 0.3;
+      let c = lit > 0.55 ? cols[3] : lit > 0.1 ? cols[2] : lit > -0.4 ? cols[1] : cols[0];
+      // the fire below lights its underside
+      if (t < 0.3 && v > 0.1) c = v > 0.5 ? fire[1] : fire[0];
+      if (e > 0.82 && v > 0.2) c = cols[0];
+      cv.set(x, y, c);
+    }
+  }
 }

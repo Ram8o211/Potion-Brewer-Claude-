@@ -68,38 +68,76 @@ function oval(x, y, rx, ry, rnd) {
 const pick = (rnd, mats) => (mats.length < 2 || rnd() < 0.6 ? mats[0] : mats[1 + Math.floor(rnd() * (mats.length - 1))]);
 
 /**
- * A cluster of leaves round (x, y), rx × ry: a dark mass in shade, leaves
- * laid over it lower ones first, lit flecks on the upper leaves, loose
- * leaves round its fringe and blossoms dotted over it. Returns its sway group.
+ * A puff of leaves: a disc whose edge is scalloped into leafy lobes.
+ * @param {number} x @param {number} y @param {number} r @param {() => number} rnd @param {number} [sy] vertical squash
+ */
+function puff(x, y, r, rnd, sy = 0.86) {
+  const n = Math.max(12, Math.round(r * 5)), lobes = Math.round(r * 0.9) + 3, ph = rnd() * 6;
+  /** @type {[number, number][]} */
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2, q = 1 + 0.14 * Math.abs(Math.sin(a * lobes * 0.5 + ph)) - 0.07 + (rnd() - 0.5) * 0.08;
+    pts.push([x + Math.cos(a) * r * q, y + Math.sin(a) * r * q * sy]);
+  }
+  return pts;
+}
+
+/**
+ * A cluster of leaves round (x, y), rx × ry, after the pixel artist's
+ * clumps: a dark mass in shade, then rounded puffs of leaves laid over it
+ * lower ones first, each in flat tones — its body, a lit cap toward the
+ * upper left and a bright highlight on the cap — so every clump reads as a
+ * rounded mass of leaves; leaf tufts break its outline, a few lit flecks
+ * and loose leaves at the fringe, the region's blossoms dotted over it.
+ * Returns its sway group.
  * @param {Model} m @param {any} rng @param {number} x @param {number} y @param {number} rx @param {number} ry
  * @param {Look & {amp?:number, tone?:number, leaf?:number, dense?:number, flat?:boolean}} [o]
  */
 export function cluster(m, rng, x, y, rx, ry, o = {}) {
   const rnd = () => rng.next(), mats = o.mats || ['leaf'], tone = o.tone ?? 0, sw = { sa: o.amp ?? 1, sg: swayGroup() };
-  const lr = o.leaf ?? Math.max(1.4, Math.min(2.9, Math.min(rx, ry) * 0.34));
-  m.poly(oval(x, y + ry * 0.12, rx * 0.74, ry * (o.flat ? 0.62 : 0.72), rnd), mats[0], { shade: 'flat', tex: 1.2, tone: tone - 0.26, ...sw });
-  const n = Math.max(3, Math.round(((rx * ry) / (lr * lr)) * 1.25 * (o.dense ?? 1)));
-  /** @type {[number, number][]} */
+  // the shade at its heart and underside
+  // (tone shifts the whole cluster's steps a little: the far side of a crown a shade darker)
+  const st = (/** @type {number} */ v) => Math.max(0, Math.min(1, v + tone * 1.5));
+  m.poly(oval(x + rx * 0.06, y + ry * 0.16, rx * 0.86, ry * (o.flat ? 0.66 : 0.8), rnd), mats[0], { shade: 'flat', step: st(0.12), ...sw });
+  const pr = Math.max(2.2, Math.min(6.5, Math.min(rx, ry) * 0.62)), n = Math.max(2, Math.round(((rx * ry) / (pr * pr)) * 0.9 * (o.dense ?? 1)));
+  /** @type {[number, number, number][]} */
   const at = [];
   for (let i = 0; i < n; i++) {
-    const a = rnd() * Math.PI * 2, q = Math.sqrt(rnd());
-    let ly = y + Math.sin(a) * ry * q * 0.9 - ry * 0.05;
-    // a flat underside
-    if (o.flat) ly = Math.min(ly, y + ry * 0.35);
-    at.push([x + Math.cos(a) * rx * q * 0.92, ly]);
+    const a = rnd() * Math.PI * 2, q = Math.sqrt(rnd()) * 0.78;
+    let py = y + Math.sin(a) * (ry - pr * 0.7) * q - ry * 0.06;
+    if (o.flat) py = Math.min(py, y + ry * 0.2);
+    at.push([x + Math.cos(a) * (rx - pr * 0.6) * q, py, pr * (0.8 + rnd() * 0.4)]);
   }
+  // the crown of the cluster always has a puff at its top
+  at.push([x - rx * 0.12, y - ry * 0.32, pr * 1.05]);
   at.sort((p, q) => q[1] - p[1]);
-  for (const [lx, ly] of at) {
-    const up = (y - ly) / ry, left = (x - lx) / rx, mat = pick(rnd, mats);
-    m.poly(leaf(rnd, lx, ly, lr * (0.7 + rnd() * 0.6)), mat, { shade: 'round', soft: true, tex: 0.8, tone: tone - 0.06 + up * 0.17 + left * 0.06 + (rnd() - 0.5) * 0.14, ...sw });
-    if (up > 0.05 && rnd() < 0.4) m.dot(lx - lr * 0.3, ly - lr * 0.35, mat, { lum: 0.78 + rnd() * 0.17, ...sw });
+  for (const [px, py, r] of at) {
+    // the higher and further left, the more of it in the light
+    const up = (y - py) / ry, left = (x - px) / rx, mat = pick(rnd, mats), b = 0.38 + up * 0.12 + left * 0.05 + (rnd() - 0.5) * 0.08;
+    m.poly(puff(px, py, r, rnd), mat, { shade: 'flat', step: st(b), ...sw });
+    m.poly(puff(px - r * 0.2, py - r * 0.24, r * 0.7, rnd), mat, { shade: 'flat', step: st(b + 0.22), noOutline: true, ...sw });
+    m.poly(puff(px - r * 0.36, py - r * 0.42, r * 0.38, rnd), mat, { shade: 'flat', step: st(b + 0.44), noOutline: true, ...sw });
+    // a few single leaves catching the light on the cap, a few in shade under it
+    for (let k = 0; k < Math.round(r * 0.6); k++) {
+      const a = Math.PI * (1.05 + rnd() * 0.7), d = r * (0.5 + rnd() * 0.35);
+      m.dot(px + Math.cos(a) * d, py + Math.sin(a) * d * 0.86, mat, { step: st(b + 0.5), ...sw });
+      const a2 = Math.PI * (0.15 + rnd() * 0.7);
+      m.dot(px + Math.cos(a2) * d, py + Math.sin(a2) * d * 0.86, mat, { step: st(b - 0.22), ...sw });
+    }
   }
-  // loose leaves at the fringe
-  for (let i = 0; i < n * 0.45; i++) {
-    const a = rnd() * Math.PI * 2, q = 0.92 + rnd() * 0.22;
-    m.dot(x + Math.cos(a) * rx * q, y + Math.sin(a) * ry * q * (o.flat && Math.sin(a) > 0 ? 0.6 : 1), pick(rnd, mats), { clip: false, lum: 0.3 + rnd() * 0.35, ...sw });
+  // leaf tufts breaking the outline: small leaves round the edge, lit above, dark below
+  const tufts = Math.round((rx + ry) * 0.9);
+  for (let i = 0; i < tufts; i++) {
+    const a = rnd() * Math.PI * 2, q = 0.88 + rnd() * 0.12, lx = x + Math.cos(a) * rx * q, ly = y + Math.sin(a) * ry * q * (o.flat && Math.sin(a) > 0 ? 0.62 : 1);
+    const lit = -Math.sin(a) * 0.7 - Math.cos(a) * 0.3, mat = pick(rnd, mats);
+    m.poly(leaf(rnd, lx, ly, 0.9 + rnd() * 0.7), mat, { shade: 'flat', step: st(0.4 + lit * 0.3), noOutline: lit > 0, ...sw });
   }
-  if (o.bloom) for (let i = 0; i < n * o.bloom.rate; i++) {
+  // loose leaves just off the fringe
+  for (let i = 0; i < tufts * 0.3; i++) {
+    const a = rnd() * Math.PI * 2, q = 1.02 + rnd() * 0.14;
+    m.dot(x + Math.cos(a) * rx * q, y + Math.sin(a) * ry * q * (o.flat && Math.sin(a) > 0 ? 0.6 : 1), pick(rnd, mats), { clip: false, step: st(Math.sin(a) < 0 ? 0.6 : 0.25), ...sw });
+  }
+  if (o.bloom) for (let i = 0; i < n * 5 * o.bloom.rate; i++) {
     const a = rnd() * Math.PI * 2, q = Math.sqrt(rnd()) * 0.85, bx = x + Math.cos(a) * rx * q, by = y + Math.sin(a) * ry * q * 0.85 - ry * 0.1;
     m.dot(bx, by, o.bloom.mat, { clip: false, lum: 0.62 + rnd() * 0.33, ...sw });
     if (rnd() < 0.35) m.dot(bx + 1, by, o.bloom.mat, { clip: false, lum: 0.5, ...sw });
