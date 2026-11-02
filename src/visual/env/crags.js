@@ -68,6 +68,11 @@ export function compose(cv, seed) {
     crust: ['#6a6a2e', '#4e4e24', '#3a3a1e', '#2a2418'], crustH: 4, seed: ss,
     cobble: { stones: ['#3e2e2a', '#32241f', '#4a3630', '#2a1e1c', '#3a2a2a', '#4e2a1e'], mortar: '#0c0606', s: 6 },
     grass: { cols: ['#5a5a26', '#6a6a2e', '#4a4420'], tall: 3, rate: 0.45, flowers: ['#ff5a2a', '#ff8a3a', '#e0302a'] },
+    // under the scorched moss: grey ash, then red cinders, then the basalt
+    layers: [
+      { kind: 'ash', cols: ['#4e484a', '#443e40', '#8a8280'], h: [6, 11] },
+      { kind: 'gravel', cols: ['#a8482a', '#7a3220', '#4e2016', '#1e1210'], h: [5, 8] },
+    ],
   });
   moss(cv, { cols: ['#6a6a2e', '#4e4e24', '#3a3a1e', '#2a2418'], seed: ss + 1, drape: 8, rate: 0.18, len: 10 });
   const level = Math.round(Math.max(top[px - hw], top[px + hw])) + 4;

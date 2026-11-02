@@ -46,6 +46,8 @@ export class Canvas {
     this.liquid = new Uint8Array(N);
     /** 1 on the surface pixels where grass grows (blades or a tuft standing on them): where an animal may graze */
     this.grass = new Uint8Array(N);
+    /** which of the region's strata (side.js paintTerrain layers, from 1) a ground pixel is in (0: the rock below them, or none) */
+    this.stratum = new Uint8Array(N);
     this.cave = new Uint8Array(N);
     /** 1 where the cave's roof or walls are painted (cave.js caveFrame) */
     this.rock = new Uint8Array(N);

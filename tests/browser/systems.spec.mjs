@@ -2,7 +2,7 @@
 // and settings — through the real UI.
 import fs from 'node:fs';
 import { test, expect } from '@playwright/test';
-import { watchErrors, shot, newGame, openGame, lab } from './helpers.mjs';
+import { watchErrors, shot, newGame, openGame, lab, startSandbox } from './helpers.mjs';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -104,9 +104,28 @@ test('settings persist across sessions', async ({ page }) => {
   await page.click('[data-act=menu-settings]');
   await page.locator('input[aria-label="Mute everything"]').check();
   await page.locator('select[aria-label="Graphics quality"]').selectOption('low');
+  await expect(page.locator('select[aria-label="Wilds resolution"]')).toHaveValue('3');
+  await page.locator('select[aria-label="Wilds resolution"]').selectOption('2');
+  // (the old smoothing switch is gone)
+  await expect(page.locator('input[aria-label="Smooth pixel art"]')).toHaveCount(0);
   await page.locator('.overlay .modal-head .btn').first().click();
   await page.reload();
   await page.click('[data-act=menu-settings]');
   await expect(page.locator('input[aria-label="Mute everything"]')).toBeChecked();
   await expect(page.locator('select[aria-label="Graphics quality"]')).toHaveValue('low');
+  await expect(page.locator('select[aria-label="Wilds resolution"]')).toHaveValue('2');
+});
+
+test('the wilds are shown upscaled at the chosen resolution, and as they are at ×1', async ({ page }) => {
+  await startSandbox(page);
+  await page.click('[data-act=tab-wilds]');
+  await page.waitForFunction(() => !!window.__alchemist.screen.views.wilds.bg);
+  const state = () => page.evaluate(() => { const c = window.__alchemist.screen.views.wilds.crisp; return { on: c.on, factor: c.factor, failed: c.failed }; });
+  await page.waitForTimeout(300);
+  const s3 = await state();
+  // (where the browser has no WebGL the art canvas is shown as it is)
+  if (!s3.failed) expect(s3).toEqual({ on: true, factor: 3, failed: false });
+  await page.evaluate(() => { window.__alchemist.settings.resolution = 1; });
+  await page.waitForTimeout(300);
+  expect(await state()).toMatchObject({ on: false, factor: 1 });
 });

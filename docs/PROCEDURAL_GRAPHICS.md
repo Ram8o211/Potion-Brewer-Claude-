@@ -42,6 +42,25 @@ still limited.
   Each stone is a low dome (a bright cap, a lit shoulder, a shaded
   underside, a dark rim where it beds into the mortar), and paler
   boulders lie bedded in the rock, apart from one another.
+* **Strata.** Between the crust and the stone each region's ground is
+  layered in its own soils (`STRATA` in side.js, each a clean flat-toned
+  pixel texture, the top edge of each layer a darker line): the Meadow
+  brown topsoil with pebbles over bands of orange clay; the Whisperwood
+  black humus over loam; Willow Bank a sandy bank (sand on the surface,
+  sand ripples below) over river gravel and grey silt; the Quarry banded
+  sandstone over dark shale; Moonfen black peat over blue clay; the
+  Netherwood dark loam threaded with pale mycelium over violet clay; the
+  Ember Crags grey ash over red cinders over basalt. In the main ground
+  the strata lie level with its surface and run on under the pillars; on
+  a ledge they follow its own top. Boulders bed only in the rock below.
+* **Shown at a higher resolution** (rendering/crisp.js, the *Wilds
+  resolution* setting: ×1 to ×4, ×3 by default). A WebGL overlay draws
+  the scene at the device's resolution by the Scale2x family's rules
+  (Scale2x, Scale3x, Scale2x twice for ×4): where two neighbours meeting
+  at a corner share a colour the corner's sub-pixel takes it, so stair
+  steps become finer edges and curves rounder, while every pixel stays one
+  of the art's own colours — nothing is blurred. ×1 shows the art pixels
+  as they are (nearest-neighbour).
 * **The flourish** (flourish.js), after the legibility pass: each
   region's own little flora along its dry surfaces — grass tufts,
   daisies, lavender spikes, small ferns and mushrooms, cattails,

@@ -60,6 +60,11 @@ export function compose(cv, seed) {
     crust: ['#5aa08a', '#3e7a6a', '#2a5a4e', '#1e4038'], crustH: 4, seed: ss,
     cobble: { stones: ['#4a4652', '#3e3a46', '#54505c', '#36343e', '#464e52', '#3a3640'], mortar: '#0e0c12', s: 6 },
     grass: { cols: ['#3e7a6a', '#5aa08a', '#2a5a4e'], tall: 3, rate: 0.45, flowers: ['#c8a0ff', '#8ff0ff', '#f0c8ff'] },
+    // under the moss: dark cave loam threaded with pale mycelium, then violet-grey clay, then the stone
+    layers: [
+      { kind: 'peat', cols: ['#2c2430', '#241e28', '#7a6e8a'], h: [8, 13] },
+      { kind: 'clay', cols: ['#3a3242', '#322a38', '#443c4e'], h: [5, 8] },
+    ],
   });
   moss(cv, { cols: ['#5aa08a', '#3e7a6a', '#2a5a4e', '#1e4038'], seed: ss + 1, drape: 10, rate: 0.25, len: 14 });
   roots(cv, s('roots'), '#3a2a24', '#5a4232');

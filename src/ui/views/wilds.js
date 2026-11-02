@@ -41,7 +41,7 @@
 // its remains. Each kind's enclosure holds ten animals, living and dead.
 
 import { punchSprite } from '../../rendering/punch.js';
-import { CrispCanvas } from '../../rendering/crisp.js';
+import { UpscaledCanvas } from '../../rendering/crisp.js';
 import { h, btn, clear, toast, keepScroll } from '../dom.js';
 import { icon } from '../icons.js';
 import { audio } from '../../audio/audio.js';
@@ -228,8 +228,8 @@ export class WildsView {
     // keep the scene in view beside the deposit list
     const wrap = h('div', { class: 'scene-wrap' }, this.view);
     el.append(this.tabs, h('div', { class: 'wilds-scene' }, wrap, h('div', { class: 'scene-bar' }, this.info, this.zoomCtl)), h('div', { class: 'wilds-list' }, this.sky, this.list, this.foot));
-    // shown at any zoom with every art pixel the same size, its edges anti-aliased (rendering/crisp.js)
-    this.crisp = new CrispCanvas(this.canvas, wrap, this.view);
+    // shown at the chosen resolution, its edges kept hard (rendering/crisp.js)
+    this.crisp = new UpscaledCanvas(this.canvas, wrap, this.view);
     // the last moment the player touched this room (pre-generation waits for a pause)
     this.lastInput = 0;
     this.warmTimer = 0;
@@ -1259,7 +1259,7 @@ export class WildsView {
       ctx.globalAlpha = 1;
     }
     this.floaters = this.floaters.filter((f) => f.t < 1.2);
-    if (this.crisp) { this.crisp.enabled = this.lab.smoothPixels(); this.crisp.present(); }
+    if (this.crisp) { this.crisp.factor = this.lab.resolution(); this.crisp.present(); }
     // live stock and timers, updated in place about once a second
     this._acc = (this._acc || 0) + dt;
     if (this._acc > 1) { this._acc = 0; this.tick(); }
