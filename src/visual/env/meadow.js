@@ -17,7 +17,7 @@ import { pack } from '../color.js';
 export function compose(cv, seed) {
   const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'meadow', p);
   const pal = vary(palette({
-    leaf: ['#4e9a2c', { spread: 0.8, warm: 0.45 }], leaf2: ['#6aa82e', { spread: 0.75, warm: 0.45 }], bloom: ['#f0d040', { spread: 0.4 }], bark: '#4e3420', rock: '#7a7a72', cloud: ['#c8d4e4', { spread: 0.3, cool: 0.5 }],
+    leaf: ['#5aa62a', { spread: 0.85, warm: 0.6 }], leaf2: ['#7ab42c', { spread: 0.8, warm: 0.6 }], bloom: ['#f0d040', { spread: 0.4 }], bark: '#4e3420', rock: '#7a7a72', cloud: ['#c8d4e4', { spread: 0.3, cool: 0.5 }],
     timber: '#6a4a2e', straw: ['#c8a050', { spread: 0.45 }], moss: '#5a8a34',
   }), s('pal'), 1);
   sky(cv, 0, 160, ['#2a5aa0', '#4a82c4', '#86b4dc', '#cfe2e8'], 10);

@@ -46,6 +46,8 @@ const FRAG = `#version 300 es
 precision highp float;
 precision highp int;
 uniform sampler2D art;
+uniform sampler2D detail; // drawn at twice the art's resolution over it (the animals), or none
+uniform int hasDetail;
 uniform ivec2 size;      // the art canvas
 uniform vec2 a0;         // art coordinate of the overlay's top-left corner
 uniform vec2 u;          // art pixels per device pixel
@@ -96,6 +98,10 @@ void main() {
   else if (k == 4) o = s4(ivec2(floor(a * 4.0)));
   else if (k == 3) { ivec2 q = ivec2(floor(a * 3.0)), c = q / 3; o = s3(c, q - c * 3); }
   else o = px(ivec2(floor(a)));
+  if (hasDetail == 1) {
+    vec4 d = texelFetch(detail, clamp(ivec2(floor(a * 2.0)), ivec2(0), size * 2 - 1), 0);
+    o.rgb = mix(o.rgb, d.rgb, d.a);
+  }
   o.a = 1.0;
 }`;
 
@@ -122,6 +128,13 @@ export class UpscaledCanvas {
     host.appendChild(this.out);
     /** @type {any} */
     this.gl = null;
+    /**
+     * A canvas twice the art's size, transparent but for what is drawn on it,
+     * laid over the art at its own resolution (the wilds draw their animals
+     * there at full size); null for none
+     * @type {HTMLCanvasElement|null}
+     */
+    this.detail = null;
     this.failed = false;
     // measure again only when something moves: a scroll, a resize, a change of zoom or screen
     this.dirty = () => { this.geo = null; };
@@ -151,15 +164,28 @@ export class UpscaledCanvas {
     const loc = gl.getAttribLocation(prog, 'p');
     gl.enableVertexAttribArray(loc);
     gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-    const tex = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, tex);
-    for (const [p, v] of [[gl.TEXTURE_MIN_FILTER, gl.NEAREST], [gl.TEXTURE_MAG_FILTER, gl.NEAREST], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, p, v);
+    const texture = (/** @type {number} */ unit) => {
+      const t = gl.createTexture();
+      gl.activeTexture(gl.TEXTURE0 + unit);
+      gl.bindTexture(gl.TEXTURE_2D, t);
+      for (const [p, v] of [[gl.TEXTURE_MIN_FILTER, gl.NEAREST], [gl.TEXTURE_MAG_FILTER, gl.NEAREST], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, p, v);
+      return t;
+    };
+    this.texDetail = texture(1);
+    this.texArt = texture(0);
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
     const U = (/** @type {string} */ n) => gl.getUniformLocation(prog, n);
-    this.u = { size: U('size'), a0: U('a0'), u: U('u'), H: U('H'), k: U('k'), art: U('art') };
+    this.u = { size: U('size'), a0: U('a0'), u: U('u'), H: U('H'), k: U('k'), art: U('art'), detail: U('detail'), hasDetail: U('hasDetail') };
     gl.uniform1i(this.u.art, 0);
+    gl.uniform1i(this.u.detail, 1);
     this.gl = gl;
     return true;
+  }
+
+  /** Whether present() will draw the overlay (a resolution above ×1, WebGL to be had, the art in view). */
+  ready() {
+    if (this.factor <= 1 || !this.init()) return false;
+    return (this.geo || (this.geo = this.measure())).on;
   }
 
   /** Stop and remove the overlay. */
@@ -209,7 +235,11 @@ export class UpscaledCanvas {
     if (!g.on) { this.off(); return; }
     const gl = this.gl, u = this.u;
     gl.viewport(0, 0, g.W, g.H);
+    gl.activeTexture(gl.TEXTURE0);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.src);
+    const det = this.detail && this.detail.width === this.src.width * 2 ? this.detail : null;
+    if (det) { gl.activeTexture(gl.TEXTURE1); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, det); gl.activeTexture(gl.TEXTURE0); }
+    gl.uniform1i(u.hasDetail, det ? 1 : 0);
     gl.uniform2i(u.size, this.src.width, this.src.height);
     gl.uniform2f(u.a0, g.ax0, g.ay0);
     gl.uniform2f(u.u, g.ux, g.uy);

@@ -1864,6 +1864,7 @@ function drawFloor(ctx, fx, fy) {
  * @param {number} [opts.lift] px the body is raised off the ground (a hop arc); the shadow stays
  * @param {boolean} [opts.flash] the white reaction flash over the frame (default true)
  * @param {boolean} [opts.clip] clip to the frame (default true; the hutch lets ears pass its top)
+ * @param {boolean} [opts.shadow] its shadow on the ground under it (default true; drawn only while it touches the ground)
  * @param {boolean} [opts.grass] a tuft of grass at its mouth while it grazes (default true; false on bare ground)
  */
 export function drawRabbit(ctx, look, snap, t, react = 0, opts = {}) {
@@ -1882,11 +1883,14 @@ export function drawRabbit(ctx, look, snap, t, react = 0, opts = {}) {
   const grass = opts.grass !== false;
   if (!grass) a.bare = true;
   const dy = m.dy - Math.round(opts.lift || 0);
-  // the ground shadow stays put while the body hops or floats
-  const shadowP = pen(ctx, fx, fy, m.dx, 0, mirror, clip);
-  const sx0 = a.haunch.cx - a.haunch.rx + 1, sx1 = Math.max(a.chest.cx + a.chest.rx, a.lying ? a.head.cx + a.head.rx : 0);
-  shadowP(sx0, a.feetY + 1, sx1 - sx0, 1, 'rgba(0,0,0,0.18)');
-  shadowP(sx0 + 2, a.feetY + 2, sx1 - sx0 - 4, 1, 'rgba(0,0,0,0.12)');
+  // its shadow on the ground, only while it stands on it: none in a hop or in flight (never floating under it)
+  const grounded = dy >= 0 && a.pose !== 'hop' && a.pose !== 'fly1' && a.pose !== 'fly2';
+  if (opts.shadow !== false && grounded) {
+    const shadowP = pen(ctx, fx, fy, m.dx, 0, mirror, clip);
+    const sx0 = a.haunch.cx - a.haunch.rx + 1, sx1 = Math.max(a.chest.cx + a.chest.rx, a.lying ? a.head.cx + a.head.rx : 0);
+    shadowP(sx0, a.feetY + 1, sx1 - sx0, 1, 'rgba(0,0,0,0.18)');
+    shadowP(sx0 + 2, a.feetY + 2, sx1 - sx0 - 4, 1, 'rgba(0,0,0,0.12)');
+  }
   const factory = opts.factory || (typeof document !== 'undefined' ? makeCanvas : null);
   if (opts.cache !== false && factory) {
     const sprite = spriteFor(look, snap, a.pose, low, factory, grass);
