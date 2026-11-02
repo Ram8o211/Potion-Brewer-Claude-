@@ -58,12 +58,11 @@ export function compose(cv, seed) {
   paintTerrain(cv, {
     a: '#2a2228', b: '#342a30', grain: '#54465a', dark: '#100c10', deep: '#060408', cave: '#040305',
     crust: ['#5aa08a', '#3e7a6a', '#2a5a4e', '#1e4038'], crustH: 4, seed: ss,
-    cobble: { stones: ['#4a4652', '#3e3a46', '#54505c', '#36343e', '#464e52', '#3a3640'], mortar: '#0e0c12', s: 6 },
+    cobble: { stones: ['#3a3444', '#443c4e', '#4e4658', '#36303e', '#48405a', '#3e3848'], mortar: '#050408', s: 10 },
     grass: { cols: ['#3e7a6a', '#5aa08a', '#2a5a4e'], tall: 3, rate: 0.45, flowers: ['#c8a0ff', '#8ff0ff', '#f0c8ff'] },
-    // under the moss: dark cave loam threaded with pale mycelium, then violet-grey clay, then the stone
+    // under the moss a dark violet loam with pale pebbles, then the stones
     layers: [
-      { kind: 'peat', cols: ['#2c2430', '#241e28', '#7a6e8a'], h: [8, 13] },
-      { kind: 'clay', cols: ['#3a3242', '#322a38', '#443c4e'], h: [5, 8] },
+      { kind: 'dirt', cols: ['#241e2a', '#2c2432', '#3e3248', '#4a3a58', '#6e5a86', '#16121a'], h: [6, 10] },
     ],
   });
   moss(cv, { cols: ['#5aa08a', '#3e7a6a', '#2a5a4e', '#1e4038'], seed: ss + 1, drape: 10, rate: 0.25, len: 14 });

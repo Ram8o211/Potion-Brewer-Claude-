@@ -44,15 +44,25 @@ still limited.
   boulders lie bedded in the rock, apart from one another.
 * **Strata.** Between the crust and the stone each region's ground is
   layered in its own soils (`STRATA` in side.js, each a clean flat-toned
-  pixel texture, the top edge of each layer a darker line): the Meadow
-  brown topsoil with pebbles over bands of orange clay; the Whisperwood
-  black humus over loam; Willow Bank a sandy bank (sand on the surface,
-  sand ripples below) over river gravel and grey silt; the Quarry banded
-  sandstone over dark shale; Moonfen black peat over blue clay; the
-  Netherwood dark loam threaded with pale mycelium over violet clay; the
-  Ember Crags grey ash over red cinders over basalt. In the main ground
-  the strata lie level with its surface and run on under the pillars; on
-  a ledge they follow its own top. Boulders bed only in the rock below.
+  pixel texture, the top edge of each layer a darker line), matched to the
+  reference sheets: the Meadow a thick band of orange earth (a bright band
+  along its top, a darker body streaked lighter, round pale pebbles bedded
+  in it, a dark seam along its floor); the Whisperwood a thin dark humus;
+  Willow Bank pale speckled sand (on the surface too) over a seam of grey
+  rock; the Quarry wavy sandstone beds with thin brown bedding lines over
+  a grey seam; Moonfen dark peaty earth over a blue-grey seam; the
+  Netherwood dark violet loam; the Ember Crags a slab of grey ash
+  speckled pale over a band of red cinders. In the main ground the strata
+  lie level with its surface and run on under the pillars; on a ledge
+  they follow its own top, so ledges are slabs of the top soil on stone
+  pillars. Boulders bed only in the rock below.
+* **The wilds' stone** (`pebble` in stone.js): big rounded stones of
+  uneven sizes, each an egg a little wider than tall, in rows settled
+  half a stone apart, set in a thick near-black mortar that shows round
+  every one, each shaded in five flat tones as a lit dome (a bright cap
+  on its upper left, a lit shoulder, its body, a shaded flank, a deep
+  shadow along its underside), with no speckle. The ground, pillars, cave
+  roofs and walls share it; the enclosures keep their packed cobbles.
 * **Shown at a higher resolution** (rendering/crisp.js, the *Wilds
   resolution* setting: ×1 to ×4, ×3 by default). A WebGL overlay draws
   the scene at the device's resolution by the Scale2x family's rules

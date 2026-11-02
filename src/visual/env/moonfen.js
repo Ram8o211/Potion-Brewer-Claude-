@@ -73,12 +73,12 @@ export function compose(cv, seed) {
   paintTerrain(cv, {
     a: '#1e1a18', b: '#2a2420', grain: '#4a4038', dark: '#0a0a10', deep: '#050508', cave: '#030305',
     crust: ['#3e8a6a', '#2e6a52', '#1e4a3c', '#16382e'], crustH: 4, seed: ss,
-    cobble: { stones: ['#4a5064', '#3e4456', '#585e72', '#34384a', '#465a5a', '#3a3e4e'], mortar: '#10121a', s: 6 },
+    cobble: { stones: ['#283247', '#323850', '#3b425b', '#454f68', '#2e3a4c', '#3a4658'], mortar: '#020308', s: 10 },
     grass: { cols: ['#2e6a52', '#3e8a6a', '#1e4a3c'], tall: 4, rate: 0.55, flowers: ['#8ff0ff', '#d8ff8a'] },
-    // under the bog moss: black peat, then cold blue clay, then the stone
+    // under the bog moss a dark peaty earth with pale pebbles, a seam of blue-grey rock, then the stones
     layers: [
-      { kind: 'peat', cols: ['#2a2420', '#211c1a', '#4e4636'], h: [8, 14] },
-      { kind: 'clay', cols: ['#3e4858', '#343c4c', '#4a5466'], h: [5, 10] },
+      { kind: 'dirt', cols: ['#1d1c1c', '#24222a', '#33333b', '#404c54', '#516b6e', '#141416'], h: [6, 10] },
+      { kind: 'band', cols: ['#33333b', '#404c54', '#516b6e', '#141416'], h: [3, 5] },
     ],
   });
   moss(cv, { cols: ['#3e8a6a', '#2e6a52', '#1e4a3c', '#14322a'], seed: ss + 1, drape: 10, rate: 0.25, len: 14 });

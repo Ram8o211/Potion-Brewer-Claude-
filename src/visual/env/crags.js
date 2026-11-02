@@ -66,12 +66,12 @@ export function compose(cv, seed) {
   paintTerrain(cv, {
     a: '#2a2228', b: '#352a30', grain: '#5a3a36', dark: '#100a0a', deep: '#060304', cave: '#040203',
     crust: ['#6a6a2e', '#4e4e24', '#3a3a1e', '#2a2418'], crustH: 4, seed: ss,
-    cobble: { stones: ['#3e2e2a', '#32241f', '#4a3630', '#2a1e1c', '#3a2a2a', '#4e2a1e'], mortar: '#0c0606', s: 6 },
+    cobble: { stones: ['#45312d', '#3a231e', '#5e3a30', '#4a2a22', '#6c4436', '#3e2a26'], mortar: '#050202', s: 10 },
     grass: { cols: ['#5a5a26', '#6a6a2e', '#4a4420'], tall: 3, rate: 0.45, flowers: ['#ff5a2a', '#ff8a3a', '#e0302a'] },
-    // under the scorched moss: grey ash, then red cinders, then the basalt
+    // under the scorched moss a slab of grey ash speckled pale, a band of red cinders, then the red-brown cinder stones
     layers: [
-      { kind: 'ash', cols: ['#4e484a', '#443e40', '#8a8280'], h: [6, 11] },
-      { kind: 'gravel', cols: ['#a8482a', '#7a3220', '#4e2016', '#1e1210'], h: [5, 8] },
+      { kind: 'ash', cols: ['#625658', '#6c5e60', '#d8c0b0'], h: [6, 9] },
+      { kind: 'gravel', cols: ['#c0603a', '#8a3a22', '#5a2416', '#1a0c08'], h: [3, 5] },
     ],
   });
   moss(cv, { cols: ['#6a6a2e', '#4e4e24', '#3a3a1e', '#2a2418'], seed: ss + 1, drape: 8, rate: 0.18, len: 10 });

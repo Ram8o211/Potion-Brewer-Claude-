@@ -61,12 +61,12 @@ export function compose(cv, seed) {
   const ss = ts.int(0, 1e9);
   paintTerrain(cv, {
     a: '#5a5048', b: '#4e463e', grain: '#8a7e70', dark: '#1e1812', deep: '#0e0a08', cave: '#060404',
-    crust: ['#9a8a6e', '#7a6c56', '#5a4e40'], crustH: 3, seed: ss,
-    cobble: { stones: ['#5e5246', '#4e443a', '#6a5c4c', '#463e36', '#584c40', '#6a5236'], mortar: '#16100c', s: 6 },
-    // under the gravel: banded sandstone, then dark shale, then the hard rock the quarry is cut into
+    crust: ['#fddf88', '#f7c069', '#e8b160'], crustH: 3, seed: ss,
+    cobble: { stones: ['#4a3e34', '#3e342c', '#55483c', '#463a30', '#5a4c40', '#40362e'], mortar: '#080605', s: 10 },
+    // under the gravel banded sandstone, a seam of grey rock, then the dark stone the ore is in
     layers: [
-      { kind: 'banded', cols: ['#a88a66', '#927656', '#b8a07a', '#7e6650'], h: [13, 21] },
-      { kind: 'banded', cols: ['#4e4a46', '#5c5852', '#423e3a'], h: [6, 11] },
+      { kind: 'banded', cols: ['#fdcc76', '#f7c069', '#fddf88', '#e8b160', '#a86e38'], h: [12, 18] },
+      { kind: 'band', cols: ['#525d60', '#606766', '#787c74', '#34322e'], h: [4, 6] },
     ],
   });
   moss(cv, { cols: ['#8a7a5e', '#6a5c48', '#4a4034'], seed: ss + 1, drape: 5, rate: 0.08, len: 6 });
