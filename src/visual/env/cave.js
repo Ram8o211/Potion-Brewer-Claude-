@@ -65,7 +65,7 @@ export function fog(cv, c, y0, y1, k, seed) {
  */
 export function caveFrame(cv, o) {
   const W = cv.W, H = cv.H, seed = o.seed;
-  const tex = { stones: o.stones.map(col), mortar: col(o.mortar), s: o.s ?? 6, seed };
+  const tex = { stones: o.stones.map(col), mortar: col(o.mortar), s: o.s ?? 8, seed, round: true };
   const roof = new Float32Array(W);
   for (let x = 0; x < W; x++) {
     let y = o.roof[0] + fbm1(x * 0.03, seed, 3) * (o.roof[1] - o.roof[0]) + (hash2(x >> 1, 0, seed) - 0.5) * 2;

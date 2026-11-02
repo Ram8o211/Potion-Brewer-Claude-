@@ -65,12 +65,11 @@ export function compose(cv, seed) {
   paintTerrain(cv, {
     a: '#6a4a30', b: '#7e5a3a', grain: '#a08060', dark: '#2a1c12', deep: '#140c08', cave: '#100a06',
     crust: ['#8ccf4a', '#5ea83a', '#3f7e2c', '#2e5a22'], crustH: 4, seed: ss,
-    cobble: { stones: ['#625a4c', '#544c40', '#6e6656', '#4a443a', '#5e5c4e', '#524e44'], mortar: '#16120e', s: 6 },
+    cobble: { stones: ['#5f564d', '#574d46', '#4d433e', '#6c5e59', '#5a5048', '#635a52'], mortar: '#0a0909', s: 10 },
     grass: { cols: ['#6ab83e', '#8ccf4a', '#4e9a34'], tall: 4, rate: 0.7, flowers: ['#fff4c0', '#ffe066', '#ff9fc7', '#c9b0ff', '#ffffff', '#ff7a6a'] },
-    // under the turf: brown topsoil with pebbles, then bands of orange clay, then the stone
+    // under the turf a thick band of orange earth with pebbles bedded in it, then the stones
     layers: [
-      { kind: 'soil', cols: ['#6e4c30', '#5e4028', '#a89070', '#4a3424'], h: [8, 14] },
-      { kind: 'clay', cols: ['#9a6a42', '#8a5c38', '#a87a4e'], h: [5, 10] },
+      { kind: 'dirt', cols: ['#6a3a1e', '#76421f', '#9a5428', '#c06e32', '#c4a684', '#6a4e38'], h: [12, 18] },
     ],
   });
   moss(cv, { cols: ['#8ccf4a', '#5ea83a', '#3f7e2c', '#2e5a22'], seed: ss + 1, drape: 12, rate: 0.32, len: 14 });
