@@ -214,7 +214,7 @@ export function followUpCard(lab, f) {
     if (!r) return;
     if (r.refused) { audio.play('error'); toast('Not enough coins', r.text, 'coin'); return; }
     audio.play(f.kind === 'praise' ? 'praise' : r.coins < 0 || r.rep < 0 ? 'complaint' : 'coin');
-    toast(f.kind === 'praise' ? 'A happy customer' : 'Complaint settled', `${r.text} ${r.coins ? (r.coins > 0 ? '+' : '') + coins(r.coins) + ' coins. ' : ''}${r.rep ? 'Reputation ' + (r.rep > 0 ? '+' : '') + r.rep + '.' : ''}`, f.kind === 'praise' ? 'heart' : 'talk', 5200);
+    toast(f.kind === 'praise' ? 'A happy customer' : 'Complaint settled', `${r.text} ${r.coins ? (r.coins > 0 ? '+' : '') + coins(r.coins) + ' coins. ' : ''}${r.rep ? 'Reputation ' + (r.rep > 0 ? '+' : '') + r.rep + '.' : ''}${r.travel ? ' They leave you a traveller coin.' : ''}`, r.travel ? 'compass' : f.kind === 'praise' ? 'heart' : 'talk', 5200);
     for (const e of r.events) lab.announce(e);
     lab.save();
     lab.refreshHud(true);

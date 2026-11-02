@@ -117,12 +117,17 @@ function shardAt(sh, u, v) {
  * @param {import('./descriptor.js').Descriptor} d @param {number} v 0..3 @param {number} size
  * @returns {Pixels}
  */
+/** Pieces are the whole icon (true) rather than a quarter of it. */
+export const WHOLE_PIECES = true;
+
 function shardArt(d, v, size) {
+  // every piece poured is the ingredient as the menus show it: the whole icon, the same every pour
+  // (WHOLE_PIECES; the shards it once broke into are kept for the grains the pestle grinds off)
   const sh = shardsOf(d), want = v & 3, icon = iconRaster(d), N = ICON_IN;
   const part = new Pixels(N, N);
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
     const c = icon.px[y * N + x];
-    if (c >>> 24 && shardAt(sh, (x + 0.5) / N, (y + 0.5) / N) === want) part.px[y * N + x] = c;
+    if (c >>> 24 && (WHOLE_PIECES || shardAt(sh, (x + 0.5) / N, (y + 0.5) / N) === want)) part.px[y * N + x] = c;
   }
   keepLargest(part);
   let x0 = N, x1 = 0, y0 = N, y1 = 0;
@@ -213,7 +218,31 @@ export function pieceFrame(d, v) {
     for (let j = 0; j < k; j++) for (let i = 0; i < k; i++) if (pix.px[(y * k + j) * PIECE_PX + x * k + i] >>> 24) n++;
     mask[y * PIECE_GRID + x] = n * 2 >= k * k ? 1 : 0;
   }
-  return { pix, mask };
+  // the body the physics gives a whole piece is its silhouette's convex hull: one compact, solid
+  // object (a root's whiskers or a sprig's leaves never split it), the icon drawn over it
+  return { pix, mask: WHOLE_PIECES ? hullMask(mask, PIECE_GRID) : mask };
+}
+
+/** A mask filled out to its convex hull (cells whose centres lie inside it). @param {Uint8Array} m @param {number} N */
+function hullMask(m, N) {
+  /** @type {[number, number][]} */
+  const pts = [];
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (m[y * N + x]) pts.push([x + 0.5, y + 0.5], [x, y], [x + 1, y], [x, y + 1], [x + 1, y + 1]);
+  if (pts.length < 3) return m;
+  pts.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lower = [], upper = [];
+  for (const p of pts) { while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop(); lower.push(p); }
+  for (let i = pts.length - 1; i >= 0; i--) { const p = pts[i]; while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop(); upper.push(p); }
+  const hull = lower.slice(0, -1).concat(upper.slice(0, -1));
+  const out = new Uint8Array(N * N);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const c = [x + 0.5, y + 0.5];
+    let inside = true;
+    for (let i = 0; i < hull.length && inside; i++) if (cross(hull[i], hull[(i + 1) % hull.length], c) < -1e-9) inside = false;
+    out[y * N + x] = inside ? 1 : 0;
+  }
+  return out;
 }
 
 export { Pixels };

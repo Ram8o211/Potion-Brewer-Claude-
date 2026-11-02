@@ -979,6 +979,7 @@ export class WildsView {
     toast(r.dead ? 'A body for the hutch' : 'Caught!', r.dead
       ? `The ${kd.noun} is carried home. You named it ${name}: its body waits in the hutch, where its remains can be recovered.`
       : `${name} the ${kd.noun} is carried home to the hutch, weak from its wounds — it will mend there.${kd.steady ? ` ${kd.lore}` : ''}`, 'rabbit');
+    if (lab.tutorial) lab.tutorial.notify('caught', r.kind);
     lab.save();
   }
 

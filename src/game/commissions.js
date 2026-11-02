@@ -852,7 +852,7 @@ export const TUTORIAL_HERBS = { healer: 'wild-silverleaf', warmer: 'wild-emberba
 export function tutorialCommission(ctx, rng) {
   const R = ctx.world.roles;
   const { healer, warmer } = TUTORIAL_HERBS;
-  const plan = { ingredients: [{ id: R.water, n: 22 }, { id: healer, n: 10 }, { id: warmer, n: 5 }], heatTo: 62, coolTo: 20, serveTemp: 20, steep: { T: 62, hold: 22 }, knead: true, crush: true, hold: 8 };
+  const plan = { ingredients: [{ id: R.water, n: 22 }, { id: healer, n: 10 }, { id: warmer, n: 9 }], heatTo: 62, coolTo: 20, serveTemp: 20, steep: { T: 62, hold: 22 }, knead: true, crush: true, hold: 8 };
   const pred = predictPlan(ctx.world, ctx.lookup, plan);
   const vit = Math.max(4, Math.round(pred.effects[EFFECT_INDEX.vitality] * 0.7));
   const arch = archetypeOf('farmer');
@@ -868,7 +868,7 @@ export function tutorialCommission(ctx, rng) {
     tutorial: true,
     potionName: `${capitalize(colorWord)} Healing Tonic`,
     customer,
-    dialogue: `Ah, a new alchemist! My old joints ache. Could you brew me a healing tonic? ${leaf} heals, they say, but it leaves a frosty bite — a little ${sun} should warm that away. Test that it truly heals, and that nothing else is in it!`,
+    dialogue: `A new alchemist! My old joints ache — a healing tonic, please. ${leaf} heals but bites with frost; ${sun} heals with a warmth that cancels it. Test that it truly heals, and nothing else!`,
     requirements: [
       { key: 'vitality', kind: 'min', target: vit, tol: 0, zero: Math.max(6, vit * 0.6), label: `at least ${vit}%`, effect: true },
       purityRequirement(['vitality'], 3),

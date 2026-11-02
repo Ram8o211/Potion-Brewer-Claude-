@@ -72,7 +72,8 @@ test('whole ingredients enter as recognisable rigid objects, not as powder', () 
   const t = sim();
   pour(t, 'wild-riverchalk', chunkSize(lookup('wild-riverchalk')));
   run(t, 3);
-  assert.ok(aspect(t, bodies(t)[0]) < 1.5, 'a pebble is round');
+  // (a piece is the whole icon: a pebble lies as its icon shows it, compact if not quite round)
+  assert.ok(aspect(t, bodies(t)[0]) < 2.2, 'a pebble is compact');
   // whole roots carry the renderer's look and count as "whole"
   assert.ok(s.p.whole[0] > 0.99);
 });

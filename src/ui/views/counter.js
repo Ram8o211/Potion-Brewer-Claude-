@@ -39,11 +39,12 @@ export class CounterView {
       return;
     }
     for (const f of st.dueFollowUps()) el.append(trade.followUpCard(lab, f));
+    this.ordersCard(el);
     const com = st.current;
     if (!com) {
       el.append(h('div', { class: 'card parch counter-empty' },
-        h('div', { text: st.dayOver ? `The last customer has left. Day ${st.day} is over.` : st.opened ? 'The shop is quiet.' : `Dawn of day ${st.day}. The shop is still closed.` }),
-        h('div', { class: 'small muted', text: st.dayOver ? 'Dusk: the twilight plants are open in the wilds until you close for the night.' : st.opened ? '' : 'Dawn flowers are open in the wilds only until you open the door. Brew ahead for the shelves, or open up when you are ready.' }),
+        h('div', { text: st.dayOver ? `Dusk of day ${st.day}` : st.opened ? 'The shop is quiet.' : `Dawn of day ${st.day} · shop closed` }),
+        h('div', { class: 'small muted', text: st.dayOver ? 'Dusk plants are open in the wilds.' : st.opened ? '' : 'Dawn plants are open in the wilds until you open.' }),
         h('div', { class: 'row wrap' },
           st.dayOver ? btn('Close shop for the night', () => lab.endDay(), { cls: 'gold', icon: 'sun', act: 'end-day' })
             : btn(st.opened ? 'Next customer' : 'Open the door', () => lab.bringCustomer(true), { cls: 'gold', icon: 'door', act: 'next-customer' }))));
@@ -55,33 +56,66 @@ export class CounterView {
     drawPortrait(portrait, com.customer.portrait, 'neutral');
     // with a vial waiting, only its own trials count: that is what will be sold
     const sum = st.vial ? summarize(st.vial.samples || seedSamples(st.vial)) : lab.currentCert();
-    const list = h('ul', { class: 'reqs full' });
+    const list = h('div', { class: 'req-grid' });
     for (const req of com.requirements) {
       const isFx = !!EFFECT_BY_KEY[req.key];
-      const label = PROPERTY_LABELS[req.key] || req.key;
       const status = isFx || req.key === 'purity' ? reqStatus(req, sum) : null;
-      const target = h('span', { text: req.label });
-      list.appendChild(h('li', { class: 'req' + (req.limit || req.key === 'purity' ? ' limit' : '') }, icon(isFx ? EFFECT_BY_KEY[req.key].icon : lab.reqIcon(req.key)), h('span', {}, h('span', { class: 'lbl-k', text: (req.limit ? 'Limit: ' : '') + label + ' ' }), target), status));
+      list.appendChild(h('div', { class: 'req-cell' + (req.limit || req.key === 'purity' ? ' limit' : ''), title: `${PROPERTY_LABELS[req.key] || req.key}: ${req.label}` },
+        icon(isFx ? EFFECT_BY_KEY[req.key].icon : lab.reqIcon(req.key), 'sm'), h('b', { text: isFx ? EFFECT_BY_KEY[req.key].label : req.key === 'purity' ? 'Pure' : (PROPERTY_LABELS[req.key] || req.key) }), h('span', { class: 'tgt', text: shortLabel(req) }), status));
     }
-    list.appendChild(h('li', { class: 'req' }, icon('flask'), h('span', {}, h('span', { class: 'lbl-k', text: 'Quantity ' }), `${com.bottleMl} ml`)));
-    el.append(h('div', { class: 'card parch customer-card' },
-      h('div', { class: 'cust-top' }, portrait, h('div', {},
-        h('div', { class: 'cust-name', text: `${com.customer.name}` }),
-        h('div', { class: 'small muted', text: `${com.customer.title}${com.contract ? ' · Guild contract' : ''}${com.grand ? ' · Grand Commission' : ''}` }),
-        h('div', { class: 'budget' }, icon('coin', 'sm'), ` up to ${coins(com.budget)}`))),
-      com.patron ? h('div', { class: 'small patron ' + (com.patron.trust > 0.2 ? 'ok' : com.patron.trust < -0.2 ? 'warn' : 'muted'), text: `A returning customer (${com.patron.visits} earlier visit${com.patron.visits === 1 ? '' : 's'}): ${com.patron.trust > 0.2 ? 'they trust your shop — less haggling, a bigger purse' : com.patron.trust < -0.2 ? 'they were let down before and want proof this time' : 'they know your shop'}.` }) : null,
+    list.appendChild(h('div', { class: 'req-cell' }, icon('flask', 'sm'), h('b', { text: 'Bottle' }), h('span', { class: 'tgt', text: `${com.bottleMl} ml` })));
+    const offer = com.commission;
+    const tags = [
+      com.contract && !offer ? h('span', { class: 'tag', text: 'Guild contract' }) : null,
+      com.grand ? h('span', { class: 'tag rare', text: 'Grand Commission' }) : null,
+      offer ? h('span', { class: 'tag hour', text: `Commission · day ${offer.due}` }) : null,
+      com.patron ? h('span', { class: 'tag' + (com.patron.trust > 0.2 ? ' ok' : com.patron.trust < -0.2 ? ' warn' : ''), title: com.patron.trust > 0.2 ? 'They trust your shop: less haggling, a bigger purse' : com.patron.trust < -0.2 ? 'They were let down before and want proof' : 'They know your shop', text: `Returning ×${com.patron.visits}` }) : null,
+    ].filter(Boolean);
+    el.append(h('div', { class: 'card parch customer-card' + (offer ? ' offer' : '') },
+      h('div', { class: 'cust-top' }, h('div', { class: 'cust-face' }, portrait, com.wait ? h('div', { class: 'patience', 'data-patience': '1' }, h('i')) : null), h('div', { class: 'cust-id' },
+        h('div', { class: 'cust-name', text: com.customer.name }),
+        h('div', { class: 'small muted', text: com.customer.title }),
+        h('div', { class: 'budget' }, icon('coin', 'sm'), ` ${offer ? offer.reward : `≤ ${coins(com.budget)}`}`),
+        tags.length ? h('div', { class: 'tags' }, ...tags) : null)),
       h('div', { class: 'speech', text: '“' + com.dialogue + '”' }),
       h('div', { class: 'potion-name', text: com.potionName }),
       list,
       this.techCard(com),
       this.supplyCard(com),
-      this.shelfMatches(com),
-      h('div', { class: 'row wrap cust-actions' },
-        btn('Brew it', () => lab.showView('brew'), { icon: 'cauldron', cls: 'primary', act: 'go-brew', title: 'Go to the cauldron' }),
-        btn(com.hintCost ? `Advice · ${com.hintCost}` : 'Advice', () => panels.openHint(lab), { icon: 'bulb', act: 'hint', title: com.hintCost ? `A guild alchemist suggests an approach for ${com.hintCost} coins` : 'A guild alchemist suggests an approach' }),
-        com.tutorial ? null : btn('Decline', () => lab.decline(), { icon: 'door', act: 'decline', title: 'Send this customer away (no penalty)' }))));
+      offer ? null : this.shelfMatches(com),
+      offer
+        ? h('div', { class: 'row wrap cust-actions' },
+          btn(`Accept · ${offer.reward}`, () => lab.acceptCommission(), { icon: 'scroll', cls: 'gold', act: 'accept-commission', title: `They come back on day ${offer.due} to collect it` }),
+          btn('Decline', () => lab.decline(), { icon: 'door', act: 'decline', title: 'Turn the commission down (no penalty)' }))
+        : h('div', { class: 'row wrap cust-actions' },
+          btn('Brew', () => lab.showView('brew'), { icon: 'cauldron', cls: 'primary', act: 'go-brew', title: 'Go to the cauldron' }),
+          btn(com.hintCost ? `Advice · ${com.hintCost}` : 'Advice', () => panels.openHint(lab), { icon: 'bulb', act: 'hint', title: com.hintCost ? `A guild alchemist suggests an approach for ${com.hintCost} coins` : 'A guild alchemist suggests an approach' }),
+          com.tutorial ? null : btn('Decline', () => lab.decline(), { icon: 'door', act: 'decline', title: 'Send this customer away (no penalty)' }))));
+    lab.showPatience();
     this.vialCard(el);
     this.shelfCard(el);
+  }
+
+  /**
+   * The order book: commissions accepted, when each customer comes back, and
+   * — on their day — handing them the vial on the counter.
+   * @param {HTMLElement} el
+   */
+  ordersCard(el) {
+    const lab = this.lab, st = lab.state;
+    const open = st.openOrders();
+    if (!open.length) return;
+    const rows = open.map((o) => {
+      const due = o.due <= st.day;
+      return h('div', { class: 'order-row' + (due ? ' due' : ''), 'data-order': o.id },
+        icon('scroll', 'sm'),
+        h('div', { class: 'order-info' },
+          h('b', { text: o.com.potionName }),
+          h('div', { class: 'small muted', text: `${shortName(o.com.customer.name)} · ${due ? (o.late ? 'waiting, last day' : 'here today') : `day ${o.due}`} · ${o.reward} coins` }),
+          h('div', { class: 'small' }, ...o.com.requirements.filter((r) => EFFECT_BY_KEY[r.key]).map((r) => h('span', { class: 'fx-chip' }, icon(EFFECT_BY_KEY[r.key].icon, 'sm'), ` ${shortLabel(r)}`)), ` · ${o.com.bottleMl} ml`)),
+        due ? btn('Hand over', () => lab.deliverOrder(o.id), { cls: 'gold small', icon: 'deal', disabled: !st.vial, act: 'deliver-' + o.id, title: st.vial ? 'Give them the vial on the counter' : 'Bottle the potion first' }) : null);
+    });
+    el.append(h('div', { class: 'card parch orders-card' }, h('div', { class: 'row' }, icon('scroll'), h('b', { text: `Commissions · ${open.length}` })), ...rows));
   }
 
   /** What the order's techniques ask of the alchemist (one line each). @param {any} com */
@@ -142,7 +176,6 @@ export class CounterView {
     const lab = this.lab, st = lab.state;
     const v = st.vial;
     if (!v) {
-      if (st.current) el.append(h('div', { class: 'card parch small muted next-step' }, h('b', { text: 'Next: ' }), 'brew it, test a dose in Trials, then Bottle it — the vial appears here.'));
       return;
     }
     const com = st.current;
@@ -215,9 +248,17 @@ export class CounterView {
     }
     el.append(h('div', { class: 'card parch shelf-card' },
       h('div', { class: 'row' }, icon('shelf2'), h('b', { text: `Potion shelves · ${st.bottles.length}/${cap}` })),
-      st.bottles.length ? null : h('div', { class: 'small muted', text: 'Empty. When you bottle a brew, choose “To the potion shelves” to keep it for a later customer. Tap a bottle here to use it. More shelving is sold in the Shop.' }),
+      st.bottles.length ? null : h('div', { class: 'small muted', text: 'Empty — bottle a brew “to the shelves” to keep it.' }),
       grid, detail));
   }
+}
+
+/** A requirement's target in a few characters ("≥ 12%", "≤ 1.2%"). @param {any} r */
+function shortLabel(r) {
+  if (r.key === 'purity') return `others ≤ ${r.target}%`;
+  if (r.kind === 'min') return `≥ ${r.target}%`;
+  if (r.kind === 'max') return `≤ ${r.target}`;
+  return r.label;
 }
 
 /** A vial bottled before readings were kept: its certificate counts as one reading per effect. @param {any} v */

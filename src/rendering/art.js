@@ -397,6 +397,92 @@ export function drawJar(ctx, x, y, w, h, color, form) {
   R(ctx, x + 1, y + Math.round(h * 0.45), w - 2, Math.max(1, Math.round(h * 0.18)), glass);
 }
 
+/**
+ * A vessel for a liquid, powder or gas ingredient, drawn as the wild
+ * ingredients' icons are (rendering/species-sprites.js): a dark ink outline,
+ * flat tones lit from the upper left, a glint on the glass — the shape
+ * telling what it holds at a glance: well water in a round-bellied flask
+ * with a drop on its label, oil in a squat stoneware jug with a handle,
+ * spirit in a tall slim bottle, a syrup in a fat jar, a powder in a tied
+ * sack, a vapour in a stoppered globe. `size` art pixels square (24 by
+ * default), returned as a canvas at that size.
+ * @param {any} m material @param {number} [size]
+ */
+export function vesselSprite(m, size = 24) {
+  const cv = makeCanvas(size, size);
+  const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
+  const kind = m.form === 'powder' ? 'sack' : m.form === 'gas' ? 'globe' : m.archetype === 'water' ? 'flask' : m.archetype === 'oil' ? 'jug' : m.archetype === 'spirit' ? 'bottle' : m.archetype === 'syrup' ? 'jar' : 'flask';
+  const c = m.look || m.color || [0.6, 0.7, 0.8];
+  const tone = (k) => rgbStr(c.map((v) => Math.max(0, Math.min(1, v * k))));
+  const INK = '#1a1218';
+  const S = size / 24;
+  /** a filled pixel rect in 24-unit coordinates */
+  const P = (x, y, w, h, col) => { ctx.fillStyle = col; ctx.fillRect(Math.round(x * S), Math.round(y * S), Math.max(1, Math.round(w * S)), Math.max(1, Math.round(h * S))); };
+  /** an ellipse filled row by row, `col(dx, dy)` picking each pixel's tone */
+  const blob = (cx, cy, rx, ry, col) => {
+    for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) for (let x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) {
+      const dx = (x + 0.5 - cx) / rx, dy = (y + 0.5 - cy) / ry;
+      if (dx * dx + dy * dy > 1) continue;
+      const f = col(dx, dy);
+      if (f) P(x, y, 1, 1, f);
+    }
+  };
+  /** the liquid inside a rounded body: dark below, lit band at its surface, a glint */
+  const liquidBody = (cx, cy, rx, ry, level) => {
+    blob(cx, cy, rx + 1, ry + 1, () => INK);
+    blob(cx, cy, rx, ry, (dx, dy) => {
+      if (dy < level) return dx < -0.35 && dy < level - 0.25 ? 'rgba(230,245,255,0.55)' : 'rgba(190,220,235,0.28)';
+      if (dy < level + 0.16) return tone(1.25);
+      return dy > 0.55 || dx > 0.55 ? tone(0.62) : dx < -0.45 ? tone(1.08) : tone(0.86);
+    });
+    P(cx - rx * 0.55, cy - ry * 0.55, 1, 2, '#ffffff');
+  };
+  const cork = (x, y, w, h) => { P(x - 1, y - 1, w + 2, h + 2, INK); P(x, y, w, h, '#8b5a31'); P(x, y, w, 1, '#c88a4c'); P(x + w - 1, y + 1, 1, h - 1, '#52321d'); };
+  const neck = (x, y, w, h) => { P(x - 1, y, w + 2, h, INK); P(x, y, w, h, 'rgba(200,230,240,0.55)'); P(x, y, 1, h, 'rgba(255,255,255,0.7)'); };
+  if (kind === 'flask') {
+    neck(10, 4, 4, 6); cork(9.5, 2, 5, 3);
+    liquidBody(12, 15, 7.5, 7, -0.3);
+    // a parchment label with a drop on it (well water) or a rune
+    P(8, 14, 8, 5, INK); P(9, 15, 6, 3, '#e6d3a5');
+    if (m.archetype === 'water') { P(11, 15, 2, 1, '#3a7ad0'); P(10.5, 16, 3, 1, '#3a7ad0'); P(11, 17, 2, 1, '#2a5aa8'); } else P(10, 16, 4, 1, '#7a2a22');
+  } else if (kind === 'jug') {
+    // squat stoneware: an ochre glaze over the dark clay, a handle, the oil showing at the lip
+    blob(12, 15, 8, 7, () => INK);
+    blob(12, 15, 7, 6, (dx, dy) => (dy < -0.55 ? '#6a4a2a' : dx < -0.4 ? '#d8a868' : dx > 0.45 || dy > 0.5 ? '#7a5030' : '#b88448'));
+    P(15, 13, 1, 4, '#e8c080');
+    P(8, 5, 8, 4, INK); P(9, 6, 6, 3, '#b88448'); P(9, 6, 6, 1, tone(1.2)); P(10, 7, 4, 1, tone(0.9));
+    P(18, 9, 3, 1, INK); P(20, 9, 1, 6, INK); P(18, 14, 3, 1, INK); P(19, 10, 1, 4, '#7a5030');
+    P(7, 16, 10, 2, INK); P(8, 16, 8, 1, tone(1.1));
+  } else if (kind === 'bottle') {
+    // tall and slim: a long neck, a waxed cork, the spirit nearly to the shoulder
+    neck(10.5, 3, 3, 7); cork(10, 1, 4, 3); P(10, 4, 4, 1, '#a83a3a');
+    P(7, 9, 10, 14, INK);
+    for (let y = 10; y < 22; y++) for (let x = 8; x < 16; x++) {
+      const lit = x < 10, dark = x > 13 || y > 19;
+      P(x, y, 1, 1, y < 11 ? 'rgba(220,240,255,0.4)' : y === 11 ? tone(1.25) : dark ? tone(0.66) : lit ? tone(1.05) : tone(0.85));
+    }
+    P(9, 12, 1, 6, 'rgba(255,255,255,0.75)'); P(8, 14, 8, 1, INK); P(8, 15, 8, 3, '#e6d3a5'); P(9, 16, 6, 1, '#5a4330');
+  } else if (kind === 'jar') {
+    P(5, 6, 14, 17, INK); P(6, 4, 12, 3, INK); P(7, 5, 10, 1, '#8b5a31');
+    for (let y = 7; y < 22; y++) for (let x = 6; x < 18; x++) P(x, y, 1, 1, y < 9 ? 'rgba(220,240,255,0.4)' : y === 9 ? tone(1.25) : x > 15 || y > 19 ? tone(0.62) : x < 8 ? tone(1.05) : tone(0.85));
+    P(7, 11, 1, 7, 'rgba(255,255,255,0.7)');
+  } else if (kind === 'sack') {
+    // a burlap sack tied at the neck, the powder heaped in its open mouth
+    blob(12, 16, 8, 7, () => INK);
+    blob(12, 16, 7, 6, (dx, dy) => (dx < -0.4 && dy < 0.3 ? '#c8a878' : dx > 0.45 || dy > 0.5 ? '#7a5a3a' : (Math.round((dx + 1) * 7) + Math.round((dy + 1) * 6)) % 3 === 0 ? '#8e6c46' : '#a8865a'));
+    P(9, 8, 6, 3, INK); P(10, 9, 4, 1, '#5a3a20');
+    blob(12, 7, 4.5, 2.5, () => INK); blob(12, 7, 3.5, 1.6, (dx) => (dx < -0.2 ? tone(1.2) : tone(0.95)));
+    P(8, 18, 8, 1, '#5a3a20');
+  } else {
+    // a stoppered glass globe with vapour swirling in it
+    neck(10.5, 4, 3, 5); cork(10, 2, 4, 3);
+    blob(12, 15, 8, 7.5, () => INK);
+    blob(12, 15, 7, 6.5, (dx, dy) => (Math.sin(dx * 6 + dy * 4) > 0.3 ? tone(1.1) : dx < -0.4 && dy < -0.3 ? 'rgba(230,245,255,0.6)' : tone(0.75)));
+    P(8, 11, 1, 3, '#ffffff');
+  }
+  return cv;
+}
+
 /** 4×4 ordered-dither matrix: sixteen levels, so gradients don't step into bands */
 const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 

@@ -188,7 +188,8 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 .chip { padding: 2px 6px; font-size: var(--fs-s); background: rgba(13, 10, 16, 0.75); box-shadow: 0 0 0 1px var(--wood3); }
 /* the pour hint sits in the top-left corner, over the wall — clear of the cauldron, the tap and the buttons */
 .stage .pour-hint { position: absolute; left: 6px; top: 6px; font-size: var(--fs-s); padding: 3px 8px; pointer-events: none; max-width: calc(100% - 200px); line-height: 1.25; }
-.stage .fab { position: absolute; right: 8px; bottom: 8px; min-height: 52px; padding: 6px 14px; z-index: 3; }
+/* the Bottle button stands at the bottom left: the tap and the vial filling under it are on the right */
+.stage .fab { position: absolute; left: 8px; bottom: 8px; min-height: 48px; padding: 6px 12px; z-index: 3; }
 .stage .brew-panel { position: absolute; right: 6px; top: 56px; width: min(320px, calc(100% - 12px)); max-height: calc(100% - 124px); overflow-y: auto; padding: 8px 10px; font-size: var(--fs-s); z-index: 4; line-height: 1.35; }
 .brew-panel .row.small { gap: 6px; }
 .know { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 3px; align-items: center; }
@@ -801,3 +802,66 @@ details.steps summary { cursor: pointer; min-height: 24px; }
 .deposit .meta.soil { color: #3a5a7a; }
 .view-wilds .tap-mode .btn.active { box-shadow: 0 0 0 var(--px) #1a0f26, 0 0 0 calc(var(--px) * 2) var(--brass); }
 .deposit .meta.soil:empty { display: none; }
+
+/* ---------- v3: biomes, expeditions, commissions, patience (compact) ---------- */
+.region-tabs { gap: 4px; padding: 6px 6px 8px; align-items: center; }
+.region-tabs .btn { min-height: 42px; padding-left: 8px; padding-right: 10px; font-size: var(--fs-s); position: relative; }
+.region-tabs .btn img.ico { width: 22px; height: 22px; }
+.region-tabs .btn.exotic:not(.locked) { background: #3a2a5a; box-shadow: 0 0 0 var(--px) #120a1e, inset 0 var(--px) 0 0 #8a6ad0, inset 0 calc(var(--px) * -2) 0 0 #1e1230; }
+.region-tabs .btn.active { background: #5a3a7a; }
+.region-tabs .tab-price { position: absolute; right: 2px; bottom: 1px; font-size: 12px; color: var(--brassHi); text-shadow: 1px 1px 0 #000; }
+.realm-tag { flex: none; writing-mode: vertical-rl; transform: rotate(180deg); font-size: 12px; color: var(--parch1); letter-spacing: 1px; padding: 0 1px; opacity: 0.8; }
+.realm-tag.exotic { color: #c8a8ff; }
+.wilds-sky .sky-row { gap: 6px; align-items: center; }
+.wilds-sky .chip { display: inline-flex; gap: 3px; align-items: center; padding: 1px 6px; background: rgba(255, 255, 255, 0.06); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4); color: var(--parch2); }
+.wilds-sky .weather-note { margin-top: 2px; }
+.travel-purse { display: inline-flex; gap: 1px; align-items: center; }
+.travel-purse img.ico { width: 16px; height: 16px; }
+.travel-purse img.ico.spent { opacity: 0.25; filter: grayscale(1); }
+.travel-next { font-size: 13px; }
+.deposit { grid-template-columns: 44px minmax(0, 1fr) auto; gap: 6px; padding: 6px 8px; }
+.deposit canvas { width: 40px; height: 40px; }
+.deposit .title { font-size: 18px; }
+.deposit .btn { min-height: 40px; }
+.deposit .meta.fx { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; }
+.fx-chip { display: inline-flex; align-items: center; gap: 1px; padding: 0 3px; background: rgba(43, 29, 20, 0.08); }
+.fx-chip.main { background: rgba(120, 200, 90, 0.25); box-shadow: 0 0 0 1px rgba(60, 120, 40, 0.5); }
+.fx-chip img.ico { width: 14px; height: 14px; }
+@media (max-width: 600px) { .deposit { grid-template-columns: 44px minmax(0, 1fr) auto; } .deposit > .btn { grid-column: auto; } }
+
+/* the customer card, compact */
+.customer-card { padding: 8px 10px; }
+.customer-card .cust-top { grid-template-columns: auto 1fr; gap: 8px; align-items: start; }
+.customer-card .cust-face { display: flex; flex-direction: column; gap: 3px; align-items: stretch; }
+.customer-card .cust-name { font-size: 19px; line-height: 1.05; }
+.customer-card .tags { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 2px; }
+.customer-card .tag.ok { background: rgba(120, 200, 90, 0.3); }
+.customer-card .tag.warn { background: rgba(224, 64, 44, 0.25); }
+.customer-card .speech { margin: 6px 0 4px; padding: 4px 6px; line-height: 1.3; max-height: 5.4em; overflow: auto; }
+.customer-card .potion-name { font-size: 19px; margin: 2px 0 4px; }
+.customer-card.offer { box-shadow: 0 0 0 var(--px) #6a4a12, inset 0 0 0 var(--px) var(--brassHi); }
+.req-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 3px; margin: 2px 0 4px; }
+.req-cell { display: grid; grid-template-columns: 14px auto 1fr; gap: 4px; align-items: center; font-size: var(--fs-s); padding: 2px 4px; background: rgba(43, 29, 20, 0.07); }
+.req-cell b { font-weight: normal; color: var(--ink); white-space: nowrap; }
+.req-cell .tgt { color: var(--ink2); white-space: nowrap; }
+.req-cell .fx-status { grid-column: 1 / -1; font-size: 13px; }
+.req-cell.limit b { color: #7a2a22; }
+.req-cell img.ico { width: 14px; height: 14px; }
+.cust-actions { gap: 6px; margin-top: 4px; }
+.cust-actions .btn { flex: 1 1 auto; min-height: 42px; }
+
+/* patience: a draining bar under the portrait */
+.patience { height: 5px; background: var(--wood0); box-shadow: 0 0 0 1px #000; position: relative; overflow: hidden; }
+.patience > i { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: linear-gradient(#a8e06a, #5a9a32); transition: width 0.4s linear; }
+.patience.low > i { background: linear-gradient(#ffd060, #d0901a); }
+.patience.critical > i { background: linear-gradient(#ff7a5a, #c03a22); animation: patience-blink 0.8s steps(2) infinite; }
+@keyframes patience-blink { 50% { opacity: 0.4; } }
+.order-strip .strip-who { display: flex; flex-direction: column; gap: 2px; }
+.order-strip .patience { height: 4px; }
+
+/* the order book */
+.orders-card { padding: 8px 10px; display: grid; gap: 6px; }
+.order-row { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 6px; align-items: center; padding: 4px 6px; background: rgba(43, 29, 20, 0.07); }
+.order-row.due { background: rgba(255, 200, 90, 0.28); box-shadow: 0 0 0 1px rgba(160, 110, 20, 0.6); }
+.order-row b { font-weight: normal; font-size: 18px; color: var(--ink); }
+.order-row .btn { min-height: 40px; }

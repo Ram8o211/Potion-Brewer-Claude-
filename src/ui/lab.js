@@ -20,7 +20,7 @@ import { MAX_SPECIES } from '../reactions/species.js';
 import { compatFactor } from '../reactions/compatibility.js';
 import { Renderer } from '../rendering/renderer.js';
 import { drawPortrait } from '../rendering/portraits.js';
-import { drawJar } from '../rendering/art.js';
+import { drawJar, vesselSprite } from '../rendering/art.js';
 import { ingredientSprite } from '../rendering/species-sprites.js';
 import { measureParticles, tapSelection, probeSelection, viscosityClass, densityWord } from '../game/measure.js';
 import { scoreRequirement, PROPERTY_LABELS } from '../game/evaluate.js';
@@ -34,6 +34,7 @@ import { certification, missingEffects, requirementEvidence } from '../game/expe
 import { sandboxIngredients } from '../materials/generator.js';
 import { makeVial, appendParticles, updateVial, takeDose, pourBack, pourBackParts, relaxVial } from '../game/vial.js';
 import { theoryOf, EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, dominantEffect, NE } from '../alchemy/effects.js';
+import { patienceLeft, patienceFactor } from '../game/orders.js';
 import { awakenParts, describeThreshold } from '../alchemy/arcane.js';
 import { ARC_NONE } from '../simulation/particles.js';
 import { describeColor, rgbToHex } from '../core/color.js';
@@ -496,8 +497,9 @@ export class LabScreen {
         cv = ingredientSprite(m);
         cv.classList.add('raw');
       } else {
-        cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: '15', height: '20' }));
-        drawJar(cv.getContext('2d'), 1, 0, 13, 20, m.look || m.color, m.form);
+        // a liquid, a powder or a vapour in its own vessel, drawn as the wild ingredients' icons are
+        cv = /** @type {HTMLCanvasElement} */ (vesselSprite(m, 24));
+        cv.classList.add('raw', 'vessel');
       }
       const stock = h('span', { class: 'jstock' });
       const el = h('button', { class: 'jar' + (m.wild ? ' wild' : '') + (m.remains ? ' remains' : ''), title: m.name, 'aria-label': m.name, 'data-id': id, role: 'option' }, stock, cv, h('span', { class: 'jname', text: m.remains ? m.remains.short : labels[n] }));
@@ -978,7 +980,9 @@ export class LabScreen {
     const qli = h('div', { class: 'req-chip' }, icon('flask', 'sm'), h('span', { class: 'tgt', text: `${com.bottleMl}` }), qNow, h('div', { class: 'meter' }, qMeter));
     chips.appendChild(qli);
     this.reqEls.push({ req: { key: 'quantity' }, li: qli, now: qNow, meter: qMeter });
-    el.append(portrait, h('div', { class: 'strip-main' }, h('div', { class: 'potion-name', text: com.potionName }), chips));
+    const wait = com.wait ? h('div', { class: 'patience', 'data-patience': '1' }, h('i')) : null;
+    el.append(h('div', { class: 'strip-who' }, portrait, wait), h('div', { class: 'strip-main' }, h('div', { class: 'potion-name', text: com.potionName }), chips));
+    this.showPatience();
     this.updateAssay(true);
   }
 
@@ -989,6 +993,87 @@ export class LabScreen {
     this.refreshCustomer();
     this.views.counter.refresh();
     setTimeout(() => this.bringCustomer(true), 900);
+  }
+
+  /**
+   * The waiting customer's patience runs down (seconds of play): the meters
+   * show it, and at the end they give up and leave.
+   * @param {number} dt
+   */
+  tickPatience(dt) {
+    const st = this.state;
+    const com = st.current;
+    if (!com || !com.wait || com.tutorial || (this.tutorial && this.tutorial.active)) return;
+    if (st.tickPatience(dt)) {
+      const name = shortName(com.customer.name);
+      for (const e of st.walkOut()) this.announce(e);
+      audio.play('fail');
+      toast(`${name} gave up waiting`, 'They left without buying. Customers wait only so long — the meter by their portrait shows how much patience is left.', 'hourglass', 5000);
+      this.save();
+      this.refreshCustomer();
+      if (this.views) this.views.counter.refresh();
+      this.updateBadges();
+      setTimeout(() => this.bringCustomer(true), 1500);
+      return;
+    }
+    this.showPatience();
+  }
+
+  /** Update every patience meter on screen (cheap: widths and classes only). */
+  showPatience() {
+    const com = this.state.current;
+    const left = com ? patienceLeft(com) : 1, pay = com ? patienceFactor(com) : 1;
+    for (const el of document.querySelectorAll('[data-patience]')) {
+      const fill = /** @type {HTMLElement} */ (el.firstElementChild);
+      if (fill) fill.style.width = `${Math.round(left * 100)}%`;
+      el.classList.toggle('low', left < 0.5);
+      el.classList.toggle('critical', left < 0.2);
+      el.setAttribute('title', left < 0.5 ? `Impatient: pays ${Math.round(pay * 100)}% of their purse` : 'Patience');
+    }
+  }
+
+  /** Take the commission offered at the counter: into the order book. */
+  acceptCommission() {
+    const st = this.state;
+    const com = st.current;
+    if (!com || !com.commission) return;
+    const o = st.acceptCommission();
+    if (!o) return;
+    audio.play('coin');
+    toast('Commission accepted', `${shortName(com.customer.name)} comes back on day ${o.due} for ${com.potionName}: ${o.reward} coins for a potion that meets the order.`, 'scroll', 5500);
+    this.save();
+    this.refreshCustomer();
+    this.views.counter.refresh();
+    this.updateBadges();
+    setTimeout(() => this.bringCustomer(true), 1200);
+  }
+
+  /**
+   * Hand the counter's vial to a commission's customer, who inspects it and
+   * pays (in full, in part or not at all).
+   * @param {string} id
+   */
+  deliverOrder(id) {
+    const st = this.state;
+    const v = st.vial, o = st.orders.find((x) => x.id === id);
+    if (!v || !o) { toast('Nothing to hand over', 'Bottle the potion first: the sealed vial goes on the counter.', 'bottle'); return; }
+    const truth = { ...v.m, ml: Math.floor(v.ml / SIM.ML_PER_PARTICLE) * SIM.ML_PER_PARTICLE };
+    const r = st.deliverOrder(id, truth);
+    if (!r) return;
+    const name = shortName(o.com.customer.name);
+    if (!r.ok) {
+      audio.play('complaint');
+      toast(`${name} turns it down`, `This is not what was ordered (quality ${Math.round(r.quality * 100)}%). They will wait until the end of the day for a better one.`, 'close', 6000);
+      return;
+    }
+    audio.play('coin');
+    toast(r.full ? `${name} is delighted` : `${name} pays part`, `${r.paid} coins${r.full ? ' and a traveller coin as a tip' : ` (quality ${Math.round(r.quality * 100)}%)`}.`, r.full ? 'compass' : 'coin', 5500);
+    for (const e of r.events) if (e.type !== 'travel-gift') this.announce(e);
+    if (this.tutorial) this.tutorial.notify('sold');
+    this.save();
+    this.views.counter.refresh();
+    this.refreshHud(true);
+    this.updateBadges();
   }
 
   endDay() {
@@ -1769,6 +1854,11 @@ export class LabScreen {
     // the hutch lives in real time, whichever room is open
     this._colonyAcc = (this._colonyAcc || 0) + dt;
     if (this._colonyAcc >= 0.5) { this.tickColony(this._colonyAcc); this._colonyAcc = 0; }
+    // the customer at the counter waits only so long (never while a dialog holds the game)
+    if (!this.sandbox && !modalOpen) {
+      this._waitAcc = (this._waitAcc || 0) + dt;
+      if (this._waitAcc >= 0.5) { this.tickPatience(this._waitAcc); this._waitAcc = 0; }
+    }
     // physics (keeps running in every room so brews keep evolving)
     if (this.autoBrewer) {
       // the homunculus decides once per physics step

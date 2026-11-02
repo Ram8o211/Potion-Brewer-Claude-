@@ -7,7 +7,7 @@ import { evidenceRank } from '../game/experiments.js';
 import { h, btn, modal, toast, coins, starsText, confirmDialog, clear, keepScroll } from './dom.js';
 import { icon } from './icons.js';
 import { drawPortrait } from '../rendering/portraits.js';
-import { drawJar } from '../rendering/art.js';
+import { vesselSprite } from '../rendering/art.js';
 import { EQUIPMENT, RANKS } from '../game/equipment.js';
 import { ACHIEVEMENTS } from '../game/state.js';
 import { viscosityClass, densityWord, evennessWord } from '../game/measure.js';
@@ -35,8 +35,10 @@ export function jarCanvas(m, w = 22, hh = 30) {
     cv.style.height = w * 2 + 'px';
     return cv;
   }
-  const cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: String(w), height: String(hh), style: { width: w * 2 + 'px', height: hh * 2 + 'px' } }));
-  drawJar(cv.getContext('2d'), 2, 0, w - 4, hh, m.look || m.color, m.form);
+  const cv = /** @type {HTMLCanvasElement} */ (vesselSprite(m, 24));
+  cv.style.imageRendering = 'pixelated';
+  cv.style.width = w * 2 + 'px';
+  cv.style.height = w * 2 + 'px';
   return cv;
 }
 
@@ -347,7 +349,10 @@ export function showDaySummary(lab, summary, onDone) {
           h('span', { class: 'k', text: 'Spent' }), h('span', { text: coins(summary.spent) }),
           h('span', { class: 'k', text: 'Net' }), h('span', { text: (net >= 0 ? '+' : '') + coins(net) }),
           h('span', { class: 'k', text: 'Rank' }), h('span', { text: `${st.rankName} (${st.reputation} rep)` }),
+          h('span', { class: 'k', text: 'Traveller coins' }), h('span', { text: `${st.travelCoins()} / ${st.travelMax}` }),
         )),
+      summary.lapsed ? h('div', { class: 'card parch warn small', text: `${summary.lapsed} commission${summary.lapsed > 1 ? 's were' : ' was'} never collected: the customer${summary.lapsed > 1 ? 's' : ''} gave up (reputation −6 each).` }) : null,
+      st.openOrders().some((o) => o.due === st.day) ? h('div', { class: 'card parch small', text: `Tomorrow ${st.openOrders().filter((o) => o.due === st.day).length} commission customer${st.openOrders().filter((o) => o.due === st.day).length > 1 ? 's come' : ' comes'} to collect.` }) : null,
       hutchSummary(summary.colony),
       h('div', { class: 'card parch' }, h('b', { text: `Tomorrow: ${st.marketEvent.name}` }), h('div', { class: 'small', text: st.marketEvent.text })),
       st.nextRank() ? h('div', { class: 'small muted', text: `Next rank: ${st.nextRank().name} at ${st.nextRank().rep} reputation.` }) : null,

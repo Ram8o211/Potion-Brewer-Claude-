@@ -2,7 +2,17 @@
 // tools, effects and lighting at a fixed "art pixel" density, upscaled with
 // nearest-neighbour filtering for crisp pixel art at any screen size.
 
-import { PAL, paintBackground, renderCauldron, renderLid, renderLidAside, paintHearth, makeCanvas, rgbStr, hex2rgb, drawJar, rect } from './art.js';
+import { PAL, paintBackground, renderCauldron, renderLid, renderLidAside, paintHearth, makeCanvas, rgbStr, hex2rgb, drawJar, rect, vesselSprite } from './art.js';
+
+/** @type {Map<string, any>} the vessels drawn so far, by material */
+const vessels = new Map();
+/** A material's vessel sprite (cached). @param {any} def */
+function vesselCache(def) {
+  if (typeof document === 'undefined') return null;
+  let v = vessels.get(def.id);
+  if (!v) { v = vesselSprite(def, 24); vessels.set(def.id, v); }
+  return v;
+}
 import { FluidRenderer, drawnGlow, drawnGlowTable } from './fluid.js';
 import { Effects } from './effects.js';
 import { COLUMN } from '../simulation/cauldron.js';
@@ -289,7 +299,15 @@ export class Renderer {
     ctx.save();
     ctx.translate(x - jarW * 0.2, jy + jarH * 0.5);
     ctx.rotate(2.0);
-    drawJar(ctx, -jarW / 2, -jarH / 2, jarW, jarH, def.look || def.color, def.form);
+    // the very vessel the shelf shows it in, tipped over the cauldron
+    const vs = def.wild && def.form === 'solid' ? null : vesselCache(def);
+    if (vs && typeof document !== 'undefined') {
+      const sz = Math.max(jarW, jarH) * 1.4;
+      const sm = ctx.imageSmoothingEnabled;
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(/** @type {any} */ (vs), -sz / 2, -sz / 2, sz, sz);
+      ctx.imageSmoothingEnabled = sm;
+    } else drawJar(ctx, -jarW / 2, -jarH / 2, jarW, jarH, def.look || def.color, def.form);
     ctx.restore();
     // stream to the entry point
     const entry = c.lidClosed ? view.oy - 0.25 * s : view.oy + (-COLUMN * 0.55) * s;
