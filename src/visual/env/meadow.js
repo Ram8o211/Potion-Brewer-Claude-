@@ -7,7 +7,7 @@
 
 import { sky } from './paint.js';
 import { palette, vary, streamOf } from './kit.js';
-import { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, silhouette, treeShape, glow, drips, ledges } from './side.js';
+import { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, silhouette, mountains, treeShape, glow, drips, ledges } from './side.js';
 import { caveFrame, fog, vines, moss, veins, WATER_VEINS } from './cave.js';
 import { cloud, fence, skep, boulder } from './objects.js';
 import { terrainTrees } from './trees.js';
@@ -27,12 +27,16 @@ export function compose(cv, seed) {
   const cr = s('clouds');
   for (let i = 0; i < 4 + cr.int(0, 2); i++) cv.stamp(cloud(cr, cr.int(30, 70), cr.int(8, 14)), pal, cr.int(40, W - 40), cr.int(26, 70), { outline: false, texture: 0 });
   // the view: blue mountains, then a dark wood, then nearer hills
-  silhouette(cv, { base: 100, amp: 18, freq: 0.009, seed: s('h1').int(0, 1e9), fill: '#4a6a94', rim: '#6a8ab0', peaks: 0.5 });
+  mountains(cv, { base: 118, amp: 44, n: 7, seed: s('h1').int(0, 1e9), fill: '#4e6c98', lit: '#6a88b4', dark: '#3e5882' });
   fog(cv, '#9ab8d0', 96, 140, 0.25, s('haze').int(0, 1e9));
   const wood = silhouette(cv, { base: 124, amp: 8, freq: 0.014, seed: s('h2').int(0, 1e9), fill: '#1e3e30', rim: '#2a5038' });
   const tr = s('far');
   for (let x = 4; x < W; x += tr.int(5, 12)) treeShape(cv, x, wood[x] + 2, tr.int(12, 24), tr.next() < 0.4 ? 'pine' : 'oak', tr.next() < 0.5 ? '#1e3e30' : '#24482f', tr.int(0, 1e9));
-  silhouette(cv, { base: 140, amp: 6, freq: 0.02, seed: s('h3').int(0, 1e9), fill: '#2e5a32', rim: '#3e7238' });
+  fog(cv, '#9ab8b0', 118, 150, 0.18, s('haze2').int(0, 1e9));
+  // a nearer wood on the hills: bigger, brighter oaks, each crown lit
+  const hills = silhouette(cv, { base: 140, amp: 6, freq: 0.02, seed: s('h3').int(0, 1e9), fill: '#2e5a32', rim: '#3e7238' });
+  const nr = s('near');
+  for (let x = nr.int(0, 10); x < W; x += nr.int(14, 30)) treeShape(cv, x, hills[x] + 3, nr.int(20, 34), nr.next() < 0.25 ? 'pine' : 'oak', nr.next() < 0.5 ? '#2e5e30' : '#346a36', nr.int(0, 1e9));
   // most meadows lie open under the sky; some are seen from a cave mouth framing it
   const fs = s('frame'), cave = fs.next() < 0.25;
   if (cave) {

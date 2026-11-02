@@ -23,23 +23,23 @@ import { col } from './side.js';
 /** Each region's flora: which plants, how many, in which colours. @type {Record<string, Flora>} */
 const FLORA = {
   meadow: {
-    kinds: [['tuft', 4], ['daisy', 3], ['spike', 1.6], ['bloom', 2], ['fern', 0.8]], rate: 0.22,
+    kinds: [['tuft', 4], ['daisy', 3], ['spike', 1.6], ['bloom', 2], ['fern', 0.8]], rate: 0.3,
     cols: { blade: ['#2e6a22', '#4e9a34', '#7ac046', '#a8dc5a'], petal: ['#ffffff', '#fff4c0', '#ffd8e8'], eye: ['#ffd040', '#f0a020'], spike: ['#5a3a9a', '#8a62d0', '#b898f0'], bloom: ['#ff7a8a', '#ffb0c8', '#ffe066', '#c9b0ff'] },
     creep: { cols: ['#6a1e1a', '#9a2e22', '#c04a30'], leaf: '#4e9a34', berry: '#e8403a', rate: 0.5 },
   },
   forest: {
-    kinds: [['tuft', 3], ['fern', 3], ['bloom', 1.4], ['cap', 1.2], ['daisy', 1]], rate: 0.14,
+    kinds: [['tuft', 3], ['fern', 3], ['bloom', 1.4], ['cap', 1.2], ['daisy', 1]], rate: 0.2,
     cols: { blade: ['#1e4a1e', '#2e6a2a', '#4e8a34', '#78ac48'], petal: ['#f4ecd8', '#f0c8d8'], eye: ['#e8b040'], bloom: ['#f08ab0', '#e85a8a', '#f0e0a0'], cap: ['#8a4a2a', '#b8683a', '#e0c8a0'] },
     creep: { cols: ['#2a4a1e', '#3e6a2a', '#5a8a34'], leaf: '#6aa83a', berry: '#c03a3a', rate: 0.45 },
   },
   netherwood: {
-    kinds: [['tuft', 3], ['glowcap', 1.6], ['spike', 1.6], ['daisy', 1.2], ['fern', 1.2]], rate: 0.13,
+    kinds: [['tuft', 3], ['glowcap', 1.6], ['spike', 1.6], ['daisy', 1.2], ['fern', 1.2]], rate: 0.2,
     cols: { blade: ['#14302a', '#1e4a3e', '#3e7a6a', '#5aa08a'], petal: ['#e8e0ff', '#c8f0ff'], eye: ['#a080ff'], spike: ['#4a2a7a', '#7a4ac0', '#b088ff'], cap: ['#5a2a8a', '#a060f0', '#e0c0ff'] },
     creep: { cols: ['#4a1414', '#7a1e1a', '#a83020'], leaf: '#3e7a6a', berry: '#ff5a6a', rate: 0.55 },
     glow: [0.7, 0.4, 1],
   },
   river: {
-    kinds: [['tuft', 4], ['daisy', 2.4], ['cattail', 1.6], ['fern', 1.4], ['bloom', 1]], rate: 0.15,
+    kinds: [['tuft', 4], ['daisy', 2.4], ['cattail', 1.6], ['fern', 1.4], ['bloom', 1]], rate: 0.24,
     cols: { blade: ['#2a5a26', '#4a8a30', '#6ab040', '#98d05a'], petal: ['#ffffff', '#fff4c0'], eye: ['#ffd040'], bloom: ['#ffe58a', '#c9b0ff', '#ffffff'], cat: ['#3a2414', '#6a4024', '#8a5a34'] },
     creep: { cols: ['#2a4a1e', '#3e6a2a', '#5a8a34'], leaf: '#7ac04a', rate: 0.3 },
   },
@@ -48,13 +48,13 @@ const FLORA = {
     cols: { blade: ['#5a5a2a', '#7a7a34', '#a09a48', '#c8bc6a'], petal: ['#ffffff', '#f4ecd8'], eye: ['#e8b040'] },
   },
   moonfen: {
-    kinds: [['tuft', 3], ['puff', 1.8], ['shard', 1.2], ['glowcap', 1.2], ['cattail', 1]], rate: 0.13,
+    kinds: [['tuft', 3], ['puff', 1.8], ['shard', 1.2], ['glowcap', 1.2], ['cattail', 1]], rate: 0.2,
     cols: { blade: ['#14322a', '#1e4a3c', '#2e6a52', '#4a9a78'], puff: ['#c8d8f0', '#ffffff'], shard: ['#3a6ab0', '#6ab0f0', '#c8f0ff'], cap: ['#1e5a8a', '#4ab0f0', '#c0f0ff'], cat: ['#1a1e2a', '#2e3446', '#464e66'] },
     creep: { cols: ['#14322a', '#1e4a3c', '#2e6a52'], leaf: '#4a9a78', berry: '#8ff0ff', rate: 0.4 },
     glow: [0.45, 0.8, 1],
   },
   crags: {
-    kinds: [['tuft', 4], ['bloom', 1.4], ['cap', 0.6]], rate: 0.08,
+    kinds: [['tuft', 4], ['bloom', 1.4], ['cap', 0.6]], rate: 0.12,
     cols: { blade: ['#3a3418', '#5a5a26', '#7a7a34', '#a09a48'], bloom: ['#ff5a2a', '#ff8a3a', '#ffd060'], cap: ['#6a2a14', '#c04a1e', '#ffb060'] },
   },
 };
@@ -81,25 +81,129 @@ export function flourish(cv, region) {
   const total = f.kinds.reduce((t, [, w]) => t + w, 0);
   const pick = (r) => { let a = r * total; for (const [k, w] of f.kinds) { if ((a -= w) < 0) return k; } return f.kinds[0][0]; };
   const glows = [];
-  let last = -9;
+  // where the last plant on each row stood (plants keep a few columns apart on any one surface)
+  const last = new Int16Array(H).fill(-99);
   for (let x = 3; x < W - 3; x++) {
-    if (x - last < 3) continue;
     for (let y = 2; y < H - 2; y++) {
       const k = y * W + x;
       // the dry surface: ground under air, in the open (not under a prop, never in a liquid)
       if (!cv.solid[k] || cv.liquid[k] || cv.solid[k - W] || cv.liquid[k - W] || !cv.open[k] || !air(x, y - 1)) continue;
       if (hash2(x, y, seed) > f.rate) continue;
+      let near = false;
+      for (let j = Math.max(0, y - 3); j <= Math.min(H - 1, y + 3); j++) if (x - last[j] < 3) near = true;
+      if (near) continue;
       // near the water a reed is likelier
       const kind = pick(hash2(x, y, seed + 1)), r = (/** @type {number} */ i) => hash2(x * 31 + i, y, seed + 2 + i);
       const fx = r(9) < 0.5 ? -1 : 1;
       const drawn = PLANTS[kind]?.(put, x, y - 1, r, cols, fx);
       if (drawn && f.glow && (kind === 'glowcap' || kind === 'shard')) glows.push([x, y - 3]);
-      last = x;
-      break;
+      last[y] = x;
     }
   }
   for (const [x, y] of glows) cv.glow(x, y, 9, f.glow, 0.35);
   if (f.creep) creepers(cv, f.creep, seed + 7, swaying);
+  EXTRAS[region]?.(cv, seed + 11, swaying);
+}
+
+/** What a region has besides: lava cracks, ore, glowing bells hanging from the roof. @type {Record<string, (cv:any, seed:number, swaying:Uint8Array) => void>} */
+const EXTRAS = {
+  crags: (cv, seed) => cracks(cv, seed),
+  quarry: (cv, seed) => ore(cv, seed),
+  netherwood: (cv, seed, sw) => bells(cv, seed, sw, { cols: [['#c03a6a', '#ff7aa8', '#ffd0e0'], ['#c8862a', '#ffc860', '#fff0c0']], stem: ['#2e5a3a', '#4a2e22'], rgb: [[1, 0.45, 0.65], [1, 0.75, 0.35]], n: 6 }),
+  moonfen: (cv, seed, sw) => bells(cv, seed, sw, { cols: [['#6a3ac0', '#a878ff', '#e8d0ff'], ['#2a7ab0', '#6ad0ff', '#d8f8ff']], stem: ['#1e4a3c', '#2e6a52'], rgb: [[0.7, 0.45, 1], [0.4, 0.85, 1]], n: 5 }),
+};
+
+/** Depth of a ground pixel below the air above it (0 on the surface). */
+function depthOf(cv, x, y) {
+  let d = 0;
+  while (y - d - 1 >= 0 && cv.solid[(y - d - 1) * cv.W + x] && d < 40) d++;
+  return d;
+}
+
+/**
+ * Cracks in the rock glowing with the lava under it: branching seams
+ * wandering down through the ground, a molten core in a burnt edge.
+ */
+function cracks(cv, seed) {
+  const W = cv.W, H = cv.H, core = col('#ffe080'), hot = col('#ff9a2a'), edge = col('#c8441a'), burnt = col('#5a1e10');
+  const ok = (x, y) => x >= 0 && y >= 0 && x < W && y < H && cv.solid[y * W + x] && !cv.liquid[y * W + x] && !cv.rock[y * W + x] && !cv.things[y * W + x];
+  const walkers = [];
+  for (let i = 0; i < 40 && walkers.length < 9; i++) {
+    const x = Math.floor(hash2(i, 1, seed) * W), y = Math.floor(160 + hash2(i, 2, seed) * (H - 170));
+    if (!ok(x, y) || depthOf(cv, x, y) < 6) continue;
+    walkers.push([x, y, hash2(i, 3, seed) < 0.5 ? -1 : 1, 18 + Math.floor(hash2(i, 4, seed) * 40), 1]);
+  }
+  for (let w = 0; w < walkers.length && w < 30; w++) {
+    let [x, y, dir, len, wd] = walkers[w];
+    for (let t = 0; t < len; t++) {
+      if (!ok(x, y)) break;
+      const r = hash2(x * 7 + w, y, seed + 5);
+      for (const [dx, dy, c, m] of [[-1, 0, edge, 1], [1, 0, edge, 1], [0, -1, edge, 0.6], [0, 1, edge, 0.6], [-2, 0, burnt, 0.5], [2, 0, burnt, 0.5]]) {
+        if (ok(x + dx, y + dy) && hash2(x + dx, y + dy, seed + 6) < m) cv.set(x + dx, y + dy, c);
+      }
+      cv.set(x, y, wd && t < len * 0.7 ? core : hot);
+      if (t % 9 === 4) cv.glow(x, y, 12, [1, 0.42, 0.12], 0.32);
+      // wander: mostly down, now sideways, now and then a branch
+      if (r < 0.45) y++; else if (r < 0.8) x += dir; else { x += dir; y++; }
+      if (hash2(t, w, seed + 7) < 0.08) dir = -dir;
+      if (hash2(t, w, seed + 8) < 0.05 && walkers.length < 30) walkers.push([x, y, -dir, Math.floor((len - t) * 0.6), 0]);
+    }
+  }
+}
+
+/** Ore in the rock: clusters of gold nuggets, each outlined and lit on top, and a few nests of white quartz. */
+function ore(cv, seed) {
+  const W = cv.W, H = cv.H, ink = col('#3a2410'), gold = [col('#b8781e'), col('#e8b030'), col('#fff0a0')], quartz = [col('#9aa0a8'), col('#e4e8ec'), col('#ffffff')];
+  const ok = (x, y) => x >= 0 && y >= 0 && x < W && y < H && cv.solid[y * W + x] && !cv.liquid[y * W + x] && !cv.things[y * W + x] && depthOf(cv, x, y) > 4;
+  for (let i = 0; i < 60; i++) {
+    const cx = Math.floor(hash2(i, 1, seed) * W), cy = Math.floor(hash2(i, 2, seed) * H);
+    if (!ok(cx, cy)) continue;
+    const g = hash2(i, 3, seed) < 0.75 ? gold : quartz, n = 3 + Math.floor(hash2(i, 4, seed) * 6);
+    for (let j = 0; j < n; j++) {
+      const x = cx + Math.round((hash2(i, j * 3 + 5, seed) - 0.5) * 12), y = cy + Math.round((hash2(i, j * 3 + 6, seed) - 0.5) * 7), w = 1 + Math.floor(hash2(i, j * 3 + 7, seed) * 2);
+      if (!ok(x, y) || !ok(x + w, y + 1)) continue;
+      for (let yy = -1; yy <= 2; yy++) for (let xx = -1; xx <= w + 1; xx++) if (ok(x + xx, y + yy) && (yy < 0 || yy > 1 || xx < 0 || xx > w)) cv.set(x + xx, y + yy, ink);
+      for (let yy = 0; yy <= 1; yy++) for (let xx = 0; xx <= w; xx++) cv.set(x + xx, y + yy, g[yy ? 0 : 1]);
+      cv.set(x, y, g[2]);
+    }
+  }
+}
+
+/**
+ * Glowing flowers hanging from the roof of a cavern on long stems: a
+ * cluster of bells, each lighting the dark round it.
+ * @param {any} cv @param {number} seed @param {Uint8Array} swaying @param {{cols:string[][], stem:string[], rgb:number[][], n:number}} o
+ */
+function bells(cv, seed, swaying, o) {
+  const W = cv.W, H = cv.H, stem = o.stem.map(col), cols = o.cols.map((c) => c.map(col));
+  const free = (x, y) => x >= 0 && y >= 0 && x < W && y < H && !cv.solid[y * W + x] && !cv.rock[y * W + x] && !cv.trees[y * W + x] && !cv.things[y * W + x] && !swaying[y * W + x] && !cv.liquid[y * W + x];
+  const spots = [];
+  for (let x = 6; x < W - 6; x++) for (let y = 4; y < 90; y++) if (cv.rock[y * W + x] && free(x, y + 1)) { spots.push([x, y + 1]); break; }
+  const out = [];
+  for (let i = 0; i < spots.length && out.length < o.n; i++) {
+    const [x, y] = spots[Math.floor(hash2(i, 1, seed) * spots.length)];
+    if (out.some((p) => Math.abs(p[0] - x) < 34)) continue;
+    const len = 10 + Math.floor(hash2(i, 2, seed) * 26), kind = Math.floor(hash2(i, 3, seed) * cols.length), C = cols[kind];
+    let ok = true;
+    for (let j = 0; j < len + 6; j++) if (!free(x, y + j)) { ok = false; break; }
+    if (!ok) continue;
+    let sx = x;
+    for (let j = 0; j < len; j++) {
+      if (j && hash2(i, j, seed + 3) < 0.15) sx += hash2(i, j, seed + 4) < 0.5 ? -1 : 1;
+      if (free(sx, y + j)) cv.set(sx, y + j, stem[j % 4 ? 0 : 1]);
+      if (hash2(i, j, seed + 5) < 0.12 && free(sx + 1, y + j)) cv.set(sx + 1, y + j, stem[0]);
+    }
+    // the bells, a few round the stem's end, mouths down
+    const by = y + len;
+    for (const [dx, dy] of [[0, 0], [-3, -2], [3, -1], [-1, 3]].slice(0, 2 + Math.floor(hash2(i, 6, seed) * 3))) {
+      const bx = sx + dx, yy = by + dy;
+      if (dx) for (let j = Math.min(0, dy); j < 0; j++) cv.set(sx + Math.sign(dx), yy + j + 1, stem[0]);
+      for (const [px, py, t] of [[0, 0, 1], [-1, 1, 0], [0, 1, 2], [1, 1, 1], [-1, 2, 1], [0, 2, 2], [1, 2, 1], [-1, 3, 0], [1, 3, 0]]) if (free(bx + px, yy + py)) cv.set(bx + px, yy + py, C[t]);
+    }
+    cv.glow(sx, by + 2, 18, o.rgb[kind], 0.5);
+    out.push([sx, by + 2]);
+  }
+  (cv.meta.bells ||= []).push(...out);
 }
 
 /**

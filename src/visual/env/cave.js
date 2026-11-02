@@ -205,7 +205,7 @@ export function glowShrooms(cv, o) {
     }
     cv.block(x - 4, y - 8, x + 5, y + 1);
     cv.claim(x - 4, y - 8, x + 4, y - 1);
-    cv.glow(x, y - 4, 16, o.rgb, 0.5);
+    cv.glow(x, y - 4, 22, o.rgb, 0.6);
     out.push([x, y - 4]);
   }
   return out;

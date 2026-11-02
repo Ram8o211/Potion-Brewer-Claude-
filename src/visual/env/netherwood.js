@@ -76,7 +76,7 @@ export function compose(cv, seed) {
     const h = mr.int(18, 34), r = Math.round(h * mr.range(0.4, 0.55));
     const at = cv.place(mushroom(mr, h, r), pal, mr.int(30, W - 30), { sink: 2, roots: [r * 0.4, 2], range: 60 });
     if (!at) continue;
-    glow(cv, at.fx, at.fy - h + r * 0.2, r * 2.4, [0.6, 0.35, 1], 0.35);
+    glow(cv, at.fx, at.fy - h + r * 0.2, r * 3.4, [0.6, 0.35, 1], 0.55);
     glows.push([at.fx, Math.round(at.fy - h + r * 0.3)]);
   }
   ferns(cv, s, pal);

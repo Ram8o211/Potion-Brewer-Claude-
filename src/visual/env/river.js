@@ -7,7 +7,7 @@
 
 import { sky } from './paint.js';
 import { palette, vary, streamOf } from './kit.js';
-import { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, silhouette, treeShape } from './side.js';
+import { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, silhouette, mountains, treeShape } from './side.js';
 import { caveFrame, farPillars, fog, vines, moss, glowShrooms, ledgeTops, veins, WATER_VEINS } from './cave.js';
 import { reeds, beam, cloud } from './objects.js';
 import { terrainTrees } from './trees.js';
@@ -20,7 +20,7 @@ export function compose(cv, seed) {
     cattail: '#7a3a22', timber: '#6a4a2e', cloud: ['#eef2f4', { spread: 0.3 }],
   }), s('pal'), 1);
   // some worlds' river runs through a cave, most under the open sky
-  const fs = s('frame'), cave = fs.next() < 0.5;
+  const fs = s('frame'), cave = fs.next() < 0.35;
   if (cave) {
     sky(cv, 0, H, ['#05090c', '#08121a', '#0c1c20', '#102624']);
     farPillars(cv, { n: 8, fill: '#0f1e1e', rim: '#162a28', seed: s('far1').int(0, 1e9), w: [10, 20], floor: 180, caps: true });
@@ -36,7 +36,7 @@ export function compose(cv, seed) {
     sky(cv, 0, 170, ['#3a6eb4', '#6a9ad0', '#a8c8e0', '#d8e6e4']);
     const cr = s('clouds');
     for (let i = 0; i < 3 + cr.int(0, 2); i++) cv.stamp(cloud(cr, cr.int(30, 60), cr.int(7, 12)), pal, cr.int(0, W), cr.int(14, 50), { outline: false, texture: 0 });
-    silhouette(cv, { base: 84, amp: 24, freq: 0.01, seed: s('m').int(0, 1e9), fill: '#8a9ec0', rim: '#c8d4e4', peaks: 0.6 });
+    mountains(cv, { base: 118, amp: 70, n: 6, seed: s('m').int(0, 1e9), fill: '#7a8eb4', lit: '#98aacc', dark: '#64769c', snow: '#eef2f8' });
     fog(cv, '#c8d8e4', 80, 130, 0.3, s('haze').int(0, 1e9));
     const pines = silhouette(cv, { base: 122, amp: 8, freq: 0.02, seed: s('p').int(0, 1e9), fill: '#4e7a6a' });
     const pr = s('pines');
