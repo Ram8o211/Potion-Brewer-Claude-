@@ -162,9 +162,14 @@ test('every kind is drawn inside its frame in every pose', () => {
 });
 
 test('there is one kind of animal steady on each effect, and each lives somewhere in the wilds', () => {
+  // the ten original channels each have a steady kind; the five channels added
+  // with the exotic biomes (swiftness, levitation, invisibility, phasing,
+  // temporal) are read by every animal at rabbit precision until their native
+  // creatures join the hutch
+  const CHANNELS = EFFECT_KEYS.slice(0, 10);
   const steady = KIND_IDS.map((k) => KINDS[k].steady).filter(Boolean);
-  assert.deepEqual([...steady].sort(), [...EFFECT_KEYS].sort(), 'one steady kind per effect');
-  for (const key of EFFECT_KEYS) {
+  assert.deepEqual([...steady].sort(), [...CHANNELS].sort(), 'one steady kind per original effect');
+  for (const key of CHANNELS) {
     const k = KIND_IDS.find((id) => KINDS[id].steady === key);
     assert.equal(biasSpread({ kind: k }, key), STEADY_SPREAD, `${k} reads ${key} steadily`);
     assert.ok(Object.values(HABITAT).some((h) => h.some(([x]) => x === k)), `${k} lives somewhere`);

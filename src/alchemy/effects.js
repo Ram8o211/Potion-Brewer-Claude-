@@ -36,6 +36,7 @@
  * @property {boolean} [signed]
  * @property {string} desc
  * @property {boolean} [harmful]
+ * @property {boolean} [exotic]
  */
 
 /** @type {EffectDef[]} */
@@ -50,7 +51,18 @@ export const EFFECTS = [
   { key: 'acidity', label: 'Acidity', icon: 'acid', color: [0.84, 0.91, 0.45], kind: 'chemical', signed: true, harmful: true, desc: 'Corrosive acid. Negative values are alkaline; acids and alkalis neutralise.' },
   { key: 'toxicity', label: 'Toxicity', icon: 'skull', color: [0.57, 0.8, 0.44], kind: 'chemical', harmful: true, desc: 'Poison. Vitality neutralises it.' },
   { key: 'death', label: 'Death', icon: 'death', color: [0.71, 0.57, 0.93], kind: 'magic', harmful: true, desc: 'Necromantic decay. Opposes vitality.' },
+  // channels added later are appended, so the indices above never move and
+  // every saved vector, record and species table keeps its meaning
+  { key: 'swiftness', label: 'Swiftness', icon: 'speed', color: [0.98, 0.9, 0.42], kind: 'magic', desc: 'Quickness of foot and hand. Natural; replaces Transformation in the natural progression.' },
+  { key: 'levitation', label: 'Levitation', icon: 'feather', color: [0.72, 0.92, 1], kind: 'magic', exotic: true, desc: 'Lightness: what drinks it drifts upward. Exotic (Skyshard Archipelago).' },
+  { key: 'invisibility', label: 'Invisibility', icon: 'veil', color: [0.8, 0.72, 0.98], kind: 'magic', exotic: true, desc: 'Fading from sight. Exotic (Veil Hollow).' },
+  { key: 'phasing', label: 'Phasing', icon: 'ghost', color: [0.55, 0.98, 0.92], kind: 'magic', exotic: true, desc: 'Passing through solid matter. Exotic (Ghostglass Reef).' },
+  { key: 'temporal', label: 'Temporal Distortion', icon: 'clock', color: [1, 0.78, 0.5], kind: 'magic', exotic: true, desc: 'Time slowed, hastened or turned back. Exotic (Chronoglass Wastes).' },
 ];
+
+/** Natural and exotic effect channels (Arcana and Transformation are exotic in the new progression). */
+export const NATURAL_EFFECTS = ['vitality', 'strength', 'love', 'fire', 'frost', 'acidity', 'toxicity', 'death', 'swiftness'];
+export const EXOTIC_EFFECTS = ['arcana', 'levitation', 'transformation', 'invisibility', 'phasing', 'temporal'];
 
 export const NE = EFFECTS.length;
 export const EFFECT_KEYS = EFFECTS.map((e) => e.key);
@@ -58,7 +70,7 @@ export const EFFECT_KEYS = EFFECTS.map((e) => e.key);
 export const EFFECT_INDEX = Object.fromEntries(EFFECT_KEYS.map((k, i) => [k, i]));
 /** @type {Record<string, EffectDef>} */
 export const EFFECT_BY_KEY = Object.fromEntries(EFFECTS.map((e) => [e.key, e]));
-export const E = Object.freeze({ VIT: 0, STR: 1, LOVE: 2, ARC: 3, TRANS: 4, FIRE: 5, FROST: 6, ACID: 7, TOX: 8, DEATH: 9 });
+export const E = Object.freeze({ VIT: 0, STR: 1, LOVE: 2, ARC: 3, TRANS: 4, FIRE: 5, FROST: 6, ACID: 7, TOX: 8, DEATH: 9, SWIFT: 10, LEV: 11, INVIS: 12, PHASE: 13, TEMP: 14 });
 
 /** Old four-aspect model → effect channels (save migration and generator). */
 export const ASPECT_TO_EFFECT = ['vitality', 'fire', 'arcana', 'strength'];
@@ -242,6 +254,12 @@ export function interact(e, laws, trace) {
   if (m > 0) { e[E.VIT] -= m; e[E.DEATH] -= m; }
   m = Math.min(e[E.VIT] * 0.5, e[E.TOX]);
   if (m > 0) { e[E.TOX] -= m; e[E.VIT] -= 2 * m; }
+  // the new channels add only two plain rules: weight (strength) holds what
+  // levitates down, and what phases slips out of time's grip
+  m = Math.min(e[E.LEV], e[E.STR] * 0.5);
+  if (m > 0) { e[E.LEV] -= m; e[E.STR] -= m; }
+  m = Math.min(e[E.TEMP], e[E.PHASE]) * 0.5;
+  if (m > 0) { e[E.TEMP] -= m; e[E.PHASE] -= m; }
   // 3. saturation (acidity is signed and saturates both ways)
   for (let k = 0; k < NE; k++) {
     let v = e[k];

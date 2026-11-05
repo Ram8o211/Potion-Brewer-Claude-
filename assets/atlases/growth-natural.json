@@ -1,0 +1,10569 @@
+{
+ "version": 1,
+ "atlas": "growth-natural.png",
+ "width": 512,
+ "height": 576,
+ "padding": 2,
+ "frames": {
+  "ammonite-coil@stage0": {
+   "species": "ammonite-coil",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 0,
+   "x": 150,
+   "y": 413,
+   "w": 16,
+   "h": 17,
+   "pivot": [
+    8,
+    16
+   ],
+   "native": [
+    16,
+    17
+   ]
+  },
+  "ammonite-coil@stage0-arcane": {
+   "species": "ammonite-coil",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 0,
+   "x": 2,
+   "y": 371,
+   "w": 21,
+   "h": 19,
+   "pivot": [
+    10,
+    18
+   ],
+   "native": [
+    21,
+    19
+   ]
+  },
+  "ammonite-coil@stage1": {
+   "species": "ammonite-coil",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 1,
+   "x": 405,
+   "y": 488,
+   "w": 16,
+   "h": 15,
+   "pivot": [
+    8,
+    14
+   ],
+   "native": [
+    16,
+    15
+   ]
+  },
+  "ammonite-coil@stage1-arcane": {
+   "species": "ammonite-coil",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 1,
+   "x": 123,
+   "y": 279,
+   "w": 21,
+   "h": 21,
+   "pivot": [
+    10,
+    20
+   ],
+   "native": [
+    21,
+    21
+   ]
+  },
+  "ammonite-coil@stage2": {
+   "species": "ammonite-coil",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 2,
+   "x": 317,
+   "y": 523,
+   "w": 22,
+   "h": 14,
+   "pivot": [
+    11,
+    13
+   ],
+   "native": [
+    22,
+    14
+   ]
+  },
+  "ammonite-coil@stage2-arcane": {
+   "species": "ammonite-coil",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 2,
+   "x": 163,
+   "y": 326,
+   "w": 26,
+   "h": 20,
+   "pivot": [
+    13,
+    19
+   ],
+   "native": [
+    26,
+    20
+   ]
+  },
+  "ammonite-coil@stage3": {
+   "species": "ammonite-coil",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 3,
+   "x": 213,
+   "y": 182,
+   "w": 34,
+   "h": 22,
+   "pivot": [
+    17,
+    21
+   ],
+   "native": [
+    34,
+    22
+   ]
+  },
+  "ammonite-coil@stage3-arcane": {
+   "species": "ammonite-coil",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 3,
+   "x": 232,
+   "y": 37,
+   "w": 39,
+   "h": 28,
+   "pivot": [
+    19,
+    27
+   ],
+   "native": [
+    39,
+    28
+   ]
+  },
+  "ashcactus@stage0": {
+   "species": "ashcactus",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "herb",
+   "stage": 0,
+   "x": 265,
+   "y": 433,
+   "w": 16,
+   "h": 16,
+   "pivot": [
+    8,
+    15
+   ],
+   "native": [
+    16,
+    16
+   ]
+  },
+  "ashcactus@stage0-arcane": {
+   "species": "ashcactus",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "herb",
+   "stage": 0,
+   "x": 249,
+   "y": 182,
+   "w": 18,
+   "h": 22,
+   "pivot": [
+    9,
+    21
+   ],
+   "native": [
+    18,
+    22
+   ]
+  },
+  "ashcactus@stage1": {
+   "species": "ashcactus",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "herb",
+   "stage": 1,
+   "x": 283,
+   "y": 433,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "ashcactus@stage1-arcane": {
+   "species": "ashcactus",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "herb",
+   "stage": 1,
+   "x": 29,
+   "y": 392,
+   "w": 24,
+   "h": 18,
+   "pivot": [
+    12,
+    17
+   ],
+   "native": [
+    24,
+    18
+   ]
+  },
+  "ashcactus@stage2": {
+   "species": "ashcactus",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "herb",
+   "stage": 2,
+   "x": 341,
+   "y": 523,
+   "w": 20,
+   "h": 14,
+   "pivot": [
+    10,
+    13
+   ],
+   "native": [
+    20,
+    14
+   ]
+  },
+  "ashcactus@stage2-arcane": {
+   "species": "ashcactus",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "herb",
+   "stage": 2,
+   "x": 25,
+   "y": 371,
+   "w": 27,
+   "h": 19,
+   "pivot": [
+    13,
+    18
+   ],
+   "native": [
+    27,
+    19
+   ]
+  },
+  "ashcactus@stage3": {
+   "species": "ashcactus",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "herb",
+   "stage": 3,
+   "x": 269,
+   "y": 182,
+   "w": 31,
+   "h": 22,
+   "pivot": [
+    15,
+    21
+   ],
+   "native": [
+    31,
+    22
+   ]
+  },
+  "ashcactus@stage3-arcane": {
+   "species": "ashcactus",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "herb",
+   "stage": 3,
+   "x": 228,
+   "y": 68,
+   "w": 38,
+   "h": 27,
+   "pivot": [
+    19,
+    26
+   ],
+   "native": [
+    38,
+    27
+   ]
+  },
+  "blazestone@stage0": {
+   "species": "blazestone",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 0,
+   "x": 168,
+   "y": 413,
+   "w": 16,
+   "h": 17,
+   "pivot": [
+    8,
+    16
+   ],
+   "native": [
+    16,
+    17
+   ]
+  },
+  "blazestone@stage0-arcane": {
+   "species": "blazestone",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 0,
+   "x": 297,
+   "y": 156,
+   "w": 21,
+   "h": 23,
+   "pivot": [
+    10,
+    22
+   ],
+   "native": [
+    21,
+    23
+   ]
+  },
+  "blazestone@stage1": {
+   "species": "blazestone",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 1,
+   "x": 423,
+   "y": 488,
+   "w": 16,
+   "h": 15,
+   "pivot": [
+    8,
+    14
+   ],
+   "native": [
+    16,
+    15
+   ]
+  },
+  "blazestone@stage1-arcane": {
+   "species": "blazestone",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 1,
+   "x": 186,
+   "y": 413,
+   "w": 21,
+   "h": 17,
+   "pivot": [
+    10,
+    16
+   ],
+   "native": [
+    21,
+    17
+   ]
+  },
+  "blazestone@stage2": {
+   "species": "blazestone",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 2,
+   "x": 363,
+   "y": 523,
+   "w": 19,
+   "h": 14,
+   "pivot": [
+    9,
+    13
+   ],
+   "native": [
+    19,
+    14
+   ]
+  },
+  "blazestone@stage2-arcane": {
+   "species": "blazestone",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 2,
+   "x": 191,
+   "y": 326,
+   "w": 26,
+   "h": 20,
+   "pivot": [
+    13,
+    19
+   ],
+   "native": [
+    26,
+    20
+   ]
+  },
+  "blazestone@stage3": {
+   "species": "blazestone",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 3,
+   "x": 302,
+   "y": 182,
+   "w": 29,
+   "h": 22,
+   "pivot": [
+    14,
+    21
+   ],
+   "native": [
+    29,
+    22
+   ]
+  },
+  "blazestone@stage3-arcane": {
+   "species": "blazestone",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 3,
+   "x": 273,
+   "y": 37,
+   "w": 36,
+   "h": 28,
+   "pivot": [
+    18,
+    27
+   ],
+   "native": [
+    36,
+    28
+   ]
+  },
+  "brightberry@stage0": {
+   "species": "brightberry",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 0,
+   "x": 384,
+   "y": 523,
+   "w": 17,
+   "h": 14,
+   "pivot": [
+    8,
+    13
+   ],
+   "native": [
+    17,
+    14
+   ]
+  },
+  "brightberry@stage0-arcane": {
+   "species": "brightberry",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 0,
+   "x": 304,
+   "y": 433,
+   "w": 22,
+   "h": 16,
+   "pivot": [
+    11,
+    15
+   ],
+   "native": [
+    22,
+    16
+   ]
+  },
+  "brightberry@stage1": {
+   "species": "brightberry",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 1,
+   "x": 328,
+   "y": 433,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "brightberry@stage1-arcane": {
+   "species": "brightberry",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 1,
+   "x": 55,
+   "y": 392,
+   "w": 24,
+   "h": 18,
+   "pivot": [
+    12,
+    17
+   ],
+   "native": [
+    24,
+    18
+   ]
+  },
+  "brightberry@stage2": {
+   "species": "brightberry",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 2,
+   "x": 441,
+   "y": 488,
+   "w": 17,
+   "h": 15,
+   "pivot": [
+    8,
+    14
+   ],
+   "native": [
+    17,
+    15
+   ]
+  },
+  "brightberry@stage2-arcane": {
+   "species": "brightberry",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 2,
+   "x": 146,
+   "y": 279,
+   "w": 24,
+   "h": 21,
+   "pivot": [
+    12,
+    20
+   ],
+   "native": [
+    24,
+    21
+   ]
+  },
+  "brightberry@stage3": {
+   "species": "brightberry",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 3,
+   "x": 320,
+   "y": 156,
+   "w": 27,
+   "h": 23,
+   "pivot": [
+    13,
+    22
+   ],
+   "native": [
+    27,
+    23
+   ]
+  },
+  "brightberry@stage3-arcane": {
+   "species": "brightberry",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 3,
+   "x": 476,
+   "y": 2,
+   "w": 32,
+   "h": 29,
+   "pivot": [
+    16,
+    28
+   ],
+   "native": [
+    32,
+    29
+   ]
+  },
+  "bubbleberry@stage0": {
+   "species": "bubbleberry",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 0,
+   "x": 403,
+   "y": 523,
+   "w": 17,
+   "h": 14,
+   "pivot": [
+    8,
+    13
+   ],
+   "native": [
+    17,
+    14
+   ]
+  },
+  "bubbleberry@stage0-arcane": {
+   "species": "bubbleberry",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 0,
+   "x": 349,
+   "y": 433,
+   "w": 22,
+   "h": 16,
+   "pivot": [
+    11,
+    15
+   ],
+   "native": [
+    22,
+    16
+   ]
+  },
+  "bubbleberry@stage1": {
+   "species": "bubbleberry",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 1,
+   "x": 373,
+   "y": 433,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "bubbleberry@stage1-arcane": {
+   "species": "bubbleberry",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 1,
+   "x": 333,
+   "y": 182,
+   "w": 21,
+   "h": 22,
+   "pivot": [
+    10,
+    21
+   ],
+   "native": [
+    21,
+    22
+   ]
+  },
+  "bubbleberry@stage2": {
+   "species": "bubbleberry",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 2,
+   "x": 394,
+   "y": 433,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "bubbleberry@stage2-arcane": {
+   "species": "bubbleberry",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 2,
+   "x": 356,
+   "y": 182,
+   "w": 24,
+   "h": 22,
+   "pivot": [
+    12,
+    21
+   ],
+   "native": [
+    24,
+    22
+   ]
+  },
+  "bubbleberry@stage3": {
+   "species": "bubbleberry",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 3,
+   "x": 364,
+   "y": 127,
+   "w": 30,
+   "h": 25,
+   "pivot": [
+    15,
+    24
+   ],
+   "native": [
+    30,
+    25
+   ]
+  },
+  "bubbleberry@stage3-arcane": {
+   "species": "bubbleberry",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 3,
+   "x": 215,
+   "y": 2,
+   "w": 35,
+   "h": 30,
+   "pivot": [
+    17,
+    29
+   ],
+   "native": [
+    35,
+    30
+   ]
+  },
+  "cinderpod@stage0": {
+   "species": "cinderpod",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 0,
+   "x": 209,
+   "y": 413,
+   "w": 16,
+   "h": 17,
+   "pivot": [
+    8,
+    16
+   ],
+   "native": [
+    16,
+    17
+   ]
+  },
+  "cinderpod@stage0-arcane": {
+   "species": "cinderpod",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 0,
+   "x": 349,
+   "y": 156,
+   "w": 21,
+   "h": 23,
+   "pivot": [
+    10,
+    22
+   ],
+   "native": [
+    21,
+    23
+   ]
+  },
+  "cinderpod@stage1": {
+   "species": "cinderpod",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 1,
+   "x": 460,
+   "y": 488,
+   "w": 16,
+   "h": 15,
+   "pivot": [
+    8,
+    14
+   ],
+   "native": [
+    16,
+    15
+   ]
+  },
+  "cinderpod@stage1-arcane": {
+   "species": "cinderpod",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 1,
+   "x": 172,
+   "y": 279,
+   "w": 21,
+   "h": 21,
+   "pivot": [
+    10,
+    20
+   ],
+   "native": [
+    21,
+    21
+   ]
+  },
+  "cinderpod@stage2": {
+   "species": "cinderpod",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 2,
+   "x": 478,
+   "y": 488,
+   "w": 21,
+   "h": 15,
+   "pivot": [
+    10,
+    14
+   ],
+   "native": [
+    21,
+    15
+   ]
+  },
+  "cinderpod@stage2-arcane": {
+   "species": "cinderpod",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 2,
+   "x": 195,
+   "y": 279,
+   "w": 26,
+   "h": 21,
+   "pivot": [
+    13,
+    20
+   ],
+   "native": [
+    26,
+    21
+   ]
+  },
+  "cinderpod@stage3": {
+   "species": "cinderpod",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 3,
+   "x": 372,
+   "y": 156,
+   "w": 32,
+   "h": 23,
+   "pivot": [
+    16,
+    22
+   ],
+   "native": [
+    32,
+    23
+   ]
+  },
+  "cinderpod@stage3-arcane": {
+   "species": "cinderpod",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 3,
+   "x": 311,
+   "y": 37,
+   "w": 37,
+   "h": 28,
+   "pivot": [
+    18,
+    27
+   ],
+   "native": [
+    37,
+    28
+   ]
+  },
+  "cindershroom@stage0": {
+   "species": "cindershroom",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 0,
+   "x": 2,
+   "y": 506,
+   "w": 17,
+   "h": 15,
+   "pivot": [
+    8,
+    14
+   ],
+   "native": [
+    17,
+    15
+   ]
+  },
+  "cindershroom@stage0-arcane": {
+   "species": "cindershroom",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 0,
+   "x": 227,
+   "y": 413,
+   "w": 22,
+   "h": 17,
+   "pivot": [
+    11,
+    16
+   ],
+   "native": [
+    22,
+    17
+   ]
+  },
+  "cindershroom@stage1": {
+   "species": "cindershroom",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 1,
+   "x": 21,
+   "y": 506,
+   "w": 18,
+   "h": 15,
+   "pivot": [
+    9,
+    14
+   ],
+   "native": [
+    18,
+    15
+   ]
+  },
+  "cindershroom@stage1-arcane": {
+   "species": "cindershroom",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 1,
+   "x": 223,
+   "y": 279,
+   "w": 23,
+   "h": 21,
+   "pivot": [
+    11,
+    20
+   ],
+   "native": [
+    23,
+    21
+   ]
+  },
+  "cindershroom@stage2": {
+   "species": "cindershroom",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 2,
+   "x": 422,
+   "y": 523,
+   "w": 19,
+   "h": 14,
+   "pivot": [
+    9,
+    13
+   ],
+   "native": [
+    19,
+    14
+   ]
+  },
+  "cindershroom@stage2-arcane": {
+   "species": "cindershroom",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 2,
+   "x": 54,
+   "y": 371,
+   "w": 24,
+   "h": 19,
+   "pivot": [
+    12,
+    18
+   ],
+   "native": [
+    24,
+    19
+   ]
+  },
+  "cindershroom@stage3": {
+   "species": "cindershroom",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 3,
+   "x": 248,
+   "y": 279,
+   "w": 30,
+   "h": 21,
+   "pivot": [
+    15,
+    20
+   ],
+   "native": [
+    30,
+    21
+   ]
+  },
+  "cindershroom@stage3-arcane": {
+   "species": "cindershroom",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 3,
+   "x": 268,
+   "y": 68,
+   "w": 37,
+   "h": 27,
+   "pivot": [
+    18,
+    26
+   ],
+   "native": [
+    37,
+    27
+   ]
+  },
+  "dawnblossom@stage0": {
+   "species": "dawnblossom",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 415,
+   "y": 433,
+   "w": 16,
+   "h": 16,
+   "pivot": [
+    8,
+    15
+   ],
+   "native": [
+    16,
+    16
+   ]
+  },
+  "dawnblossom@stage0-arcane": {
+   "species": "dawnblossom",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 382,
+   "y": 182,
+   "w": 18,
+   "h": 22,
+   "pivot": [
+    9,
+    21
+   ],
+   "native": [
+    18,
+    22
+   ]
+  },
+  "dawnblossom@stage1": {
+   "species": "dawnblossom",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 433,
+   "y": 433,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "dawnblossom@stage1-arcane": {
+   "species": "dawnblossom",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 402,
+   "y": 182,
+   "w": 21,
+   "h": 22,
+   "pivot": [
+    10,
+    21
+   ],
+   "native": [
+    21,
+    22
+   ]
+  },
+  "dawnblossom@stage2": {
+   "species": "dawnblossom",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 41,
+   "y": 506,
+   "w": 18,
+   "h": 15,
+   "pivot": [
+    9,
+    14
+   ],
+   "native": [
+    18,
+    15
+   ]
+  },
+  "dawnblossom@stage2-arcane": {
+   "species": "dawnblossom",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 280,
+   "y": 279,
+   "w": 25,
+   "h": 21,
+   "pivot": [
+    12,
+    20
+   ],
+   "native": [
+    25,
+    21
+   ]
+  },
+  "dawnblossom@stage3": {
+   "species": "dawnblossom",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 2,
+   "y": 156,
+   "w": 29,
+   "h": 24,
+   "pivot": [
+    14,
+    23
+   ],
+   "native": [
+    29,
+    24
+   ]
+  },
+  "dawnblossom@stage3-arcane": {
+   "species": "dawnblossom",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 252,
+   "y": 2,
+   "w": 36,
+   "h": 30,
+   "pivot": [
+    18,
+    29
+   ],
+   "native": [
+    36,
+    30
+   ]
+  },
+  "dewpear@stage0": {
+   "species": "dewpear",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fruit",
+   "stage": 0,
+   "x": 443,
+   "y": 523,
+   "w": 17,
+   "h": 14,
+   "pivot": [
+    8,
+    13
+   ],
+   "native": [
+    17,
+    14
+   ]
+  },
+  "dewpear@stage0-arcane": {
+   "species": "dewpear",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fruit",
+   "stage": 0,
+   "x": 454,
+   "y": 433,
+   "w": 22,
+   "h": 16,
+   "pivot": [
+    11,
+    15
+   ],
+   "native": [
+    22,
+    16
+   ]
+  },
+  "dewpear@stage1": {
+   "species": "dewpear",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fruit",
+   "stage": 1,
+   "x": 478,
+   "y": 433,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "dewpear@stage1-arcane": {
+   "species": "dewpear",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fruit",
+   "stage": 1,
+   "x": 81,
+   "y": 392,
+   "w": 24,
+   "h": 18,
+   "pivot": [
+    12,
+    17
+   ],
+   "native": [
+    24,
+    18
+   ]
+  },
+  "dewpear@stage2": {
+   "species": "dewpear",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fruit",
+   "stage": 2,
+   "x": 2,
+   "y": 452,
+   "w": 15,
+   "h": 16,
+   "pivot": [
+    7,
+    15
+   ],
+   "native": [
+    15,
+    16
+   ]
+  },
+  "dewpear@stage2-arcane": {
+   "species": "dewpear",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fruit",
+   "stage": 2,
+   "x": 425,
+   "y": 182,
+   "w": 20,
+   "h": 22,
+   "pivot": [
+    10,
+    21
+   ],
+   "native": [
+    20,
+    22
+   ]
+  },
+  "dewpear@stage3": {
+   "species": "dewpear",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fruit",
+   "stage": 3,
+   "x": 396,
+   "y": 127,
+   "w": 23,
+   "h": 25,
+   "pivot": [
+    11,
+    24
+   ],
+   "native": [
+    23,
+    25
+   ]
+  },
+  "dewpear@stage3-arcane": {
+   "species": "dewpear",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fruit",
+   "stage": 3,
+   "x": 147,
+   "y": 2,
+   "w": 28,
+   "h": 31,
+   "pivot": [
+    14,
+    30
+   ],
+   "native": [
+    28,
+    31
+   ]
+  },
+  "emberheart-geode@stage0": {
+   "species": "emberheart-geode",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 0,
+   "x": 251,
+   "y": 413,
+   "w": 16,
+   "h": 17,
+   "pivot": [
+    8,
+    16
+   ],
+   "native": [
+    16,
+    17
+   ]
+  },
+  "emberheart-geode@stage0-arcane": {
+   "species": "emberheart-geode",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 0,
+   "x": 406,
+   "y": 156,
+   "w": 21,
+   "h": 23,
+   "pivot": [
+    10,
+    22
+   ],
+   "native": [
+    21,
+    23
+   ]
+  },
+  "emberheart-geode@stage1": {
+   "species": "emberheart-geode",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 1,
+   "x": 61,
+   "y": 506,
+   "w": 16,
+   "h": 15,
+   "pivot": [
+    8,
+    14
+   ],
+   "native": [
+    16,
+    15
+   ]
+  },
+  "emberheart-geode@stage1-arcane": {
+   "species": "emberheart-geode",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 1,
+   "x": 307,
+   "y": 279,
+   "w": 21,
+   "h": 21,
+   "pivot": [
+    10,
+    20
+   ],
+   "native": [
+    21,
+    21
+   ]
+  },
+  "emberheart-geode@stage2": {
+   "species": "emberheart-geode",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 2,
+   "x": 462,
+   "y": 523,
+   "w": 17,
+   "h": 14,
+   "pivot": [
+    8,
+    13
+   ],
+   "native": [
+    17,
+    14
+   ]
+  },
+  "emberheart-geode@stage2-arcane": {
+   "species": "emberheart-geode",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 2,
+   "x": 219,
+   "y": 326,
+   "w": 24,
+   "h": 20,
+   "pivot": [
+    12,
+    19
+   ],
+   "native": [
+    24,
+    20
+   ]
+  },
+  "emberheart-geode@stage3": {
+   "species": "emberheart-geode",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 3,
+   "x": 330,
+   "y": 279,
+   "w": 27,
+   "h": 21,
+   "pivot": [
+    13,
+    20
+   ],
+   "native": [
+    27,
+    21
+   ]
+  },
+  "emberheart-geode@stage3-arcane": {
+   "species": "emberheart-geode",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 3,
+   "x": 307,
+   "y": 68,
+   "w": 31,
+   "h": 27,
+   "pivot": [
+    15,
+    26
+   ],
+   "native": [
+    31,
+    27
+   ]
+  },
+  "emberleaf@stage0": {
+   "species": "emberleaf",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "leaf",
+   "stage": 0,
+   "x": 19,
+   "y": 452,
+   "w": 16,
+   "h": 16,
+   "pivot": [
+    8,
+    15
+   ],
+   "native": [
+    16,
+    16
+   ]
+  },
+  "emberleaf@stage0-arcane": {
+   "species": "emberleaf",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "leaf",
+   "stage": 0,
+   "x": 447,
+   "y": 182,
+   "w": 18,
+   "h": 22,
+   "pivot": [
+    9,
+    21
+   ],
+   "native": [
+    18,
+    22
+   ]
+  },
+  "emberleaf@stage1": {
+   "species": "emberleaf",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "leaf",
+   "stage": 1,
+   "x": 37,
+   "y": 452,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "emberleaf@stage1-arcane": {
+   "species": "emberleaf",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "leaf",
+   "stage": 1,
+   "x": 107,
+   "y": 392,
+   "w": 24,
+   "h": 18,
+   "pivot": [
+    12,
+    17
+   ],
+   "native": [
+    24,
+    18
+   ]
+  },
+  "emberleaf@stage2": {
+   "species": "emberleaf",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "leaf",
+   "stage": 2,
+   "x": 481,
+   "y": 523,
+   "w": 21,
+   "h": 14,
+   "pivot": [
+    10,
+    13
+   ],
+   "native": [
+    21,
+    14
+   ]
+  },
+  "emberleaf@stage2-arcane": {
+   "species": "emberleaf",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "leaf",
+   "stage": 2,
+   "x": 58,
+   "y": 452,
+   "w": 28,
+   "h": 16,
+   "pivot": [
+    14,
+    15
+   ],
+   "native": [
+    28,
+    16
+   ]
+  },
+  "emberleaf@stage3": {
+   "species": "emberleaf",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "leaf",
+   "stage": 3,
+   "x": 359,
+   "y": 279,
+   "w": 32,
+   "h": 21,
+   "pivot": [
+    16,
+    20
+   ],
+   "native": [
+    32,
+    21
+   ]
+  },
+  "emberleaf@stage3-arcane": {
+   "species": "emberleaf",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "leaf",
+   "stage": 3,
+   "x": 42,
+   "y": 127,
+   "w": 37,
+   "h": 26,
+   "pivot": [
+    18,
+    25
+   ],
+   "native": [
+    37,
+    26
+   ]
+  },
+  "eternal-rose@stage0": {
+   "species": "eternal-rose",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 88,
+   "y": 452,
+   "w": 16,
+   "h": 16,
+   "pivot": [
+    8,
+    15
+   ],
+   "native": [
+    16,
+    16
+   ]
+  },
+  "eternal-rose@stage0-arcane": {
+   "species": "eternal-rose",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 467,
+   "y": 182,
+   "w": 18,
+   "h": 22,
+   "pivot": [
+    9,
+    21
+   ],
+   "native": [
+    18,
+    22
+   ]
+  },
+  "eternal-rose@stage1": {
+   "species": "eternal-rose",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 106,
+   "y": 452,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "eternal-rose@stage1-arcane": {
+   "species": "eternal-rose",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 487,
+   "y": 182,
+   "w": 21,
+   "h": 22,
+   "pivot": [
+    10,
+    21
+   ],
+   "native": [
+    21,
+    22
+   ]
+  },
+  "eternal-rose@stage2": {
+   "species": "eternal-rose",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 2,
+   "y": 540,
+   "w": 19,
+   "h": 14,
+   "pivot": [
+    9,
+    13
+   ],
+   "native": [
+    19,
+    14
+   ]
+  },
+  "eternal-rose@stage2-arcane": {
+   "species": "eternal-rose",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 245,
+   "y": 326,
+   "w": 24,
+   "h": 20,
+   "pivot": [
+    12,
+    19
+   ],
+   "native": [
+    24,
+    20
+   ]
+  },
+  "eternal-rose@stage3": {
+   "species": "eternal-rose",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 2,
+   "y": 207,
+   "w": 30,
+   "h": 22,
+   "pivot": [
+    15,
+    21
+   ],
+   "native": [
+    30,
+    22
+   ]
+  },
+  "eternal-rose@stage3-arcane": {
+   "species": "eternal-rose",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 350,
+   "y": 37,
+   "w": 34,
+   "h": 28,
+   "pivot": [
+    17,
+    27
+   ],
+   "native": [
+    34,
+    28
+   ]
+  },
+  "everbloom-chalice@stage0": {
+   "species": "everbloom-chalice",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 0,
+   "x": 79,
+   "y": 506,
+   "w": 17,
+   "h": 15,
+   "pivot": [
+    8,
+    14
+   ],
+   "native": [
+    17,
+    15
+   ]
+  },
+  "everbloom-chalice@stage0-arcane": {
+   "species": "everbloom-chalice",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 0,
+   "x": 269,
+   "y": 413,
+   "w": 22,
+   "h": 17,
+   "pivot": [
+    11,
+    16
+   ],
+   "native": [
+    22,
+    17
+   ]
+  },
+  "everbloom-chalice@stage1": {
+   "species": "everbloom-chalice",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 1,
+   "x": 98,
+   "y": 506,
+   "w": 18,
+   "h": 15,
+   "pivot": [
+    9,
+    14
+   ],
+   "native": [
+    18,
+    15
+   ]
+  },
+  "everbloom-chalice@stage1-arcane": {
+   "species": "everbloom-chalice",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 1,
+   "x": 393,
+   "y": 279,
+   "w": 20,
+   "h": 21,
+   "pivot": [
+    10,
+    20
+   ],
+   "native": [
+    20,
+    21
+   ]
+  },
+  "everbloom-chalice@stage2": {
+   "species": "everbloom-chalice",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 2,
+   "x": 197,
+   "y": 556,
+   "w": 17,
+   "h": 13,
+   "pivot": [
+    8,
+    12
+   ],
+   "native": [
+    17,
+    13
+   ]
+  },
+  "everbloom-chalice@stage2-arcane": {
+   "species": "everbloom-chalice",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 2,
+   "x": 133,
+   "y": 392,
+   "w": 24,
+   "h": 18,
+   "pivot": [
+    12,
+    17
+   ],
+   "native": [
+    24,
+    18
+   ]
+  },
+  "everbloom-chalice@stage3": {
+   "species": "everbloom-chalice",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 3,
+   "x": 271,
+   "y": 326,
+   "w": 27,
+   "h": 20,
+   "pivot": [
+    13,
+    19
+   ],
+   "native": [
+    27,
+    20
+   ]
+  },
+  "everbloom-chalice@stage3-arcane": {
+   "species": "everbloom-chalice",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 3,
+   "x": 81,
+   "y": 127,
+   "w": 34,
+   "h": 26,
+   "pivot": [
+    17,
+    25
+   ],
+   "native": [
+    34,
+    26
+   ]
+  },
+  "everburning-sunheart@stage0": {
+   "species": "everburning-sunheart",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 127,
+   "y": 452,
+   "w": 16,
+   "h": 16,
+   "pivot": [
+    8,
+    15
+   ],
+   "native": [
+    16,
+    16
+   ]
+  },
+  "everburning-sunheart@stage0-arcane": {
+   "species": "everburning-sunheart",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 159,
+   "y": 392,
+   "w": 21,
+   "h": 18,
+   "pivot": [
+    10,
+    17
+   ],
+   "native": [
+    21,
+    18
+   ]
+  },
+  "everburning-sunheart@stage1": {
+   "species": "everburning-sunheart",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 145,
+   "y": 452,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "everburning-sunheart@stage1-arcane": {
+   "species": "everburning-sunheart",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 182,
+   "y": 392,
+   "w": 24,
+   "h": 18,
+   "pivot": [
+    12,
+    17
+   ],
+   "native": [
+    24,
+    18
+   ]
+  },
+  "everburning-sunheart@stage2": {
+   "species": "everburning-sunheart",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 23,
+   "y": 540,
+   "w": 21,
+   "h": 14,
+   "pivot": [
+    10,
+    13
+   ],
+   "native": [
+    21,
+    14
+   ]
+  },
+  "everburning-sunheart@stage2-arcane": {
+   "species": "everburning-sunheart",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 300,
+   "y": 326,
+   "w": 25,
+   "h": 20,
+   "pivot": [
+    12,
+    19
+   ],
+   "native": [
+    25,
+    20
+   ]
+  },
+  "everburning-sunheart@stage3": {
+   "species": "everburning-sunheart",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 34,
+   "y": 207,
+   "w": 32,
+   "h": 22,
+   "pivot": [
+    16,
+    21
+   ],
+   "native": [
+    32,
+    22
+   ]
+  },
+  "everburning-sunheart@stage3-arcane": {
+   "species": "everburning-sunheart",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 340,
+   "y": 68,
+   "w": 37,
+   "h": 27,
+   "pivot": [
+    18,
+    26
+   ],
+   "native": [
+    37,
+    27
+   ]
+  },
+  "everfrost-pearlbloom@stage0": {
+   "species": "everfrost-pearlbloom",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 166,
+   "y": 452,
+   "w": 16,
+   "h": 16,
+   "pivot": [
+    8,
+    15
+   ],
+   "native": [
+    16,
+    16
+   ]
+  },
+  "everfrost-pearlbloom@stage0-arcane": {
+   "species": "everfrost-pearlbloom",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 68,
+   "y": 207,
+   "w": 21,
+   "h": 22,
+   "pivot": [
+    10,
+    21
+   ],
+   "native": [
+    21,
+    22
+   ]
+  },
+  "everfrost-pearlbloom@stage1": {
+   "species": "everfrost-pearlbloom",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 184,
+   "y": 452,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "everfrost-pearlbloom@stage1-arcane": {
+   "species": "everfrost-pearlbloom",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 91,
+   "y": 207,
+   "w": 21,
+   "h": 22,
+   "pivot": [
+    10,
+    21
+   ],
+   "native": [
+    21,
+    22
+   ]
+  },
+  "everfrost-pearlbloom@stage2": {
+   "species": "everfrost-pearlbloom",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 118,
+   "y": 506,
+   "w": 20,
+   "h": 15,
+   "pivot": [
+    10,
+    14
+   ],
+   "native": [
+    20,
+    15
+   ]
+  },
+  "everfrost-pearlbloom@stage2-arcane": {
+   "species": "everfrost-pearlbloom",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 327,
+   "y": 326,
+   "w": 25,
+   "h": 20,
+   "pivot": [
+    12,
+    19
+   ],
+   "native": [
+    25,
+    20
+   ]
+  },
+  "everfrost-pearlbloom@stage3": {
+   "species": "everfrost-pearlbloom",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 33,
+   "y": 156,
+   "w": 31,
+   "h": 24,
+   "pivot": [
+    15,
+    23
+   ],
+   "native": [
+    31,
+    24
+   ]
+  },
+  "everfrost-pearlbloom@stage3-arcane": {
+   "species": "everfrost-pearlbloom",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 2,
+   "y": 37,
+   "w": 36,
+   "h": 29,
+   "pivot": [
+    18,
+    28
+   ],
+   "native": [
+    36,
+    29
+   ]
+  },
+  "ferric-crystal@stage0": {
+   "species": "ferric-crystal",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 0,
+   "x": 293,
+   "y": 413,
+   "w": 16,
+   "h": 17,
+   "pivot": [
+    8,
+    16
+   ],
+   "native": [
+    16,
+    17
+   ]
+  },
+  "ferric-crystal@stage0-arcane": {
+   "species": "ferric-crystal",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 0,
+   "x": 429,
+   "y": 156,
+   "w": 18,
+   "h": 23,
+   "pivot": [
+    9,
+    22
+   ],
+   "native": [
+    18,
+    23
+   ]
+  },
+  "ferric-crystal@stage1": {
+   "species": "ferric-crystal",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 1,
+   "x": 140,
+   "y": 506,
+   "w": 16,
+   "h": 15,
+   "pivot": [
+    8,
+    14
+   ],
+   "native": [
+    16,
+    15
+   ]
+  },
+  "ferric-crystal@stage1-arcane": {
+   "species": "ferric-crystal",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 1,
+   "x": 311,
+   "y": 413,
+   "w": 21,
+   "h": 17,
+   "pivot": [
+    10,
+    16
+   ],
+   "native": [
+    21,
+    17
+   ]
+  },
+  "ferric-crystal@stage2": {
+   "species": "ferric-crystal",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 2,
+   "x": 46,
+   "y": 540,
+   "w": 19,
+   "h": 14,
+   "pivot": [
+    9,
+    13
+   ],
+   "native": [
+    19,
+    14
+   ]
+  },
+  "ferric-crystal@stage2-arcane": {
+   "species": "ferric-crystal",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 2,
+   "x": 80,
+   "y": 371,
+   "w": 24,
+   "h": 19,
+   "pivot": [
+    12,
+    18
+   ],
+   "native": [
+    24,
+    19
+   ]
+  },
+  "ferric-crystal@stage3": {
+   "species": "ferric-crystal",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 3,
+   "x": 415,
+   "y": 279,
+   "w": 29,
+   "h": 21,
+   "pivot": [
+    14,
+    20
+   ],
+   "native": [
+    29,
+    21
+   ]
+  },
+  "ferric-crystal@stage3-arcane": {
+   "species": "ferric-crystal",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 3,
+   "x": 379,
+   "y": 68,
+   "w": 36,
+   "h": 27,
+   "pivot": [
+    18,
+    26
+   ],
+   "native": [
+    36,
+    27
+   ]
+  },
+  "firebramble@stage0": {
+   "species": "firebramble",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 0,
+   "x": 67,
+   "y": 540,
+   "w": 17,
+   "h": 14,
+   "pivot": [
+    8,
+    13
+   ],
+   "native": [
+    17,
+    14
+   ]
+  },
+  "firebramble@stage0-arcane": {
+   "species": "firebramble",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 0,
+   "x": 354,
+   "y": 326,
+   "w": 19,
+   "h": 20,
+   "pivot": [
+    9,
+    19
+   ],
+   "native": [
+    19,
+    20
+   ]
+  },
+  "firebramble@stage1": {
+   "species": "firebramble",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 1,
+   "x": 205,
+   "y": 452,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "firebramble@stage1-arcane": {
+   "species": "firebramble",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 1,
+   "x": 114,
+   "y": 207,
+   "w": 24,
+   "h": 22,
+   "pivot": [
+    12,
+    21
+   ],
+   "native": [
+    24,
+    22
+   ]
+  },
+  "firebramble@stage2": {
+   "species": "firebramble",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 2,
+   "x": 216,
+   "y": 556,
+   "w": 19,
+   "h": 13,
+   "pivot": [
+    9,
+    12
+   ],
+   "native": [
+    19,
+    13
+   ]
+  },
+  "firebramble@stage2-arcane": {
+   "species": "firebramble",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 2,
+   "x": 106,
+   "y": 371,
+   "w": 24,
+   "h": 19,
+   "pivot": [
+    12,
+    18
+   ],
+   "native": [
+    24,
+    19
+   ]
+  },
+  "firebramble@stage3": {
+   "species": "firebramble",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 3,
+   "x": 375,
+   "y": 326,
+   "w": 29,
+   "h": 20,
+   "pivot": [
+    14,
+    19
+   ],
+   "native": [
+    29,
+    20
+   ]
+  },
+  "firebramble@stage3-arcane": {
+   "species": "firebramble",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 3,
+   "x": 117,
+   "y": 127,
+   "w": 33,
+   "h": 26,
+   "pivot": [
+    16,
+    25
+   ],
+   "native": [
+    33,
+    26
+   ]
+  },
+  "flamecrest@stage0": {
+   "species": "flamecrest",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 226,
+   "y": 452,
+   "w": 16,
+   "h": 16,
+   "pivot": [
+    8,
+    15
+   ],
+   "native": [
+    16,
+    16
+   ]
+  },
+  "flamecrest@stage0-arcane": {
+   "species": "flamecrest",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 208,
+   "y": 392,
+   "w": 21,
+   "h": 18,
+   "pivot": [
+    10,
+    17
+   ],
+   "native": [
+    21,
+    18
+   ]
+  },
+  "flamecrest@stage1": {
+   "species": "flamecrest",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 244,
+   "y": 452,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "flamecrest@stage1-arcane": {
+   "species": "flamecrest",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 140,
+   "y": 207,
+   "w": 24,
+   "h": 22,
+   "pivot": [
+    12,
+    21
+   ],
+   "native": [
+    24,
+    22
+   ]
+  },
+  "flamecrest@stage2": {
+   "species": "flamecrest",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 86,
+   "y": 540,
+   "w": 22,
+   "h": 14,
+   "pivot": [
+    11,
+    13
+   ],
+   "native": [
+    22,
+    14
+   ]
+  },
+  "flamecrest@stage2-arcane": {
+   "species": "flamecrest",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 406,
+   "y": 326,
+   "w": 26,
+   "h": 20,
+   "pivot": [
+    13,
+    19
+   ],
+   "native": [
+    26,
+    20
+   ]
+  },
+  "flamecrest@stage3": {
+   "species": "flamecrest",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 446,
+   "y": 279,
+   "w": 34,
+   "h": 21,
+   "pivot": [
+    17,
+    20
+   ],
+   "native": [
+    34,
+    21
+   ]
+  },
+  "flamecrest@stage3-arcane": {
+   "species": "flamecrest",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 417,
+   "y": 68,
+   "w": 41,
+   "h": 27,
+   "pivot": [
+    20,
+    26
+   ],
+   "native": [
+    41,
+    27
+   ]
+  },
+  "frostlotus@stage0": {
+   "species": "frostlotus",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 265,
+   "y": 452,
+   "w": 16,
+   "h": 16,
+   "pivot": [
+    8,
+    15
+   ],
+   "native": [
+    16,
+    16
+   ]
+  },
+  "frostlotus@stage0-arcane": {
+   "species": "frostlotus",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 166,
+   "y": 207,
+   "w": 21,
+   "h": 22,
+   "pivot": [
+    10,
+    21
+   ],
+   "native": [
+    21,
+    22
+   ]
+  },
+  "frostlotus@stage1": {
+   "species": "frostlotus",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 283,
+   "y": 452,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "frostlotus@stage1-arcane": {
+   "species": "frostlotus",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 189,
+   "y": 207,
+   "w": 24,
+   "h": 22,
+   "pivot": [
+    12,
+    21
+   ],
+   "native": [
+    24,
+    22
+   ]
+  },
+  "frostlotus@stage2": {
+   "species": "frostlotus",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 158,
+   "y": 506,
+   "w": 21,
+   "h": 15,
+   "pivot": [
+    10,
+    14
+   ],
+   "native": [
+    21,
+    15
+   ]
+  },
+  "frostlotus@stage2-arcane": {
+   "species": "frostlotus",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 434,
+   "y": 326,
+   "w": 26,
+   "h": 20,
+   "pivot": [
+    13,
+    19
+   ],
+   "native": [
+    26,
+    20
+   ]
+  },
+  "frostlotus@stage3": {
+   "species": "frostlotus",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 66,
+   "y": 156,
+   "w": 33,
+   "h": 24,
+   "pivot": [
+    16,
+    23
+   ],
+   "native": [
+    33,
+    24
+   ]
+  },
+  "frostlotus@stage3-arcane": {
+   "species": "frostlotus",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 290,
+   "y": 2,
+   "w": 38,
+   "h": 30,
+   "pivot": [
+    19,
+    29
+   ],
+   "native": [
+    38,
+    30
+   ]
+  },
+  "gloommoss@stage0": {
+   "species": "gloommoss",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "moss",
+   "stage": 0,
+   "x": 181,
+   "y": 506,
+   "w": 17,
+   "h": 15,
+   "pivot": [
+    8,
+    14
+   ],
+   "native": [
+    17,
+    15
+   ]
+  },
+  "gloommoss@stage0-arcane": {
+   "species": "gloommoss",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "moss",
+   "stage": 0,
+   "x": 334,
+   "y": 413,
+   "w": 22,
+   "h": 17,
+   "pivot": [
+    11,
+    16
+   ],
+   "native": [
+    22,
+    17
+   ]
+  },
+  "gloommoss@stage1": {
+   "species": "gloommoss",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "moss",
+   "stage": 1,
+   "x": 200,
+   "y": 506,
+   "w": 18,
+   "h": 15,
+   "pivot": [
+    9,
+    14
+   ],
+   "native": [
+    18,
+    15
+   ]
+  },
+  "gloommoss@stage1-arcane": {
+   "species": "gloommoss",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "moss",
+   "stage": 1,
+   "x": 358,
+   "y": 413,
+   "w": 23,
+   "h": 17,
+   "pivot": [
+    11,
+    16
+   ],
+   "native": [
+    23,
+    17
+   ]
+  },
+  "gloommoss@stage2": {
+   "species": "gloommoss",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "moss",
+   "stage": 2,
+   "x": 237,
+   "y": 556,
+   "w": 23,
+   "h": 13,
+   "pivot": [
+    11,
+    12
+   ],
+   "native": [
+    23,
+    13
+   ]
+  },
+  "gloommoss@stage2-arcane": {
+   "species": "gloommoss",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "moss",
+   "stage": 2,
+   "x": 132,
+   "y": 371,
+   "w": 27,
+   "h": 19,
+   "pivot": [
+    13,
+    18
+   ],
+   "native": [
+    27,
+    19
+   ]
+  },
+  "gloommoss@stage3": {
+   "species": "gloommoss",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "moss",
+   "stage": 3,
+   "x": 462,
+   "y": 326,
+   "w": 36,
+   "h": 20,
+   "pivot": [
+    18,
+    19
+   ],
+   "native": [
+    36,
+    20
+   ]
+  },
+  "gloommoss@stage3-arcane": {
+   "species": "gloommoss",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "moss",
+   "stage": 3,
+   "x": 152,
+   "y": 127,
+   "w": 40,
+   "h": 26,
+   "pivot": [
+    20,
+    25
+   ],
+   "native": [
+    40,
+    26
+   ]
+  },
+  "goldenrush@stage0": {
+   "species": "goldenrush",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "grass",
+   "stage": 0,
+   "x": 304,
+   "y": 452,
+   "w": 17,
+   "h": 16,
+   "pivot": [
+    8,
+    15
+   ],
+   "native": [
+    17,
+    16
+   ]
+  },
+  "goldenrush@stage0-arcane": {
+   "species": "goldenrush",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "grass",
+   "stage": 0,
+   "x": 215,
+   "y": 207,
+   "w": 22,
+   "h": 22,
+   "pivot": [
+    11,
+    21
+   ],
+   "native": [
+    22,
+    22
+   ]
+  },
+  "goldenrush@stage1": {
+   "species": "goldenrush",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "grass",
+   "stage": 1,
+   "x": 323,
+   "y": 452,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "goldenrush@stage1-arcane": {
+   "species": "goldenrush",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "grass",
+   "stage": 1,
+   "x": 239,
+   "y": 207,
+   "w": 24,
+   "h": 22,
+   "pivot": [
+    12,
+    21
+   ],
+   "native": [
+    24,
+    22
+   ]
+  },
+  "goldenrush@stage2": {
+   "species": "goldenrush",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "grass",
+   "stage": 2,
+   "x": 344,
+   "y": 452,
+   "w": 20,
+   "h": 16,
+   "pivot": [
+    10,
+    15
+   ],
+   "native": [
+    20,
+    16
+   ]
+  },
+  "goldenrush@stage2-arcane": {
+   "species": "goldenrush",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "grass",
+   "stage": 2,
+   "x": 482,
+   "y": 279,
+   "w": 27,
+   "h": 21,
+   "pivot": [
+    13,
+    20
+   ],
+   "native": [
+    27,
+    21
+   ]
+  },
+  "goldenrush@stage3": {
+   "species": "goldenrush",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "grass",
+   "stage": 3,
+   "x": 421,
+   "y": 127,
+   "w": 31,
+   "h": 25,
+   "pivot": [
+    15,
+    24
+   ],
+   "native": [
+    31,
+    25
+   ]
+  },
+  "goldenrush@stage3-arcane": {
+   "species": "goldenrush",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "grass",
+   "stage": 3,
+   "x": 330,
+   "y": 2,
+   "w": 36,
+   "h": 30,
+   "pivot": [
+    18,
+    29
+   ],
+   "native": [
+    36,
+    30
+   ]
+  },
+  "gravelpod@stage0": {
+   "species": "gravelpod",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 0,
+   "x": 383,
+   "y": 413,
+   "w": 16,
+   "h": 17,
+   "pivot": [
+    8,
+    16
+   ],
+   "native": [
+    16,
+    17
+   ]
+  },
+  "gravelpod@stage0-arcane": {
+   "species": "gravelpod",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 0,
+   "x": 161,
+   "y": 371,
+   "w": 21,
+   "h": 19,
+   "pivot": [
+    10,
+    18
+   ],
+   "native": [
+    21,
+    19
+   ]
+  },
+  "gravelpod@stage1": {
+   "species": "gravelpod",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 1,
+   "x": 220,
+   "y": 506,
+   "w": 16,
+   "h": 15,
+   "pivot": [
+    8,
+    14
+   ],
+   "native": [
+    16,
+    15
+   ]
+  },
+  "gravelpod@stage1-arcane": {
+   "species": "gravelpod",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 1,
+   "x": 401,
+   "y": 413,
+   "w": 21,
+   "h": 17,
+   "pivot": [
+    10,
+    16
+   ],
+   "native": [
+    21,
+    17
+   ]
+  },
+  "gravelpod@stage2": {
+   "species": "gravelpod",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 2,
+   "x": 262,
+   "y": 556,
+   "w": 21,
+   "h": 13,
+   "pivot": [
+    10,
+    12
+   ],
+   "native": [
+    21,
+    13
+   ]
+  },
+  "gravelpod@stage2-arcane": {
+   "species": "gravelpod",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 2,
+   "x": 184,
+   "y": 371,
+   "w": 26,
+   "h": 19,
+   "pivot": [
+    13,
+    18
+   ],
+   "native": [
+    26,
+    19
+   ]
+  },
+  "gravelpod@stage3": {
+   "species": "gravelpod",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 3,
+   "x": 2,
+   "y": 349,
+   "w": 32,
+   "h": 20,
+   "pivot": [
+    16,
+    19
+   ],
+   "native": [
+    32,
+    20
+   ]
+  },
+  "gravelpod@stage3-arcane": {
+   "species": "gravelpod",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 3,
+   "x": 194,
+   "y": 127,
+   "w": 37,
+   "h": 26,
+   "pivot": [
+    18,
+    25
+   ],
+   "native": [
+    37,
+    26
+   ]
+  },
+  "heartberry@stage0": {
+   "species": "heartberry",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fruit",
+   "stage": 0,
+   "x": 110,
+   "y": 540,
+   "w": 17,
+   "h": 14,
+   "pivot": [
+    8,
+    13
+   ],
+   "native": [
+    17,
+    14
+   ]
+  },
+  "heartberry@stage0-arcane": {
+   "species": "heartberry",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fruit",
+   "stage": 0,
+   "x": 36,
+   "y": 349,
+   "w": 22,
+   "h": 20,
+   "pivot": [
+    11,
+    19
+   ],
+   "native": [
+    22,
+    20
+   ]
+  },
+  "heartberry@stage1": {
+   "species": "heartberry",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fruit",
+   "stage": 1,
+   "x": 366,
+   "y": 452,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "heartberry@stage1-arcane": {
+   "species": "heartberry",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fruit",
+   "stage": 1,
+   "x": 265,
+   "y": 207,
+   "w": 24,
+   "h": 22,
+   "pivot": [
+    12,
+    21
+   ],
+   "native": [
+    24,
+    22
+   ]
+  },
+  "heartberry@stage2": {
+   "species": "heartberry",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fruit",
+   "stage": 2,
+   "x": 129,
+   "y": 540,
+   "w": 19,
+   "h": 14,
+   "pivot": [
+    9,
+    13
+   ],
+   "native": [
+    19,
+    14
+   ]
+  },
+  "heartberry@stage2-arcane": {
+   "species": "heartberry",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fruit",
+   "stage": 2,
+   "x": 60,
+   "y": 349,
+   "w": 24,
+   "h": 20,
+   "pivot": [
+    12,
+    19
+   ],
+   "native": [
+    24,
+    20
+   ]
+  },
+  "heartberry@stage3": {
+   "species": "heartberry",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fruit",
+   "stage": 3,
+   "x": 291,
+   "y": 207,
+   "w": 30,
+   "h": 22,
+   "pivot": [
+    15,
+    21
+   ],
+   "native": [
+    30,
+    22
+   ]
+  },
+  "heartberry@stage3-arcane": {
+   "species": "heartberry",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fruit",
+   "stage": 3,
+   "x": 386,
+   "y": 37,
+   "w": 37,
+   "h": 28,
+   "pivot": [
+    18,
+    27
+   ],
+   "native": [
+    37,
+    28
+   ]
+  },
+  "hearthnut@stage0": {
+   "species": "hearthnut",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 0,
+   "x": 424,
+   "y": 413,
+   "w": 16,
+   "h": 17,
+   "pivot": [
+    8,
+    16
+   ],
+   "native": [
+    16,
+    17
+   ]
+  },
+  "hearthnut@stage0-arcane": {
+   "species": "hearthnut",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 0,
+   "x": 449,
+   "y": 156,
+   "w": 18,
+   "h": 23,
+   "pivot": [
+    9,
+    22
+   ],
+   "native": [
+    18,
+    23
+   ]
+  },
+  "hearthnut@stage1": {
+   "species": "hearthnut",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 1,
+   "x": 238,
+   "y": 506,
+   "w": 16,
+   "h": 15,
+   "pivot": [
+    8,
+    14
+   ],
+   "native": [
+    16,
+    15
+   ]
+  },
+  "hearthnut@stage1-arcane": {
+   "species": "hearthnut",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 1,
+   "x": 442,
+   "y": 413,
+   "w": 21,
+   "h": 17,
+   "pivot": [
+    10,
+    16
+   ],
+   "native": [
+    21,
+    17
+   ]
+  },
+  "hearthnut@stage2": {
+   "species": "hearthnut",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 2,
+   "x": 150,
+   "y": 540,
+   "w": 20,
+   "h": 14,
+   "pivot": [
+    10,
+    13
+   ],
+   "native": [
+    20,
+    14
+   ]
+  },
+  "hearthnut@stage2-arcane": {
+   "species": "hearthnut",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 2,
+   "x": 86,
+   "y": 349,
+   "w": 27,
+   "h": 20,
+   "pivot": [
+    13,
+    19
+   ],
+   "native": [
+    27,
+    20
+   ]
+  },
+  "hearthnut@stage3": {
+   "species": "hearthnut",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 3,
+   "x": 323,
+   "y": 207,
+   "w": 31,
+   "h": 22,
+   "pivot": [
+    15,
+    21
+   ],
+   "native": [
+    31,
+    22
+   ]
+  },
+  "hearthnut@stage3-arcane": {
+   "species": "hearthnut",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "stone",
+   "stage": 3,
+   "x": 425,
+   "y": 37,
+   "w": 35,
+   "h": 28,
+   "pivot": [
+    17,
+    27
+   ],
+   "native": [
+    35,
+    28
+   ]
+  },
+  "heartwood-mandrake@stage0": {
+   "species": "heartwood-mandrake",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "root",
+   "stage": 0,
+   "x": 212,
+   "y": 371,
+   "w": 17,
+   "h": 19,
+   "pivot": [
+    8,
+    18
+   ],
+   "native": [
+    17,
+    19
+   ]
+  },
+  "heartwood-mandrake@stage0-arcane": {
+   "species": "heartwood-mandrake",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "root",
+   "stage": 0,
+   "x": 454,
+   "y": 127,
+   "w": 22,
+   "h": 25,
+   "pivot": [
+    11,
+    24
+   ],
+   "native": [
+    22,
+    25
+   ]
+  },
+  "heartwood-mandrake@stage1": {
+   "species": "heartwood-mandrake",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "root",
+   "stage": 1,
+   "x": 387,
+   "y": 452,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "heartwood-mandrake@stage1-arcane": {
+   "species": "heartwood-mandrake",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "root",
+   "stage": 1,
+   "x": 231,
+   "y": 392,
+   "w": 24,
+   "h": 18,
+   "pivot": [
+    12,
+    17
+   ],
+   "native": [
+    24,
+    18
+   ]
+  },
+  "heartwood-mandrake@stage2": {
+   "species": "heartwood-mandrake",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "root",
+   "stage": 2,
+   "x": 257,
+   "y": 392,
+   "w": 19,
+   "h": 18,
+   "pivot": [
+    9,
+    17
+   ],
+   "native": [
+    19,
+    18
+   ]
+  },
+  "heartwood-mandrake@stage2-arcane": {
+   "species": "heartwood-mandrake",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "root",
+   "stage": 2,
+   "x": 469,
+   "y": 156,
+   "w": 26,
+   "h": 23,
+   "pivot": [
+    13,
+    22
+   ],
+   "native": [
+    26,
+    23
+   ]
+  },
+  "heartwood-mandrake@stage3": {
+   "species": "heartwood-mandrake",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "root",
+   "stage": 3,
+   "x": 460,
+   "y": 68,
+   "w": 29,
+   "h": 27,
+   "pivot": [
+    14,
+    26
+   ],
+   "native": [
+    29,
+    27
+   ]
+  },
+  "heartwood-mandrake@stage3-arcane": {
+   "species": "heartwood-mandrake",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "root",
+   "stage": 3,
+   "x": 2,
+   "y": 2,
+   "w": 33,
+   "h": 33,
+   "pivot": [
+    16,
+    32
+   ],
+   "native": [
+    33,
+    33
+   ]
+  },
+  "honeycap@stage0": {
+   "species": "honeycap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 0,
+   "x": 256,
+   "y": 506,
+   "w": 17,
+   "h": 15,
+   "pivot": [
+    8,
+    14
+   ],
+   "native": [
+    17,
+    15
+   ]
+  },
+  "honeycap@stage0-arcane": {
+   "species": "honeycap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 0,
+   "x": 2,
+   "y": 303,
+   "w": 22,
+   "h": 21,
+   "pivot": [
+    11,
+    20
+   ],
+   "native": [
+    22,
+    21
+   ]
+  },
+  "honeycap@stage1": {
+   "species": "honeycap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 1,
+   "x": 275,
+   "y": 506,
+   "w": 18,
+   "h": 15,
+   "pivot": [
+    9,
+    14
+   ],
+   "native": [
+    18,
+    15
+   ]
+  },
+  "honeycap@stage1-arcane": {
+   "species": "honeycap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 1,
+   "x": 26,
+   "y": 303,
+   "w": 23,
+   "h": 21,
+   "pivot": [
+    11,
+    20
+   ],
+   "native": [
+    23,
+    21
+   ]
+  },
+  "honeycap@stage2": {
+   "species": "honeycap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 2,
+   "x": 295,
+   "y": 506,
+   "w": 17,
+   "h": 15,
+   "pivot": [
+    8,
+    14
+   ],
+   "native": [
+    17,
+    15
+   ]
+  },
+  "honeycap@stage2-arcane": {
+   "species": "honeycap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 2,
+   "x": 51,
+   "y": 303,
+   "w": 21,
+   "h": 21,
+   "pivot": [
+    10,
+    20
+   ],
+   "native": [
+    21,
+    21
+   ]
+  },
+  "honeycap@stage3": {
+   "species": "honeycap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 3,
+   "x": 101,
+   "y": 156,
+   "w": 27,
+   "h": 24,
+   "pivot": [
+    13,
+    23
+   ],
+   "native": [
+    27,
+    24
+   ]
+  },
+  "honeycap@stage3-arcane": {
+   "species": "honeycap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 3,
+   "x": 368,
+   "y": 2,
+   "w": 32,
+   "h": 30,
+   "pivot": [
+    16,
+    29
+   ],
+   "native": [
+    32,
+    30
+   ]
+  },
+  "honeyclover@stage0": {
+   "species": "honeyclover",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 408,
+   "y": 452,
+   "w": 16,
+   "h": 16,
+   "pivot": [
+    8,
+    15
+   ],
+   "native": [
+    16,
+    16
+   ]
+  },
+  "honeyclover@stage0-arcane": {
+   "species": "honeyclover",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 278,
+   "y": 392,
+   "w": 21,
+   "h": 18,
+   "pivot": [
+    10,
+    17
+   ],
+   "native": [
+    21,
+    18
+   ]
+  },
+  "honeyclover@stage1": {
+   "species": "honeyclover",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 426,
+   "y": 452,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "honeyclover@stage1-arcane": {
+   "species": "honeyclover",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 356,
+   "y": 207,
+   "w": 21,
+   "h": 22,
+   "pivot": [
+    10,
+    21
+   ],
+   "native": [
+    21,
+    22
+   ]
+  },
+  "honeyclover@stage2": {
+   "species": "honeyclover",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 314,
+   "y": 506,
+   "w": 20,
+   "h": 15,
+   "pivot": [
+    10,
+    14
+   ],
+   "native": [
+    20,
+    15
+   ]
+  },
+  "honeyclover@stage2-arcane": {
+   "species": "honeyclover",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 74,
+   "y": 303,
+   "w": 24,
+   "h": 21,
+   "pivot": [
+    12,
+    20
+   ],
+   "native": [
+    24,
+    21
+   ]
+  },
+  "honeyclover@stage3": {
+   "species": "honeyclover",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 2,
+   "y": 182,
+   "w": 31,
+   "h": 23,
+   "pivot": [
+    15,
+    22
+   ],
+   "native": [
+    31,
+    23
+   ]
+  },
+  "honeyclover@stage3-arcane": {
+   "species": "honeyclover",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 40,
+   "y": 37,
+   "w": 36,
+   "h": 29,
+   "pivot": [
+    18,
+    28
+   ],
+   "native": [
+    36,
+    29
+   ]
+  },
+  "ironbloom@stage0": {
+   "species": "ironbloom",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 447,
+   "y": 452,
+   "w": 16,
+   "h": 16,
+   "pivot": [
+    8,
+    15
+   ],
+   "native": [
+    16,
+    16
+   ]
+  },
+  "ironbloom@stage0-arcane": {
+   "species": "ironbloom",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 379,
+   "y": 207,
+   "w": 21,
+   "h": 22,
+   "pivot": [
+    10,
+    21
+   ],
+   "native": [
+    21,
+    22
+   ]
+  },
+  "ironbloom@stage1": {
+   "species": "ironbloom",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 465,
+   "y": 452,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "ironbloom@stage1-arcane": {
+   "species": "ironbloom",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 402,
+   "y": 207,
+   "w": 21,
+   "h": 22,
+   "pivot": [
+    10,
+    21
+   ],
+   "native": [
+    21,
+    22
+   ]
+  },
+  "ironbloom@stage2": {
+   "species": "ironbloom",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 172,
+   "y": 540,
+   "w": 22,
+   "h": 14,
+   "pivot": [
+    11,
+    13
+   ],
+   "native": [
+    22,
+    14
+   ]
+  },
+  "ironbloom@stage2-arcane": {
+   "species": "ironbloom",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 231,
+   "y": 371,
+   "w": 27,
+   "h": 19,
+   "pivot": [
+    13,
+    18
+   ],
+   "native": [
+    27,
+    19
+   ]
+  },
+  "ironbloom@stage3": {
+   "species": "ironbloom",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 100,
+   "y": 303,
+   "w": 34,
+   "h": 21,
+   "pivot": [
+    17,
+    20
+   ],
+   "native": [
+    34,
+    21
+   ]
+  },
+  "ironbloom@stage3-arcane": {
+   "species": "ironbloom",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 2,
+   "y": 98,
+   "w": 41,
+   "h": 27,
+   "pivot": [
+    20,
+    26
+   ],
+   "native": [
+    41,
+    27
+   ]
+  },
+  "lovelace-orchid@stage0": {
+   "species": "lovelace-orchid",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 486,
+   "y": 452,
+   "w": 16,
+   "h": 16,
+   "pivot": [
+    8,
+    15
+   ],
+   "native": [
+    16,
+    16
+   ]
+  },
+  "lovelace-orchid@stage0-arcane": {
+   "species": "lovelace-orchid",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 301,
+   "y": 392,
+   "w": 21,
+   "h": 18,
+   "pivot": [
+    10,
+    17
+   ],
+   "native": [
+    21,
+    18
+   ]
+  },
+  "lovelace-orchid@stage1": {
+   "species": "lovelace-orchid",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 2,
+   "y": 470,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "lovelace-orchid@stage1-arcane": {
+   "species": "lovelace-orchid",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 425,
+   "y": 207,
+   "w": 21,
+   "h": 22,
+   "pivot": [
+    10,
+    21
+   ],
+   "native": [
+    21,
+    22
+   ]
+  },
+  "lovelace-orchid@stage2": {
+   "species": "lovelace-orchid",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 336,
+   "y": 506,
+   "w": 21,
+   "h": 15,
+   "pivot": [
+    10,
+    14
+   ],
+   "native": [
+    21,
+    15
+   ]
+  },
+  "lovelace-orchid@stage2-arcane": {
+   "species": "lovelace-orchid",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 136,
+   "y": 303,
+   "w": 26,
+   "h": 21,
+   "pivot": [
+    13,
+    20
+   ],
+   "native": [
+    26,
+    21
+   ]
+  },
+  "lovelace-orchid@stage3": {
+   "species": "lovelace-orchid",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 130,
+   "y": 156,
+   "w": 32,
+   "h": 24,
+   "pivot": [
+    16,
+    23
+   ],
+   "native": [
+    32,
+    24
+   ]
+  },
+  "lovelace-orchid@stage3-arcane": {
+   "species": "lovelace-orchid",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 78,
+   "y": 37,
+   "w": 37,
+   "h": 29,
+   "pivot": [
+    18,
+    28
+   ],
+   "native": [
+    37,
+    29
+   ]
+  },
+  "meadow-daisy@stage0": {
+   "species": "meadow-daisy",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 23,
+   "y": 470,
+   "w": 16,
+   "h": 16,
+   "pivot": [
+    8,
+    15
+   ],
+   "native": [
+    16,
+    16
+   ]
+  },
+  "meadow-daisy@stage0-arcane": {
+   "species": "meadow-daisy",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 448,
+   "y": 207,
+   "w": 18,
+   "h": 22,
+   "pivot": [
+    9,
+    21
+   ],
+   "native": [
+    18,
+    22
+   ]
+  },
+  "meadow-daisy@stage1": {
+   "species": "meadow-daisy",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 41,
+   "y": 470,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "meadow-daisy@stage1-arcane": {
+   "species": "meadow-daisy",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 468,
+   "y": 207,
+   "w": 24,
+   "h": 22,
+   "pivot": [
+    12,
+    21
+   ],
+   "native": [
+    24,
+    22
+   ]
+  },
+  "meadow-daisy@stage2": {
+   "species": "meadow-daisy",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 62,
+   "y": 470,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "meadow-daisy@stage2-arcane": {
+   "species": "meadow-daisy",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 2,
+   "y": 231,
+   "w": 24,
+   "h": 22,
+   "pivot": [
+    12,
+    21
+   ],
+   "native": [
+    24,
+    22
+   ]
+  },
+  "meadow-daisy@stage3": {
+   "species": "meadow-daisy",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 478,
+   "y": 127,
+   "w": 29,
+   "h": 25,
+   "pivot": [
+    14,
+    24
+   ],
+   "native": [
+    29,
+    25
+   ]
+  },
+  "meadow-daisy@stage3-arcane": {
+   "species": "meadow-daisy",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 402,
+   "y": 2,
+   "w": 34,
+   "h": 30,
+   "pivot": [
+    17,
+    29
+   ],
+   "native": [
+    34,
+    30
+   ]
+  },
+  "meadowcrystal@stage0": {
+   "species": "meadowcrystal",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 0,
+   "x": 465,
+   "y": 413,
+   "w": 16,
+   "h": 17,
+   "pivot": [
+    8,
+    16
+   ],
+   "native": [
+    16,
+    17
+   ]
+  },
+  "meadowcrystal@stage0-arcane": {
+   "species": "meadowcrystal",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 0,
+   "x": 35,
+   "y": 182,
+   "w": 21,
+   "h": 23,
+   "pivot": [
+    10,
+    22
+   ],
+   "native": [
+    21,
+    23
+   ]
+  },
+  "meadowcrystal@stage1": {
+   "species": "meadowcrystal",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 1,
+   "x": 359,
+   "y": 506,
+   "w": 16,
+   "h": 15,
+   "pivot": [
+    8,
+    14
+   ],
+   "native": [
+    16,
+    15
+   ]
+  },
+  "meadowcrystal@stage1-arcane": {
+   "species": "meadowcrystal",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 1,
+   "x": 483,
+   "y": 413,
+   "w": 21,
+   "h": 17,
+   "pivot": [
+    10,
+    16
+   ],
+   "native": [
+    21,
+    17
+   ]
+  },
+  "meadowcrystal@stage2": {
+   "species": "meadowcrystal",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 2,
+   "x": 196,
+   "y": 540,
+   "w": 18,
+   "h": 14,
+   "pivot": [
+    9,
+    13
+   ],
+   "native": [
+    18,
+    14
+   ]
+  },
+  "meadowcrystal@stage2-arcane": {
+   "species": "meadowcrystal",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 2,
+   "x": 115,
+   "y": 349,
+   "w": 25,
+   "h": 20,
+   "pivot": [
+    12,
+    19
+   ],
+   "native": [
+    25,
+    20
+   ]
+  },
+  "meadowcrystal@stage3": {
+   "species": "meadowcrystal",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 3,
+   "x": 28,
+   "y": 231,
+   "w": 28,
+   "h": 22,
+   "pivot": [
+    14,
+    21
+   ],
+   "native": [
+    28,
+    22
+   ]
+  },
+  "meadowcrystal@stage3-arcane": {
+   "species": "meadowcrystal",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 3,
+   "x": 462,
+   "y": 37,
+   "w": 33,
+   "h": 28,
+   "pivot": [
+    16,
+    27
+   ],
+   "native": [
+    33,
+    28
+   ]
+  },
+  "mossback-bark@stage0": {
+   "species": "mossback-bark",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "bark",
+   "stage": 0,
+   "x": 260,
+   "y": 371,
+   "w": 17,
+   "h": 19,
+   "pivot": [
+    8,
+    18
+   ],
+   "native": [
+    17,
+    19
+   ]
+  },
+  "mossback-bark@stage0-arcane": {
+   "species": "mossback-bark",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "bark",
+   "stage": 0,
+   "x": 164,
+   "y": 303,
+   "w": 22,
+   "h": 21,
+   "pivot": [
+    11,
+    20
+   ],
+   "native": [
+    22,
+    21
+   ]
+  },
+  "mossback-bark@stage1": {
+   "species": "mossback-bark",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "bark",
+   "stage": 1,
+   "x": 83,
+   "y": 470,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "mossback-bark@stage1-arcane": {
+   "species": "mossback-bark",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "bark",
+   "stage": 1,
+   "x": 324,
+   "y": 392,
+   "w": 24,
+   "h": 18,
+   "pivot": [
+    12,
+    17
+   ],
+   "native": [
+    24,
+    18
+   ]
+  },
+  "mossback-bark@stage2": {
+   "species": "mossback-bark",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "bark",
+   "stage": 2,
+   "x": 216,
+   "y": 540,
+   "w": 20,
+   "h": 14,
+   "pivot": [
+    10,
+    13
+   ],
+   "native": [
+    20,
+    14
+   ]
+  },
+  "mossback-bark@stage2-arcane": {
+   "species": "mossback-bark",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "bark",
+   "stage": 2,
+   "x": 142,
+   "y": 349,
+   "w": 27,
+   "h": 20,
+   "pivot": [
+    13,
+    19
+   ],
+   "native": [
+    27,
+    20
+   ]
+  },
+  "mossback-bark@stage3": {
+   "species": "mossback-bark",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "bark",
+   "stage": 3,
+   "x": 58,
+   "y": 231,
+   "w": 31,
+   "h": 22,
+   "pivot": [
+    15,
+    21
+   ],
+   "native": [
+    31,
+    22
+   ]
+  },
+  "mossback-bark@stage3-arcane": {
+   "species": "mossback-bark",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "bark",
+   "stage": 3,
+   "x": 2,
+   "y": 68,
+   "w": 35,
+   "h": 28,
+   "pivot": [
+    17,
+    27
+   ],
+   "native": [
+    35,
+    28
+   ]
+  },
+  "nethercap@stage0": {
+   "species": "nethercap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 0,
+   "x": 377,
+   "y": 506,
+   "w": 17,
+   "h": 15,
+   "pivot": [
+    8,
+    14
+   ],
+   "native": [
+    17,
+    15
+   ]
+  },
+  "nethercap@stage0-arcane": {
+   "species": "nethercap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 0,
+   "x": 2,
+   "y": 433,
+   "w": 22,
+   "h": 17,
+   "pivot": [
+    11,
+    16
+   ],
+   "native": [
+    22,
+    17
+   ]
+  },
+  "nethercap@stage1": {
+   "species": "nethercap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 1,
+   "x": 396,
+   "y": 506,
+   "w": 18,
+   "h": 15,
+   "pivot": [
+    9,
+    14
+   ],
+   "native": [
+    18,
+    15
+   ]
+  },
+  "nethercap@stage1-arcane": {
+   "species": "nethercap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 1,
+   "x": 188,
+   "y": 303,
+   "w": 23,
+   "h": 21,
+   "pivot": [
+    11,
+    20
+   ],
+   "native": [
+    23,
+    21
+   ]
+  },
+  "nethercap@stage2": {
+   "species": "nethercap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 2,
+   "x": 238,
+   "y": 540,
+   "w": 21,
+   "h": 14,
+   "pivot": [
+    10,
+    13
+   ],
+   "native": [
+    21,
+    14
+   ]
+  },
+  "nethercap@stage2-arcane": {
+   "species": "nethercap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 2,
+   "x": 279,
+   "y": 371,
+   "w": 28,
+   "h": 19,
+   "pivot": [
+    14,
+    18
+   ],
+   "native": [
+    28,
+    19
+   ]
+  },
+  "nethercap@stage3": {
+   "species": "nethercap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 3,
+   "x": 91,
+   "y": 231,
+   "w": 32,
+   "h": 22,
+   "pivot": [
+    16,
+    21
+   ],
+   "native": [
+    32,
+    22
+   ]
+  },
+  "nethercap@stage3-arcane": {
+   "species": "nethercap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 3,
+   "x": 39,
+   "y": 68,
+   "w": 36,
+   "h": 28,
+   "pivot": [
+    18,
+    27
+   ],
+   "native": [
+    36,
+    28
+   ]
+  },
+  "nightbloom-lotus@stage0": {
+   "species": "nightbloom-lotus",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 104,
+   "y": 470,
+   "w": 16,
+   "h": 16,
+   "pivot": [
+    8,
+    15
+   ],
+   "native": [
+    16,
+    16
+   ]
+  },
+  "nightbloom-lotus@stage0-arcane": {
+   "species": "nightbloom-lotus",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 125,
+   "y": 231,
+   "w": 18,
+   "h": 22,
+   "pivot": [
+    9,
+    21
+   ],
+   "native": [
+    18,
+    22
+   ]
+  },
+  "nightbloom-lotus@stage1": {
+   "species": "nightbloom-lotus",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 122,
+   "y": 470,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "nightbloom-lotus@stage1-arcane": {
+   "species": "nightbloom-lotus",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 145,
+   "y": 231,
+   "w": 21,
+   "h": 22,
+   "pivot": [
+    10,
+    21
+   ],
+   "native": [
+    21,
+    22
+   ]
+  },
+  "nightbloom-lotus@stage2": {
+   "species": "nightbloom-lotus",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 261,
+   "y": 540,
+   "w": 20,
+   "h": 14,
+   "pivot": [
+    10,
+    13
+   ],
+   "native": [
+    20,
+    14
+   ]
+  },
+  "nightbloom-lotus@stage2-arcane": {
+   "species": "nightbloom-lotus",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 143,
+   "y": 470,
+   "w": 27,
+   "h": 16,
+   "pivot": [
+    13,
+    15
+   ],
+   "native": [
+    27,
+    16
+   ]
+  },
+  "nightbloom-lotus@stage3": {
+   "species": "nightbloom-lotus",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 168,
+   "y": 231,
+   "w": 31,
+   "h": 22,
+   "pivot": [
+    15,
+    21
+   ],
+   "native": [
+    31,
+    22
+   ]
+  },
+  "nightbloom-lotus@stage3-arcane": {
+   "species": "nightbloom-lotus",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 45,
+   "y": 98,
+   "w": 38,
+   "h": 27,
+   "pivot": [
+    19,
+    26
+   ],
+   "native": [
+    38,
+    27
+   ]
+  },
+  "nixie-torc@stage0": {
+   "species": "nixie-torc",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "relic",
+   "stage": 0,
+   "x": 26,
+   "y": 433,
+   "w": 16,
+   "h": 17,
+   "pivot": [
+    8,
+    16
+   ],
+   "native": [
+    16,
+    17
+   ]
+  },
+  "nixie-torc@stage0-arcane": {
+   "species": "nixie-torc",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "relic",
+   "stage": 0,
+   "x": 58,
+   "y": 182,
+   "w": 21,
+   "h": 23,
+   "pivot": [
+    10,
+    22
+   ],
+   "native": [
+    21,
+    23
+   ]
+  },
+  "nixie-torc@stage1": {
+   "species": "nixie-torc",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "relic",
+   "stage": 1,
+   "x": 416,
+   "y": 506,
+   "w": 16,
+   "h": 15,
+   "pivot": [
+    8,
+    14
+   ],
+   "native": [
+    16,
+    15
+   ]
+  },
+  "nixie-torc@stage1-arcane": {
+   "species": "nixie-torc",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "relic",
+   "stage": 1,
+   "x": 44,
+   "y": 433,
+   "w": 21,
+   "h": 17,
+   "pivot": [
+    10,
+    16
+   ],
+   "native": [
+    21,
+    17
+   ]
+  },
+  "nixie-torc@stage2": {
+   "species": "nixie-torc",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "relic",
+   "stage": 2,
+   "x": 283,
+   "y": 540,
+   "w": 21,
+   "h": 14,
+   "pivot": [
+    10,
+    13
+   ],
+   "native": [
+    21,
+    14
+   ]
+  },
+  "nixie-torc@stage2-arcane": {
+   "species": "nixie-torc",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "relic",
+   "stage": 2,
+   "x": 171,
+   "y": 349,
+   "w": 25,
+   "h": 20,
+   "pivot": [
+    12,
+    19
+   ],
+   "native": [
+    25,
+    20
+   ]
+  },
+  "nixie-torc@stage3": {
+   "species": "nixie-torc",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "relic",
+   "stage": 3,
+   "x": 201,
+   "y": 231,
+   "w": 32,
+   "h": 22,
+   "pivot": [
+    16,
+    21
+   ],
+   "native": [
+    32,
+    22
+   ]
+  },
+  "nixie-torc@stage3-arcane": {
+   "species": "nixie-torc",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "relic",
+   "stage": 3,
+   "x": 85,
+   "y": 98,
+   "w": 39,
+   "h": 27,
+   "pivot": [
+    19,
+    26
+   ],
+   "native": [
+    39,
+    27
+   ]
+  },
+  "orebud@stage0": {
+   "species": "orebud",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 0,
+   "x": 67,
+   "y": 433,
+   "w": 16,
+   "h": 17,
+   "pivot": [
+    8,
+    16
+   ],
+   "native": [
+    16,
+    17
+   ]
+  },
+  "orebud@stage0-arcane": {
+   "species": "orebud",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 0,
+   "x": 81,
+   "y": 182,
+   "w": 21,
+   "h": 23,
+   "pivot": [
+    10,
+    22
+   ],
+   "native": [
+    21,
+    23
+   ]
+  },
+  "orebud@stage1": {
+   "species": "orebud",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 1,
+   "x": 434,
+   "y": 506,
+   "w": 16,
+   "h": 15,
+   "pivot": [
+    8,
+    14
+   ],
+   "native": [
+    16,
+    15
+   ]
+  },
+  "orebud@stage1-arcane": {
+   "species": "orebud",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 1,
+   "x": 85,
+   "y": 433,
+   "w": 21,
+   "h": 17,
+   "pivot": [
+    10,
+    16
+   ],
+   "native": [
+    21,
+    17
+   ]
+  },
+  "orebud@stage2": {
+   "species": "orebud",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 2,
+   "x": 306,
+   "y": 540,
+   "w": 19,
+   "h": 14,
+   "pivot": [
+    9,
+    13
+   ],
+   "native": [
+    19,
+    14
+   ]
+  },
+  "orebud@stage2-arcane": {
+   "species": "orebud",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 2,
+   "x": 172,
+   "y": 470,
+   "w": 26,
+   "h": 16,
+   "pivot": [
+    13,
+    15
+   ],
+   "native": [
+    26,
+    16
+   ]
+  },
+  "orebud@stage3": {
+   "species": "orebud",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 3,
+   "x": 235,
+   "y": 231,
+   "w": 29,
+   "h": 22,
+   "pivot": [
+    14,
+    21
+   ],
+   "native": [
+    29,
+    22
+   ]
+  },
+  "orebud@stage3-arcane": {
+   "species": "orebud",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 3,
+   "x": 77,
+   "y": 68,
+   "w": 34,
+   "h": 28,
+   "pivot": [
+    17,
+    27
+   ],
+   "native": [
+    34,
+    28
+   ]
+  },
+  "phoenix-heartseed@stage0": {
+   "species": "phoenix-heartseed",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "seedpod",
+   "stage": 0,
+   "x": 452,
+   "y": 506,
+   "w": 21,
+   "h": 15,
+   "pivot": [
+    10,
+    14
+   ],
+   "native": [
+    21,
+    15
+   ]
+  },
+  "phoenix-heartseed@stage0-arcane": {
+   "species": "phoenix-heartseed",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "seedpod",
+   "stage": 0,
+   "x": 213,
+   "y": 303,
+   "w": 23,
+   "h": 21,
+   "pivot": [
+    11,
+    20
+   ],
+   "native": [
+    23,
+    21
+   ]
+  },
+  "phoenix-heartseed@stage1": {
+   "species": "phoenix-heartseed",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "seedpod",
+   "stage": 1,
+   "x": 200,
+   "y": 470,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "phoenix-heartseed@stage1-arcane": {
+   "species": "phoenix-heartseed",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "seedpod",
+   "stage": 1,
+   "x": 266,
+   "y": 231,
+   "w": 24,
+   "h": 22,
+   "pivot": [
+    12,
+    21
+   ],
+   "native": [
+    24,
+    22
+   ]
+  },
+  "phoenix-heartseed@stage2": {
+   "species": "phoenix-heartseed",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "seedpod",
+   "stage": 2,
+   "x": 327,
+   "y": 540,
+   "w": 19,
+   "h": 14,
+   "pivot": [
+    9,
+    13
+   ],
+   "native": [
+    19,
+    14
+   ]
+  },
+  "phoenix-heartseed@stage2-arcane": {
+   "species": "phoenix-heartseed",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "seedpod",
+   "stage": 2,
+   "x": 108,
+   "y": 433,
+   "w": 26,
+   "h": 17,
+   "pivot": [
+    13,
+    16
+   ],
+   "native": [
+    26,
+    17
+   ]
+  },
+  "phoenix-heartseed@stage3": {
+   "species": "phoenix-heartseed",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "seedpod",
+   "stage": 3,
+   "x": 292,
+   "y": 231,
+   "w": 29,
+   "h": 22,
+   "pivot": [
+    14,
+    21
+   ],
+   "native": [
+    29,
+    22
+   ]
+  },
+  "phoenix-heartseed@stage3-arcane": {
+   "species": "phoenix-heartseed",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "seedpod",
+   "stage": 3,
+   "x": 126,
+   "y": 98,
+   "w": 36,
+   "h": 27,
+   "pivot": [
+    18,
+    26
+   ],
+   "native": [
+    36,
+    27
+   ]
+  },
+  "prism-petal@stage0": {
+   "species": "prism-petal",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 221,
+   "y": 470,
+   "w": 16,
+   "h": 16,
+   "pivot": [
+    8,
+    15
+   ],
+   "native": [
+    16,
+    16
+   ]
+  },
+  "prism-petal@stage0-arcane": {
+   "species": "prism-petal",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 323,
+   "y": 231,
+   "w": 18,
+   "h": 22,
+   "pivot": [
+    9,
+    21
+   ],
+   "native": [
+    18,
+    22
+   ]
+  },
+  "prism-petal@stage1": {
+   "species": "prism-petal",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 239,
+   "y": 470,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "prism-petal@stage1-arcane": {
+   "species": "prism-petal",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 350,
+   "y": 392,
+   "w": 24,
+   "h": 18,
+   "pivot": [
+    12,
+    17
+   ],
+   "native": [
+    24,
+    18
+   ]
+  },
+  "prism-petal@stage2": {
+   "species": "prism-petal",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 475,
+   "y": 506,
+   "w": 17,
+   "h": 15,
+   "pivot": [
+    8,
+    14
+   ],
+   "native": [
+    17,
+    15
+   ]
+  },
+  "prism-petal@stage2-arcane": {
+   "species": "prism-petal",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 238,
+   "y": 303,
+   "w": 21,
+   "h": 21,
+   "pivot": [
+    10,
+    20
+   ],
+   "native": [
+    21,
+    21
+   ]
+  },
+  "prism-petal@stage3": {
+   "species": "prism-petal",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 104,
+   "y": 182,
+   "w": 27,
+   "h": 23,
+   "pivot": [
+    13,
+    22
+   ],
+   "native": [
+    27,
+    23
+   ]
+  },
+  "prism-petal@stage3-arcane": {
+   "species": "prism-petal",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 113,
+   "y": 68,
+   "w": 34,
+   "h": 28,
+   "pivot": [
+    17,
+    27
+   ],
+   "native": [
+    34,
+    28
+   ]
+  },
+  "quarrycap@stage0": {
+   "species": "quarrycap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 0,
+   "x": 2,
+   "y": 523,
+   "w": 17,
+   "h": 15,
+   "pivot": [
+    8,
+    14
+   ],
+   "native": [
+    17,
+    15
+   ]
+  },
+  "quarrycap@stage0-arcane": {
+   "species": "quarrycap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 0,
+   "x": 261,
+   "y": 303,
+   "w": 22,
+   "h": 21,
+   "pivot": [
+    11,
+    20
+   ],
+   "native": [
+    22,
+    21
+   ]
+  },
+  "quarrycap@stage1": {
+   "species": "quarrycap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 1,
+   "x": 21,
+   "y": 523,
+   "w": 18,
+   "h": 15,
+   "pivot": [
+    9,
+    14
+   ],
+   "native": [
+    18,
+    15
+   ]
+  },
+  "quarrycap@stage1-arcane": {
+   "species": "quarrycap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 1,
+   "x": 285,
+   "y": 303,
+   "w": 23,
+   "h": 21,
+   "pivot": [
+    11,
+    20
+   ],
+   "native": [
+    23,
+    21
+   ]
+  },
+  "quarrycap@stage2": {
+   "species": "quarrycap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 2,
+   "x": 348,
+   "y": 540,
+   "w": 18,
+   "h": 14,
+   "pivot": [
+    9,
+    13
+   ],
+   "native": [
+    18,
+    14
+   ]
+  },
+  "quarrycap@stage2-arcane": {
+   "species": "quarrycap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 2,
+   "x": 198,
+   "y": 349,
+   "w": 23,
+   "h": 20,
+   "pivot": [
+    11,
+    19
+   ],
+   "native": [
+    23,
+    20
+   ]
+  },
+  "quarrycap@stage3": {
+   "species": "quarrycap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 3,
+   "x": 343,
+   "y": 231,
+   "w": 29,
+   "h": 22,
+   "pivot": [
+    14,
+    21
+   ],
+   "native": [
+    29,
+    22
+   ]
+  },
+  "quarrycap@stage3-arcane": {
+   "species": "quarrycap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 3,
+   "x": 164,
+   "y": 98,
+   "w": 34,
+   "h": 27,
+   "pivot": [
+    17,
+    26
+   ],
+   "native": [
+    34,
+    27
+   ]
+  },
+  "radiant-sunbloom@stage0": {
+   "species": "radiant-sunbloom",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 260,
+   "y": 470,
+   "w": 16,
+   "h": 16,
+   "pivot": [
+    8,
+    15
+   ],
+   "native": [
+    16,
+    16
+   ]
+  },
+  "radiant-sunbloom@stage0-arcane": {
+   "species": "radiant-sunbloom",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 376,
+   "y": 392,
+   "w": 21,
+   "h": 18,
+   "pivot": [
+    10,
+    17
+   ],
+   "native": [
+    21,
+    18
+   ]
+  },
+  "radiant-sunbloom@stage1": {
+   "species": "radiant-sunbloom",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 278,
+   "y": 470,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "radiant-sunbloom@stage1-arcane": {
+   "species": "radiant-sunbloom",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 399,
+   "y": 392,
+   "w": 24,
+   "h": 18,
+   "pivot": [
+    12,
+    17
+   ],
+   "native": [
+    24,
+    18
+   ]
+  },
+  "radiant-sunbloom@stage2": {
+   "species": "radiant-sunbloom",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 368,
+   "y": 540,
+   "w": 20,
+   "h": 14,
+   "pivot": [
+    10,
+    13
+   ],
+   "native": [
+    20,
+    14
+   ]
+  },
+  "radiant-sunbloom@stage2-arcane": {
+   "species": "radiant-sunbloom",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 223,
+   "y": 349,
+   "w": 27,
+   "h": 20,
+   "pivot": [
+    13,
+    19
+   ],
+   "native": [
+    27,
+    20
+   ]
+  },
+  "radiant-sunbloom@stage3": {
+   "species": "radiant-sunbloom",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 374,
+   "y": 231,
+   "w": 31,
+   "h": 22,
+   "pivot": [
+    15,
+    21
+   ],
+   "native": [
+    31,
+    22
+   ]
+  },
+  "radiant-sunbloom@stage3-arcane": {
+   "species": "radiant-sunbloom",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 200,
+   "y": 98,
+   "w": 36,
+   "h": 27,
+   "pivot": [
+    18,
+    26
+   ],
+   "native": [
+    36,
+    27
+   ]
+  },
+  "reedcap@stage0": {
+   "species": "reedcap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 0,
+   "x": 41,
+   "y": 523,
+   "w": 17,
+   "h": 15,
+   "pivot": [
+    8,
+    14
+   ],
+   "native": [
+    17,
+    15
+   ]
+  },
+  "reedcap@stage0-arcane": {
+   "species": "reedcap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 0,
+   "x": 310,
+   "y": 303,
+   "w": 22,
+   "h": 21,
+   "pivot": [
+    11,
+    20
+   ],
+   "native": [
+    22,
+    21
+   ]
+  },
+  "reedcap@stage1": {
+   "species": "reedcap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 1,
+   "x": 60,
+   "y": 523,
+   "w": 18,
+   "h": 15,
+   "pivot": [
+    9,
+    14
+   ],
+   "native": [
+    18,
+    15
+   ]
+  },
+  "reedcap@stage1-arcane": {
+   "species": "reedcap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 1,
+   "x": 334,
+   "y": 303,
+   "w": 23,
+   "h": 21,
+   "pivot": [
+    11,
+    20
+   ],
+   "native": [
+    23,
+    21
+   ]
+  },
+  "reedcap@stage2": {
+   "species": "reedcap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 2,
+   "x": 80,
+   "y": 523,
+   "w": 18,
+   "h": 15,
+   "pivot": [
+    9,
+    14
+   ],
+   "native": [
+    18,
+    15
+   ]
+  },
+  "reedcap@stage2-arcane": {
+   "species": "reedcap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 2,
+   "x": 359,
+   "y": 303,
+   "w": 25,
+   "h": 21,
+   "pivot": [
+    12,
+    20
+   ],
+   "native": [
+    25,
+    21
+   ]
+  },
+  "reedcap@stage3": {
+   "species": "reedcap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 3,
+   "x": 133,
+   "y": 182,
+   "w": 27,
+   "h": 23,
+   "pivot": [
+    13,
+    22
+   ],
+   "native": [
+    27,
+    23
+   ]
+  },
+  "reedcap@stage3-arcane": {
+   "species": "reedcap",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "fungus",
+   "stage": 3,
+   "x": 117,
+   "y": 37,
+   "w": 34,
+   "h": 29,
+   "pivot": [
+    17,
+    28
+   ],
+   "native": [
+    34,
+    29
+   ]
+  },
+  "rimefeather@stage0": {
+   "species": "rimefeather",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "grass",
+   "stage": 0,
+   "x": 299,
+   "y": 470,
+   "w": 17,
+   "h": 16,
+   "pivot": [
+    8,
+    15
+   ],
+   "native": [
+    17,
+    16
+   ]
+  },
+  "rimefeather@stage0-arcane": {
+   "species": "rimefeather",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "grass",
+   "stage": 0,
+   "x": 407,
+   "y": 231,
+   "w": 19,
+   "h": 22,
+   "pivot": [
+    9,
+    21
+   ],
+   "native": [
+    19,
+    22
+   ]
+  },
+  "rimefeather@stage1": {
+   "species": "rimefeather",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "grass",
+   "stage": 1,
+   "x": 318,
+   "y": 470,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "rimefeather@stage1-arcane": {
+   "species": "rimefeather",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "grass",
+   "stage": 1,
+   "x": 428,
+   "y": 231,
+   "w": 21,
+   "h": 22,
+   "pivot": [
+    10,
+    21
+   ],
+   "native": [
+    21,
+    22
+   ]
+  },
+  "rimefeather@stage2": {
+   "species": "rimefeather",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "grass",
+   "stage": 2,
+   "x": 100,
+   "y": 523,
+   "w": 20,
+   "h": 15,
+   "pivot": [
+    10,
+    14
+   ],
+   "native": [
+    20,
+    15
+   ]
+  },
+  "rimefeather@stage2-arcane": {
+   "species": "rimefeather",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "grass",
+   "stage": 2,
+   "x": 252,
+   "y": 349,
+   "w": 25,
+   "h": 20,
+   "pivot": [
+    12,
+    19
+   ],
+   "native": [
+    25,
+    20
+   ]
+  },
+  "rimefeather@stage3": {
+   "species": "rimefeather",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "grass",
+   "stage": 3,
+   "x": 164,
+   "y": 156,
+   "w": 31,
+   "h": 24,
+   "pivot": [
+    15,
+    23
+   ],
+   "native": [
+    31,
+    24
+   ]
+  },
+  "rimefeather@stage3-arcane": {
+   "species": "rimefeather",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "grass",
+   "stage": 3,
+   "x": 438,
+   "y": 2,
+   "w": 36,
+   "h": 30,
+   "pivot": [
+    18,
+    29
+   ],
+   "native": [
+    36,
+    30
+   ]
+  },
+  "riverlotus@stage0": {
+   "species": "riverlotus",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 339,
+   "y": 470,
+   "w": 16,
+   "h": 16,
+   "pivot": [
+    8,
+    15
+   ],
+   "native": [
+    16,
+    16
+   ]
+  },
+  "riverlotus@stage0-arcane": {
+   "species": "riverlotus",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 425,
+   "y": 392,
+   "w": 21,
+   "h": 18,
+   "pivot": [
+    10,
+    17
+   ],
+   "native": [
+    21,
+    18
+   ]
+  },
+  "riverlotus@stage1": {
+   "species": "riverlotus",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 357,
+   "y": 470,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "riverlotus@stage1-arcane": {
+   "species": "riverlotus",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 451,
+   "y": 231,
+   "w": 24,
+   "h": 22,
+   "pivot": [
+    12,
+    21
+   ],
+   "native": [
+    24,
+    22
+   ]
+  },
+  "riverlotus@stage2": {
+   "species": "riverlotus",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 122,
+   "y": 523,
+   "w": 22,
+   "h": 15,
+   "pivot": [
+    11,
+    14
+   ],
+   "native": [
+    22,
+    15
+   ]
+  },
+  "riverlotus@stage2-arcane": {
+   "species": "riverlotus",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 279,
+   "y": 349,
+   "w": 27,
+   "h": 20,
+   "pivot": [
+    13,
+    19
+   ],
+   "native": [
+    27,
+    20
+   ]
+  },
+  "riverlotus@stage3": {
+   "species": "riverlotus",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 197,
+   "y": 156,
+   "w": 34,
+   "h": 24,
+   "pivot": [
+    17,
+    23
+   ],
+   "native": [
+    34,
+    24
+   ]
+  },
+  "riverlotus@stage3-arcane": {
+   "species": "riverlotus",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 153,
+   "y": 37,
+   "w": 39,
+   "h": 29,
+   "pivot": [
+    19,
+    28
+   ],
+   "native": [
+    39,
+    29
+   ]
+  },
+  "shadefruit@stage0": {
+   "species": "shadefruit",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 0,
+   "x": 390,
+   "y": 540,
+   "w": 17,
+   "h": 14,
+   "pivot": [
+    8,
+    13
+   ],
+   "native": [
+    17,
+    14
+   ]
+  },
+  "shadefruit@stage0-arcane": {
+   "species": "shadefruit",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 0,
+   "x": 308,
+   "y": 349,
+   "w": 19,
+   "h": 20,
+   "pivot": [
+    9,
+    19
+   ],
+   "native": [
+    19,
+    20
+   ]
+  },
+  "shadefruit@stage1": {
+   "species": "shadefruit",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 1,
+   "x": 378,
+   "y": 470,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "shadefruit@stage1-arcane": {
+   "species": "shadefruit",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 1,
+   "x": 448,
+   "y": 392,
+   "w": 24,
+   "h": 18,
+   "pivot": [
+    12,
+    17
+   ],
+   "native": [
+    24,
+    18
+   ]
+  },
+  "shadefruit@stage2": {
+   "species": "shadefruit",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 2,
+   "x": 409,
+   "y": 540,
+   "w": 18,
+   "h": 14,
+   "pivot": [
+    9,
+    13
+   ],
+   "native": [
+    18,
+    14
+   ]
+  },
+  "shadefruit@stage2-arcane": {
+   "species": "shadefruit",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 2,
+   "x": 329,
+   "y": 349,
+   "w": 23,
+   "h": 20,
+   "pivot": [
+    11,
+    19
+   ],
+   "native": [
+    23,
+    20
+   ]
+  },
+  "shadefruit@stage3": {
+   "species": "shadefruit",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 3,
+   "x": 386,
+   "y": 303,
+   "w": 27,
+   "h": 21,
+   "pivot": [
+    13,
+    20
+   ],
+   "native": [
+    27,
+    21
+   ]
+  },
+  "shadefruit@stage3-arcane": {
+   "species": "shadefruit",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 3,
+   "x": 238,
+   "y": 98,
+   "w": 32,
+   "h": 27,
+   "pivot": [
+    16,
+    26
+   ],
+   "native": [
+    32,
+    27
+   ]
+  },
+  "silverleaf@stage0": {
+   "species": "silverleaf",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "leaf",
+   "stage": 0,
+   "x": 399,
+   "y": 470,
+   "w": 16,
+   "h": 16,
+   "pivot": [
+    8,
+    15
+   ],
+   "native": [
+    16,
+    16
+   ]
+  },
+  "silverleaf@stage0-arcane": {
+   "species": "silverleaf",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "leaf",
+   "stage": 0,
+   "x": 477,
+   "y": 231,
+   "w": 21,
+   "h": 22,
+   "pivot": [
+    10,
+    21
+   ],
+   "native": [
+    21,
+    22
+   ]
+  },
+  "silverleaf@stage1": {
+   "species": "silverleaf",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "leaf",
+   "stage": 1,
+   "x": 417,
+   "y": 470,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "silverleaf@stage1-arcane": {
+   "species": "silverleaf",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "leaf",
+   "stage": 1,
+   "x": 474,
+   "y": 392,
+   "w": 24,
+   "h": 18,
+   "pivot": [
+    12,
+    17
+   ],
+   "native": [
+    24,
+    18
+   ]
+  },
+  "silverleaf@stage2": {
+   "species": "silverleaf",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "leaf",
+   "stage": 2,
+   "x": 2,
+   "y": 413,
+   "w": 19,
+   "h": 18,
+   "pivot": [
+    9,
+    17
+   ],
+   "native": [
+    19,
+    18
+   ]
+  },
+  "silverleaf@stage2-arcane": {
+   "species": "silverleaf",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "leaf",
+   "stage": 2,
+   "x": 233,
+   "y": 156,
+   "w": 23,
+   "h": 24,
+   "pivot": [
+    11,
+    23
+   ],
+   "native": [
+    23,
+    24
+   ]
+  },
+  "silverleaf@stage3": {
+   "species": "silverleaf",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "leaf",
+   "stage": 3,
+   "x": 272,
+   "y": 98,
+   "w": 29,
+   "h": 27,
+   "pivot": [
+    14,
+    26
+   ],
+   "native": [
+    29,
+    27
+   ]
+  },
+  "silverleaf@stage3-arcane": {
+   "species": "silverleaf",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "leaf",
+   "stage": 3,
+   "x": 37,
+   "y": 2,
+   "w": 34,
+   "h": 32,
+   "pivot": [
+    17,
+    31
+   ],
+   "native": [
+    34,
+    32
+   ]
+  },
+  "sporelantern@stage0": {
+   "species": "sporelantern",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 0,
+   "x": 146,
+   "y": 523,
+   "w": 21,
+   "h": 15,
+   "pivot": [
+    10,
+    14
+   ],
+   "native": [
+    21,
+    15
+   ]
+  },
+  "sporelantern@stage0-arcane": {
+   "species": "sporelantern",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 0,
+   "x": 136,
+   "y": 433,
+   "w": 26,
+   "h": 17,
+   "pivot": [
+    13,
+    16
+   ],
+   "native": [
+    26,
+    17
+   ]
+  },
+  "sporelantern@stage1": {
+   "species": "sporelantern",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 1,
+   "x": 438,
+   "y": 470,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "sporelantern@stage1-arcane": {
+   "species": "sporelantern",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 1,
+   "x": 23,
+   "y": 413,
+   "w": 24,
+   "h": 18,
+   "pivot": [
+    12,
+    17
+   ],
+   "native": [
+    24,
+    18
+   ]
+  },
+  "sporelantern@stage2": {
+   "species": "sporelantern",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 2,
+   "x": 429,
+   "y": 540,
+   "w": 18,
+   "h": 14,
+   "pivot": [
+    9,
+    13
+   ],
+   "native": [
+    18,
+    14
+   ]
+  },
+  "sporelantern@stage2-arcane": {
+   "species": "sporelantern",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 2,
+   "x": 354,
+   "y": 349,
+   "w": 22,
+   "h": 20,
+   "pivot": [
+    11,
+    19
+   ],
+   "native": [
+    22,
+    20
+   ]
+  },
+  "sporelantern@stage3": {
+   "species": "sporelantern",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 3,
+   "x": 415,
+   "y": 303,
+   "w": 27,
+   "h": 21,
+   "pivot": [
+    13,
+    20
+   ],
+   "native": [
+    27,
+    21
+   ]
+  },
+  "sporelantern@stage3-arcane": {
+   "species": "sporelantern",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 3,
+   "x": 233,
+   "y": 127,
+   "w": 32,
+   "h": 26,
+   "pivot": [
+    16,
+    25
+   ],
+   "native": [
+    32,
+    26
+   ]
+  },
+  "stagthorn-vine@stage0": {
+   "species": "stagthorn-vine",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 0,
+   "x": 169,
+   "y": 523,
+   "w": 21,
+   "h": 15,
+   "pivot": [
+    10,
+    14
+   ],
+   "native": [
+    21,
+    15
+   ]
+  },
+  "stagthorn-vine@stage0-arcane": {
+   "species": "stagthorn-vine",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 0,
+   "x": 444,
+   "y": 303,
+   "w": 23,
+   "h": 21,
+   "pivot": [
+    11,
+    20
+   ],
+   "native": [
+    23,
+    21
+   ]
+  },
+  "stagthorn-vine@stage1": {
+   "species": "stagthorn-vine",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 1,
+   "x": 459,
+   "y": 470,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "stagthorn-vine@stage1-arcane": {
+   "species": "stagthorn-vine",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 1,
+   "x": 2,
+   "y": 255,
+   "w": 24,
+   "h": 22,
+   "pivot": [
+    12,
+    21
+   ],
+   "native": [
+    24,
+    22
+   ]
+  },
+  "stagthorn-vine@stage2": {
+   "species": "stagthorn-vine",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 2,
+   "x": 449,
+   "y": 540,
+   "w": 22,
+   "h": 14,
+   "pivot": [
+    11,
+    13
+   ],
+   "native": [
+    22,
+    14
+   ]
+  },
+  "stagthorn-vine@stage2-arcane": {
+   "species": "stagthorn-vine",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 2,
+   "x": 480,
+   "y": 470,
+   "w": 29,
+   "h": 16,
+   "pivot": [
+    14,
+    15
+   ],
+   "native": [
+    29,
+    16
+   ]
+  },
+  "stagthorn-vine@stage3": {
+   "species": "stagthorn-vine",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 3,
+   "x": 28,
+   "y": 255,
+   "w": 34,
+   "h": 22,
+   "pivot": [
+    17,
+    21
+   ],
+   "native": [
+    34,
+    22
+   ]
+  },
+  "stagthorn-vine@stage3-arcane": {
+   "species": "stagthorn-vine",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 3,
+   "x": 149,
+   "y": 68,
+   "w": 41,
+   "h": 28,
+   "pivot": [
+    20,
+    27
+   ],
+   "native": [
+    41,
+    28
+   ]
+  },
+  "stoneberry@stage0": {
+   "species": "stoneberry",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 0,
+   "x": 473,
+   "y": 540,
+   "w": 17,
+   "h": 14,
+   "pivot": [
+    8,
+    13
+   ],
+   "native": [
+    17,
+    14
+   ]
+  },
+  "stoneberry@stage0-arcane": {
+   "species": "stoneberry",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 0,
+   "x": 2,
+   "y": 488,
+   "w": 22,
+   "h": 16,
+   "pivot": [
+    11,
+    15
+   ],
+   "native": [
+    22,
+    16
+   ]
+  },
+  "stoneberry@stage1": {
+   "species": "stoneberry",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 1,
+   "x": 26,
+   "y": 488,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "stoneberry@stage1-arcane": {
+   "species": "stoneberry",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 1,
+   "x": 64,
+   "y": 255,
+   "w": 21,
+   "h": 22,
+   "pivot": [
+    10,
+    21
+   ],
+   "native": [
+    21,
+    22
+   ]
+  },
+  "stoneberry@stage2": {
+   "species": "stoneberry",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 2,
+   "x": 2,
+   "y": 556,
+   "w": 19,
+   "h": 14,
+   "pivot": [
+    9,
+    13
+   ],
+   "native": [
+    19,
+    14
+   ]
+  },
+  "stoneberry@stage2-arcane": {
+   "species": "stoneberry",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 2,
+   "x": 309,
+   "y": 371,
+   "w": 26,
+   "h": 19,
+   "pivot": [
+    13,
+    18
+   ],
+   "native": [
+    26,
+    19
+   ]
+  },
+  "stoneberry@stage3": {
+   "species": "stoneberry",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 3,
+   "x": 87,
+   "y": 255,
+   "w": 30,
+   "h": 22,
+   "pivot": [
+    15,
+    21
+   ],
+   "native": [
+    30,
+    22
+   ]
+  },
+  "stoneberry@stage3-arcane": {
+   "species": "stoneberry",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "berry",
+   "stage": 3,
+   "x": 192,
+   "y": 68,
+   "w": 34,
+   "h": 28,
+   "pivot": [
+    17,
+    27
+   ],
+   "native": [
+    34,
+    28
+   ]
+  },
+  "stonewort@stage0": {
+   "species": "stonewort",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 47,
+   "y": 488,
+   "w": 16,
+   "h": 16,
+   "pivot": [
+    8,
+    15
+   ],
+   "native": [
+    16,
+    16
+   ]
+  },
+  "stonewort@stage0-arcane": {
+   "species": "stonewort",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 49,
+   "y": 413,
+   "w": 21,
+   "h": 18,
+   "pivot": [
+    10,
+    17
+   ],
+   "native": [
+    21,
+    18
+   ]
+  },
+  "stonewort@stage1": {
+   "species": "stonewort",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 65,
+   "y": 488,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "stonewort@stage1-arcane": {
+   "species": "stonewort",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 119,
+   "y": 255,
+   "w": 21,
+   "h": 22,
+   "pivot": [
+    10,
+    21
+   ],
+   "native": [
+    21,
+    22
+   ]
+  },
+  "stonewort@stage2": {
+   "species": "stonewort",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 23,
+   "y": 556,
+   "w": 21,
+   "h": 14,
+   "pivot": [
+    10,
+    13
+   ],
+   "native": [
+    21,
+    14
+   ]
+  },
+  "stonewort@stage2-arcane": {
+   "species": "stonewort",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 86,
+   "y": 488,
+   "w": 28,
+   "h": 16,
+   "pivot": [
+    14,
+    15
+   ],
+   "native": [
+    28,
+    16
+   ]
+  },
+  "stonewort@stage3": {
+   "species": "stonewort",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 142,
+   "y": 255,
+   "w": 32,
+   "h": 22,
+   "pivot": [
+    16,
+    21
+   ],
+   "native": [
+    32,
+    22
+   ]
+  },
+  "stonewort@stage3-arcane": {
+   "species": "stonewort",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 303,
+   "y": 98,
+   "w": 37,
+   "h": 27,
+   "pivot": [
+    18,
+    26
+   ],
+   "native": [
+    37,
+    27
+   ]
+  },
+  "streampearl@stage0": {
+   "species": "streampearl",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "shell",
+   "stage": 0,
+   "x": 46,
+   "y": 556,
+   "w": 19,
+   "h": 14,
+   "pivot": [
+    9,
+    13
+   ],
+   "native": [
+    19,
+    14
+   ]
+  },
+  "streampearl@stage0-arcane": {
+   "species": "streampearl",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "shell",
+   "stage": 0,
+   "x": 378,
+   "y": 349,
+   "w": 24,
+   "h": 20,
+   "pivot": [
+    12,
+    19
+   ],
+   "native": [
+    24,
+    20
+   ]
+  },
+  "streampearl@stage1": {
+   "species": "streampearl",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "shell",
+   "stage": 1,
+   "x": 285,
+   "y": 556,
+   "w": 16,
+   "h": 13,
+   "pivot": [
+    8,
+    12
+   ],
+   "native": [
+    16,
+    13
+   ]
+  },
+  "streampearl@stage1-arcane": {
+   "species": "streampearl",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "shell",
+   "stage": 1,
+   "x": 192,
+   "y": 523,
+   "w": 21,
+   "h": 15,
+   "pivot": [
+    10,
+    14
+   ],
+   "native": [
+    21,
+    15
+   ]
+  },
+  "streampearl@stage2": {
+   "species": "streampearl",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "shell",
+   "stage": 2,
+   "x": 215,
+   "y": 523,
+   "w": 18,
+   "h": 15,
+   "pivot": [
+    9,
+    14
+   ],
+   "native": [
+    18,
+    15
+   ]
+  },
+  "streampearl@stage2-arcane": {
+   "species": "streampearl",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "shell",
+   "stage": 2,
+   "x": 404,
+   "y": 349,
+   "w": 23,
+   "h": 20,
+   "pivot": [
+    11,
+    19
+   ],
+   "native": [
+    23,
+    20
+   ]
+  },
+  "streampearl@stage3": {
+   "species": "streampearl",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "shell",
+   "stage": 3,
+   "x": 162,
+   "y": 182,
+   "w": 29,
+   "h": 23,
+   "pivot": [
+    14,
+    22
+   ],
+   "native": [
+    29,
+    23
+   ]
+  },
+  "streampearl@stage3-arcane": {
+   "species": "streampearl",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "shell",
+   "stage": 3,
+   "x": 194,
+   "y": 37,
+   "w": 36,
+   "h": 29,
+   "pivot": [
+    18,
+    28
+   ],
+   "native": [
+    36,
+    29
+   ]
+  },
+  "sulfurvine@stage0": {
+   "species": "sulfurvine",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 0,
+   "x": 235,
+   "y": 523,
+   "w": 21,
+   "h": 15,
+   "pivot": [
+    10,
+    14
+   ],
+   "native": [
+    21,
+    15
+   ]
+  },
+  "sulfurvine@stage0-arcane": {
+   "species": "sulfurvine",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 0,
+   "x": 469,
+   "y": 303,
+   "w": 23,
+   "h": 21,
+   "pivot": [
+    11,
+    20
+   ],
+   "native": [
+    23,
+    21
+   ]
+  },
+  "sulfurvine@stage1": {
+   "species": "sulfurvine",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 1,
+   "x": 116,
+   "y": 488,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "sulfurvine@stage1-arcane": {
+   "species": "sulfurvine",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 1,
+   "x": 176,
+   "y": 255,
+   "w": 21,
+   "h": 22,
+   "pivot": [
+    10,
+    21
+   ],
+   "native": [
+    21,
+    22
+   ]
+  },
+  "sulfurvine@stage2": {
+   "species": "sulfurvine",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 2,
+   "x": 303,
+   "y": 556,
+   "w": 20,
+   "h": 13,
+   "pivot": [
+    10,
+    12
+   ],
+   "native": [
+    20,
+    13
+   ]
+  },
+  "sulfurvine@stage2-arcane": {
+   "species": "sulfurvine",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 2,
+   "x": 337,
+   "y": 371,
+   "w": 27,
+   "h": 19,
+   "pivot": [
+    13,
+    18
+   ],
+   "native": [
+    27,
+    19
+   ]
+  },
+  "sulfurvine@stage3": {
+   "species": "sulfurvine",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 3,
+   "x": 429,
+   "y": 349,
+   "w": 31,
+   "h": 20,
+   "pivot": [
+    15,
+    19
+   ],
+   "native": [
+    31,
+    20
+   ]
+  },
+  "sulfurvine@stage3-arcane": {
+   "species": "sulfurvine",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 3,
+   "x": 199,
+   "y": 255,
+   "w": 38,
+   "h": 22,
+   "pivot": [
+    19,
+    21
+   ],
+   "native": [
+    38,
+    22
+   ]
+  },
+  "suncrown@stage0": {
+   "species": "suncrown",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 137,
+   "y": 488,
+   "w": 16,
+   "h": 16,
+   "pivot": [
+    8,
+    15
+   ],
+   "native": [
+    16,
+    16
+   ]
+  },
+  "suncrown@stage0-arcane": {
+   "species": "suncrown",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 239,
+   "y": 255,
+   "w": 18,
+   "h": 22,
+   "pivot": [
+    9,
+    21
+   ],
+   "native": [
+    18,
+    22
+   ]
+  },
+  "suncrown@stage1": {
+   "species": "suncrown",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 155,
+   "y": 488,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "suncrown@stage1-arcane": {
+   "species": "suncrown",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 72,
+   "y": 413,
+   "w": 24,
+   "h": 18,
+   "pivot": [
+    12,
+    17
+   ],
+   "native": [
+    24,
+    18
+   ]
+  },
+  "suncrown@stage2": {
+   "species": "suncrown",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 164,
+   "y": 433,
+   "w": 20,
+   "h": 17,
+   "pivot": [
+    10,
+    16
+   ],
+   "native": [
+    20,
+    17
+   ]
+  },
+  "suncrown@stage2-arcane": {
+   "species": "suncrown",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 259,
+   "y": 255,
+   "w": 25,
+   "h": 22,
+   "pivot": [
+    12,
+    21
+   ],
+   "native": [
+    25,
+    22
+   ]
+  },
+  "suncrown@stage3": {
+   "species": "suncrown",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 267,
+   "y": 127,
+   "w": 31,
+   "h": 26,
+   "pivot": [
+    15,
+    25
+   ],
+   "native": [
+    31,
+    26
+   ]
+  },
+  "suncrown@stage3-arcane": {
+   "species": "suncrown",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 73,
+   "y": 2,
+   "w": 35,
+   "h": 32,
+   "pivot": [
+    17,
+    31
+   ],
+   "native": [
+    35,
+    32
+   ]
+  },
+  "thornhalo@stage0": {
+   "species": "thornhalo",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "relic",
+   "stage": 0,
+   "x": 186,
+   "y": 433,
+   "w": 16,
+   "h": 17,
+   "pivot": [
+    8,
+    16
+   ],
+   "native": [
+    16,
+    17
+   ]
+  },
+  "thornhalo@stage0-arcane": {
+   "species": "thornhalo",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "relic",
+   "stage": 0,
+   "x": 193,
+   "y": 182,
+   "w": 18,
+   "h": 23,
+   "pivot": [
+    9,
+    22
+   ],
+   "native": [
+    18,
+    23
+   ]
+  },
+  "thornhalo@stage1": {
+   "species": "thornhalo",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "relic",
+   "stage": 1,
+   "x": 258,
+   "y": 523,
+   "w": 16,
+   "h": 15,
+   "pivot": [
+    8,
+    14
+   ],
+   "native": [
+    16,
+    15
+   ]
+  },
+  "thornhalo@stage1-arcane": {
+   "species": "thornhalo",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "relic",
+   "stage": 1,
+   "x": 2,
+   "y": 326,
+   "w": 21,
+   "h": 21,
+   "pivot": [
+    10,
+    20
+   ],
+   "native": [
+    21,
+    21
+   ]
+  },
+  "thornhalo@stage2": {
+   "species": "thornhalo",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "relic",
+   "stage": 2,
+   "x": 67,
+   "y": 556,
+   "w": 22,
+   "h": 14,
+   "pivot": [
+    11,
+    13
+   ],
+   "native": [
+    22,
+    14
+   ]
+  },
+  "thornhalo@stage2-arcane": {
+   "species": "thornhalo",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "relic",
+   "stage": 2,
+   "x": 176,
+   "y": 488,
+   "w": 29,
+   "h": 16,
+   "pivot": [
+    14,
+    15
+   ],
+   "native": [
+    29,
+    16
+   ]
+  },
+  "thornhalo@stage3": {
+   "species": "thornhalo",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "relic",
+   "stage": 3,
+   "x": 286,
+   "y": 255,
+   "w": 34,
+   "h": 22,
+   "pivot": [
+    17,
+    21
+   ],
+   "native": [
+    34,
+    22
+   ]
+  },
+  "thornhalo@stage3-arcane": {
+   "species": "thornhalo",
+   "kind": "stage",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "relic",
+   "stage": 3,
+   "x": 342,
+   "y": 98,
+   "w": 41,
+   "h": 27,
+   "pivot": [
+    20,
+    26
+   ],
+   "native": [
+    41,
+    27
+   ]
+  },
+  "tidebloom@stage0": {
+   "species": "tidebloom",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 207,
+   "y": 488,
+   "w": 16,
+   "h": 16,
+   "pivot": [
+    8,
+    15
+   ],
+   "native": [
+    16,
+    16
+   ]
+  },
+  "tidebloom@stage0-arcane": {
+   "species": "tidebloom",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 322,
+   "y": 255,
+   "w": 18,
+   "h": 22,
+   "pivot": [
+    9,
+    21
+   ],
+   "native": [
+    18,
+    22
+   ]
+  },
+  "tidebloom@stage1": {
+   "species": "tidebloom",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 225,
+   "y": 488,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "tidebloom@stage1-arcane": {
+   "species": "tidebloom",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 342,
+   "y": 255,
+   "w": 24,
+   "h": 22,
+   "pivot": [
+    12,
+    21
+   ],
+   "native": [
+    24,
+    22
+   ]
+  },
+  "tidebloom@stage2": {
+   "species": "tidebloom",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 204,
+   "y": 433,
+   "w": 19,
+   "h": 17,
+   "pivot": [
+    9,
+    16
+   ],
+   "native": [
+    19,
+    17
+   ]
+  },
+  "tidebloom@stage2-arcane": {
+   "species": "tidebloom",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 366,
+   "y": 371,
+   "w": 26,
+   "h": 19,
+   "pivot": [
+    13,
+    18
+   ],
+   "native": [
+    26,
+    19
+   ]
+  },
+  "tidebloom@stage3": {
+   "species": "tidebloom",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 300,
+   "y": 127,
+   "w": 29,
+   "h": 26,
+   "pivot": [
+    14,
+    25
+   ],
+   "native": [
+    29,
+    26
+   ]
+  },
+  "tidebloom@stage3-arcane": {
+   "species": "tidebloom",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 177,
+   "y": 2,
+   "w": 36,
+   "h": 31,
+   "pivot": [
+    18,
+    30
+   ],
+   "native": [
+    36,
+    31
+   ]
+  },
+  "titan-root@stage0": {
+   "species": "titan-root",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "root",
+   "stage": 0,
+   "x": 394,
+   "y": 371,
+   "w": 17,
+   "h": 19,
+   "pivot": [
+    8,
+    18
+   ],
+   "native": [
+    17,
+    19
+   ]
+  },
+  "titan-root@stage0-arcane": {
+   "species": "titan-root",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "root",
+   "stage": 0,
+   "x": 25,
+   "y": 326,
+   "w": 22,
+   "h": 21,
+   "pivot": [
+    11,
+    20
+   ],
+   "native": [
+    22,
+    21
+   ]
+  },
+  "titan-root@stage1": {
+   "species": "titan-root",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "root",
+   "stage": 1,
+   "x": 246,
+   "y": 488,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "titan-root@stage1-arcane": {
+   "species": "titan-root",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "root",
+   "stage": 1,
+   "x": 368,
+   "y": 255,
+   "w": 24,
+   "h": 22,
+   "pivot": [
+    12,
+    21
+   ],
+   "native": [
+    24,
+    22
+   ]
+  },
+  "titan-root@stage2": {
+   "species": "titan-root",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "root",
+   "stage": 2,
+   "x": 91,
+   "y": 556,
+   "w": 21,
+   "h": 14,
+   "pivot": [
+    10,
+    13
+   ],
+   "native": [
+    21,
+    14
+   ]
+  },
+  "titan-root@stage2-arcane": {
+   "species": "titan-root",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "root",
+   "stage": 2,
+   "x": 413,
+   "y": 371,
+   "w": 26,
+   "h": 19,
+   "pivot": [
+    13,
+    18
+   ],
+   "native": [
+    26,
+    19
+   ]
+  },
+  "titan-root@stage3": {
+   "species": "titan-root",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "root",
+   "stage": 3,
+   "x": 394,
+   "y": 255,
+   "w": 33,
+   "h": 22,
+   "pivot": [
+    16,
+    21
+   ],
+   "native": [
+    33,
+    22
+   ]
+  },
+  "titan-root@stage3-arcane": {
+   "species": "titan-root",
+   "kind": "stage",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "root",
+   "stage": 3,
+   "x": 385,
+   "y": 98,
+   "w": 38,
+   "h": 27,
+   "pivot": [
+    19,
+    26
+   ],
+   "native": [
+    38,
+    27
+   ]
+  },
+  "umbrabell@stage0": {
+   "species": "umbrabell",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 267,
+   "y": 488,
+   "w": 16,
+   "h": 16,
+   "pivot": [
+    8,
+    15
+   ],
+   "native": [
+    16,
+    16
+   ]
+  },
+  "umbrabell@stage0-arcane": {
+   "species": "umbrabell",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 429,
+   "y": 255,
+   "w": 21,
+   "h": 22,
+   "pivot": [
+    10,
+    21
+   ],
+   "native": [
+    21,
+    22
+   ]
+  },
+  "umbrabell@stage1": {
+   "species": "umbrabell",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 285,
+   "y": 488,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "umbrabell@stage1-arcane": {
+   "species": "umbrabell",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 98,
+   "y": 413,
+   "w": 24,
+   "h": 18,
+   "pivot": [
+    12,
+    17
+   ],
+   "native": [
+    24,
+    18
+   ]
+  },
+  "umbrabell@stage2": {
+   "species": "umbrabell",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 114,
+   "y": 556,
+   "w": 19,
+   "h": 14,
+   "pivot": [
+    9,
+    13
+   ],
+   "native": [
+    19,
+    14
+   ]
+  },
+  "umbrabell@stage2-arcane": {
+   "species": "umbrabell",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 441,
+   "y": 371,
+   "w": 26,
+   "h": 19,
+   "pivot": [
+    13,
+    18
+   ],
+   "native": [
+    26,
+    19
+   ]
+  },
+  "umbrabell@stage3": {
+   "species": "umbrabell",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 452,
+   "y": 255,
+   "w": 30,
+   "h": 22,
+   "pivot": [
+    15,
+    21
+   ],
+   "native": [
+    30,
+    22
+   ]
+  },
+  "umbrabell@stage3-arcane": {
+   "species": "umbrabell",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 258,
+   "y": 156,
+   "w": 37,
+   "h": 24,
+   "pivot": [
+    18,
+    23
+   ],
+   "native": [
+    37,
+    24
+   ]
+  },
+  "umbral-amethyst@stage0": {
+   "species": "umbral-amethyst",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 0,
+   "x": 225,
+   "y": 433,
+   "w": 16,
+   "h": 17,
+   "pivot": [
+    8,
+    16
+   ],
+   "native": [
+    16,
+    17
+   ]
+  },
+  "umbral-amethyst@stage0-arcane": {
+   "species": "umbral-amethyst",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 0,
+   "x": 469,
+   "y": 371,
+   "w": 21,
+   "h": 19,
+   "pivot": [
+    10,
+    18
+   ],
+   "native": [
+    21,
+    19
+   ]
+  },
+  "umbral-amethyst@stage1": {
+   "species": "umbral-amethyst",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 1,
+   "x": 276,
+   "y": 523,
+   "w": 16,
+   "h": 15,
+   "pivot": [
+    8,
+    14
+   ],
+   "native": [
+    16,
+    15
+   ]
+  },
+  "umbral-amethyst@stage1-arcane": {
+   "species": "umbral-amethyst",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 1,
+   "x": 49,
+   "y": 326,
+   "w": 18,
+   "h": 21,
+   "pivot": [
+    9,
+    20
+   ],
+   "native": [
+    18,
+    21
+   ]
+  },
+  "umbral-amethyst@stage2": {
+   "species": "umbral-amethyst",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 2,
+   "x": 135,
+   "y": 556,
+   "w": 16,
+   "h": 14,
+   "pivot": [
+    8,
+    13
+   ],
+   "native": [
+    16,
+    14
+   ]
+  },
+  "umbral-amethyst@stage2-arcane": {
+   "species": "umbral-amethyst",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 2,
+   "x": 462,
+   "y": 349,
+   "w": 21,
+   "h": 20,
+   "pivot": [
+    10,
+    19
+   ],
+   "native": [
+    21,
+    20
+   ]
+  },
+  "umbral-amethyst@stage3": {
+   "species": "umbral-amethyst",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 3,
+   "x": 484,
+   "y": 255,
+   "w": 25,
+   "h": 22,
+   "pivot": [
+    12,
+    21
+   ],
+   "native": [
+    25,
+    22
+   ]
+  },
+  "umbral-amethyst@stage3-arcane": {
+   "species": "umbral-amethyst",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "crystal",
+   "stage": 3,
+   "x": 425,
+   "y": 98,
+   "w": 30,
+   "h": 27,
+   "pivot": [
+    15,
+    26
+   ],
+   "native": [
+    30,
+    27
+   ]
+  },
+  "venomlily@stage0": {
+   "species": "venomlily",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 306,
+   "y": 488,
+   "w": 16,
+   "h": 16,
+   "pivot": [
+    8,
+    15
+   ],
+   "native": [
+    16,
+    16
+   ]
+  },
+  "venomlily@stage0-arcane": {
+   "species": "venomlily",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 0,
+   "x": 2,
+   "y": 279,
+   "w": 18,
+   "h": 22,
+   "pivot": [
+    9,
+    21
+   ],
+   "native": [
+    18,
+    22
+   ]
+  },
+  "venomlily@stage1": {
+   "species": "venomlily",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 324,
+   "y": 488,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "venomlily@stage1-arcane": {
+   "species": "venomlily",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 1,
+   "x": 22,
+   "y": 279,
+   "w": 24,
+   "h": 22,
+   "pivot": [
+    12,
+    21
+   ],
+   "native": [
+    24,
+    22
+   ]
+  },
+  "venomlily@stage2": {
+   "species": "venomlily",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 153,
+   "y": 556,
+   "w": 20,
+   "h": 14,
+   "pivot": [
+    10,
+    13
+   ],
+   "native": [
+    20,
+    14
+   ]
+  },
+  "venomlily@stage2-arcane": {
+   "species": "venomlily",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 2,
+   "x": 485,
+   "y": 349,
+   "w": 24,
+   "h": 20,
+   "pivot": [
+    12,
+    19
+   ],
+   "native": [
+    24,
+    20
+   ]
+  },
+  "venomlily@stage3": {
+   "species": "venomlily",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 69,
+   "y": 326,
+   "w": 31,
+   "h": 21,
+   "pivot": [
+    15,
+    20
+   ],
+   "native": [
+    31,
+    21
+   ]
+  },
+  "venomlily@stage3-arcane": {
+   "species": "venomlily",
+   "kind": "stage",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "flower",
+   "stage": 3,
+   "x": 457,
+   "y": 98,
+   "w": 35,
+   "h": 27,
+   "pivot": [
+    17,
+    26
+   ],
+   "native": [
+    35,
+    27
+   ]
+  },
+  "willowleaf@stage0": {
+   "species": "willowleaf",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "leaf",
+   "stage": 0,
+   "x": 345,
+   "y": 488,
+   "w": 16,
+   "h": 16,
+   "pivot": [
+    8,
+    15
+   ],
+   "native": [
+    16,
+    16
+   ]
+  },
+  "willowleaf@stage0-arcane": {
+   "species": "willowleaf",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "leaf",
+   "stage": 0,
+   "x": 48,
+   "y": 279,
+   "w": 21,
+   "h": 22,
+   "pivot": [
+    10,
+    21
+   ],
+   "native": [
+    21,
+    22
+   ]
+  },
+  "willowleaf@stage1": {
+   "species": "willowleaf",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "leaf",
+   "stage": 1,
+   "x": 363,
+   "y": 488,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "willowleaf@stage1-arcane": {
+   "species": "willowleaf",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "leaf",
+   "stage": 1,
+   "x": 71,
+   "y": 279,
+   "w": 21,
+   "h": 22,
+   "pivot": [
+    10,
+    21
+   ],
+   "native": [
+    21,
+    22
+   ]
+  },
+  "willowleaf@stage2": {
+   "species": "willowleaf",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "leaf",
+   "stage": 2,
+   "x": 243,
+   "y": 433,
+   "w": 20,
+   "h": 17,
+   "pivot": [
+    10,
+    16
+   ],
+   "native": [
+    20,
+    17
+   ]
+  },
+  "willowleaf@stage2-arcane": {
+   "species": "willowleaf",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "leaf",
+   "stage": 2,
+   "x": 94,
+   "y": 279,
+   "w": 27,
+   "h": 22,
+   "pivot": [
+    13,
+    21
+   ],
+   "native": [
+    27,
+    22
+   ]
+  },
+  "willowleaf@stage3": {
+   "species": "willowleaf",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "leaf",
+   "stage": 3,
+   "x": 331,
+   "y": 127,
+   "w": 31,
+   "h": 26,
+   "pivot": [
+    15,
+    25
+   ],
+   "native": [
+    31,
+    26
+   ]
+  },
+  "willowleaf@stage3-arcane": {
+   "species": "willowleaf",
+   "kind": "stage",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "river",
+   "category": "natural",
+   "morph": "leaf",
+   "stage": 3,
+   "x": 110,
+   "y": 2,
+   "w": 35,
+   "h": 32,
+   "pivot": [
+    17,
+    31
+   ],
+   "native": [
+    35,
+    32
+   ]
+  },
+  "wraithvine@stage0": {
+   "species": "wraithvine",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 0,
+   "x": 294,
+   "y": 523,
+   "w": 21,
+   "h": 15,
+   "pivot": [
+    10,
+    14
+   ],
+   "native": [
+    21,
+    15
+   ]
+  },
+  "wraithvine@stage0-arcane": {
+   "species": "wraithvine",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 0,
+   "x": 102,
+   "y": 326,
+   "w": 26,
+   "h": 21,
+   "pivot": [
+    13,
+    20
+   ],
+   "native": [
+    26,
+    21
+   ]
+  },
+  "wraithvine@stage1": {
+   "species": "wraithvine",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 1,
+   "x": 384,
+   "y": 488,
+   "w": 19,
+   "h": 16,
+   "pivot": [
+    9,
+    15
+   ],
+   "native": [
+    19,
+    16
+   ]
+  },
+  "wraithvine@stage1-arcane": {
+   "species": "wraithvine",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 1,
+   "x": 124,
+   "y": 413,
+   "w": 24,
+   "h": 18,
+   "pivot": [
+    12,
+    17
+   ],
+   "native": [
+    24,
+    18
+   ]
+  },
+  "wraithvine@stage2": {
+   "species": "wraithvine",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 2,
+   "x": 175,
+   "y": 556,
+   "w": 20,
+   "h": 14,
+   "pivot": [
+    10,
+    13
+   ],
+   "native": [
+    20,
+    14
+   ]
+  },
+  "wraithvine@stage2-arcane": {
+   "species": "wraithvine",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 2,
+   "x": 2,
+   "y": 392,
+   "w": 25,
+   "h": 19,
+   "pivot": [
+    12,
+    18
+   ],
+   "native": [
+    25,
+    19
+   ]
+  },
+  "wraithvine@stage3": {
+   "species": "wraithvine",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 3,
+   "x": 130,
+   "y": 326,
+   "w": 31,
+   "h": 21,
+   "pivot": [
+    15,
+    20
+   ],
+   "native": [
+    31,
+    21
+   ]
+  },
+  "wraithvine@stage3-arcane": {
+   "species": "wraithvine",
+   "kind": "stage",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "vine",
+   "stage": 3,
+   "x": 2,
+   "y": 127,
+   "w": 38,
+   "h": 27,
+   "pivot": [
+    19,
+    26
+   ],
+   "native": [
+    38,
+    27
+   ]
+  }
+ }
+}
