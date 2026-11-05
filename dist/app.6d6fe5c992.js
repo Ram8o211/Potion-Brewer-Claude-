@@ -2546,6 +2546,11 @@ river: { wet: 0.78, retain: 6, light: [0.85, 0.95, 1], lightK: 0.08, sat: 0.9, d
 quarry: { wet: 0.25, retain: 1.5, light: [1, 0.92, 0.8], lightK: 0.08, sat: 0.85, dark: 0, wear: 0.6, crystal: 0.6, lush: 0.3, leaf: [0.36, 0.45, 0.22], rock: [0.55, 0.5, 0.45], soil: [0.5, 0.4, 0.28] },
 moonfen: { wet: 0.85, retain: 8, light: [0.62, 0.75, 1], lightK: 0.2, sat: 0.75, dark: -0.08, wear: 0.8, crystal: 0.7, lush: 0.55, leaf: [0.14, 0.33, 0.27], rock: [0.3, 0.32, 0.38], soil: [0.15, 0.17, 0.14] },
 crags: { wet: 0.18, retain: 1, light: [1, 0.6, 0.35], lightK: 0.18, sat: 0.95, dark: -0.05, wear: 0.4, crystal: 0.8, lush: 0.25, leaf: [0.32, 0.33, 0.16], rock: [0.2, 0.17, 0.2], soil: [0.22, 0.14, 0.12] },
+skyshard: { wet: 0.45, retain: 2, light: [0.9, 0.97, 1], lightK: 0.1, sat: 1.05, dark: 0.03, wear: 0.3, crystal: 0.6, lush: 0.6, leaf: [0.3, 0.6, 0.25], rock: [0.45, 0.5, 0.58], soil: [0.35, 0.3, 0.25] },
+morphgrove: { wet: 0.6, retain: 4, light: [1, 0.75, 0.9], lightK: 0.16, sat: 1.05, dark: -0.03, wear: 0.4, crystal: 0.3, lush: 0.85, leaf: [0.25, 0.6, 0.4], rock: [0.32, 0.28, 0.4], soil: [0.3, 0.18, 0.22] },
+veilhollow: { wet: 0.75, retain: 6, light: [0.8, 0.78, 0.95], lightK: 0.18, sat: 0.8, dark: -0.06, wear: 0.6, crystal: 0.4, lush: 0.6, leaf: [0.25, 0.4, 0.32], rock: [0.25, 0.25, 0.3], soil: [0.18, 0.16, 0.2] },
+ghostglass: { wet: 0.95, retain: 10, light: [0.6, 0.85, 1], lightK: 0.22, sat: 0.95, dark: -0.05, wear: 0.5, crystal: 0.9, lush: 0.5, leaf: [0.2, 0.6, 0.6], rock: [0.16, 0.24, 0.34], soil: [0.12, 0.16, 0.22] },
+chronoglass: { wet: 0.12, retain: 1, light: [1, 0.85, 0.7], lightK: 0.14, sat: 0.95, dark: 0, wear: 0.7, crystal: 0.7, lush: 0.2, leaf: [0.6, 0.5, 0.3], rock: [0.6, 0.48, 0.34], soil: [0.55, 0.42, 0.28] },
 };
 const habitatOf = (region) => HABITATS[region] || HABITATS.forest;
 const EFFECT_TINT = {
@@ -18158,6 +18163,31 @@ const IMMERSION = [
 const SANDBOX_CONTROLS = ['skimmer', 'alembic', 'heatmap', 'readouts'];
 return { MECHANICS, MECHANIC_BY_ID, IMMERSION, SANDBOX_CONTROLS };
 })();
+// src/ui/rarity-ui.js
+const __m100 = (() => {
+const { h } = __m2;
+const { icon } = __m3;
+const { RARITY } = __m19;
+const { EFFECT_BY_KEY } = __m14;
+const CREATURE_NAMES = {
+fox: 'Fox', hare: 'Hare', otter: 'River Otter', beetle: 'Rock Beetle', cavemoth: 'Cave Moth', salamander: 'Salamander',
+wisp: 'Will-o’-Wisp', cloudray: 'Cloud Ray', mimic: 'Mimic Lizard', shroudmoth: 'Shroud Moth', axolotl: 'Spectral Axolotl', scarab: 'Hourglass Scarab',
+};
+const rarityOf = (m) => (m && m.wild && m.wild.rarity ? RARITY[/** @type {'common'} */ (m.wild.rarity)] : null);
+function rarityTag(m, o = {}) {
+const r = rarityOf(m);
+if (!r) return null;
+const tags = h('span', { class: 'rar-tags' },
+h('span', { class: `tag rarity r-${r.id}`, title: `${r.label}: ${r.visual}`, text: o.short ? r.label[0] : r.label }));
+if (m.wild.arcane) tags.appendChild(h('span', { class: 'tag arcane', title: 'Arcane: only Arcane ingredients can awaken past their threshold' }, icon('awaken', 'sm'), o.short ? '' : ' Arcane'));
+return tags;
+}
+function effectChips(m, n = 3) {
+const fx = Object.entries((m && m.effects) || {}).filter(([, v]) => Math.abs(v) >= 1).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, n);
+return fx.map(([k, v]) => h('span', { class: 'fx-chip', title: EFFECT_BY_KEY[k].label }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(v)}`));
+}
+return { CREATURE_NAMES, rarityOf, rarityTag, effectChips };
+})();
 // src/ui/panels.js
 const __m98 = (() => {
 const { recipeConfidence, CONFIDENCE_TEXT, describeStep } = __m83;
@@ -18179,6 +18209,9 @@ const { exportSave, parseImport, saveGame } = __m84;
 const { audio } = __m4;
 const { isMagical } = __m21;
 const { causeWord } = __m59;
+const { rarityTag } = __m100;
+const { BIOME_BY_ID } = __m20;
+const { seedChance } = __m19;
 const CAT_LABEL = { heat: 'Fire', cold: 'Cooling', vessel: 'Cauldrons', tool: 'Tools', instrument: 'Instruments', trials: 'Trials room', gathering: 'Foraging', storage: 'Potion storage', guild: 'Guild' };
 function jarCanvas(m, w = 22, hh = 30) {
 if ((m.wild || m.remains) && m.form === 'solid') {
@@ -18339,7 +18372,11 @@ h('span', { class: 'k', text: 'Weight' }), h('span', { text: lab.sandbox ? `${m.
 h('span', { class: 'k', text: m.form === 'powder' ? 'Grains' : 'Thickness' }), h('span', { text: m.form === 'powder' ? `piles at ≈${Math.round(Math.atan(m.friction) * 180 / Math.PI)}°` + (m.solubility > 0.05 ? ', dissolves in water' : '') : lab.sandbox ? `${m.viscosity} cP` : viscosityClass(m.viscosity) }),
 h('span', { class: 'k', text: 'Melts' }), h('span', { text: k.melt !== undefined ? `≈${k.melt}°C (observed)` : m.form === 'liquid' ? 'unknown (freeze it to find out)' : 'unknown' }),
 h('span', { class: 'k', text: 'Boils' }), h('span', { text: k.boil !== undefined ? `≈${k.boil}°C (observed)` : isFinite(m.boil) ? 'unknown (heat it to find out)' : 'does not boil' }),
-h('span', { class: 'k', text: 'Magic' }), h('span', { text: !isMagical(m) ? 'none to awaken' : k.awaken !== undefined ? `awoke near ${k.awaken}°C in your brew (observed)` : 'can awaken — its threshold is unknown (heat or chill it to find out)' }),
+...(m.wild && m.wild.catalog ? [
+h('span', { class: 'k', text: 'Species' }), h('span', {}, rarityTag(m), ` ${BIOME_BY_ID[m.wild.region] ? BIOME_BY_ID[m.wild.region].name : ''}`),
+h('span', { class: 'k', text: 'Seeds' }), h('span', { text: `${st.garden.seeds[m.wild.key + (m.wild.arcane ? '+arcane' : '')] || 0} in hand · a harvest drops one ${Math.round(seedChance(m.wild.rarity, !!m.wild.arcane) * 100)}% of the time` }),
+] : []),
+h('span', { class: 'k', text: 'Magic' }), h('span', { text: !isMagical(m) ? (m.wild && m.wild.catalog ? 'ordinary: it never awakens (only its Arcane form can)' : 'none to awaken') : k.awaken !== undefined ? `Arcane: awoke near ${k.awaken}°C in your brew (observed)` : 'Arcane: it can awaken — its threshold is unknown (heat or chill it to find out)' }),
 h('span', { class: 'k', text: 'Price' }), h('span', { text: `${coins(st.priceOf(id))} / 100 ml` }),
 );
 const asp = h('div', { class: 'aspect-bars' });
@@ -18359,7 +18396,7 @@ h('div', { class: 'card parch ing-card' }, jarCanvas(m, 22, 30), h('div', {}, h(
 h('div', { class: 'card parch' }, facts),
 h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: m.remains ? 'Effects' : m.product ? 'Effects of this pure substance (as the guild knows it)' : 'Known effects of the pure ingredient (mixtures must be tested)' }), asp,
 (m.wild || m.remains) && m.form === 'solid' ? h('div', { class: 'small', text: 'Supplied whole: crush it in the pot with the pestle (Crush). Only what dissolves takes effect.' }) : null),
-balance.length ? h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Nothing that grows is pure. Its side effects cancel against their opposites:' }), ...balance.map((t) => h('div', { class: 'small', text: '• ' + t }))) : null,
+balance.length ? h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Its side effects cancel against their opposites:' }), ...balance.map((t) => h('div', { class: 'small', text: '• ' + t }))) : null,
 reactions.length ? h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Known reactions' }), ...reactions.map((r) => h('div', { class: 'small', text: `• ${r.name}: ${r.hint || ''}` }))) : null,
 ],
 });
@@ -18750,7 +18787,7 @@ h('div', { class: 'small muted credits', text: 'The Alchemist’s Shop — all a
 return { jarCanvas, fxChips, openShop, openIngredient, openHint, openBottleSize, showDaySummary, showAnalysis, openRecipes, renderRecipes, openJournal, renderJournal, openPause, openReceiver, openHelp, openSettings };
 })();
 // src/ui/trade.js
-const __m100 = (() => {
+const __m101 = (() => {
 const { h, btn, modal, toast, coins, clear, starsText } = __m2;
 const { icon } = __m3;
 const { drawPortrait } = __m93;
@@ -18972,10 +19009,11 @@ return `${n === null ? '' : starsText(n, MAX_STARS) + ' '}${claimSummary(label.c
 return { openIdentify, openNegotiation, showDeal, followUpCard, claimSummary, accuracyTitle, labelLine, EFFECT_BY_KEY };
 })();
 // src/ui/tutorial.js
-const __m101 = (() => {
+const __m102 = (() => {
 const { h, btn, placeToasts } = __m2;
 const { PHASE } = __m55;
 const { TUTORIAL_HERBS } = __m22;
+const { thresholdToCelsius } = __m21;
 const { shortName } = __m53;
 class Tutorial {
 constructor(lab) {
@@ -18991,7 +19029,8 @@ const lab = this.lab;
 const st = lab.state;
 const R = st.world.roles;
 const water = st.lookup(R.water);
-const H = TUTORIAL_HERBS, leaf = st.lookup(H.healer), sun = st.lookup(H.warmer);
+const H = TUTORIAL_HERBS, leaf = st.lookup(H.healer), arc = st.lookup(H.arcane);
+const thrC = arc && arc.arcane ? Math.round(thresholdToCelsius(arc.arcane.thr)) : 85;
 const poured = (id) => st.brewLog.reduce((a, e) => a + (e.type === 'pour' && e.id === id ? e.ml : 0), 0);
 const brewT = () => {
 const p = lab.sim.p;
@@ -19005,43 +19044,46 @@ let n = 0;
 for (let i = 0; i < p.count; i++) if (p.phase[i] === PHASE.SOLID) n++;
 return n;
 };
+const awakened = () => [...lab.sim.species.slotOf.keys()].some((id) => typeof id === 'string' && id.endsWith('~a'));
 const tab = (id) => () => lab.tabEls[id] && lab.tabEls[id].b;
 const q = (sel) => () => /** @type {HTMLElement|null} */ (lab.el.querySelector(sel));
 const inView = (id) => () => lab.view === id;
 const rabbitTested = () => st.trials.records.some((r) => r.subjectId === 'rabbit' && r.batchId === st.batch.id);
+const hasSeed = () => Object.keys(st.garden.seeds).length > 0 || st.garden.plots.some((p) => p.crop);
+const sown = () => st.garden.plots.some((p) => p.crop);
+const watered = () => st.garden.plots.some((p) => p.crop && p.crop.w > 0.5);
 const who = st.current && st.current.customer ? shortName(st.current.customer.name) : 'the customer';
 return [
-{ text: 'Welcome to your shop, alchemist! This tour shows every part of it while you brew your first order. Follow the glowing outline: do what it asks, or press Next.', button: 'Let’s begin' },
-{ text: 'The top bar: ☰ opens the menu (how to play, settings, this tour). Then your coins, your rank (its bar fills with reputation), the day and which customer of the day this is. Shop sells ingredients and equipment.', target: () => lab.topbar, button: 'Next' },
-{ text: 'Five rooms along the edge: Counter (customers), Brew (the cauldron), Wilds (gathering), Trials (testing on rabbits) and Book (recipes and notes). A red mark means something is waiting there.', target: () => lab.tabbar, button: 'Next' },
+{ text: 'Welcome to your shop, alchemist! This tour walks you through your first day: gathering, your garden, a first brew with an Arcane ingredient, a test and a sale. Follow the glowing outline, or press Next. (☰ → Tour replays it; Skip ends it.)', button: 'Let’s begin' },
+{ text: 'Your rooms: Counter (customers), Brew (the cauldron), Wilds (gathering), Garden (growing), Trials (testing on animals) and Book (recipes, notes and the ingredient encyclopedia).', target: () => lab.tabbar, button: 'Next' },
+{ text: 'Your shelves are nearly bare. Travel to the Wilds.', target: tab('wilds'), done: inView('wilds') },
+{ text: 'The Whisperwood, home of healing magic and of the fox. Every species here has a fixed rarity — Common, Uncommon, Rare, Unique or Legendary — and now and then grows in an Arcane form. Tap a Silverleaf (silvery leaves) in the picture to gather it.', target: q('.view-wilds .wilds-scene'), done: () => !!st.found[H.healer] },
+{ text: `A glowing, violet-rimmed Silverleaf grows here too: an Arcane specimen. Only Arcane ingredients can awaken when a brew passes their threshold. Gather it.`, target: q('.view-wilds .wilds-scene'), done: () => !!st.found[H.arcane] },
+{ text: 'Harvests sometimes drop a seed — your first Silverleaf did. Seeds keep their species and form: a Silverleaf seed always grows Silverleaf.', target: q('.view-wilds .deposits'), done: hasSeed, button: hasSeed() ? 'Next' : undefined },
+{ text: 'The fox is the Whisperwood’s native creature. Three quick taps on one catch it alive for your hutch; testing potions on animals comes later.', target: q('.view-wilds .wilds-scene'), button: 'Next' },
+{ text: 'Open your Garden.', target: tab('garden'), done: inView('garden') },
+{ text: 'Choose your Silverleaf seed, then tap an empty plot to sow it.', target: q('.view-garden .seeds'), done: sown },
+{ text: 'Tap the plot again (or Water all) to water it: moist soil grows faster. Your first seed grows quickly; later crops take real time, even while the game is closed.', target: q('.view-garden .plots'), done: watered },
 { text: 'A customer is waiting. Open the Counter.', target: tab('counter'), done: inView('counter') },
-{ text: 'The order: every line must be met — the effect and its strength, purity (no other effect above a limit) and the quantity. “?” means not tested yet. Advice buys a hint; Decline sends a customer away.', target: q('.customer-card .reqs'), button: 'Next' },
-{ text: 'Let’s brew it. Press “Brew it”.', target: () => lab.el.querySelector('[data-act=go-brew]') || tab('brew')(), done: inView('brew') },
-{ text: 'The order strip stays above the cauldron: each chip fills as the brew meets that line of the order. Tap the strip to go back to the Counter.', target: () => lab.strip, button: 'Next' },
-{ text: `Tap the jar of ${water.name} on the shelf to pick it up. The small number on a jar is how many ml you have.`, target: () => lab.jarEls[R.water] && lab.jarEls[R.water].el, done: () => lab.selected === R.water },
-{ text: 'Pour about 110 ml: tap 100, then 25. You can also hold your finger in the cauldron to pour freely, or drag a jar onto it.', target: () => lab.doseEl, done: () => poured(R.water) >= 95 },
-{ text: `Now pick up the ${leaf.name}. Tip: long-press (or right-click) any jar to read what it does — this one heals, but leaves a frosty bite.`, target: () => lab.jarEls[H.healer] && lab.jarEls[H.healer].el, done: () => lab.selected === H.healer },
-{ text: 'Pour 50 ml. The leaves go in whole — and whole leaves give up almost nothing, so you will crush them in a moment.', target: () => lab.doseEl, done: () => poured(H.healer) >= 45 && !lab.sim.emitter.pouring },
-{ text: `Nothing that grows is pure, but opposites cancel: fire–frost, life–death, acid–alkali. Pick up the ${sun.name}: its fire cancels the leaf’s frost.`, target: () => lab.jarEls[H.warmer] && lab.jarEls[H.warmer].el, done: () => lab.selected === H.warmer },
-{ text: 'Pour 25 ml — half as much as the leaf, so fire and frost balance out.', target: () => lab.doseEl, done: () => poured(H.warmer) >= 20 && !lab.sim.emitter.pouring },
-{ text: 'Now choose Crush (the pestle) and drag it back and forth over the leaves at the bottom of the pot. Only crushed herbs give up their magic — nothing is ground for you.', target: () => lab.toolBtns.pestle, done: () => wholeSolids() <= 3 || (lab.tool === 'pestle' && (lab.sim.tool.stirDistance - (this.flags.crush0 ?? (this.flags.crush0 = lab.sim.tool.stirDistance))) > 25) },
-{ text: 'Choose Stir and drag circles through the brew: stirring spreads the magic evenly. (Auto, further along, stirs for you while you hold it.)', target: () => lab.toolBtns.spoon, done: () => (lab.sim.tool.stirDistance - (this.flags.stir0 ?? (this.flags.stir0 = lab.sim.tool.stirDistance))) > 12 || lab.sim.tool.auto || brewT() >= 40 },
-{ text: 'Herbs steep only when warm. Slide the fire control right (left cools) and bring the brew to about 60 °C. The lid keeps steam in; with the lid off, boiling makes a brew smaller and stronger.', target: () => lab.controls, done: () => brewT() >= 50 },
-{ text: 'The other tools: Crush (whole herbs, stones, ice), Inspect (tap a spot to read it), Sample (what a bottle would hold), 1× (speeds up time), Empty. Tap the ml · °C readout over the cauldron to see what is inside.', target: () => lab.toolbar, button: 'Next' },
-{ text: 'Does it really heal? What a mixture does is unknown until it is tested. Open the Trials room.', target: tab('trials'), done: inView('trials') },
+{ text: 'The order: every line must be met — the effect and its strength, purity (nothing else above a limit) and the quantity. Press “Brew it”.', target: () => lab.el.querySelector('[data-act=go-brew]') || tab('brew')(), done: inView('brew') },
+{ text: `Tap the jar of ${water.name}, then pour about 110 ml (tap 100, then 25). You can also hold a finger in the cauldron, or drag a jar onto it.`, target: () => lab.jarEls[R.water] && lab.jarEls[R.water].el, done: () => poured(R.water) >= 95 },
+{ text: `Pick up the ${leaf.name} (long-press any jar to read it: rarity, effects, seeds) and pour 45 ml.`, target: () => lab.jarEls[H.healer] && lab.jarEls[H.healer].el, done: () => poured(H.healer) >= 40 && !lab.sim.emitter.pouring },
+{ text: `Now the ${arc ? arc.name : 'Arcane Silverleaf'} (the jar with the violet rim): pour 15 ml.`, target: () => lab.jarEls[H.arcane] && lab.jarEls[H.arcane].el, done: () => poured(H.arcane) >= 10 && !lab.sim.emitter.pouring },
+{ text: 'Choose Crush (the pestle) and drag it over the leaves at the bottom: only crushed herbs give up their magic.', target: () => lab.toolBtns.pestle, done: () => wholeSolids() <= 3 || (lab.tool === 'pestle' && (lab.sim.tool.stirDistance - (this.flags.crush0 ?? (this.flags.crush0 = lab.sim.tool.stirDistance))) > 25) },
+{ text: 'Choose Stir and drag circles through the brew to spread the magic evenly.', target: () => lab.toolBtns.spoon, done: () => (lab.sim.tool.stirDistance - (this.flags.stir0 ?? (this.flags.stir0 = lab.sim.tool.stirDistance))) > 12 || lab.sim.tool.auto || brewT() >= 40 },
+{ text: `The Arcane transition: slide the fire control right and heat the brew past about ${thrC} °C. Only the Arcane leaf’s magic awakens — and only the effects it carries — growing several times stronger, and it stays awake as the brew cools.`, target: () => lab.controls, done: () => awakened() || brewT() >= thrC + 1 },
+{ text: 'It awoke: its particles swarm denser and brighter. Now let the brew cool a little (fire control left, or just wait).', target: () => lab.controls, done: () => brewT() <= thrC - 10 || this.flags.cooledSkip, button: 'Next' },
+{ text: 'Does it really heal? A mixture is unknown until tested. Open the Trials room.', target: tab('trials'), done: inView('trials') },
 { text: 'Choose a rabbit (tap it) and press Give — or drag the dropper onto it. The dose is real potion from the cauldron’s tap.', target: () => document.querySelector('[data-act=test-rabbit]') || lab.views.trials.hutch.el, done: rabbitTested },
-{ text: 'The result: each effect the rabbit showed, with a ± margin. One reading is a rough guess; a second rabbit narrows it most — and demanding customers insist on that.', target: q('.estimate-card'), button: 'Next' },
-{ text: 'Look after your rabbits here: buy, feed, breed, and purge one to wash a potion out. Too much of an effect can make a rabbit sick, wild or dead — every rabbit has its own hidden limits.', target: q('.hutch-manage'), button: 'Next' },
+{ text: 'Each effect the rabbit showed, with a ± margin. One reading is a rough guess; a second animal narrows it most.', target: q('.estimate-card'), button: 'Next' },
 { text: 'Back to the cauldron.', target: tab('brew'), done: inView('brew') },
-{ text: 'Press Bottle and choose 100 ml (the order’s quantity). A bottle goes to the counter, or onto your potion shelves for later.', target: () => lab.bottleFab, done: () => this.flags.bottled },
-{ text: `Your vial is on the counter, labelled from your trial. Press “Sell to ${who}”, agree on a price, then save the recipe to your book.`, target: () => document.querySelector('[data-act=serve]') || tab('counter')(), done: () => this.flags.sold },
-{ text: 'Splendid — your first sale! The customer comes back tomorrow: pleased, or with a complaint you can refund, dispute with your trial records, or refuse. The potion shelves below keep sealed bottles for later customers.', target: () => lab.el.querySelector('.view-counter .shelf-card') || tab('counter')(), button: 'Next' },
-{ text: 'Ingredients run out. Open the Wilds to gather more.', target: tab('wilds'), done: inView('wilds') },
-{ text: 'Slide a finger across a mature plant in the picture to shake it: its fruit or bloom falls to the ground, and a tap on it gathers it. Each ingredient is listed below once you have gathered it. Plants grow from sprout to ripe to mature; only mature ones can be harvested, and new sprouts come up until the ground is full. Thorough digs a plant out for twice as much, but its kind sprouts slowly. Some flowers open only at dawn or at dusk. New regions open as your rank rises.', target: q('.view-wilds .deposits'), button: 'Next' },
-{ text: 'Now open the Book.', target: tab('book'), done: inView('book') },
-{ text: 'The Book keeps your recipes (Prepare pours one again), every trial, the laws of magic you discover, all ingredients, your journal, awards and sales.', target: q('.book-tabs'), button: 'Next' },
-{ text: 'The Shop sells ingredients, buys your surplus, and offers equipment: each piece lets you do something new (deep cold, a stirrer, a bigger cauldron, more shelves…).', target: q('[data-act=shop]'), button: 'Next' },
-{ text: 'That is a day: at dawn gather in the Wilds, then open the door at the Counter; brew, test, bottle and sell; when the last customer has gone, close the shop. ☰ → How to play explains everything in detail. Good luck!', target: tab('counter'), button: 'Run my shop!' },
+{ text: 'Press Bottle and choose 100 ml (the order’s quantity).', target: () => lab.bottleFab, done: () => this.flags.bottled },
+{ text: `Your vial is on the counter, labelled from your trial. Press “Sell to ${who}”, agree on a price, then save the recipe.`, target: () => document.querySelector('[data-act=serve]') || tab('counter')(), done: () => this.flags.sold },
+{ text: 'Your first sale! Back in the Wilds: the biome bar shows its category, dominant effect, native creature, what is left — and your Traveller Coins.', target: tab('wilds'), done: inView('wilds') },
+{ text: 'The wilds never grow back by themselves. Spend a Traveller Coin on Regenerate for a new generation: new scenery, new species, new specimens. Coins recharge with time, and delighted customers sometimes give one.', target: q('.view-wilds .biome-bar'), button: 'Next' },
+{ text: 'New biomes open as you serve customers and rise in rank: five more Natural ones, then the Exotic biomes with new effects — Levitation, Invisibility, Phasing, Temporal Distortion. Later customers commission harder potions: stronger, purer, several effects, awakened magic.', target: q('.view-wilds .region-tabs'), button: 'Next' },
+{ text: 'Your Silverleaf should be ready by now: open the Garden and tap it to harvest.', target: tab('garden'), done: () => st.garden.harvested > 0 || this.flags.skipHarvest, button: 'Later' },
+{ text: 'That is the loop: explore, gather, collect seeds, grow, brew, test and sell — and unlock more of the world. ☰ → How to play explains everything. Good luck!', target: tab('counter'), button: 'Run my shop!' },
 ];
 }
 start(restart = false) {
@@ -19119,7 +19161,7 @@ if (t && t !== this.target) { if (this.target) this.target.classList.remove('hig
 return { Tutorial };
 })();
 // src/ui/views/counter.js
-const __m102 = (() => {
+const __m103 = (() => {
 const { h, btn, clear, coins, confirmDialog, starsText } = __m2;
 const { icon } = __m3;
 const { drawPortrait } = __m93;
@@ -19130,7 +19172,7 @@ const { EFFECT_INDEX, NE } = __m14;
 const { EFFECT_BY_KEY } = __m14;
 const { missingEffects, summarize, requirementEvidence } = __m58;
 const { labelStars, MAX_STARS } = __m79;
-const trade = __m100;
+const trade = __m101;
 const { describeColor, rgbToHex } = __m9;
 const { viscosityClass } = __m78;
 const panels = __m98;
@@ -19327,7 +19369,7 @@ unseen ? h('span', { class: 'muted', text: ` ${seen.length ? '· ' : ''}${unseen
 return { CounterView };
 })();
 // src/rendering/crisp.js
-const __m104 = (() => {
+const __m105 = (() => {
 const RESOLUTIONS = /** @type {const} */ ([1, 2, 3, 4]);
 const VERT = `#version 300 es
 in vec2 p;
@@ -19511,31 +19553,6 @@ this.src.style.opacity = '0';
 }
 }
 return { RESOLUTIONS, UpscaledCanvas };
-})();
-// src/ui/rarity-ui.js
-const __m105 = (() => {
-const { h } = __m2;
-const { icon } = __m3;
-const { RARITY } = __m19;
-const { EFFECT_BY_KEY } = __m14;
-const CREATURE_NAMES = {
-fox: 'Fox', hare: 'Hare', otter: 'River Otter', beetle: 'Rock Beetle', cavemoth: 'Cave Moth', salamander: 'Salamander',
-wisp: 'Will-o’-Wisp', cloudray: 'Cloud Ray', mimic: 'Mimic Lizard', shroudmoth: 'Shroud Moth', axolotl: 'Spectral Axolotl', scarab: 'Hourglass Scarab',
-};
-const rarityOf = (m) => (m && m.wild && m.wild.rarity ? RARITY[/** @type {'common'} */ (m.wild.rarity)] : null);
-function rarityTag(m, o = {}) {
-const r = rarityOf(m);
-if (!r) return null;
-const tags = h('span', { class: 'rar-tags' },
-h('span', { class: `tag rarity r-${r.id}`, title: `${r.label}: ${r.visual}`, text: o.short ? r.label[0] : r.label }));
-if (m.wild.arcane) tags.appendChild(h('span', { class: 'tag arcane', title: 'Arcane: only Arcane ingredients can awaken past their threshold' }, icon('awaken', 'sm'), o.short ? '' : ' Arcane'));
-return tags;
-}
-function effectChips(m, n = 3) {
-const fx = Object.entries((m && m.effects) || {}).filter(([, v]) => Math.abs(v) >= 1).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, n);
-return fx.map(([k, v]) => h('span', { class: 'fx-chip', title: EFFECT_BY_KEY[k].label }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(v)}`));
-}
-return { CREATURE_NAMES, rarityOf, rarityTag, effectChips };
 })();
 // src/visual/env/paint.js
 const __m108 = (() => {
@@ -21169,6 +21186,7 @@ const __m114 = (() => {
 const GRADE = {
 meadow: [0.42, 1.32, 0.5], forest: [0.4, 1.28, 0.5], netherwood: [0.34, 1.3, 0.46], river: [0.42, 1.3, 0.5],
 quarry: [0.38, 1.26, 0.48], moonfen: [0.34, 1.3, 0.44], crags: [0.36, 1.25, 0.48],
+skyshard: [0.4, 1.3, 0.5], morphgrove: [0.36, 1.3, 0.46], veilhollow: [0.32, 1.18, 0.42], ghostglass: [0.34, 1.28, 0.44], chronoglass: [0.38, 1.24, 0.48],
 pen: [0.4, 1.28, 0],
 };
 function curve(k) {
@@ -22571,6 +22589,341 @@ cv.meta.horizon = 120;
 }
 return { compose };
 })();
+// src/visual/env/exotic.js
+const __m126 = (() => {
+const { sky } = __m108;
+const { palette, vary, streamOf } = __m116;
+const { heights, raise, dip, fillSolid, blob, paintTerrain, pool, markOpen, silhouette, mountains, glow, ledges, treeShape } = __m110;
+const { fog, vines, glowShrooms, ruins, fall, moss } = __m109;
+const { cloud, spire, boulder } = __m117;
+const { terrainTrees } = __m119;
+const { fbm2 } = __m47;
+const { pack } = __m108;
+function sprite(w, h) { return { w, h, px: new Uint32Array(w * h), x: 0, y: 0 }; }
+function isleSprite(rng, w, h, cols) {
+const s = sprite(w, h), cx = w / 2, top = 3;
+for (let y = 0; y < h; y++) {
+const t = (y - top) / (h - top);
+const half = y < top ? 0 : (w / 2 - 1) * (1 - Math.pow(Math.max(0, t), 1.6)) * (0.85 + 0.15 * Math.sin(y * 0.9 + rng.next()));
+for (let x = 0; x < w; x++) {
+const dx = x - cx;
+if (y < top) { if (Math.abs(dx) < w / 2 - 2 && (y === top - 1 || ((x + y) & 1) === 0)) s.px[y * w + x] = cols.grass[y === top - 1 ? 1 : 0]; continue; }
+if (Math.abs(dx) > half) continue;
+const edge = Math.abs(dx) > half - 1.2 || y === h - 1;
+const band = Math.floor((y - top) / 4) % 2;
+let c = y < top + 2 ? cols.grass[2] : band ? cols.rock[1] : cols.rock[0];
+if (dx < -half * 0.4 && y > top + 2) c = cols.rock[2];
+if (dx > half * 0.5) c = cols.rock[3];
+if (edge) c = cols.ink;
+s.px[y * w + x] = c;
+}
+}
+return s;
+}
+function crystalSprite(rng, h, cols) {
+const w = Math.max(5, Math.round(h * 0.38)), s = sprite(w + 2, h + 1), cx = Math.floor((w + 2) / 2);
+for (let y = 0; y <= h; y++) {
+const half = y < h * 0.25 ? (y / (h * 0.25)) * (w / 2) : w / 2;
+for (let x = 0; x < w + 2; x++) {
+const dx = x - cx;
+if (Math.abs(dx) > half) continue;
+let c = dx < 0 ? cols[2] : cols[1];
+if (dx === 0) c = cols[3];
+if (y < 2) c = 0xffffffff;
+if (Math.abs(dx) > half - 1) c = cols[0];
+s.px[y * (w + 2) + x] = c;
+}
+}
+void rng;
+return s;
+}
+function keep(cv, list, s, x, y, extra = {}) {
+s.x = Math.round(x - s.w / 2); s.y = Math.round(y - s.h);
+(cv.meta[list] ||= []).push({ ...s, ...extra });
+}
+const skyshard = {
+compose(cv, seed) {
+const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'skyshard', p);
+const pal = vary(palette({
+leaf: ['#5ac84a', { spread: 0.6 }], leaf2: ['#7ad85a', { spread: 0.6 }], bloom: ['#ffffff', { spread: 0.2 }], bark: '#5a4a3a', rock: '#7a8494',
+cloud: ['#f4f8ff', { spread: 0.2 }], gem: ['#b48cff', { spread: 0.5 }],
+}), s('pal'), 0.8);
+sky(cv, 0, H, ['#3a8ae0', '#5ab0f0', '#8ccaf4', '#c8e6fa', '#e8f4fc']);
+const cr = s('clouds');
+for (let i = 0; i < 6; i++) cv.stamp(cloud(cr, cr.int(30, 80), cr.int(8, 16)), pal, cr.int(20, W - 20), cr.int(18, 90), { outline: false, texture: 0 });
+const fr = s('far');
+for (let i = 0; i < 6; i++) {
+const x = fr.int(10, W - 10), y = fr.int(70, 120), rx = fr.int(10, 24);
+for (let yy = 0; yy < rx; yy++) for (let xx = -rx; xx <= rx; xx++) {
+const half = rx * (1 - Math.pow(yy / rx, 1.4));
+if (Math.abs(xx) > half) continue;
+cv.set(x + xx, y + yy, pack(yy < 2 ? [0.62, 0.8, 0.62] : [0.62, 0.7, 0.82]));
+}
+}
+fog(cv, '#d8ecfa', 80, 150, 0.35, s('haze').int(0, 1e9));
+const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 160, amp: 10, freq: 0.02 });
+const gaps = [];
+for (let i = 0; i < 3; i++) { const gx = ts.int(40 + i * 110, 90 + i * 110), gw = ts.int(14, 22); gaps.push([gx - gw, gx + gw]); }
+for (const [a, b] of gaps) for (let x = Math.max(0, a); x <= Math.min(W - 1, b); x++) top[x] = H + 8;
+fillSolid(cv, top);
+for (let x = 0; x < W; x++) {
+const d = Math.min(...gaps.map(([a, b]) => (x < a ? a - x : x > b ? x - b : 0)));
+const bottom = Math.round(top[x] + 14 + Math.min(40, d * 0.9) + fbm2(x * 0.1, 3, ts.int(0, 1e9), 2) * 6);
+for (let y = bottom; y < H; y++) cv.solid[y * W + x] = 0;
+}
+ledges(cv, top, ts, 4, { keep: gaps });
+const ss = ts.int(0, 1e9);
+paintTerrain(cv, {
+a: '#5a6474', b: '#6a7486', grain: '#9aa4b4', dark: '#2a3040', deep: '#1a2030', cave: '#141a26',
+crust: ['#8ce05a', '#5ac84a', '#3a9a3a', '#2a6a30'], crustH: 4, seed: ss,
+cobble: { stones: ['#6a7486', '#7a8496', '#5a6476', '#8a94a6', '#6e788a', '#76808f'], mortar: '#1a2030', s: 9, moss: ['#3a9a3a', '#8ce05a'] },
+grass: { cols: ['#6ad04a', '#8ce05a', '#4ab03a'], tall: 3, rate: 0.6, flowers: ['#ffffff', '#c8e8ff', '#ffe8a0'] },
+layers: [{ kind: 'band', cols: ['#7a8496', '#8a94a6', '#9aa4b4', '#4a5464'], h: [3, 5] }],
+});
+markOpen(cv);
+for (const [a] of gaps.slice(0, 2)) if (a > 8) fall(cv, a - 2, Math.round(top[Math.max(0, a - 6)]) + 1, { cols: ['#e8f8ff', '#a8dcf4', '#6ab8e8'], w: 2, seed: ss + a, rgb: [0.6, 0.85, 1] });
+const sr = s('crystals'), glows = [];
+for (let i = 0; i < 4; i++) {
+const at = cv.place(spire(sr, sr.int(8, 14)), pal, sr.int(16, W - 16), { foot: [4, 2], range: 40 });
+if (at) { glow(cv, at.fx, at.fy - 7, 26, [0.7, 0.55, 1], 0.4); glows.push([at.fx, at.fy - 7]); }
+}
+ruins(cv, { n: 2, fill: '#8a94a6', line: '#4a5464', rim: '#aab4c4', seed: s('arch').int(0, 1e9), floor: 150 });
+terrainTrees(cv, s('trees'), pal, { n: 2, kinds: ['gnarl', 'sparse'], shapes: ['spread', 'lean'], h: [40, 70], gap: 80, look: { mats: ['leaf', 'leaf2'], bloom: { mat: 'bloom', rate: 0.04 } } });
+const ir = s('isles'), cols = { grass: [pack([0.55, 0.85, 0.35]), pack([0.4, 0.72, 0.3]), pack([0.3, 0.55, 0.28])], rock: [pack([0.45, 0.5, 0.58]), pack([0.52, 0.57, 0.66]), pack([0.62, 0.67, 0.76]), pack([0.32, 0.36, 0.44])], ink: pack([0.12, 0.14, 0.2]) };
+for (let i = 0; i < 3; i++) keep(cv, 'isles', isleSprite(ir, ir.int(22, 34), ir.int(14, 22), cols), 40 + i * 120 + ir.int(-20, 20), ir.int(48, 96));
+cv.meta.glows = glows;
+cv.meta.vignette = 0.2;
+cv.meta.wind = 1.2;
+cv.meta.horizon = 120;
+},
+};
+const morphgrove = {
+compose(cv, seed) {
+const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'morphgrove', p);
+const pal = vary(palette({
+leaf: ['#e87ac8', { spread: 0.5 }], leaf2: ['#3aa86a', { spread: 0.6 }], bloom: ['#ffd0f0', { spread: 0.3 }], bark: '#5a3a2a', moss: '#4ab06a', rock: '#5a5470',
+cap: ['#ff8ad8', { spread: 0.4 }], gem: ['#7af0a8', { spread: 0.4 }],
+}), s('pal'), 0.9);
+sky(cv, 0, H, ['#3a2a5a', '#6a3a7a', '#a85a8a', '#e88aa0', '#f8c0b0']);
+mountains(cv, { base: 120, amp: 30, n: 5, seed: s('m').int(0, 1e9), fill: '#5a3a6a', lit: '#7a4a7a', dark: '#4a2a5a' });
+fog(cv, '#c88aa8', 90, 150, 0.3, s('haze').int(0, 1e9));
+const line = silhouette(cv, { base: 132, amp: 7, freq: 0.03, seed: s('tl').int(0, 1e9), fill: '#3a2a4a', rough: 3 });
+const tl = s('tl2');
+for (let x = 4; x < W; x += tl.int(9, 16)) treeShape(cv, x, line[x] + 2, tl.int(14, 26), 'oak', '#3a2a4a', tl.int(0, 1e9));
+const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 164, amp: 8, freq: 0.016 });
+const rx = ts.int(140, 240);
+raise(top, rx - 30, rx + 30, Math.min(...top) - 10, 4);
+fillSolid(cv, top);
+ledges(cv, top, ts, 6, { keep: [[rx - 34, rx + 34]] });
+const ss = ts.int(0, 1e9);
+paintTerrain(cv, {
+a: '#3a2a3a', b: '#4a3446', grain: '#7a5a6a', dark: '#1a1018', deep: '#100810', cave: '#0a0608',
+crust: ['#7ae08a', '#4ab06a', '#2a8a5a', '#1e5a40'], crustH: 4, seed: ss,
+cobble: { stones: ['#4a4058', '#5a4e68', '#3e3448', '#6a5a78', '#544862', '#463c52'], mortar: '#0a0610', s: 10, moss: ['#2a8a5a', '#7ae08a'] },
+grass: { cols: ['#5ac87a', '#7ae08a', '#3aa86a'], tall: 4, rate: 0.6, flowers: ['#ff8ad8', '#ffd0f0', '#c8a4ff', '#ffffff'] },
+layers: [{ kind: 'dirt', cols: ['#4a2a3a', '#5a3446', '#7a4a5a', '#a86a7a', '#c8a4b4', '#3a2430'], h: [8, 12] }],
+});
+moss(cv, { cols: ['#7ae08a', '#4ab06a', '#2a8a5a', '#1e5a40'], seed: ss + 1, drape: 10, rate: 0.3, len: 12 });
+markOpen(cv);
+terrainTrees(cv, s('trees'), pal, { n: 3, kinds: ['wisteria', 'gnarl', 'wisteria'], shapes: ['spread', 'lean'], h: [70, 120], gap: 70, ledges: true, look: { mats: ['leaf', 'leaf2'], bloom: { mat: 'bloom', rate: 0.12 }, hang: { mat: 'leaf', rate: 0.35, len: [4, 14] } } });
+const cx = rx, cy = Math.round(top[rx]) - 22, R = 16;
+for (let a = 0; a < 360; a += 2) {
+const r = (a * Math.PI) / 180;
+for (let t = 0; t < 4; t++) {
+const x = Math.round(cx + Math.cos(r) * (R - t)), y = Math.round(cy + Math.sin(r) * (R - t) * 1.05);
+cv.set(x, y, pack(t === 0 ? [0.25, 0.22, 0.32] : t === 3 ? [0.45, 0.95, 0.6] : [0.38, 0.34, 0.48]));
+}
+}
+for (let y = -R + 4; y < R - 4; y++) for (let x = -R + 4; x < R - 4; x++) if (x * x + y * y < (R - 4) ** 2 && ((x + y) & 3) === 0) cv.set(cx + x, cy + y, pack([0.55, 1, 0.7]));
+glow(cv, cx, cy, 46, [0.5, 1, 0.65], 0.5);
+cv.block(cx - R - 2, cy - R - 2, cx + R + 2, cy + R + 4);
+const glows = [[cx, cy], ...glowShrooms(cv, { n: 6, cap: '#ff8ad8', lit: '#ffe0f4', stem: '#d8c8d8', rgb: [1, 0.5, 0.85], seed: s('caps').int(0, 1e9) })];
+const mr = s('morphs'), morphs = [];
+for (let i = 0; i < 7; i++) {
+const x = mr.int(10, W - 10);
+let y = 0;
+while (y < H - 1 && !(cv.open[y * W + x] && cv.solid[(y + 1) * W + x])) y++;
+if (y < H - 2) morphs.push({ x, y, hue: mr.int(0, 2) });
+}
+cv.meta.morphs = morphs;
+cv.meta.glows = glows;
+cv.meta.portal = [cx, cy, R];
+cv.meta.vignette = 0.4;
+cv.meta.wind = 0.6;
+cv.meta.horizon = 122;
+},
+};
+const veilhollow = {
+compose(cv, seed) {
+const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'veilhollow', p);
+const pal = vary(palette({
+leaf: ['#4a6a5a', { spread: 0.4 }], leaf2: ['#3a5a5a', { spread: 0.4 }], bloom: ['#c8a4ff', { spread: 0.3 }], bark: '#2a2420', moss: '#3a6a4a', rock: '#4a4a58', timber: '#3a2420',
+}), s('pal'), 0.8);
+sky(cv, 0, H, ['#2a2a3a', '#3a3a4e', '#5a5a6e', '#7a7a8a', '#9a9aa8']);
+for (let L = 0; L < 3; L++) {
+const line = silhouette(cv, { base: 110 + L * 12, amp: 8, freq: 0.03, seed: s('w' + L).int(0, 1e9), fill: ['#4a4a5e', '#3e3e52', '#323246'][L], rough: 3 });
+const tr = s('t' + L);
+for (let x = 2; x < W; x += tr.int(8, 16)) treeShape(cv, x, line[x] + 2, tr.int(18, 34), tr.next() < 0.5 ? 'pine' : 'oak', ['#4a4a5e', '#3e3e52', '#323246'][L], tr.int(0, 1e9));
+fog(cv, '#9a9ab0', 70, 170, 0.28, s('fog' + L).int(0, 1e9));
+}
+const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 166, amp: 10, freq: 0.018 });
+const px = ts.int(120, 260), hw = ts.int(20, 30);
+dip(top, px, hw, 14);
+fillSolid(cv, top);
+ledges(cv, top, ts, 7, { keep: [[px - hw - 4, px + hw + 4]], high: 1 });
+const ss = ts.int(0, 1e9);
+paintTerrain(cv, {
+a: '#2a2a32', b: '#34343e', grain: '#5a5a6a', dark: '#121218', deep: '#0a0a10', cave: '#060608',
+crust: ['#5a8a6a', '#3a6a4a', '#2a4a3a', '#1a3428'], crustH: 4, seed: ss,
+cobble: { stones: ['#3a3a48', '#44445a', '#323240', '#4e4e64', '#3e3e50', '#48485c'], mortar: '#08080c', s: 10, moss: ['#2a4a3a', '#5a8a6a'] },
+grass: { cols: ['#4a7a5a', '#5a8a6a', '#3a6a4a'], tall: 4, rate: 0.5, flowers: ['#c8a4ff', '#e8dcff'] },
+layers: [{ kind: 'band', cols: ['#3a3a48', '#4a4a5a', '#5a5a6e', '#22222a'], h: [3, 5] }],
+});
+const pd = pool(cv, px - hw, px + hw, Math.round(top[px]) - 2, { surface: '#c8c8e8', body: ['#3a3a6a', '#2e2e5a', '#24244a', '#1a1a3a'], see: 0.15, bed: ['#1a1a24', '#24242e'] });
+cv.meta.pools = [pd];
+markOpen(cv);
+fall(cv, px - 6, 0, { cols: ['#e8e8ff', '#b8b8e8', '#8a8ac8'], w: 2, seed: ss + 3, rgb: [0.75, 0.75, 1] });
+const gx = ts.int(40, 100), gy = Math.round(top[gx]);
+const post = pack([0.16, 0.1, 0.12]), lint = pack([0.3, 0.14, 0.16]), lit = pack([0.5, 0.24, 0.26]);
+for (const ox of [-14, 14]) for (let y = gy - 40; y < gy; y++) for (let x = gx + ox - 2; x <= gx + ox + 1; x++) cv.set(x, y, x === gx + ox - 2 ? lit : post);
+for (let x = gx - 22; x <= gx + 22; x++) { const bend = Math.round(((x - gx) / 22) ** 2 * 3); for (let t = 0; t < 4; t++) cv.set(x, gy - 44 - bend + t, t === 0 ? lit : lint); }
+for (let x = gx - 17; x <= gx + 17; x++) cv.set(x, gy - 34, lint);
+cv.block(gx - 24, gy - 50, gx + 24, gy);
+const glows = [];
+const lr = s('lanterns');
+for (let i = 0; i < 2; i++) {
+const lx = lr.int(20, W - 20), ly = Math.round(top[lx]);
+if (cv.liquid[(ly - 1) * W + lx]) continue;
+for (let y = ly - 12; y < ly; y++) for (let x = lx - 2; x <= lx + 2; x++) cv.set(x, y, pack(y < ly - 8 ? [0.42, 0.42, 0.48] : y < ly - 5 ? [1, 0.8, 0.45] : [0.34, 0.34, 0.4]));
+glow(cv, lx, ly - 7, 26, [1, 0.75, 0.4], 0.5);
+glows.push([lx, ly - 7]);
+}
+const br = s('stones');
+for (let i = 0; i < 3; i++) cv.place(boulder(br, br.int(5, 9), br.int(3, 5), { moss: 'moss' }), pal, br.int(10, W - 10), { sink: 2, foot: [8, 2] });
+vines(cv, new Float32Array(W).fill(0), { cols: ['#8a6ab8', '#6a4a98', '#4a3a78'], leaf: '#a88ad8', flower: '#e8dcff', seed: s('wis').int(0, 1e9), rate: 0.12, len: [10, 40] });
+terrainTrees(cv, s('trees'), pal, { n: 2, kinds: ['gnarl', 'wisteria'], shapes: ['lean', 'tall'], h: [70, 110], dark: 0.25, gap: 90, look: { mats: ['leaf', 'leaf2'], bloom: { mat: 'bloom', rate: 0.08 }, hang: { mat: 'bloom', rate: 0.3, len: [6, 18] } } });
+cv.meta.mist = { y0: 110, y1: H, seed: s('mist').int(0, 1e9) };
+cv.meta.glows = glows;
+cv.meta.vignette = 0.5;
+cv.meta.wind = 0.4;
+cv.meta.horizon = 120;
+},
+};
+const ghostglass = {
+compose(cv, seed) {
+const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'ghostglass', p);
+const pal = vary(palette({
+leaf: ['#3ad8c8', { spread: 0.5 }], leaf2: ['#c84ad8', { spread: 0.5 }], bloom: ['#ffffff', { spread: 0.2 }], bark: '#2a3a4a', rock: '#2a4a6a', gem: ['#8ae8ff', { spread: 0.5 }],
+}), s('pal'), 0.8);
+sky(cv, 0, H, ['#0a1a3a', '#0e2a52', '#123a6a', '#164a7e', '#1a5a8a']);
+const lr = s('shafts');
+for (let i = 0; i < 5; i++) {
+const x0 = lr.int(0, W), wdt = lr.int(10, 22);
+cv.wash(pack([0.6, 0.85, 1]), (x, y) => { const c = x0 + y * 0.35; return Math.abs(x - c) < wdt ? 0.1 * (1 - y / H) : 0; }, 0, H);
+}
+silhouette(cv, { base: 120, amp: 14, freq: 0.03, seed: s('far').int(0, 1e9), fill: '#14305a', rough: 4 });
+ruins(cv, { n: 3, fill: '#1e3e6a', line: '#0e2240', rim: '#2e5a8a', seed: s('ruins').int(0, 1e9), floor: 170 });
+fog(cv, '#2a5a8a', 90, 170, 0.25, s('haze').int(0, 1e9));
+const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 168, amp: 9, freq: 0.02 });
+fillSolid(cv, top);
+ledges(cv, top, ts, 6, { high: 1 });
+const ss = ts.int(0, 1e9);
+paintTerrain(cv, {
+a: '#1e3046', b: '#26384e', grain: '#4a6a8a', dark: '#0a1420', deep: '#060c14', cave: '#04080e',
+crust: ['#6af0e0', '#3ad8c8', '#2aa0a0', '#1e6a78'], crustH: 4, seed: ss,
+cobble: { stones: ['#2a4060', '#34506e', '#24384e', '#3e5a7a', '#2e4664', '#385470'], mortar: '#04080e', s: 9, moss: ['#2aa0a0', '#6af0e0'] },
+grass: { cols: ['#3ad8c8', '#6af0e0', '#c84ad8'], tall: 4, rate: 0.55, flowers: ['#ff8ad8', '#ffffff', '#8ae8ff'] },
+layers: [{ kind: 'band', cols: ['#2a4060', '#3a5474', '#4a6a8a', '#14202e'], h: [3, 5] }],
+});
+markOpen(cv);
+const cr = s('crystals'), palettes = [[pack([0.2, 0.3, 0.6]), pack([0.55, 0.85, 1]), pack([0.35, 0.6, 0.9]), pack([0.9, 1, 1])], [pack([0.35, 0.15, 0.5]), pack([0.95, 0.6, 1]), pack([0.7, 0.4, 0.9]), pack([1, 0.92, 1])]];
+const glows = [];
+for (let i = 0; i < 5; i++) {
+const x = cr.int(14, W - 14);
+let y = 0;
+while (y < H - 1 && !(cv.open[y * W + x] && cv.solid[(y + 1) * W + x])) y++;
+if (y >= H - 2) continue;
+keep(cv, 'crystals', crystalSprite(cr, cr.int(16, 30), palettes[i & 1]), x, y + 1, { phase: 0, rgb: i & 1 ? [0.95, 0.6, 1] : [0.55, 0.85, 1] });
+glow(cv, x, y - 8, 24, i & 1 ? [0.95, 0.6, 1] : [0.55, 0.85, 1], 0.35);
+glows.push([x, y - 8]);
+}
+glows.push(...glowShrooms(cv, { n: 5, cap: '#8ae8ff', lit: '#e8ffff', stem: '#5a8a9a', rgb: [0.55, 0.9, 1], seed: s('caps').int(0, 1e9) }));
+const br = s('boulders');
+for (let i = 0; i < 2; i++) cv.place(boulder(br, br.int(6, 10), br.int(4, 6)), pal, br.int(10, W - 10), { sink: 2, foot: [8, 2] });
+terrainTrees(cv, s('kelp'), pal, { n: 3, kinds: ['willow', 'sparse', 'willow'], shapes: ['tall', 'lean'], h: [40, 80], dark: 0.2, gap: 70, ledges: true, look: { mats: ['leaf', 'leaf2'], bloom: { mat: 'bloom', rate: 0.03 }, hang: { mat: 'leaf', rate: 0.3, len: [4, 12] } } });
+cv.meta.glows = glows;
+cv.meta.underwater = true;
+cv.meta.vignette = 0.55;
+cv.meta.wind = 0.3;
+cv.meta.horizon = 120;
+},
+};
+const chronoglass = {
+compose(cv, seed) {
+const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'chronoglass', p);
+const pal = vary(palette({
+leaf: ['#c8a050', { spread: 0.4 }], leaf2: ['#a88a40', { spread: 0.4 }], bloom: ['#ffd0f0', { spread: 0.2 }], bark: '#5a4030', rock: '#b08a5a', gem: ['#b48cff', { spread: 0.5 }],
+}), s('pal'), 0.8);
+sky(cv, 0, H, ['#5a3a7a', '#8a5a9a', '#c88aa0', '#f0b890', '#f8d8a8']);
+const cx = s('clock').int(90, W - 90), cy = 50, R = 34;
+for (let a = 0; a < 360; a += 1) { const r = (a * Math.PI) / 180; const x = Math.round(cx + Math.cos(r) * R), y = Math.round(cy + Math.sin(r) * R); cv.set(x, y, pack([0.98, 0.9, 0.8])); }
+for (let hr = 0; hr < 12; hr++) { const r = (hr * Math.PI) / 6; for (let t = 0; t < 4; t++) cv.set(Math.round(cx + Math.cos(r) * (R - 3 - t)), Math.round(cy + Math.sin(r) * (R - 3 - t)), pack([0.95, 0.85, 0.75])); }
+for (let t = 0; t < 20; t++) cv.set(cx + Math.round(t * 0.6), cy - Math.round(t * 0.8), pack([0.9, 0.78, 0.7]));
+for (let t = 0; t < 14; t++) cv.set(cx - t, cy + Math.round(t * 0.3), pack([0.9, 0.78, 0.7]));
+glow(cv, cx, cy, 60, [1, 0.85, 0.7], 0.25);
+mountains(cv, { base: 122, amp: 18, n: 6, seed: s('m').int(0, 1e9), fill: '#a87a8a', lit: '#c89a9a', dark: '#8a6a7a' });
+for (let L = 0; L < 2; L++) silhouette(cv, { base: 132 + L * 10, amp: 6, freq: 0.02, seed: s('d' + L).int(0, 1e9), fill: ['#d8a878', '#e0b080'][L], rim: ['#f0c898', '#f8d8a8'][L] });
+ruins(cv, { n: 4, fill: '#b08a6a', line: '#6a4a3a', rim: '#d8b08a', seed: s('ruins').int(0, 1e9), floor: 168 });
+const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 166, amp: 12, freq: 0.014 });
+fillSolid(cv, top);
+ledges(cv, top, ts, 6, { high: 1 });
+const ss = ts.int(0, 1e9);
+paintTerrain(cv, {
+a: '#8a6a4a', b: '#9a7a56', grain: '#c8a878', dark: '#3a2818', deep: '#2a1c10', cave: '#1a1008',
+crust: ['#f8d8a0', '#e8c088', '#d0a070', '#a88050'], crustH: 4, seed: ss,
+cobble: { stones: ['#a8845a', '#b8946a', '#98744e', '#c8a478', '#a08060', '#b08c64'], mortar: '#2a1c10', s: 10 },
+layers: [
+{ kind: 'band', cols: ['#e8c088', '#f0d098', '#d8b078', '#a88050'], h: [4, 6] },
+{ kind: 'band', cols: ['#c89a6a', '#d8aa7a', '#b88a5a', '#8a6040'], h: [3, 5] },
+],
+});
+markOpen(cv);
+const hx = ts.int(40, W - 40), hy = Math.round(top[hx]);
+const brass = pack([0.75, 0.55, 0.25]), lite = pack([0.95, 0.8, 0.45]), glass = pack([0.85, 0.92, 1]), sand = pack([0.95, 0.78, 0.45]);
+for (let y = 0; y < 34; y++) {
+const t = Math.abs(y - 17) / 17, half = 2 + Math.round(t * 8);
+for (let x = -half; x <= half; x++) {
+const c = Math.abs(x) === half ? glass : (y < 17 ? y < 6 : y > 22) ? sand : pack([0.72, 0.8, 0.9]);
+cv.set(hx + x, hy - 4 - y, c);
+}
+}
+for (let x = -12; x <= 12; x++) for (const y of [hy - 4, hy - 39, hy - 40]) cv.set(hx + x, y, x < -6 ? lite : brass);
+for (let y = hy - 39; y < hy - 4; y++) { cv.set(hx - 12, y, brass); cv.set(hx + 12, y, brass); }
+cv.block(hx - 14, hy - 42, hx + 14, hy);
+const sr = s('crystals'), glows = [];
+for (let i = 0; i < 3; i++) {
+const at = cv.place(spire(sr, sr.int(8, 14)), pal, sr.int(16, W - 16), { foot: [4, 2], range: 40 });
+if (at) { glow(cv, at.fx, at.fy - 7, 24, [0.75, 0.55, 1], 0.4); glows.push([at.fx, at.fy - 7]); }
+}
+terrainTrees(cv, s('trees'), pal, { n: 2, kinds: ['sparse', 'gnarl'], shapes: ['lean', 'spread'], h: [44, 70], gap: 90, ledges: true, look: { mats: ['leaf', 'leaf2'], bloom: { mat: 'bloom', rate: 0.02 } } });
+const falls = [];
+const fr = s('falls');
+for (let i = 0; i < 2; i++) {
+const x = fr.int(30, W - 30);
+let y = 40;
+while (y < H - 1 && !cv.solid[y * W + x]) y++;
+falls.push({ x, y0: Math.max(20, y - fr.int(40, 70)), y1: y });
+}
+cv.meta.sandfalls = falls;
+cv.meta.hourglass = [hx, hy - 22];
+cv.meta.glows = glows;
+cv.meta.vignette = 0.35;
+cv.meta.wind = 0.9;
+cv.meta.horizon = 122;
+},
+};
+return { skyshard, morphgrove, veilhollow, ghostglass, chronoglass };
+})();
 // src/visual/env/scene.js
 const __m107 = (() => {
 const { Canvas, SCENE_W, SCENE_H } = __m108;
@@ -22586,8 +22939,9 @@ const quarry = __m122;
 const moonfen = __m123;
 const crags = __m124;
 const netherwood = __m125;
-const ENV_VERSION = 12;
-const COMPOSERS = { meadow, forest, netherwood, river, quarry, moonfen, crags };
+const { skyshard, morphgrove, veilhollow, ghostglass, chronoglass } = __m126;
+const ENV_VERSION = 13;
+const COMPOSERS = { meadow, forest, netherwood, river, quarry, moonfen, crags, skyshard, morphgrove, veilhollow, ghostglass, chronoglass };
 const cache = new Map();
 function composeScene(region, seed) {
 const id = COMPOSERS[region] ? region : 'forest';
@@ -23162,7 +23516,7 @@ trickles(ctx, meta.trickles || [], t, '#5a4e4c', '#3e3438');
 return { sceneCanvas, windAt, crosses, SceneTouch, sceneTouch, swayPixels, sceneFrame, findAnchors, PlantGround, mountOrder, plantBox, hitPlant, animateRegion, SCENE_W, SCENE_H };
 })();
 // src/rendering/ragdoll.js
-const __m126 = (() => {
+const __m127 = (() => {
 const GRAVITY = 640;
 const STEP = 1 / 120;
 const FRICTION = 380;
@@ -23415,8 +23769,182 @@ ctx.imageSmoothingEnabled = smooth;
 }
 return { GRAVITY, STEP, FRICTION, Ragdoll };
 })();
+// src/rendering/exotic-fx.js
+const __m128 = (() => {
+const { sceneOf, SCENE_W, SCENE_H } = __m107;
+const states = new Map();
+function canvasOf(s) {
+if (s.cv) return s.cv;
+const c = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(s.w, s.h) : /** @type {any} */ (document.createElement('canvas'));
+c.width = s.w; c.height = s.h;
+const ctx = c.getContext('2d'), img = ctx.createImageData(s.w, s.h);
+new Uint32Array(img.data.buffer).set(s.px);
+ctx.putImageData(img, 0, 0);
+s.cv = c;
+return c;
+}
+function stateOf(region, seed) {
+const key = region + ':' + seed;
+let st = states.get(key);
+if (st) return st;
+const meta = sceneOf(region, seed).meta;
+st = {
+region, meta, t: 0,
+isles: (meta.isles || []).map((s) => ({ s, ox: 0, oy: 0, vx: 0, vy: 0 })),
+ripples: /** @type {{x:number, y:number, t:number}[]} */ ([]),
+morphs: (meta.morphs || []).map((m) => ({ ...m, shape: 0, cool: 0 })),
+crystals: (meta.crystals || []).map((s) => ({ s, a: 1, target: 1, hold: 0 })),
+falls: (meta.sandfalls || []).map((f) => ({ ...f, phase: 0, speed: 40, mode: 'run', left: 0 })),
+mist: null,
+};
+if (meta.mist) {
+const cw = 6, nx = Math.ceil(SCENE_W / cw), ny = Math.ceil((meta.mist.y1 - meta.mist.y0) / cw);
+const base = new Float32Array(nx * ny);
+for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+const v = 0.5 + 0.5 * Math.sin(i * 0.37 + meta.mist.seed % 7) * Math.cos(j * 0.6 + i * 0.11);
+base[j * nx + i] = Math.min(1, 0.35 + v * 0.5 + j / ny * 0.3);
+}
+st.mist = { cw, nx, ny, y0: meta.mist.y0, base, cur: base.slice() };
+}
+if (states.size >= 6) states.delete(/** @type {string} */ (states.keys().next().value));
+states.set(key, st);
+return st;
+}
+const hasExotic = (region) => ['moonfen', 'skyshard', 'morphgrove', 'veilhollow', 'ghostglass', 'chronoglass'].includes(region);
+function segDist(px, py, x0, y0, x1, y1) {
+const dx = x1 - x0, dy = y1 - y0, L = dx * dx + dy * dy;
+const t = L ? Math.max(0, Math.min(1, ((px - x0) * dx + (py - y0) * dy) / L)) : 0;
+return Math.hypot(px - (x0 + t * dx), py - (y0 + t * dy));
+}
+function exoticPush(region, seed, x0, y0, x1, y1) {
+if (!hasExotic(region)) return;
+const st = stateOf(region, seed), vx = x1 - x0, vy = y1 - y0;
+for (const is of st.isles) {
+const s = is.s, cx = s.x + is.ox + s.w / 2, cy = s.y + is.oy + s.h / 2;
+if (segDist(cx, cy, x0, y0, x1, y1) < Math.max(s.w, s.h) * 0.6) { is.vx += vx * 9; is.vy += vy * 9; }
+}
+if (region === 'moonfen') for (const [gx, gy] of st.meta.glows || []) {
+if (segDist(gx, gy, x0, y0, x1, y1) < 14 && st.ripples.length < 24 && !st.ripples.some((r) => r.x === gx && r.y === gy && st.t - r.t < 0.5)) st.ripples.push({ x: gx, y: gy, t: st.t });
+}
+for (const m of st.morphs) if (m.cool <= 0 && segDist(m.x, m.y - 3, x0, y0, x1, y1) < 9) { m.shape = (m.shape + 1) % 4; m.cool = 0.45; }
+for (const c of st.crystals) {
+const s = c.s;
+if (c.hold <= 0 && segDist(s.x + s.w / 2, s.y + s.h / 2, x0, y0, x1, y1) < Math.max(6, s.w)) { c.target = c.target > 0.5 ? 0.2 : 1; c.hold = 0.6; }
+}
+for (const f of st.falls) if (f.mode === 'run' && Math.abs(f.x - (x0 + x1) / 2) < 10 && (y0 + y1) / 2 > f.y0 && (y0 + y1) / 2 < f.y1) { f.mode = 'back'; f.left = 2.5; }
+const m = st.mist;
+if (m) {
+const steps = Math.max(1, Math.ceil(Math.hypot(vx, vy) / 3));
+for (let k = 0; k <= steps; k++) {
+const x = x0 + (vx * k) / steps, y = y0 + (vy * k) / steps;
+for (let j = 0; j < m.ny; j++) for (let i = 0; i < m.nx; i++) {
+const d = Math.hypot(i * m.cw + m.cw / 2 - x, m.y0 + j * m.cw + m.cw / 2 - y);
+if (d < 16) m.cur[j * m.nx + i] *= 0.4 + (d / 16) * 0.6;
+}
+}
+}
+}
+function exoticStep(region, seed, dt) {
+if (!hasExotic(region)) return;
+const st = stateOf(region, seed);
+dt = Math.min(dt, 0.05);
+st.t += dt;
+for (const is of st.isles) {
+const k = 22, c = 2.6;
+is.vx += (-k * is.ox - c * is.vx) * dt; is.vy += (-k * is.oy - c * is.vy) * dt;
+is.ox += is.vx * dt; is.oy += is.vy * dt;
+const lim = 26, r = Math.hypot(is.ox, is.oy);
+if (r > lim) { is.ox *= lim / r; is.oy *= lim / r; is.vx *= 0.5; is.vy *= 0.5; }
+}
+st.ripples = st.ripples.filter((r) => st.t - r.t < 1.6);
+for (const m of st.morphs) m.cool -= dt;
+for (const c of st.crystals) { c.a += (c.target - c.a) * Math.min(1, dt * 5); c.hold -= dt; if (c.target < 0.5 && c.hold < -2.5) c.target = 1; }
+for (const f of st.falls) {
+f.left -= dt;
+if (f.mode === 'back' && f.left <= 0) { f.mode = 'race'; f.left = 2; }
+else if (f.mode === 'race' && f.left <= 0) f.mode = 'run';
+const target = f.mode === 'back' ? -55 : f.mode === 'race' ? 140 : 40;
+f.speed += (target - f.speed) * Math.min(1, dt * 4);
+f.phase += f.speed * dt;
+}
+const m = st.mist;
+if (m) for (let i = 0; i < m.cur.length; i++) m.cur[i] += (m.base[i] - m.cur[i]) * Math.min(1, dt * 0.18);
+}
+function px(ctx, x, y, c, w = 1, h = 1) { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); }
+const rnd = (i, k = 0) => { const v = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return v - Math.floor(v); };
+const BLOOMS = [
+[[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]],
+[[0, 0], [-1, -1], [1, -1], [-1, 1], [1, 1], [0, -2], [-2, 0], [2, 0]],
+[[0, 0], [-1, 0], [1, 0], [-1, 1], [1, 1], [0, -1], [-2, 2], [2, 2]],
+[[0, 0], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1], [2, -1]],
+];
+const BLOOM_COLS = [['#ff8ad8', '#ffd0f0'], ['#7af0a8', '#e0ffe8'], ['#c8a4ff', '#f0e8ff']];
+function exoticDraw(ctx, region, t, seed) {
+if (!hasExotic(region)) return;
+const st = stateOf(region, seed), W = SCENE_W, H = SCENE_H;
+if (region === 'moonfen') {
+for (const r of st.ripples) {
+const age = st.t - r.t, R = 3 + age * 22, a = Math.max(0, 1 - age / 1.6);
+ctx.globalAlpha = a * 0.85;
+for (let k = 0; k < 28; k++) { const an = (k / 28) * Math.PI * 2; px(ctx, r.x + Math.cos(an) * R, r.y + Math.sin(an) * R * 0.4, '#bff4ff'); }
+if (age > 0.3) { const R2 = R - 7; for (let k = 0; k < 20; k++) { const an = (k / 20) * Math.PI * 2; px(ctx, r.x + Math.cos(an) * R2, r.y + Math.sin(an) * R2 * 0.4, '#6ad0ff'); } }
+ctx.globalAlpha = 1;
+}
+}
+if (region === 'skyshard') {
+for (let i = 0; i < 10; i++) { const x = ((t * (30 + i * 4) + rnd(i) * W) % (W + 40)) - 20, y = 20 + rnd(i, 1) * 120; px(ctx, x, y, 'rgba(255,255,255,0.55)', 6 + (i % 3) * 2, 1); }
+for (const is of st.isles) {
+const s = is.s, bob = Math.sin(t * 0.9 + s.x * 0.05) * 1.5;
+ctx.drawImage(canvasOf(s), Math.round(s.x + is.ox), Math.round(s.y + is.oy + bob));
+}
+}
+if (region === 'morphgrove') {
+for (const m of st.morphs) {
+const [c0, c1] = BLOOM_COLS[m.hue % BLOOM_COLS.length], sway = Math.round(Math.sin(t * 1.4 + m.x) * 0.6);
+px(ctx, m.x, m.y - 3, '#3a8a5a', 1, 3);
+for (const [dx, dy] of BLOOMS[m.shape]) px(ctx, m.x + dx + sway, m.y - 5 + dy, dx === 0 && dy === 0 ? c1 : c0);
+if (m.cool > 0) for (let k = 0; k < 4; k++) px(ctx, m.x + Math.cos(k * 1.6 + t * 6) * 4, m.y - 5 + Math.sin(k * 1.6 + t * 6) * 3, '#e0ffe8');
+}
+const p = st.meta.portal;
+if (p) for (let i = 0; i < 10; i++) { const an = t * 1.2 + i * 0.63, r = p[2] + 4 + Math.sin(t + i) * 3; px(ctx, p[0] + Math.cos(an) * r, p[1] + Math.sin(an) * r, i % 2 ? '#aaffcc' : '#ffd0f0'); }
+}
+if (region === 'veilhollow' && st.mist) {
+const m = st.mist;
+for (let j = 0; j < m.ny; j++) for (let i = 0; i < m.nx; i++) {
+const v = m.cur[j * m.nx + i];
+if (v < 0.05) continue;
+const drift = Math.sin(t * 0.3 + j * 0.7) * 3;
+ctx.fillStyle = `rgba(206,204,232,${(v * 0.42).toFixed(3)})`;
+ctx.fillRect(Math.round(i * m.cw + drift), m.y0 + j * m.cw, m.cw, m.cw);
+}
+for (let i = 0; i < 8; i++) { const x = (rnd(i) * W + Math.sin(t * 0.4 + i) * 20 + W) % W, y = 80 + rnd(i, 2) * 80 + Math.sin(t * 0.6 + i) * 6; if (Math.sin(t * 1.5 + i * 2) > 0) px(ctx, x, y, '#e8dcff'); }
+}
+if (region === 'ghostglass') {
+for (let i = 0; i < 16; i++) { const age = (t * 0.12 + rnd(i)) % 1, x = rnd(i, 1) * W + Math.sin(t * 2 + i) * 2, y = H - age * H; px(ctx, x, y, age < 0.85 ? 'rgba(200,240,255,0.7)' : 'rgba(255,255,255,0.9)'); }
+for (const c of st.crystals) {
+const s = c.s;
+ctx.globalAlpha = c.a;
+ctx.drawImage(canvasOf(s), s.x, s.y);
+ctx.globalAlpha = 1;
+if (c.a < 0.7) for (let k = 0; k < 6; k++) px(ctx, s.x + rnd(k, s.x) * s.w, s.y + ((t * 20 + k * 7) % s.h), 'rgba(200,250,255,0.8)');
+}
+}
+if (region === 'chronoglass') {
+for (const f of st.falls) {
+const L = f.y1 - f.y0, n = Math.max(6, Math.round(L / 3));
+for (let i = 0; i < n; i++) {
+const y = f.y0 + ((((f.phase + (i * L) / n) % L) + L) % L), x = f.x + Math.round(Math.sin(i * 1.7) * 1.2);
+px(ctx, x, y, f.mode === 'back' ? '#d8c8ff' : f.mode === 'race' ? '#fff0c0' : (i & 1 ? '#f0c878' : '#d8a858'));
+}
+px(ctx, f.x - 2, f.y1 - 1, '#e8c088', 5, 1);
+}
+for (let i = 0; i < 12; i++) { const dir = i % 4 === 0 ? -1 : 1, age = ((t * 0.1 * dir + rnd(i)) % 1 + 1) % 1; px(ctx, rnd(i, 3) * W, H * 0.9 - age * 100, i % 3 ? '#ffe8b0' : '#d8b8ff'); }
+}
+}
+return { hasExotic, exoticPush, exoticStep, exoticDraw };
+})();
 // src/game/wild-rabbits.js
-const __m127 = (() => {
+const __m129 = (() => {
 const { Rng, hashString } = __m6;
 const { rollLook } = __m59;
 const { pickKind, kindLook } = __m60;
@@ -23875,7 +24403,7 @@ return out;
 return { HOP_GRAVITY, WILD_HP, BLEED_OUT, NEAR_MISS, WARREN_SIZE, RESPAWN, BLOOD, wildLook, GAITS, WildRabbit, Warren, warrenSpots };
 })();
 // src/rendering/punch.js
-const __m129 = (() => {
+const __m131 = (() => {
 const CONTRAST = 1.4, SATURATE = 1.3;
 const INK = [20, 12, 16, 235], HALO = [255, 244, 220, 70];
 function punchSprite(d, w, h, o = {}) {
@@ -23913,12 +24441,12 @@ for (const i of halo) d.set(HALO, i * 4);
 return { punchSprite };
 })();
 // src/rendering/rabbit.js
-const __m128 = (() => {
+const __m130 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m88;
 const { RABBIT_MARKS } = __m59;
 const { KINDS } = __m60;
-const { punchSprite } = __m129;
+const { punchSprite } = __m131;
 const RABBIT_W = 48;
 const RABBIT_H = 40;
 const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
@@ -25429,10 +25957,10 @@ ctx.fillRect(fx, fy, RABBIT_W, RABBIT_H);
 return { RABBIT_W, RABBIT_H, rabbitLevels, rabbitPose, rabbitPace, rabbitAnchors, rabbitSpriteKey, drawRabbitSprite, clearRabbitSprites, drawRabbit };
 })();
 // src/ui/views/wilds.js
-const __m103 = (() => {
-const { UpscaledCanvas } = __m104;
+const __m104 = (() => {
+const { UpscaledCanvas } = __m105;
 const { BIOME_BY_ID, unlockText } = __m20;
-const { CREATURE_NAMES, rarityTag } = __m105;
+const { CREATURE_NAMES, rarityTag } = __m100;
 const { h, btn, clear, toast, keepScroll, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
@@ -25440,16 +25968,17 @@ const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, we
 const { equipmentById } = __m57;
 const { RANKS } = __m57;
 const { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, sceneTouch, crosses, SCENE_W, SCENE_H } = __m106;
-const { Ragdoll } = __m126;
+const { Ragdoll } = __m127;
+const { exoticPush, exoticStep, exoticDraw } = __m128;
 const { sceneOf } = __m107;
 const { plantCanvas, plantFrameOf, plantGlow, emitColour, silhouetteOf, ingredientSprite, speciesOf, mountsOf, variantOf, MIN_HIT } = __m94;
 const { EFFECT_BY_KEY } = __m14;
 const { hashString } = __m6;
-const { Warren, warrenSpots, BLOOD, WILD_HP } = __m127;
-const { drawRabbit, rabbitSpriteKey, RABBIT_W, RABBIT_H } = __m128;
+const { Warren, warrenSpots, BLOOD, WILD_HP } = __m129;
+const { drawRabbit, rabbitSpriteKey, RABBIT_W, RABBIT_H } = __m130;
 const { defaultSnap, penHasRoom, PEN_MAX } = __m59;
 const { KINDS } = __m60;
-const SHADOW = { forest: 'rgba(8,16,10,0.32)', netherwood: 'rgba(6,4,16,0.4)', meadow: 'rgba(24,30,10,0.26)', river: 'rgba(4,14,16,0.34)', quarry: 'rgba(26,18,10,0.3)', moonfen: 'rgba(2,6,18,0.42)', crags: 'rgba(30,6,4,0.4)' };
+const SHADOW = { forest: 'rgba(8,16,10,0.32)', netherwood: 'rgba(6,4,16,0.4)', meadow: 'rgba(24,30,10,0.26)', river: 'rgba(4,14,16,0.34)', quarry: 'rgba(26,18,10,0.3)', moonfen: 'rgba(2,6,18,0.42)', crags: 'rgba(30,6,4,0.4)', skyshard: 'rgba(20,40,70,0.26)', morphgrove: 'rgba(30,8,30,0.34)', veilhollow: 'rgba(10,10,20,0.38)', ghostglass: 'rgba(2,10,24,0.42)', chronoglass: 'rgba(40,20,10,0.32)' };
 function litSprite(d, light) {
 const dark = light.length >= 6 ? [light[3] * 255, light[4] * 255, light[5] * 255] : null;
 const m = (light[0] + light[1] + light[2]) / 3;
@@ -25923,6 +26452,7 @@ const dx = x1 - x0, speed = Math.hypot(dx, y1 - y0), dir = dx === 0 ? (this.time
 const a = dir * Math.min(3.2, 0.5 + speed * 0.45);
 const touch = sceneTouch(this.region, this.lab.state.sceneSeed(this.region));
 if (touch) touch.push(x0, y0, x1, y1);
+exoticPush(this.region, this.lab.state.sceneSeed(this.region), x0, y0, x1, y1);
 for (const it of Object.values(this.fallen)) it.doll.kick(x0, y0, x1, y1, 3);
 const warren = this.wildlife ? this.warrens.get(this.region) : null;
 if (warren) for (const r of warren.rabbits) { const b = r.box(2); if (r.running && crosses(x0, y0, x1, y1, b.x0, b.y0, b.x1, b.y1)) warren.scare(r, x0); }
@@ -26353,6 +26883,8 @@ const touch = sceneTouch(this.region, st.sceneSeed(this.region));
 if (touch) touch.step(dt);
 ctx.drawImage(sceneFrame(this.region, st.sceneSeed(this.region), this.time), 0, 0);
 animateRegion(ctx, this.region, this.time, st.sceneSeed(this.region));
+exoticStep(this.region, st.sceneSeed(this.region), dt);
+exoticDraw(ctx, this.region, this.time, st.sceneSeed(this.region));
 const warren = this.warren();
 if (warren) warren.step(dt);
 const gore = this.goreLayer(warren);
@@ -26642,7 +27174,7 @@ this.grow();
 return { WildsView };
 })();
 // src/visual/env/pens.js
-const __m133 = (() => {
+const __m135 = (() => {
 const { Canvas } = __m108;
 const { col, silhouette, treeShape } = __m110;
 const { finish } = __m109;
@@ -27869,7 +28401,7 @@ return p;
 return { PEN_W, PEN_H, BACK, GROUND_Y0, PENS_VERSION, PEN_KINDS, penTitle, penOf };
 })();
 // src/rendering/pen-anim.js
-const __m134 = (() => {
+const __m136 = (() => {
 function hash(a, b = 0) {
 let n = Math.imul(a | 0, 0x27d4eb2d) ^ Math.imul(b | 0, 0x165667b1);
 n = Math.imul(n ^ (n >>> 15), 0x2c1b3c6d);
@@ -27992,13 +28524,13 @@ if (f) f(ctx, a, t);
 return { drawPenAnim };
 })();
 // src/rendering/hutch-scene.js
-const __m132 = (() => {
+const __m134 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m88;
-const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m128;
+const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m130;
 const { kindOf } = __m60;
-const { penOf } = __m133;
-const { drawPenAnim } = __m134;
+const { penOf } = __m135;
+const { drawPenAnim } = __m136;
 const WALKERS = { cat: 12, salamander: 5, deer: 10, badger: 8, dove: 8, fox: 14, snail: 1.5, rat: 16 };
 const HUTCH_W = 224;
 const HUTCH_H = 92;
@@ -28428,16 +28960,16 @@ ctx.drawImage(this.bg, 0, 0);
 return { HUTCH_W, HUTCH_H, HUTCH_BODIES, penFor, paintHutch, paintHutchFront, onGround, HutchScene };
 })();
 // src/ui/views/hutch.js
-const __m131 = (() => {
+const __m133 = (() => {
 const { readingSteadiness } = __m58;
 const { kindDef, kindOf, KINDS, KIND_IDS } = __m60;
 const { h, btn, clear, toast, modal, confirmDialog, keepScroll } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { drawRabbit, RABBIT_W, RABBIT_H } = __m128;
-const { HutchScene, HUTCH_W, HUTCH_H } = __m132;
-const { penTitle } = __m133;
-const { UpscaledCanvas } = __m104;
+const { drawRabbit, RABBIT_W, RABBIT_H } = __m130;
+const { HutchScene, HUTCH_W, HUTCH_H } = __m134;
+const { penTitle } = __m135;
+const { UpscaledCanvas } = __m105;
 const { EFFECT_BY_KEY } = __m14;
 const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral, RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE, BURNS, PEN_MAX, penHasRoom, livingOf } = __m59;
 const { PURGE_BREW_TIME } = __m5;
@@ -28811,7 +29343,7 @@ if (this._live >= 0.25) { this._live = 0; this.live(); }
 return { CHANNELS, HutchPanel };
 })();
 // src/ui/views/trials.js
-const __m130 = (() => {
+const __m132 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
@@ -28823,9 +29355,9 @@ const { summarize, addSamples, EVIDENCE_TEXT, evidenceRank, requirementEvidence 
 const { evidenceOf } = __m79;
 const { shortName } = __m53;
 const LEVEL_SHORT = { preliminary: '1 reading', repeated: 'repeated', corroborated: 'corroborated', certified: 'certified' };
-const { drawRabbit } = __m128;
+const { drawRabbit } = __m130;
 const { focusRabbit, findRabbit, rabbitSnap, decodeSnap, lookFromSeed, RABBIT_MARKS } = __m59;
-const { HutchPanel } = __m131;
+const { HutchPanel } = __m133;
 const REPLAY_T = 3.2;
 class TrialsView {
 constructor(lab) {
@@ -29201,8 +29733,241 @@ return `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2
 }
 return { TrialsView, EFFECTS, EFFECT_INDEX };
 })();
+// src/ui/views/garden.js
+const __m137 = (() => {
+const { h, btn, clear, toast } = __m2;
+const { icon } = __m3;
+const { audio } = __m4;
+const { BEDS, GRADES, GARDEN_UPGRADES, seedList, gradeNeeded, bedOf, boughtCount, cropYield, growHours, seedId } = __m80;
+const { SPECIES_BY_KEY, materialIdOf } = __m16;
+const { RARITY } = __m19;
+const { atlasFrame, seedAsset, stageAsset, loadAtlases, onAtlasLoaded } = __m50;
+const { formatWait } = __m61;
+const { rarityTag } = __m100;
+const { hashString, Rng } = __m6;
+const GW = 384, GH = 176;
+const BED_LOOK = {
+soil: { rim: ['#6a6460', '#8a847c', '#4a4440'], dry: [0.42, 0.29, 0.18], wet: [0.2, 0.13, 0.08], speck: '#8a6a44' },
+fungal: { rim: ['#5a3a22', '#7a5232', '#3a2416'], dry: [0.24, 0.2, 0.17], wet: [0.12, 0.1, 0.09], speck: '#d8c8a8' },
+crystal: { rim: ['#5a5a66', '#8a8a96', '#3a3a44'], dry: [0.5, 0.5, 0.55], wet: [0.34, 0.34, 0.4], speck: '#c8c8d8' },
+tide: { rim: ['#b09a6a', '#e0cc96', '#7a6a4a'], dry: [0.25, 0.48, 0.62], wet: [0.14, 0.32, 0.5], speck: '#d8f0ff' },
+};
+const hex = (rgb) => '#' + rgb.map((v) => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
+const mixc = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+class GardenView {
+constructor(lab) {
+this.lab = lab;
+this.el = h('section', { class: 'view view-garden', 'data-view': 'garden' });
+this.plot = null;
+this.seed = null;
+this.t = 0;
+this.redrawIn = 0;
+onAtlasLoaded((a) => { if (a.startsWith('growth') || a === 'seeds') this.refresh(); });
+}
+build() {
+const el = clear(this.el);
+this.canvas = /** @type {HTMLCanvasElement} */ (h('canvas', { width: String(GW), height: String(GH), class: 'garden-scene', 'aria-label': 'Your garden: tap a plot' }));
+this.canvas.addEventListener('pointerdown', (e) => this.tapScene(e));
+this.status = h('div', { class: 'small garden-status' });
+this.plotsEl = h('div', { class: 'plots', role: 'listbox', 'aria-label': 'Garden plots' });
+this.seedsEl = h('div', { class: 'seeds', role: 'listbox', 'aria-label': 'Seeds in hand' });
+this.actsEl = h('div', { class: 'row wrap' });
+this.upsEl = h('div', { class: 'garden-ups' });
+el.append(h('div', { class: 'garden' },
+this.canvas, this.status, this.actsEl,
+h('div', { class: 'small muted', text: 'Plots' }), this.plotsEl,
+h('div', { class: 'small muted', text: 'Seeds' }), this.seedsEl,
+h('details', { class: 'card parch' }, h('summary', { text: 'Garden upgrades' }), this.upsEl)));
+loadAtlases((a) => a.id.startsWith('growth') || a.id === 'seeds').then(() => this.refresh());
+this.refresh();
+}
+layout() {
+const plots = this.lab.state.garden.plots, n = plots.length, per = Math.min(6, Math.max(3, Math.ceil(n / 2))), pw = Math.floor((GW - 24) / per);
+return plots.map((p, i) => {
+const row = Math.floor(i / per), col = i % per;
+return { p, x: 12 + col * pw + 4, y: row === 0 ? 150 : 110, w: pw - 8, h: 18 };
+});
+}
+tapScene(e) {
+const r = this.canvas.getBoundingClientRect(), x = ((e.clientX - r.left) / r.width) * GW, y = ((e.clientY - r.top) / r.height) * GH;
+const hit = this.layout().find((q) => x >= q.x - 2 && x <= q.x + q.w + 2 && y >= q.y - 44 && y <= q.y + q.h);
+if (hit) this.act(hit.p.id);
+}
+act(id) {
+const st = this.lab.state, g = st.garden, now = Date.now();
+const p = g.plots.find((x) => x.id === id);
+if (!p) return;
+this.plot = id;
+if (!p.crop) {
+if (!this.seed) { audio.play('click'); this.refresh(); return; }
+const r = st.sow(id, this.seed, now);
+if (!r.ok) { toast('Garden', r.reason || 'It will not grow there.', 'seedling'); this.refresh(); return; }
+audio.play('dig');
+if (!g.seeds[this.seed]) this.seed = null;
+} else {
+const s = st.gardenView(now).find((x) => x.id === id).state;
+if (s && s.stage === 'mature') {
+const r = st.harvestGarden(id, now);
+if (!r.ok) { toast('Garden', r.reason || 'It cannot be harvested yet.', 'seedling'); this.refresh(); return; }
+audio.play('snip');
+const m = st.lookup(/** @type {string} */ (r.material));
+toast('Harvest', `+${r.amount} ml ${m ? m.name : ''}${r.seed ? ' — and a seed fell from it' : ''}.`, 'seedling');
+this.lab.refreshHud && this.lab.refreshHud(true);
+if (this.lab.buildShelf) this.lab.buildShelf();
+} else if (st.waterGarden(id, now)) audio.play('pour');
+else audio.play('click');
+}
+this.lab.save();
+this.refresh();
+}
+refresh() {
+if (!this.plotsEl) return;
+const st = this.lab.state, g = st.garden, now = Date.now();
+g.seen = true;
+const view = st.gardenView(now);
+const growing = view.filter((p) => p.crop).length, ready = view.filter((p) => p.state && p.state.stage === 'mature').length, thirsty = view.filter((p) => p.state && p.state.thirsty).length;
+clear(this.status).append(`${g.plots.length} plots · ${growing} growing · ${ready} ready${thirsty ? ` · ${thirsty} thirsty` : ''}`);
+clear(this.actsEl).append(
+btn('Water all', () => { const n = st.waterGarden(null, Date.now()); audio.play(n ? 'pour' : 'click'); if (n) this.lab.save(); this.refresh(); }, { cls: 'small', icon: 'drop', act: 'garden-water', disabled: !thirsty && !view.some((p) => p.state && p.state.g < 1 && p.state.w < 0.9) }),
+ready ? btn(`Harvest ${ready}`, () => { for (const p of view.filter((q) => q.state && q.state.stage === 'mature')) this.act(p.id); }, { cls: 'small gold', icon: 'seedling', act: 'garden-harvest' }) : null,
+this.seed ? h('span', { class: 'muted small', text: `Sowing ${this.seedName(this.seed)}: tap an empty ${BEDS[bedOf(this.seed.replace(/\+arcane$/, ''))].name.toLowerCase()}.` }) : h('span', { class: 'muted small', text: 'Choose a seed, then tap an empty plot to sow it.' }));
+const plots = clear(this.plotsEl);
+for (const p of view) {
+const sp = p.crop ? SPECIES_BY_KEY[p.crop.species] : null;
+const stageIx = p.state ? p.state.stageIx : -1;
+const asset = sp && p.crop ? stageAsset(sp.key, p.crop.arcane, stageIx) : null;
+const cv = this.spriteCanvas(asset, 64);
+const what = !p.crop ? `Empty ${BEDS[p.bed].name.toLowerCase()}` : `${p.crop.arcane ? 'Arcane ' : ''}${sp ? sp.name : p.crop.species}`;
+const state = !p.crop ? (GRADES[p.grade] + (p.grade ? ' grade' : '')) : p.state.stage === 'mature' ? `ready · tap to harvest ${cropYield(p.crop.species)} ml` : `${p.state.stage} · ${formatWait(p.state.readyIn)}${p.state.thirsty ? ' · thirsty' : ''}`;
+const el = h('button', { class: `plot g${p.grade}${this.plot === p.id ? ' selected' : ''}`, 'data-act': 'plot-' + p.id, role: 'option', 'aria-label': `${what}: ${state}` },
+cv, h('span', { class: 'pname', text: what }), h('span', { class: 'pstate', text: state }),
+p.crop && p.state.g < 1 ? h('span', { class: 'moist', title: 'Soil moisture' }, h('i', { style: { width: Math.round(p.state.w * 100) + '%' } })) : null);
+el.addEventListener('click', () => this.act(p.id));
+plots.appendChild(el);
+}
+const seeds = clear(this.seedsEl);
+const list = seedList(g);
+if (!list.length) seeds.appendChild(h('div', { class: 'muted small', text: 'No seeds yet. Harvests in the wilds sometimes drop one: common species often, rare ones seldom, Arcane ones rarely.' }));
+const sel = this.plot ? g.plots.find((x) => x.id === this.plot) : null;
+for (const s of list) {
+const fits = !sel || (!sel.crop && sel.bed === bedOf(s.key) && sel.grade >= gradeNeeded(s.key, s.arcane));
+const el = h('button', { class: 'seed' + (this.seed === s.id ? ' selected' : ''), 'data-act': 'seed-' + s.id, role: 'option', title: `${this.seedName(s.id)} ×${s.n} — needs a ${BEDS[bedOf(s.key)].name.toLowerCase()}${gradeNeeded(s.key, s.arcane) ? ` of ${GRADES[gradeNeeded(s.key, s.arcane)].toLowerCase()} grade` : ''}; about ${Math.round(growHours(s.key, s.arcane) * 10) / 10} h to grow (watered)`, disabled: !fits },
+this.spriteCanvas(seedAsset(s.key, s.arcane), 28), h('span', { class: 'sn', text: `${s.n}× ${s.species.name}` }), rarityTag(/** @type {any} */ ({ wild: { rarity: s.species.rarity, arcane: s.arcane } }), { short: true }));
+el.addEventListener('click', () => {
+this.seed = this.seed === s.id ? null : s.id;
+audio.play('click');
+if (this.seed && sel && !sel.crop) { this.act(sel.id); return; }
+this.refresh();
+});
+seeds.appendChild(el);
+}
+const ups = clear(this.upsEl);
+for (const u of GARDEN_UPGRADES) {
+const maxed = u.max !== undefined && boughtCount(g, u.id) >= u.max;
+ups.appendChild(h('div', { class: 'card' },
+h('div', { class: 'title', text: `${u.name}${u.max !== undefined ? ` (${boughtCount(g, u.id)}/${u.max})` : ''}` }), h('div', { class: 'small', text: u.desc }),
+btn(maxed ? 'Owned' : `${u.price} coins`, () => {
+const r = st.buyGardenUpgrade(u.id);
+if (!r.ok) { toast(u.name, r.reason || 'Not now.', 'lock'); return; }
+audio.play('coin'); this.lab.save(); this.lab.refreshHud && this.lab.refreshHud(true); this.refresh();
+}, { cls: 'small', icon: st.rank < u.rank ? 'lock' : 'coin', disabled: maxed || st.rank < u.rank || st.coins < u.price, act: 'garden-up-' + u.id })));
+}
+this.paint();
+}
+seedName(id) {
+const arcane = id.endsWith('+arcane'), sp = SPECIES_BY_KEY[arcane ? id.slice(0, -7) : id];
+return `${arcane ? 'Arcane ' : ''}${sp ? sp.name : id} seed`;
+}
+spriteCanvas(asset, size) {
+const f = atlasFrame(asset);
+const S = f ? Math.max(f.pix.w, f.pix.h, 16) + 2 : 16;
+const cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: String(S), height: String(S), style: { width: size + 'px', height: size + 'px' } }));
+if (f) /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')).drawImage(f.pix.toCanvas(), Math.round((S - f.pix.w) / 2), S - 1 - f.pix.h);
+return cv;
+}
+paint() {
+const cv = this.canvas;
+if (!cv) return;
+const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
+ctx.imageSmoothingEnabled = false;
+if (!this.bg) this.bg = this.paintGround();
+ctx.drawImage(this.bg, 0, 0);
+const st = this.lab.state, view = st.gardenView(Date.now()), lay = this.layout();
+for (const q of lay) {
+const pv = view.find((x) => x.id === q.p.id);
+this.paintPlot(ctx, q, pv);
+}
+}
+paintGround() {
+const c = /** @type {HTMLCanvasElement} */ (document.createElement('canvas'));
+c.width = GW; c.height = GH;
+const g = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d'));
+const rng = new Rng(hashString('garden:' + this.lab.state.seed));
+const sky = ['#9ad0e8', '#a8d8e8', '#b8e0e4', '#c8e4dc', '#d8e8d0'];
+sky.forEach((col, i) => { g.fillStyle = col; g.fillRect(0, i * 12, GW, 12); });
+for (let x = -10; x < GW + 10; x += rng.int(10, 18)) {
+const r = rng.int(10, 18), cy = 64 - rng.int(0, 12);
+for (let y = -r; y <= r; y++) for (let dx = -r; dx <= r; dx++) {
+if (dx * dx + y * y > r * r) continue;
+g.fillStyle = dx + y < -r * 0.4 ? '#4a8a4a' : dx + y > r * 0.5 ? '#1e4a2a' : '#2e6a3a';
+g.fillRect(x + dx, cy + y, 1, 1);
+}
+}
+g.fillStyle = '#2e6a3a'; g.fillRect(0, 64, GW, 18);
+for (let y = 80; y < GH; y++) { g.fillStyle = y < 84 ? '#5aa04a' : (y & 1) ? '#4a8a3c' : '#4e9040'; g.fillRect(0, y, GW, 1); }
+for (let i = 0; i < 260; i++) { const x = rng.int(0, GW - 1), y = rng.int(84, GH - 1); g.fillStyle = rng.chance(0.5) ? '#3a7030' : '#6ab45a'; g.fillRect(x, y, 1, 2); }
+for (let i = 0; i < 18; i++) { const x = rng.int(0, GW - 1), y = rng.int(86, GH - 4); g.fillStyle = rng.pick(['#f0e0f0', '#ffe070', '#f08aa8']); g.fillRect(x, y, 1, 1); }
+g.fillStyle = '#5a3a22'; g.fillRect(0, 72, GW, 2); g.fillRect(0, 79, GW, 2);
+g.fillStyle = '#8a5a32'; g.fillRect(0, 72, GW, 1); g.fillRect(0, 79, GW, 1);
+for (let x = 4; x < GW; x += 16) { g.fillStyle = '#3a2416'; g.fillRect(x, 66, 4, 20); g.fillStyle = '#7a5232'; g.fillRect(x + 1, 66, 2, 19); g.fillStyle = '#a8784a'; g.fillRect(x + 1, 66, 1, 1); }
+g.fillStyle = '#3a2416'; g.fillRect(GW - 30, 70, 18, 22); g.fillStyle = '#7a5232'; g.fillRect(GW - 29, 71, 16, 20);
+g.fillStyle = '#4a4440'; g.fillRect(GW - 30, 75, 18, 2); g.fillRect(GW - 30, 86, 18, 2); g.fillStyle = '#5ab0f0'; g.fillRect(GW - 28, 71, 12, 2);
+g.fillStyle = '#5a6a7a'; g.fillRect(GW - 46, 84, 10, 7); g.fillStyle = '#8a9aaa'; g.fillRect(GW - 46, 84, 10, 1); g.fillRect(GW - 52, 82, 6, 1); g.fillRect(GW - 36, 85, 3, 1);
+return c;
+}
+paintPlot(g, q, pv) {
+const L = BED_LOOK[/** @type {'soil'} */ (q.p.bed)] || BED_LOOK.soil;
+const w = pv && pv.state ? pv.state.w : 0.25, wet = Math.max(0, Math.min(1, (w - 0.25) / 0.6));
+const rng = new Rng(hashString('plot:' + q.p.id));
+for (let x = q.x - 2; x < q.x + q.w + 2; x += 3) for (const y of [q.y - 2, q.y + q.h]) {
+g.fillStyle = L.rim[2]; g.fillRect(x, y, 3, 2); g.fillStyle = L.rim[rng.int(0, 1)]; g.fillRect(x, y, 2, 1);
+}
+for (let y = q.y; y < q.y + q.h; y += 3) for (const x of [q.x - 2, q.x + q.w]) {
+g.fillStyle = L.rim[2]; g.fillRect(x, y, 2, 3); g.fillStyle = L.rim[0]; g.fillRect(x, y, 1, 2);
+}
+g.fillStyle = hex(mixc(L.dry, L.wet, wet)); g.fillRect(q.x, q.y, q.w, q.h);
+for (let i = 0; i < q.w * q.h * 0.06; i++) { g.fillStyle = L.speck; g.fillRect(q.x + rng.int(0, q.w - 1), q.y + rng.int(0, q.h - 1), 1, 1); }
+for (let x = q.x; x < q.x + q.w; x += 4) { g.fillStyle = hex(mixc(L.dry, [0, 0, 0], 0.25 + wet * 0.2)); g.fillRect(x, q.y + 4 + ((x >> 2) & 1) * 6, 3, 1); }
+if (q.p.grade >= 1) {
+g.fillStyle = 'rgba(210,240,255,0.18)'; g.fillRect(q.x - 2, q.y - 46, q.w + 4, 44);
+g.fillStyle = '#8a9aa8'; for (const x of [q.x - 2, q.x + q.w + 1, q.x + (q.w >> 1)]) g.fillRect(x, q.y - 46, 1, 46);
+g.fillRect(q.x - 2, q.y - 46, q.w + 4, 1); g.fillRect(q.x - 2, q.y - 24, q.w + 4, 1);
+}
+if (q.p.grade >= 2) {
+const t = Date.now() / 600;
+for (let i = 0; i < 4; i++) { g.fillStyle = Math.sin(t + i) > 0 ? '#c8a4ff' : '#8e5cf0'; g.fillRect(q.x + 3 + i * Math.floor((q.w - 6) / 3), q.y + q.h + 3, 2, 1); }
+}
+if (this.plot === q.p.id) { g.fillStyle = '#ffe070'; g.fillRect(q.x - 3, q.y + q.h + 3, q.w + 6, 1); }
+if (!pv || !pv.crop) return;
+const f = atlasFrame(stageAsset(pv.crop.species, pv.crop.arcane, pv.state.stageIx));
+if (!f) return;
+g.drawImage(f.pix.toCanvas(), Math.round(q.x + q.w / 2 - f.ax), Math.round(q.y + q.h * 0.75 - f.ay));
+if (pv.state.stage === 'mature' && Math.sin(Date.now() / 300 + q.x) > 0.6) { g.fillStyle = '#fff6c0'; g.fillRect(Math.round(q.x + q.w / 2 + 6), q.y - 18, 1, 1); }
+if (pv.state.thirsty) { g.fillStyle = '#1a2a48'; g.fillRect(q.x + q.w - 6, q.y - 10, 4, 5); g.fillStyle = '#6ab8f0'; g.fillRect(q.x + q.w - 5, q.y - 9, 2, 3); }
+}
+frame(dt) {
+this.redrawIn -= dt;
+if (this.redrawIn > 0) return;
+this.redrawIn = 0.5;
+this.paint();
+this.t += 0.5;
+if (this.t % 5 < 0.5) this.refresh();
+}
+}
+return { GardenView, materialIdOf, RARITY, seedId, icon };
+})();
 // src/ui/views/book.js
-const __m135 = (() => {
+const __m138 = (() => {
 const { KINDS } = __m60;
 const { h, btn, clear } = __m2;
 const { icon } = __m3;
@@ -29318,6 +30083,7 @@ const { Renderer } = __m87;
 const { drawPortrait } = __m93;
 const { drawJar } = __m88;
 const { ingredientSprite } = __m94;
+const { RARITY } = __m19;
 const { measureParticles, tapSelection, probeSelection, viscosityClass, densityWord } = __m78;
 const { scoreRequirement, PROPERTY_LABELS } = __m54;
 const { processEvent } = __m96;
@@ -29337,12 +30103,13 @@ const { h, btn, clear, keepScroll, toast, coins, confirmDialog, modal, setNoteDo
 const { icon } = __m3;
 const { audio } = __m4;
 const panels = __m98;
-const trade = __m100;
-const { Tutorial } = __m101;
-const { CounterView } = __m102;
-const { WildsView } = __m103;
-const { TrialsView } = __m130;
-const { BookView } = __m135;
+const trade = __m101;
+const { Tutorial } = __m102;
+const { CounterView } = __m103;
+const { WildsView } = __m104;
+const { TrialsView } = __m132;
+const { GardenView } = __m137;
+const { BookView } = __m138;
 const { shortName } = __m53;
 const REQ_ICON = { temperature: 'thermo', quantity: 'flask', purity: 'pure' };
 const TOOL_DEFS = [
@@ -29356,6 +30123,7 @@ const VIEWS = [
 { id: 'counter', label: 'Counter', icon: 'stall', key: 'c' },
 { id: 'brew', label: 'Brew', icon: 'cauldron', key: 'v' },
 { id: 'wilds', label: 'Wilds', icon: 'tree', key: 'w' },
+{ id: 'garden', label: 'Garden', icon: 'seedling', key: 'g' },
 { id: 'trials', label: 'Trials', icon: 'dropper', key: 't' },
 { id: 'book', label: 'Book', icon: 'book', key: 'j' },
 ];
@@ -29556,12 +30324,12 @@ this.doseEl = h('div', { class: 'dose' });
 this.shelfWrap = h('div', { class: 'shelf-wrap frame' }, this.doseEl, this.shelfEl);
 this.brewView = h('section', { class: 'view view-brew', 'data-view': 'brew' },
 this.sandbox ? null : this.strip, this.stageEl, this.controls, this.toolbar, this.shelfWrap);
-this.views = { counter: new CounterView(this), wilds: new WildsView(this), trials: new TrialsView(this), book: new BookView(this) };
-this.viewsEl = h('div', { class: 'views' }, this.views.counter.el, this.brewView, this.views.wilds.el, this.views.trials.el, this.views.book.el);
+this.views = { counter: new CounterView(this), wilds: new WildsView(this), garden: new GardenView(this), trials: new TrialsView(this), book: new BookView(this) };
+this.viewsEl = h('div', { class: 'views' }, this.views.counter.el, this.brewView, this.views.wilds.el, this.views.garden.el, this.views.trials.el, this.views.book.el);
 this.tabEls = {};
 this.tabbar = h('nav', { class: 'tabbar frame', 'aria-label': 'Rooms' });
 for (const v of VIEWS) {
-if (this.sandbox && v.id === 'counter') continue;
+if (this.sandbox && (v.id === 'counter' || v.id === 'garden')) continue;
 const badge = h('span', { class: 'badge hidden' });
 const b = h('button', { class: 'tab', 'data-act': 'tab-' + v.id, 'aria-label': v.label, title: `${v.label} (${v.key.toUpperCase()})` }, icon(v.icon), h('span', { class: 'tab-lbl', text: v.label }), badge);
 b.addEventListener('click', () => { audio.play('select'); this.showView(v.id); });
@@ -29732,7 +30500,10 @@ cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: '15', height: '20' }
 drawJar(cv.getContext('2d'), 1, 0, 13, 20, m.look || m.color, m.form);
 }
 const stock = h('span', { class: 'jstock' });
-const el = h('button', { class: 'jar' + (m.wild ? ' wild' : '') + (m.remains ? ' remains' : ''), title: m.name, 'aria-label': m.name, 'data-id': id, role: 'option' }, stock, cv, h('span', { class: 'jname', text: m.remains ? m.remains.short : labels[n] }));
+const w = m.wild && m.wild.catalog ? m.wild : null;
+const seeds = w ? (st.garden.seeds[w.key + (w.arcane ? '+arcane' : '')] || 0) : 0;
+const badge = w ? h('span', { class: `jrar r-${w.rarity}${w.arcane ? ' arcane' : ''}`, title: `${RARITY[w.rarity].label}${w.arcane ? ', Arcane' : ''}${seeds ? ` · ${seeds} seed${seeds > 1 ? 's' : ''}` : ''}` }, seeds ? h('span', { class: 'jseed', text: String(seeds) }) : null) : null;
+const el = h('button', { class: 'jar' + (m.wild ? ' wild' : '') + (m.remains ? ' remains' : '') + (w && w.arcane ? ' arcane' : ''), title: m.name, 'aria-label': m.name + (w ? `, ${RARITY[w.rarity].label}${w.arcane ? ', Arcane' : ''}` : ''), 'data-id': id, role: 'option' }, stock, cv, badge, h('span', { class: 'jname', text: m.remains ? m.remains.short : labels[n] }));
 this.bindJar(el, id);
 this.jarEls[id] = { el, stock };
 sh.appendChild(el);
@@ -31101,7 +31872,7 @@ void dominantEffect;
 return { VIEWS, LabScreen };
 })();
 // src/materials/reference.js
-const __m137 = (() => {
+const __m140 = (() => {
 const { completeMaterial } = __m10;
 const REF = {};
 const add = (d) => (REF[d.id] = completeMaterial(d));
@@ -31139,11 +31910,11 @@ const refLookup = (id) => REF[id];
 return { REF, refLookup };
 })();
 // src/ui/menu.js
-const __m136 = (() => {
+const __m139 = (() => {
 const { h, btn } = __m2;
 const { Renderer } = __m87;
 const { Simulation } = __m64;
-const { REF, refLookup } = __m137;
+const { REF, refLookup } = __m140;
 const { hasSave, loadGame } = __m84;
 const { audio } = __m4;
 class MenuScreen {
@@ -31232,7 +32003,7 @@ const { sandboxIngredients } = __m7;
 const { EQUIPMENT } = __m57;
 const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m84;
 const { LabScreen } = __m85;
-const { MenuScreen } = __m136;
+const { MenuScreen } = __m139;
 const { openSettings, openHelp } = __m98;
 const { Rng } = __m6;
 const { normalizeTrials } = __m58;
@@ -31368,7 +32139,7 @@ openHelp();
 return { App, icon };
 })();
 // src/ui/textures.js
-const __m138 = (() => {
+const __m141 = (() => {
 const { Rng } = __m6;
 function texture(w, h, paint) {
 const cv = document.createElement('canvas');
@@ -31412,7 +32183,7 @@ return { installTextures };
 // src/main.js
 const __m0 = (() => {
 const { App } = __m1;
-const { installTextures } = __m138;
+const { installTextures } = __m141;
 installTextures();
 const root = document.getElementById('app');
 const app = new App(root);
