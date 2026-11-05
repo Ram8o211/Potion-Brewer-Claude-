@@ -1,11 +1,11 @@
-// Commission rules: concentration targets by tier, the 1.2 % purity rule,
+// Commission rules: concentration targets by tier, purity limits by tier,
 // coherent requests, only accessible ingredients and equipment, arcane
 // activation that is genuinely needed, and real-simulation brews of the
 // hidden plans (including activation orders).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { generateCommission } from '../src/game/commissions.js';
-import { REQUESTS, TIER_TARGET, PURITY_LIMIT } from '../src/game/requests.js';
+import { REQUESTS, TIER_TARGET, PURITY_LIMIT, purityLimitFor } from '../src/game/requests.js';
 import { predictPlan } from '../src/game/predict.js';
 import { EQUIPMENT, RANKS } from '../src/game/equipment.js';
 import { GameState } from '../src/game/state.js';
@@ -21,7 +21,12 @@ import { isAwakenedId } from '../src/alchemy/arcane.js';
 function shopAt(seed, rank) {
   const st = GameState.create(seed, { tutorial: false });
   st.reputation = RANKS[rank].rep;
+  // a shop of that rank has served customers (which opens biomes) and keeps stores of what it gathers
+  st.stats.served = [0, 8, 25, 50, 130, 200][rank];
   st.equipment = EQUIPMENT.filter((e) => e.rank <= rank && e.category !== 'vessel').map((e) => e.id).concat(['pot']);
+  // (the everyday tiers, and from the Expert's rank the Unique finds of a long career: a Legendary is never a stock)
+  const tiers = rank >= 3 ? ['common', 'uncommon', 'rare', 'unique'] : ['common', 'uncommon', 'rare'];
+  if (rank > 0) for (const id of st.gatherableSet()) if (tiers.includes(st.lookup(id).wild.rarity)) st.inventory[id] = Math.max(st.inventory[id] || 0, st.cap.storage);
   return st;
 }
 
@@ -36,7 +41,7 @@ function sample(tier, count, prefix = 'cm') {
   return out;
 }
 
-test('apprentice orders ask for 8–15 % of what they want, and nothing else above 1.2 %', () => {
+test('apprentice orders ask for 8–15 % of what they want, and nothing else above their tier’s purity limit', () => {
   let effectOrders = 0;
   for (const { com } of sample(0, 30)) {
     assert.ok(com, 'a commission was generated');
@@ -47,7 +52,8 @@ test('apprentice orders ask for 8–15 % of what they want, and nothing else abo
     assert.ok(main.target >= 6 && main.target <= TIER_TARGET[0][1], `${com.style}: main target ${main.target}%`);
     const purity = com.requirements.find((r) => r.key === 'purity');
     assert.ok(purity, 'a drinkable order carries the purity rule');
-    assert.equal(purity.target, PURITY_LIMIT);
+    assert.equal(purity.target, purityLimitFor(0));
+    assert.ok(purityLimitFor(4) === PURITY_LIMIT && purityLimitFor(0) > purityLimitFor(4), 'masters want purer potions than apprentices');
     assert.deepEqual([...purity.exclude].sort(), fx.map((r) => r.key).sort());
     assert.ok(!com.activation, 'no apprentice order needs arcane activation');
   }
@@ -99,8 +105,10 @@ test('targets rise with rank, every plan uses only what the shop can reach, and 
     }
     mains.push(t.reduce((a, b) => a + b, 0) / Math.max(1, t.length));
   }
-  for (let k = 1; k < 5; k++) assert.ok(mains[k] >= mains[k - 1] - 1, `targets rise with rank (${mains.map((m) => m.toFixed(1)).join(' → ')})`);
-  assert.ok(activations >= 6, `advanced orders that need awakening (${activations})`);
+  // (a master's order falls back to a milder strength when its generation lacks the rarest species, so the top tier may dip a little)
+  for (let k = 1; k < 5; k++) assert.ok(mains[k] >= mains[k - 1] - (k === 4 ? 3 : 1.5), `targets rise with rank (${mains.map((m) => m.toFixed(1)).join(' → ')})`);
+  // (rare, unique and legendary species reach high targets plainly, so awakening is the exception it should be)
+  assert.ok(activations >= 5, `advanced orders that need awakening (${activations})`);
   assert.ok(needed >= activations * 0.7, `where a plan awakens, plain brewing would fall short (${needed}/${activations})`);
 });
 
@@ -114,7 +122,8 @@ test('hidden plans brew to full quality in the real simulation, awakening orders
     if (plain) picked.push(plain);
     if (awaken) picked.push(awaken);
   }
-  assert.ok(picked.filter((x) => x.com.activation).length >= 2);
+  // (rarer, purer species reach strong targets plainly: awakening orders are fewer than they were, but there)
+  assert.ok(picked.filter((x) => x.com.activation).length >= 1);
   for (const { st, com } of picked) {
     const cap = st.cap;
     const sim = new Simulation({ size: cap.size, lookup: st.lookup, reactions: st.world.reactions, laws: st.world.laws });

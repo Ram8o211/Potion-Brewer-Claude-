@@ -123,8 +123,8 @@ test('the wilds: deterministic deposits, plants that mature with time, rank lock
   const again = generateDeposits(st.world, st.lookup);
   assert.equal(JSON.stringify(again), JSON.stringify(st.deposits), 'deterministic layout');
   const regions = new Set(st.deposits.map((d) => d.region));
-  assert.ok(regions.size >= 6, 'six regions');
-  const d = st.deposits.find((x) => x.rank === 0 && !x.rare);
+  assert.equal(regions.size, 12, 'twelve biomes');
+  const d = st.deposits.find((x) => x.region === 'forest' && !x.rare);
   const t0 = Date.now() + 60 * 60000;
   const inv0 = st.stock(d.materialId);
   let got = 0, n = 0;
@@ -132,24 +132,20 @@ test('the wilds: deterministic deposits, plants that mature with time, rank lock
   while (n++ < 100) { const r = st.gather(d.id, { now: t0 }); if (!r.ok) { assert.equal(r.reason, 'depleted'); break; } got += r.amount; }
   assert.ok(got > 0 && got <= d.capacity, `gathered ${got} of ${d.capacity}`);
   assert.equal(st.stock(d.materialId), inv0 + got, 'everything gathered is in the inventory');
-  // the stand grows back with elapsed time, and never past its slots
-  const s = depositStatus(st.gathering, d, t0);
-  assert.equal(depositStatus(st.gathering, d, t0 + s.fullIn).mature, d.slots, 'grows back with elapsed time');
-  assert.equal(depositStatus(st.gathering, d, t0 + s.fullIn * 5).plants.length, d.slots, 'never above its slots');
-  const locked = st.deposits.find((x) => x.rank > 0);
+  // the wilds no longer grow back by themselves: an emptied stand stays empty until a Traveller Coin regenerates the biome
+  assert.equal(depositStatus(st.gathering, d, t0 + 7 * 86400000).mature, 0, 'nothing grows back with time');
+  const locked = st.deposits.find((x) => !st.biomeOpen(x.region));
   assert.equal(st.gather(locked.id, { now: t0 }).reason, 'locked');
+  assert.ok(st.regenerate(d.region, t0).ok, 'a Traveller Coin brings the biome back');
+  const d2 = st.deposits.find((x) => x.region === d.region && x.materialId === d.materialId) || st.deposits.find((x) => x.region === d.region);
   // shelves cap what can be carried home
-  st.inventory[d.materialId] = st.cap.storage;
-  assert.equal(st.gather(d.id, { now: t0 + d.regrowMs * 3 }).reason, 'full');
+  st.inventory[d2.materialId] = st.cap.storage;
+  assert.equal(st.gather(d2.id, { now: t0 }).reason, 'full');
   // persistence of the plants
   const back = GameState.fromJSON(JSON.parse(JSON.stringify(st.toJSON())));
   assert.equal(JSON.stringify(back.gathering.nodes), JSON.stringify(st.gathering.nodes));
-  // a new day brings every plant on and fills half of the empty slots
-  st.inventory[d.materialId] = 0;
-  const now = Date.now();
-  st.gathering.nodes[d.id] = { plants: [], due: now + d.spawnMs, seq: 10 };
-  st.endDay();
-  assert.ok(depositStatus(st.gathering, d).plants.length >= d.slots / 2);
+  // and the generation survives the save too
+  assert.deepEqual(back.deposits.map((x) => x.id), st.deposits.map((x) => x.id));
 });
 
 test('a genuine v2 save migrates: progress kept, effects and wilds added, aspect order rescaled and needing a trial', () => {

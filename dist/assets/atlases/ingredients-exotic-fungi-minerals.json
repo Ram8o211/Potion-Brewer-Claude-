@@ -1,0 +1,555 @@
+{
+ "version": 1,
+ "atlas": "ingredients-exotic-fungi-minerals.png",
+ "width": 512,
+ "height": 96,
+ "padding": 2,
+ "frames": {
+  "aeon-circlet": {
+   "species": "aeon-circlet",
+   "kind": "sprite",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "chronoglass",
+   "category": "exotic",
+   "morph": "relic",
+   "x": 2,
+   "y": 36,
+   "w": 54,
+   "h": 29,
+   "pivot": [
+    27,
+    28
+   ],
+   "native": [
+    54,
+    29
+   ]
+  },
+  "chronoglass-shard": {
+   "species": "chronoglass-shard",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "chronoglass",
+   "category": "exotic",
+   "morph": "crystal",
+   "x": 2,
+   "y": 2,
+   "w": 39,
+   "h": 32,
+   "pivot": [
+    19,
+    31
+   ],
+   "native": [
+    39,
+    32
+   ]
+  },
+  "cloudcap": {
+   "species": "cloudcap",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "skyshard",
+   "category": "exotic",
+   "morph": "fungus",
+   "x": 180,
+   "y": 36,
+   "w": 40,
+   "h": 28,
+   "pivot": [
+    20,
+    27
+   ],
+   "native": [
+    40,
+    28
+   ]
+  },
+  "cloudprism": {
+   "species": "cloudprism",
+   "kind": "sprite",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "skyshard",
+   "category": "exotic",
+   "morph": "crystal",
+   "x": 58,
+   "y": 36,
+   "w": 34,
+   "h": 29,
+   "pivot": [
+    17,
+    28
+   ],
+   "native": [
+    34,
+    29
+   ]
+  },
+  "eclipse-eye": {
+   "species": "eclipse-eye",
+   "kind": "sprite",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "veilhollow",
+   "category": "exotic",
+   "morph": "relic",
+   "x": 222,
+   "y": 36,
+   "w": 35,
+   "h": 28,
+   "pivot": [
+    17,
+    27
+   ],
+   "native": [
+    35,
+    28
+   ]
+  },
+  "fenmilk-cap": {
+   "species": "fenmilk-cap",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "moonfen",
+   "category": "exotic",
+   "morph": "fungus",
+   "x": 259,
+   "y": 36,
+   "w": 37,
+   "h": 28,
+   "pivot": [
+    18,
+    27
+   ],
+   "native": [
+    37,
+    28
+   ]
+  },
+  "ghostcrown-coral": {
+   "species": "ghostcrown-coral",
+   "kind": "sprite",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "ghostglass",
+   "category": "exotic",
+   "morph": "coral",
+   "x": 363,
+   "y": 2,
+   "w": 52,
+   "h": 30,
+   "pivot": [
+    26,
+    29
+   ],
+   "native": [
+    52,
+    30
+   ]
+  },
+  "ghostglass-coral": {
+   "species": "ghostglass-coral",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "ghostglass",
+   "category": "exotic",
+   "morph": "coral",
+   "x": 43,
+   "y": 2,
+   "w": 52,
+   "h": 32,
+   "pivot": [
+    26,
+    31
+   ],
+   "native": [
+    52,
+    32
+   ]
+  },
+  "glasscap": {
+   "species": "glasscap",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "ghostglass",
+   "category": "exotic",
+   "morph": "fungus",
+   "x": 417,
+   "y": 2,
+   "w": 37,
+   "h": 30,
+   "pivot": [
+    18,
+    29
+   ],
+   "native": [
+    37,
+    30
+   ]
+  },
+  "hollowcap": {
+   "species": "hollowcap",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "veilhollow",
+   "category": "exotic",
+   "morph": "fungus",
+   "x": 94,
+   "y": 36,
+   "w": 42,
+   "h": 29,
+   "pivot": [
+    21,
+    28
+   ],
+   "native": [
+    42,
+    29
+   ]
+  },
+  "hourglass-of-ages": {
+   "species": "hourglass-of-ages",
+   "kind": "sprite",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "chronoglass",
+   "category": "exotic",
+   "morph": "relic",
+   "x": 97,
+   "y": 2,
+   "w": 29,
+   "h": 32,
+   "pivot": [
+    14,
+    31
+   ],
+   "native": [
+    29,
+    32
+   ]
+  },
+  "mimic-eye": {
+   "species": "mimic-eye",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "morphgrove",
+   "category": "exotic",
+   "morph": "relic",
+   "x": 298,
+   "y": 36,
+   "w": 39,
+   "h": 28,
+   "pivot": [
+    19,
+    27
+   ],
+   "native": [
+    39,
+    28
+   ]
+  },
+  "mirepod-shell": {
+   "species": "mirepod-shell",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "moonfen",
+   "category": "exotic",
+   "morph": "shell",
+   "x": 84,
+   "y": 67,
+   "w": 38,
+   "h": 25,
+   "pivot": [
+    19,
+    24
+   ],
+   "native": [
+    38,
+    25
+   ]
+  },
+  "mistpebble": {
+   "species": "mistpebble",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "veilhollow",
+   "category": "exotic",
+   "morph": "stone",
+   "x": 456,
+   "y": 2,
+   "w": 44,
+   "h": 30,
+   "pivot": [
+    22,
+    29
+   ],
+   "native": [
+    44,
+    30
+   ]
+  },
+  "pearlshell": {
+   "species": "pearlshell",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "ghostglass",
+   "category": "exotic",
+   "morph": "shell",
+   "x": 265,
+   "y": 2,
+   "w": 43,
+   "h": 31,
+   "pivot": [
+    21,
+    30
+   ],
+   "native": [
+    43,
+    31
+   ]
+  },
+  "phantom-pearl": {
+   "species": "phantom-pearl",
+   "kind": "sprite",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "ghostglass",
+   "category": "exotic",
+   "morph": "shell",
+   "x": 339,
+   "y": 36,
+   "w": 40,
+   "h": 28,
+   "pivot": [
+    20,
+    27
+   ],
+   "native": [
+    40,
+    28
+   ]
+  },
+  "reefmoss": {
+   "species": "reefmoss",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "ghostglass",
+   "category": "exotic",
+   "morph": "coral",
+   "x": 128,
+   "y": 2,
+   "w": 50,
+   "h": 32,
+   "pivot": [
+    25,
+    31
+   ],
+   "native": [
+    50,
+    32
+   ]
+  },
+  "sandskirt-cap": {
+   "species": "sandskirt-cap",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "chronoglass",
+   "category": "exotic",
+   "morph": "fungus",
+   "x": 138,
+   "y": 36,
+   "w": 40,
+   "h": 29,
+   "pivot": [
+    20,
+    28
+   ],
+   "native": [
+    40,
+    29
+   ]
+  },
+  "shapecap": {
+   "species": "shapecap",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "morphgrove",
+   "category": "exotic",
+   "morph": "fungus",
+   "x": 2,
+   "y": 67,
+   "w": 40,
+   "h": 26,
+   "pivot": [
+    20,
+    25
+   ],
+   "native": [
+    40,
+    26
+   ]
+  },
+  "skyshard-geode": {
+   "species": "skyshard-geode",
+   "kind": "sprite",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "skyshard",
+   "category": "exotic",
+   "morph": "crystal",
+   "x": 44,
+   "y": 67,
+   "w": 38,
+   "h": 26,
+   "pivot": [
+    19,
+    25
+   ],
+   "native": [
+    38,
+    26
+   ]
+  },
+  "sleepglass": {
+   "species": "sleepglass",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "moonfen",
+   "category": "exotic",
+   "morph": "crystal",
+   "x": 428,
+   "y": 36,
+   "w": 37,
+   "h": 27,
+   "pivot": [
+    18,
+    26
+   ],
+   "native": [
+    37,
+    27
+   ]
+  },
+  "spectral-anemone": {
+   "species": "spectral-anemone",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "ghostglass",
+   "category": "exotic",
+   "morph": "coral",
+   "x": 310,
+   "y": 2,
+   "w": 51,
+   "h": 31,
+   "pivot": [
+    25,
+    30
+   ],
+   "native": [
+    51,
+    31
+   ]
+  },
+  "sundial-stone": {
+   "species": "sundial-stone",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "chronoglass",
+   "category": "exotic",
+   "morph": "relic",
+   "x": 180,
+   "y": 2,
+   "w": 45,
+   "h": 32,
+   "pivot": [
+    22,
+    31
+   ],
+   "native": [
+    45,
+    32
+   ]
+  },
+  "veil-circlet": {
+   "species": "veil-circlet",
+   "kind": "sprite",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "veilhollow",
+   "category": "exotic",
+   "morph": "relic",
+   "x": 381,
+   "y": 36,
+   "w": 45,
+   "h": 28,
+   "pivot": [
+    22,
+    27
+   ],
+   "native": [
+    45,
+    28
+   ]
+  },
+  "veilglass": {
+   "species": "veilglass",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "veilhollow",
+   "category": "exotic",
+   "morph": "crystal",
+   "x": 227,
+   "y": 2,
+   "w": 36,
+   "h": 32,
+   "pivot": [
+    18,
+    31
+   ],
+   "native": [
+    36,
+    32
+   ]
+  },
+  "wisp-reliquary": {
+   "species": "wisp-reliquary",
+   "kind": "sprite",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "moonfen",
+   "category": "exotic",
+   "morph": "relic",
+   "x": 467,
+   "y": 36,
+   "w": 42,
+   "h": 27,
+   "pivot": [
+    21,
+    26
+   ],
+   "native": [
+    42,
+    27
+   ]
+  }
+ }
+}

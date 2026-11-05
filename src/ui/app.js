@@ -14,6 +14,9 @@ import { openSettings, openHelp } from './panels.js';
 import { Rng } from '../core/rng.js';
 import { normalizeTrials } from '../game/experiments.js';
 import { sandboxWilds } from '../game/gathering.js';
+import { loadAtlases, neededAtlases } from '../visual/atlas.js';
+import { parseCatalogId } from '../materials/catalog.js';
+import { BIOMES } from '../game/biomes.js';
 
 const DEFAULT_SETTINGS = { master: 0.8, sfx: 0.8, music: 0.35, musicOn: true, muted: false, quality: 'auto', showFps: false, resolution: 3 };
 const SEED_WORDS = ['amber', 'ashen', 'brine', 'copper', 'dusk', 'elder', 'fen', 'gloam', 'hollow', 'iron', 'juniper', 'kelp', 'lantern', 'moon', 'nettle', 'oak', 'pewter', 'quill', 'raven', 'sage', 'thorn', 'umber', 'vale', 'willow', 'wyrm', 'yarrow'];
@@ -74,9 +77,25 @@ export class App {
     if (error) toast('Save problem', error, 'scroll', 6000);
   }
 
+  /**
+   * The ingredient atlases a save needs before its screen is drawn (its
+   * open biomes and its stores), then the others in the background.
+   * @param {GameState} state @param {boolean} [all]
+   */
+  async prepareAssets(state, all = false) {
+    const held = Object.entries(state.inventory).filter(([, v]) => v > 0).map(([id]) => parseCatalogId(id)).filter(Boolean).map((p) => /** @type {any} */ (p).key);
+    for (const s of Object.keys(state.garden.seeds)) held.push(s.replace(/\+arcane$/, ''));
+    const need = all ? undefined : neededAtlases(state.regen.unlocked, held);
+    await loadAtlases(need ? need : (a) => !a.id.startsWith('growth'));
+    // the rest when the browser is idle (the garden's growth stages, distant biomes)
+    const idle = typeof requestIdleCallback === 'function' ? requestIdleCallback : (fn) => setTimeout(fn, 1200);
+    idle(() => { loadAtlases(); });
+  }
+
   /** @param {GameState} state */
-  startGame(state) {
+  async startGame(state) {
     try {
+      await this.prepareAssets(state);
       this._swap(new LabScreen(this, state));
     } catch (e) {
       console.error(e);
@@ -124,6 +143,8 @@ export class App {
     st.equipment = EQUIPMENT.map((e) => e.id);
     st.reputation = 99999;
     st.current = null;
+    // every biome is open in the sandbox
+    st.regen.unlocked = BIOMES.map((b) => b.id);
     // its wilds stand fully grown and grow back quickly after every harvest
     sandboxWilds(st.gathering, st.deposits);
     if (saved && saved.seed === seed && saved.cauldron) st.cauldron = saved.cauldron;
@@ -136,8 +157,11 @@ export class App {
       st.restoreRemains();
       for (const id of sandboxIngredients(st.world)) st.inventory[id] = Infinity;
     }
-    this._swap(new LabScreen(this, st, { sandbox: true }));
-    toast('Free Experiment', 'Unlimited reagents, wild ingredients, tools and test subjects. Nothing here affects your shop.', 'flask', 4500);
+    // (the sandbox reaches every biome: every ingredient atlas first)
+    this.prepareAssets(st, true).then(() => {
+      this._swap(new LabScreen(this, st, { sandbox: true }));
+      toast('Free Experiment', 'Unlimited reagents, wild ingredients, tools and test subjects. Nothing here affects your shop.', 'flask', 4500);
+    });
   }
 
   openSettings() {

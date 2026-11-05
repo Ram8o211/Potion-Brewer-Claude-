@@ -41,7 +41,7 @@ function watch(w, sec, alarm = false) {
   return { air: air / steps, walk: walk / steps, maxFlight, speed: dist / (sec * w.rabbits.length) };
 }
 
-test('every kind lives where its habitat says, and the wilds hold more than rabbits', () => {
+test('every kind lives where its habitat says, one kind per biome, and the wilds hold more than rabbits', () => {
   const rng = new Rng(5);
   for (const [region, h] of Object.entries(HABITAT)) {
     const seen = new Set();
@@ -50,7 +50,10 @@ test('every kind lives where its habitat says, and the wilds hold more than rabb
   }
   const all = new Set(Object.values(HABITAT).flatMap((h) => h.map((x) => x[0])));
   for (const k of Object.keys(KINDS)) assert.ok(all.has(k), `${k} lives somewhere`);
-  assert.ok(HABITAT.river.some(([k]) => k === 'toad') && HABITAT.quarry.some(([k]) => k === 'salamander'));
+  // one kind per biome (its native creature, or the kind standing in for it), never in another biome's place
+  for (const [region, h] of Object.entries(HABITAT)) assert.equal(h.length, 1, `${region}: one kind of wild animal`);
+  assert.deepEqual(HABITAT.forest, [['fox', 1]], 'the Whisperwood’s native fox');
+  assert.deepEqual(HABITAT.crags, [['salamander', 1]], 'the Ember Crags’ salamander');
 });
 
 test('each kind moves in its own way: rabbits bound, cats stroll and pounce, toads squat and hop short, salamanders creep', () => {

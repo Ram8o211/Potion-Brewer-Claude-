@@ -20,8 +20,9 @@ export const LOOK = Object.freeze({
   BARK: 10, BERRY: 11, GILLS: 12, SEED: 13, SHELL: 14, METAL: 15, GLASS: 16, SPOTS: 17, REED: 18, FLORET: 19,
 });
 
-import { PIECE_KEYS, PIECE_CELL, PIECE_MASK, pieceMask, skinCell, onPiecesChanged, registerSpecies } from '../visual/pieces.js';
+import { PIECE_KEYS, PIECE_CELL, PIECE_MASK, pieceMask, skinCell, onPiecesChanged, registerSpecies, pieceKeyOf } from '../visual/pieces.js';
 import { WILD_BY_KEY } from './wild.js';
+import { SPECIES_BY_KEY } from './catalog.js';
 
 const SHAPE_LOOK = {
   root: LOOK.FIBRE, pepper: LOOK.FIBRE, leaf: LOOK.LEAF, petal: LOOK.LEAF, flower: LOOK.LEAF, clover: LOOK.LEAF, moss: LOOK.LEAF, sprig: LOOK.LEAF,
@@ -130,7 +131,7 @@ const SKIN_BASE = Object.fromEntries(PIECE_KEYS.map((key, n) => [key, 1 + n * 4]
 
 /** Whether whole objects of a material are drawn as its procedural pieces. @param {any} def */
 export function hasPieces(def) {
-  return !!def && def.form === 'solid' && !def.shape && !!def.wild && def.wild.key in SKIN_BASE;
+  return !!def && def.form === 'solid' && !def.shape && !!def.wild && pieceKeyOf(def) in SKIN_BASE;
 }
 
 /**
@@ -139,12 +140,12 @@ export function hasPieces(def) {
  * has no pieces. @param {any} def @param {number} variant
  */
 export function grainSkinOf(def, variant) {
-  return def && !def.shape && def.wild && def.wild.key in SKIN_BASE ? SKIN_BASE[def.wild.key] + (variant & 3) : 0;
+  return def && !def.shape && def.wild && pieceKeyOf(def) in SKIN_BASE ? SKIN_BASE[pieceKeyOf(def)] + (variant & 3) : 0;
 }
 
 /** Skin id (1..) of a material's piece `variant`, 0 if it has none. @param {any} def @param {number} variant */
 export function skinOf(def, variant) {
-  return hasPieces(def) ? SKIN_BASE[def.wild.key] + (variant & 3) : 0;
+  return hasPieces(def) ? SKIN_BASE[pieceKeyOf(def)] + (variant & 3) : 0;
 }
 
 /**
@@ -178,7 +179,8 @@ export function piece(skin) {
   const M = PIECE_MASK, fx = sk.cx, fy = sk.cy;
   let area = 0;
   for (const m of mask) area += m;
-  const spec = WILD_BY_KEY[sk.key];
+  if (!mask) return null;
+  const spec = WILD_BY_KEY[sk.key] || SPECIES_BY_KEY[sk.key.replace(/^sp:/, '').replace(/@arcane$/, '')];
   const n = pieceSize((TEMPLATES[spec ? spec.shape : 'stone'] || TEMPLATES.stone).length);
   const inside = (x, y) => x >= 0 && y >= 0 && x < M && y < M && mask[(y | 0) * M + (x | 0)] === 1;
   /** @type {number[][]|null} */

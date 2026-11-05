@@ -35,13 +35,13 @@
 
 /** @type {BiomeDef[]} */
 export const BIOMES = [
-  { id: 'forest', name: 'Whisperwood', category: 'natural', effect: 'vitality', creature: 'fox', minor: ['frost', 'toxicity', 'love', 'strength', 'swiftness', 'acidity'], arcaneSign: 1,
+  { id: 'forest', name: 'Whisperwood', category: 'natural', effect: 'vitality', creature: 'fox', minor: ['frost', 'fire', 'toxicity', 'love', 'strength', 'swiftness', 'acidity'], arcaneSign: 1,
     interaction: 'sway', unlock: {}, tier: 'Apprentice', icon: 'leaf', sky: [0.36, 0.52, 0.42],
     desc: 'Old oaks, ferns and fruiting groves where healing magic grows thick. Home of the fox.' },
   { id: 'meadow', name: 'Sunlit Meadow', category: 'natural', effect: 'love', creature: 'hare', minor: ['fire', 'vitality', 'swiftness', 'acidity', 'strength'], arcaneSign: 1,
     interaction: 'sway', unlock: { served: 3 }, tier: 'Naturalist', icon: 'rose', sky: [0.55, 0.72, 0.9],
     desc: 'Open fields of wildflowers, heavy with love and summer warmth. Hares run in the long grass.' },
-  { id: 'river', name: 'Willow Bank', category: 'natural', effect: 'frost', creature: 'otter', minor: ['vitality', 'death', 'acidity', 'toxicity', 'swiftness'], arcaneSign: -1,
+  { id: 'river', name: 'Willow Bank', category: 'natural', effect: 'frost', creature: 'otter', minor: ['vitality', 'death', 'acidity', 'toxicity', 'swiftness', 'strength'], arcaneSign: -1,
     interaction: 'sway', unlock: { served: 6 }, tier: 'Naturalist', icon: 'snow', sky: [0.5, 0.66, 0.78],
     desc: 'Cold riverbanks, lilies and pearl mussels under the willows. River otters fish the shallows.' },
   { id: 'quarry', name: 'Ironstone Quarry', category: 'natural', effect: 'strength', creature: 'beetle', minor: ['acidity', 'frost', 'fire', 'toxicity', 'death'], arcaneSign: 1,

@@ -19,18 +19,19 @@ import { BIOMES, BIOME_BY_ID } from '../src/game/biomes.js';
 
 const OUT = new URL('../src/materials/species-data.js', import.meta.url);
 
-// [slot on the biome's sheet block (0..9), key, name, morphology, rarity, dominant (default: the biome's), flavour]
-/** @type {Record<string, [number, string, string, string, string, string|null, string][]>} */
+// [slot on the biome's sheet block (0..9), key, name, morphology, rarity, dominant (default: the biome's; a trailing '-' for the
+//  negative direction, i.e. alkaline), flavour, optional authored secondary effects (strongest first)]
+/** @type {Record<string, any[][]>} */
 const TABLE = {
   forest: [
     [0, 'silverleaf', 'Silverleaf', 'leaf', 'common', null, 'Soft silvery leaves prized by healers, with a frosty bite.'],
-    [1, 'honeycap', 'Honeycap', 'fungus', 'common', null, 'A golden mushroom that smells of honey and warm bread.'],
+    [1, 'honeycap', 'Honeycap', 'fungus', 'common', null, 'A golden mushroom that smells of honey and warm bread: it heals, and its warmth cancels a frosty herb.', ['fire']],
     [2, 'dawnblossom', 'Dawnblossom', 'flower', 'uncommon', null, 'Pale pink flowers that open with the first light.'],
     [3, 'dewpear', 'Dewpear', 'fruit', 'uncommon', 'swiftness', 'A green pear so light and quick it seems to roll uphill.'],
     [4, 'heartwood-mandrake', 'Heartwood Mandrake', 'root', 'rare', null, 'A drowsy root with a face, grown from the heart of old oaks.'],
     [5, 'mossback-bark', 'Mossback Bark', 'bark', 'uncommon', null, 'Bark slabs furred with living moss that mends what it touches.'],
     [6, 'stagthorn-vine', 'Stagthorn Vine', 'vine', 'rare', null, 'A golden vine branching like antlers, rooted in fern hollows.'],
-    [7, 'hearthnut', 'Hearthnut', 'stone', 'common', 'acidity', 'Speckled brown nuts with a sour, stony shell.'],
+    [7, 'hearthnut', 'Hearthnut', 'stone', 'common', 'acidity-', 'Speckled brown nuts with a chalky, alkaline shell that settles acids.'],
     [8, 'heartberry', 'Heartberry', 'fruit', 'unique', null, 'A single heart-shaped fruit that beats faintly in the hand.'],
     [9, 'everbloom-chalice', 'Everbloom Chalice', 'fungus', 'legendary', null, 'A green cup-fungus that is always full of healing dew.'],
   ],
@@ -191,16 +192,28 @@ const MORPH = {
 
 const BASE_PRICE = { common: 8, uncommon: 13, rare: 22, unique: 45, legendary: 110 };
 
+/**
+ * Effects with an opposite that cancels them in a brew (alchemy/effects.js
+ * interact): fire–frost, life–death, vitality mends poison, acid–alkali,
+ * weight–levitation, phasing–time. A species' strongest side effect is
+ * always one of these, so an impure ingredient can be purified by mixing it
+ * with one that carries the opposite — the craft of the lower tiers.
+ */
+const CANCELLABLE = ['fire', 'frost', 'death', 'toxicity', 'acidity', 'vitality', 'strength', 'levitation', 'temporal', 'phasing'];
+
 /** Pick the secondary effects of a species: from its biome's minor pool, never opposing what it already carries. */
 function secondaries(rng, biome, dominant, rarity) {
   const r = RARITY[rarity];
   const n = r.secondaries[0] === r.secondaries[1] ? r.secondaries[0] : rng.int(r.secondaries[0], r.secondaries[1]);
   const pool = rng.shuffle([...biome.minor, biome.effect].filter((e) => e !== dominant));
+  const ok = (e, out) => !opposed(e, dominant) && !out.some((o) => o === e || opposed(o, e));
   const out = [];
+  // the strongest: something an opposite can cancel (from the biome's own pool when it has one)
+  const first = pool.find((e) => CANCELLABLE.includes(e) && ok(e, out)) || CANCELLABLE.find((e) => ok(e, out));
+  if (n > 0 && first) out.push(first);
   for (const e of pool) {
     if (out.length >= n) break;
-    if (opposed(e, dominant) || out.some((o) => opposed(o, e))) continue;
-    out.push(e);
+    if (ok(e, out)) out.push(e);
   }
   return out;
 }
@@ -213,7 +226,9 @@ function buildSpecies() {
   for (const biome of BIOMES) {
     const rows = TABLE[biome.id];
     if (!rows || rows.length !== 10) throw new Error(`${biome.id}: needs 10 species`);
-    for (const [slot, key, name, morph, rarity, domOverride, flavour] of rows) {
+    for (const [slot, key, name, morph, rarity, domSpec, flavour, authored] of rows) {
+      const neg = typeof domSpec === 'string' && domSpec.endsWith('-');
+      const domOverride = neg ? domSpec.slice(0, -1) : domSpec;
       if (seenKeys.has(key)) throw new Error(`duplicate key ${key}`);
       seenKeys.add(key);
       const m = MORPH[morph];
@@ -223,19 +238,25 @@ function buildSpecies() {
       const dominant = domOverride || biome.effect;
       const mag = round1(rng.range(r.dominant[0] + 0.5, r.dominant[1] - 0.5));
       /** @type {Record<string, number>} */
-      const fx = { [dominant]: mag };
-      const secs = secondaries(rng, biome, dominant, rarity);
+      const fx = { [dominant]: neg ? -mag : mag };
+      const secs = authored ? authored.slice() : secondaries(rng, biome, dominant, rarity);
+      if (authored && RARITY[rarity].secondaries[1] > secs.length && secs.length < RARITY[rarity].secondaries[1]) {
+        // an authored list may be completed with a trace from the biome's pool
+        for (const e of secondaries(rng, biome, dominant, rarity)) if (secs.length < RARITY[rarity].secondaries[1] && !secs.includes(e) && !secs.some((o) => opposed(o, e)) && !opposed(e, dominant)) { secs.push(e); break; }
+      }
       secs.forEach((e, i) => {
-        // the strongest secondary reaches the tier's floor; the next is weaker
-        const lo = i === 0 ? r.ratio[0] + 0.01 : r.ratio[0] * 0.5 + 0.005;
-        const hi = i === 0 ? r.ratio[1] - 0.01 : Math.min(r.ratio[1] - 0.01, r.ratio[0] + 0.04);
+        // the strongest secondary (cancellable) reaches the tier's floor; a second one is a trace
+        const lo = i === 0 ? r.ratio[0] + 0.01 : 0.03;
+        const hi = i === 0 ? r.ratio[1] - 0.01 : 0.055;
         let v = Math.max(1, round1(mag * rng.range(Math.max(lo, 0.001), Math.max(hi, lo + 0.001))));
         if (v / mag > r.ratio[1]) v = Math.floor(mag * r.ratio[1] * 10) / 10;
         if (i === 0 && v / mag < r.ratio[0]) v = Math.ceil(mag * r.ratio[0] * 10) / 10;
         // acidity as a side effect is sometimes alkaline (it settles acids)
-        fx[e] = e === 'acidity' && rng.chance(0.4) ? -v : v;
+        // (and never the same direction as an acidic dominant, which would just add to it)
+        fx[e] = e === 'acidity' && (rng.chance(0.4) || neg) ? -v : v;
       });
-      const thr = Math.round(biome.arcaneSign * rng.range(ARCANE.threshold[0], ARCANE.threshold[1]) / 10) * 10;
+      const band = biome.arcaneSign < 0 ? ARCANE.coldThreshold : ARCANE.threshold;
+      const thr = Math.round(biome.arcaneSign * rng.range(band[0], band[1]) / 10) * 10;
       const gain = Math.round(rng.range(ARCANE.gain[0], ARCANE.gain[1]) * 10) / 10;
       const sp = {
         key, name, biome: biome.id, category: biome.category, slot, morph, rarity, dominant, fx,
@@ -244,7 +265,8 @@ function buildSpecies() {
         form: 'solid', density: Math.round(m.density * rng.range(0.96, 1.04) * 100) / 100, hardness: m.hardness,
         sol: Math.round(m.sol * rng.range(0.92, 1.08) * 1000) / 1000, solT: m.solT,
         gather: m.gather,
-        steep: { into: m.steep[0], lo: m.steep[1], hi: m.steep[2] },
+        // frost-bearing plants give their cold up only to ice-cold water (as Frostcap always did): a cold steep
+        steep: dominant === 'frost' && m.botanical ? { into: 'water', lo: [1, 2], hi: [12, 14] } : { into: m.steep[0], lo: m.steep[1], hi: m.steep[2] },
         price: Math.round(BASE_PRICE[rarity] * rng.range(0.9, 1.15)),
         lore: flavour,
       };

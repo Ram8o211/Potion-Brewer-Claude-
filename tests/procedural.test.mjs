@@ -23,7 +23,9 @@ import { rgbToOklab, deltaE } from '../src/core/color.js';
 import { GameState } from '../src/game/state.js';
 import { REGIONS, depositStatus } from '../src/game/gathering.js';
 
-const wild = (/** @type {any} */ w) => w.wild.map((id) => /** @type {any} */ (w.materials.find((m) => m.id === id)));
+// the legacy archetypes keep their procedural identities (old saves' ingredients, the Free Experiment's
+// shelf); the catalog species are drawn from the ingredient atlases (tests/atlas-sprites.test.mjs)
+const wild = (/** @type {any} */ w) => w.materials.filter((m) => m.wild && m.wild.legacy && !m.product);
 const species = (seed) => wild(generateWorld(seed)).map((m) => ({ m, d: describe(m.vis) }));
 /** every opaque pixel as sRGB 0..1 */
 const colours = (/** @type {any} */ pix) => { const out = []; for (const c of pix.px) if (c >>> 24) out.push([(c & 255) / 255, ((c >>> 8) & 255) / 255, ((c >>> 16) & 255) / 255]); return out; };
@@ -217,7 +219,7 @@ test('plants grow where their species is found — on open ground, hanging from 
     }
     const shape = (p, mount, flip) => silhouetteOf(p.m, { mount, variant: variantOf(p.id), flip });
     const spots = ground.place(plants, shape, (p) => mountsOf(p.m));
-    let overlap = 0;
+    let overlap = 0, area = 0;
     const taken = new Uint8Array(SCENE_W * SCENE_H);
     const at = (x, y) => y * SCENE_W + x;
     for (const p of plants) {
@@ -238,14 +240,16 @@ test('plants grow where their species is found — on open ground, hanging from 
         if (s.mount === 'ground') assert.ok(sc.depth[k] <= ay, `${r.id}: ${p.id} is not behind scenery`);
         if (taken[k]) overlap++;
         taken[k] = 1;
+        area++;
       }
     }
-    assert.ok(overlap < 60, `${r.id}: plants hardly touch (${overlap} px)`);
+    // (the atlas sprites are larger than the old procedural plants: some stand partly in front of others, as in any side view)
+    assert.ok(overlap < area * 0.3, `${r.id}: plants mostly stand apart (${overlap} of ${area} px)`);
     // the same plants keep their spots
     assert.deepEqual(ground.place(plants, shape, (p) => mountsOf(p.m)), spots);
   }
-  for (const k of ['ground', 'wall']) assert.ok(mounts.has(k), `something grows on ${k}: ${[...mounts]}`);
-  assert.ok(mounts.has('bough') || mounts.has('hang') || mounts.has('ceiling'), `something hangs: ${[...mounts]}`);
+  // the catalog's atlas sprites stand on the ground
+  assert.ok(mounts.has('ground'), `something grows on the ground: ${[...mounts]}`);
   // hit testing: the nearer plant wins where boxes overlap; a tiny plant still has a fair target
   const f = { w: 10, h: 10, ax: 5, ay: 9 };
   const back = { x: 100 / SCENE_W, y: 150 / SCENE_H }, front = { x: 104 / SCENE_W, y: 160 / SCENE_H };

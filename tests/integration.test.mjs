@@ -32,26 +32,17 @@ function simFor(st) {
   return sim;
 }
 
-test('the market sells only solvents and the herbalist’s common herbs, never gather-only finds, remains or prepared reagents', () => {
+test('the market sells only solvents: every species is gathered in the wilds or grown in the garden, never bought', () => {
   const st = GameState.create('market-rules', { tutorial: false });
   const R = st.world.roles;
   for (const role of LAB_ROLES) if (R[role]) assert.equal(st.canBuy(R[role]).ok, false, `prepared reagent ${role} is not for sale`);
-  for (const id of st.purchasable()) {
-    const m = st.lookup(id);
-    assert.ok(id === R.water || id === R.oil || id === R.spirit || (m.wild && !m.wild.gatherOnly), `${id} on sale is a solvent or a common herb`);
+  for (const id of st.purchasable()) assert.ok(id === R.water || id === R.oil || id === R.spirit, `${id} on sale is a solvent`);
+  st.reputation = RANKS[3].rep;
+  for (const id of ['wild-sp-silverleaf', 'wild-sp-silverleaf-arcane', 'wild-sp-everbloom-chalice']) {
+    const coins = st.coins;
+    assert.equal(st.buy(id, 100).ok, false, `${id} cannot be bought`);
+    assert.equal(st.coins, coins, 'and nothing was charged');
   }
-  const shade = 'wild-nightshade';
-  assert.ok(st.lookup(shade).wild.gatherOnly);
-  const coins = st.coins;
-  const r = st.buy(shade, 100);
-  assert.equal(r.ok, false, 'a gather-only ingredient cannot be bought');
-  assert.equal(st.coins, coins, 'and nothing was charged');
-  // the herbalist sells common herbs only from Journeyman on
-  const leaf = 'wild-silverleaf';
-  assert.equal(st.buy(leaf, 100).ok, false, 'an apprentice cannot buy herbs');
-  st.reputation = RANKS[1].rep;
-  assert.equal(st.buy(leaf, 100).ok, true, 'a journeyman can');
-  assert.equal(st.canBuy('wild-mandrake').ok, false, 'rare roots are never sold');
   assert.equal(st.buy(R.spirit, 100).ok, true, 'plain solvents are always for sale');
 });
 
@@ -105,6 +96,9 @@ test('every technique can be asked for and changes the order; customers only ask
       st.reputation = RANKS[tier].rep;
       st.coins = 200;
       st.equipment.push('kit');
+      // a shop of that rank has served customers (its biomes are open) and keeps everyday stores
+      st.stats.served = 25;
+      for (const id of st.gatherableSet()) if (['common', 'uncommon'].includes(st.lookup(id).wild.rarity)) st.inventory[id] = st.cap.storage;
       const com = generateCommission(st.commissionContext(), new Rng(`t${k}`), { tier, techniques: [t.id] });
       if (com && com.techniques.includes(t.id)) got = com;
     }

@@ -84,7 +84,8 @@ test('Arcane variants: rarer, less fertile, dearer; thresholds follow the biome'
   }
   assert.deepEqual(RARITIES.map((r) => Math.round(r.seedDrop * 100)), [35, 22, 10, 4, 1]);
   for (const s of SPECIES_DATA) {
-    assert.ok(Math.abs(s.arcane.thr) >= ARCANE.threshold[0] && Math.abs(s.arcane.thr) <= ARCANE.threshold[1], `${s.key} threshold`);
+    const band = s.arcane.thr < 0 ? ARCANE.coldThreshold : ARCANE.threshold;
+    assert.ok(Math.abs(s.arcane.thr) >= band[0] && Math.abs(s.arcane.thr) <= band[1], `${s.key} threshold`);
     assert.equal(Math.sign(s.arcane.thr), BIOME_BY_ID[s.biome].arcaneSign, `${s.key}: its biome's direction`);
   }
 });

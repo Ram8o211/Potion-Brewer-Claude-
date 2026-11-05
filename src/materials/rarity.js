@@ -28,7 +28,8 @@
  * @property {[number, number]} dominant   inclusive range of the dominant effect's magnitude
  * @property {[number, number]} secondaries permitted number of secondary effects
  * @property {[number, number]} ratio      permitted range of (each) secondary / dominant; the strongest secondary must reach ratio[0]
- * @property {number} spawnWeight          relative chance a species of this tier is chosen for a biome population
+ * @property {number} spawnWeight          relative weight of the tier in a biome's population
+ * @property {number} presence             chance a species of this tier grows at all in one generation of its biome
  * @property {[number, number]} specimens  specimens of a chosen species in one population
  * @property {number} seedDrop             chance a harvest drops a seed (ordinary form)
  * @property {number} value                selling-value multiplier
@@ -40,15 +41,15 @@
 
 /** @type {RarityDef[]} */
 export const RARITIES = [
-  { id: 'common', label: 'Common', rank: 0, dominant: [14, 22], secondaries: [1, 2], ratio: [0.3, 0.62], spawnWeight: 10, specimens: [4, 7],
+  { id: 'common', presence: 0.95, label: 'Common', rank: 0, dominant: [18, 26], secondaries: [1, 2], ratio: [0.3, 0.62], spawnWeight: 10, specimens: [2, 3],
     seedDrop: 0.35, value: 1, visual: 'simple natural structure', growHours: 0.75, color: '#c9c3b8' },
-  { id: 'uncommon', label: 'Uncommon', rank: 1, dominant: [24, 34], secondaries: [1, 2], ratio: [0.08, 0.26], spawnWeight: 5, specimens: [2, 4],
+  { id: 'uncommon', presence: 0.7, label: 'Uncommon', rank: 1, dominant: [28, 38], secondaries: [1, 2], ratio: [0.08, 0.26], spawnWeight: 5, specimens: [1, 2],
     seedDrop: 0.22, value: 1.8, visual: 'distinctive morphology', growHours: 1.5, color: '#6fd06a' },
-  { id: 'rare', label: 'Rare', rank: 2, dominant: [36, 48], secondaries: [1, 1], ratio: [0.02, 0.08], spawnWeight: 2.2, specimens: [1, 2],
+  { id: 'rare', presence: 0.4, label: 'Rare', rank: 2, dominant: [40, 52], secondaries: [1, 1], ratio: [0.02, 0.08], spawnWeight: 2.2, specimens: [1, 2],
     seedDrop: 0.1, value: 3.5, visual: 'complex, unusual structure', growHours: 3, color: '#5aa8ff' },
-  { id: 'unique', label: 'Unique', rank: 3, dominant: [52, 64], secondaries: [0, 0], ratio: [0, 0], spawnWeight: 0.6, specimens: [1, 1],
+  { id: 'unique', presence: 0.12, label: 'Unique', rank: 3, dominant: [56, 68], secondaries: [0, 0], ratio: [0, 0], spawnWeight: 0.6, specimens: [1, 1],
     seedDrop: 0.04, value: 8, visual: 'singular, striking anatomy', growHours: 6, color: '#c27aff', requires: 'an upgraded plot' },
-  { id: 'legendary', label: 'Legendary', rank: 4, dominant: [80, 95], secondaries: [0, 0], ratio: [0, 0], spawnWeight: 0.12, specimens: [1, 1],
+  { id: 'legendary', presence: 0.03, label: 'Legendary', rank: 4, dominant: [84, 98], secondaries: [0, 0], ratio: [0, 0], spawnWeight: 0.12, specimens: [1, 1],
     seedDrop: 0.01, value: 20, visual: 'exceptional detail, unmistakable silhouette', growHours: 12, color: '#ffb340', requires: 'an Arcane cultivation chamber' },
 ];
 
@@ -66,8 +67,10 @@ export const ARCANE = Object.freeze({
   value: 2.2,
   /** awakening gain range (effects × gain past the threshold) */
   gain: /** @type {[number, number]} */ ([2.5, 3]),
-  /** activation threshold magnitude range on the −1000…+1000 scale */
-  threshold: /** @type {[number, number]} */ ([250, 750]),
+  /** activation threshold range on the −1000…+1000 scale (T = 20 °C + 0.1·thr): heat awakens 45–85 °C, below the boil */
+  threshold: /** @type {[number, number]} */ ([250, 650]),
+  /** cold awakening: −60…−300, i.e. 14 °C down to −10 °C, within the reach of the basin and the frost rune */
+  coldThreshold: /** @type {[number, number]} */ ([60, 300]),
 });
 
 /** Effect pairs that cancel in a brew: a species never carries both halves (nor a secondary opposing its dominant). */

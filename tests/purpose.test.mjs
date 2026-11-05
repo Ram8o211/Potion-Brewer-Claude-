@@ -81,6 +81,7 @@ test('cold steeps are only planned where the equipment can hold them, never froz
     for (const eq of [[], ['frostrune']]) {
       const st = GameState.create(`cold-${k}`, { tutorial: false });
       st.reputation = RANKS[1].rep;
+      st.stats.served = 8; // (which opens the Willow Bank, where frost grows)
       st.coins = 300;
       st.equipment.push('kit', ...eq);
       const com = generateCommission(st.commissionContext(), new Rng(`c${k}`), { tier: 1, request: 'cooling' });
@@ -318,12 +319,12 @@ test('the mechanics make a measurable difference in the real cauldron: grinding,
     return tap(sim, 20);
   };
   const v = EFFECT_INDEX.vitality, f = EFFECT_INDEX.frost;
-  const whole = brew('wild-silverleaf', 16, { ground: false }), ground = brew('wild-silverleaf', 16);
+  const whole = brew('wild-sp-silverleaf', 16, { ground: false }), ground = brew('wild-sp-silverleaf', 16);
   assert.ok(whole.effects[v] < 1 && ground.effects[v] > 5, `grinding: ${whole.effects[v].toFixed(1)} → ${ground.effects[v].toFixed(1)}`);
-  const cool = brew('wild-silverleaf', 34, { T: 25 }), warm = brew('wild-silverleaf', 34);
+  const cool = brew('wild-sp-silverleaf', 34, { T: 25 }), warm = brew('wild-sp-silverleaf', 34);
   assert.ok(warm.effects[v] > cool.effects[v] * 2, `steeping in the window: ${cool.effects[v].toFixed(1)} → ${warm.effects[v].toFixed(1)}`);
-  const warmCap = brew('wild-frostcap', 34, { T: 40, eq: STARTING_EQUIPMENT }), basin = brew('wild-frostcap', 34, { T: 9, eq: STARTING_EQUIPMENT });
+  const warmCap = brew('wild-sp-willowleaf', 34, { T: 40, eq: STARTING_EQUIPMENT }), basin = brew('wild-sp-willowleaf', 34, { T: 9, eq: STARTING_EQUIPMENT });
   assert.ok(basin.effects[f] > warmCap.effects[f] * 1.8, `cold extraction: ${warmCap.effects[f].toFixed(1)} (warm) → ${basin.effects[f].toFixed(1)} (the basin's 9°C)`);
-  const reduced = brew('wild-silverleaf', 16, { boil: 0.3, T: 62 });
+  const reduced = brew('wild-sp-silverleaf', 16, { boil: 0.3, T: 62 });
   assert.ok(reduced.effects[f] > ground.effects[f] * 1.2, `boiling down strengthens the side effect too: frost ${ground.effects[f].toFixed(1)} → ${reduced.effects[f].toFixed(1)}`);
 });
