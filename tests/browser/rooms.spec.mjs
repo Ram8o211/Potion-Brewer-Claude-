@@ -100,7 +100,8 @@ test('harvesting a mature plant fills the stores and leaves nothing behind; grow
       await expect.poll(() => lab(page, (l) => l.views.wilds.hover)).toBe(p3.id);
     }
   }
-  // the Sunlit Meadow grows its own plants, tapped the same way; their cards show the plant's icon
+  // the Sunlit Meadow (opened after three customers) grows its own plants, tapped the same way; their cards show the plant's icon
+  await lab(page, (l) => { l.state.stats.served = 3; l.state.checkUnlocks(); l.views.wilds.refresh(); });
   await page.click('[data-act=region-meadow]');
   await page.waitForFunction(() => { const w = window.__alchemist.screen.views.wilds; return w.region === 'meadow' && !!w.bg; });
   await lab(page, (l) => l.views.wilds.grow());
@@ -150,16 +151,18 @@ test('the dropper doses a rabbit on the farm; a dead one is replaced for coins; 
   await newGame(page, { tutorial: false, seed: 'trial-room-1' });
   const roles = await lab(page, (l) => l.state.world.roles);
   await pourDose(page, roles.water, [100]);
-  await pourDose(page, 'wild-emberbark', [100]);
+  // an Emberleaf from the Ember Crags (its fire shows plainly in one reading)
+  await lab(page, (l) => { l.state.inventory['wild-sp-emberleaf'] = 200; l.state.found['wild-sp-emberleaf'] = 1; l.buildShelf(); });
+  await pourDose(page, 'wild-sp-emberleaf', [100]);
   await crushInPot(page);
-  // steep the bark (it gives up its fire only when warm), so one reading plainly shows it
+  // steep the leaf (it gives up its fire only when warm), so one reading plainly shows it
   await lab(page, (l) => { l.setAutoStir(true); l.setFurnace(0.8); l.speed = 4; });
   await page.waitForFunction(() => { const p = window.__alchemist.screen.sim.p; let t = 0; for (let i = 0; i < p.count; i++) t += p.temp[i]; return t / p.count > 62; }, null, { timeout: 60_000, polling: 250 });
   await page.waitForTimeout(3000);
   await lab(page, (l) => { l.setFurnace(0); l.setAutoStir(false); l.speed = 1; });
   await page.click('[data-act=tab-trials]');
   await expect(page.locator('[data-subject=beetle]')).toHaveCount(0);
-  await expect(page.locator('.status-bars .sb')).toHaveCount(11);
+  await expect(page.locator('.status-bars .sb')).toHaveCount(16);
   // drag the dropper onto Bramble's tile (the dose bar sits right above the roster)
   await page.locator('.dose-bar').evaluate((el) => el.scrollIntoView({ block: 'start' }));
   const from = await page.locator('.dropper').boundingBox();
@@ -171,7 +174,7 @@ test('the dropper doses a rabbit on the farm; a dead one is replaced for coins; 
   await expect(page.locator('.trial-report .report').first()).toContainText('Bramble');
   const rec = await lab(page, (l) => l.state.trials.records[0]);
   expect(rec.subjectId).toBe('rabbit');
-  expect(rec.revealed.length, 'a rabbit shows every effect').toBe(10);
+  expect(rec.revealed.length, 'a rabbit shows every effect').toBe(15);
   expect(rec.values.fire, 'the rabbit shows fire (a single reading is noisy)').toBeGreaterThan(0);
   // the room's batch estimate updates at once
   await expect(page.locator('.view-trials')).not.toContainText('nothing tested yet');
@@ -195,45 +198,28 @@ test('the dropper doses a rabbit on the farm; a dead one is replaced for coins; 
   expect(errors).toEqual([]);
 });
 
-test('watering: a tap in watering mode wets the soil round a growing plant, its card can water the whole stand, and it grows faster', async ({ page }, info) => {
+test('the garden: a seed is sown in a plot, watered with a tap, grows and is harvested; the wilds are not watered', async ({ page }, info) => {
   const errors = watchErrors(page);
-  await newGame(page, { tutorial: false, seed: 'water-seed-1' });
+  await newGame(page, { tutorial: false, seed: 'garden-room-1' });
   await page.click('[data-act=tab-wilds]');
-  // (no wild rabbits hopping in front of the plants these taps are aimed at)
-  await lab(page, (l) => { l.views.wilds.wildlife = false; });
-  // (the whole region in view: taps below are aimed from the scene's own coordinates)
-  await lab(page, (l) => l.views.wilds.setZoom(1));
-  await page.click('[data-act=region-meadow]');
-  await page.waitForFunction(() => !!window.__alchemist.screen.views.wilds.bg);
-  // a stand of the meadow with fresh sprouts in it
-  const dep = await lab(page, (l) => {
-    const st = l.state, d = st.deposits.find((x) => x.region === 'meadow' && x.botanical && x.rank === 0);
-    const now = Date.now();
-    st.gathering.nodes[d.id] = { plants: [0, 1].map((k) => ({ id: `${d.id}#w${k}`, x: 0.3 + k * 0.3, y: 0.75, born: now, g: 0.1, t: now, w: 0.2 })), due: null, seq: 50 };
-    // (its card is listed once it has been gathered before)
-    st.found[d.materialId] = 1;
-    l.views.wilds.refresh();
-    l.views.wilds.grow();
-    return d;
-  });
-  await page.click('[data-act=mode-water]');
-  await expect(page.locator('[data-act=mode-water]')).toHaveClass(/active/);
-  const cv = await page.locator('.view-wilds canvas.scene').boundingBox();
-  if (!cv) throw new Error('no scene');
-  const p = await lab(page, (l, id) => { const q = l.views.wilds.field.find((x) => x.id === id); return { x: q.x, y: q.y }; }, `${dep.id}#w0`);
-  const before = await lab(page, (l, id) => l.state.gathering.nodes[id].plants[0].w, dep.id);
-  await page.mouse.click(cv.x + p.x * cv.width, cv.y + (p.y * 216 - 6) / 216 * cv.height);
-  const after = await lab(page, (l, id) => l.state.gathering.nodes[id].plants[0].w, dep.id);
-  expect(after, 'the tap watered the plant').toBeGreaterThan(before + 0.3);
-  await expect(page.locator(`[data-deposit="${dep.id}"] .soil`)).toBeVisible();
-  // the card's button waters the rest of the stand
-  await page.click(`[data-act="water-${dep.id}"]`);
-  const ws = await lab(page, (l, id) => l.state.gathering.nodes[id].plants.map((q) => q.w), dep.id);
-  expect(Math.min(...ws)).toBeGreaterThan(0.6);
-  await page.waitForTimeout(700);
-  await shot(page, info, 'wilds-watering');
-  // a tap in harvest mode again harvests rather than waters
-  await page.click('[data-act=mode-harvest]');
-  await expect(page.locator('[data-act=mode-harvest]')).toHaveClass(/active/);
+  await expect(page.locator('[data-act=mode-water]')).toHaveCount(0);
+  // a Silverleaf seed in hand
+  await lab(page, (l) => { l.state.garden.seeds.silverleaf = 1; });
+  await page.click('[data-act=tab-garden]');
+  await page.click('[data-act=seed-silverleaf]');
+  await page.click('[data-act=plot-p1]');
+  expect(await lab(page, (l) => l.state.garden.plots[0].crop && l.state.garden.plots[0].crop.species)).toBe('silverleaf');
+  expect(await lab(page, (l) => l.state.garden.seeds.silverleaf || 0), 'the seed was used').toBe(0);
+  // a tap waters it
+  const w0 = await lab(page, (l) => l.state.garden.plots[0].crop.w);
+  await page.click('[data-act=plot-p1]');
+  expect(await lab(page, (l) => l.state.garden.plots[0].crop.w)).toBeGreaterThan(w0 + 0.3);
+  await shot(page, info, 'garden-sown');
+  // a day later it is mature: a tap harvests it into the stores
+  const before = await lab(page, (l) => l.state.stock('wild-sp-silverleaf'));
+  await lab(page, (l) => { const c = l.state.garden.plots[0].crop; c.t -= 86400000; c.planted -= 86400000; l.views.garden.refresh(); });
+  await page.click('[data-act=plot-p1]');
+  expect(await lab(page, (l) => l.state.stock('wild-sp-silverleaf'))).toBeGreaterThan(before);
+  expect(await lab(page, (l) => l.state.garden.plots[0].crop), 'the harvest consumed the plant').toBeNull();
   expect(errors).toEqual([]);
 });

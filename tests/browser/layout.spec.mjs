@@ -100,7 +100,7 @@ test('panels open, fit and close', async ({ page }, info) => {
     await expect(page.locator('.overlay')).toHaveCount(0);
   }
   // long-press a jar: the ingredient sheet shows its known effects
-  const jar = page.locator('.jar[data-id="wild-silverleaf"]');
+  const jar = page.locator('.jar[data-id="wild-sp-silverleaf"]');
   await jar.click({ button: 'right' });
   await expect(page.locator('.overlay .modal')).toContainText('Vitality');
   await shot(page, info, 'ingredient-panel');

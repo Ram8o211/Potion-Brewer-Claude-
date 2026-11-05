@@ -25,7 +25,7 @@ test('walking away keeps the talks; the same bottle resumes them; a new label re
   });
   await pourRole(page, 'water', 50);
   await pourRole(page, 'water', 50);
-  await pourRole(page, 'wild-silverleaf', 50);
+  await pourRole(page, 'wild-sp-silverleaf', 50);
   await crushInPot(page);
   await page.click('[data-act=bottle]');
   await page.click('[data-act=bottle-50]');

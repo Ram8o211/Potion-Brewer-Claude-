@@ -11,7 +11,7 @@ test('first commission: brew, test on a subject, bottle and serve', async ({ pag
   await page.waitForTimeout(200);
   await page.click('[data-act=tutorial-next]').catch(() => {});
   const roles = await lab(page, (l) => l.state.world.roles);
-  const leaf = 'wild-silverleaf', sun = 'wild-sunthistle';
+  const leaf = 'wild-sp-silverleaf', sun = 'wild-sp-honeycap';
   const before = await lab(page, (l, id) => ({ coins: l.state.coins, rep: l.state.reputation, leaf: l.state.stock(id) }), leaf);
   // 125 ml of water, 50 ml of whole Silverleaf (healing with a frosty bite), 25 ml of Sunthistle to cancel the frost
   await pourDose(page, roles.water, [100, 25]);
@@ -44,7 +44,7 @@ test('first commission: brew, test on a subject, bottle and serve', async ({ pag
   await lab(page, (l) => { l.speed = 4; });
   await page.waitForFunction(() => {
     const st = window.__alchemist.screen.state, sim = window.__alchemist.screen.sim;
-    const leafLeft = sim.species.slotOf.get('wild-silverleaf');
+    const leafLeft = sim.species.slotOf.get('wild-sp-silverleaf');
     let f = 0;
     for (let i = 0; i < sim.p.count; i++) f += leafLeft === undefined ? 0 : sim.p.comp[i * sim.p.S + leafLeft];
     return f < 2 && !!st;
@@ -140,7 +140,7 @@ test('a customer who insists on proof will not buy until the vial is tested; tes
     l.views.counter.refresh();
   });
   await pourDose(page, await lab(page, (l) => l.state.world.roles.water), [100]);
-  await pourDose(page, 'wild-silverleaf', [50]);
+  await pourDose(page, 'wild-sp-silverleaf', [50]);
   await crushInPot(page);
   // steeped warm, so one reading plainly shows the healing (a cold brew is too weak to be sure of)
   await lab(page, (l) => { l.setAutoStir(true); l.setFurnace(0.8); l.speed = 4; });
@@ -260,8 +260,8 @@ test('drag a jar from the shelf onto the cauldron to pour; a root goes in whole 
   await page.waitForTimeout(800);
   expect(await lab(page, (l) => l.sim.p.count), 'dragging the jar onto the cauldron poured it').toBeGreaterThan(3);
   // a wild root goes in whole: there is no grinding before the pour
-  await lab(page, (l) => { l.state.inventory['wild-ironroot'] = 100; l.buildShelf(); });
-  await page.click('.jar[data-id="wild-ironroot"]');
+  await lab(page, (l) => { l.state.inventory['wild-sp-heartwood-mandrake'] = 100; l.buildShelf(); });
+  await page.click('.jar[data-id="wild-sp-heartwood-mandrake"]');
   await expect(page.locator('[data-act=ground]')).toHaveCount(0);
   await page.click('[data-act=dose-25]');
   await page.waitForFunction(() => !window.__alchemist.screen.sim.emitter.pouring);

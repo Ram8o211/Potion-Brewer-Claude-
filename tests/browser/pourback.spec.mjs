@@ -10,7 +10,7 @@ test('bottle, test a dose of the vial, pour the rest back', async ({ page }) => 
   const errors = watchErrors(page);
   await newGame(page, { tutorial: false, seed: 'pour-back-ui' });
   await pourRole(page, 'water', 150);
-  await pourRole(page, 'wild-silverleaf', 50);
+  await pourRole(page, 'wild-sp-silverleaf', 50);
   await crushInPot(page);
   const n0 = await lab(page, (l) => l.sim.p.count);
   await page.click('[data-act=bottle]');
@@ -43,7 +43,7 @@ test('a tested bottle keeps its label through the shelf, a pour back into the em
   const errors = watchErrors(page);
   await newGame(page, { tutorial: false, seed: 'pour-back-label' });
   await pourRole(page, 'water', 150);
-  await pourRole(page, 'wild-silverleaf', 100);
+  await pourRole(page, 'wild-sp-silverleaf', 100);
   await crushInPot(page);
   // two trials of the batch (its label is drafted from them), then the whole cauldron onto the shelves
   await page.click('[data-act=tab-trials]');

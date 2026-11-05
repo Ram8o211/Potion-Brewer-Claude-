@@ -9,7 +9,7 @@ test('bottles go onto the potion shelves while there is room, and come down to t
   const errors = watchErrors(page);
   await newGame(page, { tutorial: false, seed: 'shelves-ui-1' });
   await pourRole(page, 'water', 150);
-  await pourRole(page, 'wild-silverleaf', 100);
+  await pourRole(page, 'wild-sp-silverleaf', 100);
   await crushInPot(page);
   const shelve = async (ml) => {
     await page.click('[data-act=bottle]');
@@ -77,7 +77,7 @@ test('a tested batch labels its bottles by itself: shelved bottles show their ef
   const errors = watchErrors(page);
   await newGame(page, { tutorial: false, seed: 'shelves-label-1' });
   await pourRole(page, 'water', 150);
-  await pourRole(page, 'wild-silverleaf', 100);
+  await pourRole(page, 'wild-sp-silverleaf', 100);
   await crushInPot(page);
   const shelve = async () => {
     await page.click('[data-act=tab-brew]');
