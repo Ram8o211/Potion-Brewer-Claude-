@@ -1078,8 +1078,442 @@ return { thr: Math.max(-1000, Math.min(1000, t)), gain: Math.round(gain * jitter
 }
 return { ROLE_EFFECTS, ROLE_ARCANE, FX_VERSION, ROLE_ELECTRIC, roleOf, jitter, applyProfile, arcaneProfile };
 })();
-// src/reactions/compatibility.js
+// src/materials/species-data.js
+const __m14 = (() => {
+const SPECIES_DATA = [
+{ "key": "silverleaf", "name": "Silverleaf", "biome": "forest", "category": "natural", "slot": 0, "morph": "leaf", "rarity": "common", "dominant": "vitality", "fx": { "vitality": 23.7, "frost": 9.4, "acidity": 1.2 }, "arcane": { "thr": 560, "gain": 2.8 }, "shape": "leaf", "bed": "soil", "botanical": true, "form": "solid", "density": 0.72, "hardness": 0.22, "sol": 0.187, "solT": 0.0015, "gather": "pick", "steep": { "into": "water", "lo": [ 40, 50 ], "hi": [ 80, 90 ] }, "price": 8, "lore": "Soft silvery leaves prized by healers, with a frosty bite." },
+{ "key": "honeycap", "name": "Honeycap", "biome": "forest", "category": "natural", "slot": 1, "morph": "fungus", "rarity": "common", "dominant": "vitality", "fx": { "vitality": 22.2, "fire": 8.4, "acidity": 1 }, "arcane": { "thr": 470, "gain": 2.9 }, "shape": "cap", "bed": "fungal", "botanical": true, "form": "solid", "density": 0.89, "hardness": 0.22, "sol": 0.16, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 20, 25 ], "hi": [ 55, 60 ] }, "price": 9, "lore": "A golden mushroom that smells of honey and warm bread: it heals, and its warmth cancels a frosty herb." },
+{ "key": "dawnblossom", "name": "Dawnblossom", "biome": "forest", "category": "natural", "slot": 2, "morph": "flower", "rarity": "uncommon", "dominant": "vitality", "fx": { "vitality": 35, "strength": 7.8 }, "arcane": { "thr": 270, "gain": 2.7 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.64, "hardness": 0.15, "sol": 0.2, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 12, "lore": "Pale pink flowers that open with the first light." },
+{ "key": "dewpear", "name": "Dewpear", "biome": "forest", "category": "natural", "slot": 3, "morph": "fruit", "rarity": "uncommon", "dominant": "swiftness", "fx": { "swiftness": 34.6, "fire": 8.3, "love": 1.7 }, "arcane": { "thr": 580, "gain": 2.8 }, "shape": "berry", "bed": "soil", "botanical": true, "form": "solid", "density": 0.97, "hardness": 0.12, "sol": 0.214, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 15, "lore": "A green pear so light and quick it seems to roll uphill." },
+{ "key": "heartwood-mandrake", "name": "Heartwood Mandrake", "biome": "forest", "category": "natural", "slot": 4, "morph": "root", "rarity": "rare", "dominant": "vitality", "fx": { "vitality": 42.9, "fire": 2.9 }, "arcane": { "thr": 530, "gain": 2.8 }, "shape": "root", "bed": "soil", "botanical": true, "form": "solid", "density": 1.11, "hardness": 0.45, "sol": 0.115, "solT": 0.002, "gather": "dig", "steep": { "into": "water", "lo": [ 60, 70 ], "hi": [ 90, 100 ] }, "price": 22, "lore": "A drowsy root with a face, grown from the heart of old oaks." },
+{ "key": "mossback-bark", "name": "Mossback Bark", "biome": "forest", "category": "natural", "slot": 5, "morph": "bark", "rarity": "uncommon", "dominant": "vitality", "fx": { "vitality": 29.1, "fire": 3.7 }, "arcane": { "thr": 310, "gain": 2.9 }, "shape": "bark", "bed": "soil", "botanical": true, "form": "solid", "density": 0.87, "hardness": 0.4, "sol": 0.119, "solT": 0.002, "gather": "scrape", "steep": { "into": "water", "lo": [ 45, 50 ], "hi": [ 85, 90 ] }, "price": 14, "lore": "Bark slabs furred with living moss that mends what it touches." },
+{ "key": "stagthorn-vine", "name": "Stagthorn Vine", "biome": "forest", "category": "natural", "slot": 6, "morph": "vine", "rarity": "rare", "dominant": "vitality", "fx": { "vitality": 50.8, "frost": 3.4 }, "arcane": { "thr": 460, "gain": 2.7 }, "shape": "bean", "bed": "soil", "botanical": true, "form": "solid", "density": 0.93, "hardness": 0.22, "sol": 0.191, "solT": 0.0015, "gather": "pick", "steep": { "into": "spirit", "lo": [ 25, 30 ], "hi": [ 55, 60 ] }, "price": 22, "lore": "A golden vine branching like antlers, rooted in fern hollows." },
+{ "key": "hearthnut", "name": "Hearthnut", "biome": "forest", "category": "natural", "slot": 7, "morph": "stone", "rarity": "common", "dominant": "acidity", "fx": { "acidity": -22.9, "strength": 12.4, "frost": 1.1 }, "arcane": { "thr": 320, "gain": 2.5 }, "shape": "stone", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.61, "hardness": 0.6, "sol": 0.059, "solT": 0.003, "gather": "mine", "steep": { "into": "water", "lo": [ 75, 80 ], "hi": [ 150, 160 ] }, "price": 8, "lore": "Speckled brown nuts with a chalky, alkaline shell that settles acids." },
+{ "key": "heartberry", "name": "Heartberry", "biome": "forest", "category": "natural", "slot": 8, "morph": "fruit", "rarity": "unique", "dominant": "vitality", "fx": { "vitality": 63.4 }, "arcane": { "thr": 630, "gain": 3 }, "shape": "berry", "bed": "soil", "botanical": true, "form": "solid", "density": 0.95, "hardness": 0.12, "sol": 0.231, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 50, "lore": "A single heart-shaped fruit that beats faintly in the hand." },
+{ "key": "everbloom-chalice", "name": "Everbloom Chalice", "biome": "forest", "category": "natural", "slot": 9, "morph": "fungus", "rarity": "legendary", "dominant": "vitality", "fx": { "vitality": 93.9 }, "arcane": { "thr": 580, "gain": 2.6 }, "shape": "cap", "bed": "fungal", "botanical": true, "form": "solid", "density": 0.94, "hardness": 0.22, "sol": 0.169, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 20, 25 ], "hi": [ 55, 60 ] }, "price": 101, "lore": "A green cup-fungus that is always full of healing dew." },
+{ "key": "meadow-daisy", "name": "Meadow Daisy", "biome": "meadow", "category": "natural", "slot": 0, "morph": "flower", "rarity": "common", "dominant": "love", "fx": { "love": 21.6, "acidity": 9.7, "swiftness": 1.1 }, "arcane": { "thr": 500, "gain": 2.7 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.63, "hardness": 0.15, "sol": 0.201, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 8, "lore": "Plain white daisies, the first love-charm every child learns." },
+{ "key": "goldenrush", "name": "Goldenrush Grass", "biome": "meadow", "category": "natural", "slot": 1, "morph": "grass", "rarity": "common", "dominant": "swiftness", "fx": { "swiftness": 23.9, "fire": 11.6, "acidity": 1 }, "arcane": { "thr": 600, "gain": 2.5 }, "shape": "reed", "bed": "soil", "botanical": true, "form": "solid", "density": 0.68, "hardness": 0.25, "sol": 0.162, "solT": 0.0015, "gather": "scrape", "steep": { "into": "water", "lo": [ 35, 40 ], "hi": [ 80, 85 ] }, "price": 9, "lore": "Wind-combed golden grass that never stands still." },
+{ "key": "brightberry", "name": "Brightberry", "biome": "meadow", "category": "natural", "slot": 2, "morph": "berry", "rarity": "common", "dominant": "love", "fx": { "love": 19, "strength": 6.6, "fire": 1 }, "arcane": { "thr": 570, "gain": 2.8 }, "shape": "berry", "bed": "soil", "botanical": true, "form": "solid", "density": 1.01, "hardness": 0.12, "sol": 0.211, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 8, "lore": "Glossy red berries, sweet and a little sour." },
+{ "key": "honeyclover", "name": "Honeyclover", "biome": "meadow", "category": "natural", "slot": 3, "morph": "flower", "rarity": "uncommon", "dominant": "love", "fx": { "love": 35.8, "fire": 4.6, "strength": 1.2 }, "arcane": { "thr": 250, "gain": 2.7 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.62, "hardness": 0.15, "sol": 0.2, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 13, "lore": "Round golden clover heads humming with bees." },
+{ "key": "suncrown", "name": "Suncrown Flower", "biome": "meadow", "category": "natural", "slot": 4, "morph": "flower", "rarity": "uncommon", "dominant": "fire", "fx": { "fire": 28.8, "vitality": 5.4 }, "arcane": { "thr": 380, "gain": 2.9 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.63, "hardness": 0.15, "sol": 0.215, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 13, "lore": "A sunflower that keeps the day’s warmth in its seeds." },
+{ "key": "meadowcrystal", "name": "Meadowcrystal Shard", "biome": "meadow", "category": "natural", "slot": 5, "morph": "crystal", "rarity": "rare", "dominant": "love", "fx": { "love": 47.7, "fire": 3 }, "arcane": { "thr": 470, "gain": 2.7 }, "shape": "crystal", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.83, "hardness": 0.65, "sol": 0.084, "solT": 0.002, "gather": "mine", "steep": { "into": "spirit", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 22, "lore": "A clear pink-hearted crystal pushed up among the grass roots." },
+{ "key": "prism-petal", "name": "Prism Petal", "biome": "meadow", "category": "natural", "slot": 6, "morph": "flower", "rarity": "rare", "dominant": "love", "fx": { "love": 46.2, "fire": 3.1 }, "arcane": { "thr": 280, "gain": 3 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.6, "hardness": 0.15, "sol": 0.186, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 22, "lore": "A single petal that splits the sun into every colour." },
+{ "key": "lovelace-orchid", "name": "Lovelace Orchid", "biome": "meadow", "category": "natural", "slot": 7, "morph": "flower", "rarity": "uncommon", "dominant": "love", "fx": { "love": 32.1, "fire": 6, "swiftness": 1.3 }, "arcane": { "thr": 600, "gain": 2.6 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.63, "hardness": 0.15, "sol": 0.195, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 14, "lore": "A frilled cream-and-pink orchid that turns towards voices." },
+{ "key": "radiant-sunbloom", "name": "Radiant Sunbloom", "biome": "meadow", "category": "natural", "slot": 8, "morph": "flower", "rarity": "unique", "dominant": "love", "fx": { "love": 57.9 }, "arcane": { "thr": 350, "gain": 2.7 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.64, "hardness": 0.15, "sol": 0.21, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 42, "lore": "A blossom shaped like the sun, warm with devotion." },
+{ "key": "eternal-rose", "name": "Eternal Rose", "biome": "meadow", "category": "natural", "slot": 9, "morph": "flower", "rarity": "legendary", "dominant": "love", "fx": { "love": 97 }, "arcane": { "thr": 350, "gain": 2.6 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.6, "hardness": 0.15, "sol": 0.209, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 117, "lore": "A rose that has never wilted since it first opened." },
+{ "key": "willowleaf", "name": "Willowleaf Sprig", "biome": "river", "category": "natural", "slot": 0, "morph": "leaf", "rarity": "common", "dominant": "frost", "fx": { "frost": 24.3, "death": 10, "swiftness": 1 }, "arcane": { "thr": -230, "gain": 2.5 }, "shape": "leaf", "bed": "soil", "botanical": true, "form": "solid", "density": 0.72, "hardness": 0.22, "sol": 0.183, "solT": 0.0015, "gather": "pick", "steep": { "into": "water", "lo": [ 1, 2 ], "hi": [ 12, 14 ] }, "price": 7, "lore": "Long drooping willow leaves, cold to the touch." },
+{ "key": "reedcap", "name": "Reedcap", "biome": "river", "category": "natural", "slot": 1, "morph": "fungus", "rarity": "common", "dominant": "death", "fx": { "death": 23.3, "frost": 11.7 }, "arcane": { "thr": -70, "gain": 2.9 }, "shape": "cap", "bed": "fungal", "botanical": true, "form": "solid", "density": 0.9, "hardness": 0.22, "sol": 0.161, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 20, 25 ], "hi": [ 55, 60 ] }, "price": 8, "lore": "A pale riverside mushroom with a grave chill about it." },
+{ "key": "riverlotus", "name": "Riverlotus", "biome": "river", "category": "natural", "slot": 2, "morph": "flower", "rarity": "uncommon", "dominant": "frost", "fx": { "frost": 35.1, "vitality": 4.9 }, "arcane": { "thr": -110, "gain": 2.6 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.63, "hardness": 0.15, "sol": 0.213, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 1, 2 ], "hi": [ 12, 14 ] }, "price": 13, "lore": "A white water-lily that floats on the coldest pools." },
+{ "key": "bubbleberry", "name": "Bubbleberry", "biome": "river", "category": "natural", "slot": 3, "morph": "berry", "rarity": "common", "dominant": "frost", "fx": { "frost": 23.3, "death": 11.3 }, "arcane": { "thr": -140, "gain": 3 }, "shape": "berry", "bed": "soil", "botanical": true, "form": "solid", "density": 0.99, "hardness": 0.12, "sol": 0.202, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 1, 2 ], "hi": [ 12, 14 ] }, "price": 8, "lore": "Blue berries full of icy juice that fizzes on the tongue." },
+{ "key": "tidebloom", "name": "Tidebloom", "biome": "river", "category": "natural", "slot": 4, "morph": "flower", "rarity": "uncommon", "dominant": "frost", "fx": { "frost": 35.2, "death": 6.6 }, "arcane": { "thr": -270, "gain": 2.6 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.62, "hardness": 0.15, "sol": 0.213, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 1, 2 ], "hi": [ 12, 14 ] }, "price": 13, "lore": "A cyan flower that opens and closes with the river’s flow." },
+{ "key": "streampearl", "name": "Streampearl Oyster", "biome": "river", "category": "natural", "slot": 5, "morph": "shell", "rarity": "rare", "dominant": "frost", "fx": { "frost": 45.1, "vitality": 1.6 }, "arcane": { "thr": -140, "gain": 2.6 }, "shape": "shell", "bed": "tide", "botanical": false, "form": "solid", "density": 1.63, "hardness": 0.55, "sol": 0.074, "solT": 0.002, "gather": "pick", "steep": { "into": "water", "lo": [ 50, 55 ], "hi": [ 85, 90 ] }, "price": 21, "lore": "A freshwater mussel holding a pearl of frozen light." },
+{ "key": "frostlotus", "name": "Frostlotus", "biome": "river", "category": "natural", "slot": 6, "morph": "flower", "rarity": "rare", "dominant": "frost", "fx": { "frost": 41.3, "strength": 1.7 }, "arcane": { "thr": -70, "gain": 3 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.63, "hardness": 0.15, "sol": 0.211, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 1, 2 ], "hi": [ 12, 14 ] }, "price": 23, "lore": "A lotus whose petals are rimed with frost even in summer." },
+{ "key": "rimefeather", "name": "Rimefeather Reed", "biome": "river", "category": "natural", "slot": 7, "morph": "grass", "rarity": "uncommon", "dominant": "swiftness", "fx": { "swiftness": 31.2, "frost": 3.3 }, "arcane": { "thr": -90, "gain": 3 }, "shape": "reed", "bed": "soil", "botanical": true, "form": "solid", "density": 0.68, "hardness": 0.25, "sol": 0.159, "solT": 0.0015, "gather": "scrape", "steep": { "into": "water", "lo": [ 35, 40 ], "hi": [ 80, 85 ] }, "price": 15, "lore": "Blue reeds that bend and spring back faster than the eye." },
+{ "key": "nixie-torc", "name": "Nixie Torc", "biome": "river", "category": "natural", "slot": 8, "morph": "relic", "rarity": "unique", "dominant": "frost", "fx": { "frost": 64.6 }, "arcane": { "thr": -160, "gain": 2.8 }, "shape": "nugget", "bed": "crystal", "botanical": false, "form": "solid", "density": 2, "hardness": 0.7, "sol": 0.056, "solT": 0.003, "gather": "mine", "steep": { "into": "spirit", "lo": [ 55, 60 ], "hi": [ 110, 120 ] }, "price": 47, "lore": "A ring of river-gold the nixies leave on the bank, ice-cold." },
+{ "key": "everfrost-pearlbloom", "name": "Everfrost Pearlbloom", "biome": "river", "category": "natural", "slot": 9, "morph": "flower", "rarity": "legendary", "dominant": "frost", "fx": { "frost": 87.1 }, "arcane": { "thr": -280, "gain": 2.5 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.62, "hardness": 0.15, "sol": 0.213, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 1, 2 ], "hi": [ 12, 14 ] }, "price": 125, "lore": "A crystalline flower around a pearl that never thaws." },
+{ "key": "stonewort", "name": "Stonewort", "biome": "quarry", "category": "natural", "slot": 0, "morph": "flower", "rarity": "common", "dominant": "strength", "fx": { "strength": 24.3, "fire": 13.6 }, "arcane": { "thr": 520, "gain": 2.9 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.64, "hardness": 0.15, "sol": 0.202, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 8, "lore": "Tough little white flowers rooted in cracks of the rock." },
+{ "key": "quarrycap", "name": "Quarrycap", "biome": "quarry", "category": "natural", "slot": 1, "morph": "fungus", "rarity": "common", "dominant": "strength", "fx": { "strength": 22.9, "acidity": 12 }, "arcane": { "thr": 330, "gain": 3 }, "shape": "cap", "bed": "fungal", "botanical": true, "form": "solid", "density": 0.92, "hardness": 0.22, "sol": 0.175, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 20, 25 ], "hi": [ 55, 60 ] }, "price": 9, "lore": "A stout tan mushroom that grows on the spoil heaps." },
+{ "key": "ironbloom", "name": "Ironbloom Shrub", "biome": "quarry", "category": "natural", "slot": 2, "morph": "flower", "rarity": "uncommon", "dominant": "strength", "fx": { "strength": 34.1, "fire": 4.2 }, "arcane": { "thr": 440, "gain": 2.7 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.63, "hardness": 0.15, "sol": 0.2, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 13, "lore": "Spiky red leaves stiff as iron filings." },
+{ "key": "stoneberry", "name": "Stoneberry", "biome": "quarry", "category": "natural", "slot": 3, "morph": "berry", "rarity": "common", "dominant": "acidity", "fx": { "acidity": 21.8, "strength": 11, "fire": 1 }, "arcane": { "thr": 600, "gain": 2.9 }, "shape": "berry", "bed": "soil", "botanical": true, "form": "solid", "density": 1, "hardness": 0.12, "sol": 0.203, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 9, "lore": "Hard purple berries that etch the stone they fall on." },
+{ "key": "orebud", "name": "Orebud Cluster", "biome": "quarry", "category": "natural", "slot": 4, "morph": "crystal", "rarity": "uncommon", "dominant": "strength", "fx": { "strength": 35.7, "acidity": 8, "toxicity": 1.2 }, "arcane": { "thr": 640, "gain": 2.7 }, "shape": "crystal", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.77, "hardness": 0.65, "sol": 0.085, "solT": 0.002, "gather": "mine", "steep": { "into": "spirit", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 15, "lore": "Amber crystals budding from grey rock like seeds." },
+{ "key": "ferric-crystal", "name": "Ferric Crystal", "biome": "quarry", "category": "natural", "slot": 5, "morph": "crystal", "rarity": "rare", "dominant": "strength", "fx": { "strength": 47, "death": 2.1 }, "arcane": { "thr": 270, "gain": 2.9 }, "shape": "crystal", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.74, "hardness": 0.65, "sol": 0.076, "solT": 0.002, "gather": "mine", "steep": { "into": "spirit", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 25, "lore": "Smoky iron-grey prisms, heavy as a hammer head." },
+{ "key": "gravelpod", "name": "Gravelpod", "biome": "quarry", "category": "natural", "slot": 6, "morph": "stone", "rarity": "uncommon", "dominant": "strength", "fx": { "strength": 28.8, "fire": 5.2, "death": 1.3 }, "arcane": { "thr": 470, "gain": 3 }, "shape": "stone", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.58, "hardness": 0.6, "sol": 0.058, "solT": 0.003, "gather": "mine", "steep": { "into": "water", "lo": [ 75, 80 ], "hi": [ 150, 160 ] }, "price": 12, "lore": "Lumpy mauve pods that crack open into gravel." },
+{ "key": "ammonite-coil", "name": "Ammonite Coil", "biome": "quarry", "category": "natural", "slot": 7, "morph": "stone", "rarity": "rare", "dominant": "strength", "fx": { "strength": 43.4, "acidity": 2.3 }, "arcane": { "thr": 650, "gain": 2.9 }, "shape": "stone", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.57, "hardness": 0.6, "sol": 0.06, "solT": 0.003, "gather": "mine", "steep": { "into": "water", "lo": [ 75, 80 ], "hi": [ 150, 160 ] }, "price": 22, "lore": "A spiral stone, the strength of ages curled inside." },
+{ "key": "emberheart-geode", "name": "Emberheart Geode", "biome": "quarry", "category": "natural", "slot": 8, "morph": "crystal", "rarity": "unique", "dominant": "strength", "fx": { "strength": 66.7 }, "arcane": { "thr": 250, "gain": 2.8 }, "shape": "crystal", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.75, "hardness": 0.65, "sol": 0.078, "solT": 0.002, "gather": "mine", "steep": { "into": "spirit", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 44, "lore": "A geode with a violet fire burning at its core." },
+{ "key": "titan-root", "name": "Titan Root", "biome": "quarry", "category": "natural", "slot": 9, "morph": "root", "rarity": "legendary", "dominant": "strength", "fx": { "strength": 93.3 }, "arcane": { "thr": 440, "gain": 2.9 }, "shape": "root", "bed": "soil", "botanical": true, "form": "solid", "density": 1.05, "hardness": 0.45, "sol": 0.124, "solT": 0.002, "gather": "dig", "steep": { "into": "water", "lo": [ 60, 70 ], "hi": [ 90, 100 ] }, "price": 120, "lore": "Golden roots that split boulders as they grow." },
+{ "key": "nethercap", "name": "Nethercap", "biome": "netherwood", "category": "natural", "slot": 0, "morph": "fungus", "rarity": "common", "dominant": "toxicity", "fx": { "toxicity": 18.7, "frost": 7.3 }, "arcane": { "thr": 640, "gain": 2.5 }, "shape": "cap", "bed": "fungal", "botanical": true, "form": "solid", "density": 0.95, "hardness": 0.22, "sol": 0.173, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 20, 25 ], "hi": [ 55, 60 ] }, "price": 7, "lore": "A violet spotted toadstool glowing in the cavern dark." },
+{ "key": "gloommoss", "name": "Gloommoss Tuft", "biome": "netherwood", "category": "natural", "slot": 1, "morph": "moss", "rarity": "common", "dominant": "toxicity", "fx": { "toxicity": 22.7, "strength": 11.4, "death": 1 }, "arcane": { "thr": 510, "gain": 3 }, "shape": "moss", "bed": "fungal", "botanical": true, "form": "solid", "density": 0.8, "hardness": 0.2, "sol": 0.169, "solT": 0.0012, "gather": "scrape", "steep": { "into": "water", "lo": [ 15, 20 ], "hi": [ 45, 50 ] }, "price": 9, "lore": "Teal moss that sweats a bitter, tingling dew." },
+{ "key": "umbrabell", "name": "Umbrabell", "biome": "netherwood", "category": "natural", "slot": 2, "morph": "flower", "rarity": "uncommon", "dominant": "toxicity", "fx": { "toxicity": 33.4, "death": 4.8 }, "arcane": { "thr": 520, "gain": 2.9 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.63, "hardness": 0.15, "sol": 0.195, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 14, "lore": "Drooping violet bells that ring with spores." },
+{ "key": "shadefruit", "name": "Shadefruit", "biome": "netherwood", "category": "natural", "slot": 3, "morph": "berry", "rarity": "common", "dominant": "death", "fx": { "death": 20, "frost": 12.1 }, "arcane": { "thr": 580, "gain": 2.5 }, "shape": "berry", "bed": "soil", "botanical": true, "form": "solid", "density": 0.98, "hardness": 0.12, "sol": 0.23, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 7, "lore": "Dusky purple berries that taste of the grave." },
+{ "key": "sporelantern", "name": "Sporelantern", "biome": "netherwood", "category": "natural", "slot": 4, "morph": "vine", "rarity": "uncommon", "dominant": "toxicity", "fx": { "toxicity": 31.3, "frost": 6.3, "strength": 1.5 }, "arcane": { "thr": 270, "gain": 2.9 }, "shape": "bean", "bed": "soil", "botanical": true, "form": "solid", "density": 0.92, "hardness": 0.22, "sol": 0.194, "solT": 0.0015, "gather": "pick", "steep": { "into": "spirit", "lo": [ 25, 30 ], "hi": [ 55, 60 ] }, "price": 12, "lore": "Glowing yellow-green pods hanging in pairs from a vine." },
+{ "key": "wraithvine", "name": "Wraithvine", "biome": "netherwood", "category": "natural", "slot": 5, "morph": "vine", "rarity": "uncommon", "dominant": "death", "fx": { "death": 33, "acidity": 4.5, "swiftness": 1.2 }, "arcane": { "thr": 440, "gain": 2.7 }, "shape": "bean", "bed": "soil", "botanical": true, "form": "solid", "density": 0.88, "hardness": 0.22, "sol": 0.173, "solT": 0.0015, "gather": "pick", "steep": { "into": "spirit", "lo": [ 25, 30 ], "hi": [ 55, 60 ] }, "price": 13, "lore": "A grey creeping vine that withers what it wraps." },
+{ "key": "nightbloom-lotus", "name": "Nightbloom Lotus", "biome": "netherwood", "category": "natural", "slot": 6, "morph": "flower", "rarity": "legendary", "dominant": "toxicity", "fx": { "toxicity": 87 }, "arcane": { "thr": 320, "gain": 2.9 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.63, "hardness": 0.15, "sol": 0.193, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 103, "lore": "A great violet lotus that opens only in perfect darkness." },
+{ "key": "umbral-amethyst", "name": "Umbral Amethyst", "biome": "netherwood", "category": "natural", "slot": 7, "morph": "crystal", "rarity": "rare", "dominant": "toxicity", "fx": { "toxicity": 43, "strength": 2.3 }, "arcane": { "thr": 470, "gain": 2.8 }, "shape": "crystal", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.82, "hardness": 0.65, "sol": 0.083, "solT": 0.002, "gather": "mine", "steep": { "into": "spirit", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 23, "lore": "Purple crystals grown on poisoned water." },
+{ "key": "thornhalo", "name": "Thornhalo", "biome": "netherwood", "category": "natural", "slot": 8, "morph": "relic", "rarity": "unique", "dominant": "toxicity", "fx": { "toxicity": 61.4 }, "arcane": { "thr": 490, "gain": 2.6 }, "shape": "nugget", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.99, "hardness": 0.7, "sol": 0.064, "solT": 0.003, "gather": "mine", "steep": { "into": "spirit", "lo": [ 55, 60 ], "hi": [ 110, 120 ] }, "price": 47, "lore": "A ring of black thorns that grows around nothing at all." },
+{ "key": "venomlily", "name": "Venomlily", "biome": "netherwood", "category": "natural", "slot": 9, "morph": "flower", "rarity": "rare", "dominant": "toxicity", "fx": { "toxicity": 45.8, "frost": 1.4 }, "arcane": { "thr": 450, "gain": 2.7 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.61, "hardness": 0.15, "sol": 0.209, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 20, "lore": "A pale pink lily, beautiful and deadly to touch." },
+{ "key": "emberleaf", "name": "Emberleaf Herb", "biome": "crags", "category": "natural", "slot": 0, "morph": "leaf", "rarity": "common", "dominant": "fire", "fx": { "fire": 22.7, "strength": 9.7 }, "arcane": { "thr": 300, "gain": 2.8 }, "shape": "leaf", "bed": "soil", "botanical": true, "form": "solid", "density": 0.72, "hardness": 0.22, "sol": 0.174, "solT": 0.0015, "gather": "pick", "steep": { "into": "water", "lo": [ 40, 50 ], "hi": [ 80, 90 ] }, "price": 9, "lore": "Red leaves that crackle and smoke when crushed." },
+{ "key": "cindershroom", "name": "Cindershroom", "biome": "crags", "category": "natural", "slot": 1, "morph": "fungus", "rarity": "common", "dominant": "fire", "fx": { "fire": 22.2, "strength": 9.3 }, "arcane": { "thr": 280, "gain": 2.6 }, "shape": "cap", "bed": "fungal", "botanical": true, "form": "solid", "density": 0.9, "hardness": 0.22, "sol": 0.182, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 20, 25 ], "hi": [ 55, 60 ] }, "price": 8, "lore": "A soot-brown mushroom that grows on warm ash." },
+{ "key": "firebramble", "name": "Firebramble", "biome": "crags", "category": "natural", "slot": 2, "morph": "berry", "rarity": "common", "dominant": "fire", "fx": { "fire": 18.8, "death": 9.5 }, "arcane": { "thr": 440, "gain": 2.8 }, "shape": "berry", "bed": "soil", "botanical": true, "form": "solid", "density": 0.98, "hardness": 0.12, "sol": 0.229, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 9, "lore": "Fiery red berries on a thorny bramble." },
+{ "key": "sulfurvine", "name": "Sulfurvine Pods", "biome": "crags", "category": "natural", "slot": 3, "morph": "vine", "rarity": "uncommon", "dominant": "acidity", "fx": { "acidity": 34, "toxicity": 6, "swiftness": 1.5 }, "arcane": { "thr": 490, "gain": 2.8 }, "shape": "bean", "bed": "soil", "botanical": true, "form": "solid", "density": 0.89, "hardness": 0.22, "sol": 0.177, "solT": 0.0015, "gather": "pick", "steep": { "into": "spirit", "lo": [ 25, 30 ], "hi": [ 55, 60 ] }, "price": 13, "lore": "Yellow pods that burst with stinking sulphur." },
+{ "key": "flamecrest", "name": "Flamecrest Flower", "biome": "crags", "category": "natural", "slot": 4, "morph": "flower", "rarity": "rare", "dominant": "fire", "fx": { "fire": 40.7, "death": 2 }, "arcane": { "thr": 260, "gain": 2.6 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.64, "hardness": 0.15, "sol": 0.201, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 20, "lore": "A blossom of living flame that never burns down." },
+{ "key": "blazestone", "name": "Blazestone Crystal", "biome": "crags", "category": "natural", "slot": 5, "morph": "crystal", "rarity": "rare", "dominant": "fire", "fx": { "fire": 50, "death": 2.4 }, "arcane": { "thr": 630, "gain": 2.9 }, "shape": "crystal", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.87, "hardness": 0.65, "sol": 0.085, "solT": 0.002, "gather": "mine", "steep": { "into": "spirit", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 21, "lore": "Red crystals that hold the heat of the magma." },
+{ "key": "phoenix-heartseed", "name": "Phoenix Heartseed", "biome": "crags", "category": "natural", "slot": 6, "morph": "seedpod", "rarity": "unique", "dominant": "fire", "fx": { "fire": 63.3 }, "arcane": { "thr": 620, "gain": 2.7 }, "shape": "seed", "bed": "soil", "botanical": true, "form": "solid", "density": 1.05, "hardness": 0.3, "sol": 0.161, "solT": 0.0015, "gather": "pick", "steep": { "into": "water", "lo": [ 40, 45 ], "hi": [ 80, 85 ] }, "price": 46, "lore": "A seed wrapped in flame, said to fall from a phoenix." },
+{ "key": "ashcactus", "name": "Ashcactus", "biome": "crags", "category": "natural", "slot": 7, "morph": "herb", "rarity": "uncommon", "dominant": "fire", "fx": { "fire": 29.6, "toxicity": 2.8 }, "arcane": { "thr": 550, "gain": 2.8 }, "shape": "sprig", "bed": "soil", "botanical": true, "form": "solid", "density": 0.74, "hardness": 0.2, "sol": 0.182, "solT": 0.0015, "gather": "pick", "steep": { "into": "water", "lo": [ 40, 50 ], "hi": [ 80, 90 ] }, "price": 13, "lore": "A squat cactus crowned with orange blooms." },
+{ "key": "everburning-sunheart", "name": "Everburning Sunheart", "biome": "crags", "category": "natural", "slot": 8, "morph": "flower", "rarity": "legendary", "dominant": "fire", "fx": { "fire": 92.4 }, "arcane": { "thr": 490, "gain": 2.8 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.6, "hardness": 0.15, "sol": 0.188, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 117, "lore": "A burst of sunfire that has burned since the mountain was born." },
+{ "key": "cinderpod", "name": "Cinderpod", "biome": "crags", "category": "natural", "slot": 9, "morph": "stone", "rarity": "uncommon", "dominant": "strength", "fx": { "strength": 33.6, "death": 4.4 }, "arcane": { "thr": 260, "gain": 2.9 }, "shape": "stone", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.54, "hardness": 0.6, "sol": 0.059, "solT": 0.003, "gather": "mine", "steep": { "into": "water", "lo": [ 75, 80 ], "hi": [ 150, 160 ] }, "price": 13, "lore": "A dark rock egg veined with cooling lava." },
+{ "key": "moonreed", "name": "Moonreed Frond", "biome": "moonfen", "category": "exotic", "slot": 0, "morph": "grass", "rarity": "common", "dominant": "arcana", "fx": { "arcana": 19, "vitality": 10.7, "invisibility": 1 }, "arcane": { "thr": -160, "gain": 3 }, "shape": "reed", "bed": "soil", "botanical": true, "form": "solid", "density": 0.71, "hardness": 0.25, "sol": 0.158, "solT": 0.0015, "gather": "scrape", "steep": { "into": "water", "lo": [ 35, 40 ], "hi": [ 80, 85 ] }, "price": 9, "lore": "Silver fronds that catch the moonlight and keep it." },
+{ "key": "fenmilk-cap", "name": "Fenmilk Cap", "biome": "moonfen", "category": "exotic", "slot": 1, "morph": "fungus", "rarity": "common", "dominant": "frost", "fx": { "frost": 19.1, "death": 9.5, "invisibility": 1 }, "arcane": { "thr": -200, "gain": 2.9 }, "shape": "cap", "bed": "fungal", "botanical": true, "form": "solid", "density": 0.93, "hardness": 0.22, "sol": 0.176, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 1, 2 ], "hi": [ 12, 14 ] }, "price": 9, "lore": "A pale blue mushroom weeping cold milk." },
+{ "key": "duskbell", "name": "Duskbell", "biome": "moonfen", "category": "exotic", "slot": 2, "morph": "flower", "rarity": "uncommon", "dominant": "arcana", "fx": { "arcana": 32.5, "death": 3.5, "frost": 1.1 }, "arcane": { "thr": -100, "gain": 2.6 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.62, "hardness": 0.15, "sol": 0.201, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 13, "lore": "Lavender bells that ring only at dusk." },
+{ "key": "dreamberry", "name": "Dreamberry", "biome": "moonfen", "category": "exotic", "slot": 3, "morph": "berry", "rarity": "common", "dominant": "love", "fx": { "love": 22.4, "frost": 9.5, "invisibility": 1 }, "arcane": { "thr": -220, "gain": 3 }, "shape": "berry", "bed": "soil", "botanical": true, "form": "solid", "density": 0.98, "hardness": 0.12, "sol": 0.215, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 9, "lore": "Purple berries that bring dreams of someone dear." },
+{ "key": "moonlotus", "name": "Moonlotus", "biome": "moonfen", "category": "exotic", "slot": 4, "morph": "flower", "rarity": "rare", "dominant": "arcana", "fx": { "arcana": 42.1, "frost": 1.6 }, "arcane": { "thr": -170, "gain": 2.6 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.61, "hardness": 0.15, "sol": 0.195, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 24, "lore": "A pink lotus with a lamp of moonlight at its heart." },
+{ "key": "sleepglass", "name": "Sleepglass Shard", "biome": "moonfen", "category": "exotic", "slot": 5, "morph": "crystal", "rarity": "uncommon", "dominant": "arcana", "fx": { "arcana": 36.7, "frost": 3.9 }, "arcane": { "thr": -110, "gain": 2.9 }, "shape": "crystal", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.76, "hardness": 0.65, "sol": 0.082, "solT": 0.002, "gather": "mine", "steep": { "into": "spirit", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 13, "lore": "A blue crystal shard that hums when held to the ear." },
+{ "key": "moonveil-bloom", "name": "Moonveil Bloom", "biome": "moonfen", "category": "exotic", "slot": 6, "morph": "flower", "rarity": "rare", "dominant": "arcana", "fx": { "arcana": 41.1, "frost": 2.2 }, "arcane": { "thr": -110, "gain": 2.5 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.64, "hardness": 0.15, "sol": 0.197, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 21, "lore": "A violet water flower veiled in silver light." },
+{ "key": "mirepod-shell", "name": "Mirepod Shell", "biome": "moonfen", "category": "exotic", "slot": 7, "morph": "shell", "rarity": "uncommon", "dominant": "arcana", "fx": { "arcana": 31.8, "frost": 5.7, "vitality": 1.4 }, "arcane": { "thr": -290, "gain": 2.6 }, "shape": "shell", "bed": "tide", "botanical": false, "form": "solid", "density": 1.62, "hardness": 0.55, "sol": 0.085, "solT": 0.002, "gather": "pick", "steep": { "into": "water", "lo": [ 50, 55 ], "hi": [ 85, 90 ] }, "price": 13, "lore": "A spiral snail shell from the bog, pearly inside." },
+{ "key": "wisp-reliquary", "name": "Wisp Reliquary", "biome": "moonfen", "category": "exotic", "slot": 8, "morph": "relic", "rarity": "unique", "dominant": "arcana", "fx": { "arcana": 67.2 }, "arcane": { "thr": -210, "gain": 2.9 }, "shape": "nugget", "bed": "crystal", "botanical": false, "form": "solid", "density": 2.04, "hardness": 0.7, "sol": 0.063, "solT": 0.003, "gather": "mine", "steep": { "into": "spirit", "lo": [ 55, 60 ], "hi": [ 110, 120 ] }, "price": 49, "lore": "A golden curl of bog-iron around a captured wisp-light." },
+{ "key": "starfall-lotus", "name": "Starfall Lotus", "biome": "moonfen", "category": "exotic", "slot": 9, "morph": "flower", "rarity": "legendary", "dominant": "arcana", "fx": { "arcana": 86.2 }, "arcane": { "thr": -190, "gain": 3 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.63, "hardness": 0.15, "sol": 0.205, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 118, "lore": "A deep violet lotus that bloomed where a star fell." },
+{ "key": "skyspray", "name": "Skyspray Herb", "biome": "skyshard", "category": "exotic", "slot": 0, "morph": "herb", "rarity": "common", "dominant": "levitation", "fx": { "levitation": 22.1, "vitality": 7.1 }, "arcane": { "thr": 450, "gain": 2.6 }, "shape": "sprig", "bed": "soil", "botanical": true, "form": "solid", "density": 0.72, "hardness": 0.2, "sol": 0.167, "solT": 0.0015, "gather": "pick", "steep": { "into": "water", "lo": [ 40, 50 ], "hi": [ 80, 90 ] }, "price": 9, "lore": "White sky-daisies that float an inch above the soil." },
+{ "key": "cloudcap", "name": "Cloudcap", "biome": "skyshard", "category": "exotic", "slot": 1, "morph": "fungus", "rarity": "common", "dominant": "levitation", "fx": { "levitation": 21.5, "vitality": 10.6 }, "arcane": { "thr": 330, "gain": 2.6 }, "shape": "cap", "bed": "fungal", "botanical": true, "form": "solid", "density": 0.95, "hardness": 0.22, "sol": 0.163, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 20, 25 ], "hi": [ 55, 60 ] }, "price": 9, "lore": "A puffy white mushroom light as a cloud." },
+{ "key": "airstar", "name": "Airstar Flower", "biome": "skyshard", "category": "exotic", "slot": 2, "morph": "flower", "rarity": "uncommon", "dominant": "levitation", "fx": { "levitation": 28.9, "vitality": 2.9 }, "arcane": { "thr": 400, "gain": 2.9 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.64, "hardness": 0.15, "sol": 0.199, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 12, "lore": "Star-shaped flowers that turn in the wind like vanes." },
+{ "key": "skyberry", "name": "Skyberry", "biome": "skyshard", "category": "exotic", "slot": 3, "morph": "berry", "rarity": "common", "dominant": "swiftness", "fx": { "swiftness": 19.2, "levitation": 6.8, "arcana": 1 }, "arcane": { "thr": 590, "gain": 2.8 }, "shape": "berry", "bed": "soil", "botanical": true, "form": "solid", "density": 1.02, "hardness": 0.12, "sol": 0.222, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 8, "lore": "Blue berries that fall upward when shaken loose." },
+{ "key": "updraft-seedwing", "name": "Updraft Seedwing", "biome": "skyshard", "category": "exotic", "slot": 4, "morph": "seedpod", "rarity": "rare", "dominant": "levitation", "fx": { "levitation": 50.6, "vitality": 3.3 }, "arcane": { "thr": 540, "gain": 2.7 }, "shape": "seed", "bed": "soil", "botanical": true, "form": "solid", "density": 1.05, "hardness": 0.3, "sol": 0.141, "solT": 0.0015, "gather": "pick", "steep": { "into": "water", "lo": [ 40, 45 ], "hi": [ 80, 85 ] }, "price": 21, "lore": "A golden winged seed that rides every updraft." },
+{ "key": "zephyr-starbloom", "name": "Zephyr Starbloom", "biome": "skyshard", "category": "exotic", "slot": 5, "morph": "flower", "rarity": "uncommon", "dominant": "levitation", "fx": { "levitation": 33.9, "vitality": 5.8, "arcana": 1.5 }, "arcane": { "thr": 550, "gain": 2.5 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.61, "hardness": 0.15, "sol": 0.209, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 15, "lore": "A pale star flower whose leaves are feather-light." },
+{ "key": "featherpetal", "name": "Featherpetal", "biome": "skyshard", "category": "exotic", "slot": 6, "morph": "flower", "rarity": "rare", "dominant": "levitation", "fx": { "levitation": 45.8, "vitality": 1.4 }, "arcane": { "thr": 330, "gain": 2.8 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.6, "hardness": 0.15, "sol": 0.201, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 20, "lore": "A pink blossom with petals like down feathers." },
+{ "key": "skyshard-geode", "name": "Skyshard Geode", "biome": "skyshard", "category": "exotic", "slot": 7, "morph": "crystal", "rarity": "unique", "dominant": "levitation", "fx": { "levitation": 66.7 }, "arcane": { "thr": 270, "gain": 2.6 }, "shape": "crystal", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.78, "hardness": 0.65, "sol": 0.079, "solT": 0.002, "gather": "mine", "steep": { "into": "spirit", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 47, "lore": "An open geode of floating violet crystal." },
+{ "key": "windfern", "name": "Windfern", "biome": "skyshard", "category": "exotic", "slot": 8, "morph": "leaf", "rarity": "uncommon", "dominant": "levitation", "fx": { "levitation": 33.4, "vitality": 3.8, "swiftness": 1.4 }, "arcane": { "thr": 550, "gain": 2.8 }, "shape": "leaf", "bed": "soil", "botanical": true, "form": "solid", "density": 0.72, "hardness": 0.22, "sol": 0.179, "solT": 0.0015, "gather": "pick", "steep": { "into": "water", "lo": [ 40, 50 ], "hi": [ 80, 90 ] }, "price": 14, "lore": "Bright green fronds that lift any soil they grow in." },
+{ "key": "cloudprism", "name": "Cloudprism Crystal", "biome": "skyshard", "category": "exotic", "slot": 9, "morph": "crystal", "rarity": "legendary", "dominant": "levitation", "fx": { "levitation": 94.3 }, "arcane": { "thr": 410, "gain": 2.7 }, "shape": "crystal", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.76, "hardness": 0.65, "sol": 0.078, "solT": 0.002, "gather": "mine", "steep": { "into": "spirit", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 101, "lore": "A crystal of solid sky that weighs less than nothing." },
+{ "key": "morphleaf", "name": "Morphleaf Sprig", "biome": "morphgrove", "category": "exotic", "slot": 0, "morph": "leaf", "rarity": "common", "dominant": "transformation", "fx": { "transformation": 23.4, "toxicity": 7.8 }, "arcane": { "thr": 270, "gain": 2.8 }, "shape": "leaf", "bed": "soil", "botanical": true, "form": "solid", "density": 0.72, "hardness": 0.22, "sol": 0.181, "solT": 0.0015, "gather": "pick", "steep": { "into": "water", "lo": [ 40, 50 ], "hi": [ 80, 90 ] }, "price": 7, "lore": "Leaves that never grow the same shape twice." },
+{ "key": "shapecap", "name": "Shapecap", "biome": "morphgrove", "category": "exotic", "slot": 1, "morph": "fungus", "rarity": "common", "dominant": "transformation", "fx": { "transformation": 22.1, "toxicity": 11.9, "love": 1.2 }, "arcane": { "thr": 340, "gain": 2.5 }, "shape": "cap", "bed": "fungal", "botanical": true, "form": "solid", "density": 0.91, "hardness": 0.22, "sol": 0.162, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 20, 25 ], "hi": [ 55, 60 ] }, "price": 7, "lore": "A mushroom whose cap shifts from round to fluted." },
+{ "key": "twinsprout", "name": "Twinsprout", "biome": "morphgrove", "category": "exotic", "slot": 2, "morph": "herb", "rarity": "common", "dominant": "vitality", "fx": { "vitality": 24.3, "fire": 10.4, "arcana": 1 }, "arcane": { "thr": 290, "gain": 2.9 }, "shape": "sprig", "bed": "soil", "botanical": true, "form": "solid", "density": 0.72, "hardness": 0.2, "sol": 0.172, "solT": 0.0015, "gather": "pick", "steep": { "into": "water", "lo": [ 40, 50 ], "hi": [ 80, 90 ] }, "price": 8, "lore": "A sprout that is two seedlings one moment, one the next." },
+{ "key": "graftberry", "name": "Graftberry", "biome": "morphgrove", "category": "exotic", "slot": 3, "morph": "berry", "rarity": "uncommon", "dominant": "transformation", "fx": { "transformation": 36.4, "toxicity": 9.1, "love": 1.7 }, "arcane": { "thr": 560, "gain": 2.8 }, "shape": "berry", "bed": "soil", "botanical": true, "form": "solid", "density": 0.97, "hardness": 0.12, "sol": 0.237, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 13, "lore": "Cherries that ripen into whatever fruit is near." },
+{ "key": "formblossom", "name": "Formblossom", "biome": "morphgrove", "category": "exotic", "slot": 4, "morph": "flower", "rarity": "uncommon", "dominant": "transformation", "fx": { "transformation": 36.2, "vitality": 8.5, "arcana": 1.2 }, "arcane": { "thr": 530, "gain": 2.9 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.61, "hardness": 0.15, "sol": 0.201, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 12, "lore": "A ringed pink flower rearranging its own petals." },
+{ "key": "mimic-eye", "name": "Mimic Eye", "biome": "morphgrove", "category": "exotic", "slot": 5, "morph": "relic", "rarity": "rare", "dominant": "transformation", "fx": { "transformation": 44.3, "vitality": 2.8 }, "arcane": { "thr": 430, "gain": 2.8 }, "shape": "nugget", "bed": "crystal", "botanical": false, "form": "solid", "density": 2, "hardness": 0.7, "sol": 0.059, "solT": 0.003, "gather": "mine", "steep": { "into": "spirit", "lo": [ 55, 60 ], "hi": [ 110, 120 ] }, "price": 20, "lore": "A mossy stone eye that copies what it looks at." },
+{ "key": "crownbloom", "name": "Crownbloom", "biome": "morphgrove", "category": "exotic", "slot": 6, "morph": "flower", "rarity": "unique", "dominant": "transformation", "fx": { "transformation": 66.3 }, "arcane": { "thr": 270, "gain": 2.8 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.63, "hardness": 0.15, "sol": 0.201, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 47, "lore": "A golden crown of petals with a violet heart." },
+{ "key": "shifting-root", "name": "Shifting Root", "biome": "morphgrove", "category": "exotic", "slot": 7, "morph": "root", "rarity": "uncommon", "dominant": "transformation", "fx": { "transformation": 31.5, "vitality": 5.1 }, "arcane": { "thr": 370, "gain": 2.6 }, "shape": "root", "bed": "soil", "botanical": true, "form": "solid", "density": 1.07, "hardness": 0.45, "sol": 0.127, "solT": 0.002, "gather": "dig", "steep": { "into": "water", "lo": [ 60, 70 ], "hi": [ 90, 100 ] }, "price": 14, "lore": "A root that crawls to a new place every night." },
+{ "key": "splice-bud", "name": "Splice Bud", "biome": "morphgrove", "category": "exotic", "slot": 8, "morph": "flower", "rarity": "rare", "dominant": "transformation", "fx": { "transformation": 44.7, "toxicity": 1.8 }, "arcane": { "thr": 450, "gain": 2.7 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.61, "hardness": 0.15, "sol": 0.21, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 22, "lore": "A tight bud of many plants grafted into one." },
+{ "key": "polymorph-lotus", "name": "Polymorph Lotus", "biome": "morphgrove", "category": "exotic", "slot": 9, "morph": "flower", "rarity": "legendary", "dominant": "transformation", "fx": { "transformation": 88.5 }, "arcane": { "thr": 600, "gain": 3 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.63, "hardness": 0.15, "sol": 0.21, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 122, "lore": "A prismatic lotus that is every flower at once." },
+{ "key": "veilfern", "name": "Veilfern Frond", "biome": "veilhollow", "category": "exotic", "slot": 0, "morph": "leaf", "rarity": "common", "dominant": "invisibility", "fx": { "invisibility": 25.3, "phasing": 9.9, "frost": 1.1 }, "arcane": { "thr": -220, "gain": 2.9 }, "shape": "leaf", "bed": "soil", "botanical": true, "form": "solid", "density": 0.73, "hardness": 0.22, "sol": 0.19, "solT": 0.0015, "gather": "pick", "steep": { "into": "water", "lo": [ 40, 50 ], "hi": [ 80, 90 ] }, "price": 8, "lore": "Lilac fern fronds you only see from the corner of the eye." },
+{ "key": "hollowcap", "name": "Hollowcap", "biome": "veilhollow", "category": "exotic", "slot": 1, "morph": "fungus", "rarity": "common", "dominant": "invisibility", "fx": { "invisibility": 19.1, "death": 7.9 }, "arcane": { "thr": -240, "gain": 2.5 }, "shape": "cap", "bed": "fungal", "botanical": true, "form": "solid", "density": 0.9, "hardness": 0.22, "sol": 0.164, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 20, 25 ], "hi": [ 55, 60 ] }, "price": 8, "lore": "A violet mushroom that leaves no shadow." },
+{ "key": "ghostbud", "name": "Ghostbud", "biome": "veilhollow", "category": "exotic", "slot": 2, "morph": "flower", "rarity": "uncommon", "dominant": "invisibility", "fx": { "invisibility": 29, "phasing": 3.3, "frost": 1.4 }, "arcane": { "thr": -220, "gain": 2.6 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.6, "hardness": 0.15, "sol": 0.21, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 12, "lore": "Translucent white tulips, there and then not." },
+{ "key": "veilberry", "name": "Veilberry", "biome": "veilhollow", "category": "exotic", "slot": 3, "morph": "berry", "rarity": "common", "dominant": "death", "fx": { "death": 23, "phasing": 9 }, "arcane": { "thr": -150, "gain": 2.8 }, "shape": "berry", "bed": "soil", "botanical": true, "form": "solid", "density": 1.01, "hardness": 0.12, "sol": 0.237, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 8, "lore": "Dusky berries with a grave, numbing juice." },
+{ "key": "hollowbloom", "name": "Hollowbloom", "biome": "veilhollow", "category": "exotic", "slot": 4, "morph": "flower", "rarity": "uncommon", "dominant": "invisibility", "fx": { "invisibility": 31, "death": 5.3, "frost": 1 }, "arcane": { "thr": -150, "gain": 2.8 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.62, "hardness": 0.15, "sol": 0.216, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 13, "lore": "A pale pink flower whose middle you can see through." },
+{ "key": "veilglass", "name": "Veilglass Crystal", "biome": "veilhollow", "category": "exotic", "slot": 5, "morph": "crystal", "rarity": "rare", "dominant": "invisibility", "fx": { "invisibility": 43.1, "phasing": 2.7 }, "arcane": { "thr": -110, "gain": 2.7 }, "shape": "crystal", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.79, "hardness": 0.65, "sol": 0.079, "solT": 0.002, "gather": "mine", "steep": { "into": "spirit", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 24, "lore": "A violet crystal that bends the light around itself." },
+{ "key": "shroud-orchid", "name": "Shroud Orchid", "biome": "veilhollow", "category": "exotic", "slot": 6, "morph": "flower", "rarity": "uncommon", "dominant": "invisibility", "fx": { "invisibility": 35.5, "phasing": 6, "death": 1.1 }, "arcane": { "thr": -240, "gain": 2.7 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.6, "hardness": 0.15, "sol": 0.205, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 14, "lore": "An orchid wrapped in a veil of mist." },
+{ "key": "mistpebble", "name": "Mistpebble", "biome": "veilhollow", "category": "exotic", "slot": 7, "morph": "stone", "rarity": "rare", "dominant": "invisibility", "fx": { "invisibility": 50.6, "death": 3 }, "arcane": { "thr": -140, "gain": 2.5 }, "shape": "stone", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.62, "hardness": 0.6, "sol": 0.061, "solT": 0.003, "gather": "mine", "steep": { "into": "water", "lo": [ 75, 80 ], "hi": [ 150, 160 ] }, "price": 25, "lore": "Purple pebbles that fog over when looked at." },
+{ "key": "eclipse-eye", "name": "Eclipse Eye", "biome": "veilhollow", "category": "exotic", "slot": 8, "morph": "relic", "rarity": "legendary", "dominant": "invisibility", "fx": { "invisibility": 87 }, "arcane": { "thr": -190, "gain": 2.9 }, "shape": "nugget", "bed": "crystal", "botanical": false, "form": "solid", "density": 2.03, "hardness": 0.7, "sol": 0.063, "solT": 0.003, "gather": "mine", "steep": { "into": "spirit", "lo": [ 55, 60 ], "hi": [ 110, 120 ] }, "price": 126, "lore": "A black orb ringed with golden light, the eye of an eclipse." },
+{ "key": "veil-circlet", "name": "Veil Circlet", "biome": "veilhollow", "category": "exotic", "slot": 9, "morph": "relic", "rarity": "unique", "dominant": "invisibility", "fx": { "invisibility": 63 }, "arcane": { "thr": -190, "gain": 2.6 }, "shape": "nugget", "bed": "crystal", "botanical": false, "form": "solid", "density": 2, "hardness": 0.7, "sol": 0.062, "solT": 0.003, "gather": "mine", "steep": { "into": "spirit", "lo": [ 55, 60 ], "hi": [ 110, 120 ] }, "price": 47, "lore": "A thorny circlet that hides whoever holds it." },
+{ "key": "reefmoss", "name": "Reefmoss Coral", "biome": "ghostglass", "category": "exotic", "slot": 0, "morph": "coral", "rarity": "common", "dominant": "phasing", "fx": { "phasing": 22.9, "frost": 13.6, "acidity": -1 }, "arcane": { "thr": -270, "gain": 2.6 }, "shape": "crust", "bed": "tide", "botanical": false, "form": "solid", "density": 1.43, "hardness": 0.5, "sol": 0.09, "solT": 0.002, "gather": "scrape", "steep": { "into": "water", "lo": [ 40, 45 ], "hi": [ 80, 85 ] }, "price": 9, "lore": "Teal coral fronds that sway in water that is not there." },
+{ "key": "glasscap", "name": "Glasscap", "biome": "ghostglass", "category": "exotic", "slot": 1, "morph": "fungus", "rarity": "common", "dominant": "phasing", "fx": { "phasing": 19.6, "vitality": 9.1 }, "arcane": { "thr": -250, "gain": 2.9 }, "shape": "cap", "bed": "fungal", "botanical": true, "form": "solid", "density": 0.94, "hardness": 0.22, "sol": 0.172, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 20, 25 ], "hi": [ 55, 60 ] }, "price": 8, "lore": "A glassy mushroom you can see the reef through." },
+{ "key": "coralberry", "name": "Coralberry", "biome": "ghostglass", "category": "exotic", "slot": 2, "morph": "berry", "rarity": "common", "dominant": "frost", "fx": { "frost": 19.8, "vitality": 8.5, "arcana": 1 }, "arcane": { "thr": -230, "gain": 2.7 }, "shape": "berry", "bed": "soil", "botanical": true, "form": "solid", "density": 0.97, "hardness": 0.12, "sol": 0.208, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 1, 2 ], "hi": [ 12, 14 ] }, "price": 9, "lore": "Cold red berries clustered like coral polyps." },
+{ "key": "reefbud", "name": "Reefbud", "biome": "ghostglass", "category": "exotic", "slot": 3, "morph": "flower", "rarity": "uncommon", "dominant": "phasing", "fx": { "phasing": 33, "frost": 6.9 }, "arcane": { "thr": -80, "gain": 2.7 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.62, "hardness": 0.15, "sol": 0.194, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 12, "lore": "A pink bud that opens underwater only." },
+{ "key": "ghostglass-coral", "name": "Ghostglass Coral", "biome": "ghostglass", "category": "exotic", "slot": 4, "morph": "coral", "rarity": "rare", "dominant": "phasing", "fx": { "phasing": 42.2, "vitality": 2.8 }, "arcane": { "thr": -200, "gain": 2.7 }, "shape": "crust", "bed": "tide", "botanical": false, "form": "solid", "density": 1.41, "hardness": 0.5, "sol": 0.086, "solT": 0.002, "gather": "scrape", "steep": { "into": "water", "lo": [ 40, 45 ], "hi": [ 80, 85 ] }, "price": 20, "lore": "Blue-white coral that drifts through solid rock." },
+{ "key": "pearlshell", "name": "Pearlshell Oyster", "biome": "ghostglass", "category": "exotic", "slot": 5, "morph": "shell", "rarity": "uncommon", "dominant": "phasing", "fx": { "phasing": 35.5, "acidity": 4.2, "frost": 1.9 }, "arcane": { "thr": -190, "gain": 2.6 }, "shape": "shell", "bed": "tide", "botanical": false, "form": "solid", "density": 1.64, "hardness": 0.55, "sol": 0.082, "solT": 0.002, "gather": "pick", "steep": { "into": "water", "lo": [ 50, 55 ], "hi": [ 85, 90 ] }, "price": 13, "lore": "An oyster whose pearl phases in and out of its shell." },
+{ "key": "spectral-anemone", "name": "Spectral Anemone", "biome": "ghostglass", "category": "exotic", "slot": 6, "morph": "coral", "rarity": "rare", "dominant": "phasing", "fx": { "phasing": 49.6, "acidity": 2.6 }, "arcane": { "thr": -240, "gain": 2.9 }, "shape": "crust", "bed": "tide", "botanical": false, "form": "solid", "density": 1.38, "hardness": 0.5, "sol": 0.084, "solT": 0.002, "gather": "scrape", "steep": { "into": "water", "lo": [ 40, 45 ], "hi": [ 80, 85 ] }, "price": 21, "lore": "A magenta anemone of light rather than flesh." },
+{ "key": "shellfern", "name": "Shellfern Frond", "biome": "ghostglass", "category": "exotic", "slot": 7, "morph": "leaf", "rarity": "uncommon", "dominant": "phasing", "fx": { "phasing": 35.1, "frost": 8.2, "acidity": 1.9 }, "arcane": { "thr": -170, "gain": 2.7 }, "shape": "leaf", "bed": "soil", "botanical": true, "form": "solid", "density": 0.72, "hardness": 0.22, "sol": 0.184, "solT": 0.0015, "gather": "pick", "steep": { "into": "water", "lo": [ 40, 50 ], "hi": [ 80, 90 ] }, "price": 15, "lore": "Pale fern fronds that grow on old shells." },
+{ "key": "phantom-pearl", "name": "Phantom Pearl", "biome": "ghostglass", "category": "exotic", "slot": 8, "morph": "shell", "rarity": "unique", "dominant": "phasing", "fx": { "phasing": 66.5 }, "arcane": { "thr": -300, "gain": 2.6 }, "shape": "shell", "bed": "tide", "botanical": false, "form": "solid", "density": 1.57, "hardness": 0.55, "sol": 0.085, "solT": 0.002, "gather": "pick", "steep": { "into": "water", "lo": [ 50, 55 ], "hi": [ 85, 90 ] }, "price": 47, "lore": "A violet pearl in a setting of blue nacre, half not here." },
+{ "key": "ghostcrown-coral", "name": "Ghostcrown Coral", "biome": "ghostglass", "category": "exotic", "slot": 9, "morph": "coral", "rarity": "legendary", "dominant": "phasing", "fx": { "phasing": 87.1 }, "arcane": { "thr": -160, "gain": 2.8 }, "shape": "crust", "bed": "tide", "botanical": false, "form": "solid", "density": 1.39, "hardness": 0.5, "sol": 0.089, "solT": 0.002, "gather": "scrape", "steep": { "into": "water", "lo": [ 40, 45 ], "hi": [ 80, 85 ] }, "price": 107, "lore": "A crown of magenta coral that passes through anything." },
+{ "key": "timeweed", "name": "Timeweed Sprig", "biome": "chronoglass", "category": "exotic", "slot": 0, "morph": "grass", "rarity": "common", "dominant": "temporal", "fx": { "temporal": 19.1, "fire": 7.1, "swiftness": 1 }, "arcane": { "thr": 430, "gain": 2.8 }, "shape": "reed", "bed": "soil", "botanical": true, "form": "solid", "density": 0.71, "hardness": 0.25, "sol": 0.151, "solT": 0.0015, "gather": "scrape", "steep": { "into": "water", "lo": [ 35, 40 ], "hi": [ 80, 85 ] }, "price": 9, "lore": "Golden weeds that grow backward at noon." },
+{ "key": "sandskirt-cap", "name": "Sandskirt Cap", "biome": "chronoglass", "category": "exotic", "slot": 1, "morph": "fungus", "rarity": "common", "dominant": "temporal", "fx": { "temporal": 22.2, "fire": 7.9, "swiftness": 1 }, "arcane": { "thr": 550, "gain": 2.9 }, "shape": "cap", "bed": "fungal", "botanical": true, "form": "solid", "density": 0.9, "hardness": 0.22, "sol": 0.168, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 20, 25 ], "hi": [ 55, 60 ] }, "price": 9, "lore": "A sandy mushroom ringed like an old tree." },
+{ "key": "hourberry", "name": "Hourberry", "biome": "chronoglass", "category": "exotic", "slot": 2, "morph": "berry", "rarity": "common", "dominant": "swiftness", "fx": { "swiftness": 22.8, "phasing": 8.6, "arcana": 1 }, "arcane": { "thr": 480, "gain": 2.6 }, "shape": "berry", "bed": "soil", "botanical": true, "form": "solid", "density": 1.01, "hardness": 0.12, "sol": 0.213, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 9, "lore": "Orange berries that ripen in an hour and rot in a minute." },
+{ "key": "chronovine", "name": "Chronovine", "biome": "chronoglass", "category": "exotic", "slot": 3, "morph": "vine", "rarity": "uncommon", "dominant": "temporal", "fx": { "temporal": 34.8, "death": 6.2, "swiftness": 1.8 }, "arcane": { "thr": 270, "gain": 2.5 }, "shape": "bean", "bed": "soil", "botanical": true, "form": "solid", "density": 0.93, "hardness": 0.22, "sol": 0.173, "solT": 0.0015, "gather": "pick", "steep": { "into": "spirit", "lo": [ 25, 30 ], "hi": [ 55, 60 ] }, "price": 12, "lore": "A vine that grows pocket-watch fruit." },
+{ "key": "epochbloom", "name": "Epochbloom", "biome": "chronoglass", "category": "exotic", "slot": 4, "morph": "flower", "rarity": "rare", "dominant": "temporal", "fx": { "temporal": 44.6, "death": 3 }, "arcane": { "thr": 280, "gain": 2.8 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.63, "hardness": 0.15, "sol": 0.213, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 20, "lore": "A flower with a clock face that tells the hour it was picked." },
+{ "key": "chronoglass-shard", "name": "Chronoglass Shard", "biome": "chronoglass", "category": "exotic", "slot": 5, "morph": "crystal", "rarity": "uncommon", "dominant": "temporal", "fx": { "temporal": 30.4, "death": 7.3 }, "arcane": { "thr": 510, "gain": 2.9 }, "shape": "crystal", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.75, "hardness": 0.65, "sol": 0.084, "solT": 0.002, "gather": "mine", "steep": { "into": "spirit", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 12, "lore": "A violet shard of glass fused by time, not heat." },
+{ "key": "pendulum-pods", "name": "Pendulum Pods", "biome": "chronoglass", "category": "exotic", "slot": 6, "morph": "vine", "rarity": "uncommon", "dominant": "temporal", "fx": { "temporal": 29.1, "fire": 7.1, "swiftness": 1.2 }, "arcane": { "thr": 490, "gain": 2.5 }, "shape": "bean", "bed": "soil", "botanical": true, "form": "solid", "density": 0.9, "hardness": 0.22, "sol": 0.193, "solT": 0.0015, "gather": "pick", "steep": { "into": "spirit", "lo": [ 25, 30 ], "hi": [ 55, 60 ] }, "price": 14, "lore": "Golden pods swinging on a branch in perfect time." },
+{ "key": "sundial-stone", "name": "Sundial Stone", "biome": "chronoglass", "category": "exotic", "slot": 7, "morph": "relic", "rarity": "rare", "dominant": "temporal", "fx": { "temporal": 42.8, "death": 2.9 }, "arcane": { "thr": 610, "gain": 2.8 }, "shape": "nugget", "bed": "crystal", "botanical": false, "form": "solid", "density": 2.06, "hardness": 0.7, "sol": 0.064, "solT": 0.003, "gather": "mine", "steep": { "into": "spirit", "lo": [ 55, 60 ], "hi": [ 110, 120 ] }, "price": 20, "lore": "A weathered sundial that casts tomorrow’s shadow." },
+{ "key": "aeon-circlet", "name": "Aeon Circlet", "biome": "chronoglass", "category": "exotic", "slot": 8, "morph": "relic", "rarity": "unique", "dominant": "temporal", "fx": { "temporal": 57 }, "arcane": { "thr": 590, "gain": 2.8 }, "shape": "nugget", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.98, "hardness": 0.7, "sol": 0.062, "solT": 0.003, "gather": "mine", "steep": { "into": "spirit", "lo": [ 55, 60 ], "hi": [ 110, 120 ] }, "price": 50, "lore": "A golden circlet of hours set with sand-glass gems." },
+{ "key": "hourglass-of-ages", "name": "Hourglass of Ages", "biome": "chronoglass", "category": "exotic", "slot": 9, "morph": "relic", "rarity": "legendary", "dominant": "temporal", "fx": { "temporal": 95.9 }, "arcane": { "thr": 320, "gain": 2.7 }, "shape": "nugget", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.94, "hardness": 0.7, "sol": 0.057, "solT": 0.003, "gather": "mine", "steep": { "into": "spirit", "lo": [ 55, 60 ], "hi": [ 110, 120 ] }, "price": 112, "lore": "An hourglass whose sand has fallen since the first day." } ];
+return { SPECIES_DATA };
+})();
+// src/materials/species-colors.js
 const __m15 = (() => {
+const SPECIES_COLORS = {"silverleaf":{"body":[0.502,0.671,0.584],"accent":[0.102,0.275,0.149]},"honeycap":{"body":[0.792,0.631,0.22],"accent":[0.957,0.796,0.165]},"dawnblossom":{"body":[0.671,0.627,0.502],"accent":[0.631,0.804,0.165]},"dewpear":{"body":[0.635,0.741,0.122],"accent":[0.863,0.91,0.031]},"heartwood-mandrake":{"body":[0.557,0.502,0.137],"accent":[0.51,0.682,0.043]},"mossback-bark":{"body":[0.573,0.514,0.271],"accent":[0.627,0.753,0.082]},"stagthorn-vine":{"body":[0.537,0.537,0.118],"accent":[0.792,0.745,0.141]},"hearthnut":{"body":[0.643,0.451,0.38],"accent":[0.906,0.698,0.525]},"heartberry":{"body":[0.573,0.463,0.259],"accent":[0.686,0.835,0.141]},"everbloom-chalice":{"body":[0.502,0.647,0.11],"accent":[0.592,0.776,0.059]},"meadow-daisy":{"body":[0.671,0.69,0.475],"accent":[0.882,0.675,0.184]},"goldenrush":{"body":[0.537,0.514,0.078],"accent":[0.918,0.886,0.169]},"brightberry":{"body":[0.6,0.298,0.22],"accent":[0.494,0.576,0.153]},"honeyclover":{"body":[0.639,0.6,0.114],"accent":[0.949,0.835,0.153]},"suncrown":{"body":[0.706,0.549,0.078],"accent":[0.976,0.847,0.09]},"meadowcrystal":{"body":[0.533,0.675,0.38],"accent":[0.804,0.922,0.157]},"prism-petal":{"body":[0.714,0.502,0.541],"accent":[0.922,0.882,0.11]},"lovelace-orchid":{"body":[0.82,0.678,0.498],"accent":[0.976,0.89,0.486]},"radiant-sunbloom":{"body":[0.792,0.604,0.157],"accent":[0.949,0.78,0.125]},"eternal-rose":{"body":[0.71,0.365,0.475],"accent":[0.702,0.078,0.341]},"willowleaf":{"body":[0.439,0.573,0.078],"accent":[0.812,0.937,0.102]},"reedcap":{"body":[0.753,0.655,0.475],"accent":[0.796,0.612,0.404]},"riverlotus":{"body":[0.694,0.729,0.482],"accent":[0.671,0.851,0.118]},"bubbleberry":{"body":[0.294,0.478,0.494],"accent":[0.404,0.569,0.133]},"tidebloom":{"body":[0.275,0.682,0.678],"accent":[0.22,0.839,0.918]},"streampearl":{"body":[0.62,0.514,0.639],"accent":[0.424,0.275,0.439]},"frostlotus":{"body":[0.549,0.678,0.741],"accent":[0.059,0.498,0.467]},"rimefeather":{"body":[0.427,0.588,0.69],"accent":[0.075,0.263,0.396]},"nixie-torc":{"body":[0.533,0.51,0.176],"accent":[0.855,0.78,0.267]},"everfrost-pearlbloom":{"body":[0.494,0.655,0.827],"accent":[0.337,0.62,0.902]},"stonewort":{"body":[0.62,0.647,0.467],"accent":[0.29,0.427,0.063]},"quarrycap":{"body":[0.761,0.588,0.353],"accent":[0.957,0.757,0.388]},"ironbloom":{"body":[0.812,0.29,0.325],"accent":[0.914,0.204,0.302]},"stoneberry":{"body":[0.522,0.38,0.31],"accent":[0.51,0.643,0.137]},"orebud":{"body":[0.627,0.518,0.357],"accent":[0.937,0.698,0.369]},"ferric-crystal":{"body":[0.565,0.533,0.51],"accent":[0.882,0.843,0.776]},"gravelpod":{"body":[0.659,0.471,0.482],"accent":[0.604,0.369,0.388]},"ammonite-coil":{"body":[0.651,0.565,0.514],"accent":[0.435,0.337,0.282]},"emberheart-geode":{"body":[0.761,0.498,0.447],"accent":[0.898,0.62,0.216]},"titan-root":{"body":[0.58,0.416,0.141],"accent":[0.725,0.522,0.153]},"nethercap":{"body":[0.678,0.322,0.843],"accent":[0.627,0.133,0.914]},"gloommoss":{"body":[0.063,0.584,0.569],"accent":[0.086,0.89,0.835]},"umbrabell":{"body":[0.537,0.431,0.475],"accent":[0.573,0.718,0.184]},"shadefruit":{"body":[0.463,0.396,0.439],"accent":[0.42,0.561,0.075]},"sporelantern":{"body":[0.592,0.643,0.157],"accent":[0.922,0.937,0.122]},"wraithvine":{"body":[0.408,0.431,0.322],"accent":[0.365,0.463,0.212]},"nightbloom-lotus":{"body":[0.592,0.306,0.749],"accent":[0.631,0.227,0.784]},"umbral-amethyst":{"body":[0.573,0.412,0.796],"accent":[0.376,0.145,0.714]},"thornhalo":{"body":[0.545,0.447,0.506],"accent":[0.502,0.369,0.604]},"venomlily":{"body":[0.773,0.612,0.518],"accent":[0.655,0.812,0.114]},"emberleaf":{"body":[0.8,0.29,0.153],"accent":[0.89,0.361,0.149]},"cindershroom":{"body":[0.69,0.514,0.38],"accent":[0.922,0.733,0.392]},"firebramble":{"body":[0.631,0.384,0.161],"accent":[0.529,0.667,0.137]},"sulfurvine":{"body":[0.592,0.635,0.137],"accent":[0.894,0.894,0.114]},"flamecrest":{"body":[0.804,0.447,0.129],"accent":[0.992,0.808,0.09]},"blazestone":{"body":[0.765,0.314,0.176],"accent":[0.882,0.439,0.176]},"phoenix-heartseed":{"body":[0.875,0.529,0.129],"accent":[0.996,0.812,0.071]},"ashcactus":{"body":[0.573,0.51,0.082],"accent":[0.957,0.639,0.098]},"everburning-sunheart":{"body":[0.871,0.498,0.157],"accent":[0.98,0.784,0.078]},"cinderpod":{"body":[0.659,0.369,0.22],"accent":[1,0.698,0.259]},"moonreed":{"body":[0.525,0.6,0.678],"accent":[0.133,0.216,0.294]},"fenmilk-cap":{"body":[0.573,0.675,0.839],"accent":[0.439,0.6,0.894]},"duskbell":{"body":[0.435,0.522,0.62],"accent":[0.58,0.686,0.275]},"dreamberry":{"body":[0.475,0.451,0.506],"accent":[0.627,0.757,0.184]},"moonlotus":{"body":[0.8,0.604,0.765],"accent":[0.882,0.502,0.933]},"sleepglass":{"body":[0.498,0.588,0.698],"accent":[0.302,0.333,0.882]},"moonveil-bloom":{"body":[0.643,0.537,0.722],"accent":[0.42,0.651,0.251]},"mirepod-shell":{"body":[0.675,0.58,0.843],"accent":[0.439,0.467,0.902]},"wisp-reliquary":{"body":[0.639,0.49,0.514],"accent":[0.922,0.808,0.467]},"starfall-lotus":{"body":[0.624,0.302,0.776],"accent":[0.678,0.259,0.863]},"skyspray":{"body":[0.545,0.616,0.396],"accent":[0.22,0.427,0.02]},"cloudcap":{"body":[0.635,0.757,0.839],"accent":[0.557,0.753,0.945]},"airstar":{"body":[0.51,0.729,0.659],"accent":[0.925,0.851,0.29]},"skyberry":{"body":[0.376,0.549,0.584],"accent":[0.565,0.776,0.208]},"updraft-seedwing":{"body":[0.741,0.671,0.42],"accent":[0.816,0.694,0.388]},"zephyr-starbloom":{"body":[0.51,0.702,0.616],"accent":[0.475,0.714,0.212]},"featherpetal":{"body":[0.753,0.624,0.69],"accent":[0.875,0.42,0.831]},"skyshard-geode":{"body":[0.682,0.553,0.678],"accent":[0.533,0.318,0.855]},"windfern":{"body":[0.333,0.502,0.094],"accent":[0.541,0.722,0.118]},"cloudprism":{"body":[0.58,0.569,0.69],"accent":[0.294,0.463,0.122]},"morphleaf":{"body":[0.451,0.6,0.075],"accent":[0.816,0.929,0.082]},"shapecap":{"body":[0.792,0.655,0.392],"accent":[0.914,0.722,0.325]},"twinsprout":{"body":[0.502,0.655,0.071],"accent":[0.816,0.933,0.075]},"graftberry":{"body":[0.647,0.349,0.271],"accent":[0.58,0.647,0.157]},"formblossom":{"body":[0.839,0.604,0.698],"accent":[0.965,0.765,0.439]},"mimic-eye":{"body":[0.573,0.6,0.365],"accent":[0.753,0.714,0.212]},"crownbloom":{"body":[0.761,0.533,0.353],"accent":[0.961,0.776,0.184]},"shifting-root":{"body":[0.565,0.404,0.153],"accent":[0.533,0.349,0.086]},"splice-bud":{"body":[0.765,0.694,0.584],"accent":[0.31,0.447,0.129]},"polymorph-lotus":{"body":[0.761,0.631,0.722],"accent":[0.863,0.482,0.89]},"veilfern":{"body":[0.663,0.302,0.741],"accent":[0.608,0.204,0.702]},"hollowcap":{"body":[0.725,0.42,0.835],"accent":[0.565,0.204,0.792]},"ghostbud":{"body":[0.635,0.584,0.635],"accent":[0.392,0.459,0.255]},"veilberry":{"body":[0.576,0.427,0.498],"accent":[0.459,0.545,0.11]},"hollowbloom":{"body":[0.796,0.627,0.722],"accent":[0.541,0.663,0.188]},"veilglass":{"body":[0.698,0.459,0.855],"accent":[0.427,0.122,0.8]},"shroud-orchid":{"body":[0.804,0.604,0.804],"accent":[0.902,0.471,0.941]},"mistpebble":{"body":[0.647,0.373,0.698],"accent":[0.42,0.149,0.569]},"eclipse-eye":{"body":[0.761,0.475,0.443],"accent":[0.945,0.698,0.243]},"veil-circlet":{"body":[0.569,0.424,0.616],"accent":[0.357,0.18,0.42]},"reefmoss":{"body":[0.086,0.545,0.576],"accent":[0.137,0.894,0.898]},"glasscap":{"body":[0.573,0.686,0.839],"accent":[0.537,0.714,0.922]},"coralberry":{"body":[0.8,0.286,0.4],"accent":[0.91,0.157,0.369]},"reefbud":{"body":[0.753,0.51,0.51],"accent":[0.863,0.396,0.659]},"ghostglass-coral":{"body":[0.498,0.537,0.827],"accent":[0.118,0.153,0.643]},"pearlshell":{"body":[0.733,0.608,0.635],"accent":[0.647,0.459,0.447]},"spectral-anemone":{"body":[0.761,0.471,0.765],"accent":[0.514,0.114,0.549]},"shellfern":{"body":[0.4,0.6,0.667],"accent":[0.039,0.282,0.357]},"phantom-pearl":{"body":[0.655,0.545,0.882],"accent":[0.243,0.239,0.678]},"ghostcrown-coral":{"body":[0.725,0.4,0.757],"accent":[0.525,0.075,0.537]},"timeweed":{"body":[0.808,0.62,0.145],"accent":[0.98,0.827,0.251]},"sandskirt-cap":{"body":[0.82,0.671,0.337],"accent":[0.976,0.855,0.294]},"hourberry":{"body":[0.659,0.506,0.118],"accent":[0.643,0.725,0.078]},"chronovine":{"body":[0.624,0.58,0.243],"accent":[0.875,0.839,0.224]},"epochbloom":{"body":[0.769,0.616,0.643],"accent":[0.788,0.675,0.208]},"chronoglass-shard":{"body":[0.71,0.482,0.839],"accent":[0.69,0.333,0.937]},"pendulum-pods":{"body":[0.675,0.51,0.145],"accent":[0.957,0.769,0.086]},"sundial-stone":{"body":[0.765,0.612,0.4],"accent":[0.698,0.475,0.2]},"aeon-circlet":{"body":[0.639,0.533,0.173],"accent":[0.875,0.769,0.165]},"hourglass-of-ages":{"body":[0.682,0.588,0.263],"accent":[0.937,0.824,0.247]}};
+return { SPECIES_COLORS };
+})();
+// src/materials/rarity.js
+const __m16 = (() => {
+const RARITIES = [
+{ id: 'common', presence: 0.95, label: 'Common', rank: 0, dominant: [18, 26], secondaries: [1, 2], ratio: [0.3, 0.62], spawnWeight: 10, specimens: [2, 3],
+seedDrop: 0.35, value: 1, visual: 'simple natural structure', growHours: 0.75, color: '#c9c3b8' },
+{ id: 'uncommon', presence: 0.7, label: 'Uncommon', rank: 1, dominant: [28, 38], secondaries: [1, 2], ratio: [0.08, 0.26], spawnWeight: 5, specimens: [1, 2],
+seedDrop: 0.22, value: 1.8, visual: 'distinctive morphology', growHours: 1.5, color: '#6fd06a' },
+{ id: 'rare', presence: 0.4, label: 'Rare', rank: 2, dominant: [40, 52], secondaries: [1, 1], ratio: [0.02, 0.08], spawnWeight: 2.2, specimens: [1, 2],
+seedDrop: 0.1, value: 3.5, visual: 'complex, unusual structure', growHours: 3, color: '#5aa8ff' },
+{ id: 'unique', presence: 0.12, label: 'Unique', rank: 3, dominant: [56, 68], secondaries: [0, 0], ratio: [0, 0], spawnWeight: 0.6, specimens: [1, 1],
+seedDrop: 0.04, value: 8, visual: 'singular, striking anatomy', growHours: 6, color: '#c27aff', requires: 'an upgraded plot' },
+{ id: 'legendary', presence: 0.03, label: 'Legendary', rank: 4, dominant: [84, 98], secondaries: [0, 0], ratio: [0, 0], spawnWeight: 0.12, specimens: [1, 1],
+seedDrop: 0.01, value: 20, visual: 'exceptional detail, unmistakable silhouette', growHours: 12, color: '#ffb340', requires: 'an Arcane cultivation chamber' },
+];
+const RARITY = /** @type {any} */ (Object.fromEntries(RARITIES.map((r) => [r.id, r])));
+const RARITY_IDS = /** @type {RarityId[]} */ (RARITIES.map((r) => r.id));
+const ARCANE = Object.freeze({
+spawnChance: Object.freeze({ common: 0.1, uncommon: 0.08, rare: 0.06, unique: 0.04, legendary: 0.02 }),
+seedFactor: 0.35,
+value: 2.2,
+gain: /** @type {[number, number]} */ ([2.5, 3]),
+threshold: /** @type {[number, number]} */ ([250, 650]),
+coldThreshold: /** @type {[number, number]} */ ([60, 300]),
+});
+const OPPOSED = [['fire', 'frost'], ['vitality', 'death'], ['vitality', 'toxicity'], ['levitation', 'strength'], ['temporal', 'phasing']];
+const opposed = (a, b) => OPPOSED.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
+function splitEffects(fx) {
+const list = Object.entries(fx).filter(([, v]) => Math.abs(v) > 0).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
+const [dom, ...sec] = list;
+return { dominant: dom ? dom[0] : null, magnitude: dom ? Math.abs(dom[1]) : 0, secondaries: sec.map(([k, v]) => ({ key: k, v: Math.abs(v), ratio: dom ? Math.abs(v) / Math.abs(dom[1]) : 0 })) };
+}
+function validateSpecies(s) {
+const r = RARITY[/** @type {RarityId} */ (s.rarity)];
+if (!r) return [`${s.key}: unknown rarity ${s.rarity}`];
+const out = [];
+const { magnitude, secondaries } = splitEffects(s.fx);
+if (magnitude < r.dominant[0] || magnitude > r.dominant[1]) out.push(`${s.key}: dominant ${magnitude} outside ${r.label} range ${r.dominant.join('–')}`);
+if (secondaries.length < r.secondaries[0] || secondaries.length > r.secondaries[1]) out.push(`${s.key}: ${secondaries.length} secondary effects, ${r.label} permits ${r.secondaries.join('–')}`);
+if (secondaries.length) {
+if (secondaries[0].ratio < r.ratio[0]) out.push(`${s.key}: strongest secondary ratio ${secondaries[0].ratio.toFixed(2)} below ${r.ratio[0]}`);
+for (const x of secondaries) if (x.ratio > r.ratio[1] + 1e-9) out.push(`${s.key}: secondary ${x.key} ratio ${x.ratio.toFixed(2)} above ${r.ratio[1]}`);
+}
+const keys = Object.keys(s.fx).filter((k) => s.fx[k]);
+for (let i = 0; i < keys.length; i++) for (let j = i + 1; j < keys.length; j++) if (opposed(keys[i], keys[j])) out.push(`${s.key}: carries opposed ${keys[i]} and ${keys[j]}`);
+return out;
+}
+function valueOf(rarity, arcane) {
+const r = RARITY[/** @type {RarityId} */ (rarity)] || RARITY.common;
+return r.value * (arcane ? ARCANE.value : 1);
+}
+function seedChance(rarity, arcane) {
+const r = RARITY[/** @type {RarityId} */ (rarity)] || RARITY.common;
+return r.seedDrop * (arcane ? ARCANE.seedFactor : 1);
+}
+return { RARITIES, RARITY, RARITY_IDS, ARCANE, OPPOSED, opposed, splitEffects, validateSpecies, valueOf, seedChance };
+})();
+// src/game/biomes.js
+const __m17 = (() => {
+const BIOMES = [
+{ id: 'forest', name: 'Whisperwood', category: 'natural', effect: 'vitality', creature: 'fox', minor: ['frost', 'fire', 'toxicity', 'love', 'strength', 'swiftness', 'acidity'], arcaneSign: 1,
+interaction: 'sway', unlock: {}, tier: 'Apprentice', icon: 'leaf', sky: [0.36, 0.52, 0.42],
+desc: 'Old oaks, ferns and fruiting groves where healing magic grows thick. Home of the fox.' },
+{ id: 'meadow', name: 'Sunlit Meadow', category: 'natural', effect: 'love', creature: 'hare', minor: ['fire', 'vitality', 'swiftness', 'acidity', 'strength'], arcaneSign: 1,
+interaction: 'sway', unlock: { served: 3 }, tier: 'Naturalist', icon: 'rose', sky: [0.55, 0.72, 0.9],
+desc: 'Open fields of wildflowers, heavy with love and summer warmth. Hares run in the long grass.' },
+{ id: 'river', name: 'Willow Bank', category: 'natural', effect: 'frost', creature: 'otter', minor: ['vitality', 'death', 'acidity', 'toxicity', 'swiftness', 'strength'], arcaneSign: -1,
+interaction: 'sway', unlock: { served: 6 }, tier: 'Naturalist', icon: 'snow', sky: [0.5, 0.66, 0.78],
+desc: 'Cold riverbanks, lilies and pearl mussels under the willows. River otters fish the shallows.' },
+{ id: 'quarry', name: 'Ironstone Quarry', category: 'natural', effect: 'strength', creature: 'beetle', minor: ['acidity', 'frost', 'fire', 'toxicity', 'death'], arcaneSign: 1,
+interaction: 'sway', unlock: { rank: 1 }, tier: 'Naturalist', icon: 'fist', sky: [0.62, 0.6, 0.58],
+desc: 'Cut rock faces, ore seams and geodes, rich in strength. Rock beetles graze the lichen.' },
+{ id: 'netherwood', name: 'Netherwood', category: 'natural', effect: 'toxicity', creature: 'cavemoth', minor: ['death', 'acidity', 'frost', 'strength', 'swiftness'], arcaneSign: 1,
+interaction: 'sway', unlock: { rank: 2 }, tier: 'Adept', icon: 'skull', sky: [0.1, 0.12, 0.18],
+desc: 'An umbral forest in a cavern under the Whisperwood, lit by poisonous fungi. Cave moths flutter to its glow.' },
+{ id: 'crags', name: 'Ember Crags', category: 'natural', effect: 'fire', creature: 'salamander', minor: ['strength', 'acidity', 'toxicity', 'swiftness', 'death'], arcaneSign: 1,
+interaction: 'sway', unlock: { rank: 2, served: 20 }, tier: 'Adept', icon: 'flame', sky: [0.42, 0.2, 0.16],
+desc: 'Volcanic heights where heat-blooming life grows over magma veins. Salamanders bask on the rock.' },
+{ id: 'moonfen', name: 'Moonfen', category: 'exotic', effect: 'arcana', creature: 'wisp', minor: ['frost', 'death', 'love', 'invisibility', 'vitality'], arcaneSign: -1,
+interaction: 'ripple', unlock: { rank: 3 }, tier: 'Exotic Explorer', icon: 'eye', sky: [0.16, 0.18, 0.32],
+desc: 'Silver marshes under the moon. Will-o’-wisps flicker over the pools: touch their lights and spectral ripples run out.' },
+{ id: 'skyshard', name: 'Skyshard Archipelago', category: 'exotic', effect: 'levitation', creature: 'cloudray', minor: ['swiftness', 'frost', 'arcana', 'vitality'], arcaneSign: 1,
+interaction: 'float', unlock: { rank: 3, served: 40 }, tier: 'Exotic Explorer', icon: 'feather', sky: [0.55, 0.78, 0.98],
+desc: 'Islands adrift in a crystalline sky. Drag or flick them: they bob back to where they float. Cloud rays glide between.' },
+{ id: 'morphgrove', name: 'Morphgrove', category: 'exotic', effect: 'transformation', creature: 'mimic', minor: ['vitality', 'toxicity', 'love', 'arcana', 'swiftness'], arcaneSign: 1,
+interaction: 'morph', unlock: { rank: 4 }, tier: 'Exotic Explorer', icon: 'swirl', sky: [0.4, 0.3, 0.55],
+desc: 'A living grove of shifting, adaptive flora that changes shape under the finger. Mimic lizards hide in plain sight.' },
+{ id: 'veilhollow', name: 'Veil Hollow', category: 'exotic', effect: 'invisibility', creature: 'shroudmoth', minor: ['death', 'frost', 'arcana', 'phasing'], arcaneSign: -1,
+interaction: 'mist', unlock: { rank: 4, served: 70 }, tier: 'Master Alchemist', icon: 'veil', sky: [0.3, 0.26, 0.42],
+desc: 'A shrouded hollow of resonant mist. Stir the mist and the scenery it hides shows through. Shroud moths drift unseen.' },
+{ id: 'ghostglass', name: 'Ghostglass Reef', category: 'exotic', effect: 'phasing', creature: 'axolotl', minor: ['frost', 'arcana', 'invisibility', 'vitality', 'acidity'], arcaneSign: -1,
+interaction: 'phase', unlock: { rank: 5 }, tier: 'Master Alchemist', icon: 'ghost', sky: [0.08, 0.2, 0.36],
+desc: 'A submerged reef of spectral light and living crystal that turns clear at a touch. Spectral axolotls haunt it.' },
+{ id: 'chronoglass', name: 'Chronoglass Wastes', category: 'exotic', effect: 'temporal', creature: 'scarab', minor: ['swiftness', 'fire', 'death', 'phasing', 'arcana'], arcaneSign: 1,
+interaction: 'time', unlock: { rank: 5, served: 120 }, tier: 'Master Alchemist', icon: 'clock', sky: [0.72, 0.6, 0.78],
+desc: 'Fractured timefields of crystal sand. Touch a sandfall and time runs backward or races. Hourglass scarabs roll there.' },
+];
+const BIOME_BY_ID = Object.fromEntries(BIOMES.map((b) => [b.id, b]));
+const BIOME_IDS = BIOMES.map((b) => b.id);
+const START_BIOME = 'forest';
+const biomeOf = (id) => BIOME_BY_ID[id] || BIOME_BY_ID[START_BIOME];
+function milestoneMet(b, st) {
+const u = b.unlock || {};
+const s = st.stats || {};
+if (u.rank !== undefined && st.rank < u.rank) return false;
+if (u.served !== undefined && (s.served || 0) < u.served) return false;
+if (u.gathered !== undefined && (s.gathered || 0) < u.gathered) return false;
+return true;
+}
+function unlockText(b, rankNames) {
+const u = b.unlock || {}, parts = [];
+if (u.rank) parts.push(`rank ${rankNames[u.rank] || u.rank}`);
+if (u.served) parts.push(`${u.served} customers served`);
+if (u.gathered) parts.push(`${u.gathered} ml gathered`);
+return parts.length ? parts.join(' and ') : 'open from the start';
+}
+return { BIOMES, BIOME_BY_ID, BIOME_IDS, START_BIOME, biomeOf, milestoneMet, unlockText };
+})();
+// src/alchemy/extraction.js
+const __m18 = (() => {
+const { SPECIES_DATA } = __m14;
+const SPECIES_BY_KEY = Object.fromEntries(SPECIES_DATA.map((s) => [s.key, s]));
+const SOLVENT_CAPACITY = 0.5;
+const WHOLE_FACTOR = 0.03;
+const EMULSION_FACTOR = 0.1;
+const CELLAR_FACTOR = 0.006;
+const COMBUST_RANGE = /** @type {[number, number]} */ ([115, 300]);
+const EMULSIFIER_NEED = 0.06;
+const EMULSION_MAX_SHARE = 0.42;
+const CLASS_COMPAT = { hydro: [0.82, 0.14], lipo: [0.16, 0.11] };
+function hash01(s) {
+let h = 2166136261;
+for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995); h ^= h >>> 15;
+return (h >>> 0) / 4294967296;
+}
+const SOFT = new Set(['flower', 'leaf', 'herb', 'grass', 'berry', 'fruit', 'fungus', 'moss', 'vine']);
+const HARD = new Set(['stone', 'crystal', 'relic', 'shell', 'coral']);
+const LIPO_MORPH = new Set(['bark', 'seedpod', 'root', 'vine', 'crystal', 'relic']);
+const EMULSIFYING = new Set(['seedpod', 'fungus', 'shell', 'berry']);
+const cache = new Map();
+function speciesProfile(key) {
+if (cache.has(key)) return /** @type {ExtractionProfile} */ (cache.get(key));
+const s = SPECIES_BY_KEY[key];
+if (!s) return null;
+const h = (salt) => hash01(key + ':' + salt);
+const morph = s.morph;
+const lipo = LIPO_MORPH.has(morph) || (s.steep && s.steep.into === 'spirit') || (morph === 'berry' && h('cls') < 0.3) || (morph === 'flower' && s.dominant === 'fire' && h('cls') < 0.5);
+const cls = lipo ? 'lipo' : 'hydro';
+const k20 = SOFT.has(morph) ? 0.2 + 0.1 * h('k') : HARD.has(morph) ? 0.09 + 0.04 * h('k') : 0.13 + 0.06 * h('k');
+const Q = 15 + 5 * h('q');
+const Tfull = cls === 'hydro' ? Math.round(-16 + 8 * h('tf')) : Math.round(-6 + 7 * h('tf'));
+const Ymin = Math.round((0.25 + 0.2 * h('ym')) * 100) / 100;
+const span = Math.round(130 + 40 * h('sp'));
+const mineral = HARD.has(morph) || !s.botanical;
+const combust = Math.round(mineral ? 180 + 120 * h('c') : 115 + 125 * h('c'));
+const emulsifier = EMULSIFYING.has(morph) && h('em') < 0.55 ? Math.round((0.3 + 0.5 * h('es')) * 100) / 100 : 0;
+const prof = { cls: /** @type {SolventClass} */ (cls), k20, Q, Tfull, Ymin, span, combust, emulsifier };
+cache.set(key, prof);
+return prof;
+}
+function rateAt(pr, T) {
+return pr.k20 * Math.pow(2, (Math.max(-80, Math.min(400, T)) - 20) / pr.Q);
+}
+function yieldAt(pr, T) {
+const y = 1 - ((1 - pr.Ymin) * (T - pr.Tfull)) / pr.span;
+return y > 1 ? 1 : y < pr.Ymin ? pr.Ymin : y;
+}
+function extractOver(pr, T, t, phi0 = 0, m = 1) {
+const Y = yieldAt(pr, T);
+if (phi0 >= Y) return phi0;
+return Y - (Y - phi0) * Math.exp(-rateAt(pr, T) * m * t);
+}
+function extractIdOf(rawId) {
+let base = rawId, awake = '';
+if (base.endsWith('~a')) { base = base.slice(0, -2); awake = '~a'; }
+return base.replace(/^wild-sp-/, 'wild-p-sp-') + awake;
+}
+function profileOf(def) {
+return def && def.extraction ? def.extraction : null;
+}
+function solventClassOf(def) {
+return def && (def.solvent === 'hydro' || def.solvent === 'lipo') ? def.solvent : null;
+}
+function emulsionStability(hydro, lipo, emul) {
+const tot = hydro + lipo;
+if (tot <= 1e-9) return 0;
+const disp = Math.min(hydro, lipo);
+if (disp <= 1e-9) return 1;
+const share = disp / tot;
+if (share > EMULSION_MAX_SHARE + 0.04) return 0;
+const prop = share <= EMULSION_MAX_SHARE ? 1 : 1 - (share - EMULSION_MAX_SHARE) / 0.04;
+const need = EMULSIFIER_NEED * disp;
+const amt = Math.min(1, Math.max(0, (emul / need - 0.6) / 0.4));
+return prop * amt;
+}
+function classWords(cls) {
+return cls === 'lipo' ? { short: 'oil-soluble', solvents: 'oil' } : { short: 'water-soluble', solvents: 'water or spirit' };
+}
+function extractedParts(parts, comp, lookup) {
+const out = [];
+for (const p of parts) {
+const d = lookup(p.id);
+if (!d || !d.extraction) { out.push(p); continue; }
+const base = p.id.endsWith('~a') ? p.id.slice(0, -2) : p.id;
+const x = extractIdOf(base);
+const raw = (comp[base] || 0) + (comp[base + '~a'] || 0);
+const ext = (comp[x] || 0) + (comp[x + '~a'] || 0);
+const share = raw + ext > 1e-9 ? ext / (raw + ext) : 0;
+if (share > 0) out.push({ id: p.id, ml: p.ml * share });
+if (share < 1) out.push({ id: '__undissolved', ml: p.ml * (1 - share) });
+}
+return out;
+}
+return { SOLVENT_CAPACITY, WHOLE_FACTOR, EMULSION_FACTOR, CELLAR_FACTOR, COMBUST_RANGE, EMULSIFIER_NEED, EMULSION_MAX_SHARE, CLASS_COMPAT, hash01, speciesProfile, rateAt, yieldAt, extractOver, extractIdOf, profileOf, solventClassOf, emulsionStability, classWords, extractedParts };
+})();
+// src/materials/catalog.js
+const __m13 = (() => {
+const { SPECIES_DATA } = __m14;
+const { SPECIES_COLORS } = __m15;
+const { completeMaterial } = __m10;
+const { RARITY, valueOf } = __m16;
+const { BIOME_BY_ID } = __m17;
+const { speciesProfile, CLASS_COMPAT, classWords } = __m18;
+const CATALOG_VERSION = 6;
+const SPECIES = SPECIES_DATA;
+const SPECIES_BY_KEY = Object.fromEntries(SPECIES.map((s) => [s.key, s]));
+const PREFIX = 'wild-sp-';
+const ARC = '-arcane';
+const materialIdOf = (key, arcane = false) => PREFIX + key + (arcane ? ARC : '');
+const isCatalogId = (id) => typeof id === 'string' && id.startsWith(PREFIX);
+function parseCatalogId(id) {
+if (!isCatalogId(id)) return null;
+let rest = id.slice(PREFIX.length);
+if (rest.endsWith('~a')) rest = rest.slice(0, -2);
+const arcane = rest.endsWith(ARC);
+const key = arcane ? rest.slice(0, -ARC.length) : rest;
+const species = SPECIES_BY_KEY[key];
+return species ? { key, arcane, species } : null;
+}
+function speciesOfMaterial(m) {
+if (!m) return null;
+if (m.wild && m.wild.species) return SPECIES_BY_KEY[m.wild.species] || null;
+const p = parseCatalogId(m.id);
+return p ? p.species : null;
+}
+function catalogIds() {
+return SPECIES.flatMap((s) => [materialIdOf(s.key), materialIdOf(s.key, true)]);
+}
+const speciesOfBiome = (biome) => SPECIES.filter((s) => s.biome === biome);
+const CHAR_ID = 'char-inert';
+const STEEP_NAME = { hydro: 'Extract', lipo: 'Oil Extract' };
+function generateCatalog(base) {
+const materials = [];
+const reactions = [];
+for (const s of SPECIES) {
+const col = SPECIES_COLORS[s.key] || { body: [0.6, 0.55, 0.45], accent: [0.8, 0.7, 0.5] };
+const biome = BIOME_BY_ID[s.biome];
+const prof = /** @type {import('../alchemy/extraction.js').ExtractionProfile} */ (speciesProfile(s.key));
+const words = classWords(prof.cls);
+for (const arcane of [false, true]) {
+const id = materialIdOf(s.key, arcane);
+const m = /** @type {any} */ (completeMaterial({
+id, name: arcane ? `Arcane ${s.name}` : s.name, archetype: 'wild', form: /** @type {any} */ (s.form), color: col.body.slice(), tint: 0.75, opacity: 1,
+density: s.density, compat: CLASS_COMPAT[prof.cls].slice(), friction: 0.67, binder: 0, hardness: s.hardness,
+solubility: s.sol, solubilityTemp: s.solT, melt: 1500, boil: Infinity,
+heatCapacity: 1.7, conductivity: 0.35, flammability: 0.45, ignition: prof.combust, combustionHeat: 300,
+ash: CHAR_ID, smoke: base.roles.smoke, glow: arcane ? 0.35 : 0, reactivity: 0.3,
+price: Math.round(s.price * (arcane ? valueOf(s.rarity, true) / valueOf(s.rarity, false) : 1)), tier: 99, product: false,
+description: `${s.lore} ${RARITY[s.rarity].label}${arcane ? ', Arcane' : ''} — ${biome ? biome.name : s.biome}. Its magic is ${words.short}: it dissolves only in ${words.solvents}.`,
+}));
+m.effects = { ...s.fx };
+if (arcane) m.arcane = { thr: s.arcane.thr, gain: s.arcane.gain };
+m.fxv = CATALOG_VERSION;
+m.econd = s.morph === 'crystal' || s.morph === 'relic' ? 0.3 : 0.04;
+m.charge = 0;
+m.crushable = true;
+m.extraction = { ...prof };
+if (prof.emulsifier > 0) m.emulsifier = prof.emulsifier;
+m.wild = {
+key: s.key, species: s.key, shape: s.shape, region: s.biome, rank: 0, rare: RARITY[s.rarity].rank >= 2,
+gatherOnly: true, gather: s.gather, dusk: false, dawn: false,
+rarity: s.rarity, arcane, morph: s.morph, category: s.category, catalog: true,
+};
+materials.push(m);
+const ext = /** @type {any} */ (completeMaterial({
+id: `wild-p-sp-${s.key}${arcane ? ARC : ''}`, name: `${m.name} ${STEEP_NAME[prof.cls]}`, archetype: 'product',
+tint: 0.85, opacity: 0.85, heatCapacity: 3.6, boil: Infinity, melt: prof.cls === 'hydro' ? -2 : -10, viscosity: 2.5, compat: CLASS_COMPAT[prof.cls].slice(), price: 0, tier: 99, product: true,
+density: prof.cls === 'hydro' ? Math.max(1, s.density * 0.8) : 0.9, form: 'liquid', color: col.body.map((c) => Math.round(c * 0.85 * 100) / 100),
+flammability: 0, description: `The magic of ${m.name} dissolved in ${words.solvents}. Dissolved magic is thermally stable.`,
+}));
+ext.effects = { ...s.fx };
+if (m.arcane) ext.arcane = { ...m.arcane };
+ext.fxv = CATALOG_VERSION;
+ext.econd = 0.12;
+ext.charge = 0;
+ext.extractOf = id;
+ext.extractClass = prof.cls;
+materials.push(ext);
+}
+}
+return { materials, reactions };
+}
+return { CATALOG_VERSION, SPECIES, SPECIES_BY_KEY, materialIdOf, isCatalogId, parseCatalogId, speciesOfMaterial, catalogIds, speciesOfBiome, CHAR_ID, generateCatalog };
+})();
+// src/reactions/compatibility.js
+const __m21 = (() => {
 const COMPAT_FULL = 0.26;
 const COMPAT_NONE = 0.4;
 function compatFactor(a1, b1, a2, b2) {
@@ -1094,7 +1528,7 @@ return compatFactor(m1.compat[0], m1.compat[1], m2.compat[0], m2.compat[1]) > 0.
 return { COMPAT_FULL, COMPAT_NONE, compatFactor, miscible };
 })();
 // src/alchemy/effects.js
-const __m14 = (() => {
+const __m20 = (() => {
 const EFFECTS = [
 { key: 'vitality', label: 'Vitality', icon: 'heart', color: [0.92, 0.3, 0.32], kind: 'magic', desc: 'Healing and life: mends wounds, restores energy.' },
 { key: 'strength', label: 'Strength', icon: 'fist', color: [0.96, 0.76, 0.36], kind: 'magic', desc: 'Might and toughness of body (or of stone).' },
@@ -1120,7 +1554,7 @@ const EFFECT_INDEX = Object.fromEntries(EFFECT_KEYS.map((k, i) => [k, i]));
 const EFFECT_BY_KEY = Object.fromEntries(EFFECTS.map((e) => [e.key, e]));
 const E = Object.freeze({ VIT: 0, STR: 1, LOVE: 2, ARC: 3, TRANS: 4, FIRE: 5, FROST: 6, ACID: 7, TOX: 8, DEATH: 9, SWIFT: 10, LEV: 11, INVIS: 12, PHASE: 13, TEMP: 14 });
 const ASPECT_TO_EFFECT = ['vitality', 'fire', 'arcana', 'strength'];
-const { compatFactor } = __m15;
+const { compatFactor } = __m21;
 const LEACH_WET = 0.12;
 const LEACH_DRY = 0.05;
 const KNEE = 40;
@@ -1168,7 +1602,8 @@ for (let s = 0; s < n; s++) {
 const f = comp[off + s];
 if (f <= 0) continue;
 let avail = f;
-if (sp.isPowder[s] && T < sp.melt[s]) {
+if (sp.exCls[s]) avail = 0;
+else if (sp.isPowder[s] && T < sp.melt[s]) {
 let solvent = 0;
 for (let q = 0; q < nl; q++) {
 const l = liqIdx[q];
@@ -1304,355 +1739,15 @@ return 'intense';
 }
 return { EFFECTS, NATURAL_EFFECTS, EXOTIC_EFFECTS, NE, EFFECT_KEYS, EFFECT_INDEX, EFFECT_BY_KEY, E, ASPECT_TO_EFFECT, EFFECT_CUTOFF, cutoffEffects, effectVector, toRecord, fromRecord, cutoffDormant, extractedEffects, interact, compositionEffects, theoryOf, sampleEffects, dominantEffect, potencyWord };
 })();
-// src/materials/species-data.js
-const __m17 = (() => {
-const SPECIES_DATA = [
-{ "key": "silverleaf", "name": "Silverleaf", "biome": "forest", "category": "natural", "slot": 0, "morph": "leaf", "rarity": "common", "dominant": "vitality", "fx": { "vitality": 23.7, "frost": 9.4, "acidity": 1.2 }, "arcane": { "thr": 560, "gain": 2.8 }, "shape": "leaf", "bed": "soil", "botanical": true, "form": "solid", "density": 0.72, "hardness": 0.22, "sol": 0.187, "solT": 0.0015, "gather": "pick", "steep": { "into": "water", "lo": [ 40, 50 ], "hi": [ 80, 90 ] }, "price": 8, "lore": "Soft silvery leaves prized by healers, with a frosty bite." },
-{ "key": "honeycap", "name": "Honeycap", "biome": "forest", "category": "natural", "slot": 1, "morph": "fungus", "rarity": "common", "dominant": "vitality", "fx": { "vitality": 22.2, "fire": 8.4, "acidity": 1 }, "arcane": { "thr": 470, "gain": 2.9 }, "shape": "cap", "bed": "fungal", "botanical": true, "form": "solid", "density": 0.89, "hardness": 0.22, "sol": 0.16, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 20, 25 ], "hi": [ 55, 60 ] }, "price": 9, "lore": "A golden mushroom that smells of honey and warm bread: it heals, and its warmth cancels a frosty herb." },
-{ "key": "dawnblossom", "name": "Dawnblossom", "biome": "forest", "category": "natural", "slot": 2, "morph": "flower", "rarity": "uncommon", "dominant": "vitality", "fx": { "vitality": 35, "strength": 7.8 }, "arcane": { "thr": 270, "gain": 2.7 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.64, "hardness": 0.15, "sol": 0.2, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 12, "lore": "Pale pink flowers that open with the first light." },
-{ "key": "dewpear", "name": "Dewpear", "biome": "forest", "category": "natural", "slot": 3, "morph": "fruit", "rarity": "uncommon", "dominant": "swiftness", "fx": { "swiftness": 34.6, "fire": 8.3, "love": 1.7 }, "arcane": { "thr": 580, "gain": 2.8 }, "shape": "berry", "bed": "soil", "botanical": true, "form": "solid", "density": 0.97, "hardness": 0.12, "sol": 0.214, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 15, "lore": "A green pear so light and quick it seems to roll uphill." },
-{ "key": "heartwood-mandrake", "name": "Heartwood Mandrake", "biome": "forest", "category": "natural", "slot": 4, "morph": "root", "rarity": "rare", "dominant": "vitality", "fx": { "vitality": 42.9, "fire": 2.9 }, "arcane": { "thr": 530, "gain": 2.8 }, "shape": "root", "bed": "soil", "botanical": true, "form": "solid", "density": 1.11, "hardness": 0.45, "sol": 0.115, "solT": 0.002, "gather": "dig", "steep": { "into": "water", "lo": [ 60, 70 ], "hi": [ 90, 100 ] }, "price": 22, "lore": "A drowsy root with a face, grown from the heart of old oaks." },
-{ "key": "mossback-bark", "name": "Mossback Bark", "biome": "forest", "category": "natural", "slot": 5, "morph": "bark", "rarity": "uncommon", "dominant": "vitality", "fx": { "vitality": 29.1, "fire": 3.7 }, "arcane": { "thr": 310, "gain": 2.9 }, "shape": "bark", "bed": "soil", "botanical": true, "form": "solid", "density": 0.87, "hardness": 0.4, "sol": 0.119, "solT": 0.002, "gather": "scrape", "steep": { "into": "water", "lo": [ 45, 50 ], "hi": [ 85, 90 ] }, "price": 14, "lore": "Bark slabs furred with living moss that mends what it touches." },
-{ "key": "stagthorn-vine", "name": "Stagthorn Vine", "biome": "forest", "category": "natural", "slot": 6, "morph": "vine", "rarity": "rare", "dominant": "vitality", "fx": { "vitality": 50.8, "frost": 3.4 }, "arcane": { "thr": 460, "gain": 2.7 }, "shape": "bean", "bed": "soil", "botanical": true, "form": "solid", "density": 0.93, "hardness": 0.22, "sol": 0.191, "solT": 0.0015, "gather": "pick", "steep": { "into": "spirit", "lo": [ 25, 30 ], "hi": [ 55, 60 ] }, "price": 22, "lore": "A golden vine branching like antlers, rooted in fern hollows." },
-{ "key": "hearthnut", "name": "Hearthnut", "biome": "forest", "category": "natural", "slot": 7, "morph": "stone", "rarity": "common", "dominant": "acidity", "fx": { "acidity": -22.9, "strength": 12.4, "frost": 1.1 }, "arcane": { "thr": 320, "gain": 2.5 }, "shape": "stone", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.61, "hardness": 0.6, "sol": 0.059, "solT": 0.003, "gather": "mine", "steep": { "into": "water", "lo": [ 75, 80 ], "hi": [ 150, 160 ] }, "price": 8, "lore": "Speckled brown nuts with a chalky, alkaline shell that settles acids." },
-{ "key": "heartberry", "name": "Heartberry", "biome": "forest", "category": "natural", "slot": 8, "morph": "fruit", "rarity": "unique", "dominant": "vitality", "fx": { "vitality": 63.4 }, "arcane": { "thr": 630, "gain": 3 }, "shape": "berry", "bed": "soil", "botanical": true, "form": "solid", "density": 0.95, "hardness": 0.12, "sol": 0.231, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 50, "lore": "A single heart-shaped fruit that beats faintly in the hand." },
-{ "key": "everbloom-chalice", "name": "Everbloom Chalice", "biome": "forest", "category": "natural", "slot": 9, "morph": "fungus", "rarity": "legendary", "dominant": "vitality", "fx": { "vitality": 93.9 }, "arcane": { "thr": 580, "gain": 2.6 }, "shape": "cap", "bed": "fungal", "botanical": true, "form": "solid", "density": 0.94, "hardness": 0.22, "sol": 0.169, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 20, 25 ], "hi": [ 55, 60 ] }, "price": 101, "lore": "A green cup-fungus that is always full of healing dew." },
-{ "key": "meadow-daisy", "name": "Meadow Daisy", "biome": "meadow", "category": "natural", "slot": 0, "morph": "flower", "rarity": "common", "dominant": "love", "fx": { "love": 21.6, "acidity": 9.7, "swiftness": 1.1 }, "arcane": { "thr": 500, "gain": 2.7 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.63, "hardness": 0.15, "sol": 0.201, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 8, "lore": "Plain white daisies, the first love-charm every child learns." },
-{ "key": "goldenrush", "name": "Goldenrush Grass", "biome": "meadow", "category": "natural", "slot": 1, "morph": "grass", "rarity": "common", "dominant": "swiftness", "fx": { "swiftness": 23.9, "fire": 11.6, "acidity": 1 }, "arcane": { "thr": 600, "gain": 2.5 }, "shape": "reed", "bed": "soil", "botanical": true, "form": "solid", "density": 0.68, "hardness": 0.25, "sol": 0.162, "solT": 0.0015, "gather": "scrape", "steep": { "into": "water", "lo": [ 35, 40 ], "hi": [ 80, 85 ] }, "price": 9, "lore": "Wind-combed golden grass that never stands still." },
-{ "key": "brightberry", "name": "Brightberry", "biome": "meadow", "category": "natural", "slot": 2, "morph": "berry", "rarity": "common", "dominant": "love", "fx": { "love": 19, "strength": 6.6, "fire": 1 }, "arcane": { "thr": 570, "gain": 2.8 }, "shape": "berry", "bed": "soil", "botanical": true, "form": "solid", "density": 1.01, "hardness": 0.12, "sol": 0.211, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 8, "lore": "Glossy red berries, sweet and a little sour." },
-{ "key": "honeyclover", "name": "Honeyclover", "biome": "meadow", "category": "natural", "slot": 3, "morph": "flower", "rarity": "uncommon", "dominant": "love", "fx": { "love": 35.8, "fire": 4.6, "strength": 1.2 }, "arcane": { "thr": 250, "gain": 2.7 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.62, "hardness": 0.15, "sol": 0.2, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 13, "lore": "Round golden clover heads humming with bees." },
-{ "key": "suncrown", "name": "Suncrown Flower", "biome": "meadow", "category": "natural", "slot": 4, "morph": "flower", "rarity": "uncommon", "dominant": "fire", "fx": { "fire": 28.8, "vitality": 5.4 }, "arcane": { "thr": 380, "gain": 2.9 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.63, "hardness": 0.15, "sol": 0.215, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 13, "lore": "A sunflower that keeps the day’s warmth in its seeds." },
-{ "key": "meadowcrystal", "name": "Meadowcrystal Shard", "biome": "meadow", "category": "natural", "slot": 5, "morph": "crystal", "rarity": "rare", "dominant": "love", "fx": { "love": 47.7, "fire": 3 }, "arcane": { "thr": 470, "gain": 2.7 }, "shape": "crystal", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.83, "hardness": 0.65, "sol": 0.084, "solT": 0.002, "gather": "mine", "steep": { "into": "spirit", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 22, "lore": "A clear pink-hearted crystal pushed up among the grass roots." },
-{ "key": "prism-petal", "name": "Prism Petal", "biome": "meadow", "category": "natural", "slot": 6, "morph": "flower", "rarity": "rare", "dominant": "love", "fx": { "love": 46.2, "fire": 3.1 }, "arcane": { "thr": 280, "gain": 3 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.6, "hardness": 0.15, "sol": 0.186, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 22, "lore": "A single petal that splits the sun into every colour." },
-{ "key": "lovelace-orchid", "name": "Lovelace Orchid", "biome": "meadow", "category": "natural", "slot": 7, "morph": "flower", "rarity": "uncommon", "dominant": "love", "fx": { "love": 32.1, "fire": 6, "swiftness": 1.3 }, "arcane": { "thr": 600, "gain": 2.6 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.63, "hardness": 0.15, "sol": 0.195, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 14, "lore": "A frilled cream-and-pink orchid that turns towards voices." },
-{ "key": "radiant-sunbloom", "name": "Radiant Sunbloom", "biome": "meadow", "category": "natural", "slot": 8, "morph": "flower", "rarity": "unique", "dominant": "love", "fx": { "love": 57.9 }, "arcane": { "thr": 350, "gain": 2.7 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.64, "hardness": 0.15, "sol": 0.21, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 42, "lore": "A blossom shaped like the sun, warm with devotion." },
-{ "key": "eternal-rose", "name": "Eternal Rose", "biome": "meadow", "category": "natural", "slot": 9, "morph": "flower", "rarity": "legendary", "dominant": "love", "fx": { "love": 97 }, "arcane": { "thr": 350, "gain": 2.6 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.6, "hardness": 0.15, "sol": 0.209, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 117, "lore": "A rose that has never wilted since it first opened." },
-{ "key": "willowleaf", "name": "Willowleaf Sprig", "biome": "river", "category": "natural", "slot": 0, "morph": "leaf", "rarity": "common", "dominant": "frost", "fx": { "frost": 24.3, "death": 10, "swiftness": 1 }, "arcane": { "thr": -230, "gain": 2.5 }, "shape": "leaf", "bed": "soil", "botanical": true, "form": "solid", "density": 0.72, "hardness": 0.22, "sol": 0.183, "solT": 0.0015, "gather": "pick", "steep": { "into": "water", "lo": [ 1, 2 ], "hi": [ 12, 14 ] }, "price": 7, "lore": "Long drooping willow leaves, cold to the touch." },
-{ "key": "reedcap", "name": "Reedcap", "biome": "river", "category": "natural", "slot": 1, "morph": "fungus", "rarity": "common", "dominant": "death", "fx": { "death": 23.3, "frost": 11.7 }, "arcane": { "thr": -70, "gain": 2.9 }, "shape": "cap", "bed": "fungal", "botanical": true, "form": "solid", "density": 0.9, "hardness": 0.22, "sol": 0.161, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 20, 25 ], "hi": [ 55, 60 ] }, "price": 8, "lore": "A pale riverside mushroom with a grave chill about it." },
-{ "key": "riverlotus", "name": "Riverlotus", "biome": "river", "category": "natural", "slot": 2, "morph": "flower", "rarity": "uncommon", "dominant": "frost", "fx": { "frost": 35.1, "vitality": 4.9 }, "arcane": { "thr": -110, "gain": 2.6 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.63, "hardness": 0.15, "sol": 0.213, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 1, 2 ], "hi": [ 12, 14 ] }, "price": 13, "lore": "A white water-lily that floats on the coldest pools." },
-{ "key": "bubbleberry", "name": "Bubbleberry", "biome": "river", "category": "natural", "slot": 3, "morph": "berry", "rarity": "common", "dominant": "frost", "fx": { "frost": 23.3, "death": 11.3 }, "arcane": { "thr": -140, "gain": 3 }, "shape": "berry", "bed": "soil", "botanical": true, "form": "solid", "density": 0.99, "hardness": 0.12, "sol": 0.202, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 1, 2 ], "hi": [ 12, 14 ] }, "price": 8, "lore": "Blue berries full of icy juice that fizzes on the tongue." },
-{ "key": "tidebloom", "name": "Tidebloom", "biome": "river", "category": "natural", "slot": 4, "morph": "flower", "rarity": "uncommon", "dominant": "frost", "fx": { "frost": 35.2, "death": 6.6 }, "arcane": { "thr": -270, "gain": 2.6 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.62, "hardness": 0.15, "sol": 0.213, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 1, 2 ], "hi": [ 12, 14 ] }, "price": 13, "lore": "A cyan flower that opens and closes with the river’s flow." },
-{ "key": "streampearl", "name": "Streampearl Oyster", "biome": "river", "category": "natural", "slot": 5, "morph": "shell", "rarity": "rare", "dominant": "frost", "fx": { "frost": 45.1, "vitality": 1.6 }, "arcane": { "thr": -140, "gain": 2.6 }, "shape": "shell", "bed": "tide", "botanical": false, "form": "solid", "density": 1.63, "hardness": 0.55, "sol": 0.074, "solT": 0.002, "gather": "pick", "steep": { "into": "water", "lo": [ 50, 55 ], "hi": [ 85, 90 ] }, "price": 21, "lore": "A freshwater mussel holding a pearl of frozen light." },
-{ "key": "frostlotus", "name": "Frostlotus", "biome": "river", "category": "natural", "slot": 6, "morph": "flower", "rarity": "rare", "dominant": "frost", "fx": { "frost": 41.3, "strength": 1.7 }, "arcane": { "thr": -70, "gain": 3 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.63, "hardness": 0.15, "sol": 0.211, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 1, 2 ], "hi": [ 12, 14 ] }, "price": 23, "lore": "A lotus whose petals are rimed with frost even in summer." },
-{ "key": "rimefeather", "name": "Rimefeather Reed", "biome": "river", "category": "natural", "slot": 7, "morph": "grass", "rarity": "uncommon", "dominant": "swiftness", "fx": { "swiftness": 31.2, "frost": 3.3 }, "arcane": { "thr": -90, "gain": 3 }, "shape": "reed", "bed": "soil", "botanical": true, "form": "solid", "density": 0.68, "hardness": 0.25, "sol": 0.159, "solT": 0.0015, "gather": "scrape", "steep": { "into": "water", "lo": [ 35, 40 ], "hi": [ 80, 85 ] }, "price": 15, "lore": "Blue reeds that bend and spring back faster than the eye." },
-{ "key": "nixie-torc", "name": "Nixie Torc", "biome": "river", "category": "natural", "slot": 8, "morph": "relic", "rarity": "unique", "dominant": "frost", "fx": { "frost": 64.6 }, "arcane": { "thr": -160, "gain": 2.8 }, "shape": "nugget", "bed": "crystal", "botanical": false, "form": "solid", "density": 2, "hardness": 0.7, "sol": 0.056, "solT": 0.003, "gather": "mine", "steep": { "into": "spirit", "lo": [ 55, 60 ], "hi": [ 110, 120 ] }, "price": 47, "lore": "A ring of river-gold the nixies leave on the bank, ice-cold." },
-{ "key": "everfrost-pearlbloom", "name": "Everfrost Pearlbloom", "biome": "river", "category": "natural", "slot": 9, "morph": "flower", "rarity": "legendary", "dominant": "frost", "fx": { "frost": 87.1 }, "arcane": { "thr": -280, "gain": 2.5 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.62, "hardness": 0.15, "sol": 0.213, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 1, 2 ], "hi": [ 12, 14 ] }, "price": 125, "lore": "A crystalline flower around a pearl that never thaws." },
-{ "key": "stonewort", "name": "Stonewort", "biome": "quarry", "category": "natural", "slot": 0, "morph": "flower", "rarity": "common", "dominant": "strength", "fx": { "strength": 24.3, "fire": 13.6 }, "arcane": { "thr": 520, "gain": 2.9 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.64, "hardness": 0.15, "sol": 0.202, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 8, "lore": "Tough little white flowers rooted in cracks of the rock." },
-{ "key": "quarrycap", "name": "Quarrycap", "biome": "quarry", "category": "natural", "slot": 1, "morph": "fungus", "rarity": "common", "dominant": "strength", "fx": { "strength": 22.9, "acidity": 12 }, "arcane": { "thr": 330, "gain": 3 }, "shape": "cap", "bed": "fungal", "botanical": true, "form": "solid", "density": 0.92, "hardness": 0.22, "sol": 0.175, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 20, 25 ], "hi": [ 55, 60 ] }, "price": 9, "lore": "A stout tan mushroom that grows on the spoil heaps." },
-{ "key": "ironbloom", "name": "Ironbloom Shrub", "biome": "quarry", "category": "natural", "slot": 2, "morph": "flower", "rarity": "uncommon", "dominant": "strength", "fx": { "strength": 34.1, "fire": 4.2 }, "arcane": { "thr": 440, "gain": 2.7 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.63, "hardness": 0.15, "sol": 0.2, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 13, "lore": "Spiky red leaves stiff as iron filings." },
-{ "key": "stoneberry", "name": "Stoneberry", "biome": "quarry", "category": "natural", "slot": 3, "morph": "berry", "rarity": "common", "dominant": "acidity", "fx": { "acidity": 21.8, "strength": 11, "fire": 1 }, "arcane": { "thr": 600, "gain": 2.9 }, "shape": "berry", "bed": "soil", "botanical": true, "form": "solid", "density": 1, "hardness": 0.12, "sol": 0.203, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 9, "lore": "Hard purple berries that etch the stone they fall on." },
-{ "key": "orebud", "name": "Orebud Cluster", "biome": "quarry", "category": "natural", "slot": 4, "morph": "crystal", "rarity": "uncommon", "dominant": "strength", "fx": { "strength": 35.7, "acidity": 8, "toxicity": 1.2 }, "arcane": { "thr": 640, "gain": 2.7 }, "shape": "crystal", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.77, "hardness": 0.65, "sol": 0.085, "solT": 0.002, "gather": "mine", "steep": { "into": "spirit", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 15, "lore": "Amber crystals budding from grey rock like seeds." },
-{ "key": "ferric-crystal", "name": "Ferric Crystal", "biome": "quarry", "category": "natural", "slot": 5, "morph": "crystal", "rarity": "rare", "dominant": "strength", "fx": { "strength": 47, "death": 2.1 }, "arcane": { "thr": 270, "gain": 2.9 }, "shape": "crystal", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.74, "hardness": 0.65, "sol": 0.076, "solT": 0.002, "gather": "mine", "steep": { "into": "spirit", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 25, "lore": "Smoky iron-grey prisms, heavy as a hammer head." },
-{ "key": "gravelpod", "name": "Gravelpod", "biome": "quarry", "category": "natural", "slot": 6, "morph": "stone", "rarity": "uncommon", "dominant": "strength", "fx": { "strength": 28.8, "fire": 5.2, "death": 1.3 }, "arcane": { "thr": 470, "gain": 3 }, "shape": "stone", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.58, "hardness": 0.6, "sol": 0.058, "solT": 0.003, "gather": "mine", "steep": { "into": "water", "lo": [ 75, 80 ], "hi": [ 150, 160 ] }, "price": 12, "lore": "Lumpy mauve pods that crack open into gravel." },
-{ "key": "ammonite-coil", "name": "Ammonite Coil", "biome": "quarry", "category": "natural", "slot": 7, "morph": "stone", "rarity": "rare", "dominant": "strength", "fx": { "strength": 43.4, "acidity": 2.3 }, "arcane": { "thr": 650, "gain": 2.9 }, "shape": "stone", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.57, "hardness": 0.6, "sol": 0.06, "solT": 0.003, "gather": "mine", "steep": { "into": "water", "lo": [ 75, 80 ], "hi": [ 150, 160 ] }, "price": 22, "lore": "A spiral stone, the strength of ages curled inside." },
-{ "key": "emberheart-geode", "name": "Emberheart Geode", "biome": "quarry", "category": "natural", "slot": 8, "morph": "crystal", "rarity": "unique", "dominant": "strength", "fx": { "strength": 66.7 }, "arcane": { "thr": 250, "gain": 2.8 }, "shape": "crystal", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.75, "hardness": 0.65, "sol": 0.078, "solT": 0.002, "gather": "mine", "steep": { "into": "spirit", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 44, "lore": "A geode with a violet fire burning at its core." },
-{ "key": "titan-root", "name": "Titan Root", "biome": "quarry", "category": "natural", "slot": 9, "morph": "root", "rarity": "legendary", "dominant": "strength", "fx": { "strength": 93.3 }, "arcane": { "thr": 440, "gain": 2.9 }, "shape": "root", "bed": "soil", "botanical": true, "form": "solid", "density": 1.05, "hardness": 0.45, "sol": 0.124, "solT": 0.002, "gather": "dig", "steep": { "into": "water", "lo": [ 60, 70 ], "hi": [ 90, 100 ] }, "price": 120, "lore": "Golden roots that split boulders as they grow." },
-{ "key": "nethercap", "name": "Nethercap", "biome": "netherwood", "category": "natural", "slot": 0, "morph": "fungus", "rarity": "common", "dominant": "toxicity", "fx": { "toxicity": 18.7, "frost": 7.3 }, "arcane": { "thr": 640, "gain": 2.5 }, "shape": "cap", "bed": "fungal", "botanical": true, "form": "solid", "density": 0.95, "hardness": 0.22, "sol": 0.173, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 20, 25 ], "hi": [ 55, 60 ] }, "price": 7, "lore": "A violet spotted toadstool glowing in the cavern dark." },
-{ "key": "gloommoss", "name": "Gloommoss Tuft", "biome": "netherwood", "category": "natural", "slot": 1, "morph": "moss", "rarity": "common", "dominant": "toxicity", "fx": { "toxicity": 22.7, "strength": 11.4, "death": 1 }, "arcane": { "thr": 510, "gain": 3 }, "shape": "moss", "bed": "fungal", "botanical": true, "form": "solid", "density": 0.8, "hardness": 0.2, "sol": 0.169, "solT": 0.0012, "gather": "scrape", "steep": { "into": "water", "lo": [ 15, 20 ], "hi": [ 45, 50 ] }, "price": 9, "lore": "Teal moss that sweats a bitter, tingling dew." },
-{ "key": "umbrabell", "name": "Umbrabell", "biome": "netherwood", "category": "natural", "slot": 2, "morph": "flower", "rarity": "uncommon", "dominant": "toxicity", "fx": { "toxicity": 33.4, "death": 4.8 }, "arcane": { "thr": 520, "gain": 2.9 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.63, "hardness": 0.15, "sol": 0.195, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 14, "lore": "Drooping violet bells that ring with spores." },
-{ "key": "shadefruit", "name": "Shadefruit", "biome": "netherwood", "category": "natural", "slot": 3, "morph": "berry", "rarity": "common", "dominant": "death", "fx": { "death": 20, "frost": 12.1 }, "arcane": { "thr": 580, "gain": 2.5 }, "shape": "berry", "bed": "soil", "botanical": true, "form": "solid", "density": 0.98, "hardness": 0.12, "sol": 0.23, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 7, "lore": "Dusky purple berries that taste of the grave." },
-{ "key": "sporelantern", "name": "Sporelantern", "biome": "netherwood", "category": "natural", "slot": 4, "morph": "vine", "rarity": "uncommon", "dominant": "toxicity", "fx": { "toxicity": 31.3, "frost": 6.3, "strength": 1.5 }, "arcane": { "thr": 270, "gain": 2.9 }, "shape": "bean", "bed": "soil", "botanical": true, "form": "solid", "density": 0.92, "hardness": 0.22, "sol": 0.194, "solT": 0.0015, "gather": "pick", "steep": { "into": "spirit", "lo": [ 25, 30 ], "hi": [ 55, 60 ] }, "price": 12, "lore": "Glowing yellow-green pods hanging in pairs from a vine." },
-{ "key": "wraithvine", "name": "Wraithvine", "biome": "netherwood", "category": "natural", "slot": 5, "morph": "vine", "rarity": "uncommon", "dominant": "death", "fx": { "death": 33, "acidity": 4.5, "swiftness": 1.2 }, "arcane": { "thr": 440, "gain": 2.7 }, "shape": "bean", "bed": "soil", "botanical": true, "form": "solid", "density": 0.88, "hardness": 0.22, "sol": 0.173, "solT": 0.0015, "gather": "pick", "steep": { "into": "spirit", "lo": [ 25, 30 ], "hi": [ 55, 60 ] }, "price": 13, "lore": "A grey creeping vine that withers what it wraps." },
-{ "key": "nightbloom-lotus", "name": "Nightbloom Lotus", "biome": "netherwood", "category": "natural", "slot": 6, "morph": "flower", "rarity": "legendary", "dominant": "toxicity", "fx": { "toxicity": 87 }, "arcane": { "thr": 320, "gain": 2.9 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.63, "hardness": 0.15, "sol": 0.193, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 103, "lore": "A great violet lotus that opens only in perfect darkness." },
-{ "key": "umbral-amethyst", "name": "Umbral Amethyst", "biome": "netherwood", "category": "natural", "slot": 7, "morph": "crystal", "rarity": "rare", "dominant": "toxicity", "fx": { "toxicity": 43, "strength": 2.3 }, "arcane": { "thr": 470, "gain": 2.8 }, "shape": "crystal", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.82, "hardness": 0.65, "sol": 0.083, "solT": 0.002, "gather": "mine", "steep": { "into": "spirit", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 23, "lore": "Purple crystals grown on poisoned water." },
-{ "key": "thornhalo", "name": "Thornhalo", "biome": "netherwood", "category": "natural", "slot": 8, "morph": "relic", "rarity": "unique", "dominant": "toxicity", "fx": { "toxicity": 61.4 }, "arcane": { "thr": 490, "gain": 2.6 }, "shape": "nugget", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.99, "hardness": 0.7, "sol": 0.064, "solT": 0.003, "gather": "mine", "steep": { "into": "spirit", "lo": [ 55, 60 ], "hi": [ 110, 120 ] }, "price": 47, "lore": "A ring of black thorns that grows around nothing at all." },
-{ "key": "venomlily", "name": "Venomlily", "biome": "netherwood", "category": "natural", "slot": 9, "morph": "flower", "rarity": "rare", "dominant": "toxicity", "fx": { "toxicity": 45.8, "frost": 1.4 }, "arcane": { "thr": 450, "gain": 2.7 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.61, "hardness": 0.15, "sol": 0.209, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 20, "lore": "A pale pink lily, beautiful and deadly to touch." },
-{ "key": "emberleaf", "name": "Emberleaf Herb", "biome": "crags", "category": "natural", "slot": 0, "morph": "leaf", "rarity": "common", "dominant": "fire", "fx": { "fire": 22.7, "strength": 9.7 }, "arcane": { "thr": 300, "gain": 2.8 }, "shape": "leaf", "bed": "soil", "botanical": true, "form": "solid", "density": 0.72, "hardness": 0.22, "sol": 0.174, "solT": 0.0015, "gather": "pick", "steep": { "into": "water", "lo": [ 40, 50 ], "hi": [ 80, 90 ] }, "price": 9, "lore": "Red leaves that crackle and smoke when crushed." },
-{ "key": "cindershroom", "name": "Cindershroom", "biome": "crags", "category": "natural", "slot": 1, "morph": "fungus", "rarity": "common", "dominant": "fire", "fx": { "fire": 22.2, "strength": 9.3 }, "arcane": { "thr": 280, "gain": 2.6 }, "shape": "cap", "bed": "fungal", "botanical": true, "form": "solid", "density": 0.9, "hardness": 0.22, "sol": 0.182, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 20, 25 ], "hi": [ 55, 60 ] }, "price": 8, "lore": "A soot-brown mushroom that grows on warm ash." },
-{ "key": "firebramble", "name": "Firebramble", "biome": "crags", "category": "natural", "slot": 2, "morph": "berry", "rarity": "common", "dominant": "fire", "fx": { "fire": 18.8, "death": 9.5 }, "arcane": { "thr": 440, "gain": 2.8 }, "shape": "berry", "bed": "soil", "botanical": true, "form": "solid", "density": 0.98, "hardness": 0.12, "sol": 0.229, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 9, "lore": "Fiery red berries on a thorny bramble." },
-{ "key": "sulfurvine", "name": "Sulfurvine Pods", "biome": "crags", "category": "natural", "slot": 3, "morph": "vine", "rarity": "uncommon", "dominant": "acidity", "fx": { "acidity": 34, "toxicity": 6, "swiftness": 1.5 }, "arcane": { "thr": 490, "gain": 2.8 }, "shape": "bean", "bed": "soil", "botanical": true, "form": "solid", "density": 0.89, "hardness": 0.22, "sol": 0.177, "solT": 0.0015, "gather": "pick", "steep": { "into": "spirit", "lo": [ 25, 30 ], "hi": [ 55, 60 ] }, "price": 13, "lore": "Yellow pods that burst with stinking sulphur." },
-{ "key": "flamecrest", "name": "Flamecrest Flower", "biome": "crags", "category": "natural", "slot": 4, "morph": "flower", "rarity": "rare", "dominant": "fire", "fx": { "fire": 40.7, "death": 2 }, "arcane": { "thr": 260, "gain": 2.6 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.64, "hardness": 0.15, "sol": 0.201, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 20, "lore": "A blossom of living flame that never burns down." },
-{ "key": "blazestone", "name": "Blazestone Crystal", "biome": "crags", "category": "natural", "slot": 5, "morph": "crystal", "rarity": "rare", "dominant": "fire", "fx": { "fire": 50, "death": 2.4 }, "arcane": { "thr": 630, "gain": 2.9 }, "shape": "crystal", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.87, "hardness": 0.65, "sol": 0.085, "solT": 0.002, "gather": "mine", "steep": { "into": "spirit", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 21, "lore": "Red crystals that hold the heat of the magma." },
-{ "key": "phoenix-heartseed", "name": "Phoenix Heartseed", "biome": "crags", "category": "natural", "slot": 6, "morph": "seedpod", "rarity": "unique", "dominant": "fire", "fx": { "fire": 63.3 }, "arcane": { "thr": 620, "gain": 2.7 }, "shape": "seed", "bed": "soil", "botanical": true, "form": "solid", "density": 1.05, "hardness": 0.3, "sol": 0.161, "solT": 0.0015, "gather": "pick", "steep": { "into": "water", "lo": [ 40, 45 ], "hi": [ 80, 85 ] }, "price": 46, "lore": "A seed wrapped in flame, said to fall from a phoenix." },
-{ "key": "ashcactus", "name": "Ashcactus", "biome": "crags", "category": "natural", "slot": 7, "morph": "herb", "rarity": "uncommon", "dominant": "fire", "fx": { "fire": 29.6, "toxicity": 2.8 }, "arcane": { "thr": 550, "gain": 2.8 }, "shape": "sprig", "bed": "soil", "botanical": true, "form": "solid", "density": 0.74, "hardness": 0.2, "sol": 0.182, "solT": 0.0015, "gather": "pick", "steep": { "into": "water", "lo": [ 40, 50 ], "hi": [ 80, 90 ] }, "price": 13, "lore": "A squat cactus crowned with orange blooms." },
-{ "key": "everburning-sunheart", "name": "Everburning Sunheart", "biome": "crags", "category": "natural", "slot": 8, "morph": "flower", "rarity": "legendary", "dominant": "fire", "fx": { "fire": 92.4 }, "arcane": { "thr": 490, "gain": 2.8 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.6, "hardness": 0.15, "sol": 0.188, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 117, "lore": "A burst of sunfire that has burned since the mountain was born." },
-{ "key": "cinderpod", "name": "Cinderpod", "biome": "crags", "category": "natural", "slot": 9, "morph": "stone", "rarity": "uncommon", "dominant": "strength", "fx": { "strength": 33.6, "death": 4.4 }, "arcane": { "thr": 260, "gain": 2.9 }, "shape": "stone", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.54, "hardness": 0.6, "sol": 0.059, "solT": 0.003, "gather": "mine", "steep": { "into": "water", "lo": [ 75, 80 ], "hi": [ 150, 160 ] }, "price": 13, "lore": "A dark rock egg veined with cooling lava." },
-{ "key": "moonreed", "name": "Moonreed Frond", "biome": "moonfen", "category": "exotic", "slot": 0, "morph": "grass", "rarity": "common", "dominant": "arcana", "fx": { "arcana": 19, "vitality": 10.7, "invisibility": 1 }, "arcane": { "thr": -160, "gain": 3 }, "shape": "reed", "bed": "soil", "botanical": true, "form": "solid", "density": 0.71, "hardness": 0.25, "sol": 0.158, "solT": 0.0015, "gather": "scrape", "steep": { "into": "water", "lo": [ 35, 40 ], "hi": [ 80, 85 ] }, "price": 9, "lore": "Silver fronds that catch the moonlight and keep it." },
-{ "key": "fenmilk-cap", "name": "Fenmilk Cap", "biome": "moonfen", "category": "exotic", "slot": 1, "morph": "fungus", "rarity": "common", "dominant": "frost", "fx": { "frost": 19.1, "death": 9.5, "invisibility": 1 }, "arcane": { "thr": -200, "gain": 2.9 }, "shape": "cap", "bed": "fungal", "botanical": true, "form": "solid", "density": 0.93, "hardness": 0.22, "sol": 0.176, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 1, 2 ], "hi": [ 12, 14 ] }, "price": 9, "lore": "A pale blue mushroom weeping cold milk." },
-{ "key": "duskbell", "name": "Duskbell", "biome": "moonfen", "category": "exotic", "slot": 2, "morph": "flower", "rarity": "uncommon", "dominant": "arcana", "fx": { "arcana": 32.5, "death": 3.5, "frost": 1.1 }, "arcane": { "thr": -100, "gain": 2.6 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.62, "hardness": 0.15, "sol": 0.201, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 13, "lore": "Lavender bells that ring only at dusk." },
-{ "key": "dreamberry", "name": "Dreamberry", "biome": "moonfen", "category": "exotic", "slot": 3, "morph": "berry", "rarity": "common", "dominant": "love", "fx": { "love": 22.4, "frost": 9.5, "invisibility": 1 }, "arcane": { "thr": -220, "gain": 3 }, "shape": "berry", "bed": "soil", "botanical": true, "form": "solid", "density": 0.98, "hardness": 0.12, "sol": 0.215, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 9, "lore": "Purple berries that bring dreams of someone dear." },
-{ "key": "moonlotus", "name": "Moonlotus", "biome": "moonfen", "category": "exotic", "slot": 4, "morph": "flower", "rarity": "rare", "dominant": "arcana", "fx": { "arcana": 42.1, "frost": 1.6 }, "arcane": { "thr": -170, "gain": 2.6 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.61, "hardness": 0.15, "sol": 0.195, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 24, "lore": "A pink lotus with a lamp of moonlight at its heart." },
-{ "key": "sleepglass", "name": "Sleepglass Shard", "biome": "moonfen", "category": "exotic", "slot": 5, "morph": "crystal", "rarity": "uncommon", "dominant": "arcana", "fx": { "arcana": 36.7, "frost": 3.9 }, "arcane": { "thr": -110, "gain": 2.9 }, "shape": "crystal", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.76, "hardness": 0.65, "sol": 0.082, "solT": 0.002, "gather": "mine", "steep": { "into": "spirit", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 13, "lore": "A blue crystal shard that hums when held to the ear." },
-{ "key": "moonveil-bloom", "name": "Moonveil Bloom", "biome": "moonfen", "category": "exotic", "slot": 6, "morph": "flower", "rarity": "rare", "dominant": "arcana", "fx": { "arcana": 41.1, "frost": 2.2 }, "arcane": { "thr": -110, "gain": 2.5 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.64, "hardness": 0.15, "sol": 0.197, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 21, "lore": "A violet water flower veiled in silver light." },
-{ "key": "mirepod-shell", "name": "Mirepod Shell", "biome": "moonfen", "category": "exotic", "slot": 7, "morph": "shell", "rarity": "uncommon", "dominant": "arcana", "fx": { "arcana": 31.8, "frost": 5.7, "vitality": 1.4 }, "arcane": { "thr": -290, "gain": 2.6 }, "shape": "shell", "bed": "tide", "botanical": false, "form": "solid", "density": 1.62, "hardness": 0.55, "sol": 0.085, "solT": 0.002, "gather": "pick", "steep": { "into": "water", "lo": [ 50, 55 ], "hi": [ 85, 90 ] }, "price": 13, "lore": "A spiral snail shell from the bog, pearly inside." },
-{ "key": "wisp-reliquary", "name": "Wisp Reliquary", "biome": "moonfen", "category": "exotic", "slot": 8, "morph": "relic", "rarity": "unique", "dominant": "arcana", "fx": { "arcana": 67.2 }, "arcane": { "thr": -210, "gain": 2.9 }, "shape": "nugget", "bed": "crystal", "botanical": false, "form": "solid", "density": 2.04, "hardness": 0.7, "sol": 0.063, "solT": 0.003, "gather": "mine", "steep": { "into": "spirit", "lo": [ 55, 60 ], "hi": [ 110, 120 ] }, "price": 49, "lore": "A golden curl of bog-iron around a captured wisp-light." },
-{ "key": "starfall-lotus", "name": "Starfall Lotus", "biome": "moonfen", "category": "exotic", "slot": 9, "morph": "flower", "rarity": "legendary", "dominant": "arcana", "fx": { "arcana": 86.2 }, "arcane": { "thr": -190, "gain": 3 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.63, "hardness": 0.15, "sol": 0.205, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 118, "lore": "A deep violet lotus that bloomed where a star fell." },
-{ "key": "skyspray", "name": "Skyspray Herb", "biome": "skyshard", "category": "exotic", "slot": 0, "morph": "herb", "rarity": "common", "dominant": "levitation", "fx": { "levitation": 22.1, "vitality": 7.1 }, "arcane": { "thr": 450, "gain": 2.6 }, "shape": "sprig", "bed": "soil", "botanical": true, "form": "solid", "density": 0.72, "hardness": 0.2, "sol": 0.167, "solT": 0.0015, "gather": "pick", "steep": { "into": "water", "lo": [ 40, 50 ], "hi": [ 80, 90 ] }, "price": 9, "lore": "White sky-daisies that float an inch above the soil." },
-{ "key": "cloudcap", "name": "Cloudcap", "biome": "skyshard", "category": "exotic", "slot": 1, "morph": "fungus", "rarity": "common", "dominant": "levitation", "fx": { "levitation": 21.5, "vitality": 10.6 }, "arcane": { "thr": 330, "gain": 2.6 }, "shape": "cap", "bed": "fungal", "botanical": true, "form": "solid", "density": 0.95, "hardness": 0.22, "sol": 0.163, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 20, 25 ], "hi": [ 55, 60 ] }, "price": 9, "lore": "A puffy white mushroom light as a cloud." },
-{ "key": "airstar", "name": "Airstar Flower", "biome": "skyshard", "category": "exotic", "slot": 2, "morph": "flower", "rarity": "uncommon", "dominant": "levitation", "fx": { "levitation": 28.9, "vitality": 2.9 }, "arcane": { "thr": 400, "gain": 2.9 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.64, "hardness": 0.15, "sol": 0.199, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 12, "lore": "Star-shaped flowers that turn in the wind like vanes." },
-{ "key": "skyberry", "name": "Skyberry", "biome": "skyshard", "category": "exotic", "slot": 3, "morph": "berry", "rarity": "common", "dominant": "swiftness", "fx": { "swiftness": 19.2, "levitation": 6.8, "arcana": 1 }, "arcane": { "thr": 590, "gain": 2.8 }, "shape": "berry", "bed": "soil", "botanical": true, "form": "solid", "density": 1.02, "hardness": 0.12, "sol": 0.222, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 8, "lore": "Blue berries that fall upward when shaken loose." },
-{ "key": "updraft-seedwing", "name": "Updraft Seedwing", "biome": "skyshard", "category": "exotic", "slot": 4, "morph": "seedpod", "rarity": "rare", "dominant": "levitation", "fx": { "levitation": 50.6, "vitality": 3.3 }, "arcane": { "thr": 540, "gain": 2.7 }, "shape": "seed", "bed": "soil", "botanical": true, "form": "solid", "density": 1.05, "hardness": 0.3, "sol": 0.141, "solT": 0.0015, "gather": "pick", "steep": { "into": "water", "lo": [ 40, 45 ], "hi": [ 80, 85 ] }, "price": 21, "lore": "A golden winged seed that rides every updraft." },
-{ "key": "zephyr-starbloom", "name": "Zephyr Starbloom", "biome": "skyshard", "category": "exotic", "slot": 5, "morph": "flower", "rarity": "uncommon", "dominant": "levitation", "fx": { "levitation": 33.9, "vitality": 5.8, "arcana": 1.5 }, "arcane": { "thr": 550, "gain": 2.5 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.61, "hardness": 0.15, "sol": 0.209, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 15, "lore": "A pale star flower whose leaves are feather-light." },
-{ "key": "featherpetal", "name": "Featherpetal", "biome": "skyshard", "category": "exotic", "slot": 6, "morph": "flower", "rarity": "rare", "dominant": "levitation", "fx": { "levitation": 45.8, "vitality": 1.4 }, "arcane": { "thr": 330, "gain": 2.8 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.6, "hardness": 0.15, "sol": 0.201, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 20, "lore": "A pink blossom with petals like down feathers." },
-{ "key": "skyshard-geode", "name": "Skyshard Geode", "biome": "skyshard", "category": "exotic", "slot": 7, "morph": "crystal", "rarity": "unique", "dominant": "levitation", "fx": { "levitation": 66.7 }, "arcane": { "thr": 270, "gain": 2.6 }, "shape": "crystal", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.78, "hardness": 0.65, "sol": 0.079, "solT": 0.002, "gather": "mine", "steep": { "into": "spirit", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 47, "lore": "An open geode of floating violet crystal." },
-{ "key": "windfern", "name": "Windfern", "biome": "skyshard", "category": "exotic", "slot": 8, "morph": "leaf", "rarity": "uncommon", "dominant": "levitation", "fx": { "levitation": 33.4, "vitality": 3.8, "swiftness": 1.4 }, "arcane": { "thr": 550, "gain": 2.8 }, "shape": "leaf", "bed": "soil", "botanical": true, "form": "solid", "density": 0.72, "hardness": 0.22, "sol": 0.179, "solT": 0.0015, "gather": "pick", "steep": { "into": "water", "lo": [ 40, 50 ], "hi": [ 80, 90 ] }, "price": 14, "lore": "Bright green fronds that lift any soil they grow in." },
-{ "key": "cloudprism", "name": "Cloudprism Crystal", "biome": "skyshard", "category": "exotic", "slot": 9, "morph": "crystal", "rarity": "legendary", "dominant": "levitation", "fx": { "levitation": 94.3 }, "arcane": { "thr": 410, "gain": 2.7 }, "shape": "crystal", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.76, "hardness": 0.65, "sol": 0.078, "solT": 0.002, "gather": "mine", "steep": { "into": "spirit", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 101, "lore": "A crystal of solid sky that weighs less than nothing." },
-{ "key": "morphleaf", "name": "Morphleaf Sprig", "biome": "morphgrove", "category": "exotic", "slot": 0, "morph": "leaf", "rarity": "common", "dominant": "transformation", "fx": { "transformation": 23.4, "toxicity": 7.8 }, "arcane": { "thr": 270, "gain": 2.8 }, "shape": "leaf", "bed": "soil", "botanical": true, "form": "solid", "density": 0.72, "hardness": 0.22, "sol": 0.181, "solT": 0.0015, "gather": "pick", "steep": { "into": "water", "lo": [ 40, 50 ], "hi": [ 80, 90 ] }, "price": 7, "lore": "Leaves that never grow the same shape twice." },
-{ "key": "shapecap", "name": "Shapecap", "biome": "morphgrove", "category": "exotic", "slot": 1, "morph": "fungus", "rarity": "common", "dominant": "transformation", "fx": { "transformation": 22.1, "toxicity": 11.9, "love": 1.2 }, "arcane": { "thr": 340, "gain": 2.5 }, "shape": "cap", "bed": "fungal", "botanical": true, "form": "solid", "density": 0.91, "hardness": 0.22, "sol": 0.162, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 20, 25 ], "hi": [ 55, 60 ] }, "price": 7, "lore": "A mushroom whose cap shifts from round to fluted." },
-{ "key": "twinsprout", "name": "Twinsprout", "biome": "morphgrove", "category": "exotic", "slot": 2, "morph": "herb", "rarity": "common", "dominant": "vitality", "fx": { "vitality": 24.3, "fire": 10.4, "arcana": 1 }, "arcane": { "thr": 290, "gain": 2.9 }, "shape": "sprig", "bed": "soil", "botanical": true, "form": "solid", "density": 0.72, "hardness": 0.2, "sol": 0.172, "solT": 0.0015, "gather": "pick", "steep": { "into": "water", "lo": [ 40, 50 ], "hi": [ 80, 90 ] }, "price": 8, "lore": "A sprout that is two seedlings one moment, one the next." },
-{ "key": "graftberry", "name": "Graftberry", "biome": "morphgrove", "category": "exotic", "slot": 3, "morph": "berry", "rarity": "uncommon", "dominant": "transformation", "fx": { "transformation": 36.4, "toxicity": 9.1, "love": 1.7 }, "arcane": { "thr": 560, "gain": 2.8 }, "shape": "berry", "bed": "soil", "botanical": true, "form": "solid", "density": 0.97, "hardness": 0.12, "sol": 0.237, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 13, "lore": "Cherries that ripen into whatever fruit is near." },
-{ "key": "formblossom", "name": "Formblossom", "biome": "morphgrove", "category": "exotic", "slot": 4, "morph": "flower", "rarity": "uncommon", "dominant": "transformation", "fx": { "transformation": 36.2, "vitality": 8.5, "arcana": 1.2 }, "arcane": { "thr": 530, "gain": 2.9 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.61, "hardness": 0.15, "sol": 0.201, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 12, "lore": "A ringed pink flower rearranging its own petals." },
-{ "key": "mimic-eye", "name": "Mimic Eye", "biome": "morphgrove", "category": "exotic", "slot": 5, "morph": "relic", "rarity": "rare", "dominant": "transformation", "fx": { "transformation": 44.3, "vitality": 2.8 }, "arcane": { "thr": 430, "gain": 2.8 }, "shape": "nugget", "bed": "crystal", "botanical": false, "form": "solid", "density": 2, "hardness": 0.7, "sol": 0.059, "solT": 0.003, "gather": "mine", "steep": { "into": "spirit", "lo": [ 55, 60 ], "hi": [ 110, 120 ] }, "price": 20, "lore": "A mossy stone eye that copies what it looks at." },
-{ "key": "crownbloom", "name": "Crownbloom", "biome": "morphgrove", "category": "exotic", "slot": 6, "morph": "flower", "rarity": "unique", "dominant": "transformation", "fx": { "transformation": 66.3 }, "arcane": { "thr": 270, "gain": 2.8 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.63, "hardness": 0.15, "sol": 0.201, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 47, "lore": "A golden crown of petals with a violet heart." },
-{ "key": "shifting-root", "name": "Shifting Root", "biome": "morphgrove", "category": "exotic", "slot": 7, "morph": "root", "rarity": "uncommon", "dominant": "transformation", "fx": { "transformation": 31.5, "vitality": 5.1 }, "arcane": { "thr": 370, "gain": 2.6 }, "shape": "root", "bed": "soil", "botanical": true, "form": "solid", "density": 1.07, "hardness": 0.45, "sol": 0.127, "solT": 0.002, "gather": "dig", "steep": { "into": "water", "lo": [ 60, 70 ], "hi": [ 90, 100 ] }, "price": 14, "lore": "A root that crawls to a new place every night." },
-{ "key": "splice-bud", "name": "Splice Bud", "biome": "morphgrove", "category": "exotic", "slot": 8, "morph": "flower", "rarity": "rare", "dominant": "transformation", "fx": { "transformation": 44.7, "toxicity": 1.8 }, "arcane": { "thr": 450, "gain": 2.7 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.61, "hardness": 0.15, "sol": 0.21, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 22, "lore": "A tight bud of many plants grafted into one." },
-{ "key": "polymorph-lotus", "name": "Polymorph Lotus", "biome": "morphgrove", "category": "exotic", "slot": 9, "morph": "flower", "rarity": "legendary", "dominant": "transformation", "fx": { "transformation": 88.5 }, "arcane": { "thr": 600, "gain": 3 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.63, "hardness": 0.15, "sol": 0.21, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 122, "lore": "A prismatic lotus that is every flower at once." },
-{ "key": "veilfern", "name": "Veilfern Frond", "biome": "veilhollow", "category": "exotic", "slot": 0, "morph": "leaf", "rarity": "common", "dominant": "invisibility", "fx": { "invisibility": 25.3, "phasing": 9.9, "frost": 1.1 }, "arcane": { "thr": -220, "gain": 2.9 }, "shape": "leaf", "bed": "soil", "botanical": true, "form": "solid", "density": 0.73, "hardness": 0.22, "sol": 0.19, "solT": 0.0015, "gather": "pick", "steep": { "into": "water", "lo": [ 40, 50 ], "hi": [ 80, 90 ] }, "price": 8, "lore": "Lilac fern fronds you only see from the corner of the eye." },
-{ "key": "hollowcap", "name": "Hollowcap", "biome": "veilhollow", "category": "exotic", "slot": 1, "morph": "fungus", "rarity": "common", "dominant": "invisibility", "fx": { "invisibility": 19.1, "death": 7.9 }, "arcane": { "thr": -240, "gain": 2.5 }, "shape": "cap", "bed": "fungal", "botanical": true, "form": "solid", "density": 0.9, "hardness": 0.22, "sol": 0.164, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 20, 25 ], "hi": [ 55, 60 ] }, "price": 8, "lore": "A violet mushroom that leaves no shadow." },
-{ "key": "ghostbud", "name": "Ghostbud", "biome": "veilhollow", "category": "exotic", "slot": 2, "morph": "flower", "rarity": "uncommon", "dominant": "invisibility", "fx": { "invisibility": 29, "phasing": 3.3, "frost": 1.4 }, "arcane": { "thr": -220, "gain": 2.6 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.6, "hardness": 0.15, "sol": 0.21, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 12, "lore": "Translucent white tulips, there and then not." },
-{ "key": "veilberry", "name": "Veilberry", "biome": "veilhollow", "category": "exotic", "slot": 3, "morph": "berry", "rarity": "common", "dominant": "death", "fx": { "death": 23, "phasing": 9 }, "arcane": { "thr": -150, "gain": 2.8 }, "shape": "berry", "bed": "soil", "botanical": true, "form": "solid", "density": 1.01, "hardness": 0.12, "sol": 0.237, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 8, "lore": "Dusky berries with a grave, numbing juice." },
-{ "key": "hollowbloom", "name": "Hollowbloom", "biome": "veilhollow", "category": "exotic", "slot": 4, "morph": "flower", "rarity": "uncommon", "dominant": "invisibility", "fx": { "invisibility": 31, "death": 5.3, "frost": 1 }, "arcane": { "thr": -150, "gain": 2.8 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.62, "hardness": 0.15, "sol": 0.216, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 13, "lore": "A pale pink flower whose middle you can see through." },
-{ "key": "veilglass", "name": "Veilglass Crystal", "biome": "veilhollow", "category": "exotic", "slot": 5, "morph": "crystal", "rarity": "rare", "dominant": "invisibility", "fx": { "invisibility": 43.1, "phasing": 2.7 }, "arcane": { "thr": -110, "gain": 2.7 }, "shape": "crystal", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.79, "hardness": 0.65, "sol": 0.079, "solT": 0.002, "gather": "mine", "steep": { "into": "spirit", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 24, "lore": "A violet crystal that bends the light around itself." },
-{ "key": "shroud-orchid", "name": "Shroud Orchid", "biome": "veilhollow", "category": "exotic", "slot": 6, "morph": "flower", "rarity": "uncommon", "dominant": "invisibility", "fx": { "invisibility": 35.5, "phasing": 6, "death": 1.1 }, "arcane": { "thr": -240, "gain": 2.7 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.6, "hardness": 0.15, "sol": 0.205, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 14, "lore": "An orchid wrapped in a veil of mist." },
-{ "key": "mistpebble", "name": "Mistpebble", "biome": "veilhollow", "category": "exotic", "slot": 7, "morph": "stone", "rarity": "rare", "dominant": "invisibility", "fx": { "invisibility": 50.6, "death": 3 }, "arcane": { "thr": -140, "gain": 2.5 }, "shape": "stone", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.62, "hardness": 0.6, "sol": 0.061, "solT": 0.003, "gather": "mine", "steep": { "into": "water", "lo": [ 75, 80 ], "hi": [ 150, 160 ] }, "price": 25, "lore": "Purple pebbles that fog over when looked at." },
-{ "key": "eclipse-eye", "name": "Eclipse Eye", "biome": "veilhollow", "category": "exotic", "slot": 8, "morph": "relic", "rarity": "legendary", "dominant": "invisibility", "fx": { "invisibility": 87 }, "arcane": { "thr": -190, "gain": 2.9 }, "shape": "nugget", "bed": "crystal", "botanical": false, "form": "solid", "density": 2.03, "hardness": 0.7, "sol": 0.063, "solT": 0.003, "gather": "mine", "steep": { "into": "spirit", "lo": [ 55, 60 ], "hi": [ 110, 120 ] }, "price": 126, "lore": "A black orb ringed with golden light, the eye of an eclipse." },
-{ "key": "veil-circlet", "name": "Veil Circlet", "biome": "veilhollow", "category": "exotic", "slot": 9, "morph": "relic", "rarity": "unique", "dominant": "invisibility", "fx": { "invisibility": 63 }, "arcane": { "thr": -190, "gain": 2.6 }, "shape": "nugget", "bed": "crystal", "botanical": false, "form": "solid", "density": 2, "hardness": 0.7, "sol": 0.062, "solT": 0.003, "gather": "mine", "steep": { "into": "spirit", "lo": [ 55, 60 ], "hi": [ 110, 120 ] }, "price": 47, "lore": "A thorny circlet that hides whoever holds it." },
-{ "key": "reefmoss", "name": "Reefmoss Coral", "biome": "ghostglass", "category": "exotic", "slot": 0, "morph": "coral", "rarity": "common", "dominant": "phasing", "fx": { "phasing": 22.9, "frost": 13.6, "acidity": -1 }, "arcane": { "thr": -270, "gain": 2.6 }, "shape": "crust", "bed": "tide", "botanical": false, "form": "solid", "density": 1.43, "hardness": 0.5, "sol": 0.09, "solT": 0.002, "gather": "scrape", "steep": { "into": "water", "lo": [ 40, 45 ], "hi": [ 80, 85 ] }, "price": 9, "lore": "Teal coral fronds that sway in water that is not there." },
-{ "key": "glasscap", "name": "Glasscap", "biome": "ghostglass", "category": "exotic", "slot": 1, "morph": "fungus", "rarity": "common", "dominant": "phasing", "fx": { "phasing": 19.6, "vitality": 9.1 }, "arcane": { "thr": -250, "gain": 2.9 }, "shape": "cap", "bed": "fungal", "botanical": true, "form": "solid", "density": 0.94, "hardness": 0.22, "sol": 0.172, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 20, 25 ], "hi": [ 55, 60 ] }, "price": 8, "lore": "A glassy mushroom you can see the reef through." },
-{ "key": "coralberry", "name": "Coralberry", "biome": "ghostglass", "category": "exotic", "slot": 2, "morph": "berry", "rarity": "common", "dominant": "frost", "fx": { "frost": 19.8, "vitality": 8.5, "arcana": 1 }, "arcane": { "thr": -230, "gain": 2.7 }, "shape": "berry", "bed": "soil", "botanical": true, "form": "solid", "density": 0.97, "hardness": 0.12, "sol": 0.208, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 1, 2 ], "hi": [ 12, 14 ] }, "price": 9, "lore": "Cold red berries clustered like coral polyps." },
-{ "key": "reefbud", "name": "Reefbud", "biome": "ghostglass", "category": "exotic", "slot": 3, "morph": "flower", "rarity": "uncommon", "dominant": "phasing", "fx": { "phasing": 33, "frost": 6.9 }, "arcane": { "thr": -80, "gain": 2.7 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.62, "hardness": 0.15, "sol": 0.194, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 12, "lore": "A pink bud that opens underwater only." },
-{ "key": "ghostglass-coral", "name": "Ghostglass Coral", "biome": "ghostglass", "category": "exotic", "slot": 4, "morph": "coral", "rarity": "rare", "dominant": "phasing", "fx": { "phasing": 42.2, "vitality": 2.8 }, "arcane": { "thr": -200, "gain": 2.7 }, "shape": "crust", "bed": "tide", "botanical": false, "form": "solid", "density": 1.41, "hardness": 0.5, "sol": 0.086, "solT": 0.002, "gather": "scrape", "steep": { "into": "water", "lo": [ 40, 45 ], "hi": [ 80, 85 ] }, "price": 20, "lore": "Blue-white coral that drifts through solid rock." },
-{ "key": "pearlshell", "name": "Pearlshell Oyster", "biome": "ghostglass", "category": "exotic", "slot": 5, "morph": "shell", "rarity": "uncommon", "dominant": "phasing", "fx": { "phasing": 35.5, "acidity": 4.2, "frost": 1.9 }, "arcane": { "thr": -190, "gain": 2.6 }, "shape": "shell", "bed": "tide", "botanical": false, "form": "solid", "density": 1.64, "hardness": 0.55, "sol": 0.082, "solT": 0.002, "gather": "pick", "steep": { "into": "water", "lo": [ 50, 55 ], "hi": [ 85, 90 ] }, "price": 13, "lore": "An oyster whose pearl phases in and out of its shell." },
-{ "key": "spectral-anemone", "name": "Spectral Anemone", "biome": "ghostglass", "category": "exotic", "slot": 6, "morph": "coral", "rarity": "rare", "dominant": "phasing", "fx": { "phasing": 49.6, "acidity": 2.6 }, "arcane": { "thr": -240, "gain": 2.9 }, "shape": "crust", "bed": "tide", "botanical": false, "form": "solid", "density": 1.38, "hardness": 0.5, "sol": 0.084, "solT": 0.002, "gather": "scrape", "steep": { "into": "water", "lo": [ 40, 45 ], "hi": [ 80, 85 ] }, "price": 21, "lore": "A magenta anemone of light rather than flesh." },
-{ "key": "shellfern", "name": "Shellfern Frond", "biome": "ghostglass", "category": "exotic", "slot": 7, "morph": "leaf", "rarity": "uncommon", "dominant": "phasing", "fx": { "phasing": 35.1, "frost": 8.2, "acidity": 1.9 }, "arcane": { "thr": -170, "gain": 2.7 }, "shape": "leaf", "bed": "soil", "botanical": true, "form": "solid", "density": 0.72, "hardness": 0.22, "sol": 0.184, "solT": 0.0015, "gather": "pick", "steep": { "into": "water", "lo": [ 40, 50 ], "hi": [ 80, 90 ] }, "price": 15, "lore": "Pale fern fronds that grow on old shells." },
-{ "key": "phantom-pearl", "name": "Phantom Pearl", "biome": "ghostglass", "category": "exotic", "slot": 8, "morph": "shell", "rarity": "unique", "dominant": "phasing", "fx": { "phasing": 66.5 }, "arcane": { "thr": -300, "gain": 2.6 }, "shape": "shell", "bed": "tide", "botanical": false, "form": "solid", "density": 1.57, "hardness": 0.55, "sol": 0.085, "solT": 0.002, "gather": "pick", "steep": { "into": "water", "lo": [ 50, 55 ], "hi": [ 85, 90 ] }, "price": 47, "lore": "A violet pearl in a setting of blue nacre, half not here." },
-{ "key": "ghostcrown-coral", "name": "Ghostcrown Coral", "biome": "ghostglass", "category": "exotic", "slot": 9, "morph": "coral", "rarity": "legendary", "dominant": "phasing", "fx": { "phasing": 87.1 }, "arcane": { "thr": -160, "gain": 2.8 }, "shape": "crust", "bed": "tide", "botanical": false, "form": "solid", "density": 1.39, "hardness": 0.5, "sol": 0.089, "solT": 0.002, "gather": "scrape", "steep": { "into": "water", "lo": [ 40, 45 ], "hi": [ 80, 85 ] }, "price": 107, "lore": "A crown of magenta coral that passes through anything." },
-{ "key": "timeweed", "name": "Timeweed Sprig", "biome": "chronoglass", "category": "exotic", "slot": 0, "morph": "grass", "rarity": "common", "dominant": "temporal", "fx": { "temporal": 19.1, "fire": 7.1, "swiftness": 1 }, "arcane": { "thr": 430, "gain": 2.8 }, "shape": "reed", "bed": "soil", "botanical": true, "form": "solid", "density": 0.71, "hardness": 0.25, "sol": 0.151, "solT": 0.0015, "gather": "scrape", "steep": { "into": "water", "lo": [ 35, 40 ], "hi": [ 80, 85 ] }, "price": 9, "lore": "Golden weeds that grow backward at noon." },
-{ "key": "sandskirt-cap", "name": "Sandskirt Cap", "biome": "chronoglass", "category": "exotic", "slot": 1, "morph": "fungus", "rarity": "common", "dominant": "temporal", "fx": { "temporal": 22.2, "fire": 7.9, "swiftness": 1 }, "arcane": { "thr": 550, "gain": 2.9 }, "shape": "cap", "bed": "fungal", "botanical": true, "form": "solid", "density": 0.9, "hardness": 0.22, "sol": 0.168, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 20, 25 ], "hi": [ 55, 60 ] }, "price": 9, "lore": "A sandy mushroom ringed like an old tree." },
-{ "key": "hourberry", "name": "Hourberry", "biome": "chronoglass", "category": "exotic", "slot": 2, "morph": "berry", "rarity": "common", "dominant": "swiftness", "fx": { "swiftness": 22.8, "phasing": 8.6, "arcana": 1 }, "arcane": { "thr": 480, "gain": 2.6 }, "shape": "berry", "bed": "soil", "botanical": true, "form": "solid", "density": 1.01, "hardness": 0.12, "sol": 0.213, "solT": 0.0012, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 9, "lore": "Orange berries that ripen in an hour and rot in a minute." },
-{ "key": "chronovine", "name": "Chronovine", "biome": "chronoglass", "category": "exotic", "slot": 3, "morph": "vine", "rarity": "uncommon", "dominant": "temporal", "fx": { "temporal": 34.8, "death": 6.2, "swiftness": 1.8 }, "arcane": { "thr": 270, "gain": 2.5 }, "shape": "bean", "bed": "soil", "botanical": true, "form": "solid", "density": 0.93, "hardness": 0.22, "sol": 0.173, "solT": 0.0015, "gather": "pick", "steep": { "into": "spirit", "lo": [ 25, 30 ], "hi": [ 55, 60 ] }, "price": 12, "lore": "A vine that grows pocket-watch fruit." },
-{ "key": "epochbloom", "name": "Epochbloom", "biome": "chronoglass", "category": "exotic", "slot": 4, "morph": "flower", "rarity": "rare", "dominant": "temporal", "fx": { "temporal": 44.6, "death": 3 }, "arcane": { "thr": 280, "gain": 2.8 }, "shape": "flower", "bed": "soil", "botanical": true, "form": "solid", "density": 0.63, "hardness": 0.15, "sol": 0.213, "solT": 0.001, "gather": "pick", "steep": { "into": "water", "lo": [ 30, 35 ], "hi": [ 65, 70 ] }, "price": 20, "lore": "A flower with a clock face that tells the hour it was picked." },
-{ "key": "chronoglass-shard", "name": "Chronoglass Shard", "biome": "chronoglass", "category": "exotic", "slot": 5, "morph": "crystal", "rarity": "uncommon", "dominant": "temporal", "fx": { "temporal": 30.4, "death": 7.3 }, "arcane": { "thr": 510, "gain": 2.9 }, "shape": "crystal", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.75, "hardness": 0.65, "sol": 0.084, "solT": 0.002, "gather": "mine", "steep": { "into": "spirit", "lo": [ 30, 35 ], "hi": [ 60, 65 ] }, "price": 12, "lore": "A violet shard of glass fused by time, not heat." },
-{ "key": "pendulum-pods", "name": "Pendulum Pods", "biome": "chronoglass", "category": "exotic", "slot": 6, "morph": "vine", "rarity": "uncommon", "dominant": "temporal", "fx": { "temporal": 29.1, "fire": 7.1, "swiftness": 1.2 }, "arcane": { "thr": 490, "gain": 2.5 }, "shape": "bean", "bed": "soil", "botanical": true, "form": "solid", "density": 0.9, "hardness": 0.22, "sol": 0.193, "solT": 0.0015, "gather": "pick", "steep": { "into": "spirit", "lo": [ 25, 30 ], "hi": [ 55, 60 ] }, "price": 14, "lore": "Golden pods swinging on a branch in perfect time." },
-{ "key": "sundial-stone", "name": "Sundial Stone", "biome": "chronoglass", "category": "exotic", "slot": 7, "morph": "relic", "rarity": "rare", "dominant": "temporal", "fx": { "temporal": 42.8, "death": 2.9 }, "arcane": { "thr": 610, "gain": 2.8 }, "shape": "nugget", "bed": "crystal", "botanical": false, "form": "solid", "density": 2.06, "hardness": 0.7, "sol": 0.064, "solT": 0.003, "gather": "mine", "steep": { "into": "spirit", "lo": [ 55, 60 ], "hi": [ 110, 120 ] }, "price": 20, "lore": "A weathered sundial that casts tomorrow’s shadow." },
-{ "key": "aeon-circlet", "name": "Aeon Circlet", "biome": "chronoglass", "category": "exotic", "slot": 8, "morph": "relic", "rarity": "unique", "dominant": "temporal", "fx": { "temporal": 57 }, "arcane": { "thr": 590, "gain": 2.8 }, "shape": "nugget", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.98, "hardness": 0.7, "sol": 0.062, "solT": 0.003, "gather": "mine", "steep": { "into": "spirit", "lo": [ 55, 60 ], "hi": [ 110, 120 ] }, "price": 50, "lore": "A golden circlet of hours set with sand-glass gems." },
-{ "key": "hourglass-of-ages", "name": "Hourglass of Ages", "biome": "chronoglass", "category": "exotic", "slot": 9, "morph": "relic", "rarity": "legendary", "dominant": "temporal", "fx": { "temporal": 95.9 }, "arcane": { "thr": 320, "gain": 2.7 }, "shape": "nugget", "bed": "crystal", "botanical": false, "form": "solid", "density": 1.94, "hardness": 0.7, "sol": 0.057, "solT": 0.003, "gather": "mine", "steep": { "into": "spirit", "lo": [ 55, 60 ], "hi": [ 110, 120 ] }, "price": 112, "lore": "An hourglass whose sand has fallen since the first day." } ];
-return { SPECIES_DATA };
-})();
-// src/materials/species-colors.js
-const __m18 = (() => {
-const SPECIES_COLORS = {"silverleaf":{"body":[0.502,0.671,0.584],"accent":[0.102,0.275,0.149]},"honeycap":{"body":[0.792,0.631,0.22],"accent":[0.957,0.796,0.165]},"dawnblossom":{"body":[0.671,0.627,0.502],"accent":[0.631,0.804,0.165]},"dewpear":{"body":[0.635,0.741,0.122],"accent":[0.863,0.91,0.031]},"heartwood-mandrake":{"body":[0.557,0.502,0.137],"accent":[0.51,0.682,0.043]},"mossback-bark":{"body":[0.573,0.514,0.271],"accent":[0.627,0.753,0.082]},"stagthorn-vine":{"body":[0.537,0.537,0.118],"accent":[0.792,0.745,0.141]},"hearthnut":{"body":[0.643,0.451,0.38],"accent":[0.906,0.698,0.525]},"heartberry":{"body":[0.573,0.463,0.259],"accent":[0.686,0.835,0.141]},"everbloom-chalice":{"body":[0.502,0.647,0.11],"accent":[0.592,0.776,0.059]},"meadow-daisy":{"body":[0.671,0.69,0.475],"accent":[0.882,0.675,0.184]},"goldenrush":{"body":[0.537,0.514,0.078],"accent":[0.918,0.886,0.169]},"brightberry":{"body":[0.6,0.298,0.22],"accent":[0.494,0.576,0.153]},"honeyclover":{"body":[0.639,0.6,0.114],"accent":[0.949,0.835,0.153]},"suncrown":{"body":[0.706,0.549,0.078],"accent":[0.976,0.847,0.09]},"meadowcrystal":{"body":[0.533,0.675,0.38],"accent":[0.804,0.922,0.157]},"prism-petal":{"body":[0.714,0.502,0.541],"accent":[0.922,0.882,0.11]},"lovelace-orchid":{"body":[0.82,0.678,0.498],"accent":[0.976,0.89,0.486]},"radiant-sunbloom":{"body":[0.792,0.604,0.157],"accent":[0.949,0.78,0.125]},"eternal-rose":{"body":[0.71,0.365,0.475],"accent":[0.702,0.078,0.341]},"willowleaf":{"body":[0.439,0.573,0.078],"accent":[0.812,0.937,0.102]},"reedcap":{"body":[0.753,0.655,0.475],"accent":[0.796,0.612,0.404]},"riverlotus":{"body":[0.694,0.729,0.482],"accent":[0.671,0.851,0.118]},"bubbleberry":{"body":[0.294,0.478,0.494],"accent":[0.404,0.569,0.133]},"tidebloom":{"body":[0.275,0.682,0.678],"accent":[0.22,0.839,0.918]},"streampearl":{"body":[0.62,0.514,0.639],"accent":[0.424,0.275,0.439]},"frostlotus":{"body":[0.549,0.678,0.741],"accent":[0.059,0.498,0.467]},"rimefeather":{"body":[0.427,0.588,0.69],"accent":[0.075,0.263,0.396]},"nixie-torc":{"body":[0.533,0.51,0.176],"accent":[0.855,0.78,0.267]},"everfrost-pearlbloom":{"body":[0.494,0.655,0.827],"accent":[0.337,0.62,0.902]},"stonewort":{"body":[0.62,0.647,0.467],"accent":[0.29,0.427,0.063]},"quarrycap":{"body":[0.761,0.588,0.353],"accent":[0.957,0.757,0.388]},"ironbloom":{"body":[0.812,0.29,0.325],"accent":[0.914,0.204,0.302]},"stoneberry":{"body":[0.522,0.38,0.31],"accent":[0.51,0.643,0.137]},"orebud":{"body":[0.627,0.518,0.357],"accent":[0.937,0.698,0.369]},"ferric-crystal":{"body":[0.565,0.533,0.51],"accent":[0.882,0.843,0.776]},"gravelpod":{"body":[0.659,0.471,0.482],"accent":[0.604,0.369,0.388]},"ammonite-coil":{"body":[0.651,0.565,0.514],"accent":[0.435,0.337,0.282]},"emberheart-geode":{"body":[0.761,0.498,0.447],"accent":[0.898,0.62,0.216]},"titan-root":{"body":[0.58,0.416,0.141],"accent":[0.725,0.522,0.153]},"nethercap":{"body":[0.678,0.322,0.843],"accent":[0.627,0.133,0.914]},"gloommoss":{"body":[0.063,0.584,0.569],"accent":[0.086,0.89,0.835]},"umbrabell":{"body":[0.537,0.431,0.475],"accent":[0.573,0.718,0.184]},"shadefruit":{"body":[0.463,0.396,0.439],"accent":[0.42,0.561,0.075]},"sporelantern":{"body":[0.592,0.643,0.157],"accent":[0.922,0.937,0.122]},"wraithvine":{"body":[0.408,0.431,0.322],"accent":[0.365,0.463,0.212]},"nightbloom-lotus":{"body":[0.592,0.306,0.749],"accent":[0.631,0.227,0.784]},"umbral-amethyst":{"body":[0.573,0.412,0.796],"accent":[0.376,0.145,0.714]},"thornhalo":{"body":[0.545,0.447,0.506],"accent":[0.502,0.369,0.604]},"venomlily":{"body":[0.773,0.612,0.518],"accent":[0.655,0.812,0.114]},"emberleaf":{"body":[0.8,0.29,0.153],"accent":[0.89,0.361,0.149]},"cindershroom":{"body":[0.69,0.514,0.38],"accent":[0.922,0.733,0.392]},"firebramble":{"body":[0.631,0.384,0.161],"accent":[0.529,0.667,0.137]},"sulfurvine":{"body":[0.592,0.635,0.137],"accent":[0.894,0.894,0.114]},"flamecrest":{"body":[0.804,0.447,0.129],"accent":[0.992,0.808,0.09]},"blazestone":{"body":[0.765,0.314,0.176],"accent":[0.882,0.439,0.176]},"phoenix-heartseed":{"body":[0.875,0.529,0.129],"accent":[0.996,0.812,0.071]},"ashcactus":{"body":[0.573,0.51,0.082],"accent":[0.957,0.639,0.098]},"everburning-sunheart":{"body":[0.871,0.498,0.157],"accent":[0.98,0.784,0.078]},"cinderpod":{"body":[0.659,0.369,0.22],"accent":[1,0.698,0.259]},"moonreed":{"body":[0.525,0.6,0.678],"accent":[0.133,0.216,0.294]},"fenmilk-cap":{"body":[0.573,0.675,0.839],"accent":[0.439,0.6,0.894]},"duskbell":{"body":[0.435,0.522,0.62],"accent":[0.58,0.686,0.275]},"dreamberry":{"body":[0.475,0.451,0.506],"accent":[0.627,0.757,0.184]},"moonlotus":{"body":[0.8,0.604,0.765],"accent":[0.882,0.502,0.933]},"sleepglass":{"body":[0.498,0.588,0.698],"accent":[0.302,0.333,0.882]},"moonveil-bloom":{"body":[0.643,0.537,0.722],"accent":[0.42,0.651,0.251]},"mirepod-shell":{"body":[0.675,0.58,0.843],"accent":[0.439,0.467,0.902]},"wisp-reliquary":{"body":[0.639,0.49,0.514],"accent":[0.922,0.808,0.467]},"starfall-lotus":{"body":[0.624,0.302,0.776],"accent":[0.678,0.259,0.863]},"skyspray":{"body":[0.545,0.616,0.396],"accent":[0.22,0.427,0.02]},"cloudcap":{"body":[0.635,0.757,0.839],"accent":[0.557,0.753,0.945]},"airstar":{"body":[0.51,0.729,0.659],"accent":[0.925,0.851,0.29]},"skyberry":{"body":[0.376,0.549,0.584],"accent":[0.565,0.776,0.208]},"updraft-seedwing":{"body":[0.741,0.671,0.42],"accent":[0.816,0.694,0.388]},"zephyr-starbloom":{"body":[0.51,0.702,0.616],"accent":[0.475,0.714,0.212]},"featherpetal":{"body":[0.753,0.624,0.69],"accent":[0.875,0.42,0.831]},"skyshard-geode":{"body":[0.682,0.553,0.678],"accent":[0.533,0.318,0.855]},"windfern":{"body":[0.333,0.502,0.094],"accent":[0.541,0.722,0.118]},"cloudprism":{"body":[0.58,0.569,0.69],"accent":[0.294,0.463,0.122]},"morphleaf":{"body":[0.451,0.6,0.075],"accent":[0.816,0.929,0.082]},"shapecap":{"body":[0.792,0.655,0.392],"accent":[0.914,0.722,0.325]},"twinsprout":{"body":[0.502,0.655,0.071],"accent":[0.816,0.933,0.075]},"graftberry":{"body":[0.647,0.349,0.271],"accent":[0.58,0.647,0.157]},"formblossom":{"body":[0.839,0.604,0.698],"accent":[0.965,0.765,0.439]},"mimic-eye":{"body":[0.573,0.6,0.365],"accent":[0.753,0.714,0.212]},"crownbloom":{"body":[0.761,0.533,0.353],"accent":[0.961,0.776,0.184]},"shifting-root":{"body":[0.565,0.404,0.153],"accent":[0.533,0.349,0.086]},"splice-bud":{"body":[0.765,0.694,0.584],"accent":[0.31,0.447,0.129]},"polymorph-lotus":{"body":[0.761,0.631,0.722],"accent":[0.863,0.482,0.89]},"veilfern":{"body":[0.663,0.302,0.741],"accent":[0.608,0.204,0.702]},"hollowcap":{"body":[0.725,0.42,0.835],"accent":[0.565,0.204,0.792]},"ghostbud":{"body":[0.635,0.584,0.635],"accent":[0.392,0.459,0.255]},"veilberry":{"body":[0.576,0.427,0.498],"accent":[0.459,0.545,0.11]},"hollowbloom":{"body":[0.796,0.627,0.722],"accent":[0.541,0.663,0.188]},"veilglass":{"body":[0.698,0.459,0.855],"accent":[0.427,0.122,0.8]},"shroud-orchid":{"body":[0.804,0.604,0.804],"accent":[0.902,0.471,0.941]},"mistpebble":{"body":[0.647,0.373,0.698],"accent":[0.42,0.149,0.569]},"eclipse-eye":{"body":[0.761,0.475,0.443],"accent":[0.945,0.698,0.243]},"veil-circlet":{"body":[0.569,0.424,0.616],"accent":[0.357,0.18,0.42]},"reefmoss":{"body":[0.086,0.545,0.576],"accent":[0.137,0.894,0.898]},"glasscap":{"body":[0.573,0.686,0.839],"accent":[0.537,0.714,0.922]},"coralberry":{"body":[0.8,0.286,0.4],"accent":[0.91,0.157,0.369]},"reefbud":{"body":[0.753,0.51,0.51],"accent":[0.863,0.396,0.659]},"ghostglass-coral":{"body":[0.498,0.537,0.827],"accent":[0.118,0.153,0.643]},"pearlshell":{"body":[0.733,0.608,0.635],"accent":[0.647,0.459,0.447]},"spectral-anemone":{"body":[0.761,0.471,0.765],"accent":[0.514,0.114,0.549]},"shellfern":{"body":[0.4,0.6,0.667],"accent":[0.039,0.282,0.357]},"phantom-pearl":{"body":[0.655,0.545,0.882],"accent":[0.243,0.239,0.678]},"ghostcrown-coral":{"body":[0.725,0.4,0.757],"accent":[0.525,0.075,0.537]},"timeweed":{"body":[0.808,0.62,0.145],"accent":[0.98,0.827,0.251]},"sandskirt-cap":{"body":[0.82,0.671,0.337],"accent":[0.976,0.855,0.294]},"hourberry":{"body":[0.659,0.506,0.118],"accent":[0.643,0.725,0.078]},"chronovine":{"body":[0.624,0.58,0.243],"accent":[0.875,0.839,0.224]},"epochbloom":{"body":[0.769,0.616,0.643],"accent":[0.788,0.675,0.208]},"chronoglass-shard":{"body":[0.71,0.482,0.839],"accent":[0.69,0.333,0.937]},"pendulum-pods":{"body":[0.675,0.51,0.145],"accent":[0.957,0.769,0.086]},"sundial-stone":{"body":[0.765,0.612,0.4],"accent":[0.698,0.475,0.2]},"aeon-circlet":{"body":[0.639,0.533,0.173],"accent":[0.875,0.769,0.165]},"hourglass-of-ages":{"body":[0.682,0.588,0.263],"accent":[0.937,0.824,0.247]}};
-return { SPECIES_COLORS };
-})();
-// src/materials/rarity.js
-const __m19 = (() => {
-const RARITIES = [
-{ id: 'common', presence: 0.95, label: 'Common', rank: 0, dominant: [18, 26], secondaries: [1, 2], ratio: [0.3, 0.62], spawnWeight: 10, specimens: [2, 3],
-seedDrop: 0.35, value: 1, visual: 'simple natural structure', growHours: 0.75, color: '#c9c3b8' },
-{ id: 'uncommon', presence: 0.7, label: 'Uncommon', rank: 1, dominant: [28, 38], secondaries: [1, 2], ratio: [0.08, 0.26], spawnWeight: 5, specimens: [1, 2],
-seedDrop: 0.22, value: 1.8, visual: 'distinctive morphology', growHours: 1.5, color: '#6fd06a' },
-{ id: 'rare', presence: 0.4, label: 'Rare', rank: 2, dominant: [40, 52], secondaries: [1, 1], ratio: [0.02, 0.08], spawnWeight: 2.2, specimens: [1, 2],
-seedDrop: 0.1, value: 3.5, visual: 'complex, unusual structure', growHours: 3, color: '#5aa8ff' },
-{ id: 'unique', presence: 0.12, label: 'Unique', rank: 3, dominant: [56, 68], secondaries: [0, 0], ratio: [0, 0], spawnWeight: 0.6, specimens: [1, 1],
-seedDrop: 0.04, value: 8, visual: 'singular, striking anatomy', growHours: 6, color: '#c27aff', requires: 'an upgraded plot' },
-{ id: 'legendary', presence: 0.03, label: 'Legendary', rank: 4, dominant: [84, 98], secondaries: [0, 0], ratio: [0, 0], spawnWeight: 0.12, specimens: [1, 1],
-seedDrop: 0.01, value: 20, visual: 'exceptional detail, unmistakable silhouette', growHours: 12, color: '#ffb340', requires: 'an Arcane cultivation chamber' },
-];
-const RARITY = /** @type {any} */ (Object.fromEntries(RARITIES.map((r) => [r.id, r])));
-const RARITY_IDS = /** @type {RarityId[]} */ (RARITIES.map((r) => r.id));
-const ARCANE = Object.freeze({
-spawnChance: Object.freeze({ common: 0.1, uncommon: 0.08, rare: 0.06, unique: 0.04, legendary: 0.02 }),
-seedFactor: 0.35,
-value: 2.2,
-gain: /** @type {[number, number]} */ ([2.5, 3]),
-threshold: /** @type {[number, number]} */ ([250, 650]),
-coldThreshold: /** @type {[number, number]} */ ([60, 300]),
-});
-const OPPOSED = [['fire', 'frost'], ['vitality', 'death'], ['vitality', 'toxicity'], ['levitation', 'strength'], ['temporal', 'phasing']];
-const opposed = (a, b) => OPPOSED.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
-function splitEffects(fx) {
-const list = Object.entries(fx).filter(([, v]) => Math.abs(v) > 0).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
-const [dom, ...sec] = list;
-return { dominant: dom ? dom[0] : null, magnitude: dom ? Math.abs(dom[1]) : 0, secondaries: sec.map(([k, v]) => ({ key: k, v: Math.abs(v), ratio: dom ? Math.abs(v) / Math.abs(dom[1]) : 0 })) };
-}
-function validateSpecies(s) {
-const r = RARITY[/** @type {RarityId} */ (s.rarity)];
-if (!r) return [`${s.key}: unknown rarity ${s.rarity}`];
-const out = [];
-const { magnitude, secondaries } = splitEffects(s.fx);
-if (magnitude < r.dominant[0] || magnitude > r.dominant[1]) out.push(`${s.key}: dominant ${magnitude} outside ${r.label} range ${r.dominant.join('–')}`);
-if (secondaries.length < r.secondaries[0] || secondaries.length > r.secondaries[1]) out.push(`${s.key}: ${secondaries.length} secondary effects, ${r.label} permits ${r.secondaries.join('–')}`);
-if (secondaries.length) {
-if (secondaries[0].ratio < r.ratio[0]) out.push(`${s.key}: strongest secondary ratio ${secondaries[0].ratio.toFixed(2)} below ${r.ratio[0]}`);
-for (const x of secondaries) if (x.ratio > r.ratio[1] + 1e-9) out.push(`${s.key}: secondary ${x.key} ratio ${x.ratio.toFixed(2)} above ${r.ratio[1]}`);
-}
-const keys = Object.keys(s.fx).filter((k) => s.fx[k]);
-for (let i = 0; i < keys.length; i++) for (let j = i + 1; j < keys.length; j++) if (opposed(keys[i], keys[j])) out.push(`${s.key}: carries opposed ${keys[i]} and ${keys[j]}`);
-return out;
-}
-function valueOf(rarity, arcane) {
-const r = RARITY[/** @type {RarityId} */ (rarity)] || RARITY.common;
-return r.value * (arcane ? ARCANE.value : 1);
-}
-function seedChance(rarity, arcane) {
-const r = RARITY[/** @type {RarityId} */ (rarity)] || RARITY.common;
-return r.seedDrop * (arcane ? ARCANE.seedFactor : 1);
-}
-return { RARITIES, RARITY, RARITY_IDS, ARCANE, OPPOSED, opposed, splitEffects, validateSpecies, valueOf, seedChance };
-})();
-// src/game/biomes.js
-const __m20 = (() => {
-const BIOMES = [
-{ id: 'forest', name: 'Whisperwood', category: 'natural', effect: 'vitality', creature: 'fox', minor: ['frost', 'fire', 'toxicity', 'love', 'strength', 'swiftness', 'acidity'], arcaneSign: 1,
-interaction: 'sway', unlock: {}, tier: 'Apprentice', icon: 'leaf', sky: [0.36, 0.52, 0.42],
-desc: 'Old oaks, ferns and fruiting groves where healing magic grows thick. Home of the fox.' },
-{ id: 'meadow', name: 'Sunlit Meadow', category: 'natural', effect: 'love', creature: 'hare', minor: ['fire', 'vitality', 'swiftness', 'acidity', 'strength'], arcaneSign: 1,
-interaction: 'sway', unlock: { served: 3 }, tier: 'Naturalist', icon: 'rose', sky: [0.55, 0.72, 0.9],
-desc: 'Open fields of wildflowers, heavy with love and summer warmth. Hares run in the long grass.' },
-{ id: 'river', name: 'Willow Bank', category: 'natural', effect: 'frost', creature: 'otter', minor: ['vitality', 'death', 'acidity', 'toxicity', 'swiftness', 'strength'], arcaneSign: -1,
-interaction: 'sway', unlock: { served: 6 }, tier: 'Naturalist', icon: 'snow', sky: [0.5, 0.66, 0.78],
-desc: 'Cold riverbanks, lilies and pearl mussels under the willows. River otters fish the shallows.' },
-{ id: 'quarry', name: 'Ironstone Quarry', category: 'natural', effect: 'strength', creature: 'beetle', minor: ['acidity', 'frost', 'fire', 'toxicity', 'death'], arcaneSign: 1,
-interaction: 'sway', unlock: { rank: 1 }, tier: 'Naturalist', icon: 'fist', sky: [0.62, 0.6, 0.58],
-desc: 'Cut rock faces, ore seams and geodes, rich in strength. Rock beetles graze the lichen.' },
-{ id: 'netherwood', name: 'Netherwood', category: 'natural', effect: 'toxicity', creature: 'cavemoth', minor: ['death', 'acidity', 'frost', 'strength', 'swiftness'], arcaneSign: 1,
-interaction: 'sway', unlock: { rank: 2 }, tier: 'Adept', icon: 'skull', sky: [0.1, 0.12, 0.18],
-desc: 'An umbral forest in a cavern under the Whisperwood, lit by poisonous fungi. Cave moths flutter to its glow.' },
-{ id: 'crags', name: 'Ember Crags', category: 'natural', effect: 'fire', creature: 'salamander', minor: ['strength', 'acidity', 'toxicity', 'swiftness', 'death'], arcaneSign: 1,
-interaction: 'sway', unlock: { rank: 2, served: 20 }, tier: 'Adept', icon: 'flame', sky: [0.42, 0.2, 0.16],
-desc: 'Volcanic heights where heat-blooming life grows over magma veins. Salamanders bask on the rock.' },
-{ id: 'moonfen', name: 'Moonfen', category: 'exotic', effect: 'arcana', creature: 'wisp', minor: ['frost', 'death', 'love', 'invisibility', 'vitality'], arcaneSign: -1,
-interaction: 'ripple', unlock: { rank: 3 }, tier: 'Exotic Explorer', icon: 'eye', sky: [0.16, 0.18, 0.32],
-desc: 'Silver marshes under the moon. Will-o’-wisps flicker over the pools: touch their lights and spectral ripples run out.' },
-{ id: 'skyshard', name: 'Skyshard Archipelago', category: 'exotic', effect: 'levitation', creature: 'cloudray', minor: ['swiftness', 'frost', 'arcana', 'vitality'], arcaneSign: 1,
-interaction: 'float', unlock: { rank: 3, served: 40 }, tier: 'Exotic Explorer', icon: 'feather', sky: [0.55, 0.78, 0.98],
-desc: 'Islands adrift in a crystalline sky. Drag or flick them: they bob back to where they float. Cloud rays glide between.' },
-{ id: 'morphgrove', name: 'Morphgrove', category: 'exotic', effect: 'transformation', creature: 'mimic', minor: ['vitality', 'toxicity', 'love', 'arcana', 'swiftness'], arcaneSign: 1,
-interaction: 'morph', unlock: { rank: 4 }, tier: 'Exotic Explorer', icon: 'swirl', sky: [0.4, 0.3, 0.55],
-desc: 'A living grove of shifting, adaptive flora that changes shape under the finger. Mimic lizards hide in plain sight.' },
-{ id: 'veilhollow', name: 'Veil Hollow', category: 'exotic', effect: 'invisibility', creature: 'shroudmoth', minor: ['death', 'frost', 'arcana', 'phasing'], arcaneSign: -1,
-interaction: 'mist', unlock: { rank: 4, served: 70 }, tier: 'Master Alchemist', icon: 'veil', sky: [0.3, 0.26, 0.42],
-desc: 'A shrouded hollow of resonant mist. Stir the mist and the scenery it hides shows through. Shroud moths drift unseen.' },
-{ id: 'ghostglass', name: 'Ghostglass Reef', category: 'exotic', effect: 'phasing', creature: 'axolotl', minor: ['frost', 'arcana', 'invisibility', 'vitality', 'acidity'], arcaneSign: -1,
-interaction: 'phase', unlock: { rank: 5 }, tier: 'Master Alchemist', icon: 'ghost', sky: [0.08, 0.2, 0.36],
-desc: 'A submerged reef of spectral light and living crystal that turns clear at a touch. Spectral axolotls haunt it.' },
-{ id: 'chronoglass', name: 'Chronoglass Wastes', category: 'exotic', effect: 'temporal', creature: 'scarab', minor: ['swiftness', 'fire', 'death', 'phasing', 'arcana'], arcaneSign: 1,
-interaction: 'time', unlock: { rank: 5, served: 120 }, tier: 'Master Alchemist', icon: 'clock', sky: [0.72, 0.6, 0.78],
-desc: 'Fractured timefields of crystal sand. Touch a sandfall and time runs backward or races. Hourglass scarabs roll there.' },
-];
-const BIOME_BY_ID = Object.fromEntries(BIOMES.map((b) => [b.id, b]));
-const BIOME_IDS = BIOMES.map((b) => b.id);
-const START_BIOME = 'forest';
-const biomeOf = (id) => BIOME_BY_ID[id] || BIOME_BY_ID[START_BIOME];
-function milestoneMet(b, st) {
-const u = b.unlock || {};
-const s = st.stats || {};
-if (u.rank !== undefined && st.rank < u.rank) return false;
-if (u.served !== undefined && (s.served || 0) < u.served) return false;
-if (u.gathered !== undefined && (s.gathered || 0) < u.gathered) return false;
-return true;
-}
-function unlockText(b, rankNames) {
-const u = b.unlock || {}, parts = [];
-if (u.rank) parts.push(`rank ${rankNames[u.rank] || u.rank}`);
-if (u.served) parts.push(`${u.served} customers served`);
-if (u.gathered) parts.push(`${u.gathered} ml gathered`);
-return parts.length ? parts.join(' and ') : 'open from the start';
-}
-return { BIOMES, BIOME_BY_ID, BIOME_IDS, START_BIOME, biomeOf, milestoneMet, unlockText };
-})();
-// src/materials/catalog.js
-const __m16 = (() => {
-const { SPECIES_DATA } = __m17;
-const { SPECIES_COLORS } = __m18;
-const { completeMaterial } = __m10;
-const { RARITY, valueOf } = __m19;
-const { BIOME_BY_ID } = __m20;
-const CATALOG_VERSION = 5;
-const SPECIES = SPECIES_DATA;
-const SPECIES_BY_KEY = Object.fromEntries(SPECIES.map((s) => [s.key, s]));
-const PREFIX = 'wild-sp-';
-const ARC = '-arcane';
-const materialIdOf = (key, arcane = false) => PREFIX + key + (arcane ? ARC : '');
-const isCatalogId = (id) => typeof id === 'string' && id.startsWith(PREFIX);
-function parseCatalogId(id) {
-if (!isCatalogId(id)) return null;
-let rest = id.slice(PREFIX.length);
-if (rest.endsWith('~a')) rest = rest.slice(0, -2);
-const arcane = rest.endsWith(ARC);
-const key = arcane ? rest.slice(0, -ARC.length) : rest;
-const species = SPECIES_BY_KEY[key];
-return species ? { key, arcane, species } : null;
-}
-function speciesOfMaterial(m) {
-if (!m) return null;
-if (m.wild && m.wild.species) return SPECIES_BY_KEY[m.wild.species] || null;
-const p = parseCatalogId(m.id);
-return p ? p.species : null;
-}
-function catalogIds() {
-return SPECIES.flatMap((s) => [materialIdOf(s.key), materialIdOf(s.key, true)]);
-}
-const speciesOfBiome = (biome) => SPECIES.filter((s) => s.biome === biome);
-const STEEP_NAME = { water: 'Infusion', spirit: 'Tincture', oil: 'Oil' };
-function generateCatalog(base) {
-const materials = [];
-const reactions = [];
-const solvent = { water: base.roles.water, spirit: base.roles.spirit, oil: base.roles.oil };
-for (const s of SPECIES) {
-const col = SPECIES_COLORS[s.key] || { body: [0.6, 0.55, 0.45], accent: [0.8, 0.7, 0.5] };
-const biome = BIOME_BY_ID[s.biome];
-for (const arcane of [false, true]) {
-const id = materialIdOf(s.key, arcane);
-const m = /** @type {any} */ (completeMaterial({
-id, name: arcane ? `Arcane ${s.name}` : s.name, archetype: 'wild', form: /** @type {any} */ (s.form), color: col.body.slice(), tint: 0.75, opacity: 1,
-density: s.density, compat: [0.82, 0.14], friction: 0.67, binder: 0, hardness: s.hardness,
-solubility: s.sol, solubilityTemp: s.solT, melt: 1500, boil: Infinity,
-heatCapacity: 1.7, conductivity: 0.35, flammability: s.botanical ? 0.45 : 0, ignition: 290, combustionHeat: 500,
-ash: base.roles.soot, smoke: base.roles.smoke, glow: arcane ? 0.35 : 0, reactivity: 0.3,
-price: Math.round(s.price * (arcane ? valueOf(s.rarity, true) / valueOf(s.rarity, false) : 1)), tier: 99, product: false,
-description: `${s.lore} ${RARITY[s.rarity].label}${arcane ? ', Arcane' : ''} — ${biome ? biome.name : s.biome}.`,
-}));
-m.effects = { ...s.fx };
-if (arcane) m.arcane = { thr: s.arcane.thr, gain: s.arcane.gain };
-m.fxv = CATALOG_VERSION;
-m.econd = s.morph === 'crystal' || s.morph === 'relic' ? 0.3 : 0.04;
-m.charge = 0;
-m.crushable = true;
-m.wild = {
-key: s.key, species: s.key, shape: s.shape, region: s.biome, rank: 0, rare: RARITY[s.rarity].rank >= 2,
-gatherOnly: true, gather: s.gather, dusk: false, dawn: false,
-rarity: s.rarity, arcane, morph: s.morph, category: s.category, catalog: true,
-};
-materials.push(m);
-const st = s.steep, into = solvent[/** @type {'water'|'spirit'|'oil'} */ (st.into)];
-if (!into) continue;
-const ext = /** @type {any} */ (completeMaterial({
-id: `wild-p-sp-${s.key}${arcane ? ARC : ''}`, name: `${m.name} ${STEEP_NAME[/** @type {'water'} */ (st.into)] || 'Extract'}`, archetype: 'product',
-tint: 0.85, opacity: 0.85, heatCapacity: 3.6, boil: Infinity, melt: -20, viscosity: 2.5, compat: [0.82, 0.14], price: 0, tier: 99, product: true,
-density: Math.max(1, s.density * 0.8), form: 'liquid', color: col.body.map((c) => Math.round(c * 0.85 * 100) / 100),
-description: `The magic of ${m.name} drawn into ${st.into}.`,
-}));
-ext.effects = Object.fromEntries(Object.entries(s.fx).map(([k, v]) => [k, Math.round(v * 1.08 * 10) / 10]));
-if (m.arcane) ext.arcane = { ...m.arcane };
-ext.fxv = CATALOG_VERSION;
-ext.econd = 0.12;
-ext.charge = 0;
-materials.push(ext);
-const lo = Math.round((st.lo[0] + st.lo[1]) / 10) * 5, hi = Math.round((st.hi[0] + st.hi[1]) / 10) * 5;
-const window = `between about ${lo} and ${hi}°C`;
-if (st.into === 'water') {
-reactions.push({ id: `rw_extract_sp_${s.key}${arcane ? '_a' : ''}`, name: ext.name, kind: 'decompose', a: id, b: null, ra: 1, rb: 0, products: [{ id: ext.id, frac: 1 }],
-minT: lo, maxT: hi, rate: 0.1, heat: -4, stir: 0.4, wet: true, hint: `Ground ${m.name} steeps into water ${window}.` });
-} else {
-reactions.push({ id: `rw_extract_sp_${s.key}${arcane ? '_a' : ''}`, name: ext.name, kind: st.into === 'oil' ? 'contact' : 'mix', a: id, b: into, ra: 1, rb: 1, products: [{ id: ext.id, frac: 1 }],
-minT: lo, maxT: hi, rate: 0.25, heat: 4, stir: 0.8, hint: `${m.name} dissolves in ${st.into} ${window}.` });
-}
-}
-}
-return { materials, reactions };
-}
-return { CATALOG_VERSION, SPECIES, SPECIES_BY_KEY, materialIdOf, isCatalogId, parseCatalogId, speciesOfMaterial, catalogIds, speciesOfBiome, generateCatalog };
-})();
 // src/materials/wild.js
-const __m13 = (() => {
+const __m19 = (() => {
 const { Rng } = __m6;
 const { hslToRgb } = __m9;
 const { completeMaterial } = __m10;
-const { EFFECT_INDEX } = __m14;
+const { EFFECT_INDEX } = __m20;
 const { arcaneProfile } = __m12;
 const { identityOf } = __m8;
-const { generateCatalog, CATALOG_VERSION, SPECIES, materialIdOf } = __m16;
+const { generateCatalog, CATALOG_VERSION, SPECIES, materialIdOf } = __m13;
 const WILD_SPECS = [
 { key: 'ironroot', noun: 'Ironroot', shape: 'root', region: 'forest', rank: 0, buy: 1, hue: [28, 0.45, 0.42], form: 'solid', density: 1.05, hardness: 0.5, sol: 0.12, solT: 0.0022,
 fx: { strength: 26, frost: 9 }, arc: [560, 3], price: 9, gather: 'dig', lore: 'A knotted woodland root that carries strength — and a cold, earthy chill that needs something fiery to cancel it. Crush or grind it; it gives up far more when steeped in hot water.' },
@@ -2042,8 +2137,8 @@ return out;
 return { WILD_SPECS, WILD_BY_KEY, WILD_FX_VERSION, legacyReplacement, generateWild, generateLaws };
 })();
 // src/alchemy/arcane.js
-const __m21 = (() => {
-const { EFFECT_KEYS } = __m14;
+const __m22 = (() => {
+const { EFFECT_KEYS } = __m20;
 const ARCANE_SCALE = 0.1;
 const ARCANE_ZERO = 20;
 const AWAKE_SUFFIX = '~a';
@@ -2152,8 +2247,9 @@ const { hslToRgb } = __m9;
 const { completeMaterial } = __m10;
 const { makeName, makeProductName } = __m11;
 const { applyProfile } = __m12;
-const { generateWild, generateLaws, WILD_FX_VERSION, WILD_BY_KEY } = __m13;
-const { withAwakened } = __m21;
+const { CHAR_ID } = __m13;
+const { generateWild, generateLaws, WILD_FX_VERSION, WILD_BY_KEY } = __m19;
+const { withAwakened } = __m22;
 const r2 = (v) => Math.round(v * 100) / 100;
 function generateWorld(seed) {
 const seedStr = String(seed);
@@ -2470,6 +2566,7 @@ for (const m of w.materials) {
 const old = world.materials.find((x) => x.id === m.id);
 if (!old) { world.materials.push(m); continue; }
 const mm = /** @type {any} */ (m);
+if (/^wild-(p-)?sp-/.test(m.id)) { for (const k of Object.keys(old)) if (!(k in m)) delete /** @type {any} */ (old)[k]; Object.assign(old, m); continue; }
 Object.assign(old, { effects: mm.effects, arcane: mm.arcane, fxv: mm.fxv, solubility: m.solubility, binder: m.binder, description: m.description });
 if (mm.wild) old.wild = { ...mm.wild };
 }
@@ -2483,16 +2580,52 @@ for (const id of world.wild) if (!world.ingredients.includes(id)) world.ingredie
 if (!world.laws) world.laws = w.laws;
 }
 if (!world.laws) world.laws = generateLaws(world.seed);
+addSolvents(world);
 for (const m of world.materials) {
 const w = /** @type {any} */ (m).wild, spec = w && WILD_BY_KEY[w.key];
 if (spec && !w.catalog && w.region !== spec.region) /** @type {any} */ (m).wild = { ...w, region: spec.region };
 }
 attachVisuals(world);
-const keep = new Set([...SOLVENT_ROLES.map((r) => world.roles[r]), ...world.wild]);
+const keep = new Set([...SOLVENT_ROLES.map((r) => world.roles[r]), ...SHOP_EXTRAS.map((r) => world.roles[r]), ...world.wild]);
 world.ingredients = world.ingredients.filter((id) => keep.has(id) || world.materials.some((m) => m.id === id && m.remains));
 world.starting = SOLVENT_ROLES.map((r) => world.roles[r]).filter(Boolean);
 return world;
 }
+function addSolvents(world) {
+const R = world.roles;
+const by = (id) => world.materials.find((m) => m.id === id);
+for (const [role, cls] of [['water', 'hydro'], ['spirit', 'hydro'], ['oil', 'lipo']]) {
+const m = /** @type {any} */ (by(R[role]));
+if (!m) continue;
+m.solvent = cls;
+if (role === 'spirit') m.alcohol = true;
+m.flammability = 0;
+}
+world.reactions = world.reactions.filter((r) => !/^rw_extract_sp_/.test(r.id));
+if (!R.emulsifier || !by(R.emulsifier)) {
+const em = /** @type {any} */ (completeMaterial({
+id: 'emulsifier-gum', name: 'Neutral Emulsifying Gum', form: 'liquid', archetype: 'emulsifier', color: [0.93, 0.89, 0.78], tint: 0.25, opacity: 0.8,
+density: 0.97, viscosity: 60, viscTemp: 0.02, compat: [0.5, 0.12], boil: Infinity, melt: -6, heatCapacity: 2.6, conductivity: 0.4,
+flammability: 0, price: 6, tier: 0, product: false,
+description: 'A pale, tasteless gum with no magic of its own. A little of it binds a watery extract and an oily one into one stable potion — about six parts of gum per hundred of the smaller phase, and the smaller phase no more than two fifths of the liquid.',
+}));
+em.emulsifier = 1;
+em.effects = {};
+world.materials.push(em);
+R.emulsifier = em.id;
+}
+if (!world.ingredients.includes(R.emulsifier)) world.ingredients.push(R.emulsifier);
+if (!by(CHAR_ID)) {
+const ch = /** @type {any} */ (completeMaterial({
+id: CHAR_ID, name: 'Char', form: 'powder', archetype: 'ash', color: [0.12, 0.1, 0.09], tint: 0.85, opacity: 1,
+density: 0.9, compat: [0.5, 0.3], friction: 0.7, melt: 3000, boil: Infinity, heatCapacity: 1, conductivity: 0.2,
+flammability: 0, price: 0, tier: 99, product: true, description: 'What is left of an ingredient that burnt before its magic was drawn out: black, brittle and lifeless.',
+}));
+ch.effects = {};
+world.materials.push(ch);
+}
+}
+const SHOP_EXTRAS = ['emulsifier'];
 const SOLVENT_ROLES = ['water', 'oil', 'spirit'];
 const LAB_ROLES = ['syrup', 'essenceA', 'essenceB', 'binder', 'salt', 'essenceC', 'ember', 'frost', 'metal', 'crystal', 'wax', 'fizz', 'spores', 'resin', 'starlight', 'moss', 'vapor', 'phoenix', 'void'];
 function sandboxIngredients(world) {
@@ -2515,10 +2648,10 @@ if (n !== world.materials.length) index();
 return map.get(id);
 });
 }
-return { generateWorld, addAlchemy, SOLVENT_ROLES, LAB_ROLES, sandboxIngredients, makeLookup };
+return { generateWorld, addAlchemy, addSolvents, SHOP_EXTRAS, SOLVENT_ROLES, LAB_ROLES, sandboxIngredients, makeLookup };
 })();
 // src/visual/taxonomy.js
-const __m28 = (() => {
+const __m29 = (() => {
 const FAMILY_OF = Object.freeze({
 petal: 'flower', flower: 'flower', clover: 'flower', spike: 'flower', lily: 'flower',
 leaf: 'herb', sprig: 'herb',
@@ -2568,7 +2701,7 @@ death: { h: 300, c: 0.03, L: 0.35 },
 return { FAMILY_OF, BOTANICAL, familyOf, isBotanical, HABITATS, habitatOf, EFFECT_TINT };
 })();
 // src/visual/color.js
-const __m29 = (() => {
+const __m30 = (() => {
 const { rgbToOklab, oklabToRgb } = __m9;
 function toLch(rgb) {
 const [L, a, b] = rgbToOklab(rgb[0], rgb[1], rgb[2]);
@@ -2622,7 +2755,7 @@ return fromLch(L + (d.dL || 0), Math.max(0, C * (d.cK ?? 1) + (d.dC || 0)), (hh 
 return { toLch, fromLch, hueDiff, hueToward, pack, unpack, mixPacked, hex, ramp, shift };
 })();
 // src/visual/geometry.js
-const __m33 = (() => {
+const __m34 = (() => {
 class Model {
 constructor() {
 this.parts = [];
@@ -2789,9 +2922,9 @@ return out;
 return { Model, SQUARE, sq, ellipse, bezier, arc, blade, PROFILES, roughen, lumpy, polygon, along, upTo };
 })();
 // src/visual/families/common.js
-const __m32 = (() => {
+const __m33 = (() => {
 const { Rng, hashString } = __m6;
-const { Model, blade, PROFILES, bezier, lumpy, ellipse, polygon } = __m33;
+const { Model, blade, PROFILES, bezier, lumpy, ellipse, polygon } = __m34;
 const stream = (d, label) => new Rng((d.seeds.morph ^ hashString(label)) >>> 0);
 const pick = (rng, arr) => arr[Math.floor(rng.next() * arr.length)];
 const LEAF_SHAPES = ['ovate', 'lance', 'round', 'heart', 'linear', 'spoon'];
@@ -2849,8 +2982,8 @@ return m;
 return { stream, pick, LEAF_SHAPES, leaf, stemPts, rock, marks, Model, PROFILES, ellipse, blade, lumpy, bezier, polygon };
 })();
 // src/visual/families/flower.js
-const __m31 = (() => {
-const { Model, PROFILES, stream, pick, leaf, stemPts, marks, LEAF_SHAPES, blade, ellipse } = __m32;
+const __m32 = (() => {
+const { Model, PROFILES, stream, pick, leaf, stemPts, marks, LEAF_SHAPES, blade, ellipse } = __m33;
 function params(rng, d) {
 const t = d.tr, form = d.form;
 const petalShapes = ['round', 'ovate', 'spoon', 'heart', 'lance', 'wedge'];
@@ -3059,8 +3192,8 @@ return m;
 return { params, size, head, icon, piece };
 })();
 // src/visual/families/herb.js
-const __m34 = (() => {
-const { Model, stream, pick, leaf, marks, LEAF_SHAPES, ellipse } = __m32;
+const __m35 = (() => {
+const { Model, stream, pick, leaf, marks, LEAF_SHAPES, ellipse } = __m33;
 function params(rng, d) {
 const t = d.tr;
 const habit = d.form === 'sprig' ? rng.weighted(['upright', 'opposite'], [1, 1.2]) : rng.weighted(['rosette', 'bush', 'upright'], [1.3, 1 + t.spots + t.droop, 0.6]);
@@ -3114,8 +3247,8 @@ return m;
 return { params, size, icon, piece };
 })();
 // src/visual/families/root.js
-const __m35 = (() => {
-const { Model, stream, leaf, marks, LEAF_SHAPES, bezier } = __m32;
+const __m36 = (() => {
+const { Model, stream, leaf, marks, LEAF_SHAPES, bezier } = __m33;
 function params(rng, d) {
 const t = d.tr;
 return {
@@ -3191,8 +3324,8 @@ return m;
 return { params, size, rootBody, icon, piece };
 })();
 // src/visual/families/fungus.js
-const __m36 = (() => {
-const { Model, stream, pick, marks, ellipse, lumpy } = __m32;
+const __m37 = (() => {
+const { Model, stream, pick, marks, ellipse, lumpy } = __m33;
 function params(rng, d) {
 const t = d.tr;
 return {
@@ -3276,8 +3409,8 @@ return m;
 return { params, size, mushroom, icon, piece, ellipse };
 })();
 // src/visual/families/moss.js
-const __m37 = (() => {
-const { Model, stream, pick, rock, marks, lumpy } = __m32;
+const __m38 = (() => {
+const { Model, stream, pick, rock, marks, lumpy } = __m33;
 function params(rng, d) {
 return {
 kind: d.tr.glow > 0.35 ? rng.weighted(['lichen', 'cushion'], [2, 1]) : rng.weighted(['cushion', 'lichen'], [2, 1]),
@@ -3333,8 +3466,8 @@ return m.rotate((v - 1.5) * 0.3);
 return { params, size, growth, icon, piece, pick };
 })();
 // src/visual/families/fruit.js
-const __m38 = (() => {
-const { Model, stream, pick, leaf, marks, LEAF_SHAPES, ellipse, blade, PROFILES } = __m32;
+const __m39 = (() => {
+const { Model, stream, pick, leaf, marks, LEAF_SHAPES, ellipse, blade, PROFILES } = __m33;
 function params(rng, d) {
 const t = d.tr;
 return {
@@ -3416,8 +3549,8 @@ return m;
 return { params, size, fruit, icon, piece, pick, ellipse };
 })();
 // src/visual/families/reed.js
-const __m39 = (() => {
-const { Model, stream, pick, marks, blade, PROFILES } = __m32;
+const __m40 = (() => {
+const { Model, stream, pick, marks, blade, PROFILES } = __m33;
 function params(rng, d) {
 return {
 head: rng.weighted(['cattail', 'plume', 'tassel'], [1.4, 1, 0.8]),
@@ -3465,8 +3598,8 @@ return m.rotate(v * 0.7);
 return { params, size, icon, piece, pick };
 })();
 // src/visual/families/bark.js
-const __m40 = (() => {
-const { Model, stream, pick, marks, LEAF_SHAPES } = __m32;
+const __m41 = (() => {
+const { Model, stream, pick, marks, LEAF_SHAPES } = __m33;
 function params(rng, d) {
 return {
 texture: pick(rng, ['ridged', 'plated', 'peeling', 'smooth']),
@@ -3519,8 +3652,8 @@ return m.rotate(v * 0.8);
 return { params, size, icon, piece };
 })();
 // src/visual/families/crystal.js
-const __m41 = (() => {
-const { Model, stream, pick, rock, marks } = __m32;
+const __m42 = (() => {
+const { Model, stream, pick, rock, marks } = __m33;
 function params(rng, d) {
 return {
 habit: d.form === 'shard' ? pick(rng, ['splinters', 'blades', 'spire']) : pick(rng, ['fan', 'druse', 'spire', 'fan']),
@@ -3594,8 +3727,8 @@ return m;
 return { params, size, prism, icon, piece };
 })();
 // src/visual/families/mineral.js
-const __m42 = (() => {
-const { Model, stream, pick, rock, marks, lumpy, polygon } = __m32;
+const __m43 = (() => {
+const { Model, stream, pick, rock, marks, lumpy, polygon } = __m33;
 function params(rng, d) {
 return {
 lumps: rng.int(2, 4),
@@ -3663,8 +3796,8 @@ return m.rotate(v * 0.7);
 return { params, size, lump, icon, piece, pick };
 })();
 // src/visual/families/shell.js
-const __m43 = (() => {
-const { Model, stream, pick, marks, blade, PROFILES } = __m32;
+const __m44 = (() => {
+const { Model, stream, pick, marks, blade, PROFILES } = __m33;
 function params(rng, d) {
 return {
 outline: d.form === 'scale' ? pick(rng, ['round', 'spoon', 'wedge']) : pick(rng, ['round', 'ovate', 'spoon']),
@@ -3722,28 +3855,28 @@ return m;
 return { params, size, valve, icon, piece };
 })();
 // src/visual/families/index.js
-const __m30 = (() => {
-const flower = __m31;
-const herb = __m34;
-const root = __m35;
-const fungus = __m36;
-const moss = __m37;
-const fruit = __m38;
-const reed = __m39;
-const bark = __m40;
-const crystal = __m41;
-const mineral = __m42;
-const shell = __m43;
+const __m31 = (() => {
+const flower = __m32;
+const herb = __m35;
+const root = __m36;
+const fungus = __m37;
+const moss = __m38;
+const fruit = __m39;
+const reed = __m40;
+const bark = __m41;
+const crystal = __m42;
+const mineral = __m43;
+const shell = __m44;
 const FAMILIES = { flower, herb, root, fungus, moss, fruit, reed, bark, crystal, mineral, shell };
 return { FAMILIES };
 })();
 // src/visual/descriptor.js
-const __m27 = (() => {
+const __m28 = (() => {
 const { Rng } = __m6;
-const { familyOf, isBotanical, habitatOf, EFFECT_TINT } = __m28;
-const { ramp, toLch, fromLch, hueToward, shift } = __m29;
+const { familyOf, isBotanical, habitatOf, EFFECT_TINT } = __m29;
+const { ramp, toLch, fromLch, hueToward, shift } = __m30;
 const { identityKey } = __m8;
-const { FAMILIES } = __m30;
+const { FAMILIES } = __m31;
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 const cache = new Map();
 const CACHE_MAX = 400;
@@ -3825,7 +3958,7 @@ iris: ramp(fromLch(0.75, cr, (bh + 120) % 360), { spread: 0.35, n: 4 }),
 return { describe };
 })();
 // src/visual/pixels.js
-const __m46 = (() => {
+const __m47 = (() => {
 class Pixels {
 constructor(w, h) {
 this.w = w;
@@ -3886,7 +4019,7 @@ return cv;
 return { Pixels };
 })();
 // src/visual/noise.js
-const __m47 = (() => {
+const __m48 = (() => {
 function hash3(x, y, z, seed) {
 let h = (seed ^ Math.imul(x | 0, 0x27d4eb2d) ^ Math.imul(y | 0, 0x165667b1) ^ Math.imul(z | 0, 0x9e3779b1)) >>> 0;
 h = Math.imul(h ^ (h >>> 15), 0x2c1b3c6d);
@@ -3929,8 +4062,8 @@ const bayer = (x, y) => (BAYER4[(x & 3) + (y & 3) * 4] + 0.5) / 16;
 return { hash3, hash2, noise2, noise1, fbm2, fbm1, bayer };
 })();
 // src/visual/style.js
-const __m48 = (() => {
-const { Pixels } = __m46;
+const __m49 = (() => {
+const { Pixels } = __m47;
 const INK = 0xff1a1016;
 const BANDS = [0.3, 0.6, 0.9, Infinity];
 const AT = [0.1, 0.45, 0.78, 1];
@@ -3960,11 +4093,11 @@ return p;
 return { INK, toneOf, materialTone, inked };
 })();
 // src/visual/raster.js
-const __m45 = (() => {
-const { Pixels } = __m46;
-const { noise2, hash2 } = __m47;
-const { mixPacked } = __m29;
-const { INK, materialTone, toneOf } = __m48;
+const __m46 = (() => {
+const { Pixels } = __m47;
+const { noise2, hash2 } = __m48;
+const { mixPacked } = __m30;
+const { INK, materialTone, toneOf } = __m49;
 const GRAIN = 2;
 const L = (() => { const v = [-0.55, -0.72, 0.62], n = Math.hypot(...v); return v.map((x) => x / n); })();
 function inside(x, y, pts) {
@@ -4183,11 +4316,11 @@ return { pix, part, glints: r.glints.map(([x, y]) => [x * c + (c >> 1), y * c + 
 return { GRAIN, rasterize };
 })();
 // src/visual/growth.js
-const __m49 = (() => {
+const __m50 = (() => {
 const { Rng } = __m6;
-const { Pixels } = __m46;
-const { inked } = __m48;
-const { pack } = __m29;
+const { Pixels } = __m47;
+const { inked } = __m49;
+const { pack } = __m30;
 const TAU = Math.PI * 2, UP = -Math.PI / 2, DOWN = Math.PI / 2;
 const DANGLERS = ['icicle', 'bellbloom', 'orb', 'teardrop', 'bluebell', 'netpod', 'jelly', 'puffbloom'];
 const ORCHARD = ['apple', 'pear', 'plum'];
@@ -5126,13 +5259,13 @@ return sk.frame(!!o.flip);
 return { DANGLERS, ORCHARD, MOUNTS, mountsOfForm, frameMount, growthParams, growFrame };
 })();
 // src/visual/render.js
-const __m44 = (() => {
-const { FAMILIES } = __m30;
-const { rasterize } = __m45;
-const { Pixels } = __m46;
-const { inked } = __m48;
-const { growFrame } = __m49;
-const { noise2, hash2 } = __m47;
+const __m45 = (() => {
+const { FAMILIES } = __m31;
+const { rasterize } = __m46;
+const { Pixels } = __m47;
+const { inked } = __m49;
+const { growFrame } = __m50;
+const { noise2, hash2 } = __m48;
 const ICON_PX = 32;
 const PIECE_PX = 40;
 const PIECE_GRID = 20;
@@ -5268,7 +5401,7 @@ return { pix, mask };
 return { ICON_PX, PIECE_PX, PIECE_GRID, plantFrame, iconFrame, pieceArt, pieceFrame, Pixels };
 })();
 // src/visual/atlas-frames.js
-const __m51 = (() => {
+const __m52 = (() => {
 const ATLAS_VERSION = 1;
 const ATLASES = [{"id":"growth-exotic","image":"growth-exotic.png","width":512,"height":544,"eager":false,"biomes":["chronoglass","ghostglass","moonfen","morphgrove","skyshard","veilhollow"]},{"id":"growth-natural","image":"growth-natural.png","width":512,"height":576,"eager":false,"biomes":["crags","forest","meadow","netherwood","quarry","river"]},{"id":"ingredients-arcane-exotic","image":"ingredients-arcane-exotic.png","width":512,"height":256,"eager":false,"biomes":["chronoglass","ghostglass","moonfen","morphgrove","skyshard","veilhollow"]},{"id":"ingredients-arcane-natural","image":"ingredients-arcane-natural.png","width":512,"height":304,"eager":true,"biomes":["crags","forest","meadow","netherwood","quarry","river"]},{"id":"ingredients-exotic-flora","image":"ingredients-exotic-flora.png","width":512,"height":128,"eager":false,"biomes":["chronoglass","ghostglass","moonfen","morphgrove","skyshard","veilhollow"]},{"id":"ingredients-exotic-fungi-minerals","image":"ingredients-exotic-fungi-minerals.png","width":512,"height":96,"eager":false,"biomes":["chronoglass","ghostglass","moonfen","morphgrove","skyshard","veilhollow"]},{"id":"ingredients-natural-flora","image":"ingredients-natural-flora.png","width":512,"height":160,"eager":true,"biomes":["crags","forest","meadow","netherwood","quarry","river"]},{"id":"ingredients-natural-fungi-minerals","image":"ingredients-natural-fungi-minerals.png","width":512,"height":80,"eager":true,"biomes":["crags","forest","meadow","netherwood","quarry","river"]},{"id":"seeds","image":"seeds.png","width":256,"height":240,"eager":true,"biomes":["chronoglass","crags","forest","ghostglass","meadow","moonfen","morphgrove","netherwood","quarry","river","skyshard","veilhollow"]}];
 const SPECIES_ASSETS = {"silverleaf":{"sprite":"silverleaf","arcane":"silverleaf@arcane","seed":"silverleaf@seed","seedArcane":"silverleaf@seed-arcane","stages":["silverleaf@stage0","silverleaf@stage1","silverleaf@stage2","silverleaf@stage3"],"stagesArcane":["silverleaf@stage0-arcane","silverleaf@stage1-arcane","silverleaf@stage2-arcane","silverleaf@stage3-arcane"],"bed":"soil","seedForm":"seed"},"honeycap":{"sprite":"honeycap","arcane":"honeycap@arcane","seed":"honeycap@seed","seedArcane":"honeycap@seed-arcane","stages":["honeycap@stage0","honeycap@stage1","honeycap@stage2","honeycap@stage3"],"stagesArcane":["honeycap@stage0-arcane","honeycap@stage1-arcane","honeycap@stage2-arcane","honeycap@stage3-arcane"],"bed":"fungal","seedForm":"spore"},"dawnblossom":{"sprite":"dawnblossom","arcane":"dawnblossom@arcane","seed":"dawnblossom@seed","seedArcane":"dawnblossom@seed-arcane","stages":["dawnblossom@stage0","dawnblossom@stage1","dawnblossom@stage2","dawnblossom@stage3"],"stagesArcane":["dawnblossom@stage0-arcane","dawnblossom@stage1-arcane","dawnblossom@stage2-arcane","dawnblossom@stage3-arcane"],"bed":"soil","seedForm":"seed"},"dewpear":{"sprite":"dewpear","arcane":"dewpear@arcane","seed":"dewpear@seed","seedArcane":"dewpear@seed-arcane","stages":["dewpear@stage0","dewpear@stage1","dewpear@stage2","dewpear@stage3"],"stagesArcane":["dewpear@stage0-arcane","dewpear@stage1-arcane","dewpear@stage2-arcane","dewpear@stage3-arcane"],"bed":"soil","seedForm":"pip"},"heartwood-mandrake":{"sprite":"heartwood-mandrake","arcane":"heartwood-mandrake@arcane","seed":"heartwood-mandrake@seed","seedArcane":"heartwood-mandrake@seed-arcane","stages":["heartwood-mandrake@stage0","heartwood-mandrake@stage1","heartwood-mandrake@stage2","heartwood-mandrake@stage3"],"stagesArcane":["heartwood-mandrake@stage0-arcane","heartwood-mandrake@stage1-arcane","heartwood-mandrake@stage2-arcane","heartwood-mandrake@stage3-arcane"],"bed":"soil","seedForm":"bulb"},"mossback-bark":{"sprite":"mossback-bark","arcane":"mossback-bark@arcane","seed":"mossback-bark@seed","seedArcane":"mossback-bark@seed-arcane","stages":["mossback-bark@stage0","mossback-bark@stage1","mossback-bark@stage2","mossback-bark@stage3"],"stagesArcane":["mossback-bark@stage0-arcane","mossback-bark@stage1-arcane","mossback-bark@stage2-arcane","mossback-bark@stage3-arcane"],"bed":"soil","seedForm":"bulb"},"stagthorn-vine":{"sprite":"stagthorn-vine","arcane":"stagthorn-vine@arcane","seed":"stagthorn-vine@seed","seedArcane":"stagthorn-vine@seed-arcane","stages":["stagthorn-vine@stage0","stagthorn-vine@stage1","stagthorn-vine@stage2","stagthorn-vine@stage3"],"stagesArcane":["stagthorn-vine@stage0-arcane","stagthorn-vine@stage1-arcane","stagthorn-vine@stage2-arcane","stagthorn-vine@stage3-arcane"],"bed":"soil","seedForm":"winged"},"hearthnut":{"sprite":"hearthnut","arcane":"hearthnut@arcane","seed":"hearthnut@seed","seedArcane":"hearthnut@seed-arcane","stages":["hearthnut@stage0","hearthnut@stage1","hearthnut@stage2","hearthnut@stage3"],"stagesArcane":["hearthnut@stage0-arcane","hearthnut@stage1-arcane","hearthnut@stage2-arcane","hearthnut@stage3-arcane"],"bed":"crystal","seedForm":"chip"},"heartberry":{"sprite":"heartberry","arcane":"heartberry@arcane","seed":"heartberry@seed","seedArcane":"heartberry@seed-arcane","stages":["heartberry@stage0","heartberry@stage1","heartberry@stage2","heartberry@stage3"],"stagesArcane":["heartberry@stage0-arcane","heartberry@stage1-arcane","heartberry@stage2-arcane","heartberry@stage3-arcane"],"bed":"soil","seedForm":"pip"},"everbloom-chalice":{"sprite":"everbloom-chalice","arcane":"everbloom-chalice@arcane","seed":"everbloom-chalice@seed","seedArcane":"everbloom-chalice@seed-arcane","stages":["everbloom-chalice@stage0","everbloom-chalice@stage1","everbloom-chalice@stage2","everbloom-chalice@stage3"],"stagesArcane":["everbloom-chalice@stage0-arcane","everbloom-chalice@stage1-arcane","everbloom-chalice@stage2-arcane","everbloom-chalice@stage3-arcane"],"bed":"fungal","seedForm":"spore"},"meadow-daisy":{"sprite":"meadow-daisy","arcane":"meadow-daisy@arcane","seed":"meadow-daisy@seed","seedArcane":"meadow-daisy@seed-arcane","stages":["meadow-daisy@stage0","meadow-daisy@stage1","meadow-daisy@stage2","meadow-daisy@stage3"],"stagesArcane":["meadow-daisy@stage0-arcane","meadow-daisy@stage1-arcane","meadow-daisy@stage2-arcane","meadow-daisy@stage3-arcane"],"bed":"soil","seedForm":"seed"},"goldenrush":{"sprite":"goldenrush","arcane":"goldenrush@arcane","seed":"goldenrush@seed","seedArcane":"goldenrush@seed-arcane","stages":["goldenrush@stage0","goldenrush@stage1","goldenrush@stage2","goldenrush@stage3"],"stagesArcane":["goldenrush@stage0-arcane","goldenrush@stage1-arcane","goldenrush@stage2-arcane","goldenrush@stage3-arcane"],"bed":"soil","seedForm":"grain"},"brightberry":{"sprite":"brightberry","arcane":"brightberry@arcane","seed":"brightberry@seed","seedArcane":"brightberry@seed-arcane","stages":["brightberry@stage0","brightberry@stage1","brightberry@stage2","brightberry@stage3"],"stagesArcane":["brightberry@stage0-arcane","brightberry@stage1-arcane","brightberry@stage2-arcane","brightberry@stage3-arcane"],"bed":"soil","seedForm":"pip"},"honeyclover":{"sprite":"honeyclover","arcane":"honeyclover@arcane","seed":"honeyclover@seed","seedArcane":"honeyclover@seed-arcane","stages":["honeyclover@stage0","honeyclover@stage1","honeyclover@stage2","honeyclover@stage3"],"stagesArcane":["honeyclover@stage0-arcane","honeyclover@stage1-arcane","honeyclover@stage2-arcane","honeyclover@stage3-arcane"],"bed":"soil","seedForm":"seed"},"suncrown":{"sprite":"suncrown","arcane":"suncrown@arcane","seed":"suncrown@seed","seedArcane":"suncrown@seed-arcane","stages":["suncrown@stage0","suncrown@stage1","suncrown@stage2","suncrown@stage3"],"stagesArcane":["suncrown@stage0-arcane","suncrown@stage1-arcane","suncrown@stage2-arcane","suncrown@stage3-arcane"],"bed":"soil","seedForm":"seed"},"meadowcrystal":{"sprite":"meadowcrystal","arcane":"meadowcrystal@arcane","seed":"meadowcrystal@seed","seedArcane":"meadowcrystal@seed-arcane","stages":["meadowcrystal@stage0","meadowcrystal@stage1","meadowcrystal@stage2","meadowcrystal@stage3"],"stagesArcane":["meadowcrystal@stage0-arcane","meadowcrystal@stage1-arcane","meadowcrystal@stage2-arcane","meadowcrystal@stage3-arcane"],"bed":"crystal","seedForm":"chip"},"prism-petal":{"sprite":"prism-petal","arcane":"prism-petal@arcane","seed":"prism-petal@seed","seedArcane":"prism-petal@seed-arcane","stages":["prism-petal@stage0","prism-petal@stage1","prism-petal@stage2","prism-petal@stage3"],"stagesArcane":["prism-petal@stage0-arcane","prism-petal@stage1-arcane","prism-petal@stage2-arcane","prism-petal@stage3-arcane"],"bed":"soil","seedForm":"seed"},"lovelace-orchid":{"sprite":"lovelace-orchid","arcane":"lovelace-orchid@arcane","seed":"lovelace-orchid@seed","seedArcane":"lovelace-orchid@seed-arcane","stages":["lovelace-orchid@stage0","lovelace-orchid@stage1","lovelace-orchid@stage2","lovelace-orchid@stage3"],"stagesArcane":["lovelace-orchid@stage0-arcane","lovelace-orchid@stage1-arcane","lovelace-orchid@stage2-arcane","lovelace-orchid@stage3-arcane"],"bed":"soil","seedForm":"seed"},"radiant-sunbloom":{"sprite":"radiant-sunbloom","arcane":"radiant-sunbloom@arcane","seed":"radiant-sunbloom@seed","seedArcane":"radiant-sunbloom@seed-arcane","stages":["radiant-sunbloom@stage0","radiant-sunbloom@stage1","radiant-sunbloom@stage2","radiant-sunbloom@stage3"],"stagesArcane":["radiant-sunbloom@stage0-arcane","radiant-sunbloom@stage1-arcane","radiant-sunbloom@stage2-arcane","radiant-sunbloom@stage3-arcane"],"bed":"soil","seedForm":"seed"},"eternal-rose":{"sprite":"eternal-rose","arcane":"eternal-rose@arcane","seed":"eternal-rose@seed","seedArcane":"eternal-rose@seed-arcane","stages":["eternal-rose@stage0","eternal-rose@stage1","eternal-rose@stage2","eternal-rose@stage3"],"stagesArcane":["eternal-rose@stage0-arcane","eternal-rose@stage1-arcane","eternal-rose@stage2-arcane","eternal-rose@stage3-arcane"],"bed":"soil","seedForm":"seed"},"willowleaf":{"sprite":"willowleaf","arcane":"willowleaf@arcane","seed":"willowleaf@seed","seedArcane":"willowleaf@seed-arcane","stages":["willowleaf@stage0","willowleaf@stage1","willowleaf@stage2","willowleaf@stage3"],"stagesArcane":["willowleaf@stage0-arcane","willowleaf@stage1-arcane","willowleaf@stage2-arcane","willowleaf@stage3-arcane"],"bed":"soil","seedForm":"seed"},"reedcap":{"sprite":"reedcap","arcane":"reedcap@arcane","seed":"reedcap@seed","seedArcane":"reedcap@seed-arcane","stages":["reedcap@stage0","reedcap@stage1","reedcap@stage2","reedcap@stage3"],"stagesArcane":["reedcap@stage0-arcane","reedcap@stage1-arcane","reedcap@stage2-arcane","reedcap@stage3-arcane"],"bed":"fungal","seedForm":"spore"},"riverlotus":{"sprite":"riverlotus","arcane":"riverlotus@arcane","seed":"riverlotus@seed","seedArcane":"riverlotus@seed-arcane","stages":["riverlotus@stage0","riverlotus@stage1","riverlotus@stage2","riverlotus@stage3"],"stagesArcane":["riverlotus@stage0-arcane","riverlotus@stage1-arcane","riverlotus@stage2-arcane","riverlotus@stage3-arcane"],"bed":"soil","seedForm":"seed"},"bubbleberry":{"sprite":"bubbleberry","arcane":"bubbleberry@arcane","seed":"bubbleberry@seed","seedArcane":"bubbleberry@seed-arcane","stages":["bubbleberry@stage0","bubbleberry@stage1","bubbleberry@stage2","bubbleberry@stage3"],"stagesArcane":["bubbleberry@stage0-arcane","bubbleberry@stage1-arcane","bubbleberry@stage2-arcane","bubbleberry@stage3-arcane"],"bed":"soil","seedForm":"pip"},"tidebloom":{"sprite":"tidebloom","arcane":"tidebloom@arcane","seed":"tidebloom@seed","seedArcane":"tidebloom@seed-arcane","stages":["tidebloom@stage0","tidebloom@stage1","tidebloom@stage2","tidebloom@stage3"],"stagesArcane":["tidebloom@stage0-arcane","tidebloom@stage1-arcane","tidebloom@stage2-arcane","tidebloom@stage3-arcane"],"bed":"soil","seedForm":"seed"},"streampearl":{"sprite":"streampearl","arcane":"streampearl@arcane","seed":"streampearl@seed","seedArcane":"streampearl@seed-arcane","stages":["streampearl@stage0","streampearl@stage1","streampearl@stage2","streampearl@stage3"],"stagesArcane":["streampearl@stage0-arcane","streampearl@stage1-arcane","streampearl@stage2-arcane","streampearl@stage3-arcane"],"bed":"tide","seedForm":"spat"},"frostlotus":{"sprite":"frostlotus","arcane":"frostlotus@arcane","seed":"frostlotus@seed","seedArcane":"frostlotus@seed-arcane","stages":["frostlotus@stage0","frostlotus@stage1","frostlotus@stage2","frostlotus@stage3"],"stagesArcane":["frostlotus@stage0-arcane","frostlotus@stage1-arcane","frostlotus@stage2-arcane","frostlotus@stage3-arcane"],"bed":"soil","seedForm":"seed"},"rimefeather":{"sprite":"rimefeather","arcane":"rimefeather@arcane","seed":"rimefeather@seed","seedArcane":"rimefeather@seed-arcane","stages":["rimefeather@stage0","rimefeather@stage1","rimefeather@stage2","rimefeather@stage3"],"stagesArcane":["rimefeather@stage0-arcane","rimefeather@stage1-arcane","rimefeather@stage2-arcane","rimefeather@stage3-arcane"],"bed":"soil","seedForm":"grain"},"nixie-torc":{"sprite":"nixie-torc","arcane":"nixie-torc@arcane","seed":"nixie-torc@seed","seedArcane":"nixie-torc@seed-arcane","stages":["nixie-torc@stage0","nixie-torc@stage1","nixie-torc@stage2","nixie-torc@stage3"],"stagesArcane":["nixie-torc@stage0-arcane","nixie-torc@stage1-arcane","nixie-torc@stage2-arcane","nixie-torc@stage3-arcane"],"bed":"crystal","seedForm":"chip"},"everfrost-pearlbloom":{"sprite":"everfrost-pearlbloom","arcane":"everfrost-pearlbloom@arcane","seed":"everfrost-pearlbloom@seed","seedArcane":"everfrost-pearlbloom@seed-arcane","stages":["everfrost-pearlbloom@stage0","everfrost-pearlbloom@stage1","everfrost-pearlbloom@stage2","everfrost-pearlbloom@stage3"],"stagesArcane":["everfrost-pearlbloom@stage0-arcane","everfrost-pearlbloom@stage1-arcane","everfrost-pearlbloom@stage2-arcane","everfrost-pearlbloom@stage3-arcane"],"bed":"soil","seedForm":"seed"},"stonewort":{"sprite":"stonewort","arcane":"stonewort@arcane","seed":"stonewort@seed","seedArcane":"stonewort@seed-arcane","stages":["stonewort@stage0","stonewort@stage1","stonewort@stage2","stonewort@stage3"],"stagesArcane":["stonewort@stage0-arcane","stonewort@stage1-arcane","stonewort@stage2-arcane","stonewort@stage3-arcane"],"bed":"soil","seedForm":"seed"},"quarrycap":{"sprite":"quarrycap","arcane":"quarrycap@arcane","seed":"quarrycap@seed","seedArcane":"quarrycap@seed-arcane","stages":["quarrycap@stage0","quarrycap@stage1","quarrycap@stage2","quarrycap@stage3"],"stagesArcane":["quarrycap@stage0-arcane","quarrycap@stage1-arcane","quarrycap@stage2-arcane","quarrycap@stage3-arcane"],"bed":"fungal","seedForm":"spore"},"ironbloom":{"sprite":"ironbloom","arcane":"ironbloom@arcane","seed":"ironbloom@seed","seedArcane":"ironbloom@seed-arcane","stages":["ironbloom@stage0","ironbloom@stage1","ironbloom@stage2","ironbloom@stage3"],"stagesArcane":["ironbloom@stage0-arcane","ironbloom@stage1-arcane","ironbloom@stage2-arcane","ironbloom@stage3-arcane"],"bed":"soil","seedForm":"seed"},"stoneberry":{"sprite":"stoneberry","arcane":"stoneberry@arcane","seed":"stoneberry@seed","seedArcane":"stoneberry@seed-arcane","stages":["stoneberry@stage0","stoneberry@stage1","stoneberry@stage2","stoneberry@stage3"],"stagesArcane":["stoneberry@stage0-arcane","stoneberry@stage1-arcane","stoneberry@stage2-arcane","stoneberry@stage3-arcane"],"bed":"soil","seedForm":"pip"},"orebud":{"sprite":"orebud","arcane":"orebud@arcane","seed":"orebud@seed","seedArcane":"orebud@seed-arcane","stages":["orebud@stage0","orebud@stage1","orebud@stage2","orebud@stage3"],"stagesArcane":["orebud@stage0-arcane","orebud@stage1-arcane","orebud@stage2-arcane","orebud@stage3-arcane"],"bed":"crystal","seedForm":"chip"},"ferric-crystal":{"sprite":"ferric-crystal","arcane":"ferric-crystal@arcane","seed":"ferric-crystal@seed","seedArcane":"ferric-crystal@seed-arcane","stages":["ferric-crystal@stage0","ferric-crystal@stage1","ferric-crystal@stage2","ferric-crystal@stage3"],"stagesArcane":["ferric-crystal@stage0-arcane","ferric-crystal@stage1-arcane","ferric-crystal@stage2-arcane","ferric-crystal@stage3-arcane"],"bed":"crystal","seedForm":"chip"},"gravelpod":{"sprite":"gravelpod","arcane":"gravelpod@arcane","seed":"gravelpod@seed","seedArcane":"gravelpod@seed-arcane","stages":["gravelpod@stage0","gravelpod@stage1","gravelpod@stage2","gravelpod@stage3"],"stagesArcane":["gravelpod@stage0-arcane","gravelpod@stage1-arcane","gravelpod@stage2-arcane","gravelpod@stage3-arcane"],"bed":"crystal","seedForm":"chip"},"ammonite-coil":{"sprite":"ammonite-coil","arcane":"ammonite-coil@arcane","seed":"ammonite-coil@seed","seedArcane":"ammonite-coil@seed-arcane","stages":["ammonite-coil@stage0","ammonite-coil@stage1","ammonite-coil@stage2","ammonite-coil@stage3"],"stagesArcane":["ammonite-coil@stage0-arcane","ammonite-coil@stage1-arcane","ammonite-coil@stage2-arcane","ammonite-coil@stage3-arcane"],"bed":"crystal","seedForm":"chip"},"emberheart-geode":{"sprite":"emberheart-geode","arcane":"emberheart-geode@arcane","seed":"emberheart-geode@seed","seedArcane":"emberheart-geode@seed-arcane","stages":["emberheart-geode@stage0","emberheart-geode@stage1","emberheart-geode@stage2","emberheart-geode@stage3"],"stagesArcane":["emberheart-geode@stage0-arcane","emberheart-geode@stage1-arcane","emberheart-geode@stage2-arcane","emberheart-geode@stage3-arcane"],"bed":"crystal","seedForm":"chip"},"titan-root":{"sprite":"titan-root","arcane":"titan-root@arcane","seed":"titan-root@seed","seedArcane":"titan-root@seed-arcane","stages":["titan-root@stage0","titan-root@stage1","titan-root@stage2","titan-root@stage3"],"stagesArcane":["titan-root@stage0-arcane","titan-root@stage1-arcane","titan-root@stage2-arcane","titan-root@stage3-arcane"],"bed":"soil","seedForm":"bulb"},"nethercap":{"sprite":"nethercap","arcane":"nethercap@arcane","seed":"nethercap@seed","seedArcane":"nethercap@seed-arcane","stages":["nethercap@stage0","nethercap@stage1","nethercap@stage2","nethercap@stage3"],"stagesArcane":["nethercap@stage0-arcane","nethercap@stage1-arcane","nethercap@stage2-arcane","nethercap@stage3-arcane"],"bed":"fungal","seedForm":"spore"},"gloommoss":{"sprite":"gloommoss","arcane":"gloommoss@arcane","seed":"gloommoss@seed","seedArcane":"gloommoss@seed-arcane","stages":["gloommoss@stage0","gloommoss@stage1","gloommoss@stage2","gloommoss@stage3"],"stagesArcane":["gloommoss@stage0-arcane","gloommoss@stage1-arcane","gloommoss@stage2-arcane","gloommoss@stage3-arcane"],"bed":"fungal","seedForm":"spore"},"umbrabell":{"sprite":"umbrabell","arcane":"umbrabell@arcane","seed":"umbrabell@seed","seedArcane":"umbrabell@seed-arcane","stages":["umbrabell@stage0","umbrabell@stage1","umbrabell@stage2","umbrabell@stage3"],"stagesArcane":["umbrabell@stage0-arcane","umbrabell@stage1-arcane","umbrabell@stage2-arcane","umbrabell@stage3-arcane"],"bed":"soil","seedForm":"seed"},"shadefruit":{"sprite":"shadefruit","arcane":"shadefruit@arcane","seed":"shadefruit@seed","seedArcane":"shadefruit@seed-arcane","stages":["shadefruit@stage0","shadefruit@stage1","shadefruit@stage2","shadefruit@stage3"],"stagesArcane":["shadefruit@stage0-arcane","shadefruit@stage1-arcane","shadefruit@stage2-arcane","shadefruit@stage3-arcane"],"bed":"soil","seedForm":"pip"},"sporelantern":{"sprite":"sporelantern","arcane":"sporelantern@arcane","seed":"sporelantern@seed","seedArcane":"sporelantern@seed-arcane","stages":["sporelantern@stage0","sporelantern@stage1","sporelantern@stage2","sporelantern@stage3"],"stagesArcane":["sporelantern@stage0-arcane","sporelantern@stage1-arcane","sporelantern@stage2-arcane","sporelantern@stage3-arcane"],"bed":"soil","seedForm":"winged"},"wraithvine":{"sprite":"wraithvine","arcane":"wraithvine@arcane","seed":"wraithvine@seed","seedArcane":"wraithvine@seed-arcane","stages":["wraithvine@stage0","wraithvine@stage1","wraithvine@stage2","wraithvine@stage3"],"stagesArcane":["wraithvine@stage0-arcane","wraithvine@stage1-arcane","wraithvine@stage2-arcane","wraithvine@stage3-arcane"],"bed":"soil","seedForm":"winged"},"nightbloom-lotus":{"sprite":"nightbloom-lotus","arcane":"nightbloom-lotus@arcane","seed":"nightbloom-lotus@seed","seedArcane":"nightbloom-lotus@seed-arcane","stages":["nightbloom-lotus@stage0","nightbloom-lotus@stage1","nightbloom-lotus@stage2","nightbloom-lotus@stage3"],"stagesArcane":["nightbloom-lotus@stage0-arcane","nightbloom-lotus@stage1-arcane","nightbloom-lotus@stage2-arcane","nightbloom-lotus@stage3-arcane"],"bed":"soil","seedForm":"seed"},"umbral-amethyst":{"sprite":"umbral-amethyst","arcane":"umbral-amethyst@arcane","seed":"umbral-amethyst@seed","seedArcane":"umbral-amethyst@seed-arcane","stages":["umbral-amethyst@stage0","umbral-amethyst@stage1","umbral-amethyst@stage2","umbral-amethyst@stage3"],"stagesArcane":["umbral-amethyst@stage0-arcane","umbral-amethyst@stage1-arcane","umbral-amethyst@stage2-arcane","umbral-amethyst@stage3-arcane"],"bed":"crystal","seedForm":"chip"},"thornhalo":{"sprite":"thornhalo","arcane":"thornhalo@arcane","seed":"thornhalo@seed","seedArcane":"thornhalo@seed-arcane","stages":["thornhalo@stage0","thornhalo@stage1","thornhalo@stage2","thornhalo@stage3"],"stagesArcane":["thornhalo@stage0-arcane","thornhalo@stage1-arcane","thornhalo@stage2-arcane","thornhalo@stage3-arcane"],"bed":"crystal","seedForm":"chip"},"venomlily":{"sprite":"venomlily","arcane":"venomlily@arcane","seed":"venomlily@seed","seedArcane":"venomlily@seed-arcane","stages":["venomlily@stage0","venomlily@stage1","venomlily@stage2","venomlily@stage3"],"stagesArcane":["venomlily@stage0-arcane","venomlily@stage1-arcane","venomlily@stage2-arcane","venomlily@stage3-arcane"],"bed":"soil","seedForm":"seed"},"emberleaf":{"sprite":"emberleaf","arcane":"emberleaf@arcane","seed":"emberleaf@seed","seedArcane":"emberleaf@seed-arcane","stages":["emberleaf@stage0","emberleaf@stage1","emberleaf@stage2","emberleaf@stage3"],"stagesArcane":["emberleaf@stage0-arcane","emberleaf@stage1-arcane","emberleaf@stage2-arcane","emberleaf@stage3-arcane"],"bed":"soil","seedForm":"seed"},"cindershroom":{"sprite":"cindershroom","arcane":"cindershroom@arcane","seed":"cindershroom@seed","seedArcane":"cindershroom@seed-arcane","stages":["cindershroom@stage0","cindershroom@stage1","cindershroom@stage2","cindershroom@stage3"],"stagesArcane":["cindershroom@stage0-arcane","cindershroom@stage1-arcane","cindershroom@stage2-arcane","cindershroom@stage3-arcane"],"bed":"fungal","seedForm":"spore"},"firebramble":{"sprite":"firebramble","arcane":"firebramble@arcane","seed":"firebramble@seed","seedArcane":"firebramble@seed-arcane","stages":["firebramble@stage0","firebramble@stage1","firebramble@stage2","firebramble@stage3"],"stagesArcane":["firebramble@stage0-arcane","firebramble@stage1-arcane","firebramble@stage2-arcane","firebramble@stage3-arcane"],"bed":"soil","seedForm":"pip"},"sulfurvine":{"sprite":"sulfurvine","arcane":"sulfurvine@arcane","seed":"sulfurvine@seed","seedArcane":"sulfurvine@seed-arcane","stages":["sulfurvine@stage0","sulfurvine@stage1","sulfurvine@stage2","sulfurvine@stage3"],"stagesArcane":["sulfurvine@stage0-arcane","sulfurvine@stage1-arcane","sulfurvine@stage2-arcane","sulfurvine@stage3-arcane"],"bed":"soil","seedForm":"winged"},"flamecrest":{"sprite":"flamecrest","arcane":"flamecrest@arcane","seed":"flamecrest@seed","seedArcane":"flamecrest@seed-arcane","stages":["flamecrest@stage0","flamecrest@stage1","flamecrest@stage2","flamecrest@stage3"],"stagesArcane":["flamecrest@stage0-arcane","flamecrest@stage1-arcane","flamecrest@stage2-arcane","flamecrest@stage3-arcane"],"bed":"soil","seedForm":"seed"},"blazestone":{"sprite":"blazestone","arcane":"blazestone@arcane","seed":"blazestone@seed","seedArcane":"blazestone@seed-arcane","stages":["blazestone@stage0","blazestone@stage1","blazestone@stage2","blazestone@stage3"],"stagesArcane":["blazestone@stage0-arcane","blazestone@stage1-arcane","blazestone@stage2-arcane","blazestone@stage3-arcane"],"bed":"crystal","seedForm":"chip"},"phoenix-heartseed":{"sprite":"phoenix-heartseed","arcane":"phoenix-heartseed@arcane","seed":"phoenix-heartseed@seed","seedArcane":"phoenix-heartseed@seed-arcane","stages":["phoenix-heartseed@stage0","phoenix-heartseed@stage1","phoenix-heartseed@stage2","phoenix-heartseed@stage3"],"stagesArcane":["phoenix-heartseed@stage0-arcane","phoenix-heartseed@stage1-arcane","phoenix-heartseed@stage2-arcane","phoenix-heartseed@stage3-arcane"],"bed":"soil","seedForm":"winged"},"ashcactus":{"sprite":"ashcactus","arcane":"ashcactus@arcane","seed":"ashcactus@seed","seedArcane":"ashcactus@seed-arcane","stages":["ashcactus@stage0","ashcactus@stage1","ashcactus@stage2","ashcactus@stage3"],"stagesArcane":["ashcactus@stage0-arcane","ashcactus@stage1-arcane","ashcactus@stage2-arcane","ashcactus@stage3-arcane"],"bed":"soil","seedForm":"seed"},"everburning-sunheart":{"sprite":"everburning-sunheart","arcane":"everburning-sunheart@arcane","seed":"everburning-sunheart@seed","seedArcane":"everburning-sunheart@seed-arcane","stages":["everburning-sunheart@stage0","everburning-sunheart@stage1","everburning-sunheart@stage2","everburning-sunheart@stage3"],"stagesArcane":["everburning-sunheart@stage0-arcane","everburning-sunheart@stage1-arcane","everburning-sunheart@stage2-arcane","everburning-sunheart@stage3-arcane"],"bed":"soil","seedForm":"seed"},"cinderpod":{"sprite":"cinderpod","arcane":"cinderpod@arcane","seed":"cinderpod@seed","seedArcane":"cinderpod@seed-arcane","stages":["cinderpod@stage0","cinderpod@stage1","cinderpod@stage2","cinderpod@stage3"],"stagesArcane":["cinderpod@stage0-arcane","cinderpod@stage1-arcane","cinderpod@stage2-arcane","cinderpod@stage3-arcane"],"bed":"crystal","seedForm":"chip"},"moonreed":{"sprite":"moonreed","arcane":"moonreed@arcane","seed":"moonreed@seed","seedArcane":"moonreed@seed-arcane","stages":["moonreed@stage0","moonreed@stage1","moonreed@stage2","moonreed@stage3"],"stagesArcane":["moonreed@stage0-arcane","moonreed@stage1-arcane","moonreed@stage2-arcane","moonreed@stage3-arcane"],"bed":"soil","seedForm":"grain"},"fenmilk-cap":{"sprite":"fenmilk-cap","arcane":"fenmilk-cap@arcane","seed":"fenmilk-cap@seed","seedArcane":"fenmilk-cap@seed-arcane","stages":["fenmilk-cap@stage0","fenmilk-cap@stage1","fenmilk-cap@stage2","fenmilk-cap@stage3"],"stagesArcane":["fenmilk-cap@stage0-arcane","fenmilk-cap@stage1-arcane","fenmilk-cap@stage2-arcane","fenmilk-cap@stage3-arcane"],"bed":"fungal","seedForm":"spore"},"duskbell":{"sprite":"duskbell","arcane":"duskbell@arcane","seed":"duskbell@seed","seedArcane":"duskbell@seed-arcane","stages":["duskbell@stage0","duskbell@stage1","duskbell@stage2","duskbell@stage3"],"stagesArcane":["duskbell@stage0-arcane","duskbell@stage1-arcane","duskbell@stage2-arcane","duskbell@stage3-arcane"],"bed":"soil","seedForm":"seed"},"dreamberry":{"sprite":"dreamberry","arcane":"dreamberry@arcane","seed":"dreamberry@seed","seedArcane":"dreamberry@seed-arcane","stages":["dreamberry@stage0","dreamberry@stage1","dreamberry@stage2","dreamberry@stage3"],"stagesArcane":["dreamberry@stage0-arcane","dreamberry@stage1-arcane","dreamberry@stage2-arcane","dreamberry@stage3-arcane"],"bed":"soil","seedForm":"pip"},"moonlotus":{"sprite":"moonlotus","arcane":"moonlotus@arcane","seed":"moonlotus@seed","seedArcane":"moonlotus@seed-arcane","stages":["moonlotus@stage0","moonlotus@stage1","moonlotus@stage2","moonlotus@stage3"],"stagesArcane":["moonlotus@stage0-arcane","moonlotus@stage1-arcane","moonlotus@stage2-arcane","moonlotus@stage3-arcane"],"bed":"soil","seedForm":"seed"},"sleepglass":{"sprite":"sleepglass","arcane":"sleepglass@arcane","seed":"sleepglass@seed","seedArcane":"sleepglass@seed-arcane","stages":["sleepglass@stage0","sleepglass@stage1","sleepglass@stage2","sleepglass@stage3"],"stagesArcane":["sleepglass@stage0-arcane","sleepglass@stage1-arcane","sleepglass@stage2-arcane","sleepglass@stage3-arcane"],"bed":"crystal","seedForm":"chip"},"moonveil-bloom":{"sprite":"moonveil-bloom","arcane":"moonveil-bloom@arcane","seed":"moonveil-bloom@seed","seedArcane":"moonveil-bloom@seed-arcane","stages":["moonveil-bloom@stage0","moonveil-bloom@stage1","moonveil-bloom@stage2","moonveil-bloom@stage3"],"stagesArcane":["moonveil-bloom@stage0-arcane","moonveil-bloom@stage1-arcane","moonveil-bloom@stage2-arcane","moonveil-bloom@stage3-arcane"],"bed":"soil","seedForm":"seed"},"mirepod-shell":{"sprite":"mirepod-shell","arcane":"mirepod-shell@arcane","seed":"mirepod-shell@seed","seedArcane":"mirepod-shell@seed-arcane","stages":["mirepod-shell@stage0","mirepod-shell@stage1","mirepod-shell@stage2","mirepod-shell@stage3"],"stagesArcane":["mirepod-shell@stage0-arcane","mirepod-shell@stage1-arcane","mirepod-shell@stage2-arcane","mirepod-shell@stage3-arcane"],"bed":"tide","seedForm":"spat"},"wisp-reliquary":{"sprite":"wisp-reliquary","arcane":"wisp-reliquary@arcane","seed":"wisp-reliquary@seed","seedArcane":"wisp-reliquary@seed-arcane","stages":["wisp-reliquary@stage0","wisp-reliquary@stage1","wisp-reliquary@stage2","wisp-reliquary@stage3"],"stagesArcane":["wisp-reliquary@stage0-arcane","wisp-reliquary@stage1-arcane","wisp-reliquary@stage2-arcane","wisp-reliquary@stage3-arcane"],"bed":"crystal","seedForm":"chip"},"starfall-lotus":{"sprite":"starfall-lotus","arcane":"starfall-lotus@arcane","seed":"starfall-lotus@seed","seedArcane":"starfall-lotus@seed-arcane","stages":["starfall-lotus@stage0","starfall-lotus@stage1","starfall-lotus@stage2","starfall-lotus@stage3"],"stagesArcane":["starfall-lotus@stage0-arcane","starfall-lotus@stage1-arcane","starfall-lotus@stage2-arcane","starfall-lotus@stage3-arcane"],"bed":"soil","seedForm":"seed"},"skyspray":{"sprite":"skyspray","arcane":"skyspray@arcane","seed":"skyspray@seed","seedArcane":"skyspray@seed-arcane","stages":["skyspray@stage0","skyspray@stage1","skyspray@stage2","skyspray@stage3"],"stagesArcane":["skyspray@stage0-arcane","skyspray@stage1-arcane","skyspray@stage2-arcane","skyspray@stage3-arcane"],"bed":"soil","seedForm":"seed"},"cloudcap":{"sprite":"cloudcap","arcane":"cloudcap@arcane","seed":"cloudcap@seed","seedArcane":"cloudcap@seed-arcane","stages":["cloudcap@stage0","cloudcap@stage1","cloudcap@stage2","cloudcap@stage3"],"stagesArcane":["cloudcap@stage0-arcane","cloudcap@stage1-arcane","cloudcap@stage2-arcane","cloudcap@stage3-arcane"],"bed":"fungal","seedForm":"spore"},"airstar":{"sprite":"airstar","arcane":"airstar@arcane","seed":"airstar@seed","seedArcane":"airstar@seed-arcane","stages":["airstar@stage0","airstar@stage1","airstar@stage2","airstar@stage3"],"stagesArcane":["airstar@stage0-arcane","airstar@stage1-arcane","airstar@stage2-arcane","airstar@stage3-arcane"],"bed":"soil","seedForm":"seed"},"skyberry":{"sprite":"skyberry","arcane":"skyberry@arcane","seed":"skyberry@seed","seedArcane":"skyberry@seed-arcane","stages":["skyberry@stage0","skyberry@stage1","skyberry@stage2","skyberry@stage3"],"stagesArcane":["skyberry@stage0-arcane","skyberry@stage1-arcane","skyberry@stage2-arcane","skyberry@stage3-arcane"],"bed":"soil","seedForm":"pip"},"updraft-seedwing":{"sprite":"updraft-seedwing","arcane":"updraft-seedwing@arcane","seed":"updraft-seedwing@seed","seedArcane":"updraft-seedwing@seed-arcane","stages":["updraft-seedwing@stage0","updraft-seedwing@stage1","updraft-seedwing@stage2","updraft-seedwing@stage3"],"stagesArcane":["updraft-seedwing@stage0-arcane","updraft-seedwing@stage1-arcane","updraft-seedwing@stage2-arcane","updraft-seedwing@stage3-arcane"],"bed":"soil","seedForm":"winged"},"zephyr-starbloom":{"sprite":"zephyr-starbloom","arcane":"zephyr-starbloom@arcane","seed":"zephyr-starbloom@seed","seedArcane":"zephyr-starbloom@seed-arcane","stages":["zephyr-starbloom@stage0","zephyr-starbloom@stage1","zephyr-starbloom@stage2","zephyr-starbloom@stage3"],"stagesArcane":["zephyr-starbloom@stage0-arcane","zephyr-starbloom@stage1-arcane","zephyr-starbloom@stage2-arcane","zephyr-starbloom@stage3-arcane"],"bed":"soil","seedForm":"seed"},"featherpetal":{"sprite":"featherpetal","arcane":"featherpetal@arcane","seed":"featherpetal@seed","seedArcane":"featherpetal@seed-arcane","stages":["featherpetal@stage0","featherpetal@stage1","featherpetal@stage2","featherpetal@stage3"],"stagesArcane":["featherpetal@stage0-arcane","featherpetal@stage1-arcane","featherpetal@stage2-arcane","featherpetal@stage3-arcane"],"bed":"soil","seedForm":"seed"},"skyshard-geode":{"sprite":"skyshard-geode","arcane":"skyshard-geode@arcane","seed":"skyshard-geode@seed","seedArcane":"skyshard-geode@seed-arcane","stages":["skyshard-geode@stage0","skyshard-geode@stage1","skyshard-geode@stage2","skyshard-geode@stage3"],"stagesArcane":["skyshard-geode@stage0-arcane","skyshard-geode@stage1-arcane","skyshard-geode@stage2-arcane","skyshard-geode@stage3-arcane"],"bed":"crystal","seedForm":"chip"},"windfern":{"sprite":"windfern","arcane":"windfern@arcane","seed":"windfern@seed","seedArcane":"windfern@seed-arcane","stages":["windfern@stage0","windfern@stage1","windfern@stage2","windfern@stage3"],"stagesArcane":["windfern@stage0-arcane","windfern@stage1-arcane","windfern@stage2-arcane","windfern@stage3-arcane"],"bed":"soil","seedForm":"seed"},"cloudprism":{"sprite":"cloudprism","arcane":"cloudprism@arcane","seed":"cloudprism@seed","seedArcane":"cloudprism@seed-arcane","stages":["cloudprism@stage0","cloudprism@stage1","cloudprism@stage2","cloudprism@stage3"],"stagesArcane":["cloudprism@stage0-arcane","cloudprism@stage1-arcane","cloudprism@stage2-arcane","cloudprism@stage3-arcane"],"bed":"crystal","seedForm":"chip"},"morphleaf":{"sprite":"morphleaf","arcane":"morphleaf@arcane","seed":"morphleaf@seed","seedArcane":"morphleaf@seed-arcane","stages":["morphleaf@stage0","morphleaf@stage1","morphleaf@stage2","morphleaf@stage3"],"stagesArcane":["morphleaf@stage0-arcane","morphleaf@stage1-arcane","morphleaf@stage2-arcane","morphleaf@stage3-arcane"],"bed":"soil","seedForm":"seed"},"shapecap":{"sprite":"shapecap","arcane":"shapecap@arcane","seed":"shapecap@seed","seedArcane":"shapecap@seed-arcane","stages":["shapecap@stage0","shapecap@stage1","shapecap@stage2","shapecap@stage3"],"stagesArcane":["shapecap@stage0-arcane","shapecap@stage1-arcane","shapecap@stage2-arcane","shapecap@stage3-arcane"],"bed":"fungal","seedForm":"spore"},"twinsprout":{"sprite":"twinsprout","arcane":"twinsprout@arcane","seed":"twinsprout@seed","seedArcane":"twinsprout@seed-arcane","stages":["twinsprout@stage0","twinsprout@stage1","twinsprout@stage2","twinsprout@stage3"],"stagesArcane":["twinsprout@stage0-arcane","twinsprout@stage1-arcane","twinsprout@stage2-arcane","twinsprout@stage3-arcane"],"bed":"soil","seedForm":"seed"},"graftberry":{"sprite":"graftberry","arcane":"graftberry@arcane","seed":"graftberry@seed","seedArcane":"graftberry@seed-arcane","stages":["graftberry@stage0","graftberry@stage1","graftberry@stage2","graftberry@stage3"],"stagesArcane":["graftberry@stage0-arcane","graftberry@stage1-arcane","graftberry@stage2-arcane","graftberry@stage3-arcane"],"bed":"soil","seedForm":"pip"},"formblossom":{"sprite":"formblossom","arcane":"formblossom@arcane","seed":"formblossom@seed","seedArcane":"formblossom@seed-arcane","stages":["formblossom@stage0","formblossom@stage1","formblossom@stage2","formblossom@stage3"],"stagesArcane":["formblossom@stage0-arcane","formblossom@stage1-arcane","formblossom@stage2-arcane","formblossom@stage3-arcane"],"bed":"soil","seedForm":"seed"},"mimic-eye":{"sprite":"mimic-eye","arcane":"mimic-eye@arcane","seed":"mimic-eye@seed","seedArcane":"mimic-eye@seed-arcane","stages":["mimic-eye@stage0","mimic-eye@stage1","mimic-eye@stage2","mimic-eye@stage3"],"stagesArcane":["mimic-eye@stage0-arcane","mimic-eye@stage1-arcane","mimic-eye@stage2-arcane","mimic-eye@stage3-arcane"],"bed":"crystal","seedForm":"chip"},"crownbloom":{"sprite":"crownbloom","arcane":"crownbloom@arcane","seed":"crownbloom@seed","seedArcane":"crownbloom@seed-arcane","stages":["crownbloom@stage0","crownbloom@stage1","crownbloom@stage2","crownbloom@stage3"],"stagesArcane":["crownbloom@stage0-arcane","crownbloom@stage1-arcane","crownbloom@stage2-arcane","crownbloom@stage3-arcane"],"bed":"soil","seedForm":"seed"},"shifting-root":{"sprite":"shifting-root","arcane":"shifting-root@arcane","seed":"shifting-root@seed","seedArcane":"shifting-root@seed-arcane","stages":["shifting-root@stage0","shifting-root@stage1","shifting-root@stage2","shifting-root@stage3"],"stagesArcane":["shifting-root@stage0-arcane","shifting-root@stage1-arcane","shifting-root@stage2-arcane","shifting-root@stage3-arcane"],"bed":"soil","seedForm":"bulb"},"splice-bud":{"sprite":"splice-bud","arcane":"splice-bud@arcane","seed":"splice-bud@seed","seedArcane":"splice-bud@seed-arcane","stages":["splice-bud@stage0","splice-bud@stage1","splice-bud@stage2","splice-bud@stage3"],"stagesArcane":["splice-bud@stage0-arcane","splice-bud@stage1-arcane","splice-bud@stage2-arcane","splice-bud@stage3-arcane"],"bed":"soil","seedForm":"seed"},"polymorph-lotus":{"sprite":"polymorph-lotus","arcane":"polymorph-lotus@arcane","seed":"polymorph-lotus@seed","seedArcane":"polymorph-lotus@seed-arcane","stages":["polymorph-lotus@stage0","polymorph-lotus@stage1","polymorph-lotus@stage2","polymorph-lotus@stage3"],"stagesArcane":["polymorph-lotus@stage0-arcane","polymorph-lotus@stage1-arcane","polymorph-lotus@stage2-arcane","polymorph-lotus@stage3-arcane"],"bed":"soil","seedForm":"seed"},"veilfern":{"sprite":"veilfern","arcane":"veilfern@arcane","seed":"veilfern@seed","seedArcane":"veilfern@seed-arcane","stages":["veilfern@stage0","veilfern@stage1","veilfern@stage2","veilfern@stage3"],"stagesArcane":["veilfern@stage0-arcane","veilfern@stage1-arcane","veilfern@stage2-arcane","veilfern@stage3-arcane"],"bed":"soil","seedForm":"seed"},"hollowcap":{"sprite":"hollowcap","arcane":"hollowcap@arcane","seed":"hollowcap@seed","seedArcane":"hollowcap@seed-arcane","stages":["hollowcap@stage0","hollowcap@stage1","hollowcap@stage2","hollowcap@stage3"],"stagesArcane":["hollowcap@stage0-arcane","hollowcap@stage1-arcane","hollowcap@stage2-arcane","hollowcap@stage3-arcane"],"bed":"fungal","seedForm":"spore"},"ghostbud":{"sprite":"ghostbud","arcane":"ghostbud@arcane","seed":"ghostbud@seed","seedArcane":"ghostbud@seed-arcane","stages":["ghostbud@stage0","ghostbud@stage1","ghostbud@stage2","ghostbud@stage3"],"stagesArcane":["ghostbud@stage0-arcane","ghostbud@stage1-arcane","ghostbud@stage2-arcane","ghostbud@stage3-arcane"],"bed":"soil","seedForm":"seed"},"veilberry":{"sprite":"veilberry","arcane":"veilberry@arcane","seed":"veilberry@seed","seedArcane":"veilberry@seed-arcane","stages":["veilberry@stage0","veilberry@stage1","veilberry@stage2","veilberry@stage3"],"stagesArcane":["veilberry@stage0-arcane","veilberry@stage1-arcane","veilberry@stage2-arcane","veilberry@stage3-arcane"],"bed":"soil","seedForm":"pip"},"hollowbloom":{"sprite":"hollowbloom","arcane":"hollowbloom@arcane","seed":"hollowbloom@seed","seedArcane":"hollowbloom@seed-arcane","stages":["hollowbloom@stage0","hollowbloom@stage1","hollowbloom@stage2","hollowbloom@stage3"],"stagesArcane":["hollowbloom@stage0-arcane","hollowbloom@stage1-arcane","hollowbloom@stage2-arcane","hollowbloom@stage3-arcane"],"bed":"soil","seedForm":"seed"},"veilglass":{"sprite":"veilglass","arcane":"veilglass@arcane","seed":"veilglass@seed","seedArcane":"veilglass@seed-arcane","stages":["veilglass@stage0","veilglass@stage1","veilglass@stage2","veilglass@stage3"],"stagesArcane":["veilglass@stage0-arcane","veilglass@stage1-arcane","veilglass@stage2-arcane","veilglass@stage3-arcane"],"bed":"crystal","seedForm":"chip"},"shroud-orchid":{"sprite":"shroud-orchid","arcane":"shroud-orchid@arcane","seed":"shroud-orchid@seed","seedArcane":"shroud-orchid@seed-arcane","stages":["shroud-orchid@stage0","shroud-orchid@stage1","shroud-orchid@stage2","shroud-orchid@stage3"],"stagesArcane":["shroud-orchid@stage0-arcane","shroud-orchid@stage1-arcane","shroud-orchid@stage2-arcane","shroud-orchid@stage3-arcane"],"bed":"soil","seedForm":"seed"},"mistpebble":{"sprite":"mistpebble","arcane":"mistpebble@arcane","seed":"mistpebble@seed","seedArcane":"mistpebble@seed-arcane","stages":["mistpebble@stage0","mistpebble@stage1","mistpebble@stage2","mistpebble@stage3"],"stagesArcane":["mistpebble@stage0-arcane","mistpebble@stage1-arcane","mistpebble@stage2-arcane","mistpebble@stage3-arcane"],"bed":"crystal","seedForm":"chip"},"eclipse-eye":{"sprite":"eclipse-eye","arcane":"eclipse-eye@arcane","seed":"eclipse-eye@seed","seedArcane":"eclipse-eye@seed-arcane","stages":["eclipse-eye@stage0","eclipse-eye@stage1","eclipse-eye@stage2","eclipse-eye@stage3"],"stagesArcane":["eclipse-eye@stage0-arcane","eclipse-eye@stage1-arcane","eclipse-eye@stage2-arcane","eclipse-eye@stage3-arcane"],"bed":"crystal","seedForm":"chip"},"veil-circlet":{"sprite":"veil-circlet","arcane":"veil-circlet@arcane","seed":"veil-circlet@seed","seedArcane":"veil-circlet@seed-arcane","stages":["veil-circlet@stage0","veil-circlet@stage1","veil-circlet@stage2","veil-circlet@stage3"],"stagesArcane":["veil-circlet@stage0-arcane","veil-circlet@stage1-arcane","veil-circlet@stage2-arcane","veil-circlet@stage3-arcane"],"bed":"crystal","seedForm":"chip"},"reefmoss":{"sprite":"reefmoss","arcane":"reefmoss@arcane","seed":"reefmoss@seed","seedArcane":"reefmoss@seed-arcane","stages":["reefmoss@stage0","reefmoss@stage1","reefmoss@stage2","reefmoss@stage3"],"stagesArcane":["reefmoss@stage0-arcane","reefmoss@stage1-arcane","reefmoss@stage2-arcane","reefmoss@stage3-arcane"],"bed":"tide","seedForm":"polyp"},"glasscap":{"sprite":"glasscap","arcane":"glasscap@arcane","seed":"glasscap@seed","seedArcane":"glasscap@seed-arcane","stages":["glasscap@stage0","glasscap@stage1","glasscap@stage2","glasscap@stage3"],"stagesArcane":["glasscap@stage0-arcane","glasscap@stage1-arcane","glasscap@stage2-arcane","glasscap@stage3-arcane"],"bed":"fungal","seedForm":"spore"},"coralberry":{"sprite":"coralberry","arcane":"coralberry@arcane","seed":"coralberry@seed","seedArcane":"coralberry@seed-arcane","stages":["coralberry@stage0","coralberry@stage1","coralberry@stage2","coralberry@stage3"],"stagesArcane":["coralberry@stage0-arcane","coralberry@stage1-arcane","coralberry@stage2-arcane","coralberry@stage3-arcane"],"bed":"soil","seedForm":"pip"},"reefbud":{"sprite":"reefbud","arcane":"reefbud@arcane","seed":"reefbud@seed","seedArcane":"reefbud@seed-arcane","stages":["reefbud@stage0","reefbud@stage1","reefbud@stage2","reefbud@stage3"],"stagesArcane":["reefbud@stage0-arcane","reefbud@stage1-arcane","reefbud@stage2-arcane","reefbud@stage3-arcane"],"bed":"soil","seedForm":"seed"},"ghostglass-coral":{"sprite":"ghostglass-coral","arcane":"ghostglass-coral@arcane","seed":"ghostglass-coral@seed","seedArcane":"ghostglass-coral@seed-arcane","stages":["ghostglass-coral@stage0","ghostglass-coral@stage1","ghostglass-coral@stage2","ghostglass-coral@stage3"],"stagesArcane":["ghostglass-coral@stage0-arcane","ghostglass-coral@stage1-arcane","ghostglass-coral@stage2-arcane","ghostglass-coral@stage3-arcane"],"bed":"tide","seedForm":"polyp"},"pearlshell":{"sprite":"pearlshell","arcane":"pearlshell@arcane","seed":"pearlshell@seed","seedArcane":"pearlshell@seed-arcane","stages":["pearlshell@stage0","pearlshell@stage1","pearlshell@stage2","pearlshell@stage3"],"stagesArcane":["pearlshell@stage0-arcane","pearlshell@stage1-arcane","pearlshell@stage2-arcane","pearlshell@stage3-arcane"],"bed":"tide","seedForm":"spat"},"spectral-anemone":{"sprite":"spectral-anemone","arcane":"spectral-anemone@arcane","seed":"spectral-anemone@seed","seedArcane":"spectral-anemone@seed-arcane","stages":["spectral-anemone@stage0","spectral-anemone@stage1","spectral-anemone@stage2","spectral-anemone@stage3"],"stagesArcane":["spectral-anemone@stage0-arcane","spectral-anemone@stage1-arcane","spectral-anemone@stage2-arcane","spectral-anemone@stage3-arcane"],"bed":"tide","seedForm":"polyp"},"shellfern":{"sprite":"shellfern","arcane":"shellfern@arcane","seed":"shellfern@seed","seedArcane":"shellfern@seed-arcane","stages":["shellfern@stage0","shellfern@stage1","shellfern@stage2","shellfern@stage3"],"stagesArcane":["shellfern@stage0-arcane","shellfern@stage1-arcane","shellfern@stage2-arcane","shellfern@stage3-arcane"],"bed":"soil","seedForm":"seed"},"phantom-pearl":{"sprite":"phantom-pearl","arcane":"phantom-pearl@arcane","seed":"phantom-pearl@seed","seedArcane":"phantom-pearl@seed-arcane","stages":["phantom-pearl@stage0","phantom-pearl@stage1","phantom-pearl@stage2","phantom-pearl@stage3"],"stagesArcane":["phantom-pearl@stage0-arcane","phantom-pearl@stage1-arcane","phantom-pearl@stage2-arcane","phantom-pearl@stage3-arcane"],"bed":"tide","seedForm":"spat"},"ghostcrown-coral":{"sprite":"ghostcrown-coral","arcane":"ghostcrown-coral@arcane","seed":"ghostcrown-coral@seed","seedArcane":"ghostcrown-coral@seed-arcane","stages":["ghostcrown-coral@stage0","ghostcrown-coral@stage1","ghostcrown-coral@stage2","ghostcrown-coral@stage3"],"stagesArcane":["ghostcrown-coral@stage0-arcane","ghostcrown-coral@stage1-arcane","ghostcrown-coral@stage2-arcane","ghostcrown-coral@stage3-arcane"],"bed":"tide","seedForm":"polyp"},"timeweed":{"sprite":"timeweed","arcane":"timeweed@arcane","seed":"timeweed@seed","seedArcane":"timeweed@seed-arcane","stages":["timeweed@stage0","timeweed@stage1","timeweed@stage2","timeweed@stage3"],"stagesArcane":["timeweed@stage0-arcane","timeweed@stage1-arcane","timeweed@stage2-arcane","timeweed@stage3-arcane"],"bed":"soil","seedForm":"grain"},"sandskirt-cap":{"sprite":"sandskirt-cap","arcane":"sandskirt-cap@arcane","seed":"sandskirt-cap@seed","seedArcane":"sandskirt-cap@seed-arcane","stages":["sandskirt-cap@stage0","sandskirt-cap@stage1","sandskirt-cap@stage2","sandskirt-cap@stage3"],"stagesArcane":["sandskirt-cap@stage0-arcane","sandskirt-cap@stage1-arcane","sandskirt-cap@stage2-arcane","sandskirt-cap@stage3-arcane"],"bed":"fungal","seedForm":"spore"},"hourberry":{"sprite":"hourberry","arcane":"hourberry@arcane","seed":"hourberry@seed","seedArcane":"hourberry@seed-arcane","stages":["hourberry@stage0","hourberry@stage1","hourberry@stage2","hourberry@stage3"],"stagesArcane":["hourberry@stage0-arcane","hourberry@stage1-arcane","hourberry@stage2-arcane","hourberry@stage3-arcane"],"bed":"soil","seedForm":"pip"},"chronovine":{"sprite":"chronovine","arcane":"chronovine@arcane","seed":"chronovine@seed","seedArcane":"chronovine@seed-arcane","stages":["chronovine@stage0","chronovine@stage1","chronovine@stage2","chronovine@stage3"],"stagesArcane":["chronovine@stage0-arcane","chronovine@stage1-arcane","chronovine@stage2-arcane","chronovine@stage3-arcane"],"bed":"soil","seedForm":"winged"},"epochbloom":{"sprite":"epochbloom","arcane":"epochbloom@arcane","seed":"epochbloom@seed","seedArcane":"epochbloom@seed-arcane","stages":["epochbloom@stage0","epochbloom@stage1","epochbloom@stage2","epochbloom@stage3"],"stagesArcane":["epochbloom@stage0-arcane","epochbloom@stage1-arcane","epochbloom@stage2-arcane","epochbloom@stage3-arcane"],"bed":"soil","seedForm":"seed"},"chronoglass-shard":{"sprite":"chronoglass-shard","arcane":"chronoglass-shard@arcane","seed":"chronoglass-shard@seed","seedArcane":"chronoglass-shard@seed-arcane","stages":["chronoglass-shard@stage0","chronoglass-shard@stage1","chronoglass-shard@stage2","chronoglass-shard@stage3"],"stagesArcane":["chronoglass-shard@stage0-arcane","chronoglass-shard@stage1-arcane","chronoglass-shard@stage2-arcane","chronoglass-shard@stage3-arcane"],"bed":"crystal","seedForm":"chip"},"pendulum-pods":{"sprite":"pendulum-pods","arcane":"pendulum-pods@arcane","seed":"pendulum-pods@seed","seedArcane":"pendulum-pods@seed-arcane","stages":["pendulum-pods@stage0","pendulum-pods@stage1","pendulum-pods@stage2","pendulum-pods@stage3"],"stagesArcane":["pendulum-pods@stage0-arcane","pendulum-pods@stage1-arcane","pendulum-pods@stage2-arcane","pendulum-pods@stage3-arcane"],"bed":"soil","seedForm":"winged"},"sundial-stone":{"sprite":"sundial-stone","arcane":"sundial-stone@arcane","seed":"sundial-stone@seed","seedArcane":"sundial-stone@seed-arcane","stages":["sundial-stone@stage0","sundial-stone@stage1","sundial-stone@stage2","sundial-stone@stage3"],"stagesArcane":["sundial-stone@stage0-arcane","sundial-stone@stage1-arcane","sundial-stone@stage2-arcane","sundial-stone@stage3-arcane"],"bed":"crystal","seedForm":"chip"},"aeon-circlet":{"sprite":"aeon-circlet","arcane":"aeon-circlet@arcane","seed":"aeon-circlet@seed","seedArcane":"aeon-circlet@seed-arcane","stages":["aeon-circlet@stage0","aeon-circlet@stage1","aeon-circlet@stage2","aeon-circlet@stage3"],"stagesArcane":["aeon-circlet@stage0-arcane","aeon-circlet@stage1-arcane","aeon-circlet@stage2-arcane","aeon-circlet@stage3-arcane"],"bed":"crystal","seedForm":"chip"},"hourglass-of-ages":{"sprite":"hourglass-of-ages","arcane":"hourglass-of-ages@arcane","seed":"hourglass-of-ages@seed","seedArcane":"hourglass-of-ages@seed-arcane","stages":["hourglass-of-ages@stage0","hourglass-of-ages@stage1","hourglass-of-ages@stage2","hourglass-of-ages@stage3"],"stagesArcane":["hourglass-of-ages@stage0-arcane","hourglass-of-ages@stage1-arcane","hourglass-of-ages@stage2-arcane","hourglass-of-ages@stage3-arcane"],"bed":"crystal","seedForm":"chip"}};
@@ -5276,9 +5409,9 @@ const FRAMES = {"aeon-circlet@stage0":["growth-exotic",205,387,16,17,8,16],"aeon
 return { ATLAS_VERSION, ATLASES, SPECIES_ASSETS, FRAMES };
 })();
 // src/visual/atlas.js
-const __m50 = (() => {
-const { ATLASES, SPECIES_ASSETS, FRAMES } = __m51;
-const { Pixels } = __m46;
+const __m51 = (() => {
+const { ATLASES, SPECIES_ASSETS, FRAMES } = __m52;
+const { Pixels } = __m47;
 const loaded = new Map();
 const pending = new Map();
 const cut = new Map();
@@ -5406,15 +5539,15 @@ function forgetAtlasFrames() { cut.clear(); }
 return { onAtlasLoaded, atlasLoaded, atlasOf, assetsOf, spriteAsset, seedAsset, stageAsset, atlasFrame, loadAtlases, neededAtlases, forgetAtlasFrames, ATLASES, SPECIES_ASSETS, FRAMES };
 })();
 // src/visual/pieces.js
-const __m26 = (() => {
-const { WILD_SPECS } = __m13;
+const __m27 = (() => {
+const { WILD_SPECS } = __m19;
 const { hslToRgb } = __m9;
 const { identityOf, identityKey, validIdentity } = __m8;
-const { describe } = __m27;
-const { pieceFrame, pieceArt, PIECE_PX, PIECE_GRID } = __m44;
-const { SPECIES } = __m16;
-const { atlasFrame, spriteAsset } = __m50;
-const { Pixels } = __m46;
+const { describe } = __m28;
+const { pieceFrame, pieceArt, PIECE_PX, PIECE_GRID } = __m45;
+const { SPECIES } = __m13;
+const { atlasFrame, spriteAsset } = __m51;
+const { Pixels } = __m47;
 const PIECE_CELL = PIECE_PX;
 const PIECE_MASK = PIECE_GRID;
 const PIECE_KEYS = [...WILD_SPECS.map((s) => s.key).sort(), ...SPECIES.flatMap((s) => ['sp:' + s.key, 'sp:' + s.key + '@arcane'])];
@@ -5618,14 +5751,14 @@ return pal;
 return { PIECE_CELL, PIECE_MASK, PIECE_KEYS, pieceKeyOf, PIECE_ART, onPiecesChanged, archetypeIdentity, registerSpecies, ensurePieces, pieceSprite, pieceMask, skinCell, forgetPieces, piecePalette };
 })();
 // src/materials/shapes.js
-const __m25 = (() => {
+const __m26 = (() => {
 const LOOK = Object.freeze({
 ICE: 0, FIBRE: 1, LEAF: 2, STONE: 3, CRYSTAL: 4, CAP: 5, GLOSSY: 6, BONE: 7, FUR: 8, LUMP: 9,
 BARK: 10, BERRY: 11, GILLS: 12, SEED: 13, SHELL: 14, METAL: 15, GLASS: 16, SPOTS: 17, REED: 18, FLORET: 19,
 });
-const { PIECE_KEYS, PIECE_CELL, PIECE_MASK, pieceMask, skinCell, onPiecesChanged, registerSpecies, pieceKeyOf } = __m26;
-const { WILD_BY_KEY } = __m13;
-const { SPECIES_BY_KEY } = __m16;
+const { PIECE_KEYS, PIECE_CELL, PIECE_MASK, pieceMask, skinCell, onPiecesChanged, registerSpecies, pieceKeyOf } = __m27;
+const { WILD_BY_KEY } = __m19;
+const { SPECIES_BY_KEY } = __m13;
 const SHAPE_LOOK = {
 root: LOOK.FIBRE, pepper: LOOK.FIBRE, leaf: LOOK.LEAF, petal: LOOK.LEAF, flower: LOOK.LEAF, clover: LOOK.LEAF, moss: LOOK.LEAF, sprig: LOOK.LEAF,
 stone: LOOK.STONE, crust: LOOK.STONE, crystal: LOOK.CRYSTAL, cap: LOOK.CAP, bean: LOOK.GLOSSY, scale: LOOK.GLOSSY, bone: LOOK.BONE, fur: LOOK.FUR, lump: LOOK.LUMP,
@@ -5751,12 +5884,12 @@ return hasPieces(def) ? pieceSize(n) : n;
 return { LOOK, shapeOf, solidLook, chunkTemplate, hasPieces, grainSkinOf, skinOf, piece, chunkSize };
 })();
 // src/reactions/species.js
-const __m24 = (() => {
+const __m25 = (() => {
 const { rgbToOklab, srgbToLinear } = __m9;
 const { volatilityOf } = __m10;
-const { NE, effectVector } = __m14;
-const { isMagical, awakenedId } = __m21;
-const { solidLook } = __m25;
+const { NE, effectVector } = __m20;
+const { isMagical, awakenedId } = __m22;
+const { solidLook } = __m26;
 const MAX_SPECIES = 24;
 const NO_BOIL = 1e6;
 class SpeciesTable {
@@ -5812,6 +5945,19 @@ this.arcGain = f();
 this.awakeSlot = new Int16Array(S).fill(-1);
 this.isWhole = new Uint8Array(S);
 this.look = new Uint8Array(S);
+this.exCls = new Uint8Array(S);
+this.exK20 = f();
+this.exQ = f();
+this.exTfull = f();
+this.exYmin = f();
+this.exSpan = f();
+this.exComb = f();
+this.exSlot = new Int16Array(S).fill(-1);
+this.solvCls = new Uint8Array(S);
+this.extCls = new Uint8Array(S);
+this.emul = f();
+this.alcohol = new Uint8Array(S);
+this.extractables = 0;
 this.magicCount = 0;
 }
 assign(slot, def, lookup) {
@@ -5886,6 +6032,20 @@ this.awakeSlot[slot] = -1;
 this.isWhole[slot] = def.form === 'solid' ? 1 : 0;
 this.look[slot] = solidLook(def);
 if (mag) this.magicCount++;
+const ex = /** @type {any} */ (def).extraction;
+this.exCls[slot] = ex ? (ex.cls === 'lipo' ? 2 : 1) : 0;
+if (ex) {
+this.exK20[slot] = ex.k20; this.exQ[slot] = ex.Q; this.exTfull[slot] = ex.Tfull;
+this.exYmin[slot] = ex.Ymin; this.exSpan[slot] = ex.span; this.exComb[slot] = ex.combust;
+this.extractables++;
+}
+this.exSlot[slot] = -1;
+const sv = /** @type {any} */ (def).solvent;
+this.solvCls[slot] = sv === 'hydro' ? 1 : sv === 'lipo' ? 2 : 0;
+const ec = /** @type {any} */ (def).extractClass;
+this.extCls[slot] = ec === 'hydro' ? 1 : ec === 'lipo' ? 2 : 0;
+this.emul[slot] = Number(/** @type {any} */ (def).emulsifier) || 0;
+this.alcohol[slot] = /** @type {any} */ (def).alcohol ? 1 : 0;
 if (def.awakened && def.base) {
 const b = this.slotOf.get(def.base);
 if (b !== undefined) this.awakeSlot[b] = slot;
@@ -5913,6 +6073,8 @@ this.defs[slot] = null;
 this.ashSlot[slot] = -1;
 this.smokeSlot[slot] = -1;
 if (this.arcMag[slot]) this.magicCount--;
+if (this.exCls[slot]) this.extractables--;
+this.exCls[slot] = 0; this.solvCls[slot] = 0; this.extCls[slot] = 0; this.emul[slot] = 0; this.alcohol[slot] = 0; this.exSlot[slot] = -1;
 this.arcMag[slot] = 0;
 this.isAwake[slot] = 0;
 this.awakeSlot[slot] = -1;
@@ -5920,6 +6082,7 @@ for (let s = 0; s < MAX_SPECIES; s++) {
 if (this.ashSlot[s] === slot) this.ashSlot[s] = -1;
 if (this.smokeSlot[s] === slot) this.smokeSlot[s] = -1;
 if (this.awakeSlot[s] === slot) this.awakeSlot[s] = -1;
+if (this.exSlot[s] === slot) this.exSlot[s] = -1;
 }
 let c = 0;
 for (let s = 0; s < MAX_SPECIES; s++) if (this.defs[s]) c = s + 1;
@@ -5937,8 +6100,8 @@ return [0, 1, 2].map((k) => -Math.log(Math.max(0.003, srgbToLinear(def.color[k])
 return { MAX_SPECIES, NO_BOIL, SpeciesTable, absorbance };
 })();
 // src/reactions/mixture.js
-const __m52 = (() => {
-const { MAX_SPECIES, NO_BOIL } = __m24;
+const __m53 = (() => {
+const { MAX_SPECIES, NO_BOIL } = __m25;
 const { rgbToOklab, linearToSrgb } = __m9;
 function granularFraction(sp, comp, off, T) {
 let liquidPart = 0;
@@ -6036,12 +6199,59 @@ return new Float32Array(n);
 return { granularFraction, suspensionLnMult, mixtureProps, zeroComposition };
 })();
 // src/game/predict.js
-const __m23 = (() => {
-const { SpeciesTable, MAX_SPECIES } = __m24;
-const { mixtureProps } = __m52;
-const { compositionEffects, extractedEffects, NE } = __m14;
-const { isMagical, awakenedId, thresholdToCelsius } = __m21;
+const __m24 = (() => {
+const { SpeciesTable, MAX_SPECIES } = __m25;
+const { mixtureProps } = __m53;
+const { compositionEffects, extractedEffects, NE } = __m20;
+const { isMagical, awakenedId, thresholdToCelsius } = __m22;
+const { extractOver, extractIdOf, SOLVENT_CAPACITY, EMULSION_FACTOR, emulsionStability } = __m18;
 const ACTIVATION_MARGIN = 6;
+function stirSeconds(plan) {
+return plan.knead ? 14 : plan.activate ? 10 : 7;
+}
+function predictExtraction(vol, lookup, plan) {
+let Lh = 0, Ll = 0, em = 0;
+for (const [id, v] of vol) {
+const d = lookup(id);
+if (!d || v <= 0) continue;
+if (d.solvent === 'hydro') Lh += v; else if (d.solvent === 'lipo') Ll += v;
+em += v * (Number(d.emulsifier) || 0);
+}
+const emulsion = Lh > 0 && Ll > 0 && emulsionStability(Lh, Ll, em) > 0.5;
+const m = emulsion ? EMULSION_FACTOR : 1;
+const shares = {};
+const items = [];
+const tStir = stirSeconds(plan);
+for (const [id, v] of vol) {
+const d = lookup(id);
+const pr = d && d.extraction;
+if (!pr || v <= 1e-6) continue;
+if ((pr.cls === 'lipo' ? Ll : Lh) <= 0) { shares[id] = 0; continue; }
+let phi = extractOver(pr, 20, tStir, 0, m);
+if (plan.steep) phi = extractOver(pr, plan.steep.T, plan.steep.hold, phi, m);
+if (plan.hold && (plan.heatTo ?? 20) > 20) phi = extractOver(pr, plan.heatTo ?? 20, plan.hold, phi, m);
+if (plan.hold && (plan.coolTo ?? 20) < 20) phi = extractOver(pr, plan.coolTo ?? 20, plan.hold, phi, m);
+phi = extractOver(pr, plan.serveTemp ?? 20, 4, phi, m);
+items.push({ id, v, phi, cls: pr.cls });
+}
+for (const cls of ['hydro', 'lipo']) {
+const L = cls === 'lipo' ? Ll : Lh;
+const its = items.filter((x) => x.cls === cls);
+const want = its.reduce((a, x) => a + x.v * x.phi, 0);
+const cap = (SOLVENT_CAPACITY / (1 - SOLVENT_CAPACITY)) * L;
+const k = want > cap ? cap / want : 1;
+for (const x of its) {
+const dv = x.v * x.phi * k;
+shares[x.id] = x.phi * k;
+if (dv <= 0) continue;
+const xid = extractIdOf(x.id);
+if (!lookup(xid)) continue;
+vol.set(x.id, x.v - dv);
+vol.set(xid, (vol.get(xid) || 0) + dv);
+}
+}
+return shares;
+}
 const tables = new WeakMap();
 function predictPlan(world, lookup, plan) {
 const vol = new Map();
@@ -6072,6 +6282,7 @@ for (const pr of r.products) vol.set(pr.id, (vol.get(pr.id) || 0) + used * pr.fr
 fired.push(r.id);
 }
 }
+const extracted = predictExtraction(vol, lookup, plan);
 let wMag = 0, tMag = 0;
 for (const [id, v] of vol) {
 const d = lookup(id);
@@ -6103,6 +6314,14 @@ total -= take;
 left -= take;
 }
 }
+if (plan.distil) {
+const water = (plan.distil.id && lookup(plan.distil.id)) || [...vol.keys()].map(lookup).find((d) => d && d.solvent === 'hydro' && !d.alcohol);
+if (water && plan.distil.water > 0) { vol.set(water.id, (vol.get(water.id) || 0) + plan.distil.water); total += plan.distil.water; }
+for (const [id, v] of [...vol]) {
+const d = lookup(id);
+if (d && d.alcohol && v > 0) { total -= v; vol.set(id, 0); }
+}
+}
 for (const [id, v] of vol) {
 const d = lookup(id);
 if (d && d.form === 'gas' && d.boil < (plan.serveTemp ?? 20)) {
@@ -6132,7 +6351,9 @@ const raw = new Array(NE).fill(0);
 extractedEffects(sp, comp, 0, plan.serveTemp ?? 20, raw);
 const composition = {};
 for (let s = 0; s < sp.count; s++) if (sp.defs[s] && comp[s] > 1e-5) composition[sp.defs[s].id] = comp[s];
-return { ...props, effects, raw, composition, reactions: fired, totalParticles: total, threshold, awakened };
+let alcohol = 0;
+for (const [id, f] of Object.entries(composition)) { const d = lookup(id); if (d && d.alcohol) alcohol += f; }
+return { ...props, effects, raw, composition, reactions: fired, totalParticles: total, threshold, awakened, extracted, alcohol: alcohol * 100 };
 }
 function reduceTemp(plan, lookup) {
 let b = Infinity;
@@ -6181,10 +6402,10 @@ let c = 0;
 for (const ing of plan.ingredients) c += (ing.n * 5 / 100) * priceOf(ing.id);
 return c;
 }
-return { ACTIVATION_MARGIN, predictPlan, reduceTemp, arcaneRegime, activationMargin, planCost };
+return { ACTIVATION_MARGIN, stirSeconds, predictExtraction, predictPlan, reduceTemp, arcaneRegime, activationMargin, planCost };
 })();
 // src/game/customers.js
-const __m53 = (() => {
+const __m54 = (() => {
 const { Rng } = __m6;
 const ARCHETYPES = [
 {
@@ -6313,8 +6534,8 @@ return ARCHETYPES.find((a) => a.key === key) || ARCHETYPES[0];
 return { ARCHETYPES, shortName, makeCustomer, archetypeOf, Rng };
 })();
 // src/game/evaluate.js
-const __m54 = (() => {
-const { EFFECTS, EFFECT_INDEX, EFFECT_KEYS, NE } = __m14;
+const __m55 = (() => {
+const { EFFECTS, EFFECT_INDEX, EFFECT_KEYS, NE } = __m20;
 const PROPERTY_LABELS = {
 temperature: 'Temperature', quantity: 'Quantity', purity: 'Purity', ...Object.fromEntries(EFFECTS.map((e) => [e.key, e.label])),
 };
@@ -6340,6 +6561,9 @@ d = Math.abs(value - /** @type {number} */ (req.target));
 break;
 case 'purity':
 value = strongestUnwanted(m.effects, req.exclude || []).value;
+break;
+case 'alcohol':
+value = Number(m.alcohol) || 0;
 break;
 default: {
 const k = EFFECT_INDEX[req.key];
@@ -6368,6 +6592,8 @@ case 'temperature':
 return `${Math.round(value)}°C`;
 case 'purity':
 return value < 0.05 ? 'pure' : `${value.toFixed(1)}% other magic`;
+case 'alcohol':
+return value < 0.05 ? 'no spirit' : `${value.toFixed(1)}% spirit`;
 default:
 return `${Math.round(value)}`;
 }
@@ -6405,7 +6631,7 @@ return { rows, quality, stars, perfect, payment, repDelta };
 return { PROPERTY_LABELS, strongestUnwanted, isEffectKey, scoreRequirement, describeValue, evaluatePotion };
 })();
 // src/simulation/constants.js
-const __m55 = (() => {
+const __m56 = (() => {
 const PHASE = Object.freeze({ LIQUID: 0, POWDER: 1, PASTE: 2, SOLID: 3, GAS: 4 });
 const PHASE_NAMES = ['liquid', 'powder', 'paste', 'solid', 'gas'];
 const SIM = Object.freeze({
@@ -6446,7 +6672,7 @@ return PHASE.LIQUID;
 return { PHASE, PHASE_NAMES, SIM, TUNE, formPhase };
 })();
 // src/game/requests.js
-const __m56 = (() => {
+const __m57 = (() => {
 const REQUESTS = [
 { id: 'healing', title: 'Healing Draught', fx: [{ key: 'vitality' }], who: ['healer', 'farmer', 'innkeeper', 'knight', 'hunter'], minTier: 0,
 story: ['My patients are wasting with fever. I need something that truly heals — and nothing else in it.', 'The goats are poorly and so is my back. A healing draught, plain and honest.', 'A traveller collapsed in my common room. Something to bring the colour back to his face.'] },
@@ -6501,7 +6727,7 @@ story: ['A courier route over the Skyshard isles: float from one to the next, an
 { id: 'starseer', title: 'Star-Seer’s Elixir', fx: [{ key: 'arcana' }, { key: 'transformation', share: 0.5 }, { key: 'love', share: 0.4 }], who: ['wizard', 'noble'], minTier: 4,
 story: ['A rite under the comet: sight, change and the bond between the casters — all three, in measure.'] },
 ];
-const TIER_TARGET = [[8, 15], [10, 18], [13, 22], [17, 28], [22, 34]];
+const TIER_TARGET = [[6, 12], [8, 14], [9, 17], [13, 22], [17, 27]];
 const PURITY_LIMIT = 1.2;
 const PURITY_BY_TIER = [4, 3.2, 2.4, 1.8, 1.2];
 const purityLimitFor = (tier) => PURITY_BY_TIER[Math.max(0, Math.min(PURITY_BY_TIER.length - 1, tier | 0))];
@@ -6511,17 +6737,19 @@ return REQUESTS.find((r) => r.id === id);
 return { REQUESTS, TIER_TARGET, PURITY_LIMIT, PURITY_BY_TIER, purityLimitFor, requestById };
 })();
 // src/game/commissions.js
-const __m22 = (() => {
+const __m23 = (() => {
 const { Rng } = __m6;
 const { describeColor } = __m9;
-const { predictPlan, planCost, arcaneRegime, ACTIVATION_MARGIN } = __m23;
-const { ARCHETYPES, makeCustomer, archetypeOf } = __m53;
-const { evaluatePotion } = __m54;
-const { SIM } = __m55;
-const { EFFECT_INDEX, EFFECT_BY_KEY, EFFECT_KEYS, NE, interact } = __m14;
-const { thresholdToCelsius, isMagical } = __m21;
-const { compatFactor } = __m15;
-const { REQUESTS, TIER_TARGET, PURITY_LIMIT, requestById, purityLimitFor } = __m56;
+const { predictPlan, planCost, arcaneRegime, ACTIVATION_MARGIN } = __m24;
+const { ARCHETYPES, makeCustomer, archetypeOf } = __m54;
+const { evaluatePotion } = __m55;
+const { SIM } = __m56;
+const { EFFECT_INDEX, EFFECT_BY_KEY, EFFECT_KEYS, NE, interact } = __m20;
+const { thresholdToCelsius, isMagical } = __m22;
+const { compatFactor } = __m21;
+const { REQUESTS, TIER_TARGET, PURITY_LIMIT, requestById, purityLimitFor } = __m57;
+const { rateAt } = __m18;
+const ALCOHOL_FREE_LIMIT = 3;
 const plim = (ctx) => (ctx && ctx.purity) || PURITY_LIMIT;
 function effectRequirement(key, sign, min) {
 if (sign < 0) {
@@ -6559,6 +6787,13 @@ const compat = solvents.find((l) => compatFactor(m.compat[0], m.compat[1], l.com
 return { solvent: compat || null, heatTo: 20, coolTo: 20, hold: 12 };
 }
 const ground = m.form === 'solid';
+const ex = /** @type {any} */ (m).extraction;
+if (ex) {
+const solvent = solvents.find((l) => l.solvent === ex.cls && !l.alcohol);
+if (!solvent) return null;
+const hold = Math.max(8, Math.min(60, Math.ceil(Math.log(30) / rateAt(ex, 20)) - 7));
+return { solvent, heatTo: 20, coolTo: 20, hold, ground, extract: true };
+}
 const rx = ctx.world.reactions.find((r) => r.a === m.id && (r.wet || r.kind === 'mix' || r.kind === 'contact') && r.products.length === 1 && /^rw_(extract|steep|infuse|mandrake|starquartz|dragonoil)/.test(r.id));
 if (rx) {
 const solvent = rx.b ? solvents.find((l) => l.id === rx.b) : water;
@@ -6648,7 +6883,7 @@ hold = Math.max(hold, p.hold);
 }
 solvent = solvent || solvents.find((x) => x.id === ctx.world.roles.water) || solvents[0];
 const quietServe = o.activation ? [] : [o.serve];
-let stageT = null;
+let stageT = !win && preps.some((p) => p.extract) ? 20 : null;
 if (win) {
 const mid = (win[0] + win[1]) / 2;
 for (let T = Math.ceil(win[0]); T <= win[1]; T++) {
@@ -6976,6 +7211,37 @@ if (!wanted.every((w) => w.sign * r2.effects[EFFECT_INDEX[w.key]] >= w.sign * pr
 return { plan: p2, pred: r2, strengthen: true, reqs: [], say: 'Make it strong and compact — a little goes a long way where I am going.' };
 },
 },
+{
+id: 'sober', name: 'Alcohol-free cold tincture', mechanic: 'distillation', minTier: 1, who: ['healer', 'noble', 'farmer', 'scholar', 'innkeeper', 'knight'],
+lesson: 'Stronger than a warm water steep, with no spirit in it. Only spirit stays liquid cold enough to draw everything out: steep the herbs in spirit well below freezing, then add water and distil the spirit off through the alembic’s condenser — the dissolved magic never boils.',
+apply: ({ plan, pred, ctx, wanted, exclude }) => {
+const R = ctx.world.roles;
+if (!ctx.cap.has('condenser') || ctx.cap.minCool > -20 || plan.activate || plan.reduce || !ctx.available.has(R.spirit)) return null;
+const water = ctx.lookup(R.water), spirit = ctx.lookup(R.spirit);
+if (!water || !spirit || !isFinite(water.boil)) return null;
+const nW = plan.ingredients.filter((i) => i.id === R.water).reduce((a, i) => a + i.n, 0);
+if (!nW || plan.ingredients.some((i) => { const d = ctx.lookup(i.id); return d && (d.solvent === 'lipo' || i.id === R.spirit); })) return null;
+const T = -12;
+const ex = plan.ingredients.map((i) => ctx.lookup(i.id)).filter((d) => d && d.extraction).map((d) => d.extraction);
+if (!ex.length) return null;
+const kMin = Math.min(...ex.map((e) => rateAt(e, T)));
+const hold = Math.max(20, Math.min(90, Math.ceil(Math.log(12) / kMin)));
+const p2 = {
+...plan, ingredients: plan.ingredients.map((i) => (i.id === R.water ? { ...i, id: R.spirit } : { ...i })),
+coolTo: Math.min(plan.coolTo ?? 20, T), steep: { T, hold }, distil: { water: nW, T: water.boil, id: water.id },
+};
+if (arcaneRegime(p2.ingredients.map((i) => i.id), ctx.lookup, [T, water.boil]) !== 'quiet') return null;
+const r2 = predictPlan(ctx.world, ctx.lookup, p2);
+if (r2.awakened) return null;
+if (unwantedMax(r2.effects, exclude).value > plim(ctx) * 0.6) return null;
+if (!wanted.every((w) => w.sign * r2.effects[EFFECT_INDEX[w.key]] >= w.sign * pred.effects[EFFECT_INDEX[w.key]] * 1.1)) return null;
+return {
+plan: p2, pred: r2, strengthen: true,
+reqs: [{ key: 'alcohol', kind: /** @type {'max'} */ ('max'), target: ALCOHOL_FREE_LIMIT, tol: 0, zero: 8, label: `alcohol-free: at most ${ALCOHOL_FREE_LIMIT}% spirit left` }],
+say: 'Not a drop of spirit in it, mind — but I want it as strong as a proper cold tincture.',
+};
+},
+},
 ];
 function techniqueById(id) {
 return TECHNIQUES.find((t) => t.id === id);
@@ -7053,7 +7319,7 @@ if (!wanted.every((w) => w.sign * pred.effects[EFFECT_INDEX[w.key]] >= w.target 
 const reqs = [];
 for (const w of wanted) {
 const v = w.sign * pred.effects[EFFECT_INDEX[w.key]];
-reqs.push(effectRequirement(w.key, w.sign, Math.min(chosen.includes('strong') ? v * 0.85 : w.target, v * 0.88)));
+reqs.push(effectRequirement(w.key, w.sign, chosen.includes('sober') ? v * 0.95 : Math.min(chosen.includes('strong') ? v * 0.85 : w.target, v * 0.88)));
 }
 if (tier >= 3 && strict < 1 && rng.chance(0.4)) {
 const r0 = reqs[0], v = wanted[0].sign * pred.effects[EFFECT_INDEX[wanted[0].key]];
@@ -7095,9 +7361,9 @@ if (check.quality < 0.999) return null;
 const customer = makeCustomer(rng, arch);
 const cost = planCost(plan, ctx.priceOf) * (bottleN / pred.totalParticles) * 1.6;
 const eventBonus = ctx.event && ['winter', 'plague', 'conclave', 'festival'].includes(ctx.event) ? 1.15 : 1;
-const techPay = techniques.reduce((a, t) => a + (t === 'strong' ? 18 + 4 * tier : 5), 0);
+const techPay = techniques.reduce((a, t) => a + (t === 'strong' ? 18 + 4 * tier : t === 'sober' ? 22 + 5 * tier : 5), 0);
 const budget = Math.round((14 + cost * (2.6 + 0.45 * tier) + 9 * tier + reqs.length * 5 + (com.effectOrder ? 10 : 0) + techPay + (activation ? 30 + 12 * tier : 0)) * arch.budget * eventBonus * (opts.contract ? 2.2 : 1));
-const potionName = (techniques.includes('strong') ? 'Concentrated ' : '') + (title || 'Potion');
+const potionName = (techniques.includes('strong') ? 'Concentrated ' : '') + (techniques.includes('sober') ? 'Alcohol-free ' : '') + (title || 'Potion');
 let greet = request ? rng.pick(request.story) : rng.pick(arch.greet).replace('{potion}', aOrAn(potionName.toLowerCase()) + ' ' + potionName.toLowerCase());
 if (say.length) greet += ' ' + say.join(' ');
 Object.assign(com, { potionName, customer, dialogue: greet, budget: Math.max(12, budget), hintCost: Math.max(3, Math.round(budget * 0.12)) });
@@ -7148,13 +7414,13 @@ return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 function aOrAn(w) {
 return /^[aeiou]/i.test(w) ? 'an' : 'a';
 }
-return { purityRequirement, coldFloor, TEST_MARGIN, checkSupply, TECHNIQUES, techniqueById, migrateTechniques, generateCommission, TUTORIAL_HERBS, tutorialCommission, unwantedMax };
+return { ALCOHOL_FREE_LIMIT, purityRequirement, coldFloor, TEST_MARGIN, checkSupply, TECHNIQUES, techniqueById, migrateTechniques, generateCommission, TUTORIAL_HERBS, tutorialCommission, unwantedMax };
 })();
 // src/game/equipment.js
-const __m57 = (() => {
+const __m58 = (() => {
 const EQUIPMENT = [
-{ id: 'hearth', name: 'Stone Hearth', category: 'heat', price: 0, rank: 0, icon: 'fire', mechanics: ['steeping', 'concentration', 'awakening'], desc: 'A wood fire under the cauldron. It brings a pot to the boil in seconds and takes lamp oil past 200°C — every steep, boil and heat-awakening in the guild’s books.', effect: { maxFlame: 340, heatPower: 3.5 } },
-{ id: 'basin', name: 'Cold-Water Basin', category: 'cold', price: 0, rank: 0, icon: 'basin', mechanics: ['cold-extraction'], desc: 'Cool well water under the cauldron: chills a brew to about 9°C — cold enough for most ice-cold steeps, never colder.', effect: { minCool: 4, coolPower: 4 } },
+{ id: 'hearth', name: 'Stone Hearth', category: 'heat', price: 0, rank: 0, icon: 'fire', mechanics: ['steeping', 'concentration', 'awakening'], desc: 'A wood fire under the cauldron. It brings a pot to the boil in seconds and takes oil past 200°C — hot enough to burn any herb left undissolved in it.', effect: { maxFlame: 340, heatPower: 3.5 } },
+{ id: 'basin', name: 'Cold-Water Basin', category: 'cold', price: 0, rank: 0, icon: 'basin', mechanics: ['cold-extraction'], desc: 'Cool well water under the cauldron: chills a brew to about 9°C — a little more comes out of most herbs than at room heat, but never everything.', effect: { minCool: 4, coolPower: 4 } },
 { id: 'pot', name: 'Iron Pot', category: 'vessel', price: 0, rank: 0, icon: 'cauldron', mechanics: ['batch'], desc: 'Your first cauldron (about 1.5 litres).', effect: { size: 'pot' } },
 { id: 'spoon', name: 'Oak Spoon', category: 'tool', price: 0, rank: 0, icon: 'spoon', mechanics: ['mixing'], desc: 'Stirs, folds and kneads.' },
 { id: 'pestle', name: 'Granite Pestle', category: 'tool', price: 0, rank: 0, icon: 'pestle', mechanics: ['extraction'], desc: 'Crushes whole herbs, roots and stones in the pot, frozen blocks and crystal chunks into grains. Everything solid goes in whole: only the pestle breaks it up.' },
@@ -7164,8 +7430,11 @@ const EQUIPMENT = [
 { id: 'rack1', name: 'Bottle Shelf', category: 'storage', price: 40, rank: 0, icon: 'shelf', mechanics: ['storage'], desc: 'A plank shelf with a lip: room for 6 sealed bottles of potion.', effect: { bottles: 6 } },
 { id: 'rack2', name: 'Potion Cabinet', category: 'storage', price: 150, rank: 1, icon: 'shelf2', requires: ['rack1'], mechanics: ['storage'], desc: 'A glass-fronted cabinet: room for 12 sealed bottles.', effect: { bottles: 12 } },
 { id: 'rack3', name: 'Bottle Cellar', category: 'storage', price: 420, rank: 2, icon: 'shelf2', requires: ['rack2'], mechanics: ['storage'], desc: 'Cool cellar racks from floor to vault: room for 24 sealed bottles.', effect: { bottles: 24 } },
-{ id: 'frostrune', name: 'Frost Rune Plate', category: 'cold', price: 150, rank: 1, icon: 'rune', requires: ['basin'], mechanics: ['cold-extraction', 'awakening'], desc: 'A carved rune that draws a brew down to about -14°C: the ice-cold steeps the basin cannot hold (Grave Moss, the narrowest windows), the cold awakenings of Moonfen magic, and freezing. Mind the dial: a brew frozen solid gives up less.', effect: { minCool: -30, coolPower: 6 } },
+{ id: 'frostrune', name: 'Frost Rune Plate', category: 'cold', price: 150, rank: 1, icon: 'rune', requires: ['basin'], mechanics: ['cold-extraction', 'awakening'], desc: 'A carved rune that draws a brew down to about -14°C: cold enough for a spirit or oil steep to draw out everything, and for the cold awakenings of Moonfen magic. Mind the dial: water freezes long before, and a frozen solvent extracts nothing.', effect: { minCool: -30, coolPower: 6 } },
 { id: 'glacial', name: 'Glacial Sigil', category: 'cold', price: 750, rank: 3, icon: 'snow', requires: ['frostrune'], mechanics: ['awakening', 'cold-extraction'], desc: 'Deep cold, fast: a brew falls to about -48°C, past the thresholds of the Moonfen’s deepest magic.', effect: { minCool: -70, coolPower: 9 } },
+{ id: 'condenser', name: 'Alembic & Condenser', category: 'tool', price: 170, rank: 1, icon: 'alembic', mechanics: ['distillation'], desc: 'A copper still head that sits on the cauldron like a lid, with a cooled coil and a receiving flask. Vapour that rises into it is condensed into the receiver instead of raining back: heat a tincture between spirit’s and water’s boiling points and the spirit leaves while the magic stays. The spirit collected goes back on your shelf.' },
+{ id: 'cellar', name: 'Aging Cellar', category: 'vessel', price: 240, rank: 1, icon: 'shelf2', mechanics: ['aging'], desc: 'A vaulted cellar with two sealed aging vessels. A brew laid down in one goes on extracting for hours, even while the shop is closed — warmed by a Fire potion or chilled by a Frost potion, and held at the heat you choose by a temperature rune.', effect: { vessels: 2 } },
+{ id: 'cellar2', name: 'Deep Cellar', category: 'vessel', price: 520, rank: 2, icon: 'shelf2', requires: ['cellar'], mechanics: ['aging'], desc: 'Two more aging vessels, deeper under the shop (four in all).', effect: { vessels: 4 } },
 { id: 'stirrer', name: 'Clockwork Stirrer', category: 'tool', price: 110, rank: 1, icon: 'gear', mechanics: ['mixing'], desc: 'A wind-up paddle that keeps stirring on its own — through the whole depth of the brew — while you gather, test or serve. It evens a brew about three times as fast as the hand spoon, so every bottle of a batch matches the one you tested.' },
 { id: 'homunculus', name: 'Brass Homunculus', category: 'tool', price: 1100, rank: 3, icon: 'homunculus', mechanics: ['automation'], desc: 'A clockwork assistant that follows a saved recipe’s recorded procedure step by step — every pour, grinding, stir, heat, chill, hold, boil-down and the lid — in the real cauldron, at full ingredient cost.' },
 { id: 'arcanometer', name: 'Arcanometer', category: 'instrument', price: 200, rank: 1, icon: 'awaken', mechanics: ['awakening', 'experimentation'], desc: 'A lodestone needle in a glass of wisp-light. The Inspect probe shows the aura of strong magic in the matter under it (which kinds, never how strong) and reads its arcane threshold to the nearest 50, and how much has awakened.' },
@@ -7187,7 +7456,7 @@ assay: { name: 'Assay Kit', price: 90, sandbox: true, why: 'customers no longer 
 galvanometer: { name: 'Galvanometer', price: 120, sandbox: true, why: 'charge is never asked for' },
 thermal: { name: 'Thermal Monocle', price: 80, sandbox: true, why: 'the heat map is now a Free Experiment view' },
 skimmer: { name: 'Brass Skimmer', price: 60, sandbox: true, why: 'natural extracts all mix with water, so there is no layer worth skimming; the tap already draws from the bottom' },
-alembic: { name: 'Copper Alembic', price: 360, sandbox: true, why: 'boiling down with the lid open does the same, and the distillate is never clean enough to jar' },
+alembic: { name: 'Copper Alembic', price: 360, into: 'condenser', why: 'the Alembic & Condenser took over: its receiver now jars the spirit it recovers' },
 bellows: { name: 'Bellows & Coal', price: 120, why: 'the hearth already reaches every steep and boil; hotter fires only set lamp oil alight' },
 athanor: { name: 'Athanor Furnace', price: 700, why: 'the hearth already reaches every steep and boil' },
 lens: { name: 'Aether Lens', price: 140, into: 'arcanometer', why: 'its aura view is now part of the Arcanometer' },
@@ -7216,7 +7485,7 @@ return r;
 }
 function capabilities(owned) {
 const has = owned instanceof Set ? owned : new Set(owned);
-const cap = { maxFlame: 340, heatPower: 3.5, minCool: 4, coolPower: 4, size: 'pot', storage: BASE_STORAGE, discount: 0, hutch: BASE_HUTCH, bottles: BASE_BOTTLES, has: (id) => has.has(id) };
+const cap = { maxFlame: 340, heatPower: 3.5, minCool: 4, coolPower: 4, size: 'pot', storage: BASE_STORAGE, discount: 0, hutch: BASE_HUTCH, bottles: BASE_BOTTLES, vessels: 0, has: (id) => has.has(id) };
 for (const e of EQUIPMENT) {
 if (!has.has(e.id) || !e.effect) continue;
 const f = /** @type {any} */ (e.effect);
@@ -7228,13 +7497,14 @@ if (f.storage && f.storage > cap.storage) cap.storage = f.storage;
 if (f.discount) cap.discount = Math.max(cap.discount, f.discount);
 if (f.hutch && f.hutch > cap.hutch) cap.hutch = f.hutch;
 if (f.bottles && f.bottles > cap.bottles) cap.bottles = f.bottles;
+if (f.vessels && f.vessels > cap.vessels) cap.vessels = f.vessels;
 }
 return cap;
 }
 return { EQUIPMENT, STARTING_EQUIPMENT, BASE_STORAGE, BASE_BOTTLES, BASE_HUTCH, RETIRED_EQUIPMENT, equipmentById, RANKS, rankIndex, capabilities };
 })();
 // src/game/kinds.js
-const __m60 = (() => {
+const __m61 = (() => {
 const { Rng } = __m6;
 const RABBIT_SPREAD = 0.1;
 const STEADY_SPREAD = 0.012;
@@ -7379,10 +7649,10 @@ return { kind: 'salamander', coat: [0.14, 0.12, 0.13], coat2: spot, pattern: 'bl
 return { RABBIT_SPREAD, STEADY_SPREAD, STEADY_NOISE, KINDS, KIND_IDS, kindOf, kindDef, biasSpread, noiseFactor, aNoun, HABITAT, pickKind, kindLook };
 })();
 // src/game/colony.js
-const __m59 = (() => {
-const { EFFECT_INDEX } = __m14;
+const __m60 = (() => {
+const { EFFECT_INDEX } = __m20;
 const { Rng, hashString } = __m6;
-const { kindOf, biasSpread, kindLook, RABBIT_SPREAD } = __m60;
+const { kindOf, biasSpread, kindLook, RABBIT_SPREAD } = __m61;
 const RABBIT_MARKS = ['vitality', 'strength', 'love', 'arcana', 'transformation', 'fire', 'frost', 'acid', 'alkali', 'toxicity', 'death', 'swiftness', 'levitation', 'invisibility', 'phasing', 'temporal'];
 const PRE_EXOTIC_MARKS = 11;
 const MARK_INDEX = Object.fromEntries(RABBIT_MARKS.map((k, i) => [k, i]));
@@ -8199,11 +8469,11 @@ return trials;
 return { RABBIT_MARKS, MARK_INDEX, KIT_DAYS, ADULT_DAYS, ELDER_DAYS, LIFESPAN_DAYS, FOUNDER_BORN, GESTATION_DAYS, DOSE_LIMIT, MEMORIAL_LIMIT, LEVEL_AT, TRAIT_AT, DEGEN_AT, MARK_MAX, LETHAL, AGGRO, FERAL, AGGRO_AT, LOVE_MATE, MATE_EVERY, MARK_TAU, BURNS, BURN_RATE, MAX_BONUS, DEGEN_RISE, ATTACK_EVERY, TRAITS, TRAIT_EXCLUSIVE, TRAIT_WORDS, COATS, rollLook, inheritLook, lookFromSeed, visibleLevel, stageOf, maxHealthOf, degenOf, degenAt, degenRate, aggroAt, aggroOf, isFeral, burnRate, mateEvery, mateCost, RABBIT_BIAS, rabbitSensitivity, rabbitSnap, encodeSnap, defaultSnap, decodeSnap, NAMES, createColony, findRabbit, PEN_MAX, penCount, livingOf, penHasRoom, livingRabbits, bodies, focusRabbit, pickName, makeRabbit, addBoughtRabbit, addWildRabbit, recordDose, related, STAGE_ERR, MARK_DECAY, rabbitResponse, colonyTick, purgeRabbit, cullRabbit, colonyDay, retireRabbit, trimMemorial, remainsSource, causeWord, rabbitCondition, normalizeRabbit, normalizeColony, installRabbitAlias };
 })();
 // src/game/experiments.js
-const __m58 = (() => {
-const { EFFECTS, EFFECT_KEYS, EFFECT_INDEX, NE, potencyWord } = __m14;
+const __m59 = (() => {
+const { EFFECTS, EFFECT_KEYS, EFFECT_INDEX, NE, potencyWord } = __m20;
 const { Rng, hashString } = __m6;
-const { createColony, normalizeColony, installRabbitAlias, rabbitResponse, findRabbit, focusRabbit, recordDose, rabbitSnap, encodeSnap, stageOf, addBoughtRabbit, STAGE_ERR, rabbitSensitivity, RABBIT_BIAS, maxHealthOf } = __m59;
-const { biasSpread, noiseFactor, kindOf } = __m60;
+const { createColony, normalizeColony, installRabbitAlias, rabbitResponse, findRabbit, focusRabbit, recordDose, rabbitSnap, encodeSnap, stageOf, addBoughtRabbit, STAGE_ERR, rabbitSensitivity, RABBIT_BIAS, maxHealthOf } = __m60;
+const { biasSpread, noiseFactor, kindOf } = __m61;
 function readingSteadiness(rabbit, day) {
 const stage = STAGE_ERR[stageOf(rabbit, day)] || 1;
 const max = Math.max(1, maxHealthOf(rabbit, day ?? 1));
@@ -8469,11 +8739,11 @@ return `${e.label} ${Math.round(v)} (${potencyWord(v, key)})`;
 return { readingSteadiness, SUBJECTS, SUBJECT_BY_ID, RECORD_LIMIT, DOSES, DOSE_NOISE, READ_NOISE, driftTolerance, createTrials, normalizeTrials, rabbitReading, doseErr, EVIDENCE_LEVELS, EVIDENCE_TEXT, evidenceRank, summarize, effectEvidence, requirementEvidence, EVIDENCE_STATE_TEXT, addSamples, runTrial, resetSubject, certification, requiredEffects, missingEffects, suggestSubjects, knownLaws, describeReading };
 })();
 // src/game/regen.js
-const __m62 = (() => {
+const __m63 = (() => {
 const { Rng } = __m6;
-const { RARITY, ARCANE } = __m19;
-const { SPECIES } = __m16;
-const { BIOMES, BIOME_BY_ID, START_BIOME, milestoneMet } = __m20;
+const { RARITY, ARCANE } = __m16;
+const { SPECIES } = __m13;
+const { BIOMES, BIOME_BY_ID, START_BIOME, milestoneMet } = __m17;
 const COIN_RULES = Object.freeze({
 max: 3,
 start: 3,
@@ -8564,13 +8834,13 @@ const specimenCount = (pop) => pop.reduce((a, p) => a + p.ordinary + p.arcane, 0
 return { COIN_RULES, createRegen, normalizeRegen, accrue, nextCoinIn, generationOf, regenerate, maybeGift, unlockBiomes, populationOf, specimenCount };
 })();
 // src/game/gathering.js
-const __m61 = (() => {
+const __m62 = (() => {
 const { Rng, hashString } = __m6;
-const { familyOf, habitatOf } = __m28;
-const { BIOMES } = __m20;
-const { populationOf } = __m62;
-const { RARITY } = __m19;
-const { materialIdOf } = __m16;
+const { familyOf, habitatOf } = __m29;
+const { BIOMES } = __m17;
+const { populationOf } = __m63;
+const { RARITY } = __m16;
+const { materialIdOf } = __m13;
 const REGIONS = BIOMES.map((b) => ({ id: b.id, name: b.name, rank: b.unlock.rank || 0, magical: b.category === 'exotic', desc: b.desc, sky: b.sky }));
 const REGION_BY_ID = Object.fromEntries(REGIONS.map((r) => [r.id, r]));
 const PLACES = {
@@ -8950,10 +9220,10 @@ return `${Math.floor(m / 60)} h ${m % 60} min`;
 return { REGIONS, REGION_BY_ID, STAGES, SPROUT_SHARE, TAKE_BY_RARITY, generateDeposits, thirstOf, createGathering, GATHER_VERSION, normalizeGathering, GROW_FLOOR, GROW_MAX, WATER_DOSE, moistureEnv, growthOf, matureIn, checkpoint, standOf, plantStage, depositStatus, water, setSky, migrateGathering, SCAR_SLOWDOWN, METHODS, methodOf, dayPart, DAY_PART_NAME, DAY_PART_HINT, WEATHERS, weatherOn, gatherPlan, harvestable, weatherRegrowth, harvest, newDayRegrowth, SANDBOX_PACE, sandboxWilds, formatWait };
 })();
 // src/simulation/particles.js
-const __m65 = (() => {
-const { MAX_SPECIES } = __m24;
-const { PHASE } = __m55;
-const { NE } = __m14;
+const __m66 = (() => {
+const { MAX_SPECIES } = __m25;
+const { PHASE } = __m56;
+const { NE } = __m20;
 const STATE_FIELDS_F32 = ['x', 'y', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet', 'q', 'skinU', 'skinV'];
 const STATE_FIELDS_I32 = ['group'];
 const STATE_FIELDS_U8 = ['phase'];
@@ -9075,7 +9345,7 @@ return this.phase[i] !== PHASE.GAS;
 return { STATE_FIELDS_F32, STATE_FIELDS_I32, STATE_FIELDS_U8, STATE_FIELDS_U16, STATE_FIELDS_U32, DERIVED_FIELDS, ARC_NONE, Particles };
 })();
 // src/simulation/grid.js
-const __m66 = (() => {
+const __m67 = (() => {
 class NeighborGrid {
 constructor(minX, minY, maxX, maxY, cell, capacity) {
 this.minX = minX;
@@ -9175,8 +9445,8 @@ for (let a = cellStart[c]; a < cellStart[c + 1]; a++) fn(sorted[a]);
 return { NeighborGrid };
 })();
 // src/simulation/cauldron.js
-const __m67 = (() => {
-const { SIM } = __m55;
+const __m68 = (() => {
+const { SIM } = __m56;
 const CAULDRON_SIZES = {
 pot: { key: 'pot', label: 'Iron Pot', mouth: 0.8, belly: 1.0, neck: 0.5, depth: 1.55, capacity: 310 },
 copper: { key: 'copper', label: 'Copper Cauldron', mouth: 0.95, belly: 1.2, neck: 0.6, depth: 1.8, capacity: 440 },
@@ -9412,13 +9682,13 @@ return s / this.lidCells;
 return { CAULDRON_SIZES, COLUMN, Cauldron };
 })();
 // src/simulation/derived.js
-const __m68 = (() => {
-const { MAX_SPECIES, NO_BOIL } = __m24;
-const { granularFraction, suspensionLnMult } = __m52;
+const __m69 = (() => {
+const { MAX_SPECIES, NO_BOIL } = __m25;
+const { granularFraction, suspensionLnMult } = __m53;
 const { rgbToOklabInto, linearToSrgb } = __m9;
-const { PHASE } = __m55;
-const { compositionEffects, EFFECTS, NE } = __m14;
-const { ARC_NONE } = __m65;
+const { PHASE } = __m56;
+const { compositionEffects, EFFECTS, NE } = __m20;
+const { ARC_NONE } = __m66;
 const AURA_W = EFFECTS.map((e) => (e.kind === 'magic' ? 1 : 0.55));
 const AURA_COL = EFFECTS.map((e) => e.color);
 const auraFx = new Float64Array(NE);
@@ -9516,7 +9786,7 @@ const kT = lnVw > 0 ? vT / lnVw : 0;
 p.lnMu20[i] = lnMu20;
 p.viscT[i] = kT;
 p.lnMu[i] = lnMu20 - kT * (Math.min(T, 300) - 20) + suspensionLnMult(gran, bnd);
-p.tm[i] = tmW > 0 ? tmS / tmW - 28 * dissolved : pmW > 0 ? pmS / pmW : 0;
+p.tm[i] = p.phase[i] === PHASE.SOLID && whole * inv >= 0.3 && pmW > 0 ? pmS / pmW : tmW > 0 ? tmS / tmW - 28 * dissolved : pmW > 0 ? pmS / pmW : 0;
 p.tb[i] = tbW > 0 ? tbS / tbW : NO_BOIL;
 p.volFrac[i] = tbW * inv;
 p.latF[i] = latF * inv;
@@ -9566,8 +9836,8 @@ p.auraI[i] = I / 100;
 return { STAIN, GAS_MASS, refreshParticle, refreshAura };
 })();
 // src/simulation/rigid.js
-const __m69 = (() => {
-const { PHASE } = __m55;
+const __m70 = (() => {
+const { PHASE } = __m56;
 const MAX_GROUPS = 2048;
 const BOND = 0.135;
 const FRESH = -2;
@@ -9760,8 +10030,8 @@ return this.active.length;
 return { FRESH, RigidBodies };
 })();
 // src/simulation/thermal.js
-const __m70 = (() => {
-const { PHASE, SIM } = __m55;
+const __m71 = (() => {
+const { PHASE, SIM } = __m56;
 const KPP = 34; // particle–particle conductance (game-scaled)
 const KW = 24; // particle–wall conductance
 const KA = 0.35; // free-surface loss to air
@@ -9877,11 +10147,11 @@ for (let k = 0; k < M + L; k++) Tw[k] += flow[k] / Cw[k];
 return { thermalStep, wallStep };
 })();
 // src/simulation/phase.js
-const __m71 = (() => {
-const { PHASE, PHASE_NAMES } = __m55;
-const { MAX_SPECIES, NO_BOIL } = __m24;
-const { refreshParticle } = __m68;
-const { FRESH } = __m69;
+const __m72 = (() => {
+const { PHASE, PHASE_NAMES } = __m56;
+const { MAX_SPECIES, NO_BOIL } = __m25;
+const { refreshParticle } = __m69;
+const { FRESH } = __m70;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const BOIL_VOLATILE = 0.8;
 const DRY_MIN = 0.12;
@@ -9998,6 +10268,9 @@ T[i] += r / Ci;
 }
 continue;
 }
+if ((ph === LIQUID || ph === PASTE) && p.volFrac[i] >= 0.3 && T[i] > p.tb[i] - 40 && mixedVolatile(sim, i, T[i])) {
+if (enrichVolatile(sim, i) > 0) refreshParticle(sim, i);
+}
 const tb = p.tb[i];
 const tm = p.tm[i];
 const volatile = p.volFrac[i];
@@ -10025,6 +10298,15 @@ lat[i] += e;
 T[i] = tb;
 if (lat[i] >= p.latV[i]) {
 if (volatile < 0.999 && gatherVolatile(sim, i, 1 - volatile) > 0) refreshParticle(sim, i);
+if (p.volFrac[i] < 0.99) {
+spreadVolatile(sim, i);
+refreshParticle(sim, i);
+classifyFluid(sim, i);
+T[i] += lat[i] / Ci;
+lat[i] = 0;
+continue;
+}
+if (enrichVolatile(sim, i) > 0) refreshParticle(sim, i);
 lat[i] -= p.latV[i];
 p.eph[i] += p.latV[i];
 T[i] += lat[i] / Ci;
@@ -10065,6 +10347,7 @@ const e = 0.9 * ((T[i] - (tb - 40)) / 40) * Ci * dt;
 T[i] -= e / Ci;
 lat[i] += e;
 if (lat[i] >= p.latV[i]) {
+if (enrichVolatile(sim, i) > 0) refreshParticle(sim, i);
 lat[i] -= p.latV[i];
 p.eph[i] += p.latV[i];
 T[i] += lat[i] / Ci;
@@ -10075,6 +10358,59 @@ changed(sim, i, ph, GAS);
 }
 }
 }
+}
+function mixedVolatile(sim, i, T) {
+const p = sim.p, sp = sim.species, off = i * MAX_SPECIES, ns = sp.count, comp = p.comp;
+let low = false, high = false;
+for (let s = 0; s < ns; s++) {
+const f = comp[off + s];
+if (f <= 0.004 || !(sp.boil[s] < NO_BOIL) || sp.boil[s] <= -50) continue;
+if (sp.boil[s] + 3 < T) low = true; else high = true;
+}
+return low && high;
+}
+function enrichVolatile(sim, i) {
+const p = sim.p, sp = sim.species, S = MAX_SPECIES, ns = sp.count;
+const comp = p.comp, oi = i * S;
+let low = -1;
+for (let s = 0; s < ns; s++) if (sp.boil[s] < NO_BOIL && sp.boil[s] > -50 && comp[oi + s] > 0 && (low < 0 || sp.boil[s] < sp.boil[low])) low = s;
+const x = p.x[i], y = p.y[i];
+const nb = gatherTouched;
+nb.length = 0;
+sim.grid.query(x, y, DRY_R, (j) => {
+if (j === i || nb.length >= 12) return;
+const ph = p.phase[j];
+if (ph === GAS || ph === SOLID || p.group[j] >= 0) return;
+const dx = p.x[j] - x, dy = p.y[j] - y;
+if (dx * dx + dy * dy <= DRY_R * DRY_R) nb.push(j);
+});
+for (const j of nb) {
+const oj = j * S;
+for (let s = 0; s < ns; s++) if (sp.boil[s] < NO_BOIL && sp.boil[s] > -50 && comp[oj + s] > 1e-5 && (low < 0 || sp.boil[s] < sp.boil[low])) low = s;
+}
+if (low < 0) return 0;
+const bl = sp.boil[low];
+let moved = 0;
+for (const j of nb) {
+let hi = 0;
+for (let s = 0; s < ns; s++) if (sp.boil[s] < NO_BOIL && sp.boil[s] > bl + 5) hi += comp[oi + s];
+if (hi < 1e-5) break;
+const oj = j * S;
+const a = Math.min(comp[oj + low] * 0.6, hi);
+if (a < 1e-5) continue;
+const kh = a / hi;
+for (let s = 0; s < ns; s++) {
+if (!(sp.boil[s] < NO_BOIL && sp.boil[s] > bl + 5)) continue;
+const d = comp[oi + s] * kh;
+comp[oi + s] -= d;
+comp[oj + s] += d;
+}
+comp[oj + low] -= a;
+comp[oi + low] += a;
+moved += a;
+p.dirty[j] = 1;
+}
+return moved;
 }
 function gatherVolatile(sim, i, need) {
 if (need <= 0) return 0;
@@ -10163,13 +10499,14 @@ refreshParticle(sim, j);
 classifyFluid(sim, j);
 }
 }
-return { classifyFluid, isFrozenGrain, dominantId, phaseStep };
+return { classifyFluid, isFrozenGrain, dominantId, phaseStep, enrichVolatile };
 })();
 // src/reactions/diffusion.js
-const __m72 = (() => {
-const { PHASE } = __m55;
-const { MAX_SPECIES } = __m24;
-const { compatFactor } = __m15;
+const __m73 = (() => {
+const { PHASE } = __m56;
+const { MAX_SPECIES } = __m25;
+const { compatFactor } = __m21;
+const { emulsionStability } = __m18;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const RD = 0.16;
 function diffusionStep(sim, dt) {
@@ -10182,6 +10519,7 @@ const chg = sim.tmpA;
 const n = p.count;
 for (let i = 0; i < n; i++) chg[i] = 0;
 const ph = p.phase;
+const emu = emulsionPrep(sim);
 for (let k = 0; k < pairCount; k++) {
 const i = pairI[k], j = pairJ[k];
 const pi = ph[i], pj = ph[j];
@@ -10201,12 +10539,20 @@ Math.abs(p.arcT[i] - p.arcT[j]) < 1e-3
 const dx = p.x[i] - p.x[j], dy = p.y[i] - p.y[j];
 const r2 = dx * dx + dy * dy;
 if (r2 >= RD2) continue;
-const c = compatFactor(p.cA[i], p.cB[i], p.cA[j], p.cB[j]);
+let c = compatFactor(p.cA[i], p.cB[i], p.cA[j], p.cB[j]);
+const fi = pi === LIQUID || pi === PASTE, fj = pj === LIQUID || pj === PASTE;
+if (emu && fi && fj && !gi) {
+const H = emu.h[i] + emu.h[j], L = emu.l[i] + emu.l[j];
+if (H > 0.02 && L > 0.02) {
+const st = emulsionStability(H, L, emu.e[i] + emu.e[j]);
+if (st > 0.05 && c < 1) c = Math.max(c, 0.9 * st);
+else if (st < 0.3) separate(sim, i, j, emu, dt * (1 - st));
+}
+}
 if (c <= 0) continue;
 const w = 1 - Math.sqrt(r2) / RD;
 const agit = Math.max(p.agit[i], p.agit[j]);
 let rate;
-const fi = pi === LIQUID || pi === PASTE, fj = pj === LIQUID || pj === PASTE;
 if (gi) {
 rate = 2.4;
 } else if (fi && fj) {
@@ -10320,13 +10666,63 @@ w += f;
 }
 return w > 0 ? s / w : 0;
 }
+let emuBuf = { h: new Float32Array(0), l: new Float32Array(0), e: new Float32Array(0) };
+function emulsionPrep(sim) {
+const sp = sim.species, ns = sp.count;
+let any = false, hasH = false, hasL = false;
+for (let s = 0; s < ns; s++) {
+if (sp.emul[s] > 0) any = true;
+if (sp.solvCls[s] === 1 || sp.extCls[s] === 1) hasH = true;
+if (sp.solvCls[s] === 2 || sp.extCls[s] === 2) hasL = true;
+}
+if (!hasH || !hasL) return null;
+const p = sim.p, n = p.count, comp = p.comp;
+if (emuBuf.h.length < p.capacity) emuBuf = { h: new Float32Array(p.capacity), l: new Float32Array(p.capacity), e: new Float32Array(p.capacity) };
+const { h, l, e } = emuBuf;
+let mixed = false;
+for (let i = 0; i < n; i++) {
+const off = i * MAX_SPECIES;
+let a = 0, b = 0, c = 0;
+for (let s = 0; s < ns; s++) {
+const f = comp[off + s];
+if (f <= 0) continue;
+if (sp.solvCls[s] === 1 || sp.extCls[s] === 1) a += f;
+else if (sp.solvCls[s] === 2 || sp.extCls[s] === 2) b += f;
+c += f * sp.emul[s];
+}
+h[i] = a; l[i] = b; e[i] = c;
+if (a > 0.02 && b > 0.02) mixed = true;
+}
+return any || mixed ? emuBuf : null;
+}
+function separate(sim, i, j, emu, dt) {
+const p = sim.p, sp = sim.species, comp = p.comp, ns = sp.count;
+if (emu.l[i] / Math.max(1e-6, emu.h[i] + emu.l[i]) < emu.l[j] / Math.max(1e-6, emu.h[j] + emu.l[j])) { const t = i; i = j; j = t; }
+const amt = Math.min(emu.l[j], emu.h[i]) * Math.min(0.4, 3 * dt);
+if (amt < 1e-5) return;
+const oi = i * MAX_SPECIES, oj = j * MAX_SPECIES;
+const kl = amt / emu.l[j], kh = amt / emu.h[i];
+for (let s = 0; s < ns; s++) {
+if (sp.solvCls[s] === 2 || sp.extCls[s] === 2) {
+const d = comp[oj + s] * kl;
+comp[oj + s] -= d; comp[oi + s] += d;
+} else if (sp.solvCls[s] === 1 || sp.extCls[s] === 1) {
+const d = comp[oi + s] * kh;
+comp[oi + s] -= d; comp[oj + s] += d;
+}
+}
+emu.l[j] -= amt; emu.l[i] += amt; emu.h[i] -= amt; emu.h[j] += amt;
+sim.compChange[i] += amt; sim.compChange[j] += amt;
+if (sim.compChange[i] > 0.004) { sim.compChange[i] = 0; p.dirty[i] = 1; }
+if (sim.compChange[j] > 0.004) { sim.compChange[j] = 0; p.dirty[j] = 1; }
+}
 return { diffusionStep };
 })();
 // src/simulation/arcane.js
-const __m74 = (() => {
-const { MAX_SPECIES } = __m24;
-const { ARCANE_SCALE, ARCANE_ZERO, awakenedId } = __m21;
-const { ARC_NONE } = __m65;
+const __m75 = (() => {
+const { MAX_SPECIES } = __m25;
+const { ARCANE_SCALE, ARCANE_ZERO, awakenedId } = __m22;
+const { ARC_NONE } = __m66;
 const RATE = 0.55;
 const HEAT = 24;
 const TAIL = 0.002;
@@ -10405,11 +10801,11 @@ return a;
 return { arcaneStep, awakeSlot };
 })();
 // src/reactions/reactions.js
-const __m73 = (() => {
-const { MAX_SPECIES } = __m24;
-const { PHASE } = __m55;
-const { awakenedId } = __m21;
-const { awakeSlot } = __m74;
+const __m74 = (() => {
+const { MAX_SPECIES } = __m25;
+const { PHASE } = __m56;
+const { awakenedId } = __m22;
+const { awakeSlot } = __m75;
 const { GAS, SOLID } = PHASE;
 class ReactionSystem {
 constructor(sim, rules) {
@@ -10684,9 +11080,9 @@ return best;
 return { ReactionSystem };
 })();
 // src/simulation/tools.js
-const __m75 = (() => {
-const { PHASE, SIM } = __m55;
-const { MAX_SPECIES } = __m24;
+const __m76 = (() => {
+const { PHASE, SIM } = __m56;
+const { MAX_SPECIES } = __m25;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const TOOL_SPECS = {
 spoon: { core: SIM.SPOON_CORE, reach: SIM.SPOON_RADIUS, entrain: [0.2, 0.09, 0.3, 0.035, 0.12], drag: 0.55 },
@@ -10941,11 +11337,11 @@ if (victims.length) sim.emit({ type: 'skim', count: victims.length, x: t.x, y: t
 return { TOOL_SPECS, ToolState, clampToInterior, toolForces, toolConstraints, LIQUID };
 })();
 // src/simulation/emitter.js
-const __m76 = (() => {
-const { PHASE, SIM, formPhase } = __m55;
-const { COLUMN } = __m67;
-const { chunkTemplate, chunkSize, hasPieces, skinOf, grainSkinOf, piece } = __m25;
-const { registerSpecies } = __m26;
+const __m77 = (() => {
+const { PHASE, SIM, formPhase } = __m56;
+const { COLUMN } = __m68;
+const { chunkTemplate, chunkSize, hasPieces, skinOf, grainSkinOf, piece } = __m26;
+const { registerSpecies } = __m27;
 class Emitter {
 constructor(sim) {
 this.sim = sim;
@@ -11112,8 +11508,8 @@ return true;
 return { Emitter };
 })();
 // src/simulation/electric.js
-const __m77 = (() => {
-const { PHASE } = __m55;
+const __m78 = (() => {
+const { PHASE } = __m56;
 const KQ = 26; // conduction rate (game scaled)
 const RE = 0.16; // contact distance
 const JOULE = 140; // heat per unit of charge moved per unit of potential difference
@@ -11159,23 +11555,286 @@ return s;
 }
 return { electricStep, totalCharge };
 })();
+// src/reactions/extraction.js
+const __m79 = (() => {
+const { MAX_SPECIES } = __m25;
+const { PHASE } = __m56;
+const { SOLVENT_CAPACITY, WHOLE_FACTOR, EMULSION_FACTOR, extractIdOf } = __m18;
+const { isFrozenGrain } = __m72;
+const { SOLID, GAS } = PHASE;
+const S = MAX_SPECIES;
+const CHAR_RATE = 0.35;
+const tot = new Float64Array(S);
+const grpRaw = new Float64Array(S);
+const grpExt = new Float64Array(S);
+const grpOf = new Int16Array(S);
+function agitFactor(agit) {
+return 0.4 + 0.6 * Math.min(1, agit * 2.5);
+}
+class ExtractionSystem {
+constructor(sim) {
+this.sim = sim;
+this.extracted = 0;
+this.charred = 0;
+/** @type {Record<string, number>} */ this.safeSeen = {};
+/** @type {Record<string, number>} */ this.charSeen = {};
+this._lastChar = -99;
+}
+_ext(s) {
+const sp = this.sim.species;
+let x = sp.exSlot[s];
+if (x >= 0) return x;
+const def = sp.defs[s];
+if (!def) return -1;
+const ed = this.sim.lookup(extractIdOf(def.id));
+if (!ed) return -1;
+x = this.sim.slotFor(ed);
+if (x >= 0) sp.exSlot[s] = x;
+return x;
+}
+step(dt) {
+const sim = this.sim, sp = sim.species;
+if (sp.extractables <= 0) return;
+const p = sim.p, comp = p.comp, n = p.count, ns = sp.count;
+tot.fill(0);
+for (let i = 0; i < n; i++) {
+const off = i * S;
+for (let s = 0; s < ns; s++) { const f = comp[off + s]; if (f > 0) tot[s] += f; }
+}
+grpRaw.fill(0); grpExt.fill(0); grpOf.fill(-1);
+for (let s = 0; s < ns; s++) {
+if (!sp.exCls[s] || !sp.defs[s]) continue;
+const d = /** @type {any} */ (sp.defs[s]);
+const base = d.base || d.id;
+let g = s;
+for (let q = 0; q < s; q++) {
+const dq = /** @type {any} */ (sp.defs[q]);
+if (dq && sp.exCls[q] && (dq.base || dq.id) === base) { g = grpOf[q]; break; }
+}
+grpOf[s] = g;
+grpRaw[g] += tot[s];
+const x = sp.exSlot[s];
+if (x >= 0) grpExt[g] += tot[x];
+else if (tot[s] > 0) {
+const xd = sim.lookup(extractIdOf(d.id));
+const xs = xd ? sp.slotOf.get(xd.id) : undefined;
+if (xs !== undefined) { sp.exSlot[s] = xs; grpExt[g] += tot[xs]; }
+}
+}
+for (let i = 0; i < n; i++) {
+const ph = p.phase[i];
+if (ph === GAS) continue;
+const off = i * S;
+let hasRaw = false;
+for (let s = 0; s < ns; s++) if (sp.exCls[s] && comp[off + s] > 1e-6) { hasRaw = true; break; }
+if (!hasRaw) continue;
+const T = p.temp[i];
+let charred = false;
+for (let s = 0; s < ns; s++) {
+if (!sp.exCls[s]) continue;
+const f = comp[off + s];
+if (f <= 1e-6) continue;
+const d = /** @type {any} */ (sp.defs[s]);
+const base = d.base || d.id;
+if (T > sp.exComb[s]) {
+const a = sp.ashSlot[s];
+if (a < 0) continue;
+const k = CHAR_RATE * (1 + (T - sp.exComb[s]) / 40);
+const dv = f * (1 - Math.exp(-k * dt));
+comp[off + s] -= dv;
+comp[off + a] += dv;
+grpRaw[grpOf[s]] -= dv;
+this.charred += dv;
+p.burn[i] = Math.min(1, p.burn[i] + 0.25);
+p.dirty[i] = 1;
+charred = true;
+if (!(this.charSeen[base] <= T)) this.charSeen[base] = Math.round(T);
+} else if (!(this.safeSeen[base] >= T)) this.safeSeen[base] = Math.round(T);
+}
+if (charred && sim.time - this._lastChar > 1.5) {
+this._lastChar = sim.time;
+sim.emit({ type: 'char', x: p.x[i], y: p.y[i], temp: T });
+}
+if (ph === SOLID) {
+if (p.whole[i] > 0.3) this._contact(i, dt);
+continue;
+}
+if (isFrozenGrain(sim, i)) continue;
+let Lh = 0, Ll = 0, Xh = 0, Xl = 0, em = 0;
+for (let s = 0; s < ns; s++) {
+const f = comp[off + s];
+if (f <= 0) continue;
+const sc = sp.solvCls[s];
+if (sc === 1) Lh += f; else if (sc === 2) Ll += f;
+const ec = sp.extCls[s];
+if (ec === 1) Xh += f; else if (ec === 2) Xl += f;
+em += f * sp.emul[s];
+}
+if (Lh < 0.02 && Ll < 0.02) continue;
+const emulsified = Math.min(Lh + Xh, Ll + Xl) > 0.04 && em > 0.002;
+const mf = agitFactor(p.agit[i]) * (emulsified ? EMULSION_FACTOR : 1);
+let capH = SOLVENT_CAPACITY * (Lh + Xh) - Xh, capL = SOLVENT_CAPACITY * (Ll + Xl) - Xl;
+for (let s = 0; s < ns; s++) {
+const c = sp.exCls[s];
+if (!c) continue;
+const f = comp[off + s];
+if (f <= 1e-6) continue;
+if ((c === 1 ? Lh : Ll) < 0.02) continue;
+const cap = c === 1 ? capH : capL;
+if (cap <= 1e-6) continue;
+const g = grpOf[s];
+const all = grpRaw[g] + grpExt[g];
+const phi = all > 1e-9 ? grpExt[g] / all : 0;
+const Y = yieldOf(sp, s, T);
+const drive = Y - phi;
+if (drive <= 1e-4) continue;
+const k = sp.exK20[s] * Math.pow(2, (Math.max(-80, Math.min(400, T)) - 20) / sp.exQ[s]) * mf;
+let dv = (f * (1 - Math.exp(-k * dt)) * drive) / Math.max(0.02, 1 - phi);
+if (dv > f) dv = f;
+if (dv > cap) dv = cap;
+if (dv > drive * all) dv = drive * all;
+if (dv < 1e-8) continue;
+const x = this._ext(s);
+if (x < 0) continue;
+comp[off + s] -= dv;
+comp[off + x] += dv;
+grpRaw[g] -= dv;
+grpExt[g] += dv;
+if (c === 1) capH -= dv; else capL -= dv;
+this.extracted += dv;
+sim.compChange[i] += dv;
+if (sim.compChange[i] > 0.004) { sim.compChange[i] = 0; p.dirty[i] = 1; }
+}
+}
+}
+_contact(i, dt) {
+const sim = this.sim, p = sim.p, sp = sim.species, comp = p.comp, ns = sp.count;
+const oi = i * S;
+const R2 = 0.0144;
+sim.grid.query(p.x[i], p.y[i], 0.12, (j) => {
+if (j === i) return;
+const ph = p.phase[j];
+if (ph === SOLID || ph === GAS) return;
+const dx = p.x[j] - p.x[i], dy = p.y[j] - p.y[i];
+if (dx * dx + dy * dy > R2) return;
+const oj = j * S;
+for (let s = 0; s < ns; s++) {
+const c = sp.exCls[s];
+if (!c) continue;
+const f = comp[oi + s];
+if (f <= 1e-6) continue;
+let L = 0, X = 0;
+for (let q = 0; q < ns; q++) {
+if (sp.solvCls[q] === c) L += comp[oj + q];
+if (sp.extCls[q] === c) X += comp[oj + q];
+}
+if (L < 0.05) continue;
+const cap = SOLVENT_CAPACITY * (L + X) - X;
+if (cap <= 1e-6) continue;
+const T = 0.5 * (p.temp[i] + p.temp[j]);
+const Y = yieldOf(sp, s, T);
+const phi = this._phi(s);
+const drive = Y - phi;
+if (drive <= 1e-4) continue;
+const k = sp.exK20[s] * Math.pow(2, (Math.max(-80, Math.min(400, T)) - 20) / sp.exQ[s]) * WHOLE_FACTOR * (0.4 + 0.6 * Math.min(1, p.agit[j] * 2.5));
+let dv = (f * (1 - Math.exp(-k * dt)) * drive) / Math.max(0.02, 1 - phi);
+dv = Math.min(dv, f, cap, L * 0.5);
+if (dv < 1e-8) continue;
+const x = this._ext(s);
+if (x < 0) continue;
+const kL = dv / L;
+for (let q = 0; q < ns; q++) {
+if (sp.solvCls[q] !== c) continue;
+const d = comp[oj + q] * kL;
+comp[oj + q] -= d;
+comp[oi + q] += d;
+}
+comp[oi + s] -= dv;
+comp[oj + x] += dv;
+this.extracted += dv;
+p.dirty[i] = 1; p.dirty[j] = 1;
+}
+});
+}
+_phi(s) {
+const g = grpOf[s];
+if (g < 0) return 0;
+const all = grpRaw[g] + grpExt[g];
+return all > 1e-9 ? grpExt[g] / all : 0;
+}
+}
+function yieldOf(sp, s, T) {
+const y = 1 - ((1 - sp.exYmin[s]) * (T - sp.exTfull[s])) / sp.exSpan[s];
+return y > 1 ? 1 : y < sp.exYmin[s] ? sp.exYmin[s] : y;
+}
+function extractionReport(sim) {
+const sp = sim.species, p = sim.p, n = p.count, ns = sp.count;
+const by = new Map();
+let liquidT = 0, liquidN = 0, frozen = 0, cond = 0, emulsified = 0, hyd = 0, lip = 0, alcohol = 0, emul = 0;
+for (let i = 0; i < n; i++) {
+if (p.phase[i] === GAS) continue;
+cond++;
+const off = i * S;
+const isFrozen = p.phase[i] === SOLID && p.whole[i] < 0.3;
+if (isFrozen) frozen++;
+else { liquidT += p.temp[i]; liquidN++; }
+let h = 0, l = 0, e = 0;
+for (let s = 0; s < ns; s++) {
+const f = p.comp[off + s];
+if (f <= 0) continue;
+if (sp.solvCls[s] === 1 || sp.extCls[s] === 1) h += f;
+if (sp.solvCls[s] === 2 || sp.extCls[s] === 2) l += f;
+if (sp.alcohol[s]) alcohol += f;
+e += f * sp.emul[s];
+let key = null, raw = 0, ext = 0;
+const d = /** @type {any} */ (sp.defs[s]);
+if (!d) continue;
+if (sp.exCls[s]) { key = d.base || d.id; raw = f; } else if (sp.extCls[s] && d.extractOf) { key = d.extractOf; ext = f; }
+if (!key) continue;
+let g = by.get(key);
+if (!g) { g = { id: key, raw: 0, ext: 0, T: 0, w: 0, frozen: 0, cls: sp.exCls[s] || sp.extCls[s] }; by.set(key, g); }
+g.raw += raw; g.ext += ext; g.T += p.temp[i] * f; g.w += f;
+if (isFrozen) g.frozen += f;
+}
+hyd += h; lip += l; emul += e;
+if (Math.min(h, l) > 0.04 && e > 0.002) emulsified++;
+}
+const meanT = liquidN ? liquidT / liquidN : 20;
+const items = [...by.values()].map((g) => {
+const def = sim.lookup(g.id);
+const pr = def && def.extraction;
+const share = g.raw + g.ext > 0 ? g.ext / (g.raw + g.ext) : 0;
+const T = g.w > 0 ? g.T / g.w : meanT;
+const ceiling = pr ? Math.max(pr.Ymin, Math.min(1, 1 - ((1 - pr.Ymin) * (T - pr.Tfull)) / pr.span)) : 1;
+return { id: g.id, name: def ? def.name : g.id, cls: g.cls === 2 ? 'lipo' : 'hydro', raw: g.raw, ext: g.ext, share, ceiling, frozen: g.raw > 0 && g.frozen >= g.raw * 0.8 };
+});
+return {
+items, meanT, frozen: cond ? frozen / cond : 0,
+emulsified: cond ? emulsified / cond : 0,
+phases: { hydro: hyd, lipo: lip, emulsifier: emul },
+alcohol: cond ? alcohol / cond : 0,
+};
+}
+return { agitFactor, ExtractionSystem, extractionReport };
+})();
 // src/simulation/world.js
-const __m64 = (() => {
-const { PHASE, SIM, TUNE, formPhase } = __m55;
-const { Particles } = __m65;
-const { NeighborGrid } = __m66;
-const { Cauldron, COLUMN } = __m67;
-const { SpeciesTable, MAX_SPECIES } = __m24;
-const { refreshParticle } = __m68;
-const { RigidBodies } = __m69;
-const { thermalStep } = __m70;
-const { phaseStep, classifyFluid } = __m71;
-const { diffusionStep } = __m72;
-const { ReactionSystem } = __m73;
-const { ToolState, toolForces, toolConstraints } = __m75;
-const { Emitter } = __m76;
-const { electricStep } = __m77;
-const { arcaneStep } = __m74;
+const __m65 = (() => {
+const { PHASE, SIM, TUNE, formPhase } = __m56;
+const { Particles } = __m66;
+const { NeighborGrid } = __m67;
+const { Cauldron, COLUMN } = __m68;
+const { SpeciesTable, MAX_SPECIES } = __m25;
+const { refreshParticle } = __m69;
+const { RigidBodies } = __m70;
+const { thermalStep } = __m71;
+const { phaseStep, classifyFluid } = __m72;
+const { diffusionStep } = __m73;
+const { ReactionSystem } = __m74;
+const { ToolState, toolForces, toolConstraints } = __m76;
+const { Emitter } = __m77;
+const { electricStep } = __m78;
+const { arcaneStep } = __m75;
+const { ExtractionSystem } = __m79;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const MODE = Object.freeze({ PBF: 0, GRAN: 1, COH: 2, RIGID: 3, GAS: 4 });
 const M_PBF = 0, M_GRAN = 1, M_COH = 2, M_RIGID = 3, M_GAS = 4;
@@ -11259,6 +11918,7 @@ this.rigid = new RigidBodies(this);
 this.tool = new ToolState();
 this.emitter = new Emitter(this);
 this.reactions = new ReactionSystem(this, opts.reactions || []);
+this.extraction = new ExtractionSystem(this);
 this.laws = opts.laws || [];
 this.furnace = { setting: 0, maxFlame: 340, heatPower: 3.5, minCool: 4, coolPower: 6 };
 this.oxygen = 1;
@@ -11272,6 +11932,7 @@ this.awakened = 0;
 this._lastAwakenEvent = -99;
 this._awokeBy = null;
 this.vented = /** @type {Record<string, number>} */ ({});
+this.condenser = { on: false, receiver: /** @type {Record<string, number>} */ ({}) };
 this._rng = 12345;
 this.stats = { stepMs: 0, steps: 0, pairs: 0, awake: 0 };
 this.paused = false;
@@ -11401,6 +12062,7 @@ thermalStep(this, dt2);
 electricStep(this, dt2);
 diffusionStep(this, dt2);
 this.reactions.step(dt2);
+this.extraction.step(dt2);
 arcaneStep(this, dt2);
 phaseStep(this, dt2);
 this._oxygen(dt2);
@@ -11911,7 +12573,7 @@ const x = p.x[i], y = p.y[i];
 let best = -1, by = y - 0.015;
 this.grid.query(x, y, R, (j) => {
 const mj = mode[j];
-if (mj !== M_COH && mj !== M_GRAN) return;
+if (mj !== M_COH && mj !== M_GRAN && mj !== M_PBF) return;
 if (p.y[j] >= by) return;
 const dx = p.x[j] - x, dy = p.y[j] - y;
 if (dx * dx + dy * dy > R2 || Math.abs(dx) > 0.6 * -dy + 0.02) return;
@@ -11960,6 +12622,7 @@ this.oxygen += (1 - this.oxygen) * Math.min(1, rate * dt);
 }
 _vent() {
 const p = this.p, c = this.cauldron;
+if (this.condenser.on) { this._condense(); return; }
 if (c.lidClosed) return;
 for (let i = p.count - 1; i >= 0; i--) {
 if (p.phase[i] === GAS && p.y[i] < -COLUMN + 0.12) {
@@ -11970,6 +12633,20 @@ if (f > 0 && sp.defs[s]) this.vented[sp.defs[s].id] = (this.vented[sp.defs[s].id
 }
 this.removeParticle(i);
 }
+}
+}
+_condense() {
+const p = this.p, c = this.cauldron, sp = this.species;
+const top = c.lidY + 0.32;
+for (let i = p.count - 1; i >= 0; i--) {
+if (p.phase[i] !== GAS || (p.y[i] > top && this.nCond[i] >= 2)) continue;
+const rec = this.condenser.receiver;
+for (let s = 0; s < sp.count; s++) {
+const f = p.comp[i * MAX_SPECIES + s];
+if (f > 0 && sp.defs[s]) rec[sp.defs[s].id] = (rec[sp.defs[s].id] || 0) + f;
+}
+this.energyOut += p.rhoCp[i] * p.temp[i] + p.lat[i] + p.eph[i];
+this.removeParticle(i);
 }
 }
 compactSpecies() {
@@ -11995,12 +12672,12 @@ if (p.sleep[i] >= SLEEP_STEPS) p.sleep[i] = 0;
 return { MODE, SLEEP_STEPS, Simulation, formPhase };
 })();
 // src/game/measure.js
-const __m78 = (() => {
-const { MAX_SPECIES } = __m24;
-const { PHASE, SIM } = __m55;
-const { compatFactor } = __m15;
+const __m80 = (() => {
+const { MAX_SPECIES } = __m25;
+const { PHASE, SIM } = __m56;
+const { compatFactor } = __m21;
 const { oklabToRgb } = __m9;
-const { sampleEffects } = __m14;
+const { sampleEffects } = __m20;
 function measureParticles(sim, indices) {
 const n = indices.length;
 if (!n) return null;
@@ -12030,11 +12707,12 @@ lnMu += lm;
 }
 for (let s = 0; s < ns; s++) comp[s] /= n;
 const composition = {};
-let volat = 0;
+let volat = 0, alcohol = 0;
 for (let s = 0; s < ns; s++) {
 const def = sp.defs[s];
 if (!def || comp[s] < 1e-5) continue;
 composition[def.id] = comp[s];
+if (sp.alcohol[s]) alcohol += comp[s];
 volat += comp[s] * (sp.volatility[s] * 70 + sp.reactivity[s] * 30);
 }
 const lab = [L / n, A / n, B / n];
@@ -12078,6 +12756,7 @@ stability,
 volatility: clamp(volat, 0, 100),
 phases: { liquid: phases[0] / n, powder: phases[1] / n, paste: phases[2] / n, solid: phases[3] / n, gas: phases[4] / n },
 glow: glow / n,
+alcohol: Math.round(alcohol * 1000) / 10,
 };
 }
 function clamp(v, a, b) {
@@ -12122,12 +12801,12 @@ return stability >= 90 ? 'evenly mixed' : stability >= 70 ? 'a little uneven' : 
 return { measureParticles, tapSelection, probeSelection, viscosityClass, densityWord, evennessWord };
 })();
 // src/game/vial.js
-const __m63 = (() => {
-const { Simulation } = __m64;
-const { PHASE, SIM } = __m55;
-const { MAX_SPECIES } = __m24;
-const { measureParticles } = __m78;
-const { refreshParticle } = __m68;
+const __m64 = (() => {
+const { Simulation } = __m65;
+const { PHASE, SIM } = __m56;
+const { MAX_SPECIES } = __m25;
+const { measureParticles } = __m80;
+const { refreshParticle } = __m69;
 const ROOM = SIM.AMBIENT;
 const COOL_TAU = 480;
 function makeVial(sim, indices, meta) {
@@ -12156,6 +12835,23 @@ batchId: '', rev: 0, cert: {}, parts: [], day: 0, log: [],
 ...meta,
 });
 vial.log = [...(vial.log || []), { type: 'bottled', ml: vial.ml, day: vial.day }];
+return vial;
+}
+function makeVialFromComposition(comp, T, meta, lookup, laws) {
+const species = Object.keys(comp).filter((id) => comp[id] > 1e-9 && lookup(id));
+const tot = species.reduce((a, id) => a + comp[id], 0);
+const n = Math.floor(tot / SIM.ML_PER_PARTICLE + 1e-6);
+if (n < 1) return null;
+const c = species.map((id) => Math.round((comp[id] / tot) * 1e6) / 1e6);
+const particles = [];
+for (let k = 0; k < n; k++) particles.push({ c: c.slice(), t: Math.round(T * 100) / 100, ph: PHASE.LIQUID });
+const vial = /** @type {Vial} */ ({
+id: 'v' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36),
+species, particles, ml: n * SIM.ML_PER_PARTICLE, bottledMl: n * SIM.ML_PER_PARTICLE, m: null,
+batchId: '', rev: 0, cert: {}, parts: [], day: 0, log: [], ...meta,
+});
+vial.log = [...(vial.log || []), { type: 'cellar', ml: vial.ml, day: vial.day }];
+updateVial(vial, lookup, laws);
 return vial;
 }
 function appendParticles(vial, sim, indices) {
@@ -12301,15 +12997,15 @@ const particles = [];
 for (let k = 0; k < n; k++) particles.push({ c: c.slice(), t: m.temperature ?? ROOM, q: m.charge || undefined, ph: PHASE.LIQUID });
 return { ...v, species, particles, ml: n * SIM.ML_PER_PARTICLE, bottledMl: v.bottledMl ?? n * SIM.ML_PER_PARTICLE, log: v.log || [], cert: v.cert || {} };
 }
-return { makeVial, appendParticles, measureVial, updateVial, takeDose, pourBack, pourBackParts, relaxVial, vialInventory, migrateVial };
+return { makeVial, makeVialFromComposition, appendParticles, measureVial, updateVial, takeDose, pourBack, pourBackParts, relaxVial, vialInventory, migrateVial };
 })();
 // src/game/commerce.js
-const __m79 = (() => {
+const __m81 = (() => {
 const { Rng, hashString } = __m6;
-const { EFFECT_KEYS, EFFECT_INDEX, NE, EFFECT_BY_KEY } = __m14;
-const { evaluatePotion, strongestUnwanted, PROPERTY_LABELS } = __m54;
-const { PURITY_LIMIT } = __m56;
-const { summarize, evidenceRank, EVIDENCE_TEXT } = __m58;
+const { EFFECT_KEYS, EFFECT_INDEX, NE, EFFECT_BY_KEY } = __m20;
+const { evaluatePotion, strongestUnwanted, PROPERTY_LABELS } = __m55;
+const { PURITY_LIMIT } = __m57;
+const { summarize, evidenceRank, EVIDENCE_TEXT } = __m59;
 function draftLabel(vial, theory, day) {
 const claims = {};
 const cert = vial.cert || {}, recs = vial.certRecords || {};
@@ -12627,10 +13323,10 @@ return (Math.round(v * 10) / 10).toLocaleString('en-US', { maximumFractionDigits
 return { draftLabel, applyTrials, evidenceOf, STAR_STEPS, MAX_STARS, accuracyStars, claimSigma, claimStars, labelStars, trialClaim, sameClaim, editClaim, claimedEffects, relevantEffects, EVIDENCE_WEIGHT, trustReport, labelTrust, unprovenWanted, proofGaps, claimedMeasurement, openNegotiation, proposePrice, acceptOffer, recordSale, resolveFollowUp, EVIDENCE_TEXT };
 })();
 // src/game/garden.js
-const __m80 = (() => {
+const __m82 = (() => {
 const { Rng } = __m6;
-const { RARITY, ARCANE, seedChance } = __m19;
-const { SPECIES_BY_KEY, materialIdOf } = __m16;
+const { RARITY, ARCANE, seedChance } = __m16;
+const { SPECIES_BY_KEY, materialIdOf } = __m13;
 const GARDEN_STAGES = /** @type {const} */ (['seed', 'sprout', 'young', 'developing', 'mature']);
 const STAGE_AT = [0, 0.12, 0.35, 0.65, 1];
 const BEDS = {
@@ -12808,7 +13504,7 @@ return Object.entries(g.seeds).filter(([, n]) => n > 0).map(([id, n]) => ({ id, 
 return { GARDEN_STAGES, BEDS, GRADES, GARDEN_UPGRADES, OFFLINE_CAP_MS, TUTORIAL_PACE, createGarden, seedId, parseSeed, normalizeGarden, bedOf, gradeNeeded, growHours, cropState, rollSeed, giveSeed, plant, waterPlots, cropYield, harvestPlot, boughtCount, upgrade, gardenStatus, seedList, ARCANE };
 })();
 // src/materials/remains.js
-const __m81 = (() => {
+const __m83 = (() => {
 const { completeMaterial } = __m10;
 const { arcaneProfile, jitter } = __m12;
 function remainsId(rabbitId, part) {
@@ -12907,7 +13603,7 @@ return m;
 return { remainsId, isRemains, remainsPlan, remainsMaterials };
 })();
 // src/game/patrons.js
-const __m82 = (() => {
+const __m84 = (() => {
 const RETURN_CHANCE = 0.3;
 const BANNED_TRUST = -0.75;
 const clamp1 = (v) => Math.max(-1, Math.min(1, v));
@@ -12975,7 +13671,7 @@ return Math.round(v * 100) / 100;
 return { RETURN_CHANCE, BANNED_TRUST, notePatron, patronVerdict, returningPatron, welcomePatron, recentStyles, noveltyFactor };
 })();
 // src/game/recipes.js
-const __m83 = (() => {
+const __m85 = (() => {
 const TRACE_DT = 1;
 const TRACE_MAX = 1200;
 const HOLD_MIN = 6, HOLD_BAND = 4, ROOM = 20;
@@ -13207,32 +13903,266 @@ return Math.round(v * 10) / 10;
 }
 return { TRACE_DT, TRACE_MAX, SAME, traceSample, buildProcedure, procedureLimits, approximateSteps, migrateRecipe, holds, procedureShape, compareRecipe, matchRecipe, recipeConfidence, CONFIDENCE_TEXT, checkReproduction, describeStep };
 })();
+// src/game/cellar.js
+const __m86 = (() => {
+const { rateAt, yieldAt, extractIdOf, SOLVENT_CAPACITY, CELLAR_FACTOR, EMULSION_FACTOR, emulsionStability } = __m18;
+const { isMagical, awakenedId, thresholdToCelsius } = __m22;
+const { CHAR_ID } = __m13;
+const { EFFECT_INDEX } = __m20;
+const CELLAR_STEP = 20;
+const CELLAR_T = 12;
+const MAX_OFFLINE = 30 * 86400;
+const DRIVE_PER_POINT = 2.5;
+const RUNE_SLEW = 90;
+const RUNE_LIFE = 12 * 3600;
+const RUNE_DRIVE_WEAR = 40;
+const RUNE_PRICE = 28;
+const CHAR_RATE = 0.002;
+const T_MIN = -90, T_MAX = 450;
+function createCellar() {
+return { vessels: /** @type {Vessel[]} */ ([]), runes: 0 };
+}
+function emptyVessel(id, now) {
+return /** @type {Vessel} */ ({ id, comp: {}, T: CELLAR_T, drive: 0, rune: null, t: now, carry: 0, log: [] });
+}
+function normalizeCellar(data, count, now = Date.now()) {
+const c = data && typeof data === 'object' ? data : createCellar();
+if (!Array.isArray(c.vessels)) c.vessels = [];
+c.runes = Math.max(0, Number(c.runes) | 0);
+c.vessels = c.vessels.filter((v) => v && typeof v === 'object').map((v, k) => Object.assign(v, {
+...emptyVessel(k, now), ...v, id: k,
+comp: v.comp && typeof v.comp === 'object' ? Object.fromEntries(Object.entries(v.comp).filter(([, ml]) => Number(ml) > 1e-6).map(([id, ml]) => [id, Number(ml)])) : {},
+T: Number.isFinite(v.T) ? v.T : CELLAR_T, drive: Number.isFinite(v.drive) ? v.drive : 0,
+rune: v.rune && Number.isFinite(v.rune.target) && v.rune.life > 0 ? { target: v.rune.target, life: v.rune.life } : null,
+t: Number.isFinite(v.t) ? v.t : now, carry: Number.isFinite(v.carry) ? v.carry : 0, log: Array.isArray(v.log) ? v.log.slice(-20) : [],
+}));
+while (c.vessels.length < count) c.vessels.push(emptyVessel(c.vessels.length, now));
+return c;
+}
+function vesselVolume(v) {
+let s = 0;
+for (const ml of Object.values(v.comp)) s += ml;
+return s;
+}
+function note(v, now, text) {
+v.log.push({ t: now, text });
+if (v.log.length > 20) v.log.splice(0, v.log.length - 20);
+}
+function fillVessel(v, comp, T, now, meta = {}) {
+if (vesselVolume(v) > 0) return { ok: false, reason: 'The vessel is not empty.' };
+const c = Object.fromEntries(Object.entries(comp).filter(([, ml]) => ml > 1e-6));
+if (!Object.keys(c).length) return { ok: false, reason: 'There is nothing to lay down.' };
+Object.assign(v, emptyVessel(v.id, now), { comp: c, T, name: meta.name || 'A laid-down brew', batchId: meta.batchId, parts: meta.parts || [] });
+note(v, now, `Laid down at ${Math.round(T)}°C.`);
+return { ok: true };
+}
+function emptyVesselContents(v, now) {
+const out = { comp: { ...v.comp }, T: v.T, name: v.name, parts: v.parts || [] };
+Object.assign(v, emptyVessel(v.id, now));
+return out;
+}
+function potionDrive(effects) {
+const net = (effects[EFFECT_INDEX.fire] || 0) - (effects[EFFECT_INDEX.frost] || 0);
+return Math.abs(net) < 3 ? 0 : net * DRIVE_PER_POINT;
+}
+function activateVessel(v, effects, now) {
+if (vesselVolume(v) <= 0) return { ok: false, reason: 'Fill the vessel first.' };
+const d = potionDrive(effects);
+if (!d) return { ok: false, reason: 'Only a potion of Fire or of Frost (at least 3 %) warms or chills a vessel.' };
+v.drive = Math.round((v.drive + d) * 10) / 10;
+note(v, now, `${d > 0 ? 'Warmed' : 'Chilled'} by a potion: ${d > 0 ? '+' : ''}${Math.round(d)}°C an hour.`);
+return { ok: true, drive: v.drive };
+}
+function setRune(v, target, now) {
+if (!Number.isFinite(target)) return { ok: false, reason: 'Choose a temperature.' };
+v.rune = { target: Math.max(-60, Math.min(300, Math.round(target))), life: RUNE_LIFE };
+note(v, now, `A rune holds it at ${v.rune.target}°C.`);
+return { ok: true };
+}
+function infoOf(lookup) {
+return (id) => lookup(id);
+}
+function freezingPoint(v, lookup) {
+let w = 0, s = 0;
+for (const [id, ml] of Object.entries(v.comp)) {
+const d = lookup(id);
+if (!d || d.form !== 'liquid' || ml <= 0) continue;
+w += ml; s += ml * d.melt;
+}
+return w > 0 ? s / w : null;
+}
+function advanceVessel(v, lookup, now) {
+const events = [];
+if (!(now > v.t)) return events;
+let dt = Math.min((now - v.t) / 1000, MAX_OFFLINE) + (v.carry || 0);
+v.t = now;
+if (vesselVolume(v) <= 0) { v.carry = 0; return events; }
+const get = infoOf(lookup);
+let steps = Math.floor(dt / CELLAR_STEP);
+v.carry = dt - steps * CELLAR_STEP;
+for (; steps > 0; steps--) {
+const ev = stepVessel(v, get, CELLAR_STEP);
+for (const e of ev) if (!events.includes(e)) events.push(e);
+if (!v.rune && !v.drive && ev.idle) break;
+}
+for (const e of events) note(v, now, e);
+return events;
+}
+function advanceCellar(cellar, lookup, now = Date.now()) {
+const out = [];
+for (const v of cellar.vessels) {
+const ev = advanceVessel(v, lookup, now);
+for (const e of ev) out.push({ vessel: v.id, text: e });
+}
+return out;
+}
+function stepVessel(v, get, dt) {
+const events = [];
+const h = dt / 3600;
+if (v.rune && v.rune.life > 0) {
+const d = v.rune.target - v.T;
+const move = Math.sign(d) * Math.min(Math.abs(d), RUNE_SLEW * h);
+v.T += move;
+v.rune.life -= dt * (1 + Math.abs(v.drive) / RUNE_DRIVE_WEAR);
+if (v.rune.life <= 0) { v.rune = null; events.push('The rune has worn out: the vessel drifts again.'); }
+} else if (v.drive) {
+v.T = Math.max(T_MIN, Math.min(T_MAX, v.T + v.drive * h));
+}
+const T = v.T;
+let Lh = 0, Ll = 0, Xh = 0, Xl = 0, em = 0;
+const raws = [];
+for (const [id, ml] of Object.entries(v.comp)) {
+if (ml <= 0) continue;
+const d = get(id);
+if (!d) continue;
+if (d.solvent === 'hydro') Lh += ml; else if (d.solvent === 'lipo') Ll += ml;
+if (d.extractClass === 'hydro') Xh += ml; else if (d.extractClass === 'lipo') Xl += ml;
+em += ml * (Number(d.emulsifier) || 0);
+if (d.extraction) raws.push({ id, ml, pr: d.extraction, x: extractIdOf(id), base: d.base || d.id });
+}
+const tf = freezingPoint(v, get);
+const frozen = tf !== null && T <= tf;
+const emulsion = Lh + Xh > 0 && Ll + Xl > 0 && emulsionStability(Lh + Xh, Ll + Xl, em) > 0.5;
+const m = CELLAR_FACTOR * (emulsion ? EMULSION_FACTOR : 1);
+let moved = 0;
+const grp = new Map();
+for (const r of raws) {
+const g = grp.get(r.base) || { raw: 0, ext: 0 };
+g.raw += r.ml;
+g.ext += v.comp[r.x] || 0;
+grp.set(r.base, g);
+}
+let capH = SOLVENT_CAPACITY * (Lh + Xh) - Xh, capL = SOLVENT_CAPACITY * (Ll + Xl) - Xl;
+let charred = false;
+for (const r of raws) {
+if (T > r.pr.combust) {
+const dv = r.ml * (1 - Math.exp(-CHAR_RATE * (1 + (T - r.pr.combust) / 40) * dt));
+v.comp[r.id] -= dv;
+v.comp[CHAR_ID] = (v.comp[CHAR_ID] || 0) + dv;
+grp.get(r.base).raw -= dv;
+r.ml -= dv;
+moved += dv;
+charred = true;
+}
+if (frozen) continue;
+const L = r.pr.cls === 'lipo' ? Ll : Lh;
+const cap = r.pr.cls === 'lipo' ? capL : capH;
+if (L <= 0 || cap <= 1e-9 || r.ml <= 1e-9) continue;
+const g = /** @type {{raw:number, ext:number}} */ (grp.get(r.base));
+const all = g.raw + g.ext;
+const phi = all > 0 ? g.ext / all : 0;
+const drive = yieldAt(r.pr, T) - phi;
+if (drive <= 1e-6) continue;
+let dv = (r.ml * (1 - Math.exp(-rateAt(r.pr, T) * m * dt)) * drive) / Math.max(0.02, 1 - phi);
+dv = Math.min(dv, r.ml, cap, drive * all);
+if (dv <= 1e-9) continue;
+v.comp[r.id] -= dv;
+v.comp[r.x] = (v.comp[r.x] || 0) + dv;
+g.raw -= dv; g.ext += dv;
+if (r.pr.cls === 'lipo') capL -= dv; else capH -= dv;
+moved += dv;
+}
+if (charred) events.push('Herbs are burning in the vessel: what was not yet drawn out is lost.');
+if (frozen && raws.some((r) => r.ml > 1e-6) && !v.frozen) events.push('The vessel has frozen solid: extraction has stopped.');
+v.frozen = frozen;
+let w = 0, tw = 0;
+for (const [id, ml] of Object.entries(v.comp)) {
+const d = get(id);
+if (ml > 1e-6 && isMagical(d)) { w += ml; tw += ml * d.arcane.thr; }
+}
+if (w > 0) {
+const thr = tw / w, Ta = thresholdToCelsius(thr);
+if (thr >= 0 ? T >= Ta : T <= Ta) {
+for (const [id, ml] of Object.entries(v.comp)) {
+const d = get(id);
+if (!(ml > 1e-6) || !isMagical(d) || !get(awakenedId(id))) continue;
+v.comp[awakenedId(id)] = (v.comp[awakenedId(id)] || 0) + ml;
+delete v.comp[id];
+moved += ml;
+}
+if (moved) events.push('Its magic has awakened.');
+}
+}
+for (const [id, ml] of Object.entries(v.comp)) if (!(ml > 1e-9)) delete v.comp[id];
+if (moved < 1e-7) events.idle = true;
+return events;
+}
+function vesselReport(v, lookup) {
+const by = new Map();
+let alcohol = 0, total = 0, Lh = 0, Ll = 0, em = 0;
+for (const [id, ml] of Object.entries(v.comp)) {
+total += ml;
+const d = lookup(id);
+if (!d) continue;
+if (d.alcohol) alcohol += ml;
+if (d.solvent === 'hydro' || d.extractClass === 'hydro') Lh += ml;
+if (d.solvent === 'lipo' || d.extractClass === 'lipo') Ll += ml;
+em += ml * (Number(d.emulsifier) || 0);
+let key = null, raw = 0, ext = 0, pr = null;
+if (d.extraction) { key = d.base || d.id; raw = ml; pr = d.extraction; } else if (d.extractOf) { key = d.extractOf; ext = ml; pr = lookup(d.extractOf)?.extraction; }
+if (!key) continue;
+const g = by.get(key) || { id: key, name: lookup(key)?.name || key, cls: pr ? pr.cls : 'hydro', raw: 0, ext: 0, ceiling: pr ? yieldAt(pr, v.T) : 1 };
+g.raw += raw; g.ext += ext;
+by.set(key, g);
+}
+const items = [...by.values()].map((g) => ({ ...g, share: g.raw + g.ext > 0 ? g.ext / (g.raw + g.ext) : 0 }));
+const tf = freezingPoint(v, lookup);
+return {
+ml: total, T: v.T, drive: v.drive, rune: v.rune ? { target: v.rune.target, wear: 1 - v.rune.life / RUNE_LIFE } : null,
+freezing: tf, frozen: tf !== null && v.T <= tf, items, alcohol: total > 0 ? (alcohol / total) * 100 : 0,
+emulsion: Lh > 0 && Ll > 0 ? emulsionStability(Lh, Ll, em) : null, char: v.comp[CHAR_ID] || 0,
+};
+}
+return { CELLAR_STEP, CELLAR_T, MAX_OFFLINE, DRIVE_PER_POINT, RUNE_SLEW, RUNE_LIFE, RUNE_DRIVE_WEAR, RUNE_PRICE, createCellar, normalizeCellar, vesselVolume, fillVessel, emptyVesselContents, potionDrive, activateVessel, setRune, freezingPoint, advanceVessel, advanceCellar, vesselReport };
+})();
 // src/game/state.js
 const __m5 = (() => {
 const { Rng, hashString } = __m6;
 const { generateWorld, makeLookup, addAlchemy, LAB_ROLES } = __m7;
 const { serializeMaterial, deserializeMaterial } = __m10;
-const { generateCommission, tutorialCommission } = __m22;
-const { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById, RETIRED_EQUIPMENT } = __m57;
-const { SIM } = __m55;
-const { createTrials, normalizeTrials, runTrial, SUBJECT_BY_ID, knownLaws, certification, summarize } = __m58;
-const { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth, depositStatus, migrateGathering, setSky, water } = __m61;
-const { predictPlan } = __m23;
-const { EFFECT_INDEX, EFFECT_KEYS } = __m14;
-const { migrateVial } = __m63;
-const { recordSale, resolveFollowUp, applyTrials, evidenceOf } = __m79;
-const { colonyDay, colonyTick, livingRabbits, livingOf, findRabbit, addBoughtRabbit, addWildRabbit, penHasRoom, PEN_MAX, retireRabbit, remainsSource, purgeRabbit, cullRabbit, maxHealthOf, FOUNDER_BORN } = __m59;
-const { kindOf } = __m60;
-const { normalizeRegen, accrue, regenerate: regenerateBiome, maybeGift, unlockBiomes, generationOf, nextCoinIn, COIN_RULES } = __m62;
-const { normalizeGarden, plant: gardenPlant, waterPlots, harvestPlot, upgrade: gardenUpgrade, rollSeed, giveSeed, GARDEN_UPGRADES, gardenStatus } = __m80;
-const { BIOME_BY_ID } = __m20;
-const { materialIdOf } = __m16;
-const { legacyReplacement } = __m13;
-const { remainsMaterials, remainsPlan, isRemains } = __m81;
-const { returningPatron, welcomePatron, recentStyles, notePatron, patronVerdict, noveltyFactor } = __m82;
-const { techniqueById, migrateTechniques } = __m22;
-const { migrateRecipe } = __m83;
-const SAVE_VERSION = 7;
+const { generateCommission, tutorialCommission } = __m23;
+const { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById, RETIRED_EQUIPMENT } = __m58;
+const { SIM } = __m56;
+const { createTrials, normalizeTrials, runTrial, SUBJECT_BY_ID, knownLaws, certification, summarize } = __m59;
+const { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth, depositStatus, migrateGathering, setSky, water } = __m62;
+const { predictPlan } = __m24;
+const { EFFECT_INDEX, EFFECT_KEYS } = __m20;
+const { migrateVial } = __m64;
+const { recordSale, resolveFollowUp, applyTrials, evidenceOf } = __m81;
+const { colonyDay, colonyTick, livingRabbits, livingOf, findRabbit, addBoughtRabbit, addWildRabbit, penHasRoom, PEN_MAX, retireRabbit, remainsSource, purgeRabbit, cullRabbit, maxHealthOf, FOUNDER_BORN } = __m60;
+const { kindOf } = __m61;
+const { normalizeRegen, accrue, regenerate: regenerateBiome, maybeGift, unlockBiomes, generationOf, nextCoinIn, COIN_RULES } = __m63;
+const { normalizeGarden, plant: gardenPlant, waterPlots, harvestPlot, upgrade: gardenUpgrade, rollSeed, giveSeed, GARDEN_UPGRADES, gardenStatus } = __m82;
+const { BIOME_BY_ID } = __m17;
+const { materialIdOf } = __m13;
+const { legacyReplacement } = __m19;
+const { remainsMaterials, remainsPlan, isRemains } = __m83;
+const { returningPatron, welcomePatron, recentStyles, notePatron, patronVerdict, noveltyFactor } = __m84;
+const { techniqueById, migrateTechniques } = __m23;
+const { migrateRecipe } = __m85;
+const { createCellar, normalizeCellar, advanceCellar, fillVessel, emptyVesselContents, activateVessel, setRune, vesselVolume, RUNE_PRICE } = __m86;
+const { makeVialFromComposition } = __m64;
+const SAVE_VERSION = 8;
 const PURGE_PRICE = 8;
 const PURGE_BREW_COST = 1;
 const PURGE_BREW_TIME = 40;
@@ -13333,6 +14263,7 @@ this.lookup = makeLookup(this.world);
 this.regen = normalizeRegen(data.regen);
 accrue(this.regen);
 this.garden = normalizeGarden(data.garden);
+this.cellar = normalizeCellar(data.cellar, capabilities(data.equipment || []).vessels);
 this._deposits = null;
 migrateGathering(this.gathering, this.deposits);
 setSky(this.gathering, this.deposits, weatherOn(this.seed, this.day).id);
@@ -13487,8 +14418,105 @@ if (this.tutorial.active && d.species === 'silverleaf' && !Object.keys(this.gard
 this.stats.gathered = (this.stats.gathered || 0) + r.amount;
 /** @type {any} */ (r).events = [...this.unlock('forage1')];
 if (this.stats.gathered >= 1000) /** @type {any} */ (r).events.push(...this.unlock('forage1k'));
+const under = d.region === 'netherwood' || ['mine', 'dig'].includes(m && m.wild ? m.wild.gather : '');
+if (under && runeFind(this.seed, d.id, this.stats.gathered, d.region === 'netherwood' ? 0.14 : 0.06)) {
+this.cellar.runes++;
+/** @type {any} */ (r).rune = true;
+}
 }
 return r;
+}
+tickCellar(now = Date.now()) {
+if (this.cellar.vessels.length < this.cap.vessels) normalizeCellar(this.cellar, this.cap.vessels, now);
+return advanceCellar(this.cellar, this.lookup, now);
+}
+buyRune() {
+const price = Math.round(RUNE_PRICE * (1 - this.cap.discount) * 10) / 10;
+if (this.rank < 1) return { ok: false, reason: 'The runesmith sells only to a Journeyman or above.' };
+if (this.coins + 1e-9 < price) return { ok: false, reason: 'Not enough coins.' };
+this.coins = round1(this.coins - price);
+this.stats.spent += price;
+this.daySpending += price;
+this.cellar.runes++;
+return { ok: true, cost: price };
+}
+layDown(vessel, src, now = Date.now()) {
+this.tickCellar(now);
+const v = this.cellar.vessels[vessel];
+if (!v) return { ok: false, reason: 'There is no such vessel.' };
+if (src.bottleId) {
+const b = this.bottles.find((x) => x.id === src.bottleId);
+if (!b) return { ok: false, reason: 'That bottle is not on the shelf.' };
+const comp = {};
+for (const vp of b.particles) vp.c.forEach((f, j) => { if (f > 0) comp[b.species[j]] = (comp[b.species[j]] || 0) + f * SIM.ML_PER_PARTICLE; });
+const T = b.particles.length ? b.particles.reduce((a, q) => a + q.t, 0) / b.particles.length : 20;
+const r = fillVessel(v, comp, T, now, { name: (b.label && b.label.name) || 'A shelved brew', batchId: b.batchId, parts: b.parts });
+if (r.ok) this.removeBottle(b.id);
+return r;
+}
+return fillVessel(v, src.comp || {}, src.T ?? 20, now, { name: src.name, batchId: this.batch.id, parts: src.parts });
+}
+activateVessel(vessel, bottleId, now = Date.now()) {
+this.tickCellar(now);
+const v = this.cellar.vessels[vessel];
+const b = this.bottles.find((x) => x.id === bottleId);
+if (!v || !b) return { ok: false, reason: 'Choose a vessel and a bottle.' };
+const r = activateVessel(v, (b.m && b.m.effects) || [], now);
+if (r.ok) this.removeBottle(b.id);
+return r;
+}
+runeVessel(vessel, target, now = Date.now()) {
+this.tickCellar(now);
+const v = this.cellar.vessels[vessel];
+if (!v || vesselVolume(v) <= 0) return { ok: false, reason: 'Fill the vessel first.' };
+if (this.cellar.runes <= 0) return { ok: false, reason: 'You have no temperature rune. Buy one at the market, or look underground in the Wilds.' };
+const r = setRune(v, target, now);
+if (r.ok) this.cellar.runes--;
+return r;
+}
+bottleVessel(vessel, now = Date.now()) {
+this.tickCellar(now);
+const v = this.cellar.vessels[vessel];
+if (!v || vesselVolume(v) <= 0) return { ok: false, reason: 'The vessel is empty.' };
+if (this.bottles.length >= this.cap.bottles && this.vial) return { ok: false, reason: 'No room on the potion shelves, and a vial is already on the counter.' };
+const out = emptyVesselContents(v, now);
+const vial = makeVialFromComposition(out.comp, out.T, { batchId: 'b' + now.toString(36) + 'c' + v.id, day: this.day, parts: out.parts }, this.lookup, this.world.laws || []);
+if (!vial) return { ok: false, reason: 'Nothing could be bottled.' };
+if (this.bottles.length < this.cap.bottles) this.bottles.push(vial); else this.vial = vial;
+return { ok: true, vial };
+}
+collectDistillate(collected) {
+const got = {};
+for (const [id, v] of Object.entries(collected || {})) {
+const d = this.lookup(id);
+if (!d || !d.solvent || !(v > 0)) continue;
+const ml = Math.floor(v * SIM.ML_PER_PARTICLE);
+if (ml <= 0 || !isFinite(this.stock(id))) continue;
+const room = Math.max(0, this.cap.storage - this.stock(id));
+const take = Math.min(room, ml);
+if (take <= 0) continue;
+this.inventory[id] = this.stock(id) + take;
+got[id] = take;
+}
+return got;
+}
+noteBurning(safe, charred) {
+const events = [];
+for (const [id, T] of Object.entries(safe || {})) {
+const k = this.knowledge[id] || (this.knowledge[id] = {});
+if (!(k.safeTo >= T)) k.safeTo = T;
+}
+for (const [id, T] of Object.entries(charred || {})) {
+const k = this.knowledge[id] || (this.knowledge[id] = {});
+const first = k.burnsAt === undefined;
+if (!(k.burnsAt <= T)) k.burnsAt = T;
+if (first) {
+const m = this.lookup(id);
+events.push({ type: 'burn-discovered', id, T });
+this.journal['burn:' + id] = { key: 'burn:' + id, kind: 'burn', title: `${m ? m.name : id} burns`, day: this.day, text: `Seen burning at ${Math.round(T)}°C: whatever of it was not yet drawn out turned to char.` };
+}
+}
+return events;
 }
 water(depositId, plants = null, now = Date.now()) {
 const d = this.deposits.find((x) => x.id === depositId);
@@ -14171,6 +15199,7 @@ opened: this.opened,
 patrons: this.patrons,
 regen: this.regen,
 garden: this.garden,
+cellar: this.cellar,
 savedAt: Date.now(),
 };
 }
@@ -14273,6 +15302,12 @@ d.version = 6;
 if (d.version < 7) {
 d.version = 7;
 }
+if (d.version < 8) {
+d.cellar = d.cellar || createCellar();
+d.journal = { ...(d.journal || {}), 'note:extraction': { key: 'note:extraction', kind: 'note', title: 'The guild revises its steeping lore', day: d.day || 1,
+text: 'Herbs give up their magic gradually, at any temperature: faster when hot, but more of it when cool. Some dissolve only in oil. Cold spirit draws out everything. Herbs left undissolved burn when too hot. The market now sells a neutral emulsifier, the guild an alembic and aging cellars.' } };
+d.version = 8;
+}
 for (const id of STARTING_EQUIPMENT) if (!d.equipment.includes(id)) d.equipment = [...d.equipment, id];
 d.equipment = d.equipment.filter((id) => id !== 'mortar');
 if (d.world && Array.isArray(d.world.materials) && d.world.materials.length === 0) throw new Error('The save has no reagents');
@@ -14311,20 +15346,23 @@ return { equipment: out, refund: round1(refund), lines };
 }
 function retireRequirements(com) {
 if (!com || !Array.isArray(com.requirements)) return com;
-const keep = (r) => r.key === 'purity' || EFFECT_KEYS.includes(r.key);
+const keep = (r) => r.key === 'purity' || r.key === 'alcohol' || EFFECT_KEYS.includes(r.key);
 com.requirements = com.requirements.filter(keep);
 com.techniques = migrateTechniques(com.techniques || []);
 if (typeof com.style === 'string') com.style = [com.style.split('+')[0], ...com.techniques.slice().sort()].join('+');
 com.effectOrder = com.requirements.some((r) => r.effect);
 return com;
 }
+function runeFind(seed, depositId, n, chance) {
+return (hashString(`rune:${seed}:${depositId}:${Math.round(n)}`) % 10000) / 10000 < chance;
+}
 function round1(v) {
 return Math.round(v * 10) / 10;
 }
-return { SAVE_VERSION, PURGE_PRICE, PURGE_BREW_COST, PURGE_BREW_TIME, WORLD_GEN_VERSION, STARTER_HERBS, MARKET_EVENTS, ACHIEVEMENTS, GameState, migrateCommission, migrate, retireEquipment, retireRequirements, EQUIPMENT, SIM };
+return { SAVE_VERSION, PURGE_PRICE, PURGE_BREW_COST, PURGE_BREW_TIME, WORLD_GEN_VERSION, STARTER_HERBS, MARKET_EVENTS, ACHIEVEMENTS, GameState, migrateCommission, migrate, retireEquipment, retireRequirements, runeFind, EQUIPMENT, SIM };
 })();
 // src/game/persistence.js
-const __m84 = (() => {
+const __m87 = (() => {
 const { GameState } = __m5;
 const KEYS = {
 save: 'alchemist-shop.save',
@@ -14448,11 +15486,11 @@ if (s) s.removeItem(key);
 return { KEYS, storageAvailable, saveGame, loadGame, hasSave, deleteSave, exportSave, parseImport, loadJSON, saveJSON, removeKey };
 })();
 // src/simulation/snapshot.js
-const __m86 = (() => {
-const { MAX_SPECIES } = __m24;
-const { refreshParticle } = __m68;
-const { Simulation } = __m64;
-const { CAULDRON_SIZES } = __m67;
+const __m89 = (() => {
+const { MAX_SPECIES } = __m25;
+const { refreshParticle } = __m69;
+const { Simulation } = __m65;
+const { CAULDRON_SIZES } = __m68;
 const F32_FIELDS_V1 = ['x', 'y', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet'];
 const F32_FIELDS = [...F32_FIELDS_V1, 'q'];
 const SNAPSHOT_VERSION = 2;
@@ -14583,7 +15621,7 @@ for (let i = 0; i < n; i++) if (p.group[i] >= 0) sim.rigid.used[p.group[i]] = 1;
 return { SNAPSHOT_VERSION, toBase64, fromBase64, snapshotSim, restoreSim, applySnapshot };
 })();
 // src/rendering/art.js
-const __m88 = (() => {
+const __m91 = (() => {
 const { Rng } = __m6;
 const PAL = {
 night0: '#0d0a10', night1: '#17121c', night2: '#221a28',
@@ -15185,8 +16223,8 @@ for (let k = 0; k < 14; k++) R(ctx, Math.round(v.ox + rng.range(-0.6, 0.6) * c.b
 return { PAL, hex2rgb, rgbStr, mixHex, paintBackground, drawJar, renderCauldron, renderLid, renderLidAside, makeCanvas, paintHearth, rect: R };
 })();
 // src/rendering/potion-fx.js
-const __m90 = (() => {
-const { EFFECTS, NE } = __m14;
+const __m93 = (() => {
+const { EFFECTS, NE } = __m20;
 const K = Object.fromEntries(EFFECTS.map((e, k) => [e.key, k]));
 const MAX = 2400;
 const DENSITY = {
@@ -15643,12 +16681,12 @@ break;
 return { PotionParticles };
 })();
 // src/rendering/brew-palette.js
-const __m91 = (() => {
-const { MAX_SPECIES } = __m24;
+const __m94 = (() => {
+const { MAX_SPECIES } = __m25;
 const { srgbToLinear, linearToSrgb } = __m9;
-const { PIECE_ART, piecePalette, registerSpecies, onPiecesChanged } = __m26;
-const { grainSkinOf } = __m25;
-const { STAIN } = __m68;
+const { PIECE_ART, piecePalette, registerSpecies, onPiecesChanged } = __m27;
+const { grainSkinOf } = __m26;
+const { STAIN } = __m69;
 const bySpecies = new WeakMap();
 const bySkin = new Map();
 onPiecesChanged(() => bySkin.clear());
@@ -15767,14 +16805,14 @@ return true;
 return { dominantColour, preparePalettes, pc, paletteColour };
 })();
 // src/rendering/fluid.js
-const __m89 = (() => {
-const { PHASE, SIM } = __m55;
-const { LOOK, piece } = __m25;
-const { PIECE_ART, PIECE_CELL, piecePalette, pieceSprite } = __m26;
-const { NE } = __m14;
-const { MAX_SPECIES } = __m24;
-const { PotionParticles } = __m90;
-const { preparePalettes, paletteColour, pc: palCol } = __m91;
+const __m92 = (() => {
+const { PHASE, SIM } = __m56;
+const { LOOK, piece } = __m26;
+const { PIECE_ART, PIECE_CELL, piecePalette, pieceSprite } = __m27;
+const { NE } = __m20;
+const { MAX_SPECIES } = __m25;
+const { PotionParticles } = __m93;
+const { preparePalettes, paletteColour, pc: palCol } = __m94;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const LS = 9;
 const LC = 6;
@@ -16742,8 +17780,8 @@ return v < 0 ? 0 : v > 255 ? 255 : v | 0;
 return { dropletCell, drawnGlow, drawnGlowTable, FluidRenderer };
 })();
 // src/rendering/effects.js
-const __m92 = (() => {
-const { PAL, hex2rgb } = __m88;
+const __m95 = (() => {
+const { PAL, hex2rgb } = __m91;
 const MAX = 900;
 const FIRE_RAMP = [PAL.fire5, PAL.fire4, PAL.fire3, PAL.fire2, PAL.fire1, PAL.fire0].map(hex2rgb);
 class Effects {
@@ -16856,13 +17894,13 @@ ctx.globalAlpha = 1;
 return { Effects };
 })();
 // src/rendering/renderer.js
-const __m87 = (() => {
-const { PAL, paintBackground, renderCauldron, renderLid, renderLidAside, paintHearth, makeCanvas, rgbStr, hex2rgb, drawJar, rect } = __m88;
-const { FluidRenderer, drawnGlow, drawnGlowTable } = __m89;
-const { Effects } = __m92;
-const { COLUMN } = __m67;
-const { PHASE } = __m55;
-const { compositionEffects, dominantEffect, EFFECTS, NE } = __m14;
+const __m90 = (() => {
+const { PAL, paintBackground, renderCauldron, renderLid, renderLidAside, paintHearth, makeCanvas, rgbStr, hex2rgb, drawJar, rect } = __m91;
+const { FluidRenderer, drawnGlow, drawnGlowTable } = __m92;
+const { Effects } = __m95;
+const { COLUMN } = __m68;
+const { PHASE } = __m56;
+const { compositionEffects, dominantEffect, EFFECTS, NE } = __m20;
 const auraScratch = new Float64Array(NE);
 const VIEW_TOP = -1.25;
 class Renderer {
@@ -17304,7 +18342,7 @@ if (W >= 9) px(gx + 1, g0 + 1, GLASS_HI);
 return { Renderer, drawBottle, PHASE };
 })();
 // src/rendering/portraits.js
-const __m93 = (() => {
+const __m96 = (() => {
 const { Rng } = __m6;
 const S = 32;
 const shade = (c, f) => `rgb(${Math.round(Math.min(255, c[0] * 255 * f))},${Math.round(Math.min(255, c[1] * 255 * f))},${Math.round(Math.min(255, c[2] * 255 * f))})`;
@@ -17422,7 +18460,7 @@ if (rng.chance(0.5)) P(hx - 1, 8, 2, 10, hc);
 return { drawPortrait };
 })();
 // src/rendering/scenes.js
-const __m95 = (() => {
+const __m98 = (() => {
 function R(ctx, x, y, w, h, c) {
 ctx.fillStyle = c;
 ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
@@ -17474,19 +18512,19 @@ return cv;
 return { drawRaw, rawSprite };
 })();
 // src/rendering/species-sprites.js
-const __m94 = (() => {
-const { describe } = __m27;
-const { plantFrame, iconFrame, ICON_PX } = __m44;
+const __m97 = (() => {
+const { describe } = __m28;
+const { plantFrame, iconFrame, ICON_PX } = __m45;
 const { identityKey, validIdentity } = __m8;
-const { archetypeIdentity } = __m26;
-const { Pixels } = __m46;
-const { isBotanical } = __m28;
-const { rawSprite } = __m95;
-const { mountsOfForm, frameMount, growthParams } = __m49;
+const { archetypeIdentity } = __m27;
+const { Pixels } = __m47;
+const { isBotanical } = __m29;
+const { rawSprite } = __m98;
+const { mountsOfForm, frameMount, growthParams } = __m50;
 const { hashString } = __m6;
-const { INK } = __m48;
-const { atlasFrame, spriteAsset, stageAsset } = __m50;
-const { SPECIES_COLORS } = __m18;
+const { INK } = __m49;
+const { atlasFrame, spriteAsset, stageAsset } = __m51;
+const { SPECIES_COLORS } = __m15;
 const isAtlasMaterial = (m) => !!(m && m.wild && m.wild.catalog);
 const ATLAS_K = 2;
 const ARCANE_GLOW = 'rgb(186,150,255)';
@@ -17681,7 +18719,7 @@ return cv;
 return { isAtlasMaterial, ATLAS_K, MIN_HIT, identityOfMaterial, speciesOf, variantOf, mountsOf, plantFrameOf, plantCanvas, plantGlow, emitColour, silhouetteOf, iconFrameOf, ingredientSprite, ICON_PX };
 })();
 // src/game/journal.js
-const __m96 = (() => {
+const __m99 = (() => {
 function processEvent(state, e) {
 const entries = [];
 const achievements = [];
@@ -17794,9 +18832,9 @@ return { entries, achievements };
 return { processEvent };
 })();
 // src/game/autobrew.js
-const __m97 = (() => {
-const { PHASE, SIM } = __m55;
-const { MAX_SPECIES } = __m24;
+const __m100 = (() => {
+const { PHASE, SIM } = __m56;
+const { MAX_SPECIES } = __m25;
 function condensedCount(sim) {
 const p = sim.p;
 let n = 0;
@@ -17875,7 +18913,7 @@ const dt = SIM.DT;
 this.t += dt;
 this.stageT += dt;
 const sim = this.sim, plan = this.plan;
-if (this.t > (this.steps ? 900 : 360)) { this.failed = true; this.finish(); return; }
+if (this.t > (this.steps ? 900 : /** @type {any} */ (plan).distil ? 720 : 360)) { this.failed = true; this.finish(); return; }
 switch (this.stage) {
 case 'steps': this.tickStep(); return;
 case 'pour': {
@@ -17906,7 +18944,7 @@ this.status = `Steeping at ${Math.round(T)}°C`;
 const err = this.control(T);
 if (this.stageT % 3 < 1.6) this.stir(0.8); else this.release();
 if (err < 4) this.held = (this.held || 0) + dt;
-if (this.held >= plan.steep.hold || this.stageT > 90) { this.held = 0; this.next('heat'); }
+if (this.held >= plan.steep.hold || this.stageT > plan.steep.hold + 90) { this.held = 0; this.next('heat'); }
 return;
 }
 case 'heat': {
@@ -17921,7 +18959,7 @@ case 'hold': {
 this.control(stageGoal(plan));
 this.status = plan.activate ? 'Letting it awaken' : 'Letting it react';
 if (this.stageT % 2.5 < 1.5) this.stir(0.9); else this.release();
-if (this.stageT > (plan.hold ?? 6) + 4) this.next(plan.reduce ? 'reduce' : 'serve');
+if (this.stageT > (plan.hold ?? 6) + 4) this.next(plan.reduce ? 'reduce' : plan.distil ? 'distil' : 'serve');
 return;
 }
 case 'reduce': {
@@ -17941,6 +18979,10 @@ sim.furnace.setting = 0;
 const gas = sim.p.count - condensedCount(sim);
 if (gas <= 0 && condensedCount(sim) > goal && this.stageT < 200) { this.venting = 0; return; }
 if (gas <= 0 || this.stageT - this.venting > 20) { c.lidClosed = this.lidWas ?? true; this.venting = 0; this.next('serve'); }
+return;
+}
+case 'distil': {
+if (this.tickDistil(/** @type {any} */ (plan).distil)) this.next('serve');
 return;
 }
 case 'serve': {
@@ -18048,6 +19090,42 @@ sim.furnace.setting = 0;
 const gas = sim.p.count - condensedCount(sim);
 if (gas <= 0 || this.stageT - this.venting > 20) { this.venting = 0; done(); }
 }
+tickDistil(d) {
+const sim = this.sim, c = sim.cauldron;
+if (this.stageT <= SIM.DT + 1e-9) {
+this.distilPhase = 0;
+const water = this.lookup(/** @type {any} */ (d).id || this.waterId());
+if (water && d.water > 0) sim.emitter.start(water, { x: 0.3, amount: Math.max(1, Math.round(d.water * this.scale)), rate: 110 });
+}
+if (sim.emitter.pouring) { this.stir(0.6); this.control(20); return false; }
+sim.condenser.on = true;
+c.lidClosed = true;
+const wb = d.T || 100;
+const alc = spiritShare(sim);
+if (this.distilPhase === 0) {
+this.status = `Distilling (${(alc * 100).toFixed(1)}% spirit)`;
+this.control(wb - 9);
+if (this.stageT % 3 < 1) this.stir(0.6); else this.release();
+if (alc < 0.03 || this.stageT > 110) { this.distilPhase = 1; this.distilT = this.stageT; }
+return false;
+}
+this.status = `Stripping the last spirit (${(alc * 100).toFixed(1)}%)`;
+this.control(wb - 2);
+sim.furnace.setting = Math.min(sim.furnace.setting, 0.6);
+this.stir(0.9);
+if (alc < 0.006 || this.stageT - (this.distilT || 0) > 120) {
+sim.furnace.setting = 0;
+sim.condenser.on = false;
+this.release();
+return true;
+}
+return false;
+}
+waterId() {
+const sp = this.sim.species;
+for (let s = 0; s < sp.count; s++) { const d = /** @type {any} */ (sp.defs[s]); if (d && d.solvent === 'hydro' && !d.alcohol) return d.id; }
+return /** @type {any} */ (this.plan).waterId || 'water';
+}
 next(s) {
 this.stage = s;
 this.stageT = 0;
@@ -18058,6 +19136,17 @@ this.sim.furnace.setting = 0;
 this.stage = 'done';
 this.status = this.failed ? 'Stopped' : 'Ready to bottle';
 }
+}
+function spiritShare(sim) {
+const p = sim.p, sp = sim.species;
+let a = 0, n = 0;
+for (let i = 0; i < p.count; i++) {
+if (p.phase[i] === PHASE.GAS) continue;
+n++;
+const off = i * MAX_SPECIES;
+for (let s = 0; s < sp.count; s++) if (sp.alcohol[s]) a += p.comp[off + s];
+}
+return n ? a / n : 0;
 }
 function runPlanHeadless(sim, plan, lookup) {
 const ab = new AutoBrewer(sim, plan, lookup);
@@ -18075,36 +19164,36 @@ let t = 0;
 for (let i = 0; i < sim.p.count; i++) t += sim.p.comp[i * MAX_SPECIES + s];
 return t / Math.max(1, sim.p.count);
 }
-return { condensedCount, stageGoal, AutoBrewer, runPlanHeadless, speciesFraction };
+return { condensedCount, stageGoal, AutoBrewer, spiritShare, runPlanHeadless, speciesFraction };
 })();
 // src/game/mechanics.js
-const __m99 = (() => {
+const __m102 = (() => {
 const MECHANICS = [
 { id: 'formulation', name: 'Formulation and neutralisation', role: 'core', stage: 'formulation', rank: 0,
 decision: 'Which natural ingredients, in what proportions, to carry the wanted effects and cancel their side effects.',
 consequence: 'Effects cancel in pairs where they meet (fire–frost, life–death, life–poison, acid–alkali); what is left is the potion.',
 objective: 'The wanted effects at strength, every other effect under the purity limit.',
 feedback: 'Each ingredient’s known effects and its balancing hints; the guild theory; trials.' },
-{ id: 'extraction', name: 'Grinding and extraction', role: 'core', stage: 'preparation', rank: 0,
-decision: 'Crush in the pot with the pestle, or leave it whole.',
-consequence: 'Only what dissolves acts: a whole herb gives nothing, the same herb ground gives its effects.',
-objective: 'Reaching the strength the order asks for at all.',
-feedback: 'Brew advice (“whole herbs: crush”), the brew’s colour, trials.' },
-{ id: 'steeping', name: 'Steeping temperature', role: 'core', stage: 'preparation', rank: 0,
-decision: 'How hot to steep, for how long, and which ingredients go in before the steep.',
-consequence: 'Inside an ingredient’s steeping window it gives up two to three times as much; outside it only what dissolves.',
-objective: 'Strength without wasting herbs; an ingredient added after the steep stays weak.',
-feedback: 'The lore of each herb, the reaction once discovered (its window in the journal), brew advice, trials.' },
-{ id: 'heat-damage', name: 'Heat-sensitive ingredients', role: 'core', stage: 'preparation', rank: 0,
-decision: 'Keep delicate petals below their spoiling heat.',
-consequence: 'Overheated Heartpetal wilts: its love falls to a quarter and a poison appears.',
-objective: 'Love philtres and cordials must not be boiled.',
-feedback: 'The petal’s lore, the wilting reaction in the journal, trials.' },
-{ id: 'cold-extraction', name: 'Cold extraction', role: 'core', stage: 'preparation', rank: 0,
-decision: 'Steep ice-cold ingredients cold — but not frozen — instead of warm.',
-consequence: 'Frostcap held at 5–10°C gives two and a half to three times the frost it gives warm; frozen solid it gives less again. The basin holds 9°C; narrower windows (Grave Moss) need the Frost Rune.',
-objective: 'Cooling and fever orders at strength.',
-feedback: 'The lore (“steeps only in ice-cold water”), the thermometer, trials.' },
+{ id: 'extraction', name: 'Solvents, grinding and extraction', role: 'core', stage: 'preparation', rank: 0,
+decision: 'Which solvent each ingredient goes into, whether to crush it, and how much liquid to give it.',
+consequence: 'Water-soluble magic dissolves only in water or spirit, oil-soluble magic only in oil. A whole piece gives slowly at its surface; ground and stirred, it gives in seconds. A solvent holds at most its own volume of extract.',
+objective: 'Reaching the strength the order asks for at all, without wasting herbs.',
+feedback: 'Each ingredient’s solvent class (encyclopedia), the brew panel’s extraction bars, the brew’s colour, trials.' },
+{ id: 'steeping', name: 'Steeping temperature and time', role: 'core', stage: 'preparation', rank: 0,
+decision: 'How hot to steep, and for how long.',
+consequence: 'Heat speeds extraction (about twice as fast for every 15–20 °C) but lowers how much can come out at all; cooling lets more come out again, heating never takes back what is dissolved.',
+objective: 'Strength against time: a hot quick steep, or a cool patient one that gets more.',
+feedback: 'The brew panel shows each ingredient’s extracted share and its ceiling at the present heat; trials.' },
+{ id: 'heat-damage', name: 'Combustion of raw ingredients', role: 'core', stage: 'preparation', rank: 0,
+decision: 'Keep undissolved ingredients below the heat at which they burn — every one has its own, found by experiment.',
+consequence: 'Above it the unextracted matter chars and its magic is gone for good; what is already dissolved is safe. Water boils first, so only oil (or a dry pot) gets hot enough.',
+objective: 'Hot oil steeps that do not throw herbs away.',
+feedback: 'Charring smoke, the journal’s burning temperatures once seen (unknown until then), trials.' },
+{ id: 'cold-extraction', name: 'Cold extraction', role: 'core', stage: 'preparation', rank: 1,
+decision: 'Steep cold — in spirit below water’s freezing point, or in chilled oil — instead of warm.',
+consequence: 'Only near −10 °C does everything come out; water freezes long before, and a frozen solvent extracts nothing. Cold is slow.',
+objective: 'The strongest potion an ingredient can give; alcohol-free cold tinctures.',
+feedback: 'The brew panel’s ceiling bars, the thermometer, trials.' },
 { id: 'awakening', name: 'Arcane awakening', role: 'core', stage: 'transformation', rank: 2,
 decision: 'Heat (or chill) a well-mixed brew past the blend’s arcane threshold, or keep it below.',
 consequence: 'Awakened magic runs two to three times stronger, side effects too, and stays awake.',
@@ -18115,6 +19204,21 @@ decision: 'Boil water off with the lid open, or add water.',
 consequence: 'Boiling a third away strengthens every effect by about 40 %, wanted and unwanted; water weakens both.',
 objective: 'Strong orders (“strong and compact”); taming a brew that overshoots its purity limit.',
 feedback: 'Steam escaping (brew advice), the volume, trials.' },
+{ id: 'distillation', name: 'Distillation', role: 'core', stage: 'balancing', rank: 1,
+decision: 'Put the alembic’s still head on and heat between spirit’s and water’s boiling points.',
+consequence: 'Spirit boils off through the condenser into the receiver, water mostly stays and the dissolved magic never boils. The spirit collected goes back on the shelf.',
+objective: 'Alcohol-free potions that were steeped in spirit; recovering spirit instead of buying it.',
+feedback: 'The brew panel’s spirit reading, the receiver, the alcohol line of an order.' },
+{ id: 'emulsification', name: 'Emulsification', role: 'core', stage: 'balancing', rank: 1,
+decision: 'Bind a watery extract and an oily one with an emulsifier, in the right proportions.',
+consequence: 'With enough emulsifier (about 6 % of the smaller phase) and the smaller phase under two fifths of the liquid, oil and water become one potion; otherwise they part again. An emulsion extracts badly, so extract first, then emulsify.',
+objective: 'Potions that need magic from both oil- and water-soluble herbs.',
+feedback: 'The brew panel’s emulsion reading, layers that part or stay mixed, trials.' },
+{ id: 'aging', name: 'Aging cellars', role: 'production', stage: 'production', rank: 1,
+decision: 'Lay a brew down in a cellar vessel, warm or chill it with a Fire or Frost potion, and hold it with a temperature rune.',
+consequence: 'Extraction goes on for hours, even while the shop is closed. Unregulated, a vessel heats until its herbs burn or cools until it freezes; a rune holds it until it wears out.',
+objective: 'Full, slow extraction without standing at the cauldron.',
+feedback: 'The cellar: each vessel’s temperature, extraction and rune.' },
 { id: 'mixing', name: 'Mixing', role: 'supporting', stage: 'balancing', rank: 0,
 decision: 'Stir, and how thoroughly, after every addition.',
 consequence: 'Powders dissolve faster when stirred (about 40 % more in a cold brew), neutralisers meet what they cancel, and every bottle of the batch comes out the same.',
@@ -18164,11 +19268,11 @@ const SANDBOX_CONTROLS = ['skimmer', 'alembic', 'heatmap', 'readouts'];
 return { MECHANICS, MECHANIC_BY_ID, IMMERSION, SANDBOX_CONTROLS };
 })();
 // src/ui/rarity-ui.js
-const __m100 = (() => {
+const __m103 = (() => {
 const { h } = __m2;
 const { icon } = __m3;
-const { RARITY } = __m19;
-const { EFFECT_BY_KEY } = __m14;
+const { RARITY } = __m16;
+const { EFFECT_BY_KEY } = __m20;
 const CREATURE_NAMES = {
 fox: 'Fox', hare: 'Hare', otter: 'River Otter', beetle: 'Rock Beetle', cavemoth: 'Cave Moth', salamander: 'Salamander',
 wisp: 'Will-o’-Wisp', cloudray: 'Cloud Ray', mimic: 'Mimic Lizard', shroudmoth: 'Shroud Moth', axolotl: 'Spectral Axolotl', scarab: 'Hourglass Scarab',
@@ -18189,29 +19293,31 @@ return fx.map(([k, v]) => h('span', { class: 'fx-chip', title: EFFECT_BY_KEY[k].
 return { CREATURE_NAMES, rarityOf, rarityTag, effectChips };
 })();
 // src/ui/panels.js
-const __m98 = (() => {
-const { recipeConfidence, CONFIDENCE_TEXT, describeStep } = __m83;
-const { MECHANIC_BY_ID } = __m99;
-const { evidenceRank } = __m58;
+const __m101 = (() => {
+const { recipeConfidence, CONFIDENCE_TEXT, describeStep } = __m85;
+const { MECHANIC_BY_ID } = __m102;
+const { evidenceRank } = __m59;
 const { h, btn, modal, toast, coins, starsText, confirmDialog, clear, keepScroll } = __m2;
 const { icon } = __m3;
-const { drawPortrait } = __m93;
-const { drawJar } = __m88;
-const { EQUIPMENT, RANKS } = __m57;
+const { drawPortrait } = __m96;
+const { drawJar } = __m91;
+const { EQUIPMENT, RANKS } = __m58;
 const { ACHIEVEMENTS } = __m5;
-const { viscosityClass, densityWord, evennessWord } = __m78;
-const { EFFECTS, EFFECT_BY_KEY, EFFECT_KEYS, dominantEffect } = __m14;
-const { ingredientSprite } = __m94;
-const { compatFactor } = __m15;
+const { viscosityClass, densityWord, evennessWord } = __m80;
+const { EFFECTS, EFFECT_BY_KEY, EFFECT_KEYS, dominantEffect } = __m20;
+const { ingredientSprite } = __m97;
+const { compatFactor } = __m21;
 const { describeColor, rgbToHex } = __m9;
-const { SIM } = __m55;
-const { exportSave, parseImport, saveGame } = __m84;
+const { SIM } = __m56;
+const { exportSave, parseImport, saveGame } = __m87;
 const { audio } = __m4;
-const { isMagical } = __m21;
-const { causeWord } = __m59;
-const { rarityTag } = __m100;
-const { BIOME_BY_ID } = __m20;
-const { seedChance } = __m19;
+const { isMagical } = __m22;
+const { causeWord } = __m60;
+const { rarityTag } = __m103;
+const { BIOME_BY_ID } = __m17;
+const { seedChance } = __m16;
+const { classWords } = __m18;
+const { vesselReport, vesselVolume, potionDrive, RUNE_PRICE } = __m86;
 const CAT_LABEL = { heat: 'Fire', cold: 'Cooling', vessel: 'Cauldrons', tool: 'Tools', instrument: 'Instruments', trials: 'Trials room', gathering: 'Foraging', storage: 'Potion storage', guild: 'Guild' };
 function jarCanvas(m, w = 22, hh = 30) {
 if ((m.wild || m.remains) && m.form === 'solid') {
@@ -18293,6 +19399,21 @@ h('div', { class: 'meta', text: locked ? '' : `${mt.form} · ${coins(price)} per
 ),
 locked ? icon('lock') : buyRow,
 ));
+}
+if (!lab.sandbox) {
+const price = Math.round(RUNE_PRICE * (1 - st.cap.discount) * 10) / 10;
+const locked = st.rank < 1;
+const b = btn('Buy', () => {
+const r = st.buyRune();
+if (r.ok) { audio.play('purchase'); toast('A temperature rune', 'Set it on a cellar vessel to hold it at the heat you choose until it wears out.', 'rune'); } else { audio.play('error'); toast('Cannot buy', r.reason, 'lock'); }
+rerender();
+}, { cls: 'small', disabled: locked || st.coins < price, act: 'buy-rune', title: `Buy a temperature rune for ${coins(price)} coins` });
+b.appendChild(h('span', { class: 'price' }, icon('coin'), coins(price)));
+list.appendChild(h('div', { class: 'item parch' + (locked ? ' locked' : '') }, icon('rune'),
+h('div', {}, h('div', { class: 'title', text: 'Temperature rune' }),
+h('div', { class: 'meta', text: locked ? 'The runesmith sells to a Journeyman or above. Old runes also turn up underground in the Wilds.' : 'Holds a cellar vessel at the temperature you choose, against the heat or cold of its potion, until it wears out. Also found underground in the Wilds.' }),
+h('div', { class: 'meta', text: `owned: ${st.cellar.runes}` })),
+locked ? icon('lock') : b));
 }
 body.appendChild(list);
 }
@@ -18376,6 +19497,11 @@ h('span', { class: 'k', text: 'Boils' }), h('span', { text: k.boil !== undefined
 h('span', { class: 'k', text: 'Species' }), h('span', {}, rarityTag(m), ` ${BIOME_BY_ID[m.wild.region] ? BIOME_BY_ID[m.wild.region].name : ''}`),
 h('span', { class: 'k', text: 'Seeds' }), h('span', { text: `${st.garden.seeds[m.wild.key + (m.wild.arcane ? '+arcane' : '')] || 0} in hand · a harvest drops one ${Math.round(seedChance(m.wild.rarity, !!m.wild.arcane) * 100)}% of the time` }),
 ] : []),
+...(m.extraction ? [
+h('span', { class: 'k', text: 'Dissolves in' }), h('span', { text: `${classWords(m.extraction.cls).solvents} (${classWords(m.extraction.cls).short}); more comes out cool than hot, everything only well below freezing${m.extraction.cls === 'hydro' ? ' — in spirit' : ' — in chilled oil'}` }),
+h('span', { class: 'k', text: 'Burns' }), h('span', { text: k.burnsAt !== undefined ? `seen burning at ${Math.round(k.burnsAt)}°C${k.safeTo !== undefined && k.safeTo < k.burnsAt ? `, unharmed at ${Math.round(k.safeTo)}°C` : ''}` : k.safeTo !== undefined && k.safeTo > 100 ? `unknown — unharmed up to ${Math.round(k.safeTo)}°C so far` : 'unknown — somewhere above water’s boiling point (heat it in oil to find out)' }),
+...(m.emulsifier ? [h('span', { class: 'k', text: 'Emulsifies' }), h('span', { text: 'yes: it helps bind oil and water into one potion' })] : []),
+] : m.emulsifier ? [h('span', { class: 'k', text: 'Emulsifies' }), h('span', { text: 'binds oil and water: about 6 parts per 100 of the smaller phase, which must stay under two fifths of the liquid' })] : []),
 h('span', { class: 'k', text: 'Magic' }), h('span', { text: !isMagical(m) ? (m.wild && m.wild.catalog ? 'ordinary: it never awakens (only its Arcane form can)' : 'none to awaken') : k.awaken !== undefined ? `Arcane: awoke near ${k.awaken}°C in your brew (observed)` : 'Arcane: it can awaken — its threshold is unknown (heat or chill it to find out)' }),
 h('span', { class: 'k', text: 'Price' }), h('span', { text: `${coins(st.priceOf(id))} / 100 ml` }),
 );
@@ -18395,7 +19521,7 @@ body: [
 h('div', { class: 'card parch ing-card' }, jarCanvas(m, 22, 30), h('div', {}, h('div', { text: m.description }), h('div', {}, ...tags.map((t) => h('span', { class: 'tag', text: t }))))),
 h('div', { class: 'card parch' }, facts),
 h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: m.remains ? 'Effects' : m.product ? 'Effects of this pure substance (as the guild knows it)' : 'Known effects of the pure ingredient (mixtures must be tested)' }), asp,
-(m.wild || m.remains) && m.form === 'solid' ? h('div', { class: 'small', text: 'Supplied whole: crush it in the pot with the pestle (Crush). Only what dissolves takes effect.' }) : null),
+(m.wild || m.remains) && m.form === 'solid' ? h('div', { class: 'small', text: 'Supplied whole: crush it in the pot with the pestle (Crush). Only the magic drawn out into its solvent takes effect; a whole piece gives slowly, at its surface.' }) : null),
 balance.length ? h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Its side effects cancel against their opposites:' }), ...balance.map((t) => h('div', { class: 'small', text: '• ' + t }))) : null,
 reactions.length ? h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Known reactions' }), ...reactions.map((r) => h('div', { class: 'small', text: `• ${r.name}: ${r.hint || ''}` }))) : null,
 ],
@@ -18434,8 +19560,10 @@ const main = ref.ingredients.slice().sort((a, b) => b.n - a.n).map((i) => st.loo
 const tips = [];
 if (main) tips.push(`A guild alchemist would start from ${main.name}${main.wild ? ` (it grows in the ${main.wild.region === 'forest' ? 'Whisperwood' : main.wild.region === 'netherwood' ? 'Netherwood' : main.wild.region === 'meadow' ? 'Sunlit Meadow' : main.wild.region === 'river' ? 'Willow Bank' : main.wild.region === 'quarry' ? 'Ironstone Quarry' : main.wild.region === 'moonfen' ? 'Moonfen' : 'Ember Crags'})` : ''}.`);
 if (ref.ingredients.some((i) => i.ground)) tips.push('Crush what is whole with the pestle — only what dissolves takes effect.');
-if (ref.steep && ref.steep.T < 15) tips.push('Part of this wants ice-cold water, not heat — cold, but not frozen.');
-else if ((ref.heatTo ?? 20) > 40 && !com.activation) tips.push('Patience and gentle heat draw out more than stirring alone.');
+const oily = ref.ingredients.some((i) => { const d = st.lookup(i.id); return d && d.extraction && d.extraction.cls === 'lipo'; });
+if (oily) tips.push('Its main herb is oil-soluble: steep it in oil, not water.');
+if (ref.distil) tips.push('Steep it in spirit well below freezing — only spirit stays liquid there and draws everything out — then add water and distil the spirit off with the still head.');
+else if (ref.steep && ref.steep.hold >= 20) tips.push('Grind, stir and give it time: herbs give up their magic gradually, and more of it cool than hot.');
 if (ref.reduce) tips.push('It must be stronger than the herbs give plainly: boil some water off with the lid open — and cancel the side effects harder, for they grow too.');
 if (com.activation) {
 const cold = com.predicted && com.predicted.threshold !== null && com.predicted.threshold < 0;
@@ -18685,10 +19813,16 @@ const tot = Object.values(rec.comp).reduce((a, b) => /** @type {number} */ (a) +
 const parts = Object.entries(rec.comp).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([id, f]) => `${st.lookup(id) ? st.lookup(id).name : id} ${Math.round((f / tot) * 100)}%`).join(', ');
 let m;
 m = modal({
-title: `Receiver flask · ${rec.count * SIM.ML_PER_PARTICLE} ml`,
-body: h('div', { class: 'card parch' }, h('div', { class: 'small', text: `What the alembic drew off: ${parts}.` }),
-h('div', { class: 'small muted', text: 'Water and spirit boil off together: a distillate is rarely one thing.' })),
+title: `Receiver flask · ${Math.round(rec.count * SIM.ML_PER_PARTICLE)} ml`,
+body: h('div', { class: 'card parch' }, h('div', { class: 'small', text: `What the still drew off: ${parts}.` }),
+h('div', { class: 'small muted', text: 'Spirit boils off first, water after it; the dissolved magic never boils. Jarred, the solvents go back on your shelf.' })),
 foot: [
+lab.sandbox ? null : btn('Jar the solvents', () => {
+const got = st.collectDistillate(rec.comp);
+const lines = Object.entries(got).map(([id, ml]) => `${ml} ml of ${st.lookup(id).name}`);
+toast('Distillate jarred', lines.length ? lines.join(', ') + ' back on the shelf.' : 'Nothing worth jarring (or no room on the shelf).', 'alembic');
+lab.receiver = null; lab.updateShelf(); m.close();
+}, { icon: 'jar', cls: 'primary', act: 'receiver-jar' }),
 btn('Pour into the cauldron', () => { lab.pourReceiver(); m.close(); }, { icon: 'pour', act: 'receiver-pour' }),
 btn('Pour away', () => { lab.receiver = null; m.close(); }, { icon: 'trash', cls: 'danger', act: 'receiver-away' }),
 ],
@@ -18710,7 +19844,7 @@ h('ol', { class: 'small' }, ...[
 ].map((t) => h('li', { text: t })))),
 sec('Orders and selling', 'stall', ['Customers ask for an effect — healing, strength, love, fire… — at a strength in percent (everyday orders want about 8–15 %).', 'Most orders forbid side effects: “no other effect above 1.2 %”. Every other kind of magic in the bottle must stay that faint.', 'Before a sale you write the label — tested values, the guild theory’s estimates, “none” or unknown — and bargain over the price. The customer comes back the next day: pleased, or with a complaint. Refund them, dispute it with your trial records, or turn them away.', 'Bottle onto the potion shelves whenever there is room (3 bottles; more with a Bottle Shelf, Potion Cabinet or Bottle Cellar). Bottles of one batch share its trials.', 'Honest, well-tested potions earn reputation. Reputation raises your rank, which opens regions, ingredients, equipment and harder orders.'], true),
 sec('Ingredients and side effects', 'leaf', ['The Shop sells no prepared reagents — only free well water and two plain solvents, oil and spirit. Every effect comes from what you gather.', 'Nothing that grows is pure: each herb or mineral brings side effects. Cancel them with their opposites — fire and frost, life and death (life also mends poison, two parts to one), acid and alkali.', 'Long-press (or right-click) a jar to see what it does and what cancels its side effects.', 'You know what each plain ingredient does. You do NOT know what a mixture does: extraction, heat, reactions and hidden laws change it.']),
-sec('Brewing', 'cauldron', ['Pour: tap a jar, then a dose button (25–250 ml) — or hold your finger in the cauldron, or drag a jar onto it.', 'Crush: whole roots, leaves and stones go into the pot whole and give up almost nothing until you break them up with Crush (the pestle).', 'Steep at the right heat: most herbs give two to three times as much held warm in their steeping window (see the herb’s card and your journal). Some want ice-cold water: Frostcap near 9 °C gives about three times as much — but frozen solid gives less. Heartpetal wilts above about 85 °C.', 'Stir after every addition: an unstirred brew pours unevenly, so later bottles may not match the tested dose. Auto stirs for you (the Clockwork Stirrer about three times as fast).', 'The fire control: right heats, left cools; tap Off beside it (or press 0) to put it out at once. The lid keeps steam in; boiling with the lid off makes a brew smaller and stronger — side effects too. Add water to weaken it.', 'Tap the ml · °C readout over the cauldron to see what is in it; Inspect reads one spot; Sample measures what a bottle would hold.']),
+sec('Brewing', 'cauldron', ['Pour: tap a jar, then a dose button (25–250 ml) — or hold your finger in the cauldron, or drag a jar onto it.', 'Crush: whole roots, leaves and stones go into the pot whole and give up almost nothing until you break them up with Crush (the pestle).', 'Extraction: an herb’s magic dissolves only in its own solvent — water-soluble herbs in water or spirit, oil-soluble ones only in oil (see the herb’s card). It comes out gradually: heat makes it quicker, but less of it can come out hot; cool it again and more comes out. Everything comes out only well below freezing — in spirit (water freezes) or chilled oil — and a frozen solvent extracts nothing. Watch the brew panel’s Extracted bars.', 'Burning: every herb has its own burning point, above water’s boil, found only by trying. Undissolved matter above it chars and its magic is lost; what is already dissolved is safe. Water boils first, so it is hot oil that burns herbs.', 'Emulsions: oil and water extracts stay apart unless an emulsifier binds them — the neutral gum from the Shop, about 6 % of the smaller phase, with the smaller phase under two fifths of the liquid. An emulsion extracts badly: extract each in its own solvent first, then bind them.', 'Distillation (Alembic & Condenser): put the still head on and heat between spirit’s and water’s boiling points; the spirit goes into the receiver and the magic stays. Jar the distillate to use the spirit again.', 'The Aging Cellar: lay a brew down to go on extracting for hours, even while the game is closed. A Fire or Frost potion keeps warming or chilling the vessel; a temperature rune holds it where you choose until it wears out.', 'Stir after every addition: an unstirred brew pours unevenly, so later bottles may not match the tested dose. Auto stirs for you (the Clockwork Stirrer about three times as fast).', 'The fire control: right heats, left cools; tap Off beside it (or press 0) to put it out at once. The lid keeps steam in; boiling with the lid off makes a brew smaller and stronger — side effects too. Add water to weaken it.', 'Tap the ml · °C readout over the cauldron to see what is in it; Inspect reads one spot; Sample measures what a bottle would hold.']),
 sec('Arcane awakening', 'awaken', ['Magical ingredients carry a hidden arcane threshold. Heat the brew past it (or, for cold magic, chill it below) and the magic awakens: it glows and acts two to three times stronger — side effects too.', 'In a blend the threshold is the mix of its magical ingredients’ thresholds, by volume. Mix first at room temperature, then heat or chill; a half-mixed brew awakens unevenly.', 'Awakened magic stays awake when it cools, is bottled or kept. Only dilution and reactions undo it. The Arcanometer reads a brew’s threshold.']),
 sec('Trials and rabbits', 'rabbit', ['Choose a rabbit and give it a dose (5, 10 or 25 ml) from the cauldron tap or the sealed vial. One trial reads every effect at once.', 'Each reading is uncertain: the ± margin is how far the truth may lie. One reading is a rough guess; repeating it on the same rabbit helps a little; other rabbits help most (detected once → repeated → corroborated).', '“Not detected” is not proof of absence: a faint effect can hide below the noise. Cautious customers want readings repeated or corroborated, and every customer pays more for a well-tested label.', 'Effects pile up in a rabbit and fade slowly. Past its own hidden limit an effect runs out of control and can kill it; fire and acid burn; strength and vitality can make it attack; love makes it mate. A purging draught washes everything out. Rabbits can be fed, bred, bought and put down; a body’s remains can be recovered once as an ingredient.', 'When a trial surprises you, a hidden law may be at work. Confirm it twice and your theory learns it.']),
 sec('Wilds', 'tree', ['Tap a mature plant in the picture, or its button, to gather. Every plant grows from sprout to ripe to mature, and only a mature one can be harvested. A harvest leaves a mark on the ground that fades; new sprouts come up at random spots until the region is full again, even while the game is closed.', 'Thorough digs the plant out for twice as much, but its kind then sprouts at half pace. Roots, seams, mosses and dust need the Forager’s Kit for a full harvest.', 'Twilight plants open only at dawn (before you open the shop) or at dusk (after the last customer). The weather changes daily. New regions open with rank.']),
@@ -18784,18 +19918,62 @@ h('div', { class: 'small muted credits', text: 'The Alchemist’s Shop — all a
 ],
 });
 }
-return { jarCanvas, fxChips, openShop, openIngredient, openHint, openBottleSize, showDaySummary, showAnalysis, openRecipes, renderRecipes, openJournal, renderJournal, openPause, openReceiver, openHelp, openSettings };
+function openCellar(lab) {
+const st = lab.state;
+let m = null;
+const rerender = () => { if (m) { clear(m.body); m.body.append(...render()); } };
+const fireFrost = () => st.bottles.filter((b) => b.m && potionDrive(b.m.effects));
+const render = () => {
+st.tickCellar();
+const out = [h('div', { class: 'small muted', text: `Runes in hand: ${st.cellar.runes}. A vessel extracts slowly but for hours, even while the shop is closed. Warmed by a Fire potion or chilled by a Frost potion it keeps heating or cooling — until its herbs burn or it freezes — unless a rune holds it.` })];
+st.cellar.vessels.forEach((v, k) => {
+const rep = vesselReport(v, st.lookup);
+const empty = vesselVolume(v) <= 0;
+const card = h('div', { class: 'card parch cellar-vessel', 'data-vessel': String(k) },
+h('div', { class: 'row' }, icon('shelf2'), h('b', { text: `Vessel ${k + 1}` }), h('span', { class: 'spacer' }), h('span', { class: 'small muted', text: empty ? 'empty' : `${Math.round(rep.ml)} ml · ${Math.round(rep.T)}°C` })));
+if (!empty) {
+card.append(h('div', { class: 'small', text: v.name || 'A laid-down brew' }));
+const heat = rep.rune ? `held at ${rep.rune.target}°C by a rune (${Math.round((1 - rep.rune.wear) * 100)}% left)` : rep.drive > 0 ? `warming ${Math.round(rep.drive)}°C an hour` : rep.drive < 0 ? `cooling ${Math.round(-rep.drive)}°C an hour` : 'at cellar temperature';
+card.append(h('div', { class: 'small ' + (rep.frozen ? 'warn' : 'muted'), text: `${heat}${rep.frozen ? ' · frozen: extraction stopped' : ''}${rep.char > 0.5 ? ` · ${Math.round(rep.char)} ml burnt to char` : ''}${rep.alcohol > 0.5 ? ` · ${rep.alcohol.toFixed(0)}% spirit` : ''}` }));
+for (const it of rep.items) {
+const k2 = st.knowledge[it.id] || {};
+card.append(h('div', { class: 'row small extract-row' }, h('span', { text: it.name }), h('span', { class: 'spacer' }),
+h('span', { class: 'xbar' }, h('i', { class: 'xbar-fill', style: { width: Math.round(it.share * 100) + '%' } }), h('i', { class: 'xbar-cap', style: { left: Math.round(it.ceiling * 100) + '%' } })),
+h('span', { class: 'muted', text: ` ${Math.round(it.share * 100)}% / ${Math.round(it.ceiling * 100)}%${k2.burnsAt !== undefined ? ` · burns by ${Math.round(k2.burnsAt)}°C` : ''}` })));
+}
+}
+const acts = h('div', { class: 'row', style: { flexWrap: 'wrap', gap: '6px' } });
+if (empty) {
+acts.append(btn('Lay down the brew', () => { lab.layDownCauldron(k); rerender(); }, { icon: 'cauldron', act: `cellar-fill-${k}`, disabled: !lab.sim.p.count, title: 'Pour everything in the cauldron into this vessel' }));
+for (const b of st.bottles.slice(0, 4)) acts.append(btn(`Lay down ${Math.round(b.ml)} ml bottle`, () => { const r = st.layDown(k, { bottleId: b.id }); if (!r.ok) toast('Cannot', r.reason, 'lock'); rerender(); }, { icon: 'bottle', cls: 'small', act: `cellar-bottle-${k}` }));
+} else {
+for (const b of fireFrost().slice(0, 3)) {
+const d = potionDrive(b.m.effects);
+acts.append(btn(`${d > 0 ? 'Warm' : 'Chill'} with ${Math.round(b.ml)} ml (${d > 0 ? '+' : ''}${Math.round(d)}°C/h)`, () => { const r = st.activateVessel(k, b.id); if (!r.ok) toast('Cannot', r.reason, 'lock'); else audio.play('select'); rerender(); }, { icon: d > 0 ? 'flame' : 'snow', cls: 'small', act: `cellar-activate-${k}` }));
+}
+const input = /** @type {HTMLInputElement} */ (h('input', { type: 'number', value: String(Math.round(v.rune ? v.rune.target : -10)), min: '-60', max: '300', step: '1', style: { width: '4.5em' }, 'aria-label': 'Rune temperature (°C)' }));
+acts.append(input, btn('Set a rune', () => { const r = st.runeVessel(k, Number(input.value)); if (!r.ok) toast('Cannot', r.reason, 'lock'); else audio.play('select'); rerender(); }, { icon: 'rune', cls: 'small', act: `cellar-rune-${k}`, disabled: st.cellar.runes <= 0 }));
+acts.append(btn('Bottle it', () => { const r = st.bottleVessel(k); if (!r.ok) toast('Cannot', r.reason, 'lock'); else { toast('Bottled from the cellar', `${Math.round(r.vial.ml)} ml onto the potion shelves. Test it before you sell it.`, 'bottle'); audio.play('glass'); } rerender(); }, { icon: 'bottle', cls: 'small primary', act: `cellar-bottle-out-${k}` }));
+}
+card.append(acts);
+out.push(card);
+});
+return out;
+};
+m = modal({ title: 'Aging cellar', wide: true, body: render() });
+}
+return { jarCanvas, fxChips, openShop, openIngredient, openHint, openBottleSize, showDaySummary, showAnalysis, openRecipes, renderRecipes, openJournal, renderJournal, openPause, openReceiver, openHelp, openSettings, openCellar };
 })();
 // src/ui/trade.js
-const __m101 = (() => {
+const __m104 = (() => {
 const { h, btn, modal, toast, coins, clear, starsText } = __m2;
 const { icon } = __m3;
-const { drawPortrait } = __m93;
+const { drawPortrait } = __m96;
 const { audio } = __m4;
-const { EFFECTS, EFFECT_BY_KEY } = __m14;
-const { draftLabel, openNegotiation: beginNegotiation, proposePrice, acceptOffer, relevantEffects, trustReport, editClaim, proofGaps, claimSigma, claimStars, labelStars, MAX_STARS } = __m79;
-const { PURITY_LIMIT } = __m56;
-const { shortName } = __m53;
+const { EFFECTS, EFFECT_BY_KEY } = __m20;
+const { draftLabel, openNegotiation: beginNegotiation, proposePrice, acceptOffer, relevantEffects, trustReport, editClaim, proofGaps, claimSigma, claimStars, labelStars, MAX_STARS } = __m81;
+const { PURITY_LIMIT } = __m57;
+const { shortName } = __m54;
 function openIdentify(lab, vial, onDone) {
 const st = lab.state;
 const draft = vial.label ? JSON.parse(JSON.stringify(vial.label)) : draftLabel(vial, lab.vialTheory(vial), st.day);
@@ -19009,12 +20187,12 @@ return `${n === null ? '' : starsText(n, MAX_STARS) + ' '}${claimSummary(label.c
 return { openIdentify, openNegotiation, showDeal, followUpCard, claimSummary, accuracyTitle, labelLine, EFFECT_BY_KEY };
 })();
 // src/ui/tutorial.js
-const __m102 = (() => {
+const __m105 = (() => {
 const { h, btn, placeToasts } = __m2;
-const { PHASE } = __m55;
-const { TUTORIAL_HERBS } = __m22;
-const { thresholdToCelsius } = __m21;
-const { shortName } = __m53;
+const { PHASE } = __m56;
+const { TUTORIAL_HERBS } = __m23;
+const { thresholdToCelsius } = __m22;
+const { shortName } = __m54;
 class Tutorial {
 constructor(lab) {
 this.lab = lab;
@@ -19161,22 +20339,22 @@ if (t && t !== this.target) { if (this.target) this.target.classList.remove('hig
 return { Tutorial };
 })();
 // src/ui/views/counter.js
-const __m103 = (() => {
+const __m106 = (() => {
 const { h, btn, clear, coins, confirmDialog, starsText } = __m2;
 const { icon } = __m3;
-const { drawPortrait } = __m93;
-const { drawBottle } = __m87;
-const { PROPERTY_LABELS, scoreRequirement } = __m54;
-const { techniqueById } = __m22;
-const { EFFECT_INDEX, NE } = __m14;
-const { EFFECT_BY_KEY } = __m14;
-const { missingEffects, summarize, requirementEvidence } = __m58;
-const { labelStars, MAX_STARS } = __m79;
-const trade = __m101;
+const { drawPortrait } = __m96;
+const { drawBottle } = __m90;
+const { PROPERTY_LABELS, scoreRequirement } = __m55;
+const { techniqueById } = __m23;
+const { EFFECT_INDEX, NE } = __m20;
+const { EFFECT_BY_KEY } = __m20;
+const { missingEffects, summarize, requirementEvidence } = __m59;
+const { labelStars, MAX_STARS } = __m81;
+const trade = __m104;
 const { describeColor, rgbToHex } = __m9;
-const { viscosityClass } = __m78;
-const panels = __m98;
-const { shortName } = __m53;
+const { viscosityClass } = __m80;
+const panels = __m101;
+const { shortName } = __m54;
 class CounterView {
 constructor(lab) {
 this.lab = lab;
@@ -19369,7 +20547,7 @@ unseen ? h('span', { class: 'muted', text: ` ${seen.length ? '· ' : ''}${unseen
 return { CounterView };
 })();
 // src/rendering/crisp.js
-const __m105 = (() => {
+const __m108 = (() => {
 const RESOLUTIONS = /** @type {const} */ ([1, 2, 3, 4]);
 const VERT = `#version 300 es
 in vec2 p;
@@ -19555,11 +20733,11 @@ this.src.style.opacity = '0';
 return { RESOLUTIONS, UpscaledCanvas };
 })();
 // src/visual/env/paint.js
-const __m108 = (() => {
-const { Pixels } = __m46;
-const { rasterize } = __m45;
-const { Model } = __m33;
-const { ramp, hex, mixPacked, pack, unpack } = __m29;
+const __m111 = (() => {
+const { Pixels } = __m47;
+const { rasterize } = __m46;
+const { Model } = __m34;
+const { ramp, hex, mixPacked, pack, unpack } = __m30;
 const SCENE_W = 384;
 const SCENE_H = 216;
 const CELL = 1;
@@ -19845,9 +21023,9 @@ cv.set(x, y, pack([c[0] + d, c[1] + d, c[2] + d]));
 return { SCENE_W, SCENE_H, CELL, Canvas, sky, ramp, hex, mixPacked, pack, unpack };
 })();
 // src/visual/env/stone.js
-const __m111 = (() => {
-const { hash2, noise2 } = __m47;
-const { mixPacked } = __m29;
+const __m114 = (() => {
+const { hash2, noise2 } = __m48;
+const { mixPacked } = __m30;
 function cobble(x, y, o) {
 if (o.round) return pebble(x, y, o);
 const s = o.s, gx = Math.floor(x / s), gy = Math.floor(y / s), fl = o.flat ?? 1.3;
@@ -19929,11 +21107,11 @@ return e > 0.98 ? null : { bx, by, r, id, e };
 return { cobble, pebble };
 })();
 // src/visual/env/side.js
-const __m110 = (() => {
-const { fbm1, fbm2, hash2, noise2 } = __m47;
-const { mixPacked, pack, hex } = __m29;
-const { CELL } = __m108;
-const { cobble } = __m111;
+const __m113 = (() => {
+const { fbm1, fbm2, hash2, noise2 } = __m48;
+const { mixPacked, pack, hex } = __m30;
+const { CELL } = __m111;
+const { cobble } = __m114;
 const snap = (v) => v - (((v % CELL) + CELL) % CELL);
 const col = (h) => pack(hex(h));
 function far(c, x, y, seed) {
@@ -20388,11 +21566,11 @@ return out.filter((_, i) => i % Math.max(1, Math.floor(out.length / n)) === 0).s
 return { col, far, heights, dip, raise, fillSolid, blob, paintTerrain, STRATA, hanging, pool, markOpen, ledges, surfaceAt, silhouette, mountains, rockFace, treeShape, glow, drips };
 })();
 // src/visual/env/cave.js
-const __m109 = (() => {
-const { fbm1, fbm2, hash2 } = __m47;
-const { mixPacked } = __m29;
-const { col, far } = __m110;
-const { cobble } = __m111;
+const __m112 = (() => {
+const { fbm1, fbm2, hash2 } = __m48;
+const { mixPacked } = __m30;
+const { col, far } = __m113;
+const { cobble } = __m114;
 function farPillars(cv, o) {
 const fill = col(o.fill), rim = o.rim ? col(o.rim) : fill, W = cv.W;
 for (let i = 0; i < o.n; i++) {
@@ -20733,9 +21911,9 @@ const LAVA_VEINS = (seed) => ({ from: ['#ffd060', '#ffb040', '#ff8a2a', '#e05a18
 return { farPillars, fog, caveFrame, vines, moss, glowShrooms, torch, fall, ruins, finish, ledgeTops, veins, WATER_VEINS, LAVA_VEINS };
 })();
 // src/visual/env/legible.js
-const __m112 = (() => {
-const { hash2, fbm2, noise2 } = __m47;
-const { mixPacked } = __m29;
+const __m115 = (() => {
+const { hash2, fbm2, noise2 } = __m48;
+const { mixPacked } = __m30;
 const { Rng } = __m6;
 const luma = (c) => 0.3 * (c & 255) + 0.59 * ((c >>> 8) & 255) + 0.11 * ((c >>> 16) & 255);
 const clampI = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -20901,9 +22079,9 @@ if (f !== 1 || add) L[k] = saturate(scale(c, f, add), f > 1 ? 1.05 : 1);
 return { legible };
 })();
 // src/visual/env/flourish.js
-const __m113 = (() => {
-const { hash2 } = __m47;
-const { col } = __m110;
+const __m116 = (() => {
+const { hash2 } = __m48;
+const { col } = __m113;
 const FLORA = {
 meadow: {
 kinds: [['tuft', 4], ['daisy', 3], ['spike', 1.6], ['bloom', 2], ['fern', 0.8]], rate: 0.3,
@@ -21182,7 +22360,7 @@ else if (berry && h > 0.95 && free(cx + side, yy)) cv.set(cx + side, yy, berry);
 return { flourish };
 })();
 // src/visual/env/grade.js
-const __m114 = (() => {
+const __m117 = (() => {
 const GRADE = {
 meadow: [0.42, 1.32, 0.5], forest: [0.4, 1.28, 0.5], netherwood: [0.34, 1.3, 0.46], river: [0.42, 1.3, 0.5],
 quarry: [0.38, 1.26, 0.48], moonfen: [0.34, 1.3, 0.44], crags: [0.36, 1.25, 0.48],
@@ -21228,10 +22406,10 @@ return ((c & 0xff000000) | (Math.round(((c >>> 16) & 255) * f) << 16) | (Math.ro
 return { grade };
 })();
 // src/visual/env/kit.js
-const __m116 = (() => {
-const { ramp, hex } = __m108;
+const __m119 = (() => {
+const { ramp, hex } = __m111;
 const { Rng, hashString } = __m6;
-const { shift } = __m29;
+const { shift } = __m30;
 function palette(spec) {
 const out = {};
 for (const [k, v] of Object.entries(spec)) out[k] = Array.isArray(v) ? ramp(hex(v[0]), v[1]) : ramp(hex(v));
@@ -21251,8 +22429,8 @@ const streamOf = (seed, region, part) => new Rng(hashString(`env:${seed}:${regio
 return { palette, vary, streamOf };
 })();
 // src/visual/env/foliage.js
-const __m118 = (() => {
-const { Model, bezier } = __m33;
+const __m121 = (() => {
+const { Model, bezier } = __m34;
 let groups = 0;
 const swayGroup = () => ++groups;
 const SHAPES = [
@@ -21417,9 +22595,9 @@ return m;
 return { swayGroup, leaf, cluster, strand, grove };
 })();
 // src/visual/env/objects.js
-const __m117 = (() => {
-const { Model, blade, PROFILES, bezier, lumpy, ellipse, polygon } = __m33;
-const { cluster, strand, grove, swayGroup } = __m118;
+const __m120 = (() => {
+const { Model, blade, PROFILES, bezier, lumpy, ellipse, polygon } = __m34;
+const { cluster, strand, grove, swayGroup } = __m121;
 const R = (rng) => () => rng.next();
 function leafBlock(x, y, hw, hh, rnd) {
 const c = Math.max(1, Math.round(Math.min(hw, hh) * 0.4)), j = () => Math.round((rnd() - 0.5) * 2);
@@ -21776,10 +22954,10 @@ return m;
 return { leafBlock, crown, pad, branchTree, tree, branch, bush, boulder, reeds, fern, tuft, log, stump, mushroom, cloud, beam, crane, ladder, cart, crate, fence, skep, basalt, spire, cairn, scaffold, wheel };
 })();
 // src/visual/env/trees.js
-const __m119 = (() => {
-const { branchTree, tree } = __m117;
+const __m122 = (() => {
+const { branchTree, tree } = __m120;
 const { Rng } = __m6;
-const { pack, hex } = __m29;
+const { pack, hex } = __m30;
 function treeRow(cv, rng, pal, o) {
 const haze = pack(hex(o.haze));
 for (let x = rng.int(-6, 6); x < cv.W + 10; x += rng.int(o.gap[0], o.gap[1])) {
@@ -21837,15 +23015,15 @@ return out;
 return { treeRow, terrainTrees };
 })();
 // src/visual/env/meadow.js
-const __m115 = (() => {
-const { sky } = __m108;
-const { palette, vary, streamOf } = __m116;
-const { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, silhouette, mountains, treeShape, glow, drips, ledges } = __m110;
-const { caveFrame, fog, vines, moss, veins, WATER_VEINS } = __m109;
-const { cloud, fence, skep, boulder } = __m117;
-const { terrainTrees } = __m119;
-const { Model, lumpy } = __m33;
-const { pack } = __m29;
+const __m118 = (() => {
+const { sky } = __m111;
+const { palette, vary, streamOf } = __m119;
+const { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, silhouette, mountains, treeShape, glow, drips, ledges } = __m113;
+const { caveFrame, fog, vines, moss, veins, WATER_VEINS } = __m112;
+const { cloud, fence, skep, boulder } = __m120;
+const { terrainTrees } = __m122;
+const { Model, lumpy } = __m34;
+const { pack } = __m30;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'meadow', p);
 const pal = vary(palette({
@@ -21941,14 +23119,14 @@ cv.meta.horizon = 120;
 return { compose };
 })();
 // src/visual/env/forest.js
-const __m120 = (() => {
-const { sky } = __m108;
-const { palette, vary, streamOf } = __m116;
-const { heights, raise, fillSolid, blob, paintTerrain, markOpen, surfaceAt, col, drips, ledges, hanging } = __m110;
-const { fog, moss, glowShrooms } = __m109;
-const { fern, log, stump } = __m117;
-const { treeRow, terrainTrees } = __m119;
-const { hash2 } = __m47;
+const __m123 = (() => {
+const { sky } = __m111;
+const { palette, vary, streamOf } = __m119;
+const { heights, raise, fillSolid, blob, paintTerrain, markOpen, surfaceAt, col, drips, ledges, hanging } = __m113;
+const { fog, moss, glowShrooms } = __m112;
+const { fern, log, stump } = __m120;
+const { treeRow, terrainTrees } = __m122;
+const { hash2 } = __m48;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'forest', p);
 const autumn = s('season').next() < 0.3;
@@ -22026,14 +23204,14 @@ for (let i = 0, n = 0; i < 14 && n < 6; i++) if (cv.place(fern(fr, fr.int(8, 13)
 return { compose, roots, litter, ferns };
 })();
 // src/visual/env/river.js
-const __m121 = (() => {
-const { sky } = __m108;
-const { palette, vary, streamOf } = __m116;
-const { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, silhouette, mountains, treeShape } = __m110;
-const { caveFrame, farPillars, fog, vines, moss, glowShrooms, ledgeTops, veins, WATER_VEINS } = __m109;
-const { reeds, beam, cloud } = __m117;
-const { terrainTrees } = __m119;
-const { Model } = __m33;
+const __m124 = (() => {
+const { sky } = __m111;
+const { palette, vary, streamOf } = __m119;
+const { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, silhouette, mountains, treeShape } = __m113;
+const { caveFrame, farPillars, fog, vines, moss, glowShrooms, ledgeTops, veins, WATER_VEINS } = __m112;
+const { reeds, beam, cloud } = __m120;
+const { terrainTrees } = __m122;
+const { Model } = __m34;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'river', p);
 const pal = vary(palette({
@@ -22112,14 +23290,14 @@ cv.meta.horizon = 116;
 return { compose };
 })();
 // src/visual/env/quarry.js
-const __m122 = (() => {
-const { sky } = __m108;
-const { palette, vary, streamOf } = __m116;
-const { fillSolid, blob, ledges, paintTerrain, markOpen, glow, drips, silhouette, mountains } = __m110;
-const { caveFrame, farPillars, fog, moss, torch, ledgeTops } = __m109;
-const { crane, ladder, cart, crate, beam, boulder, scaffold, wheel, cloud } = __m117;
-const { terrainTrees } = __m119;
-const { Model } = __m33;
+const __m125 = (() => {
+const { sky } = __m111;
+const { palette, vary, streamOf } = __m119;
+const { fillSolid, blob, ledges, paintTerrain, markOpen, glow, drips, silhouette, mountains } = __m113;
+const { caveFrame, farPillars, fog, moss, torch, ledgeTops } = __m112;
+const { crane, ladder, cart, crate, beam, boulder, scaffold, wheel, cloud } = __m120;
+const { terrainTrees } = __m122;
+const { Model } = __m34;
 const { Rng } = __m6;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'quarry', p);
@@ -22233,15 +23411,15 @@ cv.meta.horizon = 100;
 return { compose };
 })();
 // src/visual/env/moonfen.js
-const __m123 = (() => {
-const { sky } = __m108;
-const { palette, vary, streamOf } = __m116;
-const { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, glow, silhouette, treeShape } = __m110;
-const { caveFrame, farPillars, fog, vines, moss, ruins, glowShrooms, veins, WATER_VEINS } = __m109;
-const { reeds, spire, cairn } = __m117;
-const { terrainTrees } = __m119;
-const { fbm2 } = __m47;
-const { pack } = __m29;
+const __m126 = (() => {
+const { sky } = __m111;
+const { palette, vary, streamOf } = __m119;
+const { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, glow, silhouette, treeShape } = __m113;
+const { caveFrame, farPillars, fog, vines, moss, ruins, glowShrooms, veins, WATER_VEINS } = __m112;
+const { reeds, spire, cairn } = __m120;
+const { terrainTrees } = __m122;
+const { fbm2 } = __m48;
+const { pack } = __m30;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'moonfen', p);
 const pal = vary(palette({
@@ -22339,16 +23517,16 @@ cv.meta.horizon = 124;
 return { compose };
 })();
 // src/visual/env/crags.js
-const __m124 = (() => {
-const { sky } = __m108;
-const { palette, vary, streamOf } = __m116;
-const { heights, dip, raise, fillSolid, blob, ledges, paintTerrain, pool, markOpen, glow, drips, silhouette, col, rockFace } = __m110;
-const { caveFrame, farPillars, fog, moss, fall, veins, LAVA_VEINS } = __m109;
-const { basalt, spire, cloud } = __m117;
-const { terrainTrees } = __m119;
-const { fbm1, hash2 } = __m47;
-const { mixPacked } = __m29;
-const { Model, lumpy } = __m33;
+const __m127 = (() => {
+const { sky } = __m111;
+const { palette, vary, streamOf } = __m119;
+const { heights, dip, raise, fillSolid, blob, ledges, paintTerrain, pool, markOpen, glow, drips, silhouette, col, rockFace } = __m113;
+const { caveFrame, farPillars, fog, moss, fall, veins, LAVA_VEINS } = __m112;
+const { basalt, spire, cloud } = __m120;
+const { terrainTrees } = __m122;
+const { fbm1, hash2 } = __m48;
+const { mixPacked } = __m30;
+const { Model, lumpy } = __m34;
 const LAVA = ['#fff0a0', '#ffc040', '#ff8a2a', '#e05a18', '#a8320e'];
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'crags', p);
@@ -22505,14 +23683,14 @@ cv.set(x, y, c);
 return { compose };
 })();
 // src/visual/env/netherwood.js
-const __m125 = (() => {
-const { sky } = __m108;
-const { palette, vary, streamOf } = __m116;
-const { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, drips, ledges, glow } = __m110;
-const { caveFrame, farPillars, fog, vines, moss, glowShrooms, veins, WATER_VEINS } = __m109;
-const { mushroom } = __m117;
-const { treeRow, terrainTrees } = __m119;
-const { roots, litter, ferns } = __m120;
+const __m128 = (() => {
+const { sky } = __m111;
+const { palette, vary, streamOf } = __m119;
+const { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, drips, ledges, glow } = __m113;
+const { caveFrame, farPillars, fog, vines, moss, glowShrooms, veins, WATER_VEINS } = __m112;
+const { mushroom } = __m120;
+const { treeRow, terrainTrees } = __m122;
+const { roots, litter, ferns } = __m123;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'netherwood', p);
 const pal = vary(palette({
@@ -22590,15 +23768,15 @@ cv.meta.horizon = 120;
 return { compose };
 })();
 // src/visual/env/exotic.js
-const __m126 = (() => {
-const { sky } = __m108;
-const { palette, vary, streamOf } = __m116;
-const { heights, raise, dip, fillSolid, blob, paintTerrain, pool, markOpen, silhouette, mountains, glow, ledges, treeShape } = __m110;
-const { fog, vines, glowShrooms, ruins, fall, moss } = __m109;
-const { cloud, spire, boulder } = __m117;
-const { terrainTrees } = __m119;
-const { fbm2 } = __m47;
-const { pack } = __m108;
+const __m129 = (() => {
+const { sky } = __m111;
+const { palette, vary, streamOf } = __m119;
+const { heights, raise, dip, fillSolid, blob, paintTerrain, pool, markOpen, silhouette, mountains, glow, ledges, treeShape } = __m113;
+const { fog, vines, glowShrooms, ruins, fall, moss } = __m112;
+const { cloud, spire, boulder } = __m120;
+const { terrainTrees } = __m122;
+const { fbm2 } = __m48;
+const { pack } = __m111;
 function sprite(w, h) { return { w, h, px: new Uint32Array(w * h), x: 0, y: 0 }; }
 function isleSprite(rng, w, h, cols) {
 const s = sprite(w, h), cx = w / 2, top = 3;
@@ -22925,21 +24103,21 @@ cv.meta.horizon = 122;
 return { skyshard, morphgrove, veilhollow, ghostglass, chronoglass };
 })();
 // src/visual/env/scene.js
-const __m107 = (() => {
-const { Canvas, SCENE_W, SCENE_H } = __m108;
+const __m110 = (() => {
+const { Canvas, SCENE_W, SCENE_H } = __m111;
 const { hashString } = __m6;
-const { finish } = __m109;
-const { legible } = __m112;
-const { flourish } = __m113;
-const { grade } = __m114;
-const meadow = __m115;
-const forest = __m120;
-const river = __m121;
-const quarry = __m122;
-const moonfen = __m123;
-const crags = __m124;
-const netherwood = __m125;
-const { skyshard, morphgrove, veilhollow, ghostglass, chronoglass } = __m126;
+const { finish } = __m112;
+const { legible } = __m115;
+const { flourish } = __m116;
+const { grade } = __m117;
+const meadow = __m118;
+const forest = __m123;
+const river = __m124;
+const quarry = __m125;
+const moonfen = __m126;
+const crags = __m127;
+const netherwood = __m128;
+const { skyshard, morphgrove, veilhollow, ghostglass, chronoglass } = __m129;
 const ENV_VERSION = 13;
 const COMPOSERS = { meadow, forest, netherwood, river, quarry, moonfen, crags, skyshard, morphgrove, veilhollow, ghostglass, chronoglass };
 const cache = new Map();
@@ -22972,11 +24150,11 @@ return s;
 return { ENV_VERSION, composeScene, sceneOf, SCENE_W, SCENE_H };
 })();
 // src/rendering/wild-scene.js
-const __m106 = (() => {
-const { sceneOf, SCENE_W, SCENE_H } = __m107;
-const { MIN_HIT } = __m94;
+const __m109 = (() => {
+const { sceneOf, SCENE_W, SCENE_H } = __m110;
+const { MIN_HIT } = __m97;
 const { hashString } = __m6;
-const { frameMount } = __m49;
+const { frameMount } = __m50;
 const canvases = new Map();
 function sceneCanvas(region, seed) {
 const k = region + ':' + seed;
@@ -23516,7 +24694,7 @@ trickles(ctx, meta.trickles || [], t, '#5a4e4c', '#3e3438');
 return { sceneCanvas, windAt, crosses, SceneTouch, sceneTouch, swayPixels, sceneFrame, findAnchors, PlantGround, mountOrder, plantBox, hitPlant, animateRegion, SCENE_W, SCENE_H };
 })();
 // src/rendering/ragdoll.js
-const __m127 = (() => {
+const __m130 = (() => {
 const GRAVITY = 640;
 const STEP = 1 / 120;
 const FRICTION = 380;
@@ -23770,8 +24948,8 @@ ctx.imageSmoothingEnabled = smooth;
 return { GRAVITY, STEP, FRICTION, Ragdoll };
 })();
 // src/rendering/exotic-fx.js
-const __m128 = (() => {
-const { sceneOf, SCENE_W, SCENE_H } = __m107;
+const __m131 = (() => {
+const { sceneOf, SCENE_W, SCENE_H } = __m110;
 const states = new Map();
 function canvasOf(s) {
 if (s.cv) return s.cv;
@@ -23944,10 +25122,10 @@ for (let i = 0; i < 12; i++) { const dir = i % 4 === 0 ? -1 : 1, age = ((t * 0.1
 return { hasExotic, exoticPush, exoticStep, exoticDraw };
 })();
 // src/game/wild-rabbits.js
-const __m129 = (() => {
+const __m132 = (() => {
 const { Rng, hashString } = __m6;
-const { rollLook } = __m59;
-const { pickKind, kindLook } = __m60;
+const { rollLook } = __m60;
+const { pickKind, kindLook } = __m61;
 const HOP_GRAVITY = 300, BLOOD_GRAVITY = 260;
 const WILD_HP = 3;
 const BLEED_OUT = 4;
@@ -24403,7 +25581,7 @@ return out;
 return { HOP_GRAVITY, WILD_HP, BLEED_OUT, NEAR_MISS, WARREN_SIZE, RESPAWN, BLOOD, wildLook, GAITS, WildRabbit, Warren, warrenSpots };
 })();
 // src/rendering/punch.js
-const __m131 = (() => {
+const __m134 = (() => {
 const CONTRAST = 1.4, SATURATE = 1.3;
 const INK = [20, 12, 16, 235], HALO = [255, 244, 220, 70];
 function punchSprite(d, w, h, o = {}) {
@@ -24441,12 +25619,12 @@ for (const i of halo) d.set(HALO, i * 4);
 return { punchSprite };
 })();
 // src/rendering/rabbit.js
-const __m130 = (() => {
+const __m133 = (() => {
 const { Rng, hashString } = __m6;
-const { PAL, makeCanvas } = __m88;
-const { RABBIT_MARKS } = __m59;
-const { KINDS } = __m60;
-const { punchSprite } = __m131;
+const { PAL, makeCanvas } = __m91;
+const { RABBIT_MARKS } = __m60;
+const { KINDS } = __m61;
+const { punchSprite } = __m134;
 const RABBIT_W = 48;
 const RABBIT_H = 40;
 const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
@@ -25957,27 +27135,27 @@ ctx.fillRect(fx, fy, RABBIT_W, RABBIT_H);
 return { RABBIT_W, RABBIT_H, rabbitLevels, rabbitPose, rabbitPace, rabbitAnchors, rabbitSpriteKey, drawRabbitSprite, clearRabbitSprites, drawRabbit };
 })();
 // src/ui/views/wilds.js
-const __m104 = (() => {
-const { UpscaledCanvas } = __m105;
-const { BIOME_BY_ID, unlockText } = __m20;
-const { CREATURE_NAMES, rarityTag } = __m100;
+const __m107 = (() => {
+const { UpscaledCanvas } = __m108;
+const { BIOME_BY_ID, unlockText } = __m17;
+const { CREATURE_NAMES, rarityTag } = __m103;
 const { h, btn, clear, toast, keepScroll, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, moistureEnv, DAY_PART_NAME } = __m61;
-const { equipmentById } = __m57;
-const { RANKS } = __m57;
-const { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, sceneTouch, crosses, SCENE_W, SCENE_H } = __m106;
-const { Ragdoll } = __m127;
-const { exoticPush, exoticStep, exoticDraw } = __m128;
-const { sceneOf } = __m107;
-const { plantCanvas, plantFrameOf, plantGlow, emitColour, silhouetteOf, ingredientSprite, speciesOf, mountsOf, variantOf, MIN_HIT } = __m94;
-const { EFFECT_BY_KEY } = __m14;
+const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, moistureEnv, DAY_PART_NAME } = __m62;
+const { equipmentById } = __m58;
+const { RANKS } = __m58;
+const { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, sceneTouch, crosses, SCENE_W, SCENE_H } = __m109;
+const { Ragdoll } = __m130;
+const { exoticPush, exoticStep, exoticDraw } = __m131;
+const { sceneOf } = __m110;
+const { plantCanvas, plantFrameOf, plantGlow, emitColour, silhouetteOf, ingredientSprite, speciesOf, mountsOf, variantOf, MIN_HIT } = __m97;
+const { EFFECT_BY_KEY } = __m20;
 const { hashString } = __m6;
-const { Warren, warrenSpots, BLOOD, WILD_HP } = __m129;
-const { drawRabbit, rabbitSpriteKey, RABBIT_W, RABBIT_H } = __m130;
-const { defaultSnap, penHasRoom, PEN_MAX } = __m59;
-const { KINDS } = __m60;
+const { Warren, warrenSpots, BLOOD, WILD_HP } = __m132;
+const { drawRabbit, rabbitSpriteKey, RABBIT_W, RABBIT_H } = __m133;
+const { defaultSnap, penHasRoom, PEN_MAX } = __m60;
+const { KINDS } = __m61;
 const SHADOW = { forest: 'rgba(8,16,10,0.32)', netherwood: 'rgba(6,4,16,0.4)', meadow: 'rgba(24,30,10,0.26)', river: 'rgba(4,14,16,0.34)', quarry: 'rgba(26,18,10,0.3)', moonfen: 'rgba(2,6,18,0.42)', crags: 'rgba(30,6,4,0.4)', skyshard: 'rgba(20,40,70,0.26)', morphgrove: 'rgba(30,8,30,0.34)', veilhollow: 'rgba(10,10,20,0.38)', ghostglass: 'rgba(2,10,24,0.42)', chronoglass: 'rgba(40,20,10,0.32)' };
 function litSprite(d, light) {
 const dark = light.length >= 6 ? [light[3] * 255, light[4] * 255, light[5] * 255] : null;
@@ -27174,14 +28352,14 @@ this.grow();
 return { WildsView };
 })();
 // src/visual/env/pens.js
-const __m135 = (() => {
-const { Canvas } = __m108;
-const { col, silhouette, treeShape } = __m110;
-const { finish } = __m109;
-const { grade } = __m114;
-const { cobble } = __m111;
-const { fbm1, fbm2, hash2, noise2 } = __m47;
-const { mixPacked } = __m29;
+const __m138 = (() => {
+const { Canvas } = __m111;
+const { col, silhouette, treeShape } = __m113;
+const { finish } = __m112;
+const { grade } = __m117;
+const { cobble } = __m114;
+const { fbm1, fbm2, hash2, noise2 } = __m48;
+const { mixPacked } = __m30;
 const { Rng, hashString } = __m6;
 const PEN_W = 224;
 const PEN_H = 92;
@@ -28401,7 +29579,7 @@ return p;
 return { PEN_W, PEN_H, BACK, GROUND_Y0, PENS_VERSION, PEN_KINDS, penTitle, penOf };
 })();
 // src/rendering/pen-anim.js
-const __m136 = (() => {
+const __m139 = (() => {
 function hash(a, b = 0) {
 let n = Math.imul(a | 0, 0x27d4eb2d) ^ Math.imul(b | 0, 0x165667b1);
 n = Math.imul(n ^ (n >>> 15), 0x2c1b3c6d);
@@ -28524,13 +29702,13 @@ if (f) f(ctx, a, t);
 return { drawPenAnim };
 })();
 // src/rendering/hutch-scene.js
-const __m134 = (() => {
+const __m137 = (() => {
 const { Rng, hashString } = __m6;
-const { PAL, makeCanvas } = __m88;
-const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m130;
-const { kindOf } = __m60;
-const { penOf } = __m135;
-const { drawPenAnim } = __m136;
+const { PAL, makeCanvas } = __m91;
+const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m133;
+const { kindOf } = __m61;
+const { penOf } = __m138;
+const { drawPenAnim } = __m139;
 const WALKERS = { cat: 12, salamander: 5, deer: 10, badger: 8, dove: 8, fox: 14, snail: 1.5, rat: 16 };
 const HUTCH_W = 224;
 const HUTCH_H = 92;
@@ -28960,18 +30138,18 @@ ctx.drawImage(this.bg, 0, 0);
 return { HUTCH_W, HUTCH_H, HUTCH_BODIES, penFor, paintHutch, paintHutchFront, onGround, HutchScene };
 })();
 // src/ui/views/hutch.js
-const __m133 = (() => {
-const { readingSteadiness } = __m58;
-const { kindDef, kindOf, KINDS, KIND_IDS } = __m60;
+const __m136 = (() => {
+const { readingSteadiness } = __m59;
+const { kindDef, kindOf, KINDS, KIND_IDS } = __m61;
 const { h, btn, clear, toast, modal, confirmDialog, keepScroll } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { drawRabbit, RABBIT_W, RABBIT_H } = __m130;
-const { HutchScene, HUTCH_W, HUTCH_H } = __m134;
-const { penTitle } = __m135;
-const { UpscaledCanvas } = __m105;
-const { EFFECT_BY_KEY } = __m14;
-const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral, RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE, BURNS, PEN_MAX, penHasRoom, livingOf } = __m59;
+const { drawRabbit, RABBIT_W, RABBIT_H } = __m133;
+const { HutchScene, HUTCH_W, HUTCH_H } = __m137;
+const { penTitle } = __m138;
+const { UpscaledCanvas } = __m108;
+const { EFFECT_BY_KEY } = __m20;
+const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral, RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE, BURNS, PEN_MAX, penHasRoom, livingOf } = __m60;
 const { PURGE_BREW_TIME } = __m5;
 const STAGE_WORD = { kit: 'kit', young: 'youngster', adult: 'adult', elder: 'elder' };
 const CHANNELS = RABBIT_MARKS.map((k) => {
@@ -29343,21 +30521,21 @@ if (this._live >= 0.25) { this._live = 0; this.live(); }
 return { CHANNELS, HutchPanel };
 })();
 // src/ui/views/trials.js
-const __m132 = (() => {
+const __m135 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { SUBJECT_BY_ID, DOSES, missingEffects } = __m58;
-const { EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, EFFECT_KEYS, potencyWord } = __m14;
-const { SIM } = __m55;
-const { applyTrials } = __m79;
-const { summarize, addSamples, EVIDENCE_TEXT, evidenceRank, requirementEvidence } = __m58;
-const { evidenceOf } = __m79;
-const { shortName } = __m53;
+const { SUBJECT_BY_ID, DOSES, missingEffects } = __m59;
+const { EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, EFFECT_KEYS, potencyWord } = __m20;
+const { SIM } = __m56;
+const { applyTrials } = __m81;
+const { summarize, addSamples, EVIDENCE_TEXT, evidenceRank, requirementEvidence } = __m59;
+const { evidenceOf } = __m81;
+const { shortName } = __m54;
 const LEVEL_SHORT = { preliminary: '1 reading', repeated: 'repeated', corroborated: 'corroborated', certified: 'certified' };
-const { drawRabbit } = __m130;
-const { focusRabbit, findRabbit, rabbitSnap, decodeSnap, lookFromSeed, RABBIT_MARKS } = __m59;
-const { HutchPanel } = __m133;
+const { drawRabbit } = __m133;
+const { focusRabbit, findRabbit, rabbitSnap, decodeSnap, lookFromSeed, RABBIT_MARKS } = __m60;
+const { HutchPanel } = __m136;
 const REPLAY_T = 3.2;
 class TrialsView {
 constructor(lab) {
@@ -29734,16 +30912,16 @@ return `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2
 return { TrialsView, EFFECTS, EFFECT_INDEX };
 })();
 // src/ui/views/garden.js
-const __m137 = (() => {
+const __m140 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { BEDS, GRADES, GARDEN_UPGRADES, seedList, gradeNeeded, bedOf, boughtCount, cropYield, growHours, seedId } = __m80;
-const { SPECIES_BY_KEY, materialIdOf } = __m16;
-const { RARITY } = __m19;
-const { atlasFrame, seedAsset, stageAsset, loadAtlases, onAtlasLoaded } = __m50;
-const { formatWait } = __m61;
-const { rarityTag } = __m100;
+const { BEDS, GRADES, GARDEN_UPGRADES, seedList, gradeNeeded, bedOf, boughtCount, cropYield, growHours, seedId } = __m82;
+const { SPECIES_BY_KEY, materialIdOf } = __m13;
+const { RARITY } = __m16;
+const { atlasFrame, seedAsset, stageAsset, loadAtlases, onAtlasLoaded } = __m51;
+const { formatWait } = __m62;
+const { rarityTag } = __m103;
 const { hashString, Rng } = __m6;
 const GW = 384, GH = 176;
 const BED_LOOK = {
@@ -29967,14 +31145,14 @@ if (this.t % 5 < 0.5) this.refresh();
 return { GardenView, materialIdOf, RARITY, seedId, icon };
 })();
 // src/ui/views/book.js
-const __m138 = (() => {
-const { KINDS } = __m60;
+const __m141 = (() => {
+const { KINDS } = __m61;
 const { h, btn, clear } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const panels = __m98;
-const { SUBJECT_BY_ID } = __m58;
-const { EFFECTS, EFFECT_BY_KEY, EFFECT_KEYS } = __m14;
+const panels = __m101;
+const { SUBJECT_BY_ID } = __m59;
+const { EFFECTS, EFFECT_BY_KEY, EFFECT_KEYS } = __m20;
 const { rgbToHex } = __m9;
 const TABS = [
 ['recipes', 'Recipes', 'book'], ['trials', 'Trials', 'dropper'], ['laws', 'Laws', 'eye'], ['ingredients', 'Ingredients', 'leaf'],
@@ -30072,45 +31250,47 @@ body.appendChild(list);
 return { BookView };
 })();
 // src/ui/lab.js
-const __m85 = (() => {
-const { Simulation } = __m64;
-const { PHASE, SIM } = __m55;
-const { snapshotSim, applySnapshot } = __m86;
-const { clampToInterior } = __m75;
-const { MAX_SPECIES } = __m24;
-const { compatFactor } = __m15;
-const { Renderer } = __m87;
-const { drawPortrait } = __m93;
-const { drawJar } = __m88;
-const { ingredientSprite } = __m94;
-const { RARITY } = __m19;
-const { measureParticles, tapSelection, probeSelection, viscosityClass, densityWord } = __m78;
-const { scoreRequirement, PROPERTY_LABELS } = __m54;
-const { processEvent } = __m96;
-const { saveGame, saveJSON, KEYS } = __m84;
-const { AutoBrewer, condensedCount } = __m97;
-const { traceSample, buildProcedure, procedureLimits, matchRecipe, compareRecipe, checkReproduction, TRACE_DT } = __m83;
-const { proofGaps, draftLabel, applyTrials, evidenceOf } = __m79;
-const { RANKS } = __m57;
-const { certification, missingEffects, requirementEvidence } = __m58;
+const __m88 = (() => {
+const { Simulation } = __m65;
+const { PHASE, SIM } = __m56;
+const { snapshotSim, applySnapshot } = __m89;
+const { clampToInterior } = __m76;
+const { MAX_SPECIES } = __m25;
+const { compatFactor } = __m21;
+const { Renderer } = __m90;
+const { drawPortrait } = __m96;
+const { drawJar } = __m91;
+const { ingredientSprite } = __m97;
+const { RARITY } = __m16;
+const { measureParticles, tapSelection, probeSelection, viscosityClass, densityWord } = __m80;
+const { scoreRequirement, PROPERTY_LABELS } = __m55;
+const { processEvent } = __m99;
+const { saveGame, saveJSON, KEYS } = __m87;
+const { AutoBrewer, condensedCount } = __m100;
+const { traceSample, buildProcedure, procedureLimits, matchRecipe, compareRecipe, checkReproduction, TRACE_DT } = __m85;
+const { proofGaps, draftLabel, applyTrials, evidenceOf } = __m81;
+const { RANKS } = __m58;
+const { certification, missingEffects, requirementEvidence } = __m59;
 const { sandboxIngredients } = __m7;
-const { makeVial, appendParticles, updateVial, takeDose, pourBack, pourBackParts, relaxVial } = __m63;
-const { theoryOf, EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, dominantEffect, NE } = __m14;
-const { awakenParts, describeThreshold } = __m21;
-const { ARC_NONE } = __m65;
+const { makeVial, appendParticles, updateVial, takeDose, pourBack, pourBackParts, relaxVial } = __m64;
+const { theoryOf, EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, dominantEffect, NE } = __m20;
+const { awakenParts, describeThreshold } = __m22;
+const { ARC_NONE } = __m66;
+const { extractionReport } = __m79;
+const { classWords, extractedParts } = __m18;
 const { describeColor, rgbToHex } = __m9;
 const { h, btn, clear, keepScroll, toast, coins, confirmDialog, modal, setNoteDock, recentNotes } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const panels = __m98;
-const trade = __m101;
-const { Tutorial } = __m102;
-const { CounterView } = __m103;
-const { WildsView } = __m104;
-const { TrialsView } = __m132;
-const { GardenView } = __m137;
-const { BookView } = __m138;
-const { shortName } = __m53;
+const panels = __m101;
+const trade = __m104;
+const { Tutorial } = __m105;
+const { CounterView } = __m106;
+const { WildsView } = __m107;
+const { TrialsView } = __m135;
+const { GardenView } = __m140;
+const { BookView } = __m141;
+const { shortName } = __m54;
 const REQ_ICON = { temperature: 'thermo', quantity: 'flask', purity: 'pure' };
 const TOOL_DEFS = [
 { id: 'spoon', label: 'Stir', icon: 'spoon', key: '2', title: 'Spoon: drag in the brew to stir' },
@@ -30434,9 +31614,12 @@ a.append(set.stir, set.speed);
 if (this.sandbox) {
 set.thermal = btn('Heat', () => this.toggleThermal(), { icon: 'monocle', title: 'Heat map (H)', act: 'thermal' });
 a.append(set.thermal);
-set.alembic = btn('Still', () => this.toggleAlembic(), { icon: 'alembic', title: 'Alembic valve: draw off the vapour', act: 'alembic' });
+}
+if (this.sandbox || this.state.has('condenser')) {
+set.alembic = btn('Still', () => this.toggleAlembic(), { icon: 'alembic', title: 'Still head on/off: vapour rising into it is condensed into the receiver', act: 'alembic' });
 a.append(set.alembic);
 }
+if (!this.sandbox && this.state.cap.vessels > 0) a.append(btn('Cellar', () => panels.openCellar(this), { icon: 'shelf2', title: 'The aging cellar: lay brews down to go on extracting', act: 'cellar' }));
 a.append(btn('Empty', () => this.emptyCauldron(), { icon: 'trash', cls: 'danger', title: 'Empty the cauldron', act: 'empty' }));
 this.actionSet = set;
 this.syncActions();
@@ -30824,8 +32007,11 @@ this.refreshHud();
 }
 toggleAlembic() {
 this.alembicOpen = !this.alembicOpen;
+const c = this.sim.cauldron;
+this.sim.condenser.on = this.alembicOpen;
+if (this.alembicOpen && !c.lidClosed) { c.lidClosed = true; this.state.brewLog.push({ type: 'lid', closed: true, t: Math.round(this.sim.time) }); }
 this.syncActions();
-toast(this.alembicOpen ? 'Alembic valve open' : 'Alembic valve closed', this.alembicOpen ? 'Vapour under the lid is drawn into the receiver flask.' : '', 'alembic', 2000);
+toast(this.alembicOpen ? 'Still head on' : 'Still head off', this.alembicOpen ? 'Vapour rising into the head is condensed into the receiver. Heat between spirit’s and water’s boiling points to draw the spirit off.' : '', 'alembic', 2600);
 }
 cycleSpeed() {
 this.speed = this.speed === 1 ? 2 : this.speed === 2 ? 4 : 1;
@@ -30868,6 +32054,31 @@ this.state.brewLog = [];
 this.state.newBatch();
 this.lastPoured = {};
 audio.play('splash');
+this.save();
+}
+layDownCauldron(vessel) {
+const sim = this.sim, p = sim.p, sp = sim.species, st = this.state;
+if (!p.count) return;
+const comp = {};
+let T = 0, n = 0;
+for (let i = 0; i < p.count; i++) {
+if (p.phase[i] === PHASE.GAS) continue;
+T += p.temp[i]; n++;
+for (let s = 0; s < sp.count; s++) {
+const f = p.comp[i * MAX_SPECIES + s];
+if (f > 0 && sp.defs[s]) comp[sp.defs[s].id] = (comp[sp.defs[s].id] || 0) + f * SIM.ML_PER_PARTICLE;
+}
+}
+const parts = Object.entries(this.lastPoured || {}).map(([id, n]) => ({ id, ml: Number(n) * SIM.ML_PER_PARTICLE }));
+const r = st.layDown(vessel, { comp, T: n ? T / n : 20, name: st.current ? st.current.potionName : 'A laid-down brew', parts });
+if (!r.ok) { toast('Cannot lay it down', r.reason, 'lock'); return; }
+sim.clear();
+this.receiver = null;
+st.brewLog = [];
+st.newBatch();
+this.lastPoured = {};
+audio.play('splash');
+toast('Laid down', `The brew is in vessel ${vessel + 1}. It goes on extracting while you work — and while you are away.`, 'shelf2');
 this.save();
 }
 bringCustomer(withSound = true) {
@@ -31289,19 +32500,16 @@ raw.set(s, (raw.get(s) || 0) + f);
 }
 T = n ? T / n : 20;
 if (whole >= 3) out.push({ key: 'whole', text: 'Whole herbs and stones give up almost nothing: crush them with the pestle (Crush).' });
-const windows = [];
-for (const [s, f] of raw) {
-if (f < 1.5) continue;
-const d = sp.defs[s];
-const r = st.world.reactions.find((x) => x.a === d.id && x.products.length === 1 && /^rw_(extract|infuse|steep)/.test(x.id));
-if (!r) continue;
-const knownR = this.sandbox || st.journal['reaction:' + r.id];
-if (knownR && (T < r.minT - 2 || T > r.maxT + 2)) windows.push(`${d.name.split(' ').slice(-1)[0]} steeps at ${r.minT}–${r.maxT}°C`);
-else if (!knownR && T < 30 && r.minT > 25) windows.push('');
-}
-const named = windows.filter(Boolean);
-if (named.length) out.push({ key: 'window', text: `${named.slice(0, 2).join('; ')} — the brew is at ${Math.round(T)}°C.` });
-else if (windows.length) out.push({ key: 'warm', text: 'Some of these herbs have not given up their magic yet: most steep only when warmed (a few only ice-cold).' });
+void raw;
+const rep = extractionReport(sim);
+const lone = rep.items.filter((it) => it.raw > 1 && (it.cls === 'lipo' ? rep.phases.lipo : rep.phases.hydro) - it.ext < 0.5);
+if (lone.length) out.push({ key: 'solvent', text: `${lone[0].name} is ${classWords(/** @type {any} */ (lone[0].cls)).short}: nothing here can take its magic up — add ${classWords(/** @type {any} */ (lone[0].cls)).solvents}.` });
+if (rep.frozen > 0.4 && rep.items.some((it) => it.raw > 0.5)) out.push({ key: 'frozen', text: 'The brew is frozen: a frozen solvent extracts nothing. Spirit stays liquid far colder than water.' });
+const capped = rep.items.filter((it) => it.raw > 1 && it.share > it.ceiling - 0.02 && it.ceiling < 0.9);
+if (capped.length && T > 30) out.push({ key: 'ceiling', text: `${capped[0].name} has given all it can at ${Math.round(T)}°C: cooler, more of it would come out (heat never takes back what is dissolved).` });
+const hot = rep.items.find((it) => it.raw > 0.5 && st.knowledge[it.id] && st.knowledge[it.id].burnsAt !== undefined && T > st.knowledge[it.id].burnsAt - 15);
+if (hot) out.push({ key: 'burn', text: `${hot.name} burnt at about ${Math.round(st.knowledge[hot.id].burnsAt)}°C before: undissolved, it will char again.` });
+if (rep.phases.hydro > 2 && rep.phases.lipo > 2 && rep.emulsified < 0.2 && rep.items.some((it) => it.cls === 'lipo') && rep.items.some((it) => it.cls === 'hydro')) out.push({ key: 'emulsion', text: 'Oil and water extracts stand apart: a little emulsifier binds them into one potion — after extraction, since an emulsion extracts badly.' });
 if (gas >= 3 && !sim.cauldron.lidClosed) out.push({ key: 'steam', text: 'Boiling with the lid off: steam is leaving, so the brew grows smaller and stronger — side effects too.' });
 else if (this.assay && this.assay.stability < 70 && !sim.emitter.pouring && !this.autoStir) out.push({ key: 'stir', text: 'The brew is uneven — pockets and layers. Stir it through before you test or bottle.' });
 return out.slice(0, 3);
@@ -31327,12 +32535,13 @@ if (res === 'agree') toast('Recipe reproduced', `“${r.name}” brewed again an
 else if (res === 'differ') toast('The recipe did not repeat', `This batch of “${r.name}” tested differently from the recorded one. Something in the procedure matters that the recipe does not hold.`, 'book', 6000);
 }
 theory() {
-const parts = awakenParts(this.batchParts(), this.sim.inventory(), this.state.lookup);
+const inv = this.sim.inventory();
+const parts = extractedParts(awakenParts(this.batchParts(), inv, this.state.lookup), inv, this.state.lookup);
 return theoryOf(parts, this.state.lookup, this.sandbox ? this.state.world.laws : this.state.knownLaws);
 }
 vialTheory(v) {
 const comp = v && v.m ? v.m.composition : {};
-return theoryOf(awakenParts(v.parts || [], comp, this.state.lookup), this.state.lookup, this.sandbox ? this.state.world.laws : this.state.knownLaws);
+return theoryOf(extractedParts(awakenParts(v.parts || [], comp, this.state.lookup), comp, this.state.lookup), this.state.lookup, this.sandbox ? this.state.world.laws : this.state.knownLaws);
 }
 drawDose(ml) {
 const n = Math.max(1, Math.round(ml / SIM.ML_PER_PARTICLE));
@@ -31445,6 +32654,7 @@ h('div', { class: 'small muted', text: ['liquid', 'powder', 'paste', 'solid', 'v
 const m = st.lookup(id);
 return h('div', { class: 'row small' }, h('span', { class: 'swatch', style: { background: rgbToHex(m ? m.look || m.color : [0.5, 0.5, 0.5]) } }), h('span', { text: `${Math.round((v / tot) * 100)}% ${m ? m.name : id}` }));
 }),
+...this.extractionRows(),
 h('div', { class: 'small know' }, h('b', { text: 'Theory ' }), thList.length ? thList.map(([e, v]) => h('span', { class: 'fx-chip dim', title: e.label }, icon(e.icon, 'sm'), ` ≈${Math.round(v)}`)) : h('span', { class: 'muted', text: 'no effects expected' })),
 known ? h('div', { class: 'small know' }, h('b', { text: 'Recipe ' }), ...Object.entries(known.verified).map(([k, v]) => h('span', { class: 'fx-chip dim', title: `${EFFECT_BY_KEY[k].label}, as verified when “${known.name}” was first brewed` }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ~${Math.round(/** @type {number} */ (v))}`))) : null,
 similar ? h('div', { class: 'small warn recipe-partial', text: similar.approx
@@ -31454,6 +32664,27 @@ h('div', { class: 'small know' }, h('b', { text: 'Verified ' }), Object.keys(cer
 h('div', { class: 'small muted', text: `Theory: what the ingredients do on paper.${known ? ' Recipe: what this recipe did when tested.' : ''} Verified: trials of this batch — the only proof.` }),
 ].filter(Boolean));
 void force;
+}
+extractionRows() {
+const sim = this.sim, st = this.state;
+const r = extractionReport(sim);
+const rows = [];
+for (const it of r.items.slice(0, 6)) {
+const w = classWords(/** @type {any} */ (it.cls));
+const pct = Math.round(it.share * 100), cap = Math.round(it.ceiling * 100);
+const k = st.knowledge[it.id] || {};
+const burn = k.burnsAt !== undefined ? ` · burns by ${Math.round(k.burnsAt)}°C` : '';
+rows.push(h('div', { class: 'row small extract-row', title: `${it.name} is ${w.short}: only ${w.solvents} takes its magic up. At the brew's present heat at most ${cap}% can come out; cooler, more can.` },
+h('span', { text: `${it.name}` }), h('span', { class: 'spacer' }),
+h('span', { class: 'xbar' }, h('i', { class: 'xbar-fill', style: { width: pct + '%' } }), h('i', { class: 'xbar-cap', style: { left: cap + '%' } })),
+h('span', { class: it.frozen ? 'warn' : 'muted', text: ` ${pct}% / ${cap}%${it.frozen ? ' frozen' : ''}${burn}` })));
+}
+if (rows.length) rows.unshift(h('div', { class: 'small know' }, h('b', { text: 'Extracted ' }), h('span', { class: 'muted', text: 'dissolved / most possible at this heat' })));
+if (r.frozen > 0.4) rows.push(h('div', { class: 'small warn', text: 'The solvent is frozen: nothing more is extracted until it thaws.' }));
+const ph = r.phases;
+if (ph.hydro > 0.5 && ph.lipo > 0.5) rows.push(h('div', { class: 'small ' + (r.emulsified > 0.3 ? 'know' : 'muted'), text: r.emulsified > 0.3 ? 'Emulsion: oil and water are bound into one potion (extraction is slow in an emulsion).' : 'Oil and water stand apart: an emulsifier (about 6 % of the smaller phase) would bind them.' }));
+if (r.alcohol > 0.001) rows.push(h('div', { class: 'small muted', text: `Spirit: ${(r.alcohol * 100).toFixed(1)}% of the brew` }));
+return rows;
 }
 updateProbe() {
 if (!this.probe) return;
@@ -31545,7 +32776,7 @@ else if (!this.bottling) {
 const a = this.brewAdvice()[0];
 if (a) list.push({ text: ADVICE_SHORT[a.key] || 'Advice', act: 'advice-chip', cls: 'advice', title: a.text, key: a.key, on: () => toast('At the cauldron', a.text, 'bulb', 5000) });
 }
-if (this.receiver && this.receiver.count) list.push({ text: `Receiver ${this.receiver.count * SIM.ML_PER_PARTICLE} ml`, act: 'receiver', title: 'The alembic’s receiver flask', on: () => panels.openReceiver(this) });
+if (this.receiver && this.receiver.count >= 0.2) list.push({ text: `Receiver ${Math.round(this.receiver.count * SIM.ML_PER_PARTICLE)} ml`, act: 'receiver', title: 'The alembic’s receiver flask', on: () => panels.openReceiver(this) });
 if (this.app.settings.showFps) list.push({ text: `${this.fpsAcc.fps} fps · ${sim.stats.stepMs.toFixed(1)} ms/step · ${p.count} p` });
 const sig = list.map((x) => x.text + '|' + (x.title || '')).join('/');
 if (sig === this._chipSig) return;
@@ -31572,7 +32803,7 @@ const modalOpen = !!document.querySelector('.overlay');
 const sim = this.sim;
 const brewing = this.view === 'brew';
 this._colonyAcc = (this._colonyAcc || 0) + dt;
-if (this._colonyAcc >= 0.5) { this.tickColony(this._colonyAcc); this._colonyAcc = 0; }
+if (this._colonyAcc >= 0.5) { this.tickColony(this._colonyAcc); this.tickCellar(); this._colonyAcc = 0; }
 if (this.autoBrewer) {
 const n = Math.min(12, Math.round((dt * this.speed) / SIM.DT));
 for (let k = 0; k < n; k++) {
@@ -31589,7 +32820,7 @@ sim.advance(dt, this.speed, maxSteps);
 this.accountPours();
 }
 const tw1 = performance.now();
-if (this.alembicOpen) this.collectVapour();
+this.collectVapour();
 this.stepBottling(dt);
 this.stepVial(dt);
 this.trackBrew(dt);
@@ -31663,6 +32894,19 @@ if (att.length && this.time - (this._feralWarned || -99) > 20) { this._feralWarn
 }
 }
 }
+tickCellar() {
+if (this.sandbox) return;
+const st = this.state;
+for (const e of st.tickCellar()) {
+const v = st.cellar.vessels[e.vessel];
+toast(`Cellar vessel ${e.vessel + 1}${v && v.name ? ` (${v.name})` : ''}`, e.text, 'shelf2', 4500);
+}
+const ex = this.sim.extraction;
+for (const e of st.noteBurning(ex.safeSeen, ex.charSeen)) {
+const m = st.lookup(e.id);
+toast('Something is burning!', `${m ? m.name : 'An ingredient'} chars at about ${Math.round(e.T)}°C: what was not yet drawn out is lost. Dissolved magic is safe.`, 'flame', 5000);
+}
+}
 stepVial(dt) {
 const st = this.state;
 for (const b of st.bottles) this._shelfDrift = (this._shelfDrift || 0) + relaxVial(b, dt * this.speed);
@@ -31728,6 +32972,7 @@ switch (e.type) {
 case 'reaction': audio.play('reaction'); break;
 case 'crush': if (Math.random() < 0.5) audio.play('crush'); break;
 case 'ignite': audio.play('ignite'); break;
+case 'char': if (Math.random() < 0.4) audio.play('ignite'); break;
 case 'awaken': audio.play('awaken'); break;
 case 'crack': audio.play('crack'); break;
 case 'spark': if (Math.random() < 0.3) audio.play('crush'); break;
@@ -31763,22 +33008,17 @@ this.handleSimEvent({ type: 'layers', a: ids[0], b: ids[1] });
 }
 }
 collectVapour() {
-const sim = this.sim, p = sim.p, c = sim.cauldron;
-if (!c.lidClosed || !this.sandbox) return;
+const sim = this.sim, got = sim.condenser.receiver;
+const ids = Object.keys(got);
+if (!ids.length) return;
 this.receiver = this.receiver || { count: 0, comp: {}, color: [0.7, 0.8, 0.9] };
 const rec = this.receiver;
-let took = 0;
-for (let i = p.count - 1; i >= 0 && took < 3; i--) {
-if (p.phase[i] !== PHASE.GAS || p.y[i] > 0.25 || p.x[i] < c.mouth * 0.3) continue;
-for (let s = 0; s < sim.species.count; s++) {
-const f = p.comp[i * MAX_SPECIES + s];
-if (f > 0 && sim.species.defs[s]) rec.comp[sim.species.defs[s].id] = (rec.comp[sim.species.defs[s].id] || 0) + f;
+for (const id of ids) {
+rec.comp[id] = (rec.comp[id] || 0) + got[id];
+rec.count += got[id];
+delete got[id];
 }
-rec.color = [sim.colR[i], sim.colG[i], sim.colB[i]];
-rec.count++;
-sim.removeParticle(i);
-took++;
-}
+rec.count = Math.round(rec.count * 1000) / 1000;
 }
 pourReceiver() {
 const rec = this.receiver;
@@ -31838,10 +33078,10 @@ saveGame(this.state);
 }
 }
 const SANDBOX_FIRE = { maxFlame: 800, heatPower: 8 };
-const ADVICE_SHORT = { whole: 'Whole herbs: crush', window: 'Outside the steep', warm: 'Not steeped yet', steam: 'Steam escaping', stir: 'Uneven: stir' };
+const ADVICE_SHORT = { whole: 'Whole herbs: crush', solvent: 'Wrong solvent', frozen: 'Frozen: no extraction', ceiling: 'Cool to draw more', burn: 'Burning risk', emulsion: 'Needs an emulsifier', steam: 'Steam escaping', stir: 'Uneven: stir' };
 const RANK_NEWS = [
 '',
-'Journeyman: cooling and insight orders arrive, the herbalist sells the common herbs, and the guild offers the Frost Rune (deep cold), the Clockwork Stirrer and the Arcanometer.',
+'Journeyman: cooling and insight orders arrive, some customers want alcohol-free cold tinctures, and the guild offers the Frost Rune (deep cold), the Alembic & Condenser, the Aging Cellar and temperature runes, the Clockwork Stirrer and the Arcanometer.',
 'Adept: strong orders need awakened magic, or a brew boiled down with the lid open, and customers combine two effects. The Moonfen opens, its magic woken by cold; larger cauldrons and the Guild Charter are for sale.',
 'Expert: customers combine several effects and techniques in one order. The Ember Crags open; the Glacial Sigil reaches the deepest cold, and the Brass Homunculus brews your recipes.',
 'Master: the grandest commissions — several effects, awakened, in exact measure. The Queen’s herald may call.',
@@ -31872,7 +33112,7 @@ void dominantEffect;
 return { VIEWS, LabScreen };
 })();
 // src/materials/reference.js
-const __m140 = (() => {
+const __m143 = (() => {
 const { completeMaterial } = __m10;
 const REF = {};
 const add = (d) => (REF[d.id] = completeMaterial(d));
@@ -31910,12 +33150,12 @@ const refLookup = (id) => REF[id];
 return { REF, refLookup };
 })();
 // src/ui/menu.js
-const __m139 = (() => {
+const __m142 = (() => {
 const { h, btn } = __m2;
-const { Renderer } = __m87;
-const { Simulation } = __m64;
-const { REF, refLookup } = __m140;
-const { hasSave, loadGame } = __m84;
+const { Renderer } = __m90;
+const { Simulation } = __m65;
+const { REF, refLookup } = __m143;
+const { hasSave, loadGame } = __m87;
 const { audio } = __m4;
 class MenuScreen {
 constructor(app) {
@@ -32000,17 +33240,17 @@ const { icon } = __m3;
 const { audio } = __m4;
 const { GameState } = __m5;
 const { sandboxIngredients } = __m7;
-const { EQUIPMENT } = __m57;
-const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m84;
-const { LabScreen } = __m85;
-const { MenuScreen } = __m139;
-const { openSettings, openHelp } = __m98;
+const { EQUIPMENT } = __m58;
+const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m87;
+const { LabScreen } = __m88;
+const { MenuScreen } = __m142;
+const { openSettings, openHelp } = __m101;
 const { Rng } = __m6;
-const { normalizeTrials } = __m58;
-const { sandboxWilds } = __m61;
-const { loadAtlases, neededAtlases } = __m50;
-const { parseCatalogId } = __m16;
-const { BIOMES } = __m20;
+const { normalizeTrials } = __m59;
+const { sandboxWilds } = __m62;
+const { loadAtlases, neededAtlases } = __m51;
+const { parseCatalogId } = __m13;
+const { BIOMES } = __m17;
 const DEFAULT_SETTINGS = { master: 0.8, sfx: 0.8, music: 0.35, musicOn: true, muted: false, quality: 'auto', showFps: false, resolution: 3 };
 const SEED_WORDS = ['amber', 'ashen', 'brine', 'copper', 'dusk', 'elder', 'fen', 'gloam', 'hollow', 'iron', 'juniper', 'kelp', 'lantern', 'moon', 'nettle', 'oak', 'pewter', 'quill', 'raven', 'sage', 'thorn', 'umber', 'vale', 'willow', 'wyrm', 'yarrow'];
 class App {
@@ -32139,7 +33379,7 @@ openHelp();
 return { App, icon };
 })();
 // src/ui/textures.js
-const __m141 = (() => {
+const __m144 = (() => {
 const { Rng } = __m6;
 function texture(w, h, paint) {
 const cv = document.createElement('canvas');
@@ -32183,7 +33423,7 @@ return { installTextures };
 // src/main.js
 const __m0 = (() => {
 const { App } = __m1;
-const { installTextures } = __m141;
+const { installTextures } = __m144;
 installTextures();
 const root = document.getElementById('app');
 const app = new App(root);
