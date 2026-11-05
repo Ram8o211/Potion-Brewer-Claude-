@@ -32053,9 +32053,9 @@ if (!storageAvailable()) toast('Saving unavailable', 'This browser mode blocks l
 showMenu() {
 this._swap(new MenuScreen(this));
 }
-continueGame() {
+async continueGame() {
 const { state, error } = loadGame();
-if (state) this.startGame(state);
+if (state) await this.startGame(state);
 if (error) toast('Save problem', error, 'scroll', 6000);
 }
 async prepareAssets(state, all = false) {

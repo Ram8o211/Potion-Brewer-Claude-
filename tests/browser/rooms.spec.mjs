@@ -28,7 +28,7 @@ test('harvesting a mature plant fills the stores and leaves nothing behind; grow
   expect(after, 'gathered what the button promised').toBe(before + promised);
   const node = await lab(page, (l, id) => l.state.gathering.nodes[id], dep.id);
   expect(node.plants.length, 'one plant was taken').toBe(dep.slots - 1);
-  expect(node.due, 'and the stand is sprouting again').toBeGreaterThan(Date.now() - 1000);
+  expect(node.due, 'and the wilds do not grow back by themselves (a Traveller Coin regenerates them)').toBeNull();
   expect(await lab(page, (l) => l.state.gathering.marks), 'it left no mark on the ground').toBeUndefined();
   // buying the Forager's Kit raises the yield of everything that is not simply picked
   const tool = await lab(page, (l, id) => { const m = l.state.lookup(id); return m.wild.gather; }, dep.materialId);

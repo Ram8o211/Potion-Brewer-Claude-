@@ -16,7 +16,9 @@ test('an awakened brew draws its effects\' patterns boldly', async ({ page }, in
   const errors = watchErrors(page);
   await newGame(page, { tutorial: false, seed: 'showcase-glow' });
   await pourRole(page, 'water', 125);
-  await pourRole(page, 'wild-sp-silverleaf', 100);
+  // only Arcane ingredients awaken: an Arcane Silverleaf
+  await lab(page, (l) => { l.state.inventory['wild-sp-silverleaf-arcane'] = 200; l.state.found['wild-sp-silverleaf-arcane'] = 1; l.buildShelf(); });
+  await pourRole(page, 'wild-sp-silverleaf-arcane', 100);
   await crushInPot(page);
   // stir until even, then heat past the blend's threshold with the fire control
   await lab(page, (l) => { l.setAutoStir(true); });
