@@ -25,8 +25,10 @@ import { remainsMaterials, remainsPlan, isRemains } from '../materials/remains.j
 import { returningPatron, welcomePatron, recentStyles, notePatron, patronVerdict, noveltyFactor } from './patrons.js';
 import { techniqueById, migrateTechniques } from './commissions.js';
 import { migrateRecipe } from './recipes.js';
+import { createCellar, normalizeCellar, advanceCellar, fillVessel, emptyVesselContents, activateVessel, setRune, vesselVolume, RUNE_PRICE } from './cellar.js';
+import { makeVialFromComposition } from './vial.js';
 
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 /** A purging draught at the apothecary, and brewed in the still. */
 export const PURGE_PRICE = 8;
 export const PURGE_BREW_COST = 1;
@@ -160,6 +162,8 @@ export class GameState {
     accrue(this.regen);
     /** the personal garden (garden.js) */
     this.garden = normalizeGarden(data.garden);
+    /** the aging cellar (cellar.js): vessels and temperature runes */
+    this.cellar = normalizeCellar(data.cellar, capabilities(data.equipment || []).vessels);
     /** @type {import('./gathering.js').Deposit[]|null} */
     this._deposits = null;
     // plants that drink: an older save's plants keep their growth, and grow under today's weather
@@ -383,8 +387,145 @@ export class GameState {
       this.stats.gathered = (this.stats.gathered || 0) + r.amount;
       /** @type {any} */ (r).events = [...this.unlock('forage1')];
       if (this.stats.gathered >= 1000) /** @type {any} */ (r).events.push(...this.unlock('forage1k'));
+      // underground (the Netherwood's caverns, mined seams) an old temperature rune turns up now and then
+      const under = d.region === 'netherwood' || ['mine', 'dig'].includes(m && m.wild ? m.wild.gather : '');
+      if (under && runeFind(this.seed, d.id, this.stats.gathered, d.region === 'netherwood' ? 0.14 : 0.06)) {
+        this.cellar.runes++;
+        /** @type {any} */ (r).rune = true;
+      }
     }
     return r;
+  }
+
+  // ------------------------------------------------------------ cellar, still and burning
+  /** Advance the aging vessels to now (also after a break). @param {number} [now] */
+  tickCellar(now = Date.now()) {
+    if (this.cellar.vessels.length < this.cap.vessels) normalizeCellar(this.cellar, this.cap.vessels, now);
+    return advanceCellar(this.cellar, this.lookup, now);
+  }
+
+  /** Buy a temperature rune at the market. */
+  buyRune() {
+    const price = Math.round(RUNE_PRICE * (1 - this.cap.discount) * 10) / 10;
+    if (this.rank < 1) return { ok: false, reason: 'The runesmith sells only to a Journeyman or above.' };
+    if (this.coins + 1e-9 < price) return { ok: false, reason: 'Not enough coins.' };
+    this.coins = round1(this.coins - price);
+    this.stats.spent += price;
+    this.daySpending += price;
+    this.cellar.runes++;
+    return { ok: true, cost: price };
+  }
+
+  /**
+   * Lay a brew down in an empty vessel: a shelved bottle, or matter taken
+   * from the cauldron (ml per id).
+   * @param {number} vessel @param {{bottleId?:string, comp?:Record<string, number>, T?:number, name?:string, parts?:{id:string, ml:number}[]}} src @param {number} [now]
+   */
+  layDown(vessel, src, now = Date.now()) {
+    this.tickCellar(now);
+    const v = this.cellar.vessels[vessel];
+    if (!v) return { ok: false, reason: 'There is no such vessel.' };
+    if (src.bottleId) {
+      const b = this.bottles.find((x) => x.id === src.bottleId);
+      if (!b) return { ok: false, reason: 'That bottle is not on the shelf.' };
+      /** @type {Record<string, number>} */
+      const comp = {};
+      for (const vp of b.particles) vp.c.forEach((f, j) => { if (f > 0) comp[b.species[j]] = (comp[b.species[j]] || 0) + f * SIM.ML_PER_PARTICLE; });
+      const T = b.particles.length ? b.particles.reduce((a, q) => a + q.t, 0) / b.particles.length : 20;
+      const r = fillVessel(v, comp, T, now, { name: (b.label && b.label.name) || 'A shelved brew', batchId: b.batchId, parts: b.parts });
+      if (r.ok) this.removeBottle(b.id);
+      return r;
+    }
+    return fillVessel(v, src.comp || {}, src.T ?? 20, now, { name: src.name, batchId: this.batch.id, parts: src.parts });
+  }
+
+  /**
+   * Warm or chill a vessel with a shelved Fire or Frost potion (the bottle is used up).
+   * @param {number} vessel @param {string} bottleId @param {number} [now]
+   */
+  activateVessel(vessel, bottleId, now = Date.now()) {
+    this.tickCellar(now);
+    const v = this.cellar.vessels[vessel];
+    const b = this.bottles.find((x) => x.id === bottleId);
+    if (!v || !b) return { ok: false, reason: 'Choose a vessel and a bottle.' };
+    const r = activateVessel(v, (b.m && b.m.effects) || [], now);
+    if (r.ok) this.removeBottle(b.id);
+    return r;
+  }
+
+  /** Set a rune on a vessel at a temperature. @param {number} vessel @param {number} target @param {number} [now] */
+  runeVessel(vessel, target, now = Date.now()) {
+    this.tickCellar(now);
+    const v = this.cellar.vessels[vessel];
+    if (!v || vesselVolume(v) <= 0) return { ok: false, reason: 'Fill the vessel first.' };
+    if (this.cellar.runes <= 0) return { ok: false, reason: 'You have no temperature rune. Buy one at the market, or look underground in the Wilds.' };
+    const r = setRune(v, target, now);
+    if (r.ok) this.cellar.runes--;
+    return r;
+  }
+
+  /**
+   * Draw a vessel off into a sealed bottle on the potion shelves (or the
+   * counter's vial when the shelves are full). Returns the vial.
+   * @param {number} vessel @param {number} [now]
+   */
+  bottleVessel(vessel, now = Date.now()) {
+    this.tickCellar(now);
+    const v = this.cellar.vessels[vessel];
+    if (!v || vesselVolume(v) <= 0) return { ok: false, reason: 'The vessel is empty.' };
+    if (this.bottles.length >= this.cap.bottles && this.vial) return { ok: false, reason: 'No room on the potion shelves, and a vial is already on the counter.' };
+    const out = emptyVesselContents(v, now);
+    const vial = makeVialFromComposition(out.comp, out.T, { batchId: 'b' + now.toString(36) + 'c' + v.id, day: this.day, parts: out.parts }, this.lookup, this.world.laws || []);
+    if (!vial) return { ok: false, reason: 'Nothing could be bottled.' };
+    if (this.bottles.length < this.cap.bottles) this.bottles.push(vial); else this.vial = vial;
+    return { ok: true, vial };
+  }
+
+  /**
+   * Jar what the still's receiver collected: the solvents (spirit, water,
+   * oil) go back on the shelf; anything else is poured away.
+   * @param {Record<string, number>} collected particle volumes per id (the simulation's receiver)
+   */
+  collectDistillate(collected) {
+    /** @type {Record<string, number>} */
+    const got = {};
+    for (const [id, v] of Object.entries(collected || {})) {
+      const d = this.lookup(id);
+      if (!d || !d.solvent || !(v > 0)) continue;
+      const ml = Math.floor(v * SIM.ML_PER_PARTICLE);
+      if (ml <= 0 || !isFinite(this.stock(id))) continue;
+      const room = Math.max(0, this.cap.storage - this.stock(id));
+      const take = Math.min(room, ml);
+      if (take <= 0) continue;
+      this.inventory[id] = this.stock(id) + take;
+      got[id] = take;
+    }
+    return got;
+  }
+
+  /**
+   * Remember what a brew showed about burning: the hottest an ingredient was
+   * seen at unharmed and the coolest it was seen burning. The combustion
+   * threshold itself stays hidden; the journal brackets it.
+   * @param {Record<string, number>} safe @param {Record<string, number>} charred
+   */
+  noteBurning(safe, charred) {
+    const events = [];
+    for (const [id, T] of Object.entries(safe || {})) {
+      const k = this.knowledge[id] || (this.knowledge[id] = {});
+      if (!(k.safeTo >= T)) k.safeTo = T;
+    }
+    for (const [id, T] of Object.entries(charred || {})) {
+      const k = this.knowledge[id] || (this.knowledge[id] = {});
+      const first = k.burnsAt === undefined;
+      if (!(k.burnsAt <= T)) k.burnsAt = T;
+      if (first) {
+        const m = this.lookup(id);
+        events.push({ type: 'burn-discovered', id, T });
+        this.journal['burn:' + id] = { key: 'burn:' + id, kind: 'burn', title: `${m ? m.name : id} burns`, day: this.day, text: `Seen burning at ${Math.round(T)}°C: whatever of it was not yet drawn out turned to char.` };
+      }
+    }
+    return events;
   }
 
   /**
@@ -1340,6 +1481,7 @@ export class GameState {
       patrons: this.patrons,
       regen: this.regen,
       garden: this.garden,
+      cellar: this.cellar,
       savedAt: Date.now(),
     };
   }
@@ -1481,6 +1623,16 @@ export function migrate(raw) {
     // garden (their stores are carried over in fromJSON: migrateToCatalog)
     d.version = 7;
   }
+  if (d.version < 8) {
+    // v8: continuous extraction (the catalog's materials are refreshed by
+    // addAlchemy), the aging cellar and its runes.
+    // A brew in the cauldron or a bottle keeps its matter: extracts stay
+    // extracts, raw herbs go on extracting under the new rules.
+    d.cellar = d.cellar || createCellar();
+    d.journal = { ...(d.journal || {}), 'note:extraction': { key: 'note:extraction', kind: 'note', title: 'The guild revises its steeping lore', day: d.day || 1,
+      text: 'Herbs give up their magic gradually, at any temperature: faster when hot, but more of it when cool. Some dissolve only in oil. Cold spirit draws out everything. Herbs left undissolved burn when too hot. The market now sells a neutral emulsifier, the guild an alembic and aging cellars.' } };
+    d.version = 8;
+  }
   // every shop owns the starting kit (the pestle joined it in v6)
   for (const id of STARTING_EQUIPMENT) if (!d.equipment.includes(id)) d.equipment = [...d.equipment, id];
   // the free starter mortar is retired: solids go in whole and the pestle crushes them
@@ -1548,6 +1700,15 @@ export function retireRequirements(com) {
   if (typeof com.style === 'string') com.style = [com.style.split('+')[0], ...com.techniques.slice().sort()].join('+');
   com.effectOrder = com.requirements.some((r) => r.effect);
   return com;
+}
+
+/**
+ * Does this underground harvest turn up a rune? Deterministic per seed,
+ * deposit and harvest count, so reloading never rerolls it.
+ * @param {string} seed @param {string} depositId @param {number} n @param {number} chance
+ */
+export function runeFind(seed, depositId, n, chance) {
+  return (hashString(`rune:${seed}:${depositId}:${Math.round(n)}`) % 10000) / 10000 < chance;
 }
 
 /** @param {number} v */

@@ -182,3 +182,27 @@ export function emulsionStability(hydro, lipo, emul) {
 export function classWords(cls) {
   return cls === 'lipo' ? { short: 'oil-soluble', solvents: 'oil' } : { short: 'water-soluble', solvents: 'water or spirit' };
 }
+
+/**
+ * The guild theory's view of extraction: each catalog ingredient of a
+ * batch's parts counts only with the share of it that is already dissolved
+ * in what is measured (`comp`: volumes or fractions per material id, as the
+ * brew panel's Extracted bars show it); the rest dilutes. Other parts pass
+ * unchanged.
+ * @param {{id:string, ml:number}[]} parts @param {Record<string, number>} comp @param {(id:string)=>any} lookup
+ */
+export function extractedParts(parts, comp, lookup) {
+  const out = [];
+  for (const p of parts) {
+    const d = lookup(p.id);
+    if (!d || !d.extraction) { out.push(p); continue; }
+    const base = p.id.endsWith('~a') ? p.id.slice(0, -2) : p.id;
+    const x = extractIdOf(base);
+    const raw = (comp[base] || 0) + (comp[base + '~a'] || 0);
+    const ext = (comp[x] || 0) + (comp[x + '~a'] || 0);
+    const share = raw + ext > 1e-9 ? ext / (raw + ext) : 0;
+    if (share > 0) out.push({ id: p.id, ml: p.ml * share });
+    if (share < 1) out.push({ id: '__undissolved', ml: p.ml * (1 - share) });
+  }
+  return out;
+}

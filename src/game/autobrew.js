@@ -358,8 +358,9 @@ export class AutoBrewer {
     this.status = `Stripping the last spirit (${(alc * 100).toFixed(1)}%)`;
     this.control(wb - 2);
     sim.furnace.setting = Math.min(sim.furnace.setting, 0.6);
-    if (this.stageT % 3 < 1) this.stir(0.6); else this.release();
-    if (alc < 0.008 || this.stageT - (this.distilT || 0) > 60) {
+    // stirring brings the spirit held in the sediment up into the boiling brew
+    this.stir(0.9);
+    if (alc < 0.006 || this.stageT - (this.distilT || 0) > 120) {
       sim.furnace.setting = 0;
       sim.condenser.on = false;
       this.release();

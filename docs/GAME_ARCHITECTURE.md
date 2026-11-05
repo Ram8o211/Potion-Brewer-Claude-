@@ -125,9 +125,23 @@ material ids to slots and keeps per-slot property arrays).
 What a potion *does* is never looked up from a recipe. It is computed from
 the matter actually drunk, particle by particle:
 
-1. **Extraction.** A species acts only in solution. Undissolved grains
-   leach 12% of their potency, dry powder 5%. Solubility rises with heat,
-   so grinding, stirring and hot water all change the result.
+1. **Extraction** (`alchemy/extraction.js`, `reactions/extraction.js`).
+   A catalog ingredient acts only through its dissolved extract. Every
+   species is *hydrosoluble* (water or spirit) or *liposoluble* (oil only)
+   and has a rate k(T) that doubles every 15–20 °C and a ceiling Y(T) that
+   falls with heat (1 at its Tfull — below water's freezing point for
+   hydrosoluble species, so only spirit gets everything out; in chilled oil
+   for liposoluble ones). Wherever a raw ingredient shares a particle with
+   liquid solvent of its class, it turns into its extract volume for volume
+   at dφ/dt = k·m·(Y − φ), φ being the extracted share of that ingredient
+   over the whole cauldron: never past the ceiling, never back (heating
+   never destroys what is dissolved; cooling lets more out). `m` folds in
+   stirring and an emulsion (×0.1); whole pieces give only at their surface
+   (×0.03, by contact). A solvent holds at most its own volume of extract;
+   frozen solvent extracts nothing. Above an ingredient's hidden combustion
+   threshold (115–300 °C, always above water's boil) its unextracted matter
+   chars to inert char; extracts and the solvents never burn. The fixed
+   temperature-window steeping reactions of earlier versions are retired.
 2. **Resonance laws** (hidden; six per world, on distinct effect pairs).
    Two effects meeting inside one particle can *transmute* into a third,
    *catalyse* or *suppress* one another above a threshold. A layered brew
@@ -142,8 +156,28 @@ Effect values are **percent effective concentration** (0–100, acidity
 signed): 100 would be a pure, fully extracted, fully potent reagent.
 Sleeping (unawakened) magic is weak — most native potencies are 6–30 — so
 everyday orders sit around 8–15 % and the strongest ones need awakening.
-Extraction only counts liquids that mix with the solvent (an oil does not
-dissolve a crystal sitting in a water brew).
+Extraction only counts liquids of the ingredient's solvent class (oil does
+not take up water-soluble magic, water not oil-soluble magic). Watery and
+oily extracts stay in separate layers unless an emulsifier binds them
+(`diffusion.js`): about 6 % of the smaller phase, with the smaller phase
+under two fifths of the liquid; a mixed particle without one separates
+again.
+
+**Distillation.** With the Alembic & Condenser's still head on
+(`sim.condenser`), vapour that leaves the liquid is collected in the
+receiver instead of raining back. A liquid hotter than the boiling point of
+its most volatile part first gathers that part from its neighbours (volume
+for volume, `phase.js enrichVolatile`), so spirit boils off near its own
+boiling point and water mostly stays; vapour never carries dissolved
+matter. The receiver's solvents can be jarred back onto the shelf.
+
+**Aging cellar** (`game/cellar.js`). Sealed vessels hold a brew as bulk
+matter and advance it in fixed 20-second steps of wall-clock time with the
+same extraction model (at an unstirred vessel's pace), charring, freezing
+and awakening — so an hour reached in one jump after a break equals an
+hour of live ticks. A Fire or Frost potion gives a vessel a lasting
+heating or cooling drive; a temperature rune holds a chosen temperature
+and wears out (faster against a stronger drive).
 
 Reactions, evaporation and dilution change the composition, so they change
 effects through the same function. `theoryOf()` is the player's naive

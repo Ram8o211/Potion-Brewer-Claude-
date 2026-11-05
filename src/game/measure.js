@@ -30,6 +30,7 @@ import { sampleEffects } from '../alchemy/effects.js';
  * @property {number} count
  * @property {number} ml
  * @property {Record<string, number>} composition  species id → volume fraction
+ * @property {number} [alcohol]    spirit content, percent of the volume
  * @property {number[]} color   sRGB
  * @property {number[]} lab     OKLab
  * @property {number} density

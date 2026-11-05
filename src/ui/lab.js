@@ -37,6 +37,8 @@ import { makeVial, appendParticles, updateVial, takeDose, pourBack, pourBackPart
 import { theoryOf, EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, dominantEffect, NE } from '../alchemy/effects.js';
 import { awakenParts, describeThreshold } from '../alchemy/arcane.js';
 import { ARC_NONE } from '../simulation/particles.js';
+import { extractionReport } from '../reactions/extraction.js';
+import { classWords, extractedParts } from '../alchemy/extraction.js';
 import { describeColor, rgbToHex } from '../core/color.js';
 import { h, btn, clear, keepScroll, toast, coins, confirmDialog, modal, setNoteDock, recentNotes } from './dom.js';
 import { icon } from './icons.js';
@@ -425,13 +427,18 @@ export class LabScreen {
     this.toolsEl.addEventListener('scroll', this._autoScroll, { passive: true });
     set.speed = btn('1×', () => this.cycleSpeed(), { icon: 'speed', title: 'Time speed: 1×, 2×, 4× (F)', act: 'speed' });
     a.append(set.stir, set.speed);
-    // physics demonstrations of the Free Experiment: the heat map and the alembic
+    // physics demonstrations of the Free Experiment: the heat map
     if (this.sandbox) {
       set.thermal = btn('Heat', () => this.toggleThermal(), { icon: 'monocle', title: 'Heat map (H)', act: 'thermal' });
       a.append(set.thermal);
-      set.alembic = btn('Still', () => this.toggleAlembic(), { icon: 'alembic', title: 'Alembic valve: draw off the vapour', act: 'alembic' });
+    }
+    // the still head and condenser (the Free Experiment always has one)
+    if (this.sandbox || this.state.has('condenser')) {
+      set.alembic = btn('Still', () => this.toggleAlembic(), { icon: 'alembic', title: 'Still head on/off: vapour rising into it is condensed into the receiver', act: 'alembic' });
       a.append(set.alembic);
     }
+    // the aging cellar
+    if (!this.sandbox && this.state.cap.vessels > 0) a.append(btn('Cellar', () => panels.openCellar(this), { icon: 'shelf2', title: 'The aging cellar: lay brews down to go on extracting', act: 'cellar' }));
     a.append(btn('Empty', () => this.emptyCauldron(), { icon: 'trash', cls: 'danger', title: 'Empty the cauldron', act: 'empty' }));
     this.actionSet = set;
     this.syncActions();
@@ -880,8 +887,12 @@ export class LabScreen {
 
   toggleAlembic() {
     this.alembicOpen = !this.alembicOpen;
+    const c = this.sim.cauldron;
+    this.sim.condenser.on = this.alembicOpen;
+    // the still head sits on the cauldron like a lid
+    if (this.alembicOpen && !c.lidClosed) { c.lidClosed = true; this.state.brewLog.push({ type: 'lid', closed: true, t: Math.round(this.sim.time) }); }
     this.syncActions();
-    toast(this.alembicOpen ? 'Alembic valve open' : 'Alembic valve closed', this.alembicOpen ? 'Vapour under the lid is drawn into the receiver flask.' : '', 'alembic', 2000);
+    toast(this.alembicOpen ? 'Still head on' : 'Still head off', this.alembicOpen ? 'Vapour rising into the head is condensed into the receiver. Heat between spirit’s and water’s boiling points to draw the spirit off.' : '', 'alembic', 2600);
   }
 
   cycleSpeed() {
@@ -933,6 +944,38 @@ export class LabScreen {
     this.state.newBatch();
     this.lastPoured = {};
     audio.play('splash');
+    this.save();
+  }
+
+  /**
+   * Lay the whole brew down in a cellar vessel: every condensed particle's
+   * matter goes into the vessel (vapour is let go), the cauldron is left empty.
+   * @param {number} vessel
+   */
+  layDownCauldron(vessel) {
+    const sim = this.sim, p = sim.p, sp = sim.species, st = this.state;
+    if (!p.count) return;
+    /** @type {Record<string, number>} */
+    const comp = {};
+    let T = 0, n = 0;
+    for (let i = 0; i < p.count; i++) {
+      if (p.phase[i] === PHASE.GAS) continue;
+      T += p.temp[i]; n++;
+      for (let s = 0; s < sp.count; s++) {
+        const f = p.comp[i * MAX_SPECIES + s];
+        if (f > 0 && sp.defs[s]) comp[sp.defs[s].id] = (comp[sp.defs[s].id] || 0) + f * SIM.ML_PER_PARTICLE;
+      }
+    }
+    const parts = Object.entries(this.lastPoured || {}).map(([id, n]) => ({ id, ml: Number(n) * SIM.ML_PER_PARTICLE }));
+    const r = st.layDown(vessel, { comp, T: n ? T / n : 20, name: st.current ? st.current.potionName : 'A laid-down brew', parts });
+    if (!r.ok) { toast('Cannot lay it down', r.reason, 'lock'); return; }
+    sim.clear();
+    this.receiver = null;
+    st.brewLog = [];
+    st.newBatch();
+    this.lastPoured = {};
+    audio.play('splash');
+    toast('Laid down', `The brew is in vessel ${vessel + 1}. It goes on extracting while you work — and while you are away.`, 'shelf2');
     this.save();
   }
 
@@ -1404,10 +1447,10 @@ export class LabScreen {
 
   /**
    * What the brew needs, read from the cauldron itself (never the hidden
-   * effects): whole solids that will not give anything up, herbs outside the
-   * steeping window the alchemist has discovered for them (or a hint that
-   * some herbs want warmth), an uneven brew, steam leaving with the lid off,
-   * awakening reached. At most three lines.
+   * effects): whole solids that give up little, herbs with no solvent of
+   * their class, a frozen brew, a hot brew at its extraction ceiling, herbs
+   * near their (seen) burning point, oil and water left unbound, an uneven
+   * brew, steam leaving with the lid off. At most three lines.
    * @returns {{key:string, text:string}[]}
    */
   brewAdvice() {
@@ -1440,20 +1483,17 @@ export class LabScreen {
     }
     T = n ? T / n : 20;
     if (whole >= 3) out.push({ key: 'whole', text: 'Whole herbs and stones give up almost nothing: crush them with the pestle (Crush).' });
-    // the steeping windows the alchemist has seen work, for what is still undissolved
-    const windows = [];
-    for (const [s, f] of raw) {
-      if (f < 1.5) continue;
-      const d = sp.defs[s];
-      const r = st.world.reactions.find((x) => x.a === d.id && x.products.length === 1 && /^rw_(extract|infuse|steep)/.test(x.id));
-      if (!r) continue;
-      const knownR = this.sandbox || st.journal['reaction:' + r.id];
-      if (knownR && (T < r.minT - 2 || T > r.maxT + 2)) windows.push(`${d.name.split(' ').slice(-1)[0]} steeps at ${r.minT}–${r.maxT}°C`);
-      else if (!knownR && T < 30 && r.minT > 25) windows.push('');
-    }
-    const named = windows.filter(Boolean);
-    if (named.length) out.push({ key: 'window', text: `${named.slice(0, 2).join('; ')} — the brew is at ${Math.round(T)}°C.` });
-    else if (windows.length) out.push({ key: 'warm', text: 'Some of these herbs have not given up their magic yet: most steep only when warmed (a few only ice-cold).' });
+    // continuous extraction: the wrong solvent, a frozen brew, a hot brew at its ceiling, burning
+    void raw;
+    const rep = extractionReport(sim);
+    const lone = rep.items.filter((it) => it.raw > 1 && (it.cls === 'lipo' ? rep.phases.lipo : rep.phases.hydro) - it.ext < 0.5);
+    if (lone.length) out.push({ key: 'solvent', text: `${lone[0].name} is ${classWords(/** @type {any} */ (lone[0].cls)).short}: nothing here can take its magic up — add ${classWords(/** @type {any} */ (lone[0].cls)).solvents}.` });
+    if (rep.frozen > 0.4 && rep.items.some((it) => it.raw > 0.5)) out.push({ key: 'frozen', text: 'The brew is frozen: a frozen solvent extracts nothing. Spirit stays liquid far colder than water.' });
+    const capped = rep.items.filter((it) => it.raw > 1 && it.share > it.ceiling - 0.02 && it.ceiling < 0.9);
+    if (capped.length && T > 30) out.push({ key: 'ceiling', text: `${capped[0].name} has given all it can at ${Math.round(T)}°C: cooler, more of it would come out (heat never takes back what is dissolved).` });
+    const hot = rep.items.find((it) => it.raw > 0.5 && st.knowledge[it.id] && st.knowledge[it.id].burnsAt !== undefined && T > st.knowledge[it.id].burnsAt - 15);
+    if (hot) out.push({ key: 'burn', text: `${hot.name} burnt at about ${Math.round(st.knowledge[hot.id].burnsAt)}°C before: undissolved, it will char again.` });
+    if (rep.phases.hydro > 2 && rep.phases.lipo > 2 && rep.emulsified < 0.2 && rep.items.some((it) => it.cls === 'lipo') && rep.items.some((it) => it.cls === 'hydro')) out.push({ key: 'emulsion', text: 'Oil and water extracts stand apart: a little emulsifier binds them into one potion — after extraction, since an emulsion extracts badly.' });
     if (gas >= 3 && !sim.cauldron.lidClosed) out.push({ key: 'steam', text: 'Boiling with the lid off: steam is leaving, so the brew grows smaller and stronger — side effects too.' });
     else if (this.assay && this.assay.stability < 70 && !sim.emitter.pouring && !this.autoStir) out.push({ key: 'stir', text: 'The brew is uneven — pockets and layers. Stir it through before you test or bottle.' });
     return out.slice(0, 3);
@@ -1492,14 +1532,16 @@ export class LabScreen {
 
   /** The guild's naive theory for this batch, with the laws you have found (and the awakening you can see). */
   theory() {
-    const parts = awakenParts(this.batchParts(), this.sim.inventory(), this.state.lookup);
+    const inv = this.sim.inventory();
+    // only what is already dissolved counts (the brew panel shows how much)
+    const parts = extractedParts(awakenParts(this.batchParts(), inv, this.state.lookup), inv, this.state.lookup);
     return theoryOf(parts, this.state.lookup, this.sandbox ? this.state.world.laws : this.state.knownLaws);
   }
 
   /** Theory for the sealed vial (its provenance, with its visible awakening). @param {any} v */
   vialTheory(v) {
     const comp = v && v.m ? v.m.composition : {};
-    return theoryOf(awakenParts(v.parts || [], comp, this.state.lookup), this.state.lookup, this.sandbox ? this.state.world.laws : this.state.knownLaws);
+    return theoryOf(extractedParts(awakenParts(v.parts || [], comp, this.state.lookup), comp, this.state.lookup), this.state.lookup, this.sandbox ? this.state.world.laws : this.state.knownLaws);
   }
 
   /**
@@ -1629,6 +1671,7 @@ export class LabScreen {
         const m = st.lookup(id);
         return h('div', { class: 'row small' }, h('span', { class: 'swatch', style: { background: rgbToHex(m ? m.look || m.color : [0.5, 0.5, 0.5]) } }), h('span', { text: `${Math.round((v / tot) * 100)}% ${m ? m.name : id}` }));
       }),
+      ...this.extractionRows(),
       h('div', { class: 'small know' }, h('b', { text: 'Theory ' }), thList.length ? thList.map(([e, v]) => h('span', { class: 'fx-chip dim', title: e.label }, icon(e.icon, 'sm'), ` ≈${Math.round(v)}`)) : h('span', { class: 'muted', text: 'no effects expected' })),
       known ? h('div', { class: 'small know' }, h('b', { text: 'Recipe ' }), ...Object.entries(known.verified).map(([k, v]) => h('span', { class: 'fx-chip dim', title: `${EFFECT_BY_KEY[k].label}, as verified when “${known.name}” was first brewed` }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ~${Math.round(/** @type {number} */ (v))}`))) : null,
       similar ? h('div', { class: 'small warn recipe-partial', text: similar.approx
@@ -1638,6 +1681,33 @@ export class LabScreen {
       h('div', { class: 'small muted', text: `Theory: what the ingredients do on paper.${known ? ' Recipe: what this recipe did when tested.' : ''} Verified: trials of this batch — the only proof.` }),
     ].filter(Boolean));
     void force;
+  }
+
+  /**
+   * Extraction in the brew panel: per ingredient, how much of its magic is
+   * dissolved and how much could be at the brew's present heat; frozen
+   * solvent, emulsion and spirit content.
+   */
+  extractionRows() {
+    const sim = this.sim, st = this.state;
+    const r = extractionReport(sim);
+    const rows = [];
+    for (const it of r.items.slice(0, 6)) {
+      const w = classWords(/** @type {any} */ (it.cls));
+      const pct = Math.round(it.share * 100), cap = Math.round(it.ceiling * 100);
+      const k = st.knowledge[it.id] || {};
+      const burn = k.burnsAt !== undefined ? ` · burns by ${Math.round(k.burnsAt)}°C` : '';
+      rows.push(h('div', { class: 'row small extract-row', title: `${it.name} is ${w.short}: only ${w.solvents} takes its magic up. At the brew's present heat at most ${cap}% can come out; cooler, more can.` },
+        h('span', { text: `${it.name}` }), h('span', { class: 'spacer' }),
+        h('span', { class: 'xbar' }, h('i', { class: 'xbar-fill', style: { width: pct + '%' } }), h('i', { class: 'xbar-cap', style: { left: cap + '%' } })),
+        h('span', { class: it.frozen ? 'warn' : 'muted', text: ` ${pct}% / ${cap}%${it.frozen ? ' frozen' : ''}${burn}` })));
+    }
+    if (rows.length) rows.unshift(h('div', { class: 'small know' }, h('b', { text: 'Extracted ' }), h('span', { class: 'muted', text: 'dissolved / most possible at this heat' })));
+    if (r.frozen > 0.4) rows.push(h('div', { class: 'small warn', text: 'The solvent is frozen: nothing more is extracted until it thaws.' }));
+    const ph = r.phases;
+    if (ph.hydro > 0.5 && ph.lipo > 0.5) rows.push(h('div', { class: 'small ' + (r.emulsified > 0.3 ? 'know' : 'muted'), text: r.emulsified > 0.3 ? 'Emulsion: oil and water are bound into one potion (extraction is slow in an emulsion).' : 'Oil and water stand apart: an emulsifier (about 6 % of the smaller phase) would bind them.' }));
+    if (r.alcohol > 0.001) rows.push(h('div', { class: 'small muted', text: `Spirit: ${(r.alcohol * 100).toFixed(1)}% of the brew` }));
+    return rows;
   }
 
   updateProbe() {
@@ -1743,7 +1813,7 @@ export class LabScreen {
       const a = this.brewAdvice()[0];
       if (a) list.push({ text: ADVICE_SHORT[a.key] || 'Advice', act: 'advice-chip', cls: 'advice', title: a.text, key: a.key, on: () => toast('At the cauldron', a.text, 'bulb', 5000) });
     }
-    if (this.receiver && this.receiver.count) list.push({ text: `Receiver ${this.receiver.count * SIM.ML_PER_PARTICLE} ml`, act: 'receiver', title: 'The alembic’s receiver flask', on: () => panels.openReceiver(this) });
+    if (this.receiver && this.receiver.count >= 0.2) list.push({ text: `Receiver ${Math.round(this.receiver.count * SIM.ML_PER_PARTICLE)} ml`, act: 'receiver', title: 'The alembic’s receiver flask', on: () => panels.openReceiver(this) });
     if (this.app.settings.showFps) list.push({ text: `${this.fpsAcc.fps} fps · ${sim.stats.stepMs.toFixed(1)} ms/step · ${p.count} p` });
     // rebuilt only when something changed, so a chip can be tapped reliably
     const sig = list.map((x) => x.text + '|' + (x.title || '')).join('/');
@@ -1775,7 +1845,7 @@ export class LabScreen {
     const brewing = this.view === 'brew';
     // the hutch lives in real time, whichever room is open
     this._colonyAcc = (this._colonyAcc || 0) + dt;
-    if (this._colonyAcc >= 0.5) { this.tickColony(this._colonyAcc); this._colonyAcc = 0; }
+    if (this._colonyAcc >= 0.5) { this.tickColony(this._colonyAcc); this.tickCellar(); this._colonyAcc = 0; }
     // physics (keeps running in every room so brews keep evolving)
     if (this.autoBrewer) {
       // the homunculus decides once per physics step
@@ -1797,7 +1867,7 @@ export class LabScreen {
       this.accountPours();
     }
     const tw1 = performance.now();
-    if (this.alembicOpen) this.collectVapour();
+    this.collectVapour();
     this.stepBottling(dt);
     this.stepVial(dt);
     this.trackBrew(dt);
@@ -1880,6 +1950,24 @@ export class LabScreen {
         const att = events.filter((e) => e.type === 'attack');
         if (att.length && this.time - (this._feralWarned || -99) > 20) { this._feralWarned = this.time; toast('Trouble in the hutch', `${att[0].fromName} has turned aggressive and is attacking ${att[0].toName}!`, 'claw', 4500); }
       }
+    }
+  }
+
+  /**
+   * The aging cellar goes on in real time (and caught up after a break);
+   * what the cauldron showed about burning goes to the journal.
+   */
+  tickCellar() {
+    if (this.sandbox) return;
+    const st = this.state;
+    for (const e of st.tickCellar()) {
+      const v = st.cellar.vessels[e.vessel];
+      toast(`Cellar vessel ${e.vessel + 1}${v && v.name ? ` (${v.name})` : ''}`, e.text, 'shelf2', 4500);
+    }
+    const ex = this.sim.extraction;
+    for (const e of st.noteBurning(ex.safeSeen, ex.charSeen)) {
+      const m = st.lookup(e.id);
+      toast('Something is burning!', `${m ? m.name : 'An ingredient'} chars at about ${Math.round(e.T)}°C: what was not yet drawn out is lost. Dissolved magic is safe.`, 'flame', 5000);
     }
   }
 
@@ -1973,6 +2061,7 @@ export class LabScreen {
       case 'reaction': audio.play('reaction'); break;
       case 'crush': if (Math.random() < 0.5) audio.play('crush'); break;
       case 'ignite': audio.play('ignite'); break;
+      case 'char': if (Math.random() < 0.4) audio.play('ignite'); break;
       case 'awaken': audio.play('awaken'); break;
       case 'crack': audio.play('crack'); break;
       case 'spark': if (Math.random() < 0.3) audio.play('crush'); break;
@@ -2010,24 +2099,19 @@ export class LabScreen {
     }
   }
 
-  /** The Free Experiment's alembic: draw vapour from under the closed lid into the receiver flask. */
+  /** The still's receiver: what the condenser collected (simulation) gathers in the flask. */
   collectVapour() {
-    const sim = this.sim, p = sim.p, c = sim.cauldron;
-    if (!c.lidClosed || !this.sandbox) return;
+    const sim = this.sim, got = sim.condenser.receiver;
+    const ids = Object.keys(got);
+    if (!ids.length) return;
     this.receiver = this.receiver || { count: 0, comp: {}, color: [0.7, 0.8, 0.9] };
     const rec = this.receiver;
-    let took = 0;
-    for (let i = p.count - 1; i >= 0 && took < 3; i--) {
-      if (p.phase[i] !== PHASE.GAS || p.y[i] > 0.25 || p.x[i] < c.mouth * 0.3) continue;
-      for (let s = 0; s < sim.species.count; s++) {
-        const f = p.comp[i * MAX_SPECIES + s];
-        if (f > 0 && sim.species.defs[s]) rec.comp[sim.species.defs[s].id] = (rec.comp[sim.species.defs[s].id] || 0) + f;
-      }
-      rec.color = [sim.colR[i], sim.colG[i], sim.colB[i]];
-      rec.count++;
-      sim.removeParticle(i);
-      took++;
+    for (const id of ids) {
+      rec.comp[id] = (rec.comp[id] || 0) + got[id];
+      rec.count += got[id];
+      delete got[id];
     }
+    rec.count = Math.round(rec.count * 1000) / 1000;
   }
 
   /** Pour the receiver's distillate back into the cauldron (as liquid). */
@@ -2105,12 +2189,12 @@ export class LabScreen {
 const SANDBOX_FIRE = { maxFlame: 800, heatPower: 8 };
 
 /** Short labels of the brew advice (lab.brewAdvice) for the chip row. */
-const ADVICE_SHORT = { whole: 'Whole herbs: crush', window: 'Outside the steep', warm: 'Not steeped yet', steam: 'Steam escaping', stir: 'Uneven: stir' };
+const ADVICE_SHORT = { whole: 'Whole herbs: crush', solvent: 'Wrong solvent', frozen: 'Frozen: no extraction', ceiling: 'Cool to draw more', burn: 'Burning risk', emulsion: 'Needs an emulsifier', steam: 'Steam escaping', stir: 'Uneven: stir' };
 
 /** What each promotion brings (the difficulty curve, in the guild's words). */
 const RANK_NEWS = [
   '',
-  'Journeyman: cooling and insight orders arrive, the herbalist sells the common herbs, and the guild offers the Frost Rune (deep cold), the Clockwork Stirrer and the Arcanometer.',
+  'Journeyman: cooling and insight orders arrive, some customers want alcohol-free cold tinctures, and the guild offers the Frost Rune (deep cold), the Alembic & Condenser, the Aging Cellar and temperature runes, the Clockwork Stirrer and the Arcanometer.',
   'Adept: strong orders need awakened magic, or a brew boiled down with the lid open, and customers combine two effects. The Moonfen opens, its magic woken by cold; larger cauldrons and the Guild Charter are for sale.',
   'Expert: customers combine several effects and techniques in one order. The Ember Crags open; the Glacial Sigil reaches the deepest cold, and the Brass Homunculus brews your recipes.',
   'Master: the grandest commissions — several effects, awakened, in exact measure. The Queen’s herald may call.',

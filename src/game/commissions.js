@@ -46,7 +46,7 @@ import { REQUESTS, TIER_TARGET, PURITY_LIMIT, requestById, purityLimitFor } from
 import { rateAt } from '../alchemy/extraction.js';
 
 /** Spirit an alcohol-free potion may still hold (percent of its volume). */
-export const ALCOHOL_FREE_LIMIT = 2;
+export const ALCOHOL_FREE_LIMIT = 3;
 
 /** The purity limit an order is planned for (its tier's, else the strictest). @param {any} ctx */
 const plim = (ctx) => (ctx && ctx.purity) || PURITY_LIMIT;
@@ -124,7 +124,7 @@ function solventsOf(ctx) {
  * Preparation for one reagent: how hot (or cold) and how long to brew so
  * that its magic reaches the liquid. Uses the reagent's own extraction
  * reaction where it has one.
- * @returns {{solvent:any, heatTo:number, coolTo:number, hold:number, ground?:boolean, lo?:number, hi?:number}|null}
+ * @returns {{solvent:any, heatTo:number, coolTo:number, hold:number, ground?:boolean, lo?:number, hi?:number, extract?:boolean}|null}
  */
 function prepFor(m, ctx, solvents) {
   const water = solvents.find((x) => x.id === ctx.world.roles.water) || solvents[0];
@@ -743,7 +743,7 @@ export const TECHNIQUES = [
       if (!wanted.every((w) => w.sign * r2.effects[EFFECT_INDEX[w.key]] >= w.sign * pred.effects[EFFECT_INDEX[w.key]] * 1.1)) return null;
       return {
         plan: p2, pred: r2, strengthen: true,
-        reqs: [{ key: 'alcohol', kind: /** @type {'max'} */ ('max'), target: ALCOHOL_FREE_LIMIT, tol: 0, zero: 8, label: `alcohol-free: at most ${ALCOHOL_FREE_LIMIT}% spirit` }],
+        reqs: [{ key: 'alcohol', kind: /** @type {'max'} */ ('max'), target: ALCOHOL_FREE_LIMIT, tol: 0, zero: 8, label: `alcohol-free: at most ${ALCOHOL_FREE_LIMIT}% spirit left` }],
         say: 'Not a drop of spirit in it, mind — but I want it as strong as a proper cold tincture.',
       };
     },

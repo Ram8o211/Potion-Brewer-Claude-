@@ -23,6 +23,8 @@ import { causeWord } from '../game/colony.js';
 import { rarityTag } from './rarity-ui.js';
 import { BIOME_BY_ID } from '../game/biomes.js';
 import { seedChance } from '../materials/rarity.js';
+import { classWords } from '../alchemy/extraction.js';
+import { vesselReport, vesselVolume, potionDrive, RUNE_PRICE } from '../game/cellar.js';
 
 const CAT_LABEL = { heat: 'Fire', cold: 'Cooling', vessel: 'Cauldrons', tool: 'Tools', instrument: 'Instruments', trials: 'Trials room', gathering: 'Foraging', storage: 'Potion storage', guild: 'Guild' };
 
@@ -118,6 +120,21 @@ function renderReagents(lab, body, rerender) {
       locked ? icon('lock') : buyRow,
     ));
   }
+  if (!lab.sandbox) {
+    const price = Math.round(RUNE_PRICE * (1 - st.cap.discount) * 10) / 10;
+    const locked = st.rank < 1;
+    const b = btn('Buy', () => {
+      const r = st.buyRune();
+      if (r.ok) { audio.play('purchase'); toast('A temperature rune', 'Set it on a cellar vessel to hold it at the heat you choose until it wears out.', 'rune'); } else { audio.play('error'); toast('Cannot buy', r.reason, 'lock'); }
+      rerender();
+    }, { cls: 'small', disabled: locked || st.coins < price, act: 'buy-rune', title: `Buy a temperature rune for ${coins(price)} coins` });
+    b.appendChild(h('span', { class: 'price' }, icon('coin'), coins(price)));
+    list.appendChild(h('div', { class: 'item parch' + (locked ? ' locked' : '') }, icon('rune'),
+      h('div', {}, h('div', { class: 'title', text: 'Temperature rune' }),
+        h('div', { class: 'meta', text: locked ? 'The runesmith sells to a Journeyman or above. Old runes also turn up underground in the Wilds.' : 'Holds a cellar vessel at the temperature you choose, against the heat or cold of its potion, until it wears out. Also found underground in the Wilds.' }),
+        h('div', { class: 'meta', text: `owned: ${st.cellar.runes}` })),
+      locked ? icon('lock') : b));
+  }
   body.appendChild(list);
 }
 
@@ -204,6 +221,11 @@ export function openIngredient(lab, id) {
       h('span', { class: 'k', text: 'Species' }), h('span', {}, rarityTag(m), ` ${BIOME_BY_ID[m.wild.region] ? BIOME_BY_ID[m.wild.region].name : ''}`),
       h('span', { class: 'k', text: 'Seeds' }), h('span', { text: `${st.garden.seeds[m.wild.key + (m.wild.arcane ? '+arcane' : '')] || 0} in hand · a harvest drops one ${Math.round(seedChance(m.wild.rarity, !!m.wild.arcane) * 100)}% of the time` }),
     ] : []),
+    ...(m.extraction ? [
+      h('span', { class: 'k', text: 'Dissolves in' }), h('span', { text: `${classWords(m.extraction.cls).solvents} (${classWords(m.extraction.cls).short}); more comes out cool than hot, everything only well below freezing${m.extraction.cls === 'hydro' ? ' — in spirit' : ' — in chilled oil'}` }),
+      h('span', { class: 'k', text: 'Burns' }), h('span', { text: k.burnsAt !== undefined ? `seen burning at ${Math.round(k.burnsAt)}°C${k.safeTo !== undefined && k.safeTo < k.burnsAt ? `, unharmed at ${Math.round(k.safeTo)}°C` : ''}` : k.safeTo !== undefined && k.safeTo > 100 ? `unknown — unharmed up to ${Math.round(k.safeTo)}°C so far` : 'unknown — somewhere above water’s boiling point (heat it in oil to find out)' }),
+      ...(m.emulsifier ? [h('span', { class: 'k', text: 'Emulsifies' }), h('span', { text: 'yes: it helps bind oil and water into one potion' })] : []),
+    ] : m.emulsifier ? [h('span', { class: 'k', text: 'Emulsifies' }), h('span', { text: 'binds oil and water: about 6 parts per 100 of the smaller phase, which must stay under two fifths of the liquid' })] : []),
     h('span', { class: 'k', text: 'Magic' }), h('span', { text: !isMagical(m) ? (m.wild && m.wild.catalog ? 'ordinary: it never awakens (only its Arcane form can)' : 'none to awaken') : k.awaken !== undefined ? `Arcane: awoke near ${k.awaken}°C in your brew (observed)` : 'Arcane: it can awaken — its threshold is unknown (heat or chill it to find out)' }),
     h('span', { class: 'k', text: 'Price' }), h('span', { text: `${coins(st.priceOf(id))} / 100 ml` }),
   );
@@ -223,7 +245,7 @@ export function openIngredient(lab, id) {
       h('div', { class: 'card parch ing-card' }, jarCanvas(m, 22, 30), h('div', {}, h('div', { text: m.description }), h('div', {}, ...tags.map((t) => h('span', { class: 'tag', text: t }))))),
       h('div', { class: 'card parch' }, facts),
       h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: m.remains ? 'Effects' : m.product ? 'Effects of this pure substance (as the guild knows it)' : 'Known effects of the pure ingredient (mixtures must be tested)' }), asp,
-        (m.wild || m.remains) && m.form === 'solid' ? h('div', { class: 'small', text: 'Supplied whole: crush it in the pot with the pestle (Crush). Only what dissolves takes effect.' }) : null),
+        (m.wild || m.remains) && m.form === 'solid' ? h('div', { class: 'small', text: 'Supplied whole: crush it in the pot with the pestle (Crush). Only the magic drawn out into its solvent takes effect; a whole piece gives slowly, at its surface.' }) : null),
       balance.length ? h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Its side effects cancel against their opposites:' }), ...balance.map((t) => h('div', { class: 'small', text: '• ' + t }))) : null,
       reactions.length ? h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Known reactions' }), ...reactions.map((r) => h('div', { class: 'small', text: `• ${r.name}: ${r.hint || ''}` }))) : null,
     ],
@@ -270,8 +292,10 @@ export function openHint(lab) {
     const tips = [];
     if (main) tips.push(`A guild alchemist would start from ${main.name}${main.wild ? ` (it grows in the ${main.wild.region === 'forest' ? 'Whisperwood' : main.wild.region === 'netherwood' ? 'Netherwood' : main.wild.region === 'meadow' ? 'Sunlit Meadow' : main.wild.region === 'river' ? 'Willow Bank' : main.wild.region === 'quarry' ? 'Ironstone Quarry' : main.wild.region === 'moonfen' ? 'Moonfen' : 'Ember Crags'})` : ''}.`);
     if (ref.ingredients.some((i) => i.ground)) tips.push('Crush what is whole with the pestle — only what dissolves takes effect.');
-    if (ref.steep && ref.steep.T < 15) tips.push('Part of this wants ice-cold water, not heat — cold, but not frozen.');
-    else if ((ref.heatTo ?? 20) > 40 && !com.activation) tips.push('Patience and gentle heat draw out more than stirring alone.');
+    const oily = ref.ingredients.some((i) => { const d = st.lookup(i.id); return d && d.extraction && d.extraction.cls === 'lipo'; });
+    if (oily) tips.push('Its main herb is oil-soluble: steep it in oil, not water.');
+    if (ref.distil) tips.push('Steep it in spirit well below freezing — only spirit stays liquid there and draws everything out — then add water and distil the spirit off with the still head.');
+    else if (ref.steep && ref.steep.hold >= 20) tips.push('Grind, stir and give it time: herbs give up their magic gradually, and more of it cool than hot.');
     if (ref.reduce) tips.push('It must be stronger than the herbs give plainly: boil some water off with the lid open — and cancel the side effects harder, for they grow too.');
     if (com.activation) {
       const cold = com.predicted && com.predicted.threshold !== null && com.predicted.threshold < 0;
@@ -556,10 +580,16 @@ export function openReceiver(lab) {
   const parts = Object.entries(rec.comp).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([id, f]) => `${st.lookup(id) ? st.lookup(id).name : id} ${Math.round((f / tot) * 100)}%`).join(', ');
   let m;
   m = modal({
-    title: `Receiver flask · ${rec.count * SIM.ML_PER_PARTICLE} ml`,
-    body: h('div', { class: 'card parch' }, h('div', { class: 'small', text: `What the alembic drew off: ${parts}.` }),
-      h('div', { class: 'small muted', text: 'Water and spirit boil off together: a distillate is rarely one thing.' })),
+    title: `Receiver flask · ${Math.round(rec.count * SIM.ML_PER_PARTICLE)} ml`,
+    body: h('div', { class: 'card parch' }, h('div', { class: 'small', text: `What the still drew off: ${parts}.` }),
+      h('div', { class: 'small muted', text: 'Spirit boils off first, water after it; the dissolved magic never boils. Jarred, the solvents go back on your shelf.' })),
     foot: [
+      lab.sandbox ? null : btn('Jar the solvents', () => {
+        const got = st.collectDistillate(rec.comp);
+        const lines = Object.entries(got).map(([id, ml]) => `${ml} ml of ${st.lookup(id).name}`);
+        toast('Distillate jarred', lines.length ? lines.join(', ') + ' back on the shelf.' : 'Nothing worth jarring (or no room on the shelf).', 'alembic');
+        lab.receiver = null; lab.updateShelf(); m.close();
+      }, { icon: 'jar', cls: 'primary', act: 'receiver-jar' }),
       btn('Pour into the cauldron', () => { lab.pourReceiver(); m.close(); }, { icon: 'pour', act: 'receiver-pour' }),
       btn('Pour away', () => { lab.receiver = null; m.close(); }, { icon: 'trash', cls: 'danger', act: 'receiver-away' }),
     ],
@@ -583,7 +613,7 @@ export function openHelp() {
       ].map((t) => h('li', { text: t })))),
     sec('Orders and selling', 'stall', ['Customers ask for an effect — healing, strength, love, fire… — at a strength in percent (everyday orders want about 8–15 %).', 'Most orders forbid side effects: “no other effect above 1.2 %”. Every other kind of magic in the bottle must stay that faint.', 'Before a sale you write the label — tested values, the guild theory’s estimates, “none” or unknown — and bargain over the price. The customer comes back the next day: pleased, or with a complaint. Refund them, dispute it with your trial records, or turn them away.', 'Bottle onto the potion shelves whenever there is room (3 bottles; more with a Bottle Shelf, Potion Cabinet or Bottle Cellar). Bottles of one batch share its trials.', 'Honest, well-tested potions earn reputation. Reputation raises your rank, which opens regions, ingredients, equipment and harder orders.'], true),
     sec('Ingredients and side effects', 'leaf', ['The Shop sells no prepared reagents — only free well water and two plain solvents, oil and spirit. Every effect comes from what you gather.', 'Nothing that grows is pure: each herb or mineral brings side effects. Cancel them with their opposites — fire and frost, life and death (life also mends poison, two parts to one), acid and alkali.', 'Long-press (or right-click) a jar to see what it does and what cancels its side effects.', 'You know what each plain ingredient does. You do NOT know what a mixture does: extraction, heat, reactions and hidden laws change it.']),
-    sec('Brewing', 'cauldron', ['Pour: tap a jar, then a dose button (25–250 ml) — or hold your finger in the cauldron, or drag a jar onto it.', 'Crush: whole roots, leaves and stones go into the pot whole and give up almost nothing until you break them up with Crush (the pestle).', 'Steep at the right heat: most herbs give two to three times as much held warm in their steeping window (see the herb’s card and your journal). Some want ice-cold water: Frostcap near 9 °C gives about three times as much — but frozen solid gives less. Heartpetal wilts above about 85 °C.', 'Stir after every addition: an unstirred brew pours unevenly, so later bottles may not match the tested dose. Auto stirs for you (the Clockwork Stirrer about three times as fast).', 'The fire control: right heats, left cools; tap Off beside it (or press 0) to put it out at once. The lid keeps steam in; boiling with the lid off makes a brew smaller and stronger — side effects too. Add water to weaken it.', 'Tap the ml · °C readout over the cauldron to see what is in it; Inspect reads one spot; Sample measures what a bottle would hold.']),
+    sec('Brewing', 'cauldron', ['Pour: tap a jar, then a dose button (25–250 ml) — or hold your finger in the cauldron, or drag a jar onto it.', 'Crush: whole roots, leaves and stones go into the pot whole and give up almost nothing until you break them up with Crush (the pestle).', 'Extraction: an herb’s magic dissolves only in its own solvent — water-soluble herbs in water or spirit, oil-soluble ones only in oil (see the herb’s card). It comes out gradually: heat makes it quicker, but less of it can come out hot; cool it again and more comes out. Everything comes out only well below freezing — in spirit (water freezes) or chilled oil — and a frozen solvent extracts nothing. Watch the brew panel’s Extracted bars.', 'Burning: every herb has its own burning point, above water’s boil, found only by trying. Undissolved matter above it chars and its magic is lost; what is already dissolved is safe. Water boils first, so it is hot oil that burns herbs.', 'Emulsions: oil and water extracts stay apart unless an emulsifier binds them — the neutral gum from the Shop, about 6 % of the smaller phase, with the smaller phase under two fifths of the liquid. An emulsion extracts badly: extract each in its own solvent first, then bind them.', 'Distillation (Alembic & Condenser): put the still head on and heat between spirit’s and water’s boiling points; the spirit goes into the receiver and the magic stays. Jar the distillate to use the spirit again.', 'The Aging Cellar: lay a brew down to go on extracting for hours, even while the game is closed. A Fire or Frost potion keeps warming or chilling the vessel; a temperature rune holds it where you choose until it wears out.', 'Stir after every addition: an unstirred brew pours unevenly, so later bottles may not match the tested dose. Auto stirs for you (the Clockwork Stirrer about three times as fast).', 'The fire control: right heats, left cools; tap Off beside it (or press 0) to put it out at once. The lid keeps steam in; boiling with the lid off makes a brew smaller and stronger — side effects too. Add water to weaken it.', 'Tap the ml · °C readout over the cauldron to see what is in it; Inspect reads one spot; Sample measures what a bottle would hold.']),
     sec('Arcane awakening', 'awaken', ['Magical ingredients carry a hidden arcane threshold. Heat the brew past it (or, for cold magic, chill it below) and the magic awakens: it glows and acts two to three times stronger — side effects too.', 'In a blend the threshold is the mix of its magical ingredients’ thresholds, by volume. Mix first at room temperature, then heat or chill; a half-mixed brew awakens unevenly.', 'Awakened magic stays awake when it cools, is bottled or kept. Only dilution and reactions undo it. The Arcanometer reads a brew’s threshold.']),
     sec('Trials and rabbits', 'rabbit', ['Choose a rabbit and give it a dose (5, 10 or 25 ml) from the cauldron tap or the sealed vial. One trial reads every effect at once.', 'Each reading is uncertain: the ± margin is how far the truth may lie. One reading is a rough guess; repeating it on the same rabbit helps a little; other rabbits help most (detected once → repeated → corroborated).', '“Not detected” is not proof of absence: a faint effect can hide below the noise. Cautious customers want readings repeated or corroborated, and every customer pays more for a well-tested label.', 'Effects pile up in a rabbit and fade slowly. Past its own hidden limit an effect runs out of control and can kill it; fire and acid burn; strength and vitality can make it attack; love makes it mate. A purging draught washes everything out. Rabbits can be fed, bred, bought and put down; a body’s remains can be recovered once as an ingredient.', 'When a trial surprises you, a hidden law may be at work. Confirm it twice and your theory learns it.']),
     sec('Wilds', 'tree', ['Tap a mature plant in the picture, or its button, to gather. Every plant grows from sprout to ripe to mature, and only a mature one can be harvested. A harvest leaves a mark on the ground that fades; new sprouts come up at random spots until the region is full again, even while the game is closed.', 'Thorough digs the plant out for twice as much, but its kind then sprouts at half pace. Roots, seams, mosses and dust need the Forager’s Kit for a full harvest.', 'Twilight plants open only at dawn (before you open the shop) or at dusk (after the last customer). The weather changes daily. New regions open with rank.']),
@@ -659,4 +689,56 @@ export function openSettings(app, lab) {
       h('div', { class: 'small muted credits', text: 'The Alchemist’s Shop — all art, sound, font and code made for this game. Runs fully offline.' }),
     ],
   });
+}
+
+/**
+ * The aging cellar: its vessels, what each holds and how far its extraction
+ * has come, and the actions — lay the brew (or a shelved bottle) down, warm
+ * or chill it with a Fire or Frost potion, hold it with a rune, bottle it.
+ * @param {any} lab
+ */
+export function openCellar(lab) {
+  const st = lab.state;
+  /** @type {any} */
+  let m = null;
+  const rerender = () => { if (m) { clear(m.body); m.body.append(...render()); } };
+  const fireFrost = () => st.bottles.filter((b) => b.m && potionDrive(b.m.effects));
+  const render = () => {
+    st.tickCellar();
+    const out = [h('div', { class: 'small muted', text: `Runes in hand: ${st.cellar.runes}. A vessel extracts slowly but for hours, even while the shop is closed. Warmed by a Fire potion or chilled by a Frost potion it keeps heating or cooling — until its herbs burn or it freezes — unless a rune holds it.` })];
+    st.cellar.vessels.forEach((v, k) => {
+      const rep = vesselReport(v, st.lookup);
+      const empty = vesselVolume(v) <= 0;
+      const card = h('div', { class: 'card parch cellar-vessel', 'data-vessel': String(k) },
+        h('div', { class: 'row' }, icon('shelf2'), h('b', { text: `Vessel ${k + 1}` }), h('span', { class: 'spacer' }), h('span', { class: 'small muted', text: empty ? 'empty' : `${Math.round(rep.ml)} ml · ${Math.round(rep.T)}°C` })));
+      if (!empty) {
+        card.append(h('div', { class: 'small', text: v.name || 'A laid-down brew' }));
+        const heat = rep.rune ? `held at ${rep.rune.target}°C by a rune (${Math.round((1 - rep.rune.wear) * 100)}% left)` : rep.drive > 0 ? `warming ${Math.round(rep.drive)}°C an hour` : rep.drive < 0 ? `cooling ${Math.round(-rep.drive)}°C an hour` : 'at cellar temperature';
+        card.append(h('div', { class: 'small ' + (rep.frozen ? 'warn' : 'muted'), text: `${heat}${rep.frozen ? ' · frozen: extraction stopped' : ''}${rep.char > 0.5 ? ` · ${Math.round(rep.char)} ml burnt to char` : ''}${rep.alcohol > 0.5 ? ` · ${rep.alcohol.toFixed(0)}% spirit` : ''}` }));
+        for (const it of rep.items) {
+          const k2 = st.knowledge[it.id] || {};
+          card.append(h('div', { class: 'row small extract-row' }, h('span', { text: it.name }), h('span', { class: 'spacer' }),
+            h('span', { class: 'xbar' }, h('i', { class: 'xbar-fill', style: { width: Math.round(it.share * 100) + '%' } }), h('i', { class: 'xbar-cap', style: { left: Math.round(it.ceiling * 100) + '%' } })),
+            h('span', { class: 'muted', text: ` ${Math.round(it.share * 100)}% / ${Math.round(it.ceiling * 100)}%${k2.burnsAt !== undefined ? ` · burns by ${Math.round(k2.burnsAt)}°C` : ''}` })));
+        }
+      }
+      const acts = h('div', { class: 'row', style: { flexWrap: 'wrap', gap: '6px' } });
+      if (empty) {
+        acts.append(btn('Lay down the brew', () => { lab.layDownCauldron(k); rerender(); }, { icon: 'cauldron', act: `cellar-fill-${k}`, disabled: !lab.sim.p.count, title: 'Pour everything in the cauldron into this vessel' }));
+        for (const b of st.bottles.slice(0, 4)) acts.append(btn(`Lay down ${Math.round(b.ml)} ml bottle`, () => { const r = st.layDown(k, { bottleId: b.id }); if (!r.ok) toast('Cannot', r.reason, 'lock'); rerender(); }, { icon: 'bottle', cls: 'small', act: `cellar-bottle-${k}` }));
+      } else {
+        for (const b of fireFrost().slice(0, 3)) {
+          const d = potionDrive(b.m.effects);
+          acts.append(btn(`${d > 0 ? 'Warm' : 'Chill'} with ${Math.round(b.ml)} ml (${d > 0 ? '+' : ''}${Math.round(d)}°C/h)`, () => { const r = st.activateVessel(k, b.id); if (!r.ok) toast('Cannot', r.reason, 'lock'); else audio.play('select'); rerender(); }, { icon: d > 0 ? 'flame' : 'snow', cls: 'small', act: `cellar-activate-${k}` }));
+        }
+        const input = /** @type {HTMLInputElement} */ (h('input', { type: 'number', value: String(Math.round(v.rune ? v.rune.target : -10)), min: '-60', max: '300', step: '1', style: { width: '4.5em' }, 'aria-label': 'Rune temperature (°C)' }));
+        acts.append(input, btn('Set a rune', () => { const r = st.runeVessel(k, Number(input.value)); if (!r.ok) toast('Cannot', r.reason, 'lock'); else audio.play('select'); rerender(); }, { icon: 'rune', cls: 'small', act: `cellar-rune-${k}`, disabled: st.cellar.runes <= 0 }));
+        acts.append(btn('Bottle it', () => { const r = st.bottleVessel(k); if (!r.ok) toast('Cannot', r.reason, 'lock'); else { toast('Bottled from the cellar', `${Math.round(r.vial.ml)} ml onto the potion shelves. Test it before you sell it.`, 'bottle'); audio.play('glass'); } rerender(); }, { icon: 'bottle', cls: 'small primary', act: `cellar-bottle-out-${k}` }));
+      }
+      card.append(acts);
+      out.push(card);
+    });
+    return out;
+  };
+  m = modal({ title: 'Aging cellar', wide: true, body: render() });
 }
