@@ -190,12 +190,13 @@ export function freezingPoint(v, lookup) {
 /**
  * Advance one vessel to `now` (fixed steps).
  * @param {Vessel} v @param {(id:string)=>any} lookup @param {number} now ms
+ * @param {number} [pace] how many cellar seconds pass per real second (the Free Experiment's cellar is quicker)
  * @returns {string[]} what happened (for notices)
  */
-export function advanceVessel(v, lookup, now) {
+export function advanceVessel(v, lookup, now, pace = 1) {
   const events = [];
   if (!(now > v.t)) return events;
-  let dt = Math.min((now - v.t) / 1000, MAX_OFFLINE) + (v.carry || 0);
+  let dt = Math.min(((now - v.t) / 1000) * (pace > 0 ? pace : 1), MAX_OFFLINE) + (v.carry || 0);
   v.t = now;
   if (vesselVolume(v) <= 0) { v.carry = 0; return events; }
   const get = infoOf(lookup);
@@ -212,13 +213,13 @@ export function advanceVessel(v, lookup, now) {
 }
 
 /**
- * Advance every vessel of the cellar to `now`.
- * @param {{vessels:Vessel[]}} cellar @param {(id:string)=>any} lookup @param {number} [now]
+ * Advance every vessel of the cellar to `now` (at the cellar's own `pace`, if it has one).
+ * @param {{vessels:Vessel[], pace?:number}} cellar @param {(id:string)=>any} lookup @param {number} [now]
  */
 export function advanceCellar(cellar, lookup, now = Date.now()) {
   const out = [];
   for (const v of cellar.vessels) {
-    const ev = advanceVessel(v, lookup, now);
+    const ev = advanceVessel(v, lookup, now, cellar.pace || 1);
     for (const e of ev) out.push({ vessel: v.id, text: e });
   }
   return out;

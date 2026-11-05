@@ -34,8 +34,9 @@ export class CounterView {
     const lab = this.lab, st = lab.state;
     const el = clear(this.el);
     if (lab.sandbox) {
-      el.append(h('div', { class: 'card parch' }, h('h3', { text: 'Free Experiment' }), h('div', { class: 'small', text: 'No customers here: every reagent, tool and subject is yours to play with. Bottle what you like, test everything.' })));
+      el.append(h('div', { class: 'card parch' }, h('h3', { text: 'Free Experiment' }), h('div', { class: 'small', text: 'No customers here: every reagent, tool and subject is yours to play with. Bottle what you like, test everything, keep bottles on the shelves for the cellar.' })));
       this.vialCard(el);
+      this.shelfCard(el);
       return;
     }
     for (const f of st.dueFollowUps()) el.append(trade.followUpCard(lab, f));
@@ -156,7 +157,7 @@ export class CounterView {
     const labelB = btn(v.label ? 'Edit label' : 'Write label', () => lab.identifyVial(), { icon: 'tag', act: 'label', title: 'What the label claims the potion does' });
     const testB = btn('Test it', () => { lab.trialSource = 'vial'; lab.showView('trials'); }, { icon: 'dropper', act: 'test-vial', title: 'Give a dose from this vial to a rabbit' });
     const back = btn('Pour back', () => lab.pourBackVial(), { icon: 'pour', act: 'pour-back', title: 'Return the vial to the cauldron to keep working on it' });
-    const store = lab.sandbox ? null : btn('To shelf', () => lab.shelveVial(), { icon: 'shelf2', act: 'shelve-vial', disabled: st.bottleRoom <= 0, title: st.bottleRoom <= 0 ? 'The potion shelves are full' : 'Keep this bottle on the potion shelves' });
+    const store = btn('To shelf', () => lab.shelveVial(), { icon: 'shelf2', act: 'shelve-vial', disabled: st.bottleRoom <= 0, title: st.bottleRoom <= 0 ? 'The potion shelves are full' : 'Keep this bottle on the potion shelves' });
     const discard = btn('Discard', async () => { if (await confirmDialog('Discard the vial?', 'The potion is poured away. Ingredients are not refunded.', 'Discard', 'danger')) lab.discardVial(); }, { icon: 'trash', cls: 'danger', act: 'discard', title: 'Pour the vial away' });
     el.append(h('div', { class: 'card parch vial-card' },
       h('div', { class: 'row' }, cv, h('div', {},
@@ -177,7 +178,6 @@ export class CounterView {
    */
   shelfCard(el) {
     const lab = this.lab, st = lab.state;
-    if (lab.sandbox) return;
     lab.freshBottles();
     const cap = st.cap.bottles;
     if (this.sel && !st.bottles.some((b) => b.id === this.sel)) this.sel = null;

@@ -176,6 +176,14 @@ charge. In the campaign the same code paths stay in the engine, but no
 control, reading or requirement exposes them (`lab.js` checks
 `this.sandbox`).
 
+The other way round, everything the campaign has is in the Free Experiment
+too (`game/sandbox.js prepareSandbox`): all six rooms, the potion shelves,
+the aging cellar (runes never run out; `cellar.pace` ages it 60× faster),
+the still's receiver, burn warnings, and the garden (a seed of every
+species in both forms, never used up; twelve beds at Arcane chamber grade;
+`garden.pace` grows crops 60× faster). A feature added to the campaign
+should be checked against `prepareSandbox` and the `lab.sandbox` branches.
+
 ## 7. Experiments, evidence and hidden knowledge
 
 * A rabbit reads every effect with a hidden lifelong bias and a per-dose

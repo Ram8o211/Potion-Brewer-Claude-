@@ -153,3 +153,38 @@ test('swiping the tool row over Auto scrolls it without starting the stirrer', a
   }
   expect(errors).toEqual([]);
 });
+
+test('the campaign’s rooms and stores are here too: shelves, the cellar and the garden', async ({ page }, info) => {
+  const errors = watchErrors(page);
+  await startSandbox(page);
+  // bottle onto the potion shelves, as in the shop
+  await pourRole(page, 'water', 200, 0);
+  await page.waitForTimeout(800);
+  await page.click('[data-act=bottle]');
+  await page.click('[data-act=bottle-dest-shelf]');
+  await page.click('[data-act=bottle-50]');
+  await page.waitForFunction(() => /** @type {any} */ (window).__alchemist.screen.state.bottles.length === 1);
+  await page.click('[data-act=tab-counter]');
+  await expect(page.locator('[data-act=bottle-slot]')).toHaveCount(1);
+  // the cellar: lay the brew down, and set as many runes as wanted
+  await page.click('[data-act=tab-brew]');
+  await page.click('[data-act=cellar]');
+  await page.click('[data-act=cellar-fill-0]');
+  await expect(page.locator('.cellar-vessel').first()).toContainText('ml');
+  for (let k = 0; k < 2; k++) await page.click('[data-act=cellar-rune-0]');
+  expect(await lab(page, (l) => l.state.cellar.runes === Infinity && !!l.state.cellar.vessels[0].rune)).toBe(true);
+  await expect(page.locator('.overlay .modal')).toContainText('unlimited');
+  await shot(page, info, 'sandbox-cellar');
+  await page.locator('.overlay .modal-head .btn').first().click();
+  // the garden: every bed, every seed
+  await page.click('[data-act=tab-garden]');
+  const seeds = page.locator('.seeds .seed');
+  expect(await seeds.count()).toBeGreaterThan(100);
+  // choose a plot, then any seed that grows there: it is sown at once and the seed is not used up
+  await page.click('[data-act=plot-soil1]');
+  await page.locator('.seeds .seed:not([disabled])').first().click();
+  expect(await lab(page, (l) => !!l.state.garden.plots.find((p) => p.id === 'soil1').crop)).toBe(true);
+  expect(await seeds.count()).toBeGreaterThan(100);
+  await shot(page, info, 'sandbox-garden');
+  expect(errors).toEqual([]);
+});

@@ -33,6 +33,9 @@ const BED_LOOK = {
   tide: { rim: ['#b09a6a', '#e0cc96', '#7a6a4a'], dry: [0.25, 0.48, 0.62], wet: [0.14, 0.32, 0.5], speck: '#d8f0ff' },
 };
 
+/** A growing time, in hours or minutes. @param {number} hours */
+const growText = (hours) => hours >= 1 ? `${Math.round(hours * 10) / 10} h` : `${Math.max(1, Math.round(hours * 60))} min`;
+
 const hex = (rgb) => '#' + rgb.map((v) => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const mixc = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
 
@@ -148,8 +151,8 @@ export class GardenView {
     const sel = this.plot ? g.plots.find((x) => x.id === this.plot) : null;
     for (const s of list) {
       const fits = !sel || (!sel.crop && sel.bed === bedOf(s.key) && sel.grade >= gradeNeeded(s.key, s.arcane));
-      const el = h('button', { class: 'seed' + (this.seed === s.id ? ' selected' : ''), 'data-act': 'seed-' + s.id, role: 'option', title: `${this.seedName(s.id)} ×${s.n} — needs a ${BEDS[bedOf(s.key)].name.toLowerCase()}${gradeNeeded(s.key, s.arcane) ? ` of ${GRADES[gradeNeeded(s.key, s.arcane)].toLowerCase()} grade` : ''}; about ${Math.round(growHours(s.key, s.arcane) * 10) / 10} h to grow (watered)`, disabled: !fits },
-        this.spriteCanvas(seedAsset(s.key, s.arcane), 28), h('span', { class: 'sn', text: `${s.n}× ${s.species.name}` }), rarityTag(/** @type {any} */ ({ wild: { rarity: s.species.rarity, arcane: s.arcane } }), { short: true }));
+      const el = h('button', { class: 'seed' + (this.seed === s.id ? ' selected' : ''), 'data-act': 'seed-' + s.id, role: 'option', title: `${this.seedName(s.id)} ×${s.n} — needs a ${BEDS[bedOf(s.key)].name.toLowerCase()}${gradeNeeded(s.key, s.arcane) ? ` of ${GRADES[gradeNeeded(s.key, s.arcane)].toLowerCase()} grade` : ''}; about ${growText(growHours(s.key, s.arcane) / (g.pace > 1 ? g.pace : 1))} to grow (watered)`, disabled: !fits },
+        this.spriteCanvas(seedAsset(s.key, s.arcane), 28), h('span', { class: 'sn', text: `${Number.isFinite(s.n) ? s.n + '× ' : ''}${s.species.name}` }), rarityTag(/** @type {any} */ ({ wild: { rarity: s.species.rarity, arcane: s.arcane } }), { short: true }));
       el.addEventListener('click', () => {
         this.seed = this.seed === s.id ? null : s.id;
         audio.play('click');
@@ -161,7 +164,9 @@ export class GardenView {
     }
     // ---- upgrades
     const ups = clear(this.upsEl);
-    for (const u of GARDEN_UPGRADES) {
+    // the Free Experiment's garden has every bed at the highest grade and the copper can already
+    if (this.lab.sandbox) ups.appendChild(h('div', { class: 'small', text: `Every bed is an Arcane chamber and the seeds never run out. Crops grow ${g.pace || 1} times faster here.` }));
+    else for (const u of GARDEN_UPGRADES) {
       const maxed = u.max !== undefined && boughtCount(g, u.id) >= u.max;
       ups.appendChild(h('div', { class: 'card' },
         h('div', { class: 'title', text: `${u.name}${u.max !== undefined ? ` (${boughtCount(g, u.id)}/${u.max})` : ''}` }), h('div', { class: 'small', text: u.desc }),
