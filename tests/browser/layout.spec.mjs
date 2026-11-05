@@ -41,7 +41,8 @@ test('brew room: cauldron, order, shelf, tools and tabs are all on screen', asyn
     await expect(page.locator(sel).first(), sel).toBeInViewport();
   }
   const jars = page.locator('.jar');
-  expect(await jars.count()).toBeGreaterThanOrEqual(8);
+  // (three solvents and the Whisperwood's three commons to start)
+  expect(await jars.count()).toBeGreaterThanOrEqual(6);
   await expect(jars.first()).toBeInViewport();
   // the cauldron is the centre of the screen
   const cv = await page.locator('canvas.view-canvas').boundingBox();

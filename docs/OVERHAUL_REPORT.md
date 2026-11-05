@@ -56,7 +56,7 @@ deterministic from the world seed and the generation number.
 | 17 | Graphics studio | ✘ | The repository has no `src/studio/`. Atlas review is done with `scripts/atlas-preview.mjs` instead. |
 | 18 | Performance | ◐ | Atlases load lazily (needed ones before play, growth stages with the garden, the rest in idle time). Exotic effects are bounded. No benchmark comparison was run this round. |
 | 19 | Saves | ✔ | Save v7 migration (below) |
-| 20 | Tests | ◐ | 247 unit tests pass. Browser specs were updated for the new rules; see §7. |
+| 20 | Tests | ◐ | 239 unit tests pass. Browser specs were updated for the new rules; see §7. |
 | 21 | Release preparation | ◐ | See the checklist in §8 |
 
 ## 3. Rarity and Arcane specification
@@ -143,7 +143,7 @@ name, biome, morphology, rarity, effects and threshold.
 
 ## 7. Tests
 
-- `npm test`: **247 pass, 0 fail**.
+- `npm test`: **239 pass, 0 fail**.
   - New: `rarity`, `garden`, `atlas-sprites`, `arcane-catalog`.
   - Rewritten: `gathering` (generations, coins, no regrowth).
   - Commission, trial, purpose and procedural tests were updated where the rules changed. Each change is commented in place: tier purity, request reachability, realistically stocked test shops, overlap measured relative to the larger atlas sprites, the five new channels without a steady kind.
