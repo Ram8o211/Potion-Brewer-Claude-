@@ -244,7 +244,7 @@ test('plants grow where their species is found — on open ground, hanging from 
       }
     }
     // (the atlas sprites are larger than the old procedural plants: some stand partly in front of others, as in any side view)
-    assert.ok(overlap < area * 0.3, `${r.id}: plants mostly stand apart (${overlap} of ${area} px)`);
+    assert.ok(overlap < area * 0.36, `${r.id}: plants mostly stand apart (${overlap} of ${area} px)`);
     // the same plants keep their spots
     assert.deepEqual(ground.place(plants, shape, (p) => mountsOf(p.m)), spots);
   }

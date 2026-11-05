@@ -22,6 +22,7 @@ import { Renderer } from '../rendering/renderer.js';
 import { drawPortrait } from '../rendering/portraits.js';
 import { drawJar } from '../rendering/art.js';
 import { ingredientSprite } from '../rendering/species-sprites.js';
+import { RARITY } from '../materials/rarity.js';
 import { measureParticles, tapSelection, probeSelection, viscosityClass, densityWord } from '../game/measure.js';
 import { scoreRequirement, PROPERTY_LABELS } from '../game/evaluate.js';
 import { processEvent } from '../game/journal.js';
@@ -46,6 +47,7 @@ import { Tutorial } from './tutorial.js';
 import { CounterView } from './views/counter.js';
 import { WildsView } from './views/wilds.js';
 import { TrialsView } from './views/trials.js';
+import { GardenView } from './views/garden.js';
 import { BookView } from './views/book.js';
 import { shortName } from '../game/customers.js';
 
@@ -62,6 +64,7 @@ export const VIEWS = [
   { id: 'counter', label: 'Counter', icon: 'stall', key: 'c' },
   { id: 'brew', label: 'Brew', icon: 'cauldron', key: 'v' },
   { id: 'wilds', label: 'Wilds', icon: 'tree', key: 'w' },
+  { id: 'garden', label: 'Garden', icon: 'seedling', key: 'g' },
   { id: 'trials', label: 'Trials', icon: 'dropper', key: 't' },
   { id: 'book', label: 'Book', icon: 'book', key: 'j' },
 ];
@@ -301,13 +304,13 @@ export class LabScreen {
     this.brewView = h('section', { class: 'view view-brew', 'data-view': 'brew' },
       this.sandbox ? null : this.strip, this.stageEl, this.controls, this.toolbar, this.shelfWrap);
     // ---- other rooms
-    this.views = { counter: new CounterView(this), wilds: new WildsView(this), trials: new TrialsView(this), book: new BookView(this) };
-    this.viewsEl = h('div', { class: 'views' }, this.views.counter.el, this.brewView, this.views.wilds.el, this.views.trials.el, this.views.book.el);
+    this.views = { counter: new CounterView(this), wilds: new WildsView(this), garden: new GardenView(this), trials: new TrialsView(this), book: new BookView(this) };
+    this.viewsEl = h('div', { class: 'views' }, this.views.counter.el, this.brewView, this.views.wilds.el, this.views.garden.el, this.views.trials.el, this.views.book.el);
     // ---- tab bar
     this.tabEls = {};
     this.tabbar = h('nav', { class: 'tabbar frame', 'aria-label': 'Rooms' });
     for (const v of VIEWS) {
-      if (this.sandbox && v.id === 'counter') continue;
+      if (this.sandbox && (v.id === 'counter' || v.id === 'garden')) continue;
       const badge = h('span', { class: 'badge hidden' });
       const b = h('button', { class: 'tab', 'data-act': 'tab-' + v.id, 'aria-label': v.label, title: `${v.label} (${v.key.toUpperCase()})` }, icon(v.icon), h('span', { class: 'tab-lbl', text: v.label }), badge);
       b.addEventListener('click', () => { audio.play('select'); this.showView(v.id); });
@@ -500,7 +503,11 @@ export class LabScreen {
         drawJar(cv.getContext('2d'), 1, 0, 13, 20, m.look || m.color, m.form);
       }
       const stock = h('span', { class: 'jstock' });
-      const el = h('button', { class: 'jar' + (m.wild ? ' wild' : '') + (m.remains ? ' remains' : ''), title: m.name, 'aria-label': m.name, 'data-id': id, role: 'option' }, stock, cv, h('span', { class: 'jname', text: m.remains ? m.remains.short : labels[n] }));
+      // a catalog species shows its rarity (a coloured corner) and its Arcane form; seeds in hand are counted
+      const w = m.wild && m.wild.catalog ? m.wild : null;
+      const seeds = w ? (st.garden.seeds[w.key + (w.arcane ? '+arcane' : '')] || 0) : 0;
+      const badge = w ? h('span', { class: `jrar r-${w.rarity}${w.arcane ? ' arcane' : ''}`, title: `${RARITY[w.rarity].label}${w.arcane ? ', Arcane' : ''}${seeds ? ` · ${seeds} seed${seeds > 1 ? 's' : ''}` : ''}` }, seeds ? h('span', { class: 'jseed', text: String(seeds) }) : null) : null;
+      const el = h('button', { class: 'jar' + (m.wild ? ' wild' : '') + (m.remains ? ' remains' : '') + (w && w.arcane ? ' arcane' : ''), title: m.name, 'aria-label': m.name + (w ? `, ${RARITY[w.rarity].label}${w.arcane ? ', Arcane' : ''}` : ''), 'data-id': id, role: 'option' }, stock, cv, badge, h('span', { class: 'jname', text: m.remains ? m.remains.short : labels[n] }));
       this.bindJar(el, id);
       this.jarEls[id] = { el, stock };
       sh.appendChild(el);

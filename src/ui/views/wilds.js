@@ -51,6 +51,7 @@ import { equipmentById } from '../../game/equipment.js';
 import { RANKS } from '../../game/equipment.js';
 import { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, sceneTouch, crosses, SCENE_W, SCENE_H } from '../../rendering/wild-scene.js';
 import { Ragdoll } from '../../rendering/ragdoll.js';
+import { exoticPush, exoticStep, exoticDraw } from '../../rendering/exotic-fx.js';
 import { sceneOf } from '../../visual/env/scene.js';
 import { plantCanvas, plantFrameOf, plantGlow, emitColour, silhouetteOf, ingredientSprite, speciesOf, mountsOf, variantOf, MIN_HIT } from '../../rendering/species-sprites.js';
 import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
@@ -61,7 +62,7 @@ import { defaultSnap, penHasRoom, PEN_MAX } from '../../game/colony.js';
 import { KINDS } from '../../game/kinds.js';
 
 /** The shadow a plant casts on its ground, by region (the crags' is warm and deep, the fens' cold). */
-const SHADOW = { forest: 'rgba(8,16,10,0.32)', netherwood: 'rgba(6,4,16,0.4)', meadow: 'rgba(24,30,10,0.26)', river: 'rgba(4,14,16,0.34)', quarry: 'rgba(26,18,10,0.3)', moonfen: 'rgba(2,6,18,0.42)', crags: 'rgba(30,6,4,0.4)' };
+const SHADOW = { forest: 'rgba(8,16,10,0.32)', netherwood: 'rgba(6,4,16,0.4)', meadow: 'rgba(24,30,10,0.26)', river: 'rgba(4,14,16,0.34)', quarry: 'rgba(26,18,10,0.3)', moonfen: 'rgba(2,6,18,0.42)', crags: 'rgba(30,6,4,0.4)', skyshard: 'rgba(20,40,70,0.26)', morphgrove: 'rgba(30,8,30,0.34)', veilhollow: 'rgba(10,10,20,0.38)', ghostglass: 'rgba(2,10,24,0.42)', chronoglass: 'rgba(40,20,10,0.32)' };
 
 /**
  * An animal's sprite lit like the plants beside it (species-sprites.js lit):
@@ -716,6 +717,8 @@ export class WildsView {
     const a = dir * Math.min(3.2, 0.5 + speed * 0.45);
     const touch = sceneTouch(this.region, this.lab.state.sceneSeed(this.region));
     if (touch) touch.push(x0, y0, x1, y1);
+    // the exotic biomes' touch interactions (decorative)
+    exoticPush(this.region, this.lab.state.sceneSeed(this.region), x0, y0, x1, y1);
     for (const it of Object.values(this.fallen)) it.doll.kick(x0, y0, x1, y1, 3);
     // a rabbit the finger sweeps across bolts
     const warren = this.wildlife ? this.warrens.get(this.region) : null;
@@ -1318,6 +1321,8 @@ export class WildsView {
     if (touch) touch.step(dt);
     ctx.drawImage(sceneFrame(this.region, st.sceneSeed(this.region), this.time), 0, 0);
     animateRegion(ctx, this.region, this.time, st.sceneSeed(this.region));
+    exoticStep(this.region, st.sceneSeed(this.region), dt);
+    exoticDraw(ctx, this.region, this.time, st.sceneSeed(this.region));
     // the blood spilt here, on the ground and the rock
     const warren = this.warren();
     if (warren) warren.step(dt);

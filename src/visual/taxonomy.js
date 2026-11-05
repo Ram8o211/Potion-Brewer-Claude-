@@ -57,6 +57,11 @@ export const HABITATS = {
   quarry: { wet: 0.25, retain: 1.5, light: [1, 0.92, 0.8], lightK: 0.08, sat: 0.85, dark: 0, wear: 0.6, crystal: 0.6, lush: 0.3, leaf: [0.36, 0.45, 0.22], rock: [0.55, 0.5, 0.45], soil: [0.5, 0.4, 0.28] },
   moonfen: { wet: 0.85, retain: 8, light: [0.62, 0.75, 1], lightK: 0.2, sat: 0.75, dark: -0.08, wear: 0.8, crystal: 0.7, lush: 0.55, leaf: [0.14, 0.33, 0.27], rock: [0.3, 0.32, 0.38], soil: [0.15, 0.17, 0.14] },
   crags: { wet: 0.18, retain: 1, light: [1, 0.6, 0.35], lightK: 0.18, sat: 0.95, dark: -0.05, wear: 0.4, crystal: 0.8, lush: 0.25, leaf: [0.32, 0.33, 0.16], rock: [0.2, 0.17, 0.2], soil: [0.22, 0.14, 0.12] },
+  skyshard: { wet: 0.45, retain: 2, light: [0.9, 0.97, 1], lightK: 0.1, sat: 1.05, dark: 0.03, wear: 0.3, crystal: 0.6, lush: 0.6, leaf: [0.3, 0.6, 0.25], rock: [0.45, 0.5, 0.58], soil: [0.35, 0.3, 0.25] },
+  morphgrove: { wet: 0.6, retain: 4, light: [1, 0.75, 0.9], lightK: 0.16, sat: 1.05, dark: -0.03, wear: 0.4, crystal: 0.3, lush: 0.85, leaf: [0.25, 0.6, 0.4], rock: [0.32, 0.28, 0.4], soil: [0.3, 0.18, 0.22] },
+  veilhollow: { wet: 0.75, retain: 6, light: [0.8, 0.78, 0.95], lightK: 0.18, sat: 0.8, dark: -0.06, wear: 0.6, crystal: 0.4, lush: 0.6, leaf: [0.25, 0.4, 0.32], rock: [0.25, 0.25, 0.3], soil: [0.18, 0.16, 0.2] },
+  ghostglass: { wet: 0.95, retain: 10, light: [0.6, 0.85, 1], lightK: 0.22, sat: 0.95, dark: -0.05, wear: 0.5, crystal: 0.9, lush: 0.5, leaf: [0.2, 0.6, 0.6], rock: [0.16, 0.24, 0.34], soil: [0.12, 0.16, 0.22] },
+  chronoglass: { wet: 0.12, retain: 1, light: [1, 0.85, 0.7], lightK: 0.14, sat: 0.95, dark: 0, wear: 0.7, crystal: 0.7, lush: 0.2, leaf: [0.6, 0.5, 0.3], rock: [0.6, 0.48, 0.34], soil: [0.55, 0.42, 0.28] },
 };
 
 /** @param {string} region */
