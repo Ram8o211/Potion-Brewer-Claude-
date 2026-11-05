@@ -25,6 +25,7 @@
 import { PHASE } from '../simulation/constants.js';
 import { MAX_SPECIES } from './species.js';
 import { compatFactor } from './compatibility.js';
+import { emulsionStability } from '../alchemy/extraction.js';
 
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const RD = 0.16;
@@ -40,6 +41,8 @@ export function diffusionStep(sim, dt) {
   const n = p.count;
   for (let i = 0; i < n; i++) chg[i] = 0;
   const ph = p.phase;
+  // emulsions: the watery, oily and emulsifier volume of every particle
+  const emu = emulsionPrep(sim);
   for (let k = 0; k < pairCount; k++) {
     const i = pairI[k], j = pairJ[k];
     const pi = ph[i], pj = ph[j];
@@ -60,12 +63,22 @@ export function diffusionStep(sim, dt) {
     const dx = p.x[i] - p.x[j], dy = p.y[i] - p.y[j];
     const r2 = dx * dx + dy * dy;
     if (r2 >= RD2) continue;
-    const c = compatFactor(p.cA[i], p.cB[i], p.cA[j], p.cB[j]);
+    let c = compatFactor(p.cA[i], p.cB[i], p.cA[j], p.cB[j]);
+    const fi = pi === LIQUID || pi === PASTE, fj = pj === LIQUID || pj === PASTE;
+    if (emu && fi && fj && !gi) {
+      const H = emu.h[i] + emu.h[j], L = emu.l[i] + emu.l[j];
+      if (H > 0.02 && L > 0.02) {
+        // an emulsifier in the right amount binds the two phases into one
+        const st = emulsionStability(H, L, emu.e[i] + emu.e[j]);
+        if (st > 0.05 && c < 1) c = Math.max(c, 0.9 * st);
+        // too little of it (or the wrong proportions): a mixed particle separates again
+        else if (st < 0.3) separate(sim, i, j, emu, dt * (1 - st));
+      }
+    }
     if (c <= 0) continue;
     const w = 1 - Math.sqrt(r2) / RD;
     const agit = Math.max(p.agit[i], p.agit[j]);
     let rate;
-    const fi = pi === LIQUID || pi === PASTE, fj = pj === LIQUID || pj === PASTE;
     if (gi) {
       rate = 2.4;
     } else if (fi && fj) {
@@ -207,4 +220,74 @@ function solubilityOf(sim, i) {
     }
   }
   return w > 0 ? s / w : 0;
+}
+
+/** scratch per particle: watery, oily and emulsifier volume */
+let emuBuf = { h: new Float32Array(0), l: new Float32Array(0), e: new Float32Array(0) };
+
+/**
+ * Per particle, the volume of watery liquid (water, spirit and their
+ * extracts), of oily liquid (oil and oil extracts) and of emulsifier
+ * (× strength). Null when nothing in the cauldron emulsifies and nothing is
+ * both watery and oily (the common case costs one scan of the species).
+ * @param {import('../simulation/world.js').Simulation} sim
+ */
+function emulsionPrep(sim) {
+  const sp = sim.species, ns = sp.count;
+  let any = false, hasH = false, hasL = false;
+  for (let s = 0; s < ns; s++) {
+    if (sp.emul[s] > 0) any = true;
+    if (sp.solvCls[s] === 1 || sp.extCls[s] === 1) hasH = true;
+    if (sp.solvCls[s] === 2 || sp.extCls[s] === 2) hasL = true;
+  }
+  if (!hasH || !hasL) return null;
+  const p = sim.p, n = p.count, comp = p.comp;
+  if (emuBuf.h.length < p.capacity) emuBuf = { h: new Float32Array(p.capacity), l: new Float32Array(p.capacity), e: new Float32Array(p.capacity) };
+  const { h, l, e } = emuBuf;
+  let mixed = false;
+  for (let i = 0; i < n; i++) {
+    const off = i * MAX_SPECIES;
+    let a = 0, b = 0, c = 0;
+    for (let s = 0; s < ns; s++) {
+      const f = comp[off + s];
+      if (f <= 0) continue;
+      if (sp.solvCls[s] === 1 || sp.extCls[s] === 1) a += f;
+      else if (sp.solvCls[s] === 2 || sp.extCls[s] === 2) b += f;
+      c += f * sp.emul[s];
+    }
+    h[i] = a; l[i] = b; e[i] = c;
+    if (a > 0.02 && b > 0.02) mixed = true;
+  }
+  return any || mixed ? emuBuf : null;
+}
+
+/**
+ * Two touching particles holding watery and oily liquid that no emulsifier
+ * binds: the oilier one takes the other's oily liquid and gives back the
+ * same volume of watery liquid, so the phases part again (volumes and every
+ * species are conserved).
+ * @param {import('../simulation/world.js').Simulation} sim @param {number} i @param {number} j
+ * @param {{h:Float32Array, l:Float32Array, e:Float32Array}} emu @param {number} dt
+ */
+function separate(sim, i, j, emu, dt) {
+  const p = sim.p, sp = sim.species, comp = p.comp, ns = sp.count;
+  // i is the oilier
+  if (emu.l[i] / Math.max(1e-6, emu.h[i] + emu.l[i]) < emu.l[j] / Math.max(1e-6, emu.h[j] + emu.l[j])) { const t = i; i = j; j = t; }
+  const amt = Math.min(emu.l[j], emu.h[i]) * Math.min(0.4, 3 * dt);
+  if (amt < 1e-5) return;
+  const oi = i * MAX_SPECIES, oj = j * MAX_SPECIES;
+  const kl = amt / emu.l[j], kh = amt / emu.h[i];
+  for (let s = 0; s < ns; s++) {
+    if (sp.solvCls[s] === 2 || sp.extCls[s] === 2) {
+      const d = comp[oj + s] * kl;
+      comp[oj + s] -= d; comp[oi + s] += d;
+    } else if (sp.solvCls[s] === 1 || sp.extCls[s] === 1) {
+      const d = comp[oi + s] * kh;
+      comp[oi + s] -= d; comp[oj + s] += d;
+    }
+  }
+  emu.l[j] -= amt; emu.l[i] += amt; emu.h[i] -= amt; emu.h[j] += amt;
+  sim.compChange[i] += amt; sim.compChange[j] += amt;
+  if (sim.compChange[i] > 0.004) { sim.compChange[i] = 0; p.dirty[i] = 1; }
+  if (sim.compChange[j] > 0.004) { sim.compChange[j] = 0; p.dirty[j] = 1; }
 }

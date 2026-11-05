@@ -43,6 +43,10 @@ import { EFFECT_INDEX, EFFECT_BY_KEY, EFFECT_KEYS, NE, interact } from '../alche
 import { thresholdToCelsius, isMagical } from '../alchemy/arcane.js';
 import { compatFactor } from '../reactions/compatibility.js';
 import { REQUESTS, TIER_TARGET, PURITY_LIMIT, requestById, purityLimitFor } from './requests.js';
+import { rateAt } from '../alchemy/extraction.js';
+
+/** Spirit an alcohol-free potion may still hold (percent of its volume). */
+export const ALCOHOL_FREE_LIMIT = 2;
 
 /** The purity limit an order is planned for (its tier's, else the strictest). @param {any} ctx */
 const plim = (ctx) => (ctx && ctx.purity) || PURITY_LIMIT;
@@ -136,6 +140,17 @@ function prepFor(m, ctx, solvents) {
   }
   // a whole solid is crushed in the pot with the pestle (every kit has one)
   const ground = m.form === 'solid';
+  // a catalog ingredient: continuous extraction into its own solvent class
+  // (alchemy/extraction.js). Room temperature is the planned steep — the
+  // ceiling is high there and every other stage keeps what it drew out; the
+  // hold lets the slowest ingredient come within a few percent of its ceiling.
+  const ex = /** @type {any} */ (m).extraction;
+  if (ex) {
+    const solvent = solvents.find((l) => l.solvent === ex.cls && !l.alcohol);
+    if (!solvent) return null;
+    const hold = Math.max(8, Math.min(60, Math.ceil(Math.log(30) / rateAt(ex, 20)) - 7));
+    return { solvent, heatTo: 20, coolTo: 20, hold, ground, extract: true };
+  }
   // its own extraction (steeping, infusing, a tincture in spirit, fire into oil)
   const rx = ctx.world.reactions.find((r) => r.a === m.id && (r.wet || r.kind === 'mix' || r.kind === 'contact') && r.products.length === 1 && /^rw_(extract|steep|infuse|mandrake|starquartz|dragonoil)/.test(r.id));
   if (rx) {
@@ -279,7 +294,8 @@ function composePlan(pick, wanted, exclude, ctx, solvents, n, o, pool) {
   solvent = solvent || solvents.find((x) => x.id === ctx.world.roles.water) || solvents[0];
   const quietServe = o.activation ? [] : [o.serve];
   // the steep temperature nearest the middle of the window that wakes none of the carriers
-  let stageT = null;
+  // (catalog ingredients steep at room temperature: see prepFor)
+  let stageT = !win && preps.some((p) => p.extract) ? 20 : null;
   if (win) {
     const mid = (win[0] + win[1]) / 2;
     for (let T = Math.ceil(win[0]); T <= win[1]; T++) {
@@ -700,6 +716,38 @@ export const TECHNIQUES = [
       return { plan: p2, pred: r2, strengthen: true, reqs: [], say: 'Make it strong and compact — a little goes a long way where I am going.' };
     },
   },
+  {
+    id: 'sober', name: 'Alcohol-free cold tincture', mechanic: 'distillation', minTier: 1, who: ['healer', 'noble', 'farmer', 'scholar', 'innkeeper', 'knight'],
+    lesson: 'Stronger than a warm water steep, with no spirit in it. Only spirit stays liquid cold enough to draw everything out: steep the herbs in spirit well below freezing, then add water and distil the spirit off through the alembic’s condenser — the dissolved magic never boils.',
+    apply: ({ plan, pred, ctx, wanted, exclude }) => {
+      const R = ctx.world.roles;
+      if (!ctx.cap.has('condenser') || ctx.cap.minCool > -20 || plan.activate || plan.reduce || !ctx.available.has(R.spirit)) return null;
+      const water = ctx.lookup(R.water), spirit = ctx.lookup(R.spirit);
+      if (!water || !spirit || !isFinite(water.boil)) return null;
+      // a watery plan: its water becomes spirit for the cold steep, and comes back as water before the still
+      const nW = plan.ingredients.filter((i) => i.id === R.water).reduce((a, i) => a + i.n, 0);
+      if (!nW || plan.ingredients.some((i) => { const d = ctx.lookup(i.id); return d && (d.solvent === 'lipo' || i.id === R.spirit); })) return null;
+      const T = -12;
+      const ex = plan.ingredients.map((i) => ctx.lookup(i.id)).filter((d) => d && d.extraction).map((d) => d.extraction);
+      if (!ex.length) return null;
+      const kMin = Math.min(...ex.map((e) => rateAt(e, T)));
+      const hold = Math.max(20, Math.min(90, Math.ceil(Math.log(12) / kMin)));
+      const p2 = {
+        ...plan, ingredients: plan.ingredients.map((i) => (i.id === R.water ? { ...i, id: R.spirit } : { ...i })),
+        coolTo: Math.min(plan.coolTo ?? 20, T), steep: { T, hold }, distil: { water: nW, T: water.boil, id: water.id },
+      };
+      if (arcaneRegime(p2.ingredients.map((i) => i.id), ctx.lookup, [T, water.boil]) !== 'quiet') return null;
+      const r2 = predictPlan(ctx.world, ctx.lookup, p2);
+      if (r2.awakened) return null;
+      if (unwantedMax(r2.effects, exclude).value > plim(ctx) * 0.6) return null;
+      if (!wanted.every((w) => w.sign * r2.effects[EFFECT_INDEX[w.key]] >= w.sign * pred.effects[EFFECT_INDEX[w.key]] * 1.1)) return null;
+      return {
+        plan: p2, pred: r2, strengthen: true,
+        reqs: [{ key: 'alcohol', kind: /** @type {'max'} */ ('max'), target: ALCOHOL_FREE_LIMIT, tol: 0, zero: 8, label: `alcohol-free: at most ${ALCOHOL_FREE_LIMIT}% spirit` }],
+        say: 'Not a drop of spirit in it, mind — but I want it as strong as a proper cold tincture.',
+      };
+    },
+  },
 ];
 
 /** @param {string} id */
@@ -807,7 +855,8 @@ function effectCommission(req, arch, tier, ctx, rng, totalN, bottleMl, bottleN, 
   const reqs = [];
   for (const w of wanted) {
     const v = w.sign * pred.effects[EFFECT_INDEX[w.key]];
-    reqs.push(effectRequirement(w.key, w.sign, Math.min(chosen.includes('strong') ? v * 0.85 : w.target, v * 0.88)));
+    // an alcohol-free cold tincture must be as strong as the cold steep makes it: a warm water steep falls short
+    reqs.push(effectRequirement(w.key, w.sign, chosen.includes('sober') ? v * 0.95 : Math.min(chosen.includes('strong') ? v * 0.85 : w.target, v * 0.88)));
   }
   // an exacting master sometimes wants a measured dose, not just "enough"
   if (tier >= 3 && strict < 1 && rng.chance(0.4)) {
@@ -863,9 +912,9 @@ function finalize({ style, request, title, arch, tier, ctx, rng, plan, pred, req
   const cost = planCost(plan, ctx.priceOf) * (bottleN / pred.totalParticles) * 1.6;
   const eventBonus = ctx.event && ['winter', 'plague', 'conclave', 'festival'].includes(ctx.event) ? 1.15 : 1;
   // techniques pay: each is extra work, a stronger brew most of all
-  const techPay = techniques.reduce((a, t) => a + (t === 'strong' ? 18 + 4 * tier : 5), 0);
+  const techPay = techniques.reduce((a, t) => a + (t === 'strong' ? 18 + 4 * tier : t === 'sober' ? 22 + 5 * tier : 5), 0);
   const budget = Math.round((14 + cost * (2.6 + 0.45 * tier) + 9 * tier + reqs.length * 5 + (com.effectOrder ? 10 : 0) + techPay + (activation ? 30 + 12 * tier : 0)) * arch.budget * eventBonus * (opts.contract ? 2.2 : 1));
-  const potionName = (techniques.includes('strong') ? 'Concentrated ' : '') + (title || 'Potion');
+  const potionName = (techniques.includes('strong') ? 'Concentrated ' : '') + (techniques.includes('sober') ? 'Alcohol-free ' : '') + (title || 'Potion');
   let greet = request ? rng.pick(request.story) : rng.pick(arch.greet).replace('{potion}', aOrAn(potionName.toLowerCase()) + ' ' + potionName.toLowerCase());
   if (say.length) greet += ' ' + say.join(' ');
   Object.assign(com, { potionName, customer, dialogue: greet, budget: Math.max(12, budget), hintCost: Math.max(3, Math.round(budget * 0.12)) });

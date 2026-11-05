@@ -36,7 +36,9 @@ test('the market sells only solvents: every species is gathered in the wilds or 
   const st = GameState.create('market-rules', { tutorial: false });
   const R = st.world.roles;
   for (const role of LAB_ROLES) if (R[role]) assert.equal(st.canBuy(R[role]).ok, false, `prepared reagent ${role} is not for sale`);
-  for (const id of st.purchasable()) assert.ok(id === R.water || id === R.oil || id === R.spirit, `${id} on sale is a solvent`);
+  for (const id of st.purchasable()) assert.ok(id === R.water || id === R.oil || id === R.spirit || id === R.emulsifier, `${id} on sale is a solvent or the neutral emulsifier`);
+  assert.ok(st.canBuy(R.emulsifier).ok, 'the neutral emulsifier is for sale');
+  assert.equal(Object.keys(st.lookup(R.emulsifier).effects || {}).length, 0, 'and carries no magic');
   st.reputation = RANKS[3].rep;
   for (const id of ['wild-sp-silverleaf', 'wild-sp-silverleaf-arcane', 'wild-sp-everbloom-chalice']) {
     const coins = st.coins;
@@ -96,6 +98,8 @@ test('every technique can be asked for and changes the order; customers only ask
       st.reputation = RANKS[tier].rep;
       st.coins = 200;
       st.equipment.push('kit');
+      // an alcohol-free cold tincture needs the cold and the still
+      if (t.id === 'sober') st.equipment.push('frostrune', 'condenser');
       // a shop of that rank has served customers (its biomes are open) and keeps everyday stores
       st.stats.served = 25;
       for (const id of st.gatherableSet()) if (['common', 'uncommon'].includes(st.lookup(id).wild.rarity)) st.inventory[id] = st.cap.storage;
@@ -103,7 +107,16 @@ test('every technique can be asked for and changes the order; customers only ask
       if (com && com.techniques.includes(t.id)) got = com;
     }
     assert.ok(got && st, `${t.id} was generated`);
-    for (const r of got.requirements) assert.ok(r.key === 'purity' || EFFECT_INDEX[r.key] !== undefined, `${t.id}: ${r.key} is an outcome a customer can judge`);
+    for (const r of got.requirements) assert.ok(r.key === 'purity' || r.key === 'alcohol' || EFFECT_INDEX[r.key] !== undefined, `${t.id}: ${r.key} is an outcome a customer can judge`);
+    if (t.id === 'sober') {
+      const ref = got.reference;
+      assert.ok(got.requirements.some((r) => r.key === 'alcohol' && r.kind === 'max'), 'an alcohol-free order limits the spirit');
+      assert.ok(ref.distil && ref.steep && ref.steep.T < 0 && ref.ingredients.some((i) => i.id === st.world.roles.spirit), 'planned as a cold spirit steep, then distilled');
+      // the same herbs steeped in water at room temperature fall short of the asked strength
+      const warm = predictPlan(st.world, st.lookup, { ...ref, ingredients: ref.ingredients.map((i) => (i.id === st.world.roles.spirit ? { ...i, id: st.world.roles.water } : i)), steep: { T: 20, hold: ref.steep.hold }, coolTo: 20, distil: undefined });
+      const r0 = got.requirements.find((r) => r.effect && r.key !== 'purity');
+      assert.ok(Math.abs(warm.effects[EFFECT_INDEX[r0.key]]) < Math.abs(Number(r0.target)), `a warm water steep falls short (${warm.effects[EFFECT_INDEX[r0.key]].toFixed(1)} < ${r0.target})`);
+    }
     if (t.id === 'strong') {
       assert.ok(got.reference.reduce && got.reference.reduce.frac > 0, 'a strong order is planned with a real boil-down');
       const plain = predictPlan(st.world, st.lookup, { ...got.reference, reduce: undefined });
@@ -113,7 +126,7 @@ test('every technique can be asked for and changes the order; customers only ask
   }
 });
 
-test('the simulation decides: whole herbs and an unsteeped brew miss an order the proper brew fills', () => {
+test('the simulation decides: whole herbs and the wrong solvent miss an order the proper brew fills', () => {
   let st = null, com = null;
   for (let k = 0; k < 10 && !com; k++) {
     st = GameState.create(`phys-${k}`, { tutorial: false });
@@ -132,10 +145,14 @@ test('the simulation decides: whole herbs and an unsteeped brew miss an order th
   const whole = simFor(st);
   runPlanHeadless(whole, { ...com.reference, crush: false }, st.lookup);
   assert.ok(score(whole) < 1, 'whole herbs fall short');
-  // the same, crushed but never steeped
-  const cold = simFor(st);
-  runPlanHeadless(cold, { ...com.reference, steep: undefined, heatTo: 20 }, st.lookup);
-  assert.ok(score(cold) < 1, 'unsteeped, it falls short');
+  // the same, crushed and steeped, but in the solvent that cannot take its magic up
+  const R = st.world.roles;
+  const solv = com.reference.ingredients.find((i) => i.id === R.water || i.id === R.oil);
+  assert.ok(solv, 'the plan steeps in water or oil');
+  const other = solv.id === R.water ? R.oil : R.water;
+  const wrong = simFor(st);
+  runPlanHeadless(wrong, { ...com.reference, ingredients: com.reference.ingredients.map((i) => (i.id === solv.id ? { ...i, id: other } : i)) }, st.lookup);
+  assert.ok(score(wrong) < 0.5, 'in the wrong solvent, almost nothing is extracted');
 });
 
 test('boiling down with the lid off concentrates the brew as predicted, in the real cauldron', () => {
@@ -269,7 +286,8 @@ test('a recipe records the procedure in order, and the homunculus replays it to 
   const st = GameState.create('replay', { tutorial: false });
   const com = generateCommission(st.commissionContext(), new Rng('rp'), { tier: 0, request: 'healing', techniques: [] });
   assert.ok(com);
-  const { sim, log, serveT } = brewRecorded(st, com.reference);
+  // (planned steeps are at room temperature now: this one is warmed, so there is a held heat to record)
+  const { sim, log, serveT } = brewRecorded(st, { ...com.reference, steep: { T: 55, hold: 15 }, heatTo: Math.max(55, com.reference.heatTo) });
   const steps = buildProcedure(log, serveT);
   const ops = steps.map((s) => s.op);
   assert.ok(ops.indexOf('pour') === 0, 'it starts by pouring');

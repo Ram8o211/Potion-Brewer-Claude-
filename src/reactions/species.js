@@ -78,6 +78,26 @@ export class SpeciesTable {
     this.isWhole = new Uint8Array(S);
     /** surface look of the solid (materials/shapes.js LOOK) */
     this.look = new Uint8Array(S);
+    /** continuous extraction (alchemy/extraction.js): class of a raw extractable ingredient (0 none, 1 water/spirit, 2 oil) and its profile */
+    this.exCls = new Uint8Array(S);
+    this.exK20 = f();
+    this.exQ = f();
+    this.exTfull = f();
+    this.exYmin = f();
+    this.exSpan = f();
+    this.exComb = f();
+    /** slot of a raw ingredient's extract (-1 until first needed) */
+    this.exSlot = new Int16Array(S).fill(-1);
+    /** class a liquid acts as a solvent for (0 none, 1 hydro: water/spirit, 2 lipo: oil) */
+    this.solvCls = new Uint8Array(S);
+    /** class of a dissolved extract (0 not an extract) */
+    this.extCls = new Uint8Array(S);
+    /** emulsifying strength per unit volume */
+    this.emul = f();
+    /** 1 = an alcoholic solvent (spirit) */
+    this.alcohol = new Uint8Array(S);
+    /** number of raw extractable slots in use */
+    this.extractables = 0;
     /** number of magical (awakenable) slots in use */
     this.magicCount = 0;
   }
@@ -168,6 +188,20 @@ export class SpeciesTable {
     this.isWhole[slot] = def.form === 'solid' ? 1 : 0;
     this.look[slot] = solidLook(def);
     if (mag) this.magicCount++;
+    const ex = /** @type {any} */ (def).extraction;
+    this.exCls[slot] = ex ? (ex.cls === 'lipo' ? 2 : 1) : 0;
+    if (ex) {
+      this.exK20[slot] = ex.k20; this.exQ[slot] = ex.Q; this.exTfull[slot] = ex.Tfull;
+      this.exYmin[slot] = ex.Ymin; this.exSpan[slot] = ex.span; this.exComb[slot] = ex.combust;
+      this.extractables++;
+    }
+    this.exSlot[slot] = -1;
+    const sv = /** @type {any} */ (def).solvent;
+    this.solvCls[slot] = sv === 'hydro' ? 1 : sv === 'lipo' ? 2 : 0;
+    const ec = /** @type {any} */ (def).extractClass;
+    this.extCls[slot] = ec === 'hydro' ? 1 : ec === 'lipo' ? 2 : 0;
+    this.emul[slot] = Number(/** @type {any} */ (def).emulsifier) || 0;
+    this.alcohol[slot] = /** @type {any} */ (def).alcohol ? 1 : 0;
     // a magical slot whose awakened form is already present links to it (and back)
     if (def.awakened && def.base) {
       const b = this.slotOf.get(def.base);
@@ -198,6 +232,8 @@ export class SpeciesTable {
     this.ashSlot[slot] = -1;
     this.smokeSlot[slot] = -1;
     if (this.arcMag[slot]) this.magicCount--;
+    if (this.exCls[slot]) this.extractables--;
+    this.exCls[slot] = 0; this.solvCls[slot] = 0; this.extCls[slot] = 0; this.emul[slot] = 0; this.alcohol[slot] = 0; this.exSlot[slot] = -1;
     this.arcMag[slot] = 0;
     this.isAwake[slot] = 0;
     this.awakeSlot[slot] = -1;
@@ -205,6 +241,7 @@ export class SpeciesTable {
       if (this.ashSlot[s] === slot) this.ashSlot[s] = -1;
       if (this.smokeSlot[s] === slot) this.smokeSlot[s] = -1;
       if (this.awakeSlot[s] === slot) this.awakeSlot[s] = -1;
+      if (this.exSlot[s] === slot) this.exSlot[s] = -1;
     }
     let c = 0;
     for (let s = 0; s < MAX_SPECIES; s++) if (this.defs[s]) c = s + 1;

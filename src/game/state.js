@@ -1542,7 +1542,7 @@ export function retireEquipment(list) {
  */
 export function retireRequirements(com) {
   if (!com || !Array.isArray(com.requirements)) return com;
-  const keep = (r) => r.key === 'purity' || EFFECT_KEYS.includes(r.key);
+  const keep = (r) => r.key === 'purity' || r.key === 'alcohol' || EFFECT_KEYS.includes(r.key);
   com.requirements = com.requirements.filter(keep);
   com.techniques = migrateTechniques(com.techniques || []);
   if (typeof com.style === 'string') com.style = [com.style.split('+')[0], ...com.techniques.slice().sort()].join('+');

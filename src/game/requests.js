@@ -80,7 +80,8 @@ export const REQUESTS = [
 ];
 
 /** Concentration targets (percent) of a request's main effect by tier. */
-export const TIER_TARGET = [[8, 15], [10, 18], [13, 22], [17, 28], [22, 34]];
+// (rebalanced for continuous extraction: a room-temperature steep draws out about 85 % of an ingredient)
+export const TIER_TARGET = [[6, 12], [8, 14], [9, 17], [13, 22], [17, 27]];
 
 /** Hard limit on any effect the customer did not ask for (percent). */
 export const PURITY_LIMIT = 1.2;

@@ -33,8 +33,8 @@ test('the shop stocks only plain solvents; lower-tier ingredients are impure but
     assert.deepEqual(w.starting, solvents, `seed start-${k}: only solvents to start`);
     for (const id of w.ingredients) {
       const m = lk(id);
-      if (solvents.includes(id)) {
-        assert.equal(Object.values(m.effects || {}).filter((v) => Math.abs(Number(v)) >= 1).length, 0, `${m.name} is a plain solvent`);
+      if (solvents.includes(id) || id === w.roles.emulsifier) {
+        assert.equal(Object.values(m.effects || {}).filter((v) => Math.abs(Number(v)) >= 1).length, 0, `${m.name} is a plain solvent (or the neutral emulsifier)`);
         continue;
       }
       assert.ok(m.wild && m.wild.catalog, `${m.name} is a catalog species`);

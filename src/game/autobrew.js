@@ -7,7 +7,7 @@ import { PHASE, SIM } from '../simulation/constants.js';
 import { MAX_SPECIES } from '../reactions/species.js';
 
 /**
- * @typedef {'pour'|'crush'|'stir'|'steep'|'heat'|'hold'|'reduce'|'serve'|'steps'|'done'} Stage
+ * @typedef {'pour'|'crush'|'stir'|'steep'|'heat'|'hold'|'reduce'|'distil'|'serve'|'steps'|'done'} Stage
  */
 
 /** Liquid (non-vapour) particles in the cauldron. @param {import('../simulation/world.js').Simulation} sim */
@@ -117,7 +117,7 @@ export class AutoBrewer {
     this.t += dt;
     this.stageT += dt;
     const sim = this.sim, plan = this.plan;
-    if (this.t > (this.steps ? 900 : 360)) { this.failed = true; this.finish(); return; }
+    if (this.t > (this.steps ? 900 : /** @type {any} */ (plan).distil ? 720 : 360)) { this.failed = true; this.finish(); return; }
     switch (this.stage) {
       case 'steps': this.tickStep(); return;
       case 'pour': {
@@ -151,7 +151,7 @@ export class AutoBrewer {
         const err = this.control(T);
         if (this.stageT % 3 < 1.6) this.stir(0.8); else this.release();
         if (err < 4) this.held = (this.held || 0) + dt;
-        if (this.held >= plan.steep.hold || this.stageT > 90) { this.held = 0; this.next('heat'); }
+        if (this.held >= plan.steep.hold || this.stageT > plan.steep.hold + 90) { this.held = 0; this.next('heat'); }
         return;
       }
       case 'heat': {
@@ -166,7 +166,7 @@ export class AutoBrewer {
         this.control(stageGoal(plan));
         this.status = plan.activate ? 'Letting it awaken' : 'Letting it react';
         if (this.stageT % 2.5 < 1.5) this.stir(0.9); else this.release();
-        if (this.stageT > (plan.hold ?? 6) + 4) this.next(plan.reduce ? 'reduce' : 'serve');
+        if (this.stageT > (plan.hold ?? 6) + 4) this.next(plan.reduce ? 'reduce' : plan.distil ? 'distil' : 'serve');
         return;
       }
       case 'reduce': {
@@ -189,6 +189,10 @@ export class AutoBrewer {
         const gas = sim.p.count - condensedCount(sim);
         if (gas <= 0 && condensedCount(sim) > goal && this.stageT < 200) { this.venting = 0; return; }
         if (gas <= 0 || this.stageT - this.venting > 20) { c.lidClosed = this.lidWas ?? true; this.venting = 0; this.next('serve'); }
+        return;
+      }
+      case 'distil': {
+        if (this.tickDistil(/** @type {any} */ (plan).distil)) this.next('serve');
         return;
       }
       case 'serve': {
@@ -325,6 +329,52 @@ export class AutoBrewer {
     if (gas <= 0 || this.stageT - this.venting > 20) { this.venting = 0; done(); }
   }
 
+  /**
+   * Distillation: water poured in, the still head on, then the brew held
+   * between spirit's and water's boiling points until the spirit has gone
+   * into the receiver, and a little hotter to strip the last of it.
+   * Returns true when done.
+   * @param {{water:number, T:number}} d
+   */
+  tickDistil(d) {
+    const sim = this.sim, c = sim.cauldron;
+    if (this.stageT <= SIM.DT + 1e-9) {
+      this.distilPhase = 0;
+      const water = this.lookup(/** @type {any} */ (d).id || this.waterId());
+      if (water && d.water > 0) sim.emitter.start(water, { x: 0.3, amount: Math.max(1, Math.round(d.water * this.scale)), rate: 110 });
+    }
+    if (sim.emitter.pouring) { this.stir(0.6); this.control(20); return false; }
+    sim.condenser.on = true;
+    c.lidClosed = true;
+    const wb = d.T || 100;
+    const alc = spiritShare(sim);
+    if (this.distilPhase === 0) {
+      this.status = `Distilling (${(alc * 100).toFixed(1)}% spirit)`;
+      this.control(wb - 9);
+      if (this.stageT % 3 < 1) this.stir(0.6); else this.release();
+      if (alc < 0.03 || this.stageT > 110) { this.distilPhase = 1; this.distilT = this.stageT; }
+      return false;
+    }
+    this.status = `Stripping the last spirit (${(alc * 100).toFixed(1)}%)`;
+    this.control(wb - 2);
+    sim.furnace.setting = Math.min(sim.furnace.setting, 0.6);
+    if (this.stageT % 3 < 1) this.stir(0.6); else this.release();
+    if (alc < 0.008 || this.stageT - (this.distilT || 0) > 60) {
+      sim.furnace.setting = 0;
+      sim.condenser.on = false;
+      this.release();
+      return true;
+    }
+    return false;
+  }
+
+  /** The world's water (the solvent that is not spirit). */
+  waterId() {
+    const sp = this.sim.species;
+    for (let s = 0; s < sp.count; s++) { const d = /** @type {any} */ (sp.defs[s]); if (d && d.solvent === 'hydro' && !d.alcohol) return d.id; }
+    return /** @type {any} */ (this.plan).waterId || 'water';
+  }
+
   /** @param {Stage} s */
   next(s) {
     this.stage = s;
@@ -337,6 +387,19 @@ export class AutoBrewer {
     this.stage = 'done';
     this.status = this.failed ? 'Stopped' : 'Ready to bottle';
   }
+}
+
+/** Spirit share of the condensed brew (0..1). @param {import('../simulation/world.js').Simulation} sim */
+export function spiritShare(sim) {
+  const p = sim.p, sp = sim.species;
+  let a = 0, n = 0;
+  for (let i = 0; i < p.count; i++) {
+    if (p.phase[i] === PHASE.GAS) continue;
+    n++;
+    const off = i * MAX_SPECIES;
+    for (let s = 0; s < sp.count; s++) if (sp.alcohol[s]) a += p.comp[off + s];
+  }
+  return n ? a / n : 0;
 }
 
 /** Run a plan to completion headlessly (tests). */

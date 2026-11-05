@@ -47,6 +47,9 @@ export function scoreRequirement(req, m) {
     case 'purity':
       value = strongestUnwanted(m.effects, req.exclude || []).value;
       break;
+    case 'alcohol':
+      value = Number(m.alcohol) || 0;
+      break;
     default: {
       const k = EFFECT_INDEX[req.key];
       value = k !== undefined && m.effects ? m.effects[k] : 0;
@@ -76,6 +79,8 @@ export function describeValue(key, value, m) {
       return `${Math.round(value)}°C`;
     case 'purity':
       return value < 0.05 ? 'pure' : `${value.toFixed(1)}% other magic`;
+    case 'alcohol':
+      return value < 0.05 ? 'no spirit' : `${value.toFixed(1)}% spirit`;
     default:
       return `${Math.round(value)}`;
   }

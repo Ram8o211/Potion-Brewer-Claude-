@@ -15,6 +15,7 @@ import { hslToRgb } from '../core/color.js';
 import { completeMaterial } from './schema.js';
 import { makeName, makeProductName } from './names.js';
 import { applyProfile } from './profiles.js';
+import { CHAR_ID } from './catalog.js';
 import { generateWild, generateLaws, WILD_FX_VERSION, WILD_BY_KEY } from './wild.js';
 import { withAwakened } from '../alchemy/arcane.js';
 
@@ -407,6 +408,8 @@ export function addAlchemy(world) {
       const old = world.materials.find((x) => x.id === m.id);
       if (!old) { world.materials.push(m); continue; }
       const mm = /** @type {any} */ (m);
+      // catalog species and their extracts are permanent data: an older save takes them whole
+      if (/^wild-(p-)?sp-/.test(m.id)) { for (const k of Object.keys(old)) if (!(k in m)) delete /** @type {any} */ (old)[k]; Object.assign(old, m); continue; }
       Object.assign(old, { effects: mm.effects, arcane: mm.arcane, fxv: mm.fxv, solubility: m.solubility, binder: m.binder, description: m.description });
       if (mm.wild) old.wild = { ...mm.wild };
     }
@@ -421,6 +424,7 @@ export function addAlchemy(world) {
     if (!world.laws) world.laws = w.laws;
   }
   if (!world.laws) world.laws = generateLaws(world.seed);
+  addSolvents(world);
   // an ingredient grows in the region its archetype names now (Witch's Ear and
   // Mandrake moved from the Whisperwood into the Netherwood); its look stays
   for (const m of world.materials) {
@@ -431,11 +435,57 @@ export function addAlchemy(world) {
   attachVisuals(world);
   // older worlds stocked prepared reagents (essences, salts, crystals…):
   // only the solvents, the wild ingredients and recovered remains stay
-  const keep = new Set([...SOLVENT_ROLES.map((r) => world.roles[r]), ...world.wild]);
+  const keep = new Set([...SOLVENT_ROLES.map((r) => world.roles[r]), ...SHOP_EXTRAS.map((r) => world.roles[r]), ...world.wild]);
   world.ingredients = world.ingredients.filter((id) => keep.has(id) || world.materials.some((m) => m.id === id && m.remains));
   world.starting = SOLVENT_ROLES.map((r) => world.roles[r]).filter(Boolean);
   return world;
 }
+
+/**
+ * The solvents' extraction classes and the neutral emulsifier (idempotent,
+ * so an older save's world gets them too). Water, spirit and oil never burn:
+ * they only melt, boil and condense. The fixed-temperature extraction
+ * reactions of older catalog versions are retired: extraction is continuous
+ * (reactions/extraction.js).
+ * @param {any} world
+ */
+export function addSolvents(world) {
+  const R = world.roles;
+  const by = (id) => world.materials.find((m) => m.id === id);
+  for (const [role, cls] of [['water', 'hydro'], ['spirit', 'hydro'], ['oil', 'lipo']]) {
+    const m = /** @type {any} */ (by(R[role]));
+    if (!m) continue;
+    m.solvent = cls;
+    if (role === 'spirit') m.alcohol = true;
+    m.flammability = 0;
+  }
+  world.reactions = world.reactions.filter((r) => !/^rw_extract_sp_/.test(r.id));
+  if (!R.emulsifier || !by(R.emulsifier)) {
+    const em = /** @type {any} */ (completeMaterial({
+      id: 'emulsifier-gum', name: 'Neutral Emulsifying Gum', form: 'liquid', archetype: 'emulsifier', color: [0.93, 0.89, 0.78], tint: 0.25, opacity: 0.8,
+      density: 0.97, viscosity: 60, viscTemp: 0.02, compat: [0.5, 0.12], boil: Infinity, melt: -6, heatCapacity: 2.6, conductivity: 0.4,
+      flammability: 0, price: 6, tier: 0, product: false,
+      description: 'A pale, tasteless gum with no magic of its own. A little of it binds a watery extract and an oily one into one stable potion — about six parts of gum per hundred of the smaller phase, and the smaller phase no more than two fifths of the liquid.',
+    }));
+    em.emulsifier = 1;
+    em.effects = {};
+    world.materials.push(em);
+    R.emulsifier = em.id;
+  }
+  if (!world.ingredients.includes(R.emulsifier)) world.ingredients.push(R.emulsifier);
+  if (!by(CHAR_ID)) {
+    const ch = /** @type {any} */ (completeMaterial({
+      id: CHAR_ID, name: 'Char', form: 'powder', archetype: 'ash', color: [0.12, 0.1, 0.09], tint: 0.85, opacity: 1,
+      density: 0.9, compat: [0.5, 0.3], friction: 0.7, melt: 3000, boil: Infinity, heatCapacity: 1, conductivity: 0.2,
+      flammability: 0, price: 0, tier: 99, product: true, description: 'What is left of an ingredient that burnt before its magic was drawn out: black, brittle and lifeless.',
+    }));
+    ch.effects = {};
+    world.materials.push(ch);
+  }
+}
+
+/** Shop goods that are neither solvents nor gathered: the neutral emulsifier. */
+export const SHOP_EXTRAS = ['emulsifier'];
 
 /** The plain solvents the shop still sells: they carry no magic. */
 export const SOLVENT_ROLES = ['water', 'oil', 'spirit'];

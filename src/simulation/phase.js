@@ -150,6 +150,13 @@ export function phaseStep(sim, dt) {
       continue;
     }
     // condensed, unfrozen: liquid, paste or (true) powder
+    // fractional boiling: a mixture hotter than the boiling point of its most
+    // volatile liquid gathers that liquid from around it (trading back the
+    // less volatile ones), so spirit boils off near its own boiling point
+    // while water stays behind
+    if ((ph === LIQUID || ph === PASTE) && p.volFrac[i] >= 0.3 && T[i] > p.tb[i] - 40 && mixedVolatile(sim, i, T[i])) {
+      if (enrichVolatile(sim, i) > 0) refreshParticle(sim, i);
+    }
     const tb = p.tb[i];
     const tm = p.tm[i];
     const volatile = p.volFrac[i];
@@ -183,6 +190,19 @@ export function phaseStep(sim, dt) {
       if (lat[i] >= p.latV[i]) {
         // vapour leaves its dissolved solids behind: trade them to the liquid around
         if (volatile < 0.999 && gatherVolatile(sim, i, 1 - volatile) > 0) refreshParticle(sim, i);
+        if (p.volFrac[i] < 0.99) {
+          // vapour carries no dissolved matter: with too little liquid around
+          // to leave it with, the particle's liquid soaks into its neighbours
+          // and what stays behind keeps heating as a syrup
+          spreadVolatile(sim, i);
+          refreshParticle(sim, i);
+          classifyFluid(sim, i);
+          T[i] += lat[i] / Ci;
+          lat[i] = 0;
+          continue;
+        }
+        // and the vapour is richer in the more volatile liquid (spirit before water)
+        if (enrichVolatile(sim, i) > 0) refreshParticle(sim, i);
         lat[i] -= p.latV[i];
         p.eph[i] += p.latV[i];
         T[i] += lat[i] / Ci;
@@ -225,6 +245,7 @@ export function phaseStep(sim, dt) {
       T[i] -= e / Ci;
       lat[i] += e;
       if (lat[i] >= p.latV[i]) {
+        if (enrichVolatile(sim, i) > 0) refreshParticle(sim, i);
         lat[i] -= p.latV[i];
         p.eph[i] += p.latV[i];
         T[i] += lat[i] / Ci;
@@ -235,6 +256,77 @@ export function phaseStep(sim, dt) {
       }
     }
   }
+}
+
+/**
+ * Does particle i hold, besides other volatile liquids, at least a trace of
+ * one that boils below T?
+ * @param {import('./world.js').Simulation} sim @param {number} i @param {number} T
+ */
+function mixedVolatile(sim, i, T) {
+  const p = sim.p, sp = sim.species, off = i * MAX_SPECIES, ns = sp.count, comp = p.comp;
+  let low = false, high = false;
+  for (let s = 0; s < ns; s++) {
+    const f = comp[off + s];
+    if (f <= 0.004 || !(sp.boil[s] < NO_BOIL) || sp.boil[s] <= -50) continue;
+    if (sp.boil[s] + 3 < T) low = true; else high = true;
+  }
+  return low && high;
+}
+
+/**
+ * Before a particle of mixed volatile liquids turns to vapour, it trades its
+ * less volatile part (water) for the most volatile liquid (spirit) of its
+ * condensed neighbours, volume for volume: a boiling mixture gives off a
+ * vapour rich in what boils lowest, which is how a still separates spirit
+ * from water. Every particle keeps its volume and every species its amount.
+ * Returns the volume traded.
+ * @param {import('./world.js').Simulation} sim @param {number} i
+ */
+export function enrichVolatile(sim, i) {
+  const p = sim.p, sp = sim.species, S = MAX_SPECIES, ns = sp.count;
+  const comp = p.comp, oi = i * S;
+  // the lowest-boiling volatile species around
+  let low = -1;
+  for (let s = 0; s < ns; s++) if (sp.boil[s] < NO_BOIL && sp.boil[s] > -50 && comp[oi + s] > 0 && (low < 0 || sp.boil[s] < sp.boil[low])) low = s;
+  const x = p.x[i], y = p.y[i];
+  const nb = gatherTouched;
+  nb.length = 0;
+  sim.grid.query(x, y, DRY_R, (j) => {
+    if (j === i || nb.length >= 12) return;
+    const ph = p.phase[j];
+    if (ph === GAS || ph === SOLID || p.group[j] >= 0) return;
+    const dx = p.x[j] - x, dy = p.y[j] - y;
+    if (dx * dx + dy * dy <= DRY_R * DRY_R) nb.push(j);
+  });
+  for (const j of nb) {
+    const oj = j * S;
+    for (let s = 0; s < ns; s++) if (sp.boil[s] < NO_BOIL && sp.boil[s] > -50 && comp[oj + s] > 1e-5 && (low < 0 || sp.boil[s] < sp.boil[low])) low = s;
+  }
+  if (low < 0) return 0;
+  const bl = sp.boil[low];
+  let moved = 0;
+  for (const j of nb) {
+    // what i holds that boils clearly higher than the most volatile liquid
+    let hi = 0;
+    for (let s = 0; s < ns; s++) if (sp.boil[s] < NO_BOIL && sp.boil[s] > bl + 5) hi += comp[oi + s];
+    if (hi < 1e-5) break;
+    const oj = j * S;
+    const a = Math.min(comp[oj + low] * 0.6, hi);
+    if (a < 1e-5) continue;
+    const kh = a / hi;
+    for (let s = 0; s < ns; s++) {
+      if (!(sp.boil[s] < NO_BOIL && sp.boil[s] > bl + 5)) continue;
+      const d = comp[oi + s] * kh;
+      comp[oi + s] -= d;
+      comp[oj + s] += d;
+    }
+    comp[oj + low] -= a;
+    comp[oi + low] += a;
+    moved += a;
+    p.dirty[j] = 1;
+  }
+  return moved;
 }
 
 /**
