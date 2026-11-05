@@ -24,7 +24,8 @@ test('an awakened brew draws its effects\' patterns boldly', async ({ page }, in
   await lab(page, (l) => { l.setAutoStir(true); });
   await page.waitForTimeout(2500);
   await lab(page, (l) => { l.setAutoStir(false); l.setFurnace(1); l.speed = 4; });
-  await page.waitForFunction(() => (/** @type {any} */ (window)).__alchemist.screen.sim.awakened > 20, null, { timeout: 90_000, polling: 500 });
+  // (100 ml is 20 particle volumes of magic, raw and extracted: most of it awakens)
+  await page.waitForFunction(() => (/** @type {any} */ (window)).__alchemist.screen.sim.awakened > 15, null, { timeout: 90_000, polling: 500 });
   await lab(page, (l) => { l.setFurnace(0); l.speed = 1; });
   await page.waitForTimeout(600);
   const inv = await lab(page, (l) => l.sim.inventory());

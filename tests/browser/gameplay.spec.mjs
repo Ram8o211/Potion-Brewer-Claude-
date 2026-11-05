@@ -40,14 +40,20 @@ test('first commission: brew, test on a subject, bottle and serve', async ({ pag
     for (let i = 0; i < p.count; i++) t += p.temp[i];
     return t / p.count > 56;
   }, null, { timeout: 60_000, polling: 250 });
+  // hold it warm for a while (herbs give up their magic gradually now: the hold is what the recipe records)
+  for (let k = 0; k < 24; k++) {
+    await lab(page, (l) => { const p = l.sim.p; let t = 0, n = 0; for (let i = 0; i < p.count; i++) if (p.phase[i] !== 4) { t += p.temp[i]; n++; } l.setFurnace(Math.max(-1, Math.min(1, (60 - t / n) / 12))); });
+    await page.waitForTimeout(500);
+  }
   await page.locator('input[aria-label="Fire and frost control"]').fill('20');
   await lab(page, (l) => { l.speed = 4; });
   await page.waitForFunction(() => {
     const st = window.__alchemist.screen.state, sim = window.__alchemist.screen.sim;
-    const leafLeft = sim.species.slotOf.get('wild-sp-silverleaf');
-    let f = 0;
-    for (let i = 0; i < sim.p.count; i++) f += leafLeft === undefined ? 0 : sim.p.comp[i * sim.p.S + leafLeft];
-    return f < 2 && !!st;
+    // most of the leaf's magic is drawn out (some always stays in the leaf at room temperature)
+    const raw = sim.species.slotOf.get('wild-sp-silverleaf'), ext = sim.species.slotOf.get('wild-p-sp-silverleaf');
+    let r = 0, x = 0;
+    for (let i = 0; i < sim.p.count; i++) { if (raw !== undefined) r += sim.p.comp[i * sim.p.S + raw]; if (ext !== undefined) x += sim.p.comp[i * sim.p.S + ext]; }
+    return x > 0 && x / (r + x) > 0.7 && !!st;
   }, null, { timeout: 90_000, polling: 500 });
   await lab(page, (l) => { l.speed = 1; });
   await page.locator('input[aria-label="Fire and frost control"]').fill('0');

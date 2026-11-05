@@ -159,5 +159,10 @@ tests were updated where their premise was the retired steeping windows.
   strategy, not an order type.
 * Cellar vessels are sealed: nothing evaporates in them however hot, and
   their contents are treated as one well-mixed bulk.
-* The browser test suite's runtime prevents running it on every profile in
-  this pass; see the commit notes for what was run.
+* Browser suite (all six Playwright projects) was run: three specs were
+  updated to the new rules (hot oil no longer burns — herbs in it char; a
+  warm hold is what a recipe records; awakening counts volume for volume)
+  and one wait condition now checks the extracted share. Two phone specs
+  (the first commission's single rabbit reading, the hutch showcase's tile
+  re-render) failed once and passed on two re-runs: they are timing/noise
+  sensitive rather than broken.

@@ -71,20 +71,25 @@ test('the physics demonstrations live here: skimmer, alembic, heat map and exact
   expect(errors).toEqual([]);
 });
 
-test('oil catches fire on a strong furnace and the lid smothers it', async ({ page }, info) => {
+test('hot oil never burns, but the herbs left undissolved in it char', async ({ page }, info) => {
   const errors = watchErrors(page);
   await startSandbox(page);
   await lab(page, (l) => { l.sim.cauldron.lidClosed = false; });
-  await pourRole(page, 'oil', 300, 0);
+  await pourRole(page, 'oil', 250, 0);
+  // an oil-soluble bark, poured whole: most of it stays undissolved
+  await lab(page, (l) => { l.sim.emitter.start(l.state.lookup('wild-sp-mossback-bark'), { x: 0, amount: 12 }); });
+  await page.waitForFunction(() => !window.__alchemist.screen.sim.emitter.pouring, null, { timeout: 20_000 });
+  const oil0 = await lab(page, (l) => l.sim.inventory()[l.state.world.roles.oil]);
   await lab(page, (l) => { l.setFurnace(1); l.speed = 4; });
   const burning = () => window.__alchemist.screen.sim.p.burn.slice(0, window.__alchemist.screen.sim.p.count).filter((b) => b > 0.2).length;
-  await page.waitForFunction(burning, null, { timeout: 60_000, polling: 200 });
+  await page.waitForFunction(burning, null, { timeout: 90_000, polling: 200 });
   await lab(page, (l) => { l.speed = 1; });
   await page.waitForTimeout(400);
   await shot(page, info, 'fire');
   await lab(page, (l) => { l.setFurnace(0); });
-  await page.locator('[data-act=lid]:visible').first().click();
-  await page.waitForFunction(() => window.__alchemist.screen.sim.p.burn.slice(0, window.__alchemist.screen.sim.p.count).every((b) => b <= 0.2), null, { timeout: 30_000, polling: 300 });
+  const after = await lab(page, (l) => ({ oil: l.sim.inventory()[l.state.world.roles.oil], charred: l.sim.extraction.charred, ext: l.sim.inventory()['wild-p-sp-mossback-bark'] || 0 }));
+  expect(after.charred, 'the undissolved bark charred').toBeGreaterThan(0.1);
+  expect(Math.abs(after.oil - oil0), 'the oil itself did not burn').toBeLessThan(0.01);
   expect(errors).toEqual([]);
 });
 
