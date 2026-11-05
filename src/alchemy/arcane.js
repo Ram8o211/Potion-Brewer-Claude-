@@ -59,6 +59,16 @@ export function baseIdOf(id) {
  * @param {any} def
  */
 export function isMagical(def) {
+  return !!(def && def.arcane && Number.isFinite(def.arcane.thr) && !def.awakened && !def.arcane.legacy);
+}
+
+/**
+ * Has a material an awakened form at all (an Arcane ingredient, or a legacy
+ * one that awakened in an old save)? Wider than isMagical, which is what may
+ * still awaken now.
+ * @param {any} def
+ */
+export function hasAwakenedForm(def) {
   return !!(def && def.arcane && Number.isFinite(def.arcane.thr) && !def.awakened);
 }
 
@@ -106,7 +116,7 @@ export function withAwakened(lookup) {
     let d = cache.get(id);
     if (d === undefined) {
       const base = lookup(baseIdOf(id));
-      d = isMagical(base) ? awakenedDef(base) : null;
+      d = hasAwakenedForm(base) ? awakenedDef(base) : null;
       // a base that does not exist yet (remains registered later) is asked again
       if (base) cache.set(id, d);
     }

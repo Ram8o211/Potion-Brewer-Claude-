@@ -39,7 +39,11 @@
 //     until it is saturated again.
 
 import { Rng, hashString } from '../core/rng.js';
-import { isBotanical, familyOf, habitatOf } from '../visual/taxonomy.js';
+import { familyOf, habitatOf } from '../visual/taxonomy.js';
+import { BIOMES } from './biomes.js';
+import { populationOf } from './regen.js';
+import { RARITY } from '../materials/rarity.js';
+import { materialIdOf } from '../materials/catalog.js';
 
 /**
  * @typedef {Object} Region
@@ -51,16 +55,13 @@ import { isBotanical, familyOf, habitatOf } from '../visual/taxonomy.js';
  * @property {number[]} sky      palette seeds for the scene renderer
  */
 
-/** @type {Region[]} */
-export const REGIONS = [
-  { id: 'forest', name: 'Whisperwood', rank: 0, magical: false, desc: 'Old oaks and ferns. Roots and leaves grow in the shade.', sky: [0.36, 0.52, 0.42] },
-  { id: 'netherwood', name: 'Netherwood', rank: 1, magical: false, desc: 'A forest grown in a cavern under the Whisperwood, lit by glowing fungi. Shelf fungi and screaming roots thrive in the dark.', sky: [0.1, 0.12, 0.18] },
-  { id: 'meadow', name: 'Sunlit Meadow', rank: 0, magical: false, desc: 'Flowers and clover under an open sky.', sky: [0.55, 0.72, 0.9] },
-  { id: 'river', name: 'Willow Bank', rank: 0, magical: false, desc: 'Chalky banks, mushrooms and bog plants along the slow river.', sky: [0.5, 0.66, 0.78] },
-  { id: 'quarry', name: 'Ironstone Quarry', rank: 0, magical: false, desc: 'Cut rock faces, mineral crusts and glittering dust.', sky: [0.62, 0.6, 0.58] },
-  { id: 'moonfen', name: 'Moonfen', rank: 2, magical: true, desc: 'A haunted bog lit by wisps. Death-moss and star crystals — and magic that wakes in the cold, not the heat.', sky: [0.16, 0.18, 0.32] },
-  { id: 'crags', name: 'Ember Crags', rank: 3, magical: true, desc: 'Volcanic slopes where fire-peppers and salamanders live.', sky: [0.42, 0.2, 0.16] },
-];
+/**
+ * The regions of the wilds: the twelve biomes (game/biomes.js). `rank` is
+ * kept for older callers (the guild rank of the biome's milestone); whether
+ * a biome can be visited is decided by its unlock (GameState.biomeOpen).
+ * @type {Region[]}
+ */
+export const REGIONS = BIOMES.map((b) => ({ id: b.id, name: b.name, rank: b.unlock.rank || 0, magical: b.category === 'exotic', desc: b.desc, sky: b.sky }));
 /** @type {Record<string, Region>} */
 export const REGION_BY_ID = Object.fromEntries(REGIONS.map((r) => [r.id, r]));
 
@@ -82,6 +83,10 @@ export const REGION_BY_ID = Object.fromEntries(REGIONS.map((r) => [r.id, r]));
  * @property {string} [place]    a name for the spot
  * @property {boolean} botanical a living plant that drinks (else a mineral or shell that comes back with time)
  * @property {number} thirst     how much moisture it needs to grow at full pace (0..1)
+ * @property {number} [gen]      the biome generation it belongs to
+ * @property {boolean} [arcane]  its specimens are the species' Arcane form
+ * @property {string} [species]  catalog species key
+ * @property {string} [rarity]
  */
 
 /**
@@ -104,6 +109,11 @@ const PLACES = {
   quarry: ['on the east face', 'in the spoil heap', 'by the cart track', 'in the old cutting', 'under the crane', 'at the seam', 'by the powder store'],
   moonfen: ['on the barrow', 'by the will-o’-pool', 'in the drowned grove', 'on the stepping stones', 'by the sunken cross', 'in the reed beds'],
   crags: ['on the ash slope', 'by the steam vent', 'in the lava cave', 'on the black ridge'],
+  skyshard: ['on the drifting isle', 'under the falling stream', 'by the broken arch', 'on the windward ledge'],
+  morphgrove: ['by the shifting trunk', 'in the rippling glade', 'at the mirror pool', 'under the twisted bough'],
+  veilhollow: ['behind the mist', 'by the shrine gate', 'under the veil falls', 'in the lantern hollow'],
+  ghostglass: ['on the glass shelf', 'by the sunken ring', 'in the coral bed', 'under the light shafts'],
+  chronoglass: ['by the ruined arch', 'at the great hourglass', 'on the crystal dune', 'beside the sundial'],
 };
 
 /** The growth stages a plant passes through; only a mature one can be harvested. */
@@ -111,46 +121,67 @@ export const STAGES = /** @type {const} */ (['sprout', 'ripe', 'mature']);
 /** The share of its growing time a plant spends as a sprout. */
 export const SPROUT_SHARE = 0.4;
 
+/** ml one specimen gives, by rarity: rarer species are smaller harvests. */
+export const TAKE_BY_RARITY = { common: 90, uncommon: 65, rare: 45, unique: 30, legendary: 25 };
+
 /**
- * Deterministic deposits for a world: one stand of each wild ingredient in
- * its region. A stand grows up to `slots` plants; the slots of a region's
- * stands are its saturation.
+ * The deposits of a world's wilds at their current generations: for every
+ * biome, one stand per species and form (ordinary or Arcane) that its
+ * generation's population holds (game/regen.js populationOf), its slots the
+ * number of specimens. Nothing grows back and nothing is watered: a stand's
+ * specimens are all there, grown, when the generation begins, and a harvest
+ * takes one for good. A new generation (a Traveller Coin) makes new stands
+ * with new ids, at new spots.
  * @param {{seed:string, wild?:string[]}} world
  * @param {(id:string)=>any} lookup
+ * @param {Record<string, number>} [gens] each biome's generation (default 0)
  * @returns {Deposit[]}
  */
-export function generateDeposits(world, lookup) {
-  const rng = new Rng('deposits:' + world.seed);
+export function generateDeposits(world, lookup, gens = {}) {
   /** @type {Deposit[]} */
   const out = [];
+  const wild = new Set(world.wild || []);
   for (const region of REGIONS) {
-    const mats = (world.wild || []).map(lookup).filter((m) => m && m.wild && m.wild.region === region.id);
-    mats.forEach((m, k) => {
-      const rare = !!m.wild.rare;
-      // a crowded region grows fewer of each ingredient, so its ground does not overflow
-      const slots = rare ? 1 + (mats.length < 5 ? 1 : 0) : mats.length >= 5 ? 2 : 3;
-      const take = rare ? rng.int(3, 4) * 10 : rng.int(5, 8) * 10;
-      const growMs = Math.round((rare ? rng.range(18, 30) : rng.range(4, 8)) * 60000);
-      const spawnMs = Math.round((rare ? rng.range(15, 25) : rng.range(3, 5)) * 60000);
-      out.push({
-        id: `${region.id}:${m.wild.key}:0`,
-        place: PLACES[region.id][k % PLACES[region.id].length],
-        region: region.id,
-        materialId: m.id,
-        x: Math.round(rng.range(0.1, 0.9) * 1000) / 1000,
-        y: Math.round(rng.range(0.56, 0.88) * 1000) / 1000,
-        slots,
-        capacity: slots * take,
-        growMs,
-        spawnMs,
-        regrowMs: spawnMs * (slots - 1) + growMs,
-        take,
-        rank: Math.max(region.rank, m.wild.rank || 0),
-        rare,
-        botanical: isBotanical(m.wild.shape),
-        thirst: thirstOf(m.wild.shape, region.id),
-      });
-    });
+    const gen = gens[region.id] || 0;
+    const rng = new Rng(`deposits:${world.seed}:${region.id}:${gen}`);
+    const pop = populationOf(world.seed, region.id, gen);
+    let k = 0;
+    for (const p of pop) {
+      for (const arcane of [false, true]) {
+        const n = arcane ? p.arcane : p.ordinary;
+        if (!n) continue;
+        const id = materialIdOf(p.key, arcane);
+        if (!wild.has(id)) continue;
+        const m = lookup(id);
+        if (!m || !m.wild) continue;
+        const rarity = m.wild.rarity || 'common';
+        out.push({
+          id: `${region.id}:g${gen}:${p.key}${arcane ? '+arcane' : ''}`,
+          place: PLACES[region.id] ? PLACES[region.id][k % PLACES[region.id].length] : '',
+          region: region.id,
+          materialId: id,
+          x: Math.round(rng.range(0.1, 0.9) * 1000) / 1000,
+          y: Math.round(rng.range(0.56, 0.88) * 1000) / 1000,
+          slots: n,
+          capacity: n * TAKE_BY_RARITY[rarity],
+          // grown when the generation begins; never sprouts again
+          growMs: 60000,
+          spawnMs: Infinity,
+          regrowMs: Infinity,
+          take: TAKE_BY_RARITY[rarity],
+          rank: 0,
+          rare: RARITY[rarity] ? RARITY[rarity].rank >= 2 : false,
+          // wild plants are not watered any more (the garden's are)
+          botanical: false,
+          thirst: thirstOf(m.wild.shape, region.id),
+          gen,
+          arcane,
+          species: p.key,
+          rarity,
+        });
+        k++;
+      }
+    }
   }
   return out;
 }
@@ -300,7 +331,8 @@ function untouched(g, d, now) {
   const t0 = Math.min(g.created, now), rng = new Rng(hashString(`stand:${g.created}:${d.id}`));
   const plants = [];
   for (let k = 0; k < d.slots; k++) {
-    const age = d.growMs * (k === 0 ? 1.2 : rng.range(0.1, 1.6));
+    // a generation's specimens are all grown when it begins; a stand that still grows back starts at every stage
+    const age = !Number.isFinite(d.spawnMs) ? d.growMs * 1.2 : d.growMs * (k === 0 ? 1.2 : rng.range(0.1, 1.6));
     const p = sprout(g, d, k, t0 - age);
     // a living plant's growth so far is written at the moment the wilds were first walked
     plants.push(d.botanical ? { ...p, g: Math.min(1, age / d.growMs), t: t0 } : p);
@@ -576,6 +608,7 @@ function soak(g, d, now) {
  */
 export function weatherRegrowth(g, deposits, weather, lookup, now = Date.now()) {
   for (const d of deposits) {
+    if (!Number.isFinite(d.spawnMs)) continue;
     const m = lookup(d.materialId);
     const shape = m && m.wild ? m.wild.shape : '';
     if (weather.id === 'rain' && d.botanical) soak(g, d, now);
@@ -615,7 +648,9 @@ export function harvest(st, d, opts = {}) {
   if (amount <= 0) return { ok: false, amount: 0, reason: 'full' };
   const plants = s.plants.filter((q) => q !== p).map((q) => checkpoint(d, q, now, sky));
   const scar = !!(opts.thorough || s.scar);
-  g.nodes[d.id] = { plants, due: s.due ?? now + every(d, { scar }), seq: s.seq, ...(scar ? { scar: true } : {}) };
+  // a stand of the wilds never grows back by itself (only a new generation brings it back)
+  const due = Number.isFinite(d.spawnMs) ? s.due ?? now + every(d, { scar }) : null;
+  g.nodes[d.id] = { plants, due, seq: s.seq, ...(scar && due !== null ? { scar: true } : {}) };
   if (!opts.free) { st.inventory[d.materialId] = have + amount; g.total += amount; }
   return { ok: true, amount, plant: p.id, remaining: (ripe.length - 1) * d.take };
 }
@@ -631,6 +666,7 @@ export function harvest(st, d, opts = {}) {
 export function newDayRegrowth(g, deposits, now = Date.now()) {
   const sky = g.sky || 'clear';
   for (const d of deposits) {
+    if (!Number.isFinite(d.spawnMs)) continue;
     if (!g.nodes[d.id] && !d.botanical) continue;
     const s = standOf(g, d, now);
     const plants = s.plants.map((p) => {
@@ -659,6 +695,8 @@ export const SANDBOX_PACE = 8;
  */
 export function sandboxWilds(g, deposits, now = Date.now()) {
   for (const d of deposits) {
+    // the sandbox's wilds still grow back, quickly, so it never runs dry
+    if (!Number.isFinite(d.spawnMs)) d.spawnMs = 6 * 60000;
     d.growMs = Math.round(d.growMs / SANDBOX_PACE);
     d.spawnMs = Math.round(d.spawnMs / SANDBOX_PACE);
     d.regrowMs = d.spawnMs * (d.slots - 1) + d.growMs;

@@ -20,6 +20,9 @@ import { exportSave, parseImport, saveGame } from '../game/persistence.js';
 import { audio } from '../audio/audio.js';
 import { isMagical } from '../alchemy/arcane.js';
 import { causeWord } from '../game/colony.js';
+import { rarityTag } from './rarity-ui.js';
+import { BIOME_BY_ID } from '../game/biomes.js';
+import { seedChance } from '../materials/rarity.js';
 
 const CAT_LABEL = { heat: 'Fire', cold: 'Cooling', vessel: 'Cauldrons', tool: 'Tools', instrument: 'Instruments', trials: 'Trials room', gathering: 'Foraging', storage: 'Potion storage', guild: 'Guild' };
 
@@ -197,7 +200,11 @@ export function openIngredient(lab, id) {
     h('span', { class: 'k', text: m.form === 'powder' ? 'Grains' : 'Thickness' }), h('span', { text: m.form === 'powder' ? `piles at ≈${Math.round(Math.atan(m.friction) * 180 / Math.PI)}°` + (m.solubility > 0.05 ? ', dissolves in water' : '') : lab.sandbox ? `${m.viscosity} cP` : viscosityClass(m.viscosity) }),
     h('span', { class: 'k', text: 'Melts' }), h('span', { text: k.melt !== undefined ? `≈${k.melt}°C (observed)` : m.form === 'liquid' ? 'unknown (freeze it to find out)' : 'unknown' }),
     h('span', { class: 'k', text: 'Boils' }), h('span', { text: k.boil !== undefined ? `≈${k.boil}°C (observed)` : isFinite(m.boil) ? 'unknown (heat it to find out)' : 'does not boil' }),
-    h('span', { class: 'k', text: 'Magic' }), h('span', { text: !isMagical(m) ? 'none to awaken' : k.awaken !== undefined ? `awoke near ${k.awaken}°C in your brew (observed)` : 'can awaken — its threshold is unknown (heat or chill it to find out)' }),
+    ...(m.wild && m.wild.catalog ? [
+      h('span', { class: 'k', text: 'Species' }), h('span', {}, rarityTag(m), ` ${BIOME_BY_ID[m.wild.region] ? BIOME_BY_ID[m.wild.region].name : ''}`),
+      h('span', { class: 'k', text: 'Seeds' }), h('span', { text: `${st.garden.seeds[m.wild.key + (m.wild.arcane ? '+arcane' : '')] || 0} in hand · a harvest drops one ${Math.round(seedChance(m.wild.rarity, !!m.wild.arcane) * 100)}% of the time` }),
+    ] : []),
+    h('span', { class: 'k', text: 'Magic' }), h('span', { text: !isMagical(m) ? (m.wild && m.wild.catalog ? 'ordinary: it never awakens (only its Arcane form can)' : 'none to awaken') : k.awaken !== undefined ? `Arcane: awoke near ${k.awaken}°C in your brew (observed)` : 'Arcane: it can awaken — its threshold is unknown (heat or chill it to find out)' }),
     h('span', { class: 'k', text: 'Price' }), h('span', { text: `${coins(st.priceOf(id))} / 100 ml` }),
   );
   const asp = h('div', { class: 'aspect-bars' });
@@ -217,7 +224,7 @@ export function openIngredient(lab, id) {
       h('div', { class: 'card parch' }, facts),
       h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: m.remains ? 'Effects' : m.product ? 'Effects of this pure substance (as the guild knows it)' : 'Known effects of the pure ingredient (mixtures must be tested)' }), asp,
         (m.wild || m.remains) && m.form === 'solid' ? h('div', { class: 'small', text: 'Supplied whole: crush it in the pot with the pestle (Crush). Only what dissolves takes effect.' }) : null),
-      balance.length ? h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Nothing that grows is pure. Its side effects cancel against their opposites:' }), ...balance.map((t) => h('div', { class: 'small', text: '• ' + t }))) : null,
+      balance.length ? h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Its side effects cancel against their opposites:' }), ...balance.map((t) => h('div', { class: 'small', text: '• ' + t }))) : null,
       reactions.length ? h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Known reactions' }), ...reactions.map((r) => h('div', { class: 'small', text: `• ${r.name}: ${r.hint || ''}` }))) : null,
     ],
   });

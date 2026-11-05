@@ -41,7 +41,8 @@ test('brew room: cauldron, order, shelf, tools and tabs are all on screen', asyn
     await expect(page.locator(sel).first(), sel).toBeInViewport();
   }
   const jars = page.locator('.jar');
-  expect(await jars.count()).toBeGreaterThanOrEqual(8);
+  // (three solvents and the Whisperwood's three commons to start)
+  expect(await jars.count()).toBeGreaterThanOrEqual(6);
   await expect(jars.first()).toBeInViewport();
   // the cauldron is the centre of the screen
   const cv = await page.locator('canvas.view-canvas').boundingBox();
@@ -100,7 +101,7 @@ test('panels open, fit and close', async ({ page }, info) => {
     await expect(page.locator('.overlay')).toHaveCount(0);
   }
   // long-press a jar: the ingredient sheet shows its known effects
-  const jar = page.locator('.jar[data-id="wild-silverleaf"]');
+  const jar = page.locator('.jar[data-id="wild-sp-silverleaf"]');
   await jar.click({ button: 'right' });
   await expect(page.locator('.overlay .modal')).toContainText('Vitality');
   await shot(page, info, 'ingredient-panel');

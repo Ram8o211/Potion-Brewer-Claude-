@@ -16,12 +16,17 @@ import { migrateVial } from './vial.js';
 import { recordSale, resolveFollowUp, applyTrials, evidenceOf } from './commerce.js';
 import { colonyDay, colonyTick, livingRabbits, livingOf, findRabbit, addBoughtRabbit, addWildRabbit, penHasRoom, PEN_MAX, retireRabbit, remainsSource, purgeRabbit, cullRabbit, maxHealthOf, FOUNDER_BORN } from './colony.js';
 import { kindOf } from './kinds.js';
+import { normalizeRegen, accrue, regenerate as regenerateBiome, maybeGift, unlockBiomes, generationOf, nextCoinIn, COIN_RULES } from './regen.js';
+import { normalizeGarden, plant as gardenPlant, waterPlots, harvestPlot, upgrade as gardenUpgrade, rollSeed, giveSeed, GARDEN_UPGRADES, gardenStatus } from './garden.js';
+import { BIOME_BY_ID } from './biomes.js';
+import { materialIdOf } from '../materials/catalog.js';
+import { legacyReplacement } from '../materials/wild.js';
 import { remainsMaterials, remainsPlan, isRemains } from '../materials/remains.js';
 import { returningPatron, welcomePatron, recentStyles, notePatron, patronVerdict, noveltyFactor } from './patrons.js';
 import { techniqueById, migrateTechniques } from './commissions.js';
 import { migrateRecipe } from './recipes.js';
 
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 /** A purging draught at the apothecary, and brewed in the still. */
 export const PURGE_PRICE = 8;
 export const PURGE_BREW_COST = 1;
@@ -29,7 +34,8 @@ export const PURGE_BREW_TIME = 40;
 export const WORLD_GEN_VERSION = 2;
 
 /** What a new shop's shelves hold (ml): a healer's and a hedge-witch's basics. */
-export const STARTER_HERBS = { silverleaf: 200, sunthistle: 150, heartpetal: 150, ironroot: 150, emberbark: 100, frostcap: 100, riverchalk: 100, nettle: 100 };
+/** The first satchel: a little of the Whisperwood's commons (catalog species keys → ml). */
+export const STARTER_HERBS = { silverleaf: 150, honeycap: 100, hearthnut: 100 };
 /** old aspect requirement keys → effect keys (v2 saves) */
 const ASPECT_KEY_MAP = { vitality: 'vitality', ardor: 'fire', arcana: 'arcana', fortitude: 'strength' };
 
@@ -149,6 +155,11 @@ export class GameState {
     /** @type {{id:string, rev:number, carried?:{samples:Record<string, any[]>, ref?:number[], label?:any}}} */
     this.batch = data.batch && typeof data.batch.id === 'string' ? { id: data.batch.id, rev: data.batch.rev | 0, ...(data.batch.carried && typeof data.batch.carried === 'object' ? { carried: data.batch.carried } : {}) } : newBatch();
     this.lookup = makeLookup(this.world);
+    /** biome generations, unlocks and Traveller Coins (regen.js) */
+    this.regen = normalizeRegen(data.regen);
+    accrue(this.regen);
+    /** the personal garden (garden.js) */
+    this.garden = normalizeGarden(data.garden);
     /** @type {import('./gathering.js').Deposit[]|null} */
     this._deposits = null;
     // plants that drink: an older save's plants keep their growth, and grow under today's weather
@@ -179,7 +190,7 @@ export class GameState {
     inventory[R.spirit] = 200;
     for (const id of world.wild || []) inventory[id] = 0;
     // a first satchel of common herbs and minerals; everything else is gathered
-    for (const [key, ml] of Object.entries(STARTER_HERBS)) if (world.wild.includes('wild-' + key)) inventory['wild-' + key] = ml;
+    for (const [key, ml] of Object.entries(STARTER_HERBS)) if (world.wild.includes(materialIdOf(key))) inventory[materialIdOf(key)] = ml;
     const st = new GameState({
       version: SAVE_VERSION,
       genVersion: WORLD_GEN_VERSION,
@@ -247,8 +258,84 @@ export class GameState {
   // ------------------------------------------------------------ the wilds
   /** Deposits of this world (deterministic from the seed). */
   get deposits() {
-    if (!this._deposits) this._deposits = generateDeposits(this.world, this.lookup);
+    if (!this._deposits) this._deposits = generateDeposits(this.world, this.lookup, this.regen.gens);
     return this._deposits;
+  }
+
+  // ------------------------------------------------------------ biomes, Traveller Coins, the garden
+
+  /** Has the player opened this biome? @param {string} id */
+  biomeOpen(id) {
+    return this.regen.unlocked.includes(id);
+  }
+
+  /** Open every biome whose milestone is now met; returns journal-style events. */
+  checkUnlocks() {
+    const opened = unlockBiomes(this.regen, { rank: this.rank, stats: this.stats });
+    return opened.map((id) => ({ type: 'biome', id, name: BIOME_BY_ID[id].name, text: `A new biome is open to you: ${BIOME_BY_ID[id].name}.` }));
+  }
+
+  /** The seed a biome's scenery is painted from (its generation's). @param {string} region */
+  sceneSeed(region) {
+    const g = generationOf(this.regen, region);
+    return g ? `${this.seed}~g${g}` : String(this.seed);
+  }
+
+  /** Traveller Coins now (brought up to date), and the wait for the next. */
+  travellerCoins(now = Date.now()) {
+    accrue(this.regen, now);
+    return { coins: this.regen.coins, max: COIN_RULES.max, nextIn: nextCoinIn(this.regen, now), cost: COIN_RULES.cost };
+  }
+
+  /**
+   * Spend a Traveller Coin to regenerate a biome: a new generation with new
+   * scenery and new populations. Nothing already gathered, sown or brewed is touched.
+   * @param {string} region @param {number} [now]
+   */
+  regenerate(region, now = Date.now()) {
+    const r = regenerateBiome(this.regen, region, now);
+    if (!r.ok) return r;
+    // the old generation's stands are gone
+    for (const id of Object.keys(this.gathering.nodes)) if (id.startsWith(region + ':')) delete this.gathering.nodes[id];
+    this._deposits = null;
+    return r;
+  }
+
+  /** Sow a seed in a garden plot. @param {string} plotId @param {string} seed @param {number} [now] */
+  sow(plotId, seed, now = Date.now()) {
+    // the tutorial's first seed grows in minutes, not hours
+    const tutorial = !!this.tutorial.active && !this.garden.harvested && !this.garden.plots.some((p) => p.crop);
+    return gardenPlant(this.garden, plotId, seed, now, { tutorial });
+  }
+
+  /** Water a garden plot (or all of them). @param {string|null} plotId @param {number} [now] */
+  waterGarden(plotId = null, now = Date.now()) {
+    return waterPlots(this.garden, plotId, now);
+  }
+
+  /** Harvest a mature garden crop. @param {string} plotId @param {number} [now] */
+  harvestGarden(plotId, now = Date.now()) {
+    const r = harvestPlot(this.garden, plotId, { inventory: this.inventory, cap: this.cap, seed: String(this.seed) }, now);
+    if (r.ok) { this.found[/** @type {string} */ (r.material)] = 1; this.stats.gathered = (this.stats.gathered || 0) + r.amount; }
+    return r;
+  }
+
+  /** Buy a garden upgrade. @param {string} id */
+  buyGardenUpgrade(id) {
+    const u = GARDEN_UPGRADES.find((x) => x.id === id);
+    if (!u) return { ok: false, reason: 'Unknown upgrade.' };
+    if (this.coins < u.price) return { ok: false, reason: `It costs ${u.price} coins.` };
+    const r = gardenUpgrade(this.garden, id, this.rank);
+    if (!r.ok) return r;
+    this.coins = round1(this.coins - u.price);
+    this.stats.spent += u.price;
+    this.daySpending += u.price;
+    return r;
+  }
+
+  /** The garden's plots and crops now. */
+  gardenView(now = Date.now()) {
+    return gardenStatus(this.garden, now);
   }
 
   /**
@@ -265,8 +352,10 @@ export class GameState {
 
   /** Wild ingredient ids with a deposit the player can reach. */
   gatherableSet() {
+    // (milestones met since the last sale open their biomes now)
+    this.checkUnlocks();
     const s = new Set();
-    for (const d of this.deposits) if (d.rank <= this.rank) s.add(d.materialId);
+    for (const d of this.deposits) if (d.rank <= this.rank && this.biomeOpen(d.region)) s.add(d.materialId);
     return s;
   }
 
@@ -281,11 +370,16 @@ export class GameState {
   gather(depositId, opts = {}) {
     const d = this.deposits.find((x) => x.id === depositId);
     if (!d) return { ok: false, amount: 0, reason: 'unknown' };
+    if (!opts.free && !opts.unlimited && !this.biomeOpen(d.region)) return { ok: false, amount: 0, reason: 'locked' };
     const m = this.lookup(d.materialId);
     const { take } = opts.free ? d : gatherPlan(this, d, m, { thorough: opts.thorough });
     const r = harvest(this, { ...d, take }, opts);
     if (r.ok && !opts.unlimited && !opts.free) {
       this.found[d.materialId] = 1;
+      // a harvest may drop a seed (one saved roll per harvest: reloading never rerolls it)
+      if (d.species) /** @type {any} */ (r).seed = rollSeed(this.garden, String(this.seed), d.species, !!d.arcane);
+      // the tutorial's first harvest always brings the seed it teaches with
+      if (this.tutorial.active && d.species === 'silverleaf' && !Object.keys(this.garden.seeds).length && !this.garden.plots.some((p) => p.crop) && !/** @type {any} */ (r).seed) /** @type {any} */ (r).seed = giveSeed(this.garden, 'silverleaf', false);
       this.stats.gathered = (this.stats.gathered || 0) + r.amount;
       /** @type {any} */ (r).events = [...this.unlock('forage1')];
       if (this.stats.gathered >= 1000) /** @type {any} */ (r).events.push(...this.unlock('forage1k'));
@@ -300,8 +394,9 @@ export class GameState {
    * @param {string} depositId @param {string[]|null} [plants] @param {number} [now]
    */
   water(depositId, plants = null, now = Date.now()) {
+    // the wilds are no longer watered (only the garden is): a stand that does not drink takes nothing
     const d = this.deposits.find((x) => x.id === depositId);
-    return d ? water(this.gathering, d, plants, now) : 0;
+    return d && d.botanical ? water(this.gathering, d, plants, now) : 0;
   }
 
   // ------------------------------------------------------------ trials
@@ -928,6 +1023,9 @@ export class GameState {
     if (this.history.length > 60) this.history.length = 60;
     if (com.tutorial) { this.tutorial.done = true; this.tutorial.active = false; }
     if (!saleId) events.push(...this._verdict(ev.quality, ev.perfect, !!com.grand));
+    // an excellent sale may bring a Traveller Coin; milestones may open a biome
+    if (!saleId && maybeGift(this.regen, ev.quality, `${this.seed}:${this.day}:${this.stats.served}`)) events.push({ type: 'coin', text: `${com.customer.name} presses a Traveller Coin into your hand.` });
+    events.push(...this.checkUnlocks());
     this.current = null;
     this.customerIndex++;
     events.push(...this.unlock('first_sale'));
@@ -1158,6 +1256,37 @@ export class GameState {
     return this.unlock('recipe');
   }
 
+  /**
+   * v7: the wilds grow the species catalog. Stores of the old archetypes
+   * (Ironroot, Heartpetal…) move to the catalog species that took their
+   * place (same biome, same main effect), so nothing is lost; the old
+   * materials stay in the world, so bottled potions, recipes and brews that
+   * use them — awakened ones included — keep working. Their ordinary forms
+   * no longer awaken: only Arcane ingredients do. Biomes the player had
+   * reached by guild rank stay open.
+   */
+  migrateToCatalog() {
+    /** @type {string[]} */
+    const moved = [];
+    for (const [id, ml] of Object.entries(this.inventory)) {
+      const m = this.lookup(id);
+      if (!m || !m.wild || !m.wild.legacy) continue;
+      if (Number.isFinite(ml) && ml > 0) {
+        const to = legacyReplacement(m.wild.key);
+        if (to) { this.inventory[to] = (this.inventory[to] || 0) + ml; this.found[to] = 1; moved.push(`${m.name} → ${this.lookup(to).name}`); }
+      }
+      delete this.inventory[id];
+      delete this.found[id];
+    }
+    // a veteran keeps the regions their rank had opened
+    const legacyRank = { forest: 0, meadow: 0, river: 0, quarry: 0, netherwood: 1, moonfen: 2, crags: 3 };
+    for (const [id, r] of Object.entries(legacyRank)) if (this.rank >= r && !this.regen.unlocked.includes(id)) this.regen.unlocked.push(id);
+    this.checkUnlocks();
+    this.journal['note:catalog'] = { key: 'note:catalog', kind: 'note', title: 'The wilds have changed', day: this.day,
+      text: `New species grow in the wilds, each with a fixed rarity, and only Arcane specimens can awaken. ${moved.length ? `Your stores were carried over: ${moved.join('; ')}.` : ''} Biomes no longer grow back by themselves: spend a Traveller Coin to regenerate one. Your personal garden is open.`.trim() };
+    return moved;
+  }
+
   // ------------------------------------------------------------ persistence
   toJSON() {
     return {
@@ -1209,6 +1338,8 @@ export class GameState {
       referrals: this.referrals,
       opened: this.opened,
       patrons: this.patrons,
+      regen: this.regen,
+      garden: this.garden,
       savedAt: Date.now(),
     };
   }
@@ -1228,6 +1359,7 @@ export class GameState {
     for (const [k, v] of Object.entries(inventory)) if (!Number.isFinite(v) && v !== Infinity) inventory[k] = 0;
     const st = new GameState({ ...data, world, inventory });
     if (data._migratedFrom !== undefined && data._migratedFrom < 3) st.genVersion = WORLD_GEN_VERSION;
+    if (data._migratedFrom !== undefined && data._migratedFrom < 7) st.migrateToCatalog();
     st.buyBackPrepared();
     if (st.current) migrateCommission(st.current, st.world, st.lookup);
     // customers no longer ask for a serving temperature: an order taken before keeps the rest
@@ -1343,6 +1475,11 @@ export function migrate(raw) {
     d.recipes = (d.recipes || []).map(migrateRecipe);
     delete d.receiver;
     d.version = 6;
+  }
+  if (d.version < 7) {
+    // v7: the species catalog, biome generations and Traveller Coins, the
+    // garden (their stores are carried over in fromJSON: migrateToCatalog)
+    d.version = 7;
   }
   // every shop owns the starting kit (the pestle joined it in v6)
   for (const id of STARTING_EQUIPMENT) if (!d.equipment.includes(id)) d.equipment = [...d.equipment, id];

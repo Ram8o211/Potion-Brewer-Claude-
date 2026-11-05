@@ -16,6 +16,7 @@ import { completeMaterial } from './schema.js';
 import { EFFECT_INDEX } from '../alchemy/effects.js';
 import { arcaneProfile } from './profiles.js';
 import { identityOf } from '../visual/identity.js';
+import { generateCatalog, CATALOG_VERSION, SPECIES, materialIdOf } from './catalog.js';
 
 /** @typedef {import('./schema.js').MaterialDef} MaterialDef */
 
@@ -271,8 +272,25 @@ const PREFIX = ['Moss', 'Moon', 'Dusk', 'Ember', 'Witch', 'Frost', 'Star', 'Thor
 
 const r2 = (v) => Math.round(v * 100) / 100;
 
-/** Version of the wild profiles (effects, thresholds, extracts). */
-export const WILD_FX_VERSION = 4;
+/** Version of the wild profiles (effects, thresholds, extracts). 5: the species catalog; the archetypes above became legacy. */
+export const WILD_FX_VERSION = CATALOG_VERSION;
+
+/**
+ * The catalog species that replaces a legacy archetype (for save
+ * migration): one of its region's species with the same main effect, else
+ * its region's first Common species.
+ * @param {string} key legacy archetype key
+ */
+export function legacyReplacement(key) {
+  const s = WILD_BY_KEY[key];
+  if (!s) return null;
+  const main = Object.entries(s.fx).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))[0][0];
+  const pool = SPECIES.filter((x) => x.biome === s.region);
+  const rank = { common: 0, uncommon: 1, rare: 2, unique: 3, legendary: 4 };
+  const same = pool.filter((x) => x.dominant === main).sort((a, b) => rank[a.rarity] - rank[b.rarity])[0];
+  const sp = same || pool.find((x) => x.rarity === 'common') || pool[0];
+  return sp ? materialIdOf(sp.key) : null;
+}
 
 /**
  * Generate this world's wild materials, their reactions and the resonance laws.
@@ -316,11 +334,14 @@ export function generateWild(seed, base) {
     const mm = /** @type {any} */ (m);
     mm.effects = fx;
     // a few delicate ingredients carry no magic that can awaken (arc: null)
-    if (s.arc) mm.arcane = arcaneProfile(seed, id, s.arc[0], s.arc[1]);
+    // legacy: the archetypes' ordinary forms no longer awaken (only Arcane
+    // ingredients do); the profile is kept, marked legacy, so a brew that
+    // already awakened in an old save still resolves its awakened form
+    if (s.arc) mm.arcane = { ...arcaneProfile(seed, id, s.arc[0], s.arc[1]), legacy: true };
     mm.fxv = WILD_FX_VERSION;
     mm.econd = s.econd ?? 0.04;
     mm.charge = s.charge ?? 0;
-    mm.wild = { key: s.key, shape: s.shape, region: s.region, rank: s.rank, rare: !!s.rare, gatherOnly: s.buy === null, gather: s.gather || 'pick', dusk: !!s.dusk, dawn: !!s.dawn };
+    mm.wild = { key: s.key, shape: s.shape, region: s.region, rank: s.rank, rare: !!s.rare, gatherOnly: true, gather: s.gather || 'pick', dusk: !!s.dusk, dawn: !!s.dawn, legacy: true };
     if (s.form === 'solid') mm.crushable = true;
     // its visual identity in this world: what its plant, icon and pieces are drawn from (visual/)
     mm.vis = identityOf(mm, seed);
@@ -419,6 +440,10 @@ export function generateWild(seed, base) {
     }
   }
 
+  // the species catalog: what actually grows in the wilds now
+  const cat = generateCatalog(base);
+  materials.push(...cat.materials);
+  reactions.push(...cat.reactions);
   return { materials, reactions, ids, laws: generateLaws(seed) };
 }
 

@@ -1,0 +1,1269 @@
+{
+ "version": 1,
+ "atlas": "ingredients-arcane-exotic.png",
+ "width": 512,
+ "height": 256,
+ "padding": 2,
+ "frames": {
+  "aeon-circlet@arcane": {
+   "species": "aeon-circlet",
+   "kind": "sprite",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "chronoglass",
+   "category": "exotic",
+   "morph": "relic",
+   "x": 2,
+   "y": 147,
+   "w": 62,
+   "h": 32,
+   "pivot": [
+    31,
+    31
+   ],
+   "native": [
+    62,
+    32
+   ]
+  },
+  "airstar@arcane": {
+   "species": "airstar",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "skyshard",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 174,
+   "y": 76,
+   "w": 52,
+   "h": 33,
+   "pivot": [
+    26,
+    32
+   ],
+   "native": [
+    52,
+    33
+   ]
+  },
+  "chronoglass-shard@arcane": {
+   "species": "chronoglass-shard",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "chronoglass",
+   "category": "exotic",
+   "morph": "crystal",
+   "x": 228,
+   "y": 76,
+   "w": 44,
+   "h": 33,
+   "pivot": [
+    22,
+    32
+   ],
+   "native": [
+    44,
+    33
+   ]
+  },
+  "chronovine@arcane": {
+   "species": "chronovine",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "chronoglass",
+   "category": "exotic",
+   "morph": "vine",
+   "x": 274,
+   "y": 76,
+   "w": 48,
+   "h": 33,
+   "pivot": [
+    24,
+    32
+   ],
+   "native": [
+    48,
+    33
+   ]
+  },
+  "cloudcap@arcane": {
+   "species": "cloudcap",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "skyshard",
+   "category": "exotic",
+   "morph": "fungus",
+   "x": 324,
+   "y": 76,
+   "w": 45,
+   "h": 33,
+   "pivot": [
+    22,
+    32
+   ],
+   "native": [
+    45,
+    33
+   ]
+  },
+  "cloudprism@arcane": {
+   "species": "cloudprism",
+   "kind": "sprite",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "skyshard",
+   "category": "exotic",
+   "morph": "crystal",
+   "x": 2,
+   "y": 40,
+   "w": 40,
+   "h": 34,
+   "pivot": [
+    20,
+    33
+   ],
+   "native": [
+    40,
+    34
+   ]
+  },
+  "coralberry@arcane": {
+   "species": "coralberry",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "ghostglass",
+   "category": "exotic",
+   "morph": "berry",
+   "x": 44,
+   "y": 40,
+   "w": 45,
+   "h": 34,
+   "pivot": [
+    22,
+    33
+   ],
+   "native": [
+    45,
+    34
+   ]
+  },
+  "crownbloom@arcane": {
+   "species": "crownbloom",
+   "kind": "sprite",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "morphgrove",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 91,
+   "y": 40,
+   "w": 55,
+   "h": 34,
+   "pivot": [
+    27,
+    33
+   ],
+   "native": [
+    55,
+    34
+   ]
+  },
+  "dreamberry@arcane": {
+   "species": "dreamberry",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "moonfen",
+   "category": "exotic",
+   "morph": "berry",
+   "x": 455,
+   "y": 181,
+   "w": 46,
+   "h": 30,
+   "pivot": [
+    23,
+    29
+   ],
+   "native": [
+    46,
+    30
+   ]
+  },
+  "duskbell@arcane": {
+   "species": "duskbell",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "moonfen",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 371,
+   "y": 76,
+   "w": 57,
+   "h": 33,
+   "pivot": [
+    28,
+    32
+   ],
+   "native": [
+    57,
+    33
+   ]
+  },
+  "eclipse-eye@arcane": {
+   "species": "eclipse-eye",
+   "kind": "sprite",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "veilhollow",
+   "category": "exotic",
+   "morph": "relic",
+   "x": 111,
+   "y": 181,
+   "w": 44,
+   "h": 31,
+   "pivot": [
+    22,
+    30
+   ],
+   "native": [
+    44,
+    31
+   ]
+  },
+  "epochbloom@arcane": {
+   "species": "epochbloom",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "chronoglass",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 148,
+   "y": 40,
+   "w": 53,
+   "h": 34,
+   "pivot": [
+    26,
+    33
+   ],
+   "native": [
+    53,
+    34
+   ]
+  },
+  "featherpetal@arcane": {
+   "species": "featherpetal",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "skyshard",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 66,
+   "y": 147,
+   "w": 53,
+   "h": 32,
+   "pivot": [
+    26,
+    31
+   ],
+   "native": [
+    53,
+    32
+   ]
+  },
+  "fenmilk-cap@arcane": {
+   "species": "fenmilk-cap",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "moonfen",
+   "category": "exotic",
+   "morph": "fungus",
+   "x": 430,
+   "y": 76,
+   "w": 45,
+   "h": 33,
+   "pivot": [
+    22,
+    32
+   ],
+   "native": [
+    45,
+    33
+   ]
+  },
+  "formblossom@arcane": {
+   "species": "formblossom",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "morphgrove",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 121,
+   "y": 147,
+   "w": 54,
+   "h": 32,
+   "pivot": [
+    27,
+    31
+   ],
+   "native": [
+    54,
+    32
+   ]
+  },
+  "ghostbud@arcane": {
+   "species": "ghostbud",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "veilhollow",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 203,
+   "y": 40,
+   "w": 53,
+   "h": 34,
+   "pivot": [
+    26,
+    33
+   ],
+   "native": [
+    53,
+    34
+   ]
+  },
+  "ghostcrown-coral@arcane": {
+   "species": "ghostcrown-coral",
+   "kind": "sprite",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "ghostglass",
+   "category": "exotic",
+   "morph": "coral",
+   "x": 177,
+   "y": 147,
+   "w": 59,
+   "h": 32,
+   "pivot": [
+    29,
+    31
+   ],
+   "native": [
+    59,
+    32
+   ]
+  },
+  "ghostglass-coral@arcane": {
+   "species": "ghostglass-coral",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "ghostglass",
+   "category": "exotic",
+   "morph": "coral",
+   "x": 238,
+   "y": 147,
+   "w": 58,
+   "h": 32,
+   "pivot": [
+    29,
+    31
+   ],
+   "native": [
+    58,
+    32
+   ]
+  },
+  "glasscap@arcane": {
+   "species": "glasscap",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "ghostglass",
+   "category": "exotic",
+   "morph": "fungus",
+   "x": 258,
+   "y": 40,
+   "w": 52,
+   "h": 34,
+   "pivot": [
+    26,
+    33
+   ],
+   "native": [
+    52,
+    34
+   ]
+  },
+  "graftberry@arcane": {
+   "species": "graftberry",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "morphgrove",
+   "category": "exotic",
+   "morph": "berry",
+   "x": 2,
+   "y": 215,
+   "w": 43,
+   "h": 29,
+   "pivot": [
+    21,
+    28
+   ],
+   "native": [
+    43,
+    29
+   ]
+  },
+  "hollowbloom@arcane": {
+   "species": "hollowbloom",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "veilhollow",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 166,
+   "y": 2,
+   "w": 51,
+   "h": 35,
+   "pivot": [
+    25,
+    34
+   ],
+   "native": [
+    51,
+    35
+   ]
+  },
+  "hollowcap@arcane": {
+   "species": "hollowcap",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "veilhollow",
+   "category": "exotic",
+   "morph": "fungus",
+   "x": 219,
+   "y": 2,
+   "w": 50,
+   "h": 35,
+   "pivot": [
+    25,
+    34
+   ],
+   "native": [
+    50,
+    35
+   ]
+  },
+  "hourberry@arcane": {
+   "species": "hourberry",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "chronoglass",
+   "category": "exotic",
+   "morph": "berry",
+   "x": 157,
+   "y": 181,
+   "w": 54,
+   "h": 31,
+   "pivot": [
+    27,
+    30
+   ],
+   "native": [
+    54,
+    31
+   ]
+  },
+  "hourglass-of-ages@arcane": {
+   "species": "hourglass-of-ages",
+   "kind": "sprite",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "chronoglass",
+   "category": "exotic",
+   "morph": "relic",
+   "x": 477,
+   "y": 76,
+   "w": 31,
+   "h": 33,
+   "pivot": [
+    15,
+    32
+   ],
+   "native": [
+    31,
+    33
+   ]
+  },
+  "mimic-eye@arcane": {
+   "species": "mimic-eye",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "morphgrove",
+   "category": "exotic",
+   "morph": "relic",
+   "x": 2,
+   "y": 2,
+   "w": 53,
+   "h": 36,
+   "pivot": [
+    26,
+    35
+   ],
+   "native": [
+    53,
+    36
+   ]
+  },
+  "mirepod-shell@arcane": {
+   "species": "mirepod-shell",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "moonfen",
+   "category": "exotic",
+   "morph": "shell",
+   "x": 312,
+   "y": 40,
+   "w": 48,
+   "h": 34,
+   "pivot": [
+    24,
+    33
+   ],
+   "native": [
+    48,
+    34
+   ]
+  },
+  "mistpebble@arcane": {
+   "species": "mistpebble",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "veilhollow",
+   "category": "exotic",
+   "morph": "stone",
+   "x": 213,
+   "y": 181,
+   "w": 46,
+   "h": 31,
+   "pivot": [
+    23,
+    30
+   ],
+   "native": [
+    46,
+    31
+   ]
+  },
+  "moonlotus@arcane": {
+   "species": "moonlotus",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "moonfen",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 2,
+   "y": 112,
+   "w": 52,
+   "h": 33,
+   "pivot": [
+    26,
+    32
+   ],
+   "native": [
+    52,
+    33
+   ]
+  },
+  "moonreed@arcane": {
+   "species": "moonreed",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "moonfen",
+   "category": "exotic",
+   "morph": "grass",
+   "x": 362,
+   "y": 40,
+   "w": 57,
+   "h": 34,
+   "pivot": [
+    28,
+    33
+   ],
+   "native": [
+    57,
+    34
+   ]
+  },
+  "moonveil-bloom@arcane": {
+   "species": "moonveil-bloom",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "moonfen",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 271,
+   "y": 2,
+   "w": 49,
+   "h": 35,
+   "pivot": [
+    24,
+    34
+   ],
+   "native": [
+    49,
+    35
+   ]
+  },
+  "morphleaf@arcane": {
+   "species": "morphleaf",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "morphgrove",
+   "category": "exotic",
+   "morph": "leaf",
+   "x": 56,
+   "y": 112,
+   "w": 54,
+   "h": 33,
+   "pivot": [
+    27,
+    32
+   ],
+   "native": [
+    54,
+    33
+   ]
+  },
+  "pearlshell@arcane": {
+   "species": "pearlshell",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "ghostglass",
+   "category": "exotic",
+   "morph": "shell",
+   "x": 112,
+   "y": 112,
+   "w": 48,
+   "h": 33,
+   "pivot": [
+    24,
+    32
+   ],
+   "native": [
+    48,
+    33
+   ]
+  },
+  "pendulum-pods@arcane": {
+   "species": "pendulum-pods",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "chronoglass",
+   "category": "exotic",
+   "morph": "vine",
+   "x": 162,
+   "y": 112,
+   "w": 54,
+   "h": 33,
+   "pivot": [
+    27,
+    32
+   ],
+   "native": [
+    54,
+    33
+   ]
+  },
+  "phantom-pearl@arcane": {
+   "species": "phantom-pearl",
+   "kind": "sprite",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "ghostglass",
+   "category": "exotic",
+   "morph": "shell",
+   "x": 218,
+   "y": 112,
+   "w": 46,
+   "h": 33,
+   "pivot": [
+    23,
+    32
+   ],
+   "native": [
+    46,
+    33
+   ]
+  },
+  "polymorph-lotus@arcane": {
+   "species": "polymorph-lotus",
+   "kind": "sprite",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "morphgrove",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 57,
+   "y": 2,
+   "w": 58,
+   "h": 36,
+   "pivot": [
+    29,
+    35
+   ],
+   "native": [
+    58,
+    36
+   ]
+  },
+  "reefbud@arcane": {
+   "species": "reefbud",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "ghostglass",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 117,
+   "y": 2,
+   "w": 47,
+   "h": 36,
+   "pivot": [
+    23,
+    35
+   ],
+   "native": [
+    47,
+    36
+   ]
+  },
+  "reefmoss@arcane": {
+   "species": "reefmoss",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "ghostglass",
+   "category": "exotic",
+   "morph": "coral",
+   "x": 298,
+   "y": 147,
+   "w": 56,
+   "h": 32,
+   "pivot": [
+    28,
+    31
+   ],
+   "native": [
+    56,
+    32
+   ]
+  },
+  "sandskirt-cap@arcane": {
+   "species": "sandskirt-cap",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "chronoglass",
+   "category": "exotic",
+   "morph": "fungus",
+   "x": 266,
+   "y": 112,
+   "w": 50,
+   "h": 33,
+   "pivot": [
+    25,
+    32
+   ],
+   "native": [
+    50,
+    33
+   ]
+  },
+  "shapecap@arcane": {
+   "species": "shapecap",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "morphgrove",
+   "category": "exotic",
+   "morph": "fungus",
+   "x": 261,
+   "y": 181,
+   "w": 47,
+   "h": 31,
+   "pivot": [
+    23,
+    30
+   ],
+   "native": [
+    47,
+    31
+   ]
+  },
+  "shellfern@arcane": {
+   "species": "shellfern",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "ghostglass",
+   "category": "exotic",
+   "morph": "leaf",
+   "x": 356,
+   "y": 147,
+   "w": 48,
+   "h": 32,
+   "pivot": [
+    24,
+    31
+   ],
+   "native": [
+    48,
+    32
+   ]
+  },
+  "shifting-root@arcane": {
+   "species": "shifting-root",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "morphgrove",
+   "category": "exotic",
+   "morph": "root",
+   "x": 322,
+   "y": 2,
+   "w": 56,
+   "h": 35,
+   "pivot": [
+    28,
+    34
+   ],
+   "native": [
+    56,
+    35
+   ]
+  },
+  "shroud-orchid@arcane": {
+   "species": "shroud-orchid",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "veilhollow",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 310,
+   "y": 181,
+   "w": 52,
+   "h": 31,
+   "pivot": [
+    26,
+    30
+   ],
+   "native": [
+    52,
+    31
+   ]
+  },
+  "skyberry@arcane": {
+   "species": "skyberry",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "skyshard",
+   "category": "exotic",
+   "morph": "berry",
+   "x": 47,
+   "y": 215,
+   "w": 49,
+   "h": 29,
+   "pivot": [
+    24,
+    28
+   ],
+   "native": [
+    49,
+    29
+   ]
+  },
+  "skyshard-geode@arcane": {
+   "species": "skyshard-geode",
+   "kind": "sprite",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "skyshard",
+   "category": "exotic",
+   "morph": "crystal",
+   "x": 406,
+   "y": 147,
+   "w": 48,
+   "h": 32,
+   "pivot": [
+    24,
+    31
+   ],
+   "native": [
+    48,
+    32
+   ]
+  },
+  "skyspray@arcane": {
+   "species": "skyspray",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "skyshard",
+   "category": "exotic",
+   "morph": "herb",
+   "x": 456,
+   "y": 147,
+   "w": 51,
+   "h": 32,
+   "pivot": [
+    25,
+    31
+   ],
+   "native": [
+    51,
+    32
+   ]
+  },
+  "sleepglass@arcane": {
+   "species": "sleepglass",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "moonfen",
+   "category": "exotic",
+   "morph": "crystal",
+   "x": 421,
+   "y": 40,
+   "w": 47,
+   "h": 34,
+   "pivot": [
+    23,
+    33
+   ],
+   "native": [
+    47,
+    34
+   ]
+  },
+  "spectral-anemone@arcane": {
+   "species": "spectral-anemone",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "ghostglass",
+   "category": "exotic",
+   "morph": "coral",
+   "x": 318,
+   "y": 112,
+   "w": 60,
+   "h": 33,
+   "pivot": [
+    30,
+    32
+   ],
+   "native": [
+    60,
+    33
+   ]
+  },
+  "splice-bud@arcane": {
+   "species": "splice-bud",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "morphgrove",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 364,
+   "y": 181,
+   "w": 43,
+   "h": 31,
+   "pivot": [
+    21,
+    30
+   ],
+   "native": [
+    43,
+    31
+   ]
+  },
+  "starfall-lotus@arcane": {
+   "species": "starfall-lotus",
+   "kind": "sprite",
+   "rarity": "legendary",
+   "arcane": true,
+   "biome": "moonfen",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 380,
+   "y": 2,
+   "w": 53,
+   "h": 35,
+   "pivot": [
+    26,
+    34
+   ],
+   "native": [
+    53,
+    35
+   ]
+  },
+  "sundial-stone@arcane": {
+   "species": "sundial-stone",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "chronoglass",
+   "category": "exotic",
+   "morph": "relic",
+   "x": 380,
+   "y": 112,
+   "w": 49,
+   "h": 33,
+   "pivot": [
+    24,
+    32
+   ],
+   "native": [
+    49,
+    33
+   ]
+  },
+  "timeweed@arcane": {
+   "species": "timeweed",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "chronoglass",
+   "category": "exotic",
+   "morph": "grass",
+   "x": 2,
+   "y": 181,
+   "w": 55,
+   "h": 32,
+   "pivot": [
+    27,
+    31
+   ],
+   "native": [
+    55,
+    32
+   ]
+  },
+  "twinsprout@arcane": {
+   "species": "twinsprout",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "morphgrove",
+   "category": "exotic",
+   "morph": "herb",
+   "x": 98,
+   "y": 215,
+   "w": 45,
+   "h": 29,
+   "pivot": [
+    22,
+    28
+   ],
+   "native": [
+    45,
+    29
+   ]
+  },
+  "updraft-seedwing@arcane": {
+   "species": "updraft-seedwing",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "skyshard",
+   "category": "exotic",
+   "morph": "seedpod",
+   "x": 59,
+   "y": 181,
+   "w": 50,
+   "h": 32,
+   "pivot": [
+    25,
+    31
+   ],
+   "native": [
+    50,
+    32
+   ]
+  },
+  "veil-circlet@arcane": {
+   "species": "veil-circlet",
+   "kind": "sprite",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "veilhollow",
+   "category": "exotic",
+   "morph": "relic",
+   "x": 145,
+   "y": 215,
+   "w": 50,
+   "h": 28,
+   "pivot": [
+    25,
+    27
+   ],
+   "native": [
+    50,
+    28
+   ]
+  },
+  "veilberry@arcane": {
+   "species": "veilberry",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "veilhollow",
+   "category": "exotic",
+   "morph": "berry",
+   "x": 435,
+   "y": 2,
+   "w": 46,
+   "h": 35,
+   "pivot": [
+    23,
+    34
+   ],
+   "native": [
+    46,
+    35
+   ]
+  },
+  "veilfern@arcane": {
+   "species": "veilfern",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": true,
+   "biome": "veilhollow",
+   "category": "exotic",
+   "morph": "leaf",
+   "x": 2,
+   "y": 76,
+   "w": 54,
+   "h": 34,
+   "pivot": [
+    27,
+    33
+   ],
+   "native": [
+    54,
+    34
+   ]
+  },
+  "veilglass@arcane": {
+   "species": "veilglass",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": true,
+   "biome": "veilhollow",
+   "category": "exotic",
+   "morph": "crystal",
+   "x": 409,
+   "y": 181,
+   "w": 44,
+   "h": 31,
+   "pivot": [
+    22,
+    30
+   ],
+   "native": [
+    44,
+    31
+   ]
+  },
+  "windfern@arcane": {
+   "species": "windfern",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "skyshard",
+   "category": "exotic",
+   "morph": "leaf",
+   "x": 58,
+   "y": 76,
+   "w": 62,
+   "h": 34,
+   "pivot": [
+    31,
+    33
+   ],
+   "native": [
+    62,
+    34
+   ]
+  },
+  "wisp-reliquary@arcane": {
+   "species": "wisp-reliquary",
+   "kind": "sprite",
+   "rarity": "unique",
+   "arcane": true,
+   "biome": "moonfen",
+   "category": "exotic",
+   "morph": "relic",
+   "x": 122,
+   "y": 76,
+   "w": 50,
+   "h": 34,
+   "pivot": [
+    25,
+    33
+   ],
+   "native": [
+    50,
+    34
+   ]
+  },
+  "zephyr-starbloom@arcane": {
+   "species": "zephyr-starbloom",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": true,
+   "biome": "skyshard",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 431,
+   "y": 112,
+   "w": 50,
+   "h": 33,
+   "pivot": [
+    25,
+    32
+   ],
+   "native": [
+    50,
+    33
+   ]
+  }
+ }
+}

@@ -415,7 +415,8 @@ export function addAlchemy(world) {
       if (k < 0) world.reactions.push(r);
       else world.reactions[k] = r;
     }
-    world.wild = w.materials.filter((m) => !m.product).map((m) => m.id);
+    // what grows in the wilds: the catalog species (the legacy archetypes stay in the world for old brews and saves)
+    world.wild = w.materials.filter((m) => !m.product && !(/** @type {any} */ (m).wild && /** @type {any} */ (m).wild.legacy)).map((m) => m.id);
     for (const id of world.wild) if (!world.ingredients.includes(id)) world.ingredients.push(id);
     if (!world.laws) world.laws = w.laws;
   }
@@ -424,7 +425,7 @@ export function addAlchemy(world) {
   // Mandrake moved from the Whisperwood into the Netherwood); its look stays
   for (const m of world.materials) {
     const w = /** @type {any} */ (m).wild, spec = w && WILD_BY_KEY[w.key];
-    if (spec && w.region !== spec.region) /** @type {any} */ (m).wild = { ...w, region: spec.region };
+    if (spec && !w.catalog && w.region !== spec.region) /** @type {any} */ (m).wild = { ...w, region: spec.region };
   }
   // a save from before the procedural graphics: its ingredients get the identity their world would give them
   attachVisuals(world);

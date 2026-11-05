@@ -17,6 +17,7 @@
 const GRADE = {
   meadow: [0.42, 1.32, 0.5], forest: [0.4, 1.28, 0.5], netherwood: [0.34, 1.3, 0.46], river: [0.42, 1.3, 0.5],
   quarry: [0.38, 1.26, 0.48], moonfen: [0.34, 1.3, 0.44], crags: [0.36, 1.25, 0.48],
+  skyshard: [0.4, 1.3, 0.5], morphgrove: [0.36, 1.3, 0.46], veilhollow: [0.32, 1.18, 0.42], ghostglass: [0.34, 1.28, 0.44], chronoglass: [0.38, 1.24, 0.48],
   // the farm's enclosures (pens.js): the wilds' look, no ground silhouette to ink
   pen: [0.4, 1.28, 0],
 };

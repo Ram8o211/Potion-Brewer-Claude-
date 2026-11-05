@@ -132,13 +132,20 @@ export function aNoun(o) {
  * @type {Record<string, [AnimalKind, number][]>}
  */
 export const HABITAT = {
-  meadow: [['rabbit', 4], ['cat', 1], ['deer', 2], ['dove', 2], ['badger', 1], ['fox', 1]],
-  forest: [['rabbit', 3], ['cat', 2], ['toad', 1], ['deer', 2], ['badger', 2], ['fox', 2], ['snail', 1]],
-  netherwood: [['rabbit', 2], ['cat', 2], ['salamander', 1], ['fox', 2], ['rat', 2]],
-  river: [['rabbit', 2], ['toad', 3], ['dove', 1], ['snail', 2], ['rat', 1]],
-  quarry: [['rabbit', 1], ['salamander', 2], ['rat', 2], ['ermine', 1]],
-  moonfen: [['rabbit', 1], ['toad', 3], ['salamander', 1], ['snail', 2], ['rat', 1], ['ermine', 1]],
-  crags: [['rabbit', 1], ['cat', 1], ['salamander', 2], ['ermine', 2], ['dove', 1]],
+  // each biome holds one kind of wild animal: its native creature (game/biomes.js) where
+  // its art exists, otherwise the nearest kind already drawn stands in for it until it does
+  forest: [['fox', 1]],               // native: fox
+  meadow: [['rabbit', 1]],            // native: hare (the Moon Rabbit stands in)
+  river: [['ermine', 1]],             // native: river otter (stand-in)
+  quarry: [['badger', 1]],            // native: rock beetle (stand-in)
+  netherwood: [['rat', 1]],           // native: cave moth (stand-in)
+  crags: [['salamander', 1]],         // native: salamander
+  moonfen: [['toad', 1]],             // native: will-o'-wisp (stand-in)
+  skyshard: [['dove', 1]],            // native: cloud ray (stand-in)
+  morphgrove: [['cat', 1]],           // native: mimic lizard (stand-in)
+  veilhollow: [['deer', 1]],          // native: shroud moth (stand-in)
+  ghostglass: [['snail', 1]],         // native: spectral axolotl (stand-in)
+  chronoglass: [['rabbit', 1]],       // native: hourglass scarab (stand-in)
 };
 
 /** Pick a kind for a newcomer to a region. @param {string} region @param {Rng} rng @returns {AnimalKind} */

@@ -1,0 +1,2567 @@
+{
+ "version": 1,
+ "generated": "scripts/build-atlases.mjs",
+ "atlases": [
+  {
+   "id": "growth-exotic",
+   "image": "growth-exotic.png",
+   "meta": "growth-exotic.json",
+   "width": 512,
+   "height": 544,
+   "frames": 480,
+   "eager": false,
+   "biomes": [
+    "chronoglass",
+    "ghostglass",
+    "moonfen",
+    "morphgrove",
+    "skyshard",
+    "veilhollow"
+   ]
+  },
+  {
+   "id": "growth-natural",
+   "image": "growth-natural.png",
+   "meta": "growth-natural.json",
+   "width": 512,
+   "height": 576,
+   "frames": 480,
+   "eager": false,
+   "biomes": [
+    "crags",
+    "forest",
+    "meadow",
+    "netherwood",
+    "quarry",
+    "river"
+   ]
+  },
+  {
+   "id": "ingredients-arcane-exotic",
+   "image": "ingredients-arcane-exotic.png",
+   "meta": "ingredients-arcane-exotic.json",
+   "width": 512,
+   "height": 256,
+   "frames": 60,
+   "eager": false,
+   "biomes": [
+    "chronoglass",
+    "ghostglass",
+    "moonfen",
+    "morphgrove",
+    "skyshard",
+    "veilhollow"
+   ]
+  },
+  {
+   "id": "ingredients-arcane-natural",
+   "image": "ingredients-arcane-natural.png",
+   "meta": "ingredients-arcane-natural.json",
+   "width": 512,
+   "height": 304,
+   "frames": 60,
+   "eager": true,
+   "biomes": [
+    "crags",
+    "forest",
+    "meadow",
+    "netherwood",
+    "quarry",
+    "river"
+   ]
+  },
+  {
+   "id": "ingredients-exotic-flora",
+   "image": "ingredients-exotic-flora.png",
+   "meta": "ingredients-exotic-flora.json",
+   "width": 512,
+   "height": 128,
+   "frames": 34,
+   "eager": false,
+   "biomes": [
+    "chronoglass",
+    "ghostglass",
+    "moonfen",
+    "morphgrove",
+    "skyshard",
+    "veilhollow"
+   ]
+  },
+  {
+   "id": "ingredients-exotic-fungi-minerals",
+   "image": "ingredients-exotic-fungi-minerals.png",
+   "meta": "ingredients-exotic-fungi-minerals.json",
+   "width": 512,
+   "height": 96,
+   "frames": 26,
+   "eager": false,
+   "biomes": [
+    "chronoglass",
+    "ghostglass",
+    "moonfen",
+    "morphgrove",
+    "skyshard",
+    "veilhollow"
+   ]
+  },
+  {
+   "id": "ingredients-natural-flora",
+   "image": "ingredients-natural-flora.png",
+   "meta": "ingredients-natural-flora.json",
+   "width": 512,
+   "height": 160,
+   "frames": 40,
+   "eager": true,
+   "biomes": [
+    "crags",
+    "forest",
+    "meadow",
+    "netherwood",
+    "quarry",
+    "river"
+   ]
+  },
+  {
+   "id": "ingredients-natural-fungi-minerals",
+   "image": "ingredients-natural-fungi-minerals.png",
+   "meta": "ingredients-natural-fungi-minerals.json",
+   "width": 512,
+   "height": 80,
+   "frames": 20,
+   "eager": true,
+   "biomes": [
+    "crags",
+    "forest",
+    "meadow",
+    "netherwood",
+    "quarry",
+    "river"
+   ]
+  },
+  {
+   "id": "seeds",
+   "image": "seeds.png",
+   "meta": "seeds.json",
+   "width": 256,
+   "height": 240,
+   "frames": 240,
+   "eager": true,
+   "biomes": [
+    "chronoglass",
+    "crags",
+    "forest",
+    "ghostglass",
+    "meadow",
+    "moonfen",
+    "morphgrove",
+    "netherwood",
+    "quarry",
+    "river",
+    "skyshard",
+    "veilhollow"
+   ]
+  }
+ ],
+ "species": {
+  "silverleaf": {
+   "sprite": "silverleaf",
+   "arcane": "silverleaf@arcane",
+   "seed": "silverleaf@seed",
+   "seedArcane": "silverleaf@seed-arcane",
+   "stages": [
+    "silverleaf@stage0",
+    "silverleaf@stage1",
+    "silverleaf@stage2",
+    "silverleaf@stage3"
+   ],
+   "stagesArcane": [
+    "silverleaf@stage0-arcane",
+    "silverleaf@stage1-arcane",
+    "silverleaf@stage2-arcane",
+    "silverleaf@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "honeycap": {
+   "sprite": "honeycap",
+   "arcane": "honeycap@arcane",
+   "seed": "honeycap@seed",
+   "seedArcane": "honeycap@seed-arcane",
+   "stages": [
+    "honeycap@stage0",
+    "honeycap@stage1",
+    "honeycap@stage2",
+    "honeycap@stage3"
+   ],
+   "stagesArcane": [
+    "honeycap@stage0-arcane",
+    "honeycap@stage1-arcane",
+    "honeycap@stage2-arcane",
+    "honeycap@stage3-arcane"
+   ],
+   "bed": "fungal",
+   "seedForm": "spore"
+  },
+  "dawnblossom": {
+   "sprite": "dawnblossom",
+   "arcane": "dawnblossom@arcane",
+   "seed": "dawnblossom@seed",
+   "seedArcane": "dawnblossom@seed-arcane",
+   "stages": [
+    "dawnblossom@stage0",
+    "dawnblossom@stage1",
+    "dawnblossom@stage2",
+    "dawnblossom@stage3"
+   ],
+   "stagesArcane": [
+    "dawnblossom@stage0-arcane",
+    "dawnblossom@stage1-arcane",
+    "dawnblossom@stage2-arcane",
+    "dawnblossom@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "dewpear": {
+   "sprite": "dewpear",
+   "arcane": "dewpear@arcane",
+   "seed": "dewpear@seed",
+   "seedArcane": "dewpear@seed-arcane",
+   "stages": [
+    "dewpear@stage0",
+    "dewpear@stage1",
+    "dewpear@stage2",
+    "dewpear@stage3"
+   ],
+   "stagesArcane": [
+    "dewpear@stage0-arcane",
+    "dewpear@stage1-arcane",
+    "dewpear@stage2-arcane",
+    "dewpear@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "pip"
+  },
+  "heartwood-mandrake": {
+   "sprite": "heartwood-mandrake",
+   "arcane": "heartwood-mandrake@arcane",
+   "seed": "heartwood-mandrake@seed",
+   "seedArcane": "heartwood-mandrake@seed-arcane",
+   "stages": [
+    "heartwood-mandrake@stage0",
+    "heartwood-mandrake@stage1",
+    "heartwood-mandrake@stage2",
+    "heartwood-mandrake@stage3"
+   ],
+   "stagesArcane": [
+    "heartwood-mandrake@stage0-arcane",
+    "heartwood-mandrake@stage1-arcane",
+    "heartwood-mandrake@stage2-arcane",
+    "heartwood-mandrake@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "bulb"
+  },
+  "mossback-bark": {
+   "sprite": "mossback-bark",
+   "arcane": "mossback-bark@arcane",
+   "seed": "mossback-bark@seed",
+   "seedArcane": "mossback-bark@seed-arcane",
+   "stages": [
+    "mossback-bark@stage0",
+    "mossback-bark@stage1",
+    "mossback-bark@stage2",
+    "mossback-bark@stage3"
+   ],
+   "stagesArcane": [
+    "mossback-bark@stage0-arcane",
+    "mossback-bark@stage1-arcane",
+    "mossback-bark@stage2-arcane",
+    "mossback-bark@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "bulb"
+  },
+  "stagthorn-vine": {
+   "sprite": "stagthorn-vine",
+   "arcane": "stagthorn-vine@arcane",
+   "seed": "stagthorn-vine@seed",
+   "seedArcane": "stagthorn-vine@seed-arcane",
+   "stages": [
+    "stagthorn-vine@stage0",
+    "stagthorn-vine@stage1",
+    "stagthorn-vine@stage2",
+    "stagthorn-vine@stage3"
+   ],
+   "stagesArcane": [
+    "stagthorn-vine@stage0-arcane",
+    "stagthorn-vine@stage1-arcane",
+    "stagthorn-vine@stage2-arcane",
+    "stagthorn-vine@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "winged"
+  },
+  "hearthnut": {
+   "sprite": "hearthnut",
+   "arcane": "hearthnut@arcane",
+   "seed": "hearthnut@seed",
+   "seedArcane": "hearthnut@seed-arcane",
+   "stages": [
+    "hearthnut@stage0",
+    "hearthnut@stage1",
+    "hearthnut@stage2",
+    "hearthnut@stage3"
+   ],
+   "stagesArcane": [
+    "hearthnut@stage0-arcane",
+    "hearthnut@stage1-arcane",
+    "hearthnut@stage2-arcane",
+    "hearthnut@stage3-arcane"
+   ],
+   "bed": "crystal",
+   "seedForm": "chip"
+  },
+  "heartberry": {
+   "sprite": "heartberry",
+   "arcane": "heartberry@arcane",
+   "seed": "heartberry@seed",
+   "seedArcane": "heartberry@seed-arcane",
+   "stages": [
+    "heartberry@stage0",
+    "heartberry@stage1",
+    "heartberry@stage2",
+    "heartberry@stage3"
+   ],
+   "stagesArcane": [
+    "heartberry@stage0-arcane",
+    "heartberry@stage1-arcane",
+    "heartberry@stage2-arcane",
+    "heartberry@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "pip"
+  },
+  "everbloom-chalice": {
+   "sprite": "everbloom-chalice",
+   "arcane": "everbloom-chalice@arcane",
+   "seed": "everbloom-chalice@seed",
+   "seedArcane": "everbloom-chalice@seed-arcane",
+   "stages": [
+    "everbloom-chalice@stage0",
+    "everbloom-chalice@stage1",
+    "everbloom-chalice@stage2",
+    "everbloom-chalice@stage3"
+   ],
+   "stagesArcane": [
+    "everbloom-chalice@stage0-arcane",
+    "everbloom-chalice@stage1-arcane",
+    "everbloom-chalice@stage2-arcane",
+    "everbloom-chalice@stage3-arcane"
+   ],
+   "bed": "fungal",
+   "seedForm": "spore"
+  },
+  "meadow-daisy": {
+   "sprite": "meadow-daisy",
+   "arcane": "meadow-daisy@arcane",
+   "seed": "meadow-daisy@seed",
+   "seedArcane": "meadow-daisy@seed-arcane",
+   "stages": [
+    "meadow-daisy@stage0",
+    "meadow-daisy@stage1",
+    "meadow-daisy@stage2",
+    "meadow-daisy@stage3"
+   ],
+   "stagesArcane": [
+    "meadow-daisy@stage0-arcane",
+    "meadow-daisy@stage1-arcane",
+    "meadow-daisy@stage2-arcane",
+    "meadow-daisy@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "goldenrush": {
+   "sprite": "goldenrush",
+   "arcane": "goldenrush@arcane",
+   "seed": "goldenrush@seed",
+   "seedArcane": "goldenrush@seed-arcane",
+   "stages": [
+    "goldenrush@stage0",
+    "goldenrush@stage1",
+    "goldenrush@stage2",
+    "goldenrush@stage3"
+   ],
+   "stagesArcane": [
+    "goldenrush@stage0-arcane",
+    "goldenrush@stage1-arcane",
+    "goldenrush@stage2-arcane",
+    "goldenrush@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "grain"
+  },
+  "brightberry": {
+   "sprite": "brightberry",
+   "arcane": "brightberry@arcane",
+   "seed": "brightberry@seed",
+   "seedArcane": "brightberry@seed-arcane",
+   "stages": [
+    "brightberry@stage0",
+    "brightberry@stage1",
+    "brightberry@stage2",
+    "brightberry@stage3"
+   ],
+   "stagesArcane": [
+    "brightberry@stage0-arcane",
+    "brightberry@stage1-arcane",
+    "brightberry@stage2-arcane",
+    "brightberry@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "pip"
+  },
+  "honeyclover": {
+   "sprite": "honeyclover",
+   "arcane": "honeyclover@arcane",
+   "seed": "honeyclover@seed",
+   "seedArcane": "honeyclover@seed-arcane",
+   "stages": [
+    "honeyclover@stage0",
+    "honeyclover@stage1",
+    "honeyclover@stage2",
+    "honeyclover@stage3"
+   ],
+   "stagesArcane": [
+    "honeyclover@stage0-arcane",
+    "honeyclover@stage1-arcane",
+    "honeyclover@stage2-arcane",
+    "honeyclover@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "suncrown": {
+   "sprite": "suncrown",
+   "arcane": "suncrown@arcane",
+   "seed": "suncrown@seed",
+   "seedArcane": "suncrown@seed-arcane",
+   "stages": [
+    "suncrown@stage0",
+    "suncrown@stage1",
+    "suncrown@stage2",
+    "suncrown@stage3"
+   ],
+   "stagesArcane": [
+    "suncrown@stage0-arcane",
+    "suncrown@stage1-arcane",
+    "suncrown@stage2-arcane",
+    "suncrown@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "meadowcrystal": {
+   "sprite": "meadowcrystal",
+   "arcane": "meadowcrystal@arcane",
+   "seed": "meadowcrystal@seed",
+   "seedArcane": "meadowcrystal@seed-arcane",
+   "stages": [
+    "meadowcrystal@stage0",
+    "meadowcrystal@stage1",
+    "meadowcrystal@stage2",
+    "meadowcrystal@stage3"
+   ],
+   "stagesArcane": [
+    "meadowcrystal@stage0-arcane",
+    "meadowcrystal@stage1-arcane",
+    "meadowcrystal@stage2-arcane",
+    "meadowcrystal@stage3-arcane"
+   ],
+   "bed": "crystal",
+   "seedForm": "chip"
+  },
+  "prism-petal": {
+   "sprite": "prism-petal",
+   "arcane": "prism-petal@arcane",
+   "seed": "prism-petal@seed",
+   "seedArcane": "prism-petal@seed-arcane",
+   "stages": [
+    "prism-petal@stage0",
+    "prism-petal@stage1",
+    "prism-petal@stage2",
+    "prism-petal@stage3"
+   ],
+   "stagesArcane": [
+    "prism-petal@stage0-arcane",
+    "prism-petal@stage1-arcane",
+    "prism-petal@stage2-arcane",
+    "prism-petal@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "lovelace-orchid": {
+   "sprite": "lovelace-orchid",
+   "arcane": "lovelace-orchid@arcane",
+   "seed": "lovelace-orchid@seed",
+   "seedArcane": "lovelace-orchid@seed-arcane",
+   "stages": [
+    "lovelace-orchid@stage0",
+    "lovelace-orchid@stage1",
+    "lovelace-orchid@stage2",
+    "lovelace-orchid@stage3"
+   ],
+   "stagesArcane": [
+    "lovelace-orchid@stage0-arcane",
+    "lovelace-orchid@stage1-arcane",
+    "lovelace-orchid@stage2-arcane",
+    "lovelace-orchid@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "radiant-sunbloom": {
+   "sprite": "radiant-sunbloom",
+   "arcane": "radiant-sunbloom@arcane",
+   "seed": "radiant-sunbloom@seed",
+   "seedArcane": "radiant-sunbloom@seed-arcane",
+   "stages": [
+    "radiant-sunbloom@stage0",
+    "radiant-sunbloom@stage1",
+    "radiant-sunbloom@stage2",
+    "radiant-sunbloom@stage3"
+   ],
+   "stagesArcane": [
+    "radiant-sunbloom@stage0-arcane",
+    "radiant-sunbloom@stage1-arcane",
+    "radiant-sunbloom@stage2-arcane",
+    "radiant-sunbloom@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "eternal-rose": {
+   "sprite": "eternal-rose",
+   "arcane": "eternal-rose@arcane",
+   "seed": "eternal-rose@seed",
+   "seedArcane": "eternal-rose@seed-arcane",
+   "stages": [
+    "eternal-rose@stage0",
+    "eternal-rose@stage1",
+    "eternal-rose@stage2",
+    "eternal-rose@stage3"
+   ],
+   "stagesArcane": [
+    "eternal-rose@stage0-arcane",
+    "eternal-rose@stage1-arcane",
+    "eternal-rose@stage2-arcane",
+    "eternal-rose@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "willowleaf": {
+   "sprite": "willowleaf",
+   "arcane": "willowleaf@arcane",
+   "seed": "willowleaf@seed",
+   "seedArcane": "willowleaf@seed-arcane",
+   "stages": [
+    "willowleaf@stage0",
+    "willowleaf@stage1",
+    "willowleaf@stage2",
+    "willowleaf@stage3"
+   ],
+   "stagesArcane": [
+    "willowleaf@stage0-arcane",
+    "willowleaf@stage1-arcane",
+    "willowleaf@stage2-arcane",
+    "willowleaf@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "reedcap": {
+   "sprite": "reedcap",
+   "arcane": "reedcap@arcane",
+   "seed": "reedcap@seed",
+   "seedArcane": "reedcap@seed-arcane",
+   "stages": [
+    "reedcap@stage0",
+    "reedcap@stage1",
+    "reedcap@stage2",
+    "reedcap@stage3"
+   ],
+   "stagesArcane": [
+    "reedcap@stage0-arcane",
+    "reedcap@stage1-arcane",
+    "reedcap@stage2-arcane",
+    "reedcap@stage3-arcane"
+   ],
+   "bed": "fungal",
+   "seedForm": "spore"
+  },
+  "riverlotus": {
+   "sprite": "riverlotus",
+   "arcane": "riverlotus@arcane",
+   "seed": "riverlotus@seed",
+   "seedArcane": "riverlotus@seed-arcane",
+   "stages": [
+    "riverlotus@stage0",
+    "riverlotus@stage1",
+    "riverlotus@stage2",
+    "riverlotus@stage3"
+   ],
+   "stagesArcane": [
+    "riverlotus@stage0-arcane",
+    "riverlotus@stage1-arcane",
+    "riverlotus@stage2-arcane",
+    "riverlotus@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "bubbleberry": {
+   "sprite": "bubbleberry",
+   "arcane": "bubbleberry@arcane",
+   "seed": "bubbleberry@seed",
+   "seedArcane": "bubbleberry@seed-arcane",
+   "stages": [
+    "bubbleberry@stage0",
+    "bubbleberry@stage1",
+    "bubbleberry@stage2",
+    "bubbleberry@stage3"
+   ],
+   "stagesArcane": [
+    "bubbleberry@stage0-arcane",
+    "bubbleberry@stage1-arcane",
+    "bubbleberry@stage2-arcane",
+    "bubbleberry@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "pip"
+  },
+  "tidebloom": {
+   "sprite": "tidebloom",
+   "arcane": "tidebloom@arcane",
+   "seed": "tidebloom@seed",
+   "seedArcane": "tidebloom@seed-arcane",
+   "stages": [
+    "tidebloom@stage0",
+    "tidebloom@stage1",
+    "tidebloom@stage2",
+    "tidebloom@stage3"
+   ],
+   "stagesArcane": [
+    "tidebloom@stage0-arcane",
+    "tidebloom@stage1-arcane",
+    "tidebloom@stage2-arcane",
+    "tidebloom@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "streampearl": {
+   "sprite": "streampearl",
+   "arcane": "streampearl@arcane",
+   "seed": "streampearl@seed",
+   "seedArcane": "streampearl@seed-arcane",
+   "stages": [
+    "streampearl@stage0",
+    "streampearl@stage1",
+    "streampearl@stage2",
+    "streampearl@stage3"
+   ],
+   "stagesArcane": [
+    "streampearl@stage0-arcane",
+    "streampearl@stage1-arcane",
+    "streampearl@stage2-arcane",
+    "streampearl@stage3-arcane"
+   ],
+   "bed": "tide",
+   "seedForm": "spat"
+  },
+  "frostlotus": {
+   "sprite": "frostlotus",
+   "arcane": "frostlotus@arcane",
+   "seed": "frostlotus@seed",
+   "seedArcane": "frostlotus@seed-arcane",
+   "stages": [
+    "frostlotus@stage0",
+    "frostlotus@stage1",
+    "frostlotus@stage2",
+    "frostlotus@stage3"
+   ],
+   "stagesArcane": [
+    "frostlotus@stage0-arcane",
+    "frostlotus@stage1-arcane",
+    "frostlotus@stage2-arcane",
+    "frostlotus@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "rimefeather": {
+   "sprite": "rimefeather",
+   "arcane": "rimefeather@arcane",
+   "seed": "rimefeather@seed",
+   "seedArcane": "rimefeather@seed-arcane",
+   "stages": [
+    "rimefeather@stage0",
+    "rimefeather@stage1",
+    "rimefeather@stage2",
+    "rimefeather@stage3"
+   ],
+   "stagesArcane": [
+    "rimefeather@stage0-arcane",
+    "rimefeather@stage1-arcane",
+    "rimefeather@stage2-arcane",
+    "rimefeather@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "grain"
+  },
+  "nixie-torc": {
+   "sprite": "nixie-torc",
+   "arcane": "nixie-torc@arcane",
+   "seed": "nixie-torc@seed",
+   "seedArcane": "nixie-torc@seed-arcane",
+   "stages": [
+    "nixie-torc@stage0",
+    "nixie-torc@stage1",
+    "nixie-torc@stage2",
+    "nixie-torc@stage3"
+   ],
+   "stagesArcane": [
+    "nixie-torc@stage0-arcane",
+    "nixie-torc@stage1-arcane",
+    "nixie-torc@stage2-arcane",
+    "nixie-torc@stage3-arcane"
+   ],
+   "bed": "crystal",
+   "seedForm": "chip"
+  },
+  "everfrost-pearlbloom": {
+   "sprite": "everfrost-pearlbloom",
+   "arcane": "everfrost-pearlbloom@arcane",
+   "seed": "everfrost-pearlbloom@seed",
+   "seedArcane": "everfrost-pearlbloom@seed-arcane",
+   "stages": [
+    "everfrost-pearlbloom@stage0",
+    "everfrost-pearlbloom@stage1",
+    "everfrost-pearlbloom@stage2",
+    "everfrost-pearlbloom@stage3"
+   ],
+   "stagesArcane": [
+    "everfrost-pearlbloom@stage0-arcane",
+    "everfrost-pearlbloom@stage1-arcane",
+    "everfrost-pearlbloom@stage2-arcane",
+    "everfrost-pearlbloom@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "stonewort": {
+   "sprite": "stonewort",
+   "arcane": "stonewort@arcane",
+   "seed": "stonewort@seed",
+   "seedArcane": "stonewort@seed-arcane",
+   "stages": [
+    "stonewort@stage0",
+    "stonewort@stage1",
+    "stonewort@stage2",
+    "stonewort@stage3"
+   ],
+   "stagesArcane": [
+    "stonewort@stage0-arcane",
+    "stonewort@stage1-arcane",
+    "stonewort@stage2-arcane",
+    "stonewort@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "quarrycap": {
+   "sprite": "quarrycap",
+   "arcane": "quarrycap@arcane",
+   "seed": "quarrycap@seed",
+   "seedArcane": "quarrycap@seed-arcane",
+   "stages": [
+    "quarrycap@stage0",
+    "quarrycap@stage1",
+    "quarrycap@stage2",
+    "quarrycap@stage3"
+   ],
+   "stagesArcane": [
+    "quarrycap@stage0-arcane",
+    "quarrycap@stage1-arcane",
+    "quarrycap@stage2-arcane",
+    "quarrycap@stage3-arcane"
+   ],
+   "bed": "fungal",
+   "seedForm": "spore"
+  },
+  "ironbloom": {
+   "sprite": "ironbloom",
+   "arcane": "ironbloom@arcane",
+   "seed": "ironbloom@seed",
+   "seedArcane": "ironbloom@seed-arcane",
+   "stages": [
+    "ironbloom@stage0",
+    "ironbloom@stage1",
+    "ironbloom@stage2",
+    "ironbloom@stage3"
+   ],
+   "stagesArcane": [
+    "ironbloom@stage0-arcane",
+    "ironbloom@stage1-arcane",
+    "ironbloom@stage2-arcane",
+    "ironbloom@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "stoneberry": {
+   "sprite": "stoneberry",
+   "arcane": "stoneberry@arcane",
+   "seed": "stoneberry@seed",
+   "seedArcane": "stoneberry@seed-arcane",
+   "stages": [
+    "stoneberry@stage0",
+    "stoneberry@stage1",
+    "stoneberry@stage2",
+    "stoneberry@stage3"
+   ],
+   "stagesArcane": [
+    "stoneberry@stage0-arcane",
+    "stoneberry@stage1-arcane",
+    "stoneberry@stage2-arcane",
+    "stoneberry@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "pip"
+  },
+  "orebud": {
+   "sprite": "orebud",
+   "arcane": "orebud@arcane",
+   "seed": "orebud@seed",
+   "seedArcane": "orebud@seed-arcane",
+   "stages": [
+    "orebud@stage0",
+    "orebud@stage1",
+    "orebud@stage2",
+    "orebud@stage3"
+   ],
+   "stagesArcane": [
+    "orebud@stage0-arcane",
+    "orebud@stage1-arcane",
+    "orebud@stage2-arcane",
+    "orebud@stage3-arcane"
+   ],
+   "bed": "crystal",
+   "seedForm": "chip"
+  },
+  "ferric-crystal": {
+   "sprite": "ferric-crystal",
+   "arcane": "ferric-crystal@arcane",
+   "seed": "ferric-crystal@seed",
+   "seedArcane": "ferric-crystal@seed-arcane",
+   "stages": [
+    "ferric-crystal@stage0",
+    "ferric-crystal@stage1",
+    "ferric-crystal@stage2",
+    "ferric-crystal@stage3"
+   ],
+   "stagesArcane": [
+    "ferric-crystal@stage0-arcane",
+    "ferric-crystal@stage1-arcane",
+    "ferric-crystal@stage2-arcane",
+    "ferric-crystal@stage3-arcane"
+   ],
+   "bed": "crystal",
+   "seedForm": "chip"
+  },
+  "gravelpod": {
+   "sprite": "gravelpod",
+   "arcane": "gravelpod@arcane",
+   "seed": "gravelpod@seed",
+   "seedArcane": "gravelpod@seed-arcane",
+   "stages": [
+    "gravelpod@stage0",
+    "gravelpod@stage1",
+    "gravelpod@stage2",
+    "gravelpod@stage3"
+   ],
+   "stagesArcane": [
+    "gravelpod@stage0-arcane",
+    "gravelpod@stage1-arcane",
+    "gravelpod@stage2-arcane",
+    "gravelpod@stage3-arcane"
+   ],
+   "bed": "crystal",
+   "seedForm": "chip"
+  },
+  "ammonite-coil": {
+   "sprite": "ammonite-coil",
+   "arcane": "ammonite-coil@arcane",
+   "seed": "ammonite-coil@seed",
+   "seedArcane": "ammonite-coil@seed-arcane",
+   "stages": [
+    "ammonite-coil@stage0",
+    "ammonite-coil@stage1",
+    "ammonite-coil@stage2",
+    "ammonite-coil@stage3"
+   ],
+   "stagesArcane": [
+    "ammonite-coil@stage0-arcane",
+    "ammonite-coil@stage1-arcane",
+    "ammonite-coil@stage2-arcane",
+    "ammonite-coil@stage3-arcane"
+   ],
+   "bed": "crystal",
+   "seedForm": "chip"
+  },
+  "emberheart-geode": {
+   "sprite": "emberheart-geode",
+   "arcane": "emberheart-geode@arcane",
+   "seed": "emberheart-geode@seed",
+   "seedArcane": "emberheart-geode@seed-arcane",
+   "stages": [
+    "emberheart-geode@stage0",
+    "emberheart-geode@stage1",
+    "emberheart-geode@stage2",
+    "emberheart-geode@stage3"
+   ],
+   "stagesArcane": [
+    "emberheart-geode@stage0-arcane",
+    "emberheart-geode@stage1-arcane",
+    "emberheart-geode@stage2-arcane",
+    "emberheart-geode@stage3-arcane"
+   ],
+   "bed": "crystal",
+   "seedForm": "chip"
+  },
+  "titan-root": {
+   "sprite": "titan-root",
+   "arcane": "titan-root@arcane",
+   "seed": "titan-root@seed",
+   "seedArcane": "titan-root@seed-arcane",
+   "stages": [
+    "titan-root@stage0",
+    "titan-root@stage1",
+    "titan-root@stage2",
+    "titan-root@stage3"
+   ],
+   "stagesArcane": [
+    "titan-root@stage0-arcane",
+    "titan-root@stage1-arcane",
+    "titan-root@stage2-arcane",
+    "titan-root@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "bulb"
+  },
+  "nethercap": {
+   "sprite": "nethercap",
+   "arcane": "nethercap@arcane",
+   "seed": "nethercap@seed",
+   "seedArcane": "nethercap@seed-arcane",
+   "stages": [
+    "nethercap@stage0",
+    "nethercap@stage1",
+    "nethercap@stage2",
+    "nethercap@stage3"
+   ],
+   "stagesArcane": [
+    "nethercap@stage0-arcane",
+    "nethercap@stage1-arcane",
+    "nethercap@stage2-arcane",
+    "nethercap@stage3-arcane"
+   ],
+   "bed": "fungal",
+   "seedForm": "spore"
+  },
+  "gloommoss": {
+   "sprite": "gloommoss",
+   "arcane": "gloommoss@arcane",
+   "seed": "gloommoss@seed",
+   "seedArcane": "gloommoss@seed-arcane",
+   "stages": [
+    "gloommoss@stage0",
+    "gloommoss@stage1",
+    "gloommoss@stage2",
+    "gloommoss@stage3"
+   ],
+   "stagesArcane": [
+    "gloommoss@stage0-arcane",
+    "gloommoss@stage1-arcane",
+    "gloommoss@stage2-arcane",
+    "gloommoss@stage3-arcane"
+   ],
+   "bed": "fungal",
+   "seedForm": "spore"
+  },
+  "umbrabell": {
+   "sprite": "umbrabell",
+   "arcane": "umbrabell@arcane",
+   "seed": "umbrabell@seed",
+   "seedArcane": "umbrabell@seed-arcane",
+   "stages": [
+    "umbrabell@stage0",
+    "umbrabell@stage1",
+    "umbrabell@stage2",
+    "umbrabell@stage3"
+   ],
+   "stagesArcane": [
+    "umbrabell@stage0-arcane",
+    "umbrabell@stage1-arcane",
+    "umbrabell@stage2-arcane",
+    "umbrabell@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "shadefruit": {
+   "sprite": "shadefruit",
+   "arcane": "shadefruit@arcane",
+   "seed": "shadefruit@seed",
+   "seedArcane": "shadefruit@seed-arcane",
+   "stages": [
+    "shadefruit@stage0",
+    "shadefruit@stage1",
+    "shadefruit@stage2",
+    "shadefruit@stage3"
+   ],
+   "stagesArcane": [
+    "shadefruit@stage0-arcane",
+    "shadefruit@stage1-arcane",
+    "shadefruit@stage2-arcane",
+    "shadefruit@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "pip"
+  },
+  "sporelantern": {
+   "sprite": "sporelantern",
+   "arcane": "sporelantern@arcane",
+   "seed": "sporelantern@seed",
+   "seedArcane": "sporelantern@seed-arcane",
+   "stages": [
+    "sporelantern@stage0",
+    "sporelantern@stage1",
+    "sporelantern@stage2",
+    "sporelantern@stage3"
+   ],
+   "stagesArcane": [
+    "sporelantern@stage0-arcane",
+    "sporelantern@stage1-arcane",
+    "sporelantern@stage2-arcane",
+    "sporelantern@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "winged"
+  },
+  "wraithvine": {
+   "sprite": "wraithvine",
+   "arcane": "wraithvine@arcane",
+   "seed": "wraithvine@seed",
+   "seedArcane": "wraithvine@seed-arcane",
+   "stages": [
+    "wraithvine@stage0",
+    "wraithvine@stage1",
+    "wraithvine@stage2",
+    "wraithvine@stage3"
+   ],
+   "stagesArcane": [
+    "wraithvine@stage0-arcane",
+    "wraithvine@stage1-arcane",
+    "wraithvine@stage2-arcane",
+    "wraithvine@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "winged"
+  },
+  "nightbloom-lotus": {
+   "sprite": "nightbloom-lotus",
+   "arcane": "nightbloom-lotus@arcane",
+   "seed": "nightbloom-lotus@seed",
+   "seedArcane": "nightbloom-lotus@seed-arcane",
+   "stages": [
+    "nightbloom-lotus@stage0",
+    "nightbloom-lotus@stage1",
+    "nightbloom-lotus@stage2",
+    "nightbloom-lotus@stage3"
+   ],
+   "stagesArcane": [
+    "nightbloom-lotus@stage0-arcane",
+    "nightbloom-lotus@stage1-arcane",
+    "nightbloom-lotus@stage2-arcane",
+    "nightbloom-lotus@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "umbral-amethyst": {
+   "sprite": "umbral-amethyst",
+   "arcane": "umbral-amethyst@arcane",
+   "seed": "umbral-amethyst@seed",
+   "seedArcane": "umbral-amethyst@seed-arcane",
+   "stages": [
+    "umbral-amethyst@stage0",
+    "umbral-amethyst@stage1",
+    "umbral-amethyst@stage2",
+    "umbral-amethyst@stage3"
+   ],
+   "stagesArcane": [
+    "umbral-amethyst@stage0-arcane",
+    "umbral-amethyst@stage1-arcane",
+    "umbral-amethyst@stage2-arcane",
+    "umbral-amethyst@stage3-arcane"
+   ],
+   "bed": "crystal",
+   "seedForm": "chip"
+  },
+  "thornhalo": {
+   "sprite": "thornhalo",
+   "arcane": "thornhalo@arcane",
+   "seed": "thornhalo@seed",
+   "seedArcane": "thornhalo@seed-arcane",
+   "stages": [
+    "thornhalo@stage0",
+    "thornhalo@stage1",
+    "thornhalo@stage2",
+    "thornhalo@stage3"
+   ],
+   "stagesArcane": [
+    "thornhalo@stage0-arcane",
+    "thornhalo@stage1-arcane",
+    "thornhalo@stage2-arcane",
+    "thornhalo@stage3-arcane"
+   ],
+   "bed": "crystal",
+   "seedForm": "chip"
+  },
+  "venomlily": {
+   "sprite": "venomlily",
+   "arcane": "venomlily@arcane",
+   "seed": "venomlily@seed",
+   "seedArcane": "venomlily@seed-arcane",
+   "stages": [
+    "venomlily@stage0",
+    "venomlily@stage1",
+    "venomlily@stage2",
+    "venomlily@stage3"
+   ],
+   "stagesArcane": [
+    "venomlily@stage0-arcane",
+    "venomlily@stage1-arcane",
+    "venomlily@stage2-arcane",
+    "venomlily@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "emberleaf": {
+   "sprite": "emberleaf",
+   "arcane": "emberleaf@arcane",
+   "seed": "emberleaf@seed",
+   "seedArcane": "emberleaf@seed-arcane",
+   "stages": [
+    "emberleaf@stage0",
+    "emberleaf@stage1",
+    "emberleaf@stage2",
+    "emberleaf@stage3"
+   ],
+   "stagesArcane": [
+    "emberleaf@stage0-arcane",
+    "emberleaf@stage1-arcane",
+    "emberleaf@stage2-arcane",
+    "emberleaf@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "cindershroom": {
+   "sprite": "cindershroom",
+   "arcane": "cindershroom@arcane",
+   "seed": "cindershroom@seed",
+   "seedArcane": "cindershroom@seed-arcane",
+   "stages": [
+    "cindershroom@stage0",
+    "cindershroom@stage1",
+    "cindershroom@stage2",
+    "cindershroom@stage3"
+   ],
+   "stagesArcane": [
+    "cindershroom@stage0-arcane",
+    "cindershroom@stage1-arcane",
+    "cindershroom@stage2-arcane",
+    "cindershroom@stage3-arcane"
+   ],
+   "bed": "fungal",
+   "seedForm": "spore"
+  },
+  "firebramble": {
+   "sprite": "firebramble",
+   "arcane": "firebramble@arcane",
+   "seed": "firebramble@seed",
+   "seedArcane": "firebramble@seed-arcane",
+   "stages": [
+    "firebramble@stage0",
+    "firebramble@stage1",
+    "firebramble@stage2",
+    "firebramble@stage3"
+   ],
+   "stagesArcane": [
+    "firebramble@stage0-arcane",
+    "firebramble@stage1-arcane",
+    "firebramble@stage2-arcane",
+    "firebramble@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "pip"
+  },
+  "sulfurvine": {
+   "sprite": "sulfurvine",
+   "arcane": "sulfurvine@arcane",
+   "seed": "sulfurvine@seed",
+   "seedArcane": "sulfurvine@seed-arcane",
+   "stages": [
+    "sulfurvine@stage0",
+    "sulfurvine@stage1",
+    "sulfurvine@stage2",
+    "sulfurvine@stage3"
+   ],
+   "stagesArcane": [
+    "sulfurvine@stage0-arcane",
+    "sulfurvine@stage1-arcane",
+    "sulfurvine@stage2-arcane",
+    "sulfurvine@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "winged"
+  },
+  "flamecrest": {
+   "sprite": "flamecrest",
+   "arcane": "flamecrest@arcane",
+   "seed": "flamecrest@seed",
+   "seedArcane": "flamecrest@seed-arcane",
+   "stages": [
+    "flamecrest@stage0",
+    "flamecrest@stage1",
+    "flamecrest@stage2",
+    "flamecrest@stage3"
+   ],
+   "stagesArcane": [
+    "flamecrest@stage0-arcane",
+    "flamecrest@stage1-arcane",
+    "flamecrest@stage2-arcane",
+    "flamecrest@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "blazestone": {
+   "sprite": "blazestone",
+   "arcane": "blazestone@arcane",
+   "seed": "blazestone@seed",
+   "seedArcane": "blazestone@seed-arcane",
+   "stages": [
+    "blazestone@stage0",
+    "blazestone@stage1",
+    "blazestone@stage2",
+    "blazestone@stage3"
+   ],
+   "stagesArcane": [
+    "blazestone@stage0-arcane",
+    "blazestone@stage1-arcane",
+    "blazestone@stage2-arcane",
+    "blazestone@stage3-arcane"
+   ],
+   "bed": "crystal",
+   "seedForm": "chip"
+  },
+  "phoenix-heartseed": {
+   "sprite": "phoenix-heartseed",
+   "arcane": "phoenix-heartseed@arcane",
+   "seed": "phoenix-heartseed@seed",
+   "seedArcane": "phoenix-heartseed@seed-arcane",
+   "stages": [
+    "phoenix-heartseed@stage0",
+    "phoenix-heartseed@stage1",
+    "phoenix-heartseed@stage2",
+    "phoenix-heartseed@stage3"
+   ],
+   "stagesArcane": [
+    "phoenix-heartseed@stage0-arcane",
+    "phoenix-heartseed@stage1-arcane",
+    "phoenix-heartseed@stage2-arcane",
+    "phoenix-heartseed@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "winged"
+  },
+  "ashcactus": {
+   "sprite": "ashcactus",
+   "arcane": "ashcactus@arcane",
+   "seed": "ashcactus@seed",
+   "seedArcane": "ashcactus@seed-arcane",
+   "stages": [
+    "ashcactus@stage0",
+    "ashcactus@stage1",
+    "ashcactus@stage2",
+    "ashcactus@stage3"
+   ],
+   "stagesArcane": [
+    "ashcactus@stage0-arcane",
+    "ashcactus@stage1-arcane",
+    "ashcactus@stage2-arcane",
+    "ashcactus@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "everburning-sunheart": {
+   "sprite": "everburning-sunheart",
+   "arcane": "everburning-sunheart@arcane",
+   "seed": "everburning-sunheart@seed",
+   "seedArcane": "everburning-sunheart@seed-arcane",
+   "stages": [
+    "everburning-sunheart@stage0",
+    "everburning-sunheart@stage1",
+    "everburning-sunheart@stage2",
+    "everburning-sunheart@stage3"
+   ],
+   "stagesArcane": [
+    "everburning-sunheart@stage0-arcane",
+    "everburning-sunheart@stage1-arcane",
+    "everburning-sunheart@stage2-arcane",
+    "everburning-sunheart@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "cinderpod": {
+   "sprite": "cinderpod",
+   "arcane": "cinderpod@arcane",
+   "seed": "cinderpod@seed",
+   "seedArcane": "cinderpod@seed-arcane",
+   "stages": [
+    "cinderpod@stage0",
+    "cinderpod@stage1",
+    "cinderpod@stage2",
+    "cinderpod@stage3"
+   ],
+   "stagesArcane": [
+    "cinderpod@stage0-arcane",
+    "cinderpod@stage1-arcane",
+    "cinderpod@stage2-arcane",
+    "cinderpod@stage3-arcane"
+   ],
+   "bed": "crystal",
+   "seedForm": "chip"
+  },
+  "moonreed": {
+   "sprite": "moonreed",
+   "arcane": "moonreed@arcane",
+   "seed": "moonreed@seed",
+   "seedArcane": "moonreed@seed-arcane",
+   "stages": [
+    "moonreed@stage0",
+    "moonreed@stage1",
+    "moonreed@stage2",
+    "moonreed@stage3"
+   ],
+   "stagesArcane": [
+    "moonreed@stage0-arcane",
+    "moonreed@stage1-arcane",
+    "moonreed@stage2-arcane",
+    "moonreed@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "grain"
+  },
+  "fenmilk-cap": {
+   "sprite": "fenmilk-cap",
+   "arcane": "fenmilk-cap@arcane",
+   "seed": "fenmilk-cap@seed",
+   "seedArcane": "fenmilk-cap@seed-arcane",
+   "stages": [
+    "fenmilk-cap@stage0",
+    "fenmilk-cap@stage1",
+    "fenmilk-cap@stage2",
+    "fenmilk-cap@stage3"
+   ],
+   "stagesArcane": [
+    "fenmilk-cap@stage0-arcane",
+    "fenmilk-cap@stage1-arcane",
+    "fenmilk-cap@stage2-arcane",
+    "fenmilk-cap@stage3-arcane"
+   ],
+   "bed": "fungal",
+   "seedForm": "spore"
+  },
+  "duskbell": {
+   "sprite": "duskbell",
+   "arcane": "duskbell@arcane",
+   "seed": "duskbell@seed",
+   "seedArcane": "duskbell@seed-arcane",
+   "stages": [
+    "duskbell@stage0",
+    "duskbell@stage1",
+    "duskbell@stage2",
+    "duskbell@stage3"
+   ],
+   "stagesArcane": [
+    "duskbell@stage0-arcane",
+    "duskbell@stage1-arcane",
+    "duskbell@stage2-arcane",
+    "duskbell@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "dreamberry": {
+   "sprite": "dreamberry",
+   "arcane": "dreamberry@arcane",
+   "seed": "dreamberry@seed",
+   "seedArcane": "dreamberry@seed-arcane",
+   "stages": [
+    "dreamberry@stage0",
+    "dreamberry@stage1",
+    "dreamberry@stage2",
+    "dreamberry@stage3"
+   ],
+   "stagesArcane": [
+    "dreamberry@stage0-arcane",
+    "dreamberry@stage1-arcane",
+    "dreamberry@stage2-arcane",
+    "dreamberry@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "pip"
+  },
+  "moonlotus": {
+   "sprite": "moonlotus",
+   "arcane": "moonlotus@arcane",
+   "seed": "moonlotus@seed",
+   "seedArcane": "moonlotus@seed-arcane",
+   "stages": [
+    "moonlotus@stage0",
+    "moonlotus@stage1",
+    "moonlotus@stage2",
+    "moonlotus@stage3"
+   ],
+   "stagesArcane": [
+    "moonlotus@stage0-arcane",
+    "moonlotus@stage1-arcane",
+    "moonlotus@stage2-arcane",
+    "moonlotus@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "sleepglass": {
+   "sprite": "sleepglass",
+   "arcane": "sleepglass@arcane",
+   "seed": "sleepglass@seed",
+   "seedArcane": "sleepglass@seed-arcane",
+   "stages": [
+    "sleepglass@stage0",
+    "sleepglass@stage1",
+    "sleepglass@stage2",
+    "sleepglass@stage3"
+   ],
+   "stagesArcane": [
+    "sleepglass@stage0-arcane",
+    "sleepglass@stage1-arcane",
+    "sleepglass@stage2-arcane",
+    "sleepglass@stage3-arcane"
+   ],
+   "bed": "crystal",
+   "seedForm": "chip"
+  },
+  "moonveil-bloom": {
+   "sprite": "moonveil-bloom",
+   "arcane": "moonveil-bloom@arcane",
+   "seed": "moonveil-bloom@seed",
+   "seedArcane": "moonveil-bloom@seed-arcane",
+   "stages": [
+    "moonveil-bloom@stage0",
+    "moonveil-bloom@stage1",
+    "moonveil-bloom@stage2",
+    "moonveil-bloom@stage3"
+   ],
+   "stagesArcane": [
+    "moonveil-bloom@stage0-arcane",
+    "moonveil-bloom@stage1-arcane",
+    "moonveil-bloom@stage2-arcane",
+    "moonveil-bloom@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "mirepod-shell": {
+   "sprite": "mirepod-shell",
+   "arcane": "mirepod-shell@arcane",
+   "seed": "mirepod-shell@seed",
+   "seedArcane": "mirepod-shell@seed-arcane",
+   "stages": [
+    "mirepod-shell@stage0",
+    "mirepod-shell@stage1",
+    "mirepod-shell@stage2",
+    "mirepod-shell@stage3"
+   ],
+   "stagesArcane": [
+    "mirepod-shell@stage0-arcane",
+    "mirepod-shell@stage1-arcane",
+    "mirepod-shell@stage2-arcane",
+    "mirepod-shell@stage3-arcane"
+   ],
+   "bed": "tide",
+   "seedForm": "spat"
+  },
+  "wisp-reliquary": {
+   "sprite": "wisp-reliquary",
+   "arcane": "wisp-reliquary@arcane",
+   "seed": "wisp-reliquary@seed",
+   "seedArcane": "wisp-reliquary@seed-arcane",
+   "stages": [
+    "wisp-reliquary@stage0",
+    "wisp-reliquary@stage1",
+    "wisp-reliquary@stage2",
+    "wisp-reliquary@stage3"
+   ],
+   "stagesArcane": [
+    "wisp-reliquary@stage0-arcane",
+    "wisp-reliquary@stage1-arcane",
+    "wisp-reliquary@stage2-arcane",
+    "wisp-reliquary@stage3-arcane"
+   ],
+   "bed": "crystal",
+   "seedForm": "chip"
+  },
+  "starfall-lotus": {
+   "sprite": "starfall-lotus",
+   "arcane": "starfall-lotus@arcane",
+   "seed": "starfall-lotus@seed",
+   "seedArcane": "starfall-lotus@seed-arcane",
+   "stages": [
+    "starfall-lotus@stage0",
+    "starfall-lotus@stage1",
+    "starfall-lotus@stage2",
+    "starfall-lotus@stage3"
+   ],
+   "stagesArcane": [
+    "starfall-lotus@stage0-arcane",
+    "starfall-lotus@stage1-arcane",
+    "starfall-lotus@stage2-arcane",
+    "starfall-lotus@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "skyspray": {
+   "sprite": "skyspray",
+   "arcane": "skyspray@arcane",
+   "seed": "skyspray@seed",
+   "seedArcane": "skyspray@seed-arcane",
+   "stages": [
+    "skyspray@stage0",
+    "skyspray@stage1",
+    "skyspray@stage2",
+    "skyspray@stage3"
+   ],
+   "stagesArcane": [
+    "skyspray@stage0-arcane",
+    "skyspray@stage1-arcane",
+    "skyspray@stage2-arcane",
+    "skyspray@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "cloudcap": {
+   "sprite": "cloudcap",
+   "arcane": "cloudcap@arcane",
+   "seed": "cloudcap@seed",
+   "seedArcane": "cloudcap@seed-arcane",
+   "stages": [
+    "cloudcap@stage0",
+    "cloudcap@stage1",
+    "cloudcap@stage2",
+    "cloudcap@stage3"
+   ],
+   "stagesArcane": [
+    "cloudcap@stage0-arcane",
+    "cloudcap@stage1-arcane",
+    "cloudcap@stage2-arcane",
+    "cloudcap@stage3-arcane"
+   ],
+   "bed": "fungal",
+   "seedForm": "spore"
+  },
+  "airstar": {
+   "sprite": "airstar",
+   "arcane": "airstar@arcane",
+   "seed": "airstar@seed",
+   "seedArcane": "airstar@seed-arcane",
+   "stages": [
+    "airstar@stage0",
+    "airstar@stage1",
+    "airstar@stage2",
+    "airstar@stage3"
+   ],
+   "stagesArcane": [
+    "airstar@stage0-arcane",
+    "airstar@stage1-arcane",
+    "airstar@stage2-arcane",
+    "airstar@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "skyberry": {
+   "sprite": "skyberry",
+   "arcane": "skyberry@arcane",
+   "seed": "skyberry@seed",
+   "seedArcane": "skyberry@seed-arcane",
+   "stages": [
+    "skyberry@stage0",
+    "skyberry@stage1",
+    "skyberry@stage2",
+    "skyberry@stage3"
+   ],
+   "stagesArcane": [
+    "skyberry@stage0-arcane",
+    "skyberry@stage1-arcane",
+    "skyberry@stage2-arcane",
+    "skyberry@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "pip"
+  },
+  "updraft-seedwing": {
+   "sprite": "updraft-seedwing",
+   "arcane": "updraft-seedwing@arcane",
+   "seed": "updraft-seedwing@seed",
+   "seedArcane": "updraft-seedwing@seed-arcane",
+   "stages": [
+    "updraft-seedwing@stage0",
+    "updraft-seedwing@stage1",
+    "updraft-seedwing@stage2",
+    "updraft-seedwing@stage3"
+   ],
+   "stagesArcane": [
+    "updraft-seedwing@stage0-arcane",
+    "updraft-seedwing@stage1-arcane",
+    "updraft-seedwing@stage2-arcane",
+    "updraft-seedwing@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "winged"
+  },
+  "zephyr-starbloom": {
+   "sprite": "zephyr-starbloom",
+   "arcane": "zephyr-starbloom@arcane",
+   "seed": "zephyr-starbloom@seed",
+   "seedArcane": "zephyr-starbloom@seed-arcane",
+   "stages": [
+    "zephyr-starbloom@stage0",
+    "zephyr-starbloom@stage1",
+    "zephyr-starbloom@stage2",
+    "zephyr-starbloom@stage3"
+   ],
+   "stagesArcane": [
+    "zephyr-starbloom@stage0-arcane",
+    "zephyr-starbloom@stage1-arcane",
+    "zephyr-starbloom@stage2-arcane",
+    "zephyr-starbloom@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "featherpetal": {
+   "sprite": "featherpetal",
+   "arcane": "featherpetal@arcane",
+   "seed": "featherpetal@seed",
+   "seedArcane": "featherpetal@seed-arcane",
+   "stages": [
+    "featherpetal@stage0",
+    "featherpetal@stage1",
+    "featherpetal@stage2",
+    "featherpetal@stage3"
+   ],
+   "stagesArcane": [
+    "featherpetal@stage0-arcane",
+    "featherpetal@stage1-arcane",
+    "featherpetal@stage2-arcane",
+    "featherpetal@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "skyshard-geode": {
+   "sprite": "skyshard-geode",
+   "arcane": "skyshard-geode@arcane",
+   "seed": "skyshard-geode@seed",
+   "seedArcane": "skyshard-geode@seed-arcane",
+   "stages": [
+    "skyshard-geode@stage0",
+    "skyshard-geode@stage1",
+    "skyshard-geode@stage2",
+    "skyshard-geode@stage3"
+   ],
+   "stagesArcane": [
+    "skyshard-geode@stage0-arcane",
+    "skyshard-geode@stage1-arcane",
+    "skyshard-geode@stage2-arcane",
+    "skyshard-geode@stage3-arcane"
+   ],
+   "bed": "crystal",
+   "seedForm": "chip"
+  },
+  "windfern": {
+   "sprite": "windfern",
+   "arcane": "windfern@arcane",
+   "seed": "windfern@seed",
+   "seedArcane": "windfern@seed-arcane",
+   "stages": [
+    "windfern@stage0",
+    "windfern@stage1",
+    "windfern@stage2",
+    "windfern@stage3"
+   ],
+   "stagesArcane": [
+    "windfern@stage0-arcane",
+    "windfern@stage1-arcane",
+    "windfern@stage2-arcane",
+    "windfern@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "cloudprism": {
+   "sprite": "cloudprism",
+   "arcane": "cloudprism@arcane",
+   "seed": "cloudprism@seed",
+   "seedArcane": "cloudprism@seed-arcane",
+   "stages": [
+    "cloudprism@stage0",
+    "cloudprism@stage1",
+    "cloudprism@stage2",
+    "cloudprism@stage3"
+   ],
+   "stagesArcane": [
+    "cloudprism@stage0-arcane",
+    "cloudprism@stage1-arcane",
+    "cloudprism@stage2-arcane",
+    "cloudprism@stage3-arcane"
+   ],
+   "bed": "crystal",
+   "seedForm": "chip"
+  },
+  "morphleaf": {
+   "sprite": "morphleaf",
+   "arcane": "morphleaf@arcane",
+   "seed": "morphleaf@seed",
+   "seedArcane": "morphleaf@seed-arcane",
+   "stages": [
+    "morphleaf@stage0",
+    "morphleaf@stage1",
+    "morphleaf@stage2",
+    "morphleaf@stage3"
+   ],
+   "stagesArcane": [
+    "morphleaf@stage0-arcane",
+    "morphleaf@stage1-arcane",
+    "morphleaf@stage2-arcane",
+    "morphleaf@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "shapecap": {
+   "sprite": "shapecap",
+   "arcane": "shapecap@arcane",
+   "seed": "shapecap@seed",
+   "seedArcane": "shapecap@seed-arcane",
+   "stages": [
+    "shapecap@stage0",
+    "shapecap@stage1",
+    "shapecap@stage2",
+    "shapecap@stage3"
+   ],
+   "stagesArcane": [
+    "shapecap@stage0-arcane",
+    "shapecap@stage1-arcane",
+    "shapecap@stage2-arcane",
+    "shapecap@stage3-arcane"
+   ],
+   "bed": "fungal",
+   "seedForm": "spore"
+  },
+  "twinsprout": {
+   "sprite": "twinsprout",
+   "arcane": "twinsprout@arcane",
+   "seed": "twinsprout@seed",
+   "seedArcane": "twinsprout@seed-arcane",
+   "stages": [
+    "twinsprout@stage0",
+    "twinsprout@stage1",
+    "twinsprout@stage2",
+    "twinsprout@stage3"
+   ],
+   "stagesArcane": [
+    "twinsprout@stage0-arcane",
+    "twinsprout@stage1-arcane",
+    "twinsprout@stage2-arcane",
+    "twinsprout@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "graftberry": {
+   "sprite": "graftberry",
+   "arcane": "graftberry@arcane",
+   "seed": "graftberry@seed",
+   "seedArcane": "graftberry@seed-arcane",
+   "stages": [
+    "graftberry@stage0",
+    "graftberry@stage1",
+    "graftberry@stage2",
+    "graftberry@stage3"
+   ],
+   "stagesArcane": [
+    "graftberry@stage0-arcane",
+    "graftberry@stage1-arcane",
+    "graftberry@stage2-arcane",
+    "graftberry@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "pip"
+  },
+  "formblossom": {
+   "sprite": "formblossom",
+   "arcane": "formblossom@arcane",
+   "seed": "formblossom@seed",
+   "seedArcane": "formblossom@seed-arcane",
+   "stages": [
+    "formblossom@stage0",
+    "formblossom@stage1",
+    "formblossom@stage2",
+    "formblossom@stage3"
+   ],
+   "stagesArcane": [
+    "formblossom@stage0-arcane",
+    "formblossom@stage1-arcane",
+    "formblossom@stage2-arcane",
+    "formblossom@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "mimic-eye": {
+   "sprite": "mimic-eye",
+   "arcane": "mimic-eye@arcane",
+   "seed": "mimic-eye@seed",
+   "seedArcane": "mimic-eye@seed-arcane",
+   "stages": [
+    "mimic-eye@stage0",
+    "mimic-eye@stage1",
+    "mimic-eye@stage2",
+    "mimic-eye@stage3"
+   ],
+   "stagesArcane": [
+    "mimic-eye@stage0-arcane",
+    "mimic-eye@stage1-arcane",
+    "mimic-eye@stage2-arcane",
+    "mimic-eye@stage3-arcane"
+   ],
+   "bed": "crystal",
+   "seedForm": "chip"
+  },
+  "crownbloom": {
+   "sprite": "crownbloom",
+   "arcane": "crownbloom@arcane",
+   "seed": "crownbloom@seed",
+   "seedArcane": "crownbloom@seed-arcane",
+   "stages": [
+    "crownbloom@stage0",
+    "crownbloom@stage1",
+    "crownbloom@stage2",
+    "crownbloom@stage3"
+   ],
+   "stagesArcane": [
+    "crownbloom@stage0-arcane",
+    "crownbloom@stage1-arcane",
+    "crownbloom@stage2-arcane",
+    "crownbloom@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "shifting-root": {
+   "sprite": "shifting-root",
+   "arcane": "shifting-root@arcane",
+   "seed": "shifting-root@seed",
+   "seedArcane": "shifting-root@seed-arcane",
+   "stages": [
+    "shifting-root@stage0",
+    "shifting-root@stage1",
+    "shifting-root@stage2",
+    "shifting-root@stage3"
+   ],
+   "stagesArcane": [
+    "shifting-root@stage0-arcane",
+    "shifting-root@stage1-arcane",
+    "shifting-root@stage2-arcane",
+    "shifting-root@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "bulb"
+  },
+  "splice-bud": {
+   "sprite": "splice-bud",
+   "arcane": "splice-bud@arcane",
+   "seed": "splice-bud@seed",
+   "seedArcane": "splice-bud@seed-arcane",
+   "stages": [
+    "splice-bud@stage0",
+    "splice-bud@stage1",
+    "splice-bud@stage2",
+    "splice-bud@stage3"
+   ],
+   "stagesArcane": [
+    "splice-bud@stage0-arcane",
+    "splice-bud@stage1-arcane",
+    "splice-bud@stage2-arcane",
+    "splice-bud@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "polymorph-lotus": {
+   "sprite": "polymorph-lotus",
+   "arcane": "polymorph-lotus@arcane",
+   "seed": "polymorph-lotus@seed",
+   "seedArcane": "polymorph-lotus@seed-arcane",
+   "stages": [
+    "polymorph-lotus@stage0",
+    "polymorph-lotus@stage1",
+    "polymorph-lotus@stage2",
+    "polymorph-lotus@stage3"
+   ],
+   "stagesArcane": [
+    "polymorph-lotus@stage0-arcane",
+    "polymorph-lotus@stage1-arcane",
+    "polymorph-lotus@stage2-arcane",
+    "polymorph-lotus@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "veilfern": {
+   "sprite": "veilfern",
+   "arcane": "veilfern@arcane",
+   "seed": "veilfern@seed",
+   "seedArcane": "veilfern@seed-arcane",
+   "stages": [
+    "veilfern@stage0",
+    "veilfern@stage1",
+    "veilfern@stage2",
+    "veilfern@stage3"
+   ],
+   "stagesArcane": [
+    "veilfern@stage0-arcane",
+    "veilfern@stage1-arcane",
+    "veilfern@stage2-arcane",
+    "veilfern@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "hollowcap": {
+   "sprite": "hollowcap",
+   "arcane": "hollowcap@arcane",
+   "seed": "hollowcap@seed",
+   "seedArcane": "hollowcap@seed-arcane",
+   "stages": [
+    "hollowcap@stage0",
+    "hollowcap@stage1",
+    "hollowcap@stage2",
+    "hollowcap@stage3"
+   ],
+   "stagesArcane": [
+    "hollowcap@stage0-arcane",
+    "hollowcap@stage1-arcane",
+    "hollowcap@stage2-arcane",
+    "hollowcap@stage3-arcane"
+   ],
+   "bed": "fungal",
+   "seedForm": "spore"
+  },
+  "ghostbud": {
+   "sprite": "ghostbud",
+   "arcane": "ghostbud@arcane",
+   "seed": "ghostbud@seed",
+   "seedArcane": "ghostbud@seed-arcane",
+   "stages": [
+    "ghostbud@stage0",
+    "ghostbud@stage1",
+    "ghostbud@stage2",
+    "ghostbud@stage3"
+   ],
+   "stagesArcane": [
+    "ghostbud@stage0-arcane",
+    "ghostbud@stage1-arcane",
+    "ghostbud@stage2-arcane",
+    "ghostbud@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "veilberry": {
+   "sprite": "veilberry",
+   "arcane": "veilberry@arcane",
+   "seed": "veilberry@seed",
+   "seedArcane": "veilberry@seed-arcane",
+   "stages": [
+    "veilberry@stage0",
+    "veilberry@stage1",
+    "veilberry@stage2",
+    "veilberry@stage3"
+   ],
+   "stagesArcane": [
+    "veilberry@stage0-arcane",
+    "veilberry@stage1-arcane",
+    "veilberry@stage2-arcane",
+    "veilberry@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "pip"
+  },
+  "hollowbloom": {
+   "sprite": "hollowbloom",
+   "arcane": "hollowbloom@arcane",
+   "seed": "hollowbloom@seed",
+   "seedArcane": "hollowbloom@seed-arcane",
+   "stages": [
+    "hollowbloom@stage0",
+    "hollowbloom@stage1",
+    "hollowbloom@stage2",
+    "hollowbloom@stage3"
+   ],
+   "stagesArcane": [
+    "hollowbloom@stage0-arcane",
+    "hollowbloom@stage1-arcane",
+    "hollowbloom@stage2-arcane",
+    "hollowbloom@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "veilglass": {
+   "sprite": "veilglass",
+   "arcane": "veilglass@arcane",
+   "seed": "veilglass@seed",
+   "seedArcane": "veilglass@seed-arcane",
+   "stages": [
+    "veilglass@stage0",
+    "veilglass@stage1",
+    "veilglass@stage2",
+    "veilglass@stage3"
+   ],
+   "stagesArcane": [
+    "veilglass@stage0-arcane",
+    "veilglass@stage1-arcane",
+    "veilglass@stage2-arcane",
+    "veilglass@stage3-arcane"
+   ],
+   "bed": "crystal",
+   "seedForm": "chip"
+  },
+  "shroud-orchid": {
+   "sprite": "shroud-orchid",
+   "arcane": "shroud-orchid@arcane",
+   "seed": "shroud-orchid@seed",
+   "seedArcane": "shroud-orchid@seed-arcane",
+   "stages": [
+    "shroud-orchid@stage0",
+    "shroud-orchid@stage1",
+    "shroud-orchid@stage2",
+    "shroud-orchid@stage3"
+   ],
+   "stagesArcane": [
+    "shroud-orchid@stage0-arcane",
+    "shroud-orchid@stage1-arcane",
+    "shroud-orchid@stage2-arcane",
+    "shroud-orchid@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "mistpebble": {
+   "sprite": "mistpebble",
+   "arcane": "mistpebble@arcane",
+   "seed": "mistpebble@seed",
+   "seedArcane": "mistpebble@seed-arcane",
+   "stages": [
+    "mistpebble@stage0",
+    "mistpebble@stage1",
+    "mistpebble@stage2",
+    "mistpebble@stage3"
+   ],
+   "stagesArcane": [
+    "mistpebble@stage0-arcane",
+    "mistpebble@stage1-arcane",
+    "mistpebble@stage2-arcane",
+    "mistpebble@stage3-arcane"
+   ],
+   "bed": "crystal",
+   "seedForm": "chip"
+  },
+  "eclipse-eye": {
+   "sprite": "eclipse-eye",
+   "arcane": "eclipse-eye@arcane",
+   "seed": "eclipse-eye@seed",
+   "seedArcane": "eclipse-eye@seed-arcane",
+   "stages": [
+    "eclipse-eye@stage0",
+    "eclipse-eye@stage1",
+    "eclipse-eye@stage2",
+    "eclipse-eye@stage3"
+   ],
+   "stagesArcane": [
+    "eclipse-eye@stage0-arcane",
+    "eclipse-eye@stage1-arcane",
+    "eclipse-eye@stage2-arcane",
+    "eclipse-eye@stage3-arcane"
+   ],
+   "bed": "crystal",
+   "seedForm": "chip"
+  },
+  "veil-circlet": {
+   "sprite": "veil-circlet",
+   "arcane": "veil-circlet@arcane",
+   "seed": "veil-circlet@seed",
+   "seedArcane": "veil-circlet@seed-arcane",
+   "stages": [
+    "veil-circlet@stage0",
+    "veil-circlet@stage1",
+    "veil-circlet@stage2",
+    "veil-circlet@stage3"
+   ],
+   "stagesArcane": [
+    "veil-circlet@stage0-arcane",
+    "veil-circlet@stage1-arcane",
+    "veil-circlet@stage2-arcane",
+    "veil-circlet@stage3-arcane"
+   ],
+   "bed": "crystal",
+   "seedForm": "chip"
+  },
+  "reefmoss": {
+   "sprite": "reefmoss",
+   "arcane": "reefmoss@arcane",
+   "seed": "reefmoss@seed",
+   "seedArcane": "reefmoss@seed-arcane",
+   "stages": [
+    "reefmoss@stage0",
+    "reefmoss@stage1",
+    "reefmoss@stage2",
+    "reefmoss@stage3"
+   ],
+   "stagesArcane": [
+    "reefmoss@stage0-arcane",
+    "reefmoss@stage1-arcane",
+    "reefmoss@stage2-arcane",
+    "reefmoss@stage3-arcane"
+   ],
+   "bed": "tide",
+   "seedForm": "polyp"
+  },
+  "glasscap": {
+   "sprite": "glasscap",
+   "arcane": "glasscap@arcane",
+   "seed": "glasscap@seed",
+   "seedArcane": "glasscap@seed-arcane",
+   "stages": [
+    "glasscap@stage0",
+    "glasscap@stage1",
+    "glasscap@stage2",
+    "glasscap@stage3"
+   ],
+   "stagesArcane": [
+    "glasscap@stage0-arcane",
+    "glasscap@stage1-arcane",
+    "glasscap@stage2-arcane",
+    "glasscap@stage3-arcane"
+   ],
+   "bed": "fungal",
+   "seedForm": "spore"
+  },
+  "coralberry": {
+   "sprite": "coralberry",
+   "arcane": "coralberry@arcane",
+   "seed": "coralberry@seed",
+   "seedArcane": "coralberry@seed-arcane",
+   "stages": [
+    "coralberry@stage0",
+    "coralberry@stage1",
+    "coralberry@stage2",
+    "coralberry@stage3"
+   ],
+   "stagesArcane": [
+    "coralberry@stage0-arcane",
+    "coralberry@stage1-arcane",
+    "coralberry@stage2-arcane",
+    "coralberry@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "pip"
+  },
+  "reefbud": {
+   "sprite": "reefbud",
+   "arcane": "reefbud@arcane",
+   "seed": "reefbud@seed",
+   "seedArcane": "reefbud@seed-arcane",
+   "stages": [
+    "reefbud@stage0",
+    "reefbud@stage1",
+    "reefbud@stage2",
+    "reefbud@stage3"
+   ],
+   "stagesArcane": [
+    "reefbud@stage0-arcane",
+    "reefbud@stage1-arcane",
+    "reefbud@stage2-arcane",
+    "reefbud@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "ghostglass-coral": {
+   "sprite": "ghostglass-coral",
+   "arcane": "ghostglass-coral@arcane",
+   "seed": "ghostglass-coral@seed",
+   "seedArcane": "ghostglass-coral@seed-arcane",
+   "stages": [
+    "ghostglass-coral@stage0",
+    "ghostglass-coral@stage1",
+    "ghostglass-coral@stage2",
+    "ghostglass-coral@stage3"
+   ],
+   "stagesArcane": [
+    "ghostglass-coral@stage0-arcane",
+    "ghostglass-coral@stage1-arcane",
+    "ghostglass-coral@stage2-arcane",
+    "ghostglass-coral@stage3-arcane"
+   ],
+   "bed": "tide",
+   "seedForm": "polyp"
+  },
+  "pearlshell": {
+   "sprite": "pearlshell",
+   "arcane": "pearlshell@arcane",
+   "seed": "pearlshell@seed",
+   "seedArcane": "pearlshell@seed-arcane",
+   "stages": [
+    "pearlshell@stage0",
+    "pearlshell@stage1",
+    "pearlshell@stage2",
+    "pearlshell@stage3"
+   ],
+   "stagesArcane": [
+    "pearlshell@stage0-arcane",
+    "pearlshell@stage1-arcane",
+    "pearlshell@stage2-arcane",
+    "pearlshell@stage3-arcane"
+   ],
+   "bed": "tide",
+   "seedForm": "spat"
+  },
+  "spectral-anemone": {
+   "sprite": "spectral-anemone",
+   "arcane": "spectral-anemone@arcane",
+   "seed": "spectral-anemone@seed",
+   "seedArcane": "spectral-anemone@seed-arcane",
+   "stages": [
+    "spectral-anemone@stage0",
+    "spectral-anemone@stage1",
+    "spectral-anemone@stage2",
+    "spectral-anemone@stage3"
+   ],
+   "stagesArcane": [
+    "spectral-anemone@stage0-arcane",
+    "spectral-anemone@stage1-arcane",
+    "spectral-anemone@stage2-arcane",
+    "spectral-anemone@stage3-arcane"
+   ],
+   "bed": "tide",
+   "seedForm": "polyp"
+  },
+  "shellfern": {
+   "sprite": "shellfern",
+   "arcane": "shellfern@arcane",
+   "seed": "shellfern@seed",
+   "seedArcane": "shellfern@seed-arcane",
+   "stages": [
+    "shellfern@stage0",
+    "shellfern@stage1",
+    "shellfern@stage2",
+    "shellfern@stage3"
+   ],
+   "stagesArcane": [
+    "shellfern@stage0-arcane",
+    "shellfern@stage1-arcane",
+    "shellfern@stage2-arcane",
+    "shellfern@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "phantom-pearl": {
+   "sprite": "phantom-pearl",
+   "arcane": "phantom-pearl@arcane",
+   "seed": "phantom-pearl@seed",
+   "seedArcane": "phantom-pearl@seed-arcane",
+   "stages": [
+    "phantom-pearl@stage0",
+    "phantom-pearl@stage1",
+    "phantom-pearl@stage2",
+    "phantom-pearl@stage3"
+   ],
+   "stagesArcane": [
+    "phantom-pearl@stage0-arcane",
+    "phantom-pearl@stage1-arcane",
+    "phantom-pearl@stage2-arcane",
+    "phantom-pearl@stage3-arcane"
+   ],
+   "bed": "tide",
+   "seedForm": "spat"
+  },
+  "ghostcrown-coral": {
+   "sprite": "ghostcrown-coral",
+   "arcane": "ghostcrown-coral@arcane",
+   "seed": "ghostcrown-coral@seed",
+   "seedArcane": "ghostcrown-coral@seed-arcane",
+   "stages": [
+    "ghostcrown-coral@stage0",
+    "ghostcrown-coral@stage1",
+    "ghostcrown-coral@stage2",
+    "ghostcrown-coral@stage3"
+   ],
+   "stagesArcane": [
+    "ghostcrown-coral@stage0-arcane",
+    "ghostcrown-coral@stage1-arcane",
+    "ghostcrown-coral@stage2-arcane",
+    "ghostcrown-coral@stage3-arcane"
+   ],
+   "bed": "tide",
+   "seedForm": "polyp"
+  },
+  "timeweed": {
+   "sprite": "timeweed",
+   "arcane": "timeweed@arcane",
+   "seed": "timeweed@seed",
+   "seedArcane": "timeweed@seed-arcane",
+   "stages": [
+    "timeweed@stage0",
+    "timeweed@stage1",
+    "timeweed@stage2",
+    "timeweed@stage3"
+   ],
+   "stagesArcane": [
+    "timeweed@stage0-arcane",
+    "timeweed@stage1-arcane",
+    "timeweed@stage2-arcane",
+    "timeweed@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "grain"
+  },
+  "sandskirt-cap": {
+   "sprite": "sandskirt-cap",
+   "arcane": "sandskirt-cap@arcane",
+   "seed": "sandskirt-cap@seed",
+   "seedArcane": "sandskirt-cap@seed-arcane",
+   "stages": [
+    "sandskirt-cap@stage0",
+    "sandskirt-cap@stage1",
+    "sandskirt-cap@stage2",
+    "sandskirt-cap@stage3"
+   ],
+   "stagesArcane": [
+    "sandskirt-cap@stage0-arcane",
+    "sandskirt-cap@stage1-arcane",
+    "sandskirt-cap@stage2-arcane",
+    "sandskirt-cap@stage3-arcane"
+   ],
+   "bed": "fungal",
+   "seedForm": "spore"
+  },
+  "hourberry": {
+   "sprite": "hourberry",
+   "arcane": "hourberry@arcane",
+   "seed": "hourberry@seed",
+   "seedArcane": "hourberry@seed-arcane",
+   "stages": [
+    "hourberry@stage0",
+    "hourberry@stage1",
+    "hourberry@stage2",
+    "hourberry@stage3"
+   ],
+   "stagesArcane": [
+    "hourberry@stage0-arcane",
+    "hourberry@stage1-arcane",
+    "hourberry@stage2-arcane",
+    "hourberry@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "pip"
+  },
+  "chronovine": {
+   "sprite": "chronovine",
+   "arcane": "chronovine@arcane",
+   "seed": "chronovine@seed",
+   "seedArcane": "chronovine@seed-arcane",
+   "stages": [
+    "chronovine@stage0",
+    "chronovine@stage1",
+    "chronovine@stage2",
+    "chronovine@stage3"
+   ],
+   "stagesArcane": [
+    "chronovine@stage0-arcane",
+    "chronovine@stage1-arcane",
+    "chronovine@stage2-arcane",
+    "chronovine@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "winged"
+  },
+  "epochbloom": {
+   "sprite": "epochbloom",
+   "arcane": "epochbloom@arcane",
+   "seed": "epochbloom@seed",
+   "seedArcane": "epochbloom@seed-arcane",
+   "stages": [
+    "epochbloom@stage0",
+    "epochbloom@stage1",
+    "epochbloom@stage2",
+    "epochbloom@stage3"
+   ],
+   "stagesArcane": [
+    "epochbloom@stage0-arcane",
+    "epochbloom@stage1-arcane",
+    "epochbloom@stage2-arcane",
+    "epochbloom@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "seed"
+  },
+  "chronoglass-shard": {
+   "sprite": "chronoglass-shard",
+   "arcane": "chronoglass-shard@arcane",
+   "seed": "chronoglass-shard@seed",
+   "seedArcane": "chronoglass-shard@seed-arcane",
+   "stages": [
+    "chronoglass-shard@stage0",
+    "chronoglass-shard@stage1",
+    "chronoglass-shard@stage2",
+    "chronoglass-shard@stage3"
+   ],
+   "stagesArcane": [
+    "chronoglass-shard@stage0-arcane",
+    "chronoglass-shard@stage1-arcane",
+    "chronoglass-shard@stage2-arcane",
+    "chronoglass-shard@stage3-arcane"
+   ],
+   "bed": "crystal",
+   "seedForm": "chip"
+  },
+  "pendulum-pods": {
+   "sprite": "pendulum-pods",
+   "arcane": "pendulum-pods@arcane",
+   "seed": "pendulum-pods@seed",
+   "seedArcane": "pendulum-pods@seed-arcane",
+   "stages": [
+    "pendulum-pods@stage0",
+    "pendulum-pods@stage1",
+    "pendulum-pods@stage2",
+    "pendulum-pods@stage3"
+   ],
+   "stagesArcane": [
+    "pendulum-pods@stage0-arcane",
+    "pendulum-pods@stage1-arcane",
+    "pendulum-pods@stage2-arcane",
+    "pendulum-pods@stage3-arcane"
+   ],
+   "bed": "soil",
+   "seedForm": "winged"
+  },
+  "sundial-stone": {
+   "sprite": "sundial-stone",
+   "arcane": "sundial-stone@arcane",
+   "seed": "sundial-stone@seed",
+   "seedArcane": "sundial-stone@seed-arcane",
+   "stages": [
+    "sundial-stone@stage0",
+    "sundial-stone@stage1",
+    "sundial-stone@stage2",
+    "sundial-stone@stage3"
+   ],
+   "stagesArcane": [
+    "sundial-stone@stage0-arcane",
+    "sundial-stone@stage1-arcane",
+    "sundial-stone@stage2-arcane",
+    "sundial-stone@stage3-arcane"
+   ],
+   "bed": "crystal",
+   "seedForm": "chip"
+  },
+  "aeon-circlet": {
+   "sprite": "aeon-circlet",
+   "arcane": "aeon-circlet@arcane",
+   "seed": "aeon-circlet@seed",
+   "seedArcane": "aeon-circlet@seed-arcane",
+   "stages": [
+    "aeon-circlet@stage0",
+    "aeon-circlet@stage1",
+    "aeon-circlet@stage2",
+    "aeon-circlet@stage3"
+   ],
+   "stagesArcane": [
+    "aeon-circlet@stage0-arcane",
+    "aeon-circlet@stage1-arcane",
+    "aeon-circlet@stage2-arcane",
+    "aeon-circlet@stage3-arcane"
+   ],
+   "bed": "crystal",
+   "seedForm": "chip"
+  },
+  "hourglass-of-ages": {
+   "sprite": "hourglass-of-ages",
+   "arcane": "hourglass-of-ages@arcane",
+   "seed": "hourglass-of-ages@seed",
+   "seedArcane": "hourglass-of-ages@seed-arcane",
+   "stages": [
+    "hourglass-of-ages@stage0",
+    "hourglass-of-ages@stage1",
+    "hourglass-of-ages@stage2",
+    "hourglass-of-ages@stage3"
+   ],
+   "stagesArcane": [
+    "hourglass-of-ages@stage0-arcane",
+    "hourglass-of-ages@stage1-arcane",
+    "hourglass-of-ages@stage2-arcane",
+    "hourglass-of-ages@stage3-arcane"
+   ],
+   "bed": "crystal",
+   "seedForm": "chip"
+  }
+ }
+}

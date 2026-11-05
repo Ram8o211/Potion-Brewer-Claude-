@@ -44,6 +44,16 @@ export const REQUESTS = [
     story: ['I etch my maker’s mark into blades. A strong acid that bites steel.', 'Copper plates for my engravings. It must bite cleanly.'] },
   { id: 'bane', title: 'Pest Bane', fx: [{ key: 'toxicity' }], who: ['farmer', 'hunter', 'innkeeper'], minTier: 1, drunk: false, tolerate: ['death', 'acidity'],
     story: ['Rats in the granary, bold as cats. It has to be poisonous to them.', 'Slugs have eaten half my cabbages. Deadly to pests, please.'] },
+  { id: 'swiftfoot', title: 'Swiftfoot Draught', fx: [{ key: 'swiftness' }], who: ['traveler', 'hunter', 'bard', 'knight'], minTier: 1,
+    story: ['The king’s courier rides at dawn and the roads are long. Quickness in the legs, nothing else.', 'A footrace at the summer fair, and the miller’s boy has never lost. Make me quick.'] },
+  { id: 'featherfall', title: 'Featherfall Elixir', fx: [{ key: 'levitation' }], who: ['scholar', 'traveler', 'wizard', 'noble'], minTier: 3,
+    story: ['I mean to study the sky-isles from below their cliffs. If I fall, I wish to float.', 'The tower stair collapsed. I need to drift up to my study and down again.'] },
+  { id: 'shroud', title: 'Shroud Draught', fx: [{ key: 'invisibility' }], who: ['witch', 'hunter', 'noble', 'bard'], minTier: 3,
+    story: ['A masked ball where I must not be seen leaving. Fade me out, nothing more.', 'The stag is wary of every shadow. Let it not see me at all.'] },
+  { id: 'ghostwalk', title: 'Ghostwalk Philtre', fx: [{ key: 'phasing' }], who: ['scholar', 'wizard', 'witch'], minTier: 3,
+    story: ['The library’s sealed wing has no door. I need to walk through its wall.', 'A ghost-hunter must go where ghosts go: through stone.'] },
+  { id: 'timeslip', title: 'Timeslip Tonic', fx: [{ key: 'temporal' }], who: ['scholar', 'wizard', 'noble'], minTier: 3,
+    story: ['My experiment needs an hour I do not have. Stretch the afternoon for me.', 'An heirloom clock stopped the day grandfather died. I want to see that day again, just once.'] },
   // ---- coherent combinations
   { id: 'expedition', title: 'Expedition Draught', fx: [{ key: 'strength' }, { key: 'transformation', share: 0.6 }], who: ['knight', 'hunter', 'traveler'], minTier: 2,
     story: ['We ride into the Thornwastes. I must be strong enough to carry the wounded, and able to change shape to slip past the wardens.', 'A long patrol beyond the border. Strength for the march, and a change of form for the night watch.'] },
@@ -63,6 +73,8 @@ export const REQUESTS = [
     story: ['The marsh fever: it burns them up from inside. It must heal, and it must cool.', 'The prince is burning with fever. Healing, and cold to break the heat.'] },
   { id: 'warpath', title: 'War-Path Draught', fx: [{ key: 'strength' }, { key: 'fire', share: 0.5 }, { key: 'vitality', share: 0.5 }], who: ['knight'], minTier: 4,
     story: ['The northern campaign. Strength, fire against the frost and healing for the march — the general’s own order.'] },
+  { id: 'skysail', title: 'Sky-Sailor’s Draught', fx: [{ key: 'levitation' }, { key: 'swiftness', share: 0.5 }], who: ['traveler', 'knight'], minTier: 4,
+    story: ['A courier route over the Skyshard isles: float from one to the next, and quickly.'] },
   { id: 'starseer', title: 'Star-Seer’s Elixir', fx: [{ key: 'arcana' }, { key: 'transformation', share: 0.5 }, { key: 'love', share: 0.4 }], who: ['wizard', 'noble'], minTier: 4,
     story: ['A rite under the comet: sight, change and the bond between the casters — all three, in measure.'] },
 ];
@@ -72,6 +84,16 @@ export const TIER_TARGET = [[8, 15], [10, 18], [13, 22], [17, 28], [22, 34]];
 
 /** Hard limit on any effect the customer did not ask for (percent). */
 export const PURITY_LIMIT = 1.2;
+
+/**
+ * The limit on unwanted effects a customer of a tier holds an order to:
+ * apprentices' customers accept a little of what common, impure
+ * ingredients carry; masters' customers want it pure. Rarer, purer
+ * ingredients are what make the strict limits reachable.
+ */
+export const PURITY_BY_TIER = [4, 3.2, 2.4, 1.8, 1.2];
+/** @param {number} tier */
+export const purityLimitFor = (tier) => PURITY_BY_TIER[Math.max(0, Math.min(PURITY_BY_TIER.length - 1, tier | 0))];
 
 /** @param {string} id */
 export function requestById(id) {

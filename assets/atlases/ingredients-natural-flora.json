@@ -1,0 +1,849 @@
+{
+ "version": 1,
+ "atlas": "ingredients-natural-flora.png",
+ "width": 512,
+ "height": 160,
+ "padding": 2,
+ "frames": {
+  "ashcactus": {
+   "species": "ashcactus",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "herb",
+   "x": 323,
+   "y": 43,
+   "w": 45,
+   "h": 32,
+   "pivot": [
+    22,
+    31
+   ],
+   "native": [
+    45,
+    32
+   ]
+  },
+  "brightberry": {
+   "species": "brightberry",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "berry",
+   "x": 196,
+   "y": 43,
+   "w": 38,
+   "h": 33,
+   "pivot": [
+    19,
+    32
+   ],
+   "native": [
+    38,
+    33
+   ]
+  },
+  "bubbleberry": {
+   "species": "bubbleberry",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "berry",
+   "x": 306,
+   "y": 2,
+   "w": 43,
+   "h": 35,
+   "pivot": [
+    21,
+    34
+   ],
+   "native": [
+    43,
+    35
+   ]
+  },
+  "dawnblossom": {
+   "species": "dawnblossom",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "flower",
+   "x": 397,
+   "y": 2,
+   "w": 41,
+   "h": 34,
+   "pivot": [
+    20,
+    33
+   ],
+   "native": [
+    41,
+    34
+   ]
+  },
+  "dewpear": {
+   "species": "dewpear",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fruit",
+   "x": 227,
+   "y": 2,
+   "w": 33,
+   "h": 36,
+   "pivot": [
+    16,
+    35
+   ],
+   "native": [
+    33,
+    36
+   ]
+  },
+  "emberleaf": {
+   "species": "emberleaf",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "leaf",
+   "x": 421,
+   "y": 79,
+   "w": 46,
+   "h": 30,
+   "pivot": [
+    23,
+    29
+   ],
+   "native": [
+    46,
+    30
+   ]
+  },
+  "eternal-rose": {
+   "species": "eternal-rose",
+   "kind": "sprite",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "x": 370,
+   "y": 43,
+   "w": 43,
+   "h": 32,
+   "pivot": [
+    21,
+    31
+   ],
+   "native": [
+    43,
+    32
+   ]
+  },
+  "everburning-sunheart": {
+   "species": "everburning-sunheart",
+   "kind": "sprite",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "flower",
+   "x": 415,
+   "y": 43,
+   "w": 46,
+   "h": 32,
+   "pivot": [
+    23,
+    31
+   ],
+   "native": [
+    46,
+    32
+   ]
+  },
+  "everfrost-pearlbloom": {
+   "species": "everfrost-pearlbloom",
+   "kind": "sprite",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "x": 440,
+   "y": 2,
+   "w": 45,
+   "h": 34,
+   "pivot": [
+    22,
+    33
+   ],
+   "native": [
+    45,
+    34
+   ]
+  },
+  "firebramble": {
+   "species": "firebramble",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "berry",
+   "x": 323,
+   "y": 113,
+   "w": 42,
+   "h": 28,
+   "pivot": [
+    21,
+    27
+   ],
+   "native": [
+    42,
+    28
+   ]
+  },
+  "flamecrest": {
+   "species": "flamecrest",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "flower",
+   "x": 2,
+   "y": 113,
+   "w": 48,
+   "h": 30,
+   "pivot": [
+    24,
+    29
+   ],
+   "native": [
+    48,
+    30
+   ]
+  },
+  "frostlotus": {
+   "species": "frostlotus",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "x": 2,
+   "y": 43,
+   "w": 47,
+   "h": 34,
+   "pivot": [
+    23,
+    33
+   ],
+   "native": [
+    47,
+    34
+   ]
+  },
+  "goldenrush": {
+   "species": "goldenrush",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "grass",
+   "x": 351,
+   "y": 2,
+   "w": 44,
+   "h": 35,
+   "pivot": [
+    22,
+    34
+   ],
+   "native": [
+    44,
+    35
+   ]
+  },
+  "heartberry": {
+   "species": "heartberry",
+   "kind": "sprite",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fruit",
+   "x": 97,
+   "y": 79,
+   "w": 43,
+   "h": 31,
+   "pivot": [
+    21,
+    30
+   ],
+   "native": [
+    43,
+    31
+   ]
+  },
+  "heartwood-mandrake": {
+   "species": "heartwood-mandrake",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "root",
+   "x": 2,
+   "y": 2,
+   "w": 42,
+   "h": 39,
+   "pivot": [
+    21,
+    38
+   ],
+   "native": [
+    42,
+    39
+   ]
+  },
+  "honeyclover": {
+   "species": "honeyclover",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "x": 236,
+   "y": 43,
+   "w": 45,
+   "h": 33,
+   "pivot": [
+    22,
+    32
+   ],
+   "native": [
+    45,
+    33
+   ]
+  },
+  "ironbloom": {
+   "species": "ironbloom",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "flower",
+   "x": 52,
+   "y": 113,
+   "w": 48,
+   "h": 30,
+   "pivot": [
+    24,
+    29
+   ],
+   "native": [
+    48,
+    30
+   ]
+  },
+  "lovelace-orchid": {
+   "species": "lovelace-orchid",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "x": 51,
+   "y": 43,
+   "w": 46,
+   "h": 34,
+   "pivot": [
+    23,
+    33
+   ],
+   "native": [
+    46,
+    34
+   ]
+  },
+  "meadow-daisy": {
+   "species": "meadow-daisy",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "x": 262,
+   "y": 2,
+   "w": 42,
+   "h": 36,
+   "pivot": [
+    21,
+    35
+   ],
+   "native": [
+    42,
+    36
+   ]
+  },
+  "mossback-bark": {
+   "species": "mossback-bark",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "bark",
+   "x": 463,
+   "y": 43,
+   "w": 44,
+   "h": 32,
+   "pivot": [
+    22,
+    31
+   ],
+   "native": [
+    44,
+    32
+   ]
+  },
+  "nightbloom-lotus": {
+   "species": "nightbloom-lotus",
+   "kind": "sprite",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "flower",
+   "x": 142,
+   "y": 79,
+   "w": 44,
+   "h": 31,
+   "pivot": [
+    22,
+    30
+   ],
+   "native": [
+    44,
+    31
+   ]
+  },
+  "phoenix-heartseed": {
+   "species": "phoenix-heartseed",
+   "kind": "sprite",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "seedpod",
+   "x": 188,
+   "y": 79,
+   "w": 42,
+   "h": 31,
+   "pivot": [
+    21,
+    30
+   ],
+   "native": [
+    42,
+    31
+   ]
+  },
+  "prism-petal": {
+   "species": "prism-petal",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "x": 283,
+   "y": 43,
+   "w": 38,
+   "h": 33,
+   "pivot": [
+    19,
+    32
+   ],
+   "native": [
+    38,
+    33
+   ]
+  },
+  "radiant-sunbloom": {
+   "species": "radiant-sunbloom",
+   "kind": "sprite",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "x": 2,
+   "y": 79,
+   "w": 45,
+   "h": 32,
+   "pivot": [
+    22,
+    31
+   ],
+   "native": [
+    45,
+    32
+   ]
+  },
+  "rimefeather": {
+   "species": "rimefeather",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "grass",
+   "x": 99,
+   "y": 43,
+   "w": 45,
+   "h": 34,
+   "pivot": [
+    22,
+    33
+   ],
+   "native": [
+    45,
+    34
+   ]
+  },
+  "riverlotus": {
+   "species": "riverlotus",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "x": 146,
+   "y": 43,
+   "w": 48,
+   "h": 34,
+   "pivot": [
+    24,
+    33
+   ],
+   "native": [
+    48,
+    34
+   ]
+  },
+  "shadefruit": {
+   "species": "shadefruit",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "berry",
+   "x": 102,
+   "y": 113,
+   "w": 39,
+   "h": 30,
+   "pivot": [
+    19,
+    29
+   ],
+   "native": [
+    39,
+    30
+   ]
+  },
+  "silverleaf": {
+   "species": "silverleaf",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "leaf",
+   "x": 46,
+   "y": 2,
+   "w": 42,
+   "h": 39,
+   "pivot": [
+    21,
+    38
+   ],
+   "native": [
+    42,
+    39
+   ]
+  },
+  "sporelantern": {
+   "species": "sporelantern",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "vine",
+   "x": 143,
+   "y": 113,
+   "w": 39,
+   "h": 30,
+   "pivot": [
+    19,
+    29
+   ],
+   "native": [
+    39,
+    30
+   ]
+  },
+  "stagthorn-vine": {
+   "species": "stagthorn-vine",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "vine",
+   "x": 232,
+   "y": 79,
+   "w": 48,
+   "h": 31,
+   "pivot": [
+    24,
+    30
+   ],
+   "native": [
+    48,
+    31
+   ]
+  },
+  "stoneberry": {
+   "species": "stoneberry",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "berry",
+   "x": 282,
+   "y": 79,
+   "w": 43,
+   "h": 31,
+   "pivot": [
+    21,
+    30
+   ],
+   "native": [
+    43,
+    31
+   ]
+  },
+  "stonewort": {
+   "species": "stonewort",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "flower",
+   "x": 49,
+   "y": 79,
+   "w": 46,
+   "h": 32,
+   "pivot": [
+    23,
+    31
+   ],
+   "native": [
+    46,
+    32
+   ]
+  },
+  "sulfurvine": {
+   "species": "sulfurvine",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "vine",
+   "x": 276,
+   "y": 113,
+   "w": 45,
+   "h": 29,
+   "pivot": [
+    22,
+    28
+   ],
+   "native": [
+    45,
+    29
+   ]
+  },
+  "suncrown": {
+   "species": "suncrown",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "flower",
+   "x": 90,
+   "y": 2,
+   "w": 44,
+   "h": 37,
+   "pivot": [
+    22,
+    36
+   ],
+   "native": [
+    44,
+    37
+   ]
+  },
+  "tidebloom": {
+   "species": "tidebloom",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "flower",
+   "x": 136,
+   "y": 2,
+   "w": 42,
+   "h": 37,
+   "pivot": [
+    21,
+    36
+   ],
+   "native": [
+    42,
+    37
+   ]
+  },
+  "titan-root": {
+   "species": "titan-root",
+   "kind": "sprite",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "root",
+   "x": 327,
+   "y": 79,
+   "w": 47,
+   "h": 31,
+   "pivot": [
+    23,
+    30
+   ],
+   "native": [
+    47,
+    31
+   ]
+  },
+  "umbrabell": {
+   "species": "umbrabell",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "flower",
+   "x": 376,
+   "y": 79,
+   "w": 43,
+   "h": 31,
+   "pivot": [
+    21,
+    30
+   ],
+   "native": [
+    43,
+    31
+   ]
+  },
+  "venomlily": {
+   "species": "venomlily",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "flower",
+   "x": 184,
+   "y": 113,
+   "w": 44,
+   "h": 30,
+   "pivot": [
+    22,
+    29
+   ],
+   "native": [
+    44,
+    30
+   ]
+  },
+  "willowleaf": {
+   "species": "willowleaf",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "leaf",
+   "x": 180,
+   "y": 2,
+   "w": 45,
+   "h": 37,
+   "pivot": [
+    22,
+    36
+   ],
+   "native": [
+    45,
+    37
+   ]
+  },
+  "wraithvine": {
+   "species": "wraithvine",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "vine",
+   "x": 230,
+   "y": 113,
+   "w": 44,
+   "h": 30,
+   "pivot": [
+    22,
+    29
+   ],
+   "native": [
+    44,
+    30
+   ]
+  }
+ }
+}

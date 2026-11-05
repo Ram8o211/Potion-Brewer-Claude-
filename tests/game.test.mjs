@@ -23,9 +23,10 @@ test('worlds are deterministic per seed and differ between seeds', () => {
   assert.notDeepEqual(a.reactions.map((r) => r.name), c.reactions.map((r) => r.name));
 });
 
-test('the shop stocks only plain solvents; every gathered ingredient is impure but can be balanced', () => {
-  const PAIRS = new Set(['fire', 'frost', 'vitality', 'death', 'toxicity', 'acidity']);
-  for (let k = 0; k < 25; k++) {
+test('the shop stocks only plain solvents; lower-tier ingredients are impure but can be balanced, the rarest are pure', () => {
+  // effects an opposite cancels in a brew (fire–frost, life–death, life mends poison, acid–alkali, weight–levitation, phasing–time)
+  const PAIRS = new Set(['fire', 'frost', 'vitality', 'death', 'toxicity', 'acidity', 'strength', 'levitation', 'temporal', 'phasing']);
+  for (let k = 0; k < 6; k++) {
     const w = generateWorld('start-' + k);
     const lk = makeLookup(w);
     const solvents = [w.roles.water, w.roles.oil, w.roles.spirit];
@@ -36,19 +37,21 @@ test('the shop stocks only plain solvents; every gathered ingredient is impure b
         assert.equal(Object.values(m.effects || {}).filter((v) => Math.abs(Number(v)) >= 1).length, 0, `${m.name} is a plain solvent`);
         continue;
       }
-      assert.ok(m.wild, `${m.name} is a natural ingredient`);
-      const fx = Object.entries(m.effects).filter(([, v]) => Math.abs(Number(v)) >= 1);
-      assert.ok(fx.length >= 2, `${m.name} carries several effects (${fx.map(([e]) => e).join(', ')})`);
-      // the main effect may be anything; every side effect sits on an opposing pair
-      const main = fx.reduce((a, b) => (Math.abs(Number(b[1])) > Math.abs(Number(a[1])) ? b : a));
-      for (const [e] of fx) if (e !== main[0] && !PAIRS.has(e)) assert.ok(['strength', 'love', 'arcana', 'transformation'].includes(e) && fx.length >= 3, `${m.name}: ${e} rides with another main effect`);
+      assert.ok(m.wild && m.wild.catalog, `${m.name} is a catalog species`);
+      const fx = Object.entries(m.effects).filter(([, v]) => Math.abs(Number(v)) >= 1).sort((a, b) => Math.abs(Number(b[1])) - Math.abs(Number(a[1])));
+      if (m.wild.rarity === 'unique' || m.wild.rarity === 'legendary') assert.equal(fx.length, 1, `${m.name} is naturally pure`);
+      else {
+        assert.ok(fx.length >= 2, `${m.name} carries side effects`);
+        // its strongest side effect sits on an opposing pair, so mixing can cancel it
+        assert.ok(PAIRS.has(fx[1][0]), `${m.name}: ${fx[1][0]} can be cancelled`);
+      }
       // and never both halves of one pair (it would cancel itself)
       const has = (e) => fx.some(([x]) => x === e);
       assert.ok(!(has('fire') && has('frost')) && !(has('vitality') && (has('death') || has('toxicity'))), `${m.name} does not cancel itself`);
       assert.ok(m.density > 0.3 && m.density < 15, `${m.name} density ${m.density}`);
       assert.ok(m.price > 0);
     }
-    assert.ok(w.wild.length >= 30, `a wide variety of natural ingredients (${w.wild.length})`);
+    assert.equal(w.wild.length, 240, 'every species in its ordinary and its Arcane form');
     assert.equal(new Set(w.ingredients.map((id) => lk(id).name)).size, w.ingredients.length, 'names are unique');
   }
 });

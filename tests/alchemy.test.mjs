@@ -180,7 +180,7 @@ test('heat spoils delicate petals: love falls and toxicity appears (reaction pro
 test('reduction: boiling water away with the lid open concentrates a non-volatile extract', () => {
   const s = sim([]);
   pour(s, R.water, 40);
-  pour(s, 'wild-silverleaf', 8, { ground: true });
+  pour(s, 'wild-sp-silverleaf-arcane', 8, { ground: true });
   stir(s, 6);
   s.furnace.setting = 0.4;
   run(s, 30);
@@ -189,7 +189,7 @@ test('reduction: boiling water away with the lid open concentrates a non-volatil
   s.furnace.setting = 0;
   const before = measureParticles(s, allParticles(s));
   // the extract in either form (hot enough, it also awakens)
-  const slots = ['wild-p-silver-infusion', 'wild-p-silver-infusion~a'].map((id) => s.species.slotOf.get(id)).filter((x) => x !== undefined);
+  const slots = ['wild-p-sp-silverleaf-arcane', 'wild-p-sp-silverleaf-arcane~a'].map((id) => s.species.slotOf.get(id)).filter((x) => x !== undefined);
   assert.ok(slots.length > 0, 'the leaf infused');
   const extract = () => { let t = 0; for (let i = 0; i < s.p.count; i++) for (const slot of slots) t += s.p.comp[i * MAX_SPECIES + slot]; return t; };
   const ex0 = extract();

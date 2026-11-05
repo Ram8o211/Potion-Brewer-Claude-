@@ -16,7 +16,7 @@ test('an awakened brew draws its effects\' patterns boldly', async ({ page }, in
   const errors = watchErrors(page);
   await newGame(page, { tutorial: false, seed: 'showcase-glow' });
   await pourRole(page, 'water', 125);
-  await pourRole(page, 'wild-silverleaf', 100);
+  await pourRole(page, 'wild-sp-silverleaf', 100);
   await crushInPot(page);
   // stir until even, then heat past the blend's threshold with the fire control
   await lab(page, (l) => { l.setAutoStir(true); });
@@ -82,7 +82,7 @@ test('label, bargain, and the customer comes back with a complaint', async ({ pa
   });
   await pourRole(page, 'water', 50);
   await pourRole(page, 'water', 50);
-  await pourRole(page, 'wild-silverleaf', 50);
+  await pourRole(page, 'wild-sp-silverleaf', 50);
   await crushInPot(page);
   await page.click('[data-act=bottle]');
   await page.click('[data-act=bottle-50]');

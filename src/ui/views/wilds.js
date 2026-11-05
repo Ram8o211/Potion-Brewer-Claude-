@@ -41,7 +41,9 @@
 // its remains. Each kind's enclosure holds ten animals, living and dead.
 
 import { UpscaledCanvas } from '../../rendering/crisp.js';
-import { h, btn, clear, toast, keepScroll } from '../dom.js';
+import { BIOME_BY_ID, unlockText } from '../../game/biomes.js';
+import { CREATURE_NAMES, rarityTag } from '../rarity-ui.js';
+import { h, btn, clear, toast, keepScroll, confirmDialog } from '../dom.js';
 import { icon } from '../icons.js';
 import { audio } from '../../audio/audio.js';
 import { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, moistureEnv, DAY_PART_NAME } from '../../game/gathering.js';
@@ -49,6 +51,7 @@ import { equipmentById } from '../../game/equipment.js';
 import { RANKS } from '../../game/equipment.js';
 import { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, sceneTouch, crosses, SCENE_W, SCENE_H } from '../../rendering/wild-scene.js';
 import { Ragdoll } from '../../rendering/ragdoll.js';
+import { exoticPush, exoticStep, exoticDraw } from '../../rendering/exotic-fx.js';
 import { sceneOf } from '../../visual/env/scene.js';
 import { plantCanvas, plantFrameOf, plantGlow, emitColour, silhouetteOf, ingredientSprite, speciesOf, mountsOf, variantOf, MIN_HIT } from '../../rendering/species-sprites.js';
 import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
@@ -59,7 +62,7 @@ import { defaultSnap, penHasRoom, PEN_MAX } from '../../game/colony.js';
 import { KINDS } from '../../game/kinds.js';
 
 /** The shadow a plant casts on its ground, by region (the crags' is warm and deep, the fens' cold). */
-const SHADOW = { forest: 'rgba(8,16,10,0.32)', netherwood: 'rgba(6,4,16,0.4)', meadow: 'rgba(24,30,10,0.26)', river: 'rgba(4,14,16,0.34)', quarry: 'rgba(26,18,10,0.3)', moonfen: 'rgba(2,6,18,0.42)', crags: 'rgba(30,6,4,0.4)' };
+const SHADOW = { forest: 'rgba(8,16,10,0.32)', netherwood: 'rgba(6,4,16,0.4)', meadow: 'rgba(24,30,10,0.26)', river: 'rgba(4,14,16,0.34)', quarry: 'rgba(26,18,10,0.3)', moonfen: 'rgba(2,6,18,0.42)', crags: 'rgba(30,6,4,0.4)', skyshard: 'rgba(20,40,70,0.26)', morphgrove: 'rgba(30,8,30,0.34)', veilhollow: 'rgba(10,10,20,0.38)', ghostglass: 'rgba(2,10,24,0.42)', chronoglass: 'rgba(40,20,10,0.32)' };
 
 /**
  * An animal's sprite lit like the plants beside it (species-sprites.js lit):
@@ -310,7 +313,7 @@ export class WildsView {
    */
   prewarm() {
     if (this.warmTimer) return;
-    const st = this.lab.state, seed = st.seed;
+    const st = this.lab.state;
     const todo = REGIONS.filter((r) => this.unlocked(r) && r.id !== this.region).map((r) => r.id);
     const idle = typeof requestIdleCallback === 'function' ? (fn) => requestIdleCallback(fn) : (fn) => setTimeout(fn, 50);
     const tick = () => {
@@ -321,7 +324,7 @@ export class WildsView {
       idle(() => {
         if (this.lab.view !== 'wilds' || performance.now() - this.lastInput < 1500) { this.warmTimer = setTimeout(tick, 1500); return; }
         const region = /** @type {string} */ (todo.shift());
-        sceneCanvas(region, seed);
+        sceneCanvas(region, st.sceneSeed(region));
         for (const d of st.deposits.filter((x) => x.region === region)) silhouetteOf(st.lookup(d.materialId));
         if (todo.length) this.warmTimer = setTimeout(tick, 400);
       });
@@ -330,7 +333,22 @@ export class WildsView {
   }
 
   unlocked(r) {
-    return this.lab.sandbox || r.rank <= this.lab.state.rank;
+    return this.lab.sandbox || this.lab.state.biomeOpen(r.id);
+  }
+
+  /** Spend a Traveller Coin on this biome: a new generation. */
+  async regenerate() {
+    const st = this.lab.state, name = REGIONS.find((r) => r.id === this.region).name;
+    const ok = await confirmDialog(`Regenerate ${name}?`, 'One Traveller Coin brings a new generation: new scenery, a new mix of species and new specimens. Whatever is left here now is lost; your stores, seeds and garden are untouched.', 'Spend a coin', 'gold');
+    if (!ok) return;
+    const r = st.regenerate(this.region);
+    if (!r.ok) { toast(name, r.reason || 'It cannot be regenerated now.', 'lock'); return; }
+    this.bgKey = ''; this.fallen = {}; this.shakes = {}; this.energy = {}; this.hits = {}; this.rubble = []; this.puffs = []; this.pops = []; this.flashes = []; this.drag = null;
+    this.field = [];
+    audio.play('page');
+    toast(name, 'The biome renews itself: new growth stands where the old was taken.', 'coin');
+    this.lab.save();
+    this.refresh();
   }
 
   /** Rebuild the tabs, the caption and the deposit list (the rows and the page keep where they were scrolled to). */
@@ -346,12 +364,25 @@ export class WildsView {
     for (const r of REGIONS) {
       const ok = this.unlocked(r);
       tabs.appendChild(btn(r.name, () => {
-        if (!ok) { toast(r.name, `The guild grants passage at the rank of ${RANKS[r.rank].name}.`, 'lock'); return; }
+        if (!ok) { toast(r.name, `Opens with ${unlockText(BIOME_BY_ID[r.id], RANKS.map((x) => x.name))}.`, 'lock'); return; }
         this.region = r.id; this.bgKey = ''; this.fallen = {}; this.shakes = {}; this.energy = {}; this.hits = {}; this.rubble = []; this.puffs = []; this.pops = []; this.flashes = []; this.drag = null; audio.play('page'); this.refresh();
-      }, { cls: (this.region === r.id ? 'active ' : '') + (ok ? '' : 'locked'), icon: ok ? (r.magical ? 'wisp' : r.id === 'quarry' ? 'pick' : r.id === 'river' ? 'drop' : r.id === 'meadow' ? 'rose' : r.id === 'netherwood' ? 'shroom' : 'tree') : 'lock', act: 'region-' + r.id }));
+      }, { cls: (this.region === r.id ? 'active ' : '') + (ok ? '' : 'locked ') + (r.magical ? 'exotic' : 'natural'), icon: ok ? BIOME_BY_ID[r.id].icon : 'lock', act: 'region-' + r.id, title: `${r.name} — ${r.magical ? 'Exotic' : 'Natural'}` }));
     }
-    const region = REGIONS.find((r) => r.id === this.region);
+    const region = REGIONS.find((r) => r.id === this.region), biome = BIOME_BY_ID[this.region];
     clear(this.info).append(h('b', { text: region.name }), ' — ' + region.desc);
+    // the biome at a glance: its category, its dominant effect, its creature, what is left and the coin that regenerates it
+    const left = this.deposits().reduce((a, d) => a + depositStatus(st.gathering, d, Date.now()).mature, 0);
+    const total = this.deposits().reduce((a, d) => a + d.slots, 0);
+    const coins = st.travellerCoins();
+    const eff = EFFECT_BY_KEY[biome.effect];
+    const regen = lab.sandbox ? null : btn(`Regenerate`, () => this.regenerate(), { cls: 'small gold', icon: 'coin', act: 'regenerate', disabled: coins.coins < coins.cost || !this.unlocked(region), title: `Spend ${coins.cost} Traveller Coin: new scenery, new species, new specimens` });
+    this.info.appendChild(h('div', { class: 'biome-bar row wrap' },
+      h('span', { class: 'tag ' + biome.category, text: biome.category === 'exotic' ? 'Exotic' : 'Natural' }),
+      h('span', { class: 'fx-chip', title: `Dominant effect: ${eff.label}` }, icon(eff.icon, 'sm'), ' ' + eff.label),
+      h('span', { class: 'fx-chip', title: 'Native creature' }, icon('rabbit', 'sm'), ' ' + CREATURE_NAMES[biome.creature]),
+      h('span', { class: 'fx-chip', title: 'Specimens left in this generation' }, icon('leaf', 'sm'), ` ${left}/${total}`),
+      lab.sandbox ? null : h('span', { class: 'fx-chip coins', title: coins.nextIn ? `Next coin in ${formatWait(coins.nextIn)}` : 'Your purse is full' }, icon('coin', 'sm'), ` ${coins.coins}/${coins.max}`),
+      regen));
     const list = clear(this.list);
     const now = Date.now();
     // the hour, the weather and how hard to harvest
@@ -363,13 +394,10 @@ export class WildsView {
         lab.sandbox ? null : h('span', { class: 'muted', text: part === 'dawn' ? '(until you open the shop)' : part === 'dusk' ? '(after the last customer, until you close)' : '(the shop is open)' }),
         h('span', { class: 'spacer' }), icon(weather.icon, 'sm'), h('b', { text: lab.sandbox ? '' : weather.name })),
       lab.sandbox || weather.id === 'clear' ? null : h('div', { class: 'muted', text: weather.desc }),
-      h('div', { class: 'row wrap seg tap-mode' }, h('span', { text: 'Tap to:' }),
-        btn('Harvest', () => { this.mode = 'harvest'; audio.play('click'); this.refresh(); }, { cls: 'small' + (this.mode === 'harvest' ? ' active' : ''), icon: 'rose', act: 'mode-harvest' }),
-        btn('Water', () => { this.mode = 'water'; audio.play('click'); this.refresh(); }, { cls: 'small' + (this.mode === 'water' ? ' active' : ''), icon: 'drop', act: 'mode-water' }),
-        this.mode === 'water' ? h('span', { class: 'muted', text: 'tap or drag across the scene to water the plants there' }) : null),
-      // (the Free Experiment's bottomless stores have no use for digging plants out whole)
-      this.mode === 'harvest' && !lab.sandbox ? h('div', { class: 'row wrap seg harvest-mode' }, h('span', { text: 'Harvest:' }), mode('Careful', false, 'harvest-careful'), mode('Thorough ×2', true, 'harvest-thorough'),
-        this.thorough ? h('span', { class: 'muted', text: 'digs the plant out whole: its kind sprouts at half pace' }) : null) : null].filter(Boolean));
+      // (the wilds are no longer watered: only the garden's plants are)
+      !lab.sandbox ? h('div', { class: 'row wrap seg harvest-mode' }, h('span', { text: 'Harvest:' }), mode('Careful', false, 'harvest-careful'), mode('Thorough ×2', true, 'harvest-thorough'),
+        this.thorough ? h('span', { class: 'muted', text: 'takes the whole specimen, roots and all, for twice as much' }) : null) : null].filter(Boolean));
+    this.mode = 'harvest';
     this.rows = {};
     for (const d of this.deposits()) {
       const m = st.lookup(d.materialId);
@@ -398,7 +426,7 @@ export class WildsView {
         // the same picture of the ingredient as on the shelf, in the shop and in the book
         ingredientSprite(m, s.fraction),
         h('div', { class: 'dep-info' },
-          h('div', { class: 'title' }, m.name, d.rare ? h('span', { class: 'tag rare', text: 'rare' }) : null, plan.hour ? h('span', { class: 'tag hour', text: plan.hour }) : null),
+          h('div', { class: 'title' }, m.name, rarityTag(m), plan.hour ? h('span', { class: 'tag hour', text: plan.hour }) : null),
           d.place ? h('div', { class: 'meta place', text: d.place }) : null,
           h('div', { class: 'bar' }, barI),
           meta,
@@ -415,7 +443,7 @@ export class WildsView {
       list.appendChild(card);
     }
     if (!list.childElementCount) list.appendChild(h('div', { class: 'muted small empty-list', text: 'Nothing gathered here yet. Slide a finger across a ripe plant to shake its fruit loose, then tap what falls. Each ingredient is listed here once you have gathered it for the first time.' }));
-    clear(this.foot).append(lab.sandbox ? 'The Free Experiment’s stores are bottomless, but every harvest takes its plant: new sprouts come up at random spots and grow back within a minute or two — faster when watered. Stones, crystals and shells turn up again whole.' : `Room for ${st.cap.storage} ml of each ingredient. ${st.has('satchel') ? 'Your satchel carries half as much again. ' : ''}Only mature plants can be harvested. New sprouts come up at random spots until the ground is full again, even while the game is closed, and each new day brings every plant on. Living plants grow faster in damp soil: water them (rain does it for you), and they drink it up over a few hours — a riverbank or a bog stays damp far longer than a meadow or the crags. Stones, crystals and shells do not grow: they turn up again whole, with time and the weather.`);
+    clear(this.foot).append(lab.sandbox ? 'The Free Experiment’s stores are bottomless, and its wilds grow back within minutes of every harvest.' : `Room for ${st.cap.storage} ml of each ingredient. ${st.has('satchel') ? 'Your satchel carries half as much again. ' : ''}A harvest takes its specimen for good, and may drop a seed for your garden. The wilds do not grow back by themselves: spend a Traveller Coin to regenerate a biome — new scenery, new species, new specimens. Coins recharge with time, and delighted customers sometimes give one.`);
     this.paintBg();
     this.grow();
     this.prewarm();
@@ -441,11 +469,11 @@ export class WildsView {
   }
 
   paintBg() {
-    const key = this.region + ':' + this.lab.state.seed;
+    const key = this.region + ':' + this.lab.state.sceneSeed(this.region);
     if (key === this.bgKey) return;
     this.bgKey = key;
-    this.bg = sceneCanvas(this.region, this.lab.state.seed);
-    this.ground = new PlantGround(this.region, this.lab.state.seed);
+    this.bg = sceneCanvas(this.region, this.lab.state.sceneSeed(this.region));
+    this.ground = new PlantGround(this.region, this.lab.state.sceneSeed(this.region));
     this.field = [];
   }
 
@@ -687,8 +715,10 @@ export class WildsView {
   sweep(x0, y0, x1, y1) {
     const dx = x1 - x0, speed = Math.hypot(dx, y1 - y0), dir = dx === 0 ? (this.time * 7 % 2 < 1 ? 1 : -1) : Math.sign(dx);
     const a = dir * Math.min(3.2, 0.5 + speed * 0.45);
-    const touch = sceneTouch(this.region, this.lab.state.seed);
+    const touch = sceneTouch(this.region, this.lab.state.sceneSeed(this.region));
     if (touch) touch.push(x0, y0, x1, y1);
+    // the exotic biomes' touch interactions (decorative)
+    exoticPush(this.region, this.lab.state.sceneSeed(this.region), x0, y0, x1, y1);
     for (const it of Object.values(this.fallen)) it.doll.kick(x0, y0, x1, y1, 3);
     // a rabbit the finger sweeps across bolts
     const warren = this.wildlife ? this.warrens.get(this.region) : null;
@@ -733,7 +763,7 @@ export class WildsView {
   solidAt(x, y) {
     if (x < 0 || x >= SCENE_W || y < 0) return false;
     if (y >= SCENE_H) return true;
-    const sc = sceneOf(this.region, this.lab.state.seed), k = y * SCENE_W + x;
+    const sc = sceneOf(this.region, this.lab.state.sceneSeed(this.region)), k = y * SCENE_W + x;
     return !!(sc.solid[k] || sc.rock[k] || sc.liquid[k]);
   }
 
@@ -855,9 +885,9 @@ export class WildsView {
     if (!this.wildlife) return null;
     let w = this.warrens.get(this.region);
     if (w) return w;
-    const sc = sceneOf(this.region, this.lab.state.seed), W = SCENE_W, H = SCENE_H;
+    const sc = sceneOf(this.region, this.lab.state.sceneSeed(this.region)), W = SCENE_W, H = SCENE_H;
     const inside = (/** @type {number} */ x, /** @type {number} */ y) => x >= 0 && x < W && y >= 0 && y < H;
-    w = new Warren(this.region, this.lab.state.seed, {
+    w = new Warren(this.region, this.lab.state.sceneSeed(this.region), {
       W, H,
       solid: (x, y) => (y >= H ? true : inside(x, y) && !!(sc.solid[y * W + x] || sc.rock[y * W + x])),
       liquid: (x, y) => inside(x, y) && !!sc.liquid[y * W + x],
@@ -1017,7 +1047,7 @@ export class WildsView {
    * @param {number} x @param {number} y
    */
   grassAt(x, y) {
-    const sc = sceneOf(this.region, this.lab.state.seed), W = SCENE_W, H = SCENE_H;
+    const sc = sceneOf(this.region, this.lab.state.sceneSeed(this.region)), W = SCENE_W, H = SCENE_H;
     if (!sc.grass) return true;
     for (let dy = -3; dy <= 3; dy++) for (let dx = -4; dx <= 4; dx++) {
       const xx = Math.round(x) + dx, yy = Math.round(y) + dy;
@@ -1287,10 +1317,12 @@ export class WildsView {
     }
     const ctx = this.ctx, st = this.lab.state, now = Date.now();
     // the painting, its leaves swaying in the wind
-    const touch = sceneTouch(this.region, st.seed);
+    const touch = sceneTouch(this.region, st.sceneSeed(this.region));
     if (touch) touch.step(dt);
-    ctx.drawImage(sceneFrame(this.region, st.seed, this.time), 0, 0);
-    animateRegion(ctx, this.region, this.time, st.seed);
+    ctx.drawImage(sceneFrame(this.region, st.sceneSeed(this.region), this.time), 0, 0);
+    animateRegion(ctx, this.region, this.time, st.sceneSeed(this.region));
+    exoticStep(this.region, st.sceneSeed(this.region), dt);
+    exoticDraw(ctx, this.region, this.time, st.sceneSeed(this.region));
     // the blood spilt here, on the ground and the rock
     const warren = this.warren();
     if (warren) warren.step(dt);
@@ -1434,7 +1466,7 @@ export class WildsView {
     const key = `${this.region}|${p.id}|${x}|${y}|${sp.w}`;
     let cells = this.soilCache.get(key);
     if (!cells) {
-      const sc = sceneOf(this.region, this.lab.state.seed), px = sc.pix.px, seed = hashString(p.id);
+      const sc = sceneOf(this.region, this.lab.state.sceneSeed(this.region)), px = sc.pix.px, seed = hashString(p.id);
       const hw = Math.max(2, Math.round(sp.w * (WildsView.gem(p) ? 0.45 : 0.3)));
       cells = [];
       for (let dx = -hw; dx <= hw; dx++) {

@@ -1713,6 +1713,45 @@ function drawFx(P, look, snap, a, t, react, acted, low) {
     }
     if (v >= 3 && mod(tt, 2.5) < 0.12) for (let i = 0; i < 3; i++) P(bx0 + ((seed + i * 11) % Math.max(1, bx1 - bx0 - 4)), headTop + 4 + i * 4, 5, 1, C_SHIM);
   }
+  v = lv('swiftness');
+  if (v) { // speed streaks trailing behind it: more and longer with the level
+    for (let i = 0; i < v + 1; i++) {
+      const y = midY - 3 + i * 3, len = 2 + v * 2 + Math.round(Math.sin(tt * 9 + i) * 1.5);
+      P(bx0 - 2 - len, y, len, 1, i & 1 ? 'rgba(250,230,107,0.75)' : 'rgba(255,248,200,0.85)');
+    }
+    if (v >= 3) P(bx0 - 3, midY + 4, 2, 1, '#fff6c0');
+  }
+  v = lv('levitation');
+  if (v) { // pale puffs of air lifting under its feet, and a gap of light below it
+    for (let i = 0; i < v * 2; i++) {
+      const age = mod(tt * 0.9 + i * 0.37, 1);
+      P(a.cx - 6 + ((i * 5 + seed) % 12), a.feetY + 1 - Math.round(age * (2 + v)), 1, 1, age < 0.5 ? '#e8f8ff' : '#b8e8ff');
+    }
+    if (v >= 2) P(a.cx - 4, a.feetY + 1, 9, 1, 'rgba(184,232,255,0.6)');
+    if (v >= 3) P(a.cx - 6, a.feetY + 2, 13, 1, 'rgba(232,248,255,0.5)');
+  }
+  v = lv('invisibility');
+  if (v) { // a pale veil drifting over it: the body fades in bands
+    const rows = rowsOf(a.parts);
+    for (let i = 0; i < rows.length; i += 4 - v) {
+      const [y, x0, x1] = rows[i];
+      if (((y + Math.floor(tt * 3)) & 3) === 0) P(x0, y, x1 - x0, 1, `rgba(214,206,250,${0.25 + 0.15 * v})`);
+    }
+  }
+  v = lv('phasing');
+  if (v) { // a ghost of its outline a few pixels off, shifting back and forth
+    const off = (Math.sin(tt * 3) > 0 ? 1 : -1) * (1 + v);
+    for (const [y, x0, x1] of rowsOf(a.parts)) { P(x0 + off, y, 1, 1, 'rgba(140,250,235,0.7)'); P(x1 - 1 + off, y, 1, 1, 'rgba(140,250,235,0.7)'); }
+    if (v >= 3) P(a.eye.x + off, a.eye.y, 1, 1, '#e0fffa');
+  }
+  v = lv('temporal');
+  if (v) { // a little clock ring above its head, its hand running (backward at the top level)
+    const cx = a.cx, cy = headTop - 5, R = 2 + (v >= 2 ? 1 : 0);
+    for (let i = 0; i < 8; i++) { const an = (i * Math.PI) / 4; P(cx + Math.round(Math.cos(an) * R), cy + Math.round(Math.sin(an) * R), 1, 1, '#ffc880'); }
+    const hand = (v === 3 ? -1 : 1) * tt * 2;
+    P(cx + Math.round(Math.cos(hand) * (R - 1)), cy + Math.round(Math.sin(hand) * (R - 1)), 1, 1, '#fff2d0');
+    if (v >= 3) P(cx, cy, 1, 1, '#a85a20');
+  }
   v = lv('fire');
   if (v) { // smoulder (1), flames along the back (2), more flames, sparks and burning ear tips (3)
     if (v === 1 && Math.sin(tt * 5) > -0.2) P(a.back.x0 + 4, backTop(a.back.x0 + 4) + 1, 1, 1, '#ffb444');

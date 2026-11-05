@@ -1,0 +1,723 @@
+{
+ "version": 1,
+ "atlas": "ingredients-exotic-flora.png",
+ "width": 512,
+ "height": 128,
+ "padding": 2,
+ "frames": {
+  "airstar": {
+   "species": "airstar",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "skyshard",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 221,
+   "y": 67,
+   "w": 39,
+   "h": 27,
+   "pivot": [
+    19,
+    26
+   ],
+   "native": [
+    39,
+    27
+   ]
+  },
+  "chronovine": {
+   "species": "chronovine",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "chronoglass",
+   "category": "exotic",
+   "morph": "vine",
+   "x": 411,
+   "y": 35,
+   "w": 41,
+   "h": 28,
+   "pivot": [
+    20,
+    27
+   ],
+   "native": [
+    41,
+    28
+   ]
+  },
+  "coralberry": {
+   "species": "coralberry",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "ghostglass",
+   "category": "exotic",
+   "morph": "berry",
+   "x": 454,
+   "y": 35,
+   "w": 38,
+   "h": 28,
+   "pivot": [
+    19,
+    27
+   ],
+   "native": [
+    38,
+    28
+   ]
+  },
+  "crownbloom": {
+   "species": "crownbloom",
+   "kind": "sprite",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "morphgrove",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 395,
+   "y": 67,
+   "w": 52,
+   "h": 26,
+   "pivot": [
+    26,
+    25
+   ],
+   "native": [
+    52,
+    26
+   ]
+  },
+  "dreamberry": {
+   "species": "dreamberry",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "moonfen",
+   "category": "exotic",
+   "morph": "berry",
+   "x": 56,
+   "y": 35,
+   "w": 39,
+   "h": 29,
+   "pivot": [
+    19,
+    28
+   ],
+   "native": [
+    39,
+    29
+   ]
+  },
+  "duskbell": {
+   "species": "duskbell",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "moonfen",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 97,
+   "y": 35,
+   "w": 46,
+   "h": 29,
+   "pivot": [
+    23,
+    28
+   ],
+   "native": [
+    46,
+    29
+   ]
+  },
+  "epochbloom": {
+   "species": "epochbloom",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "chronoglass",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 192,
+   "y": 2,
+   "w": 48,
+   "h": 30,
+   "pivot": [
+    24,
+    29
+   ],
+   "native": [
+    48,
+    30
+   ]
+  },
+  "featherpetal": {
+   "species": "featherpetal",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "skyshard",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 242,
+   "y": 2,
+   "w": 40,
+   "h": 30,
+   "pivot": [
+    20,
+    29
+   ],
+   "native": [
+    40,
+    30
+   ]
+  },
+  "formblossom": {
+   "species": "formblossom",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "morphgrove",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 2,
+   "y": 67,
+   "w": 44,
+   "h": 28,
+   "pivot": [
+    22,
+    27
+   ],
+   "native": [
+    44,
+    28
+   ]
+  },
+  "ghostbud": {
+   "species": "ghostbud",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "veilhollow",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 145,
+   "y": 35,
+   "w": 37,
+   "h": 29,
+   "pivot": [
+    18,
+    28
+   ],
+   "native": [
+    37,
+    29
+   ]
+  },
+  "graftberry": {
+   "species": "graftberry",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "morphgrove",
+   "category": "exotic",
+   "morph": "berry",
+   "x": 449,
+   "y": 67,
+   "w": 42,
+   "h": 26,
+   "pivot": [
+    21,
+    25
+   ],
+   "native": [
+    42,
+    26
+   ]
+  },
+  "hollowbloom": {
+   "species": "hollowbloom",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "veilhollow",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 2,
+   "y": 2,
+   "w": 45,
+   "h": 31,
+   "pivot": [
+    22,
+    30
+   ],
+   "native": [
+    45,
+    31
+   ]
+  },
+  "hourberry": {
+   "species": "hourberry",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "chronoglass",
+   "category": "exotic",
+   "morph": "berry",
+   "x": 262,
+   "y": 67,
+   "w": 44,
+   "h": 27,
+   "pivot": [
+    22,
+    26
+   ],
+   "native": [
+    44,
+    27
+   ]
+  },
+  "moonlotus": {
+   "species": "moonlotus",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "moonfen",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 284,
+   "y": 2,
+   "w": 46,
+   "h": 30,
+   "pivot": [
+    23,
+    29
+   ],
+   "native": [
+    46,
+    30
+   ]
+  },
+  "moonreed": {
+   "species": "moonreed",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "moonfen",
+   "category": "exotic",
+   "morph": "grass",
+   "x": 332,
+   "y": 2,
+   "w": 49,
+   "h": 30,
+   "pivot": [
+    24,
+    29
+   ],
+   "native": [
+    49,
+    30
+   ]
+  },
+  "moonveil-bloom": {
+   "species": "moonveil-bloom",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "moonfen",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 2,
+   "y": 97,
+   "w": 44,
+   "h": 26,
+   "pivot": [
+    22,
+    25
+   ],
+   "native": [
+    44,
+    26
+   ]
+  },
+  "morphleaf": {
+   "species": "morphleaf",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "morphgrove",
+   "category": "exotic",
+   "morph": "leaf",
+   "x": 48,
+   "y": 67,
+   "w": 46,
+   "h": 28,
+   "pivot": [
+    23,
+    27
+   ],
+   "native": [
+    46,
+    28
+   ]
+  },
+  "pendulum-pods": {
+   "species": "pendulum-pods",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "chronoglass",
+   "category": "exotic",
+   "morph": "vine",
+   "x": 184,
+   "y": 35,
+   "w": 45,
+   "h": 29,
+   "pivot": [
+    22,
+    28
+   ],
+   "native": [
+    45,
+    29
+   ]
+  },
+  "polymorph-lotus": {
+   "species": "polymorph-lotus",
+   "kind": "sprite",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "morphgrove",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 231,
+   "y": 35,
+   "w": 46,
+   "h": 29,
+   "pivot": [
+    23,
+    28
+   ],
+   "native": [
+    46,
+    29
+   ]
+  },
+  "reefbud": {
+   "species": "reefbud",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "ghostglass",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 383,
+   "y": 2,
+   "w": 40,
+   "h": 30,
+   "pivot": [
+    20,
+    29
+   ],
+   "native": [
+    40,
+    30
+   ]
+  },
+  "shellfern": {
+   "species": "shellfern",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "ghostglass",
+   "category": "exotic",
+   "morph": "leaf",
+   "x": 49,
+   "y": 2,
+   "w": 42,
+   "h": 31,
+   "pivot": [
+    21,
+    30
+   ],
+   "native": [
+    42,
+    31
+   ]
+  },
+  "shifting-root": {
+   "species": "shifting-root",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "morphgrove",
+   "category": "exotic",
+   "morph": "root",
+   "x": 279,
+   "y": 35,
+   "w": 46,
+   "h": 29,
+   "pivot": [
+    23,
+    28
+   ],
+   "native": [
+    46,
+    29
+   ]
+  },
+  "shroud-orchid": {
+   "species": "shroud-orchid",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "veilhollow",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 93,
+   "y": 2,
+   "w": 47,
+   "h": 31,
+   "pivot": [
+    23,
+    30
+   ],
+   "native": [
+    47,
+    31
+   ]
+  },
+  "skyberry": {
+   "species": "skyberry",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "skyshard",
+   "category": "exotic",
+   "morph": "berry",
+   "x": 48,
+   "y": 97,
+   "w": 42,
+   "h": 26,
+   "pivot": [
+    21,
+    25
+   ],
+   "native": [
+    42,
+    26
+   ]
+  },
+  "skyspray": {
+   "species": "skyspray",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "skyshard",
+   "category": "exotic",
+   "morph": "herb",
+   "x": 327,
+   "y": 35,
+   "w": 39,
+   "h": 29,
+   "pivot": [
+    19,
+    28
+   ],
+   "native": [
+    39,
+    29
+   ]
+  },
+  "splice-bud": {
+   "species": "splice-bud",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "morphgrove",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 96,
+   "y": 67,
+   "w": 36,
+   "h": 28,
+   "pivot": [
+    18,
+    27
+   ],
+   "native": [
+    36,
+    28
+   ]
+  },
+  "starfall-lotus": {
+   "species": "starfall-lotus",
+   "kind": "sprite",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "moonfen",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 308,
+   "y": 67,
+   "w": 44,
+   "h": 27,
+   "pivot": [
+    22,
+    26
+   ],
+   "native": [
+    44,
+    27
+   ]
+  },
+  "timeweed": {
+   "species": "timeweed",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "chronoglass",
+   "category": "exotic",
+   "morph": "grass",
+   "x": 425,
+   "y": 2,
+   "w": 49,
+   "h": 30,
+   "pivot": [
+    24,
+    29
+   ],
+   "native": [
+    49,
+    30
+   ]
+  },
+  "twinsprout": {
+   "species": "twinsprout",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "morphgrove",
+   "category": "exotic",
+   "morph": "herb",
+   "x": 354,
+   "y": 67,
+   "w": 39,
+   "h": 27,
+   "pivot": [
+    19,
+    26
+   ],
+   "native": [
+    39,
+    27
+   ]
+  },
+  "updraft-seedwing": {
+   "species": "updraft-seedwing",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "skyshard",
+   "category": "exotic",
+   "morph": "seedpod",
+   "x": 368,
+   "y": 35,
+   "w": 41,
+   "h": 29,
+   "pivot": [
+    20,
+    28
+   ],
+   "native": [
+    41,
+    29
+   ]
+  },
+  "veilberry": {
+   "species": "veilberry",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "veilhollow",
+   "category": "exotic",
+   "morph": "berry",
+   "x": 134,
+   "y": 67,
+   "w": 41,
+   "h": 28,
+   "pivot": [
+    20,
+    27
+   ],
+   "native": [
+    41,
+    28
+   ]
+  },
+  "veilfern": {
+   "species": "veilfern",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "veilhollow",
+   "category": "exotic",
+   "morph": "leaf",
+   "x": 142,
+   "y": 2,
+   "w": 48,
+   "h": 31,
+   "pivot": [
+    24,
+    30
+   ],
+   "native": [
+    48,
+    31
+   ]
+  },
+  "windfern": {
+   "species": "windfern",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "skyshard",
+   "category": "exotic",
+   "morph": "leaf",
+   "x": 2,
+   "y": 35,
+   "w": 52,
+   "h": 30,
+   "pivot": [
+    26,
+    29
+   ],
+   "native": [
+    52,
+    30
+   ]
+  },
+  "zephyr-starbloom": {
+   "species": "zephyr-starbloom",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "skyshard",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 177,
+   "y": 67,
+   "w": 42,
+   "h": 28,
+   "pivot": [
+    21,
+    27
+   ],
+   "native": [
+    42,
+    28
+   ]
+  }
+ }
+}

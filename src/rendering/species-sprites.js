@@ -18,6 +18,45 @@ import { rawSprite } from './scenes.js';
 import { mountsOfForm, frameMount, growthParams } from '../visual/growth.js';
 import { hashString } from '../core/rng.js';
 import { INK } from '../visual/style.js';
+import { atlasFrame, spriteAsset, stageAsset } from '../visual/atlas.js';
+import { SPECIES_COLORS } from '../materials/species-colors.js';
+
+/** Does a material draw from the ingredient atlases (a catalog species)? @param {any} m */
+export const isAtlasMaterial = (m) => !!(m && m.wild && m.wild.catalog);
+
+/** Art pixels per scene pixel of an atlas sprite in the wilds (its native detail, crisp). */
+export const ATLAS_K = 2;
+
+/** The arcane glow every Arcane specimen gives off. */
+const ARCANE_GLOW = 'rgb(186,150,255)';
+
+/**
+ * A frame at half size (scene pixels, for layout and the plain layer): each
+ * 2×2 block takes its commonest opaque colour when at least two of its
+ * pixels are opaque — crisp, no blending.
+ * @param {{pix:Pixels, ax:number, ay:number}} f
+ */
+function halved(f) {
+  const w = Math.ceil(f.pix.w / 2), h = Math.ceil(f.pix.h / 2), out = new Pixels(w, h), src = f.pix;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const cs = [];
+    for (let j = 0; j < 2; j++) for (let i = 0; i < 2; i++) { const c = src.get(x * 2 + i, y * 2 + j); if (c >>> 24) cs.push(c); }
+    if (cs.length < 2) continue;
+    let best = cs[0], bn = 0;
+    for (const c of cs) { const n = cs.filter((q) => q === c).length; if (n > bn) { bn = n; best = c; } }
+    out.px[y * w + x] = best;
+  }
+  return { pix: out, ax: Math.round(f.ax / 2), ay: Math.ceil(f.ay / 2), glints: [], glows: [] };
+}
+
+/** Frame of a catalog species at a stage, from its atlas (null while the atlas loads), at a definition (2: native, 1: scene pixels). @param {any} m @param {string} stage @param {number} def */
+function atlasPlant(m, stage, def) {
+  const w = m.wild, st = stage === 'mature' ? 4 : stage === 'ripe' ? 3 : 2;
+  const f = atlasFrame(st >= 4 ? spriteAsset(w.key, !!w.arcane) : stageAsset(w.key, !!w.arcane, st));
+  if (!f) return null;
+  const full = { pix: f.pix, ax: f.ax, ay: f.ay, glints: [], glows: [] };
+  return def >= ATLAS_K ? full : cached(`half|${f.id}`, () => halved(full));
+}
 
 export { ICON_PX };
 
@@ -94,6 +133,8 @@ export const variantOf = (id) => hashString('variant:' + id) & 3;
 
 /** Where a material is found: its mounts with their weights, the ground last (visual/growth.js). @param {any} m @returns {[string, number][]} */
 export function mountsOf(m) {
+  // (atlas sprites stand on the ground)
+  if (isAtlasMaterial(m)) return [['ground', 1]];
   const id = identityOfMaterial(m);
   return id ? mountsOfForm(id.shape) : [['ground', 1]];
 }
@@ -112,6 +153,17 @@ export function mountsOf(m) {
  * @returns {import('../visual/render.js').Frame|null}
  */
 export function plantFrameOf(m, stage, o = {}) {
+  if (isAtlasMaterial(m)) {
+    const light = o.light && (o.light.length > 3 || o.light.some((v) => Math.abs(v - 1) > 0.02)) ? o.light : null;
+    const def = (o.k ?? 1) >= ATLAS_K ? ATLAS_K : 1;
+    const k = `atlas|${m.id}|${stage}|${def}|${light ? light.join(',') : ''}`;
+    const raw = atlasPlant(m, stage, def);
+    if (!raw) return null;
+    const base = cached('p|' + k, () => (light ? lit(raw, light, 'ground', []) : raw));
+    const out = o.hover ? cached('h|' + k, () => rimmed(base)) : base;
+    /** @type {any} */ (out).k = def;
+    return out;
+  }
   const id = identityOfMaterial(m);
   if (!id) return null;
   // stones and shells do not grow: one picture, whole, at every stage (a crystal
@@ -145,6 +197,11 @@ export function plantCanvas(m, stage, o = {}) {
  * @param {any} m @returns {string|null}
  */
 export function plantGlow(m) {
+  if (isAtlasMaterial(m)) {
+    if (m.wild.arcane) return ARCANE_GLOW;
+    const c = (SPECIES_COLORS[m.wild.key] || { accent: [0.8, 0.8, 0.8] }).accent.map((v) => Math.round((v + (1 - v) * 0.4) * 255));
+    return `rgb(${c[0]},${c[1]},${c[2]})`;
+  }
   const id = identityOfMaterial(m);
   if (!id) return null;
   return cached(`g|${identityKey(id)}`, () => {
@@ -159,6 +216,8 @@ export function plantGlow(m) {
  * @param {any} m @returns {string|null}
  */
 export function emitColour(m) {
+  // an Arcane specimen lights the ground round it; ordinary ones give no light
+  if (isAtlasMaterial(m)) return m.wild.arcane ? ARCANE_GLOW : null;
   const id = identityOfMaterial(m);
   if (!id) return null;
   return cached(`e|${identityKey(id)}`, () => {
@@ -177,6 +236,17 @@ export function emitColour(m) {
  * @returns {{w:number, h:number, ax:number, ay:number, m:Uint8Array}|null}
  */
 export function silhouetteOf(m, o = {}) {
+  if (isAtlasMaterial(m)) {
+    const frames = ['sprout', 'ripe', 'mature'].map((s) => plantFrameOf(m, s, { hover: true })).filter(Boolean);
+    if (!frames.length) return null;
+    return cached(`s|atlas|${m.id}`, () => {
+      let x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+      for (const f of frames) { x0 = Math.min(x0, -f.ax); y0 = Math.min(y0, -f.ay); x1 = Math.max(x1, f.pix.w - f.ax); y1 = Math.max(y1, f.pix.h - f.ay); }
+      const w = x1 - x0, h = y1 - y0, mask = new Uint8Array(w * h);
+      for (const f of frames) for (let y = 0; y < f.pix.h; y++) for (let x = 0; x < f.pix.w; x++) if (f.pix.px[y * f.pix.w + x] >>> 24) mask[(y - f.ay - y0) * w + x - f.ax - x0] = 1;
+      return { w, h, ax: -x0, ay: -y0, m: mask };
+    });
+  }
   const id = identityOfMaterial(m);
   if (!id) return null;
   const mount = frameMount(o.mount), variant = (o.variant ?? 0) & 3, flip = !!o.flip && mount === 'wall';
@@ -192,6 +262,10 @@ export function silhouetteOf(m, o = {}) {
 
 /** An ingredient's icon (pure pixels). @param {any} m */
 export function iconFrameOf(m) {
+  if (isAtlasMaterial(m)) {
+    const f = atlasFrame(spriteAsset(m.wild.key, !!m.wild.arcane));
+    return f ? { pix: f.pix, ax: f.ax, ay: f.ay, glints: [] } : null;
+  }
   const id = identityOfMaterial(m);
   return id ? cached(`i|${identityKey(id)}`, () => iconFrame(describe(id))) : null;
 }
@@ -205,6 +279,21 @@ export function iconFrameOf(m) {
  * @param {any} m material @param {number} [fill] 0..1 (unused by icons; remains shrink with it)
  */
 export function ingredientSprite(m, fill = 1) {
+  if (isAtlasMaterial(m)) {
+    // the species' own atlas sprite (its Arcane sprite for an Arcane specimen), in a square just round it
+    const f = iconFrameOf(m);
+    const cv = /** @type {HTMLCanvasElement} */ (document.createElement('canvas'));
+    cv.style.imageRendering = 'pixelated';
+    cv.classList.add('ing-sprite');
+    if (m.wild.arcane) cv.classList.add('arcane');
+    cv.dataset.rarity = m.wild.rarity || 'common';
+    if (!f) { cv.width = cv.height = 16; cv.dataset.pending = m.id; return cv; }
+    const S = Math.max(f.pix.w, f.pix.h) + 2;
+    cv.width = S; cv.height = S;
+    const g = f.pix.toCanvas();
+    /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')).drawImage(g, Math.round((S - f.pix.w) / 2), S - 1 - f.pix.h);
+    return cv;
+  }
   const f = m && m.wild ? iconFrameOf(m) : null;
   if (!f) return rawSprite(m.shape || 'stone', m.look || m.color, fill);
   // the very picture it has in the wilds: the grown plant (or crystal, stone, shell) on the mount its species is found on

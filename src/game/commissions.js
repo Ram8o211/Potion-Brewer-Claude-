@@ -42,7 +42,10 @@ import { SIM } from '../simulation/constants.js';
 import { EFFECT_INDEX, EFFECT_BY_KEY, EFFECT_KEYS, NE, interact } from '../alchemy/effects.js';
 import { thresholdToCelsius, isMagical } from '../alchemy/arcane.js';
 import { compatFactor } from '../reactions/compatibility.js';
-import { REQUESTS, TIER_TARGET, PURITY_LIMIT, requestById } from './requests.js';
+import { REQUESTS, TIER_TARGET, PURITY_LIMIT, requestById, purityLimitFor } from './requests.js';
+
+/** The purity limit an order is planned for (its tier's, else the strictest). @param {any} ctx */
+const plim = (ctx) => (ctx && ctx.purity) || PURITY_LIMIT;
 
 /**
  * @typedef {Object} Requirement
@@ -182,7 +185,7 @@ export function coldFloor(cap) {
  * ingredient carries side effects only on these, so an order for any effect
  * can be brewed by balancing ingredients against each other.
  */
-const NEUTRALISABLE = new Set(['fire', 'frost', 'vitality', 'death', 'toxicity', 'acidity']);
+const NEUTRALISABLE = new Set(['fire', 'frost', 'vitality', 'death', 'toxicity', 'acidity', 'levitation', 'strength', 'temporal', 'phasing']);
 
 /**
  * Search for a hidden plan that delivers the wanted effects at (at least)
@@ -200,14 +203,24 @@ function searchPlan(wanted, exclude, ctx, rng, n, o) {
   if (!solvents.length) return null;
   const pot = (m, w) => w.sign * (((m.effects || {})[w.key]) || 0);
   // an ingredient may go in only if all it carries is wanted, tolerated or neutralisable
-  const admissible = (m) => Object.entries(m.effects).every(([k, v]) => Math.abs(Number(v) || 0) < 1 || exclude.includes(k) || NEUTRALISABLE.has(k));
+  // (a carrier may also bring a side effect nothing cancels, if at the strength asked it stays well inside the order's purity limit)
+  const top = Math.max(...wanted.map((w) => w.target));
+  const admissible = (m) => {
+    const carry = Math.max(0, ...wanted.map((w) => pot(m, w)));
+    return Object.entries(m.effects).every(([k, v]) => {
+      const a = Math.abs(Number(v) || 0);
+      if (a < 1 || exclude.includes(k) || NEUTRALISABLE.has(k)) return true;
+      return carry >= 4 && (a / carry) * top <= plim(ctx) * 0.9;
+    });
+  };
   // an awakening plan can only use what wakes within the fire's (or the frost's) reach in a
   // watery brew; ingredients that wake by cold and by heat never mix in one
   const water = ctx.lookup(ctx.world.roles.water);
   const hot = Math.min(ctx.cap.maxFlame - 40, (water && isFinite(water.boil) ? water.boil : 100) - 6), cold = 20 + 0.55 * (ctx.cap.minCool - 20);
   const wakes = (m) => isMagical(m) && (m.arcane.thr >= 0 ? thresholdToCelsius(m.arcane.thr) + ACTIVATION_MARGIN + 4 <= hot : thresholdToCelsius(m.arcane.thr) - ACTIVATION_MARGIN - 4 >= cold);
   const pool = [...ctx.available].map(ctx.lookup)
-    .filter((m) => m && m.effects && m.form !== 'gas' && !m.awakened && !m.remains && !m.product && Object.keys(m.effects).length && admissible(m) && (!o.activation || wakes(m))
+    // (a plain plan uses ordinary forms: an Arcane one would only risk waking in the steep)
+    .filter((m) => m && m.effects && m.form !== 'gas' && !m.awakened && !m.remains && !m.product && Object.keys(m.effects).length && admissible(m) && (o.activation ? wakes(m) : !isMagical(m))
       && !(ctx.avoid && ctx.avoid.has(m.id)) && obtainable(ctx, m.id, 40));
   /** carriers for each wanted effect, cleanest first (with some variety) */
   const carriers = wanted.map((w) => pool.filter((m) => pot(m, w) >= 4)
@@ -433,7 +446,7 @@ function composePlan(pick, wanted, exclude, ctx, solvents, n, o, pool) {
     }
     return { xs, cost: best };
   };
-  const good = (e) => wanted.every((w, j) => w.sign * e[wIdx[j]] >= w.target * 1.04) && EFFECT_KEYS.every((k, i) => free[i] || Math.abs(e[i]) <= PURITY_LIMIT * 0.45);
+  const good = (e) => wanted.every((w, j) => w.sign * e[wIdx[j]] >= w.target * 1.04) && EFFECT_KEYS.every((k, i) => free[i] || Math.abs(e[i]) <= plim(ctx) * 0.45);
 
   // ---- first guess on the guild's opposing pairs, where the problem is
   // convex: fire − frost, life − death − 2·poison (life mends poison two to
@@ -508,7 +521,7 @@ function composePlan(pick, wanted, exclude, ctx, solvents, n, o, pool) {
   const accept = (pred) => wanted.every((w, j) => {
     const v = w.sign * pred.effects[wIdx[j]];
     return v >= w.target * 1.02 && v <= w.target * 1.7;
-  }) && unwantedMax(pred.effects, exclude).value <= PURITY_LIMIT * 0.6;
+  }) && unwantedMax(pred.effects, exclude).value <= plim(ctx) * 0.6;
   const toMap = (xs) => new Map(/** @type {[string, number][]} */ (ids.map((id, j) => [id, xs[j]])).filter(([, f]) => f * n >= 0.5));
   let best = null;
   for (let it = 0; it < 3; it++) {
@@ -517,7 +530,7 @@ function composePlan(pick, wanted, exclude, ctx, solvents, n, o, pool) {
     const pred = finish(plan);
     if (!pred) break;
     if (accept(pred)) return { plan, pred };
-    const err = planError(pred, wanted, wIdx, exclude);
+    const err = planError(pred, wanted, wIdx, exclude, plim(ctx));
     if (!best || err < best.err) best = { plan, pred, err };
     // refine the model where the brew actually is, and solve again
     for (const id of ids) {
@@ -540,7 +553,7 @@ function composePlan(pick, wanted, exclude, ctx, solvents, n, o, pool) {
         const p2 = plainPlan(ing);
         const r2 = finish(p2);
         if (!r2) continue;
-        const err = planError(r2, wanted, wIdx, exclude);
+        const err = planError(r2, wanted, wIdx, exclude, plim(ctx));
         if (err < (better ? better.err : cur.err) - 1e-6) better = { plan: p2, pred: r2, err };
       }
     }
@@ -552,7 +565,7 @@ function composePlan(pick, wanted, exclude, ctx, solvents, n, o, pool) {
 }
 
 /** How far a predicted brew misses the order (for particle-level tuning). */
-function planError(pred, wanted, wIdx, exclude) {
+function planError(pred, wanted, wIdx, exclude, lim = PURITY_LIMIT) {
   let e = 0;
   wanted.forEach((w, j) => {
     const v = w.sign * pred.effects[wIdx[j]];
@@ -562,12 +575,35 @@ function planError(pred, wanted, wIdx, exclude) {
   for (let k = 0; k < NE; k++) {
     if (exclude.includes(EFFECT_KEYS[k])) continue;
     const a = Math.abs(pred.effects[k]);
-    if (a > PURITY_LIMIT * 0.5) e += a - PURITY_LIMIT * 0.5;
+    if (a > lim * 0.5) e += a - lim * 0.5;
   }
   return e;
 }
 
 // ------------------------------------------------------------------ generation
+
+/**
+ * Can the shop's reachable ingredients carry every effect a request wants
+ * (in its direction)? Customers ask for what the player's progress makes
+ * possible: no love potions before a love-bearing biome is open.
+ * @param {CommissionContext} ctx @param {any} req
+ */
+function reachable(ctx, req) {
+  let cache = /** @type {any} */ (ctx)._reach;
+  if (!cache) {
+    cache = new Map();
+    for (const id of ctx.available) {
+      const m = ctx.lookup(id);
+      if (!m || !m.effects || m.product || m.remains || m.awakened) continue;
+      for (const [k, v] of Object.entries(m.effects)) {
+        const key = k + (Number(v) < 0 ? '-' : '+');
+        cache.set(key, Math.max(cache.get(key) || 0, Math.abs(Number(v) || 0)));
+      }
+    }
+    Object.defineProperty(ctx, '_reach', { value: cache, enumerable: false, configurable: true });
+  }
+  return req.fx.every((f) => (cache.get(f.key + ((f.sign || 1) < 0 ? '-' : '+')) || 0) >= 8);
+}
 
 /** Requests a customer may bring at a tier (recently sold ones only when there is nothing else). */
 function requestsFor(arch, tier, event, recent = []) {
@@ -659,7 +695,7 @@ export const TECHNIQUES = [
       // only where the prediction is trustworthy: boiling must not start a reaction of its own,
       // and the awakening state must be what the plain plan already had
       if (r2.reactions.length !== pred.reactions.length || r2.awakened !== pred.awakened) return null;
-      if (unwantedMax(r2.effects, exclude).value > PURITY_LIMIT * 0.6) return null;
+      if (unwantedMax(r2.effects, exclude).value > plim(ctx) * 0.6) return null;
       if (!wanted.every((w) => w.sign * r2.effects[EFFECT_INDEX[w.key]] >= w.sign * pred.effects[EFFECT_INDEX[w.key]] * 1.25)) return null;
       return { plan: p2, pred: r2, strengthen: true, reqs: [], say: 'Make it strong and compact — a little goes a long way where I am going.' };
     },
@@ -692,7 +728,7 @@ export function generateCommission(ctx, rng, opts = {}) {
     const bottleN = Math.round(bottleMl / SIM.ML_PER_PARTICLE);
     const vessel = { pot: 310, copper: 440, grand: 600, small: 1400, medium: 2000, large: 2700 }[ctx.cap.size] || 310;
     const totalN = Math.min(Math.round(bottleN * rng.range(1.7, 2.3)), Math.floor(vessel * 0.45));
-    let requests = opts.request ? [requestById(opts.request)].filter(Boolean) : requestsFor(arch, tier, ctx.event, opts.recent);
+    let requests = opts.request ? [requestById(opts.request)].filter(Boolean) : requestsFor(arch, tier, ctx.event, opts.recent).filter((r) => reachable(ctx, r));
     if (opts.simple) requests = REQUESTS.filter((r) => r.minTier === 0 && r.fx.length === 1);
     if (!requests.length) continue;
     const com = effectCommission(rng.pick(requests), arch, tier, ctx, rng, totalN, bottleMl, bottleN, opts);
@@ -713,7 +749,7 @@ function effectCommission(req, arch, tier, ctx, rng, totalN, bottleMl, bottleN, 
   const serve = 20;
   let found = null, activation = false, wanted = [], exclude = [], supply = null;
   // ingredients the shop cannot get today are left out and the search runs again
-  const local = { ...ctx, avoid: new Set(ctx.avoid || []) };
+  const local = { ...ctx, avoid: new Set(ctx.avoid || []), purity: purityLimitFor(tier) };
   // the sampled strength first, then the tier's mildest, then (for masters,
   // whose orders combine several balanced effects) a gentler one, before giving up
   const mains = opts.simple ? [lo] : [Math.round(rng.range(lo, hi)), lo];
@@ -758,7 +794,7 @@ function effectCommission(req, arch, tier, ctx, rng, totalN, bottleMl, bottleN, 
       if (!r) continue;
       if (r.plan) { plan = r.plan; pred = r.pred || predictPlan(ctx.world, ctx.lookup, plan); }
       // a technique that changes the brew must not break the order's purity
-      if (unwantedMax(pred.effects, exclude).value > PURITY_LIMIT * 0.6) return null;
+      if (unwantedMax(pred.effects, exclude).value > plim(ctx) * 0.6) return null;
       techReqs.push(...r.reqs);
       chosen.push(t.id);
       if (r.say) say.push(r.say);
@@ -781,7 +817,7 @@ function effectCommission(req, arch, tier, ctx, rng, totalN, bottleMl, bottleN, 
       Object.assign(r0, { kind: 'target', target: Math.round(v), tol, zero: tol * 3, label: `${Math.round(v) - tol}–${Math.round(v) + tol}%` });
     }
   }
-  if (req.drunk !== false || (req.tolerate && req.tolerate.length < 9)) reqs.push(purityRequirement(exclude, opts.simple ? 3 : PURITY_LIMIT));
+  if (req.drunk !== false || (req.tolerate && req.tolerate.length < 9)) reqs.push(purityRequirement(exclude, opts.simple ? Math.max(3, plim(local)) : plim(local)));
   reqs.push(...techReqs);
   const com = finalize({ style: req.id, request: req, title: req.title, arch, tier, ctx, rng, plan, pred, reqs, bottleMl, bottleN, opts, activation, techniques: chosen, say });
   if (com) com.supplies = supplyBrief(plan, local, wanted, exclude, supply);
@@ -836,37 +872,45 @@ function finalize({ style, request, title, arch, tier, ctx, rng, plan, pred, req
   return com;
 }
 
-/** The two herbs of the tutorial's healing tonic: a healer that leaves frost, and a warming one that cancels it. */
-export const TUTORIAL_HERBS = { healer: 'wild-silverleaf', warmer: 'wild-sunthistle' };
+/**
+ * The herbs of the tutorial's fever tonic: plain Silverleaf, which heals
+ * and cools, and a little Arcane Silverleaf (guaranteed in the first
+ * Whisperwood) whose magic awakens when the brew is heated past its threshold.
+ */
+export const TUTORIAL_HERBS = { healer: 'wild-sp-silverleaf', arcane: 'wild-sp-silverleaf-arcane' };
 
 /**
- * Fixed, gentle first commission used by the tutorial: a warm healing tonic
- * of Silverleaf (healing with a frosty bite) balanced by Sunthistle (whose
- * fire cancels the frost and adds a little more healing).
+ * Fixed, gentle first commission used by the tutorial: a fever tonic that
+ * heals and cools (vitality, frost welcome). Silverleaf alone reaches it;
+ * a little Arcane Silverleaf, awakened by heating the brew past its
+ * threshold, makes it stronger — the first arcane transition.
  */
 export function tutorialCommission(ctx, rng) {
   const R = ctx.world.roles;
-  const { healer, warmer } = TUTORIAL_HERBS;
-  const plan = { ingredients: [{ id: R.water, n: 22 }, { id: healer, n: 10 }, { id: warmer, n: 5 }], heatTo: 62, coolTo: 20, serveTemp: 20, steep: { T: 62, hold: 22 }, knead: true, crush: true, hold: 8 };
+  const { healer, arcane } = TUTORIAL_HERBS;
+  const thr = ctx.lookup(arcane) && ctx.lookup(arcane).arcane ? thresholdToCelsius(ctx.lookup(arcane).arcane.thr) : 85;
+  const plan = { ingredients: [{ id: R.water, n: 22 }, { id: healer, n: 9 }, { id: arcane, n: 3 }], heatTo: Math.min(96, Math.ceil(thr + ACTIVATION_MARGIN)), coolTo: 20, serveTemp: 20, steep: { T: 62, hold: 22 }, knead: true, crush: true, hold: 8, activate: true };
+  const plain = predictPlan(ctx.world, ctx.lookup, { ...plan, ingredients: [{ id: R.water, n: 22 }, { id: healer, n: 12 }], heatTo: 62, activate: false });
   const pred = predictPlan(ctx.world, ctx.lookup, plan);
-  const vit = Math.max(4, Math.round(pred.effects[EFFECT_INDEX.vitality] * 0.7));
+  // what plain Silverleaf reaches: the order is met without awakening, and awakening makes it shine
+  const vit = Math.max(4, Math.round(Math.min(plain.effects[EFFECT_INDEX.vitality], pred.effects[EFFECT_INDEX.vitality]) * 0.7));
   const arch = archetypeOf('farmer');
   const customer = makeCustomer(rng, arch);
   customer.name = 'Old Mabry Hollins';
   const colorWord = describeColor(pred.color);
-  const leaf = ctx.lookup(healer).name, sun = ctx.lookup(warmer).name;
+  const leaf = ctx.lookup(healer).name;
   return {
     id: 'q-tutorial',
     tier: 0,
     style: 'healing',
     contract: false,
     tutorial: true,
-    potionName: `${capitalize(colorWord)} Healing Tonic`,
+    potionName: `${capitalize(colorWord)} Fever Tonic`,
     customer,
-    dialogue: `Ah, a new alchemist! My old joints ache. Could you brew me a healing tonic? ${leaf} heals, they say, but it leaves a frosty bite — a little ${sun} should warm that away. Test that it truly heals, and that nothing else is in it!`,
+    dialogue: `Ah, a new alchemist! My grandson burns with fever. Could you brew a tonic that heals and cools? ${leaf} from the Whisperwood does both, they say — and an Arcane leaf, warmed past its threshold, does it all the stronger. Test that it truly heals, and that nothing else is in it!`,
     requirements: [
       { key: 'vitality', kind: 'min', target: vit, tol: 0, zero: Math.max(6, vit * 0.6), label: `at least ${vit}%`, effect: true },
-      purityRequirement(['vitality'], 3),
+      purityRequirement(['vitality', 'frost'], 4),
     ],
     bottleMl: 100,
     bottleN: 20,
@@ -875,6 +919,7 @@ export function tutorialCommission(ctx, rng) {
     predicted: { effects: Array.from(pred.effects), color: pred.color, reactions: pred.reactions, threshold: pred.threshold, awakened: pred.awakened },
     effectOrder: true,
     activation: false,
+    tutorialArcane: true,
     hintCost: 0,
     techniques: [],
   };

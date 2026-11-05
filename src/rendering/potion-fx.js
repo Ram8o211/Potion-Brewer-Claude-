@@ -41,6 +41,7 @@ const MAX = 2400;
 const DENSITY = {
   vitality: 22, strength: 12, love: 30, arcana: 34, transformation: 18,
   fire: 34, frost: 32, acidity: 40, toxicity: 12, death: 22,
+  swiftness: 38, levitation: 30, invisibility: 30, phasing: 30, temporal: 30,
 };
 /** Most particles of one effect. */
 const CAP = 360;
@@ -57,6 +58,11 @@ const RAMP = {
   acidity: [[0.34, 0.5, 0.06], [0.58, 0.8, 0.12], [0.8, 0.95, 0.3], [0.94, 1, 0.55], [1, 1, 0.85]],
   toxicity: [[0.12, 0.26, 0.07], [0.26, 0.5, 0.12], [0.45, 0.76, 0.22], [0.66, 0.92, 0.36], [0.6, 0.32, 0.7]],
   death: [[0.06, 0.03, 0.1], [0.2, 0.1, 0.3], [0.42, 0.3, 0.6], [0.7, 0.6, 0.92], [0.9, 0.88, 1]],
+  swiftness: [[0.5, 0.36, 0.04], [0.85, 0.66, 0.1], [0.98, 0.9, 0.42], [1, 0.97, 0.7], [1, 1, 0.92]],
+  levitation: [[0.3, 0.5, 0.7], [0.5, 0.76, 0.95], [0.72, 0.92, 1], [0.88, 0.97, 1], [1, 1, 1]],
+  invisibility: [[0.25, 0.2, 0.4], [0.45, 0.38, 0.66], [0.66, 0.6, 0.86], [0.8, 0.72, 0.98], [0.95, 0.92, 1]],
+  phasing: [[0.06, 0.4, 0.42], [0.2, 0.7, 0.7], [0.55, 0.98, 0.92], [0.8, 1, 0.97], [1, 1, 1]],
+  temporal: [[0.5, 0.3, 0.08], [0.8, 0.55, 0.2], [1, 0.78, 0.5], [1, 0.9, 0.72], [1, 0.98, 0.9]],
 };
 const P = EFFECTS.map((e) => RAMP[e.key] || [e.color, e.color, e.color, e.color, WHITE]);
 const FIRE_RAMP = RAMP.fire.slice().reverse(); // white-hot first, smoke last
@@ -210,6 +216,13 @@ export class PotionParticles {
       case K.acidity: life = 1.2 + r * 1.2; this.vy[i] = -22 - r * 18; break;
       case K.toxicity: life = 2.5 + r * 2; this.vy[i] = r < 0.25 ? -3 : -5 - r * 4; break;
       case K.death: life = 3 + r * 2; this.vy[i] = r < 0.4 ? -4 - r * 3 : 3 + r * 2; break;
+      // swiftness darts sideways; levitation drifts straight up; invisibility
+      // hangs still and blinks; phasing hops; time runs a slow circle
+      case K.swiftness: life = 1.6 + r * 1.2; this.vx[i] = (r < 0.5 ? -1 : 1) * (9 + r * 6); this.vy[i] = -0.5; break;
+      case K.levitation: life = 4 + r * 2; this.vy[i] = -6 - r * 3; break;
+      case K.invisibility: life = 3 + r * 2; break;
+      case K.phasing: life = 2.5 + r * 2; this.vx[i] = (this.rand() - 0.5) * 4; this.vy[i] = (this.rand() - 0.5) * 4; break;
+      case K.temporal: life = 4 + r * 2; this.vx[i] = 0; this.vy[i] = 0; break;
     }
     this.life[i] = life;
     // the first swarm of a brew is already under way
@@ -525,6 +538,47 @@ export class PotionParticles {
           px(Math.round(Math.cos(an) * d), Math.round(Math.sin(an) * d * 0.8), s < 2 ? C[0] : C[1], fade * (0.85 - t * 0.4));
         }
         if ((v * 97) % 1 < 0.3) px(0, 0, C[2], fade * 0.7);
+        break;
+      }
+      case K.swiftness: {
+        // a bright two-pixel head and a long streak behind it
+        const dir = this.vx[i] < 0 ? -1 : 1;
+        trail(dir, 0, 6, [C[4], C[3], C[2], C[2], C[1], C[0]], fade);
+        mote(0, 0, C[4], C[3], fade, 0.6);
+        px(dir, 0, C[4], fade);
+        break;
+      }
+      case K.levitation: {
+        // a pale feather rocking as it rises: a quill and two vanes
+        const sx = Math.round(Math.sin(time * 2 + v * 30) * 1.5);
+        mote(sx, 0, C[4], C[2], fade, 0.6);
+        px(sx - 1, 1, C[3], fade); px(sx + 1, 1, C[3], fade);
+        px(sx - 2, 2, C[2], fade * 0.8); px(sx + 2, 2, C[2], fade * 0.8);
+        px(sx, 2, C[1], fade * 0.7);
+        break;
+      }
+      case K.invisibility: {
+        // a hollow ring that fades almost to nothing and back
+        const on = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(time * (3 + v * 2) + v * 40));
+        for (const [x, y] of [[-1, -2], [0, -2], [1, -2], [-2, -1], [2, -1], [-2, 0], [2, 0], [-2, 1], [2, 1], [-1, 2], [0, 2], [1, 2]]) px(x, y, C[3], fade * on);
+        px(0, 0, C[4], fade * on * 0.6);
+        break;
+      }
+      case K.phasing: {
+        // two ghosts of itself a few pixels apart, swapping
+        const ph = Math.sin(time * 4 + v * 50) > 0 ? 1 : -1;
+        nug(ph * 2, 0, [C[1], C[3], C[4]], fade);
+        nug(-ph * 2 - 1, 0, [C[0], C[1], C[2]], fade * 0.55);
+        break;
+      }
+      case K.temporal: {
+        // a mote circling a still point, now one way, now back, with its trail
+        const dirn = (v * 13) % 1 < 0.5 ? 1 : -1, an = dirn * time * 1.6 + v * 6.28, R = 2.5 + (v * 7) % 1.5;
+        for (let k = 0; k < 4; k++) {
+          const ak = an - dirn * k * 0.45;
+          px(Math.round(Math.cos(ak) * R), Math.round(Math.sin(ak) * R), C[Math.max(0, 4 - k)], fade * (1 - k * 0.2));
+        }
+        nug(0, 0, [C[0], C[1], C[2]], fade * 0.7);
         break;
       }
     }

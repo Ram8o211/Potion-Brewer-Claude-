@@ -10,6 +10,9 @@ const PAL = {
 
 /** @type {Record<string, string[]>} */
 const ICONS = {
+  feather: ['..........kk', '........kkck', '.......kcwck', '......kcwcck', '.....kcwcck.', '....kcwcck..', '...kcwcck...', '..kcwcck....', '..kwcck.....', '.kwkkk......', 'kWk.........', 'kk..........'],
+  veil: ['............', '...kkkkkk...', '.kkpppppPkk.', 'kpp.p.p.ppPk', 'kpkkkkkkkkpk', 'kp.kpppPk.pk', 'kpp.kkkk.ppk', '.kppp.p.ppk.', '..kkpppPkk..', '....kkkk....', '............', '............'],
+  ghost: ['...kkkkk....', '..kccccck...', '.kcwccccck..', '.kckkcckkck.', '.kckwcckwck.', '.kcccccccck.', '.kccckkccck.', '.kcccccccck.', '.kcccccccck.', '.kccccccccck', '.kckckckckck', '.k.k.k.k.k..'],
   purge: ['.....kk..l..', '....kWWk.l..', '....kwck.l..', '...kkwckk...', '..kwcccccK..', '.kwcccwcccK.', 'kwcccwwwcccK', 'kwccccwcccBk', 'kwcccccccBBk', '.kwccccccBk.', '..kkkkkkkk..', '............'],
   knife: ['..........kk', '.........kWk', '........kWsk', '.......kWsk.', '......kWsk..', '.....kWsk...', '....kWsk....', '..kkkkk.....', '..kNnk......', '.kNnk.......', 'kNnk........', 'kkk.........'],
   claw: ['k...k...k...', 'rk..rk..rk..', '.rk..rk..rk.', '.rrk.rrk.rrk', '..rk..rk..rk', '..rrk.rrk.rr', '...rk..rk..r', '...rrk.rrk..', '....rk..rk..', '....Rk..Rk..', '.....k...k..', '............'],

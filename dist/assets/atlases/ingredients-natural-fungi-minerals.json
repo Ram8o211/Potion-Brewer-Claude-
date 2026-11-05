@@ -1,0 +1,429 @@
+{
+ "version": 1,
+ "atlas": "ingredients-natural-fungi-minerals.png",
+ "width": 512,
+ "height": 80,
+ "padding": 2,
+ "frames": {
+  "ammonite-coil": {
+   "species": "ammonite-coil",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "stone",
+   "x": 174,
+   "y": 2,
+   "w": 48,
+   "h": 32,
+   "pivot": [
+    24,
+    31
+   ],
+   "native": [
+    48,
+    32
+   ]
+  },
+  "blazestone": {
+   "species": "blazestone",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "crystal",
+   "x": 401,
+   "y": 2,
+   "w": 42,
+   "h": 31,
+   "pivot": [
+    21,
+    30
+   ],
+   "native": [
+    42,
+    31
+   ]
+  },
+  "cinderpod": {
+   "species": "cinderpod",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "stone",
+   "x": 42,
+   "y": 2,
+   "w": 46,
+   "h": 33,
+   "pivot": [
+    23,
+    32
+   ],
+   "native": [
+    46,
+    33
+   ]
+  },
+  "cindershroom": {
+   "species": "cindershroom",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "crags",
+   "category": "natural",
+   "morph": "fungus",
+   "x": 138,
+   "y": 38,
+   "w": 43,
+   "h": 30,
+   "pivot": [
+    21,
+    29
+   ],
+   "native": [
+    43,
+    30
+   ]
+  },
+  "emberheart-geode": {
+   "species": "emberheart-geode",
+   "kind": "sprite",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "crystal",
+   "x": 183,
+   "y": 38,
+   "w": 38,
+   "h": 30,
+   "pivot": [
+    19,
+    29
+   ],
+   "native": [
+    38,
+    30
+   ]
+  },
+  "everbloom-chalice": {
+   "species": "everbloom-chalice",
+   "kind": "sprite",
+   "rarity": "legendary",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fungus",
+   "x": 267,
+   "y": 38,
+   "w": 38,
+   "h": 29,
+   "pivot": [
+    19,
+    28
+   ],
+   "native": [
+    38,
+    29
+   ]
+  },
+  "ferric-crystal": {
+   "species": "ferric-crystal",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "crystal",
+   "x": 223,
+   "y": 38,
+   "w": 42,
+   "h": 30,
+   "pivot": [
+    21,
+    29
+   ],
+   "native": [
+    42,
+    30
+   ]
+  },
+  "gloommoss": {
+   "species": "gloommoss",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "moss",
+   "x": 307,
+   "y": 38,
+   "w": 51,
+   "h": 29,
+   "pivot": [
+    25,
+    28
+   ],
+   "native": [
+    51,
+    29
+   ]
+  },
+  "gravelpod": {
+   "species": "gravelpod",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "stone",
+   "x": 360,
+   "y": 38,
+   "w": 46,
+   "h": 29,
+   "pivot": [
+    23,
+    28
+   ],
+   "native": [
+    46,
+    29
+   ]
+  },
+  "hearthnut": {
+   "species": "hearthnut",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "stone",
+   "x": 445,
+   "y": 2,
+   "w": 44,
+   "h": 31,
+   "pivot": [
+    22,
+    30
+   ],
+   "native": [
+    44,
+    31
+   ]
+  },
+  "honeycap": {
+   "species": "honeycap",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "forest",
+   "category": "natural",
+   "morph": "fungus",
+   "x": 2,
+   "y": 2,
+   "w": 38,
+   "h": 34,
+   "pivot": [
+    19,
+    33
+   ],
+   "native": [
+    38,
+    34
+   ]
+  },
+  "meadowcrystal": {
+   "species": "meadowcrystal",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "meadow",
+   "category": "natural",
+   "morph": "crystal",
+   "x": 224,
+   "y": 2,
+   "w": 40,
+   "h": 32,
+   "pivot": [
+    20,
+    31
+   ],
+   "native": [
+    40,
+    32
+   ]
+  },
+  "nethercap": {
+   "species": "nethercap",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "fungus",
+   "x": 2,
+   "y": 38,
+   "w": 46,
+   "h": 31,
+   "pivot": [
+    23,
+    30
+   ],
+   "native": [
+    46,
+    31
+   ]
+  },
+  "nixie-torc": {
+   "species": "nixie-torc",
+   "kind": "sprite",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "relic",
+   "x": 266,
+   "y": 2,
+   "w": 46,
+   "h": 32,
+   "pivot": [
+    23,
+    31
+   ],
+   "native": [
+    46,
+    32
+   ]
+  },
+  "orebud": {
+   "species": "orebud",
+   "kind": "sprite",
+   "rarity": "uncommon",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "crystal",
+   "x": 314,
+   "y": 2,
+   "w": 42,
+   "h": 32,
+   "pivot": [
+    21,
+    31
+   ],
+   "native": [
+    42,
+    32
+   ]
+  },
+  "quarrycap": {
+   "species": "quarrycap",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "quarry",
+   "category": "natural",
+   "morph": "fungus",
+   "x": 358,
+   "y": 2,
+   "w": 41,
+   "h": 32,
+   "pivot": [
+    20,
+    31
+   ],
+   "native": [
+    41,
+    32
+   ]
+  },
+  "reedcap": {
+   "species": "reedcap",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "fungus",
+   "x": 90,
+   "y": 2,
+   "w": 39,
+   "h": 33,
+   "pivot": [
+    19,
+    32
+   ],
+   "native": [
+    39,
+    33
+   ]
+  },
+  "streampearl": {
+   "species": "streampearl",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "river",
+   "category": "natural",
+   "morph": "shell",
+   "x": 131,
+   "y": 2,
+   "w": 41,
+   "h": 33,
+   "pivot": [
+    20,
+    32
+   ],
+   "native": [
+    41,
+    33
+   ]
+  },
+  "thornhalo": {
+   "species": "thornhalo",
+   "kind": "sprite",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "relic",
+   "x": 50,
+   "y": 38,
+   "w": 49,
+   "h": 31,
+   "pivot": [
+    24,
+    30
+   ],
+   "native": [
+    49,
+    31
+   ]
+  },
+  "umbral-amethyst": {
+   "species": "umbral-amethyst",
+   "kind": "sprite",
+   "rarity": "rare",
+   "arcane": false,
+   "biome": "netherwood",
+   "category": "natural",
+   "morph": "crystal",
+   "x": 101,
+   "y": 38,
+   "w": 35,
+   "h": 31,
+   "pivot": [
+    17,
+    30
+   ],
+   "native": [
+    35,
+    31
+   ]
+  }
+ }
+}
