@@ -41,7 +41,7 @@ function sample(tier, count, prefix = 'cm') {
   return out;
 }
 
-test('apprentice orders ask for 8–15 % of what they want, and nothing else above their tier’s purity limit', () => {
+test('apprentice orders ask for 4–8 % of what they want, and nothing else above their tier’s purity limit', () => {
   let effectOrders = 0;
   for (const { com } of sample(0, 30)) {
     assert.ok(com, 'a commission was generated');
@@ -49,7 +49,8 @@ test('apprentice orders ask for 8–15 % of what they want, and nothing else abo
     if (!com.request) continue;
     effectOrders++;
     const main = fx[0];
-    assert.ok(main.target >= 6 && main.target <= TIER_TARGET[0][1], `${com.style}: main target ${main.target}%`);
+    // (a little under the tier's mildest when the planned brew only just reaches it: the order asks for what it gives)
+    assert.ok(main.target >= TIER_TARGET[0][0] * 0.85 && main.target <= TIER_TARGET[0][1], `${com.style}: main target ${main.target}%`);
     const purity = com.requirements.find((r) => r.key === 'purity');
     assert.ok(purity, 'a drinkable order carries the purity rule');
     assert.equal(purity.target, purityLimitFor(0));

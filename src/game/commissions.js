@@ -45,6 +45,9 @@ import { compatFactor } from '../reactions/compatibility.js';
 import { REQUESTS, TIER_TARGET, PURITY_LIMIT, requestById, purityLimitFor } from './requests.js';
 import { rateAt } from '../alchemy/extraction.js';
 
+/** The longest a planned warm steep is held (s; twice that when the brew must stay cool for its magic). */
+const WARM_HOLD = 90;
+
 /** Spirit an alcohol-free potion may still hold (percent of its volume). */
 export const ALCOHOL_FREE_LIMIT = 3;
 
@@ -141,9 +144,10 @@ function prepFor(m, ctx, solvents) {
   // a whole solid is crushed in the pot with the pestle (every kit has one)
   const ground = m.form === 'solid';
   // a catalog ingredient: continuous extraction into its own solvent class
-  // (alchemy/extraction.js). Room temperature is the planned steep — the
-  // ceiling is high there and every other stage keeps what it drew out; the
-  // hold lets the slowest ingredient come within a few percent of its ceiling.
+  // (alchemy/extraction.js). At room temperature it is slow (minutes), so the
+  // plan steeps warm — as warm as the slowest ingredient needs to come near
+  // its ceiling within the hold, no warmer (heat lowers the ceiling): see
+  // composePlan.
   const ex = /** @type {any} */ (m).extraction;
   if (ex) {
     const solvent = solvents.find((l) => l.solvent === ex.cls && !l.alcohol);
@@ -295,7 +299,20 @@ function composePlan(pick, wanted, exclude, ctx, solvents, n, o, pool) {
   const quietServe = o.activation ? [] : [o.serve];
   // the steep temperature nearest the middle of the window that wakes none of the carriers
   // (catalog ingredients steep at room temperature: see prepFor)
-  let stageT = !win && preps.some((p) => p.extract) ? 20 : null;
+  let stageT = null;
+  if (!win && preps.some((p) => p.extract)) {
+    const ex = uniq.map((m) => /** @type {any} */ (m).extraction).filter(Boolean);
+    const boil = isFinite(solvent.boil) ? solvent.boil : 400;
+    const top = Math.min(85, boil - 12, ctx.cap.maxFlame - 45, ...ex.map((e) => e.combust - 30));
+    const holdAt = (T) => Math.ceil(Math.log(12) / Math.min(...ex.map((e) => rateAt(e, T))));
+    stageT = 20;
+    for (let T = 20; T <= top; T += 2) {
+      if (arcaneRegime(uniq.map((m) => m.id), ctx.lookup, [T, ...quietServe]) !== 'quiet') break;
+      stageT = T;
+      if (holdAt(T) <= WARM_HOLD) break;
+    }
+    hold = Math.max(hold, Math.min(WARM_HOLD * 2, holdAt(stageT)));
+  }
   if (win) {
     const mid = (win[0] + win[1]) / 2;
     for (let T = Math.ceil(win[0]); T <= win[1]; T++) {
@@ -731,10 +748,11 @@ export const TECHNIQUES = [
       const ex = plan.ingredients.map((i) => ctx.lookup(i.id)).filter((d) => d && d.extraction).map((d) => d.extraction);
       if (!ex.length) return null;
       const kMin = Math.min(...ex.map((e) => rateAt(e, T)));
-      const hold = Math.max(20, Math.min(90, Math.ceil(Math.log(12) / kMin)));
+      // cold extraction is slow: a long hold (the cellar is the patient way)
+      const hold = Math.max(20, Math.min(600, Math.ceil(Math.log(12) / kMin)));
       const p2 = {
         ...plan, ingredients: plan.ingredients.map((i) => (i.id === R.water ? { ...i, id: R.spirit } : { ...i })),
-        coolTo: Math.min(plan.coolTo ?? 20, T), steep: { T, hold }, distil: { water: nW, T: water.boil, id: water.id },
+        heatTo: 20, coolTo: Math.min(plan.coolTo ?? 20, T), steep: { T, hold }, distil: { water: nW, T: water.boil, id: water.id },
       };
       if (arcaneRegime(p2.ingredients.map((i) => i.id), ctx.lookup, [T, water.boil]) !== 'quiet') return null;
       const r2 = predictPlan(ctx.world, ctx.lookup, p2);

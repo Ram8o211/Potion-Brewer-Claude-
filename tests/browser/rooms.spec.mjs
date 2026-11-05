@@ -3,7 +3,7 @@
 // dropper doses a subject, a spent subject is replaced for coins, and all
 // of it survives a reload.
 import { test, expect } from '@playwright/test';
-import { watchErrors, shot, newGame, lab, drag, pourDose, crushInPot } from './helpers.mjs';
+import { watchErrors, shot, newGame, lab, drag, pourDose, crushInPot, steepWarm } from './helpers.mjs';
 
 test('harvesting a mature plant fills the stores and leaves nothing behind; growing ones cannot be taken', async ({ page }, info) => {
   const errors = watchErrors(page);
@@ -156,10 +156,7 @@ test('the dropper doses a rabbit on the farm; a dead one is replaced for coins; 
   await pourDose(page, 'wild-sp-emberleaf', [100]);
   await crushInPot(page);
   // steep the leaf (it gives up its fire only when warm), so one reading plainly shows it
-  await lab(page, (l) => { l.setAutoStir(true); l.setFurnace(0.8); l.speed = 4; });
-  await page.waitForFunction(() => { const p = window.__alchemist.screen.sim.p; let t = 0; for (let i = 0; i < p.count; i++) t += p.temp[i]; return t / p.count > 62; }, null, { timeout: 60_000, polling: 250 });
-  await page.waitForTimeout(3000);
-  await lab(page, (l) => { l.setFurnace(0); l.setAutoStir(false); l.speed = 1; });
+  await steepWarm(page, 65, 45);
   await page.click('[data-act=tab-trials]');
   await expect(page.locator('[data-subject=beetle]')).toHaveCount(0);
   await expect(page.locator('.status-bars .sb')).toHaveCount(16);

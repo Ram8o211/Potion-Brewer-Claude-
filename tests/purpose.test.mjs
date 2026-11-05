@@ -250,7 +250,7 @@ test('a boil-down is recorded with the share that boiled away, and the homunculu
   const a = measureParticles(sim, tapSelection(sim, 20));
   const sim2 = cauldron(st, STARTING_EQUIPMENT);
   const ab = new AutoBrewer(sim2, /** @type {any} */ ({ ingredients: [], heatTo: 20, coolTo: 20, serveTemp: 20, steps: s }), st.lookup);
-  for (let g = 0; !ab.done && g < 120 * 900; g++) { ab.tick(); sim2.step(); }
+  for (let g = 0; !ab.done && g < 120 * 1500; g++) { ab.tick(); sim2.step(); }
   assert.ok(!ab.failed, 'the replay completes');
   const volA = condensedCount(sim), volB = condensedCount(sim2);
   assert.ok(Math.abs(volA - volB) / volA < 0.12, `the same share boiled away (${volA} vs ${volB} particles)`);
@@ -316,24 +316,26 @@ test('the mechanics make a measurable difference in the real cauldron: grinding,
     // (herbs thrown into a pot already at heat: nothing is drawn out at room temperature first)
     if (preheat) hold(sim, T, 4, 'hand');
     pour(st, sim, herb, n, { ground });
-    hold(sim, T, holdS, 'hand');
+    hold(sim, T, holdS, 'hand', holdS + 200);
     if (boil) boilDown(sim, boil);
     if (settle) settleTo(sim, 20, 90, 'hand');
     stirFor(sim, 4, 'hand');
     return tap(sim, 20);
   };
   const v = EFFECT_INDEX.vitality, f = EFFECT_INDEX.frost;
-  const whole = brew('wild-sp-silverleaf', 16, { ground: false }), ground = brew('wild-sp-silverleaf', 16);
-  assert.ok(whole.effects[v] < ground.effects[v] * 0.5 && ground.effects[v] > 4, `grinding: ${whole.effects[v].toFixed(1)} → ${ground.effects[v].toFixed(1)}`);
-  // heat is quick but lowers the ceiling: a scalding steep gives less than a mild one
-  const hot = brew('wild-sp-silverleaf', 30, { T: 92, preheat: true, settle: false }), mild = brew('wild-sp-silverleaf', 30, { T: 25, preheat: true, settle: false });
+  const whole = brew('wild-sp-silverleaf', 16, { ground: false, holdS: 40 }), ground = brew('wild-sp-silverleaf', 16, { holdS: 40 });
+  assert.ok(whole.effects[v] < ground.effects[v] * 0.5 && ground.effects[v] > 2.5, `grinding: ${whole.effects[v].toFixed(1)} → ${ground.effects[v].toFixed(1)}`);
+  // heat is quick but lowers the ceiling: a scalding steep gives less than a mild one, given the time
+  const hot = brew('wild-sp-silverleaf', 30, { T: 92, preheat: true, settle: false }), mild = brew('wild-sp-silverleaf', 30, { T: 25, preheat: true, settle: false, holdS: 400 });
+  const quick = brew('wild-sp-silverleaf', 30, { T: 25, preheat: true, settle: false });
+  assert.ok(quick.effects[v] < hot.effects[v] * 0.8, `in a short steep, heat gets more out: ${quick.effects[v].toFixed(1)} (25°C) vs ${hot.effects[v].toFixed(1)} (92°C)`);
   assert.ok(mild.effects[v] > hot.effects[v] * 1.08, `heat against yield: ${hot.effects[v].toFixed(1)} (92°C) → ${mild.effects[v].toFixed(1)} (25°C)`);
   // and cooling a scalded brew lets more come out again (heat never took any back)
   const cooled = brew('wild-sp-silverleaf', 30, { T: 92, preheat: true });
   assert.ok(cooled.effects[v] > hot.effects[v] * 1.05, `cooling extracts more: ${hot.effects[v].toFixed(1)} → ${cooled.effects[v].toFixed(1)}`);
-  // only spirit stays liquid cold enough to draw everything out
-  const warmWater = brew('wild-sp-silverleaf', 30, { T: 40 }), coldSpirit = brew('wild-sp-silverleaf', 30, { T: -12, solvent: st.world.roles.spirit, holdS: 60 });
+  // only spirit stays liquid cold enough to draw everything out — slowly: the cold steep is a long one
+  const warmWater = brew('wild-sp-silverleaf', 30, { T: 40, holdS: 250 }), coldSpirit = brew('wild-sp-silverleaf', 30, { T: -12, solvent: st.world.roles.spirit, holdS: 900 });
   assert.ok(coldSpirit.effects[v] > warmWater.effects[v] * 1.12, `cold extraction: ${warmWater.effects[v].toFixed(1)} (water, 40°C) → ${coldSpirit.effects[v].toFixed(1)} (spirit, −12°C)`);
-  const reduced = brew('wild-sp-silverleaf', 16, { boil: 0.3, T: 62 });
+  const reduced = brew('wild-sp-silverleaf', 16, { boil: 0.3, T: 62, holdS: 40 });
   assert.ok(reduced.effects[f] > ground.effects[f] * 1.2, `boiling down strengthens the side effect too: frost ${ground.effects[f].toFixed(1)} → ${reduced.effects[f].toFixed(1)}`);
 });

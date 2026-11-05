@@ -11,13 +11,21 @@
 // emulsified vessel extracts badly. Its magic awakens like a brew's when the
 // vessel passes the blend's arcane threshold.
 //
-// Temperature: a vessel sits at cellar temperature until it is *activated*
-// with a Fire or Frost potion from the shelves, which keeps heating (or
-// cooling) it for as long as it stands — at a pace set by the potion's
-// strength — until its herbs burn or its solvent freezes. A temperature rune
-// holds it at a chosen temperature instead: it brings the vessel there and
-// keeps it, wearing out as it works (faster against a stronger drive). Once
-// worn out, the drive takes over again.
+// Temperature: a vessel sits at cellar temperature until it is *charged*
+// with a Fire or Frost potion the player brewed (from the cauldron's tap, or
+// a shelved bottle, in the amount chosen). Only the potion's net Fire (or
+// Frost) counts — its other effects do not matter — and its strength sets
+// how far the vessel can go: CELLAR_T + DEG_PER_POINT °C per percent of net
+// Fire (below it for Frost). The vessel moves toward that limit by itself
+// (CHARGE_TAU), and the charge is used up as it works: the further from
+// cellar temperature it holds the vessel, and the bigger the vessel, the
+// faster; a stronger potion lasts longer. When the charge is spent the
+// vessel drifts back to cellar temperature.
+//
+// A temperature rune locks the rise (or the fall) at a chosen temperature on
+// the way to the limit: the vessel stops there and stays, as long as the
+// charge lasts. A rune wears out with the time it is set on a filled vessel
+// (RUNE_LIFE); its target can be moved without a new rune.
 //
 // Determinism: time advances in fixed steps of CELLAR_STEP seconds from the
 // vessel's own clock, so the state after an hour is the same whether it was
@@ -30,19 +38,21 @@ import { CHAR_ID } from '../materials/catalog.js';
 import { EFFECT_INDEX } from '../alchemy/effects.js';
 
 /** seconds of cellar time per step */
-export const CELLAR_STEP = 20;
+export const CELLAR_STEP = 10;
 /** the cellar's own temperature (°C) */
 export const CELLAR_T = 12;
 /** at most this much time is caught up after a break (s) */
 export const MAX_OFFLINE = 30 * 86400;
-/** heating (°C per hour) per percent of net fire in the activating potion (negative: frost) */
-export const DRIVE_PER_POINT = 2.5;
-/** a rune moves its vessel toward the target at most this fast (°C per hour) */
-export const RUNE_SLEW = 90;
-/** seconds of work in a fresh rune (against no drive) */
-export const RUNE_LIFE = 12 * 3600;
-/** a rune works harder against a strong drive: wear × (1 + |drive| / RUNE_DRIVE_WEAR) */
-export const RUNE_DRIVE_WEAR = 40;
+/** how far (°C from cellar temperature) a charge can take a vessel, per percent of net Fire (Frost: below) */
+export const DEG_PER_POINT = 4;
+/** the least net Fire or Frost (percent) that warms or chills a vessel at all */
+export const MIN_POINTS = 3;
+/** time constant (s) of the vessel's temperature: toward the charge's limit, or back to cellar temperature */
+export const CHARGE_TAU = 1800;
+/** charge used up: ml per hour = vessel ml × |T − CELLAR_T| / (HOLD_COST × |net| / 10) */
+export const HOLD_COST = 320;
+/** seconds of use in a fresh rune */
+export const RUNE_LIFE = 8 * 3600;
 /** coins for a rune at the market */
 export const RUNE_PRICE = 28;
 /** char rate (1/s) of unextracted matter just past its threshold */
@@ -55,7 +65,7 @@ const T_MIN = -90, T_MAX = 450;
  * @property {number} id
  * @property {Record<string, number>} comp   ml per material id ({} = empty)
  * @property {number} T                      °C
- * @property {number} drive                  °C per hour from activating potions (+ heats, − cools)
+ * @property {{ml:number, net:number}|null} charge  the loaded Fire/Frost potion: ml left and net Fire (percent; negative: Frost)
  * @property {{target:number, life:number}|null} rune
  * @property {number} t                      the vessel's clock (ms since epoch) it has been advanced to
  * @property {number} carry                  seconds not yet worth a step
@@ -73,7 +83,7 @@ export function createCellar() {
 
 /** @param {number} id @param {number} now */
 function emptyVessel(id, now) {
-  return /** @type {Vessel} */ ({ id, comp: {}, T: CELLAR_T, drive: 0, rune: null, t: now, carry: 0, log: [] });
+  return /** @type {Vessel} */ ({ id, comp: {}, T: CELLAR_T, charge: null, rune: null, t: now, carry: 0, log: [] });
 }
 
 /**
@@ -85,13 +95,17 @@ export function normalizeCellar(data, count, now = Date.now()) {
   if (!Array.isArray(c.vessels)) c.vessels = [];
   c.runes = Math.max(0, Number(c.runes) | 0);
   // (vessels are repaired in place: the objects others hold stay the live ones)
-  c.vessels = c.vessels.filter((v) => v && typeof v === 'object').map((v, k) => Object.assign(v, {
+  c.vessels = c.vessels.filter((v) => v && typeof v === 'object').map((v, k) => (Object.assign(v, {
     ...emptyVessel(k, now), ...v, id: k,
     comp: v.comp && typeof v.comp === 'object' ? Object.fromEntries(Object.entries(v.comp).filter(([, ml]) => Number(ml) > 1e-6).map(([id, ml]) => [id, Number(ml)])) : {},
-    T: Number.isFinite(v.T) ? v.T : CELLAR_T, drive: Number.isFinite(v.drive) ? v.drive : 0,
-    rune: v.rune && Number.isFinite(v.rune.target) && v.rune.life > 0 ? { target: v.rune.target, life: v.rune.life } : null,
+    T: Number.isFinite(v.T) ? v.T : CELLAR_T,
+    // (an old save's endless drive becomes a charge of 100 ml of that strength)
+    charge: v.charge && v.charge.ml > 0 && Number.isFinite(v.charge.net) ? { ml: Number(v.charge.ml), net: Number(v.charge.net) }
+      : Number.isFinite(v.drive) && Math.abs(v.drive) > 0 ? { ml: 100, net: v.drive / 2.5 } : null,
+    rune: v.rune && Number.isFinite(v.rune.target) && v.rune.life > 0 ? { target: v.rune.target, life: Math.min(RUNE_LIFE, v.rune.life) } : null,
     t: Number.isFinite(v.t) ? v.t : now, carry: Number.isFinite(v.carry) ? v.carry : 0, log: Array.isArray(v.log) ? v.log.slice(-20) : [],
-  }));
+  })));
+  for (const v of c.vessels) delete /** @type {any} */ (v).drive;
   while (c.vessels.length < count) c.vessels.push(emptyVessel(c.vessels.length, now));
   return c;
 }
@@ -131,37 +145,68 @@ export function emptyVesselContents(v, now) {
 }
 
 /**
- * The drive (°C per hour) a potion gives a vessel: its net fire heats, its
- * net frost cools.
+ * The net Fire of a potion (percent; negative: Frost), or 0 when it is too
+ * weak to warm or chill a vessel. Its other effects do not matter.
  * @param {ArrayLike<number>} effects
  */
-export function potionDrive(effects) {
+export function potionNet(effects) {
   const net = (effects[EFFECT_INDEX.fire] || 0) - (effects[EFFECT_INDEX.frost] || 0);
-  return Math.abs(net) < 3 ? 0 : net * DRIVE_PER_POINT;
+  return Math.abs(net) < MIN_POINTS ? 0 : Math.round(net * 10) / 10;
+}
+
+/** The temperature a charge of this strength takes a vessel to (°C). @param {number} net */
+export function chargeLimit(net) {
+  return Math.max(T_MIN, Math.min(T_MAX, Math.round(CELLAR_T + net * DEG_PER_POINT)));
+}
+
+/** @deprecated the old name: the limit's offset from cellar temperature (°C), signed. @param {ArrayLike<number>} effects */
+export function potionDrive(effects) {
+  return potionNet(effects) * DEG_PER_POINT;
 }
 
 /**
- * Activate (or strengthen) a vessel with a potion's heat or cold.
- * @param {Vessel} v @param {ArrayLike<number>} effects @param {number} now
+ * Load (or top up) a vessel's charge with `ml` of a potion with these
+ * effects. A top-up mixes with what is left (strengths average by volume;
+ * Fire and Frost cancel).
+ * @param {Vessel} v @param {ArrayLike<number>} effects @param {number} ml @param {number} now
  */
-export function activateVessel(v, effects, now) {
+export function chargeVessel(v, effects, ml, now) {
   if (vesselVolume(v) <= 0) return { ok: false, reason: 'Fill the vessel first.' };
-  const d = potionDrive(effects);
-  if (!d) return { ok: false, reason: 'Only a potion of Fire or of Frost (at least 3 %) warms or chills a vessel.' };
-  v.drive = Math.round((v.drive + d) * 10) / 10;
-  note(v, now, `${d > 0 ? 'Warmed' : 'Chilled'} by a potion: ${d > 0 ? '+' : ''}${Math.round(d)}°C an hour.`);
-  return { ok: true, drive: v.drive };
+  if (!(ml > 0)) return { ok: false, reason: 'Choose how much potion to load.' };
+  const net = potionNet(effects);
+  if (!net) return { ok: false, reason: `Only a potion with Fire or Frost (at least ${MIN_POINTS} % more of one than the other) warms or chills a vessel.` };
+  const old = v.charge && v.charge.ml > 0 ? v.charge : null;
+  const tot = (old ? old.ml : 0) + ml;
+  const mixed = old ? (old.ml * old.net + ml * net) / tot : net;
+  v.charge = Math.abs(mixed) < MIN_POINTS ? null : { ml: Math.round(tot * 10) / 10, net: Math.round(mixed * 10) / 10 };
+  note(v, now, v.charge ? `Loaded ${Math.round(ml)} ml of a ${net > 0 ? 'Fire' : 'Frost'} potion: it can take the vessel to ${chargeLimit(v.charge.net)}°C.` : 'The potions cancelled each other out.');
+  return { ok: true, charge: v.charge, limit: v.charge ? chargeLimit(v.charge.net) : CELLAR_T };
+}
+
+/** @deprecated a whole bottle as a charge (its volume). @param {Vessel} v @param {ArrayLike<number>} effects @param {number} now @param {number} [ml] */
+export function activateVessel(v, effects, now, ml = 100) {
+  return chargeVessel(v, effects, ml, now);
 }
 
 /**
- * Set a temperature rune on a vessel (replacing a worn one).
+ * Set a temperature rune on a vessel, or move the target of the rune it
+ * already has (that uses no new rune: see `fresh`).
  * @param {Vessel} v @param {number} target °C @param {number} now
  */
 export function setRune(v, target, now) {
   if (!Number.isFinite(target)) return { ok: false, reason: 'Choose a temperature.' };
-  v.rune = { target: Math.max(-60, Math.min(300, Math.round(target))), life: RUNE_LIFE };
-  note(v, now, `A rune holds it at ${v.rune.target}°C.`);
-  return { ok: true };
+  const t = Math.max(-60, Math.min(300, Math.round(target)));
+  const fresh = !(v.rune && v.rune.life > 0);
+  v.rune = { target: t, life: fresh ? RUNE_LIFE : /** @type {any} */ (v.rune).life };
+  note(v, now, `A rune locks it at ${t}°C.`);
+  return { ok: true, fresh };
+}
+
+/** Can this rune lock this vessel now (charged, and the target on the way to the charge's limit)? @param {Vessel} v */
+export function runeHolds(v) {
+  if (!v.rune || !(v.rune.life > 0) || !v.charge || !(v.charge.ml > 0)) return false;
+  const lim = chargeLimit(v.charge.net), t = v.rune.target;
+  return (lim - t) * (t - CELLAR_T) >= 0;
 }
 
 /**
@@ -206,7 +251,7 @@ export function advanceVessel(v, lookup, now, pace = 1) {
   for (; steps > 0; steps--) {
     const ev = stepVessel(v, get, CELLAR_STEP);
     for (const e of ev) if (!events.includes(e)) events.push(e);
-    if (!v.rune && !v.drive && ev.idle) break;
+    if (!v.rune && !v.charge && v.T === CELLAR_T && ev.idle) break;
   }
   for (const e of events) note(v, now, e);
   return events;
@@ -235,14 +280,29 @@ function stepVessel(v, get, dt) {
   const events = [];
   const h = dt / 3600;
   // ---- temperature
-  if (v.rune && v.rune.life > 0) {
-    const d = v.rune.target - v.T;
-    const move = Math.sign(d) * Math.min(Math.abs(d), RUNE_SLEW * h);
-    v.T += move;
-    v.rune.life -= dt * (1 + Math.abs(v.drive) / RUNE_DRIVE_WEAR);
-    if (v.rune.life <= 0) { v.rune = null; events.push('The rune has worn out: the vessel drifts again.'); }
-  } else if (v.drive) {
-    v.T = Math.max(T_MIN, Math.min(T_MAX, v.T + v.drive * h));
+  const a = 1 - Math.exp(-dt / CHARGE_TAU);
+  const c = v.charge && v.charge.ml > 0 ? v.charge : null;
+  if (c) {
+    const lim = chargeLimit(c.net), dir = Math.sign(lim - CELLAR_T);
+    if (runeHolds(v)) {
+      const t = /** @type {{target:number}} */ (v.rune).target;
+      // toward the limit until the rune's temperature, then held there; from beyond it, back to it
+      if (dir * (v.T - t) < 0) { const n = v.T + (lim - v.T) * a; v.T = dir > 0 ? Math.min(t, n) : Math.max(t, n); }
+      else { const n = v.T + (CELLAR_T - v.T) * a; v.T = dir > 0 ? Math.max(t, n) : Math.min(t, n); }
+    } else v.T += (lim - v.T) * a;
+    // the charge is used up holding the vessel away from cellar temperature
+    const use = (vesselVolume(v) * Math.abs(v.T - CELLAR_T) * h) / (HOLD_COST * Math.max(0.3, Math.abs(c.net) / 10));
+    c.ml = Math.round(Math.max(0, c.ml - use) * 1000) / 1000;
+    if (c.ml <= 0.05) { v.charge = null; events.push(`The ${c.net > 0 ? 'Fire' : 'Frost'} potion is spent: the vessel returns to cellar temperature.`); }
+  } else {
+    v.T += (CELLAR_T - v.T) * a;
+    if (Math.abs(v.T - CELLAR_T) < 0.05) v.T = CELLAR_T;
+  }
+  v.T = Math.max(T_MIN, Math.min(T_MAX, v.T));
+  // a rune wears with the time it is set on a filled vessel
+  if (v.rune) {
+    v.rune.life -= dt;
+    if (v.rune.life <= 0) { v.rune = null; events.push('The rune has worn out: the vessel is no longer held.'); }
   }
   const T = v.T;
   // ---- what the vessel holds
@@ -358,7 +418,8 @@ export function vesselReport(v, lookup) {
   const items = [...by.values()].map((g) => ({ ...g, share: g.raw + g.ext > 0 ? g.ext / (g.raw + g.ext) : 0 }));
   const tf = freezingPoint(v, lookup);
   return {
-    ml: total, T: v.T, drive: v.drive, rune: v.rune ? { target: v.rune.target, wear: 1 - v.rune.life / RUNE_LIFE } : null,
+    ml: total, T: v.T, charge: v.charge ? { ml: v.charge.ml, net: v.charge.net, limit: chargeLimit(v.charge.net) } : null,
+    rune: v.rune ? { target: v.rune.target, wear: 1 - v.rune.life / RUNE_LIFE, holds: runeHolds(v), locked: runeHolds(v) && Math.abs(v.T - v.rune.target) < 0.5 } : null,
     freezing: tf, frozen: tf !== null && v.T <= tf, items, alcohol: total > 0 ? (alcohol / total) * 100 : 0,
     emulsion: Lh > 0 && Ll > 0 ? emulsionStability(Lh, Ll, em) : null, char: v.comp[CHAR_ID] || 0,
   };

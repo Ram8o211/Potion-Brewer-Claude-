@@ -298,7 +298,7 @@ test('a recipe records the procedure in order, and the homunculus replays it to 
   // the homunculus follows the steps in a fresh cauldron
   const sim2 = simFor(st);
   const ab = new AutoBrewer(sim2, /** @type {any} */ ({ ingredients: [], heatTo: 20, coolTo: 20, serveTemp: 20, steps }), st.lookup);
-  for (let g = 0; !ab.done && g < 120 * 900; g++) { ab.tick(); sim2.step(); }
+  for (let g = 0; !ab.done && g < 120 * 1500; g++) { ab.tick(); sim2.step(); }
   assert.ok(!ab.failed, 'the replay completes');
   const b = measureParticles(sim2, tapSelection(sim2, com.bottleN));
   const k = EFFECT_INDEX.vitality;

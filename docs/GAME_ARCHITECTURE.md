@@ -172,12 +172,20 @@ boiling point and water mostly stays; vapour never carries dissolved
 matter. The receiver's solvents can be jarred back onto the shelf.
 
 **Aging cellar** (`game/cellar.js`). Sealed vessels hold a brew as bulk
-matter and advance it in fixed 20-second steps of wall-clock time with the
+matter and advance it in fixed 10-second steps of wall-clock time with the
 same extraction model (at an unstirred vessel's pace), charring, freezing
 and awakening — so an hour reached in one jump after a break equals an
-hour of live ticks. A Fire or Frost potion gives a vessel a lasting
-heating or cooling drive; a temperature rune holds a chosen temperature
-and wears out (faster against a stronger drive).
+hour of live ticks. A vessel is *charged* with an amount of a Fire or Frost
+potion the player brewed (drawn from the cauldron's tap or a shelved
+bottle): only its net Fire counts, and its strength sets the temperature
+the vessel heads for (cellar 12 °C + 4 °C per percent of net Fire, below
+for Frost), approached with a 30-minute time constant. The charge is used
+up in proportion to the vessel's volume and its distance from cellar
+temperature (less for a stronger potion); when it is spent the vessel
+returns to cellar temperature. A temperature rune locks the rise or fall
+at a chosen temperature on the way to the charge's limit, and wears out
+with the time it is set on a filled vessel (8 h); its target can be moved
+without a new rune. The cellar panel refreshes every second.
 
 Reactions, evaporation and dilution change the composition, so they change
 effects through the same function. `theoryOf()` is the player's naive

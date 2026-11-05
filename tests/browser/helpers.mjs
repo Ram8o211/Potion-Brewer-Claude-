@@ -200,3 +200,24 @@ export async function crushInPot(page, rounds = 30) {
     await drag(page, pts, 30);
   }
 }
+
+/**
+ * Steep the brew warm for a while (extraction is slow at room temperature):
+ * the fire up, the brew stirred, until it has spent `seconds` of game time
+ * near T, then the fire out.
+ * @param {import('@playwright/test').Page} page @param {number} [T] @param {number} [seconds]
+ */
+export async function steepWarm(page, T = 60, seconds = 30) {
+  await lab(page, (l) => { l.speed = 4; l.setAutoStir(true); });
+  await page.waitForFunction(([goal, secs]) => {
+    const l = /** @type {any} */ (window).__alchemist.screen, p = l.sim.p;
+    let t = 0, n = 0;
+    for (let i = 0; i < p.count; i++) if (p.phase[i] !== 4) { t += p.temp[i]; n++; }
+    const mean = n ? t / n : 20;
+    l.setFurnace(Math.max(-1, Math.min(1, (goal - mean) / 12)));
+    if (Math.abs(goal - mean) < 5) l._steepHeld = (l._steepHeld || 0) + 1;
+    // (polled every 250 ms at 4×: one game-second per poll)
+    return (l._steepHeld || 0) >= secs;
+  }, [T, seconds], { timeout: 120_000, polling: 250 });
+  await lab(page, (l) => { l._steepHeld = 0; l.setFurnace(0); l.setAutoStir(false); l.speed = 1; });
+}

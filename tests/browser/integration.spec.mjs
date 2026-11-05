@@ -4,7 +4,7 @@
 // evidence level, the recipe book's recorded steps, what a customer weighs
 // in bargaining, and a guild shop that sells only tools with a purpose.
 import { test, expect } from '@playwright/test';
-import { watchErrors, shot, newGame, lab, pourDose, crushInPot } from './helpers.mjs';
+import { watchErrors, shot, newGame, lab, pourDose, crushInPot, steepWarm } from './helpers.mjs';
 
 /** Clear the toasts so a screenshot shows the room itself. @param {import('@playwright/test').Page} page */
 const clean = (page) => page.evaluate(() => document.querySelectorAll('.toast').forEach((t) => t.remove()));
@@ -57,7 +57,7 @@ test('a day dawns closed; the order card says what it takes and where to find it
   await page.click('[data-act=tab-brew]');
   await pourDose(page, await lab(page, (l) => l.state.world.roles.water), [100]);
   const keys = await lab(page, (l) => l.state.current.requirements.map((r) => r.key));
-  for (const k of keys) expect(['purity', 'vitality', 'strength', 'love', 'arcana', 'transformation', 'fire', 'frost', 'acidity', 'toxicity', 'death']).toContain(k);
+  for (const k of keys) expect(['purity', 'vitality', 'strength', 'love', 'arcana', 'transformation', 'fire', 'frost', 'acidity', 'toxicity', 'death', 'swiftness', 'levitation', 'invisibility', 'phasing', 'temporal']).toContain(k);
   await expect(page.locator('.req-chip.unknown').first()).toBeVisible();
   await expect(page.locator('.req-chip', { hasText: '°' }), 'no serving temperature on the order').toHaveCount(0);
   expect(errors).toEqual([]);
@@ -78,11 +78,7 @@ test('advice read off the cauldron, a trial’s margin and level, and a recipe t
   await pourDose(page, 'wild-sp-silverleaf', [50]);
   await pourDose(page, 'wild-sp-honeycap', [25]);
   await crushInPot(page);
-  await lab(page, (l) => { l.setAutoStir(true); l.setFurnace(0.8); l.speed = 4; });
-  await page.waitForFunction(() => { const p = window.__alchemist.screen.sim.p; let t = 0; for (let i = 0; i < p.count; i++) t += p.temp[i]; return t / p.count > 60; }, null, { timeout: 60_000, polling: 250 });
-  await lab(page, (l) => l.setFurnace(0.15));
-  await page.waitForTimeout(6000);
-  await lab(page, (l) => { l.setFurnace(0); l.setAutoStir(false); l.speed = 1; });
+  await steepWarm(page, 60, 40);
   // one trial: a margin, never ±0, and the level "1 reading"
   await page.click('[data-act=tab-trials]');
   await page.click('[data-act=test-rabbit]');

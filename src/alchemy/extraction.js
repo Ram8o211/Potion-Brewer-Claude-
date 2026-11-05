@@ -6,9 +6,17 @@
 // temperature-dependent ceiling:
 //
 //   rate      k(T) = k20 · 2^((T − 20) / Q)          faster when hot
-//   ceiling   Y(T) = 1 − (1 − Ymin) · (T − Tfull) / span, clamped to [Ymin, 1]
+//   ceiling   Y(T): 1 at Tfull and below, falling linearly to Y20 at room
+//             temperature (20 °C), then on to Ymin at 20 + span, never below
 //                                                  lower when hot
 //   progress  dφ/dt = k(T) · m · (Y(T) − φ)  while φ < Y(T)
+//
+// Calibration. At room temperature an ingredient gives up only about 60 % of
+// its magic (Y20, 52–68 % by species), and slowly: a ground, stirred herb
+// takes one to four minutes to come most of the way (k20). Heat is the way
+// to speed it up — the rate doubles every 12–16 °C — but the hotter the
+// steep, the less of the magic can come out (about 45 % at 60 °C, 35 % near the boil).
+// Cold draws more out, but even more slowly: that is the aging cellar's work.
 //
 // φ is the extracted share of the ingredient's magic. Heating lowers the
 // ceiling but never takes back what is already dissolved (dφ/dt is never
@@ -50,8 +58,8 @@ export const SOLVENT_CAPACITY = 0.5;
 export const WHOLE_FACTOR = 0.03;
 /** Rate factor in a solution that is already emulsified. */
 export const EMULSION_FACTOR = 0.1;
-/** Rate factor of an aging-cellar vessel (unstirred, mostly whole matter). */
-export const CELLAR_FACTOR = 0.006;
+/** Rate factor of an aging-cellar vessel (unstirred, but given hours). */
+export const CELLAR_FACTOR = 0.12;
 /** Combustion thresholds lie in this band (°C): above water's boil, partly below oil's. */
 export const COMBUST_RANGE = /** @type {[number, number]} */ ([115, 300]);
 /** Emulsions: emulsifier volume needed per volume of the dispersed (minority) phase, at strength 1. */
@@ -81,8 +89,9 @@ const EMULSIFYING = new Set(['seedpod', 'fungus', 'shell', 'berry']);
  * @property {number} k20     rate (1/s) at 20 °C, ground and stirred
  * @property {number} Q       °C per doubling of the rate
  * @property {number} Tfull   at or below this every bit can be extracted (°C)
- * @property {number} Ymin    the ceiling far above Tfull
- * @property {number} span    °C over which the ceiling falls from 1 to Ymin
+ * @property {number} Y20     the ceiling at room temperature (20 °C)
+ * @property {number} Ymin    the ceiling far above room temperature
+ * @property {number} span    °C above room temperature over which the ceiling falls from Y20 to Ymin
  * @property {number} combust combustion threshold of the raw matter (°C)
  * @property {number} emulsifier emulsifying strength 0..1
  */
@@ -104,15 +113,18 @@ export function speciesProfile(key) {
   // crystals and relics whose magic sits in a fatty lattice; a few berries too
   const lipo = LIPO_MORPH.has(morph) || (s.steep && s.steep.into === 'spirit') || (morph === 'berry' && h('cls') < 0.3) || (morph === 'flower' && s.dominant === 'fire' && h('cls') < 0.5);
   const cls = lipo ? 'lipo' : 'hydro';
-  const k20 = SOFT.has(morph) ? 0.2 + 0.1 * h('k') : HARD.has(morph) ? 0.09 + 0.04 * h('k') : 0.13 + 0.06 * h('k');
-  const Q = 15 + 5 * h('q');
+  // slow at room temperature: a soft herb about a minute and a half per e-fold, a stone four
+  const k20 = Math.round((SOFT.has(morph) ? 0.0095 + 0.005 * h('k') : HARD.has(morph) ? 0.0042 + 0.002 * h('k') : 0.0062 + 0.003 * h('k')) * 1e5) / 1e5;
+  const Q = Math.round((12 + 4 * h('q')) * 10) / 10;
   const Tfull = cls === 'hydro' ? Math.round(-16 + 8 * h('tf')) : Math.round(-6 + 7 * h('tf'));
-  const Ymin = Math.round((0.25 + 0.2 * h('ym')) * 100) / 100;
-  const span = Math.round(130 + 40 * h('sp'));
+  // about 60 % at room temperature: soft herbs give a little more, stones a little less
+  const Y20 = Math.round((0.52 + 0.12 * h('y20') + (SOFT.has(morph) ? 0.04 : HARD.has(morph) ? -0.03 : 0)) * 100) / 100;
+  const Ymin = Math.round((Y20 - 0.22 - 0.1 * h('ym')) * 100) / 100;
+  const span = Math.round(70 + 30 * h('sp'));
   const mineral = HARD.has(morph) || !s.botanical;
   const combust = Math.round(mineral ? 180 + 120 * h('c') : 115 + 125 * h('c'));
   const emulsifier = EMULSIFYING.has(morph) && h('em') < 0.55 ? Math.round((0.3 + 0.5 * h('es')) * 100) / 100 : 0;
-  const prof = { cls: /** @type {SolventClass} */ (cls), k20, Q, Tfull, Ymin, span, combust, emulsifier };
+  const prof = { cls: /** @type {SolventClass} */ (cls), k20, Q, Tfull, Y20, Ymin, span, combust, emulsifier };
   cache.set(key, prof);
   return prof;
 }
@@ -122,10 +134,21 @@ export function rateAt(pr, T) {
   return pr.k20 * Math.pow(2, (Math.max(-80, Math.min(400, T)) - 20) / pr.Q);
 }
 
-/** Ceiling of the extracted share at T. @param {{Tfull:number, Ymin:number, span:number}} pr @param {number} T */
+/**
+ * Ceiling of the extracted share at T: 1 at Tfull and colder, Y20 at room
+ * temperature, Ymin from 20 + span upward (linear in between).
+ * @param {{Tfull:number, Y20?:number, Ymin:number, span:number}} pr @param {number} T
+ */
 export function yieldAt(pr, T) {
-  const y = 1 - ((1 - pr.Ymin) * (T - pr.Tfull)) / pr.span;
-  return y > 1 ? 1 : y < pr.Ymin ? pr.Ymin : y;
+  return ceilingAt(pr.Tfull, pr.Y20 ?? 0.6, pr.Ymin, pr.span, T);
+}
+
+/** The ceiling from its four numbers (shared with the particle world). @param {number} Tfull @param {number} Y20 @param {number} Ymin @param {number} span @param {number} T */
+export function ceilingAt(Tfull, Y20, Ymin, span, T) {
+  if (T <= Tfull) return 1;
+  if (T <= 20) return Tfull >= 20 ? Y20 : 1 - ((1 - Y20) * (T - Tfull)) / (20 - Tfull);
+  const y = Y20 - ((Y20 - Ymin) * (T - 20)) / span;
+  return y < Ymin ? Ymin : y;
 }
 
 /**

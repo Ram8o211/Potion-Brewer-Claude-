@@ -284,12 +284,16 @@ export class LabScreen {
     this.bottleFab = btn('Bottle', () => this.startBottling(), { icon: 'bottle', cls: 'fab primary', title: 'Bottle the potion from the tap (B)', act: 'bottle' });
     this.brewPanel = h('div', { class: 'brew-panel parch hidden' });
     this.stageEl = h('main', { class: 'stage' }, this.canvas, this.readout, this.chips, this.pourHint, this.brewPanel, this.bottleFab);
-    this.furnaceInput = /** @type {HTMLInputElement} */ (h('input', { type: 'range', min: '-100', max: '100', step: '1', value: '0', 'aria-label': 'Fire and frost control' }));
+    // a fine control: the slider's travel is squared, so its gentle half spreads the low flames
+    // (and the mild chill) over most of its length; a narrow notch at the middle is "off"
+    this.furnaceInput = /** @type {HTMLInputElement} */ (h('input', { type: 'range', min: '-100', max: '100', step: '0.1', value: '0', 'aria-label': 'Fire and frost control' }));
     this.furnaceInput.addEventListener('input', () => {
-      const v = Number(this.furnaceInput.value) / 100;
-      // a wide notch at the middle: easy to land on "off" by sliding
-      this.setFurnace(Math.abs(v) < 0.12 ? 0 : v);
+      const u = Number(this.furnaceInput.value) / 100;
+      this.setFurnace(Math.abs(u) < 0.025 ? 0 : sliderToSetting(u), false);
     });
+    // −/+ step the flame (or the chill) by a couple of degrees
+    this.furnaceDown = btn('−', () => this.nudgeFurnace(-1), { cls: 'fstep', title: 'A little cooler (←)', act: 'furnace-down' });
+    this.furnaceUp = btn('+', () => this.nudgeFurnace(1), { cls: 'fstep', title: 'A little hotter (→)', act: 'furnace-up' });
     // one tap puts the fire (or the frost) out
     this.furnaceOff = btn('Off', () => { this.setFurnace(0); audio.play('select'); }, { cls: 'foff', title: 'Put the fire or frost out (0)', act: 'furnace-off' });
     this.furnaceLabel = h('span', { class: 'flabel' });
@@ -297,7 +301,7 @@ export class LabScreen {
     this.controls = h('section', { class: 'controls frame' },
       this.lidBtn,
       // left cools (the basin), right heats (the fire)
-      h('div', { class: 'furnace', title: 'Slide left to cool, right to heat (arrow keys, 0 for off)' }, icon('snow', 'sm'), h('div', { class: 'frange' }, this.furnaceInput), icon('flame', 'sm'), this.furnaceLabel, this.furnaceOff),
+      h('div', { class: 'furnace', title: 'Slide left to cool, right to heat (arrow keys, 0 for off)' }, this.furnaceDown, h('div', { class: 'frange' }, this.furnaceInput), this.furnaceUp, this.furnaceLabel, this.furnaceOff),
     );
     this.toolsEl = h('div', { class: 'tools', role: 'toolbar', 'aria-label': 'Tools' });
     this.toolbar = h('nav', { class: 'toolbar frame' }, this.toolsEl);
@@ -511,7 +515,9 @@ export class LabScreen {
       const stock = h('span', { class: 'jstock' });
       // a catalog species shows its rarity (a coloured corner) and its Arcane form; seeds in hand are counted
       const w = m.wild && m.wild.catalog ? m.wild : null;
-      const seeds = w ? (st.garden.seeds[w.key + (w.arcane ? '+arcane' : '')] || 0) : 0;
+      // (the Free Experiment's seeds are endless: no count to show)
+      const held = w ? (st.garden.seeds[w.key + (w.arcane ? '+arcane' : '')] || 0) : 0;
+      const seeds = Number.isFinite(held) ? held : 0;
       const badge = w ? h('span', { class: `jrar r-${w.rarity}${w.arcane ? ' arcane' : ''}`, title: `${RARITY[w.rarity].label}${w.arcane ? ', Arcane' : ''}${seeds ? ` · ${seeds} seed${seeds > 1 ? 's' : ''}` : ''}` }, seeds ? h('span', { class: 'jseed', text: String(seeds) }) : null) : null;
       const el = h('button', { class: 'jar' + (m.wild ? ' wild' : '') + (m.remains ? ' remains' : '') + (w && w.arcane ? ' arcane' : ''), title: m.name, 'aria-label': m.name + (w ? `, ${RARITY[w.rarity].label}${w.arcane ? ', Arcane' : ''}` : ''), 'data-id': id, role: 'option' }, stock, cv, badge, h('span', { class: 'jname', text: m.remains ? m.remains.short : labels[n] }));
       this.bindJar(el, id);
@@ -760,8 +766,8 @@ export class LabScreen {
     else if (k === 'n') this.openNotes();
     else if (k === 'h' && this.sandbox) this.toggleThermal();
     else if (k === 'escape') panels.openPause(this);
-    else if (k === 'arrowup' || k === 'arrowright') { this.setFurnace(Math.min(1, this.sim.furnace.setting + 0.1)); }
-    else if (k === 'arrowdown' || k === 'arrowleft') { this.setFurnace(Math.max(-1, this.sim.furnace.setting - 0.1)); }
+    else if (k === 'arrowup' || k === 'arrowright') this.nudgeFurnace(1);
+    else if (k === 'arrowdown' || k === 'arrowleft') this.nudgeFurnace(-1);
     else if (k === '0') this.setFurnace(0);
   }
 
@@ -870,10 +876,33 @@ export class LabScreen {
     this.state.stats.brews = this.state.stats.brews || 0;
   }
 
-  setFurnace(v) {
+  /** @param {number} v setting −1 (full chill) … 1 (full flame) @param {boolean} [moveSlider] */
+  setFurnace(v, moveSlider = true) {
     this.sim.furnace.setting = v;
-    this.furnaceInput.value = String(Math.round(v * 100));
+    if (moveSlider) this.furnaceInput.value = String(Math.round(settingToSlider(v) * 1000) / 10);
+    this.refreshFurnaceLabel();
     if (this.tutorial) this.tutorial.notify('furnace', v);
+  }
+
+  /** The flame (or the cold plate) a couple of degrees hotter (+1) or cooler (−1). @param {number} dir */
+  nudgeFurnace(dir) {
+    const f = this.sim.furnace, amb = SIM.AMBIENT, s = f.setting;
+    // in degrees of the flame (or of the plate): 2 °C a step, across "off" too
+    let T = s > 0 ? amb + s * (f.maxFlame - amb) : s < 0 ? amb + -s * (f.minCool - amb) : amb;
+    T += dir * 2;
+    const v = T > amb + 0.5 ? (T - amb) / (f.maxFlame - amb) : T < amb - 0.5 ? -(amb - T) / (amb - f.minCool) : 0;
+    this.setFurnace(Math.max(-1, Math.min(1, v)));
+    audio.play('click');
+  }
+
+  /** The setting as the flame's (or the cold plate's) temperature, and the cauldron floor's. */
+  refreshFurnaceLabel() {
+    if (!this.furnaceLabel) return;
+    const f = this.sim.furnace, amb = SIM.AMBIENT, s = f.setting;
+    const label = s > 0.0005 ? `Flame ${Math.round(amb + s * (f.maxFlame - amb))}°C` : s < -0.0005 ? `Chill ${Math.round(amb + -s * (f.minCool - amb))}°C` : 'Off';
+    if (!this._flab) { this._flab = [h('span'), h('span', { class: 'fpot' })]; clear(this.furnaceLabel).append(...this._flab); }
+    this._flab[0].textContent = label;
+    this._flab[1].textContent = `pot ${Math.round(this.sim.cauldron.bottomTemperature())}°C`;
   }
 
   toggleLid() {
@@ -976,6 +1005,28 @@ export class LabScreen {
     audio.play('splash');
     toast('Laid down', `The brew is in vessel ${vessel + 1}. It goes on extracting while you work — and while you are away.`, 'shelf2');
     this.save();
+  }
+
+  /**
+   * Charge a cellar vessel with potion drawn from the cauldron's tap: the
+   * chosen ml (or what the tap can give), measured, then taken out of the pot.
+   * @param {number} vessel @param {number} ml
+   */
+  chargeFromCauldron(vessel, ml) {
+    const st = this.state, sim = this.sim;
+    const n = Math.max(1, Math.round(ml / SIM.ML_PER_PARTICLE));
+    const sel = tapSelection(sim, n);
+    if (!sel.length) { toast('Nothing to draw', 'There is no liquid at the cauldron’s tap.', 'cauldron'); return { ok: false }; }
+    const meas = measureParticles(sim, sel);
+    const got = sel.length * SIM.ML_PER_PARTICLE;
+    const r = st.chargeVessel(vessel, meas.effects, got);
+    if (!r.ok) { toast('Cannot load it', r.reason, 'lock'); audio.play('error'); return r; }
+    for (const i of sel.sort((a, b) => b - a)) sim.removeParticle(i);
+    st.touchBatch();
+    if (sim.p.count === 0) { st.brewLog = []; st.newBatch(); this.lastPoured = {}; }
+    toast(`Vessel ${vessel + 1} charged`, `${got} ml of potion loaded: it can take the vessel to ${r.limit}°C.`, r.limit > 12 ? 'flame' : 'snow', 3200);
+    this.save();
+    return r;
   }
 
   // ------------------------------------------------------------------ customers
@@ -1489,6 +1540,8 @@ export class LabScreen {
     if (rep.frozen > 0.4 && rep.items.some((it) => it.raw > 0.5)) out.push({ key: 'frozen', text: 'The brew is frozen: a frozen solvent extracts nothing. Spirit stays liquid far colder than water.' });
     const capped = rep.items.filter((it) => it.raw > 1 && it.share > it.ceiling - 0.02 && it.ceiling < 0.9);
     if (capped.length && T > 30) out.push({ key: 'ceiling', text: `${capped[0].name} has given all it can at ${Math.round(T)}°C: cooler, more of it would come out (heat never takes back what is dissolved).` });
+    const slow = rep.items.filter((it) => it.raw > 1 && it.share < it.ceiling - 0.15 && !it.frozen);
+    if (slow.length && !capped.length && T < 35 && rep.frozen < 0.4) out.push({ key: 'slow', text: `${slow[0].name} gives up its magic slowly at ${Math.round(T)}°C. Warm the brew to hurry it — though less of it can come out hot — or be patient (the cellar is for that).` });
     const hot = rep.items.find((it) => it.raw > 0.5 && st.knowledge[it.id] && st.knowledge[it.id].burnsAt !== undefined && T > st.knowledge[it.id].burnsAt - 15);
     if (hot) out.push({ key: 'burn', text: `${hot.name} burnt at about ${Math.round(st.knowledge[hot.id].burnsAt)}°C before: undissolved, it will char again.` });
     if (rep.phases.hydro > 2 && rep.phases.lipo > 2 && rep.emulsified < 0.2 && rep.items.some((it) => it.cls === 'lipo') && rep.items.some((it) => it.cls === 'hydro')) out.push({ key: 'emulsion', text: 'Oil and water extracts stand apart: a little emulsifier binds them into one potion — after extraction, since an emulsion extracts badly.' });
@@ -1775,14 +1828,12 @@ export class LabScreen {
     }
     this.syncActions();
     const f = this.sim.furnace.setting;
-    const c = this.sim.cauldron;
-    const label = f > 0.02 ? `Heat ${Math.round(f * 100)}%` : f < -0.02 ? `Cool ${Math.round(-f * 100)}%` : 'Off';
-    this.furnaceLabel.textContent = `${label} · ${Math.round(c.bottomTemperature())}°C`;
-    this.furnaceLabel.title = 'Setting, and the temperature of the cauldron floor';
-    const on = Math.abs(f) > 0.02;
+    this.refreshFurnaceLabel();
+    this.furnaceLabel.title = 'The flame (or the cold plate), and the temperature of the cauldron floor';
+    const on = Math.abs(f) > 0.0005;
     this.furnaceOff.disabled = !on;
-    this.furnaceOff.classList.toggle('hot', f > 0.02);
-    this.furnaceOff.classList.toggle('cold', f < -0.02);
+    this.furnaceOff.classList.toggle('hot', f > 0.0005);
+    this.furnaceOff.classList.toggle('cold', f < -0.0005);
     if (full) this.updateShelf();
     this.updateChips();
   }
@@ -2182,11 +2233,20 @@ export class LabScreen {
   }
 }
 
+/** Slider position (−1…1) → furnace setting: squared, for fine control of gentle heat. @param {number} u */
+export function sliderToSetting(u) {
+  return Math.sign(u) * u * u;
+}
+/** Furnace setting → slider position. @param {number} v */
+export function settingToSlider(v) {
+  return Math.sign(v) * Math.sqrt(Math.abs(v));
+}
+
 /** The Free Experiment's furnace: hotter than any campaign fire, to show what heat does. */
 const SANDBOX_FIRE = { maxFlame: 800, heatPower: 8 };
 
 /** Short labels of the brew advice (lab.brewAdvice) for the chip row. */
-const ADVICE_SHORT = { whole: 'Whole herbs: crush', solvent: 'Wrong solvent', frozen: 'Frozen: no extraction', ceiling: 'Cool to draw more', burn: 'Burning risk', emulsion: 'Needs an emulsifier', steam: 'Steam escaping', stir: 'Uneven: stir' };
+const ADVICE_SHORT = { slow: 'Slow: warm it?', whole: 'Whole herbs: crush', solvent: 'Wrong solvent', frozen: 'Frozen: no extraction', ceiling: 'Cool to draw more', burn: 'Burning risk', emulsion: 'Needs an emulsifier', steam: 'Steam escaping', stir: 'Uneven: stir' };
 
 /** What each promotion brings (the difficulty curve, in the guild's words). */
 const RANK_NEWS = [

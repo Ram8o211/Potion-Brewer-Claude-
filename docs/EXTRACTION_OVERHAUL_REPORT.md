@@ -166,3 +166,27 @@ tests were updated where their premise was the retired steeping windows.
   (the first commission's single rabbit reading, the hutch showcase's tile
   re-render) failed once and passed on two re-runs: they are timing/noise
   sensitive rather than broken.
+
+## Addendum: recalibration, cellar charges, fine fire control
+
+* **Room temperature is no longer enough.** Each species now has its own
+  room-temperature ceiling `Y20` (52–68 %, about 60 % on average: soft
+  herbs a little more, stones a little less). The ceiling rises linearly
+  to 1 at `Tfull` and falls linearly above 20 °C to `Ymin` (`Y20` − 0.22…0.32)
+  over 70–100 °C — about 45 % at 60 °C, 35 % near the boil.
+* **Much slower.** `k20` is about 20× lower (a ground, stirred herb takes
+  70–240 s per e-fold at 20 °C); the rate doubles every 12–16 °C, so a
+  60 °C steep is quick (7–40 s) and a cold one very slow (5–20 min at
+  −12 °C). The cellar factor was raised (0.006 → 0.12) so a vessel still
+  works in hours.
+* **The planner steeps warm** (`commissions.js composePlan`): the lowest
+  temperature (from 20 °C, in 2 °C steps, arcane-quiet) at which the
+  slowest ingredient nears its ceiling within 90 s; cold tinctures for
+  alcohol-free orders hold up to 10 minutes. Tier targets were lowered to
+  about two thirds (`requests.js TIER_TARGET`) to match the yields.
+* **Cellar charges** replace the endless drive: see GAME_ARCHITECTURE.md
+  (Aging cellar). Old saves' drives become a 100 ml charge of the same
+  strength.
+* **Fire control**: the slider is squared (fine at the gentle end) with a
+  2.5 % off-notch, − / + buttons and arrow keys step the flame by 2 °C, and
+  the readout shows the flame (or the cold plate) and the pot.

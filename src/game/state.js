@@ -25,8 +25,8 @@ import { remainsMaterials, remainsPlan, isRemains } from '../materials/remains.j
 import { returningPatron, welcomePatron, recentStyles, notePatron, patronVerdict, noveltyFactor } from './patrons.js';
 import { techniqueById, migrateTechniques } from './commissions.js';
 import { migrateRecipe } from './recipes.js';
-import { createCellar, normalizeCellar, advanceCellar, fillVessel, emptyVesselContents, activateVessel, setRune, vesselVolume, RUNE_PRICE } from './cellar.js';
-import { makeVialFromComposition } from './vial.js';
+import { createCellar, normalizeCellar, advanceCellar, fillVessel, emptyVesselContents, chargeVessel, setRune, vesselVolume, RUNE_PRICE } from './cellar.js';
+import { makeVialFromComposition, takeDose } from './vial.js';
 
 export const SAVE_VERSION = 8;
 /** A purging draught at the apothecary, and brewed in the still. */
@@ -440,17 +440,37 @@ export class GameState {
   }
 
   /**
-   * Warm or chill a vessel with a shelved Fire or Frost potion (the bottle is used up).
-   * @param {number} vessel @param {string} bottleId @param {number} [now]
+   * Charge a vessel with `ml` of a shelved Fire or Frost potion (taken out
+   * of the bottle; an emptied bottle leaves the shelf). Without `ml`, the
+   * whole bottle.
+   * @param {number} vessel @param {string} bottleId @param {number} [ml] @param {number} [now]
    */
-  activateVessel(vessel, bottleId, now = Date.now()) {
+  activateVessel(vessel, bottleId, ml, now = Date.now()) {
     this.tickCellar(now);
     const v = this.cellar.vessels[vessel];
     const b = this.bottles.find((x) => x.id === bottleId);
-    if (!v || !b) return { ok: false, reason: 'Choose a vessel and a bottle.' };
-    const r = activateVessel(v, (b.m && b.m.effects) || [], now);
-    if (r.ok) this.removeBottle(b.id);
-    return r;
+    if (!v || !b || !b.m) return { ok: false, reason: 'Choose a vessel and a bottle.' };
+    const want = Math.min(b.ml, ml ?? b.ml);
+    // check the potion first: a weak one is not poured away for nothing
+    const test = chargeVessel(/** @type {any} */ ({ ...v, comp: { ...v.comp }, charge: v.charge && { ...v.charge }, log: [] }), b.m.effects, want, now);
+    if (!test.ok) return test;
+    const dose = takeDose(b, want, this.lookup, this.world.laws || [], this.day);
+    if (!dose || !dose.dose) return { ok: false, reason: 'The bottle is empty.' };
+    const r = chargeVessel(v, dose.dose.effects, dose.ml, now);
+    if (!b.particles.length) this.removeBottle(b.id);
+    return { ...r, ml: dose.ml };
+  }
+
+  /**
+   * Charge a vessel with potion drawn from the cauldron (its measured effects
+   * and volume; the caller removes the particles).
+   * @param {number} vessel @param {ArrayLike<number>} effects @param {number} ml @param {number} [now]
+   */
+  chargeVessel(vessel, effects, ml, now = Date.now()) {
+    this.tickCellar(now);
+    const v = this.cellar.vessels[vessel];
+    if (!v) return { ok: false, reason: 'There is no such vessel.' };
+    return chargeVessel(v, effects, ml, now);
   }
 
   /** Set a rune on a vessel at a temperature. @param {number} vessel @param {number} target @param {number} [now] */
@@ -458,9 +478,11 @@ export class GameState {
     this.tickCellar(now);
     const v = this.cellar.vessels[vessel];
     if (!v || vesselVolume(v) <= 0) return { ok: false, reason: 'Fill the vessel first.' };
-    if (this.cellar.runes <= 0) return { ok: false, reason: 'You have no temperature rune. Buy one at the market, or look underground in the Wilds.' };
+    // moving the target of the vessel's own rune uses no new one
+    const fresh = !(v.rune && v.rune.life > 0);
+    if (fresh && this.cellar.runes <= 0) return { ok: false, reason: 'You have no temperature rune. Buy one at the market, or look underground in the Wilds.' };
     const r = setRune(v, target, now);
-    if (r.ok) this.cellar.runes--;
+    if (r.ok && r.fresh) this.cellar.runes--;
     return r;
   }
 

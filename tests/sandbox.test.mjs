@@ -5,7 +5,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { GameState } from '../src/game/state.js';
 import { prepareSandbox, sandboxSave, SANDBOX_CELLAR_PACE, SANDBOX_GARDEN_PACE } from '../src/game/sandbox.js';
-import { advanceVessel, fillVessel, normalizeCellar } from '../src/game/cellar.js';
+import { advanceVessel, fillVessel, normalizeCellar, chargeVessel } from '../src/game/cellar.js';
+import { EFFECT_INDEX } from '../src/alchemy/effects.js';
 import { growHours, seedId } from '../src/game/garden.js';
 import { SPECIES } from '../src/materials/catalog.js';
 import { EQUIPMENT } from '../src/game/equipment.js';
@@ -23,21 +24,24 @@ test('the Free Experiment owns every piece of equipment, shelf and cellar vessel
   assert.equal(st.cellar.pace, SANDBOX_CELLAR_PACE);
 });
 
-test('its runes never run out, and its cellar ages quicker than the shop’s', () => {
+test('its runes never run out, and its cellar runs quicker than the shop’s', () => {
   const st = sandbox();
   const R = st.world.roles;
-  assert.ok(st.layDown(0, { comp: { [R.water]: 100 }, T: 20, name: 'test' }, T0).ok);
+  const fire = new Array(15).fill(0); fire[EFFECT_INDEX.fire] = 15;
+  assert.ok(st.layDown(0, { comp: { [R.water]: 100 }, T: 12, name: 'test' }, T0).ok);
+  assert.ok(st.chargeVessel(0, fire, 50, T0).ok);
   for (let k = 0; k < 3; k++) assert.ok(st.runeVessel(0, 40, T0).ok);
+  assert.ok(st.runeVessel(1 % st.cap.vessels, 40, T0).ok === false, 'an empty vessel takes no rune');
   assert.equal(st.cellar.runes, Infinity);
-  // one real minute is an hour of aging: the rune has warmed the vessel already
-  st.tickCellar(T0 + 60000);
-  assert.ok(st.cellar.vessels[0].T > 30, `warmed to ${st.cellar.vessels[0].T}`);
-  // the shop's cellar, for the same minute, barely moves
+  // one real minute is an hour of cellar time: the charge has warmed the vessel to the rune's lock
+  st.tickCellar(T0 + 2 * 60000);
+  assert.ok(Math.abs(st.cellar.vessels[0].T - 40) < 0.01, `locked at 40°C (${st.cellar.vessels[0].T.toFixed(1)})`);
+  // the shop's cellar, for the same two minutes, barely moves
   const shop = normalizeCellar(null, 1, T0);
-  fillVessel(shop.vessels[0], { [R.water]: 100 }, 20, T0);
-  shop.vessels[0].rune = { target: 40, life: 3600 };
-  advanceVessel(shop.vessels[0], st.lookup, T0 + 60000);
-  assert.ok(shop.vessels[0].T < 25, `the shop warmed only to ${shop.vessels[0].T}`);
+  fillVessel(shop.vessels[0], { [R.water]: 100 }, 12, T0);
+  chargeVessel(shop.vessels[0], fire, 50, T0);
+  advanceVessel(shop.vessels[0], st.lookup, T0 + 2 * 60000);
+  assert.ok(shop.vessels[0].T < 17, `the shop warmed only to ${shop.vessels[0].T.toFixed(1)}`);
 });
 
 test('its garden holds every bed at the highest grade and every seed, never used up, growing quicker', () => {

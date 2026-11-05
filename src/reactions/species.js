@@ -84,6 +84,7 @@ export class SpeciesTable {
     this.exQ = f();
     this.exTfull = f();
     this.exYmin = f();
+    this.exY20 = f();
     this.exSpan = f();
     this.exComb = f();
     /** slot of a raw ingredient's extract (-1 until first needed) */
@@ -192,7 +193,7 @@ export class SpeciesTable {
     this.exCls[slot] = ex ? (ex.cls === 'lipo' ? 2 : 1) : 0;
     if (ex) {
       this.exK20[slot] = ex.k20; this.exQ[slot] = ex.Q; this.exTfull[slot] = ex.Tfull;
-      this.exYmin[slot] = ex.Ymin; this.exSpan[slot] = ex.span; this.exComb[slot] = ex.combust;
+      this.exYmin[slot] = ex.Ymin; this.exY20[slot] = ex.Y20 ?? 0.6; this.exSpan[slot] = ex.span; this.exComb[slot] = ex.combust;
       this.extractables++;
     }
     this.exSlot[slot] = -1;

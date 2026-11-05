@@ -117,7 +117,8 @@ export class AutoBrewer {
     this.t += dt;
     this.stageT += dt;
     const sim = this.sim, plan = this.plan;
-    if (this.t > (this.steps ? 900 : /** @type {any} */ (plan).distil ? 720 : 360)) { this.failed = true; this.finish(); return; }
+    // (a long steep — a cold tincture takes minutes — extends the allowance by its own length)
+    if (this.t > (this.steps ? 900 : /** @type {any} */ (plan).distil ? 720 : 360) + (plan.steep ? plan.steep.hold : 0)) { this.failed = true; this.finish(); return; }
     switch (this.stage) {
       case 'steps': this.tickStep(); return;
       case 'pour': {
@@ -407,7 +408,7 @@ export function spiritShare(sim) {
 export function runPlanHeadless(sim, plan, lookup) {
   const ab = new AutoBrewer(sim, plan, lookup);
   let guard = 0;
-  while (!ab.done && guard++ < 120 * 400) {
+  while (!ab.done && guard++ < 120 * 1200) {
     ab.tick();
     sim.step();
   }
