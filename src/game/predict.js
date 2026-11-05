@@ -9,6 +9,7 @@ import { SpeciesTable, MAX_SPECIES } from '../reactions/species.js';
 import { mixtureProps } from '../reactions/mixture.js';
 import { compositionEffects, extractedEffects, NE } from '../alchemy/effects.js';
 import { isMagical, awakenedId, thresholdToCelsius } from '../alchemy/arcane.js';
+import { extractOver, extractIdOf, SOLVENT_CAPACITY, EMULSION_FACTOR, emulsionStability } from '../alchemy/extraction.js';
 
 /** degrees past (or short of) a threshold a plan keeps, so the brew is unambiguous */
 export const ACTIVATION_MARGIN = 6;
@@ -26,7 +27,69 @@ export const ACTIVATION_MARGIN = 6;
  * @property {{T:number, hold:number}} [steep] an extraction stage before anything else (°C, seconds)
  * @property {{frac:number}} [reduce] boil off this share of the brew's volume with the lid open
  *           (the most volatile solvents go first: spirit before water); what does not boil stays
+ * @property {{water:number, T:number, id?:string}} [distil] after the stages, pour `water` particles of water and
+ *           distil every drop of spirit off into the condenser at T (an alcohol-free potion)
  */
+
+/** seconds a plan spends stirring at room temperature before its stages (autobrew 'stir') */
+export function stirSeconds(plan) {
+  return plan.knead ? 14 : plan.activate ? 10 : 7;
+}
+
+/**
+ * Continuous extraction of a plan's catalog ingredients (alchemy/extraction.js):
+ * the stirring at room temperature, the steep, then the serving temperature.
+ * Moves raw volume into extract volume in `vol`, within each solvent's capacity.
+ * @param {Map<string, number>} vol @param {(id:string)=>any} lookup @param {BrewPlan} plan
+ * @returns {Record<string, number>} extracted share per raw id
+ */
+export function predictExtraction(vol, lookup, plan) {
+  let Lh = 0, Ll = 0, em = 0;
+  for (const [id, v] of vol) {
+    const d = lookup(id);
+    if (!d || v <= 0) continue;
+    if (d.solvent === 'hydro') Lh += v; else if (d.solvent === 'lipo') Ll += v;
+    em += v * (Number(d.emulsifier) || 0);
+  }
+  const emulsion = Lh > 0 && Ll > 0 && emulsionStability(Lh, Ll, em) > 0.5;
+  const m = emulsion ? EMULSION_FACTOR : 1;
+  /** @type {Record<string, number>} */
+  const shares = {};
+  /** @type {{id:string, v:number, phi:number, cls:string}[]} */
+  const items = [];
+  const tStir = stirSeconds(plan);
+  for (const [id, v] of vol) {
+    const d = lookup(id);
+    const pr = d && d.extraction;
+    if (!pr || v <= 1e-6) continue;
+    if ((pr.cls === 'lipo' ? Ll : Lh) <= 0) { shares[id] = 0; continue; }
+    let phi = extractOver(pr, 20, tStir, 0, m);
+    if (plan.steep) phi = extractOver(pr, plan.steep.T, plan.steep.hold, phi, m);
+    // the activation hold, then a few seconds at the serving temperature
+    if (plan.hold && (plan.heatTo ?? 20) > 20) phi = extractOver(pr, plan.heatTo ?? 20, plan.hold, phi, m);
+    if (plan.hold && (plan.coolTo ?? 20) < 20) phi = extractOver(pr, plan.coolTo ?? 20, plan.hold, phi, m);
+    phi = extractOver(pr, plan.serveTemp ?? 20, 4, phi, m);
+    items.push({ id, v, phi, cls: pr.cls });
+  }
+  for (const cls of ['hydro', 'lipo']) {
+    const L = cls === 'lipo' ? Ll : Lh;
+    const its = items.filter((x) => x.cls === cls);
+    const want = its.reduce((a, x) => a + x.v * x.phi, 0);
+    // a solvent holds at most its own volume of extract (SOLVENT_CAPACITY of the solution)
+    const cap = (SOLVENT_CAPACITY / (1 - SOLVENT_CAPACITY)) * L;
+    const k = want > cap ? cap / want : 1;
+    for (const x of its) {
+      const dv = x.v * x.phi * k;
+      shares[x.id] = x.phi * k;
+      if (dv <= 0) continue;
+      const xid = extractIdOf(x.id);
+      if (!lookup(xid)) continue;
+      vol.set(x.id, x.v - dv);
+      vol.set(xid, (vol.get(xid) || 0) + dv);
+    }
+  }
+  return shares;
+}
 
 /** Species tables by world lookup (predictPlan). @type {WeakMap<Function, SpeciesTable>} */
 const tables = new WeakMap();
@@ -68,6 +131,8 @@ export function predictPlan(world, lookup, plan) {
       fired.push(r.id);
     }
   }
+  // continuous extraction of the catalog ingredients
+  const extracted = predictExtraction(vol, lookup, plan);
   // arcane activation: the well-mixed blend has one threshold; if the plan's
   // heat (or cold) passes it, all its magic awakens — in the simulation the
   // same happens particle by particle (simulation/arcane.js)
@@ -104,6 +169,15 @@ export function predictPlan(world, lookup, plan) {
       left -= take;
     }
   }
+  // distillation: water poured in, then every drop of spirit boiled off into the condenser
+  if (plan.distil) {
+    const water = (plan.distil.id && lookup(plan.distil.id)) || [...vol.keys()].map(lookup).find((d) => d && d.solvent === 'hydro' && !d.alcohol);
+    if (water && plan.distil.water > 0) { vol.set(water.id, (vol.get(water.id) || 0) + plan.distil.water); total += plan.distil.water; }
+    for (const [id, v] of [...vol]) {
+      const d = lookup(id);
+      if (d && d.alcohol && v > 0) { total -= v; vol.set(id, 0); }
+    }
+  }
   // gaseous products escape the liquid (they bubble out)
   for (const [id, v] of vol) {
     const d = lookup(id);
@@ -138,7 +212,9 @@ export function predictPlan(world, lookup, plan) {
   /** @type {Record<string, number>} */
   const composition = {};
   for (let s = 0; s < sp.count; s++) if (sp.defs[s] && comp[s] > 1e-5) composition[sp.defs[s].id] = comp[s];
-  return { ...props, effects, raw, composition, reactions: fired, totalParticles: total, threshold, awakened };
+  let alcohol = 0;
+  for (const [id, f] of Object.entries(composition)) { const d = lookup(id); if (d && d.alcohol) alcohol += f; }
+  return { ...props, effects, raw, composition, reactions: fired, totalParticles: total, threshold, awakened, extracted, alcohol: alcohol * 100 };
 }
 
 /**

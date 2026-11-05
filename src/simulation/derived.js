@@ -118,7 +118,8 @@ export function refreshParticle(sim, i) {
   p.viscT[i] = kT;
   p.lnMu[i] = lnMu20 - kT * (Math.min(T, 300) - 20) + suspensionLnMult(gran, bnd);
   // freezing point: liquid-form species, depressed by dissolved solutes
-  p.tm[i] = tmW > 0 ? tmS / tmW - 28 * dissolved : pmW > 0 ? pmS / pmW : 0;
+  // (a whole piece that has soaked up solvent is still a piece: it does not melt)
+  p.tm[i] = p.phase[i] === PHASE.SOLID && whole * inv >= 0.3 && pmW > 0 ? pmS / pmW : tmW > 0 ? tmS / tmW - 28 * dissolved : pmW > 0 ? pmS / pmW : 0;
   p.tb[i] = tbW > 0 ? tbS / tbW : NO_BOIL;
   p.volFrac[i] = tbW * inv;
   p.latF[i] = latF * inv;

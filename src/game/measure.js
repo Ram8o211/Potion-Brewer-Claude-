@@ -30,6 +30,7 @@ import { sampleEffects } from '../alchemy/effects.js';
  * @property {number} count
  * @property {number} ml
  * @property {Record<string, number>} composition  species id → volume fraction
+ * @property {number} [alcohol]    spirit content, percent of the volume
  * @property {number[]} color   sRGB
  * @property {number[]} lab     OKLab
  * @property {number} density
@@ -81,11 +82,12 @@ export function measureParticles(sim, indices) {
   for (let s = 0; s < ns; s++) comp[s] /= n;
   /** @type {Record<string, number>} */
   const composition = {};
-  let volat = 0;
+  let volat = 0, alcohol = 0;
   for (let s = 0; s < ns; s++) {
     const def = sp.defs[s];
     if (!def || comp[s] < 1e-5) continue;
     composition[def.id] = comp[s];
+    if (sp.alcohol[s]) alcohol += comp[s];
     volat += comp[s] * (sp.volatility[s] * 70 + sp.reactivity[s] * 30);
   }
   const lab = [L / n, A / n, B / n];
@@ -132,6 +134,8 @@ export function measureParticles(sim, indices) {
     volatility: clamp(volat, 0, 100),
     phases: { liquid: phases[0] / n, powder: phases[1] / n, paste: phases[2] / n, solid: phases[3] / n, gas: phases[4] / n },
     glow: glow / n,
+    /** spirit content, percent of the volume (alcohol-free orders) */
+    alcohol: Math.round(alcohol * 1000) / 10,
   };
 }
 

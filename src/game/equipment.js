@@ -22,8 +22,8 @@
 /** @type {Equipment[]} */
 export const EQUIPMENT = [
   // the starting kit: everything an apprentice needs for the core loop
-  { id: 'hearth', name: 'Stone Hearth', category: 'heat', price: 0, rank: 0, icon: 'fire', mechanics: ['steeping', 'concentration', 'awakening'], desc: 'A wood fire under the cauldron. It brings a pot to the boil in seconds and takes lamp oil past 200°C — every steep, boil and heat-awakening in the guild’s books.', effect: { maxFlame: 340, heatPower: 3.5 } },
-  { id: 'basin', name: 'Cold-Water Basin', category: 'cold', price: 0, rank: 0, icon: 'basin', mechanics: ['cold-extraction'], desc: 'Cool well water under the cauldron: chills a brew to about 9°C — cold enough for most ice-cold steeps, never colder.', effect: { minCool: 4, coolPower: 4 } },
+  { id: 'hearth', name: 'Stone Hearth', category: 'heat', price: 0, rank: 0, icon: 'fire', mechanics: ['steeping', 'concentration', 'awakening'], desc: 'A wood fire under the cauldron. It brings a pot to the boil in seconds and takes oil past 200°C — hot enough to burn any herb left undissolved in it.', effect: { maxFlame: 340, heatPower: 3.5 } },
+  { id: 'basin', name: 'Cold-Water Basin', category: 'cold', price: 0, rank: 0, icon: 'basin', mechanics: ['cold-extraction'], desc: 'Cool well water under the cauldron: chills a brew to about 9°C — a little more comes out of most herbs than at room heat, but never everything.', effect: { minCool: 4, coolPower: 4 } },
   { id: 'pot', name: 'Iron Pot', category: 'vessel', price: 0, rank: 0, icon: 'cauldron', mechanics: ['batch'], desc: 'Your first cauldron (about 1.5 litres).', effect: { size: 'pot' } },
   { id: 'spoon', name: 'Oak Spoon', category: 'tool', price: 0, rank: 0, icon: 'spoon', mechanics: ['mixing'], desc: 'Stirs, folds and kneads.' },
   { id: 'pestle', name: 'Granite Pestle', category: 'tool', price: 0, rank: 0, icon: 'pestle', mechanics: ['extraction'], desc: 'Crushes whole herbs, roots and stones in the pot, frozen blocks and crystal chunks into grains. Everything solid goes in whole: only the pestle breaks it up.' },
@@ -36,8 +36,12 @@ export const EQUIPMENT = [
   { id: 'rack2', name: 'Potion Cabinet', category: 'storage', price: 150, rank: 1, icon: 'shelf2', requires: ['rack1'], mechanics: ['storage'], desc: 'A glass-fronted cabinet: room for 12 sealed bottles.', effect: { bottles: 12 } },
   { id: 'rack3', name: 'Bottle Cellar', category: 'storage', price: 420, rank: 2, icon: 'shelf2', requires: ['rack2'], mechanics: ['storage'], desc: 'Cool cellar racks from floor to vault: room for 24 sealed bottles.', effect: { bottles: 24 } },
   // cold: what the basin cannot reach
-  { id: 'frostrune', name: 'Frost Rune Plate', category: 'cold', price: 150, rank: 1, icon: 'rune', requires: ['basin'], mechanics: ['cold-extraction', 'awakening'], desc: 'A carved rune that draws a brew down to about -14°C: the ice-cold steeps the basin cannot hold (Grave Moss, the narrowest windows), the cold awakenings of Moonfen magic, and freezing. Mind the dial: a brew frozen solid gives up less.', effect: { minCool: -30, coolPower: 6 } },
+  { id: 'frostrune', name: 'Frost Rune Plate', category: 'cold', price: 150, rank: 1, icon: 'rune', requires: ['basin'], mechanics: ['cold-extraction', 'awakening'], desc: 'A carved rune that draws a brew down to about -14°C: cold enough for a spirit or oil steep to draw out everything, and for the cold awakenings of Moonfen magic. Mind the dial: water freezes long before, and a frozen solvent extracts nothing.', effect: { minCool: -30, coolPower: 6 } },
   { id: 'glacial', name: 'Glacial Sigil', category: 'cold', price: 750, rank: 3, icon: 'snow', requires: ['frostrune'], mechanics: ['awakening', 'cold-extraction'], desc: 'Deep cold, fast: a brew falls to about -48°C, past the thresholds of the Moonfen’s deepest magic.', effect: { minCool: -70, coolPower: 9 } },
+  // distillation and aging
+  { id: 'condenser', name: 'Alembic & Condenser', category: 'tool', price: 170, rank: 1, icon: 'alembic', mechanics: ['distillation'], desc: 'A copper still head that sits on the cauldron like a lid, with a cooled coil and a receiving flask. Vapour that rises into it is condensed into the receiver instead of raining back: heat a tincture between spirit’s and water’s boiling points and the spirit leaves while the magic stays. The spirit collected goes back on your shelf.' },
+  { id: 'cellar', name: 'Aging Cellar', category: 'vessel', price: 240, rank: 1, icon: 'shelf2', mechanics: ['aging'], desc: 'A vaulted cellar with two sealed aging vessels. A brew laid down in one goes on extracting for hours, even while the shop is closed — warmed by a Fire potion or chilled by a Frost potion, and held at the heat you choose by a temperature rune.', effect: { vessels: 2 } },
+  { id: 'cellar2', name: 'Deep Cellar', category: 'vessel', price: 520, rank: 2, icon: 'shelf2', requires: ['cellar'], mechanics: ['aging'], desc: 'Two more aging vessels, deeper under the shop (four in all).', effect: { vessels: 4 } },
   // tools
   { id: 'stirrer', name: 'Clockwork Stirrer', category: 'tool', price: 110, rank: 1, icon: 'gear', mechanics: ['mixing'], desc: 'A wind-up paddle that keeps stirring on its own — through the whole depth of the brew — while you gather, test or serve. It evens a brew about three times as fast as the hand spoon, so every bottle of a batch matches the one you tested.' },
   { id: 'homunculus', name: 'Brass Homunculus', category: 'tool', price: 1100, rank: 3, icon: 'homunculus', mechanics: ['automation'], desc: 'A clockwork assistant that follows a saved recipe’s recorded procedure step by step — every pour, grinding, stir, heat, chill, hold, boil-down and the lid — in the real cauldron, at full ingredient cost.' },
@@ -76,7 +80,7 @@ export const RETIRED_EQUIPMENT = {
   galvanometer: { name: 'Galvanometer', price: 120, sandbox: true, why: 'charge is never asked for' },
   thermal: { name: 'Thermal Monocle', price: 80, sandbox: true, why: 'the heat map is now a Free Experiment view' },
   skimmer: { name: 'Brass Skimmer', price: 60, sandbox: true, why: 'natural extracts all mix with water, so there is no layer worth skimming; the tap already draws from the bottom' },
-  alembic: { name: 'Copper Alembic', price: 360, sandbox: true, why: 'boiling down with the lid open does the same, and the distillate is never clean enough to jar' },
+  alembic: { name: 'Copper Alembic', price: 360, into: 'condenser', why: 'the Alembic & Condenser took over: its receiver now jars the spirit it recovers' },
   bellows: { name: 'Bellows & Coal', price: 120, why: 'the hearth already reaches every steep and boil; hotter fires only set lamp oil alight' },
   athanor: { name: 'Athanor Furnace', price: 700, why: 'the hearth already reaches every steep and boil' },
   lens: { name: 'Aether Lens', price: 140, into: 'arcanometer', why: 'its aura view is now part of the Arcanometer' },
@@ -115,7 +119,7 @@ export function rankIndex(rep) {
  */
 export function capabilities(owned) {
   const has = owned instanceof Set ? owned : new Set(owned);
-  const cap = { maxFlame: 340, heatPower: 3.5, minCool: 4, coolPower: 4, size: 'pot', storage: BASE_STORAGE, discount: 0, hutch: BASE_HUTCH, bottles: BASE_BOTTLES, has: (id) => has.has(id) };
+  const cap = { maxFlame: 340, heatPower: 3.5, minCool: 4, coolPower: 4, size: 'pot', storage: BASE_STORAGE, discount: 0, hutch: BASE_HUTCH, bottles: BASE_BOTTLES, vessels: 0, has: (id) => has.has(id) };
   for (const e of EQUIPMENT) {
     if (!has.has(e.id) || !e.effect) continue;
     const f = /** @type {any} */ (e.effect);
@@ -127,6 +131,7 @@ export function capabilities(owned) {
     if (f.discount) cap.discount = Math.max(cap.discount, f.discount);
     if (f.hutch && f.hutch > cap.hutch) cap.hutch = f.hutch;
     if (f.bottles && f.bottles > cap.bottles) cap.bottles = f.bottles;
+    if (f.vessels && f.vessels > cap.vessels) cap.vessels = f.vessels;
   }
   return cap;
 }

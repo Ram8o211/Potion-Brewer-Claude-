@@ -163,7 +163,10 @@ export function extractedEffects(sp, comp, off, T, out, dormant) {
     const f = comp[off + s];
     if (f <= 0) continue;
     let avail = f;
-    if (sp.isPowder[s] && T < sp.melt[s]) {
+    // a catalog ingredient acts only through its extract (reactions/extraction.js):
+    // the unextracted matter holds its magic and contributes nothing
+    if (sp.exCls[s]) avail = 0;
+    else if (sp.isPowder[s] && T < sp.melt[s]) {
       // grains dissolve only into liquid they can mix with (oil does not
       // take up salt, liquid metal does not take up crystal)
       let solvent = 0;

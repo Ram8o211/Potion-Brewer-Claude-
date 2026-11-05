@@ -21,11 +21,12 @@ import { SPECIES_COLORS } from './species-colors.js';
 import { completeMaterial } from './schema.js';
 import { RARITY, valueOf } from './rarity.js';
 import { BIOME_BY_ID } from '../game/biomes.js';
+import { speciesProfile, CLASS_COMPAT, classWords } from '../alchemy/extraction.js';
 
 /** @typedef {typeof SPECIES_DATA[number]} SpeciesDef */
 
 /** Version of the catalog's materials (bump to refresh them in old saves' worlds). */
-export const CATALOG_VERSION = 5;
+export const CATALOG_VERSION = 6;
 
 /** @type {SpeciesDef[]} */
 export const SPECIES = SPECIES_DATA;
@@ -71,10 +72,16 @@ export function catalogIds() {
 /** Species of a biome, catalog order. @param {string} biome */
 export const speciesOfBiome = (biome) => SPECIES.filter((s) => s.biome === biome);
 
-const STEEP_NAME = { water: 'Infusion', spirit: 'Tincture', oil: 'Oil' };
+/** The inert char a burnt ingredient leaves (materials/generator.js addSolvents adds it to every world). */
+export const CHAR_ID = 'char-inert';
+
+const STEEP_NAME = { hydro: 'Extract', lipo: 'Oil Extract' };
 
 /**
- * The catalog's materials and extraction reactions for a world.
+ * The catalog's materials for a world: every species' ordinary and Arcane
+ * raw forms and their dissolved extracts. Extraction is no longer a set of
+ * fixed-temperature reactions: the simulation draws magic out continuously
+ * (reactions/extraction.js, alchemy/extraction.js), so `reactions` is empty.
  * @param {{materials:any[], roles:Record<string,string>}} base the world's solvents
  */
 export function generateCatalog(base) {
@@ -82,20 +89,22 @@ export function generateCatalog(base) {
   const materials = [];
   /** @type {import('../reactions/reactions.js').ReactionRule[]} */
   const reactions = [];
-  const solvent = { water: base.roles.water, spirit: base.roles.spirit, oil: base.roles.oil };
   for (const s of SPECIES) {
     const col = SPECIES_COLORS[s.key] || { body: [0.6, 0.55, 0.45], accent: [0.8, 0.7, 0.5] };
     const biome = BIOME_BY_ID[s.biome];
+    const prof = /** @type {import('../alchemy/extraction.js').ExtractionProfile} */ (speciesProfile(s.key));
+    const words = classWords(prof.cls);
     for (const arcane of [false, true]) {
       const id = materialIdOf(s.key, arcane);
       const m = /** @type {any} */ (completeMaterial({
         id, name: arcane ? `Arcane ${s.name}` : s.name, archetype: 'wild', form: /** @type {any} */ (s.form), color: col.body.slice(), tint: 0.75, opacity: 1,
-        density: s.density, compat: [0.82, 0.14], friction: 0.67, binder: 0, hardness: s.hardness,
+        density: s.density, compat: CLASS_COMPAT[prof.cls].slice(), friction: 0.67, binder: 0, hardness: s.hardness,
         solubility: s.sol, solubilityTemp: s.solT, melt: 1500, boil: Infinity,
-        heatCapacity: 1.7, conductivity: 0.35, flammability: s.botanical ? 0.45 : 0, ignition: 290, combustionHeat: 500,
-        ash: base.roles.soot, smoke: base.roles.smoke, glow: arcane ? 0.35 : 0, reactivity: 0.3,
+        // the raw matter chars above its (hidden) combustion threshold; its extract never burns
+        heatCapacity: 1.7, conductivity: 0.35, flammability: 0.45, ignition: prof.combust, combustionHeat: 300,
+        ash: CHAR_ID, smoke: base.roles.smoke, glow: arcane ? 0.35 : 0, reactivity: 0.3,
         price: Math.round(s.price * (arcane ? valueOf(s.rarity, true) / valueOf(s.rarity, false) : 1)), tier: 99, product: false,
-        description: `${s.lore} ${RARITY[s.rarity].label}${arcane ? ', Arcane' : ''} — ${biome ? biome.name : s.biome}.`,
+        description: `${s.lore} ${RARITY[s.rarity].label}${arcane ? ', Arcane' : ''} — ${biome ? biome.name : s.biome}. Its magic is ${words.short}: it dissolves only in ${words.solvents}.`,
       }));
       // a species' magic is fixed: every specimen, every world, the same numbers
       m.effects = { ...s.fx };
@@ -105,36 +114,30 @@ export function generateCatalog(base) {
       m.econd = s.morph === 'crystal' || s.morph === 'relic' ? 0.3 : 0.04;
       m.charge = 0;
       m.crushable = true;
+      m.extraction = { ...prof };
+      if (prof.emulsifier > 0) m.emulsifier = prof.emulsifier;
       m.wild = {
         key: s.key, species: s.key, shape: s.shape, region: s.biome, rank: 0, rare: RARITY[s.rarity].rank >= 2,
         gatherOnly: true, gather: s.gather, dusk: false, dawn: false,
         rarity: s.rarity, arcane, morph: s.morph, category: s.category, catalog: true,
       };
       materials.push(m);
-      // extraction: the right solvent, inside its temperature window, takes up all of its magic
-      const st = s.steep, into = solvent[/** @type {'water'|'spirit'|'oil'} */ (st.into)];
-      if (!into) continue;
+      // the dissolved extract: the same magic per volume (one volume of
+      // ingredient gives one volume of extract), carried by its solvent class
       const ext = /** @type {any} */ (completeMaterial({
-        id: `wild-p-sp-${s.key}${arcane ? ARC : ''}`, name: `${m.name} ${STEEP_NAME[/** @type {'water'} */ (st.into)] || 'Extract'}`, archetype: 'product',
-        tint: 0.85, opacity: 0.85, heatCapacity: 3.6, boil: Infinity, melt: -20, viscosity: 2.5, compat: [0.82, 0.14], price: 0, tier: 99, product: true,
-        density: Math.max(1, s.density * 0.8), form: 'liquid', color: col.body.map((c) => Math.round(c * 0.85 * 100) / 100),
-        description: `The magic of ${m.name} drawn into ${st.into}.`,
+        id: `wild-p-sp-${s.key}${arcane ? ARC : ''}`, name: `${m.name} ${STEEP_NAME[prof.cls]}`, archetype: 'product',
+        tint: 0.85, opacity: 0.85, heatCapacity: 3.6, boil: Infinity, melt: prof.cls === 'hydro' ? -2 : -10, viscosity: 2.5, compat: CLASS_COMPAT[prof.cls].slice(), price: 0, tier: 99, product: true,
+        density: prof.cls === 'hydro' ? Math.max(1, s.density * 0.8) : 0.9, form: 'liquid', color: col.body.map((c) => Math.round(c * 0.85 * 100) / 100),
+        flammability: 0, description: `The magic of ${m.name} dissolved in ${words.solvents}. Dissolved magic is thermally stable.`,
       }));
-      ext.effects = Object.fromEntries(Object.entries(s.fx).map(([k, v]) => [k, Math.round(v * 1.08 * 10) / 10]));
+      ext.effects = { ...s.fx };
       if (m.arcane) ext.arcane = { ...m.arcane };
       ext.fxv = CATALOG_VERSION;
       ext.econd = 0.12;
       ext.charge = 0;
+      ext.extractOf = id;
+      ext.extractClass = prof.cls;
       materials.push(ext);
-      const lo = Math.round((st.lo[0] + st.lo[1]) / 10) * 5, hi = Math.round((st.hi[0] + st.hi[1]) / 10) * 5;
-      const window = `between about ${lo} and ${hi}°C`;
-      if (st.into === 'water') {
-        reactions.push({ id: `rw_extract_sp_${s.key}${arcane ? '_a' : ''}`, name: ext.name, kind: 'decompose', a: id, b: null, ra: 1, rb: 0, products: [{ id: ext.id, frac: 1 }],
-          minT: lo, maxT: hi, rate: 0.1, heat: -4, stir: 0.4, wet: true, hint: `Ground ${m.name} steeps into water ${window}.` });
-      } else {
-        reactions.push({ id: `rw_extract_sp_${s.key}${arcane ? '_a' : ''}`, name: ext.name, kind: st.into === 'oil' ? 'contact' : 'mix', a: id, b: into, ra: 1, rb: 1, products: [{ id: ext.id, frac: 1 }],
-          minT: lo, maxT: hi, rate: 0.25, heat: 4, stir: 0.8, hint: `${m.name} dissolves in ${st.into} ${window}.` });
-      }
     }
   }
   return { materials, reactions };

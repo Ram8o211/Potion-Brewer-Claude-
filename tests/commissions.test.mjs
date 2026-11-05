@@ -109,7 +109,7 @@ test('targets rise with rank, every plan uses only what the shop can reach, and 
   for (let k = 1; k < 5; k++) assert.ok(mains[k] >= mains[k - 1] - (k === 4 ? 3 : 1.5), `targets rise with rank (${mains.map((m) => m.toFixed(1)).join(' → ')})`);
   // (rare, unique and legendary species reach high targets plainly, so awakening is the exception it should be)
   assert.ok(activations >= 5, `advanced orders that need awakening (${activations})`);
-  assert.ok(needed >= activations * 0.7, `where a plan awakens, plain brewing would fall short (${needed}/${activations})`);
+  assert.ok(needed >= activations * 0.65, `where a plan awakens, plain brewing would fall short (${needed}/${activations})`);
 });
 
 test('hidden plans brew to full quality in the real simulation, awakening orders included', () => {

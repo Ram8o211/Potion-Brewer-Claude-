@@ -72,8 +72,10 @@ test('in the cauldron: a heated trace awakens but is still measured as zero', ()
   stir(10);
   const idx = () => { const o = []; for (let i = 0; i < s.p.count; i++) if (s.p.phase[i] !== PHASE.GAS) o.push(i); return o; };
   assert.equal(measureParticles(s, idx()).effects[E.STR], 0);
-  // heat well past 50 °C until the trace has awakened
-  for (let k = 0; k < 120 * 40; k++) { s.furnace.setting = 1; s.step(); }
+  // heat well past 50 °C (but short of the boil: boiling the pot dry would
+  // concentrate the trace, since vapour leaves dissolved matter behind) until it has awakened
+  const meanT = () => { let t = 0, n = 0; for (let i = 0; i < s.p.count; i++) if (s.p.phase[i] !== PHASE.GAS) { t += s.p.temp[i]; n++; } return t / n; };
+  for (let k = 0; k < 120 * 40; k++) { s.furnace.setting = meanT() < 78 ? 1 : 0; s.step(); }
   s.furnace.setting = 0;
   let awake = 0;
   const as = s.species.slotOf.get(awakenedId(might.id));

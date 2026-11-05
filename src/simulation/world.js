@@ -39,6 +39,7 @@ import { ToolState, toolForces, toolConstraints } from './tools.js';
 import { Emitter } from './emitter.js';
 import { electricStep } from './electric.js';
 import { arcaneStep } from './arcane.js';
+import { ExtractionSystem } from '../reactions/extraction.js';
 
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 export const MODE = Object.freeze({ PBF: 0, GRAN: 1, COH: 2, RIGID: 3, GAS: 4 });
@@ -143,6 +144,8 @@ export class Simulation {
     this.tool = new ToolState();
     this.emitter = new Emitter(this);
     this.reactions = new ReactionSystem(this, opts.reactions || []);
+    /** continuous extraction of catalog ingredients (reactions/extraction.js) */
+    this.extraction = new ExtractionSystem(this);
     /** this world's hidden resonance laws (alchemy/effects.js) */
     this.laws = opts.laws || [];
     this.furnace = { setting: 0, maxFlame: 340, heatPower: 3.5, minCool: 4, coolPower: 6 };
@@ -161,6 +164,12 @@ export class Simulation {
     this._awokeBy = null;
     /** volume (particles) of each material vented through an open lid */
     this.vented = /** @type {Record<string, number>} */ ({});
+    /**
+     * The alembic's still head and condenser: when on, the head sits on the
+     * cauldron like a lid and vapour reaching it is cooled into the
+     * receiver (volume per material id) instead of raining back.
+     */
+    this.condenser = { on: false, receiver: /** @type {Record<string, number>} */ ({}) };
     this._rng = 12345;
     this.stats = { stepMs: 0, steps: 0, pairs: 0, awake: 0 };
     this.paused = false;
@@ -330,6 +339,7 @@ export class Simulation {
       electricStep(this, dt2);
       diffusionStep(this, dt2);
       this.reactions.step(dt2);
+      this.extraction.step(dt2);
       arcaneStep(this, dt2);
       phaseStep(this, dt2);
       this._oxygen(dt2);
@@ -902,7 +912,8 @@ export class Simulation {
       let best = -1, by = y - 0.015;
       this.grid.query(x, y, R, (j) => {
         const mj = mode[j];
-        if (mj !== M_COH && mj !== M_GRAN) return;
+        // (a bubble pinned under thin liquid rises the same way)
+        if (mj !== M_COH && mj !== M_GRAN && mj !== M_PBF) return;
         if (p.y[j] >= by) return;
         const dx = p.x[j] - x, dy = p.y[j] - y;
         if (dx * dx + dy * dy > R2 || Math.abs(dx) > 0.6 * -dy + 0.02) return;
@@ -957,6 +968,7 @@ export class Simulation {
 
   _vent() {
     const p = this.p, c = this.cauldron;
+    if (this.condenser.on) { this._condense(); return; }
     if (c.lidClosed) return;
     for (let i = p.count - 1; i >= 0; i--) {
       if (p.phase[i] === GAS && p.y[i] < -COLUMN + 0.12) {
@@ -967,6 +979,27 @@ export class Simulation {
         }
         this.removeParticle(i);
       }
+    }
+  }
+
+  /**
+   * The still head: vapour that rises to it leaves the cauldron through the
+   * condenser and is collected, as liquid, in the receiver. Its heat leaves
+   * with it (counted as energy out).
+   */
+  _condense() {
+    const p = this.p, c = this.cauldron, sp = this.species;
+    const top = c.lidY + 0.32;
+    for (let i = p.count - 1; i >= 0; i--) {
+      // vapour that has left the liquid (the headspace) is drawn up the head
+      if (p.phase[i] !== GAS || (p.y[i] > top && this.nCond[i] >= 2)) continue;
+      const rec = this.condenser.receiver;
+      for (let s = 0; s < sp.count; s++) {
+        const f = p.comp[i * MAX_SPECIES + s];
+        if (f > 0 && sp.defs[s]) rec[sp.defs[s].id] = (rec[sp.defs[s].id] || 0) + f;
+      }
+      this.energyOut += p.rhoCp[i] * p.temp[i] + p.lat[i] + p.eph[i];
+      this.removeParticle(i);
     }
   }
 

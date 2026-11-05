@@ -88,6 +88,32 @@ export function makeVial(sim, indices, meta) {
 }
 
 /**
+ * A sealed vial of bulk matter (ml per material id) at one temperature —
+ * what an aging vessel holds when it is drawn off (game/cellar.js). Its
+ * volume is split into particles of the mean composition, rounded down to
+ * whole particles. Returns null when there is less than one particle.
+ * @param {Record<string, number>} comp @param {number} T @param {Partial<Vial>} meta
+ * @param {(id:string)=>any} lookup @param {any[]} laws
+ */
+export function makeVialFromComposition(comp, T, meta, lookup, laws) {
+  const species = Object.keys(comp).filter((id) => comp[id] > 1e-9 && lookup(id));
+  const tot = species.reduce((a, id) => a + comp[id], 0);
+  const n = Math.floor(tot / SIM.ML_PER_PARTICLE + 1e-6);
+  if (n < 1) return null;
+  const c = species.map((id) => Math.round((comp[id] / tot) * 1e6) / 1e6);
+  const particles = [];
+  for (let k = 0; k < n; k++) particles.push({ c: c.slice(), t: Math.round(T * 100) / 100, ph: PHASE.LIQUID });
+  const vial = /** @type {Vial} */ ({
+    id: 'v' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36),
+    species, particles, ml: n * SIM.ML_PER_PARTICLE, bottledMl: n * SIM.ML_PER_PARTICLE, m: null,
+    batchId: '', rev: 0, cert: {}, parts: [], day: 0, log: [], ...meta,
+  });
+  vial.log = [...(vial.log || []), { type: 'cellar', ml: vial.ml, day: vial.day }];
+  updateVial(vial, lookup, laws);
+  return vial;
+}
+
+/**
  * Add particles from a simulation to a vial being filled (the caller
  * removes them from the cauldron).
  * @param {Vial} vial @param {import('../simulation/world.js').Simulation} sim @param {number[]} indices

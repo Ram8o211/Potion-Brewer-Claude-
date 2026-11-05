@@ -75,25 +75,26 @@ test('an order taken before keeps everything but its serving temperature', () =>
   assert.equal(back.current.customer.name, com.customer.name);
 });
 
-test('cold steeps are only planned where the equipment can hold them, never frozen', () => {
+test('cold steeps are only planned where the equipment can hold them, in spirit, never in freezing water', () => {
   let cold = 0;
-  for (let k = 0; k < 16; k++) {
-    for (const eq of [[], ['frostrune']]) {
+  for (let k = 0; k < 12; k++) {
+    for (const eq of [[], ['condenser'], ['frostrune', 'condenser']]) {
       const st = GameState.create(`cold-${k}`, { tutorial: false });
       st.reputation = RANKS[1].rep;
-      st.stats.served = 8; // (which opens the Willow Bank, where frost grows)
+      st.stats.served = 8;
       st.coins = 300;
       st.equipment.push('kit', ...eq);
-      const com = generateCommission(st.commissionContext(), new Rng(`c${k}`), { tier: 1, request: 'cooling' });
+      const com = generateCommission(st.commissionContext(), new Rng(`c${k}`), { tier: 1, techniques: ['sober'] });
       const s = com && com.reference.steep;
       if (!s || s.T >= 20) continue;
       cold++;
-      assert.ok(s.T >= (eq.length ? 4 : 10), `a cold steep at ${s.T}°C is above the equipment's floor and freezing`);
-      const rx = st.world.reactions.find((r) => r.a !== st.world.roles.water && com.reference.ingredients.some((i) => i.id === r.a) && r.maxT <= 20 && /^rw_extract/.test(r.id));
-      if (rx) assert.ok(s.T <= rx.maxT - 3, 'well inside its window');
+      assert.ok(eq.includes('frostrune'), 'only a shop with the Frost Rune is asked for a steep below freezing');
+      assert.ok(s.T >= st.cap.minCool + 2, `a cold steep at ${s.T}°C is within the equipment's reach`);
+      const water = st.lookup(st.world.roles.water);
+      assert.ok(!com.reference.ingredients.some((i) => i.id === water.id), 'below freezing the steep is in spirit, never in water');
     }
   }
-  assert.ok(cold > 0, 'cooling orders are planned with cold steeps');
+  assert.ok(cold > 0, 'cold spirit steeps are planned');
 });
 
 /** A v5 save holding every retired item, an order with retired requirements and a distilling recipe. */
@@ -127,7 +128,8 @@ test('a version-5 save is refitted once: retired tools refunded or replaced, the
   // full refunds, the lens refunded (an arcanometer was owned), the kit's tools beyond its price, the pestle
   const full = ['hydrometer', 'assay', 'viscometer', 'galvanometer', 'thermal', 'skimmer', 'alembic', 'bellows', 'athanor', 'shelf1', 'shelf2', 'lens'].reduce((a, id) => a + RETIRED_EQUIPMENT[id].price, 0);
   const tools = ['trowel', 'rockhammer', 'brush', 'sickle'].reduce((a, id) => a + RETIRED_EQUIPMENT[id].price, 0);
-  const expected = full + (tools - EQUIPMENT.find((e) => e.id === 'kit').price) + 35;
+  // (the old alembic becomes the Alembic & Condenser: its price is kept back)
+  const expected = full - EQUIPMENT.find((e) => e.id === 'condenser').price + (tools - EQUIPMENT.find((e) => e.id === 'kit').price) + 35;
   assert.ok(Math.abs(back.coins - (coins + expected)) < 0.05, `refund ${back.coins - coins} = ${expected}`);
   assert.ok(back.journal['note:refit'] && /paid back/.test(back.journal['note:refit'].text));
   // the order keeps its customer and budget; only outcomes remain
@@ -304,27 +306,34 @@ test('equipment capabilities: the basin cannot hold a cold steep, the frost rune
   assert.ok(hot.every((r) => r.minT + 7 <= basin.maxFlame - 40), 'every hot steep window opens below what the hearth reaches');
 });
 
-test('the mechanics make a measurable difference in the real cauldron: grinding, the steeping heat, cold extraction, boiling down', () => {
+test('the mechanics make a measurable difference in the real cauldron: grinding, heat against yield, cold extraction, boiling down', () => {
   const st = GameState.create('experiment-0', { tutorial: false });
   const kit = [...STARTING_EQUIPMENT, 'frostrune'];
   const W = st.world.roles.water;
-  const brew = (herb, n, { ground = true, T = 62, eq = kit, boil = 0 } = {}) => {
+  const brew = (herb, n, { ground = true, T = 62, eq = kit, boil = 0, solvent = W, holdS = 22, preheat = false, settle = true } = {}) => {
     const sim = cauldron(st, eq);
-    pour(st, sim, W, 50);
+    pour(st, sim, solvent, 50);
+    // (herbs thrown into a pot already at heat: nothing is drawn out at room temperature first)
+    if (preheat) hold(sim, T, 4, 'hand');
     pour(st, sim, herb, n, { ground });
-    hold(sim, T, 22, 'hand');
+    hold(sim, T, holdS, 'hand');
     if (boil) boilDown(sim, boil);
-    settleTo(sim, 20, 90, 'hand');
+    if (settle) settleTo(sim, 20, 90, 'hand');
     stirFor(sim, 4, 'hand');
     return tap(sim, 20);
   };
   const v = EFFECT_INDEX.vitality, f = EFFECT_INDEX.frost;
   const whole = brew('wild-sp-silverleaf', 16, { ground: false }), ground = brew('wild-sp-silverleaf', 16);
-  assert.ok(whole.effects[v] < 1 && ground.effects[v] > 5, `grinding: ${whole.effects[v].toFixed(1)} → ${ground.effects[v].toFixed(1)}`);
-  const cool = brew('wild-sp-silverleaf', 34, { T: 25 }), warm = brew('wild-sp-silverleaf', 34);
-  assert.ok(warm.effects[v] > cool.effects[v] * 2, `steeping in the window: ${cool.effects[v].toFixed(1)} → ${warm.effects[v].toFixed(1)}`);
-  const warmCap = brew('wild-sp-willowleaf', 34, { T: 40, eq: STARTING_EQUIPMENT }), basin = brew('wild-sp-willowleaf', 34, { T: 9, eq: STARTING_EQUIPMENT });
-  assert.ok(basin.effects[f] > warmCap.effects[f] * 1.8, `cold extraction: ${warmCap.effects[f].toFixed(1)} (warm) → ${basin.effects[f].toFixed(1)} (the basin's 9°C)`);
+  assert.ok(whole.effects[v] < ground.effects[v] * 0.5 && ground.effects[v] > 4, `grinding: ${whole.effects[v].toFixed(1)} → ${ground.effects[v].toFixed(1)}`);
+  // heat is quick but lowers the ceiling: a scalding steep gives less than a mild one
+  const hot = brew('wild-sp-silverleaf', 30, { T: 92, preheat: true, settle: false }), mild = brew('wild-sp-silverleaf', 30, { T: 25, preheat: true, settle: false });
+  assert.ok(mild.effects[v] > hot.effects[v] * 1.08, `heat against yield: ${hot.effects[v].toFixed(1)} (92°C) → ${mild.effects[v].toFixed(1)} (25°C)`);
+  // and cooling a scalded brew lets more come out again (heat never took any back)
+  const cooled = brew('wild-sp-silverleaf', 30, { T: 92, preheat: true });
+  assert.ok(cooled.effects[v] > hot.effects[v] * 1.05, `cooling extracts more: ${hot.effects[v].toFixed(1)} → ${cooled.effects[v].toFixed(1)}`);
+  // only spirit stays liquid cold enough to draw everything out
+  const warmWater = brew('wild-sp-silverleaf', 30, { T: 40 }), coldSpirit = brew('wild-sp-silverleaf', 30, { T: -12, solvent: st.world.roles.spirit, holdS: 60 });
+  assert.ok(coldSpirit.effects[v] > warmWater.effects[v] * 1.12, `cold extraction: ${warmWater.effects[v].toFixed(1)} (water, 40°C) → ${coldSpirit.effects[v].toFixed(1)} (spirit, −12°C)`);
   const reduced = brew('wild-sp-silverleaf', 16, { boil: 0.3, T: 62 });
   assert.ok(reduced.effects[f] > ground.effects[f] * 1.2, `boiling down strengthens the side effect too: frost ${ground.effects[f].toFixed(1)} → ${reduced.effects[f].toFixed(1)}`);
 });
