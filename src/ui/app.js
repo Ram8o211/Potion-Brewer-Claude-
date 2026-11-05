@@ -70,9 +70,10 @@ export class App {
     this._swap(new MenuScreen(this));
   }
 
-  continueGame() {
+  async continueGame() {
     const { state, error } = loadGame();
-    if (state) this.startGame(state);
+    // (the toast after the screen swap, which clears the root)
+    if (state) await this.startGame(state);
     // after the screen swap, which clears the root (and any toast in it)
     if (error) toast('Save problem', error, 'scroll', 6000);
   }

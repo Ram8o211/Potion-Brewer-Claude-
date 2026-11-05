@@ -36,7 +36,13 @@ test('a day dawns closed; the order card says what it takes and where to find it
     const mod = await import(/* @vite-ignore */ src + 'commissions.js');
     const rng = await import(/* @vite-ignore */ '/src/core/' + 'rng.js');
     const st = l.state;
-    st.current = mod.generateCommission(st.commissionContext(), new rng.Rng('ui-tech'), { tier: 2, techniques: ['strong'] });
+    // a shop that has served customers and keeps everyday stores
+    st.stats.served = 25;
+    for (const id of st.gatherableSet()) if (['common', 'uncommon'].includes(st.lookup(id).wild.rarity)) st.inventory[id] = st.cap.storage;
+    // (a few draws: not every world's first draw can be boiled down within its supplies)
+    let com = null;
+    for (let k = 0; k < 12 && !(com && com.techniques.includes('strong')); k++) com = mod.generateCommission(st.commissionContext(), new rng.Rng('ui-tech' + k), { tier: 2, techniques: ['strong'] });
+    st.current = com;
     l.refreshCustomer();
     l.views.counter.refresh();
   });
