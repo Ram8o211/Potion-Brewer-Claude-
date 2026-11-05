@@ -93,6 +93,7 @@ export const TUTORIAL_PACE = 60;
  * @property {Record<string, number>} bought  upgrades bought, by id
  * @property {number} harvested crops harvested
  * @property {boolean} seen    the garden has been visited
+ * @property {number} [pace]   a speed-up for every crop sown (the Free Experiment's; never saved)
  */
 
 /** @returns {Garden} */
@@ -217,9 +218,12 @@ export function plant(g, plotId, seed, now = Date.now(), o = {}) {
   if (p.bed !== bed) return { ok: false, reason: `${sd.species.name} needs a ${BEDS[bed].name.toLowerCase()}.` };
   const need = gradeNeeded(sd.key, sd.arcane);
   if (p.grade < need) return { ok: false, reason: `${sd.arcane ? 'Arcane ' : ''}${sd.species.name} needs a plot of ${GRADES[need].toLowerCase()} grade.` };
-  g.seeds[seed]--;
+  // (the Free Experiment's seeds are never used up)
+  if (Number.isFinite(g.seeds[seed])) g.seeds[seed]--;
   if (!g.seeds[seed]) delete g.seeds[seed];
-  p.crop = { species: sd.key, arcane: sd.arcane, planted: now, g: 0, t: now, w: DRY, ...(o.tutorial ? { pace: TUTORIAL_PACE } : {}) };
+  // the tutorial's first seed, and the Free Experiment's garden (its own `pace`), grow quicker
+  const pace = o.tutorial ? TUTORIAL_PACE : g.pace > 1 ? Math.min(TUTORIAL_PACE, g.pace) : 0;
+  p.crop = { species: sd.key, arcane: sd.arcane, planted: now, g: 0, t: now, w: DRY, ...(pace ? { pace } : {}) };
   return { ok: true };
 }
 
@@ -254,10 +258,11 @@ export function harvestPlot(g, plotId, st, now = Date.now()) {
   if (s.g < 1) return { ok: false, amount: 0, reason: 'It is not ready yet.', readyIn: s.readyIn };
   const id = materialIdOf(p.crop.species, p.crop.arcane);
   const have = st.inventory[id] ?? 0;
-  const room = Math.max(0, st.cap.storage - have);
+  // (bottomless stores, the Free Experiment's, take any harvest)
+  const room = Number.isFinite(have) ? Math.max(0, st.cap.storage - have) : Infinity;
   const amount = Math.floor(Math.min(cropYield(p.crop.species), room) / 5) * 5;
   if (amount <= 0) return { ok: false, amount: 0, reason: 'Your stores of it are full.' };
-  st.inventory[id] = have + amount;
+  if (Number.isFinite(have)) st.inventory[id] = have + amount;
   const crop = p.crop;
   p.crop = null;
   g.harvested++;

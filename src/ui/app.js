@@ -5,18 +5,14 @@ import { h, btn, modal, toast, setOverlayRoot, setToastRoot, confirmDialog, clea
 import { icon } from './icons.js';
 import { audio } from '../audio/audio.js';
 import { GameState } from '../game/state.js';
-import { sandboxIngredients } from '../materials/generator.js';
-import { EQUIPMENT } from '../game/equipment.js';
 import { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } from '../game/persistence.js';
 import { LabScreen } from './lab.js';
 import { MenuScreen } from './menu.js';
 import { openSettings, openHelp } from './panels.js';
 import { Rng } from '../core/rng.js';
-import { normalizeTrials } from '../game/experiments.js';
-import { sandboxWilds } from '../game/gathering.js';
+import { prepareSandbox } from '../game/sandbox.js';
 import { loadAtlases, neededAtlases } from '../visual/atlas.js';
 import { parseCatalogId } from '../materials/catalog.js';
-import { BIOMES } from '../game/biomes.js';
 
 const DEFAULT_SETTINGS = { master: 0.8, sfx: 0.8, music: 0.35, musicOn: true, muted: false, quality: 'auto', showFps: false, resolution: 3 };
 const SEED_WORDS = ['amber', 'ashen', 'brine', 'copper', 'dusk', 'elder', 'fen', 'gloam', 'hollow', 'iron', 'juniper', 'kelp', 'lantern', 'moon', 'nettle', 'oak', 'pewter', 'quill', 'raven', 'sage', 'thorn', 'umber', 'vale', 'willow', 'wyrm', 'yarrow'];
@@ -139,29 +135,12 @@ export class App {
     const saved = loadJSON(KEYS.sandbox, null);
     const existing = loadGame().state;
     const seed = existing ? existing.seed : saved && saved.seed ? saved.seed : 'experiment';
-    const st = GameState.create(seed, { tutorial: false });
-    for (const id of sandboxIngredients(st.world)) st.inventory[id] = Infinity;
-    st.equipment = EQUIPMENT.map((e) => e.id);
-    st.reputation = 99999;
-    st.current = null;
-    // every biome is open in the sandbox
-    st.regen.unlocked = BIOMES.map((b) => b.id);
-    // its wilds stand fully grown and grow back quickly after every harvest
-    sandboxWilds(st.gathering, st.deposits);
-    if (saved && saved.seed === seed && saved.cauldron) st.cauldron = saved.cauldron;
-    // the sandbox keeps its own trial history, separate from the shop's
-    if (saved && saved.seed === seed && saved.trials) {
-      st.trials = normalizeTrials(saved.trials);
-      // the sandbox's hutch keeps its own days; its rabbits' remains are rebuilt
-      st.day = Math.max(st.day, st.colony.day || 1);
-      st.colony.seed = st.colony.seed || String(seed);
-      st.restoreRemains();
-      for (const id of sandboxIngredients(st.world)) st.inventory[id] = Infinity;
-    }
+    // everything the campaign has (game/sandbox.js), with bottomless stores and quicker clocks
+    const st = prepareSandbox(GameState.create(seed, { tutorial: false }), saved);
     // (the sandbox reaches every biome: every ingredient atlas first)
     this.prepareAssets(st, true).then(() => {
       this._swap(new LabScreen(this, st, { sandbox: true }));
-      toast('Free Experiment', 'Unlimited reagents, wild ingredients, tools and test subjects. Nothing here affects your shop.', 'flask', 4500);
+      toast('Free Experiment', 'Unlimited reagents, wild ingredients, seeds, runes, tools and test subjects; the cellar and the garden run quicker. Nothing here affects your shop.', 'flask', 4500);
     });
   }
 

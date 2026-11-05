@@ -77,7 +77,8 @@ test('free experiment layout', async ({ page }, info) => {
   expect(await horizontalOverflow(page)).toBe(0);
   await expect(page.locator('canvas.view-canvas')).toBeInViewport();
   await expect(page.locator('[data-act=tool-pestle]')).toBeInViewport();
-  await expect(page.locator('[data-act=tab-counter]')).toHaveCount(0);
+  // the same rooms as the shop: the counter holds the vial and the potion shelves, the garden every seed
+  for (const room of ['counter', 'brew', 'wilds', 'garden', 'trials', 'book']) await expect(page.locator(`[data-act=tab-${room}]`)).toBeInViewport();
   await shot(page, info, 'sandbox');
   expect(errors).toEqual([]);
 });

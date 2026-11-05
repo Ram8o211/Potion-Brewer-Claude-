@@ -705,7 +705,7 @@ export function openCellar(lab) {
   const fireFrost = () => st.bottles.filter((b) => b.m && potionDrive(b.m.effects));
   const render = () => {
     st.tickCellar();
-    const out = [h('div', { class: 'small muted', text: `Runes in hand: ${st.cellar.runes}. A vessel extracts slowly but for hours, even while the shop is closed. Warmed by a Fire potion or chilled by a Frost potion it keeps heating or cooling — until its herbs burn or it freezes — unless a rune holds it.` })];
+    const out = [h('div', { class: 'small muted', text: `Runes in hand: ${Number.isFinite(st.cellar.runes) ? st.cellar.runes : 'unlimited'}.${lab.sandbox ? ` In the Free Experiment the cellar ages ${st.cellar.pace || 1} times faster.` : ''} A vessel extracts slowly but for hours, even while the shop is closed. Warmed by a Fire potion or chilled by a Frost potion it keeps heating or cooling — until its herbs burn or it freezes — unless a rune holds it.` })];
     st.cellar.vessels.forEach((v, k) => {
       const rep = vesselReport(v, st.lookup);
       const empty = vesselVolume(v) <= 0;

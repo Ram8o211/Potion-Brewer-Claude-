@@ -33,6 +33,7 @@ import { proofGaps, draftLabel, applyTrials, evidenceOf } from '../game/commerce
 import { RANKS } from '../game/equipment.js';
 import { certification, missingEffects, requirementEvidence } from '../game/experiments.js';
 import { sandboxIngredients } from '../materials/generator.js';
+import { sandboxSave } from '../game/sandbox.js';
 import { makeVial, appendParticles, updateVial, takeDose, pourBack, pourBackParts, relaxVial } from '../game/vial.js';
 import { theoryOf, EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, dominantEffect, NE } from '../alchemy/effects.js';
 import { awakenParts, describeThreshold } from '../alchemy/arcane.js';
@@ -312,7 +313,6 @@ export class LabScreen {
     this.tabEls = {};
     this.tabbar = h('nav', { class: 'tabbar frame', 'aria-label': 'Rooms' });
     for (const v of VIEWS) {
-      if (this.sandbox && (v.id === 'counter' || v.id === 'garden')) continue;
       const badge = h('span', { class: 'badge hidden' });
       const b = h('button', { class: 'tab', 'data-act': 'tab-' + v.id, 'aria-label': v.label, title: `${v.label} (${v.key.toUpperCase()})` }, icon(v.icon), h('span', { class: 'tab-lbl', text: v.label }), badge);
       b.addEventListener('click', () => { audio.play('select'); this.showView(v.id); });
@@ -332,7 +332,6 @@ export class LabScreen {
 
   /** Switch rooms. @param {string} id */
   showView(id, silent = false) {
-    if (this.sandbox && id === 'counter') id = 'brew';
     this.view = id;
     this.el.setAttribute('data-view', id);
     for (const [k, t] of Object.entries(this.tabEls)) {
@@ -438,7 +437,7 @@ export class LabScreen {
       a.append(set.alembic);
     }
     // the aging cellar
-    if (!this.sandbox && this.state.cap.vessels > 0) a.append(btn('Cellar', () => panels.openCellar(this), { icon: 'shelf2', title: 'The aging cellar: lay brews down to go on extracting', act: 'cellar' }));
+    if (this.state.cap.vessels > 0) a.append(btn('Cellar', () => panels.openCellar(this), { icon: 'shelf2', title: 'The aging cellar: lay brews down to go on extracting', act: 'cellar' }));
     a.append(btn('Empty', () => this.emptyCauldron(), { icon: 'trash', cls: 'danger', title: 'Empty the cauldron', act: 'empty' }));
     this.actionSet = set;
     this.syncActions();
@@ -1072,16 +1071,15 @@ export class LabScreen {
   startBottling() {
     if (this.bottling) return;
     const st = this.state;
-    const counterFree = !st.vial && !this.sandbox;
-    if (!counterFree && !this.sandbox && st.bottleRoom <= 0) {
+    const counterFree = !st.vial;
+    if (!counterFree && st.bottleRoom <= 0) {
       toast('Nowhere to put it', `The counter holds a vial and the potion shelves are full (${st.cap.bottles}). Serve, pour back or discard a bottle first — or buy more shelving.`, 'bottle', 4500);
       this.showView('counter');
       return;
     }
-    if (this.sandbox && st.vial) { toast('A vial is waiting', 'Pour back or discard the sealed vial first.', 'bottle'); return; }
     const avail = Math.floor(this.tapAvailable() / SIM.ML_PER_PARTICLE);
     if (avail < 1) { toast('Nothing to bottle', 'There is no liquid at the tap.', 'flask'); audio.play('error'); return; }
-    panels.openBottleSize(this, avail, (n, dest) => this.beginBottling(n, dest), { counterFree: counterFree || this.sandbox, shelfRoom: this.sandbox ? 0 : st.bottleRoom, shelves: !this.sandbox });
+    panels.openBottleSize(this, avail, (n, dest) => this.beginBottling(n, dest), { counterFree, shelfRoom: st.bottleRoom, shelves: true });
   }
 
   /**
@@ -1958,7 +1956,6 @@ export class LabScreen {
    * what the cauldron showed about burning goes to the journal.
    */
   tickCellar() {
-    if (this.sandbox) return;
     const st = this.state;
     for (const e of st.tickCellar()) {
       const v = st.cellar.vessels[e.vessel];
@@ -1997,7 +1994,7 @@ export class LabScreen {
    * @param {string} [batchId] only bottles of this batch
    */
   shareEvidence(batchId) {
-    if (!this.sandbox) this.state.shareEvidence(batchId);
+    this.state.shareEvidence(batchId);
     this.autoLabel();
   }
 
@@ -2177,7 +2174,7 @@ export class LabScreen {
   save() {
     if (this.saveBlocked) return;
     if (this.sandbox) {
-      saveJSON(KEYS.sandbox, { seed: this.state.seed, cauldron: snapshotSim(this.sim, this.cap.size), trials: this.state.trials });
+      saveJSON(KEYS.sandbox, sandboxSave(this.state, snapshotSim(this.sim, this.cap.size)));
       return;
     }
     this.state.cauldron = snapshotSim(this.sim, this.cap.size);

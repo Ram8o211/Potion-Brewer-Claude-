@@ -13438,9 +13438,10 @@ const bed = bedOf(sd.key);
 if (p.bed !== bed) return { ok: false, reason: `${sd.species.name} needs a ${BEDS[bed].name.toLowerCase()}.` };
 const need = gradeNeeded(sd.key, sd.arcane);
 if (p.grade < need) return { ok: false, reason: `${sd.arcane ? 'Arcane ' : ''}${sd.species.name} needs a plot of ${GRADES[need].toLowerCase()} grade.` };
-g.seeds[seed]--;
+if (Number.isFinite(g.seeds[seed])) g.seeds[seed]--;
 if (!g.seeds[seed]) delete g.seeds[seed];
-p.crop = { species: sd.key, arcane: sd.arcane, planted: now, g: 0, t: now, w: DRY, ...(o.tutorial ? { pace: TUTORIAL_PACE } : {}) };
+const pace = o.tutorial ? TUTORIAL_PACE : g.pace > 1 ? Math.min(TUTORIAL_PACE, g.pace) : 0;
+p.crop = { species: sd.key, arcane: sd.arcane, planted: now, g: 0, t: now, w: DRY, ...(pace ? { pace } : {}) };
 return { ok: true };
 }
 function waterPlots(g, plotId, now = Date.now()) {
@@ -13465,10 +13466,10 @@ const s = cropState(p.crop, g.can, now);
 if (s.g < 1) return { ok: false, amount: 0, reason: 'It is not ready yet.', readyIn: s.readyIn };
 const id = materialIdOf(p.crop.species, p.crop.arcane);
 const have = st.inventory[id] ?? 0;
-const room = Math.max(0, st.cap.storage - have);
+const room = Number.isFinite(have) ? Math.max(0, st.cap.storage - have) : Infinity;
 const amount = Math.floor(Math.min(cropYield(p.crop.species), room) / 5) * 5;
 if (amount <= 0) return { ok: false, amount: 0, reason: 'Your stores of it are full.' };
-st.inventory[id] = have + amount;
+if (Number.isFinite(have)) st.inventory[id] = have + amount;
 const crop = p.crop;
 p.crop = null;
 g.harvested++;
@@ -13991,10 +13992,10 @@ w += ml; s += ml * d.melt;
 }
 return w > 0 ? s / w : null;
 }
-function advanceVessel(v, lookup, now) {
+function advanceVessel(v, lookup, now, pace = 1) {
 const events = [];
 if (!(now > v.t)) return events;
-let dt = Math.min((now - v.t) / 1000, MAX_OFFLINE) + (v.carry || 0);
+let dt = Math.min(((now - v.t) / 1000) * (pace > 0 ? pace : 1), MAX_OFFLINE) + (v.carry || 0);
 v.t = now;
 if (vesselVolume(v) <= 0) { v.carry = 0; return events; }
 const get = infoOf(lookup);
@@ -14011,7 +14012,7 @@ return events;
 function advanceCellar(cellar, lookup, now = Date.now()) {
 const out = [];
 for (const v of cellar.vessels) {
-const ev = advanceVessel(v, lookup, now);
+const ev = advanceVessel(v, lookup, now, cellar.pace || 1);
 for (const e of ev) out.push({ vessel: v.id, text: e });
 }
 return out;
@@ -19166,8 +19167,72 @@ return t / Math.max(1, sim.p.count);
 }
 return { condensedCount, stageGoal, AutoBrewer, spiritShare, runPlanHeadless, speciesFraction };
 })();
+// src/game/sandbox.js
+const __m101 = (() => {
+const { sandboxIngredients } = __m7;
+const { EQUIPMENT } = __m58;
+const { BIOMES } = __m17;
+const { sandboxWilds } = __m62;
+const { normalizeTrials } = __m59;
+const { normalizeCellar } = __m86;
+const { normalizeGarden, seedId, TUTORIAL_PACE } = __m82;
+const { SPECIES_BY_KEY, materialIdOf } = __m13;
+const { migrateVial } = __m64;
+const SANDBOX_CELLAR_PACE = 60;
+const SANDBOX_GARDEN_PACE = TUTORIAL_PACE;
+const SANDBOX_BEDS = /** @type {const} */ ([['soil', 4], ['fungal', 3], ['crystal', 3], ['tide', 2]]);
+function prepareSandbox(st, saved = null, now = Date.now()) {
+const same = !!(saved && saved.seed === st.seed);
+st.equipment = EQUIPMENT.map((e) => e.id);
+st.reputation = 99999;
+st.current = null;
+st.regen.unlocked = BIOMES.map((b) => b.id);
+sandboxWilds(st.gathering, st.deposits, now);
+if (same && saved.cauldron) st.cauldron = saved.cauldron;
+if (same && saved.trials) {
+st.trials = normalizeTrials(saved.trials);
+st.day = Math.max(st.day, st.colony.day || 1);
+st.colony.seed = st.colony.seed || String(st.seed);
+st.restoreRemains();
+}
+if (same && Array.isArray(saved.bottles)) st.bottles = saved.bottles.map(migrateVial).filter(Boolean).slice(0, st.cap.bottles);
+st.cellar = normalizeCellar(same && saved.cellar ? saved.cellar : null, st.cap.vessels, now);
+sandboxCellar(st.cellar);
+st.garden = sandboxGarden(same && saved.garden ? normalizeGarden(saved.garden, now) : null, st);
+for (const id of sandboxIngredients(st.world)) st.inventory[id] = Infinity;
+return st;
+}
+function sandboxCellar(cellar) {
+cellar.runes = Infinity;
+cellar.pace = SANDBOX_CELLAR_PACE;
+return cellar;
+}
+function sandboxGarden(g, st) {
+const out = g || normalizeGarden(null);
+const plots = [];
+for (const [bed, n] of SANDBOX_BEDS) {
+const old = out.plots.filter((p) => p.bed === bed);
+for (let k = 0; k < n; k++) plots.push({ id: `${bed}${k + 1}`, bed, grade: 2, crop: (old[k] && old[k].crop) || null });
+}
+out.plots = plots;
+out.seeds = {};
+for (const key of Object.keys(SPECIES_BY_KEY)) {
+for (const arcane of [false, true]) if (st.lookup(materialIdOf(key, arcane))) out.seeds[seedId(key, arcane)] = Infinity;
+}
+out.can = 1;
+out.pace = SANDBOX_GARDEN_PACE;
+out.seen = true;
+return out;
+}
+function sandboxSave(st, cauldron) {
+const { pace: _p, runes: _r, ...cellar } = /** @type {any} */ (st.cellar);
+const { pace: _g, seeds: _s, ...garden } = /** @type {any} */ (st.garden);
+return { seed: st.seed, cauldron, trials: st.trials, bottles: st.bottles, cellar, garden };
+}
+return { SANDBOX_CELLAR_PACE, SANDBOX_GARDEN_PACE, prepareSandbox, sandboxCellar, sandboxGarden, sandboxSave };
+})();
 // src/game/mechanics.js
-const __m102 = (() => {
+const __m103 = (() => {
 const MECHANICS = [
 { id: 'formulation', name: 'Formulation and neutralisation', role: 'core', stage: 'formulation', rank: 0,
 decision: 'Which natural ingredients, in what proportions, to carry the wanted effects and cancel their side effects.',
@@ -19268,7 +19333,7 @@ const SANDBOX_CONTROLS = ['skimmer', 'alembic', 'heatmap', 'readouts'];
 return { MECHANICS, MECHANIC_BY_ID, IMMERSION, SANDBOX_CONTROLS };
 })();
 // src/ui/rarity-ui.js
-const __m103 = (() => {
+const __m104 = (() => {
 const { h } = __m2;
 const { icon } = __m3;
 const { RARITY } = __m16;
@@ -19293,9 +19358,9 @@ return fx.map(([k, v]) => h('span', { class: 'fx-chip', title: EFFECT_BY_KEY[k].
 return { CREATURE_NAMES, rarityOf, rarityTag, effectChips };
 })();
 // src/ui/panels.js
-const __m101 = (() => {
+const __m102 = (() => {
 const { recipeConfidence, CONFIDENCE_TEXT, describeStep } = __m85;
-const { MECHANIC_BY_ID } = __m102;
+const { MECHANIC_BY_ID } = __m103;
 const { evidenceRank } = __m59;
 const { h, btn, modal, toast, coins, starsText, confirmDialog, clear, keepScroll } = __m2;
 const { icon } = __m3;
@@ -19313,7 +19378,7 @@ const { exportSave, parseImport, saveGame } = __m87;
 const { audio } = __m4;
 const { isMagical } = __m22;
 const { causeWord } = __m60;
-const { rarityTag } = __m103;
+const { rarityTag } = __m104;
 const { BIOME_BY_ID } = __m17;
 const { seedChance } = __m16;
 const { classWords } = __m18;
@@ -19925,7 +19990,7 @@ const rerender = () => { if (m) { clear(m.body); m.body.append(...render()); } }
 const fireFrost = () => st.bottles.filter((b) => b.m && potionDrive(b.m.effects));
 const render = () => {
 st.tickCellar();
-const out = [h('div', { class: 'small muted', text: `Runes in hand: ${st.cellar.runes}. A vessel extracts slowly but for hours, even while the shop is closed. Warmed by a Fire potion or chilled by a Frost potion it keeps heating or cooling — until its herbs burn or it freezes — unless a rune holds it.` })];
+const out = [h('div', { class: 'small muted', text: `Runes in hand: ${Number.isFinite(st.cellar.runes) ? st.cellar.runes : 'unlimited'}.${lab.sandbox ? ` In the Free Experiment the cellar ages ${st.cellar.pace || 1} times faster.` : ''} A vessel extracts slowly but for hours, even while the shop is closed. Warmed by a Fire potion or chilled by a Frost potion it keeps heating or cooling — until its herbs burn or it freezes — unless a rune holds it.` })];
 st.cellar.vessels.forEach((v, k) => {
 const rep = vesselReport(v, st.lookup);
 const empty = vesselVolume(v) <= 0;
@@ -19965,7 +20030,7 @@ m = modal({ title: 'Aging cellar', wide: true, body: render() });
 return { jarCanvas, fxChips, openShop, openIngredient, openHint, openBottleSize, showDaySummary, showAnalysis, openRecipes, renderRecipes, openJournal, renderJournal, openPause, openReceiver, openHelp, openSettings, openCellar };
 })();
 // src/ui/trade.js
-const __m104 = (() => {
+const __m105 = (() => {
 const { h, btn, modal, toast, coins, clear, starsText } = __m2;
 const { icon } = __m3;
 const { drawPortrait } = __m96;
@@ -20187,7 +20252,7 @@ return `${n === null ? '' : starsText(n, MAX_STARS) + ' '}${claimSummary(label.c
 return { openIdentify, openNegotiation, showDeal, followUpCard, claimSummary, accuracyTitle, labelLine, EFFECT_BY_KEY };
 })();
 // src/ui/tutorial.js
-const __m105 = (() => {
+const __m106 = (() => {
 const { h, btn, placeToasts } = __m2;
 const { PHASE } = __m56;
 const { TUTORIAL_HERBS } = __m23;
@@ -20339,7 +20404,7 @@ if (t && t !== this.target) { if (this.target) this.target.classList.remove('hig
 return { Tutorial };
 })();
 // src/ui/views/counter.js
-const __m106 = (() => {
+const __m107 = (() => {
 const { h, btn, clear, coins, confirmDialog, starsText } = __m2;
 const { icon } = __m3;
 const { drawPortrait } = __m96;
@@ -20350,10 +20415,10 @@ const { EFFECT_INDEX, NE } = __m20;
 const { EFFECT_BY_KEY } = __m20;
 const { missingEffects, summarize, requirementEvidence } = __m59;
 const { labelStars, MAX_STARS } = __m81;
-const trade = __m104;
+const trade = __m105;
 const { describeColor, rgbToHex } = __m9;
 const { viscosityClass } = __m80;
-const panels = __m101;
+const panels = __m102;
 const { shortName } = __m54;
 class CounterView {
 constructor(lab) {
@@ -20367,8 +20432,9 @@ refresh() {
 const lab = this.lab, st = lab.state;
 const el = clear(this.el);
 if (lab.sandbox) {
-el.append(h('div', { class: 'card parch' }, h('h3', { text: 'Free Experiment' }), h('div', { class: 'small', text: 'No customers here: every reagent, tool and subject is yours to play with. Bottle what you like, test everything.' })));
+el.append(h('div', { class: 'card parch' }, h('h3', { text: 'Free Experiment' }), h('div', { class: 'small', text: 'No customers here: every reagent, tool and subject is yours to play with. Bottle what you like, test everything, keep bottles on the shelves for the cellar.' })));
 this.vialCard(el);
+this.shelfCard(el);
 return;
 }
 for (const f of st.dueFollowUps()) el.append(trade.followUpCard(lab, f));
@@ -20472,7 +20538,7 @@ const serve = com ? btn(`Sell to ${first}`, () => lab.serveVial(), { cls: 'prima
 const labelB = btn(v.label ? 'Edit label' : 'Write label', () => lab.identifyVial(), { icon: 'tag', act: 'label', title: 'What the label claims the potion does' });
 const testB = btn('Test it', () => { lab.trialSource = 'vial'; lab.showView('trials'); }, { icon: 'dropper', act: 'test-vial', title: 'Give a dose from this vial to a rabbit' });
 const back = btn('Pour back', () => lab.pourBackVial(), { icon: 'pour', act: 'pour-back', title: 'Return the vial to the cauldron to keep working on it' });
-const store = lab.sandbox ? null : btn('To shelf', () => lab.shelveVial(), { icon: 'shelf2', act: 'shelve-vial', disabled: st.bottleRoom <= 0, title: st.bottleRoom <= 0 ? 'The potion shelves are full' : 'Keep this bottle on the potion shelves' });
+const store = btn('To shelf', () => lab.shelveVial(), { icon: 'shelf2', act: 'shelve-vial', disabled: st.bottleRoom <= 0, title: st.bottleRoom <= 0 ? 'The potion shelves are full' : 'Keep this bottle on the potion shelves' });
 const discard = btn('Discard', async () => { if (await confirmDialog('Discard the vial?', 'The potion is poured away. Ingredients are not refunded.', 'Discard', 'danger')) lab.discardVial(); }, { icon: 'trash', cls: 'danger', act: 'discard', title: 'Pour the vial away' });
 el.append(h('div', { class: 'card parch vial-card' },
 h('div', { class: 'row' }, cv, h('div', {},
@@ -20486,7 +20552,6 @@ h('div', { class: 'row wrap' }, serve, labelB, testB, store, back, discard)));
 }
 shelfCard(el) {
 const lab = this.lab, st = lab.state;
-if (lab.sandbox) return;
 lab.freshBottles();
 const cap = st.cap.bottles;
 if (this.sel && !st.bottles.some((b) => b.id === this.sel)) this.sel = null;
@@ -20547,7 +20612,7 @@ unseen ? h('span', { class: 'muted', text: ` ${seen.length ? '· ' : ''}${unseen
 return { CounterView };
 })();
 // src/rendering/crisp.js
-const __m108 = (() => {
+const __m109 = (() => {
 const RESOLUTIONS = /** @type {const} */ ([1, 2, 3, 4]);
 const VERT = `#version 300 es
 in vec2 p;
@@ -20733,7 +20798,7 @@ this.src.style.opacity = '0';
 return { RESOLUTIONS, UpscaledCanvas };
 })();
 // src/visual/env/paint.js
-const __m111 = (() => {
+const __m112 = (() => {
 const { Pixels } = __m47;
 const { rasterize } = __m46;
 const { Model } = __m34;
@@ -21023,7 +21088,7 @@ cv.set(x, y, pack([c[0] + d, c[1] + d, c[2] + d]));
 return { SCENE_W, SCENE_H, CELL, Canvas, sky, ramp, hex, mixPacked, pack, unpack };
 })();
 // src/visual/env/stone.js
-const __m114 = (() => {
+const __m115 = (() => {
 const { hash2, noise2 } = __m48;
 const { mixPacked } = __m30;
 function cobble(x, y, o) {
@@ -21107,11 +21172,11 @@ return e > 0.98 ? null : { bx, by, r, id, e };
 return { cobble, pebble };
 })();
 // src/visual/env/side.js
-const __m113 = (() => {
+const __m114 = (() => {
 const { fbm1, fbm2, hash2, noise2 } = __m48;
 const { mixPacked, pack, hex } = __m30;
-const { CELL } = __m111;
-const { cobble } = __m114;
+const { CELL } = __m112;
+const { cobble } = __m115;
 const snap = (v) => v - (((v % CELL) + CELL) % CELL);
 const col = (h) => pack(hex(h));
 function far(c, x, y, seed) {
@@ -21566,11 +21631,11 @@ return out.filter((_, i) => i % Math.max(1, Math.floor(out.length / n)) === 0).s
 return { col, far, heights, dip, raise, fillSolid, blob, paintTerrain, STRATA, hanging, pool, markOpen, ledges, surfaceAt, silhouette, mountains, rockFace, treeShape, glow, drips };
 })();
 // src/visual/env/cave.js
-const __m112 = (() => {
+const __m113 = (() => {
 const { fbm1, fbm2, hash2 } = __m48;
 const { mixPacked } = __m30;
-const { col, far } = __m113;
-const { cobble } = __m114;
+const { col, far } = __m114;
+const { cobble } = __m115;
 function farPillars(cv, o) {
 const fill = col(o.fill), rim = o.rim ? col(o.rim) : fill, W = cv.W;
 for (let i = 0; i < o.n; i++) {
@@ -21911,7 +21976,7 @@ const LAVA_VEINS = (seed) => ({ from: ['#ffd060', '#ffb040', '#ff8a2a', '#e05a18
 return { farPillars, fog, caveFrame, vines, moss, glowShrooms, torch, fall, ruins, finish, ledgeTops, veins, WATER_VEINS, LAVA_VEINS };
 })();
 // src/visual/env/legible.js
-const __m115 = (() => {
+const __m116 = (() => {
 const { hash2, fbm2, noise2 } = __m48;
 const { mixPacked } = __m30;
 const { Rng } = __m6;
@@ -22079,9 +22144,9 @@ if (f !== 1 || add) L[k] = saturate(scale(c, f, add), f > 1 ? 1.05 : 1);
 return { legible };
 })();
 // src/visual/env/flourish.js
-const __m116 = (() => {
+const __m117 = (() => {
 const { hash2 } = __m48;
-const { col } = __m113;
+const { col } = __m114;
 const FLORA = {
 meadow: {
 kinds: [['tuft', 4], ['daisy', 3], ['spike', 1.6], ['bloom', 2], ['fern', 0.8]], rate: 0.3,
@@ -22360,7 +22425,7 @@ else if (berry && h > 0.95 && free(cx + side, yy)) cv.set(cx + side, yy, berry);
 return { flourish };
 })();
 // src/visual/env/grade.js
-const __m117 = (() => {
+const __m118 = (() => {
 const GRADE = {
 meadow: [0.42, 1.32, 0.5], forest: [0.4, 1.28, 0.5], netherwood: [0.34, 1.3, 0.46], river: [0.42, 1.3, 0.5],
 quarry: [0.38, 1.26, 0.48], moonfen: [0.34, 1.3, 0.44], crags: [0.36, 1.25, 0.48],
@@ -22406,8 +22471,8 @@ return ((c & 0xff000000) | (Math.round(((c >>> 16) & 255) * f) << 16) | (Math.ro
 return { grade };
 })();
 // src/visual/env/kit.js
-const __m119 = (() => {
-const { ramp, hex } = __m111;
+const __m120 = (() => {
+const { ramp, hex } = __m112;
 const { Rng, hashString } = __m6;
 const { shift } = __m30;
 function palette(spec) {
@@ -22429,7 +22494,7 @@ const streamOf = (seed, region, part) => new Rng(hashString(`env:${seed}:${regio
 return { palette, vary, streamOf };
 })();
 // src/visual/env/foliage.js
-const __m121 = (() => {
+const __m122 = (() => {
 const { Model, bezier } = __m34;
 let groups = 0;
 const swayGroup = () => ++groups;
@@ -22595,9 +22660,9 @@ return m;
 return { swayGroup, leaf, cluster, strand, grove };
 })();
 // src/visual/env/objects.js
-const __m120 = (() => {
+const __m121 = (() => {
 const { Model, blade, PROFILES, bezier, lumpy, ellipse, polygon } = __m34;
-const { cluster, strand, grove, swayGroup } = __m121;
+const { cluster, strand, grove, swayGroup } = __m122;
 const R = (rng) => () => rng.next();
 function leafBlock(x, y, hw, hh, rnd) {
 const c = Math.max(1, Math.round(Math.min(hw, hh) * 0.4)), j = () => Math.round((rnd() - 0.5) * 2);
@@ -22954,8 +23019,8 @@ return m;
 return { leafBlock, crown, pad, branchTree, tree, branch, bush, boulder, reeds, fern, tuft, log, stump, mushroom, cloud, beam, crane, ladder, cart, crate, fence, skep, basalt, spire, cairn, scaffold, wheel };
 })();
 // src/visual/env/trees.js
-const __m122 = (() => {
-const { branchTree, tree } = __m120;
+const __m123 = (() => {
+const { branchTree, tree } = __m121;
 const { Rng } = __m6;
 const { pack, hex } = __m30;
 function treeRow(cv, rng, pal, o) {
@@ -23015,13 +23080,13 @@ return out;
 return { treeRow, terrainTrees };
 })();
 // src/visual/env/meadow.js
-const __m118 = (() => {
-const { sky } = __m111;
-const { palette, vary, streamOf } = __m119;
-const { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, silhouette, mountains, treeShape, glow, drips, ledges } = __m113;
-const { caveFrame, fog, vines, moss, veins, WATER_VEINS } = __m112;
-const { cloud, fence, skep, boulder } = __m120;
-const { terrainTrees } = __m122;
+const __m119 = (() => {
+const { sky } = __m112;
+const { palette, vary, streamOf } = __m120;
+const { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, silhouette, mountains, treeShape, glow, drips, ledges } = __m114;
+const { caveFrame, fog, vines, moss, veins, WATER_VEINS } = __m113;
+const { cloud, fence, skep, boulder } = __m121;
+const { terrainTrees } = __m123;
 const { Model, lumpy } = __m34;
 const { pack } = __m30;
 function compose(cv, seed) {
@@ -23119,13 +23184,13 @@ cv.meta.horizon = 120;
 return { compose };
 })();
 // src/visual/env/forest.js
-const __m123 = (() => {
-const { sky } = __m111;
-const { palette, vary, streamOf } = __m119;
-const { heights, raise, fillSolid, blob, paintTerrain, markOpen, surfaceAt, col, drips, ledges, hanging } = __m113;
-const { fog, moss, glowShrooms } = __m112;
-const { fern, log, stump } = __m120;
-const { treeRow, terrainTrees } = __m122;
+const __m124 = (() => {
+const { sky } = __m112;
+const { palette, vary, streamOf } = __m120;
+const { heights, raise, fillSolid, blob, paintTerrain, markOpen, surfaceAt, col, drips, ledges, hanging } = __m114;
+const { fog, moss, glowShrooms } = __m113;
+const { fern, log, stump } = __m121;
+const { treeRow, terrainTrees } = __m123;
 const { hash2 } = __m48;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'forest', p);
@@ -23204,13 +23269,13 @@ for (let i = 0, n = 0; i < 14 && n < 6; i++) if (cv.place(fern(fr, fr.int(8, 13)
 return { compose, roots, litter, ferns };
 })();
 // src/visual/env/river.js
-const __m124 = (() => {
-const { sky } = __m111;
-const { palette, vary, streamOf } = __m119;
-const { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, silhouette, mountains, treeShape } = __m113;
-const { caveFrame, farPillars, fog, vines, moss, glowShrooms, ledgeTops, veins, WATER_VEINS } = __m112;
-const { reeds, beam, cloud } = __m120;
-const { terrainTrees } = __m122;
+const __m125 = (() => {
+const { sky } = __m112;
+const { palette, vary, streamOf } = __m120;
+const { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, silhouette, mountains, treeShape } = __m114;
+const { caveFrame, farPillars, fog, vines, moss, glowShrooms, ledgeTops, veins, WATER_VEINS } = __m113;
+const { reeds, beam, cloud } = __m121;
+const { terrainTrees } = __m123;
 const { Model } = __m34;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'river', p);
@@ -23290,13 +23355,13 @@ cv.meta.horizon = 116;
 return { compose };
 })();
 // src/visual/env/quarry.js
-const __m125 = (() => {
-const { sky } = __m111;
-const { palette, vary, streamOf } = __m119;
-const { fillSolid, blob, ledges, paintTerrain, markOpen, glow, drips, silhouette, mountains } = __m113;
-const { caveFrame, farPillars, fog, moss, torch, ledgeTops } = __m112;
-const { crane, ladder, cart, crate, beam, boulder, scaffold, wheel, cloud } = __m120;
-const { terrainTrees } = __m122;
+const __m126 = (() => {
+const { sky } = __m112;
+const { palette, vary, streamOf } = __m120;
+const { fillSolid, blob, ledges, paintTerrain, markOpen, glow, drips, silhouette, mountains } = __m114;
+const { caveFrame, farPillars, fog, moss, torch, ledgeTops } = __m113;
+const { crane, ladder, cart, crate, beam, boulder, scaffold, wheel, cloud } = __m121;
+const { terrainTrees } = __m123;
 const { Model } = __m34;
 const { Rng } = __m6;
 function compose(cv, seed) {
@@ -23411,13 +23476,13 @@ cv.meta.horizon = 100;
 return { compose };
 })();
 // src/visual/env/moonfen.js
-const __m126 = (() => {
-const { sky } = __m111;
-const { palette, vary, streamOf } = __m119;
-const { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, glow, silhouette, treeShape } = __m113;
-const { caveFrame, farPillars, fog, vines, moss, ruins, glowShrooms, veins, WATER_VEINS } = __m112;
-const { reeds, spire, cairn } = __m120;
-const { terrainTrees } = __m122;
+const __m127 = (() => {
+const { sky } = __m112;
+const { palette, vary, streamOf } = __m120;
+const { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, glow, silhouette, treeShape } = __m114;
+const { caveFrame, farPillars, fog, vines, moss, ruins, glowShrooms, veins, WATER_VEINS } = __m113;
+const { reeds, spire, cairn } = __m121;
+const { terrainTrees } = __m123;
 const { fbm2 } = __m48;
 const { pack } = __m30;
 function compose(cv, seed) {
@@ -23517,13 +23582,13 @@ cv.meta.horizon = 124;
 return { compose };
 })();
 // src/visual/env/crags.js
-const __m127 = (() => {
-const { sky } = __m111;
-const { palette, vary, streamOf } = __m119;
-const { heights, dip, raise, fillSolid, blob, ledges, paintTerrain, pool, markOpen, glow, drips, silhouette, col, rockFace } = __m113;
-const { caveFrame, farPillars, fog, moss, fall, veins, LAVA_VEINS } = __m112;
-const { basalt, spire, cloud } = __m120;
-const { terrainTrees } = __m122;
+const __m128 = (() => {
+const { sky } = __m112;
+const { palette, vary, streamOf } = __m120;
+const { heights, dip, raise, fillSolid, blob, ledges, paintTerrain, pool, markOpen, glow, drips, silhouette, col, rockFace } = __m114;
+const { caveFrame, farPillars, fog, moss, fall, veins, LAVA_VEINS } = __m113;
+const { basalt, spire, cloud } = __m121;
+const { terrainTrees } = __m123;
 const { fbm1, hash2 } = __m48;
 const { mixPacked } = __m30;
 const { Model, lumpy } = __m34;
@@ -23683,14 +23748,14 @@ cv.set(x, y, c);
 return { compose };
 })();
 // src/visual/env/netherwood.js
-const __m128 = (() => {
-const { sky } = __m111;
-const { palette, vary, streamOf } = __m119;
-const { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, drips, ledges, glow } = __m113;
-const { caveFrame, farPillars, fog, vines, moss, glowShrooms, veins, WATER_VEINS } = __m112;
-const { mushroom } = __m120;
-const { treeRow, terrainTrees } = __m122;
-const { roots, litter, ferns } = __m123;
+const __m129 = (() => {
+const { sky } = __m112;
+const { palette, vary, streamOf } = __m120;
+const { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, drips, ledges, glow } = __m114;
+const { caveFrame, farPillars, fog, vines, moss, glowShrooms, veins, WATER_VEINS } = __m113;
+const { mushroom } = __m121;
+const { treeRow, terrainTrees } = __m123;
+const { roots, litter, ferns } = __m124;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'netherwood', p);
 const pal = vary(palette({
@@ -23768,15 +23833,15 @@ cv.meta.horizon = 120;
 return { compose };
 })();
 // src/visual/env/exotic.js
-const __m129 = (() => {
-const { sky } = __m111;
-const { palette, vary, streamOf } = __m119;
-const { heights, raise, dip, fillSolid, blob, paintTerrain, pool, markOpen, silhouette, mountains, glow, ledges, treeShape } = __m113;
-const { fog, vines, glowShrooms, ruins, fall, moss } = __m112;
-const { cloud, spire, boulder } = __m120;
-const { terrainTrees } = __m122;
+const __m130 = (() => {
+const { sky } = __m112;
+const { palette, vary, streamOf } = __m120;
+const { heights, raise, dip, fillSolid, blob, paintTerrain, pool, markOpen, silhouette, mountains, glow, ledges, treeShape } = __m114;
+const { fog, vines, glowShrooms, ruins, fall, moss } = __m113;
+const { cloud, spire, boulder } = __m121;
+const { terrainTrees } = __m123;
 const { fbm2 } = __m48;
-const { pack } = __m111;
+const { pack } = __m112;
 function sprite(w, h) { return { w, h, px: new Uint32Array(w * h), x: 0, y: 0 }; }
 function isleSprite(rng, w, h, cols) {
 const s = sprite(w, h), cx = w / 2, top = 3;
@@ -24103,21 +24168,21 @@ cv.meta.horizon = 122;
 return { skyshard, morphgrove, veilhollow, ghostglass, chronoglass };
 })();
 // src/visual/env/scene.js
-const __m110 = (() => {
-const { Canvas, SCENE_W, SCENE_H } = __m111;
+const __m111 = (() => {
+const { Canvas, SCENE_W, SCENE_H } = __m112;
 const { hashString } = __m6;
-const { finish } = __m112;
-const { legible } = __m115;
-const { flourish } = __m116;
-const { grade } = __m117;
-const meadow = __m118;
-const forest = __m123;
-const river = __m124;
-const quarry = __m125;
-const moonfen = __m126;
-const crags = __m127;
-const netherwood = __m128;
-const { skyshard, morphgrove, veilhollow, ghostglass, chronoglass } = __m129;
+const { finish } = __m113;
+const { legible } = __m116;
+const { flourish } = __m117;
+const { grade } = __m118;
+const meadow = __m119;
+const forest = __m124;
+const river = __m125;
+const quarry = __m126;
+const moonfen = __m127;
+const crags = __m128;
+const netherwood = __m129;
+const { skyshard, morphgrove, veilhollow, ghostglass, chronoglass } = __m130;
 const ENV_VERSION = 13;
 const COMPOSERS = { meadow, forest, netherwood, river, quarry, moonfen, crags, skyshard, morphgrove, veilhollow, ghostglass, chronoglass };
 const cache = new Map();
@@ -24150,8 +24215,8 @@ return s;
 return { ENV_VERSION, composeScene, sceneOf, SCENE_W, SCENE_H };
 })();
 // src/rendering/wild-scene.js
-const __m109 = (() => {
-const { sceneOf, SCENE_W, SCENE_H } = __m110;
+const __m110 = (() => {
+const { sceneOf, SCENE_W, SCENE_H } = __m111;
 const { MIN_HIT } = __m97;
 const { hashString } = __m6;
 const { frameMount } = __m50;
@@ -24694,7 +24759,7 @@ trickles(ctx, meta.trickles || [], t, '#5a4e4c', '#3e3438');
 return { sceneCanvas, windAt, crosses, SceneTouch, sceneTouch, swayPixels, sceneFrame, findAnchors, PlantGround, mountOrder, plantBox, hitPlant, animateRegion, SCENE_W, SCENE_H };
 })();
 // src/rendering/ragdoll.js
-const __m130 = (() => {
+const __m131 = (() => {
 const GRAVITY = 640;
 const STEP = 1 / 120;
 const FRICTION = 380;
@@ -24948,8 +25013,8 @@ ctx.imageSmoothingEnabled = smooth;
 return { GRAVITY, STEP, FRICTION, Ragdoll };
 })();
 // src/rendering/exotic-fx.js
-const __m131 = (() => {
-const { sceneOf, SCENE_W, SCENE_H } = __m110;
+const __m132 = (() => {
+const { sceneOf, SCENE_W, SCENE_H } = __m111;
 const states = new Map();
 function canvasOf(s) {
 if (s.cv) return s.cv;
@@ -25122,7 +25187,7 @@ for (let i = 0; i < 12; i++) { const dir = i % 4 === 0 ? -1 : 1, age = ((t * 0.1
 return { hasExotic, exoticPush, exoticStep, exoticDraw };
 })();
 // src/game/wild-rabbits.js
-const __m132 = (() => {
+const __m133 = (() => {
 const { Rng, hashString } = __m6;
 const { rollLook } = __m60;
 const { pickKind, kindLook } = __m61;
@@ -25581,7 +25646,7 @@ return out;
 return { HOP_GRAVITY, WILD_HP, BLEED_OUT, NEAR_MISS, WARREN_SIZE, RESPAWN, BLOOD, wildLook, GAITS, WildRabbit, Warren, warrenSpots };
 })();
 // src/rendering/punch.js
-const __m134 = (() => {
+const __m135 = (() => {
 const CONTRAST = 1.4, SATURATE = 1.3;
 const INK = [20, 12, 16, 235], HALO = [255, 244, 220, 70];
 function punchSprite(d, w, h, o = {}) {
@@ -25619,12 +25684,12 @@ for (const i of halo) d.set(HALO, i * 4);
 return { punchSprite };
 })();
 // src/rendering/rabbit.js
-const __m133 = (() => {
+const __m134 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m91;
 const { RABBIT_MARKS } = __m60;
 const { KINDS } = __m61;
-const { punchSprite } = __m134;
+const { punchSprite } = __m135;
 const RABBIT_W = 48;
 const RABBIT_H = 40;
 const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
@@ -27135,25 +27200,25 @@ ctx.fillRect(fx, fy, RABBIT_W, RABBIT_H);
 return { RABBIT_W, RABBIT_H, rabbitLevels, rabbitPose, rabbitPace, rabbitAnchors, rabbitSpriteKey, drawRabbitSprite, clearRabbitSprites, drawRabbit };
 })();
 // src/ui/views/wilds.js
-const __m107 = (() => {
-const { UpscaledCanvas } = __m108;
+const __m108 = (() => {
+const { UpscaledCanvas } = __m109;
 const { BIOME_BY_ID, unlockText } = __m17;
-const { CREATURE_NAMES, rarityTag } = __m103;
+const { CREATURE_NAMES, rarityTag } = __m104;
 const { h, btn, clear, toast, keepScroll, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
 const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, moistureEnv, DAY_PART_NAME } = __m62;
 const { equipmentById } = __m58;
 const { RANKS } = __m58;
-const { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, sceneTouch, crosses, SCENE_W, SCENE_H } = __m109;
-const { Ragdoll } = __m130;
-const { exoticPush, exoticStep, exoticDraw } = __m131;
-const { sceneOf } = __m110;
+const { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, sceneTouch, crosses, SCENE_W, SCENE_H } = __m110;
+const { Ragdoll } = __m131;
+const { exoticPush, exoticStep, exoticDraw } = __m132;
+const { sceneOf } = __m111;
 const { plantCanvas, plantFrameOf, plantGlow, emitColour, silhouetteOf, ingredientSprite, speciesOf, mountsOf, variantOf, MIN_HIT } = __m97;
 const { EFFECT_BY_KEY } = __m20;
 const { hashString } = __m6;
-const { Warren, warrenSpots, BLOOD, WILD_HP } = __m132;
-const { drawRabbit, rabbitSpriteKey, RABBIT_W, RABBIT_H } = __m133;
+const { Warren, warrenSpots, BLOOD, WILD_HP } = __m133;
+const { drawRabbit, rabbitSpriteKey, RABBIT_W, RABBIT_H } = __m134;
 const { defaultSnap, penHasRoom, PEN_MAX } = __m60;
 const { KINDS } = __m61;
 const SHADOW = { forest: 'rgba(8,16,10,0.32)', netherwood: 'rgba(6,4,16,0.4)', meadow: 'rgba(24,30,10,0.26)', river: 'rgba(4,14,16,0.34)', quarry: 'rgba(26,18,10,0.3)', moonfen: 'rgba(2,6,18,0.42)', crags: 'rgba(30,6,4,0.4)', skyshard: 'rgba(20,40,70,0.26)', morphgrove: 'rgba(30,8,30,0.34)', veilhollow: 'rgba(10,10,20,0.38)', ghostglass: 'rgba(2,10,24,0.42)', chronoglass: 'rgba(40,20,10,0.32)' };
@@ -28352,12 +28417,12 @@ this.grow();
 return { WildsView };
 })();
 // src/visual/env/pens.js
-const __m138 = (() => {
-const { Canvas } = __m111;
-const { col, silhouette, treeShape } = __m113;
-const { finish } = __m112;
-const { grade } = __m117;
-const { cobble } = __m114;
+const __m139 = (() => {
+const { Canvas } = __m112;
+const { col, silhouette, treeShape } = __m114;
+const { finish } = __m113;
+const { grade } = __m118;
+const { cobble } = __m115;
 const { fbm1, fbm2, hash2, noise2 } = __m48;
 const { mixPacked } = __m30;
 const { Rng, hashString } = __m6;
@@ -29579,7 +29644,7 @@ return p;
 return { PEN_W, PEN_H, BACK, GROUND_Y0, PENS_VERSION, PEN_KINDS, penTitle, penOf };
 })();
 // src/rendering/pen-anim.js
-const __m139 = (() => {
+const __m140 = (() => {
 function hash(a, b = 0) {
 let n = Math.imul(a | 0, 0x27d4eb2d) ^ Math.imul(b | 0, 0x165667b1);
 n = Math.imul(n ^ (n >>> 15), 0x2c1b3c6d);
@@ -29702,13 +29767,13 @@ if (f) f(ctx, a, t);
 return { drawPenAnim };
 })();
 // src/rendering/hutch-scene.js
-const __m137 = (() => {
+const __m138 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m91;
-const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m133;
+const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m134;
 const { kindOf } = __m61;
-const { penOf } = __m138;
-const { drawPenAnim } = __m139;
+const { penOf } = __m139;
+const { drawPenAnim } = __m140;
 const WALKERS = { cat: 12, salamander: 5, deer: 10, badger: 8, dove: 8, fox: 14, snail: 1.5, rat: 16 };
 const HUTCH_W = 224;
 const HUTCH_H = 92;
@@ -30138,16 +30203,16 @@ ctx.drawImage(this.bg, 0, 0);
 return { HUTCH_W, HUTCH_H, HUTCH_BODIES, penFor, paintHutch, paintHutchFront, onGround, HutchScene };
 })();
 // src/ui/views/hutch.js
-const __m136 = (() => {
+const __m137 = (() => {
 const { readingSteadiness } = __m59;
 const { kindDef, kindOf, KINDS, KIND_IDS } = __m61;
 const { h, btn, clear, toast, modal, confirmDialog, keepScroll } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { drawRabbit, RABBIT_W, RABBIT_H } = __m133;
-const { HutchScene, HUTCH_W, HUTCH_H } = __m137;
-const { penTitle } = __m138;
-const { UpscaledCanvas } = __m108;
+const { drawRabbit, RABBIT_W, RABBIT_H } = __m134;
+const { HutchScene, HUTCH_W, HUTCH_H } = __m138;
+const { penTitle } = __m139;
+const { UpscaledCanvas } = __m109;
 const { EFFECT_BY_KEY } = __m20;
 const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral, RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE, BURNS, PEN_MAX, penHasRoom, livingOf } = __m60;
 const { PURGE_BREW_TIME } = __m5;
@@ -30521,7 +30586,7 @@ if (this._live >= 0.25) { this._live = 0; this.live(); }
 return { CHANNELS, HutchPanel };
 })();
 // src/ui/views/trials.js
-const __m135 = (() => {
+const __m136 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
@@ -30533,9 +30598,9 @@ const { summarize, addSamples, EVIDENCE_TEXT, evidenceRank, requirementEvidence 
 const { evidenceOf } = __m81;
 const { shortName } = __m54;
 const LEVEL_SHORT = { preliminary: '1 reading', repeated: 'repeated', corroborated: 'corroborated', certified: 'certified' };
-const { drawRabbit } = __m133;
+const { drawRabbit } = __m134;
 const { focusRabbit, findRabbit, rabbitSnap, decodeSnap, lookFromSeed, RABBIT_MARKS } = __m60;
-const { HutchPanel } = __m136;
+const { HutchPanel } = __m137;
 const REPLAY_T = 3.2;
 class TrialsView {
 constructor(lab) {
@@ -30912,7 +30977,7 @@ return `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2
 return { TrialsView, EFFECTS, EFFECT_INDEX };
 })();
 // src/ui/views/garden.js
-const __m140 = (() => {
+const __m141 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
@@ -30921,7 +30986,7 @@ const { SPECIES_BY_KEY, materialIdOf } = __m13;
 const { RARITY } = __m16;
 const { atlasFrame, seedAsset, stageAsset, loadAtlases, onAtlasLoaded } = __m51;
 const { formatWait } = __m62;
-const { rarityTag } = __m103;
+const { rarityTag } = __m104;
 const { hashString, Rng } = __m6;
 const GW = 384, GH = 176;
 const BED_LOOK = {
@@ -30930,6 +30995,7 @@ fungal: { rim: ['#5a3a22', '#7a5232', '#3a2416'], dry: [0.24, 0.2, 0.17], wet: [
 crystal: { rim: ['#5a5a66', '#8a8a96', '#3a3a44'], dry: [0.5, 0.5, 0.55], wet: [0.34, 0.34, 0.4], speck: '#c8c8d8' },
 tide: { rim: ['#b09a6a', '#e0cc96', '#7a6a4a'], dry: [0.25, 0.48, 0.62], wet: [0.14, 0.32, 0.5], speck: '#d8f0ff' },
 };
+const growText = (hours) => hours >= 1 ? `${Math.round(hours * 10) / 10} h` : `${Math.max(1, Math.round(hours * 60))} min`;
 const hex = (rgb) => '#' + rgb.map((v) => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const mixc = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
 class GardenView {
@@ -31029,8 +31095,8 @@ if (!list.length) seeds.appendChild(h('div', { class: 'muted small', text: 'No s
 const sel = this.plot ? g.plots.find((x) => x.id === this.plot) : null;
 for (const s of list) {
 const fits = !sel || (!sel.crop && sel.bed === bedOf(s.key) && sel.grade >= gradeNeeded(s.key, s.arcane));
-const el = h('button', { class: 'seed' + (this.seed === s.id ? ' selected' : ''), 'data-act': 'seed-' + s.id, role: 'option', title: `${this.seedName(s.id)} ×${s.n} — needs a ${BEDS[bedOf(s.key)].name.toLowerCase()}${gradeNeeded(s.key, s.arcane) ? ` of ${GRADES[gradeNeeded(s.key, s.arcane)].toLowerCase()} grade` : ''}; about ${Math.round(growHours(s.key, s.arcane) * 10) / 10} h to grow (watered)`, disabled: !fits },
-this.spriteCanvas(seedAsset(s.key, s.arcane), 28), h('span', { class: 'sn', text: `${s.n}× ${s.species.name}` }), rarityTag(/** @type {any} */ ({ wild: { rarity: s.species.rarity, arcane: s.arcane } }), { short: true }));
+const el = h('button', { class: 'seed' + (this.seed === s.id ? ' selected' : ''), 'data-act': 'seed-' + s.id, role: 'option', title: `${this.seedName(s.id)} ×${s.n} — needs a ${BEDS[bedOf(s.key)].name.toLowerCase()}${gradeNeeded(s.key, s.arcane) ? ` of ${GRADES[gradeNeeded(s.key, s.arcane)].toLowerCase()} grade` : ''}; about ${growText(growHours(s.key, s.arcane) / (g.pace > 1 ? g.pace : 1))} to grow (watered)`, disabled: !fits },
+this.spriteCanvas(seedAsset(s.key, s.arcane), 28), h('span', { class: 'sn', text: `${Number.isFinite(s.n) ? s.n + '× ' : ''}${s.species.name}` }), rarityTag(/** @type {any} */ ({ wild: { rarity: s.species.rarity, arcane: s.arcane } }), { short: true }));
 el.addEventListener('click', () => {
 this.seed = this.seed === s.id ? null : s.id;
 audio.play('click');
@@ -31040,7 +31106,8 @@ this.refresh();
 seeds.appendChild(el);
 }
 const ups = clear(this.upsEl);
-for (const u of GARDEN_UPGRADES) {
+if (this.lab.sandbox) ups.appendChild(h('div', { class: 'small', text: `Every bed is an Arcane chamber and the seeds never run out. Crops grow ${g.pace || 1} times faster here.` }));
+else for (const u of GARDEN_UPGRADES) {
 const maxed = u.max !== undefined && boughtCount(g, u.id) >= u.max;
 ups.appendChild(h('div', { class: 'card' },
 h('div', { class: 'title', text: `${u.name}${u.max !== undefined ? ` (${boughtCount(g, u.id)}/${u.max})` : ''}` }), h('div', { class: 'small', text: u.desc }),
@@ -31145,12 +31212,12 @@ if (this.t % 5 < 0.5) this.refresh();
 return { GardenView, materialIdOf, RARITY, seedId, icon };
 })();
 // src/ui/views/book.js
-const __m141 = (() => {
+const __m142 = (() => {
 const { KINDS } = __m61;
 const { h, btn, clear } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const panels = __m101;
+const panels = __m102;
 const { SUBJECT_BY_ID } = __m59;
 const { EFFECTS, EFFECT_BY_KEY, EFFECT_KEYS } = __m20;
 const { rgbToHex } = __m9;
@@ -31272,6 +31339,7 @@ const { proofGaps, draftLabel, applyTrials, evidenceOf } = __m81;
 const { RANKS } = __m58;
 const { certification, missingEffects, requirementEvidence } = __m59;
 const { sandboxIngredients } = __m7;
+const { sandboxSave } = __m101;
 const { makeVial, appendParticles, updateVial, takeDose, pourBack, pourBackParts, relaxVial } = __m64;
 const { theoryOf, EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, dominantEffect, NE } = __m20;
 const { awakenParts, describeThreshold } = __m22;
@@ -31282,14 +31350,14 @@ const { describeColor, rgbToHex } = __m9;
 const { h, btn, clear, keepScroll, toast, coins, confirmDialog, modal, setNoteDock, recentNotes } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const panels = __m101;
-const trade = __m104;
-const { Tutorial } = __m105;
-const { CounterView } = __m106;
-const { WildsView } = __m107;
-const { TrialsView } = __m135;
-const { GardenView } = __m140;
-const { BookView } = __m141;
+const panels = __m102;
+const trade = __m105;
+const { Tutorial } = __m106;
+const { CounterView } = __m107;
+const { WildsView } = __m108;
+const { TrialsView } = __m136;
+const { GardenView } = __m141;
+const { BookView } = __m142;
 const { shortName } = __m54;
 const REQ_ICON = { temperature: 'thermo', quantity: 'flask', purity: 'pure' };
 const TOOL_DEFS = [
@@ -31509,7 +31577,6 @@ this.viewsEl = h('div', { class: 'views' }, this.views.counter.el, this.brewView
 this.tabEls = {};
 this.tabbar = h('nav', { class: 'tabbar frame', 'aria-label': 'Rooms' });
 for (const v of VIEWS) {
-if (this.sandbox && (v.id === 'counter' || v.id === 'garden')) continue;
 const badge = h('span', { class: 'badge hidden' });
 const b = h('button', { class: 'tab', 'data-act': 'tab-' + v.id, 'aria-label': v.label, title: `${v.label} (${v.key.toUpperCase()})` }, icon(v.icon), h('span', { class: 'tab-lbl', text: v.label }), badge);
 b.addEventListener('click', () => { audio.play('select'); this.showView(v.id); });
@@ -31526,7 +31593,6 @@ for (const v of Object.values(this.views)) v.build();
 void st;
 }
 showView(id, silent = false) {
-if (this.sandbox && id === 'counter') id = 'brew';
 this.view = id;
 this.el.setAttribute('data-view', id);
 for (const [k, t] of Object.entries(this.tabEls)) {
@@ -31619,7 +31685,7 @@ if (this.sandbox || this.state.has('condenser')) {
 set.alembic = btn('Still', () => this.toggleAlembic(), { icon: 'alembic', title: 'Still head on/off: vapour rising into it is condensed into the receiver', act: 'alembic' });
 a.append(set.alembic);
 }
-if (!this.sandbox && this.state.cap.vessels > 0) a.append(btn('Cellar', () => panels.openCellar(this), { icon: 'shelf2', title: 'The aging cellar: lay brews down to go on extracting', act: 'cellar' }));
+if (this.state.cap.vessels > 0) a.append(btn('Cellar', () => panels.openCellar(this), { icon: 'shelf2', title: 'The aging cellar: lay brews down to go on extracting', act: 'cellar' }));
 a.append(btn('Empty', () => this.emptyCauldron(), { icon: 'trash', cls: 'danger', title: 'Empty the cauldron', act: 'empty' }));
 this.actionSet = set;
 this.syncActions();
@@ -32161,16 +32227,15 @@ this.views.wilds.refresh();
 startBottling() {
 if (this.bottling) return;
 const st = this.state;
-const counterFree = !st.vial && !this.sandbox;
-if (!counterFree && !this.sandbox && st.bottleRoom <= 0) {
+const counterFree = !st.vial;
+if (!counterFree && st.bottleRoom <= 0) {
 toast('Nowhere to put it', `The counter holds a vial and the potion shelves are full (${st.cap.bottles}). Serve, pour back or discard a bottle first — or buy more shelving.`, 'bottle', 4500);
 this.showView('counter');
 return;
 }
-if (this.sandbox && st.vial) { toast('A vial is waiting', 'Pour back or discard the sealed vial first.', 'bottle'); return; }
 const avail = Math.floor(this.tapAvailable() / SIM.ML_PER_PARTICLE);
 if (avail < 1) { toast('Nothing to bottle', 'There is no liquid at the tap.', 'flask'); audio.play('error'); return; }
-panels.openBottleSize(this, avail, (n, dest) => this.beginBottling(n, dest), { counterFree: counterFree || this.sandbox, shelfRoom: this.sandbox ? 0 : st.bottleRoom, shelves: !this.sandbox });
+panels.openBottleSize(this, avail, (n, dest) => this.beginBottling(n, dest), { counterFree, shelfRoom: st.bottleRoom, shelves: true });
 }
 beginBottling(n, dest = 'counter') {
 if (this.bottling) return;
@@ -32895,7 +32960,6 @@ if (att.length && this.time - (this._feralWarned || -99) > 20) { this._feralWarn
 }
 }
 tickCellar() {
-if (this.sandbox) return;
 const st = this.state;
 for (const e of st.tickCellar()) {
 const v = st.cellar.vessels[e.vessel];
@@ -32922,7 +32986,7 @@ if (this.view === 'counter') this.views.counter.refresh();
 }
 }
 shareEvidence(batchId) {
-if (!this.sandbox) this.state.shareEvidence(batchId);
+this.state.shareEvidence(batchId);
 this.autoLabel();
 }
 autoLabel(only) {
@@ -33070,7 +33134,7 @@ return true;
 save() {
 if (this.saveBlocked) return;
 if (this.sandbox) {
-saveJSON(KEYS.sandbox, { seed: this.state.seed, cauldron: snapshotSim(this.sim, this.cap.size), trials: this.state.trials });
+saveJSON(KEYS.sandbox, sandboxSave(this.state, snapshotSim(this.sim, this.cap.size)));
 return;
 }
 this.state.cauldron = snapshotSim(this.sim, this.cap.size);
@@ -33112,7 +33176,7 @@ void dominantEffect;
 return { VIEWS, LabScreen };
 })();
 // src/materials/reference.js
-const __m143 = (() => {
+const __m144 = (() => {
 const { completeMaterial } = __m10;
 const REF = {};
 const add = (d) => (REF[d.id] = completeMaterial(d));
@@ -33150,11 +33214,11 @@ const refLookup = (id) => REF[id];
 return { REF, refLookup };
 })();
 // src/ui/menu.js
-const __m142 = (() => {
+const __m143 = (() => {
 const { h, btn } = __m2;
 const { Renderer } = __m90;
 const { Simulation } = __m65;
-const { REF, refLookup } = __m143;
+const { REF, refLookup } = __m144;
 const { hasSave, loadGame } = __m87;
 const { audio } = __m4;
 class MenuScreen {
@@ -33239,18 +33303,14 @@ const { h, btn, modal, toast, setOverlayRoot, setToastRoot, confirmDialog, clear
 const { icon } = __m3;
 const { audio } = __m4;
 const { GameState } = __m5;
-const { sandboxIngredients } = __m7;
-const { EQUIPMENT } = __m58;
 const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m87;
 const { LabScreen } = __m88;
-const { MenuScreen } = __m142;
-const { openSettings, openHelp } = __m101;
+const { MenuScreen } = __m143;
+const { openSettings, openHelp } = __m102;
 const { Rng } = __m6;
-const { normalizeTrials } = __m59;
-const { sandboxWilds } = __m62;
+const { prepareSandbox } = __m101;
 const { loadAtlases, neededAtlases } = __m51;
 const { parseCatalogId } = __m13;
-const { BIOMES } = __m17;
 const DEFAULT_SETTINGS = { master: 0.8, sfx: 0.8, music: 0.35, musicOn: true, muted: false, quality: 'auto', showFps: false, resolution: 3 };
 const SEED_WORDS = ['amber', 'ashen', 'brine', 'copper', 'dusk', 'elder', 'fen', 'gloam', 'hollow', 'iron', 'juniper', 'kelp', 'lantern', 'moon', 'nettle', 'oak', 'pewter', 'quill', 'raven', 'sage', 'thorn', 'umber', 'vale', 'willow', 'wyrm', 'yarrow'];
 class App {
@@ -33349,24 +33409,10 @@ startSandbox() {
 const saved = loadJSON(KEYS.sandbox, null);
 const existing = loadGame().state;
 const seed = existing ? existing.seed : saved && saved.seed ? saved.seed : 'experiment';
-const st = GameState.create(seed, { tutorial: false });
-for (const id of sandboxIngredients(st.world)) st.inventory[id] = Infinity;
-st.equipment = EQUIPMENT.map((e) => e.id);
-st.reputation = 99999;
-st.current = null;
-st.regen.unlocked = BIOMES.map((b) => b.id);
-sandboxWilds(st.gathering, st.deposits);
-if (saved && saved.seed === seed && saved.cauldron) st.cauldron = saved.cauldron;
-if (saved && saved.seed === seed && saved.trials) {
-st.trials = normalizeTrials(saved.trials);
-st.day = Math.max(st.day, st.colony.day || 1);
-st.colony.seed = st.colony.seed || String(seed);
-st.restoreRemains();
-for (const id of sandboxIngredients(st.world)) st.inventory[id] = Infinity;
-}
+const st = prepareSandbox(GameState.create(seed, { tutorial: false }), saved);
 this.prepareAssets(st, true).then(() => {
 this._swap(new LabScreen(this, st, { sandbox: true }));
-toast('Free Experiment', 'Unlimited reagents, wild ingredients, tools and test subjects. Nothing here affects your shop.', 'flask', 4500);
+toast('Free Experiment', 'Unlimited reagents, wild ingredients, seeds, runes, tools and test subjects; the cellar and the garden run quicker. Nothing here affects your shop.', 'flask', 4500);
 });
 }
 openSettings() {
@@ -33379,7 +33425,7 @@ openHelp();
 return { App, icon };
 })();
 // src/ui/textures.js
-const __m144 = (() => {
+const __m145 = (() => {
 const { Rng } = __m6;
 function texture(w, h, paint) {
 const cv = document.createElement('canvas');
@@ -33423,7 +33469,7 @@ return { installTextures };
 // src/main.js
 const __m0 = (() => {
 const { App } = __m1;
-const { installTextures } = __m144;
+const { installTextures } = __m145;
 installTextures();
 const root = document.getElementById('app');
 const app = new App(root);

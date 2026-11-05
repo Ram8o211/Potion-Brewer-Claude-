@@ -249,7 +249,12 @@ computed from the particles that actually run out of the tap. What a
 * **Free Experiment mode** with every reagent, tool, rabbit and region
   unlocked, plus the physics demonstrations the campaign does not need:
   the skimmer, the alembic, the heat map, a hotter furnace and the exact
-  readings of density, viscosity, stability, volatility and charge.
+  readings of density, viscosity, stability, volatility and charge. It keeps
+  the campaign's features in step (`src/game/sandbox.js`): the potion
+  shelves, the aging cellar with unlimited temperature runes (aging sixty
+  times faster) and the garden with every seed and every bed at Arcane
+  chamber grade (crops sixty times faster). Its shelves, cellar and garden
+  are saved under the sandbox's own key, never in the shop's save.
 * **Mobile first, desktop too.**
   * A bottom tab bar over five rooms (Counter, Brew, Wilds, Trials, Book).
   * A guided tour on a new game walks through every room and control,
