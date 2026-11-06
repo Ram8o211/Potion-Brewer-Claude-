@@ -229,3 +229,39 @@ export function extractedParts(parts, comp, lookup) {
   }
   return out;
 }
+
+/**
+ * A composition (fractions or volumes per material id) with each
+ * ingredient's extract folded into the ingredient itself: one entry per
+ * ingredient, with how much of it is already dissolved (`ext`, same units as
+ * `f`). Awakened forms stay separate. Largest first.
+ * @param {Record<string, number>} comp @param {(id:string)=>any} lookup
+ * @returns {{id:string, name:string, f:number, ext:number, extractable:boolean}[]}
+ */
+export function groupExtracts(comp, lookup) {
+  /** @type {Map<string, {id:string, name:string, f:number, ext:number, extractable:boolean}>} */
+  const by = new Map();
+  for (const [id, f] of Object.entries(comp)) {
+    if (!(f > 0)) continue;
+    const awake = id.endsWith('~a');
+    const plain = awake ? id.slice(0, -2) : id;
+    const d = lookup(plain);
+    const raw = d && d.extractOf ? d.extractOf : plain;
+    const key = raw + (awake ? '~a' : '');
+    let g = by.get(key);
+    if (!g) {
+      const rd = lookup(key) || lookup(raw);
+      g = { id: key, name: rd ? (awake && !lookup(key) ? `Awakened ${rd.name}` : rd.name) : raw, f: 0, ext: 0, extractable: false };
+      by.set(key, g);
+    }
+    g.f += f;
+    if (d && d.extractOf) { g.ext += f; g.extractable = true; } else if (d && d.extraction) g.extractable = true;
+  }
+  return [...by.values()].sort((a, b) => b.f - a.f);
+}
+
+/** One line for a grouped ingredient: its share, and how much of it is drawn out. @param {{name:string, f:number, ext:number, extractable:boolean}} g @param {number} total @param {number} [digits] */
+export function groupLine(g, total, digits = 0) {
+  const pct = ((g.f / (total || 1)) * 100).toFixed(digits);
+  return g.extractable ? `${pct}% ${g.name} · ${Math.round((g.ext / g.f) * 100)}% extracted` : `${pct}% ${g.name}`;
+}

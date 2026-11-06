@@ -916,7 +916,31 @@ if (share < 1) out.push({ id: '__undissolved', ml: p.ml * (1 - share) });
 }
 return out;
 }
-return { SOLVENT_CAPACITY, WHOLE_FACTOR, EMULSION_FACTOR, CELLAR_FACTOR, COMBUST_RANGE, EMULSIFIER_NEED, EMULSION_MAX_SHARE, CLASS_COMPAT, hash01, speciesProfile, rateAt, yieldAt, ceilingAt, extractOver, extractIdOf, profileOf, solventClassOf, emulsionStability, classWords, extractedParts };
+function groupExtracts(comp, lookup) {
+const by = new Map();
+for (const [id, f] of Object.entries(comp)) {
+if (!(f > 0)) continue;
+const awake = id.endsWith('~a');
+const plain = awake ? id.slice(0, -2) : id;
+const d = lookup(plain);
+const raw = d && d.extractOf ? d.extractOf : plain;
+const key = raw + (awake ? '~a' : '');
+let g = by.get(key);
+if (!g) {
+const rd = lookup(key) || lookup(raw);
+g = { id: key, name: rd ? (awake && !lookup(key) ? `Awakened ${rd.name}` : rd.name) : raw, f: 0, ext: 0, extractable: false };
+by.set(key, g);
+}
+g.f += f;
+if (d && d.extractOf) { g.ext += f; g.extractable = true; } else if (d && d.extraction) g.extractable = true;
+}
+return [...by.values()].sort((a, b) => b.f - a.f);
+}
+function groupLine(g, total, digits = 0) {
+const pct = ((g.f / (total || 1)) * 100).toFixed(digits);
+return g.extractable ? `${pct}% ${g.name} · ${Math.round((g.ext / g.f) * 100)}% extracted` : `${pct}% ${g.name}`;
+}
+return { SOLVENT_CAPACITY, WHOLE_FACTOR, EMULSION_FACTOR, CELLAR_FACTOR, COMBUST_RANGE, EMULSIFIER_NEED, EMULSION_MAX_SHARE, CLASS_COMPAT, hash01, speciesProfile, rateAt, yieldAt, ceilingAt, extractOver, extractIdOf, profileOf, solventClassOf, emulsionStability, classWords, extractedParts, groupExtracts, groupLine };
 })();
 // src/visual/identity.js
 const __m10 = (() => {
@@ -19455,7 +19479,7 @@ const { causeWord } = __m60;
 const { rarityTag } = __m104;
 const { BIOME_BY_ID } = __m18;
 const { seedChance } = __m17;
-const { classWords } = __m8;
+const { classWords, groupExtracts, groupLine } = __m8;
 const { vesselReport, vesselVolume, potionNet, RUNE_PRICE, CELLAR_T } = __m86;
 const CAT_LABEL = { heat: 'Fire', cold: 'Cooling', vessel: 'Cauldrons', tool: 'Tools', instrument: 'Instruments', trials: 'Trials room', gathering: 'Foraging', storage: 'Potion storage', guild: 'Guild' };
 function jarCanvas(m, w = 22, hh = 30) {
@@ -19796,7 +19820,7 @@ col.lost ? h('div', { class: 'small muted', text: `The hutch was too full for ${
 }
 function showAnalysis(lab, m, recipe, title = 'Analysis of the brew') {
 const st = lab.state;
-const comp = Object.entries(m.composition).sort((a, b) => b[1] - a[1]);
+const comp = groupExtracts(m.composition, st.lookup);
 const sand = lab.sandbox;
 const aura = sand || st.has('arcanometer') ? EFFECTS.filter((e, k) => Math.abs(m.effects[k]) >= 3).map((e) => e.label).join(', ') || 'no aura' : null;
 const kv = (k, v) => [h('span', { class: 'k', text: k }), h('span', { text: v })];
@@ -19814,7 +19838,7 @@ h('span', { class: 'k', text: 'Colour' }), h('span', {}, swatch(m.color), ' ' + 
 ...kv('Effects', 'unknown — test a dose in Trials'),
 ...(aura ? kv('Aura', aura) : []),
 )),
-h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Composition' }), ...comp.map(([id, f]) => h('div', { class: 'small', text: `${(f * 100).toFixed(1)}%  ${st.lookup(id) ? st.lookup(id).name : id}` }))),
+h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Composition' }), ...comp.map((g) => h('div', { class: 'small', text: groupLine(g, 1, 1) }))),
 lab.sandbox ? null : h('div', { class: 'row' }, btn('Save as recipe', () => { const ev = st.addRecipe({ ...recipe, name: 'Experiment ' + (st.recipes.length + 1) }); for (const e of ev) lab.announce(e); toast('Recipe saved', '', 'book'); }, { icon: 'book' })),
 ],
 });
@@ -31450,7 +31474,7 @@ const { theoryOf, EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, dominantEffect, NE } = _
 const { awakenParts, describeThreshold } = __m22;
 const { ARC_NONE } = __m66;
 const { extractionReport } = __m79;
-const { classWords, extractedParts } = __m8;
+const { classWords, extractedParts, groupExtracts, groupLine } = __m8;
 const { describeColor, rgbToHex } = __m11;
 const { h, btn, clear, keepScroll, toast, coins, confirmDialog, modal, setNoteDock, recentNotes } = __m2;
 const { icon } = __m3;
@@ -31599,6 +31623,8 @@ window.removeEventListener('keydown', this.onKey);
 document.removeEventListener('visibilitychange', this.onVis);
 window.removeEventListener('pagehide', this.onUnload);
 window.removeEventListener('storage', this.onStorage);
+if (this._onJarRelease) { window.removeEventListener('pointerup', this._onJarRelease); window.removeEventListener('pointercancel', this._onJarRelease); }
+clearJarGhosts();
 if (this.resizeObs) this.resizeObs.disconnect();
 if (this.tutorial) this.tutorial.stop();
 audio.update({ fire: 0, stir: 0, pour: 0, boil: 0, cold: 0 }, 0);
@@ -31700,6 +31726,7 @@ for (const v of Object.values(this.views)) v.build();
 void st;
 }
 showView(id, silent = false) {
+clearJarGhosts();
 this.view = id;
 this.el.setAttribute('data-view', id);
 for (const [k, t] of Object.entries(this.tabEls)) {
@@ -31836,10 +31863,18 @@ t.appendChild(this.actionsEl);
 this.buildActions();
 if (this.tool) this.selectTool(this.tool, true);
 }
+bindJarRelease() {
+if (this._onJarRelease) return;
+this._onJarRelease = (e) => { const f = this._jarEnd; if (f) { this._jarEnd = null; f(e); } clearJarGhosts(); };
+window.addEventListener('pointerup', this._onJarRelease);
+window.addEventListener('pointercancel', this._onJarRelease);
+}
 buildShelf() {
 keepScroll(this.shelfEl, () => this.fillShelf());
 }
 fillShelf() {
+this.bindJarRelease();
+if (!this._jarEnd) clearJarGhosts();
 const sh = clear(this.shelfEl);
 this.jarEls = {};
 const st = this.state;
@@ -31887,6 +31922,8 @@ clearTimer(); pressTimer = 0;
 dragging = true;
 try { el.setPointerCapture(e.pointerId); } catch { /* ignore */ }
 this.selectIngredient(id);
+clearJarGhosts();
+this._jarEnd = end;
 ghost = h('div', { class: 'drag-ghost jar-ghost' }, el.querySelector('canvas').cloneNode(true));
 const c2 = ghost.querySelector('canvas');
 const src = el.querySelector('canvas');
@@ -31906,6 +31943,7 @@ else { this.pourX = this.clampPourX(wx); this.sim.emitter.setX(this.pourX); }
 });
 const end = (e) => {
 if (e.pointerId !== pid) return;
+if (this._jarEnd === end) this._jarEnd = null;
 clearTimer();
 if (dragging) {
 dragging = false;
@@ -31917,6 +31955,7 @@ pressTimer = -2;
 };
 el.addEventListener('pointerup', end);
 el.addEventListener('pointercancel', end);
+el.addEventListener('lostpointercapture', end);
 el.addEventListener('pointerleave', () => { if (!dragging) clearTimer(); });
 el.addEventListener('click', () => {
 if (pressTimer === -1 || pressTimer === -2) { pressTimer = 0; return; }
@@ -32907,7 +32946,7 @@ return;
 }
 const m = measureParticles(this.sim, sel);
 const st = this.state;
-const comp = Object.entries(m.composition).sort((a, b) => b[1] - a[1]).slice(0, 3);
+const comp = groupExtracts(m.composition, st.lookup).slice(0, 3);
 const phase = Object.entries(m.phases).sort((a, b) => b[1] - a[1])[0][0];
 const arc = this.sandbox || st.has('arcanometer');
 const aura = arc ? EFFECTS.filter((e, k) => Math.abs(m.effects[k]) >= 3) : [];
@@ -32916,7 +32955,7 @@ h('div', { class: 'rrow' }, h('span', { class: 'swatch', style: { background: rg
 this.sandbox
 ? h('div', { text: `${Math.round(m.temperature)}°C · ${m.viscosity < 100 ? m.viscosity.toFixed(1) : Math.round(m.viscosity)} cP · ${m.density.toFixed(2)} g/ml · charge ${m.charge.toFixed(2)}` })
 : h('div', { text: `${Math.round(m.temperature)}°C · ${viscosityClass(m.viscosity)} · ${densityWord(m.density)}` }),
-...comp.map(([id, f]) => h('div', { text: `${Math.round(f * 100)}% ${st.lookup(id) ? st.lookup(id).name : id}` })),
+...comp.map((g) => h('div', { text: groupLine(g, 1) })),
 arc ? h('div', { class: 'aura' }, h('span', { text: 'Aura: ' }), aura.length ? aura.map((e) => icon(e.icon, 'sm')) : h('span', { text: 'none' })) : h('div', { class: 'muted', text: 'Effects: unknown (test in Trials)' }),
 );
 if (arc) el.append(this.arcaneReading(sel, m));
@@ -33281,6 +33320,9 @@ return;
 this.state.cauldron = snapshotSim(this.sim, this.cap.size);
 saveGame(this.state);
 }
+}
+function clearJarGhosts() {
+for (const g of document.querySelectorAll('.jar-ghost')) g.remove();
 }
 function sliderToSetting(u) {
 return Math.sign(u) * u * u;

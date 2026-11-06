@@ -39,7 +39,7 @@ import { theoryOf, EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, dominantEffect, NE } fr
 import { awakenParts, describeThreshold } from '../alchemy/arcane.js';
 import { ARC_NONE } from '../simulation/particles.js';
 import { extractionReport } from '../reactions/extraction.js';
-import { classWords, extractedParts } from '../alchemy/extraction.js';
+import { classWords, extractedParts, groupExtracts, groupLine } from '../alchemy/extraction.js';
 import { describeColor, rgbToHex } from '../core/color.js';
 import { h, btn, clear, keepScroll, toast, coins, confirmDialog, modal, setNoteDock, recentNotes } from './dom.js';
 import { icon } from './icons.js';
@@ -213,6 +213,8 @@ export class LabScreen {
     document.removeEventListener('visibilitychange', this.onVis);
     window.removeEventListener('pagehide', this.onUnload);
     window.removeEventListener('storage', this.onStorage);
+    if (this._onJarRelease) { window.removeEventListener('pointerup', this._onJarRelease); window.removeEventListener('pointercancel', this._onJarRelease); }
+    clearJarGhosts();
     if (this.resizeObs) this.resizeObs.disconnect();
     if (this.tutorial) this.tutorial.stop();
     audio.update({ fire: 0, stir: 0, pour: 0, boil: 0, cold: 0 }, 0);
@@ -336,6 +338,7 @@ export class LabScreen {
 
   /** Switch rooms. @param {string} id */
   showView(id, silent = false) {
+    clearJarGhosts();
     this.view = id;
     this.el.setAttribute('data-view', id);
     for (const [k, t] of Object.entries(this.tabEls)) {
@@ -491,12 +494,26 @@ export class LabScreen {
     if (this.tool) this.selectTool(this.tool, true);
   }
 
+  /**
+   * A drag that lost its jar (the shelf was rebuilt under the finger) still
+   * ends where the finger lifts: one window listener for every jar.
+   */
+  bindJarRelease() {
+    if (this._onJarRelease) return;
+    this._onJarRelease = (e) => { const f = this._jarEnd; if (f) { this._jarEnd = null; f(e); } clearJarGhosts(); };
+    window.addEventListener('pointerup', this._onJarRelease);
+    window.addEventListener('pointercancel', this._onJarRelease);
+  }
+
   /** The ingredient shelf, rebuilt where it was scrolled to (a jar gathered in the wilds or bought does not send it back to its start). */
   buildShelf() {
     keepScroll(this.shelfEl, () => this.fillShelf());
   }
 
   fillShelf() {
+    this.bindJarRelease();
+    // a drag in flight off a jar that is about to be replaced
+    if (!this._jarEnd) clearJarGhosts();
     const sh = clear(this.shelfEl);
     this.jarEls = {};
     const st = this.state;
@@ -558,6 +575,9 @@ export class LabScreen {
         dragging = true;
         try { el.setPointerCapture(e.pointerId); } catch { /* ignore */ }
         this.selectIngredient(id);
+        clearJarGhosts();
+        // (one release handler for the whole window: see bindJarRelease)
+        this._jarEnd = end;
         ghost = h('div', { class: 'drag-ghost jar-ghost' }, el.querySelector('canvas').cloneNode(true));
         const c2 = ghost.querySelector('canvas');
         const src = el.querySelector('canvas');
@@ -577,6 +597,7 @@ export class LabScreen {
     });
     const end = (e) => {
       if (e.pointerId !== pid) return;
+      if (this._jarEnd === end) this._jarEnd = null;
       clearTimer();
       if (dragging) {
         dragging = false;
@@ -588,6 +609,9 @@ export class LabScreen {
     };
     el.addEventListener('pointerup', end);
     el.addEventListener('pointercancel', end);
+    // the shelf may be rebuilt under the finger (a jar emptied, a harvest):
+    // the jar loses the pointer and never sees the release, so the window ends the drag too
+    el.addEventListener('lostpointercapture', end);
     el.addEventListener('pointerleave', () => { if (!dragging) clearTimer(); });
     el.addEventListener('click', () => {
       if (pressTimer === -1 || pressTimer === -2) { pressTimer = 0; return; }
@@ -1774,7 +1798,8 @@ export class LabScreen {
     }
     const m = measureParticles(this.sim, sel);
     const st = this.state;
-    const comp = Object.entries(m.composition).sort((a, b) => b[1] - a[1]).slice(0, 3);
+    // each ingredient once, with its dissolved share (not the herb and its extract as two lines)
+    const comp = groupExtracts(m.composition, st.lookup).slice(0, 3);
     const phase = Object.entries(m.phases).sort((a, b) => b[1] - a[1])[0][0];
     // the arcanometer shows the aura of strong magic and reads the threshold
     const arc = this.sandbox || st.has('arcanometer');
@@ -1785,7 +1810,7 @@ export class LabScreen {
       this.sandbox
         ? h('div', { text: `${Math.round(m.temperature)}°C · ${m.viscosity < 100 ? m.viscosity.toFixed(1) : Math.round(m.viscosity)} cP · ${m.density.toFixed(2)} g/ml · charge ${m.charge.toFixed(2)}` })
         : h('div', { text: `${Math.round(m.temperature)}°C · ${viscosityClass(m.viscosity)} · ${densityWord(m.density)}` }),
-      ...comp.map(([id, f]) => h('div', { text: `${Math.round(f * 100)}% ${st.lookup(id) ? st.lookup(id).name : id}` })),
+      ...comp.map((g) => h('div', { text: groupLine(g, 1) })),
       arc ? h('div', { class: 'aura' }, h('span', { text: 'Aura: ' }), aura.length ? aura.map((e) => icon(e.icon, 'sm')) : h('span', { text: 'none' })) : h('div', { class: 'muted', text: 'Effects: unknown (test in Trials)' }),
     );
     if (arc) el.append(this.arcaneReading(sel, m));
@@ -2231,6 +2256,11 @@ export class LabScreen {
     this.state.cauldron = snapshotSim(this.sim, this.cap.size);
     saveGame(this.state);
   }
+}
+
+/** Remove every jar drag ghost from the page (a drag over, or lost). */
+function clearJarGhosts() {
+  for (const g of document.querySelectorAll('.jar-ghost')) g.remove();
 }
 
 /** Slider position (−1…1) → furnace setting: squared, for fine control of gentle heat. @param {number} u */
