@@ -60,10 +60,11 @@ test('freeze a liquid into a block, then crush it with the pestle', async ({ pag
   expect(errors).toEqual([]);
 });
 
-test('the physics demonstrations live here: skimmer, alembic, heat map and exact readings', async ({ page }) => {
+test('the physics demonstrations live here: skimmer, alembic and exact readings (no heat map, Inspect, Auto or speed any more)', async ({ page }) => {
   const errors = watchErrors(page);
   await startSandbox(page);
-  for (const act of ['alembic', 'thermal', 'tool-skimmer']) await expect(page.locator(`[data-act=${act}]`).first()).toBeAttached();
+  for (const act of ['alembic', 'tool-skimmer', 'sample']) await expect(page.locator(`[data-act=${act}]`).first()).toBeAttached();
+  for (const act of ['thermal', 'tool-probe', 'autostir', 'speed', 'cellar']) await expect(page.locator(`[data-act=${act}]`)).toHaveCount(0);
   await pourRole(page, 'water', 200, 0);
   await page.click('[data-act=sample]');
   await expect(page.locator('.overlay')).toContainText('g/ml');
