@@ -33,6 +33,8 @@ import { PAL, makeCanvas } from './art.js';
 import { RABBIT_MARKS } from '../game/colony.js';
 import { KINDS, bodyOf } from '../game/kinds.js';
 import { punchSprite } from './punch.js';
+import { ANIMAL_SPRITES } from './animal-sprites.js';
+import { VARIANT_COATS } from '../game/animal-variants.js';
 
 export const RABBIT_W = 48;
 export const RABBIT_H = 40;
@@ -908,6 +910,8 @@ function drawBody(P, look, snap, a, low) {
     P, a, L, sc, tr: traitsOf(snap), dead, cause, pattern: look.pattern || 'solid', eyeCol: look.eye || 'dark',
     seed: (look.seed >>> 0) || 1, fur, C: shades(fur), C2: shades(fur2),
   };
+  // every kind is drawn from its sprite on the animal atlas (rendering/animal-sprites.js)
+  if (ANIMAL_SPRITES[a.creature]) { spriteBody(S, look, snap, low); return; }
   if (!low && !dead) auraLayer(S);
   // a beetle, a wisp or a cloud ray: a body of its own, over the build it moves with
   if (OWN_BODY.has(a.creature)) { ownBody(S); if (dead) causeLayer(S); return; }
@@ -940,6 +944,131 @@ function drawBody(P, look, snap, a, low) {
   creatureLayer(S);
   if (dead) causeLayer(S);
 }
+
+// ------------------------------------------------------------------ the animal atlas's sprites
+
+/** sprite → its pixels as rgb (0..1) or null @type {Map<any, {w:number, h:number, px:(number[]|null)[], eye:number[]}>} */
+const DECODED = new Map();
+/** @param {import('./animal-sprites.js').AnimalSprite} sp */
+function decodeSprite(sp) {
+  let d = DECODED.get(sp);
+  if (d) return d;
+  const pal = sp.pal.map((h) => [parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255]);
+  const rows = sp.px.split('/'), px = [];
+  for (let y = 0; y < sp.h; y++) for (let x = 0; x < sp.w; x++) { const ch = rows[y][x]; px.push(ch === '.' ? null : pal[parseInt(ch, 36)]); }
+  d = { w: sp.w, h: sp.h, px, eye: sp.eye };
+  DECODED.set(sp, d);
+  return d;
+}
+
+/**
+ * Which of its kind's four atlas variants an animal is drawn as: the one
+ * whose coat is nearest its own (kinds.js gives new animals a variant's coat).
+ * @param {any} look @returns {number}
+ */
+export function variantOf(look) {
+  const vs = VARIANT_COATS[creatureOfLook(look)];
+  if (!vs) return 0;
+  const c = rgbOf(look && look.coat, vs[0]);
+  let best = 0, bd = Infinity;
+  vs.forEach((v, i) => { const d = (v[0] - c[0]) ** 2 * 0.3 + (v[1] - c[1]) ** 2 * 0.59 + (v[2] - c[2]) ** 2 * 0.11; if (d < bd) { bd = d; best = i; } });
+  return best;
+}
+
+/**
+ * The atlas sprite for a pose: the standing variant, or one of its four
+ * animation frames — the walk's (or crawl's, trot's, flutter's…) four beats,
+ * a leap or a wingbeat in the air.
+ * @param {string} kind @param {number} v @param {string} pose
+ */
+function atlasSprite(kind, v, pose) {
+  const A = ANIMAL_SPRITES[kind], b = walkBeat(pose);
+  if (b >= 0) return A.frames[v][b];
+  if (pose === 'hop' || pose === 'fly1') return A.frames[v][1];
+  if (pose === 'fly2') return A.frames[v][2];
+  return A.variants[v];
+}
+
+/**
+ * Draw an animal from its atlas sprite: chosen by its variant and pose,
+ * smaller as a kit, squashed lying down, on its back in death; coloured by
+ * its visible state (the coat's tint, never its outline or eye); then the
+ * marks its state leaves on it (kept to its body), its traits, its eyes'
+ * moods and how it died — placed on the sprite's own head and eye.
+ * @param {Paint} S @param {any} look @param {any} snap @param {boolean} low
+ */
+function spriteBody(S, look, snap, low) {
+  const { P, L, sc, dead, cause, tr } = S, a0 = S.a, pose = a0.pose;
+  const d = decodeSprite(atlasSprite(a0.creature, variantOf(look), pose));
+  // its size: a kit or a young animal is smaller, a giant larger (nearest pixels, never blended)
+  const kitS = clamp(((snap && STAGE_G[snap.stage]) || 1) * (tr.has('giant') ? 1.18 : tr.has('tiny') ? 0.8 : 1), 0.5, 1.3);
+  const sx = kitS, sy = kitS * (pose === 'flop' || pose === 'collapse' ? 0.7 : pose === 'loaf' || pose === 'sick' ? 0.85 : pose === 'dead' ? 0.8 : 1);
+  const w = Math.max(3, Math.round(d.w * sx)), h = Math.max(3, Math.round(d.h * sy));
+  const flip = pose === 'dead';
+  const at = (/** @type {number} */ x, /** @type {number} */ y) => {
+    const X = Math.min(d.w - 1, Math.floor((x * d.w) / w)), Y0 = Math.min(d.h - 1, Math.floor((y * d.h) / h));
+    return d.px[(flip ? d.h - 1 - Y0 : Y0) * d.w + X];
+  };
+  // where it stands: its feet on the ground, or up in the air in a leap or a wingbeat (a wisp always floats)
+  const air = pose === 'hop' || pose === 'fly1' || pose === 'fly2';
+  let bottom = a0.feetY;
+  if (air) bottom = Math.min(a0.feetY - 2, Math.round(Math.max(...a0.parts.map((e) => e.cy + e.ry))));
+  if (a0.creature === 'wisp' && !a0.lying) bottom = a0.feetY - 7;
+  const x0 = clamp(Math.round(a0.cx - w / 2), 1, RABBIT_W - 1 - w), y0 = clamp(bottom - h + 1, 1, RABBIT_H - 1 - h);
+  // the anchors every overlay is laid on, from the sprite itself
+  const ex = x0 + Math.round(((d.eye[0] + 0.5) * w) / d.w - 0.5), eyRaw = Math.round(((d.eye[1] + 0.5) * h) / d.h - 0.5);
+  const ey = y0 + (flip ? h - 1 - eyRaw : eyRaw);
+  const haunch = E(x0 + w * 0.32, y0 + h * 0.62, Math.max(2, w * 0.26), Math.max(2, h * 0.28));
+  const chest = E(x0 + w * 0.62, y0 + h * 0.6, Math.max(2, w * 0.2), Math.max(2, h * 0.26));
+  const head = E(ex - 1, ey, Math.max(2, w * 0.16), Math.max(2, h * 0.2));
+  const a = {
+    ...a0, haunch, chest, head, muzzle: E(x0 + w - 2, ey + 1, 1, 1), bulges: [], parts: [haunch, chest, head], ears: [], legs: [],
+    eye: { x: ex, y: ey }, eye3: { x: ex - 1, y: Math.max(1, ey - 3) }, nose: { x: x0 + w - 1, y: ey + 1 }, cheek: { x: ex, y: ey + 2 },
+    brow: { x: ex - 2, y: y0 }, wing: { x: Math.round(chest.cx - chest.rx - 3), y: y0 - 2 },
+    back: { x0: x0 + 2, x1: Math.round(chest.cx), y: y0 + 1 }, belly: { x: Math.round(chest.cx), y: y0 + h - 2 },
+    box: { x0: x0 - 1, y0: y0 - 1, x1: x0 + w + 1, y1: y0 + h + 1 },
+  };
+  S.a = a;
+  if (!low && !dead) auraLayer(S);
+  if (tr.has('wings')) wingArt(S, true);
+  // the body, tinted by its visible state (the outline and the eye keep their darks)
+  const mask = new Uint8Array(RABBIT_W * RABBIT_H), tint = new Map();
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const c = at(x, y);
+    if (!c) continue;
+    let col = tint.get(c);
+    if (!col) { col = lum(c) < 0.14 ? css(c) : css(tintCoat(c, L, sc, dead, cause)); tint.set(c, col); }
+    P(x0 + x, y0 + y, 1, 1, col);
+    if (lum(c) >= 0.14) mask[(y0 + y) * RABBIT_W + x0 + x] = 1;
+  }
+  // the marks its state leaves, kept to its body
+  const body = /** @type {Pen} */ ((x, y, ww, hh, col) => {
+    const X0 = Math.round(x), Y0 = Math.round(y), W = Math.max(1, Math.round(ww)), H = Math.max(1, Math.round(hh));
+    for (let yy = Math.max(0, Y0); yy < Math.min(RABBIT_H, Y0 + H); yy++) for (let xx = Math.max(0, X0); xx < Math.min(RABBIT_W, X0 + W); xx++) if (mask[yy * RABBIT_W + xx]) P(xx, yy, 1, 1, col);
+  });
+  S.P = body;
+  strengthMarks(S);
+  if (tr.has('scales')) scaleMarks(S);
+  coatMarks(S); burnMarks(S); acidMarks(S); alkaliMarks(S); frostMarks(S); sickMarks(S);
+  S.P = P;
+  // its traits: horns on its brow, wings at its shoulders
+  hornArt(S, true); hornArt(S, false);
+  if (tr.has('wings')) wingArt(S, false);
+  // the eye's mood over the sprite's own eye
+  const e = a.eye;
+  const cross = () => { P(e.x - 1, e.y - 1, 1, 1, K); P(e.x + 1, e.y - 1, 1, 1, K); P(e.x, e.y, 1, 1, K); P(e.x - 1, e.y + 1, 1, 1, K); P(e.x + 1, e.y + 1, 1, 1, K); };
+  if (dead || pose === 'hurt') cross();
+  else if (pose === 'flop') { P(e.x - 1, e.y, 1, 1, K); P(e.x, e.y - 1, 1, 1, K); P(e.x + 1, e.y, 1, 1, K); }
+  else if (L.love === 3) heart(P, e.x - 1, e.y - 2, C_HEART);
+  else if (pose === 'collapse' || pose === 'loaf' || L.toxicity === 3) P(e.x - 1, e.y, 3, 1, K);
+  else if (L.arcana >= 2 || sc[4] >= 2) { P(e.x, e.y, 1, 1, C_RUNE_HI); P(e.x - 1, e.y, 1, 1, C_RUNE); }
+  else if (L.arcana === 1) P(e.x, e.y - 2, 1, 1, C_RUNE);
+  if (pose === 'eat' && !a.bare && !AIRBORNE.has(a.creature)) grassTuft(P, a.nose.x - 1, a.feetY);
+  if (dead) causeLayer(S);
+}
+
+/** Kinds that never graze from the ground. */
+const AIRBORNE = new Set(['wisp', 'cloudray', 'cavemoth', 'shroudmoth']);
 
 // ------------------------------------------------------------------ the native creatures' own looks
 
