@@ -20,6 +20,7 @@ import { hashString } from '../core/rng.js';
 import { INK } from '../visual/style.js';
 import { atlasFrame, spriteAsset, stageAsset } from '../visual/atlas.js';
 import { SPECIES_COLORS } from '../materials/species-colors.js';
+import { ICON_SHEET, ICON_BOXES } from '../visual/ingredient-icons.js';
 
 /** Does a material draw from the ingredient atlases (a catalog species)? @param {any} m */
 export const isAtlasMaterial = (m) => !!(m && m.wild && m.wild.catalog);
@@ -260,6 +261,48 @@ export function silhouetteOf(m, o = {}) {
   });
 }
 
+/** The ingredient icon sheet, loaded once. @type {HTMLImageElement|null} */
+let iconSheet = null;
+/** @type {((img:HTMLImageElement)=>void)[]|null} */
+let iconWaiting = null;
+
+/** Call back with the icon sheet: at once when it is here, else when it has loaded. @param {(img:HTMLImageElement)=>void} fn */
+function whenIconSheet(fn) {
+  if (iconSheet && iconSheet.complete && iconSheet.naturalWidth) { fn(iconSheet); return; }
+  if (!iconWaiting) {
+    iconWaiting = [];
+    const img = new Image();
+    img.decoding = 'async';
+    img.onload = () => { iconSheet = img; const w = iconWaiting || []; iconWaiting = null; for (const f of w) f(img); };
+    img.onerror = () => { iconWaiting = null; };
+    img.src = ICON_SHEET;
+  }
+  iconWaiting.push(fn);
+}
+
+/** The violet outline of an Arcane icon, as [r, g, b]. */
+const ARCANE_RIM = [186, 150, 255];
+
+/** Draw a species' icon into its square canvas (centred, standing on its floor). @param {HTMLCanvasElement} cv @param {HTMLImageElement} img @param {number[]} box @param {boolean} arcane */
+function drawIcon(cv, img, box, arcane) {
+  const [x, y, w, h] = box, S = cv.width;
+  const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, S, S);
+  ctx.drawImage(img, x, y, w, h, Math.round((S - w) / 2), S - 2 - h, w, h);
+  if (!arcane) return;
+  const d = ctx.getImageData(0, 0, S, S), p = d.data, a = new Uint8Array(S * S);
+  for (let k = 0; k < S * S; k++) a[k] = p[k * 4 + 3] > 0 ? 1 : 0;
+  for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) {
+    if (a[j * S + i]) continue;
+    const near = (i > 0 && a[j * S + i - 1]) || (i < S - 1 && a[j * S + i + 1]) || (j > 0 && a[(j - 1) * S + i]) || (j < S - 1 && a[(j + 1) * S + i]);
+    if (!near) continue;
+    const o = (j * S + i) * 4;
+    p[o] = ARCANE_RIM[0]; p[o + 1] = ARCANE_RIM[1]; p[o + 2] = ARCANE_RIM[2]; p[o + 3] = 255;
+  }
+  ctx.putImageData(d, 0, 0);
+}
+
 /** An ingredient's icon (pure pixels). @param {any} m */
 export function iconFrameOf(m) {
   if (isAtlasMaterial(m)) {
@@ -280,18 +323,18 @@ export function iconFrameOf(m) {
  */
 export function ingredientSprite(m, fill = 1) {
   if (isAtlasMaterial(m)) {
-    // the species' own atlas sprite (its Arcane sprite for an Arcane specimen), in a square just round it
-    const f = iconFrameOf(m);
+    // the species' harvested-ingredient icon (assets/ingredients/icons.png), in a square just round it;
+    // an Arcane specimen wears a violet outline
+    const box = ICON_BOXES[m.wild.key];
     const cv = /** @type {HTMLCanvasElement} */ (document.createElement('canvas'));
     cv.style.imageRendering = 'pixelated';
     cv.classList.add('ing-sprite');
     if (m.wild.arcane) cv.classList.add('arcane');
     cv.dataset.rarity = m.wild.rarity || 'common';
-    if (!f) { cv.width = cv.height = 16; cv.dataset.pending = m.id; return cv; }
-    const S = Math.max(f.pix.w, f.pix.h) + 2;
+    if (!box) { cv.width = cv.height = 16; return cv; }
+    const S = Math.max(box[2], box[3]) + 4;
     cv.width = S; cv.height = S;
-    const g = f.pix.toCanvas();
-    /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')).drawImage(g, Math.round((S - f.pix.w) / 2), S - 1 - f.pix.h);
+    whenIconSheet((img) => drawIcon(cv, img, box, !!m.wild.arcane));
     return cv;
   }
   const f = m && m.wild ? iconFrameOf(m) : null;

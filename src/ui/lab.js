@@ -47,7 +47,7 @@ import { audio } from '../audio/audio.js';
 import * as panels from './panels.js';
 import * as trade from './trade.js';
 import { Tutorial } from './tutorial.js';
-import { openInventory } from './inventory.js';
+import { InventoryDrawer } from './inventory.js';
 import { benchIds, setOnBench } from '../game/bench.js';
 import { CounterView } from './views/counter.js';
 import { WildsView } from './views/wilds.js';
@@ -315,8 +315,9 @@ export class LabScreen {
     this.shelfEl = h('div', { class: 'shelf', role: 'listbox', 'aria-label': 'Ingredient shelf' });
     this.doseEl = h('div', { class: 'dose' });
     this.shelfWrap = h('div', { class: 'shelf-wrap frame' }, this.doseEl, this.shelfEl);
+    this.inventory = new InventoryDrawer(this);
     this.brewView = h('section', { class: 'view view-brew', 'data-view': 'brew' },
-      this.sandbox ? null : this.strip, this.stageEl, this.controls, this.toolbar, this.shelfWrap);
+      this.sandbox ? null : this.strip, this.stageEl, this.inventory.el, this.controls, this.toolbar, this.shelfWrap);
     // ---- other rooms
     this.views = { counter: new CounterView(this), wilds: new WildsView(this), garden: new GardenView(this), trials: new TrialsView(this), book: new BookView(this) };
     this.viewsEl = h('div', { class: 'views' }, this.views.counter.el, this.brewView, this.views.wilds.el, this.views.garden.el, this.views.trials.el, this.views.book.el);
@@ -351,6 +352,7 @@ export class LabScreen {
       t.b.setAttribute('aria-current', k === id ? 'page' : 'false');
     }
     if (id !== 'brew') {
+      if (this.inventory && this.inventory.open) this.inventory.toggle(false);
       if (this.sim.emitter.pouring && !(this.sim.emitter.active && this.sim.emitter.active.dose)) this.sim.emitter.stop();
       this.pointer.down = false;
       const t = this.sim.tool;
@@ -523,7 +525,7 @@ export class LabScreen {
     const st = this.state;
     // the quick shelf: only the jars put out of the storeroom (the Inventory button, first in the row)
     const ids = benchIds(st.bench, this.shelfPool(), (id) => (this.sandbox ? Infinity : st.stock(id)));
-    sh.appendChild(btn(ids.length ? '' : 'Fill the shelf', () => this.openInventory(), { icon: 'satchel', cls: 'shelf-inv', title: 'Inventory: every ingredient you hold, by effect or rarity — choose what goes on this shelf (I)', act: 'inventory' }));
+    sh.appendChild(btn(ids.length ? '' : 'Fill the shelf', () => this.openInventory(), { icon: 'satchel', cls: 'shelf-inv', title: 'Inventory: every ingredient you hold, by effect — tap or drag one onto this shelf (I)', act: 'inventory' }));
     const labels = shelfLabels(ids.map((id) => st.lookup(id).name));
     for (const [n, id] of ids.entries()) {
       const m = st.lookup(id);
@@ -561,9 +563,9 @@ export class LabScreen {
     return this.state.bench.ids.includes(id);
   }
 
-  /** Put a jar on the quick shelf, or take it back to the storeroom. @param {string} id @param {boolean} on */
-  setOnShelf(id, on) {
-    setOnBench(this.state.bench, id, on);
+  /** Put a jar on the quick shelf (at the end, or before the jar shown at `at`), or take it back to the storeroom. @param {string} id @param {boolean} on @param {number} [at] */
+  setOnShelf(id, on, at = -1) {
+    setOnBench(this.state.bench, id, on, at, Object.keys(this.jarEls || {}));
     if (!on && this.selected === id) {
       this.selected = null;
       if (this.sim.emitter.pouring && !(this.sim.emitter.active && this.sim.emitter.active.dose)) this.sim.emitter.stop();
@@ -576,9 +578,11 @@ export class LabScreen {
     this.save();
   }
 
-  openInventory() {
+  /** Open or close the inventory drawer (over the cauldron, the shelf in reach). @param {boolean} [on] */
+  openInventory(on) {
     audio.play('click');
-    openInventory(this);
+    if (this.view !== 'brew') this.showView('brew');
+    this.inventory.toggle(on);
   }
 
   /**
@@ -619,7 +623,10 @@ export class LabScreen {
       }
       if (dragging) {
         const r = this.canvas.getBoundingClientRect();
-        const over = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+        // (over the open inventory a jar is being put away, not poured)
+        const intoStore = this.inventory.contains(e);
+        this.inventory.el.classList.toggle('drop-over', intoStore);
+        const over = !intoStore && e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
         if (over) {
           const [wx] = this.renderer.toWorld(e.clientX - r.left, e.clientY - r.top);
           if (!this.sim.emitter.pouring) this.startPour(wx);
@@ -635,6 +642,9 @@ export class LabScreen {
         dragging = false;
         if (this.sim.emitter.pouring && !this.sim.emitter.active.dose) this.sim.emitter.stop();
         pressTimer = -2;
+        this.inventory.el.classList.remove('drop-over');
+        // dropped into the open inventory: back to the storeroom
+        if (e.type === 'pointerup' && this.inventory.contains(e)) { this.setOnShelf(id, false); this.inventory.refresh(); audio.play('select'); }
       }
     };
     el.addEventListener('pointerup', end);
@@ -802,6 +812,7 @@ export class LabScreen {
 
   handleKey(e) {
     if (e.target && /** @type {HTMLElement} */ (e.target).tagName === 'INPUT' && /** @type {any} */ (e.target).type !== 'range') return;
+    if (!document.querySelector('.overlay') && this.inventory.open && e.key === 'Escape') { this.inventory.toggle(false); return; }
     if (document.querySelector('.overlay')) {
       if (e.key === 'Escape') { const x = /** @type {HTMLElement} */ (document.querySelector('.overlay .modal-head .btn')); if (x) x.click(); }
       return;
@@ -1925,6 +1936,14 @@ export class LabScreen {
   }
 
   updateShelf() {
+    if (this.inventory && this.inventory.open) {
+      for (const t of this.inventory.grid.querySelectorAll('.inv-tile')) {
+        const s = this.sandbox ? Infinity : this.state.stock(/** @type {HTMLElement} */ (t).dataset.id || '');
+        const el = t.querySelector('.inv-stock');
+        const txt = isFinite(s) ? (s >= 1000 ? (s / 1000).toFixed(1) + 'L' : String(Math.round(s))) : '∞';
+        if (el && el.textContent !== txt) el.textContent = txt;
+      }
+    }
     if (!this.jarEls) return;
     for (const [id, j] of Object.entries(this.jarEls)) {
       const s = this.sandbox ? Infinity : this.state.stock(id);

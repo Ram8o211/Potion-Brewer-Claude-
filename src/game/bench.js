@@ -37,18 +37,29 @@ export function benchIds(bench, pool, stock) {
   for (const id of pool) {
     if (bench.seen[id] || !(stock(id) > 0)) continue;
     bench.seen[id] = 1;
-    bench.ids.push(id);
+    if (!bench.ids.includes(id)) bench.ids.push(id);
   }
   const ok = new Set(pool);
   return bench.ids.filter((id) => ok.has(id));
 }
 
-/** Put a jar out (at the end of the shelf) or take it back to the storeroom. @param {Bench} bench @param {string} id @param {boolean} on */
-export function setOnBench(bench, id, on) {
+/**
+ * Put a jar out or take it back to the storeroom. A jar put out goes at the
+ * end of the shelf, or before the jar shown at `at` (an index among `shown`,
+ * the jars on view; one already out moves there).
+ * @param {Bench} bench @param {string} id @param {boolean} on @param {number} [at] @param {string[]} [shown]
+ */
+export function setOnBench(bench, id, on, at = -1, shown = bench.ids) {
   bench.seen[id] = 1;
-  const at = bench.ids.indexOf(id);
-  if (on && at < 0) bench.ids.push(id);
-  else if (!on && at >= 0) bench.ids.splice(at, 1);
+  const before = on && at >= 0 && at < shown.length ? shown[at] : null;
+  const was = bench.ids.indexOf(id);
+  if (was >= 0 && (!on || before !== null)) {
+    if (before === id) return;
+    bench.ids.splice(was, 1);
+  }
+  if (!on) return;
+  if (before !== null) bench.ids.splice(bench.ids.indexOf(before), 0, id);
+  else if (!bench.ids.includes(id)) bench.ids.push(id);
 }
 
 /** The strongest effect of an ingredient, and its strength (|acidity| counts both ways), or null. @param {any} m */
