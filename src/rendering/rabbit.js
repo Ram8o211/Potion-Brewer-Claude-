@@ -351,10 +351,10 @@ const kindOfLook = (look) => bodyOf(creatureOfLook(look));
 /** Creatures drawn with a body of their own over the build they move with. */
 const OWN_BODY = new Set(['beetle', 'scarab', 'wisp', 'cloudray']);
 /** Each native creature's size against its build's. */
-const CREATURE_G = { hare: 1.06, otter: 1.12, beetle: 1.22, scarab: 1.18, cavemoth: 0.86, shroudmoth: 0.9, wisp: 0.8, cloudray: 1.2, mimic: 1, axolotl: 0.95 };
+const CREATURE_G = { hare: 1.06, otter: 1.12, beetle: 1.22, scarab: 1.18, cavemoth: 1.05, shroudmoth: 1.08, wisp: 0.8, cloudray: 1.2, mimic: 1, axolotl: 0.95 };
 
 /** Overall scale of each kind against a rabbit (a toad, a rat, a snail are small beasts). */
-const KIND_G = { toad: 0.8, rat: 0.78, snail: 0.82, dove: 0.82, ermine: 0.85 };
+const KIND_G = { toad: 0.88, rat: 0.78, snail: 0.82, dove: 0.82, ermine: 0.85 };
 
 /**
  * The build of the four-legged kinds, in body units (×g; the head ×hs):
@@ -443,6 +443,8 @@ function kindBody(kind, pose, ox, oy, g, hs, bulk, preg) {
   const legs = [];
   /** @type {Ell[]} */
   const extra = [];
+  // (a salamander never leaps: a 'hop' is a quick scuttle, mid-stride)
+  if (pose === 'hop' && kind === 'salamander') pose = 'walk2';
   const beat = walkBeat(pose), walk = beat < 0 ? 0 : beat < 2 ? 1 : -1;
   /** @type {Ell} */ let haunch;
   /** @type {Ell} */ let chest;
@@ -505,20 +507,35 @@ function kindBody(kind, pose, ox, oy, g, hs, bulk, preg) {
     // a deer's long neck, from its shoulders up to its head
     if (kind === 'deer' && head.cy < chest.cy - 3) extra.push(E((chest.cx + head.cx) / 2 + 0.5, (chest.cy - chest.ry * 0.3 + head.cy) / 2 + 1, 2.2 * g, Math.max(2, (chest.cy - head.cy) / 2)));
   } else if (kind === 'toad') {
+    if (pose === 'hop') {
+      // mid-leap: a frog's leap, stretched long, hind legs flung out straight behind, forelegs reaching down
+      haunch = E(ox + 11 * g, oy - 9 * g, 7.5 * g, 3.8 * g + preg);
+      chest = E(ox + 18 * g, oy - 10 * g, 5.5 * g + bulk, 3.8 * g);
+      head = E(ox + 23.5 * g, oy - 12 * g, 4.6 * hs, 3.2 * hs);
+      const hl = Math.max(4, Math.round(8 * g));
+      legs.push({ x: Math.round(haunch.cx - haunch.rx - hl + 2), y: Math.round(haunch.cy + 1), w: hl, h: 2 });
+      legs.push({ x: Math.round(haunch.cx - haunch.rx - hl + 4), y: Math.round(haunch.cy + 3), w: hl - 1, h: 1 });
+      legs.push({ x: Math.round(chest.cx + chest.rx - 3), y: Math.round(chest.cy + chest.ry - 1), w: 2, h: Math.max(2, Math.round(3 * g)) });
+      extra.push(E(head.cx + 1, head.cy - head.ry + 1, 1.6 * hs + 0.4, 1.6 * hs + 0.4));
+      extra.push(E(head.cx - 2, head.cy - head.ry + 1, 1.3 * hs + 0.3, 1.3 * hs + 0.3));
+      return { haunch, chest, head, snout, legs, extra };
+    }
     if (pose === 'rear') {
       haunch = E(ox + 11 * g, oy - 5 * g, 7 * g, 5 * g + preg);
       chest = E(ox + 17 * g, oy - 8 * g, 5 * g + bulk, 5.5 * g);
       head = E(ox + 21 * g, oy - 13 * g, 5 * hs, 3.5 * hs);
     } else {
       const low = pose === 'loaf' || pose === 'sick' ? 1 : 0;
-      haunch = E(ox + 11 * g, oy - 5 * g + low, 8.5 * g, 5 * g + preg - low);
-      chest = E(ox + 18 * g, oy - 4.5 * g + low, 6 * g + bulk, 4.5 * g - low);
-      head = E(ox + 23 * g, oy - (pose === 'eat' ? 4 : 6) * g + low, 5 * hs, 3.5 * hs);
+      // a squat, chubby toad: a round back, the head up and its eyes bulging on top
+      haunch = E(ox + 11 * g, oy - 5.8 * g + low, 8.5 * g, 5.8 * g + preg - low);
+      chest = E(ox + 18 * g, oy - 5.2 * g + low, 6 * g + bulk, 5.2 * g - low);
+      head = E(ox + 23 * g, oy - (pose === 'eat' ? 4.5 : 7) * g + low, 5 * hs, 3.8 * hs);
     }
     // a splayed forelimb
     legs.push({ x: Math.round(chest.cx + chest.rx - 3), y: oy - 3, w: 2, h: 2 });
     extra.push(E(haunch.cx + 2 * g, haunch.cy + 1, 3.6 * g, 2.6 * g)); // the folded hind leg
     extra.push(E(head.cx + 1, head.cy - head.ry + 1, 1.6 * hs + 0.4, 1.6 * hs + 0.4)); // the bulging eye
+    extra.push(E(head.cx - 2, head.cy - head.ry + 1, 1.3 * hs + 0.3, 1.3 * hs + 0.3)); // and the far one, behind it
   } else if (kind === 'dove') {
     // a plump bird: an oval body, a puffed breast, a small round head on a short neck, thin legs
     const fly = pose === 'hop' || pose === 'fly1' || pose === 'fly2';
@@ -670,11 +687,21 @@ export function rabbitAnchors(look, snap, want) {
   // (a snail lies as it withdraws; a dove in the air is a bird in flight, not a leaping rabbit)
   /** @type {Ell[]} */
   let kindExtra = [];
-  if (kind !== 'rabbit' && (!lying || kind === 'snail') && (pose !== 'hop' || kind === 'dove' || kind === 'snail' || kind in QUAD)) {
+  if (kind !== 'rabbit' && (!lying || kind === 'snail') && (pose !== 'hop' || kind === 'dove' || kind === 'snail' || kind === 'toad' || kind === 'salamander' || kind in QUAD)) {
     const kb = kindBody(kind, pose, ox, oy, g, hs, bulk, preg);
     haunch = kb.haunch; chest = kb.chest; head = kb.head; snout = kb.snout; kindExtra = kb.extra;
     legs.length = 0;
     legs.push(...kb.legs);
+  }
+  // a hare stands taller and leaner than a rabbit, up on long legs
+  if (creatureOfLook(look) === 'hare' && kind === 'rabbit' && !lying && (pose === 'idle' || pose === 'hurt' || /^walk/.test(pose))) {
+    const lift = Math.max(2, Math.round(3 * g));
+    haunch = E(haunch.cx, haunch.cy - lift + 1, haunch.rx - 1, haunch.ry - 1);
+    chest = E(chest.cx + 1, chest.cy - lift, chest.rx - 1, chest.ry);
+    head = E(head.cx + 1, head.cy - lift, head.rx, head.ry);
+    const fy = Math.round(chest.cy + chest.ry - 2), hy = Math.round(haunch.cy + haunch.ry - 2);
+    legs.push({ x: Math.round(haunch.cx + 1), y: hy, w: 2, h: Math.max(1, oy - 1 - hy) });
+    legs.push({ x: Math.round(chest.cx + 1), y: fy, w: 2, h: Math.max(1, oy - 1 - fy) });
   }
   // the muzzle: a round snout at the front of the head (a cat's is small, a fox's or a rat's long, a toad's and a salamander's hardly there)
   const mr = kind === 'rabbit' ? Math.max(1, Math.round(2.4 * hs)) : kind === 'cat' ? Math.max(1, Math.round(1.7 * hs)) : 1;
@@ -781,6 +808,8 @@ export function rabbitAnchors(look, snap, want) {
   for (const e of ears) y0 = Math.min(y0, e.kind === 'up' || e.kind === 'cat' || e.kind === 'stalk' ? e.y - e.len : e.kind === 'round' ? e.y - 2 * e.len - 1 : e.y - 1);
   if (kind === 'dove' && pose === 'fly1') y0 = Math.min(y0, haunch.cy - haunch.ry - DOVE_WING);
   for (const e of kindExtra) y0 = Math.min(y0, e.cy - e.ry - 1);
+  const cr0 = creatureOfLook(look);
+  if ((cr0 === 'cavemoth' || cr0 === 'shroudmoth') && !lying) y0 = Math.min(y0, Math.round(chest.cy) - Math.max(8, Math.round(14 * g)) - 2);
   if (kind === 'cat' && !lying) y0 = Math.min(y0, tail.y - CAT_TAIL_RISE - 1);
   if (tr.has('ears2')) y0 = Math.min(y0, ...ears.map((e) => (e.kind === 'flat' ? e.y - 3 : y0)));
   if (hornH) y0 = Math.min(y0, top + 1 - hornH);
@@ -882,6 +911,13 @@ function drawBody(P, look, snap, a, low) {
   if (!low && !dead) auraLayer(S);
   // a beetle, a wisp or a cloud ray: a body of its own, over the build it moves with
   if (OWN_BODY.has(a.creature)) { ownBody(S); if (dead) causeLayer(S); return; }
+  if (a.creature === 'cavemoth' || a.creature === 'shroudmoth') {
+    // a moth: its own wings and body, with the marks its state leaves on it
+    mothBody(S);
+    coatMarks(S); burnMarks(S); acidMarks(S); frostMarks(S); sickMarks(S);
+    if (dead) causeLayer(S);
+    return;
+  }
   farLayer(S);
   for (const e of a.parts) ell(P, e, 1, K); // outline pass
   // on a fine grid, the coat keeps to the body's smooth silhouette (its patterns and shading are laid in frame pixels)
@@ -949,6 +985,15 @@ function creatureLayer(S) {
       const y0 = colEdge(body, x, -1), y1 = colEdge(body, x, 1);
       if (y0 !== null && y1 !== null) P(x, y0 + 1, 2, Math.max(1, Math.round((y1 - y0) * 0.7)), C2.body);
     }
+    // a casque rising at the back of the head
+    const hx = h.cx - 1, hy = h.cy - h.ry;
+    P(hx - 2, hy - 1, 4, 2, K); P(hx - 1, hy - 2, 2, 1, K); P(hx - 1, hy - 1, 2, 1, C.shade); P(hx - 1, hy, 3, 1, C.body);
+    // the tail's tip curled into a coil
+    if (!a.lying) {
+      const t = a.tail, n = t.len, drop = Math.max(0, a.feetY - 2 - t.y) * 0.3;
+      const tx = t.x - n + 2, ty = t.y - 1 + Math.round(drop) - 3;
+      stamp(P, ['.kkkk.', 'kbbbbk', 'kbkcbk', 'kbbkbk', '.kkbbk', '...kk.'], tx - 2, ty - 2, { k: K, b: C.body, c: C2.body });
+    }
     const e = a.eye;
     if (!dead) { P(e.x - 1, e.y - 2, 3, 3, C.dark); P(e.x, e.y - 1, 1, 1, '#f0b84a'); P(e.x, e.y - 1, 1, 1, K); P(e.x - 1, e.y - 2, 1, 1, C.hi); }
     return;
@@ -957,9 +1002,15 @@ function creatureLayer(S) {
     // feathery gills fanning out behind the head, a faint glow of the spine through the skin, a smile
     const gx = h.cx - h.rx + 1, gy = h.cy - 1;
     const gill = dead ? '#a87a86' : C2.body, gill2 = dead ? '#8a6470' : C2.hi;
-    for (const [dx, dy, len] of [[-1, -3, 3], [-2, -1, 3], [-1, 1, 3]]) {
-      for (let i = 0; i < len; i++) P(gx + dx - i, gy + dy - Math.round(i * (dy < 0 ? 0.7 : dy > 0 ? -0.5 : 0)), 1, 1, i === len - 1 ? gill2 : gill);
-      P(gx + dx - 1, gy + dy - 1, 1, 1, gill2);
+    // three feathery fronds a side, each a dark-edged stalk fringed with bright filaments
+    for (const [dx, dy, sl] of [[0, -3, -0.6], [-1, -1, -0.15], [0, 1, 0.4]]) {
+      const len = 5;
+      for (let i = 0; i < len; i++) { const x = gx + dx - i, y = gy + dy + Math.round(i * sl); P(x - 1, y - 1, 3, 3, K); }
+      for (let i = 0; i < len; i++) {
+        const x = gx + dx - i, y = gy + dy + Math.round(i * sl);
+        P(x, y, 1, 1, gill);
+        if (i & 1) { P(x, y - 1, 1, 1, gill2); P(x, y + 1, 1, 1, gill2); }
+      }
     }
     if (!dead) for (let x = a.haunch.cx - 3; x <= a.chest.cx + 1; x += 3) P(x, a.chest.cy - 1, 1, 1, 'rgba(255,255,255,0.45)');
     if (!dead) P(h.cx, h.cy + h.ry - 1, 3, 1, C.dark);
@@ -1005,9 +1056,16 @@ function ownBody(S) {
       const hx = cx;
       P(hx - 1, cy - 2, 3, 1, C2.hi); P(hx, cy - 1, 1, 1, C2.body); P(hx - 1, cy, 3, 1, C2.hi);
     } else {
+      // the seam between the wing cases, their pitted ridges and a metallic sheen
       P(cx, cy - ry + 1, 1, 2 * ry - 1, C2.body);
       for (let k = 0; k < 3; k++) P(cx - rx + 2 + ((S.seed >> k) & 3) * 2, cy + (k - 1) * 2, 1, 1, C.dark);
+      for (const [y, l, r] of rowsOf([shell])) if (y === cy + 1) { P(l + 1, y, Math.max(1, cx - l - 2), 1, C.dark); }
+      if (!dead) { P(cx + 2, cy - ry + 2, 2, 1, '#ffffff'); P(cx - Math.round(rx * 0.55), cy - ry + 1, 1, 1, '#ffffff'); }
     }
+    // the pronotum: a shield between the shell and the head
+    const pro = E(cx + rx - 1, cy + Math.round(ry * 0.15), Math.max(2, Math.round(2.4 * g)), Math.max(2, Math.round(ry * 0.65)));
+    ell(P, pro, 1, K); ell(P, pro, 0, C.dark); P(pro.cx - 1, pro.cy - pro.ry + 1, 2, 1, C.body);
+    if (!dead) P(head.cx + 1, head.cy - 1, 1, 1, cr === 'scarab' ? '#fff0a0' : '#e8e0d0');
     if (!dead) { const e = { x: head.cx + 1, y: head.cy - 1 }; P(e.x, e.y, 1, 1, cr === 'scarab' ? '#fff0a0' : '#e8e0d0'); }
     else { P(head.cx, head.cy - 1, 1, 1, K); P(head.cx + 1, head.cy, 1, 1, K); }
     return;
@@ -1038,15 +1096,15 @@ function ownBody(S) {
   if (cr === 'cloudray') {
     // a manta of the clouds: wide wings (raised or lowered in its glide), a long whip of a tail, two horn-like fins
     const cx = a.chest.cx - 2, cy = a.lying ? feet - 2 : a.chest.cy;
-    const span = Math.max(7, Math.round(11 * g)), up = a.pose === 'fly1' ? -1 : a.pose === 'fly2' ? 1 : 0;
-    const body = E(cx, cy, Math.max(4, Math.round(6 * g)), Math.max(2, Math.round(2.6 * g)));
+    const span = Math.max(8, Math.round(13 * g)), up = a.pose === 'fly1' ? -1 : a.pose === 'fly2' ? 1 : 0;
+    const body = E(cx, cy, Math.max(5, Math.round(7 * g)), Math.max(2, Math.round(3.2 * g)));
     // the tail
     for (let i = 0; i < span + 4; i++) P(body.cx - body.rx - i, cy + (i > span ? 1 : 0), 1, 1, i & 1 ? C.dark : K);
     // the wings: a far one (darker) and a near one, swept back
     const wing = (dir, col) => {
       for (let i = 0; i < span; i++) {
-        const y = cy + dir * (1 + Math.round(i * 0.45)) + up * Math.round(i * 0.35);
-        const x = cx + 2 - Math.round(i * 0.7), w = Math.max(1, Math.round((span - i) * 0.7));
+        const y = cy + dir * (1 + Math.round(i * 0.55)) + up * Math.round(i * 0.35);
+        const x = cx + 3 - Math.round(i * 0.6), w = Math.max(1, Math.round((span - i) * 0.95));
         P(x - w, y, w + 1, 1, col);
       }
     };
@@ -1054,12 +1112,112 @@ function ownBody(S) {
     wing(-1, a.lying ? C.shade : C.dark);
     ell(P, body, 1, K);
     wing(1, C.body);
+    // the near wing's lit leading edge and its pale underside
+    for (let i = 0; i < span; i++) { const y = cy + (1 + Math.round(i * 0.55)) + up * Math.round(i * 0.35), x = cx + 3 - Math.round(i * 0.6), w = Math.max(1, Math.round((span - i) * 0.95)); P(x - w, y, 1, 1, C.hi); if (i > 1 && i < span - 1) P(x - w + 1, y, Math.max(1, w - 2), 1, i & 1 ? C.body : C2.body); }
     ell(P, body, 0, C.body);
     for (const [y, l, r] of rowsOf([body])) if (y > cy) P(l, y, r - l + 1, 1, C2.body);
     P(body.cx - 2, cy - body.ry + 1, 4, 1, C.hi);
     // the cephalic fins and the eye
     P(body.cx + body.rx, cy - 1, 2, 1, K); P(body.cx + body.rx, cy + 1, 2, 1, K);
-    if (!dead) P(body.cx + body.rx - 2, cy - 1, 1, 1, '#1a1a2a'); else P(body.cx + body.rx - 2, cy - 1, 1, 1, '#5a5a6a');
+    if (!dead) { P(body.cx + body.rx - 3, cy - 1, 2, 2, '#1a1a2a'); P(body.cx + body.rx - 3, cy - 1, 1, 1, '#ffffff'); P(body.cx + body.rx - 2, cy + 2, 2, 1, css(C.rgb, 0.55)); }
+    else P(body.cx + body.rx - 3, cy - 1, 2, 1, '#5a5a6a');
+  }
+}
+
+/**
+ * Fill a polygon (scene pixels), optionally grown by a pixel all round for
+ * its outline. @param {Pen} P @param {number[][]} pts @param {string} col @param {number} [grow]
+ */
+function poly(P, pts, col, grow = 0) {
+  const ys = pts.map((q) => q[1]), y0 = Math.floor(Math.min(...ys)), y1 = Math.ceil(Math.max(...ys));
+  for (let y = y0; y <= y1; y++) {
+    const yc = y + 0.5 > y1 ? y1 : y + 0.5 < y0 ? y0 : y + 0.5;
+    let lo = Infinity, hi = -Infinity;
+    for (let i = 0; i < pts.length; i++) {
+      const [ax, ay] = pts[i], [bx, by] = pts[(i + 1) % pts.length];
+      if ((ay <= yc && by >= yc) || (by <= yc && ay >= yc)) {
+        const x = ay === by ? Math.min(ax, bx) : ax + ((yc - ay) * (bx - ax)) / (by - ay);
+        const x2 = ay === by ? Math.max(ax, bx) : x;
+        lo = Math.min(lo, x); hi = Math.max(hi, x2);
+      }
+    }
+    if (lo > hi) continue;
+    const l = Math.round(lo) - grow, r = Math.round(hi) + grow;
+    P(l, y - (y === y0 ? grow : 0), r - l + 1, 1 + (y === y0 || y === y1 ? grow : 0), col);
+  }
+}
+
+/**
+ * A moth (the cave moth, the shroud moth): broad scaled wings raised over a
+ * furry body — fluttering as it walks or flies, folded into a tent at rest,
+ * spread flat in death — a pale or dusky eyespot on each forewing, feathery
+ * antennae and thin legs. Laid on the anchors of the dove's build it moves with.
+ * @param {Paint} S
+ */
+function mothBody(S) {
+  const { P, a, C, C2, dead } = S, g = a.g, cr = a.creature;
+  const pose = a.pose, beat = walkBeat(pose);
+  const fly = pose === 'hop' || pose === 'fly1' || pose === 'fly2';
+  const bx = Math.round(a.chest.cx), by = Math.round(fly ? a.chest.cy : Math.min(a.chest.cy, a.feetY - Math.round(3 * g) - 1));
+  const H = Math.max(8, Math.round(14 * g)), L = Math.max(8, Math.round(13 * g));
+  const rest = pose === 'loaf' || pose === 'sick' || pose === 'eat' || pose === 'collapse';
+  const half = pose === 'fly2' || beat === 1 || beat === 3 || pose === 'hurt';
+  const wingCol = dead ? css(mix(C.rgb, ASH, 0.3)) : C.body;
+  const veil = cr === 'shroudmoth';
+  /** wings as polygons: [far fore, hind, fore] */
+  let far, hind, fore;
+  if (a.lying) {
+    // spread flat on the ground, both wings out
+    const y = a.feetY - 1;
+    fore = [[bx + 1, y - 3], [bx - L + 2, y - 3 - Math.round(H * 0.3)], [bx - L, y], [bx - 2, y]];
+    hind = [[bx - 2, y - 1], [bx - L + 1, y], [bx - L + 3, y + 1], [bx - 1, y + 1]];
+    far = [[bx + 2, y - 2], [bx + L - 2, y - 2 - Math.round(H * 0.3)], [bx + L - 1, y], [bx + 2, y]];
+  } else if (rest) {
+    // folded back into a roof over the body
+    fore = [[bx + 1, by - 3], [bx - L + 1, by - 2], [bx - L - 1, by + 2], [bx, by + 1]];
+    hind = [[bx - 3, by], [bx - L, by + 1], [bx - L + 1, by + 2], [bx - 3, by + 2]];
+    far = [[bx + 1, by - 4], [bx - L + 3, by - 4], [bx - L + 1, by - 2], [bx + 1, by - 2]];
+  } else {
+    // raised over the back like a butterfly's (half spread on the downbeat)
+    const h = half ? Math.round(H * 0.6) : H, back = half ? Math.round(L * 0.3) : 0;
+    fore = [[bx + 1, by - 1], [bx + 2 - back, by - h + 2], [bx - back, by - h], [bx - Math.round(L * 0.75) - back, by - Math.round(h * 0.72)],
+      [bx - Math.round(L * 0.7) - back, by - Math.round(h * 0.35)], [bx - 3, by]];
+    hind = [[bx - 1, by + 1], [bx - Math.round(L * 0.55) - back, by - Math.round(h * 0.4)], [bx - L, by - Math.round(h * 0.2)], [bx - L + 1, by + 1], [bx - 4, by + 2]];
+    // the far wing, tipped forward of the near one: the pair open in a V
+    far = [[bx + 1, by - 1], [bx + Math.round(L * 0.45) - back, by - h + 1], [bx + Math.round(L * 0.2) - back, by - h - 1], [bx - 3, by - Math.round(h * 0.5)], [bx - 1, by]];
+  }
+  // the far forewing behind everything, then the hind wing, the body, the near forewing
+  poly(P, far, K, 1); poly(P, far, dead ? C.dark : css(C.rgb, 0.7));
+  poly(P, hind, K, 1); poly(P, hind, css(C.rgb, 0.85));
+  // the body: abdomen, thorax and head, furry
+  const ab = E(bx - 3 * g, by + 1, Math.max(2, 4 * g), Math.max(1, 1.8 * g)), th = E(bx + 1, by, Math.max(2, 2.4 * g), Math.max(2, 2.2 * g)), hd = E(bx + 3.5 * g + 1, by - 1, 1.6, 1.6);
+  for (const e of [ab, th, hd]) ell(P, e, 1, K);
+  ell(P, ab, 0, veil ? C.shade : C2.shade === C.shade ? C.dark : css(mix(C.rgb, C2.rgb, 0.4), 0.8));
+  for (let x = ab.cx - ab.rx + 1; x < ab.cx + ab.rx; x += 2) P(x, ab.cy, 1, 1, C.dark); // the rings of the abdomen
+  ell(P, th, 0, C.hi); ell(P, hd, 0, C.shade);
+  P(th.cx - 1, th.cy - th.ry + 1, 2, 1, '#ffffff');
+  poly(P, fore, K, 1); poly(P, fore, wingCol);
+  // the wing's lit leading edge, a band across it and the eyespot
+  for (let i = 0; i < 2; i++) { const [x0, y0] = fore[i], [x1, y1] = fore[i + 1]; const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let k = 0; k <= n; k += 1) P(Math.round(x0 + ((x1 - x0) * k) / n), Math.round(y0 + ((y1 - y0) * k) / n), 1, 1, C.hi); }
+  const [cxw, cyw] = [Math.round((fore[0][0] + fore[1][0] + fore[2][0] + fore[3][0]) / 4), Math.round((fore[0][1] + fore[1][1] + fore[2][1] + fore[3][1]) / 4)];
+  if (!dead) {
+    P(cxw - 1, cyw - 2, 3, 1, C2.body); P(cxw - 2, cyw - 1, 5, 2, C2.body); P(cxw - 1, cyw + 1, 3, 1, C2.body);
+    if (veil) { P(cxw, cyw - 1, 1, 2, '#d8d0f0'); }
+    else { P(cxw - 1, cyw - 1, 3, 2, C.hi); P(cxw, cyw - 1, 1, 2, K); }
+    P(cxw - 3, cyw + 2, 2, 1, C.shade); P(cxw + 1, cyw + 2, 2, 1, C.shade);
+  }
+  // the eye and the feathery antennae, swept up and forward
+  P(hd.cx, hd.cy - 1, 2, 2, dead ? '#4a4048' : K);
+  if (!dead) P(hd.cx + 1, hd.cy - 1, 1, 1, veil ? '#c8b8ff' : '#e8d8a0');
+  if (!a.lying) for (let i = 0; i < 5; i++) {
+    const x = hd.cx + Math.round(i * 0.8), y = hd.cy - hd.ry - 1 - i;
+    P(x, y, 1, 1, K);
+    if (i & 1) { P(x - 1, y, 1, 1, C.dark); P(x + 1, y + 1, 1, 1, C.dark); }
+  }
+  // thin legs to the ground
+  if (!fly && !a.lying) for (let i = 0; i < 3; i++) {
+    const lx = bx - 2 + i * 2 + (beat >= 0 && (i + beat) & 1 ? 1 : 0), ly = by + 2;
+    if (a.feetY >= ly) { P(lx, ly, 1, a.feetY - ly + 1, K); P(lx + 1, a.feetY, 1, 1, K); }
   }
 }
 
@@ -1327,6 +1485,12 @@ function fillLayer(S) {
 /** Outlined paws on the straw: the long hind foot under the haunch and a forepaw under the chest. @param {Paint} S */
 function pawLayer(S) {
   const { P, a, C, C2 } = S;
+  if (a.kind === 'toad' && a.pose === 'hop' && a.legs.length) {
+    // mid-leap: the webbed hind feet spread at the end of the legs flung back
+    const l = a.legs[0];
+    P(l.x - 2, l.y - 1, 3, 4, K); P(l.x - 1, l.y, 1, 2, C.shade);
+    return;
+  }
   if (a.lying || a.pose === 'hop') return;
   if (a.kind === 'snail') return;
   if (a.kind === 'dove') {

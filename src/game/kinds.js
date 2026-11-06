@@ -250,8 +250,8 @@ export function kindLook(kind, rng) {
     return { kind, coat: /** @type {number[]} */ (c[0]).slice(), coat2: /** @type {number[]} */ (c[1]).slice(), pattern: c[2], ear: 'cat', size, eye: rng.chance(0.5) ? 'green' : 'amber', tail: 1, seed };
   }
   if (kind === 'toad') {
-    // olive, brown or mossy, with darker warts; gold eyes
-    const coats = [[0.46, 0.5, 0.27], [0.5, 0.4, 0.26], [0.36, 0.44, 0.26], [0.58, 0.5, 0.32]];
+    // leaf-green, mossy, brown, olive or sulphur-yellow, with darker warts and a pale throat; gold eyes
+    const coats = [[0.44, 0.66, 0.26], [0.36, 0.58, 0.24], [0.5, 0.4, 0.26], [0.46, 0.5, 0.27], [0.72, 0.66, 0.26]];
     const c = coats[rng.int(0, coats.length - 1)];
     return { kind, coat: c.slice(), coat2: [c[0] * 0.62, c[1] * 0.62, c[2] * 0.6].map(r2), pattern: 'warts', ear: 'none', size, eye: 'amber', tail: 0, seed };
   }
@@ -278,7 +278,7 @@ export function kindLook(kind, rng) {
   }
   if (kind === 'snail') {
     // a grey-brown foot under a banded shell
-    return { kind, coat: pick([[0.62, 0.56, 0.48], [0.55, 0.52, 0.48], [0.7, 0.62, 0.52]]).slice(), coat2: pick([[0.72, 0.5, 0.28], [0.6, 0.45, 0.3], [0.82, 0.68, 0.42]]).slice(), pattern: 'spiral', ear: 'stalk', size, eye: 'dark', tail: 0, seed };
+    return { kind, coat: pick([[0.62, 0.56, 0.48], [0.55, 0.52, 0.48], [0.7, 0.62, 0.52]]).slice(), coat2: pick([[0.72, 0.5, 0.28], [0.6, 0.45, 0.3], [0.82, 0.68, 0.42], [0.86, 0.56, 0.62], [0.52, 0.66, 0.4]]).slice(), pattern: 'spiral', ear: 'stalk', size, eye: 'dark', tail: 0, seed };
   }
   if (kind === 'rat') {
     const c = pick([[0.45, 0.4, 0.37], [0.3, 0.27, 0.26], [0.58, 0.54, 0.48]]);
@@ -294,17 +294,23 @@ export function kindLook(kind, rng) {
   }
   if (kind === 'beetle' || kind === 'scarab') {
     // a beetle: a domed shell (iron-grey to bronze for the rock beetle; turquoise and gold for the scarab)
-    const shell = kind === 'scarab' ? pick([[0.2, 0.62, 0.6], [0.26, 0.5, 0.72], [0.2, 0.58, 0.42]]) : pick([[0.36, 0.36, 0.4], [0.46, 0.36, 0.26], [0.3, 0.34, 0.3]]);
+    // (rock beetles: steel-blue, moss-green, rust-red, bronze or slate, with a metallic sheen)
+    const shell = kind === 'scarab' ? pick([[0.2, 0.62, 0.6], [0.26, 0.5, 0.72], [0.2, 0.58, 0.42], [0.5, 0.3, 0.62]]) : pick([[0.24, 0.38, 0.62], [0.3, 0.52, 0.28], [0.66, 0.24, 0.2], [0.62, 0.48, 0.2], [0.36, 0.36, 0.42]]);
     return { kind, coat: shell.slice(), coat2: kind === 'scarab' ? [0.95, 0.76, 0.3] : [0.16, 0.15, 0.17], pattern: 'carapace', ear: 'none', size, eye: 'dark', tail: 0, seed };
   }
   if (kind === 'cavemoth' || kind === 'shroudmoth') {
     // a furry moth: dusky brown with pale eyespots (the cave moth), or grey-violet veils with dark eyes on the wings (the shroud moth)
-    const c = kind === 'cavemoth' ? pick([[0.46, 0.38, 0.3], [0.38, 0.34, 0.3], [0.5, 0.44, 0.34]]) : pick([[0.62, 0.58, 0.72], [0.56, 0.56, 0.62], [0.7, 0.66, 0.78]]);
-    return { kind, coat: c.slice(), coat2: kind === 'cavemoth' ? [0.92, 0.86, 0.62] : [0.2, 0.16, 0.28], pattern: 'moth', ear: 'antenna', size, eye: 'dark', tail: 0, seed };
+    if (kind === 'cavemoth') {
+      // gold, cream, dusky brown, rose or violet wings, each with a darker eyespot
+      const [c, c2] = pick([[[0.9, 0.74, 0.34], [0.5, 0.32, 0.16]], [[0.92, 0.88, 0.76], [0.56, 0.46, 0.36]], [[0.56, 0.44, 0.32], [0.94, 0.84, 0.56]], [[0.9, 0.62, 0.74], [0.5, 0.24, 0.4]], [[0.66, 0.54, 0.86], [0.3, 0.2, 0.5]]]);
+      return { kind, coat: c.slice(), coat2: c2.slice(), pattern: 'moth', ear: 'antenna', size, eye: 'dark', tail: 0, seed };
+    }
+    const c = pick([[0.62, 0.58, 0.72], [0.56, 0.56, 0.62], [0.7, 0.66, 0.78]]);
+    return { kind, coat: c.slice(), coat2: [0.2, 0.16, 0.28], pattern: 'moth', ear: 'antenna', size, eye: 'dark', tail: 0, seed };
   }
   if (kind === 'wisp') {
-    // a floating flame: blue-green or pale gold
-    const c = pick([[0.5, 0.95, 0.9], [0.62, 0.86, 1], [0.98, 0.9, 0.55]]);
+    // a floating flame: blue-green, sky-blue, pale gold or violet
+    const c = pick([[0.5, 0.95, 0.9], [0.62, 0.86, 1], [0.98, 0.9, 0.55], [0.82, 0.6, 1]]);
     return { kind, coat: c.slice(), coat2: [1, 1, 1], pattern: 'glow', ear: 'none', size, eye: 'dark', tail: 0, seed };
   }
   if (kind === 'cloudray') {
@@ -317,8 +323,8 @@ export function kindLook(kind, rng) {
     return { kind, coat: c.slice(), coat2: [Math.min(1, c[2] + 0.3), Math.min(1, c[0] + 0.2), Math.min(1, c[1] + 0.25)].map(r2), pattern: 'bands', ear: 'none', size, eye: 'amber', tail: 2, seed };
   }
   if (kind === 'axolotl') {
-    // pale pink, half see-through, with feathery red gills
-    return { kind, coat: pick([[0.96, 0.78, 0.84], [0.86, 0.84, 0.96], [0.98, 0.86, 0.74]]).slice(), coat2: [0.92, 0.36, 0.5], pattern: 'spectral', ear: 'gills', size, eye: 'dark', tail: 2, seed };
+    // pink, rose, lilac or ice-blue, half see-through, with feathery red gills
+    return { kind, coat: pick([[0.97, 0.7, 0.8], [0.98, 0.8, 0.86], [0.82, 0.74, 0.96], [0.66, 0.88, 0.92]]).slice(), coat2: [0.9, 0.3, 0.48], pattern: 'spectral', ear: 'gills', size, eye: 'dark', tail: 2, seed };
   }
   // fire salamander: glossy black with yellow or orange blotches
   const spot = rng.chance(0.65) ? [0.98, 0.78, 0.16] : [0.96, 0.46, 0.12];

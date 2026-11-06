@@ -32,7 +32,7 @@ export const GROUND_Y0 = 69;
 const GROUND_Y1 = 86;
 
 /** Version of the pens' painting (names caches only). */
-export const PENS_VERSION = 8;
+export const PENS_VERSION = 9;
 
 /**
  * @typedef {Object} Pen
@@ -1237,6 +1237,36 @@ function fringe(fg, style, seed) {
   else if (style === 'snow') for (let x = 0; x < fg.W; x++) { const h = 1 + Math.floor(patch(x, 0, seed, 0.3) * 3); for (let j = 1; j <= h; j++) fg.set(x, fg.H - j, P.snow[j === h ? 5 : 4]); }
 }
 
+/** A cluster of glowing crystal points on the ground: lit, middle and shadowed faces, a white tip. */
+function crystals_(cv, cx, base, hex, seed) {
+  const c = rgb(hex), tone = (k) => col('#' + c.map((v) => Math.round(Math.min(255, v * 255 * k)).toString(16).padStart(2, '0')).join(''));
+  const pts = [[-5, 7, 2], [0, 13, 3], [5, 9, 2], [-2, 5, 2], [8, 5, 1]];
+  for (const [dx, h, w] of pts) {
+    const x0 = cx + dx;
+    for (let y = 0; y < h; y++) {
+      const half = Math.max(0, Math.round(w * Math.min(1, (h - y) / (w + 1))));
+      for (let x = -half; x <= half; x++) cv.set(x0 + x, base - 1 - y, x < 0 ? tone(1.15) : x === 0 ? tone(0.9) : tone(0.6));
+    }
+    cv.set(x0, base - h, col('#ffffff'));
+  }
+  rect(cv, cx - 8, base - 1, cx + 11, base, P.stone[1]);
+  cv.glow(cx, base - 7, 22, c, 0.5);
+  void seed;
+}
+
+/** A small barrel cactus with a flower on top. */
+function cactus_(cv, cx, base, h) {
+  for (let y = 0; y < h; y++) for (let x = -2; x <= 2; x++) {
+    const edge = Math.abs(x) === 2 && (y === h - 1);
+    if (edge) continue;
+    cv.set(cx + x, base - 1 - y, col(x === -1 ? '#7ab060' : x === 2 ? '#3a6a34' : (x + y) % 3 === 0 ? '#2f5a2c' : '#5a9448'));
+  }
+  // an arm
+  for (let y = 3; y < 7 && y < h; y++) cv.set(cx + 4, base - 1 - y, col('#4a8040'));
+  cv.set(cx + 3, base - 4, col('#4a8040'));
+  cv.set(cx, base - h - 1, col('#f07aa0')); cv.set(cx - 1, base - h, col('#e05a80')); cv.set(cx + 1, base - h, col('#e05a80'));
+}
+
 // each piece of furniture and scenery drawn standing apart from what is behind it
 const frame = prop(frame_);
 const lantern = thing(lantern_);
@@ -1258,6 +1288,8 @@ const bench = thing(bench_);
 const pond = thing(pond_);
 const mushroom = thing(mushroom_);
 const stone = thing(stone_);
+const crystals = thing(crystals_);
+const cactus = thing(cactus_);
 const bottle = thing(bottle_);
 const woodpile = thing(woodpile_);
 const cabbage = thing(cabbage_);
@@ -1544,12 +1576,15 @@ const PENS = {
       burrow(cv, 176, BACK, 30, 20, seed + 4);
       rocks(cv, 0, 30, 120, BACK - 6, P.stone, seed + 5, { h: 8, moss: 0.12 });
       pond(cv, 6, 112, BACK - 9, BACK + 2, seed + 6);
-      for (const [x, w] of [[30, 6], [62, 7], [92, 5]]) stone(cv, x, BACK - 3, w, seed + x);
+      // a little fall spilling off the rocks into the stream
+      fill(cv, 76, 30, 84, BACK - 7, (x, y) => P.water[(x + y * 2 + (y >> 1)) % 4 === 0 ? 5 : x === 76 ? 3 : 4]);
+      rect(cv, 74, 28, 86, 31, P.stone[4]);
+      for (const [x, w] of [[30, 6], [62, 7], [98, 5]]) stone(cv, x, BACK - 3, w, seed + x);
       block(4, GROUND_Y0 - 4, 114, GROUND_Y0 + 2);
       ground(cv, BACK, 'dirt', seed + 7);
       pebbles(cv, 112, cv.W, BACK + 1, GROUND_Y1, seed + 8, 14);
       tufts(cv, 112, cv.W, BACK + 1, seed + 10, 0.3);
-      return { rack: { x: 130, y: GROUND_Y0 + 1 }, nest: [164, BACK - 3, 190, BACK], anim: [{ type: 'shimmer', n: 8, x0: 10, x1: 108, y0: BACK - 7, y1: BACK + 1 }] };
+      return { rack: { x: 130, y: GROUND_Y0 + 1 }, nest: [164, BACK - 3, 190, BACK], anim: [{ type: 'waterfall', x0: 76, x1: 84, y0: 31, y1: BACK - 7 }, { type: 'shimmer', n: 8, x0: 10, x1: 108, y0: BACK - 7, y1: BACK + 1 }] };
     },
   },
   beetle: {
@@ -1582,6 +1617,9 @@ const PENS = {
         cv.glow(x, BACK - h, 16, c === '#5ad0c0' ? [0.35, 0.82, 0.75] : [0.5, 0.36, 0.9], 0.45);
       }
       lantern(cv, 120, 0, 16);
+      crystals(cv, 186, BACK, '#6ab8ff', seed + 4);
+      crystals(cv, 44, BACK, '#c070e0', seed + 5);
+      crate(cv, 132, BACK, 10);
       ground(cv, BACK, 'cobble', seed + 3, { R: P.stone.map((c) => mixPacked(c, 0xff000000, 0.3)) });
       return { rack: { x: 60, y: GROUND_Y0 + 1 }, nest: [182, BACK - 3, 202, BACK], anim: [{ type: 'lantern', x: 120, y: 16 }, { type: 'motes', n: 12, x: 120, y: 34, r: 30 }, { type: 'drip', x: 70, y0: 12, y1: BACK + 2, every: 3.6 }, { type: 'drip', x: 140, y0: 10, y1: BACK + 2, every: 5.1 }] };
     },
@@ -1691,6 +1729,8 @@ const PENS = {
       }
       cv.set(hx, BACK - 21, col('#e0b860')); cv.set(hx, BACK - 20, col('#e0b860'));
       for (const x of [20, 196]) { rect(cv, x, BACK - 30, x + 8, BACK, P.sand[3]); rect(cv, x, BACK - 30, x + 2, BACK, P.sand[5]); rect(cv, x - 2, BACK - 32, x + 10, BACK - 30, P.sand[4]); }
+      crate(cv, 150, BACK, 11); crate(cv, 162, BACK, 8);
+      cactus(cv, 64, BACK, 9); cactus(cv, 176, BACK, 6);
       ground(cv, BACK, 'dirt', seed + 2, { R: P.sand });
       pebbles(cv, 0, cv.W, BACK + 1, GROUND_Y1, seed + 3, 10);
       return { rack: { x: 50, y: GROUND_Y0 + 1 }, nest: [160, BACK - 3, 184, BACK], anim: [{ type: 'motes', n: 8, x: 112, y: 40, r: 30 }] };
