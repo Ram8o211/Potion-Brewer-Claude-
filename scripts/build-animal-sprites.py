@@ -212,22 +212,54 @@ def lum(c):
 def recolour(frame, variant):
     """a cream animation frame in a variant's colours: each pixel takes the variant's colour at the same lightness quantile"""
     va = variant[..., 3] > 0; fa = frame[..., 3] > 0
-    vc = variant[va][:, :3].astype(float); vl = lum(vc); order = np.argsort(vl, kind='stable'); vc = vc[order]
+    vc = variant[va][:, :3].astype(float)
+    body = np.abs(vc - INK).sum(1) > 0          # its colours, not its outline's ink
+    if body.sum() >= 4: vc = vc[body]
+    vl = lum(vc); order = np.argsort(vl, kind='stable'); vc = vc[order]
     fl = lum(frame[..., :3].astype(float))
     ranks = np.argsort(np.argsort(fl[fa], kind='stable'), kind='stable')
     q = ranks / max(1, fa.sum() - 1)
     out = frame.copy()
     out[fa, :3] = vc[np.clip(np.round(q * (len(vc) - 1)).astype(int), 0, len(vc) - 1)]
-    return ink(out, vc[0])
+    # its edge cleaned to the same crisp ink contour as the standing sprite's
+    return crisp(out)
 
-def ink(im, col):
-    """a one-pixel outline round the sprite in the given colour"""
-    a = im[..., 3] > 0
+def ink(im, col, only=None):
+    """a one-pixel outline round the sprite (or round `only` of it) in the given colour"""
+    a = (im[..., 3] > 0) if only is None else only
     H, W = a.shape
     o = np.zeros((H + 2, W + 2, 4), np.uint8); o[1:-1, 1:-1] = im
     A = np.zeros((H + 2, W + 2), bool); A[1:-1, 1:-1] = a
-    ring = (~A) & (np.roll(A, 1, 0) | np.roll(A, -1, 0) | np.roll(A, 1, 1) | np.roll(A, -1, 1))
+    O = o[..., 3] > 0
+    ring = (~O) & (np.roll(A, 1, 0) | np.roll(A, -1, 0) | np.roll(A, 1, 1) | np.roll(A, -1, 1))
     o[ring, :3] = np.clip(col, 0, 255); o[ring, 3] = 255
+    return o
+
+# the one ink every sprite is outlined in (the sheet's contour colour)
+INK = np.array([20, 12, 24], float)
+
+def neighbours4(m):
+    p = np.pad(m, 1)
+    return p[:-2, 1:-1] | p[2:, 1:-1] | p[1:-1, :-2] | p[1:-1, 2:]
+
+def crisp(im):
+    """the standing sprite's soft, blurred contour made one crisp line of ink, as the animation frames have:
+    contour pixels (dark at the silhouette's edge, and the dark pixels just inside them) become ink;
+    where the body meets the clear without a contour, an ink pixel is added outside"""
+    a = im[..., 3] > 0
+    L = lum(im[..., :3].astype(float))
+    edge = a & neighbours4(~a)
+    inner = a & ~edge
+    m = np.median(L[inner]) if inner.any() else np.median(L[a])
+    dark = L < min(0.36, m - 0.12)
+    contour = edge & dark
+    # the blur's second, inner ring of the contour
+    contour |= a & dark & neighbours4(contour) & neighbours4(edge)
+    out = im.copy()
+    out[contour, :3] = INK
+    # wherever the light body touches the clear, outline it
+    body = a & ~contour
+    o = ink(out, INK, only=body)
     return o
 
 def eye_of(im):
@@ -260,7 +292,7 @@ def main():
     for kr in range(7):
         for kc in range(3):
             kind = KINDS[kr][kc]
-            vs = tiles(im, kr, kc)
+            vs = [crisp(v) for v in tiles(im, kr, kc)]
             fs, n = frames(im, kr, kc)
             if len(vs) != 4 or n < 4: sys.exit(f'{kind}: {len(vs)} variants, {n} frames')
             anim = [[recolour(f, v) for f in fs[:4]] for v in vs]
