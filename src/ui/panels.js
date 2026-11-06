@@ -8,6 +8,7 @@ import { h, btn, modal, toast, coins, starsText, confirmDialog, clear, keepScrol
 import { icon } from './icons.js';
 import { drawPortrait } from '../rendering/portraits.js';
 import { drawJar } from '../rendering/art.js';
+import { drawBottle } from '../rendering/renderer.js';
 import { EQUIPMENT, RANKS } from '../game/equipment.js';
 import { ACHIEVEMENTS } from '../game/state.js';
 import { viscosityClass, densityWord, evennessWord } from '../game/measure.js';
@@ -706,35 +707,115 @@ export function openCellar(lab) {
   /** what the player typed, per vessel (kept across the live refresh) */
   /** @type {Record<number, {ml:number, target:number}>} */
   const vals = {};
+  /** the shelved bottle picked (tap) or being dragged to a vessel */
+  let sel = /** @type {string|null} */ (null);
+  /** @type {{id:string, pid:number, x:number, y:number, on:boolean, ghost:HTMLElement|null, over:Element|null}|null} */
+  let drag = null;
   const rerender = () => {
-    if (!m) return;
+    if (!m || (drag && drag.on)) return;
     const keep = [m.body, m.el].map((e) => e.scrollTop);
     clear(m.body); m.body.append(...render());
     [m.body, m.el].forEach((e, i) => { e.scrollTop = keep[i]; });
   };
-  const fireFrost = () => st.bottles.filter((b) => b.m && potionNet(b.m.effects));
   const potName = (net) => (net > 0 ? 'Fire' : 'Frost');
+  const valOf = (k) => vals[k] || (vals[k] = { ml: 50, target: 40 });
+  /** A shelved bottle put to a vessel: a Fire or Frost potion charges it (the chosen ml); any other is laid down in an empty one. */
+  const useBottle = (k, bottleId) => {
+    const b = st.bottles.find((x) => x.id === bottleId);
+    const v = st.cellar.vessels[k];
+    if (!b || !v) return;
+    const net = b.m ? potionNet(b.m.effects) : 0;
+    let r;
+    if (net) {
+      r = st.activateVessel(k, b.id, valOf(k).ml);
+      if (r.ok) toast(`Vessel ${k + 1} charged`, `${Math.round(r.ml)} ml of the ${potName(net)} potion loaded: it can take the vessel to ${r.limit}°C.`, net > 0 ? 'flame' : 'snow', 3200);
+    } else if (vesselVolume(v) <= 0) {
+      r = st.layDown(k, { bottleId: b.id });
+      if (r.ok) toast('Laid down', `The bottle is in vessel ${k + 1}.`, 'shelf2');
+    } else r = { ok: false, reason: 'Only a Fire or Frost potion charges a vessel; another brew goes into an empty vessel.' };
+    if (!r.ok) { toast('Cannot', r.reason, 'lock'); audio.play('error'); } else { audio.play('glass'); lab.save(); }
+    if (!st.bottles.some((x) => x.id === sel)) sel = null;
+    rerender();
+  };
+  // ---- the potion shelves, beside the cellar: tap a bottle to pick it, or drag it onto a vessel
+  const shelves = () => {
+    const row = h('div', { class: 'cellar-shelf', role: 'listbox', 'aria-label': 'Potion shelves' });
+    if (!st.bottles.length) row.append(h('div', { class: 'small muted', text: 'The potion shelves are empty. Bottle a Fire or Frost potion onto them (Bottle → To the potion shelves) to charge a vessel.' }));
+    for (const b of st.bottles) {
+      const net = b.m ? potionNet(b.m.effects) : 0;
+      const cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: '16', height: '22', class: 'vial-art' }));
+      drawBottle(/** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')), 2, 2, 12, 19, b.m ? b.m.color : [0.5, 0.5, 0.5], Math.min(1, b.ml / Math.max(1, b.bottledMl || b.ml)));
+      const tag = net ? h('span', { class: 'cs-fx ' + (net > 0 ? 'fire' : 'frost') }, icon(net > 0 ? 'flame' : 'snow', 'sm')) : null;
+      const tile = h('button', { class: 'cellar-bottle' + (sel === b.id ? ' active' : '') + (net ? ' charger' : ''), role: 'option', 'aria-selected': sel === b.id ? 'true' : 'false', 'data-act': 'cellar-shelf-bottle', 'data-id': b.id,
+        title: `${b.label && b.label.name ? b.label.name : 'Bottle'}, ${Math.round(b.ml)} ml${net ? ` — ${potName(net)} ${Math.abs(net)}%: drag it onto a vessel to charge it` : ' — drag it onto an empty vessel to lay it down'}` },
+      cv, h('span', { class: 'bml', text: `${Math.round(b.ml)}` }), tag);
+      tile.addEventListener('pointerdown', (e) => {
+        drag = { id: b.id, pid: e.pointerId, x: e.clientX, y: e.clientY, on: false, ghost: null, over: null };
+        try { tile.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+      });
+      tile.addEventListener('pointermove', (e) => {
+        if (!drag || drag.pid !== e.pointerId) return;
+        if (!drag.on && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 8) {
+          drag.on = true;
+          drag.ghost = h('div', { class: 'drag-ghost bottle-ghost' }, cv.cloneNode(true));
+          const c2 = /** @type {HTMLCanvasElement} */ (drag.ghost.firstChild);
+          /** @type {CanvasRenderingContext2D} */ (c2.getContext('2d')).drawImage(cv, 0, 0);
+          document.body.appendChild(drag.ghost);
+        }
+        if (!drag.on || !drag.ghost) return;
+        drag.ghost.style.transform = `translate(${e.clientX - 16}px, ${e.clientY - 40}px)`;
+        // near the panel's top or bottom edge, the vessels scroll under the bottle
+        const br = m.body.getBoundingClientRect(), edge = 48;
+        if (e.clientY > br.bottom - edge) m.body.scrollTop += Math.ceil((e.clientY - (br.bottom - edge)) / 3);
+        else if (e.clientY < br.top + edge + 70) m.body.scrollTop -= Math.ceil((br.top + edge + 70 - e.clientY) / 3);
+        const over = document.elementFromPoint(e.clientX, e.clientY);
+        const card = over ? over.closest('.cellar-vessel') : null;
+        if (drag.over !== card) { if (drag.over) drag.over.classList.remove('drop-over'); if (card) card.classList.add('drop-over'); drag.over = card; }
+      });
+      const end = (e) => {
+        if (!drag || drag.pid !== e.pointerId) return;
+        const d = drag;
+        drag = null;
+        if (d.ghost) d.ghost.remove();
+        if (d.over) d.over.classList.remove('drop-over');
+        if (!d.on) { if (e.type === 'pointerup') { sel = sel === b.id ? null : b.id; audio.play('click'); rerender(); } return; }
+        const card = d.over;
+        if (e.type === 'pointerup' && card) useBottle(Number(card.getAttribute('data-vessel')), b.id);
+        else rerender();
+      };
+      tile.addEventListener('pointerup', end);
+      tile.addEventListener('pointercancel', end);
+      tile.addEventListener('lostpointercapture', end);
+      row.append(tile);
+    }
+    return h('div', { class: 'card parch cellar-shelves' },
+      h('div', { class: 'row' }, icon('bottle', 'sm'), h('b', { text: 'Potion shelves' }), h('span', { class: 'spacer' }),
+        h('span', { class: 'small muted', text: sel ? 'Now tap “Use the picked bottle” on a vessel' : 'Drag a bottle onto a vessel, or tap it to pick it' })),
+      row);
+  };
   const render = () => {
     lab.tickCellar();
-    const out = [h('div', { class: 'small muted', text: `Runes in hand: ${Number.isFinite(st.cellar.runes) ? st.cellar.runes : 'unlimited'}.${lab.sandbox ? ` In the Free Experiment the cellar runs ${st.cellar.pace || 1} times faster.` : ''} A vessel extracts slowly but for hours, even while the shop is closed. Load it with a Fire or Frost potion you brewed: the stronger its Fire (or Frost), the hotter (or colder) the vessel goes, and the potion is used up as it works. A rune locks the temperature on the way, where you choose; it wears out with use.` })];
+    const out = [h('div', { class: 'small muted', text: `Runes in hand: ${Number.isFinite(st.cellar.runes) ? st.cellar.runes : 'unlimited'}.${lab.sandbox ? ` In the Free Experiment the cellar runs ${st.cellar.pace || 1} times faster.` : ''} A vessel extracts slowly but for hours, even while the shop is closed. Load it with a Fire or Frost potion you brewed: the stronger its Fire (or Frost), the hotter (or colder) the vessel goes, and the potion is used up as it works. A rune locks the temperature on the way, where you choose; it wears out with use.` }), shelves()];
+    const picked = sel ? st.bottles.find((x) => x.id === sel) : null;
     st.cellar.vessels.forEach((v, k) => {
       const rep = vesselReport(v, st.lookup);
       const empty = vesselVolume(v) <= 0;
       const val = vals[k] || (vals[k] = { ml: 50, target: v.rune ? v.rune.target : rep.charge ? Math.round((rep.charge.limit + CELLAR_T) / 2) : 40 });
       const card = h('div', { class: 'card parch cellar-vessel', 'data-vessel': String(k) },
         h('div', { class: 'row' }, icon('shelf2'), h('b', { text: `Vessel ${k + 1}` }), h('span', { class: 'spacer' }), h('span', { class: 'small muted', 'data-temp': String(Math.round(rep.T * 10) / 10), text: empty ? 'empty' : `${Math.round(rep.ml)} ml · ${rep.T.toFixed(1)}°C` })));
+      if (!empty) card.append(h('div', { class: 'small', text: v.name || 'A laid-down brew' }));
+      // the vessel's heating jacket: its charge and rune stay with it from one brew to the next
+      const c = rep.charge;
+      const heat = c
+        ? `${potName(c.net)} charge: ${c.ml.toFixed(1)} ml left (${c.net > 0 ? 'Fire' : 'Frost'} ${Math.abs(c.net)}%) — can take it to ${c.limit}°C${empty ? ' (it works once the vessel holds a brew)' : ''}`
+        : empty ? 'no charge' : Math.abs(rep.T - CELLAR_T) > 0.5 ? `no charge: returning to cellar temperature (${CELLAR_T}°C)` : `no charge: at cellar temperature (${CELLAR_T}°C)`;
+      card.append(h('div', { class: 'small ' + (c ? 'know' : 'muted'), 'data-charge': c ? String(c.ml) : '0', text: heat }));
+      if (rep.rune) {
+        const r = rep.rune, left = `${Math.round((1 - r.wear) * 100)}% left`;
+        const state = r.locked ? `locked at ${r.target}°C` : r.holds ? `will lock at ${r.target}°C` : c ? `set at ${r.target}°C, beyond this charge's reach (${c.limit}°C): it cannot lock` : `set at ${r.target}°C: it holds only while the vessel is charged`;
+        card.append(h('div', { class: 'small ' + (r.holds ? 'know' : 'warn'), text: `Rune ${state} (${left})` }));
+      }
       if (!empty) {
-        card.append(h('div', { class: 'small', text: v.name || 'A laid-down brew' }));
-        const c = rep.charge;
-        const heat = c
-          ? `${potName(c.net)} charge: ${c.ml.toFixed(1)} ml left (${c.net > 0 ? 'Fire' : 'Frost'} ${Math.abs(c.net)}%) — can take it to ${c.limit}°C`
-          : Math.abs(rep.T - CELLAR_T) > 0.5 ? `no charge: returning to cellar temperature (${CELLAR_T}°C)` : `no charge: at cellar temperature (${CELLAR_T}°C)`;
-        card.append(h('div', { class: 'small ' + (c ? 'know' : 'muted'), 'data-charge': c ? String(c.ml) : '0', text: heat }));
-        if (rep.rune) {
-          const r = rep.rune, left = `${Math.round((1 - r.wear) * 100)}% left`;
-          const state = r.locked ? `locked at ${r.target}°C` : r.holds ? `will lock at ${r.target}°C` : c ? `set at ${r.target}°C, beyond this charge's reach (${c.limit}°C): it cannot lock` : `set at ${r.target}°C: it holds only while the vessel is charged`;
-          card.append(h('div', { class: 'small ' + (r.holds ? 'know' : 'warn'), text: `Rune ${state} (${left})` }));
-        }
         if (rep.frozen || rep.char > 0.5 || rep.alcohol > 0.5) card.append(h('div', { class: 'small ' + (rep.frozen ? 'warn' : 'muted'), text: [rep.frozen ? 'frozen: extraction stopped' : '', rep.char > 0.5 ? `${Math.round(rep.char)} ml burnt to char` : '', rep.alcohol > 0.5 ? `${rep.alcohol.toFixed(0)}% spirit` : ''].filter(Boolean).join(' · ') }));
         for (const it of rep.items) {
           const k2 = st.knowledge[it.id] || {};
@@ -744,26 +825,21 @@ export function openCellar(lab) {
         }
       }
       const acts = h('div', { class: 'row', style: { flexWrap: 'wrap', gap: '6px' } });
-      if (empty) {
-        acts.append(btn('Lay down the brew', () => { lab.layDownCauldron(k); rerender(); }, { icon: 'cauldron', act: `cellar-fill-${k}`, disabled: !lab.sim.p.count, title: 'Pour everything in the cauldron into this vessel' }));
-        for (const b of st.bottles.slice(0, 4)) acts.append(btn(`Lay down ${Math.round(b.ml)} ml bottle`, () => { const r = st.layDown(k, { bottleId: b.id }); if (!r.ok) toast('Cannot', r.reason, 'lock'); rerender(); }, { icon: 'bottle', cls: 'small', act: `cellar-bottle-${k}` }));
-      } else {
-        // ---- load a Fire or Frost potion: from the cauldron's tap, or from a shelved bottle
-        const mlIn = /** @type {HTMLInputElement} */ (h('input', { type: 'number', value: String(val.ml), min: '5', max: '1000', step: '5', style: { width: '4.5em' }, 'aria-label': 'Potion to load (ml)', 'data-act': `cellar-ml-${k}` }));
-        mlIn.addEventListener('input', () => { val.ml = Math.max(5, Number(mlIn.value) || 5); });
-        const load = h('div', { class: 'row', style: { flexWrap: 'wrap', gap: '6px', alignItems: 'center' } }, h('span', { class: 'small', text: 'Load' }), mlIn, h('span', { class: 'small', text: 'ml' }),
-          btn('From the pot', () => { const r = lab.chargeFromCauldron(k, val.ml); if (r && r.ok) audio.play('pour'); rerender(); }, { icon: 'cauldron', cls: 'small', act: `cellar-charge-pot-${k}`, disabled: lab.tapAvailable() < 5, title: 'Draw this much potion from the cauldron’s tap into the vessel’s heating jacket' }));
-        for (const b of fireFrost().slice(0, 3)) {
-          const n = potionNet(b.m.effects);
-          load.append(btn(`From ${Math.round(b.ml)} ml ${potName(n)} bottle`, () => { const r = st.activateVessel(k, b.id, val.ml); if (!r.ok) toast('Cannot', r.reason, 'lock'); else { audio.play('select'); lab.save(); } rerender(); }, { icon: n > 0 ? 'flame' : 'snow', cls: 'small', act: `cellar-activate-${k}` }));
-        }
-        acts.append(load);
-        // ---- the rune
-        const input = /** @type {HTMLInputElement} */ (h('input', { type: 'number', value: String(val.target), min: '-60', max: '300', step: '1', style: { width: '4.5em' }, 'aria-label': 'Rune temperature (°C)', 'data-act': `cellar-target-${k}` }));
-        input.addEventListener('input', () => { val.target = Number(input.value); });
-        const has = !!(v.rune && v.rune.life > 0);
-        acts.append(h('div', { class: 'row', style: { flexWrap: 'wrap', gap: '6px', alignItems: 'center' } }, h('span', { class: 'small', text: 'Lock at' }), input, h('span', { class: 'small', text: '°C' }),
-          btn(has ? 'Move the rune' : 'Set a rune', () => { const r = st.runeVessel(k, Number(val.target)); if (!r.ok) toast('Cannot', r.reason, 'lock'); else { audio.play('select'); lab.save(); } rerender(); }, { icon: 'rune', cls: 'small', act: `cellar-rune-${k}`, disabled: !has && st.cellar.runes <= 0 })));
+      if (picked) acts.append(btn(`Use the picked ${Math.round(picked.ml)} ml bottle`, () => useBottle(k, picked.id), { icon: 'bottle', cls: 'small gold', act: `cellar-use-picked-${k}` }));
+      if (empty) acts.append(btn('Lay down the brew', () => { lab.layDownCauldron(k); rerender(); }, { icon: 'cauldron', act: `cellar-fill-${k}`, disabled: !lab.sim.p.count, title: 'Pour everything in the cauldron into this vessel' }));
+      // ---- load a Fire or Frost potion: from the cauldron's tap (or drag a shelved bottle here)
+      const mlIn = /** @type {HTMLInputElement} */ (h('input', { type: 'number', value: String(val.ml), min: '5', max: '1000', step: '5', style: { width: '4.5em' }, 'aria-label': 'Potion to load (ml)', 'data-act': `cellar-ml-${k}` }));
+      mlIn.addEventListener('input', () => { val.ml = Math.max(5, Number(mlIn.value) || 5); });
+      acts.append(h('div', { class: 'row', style: { flexWrap: 'wrap', gap: '6px', alignItems: 'center' } }, h('span', { class: 'small', text: 'Load' }), mlIn, h('span', { class: 'small', text: 'ml' }),
+        btn('From the pot', () => { const r = lab.chargeFromCauldron(k, val.ml); if (r && r.ok) audio.play('pour'); rerender(); }, { icon: 'cauldron', cls: 'small', act: `cellar-charge-pot-${k}`, disabled: lab.tapAvailable() < 5, title: 'Draw this much potion from the cauldron’s tap into the vessel’s heating jacket' })));
+      // ---- the rune
+      const input = /** @type {HTMLInputElement} */ (h('input', { type: 'number', value: String(val.target), min: '-60', max: '300', step: '1', style: { width: '4.5em' }, 'aria-label': 'Rune temperature (°C)', 'data-act': `cellar-target-${k}` }));
+      input.addEventListener('input', () => { val.target = Number(input.value); });
+      const has = !!(v.rune && v.rune.life > 0);
+      acts.append(h('div', { class: 'row', style: { flexWrap: 'wrap', gap: '6px', alignItems: 'center' } }, h('span', { class: 'small', text: 'Lock at' }), input, h('span', { class: 'small', text: '°C' }),
+        btn(has ? 'Move the rune' : 'Set a rune', () => { const r = st.runeVessel(k, Number(val.target)); if (!r.ok) toast('Cannot', r.reason, 'lock'); else { audio.play('select'); lab.save(); } rerender(); }, { icon: 'rune', cls: 'small', act: `cellar-rune-${k}`, disabled: !has && st.cellar.runes <= 0 })));
+      if (!empty) {
+        acts.append(btn('Pour into the pot', () => { const r = lab.pourVesselBack(k); if (r && r.ok) rerender(); }, { icon: 'pour', cls: 'small', act: `cellar-pour-back-${k}`, title: 'Pour this brew back into the cauldron to keep working on it' }));
         acts.append(btn('Bottle it', () => { const r = st.bottleVessel(k); if (!r.ok) toast('Cannot', r.reason, 'lock'); else { toast('Bottled from the cellar', `${Math.round(r.vial.ml)} ml onto the potion shelves. Test it before you sell it.`, 'bottle'); audio.play('glass'); } rerender(); }, { icon: 'bottle', cls: 'small primary', act: `cellar-bottle-out-${k}` }));
       }
       card.append(acts);
@@ -771,12 +847,12 @@ export function openCellar(lab) {
     });
     return out;
   };
-  // the cellar goes on while it is watched: refreshed every second (not while a number is being typed)
+  // the cellar goes on while it is watched: refreshed every second (not while a number is typed or a bottle dragged)
   const timer = setInterval(() => {
     if (!m || !document.body.contains(m.el)) { clearInterval(timer); return; }
     const a = document.activeElement;
     if (a && a.tagName === 'INPUT' && m.el.contains(a)) return;
     rerender();
   }, 1000);
-  m = modal({ title: 'Aging cellar', wide: true, body: render(), onClose: () => clearInterval(timer) });
+  m = modal({ title: 'Aging cellar', wide: true, body: render(), onClose: () => { clearInterval(timer); for (const g of document.querySelectorAll('.bottle-ghost')) g.remove(); } });
 }

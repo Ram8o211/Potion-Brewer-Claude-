@@ -502,3 +502,25 @@ test('the guild theory counts only what is already dissolved', () => {
   assert.equal(none[v], 0, 'nothing dissolved, nothing expected');
   assert.ok(Math.abs(half[v] - all[v] / 2) < 0.2, `half dissolved, half the effect (${half[v].toFixed(1)} of ${all[v].toFixed(1)})`);
 });
+
+test('old runes lie buried underground in the wilds: each cache is dug once, and a new generation buries new ones', () => {
+  const st = GameState.create('rune-caches', { tutorial: false });
+  const caches = st.runeCaches('netherwood');
+  assert.equal(caches.length, 2, 'two in the Netherwood');
+  assert.equal(st.runeCaches('meadow').length, 0, 'none in the meadow');
+  assert.deepEqual(st.runeCaches('netherwood'), caches, 'the same every time');
+  const n0 = st.cellar.runes;
+  assert.ok(st.digRune(caches[0].id).ok);
+  assert.equal(st.cellar.runes, n0 + 1, 'a rune for the cellar');
+  assert.equal(st.digRune(caches[0].id).ok, false, 'dug once only');
+  assert.equal(st.digRune('netherwood:nowhere:9').ok, false, 'nothing where nothing was buried');
+  // it is saved
+  const back = GameState.fromJSON(JSON.parse(JSON.stringify(st.toJSON())));
+  assert.ok(back.runeCaches('netherwood').find((c) => c.id === caches[0].id).dug);
+  // regenerating the biome buries new caches
+  st.regen.coins = 5;
+  if (!st.regen.unlocked.includes('netherwood')) st.regen.unlocked.push('netherwood');
+  const r = st.regenerate('netherwood');
+  assert.ok(r.ok, r.reason);
+  assert.ok(st.runeCaches('netherwood').every((c) => !c.dug && !caches.some((o) => o.id === c.id)), 'new caches, none dug');
+});

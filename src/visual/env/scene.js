@@ -20,7 +20,7 @@ import * as netherwood from './netherwood.js';
 import { skyshard, morphgrove, veilhollow, ghostglass, chronoglass } from './exotic.js';
 
 /** Version of the environment generator (scenes are not saved; this only names caches). */
-export const ENV_VERSION = 13;
+export const ENV_VERSION = 14;
 
 const COMPOSERS = { meadow, forest, netherwood, river, quarry, moonfen, crags, skyshard, morphgrove, veilhollow, ghostglass, chronoglass };
 

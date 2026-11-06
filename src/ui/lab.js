@@ -34,7 +34,7 @@ import { RANKS } from '../game/equipment.js';
 import { certification, missingEffects, requirementEvidence } from '../game/experiments.js';
 import { sandboxIngredients } from '../materials/generator.js';
 import { sandboxSave } from '../game/sandbox.js';
-import { makeVial, appendParticles, updateVial, takeDose, pourBack, pourBackParts, relaxVial } from '../game/vial.js';
+import { makeVial, makeVialFromComposition, appendParticles, updateVial, takeDose, pourBack, pourBackParts, relaxVial } from '../game/vial.js';
 import { theoryOf, EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, dominantEffect, NE } from '../alchemy/effects.js';
 import { awakenParts, describeThreshold } from '../alchemy/arcane.js';
 import { ARC_NONE } from '../simulation/particles.js';
@@ -550,7 +550,7 @@ export class LabScreen {
    * @param {HTMLElement} el @param {string} id
    */
   bindJar(el, id) {
-    let pressTimer = 0, sx = 0, sy = 0, dragging = false, ghost = null, pid = -1, columns = false;
+    let pressTimer = 0, sx = 0, sy = 0, dragging = false, pid = -1, columns = false;
     const clearTimer = () => { if (pressTimer > 0) clearTimeout(pressTimer); };
     el.addEventListener('pointerdown', (e) => {
       sx = e.clientX; sy = e.clientY; dragging = false; pid = e.pointerId;
@@ -578,14 +578,9 @@ export class LabScreen {
         clearJarGhosts();
         // (one release handler for the whole window: see bindJarRelease)
         this._jarEnd = end;
-        ghost = h('div', { class: 'drag-ghost jar-ghost' }, el.querySelector('canvas').cloneNode(true));
-        const c2 = ghost.querySelector('canvas');
-        const src = el.querySelector('canvas');
-        if (c2 && src) /** @type {CanvasRenderingContext2D} */ (/** @type {HTMLCanvasElement} */ (c2).getContext('2d')).drawImage(/** @type {HTMLCanvasElement} */ (src), 0, 0);
-        document.body.appendChild(ghost);
+        // no picture follows the finger: the selected jar and the stream show what is poured
       }
-      if (dragging && ghost) {
-        ghost.style.transform = `translate(${e.clientX - 20}px, ${e.clientY - 48}px)`;
+      if (dragging) {
         const r = this.canvas.getBoundingClientRect();
         const over = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
         if (over) {
@@ -601,8 +596,6 @@ export class LabScreen {
       clearTimer();
       if (dragging) {
         dragging = false;
-        if (ghost) ghost.remove();
-        ghost = null;
         if (this.sim.emitter.pouring && !this.sim.emitter.active.dose) this.sim.emitter.stop();
         pressTimer = -2;
       }
@@ -1029,6 +1022,29 @@ export class LabScreen {
     audio.play('splash');
     toast('Laid down', `The brew is in vessel ${vessel + 1}. It goes on extracting while you work — and while you are away.`, 'shelf2');
     this.save();
+  }
+
+  /**
+   * Pour a cellar vessel's brew back into the cauldron (as liquid, at its
+   * temperature): the vessel is left empty, with its charge and rune.
+   * @param {number} vessel
+   */
+  pourVesselBack(vessel) {
+    const st = this.state, sim = this.sim;
+    st.tickCellar();
+    const v = st.cellar.vessels[vessel];
+    if (!v || !Object.keys(v.comp).length) return { ok: false };
+    const vial = makeVialFromComposition(v.comp, v.T, { batchId: st.batch.id, day: st.day, parts: v.parts || [] }, st.lookup, st.world.laws || []);
+    if (!vial) { toast('Nothing to pour', 'There is too little in the vessel.', 'shelf2'); return { ok: false }; }
+    if (sim.p.count + vial.particles.length > sim.maxParticles) { toast('The cauldron is too full', `It has no room for ${Math.round(vial.ml)} ml more: bottle or empty some first.`, 'cauldron', 4000); audio.play('error'); return { ok: false }; }
+    const r = st.takeVessel(vessel);
+    if (!r.ok) return r;
+    // (a cellar brew is a new batch: it has aged since anything was tested)
+    vial.batchId = '';
+    if (!this.pourVialIntoCauldron(vial)) return { ok: false };
+    const n = vial.particles.length;
+    this.save();
+    return { ok: true, ml: n * SIM.ML_PER_PARTICLE };
   }
 
   /**

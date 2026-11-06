@@ -31,7 +31,7 @@
 import { Rng, hashString } from '../core/rng.js';
 import { PAL, makeCanvas } from './art.js';
 import { RABBIT_MARKS } from '../game/colony.js';
-import { KINDS } from '../game/kinds.js';
+import { KINDS, bodyOf } from '../game/kinds.js';
 import { punchSprite } from './punch.js';
 
 export const RABBIT_W = 48;
@@ -306,7 +306,8 @@ const STAGE_G = { kit: 0.62, young: 0.82, adult: 1, elder: 0.97 };
  */
 /**
  * @typedef {Object} RabbitAnchors
- * @property {import('../game/kinds.js').AnimalKind} kind
+ * @property {import('../game/kinds.js').AnimalKind} kind   the build it is drawn with
+ * @property {import('../game/kinds.js').AnimalKind} creature  what it is (a hare is built like a rabbit)
  * @property {RabbitPose} pose
  * @property {boolean} lying   lying poses (flop, collapse, dead)
  * @property {boolean} [bare]  grazing bare ground: no tuft of grass at its mouth
@@ -343,8 +344,14 @@ const DOVE_WING = 9;
 /** Kinds whose tail reaches out well behind them. */
 const LONG_TAIL = new Set(['cat', 'salamander', 'fox', 'rat', 'ermine', 'dove']);
 
-/** @param {any} look @returns {import('../game/kinds.js').AnimalKind} */
-const kindOfLook = (look) => (look && look.kind && Object.prototype.hasOwnProperty.call(KINDS, look.kind) ? look.kind : 'rabbit');
+/** The creature a look is of (its own kind, game/kinds.js). @param {any} look @returns {import('../game/kinds.js').AnimalKind} */
+const creatureOfLook = (look) => (look && look.kind && Object.prototype.hasOwnProperty.call(KINDS, look.kind) ? look.kind : 'rabbit');
+/** The build a look is drawn with: a native creature borrows the nearest build (kinds.js BODY). @param {any} look */
+const kindOfLook = (look) => bodyOf(creatureOfLook(look));
+/** Creatures drawn with a body of their own over the build they move with. */
+const OWN_BODY = new Set(['beetle', 'scarab', 'wisp', 'cloudray']);
+/** Each native creature's size against its build's. */
+const CREATURE_G = { hare: 1.06, otter: 1.12, beetle: 1.22, scarab: 1.18, cavemoth: 0.86, shroudmoth: 0.9, wisp: 0.8, cloudray: 1.2, mimic: 1, axolotl: 0.95 };
 
 /** Overall scale of each kind against a rabbit (a toad, a rat, a snail are small beasts). */
 const KIND_G = { toad: 0.8, rat: 0.78, snail: 0.82, dove: 0.82, ermine: 0.85 };
@@ -574,7 +581,7 @@ export function rabbitAnchors(look, snap, want) {
   const mus = L.strength;
   const size = clamp(Number(look.size) || 1, 0.85, 1.15);
   // (a toad, a rat or a snail is a smaller beast than a rabbit or a cat)
-  const kindG = KIND_G[kindOfLook(look)] || 1;
+  const kindG = (KIND_G[kindOfLook(look)] || 1) * (CREATURE_G[creatureOfLook(look)] || 1);
   const g = clamp(size * STAGE_G[stage] * kindG * (1 + 0.04 * mus) * (tr.has('giant') ? 1.18 : tr.has('tiny') ? 0.8 : 1), 0.5, 1.3);
   const hs = kit ? 0.95 * Math.max(g, 0.8) : 0.25 + 0.75 * g;
   const lying = pose === 'dead' || pose === 'collapse' || pose === 'flop';
@@ -582,7 +589,7 @@ export function rabbitAnchors(look, snap, want) {
   const oy = 34;
   const ox = Math.round(24 - (lying ? 15 : 14) * g);
   const bulk = [0, 1, 1, 2][mus];
-  const earK = (look.ear === 'short' ? 0.6 : 1) * (kit ? 0.7 : 1);
+  const earK = (look.ear === 'short' ? 0.6 : look.ear === 'long' ? 1.25 : 1) * (kit ? 0.7 : 1);
   const hornH = tr.has('antlers') ? HORN_H.antlers : tr.has('unihorn') ? HORN_H.unihorn : tr.has('horns') ? HORN_H.horns : 0;
   const headRy = Math.round((lying ? 3.8 : 4.5) * hs);
   let haunch, chest, head;
@@ -756,6 +763,8 @@ export function rabbitAnchors(look, snap, want) {
           : kind === 'dove' ? { x: tx + 1, y: haunch.cy - 1, r: 1, len: clamp(Math.round(7 * g), 3, tx - 1) }
     : kind === 'salamander' ? { x: tx + 1, y: haunch.cy, r: 1, len: clamp(Math.round(13 * g), 4, tx - 1) }
       : { x: tx, y: haunch.cy - (lying ? 1 : 2), r: kind === 'toad' || kind === 'snail' ? 0 : kind === 'deer' || kind === 'badger' ? 1 : tailR, len: clamp(Math.round(9 * g), 3, tx - 1) };
+  // an otter's tail: thick at the root and long, tapering
+  if (creatureOfLook(look) === 'otter') Object.assign(tail, { r: 2, len: clamp(Math.round(11 * g), 4, tx - 2) });
   const prx = Math.max(2, Math.round(3 * Math.min(g, 1.1)));
   const plume = E(Math.max(prx + 2, tx - 1), tail.y - Math.max(2, Math.round(2.5 * g)), prx, Math.max(2, Math.round(2.2 * Math.min(g, 1.1))));
   const wing = lying ? { x: haunch.cx - 2, y: haunch.cy - haunch.ry - 2 } : { x: chest.cx - chest.rx - 3, y: chest.cy - chest.ry - 4 };
@@ -780,7 +789,7 @@ export function rabbitAnchors(look, snap, want) {
   if (tr.has('spines')) y0 = Math.min(y0, Math.min(haunch.cy - haunch.ry, chest.cy - chest.ry) - 5);
 
   return {
-    kind, pose, lying, g, hs, haunch, chest, head, muzzle, bulges, parts, ears, legs,
+    kind, creature: creatureOfLook(look), pose, lying, g, hs, haunch, chest, head, muzzle, bulges, parts, ears, legs,
     eye, eye3: { x: head.cx + 1, y: top + 1 }, nose, cheek: { x: eye.x, y: eye.y + 3 },
     brow: { x: head.cx - 1 - shift, y: top }, tail, plume, wing,
     back: { x0: haunch.cx - haunch.rx + 2, x1: chest.cx, y: haunch.cy - haunch.ry },
@@ -871,6 +880,8 @@ function drawBody(P, look, snap, a, low) {
     seed: (look.seed >>> 0) || 1, fur, C: shades(fur), C2: shades(fur2),
   };
   if (!low && !dead) auraLayer(S);
+  // a beetle, a wisp or a cloud ray: a body of its own, over the build it moves with
+  if (OWN_BODY.has(a.creature)) { ownBody(S); if (dead) causeLayer(S); return; }
   farLayer(S);
   for (const e of a.parts) ell(P, e, 1, K); // outline pass
   // on a fine grid, the coat keeps to the body's smooth silhouette (its patterns and shading are laid in frame pixels)
@@ -890,7 +901,166 @@ function drawBody(P, look, snap, a, low) {
   pawLayer(S);
   nearLayer(S);
   faceLayer(S);
+  creatureLayer(S);
   if (dead) causeLayer(S);
+}
+
+// ------------------------------------------------------------------ the native creatures' own looks
+
+/**
+ * What makes a native creature itself on the build it borrows: a hare's
+ * black ear tips, an otter's pale throat and whiskers, a moth's antennae,
+ * fuzz and wing eyespots (and no beak), a mimic's shifting bands and
+ * turret eye, an axolotl's feathery gills and see-through glow.
+ * @param {Paint} S
+ */
+function creatureLayer(S) {
+  const { P, a, C, C2, dead } = S, cr = a.creature, h = a.head;
+  if (cr === 'hare') {
+    for (const e of a.ears) if (e.kind === 'up') { const lean = e.lean ? Math.floor(e.len / e.lean) : 0; P(e.x - lean, e.y - e.len, Math.max(1, e.w - 1), 2, dead ? '#3a3036' : '#1e1a1c'); }
+    return;
+  }
+  if (cr === 'otter') {
+    // the pale throat and chin, the whiskers
+    for (const [y, x0, x1] of rowsOf([a.chest])) if (y >= a.chest.cy) P(Math.max(x0 + 1, a.chest.cx - 1), y, Math.max(1, x1 - Math.max(x0 + 1, a.chest.cx - 1)), 1, C2.body);
+    P(h.cx - 1, h.cy + h.ry - 1, h.rx + 1, 1, C2.body);
+    if (!dead) { P(a.nose.x - 1, a.nose.y + 1, 3, 1, 'rgba(255,255,255,0.55)'); P(a.nose.x - 2, a.nose.y + 2, 3, 1, 'rgba(255,255,255,0.4)'); }
+    return;
+  }
+  if (cr === 'cavemoth' || cr === 'shroudmoth') {
+    // no beak: the face is fur; thin dark legs; feathery antennae; fuzz on the thorax; markings on the wing
+    P(a.nose.x - 1, a.nose.y, 3, 2, C.body);
+    for (const l of a.legs) P(l.x, l.y, l.w, l.h, C.dark);
+    if (!a.lying) {
+      const ax = h.cx - 1, ay = h.cy - h.ry;
+      for (let i = 0; i < 5; i++) { P(ax - Math.round(i * 0.6), ay - 1 - i, 1, 1, K); if (i & 1) P(ax - Math.round(i * 0.6) - 1, ay - 1 - i, 1, 1, C2.shade); }
+      for (let i = 0; i < 5; i++) { P(ax + 2 + Math.round(i * 0.5), ay - 1 - i, 1, 1, K); if (i & 1) P(ax + 3 + Math.round(i * 0.5), ay - 1 - i, 1, 1, C2.shade); }
+    }
+    for (let i = 0; i < 4; i++) P(a.chest.cx - 2 + i * 2, a.chest.cy - a.chest.ry + 1, 1, 1, C.hi);
+    const hh = a.haunch;
+    // soft markings on the wing: a pale bar (the cave moth) or a dusky band (the shroud moth), never an eye
+    for (let i = -2; i <= 2; i++) P(hh.cx + i, hh.cy - 1 + (i & 1), 1, 1, cr === 'cavemoth' ? C2.shade : C2.body);
+    return;
+  }
+  if (cr === 'mimic') {
+    // bands of a second colour across the back and tail, and a turret eye
+    const body = [a.haunch, a.chest], [x0, x1] = xRange(body);
+    for (let x = x0 + 2; x <= x1 - 1; x += 4) {
+      const y0 = colEdge(body, x, -1), y1 = colEdge(body, x, 1);
+      if (y0 !== null && y1 !== null) P(x, y0 + 1, 2, Math.max(1, Math.round((y1 - y0) * 0.7)), C2.body);
+    }
+    const e = a.eye;
+    if (!dead) { P(e.x - 1, e.y - 2, 3, 3, C.dark); P(e.x, e.y - 1, 1, 1, '#f0b84a'); P(e.x, e.y - 1, 1, 1, K); P(e.x - 1, e.y - 2, 1, 1, C.hi); }
+    return;
+  }
+  if (cr === 'axolotl') {
+    // feathery gills fanning out behind the head, a faint glow of the spine through the skin, a smile
+    const gx = h.cx - h.rx + 1, gy = h.cy - 1;
+    const gill = dead ? '#a87a86' : C2.body, gill2 = dead ? '#8a6470' : C2.hi;
+    for (const [dx, dy, len] of [[-1, -3, 3], [-2, -1, 3], [-1, 1, 3]]) {
+      for (let i = 0; i < len; i++) P(gx + dx - i, gy + dy - Math.round(i * (dy < 0 ? 0.7 : dy > 0 ? -0.5 : 0)), 1, 1, i === len - 1 ? gill2 : gill);
+      P(gx + dx - 1, gy + dy - 1, 1, 1, gill2);
+    }
+    if (!dead) for (let x = a.haunch.cx - 3; x <= a.chest.cx + 1; x += 3) P(x, a.chest.cy - 1, 1, 1, 'rgba(255,255,255,0.45)');
+    if (!dead) P(h.cx, h.cy + h.ry - 1, 3, 1, C.dark);
+  }
+}
+
+/**
+ * The bodies of their own: a beetle's domed shell on six thin legs (the
+ * scarab's banded with gold and marked with an hourglass), a will-o'-wisp's
+ * flame, a cloud ray's spread wings. Laid over the anchors of the build
+ * each moves with, so every effect overlay still finds its place.
+ * @param {Paint} S
+ */
+function ownBody(S) {
+  const { P, a, C, C2, dead } = S, cr = a.creature;
+  const feet = a.feetY, g = a.g;
+  if (cr === 'beetle' || cr === 'scarab') {
+    const x0 = a.haunch.cx - a.haunch.rx, x1 = a.chest.cx + a.chest.rx;
+    const cx = Math.round((x0 + x1) / 2) - 1, rx = Math.max(4, Math.round((x1 - x0) / 2) - 1), ry = Math.max(3, Math.round(4.2 * g));
+    const back = a.lying && a.pose === 'dead';
+    const cy = feet - ry - (back ? 0 : 2);
+    const shell = E(cx, cy, rx, ry), head = E(cx + rx + 1, cy + Math.round(ry * 0.45), Math.max(2, Math.round(2.2 * g)), Math.max(1, Math.round(1.8 * g)));
+    const beat = walkBeat(a.pose);
+    // six thin legs, three a side, stepping in alternating tripods (on its back: stiff in the air)
+    for (let i = 0; i < 3; i++) {
+      const lx = cx - rx + 2 + Math.round(((2 * rx - 3) * i) / 2), up = beat >= 0 && ((i + beat) & 1) ? 1 : 0, sw = beat >= 0 ? ((i + beat) & 1 ? 1 : -1) : 0;
+      if (back) { P(lx, cy - ry - 2, 1, 3, K); P(lx + 1, cy - ry - 3, 1, 1, K); continue; }
+      P(lx + sw - 1, cy + ry - 1, 1, feet - (cy + ry) + 1 - up, K);
+      P(lx + sw, cy + ry, 1, feet - (cy + ry) + 1 - up, K);
+      P(lx + sw + 1, feet - up, 1, 1, K);
+    }
+    // the head and its antennae
+    ell(P, head, 1, K); ell(P, head, 0, C2.dark === C.dark ? C.dark : css(C.rgb, 0.5));
+    if (!back) { P(head.cx + head.rx, head.cy - head.ry - 1, 1, 1, K); P(head.cx + head.rx + 1, head.cy - head.ry - 2, 1, 1, K); P(head.cx + head.rx + 2, head.cy - head.ry - 2, 1, 1, K); }
+    // the shell: outline, body, a lit dome toward the upper left, the seam down its back
+    ell(P, shell, 1, K); ell(P, shell, 0, C.shade);
+    ell(P, E(cx - Math.round(rx * 0.15), cy - Math.round(ry * 0.15), Math.max(2, rx - 1), Math.max(2, ry - 1)), 0, C.body);
+    P(cx - Math.round(rx * 0.55), cy - ry + 1, Math.max(2, Math.round(rx * 0.6)), 1, C.hi);
+    P(cx - Math.round(rx * 0.45), cy - ry + 2, 2, 1, C.hi);
+    if (cr === 'scarab') {
+      // a gold band at the shell's rim and an hourglass on its back
+      for (const [y, l, r] of rowsOf([shell])) if (y >= cy + ry - 1) P(l, y, r - l + 1, 1, C2.body);
+      const hx = cx;
+      P(hx - 1, cy - 2, 3, 1, C2.hi); P(hx, cy - 1, 1, 1, C2.body); P(hx - 1, cy, 3, 1, C2.hi);
+    } else {
+      P(cx, cy - ry + 1, 1, 2 * ry - 1, C2.body);
+      for (let k = 0; k < 3; k++) P(cx - rx + 2 + ((S.seed >> k) & 3) * 2, cy + (k - 1) * 2, 1, 1, C.dark);
+    }
+    if (!dead) { const e = { x: head.cx + 1, y: head.cy - 1 }; P(e.x, e.y, 1, 1, cr === 'scarab' ? '#fff0a0' : '#e8e0d0'); }
+    else { P(head.cx, head.cy - 1, 1, 1, K); P(head.cx + 1, head.cy, 1, 1, K); }
+    return;
+  }
+  if (cr === 'wisp') {
+    // a little flame that floats: a halo, a flickering tongue trailing behind, a bright core, two dark eyes
+    // (it floats: well off the ground, wherever its build would stand)
+    const cx = a.chest.cx - 1, cy = a.lying ? feet - 3 : Math.min(a.chest.cy - 1, feet - 12);
+    const r = Math.max(3, Math.round(4 * g));
+    if (dead) {
+      ell(P, E(cx, feet - 1, r, 1), 0, 'rgba(120,130,140,0.6)');
+      P(cx - 1, feet - 2, 3, 1, '#8a9098');
+      return;
+    }
+    const fly = a.pose === 'fly2' ? 1 : 0;
+    for (let k = 3; k >= 1; k--) ell(P, E(cx, cy, r + k * 2, r + k * 2 - 1), 0, `rgba(${Math.round(C.rgb[0] * 255)},${Math.round(C.rgb[1] * 255)},${Math.round(C.rgb[2] * 255)},${(0.07 * (4 - k)).toFixed(2)})`);
+    // the trailing tongue of flame
+    for (let i = 0; i < r + 3; i++) {
+      const w = Math.max(1, Math.round(r * (1 - i / (r + 4)))), y = cy - Math.round(w / 2) + ((i + fly) % 3 === 0 ? 1 : 0);
+      P(cx - r - i, y, 1, w, i < 2 ? C.body : C.shade);
+    }
+    ell(P, E(cx, cy, r, r), 0, C.body);
+    ell(P, E(cx + 1, cy - 1, Math.max(1, r - 2), Math.max(1, r - 2)), 0, C.hi);
+    P(cx + 1, cy - 1, 2, 2, '#ffffff');
+    P(cx + 1, cy, 1, 2, '#1a1a2a'); P(cx + 3, cy, 1, 2, '#1a1a2a');
+    return;
+  }
+  if (cr === 'cloudray') {
+    // a manta of the clouds: wide wings (raised or lowered in its glide), a long whip of a tail, two horn-like fins
+    const cx = a.chest.cx - 2, cy = a.lying ? feet - 2 : a.chest.cy;
+    const span = Math.max(7, Math.round(11 * g)), up = a.pose === 'fly1' ? -1 : a.pose === 'fly2' ? 1 : 0;
+    const body = E(cx, cy, Math.max(4, Math.round(6 * g)), Math.max(2, Math.round(2.6 * g)));
+    // the tail
+    for (let i = 0; i < span + 4; i++) P(body.cx - body.rx - i, cy + (i > span ? 1 : 0), 1, 1, i & 1 ? C.dark : K);
+    // the wings: a far one (darker) and a near one, swept back
+    const wing = (dir, col) => {
+      for (let i = 0; i < span; i++) {
+        const y = cy + dir * (1 + Math.round(i * 0.45)) + up * Math.round(i * 0.35);
+        const x = cx + 2 - Math.round(i * 0.7), w = Math.max(1, Math.round((span - i) * 0.7));
+        P(x - w, y, w + 1, 1, col);
+      }
+    };
+    wing(-1, K); wing(1, K);
+    wing(-1, a.lying ? C.shade : C.dark);
+    ell(P, body, 1, K);
+    wing(1, C.body);
+    ell(P, body, 0, C.body);
+    for (const [y, l, r] of rowsOf([body])) if (y > cy) P(l, y, r - l + 1, 1, C2.body);
+    P(body.cx - 2, cy - body.ry + 1, 4, 1, C.hi);
+    // the cephalic fins and the eye
+    P(body.cx + body.rx, cy - 1, 2, 1, K); P(body.cx + body.rx, cy + 1, 2, 1, K);
+    if (!dead) P(body.cx + body.rx - 2, cy - 1, 1, 1, '#1a1a2a'); else P(body.cx + body.rx - 2, cy - 1, 1, 1, '#5a5a6a');
+  }
 }
 
 /** Auras behind the body: warm vitality, violet arcana, orange heat; larger and stronger with the level. */

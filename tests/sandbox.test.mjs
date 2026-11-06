@@ -31,7 +31,7 @@ test('its runes never run out, and its cellar runs quicker than the shop’s', (
   assert.ok(st.layDown(0, { comp: { [R.water]: 100 }, T: 12, name: 'test' }, T0).ok);
   assert.ok(st.chargeVessel(0, fire, 50, T0).ok);
   for (let k = 0; k < 3; k++) assert.ok(st.runeVessel(0, 40, T0).ok);
-  assert.ok(st.runeVessel(1 % st.cap.vessels, 40, T0).ok === false, 'an empty vessel takes no rune');
+  assert.ok(st.runeVessel(1 % st.cap.vessels, 40, T0).ok, 'an empty vessel takes a rune too: it stays with the vessel');
   assert.equal(st.cellar.runes, Infinity);
   // one real minute is an hour of cellar time: the charge has warmed the vessel to the rune's lock
   st.tickCellar(T0 + 2 * 60000);

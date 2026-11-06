@@ -7615,7 +7615,59 @@ id: 'rat', noun: 'rat', plural: 'rats', young: 'pup',
 biasAll: RABBIT_SPREAD, bias: { death: STEADY_SPREAD, vitality: 0.14 }, noise: { death: STEADY_NOISE, vitality: 1.2 }, steady: 'death',
 lore: 'Rats all feel death alike, within about 1 %, and steadily: the surest measure of death. Healing takes them unevenly.',
 },
+hare: {
+id: 'hare', noun: 'hare', plural: 'hares', young: 'leveret',
+biasAll: RABBIT_SPREAD, bias: { swiftness: STEADY_SPREAD, love: 0.13 }, noise: { swiftness: STEADY_NOISE, love: 1.2 }, steady: 'swiftness',
+lore: 'Meadow hares all feel swiftness alike, within about 1 %, and steadily: the surest measure of speed. Love makes them skittish.',
+},
+otter: {
+id: 'otter', noun: 'river otter', plural: 'river otters', young: 'pup',
+biasAll: RABBIT_SPREAD, bias: { frost: STEADY_SPREAD, acidity: 0.12 }, noise: { frost: STEADY_NOISE, acidity: 1.15 }, steady: 'frost',
+lore: 'River otters, at home in cold water, all feel frost alike and steadily — as surely as ermines, and calmer with heat. Acids trouble them.',
+},
+beetle: {
+id: 'beetle', noun: 'rock beetle', plural: 'rock beetles', young: 'grub',
+biasAll: RABBIT_SPREAD, bias: { strength: STEADY_SPREAD, swiftness: 0.13 }, noise: { strength: STEADY_NOISE, swiftness: 1.2 }, steady: 'strength',
+lore: 'Rock beetles all feel strength alike, within about 1 %, under their stone-hard shells. Swiftness sits oddly on them.',
+},
+cavemoth: {
+id: 'cavemoth', noun: 'cave moth', plural: 'cave moths', young: 'caterpillar',
+biasAll: RABBIT_SPREAD, bias: { toxicity: STEADY_SPREAD, vitality: 0.13 }, noise: { toxicity: STEADY_NOISE, vitality: 1.2 }, steady: 'toxicity',
+lore: 'Cave moths, raised on the Netherwood\'s spores, all feel poison alike and steadily. Healing takes them unevenly.',
+},
+wisp: {
+id: 'wisp', noun: 'will-o’-wisp', plural: 'will-o’-wisps', young: 'spark',
+biasAll: RABBIT_SPREAD, bias: { arcana: STEADY_SPREAD, invisibility: 0.12 }, noise: { arcana: STEADY_NOISE, invisibility: 1.15 }, steady: 'arcana',
+lore: 'Will-o’-wisps are arcana given a flicker of life: every one reads arcana alike, and steadily. What hides from sight unsettles their glow.',
+},
+cloudray: {
+id: 'cloudray', noun: 'cloud ray', plural: 'cloud rays', young: 'pup',
+biasAll: RABBIT_SPREAD, bias: { levitation: STEADY_SPREAD, strength: 0.13 }, noise: { levitation: STEADY_NOISE, strength: 1.2 }, steady: 'levitation',
+lore: 'Cloud rays glide on the Skyshard winds and all feel levitation alike, within about 1 %: the surest measure of lightness. Weight unsettles them.',
+},
+mimic: {
+id: 'mimic', noun: 'mimic lizard', plural: 'mimic lizards', young: 'hatchling',
+biasAll: RABBIT_SPREAD, bias: { transformation: STEADY_SPREAD, love: 0.13 }, noise: { transformation: STEADY_NOISE, love: 1.2 }, steady: 'transformation',
+lore: 'Mimic lizards change colour with every mood and all feel transformation alike, and steadily — calmer readers than foxes. Love they take unevenly.',
+},
+shroudmoth: {
+id: 'shroudmoth', noun: 'shroud moth', plural: 'shroud moths', young: 'caterpillar',
+biasAll: RABBIT_SPREAD, bias: { invisibility: STEADY_SPREAD, fire: 0.13 }, noise: { invisibility: STEADY_NOISE, fire: 1.2 }, steady: 'invisibility',
+lore: 'Shroud moths fade at the edges of sight; all of them feel invisibility alike, within about 1 %. Fire makes them erratic.',
+},
+axolotl: {
+id: 'axolotl', noun: 'spectral axolotl', plural: 'spectral axolotls', young: 'larva',
+biasAll: RABBIT_SPREAD, bias: { phasing: STEADY_SPREAD, toxicity: 0.12 }, noise: { phasing: STEADY_NOISE, toxicity: 1.15 }, steady: 'phasing',
+lore: 'Spectral axolotls slip half through glass and stone; all feel phasing alike, within about 1 %. Poisons cloud them.',
+},
+scarab: {
+id: 'scarab', noun: 'hourglass scarab', plural: 'hourglass scarabs', young: 'grub',
+biasAll: RABBIT_SPREAD, bias: { temporal: STEADY_SPREAD, death: 0.13 }, noise: { temporal: STEADY_NOISE, death: 1.2 }, steady: 'temporal',
+lore: 'Hourglass scarabs keep the time of the Wastes: all feel temporal distortion alike, within about 1 %. Death unsettles them.',
+},
 };
+const BODY = { hare: 'rabbit', otter: 'ermine', beetle: 'rat', scarab: 'rat', cavemoth: 'dove', shroudmoth: 'dove', wisp: 'dove', cloudray: 'dove', mimic: 'salamander', axolotl: 'salamander' };
+const bodyOf = (kind) => BODY[kind] || kind;
 const KIND_IDS = /** @type {AnimalKind[]} */ (Object.keys(KINDS));
 function kindOf(o) {
 const k = o && (o.kind || (o.look && o.look.kind));
@@ -7633,19 +7685,22 @@ function aNoun(o) {
 return `a ${kindDef(o).noun}`;
 }
 const HABITAT = {
-forest: [['fox', 1]],               // native: fox
-meadow: [['rabbit', 1]],            // native: hare (the Moon Rabbit stands in)
-river: [['ermine', 1]],             // native: river otter (stand-in)
-quarry: [['badger', 1]],            // native: rock beetle (stand-in)
-netherwood: [['rat', 1]],           // native: cave moth (stand-in)
-crags: [['salamander', 1]],         // native: salamander
-moonfen: [['toad', 1]],             // native: will-o'-wisp (stand-in)
-skyshard: [['dove', 1]],            // native: cloud ray (stand-in)
-morphgrove: [['cat', 1]],           // native: mimic lizard (stand-in)
-veilhollow: [['deer', 1]],          // native: shroud moth (stand-in)
-ghostglass: [['snail', 1]],         // native: spectral axolotl (stand-in)
-chronoglass: [['rabbit', 1]],       // native: hourglass scarab (stand-in)
+forest: [['fox', 1]],                              // native: fox
+meadow: [['hare', 0.65], ['rabbit', 0.35]],        // native: hare
+river: [['otter', 0.6], ['ermine', 0.4]],          // native: river otter
+quarry: [['beetle', 0.6], ['badger', 0.4]],        // native: rock beetle
+netherwood: [['cavemoth', 0.55], ['rat', 0.45]],   // native: cave moth
+crags: [['salamander', 1]],                        // native: salamander
+moonfen: [['wisp', 0.55], ['toad', 0.45]],         // native: will-o'-wisp
+skyshard: [['cloudray', 0.6], ['dove', 0.4]],      // native: cloud ray
+morphgrove: [['mimic', 0.6], ['cat', 0.4]],        // native: mimic lizard
+veilhollow: [['shroudmoth', 0.6], ['deer', 0.4]],  // native: shroud moth
+ghostglass: [['axolotl', 0.6], ['snail', 0.4]],    // native: spectral axolotl
+chronoglass: [['scarab', 0.65], ['rabbit', 0.35]], // native: hourglass scarab
 };
+function habitatOf(kind) {
+return Object.entries(HABITAT).filter(([, h]) => h.some((x) => x[0] === kind)).map(([r]) => r);
+}
 function pickKind(region, rng) {
 const h = HABITAT[region] || [['rabbit', 1]];
 return rng.weighted(h.map((x) => x[0]), h.map((x) => x[1]));
@@ -7693,10 +7748,38 @@ if (kind === 'rat') {
 const c = pick([[0.45, 0.4, 0.37], [0.3, 0.27, 0.26], [0.58, 0.54, 0.48]]);
 return { kind, coat: c.slice(), coat2: [Math.min(1, c[0] + 0.25), Math.min(1, c[1] + 0.25), Math.min(1, c[2] + 0.22)].map(r2), pattern: 'solid', ear: 'round', size, eye: 'dark', tail: 1, seed };
 }
+if (kind === 'hare') {
+return { kind, coat: pick([[0.62, 0.46, 0.28], [0.56, 0.42, 0.26], [0.68, 0.52, 0.32]]).slice(), coat2: [0.94, 0.9, 0.82], pattern: 'agouti', ear: 'long', size: r2(size * 1.08), eye: 'amber', tail: 1, seed };
+}
+if (kind === 'otter') {
+return { kind, coat: pick([[0.36, 0.24, 0.16], [0.42, 0.3, 0.2], [0.3, 0.22, 0.16]]).slice(), coat2: [0.82, 0.74, 0.62], pattern: 'otter', ear: 'round', size, eye: 'dark', tail: 2, seed };
+}
+if (kind === 'beetle' || kind === 'scarab') {
+const shell = kind === 'scarab' ? pick([[0.2, 0.62, 0.6], [0.26, 0.5, 0.72], [0.2, 0.58, 0.42]]) : pick([[0.36, 0.36, 0.4], [0.46, 0.36, 0.26], [0.3, 0.34, 0.3]]);
+return { kind, coat: shell.slice(), coat2: kind === 'scarab' ? [0.95, 0.76, 0.3] : [0.16, 0.15, 0.17], pattern: 'carapace', ear: 'none', size, eye: 'dark', tail: 0, seed };
+}
+if (kind === 'cavemoth' || kind === 'shroudmoth') {
+const c = kind === 'cavemoth' ? pick([[0.46, 0.38, 0.3], [0.38, 0.34, 0.3], [0.5, 0.44, 0.34]]) : pick([[0.62, 0.58, 0.72], [0.56, 0.56, 0.62], [0.7, 0.66, 0.78]]);
+return { kind, coat: c.slice(), coat2: kind === 'cavemoth' ? [0.92, 0.86, 0.62] : [0.2, 0.16, 0.28], pattern: 'moth', ear: 'antenna', size, eye: 'dark', tail: 0, seed };
+}
+if (kind === 'wisp') {
+const c = pick([[0.5, 0.95, 0.9], [0.62, 0.86, 1], [0.98, 0.9, 0.55]]);
+return { kind, coat: c.slice(), coat2: [1, 1, 1], pattern: 'glow', ear: 'none', size, eye: 'dark', tail: 0, seed };
+}
+if (kind === 'cloudray') {
+return { kind, coat: pick([[0.52, 0.7, 0.9], [0.62, 0.74, 0.92], [0.7, 0.8, 0.94]]).slice(), coat2: [0.97, 0.98, 1], pattern: 'ray', ear: 'none', size, eye: 'dark', tail: 1, seed };
+}
+if (kind === 'mimic') {
+const c = pick([[0.36, 0.72, 0.34], [0.86, 0.5, 0.24], [0.42, 0.5, 0.86], [0.78, 0.36, 0.62]]);
+return { kind, coat: c.slice(), coat2: [Math.min(1, c[2] + 0.3), Math.min(1, c[0] + 0.2), Math.min(1, c[1] + 0.25)].map(r2), pattern: 'bands', ear: 'none', size, eye: 'amber', tail: 2, seed };
+}
+if (kind === 'axolotl') {
+return { kind, coat: pick([[0.96, 0.78, 0.84], [0.86, 0.84, 0.96], [0.98, 0.86, 0.74]]).slice(), coat2: [0.92, 0.36, 0.5], pattern: 'spectral', ear: 'gills', size, eye: 'dark', tail: 2, seed };
+}
 const spot = rng.chance(0.65) ? [0.98, 0.78, 0.16] : [0.96, 0.46, 0.12];
 return { kind: 'salamander', coat: [0.14, 0.12, 0.13], coat2: spot, pattern: 'blotched', ear: 'none', size, eye: 'dark', tail: 2, seed };
 }
-return { RABBIT_SPREAD, STEADY_SPREAD, STEADY_NOISE, KINDS, KIND_IDS, kindOf, kindDef, biasSpread, noiseFactor, aNoun, HABITAT, pickKind, kindLook };
+return { RABBIT_SPREAD, STEADY_SPREAD, STEADY_NOISE, KINDS, BODY, bodyOf, KIND_IDS, kindOf, kindDef, biasSpread, noiseFactor, aNoun, HABITAT, habitatOf, pickKind, kindLook };
 })();
 // src/game/colony.js
 const __m60 = (() => {
@@ -8961,7 +9044,7 @@ const base = f === 'moss' || f === 'reed' || f === 'fungus' ? 0.62 : f === 'bark
 return Math.round(Math.max(0.15, Math.min(0.8, base + (region === 'crags' ? -0.25 : region === 'river' || region === 'moonfen' || region === 'netherwood' ? 0.08 : 0))) * 100) / 100;
 }
 function createGathering(now = Date.now()) {
-return { v: GATHER_VERSION, nodes: /** @type {Record<string, Stand>} */ ({}), total: 0, trips: 0, created: now, sky: 'clear', watered: 0 };
+return { v: GATHER_VERSION, nodes: /** @type {Record<string, Stand>} */ ({}), total: 0, trips: 0, created: now, sky: 'clear', watered: 0, runes: /** @type {Record<string, number>} */ ({}) };
 }
 const GATHER_VERSION = 2;
 const finite = (/** @type {any} */ v) => typeof v === 'number' && Number.isFinite(v);
@@ -8983,6 +9066,7 @@ out.trips = Number.isFinite(g.trips) ? g.trips : 0;
 out.watered = Number.isFinite(g.watered) ? g.watered : 0;
 out.v = Number.isFinite(g.v) ? g.v : 1;
 if (typeof g.sky === 'string') out.sky = g.sky;
+if (g.runes && typeof g.runes === 'object') for (const [k, v] of Object.entries(g.runes)) if (v) out.runes[k] = 1;
 return out;
 }
 const GROW_FLOOR = 0.2;
@@ -9267,7 +9351,18 @@ const m = Math.ceil(s / 60);
 if (m < 60) return `${m} min`;
 return `${Math.floor(m / 60)} h ${m % 60} min`;
 }
-return { REGIONS, REGION_BY_ID, STAGES, SPROUT_SHARE, TAKE_BY_RARITY, generateDeposits, thirstOf, createGathering, GATHER_VERSION, normalizeGathering, GROW_FLOOR, GROW_MAX, WATER_DOSE, moistureEnv, growthOf, matureIn, checkpoint, standOf, plantStage, depositStatus, water, setSky, migrateGathering, SCAR_SLOWDOWN, METHODS, methodOf, dayPart, DAY_PART_NAME, DAY_PART_HINT, WEATHERS, weatherOn, gatherPlan, harvestable, weatherRegrowth, harvest, newDayRegrowth, SANDBOX_PACE, sandboxWilds, formatWait };
+const RUNE_CACHES = { netherwood: 2, quarry: 2, crags: 1, chronoglass: 1 };
+function runeCaches(region, sceneSeed) {
+const n = /** @type {Record<string, number>} */ (RUNE_CACHES)[region] || 0;
+const out = [];
+for (let k = 0; k < n; k++) {
+const r = new Rng(`rune-cache:${sceneSeed}:${region}:${k}`);
+const fx = (k + 0.2 + 0.6 * r.next()) / n * 0.8 + 0.1;
+out.push({ id: `${region}:${sceneSeed}:${k}`, fx: Math.round(fx * 1000) / 1000 });
+}
+return out;
+}
+return { REGIONS, REGION_BY_ID, STAGES, SPROUT_SHARE, TAKE_BY_RARITY, generateDeposits, thirstOf, createGathering, GATHER_VERSION, normalizeGathering, GROW_FLOOR, GROW_MAX, WATER_DOSE, moistureEnv, growthOf, matureIn, checkpoint, standOf, plantStage, depositStatus, water, setSky, migrateGathering, SCAR_SLOWDOWN, METHODS, methodOf, dayPart, DAY_PART_NAME, DAY_PART_HINT, WEATHERS, weatherOn, gatherPlan, harvestable, weatherRegrowth, harvest, newDayRegrowth, SANDBOX_PACE, sandboxWilds, formatWait, RUNE_CACHES, runeCaches };
 })();
 // src/simulation/particles.js
 const __m66 = (() => {
@@ -14006,13 +14101,13 @@ function fillVessel(v, comp, T, now, meta = {}) {
 if (vesselVolume(v) > 0) return { ok: false, reason: 'The vessel is not empty.' };
 const c = Object.fromEntries(Object.entries(comp).filter(([, ml]) => ml > 1e-6));
 if (!Object.keys(c).length) return { ok: false, reason: 'There is nothing to lay down.' };
-Object.assign(v, emptyVessel(v.id, now), { comp: c, T, name: meta.name || 'A laid-down brew', batchId: meta.batchId, parts: meta.parts || [] });
+Object.assign(v, emptyVessel(v.id, now), { comp: c, T, name: meta.name || 'A laid-down brew', batchId: meta.batchId, parts: meta.parts || [], charge: v.charge || null, rune: v.rune || null });
 note(v, now, `Laid down at ${Math.round(T)}°C.`);
 return { ok: true };
 }
 function emptyVesselContents(v, now) {
 const out = { comp: { ...v.comp }, T: v.T, name: v.name, parts: v.parts || [] };
-Object.assign(v, emptyVessel(v.id, now));
+Object.assign(v, emptyVessel(v.id, now), { charge: v.charge || null, rune: v.rune || null });
 return out;
 }
 function potionNet(effects) {
@@ -14026,7 +14121,6 @@ function potionDrive(effects) {
 return potionNet(effects) * DEG_PER_POINT;
 }
 function chargeVessel(v, effects, ml, now) {
-if (vesselVolume(v) <= 0) return { ok: false, reason: 'Fill the vessel first.' };
 if (!(ml > 0)) return { ok: false, reason: 'Choose how much potion to load.' };
 const net = potionNet(effects);
 if (!net) return { ok: false, reason: `Only a potion with Fire or Frost (at least ${MIN_POINTS} % more of one than the other) warms or chills a vessel.` };
@@ -14231,7 +14325,7 @@ const { generateCommission, tutorialCommission } = __m23;
 const { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById, RETIRED_EQUIPMENT } = __m58;
 const { SIM } = __m56;
 const { createTrials, normalizeTrials, runTrial, SUBJECT_BY_ID, knownLaws, certification, summarize } = __m59;
-const { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth, depositStatus, migrateGathering, setSky, water } = __m62;
+const { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth, depositStatus, migrateGathering, setSky, water, runeCaches: runeCachesOf } = __m62;
 const { predictPlan } = __m24;
 const { EFFECT_INDEX, EFFECT_KEYS } = __m20;
 const { migrateVial } = __m64;
@@ -14513,6 +14607,18 @@ this.cellar.runes++;
 }
 return r;
 }
+runeCaches(region) {
+return runeCachesOf(region, this.sceneSeed(region)).map((c) => ({ ...c, dug: !!this.gathering.runes[c.id] }));
+}
+digRune(id) {
+const region = id.split(':')[0];
+if (!this.runeCaches(region).some((c) => c.id === id)) return { ok: false, reason: 'There is nothing buried there.' };
+if (this.gathering.runes[id]) return { ok: false, reason: 'It has already been dug up.' };
+this.gathering.runes[id] = 1;
+this.cellar.runes++;
+this.stats.runes = (this.stats.runes || 0) + 1;
+return { ok: true };
+}
 tickCellar(now = Date.now()) {
 if (this.cellar.vessels.length < this.cap.vessels) normalizeCellar(this.cellar, this.cap.vessels, now);
 return advanceCellar(this.cellar, this.lookup, now);
@@ -14566,7 +14672,7 @@ return chargeVessel(v, effects, ml, now);
 runeVessel(vessel, target, now = Date.now()) {
 this.tickCellar(now);
 const v = this.cellar.vessels[vessel];
-if (!v || vesselVolume(v) <= 0) return { ok: false, reason: 'Fill the vessel first.' };
+if (!v) return { ok: false, reason: 'There is no such vessel.' };
 const fresh = !(v.rune && v.rune.life > 0);
 if (fresh && this.cellar.runes <= 0) return { ok: false, reason: 'You have no temperature rune. Buy one at the market, or look underground in the Wilds.' };
 const r = setRune(v, target, now);
@@ -14583,6 +14689,12 @@ const vial = makeVialFromComposition(out.comp, out.T, { batchId: 'b' + now.toStr
 if (!vial) return { ok: false, reason: 'Nothing could be bottled.' };
 if (this.bottles.length < this.cap.bottles) this.bottles.push(vial); else this.vial = vial;
 return { ok: true, vial };
+}
+takeVessel(vessel, now = Date.now()) {
+this.tickCellar(now);
+const v = this.cellar.vessels[vessel];
+if (!v || vesselVolume(v) <= 0) return { ok: false, reason: 'The vessel is empty.' };
+return { ok: true, ...emptyVesselContents(v, now) };
 }
 collectDistillate(collected) {
 const got = {};
@@ -19464,6 +19576,7 @@ const { h, btn, modal, toast, coins, starsText, confirmDialog, clear, keepScroll
 const { icon } = __m3;
 const { drawPortrait } = __m96;
 const { drawJar } = __m91;
+const { drawBottle } = __m90;
 const { EQUIPMENT, RANKS } = __m58;
 const { ACHIEVEMENTS } = __m5;
 const { viscosityClass, densityWord, evennessWord } = __m80;
@@ -20085,35 +20198,109 @@ function openCellar(lab) {
 const st = lab.state;
 let m = null;
 const vals = {};
+let sel = /** @type {string|null} */ (null);
+let drag = null;
 const rerender = () => {
-if (!m) return;
+if (!m || (drag && drag.on)) return;
 const keep = [m.body, m.el].map((e) => e.scrollTop);
 clear(m.body); m.body.append(...render());
 [m.body, m.el].forEach((e, i) => { e.scrollTop = keep[i]; });
 };
-const fireFrost = () => st.bottles.filter((b) => b.m && potionNet(b.m.effects));
 const potName = (net) => (net > 0 ? 'Fire' : 'Frost');
+const valOf = (k) => vals[k] || (vals[k] = { ml: 50, target: 40 });
+const useBottle = (k, bottleId) => {
+const b = st.bottles.find((x) => x.id === bottleId);
+const v = st.cellar.vessels[k];
+if (!b || !v) return;
+const net = b.m ? potionNet(b.m.effects) : 0;
+let r;
+if (net) {
+r = st.activateVessel(k, b.id, valOf(k).ml);
+if (r.ok) toast(`Vessel ${k + 1} charged`, `${Math.round(r.ml)} ml of the ${potName(net)} potion loaded: it can take the vessel to ${r.limit}°C.`, net > 0 ? 'flame' : 'snow', 3200);
+} else if (vesselVolume(v) <= 0) {
+r = st.layDown(k, { bottleId: b.id });
+if (r.ok) toast('Laid down', `The bottle is in vessel ${k + 1}.`, 'shelf2');
+} else r = { ok: false, reason: 'Only a Fire or Frost potion charges a vessel; another brew goes into an empty vessel.' };
+if (!r.ok) { toast('Cannot', r.reason, 'lock'); audio.play('error'); } else { audio.play('glass'); lab.save(); }
+if (!st.bottles.some((x) => x.id === sel)) sel = null;
+rerender();
+};
+const shelves = () => {
+const row = h('div', { class: 'cellar-shelf', role: 'listbox', 'aria-label': 'Potion shelves' });
+if (!st.bottles.length) row.append(h('div', { class: 'small muted', text: 'The potion shelves are empty. Bottle a Fire or Frost potion onto them (Bottle → To the potion shelves) to charge a vessel.' }));
+for (const b of st.bottles) {
+const net = b.m ? potionNet(b.m.effects) : 0;
+const cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: '16', height: '22', class: 'vial-art' }));
+drawBottle(/** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')), 2, 2, 12, 19, b.m ? b.m.color : [0.5, 0.5, 0.5], Math.min(1, b.ml / Math.max(1, b.bottledMl || b.ml)));
+const tag = net ? h('span', { class: 'cs-fx ' + (net > 0 ? 'fire' : 'frost') }, icon(net > 0 ? 'flame' : 'snow', 'sm')) : null;
+const tile = h('button', { class: 'cellar-bottle' + (sel === b.id ? ' active' : '') + (net ? ' charger' : ''), role: 'option', 'aria-selected': sel === b.id ? 'true' : 'false', 'data-act': 'cellar-shelf-bottle', 'data-id': b.id,
+title: `${b.label && b.label.name ? b.label.name : 'Bottle'}, ${Math.round(b.ml)} ml${net ? ` — ${potName(net)} ${Math.abs(net)}%: drag it onto a vessel to charge it` : ' — drag it onto an empty vessel to lay it down'}` },
+cv, h('span', { class: 'bml', text: `${Math.round(b.ml)}` }), tag);
+tile.addEventListener('pointerdown', (e) => {
+drag = { id: b.id, pid: e.pointerId, x: e.clientX, y: e.clientY, on: false, ghost: null, over: null };
+try { tile.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+});
+tile.addEventListener('pointermove', (e) => {
+if (!drag || drag.pid !== e.pointerId) return;
+if (!drag.on && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 8) {
+drag.on = true;
+drag.ghost = h('div', { class: 'drag-ghost bottle-ghost' }, cv.cloneNode(true));
+const c2 = /** @type {HTMLCanvasElement} */ (drag.ghost.firstChild);
+/** @type {CanvasRenderingContext2D} */ (c2.getContext('2d')).drawImage(cv, 0, 0);
+document.body.appendChild(drag.ghost);
+}
+if (!drag.on || !drag.ghost) return;
+drag.ghost.style.transform = `translate(${e.clientX - 16}px, ${e.clientY - 40}px)`;
+const br = m.body.getBoundingClientRect(), edge = 48;
+if (e.clientY > br.bottom - edge) m.body.scrollTop += Math.ceil((e.clientY - (br.bottom - edge)) / 3);
+else if (e.clientY < br.top + edge + 70) m.body.scrollTop -= Math.ceil((br.top + edge + 70 - e.clientY) / 3);
+const over = document.elementFromPoint(e.clientX, e.clientY);
+const card = over ? over.closest('.cellar-vessel') : null;
+if (drag.over !== card) { if (drag.over) drag.over.classList.remove('drop-over'); if (card) card.classList.add('drop-over'); drag.over = card; }
+});
+const end = (e) => {
+if (!drag || drag.pid !== e.pointerId) return;
+const d = drag;
+drag = null;
+if (d.ghost) d.ghost.remove();
+if (d.over) d.over.classList.remove('drop-over');
+if (!d.on) { if (e.type === 'pointerup') { sel = sel === b.id ? null : b.id; audio.play('click'); rerender(); } return; }
+const card = d.over;
+if (e.type === 'pointerup' && card) useBottle(Number(card.getAttribute('data-vessel')), b.id);
+else rerender();
+};
+tile.addEventListener('pointerup', end);
+tile.addEventListener('pointercancel', end);
+tile.addEventListener('lostpointercapture', end);
+row.append(tile);
+}
+return h('div', { class: 'card parch cellar-shelves' },
+h('div', { class: 'row' }, icon('bottle', 'sm'), h('b', { text: 'Potion shelves' }), h('span', { class: 'spacer' }),
+h('span', { class: 'small muted', text: sel ? 'Now tap “Use the picked bottle” on a vessel' : 'Drag a bottle onto a vessel, or tap it to pick it' })),
+row);
+};
 const render = () => {
 lab.tickCellar();
-const out = [h('div', { class: 'small muted', text: `Runes in hand: ${Number.isFinite(st.cellar.runes) ? st.cellar.runes : 'unlimited'}.${lab.sandbox ? ` In the Free Experiment the cellar runs ${st.cellar.pace || 1} times faster.` : ''} A vessel extracts slowly but for hours, even while the shop is closed. Load it with a Fire or Frost potion you brewed: the stronger its Fire (or Frost), the hotter (or colder) the vessel goes, and the potion is used up as it works. A rune locks the temperature on the way, where you choose; it wears out with use.` })];
+const out = [h('div', { class: 'small muted', text: `Runes in hand: ${Number.isFinite(st.cellar.runes) ? st.cellar.runes : 'unlimited'}.${lab.sandbox ? ` In the Free Experiment the cellar runs ${st.cellar.pace || 1} times faster.` : ''} A vessel extracts slowly but for hours, even while the shop is closed. Load it with a Fire or Frost potion you brewed: the stronger its Fire (or Frost), the hotter (or colder) the vessel goes, and the potion is used up as it works. A rune locks the temperature on the way, where you choose; it wears out with use.` }), shelves()];
+const picked = sel ? st.bottles.find((x) => x.id === sel) : null;
 st.cellar.vessels.forEach((v, k) => {
 const rep = vesselReport(v, st.lookup);
 const empty = vesselVolume(v) <= 0;
 const val = vals[k] || (vals[k] = { ml: 50, target: v.rune ? v.rune.target : rep.charge ? Math.round((rep.charge.limit + CELLAR_T) / 2) : 40 });
 const card = h('div', { class: 'card parch cellar-vessel', 'data-vessel': String(k) },
 h('div', { class: 'row' }, icon('shelf2'), h('b', { text: `Vessel ${k + 1}` }), h('span', { class: 'spacer' }), h('span', { class: 'small muted', 'data-temp': String(Math.round(rep.T * 10) / 10), text: empty ? 'empty' : `${Math.round(rep.ml)} ml · ${rep.T.toFixed(1)}°C` })));
-if (!empty) {
-card.append(h('div', { class: 'small', text: v.name || 'A laid-down brew' }));
+if (!empty) card.append(h('div', { class: 'small', text: v.name || 'A laid-down brew' }));
 const c = rep.charge;
 const heat = c
-? `${potName(c.net)} charge: ${c.ml.toFixed(1)} ml left (${c.net > 0 ? 'Fire' : 'Frost'} ${Math.abs(c.net)}%) — can take it to ${c.limit}°C`
-: Math.abs(rep.T - CELLAR_T) > 0.5 ? `no charge: returning to cellar temperature (${CELLAR_T}°C)` : `no charge: at cellar temperature (${CELLAR_T}°C)`;
+? `${potName(c.net)} charge: ${c.ml.toFixed(1)} ml left (${c.net > 0 ? 'Fire' : 'Frost'} ${Math.abs(c.net)}%) — can take it to ${c.limit}°C${empty ? ' (it works once the vessel holds a brew)' : ''}`
+: empty ? 'no charge' : Math.abs(rep.T - CELLAR_T) > 0.5 ? `no charge: returning to cellar temperature (${CELLAR_T}°C)` : `no charge: at cellar temperature (${CELLAR_T}°C)`;
 card.append(h('div', { class: 'small ' + (c ? 'know' : 'muted'), 'data-charge': c ? String(c.ml) : '0', text: heat }));
 if (rep.rune) {
 const r = rep.rune, left = `${Math.round((1 - r.wear) * 100)}% left`;
 const state = r.locked ? `locked at ${r.target}°C` : r.holds ? `will lock at ${r.target}°C` : c ? `set at ${r.target}°C, beyond this charge's reach (${c.limit}°C): it cannot lock` : `set at ${r.target}°C: it holds only while the vessel is charged`;
 card.append(h('div', { class: 'small ' + (r.holds ? 'know' : 'warn'), text: `Rune ${state} (${left})` }));
 }
+if (!empty) {
 if (rep.frozen || rep.char > 0.5 || rep.alcohol > 0.5) card.append(h('div', { class: 'small ' + (rep.frozen ? 'warn' : 'muted'), text: [rep.frozen ? 'frozen: extraction stopped' : '', rep.char > 0.5 ? `${Math.round(rep.char)} ml burnt to char` : '', rep.alcohol > 0.5 ? `${rep.alcohol.toFixed(0)}% spirit` : ''].filter(Boolean).join(' · ') }));
 for (const it of rep.items) {
 const k2 = st.knowledge[it.id] || {};
@@ -20123,24 +20310,19 @@ h('span', { class: 'muted', text: ` ${(it.share * 100).toFixed(1)}% / ${Math.rou
 }
 }
 const acts = h('div', { class: 'row', style: { flexWrap: 'wrap', gap: '6px' } });
-if (empty) {
-acts.append(btn('Lay down the brew', () => { lab.layDownCauldron(k); rerender(); }, { icon: 'cauldron', act: `cellar-fill-${k}`, disabled: !lab.sim.p.count, title: 'Pour everything in the cauldron into this vessel' }));
-for (const b of st.bottles.slice(0, 4)) acts.append(btn(`Lay down ${Math.round(b.ml)} ml bottle`, () => { const r = st.layDown(k, { bottleId: b.id }); if (!r.ok) toast('Cannot', r.reason, 'lock'); rerender(); }, { icon: 'bottle', cls: 'small', act: `cellar-bottle-${k}` }));
-} else {
+if (picked) acts.append(btn(`Use the picked ${Math.round(picked.ml)} ml bottle`, () => useBottle(k, picked.id), { icon: 'bottle', cls: 'small gold', act: `cellar-use-picked-${k}` }));
+if (empty) acts.append(btn('Lay down the brew', () => { lab.layDownCauldron(k); rerender(); }, { icon: 'cauldron', act: `cellar-fill-${k}`, disabled: !lab.sim.p.count, title: 'Pour everything in the cauldron into this vessel' }));
 const mlIn = /** @type {HTMLInputElement} */ (h('input', { type: 'number', value: String(val.ml), min: '5', max: '1000', step: '5', style: { width: '4.5em' }, 'aria-label': 'Potion to load (ml)', 'data-act': `cellar-ml-${k}` }));
 mlIn.addEventListener('input', () => { val.ml = Math.max(5, Number(mlIn.value) || 5); });
-const load = h('div', { class: 'row', style: { flexWrap: 'wrap', gap: '6px', alignItems: 'center' } }, h('span', { class: 'small', text: 'Load' }), mlIn, h('span', { class: 'small', text: 'ml' }),
-btn('From the pot', () => { const r = lab.chargeFromCauldron(k, val.ml); if (r && r.ok) audio.play('pour'); rerender(); }, { icon: 'cauldron', cls: 'small', act: `cellar-charge-pot-${k}`, disabled: lab.tapAvailable() < 5, title: 'Draw this much potion from the cauldron’s tap into the vessel’s heating jacket' }));
-for (const b of fireFrost().slice(0, 3)) {
-const n = potionNet(b.m.effects);
-load.append(btn(`From ${Math.round(b.ml)} ml ${potName(n)} bottle`, () => { const r = st.activateVessel(k, b.id, val.ml); if (!r.ok) toast('Cannot', r.reason, 'lock'); else { audio.play('select'); lab.save(); } rerender(); }, { icon: n > 0 ? 'flame' : 'snow', cls: 'small', act: `cellar-activate-${k}` }));
-}
-acts.append(load);
+acts.append(h('div', { class: 'row', style: { flexWrap: 'wrap', gap: '6px', alignItems: 'center' } }, h('span', { class: 'small', text: 'Load' }), mlIn, h('span', { class: 'small', text: 'ml' }),
+btn('From the pot', () => { const r = lab.chargeFromCauldron(k, val.ml); if (r && r.ok) audio.play('pour'); rerender(); }, { icon: 'cauldron', cls: 'small', act: `cellar-charge-pot-${k}`, disabled: lab.tapAvailable() < 5, title: 'Draw this much potion from the cauldron’s tap into the vessel’s heating jacket' })));
 const input = /** @type {HTMLInputElement} */ (h('input', { type: 'number', value: String(val.target), min: '-60', max: '300', step: '1', style: { width: '4.5em' }, 'aria-label': 'Rune temperature (°C)', 'data-act': `cellar-target-${k}` }));
 input.addEventListener('input', () => { val.target = Number(input.value); });
 const has = !!(v.rune && v.rune.life > 0);
 acts.append(h('div', { class: 'row', style: { flexWrap: 'wrap', gap: '6px', alignItems: 'center' } }, h('span', { class: 'small', text: 'Lock at' }), input, h('span', { class: 'small', text: '°C' }),
 btn(has ? 'Move the rune' : 'Set a rune', () => { const r = st.runeVessel(k, Number(val.target)); if (!r.ok) toast('Cannot', r.reason, 'lock'); else { audio.play('select'); lab.save(); } rerender(); }, { icon: 'rune', cls: 'small', act: `cellar-rune-${k}`, disabled: !has && st.cellar.runes <= 0 })));
+if (!empty) {
+acts.append(btn('Pour into the pot', () => { const r = lab.pourVesselBack(k); if (r && r.ok) rerender(); }, { icon: 'pour', cls: 'small', act: `cellar-pour-back-${k}`, title: 'Pour this brew back into the cauldron to keep working on it' }));
 acts.append(btn('Bottle it', () => { const r = st.bottleVessel(k); if (!r.ok) toast('Cannot', r.reason, 'lock'); else { toast('Bottled from the cellar', `${Math.round(r.vial.ml)} ml onto the potion shelves. Test it before you sell it.`, 'bottle'); audio.play('glass'); } rerender(); }, { icon: 'bottle', cls: 'small primary', act: `cellar-bottle-out-${k}` }));
 }
 card.append(acts);
@@ -20154,7 +20336,7 @@ const a = document.activeElement;
 if (a && a.tagName === 'INPUT' && m.el.contains(a)) return;
 rerender();
 }, 1000);
-m = modal({ title: 'Aging cellar', wide: true, body: render(), onClose: () => clearInterval(timer) });
+m = modal({ title: 'Aging cellar', wide: true, body: render(), onClose: () => { clearInterval(timer); for (const g of document.querySelectorAll('.bottle-ghost')) g.remove(); } });
 }
 return { jarCanvas, fxChips, openShop, openIngredient, openHint, openBottleSize, showDaySummary, showAnalysis, openRecipes, renderRecipes, openJournal, renderJournal, openPause, openReceiver, openHelp, openSettings, openCellar };
 })();
@@ -22555,12 +22737,14 @@ return { flourish };
 })();
 // src/visual/env/grade.js
 const __m118 = (() => {
-const GRADE = {
+const GRADE_FULL = {
 meadow: [0.42, 1.32, 0.5], forest: [0.4, 1.28, 0.5], netherwood: [0.34, 1.3, 0.46], river: [0.42, 1.3, 0.5],
 quarry: [0.38, 1.26, 0.48], moonfen: [0.34, 1.3, 0.44], crags: [0.36, 1.25, 0.48],
 skyshard: [0.4, 1.3, 0.5], morphgrove: [0.36, 1.3, 0.46], veilhollow: [0.32, 1.18, 0.42], ghostglass: [0.34, 1.28, 0.44], chronoglass: [0.38, 1.24, 0.48],
 pen: [0.4, 1.28, 0],
 };
+const SOFTEN = { contrast: 0.45, saturation: 0.4, ink: 0.75 };
+const GRADE = Object.fromEntries(Object.entries(GRADE_FULL).map(([k, [c, s, i]]) => [k, [c * SOFTEN.contrast, 1 + (s - 1) * SOFTEN.saturation, i * SOFTEN.ink]]));
 function curve(k) {
 const t = new Uint8Array(256);
 for (let i = 0; i < 256; i++) {
@@ -22578,7 +22762,7 @@ const cl = (/** @type {number} */ v) => (v < 0 ? 0 : v > 255 ? 255 : Math.round(
 return ((c & 0xff000000) | (cl(b) << 16) | (cl(g) << 8) | cl(r)) >>> 0;
 }
 function grade(cv, region) {
-const [con, sat, ink] = GRADE[region] || [0.38, 1.28, 0.4];
+const [con, sat, ink] = GRADE[region] || [0.38 * SOFTEN.contrast, 1 + 0.28 * SOFTEN.saturation, 0.4 * SOFTEN.ink];
 const T = curve(con), W = cv.W, H = cv.H, S = cv.solid, px = cv.pix.px, s = cv.sw;
 const air = (/** @type {number} */ k) => !S[k] && !cv.liquid[k] && !cv.rock[k];
 for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
@@ -22657,39 +22841,28 @@ pts.push([x + Math.cos(a) * rx * r, y + Math.sin(a) * ry * r]);
 return pts;
 }
 const pick = (rnd, mats) => (mats.length < 2 || rnd() < 0.6 ? mats[0] : mats[1 + Math.floor(rnd() * (mats.length - 1))]);
-function puff(x, y, r, rnd, sy = 0.86) {
-const n = Math.max(12, Math.round(r * 5)), lobes = Math.round(r * 0.9) + 3, ph = rnd() * 6;
-const pts = [];
-for (let i = 0; i < n; i++) {
-const a = (i / n) * Math.PI * 2, q = 1 + 0.14 * Math.abs(Math.sin(a * lobes * 0.5 + ph)) - 0.07 + (rnd() - 0.5) * 0.08;
-pts.push([x + Math.cos(a) * r * q, y + Math.sin(a) * r * q * sy]);
-}
-return pts;
-}
 function cluster(m, rng, x, y, rx, ry, o = {}) {
 const rnd = () => rng.next(), mats = o.mats || ['leaf'], tone = o.tone ?? 0, sw = { sa: o.amp ?? 1, sg: swayGroup() };
 const st = (/** @type {number} */ v) => Math.max(0, Math.min(1, v + tone * 1.5));
 const leafy = { shade: /** @type {'flat'} */ ('flat'), noOutline: true, ...sw };
 m.poly(oval(x + rx * 0.04, y + ry * 0.12, rx * 0.9, ry * (o.flat ? 0.68 : 0.84), rnd), mats[0], { ...leafy, step: st(0.2) });
-const pr = Math.max(2.2, Math.min(4.2, Math.min(rx, ry) * 0.45)), n = Math.max(3, Math.round(((rx * ry) / (pr * pr)) * 1.05 * (o.dense ?? 1)));
+m.poly(oval(x - rx * 0.1, y - ry * (o.flat ? 0.12 : 0.16), rx * 0.74, ry * (o.flat ? 0.52 : 0.66), rnd), mats[0], { ...leafy, step: st(0.34) });
+const n = Math.max(6, Math.round(rx * ry * 1.45 * (o.dense ?? 1)));
+const MARKS = [[[0, 0], [1, 0]], [[0, 0], [0, 1]], [[0, 0], [1, 0], [1, 1]], [[0, 0], [1, 1]], [[0, 0]], [[0, 0], [1, 0], [0, 1]], [[1, 0], [0, 1]]];
 const at = [];
 for (let i = 0; i < n; i++) {
-const a = rnd() * Math.PI * 2, q = Math.sqrt(rnd()) * 0.86;
-let py = y + Math.sin(a) * (ry - pr * 0.6) * q - ry * 0.05;
-if (o.flat) py = Math.min(py, y + ry * 0.22);
-at.push([x + Math.cos(a) * (rx - pr * 0.5) * q, py, pr * (0.8 + rnd() * 0.4)]);
+const a = rnd() * Math.PI * 2, q = Math.sqrt(rnd()) * 0.96;
+let py = y + Math.sin(a) * ry * q - ry * 0.04;
+if (o.flat) py = Math.min(py, y + ry * 0.3);
+at.push([x + Math.cos(a) * rx * q, py]);
 }
 at.sort((p, q) => q[1] - p[1]);
-for (const [px, py, r] of at) {
-const up = (y - py) / ry, left = (x - px) / rx, mat = pick(rnd, mats), b = 0.36 + up * 0.14 + left * 0.06 + (rnd() - 0.5) * 0.06;
-m.poly(puff(px + r * 0.12, py + r * 0.18, r + 0.8, rnd, 0.82), mat, { ...leafy, step: st(b - 0.34) });
-m.poly(puff(px, py, r, rnd), mat, { ...leafy, step: st(b) });
-m.poly(puff(px - r * 0.22, py - r * 0.26, r * 0.66, rnd, 0.8), mat, { ...leafy, step: st(b + 0.2) });
-m.poly(puff(px - r * 0.36, py - r * 0.42, Math.max(0.9, r * 0.3), rnd, 0.6), mat, { ...leafy, step: st(b + 0.42) });
-for (let j = 0; j < Math.max(1, Math.round(r * 0.35)); j++) {
-const a = Math.PI * (1.15 + rnd() * 0.6);
-m.poly(leaf(rnd, px + Math.cos(a) * r * 0.95, py + Math.sin(a) * r * 0.9, 0.7 + rnd() * 0.4), mat, { ...leafy, step: st(b + 0.3) });
-}
+for (const [px, py] of at) {
+const up = (y - py) / ry, left = (x - px) / rx, mat = pick(rnd, mats);
+const lvl = Math.max(0, Math.min(4, Math.round((0.42 + up * 0.3 + left * 0.16 + (rnd() - 0.5) * 0.28) * 4)));
+const step = st(0.12 + lvl * 0.13), mk = MARKS[Math.floor(rnd() * MARKS.length)], bx = Math.round(px), by = Math.round(py);
+for (const [dx, dy] of mk) m.dot(bx + dx, by + dy, mat, { clip: false, step, ...sw });
+if (lvl >= 3 && rnd() < 0.35) m.dot(bx - 1, by - 1, mat, { clip: false, step: st(0.12 + Math.min(4, lvl + 1) * 0.13 + 0.06), ...sw });
 }
 const tufts = Math.round((rx + ry) * 0.6);
 for (let i = 0; i < tufts; i++) {
@@ -24312,7 +24485,7 @@ const moonfen = __m127;
 const crags = __m128;
 const netherwood = __m129;
 const { skyshard, morphgrove, veilhollow, ghostglass, chronoglass } = __m130;
-const ENV_VERSION = 13;
+const ENV_VERSION = 14;
 const COMPOSERS = { meadow, forest, netherwood, river, quarry, moonfen, crags, skyshard, morphgrove, veilhollow, ghostglass, chronoglass };
 const cache = new Map();
 function composeScene(region, seed) {
@@ -25319,7 +25492,7 @@ return { hasExotic, exoticPush, exoticStep, exoticDraw };
 const __m133 = (() => {
 const { Rng, hashString } = __m6;
 const { rollLook } = __m60;
-const { pickKind, kindLook } = __m61;
+const { pickKind, kindLook, bodyOf } = __m61;
 const HOP_GRAVITY = 300, BLOOD_GRAVITY = 260;
 const WILD_HP = 3;
 const BLEED_OUT = 4;
@@ -25354,6 +25527,7 @@ class WildRabbit {
 constructor(id, x, y, rng, kind = 'rabbit') {
 this.id = id;
 this.kind = kind;
+this.body = bodyOf(kind);
 this.look = kind === 'rabbit' ? wildLook(rng) : kindLook(kind, rng);
 this.sex = rng.chance(0.5) ? 'f' : 'm';
 this.x = x; this.y = y; this.vx = 0; this.vy = 0;
@@ -25394,10 +25568,11 @@ get flying() {
 return this.running && this.fly > 0;
 }
 get drawPose() {
-if (this.kind === 'dove' && this.fly > 0) return Math.floor(this.t * 9) & 1 ? 'fly1' : 'fly2';
-if (this.kind === 'snail' && this.hide > 0 && this.running) return 'loaf';
+if (this.body === 'dove' && this.fly > 0) return Math.floor(this.t * 9) & 1 ? 'fly1' : 'fly2';
+if ((this.kind === 'wisp' || this.kind === 'cloudray') && this.running) return Math.floor(this.t * (this.kind === 'wisp' ? 3 : 2)) & 1 ? 'fly1' : 'fly2';
+if (this.body === 'snail' && this.hide > 0 && this.running) return 'loaf';
 if (this.air) return 'hop';
-if (this.walking) return `walk${(Math.floor(this.stride / ({ cat: 2.2, fox: 2.2, deer: 2.6 }[this.kind] || 1.6)) % 4) + 1}`;
+if (this.walking) return `walk${(Math.floor(this.stride / ({ cat: 2.2, fox: 2.2, deer: 2.6 }[this.body] || 1.6)) % 4) + 1}`;
 return this.running && !this.alarm ? this.pose || undefined : undefined;
 }
 get running() {
@@ -25405,7 +25580,7 @@ return !this.dead && !this.down;
 }
 box(pad = 0) {
 const lying = this.dead || this.down;
-const tall = { salamander: 6, toad: 8, snail: 8, rat: 7, ermine: 8, badger: 9, dove: 9, cat: 12, fox: 12, deer: 17 }[this.kind] ?? 11;
+const tall = { salamander: 6, toad: 8, snail: 8, rat: 7, ermine: 8, badger: 9, dove: 9, cat: 12, fox: 12, deer: 17 }[this.body] ?? 11;
 return lying
 ? { x0: this.x - 8 - pad, y0: this.y - 6 - pad, x1: this.x + 8 + pad, y1: this.y + 1 + pad }
 : { x0: this.x - 7 - pad, y0: this.y - tall - pad, x1: this.x + 7 + pad, y1: this.y + 1 + pad };
@@ -25538,8 +25713,8 @@ while (yy < this.H - 1 && !this.solid(X, yy + 1)) yy++;
 return yy;
 }
 hop(r) {
-const rng = this.rng, G = GAITS[r.kind] || GAITS.rabbit;
-if (r.kind !== 'rabbit') return this.kindMove(r, G);
+const rng = this.rng, G = GAITS[r.body] || GAITS.rabbit;
+if (r.body !== 'rabbit') return this.kindMove(r, G);
 if (r.alarm) {
 r.face = r.x < r.from ? -1 : 1;
 if (rng.chance(0.18)) r.face = -r.face;
@@ -25568,7 +25743,7 @@ r.alarm = false;
 return;
 }
 r.face = r.x < r.from ? -1 : 1;
-if (rng.chance(r.kind === 'toad' ? 0.2 : 0.1)) r.face = -r.face;
+if (rng.chance(r.body === 'toad' ? 0.2 : 0.1)) r.face = -r.face;
 if (G.alarm === 'fly') return this.takeOff(r, true);
 if (G.flee && (G.alarm === 'bound' || rng.chance(G.pFlee))) return this.leap(r, G.flee, 1 + 0.12 * Math.min(2, r.hits));
 r.walkV = rng.range(G.run[0], G.run[1]) * (1 + 0.1 * Math.min(2, r.hits));
@@ -25626,7 +25801,7 @@ r.walkT = 0;
 if (r.hits) this.bleed(r, 2 + r.hits * 2, 0.7);
 }
 walkStep(r, dt) {
-const G = GAITS[r.kind] || GAITS.rabbit, solid = this.solid;
+const G = GAITS[r.body] || GAITS.rabbit, solid = this.solid;
 r.walkT -= dt;
 const nx = r.x + r.face * r.walkV * dt, X = Math.round(nx);
 const turn = () => { r.face = -r.face; if (!r.alarm) r.walkT = Math.min(r.walkT, 0.3); };
@@ -25718,9 +25893,9 @@ r.air = false;
 r.y = Math.round(r.y);
 const hard = r.vy;
 r.vx = 0; r.vy = 0;
-const G = GAITS[r.kind] || GAITS.rabbit;
-r.rest = r.alarm ? this.rng.range(0.03, r.kind === 'toad' ? 0.25 : 0.14) : this.rng.range(G.rest[0], G.rest[1]);
-if (!r.alarm) { const u = this.rng.next(); r.pose = r.kind === 'rabbit' ? (u < 0.35 ? 'eat' : u < 0.45 ? 'rear' : null) : u < 0.4 ? this.rng.weighted(G.poses.map((p) => p[0]), G.poses.map((p) => p[1])) : null; }
+const G = GAITS[r.body] || GAITS.rabbit;
+r.rest = r.alarm ? this.rng.range(0.03, r.body === 'toad' ? 0.25 : 0.14) : this.rng.range(G.rest[0], G.rest[1]);
+if (!r.alarm) { const u = this.rng.next(); r.pose = r.body === 'rabbit' ? (u < 0.35 ? 'eat' : u < 0.45 ? 'rear' : null) : u < 0.4 ? this.rng.weighted(G.poses.map((p) => p[0]), G.poses.map((p) => p[1])) : null; }
 if (r.hits) { this.stain(r.x - r.face * this.rng.int(0, 3), r.y + 1, BLOOD[this.rng.int(0, 2)], r.hits * 2 + 2); if (hard > 60) this.bleed(r, r.hits * 2, 0.5); }
 }
 }
@@ -25817,7 +25992,7 @@ const __m134 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m91;
 const { RABBIT_MARKS } = __m60;
-const { KINDS } = __m61;
+const { KINDS, bodyOf } = __m61;
 const { punchSprite } = __m135;
 const RABBIT_W = 48;
 const RABBIT_H = 40;
@@ -26000,7 +26175,10 @@ const STAGE_G = { kit: 0.62, young: 0.82, adult: 1, elder: 0.97 };
 const CAT_TAIL_RISE = 6;
 const DOVE_WING = 9;
 const LONG_TAIL = new Set(['cat', 'salamander', 'fox', 'rat', 'ermine', 'dove']);
-const kindOfLook = (look) => (look && look.kind && Object.prototype.hasOwnProperty.call(KINDS, look.kind) ? look.kind : 'rabbit');
+const creatureOfLook = (look) => (look && look.kind && Object.prototype.hasOwnProperty.call(KINDS, look.kind) ? look.kind : 'rabbit');
+const kindOfLook = (look) => bodyOf(creatureOfLook(look));
+const OWN_BODY = new Set(['beetle', 'scarab', 'wisp', 'cloudray']);
+const CREATURE_G = { hare: 1.06, otter: 1.12, beetle: 1.22, scarab: 1.18, cavemoth: 0.86, shroudmoth: 0.9, wisp: 0.8, cloudray: 1.2, mimic: 1, axolotl: 0.95 };
 const KIND_G = { toad: 0.8, rat: 0.78, snail: 0.82, dove: 0.82, ermine: 0.85 };
 const QUAD = {
 cat: { leg: 6, hx: 11, hrx: 6.5, hry: 4, cx: 19, crx: 5, cry: 4, hdx: 25, hdy: 9, hrxH: 4.8, hryH: 4.2, sn: [0, 0, 0], rear: 'sit' },
@@ -26153,7 +26331,7 @@ const stage = snap && STAGE_G[snap.stage] ? snap.stage : 'adult';
 const kit = stage === 'kit', elder = stage === 'elder';
 const mus = L.strength;
 const size = clamp(Number(look.size) || 1, 0.85, 1.15);
-const kindG = KIND_G[kindOfLook(look)] || 1;
+const kindG = (KIND_G[kindOfLook(look)] || 1) * (CREATURE_G[creatureOfLook(look)] || 1);
 const g = clamp(size * STAGE_G[stage] * kindG * (1 + 0.04 * mus) * (tr.has('giant') ? 1.18 : tr.has('tiny') ? 0.8 : 1), 0.5, 1.3);
 const hs = kit ? 0.95 * Math.max(g, 0.8) : 0.25 + 0.75 * g;
 const lying = pose === 'dead' || pose === 'collapse' || pose === 'flop';
@@ -26161,7 +26339,7 @@ const preg = snap && snap.preg ? 1 : 0;
 const oy = 34;
 const ox = Math.round(24 - (lying ? 15 : 14) * g);
 const bulk = [0, 1, 1, 2][mus];
-const earK = (look.ear === 'short' ? 0.6 : 1) * (kit ? 0.7 : 1);
+const earK = (look.ear === 'short' ? 0.6 : look.ear === 'long' ? 1.25 : 1) * (kit ? 0.7 : 1);
 const hornH = tr.has('antlers') ? HORN_H.antlers : tr.has('unihorn') ? HORN_H.unihorn : tr.has('horns') ? HORN_H.horns : 0;
 const headRy = Math.round((lying ? 3.8 : 4.5) * hs);
 let haunch, chest, head;
@@ -26310,6 +26488,7 @@ const tail = kind === 'cat' ? { x: tx + 1, y: haunch.cy - Math.max(1, haunch.ry 
 : kind === 'dove' ? { x: tx + 1, y: haunch.cy - 1, r: 1, len: clamp(Math.round(7 * g), 3, tx - 1) }
 : kind === 'salamander' ? { x: tx + 1, y: haunch.cy, r: 1, len: clamp(Math.round(13 * g), 4, tx - 1) }
 : { x: tx, y: haunch.cy - (lying ? 1 : 2), r: kind === 'toad' || kind === 'snail' ? 0 : kind === 'deer' || kind === 'badger' ? 1 : tailR, len: clamp(Math.round(9 * g), 3, tx - 1) };
+if (creatureOfLook(look) === 'otter') Object.assign(tail, { r: 2, len: clamp(Math.round(11 * g), 4, tx - 2) });
 const prx = Math.max(2, Math.round(3 * Math.min(g, 1.1)));
 const plume = E(Math.max(prx + 2, tx - 1), tail.y - Math.max(2, Math.round(2.5 * g)), prx, Math.max(2, Math.round(2.2 * Math.min(g, 1.1))));
 const wing = lying ? { x: haunch.cx - 2, y: haunch.cy - haunch.ry - 2 } : { x: chest.cx - chest.rx - 3, y: chest.cy - chest.ry - 4 };
@@ -26331,7 +26510,7 @@ if (tr.has('wings')) y0 = Math.min(y0, wing.y - 1);
 for (const l of legs) y0 = Math.min(y0, l.y - 1);
 if (tr.has('spines')) y0 = Math.min(y0, Math.min(haunch.cy - haunch.ry, chest.cy - chest.ry) - 5);
 return {
-kind, pose, lying, g, hs, haunch, chest, head, muzzle, bulges, parts, ears, legs,
+kind, creature: creatureOfLook(look), pose, lying, g, hs, haunch, chest, head, muzzle, bulges, parts, ears, legs,
 eye, eye3: { x: head.cx + 1, y: top + 1 }, nose, cheek: { x: eye.x, y: eye.y + 3 },
 brow: { x: head.cx - 1 - shift, y: top }, tail, plume, wing,
 back: { x0: haunch.cx - haunch.rx + 2, x1: chest.cx, y: haunch.cy - haunch.ry },
@@ -26382,6 +26561,7 @@ P, a, L, sc, tr: traitsOf(snap), dead, cause, pattern: look.pattern || 'solid', 
 seed: (look.seed >>> 0) || 1, fur, C: shades(fur), C2: shades(fur2),
 };
 if (!low && !dead) auraLayer(S);
+if (OWN_BODY.has(a.creature)) { ownBody(S); if (dead) causeLayer(S); return; }
 farLayer(S);
 for (const e of a.parts) ell(P, e, 1, K); // outline pass
 if (P.clip && P.k) P.clip(a.parts.flatMap((e) => fineRows(e, 0, /** @type {number} */ (P.k))));
@@ -26400,7 +26580,132 @@ sickMarks(S);
 pawLayer(S);
 nearLayer(S);
 faceLayer(S);
+creatureLayer(S);
 if (dead) causeLayer(S);
+}
+function creatureLayer(S) {
+const { P, a, C, C2, dead } = S, cr = a.creature, h = a.head;
+if (cr === 'hare') {
+for (const e of a.ears) if (e.kind === 'up') { const lean = e.lean ? Math.floor(e.len / e.lean) : 0; P(e.x - lean, e.y - e.len, Math.max(1, e.w - 1), 2, dead ? '#3a3036' : '#1e1a1c'); }
+return;
+}
+if (cr === 'otter') {
+for (const [y, x0, x1] of rowsOf([a.chest])) if (y >= a.chest.cy) P(Math.max(x0 + 1, a.chest.cx - 1), y, Math.max(1, x1 - Math.max(x0 + 1, a.chest.cx - 1)), 1, C2.body);
+P(h.cx - 1, h.cy + h.ry - 1, h.rx + 1, 1, C2.body);
+if (!dead) { P(a.nose.x - 1, a.nose.y + 1, 3, 1, 'rgba(255,255,255,0.55)'); P(a.nose.x - 2, a.nose.y + 2, 3, 1, 'rgba(255,255,255,0.4)'); }
+return;
+}
+if (cr === 'cavemoth' || cr === 'shroudmoth') {
+P(a.nose.x - 1, a.nose.y, 3, 2, C.body);
+for (const l of a.legs) P(l.x, l.y, l.w, l.h, C.dark);
+if (!a.lying) {
+const ax = h.cx - 1, ay = h.cy - h.ry;
+for (let i = 0; i < 5; i++) { P(ax - Math.round(i * 0.6), ay - 1 - i, 1, 1, K); if (i & 1) P(ax - Math.round(i * 0.6) - 1, ay - 1 - i, 1, 1, C2.shade); }
+for (let i = 0; i < 5; i++) { P(ax + 2 + Math.round(i * 0.5), ay - 1 - i, 1, 1, K); if (i & 1) P(ax + 3 + Math.round(i * 0.5), ay - 1 - i, 1, 1, C2.shade); }
+}
+for (let i = 0; i < 4; i++) P(a.chest.cx - 2 + i * 2, a.chest.cy - a.chest.ry + 1, 1, 1, C.hi);
+const hh = a.haunch;
+for (let i = -2; i <= 2; i++) P(hh.cx + i, hh.cy - 1 + (i & 1), 1, 1, cr === 'cavemoth' ? C2.shade : C2.body);
+return;
+}
+if (cr === 'mimic') {
+const body = [a.haunch, a.chest], [x0, x1] = xRange(body);
+for (let x = x0 + 2; x <= x1 - 1; x += 4) {
+const y0 = colEdge(body, x, -1), y1 = colEdge(body, x, 1);
+if (y0 !== null && y1 !== null) P(x, y0 + 1, 2, Math.max(1, Math.round((y1 - y0) * 0.7)), C2.body);
+}
+const e = a.eye;
+if (!dead) { P(e.x - 1, e.y - 2, 3, 3, C.dark); P(e.x, e.y - 1, 1, 1, '#f0b84a'); P(e.x, e.y - 1, 1, 1, K); P(e.x - 1, e.y - 2, 1, 1, C.hi); }
+return;
+}
+if (cr === 'axolotl') {
+const gx = h.cx - h.rx + 1, gy = h.cy - 1;
+const gill = dead ? '#a87a86' : C2.body, gill2 = dead ? '#8a6470' : C2.hi;
+for (const [dx, dy, len] of [[-1, -3, 3], [-2, -1, 3], [-1, 1, 3]]) {
+for (let i = 0; i < len; i++) P(gx + dx - i, gy + dy - Math.round(i * (dy < 0 ? 0.7 : dy > 0 ? -0.5 : 0)), 1, 1, i === len - 1 ? gill2 : gill);
+P(gx + dx - 1, gy + dy - 1, 1, 1, gill2);
+}
+if (!dead) for (let x = a.haunch.cx - 3; x <= a.chest.cx + 1; x += 3) P(x, a.chest.cy - 1, 1, 1, 'rgba(255,255,255,0.45)');
+if (!dead) P(h.cx, h.cy + h.ry - 1, 3, 1, C.dark);
+}
+}
+function ownBody(S) {
+const { P, a, C, C2, dead } = S, cr = a.creature;
+const feet = a.feetY, g = a.g;
+if (cr === 'beetle' || cr === 'scarab') {
+const x0 = a.haunch.cx - a.haunch.rx, x1 = a.chest.cx + a.chest.rx;
+const cx = Math.round((x0 + x1) / 2) - 1, rx = Math.max(4, Math.round((x1 - x0) / 2) - 1), ry = Math.max(3, Math.round(4.2 * g));
+const back = a.lying && a.pose === 'dead';
+const cy = feet - ry - (back ? 0 : 2);
+const shell = E(cx, cy, rx, ry), head = E(cx + rx + 1, cy + Math.round(ry * 0.45), Math.max(2, Math.round(2.2 * g)), Math.max(1, Math.round(1.8 * g)));
+const beat = walkBeat(a.pose);
+for (let i = 0; i < 3; i++) {
+const lx = cx - rx + 2 + Math.round(((2 * rx - 3) * i) / 2), up = beat >= 0 && ((i + beat) & 1) ? 1 : 0, sw = beat >= 0 ? ((i + beat) & 1 ? 1 : -1) : 0;
+if (back) { P(lx, cy - ry - 2, 1, 3, K); P(lx + 1, cy - ry - 3, 1, 1, K); continue; }
+P(lx + sw - 1, cy + ry - 1, 1, feet - (cy + ry) + 1 - up, K);
+P(lx + sw, cy + ry, 1, feet - (cy + ry) + 1 - up, K);
+P(lx + sw + 1, feet - up, 1, 1, K);
+}
+ell(P, head, 1, K); ell(P, head, 0, C2.dark === C.dark ? C.dark : css(C.rgb, 0.5));
+if (!back) { P(head.cx + head.rx, head.cy - head.ry - 1, 1, 1, K); P(head.cx + head.rx + 1, head.cy - head.ry - 2, 1, 1, K); P(head.cx + head.rx + 2, head.cy - head.ry - 2, 1, 1, K); }
+ell(P, shell, 1, K); ell(P, shell, 0, C.shade);
+ell(P, E(cx - Math.round(rx * 0.15), cy - Math.round(ry * 0.15), Math.max(2, rx - 1), Math.max(2, ry - 1)), 0, C.body);
+P(cx - Math.round(rx * 0.55), cy - ry + 1, Math.max(2, Math.round(rx * 0.6)), 1, C.hi);
+P(cx - Math.round(rx * 0.45), cy - ry + 2, 2, 1, C.hi);
+if (cr === 'scarab') {
+for (const [y, l, r] of rowsOf([shell])) if (y >= cy + ry - 1) P(l, y, r - l + 1, 1, C2.body);
+const hx = cx;
+P(hx - 1, cy - 2, 3, 1, C2.hi); P(hx, cy - 1, 1, 1, C2.body); P(hx - 1, cy, 3, 1, C2.hi);
+} else {
+P(cx, cy - ry + 1, 1, 2 * ry - 1, C2.body);
+for (let k = 0; k < 3; k++) P(cx - rx + 2 + ((S.seed >> k) & 3) * 2, cy + (k - 1) * 2, 1, 1, C.dark);
+}
+if (!dead) { const e = { x: head.cx + 1, y: head.cy - 1 }; P(e.x, e.y, 1, 1, cr === 'scarab' ? '#fff0a0' : '#e8e0d0'); }
+else { P(head.cx, head.cy - 1, 1, 1, K); P(head.cx + 1, head.cy, 1, 1, K); }
+return;
+}
+if (cr === 'wisp') {
+const cx = a.chest.cx - 1, cy = a.lying ? feet - 3 : Math.min(a.chest.cy - 1, feet - 12);
+const r = Math.max(3, Math.round(4 * g));
+if (dead) {
+ell(P, E(cx, feet - 1, r, 1), 0, 'rgba(120,130,140,0.6)');
+P(cx - 1, feet - 2, 3, 1, '#8a9098');
+return;
+}
+const fly = a.pose === 'fly2' ? 1 : 0;
+for (let k = 3; k >= 1; k--) ell(P, E(cx, cy, r + k * 2, r + k * 2 - 1), 0, `rgba(${Math.round(C.rgb[0] * 255)},${Math.round(C.rgb[1] * 255)},${Math.round(C.rgb[2] * 255)},${(0.07 * (4 - k)).toFixed(2)})`);
+for (let i = 0; i < r + 3; i++) {
+const w = Math.max(1, Math.round(r * (1 - i / (r + 4)))), y = cy - Math.round(w / 2) + ((i + fly) % 3 === 0 ? 1 : 0);
+P(cx - r - i, y, 1, w, i < 2 ? C.body : C.shade);
+}
+ell(P, E(cx, cy, r, r), 0, C.body);
+ell(P, E(cx + 1, cy - 1, Math.max(1, r - 2), Math.max(1, r - 2)), 0, C.hi);
+P(cx + 1, cy - 1, 2, 2, '#ffffff');
+P(cx + 1, cy, 1, 2, '#1a1a2a'); P(cx + 3, cy, 1, 2, '#1a1a2a');
+return;
+}
+if (cr === 'cloudray') {
+const cx = a.chest.cx - 2, cy = a.lying ? feet - 2 : a.chest.cy;
+const span = Math.max(7, Math.round(11 * g)), up = a.pose === 'fly1' ? -1 : a.pose === 'fly2' ? 1 : 0;
+const body = E(cx, cy, Math.max(4, Math.round(6 * g)), Math.max(2, Math.round(2.6 * g)));
+for (let i = 0; i < span + 4; i++) P(body.cx - body.rx - i, cy + (i > span ? 1 : 0), 1, 1, i & 1 ? C.dark : K);
+const wing = (dir, col) => {
+for (let i = 0; i < span; i++) {
+const y = cy + dir * (1 + Math.round(i * 0.45)) + up * Math.round(i * 0.35);
+const x = cx + 2 - Math.round(i * 0.7), w = Math.max(1, Math.round((span - i) * 0.7));
+P(x - w, y, w + 1, 1, col);
+}
+};
+wing(-1, K); wing(1, K);
+wing(-1, a.lying ? C.shade : C.dark);
+ell(P, body, 1, K);
+wing(1, C.body);
+ell(P, body, 0, C.body);
+for (const [y, l, r] of rowsOf([body])) if (y > cy) P(l, y, r - l + 1, 1, C2.body);
+P(body.cx - 2, cy - body.ry + 1, 4, 1, C.hi);
+P(body.cx + body.rx, cy - 1, 2, 1, K); P(body.cx + body.rx, cy + 1, 2, 1, K);
+if (!dead) P(body.cx + body.rx - 2, cy - 1, 1, 1, '#1a1a2a'); else P(body.cx + body.rx - 2, cy - 1, 1, 1, '#5a5a6a');
+}
 }
 const AURAS = /** @type {[string, string, number[], number][]} */ ([
 ['vitality', '255,214,120', [0, 0.12, 0.22, 0.32], 2],
@@ -27336,7 +27641,7 @@ const { CREATURE_NAMES, rarityTag } = __m104;
 const { h, btn, clear, toast, keepScroll, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, moistureEnv, DAY_PART_NAME } = __m62;
+const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, moistureEnv, DAY_PART_NAME, runeCaches: runeCachesOf } = __m62;
 const { equipmentById } = __m58;
 const { RANKS } = __m58;
 const { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, sceneTouch, crosses, SCENE_W, SCENE_H } = __m110;
@@ -27412,6 +27717,7 @@ this.fallen = {};
 this.shakes = {};
 this.energy = {};
 this.hits = {};
+this.runeHits = {};
 this.soilCache = new Map();
 this.bits = [];
 this.rubble = [];
@@ -27567,6 +27873,7 @@ h('span', { class: 'tag ' + biome.category, text: biome.category === 'exotic' ? 
 h('span', { class: 'fx-chip', title: `Dominant effect: ${eff.label}` }, icon(eff.icon, 'sm'), ' ' + eff.label),
 h('span', { class: 'fx-chip', title: 'Native creature' }, icon('rabbit', 'sm'), ' ' + CREATURE_NAMES[biome.creature]),
 h('span', { class: 'fx-chip', title: 'Specimens left in this generation' }, icon('leaf', 'sm'), ` ${left}/${total}`),
+...(() => { const cs = st.runeCaches(this.region); const n = cs.filter((c) => !c.dug).length; return cs.length ? [h('span', { class: 'fx-chip rune-chip', 'data-runes-left': String(n), title: n ? 'Old temperature runes lie buried here: look for the glowing stones and tap one a few times to dig it up' : 'Every buried rune of this generation has been dug up: regenerating the biome buries new ones' }, icon('rune', 'sm'), ` ${n}/${cs.length} buried`)] : []; })(),
 lab.sandbox ? null : h('span', { class: 'fx-chip coins', title: coins.nextIn ? `Next coin in ${formatWait(coins.nextIn)}` : 'Your purse is full' }, icon('coin', 'sm'), ` ${coins.coins}/${coins.max}`),
 regen));
 const list = clear(this.list);
@@ -28181,8 +28488,82 @@ rockColour() {
 const stone = this.region === 'quarry' || this.region === 'crags';
 return this.region === 'crags' ? '#4a3c40' : stone ? '#8c8072' : this.region === 'moonfen' || this.region === 'netherwood' ? '#4c4a58' : '#7c7c78';
 }
+caches() {
+const st = this.lab.state, seed = st.sceneSeed(this.region), key = `${this.region}:${seed}`;
+if (!this._caches || this._caches.key !== key) {
+const sc = sceneOf(this.region, seed);
+const air = (x, y) => !this.solidAt(x, y);
+const place = [];
+for (const c of runeCachesOf(this.region, seed)) {
+let x0 = Math.round(c.fx * SCENE_W), spot = null;
+for (let d = 0; d < SCENE_W / 2 && !spot; d += 3) {
+for (const x of [x0 + d, x0 - d]) {
+if (x < 8 || x > SCENE_W - 8) continue;
+let y = SCENE_H - 1;
+while (y > 0 && this.solidAt(x, y)) y--;
+if (y < 14 || y > SCENE_H - 3) continue;
+let open = true;
+for (let k = 1; k <= 12 && open; k++) if (!air(x, y - k) || !air(x - 4, y - k) || !air(x + 4, y - k)) open = false;
+if (!open || sc.liquid[(y + 1) * SCENE_W + x] || sc.liquid[y * SCENE_W + x]) continue;
+spot = { x, y: y + 1 };
+break;
+}
+}
+if (spot) place.push({ id: c.id, ...spot });
+}
+this._caches = { key, place };
+}
+const dug = new Set(st.runeCaches(this.region).filter((c) => c.dug).map((c) => c.id));
+return this._caches.place.map((c) => ({ ...c, dug: dug.has(c.id) }));
+}
+cacheAt(x, y) {
+return this.caches().find((c) => !c.dug && Math.abs(x - c.x) <= 8 && y >= c.y - 12 && y <= c.y + 4) || null;
+}
+digCache(c) {
+const n = ((this.runeHits || (this.runeHits = {}))[c.id] || 0) + 1;
+this.runeHits[c.id] = n;
+this.chips(c.x, c.y - 2, Math.random() < 0.5 ? 1 : -1, 6, this.rockColour(), '#8fe8ff', false);
+audio.play('crush');
+if (n < 3) return;
+const r = this.lab.state.digRune(c.id);
+if (!r.ok) return;
+this.chips(c.x, c.y - 3, 1, 12, this.rockColour(), '#8fe8ff', true);
+for (let i = 0; i < 3; i++) this.flashes.push({ x: c.x + (Math.random() - 0.5) * 10, y: c.y - 6 - Math.random() * 8, t: -i * 0.12 });
+this.floaters.push({ x: c.x, y: c.y - 6, t: 0, color: [0.56, 0.91, 1], text: '+1 rune' });
+audio.play('discover');
+toast('An old temperature rune!', `Dug out of the ground: ${Number.isFinite(this.lab.state.cellar.runes) ? `${this.lab.state.cellar.runes} in hand` : 'the cellar has it'}. Set it on a cellar vessel to lock its temperature.`, 'rune', 4200);
+this.lab.save();
+this.refresh();
+}
+drawCaches(ctx) {
+for (const c of this.caches()) {
+const x = c.x, y = c.y;
+if (c.dug) {
+ctx.fillStyle = 'rgba(30,20,14,0.75)'; ctx.fillRect(x - 4, y - 1, 9, 2);
+ctx.fillStyle = 'rgba(90,70,50,0.8)'; ctx.fillRect(x - 6, y - 2, 2, 1); ctx.fillRect(x + 5, y - 2, 2, 1);
+continue;
+}
+const rise = (this.runeHits && this.runeHits[c.id]) || 0; // each blow loosens it a little
+const glow = 0.55 + 0.45 * Math.sin(this.time * 2.4 + x * 0.1);
+ctx.fillStyle = `rgba(120,220,255,${(0.10 + 0.12 * glow).toFixed(3)})`;
+ctx.fillRect(x - 6, y - 11 - rise, 13, 11);
+ctx.fillStyle = '#1c1820'; ctx.fillRect(x - 4, y - 9 - rise, 9, 10 + rise);
+ctx.fillStyle = '#6a6470'; ctx.fillRect(x - 3, y - 8 - rise, 7, 9 + rise);
+ctx.fillStyle = '#8a8490'; ctx.fillRect(x - 3, y - 8 - rise, 7, 1);
+ctx.fillStyle = '#4a4450'; ctx.fillRect(x + 3, y - 7 - rise, 1, 8 + rise);
+const g = Math.round(150 + 105 * glow);
+ctx.fillStyle = `rgb(${Math.round(g * 0.55)},${g},255)`;
+ctx.fillRect(x, y - 7 - rise, 1, 6);
+ctx.fillRect(x - 2, y - 6 - rise, 2, 1); ctx.fillRect(x + 1, y - 4 - rise, 2, 1);
+ctx.fillStyle = '#3a2a1e'; ctx.fillRect(x - 5, y - 1, 11, 2);
+ctx.fillStyle = '#5a4430'; ctx.fillRect(x - 5, y - 1, 11, 1);
+if (Math.sin(this.time * 3.1 + x) > 0.97) { ctx.fillStyle = '#e8fbff'; ctx.fillRect(x + ((this.time * 7) % 7) - 3, y - 12 - rise, 1, 1); }
+}
+}
 tapScene(e) {
 const q = this.scenePoint(e);
+const cache = this.cacheAt(q.x, q.y);
+if (cache) { this.digCache(cache); return; }
 const warren = this.warren(), rb = warren ? warren.at(q.x, q.y) : null;
 if (rb) { this.hunt(warren, rb, q.x, q.y); return; }
 if (warren) for (const r of warren.near(q.x, q.y)) warren.scare(r, q.x);
@@ -28270,6 +28651,7 @@ dc.clearRect(0, 0, dc.canvas.width, dc.canvas.height);
 dc.setTransform(2, 0, 0, 2, 0, 0);
 }
 for (const p of this.field.slice().sort((a, b) => a.y - b.y)) if (p.key && !this.fallen[p.id]) this.drawPlant(ctx, p, dc);
+this.drawCaches(ctx);
 this.drawFallen(ctx, dt);
 if (dc && warren) this.drawWarren(dc, warren, true);
 else if (warren) this.drawWarren(ctx, warren);
@@ -28560,7 +28942,7 @@ const PEN_H = 92;
 const BACK = 67;
 const GROUND_Y0 = 69;
 const GROUND_Y1 = 86;
-const PENS_VERSION = 7;
+const PENS_VERSION = 8;
 const P = {
 wood: ['#1e1018', '#40241a', '#68401f', '#8e5c2c', '#b88242', '#e0b070'].map(col),
 oak: ['#160c14', '#2e1c1a', '#4a3020', '#684828', '#8c6a3c', '#b4945c'].map(col),
@@ -29725,6 +30107,178 @@ ground(cv, BACK, 'cobble', seed + 4);
 return { rack: { x: 44, y: GROUND_Y0 + 1 }, nest: [54, BACK - 3, 70, BACK], anim: [{ type: 'lantern', x: 114, y: 14 }, { type: 'motes', n: 8, x: 114, y: 28, r: 18 }, { type: 'drip', x: 104, y0: 10, y1: BACK + 2, every: 3.2 }, { type: 'drip', x: 126, y0: 8, y1: BACK + 2, every: 4.5 }] };
 },
 },
+hare: {
+title: 'The hare meadow',
+fringe: 'grass',
+compose({ cv, seed, block }) {
+sky(cv, 52, rgb('#3a6ab8'), rgb('#b0d4ee'));
+clouds(cv, 5, 16, seed + 9, 4);
+hills(cv, 34, 7, '#6a8cbc', '#7c9cc8', seed);
+hills(cv, 44, 5, '#5e8a54', '#74a060', seed + 1);
+grove(cv, 50, P.leaf, seed + 2, { h: [6, 11], bottom: 56, gap: [14, 26] });
+ground(cv, 54, 'grass', seed + 3);
+tufts(cv, 0, cv.W, 58, seed + 4, 0.55);
+tufts(cv, 0, cv.W, BACK, seed + 5, 0.45);
+flowers(cv, 4, cv.W - 4, 56, ['#ffffff', '#f6d26a', '#c890e0', '#f0a0c0'], seed + 6, 22);
+burrow(cv, 182, BACK + 1, 30, 10, seed + 7);
+railFence(cv, 0, 70, BACK - 2, 13, P.weathered, { gap: 30, rails: 2 });
+bowl(cv, 104, GROUND_Y0 + 5, 9, '#6eae3a');
+block(96, GROUND_Y0 - 2, 112, GROUND_Y0 + 6);
+return { rack: { x: 40, y: GROUND_Y0 + 1 }, nest: [170, BACK - 3, 196, BACK + 1], anim: [{ type: 'butterflies', n: 3, x0: 20, x1: 210, y0: 30, y1: 62, colors: ['#ffffff', '#f6d26a', '#c890e0'] }] };
+},
+},
+otter: {
+title: 'The otter holt',
+compose({ cv, seed, block }) {
+sky(cv, 30, rgb('#3e6cb0'), rgb('#a4c8e8'));
+clouds(cv, 3, 10, seed + 9, 3);
+grove(cv, 26, haze(P.leaf, '#7a98c4', 0.4), seed, { h: [12, 22], bottom: 32 });
+earthbank(cv, 120, 22, cv.W, BACK + 2, P.earth, seed + 1);
+roots(cv, 120, cv.W, 24, seed + 2, 0.12);
+overgrowth(cv, 120, cv.W, 21, P.moss, seed + 3, { rate: 0.3, len: [4, 16] });
+burrow(cv, 176, BACK, 30, 20, seed + 4);
+rocks(cv, 0, 30, 120, BACK - 6, P.stone, seed + 5, { h: 8, moss: 0.12 });
+pond(cv, 6, 112, BACK - 9, BACK + 2, seed + 6);
+for (const [x, w] of [[30, 6], [62, 7], [92, 5]]) stone(cv, x, BACK - 3, w, seed + x);
+block(4, GROUND_Y0 - 4, 114, GROUND_Y0 + 2);
+ground(cv, BACK, 'dirt', seed + 7);
+pebbles(cv, 112, cv.W, BACK + 1, GROUND_Y1, seed + 8, 14);
+tufts(cv, 112, cv.W, BACK + 1, seed + 10, 0.3);
+return { rack: { x: 130, y: GROUND_Y0 + 1 }, nest: [164, BACK - 3, 190, BACK], anim: [{ type: 'shimmer', n: 8, x0: 10, x1: 108, y0: BACK - 7, y1: BACK + 1 }] };
+},
+},
+beetle: {
+title: 'The beetle quarry',
+compose({ cv, seed }) {
+sky(cv, 18, rgb('#4a6a9c'), rgb('#b4c8de'));
+rocks(cv, 0, 6, cv.W, BACK, P.stone, seed, { h: 13 });
+rocks(cv, 0, 26, cv.W, BACK, P.weathered, seed + 1, { h: 9 });
+overgrowth(cv, 0, cv.W, 26, P.moss, seed + 2, { rate: 0.08, len: [2, 8] });
+for (const [x, y, w] of [[30, 50, 8], [70, 44, 6], [150, 48, 9], [196, 40, 7]]) stone(cv, x, y, w, seed + x);
+crate(cv, 120, BACK, 13); crate(cv, 133, BACK, 10);
+for (const [x, y] of [[122, BACK - 13], [127, BACK - 14], [131, BACK - 12]]) { rect(cv, x, y, x + 3, y + 2, col('#b06a3a')); cv.set(x + 1, y, col('#e8a060')); }
+lantern(cv, 92, 10, 22);
+woodpile(cv, 196, BACK, 4, 2);
+ground(cv, BACK, 'cobble', seed + 3);
+pebbles(cv, 0, cv.W, BACK + 1, GROUND_Y1, seed + 4, 22);
+return { rack: { x: 44, y: GROUND_Y0 + 1 }, nest: [176, BACK - 3, 200, BACK], anim: [{ type: 'lantern', x: 92, y: 22 }, { type: 'motes', n: 6, x: 92, y: 30, r: 16 }] };
+},
+},
+cavemoth: {
+title: 'The moth grotto',
+compose({ cv, seed }) {
+fill(cv, 0, 0, cv.W, BACK, (x, y) => mixPacked(col('#14101a'), col('#2a2232'), clampI((BACK - y) / BACK, 0, 1) * 0.6 + noise2(x * 0.2, y * 0.2, seed) * 0.3));
+rocks(cv, 0, 0, cv.W, 14, P.stone.map((c) => mixPacked(c, 0xff000000, 0.45)), seed + 1, { h: 9 });
+rocks(cv, 0, 30, cv.W, BACK, P.stone.map((c) => mixPacked(c, 0xff000000, 0.35)), seed + 2, { h: 11 });
+for (const [x, h, c] of /** @type {[number, number, string][]} */ ([[24, 7, '#7a5ae0'], [30, 5, '#5ad0c0'], [96, 6, '#7a5ae0'], [158, 8, '#5ad0c0'], [166, 5, '#c070e0'], [206, 6, '#7a5ae0']])) {
+mushroom(cv, x, BACK, h, c);
+cv.glow(x, BACK - h, 16, c === '#5ad0c0' ? [0.35, 0.82, 0.75] : [0.5, 0.36, 0.9], 0.45);
+}
+lantern(cv, 120, 0, 16);
+ground(cv, BACK, 'cobble', seed + 3, { R: P.stone.map((c) => mixPacked(c, 0xff000000, 0.3)) });
+return { rack: { x: 60, y: GROUND_Y0 + 1 }, nest: [182, BACK - 3, 202, BACK], anim: [{ type: 'lantern', x: 120, y: 16 }, { type: 'motes', n: 12, x: 120, y: 34, r: 30 }, { type: 'drip', x: 70, y0: 12, y1: BACK + 2, every: 3.6 }, { type: 'drip', x: 140, y0: 10, y1: BACK + 2, every: 5.1 }] };
+},
+},
+wisp: {
+title: 'The wisp fen',
+compose({ cv, seed, block }) {
+sky(cv, 40, rgb('#1a1e3c'), rgb('#4a4a7c'));
+fill(cv, 172, 6, 186, 20, (x, y) => ((x - 179) ** 2 + (y - 13) ** 2 <= 42 ? col((x - 179) ** 2 + (y - 13) ** 2 > 30 ? '#c8c8e0' : '#ecece8') : 0));
+cv.glow(179, 13, 26, [0.8, 0.82, 1], 0.4);
+grove(cv, 34, haze(P.leaf, '#2a2e50', 0.7), seed, { h: [8, 16], bottom: 42, pines: 0.3 });
+ground(cv, 46, 'soil', seed + 1, { R: P.earth.map((c) => mixPacked(c, col('#1a2030'), 0.4)) });
+pond(cv, 20, 118, BACK - 10, BACK + 1, seed + 2);
+tufts(cv, 0, cv.W, BACK - 9, seed + 3, 0.6, P.moss.map((c) => mixPacked(c, col('#1a2a30'), 0.45)));
+tufts(cv, 118, cv.W, BACK, seed + 4, 0.5, P.moss.map((c) => mixPacked(c, col('#1a2a30'), 0.35)));
+block(18, GROUND_Y0 - 4, 120, GROUND_Y0 + 1);
+lantern(cv, 196, 4, 20);
+return { rack: { x: 168, y: GROUND_Y0 + 1 }, nest: [186, BACK - 3, 210, BACK], anim: [{ type: 'fireflies', n: 14, x0: 4, x1: 220, y0: 18, y1: 64 }, { type: 'shimmer', n: 6, x0: 26, x1: 114, y0: BACK - 8, y1: BACK }, { type: 'lantern', x: 196, y: 20 }] };
+},
+},
+cloudray: {
+title: 'The sky loft',
+compose({ cv, seed }) {
+sky(cv, BACK, rgb('#4a86d8'), rgb('#cfe6fa'));
+clouds(cv, 4, 14, seed + 1, 5);
+clouds(cv, 30, 46, seed + 2, 6, { lit: '#ffffff', mid: '#e0ecf8', dark: '#a8c0de' });
+clouds(cv, 48, 58, seed + 3, 5, { lit: '#ffffff', mid: '#e6f0fa', dark: '#b4cae4' });
+for (let x = 4; x < cv.W - 4; x += 12) { rect(cv, x, BACK - 12, x + 3, BACK, P.lime[3]); rect(cv, x, BACK - 12, x + 1, BACK, P.lime[5]); }
+rect(cv, 0, BACK - 14, cv.W, BACK - 12, P.lime[4]); rect(cv, 0, BACK - 14, cv.W, BACK - 13, P.lime[5]);
+ground(cv, BACK, 'flags', seed + 4, { R: P.lime, joint: '#9a948a' });
+planter(cv, 18, 34, BACK, 7, seed + 5);
+planter(cv, 190, 206, BACK, 7, seed + 6);
+return { rack: { x: 60, y: GROUND_Y0 + 1 }, nest: [150, BACK - 3, 176, BACK], anim: [{ type: 'butterflies', n: 2, x0: 20, x1: 210, y0: 10, y1: 40, colors: ['#ffffff', '#e0f0ff'] }] };
+},
+},
+mimic: {
+title: 'The mimic terrarium',
+compose({ cv, seed }) {
+fill(cv, 0, 0, cv.W, BACK, (x, y) => {
+const pane = x % 28 === 0 || y % 22 === 0;
+return pane ? col('#4a5a48') : mixPacked(col('#a8d0b8'), col('#d8ecd8'), clampI(y / BACK, 0, 1) * 0.6 + noise2(x * 0.1, y * 0.1, seed) * 0.2);
+});
+foliage(cv, 10, 50, seed + 1);
+overgrowth(cv, 0, cv.W, 0, P.moss, seed + 2, { rate: 0.35, len: [6, 22], flower: '#e86ab0' });
+flowers(cv, 0, cv.W, 50, ['#e86ab0', '#f0c040', '#6aa0f0', '#f07040', '#b070e0'], seed + 3, 26);
+planter(cv, 30, 54, BACK, 9, seed + 4);
+planter(cv, 160, 186, BACK, 9, seed + 5);
+stone(cv, 112, BACK - 2, 10, seed + 6);
+ground(cv, BACK, 'soil', seed + 7);
+tufts(cv, 0, cv.W, BACK + 1, seed + 8, 0.35);
+return { rack: { x: 80, y: GROUND_Y0 + 1 }, nest: [128, BACK - 3, 150, BACK], anim: [{ type: 'butterflies', n: 3, x0: 10, x1: 214, y0: 14, y1: 60, colors: ['#e86ab0', '#6aa0f0', '#f0c040'] }] };
+},
+},
+shroudmoth: {
+title: 'The veiled hollow',
+compose({ cv, seed }) {
+bricks(cv, 0, 0, cv.W, BACK, P.brick.map((c) => mixPacked(c, col('#2a2238'), 0.6)), seed, { h: 5, w: 10 });
+for (const [x0, x1] of [[10, 48], [86, 128], [170, 214]]) fill(cv, x0, 0, x1, BACK - 4 - ((x0 >> 3) & 3), (x, y) => {
+const fold = (x - x0) % 6;
+return mixPacked(col(fold < 2 ? '#8a849a' : fold < 4 ? '#a8a2b8' : '#6e687e'), 0xff000000, clampI(y / BACK, 0, 1) * 0.25);
+});
+for (const x of [62, 150]) { table(cv, x - 10, x + 10, BACK - 8, BACK, P.oak); bottle(cv, x - 4, BACK - 8, '#e0d8c8', 'tall'); cv.glow(x - 4, BACK - 18, 20, [1, 0.8, 0.5], 0.5); }
+ground(cv, BACK, 'flags', seed + 2, { joint: '#2a2430' });
+return { rack: { x: 30, y: GROUND_Y0 + 1 }, nest: [186, BACK - 3, 210, BACK], anim: [{ type: 'motes', n: 10, x: 62, y: 40, r: 24 }, { type: 'motes', n: 10, x: 150, y: 40, r: 24 }] };
+},
+},
+axolotl: {
+title: 'The spectral tank',
+compose({ cv, seed, block }) {
+fill(cv, 0, 0, cv.W, BACK, (x, y) => mixPacked(col('#3a5a6a'), col('#5a7e8c'), clampI(((x >> 4) + (y >> 3)) & 1, 0, 1) * 0.3));
+rect(cv, 30, 10, 194, BACK - 2, col('#1a2a30'));
+fill(cv, 32, 12, 192, BACK - 4, (x, y) => mixPacked(col('#9ae0e8'), col('#3a8a9e'), clampI((y - 12) / (BACK - 16), 0, 1)));
+rect(cv, 32, 12, 192, 14, col('#d8f6fa'));
+for (let x = 40; x < 188; x += 13) for (let y = BACK - 6; y > BACK - 6 - (6 + ((x * 7) % 11)); y--) cv.set(x + (((y >> 2) & 1) ? 1 : 0), y, col(y % 3 ? '#3a9a6a' : '#5ac08a'));
+for (let x = 34; x < 190; x += 5) cv.set(x, BACK - 5, col('#d0c8a8'));
+cv.glow(112, 30, 60, [0.6, 0.95, 1], 0.35);
+ground(cv, BACK, 'flags', seed + 2, { joint: '#26343a' });
+block(30, GROUND_Y0 - 3, 194, GROUND_Y0 - 1);
+return { rack: { x: 18, y: GROUND_Y0 + 1 }, nest: [198, BACK - 3, 218, BACK], anim: [{ type: 'shimmer', n: 10, x0: 36, x1: 188, y0: 16, y1: BACK - 8 }] };
+},
+},
+scarab: {
+title: 'The sand court',
+fringe: '',
+compose({ cv, seed }) {
+sky(cv, 38, rgb('#5a8ad0'), rgb('#f2d8a8'));
+hills(cv, 32, 6, '#c8a070', '#dcb886', seed);
+bricks(cv, 0, 28, cv.W, BACK, P.sand, seed + 1, { h: 6, w: 14, mortar: P.sand[1] });
+const hx = 112;
+rect(cv, hx - 9, BACK - 6, hx + 10, BACK, P.sand[2]); rect(cv, hx - 9, BACK - 6, hx + 10, BACK - 5, P.sand[4]);
+rect(cv, hx - 8, BACK - 36, hx + 9, BACK - 34, P.wood[3]); rect(cv, hx - 8, BACK - 8, hx + 9, BACK - 6, P.wood[3]);
+for (let y = BACK - 34; y < BACK - 8; y++) {
+const t = Math.abs(y - (BACK - 21)) / 13, w = Math.max(1, Math.round(1 + t * 6));
+fill(cv, hx - w, y, hx + w + 1, y + 1, (x) => col(x === hx - w || x === hx + w ? '#e8f4f8' : '#c8e0ec'));
+if (y > BACK - 16) fill(cv, hx - w + 1, y, hx + w, y + 1, () => col('#e0b860'));
+if (y < BACK - 28) fill(cv, hx - w + 1, y, hx + w, y + 1, () => col('#e0b860'));
+}
+cv.set(hx, BACK - 21, col('#e0b860')); cv.set(hx, BACK - 20, col('#e0b860'));
+for (const x of [20, 196]) { rect(cv, x, BACK - 30, x + 8, BACK, P.sand[3]); rect(cv, x, BACK - 30, x + 2, BACK, P.sand[5]); rect(cv, x - 2, BACK - 32, x + 10, BACK - 30, P.sand[4]); }
+ground(cv, BACK, 'dirt', seed + 2, { R: P.sand });
+pebbles(cv, 0, cv.W, BACK + 1, GROUND_Y1, seed + 3, 10);
+return { rack: { x: 50, y: GROUND_Y0 + 1 }, nest: [160, BACK - 3, 184, BACK], anim: [{ type: 'motes', n: 8, x: 112, y: 40, r: 30 }] };
+},
+},
 };
 const PEN_KINDS = Object.keys(PENS);
 const penTitle = (kind) => (PENS[kind] || PENS.rabbit).title;
@@ -29900,7 +30454,7 @@ const __m138 = (() => {
 const { Rng, hashString } = __m6;
 const { PAL, makeCanvas } = __m91;
 const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m134;
-const { kindOf } = __m61;
+const { kindOf, bodyOf } = __m61;
 const { penOf } = __m139;
 const { drawPenAnim } = __m140;
 const WALKERS = { cat: 12, salamander: 5, deer: 10, badger: 8, dove: 8, fox: 14, snail: 1.5, rat: 16 };
@@ -30151,7 +30705,7 @@ if (a.act === 'collapse' || a.act === 'frozen') this._begin(a, 'idle', 0.5);
 a.at += dt * rabbitPace(snap);
 if (a.act === 'walk' || a.act === 'run') {
 const dx = a.gx - a.x, dy = a.gy - a.y, d = Math.hypot(dx, dy);
-const v = (WALKERS[kindOf(a.look)] || 10) * (a.act === 'run' ? 3 : 1) * (a.snap.stage === 'kit' ? 0.7 : 1);
+const v = (WALKERS[bodyOf(kindOf(a.look))] || 10) * (a.act === 'run' ? 3 : 1) * (a.snap.stage === 'kit' ? 0.7 : 1);
 const s = Math.min(d, v * dt * rabbitPace(snap));
 if (d > 0.5) {
 const nx = a.x + (dx / d) * s, ny = a.y + (dy / d) * s;
@@ -30162,7 +30716,7 @@ else { a.next = null; this._decide(a); return; }
 if (Math.abs(dx) > 0.3) a.face = dx > 0 ? 1 : -1;
 }
 a.stride = (a.stride || 0) + s;
-const beatLen = ({ deer: 2.6, cat: 2.2, fox: 2.2, dove: 1.2, snail: 1.5 })[kindOf(a.look)] || 1.6;
+const beatLen = ({ deer: 2.6, cat: 2.2, fox: 2.2, dove: 1.2, snail: 1.5 })[bodyOf(kindOf(a.look))] || 1.6;
 a.pose = /** @type {any} */ (`walk${(Math.floor(a.stride / beatLen) % 4) + 1}`);
 if (d <= 0.5 || a.at > 12) {
 a.x = a.gx; a.y = a.gy;
@@ -30204,7 +30758,7 @@ return this._begin(a, 'float', r.range(2.5, 4));
 if ((L.fire === 3 || L.vitality === 3) && r.chance(0.4)) return this._hopTo(a, this._goal(a, r, 60), 4, true);
 if (L.strength >= 2 && r.chance(0.3)) return this._begin(a, 'flex', r.range(1.2, 2));
 if ((L.love >= 2 || L.vitality >= 2) && a.snap.hp === 0 && r.chance(0.25)) return this._begin(a, 'flop', r.range(2.5, 4.5));
-const kind = kindOf(a.look);
+const kind = bodyOf(kindOf(a.look));
 const w = { cat: [3, 2.5, 2.5, 1.2, 1], toad: [6, 2, 0.5, 1.2, 0.8], salamander: [5, 3, 0.3, 1, 1], snail: [6, 3, 0.2, 1.5, 0.5], rat: [1.5, 4, 1, 1.5, 3], dove: [2, 3, 1.5, 3, 1], deer: [3, 2, 1, 3, 1], badger: [3, 2.5, 0.8, 2, 2], fox: [3, 3, 2, 1, 1.5], ermine: [2, 4, 1.5, 1, 2.5] }[kind] || [3, 3, 1.5, 1.2, 1.5];
 const pick = r.weighted(['idle', 'hop', 'groom', 'eat', 'sniff'], w);
 if (pick === 'hop') return this._hopTo(a, this._goal(a, r, 30), kit ? 2 : r.int(1, 3), false);
@@ -30220,7 +30774,7 @@ return this._begin(a, pick, dur);
 _begin(a, act, dur) {
 a.act = act; a.at = 0; a.dur = dur; a.hops = 0;
 a.pose = act === 'loaf' ? 'loaf' : act === 'flex' ? 'rear' : act === 'flop' ? 'flop' : act === 'eat' ? 'eat' : null;
-if (act === 'groom' && kindOf(a.look) === 'cat') a.pose = 'rear';
+if (act === 'groom' && bodyOf(kindOf(a.look)) === 'cat') a.pose = 'rear';
 if (act === 'eat') a.face = -1;
 }
 _goal(a, r, range) {
@@ -30252,7 +30806,7 @@ return best;
 }
 _hopTo(a, goal, n, zoom) {
 const kit = a.snap.stage === 'kit';
-if (WALKERS[kindOf(a.look)]) {
+if (WALKERS[bodyOf(kindOf(a.look))]) {
 a.act = zoom ? 'run' : 'walk'; a.at = 0; a.hops = 0;
 a.gx = goal.x; a.gy = goal.y;
 if (Math.hypot(goal.x - a.x, goal.y - a.y) < 0.5) {
@@ -30260,13 +30814,13 @@ a.gx = this._roam(a.x + a.face * 3, a.y).x;
 }
 return;
 }
-const toad = kindOf(a.look) === 'toad';
+const toad = bodyOf(kindOf(a.look)) === 'toad';
 a.act = zoom ? 'zoom' : 'hop'; a.pose = null;
 a.gx = goal.x; a.gy = goal.y; a.hops = n;
 a.hopT = zoom ? 0.17 : 0.34; a.hopH = kit ? 2 : zoom ? 5 : 4;
 a.step = (kit ? 5 : 8) * (zoom ? 1.7 : 1);
 if (toad) { a.hopH = Math.max(2, a.hopH - 1); a.step *= 0.6; a.hopT *= 0.85; } // a toad's hops are short and low
-else if (kindOf(a.look) === 'ermine') { a.hopH = Math.max(2, a.hopH - 1); a.hopT *= 0.7; } // an ermine's bounds are quick and low
+else if (bodyOf(kindOf(a.look)) === 'ermine') { a.hopH = Math.max(2, a.hopH - 1); a.hopT *= 0.7; } // an ermine's bounds are quick and low
 if (!this._nextHop(a)) this._begin(a, 'idle', 0.6);
 }
 _nextHop(a) {
@@ -30334,7 +30888,8 @@ return { HUTCH_W, HUTCH_H, HUTCH_BODIES, penFor, paintHutch, paintHutchFront, on
 // src/ui/views/hutch.js
 const __m137 = (() => {
 const { readingSteadiness } = __m59;
-const { kindDef, kindOf, KINDS, KIND_IDS } = __m61;
+const { kindDef, kindOf, KINDS, KIND_IDS, habitatOf } = __m61;
+const { BIOMES } = __m18;
 const { h, btn, clear, toast, modal, confirmDialog, keepScroll } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
@@ -30399,19 +30954,16 @@ lab.sandbox ? null : (st.has('still')
 ? btn(brewing ? 'Brewing…' : 'Brew · 1', () => this.brewPurge(), { icon: 'alembic', act: 'purge-brew', disabled: brewing || st.coins < 1, title: 'Brew a purging draught in your still' })
 : h('span', { class: 'small muted', text: 'Brew your own with a Purging Still (Shop)' })),
 this.d.still));
-const kinds = KIND_IDS.filter((k) => c.rabbits.some((r) => kindOf(r.look) === k));
-if (!kinds.length) kinds.push('rabbit');
+const kinds = KIND_IDS.slice();
 const focus = findRabbit(c, c.focus);
 if (focus && c.focus !== this.penFocus) this.pen = kindOf(focus.look);
 this.penFocus = c.focus;
 if (!kinds.includes(this.pen)) this.pen = kinds[0];
 const pen = this.pen, inPen = c.rabbits.filter((r) => kindOf(r.look) === pen);
-if (kinds.length > 1) {
 el.append(h('div', { class: 'pen-tabs', role: 'tablist', 'aria-label': 'Enclosures' }, ...kinds.map((k) => {
 const n = c.rabbits.filter((r) => r.alive && kindOf(r.look) === k).length, word = KINDS[k].plural;
-return btn(`${word[0].toUpperCase()}${word.slice(1)} · ${n}`, () => this.showPen(k), { cls: k === pen ? 'active' : '', act: 'pen-' + k, title: penTitle(k) });
+return btn(`${word[0].toUpperCase()}${word.slice(1)} · ${n}`, () => this.showPen(k), { cls: (k === pen ? 'active' : '') + (n ? '' : ' empty-pen'), act: 'pen-' + k, title: penTitle(k) });
 })));
-}
 const nLive = inPen.filter((r) => r.alive).length, nDead = inPen.length - nLive;
 this.scene.setPen(pen);
 this.canvas = /** @type {HTMLCanvasElement} */ (h('canvas', { width: String(HUTCH_W), height: String(HUTCH_H), class: 'hutch-scene', 'data-pen': pen, role: 'img', 'aria-label': `${penTitle(pen)}: ${nLive} ${nLive === 1 ? KINDS[pen].noun : KINDS[pen].plural}${nDead ? ` and ${nDead} bodies` : ''}. Tap one to choose it.` }));
@@ -30421,6 +30973,10 @@ this.canvas.addEventListener('pointermove', (e) => { this.hover = this.hitAt(e);
 this.canvas.addEventListener('pointerleave', () => { this.hover = null; });
 const wrap = h('div', { class: 'hutch-scene-wrap' }, this.canvas);
 el.append(wrap, h('div', { class: 'small muted pen-title', text: `${penTitle(pen)} · ${inPen.length} of ${PEN_MAX} (living and dead)` }));
+if (!inPen.length) {
+const where = habitatOf(pen).map((r) => (BIOMES.find((b) => b.id === r) || { name: r }).name);
+el.append(h('div', { class: 'small pen-empty', 'data-pen-empty': pen, text: pen === 'rabbit' ? 'No rabbits yet: buy one from the breeder above, or catch one in the Wilds.' : `No ${KINDS[pen].plural} yet. ${where.length ? `They live in the ${where.join(' and the ')}: three quick taps on one in the Wilds catch it alive.` : 'They are not found in the Wilds yet.'}` }));
+}
 if (this.crisp) this.crisp.dispose();
 this.crisp = new UpscaledCanvas(this.canvas, wrap);
 this.syncScene();
@@ -31469,7 +32025,7 @@ const { RANKS } = __m58;
 const { certification, missingEffects, requirementEvidence } = __m59;
 const { sandboxIngredients } = __m7;
 const { sandboxSave } = __m101;
-const { makeVial, appendParticles, updateVial, takeDose, pourBack, pourBackParts, relaxVial } = __m64;
+const { makeVial, makeVialFromComposition, appendParticles, updateVial, takeDose, pourBack, pourBackParts, relaxVial } = __m64;
 const { theoryOf, EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, dominantEffect, NE } = __m20;
 const { awakenParts, describeThreshold } = __m22;
 const { ARC_NONE } = __m66;
@@ -31903,7 +32459,7 @@ sh.appendChild(el);
 this.updateShelf();
 }
 bindJar(el, id) {
-let pressTimer = 0, sx = 0, sy = 0, dragging = false, ghost = null, pid = -1, columns = false;
+let pressTimer = 0, sx = 0, sy = 0, dragging = false, pid = -1, columns = false;
 const clearTimer = () => { if (pressTimer > 0) clearTimeout(pressTimer); };
 el.addEventListener('pointerdown', (e) => {
 sx = e.clientX; sy = e.clientY; dragging = false; pid = e.pointerId;
@@ -31924,14 +32480,8 @@ try { el.setPointerCapture(e.pointerId); } catch { /* ignore */ }
 this.selectIngredient(id);
 clearJarGhosts();
 this._jarEnd = end;
-ghost = h('div', { class: 'drag-ghost jar-ghost' }, el.querySelector('canvas').cloneNode(true));
-const c2 = ghost.querySelector('canvas');
-const src = el.querySelector('canvas');
-if (c2 && src) /** @type {CanvasRenderingContext2D} */ (/** @type {HTMLCanvasElement} */ (c2).getContext('2d')).drawImage(/** @type {HTMLCanvasElement} */ (src), 0, 0);
-document.body.appendChild(ghost);
 }
-if (dragging && ghost) {
-ghost.style.transform = `translate(${e.clientX - 20}px, ${e.clientY - 48}px)`;
+if (dragging) {
 const r = this.canvas.getBoundingClientRect();
 const over = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
 if (over) {
@@ -31947,8 +32497,6 @@ if (this._jarEnd === end) this._jarEnd = null;
 clearTimer();
 if (dragging) {
 dragging = false;
-if (ghost) ghost.remove();
-ghost = null;
 if (this.sim.emitter.pouring && !this.sim.emitter.active.dose) this.sim.emitter.stop();
 pressTimer = -2;
 }
@@ -32310,6 +32858,22 @@ this.lastPoured = {};
 audio.play('splash');
 toast('Laid down', `The brew is in vessel ${vessel + 1}. It goes on extracting while you work — and while you are away.`, 'shelf2');
 this.save();
+}
+pourVesselBack(vessel) {
+const st = this.state, sim = this.sim;
+st.tickCellar();
+const v = st.cellar.vessels[vessel];
+if (!v || !Object.keys(v.comp).length) return { ok: false };
+const vial = makeVialFromComposition(v.comp, v.T, { batchId: st.batch.id, day: st.day, parts: v.parts || [] }, st.lookup, st.world.laws || []);
+if (!vial) { toast('Nothing to pour', 'There is too little in the vessel.', 'shelf2'); return { ok: false }; }
+if (sim.p.count + vial.particles.length > sim.maxParticles) { toast('The cauldron is too full', `It has no room for ${Math.round(vial.ml)} ml more: bottle or empty some first.`, 'cauldron', 4000); audio.play('error'); return { ok: false }; }
+const r = st.takeVessel(vessel);
+if (!r.ok) return r;
+vial.batchId = '';
+if (!this.pourVialIntoCauldron(vial)) return { ok: false };
+const n = vial.particles.length;
+this.save();
+return { ok: true, ml: n * SIM.ML_PER_PARTICLE };
 }
 chargeFromCauldron(vessel, ml) {
 const st = this.state, sim = this.sim;

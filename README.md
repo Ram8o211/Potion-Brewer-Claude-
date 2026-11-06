@@ -275,7 +275,12 @@ computed from the particles that actually run out of the tap. What a
   under the cauldron), an enclosure for every kind of animal — the
   rabbits' wire-fenced run with a hay rack and a hutch on legs, a barn
   loft, a toad pond, a hearth, a paddock, a sett, a dovecote, a fox run, a
-  snow run, a vegetable garden and a cellar, each with clouds, shaded tree
+  snow run, a vegetable garden and a cellar, and for the biomes' native
+  creatures (hares, river otters, rock beetles, cave moths, will-o'-wisps,
+  cloud rays, mimic lizards, shroud moths, spectral axolotls, hourglass
+  scarabs) a hare meadow, an otter holt, a beetle quarry, a moth grotto, a
+  wisp fen, a sky loft, a mimic terrarium, a veiled hollow, a spectral
+  tank and a sand court, each with clouds, shaded tree
   groves, fieldstone, timber and hay painted procedurally, and alive: the
   hearth's fire licks and sparks, lanterns flicker, a spring spills into the
   pond, snow falls, butterflies and fireflies flit — shaded rabbits and

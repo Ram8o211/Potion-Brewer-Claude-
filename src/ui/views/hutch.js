@@ -11,7 +11,8 @@
 // live in the head of the panel.
 
 import { readingSteadiness } from '../../game/experiments.js';
-import { kindDef, kindOf, KINDS, KIND_IDS } from '../../game/kinds.js';
+import { kindDef, kindOf, KINDS, KIND_IDS, habitatOf } from '../../game/kinds.js';
+import { BIOMES } from '../../game/biomes.js';
 import { h, btn, clear, toast, modal, confirmDialog, keepScroll } from '../dom.js';
 import { icon } from '../icons.js';
 import { audio } from '../../audio/audio.js';
@@ -95,20 +96,17 @@ export class HutchPanel {
         ? btn(brewing ? 'Brewing…' : 'Brew · 1', () => this.brewPurge(), { icon: 'alembic', act: 'purge-brew', disabled: brewing || st.coins < 1, title: 'Brew a purging draught in your still' })
         : h('span', { class: 'small muted', text: 'Brew your own with a Purging Still (Shop)' })),
       this.d.still));
-    // ---- the enclosures: one for each kind kept, the chosen animal's open
-    const kinds = KIND_IDS.filter((k) => c.rabbits.some((r) => kindOf(r.look) === k));
-    if (!kinds.length) kinds.push('rabbit');
+    // ---- the enclosures: one for every kind of animal, kept or not yet; the chosen animal's open
+    const kinds = KIND_IDS.slice();
     const focus = findRabbit(c, c.focus);
     if (focus && c.focus !== this.penFocus) this.pen = kindOf(focus.look);
     this.penFocus = c.focus;
     if (!kinds.includes(this.pen)) this.pen = kinds[0];
     const pen = this.pen, inPen = c.rabbits.filter((r) => kindOf(r.look) === pen);
-    if (kinds.length > 1) {
-      el.append(h('div', { class: 'pen-tabs', role: 'tablist', 'aria-label': 'Enclosures' }, ...kinds.map((k) => {
-        const n = c.rabbits.filter((r) => r.alive && kindOf(r.look) === k).length, word = KINDS[k].plural;
-        return btn(`${word[0].toUpperCase()}${word.slice(1)} · ${n}`, () => this.showPen(k), { cls: k === pen ? 'active' : '', act: 'pen-' + k, title: penTitle(k) });
-      })));
-    }
+    el.append(h('div', { class: 'pen-tabs', role: 'tablist', 'aria-label': 'Enclosures' }, ...kinds.map((k) => {
+      const n = c.rabbits.filter((r) => r.alive && kindOf(r.look) === k).length, word = KINDS[k].plural;
+      return btn(`${word[0].toUpperCase()}${word.slice(1)} · ${n}`, () => this.showPen(k), { cls: (k === pen ? 'active' : '') + (n ? '' : ' empty-pen'), act: 'pen-' + k, title: penTitle(k) });
+    })));
     // ---- the scene: the animals of this enclosure going about their lives
     const nLive = inPen.filter((r) => r.alive).length, nDead = inPen.length - nLive;
     this.scene.setPen(pen);
@@ -119,6 +117,10 @@ export class HutchPanel {
     this.canvas.addEventListener('pointerleave', () => { this.hover = null; });
     const wrap = h('div', { class: 'hutch-scene-wrap' }, this.canvas);
     el.append(wrap, h('div', { class: 'small muted pen-title', text: `${penTitle(pen)} · ${inPen.length} of ${PEN_MAX} (living and dead)` }));
+    if (!inPen.length) {
+      const where = habitatOf(pen).map((r) => (BIOMES.find((b) => b.id === r) || { name: r }).name);
+      el.append(h('div', { class: 'small pen-empty', 'data-pen-empty': pen, text: pen === 'rabbit' ? 'No rabbits yet: buy one from the breeder above, or catch one in the Wilds.' : `No ${KINDS[pen].plural} yet. ${where.length ? `They live in the ${where.join(' and the ')}: three quick taps on one in the Wilds catch it alive.` : 'They are not found in the Wilds yet.'}` }));
+    }
     if (this.crisp) this.crisp.dispose();
     this.crisp = new UpscaledCanvas(this.canvas, wrap);
     this.syncScene();

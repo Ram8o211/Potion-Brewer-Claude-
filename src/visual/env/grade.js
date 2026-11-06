@@ -13,14 +13,22 @@
 // under the swaying foliage and the foliage itself, so the leaves keep
 // matching what they were painted over.
 
-/** How strong each region's grade is: [contrast, saturation, edge ink]. */
-const GRADE = {
+/** How strong each region's grade is: [contrast, saturation, edge ink] (softened: see SOFTEN). */
+const GRADE_FULL = {
   meadow: [0.42, 1.32, 0.5], forest: [0.4, 1.28, 0.5], netherwood: [0.34, 1.3, 0.46], river: [0.42, 1.3, 0.5],
   quarry: [0.38, 1.26, 0.48], moonfen: [0.34, 1.3, 0.44], crags: [0.36, 1.25, 0.48],
   skyshard: [0.4, 1.3, 0.5], morphgrove: [0.36, 1.3, 0.46], veilhollow: [0.32, 1.18, 0.42], ghostglass: [0.34, 1.28, 0.44], chronoglass: [0.38, 1.24, 0.48],
   // the farm's enclosures (pens.js): the wilds' look, no ground silhouette to ink
   pen: [0.4, 1.28, 0],
 };
+
+/**
+ * The grade softened: about half the contrast curve and less than half the
+ * extra saturation of the first, very crisp look, and a lighter ink on the
+ * rock's edges — the colours calmer, nothing washed out.
+ */
+const SOFTEN = { contrast: 0.45, saturation: 0.4, ink: 0.75 };
+const GRADE = Object.fromEntries(Object.entries(GRADE_FULL).map(([k, [c, s, i]]) => [k, [c * SOFTEN.contrast, 1 + (s - 1) * SOFTEN.saturation, i * SOFTEN.ink]]));
 
 /** The S-curve, 0..255 → 0..255, as a table. @param {number} k */
 function curve(k) {
@@ -51,7 +59,7 @@ function gradePx(c, T, sat) {
  * @param {any} cv the region's Canvas (paint.js) @param {string} region
  */
 export function grade(cv, region) {
-  const [con, sat, ink] = GRADE[region] || [0.38, 1.28, 0.4];
+  const [con, sat, ink] = GRADE[region] || [0.38 * SOFTEN.contrast, 1 + 0.28 * SOFTEN.saturation, 0.4 * SOFTEN.ink];
   const T = curve(con), W = cv.W, H = cv.H, S = cv.solid, px = cv.pix.px, s = cv.sw;
   // the rock's silhouette first, on the graded colours' source (ground with air beside or under it)
   const air = (/** @type {number} */ k) => !S[k] && !cv.liquid[k] && !cv.rock[k];

@@ -208,6 +208,40 @@ test('the campaign’s rooms and stores are here too: shelves, the cellar and th
   await expect(page.locator('.cellar-vessel').first()).toContainText(`locked at ${goal}°C`);
   await shot(page, info, 'sandbox-cellar');
   await page.locator('.overlay .modal-head .btn').first().click();
+  // the rest of the Fire potion onto the potion shelves (stirred first: the settled grains carry no fire),
+  // then dragged from the shelves inside the cellar onto vessel 2
+  await steepWarm(page, 60, 20);
+  await lab(page, (l) => l.setAutoStir(true));
+  await page.waitForTimeout(1200);
+  await page.click('[data-act=bottle]');
+  await page.click('[data-act=bottle-dest-shelf]');
+  await page.click('[data-act=bottle-50]');
+  await page.waitForFunction(() => window.__alchemist.screen.state.bottles.length >= 2);
+  await lab(page, (l) => l.setAutoStir(false));
+  const fireBottle = await lab(page, (l) => { const b = l.state.bottles[l.state.bottles.length - 1]; return { id: b.id, net: b.m.effects[5] - b.m.effects[6] }; });
+  expect(fireBottle.net, 'a Fire potion on the shelf').toBeGreaterThan(3);
+  await page.click('[data-act=tab-brew]');
+  await page.click('[data-act=cellar]');
+  await page.fill('[data-act=cellar-ml-1]', '20');
+  await page.locator('.cellar-vessel[data-vessel="1"]').scrollIntoViewIfNeeded();
+  const tile = await page.locator(`[data-act=cellar-shelf-bottle][data-id="${fireBottle.id}"]`).boundingBox();
+  const target = await page.locator('.cellar-vessel[data-vessel="1"]').boundingBox();
+  if (!tile || !target) throw new Error('no boxes');
+  await page.mouse.move(tile.x + tile.width / 2, tile.y + tile.height / 2);
+  await page.mouse.down();
+  for (let k = 1; k <= 12; k++) await page.mouse.move(tile.x + (target.x + 60 - tile.x) * (k / 12), tile.y + (target.y + 30 - tile.y) * (k / 12));
+  await page.mouse.up();
+  const ch2 = await lab(page, (l) => l.state.cellar.vessels[1].charge);
+  expect(ch2 && ch2.ml, 'dragged from the shelves: 20 ml charged').toBe(20);
+  expect(await page.locator('.bottle-ghost').count(), 'no dragged picture left behind').toBe(0);
+  // pour vessel 1's brew back into the pot: the vessel is empty, keeping its charge
+  const n1 = await lab(page, (l) => l.sim.p.count);
+  await page.click('[data-act=cellar-pour-back-0]');
+  const after = await lab(page, (l) => ({ n: l.sim.p.count, comp: Object.keys(l.state.cellar.vessels[0].comp).length, charge: !!l.state.cellar.vessels[0].charge }));
+  expect(after.n, 'the brew is back in the pot').toBe(n1 + 30);
+  expect(after.comp).toBe(0);
+  expect(after.charge, 'the vessel keeps its charge').toBe(true);
+  await page.locator('.overlay .modal-head .btn').first().click();
   // the garden: every bed, every seed
   await page.click('[data-act=tab-garden]');
   const seeds = page.locator('.seeds .seed');
