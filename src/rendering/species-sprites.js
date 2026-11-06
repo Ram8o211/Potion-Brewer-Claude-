@@ -349,7 +349,8 @@ function drawIcon(cv, img, box, arcane) {
 /** An ingredient's icon (pure pixels). @param {any} m */
 export function iconFrameOf(m) {
   if (isAtlasMaterial(m)) {
-    const f = atlasFrame(spriteAsset(m.wild.key, !!m.wild.arcane));
+    // the very pixels of its grown plant in the wilds (the icon art, at the plant's size)
+    const f = atlasPlant(m, 'mature', ATLAS_K);
     return f ? { pix: f.pix, ax: f.ax, ay: f.ay, glints: [] } : null;
   }
   const id = identityOfMaterial(m);

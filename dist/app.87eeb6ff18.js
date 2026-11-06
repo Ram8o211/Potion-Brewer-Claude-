@@ -19353,7 +19353,7 @@ ctx.putImageData(d, 0, 0);
 }
 function iconFrameOf(m) {
 if (isAtlasMaterial(m)) {
-const f = atlasFrame(spriteAsset(m.wild.key, !!m.wild.arcane));
+const f = atlasPlant(m, 'mature', ATLAS_K);
 return f ? { pix: f.pix, ax: f.ax, ay: f.ay, glints: [] } : null;
 }
 const id = identityOfMaterial(m);
