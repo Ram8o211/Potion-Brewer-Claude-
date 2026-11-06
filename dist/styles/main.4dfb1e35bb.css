@@ -1117,3 +1117,5 @@ img.ico { object-fit: contain; }
   .shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); }
   .shelf .jar, .shelf .shelf-inv { width: auto; }
 }
+/* the counter's and the dialogs' rows of actions fill their row too (no ragged gap after the last one) */
+.view-counter .card .row.wrap > .btn, .modal .row.wrap > .btn { flex: 1 0 auto; }
