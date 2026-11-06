@@ -81,6 +81,11 @@ export function createCellar() {
   return { vessels: /** @type {Vessel[]} */ ([]), runes: 0 };
 }
 
+/** A new, empty vessel (a shelved bottle's aging, state.js startAging). @param {number} [now] */
+export function newVessel(now = Date.now()) {
+  return emptyVessel(0, now);
+}
+
 /** @param {number} id @param {number} now */
 function emptyVessel(id, now) {
   return /** @type {Vessel} */ ({ id, comp: {}, T: CELLAR_T, charge: null, rune: null, t: now, carry: 0, log: [] });

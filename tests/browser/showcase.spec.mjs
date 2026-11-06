@@ -4,7 +4,7 @@
 // labelling and bargaining; a customer back the next day; the wilds at
 // dusk in bad weather. Each scene also checks what it shows.
 import { test, expect } from '@playwright/test';
-import { watchErrors, shot, newGame, lab, pourRole, crushInPot } from './helpers.mjs';
+import { watchErrors, shot, newGame, lab, pourRole, crushInPot, stir } from './helpers.mjs';
 import { weatherOn } from '../../src/game/gathering.js';
 
 const NE = 10;
@@ -21,9 +21,10 @@ test('an awakened brew draws its effects\' patterns boldly', async ({ page }, in
   await pourRole(page, 'wild-sp-silverleaf-arcane', 100);
   await crushInPot(page);
   // stir until even, then heat past the blend's threshold with the fire control
-  await lab(page, (l) => { l.setAutoStir(true); });
+  await stir(page, true);
   await page.waitForTimeout(2500);
-  await lab(page, (l) => { l.setAutoStir(false); l.setFurnace(1); l.speed = 4; });
+  await stir(page, false);
+  await lab(page, (l) => { l.setFurnace(1); l.speed = 4; });
   // (100 ml is 20 particle volumes of magic, raw and extracted: most of it awakens)
   await page.waitForFunction(() => (/** @type {any} */ (window)).__alchemist.screen.sim.awakened > 15, null, { timeout: 90_000, polling: 500 });
   await lab(page, (l) => { l.setFurnace(0); l.speed = 1; });

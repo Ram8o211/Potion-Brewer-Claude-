@@ -1279,7 +1279,7 @@ export class WildsView {
     for (let i = 0; i < 3; i++) this.flashes.push({ x: c.x + (Math.random() - 0.5) * 10, y: c.y - 6 - Math.random() * 8, t: -i * 0.12 });
     this.floaters.push({ x: c.x, y: c.y - 6, t: 0, color: [0.56, 0.91, 1], text: '+1 rune' });
     audio.play('discover');
-    toast('An old temperature rune!', `Dug out of the ground: ${Number.isFinite(this.lab.state.cellar.runes) ? `${this.lab.state.cellar.runes} in hand` : 'the cellar has it'}. Set it on a cellar vessel to lock its temperature.`, 'rune', 4200);
+    toast('An old temperature rune!', `Dug out of the ground: ${Number.isFinite(this.lab.state.cellar.runes) ? `${this.lab.state.cellar.runes} in hand` : 'the cellar has it'}. Put it in an aging bottle’s rune slot to hold its temperature.`, 'rune', 4200);
     this.lab.save();
     this.refresh();
   }

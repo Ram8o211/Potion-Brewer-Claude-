@@ -20,6 +20,7 @@ import { EFFECT_INDEX, theoryOf } from '../src/alchemy/effects.js';
 import { generateCommission, ALCOHOL_FREE_LIMIT } from '../src/game/commissions.js';
 import { evaluatePotion } from '../src/game/evaluate.js';
 import { Rng } from '../src/core/rng.js';
+import { makeVialFromComposition } from '../src/game/vial.js';
 
 const world = generateWorld('extract-tests');
 const lookup = makeLookup(world);
@@ -254,7 +255,7 @@ test('the predictor follows the simulation’s extraction', () => {
   assert.ok(Math.abs(share(s, HYDRO) - pred.extracted[HYDRO]) < 0.08, `simulated ${share(s, HYDRO).toFixed(2)} ≈ predicted ${pred.extracted[HYDRO].toFixed(2)}`);
 });
 
-// ------------------------------------------------------------------ the cellar
+// ------------------------------------------------------------------ aging on the potion shelves
 
 function cellarShop(seed) {
   const st = GameState.create(seed, { tutorial: false });
@@ -263,19 +264,31 @@ function cellarShop(seed) {
 }
 const T0 = 1_700_000_000_000, HOUR = 3600_000;
 
-test('a cellar vessel goes on extracting, conserves matter, and freezes or burns when its charge takes it too far', () => {
+/** A shelved bottle of this composition, set aging where it stands (it may overfill the shelves). */
+function ageBottle(st, comp, T, now) {
+  const v = makeVialFromComposition(comp, T, { batchId: 'test-' + st.bottles.length, day: st.day }, st.lookup, st.world.laws || []);
+  st.bottles.push(v);
+  const r = st.startAging(v.id, now);
+  assert.ok(r.ok, r.reason);
+  return v;
+}
+/** @param {any} v */
+const total = (v) => Object.values(v.comp).reduce((a, b) => a + Number(b), 0);
+
+test('an aging bottle goes on extracting, conserves matter, and freezes or burns when its charge takes it too far', () => {
   const st = cellarShop('cellar-1');
   st.tickCellar(T0);
-  assert.equal(st.cellar.vessels.length, 2, 'the cellar has two vessels');
-  assert.ok(st.layDown(0, { comp: { [R.spirit]: 150, [HYDRO]: 50 }, T: 20, name: 'test' }, T0).ok);
+  assert.equal(st.agingSlots, 2, 'the cellar ages two bottles at once');
+  const b0 = ageBottle(st, { [R.spirit]: 150, [HYDRO]: 50 }, 20, T0);
+  const v = b0.aging;
+  const tot0 = total(v);
+  assert.ok(Math.abs(tot0 - 200) < 0.01, 'the whole bottle ages');
   st.tickCellar(T0 + 4 * HOUR);
-  const v = st.cellar.vessels[0];
   const rep = vesselReport(v, st.lookup);
   const it = rep.items.find((x) => x.id === HYDRO);
   assert.equal(Math.round(rep.T), CELLAR_T, 'uncharged, it settles at cellar temperature');
   assert.ok(it.share > it.ceiling - 0.03, `four hours reach the cellar's ceiling (${it.share.toFixed(2)} of ${it.ceiling.toFixed(2)})`);
-  const tot = Object.values(v.comp).reduce((a, b) => a + b, 0);
-  assert.ok(Math.abs(tot - 200) < 1e-6, 'matter is conserved');
+  assert.ok(Math.abs(total(v) - tot0) < 1e-6, 'matter is conserved');
   // a very strong Frost charge takes it below the spirit's freezing point: extraction stops there
   const frost = new Array(15).fill(0); frost[EFFECT_INDEX.frost] = 40;
   assert.ok(chargeVessel(v, frost, 400, T0 + 4 * HOUR).ok);
@@ -285,9 +298,8 @@ test('a cellar vessel goes on extracting, conserves matter, and freezes or burns
   const frozenShare = r2.items.find((x) => x.id === HYDRO).share;
   st.tickCellar(T0 + 10 * HOUR);
   assert.equal(vesselReport(v, st.lookup).items.find((x) => x.id === HYDRO).share, frozenShare, 'frozen, nothing more comes out');
-  // a strong Fire charge takes an oil vessel up until its herbs burn
-  assert.ok(st.layDown(1, { comp: { [R.oil]: 120, [LIPO]: 40 }, T: 20 }, T0).ok);
-  const w = st.cellar.vessels[1];
+  // a strong Fire charge takes an oil bottle up until its herbs burn
+  const w = ageBottle(st, { [R.oil]: 120, [LIPO]: 40 }, 20, T0).aging;
   const fire = new Array(15).fill(0); fire[EFFECT_INDEX.fire] = 60;
   assert.ok(chargeVessel(w, fire, 500, T0).ok);
   assert.ok(chargeLimit(w.charge.net) > lookup(LIPO).extraction.combust, 'the charge can take it past the burning point');
@@ -295,13 +307,16 @@ test('a cellar vessel goes on extracting, conserves matter, and freezes or burns
   const r3 = vesselReport(w, st.lookup);
   assert.ok(r3.char > 1, `the unextracted matter burnt (${r3.char.toFixed(1)} ml of char)`);
   assert.ok(r3.items[0].ext > 1, 'what was extracted survived the heat');
+  // every aging place is taken: a third bottle waits
+  const third = makeVialFromComposition({ [R.water]: 50 }, 20, { batchId: 'x', day: 1 }, st.lookup, []);
+  st.bottles.push(third);
+  assert.equal(st.startAging(third.id, T0).ok, false, 'two places, two bottles');
 });
 
-test('charges: the potion’s strength sets the limit, it is used up as it works, then the vessel returns', () => {
+test('charges: the potion’s strength sets the limit, it is used up as it works, then the bottle returns', () => {
   const st = cellarShop('cellar-2');
   st.tickCellar(T0);
-  st.layDown(0, { comp: { [R.spirit]: 160, [HYDRO]: 40 }, T: 20 }, T0);
-  const v = st.cellar.vessels[0];
+  const v = ageBottle(st, { [R.spirit]: 160, [HYDRO]: 40 }, 20, T0).aging;
   const fx = (fire, frost, other = 0) => { const e = new Array(15).fill(0); e[EFFECT_INDEX.fire] = fire; e[EFFECT_INDEX.frost] = frost; e[EFFECT_INDEX.vitality] = other; return e; };
   assert.equal(potionNet(fx(0, 0, 30)), 0, 'a potion of neither does nothing');
   assert.equal(chargeVessel(v, fx(0, 0, 30), 50, T0).ok, false);
@@ -320,12 +335,12 @@ test('charges: the potion’s strength sets the limit, it is used up as it works
   st.tickCellar(T0 + 1.5 * HOUR);
   assert.ok(v.T < mid && v.T >= lim - 1e-6, `colder still, never past the limit (${v.T.toFixed(1)})`);
   assert.ok(!v.charge || v.charge.ml < ml1, 'still being used up');
-  // until it is spent: then the vessel returns to cellar temperature
+  // until it is spent: then the bottle returns to cellar temperature
   st.tickCellar(T0 + 30 * HOUR);
   assert.equal(v.charge, null, 'the charge is spent');
   assert.ok(Math.abs(v.T - CELLAR_T) < 0.5, `back at cellar temperature (${v.T.toFixed(1)})`);
   // a stronger potion holds the same temperature on less of it
-  const use = (frost) => { const s2 = cellarShop('cellar-2b'); s2.tickCellar(T0); s2.layDown(0, { comp: { [R.water]: 200 }, T: 12 }, T0); const w = s2.cellar.vessels[0]; chargeVessel(w, fx(0, frost), 100, T0); s2.cellar.runes = 5; assert.ok(s2.runeVessel(0, CELLAR_T - 20, T0).ok); return w; };
+  const use = (frost) => { const s2 = cellarShop('cellar-2b'); s2.tickCellar(T0); const b = ageBottle(s2, { [R.water]: 200 }, 12, T0); const w = b.aging; chargeVessel(w, fx(0, frost), 100, T0); s2.cellar.runes = 5; assert.ok(s2.runeBottle(b.id, CELLAR_T - 20, T0).ok); return w; };
   const weak = use(6), strong = use(12);
   for (const sv of [weak, strong]) advanceVessel(sv, lookup, T0 + 3 * HOUR);
   assert.ok(strong.charge.ml > weak.charge.ml, `stronger lasts longer (${strong.charge.ml.toFixed(1)} vs ${weak.charge.ml.toFixed(1)} ml)`);
@@ -335,30 +350,30 @@ test('runes lock the temperature on the way to the limit, and wear out with use'
   const st = cellarShop('cellar-3r');
   st.reputation = 60;
   st.tickCellar(T0);
-  st.layDown(0, { comp: { [R.water]: 150, [HYDRO]: 40 }, T: CELLAR_T }, T0);
-  const v = st.cellar.vessels[0];
+  const b = ageBottle(st, { [R.water]: 150, [HYDRO]: 40 }, CELLAR_T, T0);
+  const v = b.aging;
   const fire = new Array(15).fill(0); fire[EFFECT_INDEX.fire] = 20;
-  assert.equal(st.runeVessel(0, 50, T0).ok, false, 'no rune in hand');
+  assert.equal(st.runeBottle(b.id, 50, T0).ok, false, 'no rune in hand');
   st.coins = 100;
   assert.ok(st.buyRune().ok && st.cellar.runes === 1, 'a rune bought at the market');
-  assert.ok(st.runeVessel(0, 50, T0).ok && st.cellar.runes === 0);
+  assert.ok(st.runeBottle(b.id, 50, T0).ok && st.cellar.runes === 0);
   st.tickCellar(T0 + HOUR);
   assert.ok(Math.abs(v.T - CELLAR_T) < 0.5, 'without a charge the rune does nothing');
-  assert.ok(st.chargeVessel(0, fire, 300, T0 + HOUR).ok);
+  assert.ok(chargeVessel(v, fire, 300, T0 + HOUR).ok);
   assert.ok(chargeLimit(v.charge.net) > 50);
   st.tickCellar(T0 + 4 * HOUR);
   assert.ok(Math.abs(v.T - 50) < 1e-6, `locked at 50°C (${v.T.toFixed(2)})`);
   assert.ok(vesselReport(v, st.lookup).rune.locked);
   // moving the target uses no new rune
-  assert.ok(st.runeVessel(0, 45, T0 + 4 * HOUR).ok && st.cellar.runes === 0, 'moved without a new rune');
+  assert.ok(st.runeBottle(b.id, 45, T0 + 4 * HOUR).ok && st.cellar.runes === 0, 'moved without a new rune');
   st.tickCellar(T0 + 6 * HOUR);
   assert.ok(Math.abs(v.T - 45) < 1e-6, `back down to 45°C and held (${v.T.toFixed(2)})`);
   // a target beyond the charge's reach never locks
   st.cellar.runes = 1;
-  assert.ok(st.runeVessel(0, 200, T0 + 6 * HOUR).ok);
+  assert.ok(st.runeBottle(b.id, 200, T0 + 6 * HOUR).ok);
   assert.equal(vesselReport(v, st.lookup).rune.holds, false, 'beyond the limit: it cannot lock');
-  // it wears out with the time it is set on the vessel
-  assert.ok(st.runeVessel(0, 45, T0 + 6 * HOUR).ok);
+  // it wears out with the time it is set on the bottle
+  assert.ok(st.runeBottle(b.id, 45, T0 + 6 * HOUR).ok);
   const left = v.rune.life;
   st.tickCellar(T0 + 7 * HOUR);
   assert.ok(Math.abs(left - v.rune.life - 3600) < CELLAR_STEP + 1, 'an hour of use, an hour of wear');
@@ -371,39 +386,48 @@ test('runes lock the temperature on the way to the limit, and wear out with use'
   assert.equal(runeFind('rune-dig', 'd1', 120, 0.5), runeFind('rune-dig', 'd1', 120, 0.5), 'deterministic');
 });
 
-test('a charge from a shelved bottle takes only the chosen amount', () => {
+test('the Fire/Frost slot takes only the chosen amount of another shelved bottle, and starts the aging', () => {
   const st = cellarShop('cellar-bottle-charge');
   st.tickCellar(T0);
-  st.layDown(0, { comp: { [R.water]: 100, [HYDRO]: 20 }, T: 20 }, T0);
-  // a Fire potion on the shelf: a vessel laid down with fire matter, bottled out
+  const aged = makeVialFromComposition({ [R.water]: 100, [HYDRO]: 20 }, 20, { batchId: 'aged', day: 1 }, st.lookup, []);
+  st.bottles.push(aged);
+  // a Fire potion on the shelf
   const fireHerb = SPECIES.find((s) => s.fx && s.fx.fire >= 20 && !(s.fx.frost > 0));
   assert.ok(fireHerb, 'a fiery herb exists');
   const id = 'wild-p-sp-' + fireHerb.key;
   assert.ok(st.lookup(id), 'its extract');
-  st.layDown(1, { comp: { [R.water]: 40, [id]: 60 }, T: 20 }, T0);
-  const b = st.bottleVessel(1, T0).vial;
+  const b = makeVialFromComposition({ [R.water]: 40, [id]: 60 }, 20, { batchId: 'fire', day: 1 }, st.lookup, []);
+  st.bottles.push(b);
   assert.ok(potionNet(b.m.effects) > 0, 'a Fire potion');
+  assert.equal(st.chargeBottle(aged.id, aged.id, 20, T0).ok, false, 'not with itself');
   const ml0 = b.ml;
-  const r = st.activateVessel(0, b.id, 20, T0);
+  const r = st.chargeBottle(aged.id, b.id, 20, T0);
   assert.ok(r.ok, r.reason);
   assert.equal(r.ml, 20);
   assert.equal(st.bottles.find((x) => x.id === b.id).ml, ml0 - 20, 'the rest stays in the bottle');
-  assert.equal(st.cellar.vessels[0].charge.ml, 20);
+  assert.ok(aged.aging, 'loading the slot set the bottle aging');
+  assert.equal(aged.aging.charge.ml, 20);
+  // an aging bottle cannot warm another
+  assert.equal(st.chargeBottle(b.id, aged.id, 10, T0).ok, false);
+  // the whole rest of the Fire bottle: the emptied bottle leaves the shelf
+  assert.ok(st.chargeBottle(aged.id, b.id, undefined, T0).ok);
+  assert.ok(!st.bottles.some((x) => x.id === b.id), 'emptied, it leaves the shelf');
 });
 
-test('cellar aging is deterministic and persists offline: one jump equals many ticks, and a save carries it', () => {
+test('aging is deterministic and persists offline: one jump equals many ticks, and a save carries it', () => {
   const mk = () => {
-    const st = cellarShop('cellar-3'); st.tickCellar(T0); st.layDown(0, { comp: { [R.water]: 100, [R.oil]: 30, [HYDRO]: 30, [LIPO]: 15 }, T: 15 }, T0);
+    const st = cellarShop('cellar-3'); st.tickCellar(T0);
+    const b = ageBottle(st, { [R.water]: 100, [R.oil]: 30, [HYDRO]: 30, [LIPO]: 15 }, 15, T0);
     const fire = new Array(15).fill(0); fire[EFFECT_INDEX.fire] = 9;
-    chargeVessel(st.cellar.vessels[0], fire, 80, T0);
-    st.cellar.runes = 1; st.runeVessel(0, 35, T0);
+    chargeVessel(b.aging, fire, 80, T0);
+    st.cellar.runes = 1; st.runeBottle(b.id, 35, T0);
     return st;
   };
   const a = mk(), b = mk();
   a.tickCellar(T0 + 9 * HOUR + 1234);
   for (let t = T0; t <= T0 + 9 * HOUR + 1234; t += 7_777) b.tickCellar(t);
   b.tickCellar(T0 + 9 * HOUR + 1234);
-  const va = a.cellar.vessels[0], vb = b.cellar.vessels[0];
+  const va = a.bottles[0].aging, vb = b.bottles[0].aging;
   assert.ok(Math.abs(va.T - vb.T) < 1e-9, 'same temperature');
   assert.ok(Math.abs((va.charge ? va.charge.ml : 0) - (vb.charge ? vb.charge.ml : 0)) < 1e-6, 'same charge left');
   for (const id of Object.keys(va.comp)) assert.ok(Math.abs(va.comp[id] - vb.comp[id]) < 1e-9, `same ${id}`);
@@ -412,25 +436,54 @@ test('cellar aging is deterministic and persists offline: one jump equals many t
   const back = GameState.fromJSON(save);
   back.tickCellar(T0 + 33 * HOUR + 1234);
   a.tickCellar(T0 + 33 * HOUR + 1234);
-  assert.ok(Math.abs(back.cellar.vessels[0].T - a.cellar.vessels[0].T) < 1e-9, 'the saved cellar ages offline exactly as the live one');
+  assert.ok(Math.abs(back.bottles[0].aging.T - a.bottles[0].aging.T) < 1e-9, 'the saved bottle ages offline exactly as the live one');
   // fixed steps: advancing by less than one step changes nothing but the carry
-  const v = mk().cellar.vessels[0];
+  const v = mk().bottles[0].aging;
   const before = JSON.stringify(v.comp);
   advanceVessel(v, lookup, T0 + (CELLAR_STEP - 1) * 1000);
   assert.equal(JSON.stringify(v.comp), before);
 });
 
-test('a vessel is bottled onto the potion shelves with its matter', () => {
+test('an aging bottle is unsealed in its place, as a fresh bottle of what it has become', () => {
   const st = cellarShop('cellar-4');
   st.tickCellar(T0);
-  st.layDown(0, { comp: { [R.water]: 120, [HYDRO]: 40 }, T: 20 }, T0);
+  const b = ageBottle(st, { [R.water]: 120, [HYDRO]: 40 }, 20, T0);
+  const before = b.m.effects[EFFECT_INDEX.vitality];
   st.tickCellar(T0 + HOUR);
   const n0 = st.bottles.length;
-  const r = st.bottleVessel(0, T0 + HOUR);
-  assert.ok(r.ok && st.bottles.length === n0 + 1, 'bottled');
+  const r = st.finishAging(b.id, T0 + HOUR);
+  assert.ok(r.ok && st.bottles.length === n0, 'unsealed in place');
+  assert.equal(st.bottles[0], r.vial);
   assert.equal(r.vial.ml, 160);
-  assert.ok(r.vial.m.effects[EFFECT_INDEX.vitality] > 3, 'it carries the extracted magic');
-  assert.equal(Object.keys(st.cellar.vessels[0].comp).length, 0, 'the vessel is empty');
+  assert.ok(!r.vial.aging, 'no longer aging');
+  assert.notEqual(r.vial.batchId, b.batchId, 'a new, untested batch');
+  assert.ok(r.vial.m.effects[EFFECT_INDEX.vitality] > before + 1, `it carries the magic drawn out while it aged (${before.toFixed(1)} → ${r.vial.m.effects[EFFECT_INDEX.vitality].toFixed(1)})`);
+  // taken down to the counter, an aging bottle is unsealed first
+  const c = ageBottle(st, { [R.water]: 60, [HYDRO]: 20 }, 20, T0 + HOUR);
+  const t = st.takeBottle(c.id);
+  assert.ok(t.ok && st.vial && !st.vial.aging, 'the counter gets what it has become');
+});
+
+test('save migration to v9: an old cellar vessel’s brew comes back as an aging bottle, its rune in hand', () => {
+  const st = cellarShop('migrate-9');
+  const raw = JSON.parse(JSON.stringify(st.toJSON()));
+  raw.version = 8;
+  raw.cellar = { runes: 1, vessels: [
+    { id: 0, comp: { [R.water]: 100, [HYDRO]: 30 }, T: 30, charge: { ml: 40, net: 6 }, rune: { target: 35, life: 1000 }, t: T0, carry: 0, log: [], name: 'old brew' },
+    { id: 1, comp: {}, T: 12, charge: null, rune: { target: 20, life: 500 }, t: T0, carry: 0, log: [] },
+  ] };
+  raw.equipment = [...raw.equipment, 'stirrer'];
+  const coins = raw.coins;
+  const back = GameState.fromJSON(raw);
+  assert.equal(back.version, SAVE_VERSION);
+  const aged = back.bottles.find((b) => b.aging);
+  assert.ok(aged, 'the brew is on the potion shelves, aging');
+  assert.ok(Math.abs(total(aged.aging) - 130) < 0.01, 'with its matter');
+  assert.equal(aged.aging.charge.net, 6, 'and its charge');
+  assert.equal(aged.aging.rune.target, 35, 'and its rune');
+  assert.equal(back.cellar.vessels.length, 0, 'no vessels any more');
+  assert.equal(back.cellar.runes, 2, 'the empty vessel’s rune is back in hand');
+  assert.ok(!back.has('stirrer') && back.coins >= coins + 110 - 1e-6, 'the Clockwork Stirrer is refunded');
 });
 
 test('save migration to v8: an older save gains a cellar, keeps its matter, and its world gains the new materials', () => {
@@ -445,7 +498,7 @@ test('save migration to v8: an older save gains a cellar, keeps its matter, and 
   for (const m of raw.world.materials) if (m.id.startsWith('wild-sp-')) { delete m.extraction; m.fxv = 5; }
   const back = GameState.fromJSON(raw);
   assert.equal(back.version, SAVE_VERSION);
-  assert.ok(back.cellar && Array.isArray(back.cellar.vessels), 'a cellar');
+  assert.ok(back.cellar && Number.isFinite(back.cellar.runes), 'a cellar (its runes)');
   assert.ok(!back.world.reactions.some((r) => /^rw_extract_sp_/.test(r.id)), 'the fixed-window steeping reactions are retired');
   assert.ok(back.lookup(HYDRO).extraction, 'its herbs have extraction profiles');
   assert.ok(back.world.roles.emulsifier && back.canBuy(back.world.roles.emulsifier).ok, 'the neutral emulsifier is for sale');
@@ -490,7 +543,7 @@ test('the whole loop for an alcohol-free order: cold spirit steep, distillation,
   /** @type {Record<string, number>} */
   const rest = {};
   for (const [id, v] of Object.entries(s.inventory())) rest[id] = v * 5;
-  if (Object.keys(rest).length) assert.ok(st.layDown(0, { comp: rest, T: 20 }, T0).ok, 'the rest is laid down');
+  if (Object.keys(rest).length) assert.ok(ageBottle(st, rest, 20, T0).aging, 'the rest is set aging');
 });
 
 test('the guild theory counts only what is already dissolved', () => {

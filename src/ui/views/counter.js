@@ -6,7 +6,6 @@
 import { h, btn, clear, coins, confirmDialog, starsText, roomHead } from '../dom.js';
 import { icon } from '../icons.js';
 import { drawPortrait } from '../../rendering/portraits.js';
-import { drawBottle } from '../../rendering/renderer.js';
 import { PROPERTY_LABELS, scoreRequirement } from '../../game/evaluate.js';
 import { techniqueById } from '../../game/commissions.js';
 import { EFFECT_INDEX, NE } from '../../alchemy/effects.js';
@@ -18,12 +17,23 @@ import { describeColor, rgbToHex } from '../../core/color.js';
 import { viscosityClass } from '../../game/measure.js';
 import * as panels from '../panels.js';
 import { shortName } from '../../game/customers.js';
+import { agingBlock, bottleArt, loadCharge } from '../aging.js';
+import { drawBottle } from '../../rendering/renderer.js';
+import { potionNet } from '../../game/cellar.js';
 
 export class CounterView {
   /** @param {import('../lab.js').LabScreen} lab */
   constructor(lab) {
     this.lab = lab;
     this.el = h('section', { class: 'view view-counter', 'data-view': 'counter' });
+    /** the selected shelved bottle, its aging slot being filled, the ml to load, the rune's target */
+    /** @type {string|null} */ this.sel = null;
+    /** @type {'charge'|'rune'|null} */ this.agePick = null;
+    this.ageMl = 50;
+    /** @type {number|undefined} */ this.ageTarget = undefined;
+    this._bottleDrag = false;
+    /** @type {any} */ this._ageTimer = 0;
+    /** @type {HTMLElement|null} */ this.detailHost = null;
   }
 
   build() {
@@ -175,43 +185,118 @@ export class CounterView {
   shelfCard(el) {
     const lab = this.lab, st = lab.state;
     lab.freshBottles();
+    lab.tickCellar();
     const cap = st.cap.bottles;
-    if (this.sel && !st.bottles.some((b) => b.id === this.sel)) this.sel = null;
+    if (this.sel && !st.bottles.some((b) => b.id === this.sel)) { this.sel = null; this.agePick = null; }
     const grid = h('div', { class: 'bottle-shelf', role: 'listbox', 'aria-label': 'Potion shelves' });
-    const rows = Math.ceil(cap / 6);
+    const rows = Math.ceil(Math.max(cap, st.bottles.length) / 6);
     for (let i = 0; i < rows * 6; i++) {
       const b = st.bottles[i];
       if (!b) {
         grid.appendChild(h('div', { class: 'bottle-slot' + (i < cap ? ' empty' : ' locked'), 'aria-hidden': 'true' }));
         continue;
       }
-      const cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: '16', height: '22', class: 'vial-art' }));
-      drawBottle(/** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')), 2, 2, 12, 19, b.m ? b.m.color : [0.5, 0.5, 0.5], Math.min(1, b.ml / Math.max(1, b.bottledMl || b.ml)));
+      const cv = bottleArt(b);
       // a labelled bottle tells what it does without opening it
-      const fxText = b.label ? trade.labelLine(b.label) : '';
-      const acc = b.label ? labelStars(b.label) : null;
-      const slot = h('button', { class: 'bottle-slot' + (this.sel === b.id ? ' active' : '') + (b.label ? ' labelled' : ''), role: 'option', 'aria-selected': this.sel === b.id ? 'true' : 'false', 'aria-label': `${b.label && b.label.name ? b.label.name : 'Bottle'}, ${Math.round(b.ml)} ml${fxText ? `: ${fxText}` : ''}`, ...(fxText ? { title: fxText } : {}), 'data-act': 'bottle-slot', 'data-id': b.id },
-        cv, h('span', { class: 'bml', text: `${Math.round(b.ml)}` }), b.label ? h('span', { class: 'btag' }, icon('tag', 'sm')) : null,
+      const fxText = b.aging ? 'Aging' : b.label ? trade.labelLine(b.label) : '';
+      const acc = b.label && !b.aging ? labelStars(b.label) : null;
+      const net = b.m && !b.aging ? potionNet(b.m.effects) : 0;
+      const slot = h('button', { class: 'bottle-slot' + (this.sel === b.id ? ' active' : '') + (b.label ? ' labelled' : '') + (b.aging ? ' aging' : ''), role: 'option', 'aria-selected': this.sel === b.id ? 'true' : 'false', 'aria-label': `${b.label && b.label.name ? b.label.name : 'Bottle'}, ${Math.round(b.ml)} ml${fxText ? `: ${fxText}` : ''}`, ...(fxText ? { title: fxText } : {}), 'data-act': 'bottle-slot', 'data-id': b.id },
+        cv, h('span', { class: 'bml', text: `${Math.round(b.ml)}` }), b.label && !b.aging ? h('span', { class: 'btag' }, icon('tag', 'sm')) : null,
+        b.aging ? h('span', { class: 'bage' }, icon('clock', 'sm')) : net ? h('span', { class: 'bfx ' + (net > 0 ? 'fire' : 'frost') }, icon(net > 0 ? 'flame' : 'snow', 'sm')) : null,
         acc === null ? null : h('span', { class: 'bstars', 'data-stars': String(acc), text: starsText(acc, MAX_STARS) }));
-      slot.addEventListener('click', () => { this.sel = this.sel === b.id ? null : b.id; this.refresh(); });
+      this.bindBottle(slot, b);
       grid.appendChild(slot);
     }
-    const b = this.sel ? st.bottles.find((x) => x.id === this.sel) : null;
-    let detail = null;
-    if (b) {
-      const m = b.m || {};
-      detail = h('div', { class: 'bottle-detail' },
-        h('div', { class: 'small' }, h('span', { class: 'swatch', style: { background: rgbToHex(m.color || [0.5, 0.5, 0.5]) } }), ` ${describeColor(m.color || [0.5, 0.5, 0.5])} · ${Math.round(b.ml)} ml · ${Math.round(m.temperature ?? 20)}°C · bottled on day ${b.day || st.day}`),
-        verifiedLine(b.cert),
-        b.label ? h('div', { class: 'small label-line' }, icon('tag', 'sm'), ` ${trade.labelLine(b.label)}`) : null,
-        h('div', { class: 'row wrap' },
-          btn(st.vial ? 'Swap with the vial' : 'To the counter', () => lab.takeBottle(b.id), { icon: 'deal', cls: 'primary', act: 'take-bottle', title: 'Put this bottle on the counter to sell or test it' }),
-          btn('Pour back', () => lab.pourBackBottle(b.id), { icon: 'pour', act: 'pour-back-bottle' }),
-          btn('Discard', async () => { if (await confirmDialog('Discard the bottle?', 'The potion is poured away. Ingredients are not refunded.', 'Discard', 'danger')) lab.discardBottle(b.id); }, { icon: 'trash', cls: 'danger', act: 'discard-bottle' })));
-    }
+    this.detailHost = h('div', { class: 'bottle-detail-host' });
+    this.renderDetail();
     el.append(h('div', { class: 'card parch shelf-card' },
       h('div', { class: 'row' }, icon('shelf2'), h('b', { text: `Potion shelves · ${st.bottles.length}/${cap}` })),
-      grid, detail));
+      grid, this.detailHost));
+  }
+
+  /** The selected bottle's detail (and its aging slots), refreshed every second while it ages. */
+  renderDetail() {
+    const lab = this.lab, st = lab.state, host = this.detailHost;
+    if (!host) return;
+    clearInterval(this._ageTimer);
+    const b = this.sel ? st.bottles.find((x) => x.id === this.sel) : null;
+    clear(host);
+    if (!b) return;
+    const m = b.m || {};
+    const rerender = () => this.refresh();
+    host.append(h('div', { class: 'bottle-detail' },
+      b.aging
+        ? h('div', { class: 'small' }, `${b.aging.name || 'A shelved brew'} · ${Math.round(b.ml)} ml · aging since day ${b.day || st.day}`)
+        : h('div', { class: 'small' }, h('span', { class: 'swatch', style: { background: rgbToHex(m.color || [0.5, 0.5, 0.5]) } }), ` ${describeColor(m.color || [0.5, 0.5, 0.5])} · ${Math.round(b.ml)} ml · ${Math.round(m.temperature ?? 20)}°C · bottled on day ${b.day || st.day}`),
+      b.aging ? null : verifiedLine(b.cert),
+      b.label && !b.aging ? h('div', { class: 'small label-line' }, icon('tag', 'sm'), ` ${trade.labelLine(b.label)}`) : null,
+      h('div', { class: 'row wrap' },
+        btn(st.vial ? 'Swap with the vial' : 'To the counter', () => lab.takeBottle(b.id), { icon: 'deal', cls: 'primary', act: 'take-bottle', title: b.aging ? 'Unseal it and put it on the counter' : 'Put this bottle on the counter to sell or test it' }),
+        btn('Pour back', () => lab.pourBackBottle(b.id), { icon: 'pour', act: 'pour-back-bottle' }),
+        btn('Discard', async () => { if (await confirmDialog('Discard the bottle?', 'The potion is poured away. Ingredients are not refunded.', 'Discard', 'danger')) lab.discardBottle(b.id); }, { icon: 'trash', cls: 'danger', act: 'discard-bottle' })),
+      agingBlock(this, b, rerender)));
+    // an aging bottle is watched live (not while a number is being typed, or a bottle dragged)
+    if (b.aging) this._ageTimer = /** @type {any} */ (setInterval(() => {
+      if (!document.body.contains(host) || this.lab.view !== 'counter' || this.sel !== b.id) { clearInterval(this._ageTimer); return; }
+      const a = document.activeElement;
+      if (this._bottleDrag || (a && a.tagName === 'INPUT' && host.contains(a))) return;
+      lab.tickCellar();
+      this.renderDetail();
+    }, 1000));
+  }
+
+  /**
+   * A bottle on the shelves: tap to select it; drag it onto the selected
+   * bottle's Fire/Frost slot to load it (a finger holds still a moment first).
+   * @param {HTMLElement} slot @param {any} b
+   */
+  bindBottle(slot, b) {
+    let pid = -1, sx = 0, sy = 0, lifted = false, timer = 0, dragged = false;
+    /** @type {HTMLElement|null} */ let ghost = null;
+    /** @type {Element|null} */ let over = null;
+    const stop = () => { clearTimeout(timer); timer = 0; if (ghost) ghost.remove(); ghost = null; if (over) over.classList.remove('drop-over'); over = null; this._bottleDrag = false; };
+    slot.addEventListener('pointerdown', (e) => {
+      if (e.button > 0) return;
+      pid = e.pointerId; sx = e.clientX; sy = e.clientY; dragged = false;
+      lifted = e.pointerType === 'mouse';
+      if (lifted) { try { slot.setPointerCapture(pid); } catch { /* ignore */ } }
+      else timer = /** @type {any} */ (setTimeout(() => { lifted = true; try { slot.setPointerCapture(pid); } catch { /* ignore */ } }, 180));
+    });
+    slot.addEventListener('pointermove', (e) => {
+      if (e.pointerId !== pid) return;
+      const d = Math.hypot(e.clientX - sx, e.clientY - sy);
+      if (!lifted) { if (d > 8) { clearTimeout(timer); pid = -1; } return; }
+      if (!dragged && d > 8 && this.sel && this.sel !== b.id && !b.aging) {
+        dragged = true; this._bottleDrag = true;
+        ghost = h('div', { class: 'drag-ghost bottle-ghost' }, bottleArt(b));
+        document.body.appendChild(ghost);
+      }
+      if (!dragged || !ghost) return;
+      e.preventDefault();
+      ghost.style.transform = `translate(${e.clientX - 16}px, ${e.clientY - 40}px)`;
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const target = el ? el.closest('.age-slot.charge') : null;
+      if (over !== target) { if (over) over.classList.remove('drop-over'); if (target) target.classList.add('drop-over'); over = target; }
+    });
+    const end = (e) => {
+      if (e.pointerId !== pid) return;
+      pid = -1;
+      const target = over, was = dragged;
+      stop();
+      if (!was) return;
+      if (e.type === 'pointerup' && target && this.sel) { loadCharge(this.lab, this.sel, b.id, this.ageMl || 50); this.agePick = null; }
+      this.refresh();
+    };
+    slot.addEventListener('pointerup', end);
+    slot.addEventListener('pointercancel', end);
+    slot.addEventListener('touchmove', (e) => { if (dragged) e.preventDefault(); }, { passive: false });
+    slot.addEventListener('click', () => {
+      if (dragged) { dragged = false; return; }
+      this.sel = this.sel === b.id ? null : b.id;
+      this.agePick = null;
+      this.refresh();
+    });
   }
 }
 

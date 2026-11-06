@@ -16,6 +16,17 @@
 
 import { ATLASES, SPECIES_ASSETS, FRAMES } from './atlas-frames.js';
 import { Pixels } from './pixels.js';
+import { PLANT_SHEET, PLANT_BOXES } from './ingredient-icons.js';
+
+// the plants of the ingredient icons (scripts/slice-ingredient-icons.py): one more atlas, needed
+// wherever a species grows, so it loads before play; its frames stand on their bottom centre
+ATLASES.push(/** @type {any} */ ({ id: 'ingredient-plants', image: PLANT_SHEET, width: 0, height: 0, eager: true, biomes: [] }));
+for (const [key, st] of Object.entries(PLANT_BOXES)) {
+  for (const [stage, [x, y, w, h]] of Object.entries(st)) FRAMES[`${key}@plant-${stage}`] = /** @type {any} */ (['ingredient-plants', x, y, w, h, w >> 1, h - 1]);
+}
+
+/** The asset id of a species' plant (from its icon) at a growth stage. @param {string} key @param {'sprout'|'ripe'|'mature'} stage */
+export const plantAsset = (key, stage) => (PLANT_BOXES[key] ? `${key}@plant-${stage}` : null);
 
 export { ATLASES, SPECIES_ASSETS, FRAMES };
 
@@ -78,28 +89,43 @@ function loadNodeSync(file) {
   const fs = NODE.getBuiltinModule('node:fs'), zlib = NODE.getBuiltinModule('node:zlib'), url = NODE.getBuiltinModule('node:url'), buffer = NODE.getBuiltinModule('node:buffer');
   const path = url.fileURLToPath(new URL(`../../assets/atlases/${file}`, import.meta.url));
   const buf = fs.readFileSync(path);
-  let o = 8, w = 0, h = 0;
+  let o = 8, w = 0, h = 0, type = 6;
   const idat = [];
+  /** @type {Uint8Array|null} */ let plte = null;
+  /** @type {Uint8Array|null} */ let trns = null;
   while (o < buf.length) {
     const len = buf.readUInt32BE(o), kind = buf.toString('latin1', o + 4, o + 8);
-    if (kind === 'IHDR') { w = buf.readUInt32BE(o + 8); h = buf.readUInt32BE(o + 12); if (buf[o + 16] !== 8 || buf[o + 17] !== 6) throw new Error('atlas PNGs are 8-bit RGBA'); }
+    if (kind === 'IHDR') {
+      w = buf.readUInt32BE(o + 8); h = buf.readUInt32BE(o + 12); type = buf[o + 17];
+      if (buf[o + 16] !== 8 || (type !== 6 && type !== 3)) throw new Error('atlas PNGs are 8-bit RGBA or 8-bit palette');
+    } else if (kind === 'PLTE') plte = buf.subarray(o + 8, o + 8 + len);
+    else if (kind === 'tRNS') trns = buf.subarray(o + 8, o + 8 + len);
     else if (kind === 'IDAT') idat.push(buf.subarray(o + 8, o + 8 + len));
     else if (kind === 'IEND') break;
     o += 12 + len;
   }
   const raw = zlib.inflateSync(buffer.Buffer.concat(idat));
-  const pix = new Pixels(w, h), d = pix.data, stride = w * 4;
+  // (a palette image has one byte a pixel: its index into PLTE, its alpha from tRNS)
+  const bpp = type === 6 ? 4 : 1;
+  const pix = new Pixels(w, h), d = pix.data, stride = w * bpp;
   let prev = new Uint8Array(stride), cur = new Uint8Array(stride);
   for (let y = 0; y < h; y++) {
     const f = raw[y * (stride + 1)], line = raw.subarray(y * (stride + 1) + 1, (y + 1) * (stride + 1));
     for (let i = 0; i < stride; i++) {
-      const a = i >= 4 ? cur[i - 4] : 0, b = prev[i], c = i >= 4 ? prev[i - 4] : 0;
+      const a = i >= bpp ? cur[i - bpp] : 0, b = prev[i], c = i >= bpp ? prev[i - bpp] : 0;
       let v = line[i];
       if (f === 1) v += a; else if (f === 2) v += b; else if (f === 3) v += (a + b) >> 1;
       else if (f === 4) { const p = a + b - c, pa = Math.abs(p - a), pb = Math.abs(p - b), pc = Math.abs(p - c); v += pa <= pb && pa <= pc ? a : pb <= pc ? b : c; }
       cur[i] = v & 255;
     }
-    d.set(cur, y * stride);
+    if (bpp === 4) d.set(cur, y * stride);
+    else {
+      const P = /** @type {Uint8Array} */ (plte);
+      for (let x = 0; x < w; x++) {
+        const k = cur[x], q = (y * w + x) * 4;
+        d[q] = P[k * 3]; d[q + 1] = P[k * 3 + 1]; d[q + 2] = P[k * 3 + 2]; d[q + 3] = trns && k < trns.length ? trns[k] : 255;
+      }
+    }
     [prev, cur] = [cur, prev];
   }
   return pix;
