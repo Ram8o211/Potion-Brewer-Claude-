@@ -24,6 +24,7 @@
 // its other channels it is an ordinary animal, or a little less reliable.
 
 import { Rng } from '../core/rng.js';
+import { VARIANT_COATS } from './animal-variants.js';
 
 /**
  * @typedef {'rabbit'|'cat'|'toad'|'salamander'|'deer'|'badger'|'dove'|'fox'|'ermine'|'snail'|'rat'|'hare'|'otter'|'beetle'|'cavemoth'|'wisp'|'cloudray'|'mimic'|'shroudmoth'|'axolotl'|'scarab'} AnimalKind
@@ -237,6 +238,16 @@ const r2 = (v) => Math.round(v * 100) / 100;
  * @param {AnimalKind} kind @param {Rng} rng
  */
 export function kindLook(kind, rng) {
+  const look = kindLookOf(kind, rng);
+  // its coat is one of its kind's four variants on the animal atlas (rendering/animal-sprites.js), the one it is drawn as
+  const vs = VARIANT_COATS[look.kind];
+  // (chosen by its own seed, so no draw is taken from the caller's stream)
+  if (vs) look.coat = vs[(look.seed >>> 0) % vs.length].slice();
+  return look;
+}
+
+/** @param {AnimalKind} kind @param {Rng} rng */
+function kindLookOf(kind, rng) {
   const seed = 1 + rng.int(0, 2147483000);
   const size = r2(Math.max(0.85, Math.min(1.15, 1 + 0.06 * rng.gauss())));
   if (kind === 'cat') {

@@ -285,12 +285,13 @@ computed from the particles that actually run out of the tap. What a
   hearth's fire licks and sparks, lanterns flicker, a spring spills into the
   pond, snow falls, butterflies and fireflies flit — shaded rabbits and
   animals that walk in a four-beat stride and stretch out when they leap
-  (each kind drawn to read at a glance, in the wilds as in its pen: moths
-  on broad eyespotted wings that flutter and fold, rock beetles in
-  metallic shells, a leaping frog-like toad, a lean long-legged hare, a
-  chameleon-crested mimic with a coiled tail, a broad-winged cloud ray, an
-  axolotl with feathery gills; crystals glow in the moth grotto, a fall
-  spills into the otter holt, cacti and crates stand in the sand court),
+  (every kind drawn from the project's animal atlas, in the wilds as in its
+  pen: four colour variants each and a four-frame walk, crawl, trot,
+  flutter, swim or float, rebuilt as pixel art from
+  `art/animals/source/animal-atlas.webp` by `scripts/build-animal-sprites.py`
+  and tinted, marked and posed by the animal's state; crystals glow in the
+  moth grotto, a fall spills into the otter holt, cacti and crates stand in
+  the sand court),
   and wood-grain, parchment and nail textures on the interface.
 * **Procedural wilds and ingredients:** every world grows its own
   ecosystem (`src/visual/`, see

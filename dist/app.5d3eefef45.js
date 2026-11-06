@@ -7561,9 +7561,15 @@ return cap;
 }
 return { EQUIPMENT, STARTING_EQUIPMENT, BASE_STORAGE, BASE_BOTTLES, BASE_HUTCH, RETIRED_EQUIPMENT, equipmentById, RANKS, rankIndex, capabilities };
 })();
+// src/game/animal-variants.js
+const __m62 = (() => {
+const VARIANT_COATS = {"rabbit": [[0.777, 0.769, 0.762], [0.675, 0.558, 0.424], [0.468, 0.336, 0.261], [0.37, 0.357, 0.406]], "cat": [[0.785, 0.706, 0.647], [0.474, 0.465, 0.513], [0.707, 0.443, 0.301], [0.377, 0.341, 0.387]], "toad": [[0.466, 0.582, 0.309], [0.51, 0.381, 0.278], [0.383, 0.434, 0.567], [0.733, 0.689, 0.621]], "salamander": [[0.72, 0.535, 0.304], [0.689, 0.388, 0.279], [0.507, 0.469, 0.706], [0.371, 0.573, 0.493]], "deer": [[0.564, 0.415, 0.313], [0.663, 0.503, 0.372], [0.593, 0.535, 0.503], [0.76, 0.677, 0.61]], "badger": [[0.441, 0.413, 0.414], [0.627, 0.498, 0.365], [0.768, 0.701, 0.605], [0.516, 0.499, 0.536]], "dove": [[0.596, 0.581, 0.632], [0.793, 0.771, 0.74], [0.656, 0.518, 0.577], [0.41, 0.439, 0.536]], "fox": [[0.728, 0.474, 0.3], [0.648, 0.358, 0.274], [0.418, 0.408, 0.45], [0.743, 0.725, 0.734]], "ermine": [[0.796, 0.745, 0.689], [0.524, 0.389, 0.287], [0.718, 0.624, 0.466], [0.424, 0.406, 0.441]], "snail": [[0.671, 0.509, 0.316], [0.702, 0.517, 0.547], [0.527, 0.585, 0.706], [0.531, 0.61, 0.429]], "rat": [[0.525, 0.402, 0.363], [0.473, 0.431, 0.48], [0.356, 0.308, 0.349], [0.735, 0.671, 0.621]], "hare": [[0.593, 0.43, 0.291], [0.536, 0.398, 0.294], [0.654, 0.561, 0.466], [0.722, 0.699, 0.669]], "otter": [[0.475, 0.322, 0.221], [0.522, 0.376, 0.271], [0.681, 0.526, 0.321], [0.382, 0.348, 0.316]], "beetle": [[0.34, 0.395, 0.517], [0.326, 0.433, 0.291], [0.581, 0.395, 0.253], [0.38, 0.369, 0.419]], "cavemoth": [[0.698, 0.608, 0.46], [0.735, 0.666, 0.598], [0.615, 0.516, 0.654], [0.706, 0.571, 0.461]], "wisp": [[0.413, 0.785, 0.855], [0.836, 0.732, 0.446], [0.852, 0.569, 0.772], [0.501, 0.807, 0.666]], "cloudray": [[0.411, 0.698, 0.836], [0.65, 0.588, 0.834], [0.806, 0.61, 0.601], [0.529, 0.75, 0.699]], "mimic": [[0.46, 0.577, 0.299], [0.334, 0.58, 0.531], [0.654, 0.573, 0.42], [0.406, 0.5, 0.646]], "shroudmoth": [[0.599, 0.538, 0.655], [0.709, 0.692, 0.719], [0.7, 0.578, 0.634], [0.464, 0.428, 0.518]], "axolotl": [[0.737, 0.511, 0.588], [0.731, 0.675, 0.688], [0.638, 0.531, 0.694], [0.427, 0.585, 0.64]], "scarab": [[0.182, 0.362, 0.527], [0.205, 0.417, 0.37], [0.562, 0.309, 0.366], [0.44, 0.332, 0.581]]};
+return { VARIANT_COATS };
+})();
 // src/game/kinds.js
 const __m61 = (() => {
 const { Rng } = __m6;
+const { VARIANT_COATS } = __m62;
 const RABBIT_SPREAD = 0.1;
 const STEADY_SPREAD = 0.012;
 const STEADY_NOISE = 0.3;
@@ -7715,6 +7721,12 @@ return rng.weighted(h.map((x) => x[0]), h.map((x) => x[1]));
 }
 const r2 = (v) => Math.round(v * 100) / 100;
 function kindLook(kind, rng) {
+const look = kindLookOf(kind, rng);
+const vs = VARIANT_COATS[look.kind];
+if (vs) look.coat = vs[(look.seed >>> 0) % vs.length].slice();
+return look;
+}
+function kindLookOf(kind, rng) {
 const seed = 1 + rng.int(0, 2147483000);
 const size = r2(Math.max(0.85, Math.min(1.15, 1 + 0.06 * rng.gauss())));
 if (kind === 'cat') {
@@ -8884,7 +8896,7 @@ return `${e.label} ${Math.round(v)} (${potencyWord(v, key)})`;
 return { readingSteadiness, SUBJECTS, SUBJECT_BY_ID, RECORD_LIMIT, DOSES, DOSE_NOISE, READ_NOISE, driftTolerance, createTrials, normalizeTrials, rabbitReading, doseErr, EVIDENCE_LEVELS, EVIDENCE_TEXT, evidenceRank, summarize, effectEvidence, requirementEvidence, EVIDENCE_STATE_TEXT, addSamples, runTrial, resetSubject, certification, requiredEffects, missingEffects, suggestSubjects, knownLaws, describeReading };
 })();
 // src/game/regen.js
-const __m63 = (() => {
+const __m64 = (() => {
 const { Rng } = __m6;
 const { RARITY, ARCANE } = __m17;
 const { SPECIES } = __m15;
@@ -8979,11 +8991,11 @@ const specimenCount = (pop) => pop.reduce((a, p) => a + p.ordinary + p.arcane, 0
 return { COIN_RULES, createRegen, normalizeRegen, accrue, nextCoinIn, generationOf, regenerate, maybeGift, unlockBiomes, populationOf, specimenCount };
 })();
 // src/game/gathering.js
-const __m62 = (() => {
+const __m63 = (() => {
 const { Rng, hashString } = __m6;
 const { familyOf, habitatOf } = __m29;
 const { BIOMES } = __m18;
-const { populationOf } = __m63;
+const { populationOf } = __m64;
 const { RARITY } = __m17;
 const { materialIdOf } = __m15;
 const REGIONS = BIOMES.map((b) => ({ id: b.id, name: b.name, rank: b.unlock.rank || 0, magical: b.category === 'exotic', desc: b.desc, sky: b.sky }));
@@ -9377,7 +9389,7 @@ return out;
 return { REGIONS, REGION_BY_ID, STAGES, SPROUT_SHARE, TAKE_BY_RARITY, generateDeposits, thirstOf, createGathering, GATHER_VERSION, normalizeGathering, GROW_FLOOR, GROW_MAX, WATER_DOSE, moistureEnv, growthOf, matureIn, checkpoint, standOf, plantStage, depositStatus, water, setSky, migrateGathering, SCAR_SLOWDOWN, METHODS, methodOf, dayPart, DAY_PART_NAME, DAY_PART_HINT, WEATHERS, weatherOn, gatherPlan, harvestable, weatherRegrowth, harvest, newDayRegrowth, SANDBOX_PACE, sandboxWilds, formatWait, RUNE_CACHES, runeCaches };
 })();
 // src/simulation/particles.js
-const __m66 = (() => {
+const __m67 = (() => {
 const { MAX_SPECIES } = __m25;
 const { PHASE } = __m56;
 const { NE } = __m20;
@@ -9502,7 +9514,7 @@ return this.phase[i] !== PHASE.GAS;
 return { STATE_FIELDS_F32, STATE_FIELDS_I32, STATE_FIELDS_U8, STATE_FIELDS_U16, STATE_FIELDS_U32, DERIVED_FIELDS, ARC_NONE, Particles };
 })();
 // src/simulation/grid.js
-const __m67 = (() => {
+const __m68 = (() => {
 class NeighborGrid {
 constructor(minX, minY, maxX, maxY, cell, capacity) {
 this.minX = minX;
@@ -9602,7 +9614,7 @@ for (let a = cellStart[c]; a < cellStart[c + 1]; a++) fn(sorted[a]);
 return { NeighborGrid };
 })();
 // src/simulation/cauldron.js
-const __m68 = (() => {
+const __m69 = (() => {
 const { SIM } = __m56;
 const CAULDRON_SIZES = {
 pot: { key: 'pot', label: 'Iron Pot', mouth: 0.8, belly: 1.0, neck: 0.5, depth: 1.55, capacity: 310 },
@@ -9839,13 +9851,13 @@ return s / this.lidCells;
 return { CAULDRON_SIZES, COLUMN, Cauldron };
 })();
 // src/simulation/derived.js
-const __m69 = (() => {
+const __m70 = (() => {
 const { MAX_SPECIES, NO_BOIL } = __m25;
 const { granularFraction, suspensionLnMult } = __m53;
 const { rgbToOklabInto, linearToSrgb } = __m11;
 const { PHASE } = __m56;
 const { compositionEffects, EFFECTS, NE } = __m20;
-const { ARC_NONE } = __m66;
+const { ARC_NONE } = __m67;
 const AURA_W = EFFECTS.map((e) => (e.kind === 'magic' ? 1 : 0.55));
 const AURA_COL = EFFECTS.map((e) => e.color);
 const auraFx = new Float64Array(NE);
@@ -9993,7 +10005,7 @@ p.auraI[i] = I / 100;
 return { STAIN, GAS_MASS, refreshParticle, refreshAura };
 })();
 // src/simulation/rigid.js
-const __m70 = (() => {
+const __m71 = (() => {
 const { PHASE } = __m56;
 const MAX_GROUPS = 2048;
 const BOND = 0.135;
@@ -10187,7 +10199,7 @@ return this.active.length;
 return { FRESH, RigidBodies };
 })();
 // src/simulation/thermal.js
-const __m71 = (() => {
+const __m72 = (() => {
 const { PHASE, SIM } = __m56;
 const KPP = 34; // particle–particle conductance (game-scaled)
 const KW = 24; // particle–wall conductance
@@ -10304,11 +10316,11 @@ for (let k = 0; k < M + L; k++) Tw[k] += flow[k] / Cw[k];
 return { thermalStep, wallStep };
 })();
 // src/simulation/phase.js
-const __m72 = (() => {
+const __m73 = (() => {
 const { PHASE, PHASE_NAMES } = __m56;
 const { MAX_SPECIES, NO_BOIL } = __m25;
-const { refreshParticle } = __m69;
-const { FRESH } = __m70;
+const { refreshParticle } = __m70;
+const { FRESH } = __m71;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const BOIL_VOLATILE = 0.8;
 const DRY_MIN = 0.12;
@@ -10659,7 +10671,7 @@ classifyFluid(sim, j);
 return { classifyFluid, isFrozenGrain, dominantId, phaseStep, enrichVolatile };
 })();
 // src/reactions/diffusion.js
-const __m73 = (() => {
+const __m74 = (() => {
 const { PHASE } = __m56;
 const { MAX_SPECIES } = __m25;
 const { compatFactor } = __m21;
@@ -10876,10 +10888,10 @@ if (sim.compChange[j] > 0.004) { sim.compChange[j] = 0; p.dirty[j] = 1; }
 return { diffusionStep };
 })();
 // src/simulation/arcane.js
-const __m75 = (() => {
+const __m76 = (() => {
 const { MAX_SPECIES } = __m25;
 const { ARCANE_SCALE, ARCANE_ZERO, awakenedId } = __m22;
-const { ARC_NONE } = __m66;
+const { ARC_NONE } = __m67;
 const RATE = 0.55;
 const HEAT = 24;
 const TAIL = 0.002;
@@ -10958,11 +10970,11 @@ return a;
 return { arcaneStep, awakeSlot };
 })();
 // src/reactions/reactions.js
-const __m74 = (() => {
+const __m75 = (() => {
 const { MAX_SPECIES } = __m25;
 const { PHASE } = __m56;
 const { awakenedId } = __m22;
-const { awakeSlot } = __m75;
+const { awakeSlot } = __m76;
 const { GAS, SOLID } = PHASE;
 class ReactionSystem {
 constructor(sim, rules) {
@@ -11237,7 +11249,7 @@ return best;
 return { ReactionSystem };
 })();
 // src/simulation/tools.js
-const __m76 = (() => {
+const __m77 = (() => {
 const { PHASE, SIM } = __m56;
 const { MAX_SPECIES } = __m25;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
@@ -11494,9 +11506,9 @@ if (victims.length) sim.emit({ type: 'skim', count: victims.length, x: t.x, y: t
 return { TOOL_SPECS, ToolState, clampToInterior, toolForces, toolConstraints, LIQUID };
 })();
 // src/simulation/emitter.js
-const __m77 = (() => {
+const __m78 = (() => {
 const { PHASE, SIM, formPhase } = __m56;
-const { COLUMN } = __m68;
+const { COLUMN } = __m69;
 const { chunkTemplate, chunkSize, hasPieces, skinOf, grainSkinOf, piece } = __m26;
 const { registerSpecies } = __m27;
 class Emitter {
@@ -11665,7 +11677,7 @@ return true;
 return { Emitter };
 })();
 // src/simulation/electric.js
-const __m78 = (() => {
+const __m79 = (() => {
 const { PHASE } = __m56;
 const KQ = 26; // conduction rate (game scaled)
 const RE = 0.16; // contact distance
@@ -11713,11 +11725,11 @@ return s;
 return { electricStep, totalCharge };
 })();
 // src/reactions/extraction.js
-const __m79 = (() => {
+const __m80 = (() => {
 const { MAX_SPECIES } = __m25;
 const { PHASE } = __m56;
 const { SOLVENT_CAPACITY, WHOLE_FACTOR, EMULSION_FACTOR, extractIdOf, ceilingAt, yieldAt } = __m8;
-const { isFrozenGrain } = __m72;
+const { isFrozenGrain } = __m73;
 const { SOLID, GAS } = PHASE;
 const S = MAX_SPECIES;
 const CHAR_RATE = 0.35;
@@ -11974,23 +11986,23 @@ alcohol: cond ? alcohol / cond : 0,
 return { agitFactor, ExtractionSystem, extractionReport };
 })();
 // src/simulation/world.js
-const __m65 = (() => {
+const __m66 = (() => {
 const { PHASE, SIM, TUNE, formPhase } = __m56;
-const { Particles } = __m66;
-const { NeighborGrid } = __m67;
-const { Cauldron, COLUMN } = __m68;
+const { Particles } = __m67;
+const { NeighborGrid } = __m68;
+const { Cauldron, COLUMN } = __m69;
 const { SpeciesTable, MAX_SPECIES } = __m25;
-const { refreshParticle } = __m69;
-const { RigidBodies } = __m70;
-const { thermalStep } = __m71;
-const { phaseStep, classifyFluid } = __m72;
-const { diffusionStep } = __m73;
-const { ReactionSystem } = __m74;
-const { ToolState, toolForces, toolConstraints } = __m76;
-const { Emitter } = __m77;
-const { electricStep } = __m78;
-const { arcaneStep } = __m75;
-const { ExtractionSystem } = __m79;
+const { refreshParticle } = __m70;
+const { RigidBodies } = __m71;
+const { thermalStep } = __m72;
+const { phaseStep, classifyFluid } = __m73;
+const { diffusionStep } = __m74;
+const { ReactionSystem } = __m75;
+const { ToolState, toolForces, toolConstraints } = __m77;
+const { Emitter } = __m78;
+const { electricStep } = __m79;
+const { arcaneStep } = __m76;
+const { ExtractionSystem } = __m80;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const MODE = Object.freeze({ PBF: 0, GRAN: 1, COH: 2, RIGID: 3, GAS: 4 });
 const M_PBF = 0, M_GRAN = 1, M_COH = 2, M_RIGID = 3, M_GAS = 4;
@@ -12828,7 +12840,7 @@ if (p.sleep[i] >= SLEEP_STEPS) p.sleep[i] = 0;
 return { MODE, SLEEP_STEPS, Simulation, formPhase };
 })();
 // src/game/measure.js
-const __m80 = (() => {
+const __m81 = (() => {
 const { MAX_SPECIES } = __m25;
 const { PHASE, SIM } = __m56;
 const { compatFactor } = __m21;
@@ -12957,12 +12969,12 @@ return stability >= 90 ? 'evenly mixed' : stability >= 70 ? 'a little uneven' : 
 return { measureParticles, tapSelection, probeSelection, viscosityClass, densityWord, evennessWord };
 })();
 // src/game/vial.js
-const __m64 = (() => {
-const { Simulation } = __m65;
+const __m65 = (() => {
+const { Simulation } = __m66;
 const { PHASE, SIM } = __m56;
 const { MAX_SPECIES } = __m25;
-const { measureParticles } = __m80;
-const { refreshParticle } = __m69;
+const { measureParticles } = __m81;
+const { refreshParticle } = __m70;
 const ROOM = SIM.AMBIENT;
 const COOL_TAU = 480;
 function makeVial(sim, indices, meta) {
@@ -13156,7 +13168,7 @@ return { ...v, species, particles, ml: n * SIM.ML_PER_PARTICLE, bottledMl: v.bot
 return { makeVial, makeVialFromComposition, appendParticles, measureVial, updateVial, takeDose, pourBack, pourBackParts, relaxVial, vialInventory, migrateVial };
 })();
 // src/game/commerce.js
-const __m81 = (() => {
+const __m82 = (() => {
 const { Rng, hashString } = __m6;
 const { EFFECT_KEYS, EFFECT_INDEX, NE, EFFECT_BY_KEY } = __m20;
 const { evaluatePotion, strongestUnwanted, PROPERTY_LABELS } = __m55;
@@ -13479,7 +13491,7 @@ return (Math.round(v * 10) / 10).toLocaleString('en-US', { maximumFractionDigits
 return { draftLabel, applyTrials, evidenceOf, STAR_STEPS, MAX_STARS, accuracyStars, claimSigma, claimStars, labelStars, trialClaim, sameClaim, editClaim, claimedEffects, relevantEffects, EVIDENCE_WEIGHT, trustReport, labelTrust, unprovenWanted, proofGaps, claimedMeasurement, openNegotiation, proposePrice, acceptOffer, recordSale, resolveFollowUp, EVIDENCE_TEXT };
 })();
 // src/game/garden.js
-const __m82 = (() => {
+const __m83 = (() => {
 const { Rng } = __m6;
 const { RARITY, ARCANE, seedChance } = __m17;
 const { SPECIES_BY_KEY, materialIdOf } = __m15;
@@ -13661,7 +13673,7 @@ return Object.entries(g.seeds).filter(([, n]) => n > 0).map(([id, n]) => ({ id, 
 return { GARDEN_STAGES, BEDS, GRADES, GARDEN_UPGRADES, OFFLINE_CAP_MS, TUTORIAL_PACE, createGarden, seedId, parseSeed, normalizeGarden, bedOf, gradeNeeded, growHours, cropState, rollSeed, giveSeed, plant, waterPlots, cropYield, harvestPlot, boughtCount, upgrade, gardenStatus, seedList, ARCANE };
 })();
 // src/materials/remains.js
-const __m83 = (() => {
+const __m84 = (() => {
 const { completeMaterial } = __m12;
 const { arcaneProfile, jitter } = __m14;
 function remainsId(rabbitId, part) {
@@ -13760,7 +13772,7 @@ return m;
 return { remainsId, isRemains, remainsPlan, remainsMaterials };
 })();
 // src/game/patrons.js
-const __m84 = (() => {
+const __m85 = (() => {
 const RETURN_CHANCE = 0.3;
 const BANNED_TRUST = -0.75;
 const clamp1 = (v) => Math.max(-1, Math.min(1, v));
@@ -13828,7 +13840,7 @@ return Math.round(v * 100) / 100;
 return { RETURN_CHANCE, BANNED_TRUST, notePatron, patronVerdict, returningPatron, welcomePatron, recentStyles, noveltyFactor };
 })();
 // src/game/recipes.js
-const __m85 = (() => {
+const __m86 = (() => {
 const TRACE_DT = 1;
 const TRACE_MAX = 1200;
 const HOLD_MIN = 6, HOLD_BAND = 4, ROOM = 20;
@@ -14061,7 +14073,7 @@ return Math.round(v * 10) / 10;
 return { TRACE_DT, TRACE_MAX, SAME, traceSample, buildProcedure, procedureLimits, approximateSteps, migrateRecipe, holds, procedureShape, compareRecipe, matchRecipe, recipeConfidence, CONFIDENCE_TEXT, checkReproduction, describeStep };
 })();
 // src/game/cellar.js
-const __m86 = (() => {
+const __m87 = (() => {
 const { rateAt, yieldAt, extractIdOf, SOLVENT_CAPACITY, CELLAR_FACTOR, EMULSION_FACTOR, emulsionStability } = __m8;
 const { isMagical, awakenedId, thresholdToCelsius } = __m22;
 const { CHAR_ID } = __m15;
@@ -14337,24 +14349,24 @@ const { generateCommission, tutorialCommission } = __m23;
 const { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById, RETIRED_EQUIPMENT } = __m58;
 const { SIM } = __m56;
 const { createTrials, normalizeTrials, runTrial, SUBJECT_BY_ID, knownLaws, certification, summarize } = __m59;
-const { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth, depositStatus, migrateGathering, setSky, water, runeCaches: runeCachesOf } = __m62;
+const { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth, depositStatus, migrateGathering, setSky, water, runeCaches: runeCachesOf } = __m63;
 const { predictPlan } = __m24;
 const { EFFECT_INDEX, EFFECT_KEYS } = __m20;
-const { migrateVial } = __m64;
-const { recordSale, resolveFollowUp, applyTrials, evidenceOf } = __m81;
+const { migrateVial } = __m65;
+const { recordSale, resolveFollowUp, applyTrials, evidenceOf } = __m82;
 const { colonyDay, colonyTick, livingRabbits, livingOf, findRabbit, addBoughtRabbit, addWildRabbit, penHasRoom, PEN_MAX, retireRabbit, remainsSource, purgeRabbit, cullRabbit, maxHealthOf, FOUNDER_BORN } = __m60;
 const { kindOf } = __m61;
-const { normalizeRegen, accrue, regenerate: regenerateBiome, maybeGift, unlockBiomes, generationOf, nextCoinIn, COIN_RULES } = __m63;
-const { normalizeGarden, plant: gardenPlant, waterPlots, harvestPlot, upgrade: gardenUpgrade, rollSeed, giveSeed, GARDEN_UPGRADES, gardenStatus } = __m82;
+const { normalizeRegen, accrue, regenerate: regenerateBiome, maybeGift, unlockBiomes, generationOf, nextCoinIn, COIN_RULES } = __m64;
+const { normalizeGarden, plant: gardenPlant, waterPlots, harvestPlot, upgrade: gardenUpgrade, rollSeed, giveSeed, GARDEN_UPGRADES, gardenStatus } = __m83;
 const { BIOME_BY_ID } = __m18;
 const { materialIdOf } = __m15;
 const { legacyReplacement } = __m19;
-const { remainsMaterials, remainsPlan, isRemains } = __m83;
-const { returningPatron, welcomePatron, recentStyles, notePatron, patronVerdict, noveltyFactor } = __m84;
+const { remainsMaterials, remainsPlan, isRemains } = __m84;
+const { returningPatron, welcomePatron, recentStyles, notePatron, patronVerdict, noveltyFactor } = __m85;
 const { techniqueById, migrateTechniques } = __m23;
-const { migrateRecipe } = __m85;
-const { createCellar, normalizeCellar, advanceCellar, fillVessel, emptyVesselContents, chargeVessel, setRune, vesselVolume, RUNE_PRICE } = __m86;
-const { makeVialFromComposition, takeDose } = __m64;
+const { migrateRecipe } = __m86;
+const { createCellar, normalizeCellar, advanceCellar, fillVessel, emptyVesselContents, chargeVessel, setRune, vesselVolume, RUNE_PRICE } = __m87;
+const { makeVialFromComposition, takeDose } = __m65;
 const SAVE_VERSION = 8;
 const PURGE_PRICE = 8;
 const PURGE_BREW_COST = 1;
@@ -15585,7 +15597,7 @@ return Math.round(v * 10) / 10;
 return { SAVE_VERSION, PURGE_PRICE, PURGE_BREW_COST, PURGE_BREW_TIME, WORLD_GEN_VERSION, STARTER_HERBS, MARKET_EVENTS, ACHIEVEMENTS, GameState, migrateCommission, migrate, retireEquipment, retireRequirements, runeFind, EQUIPMENT, SIM };
 })();
 // src/game/persistence.js
-const __m87 = (() => {
+const __m88 = (() => {
 const { GameState } = __m5;
 const KEYS = {
 save: 'alchemist-shop.save',
@@ -15709,11 +15721,11 @@ if (s) s.removeItem(key);
 return { KEYS, storageAvailable, saveGame, loadGame, hasSave, deleteSave, exportSave, parseImport, loadJSON, saveJSON, removeKey };
 })();
 // src/simulation/snapshot.js
-const __m89 = (() => {
+const __m90 = (() => {
 const { MAX_SPECIES } = __m25;
-const { refreshParticle } = __m69;
-const { Simulation } = __m65;
-const { CAULDRON_SIZES } = __m68;
+const { refreshParticle } = __m70;
+const { Simulation } = __m66;
+const { CAULDRON_SIZES } = __m69;
 const F32_FIELDS_V1 = ['x', 'y', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet'];
 const F32_FIELDS = [...F32_FIELDS_V1, 'q'];
 const SNAPSHOT_VERSION = 2;
@@ -15844,7 +15856,7 @@ for (let i = 0; i < n; i++) if (p.group[i] >= 0) sim.rigid.used[p.group[i]] = 1;
 return { SNAPSHOT_VERSION, toBase64, fromBase64, snapshotSim, restoreSim, applySnapshot };
 })();
 // src/rendering/art.js
-const __m91 = (() => {
+const __m92 = (() => {
 const { Rng } = __m6;
 const PAL = {
 night0: '#0d0a10', night1: '#17121c', night2: '#221a28',
@@ -16446,7 +16458,7 @@ for (let k = 0; k < 14; k++) R(ctx, Math.round(v.ox + rng.range(-0.6, 0.6) * c.b
 return { PAL, hex2rgb, rgbStr, mixHex, paintBackground, drawJar, renderCauldron, renderLid, renderLidAside, makeCanvas, paintHearth, rect: R };
 })();
 // src/rendering/potion-fx.js
-const __m93 = (() => {
+const __m94 = (() => {
 const { EFFECTS, NE } = __m20;
 const K = Object.fromEntries(EFFECTS.map((e, k) => [e.key, k]));
 const MAX = 2400;
@@ -16904,12 +16916,12 @@ break;
 return { PotionParticles };
 })();
 // src/rendering/brew-palette.js
-const __m94 = (() => {
+const __m95 = (() => {
 const { MAX_SPECIES } = __m25;
 const { srgbToLinear, linearToSrgb } = __m11;
 const { PIECE_ART, piecePalette, registerSpecies, onPiecesChanged } = __m27;
 const { grainSkinOf } = __m26;
-const { STAIN } = __m69;
+const { STAIN } = __m70;
 const bySpecies = new WeakMap();
 const bySkin = new Map();
 onPiecesChanged(() => bySkin.clear());
@@ -17028,14 +17040,14 @@ return true;
 return { dominantColour, preparePalettes, pc, paletteColour };
 })();
 // src/rendering/fluid.js
-const __m92 = (() => {
+const __m93 = (() => {
 const { PHASE, SIM } = __m56;
 const { LOOK, piece } = __m26;
 const { PIECE_ART, PIECE_CELL, piecePalette, pieceSprite } = __m27;
 const { NE } = __m20;
 const { MAX_SPECIES } = __m25;
-const { PotionParticles } = __m93;
-const { preparePalettes, paletteColour, pc: palCol } = __m94;
+const { PotionParticles } = __m94;
+const { preparePalettes, paletteColour, pc: palCol } = __m95;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const LS = 9;
 const LC = 6;
@@ -18003,8 +18015,8 @@ return v < 0 ? 0 : v > 255 ? 255 : v | 0;
 return { dropletCell, drawnGlow, drawnGlowTable, FluidRenderer };
 })();
 // src/rendering/effects.js
-const __m95 = (() => {
-const { PAL, hex2rgb } = __m91;
+const __m96 = (() => {
+const { PAL, hex2rgb } = __m92;
 const MAX = 900;
 const FIRE_RAMP = [PAL.fire5, PAL.fire4, PAL.fire3, PAL.fire2, PAL.fire1, PAL.fire0].map(hex2rgb);
 class Effects {
@@ -18117,11 +18129,11 @@ ctx.globalAlpha = 1;
 return { Effects };
 })();
 // src/rendering/renderer.js
-const __m90 = (() => {
-const { PAL, paintBackground, renderCauldron, renderLid, renderLidAside, paintHearth, makeCanvas, rgbStr, hex2rgb, drawJar, rect } = __m91;
-const { FluidRenderer, drawnGlow, drawnGlowTable } = __m92;
-const { Effects } = __m95;
-const { COLUMN } = __m68;
+const __m91 = (() => {
+const { PAL, paintBackground, renderCauldron, renderLid, renderLidAside, paintHearth, makeCanvas, rgbStr, hex2rgb, drawJar, rect } = __m92;
+const { FluidRenderer, drawnGlow, drawnGlowTable } = __m93;
+const { Effects } = __m96;
+const { COLUMN } = __m69;
 const { PHASE } = __m56;
 const { compositionEffects, dominantEffect, EFFECTS, NE } = __m20;
 const auraScratch = new Float64Array(NE);
@@ -18565,7 +18577,7 @@ if (W >= 9) px(gx + 1, g0 + 1, GLASS_HI);
 return { Renderer, drawBottle, PHASE };
 })();
 // src/rendering/portraits.js
-const __m96 = (() => {
+const __m97 = (() => {
 const { Rng } = __m6;
 const S = 32;
 const shade = (c, f) => `rgb(${Math.round(Math.min(255, c[0] * 255 * f))},${Math.round(Math.min(255, c[1] * 255 * f))},${Math.round(Math.min(255, c[2] * 255 * f))})`;
@@ -18683,7 +18695,7 @@ if (rng.chance(0.5)) P(hx - 1, 8, 2, 10, hc);
 return { drawPortrait };
 })();
 // src/rendering/scenes.js
-const __m98 = (() => {
+const __m99 = (() => {
 function R(ctx, x, y, w, h, c) {
 ctx.fillStyle = c;
 ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
@@ -18735,14 +18747,14 @@ return cv;
 return { drawRaw, rawSprite };
 })();
 // src/rendering/species-sprites.js
-const __m97 = (() => {
+const __m98 = (() => {
 const { describe } = __m28;
 const { plantFrame, iconFrame, ICON_PX } = __m45;
 const { identityKey, validIdentity } = __m10;
 const { archetypeIdentity } = __m27;
 const { Pixels } = __m47;
 const { isBotanical } = __m29;
-const { rawSprite } = __m98;
+const { rawSprite } = __m99;
 const { mountsOfForm, frameMount, growthParams } = __m50;
 const { hashString } = __m6;
 const { INK } = __m49;
@@ -18942,7 +18954,7 @@ return cv;
 return { isAtlasMaterial, ATLAS_K, MIN_HIT, identityOfMaterial, speciesOf, variantOf, mountsOf, plantFrameOf, plantCanvas, plantGlow, emitColour, silhouetteOf, iconFrameOf, ingredientSprite, ICON_PX };
 })();
 // src/game/journal.js
-const __m99 = (() => {
+const __m100 = (() => {
 function processEvent(state, e) {
 const entries = [];
 const achievements = [];
@@ -19055,7 +19067,7 @@ return { entries, achievements };
 return { processEvent };
 })();
 // src/game/autobrew.js
-const __m100 = (() => {
+const __m101 = (() => {
 const { PHASE, SIM } = __m56;
 const { MAX_SPECIES } = __m25;
 function condensedCount(sim) {
@@ -19390,16 +19402,16 @@ return t / Math.max(1, sim.p.count);
 return { condensedCount, stageGoal, AutoBrewer, spiritShare, runPlanHeadless, speciesFraction };
 })();
 // src/game/sandbox.js
-const __m101 = (() => {
+const __m102 = (() => {
 const { sandboxIngredients } = __m7;
 const { EQUIPMENT } = __m58;
 const { BIOMES } = __m18;
-const { sandboxWilds } = __m62;
+const { sandboxWilds } = __m63;
 const { normalizeTrials } = __m59;
-const { normalizeCellar } = __m86;
-const { normalizeGarden, seedId, TUTORIAL_PACE } = __m82;
+const { normalizeCellar } = __m87;
+const { normalizeGarden, seedId, TUTORIAL_PACE } = __m83;
 const { SPECIES_BY_KEY, materialIdOf } = __m15;
-const { migrateVial } = __m64;
+const { migrateVial } = __m65;
 const SANDBOX_CELLAR_PACE = 60;
 const SANDBOX_GARDEN_PACE = TUTORIAL_PACE;
 const SANDBOX_BEDS = /** @type {const} */ ([['soil', 4], ['fungal', 3], ['crystal', 3], ['tide', 2]]);
@@ -19454,7 +19466,7 @@ return { seed: st.seed, cauldron, trials: st.trials, bottles: st.bottles, cellar
 return { SANDBOX_CELLAR_PACE, SANDBOX_GARDEN_PACE, prepareSandbox, sandboxCellar, sandboxGarden, sandboxSave };
 })();
 // src/game/mechanics.js
-const __m103 = (() => {
+const __m104 = (() => {
 const MECHANICS = [
 { id: 'formulation', name: 'Formulation and neutralisation', role: 'core', stage: 'formulation', rank: 0,
 decision: 'Which natural ingredients, in what proportions, to carry the wanted effects and cancel their side effects.',
@@ -19555,7 +19567,7 @@ const SANDBOX_CONTROLS = ['skimmer', 'alembic', 'heatmap', 'readouts'];
 return { MECHANICS, MECHANIC_BY_ID, IMMERSION, SANDBOX_CONTROLS };
 })();
 // src/ui/rarity-ui.js
-const __m104 = (() => {
+const __m105 = (() => {
 const { h } = __m2;
 const { icon } = __m3;
 const { RARITY } = __m17;
@@ -19580,32 +19592,32 @@ return fx.map(([k, v]) => h('span', { class: 'fx-chip', title: EFFECT_BY_KEY[k].
 return { CREATURE_NAMES, rarityOf, rarityTag, effectChips };
 })();
 // src/ui/panels.js
-const __m102 = (() => {
-const { recipeConfidence, CONFIDENCE_TEXT, describeStep } = __m85;
-const { MECHANIC_BY_ID } = __m103;
+const __m103 = (() => {
+const { recipeConfidence, CONFIDENCE_TEXT, describeStep } = __m86;
+const { MECHANIC_BY_ID } = __m104;
 const { evidenceRank } = __m59;
 const { h, btn, modal, toast, coins, starsText, confirmDialog, clear, keepScroll } = __m2;
 const { icon } = __m3;
-const { drawPortrait } = __m96;
-const { drawJar } = __m91;
-const { drawBottle } = __m90;
+const { drawPortrait } = __m97;
+const { drawJar } = __m92;
+const { drawBottle } = __m91;
 const { EQUIPMENT, RANKS } = __m58;
 const { ACHIEVEMENTS } = __m5;
-const { viscosityClass, densityWord, evennessWord } = __m80;
+const { viscosityClass, densityWord, evennessWord } = __m81;
 const { EFFECTS, EFFECT_BY_KEY, EFFECT_KEYS, dominantEffect } = __m20;
-const { ingredientSprite } = __m97;
+const { ingredientSprite } = __m98;
 const { compatFactor } = __m21;
 const { describeColor, rgbToHex } = __m11;
 const { SIM } = __m56;
-const { exportSave, parseImport, saveGame } = __m87;
+const { exportSave, parseImport, saveGame } = __m88;
 const { audio } = __m4;
 const { isMagical } = __m22;
 const { causeWord } = __m60;
-const { rarityTag } = __m104;
+const { rarityTag } = __m105;
 const { BIOME_BY_ID } = __m18;
 const { seedChance } = __m17;
 const { classWords, groupExtracts, groupLine } = __m8;
-const { vesselReport, vesselVolume, potionNet, RUNE_PRICE, CELLAR_T } = __m86;
+const { vesselReport, vesselVolume, potionNet, RUNE_PRICE, CELLAR_T } = __m87;
 const CAT_LABEL = { heat: 'Fire', cold: 'Cooling', vessel: 'Cauldrons', tool: 'Tools', instrument: 'Instruments', trials: 'Trials room', gathering: 'Foraging', storage: 'Potion storage', guild: 'Guild' };
 function jarCanvas(m, w = 22, hh = 30) {
 if ((m.wild || m.remains) && m.form === 'solid') {
@@ -20353,13 +20365,13 @@ m = modal({ title: 'Aging cellar', wide: true, body: render(), onClose: () => { 
 return { jarCanvas, fxChips, openShop, openIngredient, openHint, openBottleSize, showDaySummary, showAnalysis, openRecipes, renderRecipes, openJournal, renderJournal, openPause, openReceiver, openHelp, openSettings, openCellar };
 })();
 // src/ui/trade.js
-const __m105 = (() => {
+const __m106 = (() => {
 const { h, btn, modal, toast, coins, clear, starsText } = __m2;
 const { icon } = __m3;
-const { drawPortrait } = __m96;
+const { drawPortrait } = __m97;
 const { audio } = __m4;
 const { EFFECTS, EFFECT_BY_KEY } = __m20;
-const { draftLabel, openNegotiation: beginNegotiation, proposePrice, acceptOffer, relevantEffects, trustReport, editClaim, proofGaps, claimSigma, claimStars, labelStars, MAX_STARS } = __m81;
+const { draftLabel, openNegotiation: beginNegotiation, proposePrice, acceptOffer, relevantEffects, trustReport, editClaim, proofGaps, claimSigma, claimStars, labelStars, MAX_STARS } = __m82;
 const { PURITY_LIMIT } = __m57;
 const { shortName } = __m54;
 function openIdentify(lab, vial, onDone) {
@@ -20575,7 +20587,7 @@ return `${n === null ? '' : starsText(n, MAX_STARS) + ' '}${claimSummary(label.c
 return { openIdentify, openNegotiation, showDeal, followUpCard, claimSummary, accuracyTitle, labelLine, EFFECT_BY_KEY };
 })();
 // src/ui/tutorial.js
-const __m106 = (() => {
+const __m107 = (() => {
 const { h, btn, placeToasts } = __m2;
 const { PHASE } = __m56;
 const { TUTORIAL_HERBS } = __m23;
@@ -20727,21 +20739,21 @@ if (t && t !== this.target) { if (this.target) this.target.classList.remove('hig
 return { Tutorial };
 })();
 // src/ui/views/counter.js
-const __m107 = (() => {
+const __m108 = (() => {
 const { h, btn, clear, coins, confirmDialog, starsText } = __m2;
 const { icon } = __m3;
-const { drawPortrait } = __m96;
-const { drawBottle } = __m90;
+const { drawPortrait } = __m97;
+const { drawBottle } = __m91;
 const { PROPERTY_LABELS, scoreRequirement } = __m55;
 const { techniqueById } = __m23;
 const { EFFECT_INDEX, NE } = __m20;
 const { EFFECT_BY_KEY } = __m20;
 const { missingEffects, summarize, requirementEvidence } = __m59;
-const { labelStars, MAX_STARS } = __m81;
-const trade = __m105;
+const { labelStars, MAX_STARS } = __m82;
+const trade = __m106;
 const { describeColor, rgbToHex } = __m11;
-const { viscosityClass } = __m80;
-const panels = __m102;
+const { viscosityClass } = __m81;
+const panels = __m103;
 const { shortName } = __m54;
 class CounterView {
 constructor(lab) {
@@ -20935,7 +20947,7 @@ unseen ? h('span', { class: 'muted', text: ` ${seen.length ? '· ' : ''}${unseen
 return { CounterView };
 })();
 // src/rendering/crisp.js
-const __m109 = (() => {
+const __m110 = (() => {
 const RESOLUTIONS = /** @type {const} */ ([1, 2, 3, 4]);
 const VERT = `#version 300 es
 in vec2 p;
@@ -21121,7 +21133,7 @@ this.src.style.opacity = '0';
 return { RESOLUTIONS, UpscaledCanvas };
 })();
 // src/visual/env/paint.js
-const __m112 = (() => {
+const __m113 = (() => {
 const { Pixels } = __m47;
 const { rasterize } = __m46;
 const { Model } = __m34;
@@ -21411,7 +21423,7 @@ cv.set(x, y, pack([c[0] + d, c[1] + d, c[2] + d]));
 return { SCENE_W, SCENE_H, CELL, Canvas, sky, ramp, hex, mixPacked, pack, unpack };
 })();
 // src/visual/env/stone.js
-const __m115 = (() => {
+const __m116 = (() => {
 const { hash2, noise2 } = __m48;
 const { mixPacked } = __m30;
 function cobble(x, y, o) {
@@ -21495,11 +21507,11 @@ return e > 0.98 ? null : { bx, by, r, id, e };
 return { cobble, pebble };
 })();
 // src/visual/env/side.js
-const __m114 = (() => {
+const __m115 = (() => {
 const { fbm1, fbm2, hash2, noise2 } = __m48;
 const { mixPacked, pack, hex } = __m30;
-const { CELL } = __m112;
-const { cobble } = __m115;
+const { CELL } = __m113;
+const { cobble } = __m116;
 const snap = (v) => v - (((v % CELL) + CELL) % CELL);
 const col = (h) => pack(hex(h));
 function far(c, x, y, seed) {
@@ -21954,11 +21966,11 @@ return out.filter((_, i) => i % Math.max(1, Math.floor(out.length / n)) === 0).s
 return { col, far, heights, dip, raise, fillSolid, blob, paintTerrain, STRATA, hanging, pool, markOpen, ledges, surfaceAt, silhouette, mountains, rockFace, treeShape, glow, drips };
 })();
 // src/visual/env/cave.js
-const __m113 = (() => {
+const __m114 = (() => {
 const { fbm1, fbm2, hash2 } = __m48;
 const { mixPacked } = __m30;
-const { col, far } = __m114;
-const { cobble } = __m115;
+const { col, far } = __m115;
+const { cobble } = __m116;
 function farPillars(cv, o) {
 const fill = col(o.fill), rim = o.rim ? col(o.rim) : fill, W = cv.W;
 for (let i = 0; i < o.n; i++) {
@@ -22299,7 +22311,7 @@ const LAVA_VEINS = (seed) => ({ from: ['#ffd060', '#ffb040', '#ff8a2a', '#e05a18
 return { farPillars, fog, caveFrame, vines, moss, glowShrooms, torch, fall, ruins, finish, ledgeTops, veins, WATER_VEINS, LAVA_VEINS };
 })();
 // src/visual/env/legible.js
-const __m116 = (() => {
+const __m117 = (() => {
 const { hash2, fbm2, noise2 } = __m48;
 const { mixPacked } = __m30;
 const { Rng } = __m6;
@@ -22467,9 +22479,9 @@ if (f !== 1 || add) L[k] = saturate(scale(c, f, add), f > 1 ? 1.05 : 1);
 return { legible };
 })();
 // src/visual/env/flourish.js
-const __m117 = (() => {
+const __m118 = (() => {
 const { hash2 } = __m48;
-const { col } = __m114;
+const { col } = __m115;
 const FLORA = {
 meadow: {
 kinds: [['tuft', 4], ['daisy', 3], ['spike', 1.6], ['bloom', 2], ['fern', 0.8]], rate: 0.3,
@@ -22748,7 +22760,7 @@ else if (berry && h > 0.95 && free(cx + side, yy)) cv.set(cx + side, yy, berry);
 return { flourish };
 })();
 // src/visual/env/grade.js
-const __m118 = (() => {
+const __m119 = (() => {
 const GRADE_FULL = {
 meadow: [0.42, 1.32, 0.5], forest: [0.4, 1.28, 0.5], netherwood: [0.34, 1.3, 0.46], river: [0.42, 1.3, 0.5],
 quarry: [0.38, 1.26, 0.48], moonfen: [0.34, 1.3, 0.44], crags: [0.36, 1.25, 0.48],
@@ -22796,8 +22808,8 @@ return ((c & 0xff000000) | (Math.round(((c >>> 16) & 255) * f) << 16) | (Math.ro
 return { grade };
 })();
 // src/visual/env/kit.js
-const __m120 = (() => {
-const { ramp, hex } = __m112;
+const __m121 = (() => {
+const { ramp, hex } = __m113;
 const { Rng, hashString } = __m6;
 const { shift } = __m30;
 function palette(spec) {
@@ -22819,7 +22831,7 @@ const streamOf = (seed, region, part) => new Rng(hashString(`env:${seed}:${regio
 return { palette, vary, streamOf };
 })();
 // src/visual/env/foliage.js
-const __m122 = (() => {
+const __m123 = (() => {
 const { Model, bezier } = __m34;
 let groups = 0;
 const swayGroup = () => ++groups;
@@ -22974,9 +22986,9 @@ return m;
 return { swayGroup, leaf, cluster, strand, grove };
 })();
 // src/visual/env/objects.js
-const __m121 = (() => {
+const __m122 = (() => {
 const { Model, blade, PROFILES, bezier, lumpy, ellipse, polygon } = __m34;
-const { cluster, strand, grove, swayGroup } = __m122;
+const { cluster, strand, grove, swayGroup } = __m123;
 const R = (rng) => () => rng.next();
 function leafBlock(x, y, hw, hh, rnd) {
 const c = Math.max(1, Math.round(Math.min(hw, hh) * 0.4)), j = () => Math.round((rnd() - 0.5) * 2);
@@ -23333,8 +23345,8 @@ return m;
 return { leafBlock, crown, pad, branchTree, tree, branch, bush, boulder, reeds, fern, tuft, log, stump, mushroom, cloud, beam, crane, ladder, cart, crate, fence, skep, basalt, spire, cairn, scaffold, wheel };
 })();
 // src/visual/env/trees.js
-const __m123 = (() => {
-const { branchTree, tree } = __m121;
+const __m124 = (() => {
+const { branchTree, tree } = __m122;
 const { Rng } = __m6;
 const { pack, hex } = __m30;
 function treeRow(cv, rng, pal, o) {
@@ -23394,13 +23406,13 @@ return out;
 return { treeRow, terrainTrees };
 })();
 // src/visual/env/meadow.js
-const __m119 = (() => {
-const { sky } = __m112;
-const { palette, vary, streamOf } = __m120;
-const { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, silhouette, mountains, treeShape, glow, drips, ledges } = __m114;
-const { caveFrame, fog, vines, moss, veins, WATER_VEINS } = __m113;
-const { cloud, fence, skep, boulder } = __m121;
-const { terrainTrees } = __m123;
+const __m120 = (() => {
+const { sky } = __m113;
+const { palette, vary, streamOf } = __m121;
+const { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, silhouette, mountains, treeShape, glow, drips, ledges } = __m115;
+const { caveFrame, fog, vines, moss, veins, WATER_VEINS } = __m114;
+const { cloud, fence, skep, boulder } = __m122;
+const { terrainTrees } = __m124;
 const { Model, lumpy } = __m34;
 const { pack } = __m30;
 function compose(cv, seed) {
@@ -23498,13 +23510,13 @@ cv.meta.horizon = 120;
 return { compose };
 })();
 // src/visual/env/forest.js
-const __m124 = (() => {
-const { sky } = __m112;
-const { palette, vary, streamOf } = __m120;
-const { heights, raise, fillSolid, blob, paintTerrain, markOpen, surfaceAt, col, drips, ledges, hanging } = __m114;
-const { fog, moss, glowShrooms } = __m113;
-const { fern, log, stump } = __m121;
-const { treeRow, terrainTrees } = __m123;
+const __m125 = (() => {
+const { sky } = __m113;
+const { palette, vary, streamOf } = __m121;
+const { heights, raise, fillSolid, blob, paintTerrain, markOpen, surfaceAt, col, drips, ledges, hanging } = __m115;
+const { fog, moss, glowShrooms } = __m114;
+const { fern, log, stump } = __m122;
+const { treeRow, terrainTrees } = __m124;
 const { hash2 } = __m48;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'forest', p);
@@ -23583,13 +23595,13 @@ for (let i = 0, n = 0; i < 14 && n < 6; i++) if (cv.place(fern(fr, fr.int(8, 13)
 return { compose, roots, litter, ferns };
 })();
 // src/visual/env/river.js
-const __m125 = (() => {
-const { sky } = __m112;
-const { palette, vary, streamOf } = __m120;
-const { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, silhouette, mountains, treeShape } = __m114;
-const { caveFrame, farPillars, fog, vines, moss, glowShrooms, ledgeTops, veins, WATER_VEINS } = __m113;
-const { reeds, beam, cloud } = __m121;
-const { terrainTrees } = __m123;
+const __m126 = (() => {
+const { sky } = __m113;
+const { palette, vary, streamOf } = __m121;
+const { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, silhouette, mountains, treeShape } = __m115;
+const { caveFrame, farPillars, fog, vines, moss, glowShrooms, ledgeTops, veins, WATER_VEINS } = __m114;
+const { reeds, beam, cloud } = __m122;
+const { terrainTrees } = __m124;
 const { Model } = __m34;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'river', p);
@@ -23669,13 +23681,13 @@ cv.meta.horizon = 116;
 return { compose };
 })();
 // src/visual/env/quarry.js
-const __m126 = (() => {
-const { sky } = __m112;
-const { palette, vary, streamOf } = __m120;
-const { fillSolid, blob, ledges, paintTerrain, markOpen, glow, drips, silhouette, mountains } = __m114;
-const { caveFrame, farPillars, fog, moss, torch, ledgeTops } = __m113;
-const { crane, ladder, cart, crate, beam, boulder, scaffold, wheel, cloud } = __m121;
-const { terrainTrees } = __m123;
+const __m127 = (() => {
+const { sky } = __m113;
+const { palette, vary, streamOf } = __m121;
+const { fillSolid, blob, ledges, paintTerrain, markOpen, glow, drips, silhouette, mountains } = __m115;
+const { caveFrame, farPillars, fog, moss, torch, ledgeTops } = __m114;
+const { crane, ladder, cart, crate, beam, boulder, scaffold, wheel, cloud } = __m122;
+const { terrainTrees } = __m124;
 const { Model } = __m34;
 const { Rng } = __m6;
 function compose(cv, seed) {
@@ -23790,13 +23802,13 @@ cv.meta.horizon = 100;
 return { compose };
 })();
 // src/visual/env/moonfen.js
-const __m127 = (() => {
-const { sky } = __m112;
-const { palette, vary, streamOf } = __m120;
-const { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, glow, silhouette, treeShape } = __m114;
-const { caveFrame, farPillars, fog, vines, moss, ruins, glowShrooms, veins, WATER_VEINS } = __m113;
-const { reeds, spire, cairn } = __m121;
-const { terrainTrees } = __m123;
+const __m128 = (() => {
+const { sky } = __m113;
+const { palette, vary, streamOf } = __m121;
+const { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, glow, silhouette, treeShape } = __m115;
+const { caveFrame, farPillars, fog, vines, moss, ruins, glowShrooms, veins, WATER_VEINS } = __m114;
+const { reeds, spire, cairn } = __m122;
+const { terrainTrees } = __m124;
 const { fbm2 } = __m48;
 const { pack } = __m30;
 function compose(cv, seed) {
@@ -23896,13 +23908,13 @@ cv.meta.horizon = 124;
 return { compose };
 })();
 // src/visual/env/crags.js
-const __m128 = (() => {
-const { sky } = __m112;
-const { palette, vary, streamOf } = __m120;
-const { heights, dip, raise, fillSolid, blob, ledges, paintTerrain, pool, markOpen, glow, drips, silhouette, col, rockFace } = __m114;
-const { caveFrame, farPillars, fog, moss, fall, veins, LAVA_VEINS } = __m113;
-const { basalt, spire, cloud } = __m121;
-const { terrainTrees } = __m123;
+const __m129 = (() => {
+const { sky } = __m113;
+const { palette, vary, streamOf } = __m121;
+const { heights, dip, raise, fillSolid, blob, ledges, paintTerrain, pool, markOpen, glow, drips, silhouette, col, rockFace } = __m115;
+const { caveFrame, farPillars, fog, moss, fall, veins, LAVA_VEINS } = __m114;
+const { basalt, spire, cloud } = __m122;
+const { terrainTrees } = __m124;
 const { fbm1, hash2 } = __m48;
 const { mixPacked } = __m30;
 const { Model, lumpy } = __m34;
@@ -24062,14 +24074,14 @@ cv.set(x, y, c);
 return { compose };
 })();
 // src/visual/env/netherwood.js
-const __m129 = (() => {
-const { sky } = __m112;
-const { palette, vary, streamOf } = __m120;
-const { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, drips, ledges, glow } = __m114;
-const { caveFrame, farPillars, fog, vines, moss, glowShrooms, veins, WATER_VEINS } = __m113;
-const { mushroom } = __m121;
-const { treeRow, terrainTrees } = __m123;
-const { roots, litter, ferns } = __m124;
+const __m130 = (() => {
+const { sky } = __m113;
+const { palette, vary, streamOf } = __m121;
+const { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, drips, ledges, glow } = __m115;
+const { caveFrame, farPillars, fog, vines, moss, glowShrooms, veins, WATER_VEINS } = __m114;
+const { mushroom } = __m122;
+const { treeRow, terrainTrees } = __m124;
+const { roots, litter, ferns } = __m125;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'netherwood', p);
 const pal = vary(palette({
@@ -24147,15 +24159,15 @@ cv.meta.horizon = 120;
 return { compose };
 })();
 // src/visual/env/exotic.js
-const __m130 = (() => {
-const { sky } = __m112;
-const { palette, vary, streamOf } = __m120;
-const { heights, raise, dip, fillSolid, blob, paintTerrain, pool, markOpen, silhouette, mountains, glow, ledges, treeShape } = __m114;
-const { fog, vines, glowShrooms, ruins, fall, moss } = __m113;
-const { cloud, spire, boulder } = __m121;
-const { terrainTrees } = __m123;
+const __m131 = (() => {
+const { sky } = __m113;
+const { palette, vary, streamOf } = __m121;
+const { heights, raise, dip, fillSolid, blob, paintTerrain, pool, markOpen, silhouette, mountains, glow, ledges, treeShape } = __m115;
+const { fog, vines, glowShrooms, ruins, fall, moss } = __m114;
+const { cloud, spire, boulder } = __m122;
+const { terrainTrees } = __m124;
 const { fbm2 } = __m48;
-const { pack } = __m112;
+const { pack } = __m113;
 function sprite(w, h) { return { w, h, px: new Uint32Array(w * h), x: 0, y: 0 }; }
 function isleSprite(rng, w, h, cols) {
 const s = sprite(w, h), cx = w / 2, top = 3;
@@ -24482,21 +24494,21 @@ cv.meta.horizon = 122;
 return { skyshard, morphgrove, veilhollow, ghostglass, chronoglass };
 })();
 // src/visual/env/scene.js
-const __m111 = (() => {
-const { Canvas, SCENE_W, SCENE_H } = __m112;
+const __m112 = (() => {
+const { Canvas, SCENE_W, SCENE_H } = __m113;
 const { hashString } = __m6;
-const { finish } = __m113;
-const { legible } = __m116;
-const { flourish } = __m117;
-const { grade } = __m118;
-const meadow = __m119;
-const forest = __m124;
-const river = __m125;
-const quarry = __m126;
-const moonfen = __m127;
-const crags = __m128;
-const netherwood = __m129;
-const { skyshard, morphgrove, veilhollow, ghostglass, chronoglass } = __m130;
+const { finish } = __m114;
+const { legible } = __m117;
+const { flourish } = __m118;
+const { grade } = __m119;
+const meadow = __m120;
+const forest = __m125;
+const river = __m126;
+const quarry = __m127;
+const moonfen = __m128;
+const crags = __m129;
+const netherwood = __m130;
+const { skyshard, morphgrove, veilhollow, ghostglass, chronoglass } = __m131;
 const ENV_VERSION = 14;
 const COMPOSERS = { meadow, forest, netherwood, river, quarry, moonfen, crags, skyshard, morphgrove, veilhollow, ghostglass, chronoglass };
 const cache = new Map();
@@ -24529,9 +24541,9 @@ return s;
 return { ENV_VERSION, composeScene, sceneOf, SCENE_W, SCENE_H };
 })();
 // src/rendering/wild-scene.js
-const __m110 = (() => {
-const { sceneOf, SCENE_W, SCENE_H } = __m111;
-const { MIN_HIT } = __m97;
+const __m111 = (() => {
+const { sceneOf, SCENE_W, SCENE_H } = __m112;
+const { MIN_HIT } = __m98;
 const { hashString } = __m6;
 const { frameMount } = __m50;
 const canvases = new Map();
@@ -25073,7 +25085,7 @@ trickles(ctx, meta.trickles || [], t, '#5a4e4c', '#3e3438');
 return { sceneCanvas, windAt, crosses, SceneTouch, sceneTouch, swayPixels, sceneFrame, findAnchors, PlantGround, mountOrder, plantBox, hitPlant, animateRegion, SCENE_W, SCENE_H };
 })();
 // src/rendering/ragdoll.js
-const __m131 = (() => {
+const __m132 = (() => {
 const GRAVITY = 640;
 const STEP = 1 / 120;
 const FRICTION = 380;
@@ -25327,8 +25339,8 @@ ctx.imageSmoothingEnabled = smooth;
 return { GRAVITY, STEP, FRICTION, Ragdoll };
 })();
 // src/rendering/exotic-fx.js
-const __m132 = (() => {
-const { sceneOf, SCENE_W, SCENE_H } = __m111;
+const __m133 = (() => {
+const { sceneOf, SCENE_W, SCENE_H } = __m112;
 const states = new Map();
 function canvasOf(s) {
 if (s.cv) return s.cv;
@@ -25501,7 +25513,7 @@ for (let i = 0; i < 12; i++) { const dir = i % 4 === 0 ? -1 : 1, age = ((t * 0.1
 return { hasExotic, exoticPush, exoticStep, exoticDraw };
 })();
 // src/game/wild-rabbits.js
-const __m133 = (() => {
+const __m134 = (() => {
 const { Rng, hashString } = __m6;
 const { rollLook } = __m60;
 const { pickKind, kindLook, bodyOf } = __m61;
@@ -25962,7 +25974,7 @@ return out;
 return { HOP_GRAVITY, WILD_HP, BLEED_OUT, NEAR_MISS, WARREN_SIZE, RESPAWN, BLOOD, wildLook, GAITS, WildRabbit, Warren, warrenSpots };
 })();
 // src/rendering/punch.js
-const __m135 = (() => {
+const __m136 = (() => {
 const CONTRAST = 1.4, SATURATE = 1.3;
 const INK = [20, 12, 16, 235], HALO = [255, 244, 220, 70];
 function punchSprite(d, w, h, o = {}) {
@@ -25999,13 +26011,20 @@ for (const i of halo) d.set(HALO, i * 4);
 }
 return { punchSprite };
 })();
+// src/rendering/animal-sprites.js
+const __m137 = (() => {
+const ANIMAL_SPRITES = {"rabbit":{"variants":[{"w":15,"h":13,"pal":["#100a13","#2b282a","#4c484a","#7f7b7a","#b1acaa","#d3d1d0","#e9e8e5"],"px":".......62163.../.......642650../.......56165.../.......255665../.......35665661/.......45661664/...455545566643/.2466655556662./.46633655532.../156664266662.../166666166662.../.66664246542.../.26666616634...","eye":[11,5]},{"w":14,"h":13,"pal":["#2e1d16","#503d32","#9c7f62","#c19f75","#d2b188","#e5caa1","#fcecd5"],"px":".....140141.../.....133133.../.....123133.../......1333320./......13334420/......13340641/..133323344431/0333333334441./233223333211../23343134541.../23334234531.../23333125401.../02334405502...","eye":[8,1]},{"w":14,"h":14,"pal":["#221213","#341f1b","#482f26","#6b4d3e","#815c46","#a88568","#ccb79f"],"px":"......0......./.....030.31.../......432340../......242340../.......344431./.......3444441/......03440644/..143334444543/.3444444444440/144324444310../24445244443.../24444434542.../14443224512.../.2333413512...","eye":[10,6]},{"w":14,"h":13,"pal":["#1f1c29","#2f2b38","#4e4a57","#5a5764","#66626e","#7e7d89","#bebac5"],"px":"......4..3..../......44.23.../......24122.../.......233320./.......2344431/......03441623/...33223444444/.244333333442./0453223332..../.4445134443.../.3334.2454..../.3333..350..../..2223.250....","eye":[10,5]}],"frames":[[{"w":15,"h":12,"pal":["#100a13","#2b282a","#4c484a","#7f7b7a","#b1acaa","#d3d1d0","#e9e8e5"],"px":"........0..0.../.......020010../.......0500420./.......0431430./.......01656300/....00003652550/..0055566666650/.0256666664200./.05666666660.../026665166540.../.026666146450../..0000000000...","eye":[13,4]},{"w":16,"h":15,"pal":["#100a13","#2b282a","#4c484a","#7f7b7a","#b1acaa","#d3d1d0","#e9e8e5"],"px":".........0..00../........0400410./........0640620./........0551620./.........056660./.....00001642650/...0026666666640/..0266666666010./..05666666662230/.025655555555430/0566600000000040/03640.........0./0330............/0510............/.00.............","eye":[11,2]},{"w":16,"h":13,"pal":["#100a13","#2b282a","#4c484a","#7f7b7a","#b1acaa","#d3d1d0","#e9e8e5"],"px":".........00.0.../........002020../........0460530./.........031430./......0000065520/....005555560450/...0566666666640/.00266666666100./014666666666220./0366510000056640/065100.....00450/0400.........020/.0............0.","eye":[11,2]},{"w":15,"h":11,"pal":["#100a13","#2b282a","#4c484a","#7f7b7a","#b1acaa","#d3d1d0","#e9e8e5"],"px":".........0..0../........030040./........050050./........044440./...000000461630/..0166666665630/.0066666666200./025666666660.../0256652256120../.005555105030../...0000000.0...","eye":[11,2]}],[{"w":15,"h":12,"pal":["#2e1d16","#503d32","#9c7f62","#c19f75","#d2b188","#e5caa1","#fcecd5"],"px":"........0..0.../.......010000../.......0300210./.......0210210./.......01333100/....00001331220/..0033333443330/.0133333441100./.03444444430.../013553056320.../.013333023230../..0000000000...","eye":[13,4]},{"w":16,"h":15,"pal":["#2e1d16","#503d32","#9c7f62","#c19f75","#d2b188","#e5caa1","#fcecd5"],"px":".........0..00../........0100200./........0320310./........0220310./.........033330./.....00000321330/...0013333333320/..0133444444000./..03444444451110/.013533333333210/0356300000000020/01320.........0./0110............/0200............/.00.............","eye":[13,1]},{"w":16,"h":13,"pal":["#2e1d16","#503d32","#9c7f62","#c19f75","#d2b188","#e5caa1","#fcecd5"],"px":".........00.0.../........001010../........0230310./.........010210./......0000033310/....003333330230/...0333333444420/.00144444444000./002555333336110./0133200000023310/033000.....00230/0200.........010/.0............0.","eye":[11,2]},{"w":15,"h":11,"pal":["#2e1d16","#503d32","#9c7f62","#c19f75","#d2b188","#e5caa1","#fcecd5"],"px":".........0..0../........010020./........030030./........022220./...000000230310/..0033333332310/.0033333344100./012444444440.../0135531136010../.003333003010../...0000000.0...","eye":[11,2]}],[{"w":15,"h":12,"pal":["#221213","#341f1b","#482f26","#6b4d3e","#815c46","#a88568","#ccb79f"],"px":"........0..0.../.......020000../.......0400320./.......0320320./.......00444200/....00002441330/..0034444444430/.0134444442100./.03444444440.../014553056320.../.014444034330../..0000000000...","eye":[13,4]},{"w":16,"h":15,"pal":["#221213","#341f1b","#482f26","#6b4d3e","#815c46","#a88568","#ccb79f"],"px":".........0..00../........0200200./........0420410./........0330410./.........034440./.....00000431430/...0014444444430/..0144444444000./..03444444451220/.013533344444320/0456400000000030/02430.........0./0220............/0300............/.00.............","eye":[13,1]},{"w":16,"h":13,"pal":["#221213","#341f1b","#482f26","#6b4d3e","#815c46","#a88568","#ccb79f"],"px":".........00.0.../........001010../........0340320./.........020320./......0000043310/....003344440340/...0444444444430/.00144444444000./003555444446120./0244300000034420/043000.....00230/0200.........010/.0............0.","eye":[14,4]},{"w":15,"h":11,"pal":["#221213","#341f1b","#482f26","#6b4d3e","#815c46","#a88568","#ccb79f"],"px":".........0..0../........020020./........040040./........023330./...000000340420/..0044444443420/.0044444444100./013444444440.../0135531136020../.003334004020../...0000000.0...","eye":[11,2]}],[{"w":15,"h":12,"pal":["#1f1c29","#2f2b38","#4e4a57","#5a5764","#66626e","#7e7d89","#bebac5"],"px":"........0..0.../.......020000../.......0300320./.......0321320./.......01434200/....00002431330/..0033333443330/.0233334442200./.03444444540.../024553056320.../.024444024230../..0000000000...","eye":[13,4]},{"w":16,"h":15,"pal":["#1f1c29","#2f2b38","#4e4a57","#5a5764","#66626e","#7e7d89","#bebac5"],"px":".........0..00../........0200200./........0320320./........0331320./.........033330./.....00001422430/...0024444444420/..0244444444000./..03444444552220/.013533333333320/0356300000000030/02330.........0./0220............/0300............/.00.............","eye":[13,1]},{"w":16,"h":13,"pal":["#1f1c29","#2f2b38","#4e4a57","#5a5764","#66626e","#7e7d89","#bebac5"],"px":".........00.0.../........002020../........0240320./.........020220./......0000043320/....003333340330/...0344444444430/.00244444445000./003555333336220./0233310000033420/043100.....00230/0200.........010/.0............0.","eye":[11,2]},{"w":15,"h":11,"pal":["#1f1c29","#2f2b38","#4e4a57","#5a5764","#66626e","#7e7d89","#bebac5"],"px":".........0..0../........020020./........030030./........022230./...000000330320/..0033333443420/.0044444444100./023444444450.../0235532236120../.003333103020../...0000000.0...","eye":[11,2]}]]},"cat":{"variants":[{"w":16,"h":16,"pal":["#241a1b","#473734","#73615c","#a58e81","#cfb5a6","#e7cfbc","#f6e8d5"],"px":".53......0....../353......30..04./44.......552254./44.......555554./55......15655541/253.000055615512/.423466545664252/..3656664455424./.066666665331.../..66566666662.../..56535536642.../..56200006152.../..6131..06152.../..6050..16062.../..6333...6354.../...........00...","eye":[14,5]},{"w":16,"h":15,"pal":["#08060d","#2e2734","#53515e","#6e6d7a","#807c88","#b0adb6","#d7d2d9"],"px":"..3............./.34.......3...3./13.......34..22./13.......343333./.3.......3443332/.12.....14443414/..22333324455516/...3333343466453/...4433344432.../..14443334455.../...3324543442.../..133.0002313.../..13.2...23.3.../..13.3...33.31../..16.2....5.54..","eye":[14,5]},{"w":16,"h":16,"pal":["#361614","#5c3124","#8b4e34","#c67246","#c7a189","#e1915e","#f6cca3"],"px":"051............./352.....020..11./32......1521231./32......0533331./32......2353332./131.00003562513./.222556333564360/.03535353346444./..35335533331.../.033335555661.../..23355525620.../..2310..13021.../.0302...13021.../.0302...03031.../.04412..04433.../..0.........0...","eye":[13,5]},{"w":15,"h":15,"pal":["#1b151b","#423b48","#544c59","#6f626d","#95888f","#afa2aa","#cec2c7"],"px":".3............./3.......11...2./1.......221112./1........22222./1.......2432241/.1.....12324323/.1.224311236445/..2222311156660/..22222222210../..2222322231.../..12.35.121..../..11....11...../..1.....11.1.../........11.1.../.2614....4.63..","eye":[9,7]}],"frames":[[{"w":21,"h":14,"pal":["#241a1b","#473734","#73615c","#a58e81","#cfb5a6","#e7cfbc","#f6e8d5"],"px":".0.............0..0../040...........000040./0500..........000050./02600........0255660./.02600000000005426220/..0056206655555566440/....0046555555552110./.....02666665554000../.....036536656530..../.....066000006030..../.....04130..060310.../....0140330.061140.../....0240040.063030.../.....00..0...0000....","eye":[17,2]},{"w":18,"h":15,"pal":["#241a1b","#473734","#73615c","#a58e81","#cfb5a6","#e7cfbc","#f6e8d5"],"px":".000............../00510..........0../.0130.......0.010./.010.......010030./.030......0055550./.01500000005306120/..0025566446666440/...06444444666450./...0655555566000../..006502556620..../.0065000006220..../.026020..050350.../.0360030.0350330../.0060050..060060../..00..0....0..0...","eye":[14,3]},{"w":20,"h":14,"pal":["#241a1b","#473734","#73615c","#a58e81","#cfb5a6","#e7cfbc","#f6e8d5"],"px":".0...............0../010...........00030./040..........010150./01500.......0055530./.05500.000000552530./..026202333345665420/...0045555555555400./....00665566666000../.....06646666620..../....046400006040..../....06020..060620.../....060020.061140.../....030030.040030.../.....0..0...0..0....","eye":[15,2]},{"w":19,"h":14,"pal":["#241a1b","#473734","#73615c","#a58e81","#cfb5a6","#e7cfbc","#f6e8d5"],"px":".0................./010.............0../030..........00030./.050........012250./.0540..0...0245650./..04000000026426020/...0442555555666500/....04655555540000./....026666666400.../.....0633666630..../....04500006000..../...006030.051130.../....060330035150.../.....0.00..0000....","eye":[17,6]}],[{"w":21,"h":14,"pal":["#08060d","#2e2734","#53515e","#6e6d7a","#807c88","#b0adb6","#d7d2d9"],"px":".0.............0..0../030...........000030./0310..........011030./02400........0233440./.02410000000013324230/..0034314433333344330/....0034333344443120./.....03455554443000../.....035435545430..../.....044000006030..../.....03230..061320.../....0231330.062230.../....0230030.043130.../.....00..0...0000....","eye":[17,2]},{"w":18,"h":15,"pal":["#08060d","#2e2734","#53515e","#6e6d7a","#807c88","#b0adb6","#d7d2d9"],"px":".000............../00410..........0../.0230.......0.020./.020.......020030./.030......0044440./.02400000004314220/..0124444334556330/...05333333444330./...0533333344000../..005312334520..../.0153100004230..../.036030..031330.../.0360130.0331330../.0140030..040040../..00..0....0..0...","eye":[14,3]},{"w":20,"h":14,"pal":["#08060d","#2e2734","#53515e","#6e6d7a","#807c88","#b0adb6","#d7d2d9"],"px":".0...............0../020...........00030./030..........021230./02300.......0033330./.03300.000000332330./..025202333333553320/...0033334444444310./....01554444444000../.....06634444430..../....036310014130..../....04130..041430.../....051130.052230.../....030030.030030.../.....0..0...0..0....","eye":[13,3]},{"w":19,"h":14,"pal":["#08060d","#2e2734","#53515e","#6e6d7a","#807c88","#b0adb6","#d7d2d9"],"px":".0................./020.............0../030..........00030./.030........022230./.0330..0...0233430./..03000000025325130/...0333333344555410/....03544444431100./....036444444300.../.....0633444430..../....03310014110..../...016030.032230.../....040330033230.../.....0.00..0000....","eye":[16,5]}],[{"w":21,"h":14,"pal":["#361614","#5c3124","#8b4e34","#c67246","#c7a189","#e1915e","#f6cca3"],"px":".0.............0..0../020...........000020./0300..........000030./01500........0133550./.01500000000003215110/..0035105533333355220/....0035333333331000./.....01544443333000../.....024326656520..../.....055000006020..../.....03020..060200.../....0030220.061130.../....0130030.052020.../.....00..0...0000....","eye":[17,2]},{"w":18,"h":15,"pal":["#361614","#5c3124","#8b4e34","#c67246","#c7a189","#e1915e","#f6cca3"],"px":".000............../00300..........0../.0020.......0.000./.000.......000020./.020......0033330./.01300000003204110/..0013555225446220/...04233333555330./...0433333355000../..004301335610..../.0063000005110..../.016010..030130.../.0260020.0230220../.0050030..050050../..00..0....0..0...","eye":[15,2]},{"w":20,"h":14,"pal":["#361614","#5c3124","#8b4e34","#c67246","#c7a189","#e1915e","#f6cca3"],"px":".0...............0../000...........00020./030..........000130./01300.......0033320./.03300.000000331320./..014101222223443210/...0023333333333200./....00665555555000../.....06635555510..../....036300005030..../....05010..050410.../....040010.040030.../....010020.030020.../.....0..0...0..0....","eye":[15,2]},{"w":19,"h":14,"pal":["#361614","#5c3124","#8b4e34","#c67246","#c7a189","#e1915e","#f6cca3"],"px":".0................./010.............0../020..........00020./.030........011130./.0320..0...0123430./..02000000014214010/...0331333333446300/....03633335530000./....016555555300.../.....0612555520..../....03300005000..../...006020.030020.../....050220023030.../.....0.00..0000....","eye":[17,6]}],[{"w":21,"h":14,"pal":["#1b151b","#423b48","#544c59","#6f626d","#95888f","#afa2aa","#cec2c7"],"px":".0.............0..0../020...........000020./0210..........011020./01300........0122330./.01310000000012213110/..0023113422222244220/....0024222222221110./.....01444552222000../.....015316636310..../.....033100006010..../.....02110..061110.../....0121220.061120.../....0120020.032120.../.....00..0...0000....","eye":[17,2]},{"w":18,"h":15,"pal":["#1b151b","#423b48","#544c59","#6f626d","#95888f","#afa2aa","#cec2c7"],"px":".000............../00210..........0../.0120.......0.010./.010.......010020./.020......0022220./.01200000003214110/..0113333223446220/...05222222333220./...0522222233000../..005211223610..../.0162100004110..../.016010..021120.../.0160110.0121110../.0140020..040040../..00..0....0..0...","eye":[14,3]},{"w":20,"h":14,"pal":["#1b151b","#423b48","#544c59","#6f626d","#95888f","#afa2aa","#cec2c7"],"px":".0...............0../010...........00010./020..........011120./01200.......0022210./.02200.000000221220./..015101222222552210/...0022222222223210./....01663333333000../.....06623333410..../....026210014120..../....04110..041410.../....041110.041120.../....010010.020010.../.....0..0...0..0....","eye":[15,4]},{"w":19,"h":14,"pal":["#1b151b","#423b48","#544c59","#6f626d","#95888f","#afa2aa","#cec2c7"],"px":".0................./010.............0../020..........00020./.020........011120./.0220..0...0122420./..02000000014214110/...0221222222556210/....02622233321100./....016333333200.../.....0611334410..../....02210014110..../...016010.021110.../....040120022120.../.....0.00..0000....","eye":[16,5]}]]},"toad":{"variants":[{"w":14,"h":12,"pal":["#1a2314","#354721","#546d37","#749847","#8eb15e","#a1bf72","#c7dd91"],"px":".......0000.../......1444440./....0041544550/...24141634234/..244233444544/.0433334444444/.2221332112211/1434513566662./1333514556630./1333002352101./.133450.452221/....00........","eye":[12,6]},{"w":15,"h":11,"pal":["#251512","#4c3326","#795941","#926e4f","#a57d5a","#a69b93","#d1a97c"],"px":"......1434431../....0041244630./...23140523122./..1331233443330/.02222244444330/.1221222111111./1333413466662../1223403446620../1222001232101../.122340013011../....00.........","eye":[11,2]},{"w":14,"h":10,"pal":["#10142a","#262c46","#434b67","#58668b","#6f7ea1","#9eaecb","#c3cae2"],"px":"......144444../.....04124454./...24141634424/..343233444443/..333333444433/.22222331111.1/.333403345543./1333403336631./.233212333102./..2234..343022","eye":[12,2]},{"w":15,"h":11,"pal":["#281e1e","#443a35","#685d5a","#857969","#b4a99b","#d8cab3","#f2e8d2"],"px":"........000..../......2556651../.....063266661./...461614364260/..466456666666./.1556456666666./.5340543333331./3555615666661../3555615666630../2555013563112../.145540.454042.","eye":[7,3]}],"frames":[[{"w":15,"h":10,"pal":["#1a2314","#354721","#546d37","#749847","#8eb15e","#a1bf72","#c7dd91"],"px":".......00000.../....000334440../...00304004300./..0044245555500/.0110024223220./.045540432230../0366311443400../.066440013030../.011110.01020../..0000...0.0...","eye":[13,3]},{"w":15,"h":10,"pal":["#1a2314","#354721","#546d37","#749847","#8eb15e","#a1bf72","#c7dd91"],"px":"........0000.../.......022220../.....002404400./....02144144200/...034444455430/..0100353333310/.0154504333300./0045410563610../.0166410140220./..00000.00000..","eye":[13,3]},{"w":15,"h":10,"pal":["#1a2314","#354721","#546d37","#749847","#8eb15e","#a1bf72","#c7dd91"],"px":"........0000.../.....000445400./....00313054300/...013434455530/..0110244322200/.0056604444300./00466200140120./.01333200441230/..00000..000010/.............0.","eye":[13,2]},{"w":14,"h":11,"pal":["#1a2314","#354721","#546d37","#749847","#8eb15e","#a1bf72","#c7dd91"],"px":"...........0../.......000000./.....00333440./....0314004320/...03424444440/..000155535350/.023313542220./0045502664100./0026611143110./.014440024130./..00000.0000..","eye":[11,1]}],[{"w":15,"h":10,"pal":["#251512","#4c3326","#795941","#926e4f","#a57d5a","#a69b93","#d1a97c"],"px":".......00000.../....000223430../...00204004200./..0033134444400/.0010013112220./.034530322220../0266211332300../.066440012030../.011110.01010../..0000...0.0...","eye":[13,3]},{"w":15,"h":10,"pal":["#251512","#4c3326","#795941","#926e4f","#a57d5a","#a69b93","#d1a97c"],"px":"........0000.../.......011110../.....002303300./....02133144200/...024344444320/..0100242222210/.0143403222200./0034310562610../.0166310130110./..00000.00000..","eye":[13,3]},{"w":15,"h":10,"pal":["#251512","#4c3326","#795941","#926e4f","#a57d5a","#d1a97c"],"px":"........0000.../.....000334300./....00212043200/...012323344420/..0110133211100/.0045503444200./00455100140120./.01222200331220/..00000..000010/.............0.","eye":[13,2]},{"w":14,"h":11,"pal":["#251512","#4c3326","#795941","#926e4f","#a57d5a","#a69b93","#d1a97c"],"px":"...........0../.......000000./.....00222330./....0213003210/...02313444440/..000144424240/.012212431220./0034502663100./0026610132110./.013330013120./..00000.0000..","eye":[11,1]}],[{"w":15,"h":10,"pal":["#10142a","#262c46","#434b67","#58668b","#6f7ea1","#9eaecb","#c3cae2"],"px":".......00000.../....000333430../...00314014310./..0033234444410/.0110024333330./.044440433330../0355322443410../.066440023130../.022220.02020../..0000...0.0...","eye":[8,2]},{"w":15,"h":10,"pal":["#10142a","#262c46","#434b67","#58668b","#6f7ea1","#9eaecb","#c3cae2"],"px":"........0000.../.......023330../.....003314410./....03133144300/...034344444330/..0210343333320/.0243414333310./0144420453520../.0266420241220./..00000.00000..","eye":[13,3]},{"w":15,"h":10,"pal":["#10142a","#262c46","#434b67","#58668b","#6f7ea1","#9eaecb","#c3cae2"],"px":"........0000.../.....000334300./....00323044310/...023434444430/..0221244322310/.0145514444300./01466300140130./.02333300332330/..00000..000020/.............0.","eye":[12,5]},{"w":14,"h":11,"pal":["#10142a","#262c46","#434b67","#58668b","#6f7ea1","#9eaecb","#c3cae2"],"px":"...........0../.......000000./.....00333440./....0324004320/...03424444440/..011244434340/.033323433330./0134413553210./0136621233120./.023340024230./..00000.0000..","eye":[11,1]}],[{"w":15,"h":10,"pal":["#281e1e","#443a35","#685d5a","#857969","#b4a99b","#d8cab3","#f2e8d2"],"px":".......00000.../....000445650../...00406016510./..0055356666610/.0110036335440./.066660654440../0566511665600../.066660025050../.022230.03030../..0000...0.0...","eye":[11,6]},{"w":15,"h":10,"pal":["#281e1e","#443a35","#685d5a","#857969","#b4a99b","#d8cab3","#f2e8d2"],"px":"........0000.../.......033330../.....004516610./....04155166400/...046566666540/..0100464455510/.0265606555500./0166620665620../.0266630361330./..00000.00000..","eye":[13,3]},{"w":15,"h":10,"pal":["#281e1e","#443a35","#685d5a","#857969","#b4a99b","#d8cab3","#f2e8d2"],"px":"........0000.../.....000556500./....00424066400/...025656666650/..0330366533300/.0166616666500./01666300160140./.01555400551440/..00000..000020/.............0.","eye":[13,2]},{"w":14,"h":11,"pal":["#281e1e","#443a35","#685d5a","#857969","#b4a99b","#d8cab3","#f2e8d2"],"px":"...........0../.......000000./.....00444660./....0526006530/...05636666660/..000266656560/.035525653340./0156614665210./0146631354130./.015560036140./..00000.0000..","eye":[11,1]}]]},"salamander":{"variants":[{"w":18,"h":9,"pal":["#311c15","#543929","#896848","#b47a42","#bea476","#e29d48","#f3cf7a"],"px":"..........15551.../.........0555351.1/....133332554356.1/...3555553566666../1355555555354440../310362666661....../5004411104411...../3100002..2402...../02332.............","eye":[14,3]},{"w":17,"h":9,"pal":["#311111","#542620","#7b362b","#995543","#ce5f3e","#d4946a","#eacb99"],"px":"..........04441../..........454541./....0344314535440/...14444424566660/.244444444456551./3201553544510..../41.1622005512..../2300003..3512..../.13330...........","eye":[14,3]},{"w":17,"h":9,"pal":["#1b1436","#342c55","#5c5288","#8078af","#9386e3","#a49dc4","#bbb1e9"],"px":"...........14440./..........0655361/......11112423063/...13444432466665/.144444444436555./.321561644431..../05..5301.1623..../.5001.22..3502.../.0333............","eye":[14,2]},{"w":16,"h":10,"pal":["#162725","#2a463e","#4c796b","#5eaf8f","#829d8b","#86bfa6","#bfe7d5"],"px":"...........111../..........25532./.........0361544/...1233551355445/..22333333356665/05323323333311../51.1551443510.../51.1502..2512.../1301100...100.../.01100..........","eye":[12,2]}],"frames":[[{"w":17,"h":8,"pal":["#311c15","#543929","#896848","#b47a42","#bea476","#e29d48","#f3cf7a"],"px":"...........0000../.........0035310./....0000013450610/..001464455566630/.055563555550000./01101603335100.../00000220003020.../.0..000..00.0....","eye":[13,2]},{"w":19,"h":9,"pal":["#311c15","#543929","#896848","#b47a42","#bea476","#e29d48","#f3cf7a"],"px":"............0000.../...........013330../.......00004501130./....000311155332500/...0004555555445310/.00555566666610000./004200621556100..../.000.02300030000.../......00...0.00....","eye":[17,3]},{"w":18,"h":8,"pal":["#311c15","#543929","#896848","#b47a42","#bea476","#e29d48","#f3cf7a"],"px":"...........00000../......00000165610./.....0023344605610/.00002544455566620/05233553355550000./01300130001500..../.00.00100003010.../.....000...0.0....","eye":[13,2]},{"w":18,"h":8,"pal":["#311c15","#543929","#896848","#b47a42","#bea476","#e29d48","#f3cf7a"],"px":"............0000../..........0011310./.......00001403500/.....0033535535450/.00000555555545600/01226162366610000./.00000640003130.../......00..0000....","eye":[16,2]}],[{"w":17,"h":8,"pal":["#311111","#542620","#7b362b","#995543","#ce5f3e","#d4946a","#eacb99"],"px":"...........0000../.........0035410./....0000013450510/..001454444456630/.044463444550000./01101603345200.../00000220004020.../.0..000..00.0....","eye":[13,2]},{"w":19,"h":9,"pal":["#311111","#542620","#7b362b","#995543","#ce5f3e","#d4946a","#eacb99"],"px":"............0000.../...........013330../.......00004401130./....000311244442400/...0004445555444400/.00454555556610000./004200621446100..../.000.02300030000.../......00...0.00....","eye":[17,3]},{"w":18,"h":8,"pal":["#311111","#542620","#7b362b","#995543","#ce5f3e","#d4946a","#eacb99"],"px":"...........00000../......00000055520./.....0024444505610/.00002544444566620/05233443344440000./01300130001400..../.00.00100004010.../.....000...0.0....","eye":[13,2]},{"w":18,"h":8,"pal":["#311111","#542620","#7b362b","#995543","#ce5f3e","#d4946a","#eacb99"],"px":"............0000../..........0011310./.......00001403400/.....0034444444440/.00000444555545500/02225152366610000./.00000640003130.../......00..0000....","eye":[16,2]}],[{"w":17,"h":8,"pal":["#1b1436","#342c55","#5c5288","#8078af","#9386e3","#a49dc4","#bbb1e9"],"px":"...........0000../.........0035310./....0000013450610/..001464444466630/.044463445550000./01101603335200.../00001220013020.../.0..000..00.0....","eye":[13,2]},{"w":19,"h":9,"pal":["#1b1436","#342c55","#5c5288","#8078af","#9386e3","#a49dc4","#bbb1e9"],"px":"............0000.../...........013330../.......00004401130./....000312244332400/...0114555555444310/.00454566666610000./004200621446100..../.000.02300030000.../......00...0.00....","eye":[17,3]},{"w":18,"h":8,"pal":["#1b1436","#342c55","#5c5288","#8078af","#9386e3","#a49dc4","#bbb1e9"],"px":"...........00000../......00000165620./.....0023344605610/.00002544444566620/05233443344450000./01300130001500..../.00.00110003010.../.....000...0.0....","eye":[13,2]},{"w":18,"h":8,"pal":["#1b1436","#342c55","#5c5288","#8078af","#9386e3","#a49dc4","#bbb1e9"],"px":"............0000../..........0011310./.......00001403400/.....0033434434440/.00001445555545610/02226162366610000./.00000640003130.../......00..0000....","eye":[16,2]}],[{"w":17,"h":8,"pal":["#162725","#2a463e","#4c796b","#5eaf8f","#829d8b","#86bfa6","#bfe7d5"],"px":"...........0000../.........0015410./....0000012350510/..001353333355520/.033362333550000./01101602245100.../00000110004010.../.0..000..00.0....","eye":[13,2]},{"w":19,"h":9,"pal":["#162725","#2a463e","#4c796b","#5eaf8f","#829d8b","#86bfa6","#bfe7d5"],"px":"............0000.../...........012220../.......00003301120./....000211133441300/...0003355555333410/.00353555555610000./004100611336100..../.000.01200020000.../......00...0.00....","eye":[17,3]},{"w":18,"h":8,"pal":["#162725","#2a463e","#4c796b","#5eaf8f","#829d8b","#86bfa6","#bfe7d5"],"px":"...........00000../......00000155510./.....0014433505510/.00001533333566610/05122332233330000./01200120001500..../.00.00100004010.../.....000...0.0....","eye":[13,2]},{"w":18,"h":8,"pal":["#162725","#2a463e","#4c796b","#5eaf8f","#829d8b","#86bfa6","#bfe7d5"],"px":"............0000../..........0011210./.......00001302300/.....0024343343330/.00000333555535500/01115151155610000./.00000630002120.../......00..0000....","eye":[16,2]}]]},"deer":{"variants":[{"w":17,"h":18,"pal":["#231413","#4c342b","#73513e","#9c6e4e","#ad8362","#e0be98","#f8e3c8"],"px":".........1..1..../.........2112011./..........22112../..........243443./...........232141/...........234455/...........236664/.2.........23500./142244444323360../.32333333333360../..133333333356.../..133333333350.../...3323333333..../..0331....132..../..321.....133..../..301.....133..../..301.....134..../..3.11....1342...","eye":[14,4]},{"w":17,"h":18,"pal":["#2a1919","#6d4b38","#8e6f55","#b47e52","#c09874","#e1b78e","#f3dfbe"],"px":"...........01.0../.........2111.1../..........11011../..........413431./..........0130231/...........133456/...........136662/020........13200./15136564542334.../.4254335343344.../..143353433364.../..133333333460.../..03315555443..../..03300000433..../.0421.....114..../.0401.....114..../.0401.....115..../.0402.....1141...","eye":[12,2]},{"w":17,"h":17,"pal":["#35292a","#60504e","#80736d","#95867d","#b3a297","#d0c1b6","#f4eadf"],"px":".........001...../.........01101.../.........053443../..........023032./..........0332551/..........0345650/.1........024..../2413544452335..../1224433433335..../..23333333356..../..23333333352..../..03314542320..../..033.....320..../.0320.....21...../..3.1.....220..../..3.1.....220..../..3.20....225....","eye":[13,3]},{"w":17,"h":18,"pal":["#271b1b","#483a3a","#6e5d54","#998270","#cab3a0","#eed3bc","#f4e4d1"],"px":"........1..2...../........231312.../.........222141../.........044664../..........143352./..........1444661/..........145664./12........04610../6624666664456..../6256555555566..../.055555555566..../..56645555562..../..26535554540..../..155..00055...../..533.....34...../..504.....441..../..504.....441..../..404.....234....","eye":[12,2]}],"frames":[[{"w":17,"h":19,"pal":["#231413","#4c342b","#73513e","#9c6e4e","#ad8362","#e0be98","#f8e3c8"],"px":".........0....0../........01000010./........02200210./.........020020../.........0232300./..........0303310/..........0333310/.........0141000./.000000001330..../0424444443320..../.044455333320..../0033553333310..../.033336333310..../.036116333120..../03321000030130.../030110..0600310../020020..0300310../0300230.0600320../.0..00...0..00...","eye":[14,4]},{"w":17,"h":19,"pal":["#231413","#4c342b","#73513e","#9c6e4e","#ad8362","#e0be98","#f8e3c8"],"px":"..........00000../.........0301110./.........0030030./..........031120./..........023230./...........051630/...........036620/..0...00.0016100./.0200000000330.../.0333333633320.../..033334333430.../..04333333340..../..03424444340..../..033111123230.../.04111000130230../013020..02300400./05100300230.0250./0510020020...030./.00..0..0.....0..","eye":[13,2]},{"w":16,"h":19,"pal":["#231413","#4c342b","#73513e","#9c6e4e","#ad8362","#e0be98","#f8e3c8"],"px":".........0...0../........0100000./........0300110./........0030310./........0114220./.........0230320/.........0244420/.........025000./.0000000013300../0313556633330.../0133666333310.../.03333333330..../.03332333330..../.023214222100.../01412100040410../040120..030040../0300330030.0430./030.040310..030./.0...0.00....0..","eye":[13,1]},{"w":17,"h":19,"pal":["#231413","#4c342b","#73513e","#9c6e4e","#ad8362","#e0be98","#f8e3c8"],"px":".........0.0000../........01001010./.........020020../.........0133300./.........00401310/.........00434430/..........044310./.0.000000034000../0101111222430..../0233333333330..../.034333333330..../.04533333350...../.03531566330...../.023210016010..../0262220.03030..../060020..03030..../030.040030120..../030.02002010...../.0...0..0.0......","eye":[13,1]}],[{"w":17,"h":19,"pal":["#2a1919","#6d4b38","#8e6f55","#b47e52","#c09874","#e1b78e","#f3dfbe"],"px":".........0....0../........00000000./........01100100./.........010010../.........0121200./..........0402400/..........0444400/.........0040000./.000000000220..../0414445552210..../.055555333310..../0033563333300..../.033336333300..../.036106333110..../03311000030130.../040110..0600410../010010..0400410../0400140.0600410../.0..00...0..00...","eye":[14,1]},{"w":17,"h":19,"pal":["#2a1919","#6d4b38","#8e6f55","#b47e52","#c09874","#e1b78e","#f3dfbe"],"px":"..........00000../.........0301010./.........0020030./..........021110./..........013130./...........060640/...........046610/..0...00.0006000./.0100000000240.../.0224444642410.../..042444333430.../..04333333340..../..03414555350..../..033000013130.../.05001000130130../013010..01300500./05100300130.0150./0500010010...030./.00..0..0.....0..","eye":[13,1]},{"w":16,"h":19,"pal":["#2a1919","#6d4b38","#8e6f55","#b47e52","#c09874","#e1b78e","#f3dfbe"],"px":".........0...0../........0000000./........0300110./........0030310./........0015110./.........0130310/.........0155510/.........015000./.0000000003300../0303566633330.../0033666333300.../.03333334440..../.04441444440..../.014104111000.../00411100040410../040010..010040../0200220020.0520./020.050310..030./.0...0.00....0..","eye":[13,1]},{"w":17,"h":19,"pal":["#2a1919","#6d4b38","#8e6f55","#b47e52","#c09874","#e1b78e","#f3dfbe"],"px":".........0.0000../........00000010./.........010010../.........0122200./.........00401200/.........00434420/..........055310./.0.000000025000../0100111111530..../0123333333330..../.035333444430..../.05544444450...../.03530666430...../.014100006000..../0161110.03030..../060010..03030..../040.040030010..../030.01001000...../.0...0..0.0......","eye":[15,4]}],[{"w":17,"h":19,"pal":["#35292a","#60504e","#80736d","#95867d","#b3a297","#d0c1b6","#f4eadf"],"px":".........0....0../........00000000./........01200200./.........020020../.........0222200./..........0302300/..........0444400/.........0040000./.000000000220..../0424444452320..../.055555333320..../0033553333310..../.033335333300..../.035105333120..../03321000030130.../030110..0600310../020020..0300310../0300130.0600320../.0..00...0..00...","eye":[14,1]},{"w":17,"h":19,"pal":["#35292a","#60504e","#80736d","#95867d","#b3a297","#d0c1b6","#f4eadf"],"px":"..........00000../.........0301010./.........0020030./..........021110./..........013230./...........050530/...........035520/..0...00.0006000./.0200000000230.../.0223333632420.../..043444333430.../..04333333340..../..03424445350..../..033000023230.../.05001000130230../013020..02300500./05100300230.0250./0500020020...030./.00..0..0.....0..","eye":[13,1]},{"w":16,"h":19,"pal":["#35292a","#60504e","#80736d","#95867d","#b3a297","#d0c1b6","#f4eadf"],"px":".........0...0../........0000000./........0300110./........0030310./........0015110./.........0230320/.........0255520/.........025000./.0000000003300../0303555533330.../0033566333300.../.03333333330..../.03332334440..../.024204222000.../00412100040410../040020..020040../0200220020.0420./020.050310..030./.0...0.00....0..","eye":[13,1]},{"w":17,"h":19,"pal":["#35292a","#60504e","#80736d","#95867d","#b3a297","#d0c1b6","#f4eadf"],"px":".........0.0000../........00000010./.........020020../.........0122200./.........00401200/.........00434420/..........044310./.0.000000025000../0100111112530..../0233333333330..../.035333333330..../.05533333450...../.03530555430...../.024200005000..../0262220.03030..../060020..03030..../040.040030020..../030.02002000...../.0...0..0.0......","eye":[15,4]}],[{"w":17,"h":19,"pal":["#271b1b","#483a3a","#6e5d54","#998270","#cab3a0","#eed3bc","#f4e4d1"],"px":".........0....0../........01000010./........02200410./.........040020../.........0343400./..........0504510/..........0555500/.........0161000./.000000000440..../0636666664430..../.066666444430..../0044664444510..../.055556555510..../.056116555130..../05532000050250.../050220..0600520../040040..0500520../0500250.0600540../.0..00...0..00...","eye":[14,4]},{"w":17,"h":19,"pal":["#271b1b","#483a3a","#6e5d54","#998270","#cab3a0","#eed3bc","#f4e4d1"],"px":"..........00000../.........0502020./.........0040050./..........042220./..........025250./...........061650/...........056620/..0...00.0016100./.0200000000450.../.0445555654530.../..054555444640.../..06444444560..../..05636666560..../..055111135350.../.06111000150350../025030..03500600./06200500450.0460./0600040040...050./.00..0..0.....0..","eye":[13,1]},{"w":16,"h":19,"pal":["#271b1b","#483a3a","#6e5d54","#998270","#cab3a0","#eed3bc","#f4e4d1"],"px":".........0...0../........0100000./........0400220./........0040420./........0126220./.........0240420/.........0366630/.........036000./.0000000004400../0415666655550.../0055666555510.../.05555555550..../.05553555550..../.035315344100.../01614100060620../060140..040060../0400440040.0640./040.060420..040./.0...0.00....0..","eye":[13,1]},{"w":17,"h":19,"pal":["#271b1b","#483a3a","#6e5d54","#998270","#cab3a0","#eed3bc","#f4e4d1"],"px":".........0.0000../........01001010./.........040040../.........0144400./.........00601400/.........00656640/..........066520./.0.000000046000../0200222222650..../0244555555540..../.056555555540..../.06655555560...../.04641666540...../.025310016010..../0363330.04040..../060030..04040..../050.060050130..../050.04004010...../.0...0..0.0......","eye":[15,4]}]]},"badger":{"variants":[{"w":15,"h":9,"pal":["#362f33","#494043","#666064","#857874","#b7ad9f","#dbd9c3","#f3efd9"],"px":".........13..../....2222112640./..222222112142./.1222222113124./022222221463141/222222222156643/222.222.000010./22....0....0.../11.............","eye":[11,2]},{"w":16,"h":10,"pal":["#2c1c1b","#5d4434","#937051","#b8a691","#bd9261","#e0cfad","#f1e1c4"],"px":"...........0..../....1111102620../..024444122354../.04444441222451./.44444441461122./1224444424566510/122244442125553./122044441100..../1200000011001.../01........0.....","eye":[12,4]},{"w":17,"h":9,"pal":["#1f1418","#322825","#615248","#917b69","#cab69a","#efdfbe","#f4e9d8"],"px":".....233323563.../...24555533465.../..4555554334365../.35555554354226../.4555555436665430/0444465553355552./.443466623001..../.4211...221023.../.........10......","eye":[14,3]},{"w":15,"h":9,"pal":["#0e0812","#2e2832","#504b56","#615c67","#898590","#b0abae","#f0eceb"],"px":"..........4..../...14444233643./..444444233354./.34444442323451/.4444444356435./344344444366654/444.5543321..1./43......31.2.../.3......220....","eye":[12,3]}],"frames":[[{"w":17,"h":9,"pal":["#362f33","#494043","#666064","#857874","#b7ad9f","#dbd9c3","#f3efd9"],"px":"...........000.../....00000000010../..0012222202220../.012222221210120./01222333312422420/0244245661022220./026202222100000../012000000100110../.0000...00..00...","eye":[12,1]},{"w":17,"h":10,"pal":["#362f33","#494043","#666064","#857874","#b7ad9f","#dbd9c3","#f3efd9"],"px":"...........0.00../.....00000010110./...0022221012310./..01232221111220./.0234422201222220/01444422222256620/0266222220012220./01320222100000220/0120.00000000000./.00......00..00..","eye":[12,3]},{"w":17,"h":10,"pal":["#362f33","#494043","#666064","#857874","#b7ad9f","#dbd9c3","#f3efd9"],"px":".............00../....000000000210./...0222222022220./..022222202220210/.0222222312332340/02444445211222220/0266226621000100./0221011101000220./01201000010.0110./.00.00...0...00..","eye":[13,3]},{"w":15,"h":9,"pal":["#362f33","#494043","#666064","#857874","#b7ad9f","#dbd9c3","#f3efd9"],"px":"..........0.00./....00000000110/..0012222012220/.01222222022120/.02222222122120/022223332014440/04422566110000./06100000010020./.000....00..0..","eye":[12,3]}],[{"w":17,"h":9,"pal":["#2c1c1b","#5d4434","#937051","#b8a691","#bd9261","#e0cfad","#f1e1c4"],"px":"...........000.../....00000000010../..0014444101440../.004444440110040./00444444411322320/0155255661022220./026202242100000../012000000100110../.0000...00..00...","eye":[12,1]},{"w":17,"h":10,"pal":["#2c1c1b","#5d4434","#937051","#b8a691","#bd9261","#e0cfad","#f1e1c4"],"px":"...........0.00../.....00000000100./...0044441012410./..01444440111240./.0244344401221410/00355544411455640/0166244420001220./00420222100000220/0120.00000000000./.00......00..00..","eye":[14,1]},{"w":17,"h":10,"pal":["#2c1c1b","#5d4434","#937051","#b8a691","#bd9261","#e0cfad","#f1e1c4"],"px":".............00../....000000000200./...0144441014410./..024444401210400/.0244444402442440/01355555201244420/0256246621000100./0241011101000220./01201000000.0010./.00.00...0...00..","eye":[14,1]},{"w":15,"h":9,"pal":["#2c1c1b","#5d4434","#937051","#b8a691","#bd9261","#e0cfad","#f1e1c4"],"px":"..........0.00./....00000000110/..0011111011220/.01222244022020/.04444444044140/044444442004350/05522566010000./06000000010020./.000....00..0..","eye":[12,3]}],[{"w":17,"h":9,"pal":["#1f1418","#322825","#615248","#917b69","#cab69a","#efdfbe","#f4e9d8"],"px":"...........000.../....00000001130../..0035555313550../.025555552330250./02555555533544640/0366466663034440./046404454200000../034000001200230../.0000...00..00...","eye":[12,3]},{"w":17,"h":10,"pal":["#1f1418","#322825","#615248","#917b69","#cab69a","#efdfbe","#f4e9d8"],"px":"...........0.00../.....00000020220./...0055553034530./..03555552333450./.0455555503443530/02666655533566650/0366455540023340./02540444200000440/0240.00001100110./.00......00..00..","eye":[10,2]},{"w":17,"h":10,"pal":["#1f1418","#322825","#615248","#917b69","#cab69a","#efdfbe","#f4e9d8"],"px":".............00../....000000000420./...0355553035530./..045555503430520/.0455555524554550/03566666422355540/0466456642001210./0453133303001440./03403000020.0230./.00.00...0...00..","eye":[13,3]},{"w":15,"h":9,"pal":["#1f1418","#322825","#615248","#917b69","#cab69a","#efdfbe","#f4e9d8"],"px":"..........0.00./....00000010330/..0023333023430/.03444455044240/.05555555255350/055555554125560/06644666230010./06200000030040./.000....00..0..","eye":[9,2]}],[{"w":17,"h":9,"pal":["#0e0812","#2e2832","#504b56","#615c67","#898590","#b0abae","#f0eceb"],"px":"...........000.../....00000002230../..0034444323440../.024444442330240./02444444533544540/0355456663044440./046414444300000../034110001300330../.0000...00..00...","eye":[12,3]},{"w":17,"h":10,"pal":["#0e0812","#2e2832","#504b56","#615c67","#898590","#b0abae","#f0eceb"],"px":"...........0.00../.....00000020320./...0044443034430./..03444442333440./.0455544403443430/02555544433466640/0366444441123440./03440444311000440/0340.00001200220./.00......00..00..","eye":[10,2]},{"w":17,"h":10,"pal":["#0e0812","#2e2832","#504b56","#615c67","#898590","#b0abae","#f0eceb"],"px":".............00../....000000000420./...0344443134430./..044444403431420/.0444444424444550/03555556433444440/0466446643111320./0443233303002440./03403000020.0230./.00.00...0...00..","eye":[13,3]},{"w":15,"h":9,"pal":["#0e0812","#2e2832","#504b56","#615c67","#898590","#b0abae","#f0eceb"],"px":"..........0.00./....00000020330/..0033333133440/.03444444144240/.04444444244340/044444444125550/05544666230020./06300000130040./.000....00..0..","eye":[9,3]}]]},"dove":{"variants":[{"w":16,"h":12,"pal":["#26222d","#3a3135","#5b5762","#756971","#8b8998","#aaa6b3","#bebbc9"],"px":"..........455.../.........555551./........5666464./........56664511/...46655466665.1/..46644424666.../35664444461...../15664444465...../..566444463...../..1110456......./....40........../....20..........","eye":[13,4]},{"w":16,"h":12,"pal":["#322827","#4d4440","#6f6663","#9e9b95","#c6bfb7","#ebe6dd","#f5f1e8"],"px":".........05550../........055564../........4666362./........4666541./...3666346655400/..36644423665.../24664444441...../05664444464...../.1465444462...../....224443....../....40........../....2...........","eye":[13,4]},{"w":16,"h":12,"pal":["#28151c","#4f3940","#684d55","#775d6b","#a17a8b","#bf98a9","#d2afbe"],"px":"..........4662../.........35556../.........555636./........25555502/...35665245555.1/..266544405553../4366444444200.../.4665444446...../..466544456...../....1115551...../....53........../....31..........","eye":[9,5]},{"w":16,"h":11,"pal":["#313446","#4c3a2c","#4d4e61","#656d88","#77634e","#808ba9","#94a0b7"],"px":"..........2550../.........05555../........0555636./........06556504/...0355523555501/..256533305553../225533333320..../.2553333336...../..355333356...../...00.03350...../....32..........","eye":[14,3]}],"frames":[[{"w":16,"h":12,"pal":["#26222d","#3a3135","#5b5762","#756971","#8b8998","#aaa6b3","#bebbc9"],"px":"....000........./...00410..0000../...046610004640./...014461046560./.000455550655540/044155555414540./.0004566664400../....046666640.../.....01466620.../.....0466620..../......06340...../.......000......","eye":[10,2]},{"w":19,"h":16,"pal":["#26222d","#3a3135","#5b5762","#756971","#8b8998","#aaa6b3","#bebbc9"],"px":".................0./.0..............010/040............0150/0640..........04660/066100000....004400/.065046640..055400./..0011456500665400./....025555516654420/.....0466660466400./.....04444643400.../.....0144455550..../......014556640..../.......0366660...../......04666610...../.......0040140...../.........0.00......","eye":[17,4]},{"w":16,"h":11,"pal":["#26222d","#3a3135","#5b5762","#756971","#8b8998","#aaa6b3","#bebbc9"],"px":"............00../.....0000.00010./....01441014640./....044660464440/...0445551566650/...045555544440./.0005555566600../0266146666660.../033000066660..../.00...0414140.../.......00000....","eye":[12,1]},{"w":16,"h":11,"pal":["#26222d","#3a3135","#5b5762","#756971","#8b8998","#aaa6b3","#bebbc9"],"px":"......0....000../....00100.04660./.000044420466140/0443455551466540/014145555435540./.0001555564410../....066666660.../.....00146660.../.....0466660..../......046040..../.......0000.....","eye":[13,2]}],[{"w":16,"h":12,"pal":["#322827","#4d4440","#6f6663","#9e9b95","#c6bfb7","#ebe6dd","#f5f1e8"],"px":"....000........./...00400..0000../...026600004640./...004461046460./.000444440644430/034145555424540./.0004555564300../....046666630.../.....02366620.../.....0466620..../......06240...../.......000......","eye":[10,2]},{"w":19,"h":16,"pal":["#322827","#4d4440","#6f6663","#9e9b95","#c6bfb7","#ebe6dd","#f5f1e8"],"px":".................0./.0..............010/030............0140/0630..........03660/066200000....004400/.064046640..044400./..0002446500665400./....025555506654420/.....0355550466400./.....04444542400.../.....0044444440..../......004446640..../.......0266660...../......02666610...../.......0030130...../.........0.00......","eye":[17,4]},{"w":16,"h":11,"pal":["#322827","#4d4440","#6f6663","#9e9b95","#c6bfb7","#ebe6dd","#f5f1e8"],"px":"............00../.....0000.00000./....00440024640./....044660463440/...0344442466640/...034444544440./.0005555556500../0256046666660.../022000066660..../.00...0413130.../.......00000....","eye":[13,1]},{"w":16,"h":11,"pal":["#322827","#4d4440","#6f6663","#9e9b95","#c6bfb7","#ebe6dd","#f5f1e8"],"px":"......0....000../....00000.03660./.000044420366040/0342444440466440/004144444425540./.0001555554420../....055666660.../.....00246660.../.....0366660..../......036040..../.......0000.....","eye":[13,2]}],[{"w":16,"h":12,"pal":["#28151c","#4f3940","#684d55","#775d6b","#a17a8b","#bf98a9","#d2afbe"],"px":"....000........./...00410..0000../...036610004640./...014461046460./.000445550655530/034155555424540./.0004555554300../....045555530.../.....02366620.../.....0466620..../......06240...../.......000......","eye":[10,2]},{"w":19,"h":16,"pal":["#28151c","#4f3940","#684d55","#775d6b","#a17a8b","#bf98a9","#d2afbe"],"px":".................0./.0..............010/030............0150/0530..........03660/066200000....004400/.065046640..055400./..0002456500665400./....025555516654420/.....0355550466400./.....04444542400.../.....0144444550..../......014555540..../.......0255560...../......03666510...../.......0030130...../.........0.00......","eye":[17,4]},{"w":16,"h":11,"pal":["#28151c","#4f3940","#684d55","#775d6b","#a17a8b","#bf98a9","#d2afbe"],"px":"............00../.....0000.00000./....01441024640./....044660463440/...0344452566650/...035555544440./.0005555556500../0256145555650.../022000056660..../.00...0413130.../.......00000....","eye":[13,1]},{"w":16,"h":11,"pal":["#28151c","#4f3940","#684d55","#775d6b","#a17a8b","#bf98a9","#d2afbe"],"px":"......0....000../....00000.03660./.000044420366140/0342444551466540/014145555425540./.0001555554420../....055555560.../.....00245660.../.....0356660..../......036040..../.......0000.....","eye":[13,2]}],[{"w":16,"h":12,"pal":["#313446","#4c3a2c","#4d4e61","#656d88","#77634e","#808ba9","#94a0b7"],"px":"....000........./...00300..0000../...025500003530./...003360036360./.000333330635520/023055555303530./.0003555553200../....035555520.../.....00455600.../.....0355510..../......06230...../.......000......","eye":[10,2]},{"w":19,"h":16,"pal":["#313446","#4c3a2c","#4d4e61","#656d88","#77634e","#808ba9","#94a0b7"],"px":".................0./.0..............000/020............0030/0520..........02550/055000000....003300/.055035530..055300./..0000355500555300./....005555505653310/.....0455550466300./.....03333532300.../.....0033333330..../......003335530..../.......0255560...../......02666500...../.......0020020...../.........0.00......","eye":[17,1]},{"w":16,"h":11,"pal":["#313446","#4c3a2c","#4d4e61","#656d88","#808ba9","#94a0b7"],"px":"............00../.....0000.00000./....00330003430./....033440342330/...0233330344430/...023444433330./.0004444445400../0145034444540.../022000045550..../.00...0302020.../.......00000....","eye":[13,1]},{"w":16,"h":11,"pal":["#313446","#4c3a2c","#4d4e61","#656d88","#808ba9","#94a0b7"],"px":"......0....000../....00000.02440./.000033310245030/0232333330355330/003033444324430./.0000444443300../....044444450.../.....00034550.../.....0244440..../......024030..../.......0000.....","eye":[13,2]}]]},"fox":{"variants":[{"w":18,"h":13,"pal":["#381b14","#453231","#7b452a","#a96b47","#ca9466","#cf7a3f","#e8c59c"],"px":"...........1..01../66.........43.33../162........43252../1630.......555530./.453.0...03552655./..3224555555555553/..0255555555666664/...35555555546..../...35535555566..../...25304423544..../...43020..3203..../..04022...3203..../..04003...3203....","eye":[14,4]},{"w":18,"h":14,"pal":["#2e1211","#552822","#7e5f56","#894335","#bd5a3e","#d8a282","#f5e2ce"],"px":"...........1...1../62.........55.151./251........541350./1530.......444443./.243...0..14444440/..1313444444444444/...044444444555555/...34444444455222./...34444444456..../...14414441455..../...34310.01303..../...3103...1303..../...31.3...12031.../....0.............","eye":[10,9]},{"w":18,"h":13,"pal":["#211c27","#4d4854","#605f6a","#817c87","#a19fa9","#cdc8d0","#dedbdf"],"px":"22.............1../052........33..41./..3........121220./..42.......122222./..41.......221511./...211222212222123/....22222222456662/....2222222224111./....2222221236..../....22.2330143..../....1.....01.1..../....1.1...01.1..../....2..1..050.1...","eye":[15,4]},{"w":17,"h":13,"pal":["#302a33","#4c393d","#625a5f","#979094","#bfbabd","#d8d6d8","#e9e6e4"],"px":"3.........2...0../65........6..23../043.......64343../.3........55554../.4.......3552653./.4336666545656631/.0365555545666642/..665555555432.../..55545545664..../..453355.4353..../..5422...4223..../..5.32...4..3..../..5..5...4.14....","eye":[14,4]}],"frames":[[{"w":20,"h":14,"pal":["#381b14","#453231","#7b452a","#a96b47","#ca9466","#cf7a3f","#e8c59c"],"px":"..............00.0../.00..........020030./0230.........032230./.03300.......055350./..023000000005530550/...00503555555555550/....005555555443000./.....044444446630.../.....06656666650..../....005300006500..../....0510000051120.../....050020.052230.../....030020.032030.../.....0..0...00.0....","eye":[15,1]},{"w":18,"h":15,"pal":["#381b14","#453231","#7b452a","#a96b47","#ca9466","#cf7a3f","#e8c59c"],"px":"............0..0../...........030030./..........0030040./.00........033330./0330..000001332400/055200000003545450/002205555555544660/.0005555555562000./...055555556620.../...05525554630..../..044100003200..../..060010.032020.../..060040.032060.../...0..0...00000.../.............0....","eye":[16,4]},{"w":17,"h":14,"pal":["#381b14","#453231","#7b452a","#a96b47","#ca9466","#cf7a3f","#e8c59c"],"px":".00........0..0../0330......020030./.0230.....030030./.030......035550./.0300000000505150/.0010122223555550/..035555555552000/..05555444545000./..054444466630.../..036325556300.../.0360000005060.../.030020..050260../.050.020.060060../..0...0...00.0...","eye":[13,2]},{"w":20,"h":14,"pal":["#381b14","#453231","#7b452a","#a96b47","#ca9466","#cf7a3f","#e8c59c"],"px":".00...........0.00../0000.........030030./.0230........053330./.00500.......055550./..025000000005550530/...02502555555555530/....005555544442000./.....054444466620.../.....05635666650..../....0063100026310.../....0230300023030.../....020030.035050.../.....0..0...01020.../.............0.0....","eye":[16,1]}],[{"w":20,"h":14,"pal":["#2e1211","#552822","#7e5f56","#894335","#bd5a3e","#d8a282","#f5e2ce"],"px":"..............00.0../.00..........010030./0320.........023320./.02200.......044440./..034000000004430440/...00403444444444440/....004444444443000./.....044555555530.../.....05545555640..../....004301116410..../....0410000041110.../....040010.041130.../....030010.031030.../.....0..0...00.0....","eye":[15,1]},{"w":18,"h":15,"pal":["#2e1211","#552822","#7e5f56","#894335","#bd5a3e","#d8a282","#f5e2ce"],"px":"............0..0../...........030030./..........0030040./.00........022220./0320..000001431500/044100000013454540/011114444444455550/.0004444444451000./...044444445510.../...04414444530..../..044100003100..../..050010.033030.../..060040.033060.../...0..0...00000.../.............0....","eye":[16,4]},{"w":17,"h":14,"pal":["#2e1211","#552822","#7e5f56","#894335","#bd5a3e","#d8a282","#f5e2ce"],"px":".00........0..0../0220......030020./.0340.....031140./.030......034440./.0300000000414140/.0010111113444440/..034444444441000/..04444444444000./..044555555530.../..035314445300.../.0250000004050.../.020010..040150../.040.030.060060../..0...0...00.0...","eye":[14,4]},{"w":20,"h":14,"pal":["#2e1211","#552822","#7e5f56","#894335","#bd5a3e","#d8a282","#f5e2ce"],"px":".00...........0.00../0000.........040030./.0130........043330./.00400.......044440./..014000000004441430/...01411444444444430/....004444444441000./.....044555555510.../.....04534555540..../....0162100016210.../....0320200032040.../....030030.034040.../.....0..0...01010.../.............0.0....","eye":[16,1]}],[{"w":20,"h":14,"pal":["#211c27","#4d4854","#605f6a","#817c87","#a19fa9","#cdc8d0","#dedbdf"],"px":"..............00.0../.00..........010020./0120.........021120./.02200.......022220./..012000000002211220/...01201222222222220/....002222223331000./.....033333444420.../.....04525566620..../....002201116210..../....0211000021110.../....020010.021120.../....020010.021020.../.....0..0...00.0....","eye":[15,1]},{"w":18,"h":15,"pal":["#211c27","#4d4854","#605f6a","#817c87","#a19fa9","#cdc8d0","#dedbdf"],"px":"............0..0../...........010010./..........0020030./.00........022220./0120..000001221300/022100011112232420/011112222222244440/.0002222222251000./...022222225510.../...02212223620..../..033100002100..../..060010.021010.../..060030.021060.../...0..0...00000.../.............0....","eye":[16,4]},{"w":17,"h":14,"pal":["#211c27","#4d4854","#605f6a","#817c87","#a19fa9","#cdc8d0","#dedbdf"],"px":".00........0..0../0220......010020./.0120.....011120./.010......012220./.0100000000212120/.0010111112222220/..022222222221010/..02222333232000./..023334444420.../..025212225210.../.0250100002060.../.020010..020160../.020.010.060060../..0...0...00.0...","eye":[14,4]},{"w":20,"h":14,"pal":["#211c27","#4d4854","#605f6a","#817c87","#a19fa9","#cdc8d0","#dedbdf"],"px":".00...........0.00../0010.........020010./.0110........022220./.01210.......022220./..012000000002221220/...01211222222222220/....002222233331000./.....023334444410.../.....02522556620..../....0162100016210.../....0120200012020.../....010010.012020.../.....0..0...01010.../.............0.0....","eye":[16,1]}],[{"w":20,"h":14,"pal":["#302a33","#4c393d","#625a5f","#979094","#bfbabd","#d8d6d8","#e9e6e4"],"px":"..............00.0../.00..........030040./0340.........043340./.04400.......055450./..034100000004532540/...02423555555555550/....005555555553000./.....066666666640.../.....06656666650..../....025402226520..../....0532000053330.../....050030.053340.../....040030.043040.../.....0..0...00.0....","eye":[15,1]},{"w":18,"h":15,"pal":["#302a33","#4c393d","#625a5f","#979094","#bfbabd","#d8d6d8","#e9e6e4"],"px":"............0..0../...........030030./..........0041060./.00........044440./0340..000003443620/044300222224464650/023325555555566660/.0005555555563000./...055555556630.../...05535555640..../..056200004300..../..060030.043030.../..060060.043060.../...0..0...00000.../.............0....","eye":[14,2]},{"w":17,"h":14,"pal":["#302a33","#4c393d","#625a5f","#979094","#bfbabd","#d8d6d8","#e9e6e4"],"px":".00........0..0../0440......030040./.0340.....032240./.030......034450./.0400000000524250/.0132333334555550/..045555555553220/..05555556565000./..056666666640.../..046435556420.../.0460200005060.../.040030..050360../.050.030.060060../..0...0...00.0...","eye":[13,7]},{"w":20,"h":14,"pal":["#302a33","#4c393d","#625a5f","#979094","#bfbabd","#d8d6d8","#e9e6e4"],"px":".00...........0.00../0020.........040030./.0340........054440./.02520.......055440./..035000000004552540/...03523555555555540/....005555555663100./.....056666666630.../.....05645666650..../....0264202236430.../....0340400034040.../....030030.035050.../.....0..0...03030.../.............0.0....","eye":[16,1]}]]},"ermine":{"variants":[{"w":17,"h":9,"pal":["#2b2126","#5c5050","#827269","#b1a69a","#dbcbbc","#f4e5ce","#f8efe0"],"px":"..........01.40../..........443242./....3666616642520/...3665664566652./..16555555446641./.116645555540..../0006525553511..../...6200000511..../...10.....10.....","eye":[14,3]},{"w":16,"h":10,"pal":["#231515","#39241f","#553c30","#7d5a40","#90684a","#c3a076","#e7cea7"],"px":"............2.../..........2141../......111233233./...2444423442442/..23444423456552/.24444433346661./1133344333410.../103414443312..../.03111100211..../..1......00.....","eye":[12,2]},{"w":16,"h":9,"pal":["#120a0b","#3b2a20","#574637","#7b614b","#a38c66","#dabd89","#f0deb0"],"px":".........12050../........1545553./..04566616623551/..55555545666531/.25555555566662./23555555554111../215525554522..../.15212221513..../..412....4222...","eye":[11,2]},{"w":15,"h":9,"pal":["#27212a","#4d4853","#5f5a64","#7b777f","#9a97a0","#bab7bb","#dedbdb"],"px":"..........2.2../.........14111./..134221223023./..2332221356622/12222222216662./1.22122222...../..22.222.2...../..2......2...../..0............","eye":[12,1]}],"frames":[[{"w":14,"h":10,"pal":["#2b2126","#5c5050","#827269","#b1a69a","#dbcbbc","#f4e5ce","#f8efe0"],"px":".........0000./........011100/.......0150520/...00000252550/..002555331000/.035556444000./066666666010../04666410000.../0045000......./.0000.........","eye":[12,1]},{"w":16,"h":11,"pal":["#2b2126","#5c5050","#827269","#b1a69a","#dbcbbc","#f4e5ce","#f8efe0"],"px":"...........000../..........04140./.........0140420/....000000555520/...001555555000./..005555666600../.00266666233010./00136664400000../011166400......./.0000000......../....00..........","eye":[12,2]},{"w":16,"h":10,"pal":["#2b2126","#5c5050","#827269","#b1a69a","#dbcbbc","#f4e5ce","#f8efe0"],"px":"..........0000../.........002250./.....00000210520/....001334455510/...004555554110./..015566666100../..0466666664400./.00466500000020./00005100.....0../.00.00..........","eye":[12,2]},{"w":16,"h":11,"pal":["#2b2126","#5c5050","#827269","#b1a69a","#dbcbbc","#f4e5ce","#f8efe0"],"px":"..........0000../.........033310./........01522520/.....00004555520/...002555554000./..00555666400.../.0046666660110../0014664410000.../.00166100......./...00000......../....00..........","eye":[12,4]}],[{"w":14,"h":10,"pal":["#231515","#39241f","#553c30","#7d5a40","#90684a","#c3a076","#e7cea7"],"px":".........0000./........011100/.......0230320/...00000232340/..012444221100/.024444333000./044444445110../03566310000.../0033100......./.0000.........","eye":[12,1]},{"w":16,"h":11,"pal":["#231515","#39241f","#553c30","#7d5a40","#90684a","#c3a076","#e7cea7"],"px":"...........000../..........03130./.........0230320/....000000333320/...001334444100./..014444444400../.00244444222110./01125562300000../011166310......./.0000000......../....00..........","eye":[12,2]},{"w":16,"h":10,"pal":["#231515","#39241f","#553c30","#7d5a40","#90684a","#c3a076","#e7cea7"],"px":"..........0000../.........012230./.....00000210320/....001222333410/...003444443110./..014444444200../..0344445563310./.01366310000020./01003100.....0../.00.00..........","eye":[12,2]},{"w":16,"h":11,"pal":["#231515","#39241f","#553c30","#7d5a40","#90684a","#c3a076","#e7cea7"],"px":"..........0000../.........022210./........02322320/.....00003333320/...002444443000./..01444444310.../.0134444451110../0013563310000.../.00166100......./...00000......../....00..........","eye":[12,2]}],[{"w":14,"h":10,"pal":["#120a0b","#3b2a20","#574637","#7b614b","#a38c66","#dabd89","#f0deb0"],"px":".........0000./........022200/.......0250520/...00000252550/..013555332110/.045555445000./055556666110../05666520000.../0155100......./.0000.........","eye":[12,1]},{"w":16,"h":11,"pal":["#120a0b","#3b2a20","#574637","#7b614b","#a38c66","#dabd89","#f0deb0"],"px":"...........000../..........05250./.........0251520/....000000555520/...012555555100./..015555555500../.00255566333120./01146664400000../022266410......./.0000100......../....00..........","eye":[12,2]},{"w":16,"h":10,"pal":["#120a0b","#3b2a20","#574637","#7b614b","#a38c66","#dabd89","#f0deb0"],"px":"..........0000../.........012250./.....00000321530/....002344455520/...014555554120./..025555555200../..0556666665510./.01566510000020./01105200.....0../.00.00..........","eye":[12,2]},{"w":16,"h":11,"pal":["#120a0b","#3b2a20","#574637","#7b614b","#a38c66","#dabd89","#f0deb0"],"px":"..........0000../.........033420./........02522520/.....00004555520/...003555554100./..01555555410.../.0155556661120../0025665520000.../.00266210......./...00100......../....00..........","eye":[12,2]}],[{"w":14,"h":10,"pal":["#27212a","#4d4853","#5f5a64","#7b777f","#9a97a0","#bab7bb","#dedbdb"],"px":".........0000./........021200/.......0220220/...00000222220/..012222221110/.022222222000./033334456110../02666220000.../0122100......./.0000.........","eye":[12,1]},{"w":16,"h":11,"pal":["#27212a","#4d4853","#5f5a64","#7b777f","#9a97a0","#bab7bb","#dedbdb"],"px":"...........000../..........02220./.........0221220/....000000222220/...012222222100./..012222233300../.00233445222120./01126662200000../021266210......./.0000100......../....00..........","eye":[12,2]},{"w":16,"h":10,"pal":["#27212a","#4d4853","#5f5a64","#7b777f","#9a97a0","#bab7bb","#dedbdb"],"px":"..........0000../.........012220./.....00000221220/....002222222220/...012222222110./..022223333200../..0234456662210./.01266210000020./01102200.....0../.00.00..........","eye":[12,2]},{"w":16,"h":11,"pal":["#27212a","#4d4853","#5f5a64","#7b777f","#9a97a0","#bab7bb","#dedbdb"],"px":"..........0000../.........022220./........02222220/.....00002222220/...002222222100./..01222333210.../.0123334561110../0012662220000.../.00266210......./...00100......../....00..........","eye":[8,3]}]]},"snail":{"variants":[{"w":16,"h":13,"pal":["#23110c","#3c2416","#5b3c25","#7b5533","#a57849","#c0965d","#ebc37d"],"px":"....0555550...../...256666652..24/..14665555651051/..3464453465405./..3462534465405./..3463555365415./..3456332565415./..1456666655325./..0244455443243./.034144444224432/.44440001144442./0444444444553121/..000..00000....","eye":[13,3]},{"w":15,"h":12,"pal":["#311724","#4a2a37","#714554","#966d77","#bd8691","#ddaead","#f4cbc5"],"px":"....2555540..../...36666655...5/..2565444664041/.14654443464231/.14654434364230/.14654544364230/.14664223654230/..3466665553241/..1444444432320/.23144444124443/344410000344440/044444444444103","eye":[12,4]},{"w":15,"h":13,"pal":["#0e0e22","#292f4b","#434d6d","#606c8a","#7e8daf","#98a9c7","#c3d3ea"],"px":"....455552...../..156666653..14/.05664445651140/.4563444465414./.4562524265414./.4562544265414./.4566222665414./.1456666654214./.0344555552232./.23144444134433/54441111154442./344444444444012/.........000...","eye":[12,3]},{"w":15,"h":13,"pal":["#0e110f","#25311d","#4b5b3c","#798e62","#90a672","#b1c78f","#d1e4b1"],"px":"...0455551...../..145555562..23/.14654444652131/.3463342355313./.3462524265313./.3462554265313./.3456221554413./.1345666544214./.02344444422220/.22133434123322/333211111333320/343333333333112/.......00.00...","eye":[12,3]}],"frames":[[{"w":16,"h":11,"pal":["#23110c","#3c2416","#5b3c25","#7b5533","#a57849","#c0965d","#ebc37d"],"px":"....00000......./...00255500.00../...034555400000./..0454334530200./..055444254040../..056464464040../..0664244650400./..00566664030300/.03011111135420./0466554445520320/.00000000000.00.","eye":[13,2]},{"w":16,"h":11,"pal":["#23110c","#3c2416","#5b3c25","#7b5533","#a57849","#c0965d","#ebc37d"],"px":".....00000....../...00155500..00./..01554455100100/.01554333640400./.0164366464040../.0266444466040../..0464455640400./..02455552040200/.05422223345330./0566544445540310/.00000000000000.","eye":[14,2]},{"w":16,"h":11,"pal":["#23110c","#3c2416","#5b3c25","#7b5533","#a57849","#c0965d","#ebc37d"],"px":".....00000....../....0055500..0../...024666400000./..0364334640200./..0664442460400./..066444255040../..0665244550400./..00455554030410/.03411111035520./0355554444530320/.00000000000.00.","eye":[13,2]},{"w":14,"h":11,"pal":["#23110c","#3c2416","#5b3c25","#7b5533","#a57849","#c0965d","#ebc37d"],"px":"....00000...../...0066500.00./..056556600050/.0465444650400/.056265255040./.056244455040./.0055555400130/.0134444114310/03643122364320/04444444320040/.0000000000.0.","eye":[12,3]}],[{"w":16,"h":11,"pal":["#311724","#4a2a37","#714554","#966d77","#bd8691","#ddaead","#f4cbc5"],"px":"....00000......./...00244500.00../...034555400000./..0454334530200./..055444254040../..056464464040../..0664344640400./..00466664030310/.03111112234420./0466444444420320/.00000000000.00.","eye":[13,2]},{"w":16,"h":11,"pal":["#311724","#4a2a37","#714554","#966d77","#bd8691","#ddaead","#f4cbc5"],"px":".....00000....../...00155500..00./..01554455100100/.02554333640400./.0264366364040../.0266444466040../..0464444640400./..02444442141210/.04422333344330./0466444445540310/.00000000000000.","eye":[14,2]},{"w":16,"h":11,"pal":["#311724","#4a2a37","#714554","#966d77","#bd8691","#ddaead","#f4cbc5"],"px":".....00000....../....0055500..0../...024666400000./..0364334640200./..0664442460400./..066444244040../..0664344440400./..01444444031410/.03411122035520./0355554444530320/.00000000000.00.","eye":[13,2]},{"w":14,"h":11,"pal":["#311724","#4a2a37","#714554","#966d77","#bd8691","#ddaead","#f4cbc5"],"px":"....00000...../...0066400.00./..046446610040/.0464444640410/.046264355040./.056344455040./.0055555401130/.0134444114320/03643222364320/04444444320030/.0000000000.0.","eye":[11,2]}],[{"w":16,"h":11,"pal":["#0e0e22","#292f4b","#434d6d","#606c8a","#7e8daf","#98a9c7","#c3d3ea"],"px":"....00000......./...00255500.00../...044555400010./..0454444540210./..055444254040../..066464464040../..0664244640400./..01466664031310/.03111112235420./0466554445520320/.00000000000.00.","eye":[12,2]},{"w":16,"h":11,"pal":["#0e0e22","#292f4b","#434d6d","#606c8a","#7e8daf","#98a9c7","#c3d3ea"],"px":".....00000....../...00155500..00./..01554455100100/.02664444640410./.0264466464140../.0266444466040../..0464444640410./..02455552141210/.05422223345330./0566544445540310/.00000000000000.","eye":[14,2]},{"w":16,"h":11,"pal":["#0e0e22","#292f4b","#434d6d","#606c8a","#7e8daf","#98a9c7","#c3d3ea"],"px":".....00000....../....0055600..0../...024666410010./..0464444640210./..0664442460410./..066444244040../..0665244550400./..01455554031410/.03411122035520./0355554444530420/.00000000000.00.","eye":[13,6]},{"w":14,"h":11,"pal":["#0e0e22","#292f4b","#434d6d","#606c8a","#7e8daf","#98a9c7","#c3d3ea"],"px":"....00000...../...0166400.00./..046556610050/.0465444650410/.056265255040./.056244455040./.0155556411130/.0134444114320/03643222464420/04444444421040/.0000000000.0.","eye":[11,2]}],[{"w":16,"h":11,"pal":["#0e110f","#25311d","#4b5b3c","#798e62","#90a672","#b1c78f","#d1e4b1"],"px":"....00000......./...00244400.00../...023445300000./..0353233530210./..055333253030../..055354354030../..0554234640300./..01466663021210/.02111111124320./0366443334420220/.00000000000.00.","eye":[13,2]},{"w":16,"h":11,"pal":["#0e110f","#25311d","#4b5b3c","#798e62","#90a672","#b1c78f","#d1e4b1"],"px":".....00000....../...00145500..00./..01553355100100/.01553223530310./.0153355353140../.0256333366040../..0464444630310./..02344442131210/.04322222234220./0466433334430210/.00000000000000.","eye":[14,2]},{"w":16,"h":11,"pal":["#0e110f","#25311d","#4b5b3c","#798e62","#90a672","#b1c78f","#d1e4b1"],"px":".....00000....../....0055500..0../...023555300010./..0254333540210./..0663342460310./..066333244030../..0664233440300./..01344443021310/.02311111024420./0245553333520220/.00000000000.00.","eye":[13,6]},{"w":14,"h":11,"pal":["#0e110f","#25311d","#4b5b3c","#798e62","#90a672","#b1c78f","#d1e4b1"],"px":"....00000...../...0155400.00./..045445610040/.0364333640310/.046264244030./.056233355030./.0055555311120/.0123333113210/02632222253320/03344444321030/.0000000000.0.","eye":[11,2]}]]},"rat":{"variants":[{"w":17,"h":11,"pal":["#2c161b","#4c3534","#89695a","#a27e70","#bd9b89","#d2a8ae","#e3b9b7"],"px":".............21../..........230620./.........15323321/......12221322032/....1222222222233/....2222222222442/.045122222221100./0520122122221..../51..121...2.1..../61..1312..2.11.../.55..............","eye":[14,3]},{"w":18,"h":11,"pal":["#261724","#332a35","#4d3d4b","#675e6b","#77737f","#aa8f9d","#cda4b1"],"px":"..............2.../..........162451../........2.2634433./......144441430343/.....2444444444463/.....344444344454./..36044344443...../.46..44.444412..../15...331...302..../050..342...5.4..../.263..............","eye":[14,3]},{"w":17,"h":11,"pal":["#201722","#46404a","#5f4f5a","#8b6674","#b48a96","#b9b4bd","#e7bac3"],"px":"...........0.3.../.........064161../.......111412211./.....111120211151/.....111111111211/....111111111222./.261111111111..../241..1..1110...../40........1....../41.............../.32..............","eye":[14,2]},{"w":17,"h":11,"pal":["#271518","#3d3130","#604e4f","#8e7374","#ae9996","#d3c0b0","#eaddc7"],"px":".............4.../..........43261../.........25336651/......66660652366/....1666665666666/....6666666566663/.463666666653221./342.265466643..../4...4411..614..../50..5614..6061.../343..............","eye":[10,3]}],"frames":[[{"w":19,"h":12,"pal":["#2c161b","#4c3534","#89695a","#a27e70","#bd9b89","#d2a8ae","#e3b9b7"],"px":"................0../.............00030./.........000041120./.......00111022120./......0022221221420/...0000222222255640/..0261222222222000./.02500022232330..../00500.0210003120.../.022001111003120.../..00200000..000..../....0..............","eye":[15,3]},{"w":19,"h":12,"pal":["#2c161b","#4c3534","#89695a","#a27e70","#bd9b89","#d2a8ae","#e3b9b7"],"px":"................0../.............0.010./.........0..020030./........0000231210./......0002202222200/...0001222222323330/..02312222222466410/.04500122222200000./0500..021111210..../.050.02120005120.../..01001010.02020.../...0..0.0...0.0....","eye":[17,4]},{"w":18,"h":12,"pal":["#2c161b","#4c3534","#89695a","#a27e70","#bd9b89","#d2a8ae","#e3b9b7"],"px":"...........00..0../..........0110050./........000121210./......00110222220./.....0022222221340/...000222222244660/..025022222222330./.055003212221000../0220.0210001000.../013000300.021110../.0132000...0000.../..000.............","eye":[14,4]},{"w":17,"h":12,"pal":["#2c161b","#4c3534","#89695a","#a27e70","#bd9b89","#d2a8ae","#e3b9b7"],"px":"..........00.00../.........0020020./.......000222210./.....002220211220/....0122331333330/..000244552252210/.022015166220000./0210002000210..../02000222002120.../02210101001020.../.02200.0..0.0..../..00.............","eye":[13,1]}],[{"w":19,"h":12,"pal":["#261724","#332a35","#4d3d4b","#675e6b","#77737f","#aa8f9d","#cda4b1"],"px":"................0../.............00040./.........000052240./.......00223044340./......0044443443540/...0001444444466650/..0463344444444000./.04510043343440..../00600.0310004130.../.033001122004230.../..00400000..000..../....0..............","eye":[12,3]},{"w":19,"h":12,"pal":["#261724","#332a35","#4d3d4b","#675e6b","#77737f","#aa8f9d","#cda4b1"],"px":"................0../.............0.020./.........0..030040./........0000342320./......0003303344400/...0002444444444440/..04424444444566520/.05500244444410000./0610..043133410..../.060.04340006140.../..03001020.03030.../...0..0.0...0.0....","eye":[17,4]},{"w":18,"h":12,"pal":["#261724","#332a35","#4d3d4b","#675e6b","#77737f","#aa8f9d","#cda4b1"],"px":"...........00..0../..........0110060./........000342430./......00220344340./.....0033333442450/...000334444455660/..045044444444440./.066004424442000../0440.0420002010.../034000410.041330../.0144000...0000.../..000.............","eye":[14,4]},{"w":17,"h":12,"pal":["#261724","#332a35","#4d3d4b","#675e6b","#77737f","#aa8f9d","#cda4b1"],"px":"..........00.00../.........0030030./.......000444420./.....004440422440/....0244442444450/..000455564464430/.044136366440000./0430014000410..../04000433004140.../03310102002030.../.03300.0..0.0..../..00.............","eye":[13,1]}],[{"w":19,"h":12,"pal":["#201722","#46404a","#5f4f5a","#8b6674","#b48a96","#b9b4bd","#e7bac3"],"px":"................0../.............00030./.........000041110./.......00111011110./......0011111111410/...0000111111156640/..0161111112222000./.02410021121220..../00400.0110002110.../.011001111002110.../..00100000..000..../....0..............","eye":[15,3]},{"w":19,"h":12,"pal":["#201722","#46404a","#5f4f5a","#8b6674","#b48a96","#b9b4bd","#e7bac3"],"px":"................0../.............0.010./.........0..010020./........0000121110./......0001101111100/...0001111111212230/..01311111111466410/.04400111111100000./0410..021111210..../.050.02120006120.../..01001010.01010.../...0..0.0...0.0....","eye":[17,4]},{"w":18,"h":12,"pal":["#201722","#46404a","#5f4f5a","#8b6674","#b48a96","#b9b4bd","#e7bac3"],"px":"...........00..0../..........0110060./........000111110./......00110111110./.....0011111121340/...000111111244660/..024021111112220./.045002111111000../0110.0110001000.../012000210.011110../.0131000...0000.../..000.............","eye":[14,3]},{"w":17,"h":12,"pal":["#201722","#46404a","#5f4f5a","#8b6674","#b48a96","#b9b4bd","#e7bac3"],"px":"..........00.00../.........0010010./.......000111110./.....001120211210/....0122221222330/..000144441151110/.011016166110000./0110011000110..../01000111001110.../01110101001010.../.01100.0..0.0..../..00.............","eye":[13,1]}],[{"w":19,"h":12,"pal":["#271518","#3d3130","#604e4f","#8e7374","#ae9996","#d3c0b0","#eaddc7"],"px":"................0../.............00060./.........000062250./.......00333155350./......0155563663660/...0001666666666660/..0663366666666000./.06610064464660..../00600.0410006140.../.044001222006240.../..00400000..000..../....0..............","eye":[15,4]},{"w":19,"h":12,"pal":["#271518","#3d3130","#604e4f","#8e7374","#ae9996","#d3c0b0","#eaddc7"],"px":"................0../.............0.020./.........0..040060./........0000462420./......0004414445510/...0002555556666660/..06636666666666630/.06600366666610000./0610..063133610..../.060.06360006160.../..03002020.04040.../...0..0.0...0.0....","eye":[15,2]},{"w":18,"h":12,"pal":["#271518","#3d3130","#604e4f","#8e7374","#ae9996","#d3c0b0","#eaddc7"],"px":"...........00..0../..........0110060./........000362630./......00220366460./.....0044444662660/...000444555666660/..066165555666660./.066006626663000../0660.0630013010.../036000610.061330../.0166000...0000.../..000.............","eye":[14,7]},{"w":17,"h":12,"pal":["#271518","#3d3130","#604e4f","#8e7374","#ae9996","#d3c0b0","#eaddc7"],"px":"..........00.00../.........0040140./.......000465620./.....005661623650/....0366663666660/..000666666666630/.056136366660000./0530016000610..../06000534006150.../04410202002040.../.04400.0..0.0..../..00.............","eye":[10,1]}]]},"hare":{"variants":[{"w":16,"h":14,"pal":["#2f1a14","#472f23","#624534","#825c3f","#9e7453","#b38152","#c09369"],"px":"...........1..../.......031.33.../.......0220132../........122132../.........12142../..........16553./.........0456451/...1566665566555/..25555555556553/..5532555544554./..45563555555.../2245550555544.../12455306524130../..455661004604..","eye":[11,3]},{"w":16,"h":14,"pal":["#251514","#3e2823","#573f32","#7c5b43","#987050","#a27c5d","#b48d6e"],"px":".......361.33.../.......2330231../........232132../.........23132../..........23432./..........345651/...1222222445166/..05444444344455/..44454444344551/.0443434444420../2044461553554.../2144430552423.../.0544441114523../..00000...00....","eye":[11,2]},{"w":16,"h":14,"pal":["#241717","#4b3a31","#7e695c","#9c8672","#b99e81","#c7ae8f","#e1c8a7"],"px":".......43..62.../.......353055.../.......0443251../........133041../.........12343../..........45554./....333333553262/..15444444555542/..3445444435554./.044223444443.../2154551444564.../3155431443614.../.0555431116423../..00000...00.0..","eye":[11,3]},{"w":16,"h":14,"pal":["#221b1e","#3d3835","#655e5d","#948d8a","#b2aba6","#d4cfc3","#e7e2da"],"px":".......43..62.../.......353.652../........654362../.........4516.../..........2454../..........45556./....433332554354/...5555554555553/..5556555545555./.0554355555530../2055562656563.../3155522663613.../.0655431.16432../..00000...000...","eye":[11,3]}],"frames":[[{"w":16,"h":15,"pal":["#2f1a14","#472f23","#624534","#825c3f","#9e7453","#b38152","#c09369"],"px":"...........0..../.........0000.../........000500../.......01530500./........00053310/.......000250330/.....00445555520/....02455555210./...045555555120./.000556664444420/0165665210000120/060165000....00./.03500........../.050............/..0.............","eye":[13,3]},{"w":17,"h":15,"pal":["#2f1a14","#472f23","#624534","#825c3f","#9e7453","#b38152","#c09369"],"px":".........00.00.../........0510520../........03404400./.........00454200/........000450240/......00022555520/.....00455555100./....045555555520./..005556661000250/.0115666100...00./005266100......../0305300........../.0330............/.030............./..0..............","eye":[15,3]},{"w":17,"h":12,"pal":["#2f1a14","#472f23","#624534","#825c3f","#9e7453","#b38152","#c09369"],"px":".........00000.../........0451240../........00024520./......00000240520/....0055554455550/...0055555555000./..00566666655010./.0225652333335530/01116500000004510/.04500.......0010/0140...........0./.00..............","eye":[13,3]},{"w":17,"h":11,"pal":["#2f1a14","#472f23","#624534","#825c3f","#9e7453","#b38152","#c09369"],"px":".........00000.../........0230050../........0033230../.........0024420./.....000000241540/...00055555554540/..01155555554000./.045255555554130./01105666666651310/.036520000000250./..0000.......00..","eye":[12,1]}],[{"w":16,"h":15,"pal":["#251514","#3e2823","#573f32","#7c5b43","#987050","#a27c5d","#b48d6e"],"px":"...........0..../.........0000.../........000400../.......01420400./........00042210/.......000140230/.....00334444420/....02344444200./...034444455020./.000555553333320/0153564210000120/060164000....00./.02400........../.040............/..0.............","eye":[13,3]},{"w":17,"h":15,"pal":["#251514","#3e2823","#573f32","#7c5b43","#987050","#a27c5d","#b48d6e"],"px":".........00.00.../........0410410../........03303300./.........00343100/........000340230/......00022444420/.....00344444000./....034444445520./..003555550000240/.0114556100...00./004266100......../0204200........../.0220............/.030............./..0..............","eye":[15,3]},{"w":17,"h":12,"pal":["#251514","#3e2823","#573f32","#7c5b43","#987050","#a27c5d","#b48d6e"],"px":".........00000.../........0341130../........00023420./......00000230420/....0044443343540/...0055544444000./..00455555644000./.0224642222224430/00116400000003410/.03400.......0010/0130...........0./.00..............","eye":[13,3]},{"w":17,"h":11,"pal":["#251514","#3e2823","#573f32","#7c5b43","#987050","#a27c5d","#b48d6e"],"px":".........00000.../........0220040../........0023230../.........0023320./.....000000230430/...00044444443430/..00144444443000./.034244455553120./01103555556641210/.026410000000240./..0000.......00..","eye":[12,1]}],[{"w":16,"h":15,"pal":["#241717","#4b3a31","#7e695c","#9c8672","#b99e81","#c7ae8f","#e1c8a7"],"px":"...........0..../.........0000.../........000400../.......01430400./........00043310/.......000140330/.....00334444420/....02344445200./...035555555020./.000555553344420/0154564310000130/060164000....00./.03400........../.040............/..0.............","eye":[13,3]},{"w":17,"h":15,"pal":["#241717","#4b3a31","#7e695c","#9c8672","#b99e81","#c7ae8f","#e1c8a7"],"px":".........00.00.../........0410410../........03303300./.........00343100/........000440240/......00022444430/.....00444444000./....045555555520./..004555551000340/.0114556100...00./004266100......../0304300........../.0330............/.030............./..0..............","eye":[15,3]},{"w":17,"h":12,"pal":["#241717","#4b3a31","#7e695c","#9c8672","#b99e81","#c7ae8f","#e1c8a7"],"px":".........00000.../........0341130../........00023520./......00000240520/....0044444444540/...0055544554000./..00455555654000./.0235643333334430/00116400000003410/.03400.......0010/0130...........0./.00..............","eye":[13,3]},{"w":17,"h":11,"pal":["#241717","#4b3a31","#7e695c","#9c8672","#b99e81","#c7ae8f","#e1c8a7"],"px":".........00000.../........0230040../........0033230../.........0023320./.....000000230430/...00044444443440/..00144444554000./.045355555554130./01104555556641310/.036410000000240./..0000.......00..","eye":[12,1]}],[{"w":16,"h":15,"pal":["#221b1e","#3d3835","#655e5d","#948d8a","#b2aba6","#d4cfc3","#e7e2da"],"px":"...........0..../.........0000.../........000500../.......02530500./........00053320/.......000250440/.....00445555520/....03455555300./...045555555130./.000666664445530/0165665310000230/060265000....00./.03500........../.050............/..0.............","eye":[13,3]},{"w":17,"h":15,"pal":["#221b1e","#3d3835","#655e5d","#948d8a","#b2aba6","#d4cfc3","#e7e2da"],"px":".........00.00.../........0520520../........04404400./.........00454200/........000450350/......00023555530/.....00555555000./....055555555530./..005566661000350/.0115666200...00./005366200......../0305300........../.0330............/.040............./..0..............","eye":[15,3]},{"w":17,"h":12,"pal":["#221b1e","#3d3835","#655e5d","#948d8a","#b2aba6","#d4cfc3","#e7e2da"],"px":".........00000.../........0452240../........00024530./......00000340530/....0055555555550/...0056655555000./..00566666655000./.0335653333345540/01116500000004520/.04500.......0020/0240...........0./.00..............","eye":[13,3]},{"w":17,"h":11,"pal":["#221b1e","#3d3835","#655e5d","#948d8a","#b2aba6","#d4cfc3","#e7e2da"],"px":".........00000.../........0330050../........0034340../.........0034430./.....000000340540/...00055555554540/..01155555555000./.055355555665130./02205666666652320/.036520000000250./..0000.......00..","eye":[12,1]}]]},"otter":{"variants":[{"w":19,"h":9,"pal":["#2a1715","#462c23","#61402e","#7b5034","#a7886d","#c79a61","#d6ac7d"],"px":"..............11.../............20220../.......22211323212./.....13333223322430/...1133333323365630/..0333333333266630./12220203333331...../02210202331320...../..0..2020.0312.....","eye":[15,3]},{"w":19,"h":9,"pal":["#271816","#493027","#674635","#815e43","#986b49","#cea77c","#e7c99d"],"px":"..............1..../............41420../.......33322424231./.....14444334442330/...024444433456663./...44444444335551../122203244444440..../1231.312331332...../.00.03040.03321....","eye":[15,3]},{"w":18,"h":9,"pal":["#331e14","#68492f","#8c6b44","#b08753","#d09f59","#efc97e","#efd69e"],"px":"..............2.../...........121400./......032204314131/....13444423440522/...144444433556641/00244444444346660./31302324444441..../13202203331310..../.0..2130..1312....","eye":[14,3]},{"w":18,"h":9,"pal":["#1c1315","#332b2a","#49413f","#615950","#73685e","#8b826e","#aea28b"],"px":"............2022../..........1331223./.....2333313321324/....33333333366543/...333333333334440/21222223333344..../232..20555243...../.....1.....412..../...........1......","eye":[16,2]}],"frames":[[{"w":17,"h":9,"pal":["#2a1715","#462c23","#61402e","#7b5034","#a7886d","#d6ac7d"],"px":"...........0000../......0000021200./....0002222220200/..00033333333330./.00333333334000../.021025222510..../0500.0100010...../010...00..0....../.0...............","eye":[15,2]},{"w":18,"h":10,"pal":["#2a1715","#462c23","#61402e","#7b5034","#a7886d","#d6ac7d"],"px":"............00.0../........000010010./.......00000221210/.....0023332321230/...000333333333320/..012232334350000./.0220023000500..../00510.000..0....../0300............../.0................","eye":[13,1]},{"w":18,"h":9,"pal":["#2a1715","#462c23","#61402e","#7b5034","#c79a61","#d6ac7d"],"px":"............0000../......00000020200./.....002232230330./...000233333323300/..002333333321100./.022012133341000../0150015100220...../050..000..00....../.0................","eye":[15,1]},{"w":18,"h":9,"pal":["#2a1715","#462c23","#61402e","#7b5034","#a7886d","#d6ac7d"],"px":"............0000../.......0000003110./.....0000000221310/....00233333322310/...00233333333230./..02203342555000../.0220021000200..../0130..00...0....../.00...............","eye":[14,2]}],[{"w":17,"h":9,"pal":["#271816","#493027","#674635","#815e43","#986b49","#cea77c","#e7c99d"],"px":"...........0000../......0000032200./....0003332320310/..00133444444440./.00444444445000../.021025333610..../0600.0100020...../020...00..0....../.0...............","eye":[14,1]},{"w":18,"h":10,"pal":["#271816","#493027","#674635","#815e43","#986b49","#cea77c","#e7c99d"],"px":"............00.0../........000010010./.......00000322320/.....0024342332330/...000444444444430/..023243445451000./.0330034100600..../01610.000..0....../0400............../.0................","eye":[13,1]},{"w":18,"h":9,"pal":["#271816","#493027","#674635","#815e43","#986b49","#cea77c","#e7c99d"],"px":"............0000../......00000030300./.....002332230340./...000344444434400/..013444444431210./.033023144451000../0250016200220...../060..000..00....../.0................","eye":[15,1]},{"w":18,"h":9,"pal":["#271816","#493027","#674635","#815e43","#986b49","#cea77c","#e7c99d"],"px":"............0000../.......0000003220./.....0001110221310/....00244444423410/...00344444444340./..03304453566000../.0330032000300..../0230..00...0....../.00...............","eye":[14,2]}],[{"w":17,"h":9,"pal":["#331e14","#68492f","#8c6b44","#b08753","#d09f59","#efc97e","#efd69e"],"px":"...........0000../......0000031100./....0003332320300/..00133344444440./.00444444445000../.021026222610..../0600.0100010...../010...00..0....../.0...............","eye":[15,2]},{"w":18,"h":10,"pal":["#331e14","#68492f","#8c6b44","#b08753","#d09f59","#efc97e","#efd69e"],"px":"............00.0../........000010010./.......00000321310/.....0024342321230/...000434444444420/..012243455460000./.0330034000600..../01610.000..0....../0400............../.0................","eye":[13,1]},{"w":18,"h":9,"pal":["#331e14","#68492f","#8c6b44","#b08753","#d09f59","#efc97e","#efd69e"],"px":"............0000../......00000030300./.....002332230330./...000244444424400/..002444444421110./.033013144551000../0160016100220...../060..000..00....../.0................","eye":[15,1]},{"w":18,"h":9,"pal":["#331e14","#68492f","#8c6b44","#b08753","#d09f59","#efc97e","#efd69e"],"px":"............0000../.......0000003110./.....0000010221310/....00234444422410/...00244444444240./..02304553666000../.0330031000300..../0130..00...0....../.00...............","eye":[12,1]}],[{"w":17,"h":9,"pal":["#1c1315","#332b2a","#49413f","#615950","#73685e","#8b826e","#aea28b"],"px":"...........0000../......0000032210./....0013332321310/..00233333333330./.00333444445000../.022035333520..../0610.0200020...../020...00..0....../.0...............","eye":[13,2]},{"w":18,"h":10,"pal":["#1c1315","#332b2a","#49413f","#615950","#73685e","#8b826e","#aea28b"],"px":"............00.0../........000020020./.......00111322320/.....0023342332330/...001433333344430/..023233345351000./.0330033200500..../02620.000..0....../0300............../.0................","eye":[13,1]},{"w":18,"h":9,"pal":["#1c1315","#332b2a","#49413f","#615950","#73685e","#8b826e","#aea28b"],"px":"............0000../......00000031310./.....002332331330./...001333333333310/..013333444432220./.033023244452000../0250026200220...../060..000..00....../.0................","eye":[13,2]},{"w":18,"h":9,"pal":["#1c1315","#332b2a","#49413f","#615950","#73685e","#8b826e","#aea28b"],"px":"............0000../.......0000013220./.....0011220222320/....01233333323320/...00333333444340./..03314453556000../.0330032000300..../0230..00...0....../.00...............","eye":[14,2]}]]},"beetle":{"variants":[{"w":15,"h":11,"pal":["#161828","#242b44","#383c53","#4b5a7a","#5c6c8f","#7385a7","#a9b9d3"],"px":"....233333...../..146514554..../.245551454651../.345552455543../2335552555543../33334525543224./333333133331562/.33333133332554/.1333333332034./22..000......../...222222......","eye":[12,5]},{"w":16,"h":11,"pal":["#192418","#344231","#4d6945","#5f7e52","#6e9460","#8cac82","#c7debc"],"px":".....122221...../...1254134441.../..144441343451../.0234441343342../.2224441343332../.22222413433022./.222222122223561/.022222122222342/.002222222210220/.1.00000001...../1..11111110.....","eye":[12,5]},{"w":15,"h":12,"pal":["#2e1915","#3e2721","#5e3c28","#865939","#a66e43","#be8755","#d7ae82"],"px":"....033331...../..1264245430.../.145652454650../.345552454453../3334552444543../33334524544330./333333244432450/233333233333663/.23333333331441/2.101111110..../..12333321...../....0..1.......","eye":[11,6]},{"w":14,"h":11,"pal":["#1b1722","#34303c","#4b4754","#5b5865","#757380","#9c9ba7","#f0effa"],"px":"...133332...../...45324441.../.34443244452../334443244443../334443344443../3333432433213./3333322223136./3333322223.342/.233322232.23./..00000......./..1.222.......","eye":[11,5]}],"frames":[[{"w":18,"h":12,"pal":["#161828","#242b44","#383c53","#4b5a7a","#5c6c8f","#7385a7","#a9b9d3"],"px":"......000000....../....000555510...../...01355135530..../..0135551353320.../.01244551454420.../.023334524532330../.0233344244324530./.02333332333235520/06022333233304320./0350000000000030../.0006550006300530./....0000..00..00..","eye":[12,5]},{"w":18,"h":13,"pal":["#161828","#242b44","#383c53","#4b5a7a","#5c6c8f","#7385a7","#a9b9d3"],"px":"........000......./......001110....../....002555620...../...02355035540..../..0244550355440.../..03345503543400../..033345034332520./.00333330233236420/040233332232035510/02520110000200300./.0013330..050050../...05330.0630030../....000...00..0...","eye":[14,5]},{"w":17,"h":12,"pal":["#161828","#242b44","#383c53","#4b5a7a","#5c6c8f","#7385a7","#a9b9d3"],"px":"......000000...../.....02555400..../....0235255320.../...024552444330../..0034552455430../..03334525533300./.0133335233321520/.0133443133325560/05302333333113530/.033200000240000./..006150.0620..../....000...00.....","eye":[14,5]},{"w":17,"h":12,"pal":["#161828","#242b44","#383c53","#4b5a7a","#5c6c8f","#7385a7","#a9b9d3"],"px":".......0000....../.....00333200..../....0245044420.0./...02555044443050/..023455044552020/..02333515332330./.0033333133335550/05313333033225550/03660000.0211100./.0030030.03200.../...0.050.0520..../......0...00.....","eye":[14,4]}],[{"w":18,"h":12,"pal":["#192418","#344231","#4d6945","#5f7e52","#6e9460","#8cac82","#c7debc"],"px":"......000000....../....000333300...../...00244024420..../..0024440242210.../.00122440242210.../.001112413411220../.0122233133213420./.01222221222124410/05011222122203210./0240000000000020../.0005330006200420./....0000..00..00..","eye":[11,1]},{"w":18,"h":13,"pal":["#192418","#344231","#4d6945","#5f7e52","#6e9460","#8cac82","#c7debc"],"px":"........000......./......000000....../....000444510...../...01244024420..../..0122440244220.../..02224402432300../..022234023221410./.00222220122126310/030122221121024300/01310000000100100./.0002110..030030../...03220.0520010../....000...00..0...","eye":[16,8]},{"w":17,"h":12,"pal":["#192418","#344231","#4d6945","#5f7e52","#6e9460","#8cac82","#c7debc"],"px":"......000000...../.....00444200..../....0124144210.../...012441333210../..0023441344320../..02223413321100./.0022223122210410/.0012222022213450/03201222222002420/.022100000120000./..005040.0610..../....000...00.....","eye":[14,5]},{"w":17,"h":12,"pal":["#192418","#344231","#4d6945","#5f7e52","#6e9460","#8cac82","#c7debc"],"px":".......0000....../.....00222100..../....0024022210.0./...01444023332040/..012344033331010/..01222303211120./.0022222022114440/04202222022114540/02560000.0100000./.0020020.02100.../...0.040.0410..../......0...00.....","eye":[14,4]}],[{"w":18,"h":12,"pal":["#2e1915","#3e2721","#5e3c28","#865939","#a66e43","#be8755","#d7ae82"],"px":"......000000....../....000444400...../...00344034430..../..0135551353320.../.01233551354420.../.012234514531330../.0133344144314530./.01333331333236520/06022333233304320./0350000000000030../.0006440006300530./....0000..00..00..","eye":[11,1]},{"w":18,"h":13,"pal":["#2e1915","#3e2721","#5e3c28","#865939","#a66e43","#be8755","#d7ae82"],"px":"........000......./......001110....../....001444610...../...01345035530..../..0133550355440.../..03345503543400../..033345034331510./.00333330133236420/040233332232036400/02420000000200200./.0013230..040040../...04330.0630030../....000...00..0...","eye":[16,8]},{"w":17,"h":12,"pal":["#2e1915","#3e2721","#5e3c28","#865939","#a66e43","#be8755","#d7ae82"],"px":"......000000...../.....01445400..../....0235255310.../...014551444320../..0034551455430../..03334514432300./.0033334133320520/.0033333133324660/04302333333113430/.033200000240000./..006140.0620..../....000...00.....","eye":[14,5]},{"w":17,"h":12,"pal":["#2e1915","#3e2721","#5e3c28","#865939","#a66e43","#be8755","#d7ae82"],"px":".......0000....../.....00333200..../....0135034420.0./...02555044443050/..013455044442010/..02333404321230./.0033333033335450/06303333033114640/03660000.0111100./.0030030.03200.../...0.040.0520..../......0...00.....","eye":[14,4]}],[{"w":18,"h":12,"pal":["#1b1722","#34303c","#4b4754","#5b5865","#757380","#9c9ba7","#f0effa"],"px":"......000000....../....000444400...../...01344134430..../..0134441343320.../.01233442343320.../.022223423422220../.0233333233324430./.02333332333234420/05022333233304320./0340000000000030../.0005440006300430./....0000..00..00..","eye":[11,1]},{"w":18,"h":13,"pal":["#1b1722","#34303c","#4b4754","#5b5865","#757380","#9c9ba7","#f0effa"],"px":"........000......./......001120....../....002444520...../...02344024430..../..0233440244330.../..03334403433300../..033334033332420./.00333330233236420/040233332232034400/02420010000200200./.0013220..040040../...04330.0530020../....000...00..0...","eye":[16,8]},{"w":17,"h":12,"pal":["#1b1722","#34303c","#4b4754","#5b5865","#757380","#9c9ba7","#f0effa"],"px":"......000000...../.....02444300..../....0234244320.../...023442333320../..0033442444430../..03334424432200./.0033334233320420/.0123332123324450/04302333333113430/.033200000230000./..005240.0620..../....000...00.....","eye":[14,5]},{"w":17,"h":12,"pal":["#1b1722","#34303c","#4b4754","#5b5865","#757380","#9c9ba7","#f0effa"],"px":".......0000....../.....00333200..../....0234033320.0./...02444033333040/..023344044442020/..02333404322230./.0033333133224440/04212333033224540/03560000.0211200./.0030030.03200.../...0.040.0420..../......0...00.....","eye":[14,4]}]]},"cavemoth":{"variants":[{"w":16,"h":11,"pal":["#281c18","#584533","#876b4a","#b7915d","#d2c4a2","#dbab5c","#f8eac0"],"px":".2...1...01..11./.230.01002..231./133440064004431./3246636664466321/1366644661666400/.26664121466641./..464130314660../..01123023210.../...1352.2531..../...552...3530.../...02.....20....","eye":[14,4]},{"w":16,"h":11,"pal":["#2b201d","#544640","#806f66","#ad9a8a","#cbb49f","#e4cfb9","#f8e9d1"],"px":".22..02...11.041/.241...2411.054./.33661.466116642/0236660566346654/.166661366166650/..3666500066665./...56315041463../....004504320.../....1452.2443.../....253...253.../.....2.....10...","eye":[10,2]},{"w":16,"h":11,"pal":["#0f0614","#47384f","#6e587d","#987aaf","#c2a4ce","#e9c5ec","#f3def1"],"px":"22...1....1..22./.220..13.1..231./12461.166124432./3355516665365521/145554266156552./.45555...455551./..56413.223651../...1133.2321..../...2331.1332..../...431...243..../...12.....2.....","eye":[9,2]},{"w":16,"h":11,"pal":["#32201d","#65483d","#a4745a","#baa189","#c28e6b","#f6d5a6","#f7eedc"],"px":".11..01...11..12/.021..01201..121/.014500366003321/0445551666345532/.055551166155550/..5555500055555./..0554140203551./....1124.22110../....1221.2441.../...0440...244.../....11.....21...","eye":[10,2]}],"frames":[[{"w":15,"h":12,"pal":["#281c18","#584533","#876b4a","#b7915d","#d2c4a2","#dbab5c","#f8eac0"],"px":"..0..0......00./.020000.00.0020/.04200102002320/.03430000043330/014661160633330/02666306065610./.0566500066610./.004101102610../..0001414000.../....0440440..../....0120200..../.....00.00.....","eye":[12,1]},{"w":15,"h":12,"pal":["#281c18","#584533","#876b4a","#b7915d","#d2c4a2","#dbab5c","#f8eac0"],"px":"..0...0..0..00./.03000000100220/.03300001014320/.03321010034320/013445061166620/026665060266510/.0666600046620./..06211110430../...000404000.../...00440340..../....0030010..../.....00..0.....","eye":[9,2]},{"w":14,"h":12,"pal":["#281c18","#584533","#876b4a","#b7915d","#d2c4a2","#dbab5c","#f8eac0"],"px":"..0..0..0..00./.0200100100330/00320010014330/03462000136360/05666060065610/0166601015640./.046400014630./.00202031220../..000404200.../...04403620.../....020110..../.....0.00.....","eye":[8,2]},{"w":14,"h":12,"pal":["#281c18","#584533","#876b4a","#b7915d","#d2c4a2","#dbab5c","#f8eac0"],"px":".00........00./0100.0.0000120/01510101003430/00441010034430/03444040144620/0666606026660./0166600036630./.02312011220../..000603200.../...03305620.../...0510250..../....00.00.....","eye":[9,2]}],[{"w":15,"h":12,"pal":["#2b201d","#544640","#806f66","#ad9a8a","#cbb49f","#e4cfb9","#f8e9d1"],"px":"..0..0......00./.020010.00.0120/.06200102003330/.03640000064440/016661160644440/03666406064610./.0566500066610./.005101103620../..0002525000.../....0550560..../....0230300..../.....00.00.....","eye":[9,2]},{"w":15,"h":12,"pal":["#2b201d","#544640","#806f66","#ad9a8a","#cbb49f","#e4cfb9","#f8e9d1"],"px":"..0...0..0..00./.04000000200220/.04410101016420/.04421010046430/014664061166630/036665060366510/.0666600056630./..06312220530../...000505000.../...00550360..../....0040020..../.....00..0.....","eye":[9,2]},{"w":14,"h":12,"pal":["#2b201d","#544640","#806f66","#ad9a8a","#cbb49f","#e4cfb9","#f8e9d1"],"px":"..0..0..0..00./.0300100100440/00430010016440/04663000146460/04666060065620/0266602025650./.056500025630./.00212131220../..000505300.../...06604630.../....030110..../.....0.00.....","eye":[8,2]},{"w":14,"h":12,"pal":["#2b201d","#544640","#806f66","#ad9a8a","#cbb49f","#e4cfb9","#f8e9d1"],"px":".00........00./0100.0.0000130/01520202103530/01551020045540/04566060266620/0666606026660./0166600046640./.02412011330../..000604300.../...04404630.../...0410350..../....00.00.....","eye":[9,2]}],[{"w":15,"h":12,"pal":["#0f0614","#47384f","#6e587d","#987aaf","#c2a4ce","#e9c5ec","#f3def1"],"px":"..0..0......00./.020010.00.0120/.05201102002320/.03530000153330/015551150533330/02555406064610./.0466410166620./.014212202620../..0002424100.../....0551550..../....0230310..../.....00.00.....","eye":[9,2]},{"w":15,"h":12,"pal":["#0f0614","#47384f","#6e587d","#987aaf","#c2a4ce","#e9c5ec","#f3def1"],"px":"..0...0..0..00./.03000100200220/.03310101015320/.03321011035420/014554052255520/025554050366420/.0666611146630./..06322221430../...000405100.../...01551350..../....0130020..../.....00..0.....","eye":[9,2]},{"w":14,"h":12,"pal":["#0f0614","#47384f","#6e587d","#987aaf","#c2a4ce","#e9c5ec","#f3def1"],"px":"..0..0..0..00./.0300100100330/00330121125330/03553000245450/04555150164620/0266612024640./.046500025630./.01212131220../..001505200.../...05513620.../....020110..../.....0.00.....","eye":[8,2]},{"w":14,"h":12,"pal":["#0f0614","#47384f","#6e587d","#987aaf","#c2a4ce","#e9c5ec","#f3def1"],"px":".00........00./0210.0.0000230/02420202113430/01451020135530/03555151255520/0555515025660./0166600036630./.02312111220../..001613200.../...03404620.../...0410340..../....00.00.....","eye":[7,3]}],[{"w":15,"h":12,"pal":["#32201d","#65483d","#a4745a","#baa189","#c28e6b","#f6d5a6","#f7eedc"],"px":"..0..0......00./.010000.00.0010/.05100001001210/.02520000052220/005551150544440/01555405054510./.0456400066610./.004101102610../..0001313000.../....0330550..../....0120200..../.....00.00.....","eye":[12,1]},{"w":15,"h":12,"pal":["#32201d","#65483d","#a4745a","#baa189","#c28e6b","#f6d5a6","#f7eedc"],"px":"..0...0..0..00./.02000000100110/.02200000015210/.04411010045410/014554051155510/015554050255410/.0556600036620./..06211110320../...000303000.../...00550250..../....0020010..../.....00..0.....","eye":[9,2]},{"w":14,"h":12,"pal":["#32201d","#65483d","#a4745a","#baa189","#c28e6b","#f6d5a6","#f7eedc"],"px":"..0..0..0..00./.0200100100220/00220010015440/04552000145450/04555050054510/0155601014630./.036300013620./.00101020110../..000505100.../...05502610.../....010110..../.....0.00.....","eye":[8,2]},{"w":14,"h":12,"pal":["#32201d","#65483d","#a4745a","#baa189","#c28e6b","#f6d5a6","#f7eedc"],"px":".00........00./0100.0.0000120/01410101002320/00330010023520/02555050155510/0555505015550./0055600026620./.01411011110../..000604100.../...04404620.../...0410240..../....00.00.....","eye":[9,2]}]]},"wisp":{"variants":[{"w":11,"h":13,"pal":["#172c3a","#284958","#4c8a99","#60dcf3","#68bccc","#96ecf7","#defbfd"],"px":"....2....../...031...../...334...4./..53332.441/..333322442/.133332333./0333353333./4333566532./4335666531./4333555531./1333555340./.13333331../..04444....","eye":[9,4]},{"w":11,"h":13,"pal":["#291c17","#55412c","#a39268","#d4b768","#f6d575","#f9e49c","#fdf5cc"],"px":"....20...../...032...../..04430.12./..544411422/..344413410/.2444444440/2444565443./3445666440./344566644../344455444../134444441../.1344431.../..11110....","eye":[6,4]},{"w":11,"h":12,"pal":["#351731","#5c3855","#996b8f","#c282b1","#e78fcd","#f3b1e0","#fce7f7"],"px":"....04...../....440..../...3443.03./..34443.352/..344403440/02444544440/3445566543./3445566542./3444555542./1344555442./.24444442../..144441...","eye":[6,4]},{"w":11,"h":14,"pal":["#182524","#2e4940","#558a75","#80b8a1","#89edbe","#dafae8"],"px":"....0....../....31...../...042...../..04441.04./..444420433/..444422411/.244443444./3444455444./4444555441./4444555441./4444444441./034444442../.1344442.../...1111....","eye":[9,5]}],"frames":[[{"w":9,"h":11,"pal":["#172c3a","#284958","#4c8a99","#60dcf3","#68bccc","#96ecf7","#defbfd"],"px":"...00..../..0120.../..03420../.0233400./.0333330./033333340/033333340/045555510/01566640./.0133400./..00000..","eye":[6,3]},{"w":9,"h":13,"pal":["#172c3a","#284958","#4c8a99","#60dcf3","#68bccc","#96ecf7","#defbfd"],"px":"....0..../...010.../..0040.../..03320../..043300./.04333300/043333330/043333330/043335550/013555610/.0146620./..00220../....00...","eye":[7,5]},{"w":9,"h":12,"pal":["#172c3a","#284958","#4c8a99","#60dcf3","#68bccc","#96ecf7","#defbfd"],"px":"...000.../..00100../..04420../..033310./.0133320./.04333310/043333330/043333350/045555530/.0366630./..02240../...000...","eye":[5,1]},{"w":9,"h":11,"pal":["#172c3a","#284958","#4c8a99","#60dcf3","#68bccc","#96ecf7","#defbfd"],"px":"....0..../...030.../..04340../.0133310./003333300/043333330/043333530/045555510/01466640./.002220../...000...","eye":[7,4]}],[{"w":9,"h":11,"pal":["#291c17","#55412c","#a39268","#d4b768","#f6d575","#f9e49c","#fdf5cc"],"px":"...00..../..0110.../..03310../.0144300./.0444440./044444410/044444420/034455500/00666620./.0133200./..00000..","eye":[6,3]},{"w":9,"h":13,"pal":["#291c17","#55412c","#a39268","#d4b768","#f6d575","#f9e49c","#fdf5cc"],"px":"....0..../...010.../..0030.../..03410../..024300./.02444400/013444440/024444440/034444450/004556610/.0036610./..00110../....00...","eye":[7,5]},{"w":9,"h":12,"pal":["#291c17","#55412c","#a39268","#d4b768","#f6d575","#f9e49c","#fdf5cc"],"px":"...000.../..00100../..02210../..044400./.0044410./.02444410/034444440/034444440/034555630/.0366630./..01110../...000...","eye":[5,1]},{"w":9,"h":11,"pal":["#291c17","#55412c","#a39268","#d4b768","#f6d575","#f9e49c","#fdf5cc"],"px":"....0..../...030.../..01420../.0034410./004444400/024444440/024444440/034555510/00366630./.001110../...000...","eye":[7,4]}],[{"w":9,"h":11,"pal":["#351731","#5c3855","#996b8f","#c282b1","#e78fcd","#f3b1e0","#fce7f7"],"px":"...00..../..0220.../..04320../.0244300./.0444440./044444430/044444530/045555500/00556630./.0144300./..00000..","eye":[6,3]},{"w":9,"h":13,"pal":["#351731","#5c3855","#996b8f","#c282b1","#e78fcd","#f3b1e0","#fce7f7"],"px":"....0..../...010.../..0040.../..04430../..034400./.03444400/034444440/034444440/034455550/004555510/.0036620./..00220../....00...","eye":[7,5]},{"w":9,"h":12,"pal":["#351731","#5c3855","#996b8f","#c282b1","#e78fcd","#f3b1e0","#fce7f7"],"px":"...000.../..00100../..03320../..044400./.0044420./.03444410/034444440/034444550/045555540/.0456640./..02330../...000...","eye":[5,1]},{"w":9,"h":11,"pal":["#351731","#5c3855","#996b8f","#c282b1","#e78fcd","#f3b1e0","#fce7f7"],"px":"....0..../...040.../..03430../.0044410./004444400/034444440/034445540/035555520/00356640./.002220../...000...","eye":[7,4]}],[{"w":9,"h":11,"pal":["#182524","#2e4940","#558a75","#80b8a1","#89edbe","#dafae8"],"px":"...00..../..0110.../..04310../.0144300./.0444440./044444420/044444420/044444400/01555520./.0144300./..00000..","eye":[6,3]},{"w":9,"h":13,"pal":["#182524","#2e4940","#558a75","#80b8a1","#89edbe","#dafae8"],"px":"....0..../...010.../..0040.../..04420../..024400./.02444400/024444440/034444440/034444440/004445510/.0135510./..00110../....00...","eye":[7,5]},{"w":9,"h":12,"pal":["#182524","#2e4940","#558a75","#80b8a1","#89edbe","#dafae8"],"px":"...000.../..00100../..02210../..044400./.0144410./.03444410/034444440/034444440/044444540/.0455540./..01220../...000...","eye":[5,1]},{"w":9,"h":11,"pal":["#182524","#2e4940","#558a75","#80b8a1","#89edbe","#dafae8"],"px":"....0..../...040.../..02420../.0144410./004444400/024444440/034444440/034444510/00355540./.001120../...000...","eye":[7,4]}]]},"cloudray":{"variants":[{"w":17,"h":13,"pal":["#0f1e2f","#35566e","#5b8cab","#63c2ef","#6baaca","#7bcaec","#91d3ef"],"px":".......05350...../......1333351..../.....1333333440../..112366666666640/13333366666665335/23333335666653351/..01433335535510./.....0043351...../.......0331....../........34......./.......231......./......141......../......21.........","eye":[14,4]},{"w":17,"h":13,"pal":["#251c3a","#514669","#796c9a","#9b8cce","#ad9be8","#b4a6db","#c5b5ee"],"px":".......0443....../......2444451..../.....13444443..../..22246666666563./36433466666666446/34433346666644442/...133444644551../.....0034420...../........330....../........33......./.......150......./......252......../......1..........","eye":[14,4]},{"w":18,"h":12,"pal":["#4d3138","#694a53","#886568","#ab7f83","#c2999a","#e4aaa6","#f1bab4"],"px":".......125652...../.......5555562..../......4556666651../..1345666666665560/066556666666666564/.1146565556555662./.....0455555621.../........1550....../.........44......./.........52......./.......035......../.......34.........","eye":[14,4]},{"w":18,"h":13,"pal":["#1a2229","#3e5153","#557272","#6f9c97","#8acfc2","#9fdeca","#c0e9d8"],"px":"........2220....../......1544450...../.....044455552..../....235555555542../035544555555554441/44544445555555453./..14544455546653../.....043444210..../........351......./........24......../.......041......../......152........./......32..........","eye":[14,4]}],"frames":[[{"w":19,"h":12,"pal":["#0f1e2f","#35566e","#5b8cab","#63c2ef","#6baaca","#7bcaec","#91d3ef"],"px":"............000..../..........002200.../......000043333400./..00000343333555310/.004114555556666630/011333363666663300./03000013366311000../.0..0.00036000...../........0310......./........030......../.......0120......../........00.........","eye":[14,1]},{"w":19,"h":12,"pal":["#0f1e2f","#35566e","#5b8cab","#63c2ef","#6baaca","#7bcaec","#91d3ef"],"px":"............0.0..../...........00000.../.........00024400../......000044333300./...0001333335555310/.001333333355566630/061000163366666300./.00...00026110000../........03200....../.......0160......../.......050........./........0..........","eye":[16,3]},{"w":18,"h":12,"pal":["#0f1e2f","#35566e","#5b8cab","#63c2ef","#6baaca","#7bcaec","#91d3ef"],"px":"............000.../..........001440../......00000133310./.....0014433333600/...001663333355550/.00333665555666320/03300026666600200./.00...000330000.../.......00310....../......01310......./......0310......../.......00.........","eye":[16,3]},{"w":17,"h":12,"pal":["#0f1e2f","#35566e","#5b8cab","#63c2ef","#6baaca","#7bcaec","#91d3ef"],"px":".........00000.../.......00002320../....000003335530./...00035333555530/.0045666333666630/0111143633366640./.00000043661100../.......013300..../.......0110....../......0330......./.....0320......../......00.........","eye":[10,1]}],[{"w":19,"h":12,"pal":["#251c3a","#514669","#796c9a","#9b8cce","#ad9be8","#b4a6db","#c5b5ee"],"px":"............000..../..........003310.../......000034444300./..00000434444555410/.003113556666666630/022334464666663400./04000024466422000../.0..0.00046100...../........0420......./........040......../.......0330......../........00.........","eye":[16,5]},{"w":19,"h":12,"pal":["#251c3a","#514669","#796c9a","#9b8cce","#ad9be8","#b4a6db","#c5b5ee"],"px":"............0.0..../...........00000.../.........00033310../......000033333410./...0001444445556420/.002444444466666640/062000364466666400./.00...00036120000../........04300....../.......0260......../.......040........./........0..........","eye":[14,1]},{"w":18,"h":12,"pal":["#251c3a","#514669","#796c9a","#9b8cce","#ad9be8","#b4a6db","#c5b5ee"],"px":"............000.../..........002330../......00000244420./.....0023334444600/...003664344455550/.00334665666666430/04400036666611300./.00...000440000.../.......00410....../......01420......./......0420......../.......00.........","eye":[16,3]},{"w":17,"h":12,"pal":["#251c3a","#514669","#796c9a","#9b8cce","#ad9be8","#b4a6db","#c5b5ee"],"px":".........00000.../.......00003330../....000114445540./...00045444556640/.0036666444666640/0112234644466630./.00000034662200../.......024300..../.......0230....../......0430......./.....0330......../......00.........","eye":[10,1]}],[{"w":19,"h":12,"pal":["#4d3138","#694a53","#886568","#ab7f83","#c2999a","#e4aaa6","#f1bab4"],"px":"............000..../..........004410.../......000045556400./..00000545666666510/.005115666666666650/022555565666665500./05000025566523000../.0..0.00056100...../........0530......./........050......../.......0340......../........00.........","eye":[16,5]},{"w":19,"h":12,"pal":["#4d3138","#694a53","#886568","#ab7f83","#c2999a","#e4aaa6","#f1bab4"],"px":"............0.0..../...........00010.../.........00044410../......000055555510./...0001555556666520/.002555555566666650/063000365666666600./.00...00046120000../........06400....../.......0260......../.......060........./........0..........","eye":[16,6]},{"w":18,"h":12,"pal":["#4d3138","#694a53","#886568","#ab7f83","#c2999a","#e4aaa6","#f1bab4"],"px":"............000.../..........002440../......00000255520./.....0035555555600/...003665566666660/.00555666666666540/05500046666611400./.00...000550000.../.......00510....../......01520......./......0520......../.......00.........","eye":[16,3]},{"w":17,"h":12,"pal":["#4d3138","#694a53","#886568","#ab7f83","#c2999a","#e4aaa6","#f1bab4"],"px":".........00000.../.......00004540../....000115556650./...00056555666650/.0046666555666650/0112245655566650./.00000056662200../.......026500..../.......0330....../......0650......./.....0540......../......00.........","eye":[10,1]}],[{"w":19,"h":12,"pal":["#1a2229","#3e5153","#557272","#6f9c97","#8acfc2","#9fdeca","#c0e9d8"],"px":"............000..../..........003310.../......000034555300./..00000444555555410/.004114555555555540/012444454555554400./04000024456422000../.0..0.00046000...../........0420......./........050......../.......0220......../........00.........","eye":[16,5]},{"w":19,"h":12,"pal":["#1a2229","#3e5153","#557272","#6f9c97","#8acfc2","#9fdeca","#c0e9d8"],"px":"............0.0..../...........00000.../.........00033310../......000044444410./...0001444445555420/.002444444555555550/052000255555555500./.00...00025110000../........05300....../.......0260......../.......050........./........0..........","eye":[14,1]},{"w":18,"h":12,"pal":["#1a2229","#3e5153","#557272","#6f9c97","#8acfc2","#9fdeca","#c0e9d8"],"px":"............000.../..........002330../......00000244420./.....0024444455500/...002555455555550/.00444555555555420/04400035555601300./.00...000440000.../.......00410....../......01410......./......0420......../.......00.........","eye":[16,3]},{"w":17,"h":12,"pal":["#1a2229","#3e5153","#557272","#6f9c97","#8acfc2","#9fdeca","#c0e9d8"],"px":".........00000.../.......00003430../....000014445540./...00045444555540/.0035555444555540/0111234555555540./.00000045562200../.......025400..../.......0220....../......0540......./.....0420......../......00.........","eye":[10,1]}]]},"mimic":{"variants":[{"w":18,"h":8,"pal":["#1c2214","#374920","#54683c","#6f894a","#86b154","#a5ca6e","#cada89"],"px":".....106322.5500../....2616535166330./2..35555555411435./411444444441554551/440444444441555540/34130102411223330./.130131231321...../....1120.0314.....","eye":[13,2]},{"w":18,"h":8,"pal":["#122729","#2e4c4a","#447f76","#56b3a0","#83cbb9","#869086","#efead7"],"px":".....1.24.5.1410../....1443414256522./01.044444444112422/021333333331231434/.31333333333234340/.3220010330112221./.1210230220210..../....0200...211....","eye":[14,3]},{"w":18,"h":8,"pal":["#2d1f15","#4c3d2d","#7b6a53","#ab9771","#c6ac78","#d6be8a","#e4d6a6"],"px":".....206121.550.../....262623616622../2..365555554104231/402444444430445451/451444444451455430/3423010341112443../.230040230320...../..0.121...302.....","eye":[13,2]},{"w":19,"h":8,"pal":["#192036","#38405a","#53698b","#6988b3","#7fa0cd","#aab5cc","#d4d5df"],"px":"........15031.550../......433514416612./1.2..54444444102313/.030344443332131444/.041334433333134433/.03222010230022332./..131023022032...../......22...0202....","eye":[17,2]}],"frames":[[{"w":16,"h":10,"pal":["#1c2214","#374920","#54683c","#6f894a","#86b154","#a5ca6e","#cada89"],"px":"...........0..../.....0000.0100../....00412004230./...0134443141400/..01444555351550/.003555553355660/011361133440000./.0404000011200../.0204200012040../..0.000..00.0...","eye":[14,3]},{"w":17,"h":10,"pal":["#1c2214","#374920","#54683c","#6f894a","#86b154","#a5ca6e","#cada89"],"px":".......0...00.0../.....00100000000./....003431034330./...01444444420530/..005555555555530/.012352566234440./.04406111122100../024106400041310../01103310.041040../.00.000...00.0...","eye":[14,1]},{"w":16,"h":10,"pal":["#1c2214","#374920","#54683c","#6f894a","#86b154","#a5ca6e","#cada89"],"px":"......0...00.0../....00100020000./...002433044420./..01444554550220/.015555552555540/0134436641333310/041131110300000./0400460004040.../0301100.010010../.0.000...0..0...","eye":[13,1]},{"w":16,"h":9,"pal":["#1c2214","#374920","#54683c","#6f894a","#86b154","#a5ca6e","#cada89"],"px":"......000.00.0../....00101011010./...011414114120./..02445554420420/.005455554455520/012344566640000./0310330003030.../03033100040040../.00000...0.00...","eye":[12,3]}],[{"w":16,"h":10,"pal":["#122729","#2e4c4a","#447f76","#56b3a0","#83cbb9","#869086","#efead7"],"px":"...........0..../.....0000.0000../....00312003220./...0123332131300/..01333333241440/.002444442244440/011261122550000./.0303000011100../.0103200002030../..0.000..00.0...","eye":[14,3]},{"w":17,"h":10,"pal":["#122729","#2e4c4a","#447f76","#56b3a0","#83cbb9","#869086","#efead7"],"px":".......0...00.0../.....00100000000./....002321023220./...01333333310320/..003344444444420/.001241444225530./.03304001122100../023106300031210../01102210.031030../.00.000...00.0...","eye":[14,1]},{"w":16,"h":10,"pal":["#122729","#2e4c4a","#447f76","#56b3a0","#83cbb9","#869086","#efead7"],"px":"......0...00.0../....00100010000./...001322053320./..01333335340220/.014444442444430/0123324430222200/031021110200000./0300360003030.../0201100.010010../.0.000...0..0...","eye":[13,1]},{"w":16,"h":9,"pal":["#122729","#2e4c4a","#447f76","#56b3a0","#83cbb9","#869086","#efead7"],"px":"......000.00.0../....00000001010./...011313113110./..01333333320320/.004344443344420/012233444630000./0210220002020.../02022100050050../.00000...0.00...","eye":[12,3]}],[{"w":16,"h":10,"pal":["#2d1f15","#4c3d2d","#7b6a53","#ab9771","#c6ac78","#d6be8a","#e4d6a6"],"px":"...........0..../.....0000.0000../....00412004220./...0124443141400/..01444445351550/.003555553366660/011361233440000./.0404000022200../.0204200002040../..0.000..00.0...","eye":[14,3]},{"w":17,"h":10,"pal":["#2d1f15","#4c3d2d","#7b6a53","#ab9771","#c6ac78","#d6be8a","#e4d6a6"],"px":".......0...00.0../.....00200000000./....003432034330./...02444444420430/..004555555555530/.002352666234440./.04406011122100../024106400041210../01102210.041040../.00.000...00.0...","eye":[14,1]},{"w":16,"h":10,"pal":["#2d1f15","#4c3d2d","#7b6a53","#ab9771","#c6ac78","#d6be8a","#e4d6a6"],"px":"......0...00.0../....00100020000./...002433044420./..01444444450220/.015555552556640/0124426640233300/041131120300000./0400460004040.../0302100.010020../.0.000...0..0...","eye":[13,1]},{"w":16,"h":9,"pal":["#2d1f15","#4c3d2d","#7b6a53","#ab9771","#c6ac78","#d6be8a","#e4d6a6"],"px":"......000.00.0../....00000011010./...011424124220./..02444454420420/.005455554455620/012244666640000./0210330003030.../03033100030040../.00000...0.00...","eye":[12,3]}],[{"w":16,"h":10,"pal":["#192036","#38405a","#53698b","#6988b3","#7fa0cd","#aab5cc","#d4d5df"],"px":"...........0..../.....0000.0000../....00302003220./...0123332131300/..01444444241440/.002444443355550/011361133330000./.0303000022200../.0203200002030../..0.000..00.0...","eye":[14,3]},{"w":17,"h":10,"pal":["#192036","#38405a","#53698b","#6988b3","#7fa0cd","#aab5cc","#d4d5df"],"px":".......0...00.0../.....00100000000./....002321023330./...02333444420430/..004444444444430/.002342555233330./.03306001122100../023106300031210../01102210.031030../.00.000...00.0...","eye":[14,1]},{"w":16,"h":10,"pal":["#192036","#38405a","#53698b","#6988b3","#7fa0cd","#aab5cc","#d4d5df"],"px":"......0...00.0../....00100020000./...002333033320./..01444443440220/.014444442445530/0123325630222200/031031110300000./0300360003030.../0301100.010020../.0.000...0..0...","eye":[13,1]},{"w":16,"h":9,"pal":["#192036","#38405a","#53698b","#6988b3","#7fa0cd","#aab5cc","#d4d5df"],"px":"......000.00.0../....00000001010./...011313123220./..02344443320320/.004344443344520/012234555640000./0210220003030.../03033100030030../.00000...0.00...","eye":[12,3]}]]},"shroudmoth":{"variants":[{"w":17,"h":11,"pal":["#170d20","#392e43","#594c64","#796b87","#9a8aab","#cab8dc","#e5d2ed"],"px":"33........11...24/.320....66...0123/32456..666603555./44555616666155554/.555554.661355554/.555553..01555550/.055512.33224551./...1043.33332..../...44321330344.../..4442..33..443../..142...32..241..","eye":[10,4]},{"w":17,"h":12,"pal":["#120e17","#2b2730","#5d5961","#807b85","#b0abb3","#d6d1d7","#eae7eb"],"px":"...............1./.43...3........41/.342...365...144./.34663.6666.4653./33566616665356645/.3666642661566660/.366664010356666./..3663313222666../...11241333422.../...25431332454.../...554.23303553../...15...31..43...","eye":[10,5]},{"w":17,"h":12,"pal":["#24161f","#48323f","#785767","#a17a8d","#c298ab","#e6c6d4","#f7e0e8"],"px":"......1....1...../.32...3....3...23/.331...2661...13./32456416666046632/32556616666266655/.3566631660566660/.3666640112566650/..36533143.25651./...0123143.3120../...34321431444.../..1443..33.2442../...32...2...34...","eye":[10,5]},{"w":18,"h":11,"pal":["#18121e","#2a2332","#443d4e","#5c5468","#766e88","#988da8","#cbbfd6"],"px":".33...32...2...23./..32....552...132./.2345..5555..5522./135555265561555525/.155554.55235555../..55554.11.55555../...5551.33.25555../...0223.33.3212.../...2333.3313332.../..0444..33..444.../...23........3....","eye":[15,2]}],"frames":[[{"w":15,"h":13,"pal":["#170d20","#392e43","#594c64","#796b87","#9a8aab","#cab8dc","#e5d2ed"],"px":"...........000./..000.....02310/.03200...035540/015540000345540/045555040444410/01556604155530./.066661006530../..0331202000.../...0025050...../....0330530..../...03520360..../....020.00...../.....0.........","eye":[8,4]},{"w":15,"h":12,"pal":["#170d20","#392e43","#594c64","#796b87","#9a8aab","#cab8dc","#e5d2ed"],"px":"..00.......000./.0300.....03510/004510..0055530/055543000555510/04555404054530./.056640006630../.01442001320.../..000120200..../....033060...../...03630640..../...02300120..../....00..00.....","eye":[8,3]},{"w":15,"h":12,"pal":["#170d20","#392e43","#594c64","#796b87","#9a8aab","#cab8dc","#e5d2ed"],"px":"..00.......000./.0130....003430/.01430..0034440/014553000555530/015555021555310/.0355502255530./.026640016640../..0000302000.../....034060...../...02630640..../....0600240..../.....0..00.....","eye":[9,2]},{"w":15,"h":13,"pal":["#170d20","#392e43","#594c64","#796b87","#9a8aab","#cab8dc","#e5d2ed"],"px":"............00./...........0000/..000.....01440/.03420...034440/025553000355550/035555052355520/.0555513166620./.036630013320../..0000316000.../....026060...../...01340440..../...01400040..../....00...0.....","eye":[13,1]}],[{"w":15,"h":13,"pal":["#120e17","#2b2730","#5d5961","#807b85","#b0abb3","#d6d1d7","#eae7eb"],"px":"...........000./..000.....03310/.03310...036640/016640000346640/046666041444510/02666605155530./.066661006530../..0332202000.../...0025150...../....0330630..../...03620360..../....030.00...../.....0.........","eye":[9,7]},{"w":15,"h":12,"pal":["#120e17","#2b2730","#5d5961","#807b85","#b0abb3","#d6d1d7","#eae7eb"],"px":"..00.......000./.0300.....03510/004510..0055530/066643001666620/04666404064630./.066640016630../.02452001320.../..000120300..../....033060...../...03630650..../...03300130..../....00..00.....","eye":[8,4]},{"w":15,"h":12,"pal":["#120e17","#2b2730","#5d5961","#807b85","#b0abb3","#d6d1d7","#eae7eb"],"px":"..00.......000./.0130....003430/.02430..0034550/025553000555530/026666121666310/.0466602266630./.036640016640../..0000303000.../....034160...../...03631640..../....0600340..../.....0..00.....","eye":[9,2]},{"w":15,"h":13,"pal":["#120e17","#2b2730","#5d5961","#807b85","#b0abb3","#d6d1d7","#eae7eb"],"px":"............00./...........0110/..000.....02440/.03420...035550/025553000355560/036666162366630/.0666613166630./.036630013330../..0000316000.../....036060...../...02440440..../...02400040..../....00...0.....","eye":[8,6]}],[{"w":15,"h":13,"pal":["#24161f","#48323f","#785767","#a17a8d","#c298ab","#e6c6d4","#f7e0e8"],"px":"...........000./..000.....02310/.03200...025630/016630000236630/036666041444410/01666604144520./.066661006530../..0331102000.../...0025050...../....0330530..../...03520360..../....020.00...../.....0.........","eye":[9,7]},{"w":15,"h":12,"pal":["#24161f","#48323f","#785767","#a17a8d","#c298ab","#e6c6d4","#f7e0e8"],"px":"..00.......000./.0200.....03410/003410..0055520/055532000666610/03666304064630./.066640006630../.01441001320.../..000120200..../....033060...../...03630640..../...02300120..../....00..00.....","eye":[8,3]},{"w":15,"h":12,"pal":["#24161f","#48323f","#785767","#a17a8d","#c298ab","#e6c6d4","#f7e0e8"],"px":"..00.......000./.0120....002430/.01420..0034440/014443000555530/015566111666310/.0366602266630./.026630016630../..0000302000.../....033060...../...02630630..../....0600240..../.....0..00.....","eye":[9,2]},{"w":15,"h":13,"pal":["#24161f","#48323f","#785767","#a17a8d","#c298ab","#e6c6d4","#f7e0e8"],"px":"............00./...........0000/..000.....01440/.02410...024440/024453000255550/035666162366620/.0666613166620./.036630013320../..0000316000.../....026060...../...01330330..../...01300040..../....00...0.....","eye":[13,1]}],[{"w":15,"h":13,"pal":["#18121e","#2a2332","#443d4e","#5c5468","#766e88","#988da8","#cbbfd6"],"px":"...........000./..000.....02320/.03210...035530/025530000335530/045555041444520/02555505155530./.055551005530../..0332212000.../...0025150...../....0330530..../...03520360..../....020.00...../.....0.........","eye":[9,7]},{"w":15,"h":12,"pal":["#18121e","#2a2332","#443d4e","#5c5468","#766e88","#988da8","#cbbfd6"],"px":"..00.......000./.0310.....03520/003520..0055530/055533001555520/03555404054530./.055540015530../.02452001320.../..000120200..../....033050...../...03530650..../...02300220..../....00..00.....","eye":[8,4]},{"w":15,"h":12,"pal":["#18121e","#2a2332","#443d4e","#5c5468","#766e88","#988da8","#cbbfd6"],"px":"..00.......000./.0230....003430/.02430..0034450/025553000555530/025555121555310/.0355512255530./.025530025530../..0000302000.../....033150...../...02531540..../....0600240..../.....0..00.....","eye":[9,2]},{"w":15,"h":13,"pal":["#18121e","#2a2332","#443d4e","#5c5468","#766e88","#988da8","#cbbfd6"],"px":"............00./...........0110/..000.....02440/.03420...034550/025553000355550/035555152355520/.0555513155520./.035530023320../..0000325000.../....025060...../...02331330..../...02400040..../....00...0.....","eye":[8,6]}]]},"axolotl":{"variants":[{"w":19,"h":9,"pal":["#391427","#592f43","#90566d","#b87e92","#dd9bb0","#edabbe","#f8c7d4"],"px":"...........14033121/...........15043241/...........15010251/......055553045540./....245555545666161/...3444555543666551/1..42113441015664../5333044144144....../243.0420.1131......","eye":[15,2]},{"w":18,"h":9,"pal":["#3a1f2c","#58404c","#6e5862","#968b8f","#cab3bb","#ddd2d3","#f2ebe5"],"px":"...........2406124/...........1506145/...........1402035/......04555315663./....15555555566606/6..355555555566645/63242213542006663./5533045144143...../.33..53...132.....","eye":[15,2]},{"w":18,"h":9,"pal":["#39213e","#684a66","#8b789f","#a38cc0","#bc6084","#c3a8cf","#eac3e0"],"px":"............505111/...........0615146/...........0501046/.......2333203332./.....2333333555626/5..133333332335556/52.31001331003553./55120230330320..../.22.0310..020.....","eye":[15,2]},{"w":18,"h":10,"pal":["#0f1f29","#31535f","#5b95a4","#66394e","#77cbd6","#cd839d","#e7c7d5"],"px":"...........35.6333/...........3636356/...........3535356/......02222134442./...014444442444426/4..244444444444444/41121112441014442./421204414414200.../02200410111211..../.....10....11.....","eye":[15,1]}],"frames":[[{"w":19,"h":10,"pal":["#391427","#592f43","#90566d","#b87e92","#dd9bb0","#edabbe","#f8c7d4"],"px":"............0.0000./...........04023130/........00003010130/......0011113433100/.....00355554555540/....004555544556640/.00000000664464610./01404015100140000../.04500220.0220...../..00..00...00......","eye":[17,3]},{"w":18,"h":11,"pal":["#391427","#592f43","#90566d","#b87e92","#dd9bb0","#edabbe","#f8c7d4"],"px":"...........0000.0./..........00104020/..........00205040/......00000131010./.....0344444555630/.0..01444555666660/03001000553555530./0511303200041000../014400410.0210..../.010..00...00...../..0...............","eye":[15,2]},{"w":18,"h":10,"pal":["#391427","#592f43","#90566d","#b87e92","#dd9bb0","#edabbe","#f8c7d4"],"px":"...........0000.0./..........00104010/.......00000200020/......00444224440./.....0554545555560/.00.03344565666630/00101003131553110./0131104500041000../.0450010...00...../..00..0...........","eye":[15,2]},{"w":17,"h":11,"pal":["#391427","#592f43","#90566d","#b87e92","#dd9bb0","#edabbe","#f8c7d4"],"px":"...........0.000./..........0201030/..........0401030/......0000001100./.....014555455530/....0455554555560/.0000003643366410/0411016000420000./0441024010420..../0200.0000.00...../.0...............","eye":[14,1]}],[{"w":19,"h":10,"pal":["#3a1f2c","#58404c","#6e5862","#968b8f","#cab3bb","#ddd2d3","#f2ebe5"],"px":"............0.0000./...........04033130/........00003010140/......0011224544200/.....00455555555540/....005666655666650/.00000000665565620./02515015300340000../.04500330.0330...../..00..00...00......","eye":[17,3]},{"w":18,"h":11,"pal":["#3a1f2c","#58404c","#6e5862","#968b8f","#cab3bb","#ddd2d3","#f2ebe5"],"px":"...........0000.0./..........00205030/..........01306050/......00000132020./.....0355555666630/.0..02555555666660/04001000554555540./0633404300041000../014400510.0310..../.020..00...00...../..0...............","eye":[15,2]},{"w":18,"h":10,"pal":["#3a1f2c","#58404c","#6e5862","#968b8f","#cab3bb","#ddd2d3","#f2ebe5"],"px":"...........0000.0./..........00304030/.......00000300030/......00555335550./.....0555556666660/.00.03355565666630/01101004141554110./0242204500042000../.0450020...00...../..00..0...........","eye":[15,2]},{"w":17,"h":11,"pal":["#3a1f2c","#58404c","#6e5862","#968b8f","#cab3bb","#ddd2d3","#f2ebe5"],"px":"...........0.000./..........0302030/..........0502030/......0000002210./.....025555555540/....0555565666660/.0000004654466510/0513016000430000./0441034010530..../0300.0000.00...../.0...............","eye":[14,1]}],[{"w":19,"h":10,"pal":["#39213e","#684a66","#8b789f","#a38cc0","#bc6084","#c3a8cf","#eac3e0"],"px":"............0.0000./...........03022020/........00002000020/......0001112322100/.....00333333555530/....003555533555530/.00000000663363610./01303003100130000../.03300140.0220...../..00..00...00......","eye":[16,1]},{"w":18,"h":11,"pal":["#39213e","#684a66","#8b789f","#a38cc0","#bc6084","#c3a8cf","#eac3e0"],"px":"...........0000.0./..........00103020/..........00205030/......00000021010./.....0233333555520/.0..01333333566660/02000000332555520./0511303400030000../003300300.0410..../.010..00...00...../..0...............","eye":[15,2]},{"w":18,"h":10,"pal":["#39213e","#684a66","#8b789f","#a38cc0","#bc6084","#c3a8cf","#eac3e0"],"px":"...........0000.0./..........00103010/.......00000400020/......00333223330./.....0553535555550/.00.02233353666620/00000002020332010./0131103300031000../.0350010...00...../..00..0...........","eye":[15,2]},{"w":17,"h":11,"pal":["#39213e","#684a66","#8b789f","#a38cc0","#bc6084","#c3a8cf","#eac3e0"],"px":"...........0.000./..........0201020/..........0301020/......0000001100./.....013333333520/....0355553555550/.0000002632366300/0301006000310000./0330043010320..../0200.0000.00...../.0...............","eye":[14,1]}],[{"w":19,"h":10,"pal":["#0f1f29","#31535f","#5b95a4","#66394e","#77cbd6","#cd839d","#e7c7d5"],"px":"............0.0000./...........02011320/........00002030320/......0033112522100/.....00244445444420/....005444444444440/.00000000664464610./01434034100120000../.02400110.0110...../..00..00...00......","eye":[17,3]},{"w":18,"h":11,"pal":["#0f1f29","#31535f","#5b95a4","#66394e","#77cbd6","#cd839d","#e7c7d5"],"px":"...........0000.0./..........00105010/..........00104050/......00000311010./.....0244444444420/.0..01444444466660/02003000442444420./0411202100023000../032200530.0130..../.010..00...00...../..0...............","eye":[15,2]},{"w":18,"h":10,"pal":["#0f1f29","#31535f","#5b95a4","#66394e","#77cbd6","#cd839d","#e7c7d5"],"px":"...........0000.0./..........00102010/.......00000100010/......00555114440./.....0444444444440/.00.01244444666620/00303002323442330./0121102400021000../.0240010...00...../..00..0...........","eye":[15,2]},{"w":17,"h":11,"pal":["#0f1f29","#31535f","#5b95a4","#66394e","#77cbd6","#cd839d","#e7c7d5"],"px":"...........0.000./..........0101020/..........0501020/......0000001130./.....014444444420/....0444444444440/.0000002442266430/0431036000210000./0223012030510..../0100.0000.00...../.0...............","eye":[14,1]}]]},"scarab":{"variants":[{"w":16,"h":12,"pal":["#121f33","#1e568d","#253d59","#2c6ea9","#94825c","#cff1fc","#e6cc7b"],"px":"......0000....../....21333310..../...1333233332.../.0111000003310../.2111466423331../.1111026013331../.111120623311130/.111102201121512/.211111111121332/.02111111120022./02020000000...../...0022220......","eye":[13,6]},{"w":15,"h":11,"pal":["#223e3b","#2b6c61","#388f7e","#777358","#99916a","#ccfcee","#e0cf96"],"px":"....0222220..../...122112221.../.011100011221../.1110666312220./01111030122220./011110402221121/011110440110251/.11111111110121/.0011111110.000/.000100000...../...001111......","eye":[11,6]},{"w":15,"h":11,"pal":["#46222e","#6a3646","#8c4457","#ab5b6e","#b8a587","#eedeb8","#ffe4e5"],"px":"....0333331..../..0133213332.../.022000112332../.2220555402230./02222042122221./022220303222220/022221440220361/.12222112221331/..122222221001./.1001100110..../...0022110.....","eye":[11,6]},{"w":15,"h":11,"pal":["#332040","#5a417b","#7152a1","#9577ab","#ccb0e6","#d2c5a9","#f5e9d4"],"px":"....022221...../...122222220.../.122000002221../0222156502222../12220060022220./11111.30222114./11110...1221433/.11111111221332/.0122112211..../1000000000...../0..111101......","eye":[8,2]}],"frames":[[{"w":16,"h":9,"pal":["#121f33","#1e568d","#253d59","#2c6ea9","#cff1fc","#e6cc7b"],"px":".....000000000../....00222021100./...0111110120100/..03333330333320/..01311110015100/.05002000200000./0110111004020010/.00020200200.00./....0.0..0......","eye":[14,2]},{"w":17,"h":9,"pal":["#121f33","#1e568d","#253d59","#2c6ea9","#94825c","#cff1fc","#e6cc7b"],"px":"..........00...../....0000000000.../...002111021120../..00111110110100./..011111303333320/.001313330234620./0060010002000020./05002210010200210/.00.000..0.0..00.","eye":[14,3]},{"w":16,"h":9,"pal":["#121f33","#1e568d","#253d59","#2c6ea9","#94825c","#cff1fc","#e6cc7b"],"px":"..........0...../.....000000000../...000133023300./..02321110330300/..03111110346510/.001121120011200/001000000200010./0100120.02010020/.0..00...000..0.","eye":[14,3]},{"w":16,"h":9,"pal":["#121f33","#1e568d","#253d59","#2c6ea9","#94825c","#cff1fc","#e6cc7b"],"px":"..........00..../.....00000000.../....0011201120../...011110212010./..01333322331330/.001334610015100/.01200000200000./0220210001010010/.000000..000..0.","eye":[14,5]}],[{"w":16,"h":9,"pal":["#223e3b","#2b6c61","#388f7e","#777358","#99916a","#ccfcee","#e0cf96"],"px":".....000000000../....00111011100./...0111320210100/..02222220222210/..01411110014100/.06000000100000./0110111005000010/.00000100100.00./....0.0..0......","eye":[14,2]},{"w":17,"h":9,"pal":["#223e3b","#2b6c61","#388f7e","#777358","#99916a","#ccfcee","#e0cf96"],"px":"..........00...../....0000000000.../...000111011100../..00111110110100./..011322202222200/.001212220124410./0060010001000010./05001110010100110/.00.000..0.0..00.","eye":[15,4]},{"w":16,"h":9,"pal":["#223e3b","#2b6c61","#388f7e","#777358","#99916a","#ccfcee","#e0cf96"],"px":"..........0...../.....000000000../...000222002200./..00211110220200/..02111110246510/.001101110011100/001000000100010./0100310.01020010/.0..00...000..0.","eye":[14,3]},{"w":16,"h":9,"pal":["#223e3b","#2b6c61","#388f7e","#777358","#99916a","#ccfcee","#e0cf96"],"px":"..........00..../.....00000000.../....0011001110../...011130121020./..01222211221220/.001224610015100/.01100000100000./0000110001010010/.000000..000..0.","eye":[14,5]}],[{"w":16,"h":9,"pal":["#46222e","#6a3646","#8c4457","#ab5b6e","#b8a587","#eedeb8","#ffe4e5"],"px":".....000000000../....00111012200./...0222220210200/..02333330333320/..02422220024210/.05001000200000./0220222006010020/.00010100100.00./....0.0..0......","eye":[14,2]},{"w":17,"h":9,"pal":["#46222e","#6a3646","#8c4457","#ab5b6e","#b8a587","#eedeb8","#ffe4e5"],"px":"..........00...../....0000000100.../...001222022210../..00222220220200./..022222203333310/.002323330134410./0050020001000010./06001120020100120/.00.000..0.0..00.","eye":[14,3]},{"w":16,"h":9,"pal":["#46222e","#6a3646","#8c4457","#ab5b6e","#b8a587","#eedeb8","#ffe4e5"],"px":"..........0...../.....000000000../...001223013300./..01322220330300/..03222220445620/.002212210022100/002000000100020./0200210.01020010/.0..00...000..0.","eye":[14,3]},{"w":16,"h":9,"pal":["#46222e","#6a3646","#8c4457","#ab5b6e","#b8a587","#eedeb8","#ffe4e5"],"px":"..........00..../.....00000000.../....0022102210../...022220121020./..02233311332330/.002344520026200/.02100000100010./0110220002020020/.000000..000..0.","eye":[14,5]}],[{"w":16,"h":9,"pal":["#332040","#5a417b","#7152a1","#9577ab","#ccb0e6","#d2c5a9","#f5e9d4"],"px":".....000000000../....00111012100./...0122220210200/..02222220223310/..02322220024200/.05001000100000./0110111006010010/.00010100100.00./....0.0..0......","eye":[14,2]},{"w":17,"h":9,"pal":["#332040","#5a417b","#7152a1","#9577ab","#ccb0e6","#d2c5a9","#f5e9d4"],"px":"..........00...../....0000000000.../...001122012110../..00222220220100./..022222202222210/.001212230134410./0050010001000010./06001110010100110/.00.000..0.0..00.","eye":[14,3]},{"w":16,"h":9,"pal":["#332040","#5a417b","#7152a1","#9577ab","#ccb0e6","#d2c5a9","#f5e9d4"],"px":"..........0...../.....000000000../...000222012200./..01211110220300/..03111110345620/.002212210022100/002000000100020./0200210.01020010/.0..00...000..0.","eye":[14,3]},{"w":16,"h":9,"pal":["#332040","#5a417b","#7152a1","#9577ab","#ccb0e6","#d2c5a9","#f5e9d4"],"px":"..........00..../.....00000000.../....0022101110../...022220121020./..01222211221230/.001334510026200/.02100000100000./0110110002010020/.000000..000..0.","eye":[14,5]}]]}};
+return { ANIMAL_SPRITES };
+})();
 // src/rendering/rabbit.js
-const __m134 = (() => {
+const __m135 = (() => {
 const { Rng, hashString } = __m6;
-const { PAL, makeCanvas } = __m91;
+const { PAL, makeCanvas } = __m92;
 const { RABBIT_MARKS } = __m60;
 const { KINDS, bodyOf } = __m61;
-const { punchSprite } = __m135;
+const { punchSprite } = __m136;
+const { ANIMAL_SPRITES } = __m137;
+const { VARIANT_COATS } = __m62;
 const RABBIT_W = 48;
 const RABBIT_H = 40;
 const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
@@ -26597,6 +26616,7 @@ const S = {
 P, a, L, sc, tr: traitsOf(snap), dead, cause, pattern: look.pattern || 'solid', eyeCol: look.eye || 'dark',
 seed: (look.seed >>> 0) || 1, fur, C: shades(fur), C2: shades(fur2),
 };
+if (ANIMAL_SPRITES[a.creature]) { spriteBody(S, look, snap, low); return; }
 if (!low && !dead) auraLayer(S);
 if (OWN_BODY.has(a.creature)) { ownBody(S); if (dead) causeLayer(S); return; }
 if (a.creature === 'cavemoth' || a.creature === 'shroudmoth') {
@@ -26626,6 +26646,95 @@ faceLayer(S);
 creatureLayer(S);
 if (dead) causeLayer(S);
 }
+const DECODED = new Map();
+function decodeSprite(sp) {
+let d = DECODED.get(sp);
+if (d) return d;
+const pal = sp.pal.map((h) => [parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255]);
+const rows = sp.px.split('/'), px = [];
+for (let y = 0; y < sp.h; y++) for (let x = 0; x < sp.w; x++) { const ch = rows[y][x]; px.push(ch === '.' ? null : pal[parseInt(ch, 36)]); }
+d = { w: sp.w, h: sp.h, px, eye: sp.eye };
+DECODED.set(sp, d);
+return d;
+}
+function variantOf(look) {
+const vs = VARIANT_COATS[creatureOfLook(look)];
+if (!vs) return 0;
+const c = rgbOf(look && look.coat, vs[0]);
+let best = 0, bd = Infinity;
+vs.forEach((v, i) => { const d = (v[0] - c[0]) ** 2 * 0.3 + (v[1] - c[1]) ** 2 * 0.59 + (v[2] - c[2]) ** 2 * 0.11; if (d < bd) { bd = d; best = i; } });
+return best;
+}
+function atlasSprite(kind, v, pose) {
+const A = ANIMAL_SPRITES[kind], b = walkBeat(pose);
+if (b >= 0) return A.frames[v][b];
+if (pose === 'hop' || pose === 'fly1') return A.frames[v][1];
+if (pose === 'fly2') return A.frames[v][2];
+return A.variants[v];
+}
+function spriteBody(S, look, snap, low) {
+const { P, L, sc, dead, cause, tr } = S, a0 = S.a, pose = a0.pose;
+const d = decodeSprite(atlasSprite(a0.creature, variantOf(look), pose));
+const kitS = clamp(((snap && STAGE_G[snap.stage]) || 1) * (tr.has('giant') ? 1.18 : tr.has('tiny') ? 0.8 : 1), 0.5, 1.3);
+const sx = kitS, sy = kitS * (pose === 'flop' || pose === 'collapse' ? 0.7 : pose === 'loaf' || pose === 'sick' ? 0.85 : pose === 'dead' ? 0.8 : 1);
+const w = Math.max(3, Math.round(d.w * sx)), h = Math.max(3, Math.round(d.h * sy));
+const flip = pose === 'dead';
+const at = (/** @type {number} */ x, /** @type {number} */ y) => {
+const X = Math.min(d.w - 1, Math.floor((x * d.w) / w)), Y0 = Math.min(d.h - 1, Math.floor((y * d.h) / h));
+return d.px[(flip ? d.h - 1 - Y0 : Y0) * d.w + X];
+};
+const air = pose === 'hop' || pose === 'fly1' || pose === 'fly2';
+let bottom = a0.feetY;
+if (air) bottom = Math.min(a0.feetY - 2, Math.round(Math.max(...a0.parts.map((e) => e.cy + e.ry))));
+if (a0.creature === 'wisp' && !a0.lying) bottom = a0.feetY - 7;
+const x0 = clamp(Math.round(a0.cx - w / 2), 1, RABBIT_W - 1 - w), y0 = clamp(bottom - h + 1, 1, RABBIT_H - 1 - h);
+const ex = x0 + Math.round(((d.eye[0] + 0.5) * w) / d.w - 0.5), eyRaw = Math.round(((d.eye[1] + 0.5) * h) / d.h - 0.5);
+const ey = y0 + (flip ? h - 1 - eyRaw : eyRaw);
+const haunch = E(x0 + w * 0.32, y0 + h * 0.62, Math.max(2, w * 0.26), Math.max(2, h * 0.28));
+const chest = E(x0 + w * 0.62, y0 + h * 0.6, Math.max(2, w * 0.2), Math.max(2, h * 0.26));
+const head = E(ex - 1, ey, Math.max(2, w * 0.16), Math.max(2, h * 0.2));
+const a = {
+...a0, haunch, chest, head, muzzle: E(x0 + w - 2, ey + 1, 1, 1), bulges: [], parts: [haunch, chest, head], ears: [], legs: [],
+eye: { x: ex, y: ey }, eye3: { x: ex - 1, y: Math.max(1, ey - 3) }, nose: { x: x0 + w - 1, y: ey + 1 }, cheek: { x: ex, y: ey + 2 },
+brow: { x: ex - 2, y: y0 }, wing: { x: Math.round(chest.cx - chest.rx - 3), y: y0 - 2 },
+back: { x0: x0 + 2, x1: Math.round(chest.cx), y: y0 + 1 }, belly: { x: Math.round(chest.cx), y: y0 + h - 2 },
+box: { x0: x0 - 1, y0: y0 - 1, x1: x0 + w + 1, y1: y0 + h + 1 },
+};
+S.a = a;
+if (!low && !dead) auraLayer(S);
+if (tr.has('wings')) wingArt(S, true);
+const mask = new Uint8Array(RABBIT_W * RABBIT_H), tint = new Map();
+for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+const c = at(x, y);
+if (!c) continue;
+let col = tint.get(c);
+if (!col) { col = lum(c) < 0.14 ? css(c) : css(tintCoat(c, L, sc, dead, cause)); tint.set(c, col); }
+P(x0 + x, y0 + y, 1, 1, col);
+if (lum(c) >= 0.14) mask[(y0 + y) * RABBIT_W + x0 + x] = 1;
+}
+const body = /** @type {Pen} */ ((x, y, ww, hh, col) => {
+const X0 = Math.round(x), Y0 = Math.round(y), W = Math.max(1, Math.round(ww)), H = Math.max(1, Math.round(hh));
+for (let yy = Math.max(0, Y0); yy < Math.min(RABBIT_H, Y0 + H); yy++) for (let xx = Math.max(0, X0); xx < Math.min(RABBIT_W, X0 + W); xx++) if (mask[yy * RABBIT_W + xx]) P(xx, yy, 1, 1, col);
+});
+S.P = body;
+strengthMarks(S);
+if (tr.has('scales')) scaleMarks(S);
+coatMarks(S); burnMarks(S); acidMarks(S); alkaliMarks(S); frostMarks(S); sickMarks(S);
+S.P = P;
+hornArt(S, true); hornArt(S, false);
+if (tr.has('wings')) wingArt(S, false);
+const e = a.eye;
+const cross = () => { P(e.x - 1, e.y - 1, 1, 1, K); P(e.x + 1, e.y - 1, 1, 1, K); P(e.x, e.y, 1, 1, K); P(e.x - 1, e.y + 1, 1, 1, K); P(e.x + 1, e.y + 1, 1, 1, K); };
+if (dead || pose === 'hurt') cross();
+else if (pose === 'flop') { P(e.x - 1, e.y, 1, 1, K); P(e.x, e.y - 1, 1, 1, K); P(e.x + 1, e.y, 1, 1, K); }
+else if (L.love === 3) heart(P, e.x - 1, e.y - 2, C_HEART);
+else if (pose === 'collapse' || pose === 'loaf' || L.toxicity === 3) P(e.x - 1, e.y, 3, 1, K);
+else if (L.arcana >= 2 || sc[4] >= 2) { P(e.x, e.y, 1, 1, C_RUNE_HI); P(e.x - 1, e.y, 1, 1, C_RUNE); }
+else if (L.arcana === 1) P(e.x, e.y - 2, 1, 1, C_RUNE);
+if (pose === 'eat' && !a.bare && !AIRBORNE.has(a.creature)) grassTuft(P, a.nose.x - 1, a.feetY);
+if (dead) causeLayer(S);
+}
+const AIRBORNE = new Set(['wisp', 'cloudray', 'cavemoth', 'shroudmoth']);
 function creatureLayer(S) {
 const { P, a, C, C2, dead } = S, cr = a.creature, h = a.head;
 if (cr === 'hare') {
@@ -27772,28 +27881,28 @@ ctx.fillStyle = `rgba(255,255,255,${(rx * 0.35).toFixed(3)})`;
 ctx.fillRect(fx, fy, RABBIT_W, RABBIT_H);
 }
 }
-return { RABBIT_W, RABBIT_H, rabbitLevels, rabbitPose, rabbitPace, rabbitAnchors, rabbitSpriteKey, drawRabbitSprite, clearRabbitSprites, drawRabbit };
+return { RABBIT_W, RABBIT_H, rabbitLevels, rabbitPose, rabbitPace, rabbitAnchors, variantOf, rabbitSpriteKey, drawRabbitSprite, clearRabbitSprites, drawRabbit };
 })();
 // src/ui/views/wilds.js
-const __m108 = (() => {
-const { UpscaledCanvas } = __m109;
+const __m109 = (() => {
+const { UpscaledCanvas } = __m110;
 const { BIOME_BY_ID, unlockText } = __m18;
-const { CREATURE_NAMES, rarityTag } = __m104;
+const { CREATURE_NAMES, rarityTag } = __m105;
 const { h, btn, clear, toast, keepScroll, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, moistureEnv, DAY_PART_NAME, runeCaches: runeCachesOf } = __m62;
+const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, moistureEnv, DAY_PART_NAME, runeCaches: runeCachesOf } = __m63;
 const { equipmentById } = __m58;
 const { RANKS } = __m58;
-const { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, sceneTouch, crosses, SCENE_W, SCENE_H } = __m110;
-const { Ragdoll } = __m131;
-const { exoticPush, exoticStep, exoticDraw } = __m132;
-const { sceneOf } = __m111;
-const { plantCanvas, plantFrameOf, plantGlow, emitColour, silhouetteOf, ingredientSprite, speciesOf, mountsOf, variantOf, MIN_HIT } = __m97;
+const { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, sceneTouch, crosses, SCENE_W, SCENE_H } = __m111;
+const { Ragdoll } = __m132;
+const { exoticPush, exoticStep, exoticDraw } = __m133;
+const { sceneOf } = __m112;
+const { plantCanvas, plantFrameOf, plantGlow, emitColour, silhouetteOf, ingredientSprite, speciesOf, mountsOf, variantOf, MIN_HIT } = __m98;
 const { EFFECT_BY_KEY } = __m20;
 const { hashString } = __m6;
-const { Warren, warrenSpots, BLOOD, WILD_HP } = __m133;
-const { drawRabbit, rabbitSpriteKey, RABBIT_W, RABBIT_H } = __m134;
+const { Warren, warrenSpots, BLOOD, WILD_HP } = __m134;
+const { drawRabbit, rabbitSpriteKey, RABBIT_W, RABBIT_H } = __m135;
 const { defaultSnap, penHasRoom, PEN_MAX } = __m60;
 const { KINDS } = __m61;
 const SHADOW = { forest: 'rgba(8,16,10,0.32)', netherwood: 'rgba(6,4,16,0.4)', meadow: 'rgba(24,30,10,0.26)', river: 'rgba(4,14,16,0.34)', quarry: 'rgba(26,18,10,0.3)', moonfen: 'rgba(2,6,18,0.42)', crags: 'rgba(30,6,4,0.4)', skyshard: 'rgba(20,40,70,0.26)', morphgrove: 'rgba(30,8,30,0.34)', veilhollow: 'rgba(10,10,20,0.38)', ghostglass: 'rgba(2,10,24,0.42)', chronoglass: 'rgba(40,20,10,0.32)' };
@@ -29069,12 +29178,12 @@ this.grow();
 return { WildsView };
 })();
 // src/visual/env/pens.js
-const __m139 = (() => {
-const { Canvas } = __m112;
-const { col, silhouette, treeShape } = __m114;
-const { finish } = __m113;
-const { grade } = __m118;
-const { cobble } = __m115;
+const __m141 = (() => {
+const { Canvas } = __m113;
+const { col, silhouette, treeShape } = __m115;
+const { finish } = __m114;
+const { grade } = __m119;
+const { cobble } = __m116;
 const { fbm1, fbm2, hash2, noise2 } = __m48;
 const { mixPacked } = __m30;
 const { Rng, hashString } = __m6;
@@ -30502,7 +30611,7 @@ return p;
 return { PEN_W, PEN_H, BACK, GROUND_Y0, PENS_VERSION, PEN_KINDS, penTitle, penOf };
 })();
 // src/rendering/pen-anim.js
-const __m140 = (() => {
+const __m142 = (() => {
 function hash(a, b = 0) {
 let n = Math.imul(a | 0, 0x27d4eb2d) ^ Math.imul(b | 0, 0x165667b1);
 n = Math.imul(n ^ (n >>> 15), 0x2c1b3c6d);
@@ -30625,13 +30734,13 @@ if (f) f(ctx, a, t);
 return { drawPenAnim };
 })();
 // src/rendering/hutch-scene.js
-const __m138 = (() => {
+const __m140 = (() => {
 const { Rng, hashString } = __m6;
-const { PAL, makeCanvas } = __m91;
-const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m134;
+const { PAL, makeCanvas } = __m92;
+const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m135;
 const { kindOf, bodyOf } = __m61;
-const { penOf } = __m139;
-const { drawPenAnim } = __m140;
+const { penOf } = __m141;
+const { drawPenAnim } = __m142;
 const WALKERS = { cat: 12, salamander: 5, deer: 10, badger: 8, dove: 8, fox: 14, snail: 1.5, rat: 16 };
 const HUTCH_W = 224;
 const HUTCH_H = 92;
@@ -31061,17 +31170,17 @@ ctx.drawImage(this.bg, 0, 0);
 return { HUTCH_W, HUTCH_H, HUTCH_BODIES, penFor, paintHutch, paintHutchFront, onGround, HutchScene };
 })();
 // src/ui/views/hutch.js
-const __m137 = (() => {
+const __m139 = (() => {
 const { readingSteadiness } = __m59;
 const { kindDef, kindOf, KINDS, KIND_IDS, habitatOf } = __m61;
 const { BIOMES } = __m18;
 const { h, btn, clear, toast, modal, confirmDialog, keepScroll } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { drawRabbit, RABBIT_W, RABBIT_H } = __m134;
-const { HutchScene, HUTCH_W, HUTCH_H } = __m138;
-const { penTitle } = __m139;
-const { UpscaledCanvas } = __m109;
+const { drawRabbit, RABBIT_W, RABBIT_H } = __m135;
+const { HutchScene, HUTCH_W, HUTCH_H } = __m140;
+const { penTitle } = __m141;
+const { UpscaledCanvas } = __m110;
 const { EFFECT_BY_KEY } = __m20;
 const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral, RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE, BURNS, PEN_MAX, penHasRoom, livingOf } = __m60;
 const { PURGE_BREW_TIME } = __m5;
@@ -31446,21 +31555,21 @@ if (this._live >= 0.25) { this._live = 0; this.live(); }
 return { CHANNELS, HutchPanel };
 })();
 // src/ui/views/trials.js
-const __m136 = (() => {
+const __m138 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
 const { SUBJECT_BY_ID, DOSES, missingEffects } = __m59;
 const { EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, EFFECT_KEYS, potencyWord } = __m20;
 const { SIM } = __m56;
-const { applyTrials } = __m81;
+const { applyTrials } = __m82;
 const { summarize, addSamples, EVIDENCE_TEXT, evidenceRank, requirementEvidence } = __m59;
-const { evidenceOf } = __m81;
+const { evidenceOf } = __m82;
 const { shortName } = __m54;
 const LEVEL_SHORT = { preliminary: '1 reading', repeated: 'repeated', corroborated: 'corroborated', certified: 'certified' };
-const { drawRabbit } = __m134;
+const { drawRabbit } = __m135;
 const { focusRabbit, findRabbit, rabbitSnap, decodeSnap, lookFromSeed, RABBIT_MARKS } = __m60;
-const { HutchPanel } = __m137;
+const { HutchPanel } = __m139;
 const REPLAY_T = 3.2;
 class TrialsView {
 constructor(lab) {
@@ -31837,16 +31946,16 @@ return `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2
 return { TrialsView, EFFECTS, EFFECT_INDEX };
 })();
 // src/ui/views/garden.js
-const __m141 = (() => {
+const __m143 = (() => {
 const { h, btn, clear, toast } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { BEDS, GRADES, GARDEN_UPGRADES, seedList, gradeNeeded, bedOf, boughtCount, cropYield, growHours, seedId } = __m82;
+const { BEDS, GRADES, GARDEN_UPGRADES, seedList, gradeNeeded, bedOf, boughtCount, cropYield, growHours, seedId } = __m83;
 const { SPECIES_BY_KEY, materialIdOf } = __m15;
 const { RARITY } = __m17;
 const { atlasFrame, seedAsset, stageAsset, loadAtlases, onAtlasLoaded } = __m51;
-const { formatWait } = __m62;
-const { rarityTag } = __m104;
+const { formatWait } = __m63;
+const { rarityTag } = __m105;
 const { hashString, Rng } = __m6;
 const GW = 384, GH = 176;
 const BED_LOOK = {
@@ -32072,12 +32181,12 @@ if (this.t % 5 < 0.5) this.refresh();
 return { GardenView, materialIdOf, RARITY, seedId, icon };
 })();
 // src/ui/views/book.js
-const __m142 = (() => {
+const __m144 = (() => {
 const { KINDS } = __m61;
 const { h, btn, clear } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const panels = __m102;
+const panels = __m103;
 const { SUBJECT_BY_ID } = __m59;
 const { EFFECTS, EFFECT_BY_KEY, EFFECT_KEYS } = __m20;
 const { rgbToHex } = __m11;
@@ -32177,47 +32286,47 @@ body.appendChild(list);
 return { BookView };
 })();
 // src/ui/lab.js
-const __m88 = (() => {
-const { Simulation } = __m65;
+const __m89 = (() => {
+const { Simulation } = __m66;
 const { PHASE, SIM } = __m56;
-const { snapshotSim, applySnapshot } = __m89;
-const { clampToInterior } = __m76;
+const { snapshotSim, applySnapshot } = __m90;
+const { clampToInterior } = __m77;
 const { MAX_SPECIES } = __m25;
 const { compatFactor } = __m21;
-const { Renderer } = __m90;
-const { drawPortrait } = __m96;
-const { drawJar } = __m91;
-const { ingredientSprite } = __m97;
+const { Renderer } = __m91;
+const { drawPortrait } = __m97;
+const { drawJar } = __m92;
+const { ingredientSprite } = __m98;
 const { RARITY } = __m17;
-const { measureParticles, tapSelection, probeSelection, viscosityClass, densityWord } = __m80;
+const { measureParticles, tapSelection, probeSelection, viscosityClass, densityWord } = __m81;
 const { scoreRequirement, PROPERTY_LABELS } = __m55;
-const { processEvent } = __m99;
-const { saveGame, saveJSON, KEYS } = __m87;
-const { AutoBrewer, condensedCount } = __m100;
-const { traceSample, buildProcedure, procedureLimits, matchRecipe, compareRecipe, checkReproduction, TRACE_DT } = __m85;
-const { proofGaps, draftLabel, applyTrials, evidenceOf } = __m81;
+const { processEvent } = __m100;
+const { saveGame, saveJSON, KEYS } = __m88;
+const { AutoBrewer, condensedCount } = __m101;
+const { traceSample, buildProcedure, procedureLimits, matchRecipe, compareRecipe, checkReproduction, TRACE_DT } = __m86;
+const { proofGaps, draftLabel, applyTrials, evidenceOf } = __m82;
 const { RANKS } = __m58;
 const { certification, missingEffects, requirementEvidence } = __m59;
 const { sandboxIngredients } = __m7;
-const { sandboxSave } = __m101;
-const { makeVial, makeVialFromComposition, appendParticles, updateVial, takeDose, pourBack, pourBackParts, relaxVial } = __m64;
+const { sandboxSave } = __m102;
+const { makeVial, makeVialFromComposition, appendParticles, updateVial, takeDose, pourBack, pourBackParts, relaxVial } = __m65;
 const { theoryOf, EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, dominantEffect, NE } = __m20;
 const { awakenParts, describeThreshold } = __m22;
-const { ARC_NONE } = __m66;
-const { extractionReport } = __m79;
+const { ARC_NONE } = __m67;
+const { extractionReport } = __m80;
 const { classWords, extractedParts, groupExtracts, groupLine } = __m8;
 const { describeColor, rgbToHex } = __m11;
 const { h, btn, clear, keepScroll, toast, coins, confirmDialog, modal, setNoteDock, recentNotes } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const panels = __m102;
-const trade = __m105;
-const { Tutorial } = __m106;
-const { CounterView } = __m107;
-const { WildsView } = __m108;
-const { TrialsView } = __m136;
-const { GardenView } = __m141;
-const { BookView } = __m142;
+const panels = __m103;
+const trade = __m106;
+const { Tutorial } = __m107;
+const { CounterView } = __m108;
+const { WildsView } = __m109;
+const { TrialsView } = __m138;
+const { GardenView } = __m143;
+const { BookView } = __m144;
 const { shortName } = __m54;
 const REQ_ICON = { temperature: 'thermo', quantity: 'flask', purity: 'pure' };
 const TOOL_DEFS = [
@@ -34110,7 +34219,7 @@ void dominantEffect;
 return { VIEWS, LabScreen, sliderToSetting, settingToSlider };
 })();
 // src/materials/reference.js
-const __m144 = (() => {
+const __m146 = (() => {
 const { completeMaterial } = __m12;
 const REF = {};
 const add = (d) => (REF[d.id] = completeMaterial(d));
@@ -34148,12 +34257,12 @@ const refLookup = (id) => REF[id];
 return { REF, refLookup };
 })();
 // src/ui/menu.js
-const __m143 = (() => {
+const __m145 = (() => {
 const { h, btn } = __m2;
-const { Renderer } = __m90;
-const { Simulation } = __m65;
-const { REF, refLookup } = __m144;
-const { hasSave, loadGame } = __m87;
+const { Renderer } = __m91;
+const { Simulation } = __m66;
+const { REF, refLookup } = __m146;
+const { hasSave, loadGame } = __m88;
 const { audio } = __m4;
 class MenuScreen {
 constructor(app) {
@@ -34237,12 +34346,12 @@ const { h, btn, modal, toast, setOverlayRoot, setToastRoot, confirmDialog, clear
 const { icon } = __m3;
 const { audio } = __m4;
 const { GameState } = __m5;
-const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m87;
-const { LabScreen } = __m88;
-const { MenuScreen } = __m143;
-const { openSettings, openHelp } = __m102;
+const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m88;
+const { LabScreen } = __m89;
+const { MenuScreen } = __m145;
+const { openSettings, openHelp } = __m103;
 const { Rng } = __m6;
-const { prepareSandbox } = __m101;
+const { prepareSandbox } = __m102;
 const { loadAtlases, neededAtlases } = __m51;
 const { parseCatalogId } = __m15;
 const DEFAULT_SETTINGS = { master: 0.8, sfx: 0.8, music: 0.35, musicOn: true, muted: false, quality: 'auto', showFps: false, resolution: 3 };
@@ -34359,7 +34468,7 @@ openHelp();
 return { App, icon };
 })();
 // src/ui/textures.js
-const __m145 = (() => {
+const __m147 = (() => {
 const { Rng } = __m6;
 function texture(w, h, paint) {
 const cv = document.createElement('canvas');
@@ -34403,7 +34512,7 @@ return { installTextures };
 // src/main.js
 const __m0 = (() => {
 const { App } = __m1;
-const { installTextures } = __m145;
+const { installTextures } = __m147;
 installTextures();
 const root = document.getElementById('app');
 const app = new App(root);
