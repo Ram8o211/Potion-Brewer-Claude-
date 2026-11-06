@@ -1,9 +1,9 @@
 // The shop counter: yesterday's customers coming back with their verdict,
 // the current customer and their full order (with which effects you have
 // verified), the sealed vial — labelled, then bargained over — and the
-// potion shelves, where sealed bottles wait until they are needed.
+// cellar's shelves, where sealed bottles wait and aging ones go on extracting.
 
-import { h, btn, clear, coins, confirmDialog, starsText } from '../dom.js';
+import { h, btn, clear, coins, confirmDialog } from '../dom.js';
 import { icon } from '../icons.js';
 import { drawPortrait } from '../../rendering/portraits.js';
 import { drawBottle } from '../../rendering/renderer.js';
@@ -12,11 +12,11 @@ import { techniqueById } from '../../game/commissions.js';
 import { EFFECT_INDEX, NE } from '../../alchemy/effects.js';
 import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
 import { missingEffects, summarize, requirementEvidence } from '../../game/experiments.js';
-import { labelStars, MAX_STARS } from '../../game/commerce.js';
 import * as trade from '../trade.js';
 import { describeColor, rgbToHex } from '../../core/color.js';
 import { viscosityClass } from '../../game/measure.js';
 import * as panels from '../panels.js';
+import { cellarShelves, verifiedLine } from '../cellar.js';
 import { shortName } from '../../game/customers.js';
 
 export class CounterView {
@@ -157,7 +157,7 @@ export class CounterView {
     const labelB = btn(v.label ? 'Edit label' : 'Write label', () => lab.identifyVial(), { icon: 'tag', act: 'label', title: 'What the label claims the potion does' });
     const testB = btn('Test it', () => { lab.trialSource = 'vial'; lab.showView('trials'); }, { icon: 'dropper', act: 'test-vial', title: 'Give a dose from this vial to a rabbit' });
     const back = btn('Pour back', () => lab.pourBackVial(), { icon: 'pour', act: 'pour-back', title: 'Return the vial to the cauldron to keep working on it' });
-    const store = btn('To shelf', () => lab.shelveVial(), { icon: 'shelf2', act: 'shelve-vial', disabled: st.bottleRoom <= 0, title: st.bottleRoom <= 0 ? 'The potion shelves are full' : 'Keep this bottle on the potion shelves' });
+    const store = btn('To shelf', () => lab.shelveVial(), { icon: 'shelf2', act: 'shelve-vial', disabled: st.bottleRoom <= 0, title: st.bottleRoom <= 0 ? 'The cellar shelves are full' : 'Keep this bottle on the cellar shelves' });
     const discard = btn('Discard', async () => { if (await confirmDialog('Discard the vial?', 'The potion is poured away. Ingredients are not refunded.', 'Discard', 'danger')) lab.discardVial(); }, { icon: 'trash', cls: 'danger', act: 'discard', title: 'Pour the vial away' });
     el.append(h('div', { class: 'card parch vial-card' },
       h('div', { class: 'row' }, cv, h('div', {},
@@ -171,52 +171,12 @@ export class CounterView {
   }
 
   /**
-   * The potion shelves: sealed bottles kept for later, each with its exact
-   * contents. Tap a bottle to see it; take it down to the counter to serve
-   * or test it (a bottle already there goes up in its place).
+   * The cellar's shelves: sealed bottles kept for later and bottles set
+   * aging. Tap one for its menu (to the counter, pour back, age it…).
    * @param {HTMLElement} el
    */
   shelfCard(el) {
-    const lab = this.lab, st = lab.state;
-    lab.freshBottles();
-    const cap = st.cap.bottles;
-    if (this.sel && !st.bottles.some((b) => b.id === this.sel)) this.sel = null;
-    const grid = h('div', { class: 'bottle-shelf', role: 'listbox', 'aria-label': 'Potion shelves' });
-    const rows = Math.ceil(cap / 6);
-    for (let i = 0; i < rows * 6; i++) {
-      const b = st.bottles[i];
-      if (!b) {
-        grid.appendChild(h('div', { class: 'bottle-slot' + (i < cap ? ' empty' : ' locked'), 'aria-hidden': 'true' }));
-        continue;
-      }
-      const cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: '16', height: '22', class: 'vial-art' }));
-      drawBottle(/** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')), 2, 2, 12, 19, b.m ? b.m.color : [0.5, 0.5, 0.5], Math.min(1, b.ml / Math.max(1, b.bottledMl || b.ml)));
-      // a labelled bottle tells what it does without opening it
-      const fxText = b.label ? trade.labelLine(b.label) : '';
-      const acc = b.label ? labelStars(b.label) : null;
-      const slot = h('button', { class: 'bottle-slot' + (this.sel === b.id ? ' active' : '') + (b.label ? ' labelled' : ''), role: 'option', 'aria-selected': this.sel === b.id ? 'true' : 'false', 'aria-label': `${b.label && b.label.name ? b.label.name : 'Bottle'}, ${Math.round(b.ml)} ml${fxText ? `: ${fxText}` : ''}`, ...(fxText ? { title: fxText } : {}), 'data-act': 'bottle-slot', 'data-id': b.id },
-        cv, h('span', { class: 'bml', text: `${Math.round(b.ml)}` }), b.label ? h('span', { class: 'btag' }, icon('tag', 'sm')) : null,
-        acc === null ? null : h('span', { class: 'bstars', 'data-stars': String(acc), text: starsText(acc, MAX_STARS) }));
-      slot.addEventListener('click', () => { this.sel = this.sel === b.id ? null : b.id; this.refresh(); });
-      grid.appendChild(slot);
-    }
-    const b = this.sel ? st.bottles.find((x) => x.id === this.sel) : null;
-    let detail = null;
-    if (b) {
-      const m = b.m || {};
-      detail = h('div', { class: 'bottle-detail' },
-        h('div', { class: 'small' }, h('span', { class: 'swatch', style: { background: rgbToHex(m.color || [0.5, 0.5, 0.5]) } }), ` ${describeColor(m.color || [0.5, 0.5, 0.5])} · ${Math.round(b.ml)} ml · ${Math.round(m.temperature ?? 20)}°C · bottled on day ${b.day || st.day}`),
-        verifiedLine(b.cert),
-        b.label ? h('div', { class: 'small label-line' }, icon('tag', 'sm'), ` ${trade.labelLine(b.label)}`) : null,
-        h('div', { class: 'row wrap' },
-          btn(st.vial ? 'Swap with the vial' : 'To the counter', () => lab.takeBottle(b.id), { icon: 'deal', cls: 'primary', act: 'take-bottle', title: 'Put this bottle on the counter to sell or test it' }),
-          btn('Pour back', () => lab.pourBackBottle(b.id), { icon: 'pour', act: 'pour-back-bottle' }),
-          btn('Discard', async () => { if (await confirmDialog('Discard the bottle?', 'The potion is poured away. Ingredients are not refunded.', 'Discard', 'danger')) lab.discardBottle(b.id); }, { icon: 'trash', cls: 'danger', act: 'discard-bottle' })));
-    }
-    el.append(h('div', { class: 'card parch shelf-card' },
-      h('div', { class: 'row' }, icon('shelf2'), h('b', { text: `Potion shelves · ${st.bottles.length}/${cap}` })),
-      st.bottles.length ? null : h('div', { class: 'small muted', text: 'Empty. When you bottle a brew, choose “To the potion shelves” to keep it for a later customer. Tap a bottle here to use it. More shelving is sold in the Shop.' }),
-      grid, detail));
+    el.append(cellarShelves(this.lab, { onChange: () => this.refresh() }));
   }
 }
 
@@ -235,15 +195,3 @@ function reqStatus(req, sum) {
   return h('span', { class: 'fx-status ' + cls, 'data-evidence': r.evidence, title: r.title, text: `${r.mark} ${r.text}` });
 }
 
-/**
- * What the trials of a bottle found: the effects seen, and how many were
- * tested but not detected (not proof of absence — the label says how sure).
- * @param {Record<string, number>|undefined} cert
- */
-function verifiedLine(cert) {
-  const all = Object.entries(cert || {});
-  if (!all.length) return h('div', { class: 'small' }, 'Tested: ', h('span', { class: 'muted', text: 'nothing — effects unknown' }));
-  const seen = all.filter(([, x]) => Math.abs(x) >= 0.5), unseen = all.length - seen.length;
-  return h('div', { class: 'small' }, 'Tested: ', ...seen.map(([k, x]) => h('span', { class: 'fx-chip' }, icon(EFFECT_BY_KEY[k].icon, 'sm'), ` ${Math.round(x)}`)),
-    unseen ? h('span', { class: 'muted', text: ` ${seen.length ? '· ' : ''}${unseen} not detected` }) : null);
-}

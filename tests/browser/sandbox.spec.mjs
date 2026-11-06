@@ -166,12 +166,15 @@ test('the campaign’s rooms and stores are here too: shelves, the cellar and th
   await page.waitForFunction(() => /** @type {any} */ (window).__alchemist.screen.state.bottles.length === 1);
   await page.click('[data-act=tab-counter]');
   await expect(page.locator('[data-act=bottle-slot]')).toHaveCount(1);
-  // the cellar: lay the brew down
+  const closeAll = async () => { while (await page.locator('.overlay').count()) await page.locator('.overlay .modal-head .btn').last().click(); };
+  // the cellar: an empty place on its shelves takes the brew down to age (its menu opens on it)
   await page.click('[data-act=tab-brew]');
   await page.click('[data-act=cellar]');
+  await page.locator('.overlay [data-act=empty-slot]').first().click();
   await page.click('[data-act=cellar-fill-0]');
   await expect(page.locator('.cellar-vessel').first()).toContainText('ml');
-  await page.locator('.overlay .modal-head .btn').first().click();
+  await closeAll();
+  expect(await lab(page, (l) => l.state.bottleRoom), 'the aging bottle takes a place on the shelves').toBe(await lab(page, (l) => l.state.cap.bottles - 2));
   // brew a Fire potion in the emptied cauldron: a fiery herb, crushed and steeped warm
   const fiery = await lab(page, (l) => {
     const ms = l.state.world.ingredients.map((id) => l.state.lookup(id)).filter((m) => m && m.extraction && m.wild && !m.wild.arcane && m.form === 'solid');
@@ -182,8 +185,9 @@ test('the campaign’s rooms and stores are here too: shelves, the cellar and th
   await pourRole(page, fiery.id, 150, 0);
   await crushInPot(page);
   await steepWarm(page, 60, 40);
-  // load 50 ml of it from the pot into the vessel: it can take the vessel above cellar temperature
+  // tap the aging bottle on the shelves; load 50 ml of it from the pot into its jacket: it can take the bottle above cellar temperature
   await page.click('[data-act=cellar]');
+  await page.click('.overlay [data-act=aging-slot][data-vessel="0"]');
   const n0 = await lab(page, (l) => l.sim.p.count);
   await page.fill('[data-act=cellar-ml-0]', '50');
   await page.click('[data-act=cellar-charge-pot-0]');
@@ -197,7 +201,7 @@ test('the campaign’s rooms and stores are here too: shelves, the cellar and th
   await page.click('[data-act=cellar-rune-0]');
   await page.click('[data-act=cellar-rune-0]');
   expect(await lab(page, (l) => l.state.cellar.runes === Infinity && l.state.cellar.vessels[0].rune.target)).toBe(goal);
-  await expect(page.locator('.overlay .modal')).toContainText('unlimited');
+  await expect(page.locator('.overlay .cellar-menu')).toContainText('unlimited');
   // the panel follows the vessel live: the temperature rises, the charge drains, then the rune locks it
   const t0 = Number(await page.locator('.cellar-vessel [data-temp]').first().getAttribute('data-temp'));
   await page.waitForFunction(([g]) => { const v = /** @type {any} */ (window).__alchemist.screen.state.cellar.vessels[0]; return Math.abs(v.T - g) < 0.05; }, [goal], { timeout: 90_000, polling: 500 });
@@ -207,9 +211,9 @@ test('the campaign’s rooms and stores are here too: shelves, the cellar and th
   expect(Number(await page.locator('.cellar-vessel [data-charge]').first().getAttribute('data-charge')), 'the charge is being used up').toBeLessThan(50);
   await expect(page.locator('.cellar-vessel').first()).toContainText(`locked at ${goal}°C`);
   await shot(page, info, 'sandbox-cellar');
-  await page.locator('.overlay .modal-head .btn').first().click();
-  // the rest of the Fire potion onto the potion shelves (stirred first: the settled grains carry no fire),
-  // then dragged from the shelves inside the cellar onto vessel 2
+  await closeAll();
+  // the rest of the Fire potion onto the shelves (stirred first: the settled grains carry no fire),
+  // then, from its own menu on the shelves, poured into the second jacket
   await steepWarm(page, 60, 20);
   await lab(page, (l) => l.setAutoStir(true));
   await page.waitForTimeout(1200);
@@ -220,28 +224,24 @@ test('the campaign’s rooms and stores are here too: shelves, the cellar and th
   await lab(page, (l) => l.setAutoStir(false));
   const fireBottle = await lab(page, (l) => { const b = l.state.bottles[l.state.bottles.length - 1]; return { id: b.id, net: b.m.effects[5] - b.m.effects[6] }; });
   expect(fireBottle.net, 'a Fire potion on the shelf').toBeGreaterThan(3);
-  await page.click('[data-act=tab-brew]');
-  await page.click('[data-act=cellar]');
-  await page.fill('[data-act=cellar-ml-1]', '20');
-  await page.locator('.cellar-vessel[data-vessel="1"]').scrollIntoViewIfNeeded();
-  const tile = await page.locator(`[data-act=cellar-shelf-bottle][data-id="${fireBottle.id}"]`).boundingBox();
-  const target = await page.locator('.cellar-vessel[data-vessel="1"]').boundingBox();
-  if (!tile || !target) throw new Error('no boxes');
-  await page.mouse.move(tile.x + tile.width / 2, tile.y + tile.height / 2);
-  await page.mouse.down();
-  for (let k = 1; k <= 12; k++) await page.mouse.move(tile.x + (target.x + 60 - tile.x) * (k / 12), tile.y + (target.y + 30 - tile.y) * (k / 12));
-  await page.mouse.up();
+  await page.click('[data-act=tab-counter]');
+  await page.click(`[data-act=bottle-slot][data-id="${fireBottle.id}"]`);
+  await page.fill('.cellar-menu [data-act=charge-ml]', '20');
+  await page.click('.cellar-menu [data-act=charge-jacket-1]');
   const ch2 = await lab(page, (l) => l.state.cellar.vessels[1].charge);
-  expect(ch2 && ch2.ml, 'dragged from the shelves: 20 ml charged').toBe(20);
-  expect(await page.locator('.bottle-ghost').count(), 'no dragged picture left behind').toBe(0);
-  // pour vessel 1's brew back into the pot: the vessel is empty, keeping its charge
+  expect(ch2 && ch2.ml, 'from the bottle on the shelves: 20 ml charged').toBe(20);
+  await closeAll();
+  // pour the aging brew back into the pot: its jacket is empty, keeping its charge
+  await page.click('[data-act=tab-brew]');
   const n1 = await lab(page, (l) => l.sim.p.count);
+  await page.click('[data-act=cellar]');
+  await page.click('.overlay [data-act=aging-slot][data-vessel="0"]');
   await page.click('[data-act=cellar-pour-back-0]');
   const after = await lab(page, (l) => ({ n: l.sim.p.count, comp: Object.keys(l.state.cellar.vessels[0].comp).length, charge: !!l.state.cellar.vessels[0].charge }));
   expect(after.n, 'the brew is back in the pot').toBe(n1 + 30);
   expect(after.comp).toBe(0);
-  expect(after.charge, 'the vessel keeps its charge').toBe(true);
-  await page.locator('.overlay .modal-head .btn').first().click();
+  expect(after.charge, 'the jacket keeps its charge').toBe(true);
+  await closeAll();
   // the garden: every bed, every seed
   await page.click('[data-act=tab-garden]');
   const seeds = page.locator('.seeds .seed');

@@ -452,6 +452,8 @@ export class GameState {
       if (r.ok) this.removeBottle(b.id);
       return r;
     }
+    // a brew laid down from the cauldron stands on the shelves like any bottle: it needs a free place
+    if (this.bottleRoom <= 0) return { ok: false, reason: `The cellar's shelves are full (${this.cap.bottles} places). Sell, pour back or discard a bottle first, or buy more shelving.` };
     return fillVessel(v, src.comp || {}, src.T ?? 20, now, { name: src.name, batchId: this.batch.id, parts: src.parts });
   }
 
@@ -511,7 +513,7 @@ export class GameState {
     this.tickCellar(now);
     const v = this.cellar.vessels[vessel];
     if (!v || vesselVolume(v) <= 0) return { ok: false, reason: 'The vessel is empty.' };
-    if (this.bottles.length >= this.cap.bottles && this.vial) return { ok: false, reason: 'No room on the potion shelves, and a vial is already on the counter.' };
+    if (this.bottles.length >= this.cap.bottles && this.vial) return { ok: false, reason: 'No room on the cellar shelves, and a vial is already on the counter.' };
     const out = emptyVesselContents(v, now);
     const vial = makeVialFromComposition(out.comp, out.T, { batchId: 'b' + now.toString(36) + 'c' + v.id, day: this.day, parts: out.parts }, this.lookup, this.world.laws || []);
     if (!vial) return { ok: false, reason: 'Nothing could be bottled.' };
@@ -998,9 +1000,14 @@ export class GameState {
   }
 
   // ------------------------------------------------------------ potion shelves
-  /** Free places on the potion shelves. */
+  /** Bottles aging in the cellar: each stands on the shelves in its jacket (a filled vessel). */
+  get agingCount() {
+    return this.cellar.vessels.filter((v) => vesselVolume(v) > 0).length;
+  }
+
+  /** Free places on the cellar's shelves (an aging bottle takes one too). */
   get bottleRoom() {
-    return Math.max(0, this.cap.bottles - this.bottles.length);
+    return Math.max(0, this.cap.bottles - this.bottles.length - this.agingCount);
   }
 
   /**
@@ -1012,7 +1019,7 @@ export class GameState {
     const fromCounter = !v;
     const b = v || this.vial;
     if (!b) return { ok: false, reason: 'There is no bottle to put away.' };
-    if (this.bottleRoom <= 0) return { ok: false, reason: `The potion shelves are full (${this.cap.bottles} bottles). Sell, pour back or discard one, or buy more shelving.` };
+    if (this.bottleRoom <= 0) return { ok: false, reason: `The cellar shelves are full (${this.cap.bottles} places). Sell, pour back or discard one, or buy more shelving.` };
     this.bottles.push(b);
     if (fromCounter) this.vial = null;
     return { ok: true, bottle: b };

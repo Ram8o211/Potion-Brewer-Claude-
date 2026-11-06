@@ -722,12 +722,13 @@ export function formatWait(ms) {
 // ------------------------------------------------------------------ buried runes
 
 /**
- * How many old temperature runes lie buried in each underground region's
- * generation: the Netherwood's caverns, the quarry's seams, the crags' ash
- * and the buried relics of the Chronoglass Wastes. A cache is dug up once;
- * regenerating the biome buries new ones.
+ * How many old temperature runes lie set in the rock underground in each
+ * region's generation: most in the Netherwood's caverns, the quarry's seams,
+ * the crags' ash and the buried relics of the Chronoglass Wastes, one under
+ * every other region. A rune stone is broken out once (a few blows, like a
+ * crystal); regenerating the biome buries new ones.
  */
-export const RUNE_CACHES = { netherwood: 2, quarry: 2, crags: 1, chronoglass: 1 };
+export const RUNE_CACHES = { netherwood: 3, quarry: 3, crags: 2, chronoglass: 2, forest: 1, meadow: 1, river: 1, moonfen: 1, skyshard: 1, morphgrove: 1, veilhollow: 1, ghostglass: 1 };
 
 /**
  * The rune caches of a region's generation: an id and where along the

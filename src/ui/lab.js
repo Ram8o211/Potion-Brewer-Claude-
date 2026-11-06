@@ -444,7 +444,7 @@ export class LabScreen {
       a.append(set.alembic);
     }
     // the aging cellar
-    if (this.state.cap.vessels > 0) a.append(btn('Cellar', () => panels.openCellar(this), { icon: 'shelf2', title: 'The aging cellar: lay brews down to go on extracting', act: 'cellar' }));
+    if (this.state.cap.vessels > 0) a.append(btn('Cellar', () => panels.openCellar(this), { icon: 'shelf2', title: 'The cellar: its shelves of bottles; tap one to set it aging, or an empty place to lay the brew down', act: 'cellar' }));
     a.append(btn('Empty', () => this.emptyCauldron(), { icon: 'trash', cls: 'danger', title: 'Empty the cauldron', act: 'empty' }));
     this.actionSet = set;
     this.syncActions();
@@ -1020,7 +1020,7 @@ export class LabScreen {
     st.newBatch();
     this.lastPoured = {};
     audio.play('splash');
-    toast('Laid down', `The brew is in vessel ${vessel + 1}. It goes on extracting while you work — and while you are away.`, 'shelf2');
+    toast('Laid down', `The brew is aging on the cellar shelves (jacket ${vessel + 1}). It goes on extracting while you work — and while you are away.`, 'shelf2');
     this.save();
   }
 
@@ -1064,7 +1064,7 @@ export class LabScreen {
     for (const i of sel.sort((a, b) => b - a)) sim.removeParticle(i);
     st.touchBatch();
     if (sim.p.count === 0) { st.brewLog = []; st.newBatch(); this.lastPoured = {}; }
-    toast(`Vessel ${vessel + 1} charged`, `${got} ml of potion loaded: it can take the vessel to ${r.limit}°C.`, r.limit > 12 ? 'flame' : 'snow', 3200);
+    toast(`Jacket ${vessel + 1} charged`, `${got} ml of potion loaded: it can take the bottle there to ${r.limit}°C.`, r.limit > 12 ? 'flame' : 'snow', 3200);
     this.save();
     return r;
   }
@@ -1164,7 +1164,7 @@ export class LabScreen {
     const st = this.state;
     const counterFree = !st.vial;
     if (!counterFree && st.bottleRoom <= 0) {
-      toast('Nowhere to put it', `The counter holds a vial and the potion shelves are full (${st.cap.bottles}). Serve, pour back or discard a bottle first — or buy more shelving.`, 'bottle', 4500);
+      toast('Nowhere to put it', `The counter holds a vial and the cellar shelves are full (${st.cap.bottles}). Serve, pour back or discard a bottle first — or buy more shelving.`, 'bottle', 4500);
       this.showView('counter');
       return;
     }
@@ -1233,7 +1233,7 @@ export class LabScreen {
       if (this.sim.p.count === 0) { st.brewLog = []; st.newBatch(); this.lastPoured = {}; }
       audio.play('glass');
       this.save();
-      toast('Bottle shelved', `${vial.ml} ml sealed and put on the potion shelves (${st.bottles.length}/${st.cap.bottles}). Take it down at the Counter whenever you need it.`, 'bottle', 3600);
+      toast('Bottle shelved', `${vial.ml} ml sealed and put on the cellar shelves (${st.bottles.length + st.agingCount}/${st.cap.bottles}). Take it down at the Counter whenever you need it, or set it aging there.`, 'bottle', 3600);
       if (this.view === 'counter') this.views.counter.refresh();
       this.updateBadges();
       return;
@@ -2058,7 +2058,7 @@ export class LabScreen {
     const st = this.state;
     for (const e of st.tickCellar()) {
       const v = st.cellar.vessels[e.vessel];
-      toast(`Cellar vessel ${e.vessel + 1}${v && v.name ? ` (${v.name})` : ''}`, e.text, 'shelf2', 4500);
+      toast(`Cellar · jacket ${e.vessel + 1}${v && v.name ? ` (${v.name})` : ''}`, e.text, 'shelf2', 4500);
     }
     const ex = this.sim.extraction;
     for (const e of st.noteBurning(ex.safeSeen, ex.charSeen)) {

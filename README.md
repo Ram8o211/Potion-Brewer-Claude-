@@ -167,13 +167,28 @@ computed from the particles that actually run out of the tap. What a
     full health it raises its maximum health instead.
   * Repeated trials uncover the hidden laws. Pouring anything new
     invalidates earlier tests of the batch.
-* **Potion shelves.** Bottle the cauldron whenever you like — onto the
-  counter, or into a sealed glass bottle on your potion shelves, as long as
-  there is room. Each bottle keeps its exact contents; take it down later
-  to test, label and sell it (the bottle on the counter goes up in its
-  place), pour it back into a new brew or pour it away. The shop starts
-  with room for 3 bottles; a Bottle Shelf (6), a Potion Cabinet (12) and a
-  Bottle Cellar (24) add more.
+* **The cellar.** One set of shelves keeps every potion: bottle the
+  cauldron whenever you like — onto the counter, or into a sealed glass
+  bottle on the cellar shelves, as long as there is room. Each bottle keeps
+  its exact contents. Tap a bottle (on the Counter, or in the Cellar panel
+  from the Brew room) for its menu: take it down to test, label and sell it
+  (the bottle on the counter goes up in its place), pour it back into a new
+  brew, pour it away — or, with the guild's Aging Cellar, set it aging in a
+  heating jacket, where it goes on extracting for hours, even while the
+  game is closed. Tap an aging bottle for the aging options: load its
+  jacket with a Fire or Frost potion (from the pot or a bottle on the
+  shelves) to warm or chill it, lock the temperature with a rune, then seal
+  it again or pour it into the pot; an empty place on the shelves takes the
+  cauldron's whole brew to age. An aging bottle takes a place on the
+  shelves like any other. The shop starts with room for 3 bottles; a Bottle
+  Shelf (6), a Potion Cabinet (12) and a Bottle Cellar (24) add more, and
+  the Aging Cellar (2 jackets) and Deep Cellar (4) let bottles age.
+* **Temperature runes** are sold at the market, and old ones lie set in the
+  rock underground in every region of the wilds — most in the Netherwood,
+  the quarry, the crags and the Chronoglass Wastes: glowing carved stones
+  below the ground. Strike one a few times, like a crystal (tap, or a hard
+  swipe; the Forager's Kit saves a blow), and it breaks out of the rock
+  into the cellar's stock. Regenerating a biome buries new ones.
 * **Trade.** A bottle whose batch has been tested labels itself — the
   tested values, the guild's estimates for the rest — and keeps its label up
   to date as further trials of the batch come in, so every bottle of that

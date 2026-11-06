@@ -503,11 +503,11 @@ test('the guild theory counts only what is already dissolved', () => {
   assert.ok(Math.abs(half[v] - all[v] / 2) < 0.2, `half dissolved, half the effect (${half[v].toFixed(1)} of ${all[v].toFixed(1)})`);
 });
 
-test('old runes lie buried underground in the wilds: each cache is dug once, and a new generation buries new ones', () => {
+test('old runes lie in the rock underground in the wilds: each stone is dug once, and a new generation buries new ones', () => {
   const st = GameState.create('rune-caches', { tutorial: false });
   const caches = st.runeCaches('netherwood');
-  assert.equal(caches.length, 2, 'two in the Netherwood');
-  assert.equal(st.runeCaches('meadow').length, 0, 'none in the meadow');
+  assert.equal(caches.length, 3, 'three in the Netherwood');
+  assert.equal(st.runeCaches('meadow').length, 1, 'one under the meadow');
   assert.deepEqual(st.runeCaches('netherwood'), caches, 'the same every time');
   const n0 = st.cellar.runes;
   assert.ok(st.digRune(caches[0].id).ok);

@@ -101,6 +101,8 @@ const STIFF = new Set(['crystal', 'shard', 'stone', 'nugget', 'shell', 'icicle',
 const STRIKES = [4, 5, 6];
 /** How fast a swipe must go (scene pixels per move) to strike a crystal, and how soon after a blow another lands. */
 const STRIKE_SPEED = 2.5, STRIKE_GAP = 0.18;
+/** The size of a rune stone set in the rock (scene pixels). */
+const RUNE_W = 10, RUNE_H = 12;
 
 /** How strongly what glows lights its surroundings in each region: little in the open meadow, fully in the dark fens and caves. */
 const GLOW_IN = { forest: 0.85, netherwood: 1.3, meadow: 0.45, river: 0.9, quarry: 0.7, moonfen: 1.4, crags: 0.7 };
@@ -172,8 +174,10 @@ export class WildsView {
     this.energy = {};
     /** crystal id → the blows it has taken and when the last one landed (scene time) @type {Record<string, {n:number, t:number}>} */
     this.hits = {};
-    /** blows struck on each buried rune stone @type {Record<string, number>} */
+    /** each rune stone in the rock → the blows it has taken and when the last one landed (scene time) @type {Record<string, {n:number, t:number}>} */
     this.runeHits = {};
+    /** rune stones just broken out, flying up and fading @type {{x:number, y:number, vx:number, vy:number, t:number}[]} */
+    this.runeFly = [];
     /** the ground fringe over each plant's foot, by region, plant and spot @type {Map<string, any[]>} */
     this.soilCache = new Map();
     /** bits of leaf and pulp in flight @type {{x:number, y:number, vx:number, vy:number, t:number, c:string}[]} */
@@ -383,7 +387,7 @@ export class WildsView {
       h('span', { class: 'fx-chip', title: `Dominant effect: ${eff.label}` }, icon(eff.icon, 'sm'), ' ' + eff.label),
       h('span', { class: 'fx-chip', title: 'Native creature' }, icon('rabbit', 'sm'), ' ' + CREATURE_NAMES[biome.creature]),
       h('span', { class: 'fx-chip', title: 'Specimens left in this generation' }, icon('leaf', 'sm'), ` ${left}/${total}`),
-      ...(() => { const cs = st.runeCaches(this.region); const n = cs.filter((c) => !c.dug).length; return cs.length ? [h('span', { class: 'fx-chip rune-chip', 'data-runes-left': String(n), title: n ? 'Old temperature runes lie buried here: look for the glowing stones and tap one a few times to dig it up' : 'Every buried rune of this generation has been dug up: regenerating the biome buries new ones' }, icon('rune', 'sm'), ` ${n}/${cs.length} buried`)] : []; })(),
+      ...(() => { const cs = st.runeCaches(this.region); const n = cs.filter((c) => !c.dug).length; return cs.length ? [h('span', { class: 'fx-chip rune-chip', 'data-runes-left': String(n), title: n ? 'Old temperature runes lie in the rock underground here: look for the glowing stones below the ground and strike one a few times to break it out' : 'Every rune stone of this generation has been broken out: regenerating the biome buries new ones' }, icon('rune', 'sm'), ` ${n}/${cs.length} runes underground`)] : []; })(),
       lab.sandbox ? null : h('span', { class: 'fx-chip coins', title: coins.nextIn ? `Next coin in ${formatWait(coins.nextIn)}` : 'Your purse is full' }, icon('coin', 'sm'), ` ${coins.coins}/${coins.max}`),
       regen));
     const list = clear(this.list);
@@ -730,6 +734,8 @@ export class WildsView {
     // a rabbit the finger sweeps across bolts
     const warren = this.wildlife ? this.warrens.get(this.region) : null;
     if (warren) for (const r of warren.rabbits) { const b = r.box(2); if (r.running && crosses(x0, y0, x1, y1, b.x0, b.y0, b.x1, b.y1)) warren.scare(r, x0); }
+    // a hard swipe across a rune stone in the rock strikes it, as it strikes a crystal
+    if (speed >= STRIKE_SPEED) for (const c of this.caches()) if (!c.dug && crosses(x0, y0, x1, y1, c.x - RUNE_W / 2 - 2, c.y - RUNE_H / 2 - 2, c.x + RUNE_W / 2 + 2, c.y + RUNE_H / 2 + 2)) this.digCache(c, x1 - x0);
     for (const p of this.field) {
       if (this.fallen[p.id]) continue;
       const f = this.frameOf(p);
@@ -1226,31 +1232,44 @@ export class WildsView {
   }
 
   /**
-   * The buried rune caches of the region shown, placed in the scene: on the
-   * floor of open ground (scanned up from the bottom, so a cavern's ceiling
-   * is never taken for ground), never under water. Cached per scene.
-   * @returns {{id:string, x:number, y:number, dug:boolean}[]}
+   * The rune stones of the region shown, set in the rock underground: under
+   * the floor of open ground (scanned up from the bottom, so a cavern's
+   * ceiling is never taken for ground), deep enough that earth or rock
+   * closes round them on every side, never in water. Cached per scene.
+   * @returns {{id:string, x:number, y:number, dug:boolean}[]} (x, y): the stone's centre
    */
   caches() {
     const st = this.lab.state, seed = st.sceneSeed(this.region), key = `${this.region}:${seed}`;
     if (!this._caches || this._caches.key !== key) {
       const sc = sceneOf(this.region, seed);
-      const air = (x, y) => !this.solidAt(x, y);
+      const ground = (x, y) => x >= 0 && x < SCENE_W && y >= 0 && (y >= SCENE_H || (!!(sc.solid[y * SCENE_W + x] || sc.rock[y * SCENE_W + x]) && !sc.liquid[y * SCENE_W + x]));
+      // a stone RUNE_W × RUNE_H whose whole socket (and a pixel round it) is ground
+      const fits = (cx, cy) => {
+        for (let y = cy - RUNE_H / 2 - 1; y <= cy + RUNE_H / 2 + 1; y++) for (let x = cx - RUNE_W / 2 - 1; x <= cx + RUNE_W / 2 + 1; x++) if (y < SCENE_H && !ground(x, y)) return false;
+        return true;
+      };
       const place = [];
       for (const c of runeCachesOf(this.region, seed)) {
-        let x0 = Math.round(c.fx * SCENE_W), spot = null;
-        // the nearest column, either side, with a floor under open air
+        const x0 = Math.round(c.fx * SCENE_W);
+        let spot = null;
+        // the nearest column, either side, with ground under open air deep enough to hold a stone
         for (let d = 0; d < SCENE_W / 2 && !spot; d += 3) {
           for (const x of [x0 + d, x0 - d]) {
-            if (x < 8 || x > SCENE_W - 8) continue;
+            if (x < 10 || x > SCENE_W - 10) continue;
             let y = SCENE_H - 1;
             while (y > 0 && this.solidAt(x, y)) y--;
-            if (y < 14 || y > SCENE_H - 3) continue;
+            if (y < 14) continue;
+            // (open air above the ground there: a surface, not a pocket under a ledge)
             let open = true;
-            for (let k = 1; k <= 12 && open; k++) if (!air(x, y - k) || !air(x - 4, y - k) || !air(x + 4, y - k)) open = false;
-            if (!open || sc.liquid[(y + 1) * SCENE_W + x] || sc.liquid[y * SCENE_W + x]) continue;
-            spot = { x, y: y + 1 };
-            break;
+            for (let k = 1; k <= 12 && open; k++) if (this.solidAt(x, y - k) || this.solidAt(x - 4, y - k) || this.solidAt(x + 4, y - k)) open = false;
+            if (!open) continue;
+            // just under the surface, a little deeper where the ground allows
+            for (const depth of [RUNE_H / 2 + 7, RUNE_H / 2 + 5, RUNE_H / 2 + 3]) {
+              const cy = y + depth;
+              if (cy + RUNE_H / 2 > SCENE_H - 5) continue;
+              if (fits(x, cy)) { spot = { x, y: cy }; break; }
+            }
+            if (spot) break;
           }
         }
         if (spot) place.push({ id: c.id, ...spot });
@@ -1261,75 +1280,130 @@ export class WildsView {
     return this._caches.place.map((c) => ({ ...c, dug: dug.has(c.id) }));
   }
 
-  /** A buried rune under (x, y), if one is still there. @param {number} x @param {number} y */
+  /** A rune stone still in the rock at (x, y), if any. @param {number} x @param {number} y */
   cacheAt(x, y) {
-    return this.caches().find((c) => !c.dug && Math.abs(x - c.x) <= 8 && y >= c.y - 12 && y <= c.y + 4) || null;
+    // (a finger's slack round it, but never up out of the ground over it)
+    return this.caches().find((c) => !c.dug && Math.abs(x - c.x) <= RUNE_W / 2 + 4 && y >= c.y - RUNE_H / 2 - 1 && y <= c.y + RUNE_H / 2 + 4) || null;
   }
 
-  /** A blow on a buried rune stone: dirt flies; the third frees it into the cellar's stock. @param {{id:string, x:number, y:number}} c */
-  digCache(c) {
-    const n = ((this.runeHits || (this.runeHits = {}))[c.id] || 0) + 1;
-    this.runeHits[c.id] = n;
-    this.chips(c.x, c.y - 2, Math.random() < 0.5 ? 1 : -1, 6, this.rockColour(), '#8fe8ff', false);
-    audio.play('crush');
-    if (n < 3) return;
+  /** How many blows a rune stone takes to break out of its rock (the Forager's Kit's hammer saves one). @param {{id:string}} c */
+  runeStrikes(c) {
+    const n = STRIKES[hashString(c.id) % STRIKES.length] - 1;
+    return this.lab.sandbox || this.lab.state.has('kit') ? n - 1 : n;
+  }
+
+  /**
+   * A blow on a rune stone set in the rock, as on a crystal: the rock round
+   * it cracks further and chips of it fly; the blow that finishes the cracks
+   * breaks the stone out, and the rune goes to the cellar's stock.
+   * `dir`: the way the blow went.
+   * @param {{id:string, x:number, y:number}} c @param {number} dir
+   */
+  digCache(c, dir) {
+    const hits = this.runeHits || (this.runeHits = {});
+    const hit = hits[c.id] || (hits[c.id] = { n: 0, t: -9 });
+    if (this.time - hit.t < STRIKE_GAP) return;
+    hit.n++; hit.t = this.time;
+    const side = Math.sign(dir) || 1;
+    const rock = this.rockColour();
+    const last = hit.n >= this.runeStrikes(c);
+    this.flashes.push({ x: c.x - side * 3, y: c.y - 2, t: 0 });
+    this.puffs.push({ x: c.x, y: c.y - RUNE_H / 2, t: 0, r: last ? 16 : 8, c: rock });
+    this.chips(c.x, c.y - RUNE_H / 2, side, last ? 14 : 5, rock, '#8fe8ff', last);
+    if (!last) { audio.play('click'); return; }
     const r = this.lab.state.digRune(c.id);
+    delete hits[c.id];
     if (!r.ok) return;
-    this.chips(c.x, c.y - 3, 1, 12, this.rockColour(), '#8fe8ff', true);
+    audio.play('crack');
+    // the stone leaps out of its socket, glowing, and fades as the rune is taken
+    (this.runeFly || (this.runeFly = [])).push({ x: c.x, y: c.y, vx: side * 18, vy: -70, t: 0 });
     for (let i = 0; i < 3; i++) this.flashes.push({ x: c.x + (Math.random() - 0.5) * 10, y: c.y - 6 - Math.random() * 8, t: -i * 0.12 });
-    this.floaters.push({ x: c.x, y: c.y - 6, t: 0, color: [0.56, 0.91, 1], text: '+1 rune' });
+    this.floaters.push({ x: c.x, y: c.y - RUNE_H, t: 0, color: [0.56, 0.91, 1], text: '+1 rune' });
     audio.play('discover');
-    toast('An old temperature rune!', `Dug out of the ground: ${Number.isFinite(this.lab.state.cellar.runes) ? `${this.lab.state.cellar.runes} in hand` : 'the cellar has it'}. Set it on a cellar vessel to lock its temperature.`, 'rune', 4200);
+    toast('An old temperature rune!', `Broken out of the rock: ${Number.isFinite(this.lab.state.cellar.runes) ? `${this.lab.state.cellar.runes} in hand` : 'the cellar has it'}. Tap an aging bottle in the cellar to lock its temperature with it.`, 'rune', 4200);
     this.lab.save();
     this.refresh();
   }
 
   /**
-   * The buried rune stones: a weathered slab half sunk in the ground, its
-   * carved rune glowing and pulsing; a dug one leaves a little pit of loose
-   * earth.
-   * @param {CanvasRenderingContext2D} ctx
+   * The rune stones in the rock: a carved slab set in the ground, its rune
+   * glowing and pulsing through the earth; each blow cracks the rock round
+   * it further (and jolts the stone). One broken out leaves its empty socket.
+   * Stones just broken out fly up and fade.
+   * @param {CanvasRenderingContext2D} ctx @param {number} [dt]
    */
-  drawCaches(ctx) {
+  drawCaches(ctx, dt = 0) {
+    const hw = RUNE_W / 2, hh = RUNE_H / 2;
     for (const c of this.caches()) {
       const x = c.x, y = c.y;
       if (c.dug) {
-        ctx.fillStyle = 'rgba(30,20,14,0.75)'; ctx.fillRect(x - 4, y - 1, 9, 2);
-        ctx.fillStyle = 'rgba(90,70,50,0.8)'; ctx.fillRect(x - 6, y - 2, 2, 1); ctx.fillRect(x + 5, y - 2, 2, 1);
+        // the empty socket: a dark hollow with a lit lower lip
+        ctx.fillStyle = 'rgba(14,10,12,0.8)'; ctx.fillRect(x - hw, y - hh, RUNE_W, RUNE_H);
+        ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(x - hw + 1, y - hh, RUNE_W - 2, 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fillRect(x - hw, y + hh - 1, RUNE_W, 1);
         continue;
       }
-      const rise = (this.runeHits && this.runeHits[c.id]) || 0; // each blow loosens it a little
+      const hit = this.runeHits && this.runeHits[c.id];
+      const n = hit ? hit.n : 0, need = this.runeStrikes(c);
+      // a jolt just after a blow
+      const since = hit ? this.time - hit.t : 9;
+      const jx = since < 0.15 ? Math.round(Math.sin(since * 90) * 1) : 0;
       const glow = 0.55 + 0.45 * Math.sin(this.time * 2.4 + x * 0.1);
-      // the halo
+      // the light of the rune seeping through the ground round it
+      ctx.fillStyle = `rgba(120,220,255,${(0.08 + 0.10 * glow).toFixed(3)})`;
+      ctx.fillRect(x - hw - 3, y - hh - 3, RUNE_W + 6, RUNE_H + 6);
       ctx.fillStyle = `rgba(120,220,255,${(0.10 + 0.12 * glow).toFixed(3)})`;
-      ctx.fillRect(x - 6, y - 11 - rise, 13, 11);
-      // the slab: dark outline, stone body, lit top edge
-      ctx.fillStyle = '#1c1820'; ctx.fillRect(x - 4, y - 9 - rise, 9, 10 + rise);
-      ctx.fillStyle = '#6a6470'; ctx.fillRect(x - 3, y - 8 - rise, 7, 9 + rise);
-      ctx.fillStyle = '#8a8490'; ctx.fillRect(x - 3, y - 8 - rise, 7, 1);
-      ctx.fillStyle = '#4a4450'; ctx.fillRect(x + 3, y - 7 - rise, 1, 8 + rise);
+      ctx.fillRect(x - hw - 1, y - hh - 1, RUNE_W + 2, RUNE_H + 2);
+      // the cracks in the rock, more and longer with every blow
+      if (n > 0) {
+        ctx.fillStyle = 'rgba(20,12,10,0.85)';
+        const rays = [[-1, -1], [1, -1], [1, 1], [-1, 1], [0, -1], [1, 0], [-1, 0], [0, 1]];
+        const len = 2 + Math.round((n / need) * 6);
+        for (let i = 0; i < Math.min(rays.length, n * 2); i++) {
+          const [ux, uy] = rays[(i + (hashString(c.id) % 4)) % rays.length];
+          let px = x + ux * (hw + 1), py = y + uy * (hh + 1);
+          for (let k = 0; k < len; k++) { ctx.fillRect(Math.round(px), Math.round(py), 1, 1); px += ux + (k % 2 ? 0 : uy * 0.5); py += uy + (k % 2 ? ux * 0.5 : 0); }
+        }
+      }
+      const sx = x + jx;
+      // the slab: dark outline, stone body, lit top edge, shaded side
+      ctx.fillStyle = '#1c1820'; ctx.fillRect(sx - hw, y - hh, RUNE_W, RUNE_H);
+      ctx.fillStyle = '#6a6470'; ctx.fillRect(sx - hw + 1, y - hh + 1, RUNE_W - 2, RUNE_H - 2);
+      ctx.fillStyle = '#8a8490'; ctx.fillRect(sx - hw + 1, y - hh + 1, RUNE_W - 2, 1);
+      ctx.fillStyle = '#4a4450'; ctx.fillRect(sx + hw - 2, y - hh + 2, 1, RUNE_H - 3);
       // the carved rune
       const g = Math.round(150 + 105 * glow);
       ctx.fillStyle = `rgb(${Math.round(g * 0.55)},${g},255)`;
-      ctx.fillRect(x, y - 7 - rise, 1, 6);
-      ctx.fillRect(x - 2, y - 6 - rise, 2, 1); ctx.fillRect(x + 1, y - 4 - rise, 2, 1);
-      // the earth over its foot
-      ctx.fillStyle = '#3a2a1e'; ctx.fillRect(x - 5, y - 1, 11, 2);
-      ctx.fillStyle = '#5a4430'; ctx.fillRect(x - 5, y - 1, 11, 1);
+      ctx.fillRect(sx, y - hh + 2, 1, RUNE_H - 4);
+      ctx.fillRect(sx - 2, y - hh + 3, 2, 1); ctx.fillRect(sx + 1, y - hh + 5, 2, 1);
+      ctx.fillRect(sx - 2, y + hh - 4, 2, 1);
       // a spark now and then
-      if (Math.sin(this.time * 3.1 + x) > 0.97) { ctx.fillStyle = '#e8fbff'; ctx.fillRect(x + ((this.time * 7) % 7) - 3, y - 12 - rise, 1, 1); }
+      if (Math.sin(this.time * 3.1 + x) > 0.97) { ctx.fillStyle = '#e8fbff'; ctx.fillRect(x + ((this.time * 7) % 7) - 3, y - hh - 2, 1, 1); }
+    }
+    // stones just broken out: up out of the ground, glowing, fading as the rune is taken
+    if (this.runeFly && this.runeFly.length) {
+      for (const f of this.runeFly) {
+        f.t += dt; f.x += f.vx * dt; f.y += f.vy * dt; f.vy += 160 * dt;
+        const a = Math.max(0, 1 - f.t / 0.9);
+        ctx.globalAlpha = a;
+        ctx.fillStyle = 'rgba(140,230,255,0.5)'; ctx.fillRect(Math.round(f.x) - 4, Math.round(f.y) - 5, 9, 10);
+        ctx.fillStyle = '#6a6470'; ctx.fillRect(Math.round(f.x) - 3, Math.round(f.y) - 4, 7, 8);
+        ctx.fillStyle = '#c8f6ff'; ctx.fillRect(Math.round(f.x), Math.round(f.y) - 3, 1, 6);
+        ctx.globalAlpha = 1;
+      }
+      this.runeFly = this.runeFly.filter((f) => f.t < 0.9);
     }
   }
 
   /** @param {{clientX:number, clientY:number}} e where the tap came down */
   tapScene(e) {
     const q = this.scenePoint(e);
-    // a rune stone half buried in the ground: a few blows dig it up (it lies still, so it comes before a passing animal)
-    const cache = this.cacheAt(q.x, q.y);
-    if (cache) { this.digCache(cache); return; }
     // a rabbit is struck (or, once it is down, caught; its body carried home); one close by bolts
     const warren = this.warren(), rb = warren ? warren.at(q.x, q.y) : null;
     if (rb) { this.hunt(warren, rb, q.x, q.y); return; }
+    // a rune stone set in the rock underground: a few blows break it out, like a crystal
+    const cache = this.cacheAt(q.x, q.y);
+    if (cache) { this.digCache(cache, q.x < cache.x ? 1 : -1); return; }
     if (warren) for (const r of warren.near(q.x, q.y)) warren.scare(r, q.x);
     // what lies fallen on the ground (or is still falling) is gathered by tapping it
     const fallenAt = this.itemAt(q.x, q.y);
@@ -1455,7 +1529,7 @@ export class WildsView {
     }
     // the plants, the far ones first
     for (const p of this.field.slice().sort((a, b) => a.y - b.y)) if (p.key && !this.fallen[p.id]) this.drawPlant(ctx, p, dc);
-    this.drawCaches(ctx);
+    this.drawCaches(ctx, dt);
     this.drawFallen(ctx, dt);
     if (dc && warren) this.drawWarren(dc, warren, true);
     else if (warren) this.drawWarren(ctx, warren);
