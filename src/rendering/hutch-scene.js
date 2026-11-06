@@ -456,7 +456,7 @@ export class HutchScene {
       a.stride = (a.stride || 0) + s;
       // four beats to a stride, each a step's length on (a long-legged kind's steps longer)
       const beatLen = ({ deer: 2.6, cat: 2.2, fox: 2.2, dove: 1.2, snail: 1.5 })[bodyOf(kindOf(a.look))] || 1.6;
-      a.pose = /** @type {any} */ (`walk${(Math.floor(a.stride / beatLen) % 4) + 1}`);
+      a.pose = /** @type {any} */ (`walk${(Math.floor(a.stride / beatLen) % 3) + 1}`);
       if (d <= 0.5 || a.at > 12) {
         a.x = a.gx; a.y = a.gy;
         if (a.next === 'eat') { a.next = null; this._begin(a, 'eat', 2.6); } else this._decide(a);

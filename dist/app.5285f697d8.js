@@ -23641,12 +23641,11 @@ ledges(cv, top, ts, 8, { keep: [[rx - hw - 6, rx + hw + 6]], high: 1 });
 const ss = ts.int(0, 1e9);
 paintTerrain(cv, {
 a: '#8a7a62', b: '#c8c0a8', grain: '#e8e4d4', dark: '#2a2a22', deep: '#141612', cave: '#0a0c0a',
-crust: ['#fefbc7', '#fce199', '#fbd88d', '#f6d187'], crustH: 3, seed: ss,
+crust: ['#fefbc7', '#fce199', '#fbd88d', '#f6d187'], crustH: 4, seed: ss,
 cobble: { stones: ['#57524a', '#4a463e', '#625e54', '#3e3a34', '#56544a', '#4c4a42'], mortar: '#080807', s: 10, moss: ['#3e7226', '#6aa83a'] },
 grass: { cols: ['#5a9a3a', '#7ac04a', '#4a8a30'], tall: 4, rate: 0.32, flowers: ['#ffe58a', '#ffffff'] },
 layers: [
-{ kind: 'sand', cols: ['#fefbc7', '#fcdb91', '#dfba77', '#927d58'], h: [10, 15] },
-{ kind: 'band', cols: ['#525d60', '#606766', '#787c74', '#34322e'], h: [3, 5] },
+{ kind: 'sand', cols: ['#fefbc7', '#fcdb91', '#dfba77', '#927d58'], h: [4, 7] },
 ],
 });
 moss(cv, { cols: ['#7ac04a', '#4e8a34', '#3a6e2a', '#2a5020'], seed: ss + 1, drape: 12, rate: 0.3, len: 15 });
@@ -23732,11 +23731,10 @@ for (let yy = ay; yy < steps[ak + 1]; yy++) for (let xx = ax - 9; xx <= ax + 9; 
 const ss = ts.int(0, 1e9);
 paintTerrain(cv, {
 a: '#5a5048', b: '#4e463e', grain: '#8a7e70', dark: '#1e1812', deep: '#0e0a08', cave: '#060404',
-crust: ['#fddf88', '#f7c069', '#e8b160'], crustH: 3, seed: ss,
+crust: ['#fddf88', '#f7c069', '#e8b160'], crustH: 4, seed: ss,
 cobble: { stones: ['#4a3e34', '#3e342c', '#55483c', '#463a30', '#5a4c40', '#40362e'], mortar: '#080605', s: 10 },
 layers: [
-{ kind: 'banded', cols: ['#fdcc76', '#f7c069', '#fddf88', '#e8b160', '#a86e38'], h: [12, 18] },
-{ kind: 'band', cols: ['#525d60', '#606766', '#787c74', '#34322e'], h: [4, 6] },
+{ kind: 'banded', cols: ['#fdcc76', '#f7c069', '#fddf88', '#e8b160', '#a86e38'], h: [4, 7] },
 ],
 });
 moss(cv, { cols: ['#8a7a5e', '#6a5c48', '#4a4034'], seed: ss + 1, drape: 5, rate: 0.08, len: 6 });
@@ -24170,10 +24168,10 @@ const { fbm2 } = __m48;
 const { pack } = __m113;
 function sprite(w, h) { return { w, h, px: new Uint32Array(w * h), x: 0, y: 0 }; }
 function isleSprite(rng, w, h, cols) {
-const s = sprite(w, h), cx = w / 2, top = 3;
+const s = sprite(w, h), cx = w / 2, top = 3, ph = rng.next() * 6;
 for (let y = 0; y < h; y++) {
 const t = (y - top) / (h - top);
-const half = y < top ? 0 : (w / 2 - 1) * (1 - Math.pow(Math.max(0, t), 1.6)) * (0.85 + 0.15 * Math.sin(y * 0.9 + rng.next()));
+const half = y < top ? 0 : (w / 2 - 1) * (1 - Math.pow(Math.max(0, t), 1.6)) * (0.9 + 0.1 * Math.sin(y * 0.55 + ph));
 for (let x = 0; x < w; x++) {
 const dx = x - cx;
 if (y < top) { if (Math.abs(dx) < w / 2 - 2 && (y === top - 1 || ((x + y) & 1) === 0)) s.px[y * w + x] = cols.grass[y === top - 1 ? 1 : 0]; continue; }
@@ -24229,18 +24227,9 @@ if (Math.abs(xx) > half) continue;
 cv.set(x + xx, y + yy, pack(yy < 2 ? [0.62, 0.8, 0.62] : [0.62, 0.7, 0.82]));
 }
 }
-fog(cv, '#d8ecfa', 80, 150, 0.35, s('haze').int(0, 1e9));
-const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 160, amp: 10, freq: 0.02 });
-const gaps = [];
-for (let i = 0; i < 3; i++) { const gx = ts.int(40 + i * 110, 90 + i * 110), gw = ts.int(14, 22); gaps.push([gx - gw, gx + gw]); }
-for (const [a, b] of gaps) for (let x = Math.max(0, a); x <= Math.min(W - 1, b); x++) top[x] = H + 8;
+fog(cv, '#d8ecfa', 80, 170, 0.35, s('haze').int(0, 1e9));
+const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 184, amp: 5, freq: 0.018 });
 fillSolid(cv, top);
-for (let x = 0; x < W; x++) {
-const d = Math.min(...gaps.map(([a, b]) => (x < a ? a - x : x > b ? x - b : 0)));
-const bottom = Math.round(top[x] + 14 + Math.min(40, d * 0.9) + fbm2(x * 0.1, 3, ts.int(0, 1e9), 2) * 6);
-for (let y = bottom; y < H; y++) cv.solid[y * W + x] = 0;
-}
-ledges(cv, top, ts, 4, { keep: gaps });
 const ss = ts.int(0, 1e9);
 paintTerrain(cv, {
 a: '#5a6474', b: '#6a7486', grain: '#9aa4b4', dark: '#2a3040', deep: '#1a2030', cave: '#141a26',
@@ -24250,16 +24239,27 @@ grass: { cols: ['#6ad04a', '#8ce05a', '#4ab03a'], tall: 3, rate: 0.6, flowers: [
 layers: [{ kind: 'band', cols: ['#7a8496', '#8a94a6', '#9aa4b4', '#4a5464'], h: [3, 5] }],
 });
 markOpen(cv);
-for (const [a] of gaps.slice(0, 2)) if (a > 8) fall(cv, a - 2, Math.round(top[Math.max(0, a - 6)]) + 1, { cols: ['#e8f8ff', '#a8dcf4', '#6ab8e8'], w: 2, seed: ss + a, rgb: [0.6, 0.85, 1] });
 const sr = s('crystals'), glows = [];
 for (let i = 0; i < 4; i++) {
 const at = cv.place(spire(sr, sr.int(8, 14)), pal, sr.int(16, W - 16), { foot: [4, 2], range: 40 });
 if (at) { glow(cv, at.fx, at.fy - 7, 26, [0.7, 0.55, 1], 0.4); glows.push([at.fx, at.fy - 7]); }
 }
-ruins(cv, { n: 2, fill: '#8a94a6', line: '#4a5464', rim: '#aab4c4', seed: s('arch').int(0, 1e9), floor: 150 });
-terrainTrees(cv, s('trees'), pal, { n: 2, kinds: ['gnarl', 'sparse'], shapes: ['spread', 'lean'], h: [40, 70], gap: 80, look: { mats: ['leaf', 'leaf2'], bloom: { mat: 'bloom', rate: 0.04 } } });
+terrainTrees(cv, s('trees'), pal, { n: 2, kinds: ['gnarl', 'sparse'], shapes: ['spread', 'lean'], h: [32, 50], gap: 80, look: { mats: ['leaf', 'leaf2'], bloom: { mat: 'bloom', rate: 0.04 } } });
 const ir = s('isles'), cols = { grass: [pack([0.55, 0.85, 0.35]), pack([0.4, 0.72, 0.3]), pack([0.3, 0.55, 0.28])], rock: [pack([0.45, 0.5, 0.58]), pack([0.52, 0.57, 0.66]), pack([0.62, 0.67, 0.76]), pack([0.32, 0.36, 0.44])], ink: pack([0.12, 0.14, 0.2]) };
-for (let i = 0; i < 3; i++) keep(cv, 'isles', isleSprite(ir, ir.int(22, 34), ir.int(14, 22), cols), 40 + i * 120 + ir.int(-20, 20), ir.int(48, 96));
+const sizes = [16, 22, 30, 40, 52, 66];
+for (let i = sizes.length - 1; i > 0; i--) { const j = ir.int(0, i); [sizes[i], sizes[j]] = [sizes[j], sizes[i]]; }
+const floor = Math.min(...top) - 28, /** @type {number[][]} */ boxes = [];
+for (const w0 of sizes) {
+const w = w0 + ir.int(-2, 2), h = Math.round(w * (0.42 + ir.next() * 0.16)) + 4;
+for (let k = 0; k < 40; k++) {
+const x = ir.int(Math.ceil(w / 2) + 4, W - Math.ceil(w / 2) - 4), y = ir.int(h + 22, floor);
+const box = [x - w / 2 - 8, y - h - 8, x + w / 2 + 8, y + 8];
+if (boxes.some((b) => box[0] < b[2] && b[0] < box[2] && box[1] < b[3] && b[1] < box[3])) continue;
+boxes.push(box);
+keep(cv, 'isles', isleSprite(ir, w, h, cols), x, y);
+break;
+}
+}
 cv.meta.glows = glows;
 cv.meta.vignette = 0.2;
 cv.meta.wind = 1.2;
@@ -24295,18 +24295,7 @@ layers: [{ kind: 'dirt', cols: ['#4a2a3a', '#5a3446', '#7a4a5a', '#a86a7a', '#c8
 moss(cv, { cols: ['#7ae08a', '#4ab06a', '#2a8a5a', '#1e5a40'], seed: ss + 1, drape: 10, rate: 0.3, len: 12 });
 markOpen(cv);
 terrainTrees(cv, s('trees'), pal, { n: 3, kinds: ['wisteria', 'gnarl', 'wisteria'], shapes: ['spread', 'lean'], h: [70, 120], gap: 70, ledges: true, look: { mats: ['leaf', 'leaf2'], bloom: { mat: 'bloom', rate: 0.12 }, hang: { mat: 'leaf', rate: 0.35, len: [4, 14] } } });
-const cx = rx, cy = Math.round(top[rx]) - 22, R = 16;
-for (let a = 0; a < 360; a += 2) {
-const r = (a * Math.PI) / 180;
-for (let t = 0; t < 4; t++) {
-const x = Math.round(cx + Math.cos(r) * (R - t)), y = Math.round(cy + Math.sin(r) * (R - t) * 1.05);
-cv.set(x, y, pack(t === 0 ? [0.25, 0.22, 0.32] : t === 3 ? [0.45, 0.95, 0.6] : [0.38, 0.34, 0.48]));
-}
-}
-for (let y = -R + 4; y < R - 4; y++) for (let x = -R + 4; x < R - 4; x++) if (x * x + y * y < (R - 4) ** 2 && ((x + y) & 3) === 0) cv.set(cx + x, cy + y, pack([0.55, 1, 0.7]));
-glow(cv, cx, cy, 46, [0.5, 1, 0.65], 0.5);
-cv.block(cx - R - 2, cy - R - 2, cx + R + 2, cy + R + 4);
-const glows = [[cx, cy], ...glowShrooms(cv, { n: 6, cap: '#ff8ad8', lit: '#ffe0f4', stem: '#d8c8d8', rgb: [1, 0.5, 0.85], seed: s('caps').int(0, 1e9) })];
+const glows = glowShrooms(cv, { n: 6, cap: '#ff8ad8', lit: '#ffe0f4', stem: '#d8c8d8', rgb: [1, 0.5, 0.85], seed: s('caps').int(0, 1e9) });
 const mr = s('morphs'), morphs = [];
 for (let i = 0; i < 7; i++) {
 const x = mr.int(10, W - 10);
@@ -24316,7 +24305,6 @@ if (y < H - 2) morphs.push({ x, y, hue: mr.int(0, 2) });
 }
 cv.meta.morphs = morphs;
 cv.meta.glows = glows;
-cv.meta.portal = [cx, cy, R];
 cv.meta.vignette = 0.4;
 cv.meta.wind = 0.6;
 cv.meta.horizon = 122;
@@ -24333,7 +24321,7 @@ for (let L = 0; L < 3; L++) {
 const line = silhouette(cv, { base: 110 + L * 12, amp: 8, freq: 0.03, seed: s('w' + L).int(0, 1e9), fill: ['#4a4a5e', '#3e3e52', '#323246'][L], rough: 3 });
 const tr = s('t' + L);
 for (let x = 2; x < W; x += tr.int(8, 16)) treeShape(cv, x, line[x] + 2, tr.int(18, 34), tr.next() < 0.5 ? 'pine' : 'oak', ['#4a4a5e', '#3e3e52', '#323246'][L], tr.int(0, 1e9));
-fog(cv, '#9a9ab0', 70, 170, 0.28, s('fog' + L).int(0, 1e9));
+fog(cv, '#9a9ab0', -60, 170, 0.28, s('fog' + L).int(0, 1e9));
 }
 const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 166, amp: 10, freq: 0.018 });
 const px = ts.int(120, 260), hw = ts.int(20, 30);
@@ -24371,7 +24359,7 @@ const br = s('stones');
 for (let i = 0; i < 3; i++) cv.place(boulder(br, br.int(5, 9), br.int(3, 5), { moss: 'moss' }), pal, br.int(10, W - 10), { sink: 2, foot: [8, 2] });
 vines(cv, new Float32Array(W).fill(0), { cols: ['#8a6ab8', '#6a4a98', '#4a3a78'], leaf: '#a88ad8', flower: '#e8dcff', seed: s('wis').int(0, 1e9), rate: 0.12, len: [10, 40] });
 terrainTrees(cv, s('trees'), pal, { n: 2, kinds: ['gnarl', 'wisteria'], shapes: ['lean', 'tall'], h: [70, 110], dark: 0.25, gap: 90, look: { mats: ['leaf', 'leaf2'], bloom: { mat: 'bloom', rate: 0.08 }, hang: { mat: 'bloom', rate: 0.3, len: [6, 18] } } });
-cv.meta.mist = { y0: 110, y1: H, seed: s('mist').int(0, 1e9) };
+cv.meta.mist = { y0: 0, y1: H, seed: s('mist').int(0, 1e9) };
 cv.meta.glows = glows;
 cv.meta.vignette = 0.5;
 cv.meta.wind = 0.4;
@@ -24427,54 +24415,83 @@ cv.meta.wind = 0.3;
 cv.meta.horizon = 120;
 },
 };
+function standingStones(cv, rng, n, floor, cols) {
+const W = cv.W, [lit, mid, shade, line] = cols.map((c) => pack(c));
+for (let i = 0; i < n; i++) {
+const cx = Math.round(((i + 0.25 + rng.next() * 0.5) / n) * W), w = rng.int(8, 14), h = rng.int(24, 62), slope = (rng.next() - 0.5) * 1.2;
+const top = floor - h;
+for (let x = -Math.floor(w / 2); x < Math.ceil(w / 2); x++) {
+const t = Math.round(top + slope * x + (((x + i) & 3) === 0 ? 2 : 0));
+for (let y = Math.max(0, t); y < floor + 12; y++) {
+const u = x + Math.floor(w / 2);
+let c = u < 2 ? lit : u >= w - 2 ? shade : mid;
+if (y === t) c = lit;
+if (u === 0 || u === w - 1) c = line;
+if (u === Math.floor(w / 2) + ((y >> 3) & 1) - 1 && (y + i * 7) % 23 < 9) c = line;
+if ((y - top) % 13 === 12) c = line;
+cv.set(cx + x, y, c);
+}
+}
+}
+}
 const chronoglass = {
 compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'chronoglass', p);
 const pal = vary(palette({
-leaf: ['#c8a050', { spread: 0.4 }], leaf2: ['#a88a40', { spread: 0.4 }], bloom: ['#ffd0f0', { spread: 0.2 }], bark: '#5a4030', rock: '#b08a5a', gem: ['#b48cff', { spread: 0.5 }],
+leaf: ['#e8a030', { spread: 0.35 }], leaf2: ['#f4c048', { spread: 0.35 }], bloom: ['#ffe080', { spread: 0.2 }], bark: '#4a3020', rock: '#8a6a4a', gem: ['#b48cff', { spread: 0.5 }],
 }), s('pal'), 0.8);
-sky(cv, 0, H, ['#5a3a7a', '#8a5a9a', '#c88aa0', '#f0b890', '#f8d8a8']);
-const cx = s('clock').int(90, W - 90), cy = 50, R = 34;
-for (let a = 0; a < 360; a += 1) { const r = (a * Math.PI) / 180; const x = Math.round(cx + Math.cos(r) * R), y = Math.round(cy + Math.sin(r) * R); cv.set(x, y, pack([0.98, 0.9, 0.8])); }
-for (let hr = 0; hr < 12; hr++) { const r = (hr * Math.PI) / 6; for (let t = 0; t < 4; t++) cv.set(Math.round(cx + Math.cos(r) * (R - 3 - t)), Math.round(cy + Math.sin(r) * (R - 3 - t)), pack([0.95, 0.85, 0.75])); }
-for (let t = 0; t < 20; t++) cv.set(cx + Math.round(t * 0.6), cy - Math.round(t * 0.8), pack([0.9, 0.78, 0.7]));
-for (let t = 0; t < 14; t++) cv.set(cx - t, cy + Math.round(t * 0.3), pack([0.9, 0.78, 0.7]));
-glow(cv, cx, cy, 60, [1, 0.85, 0.7], 0.25);
-mountains(cv, { base: 122, amp: 18, n: 6, seed: s('m').int(0, 1e9), fill: '#a87a8a', lit: '#c89a9a', dark: '#8a6a7a' });
-for (let L = 0; L < 2; L++) silhouette(cv, { base: 132 + L * 10, amp: 6, freq: 0.02, seed: s('d' + L).int(0, 1e9), fill: ['#d8a878', '#e0b080'][L], rim: ['#f0c898', '#f8d8a8'][L] });
-ruins(cv, { n: 4, fill: '#b08a6a', line: '#6a4a3a', rim: '#d8b08a', seed: s('ruins').int(0, 1e9), floor: 168 });
-const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 166, amp: 12, freq: 0.014 });
+sky(cv, 0, H, ['#3e2766', '#56307e', '#7e4290', '#b0609c', '#d88498']);
+const cx = s('clock').int(110, W - 70), cy = 54, R = 30, ring = pack([0.86, 0.58, 0.72]);
+for (let a = 0; a < 720; a++) { const r = (a * Math.PI) / 360; cv.set(Math.round(cx + Math.cos(r) * R), Math.round(cy + Math.sin(r) * R), ring); }
+for (let hr = 0; hr < 12; hr++) { const r = (hr * Math.PI) / 6, n = hr % 3 ? 2 : 3; for (let t = 0; t < n; t++) cv.set(Math.round(cx + Math.cos(r) * (R - 3 - t)), Math.round(cy + Math.sin(r) * (R - 3 - t)), ring); }
+for (let t = 0; t < 18; t++) cv.set(cx + Math.round(t * 0.55), cy - Math.round(t * 0.85), ring);
+for (let t = 0; t < 12; t++) cv.set(cx - Math.round(t * 0.95), cy + Math.round(t * 0.25), ring);
+mountains(cv, { base: 128, amp: 22, n: 6, seed: s('m').int(0, 1e9), fill: '#8a4a7e', lit: '#a05a86', dark: '#743e70' });
+const tw = s('tower'), tx = tw.int(Math.round(W * 0.35), Math.round(W * 0.65)), tcol = pack([0.72, 0.45, 0.55]);
+for (const [ox, ww, hh] of [[0, 16, 96], [16, 10, 62]]) for (let x = 0; x < ww; x++) {
+const notch = (x >> 2) % 2 && ox === 0 ? 4 : 0;
+for (let y = 168 - hh + notch; y < 168; y++) cv.set(tx + ox + x, y, tcol);
+}
+fog(cv, '#e09aa0', 90, 175, 0.4, s('haze').int(0, 1e9));
+standingStones(cv, s('stones'), 3, 168, [[0.84, 0.66, 0.42], [0.72, 0.55, 0.36], [0.56, 0.42, 0.28], [0.36, 0.26, 0.18]]);
+const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 168, amp: 10, freq: 0.014 });
 fillSolid(cv, top);
 ledges(cv, top, ts, 6, { high: 1 });
 const ss = ts.int(0, 1e9);
 paintTerrain(cv, {
-a: '#8a6a4a', b: '#9a7a56', grain: '#c8a878', dark: '#3a2818', deep: '#2a1c10', cave: '#1a1008',
-crust: ['#f8d8a0', '#e8c088', '#d0a070', '#a88050'], crustH: 4, seed: ss,
-cobble: { stones: ['#a8845a', '#b8946a', '#98744e', '#c8a478', '#a08060', '#b08c64'], mortar: '#2a1c10', s: 10 },
-layers: [
-{ kind: 'band', cols: ['#e8c088', '#f0d098', '#d8b078', '#a88050'], h: [4, 6] },
-{ kind: 'band', cols: ['#c89a6a', '#d8aa7a', '#b88a5a', '#8a6040'], h: [3, 5] },
-],
+a: '#5e4230', b: '#6a4c36', grain: '#8a6a4a', dark: '#2a1a10', deep: '#1a0f08', cave: '#140c06',
+crust: ['#fbe08c', '#f2cc6e', '#e6b858', '#d8a448'], crustH: 4, seed: ss,
+cobble: { stones: ['#6e5038', '#7c5c40', '#5e4430', '#8a6a4a', '#664a34', '#74563c'], mortar: '#24160c', s: 11 },
+grass: { cols: ['#e8b040', '#f4cc58', '#c89030'], tall: 4, rate: 0.22 },
+layers: [{ kind: 'band', cols: ['#e0ac50', '#d29a44', '#f0c868', '#a87430'], h: [4, 6] }],
 });
 markOpen(cv);
-const hx = ts.int(40, W - 40), hy = Math.round(top[hx]);
-const brass = pack([0.75, 0.55, 0.25]), lite = pack([0.95, 0.8, 0.45]), glass = pack([0.85, 0.92, 1]), sand = pack([0.95, 0.78, 0.45]);
-for (let y = 0; y < 34; y++) {
-const t = Math.abs(y - 17) / 17, half = 2 + Math.round(t * 8);
+cv.wash(0xff0a0604, (x, y) => (y > H - 26 ? ((y - (H - 26)) / 26) * 0.55 : 0), H - 26, H);
+const hx = ts.int(60, W - 60), hy = Math.round(top[hx]);
+const gold = pack([0.88, 0.66, 0.26]), goldLit = pack([1, 0.84, 0.42]), goldDk = pack([0.62, 0.42, 0.16]);
+const glass = pack([0.94, 0.96, 1]), inside = pack([0.86, 0.8, 0.86]), sand = pack([0.98, 0.8, 0.42]);
+for (let y = 0; y < 4; y++) for (let x = -11 + (y < 2 ? 1 : 0); x <= 11 - (y < 2 ? 1 : 0); x++) cv.set(hx + x, hy - 1 - y, y === 3 ? goldLit : x > 7 ? goldDk : gold);
+const base = hy - 5, gh = 24;
+for (const y0 of [base, base - gh - 2]) for (let y = 0; y < 2; y++) for (let x = -8; x <= 8; x++) cv.set(hx + x, y0 - y, y === 1 ? goldLit : x > 5 ? goldDk : gold);
+for (let y = 0; y < gh; y++) {
+const t = Math.abs(y - gh / 2) / (gh / 2), half = 1 + Math.round(t * t * 0.4 * 6 + t * 0.6 * 6), yy = base - 2 - y;
 for (let x = -half; x <= half; x++) {
-const c = Math.abs(x) === half ? glass : (y < 17 ? y < 6 : y > 22) ? sand : pack([0.72, 0.8, 0.9]);
-cv.set(hx + x, hy - 4 - y, c);
+let c = inside;
+if (Math.abs(x) === half) c = glass;
+else if (y < gh / 2 - 3 && y < 7) c = sand;
+else if (y > gh / 2 && y > gh - 5) c = sand;
+else if (x === 0 && y <= gh / 2 + 1 && y >= 7) c = sand;
+cv.set(hx + x, yy, c);
 }
 }
-for (let x = -12; x <= 12; x++) for (const y of [hy - 4, hy - 39, hy - 40]) cv.set(hx + x, y, x < -6 ? lite : brass);
-for (let y = hy - 39; y < hy - 4; y++) { cv.set(hx - 12, y, brass); cv.set(hx + 12, y, brass); }
-cv.block(hx - 14, hy - 42, hx + 14, hy);
+glow(cv, hx, base - gh / 2, 28, [1, 0.85, 0.5], 0.14);
+cv.block(hx - 13, base - gh - 6, hx + 13, hy);
 const sr = s('crystals'), glows = [];
 for (let i = 0; i < 3; i++) {
 const at = cv.place(spire(sr, sr.int(8, 14)), pal, sr.int(16, W - 16), { foot: [4, 2], range: 40 });
 if (at) { glow(cv, at.fx, at.fy - 7, 24, [0.75, 0.55, 1], 0.4); glows.push([at.fx, at.fy - 7]); }
 }
-terrainTrees(cv, s('trees'), pal, { n: 2, kinds: ['sparse', 'gnarl'], shapes: ['lean', 'spread'], h: [44, 70], gap: 90, ledges: true, look: { mats: ['leaf', 'leaf2'], bloom: { mat: 'bloom', rate: 0.02 } } });
+terrainTrees(cv, s('trees'), pal, { n: 2, kinds: ['gnarl', 'gnarl'], shapes: ['spread', 'lean'], h: [44, 70], gap: 90, ledges: true, look: { mats: ['leaf', 'leaf2'], bloom: { mat: 'bloom', rate: 0.03 } } });
 const falls = [];
 const fr = s('falls');
 for (let i = 0; i < 2; i++) {
@@ -24484,7 +24501,7 @@ while (y < H - 1 && !cv.solid[y * W + x]) y++;
 falls.push({ x, y0: Math.max(20, y - fr.int(40, 70)), y1: y });
 }
 cv.meta.sandfalls = falls;
-cv.meta.hourglass = [hx, hy - 22];
+cv.meta.hourglass = [hx, base - gh / 2];
 cv.meta.glows = glows;
 cv.meta.vignette = 0.35;
 cv.meta.wind = 0.9;
@@ -25371,7 +25388,7 @@ const cw = 6, nx = Math.ceil(SCENE_W / cw), ny = Math.ceil((meta.mist.y1 - meta.
 const base = new Float32Array(nx * ny);
 for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
 const v = 0.5 + 0.5 * Math.sin(i * 0.37 + meta.mist.seed % 7) * Math.cos(j * 0.6 + i * 0.11);
-base[j * nx + i] = Math.min(1, 0.35 + v * 0.5 + j / ny * 0.3);
+base[j * nx + i] = Math.min(1, 0.42 + v * 0.42 + j / ny * 0.16);
 }
 st.mist = { cw, nx, ny, y0: meta.mist.y0, base, cur: base.slice() };
 }
@@ -25390,7 +25407,7 @@ if (!hasExotic(region)) return;
 const st = stateOf(region, seed), vx = x1 - x0, vy = y1 - y0;
 for (const is of st.isles) {
 const s = is.s, cx = s.x + is.ox + s.w / 2, cy = s.y + is.oy + s.h / 2;
-if (segDist(cx, cy, x0, y0, x1, y1) < Math.max(s.w, s.h) * 0.6) { is.vx += vx * 9; is.vy += vy * 9; }
+if (segDist(cx, cy, x0, y0, x1, y1) < Math.max(s.w, s.h) * 0.6) { const kick = 10 / Math.max(0.8, Math.sqrt(s.w / 30)); is.vx += vx * kick; is.vy += vy * kick; }
 }
 if (region === 'moonfen') for (const [gx, gy] of st.meta.glows || []) {
 if (segDist(gx, gy, x0, y0, x1, y1) < 14 && st.ripples.length < 24 && !st.ripples.some((r) => r.x === gx && r.y === gy && st.t - r.t < 0.5)) st.ripples.push({ x: gx, y: gy, t: st.t });
@@ -25419,10 +25436,10 @@ const st = stateOf(region, seed);
 dt = Math.min(dt, 0.05);
 st.t += dt;
 for (const is of st.isles) {
-const k = 22, c = 2.6;
+const k = 26, c = 1.6;
 is.vx += (-k * is.ox - c * is.vx) * dt; is.vy += (-k * is.oy - c * is.vy) * dt;
 is.ox += is.vx * dt; is.oy += is.vy * dt;
-const lim = 26, r = Math.hypot(is.ox, is.oy);
+const lim = 32, r = Math.hypot(is.ox, is.oy);
 if (r > lim) { is.ox *= lim / r; is.oy *= lim / r; is.vx *= 0.5; is.vy *= 0.5; }
 }
 st.ripples = st.ripples.filter((r) => st.t - r.t < 1.6);
@@ -25474,8 +25491,6 @@ px(ctx, m.x, m.y - 3, '#3a8a5a', 1, 3);
 for (const [dx, dy] of BLOOMS[m.shape]) px(ctx, m.x + dx + sway, m.y - 5 + dy, dx === 0 && dy === 0 ? c1 : c0);
 if (m.cool > 0) for (let k = 0; k < 4; k++) px(ctx, m.x + Math.cos(k * 1.6 + t * 6) * 4, m.y - 5 + Math.sin(k * 1.6 + t * 6) * 3, '#e0ffe8');
 }
-const p = st.meta.portal;
-if (p) for (let i = 0; i < 10; i++) { const an = t * 1.2 + i * 0.63, r = p[2] + 4 + Math.sin(t + i) * 3; px(ctx, p[0] + Math.cos(an) * r, p[1] + Math.sin(an) * r, i % 2 ? '#aaffcc' : '#ffd0f0'); }
 }
 if (region === 'veilhollow' && st.mist) {
 const m = st.mist;
@@ -25596,7 +25611,7 @@ if (this.body === 'dove' && this.fly > 0) return Math.floor(this.t * 9) & 1 ? 'f
 if ((this.kind === 'wisp' || this.kind === 'cloudray') && this.running) return Math.floor(this.t * (this.kind === 'wisp' ? 3 : 2)) & 1 ? 'fly1' : 'fly2';
 if (this.body === 'snail' && this.hide > 0 && this.running) return 'loaf';
 if (this.air) return 'hop';
-if (this.walking) return `walk${(Math.floor(this.stride / ({ cat: 2.2, fox: 2.2, deer: 2.6 }[this.body] || 1.6)) % 4) + 1}`;
+if (this.walking) return `walk${(Math.floor(this.stride / ({ cat: 2.2, fox: 2.2, deer: 2.6 }[this.body] || 1.6)) % 3) + 1}`;
 return this.running && !this.alarm ? this.pose || undefined : undefined;
 }
 get running() {
@@ -25604,12 +25619,14 @@ return !this.dead && !this.down;
 }
 box(pad = 0) {
 const lying = this.dead || this.down;
-const tall = { salamander: 6, toad: 8, snail: 8, rat: 7, ermine: 8, badger: 9, dove: 9, cat: 12, fox: 12, deer: 17 }[this.body] ?? 11;
+const k = WILD_SCALE / 0.5, tall = Math.round(({ salamander: 6, toad: 8, snail: 8, rat: 7, ermine: 8, badger: 9, dove: 9, cat: 12, fox: 12, deer: 17 }[this.body] ?? 11) * k);
+const half = Math.round(7 * k), lie = Math.round(8 * k), low = Math.round(6 * k);
 return lying
-? { x0: this.x - 8 - pad, y0: this.y - 6 - pad, x1: this.x + 8 + pad, y1: this.y + 1 + pad }
-: { x0: this.x - 7 - pad, y0: this.y - tall - pad, x1: this.x + 7 + pad, y1: this.y + 1 + pad };
+? { x0: this.x - lie - pad, y0: this.y - low - pad, x1: this.x + lie + pad, y1: this.y + 1 + pad }
+: { x0: this.x - half - pad, y0: this.y - tall - pad, x1: this.x + half + pad, y1: this.y + 1 + pad };
 }
 }
+const WILD_SCALE = 0.75;
 class Warren {
 constructor(region, seed, scene) {
 this.region = region;
@@ -25971,7 +25988,7 @@ if (clear) out.push([x, y - 1]);
 }
 return out;
 }
-return { HOP_GRAVITY, WILD_HP, BLEED_OUT, NEAR_MISS, WARREN_SIZE, RESPAWN, BLOOD, wildLook, GAITS, WildRabbit, Warren, warrenSpots };
+return { HOP_GRAVITY, WILD_HP, BLEED_OUT, NEAR_MISS, WARREN_SIZE, RESPAWN, BLOOD, wildLook, GAITS, WildRabbit, WILD_SCALE, Warren, warrenSpots };
 })();
 // src/rendering/punch.js
 const __m136 = (() => {
@@ -26653,10 +26670,10 @@ return best;
 }
 function atlasSprite(kind, v, pose) {
 const A = ANIMAL_SPRITES[kind], b = walkBeat(pose);
-if (b >= 0) return A.frames[v][b];
+if (b >= 0) return A.frames[v][1 + (b % 3)];
 if (pose === 'hop' || pose === 'fly1') return A.frames[v][1];
 if (pose === 'fly2') return A.frames[v][2];
-return A.variants[v];
+return A.frames[v][0];
 }
 function spriteBody(S, look, snap, low) {
 const { P, L, sc, dead, cause, tr } = S, a0 = S.a, pose = a0.pose;
@@ -27955,7 +27972,7 @@ const { sceneOf } = __m112;
 const { plantCanvas, plantFrameOf, plantGlow, emitColour, silhouetteOf, ingredientSprite, speciesOf, mountsOf, variantOf, MIN_HIT } = __m98;
 const { EFFECT_BY_KEY } = __m20;
 const { hashString } = __m6;
-const { Warren, warrenSpots, BLOOD, WILD_HP } = __m134;
+const { Warren, warrenSpots, BLOOD, WILD_HP, WILD_SCALE } = __m134;
 const { drawRabbit, rabbitSpriteKey, RABBIT_W, RABBIT_H } = __m135;
 const { defaultSnap, penHasRoom, PEN_MAX } = __m60;
 const { KINDS } = __m61;
@@ -28635,13 +28652,14 @@ const b = /** @type {CanvasRenderingContext2D} */ (this.bunny.getContext('2d'));
 b.imageSmoothingEnabled = false;
 b.clearRect(0, 0, RABBIT_W, RABBIT_H);
 drawRabbit(b, look, snap, 0, 0, { x: 0, y: 0, clear: false, floor: false, hop: false, mirror, pose, flash: false, grass, shadow: false });
-const w = full ? RABBIT_W : RABBIT_W / 2 + 4, h = full ? RABBIT_H : RABBIT_H / 2 + 4;
+const sw = Math.round(RABBIT_W * WILD_SCALE), sh = Math.round(RABBIT_H * WILD_SCALE);
+const w = full ? RABBIT_W : sw + 4, h = full ? RABBIT_H : sh + 4;
 if (!this.bunnyRead || this.bunnyRead.width !== w) { this.bunnyRead = document.createElement('canvas'); this.bunnyRead.width = w; this.bunnyRead.height = h; }
 const hb = /** @type {CanvasRenderingContext2D} */ (this.bunnyRead.getContext('2d', { willReadFrequently: true }));
 hb.imageSmoothingEnabled = false;
 hb.clearRect(0, 0, w, h);
 if (full) hb.drawImage(this.bunny, 0, 0);
-else hb.drawImage(this.bunny, 0, 0, RABBIT_W, RABBIT_H, 2, 2, RABBIT_W / 2, RABBIT_H / 2);
+else hb.drawImage(this.bunny, 0, 0, RABBIT_W, RABBIT_H, 2, 2, sw, sh);
 const img = hb.getImageData(0, 0, w, h);
 if (light) litSprite(img.data, light);
 cv = document.createElement('canvas'); cv.width = w; cv.height = h;
@@ -28655,7 +28673,8 @@ const k = `${this.region}:${x >> 2}:${y >> 2}`, c = this.lights || (this.lights 
 let l = c.get(k);
 if (!l) {
 if (c.size > 2000) c.clear();
-l = this.ground.lightAt((x & ~3) + 2, (y & ~3) + 2, 'ground', /** @type {any} */ ({ ax: 10, ay: 14, w: 20, h: 14 }));
+const k = WILD_SCALE / 0.5;
+l = this.ground.lightAt((x & ~3) + 2, (y & ~3) + 2, 'ground', /** @type {any} */ ({ ax: Math.round(10 * k), ay: Math.round(14 * k), w: Math.round(20 * k), h: Math.round(14 * k) }));
 c.set(k, l);
 }
 return l;
@@ -28682,8 +28701,8 @@ const pose = r.drawPose;
 const x = Math.round(r.x), y = Math.round(r.y);
 if (!r.air && !r.flying) this.castShadow(ctx, r, x, y);
 const spr = this.wildSprite(r.look, snap, pose, r.face < 0, pose !== 'eat' || this.grassAt(x + r.face * 8, y), this.animalLight(x, y), full);
-const sx = x - RABBIT_W / 4 - 2, sy = y - 18;
-const put = () => full ? ctx.drawImage(spr, sx + 2, sy + 2, RABBIT_W / 2, RABBIT_H / 2) : ctx.drawImage(spr, sx, sy);
+const sx = x - Math.round(24 * WILD_SCALE) - 2, sy = y - Math.round(32 * WILD_SCALE) - 2;
+const put = () => full ? ctx.drawImage(spr, sx + 2, sy + 2, RABBIT_W * WILD_SCALE, RABBIT_H * WILD_SCALE) : ctx.drawImage(spr, sx, sy);
 put();
 if (r.react > 0) {
 ctx.globalCompositeOperation = 'lighter';
@@ -28694,13 +28713,13 @@ ctx.globalCompositeOperation = 'source-over';
 }
 const lying = r.dead || r.down;
 r.wounds.forEach(([wx, wy], i) => {
-const px = Math.round(x + wx * r.face), py = Math.round(y + (lying ? Math.max(-4, wy * 0.5) : wy));
+const px = Math.round(x + wx * r.face), py = Math.round(y + (lying ? Math.max(-4 * WILD_SCALE / 0.5, wy * 0.5) : wy));
 ctx.fillStyle = BLOOD[2]; ctx.fillRect(px - 1, py, 2, 2);
 ctx.fillStyle = BLOOD[0]; ctx.fillRect(px, py, 1, 1);
 if (!lying) { ctx.fillStyle = BLOOD[1]; ctx.fillRect(px - (i % 2), py + 2, 1, 1 + ((i + r.hits) % 3)); }
 });
 if (r.hits && r.running) {
-const bw = 14, bx = x - bw / 2, by = sy - 4, left = Math.ceil(r.blood * (bw - 2));
+const bw = 14, bx = x - bw / 2, by = r.box().y0 - 5, left = Math.ceil(r.blood * (bw - 2));
 ctx.fillStyle = '#100810'; ctx.fillRect(bx, by, bw, 3);
 ctx.fillStyle = BLOOD[2]; ctx.fillRect(bx + 1, by + 1, bw - 2, 1);
 ctx.fillStyle = r.blood < 0.35 && (Math.floor(r.t * 8) & 1) ? '#ff6a5a' : BLOOD[3];
@@ -29550,13 +29569,6 @@ wood(cv, x1 - 4, top + 6, x1, base, P.wood, { vertical: true, seed: x1 });
 brace(cv, x0 + 3, top + 14, x0 + 13, top + 5, 3, P.wood);
 thatch(cv, x0 - 6, top - 5, x1 + 6, top + 5, o.roof ?? 8, seed + 2);
 }
-function trough_(cv, x0, x1, base, h) {
-wood(cv, x0, base - h, x1, base, P.weathered, { seed: 9 });
-for (const bx of [x0 + 4, x1 - 6]) rect(cv, bx, base - h + 2, bx + 2, base - 1, P.iron[2]);
-rect(cv, x0 + 2, base - h, x1 - 2, base - h + 2, P.water[3]);
-rect(cv, x0 + 3, base - h, x1 - 6, base - h + 1, P.water[5]);
-for (const x of [x0, x1 - 3]) wood(cv, x, base - h - 2, x + 3, base, P.weathered, { vertical: true, seed: x });
-}
 function doghouse_(cv, cx, base, w, h, o = {}) {
 const x0 = cx - w / 2, x1 = cx + w / 2, top = base - h;
 fill(cv, x0, top, x1, base, (x, y) => P.dirt[(y - top) % 4 === 0 ? 3 : (x - x0) > w * 0.7 ? 4 : 5]);
@@ -29681,15 +29693,6 @@ const rim = y >= cy ? Math.abs(uo) <= 1 : uo * uo + vo * vo <= 1;
 return rim ? P.earth[y < cy ? 1 : 0] : 0;
 });
 hay(cv, cx, base, w * 0.75, 4, seed);
-}
-function pond_(cv, x0, x1, top, base, seed) {
-fill(cv, x0, top, x1, base, (x, y) => {
-const d = y - top;
-let i = d === 0 ? 4 : d < 3 ? 3 : d < 6 ? 2 : 1;
-if (noise2(x * 0.25, y * 1.4, seed) > 0.72) i = 5;
-return P.water[i];
-});
-for (const bx of [x0 - 10, x1 - 2]) rocks(cv, bx, top - 6, bx + 12, base, P.sand, seed + bx, { h: 5 });
 }
 function pump_(cv, x, base) {
 wood(cv, x, base - 22, x + 4, base, P.wood, { vertical: true, seed: x });
@@ -30194,12 +30197,10 @@ const barrel = thing(barrel_);
 const crate = thing(crate_);
 const hay = thing(hay_);
 const shelter = prop(shelter_);
-const trough = thing(trough_);
 const doghouse = thing(doghouse_);
 const pump = thing(pump_);
 const planter = thing(planter_);
 const bench = thing(bench_);
-const pond = thing(pond_);
 const mushroom = thing(mushroom_);
 const stone = thing(stone_);
 const crystals = thing(crystals_);
@@ -30230,9 +30231,8 @@ hayRack(cv, 12, 38, 46, 13, seed + 6);
 hutchBox(cv, 154, 210, BACK + 2, 36, seed + 7);
 crate(cv, 120, BACK + 1, 12);
 for (const [x, y] of [[121, BACK - 12], [126, BACK - 13], [124, BACK - 11]]) { rect(cv, x, y, x + 5, y + 2, col('#e2741e')); cv.set(x, y, col('#ffa64a')); cv.set(x + 5, y, P.moss[4]); cv.set(x + 6, y - 1, P.moss[3]); }
-bowl(cv, 88, GROUND_Y0 + 5, 11, '#6a9ccc');
-bowl(cv, 102, GROUND_Y0 + 5, 9, '#6eae3a');
-block(80, GROUND_Y0 - 2, 110, GROUND_Y0 + 6);
+bowl(cv, 98, GROUND_Y0 + 5, 9, '#6eae3a');
+block(90, GROUND_Y0 - 2, 108, GROUND_Y0 + 6);
 flowers(cv, 52, 74, BACK + 3, ['#ffffff', '#f0a0c0'], seed + 8, 4);
 return { rack: { x: 42, y: GROUND_Y0 + 1 }, nest: [168, BACK - 3, 196, BACK + 1], anim: [{ type: 'butterflies', n: 2, x0: 50, x1: 150, y0: 30, y1: 60, colors: ['#f6d26a', '#ffffff'] }] };
 },
@@ -30267,15 +30267,9 @@ rocks(cv, 0, 26, cv.W, BACK, P.stone, seed + 1, { h: 9, moss: 0.05 });
 overgrowth(cv, 0, cv.W, 25, P.moss, seed + 2, { rate: 0.2, len: [3, 16], flower: '#e86a8a' });
 flowers(cv, 60, 80, 25, ['#d84a6a', '#f07aa0'], seed + 3, 4);
 ground(cv, BACK, 'flags', seed + 7, { joint: '#26301e' });
-pond(cv, 92, 178, BACK - 7, BACK + 3, seed + 4);
-fill(cv, 150, BACK - 16, 156, BACK - 6, (x, y) => P.water[(x + y * 2 + (y >> 1)) % 4 === 0 ? 5 : x === 150 ? 3 : 4]);
-rect(cv, 148, BACK - 17, 158, BACK - 15, P.stone[4]);
-block(80, GROUND_Y0 - 3, 190, GROUND_Y0 + 2);
 pump(cv, 204, BACK);
 flowers(cv, 6, 30, BACK, ['#f0a0c0', '#ffffff', '#e86a8a'], seed + 5, 8);
 return { rack: { x: 40, y: GROUND_Y0 + 1 }, nest: [30, BACK - 3, 50, BACK], anim: [
-{ type: 'waterfall', x0: 150, x1: 156, y0: BACK - 15, y1: BACK - 6 },
-{ type: 'shimmer', n: 6, x0: 96, x1: 176, y0: BACK - 6, y1: BACK + 2 },
 { type: 'butterflies', n: 1, x0: 10, x1: 80, y0: 30, y1: 58, colors: ['#f07aa0'] },
 ] };
 },
@@ -30318,11 +30312,9 @@ grove(cv, 50, P.leaf, seed + 2, { h: [9, 16], bottom: 58, gap: [6, 10] });
 ground(cv, 54, 'grass', seed + 3);
 railFence(cv, 0, cv.W, BACK - 4, 20, P.wood, { gap: 34 });
 shelter(cv, 150, 210, BACK - 2, 34, seed + 4);
-trough(cv, 86, 122, GROUND_Y0 + 4, 7);
-block(84, GROUND_Y0 - 3, 124, GROUND_Y0 + 5);
 flowers(cv, 8, 70, GROUND_Y0 + 2, ['#ffffff', '#f4e4a0', '#f0a0c0'], seed + 5, 9);
 flowers(cv, 126, 146, GROUND_Y0 + 1, ['#ffffff', '#f4e4a0'], seed + 6, 3);
-return { rack: { x: 40, y: GROUND_Y0 + 2 }, nest: [168, BACK - 6, 196, BACK - 2], anim: [{ type: 'butterflies', n: 2, x0: 10, x1: 140, y0: 50, y1: 68, colors: ['#ffffff', '#f6d26a'] }, { type: 'shimmer', n: 2, x0: 89, x1: 119, y0: GROUND_Y0 - 3, y1: GROUND_Y0 - 2 }] };
+return { rack: { x: 40, y: GROUND_Y0 + 2 }, nest: [168, BACK - 6, 196, BACK - 2], anim: [{ type: 'butterflies', n: 2, x0: 10, x1: 140, y0: 50, y1: 68, colors: ['#ffffff', '#f6d26a'] }] };
 },
 },
 badger: {
@@ -30378,8 +30370,6 @@ shelter(cv, 142, 204, BACK, 36, seed + 2);
 pitchfork(cv, 148, BACK, 26);
 ground(cv, BACK, 'dirt', seed + 3, { straw: true });
 barrel(cv, 12, BACK + 1, 12, 15); crate(cv, 20, BACK + 1, 10);
-trough(cv, 90, 120, GROUND_Y0 + 3, 6);
-block(88, GROUND_Y0 - 3, 122, GROUND_Y0 + 4);
 hay(cv, 40, GROUND_Y0 + 2, 18, 3, seed + 4);
 return { rack: { x: 50, y: GROUND_Y0 + 1 }, nest: [160, BACK - 4, 188, BACK], anim: [{ type: 'fireflies', n: 9, x0: 4, x1: 220, y0: 20, y1: 64 }] };
 },
@@ -30468,16 +30458,12 @@ earthbank(cv, 120, 22, cv.W, BACK + 2, P.earth, seed + 1);
 roots(cv, 120, cv.W, 24, seed + 2, 0.12);
 overgrowth(cv, 120, cv.W, 21, P.moss, seed + 3, { rate: 0.3, len: [4, 16] });
 burrow(cv, 176, BACK, 30, 20, seed + 4);
-rocks(cv, 0, 30, 120, BACK - 6, P.stone, seed + 5, { h: 8, moss: 0.12 });
-pond(cv, 6, 112, BACK - 9, BACK + 2, seed + 6);
-fill(cv, 76, 30, 84, BACK - 7, (x, y) => P.water[(x + y * 2 + (y >> 1)) % 4 === 0 ? 5 : x === 76 ? 3 : 4]);
-rect(cv, 74, 28, 86, 31, P.stone[4]);
+rocks(cv, 0, 30, 120, BACK, P.stone, seed + 5, { h: 8, moss: 0.12 });
 for (const [x, w] of [[30, 6], [62, 7], [98, 5]]) stone(cv, x, BACK - 3, w, seed + x);
-block(4, GROUND_Y0 - 4, 114, GROUND_Y0 + 2);
 ground(cv, BACK, 'dirt', seed + 7, { R: P.sand }); // pale river sand under dark otters
 pebbles(cv, 112, cv.W, BACK + 1, GROUND_Y1, seed + 8, 14);
 tufts(cv, 112, cv.W, BACK + 1, seed + 10, 0.3);
-return { rack: { x: 130, y: GROUND_Y0 + 1 }, nest: [164, BACK - 3, 190, BACK], anim: [{ type: 'waterfall', x0: 76, x1: 84, y0: 31, y1: BACK - 7 }, { type: 'shimmer', n: 8, x0: 10, x1: 108, y0: BACK - 7, y1: BACK + 1 }] };
+return { rack: { x: 130, y: GROUND_Y0 + 1 }, nest: [164, BACK - 3, 190, BACK], anim: [] };
 },
 },
 beetle: {
@@ -30523,12 +30509,10 @@ fill(cv, 172, 6, 186, 20, (x, y) => ((x - 179) ** 2 + (y - 13) ** 2 <= 42 ? col(
 cv.glow(179, 13, 26, [0.8, 0.82, 1], 0.4);
 grove(cv, 34, haze(P.leaf, '#2a2e50', 0.7), seed, { h: [8, 16], bottom: 42, pines: 0.3 });
 ground(cv, 46, 'soil', seed + 1, { R: P.earth.map((c) => mixPacked(c, col('#1a2030'), 0.4)) });
-pond(cv, 20, 118, BACK - 10, BACK + 1, seed + 2);
 tufts(cv, 0, cv.W, BACK - 9, seed + 3, 0.6, P.moss.map((c) => mixPacked(c, col('#1a2a30'), 0.45)));
 tufts(cv, 118, cv.W, BACK, seed + 4, 0.5, P.moss.map((c) => mixPacked(c, col('#1a2a30'), 0.35)));
-block(18, GROUND_Y0 - 4, 120, GROUND_Y0 + 1);
 lantern(cv, 196, 4, 20);
-return { rack: { x: 168, y: GROUND_Y0 + 1 }, nest: [186, BACK - 3, 210, BACK], anim: [{ type: 'fireflies', n: 14, x0: 4, x1: 220, y0: 18, y1: 64 }, { type: 'shimmer', n: 6, x0: 26, x1: 114, y0: BACK - 8, y1: BACK }, { type: 'lantern', x: 196, y: 20 }] };
+return { rack: { x: 168, y: GROUND_Y0 + 1 }, nest: [186, BACK - 3, 210, BACK], anim: [{ type: 'fireflies', n: 14, x0: 4, x1: 220, y0: 18, y1: 64 }, { type: 'lantern', x: 196, y: 20 }] };
 },
 },
 cloudray: {
@@ -31085,7 +31069,7 @@ if (Math.abs(dx) > 0.3) a.face = dx > 0 ? 1 : -1;
 }
 a.stride = (a.stride || 0) + s;
 const beatLen = ({ deer: 2.6, cat: 2.2, fox: 2.2, dove: 1.2, snail: 1.5 })[bodyOf(kindOf(a.look))] || 1.6;
-a.pose = /** @type {any} */ (`walk${(Math.floor(a.stride / beatLen) % 4) + 1}`);
+a.pose = /** @type {any} */ (`walk${(Math.floor(a.stride / beatLen) % 3) + 1}`);
 if (d <= 0.5 || a.at > 12) {
 a.x = a.gx; a.y = a.gy;
 if (a.next === 'eat') { a.next = null; this._begin(a, 'eat', 2.6); } else this._decide(a);

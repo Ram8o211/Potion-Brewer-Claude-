@@ -468,15 +468,6 @@ function shelter_(cv, x0, x1, base, h, seed, o = {}) {
   thatch(cv, x0 - 6, top - 5, x1 + 6, top + 5, o.roof ?? 8, seed + 2);
 }
 
-/** A water trough: a box of planks, the water's surface catching the sky. */
-function trough_(cv, x0, x1, base, h) {
-  wood(cv, x0, base - h, x1, base, P.weathered, { seed: 9 });
-  for (const bx of [x0 + 4, x1 - 6]) rect(cv, bx, base - h + 2, bx + 2, base - 1, P.iron[2]);
-  rect(cv, x0 + 2, base - h, x1 - 2, base - h + 2, P.water[3]);
-  rect(cv, x0 + 3, base - h, x1 - 6, base - h + 1, P.water[5]);
-  for (const x of [x0, x1 - 3]) wood(cv, x, base - h - 2, x + 3, base, P.weathered, { vertical: true, seed: x });
-}
-
 /** A dog house: plank walls, a pitched roof (snowed on, or tiled), an arched dark door. */
 function doghouse_(cv, cx, base, w, h, o = {}) {
   const x0 = cx - w / 2, x1 = cx + w / 2, top = base - h;
@@ -637,17 +628,6 @@ function burrow(cv, cx, base, w, h, seed) {
     return rim ? P.earth[y < cy ? 1 : 0] : 0;
   });
   hay(cv, cx, base, w * 0.75, 4, seed);
-}
-
-/** A pond in a basin of stone blocks, its water still. */
-function pond_(cv, x0, x1, top, base, seed) {
-  fill(cv, x0, top, x1, base, (x, y) => {
-    const d = y - top;
-    let i = d === 0 ? 4 : d < 3 ? 3 : d < 6 ? 2 : 1;
-    if (noise2(x * 0.25, y * 1.4, seed) > 0.72) i = 5;
-    return P.water[i];
-  });
-  for (const bx of [x0 - 10, x1 - 2]) rocks(cv, bx, top - 6, bx + 12, base, P.sand, seed + bx, { h: 5 });
 }
 
 /** A hand pump on a post, spout and handle, a bucket under it. */
@@ -1280,12 +1260,10 @@ const barrel = thing(barrel_);
 const crate = thing(crate_);
 const hay = thing(hay_);
 const shelter = prop(shelter_);
-const trough = thing(trough_);
 const doghouse = thing(doghouse_);
 const pump = thing(pump_);
 const planter = thing(planter_);
 const bench = thing(bench_);
-const pond = thing(pond_);
 const mushroom = thing(mushroom_);
 const stone = thing(stone_);
 const crystals = thing(crystals_);
@@ -1321,12 +1299,11 @@ const PENS = {
       rabbitFence(cv, 0, cv.W, 35, BACK - 1, seed + 5);
       hayRack(cv, 12, 38, 46, 13, seed + 6);
       hutchBox(cv, 154, 210, BACK + 2, 36, seed + 7);
-      // the run's things: a bowl of water, a bowl of greens, a crate of carrots
+      // the run's things: a bowl of greens, a crate of carrots
       crate(cv, 120, BACK + 1, 12);
       for (const [x, y] of [[121, BACK - 12], [126, BACK - 13], [124, BACK - 11]]) { rect(cv, x, y, x + 5, y + 2, col('#e2741e')); cv.set(x, y, col('#ffa64a')); cv.set(x + 5, y, P.moss[4]); cv.set(x + 6, y - 1, P.moss[3]); }
-      bowl(cv, 88, GROUND_Y0 + 5, 11, '#6a9ccc');
-      bowl(cv, 102, GROUND_Y0 + 5, 9, '#6eae3a');
-      block(80, GROUND_Y0 - 2, 110, GROUND_Y0 + 6);
+      bowl(cv, 98, GROUND_Y0 + 5, 9, '#6eae3a');
+      block(90, GROUND_Y0 - 2, 108, GROUND_Y0 + 6);
       flowers(cv, 52, 74, BACK + 3, ['#ffffff', '#f0a0c0'], seed + 8, 4);
       return { rack: { x: 42, y: GROUND_Y0 + 1 }, nest: [168, BACK - 3, 196, BACK + 1], anim: [{ type: 'butterflies', n: 2, x0: 50, x1: 150, y0: 30, y1: 60, colors: ['#f6d26a', '#ffffff'] }] };
     },
@@ -1362,16 +1339,9 @@ const PENS = {
       overgrowth(cv, 0, cv.W, 25, P.moss, seed + 2, { rate: 0.2, len: [3, 16], flower: '#e86a8a' });
       flowers(cv, 60, 80, 25, ['#d84a6a', '#f07aa0'], seed + 3, 4);
       ground(cv, BACK, 'flags', seed + 7, { joint: '#26301e' });
-      pond(cv, 92, 178, BACK - 7, BACK + 3, seed + 4);
-      // a spring spilling from the wall into the pond
-      fill(cv, 150, BACK - 16, 156, BACK - 6, (x, y) => P.water[(x + y * 2 + (y >> 1)) % 4 === 0 ? 5 : x === 150 ? 3 : 4]);
-      rect(cv, 148, BACK - 17, 158, BACK - 15, P.stone[4]);
-      block(80, GROUND_Y0 - 3, 190, GROUND_Y0 + 2);
       pump(cv, 204, BACK);
       flowers(cv, 6, 30, BACK, ['#f0a0c0', '#ffffff', '#e86a8a'], seed + 5, 8);
       return { rack: { x: 40, y: GROUND_Y0 + 1 }, nest: [30, BACK - 3, 50, BACK], anim: [
-        { type: 'waterfall', x0: 150, x1: 156, y0: BACK - 15, y1: BACK - 6 },
-        { type: 'shimmer', n: 6, x0: 96, x1: 176, y0: BACK - 6, y1: BACK + 2 },
         { type: 'butterflies', n: 1, x0: 10, x1: 80, y0: 30, y1: 58, colors: ['#f07aa0'] },
       ] };
     },
@@ -1416,11 +1386,9 @@ const PENS = {
       ground(cv, 54, 'grass', seed + 3);
       railFence(cv, 0, cv.W, BACK - 4, 20, P.wood, { gap: 34 });
       shelter(cv, 150, 210, BACK - 2, 34, seed + 4);
-      trough(cv, 86, 122, GROUND_Y0 + 4, 7);
-      block(84, GROUND_Y0 - 3, 124, GROUND_Y0 + 5);
       flowers(cv, 8, 70, GROUND_Y0 + 2, ['#ffffff', '#f4e4a0', '#f0a0c0'], seed + 5, 9);
       flowers(cv, 126, 146, GROUND_Y0 + 1, ['#ffffff', '#f4e4a0'], seed + 6, 3);
-      return { rack: { x: 40, y: GROUND_Y0 + 2 }, nest: [168, BACK - 6, 196, BACK - 2], anim: [{ type: 'butterflies', n: 2, x0: 10, x1: 140, y0: 50, y1: 68, colors: ['#ffffff', '#f6d26a'] }, { type: 'shimmer', n: 2, x0: 89, x1: 119, y0: GROUND_Y0 - 3, y1: GROUND_Y0 - 2 }] };
+      return { rack: { x: 40, y: GROUND_Y0 + 2 }, nest: [168, BACK - 6, 196, BACK - 2], anim: [{ type: 'butterflies', n: 2, x0: 10, x1: 140, y0: 50, y1: 68, colors: ['#ffffff', '#f6d26a'] }] };
     },
   },
   badger: {
@@ -1477,8 +1445,6 @@ const PENS = {
       pitchfork(cv, 148, BACK, 26);
       ground(cv, BACK, 'dirt', seed + 3, { straw: true });
       barrel(cv, 12, BACK + 1, 12, 15); crate(cv, 20, BACK + 1, 10);
-      trough(cv, 90, 120, GROUND_Y0 + 3, 6);
-      block(88, GROUND_Y0 - 3, 122, GROUND_Y0 + 4);
       hay(cv, 40, GROUND_Y0 + 2, 18, 3, seed + 4);
       return { rack: { x: 50, y: GROUND_Y0 + 1 }, nest: [160, BACK - 4, 188, BACK], anim: [{ type: 'fireflies', n: 9, x0: 4, x1: 220, y0: 20, y1: 64 }] };
     },
@@ -1566,7 +1532,7 @@ const PENS = {
   otter: {
     title: 'The otter holt',
     compose({ cv, seed, block }) {
-      // a willow bank over a cold stream: the holt dug into the bank, stones in the water
+      // a willow bank: the holt dug into the bank, rocks and stones along the foot of the wall
       sky(cv, 30, rgb('#3e6cb0'), rgb('#a4c8e8'));
       clouds(cv, 3, 10, seed + 9, 3);
       grove(cv, 26, haze(P.leaf, '#7a98c4', 0.4), seed, { h: [12, 22], bottom: 32 });
@@ -1574,17 +1540,12 @@ const PENS = {
       roots(cv, 120, cv.W, 24, seed + 2, 0.12);
       overgrowth(cv, 120, cv.W, 21, P.moss, seed + 3, { rate: 0.3, len: [4, 16] });
       burrow(cv, 176, BACK, 30, 20, seed + 4);
-      rocks(cv, 0, 30, 120, BACK - 6, P.stone, seed + 5, { h: 8, moss: 0.12 });
-      pond(cv, 6, 112, BACK - 9, BACK + 2, seed + 6);
-      // a little fall spilling off the rocks into the stream
-      fill(cv, 76, 30, 84, BACK - 7, (x, y) => P.water[(x + y * 2 + (y >> 1)) % 4 === 0 ? 5 : x === 76 ? 3 : 4]);
-      rect(cv, 74, 28, 86, 31, P.stone[4]);
+      rocks(cv, 0, 30, 120, BACK, P.stone, seed + 5, { h: 8, moss: 0.12 });
       for (const [x, w] of [[30, 6], [62, 7], [98, 5]]) stone(cv, x, BACK - 3, w, seed + x);
-      block(4, GROUND_Y0 - 4, 114, GROUND_Y0 + 2);
       ground(cv, BACK, 'dirt', seed + 7, { R: P.sand }); // pale river sand under dark otters
       pebbles(cv, 112, cv.W, BACK + 1, GROUND_Y1, seed + 8, 14);
       tufts(cv, 112, cv.W, BACK + 1, seed + 10, 0.3);
-      return { rack: { x: 130, y: GROUND_Y0 + 1 }, nest: [164, BACK - 3, 190, BACK], anim: [{ type: 'waterfall', x0: 76, x1: 84, y0: 31, y1: BACK - 7 }, { type: 'shimmer', n: 8, x0: 10, x1: 108, y0: BACK - 7, y1: BACK + 1 }] };
+      return { rack: { x: 130, y: GROUND_Y0 + 1 }, nest: [164, BACK - 3, 190, BACK], anim: [] };
     },
   },
   beetle: {
@@ -1627,18 +1588,16 @@ const PENS = {
   wisp: {
     title: 'The wisp fen',
     compose({ cv, seed, block }) {
-      // a moonlit fen at dusk: dark reeds, still water, the moon behind the haze
+      // a moonlit fen at dusk: dark reeds, the moon behind the haze
       sky(cv, 40, rgb('#1a1e3c'), rgb('#4a4a7c'));
       fill(cv, 172, 6, 186, 20, (x, y) => ((x - 179) ** 2 + (y - 13) ** 2 <= 42 ? col((x - 179) ** 2 + (y - 13) ** 2 > 30 ? '#c8c8e0' : '#ecece8') : 0));
       cv.glow(179, 13, 26, [0.8, 0.82, 1], 0.4);
       grove(cv, 34, haze(P.leaf, '#2a2e50', 0.7), seed, { h: [8, 16], bottom: 42, pines: 0.3 });
       ground(cv, 46, 'soil', seed + 1, { R: P.earth.map((c) => mixPacked(c, col('#1a2030'), 0.4)) });
-      pond(cv, 20, 118, BACK - 10, BACK + 1, seed + 2);
       tufts(cv, 0, cv.W, BACK - 9, seed + 3, 0.6, P.moss.map((c) => mixPacked(c, col('#1a2a30'), 0.45)));
       tufts(cv, 118, cv.W, BACK, seed + 4, 0.5, P.moss.map((c) => mixPacked(c, col('#1a2a30'), 0.35)));
-      block(18, GROUND_Y0 - 4, 120, GROUND_Y0 + 1);
       lantern(cv, 196, 4, 20);
-      return { rack: { x: 168, y: GROUND_Y0 + 1 }, nest: [186, BACK - 3, 210, BACK], anim: [{ type: 'fireflies', n: 14, x0: 4, x1: 220, y0: 18, y1: 64 }, { type: 'shimmer', n: 6, x0: 26, x1: 114, y0: BACK - 8, y1: BACK }, { type: 'lantern', x: 196, y: 20 }] };
+      return { rack: { x: 168, y: GROUND_Y0 + 1 }, nest: [186, BACK - 3, 210, BACK], anim: [{ type: 'fireflies', n: 14, x0: 4, x1: 220, y0: 18, y1: 64 }, { type: 'lantern', x: 196, y: 20 }] };
     },
   },
   cloudray: {
