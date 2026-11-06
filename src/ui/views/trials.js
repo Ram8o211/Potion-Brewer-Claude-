@@ -10,7 +10,7 @@
 // is hidden and its own; trials on others average out each rabbit's bias. Any trial can be replayed on the chosen rabbit's
 // portrait without spending a drop.
 
-import { h, btn, clear, toast } from '../dom.js';
+import { h, btn, clear, toast, roomHead } from '../dom.js';
 import { icon } from '../icons.js';
 import { audio } from '../../audio/audio.js';
 import { SUBJECT_BY_ID, DOSES, missingEffects } from '../../game/experiments.js';
@@ -76,7 +76,7 @@ export class TrialsView {
     this.dropper = h('div', { class: 'dropper', role: 'button', tabindex: '0', 'aria-label': 'Dropper: drag onto a rabbit to give it the dose' }, icon('dropper', 'lg'), h('span', { class: 'small', text: 'Drag' }));
     this.bindDropper();
     this.report = h('div', { class: 'trial-report' });
-    el.append(this.expect, this.status, this.hutch.el, this.report);
+    el.append(roomHead('Trials', 'trophy'), this.expect, this.status, this.hutch.el, this.report);
     this.cards = { rabbit: { card: this.hutch.el } };
     void st;
     this.refresh();
@@ -205,7 +205,7 @@ export class TrialsView {
         'Not detected: ', ...unseen.map((k) => icon(EFFECT_BY_KEY[k].icon, 'sm')), ` — each could still be up to ${sdRound(bound)}%`));
     }
     if (firsts.length) el.append(h('div', { class: 'warn small first-flag', text: `One reading only${firsts.length === shown.length ? '' : ` (${firsts.map((k) => EFFECT_BY_KEY[k].label).join(', ')})`}: a rough guess with a wide margin. Test again — a second rabbit narrows it most.` }));
-    if (rabbits <= 1 && trials >= 2) el.append(h('div', { class: 'warn small', text: 'All on one rabbit: its own bias stays in the estimate, and the effect piles up in it towards a limit nobody can see. Try another rabbit.' }));
+    if (rabbits <= 1 && trials >= 2) el.append(h('div', { class: 'warn small', text: 'All on one rabbit: try another.' }));
     // what the order's customer will make of this evidence
     const com = this.lab.state.current;
     if (com && !this.lab.sandbox) {
@@ -233,10 +233,7 @@ export class TrialsView {
     const lab = this.lab, st = lab.state;
     const r = this.last || st.trials.records[0];
     const el = clear(this.report);
-    if (!r) {
-      el.append(h('div', { class: 'card parch small', text: 'No trial yet. A mixture’s effects are unknown until it is tested: choose a rabbit above and give it a dose.' }));
-      return;
-    }
+    if (!r) return;
     const subj = SUBJECT_BY_ID[r.subjectId] || SUBJECT_BY_ID.rabbit;
     const laws = r.lawsFound.map((id) => (st.world.laws || []).find((l) => l.id === id)).filter(Boolean);
     const who = r.rabbitName ? r.rabbitName : subj.name;

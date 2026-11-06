@@ -261,16 +261,19 @@ export class LabScreen {
     // (it shows, it takes no taps: the full list of recent notes is in the menu, and N opens it)
     this.noteDock = h('div', { class: 'note-dock idle', role: 'status', 'data-note': 'dock', 'aria-live': 'polite', title: 'The latest note (all recent notes: Menu → Recent notes, or N)' });
     setNoteDock(this.noteDock);
-    this.topbar = h('header', { class: 'topbar frame' },
+    // the top bar keeps only the menu, the shop's name plate, the purse and the Shop;
+    // the day, its customers and the rank sit at the top of the Counter
+    this.topbar = h('header', { class: 'topbar' },
       btn('', () => panels.openPause(this), { icon: 'menu', cls: 'icon', title: 'Menu: help, settings, tour (Esc)', act: 'menu' }),
+      h('img', { class: 'brand', src: 'assets/ui/header/brand.png', alt: 'Potion Brewer', draggable: 'false' }),
       this.sandbox
-        ? h('div', { class: 'stat' }, icon('flask'), h('span', { text: 'Free Experiment' }))
-        : h('div', { class: 'stat', title: 'Coins' }, icon('coin'), this.coinEl),
-      this.sandbox ? null : h('div', { class: 'rankrow' }, h('div', { class: 'stat rankbox' }, this.rankName, h('div', { class: 'bar' }, this.rankBar))),
-      this.sandbox ? null : this.dayEl,
+        ? h('div', { class: 'stat purse sandbox', title: 'Free Experiment' }, icon('flask'), h('span', { text: 'Free' }))
+        : h('div', { class: 'stat purse', title: 'Coins' }, this.coinEl),
+      this.sandbox ? null : btn('', () => panels.openShop(this), { icon: 'bag', cls: 'icon shop-btn', title: 'Shop: ingredients and equipment (S)', act: 'shop' }),
       this.noteDock,
-      this.sandbox ? null : btn('Shop', () => panels.openShop(this), { icon: 'bag', cls: 'shop-btn', title: 'Shop: ingredients and equipment (S)', act: 'shop' }),
     );
+    this.shopStatus = this.sandbox ? null : h('div', { class: 'shop-status' },
+      this.dayEl, h('div', { class: 'stat rankbox' }, this.rankName, h('div', { class: 'bar' }, this.rankBar)));
     // ---- brew room
     this.strip = h('div', { class: 'order-strip parch', role: 'button', tabindex: '0', 'aria-label': 'Order: open the counter' });
     this.strip.addEventListener('click', (e) => { if (!(/** @type {HTMLElement} */ (e.target)).closest('.btn')) this.showView('counter'); });
@@ -353,7 +356,6 @@ export class LabScreen {
     }
     const v = this.views[id];
     if (v) v.refresh();
-    if (id === 'trials' && !this.sandbox && !(this.tutorial && this.tutorial.active) && this.state.firstTip('farm')) toast('The rabbit farm', 'One reading is a rough guess: test again, ideally on another rabbit. Too much of an effect in one rabbit can make it sick, wild or dead.', 'rabbit', 6000);
     if (id === 'brew') requestAnimationFrame(() => this.resize());
     if (!silent) this.updateBadges();
     if (this.tutorial) this.tutorial.notify('view', id);
@@ -1077,8 +1079,8 @@ export class LabScreen {
     if (c && withSound) audio.play('bell');
     if (c && !c.tutorial && !(this.tutorial && this.tutorial.active)) {
       // the first order of a new kind explains itself once (never over the guided tour)
-      if (c.activation && st.firstTip('activation')) toast('Awakened magic wanted', 'This order is stronger than sleeping magic can reach: the brew must be awakened past its arcane threshold. See How to play → Arcane awakening, or ask the guild.', 'awaken', 8000);
-      else if (c.requirements.some((r) => r.key === 'purity') && st.firstTip('purity')) toast('A pure potion', '“No other effect above 1.2 %”: every effect the customer did not ask for must stay that faint. Test for them too.', 'pure', 7000);
+      if (c.activation && st.firstTip('activation')) toast('Awakened magic wanted', 'Book → Guide → Special orders', 'awaken', 5000);
+      else if (c.requirements.some((r) => r.key === 'purity') && st.firstTip('purity')) toast('A pure potion', 'Book → Guide → Special orders', 'pure', 5000);
     }
     this._seenCustomer = false;
     this.refreshCustomer();

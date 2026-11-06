@@ -1,5 +1,6 @@
-// Original 12×12 pixel-art icons, defined as character grids and rendered to
-// data URLs once at startup (no external image assets needed).
+// Icons. Where the interface's sprite sheet (assets/ui, sliced by
+// scripts/slice-ui-sheets.py) has one, that sprite is used; every other icon
+// is an original 12×12 pixel-art grid rendered to a data URL once.
 
 const PAL = {
   k: '#1a1218', K: '#3a2a30', w: '#fff6e0', W: '#c9c0b0', s: '#8a8296', S: '#4a4252',
@@ -112,6 +113,9 @@ const ICONS = {
   clock: ['...kkkkkk...', '..kwwwwwwk..', '.kwwwkwwwwk.', 'kwwwwkwwwwWk', 'kwwwwkwwwwWk', 'kwwwwkkkkwWk', 'kwwwwwwwwwWk', 'kwwwwwwwwwWk', '.kwwwwwwwWk.', '..kWWWWWWk..', '...kkkkkk...', '............'],
 };
 
+/** Icons drawn from the interface sprite sheet (assets/ui/icon/<name>.png). */
+export const SPRITE_ICONS = new Set(['awaken', 'bag', 'book', 'bottle', 'bubbles', 'cauldron', 'check', 'clock', 'close', 'coin', 'door', 'drop', 'dropper', 'flame', 'flask', 'gear', 'gem', 'heart', 'help', 'jar', 'leaf', 'minus', 'plus', 'scroll', 'seedling', 'shroom', 'skull', 'snow', 'spark', 'stall', 'star', 'stone', 'swirl', 'trash', 'tree', 'trophy']);
+
 const cache = new Map();
 
 /**
@@ -119,6 +123,7 @@ const cache = new Map();
  * @param {string} name @param {number} [scale]
  */
 export function iconUrl(name, scale = 1) {
+  if (SPRITE_ICONS.has(name)) return `assets/ui/icon/${name}.png`;
   const key = name + ':' + scale;
   if (cache.has(key)) return cache.get(key);
   const grid = ICONS[name] || ICONS.help;
@@ -146,7 +151,7 @@ export function icon(name, cls = '') {
   const img = document.createElement('img');
   img.src = iconUrl(name, 1);
   img.alt = '';
-  img.className = 'ico ' + cls;
+  img.className = 'ico ' + (SPRITE_ICONS.has(name) ? 'spr ' : '') + cls;
   img.draggable = false;
   return img;
 }

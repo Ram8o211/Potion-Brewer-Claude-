@@ -3,7 +3,7 @@
 // verified), the sealed vial — labelled, then bargained over — and the
 // potion shelves, where sealed bottles wait until they are needed.
 
-import { h, btn, clear, coins, confirmDialog, starsText } from '../dom.js';
+import { h, btn, clear, coins, confirmDialog, starsText, roomHead } from '../dom.js';
 import { icon } from '../icons.js';
 import { drawPortrait } from '../../rendering/portraits.js';
 import { drawBottle } from '../../rendering/renderer.js';
@@ -33,18 +33,18 @@ export class CounterView {
   refresh() {
     const lab = this.lab, st = lab.state;
     const el = clear(this.el);
+    el.append(roomHead('Counter', 'stall'));
     if (lab.sandbox) {
-      el.append(h('div', { class: 'card parch' }, h('h3', { text: 'Free Experiment' }), h('div', { class: 'small', text: 'No customers here: every reagent, tool and subject is yours to play with. Bottle what you like, test everything, keep bottles on the shelves for the cellar.' })));
       this.vialCard(el);
       this.shelfCard(el);
       return;
     }
+    if (lab.shopStatus) el.append(lab.shopStatus);
     for (const f of st.dueFollowUps()) el.append(trade.followUpCard(lab, f));
     const com = st.current;
     if (!com) {
       el.append(h('div', { class: 'card parch counter-empty' },
-        h('div', { text: st.dayOver ? `The last customer has left. Day ${st.day} is over.` : st.opened ? 'The shop is quiet.' : `Dawn of day ${st.day}. The shop is still closed.` }),
-        h('div', { class: 'small muted', text: st.dayOver ? 'Dusk: the twilight plants are open in the wilds until you close for the night.' : st.opened ? '' : 'Dawn flowers are open in the wilds only until you open the door. Brew ahead for the shelves, or open up when you are ready.' }),
+        h('div', { text: st.dayOver ? `Day ${st.day} is over.` : st.opened ? 'The shop is quiet.' : `Dawn of day ${st.day}. The shop is still closed.` }),
         h('div', { class: 'row wrap' },
           st.dayOver ? btn('Close shop for the night', () => lab.endDay(), { cls: 'gold', icon: 'sun', act: 'end-day' })
             : btn(st.opened ? 'Next customer' : 'Open the door', () => lab.bringCustomer(true), { cls: 'gold', icon: 'door', act: 'next-customer' }))));
@@ -106,8 +106,7 @@ export class CounterView {
     const where = { shelf: 'on the shelf', wilds: 'in the wilds', market: 'in the Shop' };
     return h('details', { class: 'small supply-card' }, h('summary', { text: `Plan for about ${sup.brewMl} ml of brew (the bottle and a few test doses)` }),
       ...sup.carriers.map((c) => h('div', {}, h('b', { text: `${EFFECT_BY_KEY[c.key].label}${c.sign < 0 ? ' (alkaline)' : ''}: ` }),
-        c.carriers.length ? c.carriers.map((x) => `${st.lookup(x.id).name} (${where[x.where] || x.where})`).join(', ') : 'nothing you can get today carries it')),
-      h('div', { class: 'muted', text: 'Every one of them brings side effects: plan what will cancel them. Long-press a jar on the shelf to see its effects.' }));
+        c.carriers.length ? c.carriers.map((x) => `${st.lookup(x.id).name} (${where[x.where] || x.where})`).join(', ') : 'nothing you can get today carries it')));
   }
 
   /**
@@ -142,10 +141,7 @@ export class CounterView {
   vialCard(el) {
     const lab = this.lab, st = lab.state;
     const v = st.vial;
-    if (!v) {
-      if (st.current) el.append(h('div', { class: 'card parch small muted next-step' }, h('b', { text: 'Next: ' }), 'brew it, test a dose in Trials, then Bottle it — the vial appears here.'));
-      return;
-    }
+    if (!v) return;
     const com = st.current;
     const m = v.m;
     const cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: '24', height: '32', class: 'vial-art' }));
@@ -215,7 +211,6 @@ export class CounterView {
     }
     el.append(h('div', { class: 'card parch shelf-card' },
       h('div', { class: 'row' }, icon('shelf2'), h('b', { text: `Potion shelves · ${st.bottles.length}/${cap}` })),
-      st.bottles.length ? null : h('div', { class: 'small muted', text: 'Empty. When you bottle a brew, choose “To the potion shelves” to keep it for a later customer. Tap a bottle here to use it. More shelving is sold in the Shop.' }),
       grid, detail));
   }
 }

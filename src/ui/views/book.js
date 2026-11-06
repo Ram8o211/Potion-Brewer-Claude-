@@ -1,20 +1,22 @@
 // The alchemist's book: recipes, the trial log, the laws of magic (the
 // universal ones every guild alchemist knows and the hidden ones you have
 // confirmed by experiment), the journal, the ingredient encyclopedia with
-// each plain ingredient's known effects, achievements and sales.
+// each plain ingredient's known effects, achievements, sales — and the
+// guide, where every explanation of how the shop works is kept.
 
 import { KINDS } from '../../game/kinds.js';
-import { h, btn, clear } from '../dom.js';
+import { h, btn, clear, roomHead } from '../dom.js';
 import { icon } from '../icons.js';
 import { audio } from '../../audio/audio.js';
 import * as panels from '../panels.js';
 import { SUBJECT_BY_ID } from '../../game/experiments.js';
 import { EFFECTS, EFFECT_BY_KEY, EFFECT_KEYS } from '../../alchemy/effects.js';
 import { rgbToHex } from '../../core/color.js';
+import { renderGuide } from '../guide.js';
 
 const TABS = [
   ['recipes', 'Recipes', 'book'], ['trials', 'Trials', 'dropper'], ['laws', 'Laws', 'eye'], ['ingredients', 'Ingredients', 'leaf'],
-  ['journal', 'Journal', 'scroll'], ['achievements', 'Awards', 'trophy'], ['history', 'Sales', 'coin'],
+  ['journal', 'Journal', 'scroll'], ['achievements', 'Awards', 'trophy'], ['history', 'Sales', 'coin'], ['guide', 'Guide', 'help'],
 ];
 
 export class BookView {
@@ -29,7 +31,7 @@ export class BookView {
     const el = clear(this.el);
     this.tabs = h('div', { class: 'book-tabs', role: 'tablist' });
     this.body = h('div', { class: 'book-body' });
-    el.append(this.tabs, this.body);
+    el.append(roomHead('Book', 'book'), this.tabs, this.body);
     this.refresh();
   }
 
@@ -53,6 +55,7 @@ export class BookView {
       case 'trials': this.renderTrials(body); break;
       case 'laws': this.renderLaws(body); break;
       case 'ingredients': this.renderIngredients(body); break;
+      case 'guide': renderGuide(body); break;
       default: panels.renderJournal(lab, body, this.tab);
     }
   }
@@ -61,8 +64,8 @@ export class BookView {
   renderTrials(body) {
     const st = this.lab.state;
     const recs = st.trials.records;
-    body.appendChild(h('div', { class: 'small muted', text: `${st.stats.trials || 0} trials run. Each records exactly what it revealed and what the guild theory expected.` }));
-    if (!recs.length) { body.appendChild(h('div', { class: 'card parch', text: 'No trials yet. In the Trials room, give a measured dose to one of your rabbits.' })); return; }
+    body.appendChild(h('div', { class: 'small muted', text: `${st.stats.trials || 0} trials run` }));
+    if (!recs.length) { body.appendChild(h('div', { class: 'card parch book-empty', text: 'No trials yet.' })); return; }
     for (const r of recs.slice(0, 40)) {
       const s = SUBJECT_BY_ID[r.subjectId];
       body.appendChild(h('div', { class: 'item parch' },
@@ -85,7 +88,7 @@ export class BookView {
     const laws = st.world.laws || [];
     const found = laws.filter((L) => st.trials.laws[L.id] && st.trials.laws[L.id].found !== null);
     const hinted = laws.filter((L) => st.trials.laws[L.id] && st.trials.laws[L.id].found === null);
-    body.appendChild(h('div', { class: 'small muted', text: `This world hides ${laws.length} laws of resonance between effects. Discovered: ${found.length}. A law shows itself in trials where its effects meet; two observations confirm it.` }));
+    body.appendChild(h('div', { class: 'small muted', text: `Hidden laws discovered: ${found.length} of ${laws.length}` }));
     for (const L of found) {
       body.appendChild(h('div', { class: 'item parch' }, icon('star'),
         h('div', {}, h('div', { class: 'title', text: L.name }), h('div', { class: 'meta', text: L.lore }),
@@ -100,7 +103,6 @@ export class BookView {
   /** @param {HTMLElement} body */
   renderIngredients(body) {
     const lab = this.lab, st = lab.state;
-    body.appendChild(h('div', { class: 'small muted', text: 'The effects of every plain ingredient are known to the guild. Mixtures are not — that is what the trials are for.' }));
     const list = h('div', { class: 'list' });
     for (const id of st.world.ingredients) {
       const m = st.lookup(id);

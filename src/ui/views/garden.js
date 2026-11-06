@@ -11,7 +11,7 @@
 // has in the wilds and on the shelf; the garden's ground is painted
 // procedurally in the wilds' pixel style.
 
-import { h, btn, clear, toast } from '../dom.js';
+import { h, btn, clear, toast, roomHead } from '../dom.js';
 import { icon } from '../icons.js';
 import { audio } from '../../audio/audio.js';
 import { BEDS, GRADES, GARDEN_UPGRADES, seedList, gradeNeeded, bedOf, boughtCount, cropYield, growHours, seedId } from '../../game/garden.js';
@@ -55,6 +55,7 @@ export class GardenView {
 
   build() {
     const el = clear(this.el);
+    this.hintEl = null;
     this.canvas = /** @type {HTMLCanvasElement} */ (h('canvas', { width: String(GW), height: String(GH), class: 'garden-scene', 'aria-label': 'Your garden: tap a plot' }));
     this.canvas.addEventListener('pointerdown', (e) => this.tapScene(e));
     this.status = h('div', { class: 'small garden-status' });
@@ -62,10 +63,10 @@ export class GardenView {
     this.seedsEl = h('div', { class: 'seeds', role: 'listbox', 'aria-label': 'Seeds in hand' });
     this.actsEl = h('div', { class: 'row wrap' });
     this.upsEl = h('div', { class: 'garden-ups' });
-    el.append(h('div', { class: 'garden' },
-      this.canvas, this.status, this.actsEl,
-      h('div', { class: 'small muted', text: 'Plots' }), this.plotsEl,
-      h('div', { class: 'small muted', text: 'Seeds' }), this.seedsEl,
+    el.append(roomHead('Garden', 'seedling'), h('div', { class: 'garden' },
+      this.canvas, h('div', { class: 'row garden-bar' }, this.status, this.actsEl),
+      this.plotsEl,
+      h('div', { class: 'sub-head' }, icon('seedling', 'sm'), h('span', { text: 'Seeds' })), this.seedsEl,
       h('details', { class: 'card parch' }, h('summary', { text: 'Garden upgrades' }), this.upsEl)));
     // the growth stages load with the garden (they are not needed before)
     loadAtlases((a) => a.id.startsWith('growth') || a.id === 'seeds').then(() => this.refresh());
@@ -124,11 +125,19 @@ export class GardenView {
     const view = st.gardenView(now);
     // ---- status and actions
     const growing = view.filter((p) => p.crop).length, ready = view.filter((p) => p.state && p.state.stage === 'mature').length, thirsty = view.filter((p) => p.state && p.state.thirsty).length;
-    clear(this.status).append(`${g.plots.length} plots · ${growing} growing · ${ready} ready${thirsty ? ` · ${thirsty} thirsty` : ''}`);
-    clear(this.actsEl).append(
+    clear(this.status).append(
+      h('span', { class: 'gstat', title: 'Plots' }, icon('stone', 'sm'), ` ${g.plots.length}`),
+      h('span', { class: 'gstat', title: 'Growing' }, icon('seedling', 'sm'), ` ${growing}`),
+      h('span', { class: 'gstat', title: 'Ready to harvest' }, icon('check', 'sm'), ` ${ready}`),
+      thirsty ? h('span', { class: 'gstat warn', title: 'Thirsty' }, icon('drop', 'sm'), ` ${thirsty}`) : '');
+    // (a null child would be appended as the text "null")
+    const hint = this.seed ? h('div', { class: 'muted small garden-hint', text: `Sowing ${this.seedName(this.seed)}: tap an empty ${BEDS[bedOf(this.seed.replace(/\+arcane$/, ''))].name.toLowerCase()}.` }) : h('div', { class: 'muted small garden-hint', text: 'Choose a seed, then tap an empty plot to sow it.' });
+    clear(this.actsEl).append(...[
       btn('Water all', () => { const n = st.waterGarden(null, Date.now()); audio.play(n ? 'pour' : 'click'); if (n) this.lab.save(); this.refresh(); }, { cls: 'small', icon: 'drop', act: 'garden-water', disabled: !thirsty && !view.some((p) => p.state && p.state.g < 1 && p.state.w < 0.9) }),
       ready ? btn(`Harvest ${ready}`, () => { for (const p of view.filter((q) => q.state && q.state.stage === 'mature')) this.act(p.id); }, { cls: 'small gold', icon: 'seedling', act: 'garden-harvest' }) : null,
-      this.seed ? h('span', { class: 'muted small', text: `Sowing ${this.seedName(this.seed)}: tap an empty ${BEDS[bedOf(this.seed.replace(/\+arcane$/, ''))].name.toLowerCase()}.` }) : h('span', { class: 'muted small', text: 'Choose a seed, then tap an empty plot to sow it.' }));
+    ].filter(Boolean));
+    if (this.hintEl) this.hintEl.replaceWith(hint); else this.status.parentElement.after(hint);
+    this.hintEl = hint;
     // ---- plots
     const plots = clear(this.plotsEl);
     for (const p of view) {
@@ -138,7 +147,7 @@ export class GardenView {
       const cv = this.spriteCanvas(asset, 64);
       const what = !p.crop ? `Empty ${BEDS[p.bed].name.toLowerCase()}` : `${p.crop.arcane ? 'Arcane ' : ''}${sp ? sp.name : p.crop.species}`;
       const state = !p.crop ? (GRADES[p.grade] + (p.grade ? ' grade' : '')) : p.state.stage === 'mature' ? `ready · tap to harvest ${cropYield(p.crop.species)} ml` : `${p.state.stage} · ${formatWait(p.state.readyIn)}${p.state.thirsty ? ' · thirsty' : ''}`;
-      const el = h('button', { class: `plot g${p.grade}${this.plot === p.id ? ' selected' : ''}`, 'data-act': 'plot-' + p.id, role: 'option', 'aria-label': `${what}: ${state}` },
+      const el = h('button', { class: `plot g${p.grade}${this.plot === p.id ? ' selected' : ''}`, 'data-bed': p.bed, 'data-act': 'plot-' + p.id, role: 'option', 'aria-label': `${what}: ${state}` },
         cv, h('span', { class: 'pname', text: what }), h('span', { class: 'pstate', text: state }),
         p.crop && p.state.g < 1 ? h('span', { class: 'moist', title: 'Soil moisture' }, h('i', { style: { width: Math.round(p.state.w * 100) + '%' } })) : null);
       el.addEventListener('click', () => this.act(p.id));
@@ -147,7 +156,7 @@ export class GardenView {
     // ---- seeds
     const seeds = clear(this.seedsEl);
     const list = seedList(g);
-    if (!list.length) seeds.appendChild(h('div', { class: 'muted small', text: 'No seeds yet. Harvests in the wilds sometimes drop one: common species often, rare ones seldom, Arcane ones rarely.' }));
+    if (!list.length) seeds.appendChild(h('div', { class: 'muted small', text: 'No seeds yet.' }));
     const sel = this.plot ? g.plots.find((x) => x.id === this.plot) : null;
     for (const s of list) {
       const fits = !sel || (!sel.crop && sel.bed === bedOf(s.key) && sel.grade >= gradeNeeded(s.key, s.arcane));
@@ -165,7 +174,7 @@ export class GardenView {
     // ---- upgrades
     const ups = clear(this.upsEl);
     // the Free Experiment's garden has every bed at the highest grade and the copper can already
-    if (this.lab.sandbox) ups.appendChild(h('div', { class: 'small', text: `Every bed is an Arcane chamber and the seeds never run out. Crops grow ${g.pace || 1} times faster here.` }));
+    if (this.lab.sandbox) ups.appendChild(h('div', { class: 'small', text: `Arcane chambers, endless seeds, ×${g.pace || 1} growth.` }));
     else for (const u of GARDEN_UPGRADES) {
       const maxed = u.max !== undefined && boughtCount(g, u.id) >= u.max;
       ups.appendChild(h('div', { class: 'card' },

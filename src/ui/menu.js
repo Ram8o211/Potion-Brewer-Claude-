@@ -19,13 +19,12 @@ export class MenuScreen {
     this.canvas = /** @type {HTMLCanvasElement} */ (h('canvas', { class: 'menu-bg', 'aria-hidden': 'true' }));
     const save = hasSave() ? loadGame().state : null;
     const panel = h('div', { class: 'menu-panel frame' },
-      h('h1', { text: 'The Alchemist’s Shop' }),
+      h('h1', { class: 'brand-title' }, h('img', { src: 'assets/ui/header/brand.png', alt: 'Potion Brewer', draggable: 'false' })),
       h('div', { class: 'subtitle', text: 'Brew. Experiment. Prosper.' }),
       save ? btn(`Continue — Day ${save.day}, ${save.rankName}`, () => app.continueGame(), { cls: 'primary', icon: 'door', act: 'continue' }) : null,
       btn('New Shop', () => app.newGameDialog(), { cls: save ? '' : 'primary', icon: 'plus', act: 'new-game' }),
       btn('Free Experiment', () => app.startSandbox(), { icon: 'flask', act: 'sandbox' }),
       h('div', { class: 'row' }, btn('How to play', () => app.openHelp(), { icon: 'help', act: 'help' }), btn('Settings', () => app.openSettings(), { icon: 'gear', act: 'menu-settings' })),
-      h('div', { class: 'footer', text: 'Works offline · progress saves on this device' }),
     );
     this.el = h('div', { class: 'screen menu' }, this.canvas, panel);
     root.appendChild(this.el);

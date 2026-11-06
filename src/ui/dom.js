@@ -42,6 +42,14 @@ export function btn(label, onClick, opts = {}) {
   return b;
 }
 
+/**
+ * A room's title plate: the vine-wrapped wooden header of the sprite sheet.
+ * @param {string} title @param {string} ic @param {...any} extra
+ */
+export function roomHead(title, ic, ...extra) {
+  return h('header', { class: 'room-head' }, h('div', { class: 'room-title' }, icon(ic), h('h2', { text: title })), ...extra);
+}
+
 export function clear(el) {
   while (el.firstChild) el.removeChild(el.firstChild);
   return el;

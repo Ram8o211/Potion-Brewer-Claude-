@@ -292,7 +292,12 @@ computed from the particles that actually run out of the tap. What a
   and tinted, marked and posed by the animal's state; crystals glow in the
   moth grotto, a fall spills into the otter holt, cacti and crates stand in
   the sand court),
-  and wood-grain, parchment and nail textures on the interface.
+  and an interface skinned entirely from a pixel-art sprite sheet
+  (`art/ui/source`, sliced into `assets/ui` by `scripts/slice-ui-sheets.py`):
+  vine-crowned wooden frames and room headers, parchment cards, wooden,
+  green, red and purple buttons, room tabs, garden beds, potion shelves and
+  the icons. The rooms show only what is happening; every explanation of
+  how the shop works is gathered in the Book's Guide (also How to play).
 * **Procedural wilds and ingredients:** every world grows its own
   ecosystem (`src/visual/`, see
   [docs/PROCEDURAL_GRAPHICS.md](docs/PROCEDURAL_GRAPHICS.md)). Each of the

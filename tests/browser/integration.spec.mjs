@@ -16,7 +16,7 @@ test('a day dawns closed; the order card says what it takes and where to find it
   await expect(page.locator('.counter-empty')).toContainText('still closed');
   await page.click('[data-act=tab-wilds]');
   await expect(page.locator('.wilds-sky')).toContainText('Dawn');
-  await expect(page.locator('.wilds-sky')).toContainText('until you open the shop');
+  await expect(page.locator('.wilds-sky [data-part=dawn]')).toHaveAttribute('title', /until you open the shop/i);
   // open the door: a customer, an order with a technique, and a plan of supplies
   await page.click('[data-act=tab-counter]');
   await lab(page, (l) => {
@@ -49,7 +49,8 @@ test('a day dawns closed; the order card says what it takes and where to find it
   await expect(page.locator('.tech-card')).toContainText('Strong and compact');
   await expect(page.locator('.supply-card summary')).toContainText('ml of brew');
   await page.click('.supply-card summary');
-  await expect(page.locator('.supply-card')).toContainText('Every one of them brings side effects');
+  // where each wanted effect can be had (the advice on side effects lives in the Book's guide)
+  await expect(page.locator('.supply-card')).toContainText(/\((on the shelf|in the wilds|in the Shop)\)|nothing you can get today/);
   await clean(page);
   await page.locator('.tech-card').scrollIntoViewIfNeeded();
   await shot(page, info, 'order-techniques');
