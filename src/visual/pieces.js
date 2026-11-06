@@ -16,7 +16,7 @@ import { identityOf, identityKey, validIdentity } from './identity.js';
 import { describe } from './descriptor.js';
 import { pieceFrame, pieceArt, PIECE_PX, PIECE_GRID } from './render.js';
 import { SPECIES } from '../materials/catalog.js';
-import { atlasFrame, spriteAsset } from './atlas.js';
+import { atlasFrame, spriteAsset, plantFrame, plantAsset } from './atlas.js';
 import { Pixels } from './pixels.js';
 
 /** Cell size in the atlas (art pixels) and the silhouette grid of a piece. */
@@ -192,7 +192,8 @@ export function ensurePieces(key) {
   if (cp) {
     let cells = atlasCells.get(key);
     if (!cells) {
-      const fr = atlasFrame(spriteAsset(cp.species, cp.arcane));
+      // (the species' grown plant from its icon art — what the stores and the wilds show)
+      const fr = plantAsset(cp.species, 'mature') ? plantFrame(cp.species, 'mature', cp.arcane) : atlasFrame(spriteAsset(cp.species, cp.arcane));
       // (its atlas is still loading: nothing to paint yet)
       if (!fr) return null;
       cells = atlasShards(fr.pix);

@@ -4,7 +4,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { generateWorld, makeLookup } from '../src/materials/generator.js';
-import { atlasFrame, spriteAsset, seedAsset, stageAsset, SPECIES_ASSETS, ATLASES, neededAtlases } from '../src/visual/atlas.js';
+import { atlasFrame, spriteAsset, seedAsset, stageAsset, plantFrame, cropFrame, SPECIES_ASSETS, ATLASES, neededAtlases } from '../src/visual/atlas.js';
 import { plantFrameOf, iconFrameOf, mountsOf, isAtlasMaterial } from '../src/rendering/species-sprites.js';
 import { PIECE_ART, PIECE_KEYS, ensurePieces, pieceKeyOf, PIECE_CELL } from '../src/visual/pieces.js';
 import { skinOf, hasPieces } from '../src/materials/shapes.js';
@@ -53,7 +53,7 @@ test('an Arcane specimen keeps its species’ silhouette but is visibly differen
   }
 });
 
-test('poured into the cauldron, an ingredient breaks into shards of its own sprite — the Arcane form into Arcane shards', () => {
+test('poured into the cauldron, an ingredient breaks into shards of its grown plant (its icon art) — the Arcane form with its violet rim', () => {
   for (const s of SPECIES.filter((x, i) => i % 7 === 0)) {
     for (const arcane of [false, true]) {
       const m = lookup(materialIdOf(s.key, arcane));
@@ -62,7 +62,7 @@ test('poured into the cauldron, an ingredient breaks into shards of its own spri
       assert.ok(PIECE_KEYS.includes(key));
       const masks = ensurePieces(key);
       assert.ok(masks && masks.length === 4, `${m.name}: four pieces`);
-      const sprite = colours(/** @type {any} */ (atlasFrame(spriteAsset(s.key, arcane))).pix);
+      const sprite = colours(/** @type {any} */ (plantFrame(s.key, 'mature', arcane)).pix);
       const skin = skinOf(m, 0), row = Math.floor((skin - 1) / 4) * PIECE_CELL;
       let inSprite = 0, n = 0;
       for (let y = row; y < row + PIECE_CELL; y++) for (let x = 0; x < PIECE_CELL * 4; x++) {
@@ -77,6 +77,19 @@ test('poured into the cauldron, an ingredient breaks into shards of its own spri
   // the ordinary and Arcane forms have pieces of their own
   const o = lookup(materialIdOf('silverleaf')), a = lookup(materialIdOf('silverleaf', true));
   assert.notEqual(skinOf(o, 0), skinOf(a, 0));
+});
+
+test('a garden crop grows as the plant of the wilds and the menus: sprout, ripe, then its full plant', () => {
+  for (const s of SPECIES.filter((x, i) => i % 9 === 0)) {
+    for (const arcane of [false, true]) {
+      const m = lookup(materialIdOf(s.key, arcane));
+      // the seed in its bed is still the seed sprite
+      assert.equal(cropFrame(s.key, arcane, 0), atlasFrame(stageAsset(s.key, arcane, 0)));
+      assert.equal(/** @type {any} */ (cropFrame(s.key, arcane, 1)).pix.hash(), /** @type {any} */ (plantFrameOf(m, 'sprout', { k: 2 })).pix.hash(), `${m.name}: sprout`);
+      assert.equal(/** @type {any} */ (cropFrame(s.key, arcane, 3)).pix.hash(), /** @type {any} */ (plantFrameOf(m, 'ripe', { k: 2 })).pix.hash(), `${m.name}: ripe`);
+      assert.equal(/** @type {any} */ (cropFrame(s.key, arcane, 4)).pix.hash(), /** @type {any} */ (iconFrameOf(m)).pix.hash(), `${m.name}: mature`);
+    }
+  }
 });
 
 test('atlases load lazily: a fresh save needs its biome’s and its stores’ atlases, not every one', () => {

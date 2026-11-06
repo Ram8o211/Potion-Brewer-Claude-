@@ -19,7 +19,7 @@ import { audio } from '../../audio/audio.js';
 import { BEDS, GRADES, GARDEN_UPGRADES, seedList, gradeNeeded, bedOf, boughtCount, cropYield, growHours, seedId } from '../../game/garden.js';
 import { SPECIES_BY_KEY, materialIdOf } from '../../materials/catalog.js';
 import { RARITY } from '../../materials/rarity.js';
-import { atlasFrame, seedAsset, stageAsset, loadAtlases, onAtlasLoaded } from '../../visual/atlas.js';
+import { atlasFrame, seedAsset, cropFrame, loadAtlases, onAtlasLoaded } from '../../visual/atlas.js';
 import { formatWait } from '../../game/gathering.js';
 import { rarityTag } from '../rarity-ui.js';
 import { hashString, Rng } from '../../core/rng.js';
@@ -94,6 +94,21 @@ function spriteURL(asset) {
   return u;
 }
 
+/** The URL of a crop at its stage, bottom-centred in a square (the plant from its icon art), or null while its atlas loads. @param {string} key @param {boolean} arcane @param {number} stageIx */
+function cropURL(key, arcane, stageIx) {
+  const f = cropFrame(key, arcane, stageIx);
+  if (!f) return null;
+  let u = SPRITE_URL.get(f.id);
+  if (u) return u;
+  const S = Math.max(f.pix.w, f.pix.h, 16) + 2;
+  const cv = document.createElement('canvas');
+  cv.width = S; cv.height = S;
+  /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')).drawImage(pixCanvas(f.pix), Math.round((S - f.pix.w) / 2), S - 1 - f.pix.h);
+  u = cv.toDataURL();
+  SPRITE_URL.set(f.id, u);
+  return u;
+}
+
 /**
  * The scene's geometry, in the sheet's own pixels: beds are drawn at their
  * size in the sheet, four to a row (six once there are more than eight),
@@ -154,7 +169,7 @@ export class GardenView {
       this.seedBar = h('div', { class: 'seed-bar' }), this.seedsEl,
       h('details', { class: 'card parch' }, h('summary', { text: 'Garden upgrades' }), this.upsEl)));
     // the growth stages load with the garden (they are not needed before)
-    loadAtlases((a) => a.id.startsWith('growth') || a.id === 'seeds').then(() => this.refresh());
+    loadAtlases((a) => a.id.startsWith('growth') || a.id === 'seeds' || a.id === 'ingredient-plants').then(() => this.refresh());
     this.refresh();
   }
 
@@ -268,8 +283,7 @@ export class GardenView {
     for (const p of view) {
       const sp = p.crop ? SPECIES_BY_KEY[p.crop.species] : null;
       const stageIx = p.state ? p.state.stageIx : -1;
-      const asset = sp && p.crop ? stageAsset(sp.key, p.crop.arcane, stageIx) : null;
-      const url = spriteURL(asset);
+      const url = sp && p.crop ? cropURL(sp.key, p.crop.arcane, stageIx) : null;
       const what = !p.crop ? `Empty ${BEDS[p.bed].name.toLowerCase()}` : `${p.crop.arcane ? 'Arcane ' : ''}${sp ? sp.name : p.crop.species}`;
       const state = !p.crop ? '' : p.state.stage === 'mature' ? `ready · ${cropYield(p.crop.species)} ml` : `${p.state.stage} · ${formatWait(p.state.readyIn)}${p.state.thirsty ? ' · thirsty' : ''}`;
       const el = h('button', { class: `plot g${p.grade}${this.plot === p.id ? ' selected' : ''}${p.crop && p.state.stage === 'mature' ? ' ripe' : ''}`, 'data-bed': p.bed, 'data-act': 'plot-' + p.id, role: 'option', 'aria-label': `${what}${state ? ': ' + state : ''}`, title: `${BEDS[p.bed].name} · ${GRADES[p.grade]}` },
@@ -458,7 +472,7 @@ export class GardenView {
     else if (ripe) mark(ART.markRipe);
     // the crop, standing on the bed's soil
     if (pv && pv.crop) {
-      const f = atlasFrame(stageAsset(pv.crop.species, pv.crop.arcane, pv.state.stageIx));
+      const f = cropFrame(pv.crop.species, pv.crop.arcane, pv.state.stageIx);
       if (f) {
         const base = q.y + Math.round(q.h * 0.74), k = Math.max(1, Math.min(CROP_SCALE, Math.floor((q.w + 12) / f.pix.w)));
         g.drawImage(pixCanvas(f.pix), Math.round(q.x + q.w / 2 - f.ax * k), Math.round(base - f.ay * k), f.pix.w * k, f.pix.h * k);

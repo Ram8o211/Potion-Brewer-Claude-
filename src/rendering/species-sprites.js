@@ -18,7 +18,7 @@ import { rawSprite } from './scenes.js';
 import { mountsOfForm, frameMount, growthParams } from '../visual/growth.js';
 import { hashString } from '../core/rng.js';
 import { INK } from '../visual/style.js';
-import { atlasFrame, spriteAsset, stageAsset, plantAsset } from '../visual/atlas.js';
+import { atlasFrame, spriteAsset, stageAsset, plantFrame as atlasPlantFrame } from '../visual/atlas.js';
 import { SPECIES_COLORS } from '../materials/species-colors.js';
 import { ICON_SHEET, ICON_BOXES } from '../visual/ingredient-icons.js';
 
@@ -50,25 +50,13 @@ function halved(f) {
   return { pix: out, ax: Math.round(f.ax / 2), ay: Math.ceil(f.ay / 2), glints: [], glows: [] };
 }
 
-/** An Arcane plant: its frame with a violet rim one pixel outside it. @param {{pix:Pixels, ax:number, ay:number}} f */
-function arcaneRim(f) {
-  const W = f.pix.w + 2, H = f.pix.h + 2, out = new Pixels(W, H), src = f.pix;
-  const rim = 0xffff96ba; // (ABGR) rgb(186,150,255)
-  for (let y = 0; y < src.h; y++) for (let x = 0; x < src.w; x++) { const c = src.px[y * src.w + x]; if (c >>> 24) out.px[(y + 1) * W + x + 1] = c; }
-  const solid = (x, y) => x >= 0 && y >= 0 && x < W && y < H && (out.px[y * W + x] >>> 24) !== 0 && out.px[y * W + x] !== rim;
-  const add = [];
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (!(out.px[y * W + x] >>> 24) && (solid(x - 1, y) || solid(x + 1, y) || solid(x, y - 1) || solid(x, y + 1))) add.push(y * W + x);
-  for (const i of add) out.px[i] = rim;
-  return { pix: out, ax: f.ax + 1, ay: f.ay + 1, glints: [], glows: [] };
-}
-
 /** Frame of a catalog species at a stage, from its atlas (null while the atlas loads), at a definition (2: native, 1: scene pixels). @param {any} m @param {string} stage @param {number} def */
 function atlasPlant(m, stage, def) {
   const w = m.wild, sz = stage === 'mature' ? 'mature' : stage === 'ripe' ? 'ripe' : 'sprout';
   // the species' own icon art, drawn at the plant's size (an Arcane specimen wears a violet rim)
-  const f = atlasFrame(plantAsset(w.key, sz)) || atlasFrame(sz === 'mature' ? spriteAsset(w.key, !!w.arcane) : stageAsset(w.key, !!w.arcane, sz === 'ripe' ? 3 : 2));
+  const f = atlasPlantFrame(w.key, sz, !!w.arcane) || atlasFrame(sz === 'mature' ? spriteAsset(w.key, !!w.arcane) : stageAsset(w.key, !!w.arcane, sz === 'ripe' ? 3 : 2));
   if (!f) return null;
-  const full = w.arcane && f.id.includes('@plant-') ? cached(`arc|${f.id}`, () => arcaneRim(f)) : { pix: f.pix, ax: f.ax, ay: f.ay, glints: [], glows: [] };
+  const full = { pix: f.pix, ax: f.ax, ay: f.ay, glints: [], glows: [] };
   return def >= ATLAS_K ? full : cached(`half|${f.id}`, () => halved(full));
 }
 
