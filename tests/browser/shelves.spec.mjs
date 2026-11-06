@@ -3,7 +3,7 @@
 // counter (swapping with the vial there), pour one back; every wild
 // ingredient has its own sprite and its own surface in the cauldron.
 import { test, expect } from '@playwright/test';
-import { watchErrors, shot, newGame, lab, pourRole, crushInPot } from './helpers.mjs';
+import { watchErrors, shot, newGame, lab, pourRole, crushInPot, steepWarm } from './helpers.mjs';
 
 test('bottles go onto the potion shelves while there is room, and come down to the counter', async ({ page }, info) => {
   const errors = watchErrors(page);
@@ -79,6 +79,8 @@ test('a tested batch labels its bottles by itself: shelved bottles show their ef
   await pourRole(page, 'water', 150);
   await pourRole(page, 'wild-sp-silverleaf', 100);
   await crushInPot(page);
+  // a warm steep, then let it settle back (extraction is slow at room temperature)
+  await steepWarm(page, 60, 30);
   const shelve = async () => {
     await page.click('[data-act=tab-brew]');
     await page.click('[data-act=bottle]');

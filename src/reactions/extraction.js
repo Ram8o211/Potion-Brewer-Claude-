@@ -21,7 +21,7 @@
 
 import { MAX_SPECIES } from './species.js';
 import { PHASE } from '../simulation/constants.js';
-import { SOLVENT_CAPACITY, WHOLE_FACTOR, EMULSION_FACTOR, extractIdOf } from '../alchemy/extraction.js';
+import { SOLVENT_CAPACITY, WHOLE_FACTOR, EMULSION_FACTOR, extractIdOf, ceilingAt, yieldAt } from '../alchemy/extraction.js';
 import { isFrozenGrain } from '../simulation/phase.js';
 
 const { SOLID, GAS } = PHASE;
@@ -262,8 +262,7 @@ export class ExtractionSystem {
 
 /** Ceiling at T for slot s. @param {import('./species.js').SpeciesTable} sp @param {number} s @param {number} T */
 function yieldOf(sp, s, T) {
-  const y = 1 - ((1 - sp.exYmin[s]) * (T - sp.exTfull[s])) / sp.exSpan[s];
-  return y > 1 ? 1 : y < sp.exYmin[s] ? sp.exYmin[s] : y;
+  return ceilingAt(sp.exTfull[s], sp.exY20[s], sp.exYmin[s], sp.exSpan[s], T);
 }
 
 /**
@@ -311,7 +310,7 @@ export function extractionReport(sim) {
     const pr = def && def.extraction;
     const share = g.raw + g.ext > 0 ? g.ext / (g.raw + g.ext) : 0;
     const T = g.w > 0 ? g.T / g.w : meanT;
-    const ceiling = pr ? Math.max(pr.Ymin, Math.min(1, 1 - ((1 - pr.Ymin) * (T - pr.Tfull)) / pr.span)) : 1;
+    const ceiling = pr ? yieldAt(pr, T) : 1;
     return { id: g.id, name: def ? def.name : g.id, cls: g.cls === 2 ? 'lipo' : 'hydro', raw: g.raw, ext: g.ext, share, ceiling, frozen: g.raw > 0 && g.frozen >= g.raw * 0.8 };
   });
   return {

@@ -30,9 +30,12 @@ computed from the particles that actually run out of the tap. What a
 * **Hidden, emergent effects.** Ten effects: vitality, strength, love,
   arcana, transformation, fire, frost, acidity, toxicity and death,
   measured as percent effective concentration (everyday orders want about
-  8–15 %). They come from what is actually dissolved in each particle:
+  4–11 %). They come from what is actually dissolved in each particle:
   * a whole root does nothing until it is crushed or ground;
-  * hot steeping extracts more than cold;
+  * at room temperature an herb gives up only about 60 % of its magic,
+    and slowly (minutes); heat hurries it but lowers how much can come
+    out (about 45 % at 60 °C); cold draws out more, but more slowly
+    still — the aging cellar's work;
   * the guild's opposing pairs cancel where they meet: fire and frost,
     life and death (life also mends poison, two parts to one), acid and
     alkali;
@@ -251,7 +254,7 @@ computed from the particles that actually run out of the tap. What a
   the skimmer, the alembic, the heat map, a hotter furnace and the exact
   readings of density, viscosity, stability, volatility and charge. It keeps
   the campaign's features in step (`src/game/sandbox.js`): the potion
-  shelves, the aging cellar with unlimited temperature runes (aging sixty
+  shelves, the aging cellar with unlimited temperature runes (running sixty
   times faster) and the garden with every seed and every bed at Arcane
   chamber grade (crops sixty times faster). Its shelves, cellar and garden
   are saved under the sandbox's own key, never in the shop's save.
@@ -470,7 +473,9 @@ Browser screenshots from the test run land in `test-results/screenshots/`.
    cauldron, tap a jar and use the dose buttons, or drag the jar onto the
    cauldron. Roots, leaves and stones go in whole: break them up with
    **Crush** (the pestle). Stir with the spoon, slide the fire control to
-   heat or cool, and tap **Off** beside it to put it out.
+   heat or cool (its gentle half is spread out for fine control; − and +
+   step the flame two degrees), and tap **Off** beside it to put it out.
+   The readout shows the flame's temperature and the pot's.
 4. **Trials.** Tap a rabbit in the hutch and press **Give**, or drag the
    dropper onto it. Test several different rabbits before you trust the
    estimate, and watch their status bars: purge or rest a rabbit before an

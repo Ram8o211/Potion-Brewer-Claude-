@@ -2,7 +2,7 @@
 // liquids layer, frozen blocks are crushed with the pestle, oil burns —
 // and a long run stays stable.
 import { test, expect } from '@playwright/test';
-import { watchErrors, shot, startSandbox, lab, pourRole, drag, viewPoint } from './helpers.mjs';
+import { watchErrors, shot, startSandbox, lab, pourRole, drag, viewPoint, crushInPot, steepWarm } from './helpers.mjs';
 
 test('layers, powders and stirring', async ({ page }, info) => {
   const errors = watchErrors(page);
@@ -166,14 +166,46 @@ test('the campaign’s rooms and stores are here too: shelves, the cellar and th
   await page.waitForFunction(() => /** @type {any} */ (window).__alchemist.screen.state.bottles.length === 1);
   await page.click('[data-act=tab-counter]');
   await expect(page.locator('[data-act=bottle-slot]')).toHaveCount(1);
-  // the cellar: lay the brew down, and set as many runes as wanted
+  // the cellar: lay the brew down
   await page.click('[data-act=tab-brew]');
   await page.click('[data-act=cellar]');
   await page.click('[data-act=cellar-fill-0]');
   await expect(page.locator('.cellar-vessel').first()).toContainText('ml');
-  for (let k = 0; k < 2; k++) await page.click('[data-act=cellar-rune-0]');
-  expect(await lab(page, (l) => l.state.cellar.runes === Infinity && !!l.state.cellar.vessels[0].rune)).toBe(true);
+  await page.locator('.overlay .modal-head .btn').first().click();
+  // brew a Fire potion in the emptied cauldron: a fiery herb, crushed and steeped warm
+  const fiery = await lab(page, (l) => {
+    const ms = l.state.world.ingredients.map((id) => l.state.lookup(id)).filter((m) => m && m.extraction && m.wild && !m.wild.arcane && m.form === 'solid');
+    ms.sort((a, b) => ((b.effects.fire || 0) - (b.effects.frost || 0)) - ((a.effects.fire || 0) - (a.effects.frost || 0)));
+    return { id: ms[0].id, solvent: ms[0].extraction.cls === 'lipo' ? 'oil' : 'water' };
+  });
+  await pourRole(page, fiery.solvent, 300, 0);
+  await pourRole(page, fiery.id, 150, 0);
+  await crushInPot(page);
+  await steepWarm(page, 60, 40);
+  // load 50 ml of it from the pot into the vessel: it can take the vessel above cellar temperature
+  await page.click('[data-act=cellar]');
+  const n0 = await lab(page, (l) => l.sim.p.count);
+  await page.fill('[data-act=cellar-ml-0]', '50');
+  await page.click('[data-act=cellar-charge-pot-0]');
+  const ch = await lab(page, (l) => l.state.cellar.vessels[0].charge);
+  expect(ch && ch.ml, 'charged with 50 ml from the pot').toBe(50);
+  expect(ch.net).toBeGreaterThan(0);
+  expect(await lab(page, (l) => l.sim.p.count), 'drawn out of the cauldron').toBe(n0 - 10);
+  // a rune to lock it on the way (as many as wanted here); moving it uses none
+  const goal = await lab(page, (l) => Math.round((12 + 12 + l.state.cellar.vessels[0].charge.net * 4) / 2));
+  await page.fill('[data-act=cellar-target-0]', String(goal));
+  await page.click('[data-act=cellar-rune-0]');
+  await page.click('[data-act=cellar-rune-0]');
+  expect(await lab(page, (l) => l.state.cellar.runes === Infinity && l.state.cellar.vessels[0].rune.target)).toBe(goal);
   await expect(page.locator('.overlay .modal')).toContainText('unlimited');
+  // the panel follows the vessel live: the temperature rises, the charge drains, then the rune locks it
+  const t0 = Number(await page.locator('.cellar-vessel [data-temp]').first().getAttribute('data-temp'));
+  await page.waitForFunction(([g]) => { const v = /** @type {any} */ (window).__alchemist.screen.state.cellar.vessels[0]; return Math.abs(v.T - g) < 0.05; }, [goal], { timeout: 90_000, polling: 500 });
+  await page.waitForTimeout(1500);
+  const t1 = Number(await page.locator('.cellar-vessel [data-temp]').first().getAttribute('data-temp'));
+  expect(t1, 'shown rising without a click').toBeGreaterThan(t0 + 3);
+  expect(Number(await page.locator('.cellar-vessel [data-charge]').first().getAttribute('data-charge')), 'the charge is being used up').toBeLessThan(50);
+  await expect(page.locator('.cellar-vessel').first()).toContainText(`locked at ${goal}°C`);
   await shot(page, info, 'sandbox-cellar');
   await page.locator('.overlay .modal-head .btn').first().click();
   // the garden: every bed, every seed

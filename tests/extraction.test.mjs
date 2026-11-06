@@ -15,7 +15,7 @@ import { SPECIES } from '../src/materials/catalog.js';
 import { measureParticles, tapSelection } from '../src/game/measure.js';
 import { predictPlan } from '../src/game/predict.js';
 import { GameState, SAVE_VERSION, runeFind } from '../src/game/state.js';
-import { createCellar, normalizeCellar, fillVessel, advanceVessel, activateVessel, setRune, vesselReport, RUNE_LIFE, CELLAR_STEP } from '../src/game/cellar.js';
+import { advanceVessel, chargeVessel, chargeLimit, potionNet, vesselReport, RUNE_LIFE, CELLAR_STEP, CELLAR_T, DEG_PER_POINT } from '../src/game/cellar.js';
 import { EFFECT_INDEX, theoryOf } from '../src/alchemy/effects.js';
 import { generateCommission, ALCOHOL_FREE_LIMIT } from '../src/game/commissions.js';
 import { evaluatePotion } from '../src/game/evaluate.js';
@@ -75,26 +75,42 @@ test('the pure model: progress toward the ceiling, never back; cooling extracts 
   const cooled = extractOver(p, 20, 600, hot);
   assert.ok(cooled > hot + 0.1, `cooling lets more come out (${hot.toFixed(2)} → ${cooled.toFixed(2)})`);
   assert.ok(extractOver(p, 20, 5) < extractOver(p, 60, 5), 'in a short time, heat gets more out');
-  assert.ok(extractOver(p, -12, 3000) > 0.97, 'cold spirit draws out (nearly) everything');
+  assert.ok(extractOver(p, -12, 30000) > 0.95, 'cold spirit draws out (nearly) everything, given hours');
+});
+
+test('calibration: about 60 % at room temperature, slowly; heat is quicker but caps lower', () => {
+  const ys = SPECIES.map((s) => yieldAt(speciesProfile(s.key), 20));
+  const mean = ys.reduce((a, b) => a + b, 0) / ys.length;
+  assert.ok(Math.abs(mean - 0.6) < 0.04, `the room-temperature ceiling averages about 60 % (${mean.toFixed(2)})`);
+  assert.ok(Math.min(...ys) >= 0.45 && Math.max(...ys) <= 0.72, 'each species its own, within reason');
+  assert.ok(new Set(ys.map((y) => y.toFixed(2))).size > 10, 'it varies from species to species');
+  for (const s of SPECIES) {
+    const p = speciesProfile(s.key);
+    // at room temperature a ground, stirred herb needs over a minute per e-fold
+    assert.ok(1 / rateAt(p, 20) > 60, `${s.key}: slow at room temperature`);
+    // a minute's steep: warm gets more out than room temperature, but less than a long room-temperature steep
+    assert.ok(extractOver(p, 60, 60) > extractOver(p, 20, 60) + 0.05, `${s.key}: warmth speeds it up`);
+    assert.ok(yieldAt(p, 60) < yieldAt(p, 20) - 0.04 && yieldAt(p, 90) < yieldAt(p, 20) - 0.1, `${s.key}: and lowers the ceiling`);
+  }
 });
 
 test('in the cauldron: matter and magic are conserved; extract appears volume for volume, within the solvent’s capacity', () => {
   const s = sim();
   const ab = brew(s, [{ id: R.water, n: 40 }, { id: HYDRO, n: 14 }]);
-  stirAt(s, ab, 20, 20);
+  stirAt(s, ab, 60, 60);
   const inv = totals(s);
   const raw = inv[HYDRO] || 0, ext = inv['wild-p-sp-silverleaf'] || 0, water = inv[R.water] || 0;
   assert.ok(Math.abs(raw + ext - 14) < 1e-3, `ingredient volume conserved (${(raw + ext).toFixed(4)})`);
-  assert.ok(Math.abs(water - 40) < 1e-3, 'the solvent is untouched');
-  assert.ok(ext > 0.7 * 14 * yieldAt(speciesProfile('silverleaf'), 20), `most of it is extracted (${ext.toFixed(2)})`);
+  assert.ok(Math.abs(water - 40) < 0.5, 'the solvent is untouched (a little steam aside)');
+  assert.ok(ext > 0.7 * 14 * yieldAt(speciesProfile('silverleaf'), 60), `most of it is extracted (${ext.toFixed(2)})`);
   // the extract carries exactly the ingredient's effects per volume: the potion is ingredient × extracted share, diluted
   const m = measureParticles(s, tapSelection(s, 40));
-  const expect = (ext / 54) * lookup(HYDRO).effects.vitality;
+  const expect = (ext / (raw + ext + water)) * lookup(HYDRO).effects.vitality;
   assert.ok(Math.abs(m.effects[EFFECT_INDEX.vitality] - expect) < expect * 0.25, `no artificial potency (${m.effects[EFFECT_INDEX.vitality].toFixed(1)} ≈ ${expect.toFixed(1)})`);
   // too little solvent: at most its own volume of extract
   const t = sim();
   const ab2 = brew(t, [{ id: R.water, n: 8 }, { id: HYDRO, n: 30 }]);
-  stirAt(t, ab2, 20, 30);
+  stirAt(t, ab2, 60, 60);
   const e2 = totals(t)['wild-p-sp-silverleaf'] || 0;
   assert.ok(e2 <= 8 * (SOLVENT_CAPACITY / (1 - SOLVENT_CAPACITY)) + 0.05, `a solvent holds at most its own volume of extract (${e2.toFixed(2)} ≤ 8)`);
 });
@@ -102,21 +118,21 @@ test('in the cauldron: matter and magic are conserved; extract appears volume fo
 test('the wrong solvent extracts nothing; oil-soluble magic needs oil', () => {
   const a = sim();
   const ab = brew(a, [{ id: R.water, n: 40 }, { id: LIPO, n: 12 }]);
-  stirAt(a, ab, 20, 15);
+  stirAt(a, ab, 60, 40);
   assert.ok(share(a, LIPO) < 0.01, 'water takes no oil-soluble magic');
   const b = sim();
   const ab2 = brew(b, [{ id: R.oil, n: 40 }, { id: LIPO, n: 12 }]);
-  stirAt(b, ab2, 20, 15);
-  assert.ok(share(b, LIPO) > 0.6, `oil does (${share(b, LIPO).toFixed(2)})`);
+  stirAt(b, ab2, 60, 40);
+  assert.ok(share(b, LIPO) > 0.3, `oil does (${share(b, LIPO).toFixed(2)})`);
   const c = sim();
   const ab3 = brew(c, [{ id: R.oil, n: 40 }, { id: HYDRO, n: 12 }]);
-  stirAt(c, ab3, 20, 15);
+  stirAt(c, ab3, 60, 40);
   assert.ok(share(c, HYDRO) < 0.01, 'oil takes no water-soluble magic');
 });
 
 test('grinding and stirring speed extraction; heat is quick but caps lower', () => {
-  const whole = sim(); const ab = brew(whole, [{ id: R.water, n: 40 }, { id: HYDRO, n: 12 }], { crush: false }); stirAt(whole, ab, 20, 10);
-  const ground = sim(); const ab2 = brew(ground, [{ id: R.water, n: 40 }, { id: HYDRO, n: 12 }]); stirAt(ground, ab2, 20, 10);
+  const whole = sim(); const ab = brew(whole, [{ id: R.water, n: 40 }, { id: HYDRO, n: 12 }], { crush: false }); stirAt(whole, ab, 20, 30);
+  const ground = sim(); const ab2 = brew(ground, [{ id: R.water, n: 40 }, { id: HYDRO, n: 12 }]); stirAt(ground, ab2, 20, 30);
   assert.ok(share(whole, HYDRO) < share(ground, HYDRO) * 0.5, `whole ${share(whole, HYDRO).toFixed(2)} vs ground ${share(ground, HYDRO).toFixed(2)}`);
   // hot steep: capped at the hot ceiling; then cooling recovers more
   const hot = sim(); const ab3 = brew(hot, [{ id: R.water, n: 40 }]);
@@ -126,9 +142,9 @@ test('grinding and stirring speed extraction; heat is quick but caps lower', () 
   stirAt(hot, ab3, 90, 20);
   const atHot = share(hot, HYDRO), cap = yieldAt(speciesProfile('silverleaf'), 90);
   // (the herbs go in cold and take a moment to come up to heat, so a little more than the hot ceiling comes out)
-  assert.ok(atHot <= cap + 0.06 && atHot < yieldAt(speciesProfile('silverleaf'), 20) - 0.15, `hot extraction stops near its ceiling (${atHot.toFixed(2)} ≈ ${cap.toFixed(2)})`);
-  stirAt(hot, ab3, 20, 40);
-  assert.ok(share(hot, HYDRO) > atHot + 0.08, `cooling draws more out (${atHot.toFixed(2)} → ${share(hot, HYDRO).toFixed(2)})`);
+  assert.ok(atHot <= cap + 0.06 && atHot < yieldAt(speciesProfile('silverleaf'), 20) - 0.08, `hot extraction stops near its ceiling (${atHot.toFixed(2)} ≈ ${cap.toFixed(2)})`);
+  stirAt(hot, ab3, 20, 150);
+  assert.ok(share(hot, HYDRO) > atHot + 0.06, `cooling draws more out, slowly (${atHot.toFixed(2)} → ${share(hot, HYDRO).toFixed(2)})`);
 });
 
 test('a frozen solvent extracts nothing; cold spirit extracts the most', () => {
@@ -141,9 +157,9 @@ test('a frozen solvent extracts nothing; cold spirit extracts the most', () => {
   holdAt(ice, ab, -25, 25);
   assert.ok(share(ice, HYDRO) < 0.02, `frozen water: nothing (${share(ice, HYDRO).toFixed(3)})`);
   const cold = sim(); const ab2 = brew(cold, [{ id: R.spirit, n: 40 }, { id: HYDRO, n: 12 }]);
-  stirAt(cold, ab2, -12, 90);
+  stirAt(cold, ab2, -12, 600);
   const warm = sim(); const ab3 = brew(warm, [{ id: R.water, n: 40 }, { id: HYDRO, n: 12 }]);
-  stirAt(warm, ab3, 20, 90);
+  stirAt(warm, ab3, 20, 600);
   assert.ok(share(cold, HYDRO) > share(warm, HYDRO) + 0.08, `cold spirit ${share(cold, HYDRO).toFixed(2)} beats room-temperature water ${share(warm, HYDRO).toFixed(2)}`);
 });
 
@@ -183,7 +199,7 @@ test('distillation: the still head draws spirit off first, the magic stays, the 
   const rec = s.condenser.receiver;
   assert.ok((rec[R.spirit] || 0) > 30, `most spirit went to the receiver (${(rec[R.spirit] || 0).toFixed(1)} of 40)`);
   assert.ok((rec[R.water] || 0) < (rec[R.spirit] || 0) * 0.4, `spirit before water (${(rec[R.water] || 0).toFixed(1)} water)`);
-  assert.ok((rec['wild-p-sp-silverleaf'] || 0) < 0.05 && (rec[HYDRO] || 0) < 0.05, 'no magic boils over');
+  assert.ok((rec['wild-p-sp-silverleaf'] || 0) < 0.12 && (rec[HYDRO] || 0) < 0.12, `no magic boils over, beyond a trace carried by the vapour (${(rec['wild-p-sp-silverleaf'] || 0).toFixed(3)} extract, ${(rec[HYDRO] || 0).toFixed(3)} herb)`);
   assert.ok(totals(s)['wild-p-sp-silverleaf'] >= ext0 - 0.05, 'the extract stays in the pot');
   assert.ok(spiritShare(s) < 0.03, `the potion is nearly alcohol-free (${(spiritShare(s) * 100).toFixed(1)}%)`);
   const m = measureParticles(s, tapSelection(s, 30));
@@ -247,57 +263,107 @@ function cellarShop(seed) {
 }
 const T0 = 1_700_000_000_000, HOUR = 3600_000;
 
-test('a cellar vessel goes on extracting, conserves matter, and freezes or burns when its drive runs away', () => {
+test('a cellar vessel goes on extracting, conserves matter, and freezes or burns when its charge takes it too far', () => {
   const st = cellarShop('cellar-1');
   st.tickCellar(T0);
   assert.equal(st.cellar.vessels.length, 2, 'the cellar has two vessels');
   assert.ok(st.layDown(0, { comp: { [R.spirit]: 150, [HYDRO]: 50 }, T: 20, name: 'test' }, T0).ok);
-  st.tickCellar(T0 + 2 * HOUR);
+  st.tickCellar(T0 + 4 * HOUR);
   const v = st.cellar.vessels[0];
   const rep = vesselReport(v, st.lookup);
   const it = rep.items.find((x) => x.id === HYDRO);
-  assert.ok(it.share > it.ceiling - 0.02, `two hours at 20°C reach the ceiling (${it.share.toFixed(2)})`);
+  assert.equal(Math.round(rep.T), CELLAR_T, 'uncharged, it settles at cellar temperature');
+  assert.ok(it.share > it.ceiling - 0.03, `four hours reach the cellar's ceiling (${it.share.toFixed(2)} of ${it.ceiling.toFixed(2)})`);
   const tot = Object.values(v.comp).reduce((a, b) => a + b, 0);
   assert.ok(Math.abs(tot - 200) < 1e-6, 'matter is conserved');
-  // a Frost potion drives it down until the spirit freezes: extraction stops there
-  v.drive = -40;
-  st.tickCellar(T0 + 8 * HOUR);
+  // a very strong Frost charge takes it below the spirit's freezing point: extraction stops there
+  const frost = new Array(15).fill(0); frost[EFFECT_INDEX.frost] = 40;
+  assert.ok(chargeVessel(v, frost, 400, T0 + 4 * HOUR).ok);
+  st.tickCellar(T0 + 9 * HOUR);
   const r2 = vesselReport(v, st.lookup);
-  assert.ok(r2.T <= r2.freezing + 1e-6 && r2.frozen, `it cooled until it froze (${Math.round(r2.T)}°C)`);
+  assert.ok(r2.T <= r2.freezing + 1e-6 && r2.frozen, `it cooled until it froze (${Math.round(r2.T)}°C, freezes at ${Math.round(r2.freezing)})`);
   const frozenShare = r2.items.find((x) => x.id === HYDRO).share;
-  st.tickCellar(T0 + 20 * HOUR);
+  st.tickCellar(T0 + 10 * HOUR);
   assert.equal(vesselReport(v, st.lookup).items.find((x) => x.id === HYDRO).share, frozenShare, 'frozen, nothing more comes out');
-  // a Fire potion drives an oil vessel up until its herbs burn
+  // a strong Fire charge takes an oil vessel up until its herbs burn
   assert.ok(st.layDown(1, { comp: { [R.oil]: 120, [LIPO]: 40 }, T: 20 }, T0).ok);
   const w = st.cellar.vessels[1];
-  w.drive = 60;
-  st.tickCellar(T0 + 12 * HOUR);
+  const fire = new Array(15).fill(0); fire[EFFECT_INDEX.fire] = 60;
+  assert.ok(chargeVessel(w, fire, 500, T0).ok);
+  assert.ok(chargeLimit(w.charge.net) > lookup(LIPO).extraction.combust, 'the charge can take it past the burning point');
+  st.tickCellar(T0 + 6 * HOUR);
   const r3 = vesselReport(w, st.lookup);
   assert.ok(r3.char > 1, `the unextracted matter burnt (${r3.char.toFixed(1)} ml of char)`);
   assert.ok(r3.items[0].ext > 1, 'what was extracted survived the heat');
 });
 
-test('activation by Fire and Frost potions, runes that hold a temperature and wear out', () => {
+test('charges: the potion’s strength sets the limit, it is used up as it works, then the vessel returns', () => {
   const st = cellarShop('cellar-2');
-  st.reputation = 60;
   st.tickCellar(T0);
   st.layDown(0, { comp: { [R.spirit]: 160, [HYDRO]: 40 }, T: 20 }, T0);
   const v = st.cellar.vessels[0];
-  const frost = new Array(15).fill(0); frost[EFFECT_INDEX.frost] = 16;
-  assert.ok(activateVessel(v, frost, T0).ok && v.drive < 0, 'a Frost potion chills it');
-  const plain = new Array(15).fill(0); plain[EFFECT_INDEX.vitality] = 20;
-  assert.equal(activateVessel(v, plain, T0).ok, false, 'a potion of neither does nothing');
-  assert.equal(st.runeVessel(0, -12, T0).ok, false, 'no rune in hand');
+  const fx = (fire, frost, other = 0) => { const e = new Array(15).fill(0); e[EFFECT_INDEX.fire] = fire; e[EFFECT_INDEX.frost] = frost; e[EFFECT_INDEX.vitality] = other; return e; };
+  assert.equal(potionNet(fx(0, 0, 30)), 0, 'a potion of neither does nothing');
+  assert.equal(chargeVessel(v, fx(0, 0, 30), 50, T0).ok, false);
+  assert.equal(potionNet(fx(10, 8.5)), 0, 'Fire and Frost cancel; too little left');
+  // other effects do not matter; the stronger the Frost, the colder it can go
+  assert.ok(chargeLimit(potionNet(fx(0, 12, 25))) < chargeLimit(potionNet(fx(0, 6))) && chargeLimit(potionNet(fx(0, 6))) < CELLAR_T);
+  assert.ok(chargeLimit(potionNet(fx(20, 0))) > chargeLimit(potionNet(fx(8, 0))) && chargeLimit(potionNet(fx(8, 0))) > CELLAR_T);
+  assert.ok(chargeVessel(v, fx(0, 6, 25), 60, T0).ok, 'a Frost potion, with other effects, charges it');
+  const lim = chargeLimit(v.charge.net);
+  assert.equal(lim, CELLAR_T - 6 * DEG_PER_POINT);
+  // the temperature falls by itself toward the limit, and the charge is used up as it works
+  st.tickCellar(T0 + 0.5 * HOUR);
+  const mid = v.T, ml1 = v.charge.ml;
+  assert.ok(mid < CELLAR_T - 3 && mid > lim, `falling (${mid.toFixed(1)}°C)`);
+  assert.ok(ml1 < 60, `the potion is being used up (${ml1.toFixed(1)} ml left)`);
+  st.tickCellar(T0 + 1.5 * HOUR);
+  assert.ok(v.T < mid && v.T >= lim - 1e-6, `colder still, never past the limit (${v.T.toFixed(1)})`);
+  assert.ok(!v.charge || v.charge.ml < ml1, 'still being used up');
+  // until it is spent: then the vessel returns to cellar temperature
+  st.tickCellar(T0 + 30 * HOUR);
+  assert.equal(v.charge, null, 'the charge is spent');
+  assert.ok(Math.abs(v.T - CELLAR_T) < 0.5, `back at cellar temperature (${v.T.toFixed(1)})`);
+  // a stronger potion holds the same temperature on less of it
+  const use = (frost) => { const s2 = cellarShop('cellar-2b'); s2.tickCellar(T0); s2.layDown(0, { comp: { [R.water]: 200 }, T: 12 }, T0); const w = s2.cellar.vessels[0]; chargeVessel(w, fx(0, frost), 100, T0); s2.cellar.runes = 5; assert.ok(s2.runeVessel(0, CELLAR_T - 20, T0).ok); return w; };
+  const weak = use(6), strong = use(12);
+  for (const sv of [weak, strong]) advanceVessel(sv, lookup, T0 + 3 * HOUR);
+  assert.ok(strong.charge.ml > weak.charge.ml, `stronger lasts longer (${strong.charge.ml.toFixed(1)} vs ${weak.charge.ml.toFixed(1)} ml)`);
+});
+
+test('runes lock the temperature on the way to the limit, and wear out with use', () => {
+  const st = cellarShop('cellar-3r');
+  st.reputation = 60;
+  st.tickCellar(T0);
+  st.layDown(0, { comp: { [R.water]: 150, [HYDRO]: 40 }, T: CELLAR_T }, T0);
+  const v = st.cellar.vessels[0];
+  const fire = new Array(15).fill(0); fire[EFFECT_INDEX.fire] = 20;
+  assert.equal(st.runeVessel(0, 50, T0).ok, false, 'no rune in hand');
   st.coins = 100;
   assert.ok(st.buyRune().ok && st.cellar.runes === 1, 'a rune bought at the market');
-  assert.ok(st.runeVessel(0, -12, T0).ok && st.cellar.runes === 0);
-  st.tickCellar(T0 + 3 * HOUR);
-  assert.ok(Math.abs(v.T + 12) < 0.5, `the rune holds it at −12°C (${v.T.toFixed(1)})`);
-  // against a frost drive it wears out faster than its idle life, then the cold takes over
-  const life = RUNE_LIFE / (1 + Math.abs(v.drive) / 40);
-  st.tickCellar(T0 + life * 1000 + 2 * HOUR);
+  assert.ok(st.runeVessel(0, 50, T0).ok && st.cellar.runes === 0);
+  st.tickCellar(T0 + HOUR);
+  assert.ok(Math.abs(v.T - CELLAR_T) < 0.5, 'without a charge the rune does nothing');
+  assert.ok(st.chargeVessel(0, fire, 300, T0 + HOUR).ok);
+  assert.ok(chargeLimit(v.charge.net) > 50);
+  st.tickCellar(T0 + 4 * HOUR);
+  assert.ok(Math.abs(v.T - 50) < 1e-6, `locked at 50°C (${v.T.toFixed(2)})`);
+  assert.ok(vesselReport(v, st.lookup).rune.locked);
+  // moving the target uses no new rune
+  assert.ok(st.runeVessel(0, 45, T0 + 4 * HOUR).ok && st.cellar.runes === 0, 'moved without a new rune');
+  st.tickCellar(T0 + 6 * HOUR);
+  assert.ok(Math.abs(v.T - 45) < 1e-6, `back down to 45°C and held (${v.T.toFixed(2)})`);
+  // a target beyond the charge's reach never locks
+  st.cellar.runes = 1;
+  assert.ok(st.runeVessel(0, 200, T0 + 6 * HOUR).ok);
+  assert.equal(vesselReport(v, st.lookup).rune.holds, false, 'beyond the limit: it cannot lock');
+  // it wears out with the time it is set on the vessel
+  assert.ok(st.runeVessel(0, 45, T0 + 6 * HOUR).ok);
+  const left = v.rune.life;
+  st.tickCellar(T0 + 7 * HOUR);
+  assert.ok(Math.abs(left - v.rune.life - 3600) < CELLAR_STEP + 1, 'an hour of use, an hour of wear');
+  st.tickCellar(T0 + 6 * HOUR + RUNE_LIFE * 1000 + HOUR);
   assert.equal(v.rune, null, 'the rune has worn out');
-  assert.ok(v.T < -14, `the vessel drifts colder again (${v.T.toFixed(1)})`);
   // runes turn up underground: about as often as their chance, and a reload never rerolls one
   let hits = 0;
   for (let n = 0; n < 3000; n++) if (runeFind('rune-dig', 'netherwood-3', n * 10, 0.14)) hits++;
@@ -305,14 +371,41 @@ test('activation by Fire and Frost potions, runes that hold a temperature and we
   assert.equal(runeFind('rune-dig', 'd1', 120, 0.5), runeFind('rune-dig', 'd1', 120, 0.5), 'deterministic');
 });
 
+test('a charge from a shelved bottle takes only the chosen amount', () => {
+  const st = cellarShop('cellar-bottle-charge');
+  st.tickCellar(T0);
+  st.layDown(0, { comp: { [R.water]: 100, [HYDRO]: 20 }, T: 20 }, T0);
+  // a Fire potion on the shelf: a vessel laid down with fire matter, bottled out
+  const fireHerb = SPECIES.find((s) => s.fx && s.fx.fire >= 20 && !(s.fx.frost > 0));
+  assert.ok(fireHerb, 'a fiery herb exists');
+  const id = 'wild-p-sp-' + fireHerb.key;
+  assert.ok(st.lookup(id), 'its extract');
+  st.layDown(1, { comp: { [R.water]: 40, [id]: 60 }, T: 20 }, T0);
+  const b = st.bottleVessel(1, T0).vial;
+  assert.ok(potionNet(b.m.effects) > 0, 'a Fire potion');
+  const ml0 = b.ml;
+  const r = st.activateVessel(0, b.id, 20, T0);
+  assert.ok(r.ok, r.reason);
+  assert.equal(r.ml, 20);
+  assert.equal(st.bottles.find((x) => x.id === b.id).ml, ml0 - 20, 'the rest stays in the bottle');
+  assert.equal(st.cellar.vessels[0].charge.ml, 20);
+});
+
 test('cellar aging is deterministic and persists offline: one jump equals many ticks, and a save carries it', () => {
-  const mk = () => { const st = cellarShop('cellar-3'); st.tickCellar(T0); st.layDown(0, { comp: { [R.water]: 100, [R.oil]: 30, [HYDRO]: 30, [LIPO]: 15 }, T: 15 }, T0); st.cellar.vessels[0].drive = 7; return st; };
+  const mk = () => {
+    const st = cellarShop('cellar-3'); st.tickCellar(T0); st.layDown(0, { comp: { [R.water]: 100, [R.oil]: 30, [HYDRO]: 30, [LIPO]: 15 }, T: 15 }, T0);
+    const fire = new Array(15).fill(0); fire[EFFECT_INDEX.fire] = 9;
+    chargeVessel(st.cellar.vessels[0], fire, 80, T0);
+    st.cellar.runes = 1; st.runeVessel(0, 35, T0);
+    return st;
+  };
   const a = mk(), b = mk();
   a.tickCellar(T0 + 9 * HOUR + 1234);
   for (let t = T0; t <= T0 + 9 * HOUR + 1234; t += 7_777) b.tickCellar(t);
   b.tickCellar(T0 + 9 * HOUR + 1234);
   const va = a.cellar.vessels[0], vb = b.cellar.vessels[0];
   assert.ok(Math.abs(va.T - vb.T) < 1e-9, 'same temperature');
+  assert.ok(Math.abs((va.charge ? va.charge.ml : 0) - (vb.charge ? vb.charge.ml : 0)) < 1e-6, 'same charge left');
   for (const id of Object.keys(va.comp)) assert.ok(Math.abs(va.comp[id] - vb.comp[id]) < 1e-9, `same ${id}`);
   // a save closed for a day comes back advanced by that day
   const save = JSON.parse(JSON.stringify(a.toJSON()));
@@ -378,7 +471,7 @@ test('the whole loop for an alcohol-free order: cold spirit steep, distillation,
   Object.assign(s.furnace, { maxFlame: cap.maxFlame, heatPower: cap.heatPower, minCool: cap.minCool, coolPower: cap.coolPower });
   const ab = new AutoBrewer(s, com.reference, st.lookup);
   let g = 0;
-  while (!ab.done && g++ < 120 * 900) { ab.tick(); s.step(); }
+  while (!ab.done && g++ < 120 * 1500) { ab.tick(); s.step(); }
   assert.ok(!ab.failed, 'the homunculus finished the plan');
   const sel = tapSelection(s, com.bottleN);
   const m = measureParticles(s, sel);

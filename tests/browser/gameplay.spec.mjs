@@ -2,7 +2,7 @@
 // pointer (touch events on phone projects), the fire control, a trial in
 // the Trials room, bottling, serving at the Counter — then the customer pays.
 import { test, expect } from '@playwright/test';
-import { watchErrors, shot, newGame, lab, drag, stirPath, pourDose, wholeSolids, crushInPot } from './helpers.mjs';
+import { watchErrors, shot, newGame, lab, drag, stirPath, pourDose, wholeSolids, crushInPot, steepWarm } from './helpers.mjs';
 
 test('first commission: brew, test on a subject, bottle and serve', async ({ page }, info) => {
   const errors = watchErrors(page);
@@ -49,11 +49,11 @@ test('first commission: brew, test on a subject, bottle and serve', async ({ pag
   await lab(page, (l) => { l.speed = 4; });
   await page.waitForFunction(() => {
     const st = window.__alchemist.screen.state, sim = window.__alchemist.screen.sim;
-    // most of the leaf's magic is drawn out (some always stays in the leaf at room temperature)
+    // about half of the leaf's magic is drawn out (at a gentle warmth no more than about 60 % ever comes out)
     const raw = sim.species.slotOf.get('wild-sp-silverleaf'), ext = sim.species.slotOf.get('wild-p-sp-silverleaf');
     let r = 0, x = 0;
     for (let i = 0; i < sim.p.count; i++) { if (raw !== undefined) r += sim.p.comp[i * sim.p.S + raw]; if (ext !== undefined) x += sim.p.comp[i * sim.p.S + ext]; }
-    return x > 0 && x / (r + x) > 0.7 && !!st;
+    return x > 0 && x / (r + x) > 0.5 && !!st;
   }, null, { timeout: 90_000, polling: 500 });
   await lab(page, (l) => { l.speed = 1; });
   await page.locator('input[aria-label="Fire and frost control"]').fill('0');
@@ -149,11 +149,7 @@ test('a customer who insists on proof will not buy until the vial is tested; tes
   await pourDose(page, 'wild-sp-silverleaf', [50]);
   await crushInPot(page);
   // steeped warm, so one reading plainly shows the healing (a cold brew is too weak to be sure of)
-  await lab(page, (l) => { l.setAutoStir(true); l.setFurnace(0.8); l.speed = 4; });
-  await page.waitForFunction(() => { const p = window.__alchemist.screen.sim.p; let t = 0; for (let i = 0; i < p.count; i++) t += p.temp[i]; return t / p.count > 60; }, null, { timeout: 60_000, polling: 250 });
-  await lab(page, (l) => l.setFurnace(0.1));
-  await page.waitForTimeout(4000);
-  await lab(page, (l) => { l.setFurnace(0); l.setAutoStir(false); l.speed = 1; });
+  await steepWarm(page, 60, 40);
   await page.click('[data-act=bottle]');
   await page.click('[data-act=bottle-50]');
   await expect(page.locator('[data-act=serve]')).toBeVisible({ timeout: 20_000 });

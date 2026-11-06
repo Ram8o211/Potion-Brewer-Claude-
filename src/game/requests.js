@@ -80,8 +80,10 @@ export const REQUESTS = [
 ];
 
 /** Concentration targets (percent) of a request's main effect by tier. */
-// (rebalanced for continuous extraction: a room-temperature steep draws out about 85 % of an ingredient)
-export const TIER_TARGET = [[6, 12], [8, 14], [9, 17], [13, 22], [17, 27]];
+// (rebalanced for the slower extraction: a room-temperature steep draws out
+// only about 60 % of an ingredient, and the quicker warm steep a planner
+// uses less again — about two thirds of the old strengths)
+export const TIER_TARGET = [[4, 8], [5, 9], [6, 11], [8, 14], [11, 18]];
 
 /** Hard limit on any effect the customer did not ask for (percent). */
 export const PURITY_LIMIT = 1.2;

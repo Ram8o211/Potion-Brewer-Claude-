@@ -3,7 +3,7 @@
 // death, remains on the shelf (kept across a reload), buying until the
 // hutch is full, a night in the hutch, and the sandbox's next-day button.
 import { test, expect } from '@playwright/test';
-import { watchErrors, shot, newGame, lab, drag, pourDose, startSandbox, crushInPot } from './helpers.mjs';
+import { watchErrors, shot, newGame, lab, drag, pourDose, startSandbox, crushInPot, steepWarm } from './helpers.mjs';
 
 test('choose a rabbit, dose it, replay the trial for free', async ({ page }, info) => {
   const errors = watchErrors(page);
@@ -12,6 +12,8 @@ test('choose a rabbit, dose it, replay the trial for free', async ({ page }, inf
   await pourDose(page, roles.water, [100]);
   await pourDose(page, 'wild-sp-silverleaf', [100]);
   await crushInPot(page);
+  // a warm steep: at room temperature the leaf would take minutes to give up its magic
+  await steepWarm(page, 60, 30);
   await page.click('[data-act=tab-trials]');
   await expect(page.locator('.rabbit-tile[data-rabbit]')).toHaveCount(2);
   await expect(page.locator('canvas.hutch-scene')).toBeVisible();

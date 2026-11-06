@@ -9,6 +9,7 @@
 // derived from the reactants (densities are stoichiometric blends, so mass
 // is conserved through every reaction).
 
+import { speciesProfile } from '../alchemy/extraction.js';
 import { attachVisuals } from '../visual/identity.js';
 import { Rng } from '../core/rng.js';
 import { hslToRgb } from '../core/color.js';
@@ -424,6 +425,11 @@ export function addAlchemy(world) {
     if (!world.laws) world.laws = w.laws;
   }
   if (!world.laws) world.laws = generateLaws(world.seed);
+  // the extraction calibration is permanent species data: an older save takes the current one
+  for (const m of world.materials) {
+    const w = /** @type {any} */ (m).wild;
+    if (/** @type {any} */ (m).extraction && w && w.catalog) /** @type {any} */ (m).extraction = { ...speciesProfile(w.key) };
+  }
   addSolvents(world);
   // an ingredient grows in the region its archetype names now (Witch's Ear and
   // Mandrake moved from the Whisperwood into the Netherwood); its look stays
