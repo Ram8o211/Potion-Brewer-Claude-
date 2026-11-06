@@ -376,6 +376,9 @@ export class PlantGround {
     this.spots = new Map();
     /** the average brightness of the whole painting (what a spot is lit relative to), found when first needed @type {number|null} */
     this.mean = null;
+    /** ground plants take first where there is room (the Skyshard's floating isles), else null @type {Uint8Array|null} */
+    this.prefer = null;
+    if (sc.meta.openLate) { this.prefer = new Uint8Array(SCENE_W * SCENE_H); for (const k of sc.meta.openLate) this.prefer[k] = 1; }
   }
 
   /**
@@ -481,7 +484,9 @@ export class PlantGround {
     const tries = [];
     for (let y = this.top; y <= H - 3; y++) for (let x = (y + ox) % 3; x < W; x += 3) if (G[y * W + x] && G[(y - 1) * W + x]) tries.push([(x - ox) ** 2 + ((y - oy) * 1.6) ** 2, x, y]);
     tries.sort((a, b) => a[0] - b[0]);
-    const spot = tries.find(([, x, y]) => fits(roomy, x, y)) || tries.find(([, x, y]) => fits(tight, x, y)) || (free && (tries.find(([, x, y]) => fits(free, x, y)) || tries[0]));
+    // (where some ground is preferred, the nearest of it with room round it first)
+    const pref = this.prefer, first = pref ? tries.filter(([, x, y]) => pref[y * W + x]) : [];
+    const spot = first.find(([, x, y]) => fits(roomy, x, y)) || tries.find(([, x, y]) => fits(roomy, x, y)) || tries.find(([, x, y]) => fits(tight, x, y)) || (free && (tries.find(([, x, y]) => fits(free, x, y)) || tries[0]));
     return spot ? { x: spot[1], y: spot[2], s, mount: 'ground', flip: false } : null;
   }
 

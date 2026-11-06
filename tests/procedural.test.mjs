@@ -139,6 +139,8 @@ test('the six environments are side views, generated deterministically, differin
     assert.notEqual(a.pix.hash(), composeScene(r.id, 'env-2').pix.hash(), `${r.id} differs per world`);
     assert.ok(a.pix.px.every((c) => c >>> 24 === 255), `${r.id} is fully painted`);
     // open ground is only ever a surface: the top of the ground, or the air just above it — never in a liquid
+    // (or the top of a floating isle, which is drawn apart from the painting: the Skyshard's, meta.openLate)
+    const isle = new Set(a.meta.openLate || []);
     let open = 0;
     for (let y = 1; y < SCENE_H - 1; y++) for (let x = 0; x < SCENE_W; x++) {
       const k = y * SCENE_W + x;
@@ -146,10 +148,10 @@ test('the six environments are side views, generated deterministically, differin
       open++;
       assert.ok(y >= a.top);
       assert.equal(a.liquid[k], 0, `${r.id}: nothing grows in water or lava`);
-      const surface = (a.solid[k] && !a.solid[k - SCENE_W]) || (!a.solid[k] && a.solid[k + SCENE_W]);
+      const surface = isle.has(k) || (a.solid[k] && !a.solid[k - SCENE_W]) || (!a.solid[k] && a.solid[k + SCENE_W]);
       assert.ok(surface, `${r.id}: (${x}, ${y}) is open but not a surface`);
     }
-    assert.ok(a.top >= 40 && a.top < 190, `${r.id} ground starts at ${a.top}`);
+    assert.ok(a.top >= (isle.size ? 8 : 40) && a.top < 190, `${r.id} ground starts at ${a.top}`);
     assert.ok(open > SCENE_W * 0.8, `${r.id} has room to grow (${open} px)`);
   }
   // the river and the lava lie in their beds, and nothing grows in them

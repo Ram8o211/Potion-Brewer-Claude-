@@ -51,7 +51,7 @@ import { equipmentById } from '../../game/equipment.js';
 import { RANKS } from '../../game/equipment.js';
 import { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, sceneTouch, crosses, SCENE_W, SCENE_H } from '../../rendering/wild-scene.js';
 import { Ragdoll } from '../../rendering/ragdoll.js';
-import { exoticPush, exoticStep, exoticDraw } from '../../rendering/exotic-fx.js';
+import { exoticPush, exoticStep, exoticDraw, isleAt, isleShift } from '../../rendering/exotic-fx.js';
 import { sceneOf } from '../../visual/env/scene.js';
 import { plantCanvas, plantFrameOf, plantGlow, emitColour, silhouetteOf, ingredientSprite, speciesOf, mountsOf, variantOf, MIN_HIT } from '../../rendering/species-sprites.js';
 import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
@@ -510,8 +510,12 @@ export class WildsView {
     const spots = this.ground.place(plants, (p, mount, flip) => this.shapeOf(p, mount, flip), (p) => mountsOf(p.m));
     /** @type {Record<string, number>} */
     const grewAt = {};
+    const seed = st.sceneSeed(this.region);
     for (const p of plants) {
       Object.assign(p, spots[p.id], { variant: variantOf(p.id) });
+      // rooted on a floating isle (the Skyshard's), it rides on it: where it stands at rest, and which isle
+      p.isle = !p.mount || p.mount === 'ground' ? isleAt(this.region, seed, p.x * SCENE_W, p.y * SCENE_H) : -1;
+      p.bx = p.x; p.by = p.y;
       // what was already growing when the scene was painted stands still; what sprouts or grows since springs up
       const tag = p.id + ':' + p.stage;
       grewAt[tag] = this.grewAt[tag] ?? (this.field.length ? this.time : -9);
@@ -1428,6 +1432,11 @@ export class WildsView {
     animateRegion(ctx, this.region, this.time, st.sceneSeed(this.region));
     exoticStep(this.region, st.sceneSeed(this.region), dt);
     exoticDraw(ctx, this.region, this.time, st.sceneSeed(this.region));
+    // the plants on the floating isles go where their isle was just drawn
+    for (const p of this.field) if (p.isle >= 0) {
+      const [dx, dy] = isleShift(this.region, st.sceneSeed(this.region), p.isle);
+      p.x = p.bx + dx / SCENE_W; p.y = p.by + dy / SCENE_H;
+    }
     // the blood spilt here, on the ground and the rock
     const warren = this.warren();
     if (warren) warren.step(dt);
