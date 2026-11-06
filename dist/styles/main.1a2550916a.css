@@ -924,25 +924,44 @@ input[type=checkbox]:checked { background-image: url('../assets/ui/form/checkbox
 .bottle-slot.locked { opacity: 0.5; }
 .shop-status + .card, .room-head + .card { margin-top: 0; }
 
-/* garden: plots drawn as the sheet's framed beds */
+/* garden: purple plot cards, each with its bed as a framed thumbnail (the crop drawn on it) */
 .garden { padding: 0; }
 .garden-scene { box-shadow: 0 0 0 2px var(--wood0), 0 0 0 4px var(--wood3); }
-.garden-bar { justify-content: space-between; flex-wrap: wrap; }
-.garden-status { display: flex; gap: 12px; align-items: center; font-size: 18px; }
-.gstat { display: inline-flex; align-items: center; gap: 2px; }
+.garden-bar { justify-content: space-between; flex-wrap: nowrap; gap: 8px; }
+.garden-status { position: relative; isolation: isolate; flex: 1 1 auto; display: flex; justify-content: space-around; gap: 10px; align-items: center; min-height: 44px; padding: 4px 14px; font-size: 18px; }
+.garden-status::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; box-sizing: border-box; border-style: solid; border-color: transparent; border-image: url('../assets/ui/chip/gold.png') 16 fill / 8px stretch; }
+.gstat { display: inline-flex; align-items: center; gap: 4px; }
 .gstat img.ico.sm { width: 20px; height: 20px; }
 .garden-hint { text-align: center; color: var(--parch1); }
-.plots { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
-.plot { background: none; box-shadow: none; isolation: isolate; min-height: 104px; padding: 10px 8px 12px; color: var(--parch3); text-shadow: 1px 1px 0 #000, -1px -1px 0 rgba(0,0,0,.6); }
-.plot::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; box-sizing: border-box; border-style: solid; border-color: transparent; border-image: url('../assets/ui/plot/brown.png') 22 fill / 11px stretch; }
-.plot[data-bed=fungal]::before { border-image-source: url('../assets/ui/plot/fungal.png'); }
-.plot[data-bed=crystal]::before { border-image-source: url('../assets/ui/plot/stone.png'); }
-.plot[data-bed=tide]::before { border-image-source: url('../assets/ui/plot/water.png'); }
-.plot.g1::before { filter: saturate(1.2) brightness(1.08); }
-.plot.g2::before { filter: hue-rotate(220deg) saturate(1.3); }
+.plots { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; }
+.plot { flex-direction: row; align-items: center; gap: 6px; min-height: 76px; padding: 8px 8px 10px; background: none; box-shadow: none; isolation: isolate; color: var(--parch3); text-align: left; text-shadow: 1px 1px 0 var(--wood0); }
+.plot::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; box-sizing: border-box; border-style: solid; border-color: transparent; border-image: url('../assets/ui/panel/purple.png') 18 fill / 9px stretch; }
 .plot.g1, .plot.g2 { background: none; box-shadow: none; }
-.plot.selected { box-shadow: none; outline: 3px solid var(--brassHi); outline-offset: -2px; }
-.plot .moist { left: 12px; right: 12px; bottom: 6px; }
+.plot.selected::before, .plot.ripe::before { border-image-source: url('../assets/ui/tab/blank-on.png'); border-image-slice: 20 fill; border-image-width: 10px; }
+.plot.selected { box-shadow: none; outline: none; }
+.plot-thumb { position: relative; flex: none; width: 46px; height: 40px; display: flex; align-items: center; justify-content: center; background: url('../assets/ui/plot/dark.png') center / 100% 100% no-repeat; }
+.plot-thumb[data-bed=fungal] { background-image: url('../assets/ui/plot/fungal.png'); }
+.plot-thumb[data-bed=crystal] { background-image: url('../assets/ui/plot/stone.png'); }
+.plot-thumb[data-bed=tide] { background-image: url('../assets/ui/plot/water.png'); }
+.plot.g1 .plot-thumb[data-bed=soil] { background-image: url('../assets/ui/plot/brown.png'); }
+.plot-thumb canvas { width: 40px; height: 40px; margin-top: -10px; }
+.plot-text { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+.plot .pname { font-size: var(--fs-s); line-height: 1.05; text-align: left; }
+.plot .pstate { font-size: 12px; opacity: 0.85; color: var(--brassHi); }
+.plot .moist { left: 10px; right: 10px; bottom: 5px; }
+.seed-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
+.seed-chip { position: relative; isolation: isolate; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 4px 14px; color: var(--ink); font-size: 18px; }
+.seed-chip::before { content: ''; position: absolute; inset: 0; z-index: -1; box-sizing: border-box; border-style: solid; border-color: transparent; border-image: url('../assets/ui/button/tan.png') 16 fill / 8px stretch; }
+.seed-chip img.ico.sm { width: 22px; height: 22px; }
+.seed-filters { display: flex; gap: 4px; }
+.seed-filter { width: 44px; height: 44px; border: none; padding: 0; cursor: pointer; background: center / contain no-repeat; opacity: 0.85; }
+.seed-filter[data-sprite=grid] { background-image: url('../assets/ui/control/grid.png'); }
+.seed-filter[data-sprite=leaf] { background-image: url('../assets/ui/slot/icon-leaf.png'); }
+.seed-filter[data-sprite=mushroom] { background-image: url('../assets/ui/slot/icon-mushroom.png'); }
+.seed-filter[data-sprite=crystal] { background-image: url('../assets/ui/slot/icon-crystal.png'); }
+.seed-filter[data-sprite=star] { background-image: url('../assets/ui/slot/icon-star.png'); }
+.seed-filter.active { opacity: 1; outline: 3px solid var(--brassHi); outline-offset: -3px; border-radius: 6px; }
+@media (max-width: 380px) { .seed-filter { width: 40px; height: 44px; } }
 .seed { background: none; box-shadow: none; isolation: isolate; position: relative; padding: 6px 4px; }
 .seed::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; box-sizing: border-box; border-style: solid; border-color: transparent; border-image: url('../assets/ui/slot/wood.png') 14 fill / 7px stretch; }
 .seed.selected { box-shadow: none; }

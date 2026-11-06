@@ -66,7 +66,7 @@ export class GardenView {
     el.append(roomHead('Garden', 'seedling'), h('div', { class: 'garden' },
       this.canvas, h('div', { class: 'row garden-bar' }, this.status, this.actsEl),
       this.plotsEl,
-      h('div', { class: 'sub-head' }, icon('seedling', 'sm'), h('span', { text: 'Seeds' })), this.seedsEl,
+      this.seedBar = h('div', { class: 'seed-bar' }), this.seedsEl,
       h('details', { class: 'card parch' }, h('summary', { text: 'Garden upgrades' }), this.upsEl)));
     // the growth stages load with the garden (they are not needed before)
     loadAtlases((a) => a.id.startsWith('growth') || a.id === 'seeds').then(() => this.refresh());
@@ -126,7 +126,7 @@ export class GardenView {
     // ---- status and actions
     const growing = view.filter((p) => p.crop).length, ready = view.filter((p) => p.state && p.state.stage === 'mature').length, thirsty = view.filter((p) => p.state && p.state.thirsty).length;
     clear(this.status).append(
-      h('span', { class: 'gstat', title: 'Plots' }, icon('stone', 'sm'), ` ${g.plots.length}`),
+      h('span', { class: 'gstat', title: 'Plots' }, icon('grid', 'sm'), ` ${g.plots.length}`),
       h('span', { class: 'gstat', title: 'Growing' }, icon('seedling', 'sm'), ` ${growing}`),
       h('span', { class: 'gstat', title: 'Ready to harvest' }, icon('check', 'sm'), ` ${ready}`),
       thirsty ? h('span', { class: 'gstat warn', title: 'Thirsty' }, icon('drop', 'sm'), ` ${thirsty}`) : '');
@@ -146,17 +146,28 @@ export class GardenView {
       const asset = sp && p.crop ? stageAsset(sp.key, p.crop.arcane, stageIx) : null;
       const cv = this.spriteCanvas(asset, 64);
       const what = !p.crop ? `Empty ${BEDS[p.bed].name.toLowerCase()}` : `${p.crop.arcane ? 'Arcane ' : ''}${sp ? sp.name : p.crop.species}`;
-      const state = !p.crop ? (GRADES[p.grade] + (p.grade ? ' grade' : '')) : p.state.stage === 'mature' ? `ready · tap to harvest ${cropYield(p.crop.species)} ml` : `${p.state.stage} · ${formatWait(p.state.readyIn)}${p.state.thirsty ? ' · thirsty' : ''}`;
-      const el = h('button', { class: `plot g${p.grade}${this.plot === p.id ? ' selected' : ''}`, 'data-bed': p.bed, 'data-act': 'plot-' + p.id, role: 'option', 'aria-label': `${what}: ${state}` },
-        cv, h('span', { class: 'pname', text: what }), h('span', { class: 'pstate', text: state }),
+      const state = !p.crop ? '' : p.state.stage === 'mature' ? `ready · ${cropYield(p.crop.species)} ml` : `${p.state.stage} · ${formatWait(p.state.readyIn)}${p.state.thirsty ? ' · thirsty' : ''}`;
+      const el = h('button', { class: `plot g${p.grade}${this.plot === p.id ? ' selected' : ''}${p.crop && p.state.stage === 'mature' ? ' ripe' : ''}`, 'data-bed': p.bed, 'data-act': 'plot-' + p.id, role: 'option', 'aria-label': `${what}${state ? ': ' + state : ''}`, title: `${BEDS[p.bed].name} · ${GRADES[p.grade]}` },
+        h('span', { class: 'plot-thumb', 'data-bed': p.bed }, p.crop ? cv : null),
+        h('span', { class: 'plot-text' }, h('span', { class: 'pname', text: what }), state ? h('span', { class: 'pstate', text: state }) : null),
         p.crop && p.state.g < 1 ? h('span', { class: 'moist', title: 'Soil moisture' }, h('i', { style: { width: Math.round(p.state.w * 100) + '%' } })) : null);
       el.addEventListener('click', () => this.act(p.id));
       plots.appendChild(el);
     }
     // ---- seeds
     const seeds = clear(this.seedsEl);
-    const list = seedList(g);
-    if (!list.length) seeds.appendChild(h('div', { class: 'muted small', text: 'No seeds yet.' }));
+    const all = seedList(g);
+    const FILTERS = [['all', 'All seeds', 'grid'], ['soil', 'Herbs, flowers and fruit', 'leaf'], ['fungal', 'Mushrooms and mosses', 'mushroom'], ['crystal', 'Crystals and stones', 'crystal'], ['arcane', 'Arcane seeds', 'star']];
+    if (!this.seedFilter) this.seedFilter = 'all';
+    clear(this.seedBar).append(h('div', { class: 'seed-chip' }, icon('seedling', 'sm'), h('span', { text: 'Seeds' })),
+      h('div', { class: 'seed-filters', role: 'tablist' }, ...FILTERS.map(([k, label, spr]) => {
+        const b = h('button', { class: 'seed-filter' + (this.seedFilter === k ? ' active' : ''), 'data-act': 'seed-filter-' + k, 'data-sprite': spr, title: label, 'aria-label': label, role: 'tab', 'aria-selected': String(this.seedFilter === k) });
+        b.addEventListener('click', () => { this.seedFilter = k; audio.play('click'); this.refresh(); });
+        return b;
+      })));
+    const f = this.seedFilter;
+    const list = all.filter((x) => f === 'all' || (f === 'arcane' ? x.arcane : bedOf(x.key) === f));
+    if (!list.length) seeds.appendChild(h('div', { class: 'muted small', text: all.length ? 'None of these.' : 'No seeds yet.' }));
     const sel = this.plot ? g.plots.find((x) => x.id === this.plot) : null;
     for (const s of list) {
       const fits = !sel || (!sel.crop && sel.bed === bedOf(s.key) && sel.grade >= gradeNeeded(s.key, s.arcane));

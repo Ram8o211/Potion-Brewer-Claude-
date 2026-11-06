@@ -114,7 +114,7 @@ const ICONS = {
 };
 
 /** Icons drawn from the interface sprite sheet (assets/ui/icon/<name>.png). */
-export const SPRITE_ICONS = new Set(['awaken', 'bag', 'book', 'bottle', 'bubbles', 'cauldron', 'check', 'clock', 'close', 'coin', 'door', 'drop', 'dropper', 'flame', 'flask', 'gear', 'gem', 'heart', 'help', 'jar', 'leaf', 'minus', 'plus', 'scroll', 'seedling', 'shroom', 'skull', 'snow', 'spark', 'stall', 'star', 'stone', 'swirl', 'trash', 'tree', 'trophy']);
+export const SPRITE_ICONS = new Set(['awaken', 'bag', 'book', 'bottle', 'bubbles', 'cauldron', 'check', 'clock', 'close', 'coin', 'door', 'drop', 'dropper', 'flame', 'flask', 'gear', 'gem', 'grid', 'heart', 'help', 'jar', 'leaf', 'minus', 'plus', 'scroll', 'seedling', 'shroom', 'skull', 'snow', 'spark', 'stall', 'star', 'stone', 'swirl', 'trash', 'tree', 'trophy']);
 
 const cache = new Map();
 

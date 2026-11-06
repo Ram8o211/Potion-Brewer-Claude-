@@ -206,7 +206,7 @@ for n, (s, i, inset) in ICON.items():
 DARK = {'swirl': 113, 'rose': 114, 'awaken': 118, 'spark': 116, 'bubbles': 119, 'flame': 120, 'snow': 122, 'skull': 124}
 for n, i in DARK.items():
     save('icon/' + n, clean(key(box('sheet2', i, 0), (9, 9, 9, 9), tol=26, outline=0), 40))
-for n, i in {'plus': 34, 'minus': 35, 'close': 36, 'check': 37}.items():
+for n, i in {'plus': 34, 'minus': 35, 'close': 36, 'check': 37, 'grid': 51}.items():
     save('icon/' + n, clean(key(box('sheet2', i, 0), (11, 11, 11, 11), tol=34, outline=40), 40))
 # standalone sprites used as icons as they are
 save('icon/coin', clean(key(S['sheet1'].crop((802, 288, 838, 323)), (0, 0, 0, 0), tol=30, outline=70), 40))
