@@ -7,7 +7,7 @@
    "image": "growth-exotic.png",
    "meta": "growth-exotic.json",
    "width": 512,
-   "height": 544,
+   "height": 512,
    "frames": 480,
    "eager": false,
    "biomes": [
@@ -24,7 +24,7 @@
    "image": "growth-natural.png",
    "meta": "growth-natural.json",
    "width": 512,
-   "height": 576,
+   "height": 512,
    "frames": 480,
    "eager": false,
    "biomes": [
@@ -58,7 +58,7 @@
    "image": "ingredients-arcane-natural.png",
    "meta": "ingredients-arcane-natural.json",
    "width": 512,
-   "height": 304,
+   "height": 256,
    "frames": 60,
    "eager": true,
    "biomes": [
@@ -75,7 +75,7 @@
    "image": "ingredients-exotic-flora.png",
    "meta": "ingredients-exotic-flora.json",
    "width": 512,
-   "height": 128,
+   "height": 112,
    "frames": 34,
    "eager": false,
    "biomes": [
@@ -92,7 +92,7 @@
    "image": "ingredients-exotic-fungi-minerals.png",
    "meta": "ingredients-exotic-fungi-minerals.json",
    "width": 512,
-   "height": 96,
+   "height": 80,
    "frames": 26,
    "eager": false,
    "biomes": [
@@ -109,7 +109,7 @@
    "image": "ingredients-natural-flora.png",
    "meta": "ingredients-natural-flora.json",
    "width": 512,
-   "height": 160,
+   "height": 112,
    "frames": 40,
    "eager": true,
    "biomes": [

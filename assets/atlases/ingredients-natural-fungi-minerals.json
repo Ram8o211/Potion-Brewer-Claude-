@@ -13,17 +13,17 @@
    "biome": "quarry",
    "category": "natural",
    "morph": "stone",
-   "x": 174,
+   "x": 218,
    "y": 2,
-   "w": 48,
-   "h": 32,
+   "w": 38,
+   "h": 30,
    "pivot": [
-    24,
-    31
+    19,
+    29
    ],
    "native": [
-    48,
-    32
+    38,
+    30
    ]
   },
   "blazestone": {
@@ -34,17 +34,17 @@
    "biome": "crags",
    "category": "natural",
    "morph": "crystal",
-   "x": 401,
+   "x": 2,
    "y": 2,
-   "w": 42,
-   "h": 31,
+   "w": 34,
+   "h": 40,
    "pivot": [
-    21,
-    30
+    17,
+    39
    ],
    "native": [
-    42,
-    31
+    34,
+    40
    ]
   },
   "cinderpod": {
@@ -55,17 +55,17 @@
    "biome": "crags",
    "category": "natural",
    "morph": "stone",
-   "x": 42,
+   "x": 258,
    "y": 2,
-   "w": 46,
-   "h": 33,
+   "w": 38,
+   "h": 30,
    "pivot": [
-    23,
-    32
+    19,
+    29
    ],
    "native": [
-    46,
-    33
+    38,
+    30
    ]
   },
   "cindershroom": {
@@ -76,17 +76,17 @@
    "biome": "crags",
    "category": "natural",
    "morph": "fungus",
-   "x": 138,
-   "y": 38,
-   "w": 43,
-   "h": 30,
+   "x": 74,
+   "y": 44,
+   "w": 34,
+   "h": 26,
    "pivot": [
-    21,
-    29
+    17,
+    25
    ],
    "native": [
-    43,
-    30
+    34,
+    26
    ]
   },
   "emberheart-geode": {
@@ -97,17 +97,17 @@
    "biome": "quarry",
    "category": "natural",
    "morph": "crystal",
-   "x": 183,
-   "y": 38,
-   "w": 38,
-   "h": 30,
+   "x": 38,
+   "y": 2,
+   "w": 34,
+   "h": 40,
    "pivot": [
-    19,
-    29
+    17,
+    39
    ],
    "native": [
-    38,
-    30
+    34,
+    40
    ]
   },
   "everbloom-chalice": {
@@ -118,17 +118,17 @@
    "biome": "forest",
    "category": "natural",
    "morph": "fungus",
-   "x": 267,
-   "y": 38,
-   "w": 38,
-   "h": 29,
+   "x": 150,
+   "y": 44,
+   "w": 32,
+   "h": 24,
    "pivot": [
-    19,
-    28
+    16,
+    23
    ],
    "native": [
-    38,
-    29
+    32,
+    24
    ]
   },
   "ferric-crystal": {
@@ -139,17 +139,17 @@
    "biome": "quarry",
    "category": "natural",
    "morph": "crystal",
-   "x": 223,
-   "y": 38,
-   "w": 42,
-   "h": 30,
+   "x": 74,
+   "y": 2,
+   "w": 34,
+   "h": 40,
    "pivot": [
-    21,
-    29
+    17,
+    39
    ],
    "native": [
-    42,
-    30
+    34,
+    40
    ]
   },
   "gloommoss": {
@@ -160,17 +160,17 @@
    "biome": "netherwood",
    "category": "natural",
    "morph": "moss",
-   "x": 307,
-   "y": 38,
-   "w": 51,
-   "h": 29,
+   "x": 450,
+   "y": 2,
+   "w": 34,
+   "h": 28,
    "pivot": [
-    25,
-    28
+    17,
+    27
    ],
    "native": [
-    51,
-    29
+    34,
+    28
    ]
   },
   "gravelpod": {
@@ -181,17 +181,17 @@
    "biome": "quarry",
    "category": "natural",
    "morph": "stone",
-   "x": 360,
-   "y": 38,
-   "w": 46,
-   "h": 29,
+   "x": 298,
+   "y": 2,
+   "w": 38,
+   "h": 30,
    "pivot": [
-    23,
-    28
+    19,
+    29
    ],
    "native": [
-    46,
-    29
+    38,
+    30
    ]
   },
   "hearthnut": {
@@ -202,17 +202,17 @@
    "biome": "forest",
    "category": "natural",
    "morph": "stone",
-   "x": 445,
+   "x": 338,
    "y": 2,
-   "w": 44,
-   "h": 31,
+   "w": 38,
+   "h": 30,
    "pivot": [
-    22,
-    30
+    19,
+    29
    ],
    "native": [
-    44,
-    31
+    38,
+    30
    ]
   },
   "honeycap": {
@@ -224,16 +224,16 @@
    "category": "natural",
    "morph": "fungus",
    "x": 2,
-   "y": 2,
-   "w": 38,
-   "h": 34,
+   "y": 44,
+   "w": 34,
+   "h": 28,
    "pivot": [
-    19,
-    33
+    17,
+    27
    ],
    "native": [
-    38,
-    34
+    34,
+    28
    ]
   },
   "meadowcrystal": {
@@ -244,17 +244,17 @@
    "biome": "meadow",
    "category": "natural",
    "morph": "crystal",
-   "x": 224,
+   "x": 110,
    "y": 2,
-   "w": 40,
-   "h": 32,
+   "w": 34,
+   "h": 40,
    "pivot": [
-    20,
-    31
+    17,
+    39
    ],
    "native": [
-    40,
-    32
+    34,
+    40
    ]
   },
   "nethercap": {
@@ -265,17 +265,17 @@
    "biome": "netherwood",
    "category": "natural",
    "morph": "fungus",
-   "x": 2,
-   "y": 38,
-   "w": 46,
-   "h": 31,
+   "x": 38,
+   "y": 44,
+   "w": 34,
+   "h": 28,
    "pivot": [
-    23,
-    30
+    17,
+    27
    ],
    "native": [
-    46,
-    31
+    34,
+    28
    ]
   },
   "nixie-torc": {
@@ -286,17 +286,17 @@
    "biome": "river",
    "category": "natural",
    "morph": "relic",
-   "x": 266,
+   "x": 378,
    "y": 2,
-   "w": 46,
-   "h": 32,
+   "w": 34,
+   "h": 30,
    "pivot": [
-    23,
-    31
+    17,
+    29
    ],
    "native": [
-    46,
-    32
+    34,
+    30
    ]
   },
   "orebud": {
@@ -307,17 +307,17 @@
    "biome": "quarry",
    "category": "natural",
    "morph": "crystal",
-   "x": 314,
+   "x": 146,
    "y": 2,
-   "w": 42,
-   "h": 32,
+   "w": 34,
+   "h": 40,
    "pivot": [
-    21,
-    31
+    17,
+    39
    ],
    "native": [
-    42,
-    32
+    34,
+    40
    ]
   },
   "quarrycap": {
@@ -328,17 +328,17 @@
    "biome": "quarry",
    "category": "natural",
    "morph": "fungus",
-   "x": 358,
-   "y": 2,
-   "w": 41,
-   "h": 32,
+   "x": 184,
+   "y": 44,
+   "w": 34,
+   "h": 24,
    "pivot": [
-    20,
-    31
+    17,
+    23
    ],
    "native": [
-    41,
-    32
+    34,
+    24
    ]
   },
   "reedcap": {
@@ -349,17 +349,17 @@
    "biome": "river",
    "category": "natural",
    "morph": "fungus",
-   "x": 90,
-   "y": 2,
-   "w": 39,
-   "h": 33,
+   "x": 220,
+   "y": 44,
+   "w": 34,
+   "h": 24,
    "pivot": [
-    19,
-    32
+    17,
+    23
    ],
    "native": [
-    39,
-    33
+    34,
+    24
    ]
   },
   "streampearl": {
@@ -370,17 +370,17 @@
    "biome": "river",
    "category": "natural",
    "morph": "shell",
-   "x": 131,
-   "y": 2,
-   "w": 41,
-   "h": 33,
+   "x": 110,
+   "y": 44,
+   "w": 38,
+   "h": 26,
    "pivot": [
-    20,
-    32
+    19,
+    25
    ],
    "native": [
-    41,
-    33
+    38,
+    26
    ]
   },
   "thornhalo": {
@@ -391,17 +391,17 @@
    "biome": "netherwood",
    "category": "natural",
    "morph": "relic",
-   "x": 50,
-   "y": 38,
-   "w": 49,
-   "h": 31,
+   "x": 414,
+   "y": 2,
+   "w": 34,
+   "h": 30,
    "pivot": [
-    24,
-    30
+    17,
+    29
    ],
    "native": [
-    49,
-    31
+    34,
+    30
    ]
   },
   "umbral-amethyst": {
@@ -412,17 +412,17 @@
    "biome": "netherwood",
    "category": "natural",
    "morph": "crystal",
-   "x": 101,
-   "y": 38,
-   "w": 35,
-   "h": 31,
+   "x": 182,
+   "y": 2,
+   "w": 34,
+   "h": 40,
    "pivot": [
     17,
-    30
+    39
    ],
    "native": [
-    35,
-    31
+    34,
+    40
    ]
   }
  }

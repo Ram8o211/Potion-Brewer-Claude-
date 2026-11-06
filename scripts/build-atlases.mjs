@@ -4,15 +4,16 @@
 //   node scripts/build-atlases.mjs
 //
 // Pipeline, per species (all deterministic, seeded by the species key):
-//   1. source   — the species' ordinary and Arcane cells, sliced from the
-//                 sheet by scripts/slice-ingredient-sheet.py (cells.json).
-//   2. clean    — hard alpha (no soft or anti-aliased edges), stray specks
-//                 removed, colours snapped to a per-sprite palette of
-//                 deliberate clusters, a one-pixel ink outline.
-//   3. arcane   — the Arcane sprite keeps the species' silhouette and adds
-//                 baked magic that reads at icon size: an emissive violet
-//                 rim lit from the upper left, luminous rune veins through
-//                 its body and a few four-point sparkles.
+//   1. source   — the species' ordinary and Arcane 24×24 sprites, sliced
+//                 pixel for pixel from the ingredient atlas sheets
+//                 (art/ingredients/source/atlas-*.png) by
+//                 scripts/slice-ingredient-atlas.py into source/native/.
+//   2. exact    — used exactly as drawn: cropped to their pixels and each
+//                 pixel doubled (no recolouring, no cleaning); the Arcane
+//                 sprite keeps its baked sparkles and stands where the
+//                 ordinary one does.
+//   3. arcane   — growth stages and seeds of the Arcane form add baked
+//                 magic procedurally (arcanize).
 //   4. seed     — a species-specific propagation form (seed, winged seed,
 //                 pip, bulb, spore sac, crystal chip, spat shell or polyp)
 //                 in the species' own colours.
@@ -41,8 +42,6 @@ const INK = 0xff1a1016;
 
 // Biome order on the sheet (row-major blocks of three)
 const SHEET_BIOMES = ['forest', 'meadow', 'river', 'quarry', 'netherwood', 'crags', 'moonfen', 'skyshard', 'morphgrove', 'veilhollow', 'ghostglass', 'chronoglass'];
-// cells whose Arcane row on the sheet shows another object: the Arcane sprite is made from the ordinary one
-const ARCANE_FROM_ORDINARY = new Set(['ghostglass:2', 'ghostglass:3', 'chronoglass:3']);
 
 // ---------------------------------------------------------------- pixel helpers
 
@@ -126,44 +125,6 @@ function components(im) {
 /** The ink a pixel on the silhouette's edge takes: its own colour, very dark. */
 const inkOf = (c) => mix(rgb(R(c) * 0.3, G(c) * 0.3, B(c) * 0.3), INK, 0.55);
 
-/** Step 2: a cleaned, crisp sprite from a raw cell. */
-function clean(raw, colors = 22) {
-  const im = img(raw.w, raw.h);
-  // hard alpha: no soft halo, no half-transparent pixels
-  for (let k = 0; k < raw.px.length; k++) { const c = raw.px[k]; if (A(c) >= 110) im.px[k] = (c | 0xff000000) >>> 0; }
-  // stray specks (from a neighbouring cell or the old soft glow) go
-  const comps = components(im);
-  const keep = new Set(comps[0] || []);
-  for (const c of comps.slice(1)) if (c.length >= 10) for (const k of c) keep.add(k);
-  for (let k = 0; k < im.px.length; k++) if (!keep.has(k)) im.px[k] = 0;
-  // deliberate clusters: snap to a small palette of the sprite's own colours
-  const cols = [];
-  for (const c of im.px) if (A(c)) cols.push(c);
-  const pal = medianCut(cols, colors);
-  for (let k = 0; k < im.px.length; k++) if (A(im.px[k])) im.px[k] = nearest(pal, im.px[k]);
-  // lone pixels unlike all four neighbours take the commonest neighbour colour (no noise)
-  const src = Uint32Array.from(im.px);
-  for (let y = 1; y < im.h - 1; y++) for (let x = 1; x < im.w - 1; x++) {
-    const c = src[y * im.w + x];
-    if (!A(c)) continue;
-    const n = [src[y * im.w + x - 1], src[y * im.w + x + 1], src[(y - 1) * im.w + x], src[(y + 1) * im.w + x]];
-    if (n.some((q) => !A(q)) || n.includes(c)) continue;
-    const counts = new Map();
-    for (const q of n) counts.set(q, (counts.get(q) || 0) + 1);
-    const [best, cnt] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
-    if (cnt >= 3) im.px[y * im.w + x] = best;
-  }
-  // a crisp one-pixel ink outline round the silhouette
-  const out = pad(trim(im), 1, 1, 1, 1);
-  const base = Uint32Array.from(out.px);
-  for (let y = 0; y < out.h; y++) for (let x = 0; x < out.w; x++) {
-    const c = base[y * out.w + x];
-    if (!A(c)) continue;
-    const edge = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => { const q = x + dx, r = y + dy; return q < 0 || r < 0 || q >= out.w || r >= out.h || !A(base[r * out.w + q]); });
-    if (edge && lum(c) > 0.12) out.px[y * out.w + x] = inkOf(c);
-  }
-  return trim(out);
-}
 
 /** The colours a species is made of: its body, its accent and its green (if any). */
 function paletteOf(im) {
@@ -464,9 +425,37 @@ function pack(frames, width) {
 
 // ---------------------------------------------------------------- build
 
-const cells = JSON.parse(readFileSync(new URL('cells.json', SRC), 'utf8'));
-void cells;
-const cellPath = (b, row, col) => new URL(`cells/b${String(b).padStart(2, '0')}_r${row}_c${col}.png`, SRC);
+// the species' native 24×24 sprites, sliced pixel for pixel from the ingredient
+// atlas sheets by scripts/slice-ingredient-atlas.py, used exactly as drawn
+const nativePath = (key) => new URL(`native/${key}.png`, SRC);
+/** Art pixels per native sprite pixel (the wilds draw ATLAS_K art pixels to a scene pixel). */
+const UP = 2;
+/** Opaque bounds of an image. */
+function bounds(im) {
+  let x0 = im.w, y0 = im.h, x1 = -1, y1 = -1;
+  for (let y = 0; y < im.h; y++) for (let x = 0; x < im.w; x++) if (A(im.px[y * im.w + x])) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+  return { x0, y0, x1, y1 };
+}
+/** Each pixel as a k×k block (no resampling). */
+function upscale(im, k) {
+  const o = img(im.w * k, im.h * k);
+  for (let y = 0; y < o.h; y++) for (let x = 0; x < o.w; x++) o.px[y * o.w + x] = im.px[Math.floor(y / k) * im.w + Math.floor(x / k)];
+  return o;
+}
+/**
+ * A species' ordinary and Arcane sprites from its native pair: the ordinary
+ * cropped to itself; the Arcane to itself and its sparkles, its pivot set
+ * where the ordinary one stands, so both plants stand on the same spot.
+ */
+function nativePair(key) {
+  const on = readPNG(nativePath(key)), an = readPNG(nativePath(`${key}@arcane`));
+  const o = bounds(on), a = bounds(an);
+  const u = { x0: Math.min(o.x0, a.x0), y0: Math.min(o.y0, a.y0), x1: Math.max(o.x1, a.x1), y1: Math.max(o.y1, a.y1) };
+  const ordinary = upscale(crop(on, o.x0, o.y0, o.x1 - o.x0 + 1, o.y1 - o.y0 + 1), UP);
+  const arcane = upscale(crop(an, u.x0, u.y0, u.x1 - u.x0 + 1, u.y1 - u.y0 + 1), UP);
+  const pivot = [UP * o.x0 + (o.x1 - o.x0 + 1) - UP * u.x0, UP * (o.y1 + 1) - 1 - UP * u.y0];
+  return { ordinary, arcane, pivot };
+}
 
 const FLORA = new Set(['leaf', 'herb', 'grass', 'flower', 'fruit', 'berry', 'vine', 'seedpod', 'root', 'bark']);
 /** @type {Record<string, any[]>} */
@@ -477,10 +466,7 @@ const manifestSpecies = {};
 const speciesColors = {};
 
 for (const sp of SPECIES_DATA) {
-  const b = SHEET_BIOMES.indexOf(sp.biome), row = sp.slot < 5 ? 0 : 1, col = sp.slot % 5;
-  const ordinary = clean(readPNG(cellPath(b, row, col)));
-  const arcSrc = ARCANE_FROM_ORDINARY.has(`${sp.biome}:${sp.slot}`) ? ordinary : clean(readPNG(cellPath(b, row + 2, col)));
-  const arcane = arcanize(arcSrc, sp.key);
+  const { ordinary, arcane, pivot: arcPivot } = nativePair(sp.key);
   const pal = paletteOf(ordinary);
   const seed = seedOf(sp, pal);
   const seedArc = arcanize(seed.im, sp.key + ':seed', { veins: 0, sparks: 1, tint: 0.25 });
@@ -494,7 +480,7 @@ for (const sp of SPECIES_DATA) {
     stages: [0, 1, 2, 3].map((i) => `${sp.key}@stage${i}`), stagesArcane: [0, 1, 2, 3].map((i) => `${sp.key}@stage${i}-arcane`),
   };
   addFrame(`ingredients-${sp.category}-${fam}`, { id: ids.sprite, im: ordinary, ...meta, arcane: false, kind: 'sprite' });
-  addFrame(`ingredients-arcane-${sp.category}`, { id: ids.arcane, im: arcane, ...meta, arcane: true, kind: 'sprite' });
+  addFrame(`ingredients-arcane-${sp.category}`, { id: ids.arcane, im: arcane, ...meta, arcane: true, kind: 'sprite', pivot: arcPivot });
   addFrame('seeds', { id: ids.seed, im: seed.im, ...meta, arcane: false, kind: 'seed', form: seed.kind });
   addFrame('seeds', { id: ids.seedArcane, im: seedArc, ...meta, arcane: true, kind: 'seed', form: seed.kind });
   stages.forEach((im, i) => addFrame(`growth-${nat ? 'natural' : 'exotic'}`, { id: ids.stages[i], im, ...meta, arcane: false, kind: 'stage', stage: i }));
@@ -521,7 +507,7 @@ for (const [name, frames] of Object.entries(groups).sort()) {
     frames: Object.fromEntries(frames.sort((a, b) => a.id.localeCompare(b.id)).map((f) => [f.id, {
       species: f.species, kind: f.kind, rarity: f.rarity, arcane: f.arcane, biome: f.biome, category: f.category, morph: f.morph,
       ...(f.kind === 'stage' ? { stage: f.stage } : {}), ...(f.form ? { form: f.form } : {}),
-      x: f.x, y: f.y, w: f.im.w, h: f.im.h, pivot: [Math.floor(f.im.w / 2), f.im.h - 1], native: [f.im.w, f.im.h],
+      x: f.x, y: f.y, w: f.im.w, h: f.im.h, pivot: f.pivot || [Math.floor(f.im.w / 2), f.im.h - 1], native: [f.im.w, f.im.h],
     }])),
   };
   writeFileSync(new URL(`${name}.json`, OUT), JSON.stringify(meta, null, 1) + '\n');

@@ -2,7 +2,7 @@
  "version": 1,
  "atlas": "ingredients-exotic-fungi-minerals.png",
  "width": 512,
- "height": 96,
+ "height": 80,
  "padding": 2,
  "frames": {
   "aeon-circlet": {
@@ -13,17 +13,17 @@
    "biome": "chronoglass",
    "category": "exotic",
    "morph": "relic",
-   "x": 2,
-   "y": 36,
-   "w": 54,
-   "h": 29,
+   "x": 432,
+   "y": 2,
+   "w": 34,
+   "h": 30,
    "pivot": [
-    27,
-    28
+    17,
+    29
    ],
    "native": [
-    54,
-    29
+    34,
+    30
    ]
   },
   "chronoglass-shard": {
@@ -36,15 +36,15 @@
    "morph": "crystal",
    "x": 2,
    "y": 2,
-   "w": 39,
-   "h": 32,
+   "w": 34,
+   "h": 40,
    "pivot": [
-    19,
-    31
+    17,
+    39
    ],
    "native": [
-    39,
-    32
+    34,
+    40
    ]
   },
   "cloudcap": {
@@ -55,17 +55,17 @@
    "biome": "skyshard",
    "category": "exotic",
    "morph": "fungus",
-   "x": 180,
-   "y": 36,
-   "w": 40,
-   "h": 28,
+   "x": 74,
+   "y": 44,
+   "w": 34,
+   "h": 26,
    "pivot": [
-    20,
-    27
+    17,
+    25
    ],
    "native": [
-    40,
-    28
+    34,
+    26
    ]
   },
   "cloudprism": {
@@ -76,17 +76,17 @@
    "biome": "skyshard",
    "category": "exotic",
    "morph": "crystal",
-   "x": 58,
-   "y": 36,
+   "x": 38,
+   "y": 2,
    "w": 34,
-   "h": 29,
+   "h": 40,
    "pivot": [
     17,
-    28
+    39
    ],
    "native": [
     34,
-    29
+    40
    ]
   },
   "eclipse-eye": {
@@ -97,17 +97,17 @@
    "biome": "veilhollow",
    "category": "exotic",
    "morph": "relic",
-   "x": 222,
-   "y": 36,
-   "w": 35,
-   "h": 28,
+   "x": 110,
+   "y": 44,
+   "w": 38,
+   "h": 26,
    "pivot": [
-    17,
-    27
+    19,
+    25
    ],
    "native": [
-    35,
-    28
+    38,
+    26
    ]
   },
   "fenmilk-cap": {
@@ -118,17 +118,17 @@
    "biome": "moonfen",
    "category": "exotic",
    "morph": "fungus",
-   "x": 259,
-   "y": 36,
-   "w": 37,
-   "h": 28,
+   "x": 346,
+   "y": 44,
+   "w": 34,
+   "h": 24,
    "pivot": [
-    18,
-    27
+    17,
+    23
    ],
    "native": [
-    37,
-    28
+    34,
+    24
    ]
   },
   "ghostcrown-coral": {
@@ -139,17 +139,17 @@
    "biome": "ghostglass",
    "category": "exotic",
    "morph": "coral",
-   "x": 363,
+   "x": 208,
    "y": 2,
-   "w": 52,
-   "h": 30,
+   "w": 36,
+   "h": 34,
    "pivot": [
-    26,
-    29
+    18,
+    33
    ],
    "native": [
-    52,
-    30
+    36,
+    34
    ]
   },
   "ghostglass-coral": {
@@ -160,17 +160,17 @@
    "biome": "ghostglass",
    "category": "exotic",
    "morph": "coral",
-   "x": 43,
+   "x": 246,
    "y": 2,
-   "w": 52,
-   "h": 32,
+   "w": 36,
+   "h": 34,
    "pivot": [
-    26,
-    31
+    18,
+    33
    ],
    "native": [
-    52,
-    32
+    36,
+    34
    ]
   },
   "glasscap": {
@@ -181,17 +181,17 @@
    "biome": "ghostglass",
    "category": "exotic",
    "morph": "fungus",
-   "x": 417,
-   "y": 2,
-   "w": 37,
-   "h": 30,
+   "x": 382,
+   "y": 44,
+   "w": 34,
+   "h": 24,
    "pivot": [
-    18,
-    29
+    17,
+    23
    ],
    "native": [
-    37,
-    30
+    34,
+    24
    ]
   },
   "hollowcap": {
@@ -202,17 +202,17 @@
    "biome": "veilhollow",
    "category": "exotic",
    "morph": "fungus",
-   "x": 94,
-   "y": 36,
-   "w": 42,
-   "h": 29,
+   "x": 150,
+   "y": 44,
+   "w": 34,
+   "h": 26,
    "pivot": [
-    21,
-    28
+    17,
+    25
    ],
    "native": [
-    42,
-    29
+    34,
+    26
    ]
   },
   "hourglass-of-ages": {
@@ -223,17 +223,17 @@
    "biome": "chronoglass",
    "category": "exotic",
    "morph": "relic",
-   "x": 97,
+   "x": 182,
    "y": 2,
-   "w": 29,
-   "h": 32,
+   "w": 24,
+   "h": 36,
    "pivot": [
-    14,
-    31
+    12,
+    35
    ],
    "native": [
-    29,
-    32
+    24,
+    36
    ]
   },
   "mimic-eye": {
@@ -244,17 +244,17 @@
    "biome": "morphgrove",
    "category": "exotic",
    "morph": "relic",
-   "x": 298,
-   "y": 36,
-   "w": 39,
-   "h": 28,
+   "x": 186,
+   "y": 44,
+   "w": 38,
+   "h": 26,
    "pivot": [
     19,
-    27
+    25
    ],
    "native": [
-    39,
-    28
+    38,
+    26
    ]
   },
   "mirepod-shell": {
@@ -265,17 +265,17 @@
    "biome": "moonfen",
    "category": "exotic",
    "morph": "shell",
-   "x": 84,
-   "y": 67,
+   "x": 226,
+   "y": 44,
    "w": 38,
-   "h": 25,
+   "h": 26,
    "pivot": [
     19,
-    24
+    25
    ],
    "native": [
     38,
-    25
+    26
    ]
   },
   "mistpebble": {
@@ -286,16 +286,16 @@
    "biome": "veilhollow",
    "category": "exotic",
    "morph": "stone",
-   "x": 456,
+   "x": 468,
    "y": 2,
-   "w": 44,
+   "w": 38,
    "h": 30,
    "pivot": [
-    22,
+    19,
     29
    ],
    "native": [
-    44,
+    38,
     30
    ]
   },
@@ -307,113 +307,8 @@
    "biome": "ghostglass",
    "category": "exotic",
    "morph": "shell",
-   "x": 265,
-   "y": 2,
-   "w": 43,
-   "h": 31,
-   "pivot": [
-    21,
-    30
-   ],
-   "native": [
-    43,
-    31
-   ]
-  },
-  "phantom-pearl": {
-   "species": "phantom-pearl",
-   "kind": "sprite",
-   "rarity": "unique",
-   "arcane": false,
-   "biome": "ghostglass",
-   "category": "exotic",
-   "morph": "shell",
-   "x": 339,
-   "y": 36,
-   "w": 40,
-   "h": 28,
-   "pivot": [
-    20,
-    27
-   ],
-   "native": [
-    40,
-    28
-   ]
-  },
-  "reefmoss": {
-   "species": "reefmoss",
-   "kind": "sprite",
-   "rarity": "common",
-   "arcane": false,
-   "biome": "ghostglass",
-   "category": "exotic",
-   "morph": "coral",
-   "x": 128,
-   "y": 2,
-   "w": 50,
-   "h": 32,
-   "pivot": [
-    25,
-    31
-   ],
-   "native": [
-    50,
-    32
-   ]
-  },
-  "sandskirt-cap": {
-   "species": "sandskirt-cap",
-   "kind": "sprite",
-   "rarity": "common",
-   "arcane": false,
-   "biome": "chronoglass",
-   "category": "exotic",
-   "morph": "fungus",
-   "x": 138,
-   "y": 36,
-   "w": 40,
-   "h": 29,
-   "pivot": [
-    20,
-    28
-   ],
-   "native": [
-    40,
-    29
-   ]
-  },
-  "shapecap": {
-   "species": "shapecap",
-   "kind": "sprite",
-   "rarity": "common",
-   "arcane": false,
-   "biome": "morphgrove",
-   "category": "exotic",
-   "morph": "fungus",
-   "x": 2,
-   "y": 67,
-   "w": 40,
-   "h": 26,
-   "pivot": [
-    20,
-    25
-   ],
-   "native": [
-    40,
-    26
-   ]
-  },
-  "skyshard-geode": {
-   "species": "skyshard-geode",
-   "kind": "sprite",
-   "rarity": "unique",
-   "arcane": false,
-   "biome": "skyshard",
-   "category": "exotic",
-   "morph": "crystal",
-   "x": 44,
-   "y": 67,
+   "x": 266,
+   "y": 44,
    "w": 38,
    "h": 26,
    "pivot": [
@@ -425,6 +320,111 @@
     26
    ]
   },
+  "phantom-pearl": {
+   "species": "phantom-pearl",
+   "kind": "sprite",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "ghostglass",
+   "category": "exotic",
+   "morph": "shell",
+   "x": 306,
+   "y": 44,
+   "w": 38,
+   "h": 26,
+   "pivot": [
+    19,
+    25
+   ],
+   "native": [
+    38,
+    26
+   ]
+  },
+  "reefmoss": {
+   "species": "reefmoss",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "ghostglass",
+   "category": "exotic",
+   "morph": "coral",
+   "x": 284,
+   "y": 2,
+   "w": 36,
+   "h": 34,
+   "pivot": [
+    18,
+    33
+   ],
+   "native": [
+    36,
+    34
+   ]
+  },
+  "sandskirt-cap": {
+   "species": "sandskirt-cap",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "chronoglass",
+   "category": "exotic",
+   "morph": "fungus",
+   "x": 418,
+   "y": 44,
+   "w": 34,
+   "h": 24,
+   "pivot": [
+    17,
+    23
+   ],
+   "native": [
+    34,
+    24
+   ]
+  },
+  "shapecap": {
+   "species": "shapecap",
+   "kind": "sprite",
+   "rarity": "common",
+   "arcane": false,
+   "biome": "morphgrove",
+   "category": "exotic",
+   "morph": "fungus",
+   "x": 38,
+   "y": 44,
+   "w": 34,
+   "h": 28,
+   "pivot": [
+    17,
+    27
+   ],
+   "native": [
+    34,
+    28
+   ]
+  },
+  "skyshard-geode": {
+   "species": "skyshard-geode",
+   "kind": "sprite",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "skyshard",
+   "category": "exotic",
+   "morph": "crystal",
+   "x": 74,
+   "y": 2,
+   "w": 34,
+   "h": 40,
+   "pivot": [
+    17,
+    39
+   ],
+   "native": [
+    34,
+    40
+   ]
+  },
   "sleepglass": {
    "species": "sleepglass",
    "kind": "sprite",
@@ -433,17 +433,17 @@
    "biome": "moonfen",
    "category": "exotic",
    "morph": "crystal",
-   "x": 428,
-   "y": 36,
-   "w": 37,
-   "h": 27,
+   "x": 110,
+   "y": 2,
+   "w": 34,
+   "h": 40,
    "pivot": [
-    18,
-    26
+    17,
+    39
    ],
    "native": [
-    37,
-    27
+    34,
+    40
    ]
   },
   "spectral-anemone": {
@@ -454,17 +454,17 @@
    "biome": "ghostglass",
    "category": "exotic",
    "morph": "coral",
-   "x": 310,
+   "x": 322,
    "y": 2,
-   "w": 51,
-   "h": 31,
+   "w": 36,
+   "h": 34,
    "pivot": [
-    25,
-    30
+    18,
+    33
    ],
    "native": [
-    51,
-    31
+    36,
+    34
    ]
   },
   "sundial-stone": {
@@ -475,17 +475,17 @@
    "biome": "chronoglass",
    "category": "exotic",
    "morph": "relic",
-   "x": 180,
+   "x": 360,
    "y": 2,
-   "w": 45,
-   "h": 32,
+   "w": 34,
+   "h": 34,
    "pivot": [
-    22,
-    31
+    17,
+    33
    ],
    "native": [
-    45,
-    32
+    34,
+    34
    ]
   },
   "veil-circlet": {
@@ -496,17 +496,17 @@
    "biome": "veilhollow",
    "category": "exotic",
    "morph": "relic",
-   "x": 381,
-   "y": 36,
-   "w": 45,
-   "h": 28,
+   "x": 2,
+   "y": 44,
+   "w": 34,
+   "h": 30,
    "pivot": [
-    22,
-    27
+    17,
+    29
    ],
    "native": [
-    45,
-    28
+    34,
+    30
    ]
   },
   "veilglass": {
@@ -517,17 +517,17 @@
    "biome": "veilhollow",
    "category": "exotic",
    "morph": "crystal",
-   "x": 227,
+   "x": 146,
    "y": 2,
-   "w": 36,
-   "h": 32,
+   "w": 34,
+   "h": 40,
    "pivot": [
-    18,
-    31
+    17,
+    39
    ],
    "native": [
-    36,
-    32
+    34,
+    40
    ]
   },
   "wisp-reliquary": {
@@ -538,17 +538,17 @@
    "biome": "moonfen",
    "category": "exotic",
    "morph": "relic",
-   "x": 467,
-   "y": 36,
-   "w": 42,
-   "h": 27,
+   "x": 396,
+   "y": 2,
+   "w": 34,
+   "h": 34,
    "pivot": [
-    21,
-    26
+    17,
+    33
    ],
    "native": [
-    42,
-    27
+    34,
+    34
    ]
   }
  }

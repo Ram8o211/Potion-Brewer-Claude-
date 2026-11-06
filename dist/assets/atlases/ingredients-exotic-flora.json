@@ -2,7 +2,7 @@
  "version": 1,
  "atlas": "ingredients-exotic-flora.png",
  "width": 512,
- "height": 128,
+ "height": 112,
  "padding": 2,
  "frames": {
   "airstar": {
@@ -13,17 +13,17 @@
    "biome": "skyshard",
    "category": "exotic",
    "morph": "flower",
-   "x": 221,
-   "y": 67,
-   "w": 39,
-   "h": 27,
+   "x": 2,
+   "y": 2,
+   "w": 32,
+   "h": 38,
    "pivot": [
-    19,
-    26
+    16,
+    37
    ],
    "native": [
-    39,
-    27
+    32,
+    38
    ]
   },
   "chronovine": {
@@ -34,17 +34,17 @@
    "biome": "chronoglass",
    "category": "exotic",
    "morph": "vine",
-   "x": 411,
-   "y": 35,
-   "w": 41,
-   "h": 28,
+   "x": 214,
+   "y": 2,
+   "w": 30,
+   "h": 36,
    "pivot": [
-    20,
-    27
+    15,
+    35
    ],
    "native": [
-    41,
-    28
+    30,
+    36
    ]
   },
   "coralberry": {
@@ -55,8 +55,29 @@
    "biome": "ghostglass",
    "category": "exotic",
    "morph": "berry",
-   "x": 454,
-   "y": 35,
+   "x": 478,
+   "y": 2,
+   "w": 28,
+   "h": 34,
+   "pivot": [
+    14,
+    33
+   ],
+   "native": [
+    28,
+    34
+   ]
+  },
+  "crownbloom": {
+   "species": "crownbloom",
+   "kind": "sprite",
+   "rarity": "unique",
+   "arcane": false,
+   "biome": "morphgrove",
+   "category": "exotic",
+   "morph": "flower",
+   "x": 246,
+   "y": 42,
    "w": 38,
    "h": 28,
    "pivot": [
@@ -68,27 +89,6 @@
     28
    ]
   },
-  "crownbloom": {
-   "species": "crownbloom",
-   "kind": "sprite",
-   "rarity": "unique",
-   "arcane": false,
-   "biome": "morphgrove",
-   "category": "exotic",
-   "morph": "flower",
-   "x": 395,
-   "y": 67,
-   "w": 52,
-   "h": 26,
-   "pivot": [
-    26,
-    25
-   ],
-   "native": [
-    52,
-    26
-   ]
-  },
   "dreamberry": {
    "species": "dreamberry",
    "kind": "sprite",
@@ -97,17 +97,17 @@
    "biome": "moonfen",
    "category": "exotic",
    "morph": "berry",
-   "x": 56,
-   "y": 35,
-   "w": 39,
-   "h": 29,
+   "x": 2,
+   "y": 42,
+   "w": 28,
+   "h": 34,
    "pivot": [
-    19,
-    28
+    14,
+    33
    ],
    "native": [
-    39,
-    29
+    28,
+    34
    ]
   },
   "duskbell": {
@@ -118,17 +118,17 @@
    "biome": "moonfen",
    "category": "exotic",
    "morph": "flower",
-   "x": 97,
-   "y": 35,
-   "w": 46,
-   "h": 29,
+   "x": 120,
+   "y": 42,
+   "w": 30,
+   "h": 30,
    "pivot": [
-    23,
-    28
+    15,
+    29
    ],
    "native": [
-    46,
-    29
+    30,
+    30
    ]
   },
   "epochbloom": {
@@ -139,17 +139,17 @@
    "biome": "chronoglass",
    "category": "exotic",
    "morph": "flower",
-   "x": 192,
+   "x": 246,
    "y": 2,
-   "w": 48,
-   "h": 30,
+   "w": 38,
+   "h": 36,
    "pivot": [
-    24,
-    29
+    19,
+    35
    ],
    "native": [
-    48,
-    30
+    38,
+    36
    ]
   },
   "featherpetal": {
@@ -160,17 +160,17 @@
    "biome": "skyshard",
    "category": "exotic",
    "morph": "flower",
-   "x": 242,
+   "x": 36,
    "y": 2,
-   "w": 40,
-   "h": 30,
+   "w": 36,
+   "h": 38,
    "pivot": [
-    20,
-    29
+    18,
+    37
    ],
    "native": [
-    40,
-    30
+    36,
+    38
    ]
   },
   "formblossom": {
@@ -181,17 +181,17 @@
    "biome": "morphgrove",
    "category": "exotic",
    "morph": "flower",
-   "x": 2,
-   "y": 67,
-   "w": 44,
-   "h": 28,
+   "x": 74,
+   "y": 2,
+   "w": 36,
+   "h": 38,
    "pivot": [
-    22,
-    27
+    18,
+    37
    ],
    "native": [
-    44,
-    28
+    36,
+    38
    ]
   },
   "ghostbud": {
@@ -202,17 +202,17 @@
    "biome": "veilhollow",
    "category": "exotic",
    "morph": "flower",
-   "x": 145,
-   "y": 35,
-   "w": 37,
-   "h": 29,
+   "x": 112,
+   "y": 2,
+   "w": 32,
+   "h": 38,
    "pivot": [
-    18,
-    28
+    16,
+    37
    ],
    "native": [
-    37,
-    29
+    32,
+    38
    ]
   },
   "graftberry": {
@@ -223,17 +223,17 @@
    "biome": "morphgrove",
    "category": "exotic",
    "morph": "berry",
-   "x": 449,
-   "y": 67,
-   "w": 42,
-   "h": 26,
+   "x": 32,
+   "y": 42,
+   "w": 28,
+   "h": 34,
    "pivot": [
-    21,
-    25
+    14,
+    33
    ],
    "native": [
-    42,
-    26
+    28,
+    34
    ]
   },
   "hollowbloom": {
@@ -244,17 +244,17 @@
    "biome": "veilhollow",
    "category": "exotic",
    "morph": "flower",
-   "x": 2,
-   "y": 2,
-   "w": 45,
-   "h": 31,
+   "x": 286,
+   "y": 42,
+   "w": 38,
+   "h": 28,
    "pivot": [
-    22,
-    30
+    19,
+    27
    ],
    "native": [
-    45,
-    31
+    38,
+    28
    ]
   },
   "hourberry": {
@@ -265,17 +265,17 @@
    "biome": "chronoglass",
    "category": "exotic",
    "morph": "berry",
-   "x": 262,
-   "y": 67,
-   "w": 44,
-   "h": 27,
+   "x": 286,
+   "y": 2,
+   "w": 30,
+   "h": 36,
    "pivot": [
-    22,
-    26
+    15,
+    35
    ],
    "native": [
-    44,
-    27
+    30,
+    36
    ]
   },
   "moonlotus": {
@@ -286,17 +286,17 @@
    "biome": "moonfen",
    "category": "exotic",
    "morph": "flower",
-   "x": 284,
-   "y": 2,
-   "w": 46,
-   "h": 30,
+   "x": 326,
+   "y": 42,
+   "w": 38,
+   "h": 28,
    "pivot": [
-    23,
-    29
+    19,
+    27
    ],
    "native": [
-    46,
-    30
+    38,
+    28
    ]
   },
   "moonreed": {
@@ -307,17 +307,17 @@
    "biome": "moonfen",
    "category": "exotic",
    "morph": "grass",
-   "x": 332,
-   "y": 2,
-   "w": 49,
-   "h": 30,
+   "x": 366,
+   "y": 42,
+   "w": 38,
+   "h": 28,
    "pivot": [
-    24,
-    29
+    19,
+    27
    ],
    "native": [
-    49,
-    30
+    38,
+    28
    ]
   },
   "moonveil-bloom": {
@@ -328,17 +328,17 @@
    "biome": "moonfen",
    "category": "exotic",
    "morph": "flower",
-   "x": 2,
-   "y": 97,
-   "w": 44,
-   "h": 26,
+   "x": 406,
+   "y": 42,
+   "w": 38,
+   "h": 28,
    "pivot": [
-    22,
-    25
+    19,
+    27
    ],
    "native": [
-    44,
-    26
+    38,
+    28
    ]
   },
   "morphleaf": {
@@ -349,17 +349,17 @@
    "biome": "morphgrove",
    "category": "exotic",
    "morph": "leaf",
-   "x": 48,
-   "y": 67,
-   "w": 46,
-   "h": 28,
+   "x": 318,
+   "y": 2,
+   "w": 30,
+   "h": 36,
    "pivot": [
-    23,
-    27
+    15,
+    35
    ],
    "native": [
-    46,
-    28
+    30,
+    36
    ]
   },
   "pendulum-pods": {
@@ -370,17 +370,17 @@
    "biome": "chronoglass",
    "category": "exotic",
    "morph": "vine",
-   "x": 184,
-   "y": 35,
-   "w": 45,
-   "h": 29,
+   "x": 350,
+   "y": 2,
+   "w": 30,
+   "h": 36,
    "pivot": [
-    22,
-    28
+    15,
+    35
    ],
    "native": [
-    45,
-    29
+    30,
+    36
    ]
   },
   "polymorph-lotus": {
@@ -391,17 +391,17 @@
    "biome": "morphgrove",
    "category": "exotic",
    "morph": "flower",
-   "x": 231,
-   "y": 35,
-   "w": 46,
-   "h": 29,
+   "x": 446,
+   "y": 42,
+   "w": 38,
+   "h": 28,
    "pivot": [
-    23,
-    28
+    19,
+    27
    ],
    "native": [
-    46,
-    29
+    38,
+    28
    ]
   },
   "reefbud": {
@@ -412,17 +412,17 @@
    "biome": "ghostglass",
    "category": "exotic",
    "morph": "flower",
-   "x": 383,
+   "x": 146,
    "y": 2,
-   "w": 40,
-   "h": 30,
+   "w": 32,
+   "h": 38,
    "pivot": [
-    20,
-    29
+    16,
+    37
    ],
    "native": [
-    40,
-    30
+    32,
+    38
    ]
   },
   "shellfern": {
@@ -433,17 +433,17 @@
    "biome": "ghostglass",
    "category": "exotic",
    "morph": "leaf",
-   "x": 49,
+   "x": 382,
    "y": 2,
-   "w": 42,
-   "h": 31,
+   "w": 30,
+   "h": 36,
    "pivot": [
-    21,
-    30
+    15,
+    35
    ],
    "native": [
-    42,
-    31
+    30,
+    36
    ]
   },
   "shifting-root": {
@@ -454,17 +454,17 @@
    "biome": "morphgrove",
    "category": "exotic",
    "morph": "root",
-   "x": 279,
-   "y": 35,
-   "w": 46,
-   "h": 29,
+   "x": 152,
+   "y": 42,
+   "w": 28,
+   "h": 30,
    "pivot": [
-    23,
-    28
+    14,
+    29
    ],
    "native": [
-    46,
-    29
+    28,
+    30
    ]
   },
   "shroud-orchid": {
@@ -475,17 +475,17 @@
    "biome": "veilhollow",
    "category": "exotic",
    "morph": "flower",
-   "x": 93,
-   "y": 2,
-   "w": 47,
-   "h": 31,
+   "x": 182,
+   "y": 42,
+   "w": 30,
+   "h": 30,
    "pivot": [
-    23,
-    30
+    15,
+    29
    ],
    "native": [
-    47,
-    31
+    30,
+    30
    ]
   },
   "skyberry": {
@@ -496,17 +496,17 @@
    "biome": "skyshard",
    "category": "exotic",
    "morph": "berry",
-   "x": 48,
-   "y": 97,
-   "w": 42,
-   "h": 26,
+   "x": 62,
+   "y": 42,
+   "w": 28,
+   "h": 34,
    "pivot": [
-    21,
-    25
+    14,
+    33
    ],
    "native": [
-    42,
-    26
+    28,
+    34
    ]
   },
   "skyspray": {
@@ -517,17 +517,17 @@
    "biome": "skyshard",
    "category": "exotic",
    "morph": "herb",
-   "x": 327,
-   "y": 35,
-   "w": 39,
-   "h": 29,
+   "x": 150,
+   "y": 78,
+   "w": 30,
+   "h": 26,
    "pivot": [
-    19,
-    28
+    15,
+    25
    ],
    "native": [
-    39,
-    29
+    30,
+    26
    ]
   },
   "splice-bud": {
@@ -538,17 +538,17 @@
    "biome": "morphgrove",
    "category": "exotic",
    "morph": "flower",
-   "x": 96,
-   "y": 67,
-   "w": 36,
-   "h": 28,
+   "x": 180,
+   "y": 2,
+   "w": 32,
+   "h": 38,
    "pivot": [
-    18,
-    27
+    16,
+    37
    ],
    "native": [
-    36,
-    28
+    32,
+    38
    ]
   },
   "starfall-lotus": {
@@ -559,17 +559,17 @@
    "biome": "moonfen",
    "category": "exotic",
    "morph": "flower",
-   "x": 308,
-   "y": 67,
-   "w": 44,
-   "h": 27,
+   "x": 2,
+   "y": 78,
+   "w": 38,
+   "h": 28,
    "pivot": [
-    22,
-    26
+    19,
+    27
    ],
    "native": [
-    44,
-    27
+    38,
+    28
    ]
   },
   "timeweed": {
@@ -580,17 +580,17 @@
    "biome": "chronoglass",
    "category": "exotic",
    "morph": "grass",
-   "x": 425,
-   "y": 2,
-   "w": 49,
-   "h": 30,
+   "x": 42,
+   "y": 78,
+   "w": 34,
+   "h": 28,
    "pivot": [
-    24,
-    29
+    17,
+    27
    ],
    "native": [
-    49,
-    30
+    34,
+    28
    ]
   },
   "twinsprout": {
@@ -601,17 +601,17 @@
    "biome": "morphgrove",
    "category": "exotic",
    "morph": "herb",
-   "x": 354,
-   "y": 67,
-   "w": 39,
-   "h": 27,
+   "x": 78,
+   "y": 78,
+   "w": 30,
+   "h": 28,
    "pivot": [
-    19,
-    26
+    15,
+    27
    ],
    "native": [
-    39,
-    27
+    30,
+    28
    ]
   },
   "updraft-seedwing": {
@@ -622,17 +622,17 @@
    "biome": "skyshard",
    "category": "exotic",
    "morph": "seedpod",
-   "x": 368,
-   "y": 35,
-   "w": 41,
-   "h": 29,
+   "x": 92,
+   "y": 42,
+   "w": 26,
+   "h": 34,
    "pivot": [
-    20,
-    28
+    13,
+    33
    ],
    "native": [
-    41,
-    29
+    26,
+    34
    ]
   },
   "veilberry": {
@@ -643,17 +643,17 @@
    "biome": "veilhollow",
    "category": "exotic",
    "morph": "berry",
-   "x": 134,
-   "y": 67,
-   "w": 41,
-   "h": 28,
+   "x": 414,
+   "y": 2,
+   "w": 30,
+   "h": 36,
    "pivot": [
-    20,
-    27
+    15,
+    35
    ],
    "native": [
-    41,
-    28
+    30,
+    36
    ]
   },
   "veilfern": {
@@ -664,17 +664,17 @@
    "biome": "veilhollow",
    "category": "exotic",
    "morph": "leaf",
-   "x": 142,
-   "y": 2,
-   "w": 48,
-   "h": 31,
+   "x": 214,
+   "y": 42,
+   "w": 30,
+   "h": 30,
    "pivot": [
-    24,
-    30
+    15,
+    29
    ],
    "native": [
-    48,
-    31
+    30,
+    30
    ]
   },
   "windfern": {
@@ -685,17 +685,17 @@
    "biome": "skyshard",
    "category": "exotic",
    "morph": "leaf",
-   "x": 2,
-   "y": 35,
-   "w": 52,
-   "h": 30,
+   "x": 446,
+   "y": 2,
+   "w": 30,
+   "h": 36,
    "pivot": [
-    26,
-    29
+    15,
+    35
    ],
    "native": [
-    52,
-    30
+    30,
+    36
    ]
   },
   "zephyr-starbloom": {
@@ -706,16 +706,16 @@
    "biome": "skyshard",
    "category": "exotic",
    "morph": "flower",
-   "x": 177,
-   "y": 67,
-   "w": 42,
+   "x": 110,
+   "y": 78,
+   "w": 38,
    "h": 28,
    "pivot": [
-    21,
+    19,
     27
    ],
    "native": [
-    42,
+    38,
     28
    ]
   }

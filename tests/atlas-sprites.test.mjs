@@ -46,10 +46,10 @@ test('an Arcane specimen keeps its species’ silhouette but is visibly differen
     const area = (pix) => pix.px.reduce((n, c) => n + (c >>> 24 ? 1 : 0), 0);
     const r = area(b.pix) / area(a.pix);
     assert.ok(r > 0.7 && r < 2.6, `${s.key}: a related silhouette (${r.toFixed(2)}× the ordinary area)`);
-    // the arcane palette: a violet rim and luminous cyan runes the ordinary sprite does not have
+    // the arcane palette: sparkles (and on some, a changed body) in colours the ordinary sprite does not have
     const ca = colours(a.pix), cb = colours(b.pix);
     const fresh = [...cb].filter((c) => !ca.has(c)).length;
-    assert.ok(fresh >= 4, `${s.key}: Arcane colours of its own (${fresh})`);
+    assert.ok(fresh >= 1, `${s.key}: Arcane colours of its own (${fresh})`);
   }
 });
 
