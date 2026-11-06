@@ -1093,3 +1093,27 @@ input[type=checkbox]:checked { background-image: url('../assets/ui/form/checkbox
 .btn, .tab, .jar, .chip, .dropper, .plot, .seed, .bottle-slot, .inv-tile, .inv-tab, .age-pick-bottle, .tabbar .tab { border-radius: var(--btn-r); }
 .btn.icon, .btn.small, .chip, .dose .btn, .inv-tools .btn, .inv-tab, .fstep, .foff { --btn-r: var(--btn-r-s); }
 .btn:focus-visible, .jar:focus-visible, .inv-tile:focus-visible, .tab:focus-visible { outline-offset: 2px; }
+
+/* ------------------------------------------------------------------ text inside sprite frames
+   A label never runs under the nine-slice rim of its frame (7–9 px of sprite border): the frame's
+   padding clears the rim and the label is at most as wide as what is left (ellipsis beyond). */
+.jar { padding-left: 6px; padding-right: 6px; }
+.jar .jname, .jar .jname { max-width: 100%; }
+.seed { padding-left: 8px; padding-right: 8px; }
+.seed .sn { max-width: 100%; }
+/* the Book's tabs: three to a row while their labels fit, fewer (wider) when they do not */
+.book-tabs .btn { min-width: fit-content; padding-left: 10px; padding-right: 10px; white-space: nowrap; }
+/* rows of choices fill their row, as the tools fill their bar (each grows from its own width) */
+.inv-tab { flex: 1 0 auto; justify-content: center; }
+.bottle-sizes .btn, .cust-actions .btn { flex: 1 0 auto; }
+/* the pour amounts keep their height in the side shelf (a scrolling flex item would otherwise shrink to
+   nothing and slide its buttons under the jars), and on a wrapped row the amounts fill it */
+.shelf-wrap > .dose { flex: none; }
+@media (min-width: 960px) and (min-aspect-ratio: 1/1) { .dose .btn { flex: 1 0 auto; } }
+/* a pixel icon keeps its proportions in any box */
+img.ico { object-fit: contain; }
+/* the side shelf (wide screens): its jars fill the shelf's width, column for column */
+@media (min-width: 960px) and (min-aspect-ratio: 1/1) {
+  .shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); }
+  .shelf .jar, .shelf .shelf-inv { width: auto; }
+}
