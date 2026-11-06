@@ -24191,13 +24191,18 @@ for (const [lx, ld, lw] of lobes) depth += ld * Math.max(0, 1 - (Math.abs(xm - l
 cols.push([x0, shoulder, depth * (0.8 + fbm1(xm * 0.3, seed + 3, 2) * 0.4)]);
 }
 const deepest = Math.max(...cols.map(([, sh, d]) => d / Math.max(1, h - sh - 1)));
+const surf = [];
 for (const [x0, shoulder, d] of cols) {
 const y0 = M + shoulder, depth = Math.max(5, Math.round(d / deepest));
-for (let x = x0; x < Math.min(w, x0 + 2); x++) for (let y = y0; y < Math.min(H, y0 + depth); y++) icv.solid[y * w + x] = 1;
+for (let x = x0; x < Math.min(w, x0 + 2); x++) {
+for (let y = y0; y < Math.min(H, y0 + depth); y++) icv.solid[y * w + x] = 1;
+surf.push([x, y0]);
+}
 }
 paintTerrain(icv, { ...ground, seed: ground.seed + seed });
-const sp = sprite(w, H);
+const sp = /** @type {any} */ (sprite(w, H));
 sp.px.set(icv.pix.px);
+sp.surf = surf;
 return sp;
 }
 function crystalSprite(rng, h, cols) {
@@ -24273,6 +24278,13 @@ keep(cv, 'isles', isleSprite(ir, w, h, ground), x, y);
 break;
 }
 }
+const late = [];
+for (const is of cv.meta.isles || []) for (const [x, y] of is.surf) {
+const X = is.x + x, Y = is.y + y;
+if (x < 2 || x > is.w - 3 || X < 2 || X > W - 3 || Y < 2) continue;
+late.push(Y * W + X, (Y - 1) * W + X);
+}
+cv.meta.openLate = late;
 cv.meta.glows = glows;
 cv.meta.vignette = 0.2;
 cv.meta.wind = 1.2;
@@ -24533,6 +24545,7 @@ grade(cv, id);
 for (const px of cv.sw ? [cv.pix.px, cv.sw.bare] : [cv.pix.px]) {
 for (let y = 1; y < SCENE_H; y++) for (let x = 0; x < SCENE_W; x++) if (!(px[y * SCENE_W + x] >>> 24)) px[y * SCENE_W + x] = px[(y - 1) * SCENE_W + x] | 0xff000000;
 }
+if (cv.meta.openLate) for (const k of cv.meta.openLate) cv.open[k] = 1;
 for (let x = 0; x < SCENE_W; x++) { cv.open[x] = 0; cv.open[(SCENE_H - 1) * SCENE_W + x] = 0; cv.open[(SCENE_H - 2) * SCENE_W + x] = 0; }
 let top = SCENE_H;
 for (let k = 0; k < cv.open.length; k++) if (cv.open[k]) { top = Math.floor(k / SCENE_W); break; }
@@ -24783,6 +24796,8 @@ this.top = Math.max(1, sc.top);
 this.anchors = null;
 this.spots = new Map();
 this.mean = null;
+this.prefer = null;
+if (sc.meta.openLate) { this.prefer = new Uint8Array(SCENE_W * SCENE_H); for (const k of sc.meta.openLate) this.prefer[k] = 1; }
 }
 lightAt(x, y, mount, s) {
 const px = this.sc.pix.px, W = SCENE_W, H = SCENE_H;
@@ -24853,7 +24868,8 @@ return true;
 const tries = [];
 for (let y = this.top; y <= H - 3; y++) for (let x = (y + ox) % 3; x < W; x += 3) if (G[y * W + x] && G[(y - 1) * W + x]) tries.push([(x - ox) ** 2 + ((y - oy) * 1.6) ** 2, x, y]);
 tries.sort((a, b) => a[0] - b[0]);
-const spot = tries.find(([, x, y]) => fits(roomy, x, y)) || tries.find(([, x, y]) => fits(tight, x, y)) || (free && (tries.find(([, x, y]) => fits(free, x, y)) || tries[0]));
+const pref = this.prefer, first = pref ? tries.filter(([, x, y]) => pref[y * W + x]) : [];
+const spot = first.find(([, x, y]) => fits(roomy, x, y)) || tries.find(([, x, y]) => fits(roomy, x, y)) || tries.find(([, x, y]) => fits(tight, x, y)) || (free && (tries.find(([, x, y]) => fits(free, x, y)) || tries[0]));
 return spot ? { x: spot[1], y: spot[2], s, mount: 'ground', flip: false } : null;
 }
 onHold(p, shapeOf, mount, ox, oy, roomy, tight) {
@@ -25369,7 +25385,7 @@ if (st) return st;
 const meta = sceneOf(region, seed).meta;
 st = {
 region, meta, t: 0,
-isles: (meta.isles || []).map((s) => ({ s, ox: 0, oy: 0, vx: 0, vy: 0 })),
+isles: (meta.isles || []).map((s) => ({ s, ox: 0, oy: 0, vx: 0, vy: 0, dx: 0, dy: 0 })),
 ripples: /** @type {{x:number, y:number, t:number}[]} */ ([]),
 morphs: (meta.morphs || []).map((m) => ({ ...m, shape: 0, cool: 0 })),
 crystals: (meta.crystals || []).map((s) => ({ s, a: 1, target: 1, hold: 0 })),
@@ -25389,6 +25405,23 @@ if (states.size >= 6) states.delete(/** @type {string} */ (states.keys().next().
 states.set(key, st);
 return st;
 }
+const ISLE_R = 8;
+function isleAt(region, seed, x, y) {
+if (region !== 'skyshard') return -1;
+const isles = sceneOf(region, seed).meta.isles || [];
+for (let i = 0; i < isles.length; i++) {
+const s = isles[i];
+for (const yy of [y, y + 1, y + 2]) {
+const u = Math.round(x) - s.x, v = Math.round(yy) - s.y;
+if (u >= 0 && v >= 0 && u < s.w && v < s.h && s.px[v * s.w + u] >>> 24) return i;
+}
+}
+return -1;
+}
+function isleShift(region, seed, i) {
+const is = hasExotic(region) ? stateOf(region, seed).isles[i] : null;
+return is ? [is.dx, is.dy] : [0, 0];
+}
 const hasExotic = (region) => ['moonfen', 'skyshard', 'morphgrove', 'veilhollow', 'ghostglass', 'chronoglass'].includes(region);
 function segDist(px, py, x0, y0, x1, y1) {
 const dx = x1 - x0, dy = y1 - y0, L = dx * dx + dy * dy;
@@ -25400,7 +25433,7 @@ if (!hasExotic(region)) return;
 const st = stateOf(region, seed), vx = x1 - x0, vy = y1 - y0;
 for (const is of st.isles) {
 const s = is.s, cx = s.x + is.ox + s.w / 2, cy = s.y + is.oy + s.h / 2;
-if (segDist(cx, cy, x0, y0, x1, y1) < Math.max(s.w, s.h) * 0.6) { const kick = 10 / Math.max(0.8, Math.sqrt(s.w / 30)); is.vx += vx * kick; is.vy += vy * kick; }
+if (segDist(cx, cy, x0, y0, x1, y1) < Math.max(s.w, s.h) * 0.6) { const kick = (10 / Math.max(0.8, Math.sqrt(s.w / 30))) * Math.exp(-Math.hypot(is.ox, is.oy) / ISLE_R); is.vx += vx * kick; is.vy += vy * kick; }
 }
 if (region === 'moonfen') for (const [gx, gy] of st.meta.glows || []) {
 if (segDist(gx, gy, x0, y0, x1, y1) < 14 && st.ripples.length < 24 && !st.ripples.some((r) => r.x === gx && r.y === gy && st.t - r.t < 0.5)) st.ripples.push({ x: gx, y: gy, t: st.t });
@@ -25429,11 +25462,12 @@ const st = stateOf(region, seed);
 dt = Math.min(dt, 0.05);
 st.t += dt;
 for (const is of st.isles) {
-const k = 26, c = 1.6;
-is.vx += (-k * is.ox - c * is.vx) * dt; is.vy += (-k * is.oy - c * is.vy) * dt;
-is.ox += is.vx * dt; is.oy += is.vy * dt;
-const lim = 32, r = Math.hypot(is.ox, is.oy);
-if (r > lim) { is.ox *= lim / r; is.oy *= lim / r; is.vx *= 0.5; is.vy *= 0.5; }
+const k = 30, c = 1.6, n = Math.ceil(dt / 0.002), h = dt / n;
+for (let i = 0; i < n; i++) {
+const r = Math.hypot(is.ox, is.oy), f = r > 1e-6 ? (k * ISLE_R * (Math.exp(Math.min(r / ISLE_R, 8)) - 1)) / r : k;
+is.vx += (-f * is.ox - c * is.vx) * h; is.vy += (-f * is.oy - c * is.vy) * h;
+is.ox += is.vx * h; is.oy += is.vy * h;
+}
 }
 st.ripples = st.ripples.filter((r) => st.t - r.t < 1.6);
 for (const m of st.morphs) m.cool -= dt;
@@ -25474,7 +25508,8 @@ if (region === 'skyshard') {
 for (let i = 0; i < 10; i++) { const x = ((t * (30 + i * 4) + rnd(i) * W) % (W + 40)) - 20, y = 20 + rnd(i, 1) * 120; px(ctx, x, y, 'rgba(255,255,255,0.55)', 6 + (i % 3) * 2, 1); }
 for (const is of st.isles) {
 const s = is.s, bob = Math.sin(t * 0.9 + s.x * 0.05) * 1.5;
-ctx.drawImage(canvasOf(s), Math.round(s.x + is.ox), Math.round(s.y + is.oy + bob));
+is.dx = Math.round(s.x + is.ox) - s.x; is.dy = Math.round(s.y + is.oy + bob) - s.y;
+ctx.drawImage(canvasOf(s), s.x + is.dx, s.y + is.dy);
 }
 }
 if (region === 'morphgrove') {
@@ -25518,7 +25553,7 @@ px(ctx, f.x - 2, f.y1 - 1, '#e8c088', 5, 1);
 for (let i = 0; i < 12; i++) { const dir = i % 4 === 0 ? -1 : 1, age = ((t * 0.1 * dir + rnd(i)) % 1 + 1) % 1; px(ctx, rnd(i, 3) * W, H * 0.9 - age * 100, i % 3 ? '#ffe8b0' : '#d8b8ff'); }
 }
 }
-return { hasExotic, exoticPush, exoticStep, exoticDraw };
+return { isleAt, isleShift, hasExotic, exoticPush, exoticStep, exoticDraw };
 })();
 // src/game/wild-rabbits.js
 const __m134 = (() => {
@@ -27960,7 +27995,7 @@ const { equipmentById } = __m58;
 const { RANKS } = __m58;
 const { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, sceneTouch, crosses, SCENE_W, SCENE_H } = __m111;
 const { Ragdoll } = __m132;
-const { exoticPush, exoticStep, exoticDraw } = __m133;
+const { exoticPush, exoticStep, exoticDraw, isleAt, isleShift } = __m133;
 const { sceneOf } = __m112;
 const { plantCanvas, plantFrameOf, plantGlow, emitColour, silhouetteOf, ingredientSprite, speciesOf, mountsOf, variantOf, MIN_HIT } = __m98;
 const { EFFECT_BY_KEY } = __m20;
@@ -28291,8 +28326,11 @@ for (const p of s.plants) if (grows || p.stage === 'mature') plants.push({ ...p,
 plants.sort((a, b) => a.born - b.born || (a.id < b.id ? -1 : 1));
 const spots = this.ground.place(plants, (p, mount, flip) => this.shapeOf(p, mount, flip), (p) => mountsOf(p.m));
 const grewAt = {};
+const seed = st.sceneSeed(this.region);
 for (const p of plants) {
 Object.assign(p, spots[p.id], { variant: variantOf(p.id) });
+p.isle = !p.mount || p.mount === 'ground' ? isleAt(this.region, seed, p.x * SCENE_W, p.y * SCENE_H) : -1;
+p.bx = p.x; p.by = p.y;
 const tag = p.id + ':' + p.stage;
 grewAt[tag] = this.grewAt[tag] ?? (this.field.length ? this.time : -9);
 }
@@ -28954,6 +28992,10 @@ ctx.drawImage(sceneFrame(this.region, st.sceneSeed(this.region), this.time), 0, 
 animateRegion(ctx, this.region, this.time, st.sceneSeed(this.region));
 exoticStep(this.region, st.sceneSeed(this.region), dt);
 exoticDraw(ctx, this.region, this.time, st.sceneSeed(this.region));
+for (const p of this.field) if (p.isle >= 0) {
+const [dx, dy] = isleShift(this.region, st.sceneSeed(this.region), p.isle);
+p.x = p.bx + dx / SCENE_W; p.y = p.by + dy / SCENE_H;
+}
 const warren = this.warren();
 if (warren) warren.step(dt);
 const gore = this.goreLayer(warren);

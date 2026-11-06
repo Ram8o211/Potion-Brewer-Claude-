@@ -62,6 +62,8 @@ export function composeScene(region, seed) {
   for (const px of cv.sw ? [cv.pix.px, cv.sw.bare] : [cv.pix.px]) {
     for (let y = 1; y < SCENE_H; y++) for (let x = 0; x < SCENE_W; x++) if (!(px[y * SCENE_W + x] >>> 24)) px[y * SCENE_W + x] = px[(y - 1) * SCENE_W + x] | 0xff000000;
   }
+  // ground the composition keeps apart from the painting (the Skyshard's floating isles): open for plants only now
+  if (cv.meta.openLate) for (const k of cv.meta.openLate) cv.open[k] = 1;
   // no plant at the very edges of the painting
   for (let x = 0; x < SCENE_W; x++) { cv.open[x] = 0; cv.open[(SCENE_H - 1) * SCENE_W + x] = 0; cv.open[(SCENE_H - 2) * SCENE_W + x] = 0; }
   let top = SCENE_H;

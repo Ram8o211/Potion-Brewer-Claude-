@@ -3,8 +3,11 @@
 //
 //   Moonfen      the wisps' lights answer a touch with spectral ripples;
 //   Skyshard     drifting isles: drag or flick them and they swing back to
-//                where they float, on a lightly damped (springy) spring,
-//                the small ones flung further than the big;
+//                where they float, on a lightly damped spring whose pull
+//                grows exponentially with the distance (no hard limit: the
+//                farther out, the harder it pulls and the less a push does),
+//                the small ones flung further than the big; the plants on
+//                them ride along (isleShift);
 //   Morphgrove   its blooms change shape when the finger brushes them;
 //   Veil Hollow  a low mist the finger parts, showing what it hides, which
 //                settles back slowly;
@@ -41,7 +44,7 @@ function stateOf(region, seed) {
   const meta = sceneOf(region, seed).meta;
   st = {
     region, meta, t: 0,
-    isles: (meta.isles || []).map((s) => ({ s, ox: 0, oy: 0, vx: 0, vy: 0 })),
+    isles: (meta.isles || []).map((s) => ({ s, ox: 0, oy: 0, vx: 0, vy: 0, dx: 0, dy: 0 })),
     ripples: /** @type {{x:number, y:number, t:number}[]} */ ([]),
     morphs: (meta.morphs || []).map((m) => ({ ...m, shape: 0, cool: 0 })),
     crystals: (meta.crystals || []).map((s) => ({ s, a: 1, target: 1, hold: 0 })),
@@ -60,6 +63,36 @@ function stateOf(region, seed) {
   if (states.size >= 6) states.delete(/** @type {string} */ (states.keys().next().value));
   states.set(key, st);
   return st;
+}
+
+/** How far (scene px) an isle goes before its spring's pull has grown e-fold past a plain spring's. */
+const ISLE_R = 8;
+
+/**
+ * The floating isle whose top a point (scene px) stands on, at rest: its
+ * index, or -1. A plant rooted there rides on the isle.
+ * @param {string} region @param {string} seed @param {number} x @param {number} y
+ */
+export function isleAt(region, seed, x, y) {
+  if (region !== 'skyshard') return -1;
+  const isles = sceneOf(region, seed).meta.isles || [];
+  for (let i = 0; i < isles.length; i++) {
+    const s = isles[i];
+    for (const yy of [y, y + 1, y + 2]) {
+      const u = Math.round(x) - s.x, v = Math.round(yy) - s.y;
+      if (u >= 0 && v >= 0 && u < s.w && v < s.h && s.px[v * s.w + u] >>> 24) return i;
+    }
+  }
+  return -1;
+}
+
+/**
+ * How far an isle is drawn from where it rests now (whole scene px), as last drawn.
+ * @param {string} region @param {string} seed @param {number} i @returns {[number, number]}
+ */
+export function isleShift(region, seed, i) {
+  const is = hasExotic(region) ? stateOf(region, seed).isles[i] : null;
+  return is ? [is.dx, is.dy] : [0, 0];
 }
 
 /** Does this region have exotic details at all? @param {string} region */
@@ -81,7 +114,8 @@ export function exoticPush(region, seed, x0, y0, x1, y1) {
   const st = stateOf(region, seed), vx = x1 - x0, vy = y1 - y0;
   for (const is of st.isles) {
     const s = is.s, cx = s.x + is.ox + s.w / 2, cy = s.y + is.oy + s.h / 2;
-    if (segDist(cx, cy, x0, y0, x1, y1) < Math.max(s.w, s.h) * 0.6) { const kick = 10 / Math.max(0.8, Math.sqrt(s.w / 30)); is.vx += vx * kick; is.vy += vy * kick; }
+    // (a push does less the farther out the isle already is)
+    if (segDist(cx, cy, x0, y0, x1, y1) < Math.max(s.w, s.h) * 0.6) { const kick = (10 / Math.max(0.8, Math.sqrt(s.w / 30))) * Math.exp(-Math.hypot(is.ox, is.oy) / ISLE_R); is.vx += vx * kick; is.vy += vy * kick; }
   }
   if (region === 'moonfen') for (const [gx, gy] of st.meta.glows || []) {
     if (segDist(gx, gy, x0, y0, x1, y1) < 14 && st.ripples.length < 24 && !st.ripples.some((r) => r.x === gx && r.y === gy && st.t - r.t < 0.5)) st.ripples.push({ x: gx, y: gy, t: st.t });
@@ -111,13 +145,16 @@ export function exoticStep(region, seed, dt) {
   const st = stateOf(region, seed);
   dt = Math.min(dt, 0.05);
   st.t += dt;
-  // the isles: a spring toward where they float, damped so they bob a few times and settle; never pushed far
+  // the isles: a spring toward where they float, damped so they bob a few times and settle; its pull
+  // k·R·(e^(r/R) − 1) is the plain spring's k·r near rest and grows exponentially farther out, so no
+  // finger can drag an isle far (stepped finely: the far-out spring is stiff)
   for (const is of st.isles) {
-    const k = 26, c = 1.6;
-    is.vx += (-k * is.ox - c * is.vx) * dt; is.vy += (-k * is.oy - c * is.vy) * dt;
-    is.ox += is.vx * dt; is.oy += is.vy * dt;
-    const lim = 32, r = Math.hypot(is.ox, is.oy);
-    if (r > lim) { is.ox *= lim / r; is.oy *= lim / r; is.vx *= 0.5; is.vy *= 0.5; }
+    const k = 30, c = 1.6, n = Math.ceil(dt / 0.002), h = dt / n;
+    for (let i = 0; i < n; i++) {
+      const r = Math.hypot(is.ox, is.oy), f = r > 1e-6 ? (k * ISLE_R * (Math.exp(Math.min(r / ISLE_R, 8)) - 1)) / r : k;
+      is.vx += (-f * is.ox - c * is.vx) * h; is.vy += (-f * is.oy - c * is.vy) * h;
+      is.ox += is.vx * h; is.oy += is.vy * h;
+    }
   }
   st.ripples = st.ripples.filter((r) => st.t - r.t < 1.6);
   for (const m of st.morphs) m.cool -= dt;
@@ -168,7 +205,9 @@ export function exoticDraw(ctx, region, t, seed) {
     for (let i = 0; i < 10; i++) { const x = ((t * (30 + i * 4) + rnd(i) * W) % (W + 40)) - 20, y = 20 + rnd(i, 1) * 120; px(ctx, x, y, 'rgba(255,255,255,0.55)', 6 + (i % 3) * 2, 1); }
     for (const is of st.isles) {
       const s = is.s, bob = Math.sin(t * 0.9 + s.x * 0.05) * 1.5;
-      ctx.drawImage(canvasOf(s), Math.round(s.x + is.ox), Math.round(s.y + is.oy + bob));
+      // (where it is drawn now, kept for the plants growing on it)
+      is.dx = Math.round(s.x + is.ox) - s.x; is.dy = Math.round(s.y + is.oy + bob) - s.y;
+      ctx.drawImage(canvasOf(s), s.x + is.dx, s.y + is.dy);
     }
   }
   if (region === 'morphgrove') {

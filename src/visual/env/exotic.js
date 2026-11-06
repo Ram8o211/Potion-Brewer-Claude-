@@ -60,13 +60,19 @@ function isleSprite(rng, w, h, ground) {
   }
   // the deepest point reaches the bottom of the sprite
   const deepest = Math.max(...cols.map(([, sh, d]) => d / Math.max(1, h - sh - 1)));
+  /** its top surface, column by column (local px): where plants may grow on it @type {number[][]} */
+  const surf = [];
   for (const [x0, shoulder, d] of cols) {
     const y0 = M + shoulder, depth = Math.max(5, Math.round(d / deepest));
-    for (let x = x0; x < Math.min(w, x0 + 2); x++) for (let y = y0; y < Math.min(H, y0 + depth); y++) icv.solid[y * w + x] = 1;
+    for (let x = x0; x < Math.min(w, x0 + 2); x++) {
+      for (let y = y0; y < Math.min(H, y0 + depth); y++) icv.solid[y * w + x] = 1;
+      surf.push([x, y0]);
+    }
   }
   paintTerrain(icv, { ...ground, seed: ground.seed + seed });
-  const sp = sprite(w, H);
+  const sp = /** @type {any} */ (sprite(w, H));
   sp.px.set(icv.pix.px);
+  sp.surf = surf;
   return sp;
 }
 
@@ -155,6 +161,17 @@ export const skyshard = {
         break;
       }
     }
+    // the isles' tops are ground where the region's plants grow (marked once the painting is done, scene.js,
+    // so nothing is painted onto the sky where they rest; the plants on them ride along, exotic-fx.js)
+    /** @type {number[]} */
+    const late = [];
+    for (const is of cv.meta.isles || []) for (const [x, y] of is.surf) {
+      const X = is.x + x, Y = is.y + y;
+      // (not right at an isle's edge, where it drops away)
+      if (x < 2 || x > is.w - 3 || X < 2 || X > W - 3 || Y < 2) continue;
+      late.push(Y * W + X, (Y - 1) * W + X);
+    }
+    cv.meta.openLate = late;
     cv.meta.glows = glows;
     cv.meta.vignette = 0.2;
     cv.meta.wind = 1.2;
