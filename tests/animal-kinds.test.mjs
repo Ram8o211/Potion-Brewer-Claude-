@@ -6,7 +6,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Warren } from '../src/game/wild-rabbits.js';
-import { KINDS, KIND_IDS, HABITAT, kindOf, biasSpread, pickKind, kindLook, STEADY_SPREAD } from '../src/game/kinds.js';
+import { KINDS, KIND_IDS, HABITAT, kindOf, biasSpread, pickKind, kindLook, STEADY_SPREAD, bodyOf } from '../src/game/kinds.js';
+import { BIOMES } from '../src/game/biomes.js';
 import { EFFECT_KEYS } from '../src/alchemy/effects.js';
 import { createColony, addWildRabbit, rabbitSensitivity, inheritLook, normalizeColony, colonyDay, rollLook } from '../src/game/colony.js';
 import { rabbitReading, summarize } from '../src/game/experiments.js';
@@ -50,8 +51,14 @@ test('every kind lives where its habitat says, one kind per biome, and the wilds
   }
   const all = new Set(Object.values(HABITAT).flatMap((h) => h.map((x) => x[0])));
   for (const k of Object.keys(KINDS)) assert.ok(all.has(k), `${k} lives somewhere`);
-  // one kind per biome (its native creature, or the kind standing in for it), never in another biome's place
-  for (const [region, h] of Object.entries(HABITAT)) assert.equal(h.length, 1, `${region}: one kind of wild animal`);
+  // each biome's native creature lives there (game/biomes.js `creature`), most of its animals; the kind that once
+  // stood in for it keeps a place beside it, so every kind can still be caught somewhere
+  for (const b of BIOMES) {
+    const h = HABITAT[b.id];
+    assert.ok(h && h.length <= 2, `${b.id}: at most two kinds`);
+    assert.equal(h[0][0], b.creature, `${b.id}: its native ${b.creature} first`);
+    assert.ok(h[0][1] >= 0.5, `${b.id}: and the most of them`);
+  }
   assert.deepEqual(HABITAT.forest, [['fox', 1]], 'the Whisperwood’s native fox');
   assert.deepEqual(HABITAT.crags, [['salamander', 1]], 'the Ember Crags’ salamander');
 });
@@ -157,7 +164,8 @@ test('every kind is drawn inside its frame in every pose', () => {
       const look = { ...kindLook(/** @type {any} */ (kind), rng), size: n % 2 ? 1.15 : 0.85 };
       for (const pose of ['idle', 'walk1', 'walk2', 'eat', 'rear', 'loaf', 'hop', 'hurt', 'fly1', 'fly2', undefined]) {
         const a = rabbitAnchors(look, snap(pose !== undefined), pose);
-        assert.equal(a.kind, kind);
+        assert.equal(a.creature, kind);
+        assert.equal(a.kind, bodyOf(/** @type {any} */ (kind)), `${kind} is built like a ${bodyOf(/** @type {any} */ (kind))}`);
         assert.ok(a.box.x0 >= -1 && a.box.x1 <= RABBIT_W && a.box.y0 >= -1 && a.box.y1 <= RABBIT_H, `${kind} ${pose} ${JSON.stringify(a.box)}`);
       }
     }
@@ -165,15 +173,15 @@ test('every kind is drawn inside its frame in every pose', () => {
 });
 
 test('there is one kind of animal steady on each effect, and each lives somewhere in the wilds', () => {
-  // the ten original channels each have a steady kind; the five channels added
-  // with the exotic biomes (swiftness, levitation, invisibility, phasing,
-  // temporal) are read by every animal at rabbit precision until their native
-  // creatures join the hutch
-  const CHANNELS = EFFECT_KEYS.slice(0, 10);
-  const steady = KIND_IDS.map((k) => KINDS[k].steady).filter(Boolean);
-  assert.deepEqual([...steady].sort(), [...CHANNELS].sort(), 'one steady kind per original effect');
-  for (const key of CHANNELS) {
-    const k = KIND_IDS.find((id) => KINDS[id].steady === key);
+  // every channel has a steady kind — the five added with the exotic biomes read by
+  // their native creatures (hare, cloud ray, shroud moth, axolotl, scarab); a few
+  // channels have two (a native creature beside the kind that stood in for it)
+  const CHANNELS = EFFECT_KEYS;
+  const steady = new Set(KIND_IDS.map((k) => KINDS[k].steady).filter(Boolean));
+  assert.deepEqual([...steady].sort(), [...CHANNELS].sort(), 'a steady kind for every effect');
+  for (const k of KIND_IDS) {
+    const key = KINDS[k].steady;
+    if (!key) continue;
     assert.equal(biasSpread({ kind: k }, key), STEADY_SPREAD, `${k} reads ${key} steadily`);
     assert.ok(Object.values(HABITAT).some((h) => h.some(([x]) => x === k)), `${k} lives somewhere`);
     // and each is drawn as itself, with its own coat

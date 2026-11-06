@@ -1508,6 +1508,194 @@ const PENS = {
       return { rack: { x: 44, y: GROUND_Y0 + 1 }, nest: [54, BACK - 3, 70, BACK], anim: [{ type: 'lantern', x: 114, y: 14 }, { type: 'motes', n: 8, x: 114, y: 28, r: 18 }, { type: 'drip', x: 104, y0: 10, y1: BACK + 2, every: 3.2 }, { type: 'drip', x: 126, y0: 8, y1: BACK + 2, every: 4.5 }] };
     },
   },
+  // ---- the native creatures' enclosures
+  hare: {
+    title: 'The hare meadow',
+    fringe: 'grass',
+    compose({ cv, seed, block }) {
+      // open grassland under a wide sky: rolling hills, a hedge, long grass and the hare's form
+      sky(cv, 52, rgb('#3a6ab8'), rgb('#b0d4ee'));
+      clouds(cv, 5, 16, seed + 9, 4);
+      hills(cv, 34, 7, '#6a8cbc', '#7c9cc8', seed);
+      hills(cv, 44, 5, '#5e8a54', '#74a060', seed + 1);
+      grove(cv, 50, P.leaf, seed + 2, { h: [6, 11], bottom: 56, gap: [14, 26] });
+      ground(cv, 54, 'grass', seed + 3);
+      tufts(cv, 0, cv.W, 58, seed + 4, 0.55);
+      tufts(cv, 0, cv.W, BACK, seed + 5, 0.45);
+      flowers(cv, 4, cv.W - 4, 56, ['#ffffff', '#f6d26a', '#c890e0', '#f0a0c0'], seed + 6, 22);
+      // the form: a shallow scrape in the grass where the hares lie up
+      burrow(cv, 182, BACK + 1, 30, 10, seed + 7);
+      railFence(cv, 0, 70, BACK - 2, 13, P.weathered, { gap: 30, rails: 2 });
+      bowl(cv, 104, GROUND_Y0 + 5, 9, '#6eae3a');
+      block(96, GROUND_Y0 - 2, 112, GROUND_Y0 + 6);
+      return { rack: { x: 40, y: GROUND_Y0 + 1 }, nest: [170, BACK - 3, 196, BACK + 1], anim: [{ type: 'butterflies', n: 3, x0: 20, x1: 210, y0: 30, y1: 62, colors: ['#ffffff', '#f6d26a', '#c890e0'] }] };
+    },
+  },
+  otter: {
+    title: 'The otter holt',
+    compose({ cv, seed, block }) {
+      // a willow bank over a cold stream: the holt dug into the bank, stones in the water
+      sky(cv, 30, rgb('#3e6cb0'), rgb('#a4c8e8'));
+      clouds(cv, 3, 10, seed + 9, 3);
+      grove(cv, 26, haze(P.leaf, '#7a98c4', 0.4), seed, { h: [12, 22], bottom: 32 });
+      earthbank(cv, 120, 22, cv.W, BACK + 2, P.earth, seed + 1);
+      roots(cv, 120, cv.W, 24, seed + 2, 0.12);
+      overgrowth(cv, 120, cv.W, 21, P.moss, seed + 3, { rate: 0.3, len: [4, 16] });
+      burrow(cv, 176, BACK, 30, 20, seed + 4);
+      rocks(cv, 0, 30, 120, BACK - 6, P.stone, seed + 5, { h: 8, moss: 0.12 });
+      pond(cv, 6, 112, BACK - 9, BACK + 2, seed + 6);
+      for (const [x, w] of [[30, 6], [62, 7], [92, 5]]) stone(cv, x, BACK - 3, w, seed + x);
+      block(4, GROUND_Y0 - 4, 114, GROUND_Y0 + 2);
+      ground(cv, BACK, 'dirt', seed + 7);
+      pebbles(cv, 112, cv.W, BACK + 1, GROUND_Y1, seed + 8, 14);
+      tufts(cv, 112, cv.W, BACK + 1, seed + 10, 0.3);
+      return { rack: { x: 130, y: GROUND_Y0 + 1 }, nest: [164, BACK - 3, 190, BACK], anim: [{ type: 'shimmer', n: 8, x0: 10, x1: 108, y0: BACK - 7, y1: BACK + 1 }] };
+    },
+  },
+  beetle: {
+    title: 'The beetle quarry',
+    compose({ cv, seed }) {
+      // a worked face of stone, ore in crates, a lantern on a post: the rock beetles' yard
+      sky(cv, 18, rgb('#4a6a9c'), rgb('#b4c8de'));
+      rocks(cv, 0, 6, cv.W, BACK, P.stone, seed, { h: 13 });
+      rocks(cv, 0, 26, cv.W, BACK, P.weathered, seed + 1, { h: 9 });
+      overgrowth(cv, 0, cv.W, 26, P.moss, seed + 2, { rate: 0.08, len: [2, 8] });
+      for (const [x, y, w] of [[30, 50, 8], [70, 44, 6], [150, 48, 9], [196, 40, 7]]) stone(cv, x, y, w, seed + x);
+      crate(cv, 120, BACK, 13); crate(cv, 133, BACK, 10);
+      for (const [x, y] of [[122, BACK - 13], [127, BACK - 14], [131, BACK - 12]]) { rect(cv, x, y, x + 3, y + 2, col('#b06a3a')); cv.set(x + 1, y, col('#e8a060')); }
+      lantern(cv, 92, 10, 22);
+      woodpile(cv, 196, BACK, 4, 2);
+      ground(cv, BACK, 'cobble', seed + 3);
+      pebbles(cv, 0, cv.W, BACK + 1, GROUND_Y1, seed + 4, 22);
+      return { rack: { x: 44, y: GROUND_Y0 + 1 }, nest: [176, BACK - 3, 200, BACK], anim: [{ type: 'lantern', x: 92, y: 22 }, { type: 'motes', n: 6, x: 92, y: 30, r: 16 }] };
+    },
+  },
+  cavemoth: {
+    title: 'The moth grotto',
+    compose({ cv, seed }) {
+      // a cave: dark stone all round, glowing mushrooms, a lantern, water dripping from the roof
+      fill(cv, 0, 0, cv.W, BACK, (x, y) => mixPacked(col('#14101a'), col('#2a2232'), clampI((BACK - y) / BACK, 0, 1) * 0.6 + noise2(x * 0.2, y * 0.2, seed) * 0.3));
+      rocks(cv, 0, 0, cv.W, 14, P.stone.map((c) => mixPacked(c, 0xff000000, 0.45)), seed + 1, { h: 9 });
+      rocks(cv, 0, 30, cv.W, BACK, P.stone.map((c) => mixPacked(c, 0xff000000, 0.35)), seed + 2, { h: 11 });
+      for (const [x, h, c] of /** @type {[number, number, string][]} */ ([[24, 7, '#7a5ae0'], [30, 5, '#5ad0c0'], [96, 6, '#7a5ae0'], [158, 8, '#5ad0c0'], [166, 5, '#c070e0'], [206, 6, '#7a5ae0']])) {
+        mushroom(cv, x, BACK, h, c);
+        cv.glow(x, BACK - h, 16, c === '#5ad0c0' ? [0.35, 0.82, 0.75] : [0.5, 0.36, 0.9], 0.45);
+      }
+      lantern(cv, 120, 0, 16);
+      ground(cv, BACK, 'cobble', seed + 3, { R: P.stone.map((c) => mixPacked(c, 0xff000000, 0.3)) });
+      return { rack: { x: 60, y: GROUND_Y0 + 1 }, nest: [182, BACK - 3, 202, BACK], anim: [{ type: 'lantern', x: 120, y: 16 }, { type: 'motes', n: 12, x: 120, y: 34, r: 30 }, { type: 'drip', x: 70, y0: 12, y1: BACK + 2, every: 3.6 }, { type: 'drip', x: 140, y0: 10, y1: BACK + 2, every: 5.1 }] };
+    },
+  },
+  wisp: {
+    title: 'The wisp fen',
+    compose({ cv, seed, block }) {
+      // a moonlit fen at dusk: dark reeds, still water, the moon behind the haze
+      sky(cv, 40, rgb('#1a1e3c'), rgb('#4a4a7c'));
+      fill(cv, 172, 6, 186, 20, (x, y) => ((x - 179) ** 2 + (y - 13) ** 2 <= 42 ? col((x - 179) ** 2 + (y - 13) ** 2 > 30 ? '#c8c8e0' : '#ecece8') : 0));
+      cv.glow(179, 13, 26, [0.8, 0.82, 1], 0.4);
+      grove(cv, 34, haze(P.leaf, '#2a2e50', 0.7), seed, { h: [8, 16], bottom: 42, pines: 0.3 });
+      ground(cv, 46, 'soil', seed + 1, { R: P.earth.map((c) => mixPacked(c, col('#1a2030'), 0.4)) });
+      pond(cv, 20, 118, BACK - 10, BACK + 1, seed + 2);
+      tufts(cv, 0, cv.W, BACK - 9, seed + 3, 0.6, P.moss.map((c) => mixPacked(c, col('#1a2a30'), 0.45)));
+      tufts(cv, 118, cv.W, BACK, seed + 4, 0.5, P.moss.map((c) => mixPacked(c, col('#1a2a30'), 0.35)));
+      block(18, GROUND_Y0 - 4, 120, GROUND_Y0 + 1);
+      lantern(cv, 196, 4, 20);
+      return { rack: { x: 168, y: GROUND_Y0 + 1 }, nest: [186, BACK - 3, 210, BACK], anim: [{ type: 'fireflies', n: 14, x0: 4, x1: 220, y0: 18, y1: 64 }, { type: 'shimmer', n: 6, x0: 26, x1: 114, y0: BACK - 8, y1: BACK }, { type: 'lantern', x: 196, y: 20 }] };
+    },
+  },
+  cloudray: {
+    title: 'The sky loft',
+    compose({ cv, seed }) {
+      // a terrace above the clouds: open sky, cloud banks drifting below, a stone balustrade
+      sky(cv, BACK, rgb('#4a86d8'), rgb('#cfe6fa'));
+      clouds(cv, 4, 14, seed + 1, 5);
+      clouds(cv, 30, 46, seed + 2, 6, { lit: '#ffffff', mid: '#e0ecf8', dark: '#a8c0de' });
+      clouds(cv, 48, 58, seed + 3, 5, { lit: '#ffffff', mid: '#e6f0fa', dark: '#b4cae4' });
+      // the balustrade
+      for (let x = 4; x < cv.W - 4; x += 12) { rect(cv, x, BACK - 12, x + 3, BACK, P.lime[3]); rect(cv, x, BACK - 12, x + 1, BACK, P.lime[5]); }
+      rect(cv, 0, BACK - 14, cv.W, BACK - 12, P.lime[4]); rect(cv, 0, BACK - 14, cv.W, BACK - 13, P.lime[5]);
+      ground(cv, BACK, 'flags', seed + 4, { R: P.lime, joint: '#9a948a' });
+      planter(cv, 18, 34, BACK, 7, seed + 5);
+      planter(cv, 190, 206, BACK, 7, seed + 6);
+      return { rack: { x: 60, y: GROUND_Y0 + 1 }, nest: [150, BACK - 3, 176, BACK], anim: [{ type: 'butterflies', n: 2, x0: 20, x1: 210, y0: 10, y1: 40, colors: ['#ffffff', '#e0f0ff'] }] };
+    },
+  },
+  mimic: {
+    title: 'The mimic terrarium',
+    compose({ cv, seed }) {
+      // a glasshouse thick with strange growth: leaves of every colour for a lizard to match
+      fill(cv, 0, 0, cv.W, BACK, (x, y) => {
+        const pane = x % 28 === 0 || y % 22 === 0;
+        return pane ? col('#4a5a48') : mixPacked(col('#a8d0b8'), col('#d8ecd8'), clampI(y / BACK, 0, 1) * 0.6 + noise2(x * 0.1, y * 0.1, seed) * 0.2);
+      });
+      foliage(cv, 10, 50, seed + 1);
+      overgrowth(cv, 0, cv.W, 0, P.moss, seed + 2, { rate: 0.35, len: [6, 22], flower: '#e86ab0' });
+      flowers(cv, 0, cv.W, 50, ['#e86ab0', '#f0c040', '#6aa0f0', '#f07040', '#b070e0'], seed + 3, 26);
+      planter(cv, 30, 54, BACK, 9, seed + 4);
+      planter(cv, 160, 186, BACK, 9, seed + 5);
+      stone(cv, 112, BACK - 2, 10, seed + 6);
+      ground(cv, BACK, 'soil', seed + 7);
+      tufts(cv, 0, cv.W, BACK + 1, seed + 8, 0.35);
+      return { rack: { x: 80, y: GROUND_Y0 + 1 }, nest: [128, BACK - 3, 150, BACK], anim: [{ type: 'butterflies', n: 3, x0: 10, x1: 214, y0: 14, y1: 60, colors: ['#e86ab0', '#6aa0f0', '#f0c040'] }] };
+    },
+  },
+  shroudmoth: {
+    title: 'The veiled hollow',
+    compose({ cv, seed }) {
+      // a dim hall hung with grey veils, candles burning low
+      bricks(cv, 0, 0, cv.W, BACK, P.brick.map((c) => mixPacked(c, col('#2a2238'), 0.6)), seed, { h: 5, w: 10 });
+      // the veils: long pale drapes, folds catching the candlelight
+      for (const [x0, x1] of [[10, 48], [86, 128], [170, 214]]) fill(cv, x0, 0, x1, BACK - 4 - ((x0 >> 3) & 3), (x, y) => {
+        const fold = (x - x0) % 6;
+        return mixPacked(col(fold < 2 ? '#8a849a' : fold < 4 ? '#a8a2b8' : '#6e687e'), 0xff000000, clampI(y / BACK, 0, 1) * 0.25);
+      });
+      for (const x of [62, 150]) { table(cv, x - 10, x + 10, BACK - 8, BACK, P.oak); bottle(cv, x - 4, BACK - 8, '#e0d8c8', 'tall'); cv.glow(x - 4, BACK - 18, 20, [1, 0.8, 0.5], 0.5); }
+      ground(cv, BACK, 'flags', seed + 2, { joint: '#2a2430' });
+      return { rack: { x: 30, y: GROUND_Y0 + 1 }, nest: [186, BACK - 3, 210, BACK], anim: [{ type: 'motes', n: 10, x: 62, y: 40, r: 24 }, { type: 'motes', n: 10, x: 150, y: 40, r: 24 }] };
+    },
+  },
+  axolotl: {
+    title: 'The spectral tank',
+    compose({ cv, seed, block }) {
+      // a tiled room with a great glass tank of pale water, weed swaying in it
+      fill(cv, 0, 0, cv.W, BACK, (x, y) => mixPacked(col('#3a5a6a'), col('#5a7e8c'), clampI(((x >> 4) + (y >> 3)) & 1, 0, 1) * 0.3));
+      // the tank: a frame, glass, water and weed
+      rect(cv, 30, 10, 194, BACK - 2, col('#1a2a30'));
+      fill(cv, 32, 12, 192, BACK - 4, (x, y) => mixPacked(col('#9ae0e8'), col('#3a8a9e'), clampI((y - 12) / (BACK - 16), 0, 1)));
+      rect(cv, 32, 12, 192, 14, col('#d8f6fa'));
+      for (let x = 40; x < 188; x += 13) for (let y = BACK - 6; y > BACK - 6 - (6 + ((x * 7) % 11)); y--) cv.set(x + (((y >> 2) & 1) ? 1 : 0), y, col(y % 3 ? '#3a9a6a' : '#5ac08a'));
+      for (let x = 34; x < 190; x += 5) cv.set(x, BACK - 5, col('#d0c8a8'));
+      cv.glow(112, 30, 60, [0.6, 0.95, 1], 0.35);
+      ground(cv, BACK, 'flags', seed + 2, { joint: '#26343a' });
+      block(30, GROUND_Y0 - 3, 194, GROUND_Y0 - 1);
+      return { rack: { x: 18, y: GROUND_Y0 + 1 }, nest: [198, BACK - 3, 218, BACK], anim: [{ type: 'shimmer', n: 10, x0: 36, x1: 188, y0: 16, y1: BACK - 8 }] };
+    },
+  },
+  scarab: {
+    title: 'The sand court',
+    fringe: '',
+    compose({ cv, seed }) {
+      // a sandstone court under a hot sky, dunes beyond, a great hourglass on a plinth
+      sky(cv, 38, rgb('#5a8ad0'), rgb('#f2d8a8'));
+      hills(cv, 32, 6, '#c8a070', '#dcb886', seed);
+      bricks(cv, 0, 28, cv.W, BACK, P.sand, seed + 1, { h: 6, w: 14, mortar: P.sand[1] });
+      // the hourglass: two bulbs of glass, sand running between them, on a stone plinth
+      const hx = 112;
+      rect(cv, hx - 9, BACK - 6, hx + 10, BACK, P.sand[2]); rect(cv, hx - 9, BACK - 6, hx + 10, BACK - 5, P.sand[4]);
+      rect(cv, hx - 8, BACK - 36, hx + 9, BACK - 34, P.wood[3]); rect(cv, hx - 8, BACK - 8, hx + 9, BACK - 6, P.wood[3]);
+      for (let y = BACK - 34; y < BACK - 8; y++) {
+        const t = Math.abs(y - (BACK - 21)) / 13, w = Math.max(1, Math.round(1 + t * 6));
+        fill(cv, hx - w, y, hx + w + 1, y + 1, (x) => col(x === hx - w || x === hx + w ? '#e8f4f8' : '#c8e0ec'));
+        if (y > BACK - 16) fill(cv, hx - w + 1, y, hx + w, y + 1, () => col('#e0b860'));
+        if (y < BACK - 28) fill(cv, hx - w + 1, y, hx + w, y + 1, () => col('#e0b860'));
+      }
+      cv.set(hx, BACK - 21, col('#e0b860')); cv.set(hx, BACK - 20, col('#e0b860'));
+      for (const x of [20, 196]) { rect(cv, x, BACK - 30, x + 8, BACK, P.sand[3]); rect(cv, x, BACK - 30, x + 2, BACK, P.sand[5]); rect(cv, x - 2, BACK - 32, x + 10, BACK - 30, P.sand[4]); }
+      ground(cv, BACK, 'dirt', seed + 2, { R: P.sand });
+      pebbles(cv, 0, cv.W, BACK + 1, GROUND_Y1, seed + 3, 10);
+      return { rack: { x: 50, y: GROUND_Y0 + 1 }, nest: [160, BACK - 3, 184, BACK], anim: [{ type: 'motes', n: 8, x: 112, y: 40, r: 30 }] };
+    },
+  },
 };
 
 /** Kinds with a pen of their own. */

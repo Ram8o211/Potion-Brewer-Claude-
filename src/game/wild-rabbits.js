@@ -28,7 +28,7 @@
 
 import { Rng, hashString } from '../core/rng.js';
 import { rollLook } from './colony.js';
-import { pickKind, kindLook } from './kinds.js';
+import { pickKind, kindLook, bodyOf } from './kinds.js';
 
 /** Pull of gravity on a rabbit and on blood, scene pixels per second². */
 export const HOP_GRAVITY = 300, BLOOD_GRAVITY = 260;
@@ -113,6 +113,8 @@ export class WildRabbit {
   constructor(id, x, y, rng, kind = 'rabbit') {
     this.id = id;
     this.kind = kind;
+    /** the build it moves with (a hare like a rabbit, a moth like a bird: kinds.js BODY) */
+    this.body = bodyOf(kind);
     this.look = kind === 'rabbit' ? wildLook(rng) : kindLook(kind, rng);
     /** @type {'f'|'m'} */
     this.sex = rng.chance(0.5) ? 'f' : 'm';
@@ -179,10 +181,12 @@ export class WildRabbit {
   /** Its pose as drawn: off the ground, striding, or what it does while resting. */
   get drawPose() {
     // a dove beats its wings in flight and spreads them to glide down
-    if (this.kind === 'dove' && this.fly > 0) return Math.floor(this.t * 9) & 1 ? 'fly1' : 'fly2';
-    if (this.kind === 'snail' && this.hide > 0 && this.running) return 'loaf';
+    if (this.body === 'dove' && this.fly > 0) return Math.floor(this.t * 9) & 1 ? 'fly1' : 'fly2';
+    // a wisp floats and a cloud ray glides even at rest: wings (or flame) always on the move, slowly
+    if ((this.kind === 'wisp' || this.kind === 'cloudray') && this.running) return Math.floor(this.t * (this.kind === 'wisp' ? 3 : 2)) & 1 ? 'fly1' : 'fly2';
+    if (this.body === 'snail' && this.hide > 0 && this.running) return 'loaf';
     if (this.air) return 'hop';
-    if (this.walking) return `walk${(Math.floor(this.stride / ({ cat: 2.2, fox: 2.2, deer: 2.6 }[this.kind] || 1.6)) % 4) + 1}`;
+    if (this.walking) return `walk${(Math.floor(this.stride / ({ cat: 2.2, fox: 2.2, deer: 2.6 }[this.body] || 1.6)) % 4) + 1}`;
     return this.running && !this.alarm ? this.pose || undefined : undefined;
   }
 
@@ -195,7 +199,7 @@ export class WildRabbit {
   box(pad = 0) {
     const lying = this.dead || this.down;
     // (a wild animal is drawn at half the hutch's size: about 18 scene pixels long; a salamander and a toad keep low)
-    const tall = { salamander: 6, toad: 8, snail: 8, rat: 7, ermine: 8, badger: 9, dove: 9, cat: 12, fox: 12, deer: 17 }[this.kind] ?? 11;
+    const tall = { salamander: 6, toad: 8, snail: 8, rat: 7, ermine: 8, badger: 9, dove: 9, cat: 12, fox: 12, deer: 17 }[this.body] ?? 11;
     return lying
       ? { x0: this.x - 8 - pad, y0: this.y - 6 - pad, x1: this.x + 8 + pad, y1: this.y + 1 + pad }
       : { x0: this.x - 7 - pad, y0: this.y - tall - pad, x1: this.x + 7 + pad, y1: this.y + 1 + pad };
@@ -387,8 +391,8 @@ export class Warren {
    * @param {WildRabbit} r
    */
   hop(r) {
-    const rng = this.rng, G = GAITS[r.kind] || GAITS.rabbit;
-    if (r.kind !== 'rabbit') return this.kindMove(r, G);
+    const rng = this.rng, G = GAITS[r.body] || GAITS.rabbit;
+    if (r.body !== 'rabbit') return this.kindMove(r, G);
     if (r.alarm) {
       // away from where the blow came from, zigzagging; a wall or the scene's edge turns it
       r.face = r.x < r.from ? -1 : 1;
@@ -430,7 +434,7 @@ export class Warren {
         return;
       }
       r.face = r.x < r.from ? -1 : 1;
-      if (rng.chance(r.kind === 'toad' ? 0.2 : 0.1)) r.face = -r.face;
+      if (rng.chance(r.body === 'toad' ? 0.2 : 0.1)) r.face = -r.face;
       if (G.alarm === 'fly') return this.takeOff(r, true);
       if (G.flee && (G.alarm === 'bound' || rng.chance(G.pFlee))) return this.leap(r, G.flee, 1 + 0.12 * Math.min(2, r.hits));
       r.walkV = rng.range(G.run[0], G.run[1]) * (1 + 0.1 * Math.min(2, r.hits));
@@ -513,7 +517,7 @@ export class Warren {
    * @param {WildRabbit} r @param {number} dt
    */
   walkStep(r, dt) {
-    const G = GAITS[r.kind] || GAITS.rabbit, solid = this.solid;
+    const G = GAITS[r.body] || GAITS.rabbit, solid = this.solid;
     r.walkT -= dt;
     const nx = r.x + r.face * r.walkV * dt, X = Math.round(nx);
     const turn = () => { r.face = -r.face; if (!r.alarm) r.walkT = Math.min(r.walkT, 0.3); };
@@ -625,9 +629,9 @@ export class Warren {
           r.y = Math.round(r.y);
           const hard = r.vy;
           r.vx = 0; r.vy = 0;
-          const G = GAITS[r.kind] || GAITS.rabbit;
-          r.rest = r.alarm ? this.rng.range(0.03, r.kind === 'toad' ? 0.25 : 0.14) : this.rng.range(G.rest[0], G.rest[1]);
-          if (!r.alarm) { const u = this.rng.next(); r.pose = r.kind === 'rabbit' ? (u < 0.35 ? 'eat' : u < 0.45 ? 'rear' : null) : u < 0.4 ? this.rng.weighted(G.poses.map((p) => p[0]), G.poses.map((p) => p[1])) : null; }
+          const G = GAITS[r.body] || GAITS.rabbit;
+          r.rest = r.alarm ? this.rng.range(0.03, r.body === 'toad' ? 0.25 : 0.14) : this.rng.range(G.rest[0], G.rest[1]);
+          if (!r.alarm) { const u = this.rng.next(); r.pose = r.body === 'rabbit' ? (u < 0.35 ? 'eat' : u < 0.45 ? 'rear' : null) : u < 0.4 ? this.rng.weighted(G.poses.map((p) => p[0]), G.poses.map((p) => p[1])) : null; }
           // where a bleeding one lands it leaves blood on the ground
           if (r.hits) { this.stain(r.x - r.face * this.rng.int(0, 3), r.y + 1, BLOOD[this.rng.int(0, 2)], r.hits * 2 + 2); if (hard > 60) this.bleed(r, r.hits * 2, 0.5); }
         }
