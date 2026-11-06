@@ -24,6 +24,11 @@
 // factor 1 (or without WebGL) it steps aside and the art canvas is shown
 // as it is, nearest-neighbour.
 //
+// The GPU may take the overlay's context away (a phone short of graphics
+// memory, the browser restarting its GPU process): the overlay then steps
+// aside at once, so the art canvas shows, and comes back when the context is
+// restored; after a third loss it stays aside for the session.
+//
 // It is cheap per frame: the layout (where the art is, how big, what part is
 // in view) is measured only when something moves or resizes, never in the
 // frame; a frame is one texture upload and one quad.
@@ -136,6 +141,18 @@ export class UpscaledCanvas {
      */
     this.detail = null;
     this.failed = false;
+    /** how many times the GPU took the context away */
+    this.lost = 0;
+    this.out.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault(); // (so that it can be restored)
+      this.lost++;
+      this.gl = null;
+      this.off();
+    });
+    this.out.addEventListener('webglcontextrestored', () => {
+      // set up again on the next frame, unless it keeps being lost
+      if (this.lost >= 3) this.failed = true;
+    });
     // measure again only when something moves: a scroll, a resize, a change of zoom or screen
     this.dirty = () => { this.geo = null; };
     this.onScroll = () => { this.geo = null; this.present(); };
@@ -151,12 +168,14 @@ export class UpscaledCanvas {
     if (this.failed) return false;
     const gl = /** @type {WebGL2RenderingContext|null} */ (this.out.getContext('webgl2', { alpha: false, antialias: false, depth: false, preserveDrawingBuffer: false }));
     if (!gl) { this.failed = true; return false; }
+    // lost and not yet restored: wait (the art canvas shows meanwhile)
+    if (gl.isContextLost()) return false;
     const sh = (/** @type {number} */ t, /** @type {string} */ s) => { const x = /** @type {WebGLShader} */ (gl.createShader(t)); gl.shaderSource(x, s); gl.compileShader(x); return x; };
     const prog = /** @type {WebGLProgram} */ (gl.createProgram());
     gl.attachShader(prog, sh(gl.VERTEX_SHADER, VERT));
     gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FRAG));
     gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { this.failed = true; return false; }
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { if (!gl.isContextLost()) this.failed = true; return false; }
     gl.useProgram(prog);
     const buf = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buf);
@@ -234,6 +253,7 @@ export class UpscaledCanvas {
     const g = this.geo || (this.geo = this.measure());
     if (!g.on) { this.off(); return; }
     const gl = this.gl, u = this.u;
+    if (gl.isContextLost()) { this.gl = null; this.off(); return; }
     gl.viewport(0, 0, g.W, g.H);
     gl.activeTexture(gl.TEXTURE0);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.src);

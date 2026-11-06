@@ -286,6 +286,77 @@ arr[core & (np.abs(arr[:, :, :3].astype(int) - tan.astype(int)).sum(axis=2) > 40
 save('garden/seed-frame', Image.fromarray(arr))
 
 
+# ---- corners: the rivets and smudges baked into the frames' corners (which
+# the nine-slice stretched into dark streaks where they crossed into the
+# edges) are cleared by mitring the frame in from its edges, and a small gold
+# stud is set in each corner, wholly inside the slice it is drawn with
+
+def band(a):
+    """frame thickness: from the edge to where the middle row reaches the interior's colour"""
+    h, w = a.shape[:2]
+    mid = a[h // 2, :, :3].astype(int); inner = np.median(a[h // 3:2 * h // 3, w // 3:2 * w // 3, :3].reshape(-1, 3), axis=0)
+    for x in range(w // 2):
+        if a[h // 2, x, 3] > 200 and np.abs(mid[x] - inner).sum() < 40 and np.abs(mid[x + 1] - inner).sum() < 40 and np.abs(mid[x + 2] - inner).sum() < 40:
+            return x
+    return 6
+
+def stud(r):
+    """a small gold button, r the radius in sprite pixels"""
+    n = 2 * r + 1; s = np.zeros((n, n, 4), np.uint8)
+    for y in range(n):
+        for x in range(n):
+            dx, dy = x - r, y - r; d = (dx * dx + dy * dy) ** 0.5
+            if d > r + 0.35: continue
+            if d > r - 0.75: c = (58, 34, 10)                    # outline
+            else:
+                t = (dx + dy) / (2 * r)                           # lit from the upper left
+                c = (255, 238, 150) if (dx + 0.6 * r) ** 2 + (dy + 0.6 * r) ** 2 < (0.45 * r) ** 2 else \
+                    (246, 206, 92) if t < -0.15 else (222, 164, 48) if t < 0.35 else (170, 108, 26)
+            s[y, x] = (*c, 255)
+    return s
+
+def restud(img, C, r=None, inset=None, keep=3):
+    """clear the corners (the rivets and smudges baked into them) by mitring the frame in from its
+    edges, then set a gold stud in each, wholly inside the nine-slice corner C"""
+    a = np.array(img.convert('RGBA')); h, w = a.shape[:2]
+    F = band(a); M = min(C + 5, w // 2 - 3, h // 2 - 3)
+    out = a.copy()
+    for fx in (False, True):
+        for fy in (False, True):
+            for y in range(keep, M):
+                for x in range(keep, M):
+                    X = w - 1 - x if fx else x; Y = h - 1 - y if fy else y
+                    # from the left/right edge (same distance from it) or the top/bottom edge
+                    if x <= y and x < F + 1: sx, sy = X, (h - 1 - (M + 2) if fy else M + 2)
+                    elif y < x and y < F + 1: sx, sy = (w - 1 - (M + 2) if fx else M + 2), Y
+                    else:  # the interior: the same spot along the edges' diagonal neighbour
+                        sx, sy = (w - 1 - (M + 2) if fx else M + 2), (h - 1 - (M + 2) if fy else M + 2)
+                    if a[Y, X, 3] < 128: continue
+                    out[Y, X] = a[sy, sx]
+    r = r or (4 if C >= 18 else 3)
+    c = inset if inset is not None else max(r + 2, min(C - r - 2, F // 2 + 2))
+    st = stud(r); n = st.shape[0]
+    for fx in (False, True):
+        for fy in (False, True):
+            cx = w - 1 - c if fx else c; cy = h - 1 - c if fy else c
+            for y in range(n):
+                for x in range(n):
+                    if st[y, x, 3]: out[cy - r + y, cx - r + x] = st[y, x]
+    return Image.fromarray(out), F
+
+# sprite → the smallest nine-slice corner the stylesheet draws it with
+RESTUD = {
+    'panel/parch': 22, 'panel/dark': 18, 'panel/purple': 18, 'panel/dark-wide': 16,
+    'slot/wood': 14, 'slot/dark': 14, 'slot/purple': 14, 'slot/gold': 14,
+    'tab/blank': 18, 'tab/blank-on': 20,
+    'button/wood': 16, 'button/wood-gold': 16, 'button/tan': 14, 'button/green': 16, 'button/green-dark': 16,
+    'button/purple': 16, 'button/purple-dark': 16, 'button/red': 16, 'button/gray': 16,
+}
+for n, C in RESTUD.items():
+    path = os.path.join(OUT, n + '.png')
+    save(n, restud(Image.open(path), C)[0])
+
+
 # ---- ship: only the sprites the game references, palette-quantized
 def referenced():
     used = set()

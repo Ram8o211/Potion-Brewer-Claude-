@@ -49,7 +49,7 @@ import { audio } from '../../audio/audio.js';
 import { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, moistureEnv, DAY_PART_NAME, runeCaches as runeCachesOf } from '../../game/gathering.js';
 import { equipmentById } from '../../game/equipment.js';
 import { RANKS } from '../../game/equipment.js';
-import { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, sceneTouch, crosses, SCENE_W, SCENE_H } from '../../rendering/wild-scene.js';
+import { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, sceneTouch, crosses, forgetSceneCanvases, SCENE_W, SCENE_H } from '../../rendering/wild-scene.js';
 import { Ragdoll } from '../../rendering/ragdoll.js';
 import { exoticPush, exoticStep, exoticDraw, isleAt, isleShift } from '../../rendering/exotic-fx.js';
 import { sceneOf } from '../../visual/env/scene.js';
@@ -224,6 +224,9 @@ export class WildsView {
     this.canvas.addEventListener('pointerleave', () => { this.setHover(null); });
     // a long press is not a menu or a text selection
     this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    // the GPU took the canvases' memory back (a phone short of it): the cached
+    // paintings came back blank, so paint them again
+    this.canvas.addEventListener('contextrestored', () => { forgetSceneCanvases(); this.soilCache.clear(); this.gore.clear(); });
     // the scene is seen through a window that can be zoomed into and panned:
     // the − / + / fit buttons, a trackpad pinch or Ctrl and the wheel, two fingers pinching and dragging
     this.view = h('div', { class: 'scene-view' }, this.canvas);

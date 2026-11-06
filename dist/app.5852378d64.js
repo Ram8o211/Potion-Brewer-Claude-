@@ -21074,6 +21074,16 @@ host.appendChild(this.out);
 this.gl = null;
 this.detail = null;
 this.failed = false;
+this.lost = 0;
+this.out.addEventListener('webglcontextlost', (e) => {
+e.preventDefault(); // (so that it can be restored)
+this.lost++;
+this.gl = null;
+this.off();
+});
+this.out.addEventListener('webglcontextrestored', () => {
+if (this.lost >= 3) this.failed = true;
+});
 this.dirty = () => { this.geo = null; };
 this.onScroll = () => { this.geo = null; this.present(); };
 if (this.viewport !== src) this.viewport.addEventListener('scroll', this.onScroll, { passive: true });
@@ -21086,12 +21096,13 @@ if (this.gl) return true;
 if (this.failed) return false;
 const gl = /** @type {WebGL2RenderingContext|null} */ (this.out.getContext('webgl2', { alpha: false, antialias: false, depth: false, preserveDrawingBuffer: false }));
 if (!gl) { this.failed = true; return false; }
+if (gl.isContextLost()) return false;
 const sh = (/** @type {number} */ t, /** @type {string} */ s) => { const x = /** @type {WebGLShader} */ (gl.createShader(t)); gl.shaderSource(x, s); gl.compileShader(x); return x; };
 const prog = /** @type {WebGLProgram} */ (gl.createProgram());
 gl.attachShader(prog, sh(gl.VERTEX_SHADER, VERT));
 gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FRAG));
 gl.linkProgram(prog);
-if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { this.failed = true; return false; }
+if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { if (!gl.isContextLost()) this.failed = true; return false; }
 gl.useProgram(prog);
 const buf = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, buf);
@@ -21157,6 +21168,7 @@ if (this.factor <= 1 || !this.init()) { this.off(); return; }
 const g = this.geo || (this.geo = this.measure());
 if (!g.on) { this.off(); return; }
 const gl = this.gl, u = this.u;
+if (gl.isContextLost()) { this.gl = null; this.off(); return; }
 gl.viewport(0, 0, g.W, g.H);
 gl.activeTexture(gl.TEXTURE0);
 gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.src);
@@ -24626,6 +24638,9 @@ canvases.set(k, cv);
 }
 return cv;
 }
+function forgetSceneCanvases() {
+canvases.clear();
+}
 function windAt(x, t, ph) {
 const breeze = 0.55 * Math.sin(t * 0.11 + ph) + 0.25 * Math.sin(t * 0.37 + ph * 2.1) + 0.15, dir = breeze >= 0 ? 1 : -1;
 const wave = 0.3 * Math.sin(t * 1.4 - dir * x * 0.03 + ph) + 0.15 * Math.sin(t * 2.7 - dir * x * 0.07 + ph * 3);
@@ -25154,7 +25169,7 @@ if (lava) halo(ctx, (lava.x0 + lava.x1) / 2, lava.level, (lava.x1 - lava.x0) / 2
 trickles(ctx, meta.trickles || [], t, '#5a4e4c', '#3e3438');
 }
 }
-return { sceneCanvas, windAt, crosses, SceneTouch, sceneTouch, swayPixels, sceneFrame, findAnchors, PlantGround, mountOrder, plantBox, hitPlant, animateRegion, SCENE_W, SCENE_H };
+return { sceneCanvas, forgetSceneCanvases, windAt, crosses, SceneTouch, sceneTouch, swayPixels, sceneFrame, findAnchors, PlantGround, mountOrder, plantBox, hitPlant, animateRegion, SCENE_W, SCENE_H };
 })();
 // src/rendering/ragdoll.js
 const __m133 = (() => {
@@ -28039,7 +28054,7 @@ const { audio } = __m4;
 const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, moistureEnv, DAY_PART_NAME, runeCaches: runeCachesOf } = __m63;
 const { equipmentById } = __m58;
 const { RANKS } = __m58;
-const { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, sceneTouch, crosses, SCENE_W, SCENE_H } = __m112;
+const { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, sceneTouch, crosses, forgetSceneCanvases, SCENE_W, SCENE_H } = __m112;
 const { Ragdoll } = __m133;
 const { exoticPush, exoticStep, exoticDraw, isleAt, isleShift } = __m134;
 const { sceneOf } = __m113;
@@ -28144,6 +28159,7 @@ this.canvas.addEventListener('pointercancel', drop);
 this.canvas.addEventListener('lostpointercapture', drop);
 this.canvas.addEventListener('pointerleave', () => { this.setHover(null); });
 this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+this.canvas.addEventListener('contextrestored', () => { forgetSceneCanvases(); this.soilCache.clear(); this.gore.clear(); });
 this.view = h('div', { class: 'scene-view' }, this.canvas);
 this.zoom = ZOOM_START;
 try { const z = Number(localStorage.getItem(ZOOM_KEY)); if (z >= ZOOM_MIN && z <= ZOOM_MAX) this.zoom = z; } catch { /* no storage */ }
@@ -32131,6 +32147,27 @@ IMAGES.set(src, im);
 }
 return im.complete && im.naturalWidth ? im : null;
 }
+const PIX_CANVAS = new WeakMap();
+function pixCanvas(pix) {
+let c = PIX_CANVAS.get(pix);
+if (!c) { c = pix.toCanvas(); PIX_CANVAS.set(pix, c); }
+return c;
+}
+const SPRITE_URL = new Map();
+function spriteURL(asset) {
+if (!asset) return null;
+let u = SPRITE_URL.get(asset);
+if (u) return u;
+const f = atlasFrame(asset);
+if (!f) return null;
+const S = Math.max(f.pix.w, f.pix.h, 16) + 2;
+const cv = document.createElement('canvas');
+cv.width = S; cv.height = S;
+/** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')).drawImage(pixCanvas(f.pix), Math.round((S - f.pix.w) / 2), S - 1 - f.pix.h);
+u = cv.toDataURL();
+SPRITE_URL.set(asset, u);
+return u;
+}
 const BW = 124, BH = 94, GAP = 22, MARGIN = 46, TOP = 214, PITCH = 154, CROP_SCALE = 3;
 function bedColumn(p, pv) {
 if (p.grade >= 2) return 4;
@@ -32149,7 +32186,11 @@ this.seed = null;
 this.t = 0;
 this.redrawIn = 0;
 onAtlasLoaded((a) => { if (a.startsWith('growth') || a === 'seeds') this.refresh(); });
-ON_IMAGE.add(() => { this.bg = null; this.paint(); });
+ON_IMAGE.add(() => {
+if (this.imgPending) return;
+this.imgPending = true;
+requestAnimationFrame(() => { this.imgPending = false; this.bg = null; this.paint(); });
+});
 }
 build() {
 const el = clear(this.el);
@@ -32161,6 +32202,8 @@ this.plotsEl = h('div', { class: 'plots', role: 'listbox', 'aria-label': 'Garden
 this.seedsEl = h('div', { class: 'seeds', role: 'listbox', 'aria-label': 'Seeds in hand' });
 this.actsEl = h('div', { class: 'row wrap' });
 this.upsEl = h('div', { class: 'garden-ups' });
+this.seedKey = '';
+this.seedEls = new Map();
 el.append(roomHead('Garden', 'seedling'), h('div', { class: 'garden' },
 this.canvas, h('div', { class: 'row garden-bar' }, this.status, this.actsEl),
 this.plotsEl,
@@ -32194,7 +32237,8 @@ if (!this.seed) { audio.play('click'); this.refresh(); return; }
 const r = st.sow(id, this.seed, now);
 if (!r.ok) { toast('Garden', r.reason || 'It will not grow there.', 'seedling'); this.refresh(); return; }
 audio.play('dig');
-if (!g.seeds[this.seed]) this.seed = null;
+const sd = this.seed;
+if (!g.seeds[sd] || !g.plots.some((q) => !q.crop && this.fits(q, sd))) this.seed = null;
 } else {
 const s = st.gardenView(now).find((x) => x.id === id).state;
 if (s && s.stage === 'mature') {
@@ -32208,10 +32252,30 @@ if (this.lab.buildShelf) this.lab.buildShelf();
 } else if (st.waterGarden(id, now)) audio.play('pour');
 else audio.play('click');
 }
-this.lab.save();
+if (this.batch) return;
+this.saveSoon();
+this.refresh();
+}
+saveSoon() {
+clearTimeout(this.saveTimer);
+this.saveTimer = setTimeout(() => this.lab.save(), 600);
+}
+fits(p, id) {
+const arcane = id.endsWith('+arcane'), key = arcane ? id.slice(0, -7) : id;
+return !p.crop && p.bed === bedOf(key) && p.grade >= gradeNeeded(key, arcane);
+}
+dropSeed() {
+this.seed = null;
+audio.play('click');
 this.refresh();
 }
 refresh() {
+this.refreshLive();
+if (!this.seedsEl) return;
+this.refreshSeeds();
+this.refreshUps();
+}
+refreshLive() {
 if (!this.plotsEl) return;
 const st = this.lab.state, g = st.garden, now = Date.now();
 g.seen = true;
@@ -32220,10 +32284,17 @@ const growing = view.filter((p) => p.crop).length, ready = view.filter((p) => p.
 const stat = (/** @type {keyof STAT_ART} */ k, title, n, cls = '') => h('span', { class: 'gstat' + cls, title }, h('img', { src: STAT_ART[k], alt: '', draggable: 'false' }), h('span', { text: String(n) }));
 clear(this.status).append(stat('plots', 'Plots', g.plots.length), stat('growing', 'Growing', growing), stat('ready', 'Ready to harvest', ready),
 thirsty ? stat('thirsty', 'Thirsty', thirsty, ' warn') : '');
-const hint = this.seed ? h('div', { class: 'muted small garden-hint', text: `Sowing ${this.seedName(this.seed)}: tap an empty ${BEDS[bedOf(this.seed.replace(/\+arcane$/, ''))].name.toLowerCase()}.` }) : h('div', { class: 'muted small garden-hint', text: 'Choose a seed, then tap an empty plot to sow it.' });
+const hint = this.seed
+? h('div', { class: 'muted small garden-hint sowing' }, h('span', { text: `Sowing ${this.seedName(this.seed)}: tap an empty ${BEDS[bedOf(this.seed.replace(/\+arcane$/, ''))].name.toLowerCase()}.` }),
+btn('Put away', () => this.dropSeed(), { cls: 'small', act: 'seed-drop' }))
+: h('div', { class: 'muted small garden-hint', text: 'Choose a seed, then tap an empty plot to sow it.' });
 clear(this.actsEl).append(...[
 btn('Water all', () => { const n = st.waterGarden(null, Date.now()); audio.play(n ? 'pour' : 'click'); if (n) this.lab.save(); this.refresh(); }, { cls: 'small', icon: 'drop', act: 'garden-water', disabled: !thirsty && !view.some((p) => p.state && p.state.g < 1 && p.state.w < 0.9) }),
-ready ? btn(`Harvest ${ready}`, () => { for (const p of view.filter((q) => q.state && q.state.stage === 'mature')) this.act(p.id); }, { cls: 'small gold', icon: 'seedling', act: 'garden-harvest' }) : null,
+ready ? btn(`Harvest ${ready}`, () => {
+this.batch = true;
+try { for (const p of view.filter((q) => q.state && q.state.stage === 'mature')) this.act(p.id); } finally { this.batch = false; }
+this.saveSoon(); this.refresh();
+}, { cls: 'small gold', icon: 'seedling', act: 'garden-harvest' }) : null,
 ].filter(Boolean));
 if (this.hintEl) this.hintEl.replaceWith(hint); else this.status.parentElement.after(hint);
 this.hintEl = hint;
@@ -32232,42 +32303,68 @@ for (const p of view) {
 const sp = p.crop ? SPECIES_BY_KEY[p.crop.species] : null;
 const stageIx = p.state ? p.state.stageIx : -1;
 const asset = sp && p.crop ? stageAsset(sp.key, p.crop.arcane, stageIx) : null;
-const cv = this.spriteCanvas(asset, 36);
+const url = spriteURL(asset);
 const what = !p.crop ? `Empty ${BEDS[p.bed].name.toLowerCase()}` : `${p.crop.arcane ? 'Arcane ' : ''}${sp ? sp.name : p.crop.species}`;
 const state = !p.crop ? '' : p.state.stage === 'mature' ? `ready · ${cropYield(p.crop.species)} ml` : `${p.state.stage} · ${formatWait(p.state.readyIn)}${p.state.thirsty ? ' · thirsty' : ''}`;
 const el = h('button', { class: `plot g${p.grade}${this.plot === p.id ? ' selected' : ''}${p.crop && p.state.stage === 'mature' ? ' ripe' : ''}`, 'data-bed': p.bed, 'data-act': 'plot-' + p.id, role: 'option', 'aria-label': `${what}${state ? ': ' + state : ''}`, title: `${BEDS[p.bed].name} · ${GRADES[p.grade]}` },
-h('span', { class: 'plot-thumb', 'data-bed': p.bed }, p.crop ? cv : null),
+h('span', { class: 'plot-thumb', 'data-bed': p.bed }, p.crop && url ? h('img', { class: 'crop', src: url, alt: '', draggable: 'false' }) : null),
 h('span', { class: 'plot-text' }, h('span', { class: 'pname', text: what }), state ? h('span', { class: 'pstate', text: state }) : null,
 p.crop && p.state.g < 1 ? h('img', { class: 'moist', src: MOIST_ART[moistCells(p.state.w)], alt: '', title: `Soil moisture ${Math.round(p.state.w * 100)} %`, draggable: 'false' }) : null));
 el.addEventListener('click', () => this.act(p.id));
 plots.appendChild(el);
 }
-const seeds = clear(this.seedsEl);
-const all = seedList(g);
+this.paint();
+}
+refreshSeeds() {
+const g = this.lab.state.garden;
 const FILTERS = [['all', 'All seeds', 'grid'], ['soil', 'Herbs, flowers and fruit', 'leaf'], ['fungal', 'Mushrooms and mosses', 'mushroom'], ['crystal', 'Crystals and stones', 'crystal'], ['arcane', 'Arcane seeds', 'star']];
 if (!this.seedFilter) this.seedFilter = 'all';
-clear(this.seedBar).append(h('div', { class: 'seed-chip' }, icon('seedling', 'sm'), h('span', { text: 'Seeds' })),
+if (!this.seedBar.firstChild) {
+this.seedBar.append(h('div', { class: 'seed-chip' }, icon('seedling', 'sm'), h('span', { text: 'Seeds' })),
 h('div', { class: 'seed-filters', role: 'tablist' }, ...FILTERS.map(([k, label, spr]) => {
-const b = h('button', { class: 'seed-filter' + (this.seedFilter === k ? ' active' : ''), 'data-act': 'seed-filter-' + k, 'data-sprite': spr, title: label, 'aria-label': label, role: 'tab', 'aria-selected': String(this.seedFilter === k) });
-b.addEventListener('click', () => { this.seedFilter = k; audio.play('click'); this.refresh(); });
+const b = h('button', { class: 'seed-filter', 'data-act': 'seed-filter-' + k, 'data-filter': k, 'data-sprite': spr, title: label, 'aria-label': label, role: 'tab' });
+b.addEventListener('click', () => { this.seedFilter = k; audio.play('click'); this.refreshSeeds(); });
 return b;
 })));
-const f = this.seedFilter;
+}
+for (const b of this.seedBar.querySelectorAll('.seed-filter')) {
+const on = /** @type {HTMLElement} */ (b).dataset.filter === this.seedFilter;
+b.classList.toggle('active', on); b.setAttribute('aria-selected', String(on));
+}
+const all = seedList(g), f = this.seedFilter;
 const list = all.filter((x) => f === 'all' || (f === 'arcane' ? x.arcane : bedOf(x.key) === f));
+const key = `${f}|${list.map((x) => x.id + ':' + x.n).join(',')}|${list.filter((x) => spriteURL(seedAsset(x.key, x.arcane))).length}`;
+if (key !== this.seedKey) {
+this.seedKey = key;
+this.seedEls.clear();
+const seeds = clear(this.seedsEl);
 if (!list.length) seeds.appendChild(h('div', { class: 'muted small', text: all.length ? 'None of these.' : 'No seeds yet.' }));
-const sel = this.plot ? g.plots.find((x) => x.id === this.plot) : null;
 for (const s of list) {
-const fits = !sel || (!sel.crop && sel.bed === bedOf(s.key) && sel.grade >= gradeNeeded(s.key, s.arcane));
-const el = h('button', { class: 'seed' + (this.seed === s.id ? ' selected' : ''), 'data-act': 'seed-' + s.id, role: 'option', title: `${this.seedName(s.id)} ×${s.n} — needs a ${BEDS[bedOf(s.key)].name.toLowerCase()}${gradeNeeded(s.key, s.arcane) ? ` of ${GRADES[gradeNeeded(s.key, s.arcane)].toLowerCase()} grade` : ''}; about ${growText(growHours(s.key, s.arcane) / (g.pace > 1 ? g.pace : 1))} to grow (watered)`, disabled: !fits },
-this.spriteCanvas(seedAsset(s.key, s.arcane), 28), h('span', { class: 'sn', text: `${Number.isFinite(s.n) ? s.n + '× ' : ''}${s.species.name}` }), rarityTag(/** @type {any} */ ({ wild: { rarity: s.species.rarity, arcane: s.arcane } }), { short: true }));
-el.addEventListener('click', () => {
-this.seed = this.seed === s.id ? null : s.id;
-audio.play('click');
-if (this.seed && sel && !sel.crop) { this.act(sel.id); return; }
-this.refresh();
-});
+const url = spriteURL(seedAsset(s.key, s.arcane));
+const el = /** @type {HTMLButtonElement} */ (h('button', { class: 'seed', 'data-act': 'seed-' + s.id, role: 'option', title: `${this.seedName(s.id)}${Number.isFinite(s.n) ? ' ×' + s.n : ''} — needs a ${BEDS[bedOf(s.key)].name.toLowerCase()}${gradeNeeded(s.key, s.arcane) ? ` of ${GRADES[gradeNeeded(s.key, s.arcane)].toLowerCase()} grade` : ''}; about ${growText(growHours(s.key, s.arcane) / (g.pace > 1 ? g.pace : 1))} to grow (watered)` },
+url ? h('img', { class: 'seed-ico', src: url, alt: '', draggable: 'false' }) : h('span', { class: 'seed-ico' }), h('span', { class: 'sn', text: `${Number.isFinite(s.n) ? s.n + '× ' : ''}${s.species.name}` }), rarityTag(/** @type {any} */ ({ wild: { rarity: s.species.rarity, arcane: s.arcane } }), { short: true })));
+el.addEventListener('click', () => this.pickSeed(s.id));
+this.seedEls.set(s.id, el);
 seeds.appendChild(el);
 }
+}
+const sel = this.plot ? g.plots.find((x) => x.id === this.plot) : null;
+for (const [id, el] of this.seedEls) {
+el.classList.toggle('selected', this.seed === id);
+el.disabled = !!sel && !sel.crop && !this.fits(sel, id) && this.seed !== id;
+}
+}
+pickSeed(id) {
+const g = this.lab.state.garden;
+if (this.seed === id) { this.dropSeed(); return; }
+this.seed = id;
+audio.play('click');
+const sel = this.plot ? g.plots.find((x) => x.id === this.plot) : null;
+if (sel && this.fits(sel, id)) { this.act(sel.id); return; }
+this.refresh();
+}
+refreshUps() {
+const st = this.lab.state, g = st.garden;
 const ups = clear(this.upsEl);
 if (this.lab.sandbox) ups.appendChild(h('div', { class: 'small', text: `Arcane chambers, endless seeds, ×${g.pace || 1} growth.` }));
 else for (const u of GARDEN_UPGRADES) {
@@ -32280,18 +32377,10 @@ if (!r.ok) { toast(u.name, r.reason || 'Not now.', 'lock'); return; }
 audio.play('coin'); this.lab.save(); this.lab.refreshHud && this.lab.refreshHud(true); this.refresh();
 }, { cls: 'small', icon: st.rank < u.rank ? 'lock' : 'coin', disabled: maxed || st.rank < u.rank || st.coins < u.price, act: 'garden-up-' + u.id })));
 }
-this.paint();
 }
 seedName(id) {
 const arcane = id.endsWith('+arcane'), sp = SPECIES_BY_KEY[arcane ? id.slice(0, -7) : id];
 return `${arcane ? 'Arcane ' : ''}${sp ? sp.name : id} seed`;
-}
-spriteCanvas(asset, size) {
-const f = atlasFrame(asset);
-const S = f ? Math.max(f.pix.w, f.pix.h, 16) + 2 : 16;
-const cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: String(S), height: String(S), style: { width: size + 'px', height: size + 'px' } }));
-if (f) /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')).drawImage(f.pix.toCanvas(), Math.round((S - f.pix.w) / 2), S - 1 - f.pix.h);
-return cv;
 }
 paint() {
 const cv = this.canvas;
@@ -32369,7 +32458,7 @@ if (pv && pv.crop) {
 const f = atlasFrame(stageAsset(pv.crop.species, pv.crop.arcane, pv.state.stageIx));
 if (f) {
 const base = q.y + Math.round(q.h * 0.74), k = Math.max(1, Math.min(CROP_SCALE, Math.floor((q.w + 12) / f.pix.w)));
-g.drawImage(f.pix.toCanvas(), Math.round(q.x + q.w / 2 - f.ax * k), Math.round(base - f.ay * k), f.pix.w * k, f.pix.h * k);
+g.drawImage(pixCanvas(f.pix), Math.round(q.x + q.w / 2 - f.ax * k), Math.round(base - f.ay * k), f.pix.w * k, f.pix.h * k);
 }
 if (ripe) {
 const sp = art(ART.sparkle);
@@ -32387,7 +32476,7 @@ if (this.redrawIn > 0) return;
 this.redrawIn = 0.5;
 this.paint();
 this.t += 0.5;
-if (this.t % 5 < 0.5) this.refresh();
+if (this.t % 5 < 0.5) this.refreshLive();
 }
 }
 return { GardenView, materialIdOf, RARITY, seedId, icon };

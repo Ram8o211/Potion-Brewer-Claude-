@@ -68,6 +68,32 @@ function art(src) {
   return im.complete && im.naturalWidth ? im : null;
 }
 
+/** Each atlas sprite's pixels as a canvas, made once (Pixels.toCanvas makes a new one per call). @type {WeakMap<object, HTMLCanvasElement>} */
+const PIX_CANVAS = new WeakMap();
+/** @param {import('../../visual/pixels.js').Pixels} pix */
+function pixCanvas(pix) {
+  let c = PIX_CANVAS.get(pix);
+  if (!c) { c = pix.toCanvas(); PIX_CANVAS.set(pix, c); }
+  return c;
+}
+/** Atlas sprites bottom-centred in a square, as image URLs (made once per sprite) @type {Map<string, string>} */
+const SPRITE_URL = new Map();
+/** The URL of an atlas sprite bottom-centred in a square, or null while its atlas loads. @param {string|null} asset */
+function spriteURL(asset) {
+  if (!asset) return null;
+  let u = SPRITE_URL.get(asset);
+  if (u) return u;
+  const f = atlasFrame(asset);
+  if (!f) return null;
+  const S = Math.max(f.pix.w, f.pix.h, 16) + 2;
+  const cv = document.createElement('canvas');
+  cv.width = S; cv.height = S;
+  /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')).drawImage(pixCanvas(f.pix), Math.round((S - f.pix.w) / 2), S - 1 - f.pix.h);
+  u = cv.toDataURL();
+  SPRITE_URL.set(asset, u);
+  return u;
+}
+
 /**
  * The scene's geometry, in the sheet's own pixels: beds are drawn at their
  * size in the sheet, four to a row (six once there are more than eight),
@@ -102,7 +128,11 @@ export class GardenView {
     this.redrawIn = 0;
     onAtlasLoaded((a) => { if (a.startsWith('growth') || a === 'seeds') this.refresh(); });
     // the sheet's sprites arrive one by one: repaint the ground and the plots as they do
-    ON_IMAGE.add(() => { this.bg = null; this.paint(); });
+    ON_IMAGE.add(() => {
+      if (this.imgPending) return;
+      this.imgPending = true;
+      requestAnimationFrame(() => { this.imgPending = false; this.bg = null; this.paint(); });
+    });
   }
 
   build() {
@@ -115,6 +145,9 @@ export class GardenView {
     this.seedsEl = h('div', { class: 'seeds', role: 'listbox', 'aria-label': 'Seeds in hand' });
     this.actsEl = h('div', { class: 'row wrap' });
     this.upsEl = h('div', { class: 'garden-ups' });
+    this.seedKey = '';
+    /** seed id → its button, kept while the seeds in hand stay the same @type {Map<string, HTMLButtonElement>} */
+    this.seedEls = new Map();
     el.append(roomHead('Garden', 'seedling'), h('div', { class: 'garden' },
       this.canvas, h('div', { class: 'row garden-bar' }, this.status, this.actsEl),
       this.plotsEl,
@@ -156,7 +189,9 @@ export class GardenView {
       const r = st.sow(id, this.seed, now);
       if (!r.ok) { toast('Garden', r.reason || 'It will not grow there.', 'seedling'); this.refresh(); return; }
       audio.play('dig');
-      if (!g.seeds[this.seed]) this.seed = null;
+      // the seed stays in hand only while there are more of it and another empty plot takes it
+      const sd = this.seed;
+      if (!g.seeds[sd] || !g.plots.some((q) => !q.crop && this.fits(q, sd))) this.seed = null;
     } else {
       const s = st.gardenView(now).find((x) => x.id === id).state;
       if (s && s.stage === 'mature') {
@@ -170,11 +205,40 @@ export class GardenView {
       } else if (st.waterGarden(id, now)) audio.play('pour');
       else audio.play('click');
     }
-    this.lab.save();
+    if (this.batch) return;
+    this.saveSoon();
     this.refresh();
   }
 
+  /** Save a moment after the last tap (a burst of taps is saved once; hiding the page saves at once). */
+  saveSoon() {
+    clearTimeout(this.saveTimer);
+    this.saveTimer = setTimeout(() => this.lab.save(), 600);
+  }
+
+  /** Whether a seed would grow in a plot (an empty bed of its kind, of the grade it needs). @param {any} p @param {string} id seed id */
+  fits(p, id) {
+    const arcane = id.endsWith('+arcane'), key = arcane ? id.slice(0, -7) : id;
+    return !p.crop && p.bed === bedOf(key) && p.grade >= gradeNeeded(key, arcane);
+  }
+
+  /** Put the seed in hand away. */
+  dropSeed() {
+    this.seed = null;
+    audio.play('click');
+    this.refresh();
+  }
+
+  /** Refresh everything: counts, plots, seeds and upgrades. */
   refresh() {
+    this.refreshLive();
+    if (!this.seedsEl) return;
+    this.refreshSeeds();
+    this.refreshUps();
+  }
+
+  /** Refresh what changes as the crops grow: the counts, the hint, the plot cards and the scene. */
+  refreshLive() {
     if (!this.plotsEl) return;
     const st = this.lab.state, g = st.garden, now = Date.now();
     g.seen = true;
@@ -185,10 +249,17 @@ export class GardenView {
     clear(this.status).append(stat('plots', 'Plots', g.plots.length), stat('growing', 'Growing', growing), stat('ready', 'Ready to harvest', ready),
       thirsty ? stat('thirsty', 'Thirsty', thirsty, ' warn') : '');
     // (a null child would be appended as the text "null")
-    const hint = this.seed ? h('div', { class: 'muted small garden-hint', text: `Sowing ${this.seedName(this.seed)}: tap an empty ${BEDS[bedOf(this.seed.replace(/\+arcane$/, ''))].name.toLowerCase()}.` }) : h('div', { class: 'muted small garden-hint', text: 'Choose a seed, then tap an empty plot to sow it.' });
+    const hint = this.seed
+      ? h('div', { class: 'muted small garden-hint sowing' }, h('span', { text: `Sowing ${this.seedName(this.seed)}: tap an empty ${BEDS[bedOf(this.seed.replace(/\+arcane$/, ''))].name.toLowerCase()}.` }),
+        btn('Put away', () => this.dropSeed(), { cls: 'small', act: 'seed-drop' }))
+      : h('div', { class: 'muted small garden-hint', text: 'Choose a seed, then tap an empty plot to sow it.' });
     clear(this.actsEl).append(...[
       btn('Water all', () => { const n = st.waterGarden(null, Date.now()); audio.play(n ? 'pour' : 'click'); if (n) this.lab.save(); this.refresh(); }, { cls: 'small', icon: 'drop', act: 'garden-water', disabled: !thirsty && !view.some((p) => p.state && p.state.g < 1 && p.state.w < 0.9) }),
-      ready ? btn(`Harvest ${ready}`, () => { for (const p of view.filter((q) => q.state && q.state.stage === 'mature')) this.act(p.id); }, { cls: 'small gold', icon: 'seedling', act: 'garden-harvest' }) : null,
+      ready ? btn(`Harvest ${ready}`, () => {
+        this.batch = true;
+        try { for (const p of view.filter((q) => q.state && q.state.stage === 'mature')) this.act(p.id); } finally { this.batch = false; }
+        this.saveSoon(); this.refresh();
+      }, { cls: 'small gold', icon: 'seedling', act: 'garden-harvest' }) : null,
     ].filter(Boolean));
     if (this.hintEl) this.hintEl.replaceWith(hint); else this.status.parentElement.after(hint);
     this.hintEl = hint;
@@ -198,45 +269,76 @@ export class GardenView {
       const sp = p.crop ? SPECIES_BY_KEY[p.crop.species] : null;
       const stageIx = p.state ? p.state.stageIx : -1;
       const asset = sp && p.crop ? stageAsset(sp.key, p.crop.arcane, stageIx) : null;
-      const cv = this.spriteCanvas(asset, 36);
+      const url = spriteURL(asset);
       const what = !p.crop ? `Empty ${BEDS[p.bed].name.toLowerCase()}` : `${p.crop.arcane ? 'Arcane ' : ''}${sp ? sp.name : p.crop.species}`;
       const state = !p.crop ? '' : p.state.stage === 'mature' ? `ready · ${cropYield(p.crop.species)} ml` : `${p.state.stage} · ${formatWait(p.state.readyIn)}${p.state.thirsty ? ' · thirsty' : ''}`;
       const el = h('button', { class: `plot g${p.grade}${this.plot === p.id ? ' selected' : ''}${p.crop && p.state.stage === 'mature' ? ' ripe' : ''}`, 'data-bed': p.bed, 'data-act': 'plot-' + p.id, role: 'option', 'aria-label': `${what}${state ? ': ' + state : ''}`, title: `${BEDS[p.bed].name} · ${GRADES[p.grade]}` },
-        h('span', { class: 'plot-thumb', 'data-bed': p.bed }, p.crop ? cv : null),
+        h('span', { class: 'plot-thumb', 'data-bed': p.bed }, p.crop && url ? h('img', { class: 'crop', src: url, alt: '', draggable: 'false' }) : null),
         h('span', { class: 'plot-text' }, h('span', { class: 'pname', text: what }), state ? h('span', { class: 'pstate', text: state }) : null,
           p.crop && p.state.g < 1 ? h('img', { class: 'moist', src: MOIST_ART[moistCells(p.state.w)], alt: '', title: `Soil moisture ${Math.round(p.state.w * 100)} %`, draggable: 'false' }) : null));
       el.addEventListener('click', () => this.act(p.id));
       plots.appendChild(el);
     }
-    // ---- seeds
-    const seeds = clear(this.seedsEl);
-    const all = seedList(g);
+    this.paint();
+  }
+
+  /** The seeds in hand: built again only when they change, otherwise brought up to date in place. */
+  refreshSeeds() {
+    const g = this.lab.state.garden;
     const FILTERS = [['all', 'All seeds', 'grid'], ['soil', 'Herbs, flowers and fruit', 'leaf'], ['fungal', 'Mushrooms and mosses', 'mushroom'], ['crystal', 'Crystals and stones', 'crystal'], ['arcane', 'Arcane seeds', 'star']];
     if (!this.seedFilter) this.seedFilter = 'all';
-    clear(this.seedBar).append(h('div', { class: 'seed-chip' }, icon('seedling', 'sm'), h('span', { text: 'Seeds' })),
-      h('div', { class: 'seed-filters', role: 'tablist' }, ...FILTERS.map(([k, label, spr]) => {
-        const b = h('button', { class: 'seed-filter' + (this.seedFilter === k ? ' active' : ''), 'data-act': 'seed-filter-' + k, 'data-sprite': spr, title: label, 'aria-label': label, role: 'tab', 'aria-selected': String(this.seedFilter === k) });
-        b.addEventListener('click', () => { this.seedFilter = k; audio.play('click'); this.refresh(); });
-        return b;
-      })));
-    const f = this.seedFilter;
-    const list = all.filter((x) => f === 'all' || (f === 'arcane' ? x.arcane : bedOf(x.key) === f));
-    if (!list.length) seeds.appendChild(h('div', { class: 'muted small', text: all.length ? 'None of these.' : 'No seeds yet.' }));
-    const sel = this.plot ? g.plots.find((x) => x.id === this.plot) : null;
-    for (const s of list) {
-      const fits = !sel || (!sel.crop && sel.bed === bedOf(s.key) && sel.grade >= gradeNeeded(s.key, s.arcane));
-      const el = h('button', { class: 'seed' + (this.seed === s.id ? ' selected' : ''), 'data-act': 'seed-' + s.id, role: 'option', title: `${this.seedName(s.id)} ×${s.n} — needs a ${BEDS[bedOf(s.key)].name.toLowerCase()}${gradeNeeded(s.key, s.arcane) ? ` of ${GRADES[gradeNeeded(s.key, s.arcane)].toLowerCase()} grade` : ''}; about ${growText(growHours(s.key, s.arcane) / (g.pace > 1 ? g.pace : 1))} to grow (watered)`, disabled: !fits },
-        this.spriteCanvas(seedAsset(s.key, s.arcane), 28), h('span', { class: 'sn', text: `${Number.isFinite(s.n) ? s.n + '× ' : ''}${s.species.name}` }), rarityTag(/** @type {any} */ ({ wild: { rarity: s.species.rarity, arcane: s.arcane } }), { short: true }));
-      el.addEventListener('click', () => {
-        this.seed = this.seed === s.id ? null : s.id;
-        audio.play('click');
-        // a plot already chosen and empty: sow at once
-        if (this.seed && sel && !sel.crop) { this.act(sel.id); return; }
-        this.refresh();
-      });
-      seeds.appendChild(el);
+    if (!this.seedBar.firstChild) {
+      this.seedBar.append(h('div', { class: 'seed-chip' }, icon('seedling', 'sm'), h('span', { text: 'Seeds' })),
+        h('div', { class: 'seed-filters', role: 'tablist' }, ...FILTERS.map(([k, label, spr]) => {
+          const b = h('button', { class: 'seed-filter', 'data-act': 'seed-filter-' + k, 'data-filter': k, 'data-sprite': spr, title: label, 'aria-label': label, role: 'tab' });
+          b.addEventListener('click', () => { this.seedFilter = k; audio.play('click'); this.refreshSeeds(); });
+          return b;
+        })));
     }
-    // ---- upgrades
+    for (const b of this.seedBar.querySelectorAll('.seed-filter')) {
+      const on = /** @type {HTMLElement} */ (b).dataset.filter === this.seedFilter;
+      b.classList.toggle('active', on); b.setAttribute('aria-selected', String(on));
+    }
+    const all = seedList(g), f = this.seedFilter;
+    const list = all.filter((x) => f === 'all' || (f === 'arcane' ? x.arcane : bedOf(x.key) === f));
+    // the list is rebuilt when the seeds (or their counts, or the loaded sprites) change
+    const key = `${f}|${list.map((x) => x.id + ':' + x.n).join(',')}|${list.filter((x) => spriteURL(seedAsset(x.key, x.arcane))).length}`;
+    if (key !== this.seedKey) {
+      this.seedKey = key;
+      this.seedEls.clear();
+      const seeds = clear(this.seedsEl);
+      if (!list.length) seeds.appendChild(h('div', { class: 'muted small', text: all.length ? 'None of these.' : 'No seeds yet.' }));
+      for (const s of list) {
+        const url = spriteURL(seedAsset(s.key, s.arcane));
+        const el = /** @type {HTMLButtonElement} */ (h('button', { class: 'seed', 'data-act': 'seed-' + s.id, role: 'option', title: `${this.seedName(s.id)}${Number.isFinite(s.n) ? ' ×' + s.n : ''} — needs a ${BEDS[bedOf(s.key)].name.toLowerCase()}${gradeNeeded(s.key, s.arcane) ? ` of ${GRADES[gradeNeeded(s.key, s.arcane)].toLowerCase()} grade` : ''}; about ${growText(growHours(s.key, s.arcane) / (g.pace > 1 ? g.pace : 1))} to grow (watered)` },
+          url ? h('img', { class: 'seed-ico', src: url, alt: '', draggable: 'false' }) : h('span', { class: 'seed-ico' }), h('span', { class: 'sn', text: `${Number.isFinite(s.n) ? s.n + '× ' : ''}${s.species.name}` }), rarityTag(/** @type {any} */ ({ wild: { rarity: s.species.rarity, arcane: s.arcane } }), { short: true })));
+        el.addEventListener('click', () => this.pickSeed(s.id));
+        this.seedEls.set(s.id, el);
+        seeds.appendChild(el);
+      }
+    }
+    // which can go in the chosen plot (the seed in hand can always be put away)
+    const sel = this.plot ? g.plots.find((x) => x.id === this.plot) : null;
+    for (const [id, el] of this.seedEls) {
+      el.classList.toggle('selected', this.seed === id);
+      el.disabled = !!sel && !sel.crop && !this.fits(sel, id) && this.seed !== id;
+    }
+  }
+
+  /** A seed tapped: take it in hand (sown at once into a chosen empty plot), or put it away. @param {string} id */
+  pickSeed(id) {
+    const g = this.lab.state.garden;
+    if (this.seed === id) { this.dropSeed(); return; }
+    this.seed = id;
+    audio.play('click');
+    const sel = this.plot ? g.plots.find((x) => x.id === this.plot) : null;
+    if (sel && this.fits(sel, id)) { this.act(sel.id); return; }
+    this.refresh();
+  }
+
+  /** The upgrades for sale. */
+  refreshUps() {
+    const st = this.lab.state, g = st.garden;
     const ups = clear(this.upsEl);
     // the Free Experiment's garden has every bed at the highest grade and the copper can already
     if (this.lab.sandbox) ups.appendChild(h('div', { class: 'small', text: `Arcane chambers, endless seeds, ×${g.pace || 1} growth.` }));
@@ -250,22 +352,12 @@ export class GardenView {
           audio.play('coin'); this.lab.save(); this.lab.refreshHud && this.lab.refreshHud(true); this.refresh();
         }, { cls: 'small', icon: st.rank < u.rank ? 'lock' : 'coin', disabled: maxed || st.rank < u.rank || st.coins < u.price, act: 'garden-up-' + u.id })));
     }
-    this.paint();
   }
 
   /** @param {string} id seed id */
   seedName(id) {
     const arcane = id.endsWith('+arcane'), sp = SPECIES_BY_KEY[arcane ? id.slice(0, -7) : id];
     return `${arcane ? 'Arcane ' : ''}${sp ? sp.name : id} seed`;
-  }
-
-  /** A canvas with an atlas sprite, bottom-centred in a square (blank while its atlas loads). @param {string|null} asset @param {number} size */
-  spriteCanvas(asset, size) {
-    const f = atlasFrame(asset);
-    const S = f ? Math.max(f.pix.w, f.pix.h, 16) + 2 : 16;
-    const cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: String(S), height: String(S), style: { width: size + 'px', height: size + 'px' } }));
-    if (f) /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')).drawImage(f.pix.toCanvas(), Math.round((S - f.pix.w) / 2), S - 1 - f.pix.h);
-    return cv;
   }
 
   /** Paint the garden: the ground (once), then each plot's bed, crop and markers. */
@@ -369,7 +461,7 @@ export class GardenView {
       const f = atlasFrame(stageAsset(pv.crop.species, pv.crop.arcane, pv.state.stageIx));
       if (f) {
         const base = q.y + Math.round(q.h * 0.74), k = Math.max(1, Math.min(CROP_SCALE, Math.floor((q.w + 12) / f.pix.w)));
-        g.drawImage(f.pix.toCanvas(), Math.round(q.x + q.w / 2 - f.ax * k), Math.round(base - f.ay * k), f.pix.w * k, f.pix.h * k);
+        g.drawImage(pixCanvas(f.pix), Math.round(q.x + q.w / 2 - f.ax * k), Math.round(base - f.ay * k), f.pix.w * k, f.pix.h * k);
       }
       if (ripe) {
         const sp = art(ART.sparkle);
@@ -390,8 +482,8 @@ export class GardenView {
     this.redrawIn = 0.5;
     this.paint();
     this.t += 0.5;
-    // the plot cards follow the growth now and then
-    if (this.t % 5 < 0.5) this.refresh();
+    // the plot cards follow the growth now and then (the seeds and upgrades only change on a tap)
+    if (this.t % 5 < 0.5) this.refreshLive();
   }
 }
 
