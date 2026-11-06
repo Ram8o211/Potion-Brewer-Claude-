@@ -103,7 +103,8 @@ img.ico.spr { object-fit: contain; image-rendering: auto; }
 .topbar { grid-area: top; display: flex; align-items: center; gap: 6px; padding: 5px 8px 6px; z-index: 3; min-width: 0; position: relative; isolation: isolate; }
 .topbar::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; box-sizing: border-box; border-style: solid; border-color: transparent; border-image: url('../assets/ui/header/wood-2.png') 16 fill / 8px stretch; }
 .topbar .btn { min-height: 44px; min-width: 44px; padding: 4px; }
-.topbar img.brand { flex: 0 1 auto; min-width: 0; height: 42px; max-width: 220px; object-fit: contain; object-position: left center; image-rendering: auto; margin-right: auto; }
+/* (a zero basis: the plate shrinks rather than pushing the purse or the Shop onto a second line) */
+.topbar img.brand { flex: 1 1 0; min-width: 0; height: 42px; max-width: 220px; object-fit: contain; object-position: left center; image-rendering: auto; margin-right: auto; }
 .topbar .stat { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
 /* the purse: the sprite sheet's coin chip, its coin drawn on the left */
 .topbar .purse { position: relative; isolation: isolate; flex: none; min-height: 36px; min-width: 72px; padding: 2px 12px 2px 38px; color: var(--ink); text-shadow: none; font-size: 20px; }
