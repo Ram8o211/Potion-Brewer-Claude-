@@ -61,7 +61,7 @@ export function compose(cv, seed) {
   const ss = ts.int(0, 1e9);
   paintTerrain(cv, {
     a: '#5a5048', b: '#4e463e', grain: '#8a7e70', dark: '#1e1812', deep: '#0e0a08', cave: '#060404',
-    crust: ['#fddf88', '#f7c069', '#e8b160'], crustH: 4, seed: ss,
+    crust: ['#fddf88', '#f7c069', '#e8b160'], crustH: 4, seed: ss, blend: 7,
     cobble: { stones: ['#4a3e34', '#3e342c', '#55483c', '#463a30', '#5a4c40', '#40362e'], mortar: '#080605', s: 10 },
     // under the gravel a thin skin of sandstone, as thin as the Whisperwood's humus, then the dark stone the ore is in
     layers: [

@@ -21583,9 +21583,10 @@ const airAbove = y === 0 || !S[k - W];
 if (airAbove) d = 0; else d++;
 let c;
 const qx = snap(x), qy = snap(y);
-let li = -1, into = 0, thick = 1;
+let li = -1, into = 0, thick = 1, under = -1;
 if (d >= ch && floors) {
 const g = cv.ground ? Math.round(cv.ground[x]) : -1, e = g >= 0 && y >= g ? y - g - ch : d - ch;
+under = e - floors[x * layers.length + layers.length - 1];
 for (let i = 0, top = 0; i < layers.length; top = floors[x * layers.length + i], i++) if (e >= 0 && e < floors[x * layers.length + i]) { li = i; into = e - top; thick = floors[x * layers.length + i] - top; break; }
 }
 const drip = hash2(x >> 1, 5, o.seed) < 0.32 ? 1 + Math.floor(hash2(x >> 1, 6, o.seed) * 2) : 0;
@@ -21596,8 +21597,17 @@ const l = layers[li];
 c = l.paint(x, y, into, l.c, l.seed, thick);
 if (into === 0 && li > 0) c = mixPacked(c, D, 0.4);
 strat[k] = li + 1;
+if (o.blend && tex && li === layers.length - 1 && under >= -Math.min(o.blend, thick - 2)) {
+let whole = true;
+for (let yy = y; yy <= y - under && whole; yy++) whole = cobble(x, yy, tex) !== tex.mortar;
+if (whole) { c = mixPacked(cobble(x, y, tex), c, 0.18); strat[k] = 0; }
+}
 } else if (tex) {
 c = cobble(x, y, tex);
+if (o.blend && layers.length && under >= 0 && under < o.blend && c === tex.mortar && hash2(x >> 1, y >> 1, o.seed + 77) > under / o.blend) {
+const l = layers[layers.length - 1];
+c = mixPacked(l.paint(x, y, 2, l.c, l.seed, 4), D, 0.06 + (under / o.blend) * 0.28);
+}
 const dd = cv.ground ? Math.min(d, Math.max(0, y - cv.ground[x]) + 10) : d;
 const t = Math.min(4, Math.floor((dd - ch) / 10));
 if (t > 0) c = mixPacked(c, deep, t * 0.045);
@@ -23641,7 +23651,7 @@ ledges(cv, top, ts, 8, { keep: [[rx - hw - 6, rx + hw + 6]], high: 1 });
 const ss = ts.int(0, 1e9);
 paintTerrain(cv, {
 a: '#8a7a62', b: '#c8c0a8', grain: '#e8e4d4', dark: '#2a2a22', deep: '#141612', cave: '#0a0c0a',
-crust: ['#fefbc7', '#fce199', '#fbd88d', '#f6d187'], crustH: 4, seed: ss,
+crust: ['#fefbc7', '#fce199', '#fbd88d', '#f6d187'], crustH: 4, seed: ss, blend: 7,
 cobble: { stones: ['#57524a', '#4a463e', '#625e54', '#3e3a34', '#56544a', '#4c4a42'], mortar: '#080807', s: 10, moss: ['#3e7226', '#6aa83a'] },
 grass: { cols: ['#5a9a3a', '#7ac04a', '#4a8a30'], tall: 4, rate: 0.32, flowers: ['#ffe58a', '#ffffff'] },
 layers: [
@@ -23731,7 +23741,7 @@ for (let yy = ay; yy < steps[ak + 1]; yy++) for (let xx = ax - 9; xx <= ax + 9; 
 const ss = ts.int(0, 1e9);
 paintTerrain(cv, {
 a: '#5a5048', b: '#4e463e', grain: '#8a7e70', dark: '#1e1812', deep: '#0e0a08', cave: '#060404',
-crust: ['#fddf88', '#f7c069', '#e8b160'], crustH: 4, seed: ss,
+crust: ['#fddf88', '#f7c069', '#e8b160'], crustH: 4, seed: ss, blend: 7,
 cobble: { stones: ['#4a3e34', '#3e342c', '#55483c', '#463a30', '#5a4c40', '#40362e'], mortar: '#080605', s: 10 },
 layers: [
 { kind: 'banded', cols: ['#fdcc76', '#f7c069', '#fddf88', '#e8b160', '#a86e38'], h: [4, 7] },
@@ -24164,28 +24174,31 @@ const { heights, raise, dip, fillSolid, blob, paintTerrain, pool, markOpen, silh
 const { fog, vines, glowShrooms, ruins, fall, moss } = __m114;
 const { cloud, spire, boulder } = __m122;
 const { terrainTrees } = __m124;
-const { fbm2 } = __m48;
-const { pack } = __m113;
+const { fbm1, fbm2 } = __m48;
+const { pack, Canvas } = __m113;
 function sprite(w, h) { return { w, h, px: new Uint32Array(w * h), x: 0, y: 0 }; }
-function isleSprite(rng, w, h, cols) {
-const s = sprite(w, h), cx = w / 2, top = 3, ph = rng.next() * 6;
-for (let y = 0; y < h; y++) {
-const t = (y - top) / (h - top);
-const half = y < top ? 0 : (w / 2 - 1) * (1 - Math.pow(Math.max(0, t), 1.6)) * (0.9 + 0.1 * Math.sin(y * 0.55 + ph));
-for (let x = 0; x < w; x++) {
-const dx = x - cx;
-if (y < top) { if (Math.abs(dx) < w / 2 - 2 && (y === top - 1 || ((x + y) & 1) === 0)) s.px[y * w + x] = cols.grass[y === top - 1 ? 1 : 0]; continue; }
-if (Math.abs(dx) > half) continue;
-const edge = Math.abs(dx) > half - 1.2 || y === h - 1;
-const band = Math.floor((y - top) / 4) % 2;
-let c = y < top + 2 ? cols.grass[2] : band ? cols.rock[1] : cols.rock[0];
-if (dx < -half * 0.4 && y > top + 2) c = cols.rock[2];
-if (dx > half * 0.5) c = cols.rock[3];
-if (edge) c = cols.ink;
-s.px[y * w + x] = c;
+function isleSprite(rng, w, h, ground) {
+const M = 6, H = h + M, icv = new Canvas(rng.int(0, 1e9), w, H), seed = rng.int(0, 1e9);
+const cx = w / 2 + (rng.next() - 0.5) * w * 0.3;
+const lobes = [];
+for (let i = 0, n = 1 + rng.int(1, 3); i < n; i++) lobes.push([cx + (rng.next() - 0.5) * w * 0.6, (0.18 + rng.next() * 0.3) * (i ? 0.7 : 1), 5 + w * (0.12 + rng.next() * 0.12)]);
+const cols = [];
+for (let x0 = 0; x0 < w; x0 += 2) {
+const xm = x0 + 1, u = Math.min(1, Math.abs(xm - cx) / Math.max(cx, w - cx));
+const shoulder = Math.round(Math.pow(u, 3) * 4 + fbm1(xm * 0.18, seed, 2) * 3);
+let depth = 0.55 * Math.pow(1 - u * u, 1.3);
+for (const [lx, ld, lw] of lobes) depth += ld * Math.max(0, 1 - (Math.abs(xm - lx) / lw) ** 2);
+cols.push([x0, shoulder, depth * (0.8 + fbm1(xm * 0.3, seed + 3, 2) * 0.4)]);
 }
+const deepest = Math.max(...cols.map(([, sh, d]) => d / Math.max(1, h - sh - 1)));
+for (const [x0, shoulder, d] of cols) {
+const y0 = M + shoulder, depth = Math.max(5, Math.round(d / deepest));
+for (let x = x0; x < Math.min(w, x0 + 2); x++) for (let y = y0; y < Math.min(H, y0 + depth); y++) icv.solid[y * w + x] = 1;
 }
-return s;
+paintTerrain(icv, { ...ground, seed: ground.seed + seed });
+const sp = sprite(w, H);
+sp.px.set(icv.pix.px);
+return sp;
 }
 function crystalSprite(rng, h, cols) {
 const w = Math.max(5, Math.round(h * 0.38)), s = sprite(w + 2, h + 1), cx = Math.floor((w + 2) / 2);
@@ -24230,14 +24243,14 @@ cv.set(x + xx, y + yy, pack(yy < 2 ? [0.62, 0.8, 0.62] : [0.62, 0.7, 0.82]));
 fog(cv, '#d8ecfa', 80, 170, 0.35, s('haze').int(0, 1e9));
 const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 184, amp: 5, freq: 0.018 });
 fillSolid(cv, top);
-const ss = ts.int(0, 1e9);
-paintTerrain(cv, {
+const ss = ts.int(0, 1e9), ground = {
 a: '#5a6474', b: '#6a7486', grain: '#9aa4b4', dark: '#2a3040', deep: '#1a2030', cave: '#141a26',
 crust: ['#8ce05a', '#5ac84a', '#3a9a3a', '#2a6a30'], crustH: 4, seed: ss,
 cobble: { stones: ['#6a7486', '#7a8496', '#5a6476', '#8a94a6', '#6e788a', '#76808f'], mortar: '#1a2030', s: 9, moss: ['#3a9a3a', '#8ce05a'] },
 grass: { cols: ['#6ad04a', '#8ce05a', '#4ab03a'], tall: 3, rate: 0.6, flowers: ['#ffffff', '#c8e8ff', '#ffe8a0'] },
-layers: [{ kind: 'band', cols: ['#7a8496', '#8a94a6', '#9aa4b4', '#4a5464'], h: [3, 5] }],
-});
+layers: [{ kind: 'band', cols: ['#7a8496', '#8a94a6', '#9aa4b4', '#4a5464'], h: /** @type {[number, number]} */ ([3, 5]) }],
+};
+paintTerrain(cv, ground);
 markOpen(cv);
 const sr = s('crystals'), glows = [];
 for (let i = 0; i < 4; i++) {
@@ -24245,18 +24258,18 @@ const at = cv.place(spire(sr, sr.int(8, 14)), pal, sr.int(16, W - 16), { foot: [
 if (at) { glow(cv, at.fx, at.fy - 7, 26, [0.7, 0.55, 1], 0.4); glows.push([at.fx, at.fy - 7]); }
 }
 terrainTrees(cv, s('trees'), pal, { n: 2, kinds: ['gnarl', 'sparse'], shapes: ['spread', 'lean'], h: [32, 50], gap: 80, look: { mats: ['leaf', 'leaf2'], bloom: { mat: 'bloom', rate: 0.04 } } });
-const ir = s('isles'), cols = { grass: [pack([0.55, 0.85, 0.35]), pack([0.4, 0.72, 0.3]), pack([0.3, 0.55, 0.28])], rock: [pack([0.45, 0.5, 0.58]), pack([0.52, 0.57, 0.66]), pack([0.62, 0.67, 0.76]), pack([0.32, 0.36, 0.44])], ink: pack([0.12, 0.14, 0.2]) };
+const ir = s('isles');
 const sizes = [16, 22, 30, 40, 52, 66];
 for (let i = sizes.length - 1; i > 0; i--) { const j = ir.int(0, i); [sizes[i], sizes[j]] = [sizes[j], sizes[i]]; }
 const floor = Math.min(...top) - 28, /** @type {number[][]} */ boxes = [];
 for (const w0 of sizes) {
-const w = w0 + ir.int(-2, 2), h = Math.round(w * (0.42 + ir.next() * 0.16)) + 4;
+const w = w0 + ir.int(-2, 2), h = Math.round(w * (0.42 + ir.next() * 0.2)) + 6;
 for (let k = 0; k < 40; k++) {
 const x = ir.int(Math.ceil(w / 2) + 4, W - Math.ceil(w / 2) - 4), y = ir.int(h + 22, floor);
 const box = [x - w / 2 - 8, y - h - 8, x + w / 2 + 8, y + 8];
 if (boxes.some((b) => box[0] < b[2] && b[0] < box[2] && box[1] < b[3] && b[1] < box[3])) continue;
 boxes.push(box);
-keep(cv, 'isles', isleSprite(ir, w, h, cols), x, y);
+keep(cv, 'isles', isleSprite(ir, w, h, ground), x, y);
 break;
 }
 }
@@ -24467,25 +24480,6 @@ layers: [{ kind: 'band', cols: ['#e0ac50', '#d29a44', '#f0c868', '#a87430'], h: 
 });
 markOpen(cv);
 cv.wash(0xff0a0604, (x, y) => (y > H - 26 ? ((y - (H - 26)) / 26) * 0.55 : 0), H - 26, H);
-const hx = ts.int(60, W - 60), hy = Math.round(top[hx]);
-const gold = pack([0.88, 0.66, 0.26]), goldLit = pack([1, 0.84, 0.42]), goldDk = pack([0.62, 0.42, 0.16]);
-const glass = pack([0.94, 0.96, 1]), inside = pack([0.86, 0.8, 0.86]), sand = pack([0.98, 0.8, 0.42]);
-for (let y = 0; y < 4; y++) for (let x = -11 + (y < 2 ? 1 : 0); x <= 11 - (y < 2 ? 1 : 0); x++) cv.set(hx + x, hy - 1 - y, y === 3 ? goldLit : x > 7 ? goldDk : gold);
-const base = hy - 5, gh = 24;
-for (const y0 of [base, base - gh - 2]) for (let y = 0; y < 2; y++) for (let x = -8; x <= 8; x++) cv.set(hx + x, y0 - y, y === 1 ? goldLit : x > 5 ? goldDk : gold);
-for (let y = 0; y < gh; y++) {
-const t = Math.abs(y - gh / 2) / (gh / 2), half = 1 + Math.round(t * t * 0.4 * 6 + t * 0.6 * 6), yy = base - 2 - y;
-for (let x = -half; x <= half; x++) {
-let c = inside;
-if (Math.abs(x) === half) c = glass;
-else if (y < gh / 2 - 3 && y < 7) c = sand;
-else if (y > gh / 2 && y > gh - 5) c = sand;
-else if (x === 0 && y <= gh / 2 + 1 && y >= 7) c = sand;
-cv.set(hx + x, yy, c);
-}
-}
-glow(cv, hx, base - gh / 2, 28, [1, 0.85, 0.5], 0.14);
-cv.block(hx - 13, base - gh - 6, hx + 13, hy);
 const sr = s('crystals'), glows = [];
 for (let i = 0; i < 3; i++) {
 const at = cv.place(spire(sr, sr.int(8, 14)), pal, sr.int(16, W - 16), { foot: [4, 2], range: 40 });
@@ -24501,7 +24495,6 @@ while (y < H - 1 && !cv.solid[y * W + x]) y++;
 falls.push({ x, y0: Math.max(20, y - fr.int(40, 70)), y1: y });
 }
 cv.meta.sandfalls = falls;
-cv.meta.hourglass = [hx, base - gh / 2];
 cv.meta.glows = glows;
 cv.meta.vignette = 0.35;
 cv.meta.wind = 0.9;
