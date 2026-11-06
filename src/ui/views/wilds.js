@@ -56,7 +56,7 @@ import { sceneOf } from '../../visual/env/scene.js';
 import { plantCanvas, plantFrameOf, plantGlow, emitColour, silhouetteOf, ingredientSprite, speciesOf, mountsOf, variantOf, MIN_HIT } from '../../rendering/species-sprites.js';
 import { EFFECT_BY_KEY } from '../../alchemy/effects.js';
 import { hashString } from '../../core/rng.js';
-import { Warren, warrenSpots, BLOOD, WILD_HP } from '../../game/wild-rabbits.js';
+import { Warren, warrenSpots, BLOOD, WILD_HP, WILD_SCALE } from '../../game/wild-rabbits.js';
 import { drawRabbit, rabbitSpriteKey, RABBIT_W, RABBIT_H } from '../../rendering/rabbit.js';
 import { defaultSnap, penHasRoom, PEN_MAX } from '../../game/colony.js';
 import { KINDS } from '../../game/kinds.js';
@@ -1013,14 +1013,15 @@ export class WildsView {
     b.imageSmoothingEnabled = false;
     b.clearRect(0, 0, RABBIT_W, RABBIT_H);
     drawRabbit(b, look, snap, 0, 0, { x: 0, y: 0, clear: false, floor: false, hop: false, mirror, pose, flash: false, grass, shadow: false });
-    const w = full ? RABBIT_W : RABBIT_W / 2 + 4, h = full ? RABBIT_H : RABBIT_H / 2 + 4;
+    const sw = Math.round(RABBIT_W * WILD_SCALE), sh = Math.round(RABBIT_H * WILD_SCALE);
+    const w = full ? RABBIT_W : sw + 4, h = full ? RABBIT_H : sh + 4;
     // (read back on a scratch canvas kept for reading; the sprite itself is a plain canvas, cheap to draw)
     if (!this.bunnyRead || this.bunnyRead.width !== w) { this.bunnyRead = document.createElement('canvas'); this.bunnyRead.width = w; this.bunnyRead.height = h; }
     const hb = /** @type {CanvasRenderingContext2D} */ (this.bunnyRead.getContext('2d', { willReadFrequently: true }));
     hb.imageSmoothingEnabled = false;
     hb.clearRect(0, 0, w, h);
     if (full) hb.drawImage(this.bunny, 0, 0);
-    else hb.drawImage(this.bunny, 0, 0, RABBIT_W, RABBIT_H, 2, 2, RABBIT_W / 2, RABBIT_H / 2);
+    else hb.drawImage(this.bunny, 0, 0, RABBIT_W, RABBIT_H, 2, 2, sw, sh);
     const img = hb.getImageData(0, 0, w, h);
     if (light) litSprite(img.data, light);
     cv = document.createElement('canvas'); cv.width = w; cv.height = h;
@@ -1039,7 +1040,8 @@ export class WildsView {
     let l = c.get(k);
     if (!l) {
       if (c.size > 2000) c.clear();
-      l = this.ground.lightAt((x & ~3) + 2, (y & ~3) + 2, 'ground', /** @type {any} */ ({ ax: 10, ay: 14, w: 20, h: 14 }));
+      const k = WILD_SCALE / 0.5;
+      l = this.ground.lightAt((x & ~3) + 2, (y & ~3) + 2, 'ground', /** @type {any} */ ({ ax: Math.round(10 * k), ay: Math.round(14 * k), w: Math.round(20 * k), h: Math.round(14 * k) }));
       c.set(k, l);
     }
     return l;
@@ -1089,9 +1091,10 @@ export class WildsView {
       // lit by the light where it stands; made once for each look, state, pose, facing and light, then only copied
       // grazing: a tuft of grass at its mouth only where grass grows under it
       const spr = this.wildSprite(r.look, snap, pose, r.face < 0, pose !== 'eat' || this.grassAt(x + r.face * 8, y), this.animalLight(x, y), full);
-      const sx = x - RABBIT_W / 4 - 2, sy = y - 18;
-      // (at full size into the detail layer, its frame half a scene pixel to one of its own)
-      const put = () => full ? ctx.drawImage(spr, sx + 2, sy + 2, RABBIT_W / 2, RABBIT_H / 2) : ctx.drawImage(spr, sx, sy);
+      // (its feet are at (24, 32) in its frame; drawn WILD_SCALE scene pixels to a pixel of its sprite)
+      const sx = x - Math.round(24 * WILD_SCALE) - 2, sy = y - Math.round(32 * WILD_SCALE) - 2;
+      // (at full size into the detail layer, grown there to its size in the scene)
+      const put = () => full ? ctx.drawImage(spr, sx + 2, sy + 2, RABBIT_W * WILD_SCALE, RABBIT_H * WILD_SCALE) : ctx.drawImage(spr, sx, sy);
       put();
       if (r.react > 0) {
         // the flash of a blow: the sprite added over itself, brightening it
@@ -1104,14 +1107,14 @@ export class WildsView {
       // its wounds: dark red where it was struck, wet and bright at the middle, running down its coat
       const lying = r.dead || r.down;
       r.wounds.forEach(([wx, wy], i) => {
-        const px = Math.round(x + wx * r.face), py = Math.round(y + (lying ? Math.max(-4, wy * 0.5) : wy));
+        const px = Math.round(x + wx * r.face), py = Math.round(y + (lying ? Math.max(-4 * WILD_SCALE / 0.5, wy * 0.5) : wy));
         ctx.fillStyle = BLOOD[2]; ctx.fillRect(px - 1, py, 2, 2);
         ctx.fillStyle = BLOOD[0]; ctx.fillRect(px, py, 1, 1);
         if (!lying) { ctx.fillStyle = BLOOD[1]; ctx.fillRect(px - (i % 2), py + 2, 1, 1 + ((i + r.hits) % 3)); }
       });
       // wounded and still alive: the blood it has left, and the taps landed of the three that catch it
       if (r.hits && r.running) {
-        const bw = 14, bx = x - bw / 2, by = sy - 4, left = Math.ceil(r.blood * (bw - 2));
+        const bw = 14, bx = x - bw / 2, by = r.box().y0 - 5, left = Math.ceil(r.blood * (bw - 2));
         ctx.fillStyle = '#100810'; ctx.fillRect(bx, by, bw, 3);
         ctx.fillStyle = BLOOD[2]; ctx.fillRect(bx + 1, by + 1, bw - 2, 1);
         ctx.fillStyle = r.blood < 0.35 && (Math.floor(r.t * 8) & 1) ? '#ff6a5a' : BLOOD[3];

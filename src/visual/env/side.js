@@ -103,9 +103,12 @@ export function blob(cv, cx, cy, rx, ry, seed, v = 1, rough = 0.35) {
  *   gravel, peat, ash, banded rock… see STRATA), each `h` rows deep (a range:
  *   its floor wavers along the ground), the body (cobble or blotches) below
  *   the last; each layer's top edge is drawn as a clean line
+ *   blend: with a cobble body, rows over which the last layer gives way to
+ *   it softly — stones rising half buried into its floor, its sand sifted
+ *   down between the stones under it — rather than at one clean line
  * @param {{a:string, b:string, grain:string, dark:string, crust:string[], crustH?:number, deep:string, cave:string, seed:number, blot?:number,
  *   grass?:{cols:string[], tall?:number, flowers?:string[], rate?:number}, cobble?:{stones:string[], mortar:string, s?:number, flat?:number, moss?:string[]}, rocks?:{cols:string[], n:number, r?:number}, strata?:boolean, seams?:{cols:string[], n:number},
- *   layers?:{kind:string, cols:string[], h:[number, number]}[]}} o
+ *   layers?:{kind:string, cols:string[], h:[number, number]}[], blend?:number}} o
  */
 export function paintTerrain(cv, o) {
   const W = cv.W, H = cv.H, S = cv.solid;
@@ -139,11 +142,13 @@ export function paintTerrain(cv, o) {
       // the material is sampled square by square, so its blotches step in blocks
       const qx = snap(x), qy = snap(y);
       // the strata under the crust: which one this row is in, and how far into it
-      let li = -1, into = 0, thick = 1;
+      let li = -1, into = 0, thick = 1, under = -1;
       if (d >= ch && floors) {
         // (in the main ground the strata lie level with its surface, running on under the pillars that
         // stand on it; in a ledge they follow the ledge's own top)
         const g = cv.ground ? Math.round(cv.ground[x]) : -1, e = g >= 0 && y >= g ? y - g - ch : d - ch;
+        // how far below the last stratum's floor (the rock under them all) this pixel is
+        under = e - floors[x * layers.length + layers.length - 1];
         for (let i = 0, top = 0; i < layers.length; top = floors[x * layers.length + i], i++) if (e >= 0 && e < floors[x * layers.length + i]) { li = i; into = e - top; thick = floors[x * layers.length + i] - top; break; }
       }
       // the crust's lower edge uneven: here and there it hangs a pixel or two into what lies under it, in drips two pixels wide
@@ -156,8 +161,20 @@ export function paintTerrain(cv, o) {
         // its top edge a clean, darker line: the boundary between two strata reads at a glance
         if (into === 0 && li > 0) c = mixPacked(c, D, 0.4);
         strat[k] = li + 1;
+        // a soft floor to the last stratum: the stones of the rock below rise into it, half buried
+        // (a stone shows wherever it runs unbroken down to the floor)
+        if (o.blend && tex && li === layers.length - 1 && under >= -Math.min(o.blend, thick - 2)) {
+          let whole = true;
+          for (let yy = y; yy <= y - under && whole; yy++) whole = cobble(x, yy, tex) !== tex.mortar;
+          if (whole) { c = mixPacked(cobble(x, y, tex), c, 0.18); strat[k] = 0; }
+        }
       } else if (tex) {
         c = cobble(x, y, tex);
+        // …and the last stratum's sand sifts down between the stones under it, thinning with depth
+        if (o.blend && layers.length && under >= 0 && under < o.blend && c === tex.mortar && hash2(x >> 1, y >> 1, o.seed + 77) > under / o.blend) {
+          const l = layers[layers.length - 1];
+          c = mixPacked(l.paint(x, y, 2, l.c, l.seed, 4), D, 0.06 + (under / o.blend) * 0.28);
+        }
         // lit from above: darker down a pillar and deeper in the ground, in flat steps
         const dd = cv.ground ? Math.min(d, Math.max(0, y - cv.ground[x]) + 10) : d;
         const t = Math.min(4, Math.floor((dd - ch) / 10));

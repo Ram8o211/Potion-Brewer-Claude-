@@ -3,7 +3,8 @@
 //
 //   Moonfen      the wisps' lights answer a touch with spectral ripples;
 //   Skyshard     drifting isles: drag or flick them and they swing back to
-//                where they float, on a bounded spring-damper;
+//                where they float, on a lightly damped (springy) spring,
+//                the small ones flung further than the big;
 //   Morphgrove   its blooms change shape when the finger brushes them;
 //   Veil Hollow  a low mist the finger parts, showing what it hides, which
 //                settles back slowly;
@@ -52,7 +53,7 @@ function stateOf(region, seed) {
     const base = new Float32Array(nx * ny);
     for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
       const v = 0.5 + 0.5 * Math.sin(i * 0.37 + meta.mist.seed % 7) * Math.cos(j * 0.6 + i * 0.11);
-      base[j * nx + i] = Math.min(1, 0.35 + v * 0.5 + j / ny * 0.3);
+      base[j * nx + i] = Math.min(1, 0.42 + v * 0.42 + j / ny * 0.16);
     }
     st.mist = { cw, nx, ny, y0: meta.mist.y0, base, cur: base.slice() };
   }
@@ -80,7 +81,7 @@ export function exoticPush(region, seed, x0, y0, x1, y1) {
   const st = stateOf(region, seed), vx = x1 - x0, vy = y1 - y0;
   for (const is of st.isles) {
     const s = is.s, cx = s.x + is.ox + s.w / 2, cy = s.y + is.oy + s.h / 2;
-    if (segDist(cx, cy, x0, y0, x1, y1) < Math.max(s.w, s.h) * 0.6) { is.vx += vx * 9; is.vy += vy * 9; }
+    if (segDist(cx, cy, x0, y0, x1, y1) < Math.max(s.w, s.h) * 0.6) { const kick = 10 / Math.max(0.8, Math.sqrt(s.w / 30)); is.vx += vx * kick; is.vy += vy * kick; }
   }
   if (region === 'moonfen') for (const [gx, gy] of st.meta.glows || []) {
     if (segDist(gx, gy, x0, y0, x1, y1) < 14 && st.ripples.length < 24 && !st.ripples.some((r) => r.x === gx && r.y === gy && st.t - r.t < 0.5)) st.ripples.push({ x: gx, y: gy, t: st.t });
@@ -112,10 +113,10 @@ export function exoticStep(region, seed, dt) {
   st.t += dt;
   // the isles: a spring toward where they float, damped so they bob a few times and settle; never pushed far
   for (const is of st.isles) {
-    const k = 22, c = 2.6;
+    const k = 26, c = 1.6;
     is.vx += (-k * is.ox - c * is.vx) * dt; is.vy += (-k * is.oy - c * is.vy) * dt;
     is.ox += is.vx * dt; is.oy += is.vy * dt;
-    const lim = 26, r = Math.hypot(is.ox, is.oy);
+    const lim = 32, r = Math.hypot(is.ox, is.oy);
     if (r > lim) { is.ox *= lim / r; is.oy *= lim / r; is.vx *= 0.5; is.vy *= 0.5; }
   }
   st.ripples = st.ripples.filter((r) => st.t - r.t < 1.6);
@@ -177,9 +178,6 @@ export function exoticDraw(ctx, region, t, seed) {
       for (const [dx, dy] of BLOOMS[m.shape]) px(ctx, m.x + dx + sway, m.y - 5 + dy, dx === 0 && dy === 0 ? c1 : c0);
       if (m.cool > 0) for (let k = 0; k < 4; k++) px(ctx, m.x + Math.cos(k * 1.6 + t * 6) * 4, m.y - 5 + Math.sin(k * 1.6 + t * 6) * 3, '#e0ffe8');
     }
-    // pollen spiralling round the ring of living stone
-    const p = st.meta.portal;
-    if (p) for (let i = 0; i < 10; i++) { const an = t * 1.2 + i * 0.63, r = p[2] + 4 + Math.sin(t + i) * 3; px(ctx, p[0] + Math.cos(an) * r, p[1] + Math.sin(an) * r, i % 2 ? '#aaffcc' : '#ffd0f0'); }
   }
   if (region === 'veilhollow' && st.mist) {
     const m = st.mist;

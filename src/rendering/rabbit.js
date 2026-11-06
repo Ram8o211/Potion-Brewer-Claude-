@@ -962,17 +962,19 @@ export function variantOf(look) {
 }
 
 /**
- * The atlas sprite for a pose: the standing variant, or one of its four
- * animation frames — the walk's (or crawl's, trot's, flutter's…) four beats,
- * a leap or a wingbeat in the air.
+ * The atlas sprite for a pose. Its animation's first frame is its standing
+ * pose (at rest, and the base of every pose drawn from the standing body);
+ * the walk (or crawl, trot, flutter…) runs through the other three frames
+ * only, so the standing frame is never repeated as a step; a leap or a
+ * wingbeat in the air takes one of those.
  * @param {string} kind @param {number} v @param {string} pose
  */
 function atlasSprite(kind, v, pose) {
   const A = ANIMAL_SPRITES[kind], b = walkBeat(pose);
-  if (b >= 0) return A.frames[v][b];
+  if (b >= 0) return A.frames[v][1 + (b % 3)];
   if (pose === 'hop' || pose === 'fly1') return A.frames[v][1];
   if (pose === 'fly2') return A.frames[v][2];
-  return A.variants[v];
+  return A.frames[v][0];
 }
 
 /**

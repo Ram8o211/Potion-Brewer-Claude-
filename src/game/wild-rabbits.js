@@ -186,7 +186,8 @@ export class WildRabbit {
     if ((this.kind === 'wisp' || this.kind === 'cloudray') && this.running) return Math.floor(this.t * (this.kind === 'wisp' ? 3 : 2)) & 1 ? 'fly1' : 'fly2';
     if (this.body === 'snail' && this.hide > 0 && this.running) return 'loaf';
     if (this.air) return 'hop';
-    if (this.walking) return `walk${(Math.floor(this.stride / ({ cat: 2.2, fox: 2.2, deer: 2.6 }[this.body] || 1.6)) % 4) + 1}`;
+    // (three beats: the atlas's first frame is its standing pose, not a step)
+    if (this.walking) return `walk${(Math.floor(this.stride / ({ cat: 2.2, fox: 2.2, deer: 2.6 }[this.body] || 1.6)) % 3) + 1}`;
     return this.running && !this.alarm ? this.pose || undefined : undefined;
   }
 
@@ -198,13 +199,20 @@ export class WildRabbit {
   /** The box it is struck in (scene pixels): its body round its feet. @param {number} [pad] */
   box(pad = 0) {
     const lying = this.dead || this.down;
-    // (a wild animal is drawn at half the hutch's size: about 18 scene pixels long; a salamander and a toad keep low)
-    const tall = { salamander: 6, toad: 8, snail: 8, rat: 7, ermine: 8, badger: 9, dove: 9, cat: 12, fox: 12, deer: 17 }[this.body] ?? 11;
+    // (sized for an animal drawn at half the hutch's size, then grown with WILD_SCALE; a salamander and a toad keep low)
+    const k = WILD_SCALE / 0.5, tall = Math.round(({ salamander: 6, toad: 8, snail: 8, rat: 7, ermine: 8, badger: 9, dove: 9, cat: 12, fox: 12, deer: 17 }[this.body] ?? 11) * k);
+    const half = Math.round(7 * k), lie = Math.round(8 * k), low = Math.round(6 * k);
     return lying
-      ? { x0: this.x - 8 - pad, y0: this.y - 6 - pad, x1: this.x + 8 + pad, y1: this.y + 1 + pad }
-      : { x0: this.x - 7 - pad, y0: this.y - tall - pad, x1: this.x + 7 + pad, y1: this.y + 1 + pad };
+      ? { x0: this.x - lie - pad, y0: this.y - low - pad, x1: this.x + lie + pad, y1: this.y + 1 + pad }
+      : { x0: this.x - half - pad, y0: this.y - tall - pad, x1: this.x + half + pad, y1: this.y + 1 + pad };
   }
 }
+
+/**
+ * How large a wild animal is drawn: scene pixels per pixel of its sprite (the
+ * hutch draws them at one pixel each, on a finer grid). Its box scales with it.
+ */
+export const WILD_SCALE = 0.75;
 
 export class Warren {
   /**

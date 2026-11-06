@@ -2,22 +2,21 @@
 // the wilds (side.js, cave.js, objects.js, trees.js), each with a grammar of
 // its own:
 //
-//   Skyshard Archipelago — a bright sky over a sea of cloud; the ground is a
-//     chain of floating isles with gaps of open sky between them, streams
-//     falling off their edges, violet crystals and a broken arch; smaller
-//     isles drift in front (drawn apart from the painting, so a finger can
-//     push them: rendering/exotic-fx.js).
-//   Morphgrove — a dusk-pink grove of wisteria and twisted trunks round a
-//     glowing ring of living stone; pink caps and shifting blooms (the
-//     blooms change shape under the finger).
-//   Veil Hollow — a hollow of grey-violet forest in banks of mist: a shrine
-//     gate, stone lanterns, falls of pale water; the mist parts where a
-//     finger stirs it and shows what it hides.
+//   Skyshard Archipelago — a bright sky; one low layer of ground along the
+//     bottom with violet crystals, and above it nothing but floating isles of
+//     every size (drawn apart from the painting, so a finger can push them:
+//     rendering/exotic-fx.js).
+//   Morphgrove — a dusk-pink grove of wisteria and twisted trunks; pink caps
+//     and shifting blooms (the blooms change shape under the finger).
+//   Veil Hollow — a hollow of grey-violet forest filled with mist up to the
+//     top of the view: a shrine gate, stone lanterns, falls of pale water;
+//     the mist parts where a finger stirs it and shows what it hides.
 //   Ghostglass Reef — under water: light shafts slanting down, a reef of
 //     teal coral cobbles, a sunken ring, tall spectral crystals (drawn apart:
 //     they phase clear at a touch), drifting light.
-//   Chronoglass Wastes — a violet-to-peach evening over crystal sand: dunes
-//     in bands, sandstone arches and columns, a great hourglass, a ghostly
+//   Chronoglass Wastes — a violet-to-rose evening over rose hills and a
+//     ghostly broken tower; slabs of golden sandstone over cobbled brown
+//     rock, broken standing stones, golden-leaved trees, a thin ghost of a
 //     clock face in the sky, sandfalls whose grains a touch sends backward
 //     or racing.
 //
@@ -29,32 +28,46 @@ import { heights, raise, dip, fillSolid, blob, paintTerrain, pool, markOpen, sil
 import { fog, vines, glowShrooms, ruins, fall, moss } from './cave.js';
 import { cloud, spire, boulder } from './objects.js';
 import { terrainTrees } from './trees.js';
-import { fbm2 } from '../noise.js';
-import { pack } from './paint.js';
+import { fbm1, fbm2 } from '../noise.js';
+import { pack, Canvas } from './paint.js';
 
 /** A small pixel sprite drawn apart from the painting (it moves or changes): packed pixels and where it sits. */
 function sprite(w, h) { return { w, h, px: new Uint32Array(w * h), x: 0, y: 0 }; }
 
-/** A floating isle as a sprite: grassy top, layered rock body tapering to a point, lit from the upper left. @param {any} rng */
-function isleSprite(rng, w, h, cols) {
-  const s = sprite(w, h), cx = w / 2, top = 3;
-  for (let y = 0; y < h; y++) {
-    const t = (y - top) / (h - top);
-    const half = y < top ? 0 : (w / 2 - 1) * (1 - Math.pow(Math.max(0, t), 1.6)) * (0.85 + 0.15 * Math.sin(y * 0.9 + rng.next()));
-    for (let x = 0; x < w; x++) {
-      const dx = x - cx;
-      if (y < top) { if (Math.abs(dx) < w / 2 - 2 && (y === top - 1 || ((x + y) & 1) === 0)) s.px[y * w + x] = cols.grass[y === top - 1 ? 1 : 0]; continue; }
-      if (Math.abs(dx) > half) continue;
-      const edge = Math.abs(dx) > half - 1.2 || y === h - 1;
-      const band = Math.floor((y - top) / 4) % 2;
-      let c = y < top + 2 ? cols.grass[2] : band ? cols.rock[1] : cols.rock[0];
-      if (dx < -half * 0.4 && y > top + 2) c = cols.rock[2];
-      if (dx > half * 0.5) c = cols.rock[3];
-      if (edge) c = cols.ink;
-      s.px[y * w + x] = c;
-    }
+/**
+ * A floating isle as a sprite, painted as the ground is (paintTerrain with the
+ * scene's own ground: its grassy crust, its strata, its cobbles), on a
+ * shape of its own: a lumpy top with rounded shoulders, an underside of rock
+ * hanging off-centre in uneven lobes and points, all in two-pixel steps.
+ * @param {any} rng @param {number} w @param {number} h the isle's body (the sprite has room above it for the grass)
+ * @param {any} ground paintTerrain's options for the scene's ground
+ */
+function isleSprite(rng, w, h, ground) {
+  const M = 6, H = h + M, icv = new Canvas(rng.int(0, 1e9), w, H), seed = rng.int(0, 1e9);
+  const cx = w / 2 + (rng.next() - 0.5) * w * 0.3;
+  // a few lobes of rock hanging under it, one of them the lowest point
+  const lobes = [];
+  for (let i = 0, n = 1 + rng.int(1, 3); i < n; i++) lobes.push([cx + (rng.next() - 0.5) * w * 0.6, (0.18 + rng.next() * 0.3) * (i ? 0.7 : 1), 5 + w * (0.12 + rng.next() * 0.12)]);
+  /** @type {number[][]} [x0, shoulder, depth] per pair of columns */
+  const cols = [];
+  for (let x0 = 0; x0 < w; x0 += 2) {
+    // (judged two columns at a time: blocky like the ground's own edges)
+    const xm = x0 + 1, u = Math.min(1, Math.abs(xm - cx) / Math.max(cx, w - cx));
+    const shoulder = Math.round(Math.pow(u, 3) * 4 + fbm1(xm * 0.18, seed, 2) * 3);
+    let depth = 0.55 * Math.pow(1 - u * u, 1.3);
+    for (const [lx, ld, lw] of lobes) depth += ld * Math.max(0, 1 - (Math.abs(xm - lx) / lw) ** 2);
+    cols.push([x0, shoulder, depth * (0.8 + fbm1(xm * 0.3, seed + 3, 2) * 0.4)]);
   }
-  return s;
+  // the deepest point reaches the bottom of the sprite
+  const deepest = Math.max(...cols.map(([, sh, d]) => d / Math.max(1, h - sh - 1)));
+  for (const [x0, shoulder, d] of cols) {
+    const y0 = M + shoulder, depth = Math.max(5, Math.round(d / deepest));
+    for (let x = x0; x < Math.min(w, x0 + 2); x++) for (let y = y0; y < Math.min(H, y0 + depth); y++) icv.solid[y * w + x] = 1;
+  }
+  paintTerrain(icv, { ...ground, seed: ground.seed + seed });
+  const sp = sprite(w, H);
+  sp.px.set(icv.pix.px);
+  return sp;
 }
 
 /** A spectral crystal spire as a sprite: lit face, shadow face, a bright ridge and a white apex. */
@@ -104,42 +117,44 @@ export const skyshard = {
         cv.set(x + xx, y + yy, pack(yy < 2 ? [0.62, 0.8, 0.62] : [0.62, 0.7, 0.82]));
       }
     }
-    fog(cv, '#d8ecfa', 80, 150, 0.35, s('haze').int(0, 1e9));
-    // the ground: a chain of isles, open sky between them
-    const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 160, amp: 10, freq: 0.02 });
-    const gaps = [];
-    for (let i = 0; i < 3; i++) { const gx = ts.int(40 + i * 110, 90 + i * 110), gw = ts.int(14, 22); gaps.push([gx - gw, gx + gw]); }
-    for (const [a, b] of gaps) for (let x = Math.max(0, a); x <= Math.min(W - 1, b); x++) top[x] = H + 8;
+    fog(cv, '#d8ecfa', 80, 170, 0.35, s('haze').int(0, 1e9));
+    // the ground: one low, unbroken layer of land along the bottom; everything
+    // above it floats
+    const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 184, amp: 5, freq: 0.018 });
     fillSolid(cv, top);
-    // each isle tapers underneath to a point of rock: carve the bottom away
-    for (let x = 0; x < W; x++) {
-      const d = Math.min(...gaps.map(([a, b]) => (x < a ? a - x : x > b ? x - b : 0)));
-      const bottom = Math.round(top[x] + 14 + Math.min(40, d * 0.9) + fbm2(x * 0.1, 3, ts.int(0, 1e9), 2) * 6);
-      for (let y = bottom; y < H; y++) cv.solid[y * W + x] = 0;
-    }
-    ledges(cv, top, ts, 4, { keep: gaps });
-    const ss = ts.int(0, 1e9);
-    paintTerrain(cv, {
+    const ss = ts.int(0, 1e9), ground = {
       a: '#5a6474', b: '#6a7486', grain: '#9aa4b4', dark: '#2a3040', deep: '#1a2030', cave: '#141a26',
       crust: ['#8ce05a', '#5ac84a', '#3a9a3a', '#2a6a30'], crustH: 4, seed: ss,
       cobble: { stones: ['#6a7486', '#7a8496', '#5a6476', '#8a94a6', '#6e788a', '#76808f'], mortar: '#1a2030', s: 9, moss: ['#3a9a3a', '#8ce05a'] },
       grass: { cols: ['#6ad04a', '#8ce05a', '#4ab03a'], tall: 3, rate: 0.6, flowers: ['#ffffff', '#c8e8ff', '#ffe8a0'] },
-      layers: [{ kind: 'band', cols: ['#7a8496', '#8a94a6', '#9aa4b4', '#4a5464'], h: [3, 5] }],
-    });
+      layers: [{ kind: 'band', cols: ['#7a8496', '#8a94a6', '#9aa4b4', '#4a5464'], h: /** @type {[number, number]} */ ([3, 5]) }],
+    };
+    paintTerrain(cv, ground);
     markOpen(cv);
-    // streams falling off the isles' edges into the open sky
-    for (const [a] of gaps.slice(0, 2)) if (a > 8) fall(cv, a - 2, Math.round(top[Math.max(0, a - 6)]) + 1, { cols: ['#e8f8ff', '#a8dcf4', '#6ab8e8'], w: 2, seed: ss + a, rgb: [0.6, 0.85, 1] });
-    // violet crystals, a broken arch
+    // violet crystals and a few low trees on the ground
     const sr = s('crystals'), glows = [];
     for (let i = 0; i < 4; i++) {
       const at = cv.place(spire(sr, sr.int(8, 14)), pal, sr.int(16, W - 16), { foot: [4, 2], range: 40 });
       if (at) { glow(cv, at.fx, at.fy - 7, 26, [0.7, 0.55, 1], 0.4); glows.push([at.fx, at.fy - 7]); }
     }
-    ruins(cv, { n: 2, fill: '#8a94a6', line: '#4a5464', rim: '#aab4c4', seed: s('arch').int(0, 1e9), floor: 150 });
-    terrainTrees(cv, s('trees'), pal, { n: 2, kinds: ['gnarl', 'sparse'], shapes: ['spread', 'lean'], h: [40, 70], gap: 80, look: { mats: ['leaf', 'leaf2'], bloom: { mat: 'bloom', rate: 0.04 } } });
-    // the drifting isles in front: sprites a finger can push (exotic-fx.js springs them back)
-    const ir = s('isles'), cols = { grass: [pack([0.55, 0.85, 0.35]), pack([0.4, 0.72, 0.3]), pack([0.3, 0.55, 0.28])], rock: [pack([0.45, 0.5, 0.58]), pack([0.52, 0.57, 0.66]), pack([0.62, 0.67, 0.76]), pack([0.32, 0.36, 0.44])], ink: pack([0.12, 0.14, 0.2]) };
-    for (let i = 0; i < 3; i++) keep(cv, 'isles', isleSprite(ir, ir.int(22, 34), ir.int(14, 22), cols), 40 + i * 120 + ir.int(-20, 20), ir.int(48, 96));
+    terrainTrees(cv, s('trees'), pal, { n: 2, kinds: ['gnarl', 'sparse'], shapes: ['spread', 'lean'], h: [32, 50], gap: 80, look: { mats: ['leaf', 'leaf2'], bloom: { mat: 'bloom', rate: 0.04 } } });
+    // above the ground only floating isles, of every size: sprites a finger can
+    // push (exotic-fx.js springs them back), painted like the ground; set apart so none overlaps another
+    const ir = s('isles');
+    const sizes = [16, 22, 30, 40, 52, 66];
+    for (let i = sizes.length - 1; i > 0; i--) { const j = ir.int(0, i); [sizes[i], sizes[j]] = [sizes[j], sizes[i]]; }
+    const floor = Math.min(...top) - 28, /** @type {number[][]} */ boxes = [];
+    for (const w0 of sizes) {
+      const w = w0 + ir.int(-2, 2), h = Math.round(w * (0.42 + ir.next() * 0.2)) + 6;
+      for (let k = 0; k < 40; k++) {
+        const x = ir.int(Math.ceil(w / 2) + 4, W - Math.ceil(w / 2) - 4), y = ir.int(h + 22, floor);
+        const box = [x - w / 2 - 8, y - h - 8, x + w / 2 + 8, y + 8];
+        if (boxes.some((b) => box[0] < b[2] && b[0] < box[2] && box[1] < b[3] && b[1] < box[3])) continue;
+        boxes.push(box);
+        keep(cv, 'isles', isleSprite(ir, w, h, ground), x, y);
+        break;
+      }
+    }
     cv.meta.glows = glows;
     cv.meta.vignette = 0.2;
     cv.meta.wind = 1.2;
@@ -177,19 +192,7 @@ export const morphgrove = {
     moss(cv, { cols: ['#7ae08a', '#4ab06a', '#2a8a5a', '#1e5a40'], seed: ss + 1, drape: 10, rate: 0.3, len: 12 });
     markOpen(cv);
     terrainTrees(cv, s('trees'), pal, { n: 3, kinds: ['wisteria', 'gnarl', 'wisteria'], shapes: ['spread', 'lean'], h: [70, 120], gap: 70, ledges: true, look: { mats: ['leaf', 'leaf2'], bloom: { mat: 'bloom', rate: 0.12 }, hang: { mat: 'leaf', rate: 0.35, len: [4, 14] } } });
-    // the ring of living stone, glowing green at its heart
-    const cx = rx, cy = Math.round(top[rx]) - 22, R = 16;
-    for (let a = 0; a < 360; a += 2) {
-      const r = (a * Math.PI) / 180;
-      for (let t = 0; t < 4; t++) {
-        const x = Math.round(cx + Math.cos(r) * (R - t)), y = Math.round(cy + Math.sin(r) * (R - t) * 1.05);
-        cv.set(x, y, pack(t === 0 ? [0.25, 0.22, 0.32] : t === 3 ? [0.45, 0.95, 0.6] : [0.38, 0.34, 0.48]));
-      }
-    }
-    for (let y = -R + 4; y < R - 4; y++) for (let x = -R + 4; x < R - 4; x++) if (x * x + y * y < (R - 4) ** 2 && ((x + y) & 3) === 0) cv.set(cx + x, cy + y, pack([0.55, 1, 0.7]));
-    glow(cv, cx, cy, 46, [0.5, 1, 0.65], 0.5);
-    cv.block(cx - R - 2, cy - R - 2, cx + R + 2, cy + R + 4);
-    const glows = [[cx, cy], ...glowShrooms(cv, { n: 6, cap: '#ff8ad8', lit: '#ffe0f4', stem: '#d8c8d8', rgb: [1, 0.5, 0.85], seed: s('caps').int(0, 1e9) })];
+    const glows = glowShrooms(cv, { n: 6, cap: '#ff8ad8', lit: '#ffe0f4', stem: '#d8c8d8', rgb: [1, 0.5, 0.85], seed: s('caps').int(0, 1e9) });
     // the shifting blooms: points in the grass where a bloom stands that changes shape under the finger (exotic-fx.js)
     const mr = s('morphs'), morphs = [];
     for (let i = 0; i < 7; i++) {
@@ -200,7 +203,6 @@ export const morphgrove = {
     }
     cv.meta.morphs = morphs;
     cv.meta.glows = glows;
-    cv.meta.portal = [cx, cy, R];
     cv.meta.vignette = 0.4;
     cv.meta.wind = 0.6;
     cv.meta.horizon = 122;
@@ -220,7 +222,7 @@ export const veilhollow = {
       const line = silhouette(cv, { base: 110 + L * 12, amp: 8, freq: 0.03, seed: s('w' + L).int(0, 1e9), fill: ['#4a4a5e', '#3e3e52', '#323246'][L], rough: 3 });
       const tr = s('t' + L);
       for (let x = 2; x < W; x += tr.int(8, 16)) treeShape(cv, x, line[x] + 2, tr.int(18, 34), tr.next() < 0.5 ? 'pine' : 'oak', ['#4a4a5e', '#3e3e52', '#323246'][L], tr.int(0, 1e9));
-      fog(cv, '#9a9ab0', 70, 170, 0.28, s('fog' + L).int(0, 1e9));
+      fog(cv, '#9a9ab0', -60, 170, 0.28, s('fog' + L).int(0, 1e9));
     }
     const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 166, amp: 10, freq: 0.018 });
     const px = ts.int(120, 260), hw = ts.int(20, 30);
@@ -260,8 +262,8 @@ export const veilhollow = {
     for (let i = 0; i < 3; i++) cv.place(boulder(br, br.int(5, 9), br.int(3, 5), { moss: 'moss' }), pal, br.int(10, W - 10), { sink: 2, foot: [8, 2] });
     vines(cv, new Float32Array(W).fill(0), { cols: ['#8a6ab8', '#6a4a98', '#4a3a78'], leaf: '#a88ad8', flower: '#e8dcff', seed: s('wis').int(0, 1e9), rate: 0.12, len: [10, 40] });
     terrainTrees(cv, s('trees'), pal, { n: 2, kinds: ['gnarl', 'wisteria'], shapes: ['lean', 'tall'], h: [70, 110], dark: 0.25, gap: 90, look: { mats: ['leaf', 'leaf2'], bloom: { mat: 'bloom', rate: 0.08 }, hang: { mat: 'bloom', rate: 0.3, len: [6, 18] } } });
-    // the banks of mist lie low; the mist a finger can part is drawn over the painting (exotic-fx.js)
-    cv.meta.mist = { y0: 110, y1: H, seed: s('mist').int(0, 1e9) };
+    // the mist fills the hollow up to the top of the view; the mist a finger can part is drawn over the painting (exotic-fx.js)
+    cv.meta.mist = { y0: 0, y1: H, seed: s('mist').int(0, 1e9) };
     cv.meta.glows = glows;
     cv.meta.vignette = 0.5;
     cv.meta.wind = 0.4;
@@ -324,59 +326,79 @@ export const ghostglass = {
   },
 };
 
+/**
+ * Broken standing stones of sandstone (drawn before the ground, so their feet
+ * are buried): each lit down its left side, shaded down its right, cracked,
+ * its top snapped off at a slant.
+ */
+function standingStones(cv, rng, n, floor, cols) {
+  const W = cv.W, [lit, mid, shade, line] = cols.map((c) => pack(c));
+  for (let i = 0; i < n; i++) {
+    const cx = Math.round(((i + 0.25 + rng.next() * 0.5) / n) * W), w = rng.int(8, 14), h = rng.int(24, 62), slope = (rng.next() - 0.5) * 1.2;
+    const top = floor - h;
+    for (let x = -Math.floor(w / 2); x < Math.ceil(w / 2); x++) {
+      const t = Math.round(top + slope * x + (((x + i) & 3) === 0 ? 2 : 0));
+      for (let y = Math.max(0, t); y < floor + 12; y++) {
+        const u = x + Math.floor(w / 2);
+        let c = u < 2 ? lit : u >= w - 2 ? shade : mid;
+        if (y === t) c = lit;
+        if (u === 0 || u === w - 1) c = line;
+        // a crack or two running down the face
+        if (u === Math.floor(w / 2) + ((y >> 3) & 1) - 1 && (y + i * 7) % 23 < 9) c = line;
+        // the courses of the blocks
+        if ((y - top) % 13 === 12) c = line;
+        cv.set(cx + x, y, c);
+      }
+    }
+  }
+}
+
 export const chronoglass = {
   /** @param {any} cv @param {string} seed */
   compose(cv, seed) {
     const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'chronoglass', p);
     const pal = vary(palette({
-      leaf: ['#c8a050', { spread: 0.4 }], leaf2: ['#a88a40', { spread: 0.4 }], bloom: ['#ffd0f0', { spread: 0.2 }], bark: '#5a4030', rock: '#b08a5a', gem: ['#b48cff', { spread: 0.5 }],
+      leaf: ['#e8a030', { spread: 0.35 }], leaf2: ['#f4c048', { spread: 0.35 }], bloom: ['#ffe080', { spread: 0.2 }], bark: '#4a3020', rock: '#8a6a4a', gem: ['#b48cff', { spread: 0.5 }],
     }), s('pal'), 0.8);
-    sky(cv, 0, H, ['#5a3a7a', '#8a5a9a', '#c88aa0', '#f0b890', '#f8d8a8']);
-    // the ghost of a clock face over the dunes: its ring, its hours, its hands
-    const cx = s('clock').int(90, W - 90), cy = 50, R = 34;
-    for (let a = 0; a < 360; a += 1) { const r = (a * Math.PI) / 180; const x = Math.round(cx + Math.cos(r) * R), y = Math.round(cy + Math.sin(r) * R); cv.set(x, y, pack([0.98, 0.9, 0.8])); }
-    for (let hr = 0; hr < 12; hr++) { const r = (hr * Math.PI) / 6; for (let t = 0; t < 4; t++) cv.set(Math.round(cx + Math.cos(r) * (R - 3 - t)), Math.round(cy + Math.sin(r) * (R - 3 - t)), pack([0.95, 0.85, 0.75])); }
-    for (let t = 0; t < 20; t++) cv.set(cx + Math.round(t * 0.6), cy - Math.round(t * 0.8), pack([0.9, 0.78, 0.7]));
-    for (let t = 0; t < 14; t++) cv.set(cx - t, cy + Math.round(t * 0.3), pack([0.9, 0.78, 0.7]));
-    glow(cv, cx, cy, 60, [1, 0.85, 0.7], 0.25);
-    mountains(cv, { base: 122, amp: 18, n: 6, seed: s('m').int(0, 1e9), fill: '#a87a8a', lit: '#c89a9a', dark: '#8a6a7a' });
-    // dunes in bands, far to near
-    for (let L = 0; L < 2; L++) silhouette(cv, { base: 132 + L * 10, amp: 6, freq: 0.02, seed: s('d' + L).int(0, 1e9), fill: ['#d8a878', '#e0b080'][L], rim: ['#f0c898', '#f8d8a8'][L] });
-    ruins(cv, { n: 4, fill: '#b08a6a', line: '#6a4a3a', rim: '#d8b08a', seed: s('ruins').int(0, 1e9), floor: 168 });
-    const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 166, amp: 12, freq: 0.014 });
+    // a violet evening sky warming to rose at the horizon
+    sky(cv, 0, H, ['#3e2766', '#56307e', '#7e4290', '#b0609c', '#d88498']);
+    // the ghost of a clock face in the sky: a thin rose ring, twelve short hour marks, two hands
+    const cx = s('clock').int(110, W - 70), cy = 54, R = 30, ring = pack([0.86, 0.58, 0.72]);
+    for (let a = 0; a < 720; a++) { const r = (a * Math.PI) / 360; cv.set(Math.round(cx + Math.cos(r) * R), Math.round(cy + Math.sin(r) * R), ring); }
+    for (let hr = 0; hr < 12; hr++) { const r = (hr * Math.PI) / 6, n = hr % 3 ? 2 : 3; for (let t = 0; t < n; t++) cv.set(Math.round(cx + Math.cos(r) * (R - 3 - t)), Math.round(cy + Math.sin(r) * (R - 3 - t)), ring); }
+    for (let t = 0; t < 18; t++) cv.set(cx + Math.round(t * 0.55), cy - Math.round(t * 0.85), ring);
+    for (let t = 0; t < 12; t++) cv.set(cx - Math.round(t * 0.95), cy + Math.round(t * 0.25), ring);
+    // far hills in rose and plum, a broken tower ghostly in the haze between them
+    mountains(cv, { base: 128, amp: 22, n: 6, seed: s('m').int(0, 1e9), fill: '#8a4a7e', lit: '#a05a86', dark: '#743e70' });
+    const tw = s('tower'), tx = tw.int(Math.round(W * 0.35), Math.round(W * 0.65)), tcol = pack([0.72, 0.45, 0.55]);
+    for (const [ox, ww, hh] of [[0, 16, 96], [16, 10, 62]]) for (let x = 0; x < ww; x++) {
+      const notch = (x >> 2) % 2 && ox === 0 ? 4 : 0;
+      for (let y = 168 - hh + notch; y < 168; y++) cv.set(tx + ox + x, y, tcol);
+    }
+    fog(cv, '#e09aa0', 90, 175, 0.4, s('haze').int(0, 1e9));
+    standingStones(cv, s('stones'), 3, 168, [[0.84, 0.66, 0.42], [0.72, 0.55, 0.36], [0.56, 0.42, 0.28], [0.36, 0.26, 0.18]]);
+    // the ground: thick slabs of golden sandstone over cobbled brown rock
+    const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 168, amp: 10, freq: 0.014 });
     fillSolid(cv, top);
     ledges(cv, top, ts, 6, { high: 1 });
     const ss = ts.int(0, 1e9);
     paintTerrain(cv, {
-      a: '#8a6a4a', b: '#9a7a56', grain: '#c8a878', dark: '#3a2818', deep: '#2a1c10', cave: '#1a1008',
-      crust: ['#f8d8a0', '#e8c088', '#d0a070', '#a88050'], crustH: 4, seed: ss,
-      cobble: { stones: ['#a8845a', '#b8946a', '#98744e', '#c8a478', '#a08060', '#b08c64'], mortar: '#2a1c10', s: 10 },
-      layers: [
-        { kind: 'band', cols: ['#e8c088', '#f0d098', '#d8b078', '#a88050'], h: [4, 6] },
-        { kind: 'band', cols: ['#c89a6a', '#d8aa7a', '#b88a5a', '#8a6040'], h: [3, 5] },
-      ],
+      a: '#5e4230', b: '#6a4c36', grain: '#8a6a4a', dark: '#2a1a10', deep: '#1a0f08', cave: '#140c06',
+      crust: ['#fbe08c', '#f2cc6e', '#e6b858', '#d8a448'], crustH: 4, seed: ss,
+      cobble: { stones: ['#6e5038', '#7c5c40', '#5e4430', '#8a6a4a', '#664a34', '#74563c'], mortar: '#24160c', s: 11 },
+      grass: { cols: ['#e8b040', '#f4cc58', '#c89030'], tall: 4, rate: 0.22 },
+      layers: [{ kind: 'band', cols: ['#e0ac50', '#d29a44', '#f0c868', '#a87430'], h: [4, 6] }],
     });
     markOpen(cv);
-    // the great hourglass on its plinth, and purple crystals in the sand
-    const hx = ts.int(40, W - 40), hy = Math.round(top[hx]);
-    const brass = pack([0.75, 0.55, 0.25]), lite = pack([0.95, 0.8, 0.45]), glass = pack([0.85, 0.92, 1]), sand = pack([0.95, 0.78, 0.45]);
-    for (let y = 0; y < 34; y++) {
-      const t = Math.abs(y - 17) / 17, half = 2 + Math.round(t * 8);
-      for (let x = -half; x <= half; x++) {
-        const c = Math.abs(x) === half ? glass : (y < 17 ? y < 6 : y > 22) ? sand : pack([0.72, 0.8, 0.9]);
-        cv.set(hx + x, hy - 4 - y, c);
-      }
-    }
-    for (let x = -12; x <= 12; x++) for (const y of [hy - 4, hy - 39, hy - 40]) cv.set(hx + x, y, x < -6 ? lite : brass);
-    for (let y = hy - 39; y < hy - 4; y++) { cv.set(hx - 12, y, brass); cv.set(hx + 12, y, brass); }
-    cv.block(hx - 14, hy - 42, hx + 14, hy);
+    // the deepest rock fades into shadow
+    cv.wash(0xff0a0604, (x, y) => (y > H - 26 ? ((y - (H - 26)) / 26) * 0.55 : 0), H - 26, H);
     const sr = s('crystals'), glows = [];
     for (let i = 0; i < 3; i++) {
       const at = cv.place(spire(sr, sr.int(8, 14)), pal, sr.int(16, W - 16), { foot: [4, 2], range: 40 });
       if (at) { glow(cv, at.fx, at.fy - 7, 24, [0.75, 0.55, 1], 0.4); glows.push([at.fx, at.fy - 7]); }
     }
     // a few dry, golden-leaved trees of the oasis edges, rustling in the hot wind
-    terrainTrees(cv, s('trees'), pal, { n: 2, kinds: ['sparse', 'gnarl'], shapes: ['lean', 'spread'], h: [44, 70], gap: 90, ledges: true, look: { mats: ['leaf', 'leaf2'], bloom: { mat: 'bloom', rate: 0.02 } } });
+    terrainTrees(cv, s('trees'), pal, { n: 2, kinds: ['gnarl', 'gnarl'], shapes: ['spread', 'lean'], h: [44, 70], gap: 90, ledges: true, look: { mats: ['leaf', 'leaf2'], bloom: { mat: 'bloom', rate: 0.03 } } });
     // sandfalls pouring from the ledges: their grains run on in exotic-fx.js, backward or racing when touched
     const falls = [];
     const fr = s('falls');
@@ -388,7 +410,6 @@ export const chronoglass = {
       falls.push({ x, y0: Math.max(20, y - fr.int(40, 70)), y1: y });
     }
     cv.meta.sandfalls = falls;
-    cv.meta.hourglass = [hx, hy - 22];
     cv.meta.glows = glows;
     cv.meta.vignette = 0.35;
     cv.meta.wind = 0.9;
