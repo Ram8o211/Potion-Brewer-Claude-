@@ -23,7 +23,7 @@ import { causeWord } from '../game/colony.js';
 import { rarityTag } from './rarity-ui.js';
 import { BIOME_BY_ID } from '../game/biomes.js';
 import { seedChance } from '../materials/rarity.js';
-import { classWords } from '../alchemy/extraction.js';
+import { classWords, groupExtracts, groupLine } from '../alchemy/extraction.js';
 import { vesselReport, vesselVolume, potionNet, RUNE_PRICE, CELLAR_T } from '../game/cellar.js';
 
 const CAT_LABEL = { heat: 'Fire', cold: 'Cooling', vessel: 'Cauldrons', tool: 'Tools', instrument: 'Instruments', trials: 'Trials room', gathering: 'Foraging', storage: 'Potion storage', guild: 'Guild' };
@@ -403,7 +403,8 @@ function hutchSummary(col) {
 
 export function showAnalysis(lab, m, recipe, title = 'Analysis of the brew') {
   const st = lab.state;
-  const comp = Object.entries(m.composition).sort((a, b) => b[1] - a[1]);
+  // each ingredient once, with how much of it is dissolved
+  const comp = groupExtracts(m.composition, st.lookup);
   // the campaign shows what the eye and the arcanometer tell; the Free
   // Experiment shows the simulation's numbers
   const sand = lab.sandbox;
@@ -423,7 +424,7 @@ export function showAnalysis(lab, m, recipe, title = 'Analysis of the brew') {
         ...kv('Effects', 'unknown — test a dose in Trials'),
         ...(aura ? kv('Aura', aura) : []),
       )),
-      h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Composition' }), ...comp.map(([id, f]) => h('div', { class: 'small', text: `${(f * 100).toFixed(1)}%  ${st.lookup(id) ? st.lookup(id).name : id}` }))),
+      h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Composition' }), ...comp.map((g) => h('div', { class: 'small', text: groupLine(g, 1, 1) }))),
       lab.sandbox ? null : h('div', { class: 'row' }, btn('Save as recipe', () => { const ev = st.addRecipe({ ...recipe, name: 'Experiment ' + (st.recipes.length + 1) }); for (const e of ev) lab.announce(e); toast('Recipe saved', '', 'book'); }, { icon: 'book' })),
     ],
   });

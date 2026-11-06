@@ -146,10 +146,14 @@ test('a customer who insists on proof will not buy until the vial is tested; tes
     l.views.counter.refresh();
   });
   await pourDose(page, await lab(page, (l) => l.state.world.roles.water), [100]);
-  await pourDose(page, 'wild-sp-silverleaf', [50]);
+  await pourDose(page, 'wild-sp-silverleaf', [100]);
   await crushInPot(page);
   // steeped warm, so one reading plainly shows the healing (a cold brew is too weak to be sure of)
   await steepWarm(page, 60, 40);
+  // stirred through, so the tap does not draw mostly the undissolved leaf that settled
+  await lab(page, (l) => l.setAutoStir(true));
+  await page.waitForTimeout(1500);
+  await lab(page, (l) => l.setAutoStir(false));
   await page.click('[data-act=bottle]');
   await page.click('[data-act=bottle-50]');
   await expect(page.locator('[data-act=serve]')).toBeVisible({ timeout: 20_000 });
