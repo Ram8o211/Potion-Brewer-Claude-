@@ -396,7 +396,10 @@ computed from the particles that actually run out of the tap. What a
   places in the hutch are for rabbits bought from the breeder and bred. New rabbits come in
   from the edges of the scene.
 * **Everything is original and bundled:** pixel art drawn in code (plus
-  the wilds' sprites from the project's own concept-art packs), a
+  the ingredients' sprites — every species' ordinary and Arcane 24×24
+  sprite, used pixel for pixel from the project's ingredient atlas sheets in
+  `art/ingredients/source/` by `scripts/slice-ingredient-atlas.py` and
+  `scripts/build-atlases.mjs`), a
   pixel font, synthesised sound effects and music. No third-party runtime
   code, no CDNs, no network calls.
 

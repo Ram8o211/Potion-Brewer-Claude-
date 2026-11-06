@@ -13,17 +13,17 @@
    "biome": "chronoglass",
    "category": "exotic",
    "morph": "relic",
-   "x": 2,
-   "y": 147,
-   "w": 62,
-   "h": 32,
+   "x": 354,
+   "y": 2,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    31,
-    31
+    23,
+    35
    ],
    "native": [
-    62,
-    32
+    42,
+    38
    ]
   },
   "airstar@arcane": {
@@ -34,17 +34,17 @@
    "biome": "skyshard",
    "category": "exotic",
    "morph": "flower",
-   "x": 174,
-   "y": 76,
-   "w": 52,
-   "h": 33,
+   "x": 398,
+   "y": 2,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    26,
-    32
+    24,
+    37
    ],
    "native": [
-    52,
-    33
+    42,
+    38
    ]
   },
   "chronoglass-shard@arcane": {
@@ -55,17 +55,17 @@
    "biome": "chronoglass",
    "category": "exotic",
    "morph": "crystal",
-   "x": 228,
-   "y": 76,
-   "w": 44,
-   "h": 33,
+   "x": 2,
+   "y": 2,
+   "w": 42,
+   "h": 40,
    "pivot": [
-    22,
-    32
+    23,
+    39
    ],
    "native": [
-    44,
-    33
+    42,
+    40
    ]
   },
   "chronovine@arcane": {
@@ -76,17 +76,17 @@
    "biome": "chronoglass",
    "category": "exotic",
    "morph": "vine",
-   "x": 274,
-   "y": 76,
-   "w": 48,
-   "h": 33,
+   "x": 442,
+   "y": 2,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    24,
-    32
+    21,
+    37
    ],
    "native": [
-    48,
-    33
+    42,
+    38
    ]
   },
   "cloudcap@arcane": {
@@ -97,17 +97,17 @@
    "biome": "skyshard",
    "category": "exotic",
    "morph": "fungus",
-   "x": 324,
-   "y": 76,
-   "w": 45,
-   "h": 33,
+   "x": 2,
+   "y": 44,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    22,
-    32
+    23,
+    33
    ],
    "native": [
-    45,
-    33
+    42,
+    38
    ]
   },
   "cloudprism@arcane": {
@@ -118,17 +118,17 @@
    "biome": "skyshard",
    "category": "exotic",
    "morph": "crystal",
-   "x": 2,
-   "y": 40,
-   "w": 40,
-   "h": 34,
+   "x": 46,
+   "y": 2,
+   "w": 42,
+   "h": 40,
    "pivot": [
-    20,
-    33
+    23,
+    39
    ],
    "native": [
-    40,
-    34
+    42,
+    40
    ]
   },
   "coralberry@arcane": {
@@ -139,17 +139,17 @@
    "biome": "ghostglass",
    "category": "exotic",
    "morph": "berry",
-   "x": 44,
-   "y": 40,
-   "w": 45,
-   "h": 34,
+   "x": 46,
+   "y": 44,
+   "w": 42,
+   "h": 38,
    "pivot": [
     22,
-    33
+    37
    ],
    "native": [
-    45,
-    34
+    42,
+    38
    ]
   },
   "crownbloom@arcane": {
@@ -160,17 +160,17 @@
    "biome": "morphgrove",
    "category": "exotic",
    "morph": "flower",
-   "x": 91,
-   "y": 40,
-   "w": 55,
-   "h": 34,
+   "x": 90,
+   "y": 44,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    27,
-    33
+    23,
+    37
    ],
    "native": [
-    55,
-    34
+    42,
+    38
    ]
   },
   "dreamberry@arcane": {
@@ -181,17 +181,17 @@
    "biome": "moonfen",
    "category": "exotic",
    "morph": "berry",
-   "x": 455,
-   "y": 181,
-   "w": 46,
-   "h": 30,
+   "x": 134,
+   "y": 44,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    23,
-    29
+    22,
+    37
    ],
    "native": [
-    46,
-    30
+    42,
+    38
    ]
   },
   "duskbell@arcane": {
@@ -202,17 +202,17 @@
    "biome": "moonfen",
    "category": "exotic",
    "morph": "flower",
-   "x": 371,
-   "y": 76,
-   "w": 57,
-   "h": 33,
+   "x": 178,
+   "y": 44,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    28,
-    32
+    23,
+    35
    ],
    "native": [
-    57,
-    33
+    42,
+    38
    ]
   },
   "eclipse-eye@arcane": {
@@ -223,17 +223,17 @@
    "biome": "veilhollow",
    "category": "exotic",
    "morph": "relic",
-   "x": 111,
-   "y": 181,
-   "w": 44,
-   "h": 31,
+   "x": 222,
+   "y": 44,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    22,
-    30
+    23,
+    35
    ],
    "native": [
-    44,
-    31
+    42,
+    38
    ]
   },
   "epochbloom@arcane": {
@@ -244,17 +244,17 @@
    "biome": "chronoglass",
    "category": "exotic",
    "morph": "flower",
-   "x": 148,
-   "y": 40,
-   "w": 53,
-   "h": 34,
+   "x": 266,
+   "y": 44,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    26,
-    33
+    23,
+    37
    ],
    "native": [
-    53,
-    34
+    42,
+    38
    ]
   },
   "featherpetal@arcane": {
@@ -265,17 +265,17 @@
    "biome": "skyshard",
    "category": "exotic",
    "morph": "flower",
-   "x": 66,
-   "y": 147,
-   "w": 53,
-   "h": 32,
+   "x": 310,
+   "y": 44,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    26,
-    31
+    22,
+    37
    ],
    "native": [
-    53,
-    32
+    42,
+    38
    ]
   },
   "fenmilk-cap@arcane": {
@@ -286,17 +286,17 @@
    "biome": "moonfen",
    "category": "exotic",
    "morph": "fungus",
-   "x": 430,
-   "y": 76,
-   "w": 45,
-   "h": 33,
+   "x": 354,
+   "y": 44,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    22,
-    32
+    23,
+    33
    ],
    "native": [
-    45,
-    33
+    42,
+    38
    ]
   },
   "formblossom@arcane": {
@@ -307,17 +307,17 @@
    "biome": "morphgrove",
    "category": "exotic",
    "morph": "flower",
-   "x": 121,
-   "y": 147,
-   "w": 54,
-   "h": 32,
+   "x": 398,
+   "y": 44,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    27,
-    31
+    22,
+    37
    ],
    "native": [
-    54,
-    32
+    42,
+    38
    ]
   },
   "ghostbud@arcane": {
@@ -328,17 +328,17 @@
    "biome": "veilhollow",
    "category": "exotic",
    "morph": "flower",
-   "x": 203,
-   "y": 40,
-   "w": 53,
-   "h": 34,
+   "x": 442,
+   "y": 44,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    26,
-    33
+    24,
+    37
    ],
    "native": [
-    53,
-    34
+    42,
+    38
    ]
   },
   "ghostcrown-coral@arcane": {
@@ -349,17 +349,17 @@
    "biome": "ghostglass",
    "category": "exotic",
    "morph": "coral",
-   "x": 177,
-   "y": 147,
-   "w": 59,
-   "h": 32,
+   "x": 2,
+   "y": 84,
+   "w": 44,
+   "h": 38,
    "pivot": [
-    29,
-    31
+    26,
+    37
    ],
    "native": [
-    59,
-    32
+    44,
+    38
    ]
   },
   "ghostglass-coral@arcane": {
@@ -370,17 +370,17 @@
    "biome": "ghostglass",
    "category": "exotic",
    "morph": "coral",
-   "x": 238,
-   "y": 147,
-   "w": 58,
-   "h": 32,
+   "x": 48,
+   "y": 84,
+   "w": 44,
+   "h": 38,
    "pivot": [
-    29,
-    31
+    26,
+    37
    ],
    "native": [
-    58,
-    32
+    44,
+    38
    ]
   },
   "glasscap@arcane": {
@@ -391,17 +391,17 @@
    "biome": "ghostglass",
    "category": "exotic",
    "morph": "fungus",
-   "x": 258,
-   "y": 40,
-   "w": 52,
-   "h": 34,
+   "x": 94,
+   "y": 84,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    26,
+    23,
     33
    ],
    "native": [
-    52,
-    34
+    42,
+    38
    ]
   },
   "graftberry@arcane": {
@@ -412,17 +412,17 @@
    "biome": "morphgrove",
    "category": "exotic",
    "morph": "berry",
-   "x": 2,
-   "y": 215,
-   "w": 43,
-   "h": 29,
+   "x": 138,
+   "y": 84,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    21,
-    28
+    22,
+    37
    ],
    "native": [
-    43,
-    29
+    42,
+    38
    ]
   },
   "hollowbloom@arcane": {
@@ -433,17 +433,17 @@
    "biome": "veilhollow",
    "category": "exotic",
    "morph": "flower",
-   "x": 166,
-   "y": 2,
-   "w": 51,
-   "h": 35,
+   "x": 182,
+   "y": 84,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    25,
-    34
+    23,
+    37
    ],
    "native": [
-    51,
-    35
+    42,
+    38
    ]
   },
   "hollowcap@arcane": {
@@ -454,17 +454,17 @@
    "biome": "veilhollow",
    "category": "exotic",
    "morph": "fungus",
-   "x": 219,
-   "y": 2,
-   "w": 50,
-   "h": 35,
+   "x": 226,
+   "y": 84,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    25,
-    34
+    23,
+    33
    ],
    "native": [
-    50,
-    35
+    42,
+    38
    ]
   },
   "hourberry@arcane": {
@@ -475,17 +475,17 @@
    "biome": "chronoglass",
    "category": "exotic",
    "morph": "berry",
-   "x": 157,
-   "y": 181,
-   "w": 54,
-   "h": 31,
+   "x": 90,
+   "y": 2,
+   "w": 42,
+   "h": 40,
    "pivot": [
-    27,
-    30
+    23,
+    39
    ],
    "native": [
-    54,
-    31
+    42,
+    40
    ]
   },
   "hourglass-of-ages@arcane": {
@@ -496,17 +496,17 @@
    "biome": "chronoglass",
    "category": "exotic",
    "morph": "relic",
-   "x": 477,
-   "y": 76,
-   "w": 31,
-   "h": 33,
+   "x": 270,
+   "y": 84,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    15,
-    32
+    22,
+    37
    ],
    "native": [
-    31,
-    33
+    42,
+    38
    ]
   },
   "mimic-eye@arcane": {
@@ -517,17 +517,17 @@
    "biome": "morphgrove",
    "category": "exotic",
    "morph": "relic",
-   "x": 2,
-   "y": 2,
-   "w": 53,
-   "h": 36,
+   "x": 314,
+   "y": 84,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    26,
+    23,
     35
    ],
    "native": [
-    53,
-    36
+    42,
+    38
    ]
   },
   "mirepod-shell@arcane": {
@@ -538,17 +538,17 @@
    "biome": "moonfen",
    "category": "exotic",
    "morph": "shell",
-   "x": 312,
-   "y": 40,
-   "w": 48,
-   "h": 34,
+   "x": 358,
+   "y": 84,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    24,
-    33
+    23,
+    35
    ],
    "native": [
-    48,
-    34
+    42,
+    38
    ]
   },
   "mistpebble@arcane": {
@@ -559,17 +559,17 @@
    "biome": "veilhollow",
    "category": "exotic",
    "morph": "stone",
-   "x": 213,
-   "y": 181,
-   "w": 46,
-   "h": 31,
+   "x": 402,
+   "y": 84,
+   "w": 42,
+   "h": 38,
    "pivot": [
     23,
-    30
+    37
    ],
    "native": [
-    46,
-    31
+    42,
+    38
    ]
   },
   "moonlotus@arcane": {
@@ -580,17 +580,17 @@
    "biome": "moonfen",
    "category": "exotic",
    "morph": "flower",
-   "x": 2,
-   "y": 112,
-   "w": 52,
-   "h": 33,
+   "x": 446,
+   "y": 84,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    26,
-    32
+    23,
+    37
    ],
    "native": [
-    52,
-    33
+    42,
+    38
    ]
   },
   "moonreed@arcane": {
@@ -601,17 +601,17 @@
    "biome": "moonfen",
    "category": "exotic",
    "morph": "grass",
-   "x": 362,
-   "y": 40,
-   "w": 57,
-   "h": 34,
+   "x": 2,
+   "y": 124,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    28,
-    33
+    19,
+    37
    ],
    "native": [
-    57,
-    34
+    42,
+    38
    ]
   },
   "moonveil-bloom@arcane": {
@@ -622,17 +622,17 @@
    "biome": "moonfen",
    "category": "exotic",
    "morph": "flower",
-   "x": 271,
-   "y": 2,
-   "w": 49,
-   "h": 35,
+   "x": 46,
+   "y": 124,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    24,
-    34
+    23,
+    37
    ],
    "native": [
-    49,
-    35
+    42,
+    38
    ]
   },
   "morphleaf@arcane": {
@@ -643,17 +643,17 @@
    "biome": "morphgrove",
    "category": "exotic",
    "morph": "leaf",
-   "x": 56,
-   "y": 112,
-   "w": 54,
-   "h": 33,
+   "x": 90,
+   "y": 124,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    27,
-    32
+    23,
+    35
    ],
    "native": [
-    54,
-    33
+    42,
+    38
    ]
   },
   "pearlshell@arcane": {
@@ -664,17 +664,17 @@
    "biome": "ghostglass",
    "category": "exotic",
    "morph": "shell",
-   "x": 112,
-   "y": 112,
-   "w": 48,
-   "h": 33,
+   "x": 134,
+   "y": 124,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    24,
-    32
+    23,
+    35
    ],
    "native": [
-    48,
-    33
+    42,
+    38
    ]
   },
   "pendulum-pods@arcane": {
@@ -685,17 +685,17 @@
    "biome": "chronoglass",
    "category": "exotic",
    "morph": "vine",
-   "x": 162,
-   "y": 112,
-   "w": 54,
-   "h": 33,
+   "x": 178,
+   "y": 124,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    27,
-    32
+    21,
+    37
    ],
    "native": [
-    54,
-    33
+    42,
+    38
    ]
   },
   "phantom-pearl@arcane": {
@@ -706,17 +706,17 @@
    "biome": "ghostglass",
    "category": "exotic",
    "morph": "shell",
-   "x": 218,
-   "y": 112,
-   "w": 46,
-   "h": 33,
+   "x": 222,
+   "y": 124,
+   "w": 42,
+   "h": 38,
    "pivot": [
     23,
-    32
+    35
    ],
    "native": [
-    46,
-    33
+    42,
+    38
    ]
   },
   "polymorph-lotus@arcane": {
@@ -727,17 +727,17 @@
    "biome": "morphgrove",
    "category": "exotic",
    "morph": "flower",
-   "x": 57,
-   "y": 2,
-   "w": 58,
-   "h": 36,
+   "x": 266,
+   "y": 124,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    29,
-    35
+    23,
+    37
    ],
    "native": [
-    58,
-    36
+    42,
+    38
    ]
   },
   "reefbud@arcane": {
@@ -748,17 +748,17 @@
    "biome": "ghostglass",
    "category": "exotic",
    "morph": "flower",
-   "x": 117,
-   "y": 2,
-   "w": 47,
-   "h": 36,
+   "x": 310,
+   "y": 124,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    23,
-    35
+    24,
+    37
    ],
    "native": [
-    47,
-    36
+    42,
+    38
    ]
   },
   "reefmoss@arcane": {
@@ -769,17 +769,17 @@
    "biome": "ghostglass",
    "category": "exotic",
    "morph": "coral",
-   "x": 298,
-   "y": 147,
-   "w": 56,
-   "h": 32,
+   "x": 354,
+   "y": 124,
+   "w": 44,
+   "h": 38,
    "pivot": [
-    28,
-    31
+    26,
+    37
    ],
    "native": [
-    56,
-    32
+    44,
+    38
    ]
   },
   "sandskirt-cap@arcane": {
@@ -790,17 +790,17 @@
    "biome": "chronoglass",
    "category": "exotic",
    "morph": "fungus",
-   "x": 266,
-   "y": 112,
-   "w": 50,
-   "h": 33,
+   "x": 400,
+   "y": 124,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    25,
-    32
+    23,
+    33
    ],
    "native": [
-    50,
-    33
+    42,
+    38
    ]
   },
   "shapecap@arcane": {
@@ -811,17 +811,17 @@
    "biome": "morphgrove",
    "category": "exotic",
    "morph": "fungus",
-   "x": 261,
-   "y": 181,
-   "w": 47,
-   "h": 31,
+   "x": 444,
+   "y": 124,
+   "w": 42,
+   "h": 38,
    "pivot": [
     23,
-    30
+    33
    ],
    "native": [
-    47,
-    31
+    42,
+    38
    ]
   },
   "shellfern@arcane": {
@@ -832,17 +832,17 @@
    "biome": "ghostglass",
    "category": "exotic",
    "morph": "leaf",
-   "x": 356,
-   "y": 147,
-   "w": 48,
-   "h": 32,
+   "x": 2,
+   "y": 164,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    24,
-    31
+    23,
+    35
    ],
    "native": [
-    48,
-    32
+    42,
+    38
    ]
   },
   "shifting-root@arcane": {
@@ -853,17 +853,17 @@
    "biome": "morphgrove",
    "category": "exotic",
    "morph": "root",
-   "x": 322,
+   "x": 134,
    "y": 2,
-   "w": 56,
-   "h": 35,
+   "w": 42,
+   "h": 40,
    "pivot": [
-    28,
-    34
+    22,
+    39
    ],
    "native": [
-    56,
-    35
+    42,
+    40
    ]
   },
   "shroud-orchid@arcane": {
@@ -874,17 +874,17 @@
    "biome": "veilhollow",
    "category": "exotic",
    "morph": "flower",
-   "x": 310,
-   "y": 181,
-   "w": 52,
-   "h": 31,
+   "x": 46,
+   "y": 164,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    26,
-    30
+    23,
+    35
    ],
    "native": [
-    52,
-    31
+    42,
+    38
    ]
   },
   "skyberry@arcane": {
@@ -895,17 +895,17 @@
    "biome": "skyshard",
    "category": "exotic",
    "morph": "berry",
-   "x": 47,
-   "y": 215,
-   "w": 49,
-   "h": 29,
+   "x": 90,
+   "y": 164,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    24,
-    28
+    22,
+    37
    ],
    "native": [
-    49,
-    29
+    42,
+    38
    ]
   },
   "skyshard-geode@arcane": {
@@ -916,17 +916,17 @@
    "biome": "skyshard",
    "category": "exotic",
    "morph": "crystal",
-   "x": 406,
-   "y": 147,
-   "w": 48,
-   "h": 32,
+   "x": 178,
+   "y": 2,
+   "w": 42,
+   "h": 40,
    "pivot": [
-    24,
-    31
+    23,
+    39
    ],
    "native": [
-    48,
-    32
+    42,
+    40
    ]
   },
   "skyspray@arcane": {
@@ -937,17 +937,17 @@
    "biome": "skyshard",
    "category": "exotic",
    "morph": "herb",
-   "x": 456,
-   "y": 147,
-   "w": 51,
-   "h": 32,
+   "x": 134,
+   "y": 164,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    25,
-    31
+    21,
+    35
    ],
    "native": [
-    51,
-    32
+    42,
+    38
    ]
   },
   "sleepglass@arcane": {
@@ -958,17 +958,17 @@
    "biome": "moonfen",
    "category": "exotic",
    "morph": "crystal",
-   "x": 421,
-   "y": 40,
-   "w": 47,
-   "h": 34,
+   "x": 222,
+   "y": 2,
+   "w": 42,
+   "h": 40,
    "pivot": [
     23,
-    33
+    39
    ],
    "native": [
-    47,
-    34
+    42,
+    40
    ]
   },
   "spectral-anemone@arcane": {
@@ -979,17 +979,17 @@
    "biome": "ghostglass",
    "category": "exotic",
    "morph": "coral",
-   "x": 318,
-   "y": 112,
-   "w": 60,
-   "h": 33,
+   "x": 178,
+   "y": 164,
+   "w": 44,
+   "h": 38,
    "pivot": [
-    30,
-    32
+    26,
+    37
    ],
    "native": [
-    60,
-    33
+    44,
+    38
    ]
   },
   "splice-bud@arcane": {
@@ -1000,17 +1000,17 @@
    "biome": "morphgrove",
    "category": "exotic",
    "morph": "flower",
-   "x": 364,
-   "y": 181,
-   "w": 43,
-   "h": 31,
+   "x": 224,
+   "y": 164,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    21,
-    30
+    24,
+    37
    ],
    "native": [
-    43,
-    31
+    42,
+    38
    ]
   },
   "starfall-lotus@arcane": {
@@ -1021,17 +1021,17 @@
    "biome": "moonfen",
    "category": "exotic",
    "morph": "flower",
-   "x": 380,
-   "y": 2,
-   "w": 53,
-   "h": 35,
+   "x": 268,
+   "y": 164,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    26,
-    34
+    23,
+    37
    ],
    "native": [
-    53,
-    35
+    42,
+    38
    ]
   },
   "sundial-stone@arcane": {
@@ -1042,17 +1042,17 @@
    "biome": "chronoglass",
    "category": "exotic",
    "morph": "relic",
-   "x": 380,
-   "y": 112,
-   "w": 49,
-   "h": 33,
+   "x": 312,
+   "y": 164,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    24,
-    32
+    23,
+    35
    ],
    "native": [
-    49,
-    33
+    42,
+    38
    ]
   },
   "timeweed@arcane": {
@@ -1063,17 +1063,17 @@
    "biome": "chronoglass",
    "category": "exotic",
    "morph": "grass",
-   "x": 2,
-   "y": 181,
-   "w": 55,
-   "h": 32,
+   "x": 356,
+   "y": 164,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    27,
-    31
+    23,
+    37
    ],
    "native": [
-    55,
-    32
+    42,
+    38
    ]
   },
   "twinsprout@arcane": {
@@ -1084,17 +1084,17 @@
    "biome": "morphgrove",
    "category": "exotic",
    "morph": "herb",
-   "x": 98,
-   "y": 215,
-   "w": 45,
-   "h": 29,
+   "x": 400,
+   "y": 164,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    22,
-    28
+    21,
+    35
    ],
    "native": [
-    45,
-    29
+    42,
+    38
    ]
   },
   "updraft-seedwing@arcane": {
@@ -1105,17 +1105,17 @@
    "biome": "skyshard",
    "category": "exotic",
    "morph": "seedpod",
-   "x": 59,
-   "y": 181,
-   "w": 50,
-   "h": 32,
+   "x": 444,
+   "y": 164,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    25,
-    31
+    23,
+    37
    ],
    "native": [
-    50,
-    32
+    42,
+    38
    ]
   },
   "veil-circlet@arcane": {
@@ -1126,17 +1126,17 @@
    "biome": "veilhollow",
    "category": "exotic",
    "morph": "relic",
-   "x": 145,
-   "y": 215,
-   "w": 50,
-   "h": 28,
+   "x": 2,
+   "y": 204,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    25,
-    27
+    23,
+    35
    ],
    "native": [
-    50,
-    28
+    42,
+    38
    ]
   },
   "veilberry@arcane": {
@@ -1147,17 +1147,17 @@
    "biome": "veilhollow",
    "category": "exotic",
    "morph": "berry",
-   "x": 435,
+   "x": 266,
    "y": 2,
-   "w": 46,
-   "h": 35,
+   "w": 42,
+   "h": 40,
    "pivot": [
     23,
-    34
+    39
    ],
    "native": [
-    46,
-    35
+    42,
+    40
    ]
   },
   "veilfern@arcane": {
@@ -1168,17 +1168,17 @@
    "biome": "veilhollow",
    "category": "exotic",
    "morph": "leaf",
-   "x": 2,
-   "y": 76,
-   "w": 54,
-   "h": 34,
+   "x": 46,
+   "y": 204,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    27,
-    33
+    23,
+    35
    ],
    "native": [
-    54,
-    34
+    42,
+    38
    ]
   },
   "veilglass@arcane": {
@@ -1189,17 +1189,17 @@
    "biome": "veilhollow",
    "category": "exotic",
    "morph": "crystal",
-   "x": 409,
-   "y": 181,
-   "w": 44,
-   "h": 31,
+   "x": 310,
+   "y": 2,
+   "w": 42,
+   "h": 40,
    "pivot": [
-    22,
-    30
+    23,
+    39
    ],
    "native": [
-    44,
-    31
+    42,
+    40
    ]
   },
   "windfern@arcane": {
@@ -1210,17 +1210,17 @@
    "biome": "skyshard",
    "category": "exotic",
    "morph": "leaf",
-   "x": 58,
-   "y": 76,
-   "w": 62,
-   "h": 34,
+   "x": 90,
+   "y": 204,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    31,
-    33
+    23,
+    35
    ],
    "native": [
-    62,
-    34
+    42,
+    38
    ]
   },
   "wisp-reliquary@arcane": {
@@ -1231,17 +1231,17 @@
    "biome": "moonfen",
    "category": "exotic",
    "morph": "relic",
-   "x": 122,
-   "y": 76,
-   "w": 50,
-   "h": 34,
+   "x": 134,
+   "y": 204,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    25,
-    33
+    23,
+    35
    ],
    "native": [
-    50,
-    34
+    42,
+    38
    ]
   },
   "zephyr-starbloom@arcane": {
@@ -1252,17 +1252,17 @@
    "biome": "skyshard",
    "category": "exotic",
    "morph": "flower",
-   "x": 431,
-   "y": 112,
-   "w": 50,
-   "h": 33,
+   "x": 178,
+   "y": 204,
+   "w": 42,
+   "h": 38,
    "pivot": [
-    25,
-    32
+    23,
+    37
    ],
    "native": [
-    50,
-    33
+    42,
+    38
    ]
   }
  }

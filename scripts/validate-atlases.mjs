@@ -49,9 +49,8 @@ export function validateAtlases() {
         if (al) opaqueN++;
       }
       if (!opaqueN) errors.push(`${id}: blank frame`);
-      // transparent background: at least one corner of the frame is clear
-      const corners = [[f.x, f.y], [f.x + f.w - 1, f.y], [f.x, f.y + f.h - 1], [f.x + f.w - 1, f.y + f.h - 1]];
-      if (corners.every(([x, y]) => im.px[y * im.w + x] >>> 24)) errors.push(`${id}: no transparent background`);
+      // transparent background: the frame is not a solid block (an hourglass may fill its corners, never its sides)
+      if (opaqueN >= f.w * f.h) errors.push(`${id}: no transparent background`);
     });
     // pass 2: the padding ring round each frame is clear and reaches no other frame
     list.forEach(([id, f], idx) => {

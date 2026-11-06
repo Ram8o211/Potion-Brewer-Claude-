@@ -22,6 +22,8 @@ import { Pixels } from './pixels.js';
 /** Cell size in the atlas (art pixels) and the silhouette grid of a piece. */
 export const PIECE_CELL = PIECE_PX;
 export const PIECE_MASK = PIECE_GRID;
+/** The least silhouette (mask cells) a piece cut from an atlas sprite is fitted to. */
+const MIN_MASK = 48;
 
 /**
  * Species with pieces, in skin order: the legacy archetypes first (in key
@@ -117,6 +119,14 @@ function atlasShards(src) {
       let c = 0;
       for (let j = 0; j < kk; j++) for (let i = 0; i < kk; i++) if (cell.px[(y * kk + j) * PIECE_CELL + x * kk + i] >>> 24) c++;
       mask[y * PIECE_MASK + x] = c * 2 >= kk * kk ? 1 : 0;
+    }
+    // a slender shard (a stem, a petal's tip) is given a little more body to fit its particles in
+    for (let grow = 0; grow < 4 && mask.reduce((n, m) => n + m, 0) < MIN_MASK; grow++) {
+      const prev = mask.slice();
+      for (let y = 0; y < PIECE_MASK; y++) for (let x = 0; x < PIECE_MASK; x++) {
+        if (prev[y * PIECE_MASK + x]) continue;
+        if ((x > 0 && prev[y * PIECE_MASK + x - 1]) || (x < PIECE_MASK - 1 && prev[y * PIECE_MASK + x + 1]) || (y > 0 && prev[(y - 1) * PIECE_MASK + x]) || (y < PIECE_MASK - 1 && prev[(y + 1) * PIECE_MASK + x])) mask[y * PIECE_MASK + x] = 1;
+      }
     }
     out.push({ pix: cell, mask });
   }

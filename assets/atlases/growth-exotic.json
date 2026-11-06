@@ -2,7 +2,7 @@
  "version": 1,
  "atlas": "growth-exotic.png",
  "width": 512,
- "height": 544,
+ "height": 512,
  "padding": 2,
  "frames": {
   "aeon-circlet@stage0": {
@@ -14,8 +14,8 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 0,
-   "x": 205,
-   "y": 387,
+   "x": 189,
+   "y": 361,
    "w": 16,
    "h": 17,
    "pivot": [
@@ -36,8 +36,8 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 0,
-   "x": 74,
-   "y": 116,
+   "x": 98,
+   "y": 155,
    "w": 21,
    "h": 23,
    "pivot": [
@@ -58,8 +58,8 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 1,
-   "x": 62,
-   "y": 462,
+   "x": 389,
+   "y": 436,
    "w": 16,
    "h": 15,
    "pivot": [
@@ -80,8 +80,8 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 1,
-   "x": 223,
-   "y": 387,
+   "x": 207,
+   "y": 361,
    "w": 21,
    "h": 17,
    "pivot": [
@@ -102,17 +102,17 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 2,
-   "x": 382,
-   "y": 497,
-   "w": 24,
-   "h": 13,
+   "x": 145,
+   "y": 471,
+   "w": 15,
+   "h": 14,
    "pivot": [
-    12,
-    12
+    7,
+    13
    ],
    "native": [
-    24,
-    13
+    15,
+    14
    ]
   },
   "aeon-circlet@stage2-arcane": {
@@ -124,17 +124,17 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 2,
-   "x": 375,
-   "y": 283,
-   "w": 28,
-   "h": 19,
+   "x": 486,
+   "y": 254,
+   "w": 19,
+   "h": 20,
    "pivot": [
-    14,
-    18
+    9,
+    19
    ],
    "native": [
-    28,
-    19
+    19,
+    20
    ]
   },
   "aeon-circlet@stage3": {
@@ -146,17 +146,17 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 3,
-   "x": 40,
-   "y": 238,
-   "w": 38,
-   "h": 20,
+   "x": 147,
+   "y": 230,
+   "w": 24,
+   "h": 21,
    "pivot": [
-    19,
-    19
+    12,
+    20
    ],
    "native": [
-    38,
-    20
+    24,
+    21
    ]
   },
   "aeon-circlet@stage3-arcane": {
@@ -168,17 +168,17 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 3,
-   "x": 151,
-   "y": 32,
-   "w": 43,
-   "h": 26,
+   "x": 28,
+   "y": 70,
+   "w": 29,
+   "h": 27,
    "pivot": [
-    21,
-    25
+    14,
+    26
    ],
    "native": [
-    43,
-    26
+    29,
+    27
    ]
   },
   "airstar@stage0": {
@@ -190,8 +190,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 309,
-   "y": 407,
+   "x": 467,
+   "y": 381,
    "w": 16,
    "h": 16,
    "pivot": [
@@ -212,8 +212,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 25,
-   "y": 142,
+   "x": 125,
+   "y": 181,
    "w": 21,
    "h": 22,
    "pivot": [
@@ -234,8 +234,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 327,
-   "y": 407,
+   "x": 485,
+   "y": 381,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -256,8 +256,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 48,
-   "y": 142,
+   "x": 148,
+   "y": 181,
    "w": 21,
    "h": 22,
    "pivot": [
@@ -278,17 +278,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 23,
-   "y": 528,
-   "w": 18,
-   "h": 12,
+   "x": 230,
+   "y": 361,
+   "w": 14,
+   "h": 17,
    "pivot": [
-    9,
-    11
+    7,
+    16
    ],
    "native": [
-    18,
-    12
+    14,
+    17
    ]
   },
   "airstar@stage2-arcane": {
@@ -300,17 +300,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 429,
-   "y": 326,
-   "w": 25,
-   "h": 18,
+   "x": 121,
+   "y": 155,
+   "w": 21,
+   "h": 23,
    "pivot": [
-    12,
-    17
+    10,
+    22
    ],
    "native": [
-    25,
-    18
+    21,
+    23
    ]
   },
   "airstar@stage3": {
@@ -322,17 +322,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 405,
-   "y": 283,
-   "w": 27,
-   "h": 19,
+   "x": 59,
+   "y": 70,
+   "w": 22,
+   "h": 27,
    "pivot": [
-    13,
-    18
+    11,
+    26
    ],
    "native": [
-    27,
-    19
+    22,
+    27
    ]
   },
   "airstar@stage3-arcane": {
@@ -344,17 +344,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 316,
-   "y": 89,
-   "w": 34,
-   "h": 24,
+   "x": 246,
+   "y": 2,
+   "w": 29,
+   "h": 32,
    "pivot": [
-    17,
-    23
+    14,
+    31
    ],
    "native": [
-    34,
-    24
+    29,
+    32
    ]
   },
   "chronoglass-shard@stage0": {
@@ -367,7 +367,7 @@
    "morph": "crystal",
    "stage": 0,
    "x": 246,
-   "y": 387,
+   "y": 361,
    "w": 16,
    "h": 17,
    "pivot": [
@@ -388,8 +388,8 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 0,
-   "x": 97,
-   "y": 116,
+   "x": 144,
+   "y": 155,
    "w": 21,
    "h": 23,
    "pivot": [
@@ -410,8 +410,8 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 1,
-   "x": 80,
-   "y": 462,
+   "x": 407,
+   "y": 436,
    "w": 16,
    "h": 15,
    "pivot": [
@@ -433,7 +433,7 @@
    "morph": "crystal",
    "stage": 1,
    "x": 264,
-   "y": 387,
+   "y": 361,
    "w": 21,
    "h": 17,
    "pivot": [
@@ -454,17 +454,17 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 2,
-   "x": 199,
-   "y": 480,
-   "w": 18,
-   "h": 14,
+   "x": 493,
+   "y": 299,
+   "w": 15,
+   "h": 18,
    "pivot": [
-    9,
-    13
+    7,
+    17
    ],
    "native": [
-    18,
-    14
+    15,
+    18
    ]
   },
   "chronoglass-shard@stage2-arcane": {
@@ -476,17 +476,17 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 2,
-   "x": 434,
-   "y": 283,
-   "w": 23,
-   "h": 19,
+   "x": 167,
+   "y": 155,
+   "w": 20,
+   "h": 23,
    "pivot": [
-    11,
-    18
+    10,
+    22
    ],
    "native": [
-    23,
-    19
+    20,
+    23
    ]
   },
   "chronoglass-shard@stage3": {
@@ -498,17 +498,17 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 3,
-   "x": 71,
-   "y": 142,
-   "w": 27,
-   "h": 22,
+   "x": 387,
+   "y": 38,
+   "w": 24,
+   "h": 28,
    "pivot": [
-    13,
-    21
+    12,
+    27
    ],
    "native": [
-    27,
-    22
+    24,
+    28
    ]
   },
   "chronoglass-shard@stage3-arcane": {
@@ -520,17 +520,17 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 3,
-   "x": 352,
-   "y": 89,
-   "w": 34,
-   "h": 24,
+   "x": 2,
+   "y": 38,
+   "w": 31,
+   "h": 30,
    "pivot": [
-    17,
-    23
+    15,
+    29
    ],
    "native": [
-    34,
-    24
+    31,
+    30
    ]
   },
   "chronovine@stage0": {
@@ -542,8 +542,8 @@
    "category": "exotic",
    "morph": "vine",
    "stage": 0,
-   "x": 98,
-   "y": 462,
+   "x": 425,
+   "y": 436,
    "w": 21,
    "h": 15,
    "pivot": [
@@ -564,8 +564,8 @@
    "category": "exotic",
    "morph": "vine",
    "stage": 0,
-   "x": 245,
-   "y": 191,
+   "x": 173,
+   "y": 230,
    "w": 26,
    "h": 21,
    "pivot": [
@@ -586,8 +586,8 @@
    "category": "exotic",
    "morph": "vine",
    "stage": 1,
-   "x": 348,
-   "y": 407,
+   "x": 2,
+   "y": 400,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -608,8 +608,8 @@
    "category": "exotic",
    "morph": "vine",
    "stage": 1,
-   "x": 100,
-   "y": 142,
+   "x": 171,
+   "y": 181,
    "w": 24,
    "h": 22,
    "pivot": [
@@ -630,17 +630,17 @@
    "category": "exotic",
    "morph": "vine",
    "stage": 2,
-   "x": 408,
-   "y": 497,
-   "w": 18,
-   "h": 13,
+   "x": 23,
+   "y": 400,
+   "w": 14,
+   "h": 16,
    "pivot": [
-    9,
-    12
+    7,
+    15
    ],
    "native": [
-    18,
-    13
+    14,
+    16
    ]
   },
   "chronovine@stage2-arcane": {
@@ -652,17 +652,17 @@
    "category": "exotic",
    "morph": "vine",
    "stage": 2,
-   "x": 459,
-   "y": 283,
-   "w": 25,
-   "h": 19,
+   "x": 197,
+   "y": 181,
+   "w": 21,
+   "h": 22,
    "pivot": [
-    12,
-    18
+    10,
+    21
    ],
    "native": [
-    25,
-    19
+    21,
+    22
    ]
   },
   "chronovine@stage3": {
@@ -674,17 +674,17 @@
    "category": "exotic",
    "morph": "vine",
    "stage": 3,
-   "x": 80,
-   "y": 238,
-   "w": 29,
-   "h": 20,
+   "x": 131,
+   "y": 100,
+   "w": 21,
+   "h": 25,
    "pivot": [
-    14,
-    19
+    10,
+    24
    ],
    "native": [
-    29,
-    20
+    21,
+    25
    ]
   },
   "chronovine@stage3-arcane": {
@@ -696,17 +696,17 @@
    "category": "exotic",
    "morph": "vine",
    "stage": 3,
-   "x": 196,
-   "y": 32,
-   "w": 36,
-   "h": 26,
+   "x": 309,
+   "y": 2,
+   "w": 28,
+   "h": 31,
    "pivot": [
-    18,
-    25
+    14,
+    30
    ],
    "native": [
-    36,
-    26
+    28,
+    31
    ]
   },
   "cloudcap@stage0": {
@@ -718,8 +718,8 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 0,
-   "x": 121,
-   "y": 462,
+   "x": 448,
+   "y": 436,
    "w": 17,
    "h": 15,
    "pivot": [
@@ -740,8 +740,8 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 0,
-   "x": 273,
-   "y": 191,
+   "x": 201,
+   "y": 230,
    "w": 19,
    "h": 21,
    "pivot": [
@@ -762,8 +762,8 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 1,
-   "x": 140,
-   "y": 462,
+   "x": 467,
+   "y": 436,
    "w": 18,
    "h": 15,
    "pivot": [
@@ -784,8 +784,8 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 1,
-   "x": 294,
-   "y": 191,
+   "x": 222,
+   "y": 230,
    "w": 23,
    "h": 21,
    "pivot": [
@@ -806,17 +806,17 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 2,
-   "x": 428,
-   "y": 497,
-   "w": 18,
-   "h": 13,
+   "x": 280,
+   "y": 488,
+   "w": 15,
+   "h": 12,
    "pivot": [
-    9,
-    12
+    7,
+    11
    ],
    "native": [
-    18,
-    13
+    15,
+    12
    ]
   },
   "cloudcap@stage2-arcane": {
@@ -829,16 +829,16 @@
    "morph": "fungus",
    "stage": 2,
    "x": 2,
-   "y": 305,
-   "w": 25,
-   "h": 19,
+   "y": 321,
+   "w": 22,
+   "h": 18,
    "pivot": [
-    12,
-    18
+    11,
+    17
    ],
    "native": [
-    25,
-    19
+    22,
+    18
    ]
   },
   "cloudcap@stage3": {
@@ -850,17 +850,17 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 3,
-   "x": 111,
-   "y": 238,
-   "w": 28,
-   "h": 20,
+   "x": 26,
+   "y": 321,
+   "w": 24,
+   "h": 18,
    "pivot": [
-    14,
-    19
+    12,
+    17
    ],
    "native": [
-    28,
-    20
+    24,
+    18
    ]
   },
   "cloudcap@stage3-arcane": {
@@ -872,17 +872,17 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 3,
-   "x": 267,
-   "y": 61,
-   "w": 33,
-   "h": 25,
+   "x": 189,
+   "y": 155,
+   "w": 29,
+   "h": 23,
    "pivot": [
-    16,
-    24
+    14,
+    22
    ],
    "native": [
-    33,
-    25
+    29,
+    23
    ]
   },
   "cloudprism@stage0": {
@@ -895,7 +895,7 @@
    "morph": "crystal",
    "stage": 0,
    "x": 287,
-   "y": 387,
+   "y": 361,
    "w": 16,
    "h": 17,
    "pivot": [
@@ -916,8 +916,8 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 0,
-   "x": 120,
-   "y": 116,
+   "x": 220,
+   "y": 155,
    "w": 18,
    "h": 23,
    "pivot": [
@@ -938,8 +938,8 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 1,
-   "x": 160,
-   "y": 462,
+   "x": 487,
+   "y": 436,
    "w": 16,
    "h": 15,
    "pivot": [
@@ -960,8 +960,8 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 1,
-   "x": 319,
-   "y": 191,
+   "x": 247,
+   "y": 230,
    "w": 21,
    "h": 21,
    "pivot": [
@@ -982,17 +982,17 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 2,
-   "x": 448,
-   "y": 497,
+   "x": 52,
+   "y": 321,
    "w": 15,
-   "h": 13,
+   "h": 18,
    "pivot": [
     7,
-    12
+    17
    ],
    "native": [
     15,
-    13
+    18
    ]
   },
   "cloudprism@stage2-arcane": {
@@ -1004,17 +1004,17 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 2,
-   "x": 29,
-   "y": 305,
+   "x": 25,
+   "y": 128,
    "w": 22,
-   "h": 19,
+   "h": 24,
    "pivot": [
     11,
-    18
+    23
    ],
    "native": [
     22,
-    19
+    24
    ]
   },
   "cloudprism@stage3": {
@@ -1026,17 +1026,17 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 3,
-   "x": 141,
-   "y": 238,
+   "x": 413,
+   "y": 38,
    "w": 24,
-   "h": 20,
+   "h": 28,
    "pivot": [
     12,
-    19
+    27
    ],
    "native": [
     24,
-    20
+    28
    ]
   },
   "cloudprism@stage3-arcane": {
@@ -1048,17 +1048,17 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 3,
-   "x": 234,
-   "y": 32,
+   "x": 2,
+   "y": 2,
    "w": 28,
-   "h": 26,
+   "h": 34,
    "pivot": [
     14,
-    25
+    33
    ],
    "native": [
     28,
-    26
+    34
    ]
   },
   "coralberry@stage0": {
@@ -1070,8 +1070,8 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 0,
-   "x": 219,
-   "y": 480,
+   "x": 162,
+   "y": 471,
    "w": 17,
    "h": 14,
    "pivot": [
@@ -1092,8 +1092,8 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 0,
-   "x": 167,
-   "y": 238,
+   "x": 2,
+   "y": 277,
    "w": 22,
    "h": 20,
    "pivot": [
@@ -1114,8 +1114,8 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 1,
-   "x": 369,
-   "y": 407,
+   "x": 39,
+   "y": 400,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -1136,8 +1136,8 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 1,
-   "x": 126,
-   "y": 142,
+   "x": 220,
+   "y": 181,
    "w": 24,
    "h": 22,
    "pivot": [
@@ -1158,17 +1158,17 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 2,
-   "x": 465,
-   "y": 497,
-   "w": 17,
-   "h": 13,
+   "x": 2,
+   "y": 454,
+   "w": 13,
+   "h": 15,
    "pivot": [
-    8,
-    12
+    6,
+    14
    ],
    "native": [
-    17,
-    13
+    13,
+    15
    ]
   },
   "coralberry@stage2-arcane": {
@@ -1180,17 +1180,17 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 2,
-   "x": 53,
-   "y": 305,
-   "w": 24,
-   "h": 19,
+   "x": 270,
+   "y": 230,
+   "w": 20,
+   "h": 21,
    "pivot": [
-    12,
-    18
+    10,
+    20
    ],
    "native": [
-    24,
-    19
+    20,
+    21
    ]
   },
   "coralberry@stage3": {
@@ -1202,17 +1202,17 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 3,
-   "x": 191,
-   "y": 238,
-   "w": 27,
-   "h": 20,
+   "x": 49,
+   "y": 128,
+   "w": 20,
+   "h": 24,
    "pivot": [
-    13,
-    19
+    10,
+    23
    ],
    "native": [
-    27,
-    20
+    20,
+    24
    ]
   },
   "coralberry@stage3-arcane": {
@@ -1224,17 +1224,17 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 3,
-   "x": 264,
-   "y": 32,
-   "w": 34,
-   "h": 26,
+   "x": 35,
+   "y": 38,
+   "w": 27,
+   "h": 30,
    "pivot": [
-    17,
-    25
+    13,
+    29
    ],
    "native": [
-    34,
-    26
+    27,
+    30
    ]
   },
   "crownbloom@stage0": {
@@ -1246,8 +1246,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 390,
-   "y": 407,
+   "x": 60,
+   "y": 400,
    "w": 16,
    "h": 16,
    "pivot": [
@@ -1268,8 +1268,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 152,
-   "y": 142,
+   "x": 246,
+   "y": 181,
    "w": 21,
    "h": 22,
    "pivot": [
@@ -1290,8 +1290,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 408,
-   "y": 407,
+   "x": 78,
+   "y": 400,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -1312,8 +1312,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 456,
-   "y": 326,
+   "x": 69,
+   "y": 321,
    "w": 24,
    "h": 18,
    "pivot": [
@@ -1334,17 +1334,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 43,
-   "y": 528,
-   "w": 23,
-   "h": 12,
+   "x": 438,
+   "y": 471,
+   "w": 17,
+   "h": 13,
    "pivot": [
-    11,
-    11
+    8,
+    12
    ],
    "native": [
-    23,
-    12
+    17,
+    13
    ]
   },
   "crownbloom@stage2-arcane": {
@@ -1356,17 +1356,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 482,
-   "y": 326,
-   "w": 27,
-   "h": 18,
+   "x": 101,
+   "y": 299,
+   "w": 21,
+   "h": 19,
    "pivot": [
-    13,
-    17
+    10,
+    18
    ],
    "native": [
-    27,
-    18
+    21,
+    19
    ]
   },
   "crownbloom@stage3": {
@@ -1378,17 +1378,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 2,
-   "y": 347,
-   "w": 36,
-   "h": 18,
+   "x": 26,
+   "y": 277,
+   "w": 27,
+   "h": 20,
    "pivot": [
-    18,
-    17
+    13,
+    19
    ],
    "native": [
-    36,
-    18
+    27,
+    20
    ]
   },
   "crownbloom@stage3-arcane": {
@@ -1400,17 +1400,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 140,
-   "y": 116,
-   "w": 41,
-   "h": 23,
+   "x": 154,
+   "y": 100,
+   "w": 32,
+   "h": 25,
    "pivot": [
-    20,
-    22
+    16,
+    24
    ],
    "native": [
-    41,
-    23
+    32,
+    25
    ]
   },
   "dreamberry@stage0": {
@@ -1422,8 +1422,8 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 0,
-   "x": 238,
-   "y": 480,
+   "x": 181,
+   "y": 471,
    "w": 17,
    "h": 14,
    "pivot": [
@@ -1444,8 +1444,8 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 0,
-   "x": 220,
-   "y": 238,
+   "x": 55,
+   "y": 277,
    "w": 22,
    "h": 20,
    "pivot": [
@@ -1466,8 +1466,8 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 1,
-   "x": 429,
-   "y": 407,
+   "x": 99,
+   "y": 400,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -1488,8 +1488,8 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 1,
-   "x": 175,
-   "y": 142,
+   "x": 269,
+   "y": 181,
    "w": 21,
    "h": 22,
    "pivot": [
@@ -1510,17 +1510,17 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 2,
-   "x": 484,
-   "y": 497,
-   "w": 18,
-   "h": 13,
+   "x": 17,
+   "y": 454,
+   "w": 13,
+   "h": 15,
    "pivot": [
-    9,
-    12
+    6,
+    14
    ],
    "native": [
-    18,
-    13
+    13,
+    15
    ]
   },
   "dreamberry@stage2-arcane": {
@@ -1532,17 +1532,17 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 2,
-   "x": 79,
-   "y": 305,
-   "w": 23,
-   "h": 19,
+   "x": 292,
+   "y": 230,
+   "w": 18,
+   "h": 21,
    "pivot": [
-    11,
-    18
+    9,
+    20
    ],
    "native": [
-    23,
-    19
+    18,
+    21
    ]
   },
   "dreamberry@stage3": {
@@ -1554,17 +1554,17 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 3,
-   "x": 104,
-   "y": 305,
-   "w": 27,
-   "h": 19,
+   "x": 71,
+   "y": 128,
+   "w": 20,
+   "h": 24,
    "pivot": [
-    13,
-    18
+    10,
+    23
    ],
    "native": [
-    27,
-    19
+    20,
+    24
    ]
   },
   "dreamberry@stage3-arcane": {
@@ -1576,17 +1576,17 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 3,
-   "x": 302,
-   "y": 61,
-   "w": 34,
-   "h": 25,
+   "x": 64,
+   "y": 38,
+   "w": 27,
+   "h": 30,
    "pivot": [
-    17,
-    24
+    13,
+    29
    ],
    "native": [
-    34,
-    25
+    27,
+    30
    ]
   },
   "duskbell@stage0": {
@@ -1598,8 +1598,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 450,
-   "y": 407,
+   "x": 120,
+   "y": 400,
    "w": 16,
    "h": 16,
    "pivot": [
@@ -1620,8 +1620,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 40,
-   "y": 347,
+   "x": 95,
+   "y": 321,
    "w": 21,
    "h": 18,
    "pivot": [
@@ -1642,8 +1642,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 468,
-   "y": 407,
+   "x": 138,
+   "y": 400,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -1664,8 +1664,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 198,
-   "y": 142,
+   "x": 292,
+   "y": 181,
    "w": 24,
    "h": 22,
    "pivot": [
@@ -1686,17 +1686,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 2,
-   "y": 513,
-   "w": 21,
-   "h": 13,
+   "x": 200,
+   "y": 471,
+   "w": 14,
+   "h": 14,
    "pivot": [
-    10,
-    12
+    7,
+    13
    ],
    "native": [
-    21,
-    13
+    14,
+    14
    ]
   },
   "duskbell@stage2-arcane": {
@@ -1708,17 +1708,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 178,
-   "y": 462,
-   "w": 28,
-   "h": 15,
+   "x": 159,
+   "y": 400,
+   "w": 21,
+   "h": 16,
    "pivot": [
-    14,
-    14
+    10,
+    15
    ],
    "native": [
-    28,
-    15
+    21,
+    16
    ]
   },
   "duskbell@stage3": {
@@ -1730,17 +1730,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 244,
-   "y": 238,
-   "w": 32,
-   "h": 20,
+   "x": 312,
+   "y": 230,
+   "w": 21,
+   "h": 21,
    "pivot": [
-    16,
-    19
+    10,
+    20
    ],
    "native": [
-    32,
-    20
+    21,
+    21
    ]
   },
   "duskbell@stage3-arcane": {
@@ -1752,17 +1752,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 300,
-   "y": 32,
-   "w": 37,
-   "h": 26,
+   "x": 83,
+   "y": 70,
+   "w": 26,
+   "h": 27,
    "pivot": [
-    18,
-    25
+    13,
+    26
    ],
    "native": [
-    37,
-    26
+    26,
+    27
    ]
   },
   "eclipse-eye@stage0": {
@@ -1775,7 +1775,7 @@
    "morph": "relic",
    "stage": 0,
    "x": 305,
-   "y": 387,
+   "y": 361,
    "w": 16,
    "h": 17,
    "pivot": [
@@ -1796,8 +1796,8 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 0,
-   "x": 183,
-   "y": 116,
+   "x": 240,
+   "y": 155,
    "w": 18,
    "h": 23,
    "pivot": [
@@ -1818,8 +1818,8 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 1,
-   "x": 208,
-   "y": 462,
+   "x": 32,
+   "y": 454,
    "w": 16,
    "h": 15,
    "pivot": [
@@ -1840,8 +1840,8 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 1,
-   "x": 342,
-   "y": 191,
+   "x": 335,
+   "y": 230,
    "w": 18,
    "h": 21,
    "pivot": [
@@ -1862,17 +1862,17 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 2,
-   "x": 25,
-   "y": 513,
-   "w": 16,
-   "h": 13,
+   "x": 297,
+   "y": 488,
+   "w": 17,
+   "h": 12,
    "pivot": [
     8,
-    12
+    11
    ],
    "native": [
-    16,
-    13
+    17,
+    12
    ]
   },
   "eclipse-eye@stage2-arcane": {
@@ -1884,17 +1884,17 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 2,
-   "x": 133,
-   "y": 305,
-   "w": 23,
-   "h": 19,
+   "x": 118,
+   "y": 321,
+   "w": 24,
+   "h": 18,
    "pivot": [
-    11,
-    18
+    12,
+    17
    ],
    "native": [
-    23,
-    19
+    24,
+    18
    ]
   },
   "eclipse-eye@stage3": {
@@ -1906,17 +1906,17 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 3,
-   "x": 278,
-   "y": 238,
-   "w": 25,
-   "h": 20,
+   "x": 144,
+   "y": 321,
+   "w": 27,
+   "h": 18,
    "pivot": [
-    12,
-    19
+    13,
+    17
    ],
    "native": [
-    25,
-    20
+    27,
+    18
    ]
   },
   "eclipse-eye@stage3-arcane": {
@@ -1928,17 +1928,17 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 3,
-   "x": 339,
-   "y": 32,
-   "w": 30,
-   "h": 26,
+   "x": 93,
+   "y": 128,
+   "w": 32,
+   "h": 24,
    "pivot": [
-    15,
-    25
+    16,
+    23
    ],
    "native": [
-    30,
-    26
+    32,
+    24
    ]
   },
   "epochbloom@stage0": {
@@ -1950,8 +1950,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 489,
-   "y": 407,
+   "x": 182,
+   "y": 400,
    "w": 16,
    "h": 16,
    "pivot": [
@@ -1972,8 +1972,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 63,
-   "y": 347,
+   "x": 173,
+   "y": 321,
    "w": 21,
    "h": 18,
    "pivot": [
@@ -1994,8 +1994,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 2,
-   "y": 426,
+   "x": 200,
+   "y": 400,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -2016,8 +2016,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 224,
-   "y": 142,
+   "x": 318,
+   "y": 181,
    "w": 24,
    "h": 22,
    "pivot": [
@@ -2038,17 +2038,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 257,
-   "y": 480,
-   "w": 22,
-   "h": 14,
+   "x": 221,
+   "y": 400,
+   "w": 17,
+   "h": 16,
    "pivot": [
-    11,
-    13
+    8,
+    15
    ],
    "native": [
-    22,
-    14
+    17,
+    16
    ]
   },
   "epochbloom@stage2-arcane": {
@@ -2060,17 +2060,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 305,
-   "y": 238,
-   "w": 27,
-   "h": 20,
+   "x": 344,
+   "y": 181,
+   "w": 22,
+   "h": 22,
    "pivot": [
-    13,
-    19
+    11,
+    21
    ],
    "native": [
-    27,
-    20
+    22,
+    22
    ]
   },
   "epochbloom@stage3": {
@@ -2082,17 +2082,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 362,
-   "y": 191,
-   "w": 34,
-   "h": 21,
+   "x": 188,
+   "y": 100,
+   "w": 27,
+   "h": 25,
    "pivot": [
-    17,
-    20
+    13,
+    24
    ],
    "native": [
-    34,
-    21
+    27,
+    25
    ]
   },
   "epochbloom@stage3-arcane": {
@@ -2104,17 +2104,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 334,
+   "x": 339,
    "y": 2,
-   "w": 39,
-   "h": 27,
+   "w": 32,
+   "h": 31,
    "pivot": [
-    19,
-    26
+    16,
+    30
    ],
    "native": [
-    39,
-    27
+    32,
+    31
    ]
   },
   "featherpetal@stage0": {
@@ -2126,8 +2126,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 23,
-   "y": 426,
+   "x": 240,
+   "y": 400,
    "w": 16,
    "h": 16,
    "pivot": [
@@ -2148,8 +2148,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 250,
-   "y": 142,
+   "x": 368,
+   "y": 181,
    "w": 21,
    "h": 22,
    "pivot": [
@@ -2170,8 +2170,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 41,
-   "y": 426,
+   "x": 258,
+   "y": 400,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -2192,8 +2192,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 273,
-   "y": 142,
+   "x": 391,
+   "y": 181,
    "w": 24,
    "h": 22,
    "pivot": [
@@ -2214,17 +2214,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 281,
-   "y": 480,
-   "w": 18,
-   "h": 14,
+   "x": 323,
+   "y": 361,
+   "w": 16,
+   "h": 17,
    "pivot": [
-    9,
-    13
+    8,
+    16
    ],
    "native": [
-    18,
-    14
+    16,
+    17
    ]
   },
   "featherpetal@stage2-arcane": {
@@ -2236,17 +2236,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 334,
-   "y": 238,
-   "w": 25,
-   "h": 20,
+   "x": 260,
+   "y": 155,
+   "w": 23,
+   "h": 23,
    "pivot": [
-    12,
-    19
+    11,
+    22
    ],
    "native": [
-    25,
-    20
+    23,
+    23
    ]
   },
   "featherpetal@stage3": {
@@ -2258,17 +2258,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 398,
-   "y": 191,
-   "w": 28,
-   "h": 21,
+   "x": 111,
+   "y": 70,
+   "w": 25,
+   "h": 27,
    "pivot": [
-    14,
-    20
+    12,
+    26
    ],
    "native": [
-    28,
-    21
+    25,
+    27
    ]
   },
   "featherpetal@stage3-arcane": {
@@ -2280,17 +2280,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 375,
+   "x": 94,
    "y": 2,
-   "w": 35,
-   "h": 27,
+   "w": 32,
+   "h": 33,
    "pivot": [
-    17,
-    26
+    16,
+    32
    ],
    "native": [
-    35,
-    27
+    32,
+    33
    ]
   },
   "fenmilk-cap@stage0": {
@@ -2302,8 +2302,8 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 0,
-   "x": 226,
-   "y": 462,
+   "x": 50,
+   "y": 454,
    "w": 17,
    "h": 15,
    "pivot": [
@@ -2324,8 +2324,8 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 0,
-   "x": 323,
-   "y": 387,
+   "x": 341,
+   "y": 361,
    "w": 22,
    "h": 17,
    "pivot": [
@@ -2346,8 +2346,8 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 1,
-   "x": 245,
-   "y": 462,
+   "x": 69,
+   "y": 454,
    "w": 18,
    "h": 15,
    "pivot": [
@@ -2368,8 +2368,8 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 1,
-   "x": 347,
-   "y": 387,
+   "x": 365,
+   "y": 361,
    "w": 23,
    "h": 17,
    "pivot": [
@@ -2390,17 +2390,17 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 2,
-   "x": 43,
-   "y": 513,
-   "w": 17,
-   "h": 13,
+   "x": 425,
+   "y": 488,
+   "w": 15,
+   "h": 11,
    "pivot": [
-    8,
-    12
+    7,
+    10
    ],
    "native": [
-    17,
-    13
+    15,
+    11
    ]
   },
   "fenmilk-cap@stage2-arcane": {
@@ -2412,17 +2412,17 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 2,
-   "x": 86,
-   "y": 347,
-   "w": 22,
-   "h": 18,
+   "x": 279,
+   "y": 400,
+   "w": 20,
+   "h": 16,
    "pivot": [
-    11,
-    17
+    10,
+    15
    ],
    "native": [
-    22,
-    18
+    20,
+    16
    ]
   },
   "fenmilk-cap@stage3": {
@@ -2434,17 +2434,17 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 3,
-   "x": 361,
-   "y": 238,
-   "w": 26,
-   "h": 20,
+   "x": 390,
+   "y": 361,
+   "w": 24,
+   "h": 17,
    "pivot": [
-    13,
-    19
+    12,
+    16
    ],
    "native": [
-    26,
-    20
+    24,
+    17
    ]
   },
   "fenmilk-cap@stage3-arcane": {
@@ -2456,17 +2456,17 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 3,
-   "x": 371,
-   "y": 32,
-   "w": 33,
-   "h": 26,
+   "x": 285,
+   "y": 155,
+   "w": 31,
+   "h": 23,
    "pivot": [
-    16,
-    25
+    15,
+    22
    ],
    "native": [
-    33,
-    26
+    31,
+    23
    ]
   },
   "formblossom@stage0": {
@@ -2478,8 +2478,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 62,
-   "y": 426,
+   "x": 301,
+   "y": 400,
    "w": 16,
    "h": 16,
    "pivot": [
@@ -2500,8 +2500,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 299,
-   "y": 142,
+   "x": 417,
+   "y": 181,
    "w": 21,
    "h": 22,
    "pivot": [
@@ -2522,8 +2522,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 80,
-   "y": 426,
+   "x": 319,
+   "y": 400,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -2544,8 +2544,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 110,
-   "y": 347,
+   "x": 196,
+   "y": 321,
    "w": 24,
    "h": 18,
    "pivot": [
@@ -2566,17 +2566,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 62,
-   "y": 513,
-   "w": 20,
-   "h": 13,
+   "x": 416,
+   "y": 361,
+   "w": 16,
+   "h": 17,
    "pivot": [
-    10,
-    12
+    8,
+    16
    ],
    "native": [
-    20,
-    13
+    16,
+    17
    ]
   },
   "formblossom@stage2-arcane": {
@@ -2588,17 +2588,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 136,
-   "y": 347,
-   "w": 25,
-   "h": 18,
+   "x": 440,
+   "y": 181,
+   "w": 21,
+   "h": 22,
    "pivot": [
-    12,
-    17
+    10,
+    21
    ],
    "native": [
-    25,
-    18
+    21,
+    22
    ]
   },
   "formblossom@stage3": {
@@ -2610,17 +2610,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 389,
-   "y": 238,
-   "w": 31,
-   "h": 20,
+   "x": 138,
+   "y": 70,
+   "w": 25,
+   "h": 27,
    "pivot": [
-    15,
-    19
+    12,
+    26
    ],
    "native": [
-    31,
-    20
+    25,
+    27
    ]
   },
   "formblossom@stage3-arcane": {
@@ -2632,17 +2632,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 338,
-   "y": 61,
-   "w": 36,
-   "h": 25,
+   "x": 277,
+   "y": 2,
+   "w": 30,
+   "h": 32,
    "pivot": [
-    18,
-    24
+    15,
+    31
    ],
    "native": [
-    36,
-    25
+    30,
+    32
    ]
   },
   "ghostbud@stage0": {
@@ -2654,8 +2654,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 101,
-   "y": 426,
+   "x": 340,
+   "y": 400,
    "w": 16,
    "h": 16,
    "pivot": [
@@ -2676,8 +2676,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 163,
-   "y": 347,
+   "x": 222,
+   "y": 321,
    "w": 21,
    "h": 18,
    "pivot": [
@@ -2698,8 +2698,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 119,
-   "y": 426,
+   "x": 358,
+   "y": 400,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -2720,8 +2720,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 322,
-   "y": 142,
+   "x": 463,
+   "y": 181,
    "w": 21,
    "h": 22,
    "pivot": [
@@ -2742,17 +2742,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 84,
-   "y": 513,
-   "w": 17,
-   "h": 13,
+   "x": 434,
+   "y": 361,
+   "w": 14,
+   "h": 17,
    "pivot": [
-    8,
-    12
+    7,
+    16
    ],
    "native": [
-    17,
-    13
+    14,
+    17
    ]
   },
   "ghostbud@stage2-arcane": {
@@ -2764,17 +2764,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 158,
-   "y": 305,
-   "w": 21,
-   "h": 19,
+   "x": 318,
+   "y": 155,
+   "w": 18,
+   "h": 23,
    "pivot": [
-    10,
-    18
+    9,
+    22
    ],
    "native": [
-    21,
-    19
+    18,
+    23
    ]
   },
   "ghostbud@stage3": {
@@ -2786,17 +2786,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 422,
-   "y": 238,
-   "w": 26,
-   "h": 20,
+   "x": 165,
+   "y": 70,
+   "w": 22,
+   "h": 27,
    "pivot": [
-    13,
-    19
+    11,
+    26
    ],
    "native": [
-    26,
-    20
+    22,
+    27
    ]
   },
   "ghostbud@stage3-arcane": {
@@ -2808,17 +2808,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 406,
-   "y": 32,
-   "w": 30,
-   "h": 26,
+   "x": 128,
+   "y": 2,
+   "w": 26,
+   "h": 33,
    "pivot": [
-    15,
-    25
+    13,
+    32
    ],
    "native": [
-    30,
-    26
+    26,
+    33
    ]
   },
   "ghostcrown-coral@stage0": {
@@ -2830,8 +2830,8 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 0,
-   "x": 186,
-   "y": 347,
+   "x": 245,
+   "y": 321,
    "w": 16,
    "h": 18,
    "pivot": [
@@ -2852,8 +2852,8 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 0,
-   "x": 450,
-   "y": 238,
+   "x": 79,
+   "y": 277,
    "w": 21,
    "h": 20,
    "pivot": [
@@ -2874,8 +2874,8 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 1,
-   "x": 103,
-   "y": 513,
+   "x": 457,
+   "y": 471,
    "w": 16,
    "h": 13,
    "pivot": [
@@ -2896,8 +2896,8 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 1,
-   "x": 181,
-   "y": 305,
+   "x": 124,
+   "y": 299,
    "w": 18,
    "h": 19,
    "pivot": [
@@ -2918,17 +2918,17 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 2,
-   "x": 301,
-   "y": 480,
-   "w": 23,
-   "h": 14,
+   "x": 89,
+   "y": 454,
+   "w": 16,
+   "h": 15,
    "pivot": [
-    11,
-    13
+    8,
+    14
    ],
    "native": [
-    23,
-    14
+    16,
+    15
    ]
   },
   "ghostcrown-coral@stage2-arcane": {
@@ -2940,17 +2940,17 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 2,
-   "x": 201,
-   "y": 305,
-   "w": 28,
-   "h": 19,
+   "x": 355,
+   "y": 230,
+   "w": 21,
+   "h": 21,
    "pivot": [
-    14,
-    18
+    10,
+    20
    ],
    "native": [
-    28,
-    19
+    21,
+    21
    ]
   },
   "ghostcrown-coral@stage3": {
@@ -2962,17 +2962,17 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 3,
-   "x": 428,
-   "y": 191,
-   "w": 36,
-   "h": 21,
+   "x": 127,
+   "y": 128,
+   "w": 25,
+   "h": 24,
    "pivot": [
-    18,
-    20
+    12,
+    23
    ],
    "native": [
-    36,
-    21
+    25,
+    24
    ]
   },
   "ghostcrown-coral@stage3-arcane": {
@@ -2984,17 +2984,17 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 3,
-   "x": 412,
-   "y": 2,
-   "w": 40,
-   "h": 27,
+   "x": 93,
+   "y": 38,
+   "w": 29,
+   "h": 30,
    "pivot": [
-    20,
-    26
+    14,
+    29
    ],
    "native": [
-    40,
-    27
+    29,
+    30
    ]
   },
   "ghostglass-coral@stage0": {
@@ -3006,8 +3006,8 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 0,
-   "x": 204,
-   "y": 347,
+   "x": 263,
+   "y": 321,
    "w": 16,
    "h": 18,
    "pivot": [
@@ -3028,8 +3028,8 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 0,
-   "x": 388,
-   "y": 89,
+   "x": 154,
+   "y": 128,
    "w": 21,
    "h": 24,
    "pivot": [
@@ -3050,8 +3050,8 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 1,
-   "x": 121,
-   "y": 513,
+   "x": 475,
+   "y": 471,
    "w": 16,
    "h": 13,
    "pivot": [
@@ -3072,8 +3072,8 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 1,
-   "x": 265,
-   "y": 462,
+   "x": 107,
+   "y": 454,
    "w": 21,
    "h": 15,
    "pivot": [
@@ -3094,17 +3094,17 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 2,
-   "x": 326,
-   "y": 480,
-   "w": 23,
-   "h": 14,
+   "x": 130,
+   "y": 454,
+   "w": 16,
+   "h": 15,
    "pivot": [
-    11,
-    13
+    8,
+    14
    ],
    "native": [
-    23,
-    14
+    16,
+    15
    ]
   },
   "ghostglass-coral@stage2-arcane": {
@@ -3116,17 +3116,17 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 2,
-   "x": 231,
-   "y": 305,
-   "w": 28,
-   "h": 19,
+   "x": 102,
+   "y": 277,
+   "w": 23,
+   "h": 20,
    "pivot": [
-    14,
-    18
+    11,
+    19
    ],
    "native": [
-    28,
-    19
+    23,
+    20
    ]
   },
   "ghostglass-coral@stage3": {
@@ -3138,17 +3138,17 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 3,
-   "x": 345,
-   "y": 142,
-   "w": 36,
-   "h": 22,
+   "x": 177,
+   "y": 128,
+   "w": 25,
+   "h": 24,
    "pivot": [
-    18,
-    21
+    12,
+    23
    ],
    "native": [
-    36,
-    22
+    25,
+    24
    ]
   },
   "ghostglass-coral@stage3-arcane": {
@@ -3160,17 +3160,17 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 3,
-   "x": 454,
-   "y": 2,
-   "w": 43,
-   "h": 27,
+   "x": 271,
+   "y": 38,
+   "w": 30,
+   "h": 29,
    "pivot": [
-    21,
-    26
+    15,
+    28
    ],
    "native": [
-    43,
-    27
+    30,
+    29
    ]
   },
   "glasscap@stage0": {
@@ -3182,8 +3182,8 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 0,
-   "x": 288,
-   "y": 462,
+   "x": 148,
+   "y": 454,
    "w": 17,
    "h": 15,
    "pivot": [
@@ -3204,8 +3204,8 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 0,
-   "x": 372,
-   "y": 387,
+   "x": 450,
+   "y": 361,
    "w": 22,
    "h": 17,
    "pivot": [
@@ -3226,8 +3226,8 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 1,
-   "x": 307,
-   "y": 462,
+   "x": 167,
+   "y": 454,
    "w": 18,
    "h": 15,
    "pivot": [
@@ -3248,8 +3248,8 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 1,
-   "x": 466,
-   "y": 191,
+   "x": 378,
+   "y": 230,
    "w": 20,
    "h": 21,
    "pivot": [
@@ -3270,17 +3270,17 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 2,
-   "x": 351,
-   "y": 480,
-   "w": 17,
-   "h": 14,
+   "x": 442,
+   "y": 488,
+   "w": 15,
+   "h": 11,
    "pivot": [
-    8,
-    13
+    7,
+    10
    ],
    "native": [
-    17,
-    14
+    15,
+    11
    ]
   },
   "glasscap@stage2-arcane": {
@@ -3292,17 +3292,17 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 2,
-   "x": 473,
-   "y": 238,
-   "w": 22,
-   "h": 20,
+   "x": 474,
+   "y": 361,
+   "w": 20,
+   "h": 17,
    "pivot": [
-    11,
-    19
+    10,
+    16
    ],
    "native": [
-    22,
-    20
+    20,
+    17
    ]
   },
   "glasscap@stage3": {
@@ -3315,16 +3315,16 @@
    "morph": "fungus",
    "stage": 3,
    "x": 2,
-   "y": 215,
-   "w": 26,
-   "h": 21,
+   "y": 381,
+   "w": 24,
+   "h": 17,
    "pivot": [
-    13,
-    20
+    12,
+    16
    ],
    "native": [
-    26,
-    21
+    24,
+    17
    ]
   },
   "glasscap@stage3-arcane": {
@@ -3336,17 +3336,17 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 3,
-   "x": 2,
-   "y": 32,
-   "w": 31,
-   "h": 27,
+   "x": 338,
+   "y": 155,
+   "w": 29,
+   "h": 23,
    "pivot": [
-    15,
-    26
+    14,
+    22
    ],
    "native": [
-    31,
-    27
+    29,
+    23
    ]
   },
   "graftberry@stage0": {
@@ -3358,8 +3358,8 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 0,
-   "x": 370,
-   "y": 480,
+   "x": 216,
+   "y": 471,
    "w": 17,
    "h": 14,
    "pivot": [
@@ -3380,8 +3380,8 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 0,
-   "x": 2,
-   "y": 261,
+   "x": 127,
+   "y": 277,
    "w": 22,
    "h": 20,
    "pivot": [
@@ -3402,8 +3402,8 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 1,
-   "x": 140,
-   "y": 426,
+   "x": 379,
+   "y": 400,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -3424,8 +3424,8 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 1,
-   "x": 383,
-   "y": 142,
+   "x": 486,
+   "y": 181,
    "w": 24,
    "h": 22,
    "pivot": [
@@ -3446,17 +3446,17 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 2,
-   "x": 68,
-   "y": 528,
-   "w": 19,
-   "h": 12,
+   "x": 187,
+   "y": 454,
+   "w": 13,
+   "h": 15,
    "pivot": [
-    9,
-    11
+    6,
+    14
    ],
    "native": [
-    19,
-    12
+    13,
+    15
    ]
   },
   "graftberry@stage2-arcane": {
@@ -3468,17 +3468,17 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 2,
-   "x": 222,
-   "y": 347,
-   "w": 26,
-   "h": 18,
+   "x": 400,
+   "y": 230,
+   "w": 20,
+   "h": 21,
    "pivot": [
-    13,
-    17
+    10,
+    20
    ],
    "native": [
-    26,
-    18
+    20,
+    21
    ]
   },
   "graftberry@stage3": {
@@ -3490,17 +3490,17 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 3,
-   "x": 250,
-   "y": 347,
-   "w": 29,
-   "h": 18,
+   "x": 204,
+   "y": 128,
+   "w": 20,
+   "h": 24,
    "pivot": [
-    14,
-    17
+    10,
+    23
    ],
    "native": [
-    29,
-    18
+    20,
+    24
    ]
   },
   "graftberry@stage3-arcane": {
@@ -3512,17 +3512,17 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 3,
-   "x": 203,
-   "y": 116,
-   "w": 34,
-   "h": 23,
+   "x": 303,
+   "y": 38,
+   "w": 25,
+   "h": 29,
    "pivot": [
-    17,
-    22
+    12,
+    28
    ],
    "native": [
-    34,
-    23
+    25,
+    29
    ]
   },
   "hollowbloom@stage0": {
@@ -3534,8 +3534,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 161,
-   "y": 426,
+   "x": 400,
+   "y": 400,
    "w": 16,
    "h": 16,
    "pivot": [
@@ -3556,8 +3556,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 409,
-   "y": 142,
+   "x": 2,
+   "y": 206,
    "w": 21,
    "h": 22,
    "pivot": [
@@ -3578,8 +3578,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 179,
-   "y": 426,
+   "x": 418,
+   "y": 400,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -3600,8 +3600,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 432,
-   "y": 142,
+   "x": 25,
+   "y": 206,
    "w": 24,
    "h": 22,
    "pivot": [
@@ -3622,17 +3622,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 389,
-   "y": 480,
-   "w": 20,
-   "h": 14,
+   "x": 493,
+   "y": 471,
+   "w": 17,
+   "h": 13,
    "pivot": [
-    10,
-    13
+    8,
+    12
    ],
    "native": [
-    20,
-    14
+    17,
+    13
    ]
   },
   "hollowbloom@stage2-arcane": {
@@ -3644,17 +3644,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 26,
-   "y": 261,
-   "w": 25,
-   "h": 20,
+   "x": 144,
+   "y": 299,
+   "w": 22,
+   "h": 19,
    "pivot": [
-    12,
-    19
+    11,
+    18
    ],
    "native": [
-    25,
-    20
+    22,
+    19
    ]
   },
   "hollowbloom@stage3": {
@@ -3666,17 +3666,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 458,
-   "y": 142,
-   "w": 31,
-   "h": 22,
+   "x": 151,
+   "y": 277,
+   "w": 27,
+   "h": 20,
    "pivot": [
-    15,
-    21
+    13,
+    19
    ],
    "native": [
-    31,
-    22
+    27,
+    20
    ]
   },
   "hollowbloom@stage3-arcane": {
@@ -3688,17 +3688,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 2,
-   "y": 2,
-   "w": 36,
-   "h": 28,
+   "x": 390,
+   "y": 70,
+   "w": 32,
+   "h": 26,
    "pivot": [
-    18,
-    27
+    16,
+    25
    ],
    "native": [
-    36,
-    28
+    32,
+    26
    ]
   },
   "hollowcap@stage0": {
@@ -3710,8 +3710,8 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 0,
-   "x": 327,
-   "y": 462,
+   "x": 202,
+   "y": 454,
    "w": 17,
    "h": 15,
    "pivot": [
@@ -3732,8 +3732,8 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 0,
-   "x": 30,
-   "y": 215,
+   "x": 422,
+   "y": 230,
    "w": 22,
    "h": 21,
    "pivot": [
@@ -3754,8 +3754,8 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 1,
-   "x": 346,
-   "y": 462,
+   "x": 221,
+   "y": 454,
    "w": 18,
    "h": 15,
    "pivot": [
@@ -3776,8 +3776,8 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 1,
-   "x": 54,
-   "y": 215,
+   "x": 446,
+   "y": 230,
    "w": 23,
    "h": 21,
    "pivot": [
@@ -3798,17 +3798,17 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 2,
-   "x": 139,
-   "y": 513,
-   "w": 19,
-   "h": 13,
+   "x": 316,
+   "y": 488,
+   "w": 15,
+   "h": 12,
    "pivot": [
-    9,
-    12
+    7,
+    11
    ],
    "native": [
-    19,
-    13
+    15,
+    12
    ]
   },
   "hollowcap@stage2-arcane": {
@@ -3820,17 +3820,17 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 2,
-   "x": 261,
-   "y": 305,
-   "w": 24,
-   "h": 19,
+   "x": 281,
+   "y": 321,
+   "w": 20,
+   "h": 18,
    "pivot": [
-    12,
-    18
+    10,
+    17
    ],
    "native": [
-    24,
-    19
+    20,
+    18
    ]
   },
   "hollowcap@stage3": {
@@ -3842,17 +3842,17 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 3,
-   "x": 53,
-   "y": 261,
-   "w": 29,
-   "h": 20,
+   "x": 303,
+   "y": 321,
+   "w": 24,
+   "h": 18,
    "pivot": [
-    14,
-    19
+    12,
+    17
    ],
    "native": [
-    29,
-    20
+    24,
+    18
    ]
   },
   "hollowcap@stage3-arcane": {
@@ -3864,17 +3864,17 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 3,
-   "x": 438,
-   "y": 32,
-   "w": 34,
-   "h": 26,
+   "x": 226,
+   "y": 128,
+   "w": 29,
+   "h": 24,
    "pivot": [
-    17,
-    25
+    14,
+    23
    ],
    "native": [
-    34,
-    26
+    29,
+    24
    ]
   },
   "hourberry@stage0": {
@@ -3886,8 +3886,8 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 0,
-   "x": 411,
-   "y": 480,
+   "x": 235,
+   "y": 471,
    "w": 17,
    "h": 14,
    "pivot": [
@@ -3908,8 +3908,8 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 0,
-   "x": 200,
-   "y": 426,
+   "x": 439,
+   "y": 400,
    "w": 22,
    "h": 16,
    "pivot": [
@@ -3930,8 +3930,8 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 1,
-   "x": 224,
-   "y": 426,
+   "x": 463,
+   "y": 400,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -3952,8 +3952,8 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 1,
-   "x": 281,
-   "y": 347,
+   "x": 329,
+   "y": 321,
    "w": 24,
    "h": 18,
    "pivot": [
@@ -3974,17 +3974,17 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 2,
-   "x": 89,
-   "y": 528,
-   "w": 20,
-   "h": 12,
+   "x": 484,
+   "y": 400,
+   "w": 14,
+   "h": 16,
    "pivot": [
-    10,
-    11
+    7,
+    15
    ],
    "native": [
-    20,
-    12
+    14,
+    16
    ]
   },
   "hourberry@stage2-arcane": {
@@ -3996,17 +3996,17 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 2,
-   "x": 307,
-   "y": 347,
-   "w": 27,
-   "h": 18,
+   "x": 51,
+   "y": 206,
+   "w": 21,
+   "h": 22,
    "pivot": [
-    13,
-    17
+    10,
+    21
    ],
    "native": [
-    27,
-    18
+    21,
+    22
    ]
   },
   "hourberry@stage3": {
@@ -4018,17 +4018,17 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 3,
-   "x": 287,
-   "y": 305,
-   "w": 31,
-   "h": 19,
+   "x": 217,
+   "y": 100,
+   "w": 21,
+   "h": 25,
    "pivot": [
-    15,
-    18
+    10,
+    24
    ],
    "native": [
-    31,
-    19
+    21,
+    25
    ]
   },
   "hourberry@stage3-arcane": {
@@ -4040,17 +4040,17 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 3,
-   "x": 376,
-   "y": 61,
-   "w": 36,
-   "h": 25,
+   "x": 373,
+   "y": 2,
+   "w": 26,
+   "h": 31,
    "pivot": [
-    18,
-    24
+    13,
+    30
    ],
    "native": [
-    36,
-    25
+    26,
+    31
    ]
   },
   "hourglass-of-ages@stage0": {
@@ -4062,8 +4062,8 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 0,
-   "x": 396,
-   "y": 387,
+   "x": 28,
+   "y": 381,
    "w": 16,
    "h": 17,
    "pivot": [
@@ -4084,8 +4084,8 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 0,
-   "x": 320,
-   "y": 305,
+   "x": 168,
+   "y": 299,
    "w": 21,
    "h": 19,
    "pivot": [
@@ -4106,8 +4106,8 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 1,
-   "x": 366,
-   "y": 462,
+   "x": 241,
+   "y": 454,
    "w": 16,
    "h": 15,
    "pivot": [
@@ -4128,8 +4128,8 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 1,
-   "x": 79,
-   "y": 215,
+   "x": 471,
+   "y": 230,
    "w": 21,
    "h": 21,
    "pivot": [
@@ -4150,17 +4150,17 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 2,
-   "x": 430,
-   "y": 480,
-   "w": 13,
-   "h": 14,
+   "x": 2,
+   "y": 418,
+   "w": 11,
+   "h": 16,
    "pivot": [
-    6,
-    13
+    5,
+    15
    ],
    "native": [
-    13,
-    14
+    11,
+    16
    ]
   },
   "hourglass-of-ages@stage2-arcane": {
@@ -4172,17 +4172,17 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 2,
-   "x": 84,
-   "y": 261,
-   "w": 18,
-   "h": 20,
+   "x": 74,
+   "y": 206,
+   "w": 16,
+   "h": 22,
    "pivot": [
-    9,
-    19
+    8,
+    21
    ],
    "native": [
-    18,
-    20
+    16,
+    22
    ]
   },
   "hourglass-of-ages@stage3": {
@@ -4194,17 +4194,17 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 3,
-   "x": 2,
-   "y": 167,
-   "w": 20,
-   "h": 22,
+   "x": 240,
+   "y": 100,
+   "w": 17,
+   "h": 25,
    "pivot": [
-    10,
-    21
+    8,
+    24
    ],
    "native": [
-    20,
-    22
+    17,
+    25
    ]
   },
   "hourglass-of-ages@stage3-arcane": {
@@ -4216,17 +4216,17 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 3,
-   "x": 40,
+   "x": 401,
    "y": 2,
-   "w": 27,
-   "h": 28,
+   "w": 24,
+   "h": 31,
    "pivot": [
-    13,
-    27
+    12,
+    30
    ],
    "native": [
-    27,
-    28
+    24,
+    31
    ]
   },
   "mimic-eye@stage0": {
@@ -4238,8 +4238,8 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 0,
-   "x": 414,
-   "y": 387,
+   "x": 46,
+   "y": 381,
    "w": 16,
    "h": 17,
    "pivot": [
@@ -4260,8 +4260,8 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 0,
-   "x": 239,
-   "y": 116,
+   "x": 369,
+   "y": 155,
    "w": 21,
    "h": 23,
    "pivot": [
@@ -4282,8 +4282,8 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 1,
-   "x": 384,
-   "y": 462,
+   "x": 259,
+   "y": 454,
    "w": 16,
    "h": 15,
    "pivot": [
@@ -4304,8 +4304,8 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 1,
-   "x": 102,
-   "y": 215,
+   "x": 2,
+   "y": 254,
    "w": 18,
    "h": 21,
    "pivot": [
@@ -4326,17 +4326,17 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 2,
-   "x": 160,
-   "y": 513,
-   "w": 18,
-   "h": 13,
+   "x": 333,
+   "y": 488,
+   "w": 17,
+   "h": 12,
    "pivot": [
-    9,
-    12
+    8,
+    11
    ],
    "native": [
-    18,
-    13
+    17,
+    12
    ]
   },
   "mimic-eye@stage2-arcane": {
@@ -4348,17 +4348,17 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 2,
-   "x": 343,
-   "y": 305,
-   "w": 22,
-   "h": 19,
+   "x": 355,
+   "y": 321,
+   "w": 21,
+   "h": 18,
    "pivot": [
-    11,
-    18
+    10,
+    17
    ],
    "native": [
-    22,
-    19
+    21,
+    18
    ]
   },
   "mimic-eye@stage3": {
@@ -4370,17 +4370,17 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 3,
-   "x": 104,
-   "y": 261,
+   "x": 378,
+   "y": 321,
    "w": 27,
-   "h": 20,
+   "h": 18,
    "pivot": [
     13,
-    19
+    17
    ],
    "native": [
     27,
-    20
+    18
    ]
   },
   "mimic-eye@stage3-arcane": {
@@ -4392,17 +4392,17 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 3,
-   "x": 414,
-   "y": 61,
+   "x": 392,
+   "y": 155,
    "w": 34,
-   "h": 25,
+   "h": 23,
    "pivot": [
     17,
-    24
+    22
    ],
    "native": [
     34,
-    25
+    23
    ]
   },
   "mirepod-shell@stage0": {
@@ -4414,8 +4414,8 @@
    "category": "exotic",
    "morph": "shell",
    "stage": 0,
-   "x": 445,
-   "y": 480,
+   "x": 254,
+   "y": 471,
    "w": 19,
    "h": 14,
    "pivot": [
@@ -4436,8 +4436,8 @@
    "category": "exotic",
    "morph": "shell",
    "stage": 0,
-   "x": 245,
-   "y": 426,
+   "x": 15,
+   "y": 418,
    "w": 24,
    "h": 16,
    "pivot": [
@@ -4458,8 +4458,8 @@
    "category": "exotic",
    "morph": "shell",
    "stage": 1,
-   "x": 180,
-   "y": 513,
+   "x": 2,
+   "y": 488,
    "w": 16,
    "h": 13,
    "pivot": [
@@ -4480,8 +4480,8 @@
    "category": "exotic",
    "morph": "shell",
    "stage": 1,
-   "x": 367,
-   "y": 305,
+   "x": 191,
+   "y": 299,
    "w": 21,
    "h": 19,
    "pivot": [
@@ -4502,17 +4502,17 @@
    "category": "exotic",
    "morph": "shell",
    "stage": 2,
-   "x": 275,
-   "y": 528,
+   "x": 352,
+   "y": 488,
    "w": 17,
-   "h": 11,
+   "h": 12,
    "pivot": [
     8,
-    10
+    11
    ],
    "native": [
     17,
-    11
+    12
    ]
   },
   "mirepod-shell@stage2-arcane": {
@@ -4524,17 +4524,17 @@
    "category": "exotic",
    "morph": "shell",
    "stage": 2,
-   "x": 432,
-   "y": 387,
+   "x": 407,
+   "y": 321,
    "w": 21,
-   "h": 17,
+   "h": 18,
    "pivot": [
     10,
-    16
+    17
    ],
    "native": [
     21,
-    17
+    18
    ]
   },
   "mirepod-shell@stage3": {
@@ -4546,8 +4546,8 @@
    "category": "exotic",
    "morph": "shell",
    "stage": 3,
-   "x": 336,
-   "y": 347,
+   "x": 430,
+   "y": 321,
    "w": 27,
    "h": 18,
    "pivot": [
@@ -4568,8 +4568,8 @@
    "category": "exotic",
    "morph": "shell",
    "stage": 3,
-   "x": 411,
-   "y": 89,
+   "x": 257,
+   "y": 128,
    "w": 32,
    "h": 24,
    "pivot": [
@@ -4590,8 +4590,8 @@
    "category": "exotic",
    "morph": "stone",
    "stage": 0,
-   "x": 455,
-   "y": 387,
+   "x": 64,
+   "y": 381,
    "w": 16,
    "h": 17,
    "pivot": [
@@ -4612,8 +4612,8 @@
    "category": "exotic",
    "morph": "stone",
    "stage": 0,
-   "x": 262,
-   "y": 116,
+   "x": 428,
+   "y": 155,
    "w": 18,
    "h": 23,
    "pivot": [
@@ -4634,8 +4634,8 @@
    "category": "exotic",
    "morph": "stone",
    "stage": 1,
-   "x": 402,
-   "y": 462,
+   "x": 277,
+   "y": 454,
    "w": 16,
    "h": 15,
    "pivot": [
@@ -4656,8 +4656,8 @@
    "category": "exotic",
    "morph": "stone",
    "stage": 1,
-   "x": 122,
-   "y": 215,
+   "x": 22,
+   "y": 254,
    "w": 21,
    "h": 21,
    "pivot": [
@@ -4678,16 +4678,16 @@
    "category": "exotic",
    "morph": "stone",
    "stage": 2,
-   "x": 466,
-   "y": 480,
-   "w": 20,
+   "x": 275,
+   "y": 471,
+   "w": 17,
    "h": 14,
    "pivot": [
-    10,
+    8,
     13
    ],
    "native": [
-    20,
+    17,
     14
    ]
   },
@@ -4700,16 +4700,16 @@
    "category": "exotic",
    "morph": "stone",
    "stage": 2,
-   "x": 133,
-   "y": 261,
-   "w": 27,
+   "x": 180,
+   "y": 277,
+   "w": 24,
    "h": 20,
    "pivot": [
-    13,
+    12,
     19
    ],
    "native": [
-    27,
+    24,
     20
    ]
   },
@@ -4722,16 +4722,16 @@
    "category": "exotic",
    "morph": "stone",
    "stage": 3,
-   "x": 145,
-   "y": 215,
-   "w": 31,
+   "x": 45,
+   "y": 254,
+   "w": 27,
    "h": 21,
    "pivot": [
-    15,
+    13,
     20
    ],
    "native": [
-    31,
+    27,
     21
    ]
   },
@@ -4744,16 +4744,16 @@
    "category": "exotic",
    "morph": "stone",
    "stage": 3,
-   "x": 35,
-   "y": 32,
-   "w": 38,
+   "x": 189,
+   "y": 70,
+   "w": 34,
    "h": 27,
    "pivot": [
-    19,
+    17,
     26
    ],
    "native": [
-    38,
+    34,
     27
    ]
   },
@@ -4766,8 +4766,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 271,
-   "y": 426,
+   "x": 41,
+   "y": 418,
    "w": 16,
    "h": 16,
    "pivot": [
@@ -4788,8 +4788,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 24,
-   "y": 167,
+   "x": 92,
+   "y": 206,
    "w": 18,
    "h": 22,
    "pivot": [
@@ -4810,8 +4810,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 289,
-   "y": 426,
+   "x": 59,
+   "y": 418,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -4832,8 +4832,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 44,
-   "y": 167,
+   "x": 112,
+   "y": 206,
    "w": 21,
    "h": 22,
    "pivot": [
@@ -4854,17 +4854,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 488,
-   "y": 480,
-   "w": 21,
-   "h": 14,
+   "x": 20,
+   "y": 488,
+   "w": 17,
+   "h": 13,
    "pivot": [
-    10,
-    13
+    8,
+    12
    ],
    "native": [
-    21,
-    14
+    17,
+    13
    ]
   },
   "moonlotus@stage2-arcane": {
@@ -4876,17 +4876,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 390,
-   "y": 305,
-   "w": 26,
-   "h": 19,
+   "x": 459,
+   "y": 321,
+   "w": 22,
+   "h": 18,
    "pivot": [
-    13,
-    18
+    11,
+    17
    ],
    "native": [
-    26,
-    19
+    22,
+    18
    ]
   },
   "moonlotus@stage3": {
@@ -4898,17 +4898,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 178,
-   "y": 215,
-   "w": 32,
-   "h": 21,
+   "x": 206,
+   "y": 277,
+   "w": 27,
+   "h": 20,
    "pivot": [
-    16,
-    20
+    13,
+    19
    ],
    "native": [
-    32,
-    21
+    27,
+    20
    ]
   },
   "moonlotus@stage3-arcane": {
@@ -4920,17 +4920,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 282,
-   "y": 116,
-   "w": 39,
-   "h": 23,
+   "x": 135,
+   "y": 206,
+   "w": 34,
+   "h": 22,
    "pivot": [
-    19,
-    22
+    17,
+    21
    ],
    "native": [
-    39,
-    23
+    34,
+    22
    ]
   },
   "moonreed@stage0": {
@@ -4942,8 +4942,8 @@
    "category": "exotic",
    "morph": "grass",
    "stage": 0,
-   "x": 310,
-   "y": 426,
+   "x": 80,
+   "y": 418,
    "w": 17,
    "h": 16,
    "pivot": [
@@ -4964,8 +4964,8 @@
    "category": "exotic",
    "morph": "grass",
    "stage": 0,
-   "x": 365,
-   "y": 347,
+   "x": 483,
+   "y": 321,
    "w": 22,
    "h": 18,
    "pivot": [
@@ -4986,8 +4986,8 @@
    "category": "exotic",
    "morph": "grass",
    "stage": 1,
-   "x": 329,
-   "y": 426,
+   "x": 99,
+   "y": 418,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -5008,8 +5008,8 @@
    "category": "exotic",
    "morph": "grass",
    "stage": 1,
-   "x": 67,
-   "y": 167,
+   "x": 171,
+   "y": 206,
    "w": 24,
    "h": 22,
    "pivot": [
@@ -5030,17 +5030,17 @@
    "category": "exotic",
    "morph": "grass",
    "stage": 2,
-   "x": 2,
-   "y": 497,
-   "w": 22,
-   "h": 14,
+   "x": 39,
+   "y": 488,
+   "w": 17,
+   "h": 13,
    "pivot": [
-    11,
-    13
+    8,
+    12
    ],
    "native": [
-    22,
-    14
+    17,
+    13
    ]
   },
   "moonreed@stage2-arcane": {
@@ -5052,17 +5052,17 @@
    "category": "exotic",
    "morph": "grass",
    "stage": 2,
-   "x": 162,
-   "y": 261,
-   "w": 27,
-   "h": 20,
+   "x": 214,
+   "y": 299,
+   "w": 22,
+   "h": 19,
    "pivot": [
-    13,
-    19
+    11,
+    18
    ],
    "native": [
-    27,
-    20
+    22,
+    19
    ]
   },
   "moonreed@stage3": {
@@ -5074,17 +5074,17 @@
    "category": "exotic",
    "morph": "grass",
    "stage": 3,
-   "x": 212,
-   "y": 215,
-   "w": 34,
-   "h": 21,
+   "x": 235,
+   "y": 277,
+   "w": 27,
+   "h": 20,
    "pivot": [
-    17,
-    20
+    13,
+    19
    ],
    "native": [
-    34,
-    21
+    27,
+    20
    ]
   },
   "moonreed@stage3-arcane": {
@@ -5096,17 +5096,17 @@
    "category": "exotic",
    "morph": "grass",
    "stage": 3,
-   "x": 2,
-   "y": 61,
-   "w": 39,
-   "h": 26,
+   "x": 259,
+   "y": 100,
+   "w": 32,
+   "h": 25,
    "pivot": [
-    19,
-    25
+    16,
+    24
    ],
    "native": [
-    39,
-    26
+    32,
+    25
    ]
   },
   "moonveil-bloom@stage0": {
@@ -5118,8 +5118,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 350,
-   "y": 426,
+   "x": 120,
+   "y": 418,
    "w": 16,
    "h": 16,
    "pivot": [
@@ -5140,8 +5140,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 389,
-   "y": 347,
+   "x": 2,
+   "y": 341,
    "w": 21,
    "h": 18,
    "pivot": [
@@ -5162,8 +5162,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 368,
-   "y": 426,
+   "x": 138,
+   "y": 418,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -5184,8 +5184,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 93,
-   "y": 167,
+   "x": 197,
+   "y": 206,
    "w": 24,
    "h": 22,
    "pivot": [
@@ -5206,17 +5206,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 111,
-   "y": 528,
-   "w": 20,
-   "h": 12,
+   "x": 58,
+   "y": 488,
+   "w": 17,
+   "h": 13,
    "pivot": [
-    10,
-    11
+    8,
+    12
    ],
    "native": [
-    20,
-    12
+    17,
+    13
    ]
   },
   "moonveil-bloom@stage2-arcane": {
@@ -5228,17 +5228,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 473,
-   "y": 387,
-   "w": 27,
-   "h": 17,
+   "x": 25,
+   "y": 341,
+   "w": 24,
+   "h": 18,
    "pivot": [
-    13,
-    16
+    12,
+    17
    ],
    "native": [
-    27,
-    17
+    24,
+    18
    ]
   },
   "moonveil-bloom@stage3": {
@@ -5250,17 +5250,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 412,
-   "y": 347,
-   "w": 31,
-   "h": 18,
+   "x": 264,
+   "y": 277,
+   "w": 27,
+   "h": 20,
    "pivot": [
-    15,
-    17
+    13,
+    19
    ],
    "native": [
-    31,
-    18
+    27,
+    20
    ]
   },
   "moonveil-bloom@stage3-arcane": {
@@ -5272,17 +5272,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 445,
-   "y": 89,
-   "w": 35,
-   "h": 24,
+   "x": 424,
+   "y": 70,
+   "w": 31,
+   "h": 26,
    "pivot": [
-    17,
-    23
+    15,
+    25
    ],
    "native": [
-    35,
-    24
+    31,
+    26
    ]
   },
   "morphleaf@stage0": {
@@ -5294,8 +5294,8 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 0,
-   "x": 389,
-   "y": 426,
+   "x": 159,
+   "y": 418,
    "w": 16,
    "h": 16,
    "pivot": [
@@ -5316,8 +5316,8 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 0,
-   "x": 445,
-   "y": 347,
+   "x": 51,
+   "y": 341,
    "w": 21,
    "h": 18,
    "pivot": [
@@ -5338,8 +5338,8 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 1,
-   "x": 407,
-   "y": 426,
+   "x": 177,
+   "y": 418,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -5360,8 +5360,8 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 1,
-   "x": 119,
-   "y": 167,
+   "x": 223,
+   "y": 206,
    "w": 21,
    "h": 22,
    "pivot": [
@@ -5383,16 +5383,16 @@
    "morph": "leaf",
    "stage": 2,
    "x": 198,
-   "y": 513,
-   "w": 21,
-   "h": 13,
+   "y": 418,
+   "w": 14,
+   "h": 16,
    "pivot": [
-    10,
-    12
+    7,
+    15
    ],
    "native": [
-    21,
-    13
+    14,
+    16
    ]
   },
   "morphleaf@stage2-arcane": {
@@ -5404,17 +5404,17 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 2,
-   "x": 468,
-   "y": 347,
-   "w": 28,
-   "h": 18,
+   "x": 74,
+   "y": 254,
+   "w": 21,
+   "h": 21,
    "pivot": [
-    14,
-    17
+    10,
+    20
    ],
    "native": [
-    28,
-    18
+    21,
+    21
    ]
   },
   "morphleaf@stage3": {
@@ -5426,17 +5426,17 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 3,
-   "x": 191,
-   "y": 261,
-   "w": 32,
-   "h": 20,
+   "x": 293,
+   "y": 100,
+   "w": 21,
+   "h": 25,
    "pivot": [
-    16,
-    19
+    10,
+    24
    ],
    "native": [
-    32,
-    20
+    21,
+    25
    ]
   },
   "morphleaf@stage3-arcane": {
@@ -5448,17 +5448,17 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 3,
-   "x": 450,
-   "y": 61,
-   "w": 37,
-   "h": 25,
+   "x": 124,
+   "y": 38,
+   "w": 26,
+   "h": 30,
    "pivot": [
-    18,
-    24
+    13,
+    29
    ],
    "native": [
-    37,
-    25
+    26,
+    30
    ]
   },
   "pearlshell@stage0": {
@@ -5470,8 +5470,8 @@
    "category": "exotic",
    "morph": "shell",
    "stage": 0,
-   "x": 26,
-   "y": 497,
+   "x": 294,
+   "y": 471,
    "w": 19,
    "h": 14,
    "pivot": [
@@ -5492,8 +5492,8 @@
    "category": "exotic",
    "morph": "shell",
    "stage": 0,
-   "x": 225,
-   "y": 261,
+   "x": 293,
+   "y": 277,
    "w": 24,
    "h": 20,
    "pivot": [
@@ -5514,8 +5514,8 @@
    "category": "exotic",
    "morph": "shell",
    "stage": 1,
-   "x": 221,
-   "y": 513,
+   "x": 77,
+   "y": 488,
    "w": 16,
    "h": 13,
    "pivot": [
@@ -5536,8 +5536,8 @@
    "category": "exotic",
    "morph": "shell",
    "stage": 1,
-   "x": 420,
-   "y": 462,
+   "x": 295,
+   "y": 454,
    "w": 21,
    "h": 15,
    "pivot": [
@@ -5558,17 +5558,17 @@
    "category": "exotic",
    "morph": "shell",
    "stage": 2,
-   "x": 47,
-   "y": 497,
-   "w": 19,
-   "h": 14,
+   "x": 371,
+   "y": 488,
+   "w": 17,
+   "h": 12,
    "pivot": [
-    9,
-    13
+    8,
+    11
    ],
    "native": [
-    19,
-    14
+    17,
+    12
    ]
   },
   "pearlshell@stage2-arcane": {
@@ -5580,17 +5580,17 @@
    "category": "exotic",
    "morph": "shell",
    "stage": 2,
-   "x": 418,
-   "y": 305,
-   "w": 26,
-   "h": 19,
+   "x": 82,
+   "y": 381,
+   "w": 24,
+   "h": 17,
    "pivot": [
-    13,
-    18
+    12,
+    16
    ],
    "native": [
-    26,
-    19
+    24,
+    17
    ]
   },
   "pearlshell@stage3": {
@@ -5602,17 +5602,17 @@
    "category": "exotic",
    "morph": "shell",
    "stage": 3,
-   "x": 142,
-   "y": 167,
-   "w": 30,
-   "h": 22,
+   "x": 74,
+   "y": 341,
+   "w": 27,
+   "h": 18,
    "pivot": [
-    15,
-    21
+    13,
+    17
    ],
    "native": [
-    30,
-    22
+    27,
+    18
    ]
   },
   "pearlshell@stage3-arcane": {
@@ -5624,17 +5624,17 @@
    "category": "exotic",
    "morph": "shell",
    "stage": 3,
-   "x": 69,
-   "y": 2,
-   "w": 37,
-   "h": 28,
+   "x": 291,
+   "y": 128,
+   "w": 34,
+   "h": 24,
    "pivot": [
-    18,
-    27
+    17,
+    23
    ],
    "native": [
-    37,
-    28
+    34,
+    24
    ]
   },
   "pendulum-pods@stage0": {
@@ -5646,8 +5646,8 @@
    "category": "exotic",
    "morph": "vine",
    "stage": 0,
-   "x": 443,
-   "y": 462,
+   "x": 318,
+   "y": 454,
    "w": 21,
    "h": 15,
    "pivot": [
@@ -5668,8 +5668,8 @@
    "category": "exotic",
    "morph": "vine",
    "stage": 0,
-   "x": 248,
-   "y": 215,
+   "x": 97,
+   "y": 254,
    "w": 23,
    "h": 21,
    "pivot": [
@@ -5690,8 +5690,8 @@
    "category": "exotic",
    "morph": "vine",
    "stage": 1,
-   "x": 428,
-   "y": 426,
+   "x": 214,
+   "y": 418,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -5712,8 +5712,8 @@
    "category": "exotic",
    "morph": "vine",
    "stage": 1,
-   "x": 2,
-   "y": 367,
+   "x": 103,
+   "y": 341,
    "w": 24,
    "h": 18,
    "pivot": [
@@ -5734,17 +5734,17 @@
    "category": "exotic",
    "morph": "vine",
    "stage": 2,
-   "x": 239,
-   "y": 513,
-   "w": 20,
-   "h": 13,
+   "x": 235,
+   "y": 418,
+   "w": 14,
+   "h": 16,
    "pivot": [
-    10,
-    12
+    7,
+    15
    ],
    "native": [
-    20,
-    13
+    14,
+    16
    ]
   },
   "pendulum-pods@stage2-arcane": {
@@ -5756,17 +5756,17 @@
    "category": "exotic",
    "morph": "vine",
    "stage": 2,
-   "x": 28,
-   "y": 367,
-   "w": 27,
-   "h": 18,
+   "x": 122,
+   "y": 254,
+   "w": 21,
+   "h": 21,
    "pivot": [
-    13,
-    17
+    10,
+    20
    ],
    "native": [
-    27,
-    18
+    21,
+    21
    ]
   },
   "pendulum-pods@stage3": {
@@ -5778,17 +5778,17 @@
    "category": "exotic",
    "morph": "vine",
    "stage": 3,
-   "x": 251,
-   "y": 261,
-   "w": 31,
-   "h": 20,
+   "x": 316,
+   "y": 100,
+   "w": 21,
+   "h": 25,
    "pivot": [
-    15,
-    19
+    10,
+    24
    ],
    "native": [
-    31,
-    20
+    21,
+    25
    ]
   },
   "pendulum-pods@stage3-arcane": {
@@ -5800,17 +5800,17 @@
    "category": "exotic",
    "morph": "vine",
    "stage": 3,
-   "x": 2,
-   "y": 89,
-   "w": 36,
-   "h": 25,
+   "x": 152,
+   "y": 38,
+   "w": 26,
+   "h": 30,
    "pivot": [
-    18,
-    24
+    13,
+    29
    ],
    "native": [
-    36,
-    25
+    26,
+    30
    ]
   },
   "phantom-pearl@stage0": {
@@ -5822,8 +5822,8 @@
    "category": "exotic",
    "morph": "shell",
    "stage": 0,
-   "x": 68,
-   "y": 497,
+   "x": 315,
+   "y": 471,
    "w": 19,
    "h": 14,
    "pivot": [
@@ -5844,8 +5844,8 @@
    "category": "exotic",
    "morph": "shell",
    "stage": 0,
-   "x": 284,
-   "y": 261,
+   "x": 319,
+   "y": 277,
    "w": 21,
    "h": 20,
    "pivot": [
@@ -5866,8 +5866,8 @@
    "category": "exotic",
    "morph": "shell",
    "stage": 1,
-   "x": 261,
-   "y": 513,
+   "x": 95,
+   "y": 488,
    "w": 16,
    "h": 13,
    "pivot": [
@@ -5888,8 +5888,8 @@
    "category": "exotic",
    "morph": "shell",
    "stage": 1,
-   "x": 446,
-   "y": 305,
+   "x": 238,
+   "y": 299,
    "w": 21,
    "h": 19,
    "pivot": [
@@ -5910,17 +5910,17 @@
    "category": "exotic",
    "morph": "shell",
    "stage": 2,
-   "x": 279,
-   "y": 513,
-   "w": 18,
-   "h": 13,
+   "x": 390,
+   "y": 488,
+   "w": 17,
+   "h": 12,
    "pivot": [
-    9,
-    12
+    8,
+    11
    ],
    "native": [
-    18,
-    13
+    17,
+    12
    ]
   },
   "phantom-pearl@stage2-arcane": {
@@ -5932,17 +5932,17 @@
    "category": "exotic",
    "morph": "shell",
    "stage": 2,
-   "x": 57,
-   "y": 367,
-   "w": 23,
-   "h": 18,
+   "x": 108,
+   "y": 381,
+   "w": 22,
+   "h": 17,
    "pivot": [
     11,
-    17
+    16
    ],
    "native": [
-    23,
-    18
+    22,
+    17
    ]
   },
   "phantom-pearl@stage3": {
@@ -5954,17 +5954,17 @@
    "category": "exotic",
    "morph": "shell",
    "stage": 3,
-   "x": 307,
-   "y": 261,
-   "w": 28,
-   "h": 20,
+   "x": 129,
+   "y": 341,
+   "w": 27,
+   "h": 18,
    "pivot": [
-    14,
-    19
+    13,
+    17
    ],
    "native": [
-    28,
-    20
+    27,
+    18
    ]
   },
   "phantom-pearl@stage3-arcane": {
@@ -5976,17 +5976,17 @@
    "category": "exotic",
    "morph": "shell",
    "stage": 3,
-   "x": 40,
-   "y": 89,
-   "w": 33,
-   "h": 25,
+   "x": 448,
+   "y": 155,
+   "w": 32,
+   "h": 23,
    "pivot": [
     16,
-    24
+    22
    ],
    "native": [
-    33,
-    25
+    32,
+    23
    ]
   },
   "polymorph-lotus@stage0": {
@@ -5998,8 +5998,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 449,
-   "y": 426,
+   "x": 251,
+   "y": 418,
    "w": 16,
    "h": 16,
    "pivot": [
@@ -6020,8 +6020,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 82,
-   "y": 367,
+   "x": 158,
+   "y": 341,
    "w": 21,
    "h": 18,
    "pivot": [
@@ -6042,8 +6042,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 467,
-   "y": 426,
+   "x": 269,
+   "y": 418,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -6064,8 +6064,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 174,
-   "y": 167,
+   "x": 246,
+   "y": 206,
    "w": 24,
    "h": 22,
    "pivot": [
@@ -6086,16 +6086,16 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 299,
-   "y": 513,
-   "w": 21,
+   "x": 113,
+   "y": 488,
+   "w": 17,
    "h": 13,
    "pivot": [
-    10,
+    8,
     12
    ],
    "native": [
-    21,
+    17,
     13
    ]
   },
@@ -6108,16 +6108,16 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 469,
-   "y": 305,
-   "w": 28,
+   "x": 261,
+   "y": 299,
+   "w": 24,
    "h": 19,
    "pivot": [
-    14,
+    12,
     18
    ],
    "native": [
-    28,
+    24,
     19
    ]
   },
@@ -6130,16 +6130,16 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 337,
-   "y": 261,
-   "w": 32,
+   "x": 342,
+   "y": 277,
+   "w": 27,
    "h": 20,
    "pivot": [
-    16,
+    13,
     19
    ],
    "native": [
-    32,
+    27,
     20
    ]
   },
@@ -6152,17 +6152,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 43,
-   "y": 61,
-   "w": 37,
-   "h": 26,
+   "x": 339,
+   "y": 100,
+   "w": 32,
+   "h": 25,
    "pivot": [
-    18,
-    25
+    16,
+    24
    ],
    "native": [
-    37,
-    26
+    32,
+    25
    ]
   },
   "reefbud@stage0": {
@@ -6174,8 +6174,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 488,
-   "y": 426,
+   "x": 290,
+   "y": 418,
    "w": 16,
    "h": 16,
    "pivot": [
@@ -6196,8 +6196,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 105,
-   "y": 367,
+   "x": 181,
+   "y": 341,
    "w": 21,
    "h": 18,
    "pivot": [
@@ -6218,8 +6218,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 2,
-   "y": 444,
+   "x": 308,
+   "y": 418,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -6240,8 +6240,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 200,
-   "y": 167,
+   "x": 272,
+   "y": 206,
    "w": 24,
    "h": 22,
    "pivot": [
@@ -6262,17 +6262,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 89,
-   "y": 497,
-   "w": 18,
-   "h": 14,
+   "x": 132,
+   "y": 381,
+   "w": 14,
+   "h": 17,
    "pivot": [
-    9,
-    13
+    7,
+    16
    ],
    "native": [
-    18,
-    14
+    14,
+    17
    ]
   },
   "reefbud@stage2-arcane": {
@@ -6284,17 +6284,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 371,
-   "y": 261,
-   "w": 23,
-   "h": 20,
+   "x": 482,
+   "y": 155,
+   "w": 19,
+   "h": 23,
    "pivot": [
-    11,
-    19
+    9,
+    22
    ],
    "native": [
-    23,
-    20
+    19,
+    23
    ]
   },
   "reefbud@stage3": {
@@ -6306,17 +6306,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 273,
-   "y": 215,
-   "w": 28,
-   "h": 21,
+   "x": 225,
+   "y": 70,
+   "w": 22,
+   "h": 27,
    "pivot": [
-    14,
-    20
+    11,
+    26
    ],
    "native": [
-    28,
-    21
+    22,
+    27
    ]
   },
   "reefbud@stage3-arcane": {
@@ -6328,17 +6328,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 75,
-   "y": 32,
-   "w": 32,
-   "h": 27,
+   "x": 156,
+   "y": 2,
+   "w": 26,
+   "h": 33,
    "pivot": [
-    16,
-    26
+    13,
+    32
    ],
    "native": [
-    32,
-    27
+    26,
+    33
    ]
   },
   "reefmoss@stage0": {
@@ -6350,8 +6350,8 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 0,
-   "x": 128,
-   "y": 367,
+   "x": 204,
+   "y": 341,
    "w": 16,
    "h": 18,
    "pivot": [
@@ -6372,8 +6372,8 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 0,
-   "x": 482,
-   "y": 89,
+   "x": 327,
+   "y": 128,
    "w": 18,
    "h": 24,
    "pivot": [
@@ -6394,8 +6394,8 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 1,
-   "x": 322,
-   "y": 513,
+   "x": 132,
+   "y": 488,
    "w": 16,
    "h": 13,
    "pivot": [
@@ -6416,8 +6416,8 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 1,
-   "x": 2,
-   "y": 326,
+   "x": 287,
+   "y": 299,
    "w": 21,
    "h": 19,
    "pivot": [
@@ -6438,17 +6438,17 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 2,
-   "x": 109,
-   "y": 497,
-   "w": 23,
-   "h": 14,
+   "x": 341,
+   "y": 454,
+   "w": 16,
+   "h": 15,
    "pivot": [
-    11,
-    13
+    8,
+    14
    ],
    "native": [
-    23,
-    14
+    16,
+    15
    ]
   },
   "reefmoss@stage2-arcane": {
@@ -6460,17 +6460,17 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 2,
-   "x": 396,
-   "y": 261,
-   "w": 27,
-   "h": 20,
+   "x": 145,
+   "y": 254,
+   "w": 20,
+   "h": 21,
    "pivot": [
-    13,
-    19
+    10,
+    20
    ],
    "native": [
-    27,
-    20
+    20,
+    21
    ]
   },
   "reefmoss@stage3": {
@@ -6482,17 +6482,17 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 3,
-   "x": 226,
-   "y": 167,
-   "w": 35,
-   "h": 22,
+   "x": 347,
+   "y": 128,
+   "w": 25,
+   "h": 24,
    "pivot": [
-    17,
-    21
+    12,
+    23
    ],
    "native": [
-    35,
-    22
+    25,
+    24
    ]
   },
   "reefmoss@stage3-arcane": {
@@ -6504,17 +6504,17 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 3,
-   "x": 109,
-   "y": 32,
-   "w": 40,
-   "h": 27,
+   "x": 330,
+   "y": 38,
+   "w": 30,
+   "h": 29,
    "pivot": [
-    20,
-    26
+    15,
+    28
    ],
    "native": [
-    40,
-    27
+    30,
+    29
    ]
   },
   "sandskirt-cap@stage0": {
@@ -6526,8 +6526,8 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 0,
-   "x": 466,
-   "y": 462,
+   "x": 359,
+   "y": 454,
    "w": 17,
    "h": 15,
    "pivot": [
@@ -6548,8 +6548,8 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 0,
-   "x": 2,
-   "y": 407,
+   "x": 148,
+   "y": 381,
    "w": 22,
    "h": 17,
    "pivot": [
@@ -6570,8 +6570,8 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 1,
-   "x": 485,
-   "y": 462,
+   "x": 378,
+   "y": 454,
    "w": 18,
    "h": 15,
    "pivot": [
@@ -6592,8 +6592,8 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 1,
-   "x": 26,
-   "y": 407,
+   "x": 172,
+   "y": 381,
    "w": 23,
    "h": 17,
    "pivot": [
@@ -6614,17 +6614,17 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 2,
-   "x": 340,
-   "y": 513,
-   "w": 18,
-   "h": 13,
+   "x": 459,
+   "y": 488,
+   "w": 15,
+   "h": 11,
    "pivot": [
-    9,
-    12
+    7,
+    10
    ],
    "native": [
-    18,
-    13
+    15,
+    11
    ]
   },
   "sandskirt-cap@stage2-arcane": {
@@ -6636,17 +6636,17 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 2,
-   "x": 2,
-   "y": 480,
-   "w": 25,
-   "h": 15,
+   "x": 150,
+   "y": 488,
+   "w": 22,
+   "h": 13,
    "pivot": [
-    12,
-    14
+    11,
+    12
    ],
    "native": [
-    25,
-    15
+    22,
+    13
    ]
   },
   "sandskirt-cap@stage3": {
@@ -6658,17 +6658,17 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 3,
-   "x": 425,
-   "y": 261,
-   "w": 28,
-   "h": 20,
+   "x": 197,
+   "y": 381,
+   "w": 24,
+   "h": 17,
    "pivot": [
-    14,
-    19
+    12,
+    16
    ],
    "native": [
-    28,
-    20
+    24,
+    17
    ]
   },
   "sandskirt-cap@stage3-arcane": {
@@ -6680,17 +6680,17 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 3,
-   "x": 75,
-   "y": 89,
-   "w": 33,
-   "h": 25,
+   "x": 2,
+   "y": 181,
+   "w": 29,
+   "h": 23,
    "pivot": [
-    16,
-    24
+    14,
+    22
    ],
    "native": [
-    33,
-    25
+    29,
+    23
    ]
   },
   "shapecap@stage0": {
@@ -6702,8 +6702,8 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 0,
-   "x": 29,
-   "y": 480,
+   "x": 398,
+   "y": 454,
    "w": 17,
    "h": 15,
    "pivot": [
@@ -6724,8 +6724,8 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 0,
-   "x": 51,
-   "y": 407,
+   "x": 223,
+   "y": 381,
    "w": 22,
    "h": 17,
    "pivot": [
@@ -6746,8 +6746,8 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 1,
-   "x": 48,
-   "y": 480,
+   "x": 417,
+   "y": 454,
    "w": 18,
    "h": 15,
    "pivot": [
@@ -6768,8 +6768,8 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 1,
-   "x": 303,
-   "y": 215,
+   "x": 167,
+   "y": 254,
    "w": 20,
    "h": 21,
    "pivot": [
@@ -6790,17 +6790,17 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 2,
-   "x": 133,
-   "y": 528,
-   "w": 18,
-   "h": 12,
+   "x": 174,
+   "y": 488,
+   "w": 15,
+   "h": 13,
    "pivot": [
-    9,
-    11
+    7,
+    12
    ],
    "native": [
-    18,
-    12
+    15,
+    13
    ]
   },
   "shapecap@stage2-arcane": {
@@ -6812,17 +6812,17 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 2,
-   "x": 75,
-   "y": 407,
-   "w": 23,
-   "h": 17,
+   "x": 222,
+   "y": 341,
+   "w": 20,
+   "h": 18,
    "pivot": [
-    11,
-    16
+    10,
+    17
    ],
    "native": [
-    23,
-    17
+    20,
+    18
    ]
   },
   "shapecap@stage3": {
@@ -6834,17 +6834,17 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 3,
-   "x": 146,
-   "y": 367,
-   "w": 28,
-   "h": 18,
+   "x": 371,
+   "y": 277,
+   "w": 24,
+   "h": 20,
    "pivot": [
-    14,
-    17
+    12,
+    19
    ],
    "native": [
-    28,
-    18
+    24,
+    20
    ]
   },
   "shapecap@stage3-arcane": {
@@ -6856,17 +6856,17 @@
    "category": "exotic",
    "morph": "fungus",
    "stage": 3,
-   "x": 323,
-   "y": 116,
-   "w": 33,
-   "h": 23,
+   "x": 457,
+   "y": 70,
+   "w": 28,
+   "h": 26,
    "pivot": [
-    16,
-    22
+    14,
+    25
    ],
    "native": [
-    33,
-    23
+    28,
+    26
    ]
   },
   "shellfern@stage0": {
@@ -6878,8 +6878,8 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 0,
-   "x": 23,
-   "y": 444,
+   "x": 329,
+   "y": 418,
    "w": 16,
    "h": 16,
    "pivot": [
@@ -6900,8 +6900,8 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 0,
-   "x": 176,
-   "y": 367,
+   "x": 244,
+   "y": 341,
    "w": 21,
    "h": 18,
    "pivot": [
@@ -6922,8 +6922,8 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 1,
-   "x": 41,
-   "y": 444,
+   "x": 347,
+   "y": 418,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -6944,8 +6944,8 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 1,
-   "x": 263,
-   "y": 167,
+   "x": 298,
+   "y": 206,
    "w": 21,
    "h": 22,
    "pivot": [
@@ -6966,17 +6966,17 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 2,
-   "x": 134,
-   "y": 497,
-   "w": 19,
-   "h": 14,
+   "x": 368,
+   "y": 418,
+   "w": 14,
+   "h": 16,
    "pivot": [
-    9,
-    13
+    7,
+    15
    ],
    "native": [
-    19,
-    14
+    14,
+    16
    ]
   },
   "shellfern@stage2-arcane": {
@@ -6988,17 +6988,17 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 2,
-   "x": 25,
-   "y": 326,
-   "w": 24,
-   "h": 19,
+   "x": 189,
+   "y": 254,
+   "w": 19,
+   "h": 21,
    "pivot": [
-    12,
-    18
+    9,
+    20
    ],
    "native": [
-    24,
-    19
+    19,
+    21
    ]
   },
   "shellfern@stage3": {
@@ -7010,17 +7010,17 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 3,
-   "x": 286,
-   "y": 167,
-   "w": 29,
-   "h": 22,
+   "x": 373,
+   "y": 100,
+   "w": 21,
+   "h": 25,
    "pivot": [
-    14,
-    21
+    10,
+    24
    ],
    "native": [
-    29,
-    22
+    21,
+    25
    ]
   },
   "shellfern@stage3-arcane": {
@@ -7032,17 +7032,17 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 3,
-   "x": 108,
+   "x": 427,
    "y": 2,
-   "w": 33,
-   "h": 28,
+   "w": 25,
+   "h": 31,
    "pivot": [
-    16,
-    27
+    12,
+    30
    ],
    "native": [
-    33,
-    28
+    25,
+    31
    ]
   },
   "shifting-root@stage0": {
@@ -7054,8 +7054,8 @@
    "category": "exotic",
    "morph": "root",
    "stage": 0,
-   "x": 51,
-   "y": 326,
+   "x": 310,
+   "y": 299,
    "w": 17,
    "h": 19,
    "pivot": [
@@ -7076,8 +7076,8 @@
    "category": "exotic",
    "morph": "root",
    "stage": 0,
-   "x": 110,
-   "y": 89,
+   "x": 396,
+   "y": 100,
    "w": 22,
    "h": 25,
    "pivot": [
@@ -7098,8 +7098,8 @@
    "category": "exotic",
    "morph": "root",
    "stage": 1,
-   "x": 62,
-   "y": 444,
+   "x": 384,
+   "y": 418,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -7120,8 +7120,8 @@
    "category": "exotic",
    "morph": "root",
    "stage": 1,
-   "x": 199,
-   "y": 367,
+   "x": 267,
+   "y": 341,
    "w": 24,
    "h": 18,
    "pivot": [
@@ -7142,17 +7142,17 @@
    "category": "exotic",
    "morph": "root",
    "stage": 2,
-   "x": 360,
-   "y": 513,
-   "w": 21,
-   "h": 13,
+   "x": 336,
+   "y": 471,
+   "w": 13,
+   "h": 14,
    "pivot": [
-    10,
-    12
+    6,
+    13
    ],
    "native": [
-    21,
-    13
+    13,
+    14
    ]
   },
   "shifting-root@stage2-arcane": {
@@ -7164,17 +7164,17 @@
    "category": "exotic",
    "morph": "root",
    "stage": 2,
-   "x": 70,
-   "y": 326,
-   "w": 28,
-   "h": 19,
+   "x": 397,
+   "y": 277,
+   "w": 20,
+   "h": 20,
    "pivot": [
-    14,
-    18
+    10,
+    19
    ],
    "native": [
-    28,
-    19
+    20,
+    20
    ]
   },
   "shifting-root@stage3": {
@@ -7186,17 +7186,17 @@
    "category": "exotic",
    "morph": "root",
    "stage": 3,
-   "x": 455,
-   "y": 261,
-   "w": 32,
-   "h": 20,
+   "x": 210,
+   "y": 254,
+   "w": 20,
+   "h": 21,
    "pivot": [
-    16,
-    19
+    10,
+    20
    ],
    "native": [
-    32,
-    20
+    20,
+    21
    ]
   },
   "shifting-root@stage3-arcane": {
@@ -7208,17 +7208,17 @@
    "category": "exotic",
    "morph": "root",
    "stage": 3,
-   "x": 134,
-   "y": 89,
-   "w": 37,
-   "h": 25,
+   "x": 2,
+   "y": 100,
+   "w": 25,
+   "h": 26,
    "pivot": [
-    18,
-    24
+    12,
+    25
    ],
    "native": [
-    37,
-    25
+    25,
+    26
    ]
   },
   "shroud-orchid@stage0": {
@@ -7230,8 +7230,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 83,
-   "y": 444,
+   "x": 405,
+   "y": 418,
    "w": 16,
    "h": 16,
    "pivot": [
@@ -7252,8 +7252,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 225,
-   "y": 367,
+   "x": 293,
+   "y": 341,
    "w": 21,
    "h": 18,
    "pivot": [
@@ -7274,8 +7274,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 101,
-   "y": 444,
+   "x": 423,
+   "y": 418,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -7296,8 +7296,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 317,
-   "y": 167,
+   "x": 321,
+   "y": 206,
    "w": 24,
    "h": 22,
    "pivot": [
@@ -7318,16 +7318,16 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 155,
-   "y": 497,
-   "w": 21,
+   "x": 351,
+   "y": 471,
+   "w": 14,
    "h": 14,
    "pivot": [
-    10,
+    7,
     13
    ],
    "native": [
-    21,
+    14,
     14
    ]
   },
@@ -7340,16 +7340,16 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 122,
-   "y": 444,
-   "w": 28,
+   "x": 444,
+   "y": 418,
+   "w": 21,
    "h": 16,
    "pivot": [
-    14,
+    10,
     15
    ],
    "native": [
-    28,
+    21,
     16
    ]
   },
@@ -7362,17 +7362,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 343,
-   "y": 167,
-   "w": 33,
-   "h": 22,
+   "x": 232,
+   "y": 254,
+   "w": 21,
+   "h": 21,
    "pivot": [
-    16,
-    21
+    10,
+    20
    ],
    "native": [
-    33,
-    22
+    21,
+    21
    ]
   },
   "shroud-orchid@stage3-arcane": {
@@ -7384,17 +7384,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 143,
-   "y": 2,
-   "w": 37,
-   "h": 28,
+   "x": 249,
+   "y": 70,
+   "w": 25,
+   "h": 27,
    "pivot": [
-    18,
-    27
+    12,
+    26
    ],
    "native": [
-    37,
-    28
+    25,
+    27
    ]
   },
   "skyberry@stage0": {
@@ -7406,8 +7406,8 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 0,
-   "x": 178,
-   "y": 497,
+   "x": 367,
+   "y": 471,
    "w": 17,
    "h": 14,
    "pivot": [
@@ -7428,8 +7428,8 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 0,
-   "x": 152,
-   "y": 444,
+   "x": 467,
+   "y": 418,
    "w": 22,
    "h": 16,
    "pivot": [
@@ -7450,8 +7450,8 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 1,
-   "x": 176,
-   "y": 444,
+   "x": 491,
+   "y": 418,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -7472,8 +7472,8 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 1,
-   "x": 248,
-   "y": 367,
+   "x": 316,
+   "y": 341,
    "w": 24,
    "h": 18,
    "pivot": [
@@ -7494,17 +7494,17 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 2,
-   "x": 153,
-   "y": 528,
-   "w": 19,
-   "h": 12,
+   "x": 437,
+   "y": 454,
+   "w": 13,
+   "h": 15,
    "pivot": [
-    9,
-    11
+    6,
+    14
    ],
    "native": [
-    19,
-    12
+    13,
+    15
    ]
   },
   "skyberry@stage2-arcane": {
@@ -7516,17 +7516,17 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 2,
-   "x": 197,
-   "y": 497,
-   "w": 26,
-   "h": 14,
+   "x": 247,
+   "y": 381,
+   "w": 20,
+   "h": 17,
    "pivot": [
-    13,
-    13
+    10,
+    16
    ],
    "native": [
-    26,
-    14
+    20,
+    17
    ]
   },
   "skyberry@stage3": {
@@ -7538,17 +7538,17 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 3,
-   "x": 274,
-   "y": 367,
-   "w": 29,
-   "h": 18,
+   "x": 374,
+   "y": 128,
+   "w": 20,
+   "h": 24,
    "pivot": [
-    14,
-    17
+    10,
+    23
    ],
    "native": [
-    29,
-    18
+    20,
+    24
    ]
   },
   "skyberry@stage3-arcane": {
@@ -7560,17 +7560,17 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 3,
-   "x": 2,
-   "y": 116,
-   "w": 36,
-   "h": 24,
+   "x": 180,
+   "y": 38,
+   "w": 27,
+   "h": 30,
    "pivot": [
-    18,
-    23
+    13,
+    29
    ],
    "native": [
-    36,
-    24
+    27,
+    30
    ]
   },
   "skyshard-geode@stage0": {
@@ -7582,8 +7582,8 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 0,
-   "x": 100,
-   "y": 407,
+   "x": 269,
+   "y": 381,
    "w": 16,
    "h": 17,
    "pivot": [
@@ -7604,8 +7604,8 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 0,
-   "x": 100,
-   "y": 326,
+   "x": 329,
+   "y": 299,
    "w": 21,
    "h": 19,
    "pivot": [
@@ -7626,8 +7626,8 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 1,
-   "x": 68,
-   "y": 480,
+   "x": 452,
+   "y": 454,
    "w": 16,
    "h": 15,
    "pivot": [
@@ -7648,8 +7648,8 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 1,
-   "x": 325,
-   "y": 215,
+   "x": 255,
+   "y": 254,
    "w": 21,
    "h": 21,
    "pivot": [
@@ -7670,17 +7670,17 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 2,
-   "x": 174,
-   "y": 528,
-   "w": 17,
-   "h": 12,
+   "x": 342,
+   "y": 341,
+   "w": 15,
+   "h": 18,
    "pivot": [
-    8,
-    11
+    7,
+    17
    ],
    "native": [
-    17,
-    12
+    15,
+    18
    ]
   },
   "skyshard-geode@stage2-arcane": {
@@ -7692,17 +7692,17 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 2,
-   "x": 305,
-   "y": 367,
-   "w": 21,
-   "h": 18,
+   "x": 396,
+   "y": 128,
+   "w": 19,
+   "h": 24,
    "pivot": [
-    10,
-    17
+    9,
+    23
    ],
    "native": [
-    21,
-    18
+    19,
+    24
    ]
   },
   "skyshard-geode@stage3": {
@@ -7714,17 +7714,17 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 3,
-   "x": 328,
-   "y": 367,
-   "w": 27,
-   "h": 18,
+   "x": 439,
+   "y": 38,
+   "w": 24,
+   "h": 28,
    "pivot": [
-    13,
-    17
+    12,
+    27
    ],
    "native": [
-    27,
-    18
+    24,
+    28
    ]
   },
   "skyshard-geode@stage3-arcane": {
@@ -7736,17 +7736,17 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 3,
-   "x": 358,
-   "y": 116,
-   "w": 32,
-   "h": 23,
+   "x": 184,
+   "y": 2,
+   "w": 29,
+   "h": 33,
    "pivot": [
-    16,
-    22
+    14,
+    32
    ],
    "native": [
-    32,
-    23
+    29,
+    33
    ]
   },
   "skyspray@stage0": {
@@ -7758,8 +7758,8 @@
    "category": "exotic",
    "morph": "herb",
    "stage": 0,
-   "x": 197,
-   "y": 444,
+   "x": 2,
+   "y": 436,
    "w": 16,
    "h": 16,
    "pivot": [
@@ -7780,8 +7780,8 @@
    "category": "exotic",
    "morph": "herb",
    "stage": 0,
-   "x": 378,
-   "y": 167,
+   "x": 347,
+   "y": 206,
    "w": 18,
    "h": 22,
    "pivot": [
@@ -7802,8 +7802,8 @@
    "category": "exotic",
    "morph": "herb",
    "stage": 1,
-   "x": 215,
-   "y": 444,
+   "x": 20,
+   "y": 436,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -7824,8 +7824,8 @@
    "category": "exotic",
    "morph": "herb",
    "stage": 1,
-   "x": 398,
-   "y": 167,
+   "x": 367,
+   "y": 206,
    "w": 21,
    "h": 22,
    "pivot": [
@@ -7846,17 +7846,17 @@
    "category": "exotic",
    "morph": "herb",
    "stage": 2,
-   "x": 383,
-   "y": 513,
-   "w": 18,
-   "h": 13,
+   "x": 409,
+   "y": 488,
+   "w": 14,
+   "h": 12,
    "pivot": [
-    9,
-    12
+    7,
+    11
    ],
    "native": [
-    18,
-    13
+    14,
+    12
    ]
   },
   "skyspray@stage2-arcane": {
@@ -7868,17 +7868,17 @@
    "category": "exotic",
    "morph": "herb",
    "stage": 2,
-   "x": 123,
-   "y": 326,
-   "w": 25,
-   "h": 19,
+   "x": 359,
+   "y": 341,
+   "w": 21,
+   "h": 18,
    "pivot": [
-    12,
-    18
+    10,
+    17
    ],
    "native": [
-    25,
-    19
+    21,
+    18
    ]
   },
   "skyspray@stage3": {
@@ -7890,17 +7890,17 @@
    "category": "exotic",
    "morph": "herb",
    "stage": 3,
-   "x": 2,
-   "y": 283,
-   "w": 27,
-   "h": 20,
+   "x": 382,
+   "y": 341,
+   "w": 21,
+   "h": 18,
    "pivot": [
-    13,
-    19
+    10,
+    17
    ],
    "native": [
-    27,
-    20
+    21,
+    18
    ]
   },
   "skyspray@stage3-arcane": {
@@ -7912,17 +7912,17 @@
    "category": "exotic",
    "morph": "herb",
    "stage": 3,
-   "x": 173,
-   "y": 89,
-   "w": 32,
-   "h": 25,
+   "x": 417,
+   "y": 128,
+   "w": 28,
+   "h": 24,
    "pivot": [
-    16,
-    24
+    14,
+    23
    ],
    "native": [
-    32,
-    25
+    28,
+    24
    ]
   },
   "sleepglass@stage0": {
@@ -7934,8 +7934,8 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 0,
-   "x": 118,
-   "y": 407,
+   "x": 287,
+   "y": 381,
    "w": 16,
    "h": 17,
    "pivot": [
@@ -7956,8 +7956,8 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 0,
-   "x": 392,
-   "y": 116,
+   "x": 33,
+   "y": 181,
    "w": 21,
    "h": 23,
    "pivot": [
@@ -7978,8 +7978,8 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 1,
-   "x": 86,
-   "y": 480,
+   "x": 470,
+   "y": 454,
    "w": 16,
    "h": 15,
    "pivot": [
@@ -8000,8 +8000,8 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 1,
-   "x": 136,
-   "y": 407,
+   "x": 305,
+   "y": 381,
    "w": 21,
    "h": 17,
    "pivot": [
@@ -8022,17 +8022,17 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 2,
-   "x": 193,
-   "y": 528,
-   "w": 17,
-   "h": 12,
+   "x": 405,
+   "y": 341,
+   "w": 15,
+   "h": 18,
    "pivot": [
-    8,
-    11
+    7,
+    17
    ],
    "native": [
-    17,
-    12
+    15,
+    18
    ]
   },
   "sleepglass@stage2-arcane": {
@@ -8044,17 +8044,17 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 2,
-   "x": 357,
-   "y": 367,
-   "w": 21,
-   "h": 18,
+   "x": 447,
+   "y": 128,
+   "w": 19,
+   "h": 24,
    "pivot": [
-    10,
-    17
+    9,
+    23
    ],
    "native": [
-    21,
-    18
+    19,
+    24
    ]
   },
   "sleepglass@stage3": {
@@ -8066,17 +8066,17 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 3,
-   "x": 150,
-   "y": 326,
-   "w": 26,
-   "h": 19,
+   "x": 465,
+   "y": 38,
+   "w": 24,
+   "h": 28,
    "pivot": [
-    13,
-    18
+    12,
+    27
    ],
    "native": [
-    26,
-    19
+    24,
+    28
    ]
   },
   "sleepglass@stage3-arcane": {
@@ -8088,17 +8088,17 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 3,
-   "x": 207,
-   "y": 89,
-   "w": 31,
-   "h": 25,
+   "x": 32,
+   "y": 2,
+   "w": 29,
+   "h": 34,
    "pivot": [
-    15,
-    24
+    14,
+    33
    ],
    "native": [
-    31,
-    25
+    29,
+    34
    ]
   },
   "spectral-anemone@stage0": {
@@ -8110,8 +8110,8 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 0,
-   "x": 380,
-   "y": 367,
+   "x": 422,
+   "y": 341,
    "w": 16,
    "h": 18,
    "pivot": [
@@ -8132,8 +8132,8 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 0,
-   "x": 31,
-   "y": 283,
+   "x": 419,
+   "y": 277,
    "w": 21,
    "h": 20,
    "pivot": [
@@ -8154,8 +8154,8 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 1,
-   "x": 403,
-   "y": 513,
+   "x": 191,
+   "y": 488,
    "w": 16,
    "h": 13,
    "pivot": [
@@ -8176,8 +8176,8 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 1,
-   "x": 178,
-   "y": 326,
+   "x": 352,
+   "y": 299,
    "w": 21,
    "h": 19,
    "pivot": [
@@ -8198,17 +8198,17 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 2,
-   "x": 225,
-   "y": 497,
-   "w": 23,
-   "h": 14,
+   "x": 488,
+   "y": 454,
+   "w": 16,
+   "h": 15,
    "pivot": [
-    11,
-    13
+    8,
+    14
    ],
    "native": [
-    23,
-    14
+    16,
+    15
    ]
   },
   "spectral-anemone@stage2-arcane": {
@@ -8220,17 +8220,17 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 2,
-   "x": 201,
-   "y": 326,
-   "w": 30,
-   "h": 19,
+   "x": 278,
+   "y": 254,
+   "w": 23,
+   "h": 21,
    "pivot": [
-    15,
-    18
+    11,
+    20
    ],
    "native": [
-    30,
-    19
+    23,
+    21
    ]
   },
   "spectral-anemone@stage3": {
@@ -8242,17 +8242,17 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 3,
-   "x": 421,
-   "y": 167,
-   "w": 36,
-   "h": 22,
+   "x": 468,
+   "y": 128,
+   "w": 25,
+   "h": 24,
    "pivot": [
-    18,
-    21
+    12,
+    23
    ],
    "native": [
-    36,
-    22
+    25,
+    24
    ]
   },
   "spectral-anemone@stage3-arcane": {
@@ -8264,17 +8264,17 @@
    "category": "exotic",
    "morph": "coral",
    "stage": 3,
-   "x": 182,
-   "y": 2,
-   "w": 40,
-   "h": 28,
+   "x": 209,
+   "y": 38,
+   "w": 29,
+   "h": 30,
    "pivot": [
-    20,
-    27
+    14,
+    29
    ],
    "native": [
-    40,
-    28
+    29,
+    30
    ]
   },
   "splice-bud@stage0": {
@@ -8286,8 +8286,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 236,
-   "y": 444,
+   "x": 41,
+   "y": 436,
    "w": 16,
    "h": 16,
    "pivot": [
@@ -8308,8 +8308,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 459,
-   "y": 167,
+   "x": 390,
+   "y": 206,
    "w": 21,
    "h": 22,
    "pivot": [
@@ -8330,8 +8330,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 254,
-   "y": 444,
+   "x": 59,
+   "y": 436,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -8352,8 +8352,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 482,
-   "y": 167,
+   "x": 413,
+   "y": 206,
    "w": 24,
    "h": 22,
    "pivot": [
@@ -8374,17 +8374,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 421,
-   "y": 513,
-   "w": 16,
-   "h": 13,
+   "x": 328,
+   "y": 381,
+   "w": 14,
+   "h": 17,
    "pivot": [
-    8,
-    12
+    7,
+    16
    ],
    "native": [
-    16,
-    13
+    14,
+    17
    ]
   },
   "splice-bud@stage2-arcane": {
@@ -8396,17 +8396,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 398,
-   "y": 367,
-   "w": 21,
-   "h": 18,
+   "x": 439,
+   "y": 206,
+   "w": 19,
+   "h": 22,
    "pivot": [
-    10,
-    17
+    9,
+    21
    ],
    "native": [
-    21,
-    18
+    19,
+    22
    ]
   },
   "splice-bud@stage3": {
@@ -8418,17 +8418,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 54,
-   "y": 283,
-   "w": 25,
-   "h": 20,
+   "x": 276,
+   "y": 70,
+   "w": 22,
+   "h": 27,
    "pivot": [
-    12,
-    19
+    11,
+    26
    ],
    "native": [
-    25,
-    20
+    22,
+    27
    ]
   },
   "splice-bud@stage3-arcane": {
@@ -8440,17 +8440,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 82,
-   "y": 61,
-   "w": 32,
-   "h": 26,
+   "x": 215,
+   "y": 2,
+   "w": 29,
+   "h": 33,
    "pivot": [
-    16,
-    25
+    14,
+    32
    ],
    "native": [
-    32,
-    26
+    29,
+    33
    ]
   },
   "starfall-lotus@stage0": {
@@ -8462,8 +8462,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 275,
-   "y": 444,
+   "x": 80,
+   "y": 436,
    "w": 16,
    "h": 16,
    "pivot": [
@@ -8484,8 +8484,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 2,
-   "y": 191,
+   "x": 460,
+   "y": 206,
    "w": 21,
    "h": 22,
    "pivot": [
@@ -8506,8 +8506,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 293,
-   "y": 444,
+   "x": 98,
+   "y": 436,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -8528,8 +8528,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 25,
-   "y": 191,
+   "x": 483,
+   "y": 206,
    "w": 21,
    "h": 22,
    "pivot": [
@@ -8550,17 +8550,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 212,
-   "y": 528,
-   "w": 20,
-   "h": 12,
+   "x": 209,
+   "y": 488,
+   "w": 17,
+   "h": 13,
    "pivot": [
-    10,
-    11
+    8,
+    12
    ],
    "native": [
-    20,
-    12
+    17,
+    13
    ]
   },
   "starfall-lotus@stage2-arcane": {
@@ -8572,17 +8572,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 159,
-   "y": 407,
-   "w": 25,
-   "h": 17,
+   "x": 440,
+   "y": 341,
+   "w": 22,
+   "h": 18,
    "pivot": [
-    12,
-    16
+    11,
+    17
    ],
    "native": [
-    25,
-    17
+    22,
+    18
    ]
   },
   "starfall-lotus@stage3": {
@@ -8594,17 +8594,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 233,
-   "y": 326,
-   "w": 31,
-   "h": 19,
+   "x": 442,
+   "y": 277,
+   "w": 27,
+   "h": 20,
    "pivot": [
-    15,
-    18
+    13,
+    19
    ],
    "native": [
-    31,
-    19
+    27,
+    20
    ]
   },
   "starfall-lotus@stage3-arcane": {
@@ -8616,17 +8616,17 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 240,
-   "y": 89,
-   "w": 38,
-   "h": 25,
+   "x": 29,
+   "y": 100,
+   "w": 34,
+   "h": 26,
    "pivot": [
-    19,
-    24
+    17,
+    25
    ],
    "native": [
-    38,
-    25
+    34,
+    26
    ]
   },
   "sundial-stone@stage0": {
@@ -8638,8 +8638,8 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 0,
-   "x": 186,
-   "y": 407,
+   "x": 344,
+   "y": 381,
    "w": 16,
    "h": 17,
    "pivot": [
@@ -8660,8 +8660,8 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 0,
-   "x": 266,
-   "y": 326,
+   "x": 375,
+   "y": 299,
    "w": 21,
    "h": 19,
    "pivot": [
@@ -8682,8 +8682,8 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 1,
-   "x": 104,
-   "y": 480,
+   "x": 2,
+   "y": 471,
    "w": 16,
    "h": 15,
    "pivot": [
@@ -8704,8 +8704,8 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 1,
-   "x": 348,
-   "y": 215,
+   "x": 303,
+   "y": 254,
    "w": 21,
    "h": 21,
    "pivot": [
@@ -8726,17 +8726,17 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 2,
-   "x": 250,
-   "y": 497,
-   "w": 20,
-   "h": 14,
+   "x": 20,
+   "y": 471,
+   "w": 15,
+   "h": 15,
    "pivot": [
-    10,
-    13
+    7,
+    14
    ],
    "native": [
-    20,
-    14
+    15,
+    15
    ]
   },
   "sundial-stone@stage2-arcane": {
@@ -8748,17 +8748,17 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 2,
-   "x": 81,
-   "y": 283,
-   "w": 27,
-   "h": 20,
+   "x": 326,
+   "y": 254,
+   "w": 22,
+   "h": 21,
    "pivot": [
-    13,
-    19
+    11,
+    20
    ],
    "native": [
-    27,
-    20
+    22,
+    21
    ]
   },
   "sundial-stone@stage3": {
@@ -8770,17 +8770,17 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 3,
-   "x": 48,
-   "y": 191,
-   "w": 31,
-   "h": 22,
+   "x": 2,
+   "y": 155,
+   "w": 24,
+   "h": 24,
    "pivot": [
-    15,
-    21
+    12,
+    23
    ],
    "native": [
-    31,
-    22
+    24,
+    24
    ]
   },
   "sundial-stone@stage3-arcane": {
@@ -8792,17 +8792,17 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 3,
-   "x": 224,
-   "y": 2,
-   "w": 36,
-   "h": 28,
+   "x": 240,
+   "y": 38,
+   "w": 29,
+   "h": 30,
    "pivot": [
-    18,
-    27
+    14,
+    29
    ],
    "native": [
-    36,
-    28
+    29,
+    30
    ]
   },
   "timeweed@stage0": {
@@ -8814,8 +8814,8 @@
    "category": "exotic",
    "morph": "grass",
    "stage": 0,
-   "x": 314,
-   "y": 444,
+   "x": 119,
+   "y": 436,
    "w": 17,
    "h": 16,
    "pivot": [
@@ -8836,8 +8836,8 @@
    "category": "exotic",
    "morph": "grass",
    "stage": 0,
-   "x": 421,
-   "y": 367,
+   "x": 464,
+   "y": 341,
    "w": 22,
    "h": 18,
    "pivot": [
@@ -8858,8 +8858,8 @@
    "category": "exotic",
    "morph": "grass",
    "stage": 1,
-   "x": 333,
-   "y": 444,
+   "x": 138,
+   "y": 436,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -8880,8 +8880,8 @@
    "category": "exotic",
    "morph": "grass",
    "stage": 1,
-   "x": 445,
-   "y": 367,
+   "x": 2,
+   "y": 361,
    "w": 24,
    "h": 18,
    "pivot": [
@@ -8902,17 +8902,17 @@
    "category": "exotic",
    "morph": "grass",
    "stage": 2,
-   "x": 272,
-   "y": 497,
-   "w": 22,
-   "h": 14,
+   "x": 228,
+   "y": 488,
+   "w": 15,
+   "h": 13,
    "pivot": [
-    11,
-    13
+    7,
+    12
    ],
    "native": [
-    22,
-    14
+    15,
+    13
    ]
   },
   "timeweed@stage2-arcane": {
@@ -8924,17 +8924,17 @@
    "category": "exotic",
    "morph": "grass",
    "stage": 2,
-   "x": 110,
-   "y": 283,
-   "w": 27,
-   "h": 20,
+   "x": 398,
+   "y": 299,
+   "w": 20,
+   "h": 19,
    "pivot": [
-    13,
-    19
+    10,
+    18
    ],
    "native": [
-    27,
-    20
+    20,
+    19
    ]
   },
   "timeweed@stage3": {
@@ -8946,17 +8946,17 @@
    "category": "exotic",
    "morph": "grass",
    "stage": 3,
-   "x": 371,
-   "y": 215,
-   "w": 34,
-   "h": 21,
+   "x": 471,
+   "y": 277,
+   "w": 24,
+   "h": 20,
    "pivot": [
-    17,
-    20
+    12,
+    19
    ],
    "native": [
-    34,
-    21
+    24,
+    20
    ]
   },
   "timeweed@stage3-arcane": {
@@ -8968,17 +8968,17 @@
    "category": "exotic",
    "morph": "grass",
    "stage": 3,
-   "x": 116,
-   "y": 61,
-   "w": 39,
-   "h": 26,
+   "x": 420,
+   "y": 100,
+   "w": 29,
+   "h": 25,
    "pivot": [
-    19,
-    25
+    14,
+    24
    ],
    "native": [
-    39,
-    26
+    29,
+    25
    ]
   },
   "twinsprout@stage0": {
@@ -8990,8 +8990,8 @@
    "category": "exotic",
    "morph": "herb",
    "stage": 0,
-   "x": 354,
-   "y": 444,
+   "x": 159,
+   "y": 436,
    "w": 16,
    "h": 16,
    "pivot": [
@@ -9012,8 +9012,8 @@
    "category": "exotic",
    "morph": "herb",
    "stage": 0,
-   "x": 471,
-   "y": 367,
+   "x": 28,
+   "y": 361,
    "w": 21,
    "h": 18,
    "pivot": [
@@ -9034,8 +9034,8 @@
    "category": "exotic",
    "morph": "herb",
    "stage": 1,
-   "x": 372,
-   "y": 444,
+   "x": 177,
+   "y": 436,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -9056,8 +9056,8 @@
    "category": "exotic",
    "morph": "herb",
    "stage": 1,
-   "x": 81,
-   "y": 191,
+   "x": 2,
+   "y": 230,
    "w": 24,
    "h": 22,
    "pivot": [
@@ -9078,17 +9078,17 @@
    "category": "exotic",
    "morph": "herb",
    "stage": 2,
-   "x": 234,
-   "y": 528,
-   "w": 18,
-   "h": 12,
+   "x": 245,
+   "y": 488,
+   "w": 14,
+   "h": 13,
    "pivot": [
-    9,
-    11
+    7,
+    12
    ],
    "native": [
-    18,
-    12
+    14,
+    13
    ]
   },
   "twinsprout@stage2-arcane": {
@@ -9100,17 +9100,17 @@
    "category": "exotic",
    "morph": "herb",
    "stage": 2,
-   "x": 2,
-   "y": 387,
-   "w": 25,
-   "h": 18,
+   "x": 420,
+   "y": 299,
+   "w": 21,
+   "h": 19,
    "pivot": [
-    12,
-    17
+    10,
+    18
    ],
    "native": [
-    25,
-    18
+    21,
+    19
    ]
   },
   "twinsprout@stage3": {
@@ -9122,17 +9122,17 @@
    "category": "exotic",
    "morph": "herb",
    "stage": 3,
-   "x": 289,
-   "y": 326,
-   "w": 27,
-   "h": 19,
+   "x": 2,
+   "y": 299,
+   "w": 21,
+   "h": 20,
    "pivot": [
-    13,
-    18
+    10,
+    19
    ],
    "native": [
-    27,
-    19
+    21,
+    20
    ]
   },
   "twinsprout@stage3-arcane": {
@@ -9144,17 +9144,17 @@
    "category": "exotic",
    "morph": "herb",
    "stage": 3,
-   "x": 40,
-   "y": 116,
-   "w": 32,
-   "h": 24,
+   "x": 451,
+   "y": 100,
+   "w": 26,
+   "h": 25,
    "pivot": [
-    16,
-    23
+    13,
+    24
    ],
    "native": [
-    32,
-    24
+    26,
+    25
    ]
   },
   "updraft-seedwing@stage0": {
@@ -9166,8 +9166,8 @@
    "category": "exotic",
    "morph": "seedpod",
    "stage": 0,
-   "x": 122,
-   "y": 480,
+   "x": 37,
+   "y": 471,
    "w": 21,
    "h": 15,
    "pivot": [
@@ -9188,8 +9188,8 @@
    "category": "exotic",
    "morph": "seedpod",
    "stage": 0,
-   "x": 204,
-   "y": 407,
+   "x": 362,
+   "y": 381,
    "w": 26,
    "h": 17,
    "pivot": [
@@ -9210,8 +9210,8 @@
    "category": "exotic",
    "morph": "seedpod",
    "stage": 1,
-   "x": 393,
-   "y": 444,
+   "x": 198,
+   "y": 436,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -9232,8 +9232,8 @@
    "category": "exotic",
    "morph": "seedpod",
    "stage": 1,
-   "x": 29,
-   "y": 387,
+   "x": 51,
+   "y": 361,
    "w": 24,
    "h": 18,
    "pivot": [
@@ -9254,17 +9254,17 @@
    "category": "exotic",
    "morph": "seedpod",
    "stage": 2,
-   "x": 439,
-   "y": 513,
-   "w": 18,
-   "h": 13,
+   "x": 60,
+   "y": 471,
+   "w": 12,
+   "h": 15,
    "pivot": [
-    9,
-    12
+    6,
+    14
    ],
    "native": [
-    18,
-    13
+    12,
+    15
    ]
   },
   "updraft-seedwing@stage2-arcane": {
@@ -9276,17 +9276,17 @@
    "category": "exotic",
    "morph": "seedpod",
    "stage": 2,
-   "x": 318,
-   "y": 326,
-   "w": 23,
-   "h": 19,
+   "x": 350,
+   "y": 254,
+   "w": 17,
+   "h": 21,
    "pivot": [
-    11,
-    18
+    8,
+    20
    ],
    "native": [
-    23,
-    19
+    17,
+    21
    ]
   },
   "updraft-seedwing@stage3": {
@@ -9298,17 +9298,17 @@
    "category": "exotic",
    "morph": "seedpod",
    "stage": 3,
-   "x": 139,
-   "y": 283,
-   "w": 29,
-   "h": 20,
+   "x": 28,
+   "y": 155,
+   "w": 18,
+   "h": 24,
    "pivot": [
-    14,
-    19
+    9,
+    23
    ],
    "native": [
-    29,
-    20
+    18,
+    24
    ]
   },
   "updraft-seedwing@stage3-arcane": {
@@ -9320,17 +9320,17 @@
    "category": "exotic",
    "morph": "seedpod",
    "stage": 3,
-   "x": 280,
-   "y": 89,
-   "w": 34,
-   "h": 25,
+   "x": 362,
+   "y": 38,
+   "w": 23,
+   "h": 29,
    "pivot": [
-    17,
-    24
+    11,
+    28
    ],
    "native": [
-    34,
-    25
+    23,
+    29
    ]
   },
   "veil-circlet@stage0": {
@@ -9342,8 +9342,8 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 0,
-   "x": 232,
-   "y": 407,
+   "x": 390,
+   "y": 381,
    "w": 16,
    "h": 17,
    "pivot": [
@@ -9364,8 +9364,8 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 0,
-   "x": 415,
-   "y": 116,
+   "x": 56,
+   "y": 181,
    "w": 21,
    "h": 23,
    "pivot": [
@@ -9386,8 +9386,8 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 1,
-   "x": 145,
-   "y": 480,
+   "x": 74,
+   "y": 471,
    "w": 16,
    "h": 15,
    "pivot": [
@@ -9408,8 +9408,8 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 1,
-   "x": 250,
-   "y": 407,
+   "x": 408,
+   "y": 381,
    "w": 21,
    "h": 17,
    "pivot": [
@@ -9430,17 +9430,17 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 2,
-   "x": 459,
-   "y": 513,
-   "w": 20,
-   "h": 13,
+   "x": 386,
+   "y": 471,
+   "w": 15,
+   "h": 14,
    "pivot": [
-    10,
-    12
+    7,
+    13
    ],
    "native": [
-    20,
-    13
+    15,
+    14
    ]
   },
   "veil-circlet@stage2-arcane": {
@@ -9452,17 +9452,17 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 2,
-   "x": 55,
-   "y": 387,
-   "w": 27,
-   "h": 18,
+   "x": 443,
+   "y": 299,
+   "w": 22,
+   "h": 19,
    "pivot": [
-    13,
-    17
+    11,
+    18
    ],
    "native": [
-    27,
-    18
+    22,
+    19
    ]
   },
   "veil-circlet@stage3": {
@@ -9474,17 +9474,17 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 3,
-   "x": 170,
-   "y": 283,
-   "w": 31,
-   "h": 20,
+   "x": 369,
+   "y": 254,
+   "w": 24,
+   "h": 21,
    "pivot": [
-    15,
-    19
+    12,
+    20
    ],
    "native": [
-    31,
-    20
+    24,
+    21
    ]
   },
   "veil-circlet@stage3-arcane": {
@@ -9496,17 +9496,17 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 3,
-   "x": 157,
-   "y": 61,
-   "w": 38,
-   "h": 26,
+   "x": 300,
+   "y": 70,
+   "w": 31,
+   "h": 27,
    "pivot": [
-    19,
-    25
+    15,
+    26
    ],
    "native": [
-    38,
-    26
+    31,
+    27
    ]
   },
   "veilberry@stage0": {
@@ -9518,8 +9518,8 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 0,
-   "x": 296,
-   "y": 497,
+   "x": 403,
+   "y": 471,
    "w": 17,
    "h": 14,
    "pivot": [
@@ -9540,8 +9540,8 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 0,
-   "x": 203,
-   "y": 283,
+   "x": 25,
+   "y": 299,
    "w": 22,
    "h": 20,
    "pivot": [
@@ -9562,8 +9562,8 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 1,
-   "x": 414,
-   "y": 444,
+   "x": 219,
+   "y": 436,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -9584,8 +9584,8 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 1,
-   "x": 84,
-   "y": 387,
+   "x": 77,
+   "y": 361,
    "w": 24,
    "h": 18,
    "pivot": [
@@ -9606,17 +9606,17 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 2,
-   "x": 481,
-   "y": 513,
-   "w": 18,
-   "h": 13,
+   "x": 240,
+   "y": 436,
+   "w": 14,
+   "h": 16,
    "pivot": [
-    9,
-    12
+    7,
+    15
    ],
    "native": [
-    18,
-    13
+    14,
+    16
    ]
   },
   "veilberry@stage2-arcane": {
@@ -9628,17 +9628,17 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 2,
-   "x": 343,
-   "y": 326,
-   "w": 25,
-   "h": 19,
+   "x": 28,
+   "y": 230,
+   "w": 21,
+   "h": 22,
    "pivot": [
-    12,
-    18
+    10,
+    21
    ],
    "native": [
-    25,
-    19
+    21,
+    22
    ]
   },
   "veilberry@stage3": {
@@ -9650,17 +9650,17 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 3,
-   "x": 227,
-   "y": 283,
-   "w": 29,
-   "h": 20,
+   "x": 479,
+   "y": 100,
+   "w": 21,
+   "h": 25,
    "pivot": [
-    14,
-    19
+    10,
+    24
    ],
    "native": [
-    29,
-    20
+    21,
+    25
    ]
   },
   "veilberry@stage3-arcane": {
@@ -9672,17 +9672,17 @@
    "category": "exotic",
    "morph": "berry",
    "stage": 3,
-   "x": 197,
-   "y": 61,
-   "w": 33,
-   "h": 26,
+   "x": 454,
+   "y": 2,
+   "w": 25,
+   "h": 31,
    "pivot": [
-    16,
-    25
+    12,
+    30
    ],
    "native": [
-    33,
-    26
+    25,
+    31
    ]
   },
   "veilfern@stage0": {
@@ -9694,8 +9694,8 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 0,
-   "x": 435,
-   "y": 444,
+   "x": 256,
+   "y": 436,
    "w": 16,
    "h": 16,
    "pivot": [
@@ -9716,8 +9716,8 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 0,
-   "x": 110,
-   "y": 387,
+   "x": 103,
+   "y": 361,
    "w": 21,
    "h": 18,
    "pivot": [
@@ -9738,8 +9738,8 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 1,
-   "x": 453,
-   "y": 444,
+   "x": 274,
+   "y": 436,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -9760,8 +9760,8 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 1,
-   "x": 107,
-   "y": 191,
+   "x": 51,
+   "y": 230,
    "w": 24,
    "h": 22,
    "pivot": [
@@ -9782,16 +9782,16 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 2,
-   "x": 315,
-   "y": 497,
-   "w": 22,
+   "x": 422,
+   "y": 471,
+   "w": 14,
    "h": 14,
    "pivot": [
-    11,
+    7,
     13
    ],
    "native": [
-    22,
+    14,
     14
    ]
   },
@@ -9804,16 +9804,16 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 2,
-   "x": 258,
-   "y": 283,
-   "w": 29,
+   "x": 49,
+   "y": 299,
+   "w": 21,
    "h": 20,
    "pivot": [
-    14,
+    10,
     19
    ],
    "native": [
-    29,
+    21,
     20
    ]
   },
@@ -9826,17 +9826,17 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 3,
-   "x": 133,
-   "y": 191,
-   "w": 34,
-   "h": 22,
+   "x": 395,
+   "y": 254,
+   "w": 21,
+   "h": 21,
    "pivot": [
-    17,
-    21
+    10,
+    20
    ],
    "native": [
-    34,
-    22
+    21,
+    21
    ]
   },
   "veilfern@stage3-arcane": {
@@ -9848,17 +9848,17 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 3,
-   "x": 262,
-   "y": 2,
-   "w": 38,
-   "h": 28,
+   "x": 333,
+   "y": 70,
+   "w": 25,
+   "h": 27,
    "pivot": [
-    19,
-    27
+    12,
+    26
    ],
    "native": [
-    38,
-    28
+    25,
+    27
    ]
   },
   "veilglass@stage0": {
@@ -9870,8 +9870,8 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 0,
-   "x": 273,
-   "y": 407,
+   "x": 431,
+   "y": 381,
    "w": 16,
    "h": 17,
    "pivot": [
@@ -9892,8 +9892,8 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 0,
-   "x": 438,
-   "y": 116,
+   "x": 79,
+   "y": 181,
    "w": 21,
    "h": 23,
    "pivot": [
@@ -9914,8 +9914,8 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 1,
-   "x": 163,
-   "y": 480,
+   "x": 92,
+   "y": 471,
    "w": 16,
    "h": 15,
    "pivot": [
@@ -9936,8 +9936,8 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 1,
-   "x": 407,
-   "y": 215,
+   "x": 418,
+   "y": 254,
    "w": 21,
    "h": 21,
    "pivot": [
@@ -9958,17 +9958,17 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 2,
-   "x": 339,
-   "y": 497,
-   "w": 16,
-   "h": 14,
+   "x": 126,
+   "y": 361,
+   "w": 15,
+   "h": 18,
    "pivot": [
-    8,
-    13
+    7,
+    17
    ],
    "native": [
-    16,
-    14
+    15,
+    18
    ]
   },
   "veilglass@stage2-arcane": {
@@ -9980,17 +9980,17 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 2,
-   "x": 289,
-   "y": 283,
-   "w": 23,
-   "h": 20,
+   "x": 48,
+   "y": 155,
+   "w": 22,
+   "h": 24,
    "pivot": [
     11,
-    19
+    23
    ],
    "native": [
-    23,
-    20
+    22,
+    24
    ]
   },
   "veilglass@stage3": {
@@ -10002,17 +10002,17 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 3,
-   "x": 169,
-   "y": 191,
-   "w": 25,
-   "h": 22,
+   "x": 2,
+   "y": 70,
+   "w": 24,
+   "h": 28,
    "pivot": [
     12,
-    21
+    27
    ],
    "native": [
-    25,
-    22
+    24,
+    28
    ]
   },
   "veilglass@stage3-arcane": {
@@ -10024,17 +10024,17 @@
    "category": "exotic",
    "morph": "crystal",
    "stage": 3,
-   "x": 302,
+   "x": 63,
    "y": 2,
-   "w": 30,
-   "h": 28,
+   "w": 29,
+   "h": 34,
    "pivot": [
-    15,
-    27
+    14,
+    33
    ],
    "native": [
-    30,
-    28
+    29,
+    34
    ]
   },
   "windfern@stage0": {
@@ -10046,8 +10046,8 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 0,
-   "x": 474,
-   "y": 444,
+   "x": 295,
+   "y": 436,
    "w": 16,
    "h": 16,
    "pivot": [
@@ -10068,8 +10068,8 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 0,
-   "x": 133,
-   "y": 387,
+   "x": 143,
+   "y": 361,
    "w": 21,
    "h": 18,
    "pivot": [
@@ -10090,8 +10090,8 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 1,
-   "x": 2,
-   "y": 462,
+   "x": 313,
+   "y": 436,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -10112,8 +10112,8 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 1,
-   "x": 196,
-   "y": 191,
+   "x": 77,
+   "y": 230,
    "w": 24,
    "h": 22,
    "pivot": [
@@ -10134,17 +10134,17 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 2,
-   "x": 357,
-   "y": 497,
-   "w": 23,
-   "h": 14,
+   "x": 334,
+   "y": 436,
+   "w": 14,
+   "h": 16,
    "pivot": [
-    11,
-    13
+    7,
+    15
    ],
    "native": [
-    23,
-    14
+    14,
+    16
    ]
   },
   "windfern@stage2-arcane": {
@@ -10156,17 +10156,17 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 2,
-   "x": 314,
-   "y": 283,
-   "w": 28,
-   "h": 20,
+   "x": 103,
+   "y": 230,
+   "w": 19,
+   "h": 22,
    "pivot": [
-    14,
-    19
+    9,
+    21
    ],
    "native": [
-    28,
-    20
+    19,
+    22
    ]
   },
   "windfern@stage3": {
@@ -10178,17 +10178,17 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 3,
-   "x": 430,
-   "y": 215,
-   "w": 36,
-   "h": 21,
+   "x": 2,
+   "y": 128,
+   "w": 21,
+   "h": 25,
    "pivot": [
-    18,
-    20
+    10,
+    24
    ],
    "native": [
-    36,
-    21
+    21,
+    25
    ]
   },
   "windfern@stage3-arcane": {
@@ -10200,17 +10200,17 @@
    "category": "exotic",
    "morph": "leaf",
    "stage": 3,
-   "x": 461,
-   "y": 116,
-   "w": 43,
-   "h": 23,
+   "x": 360,
+   "y": 70,
+   "w": 28,
+   "h": 27,
    "pivot": [
-    21,
-    22
+    14,
+    26
    ],
    "native": [
-    43,
-    23
+    28,
+    27
    ]
   },
   "wisp-reliquary@stage0": {
@@ -10222,8 +10222,8 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 0,
-   "x": 291,
-   "y": 407,
+   "x": 449,
+   "y": 381,
    "w": 16,
    "h": 17,
    "pivot": [
@@ -10244,8 +10244,8 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 0,
-   "x": 2,
-   "y": 142,
+   "x": 102,
+   "y": 181,
    "w": 21,
    "h": 23,
    "pivot": [
@@ -10266,8 +10266,8 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 1,
-   "x": 181,
-   "y": 480,
+   "x": 110,
+   "y": 471,
    "w": 16,
    "h": 15,
    "pivot": [
@@ -10288,8 +10288,8 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 1,
-   "x": 468,
-   "y": 215,
+   "x": 441,
+   "y": 254,
    "w": 21,
    "h": 21,
    "pivot": [
@@ -10310,17 +10310,17 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 2,
-   "x": 254,
-   "y": 528,
-   "w": 19,
-   "h": 12,
+   "x": 128,
+   "y": 471,
+   "w": 15,
+   "h": 15,
    "pivot": [
-    9,
-    11
+    7,
+    14
    ],
    "native": [
-    19,
-    12
+    15,
+    15
    ]
   },
   "wisp-reliquary@stage2-arcane": {
@@ -10332,17 +10332,17 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 2,
-   "x": 156,
-   "y": 387,
-   "w": 24,
-   "h": 18,
+   "x": 464,
+   "y": 254,
+   "w": 20,
+   "h": 21,
    "pivot": [
-    12,
-    17
+    10,
+    20
    ],
    "native": [
-    24,
-    18
+    20,
+    21
    ]
   },
   "wisp-reliquary@stage3": {
@@ -10354,17 +10354,17 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 3,
-   "x": 370,
-   "y": 326,
-   "w": 29,
-   "h": 19,
+   "x": 72,
+   "y": 155,
+   "w": 24,
+   "h": 24,
    "pivot": [
-    14,
-    18
+    12,
+    23
    ],
    "native": [
-    29,
-    19
+    24,
+    24
    ]
   },
   "wisp-reliquary@stage3-arcane": {
@@ -10376,17 +10376,17 @@
    "category": "exotic",
    "morph": "relic",
    "stage": 3,
-   "x": 2,
-   "y": 238,
-   "w": 36,
-   "h": 21,
+   "x": 65,
+   "y": 100,
+   "w": 31,
+   "h": 26,
    "pivot": [
-    18,
-    20
+    15,
+    25
    ],
    "native": [
-    36,
-    21
+    31,
+    26
    ]
   },
   "zephyr-starbloom@stage0": {
@@ -10398,8 +10398,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 23,
-   "y": 462,
+   "x": 350,
+   "y": 436,
    "w": 16,
    "h": 16,
    "pivot": [
@@ -10420,8 +10420,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 0,
-   "x": 182,
-   "y": 387,
+   "x": 166,
+   "y": 361,
    "w": 21,
    "h": 18,
    "pivot": [
@@ -10442,8 +10442,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 41,
-   "y": 462,
+   "x": 368,
+   "y": 436,
    "w": 19,
    "h": 16,
    "pivot": [
@@ -10464,8 +10464,8 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 1,
-   "x": 222,
-   "y": 191,
+   "x": 124,
+   "y": 230,
    "w": 21,
    "h": 22,
    "pivot": [
@@ -10486,16 +10486,16 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 2,
-   "y": 528,
-   "w": 19,
+   "x": 261,
+   "y": 488,
+   "w": 17,
    "h": 13,
    "pivot": [
-    9,
+    8,
     12
    ],
    "native": [
-    19,
+    17,
     13
    ]
   },
@@ -10508,16 +10508,16 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 2,
-   "x": 401,
-   "y": 326,
-   "w": 26,
+   "x": 467,
+   "y": 299,
+   "w": 24,
    "h": 19,
    "pivot": [
-    13,
+    12,
     18
    ],
    "native": [
-    26,
+    24,
     19
    ]
   },
@@ -10530,16 +10530,16 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 344,
-   "y": 283,
-   "w": 29,
+   "x": 72,
+   "y": 299,
+   "w": 27,
    "h": 20,
    "pivot": [
-    14,
+    13,
     19
    ],
    "native": [
-    29,
+    27,
     20
    ]
   },
@@ -10552,16 +10552,16 @@
    "category": "exotic",
    "morph": "flower",
    "stage": 3,
-   "x": 232,
-   "y": 61,
-   "w": 33,
+   "x": 98,
+   "y": 100,
+   "w": 31,
    "h": 26,
    "pivot": [
-    16,
+    15,
     25
    ],
    "native": [
-    33,
+    31,
     26
    ]
   }
