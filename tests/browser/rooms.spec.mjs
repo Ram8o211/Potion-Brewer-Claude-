@@ -220,3 +220,30 @@ test('the garden: a seed is sown in a plot, watered with a tap, grows and is har
   expect(await lab(page, (l) => l.state.garden.plots[0].crop), 'the harvest consumed the plant').toBeNull();
   expect(errors).toEqual([]);
 });
+
+test('the garden: a seed in hand can always be put away, and is put away once nothing more can be sown with it', async ({ page }) => {
+  const errors = watchErrors(page);
+  await newGame(page, { tutorial: false, seed: 'garden-room-2' });
+  await lab(page, (l) => { l.state.garden.seeds.silverleaf = 3; });
+  await page.click('[data-act=tab-garden]');
+  // a seed taken in hand, then tapped again: put away
+  await page.click('[data-act=seed-silverleaf]');
+  await expect(page.locator('[data-act=seed-silverleaf]')).toHaveClass(/selected/);
+  await page.click('[data-act=seed-silverleaf]');
+  await expect(page.locator('[data-act=seed-silverleaf]')).not.toHaveClass(/selected/);
+  // sown into the first plot: still in hand for the second (another empty soil plot), and still enabled
+  await page.click('[data-act=seed-silverleaf]');
+  await page.click('[data-act=plot-p1]');
+  await expect(page.locator('[data-act=seed-silverleaf]')).toBeEnabled();
+  await expect(page.locator('[data-act=seed-drop]')).toBeVisible();
+  // put away with the button
+  await page.click('[data-act=seed-drop]');
+  await expect(page.locator('[data-act=seed-silverleaf]')).not.toHaveClass(/selected/);
+  // sown into the last empty plot: nothing more takes it, so it is put away by itself
+  await page.click('[data-act=seed-silverleaf]');
+  await page.click('[data-act=plot-p2]');
+  expect(await lab(page, (l) => l.state.garden.plots.every((p) => p.crop))).toBe(true);
+  await expect(page.locator('[data-act=seed-silverleaf]')).not.toHaveClass(/selected/);
+  await expect(page.locator('[data-act=seed-silverleaf]')).toBeEnabled();
+  expect(errors).toEqual([]);
+});

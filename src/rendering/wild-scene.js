@@ -31,6 +31,11 @@ export function sceneCanvas(region, seed) {
   return cv;
 }
 
+/** Forget the painted scenes (their canvases' contents are gone once the GPU has taken its memory back). */
+export function forgetSceneCanvases() {
+  canvases.clear();
+}
+
 /**
  * The wind over a region at column x and time t (seconds): a breeze slowly
  * rising, falling and turning about, waves running along with it through
