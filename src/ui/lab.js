@@ -47,6 +47,8 @@ import { audio } from '../audio/audio.js';
 import * as panels from './panels.js';
 import * as trade from './trade.js';
 import { Tutorial } from './tutorial.js';
+import { openInventory } from './inventory.js';
+import { benchIds, setOnBench } from '../game/bench.js';
 import { CounterView } from './views/counter.js';
 import { WildsView } from './views/wilds.js';
 import { TrialsView } from './views/trials.js';
@@ -519,7 +521,9 @@ export class LabScreen {
     const sh = clear(this.shelfEl);
     this.jarEls = {};
     const st = this.state;
-    const ids = this.sandbox ? sandboxIngredients(st.world) : st.world.ingredients.filter((id) => st.knows(id) && (st.lookup(id).tier <= st.rank || st.stock(id) > 0));
+    // the quick shelf: only the jars put out of the storeroom (the Inventory button, first in the row)
+    const ids = benchIds(st.bench, this.shelfPool(), (id) => (this.sandbox ? Infinity : st.stock(id)));
+    sh.appendChild(btn(ids.length ? '' : 'Fill the shelf', () => this.openInventory(), { icon: 'satchel', cls: 'shelf-inv', title: 'Inventory: every ingredient you hold, by effect or rarity — choose what goes on this shelf (I)', act: 'inventory' }));
     const labels = shelfLabels(ids.map((id) => st.lookup(id).name));
     for (const [n, id] of ids.entries()) {
       const m = st.lookup(id);
@@ -544,6 +548,37 @@ export class LabScreen {
       sh.appendChild(el);
     }
     this.updateShelf();
+  }
+
+  /** The ingredients the storeroom can show: everything held, and the shop's reagents of this rank. */
+  shelfPool() {
+    const st = this.state;
+    return this.sandbox ? sandboxIngredients(st.world) : st.world.ingredients.filter((id) => st.knows(id) && (st.lookup(id).tier <= st.rank || st.stock(id) > 0));
+  }
+
+  /** @param {string} id */
+  onShelf(id) {
+    return this.state.bench.ids.includes(id);
+  }
+
+  /** Put a jar on the quick shelf, or take it back to the storeroom. @param {string} id @param {boolean} on */
+  setOnShelf(id, on) {
+    setOnBench(this.state.bench, id, on);
+    if (!on && this.selected === id) {
+      this.selected = null;
+      if (this.sim.emitter.pouring && !(this.sim.emitter.active && this.sim.emitter.active.dose)) this.sim.emitter.stop();
+      this.syncSelName();
+      this.updatePourHint();
+      this.placeDose();
+    }
+    this.buildShelf();
+    if (this.selected) for (const [k, j] of Object.entries(this.jarEls)) j.el.classList.toggle('selected', k === this.selected);
+    this.save();
+  }
+
+  openInventory() {
+    audio.play('click');
+    openInventory(this);
   }
 
   /**
@@ -783,6 +818,7 @@ export class LabScreen {
     else if (k === 'r' && !this.sandbox) { this.showView('book'); this.views.book.open('recipes'); }
     else if (k === 'a') this.setAutoStir(!this.autoStir);
     else if (k === 'n') this.openNotes();
+    else if (k === 'i') this.openInventory();
     else if (k === 'h' && this.sandbox) this.toggleThermal();
     else if (k === 'escape') panels.openPause(this);
     else if (k === 'arrowup' || k === 'arrowright') this.nudgeFurnace(1);

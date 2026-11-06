@@ -22,6 +22,7 @@ import { normalizeCellar } from './cellar.js';
 import { normalizeGarden, seedId, TUTORIAL_PACE } from './garden.js';
 import { SPECIES_BY_KEY, materialIdOf } from '../materials/catalog.js';
 import { migrateVial } from './vial.js';
+import { normalizeBench } from './bench.js';
 
 /** How many times faster the Free Experiment's cellar ages: an hour of aging in a minute. */
 export const SANDBOX_CELLAR_PACE = 60;
@@ -65,6 +66,8 @@ export function prepareSandbox(st, saved = null, now = Date.now()) {
   sandboxCellar(st.cellar);
   // the garden: every bed at the highest grade, every seed, growing at a quicker pace
   st.garden = sandboxGarden(same && saved.garden ? normalizeGarden(saved.garden, now) : null, st);
+  // its own quick shelf
+  if (same && saved.bench) st.bench = normalizeBench(saved.bench);
   // bottomless stores (also of the remains rebuilt above)
   for (const id of sandboxIngredients(st.world)) st.inventory[id] = Infinity;
   return st;
@@ -106,5 +109,5 @@ export function sandboxGarden(g, st) {
 export function sandboxSave(st, cauldron) {
   const { pace: _p, runes: _r, ...cellar } = /** @type {any} */ (st.cellar);
   const { pace: _g, seeds: _s, ...garden } = /** @type {any} */ (st.garden);
-  return { seed: st.seed, cauldron, trials: st.trials, bottles: st.bottles, cellar, garden };
+  return { seed: st.seed, cauldron, trials: st.trials, bottles: st.bottles, cellar, garden, bench: st.bench };
 }

@@ -239,6 +239,7 @@ img.ico.spr { object-fit: contain; image-rendering: auto; }
   display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 1px; font-family: inherit; color: inherit;
   background: var(--wood2); box-shadow: 0 0 0 var(--px) var(--wood0), inset 0 var(--px) 0 var(--wood4);
 }
+.shelf .shelf-inv { width: 60px; height: 66px; }
 .jar canvas { width: 26px; height: 34px; }
 .jar canvas.raw { width: 40px; height: 40px; margin-bottom: 1px; image-rendering: pixelated; }
 .jar.wild { background: #3f4a26; box-shadow: 0 0 0 var(--px) var(--wood0), inset 0 var(--px) 0 #6d7f3a; }
@@ -534,7 +535,7 @@ canvas.scene { display: block; flex: none; max-width: none; aspect-ratio: 16 / 9
   .shelf-wrap { display: flex; flex-direction: column; min-height: 0; padding: 8px; }
   .shelf { flex-wrap: wrap; overflow-y: auto; overflow-x: hidden; align-content: flex-start; touch-action: pan-y; }
   .shelf .jar { touch-action: pan-y; }
-  .jar { width: 86px; height: 88px; }
+  .jar, .shelf .shelf-inv { width: 86px; height: 88px; }
   .jar canvas { width: 30px; height: 40px; }
   .jar canvas.raw { width: 48px; height: 48px; }
   .jar .jname { max-width: 82px; }
@@ -558,7 +559,7 @@ canvas.scene { display: block; flex: none; max-width: none; aspect-ratio: 16 / 9
 
 /* ---------- tablets in portrait: bigger shelf and subjects ---------- */
 @media (min-width: 700px) and (max-aspect-ratio: 1/1) {
-  .jar { width: 74px; height: 80px; }
+  .jar, .shelf .shelf-inv { width: 74px; height: 80px; }
   .jar canvas { width: 30px; height: 40px; }
   .subjects { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .tools .btn { padding: 4px 10px; }
@@ -592,7 +593,7 @@ canvas.scene { display: block; flex: none; max-width: none; aspect-ratio: 16 / 9
   .shelf { flex: 1 1 auto; min-height: 0; flex-wrap: wrap; overflow-y: auto; overflow-x: hidden; align-content: flex-start; touch-action: pan-y; }
   .shelf .jar { touch-action: pan-y; }
   .dose { flex-wrap: wrap; }
-  .jar { width: 54px; height: 58px; }
+  .jar, .shelf .shelf-inv { width: 54px; height: 58px; }
   .order-strip { margin: 4px 6px 0; }
   .subjects { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   /* the wilds: region tabs on top, the scene stays on the left and only the
@@ -1009,3 +1010,19 @@ input[type=checkbox]:checked { background-image: url('../assets/ui/form/checkbox
   .topbar img.brand { height: 36px; }
   .jar { height: 62px; }
 }
+
+/* ------------------------------------------------------------------ the inventory and the quick shelf */
+/* the first place on the shelf opens the storeroom */
+.shelf .shelf-inv { flex: none; min-height: 0; padding: 2px; flex-direction: column; justify-content: center; gap: 2px; font-size: var(--fs-s); line-height: 1; white-space: normal; text-align: center; }
+.shelf .shelf-inv .ico { width: 28px; height: 28px; }
+.inventory .inv-tools { display: flex; flex: none; flex-wrap: wrap; gap: 6px; align-items: center; padding: 0 10px 6px; }
+.inventory .inv-tools .btn { min-height: 44px; font-size: var(--fs-s); }
+.inventory .inv-count { flex: 1 1 auto; }
+.inv-group { margin-bottom: 10px; }
+.inv-head { display: flex; align-items: center; gap: 4px; margin: 4px 2px 6px; font-size: 20px; }
+.inv-item { margin-bottom: 6px; }
+.inv-item.on { box-shadow: inset 4px 0 0 var(--brass); }
+.inv-item .title { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; }
+.inv-item .meta { display: flex; flex-wrap: wrap; gap: 4px; }
+.inv-pic { border: none; background: none; padding: 0; min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.inv-toggle { min-height: 44px; min-width: 96px; font-size: var(--fs-s); }

@@ -496,6 +496,14 @@ Browser screenshots from the test run land in `test-results/screenshots/`.
    heat or cool (its gentle half is spread out for fine control; − and +
    step the flame two degrees), and tap **Off** beside it to put it out.
    The readout shows the flame's temperature and the pot's.
+   The shelf under the cauldron is a **quick shelf**: it holds only the
+   jars you have put out for the brew at hand. Its first button (or `I`)
+   opens the **Inventory** — everything you hold, grouped by effect (each
+   ingredient under its strongest one) or by rarity, rarest and strongest
+   first — where **Shelf** puts a jar out and **On shelf** takes it back.
+   A first find goes on the shelf by itself; once taken off it stays in
+   the storeroom until you put it back (the ingredient sheet, opened with
+   a long-press, has the same switch).
 4. **Trials.** Tap a rabbit in the hutch and press **Give**, or drag the
    dropper onto it. Test several different rabbits before you trust the
    estimate, and watch their status bars: purge or rest a rabbit before an
@@ -509,7 +517,7 @@ Browser screenshots from the test run land in `test-results/screenshots/`.
 
 Keyboard: `C` `V` `W` `T` `J` rooms, `1`–`5` tools, `G` ground, `L` lid,
 `B` bottle, `F` time speed, `A` auto-stir, `H` thermal view, arrows fire,
-`0` fire off, `S` market, `R` recipes, `Esc` menu.
+`0` fire off, `I` inventory, `S` market, `R` recipes, `Esc` menu.
 
 ## Project layout
 

@@ -113,3 +113,30 @@ test('a tested batch labels its bottles by itself: shelved bottles show their ef
   await expect(page.locator('[data-act=bottle-slot]').nth(1).locator('.bstars')).toHaveAttribute('data-stars', '0');
   expect(errors).toEqual([]);
 });
+
+test('the inventory groups the storeroom and fills the quick shelf', async ({ page }, info) => {
+  const errors = watchErrors(page);
+  await newGame(page, { tutorial: false, seed: 'inventory-1' });
+  const silver = 'wild-sp-silverleaf';
+  await expect(page.locator(`.jar[data-id="${silver}"]`)).toBeVisible();
+  await page.click('[data-act=inventory]');
+  await expect(page.locator('.inv-group[data-group=vitality]')).toContainText('Silverleaf');
+  // off the shelf: it stays in the storeroom, even after a reload
+  await page.click(`[data-act="shelf-${silver}"]`);
+  await expect(page.locator(`.jar[data-id="${silver}"]`)).toHaveCount(0);
+  await page.click('[data-act=inv-by-rarity]');
+  await expect(page.locator('.inv-group[data-group=common]')).toContainText('Silverleaf');
+  await shot(page, info, 'inventory-rarity');
+  await page.locator('.overlay .modal-head .btn').first().click();
+  await lab(page, (l) => l.save());
+  await page.reload();
+  await page.click('[data-act=continue]');
+  await page.waitForSelector('canvas.view-canvas');
+  await expect(page.locator(`.jar[data-id="${silver}"]`)).toHaveCount(0);
+  // and back on it, from the inventory (I)
+  await page.keyboard.press('i');
+  await page.click(`[data-act="shelf-${silver}"]`);
+  await page.locator('.overlay .modal-head .btn').first().click();
+  await expect(page.locator(`.jar[data-id="${silver}"]`)).toBeVisible();
+  expect(errors).toEqual([]);
+});

@@ -13,6 +13,7 @@ import { createGathering, normalizeGathering, generateDeposits, harvest, gatherP
 import { predictPlan } from './predict.js';
 import { EFFECT_INDEX, EFFECT_KEYS } from '../alchemy/effects.js';
 import { migrateVial } from './vial.js';
+import { normalizeBench } from './bench.js';
 import { recordSale, resolveFollowUp, applyTrials, evidenceOf } from './commerce.js';
 import { colonyDay, colonyTick, livingRabbits, livingOf, findRabbit, addBoughtRabbit, addWildRabbit, penHasRoom, PEN_MAX, retireRabbit, remainsSource, purgeRabbit, cullRabbit, maxHealthOf, FOUNDER_BORN } from './colony.js';
 import { kindOf } from './kinds.js';
@@ -136,6 +137,8 @@ export class GameState {
     /** @type {number} */ this.reliefDay = data.reliefDay || 0;
     /** @type {boolean} */ this.grandDone = !!data.grandDone;
     /** @type {number} */ this.createdAt = data.createdAt || Date.now();
+    /** the quick shelf at the cauldron: the jars put out of the storeroom (bench.js) */
+    this.bench = normalizeBench(data.bench);
     /** @type {ReturnType<typeof createTrials>} */ this.trials = normalizeTrials(data.trials);
     /** @type {ReturnType<typeof createGathering>} */ this.gathering = normalizeGathering(data.gathering);
     /** the sealed vial (game/vial.js): exact bottled particles, or null */
@@ -1532,6 +1535,7 @@ export class GameState {
       regen: this.regen,
       garden: this.garden,
       cellar: this.cellar,
+      bench: this.bench,
       savedAt: Date.now(),
     };
   }

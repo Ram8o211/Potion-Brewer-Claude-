@@ -197,7 +197,7 @@ function renderSell(lab, body, rerender) {
 }
 
 // ------------------------------------------------------------------ ingredient inspector
-export function openIngredient(lab, id) {
+export function openIngredient(lab, id, onClose = null) {
   const st = lab.state;
   const m = st.lookup(id);
   if (!m) return;
@@ -241,8 +241,14 @@ export function openIngredient(lab, id) {
   else if (!asp.children.length) asp.append(h('span', { class: 'muted', text: 'No magical or chemical effect.' }));
   const reactions = st.world.reactions.filter((r) => (r.a === id || r.b === id) && st.journal['reaction:' + r.id]);
   const balance = m.wild ? balanceHints(st, m) : [];
-  modal({
+  // put it on the quick shelf at the cauldron, or back in the storeroom (ui/inventory.js)
+  const onShelf = lab.onShelf && lab.shelfPool().includes(id) ? lab.onShelf(id) : null;
+  let sheet = null;
+  const shelfBtn = onShelf === null ? null : btn(onShelf ? 'Take off the shelf' : 'Put on the shelf', () => { lab.setOnShelf(id, !onShelf); if (sheet) sheet.close(); }, { icon: onShelf ? 'minus' : 'plus', act: 'ing-shelf' });
+  sheet = modal({
     title: m.name,
+    foot: shelfBtn ? [shelfBtn] : [],
+    onClose,
     body: [
       h('div', { class: 'card parch ing-card' }, jarCanvas(m, 22, 30), h('div', {}, h('div', { text: m.description }), h('div', {}, ...tags.map((t) => h('span', { class: 'tag', text: t }))))),
       h('div', { class: 'card parch' }, facts),
