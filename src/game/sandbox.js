@@ -62,7 +62,9 @@ export function prepareSandbox(st, saved = null, now = Date.now()) {
   // its own potion shelves
   if (same && Array.isArray(saved.bottles)) st.bottles = saved.bottles.map(migrateVial).filter(Boolean).slice(0, st.cap.bottles);
   // the cellar: every vessel the guild sells, runes without end, aging at a quicker pace
-  st.cellar = normalizeCellar(same && saved.cellar ? saved.cellar : null, st.cap.vessels, now);
+  st.cellar = normalizeCellar(same && saved.cellar ? saved.cellar : null, 0, now);
+  // (an older visit's cellar vessels come back as aging bottles on the shelves)
+  st.cellarToShelves(now);
   sandboxCellar(st.cellar);
   // the garden: every bed at the highest grade, every seed, growing at a quicker pace
   st.garden = sandboxGarden(same && saved.garden ? normalizeGarden(saved.garden, now) : null, st);

@@ -100,7 +100,7 @@ export class Renderer {
   /**
    * @param {any} st scene state
    *   sim, time, dt, pour:{def,x,active}, tool:{type,x,y,active}, bottling:{progress,color,ml}|null,
-   *   probe:{x,y}|null, thermal:boolean, alembic:boolean, receiver:{count,color}|null, stirrer:boolean
+   *   alembic:boolean, receiver:{count,color}|null
    */
   render(st) {
     const { ctx, view } = this;
@@ -135,7 +135,6 @@ export class Renderer {
     ctx.drawImage(this.heatCanvas, ca.x, ca.y);
 
     // ---- materials
-    this.fluid.thermal = !!st.thermal;
     this.fluid.halo = this.quality !== 'low';
     const fr = this.fluid.render(sim, view, st.time);
     if (fr) {
@@ -161,7 +160,6 @@ export class Renderer {
     if (st.pour && st.pour.active) this._drawPour(c, st);
     const tool = st.tool;
     if (tool && (tool.active || st.toolHover) && tool.type !== 'none') this._drawTool(c, tool, st);
-    if (st.stirrer) this._drawStirrer(c, st);
 
     // ---- flames licking up from burning matter
     const p = sim.p;
@@ -194,18 +192,6 @@ export class Renderer {
     this.fx.update(st.dt);
     this.fx.draw(ctx);
 
-    // ---- probe
-    if (st.probe) {
-      const [px, py] = this.toScreen(st.probe.x, st.probe.y);
-      const r = Math.round(st.probe.r * s);
-      ctx.strokeStyle = PAL.brassHi;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.arc(Math.round(px) + 0.5, Math.round(py) + 0.5, r, 0, Math.PI * 2);
-      ctx.stroke();
-      rect(ctx, px - 3, py, 7, 1, PAL.brassHi);
-      rect(ctx, px, py - 3, 1, 7, PAL.brassHi);
-    }
 
     // ---- lighting (cheap additive glows)
     if (this.quality !== 'low') this._lighting(c, st);
@@ -357,18 +343,6 @@ export class Renderer {
       ctx.arc(Math.round(tx) + 0.5, Math.round(ty) + 0.5, Math.round(0.42 * s), 0, Math.PI * 2);
       ctx.stroke();
     }
-  }
-
-  _drawStirrer(c, st) {
-    const { ctx, view } = this;
-    const s = view.scale;
-    // clockwork box on the rim
-    const x = Math.round(view.ox - (c.mouth + 0.45) * s), y = Math.round(view.oy - 0.45 * s);
-    const w = Math.round(0.42 * s), h = Math.round(0.32 * s);
-    rect(ctx, x, y, w, h, PAL.copper1);
-    rect(ctx, x, y, w, 1, PAL.copper3);
-    const a = st.time * 4;
-    rect(ctx, x + w / 2 + Math.cos(a) * w * 0.25 - 1, y + h / 2 + Math.sin(a) * h * 0.25 - 1, 3, 3, PAL.brassHi);
   }
 
   _drawAlembic(c, st) {

@@ -208,7 +208,7 @@ export async function crushInPot(page, rounds = 30) {
  * @param {import('@playwright/test').Page} page @param {number} [T] @param {number} [seconds]
  */
 export async function steepWarm(page, T = 60, seconds = 30) {
-  await lab(page, (l) => { l.speed = 4; l.setAutoStir(true); });
+  await lab(page, (l) => { l.speed = 4; const t = l.sim.tool, c = l.sim.cauldron; t.auto = true; t.type = 'spoon'; t.autoCenterX = 0; t.autoCenterY = c.depth - Math.min(0.75, c.depth * 0.3); t.autoRadius = c.belly * 0.45; t.autoPhase = 0; t.autoSpan = 0; });
   await page.waitForFunction(([goal, secs]) => {
     const l = /** @type {any} */ (window).__alchemist.screen, p = l.sim.p;
     let t = 0, n = 0;
@@ -219,5 +219,15 @@ export async function steepWarm(page, T = 60, seconds = 30) {
     // (polled every 250 ms at 4×: one game-second per poll)
     return (l._steepHeld || 0) >= secs;
   }, [T, seconds], { timeout: 120_000, polling: 250 });
-  await lab(page, (l) => { l._steepHeld = 0; l.setFurnace(0); l.setAutoStir(false); l.speed = 1; });
+  await lab(page, (l) => { l._steepHeld = 0; l.setFurnace(0); const t = l.sim.tool; t.auto = false; t.setTarget(t.x, t.y, false); l.speed = 1; });
+}
+
+/**
+ * Stir the brew without a hand on the spoon (the simulation's own circling
+ * paddle; the game has no automatic stirring button any more).
+ * @param {import('@playwright/test').Page} page @param {boolean} on
+ */
+export async function stir(page, on) {
+  if (on) await lab(page, (l) => { const t = l.sim.tool, c = l.sim.cauldron; t.auto = true; t.type = 'spoon'; t.autoCenterX = 0; t.autoCenterY = c.depth - Math.min(0.75, c.depth * 0.3); t.autoRadius = c.belly * 0.45; t.autoPhase = 0; t.autoSpan = 0; });
+  else await lab(page, (l) => { const t = l.sim.tool; t.auto = false; t.setTarget(t.x, t.y, false); });
 }

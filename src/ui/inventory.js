@@ -14,9 +14,10 @@
 // A jar dragged from the shelf into the drawer goes back to the storeroom
 // (lab.js bindJar).
 
-import { h, btn, clear, keepScroll } from './dom.js';
+import { h, btn, clear } from './dom.js';
 import { icon } from './icons.js';
 import { jarCanvas, openIngredient } from './panels.js';
+import { ingredientIconUrl } from '../rendering/species-sprites.js';
 import { inventoryGroups } from '../game/bench.js';
 import { EFFECTS, EFFECT_BY_KEY } from '../alchemy/effects.js';
 import { RARITY } from '../materials/rarity.js';
@@ -26,7 +27,7 @@ import { audio } from '../audio/audio.js';
 const RAR_SHORT = { common: 'COM', uncommon: 'UNC', rare: 'RARE', unique: 'UNIQ', legendary: 'LEG' };
 
 /** A finger holds this long before a tile lifts; a press this long without moving inspects it. */
-const LIFT_MS = 220, INSPECT_MS = 600;
+const LIFT_MS = 160, INSPECT_MS = 600;
 
 /** @param {number} s */
 function amount(s) {
@@ -111,7 +112,8 @@ export class InventoryDrawer {
       emptyOn.length ? btn('', () => { for (const id of emptyOn) lab.setOnShelf(id, false); this.render(); }, { icon: 'trash', cls: 'icon', title: 'Take the jars you have run out of off the shelf', act: 'inv-tidy' }) : null,
       onShelf.length ? btn('', () => { for (const id of onShelf) lab.setOnShelf(id, false); this.render(); }, { icon: 'minus', cls: 'icon', title: 'Clear the shelf: every jar back in the storeroom', act: 'inv-clear' }) : null,
     ].filter(Boolean));
-    keepScroll(this.tabs, () => {
+    const left = this.tabs.scrollLeft;
+    {
       clear(this.tabs);
       const tab = (key, label, ic, n) => {
         const b = h('button', { class: 'inv-tab' + (this.section === key ? ' active' : ''), role: 'tab', 'aria-selected': String(this.section === key), 'data-act': 'inv-sec-' + key, title: label },
@@ -123,8 +125,10 @@ export class InventoryDrawer {
       };
       tab('all', 'All', 'satchel', shown.length);
       for (const g of groups) tab(g.key, g.label, g.icon, g.ids.length);
-    });
-    keepScroll(this.grid, () => {
+    }
+    this.tabs.scrollLeft = left;
+    const top = this.grid.scrollTop;
+    {
       clear(this.grid);
       if (!shown.length) { this.grid.appendChild(h('div', { class: 'inv-empty-note small', text: 'The storeroom is empty. Gather in the Wilds, harvest the Garden or buy from the Shop.' })); return; }
       for (const g of groups) {
@@ -132,7 +136,8 @@ export class InventoryDrawer {
         if (this.section === 'all') this.grid.appendChild(h('div', { class: 'inv-head', 'data-group': g.key }, icon(g.icon, 'sm'), ` ${g.label}`));
         for (const id of g.ids) this.grid.appendChild(this.tile(id, g.key));
       }
-    });
+    }
+    this.grid.scrollTop = top;
   }
 
   /** @param {string} id @param {string} group */
@@ -149,12 +154,38 @@ export class InventoryDrawer {
     },
     w ? h('span', { class: `inv-rar r-${w.rarity}`, text: RAR_SHORT[w.rarity] || '' }) : null,
     h('span', { class: 'inv-stock', text: amount(s) }),
-    jarCanvas(m, 18, 24),
+    this.picture(m),
     h('span', { class: 'inv-name', text: m.remains ? m.remains.short : m.name }),
     effectStripe(m),
     on ? h('span', { class: 'inv-on' }, icon('check', 'sm')) : null);
     this.bindTile(el, id);
     return el;
+  }
+
+  /** Show a tile's place on the shelf (after a tap), and the counts, without redrawing the grid. @param {HTMLElement} el @param {string} id */
+  syncTile(el, id) {
+    const on = this.lab.onShelf(id);
+    el.classList.toggle('on', on);
+    el.setAttribute('aria-pressed', String(on));
+    const mark = el.querySelector('.inv-on');
+    if (on && !mark) el.appendChild(h('span', { class: 'inv-on' }, icon('check', 'sm')));
+    else if (!on && mark) mark.remove();
+    const pool = this.lab.shelfPool();
+    this.count.textContent = `${pool.filter((x) => this.stock(x) > 0).length} held · ${this.lab.state.bench.ids.filter((x) => pool.includes(x)).length} on the shelf`;
+  }
+
+  /** A tile's picture: the species' shared icon image, else its jar. @param {any} m */
+  picture(m) {
+    const url = ingredientIconUrl(m);
+    if (!url) return jarCanvas(m, 18, 24);
+    const img = /** @type {HTMLImageElement} */ (h('img', { class: 'inv-pic', src: url, alt: '', draggable: 'false' }));
+    return img;
+  }
+
+  /** @param {string} id */
+  syncId(id) {
+    const t = /** @type {HTMLElement|null} */ (this.grid.querySelector(`.inv-tile[data-id="${CSS.escape(id)}"]`));
+    if (t) this.syncTile(t, id);
   }
 
   /** @param {HTMLElement} el @param {string} id */
@@ -194,7 +225,7 @@ export class InventoryDrawer {
       if (!tap) return;
       this.lab.setOnShelf(id, !this.lab.onShelf(id));
       audio.play('select');
-      this.render();
+      this.syncTile(el, id);
     });
     el.addEventListener('contextmenu', (e) => { e.preventDefault(); clearTimers(); mode = 'done'; openIngredient(this.lab, id, () => this.refresh()); });
   }
@@ -202,9 +233,10 @@ export class InventoryDrawer {
   /** @param {HTMLElement} el @param {string} id @param {PointerEvent} e */
   startDrag(el, id, e) {
     this.endDrag();
-    const pic = /** @type {HTMLCanvasElement|null} */ (el.querySelector('canvas'));
+    const pic = /** @type {HTMLCanvasElement|HTMLImageElement|null} */ (el.querySelector('canvas, img'));
     const ghost = h('div', { class: 'inv-ghost' });
-    if (pic) { const c = /** @type {HTMLCanvasElement} */ (pic.cloneNode()); /** @type {CanvasRenderingContext2D} */ (c.getContext('2d')).drawImage(pic, 0, 0); ghost.appendChild(c); }
+    if (pic instanceof HTMLImageElement) ghost.appendChild(pic.cloneNode());
+    else if (pic) { const c = /** @type {HTMLCanvasElement} */ (pic.cloneNode()); /** @type {CanvasRenderingContext2D} */ (c.getContext('2d')).drawImage(pic, 0, 0); ghost.appendChild(c); }
     document.body.appendChild(ghost);
     this.drag = { id, ghost, pid: e.pointerId };
     el.classList.add('dragging');
@@ -230,7 +262,7 @@ export class InventoryDrawer {
       audio.play('select');
     }
     this.endDrag();
-    this.render();
+    this.syncId(d.id);
   }
 
   endDrag() {

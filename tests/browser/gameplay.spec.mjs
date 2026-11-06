@@ -2,7 +2,7 @@
 // pointer (touch events on phone projects), the fire control, a trial in
 // the Trials room, bottling, serving at the Counter — then the customer pays.
 import { test, expect } from '@playwright/test';
-import { watchErrors, shot, newGame, lab, drag, stirPath, pourDose, wholeSolids, crushInPot, steepWarm } from './helpers.mjs';
+import { watchErrors, shot, newGame, lab, drag, stirPath, pourDose, wholeSolids, crushInPot, steepWarm, stir } from './helpers.mjs';
 
 test('first commission: brew, test on a subject, bottle and serve', async ({ page }, info) => {
   const errors = watchErrors(page);
@@ -151,9 +151,9 @@ test('a customer who insists on proof will not buy until the vial is tested; tes
   // steeped warm, so one reading plainly shows the healing (a cold brew is too weak to be sure of)
   await steepWarm(page, 60, 40);
   // stirred through, so the tap does not draw mostly the undissolved leaf that settled
-  await lab(page, (l) => l.setAutoStir(true));
+  await stir(page, true);
   await page.waitForTimeout(1500);
-  await lab(page, (l) => l.setAutoStir(false));
+  await stir(page, false);
   await page.click('[data-act=bottle]');
   await page.click('[data-act=bottle-50]');
   await expect(page.locator('[data-act=serve]')).toBeVisible({ timeout: 20_000 });
@@ -213,7 +213,7 @@ test('tools switch and act on the brew', async ({ page }) => {
   await newGame(page, { tutorial: false });
   const roles = await lab(page, (l) => l.state.world.roles);
   await pourDose(page, roles.water, [100]);
-  for (const t of ['spoon', 'probe']) {
+  for (const t of ['spoon', 'pestle']) {
     const btn = page.locator(`[data-act=tool-${t}]`);
     await btn.click();
     expect(await lab(page, (l) => l.tool)).toBe(t);

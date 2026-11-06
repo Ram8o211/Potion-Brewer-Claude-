@@ -124,9 +124,9 @@ test('a version-5 save is refitted once: retired tools refunded or replaced, the
   const back = GameState.fromJSON(JSON.parse(JSON.stringify(raw)));
   assert.equal(back.version, SAVE_VERSION);
   for (const id of Object.keys(RETIRED_EQUIPMENT)) assert.ok(!back.has(id), `${id} is retired`);
-  for (const id of ['kit', 'arcanometer', 'stirrer', 'rack1', 'pestle']) assert.ok(back.has(id), `${id} is owned`);
+  for (const id of ['kit', 'arcanometer', 'rack1', 'pestle']) assert.ok(back.has(id), `${id} is owned`);
   // full refunds, the lens refunded (an arcanometer was owned), the kit's tools beyond its price, the pestle
-  const full = ['hydrometer', 'assay', 'viscometer', 'galvanometer', 'thermal', 'skimmer', 'alembic', 'bellows', 'athanor', 'shelf1', 'shelf2', 'lens'].reduce((a, id) => a + RETIRED_EQUIPMENT[id].price, 0);
+  const full = ['hydrometer', 'assay', 'viscometer', 'galvanometer', 'thermal', 'skimmer', 'alembic', 'bellows', 'athanor', 'shelf1', 'shelf2', 'lens', 'stirrer'].reduce((a, id) => a + RETIRED_EQUIPMENT[id].price, 0);
   const tools = ['trowel', 'rockhammer', 'brush', 'sickle'].reduce((a, id) => a + RETIRED_EQUIPMENT[id].price, 0);
   // (the old alembic becomes the Alembic & Condenser: its price is kept back)
   const expected = full - EQUIPMENT.find((e) => e.id === 'condenser').price + (tools - EQUIPMENT.find((e) => e.id === 'kit').price) + 35;

@@ -40,13 +40,12 @@ export const EQUIPMENT = [
   { id: 'glacial', name: 'Glacial Sigil', category: 'cold', price: 750, rank: 3, icon: 'snow', requires: ['frostrune'], mechanics: ['awakening', 'cold-extraction'], desc: 'Deep cold, fast: a brew falls to about -48°C, past the thresholds of the Moonfen’s deepest magic.', effect: { minCool: -70, coolPower: 9 } },
   // distillation and aging
   { id: 'condenser', name: 'Alembic & Condenser', category: 'tool', price: 170, rank: 1, icon: 'alembic', mechanics: ['distillation'], desc: 'A copper still head that sits on the cauldron like a lid, with a cooled coil and a receiving flask. Vapour that rises into it is condensed into the receiver instead of raining back: heat a tincture between spirit’s and water’s boiling points and the spirit leaves while the magic stays. The spirit collected goes back on your shelf.' },
-  { id: 'cellar', name: 'Aging Cellar', category: 'vessel', price: 240, rank: 1, icon: 'shelf2', mechanics: ['aging'], desc: 'A vaulted cellar with two sealed aging vessels. A brew laid down in one goes on extracting for hours, even while the shop is closed — warmed by a Fire potion or chilled by a Frost potion, and held at the heat you choose by a temperature rune.', effect: { vessels: 2 } },
-  { id: 'cellar2', name: 'Deep Cellar', category: 'vessel', price: 520, rank: 2, icon: 'shelf2', requires: ['cellar'], mechanics: ['aging'], desc: 'Two more aging vessels, deeper under the shop (four in all).', effect: { vessels: 4 } },
+  { id: 'cellar', name: 'Aging Cellar', category: 'vessel', price: 240, rank: 1, icon: 'shelf2', mechanics: ['aging'], desc: 'Two bottles at a time can age on the potion shelves: one goes on extracting for hours, even while the shop is closed — warmed or chilled by a Fire or Frost potion in its slot, and held at the heat you choose by a temperature rune in the other.', effect: { vessels: 2 } },
+  { id: 'cellar2', name: 'Deep Cellar', category: 'vessel', price: 520, rank: 2, icon: 'shelf2', requires: ['cellar'], mechanics: ['aging'], desc: 'Four bottles can age at once.', effect: { vessels: 4 } },
   // tools
-  { id: 'stirrer', name: 'Clockwork Stirrer', category: 'tool', price: 110, rank: 1, icon: 'gear', mechanics: ['mixing'], desc: 'A wind-up paddle that keeps stirring on its own — through the whole depth of the brew — while you gather, test or serve. It evens a brew about three times as fast as the hand spoon, so every bottle of a batch matches the one you tested.' },
   { id: 'homunculus', name: 'Brass Homunculus', category: 'tool', price: 1100, rank: 3, icon: 'homunculus', mechanics: ['automation'], desc: 'A clockwork assistant that follows a saved recipe’s recorded procedure step by step — every pour, grinding, stir, heat, chill, hold, boil-down and the lid — in the real cauldron, at full ingredient cost.' },
   // research
-  { id: 'arcanometer', name: 'Arcanometer', category: 'instrument', price: 200, rank: 1, icon: 'awaken', mechanics: ['awakening', 'experimentation'], desc: 'A lodestone needle in a glass of wisp-light. The Inspect probe shows the aura of strong magic in the matter under it (which kinds, never how strong) and reads its arcane threshold to the nearest 50, and how much has awakened.' },
+  { id: 'arcanometer', name: 'Arcanometer', category: 'instrument', price: 200, rank: 1, icon: 'awaken', mechanics: ['awakening', 'experimentation'], desc: 'A lodestone needle in a glass of wisp-light. A Sample’s analysis shows the aura of strong magic in the brew (which kinds, never how strong), reads its arcane threshold to the nearest 50, and how much has awakened.' },
   // experiments
   { id: 'kennel', name: 'Subject Kennel', category: 'trials', price: 60, rank: 1, icon: 'rabbit', mechanics: ['experimentation'], desc: 'Spare cages and pots: the hutch holds six rabbits, and new test subjects cost half — corroborate a reading on more animals.', effect: { hutch: 6 } },
   { id: 'warren', name: 'Rabbit Warren', category: 'trials', price: 180, rank: 2, icon: 'nest', requires: ['kennel'], mechanics: ['experimentation'], desc: 'A walled run with burrows and a nest box: room for ten rabbits.', effect: { hutch: 10 } },
@@ -78,7 +77,7 @@ export const RETIRED_EQUIPMENT = {
   viscometer: { name: 'Falling-Ball Viscometer', price: 70, sandbox: true, why: 'natural brews stay watery: viscosity is never asked for' },
   assay: { name: 'Assay Kit', price: 90, sandbox: true, why: 'customers no longer ask for stability or volatility; the cauldron tells you when a brew is uneven' },
   galvanometer: { name: 'Galvanometer', price: 120, sandbox: true, why: 'charge is never asked for' },
-  thermal: { name: 'Thermal Monocle', price: 80, sandbox: true, why: 'the heat map is now a Free Experiment view' },
+  thermal: { name: 'Thermal Monocle', price: 80, sandbox: true, why: 'the heat map was retired' },
   skimmer: { name: 'Brass Skimmer', price: 60, sandbox: true, why: 'natural extracts all mix with water, so there is no layer worth skimming; the tap already draws from the bottom' },
   alembic: { name: 'Copper Alembic', price: 360, into: 'condenser', why: 'the Alembic & Condenser took over: its receiver now jars the spirit it recovers' },
   bellows: { name: 'Bellows & Coal', price: 120, why: 'the hearth already reaches every steep and boil; hotter fires only set lamp oil alight' },
@@ -90,6 +89,7 @@ export const RETIRED_EQUIPMENT = {
   sickle: { name: 'Silver Sickle', price: 45, into: 'kit', why: 'the Forager’s Kit holds every gathering tool' },
   shelf1: { name: 'Oak Shelves', price: 90, why: 'every shop now stores 2.5 L of each reagent' },
   shelf2: { name: 'Cellar Racks', price: 260, why: 'every shop now stores 2.5 L of each reagent' },
+  stirrer: { name: 'Clockwork Stirrer', price: 110, why: 'the brew is stirred by hand: automatic stirring was retired' },
 };
 
 /** @param {string} id */

@@ -35,7 +35,7 @@ computed from the particles that actually run out of the tap. What a
   * at room temperature an herb gives up only about 60 % of its magic,
     and slowly (minutes); heat hurries it but lowers how much can come
     out (about 45 % at 60 °C); cold draws out more, but more slowly
-    still — the aging cellar's work;
+    still — the work of aging a bottle on the potion shelves;
   * the guild's opposing pairs cancel where they meet: fire and frost,
     life and death (life also mends poison, two parts to one), acid and
     alkali;
@@ -236,8 +236,9 @@ computed from the particles that actually run out of the tap. What a
     spoon, pestle, thermometer) and 16 purchases, each of which
     lets you do something new or faster: the Forager's Kit and satchel,
     three sizes of potion shelving, the frost rune and glacial sigil
-    (deep cold for cold awakenings and narrow steeps), a clockwork
-    stirrer, the arcanometer (auras and arcane thresholds), a kennel,
+    (deep cold for cold awakenings and narrow steeps), the aging cellar
+    (bottles age on the shelves), the arcanometer (auras and arcane
+    thresholds in a Sample's analysis), a kennel,
     warren and purging still, larger cauldrons, the guild charter and a
     homunculus that brews your saved recipes.
   * A recipe book that keeps a brew's formulation, its procedure (pours,
@@ -251,12 +252,12 @@ computed from the particles that actually run out of the tap. What a
     less reputation for selling the same order again and again.
 * **Free Experiment mode** with every reagent, tool, rabbit and region
   unlocked, plus the physics demonstrations the campaign does not need:
-  the skimmer, the alembic, the heat map, a hotter furnace and the exact
+  the skimmer, the alembic, a hotter furnace and the exact
   readings of density, viscosity, stability, volatility and charge. It keeps
   the campaign's features in step (`src/game/sandbox.js`): the potion
-  shelves, the aging cellar with unlimited temperature runes (running sixty
-  times faster) and the garden with every seed and every bed at Arcane
-  chamber grade (crops sixty times faster). Its shelves, cellar and garden
+  shelves with aging and unlimited temperature runes (aging sixty times
+  faster) and the garden with every seed and every bed at Arcane chamber
+  grade (crops sixty times faster). Its shelves (and their aging) and garden
   are saved under the sandbox's own key, never in the shop's save.
 * **Mobile first, desktop too.**
   * A bottom tab bar over five rooms (Counter, Brew, Wilds, Trials, Book).
@@ -516,10 +517,19 @@ Browser screenshots from the test run land in `test-results/screenshots/`.
    tested bottle that already meets an order). Label it, bargain (the
    customer shows what they weigh), and hear their verdict tomorrow. Save
    good brews as recipes in the Book: they keep every step.
+6. **Age** (with the Aging Cellar). Select a bottle on the potion shelves:
+   it has a **Fire/Frost slot** and a **rune slot**. Tap the first and pick
+   a shelved Fire or Frost potion (as many ml as you choose), or drag that
+   bottle onto it: the bottle warms or chills by itself, the stronger the
+   potion the further, using it up as it works. A temperature rune in the
+   second holds the temperature where you choose. The bottle goes on
+   extracting for hours, even while the game is closed; **Unseal** it (or
+   take it down, or pour it back) and it is a new, untested batch of what
+   it has become.
 
-Keyboard: `C` `V` `W` `T` `J` rooms, `1`–`5` tools, `G` ground, `L` lid,
-`B` bottle, `F` time speed, `A` auto-stir, `H` thermal view, arrows fire,
-`0` fire off, `I` inventory, `S` market, `R` recipes, `Esc` menu.
+Keyboard: `C` `V` `W` `T` `J` rooms, `1`–`3` tools (`4` the skimmer in the
+Free Experiment), `L` lid, `B` bottle, arrows fire, `0` fire off,
+`I` inventory, `S` market, `R` recipes, `Esc` menu.
 
 ## Project layout
 

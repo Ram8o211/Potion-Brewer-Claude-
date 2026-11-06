@@ -5448,10 +5448,266 @@ const SPECIES_ASSETS = {"silverleaf":{"sprite":"silverleaf","arcane":"silverleaf
 const FRAMES = {"aeon-circlet@stage0":["growth-exotic",189,361,16,17,8,16],"aeon-circlet@stage0-arcane":["growth-exotic",98,155,21,23,10,22],"aeon-circlet@stage1":["growth-exotic",389,436,16,15,8,14],"aeon-circlet@stage1-arcane":["growth-exotic",207,361,21,17,10,16],"aeon-circlet@stage2":["growth-exotic",145,471,15,14,7,13],"aeon-circlet@stage2-arcane":["growth-exotic",486,254,19,20,9,19],"aeon-circlet@stage3":["growth-exotic",147,230,24,21,12,20],"aeon-circlet@stage3-arcane":["growth-exotic",28,70,29,27,14,26],"airstar@stage0":["growth-exotic",467,381,16,16,8,15],"airstar@stage0-arcane":["growth-exotic",125,181,21,22,10,21],"airstar@stage1":["growth-exotic",485,381,19,16,9,15],"airstar@stage1-arcane":["growth-exotic",148,181,21,22,10,21],"airstar@stage2":["growth-exotic",230,361,14,17,7,16],"airstar@stage2-arcane":["growth-exotic",121,155,21,23,10,22],"airstar@stage3":["growth-exotic",59,70,22,27,11,26],"airstar@stage3-arcane":["growth-exotic",246,2,29,32,14,31],"chronoglass-shard@stage0":["growth-exotic",246,361,16,17,8,16],"chronoglass-shard@stage0-arcane":["growth-exotic",144,155,21,23,10,22],"chronoglass-shard@stage1":["growth-exotic",407,436,16,15,8,14],"chronoglass-shard@stage1-arcane":["growth-exotic",264,361,21,17,10,16],"chronoglass-shard@stage2":["growth-exotic",493,299,15,18,7,17],"chronoglass-shard@stage2-arcane":["growth-exotic",167,155,20,23,10,22],"chronoglass-shard@stage3":["growth-exotic",387,38,24,28,12,27],"chronoglass-shard@stage3-arcane":["growth-exotic",2,38,31,30,15,29],"chronovine@stage0":["growth-exotic",425,436,21,15,10,14],"chronovine@stage0-arcane":["growth-exotic",173,230,26,21,13,20],"chronovine@stage1":["growth-exotic",2,400,19,16,9,15],"chronovine@stage1-arcane":["growth-exotic",171,181,24,22,12,21],"chronovine@stage2":["growth-exotic",23,400,14,16,7,15],"chronovine@stage2-arcane":["growth-exotic",197,181,21,22,10,21],"chronovine@stage3":["growth-exotic",131,100,21,25,10,24],"chronovine@stage3-arcane":["growth-exotic",309,2,28,31,14,30],"cloudcap@stage0":["growth-exotic",448,436,17,15,8,14],"cloudcap@stage0-arcane":["growth-exotic",201,230,19,21,9,20],"cloudcap@stage1":["growth-exotic",467,436,18,15,9,14],"cloudcap@stage1-arcane":["growth-exotic",222,230,23,21,11,20],"cloudcap@stage2":["growth-exotic",280,488,15,12,7,11],"cloudcap@stage2-arcane":["growth-exotic",2,321,22,18,11,17],"cloudcap@stage3":["growth-exotic",26,321,24,18,12,17],"cloudcap@stage3-arcane":["growth-exotic",189,155,29,23,14,22],"cloudprism@stage0":["growth-exotic",287,361,16,17,8,16],"cloudprism@stage0-arcane":["growth-exotic",220,155,18,23,9,22],"cloudprism@stage1":["growth-exotic",487,436,16,15,8,14],"cloudprism@stage1-arcane":["growth-exotic",247,230,21,21,10,20],"cloudprism@stage2":["growth-exotic",52,321,15,18,7,17],"cloudprism@stage2-arcane":["growth-exotic",25,128,22,24,11,23],"cloudprism@stage3":["growth-exotic",413,38,24,28,12,27],"cloudprism@stage3-arcane":["growth-exotic",2,2,28,34,14,33],"coralberry@stage0":["growth-exotic",162,471,17,14,8,13],"coralberry@stage0-arcane":["growth-exotic",2,277,22,20,11,19],"coralberry@stage1":["growth-exotic",39,400,19,16,9,15],"coralberry@stage1-arcane":["growth-exotic",220,181,24,22,12,21],"coralberry@stage2":["growth-exotic",2,454,13,15,6,14],"coralberry@stage2-arcane":["growth-exotic",270,230,20,21,10,20],"coralberry@stage3":["growth-exotic",49,128,20,24,10,23],"coralberry@stage3-arcane":["growth-exotic",35,38,27,30,13,29],"crownbloom@stage0":["growth-exotic",60,400,16,16,8,15],"crownbloom@stage0-arcane":["growth-exotic",246,181,21,22,10,21],"crownbloom@stage1":["growth-exotic",78,400,19,16,9,15],"crownbloom@stage1-arcane":["growth-exotic",69,321,24,18,12,17],"crownbloom@stage2":["growth-exotic",438,471,17,13,8,12],"crownbloom@stage2-arcane":["growth-exotic",101,299,21,19,10,18],"crownbloom@stage3":["growth-exotic",26,277,27,20,13,19],"crownbloom@stage3-arcane":["growth-exotic",154,100,32,25,16,24],"dreamberry@stage0":["growth-exotic",181,471,17,14,8,13],"dreamberry@stage0-arcane":["growth-exotic",55,277,22,20,11,19],"dreamberry@stage1":["growth-exotic",99,400,19,16,9,15],"dreamberry@stage1-arcane":["growth-exotic",269,181,21,22,10,21],"dreamberry@stage2":["growth-exotic",17,454,13,15,6,14],"dreamberry@stage2-arcane":["growth-exotic",292,230,18,21,9,20],"dreamberry@stage3":["growth-exotic",71,128,20,24,10,23],"dreamberry@stage3-arcane":["growth-exotic",64,38,27,30,13,29],"duskbell@stage0":["growth-exotic",120,400,16,16,8,15],"duskbell@stage0-arcane":["growth-exotic",95,321,21,18,10,17],"duskbell@stage1":["growth-exotic",138,400,19,16,9,15],"duskbell@stage1-arcane":["growth-exotic",292,181,24,22,12,21],"duskbell@stage2":["growth-exotic",200,471,14,14,7,13],"duskbell@stage2-arcane":["growth-exotic",159,400,21,16,10,15],"duskbell@stage3":["growth-exotic",312,230,21,21,10,20],"duskbell@stage3-arcane":["growth-exotic",83,70,26,27,13,26],"eclipse-eye@stage0":["growth-exotic",305,361,16,17,8,16],"eclipse-eye@stage0-arcane":["growth-exotic",240,155,18,23,9,22],"eclipse-eye@stage1":["growth-exotic",32,454,16,15,8,14],"eclipse-eye@stage1-arcane":["growth-exotic",335,230,18,21,9,20],"eclipse-eye@stage2":["growth-exotic",297,488,17,12,8,11],"eclipse-eye@stage2-arcane":["growth-exotic",118,321,24,18,12,17],"eclipse-eye@stage3":["growth-exotic",144,321,27,18,13,17],"eclipse-eye@stage3-arcane":["growth-exotic",93,128,32,24,16,23],"epochbloom@stage0":["growth-exotic",182,400,16,16,8,15],"epochbloom@stage0-arcane":["growth-exotic",173,321,21,18,10,17],"epochbloom@stage1":["growth-exotic",200,400,19,16,9,15],"epochbloom@stage1-arcane":["growth-exotic",318,181,24,22,12,21],"epochbloom@stage2":["growth-exotic",221,400,17,16,8,15],"epochbloom@stage2-arcane":["growth-exotic",344,181,22,22,11,21],"epochbloom@stage3":["growth-exotic",188,100,27,25,13,24],"epochbloom@stage3-arcane":["growth-exotic",339,2,32,31,16,30],"featherpetal@stage0":["growth-exotic",240,400,16,16,8,15],"featherpetal@stage0-arcane":["growth-exotic",368,181,21,22,10,21],"featherpetal@stage1":["growth-exotic",258,400,19,16,9,15],"featherpetal@stage1-arcane":["growth-exotic",391,181,24,22,12,21],"featherpetal@stage2":["growth-exotic",323,361,16,17,8,16],"featherpetal@stage2-arcane":["growth-exotic",260,155,23,23,11,22],"featherpetal@stage3":["growth-exotic",111,70,25,27,12,26],"featherpetal@stage3-arcane":["growth-exotic",94,2,32,33,16,32],"fenmilk-cap@stage0":["growth-exotic",50,454,17,15,8,14],"fenmilk-cap@stage0-arcane":["growth-exotic",341,361,22,17,11,16],"fenmilk-cap@stage1":["growth-exotic",69,454,18,15,9,14],"fenmilk-cap@stage1-arcane":["growth-exotic",365,361,23,17,11,16],"fenmilk-cap@stage2":["growth-exotic",425,488,15,11,7,10],"fenmilk-cap@stage2-arcane":["growth-exotic",279,400,20,16,10,15],"fenmilk-cap@stage3":["growth-exotic",390,361,24,17,12,16],"fenmilk-cap@stage3-arcane":["growth-exotic",285,155,31,23,15,22],"formblossom@stage0":["growth-exotic",301,400,16,16,8,15],"formblossom@stage0-arcane":["growth-exotic",417,181,21,22,10,21],"formblossom@stage1":["growth-exotic",319,400,19,16,9,15],"formblossom@stage1-arcane":["growth-exotic",196,321,24,18,12,17],"formblossom@stage2":["growth-exotic",416,361,16,17,8,16],"formblossom@stage2-arcane":["growth-exotic",440,181,21,22,10,21],"formblossom@stage3":["growth-exotic",138,70,25,27,12,26],"formblossom@stage3-arcane":["growth-exotic",277,2,30,32,15,31],"ghostbud@stage0":["growth-exotic",340,400,16,16,8,15],"ghostbud@stage0-arcane":["growth-exotic",222,321,21,18,10,17],"ghostbud@stage1":["growth-exotic",358,400,19,16,9,15],"ghostbud@stage1-arcane":["growth-exotic",463,181,21,22,10,21],"ghostbud@stage2":["growth-exotic",434,361,14,17,7,16],"ghostbud@stage2-arcane":["growth-exotic",318,155,18,23,9,22],"ghostbud@stage3":["growth-exotic",165,70,22,27,11,26],"ghostbud@stage3-arcane":["growth-exotic",128,2,26,33,13,32],"ghostcrown-coral@stage0":["growth-exotic",245,321,16,18,8,17],"ghostcrown-coral@stage0-arcane":["growth-exotic",79,277,21,20,10,19],"ghostcrown-coral@stage1":["growth-exotic",457,471,16,13,8,12],"ghostcrown-coral@stage1-arcane":["growth-exotic",124,299,18,19,9,18],"ghostcrown-coral@stage2":["growth-exotic",89,454,16,15,8,14],"ghostcrown-coral@stage2-arcane":["growth-exotic",355,230,21,21,10,20],"ghostcrown-coral@stage3":["growth-exotic",127,128,25,24,12,23],"ghostcrown-coral@stage3-arcane":["growth-exotic",93,38,29,30,14,29],"ghostglass-coral@stage0":["growth-exotic",263,321,16,18,8,17],"ghostglass-coral@stage0-arcane":["growth-exotic",154,128,21,24,10,23],"ghostglass-coral@stage1":["growth-exotic",475,471,16,13,8,12],"ghostglass-coral@stage1-arcane":["growth-exotic",107,454,21,15,10,14],"ghostglass-coral@stage2":["growth-exotic",130,454,16,15,8,14],"ghostglass-coral@stage2-arcane":["growth-exotic",102,277,23,20,11,19],"ghostglass-coral@stage3":["growth-exotic",177,128,25,24,12,23],"ghostglass-coral@stage3-arcane":["growth-exotic",271,38,30,29,15,28],"glasscap@stage0":["growth-exotic",148,454,17,15,8,14],"glasscap@stage0-arcane":["growth-exotic",450,361,22,17,11,16],"glasscap@stage1":["growth-exotic",167,454,18,15,9,14],"glasscap@stage1-arcane":["growth-exotic",378,230,20,21,10,20],"glasscap@stage2":["growth-exotic",442,488,15,11,7,10],"glasscap@stage2-arcane":["growth-exotic",474,361,20,17,10,16],"glasscap@stage3":["growth-exotic",2,381,24,17,12,16],"glasscap@stage3-arcane":["growth-exotic",338,155,29,23,14,22],"graftberry@stage0":["growth-exotic",216,471,17,14,8,13],"graftberry@stage0-arcane":["growth-exotic",127,277,22,20,11,19],"graftberry@stage1":["growth-exotic",379,400,19,16,9,15],"graftberry@stage1-arcane":["growth-exotic",486,181,24,22,12,21],"graftberry@stage2":["growth-exotic",187,454,13,15,6,14],"graftberry@stage2-arcane":["growth-exotic",400,230,20,21,10,20],"graftberry@stage3":["growth-exotic",204,128,20,24,10,23],"graftberry@stage3-arcane":["growth-exotic",303,38,25,29,12,28],"hollowbloom@stage0":["growth-exotic",400,400,16,16,8,15],"hollowbloom@stage0-arcane":["growth-exotic",2,206,21,22,10,21],"hollowbloom@stage1":["growth-exotic",418,400,19,16,9,15],"hollowbloom@stage1-arcane":["growth-exotic",25,206,24,22,12,21],"hollowbloom@stage2":["growth-exotic",493,471,17,13,8,12],"hollowbloom@stage2-arcane":["growth-exotic",144,299,22,19,11,18],"hollowbloom@stage3":["growth-exotic",151,277,27,20,13,19],"hollowbloom@stage3-arcane":["growth-exotic",390,70,32,26,16,25],"hollowcap@stage0":["growth-exotic",202,454,17,15,8,14],"hollowcap@stage0-arcane":["growth-exotic",422,230,22,21,11,20],"hollowcap@stage1":["growth-exotic",221,454,18,15,9,14],"hollowcap@stage1-arcane":["growth-exotic",446,230,23,21,11,20],"hollowcap@stage2":["growth-exotic",316,488,15,12,7,11],"hollowcap@stage2-arcane":["growth-exotic",281,321,20,18,10,17],"hollowcap@stage3":["growth-exotic",303,321,24,18,12,17],"hollowcap@stage3-arcane":["growth-exotic",226,128,29,24,14,23],"hourberry@stage0":["growth-exotic",235,471,17,14,8,13],"hourberry@stage0-arcane":["growth-exotic",439,400,22,16,11,15],"hourberry@stage1":["growth-exotic",463,400,19,16,9,15],"hourberry@stage1-arcane":["growth-exotic",329,321,24,18,12,17],"hourberry@stage2":["growth-exotic",484,400,14,16,7,15],"hourberry@stage2-arcane":["growth-exotic",51,206,21,22,10,21],"hourberry@stage3":["growth-exotic",217,100,21,25,10,24],"hourberry@stage3-arcane":["growth-exotic",373,2,26,31,13,30],"hourglass-of-ages@stage0":["growth-exotic",28,381,16,17,8,16],"hourglass-of-ages@stage0-arcane":["growth-exotic",168,299,21,19,10,18],"hourglass-of-ages@stage1":["growth-exotic",241,454,16,15,8,14],"hourglass-of-ages@stage1-arcane":["growth-exotic",471,230,21,21,10,20],"hourglass-of-ages@stage2":["growth-exotic",2,418,11,16,5,15],"hourglass-of-ages@stage2-arcane":["growth-exotic",74,206,16,22,8,21],"hourglass-of-ages@stage3":["growth-exotic",240,100,17,25,8,24],"hourglass-of-ages@stage3-arcane":["growth-exotic",401,2,24,31,12,30],"mimic-eye@stage0":["growth-exotic",46,381,16,17,8,16],"mimic-eye@stage0-arcane":["growth-exotic",369,155,21,23,10,22],"mimic-eye@stage1":["growth-exotic",259,454,16,15,8,14],"mimic-eye@stage1-arcane":["growth-exotic",2,254,18,21,9,20],"mimic-eye@stage2":["growth-exotic",333,488,17,12,8,11],"mimic-eye@stage2-arcane":["growth-exotic",355,321,21,18,10,17],"mimic-eye@stage3":["growth-exotic",378,321,27,18,13,17],"mimic-eye@stage3-arcane":["growth-exotic",392,155,34,23,17,22],"mirepod-shell@stage0":["growth-exotic",254,471,19,14,9,13],"mirepod-shell@stage0-arcane":["growth-exotic",15,418,24,16,12,15],"mirepod-shell@stage1":["growth-exotic",2,488,16,13,8,12],"mirepod-shell@stage1-arcane":["growth-exotic",191,299,21,19,10,18],"mirepod-shell@stage2":["growth-exotic",352,488,17,12,8,11],"mirepod-shell@stage2-arcane":["growth-exotic",407,321,21,18,10,17],"mirepod-shell@stage3":["growth-exotic",430,321,27,18,13,17],"mirepod-shell@stage3-arcane":["growth-exotic",257,128,32,24,16,23],"mistpebble@stage0":["growth-exotic",64,381,16,17,8,16],"mistpebble@stage0-arcane":["growth-exotic",428,155,18,23,9,22],"mistpebble@stage1":["growth-exotic",277,454,16,15,8,14],"mistpebble@stage1-arcane":["growth-exotic",22,254,21,21,10,20],"mistpebble@stage2":["growth-exotic",275,471,17,14,8,13],"mistpebble@stage2-arcane":["growth-exotic",180,277,24,20,12,19],"mistpebble@stage3":["growth-exotic",45,254,27,21,13,20],"mistpebble@stage3-arcane":["growth-exotic",189,70,34,27,17,26],"moonlotus@stage0":["growth-exotic",41,418,16,16,8,15],"moonlotus@stage0-arcane":["growth-exotic",92,206,18,22,9,21],"moonlotus@stage1":["growth-exotic",59,418,19,16,9,15],"moonlotus@stage1-arcane":["growth-exotic",112,206,21,22,10,21],"moonlotus@stage2":["growth-exotic",20,488,17,13,8,12],"moonlotus@stage2-arcane":["growth-exotic",459,321,22,18,11,17],"moonlotus@stage3":["growth-exotic",206,277,27,20,13,19],"moonlotus@stage3-arcane":["growth-exotic",135,206,34,22,17,21],"moonreed@stage0":["growth-exotic",80,418,17,16,8,15],"moonreed@stage0-arcane":["growth-exotic",483,321,22,18,11,17],"moonreed@stage1":["growth-exotic",99,418,19,16,9,15],"moonreed@stage1-arcane":["growth-exotic",171,206,24,22,12,21],"moonreed@stage2":["growth-exotic",39,488,17,13,8,12],"moonreed@stage2-arcane":["growth-exotic",214,299,22,19,11,18],"moonreed@stage3":["growth-exotic",235,277,27,20,13,19],"moonreed@stage3-arcane":["growth-exotic",259,100,32,25,16,24],"moonveil-bloom@stage0":["growth-exotic",120,418,16,16,8,15],"moonveil-bloom@stage0-arcane":["growth-exotic",2,341,21,18,10,17],"moonveil-bloom@stage1":["growth-exotic",138,418,19,16,9,15],"moonveil-bloom@stage1-arcane":["growth-exotic",197,206,24,22,12,21],"moonveil-bloom@stage2":["growth-exotic",58,488,17,13,8,12],"moonveil-bloom@stage2-arcane":["growth-exotic",25,341,24,18,12,17],"moonveil-bloom@stage3":["growth-exotic",264,277,27,20,13,19],"moonveil-bloom@stage3-arcane":["growth-exotic",424,70,31,26,15,25],"morphleaf@stage0":["growth-exotic",159,418,16,16,8,15],"morphleaf@stage0-arcane":["growth-exotic",51,341,21,18,10,17],"morphleaf@stage1":["growth-exotic",177,418,19,16,9,15],"morphleaf@stage1-arcane":["growth-exotic",223,206,21,22,10,21],"morphleaf@stage2":["growth-exotic",198,418,14,16,7,15],"morphleaf@stage2-arcane":["growth-exotic",74,254,21,21,10,20],"morphleaf@stage3":["growth-exotic",293,100,21,25,10,24],"morphleaf@stage3-arcane":["growth-exotic",124,38,26,30,13,29],"pearlshell@stage0":["growth-exotic",294,471,19,14,9,13],"pearlshell@stage0-arcane":["growth-exotic",293,277,24,20,12,19],"pearlshell@stage1":["growth-exotic",77,488,16,13,8,12],"pearlshell@stage1-arcane":["growth-exotic",295,454,21,15,10,14],"pearlshell@stage2":["growth-exotic",371,488,17,12,8,11],"pearlshell@stage2-arcane":["growth-exotic",82,381,24,17,12,16],"pearlshell@stage3":["growth-exotic",74,341,27,18,13,17],"pearlshell@stage3-arcane":["growth-exotic",291,128,34,24,17,23],"pendulum-pods@stage0":["growth-exotic",318,454,21,15,10,14],"pendulum-pods@stage0-arcane":["growth-exotic",97,254,23,21,11,20],"pendulum-pods@stage1":["growth-exotic",214,418,19,16,9,15],"pendulum-pods@stage1-arcane":["growth-exotic",103,341,24,18,12,17],"pendulum-pods@stage2":["growth-exotic",235,418,14,16,7,15],"pendulum-pods@stage2-arcane":["growth-exotic",122,254,21,21,10,20],"pendulum-pods@stage3":["growth-exotic",316,100,21,25,10,24],"pendulum-pods@stage3-arcane":["growth-exotic",152,38,26,30,13,29],"phantom-pearl@stage0":["growth-exotic",315,471,19,14,9,13],"phantom-pearl@stage0-arcane":["growth-exotic",319,277,21,20,10,19],"phantom-pearl@stage1":["growth-exotic",95,488,16,13,8,12],"phantom-pearl@stage1-arcane":["growth-exotic",238,299,21,19,10,18],"phantom-pearl@stage2":["growth-exotic",390,488,17,12,8,11],"phantom-pearl@stage2-arcane":["growth-exotic",108,381,22,17,11,16],"phantom-pearl@stage3":["growth-exotic",129,341,27,18,13,17],"phantom-pearl@stage3-arcane":["growth-exotic",448,155,32,23,16,22],"polymorph-lotus@stage0":["growth-exotic",251,418,16,16,8,15],"polymorph-lotus@stage0-arcane":["growth-exotic",158,341,21,18,10,17],"polymorph-lotus@stage1":["growth-exotic",269,418,19,16,9,15],"polymorph-lotus@stage1-arcane":["growth-exotic",246,206,24,22,12,21],"polymorph-lotus@stage2":["growth-exotic",113,488,17,13,8,12],"polymorph-lotus@stage2-arcane":["growth-exotic",261,299,24,19,12,18],"polymorph-lotus@stage3":["growth-exotic",342,277,27,20,13,19],"polymorph-lotus@stage3-arcane":["growth-exotic",339,100,32,25,16,24],"reefbud@stage0":["growth-exotic",290,418,16,16,8,15],"reefbud@stage0-arcane":["growth-exotic",181,341,21,18,10,17],"reefbud@stage1":["growth-exotic",308,418,19,16,9,15],"reefbud@stage1-arcane":["growth-exotic",272,206,24,22,12,21],"reefbud@stage2":["growth-exotic",132,381,14,17,7,16],"reefbud@stage2-arcane":["growth-exotic",482,155,19,23,9,22],"reefbud@stage3":["growth-exotic",225,70,22,27,11,26],"reefbud@stage3-arcane":["growth-exotic",156,2,26,33,13,32],"reefmoss@stage0":["growth-exotic",204,341,16,18,8,17],"reefmoss@stage0-arcane":["growth-exotic",327,128,18,24,9,23],"reefmoss@stage1":["growth-exotic",132,488,16,13,8,12],"reefmoss@stage1-arcane":["growth-exotic",287,299,21,19,10,18],"reefmoss@stage2":["growth-exotic",341,454,16,15,8,14],"reefmoss@stage2-arcane":["growth-exotic",145,254,20,21,10,20],"reefmoss@stage3":["growth-exotic",347,128,25,24,12,23],"reefmoss@stage3-arcane":["growth-exotic",330,38,30,29,15,28],"sandskirt-cap@stage0":["growth-exotic",359,454,17,15,8,14],"sandskirt-cap@stage0-arcane":["growth-exotic",148,381,22,17,11,16],"sandskirt-cap@stage1":["growth-exotic",378,454,18,15,9,14],"sandskirt-cap@stage1-arcane":["growth-exotic",172,381,23,17,11,16],"sandskirt-cap@stage2":["growth-exotic",459,488,15,11,7,10],"sandskirt-cap@stage2-arcane":["growth-exotic",150,488,22,13,11,12],"sandskirt-cap@stage3":["growth-exotic",197,381,24,17,12,16],"sandskirt-cap@stage3-arcane":["growth-exotic",2,181,29,23,14,22],"shapecap@stage0":["growth-exotic",398,454,17,15,8,14],"shapecap@stage0-arcane":["growth-exotic",223,381,22,17,11,16],"shapecap@stage1":["growth-exotic",417,454,18,15,9,14],"shapecap@stage1-arcane":["growth-exotic",167,254,20,21,10,20],"shapecap@stage2":["growth-exotic",174,488,15,13,7,12],"shapecap@stage2-arcane":["growth-exotic",222,341,20,18,10,17],"shapecap@stage3":["growth-exotic",371,277,24,20,12,19],"shapecap@stage3-arcane":["growth-exotic",457,70,28,26,14,25],"shellfern@stage0":["growth-exotic",329,418,16,16,8,15],"shellfern@stage0-arcane":["growth-exotic",244,341,21,18,10,17],"shellfern@stage1":["growth-exotic",347,418,19,16,9,15],"shellfern@stage1-arcane":["growth-exotic",298,206,21,22,10,21],"shellfern@stage2":["growth-exotic",368,418,14,16,7,15],"shellfern@stage2-arcane":["growth-exotic",189,254,19,21,9,20],"shellfern@stage3":["growth-exotic",373,100,21,25,10,24],"shellfern@stage3-arcane":["growth-exotic",427,2,25,31,12,30],"shifting-root@stage0":["growth-exotic",310,299,17,19,8,18],"shifting-root@stage0-arcane":["growth-exotic",396,100,22,25,11,24],"shifting-root@stage1":["growth-exotic",384,418,19,16,9,15],"shifting-root@stage1-arcane":["growth-exotic",267,341,24,18,12,17],"shifting-root@stage2":["growth-exotic",336,471,13,14,6,13],"shifting-root@stage2-arcane":["growth-exotic",397,277,20,20,10,19],"shifting-root@stage3":["growth-exotic",210,254,20,21,10,20],"shifting-root@stage3-arcane":["growth-exotic",2,100,25,26,12,25],"shroud-orchid@stage0":["growth-exotic",405,418,16,16,8,15],"shroud-orchid@stage0-arcane":["growth-exotic",293,341,21,18,10,17],"shroud-orchid@stage1":["growth-exotic",423,418,19,16,9,15],"shroud-orchid@stage1-arcane":["growth-exotic",321,206,24,22,12,21],"shroud-orchid@stage2":["growth-exotic",351,471,14,14,7,13],"shroud-orchid@stage2-arcane":["growth-exotic",444,418,21,16,10,15],"shroud-orchid@stage3":["growth-exotic",232,254,21,21,10,20],"shroud-orchid@stage3-arcane":["growth-exotic",249,70,25,27,12,26],"skyberry@stage0":["growth-exotic",367,471,17,14,8,13],"skyberry@stage0-arcane":["growth-exotic",467,418,22,16,11,15],"skyberry@stage1":["growth-exotic",491,418,19,16,9,15],"skyberry@stage1-arcane":["growth-exotic",316,341,24,18,12,17],"skyberry@stage2":["growth-exotic",437,454,13,15,6,14],"skyberry@stage2-arcane":["growth-exotic",247,381,20,17,10,16],"skyberry@stage3":["growth-exotic",374,128,20,24,10,23],"skyberry@stage3-arcane":["growth-exotic",180,38,27,30,13,29],"skyshard-geode@stage0":["growth-exotic",269,381,16,17,8,16],"skyshard-geode@stage0-arcane":["growth-exotic",329,299,21,19,10,18],"skyshard-geode@stage1":["growth-exotic",452,454,16,15,8,14],"skyshard-geode@stage1-arcane":["growth-exotic",255,254,21,21,10,20],"skyshard-geode@stage2":["growth-exotic",342,341,15,18,7,17],"skyshard-geode@stage2-arcane":["growth-exotic",396,128,19,24,9,23],"skyshard-geode@stage3":["growth-exotic",439,38,24,28,12,27],"skyshard-geode@stage3-arcane":["growth-exotic",184,2,29,33,14,32],"skyspray@stage0":["growth-exotic",2,436,16,16,8,15],"skyspray@stage0-arcane":["growth-exotic",347,206,18,22,9,21],"skyspray@stage1":["growth-exotic",20,436,19,16,9,15],"skyspray@stage1-arcane":["growth-exotic",367,206,21,22,10,21],"skyspray@stage2":["growth-exotic",409,488,14,12,7,11],"skyspray@stage2-arcane":["growth-exotic",359,341,21,18,10,17],"skyspray@stage3":["growth-exotic",382,341,21,18,10,17],"skyspray@stage3-arcane":["growth-exotic",417,128,28,24,14,23],"sleepglass@stage0":["growth-exotic",287,381,16,17,8,16],"sleepglass@stage0-arcane":["growth-exotic",33,181,21,23,10,22],"sleepglass@stage1":["growth-exotic",470,454,16,15,8,14],"sleepglass@stage1-arcane":["growth-exotic",305,381,21,17,10,16],"sleepglass@stage2":["growth-exotic",405,341,15,18,7,17],"sleepglass@stage2-arcane":["growth-exotic",447,128,19,24,9,23],"sleepglass@stage3":["growth-exotic",465,38,24,28,12,27],"sleepglass@stage3-arcane":["growth-exotic",32,2,29,34,14,33],"spectral-anemone@stage0":["growth-exotic",422,341,16,18,8,17],"spectral-anemone@stage0-arcane":["growth-exotic",419,277,21,20,10,19],"spectral-anemone@stage1":["growth-exotic",191,488,16,13,8,12],"spectral-anemone@stage1-arcane":["growth-exotic",352,299,21,19,10,18],"spectral-anemone@stage2":["growth-exotic",488,454,16,15,8,14],"spectral-anemone@stage2-arcane":["growth-exotic",278,254,23,21,11,20],"spectral-anemone@stage3":["growth-exotic",468,128,25,24,12,23],"spectral-anemone@stage3-arcane":["growth-exotic",209,38,29,30,14,29],"splice-bud@stage0":["growth-exotic",41,436,16,16,8,15],"splice-bud@stage0-arcane":["growth-exotic",390,206,21,22,10,21],"splice-bud@stage1":["growth-exotic",59,436,19,16,9,15],"splice-bud@stage1-arcane":["growth-exotic",413,206,24,22,12,21],"splice-bud@stage2":["growth-exotic",328,381,14,17,7,16],"splice-bud@stage2-arcane":["growth-exotic",439,206,19,22,9,21],"splice-bud@stage3":["growth-exotic",276,70,22,27,11,26],"splice-bud@stage3-arcane":["growth-exotic",215,2,29,33,14,32],"starfall-lotus@stage0":["growth-exotic",80,436,16,16,8,15],"starfall-lotus@stage0-arcane":["growth-exotic",460,206,21,22,10,21],"starfall-lotus@stage1":["growth-exotic",98,436,19,16,9,15],"starfall-lotus@stage1-arcane":["growth-exotic",483,206,21,22,10,21],"starfall-lotus@stage2":["growth-exotic",209,488,17,13,8,12],"starfall-lotus@stage2-arcane":["growth-exotic",440,341,22,18,11,17],"starfall-lotus@stage3":["growth-exotic",442,277,27,20,13,19],"starfall-lotus@stage3-arcane":["growth-exotic",29,100,34,26,17,25],"sundial-stone@stage0":["growth-exotic",344,381,16,17,8,16],"sundial-stone@stage0-arcane":["growth-exotic",375,299,21,19,10,18],"sundial-stone@stage1":["growth-exotic",2,471,16,15,8,14],"sundial-stone@stage1-arcane":["growth-exotic",303,254,21,21,10,20],"sundial-stone@stage2":["growth-exotic",20,471,15,15,7,14],"sundial-stone@stage2-arcane":["growth-exotic",326,254,22,21,11,20],"sundial-stone@stage3":["growth-exotic",2,155,24,24,12,23],"sundial-stone@stage3-arcane":["growth-exotic",240,38,29,30,14,29],"timeweed@stage0":["growth-exotic",119,436,17,16,8,15],"timeweed@stage0-arcane":["growth-exotic",464,341,22,18,11,17],"timeweed@stage1":["growth-exotic",138,436,19,16,9,15],"timeweed@stage1-arcane":["growth-exotic",2,361,24,18,12,17],"timeweed@stage2":["growth-exotic",228,488,15,13,7,12],"timeweed@stage2-arcane":["growth-exotic",398,299,20,19,10,18],"timeweed@stage3":["growth-exotic",471,277,24,20,12,19],"timeweed@stage3-arcane":["growth-exotic",420,100,29,25,14,24],"twinsprout@stage0":["growth-exotic",159,436,16,16,8,15],"twinsprout@stage0-arcane":["growth-exotic",28,361,21,18,10,17],"twinsprout@stage1":["growth-exotic",177,436,19,16,9,15],"twinsprout@stage1-arcane":["growth-exotic",2,230,24,22,12,21],"twinsprout@stage2":["growth-exotic",245,488,14,13,7,12],"twinsprout@stage2-arcane":["growth-exotic",420,299,21,19,10,18],"twinsprout@stage3":["growth-exotic",2,299,21,20,10,19],"twinsprout@stage3-arcane":["growth-exotic",451,100,26,25,13,24],"updraft-seedwing@stage0":["growth-exotic",37,471,21,15,10,14],"updraft-seedwing@stage0-arcane":["growth-exotic",362,381,26,17,13,16],"updraft-seedwing@stage1":["growth-exotic",198,436,19,16,9,15],"updraft-seedwing@stage1-arcane":["growth-exotic",51,361,24,18,12,17],"updraft-seedwing@stage2":["growth-exotic",60,471,12,15,6,14],"updraft-seedwing@stage2-arcane":["growth-exotic",350,254,17,21,8,20],"updraft-seedwing@stage3":["growth-exotic",28,155,18,24,9,23],"updraft-seedwing@stage3-arcane":["growth-exotic",362,38,23,29,11,28],"veil-circlet@stage0":["growth-exotic",390,381,16,17,8,16],"veil-circlet@stage0-arcane":["growth-exotic",56,181,21,23,10,22],"veil-circlet@stage1":["growth-exotic",74,471,16,15,8,14],"veil-circlet@stage1-arcane":["growth-exotic",408,381,21,17,10,16],"veil-circlet@stage2":["growth-exotic",386,471,15,14,7,13],"veil-circlet@stage2-arcane":["growth-exotic",443,299,22,19,11,18],"veil-circlet@stage3":["growth-exotic",369,254,24,21,12,20],"veil-circlet@stage3-arcane":["growth-exotic",300,70,31,27,15,26],"veilberry@stage0":["growth-exotic",403,471,17,14,8,13],"veilberry@stage0-arcane":["growth-exotic",25,299,22,20,11,19],"veilberry@stage1":["growth-exotic",219,436,19,16,9,15],"veilberry@stage1-arcane":["growth-exotic",77,361,24,18,12,17],"veilberry@stage2":["growth-exotic",240,436,14,16,7,15],"veilberry@stage2-arcane":["growth-exotic",28,230,21,22,10,21],"veilberry@stage3":["growth-exotic",479,100,21,25,10,24],"veilberry@stage3-arcane":["growth-exotic",454,2,25,31,12,30],"veilfern@stage0":["growth-exotic",256,436,16,16,8,15],"veilfern@stage0-arcane":["growth-exotic",103,361,21,18,10,17],"veilfern@stage1":["growth-exotic",274,436,19,16,9,15],"veilfern@stage1-arcane":["growth-exotic",51,230,24,22,12,21],"veilfern@stage2":["growth-exotic",422,471,14,14,7,13],"veilfern@stage2-arcane":["growth-exotic",49,299,21,20,10,19],"veilfern@stage3":["growth-exotic",395,254,21,21,10,20],"veilfern@stage3-arcane":["growth-exotic",333,70,25,27,12,26],"veilglass@stage0":["growth-exotic",431,381,16,17,8,16],"veilglass@stage0-arcane":["growth-exotic",79,181,21,23,10,22],"veilglass@stage1":["growth-exotic",92,471,16,15,8,14],"veilglass@stage1-arcane":["growth-exotic",418,254,21,21,10,20],"veilglass@stage2":["growth-exotic",126,361,15,18,7,17],"veilglass@stage2-arcane":["growth-exotic",48,155,22,24,11,23],"veilglass@stage3":["growth-exotic",2,70,24,28,12,27],"veilglass@stage3-arcane":["growth-exotic",63,2,29,34,14,33],"windfern@stage0":["growth-exotic",295,436,16,16,8,15],"windfern@stage0-arcane":["growth-exotic",143,361,21,18,10,17],"windfern@stage1":["growth-exotic",313,436,19,16,9,15],"windfern@stage1-arcane":["growth-exotic",77,230,24,22,12,21],"windfern@stage2":["growth-exotic",334,436,14,16,7,15],"windfern@stage2-arcane":["growth-exotic",103,230,19,22,9,21],"windfern@stage3":["growth-exotic",2,128,21,25,10,24],"windfern@stage3-arcane":["growth-exotic",360,70,28,27,14,26],"wisp-reliquary@stage0":["growth-exotic",449,381,16,17,8,16],"wisp-reliquary@stage0-arcane":["growth-exotic",102,181,21,23,10,22],"wisp-reliquary@stage1":["growth-exotic",110,471,16,15,8,14],"wisp-reliquary@stage1-arcane":["growth-exotic",441,254,21,21,10,20],"wisp-reliquary@stage2":["growth-exotic",128,471,15,15,7,14],"wisp-reliquary@stage2-arcane":["growth-exotic",464,254,20,21,10,20],"wisp-reliquary@stage3":["growth-exotic",72,155,24,24,12,23],"wisp-reliquary@stage3-arcane":["growth-exotic",65,100,31,26,15,25],"zephyr-starbloom@stage0":["growth-exotic",350,436,16,16,8,15],"zephyr-starbloom@stage0-arcane":["growth-exotic",166,361,21,18,10,17],"zephyr-starbloom@stage1":["growth-exotic",368,436,19,16,9,15],"zephyr-starbloom@stage1-arcane":["growth-exotic",124,230,21,22,10,21],"zephyr-starbloom@stage2":["growth-exotic",261,488,17,13,8,12],"zephyr-starbloom@stage2-arcane":["growth-exotic",467,299,24,19,12,18],"zephyr-starbloom@stage3":["growth-exotic",72,299,27,20,13,19],"zephyr-starbloom@stage3-arcane":["growth-exotic",98,100,31,26,15,25],"ammonite-coil@stage0":["growth-natural",460,346,16,17,8,16],"ammonite-coil@stage0-arcane":["growth-natural",295,303,21,19,10,18],"ammonite-coil@stage1":["growth-natural",432,440,16,15,8,14],"ammonite-coil@stage1-arcane":["growth-natural",233,233,21,21,10,20],"ammonite-coil@stage2":["growth-natural",194,475,17,14,8,13],"ammonite-coil@stage2-arcane":["growth-natural",141,280,21,20,10,19],"ammonite-coil@stage3":["growth-natural",256,233,27,21,13,20],"ammonite-coil@stage3-arcane":["growth-natural",54,72,32,27,16,26],"ashcactus@stage0":["growth-natural",375,385,16,16,8,15],"ashcactus@stage0-arcane":["growth-natural",73,184,18,22,9,21],"ashcactus@stage1":["growth-natural",393,385,19,16,9,15],"ashcactus@stage1-arcane":["growth-natural",25,325,24,18,12,17],"ashcactus@stage2":["growth-natural",56,492,14,13,7,12],"ashcactus@stage2-arcane":["growth-natural",450,440,21,15,10,14],"ashcactus@stage3":["growth-natural",164,280,21,20,10,19],"ashcactus@stage3-arcane":["growth-natural",93,184,28,22,14,21],"blazestone@stage0":["growth-natural",478,346,16,17,8,16],"blazestone@stage0-arcane":["growth-natural",60,158,21,23,10,22],"blazestone@stage1":["growth-natural",473,440,16,15,8,14],"blazestone@stage1-arcane":["growth-natural",2,366,21,17,10,16],"blazestone@stage2":["growth-natural",51,325,15,18,7,17],"blazestone@stage2-arcane":["growth-natural",271,131,22,24,11,23],"blazestone@stage3":["growth-natural",363,38,24,28,12,27],"blazestone@stage3-arcane":["growth-natural",2,2,31,34,15,33],"brightberry@stage0":["growth-natural",213,475,17,14,8,13],"brightberry@stage0-arcane":["growth-natural",414,385,22,16,11,15],"brightberry@stage1":["growth-natural",438,385,19,16,9,15],"brightberry@stage1-arcane":["growth-natural",68,325,24,18,12,17],"brightberry@stage2":["growth-natural",491,440,13,15,6,14],"brightberry@stage2-arcane":["growth-natural",285,233,18,21,9,20],"brightberry@stage3":["growth-natural",295,131,20,24,10,23],"brightberry@stage3-arcane":["growth-natural",173,38,25,30,12,29],"bubbleberry@stage0":["growth-natural",232,475,17,14,8,13],"bubbleberry@stage0-arcane":["growth-natural",459,385,22,16,11,15],"bubbleberry@stage1":["growth-natural",483,385,19,16,9,15],"bubbleberry@stage1-arcane":["growth-natural",123,184,21,22,10,21],"bubbleberry@stage2":["growth-natural",2,458,13,15,6,14],"bubbleberry@stage2-arcane":["growth-natural",305,233,18,21,9,20],"bubbleberry@stage3":["growth-natural",317,131,20,24,10,23],"bubbleberry@stage3-arcane":["growth-natural",309,38,25,29,12,28],"cinderpod@stage0":["growth-natural",25,366,16,17,8,16],"cinderpod@stage0-arcane":["growth-natural",83,158,21,23,10,22],"cinderpod@stage1":["growth-natural",17,458,16,15,8,14],"cinderpod@stage1-arcane":["growth-natural",325,233,21,21,10,20],"cinderpod@stage2":["growth-natural",251,475,17,14,8,13],"cinderpod@stage2-arcane":["growth-natural",187,280,22,20,11,19],"cinderpod@stage3":["growth-natural",348,233,27,21,13,20],"cinderpod@stage3-arcane":["growth-natural",50,102,32,26,16,25],"cindershroom@stage0":["growth-natural",35,458,17,15,8,14],"cindershroom@stage0-arcane":["growth-natural",43,366,22,17,11,16],"cindershroom@stage1":["growth-natural",54,458,18,15,9,14],"cindershroom@stage1-arcane":["growth-natural",377,233,23,21,11,20],"cindershroom@stage2":["growth-natural",290,492,15,12,7,11],"cindershroom@stage2-arcane":["growth-natural",67,366,20,17,10,16],"cindershroom@stage3":["growth-natural",94,325,24,18,12,17],"cindershroom@stage3-arcane":["growth-natural",339,131,31,24,15,23],"dawnblossom@stage0":["growth-natural",2,404,16,16,8,15],"dawnblossom@stage0-arcane":["growth-natural",146,184,18,22,9,21],"dawnblossom@stage1":["growth-natural",20,404,19,16,9,15],"dawnblossom@stage1-arcane":["growth-natural",166,184,21,22,10,21],"dawnblossom@stage2":["growth-natural",89,366,14,17,7,16],"dawnblossom@stage2-arcane":["growth-natural",106,158,21,23,10,22],"dawnblossom@stage3":["growth-natural",88,72,22,27,11,26],"dawnblossom@stage3-arcane":["growth-natural",160,2,29,33,14,32],"dewpear@stage0":["growth-natural",270,475,17,14,8,13],"dewpear@stage0-arcane":["growth-natural",41,404,22,16,11,15],"dewpear@stage1":["growth-natural",65,404,19,16,9,15],"dewpear@stage1-arcane":["growth-natural",120,325,24,18,12,17],"dewpear@stage2":["growth-natural",289,475,9,14,4,13],"dewpear@stage2-arcane":["growth-natural",211,280,14,20,7,19],"dewpear@stage3":["growth-natural",402,233,14,21,7,20],"dewpear@stage3-arcane":["growth-natural",112,72,19,27,9,26],"emberheart-geode@stage0":["growth-natural",105,366,16,17,8,16],"emberheart-geode@stage0-arcane":["growth-natural",129,158,21,23,10,22],"emberheart-geode@stage1":["growth-natural",74,458,16,15,8,14],"emberheart-geode@stage1-arcane":["growth-natural",418,233,21,21,10,20],"emberheart-geode@stage2":["growth-natural",146,325,15,18,7,17],"emberheart-geode@stage2-arcane":["growth-natural",372,131,22,24,11,23],"emberheart-geode@stage3":["growth-natural",389,38,24,28,12,27],"emberheart-geode@stage3-arcane":["growth-natural",35,2,28,34,14,33],"emberleaf@stage0":["growth-natural",86,404,16,16,8,15],"emberleaf@stage0-arcane":["growth-natural",189,184,18,22,9,21],"emberleaf@stage1":["growth-natural",104,404,19,16,9,15],"emberleaf@stage1-arcane":["growth-natural",163,325,24,18,12,17],"emberleaf@stage2":["growth-natural",125,404,14,16,7,15],"emberleaf@stage2-arcane":["growth-natural",189,325,21,18,10,17],"emberleaf@stage3":["growth-natural",396,102,21,25,10,24],"emberleaf@stage3-arcane":["growth-natural",200,38,26,30,13,29],"eternal-rose@stage0":["growth-natural",141,404,16,16,8,15],"eternal-rose@stage0-arcane":["growth-natural",209,184,18,22,9,21],"eternal-rose@stage1":["growth-natural",159,404,19,16,9,15],"eternal-rose@stage1-arcane":["growth-natural",229,184,21,22,10,21],"eternal-rose@stage2":["growth-natural",92,458,13,15,6,14],"eternal-rose@stage2-arcane":["growth-natural",441,233,18,21,9,20],"eternal-rose@stage3":["growth-natural",396,131,20,24,10,23],"eternal-rose@stage3-arcane":["growth-natural",228,38,24,30,12,29],"everbloom-chalice@stage0":["growth-natural",107,458,17,15,8,14],"everbloom-chalice@stage0-arcane":["growth-natural",123,366,22,17,11,16],"everbloom-chalice@stage1":["growth-natural",126,458,18,15,9,14],"everbloom-chalice@stage1-arcane":["growth-natural",461,233,20,21,10,20],"everbloom-chalice@stage2":["growth-natural",326,492,14,11,7,10],"everbloom-chalice@stage2-arcane":["growth-natural",180,404,21,16,10,15],"everbloom-chalice@stage3":["growth-natural",147,366,22,17,11,16],"everbloom-chalice@stage3-arcane":["growth-natural",152,158,29,23,14,22],"everburning-sunheart@stage0":["growth-natural",203,404,16,16,8,15],"everburning-sunheart@stage0-arcane":["growth-natural",212,325,21,18,10,17],"everburning-sunheart@stage1":["growth-natural",221,404,19,16,9,15],"everburning-sunheart@stage1-arcane":["growth-natural",235,325,24,18,12,17],"everburning-sunheart@stage2":["growth-natural",171,366,17,17,8,16],"everburning-sunheart@stage2-arcane":["growth-natural",183,158,21,23,10,22],"everburning-sunheart@stage3":["growth-natural",133,72,27,27,13,26],"everburning-sunheart@stage3-arcane":["growth-natural",374,2,32,32,16,31],"everfrost-pearlbloom@stage0":["growth-natural",242,404,16,16,8,15],"everfrost-pearlbloom@stage0-arcane":["growth-natural",252,184,21,22,10,21],"everfrost-pearlbloom@stage1":["growth-natural",260,404,19,16,9,15],"everfrost-pearlbloom@stage1-arcane":["growth-natural",275,184,21,22,10,21],"everfrost-pearlbloom@stage2":["growth-natural",72,492,17,13,8,12],"everfrost-pearlbloom@stage2-arcane":["growth-natural",261,325,22,18,11,17],"everfrost-pearlbloom@stage3":["growth-natural",227,280,27,20,13,19],"everfrost-pearlbloom@stage3-arcane":["growth-natural",419,102,32,25,16,24],"ferric-crystal@stage0":["growth-natural",190,366,16,17,8,16],"ferric-crystal@stage0-arcane":["growth-natural",206,158,18,23,9,22],"ferric-crystal@stage1":["growth-natural",146,458,16,15,8,14],"ferric-crystal@stage1-arcane":["growth-natural",208,366,21,17,10,16],"ferric-crystal@stage2":["growth-natural",285,325,15,18,7,17],"ferric-crystal@stage2-arcane":["growth-natural",226,158,20,23,10,22],"ferric-crystal@stage3":["growth-natural",415,38,24,28,12,27],"ferric-crystal@stage3-arcane":["growth-natural",65,2,31,34,15,33],"firebramble@stage0":["growth-natural",300,475,17,14,8,13],"firebramble@stage0-arcane":["growth-natural",256,280,19,20,9,19],"firebramble@stage1":["growth-natural",281,404,19,16,9,15],"firebramble@stage1-arcane":["growth-natural",298,184,24,22,12,21],"firebramble@stage2":["growth-natural",302,404,14,16,7,15],"firebramble@stage2-arcane":["growth-natural",324,184,19,22,9,21],"firebramble@stage3":["growth-natural",453,102,21,25,10,24],"firebramble@stage3-arcane":["growth-natural",31,38,25,31,12,30],"flamecrest@stage0":["growth-natural",318,404,16,16,8,15],"flamecrest@stage0-arcane":["growth-natural",302,325,21,18,10,17],"flamecrest@stage1":["growth-natural",336,404,19,16,9,15],"flamecrest@stage1-arcane":["growth-natural",345,184,24,22,12,21],"flamecrest@stage2":["growth-natural",231,366,14,17,7,16],"flamecrest@stage2-arcane":["growth-natural",248,158,18,23,9,22],"flamecrest@stage3":["growth-natural",162,72,22,27,11,26],"flamecrest@stage3-arcane":["growth-natural",191,2,29,33,14,32],"frostlotus@stage0":["growth-natural",357,404,16,16,8,15],"frostlotus@stage0-arcane":["growth-natural",371,184,21,22,10,21],"frostlotus@stage1":["growth-natural",375,404,19,16,9,15],"frostlotus@stage1-arcane":["growth-natural",394,184,24,22,12,21],"frostlotus@stage2":["growth-natural",91,492,17,13,8,12],"frostlotus@stage2-arcane":["growth-natural",325,325,22,18,11,17],"frostlotus@stage3":["growth-natural",277,280,27,20,13,19],"frostlotus@stage3-arcane":["growth-natural",84,102,32,26,16,25],"gloommoss@stage0":["growth-natural",164,458,17,15,8,14],"gloommoss@stage0-arcane":["growth-natural",247,366,22,17,11,16],"gloommoss@stage1":["growth-natural",183,458,18,15,9,14],"gloommoss@stage1-arcane":["growth-natural",271,366,23,17,11,16],"gloommoss@stage2":["growth-natural",110,492,15,13,7,12],"gloommoss@stage2-arcane":["growth-natural",318,303,19,19,9,18],"gloommoss@stage3":["growth-natural",306,280,24,20,12,19],"gloommoss@stage3-arcane":["growth-natural",118,102,28,26,14,25],"goldenrush@stage0":["growth-natural",396,404,17,16,8,15],"goldenrush@stage0-arcane":["growth-natural",420,184,22,22,11,21],"goldenrush@stage1":["growth-natural",415,404,19,16,9,15],"goldenrush@stage1-arcane":["growth-natural",444,184,24,22,12,21],"goldenrush@stage2":["growth-natural",127,492,17,13,8,12],"goldenrush@stage2-arcane":["growth-natural",349,325,24,18,12,17],"goldenrush@stage3":["growth-natural",332,280,27,20,13,19],"goldenrush@stage3-arcane":["growth-natural",476,102,32,25,16,24],"gravelpod@stage0":["growth-natural",296,366,16,17,8,16],"gravelpod@stage0-arcane":["growth-natural",339,303,21,19,10,18],"gravelpod@stage1":["growth-natural",203,458,16,15,8,14],"gravelpod@stage1-arcane":["growth-natural",314,366,21,17,10,16],"gravelpod@stage2":["growth-natural",319,475,17,14,8,13],"gravelpod@stage2-arcane":["growth-natural",361,280,22,20,11,19],"gravelpod@stage3":["growth-natural",483,233,27,21,13,20],"gravelpod@stage3-arcane":["growth-natural",186,72,32,27,16,26],"heartberry@stage0":["growth-natural",338,475,17,14,8,13],"heartberry@stage0-arcane":["growth-natural",385,280,22,20,11,19],"heartberry@stage1":["growth-natural",436,404,19,16,9,15],"heartberry@stage1-arcane":["growth-natural",470,184,24,22,12,21],"heartberry@stage2":["growth-natural",357,475,12,14,6,13],"heartberry@stage2-arcane":["growth-natural",409,280,17,20,8,19],"heartberry@stage3":["growth-natural",2,209,18,22,9,21],"heartberry@stage3-arcane":["growth-natural",441,38,25,28,12,27],"hearthnut@stage0":["growth-natural",337,366,16,17,8,16],"hearthnut@stage0-arcane":["growth-natural",268,158,18,23,9,22],"hearthnut@stage1":["growth-natural",221,458,16,15,8,14],"hearthnut@stage1-arcane":["growth-natural",355,366,21,17,10,16],"hearthnut@stage2":["growth-natural",371,475,17,14,8,13],"hearthnut@stage2-arcane":["growth-natural",428,280,24,20,12,19],"hearthnut@stage3":["growth-natural",2,257,27,21,13,20],"hearthnut@stage3-arcane":["growth-natural",220,72,31,27,15,26],"heartwood-mandrake@stage0":["growth-natural",362,303,17,19,8,18],"heartwood-mandrake@stage0-arcane":["growth-natural",2,131,22,25,11,24],"heartwood-mandrake@stage1":["growth-natural",457,404,19,16,9,15],"heartwood-mandrake@stage1-arcane":["growth-natural",375,325,24,18,12,17],"heartwood-mandrake@stage2":["growth-natural",390,475,13,14,6,13],"heartwood-mandrake@stage2-arcane":["growth-natural",381,303,20,19,10,18],"heartwood-mandrake@stage3":["growth-natural",31,257,20,21,10,20],"heartwood-mandrake@stage3-arcane":["growth-natural",253,72,24,27,12,26],"honeycap@stage0":["growth-natural",239,458,17,15,8,14],"honeycap@stage0-arcane":["growth-natural",53,257,22,21,11,20],"honeycap@stage1":["growth-natural",258,458,18,15,9,14],"honeycap@stage1-arcane":["growth-natural",77,257,23,21,11,20],"honeycap@stage2":["growth-natural",146,492,15,13,7,12],"honeycap@stage2-arcane":["growth-natural",403,303,19,19,9,18],"honeycap@stage3":["growth-natural",454,280,24,20,12,19],"honeycap@stage3-arcane":["growth-natural",148,102,29,26,14,25],"honeyclover@stage0":["growth-natural",478,404,16,16,8,15],"honeyclover@stage0-arcane":["growth-natural",401,325,21,18,10,17],"honeyclover@stage1":["growth-natural",2,422,19,16,9,15],"honeyclover@stage1-arcane":["growth-natural",22,209,21,22,10,21],"honeyclover@stage2":["growth-natural",378,366,15,17,7,16],"honeyclover@stage2-arcane":["growth-natural",288,158,19,23,9,22],"honeyclover@stage3":["growth-natural",279,72,24,27,12,26],"honeyclover@stage3-arcane":["growth-natural",222,2,29,33,14,32],"ironbloom@stage0":["growth-natural",23,422,16,16,8,15],"ironbloom@stage0-arcane":["growth-natural",45,209,21,22,10,21],"ironbloom@stage1":["growth-natural",41,422,19,16,9,15],"ironbloom@stage1-arcane":["growth-natural",68,209,21,22,10,21],"ironbloom@stage2":["growth-natural",163,492,17,13,8,12],"ironbloom@stage2-arcane":["growth-natural",424,325,22,18,11,17],"ironbloom@stage3":["growth-natural",480,280,27,20,13,19],"ironbloom@stage3-arcane":["growth-natural",179,102,34,26,17,25],"lovelace-orchid@stage0":["growth-natural",62,422,16,16,8,15],"lovelace-orchid@stage0-arcane":["growth-natural",448,325,21,18,10,17],"lovelace-orchid@stage1":["growth-natural",80,422,19,16,9,15],"lovelace-orchid@stage1-arcane":["growth-natural",91,209,21,22,10,21],"lovelace-orchid@stage2":["growth-natural",405,475,14,14,7,13],"lovelace-orchid@stage2-arcane":["growth-natural",2,303,19,20,9,19],"lovelace-orchid@stage3":["growth-natural",102,257,21,21,10,20],"lovelace-orchid@stage3-arcane":["growth-natural",215,102,26,26,13,25],"meadow-daisy@stage0":["growth-natural",101,422,16,16,8,15],"meadow-daisy@stage0-arcane":["growth-natural",114,209,18,22,9,21],"meadow-daisy@stage1":["growth-natural",119,422,19,16,9,15],"meadow-daisy@stage1-arcane":["growth-natural",134,209,24,22,12,21],"meadow-daisy@stage2":["growth-natural",395,366,15,17,7,16],"meadow-daisy@stage2-arcane":["growth-natural",309,158,20,23,10,22],"meadow-daisy@stage3":["growth-natural",305,72,24,27,12,26],"meadow-daisy@stage3-arcane":["growth-natural",408,2,29,32,14,31],"meadowcrystal@stage0":["growth-natural",412,366,16,17,8,16],"meadowcrystal@stage0-arcane":["growth-natural",331,158,21,23,10,22],"meadowcrystal@stage1":["growth-natural",278,458,16,15,8,14],"meadowcrystal@stage1-arcane":["growth-natural",430,366,21,17,10,16],"meadowcrystal@stage2":["growth-natural",471,325,15,18,7,17],"meadowcrystal@stage2-arcane":["growth-natural",418,131,22,24,11,23],"meadowcrystal@stage3":["growth-natural",468,38,24,28,12,27],"meadowcrystal@stage3-arcane":["growth-natural",98,2,29,34,14,33],"mossback-bark@stage0":["growth-natural",424,303,17,19,8,18],"mossback-bark@stage0-arcane":["growth-natural",125,257,22,21,11,20],"mossback-bark@stage1":["growth-natural",140,422,19,16,9,15],"mossback-bark@stage1-arcane":["growth-natural",2,346,24,18,12,17],"mossback-bark@stage2":["growth-natural",421,475,14,14,7,13],"mossback-bark@stage2-arcane":["growth-natural",23,303,21,20,10,19],"mossback-bark@stage3":["growth-natural",149,257,22,21,11,20],"mossback-bark@stage3-arcane":["growth-natural",331,72,26,27,13,26],"nethercap@stage0":["growth-natural",296,458,17,15,8,14],"nethercap@stage0-arcane":["growth-natural",453,366,22,17,11,16],"nethercap@stage1":["growth-natural",315,458,18,15,9,14],"nethercap@stage1-arcane":["growth-natural",173,257,23,21,11,20],"nethercap@stage2":["growth-natural",182,492,15,13,7,12],"nethercap@stage2-arcane":["growth-natural",28,346,22,18,11,17],"nethercap@stage3":["growth-natural",46,303,24,20,12,19],"nethercap@stage3-arcane":["growth-natural",243,102,28,26,14,25],"nightbloom-lotus@stage0":["growth-natural",161,422,16,16,8,15],"nightbloom-lotus@stage0-arcane":["growth-natural",160,209,18,22,9,21],"nightbloom-lotus@stage1":["growth-natural",179,422,19,16,9,15],"nightbloom-lotus@stage1-arcane":["growth-natural",180,209,21,22,10,21],"nightbloom-lotus@stage2":["growth-natural",199,492,17,13,8,12],"nightbloom-lotus@stage2-arcane":["growth-natural",335,458,24,15,12,14],"nightbloom-lotus@stage3":["growth-natural",72,303,27,20,13,19],"nightbloom-lotus@stage3-arcane":["growth-natural",26,131,34,25,17,24],"nixie-torc@stage0":["growth-natural",477,366,16,17,8,16],"nixie-torc@stage0-arcane":["growth-natural",354,158,21,23,10,22],"nixie-torc@stage1":["growth-natural",361,458,16,15,8,14],"nixie-torc@stage1-arcane":["growth-natural",2,385,21,17,10,16],"nixie-torc@stage2":["growth-natural",437,475,15,14,7,13],"nixie-torc@stage2-arcane":["growth-natural",101,303,19,20,9,19],"nixie-torc@stage3":["growth-natural",198,257,24,21,12,20],"nixie-torc@stage3-arcane":["growth-natural",273,102,31,26,15,25],"orebud@stage0":["growth-natural",25,385,16,17,8,16],"orebud@stage0-arcane":["growth-natural",377,158,21,23,10,22],"orebud@stage1":["growth-natural",379,458,16,15,8,14],"orebud@stage1-arcane":["growth-natural",43,385,21,17,10,16],"orebud@stage2":["growth-natural",52,346,15,18,7,17],"orebud@stage2-arcane":["growth-natural",122,303,22,20,11,19],"orebud@stage3":["growth-natural",2,72,24,28,12,27],"orebud@stage3-arcane":["growth-natural",129,2,29,34,14,33],"phoenix-heartseed@stage0":["growth-natural",397,458,21,15,10,14],"phoenix-heartseed@stage0-arcane":["growth-natural",224,257,23,21,11,20],"phoenix-heartseed@stage1":["growth-natural",200,422,19,16,9,15],"phoenix-heartseed@stage1-arcane":["growth-natural",203,209,24,22,12,21],"phoenix-heartseed@stage2":["growth-natural",420,458,12,15,6,14],"phoenix-heartseed@stage2-arcane":["growth-natural",66,385,19,17,9,16],"phoenix-heartseed@stage3":["growth-natural",442,131,18,24,9,23],"phoenix-heartseed@stage3-arcane":["growth-natural",336,38,25,29,12,28],"prism-petal@stage0":["growth-natural",221,422,16,16,8,15],"prism-petal@stage0-arcane":["growth-natural",229,209,18,22,9,21],"prism-petal@stage1":["growth-natural",239,422,19,16,9,15],"prism-petal@stage1-arcane":["growth-natural",69,346,24,18,12,17],"prism-petal@stage2":["growth-natural",87,385,14,17,7,16],"prism-petal@stage2-arcane":["growth-natural",400,158,18,23,9,22],"prism-petal@stage3":["growth-natural",359,72,22,27,11,26],"prism-petal@stage3-arcane":["growth-natural",439,2,29,32,14,31],"quarrycap@stage0":["growth-natural",434,458,17,15,8,14],"quarrycap@stage0-arcane":["growth-natural",249,257,22,21,11,20],"quarrycap@stage1":["growth-natural",453,458,18,15,9,14],"quarrycap@stage1-arcane":["growth-natural",273,257,23,21,11,20],"quarrycap@stage2":["growth-natural",342,492,15,11,7,10],"quarrycap@stage2-arcane":["growth-natural",103,385,20,17,10,16],"quarrycap@stage3":["growth-natural",125,385,24,17,12,16],"quarrycap@stage3-arcane":["growth-natural",420,158,28,23,14,22],"radiant-sunbloom@stage0":["growth-natural",260,422,16,16,8,15],"radiant-sunbloom@stage0-arcane":["growth-natural",95,346,21,18,10,17],"radiant-sunbloom@stage1":["growth-natural",278,422,19,16,9,15],"radiant-sunbloom@stage1-arcane":["growth-natural",118,346,24,18,12,17],"radiant-sunbloom@stage2":["growth-natural",151,385,17,17,8,16],"radiant-sunbloom@stage2-arcane":["growth-natural",450,158,24,23,12,22],"radiant-sunbloom@stage3":["growth-natural",383,72,27,27,13,26],"radiant-sunbloom@stage3-arcane":["growth-natural",470,2,32,32,16,31],"reedcap@stage0":["growth-natural",473,458,17,15,8,14],"reedcap@stage0-arcane":["growth-natural",298,257,22,21,11,20],"reedcap@stage1":["growth-natural",492,458,18,15,9,14],"reedcap@stage1-arcane":["growth-natural",322,257,23,21,11,20],"reedcap@stage2":["growth-natural",359,492,15,11,7,10],"reedcap@stage2-arcane":["growth-natural",170,385,22,17,11,16],"reedcap@stage3":["growth-natural",194,385,24,17,12,16],"reedcap@stage3-arcane":["growth-natural",476,158,31,23,15,22],"rimefeather@stage0":["growth-natural",299,422,17,16,8,15],"rimefeather@stage0-arcane":["growth-natural",249,209,19,22,9,21],"rimefeather@stage1":["growth-natural",318,422,19,16,9,15],"rimefeather@stage1-arcane":["growth-natural",270,209,21,22,10,21],"rimefeather@stage2":["growth-natural",218,492,14,13,7,12],"rimefeather@stage2-arcane":["growth-natural",144,346,19,18,9,17],"rimefeather@stage3":["growth-natural",146,303,22,20,11,19],"rimefeather@stage3-arcane":["growth-natural",306,102,27,26,13,25],"riverlotus@stage0":["growth-natural",339,422,16,16,8,15],"riverlotus@stage0-arcane":["growth-natural",165,346,21,18,10,17],"riverlotus@stage1":["growth-natural",357,422,19,16,9,15],"riverlotus@stage1-arcane":["growth-natural",293,209,24,22,12,21],"riverlotus@stage2":["growth-natural",234,492,17,13,8,12],"riverlotus@stage2-arcane":["growth-natural",188,346,22,18,11,17],"riverlotus@stage3":["growth-natural",170,303,27,20,13,19],"riverlotus@stage3-arcane":["growth-natural",62,131,32,25,16,24],"shadefruit@stage0":["growth-natural",454,475,17,14,8,13],"shadefruit@stage0-arcane":["growth-natural",199,303,19,20,9,19],"shadefruit@stage1":["growth-natural",378,422,19,16,9,15],"shadefruit@stage1-arcane":["growth-natural",212,346,24,18,12,17],"shadefruit@stage2":["growth-natural",2,475,13,15,6,14],"shadefruit@stage2-arcane":["growth-natural",347,257,18,21,9,20],"shadefruit@stage3":["growth-natural",462,131,20,24,10,23],"shadefruit@stage3-arcane":["growth-natural",254,38,25,30,12,29],"silverleaf@stage0":["growth-natural",399,422,16,16,8,15],"silverleaf@stage0-arcane":["growth-natural",319,209,21,22,10,21],"silverleaf@stage1":["growth-natural",417,422,19,16,9,15],"silverleaf@stage1-arcane":["growth-natural",238,346,24,18,12,17],"silverleaf@stage2":["growth-natural",473,475,14,14,7,13],"silverleaf@stage2-arcane":["growth-natural",220,303,18,20,9,19],"silverleaf@stage3":["growth-natural",367,257,21,21,10,20],"silverleaf@stage3-arcane":["growth-natural",335,102,26,26,13,25],"sporelantern@stage0":["growth-natural",17,475,21,15,10,14],"sporelantern@stage0-arcane":["growth-natural",220,385,26,17,13,16],"sporelantern@stage1":["growth-natural",438,422,19,16,9,15],"sporelantern@stage1-arcane":["growth-natural",264,346,24,18,12,17],"sporelantern@stage2":["growth-natural",459,422,14,16,7,15],"sporelantern@stage2-arcane":["growth-natural",342,209,18,22,9,21],"sporelantern@stage3":["growth-natural",96,131,21,25,10,24],"sporelantern@stage3-arcane":["growth-natural",281,38,26,30,13,29],"stagthorn-vine@stage0":["growth-natural",40,475,21,15,10,14],"stagthorn-vine@stage0-arcane":["growth-natural",390,257,23,21,11,20],"stagthorn-vine@stage1":["growth-natural",475,422,19,16,9,15],"stagthorn-vine@stage1-arcane":["growth-natural",362,209,24,22,12,21],"stagthorn-vine@stage2":["growth-natural",496,422,14,16,7,15],"stagthorn-vine@stage2-arcane":["growth-natural",290,346,21,18,10,17],"stagthorn-vine@stage3":["growth-natural",119,131,21,25,10,24],"stagthorn-vine@stage3-arcane":["growth-natural",58,38,28,31,14,30],"stoneberry@stage0":["growth-natural",489,475,17,14,8,13],"stoneberry@stage0-arcane":["growth-natural",2,440,22,16,11,15],"stoneberry@stage1":["growth-natural",26,440,19,16,9,15],"stoneberry@stage1-arcane":["growth-natural",388,209,21,22,10,21],"stoneberry@stage2":["growth-natural",47,440,14,16,7,15],"stoneberry@stage2-arcane":["growth-natural",415,257,21,21,10,20],"stoneberry@stage3":["growth-natural",142,131,21,25,10,24],"stoneberry@stage3-arcane":["growth-natural",88,38,25,31,12,30],"stonewort@stage0":["growth-natural",63,440,16,16,8,15],"stonewort@stage0-arcane":["growth-natural",313,346,21,18,10,17],"stonewort@stage1":["growth-natural",81,440,19,16,9,15],"stonewort@stage1-arcane":["growth-natural",411,209,21,22,10,21],"stonewort@stage2":["growth-natural",248,385,14,17,7,16],"stonewort@stage2-arcane":["growth-natural",443,303,21,19,10,18],"stonewort@stage3":["growth-natural",412,72,22,27,11,26],"stonewort@stage3-arcane":["growth-natural",2,38,27,32,13,31],"streampearl@stage0":["growth-natural",2,492,19,14,9,13],"streampearl@stage0-arcane":["growth-natural",240,303,24,20,12,19],"streampearl@stage1":["growth-natural",253,492,16,13,8,12],"streampearl@stage1-arcane":["growth-natural",63,475,21,15,10,14],"streampearl@stage2":["growth-natural",307,492,17,12,8,11],"streampearl@stage2-arcane":["growth-natural",264,385,22,17,11,16],"streampearl@stage3":["growth-natural",336,346,27,18,13,17],"streampearl@stage3-arcane":["growth-natural",2,158,34,24,17,23],"sulfurvine@stage0":["growth-natural",86,475,21,15,10,14],"sulfurvine@stage0-arcane":["growth-natural",438,257,23,21,11,20],"sulfurvine@stage1":["growth-natural",102,440,19,16,9,15],"sulfurvine@stage1-arcane":["growth-natural",434,209,21,22,10,21],"sulfurvine@stage2":["growth-natural",123,440,14,16,7,15],"sulfurvine@stage2-arcane":["growth-natural",457,209,21,22,10,21],"sulfurvine@stage3":["growth-natural",165,131,21,25,10,24],"sulfurvine@stage3-arcane":["growth-natural",436,72,28,27,14,26],"suncrown@stage0":["growth-natural",139,440,16,16,8,15],"suncrown@stage0-arcane":["growth-natural",480,209,18,22,9,21],"suncrown@stage1":["growth-natural",157,440,19,16,9,15],"suncrown@stage1-arcane":["growth-natural",365,346,24,18,12,17],"suncrown@stage2":["growth-natural",288,385,17,17,8,16],"suncrown@stage2-arcane":["growth-natural",2,233,22,22,11,21],"suncrown@stage3":["growth-natural",466,72,27,27,13,26],"suncrown@stage3-arcane":["growth-natural",253,2,31,33,15,32],"thornhalo@stage0":["growth-natural",307,385,16,17,8,16],"thornhalo@stage0-arcane":["growth-natural",2,184,18,23,9,22],"thornhalo@stage1":["growth-natural",109,475,16,15,8,14],"thornhalo@stage1-arcane":["growth-natural",463,257,21,21,10,20],"thornhalo@stage2":["growth-natural",23,492,15,14,7,13],"thornhalo@stage2-arcane":["growth-natural",178,440,22,16,11,15],"thornhalo@stage3":["growth-natural",486,257,24,21,12,20],"thornhalo@stage3-arcane":["growth-natural",363,102,31,26,15,25],"tidebloom@stage0":["growth-natural",202,440,16,16,8,15],"tidebloom@stage0-arcane":["growth-natural",26,233,18,22,9,21],"tidebloom@stage1":["growth-natural",220,440,19,16,9,15],"tidebloom@stage1-arcane":["growth-natural",46,233,24,22,12,21],"tidebloom@stage2":["growth-natural",271,492,17,13,8,12],"tidebloom@stage2-arcane":["growth-natural",127,475,24,15,12,14],"tidebloom@stage3":["growth-natural",266,303,27,20,13,19],"tidebloom@stage3-arcane":["growth-natural",188,131,34,25,17,24],"titan-root@stage0":["growth-natural",466,303,17,19,8,18],"titan-root@stage0-arcane":["growth-natural",2,280,22,21,11,20],"titan-root@stage1":["growth-natural",241,440,19,16,9,15],"titan-root@stage1-arcane":["growth-natural",72,233,24,22,12,21],"titan-root@stage2":["growth-natural",325,385,13,17,6,16],"titan-root@stage2-arcane":["growth-natural",98,233,18,22,9,21],"titan-root@stage3":["growth-natural",2,102,20,27,10,26],"titan-root@stage3-arcane":["growth-natural",286,2,25,33,12,32],"umbrabell@stage0":["growth-natural",262,440,16,16,8,15],"umbrabell@stage0-arcane":["growth-natural",118,233,21,22,10,21],"umbrabell@stage1":["growth-natural",280,440,19,16,9,15],"umbrabell@stage1-arcane":["growth-natural",391,346,24,18,12,17],"umbrabell@stage2":["growth-natural",40,492,14,14,7,13],"umbrabell@stage2-arcane":["growth-natural",485,303,21,19,10,18],"umbrabell@stage3":["growth-natural",26,280,21,21,10,20],"umbrabell@stage3-arcane":["growth-natural",22,184,28,23,14,22],"umbral-amethyst@stage0":["growth-natural",340,385,16,17,8,16],"umbral-amethyst@stage0-arcane":["growth-natural",2,325,21,19,10,18],"umbral-amethyst@stage1":["growth-natural",153,475,16,15,8,14],"umbral-amethyst@stage1-arcane":["growth-natural",49,280,18,21,9,20],"umbral-amethyst@stage2":["growth-natural",417,346,15,18,7,17],"umbral-amethyst@stage2-arcane":["growth-natural",38,158,20,24,10,23],"umbral-amethyst@stage3":["growth-natural",28,72,24,28,12,27],"umbral-amethyst@stage3-arcane":["growth-natural",313,2,29,33,14,32],"venomlily@stage0":["growth-natural",301,440,16,16,8,15],"venomlily@stage0-arcane":["growth-natural",141,233,18,22,9,21],"venomlily@stage1":["growth-natural",319,440,19,16,9,15],"venomlily@stage1-arcane":["growth-natural",161,233,24,22,12,21],"venomlily@stage2":["growth-natural",358,385,15,17,7,16],"venomlily@stage2-arcane":["growth-natural",52,184,19,23,9,22],"venomlily@stage3":["growth-natural",24,102,24,27,12,26],"venomlily@stage3-arcane":["growth-natural",344,2,28,33,14,32],"willowleaf@stage0":["growth-natural",340,440,16,16,8,15],"willowleaf@stage0-arcane":["growth-natural",187,233,21,22,10,21],"willowleaf@stage1":["growth-natural",358,440,19,16,9,15],"willowleaf@stage1-arcane":["growth-natural",210,233,21,22,10,21],"willowleaf@stage2":["growth-natural",379,440,14,16,7,15],"willowleaf@stage2-arcane":["growth-natural",69,280,21,21,10,20],"willowleaf@stage3":["growth-natural",224,131,22,25,11,24],"willowleaf@stage3-arcane":["growth-natural",115,38,26,31,13,30],"wraithvine@stage0":["growth-natural",171,475,21,15,10,14],"wraithvine@stage0-arcane":["growth-natural",92,280,26,21,13,20],"wraithvine@stage1":["growth-natural",395,440,19,16,9,15],"wraithvine@stage1-arcane":["growth-natural",434,346,24,18,12,17],"wraithvine@stage2":["growth-natural",416,440,14,16,7,15],"wraithvine@stage2-arcane":["growth-natural",120,280,19,21,9,20],"wraithvine@stage3":["growth-natural",248,131,21,25,10,24],"wraithvine@stage3-arcane":["growth-natural",143,38,28,31,14,30],"aeon-circlet@arcane":["ingredients-arcane-exotic",354,2,42,38,23,35],"airstar@arcane":["ingredients-arcane-exotic",398,2,42,38,24,37],"chronoglass-shard@arcane":["ingredients-arcane-exotic",2,2,42,40,23,39],"chronovine@arcane":["ingredients-arcane-exotic",442,2,42,38,21,37],"cloudcap@arcane":["ingredients-arcane-exotic",2,44,42,38,23,33],"cloudprism@arcane":["ingredients-arcane-exotic",46,2,42,40,23,39],"coralberry@arcane":["ingredients-arcane-exotic",46,44,42,38,22,37],"crownbloom@arcane":["ingredients-arcane-exotic",90,44,42,38,23,37],"dreamberry@arcane":["ingredients-arcane-exotic",134,44,42,38,22,37],"duskbell@arcane":["ingredients-arcane-exotic",178,44,42,38,23,35],"eclipse-eye@arcane":["ingredients-arcane-exotic",222,44,42,38,23,35],"epochbloom@arcane":["ingredients-arcane-exotic",266,44,42,38,23,37],"featherpetal@arcane":["ingredients-arcane-exotic",310,44,42,38,22,37],"fenmilk-cap@arcane":["ingredients-arcane-exotic",354,44,42,38,23,33],"formblossom@arcane":["ingredients-arcane-exotic",398,44,42,38,22,37],"ghostbud@arcane":["ingredients-arcane-exotic",442,44,42,38,24,37],"ghostcrown-coral@arcane":["ingredients-arcane-exotic",2,84,44,38,26,37],"ghostglass-coral@arcane":["ingredients-arcane-exotic",48,84,44,38,26,37],"glasscap@arcane":["ingredients-arcane-exotic",94,84,42,38,23,33],"graftberry@arcane":["ingredients-arcane-exotic",138,84,42,38,22,37],"hollowbloom@arcane":["ingredients-arcane-exotic",182,84,42,38,23,37],"hollowcap@arcane":["ingredients-arcane-exotic",226,84,42,38,23,33],"hourberry@arcane":["ingredients-arcane-exotic",90,2,42,40,23,39],"hourglass-of-ages@arcane":["ingredients-arcane-exotic",270,84,42,38,22,37],"mimic-eye@arcane":["ingredients-arcane-exotic",314,84,42,38,23,35],"mirepod-shell@arcane":["ingredients-arcane-exotic",358,84,42,38,23,35],"mistpebble@arcane":["ingredients-arcane-exotic",402,84,42,38,23,37],"moonlotus@arcane":["ingredients-arcane-exotic",446,84,42,38,23,37],"moonreed@arcane":["ingredients-arcane-exotic",2,124,42,38,19,37],"moonveil-bloom@arcane":["ingredients-arcane-exotic",46,124,42,38,23,37],"morphleaf@arcane":["ingredients-arcane-exotic",90,124,42,38,23,35],"pearlshell@arcane":["ingredients-arcane-exotic",134,124,42,38,23,35],"pendulum-pods@arcane":["ingredients-arcane-exotic",178,124,42,38,21,37],"phantom-pearl@arcane":["ingredients-arcane-exotic",222,124,42,38,23,35],"polymorph-lotus@arcane":["ingredients-arcane-exotic",266,124,42,38,23,37],"reefbud@arcane":["ingredients-arcane-exotic",310,124,42,38,24,37],"reefmoss@arcane":["ingredients-arcane-exotic",354,124,44,38,26,37],"sandskirt-cap@arcane":["ingredients-arcane-exotic",400,124,42,38,23,33],"shapecap@arcane":["ingredients-arcane-exotic",444,124,42,38,23,33],"shellfern@arcane":["ingredients-arcane-exotic",2,164,42,38,23,35],"shifting-root@arcane":["ingredients-arcane-exotic",134,2,42,40,22,39],"shroud-orchid@arcane":["ingredients-arcane-exotic",46,164,42,38,23,35],"skyberry@arcane":["ingredients-arcane-exotic",90,164,42,38,22,37],"skyshard-geode@arcane":["ingredients-arcane-exotic",178,2,42,40,23,39],"skyspray@arcane":["ingredients-arcane-exotic",134,164,42,38,21,35],"sleepglass@arcane":["ingredients-arcane-exotic",222,2,42,40,23,39],"spectral-anemone@arcane":["ingredients-arcane-exotic",178,164,44,38,26,37],"splice-bud@arcane":["ingredients-arcane-exotic",224,164,42,38,24,37],"starfall-lotus@arcane":["ingredients-arcane-exotic",268,164,42,38,23,37],"sundial-stone@arcane":["ingredients-arcane-exotic",312,164,42,38,23,35],"timeweed@arcane":["ingredients-arcane-exotic",356,164,42,38,23,37],"twinsprout@arcane":["ingredients-arcane-exotic",400,164,42,38,21,35],"updraft-seedwing@arcane":["ingredients-arcane-exotic",444,164,42,38,23,37],"veil-circlet@arcane":["ingredients-arcane-exotic",2,204,42,38,23,35],"veilberry@arcane":["ingredients-arcane-exotic",266,2,42,40,23,39],"veilfern@arcane":["ingredients-arcane-exotic",46,204,42,38,23,35],"veilglass@arcane":["ingredients-arcane-exotic",310,2,42,40,23,39],"windfern@arcane":["ingredients-arcane-exotic",90,204,42,38,23,35],"wisp-reliquary@arcane":["ingredients-arcane-exotic",134,204,42,38,23,35],"zephyr-starbloom@arcane":["ingredients-arcane-exotic",178,204,42,38,23,37],"ammonite-coil@arcane":["ingredients-arcane-natural",442,2,42,38,23,37],"ashcactus@arcane":["ingredients-arcane-natural",2,44,42,38,21,35],"blazestone@arcane":["ingredients-arcane-natural",2,2,42,40,23,39],"brightberry@arcane":["ingredients-arcane-natural",46,44,42,38,22,37],"bubbleberry@arcane":["ingredients-arcane-natural",90,44,42,38,22,37],"cinderpod@arcane":["ingredients-arcane-natural",134,44,42,38,23,37],"cindershroom@arcane":["ingredients-arcane-natural",178,44,42,38,23,33],"dawnblossom@arcane":["ingredients-arcane-natural",222,44,42,38,24,37],"dewpear@arcane":["ingredients-arcane-natural",266,44,42,38,22,35],"emberheart-geode@arcane":["ingredients-arcane-natural",46,2,42,40,23,39],"emberleaf@arcane":["ingredients-arcane-natural",310,44,42,38,21,35],"eternal-rose@arcane":["ingredients-arcane-natural",354,44,42,38,22,37],"everbloom-chalice@arcane":["ingredients-arcane-natural",398,44,42,38,24,33],"everburning-sunheart@arcane":["ingredients-arcane-natural",442,44,42,38,23,37],"everfrost-pearlbloom@arcane":["ingredients-arcane-natural",2,84,42,38,23,37],"ferric-crystal@arcane":["ingredients-arcane-natural",90,2,42,40,23,39],"firebramble@arcane":["ingredients-arcane-natural",134,2,42,40,23,39],"flamecrest@arcane":["ingredients-arcane-natural",46,84,42,38,24,37],"frostlotus@arcane":["ingredients-arcane-natural",90,84,42,38,23,37],"gloommoss@arcane":["ingredients-arcane-natural",134,84,42,38,23,37],"goldenrush@arcane":["ingredients-arcane-natural",178,84,42,38,21,37],"gravelpod@arcane":["ingredients-arcane-natural",222,84,42,38,23,37],"heartberry@arcane":["ingredients-arcane-natural",266,84,42,38,23,37],"hearthnut@arcane":["ingredients-arcane-natural",310,84,42,38,23,37],"heartwood-mandrake@arcane":["ingredients-arcane-natural",178,2,42,40,22,39],"honeycap@arcane":["ingredients-arcane-natural",354,84,42,38,23,33],"honeyclover@arcane":["ingredients-arcane-natural",398,84,42,38,23,37],"ironbloom@arcane":["ingredients-arcane-natural",442,84,42,38,23,37],"lovelace-orchid@arcane":["ingredients-arcane-natural",2,124,42,38,23,35],"meadow-daisy@arcane":["ingredients-arcane-natural",46,124,42,38,23,37],"meadowcrystal@arcane":["ingredients-arcane-natural",222,2,42,40,23,39],"mossback-bark@arcane":["ingredients-arcane-natural",90,124,42,38,24,35],"nethercap@arcane":["ingredients-arcane-natural",134,124,42,38,23,33],"nightbloom-lotus@arcane":["ingredients-arcane-natural",178,124,42,38,23,37],"nixie-torc@arcane":["ingredients-arcane-natural",222,124,42,38,23,35],"orebud@arcane":["ingredients-arcane-natural",266,2,42,40,23,39],"phoenix-heartseed@arcane":["ingredients-arcane-natural",266,124,42,38,23,37],"prism-petal@arcane":["ingredients-arcane-natural",310,124,42,38,24,37],"quarrycap@arcane":["ingredients-arcane-natural",354,124,42,38,23,33],"radiant-sunbloom@arcane":["ingredients-arcane-natural",398,124,42,38,23,37],"reedcap@arcane":["ingredients-arcane-natural",442,124,42,38,23,33],"rimefeather@arcane":["ingredients-arcane-natural",2,164,42,38,22,37],"riverlotus@arcane":["ingredients-arcane-natural",46,164,42,38,23,37],"shadefruit@arcane":["ingredients-arcane-natural",90,164,42,38,22,37],"silverleaf@arcane":["ingredients-arcane-natural",134,164,42,38,21,35],"sporelantern@arcane":["ingredients-arcane-natural",178,164,42,38,21,37],"stagthorn-vine@arcane":["ingredients-arcane-natural",222,164,42,38,21,37],"stoneberry@arcane":["ingredients-arcane-natural",310,2,42,40,23,39],"stonewort@arcane":["ingredients-arcane-natural",266,164,42,38,24,37],"streampearl@arcane":["ingredients-arcane-natural",310,164,42,38,23,35],"sulfurvine@arcane":["ingredients-arcane-natural",354,164,42,38,21,37],"suncrown@arcane":["ingredients-arcane-natural",398,164,42,38,23,37],"thornhalo@arcane":["ingredients-arcane-natural",442,164,42,38,23,35],"tidebloom@arcane":["ingredients-arcane-natural",2,204,42,38,23,37],"titan-root@arcane":["ingredients-arcane-natural",354,2,42,40,22,39],"umbrabell@arcane":["ingredients-arcane-natural",46,204,42,38,23,35],"umbral-amethyst@arcane":["ingredients-arcane-natural",398,2,42,40,23,39],"venomlily@arcane":["ingredients-arcane-natural",90,204,42,38,23,37],"willowleaf@arcane":["ingredients-arcane-natural",134,204,42,38,22,35],"wraithvine@arcane":["ingredients-arcane-natural",178,204,42,38,21,37],"airstar":["ingredients-exotic-flora",2,2,32,38,16,37],"chronovine":["ingredients-exotic-flora",214,2,30,36,15,35],"coralberry":["ingredients-exotic-flora",478,2,28,34,14,33],"crownbloom":["ingredients-exotic-flora",246,42,38,28,19,27],"dreamberry":["ingredients-exotic-flora",2,42,28,34,14,33],"duskbell":["ingredients-exotic-flora",120,42,30,30,15,29],"epochbloom":["ingredients-exotic-flora",246,2,38,36,19,35],"featherpetal":["ingredients-exotic-flora",36,2,36,38,18,37],"formblossom":["ingredients-exotic-flora",74,2,36,38,18,37],"ghostbud":["ingredients-exotic-flora",112,2,32,38,16,37],"graftberry":["ingredients-exotic-flora",32,42,28,34,14,33],"hollowbloom":["ingredients-exotic-flora",286,42,38,28,19,27],"hourberry":["ingredients-exotic-flora",286,2,30,36,15,35],"moonlotus":["ingredients-exotic-flora",326,42,38,28,19,27],"moonreed":["ingredients-exotic-flora",366,42,38,28,19,27],"moonveil-bloom":["ingredients-exotic-flora",406,42,38,28,19,27],"morphleaf":["ingredients-exotic-flora",318,2,30,36,15,35],"pendulum-pods":["ingredients-exotic-flora",350,2,30,36,15,35],"polymorph-lotus":["ingredients-exotic-flora",446,42,38,28,19,27],"reefbud":["ingredients-exotic-flora",146,2,32,38,16,37],"shellfern":["ingredients-exotic-flora",382,2,30,36,15,35],"shifting-root":["ingredients-exotic-flora",152,42,28,30,14,29],"shroud-orchid":["ingredients-exotic-flora",182,42,30,30,15,29],"skyberry":["ingredients-exotic-flora",62,42,28,34,14,33],"skyspray":["ingredients-exotic-flora",150,78,30,26,15,25],"splice-bud":["ingredients-exotic-flora",180,2,32,38,16,37],"starfall-lotus":["ingredients-exotic-flora",2,78,38,28,19,27],"timeweed":["ingredients-exotic-flora",42,78,34,28,17,27],"twinsprout":["ingredients-exotic-flora",78,78,30,28,15,27],"updraft-seedwing":["ingredients-exotic-flora",92,42,26,34,13,33],"veilberry":["ingredients-exotic-flora",414,2,30,36,15,35],"veilfern":["ingredients-exotic-flora",214,42,30,30,15,29],"windfern":["ingredients-exotic-flora",446,2,30,36,15,35],"zephyr-starbloom":["ingredients-exotic-flora",110,78,38,28,19,27],"aeon-circlet":["ingredients-exotic-fungi-minerals",432,2,34,30,17,29],"chronoglass-shard":["ingredients-exotic-fungi-minerals",2,2,34,40,17,39],"cloudcap":["ingredients-exotic-fungi-minerals",74,44,34,26,17,25],"cloudprism":["ingredients-exotic-fungi-minerals",38,2,34,40,17,39],"eclipse-eye":["ingredients-exotic-fungi-minerals",110,44,38,26,19,25],"fenmilk-cap":["ingredients-exotic-fungi-minerals",346,44,34,24,17,23],"ghostcrown-coral":["ingredients-exotic-fungi-minerals",208,2,36,34,18,33],"ghostglass-coral":["ingredients-exotic-fungi-minerals",246,2,36,34,18,33],"glasscap":["ingredients-exotic-fungi-minerals",382,44,34,24,17,23],"hollowcap":["ingredients-exotic-fungi-minerals",150,44,34,26,17,25],"hourglass-of-ages":["ingredients-exotic-fungi-minerals",182,2,24,36,12,35],"mimic-eye":["ingredients-exotic-fungi-minerals",186,44,38,26,19,25],"mirepod-shell":["ingredients-exotic-fungi-minerals",226,44,38,26,19,25],"mistpebble":["ingredients-exotic-fungi-minerals",468,2,38,30,19,29],"pearlshell":["ingredients-exotic-fungi-minerals",266,44,38,26,19,25],"phantom-pearl":["ingredients-exotic-fungi-minerals",306,44,38,26,19,25],"reefmoss":["ingredients-exotic-fungi-minerals",284,2,36,34,18,33],"sandskirt-cap":["ingredients-exotic-fungi-minerals",418,44,34,24,17,23],"shapecap":["ingredients-exotic-fungi-minerals",38,44,34,28,17,27],"skyshard-geode":["ingredients-exotic-fungi-minerals",74,2,34,40,17,39],"sleepglass":["ingredients-exotic-fungi-minerals",110,2,34,40,17,39],"spectral-anemone":["ingredients-exotic-fungi-minerals",322,2,36,34,18,33],"sundial-stone":["ingredients-exotic-fungi-minerals",360,2,34,34,17,33],"veil-circlet":["ingredients-exotic-fungi-minerals",2,44,34,30,17,29],"veilglass":["ingredients-exotic-fungi-minerals",146,2,34,40,17,39],"wisp-reliquary":["ingredients-exotic-fungi-minerals",396,2,34,34,17,33],"ashcactus":["ingredients-natural-flora",34,80,30,28,15,27],"brightberry":["ingredients-natural-flora",164,42,28,34,14,33],"bubbleberry":["ingredients-natural-flora",194,42,28,34,14,33],"dawnblossom":["ingredients-natural-flora",2,2,32,38,16,37],"dewpear":["ingredients-natural-flora",340,42,20,30,10,29],"emberleaf":["ingredients-natural-flora",396,2,30,36,15,35],"eternal-rose":["ingredients-natural-flora",224,42,28,34,14,33],"everburning-sunheart":["ingredients-natural-flora",36,2,38,38,19,37],"everfrost-pearlbloom":["ingredients-natural-flora",66,80,38,28,19,27],"firebramble":["ingredients-natural-flora",428,2,30,36,15,35],"flamecrest":["ingredients-natural-flora",76,2,32,38,16,37],"frostlotus":["ingredients-natural-flora",106,80,38,28,19,27],"goldenrush":["ingredients-natural-flora",146,80,38,28,19,27],"heartberry":["ingredients-natural-flora",312,42,26,32,13,31],"heartwood-mandrake":["ingredients-natural-flora",362,42,28,30,14,29],"honeyclover":["ingredients-natural-flora",110,2,34,38,17,37],"ironbloom":["ingredients-natural-flora",186,80,38,28,19,27],"lovelace-orchid":["ingredients-natural-flora",392,42,30,30,15,29],"meadow-daisy":["ingredients-natural-flora",146,2,34,38,17,37],"mossback-bark":["ingredients-natural-flora",424,42,32,30,16,29],"nightbloom-lotus":["ingredients-natural-flora",226,80,38,28,19,27],"phoenix-heartseed":["ingredients-natural-flora",254,42,26,34,13,33],"prism-petal":["ingredients-natural-flora",182,2,32,38,16,37],"radiant-sunbloom":["ingredients-natural-flora",216,2,38,38,19,37],"rimefeather":["ingredients-natural-flora",266,80,32,28,16,27],"riverlotus":["ingredients-natural-flora",300,80,38,28,19,27],"shadefruit":["ingredients-natural-flora",282,42,28,34,14,33],"silverleaf":["ingredients-natural-flora",458,42,30,30,15,29],"sporelantern":["ingredients-natural-flora",460,2,30,36,15,35],"stagthorn-vine":["ingredients-natural-flora",2,42,30,36,15,35],"stoneberry":["ingredients-natural-flora",34,42,30,36,15,35],"stonewort":["ingredients-natural-flora",256,2,32,38,16,37],"sulfurvine":["ingredients-natural-flora",66,42,30,36,15,35],"suncrown":["ingredients-natural-flora",290,2,38,38,19,37],"tidebloom":["ingredients-natural-flora",340,80,38,28,19,27],"titan-root":["ingredients-natural-flora",330,2,28,38,14,37],"umbrabell":["ingredients-natural-flora",2,80,30,30,15,29],"venomlily":["ingredients-natural-flora",360,2,34,38,17,37],"willowleaf":["ingredients-natural-flora",98,42,32,36,16,35],"wraithvine":["ingredients-natural-flora",132,42,30,36,15,35],"ammonite-coil":["ingredients-natural-fungi-minerals",218,2,38,30,19,29],"blazestone":["ingredients-natural-fungi-minerals",2,2,34,40,17,39],"cinderpod":["ingredients-natural-fungi-minerals",258,2,38,30,19,29],"cindershroom":["ingredients-natural-fungi-minerals",74,44,34,26,17,25],"emberheart-geode":["ingredients-natural-fungi-minerals",38,2,34,40,17,39],"everbloom-chalice":["ingredients-natural-fungi-minerals",150,44,32,24,16,23],"ferric-crystal":["ingredients-natural-fungi-minerals",74,2,34,40,17,39],"gloommoss":["ingredients-natural-fungi-minerals",450,2,34,28,17,27],"gravelpod":["ingredients-natural-fungi-minerals",298,2,38,30,19,29],"hearthnut":["ingredients-natural-fungi-minerals",338,2,38,30,19,29],"honeycap":["ingredients-natural-fungi-minerals",2,44,34,28,17,27],"meadowcrystal":["ingredients-natural-fungi-minerals",110,2,34,40,17,39],"nethercap":["ingredients-natural-fungi-minerals",38,44,34,28,17,27],"nixie-torc":["ingredients-natural-fungi-minerals",378,2,34,30,17,29],"orebud":["ingredients-natural-fungi-minerals",146,2,34,40,17,39],"quarrycap":["ingredients-natural-fungi-minerals",184,44,34,24,17,23],"reedcap":["ingredients-natural-fungi-minerals",220,44,34,24,17,23],"streampearl":["ingredients-natural-fungi-minerals",110,44,38,26,19,25],"thornhalo":["ingredients-natural-fungi-minerals",414,2,34,30,17,29],"umbral-amethyst":["ingredients-natural-fungi-minerals",182,2,34,40,17,39],"aeon-circlet@seed":["seeds",208,130,10,12,5,11],"aeon-circlet@seed-arcane":["seeds",49,2,15,18,7,17],"airstar@seed":["seeds",200,159,9,11,4,10],"airstar@seed-arcane":["seeds",19,24,14,17,7,16],"ammonite-coil@seed":["seeds",220,130,10,12,5,11],"ammonite-coil@seed-arcane":["seeds",66,2,15,18,7,17],"ashcactus@seed":["seeds",211,159,9,11,4,10],"ashcactus@seed-arcane":["seeds",224,99,14,13,7,12],"blazestone@seed":["seeds",232,130,10,12,5,11],"blazestone@seed-arcane":["seeds",83,2,12,18,6,17],"brightberry@seed":["seeds",87,212,11,9,5,8],"brightberry@seed-arcane":["seeds",24,81,16,15,8,14],"bubbleberry@seed":["seeds",100,212,11,9,5,8],"bubbleberry@seed-arcane":["seeds",2,145,16,12,8,11],"chronoglass-shard@seed":["seeds",20,145,10,12,5,11],"chronoglass-shard@seed-arcane":["seeds",97,2,15,18,7,17],"chronovine@seed":["seeds",35,199,15,10,7,9],"chronovine@seed-arcane":["seeds",2,115,20,13,10,12],"cinderpod@seed":["seeds",32,145,10,12,5,11],"cinderpod@seed-arcane":["seeds",215,81,15,14,7,13],"cindershroom@seed":["seeds",52,199,11,10,5,9],"cindershroom@seed-arcane":["seeds",205,44,13,16,6,15],"cloudcap@seed":["seeds",65,199,11,10,5,9],"cloudcap@seed-arcane":["seeds",44,145,16,12,8,11],"cloudprism@seed":["seeds",62,145,10,12,5,11],"cloudprism@seed-arcane":["seeds",114,2,15,18,7,17],"coralberry@seed":["seeds",113,212,11,9,5,8],"coralberry@seed-arcane":["seeds",24,115,16,13,8,12],"crownbloom@seed":["seeds",222,159,9,11,4,10],"crownbloom@seed-arcane":["seeds",42,115,14,13,7,12],"dawnblossom@seed":["seeds",233,159,9,11,4,10],"dawnblossom@seed-arcane":["seeds",35,24,11,17,5,16],"dewpear@seed":["seeds",126,212,11,9,5,8],"dewpear@seed-arcane":["seeds",42,81,16,15,8,14],"dreamberry@seed":["seeds",139,212,11,9,5,8],"dreamberry@seed-arcane":["seeds",60,81,13,15,6,14],"duskbell@seed":["seeds",244,159,9,11,4,10],"duskbell@seed-arcane":["seeds",58,115,14,13,7,12],"eclipse-eye@seed":["seeds",74,145,10,12,5,11],"eclipse-eye@seed-arcane":["seeds",232,81,15,14,7,13],"emberheart-geode@seed":["seeds",86,145,10,12,5,11],"emberheart-geode@seed-arcane":["seeds",2,99,15,14,7,13],"emberleaf@seed":["seeds",2,173,9,11,4,10],"emberleaf@seed-arcane":["seeds",74,115,14,13,7,12],"epochbloom@seed":["seeds",13,173,9,11,4,10],"epochbloom@seed-arcane":["seeds",48,24,14,17,7,16],"eternal-rose@seed":["seeds",24,173,9,11,4,10],"eternal-rose@seed-arcane":["seeds",90,115,14,13,7,12],"everbloom-chalice@seed":["seeds",78,199,11,10,5,9],"everbloom-chalice@seed-arcane":["seeds",220,44,16,16,8,15],"everburning-sunheart@seed":["seeds",35,173,9,11,4,10],"everburning-sunheart@seed-arcane":["seeds",64,24,11,17,5,16],"everfrost-pearlbloom@seed":["seeds",46,173,9,11,4,10],"everfrost-pearlbloom@seed-arcane":["seeds",77,24,11,17,5,16],"featherpetal@seed":["seeds",57,173,9,11,4,10],"featherpetal@seed-arcane":["seeds",106,115,14,13,7,12],"fenmilk-cap@seed":["seeds",91,199,11,10,5,9],"fenmilk-cap@seed-arcane":["seeds",98,145,16,12,8,11],"ferric-crystal@seed":["seeds",116,145,10,12,5,11],"ferric-crystal@seed-arcane":["seeds",19,99,15,14,7,13],"firebramble@seed":["seeds",152,212,11,9,5,8],"firebramble@seed-arcane":["seeds",128,145,16,12,8,11],"flamecrest@seed":["seeds",68,173,9,11,4,10],"flamecrest@seed-arcane":["seeds",122,115,14,13,7,12],"formblossom@seed":["seeds",79,173,9,11,4,10],"formblossom@seed-arcane":["seeds",138,115,14,13,7,12],"frostlotus@seed":["seeds",90,173,9,11,4,10],"frostlotus@seed-arcane":["seeds",90,24,14,17,7,16],"ghostbud@seed":["seeds",101,173,9,11,4,10],"ghostbud@seed-arcane":["seeds",106,24,14,17,7,16],"ghostcrown-coral@seed":["seeds",154,115,9,13,4,12],"ghostcrown-coral@seed-arcane":["seeds",20,2,11,19,5,18],"ghostglass-coral@seed":["seeds",165,115,9,13,4,12],"ghostglass-coral@seed-arcane":["seeds",33,2,14,19,7,18],"glasscap@seed":["seeds",104,199,11,10,5,9],"glasscap@seed-arcane":["seeds",238,44,13,16,6,15],"gloommoss@seed":["seeds",117,199,11,10,5,9],"gloommoss@seed-arcane":["seeds",2,63,16,16,8,15],"goldenrush@seed":["seeds",112,173,11,11,5,10],"goldenrush@seed-arcane":["seeds",176,115,16,13,8,12],"graftberry@seed":["seeds",165,212,11,9,5,8],"graftberry@seed-arcane":["seeds",146,145,16,12,8,11],"gravelpod@seed":["seeds",164,145,10,12,5,11],"gravelpod@seed-arcane":["seeds",131,2,15,18,7,17],"heartberry@seed":["seeds",178,212,11,9,5,8],"heartberry@seed-arcane":["seeds",176,145,16,12,8,11],"hearthnut@seed":["seeds",194,145,10,12,5,11],"hearthnut@seed-arcane":["seeds",148,2,15,18,7,17],"heartwood-mandrake@seed":["seeds",36,99,11,14,5,13],"heartwood-mandrake@seed-arcane":["seeds",20,63,16,16,8,15],"hollowbloom@seed":["seeds",125,173,9,11,4,10],"hollowbloom@seed-arcane":["seeds",194,115,14,13,7,12],"hollowcap@seed":["seeds",130,199,11,10,5,9],"hollowcap@seed-arcane":["seeds",38,63,16,16,8,15],"honeycap@seed":["seeds",143,199,11,10,5,9],"honeycap@seed-arcane":["seeds",56,63,16,16,8,15],"honeyclover@seed":["seeds",136,173,9,11,4,10],"honeyclover@seed-arcane":["seeds",210,115,14,13,7,12],"hourberry@seed":["seeds",191,212,11,9,5,8],"hourberry@seed-arcane":["seeds",206,145,16,12,8,11],"hourglass-of-ages@seed":["seeds",224,145,10,12,5,11],"hourglass-of-ages@seed-arcane":["seeds",49,99,15,14,7,13],"ironbloom@seed":["seeds",147,173,9,11,4,10],"ironbloom@seed-arcane":["seeds",226,115,14,13,7,12],"lovelace-orchid@seed":["seeds",158,173,9,11,4,10],"lovelace-orchid@seed-arcane":["seeds",122,24,11,17,5,16],"meadow-daisy@seed":["seeds",169,173,9,11,4,10],"meadow-daisy@seed-arcane":["seeds",2,130,14,13,7,12],"meadowcrystal@seed":["seeds",236,145,10,12,5,11],"meadowcrystal@seed-arcane":["seeds",165,2,15,18,7,17],"mimic-eye@seed":["seeds",2,159,10,12,5,11],"mimic-eye@seed-arcane":["seeds",66,99,15,14,7,13],"mirepod-shell@seed":["seeds",204,212,13,9,6,8],"mirepod-shell@seed-arcane":["seeds",75,81,18,15,9,14],"mistpebble@seed":["seeds",14,159,10,12,5,11],"mistpebble@seed-arcane":["seeds",83,99,15,14,7,13],"moonlotus@seed":["seeds",180,173,9,11,4,10],"moonlotus@seed-arcane":["seeds",18,130,14,13,7,12],"moonreed@seed":["seeds",191,173,11,11,5,10],"moonreed@seed-arcane":["seeds",135,24,16,17,8,16],"moonveil-bloom@seed":["seeds",204,173,9,11,4,10],"moonveil-bloom@seed-arcane":["seeds",153,24,14,17,7,16],"morphleaf@seed":["seeds",215,173,9,11,4,10],"morphleaf@seed-arcane":["seeds",169,24,14,17,7,16],"mossback-bark@seed":["seeds",100,99,11,14,5,13],"mossback-bark@seed-arcane":["seeds",2,2,16,20,8,19],"nethercap@seed":["seeds",156,199,11,10,5,9],"nethercap@seed-arcane":["seeds",26,159,16,12,8,11],"nightbloom-lotus@seed":["seeds",226,173,9,11,4,10],"nightbloom-lotus@seed-arcane":["seeds",34,130,14,13,7,12],"nixie-torc@seed":["seeds",44,159,10,12,5,11],"nixie-torc@seed-arcane":["seeds",182,2,15,18,7,17],"orebud@seed":["seeds",56,159,10,12,5,11],"orebud@seed-arcane":["seeds",199,2,15,18,7,17],"pearlshell@seed":["seeds",219,212,13,9,6,8],"pearlshell@seed-arcane":["seeds",2,186,18,11,9,10],"pendulum-pods@seed":["seeds",169,199,15,10,7,9],"pendulum-pods@seed-arcane":["seeds",74,63,20,16,10,15],"phantom-pearl@seed":["seeds",234,212,13,9,6,8],"phantom-pearl@seed-arcane":["seeds",95,81,15,15,7,14],"phoenix-heartseed@seed":["seeds",186,199,15,10,7,9],"phoenix-heartseed@seed-arcane":["seeds",96,63,20,16,10,15],"polymorph-lotus@seed":["seeds",22,186,9,11,4,10],"polymorph-lotus@seed-arcane":["seeds",185,24,11,17,5,16],"prism-petal@seed":["seeds",33,186,9,11,4,10],"prism-petal@seed-arcane":["seeds",198,24,11,17,5,16],"quarrycap@seed":["seeds",203,199,11,10,5,9],"quarrycap@seed-arcane":["seeds",68,159,16,12,8,11],"radiant-sunbloom@seed":["seeds",44,186,9,11,4,10],"radiant-sunbloom@seed-arcane":["seeds",211,24,14,17,7,16],"reedcap@seed":["seeds",216,199,11,10,5,9],"reedcap@seed-arcane":["seeds",86,159,16,12,8,11],"reefbud@seed":["seeds",55,186,9,11,4,10],"reefbud@seed-arcane":["seeds",227,24,14,17,7,16],"reefmoss@seed":["seeds",50,130,9,13,4,12],"reefmoss@seed-arcane":["seeds",112,81,14,15,7,14],"rimefeather@seed":["seeds",66,186,11,11,5,10],"rimefeather@seed-arcane":["seeds",2,44,13,17,6,16],"riverlotus@seed":["seeds",79,186,9,11,4,10],"riverlotus@seed-arcane":["seeds",17,44,14,17,7,16],"sandskirt-cap@seed":["seeds",229,199,11,10,5,9],"sandskirt-cap@seed-arcane":["seeds",118,63,16,16,8,15],"shadefruit@seed":["seeds",2,224,11,9,5,8],"shadefruit@seed-arcane":["seeds",128,81,16,15,8,14],"shapecap@seed":["seeds",242,199,11,10,5,9],"shapecap@seed-arcane":["seeds",136,63,16,16,8,15],"shellfern@seed":["seeds",90,186,9,11,4,10],"shellfern@seed-arcane":["seeds",33,44,14,17,7,16],"shifting-root@seed":["seeds",113,99,11,14,5,13],"shifting-root@seed-arcane":["seeds",154,63,16,16,8,15],"shroud-orchid@seed":["seeds",101,186,9,11,4,10],"shroud-orchid@seed-arcane":["seeds",61,130,14,13,7,12],"silverleaf@seed":["seeds",112,186,9,11,4,10],"silverleaf@seed-arcane":["seeds",77,130,14,13,7,12],"skyberry@seed":["seeds",15,224,11,9,5,8],"skyberry@seed-arcane":["seeds",146,81,13,15,6,14],"skyshard-geode@seed":["seeds",104,159,10,12,5,11],"skyshard-geode@seed-arcane":["seeds",216,2,15,18,7,17],"skyspray@seed":["seeds",123,186,9,11,4,10],"skyspray@seed-arcane":["seeds",49,44,14,17,7,16],"sleepglass@seed":["seeds",116,159,10,12,5,11],"sleepglass@seed-arcane":["seeds",126,99,15,14,7,13],"spectral-anemone@seed":["seeds",93,130,9,13,4,12],"spectral-anemone@seed-arcane":["seeds",161,81,14,15,7,14],"splice-bud@seed":["seeds",134,186,9,11,4,10],"splice-bud@seed-arcane":["seeds",65,44,14,17,7,16],"sporelantern@seed":["seeds",2,212,15,10,7,9],"sporelantern@seed-arcane":["seeds",104,130,20,13,10,12],"stagthorn-vine@seed":["seeds",19,212,15,10,7,9],"stagthorn-vine@seed-arcane":["seeds",172,63,17,16,8,15],"starfall-lotus@seed":["seeds",145,186,9,11,4,10],"starfall-lotus@seed-arcane":["seeds",126,130,14,13,7,12],"stoneberry@seed":["seeds",28,224,11,9,5,8],"stoneberry@seed-arcane":["seeds",177,81,16,15,8,14],"stonewort@seed":["seeds",156,186,9,11,4,10],"stonewort@seed-arcane":["seeds",81,44,14,17,7,16],"streampearl@seed":["seeds",41,224,13,9,6,8],"streampearl@seed-arcane":["seeds",195,81,18,15,9,14],"sulfurvine@seed":["seeds",36,212,15,10,7,9],"sulfurvine@seed-arcane":["seeds",191,63,20,16,10,15],"suncrown@seed":["seeds",167,186,9,11,4,10],"suncrown@seed-arcane":["seeds",97,44,14,17,7,16],"sundial-stone@seed":["seeds",128,159,10,12,5,11],"sundial-stone@seed-arcane":["seeds",143,99,15,14,7,13],"thornhalo@seed":["seeds",140,159,10,12,5,11],"thornhalo@seed-arcane":["seeds",233,2,15,18,7,17],"tidebloom@seed":["seeds",178,186,9,11,4,10],"tidebloom@seed-arcane":["seeds",113,44,11,17,5,16],"timeweed@seed":["seeds",189,186,11,11,5,10],"timeweed@seed-arcane":["seeds",126,44,16,17,8,16],"titan-root@seed":["seeds",160,99,11,14,5,13],"titan-root@seed-arcane":["seeds",213,63,16,16,8,15],"twinsprout@seed":["seeds",202,186,9,11,4,10],"twinsprout@seed-arcane":["seeds",144,44,14,17,7,16],"umbrabell@seed":["seeds",213,186,9,11,4,10],"umbrabell@seed-arcane":["seeds",160,44,14,17,7,16],"umbral-amethyst@seed":["seeds",152,159,10,12,5,11],"umbral-amethyst@seed-arcane":["seeds",173,99,15,14,7,13],"updraft-seedwing@seed":["seeds",53,212,15,10,7,9],"updraft-seedwing@seed-arcane":["seeds",231,63,17,16,8,15],"veil-circlet@seed":["seeds",164,159,10,12,5,11],"veil-circlet@seed-arcane":["seeds",2,24,15,18,7,17],"veilberry@seed":["seeds",56,224,11,9,5,8],"veilberry@seed-arcane":["seeds",142,130,16,13,8,12],"veilfern@seed":["seeds",224,186,9,11,4,10],"veilfern@seed-arcane":["seeds",160,130,14,13,7,12],"veilglass@seed":["seeds",176,159,10,12,5,11],"veilglass@seed-arcane":["seeds",190,99,15,14,7,13],"venomlily@seed":["seeds",235,186,9,11,4,10],"venomlily@seed-arcane":["seeds",176,130,14,13,7,12],"willowleaf@seed":["seeds",2,199,9,11,4,10],"willowleaf@seed-arcane":["seeds",176,44,11,17,5,16],"windfern@seed":["seeds",13,199,9,11,4,10],"windfern@seed-arcane":["seeds",192,130,14,13,7,12],"wisp-reliquary@seed":["seeds",188,159,10,12,5,11],"wisp-reliquary@seed-arcane":["seeds",207,99,15,14,7,13],"wraithvine@seed":["seeds",70,212,15,10,7,9],"wraithvine@seed-arcane":["seeds",2,81,20,16,10,15],"zephyr-starbloom@seed":["seeds",24,199,9,11,4,10],"zephyr-starbloom@seed-arcane":["seeds",189,44,14,17,7,16]};
 return { ATLAS_VERSION, ATLASES, SPECIES_ASSETS, FRAMES };
 })();
+// src/visual/ingredient-icons.js
+const __m53 = (() => {
+const ICON_SHEET = 'assets/ingredients/icons.png';
+const ICON_BOXES = {
+'silverleaf': [10, 8, 44, 47],
+'honeycap': [72, 9, 47, 45],
+'dawnblossom': [137, 8, 45, 47],
+'dewpear': [209, 8, 30, 47],
+'heartwood-mandrake': [269, 8, 38, 47],
+'mossback-bark': [329, 9, 46, 45],
+'stagthorn-vine': [398, 7, 35, 48],
+'hearthnut': [457, 9, 46, 46],
+'heartberry': [520, 11, 47, 41],
+'everbloom-chalice': [584, 10, 47, 43],
+'meadow-daisy': [14, 72, 35, 47],
+'goldenrush': [80, 72, 31, 47],
+'brightberry': [140, 72, 40, 47],
+'honeyclover': [202, 72, 44, 47],
+'suncrown': [267, 72, 42, 47],
+'meadowcrystal': [333, 72, 37, 47],
+'prism-petal': [392, 73, 47, 45],
+'lovelace-orchid': [460, 72, 39, 47],
+'radiant-sunbloom': [523, 72, 42, 47],
+'eternal-rose': [585, 72, 45, 47],
+'willowleaf': [11, 137, 42, 45],
+'reedcap': [72, 137, 47, 45],
+'riverlotus': [136, 138, 47, 44],
+'bubbleberry': [203, 136, 40, 47],
+'tidebloom': [264, 138, 47, 43],
+'streampearl': [340, 136, 24, 24],
+'frostlotus': [392, 138, 47, 44],
+'rimefeather': [458, 136, 44, 47],
+'nixie-torc': [527, 140, 34, 35],
+'everfrost-pearlbloom': [584, 138, 47, 44],
+'stonewort': [10, 202, 45, 44],
+'quarrycap': [72, 201, 47, 45],
+'ironbloom': [142, 201, 35, 46],
+'stoneberry': [203, 200, 40, 47],
+'orebud': [270, 200, 35, 47],
+'ferric-crystal': [338, 200, 28, 47],
+'gravelpod': [392, 203, 47, 43],
+'ammonite-coil': [456, 203, 47, 42],
+'emberheart-geode': [530, 200, 28, 47],
+'titan-root': [590, 200, 35, 46],
+'nethercap': [10, 264, 44, 47],
+'gloommoss': [72, 264, 47, 47],
+'umbrabell': [140, 264, 39, 47],
+'shadefruit': [200, 265, 47, 46],
+'sporelantern': [269, 264, 37, 47],
+'wraithvine': [331, 264, 41, 47],
+'nightbloom-lotus': [392, 266, 47, 44],
+'umbral-amethyst': [458, 264, 43, 47],
+'thornhalo': [524, 265, 40, 38],
+'venomlily': [585, 264, 45, 47],
+'emberleaf': [10, 328, 44, 47],
+'cindershroom': [72, 330, 47, 44],
+'firebramble': [136, 331, 47, 41],
+'sulfurvine': [203, 328, 41, 47],
+'flamecrest': [267, 328, 42, 47],
+'blazestone': [338, 328, 28, 47],
+'phoenix-heartseed': [395, 328, 41, 47],
+'ashcactus': [458, 330, 45, 44],
+'everburning-sunheart': [525, 328, 37, 47],
+'cinderpod': [584, 331, 47, 43],
+'moonreed': [8, 394, 45, 44],
+'fenmilk-cap': [74, 392, 44, 46],
+'duskbell': [140, 392, 39, 47],
+'dreamberry': [200, 393, 47, 46],
+'moonlotus': [264, 394, 47, 44],
+'sleepglass': [330, 392, 43, 47],
+'moonveil-bloom': [393, 392, 45, 47],
+'mirepod-shell': [456, 395, 47, 42],
+'wisp-reliquary': [529, 398, 30, 34],
+'starfall-lotus': [584, 394, 47, 44],
+'skyspray': [16, 456, 31, 47],
+'cloudcap': [74, 456, 44, 47],
+'airstar': [139, 456, 42, 47],
+'skyberry': [204, 456, 40, 47],
+'updraft-seedwing': [264, 457, 47, 45],
+'zephyr-starbloom': [331, 456, 42, 47],
+'featherpetal': [392, 457, 47, 45],
+'skyshard-geode': [456, 457, 47, 45],
+'windfern': [528, 456, 32, 47],
+'cloudprism': [586, 456, 43, 47],
+'morphleaf': [11, 521, 42, 45],
+'shapecap': [74, 520, 44, 47],
+'twinsprout': [138, 520, 44, 47],
+'graftberry': [207, 520, 33, 47],
+'formblossom': [265, 520, 45, 47],
+'mimic-eye': [330, 531, 45, 26],
+'crownbloom': [392, 524, 47, 39],
+'shifting-root': [463, 520, 33, 47],
+'splice-bud': [524, 520, 39, 47],
+'polymorph-lotus': [584, 522, 47, 44],
+'veilfern': [16, 584, 32, 47],
+'hollowcap': [74, 584, 44, 47],
+'ghostbud': [140, 584, 39, 47],
+'veilberry': [200, 585, 47, 46],
+'hollowbloom': [265, 584, 45, 47],
+'veilglass': [330, 584, 43, 47],
+'shroud-orchid': [395, 584, 42, 47],
+'mistpebble': [457, 590, 46, 36],
+'eclipse-eye': [522, 597, 45, 23],
+'veil-circlet': [592, 587, 33, 36],
+'reefmoss': [15, 648, 34, 47],
+'glasscap': [72, 649, 47, 45],
+'coralberry': [139, 648, 40, 47],
+'reefbud': [204, 648, 39, 47],
+'ghostglass-coral': [271, 648, 34, 47],
+'pearlshell': [340, 648, 24, 24],
+'spectral-anemone': [396, 648, 39, 47],
+'shellfern': [458, 648, 44, 47],
+'phantom-pearl': [532, 648, 24, 24],
+'ghostcrown-coral': [588, 648, 39, 47],
+'timeweed': [16, 712, 31, 47],
+'sandskirt-cap': [72, 713, 47, 45],
+'hourberry': [140, 712, 40, 47],
+'chronovine': [205, 711, 38, 48],
+'epochbloom': [267, 712, 42, 47],
+'chronoglass-shard': [333, 712, 37, 47],
+'pendulum-pods': [395, 712, 41, 47],
+'sundial-stone': [462, 721, 36, 33],
+'aeon-circlet': [528, 720, 33, 31],
+'hourglass-of-ages': [595, 718, 27, 37],
+};
+const PLANT_SHEET = 'ingredient-plants.png';
+const PLANT_BOXES = {
+'silverleaf': {"mature": [0, 0, 28, 30], "ripe": [34, 0, 22, 23], "sprout": [68, 0, 14, 15]},
+'honeycap': {"mature": [102, 0, 30, 29], "ripe": [136, 0, 23, 22], "sprout": [170, 0, 15, 14]},
+'dawnblossom': {"mature": [204, 0, 29, 30], "ripe": [238, 0, 22, 23], "sprout": [272, 0, 14, 15]},
+'dewpear': {"mature": [306, 0, 19, 30], "ripe": [340, 0, 15, 23], "sprout": [374, 0, 10, 14]},
+'heartwood-mandrake': {"mature": [408, 0, 24, 30], "ripe": [442, 0, 19, 23], "sprout": [476, 0, 10, 14]},
+'mossback-bark': {"mature": [510, 0, 30, 29], "ripe": [544, 0, 23, 23], "sprout": [578, 0, 15, 15]},
+'stagthorn-vine': {"mature": [612, 0, 22, 29], "ripe": [646, 0, 17, 23], "sprout": [680, 0, 10, 13]},
+'hearthnut': {"mature": [714, 0, 30, 30], "ripe": [748, 0, 23, 23], "sprout": [782, 0, 15, 15]},
+'heartberry': {"mature": [816, 0, 30, 26], "ripe": [850, 0, 23, 20], "sprout": [884, 0, 15, 13]},
+'everbloom-chalice': {"mature": [918, 0, 30, 28], "ripe": [952, 0, 23, 21], "sprout": [986, 0, 15, 14]},
+'meadow-daisy': {"mature": [0, 34, 23, 30], "ripe": [34, 34, 17, 23], "sprout": [68, 34, 12, 15]},
+'goldenrush': {"mature": [102, 34, 20, 30], "ripe": [136, 34, 16, 23], "sprout": [170, 34, 10, 14]},
+'brightberry': {"mature": [204, 34, 26, 30], "ripe": [238, 34, 20, 23], "sprout": [272, 34, 13, 15]},
+'honeyclover': {"mature": [306, 34, 28, 30], "ripe": [340, 34, 22, 23], "sprout": [374, 34, 14, 15]},
+'suncrown': {"mature": [408, 34, 27, 30], "ripe": [442, 34, 21, 23], "sprout": [476, 34, 14, 15]},
+'meadowcrystal': {"mature": [510, 34, 24, 30], "ripe": [544, 34, 18, 23], "sprout": [578, 34, 12, 15]},
+'prism-petal': {"mature": [612, 34, 30, 29], "ripe": [646, 34, 23, 22], "sprout": [680, 34, 15, 14]},
+'lovelace-orchid': {"mature": [714, 34, 25, 30], "ripe": [748, 34, 19, 23], "sprout": [782, 34, 13, 15]},
+'radiant-sunbloom': {"mature": [816, 34, 27, 30], "ripe": [850, 34, 21, 23], "sprout": [884, 34, 14, 15]},
+'eternal-rose': {"mature": [918, 34, 29, 30], "ripe": [952, 34, 22, 23], "sprout": [986, 34, 14, 15]},
+'willowleaf': {"mature": [0, 68, 28, 30], "ripe": [34, 68, 22, 23], "sprout": [68, 68, 14, 15]},
+'reedcap': {"mature": [102, 68, 30, 29], "ripe": [136, 68, 23, 22], "sprout": [170, 68, 15, 14]},
+'riverlotus': {"mature": [204, 68, 30, 28], "ripe": [238, 68, 23, 21], "sprout": [272, 68, 14, 13]},
+'bubbleberry': {"mature": [306, 68, 26, 30], "ripe": [340, 68, 20, 23], "sprout": [374, 68, 13, 15]},
+'tidebloom': {"mature": [408, 68, 30, 28], "ripe": [442, 68, 23, 21], "sprout": [476, 68, 15, 14]},
+'streampearl': {"mature": [510, 68, 24, 24], "ripe": [544, 68, 23, 23], "sprout": [578, 68, 15, 15]},
+'frostlotus': {"mature": [612, 68, 30, 28], "ripe": [646, 68, 23, 21], "sprout": [680, 68, 14, 13]},
+'rimefeather': {"mature": [714, 68, 28, 30], "ripe": [748, 68, 22, 23], "sprout": [782, 68, 14, 15]},
+'nixie-torc': {"mature": [816, 68, 29, 30], "ripe": [850, 68, 22, 23], "sprout": [884, 68, 15, 15]},
+'everfrost-pearlbloom': {"mature": [918, 68, 30, 28], "ripe": [952, 68, 23, 21], "sprout": [986, 68, 14, 13]},
+'stonewort': {"mature": [0, 102, 30, 29], "ripe": [34, 102, 23, 23], "sprout": [68, 102, 15, 15]},
+'quarrycap': {"mature": [102, 102, 30, 29], "ripe": [136, 102, 23, 22], "sprout": [170, 102, 15, 14]},
+'ironbloom': {"mature": [204, 102, 23, 30], "ripe": [238, 102, 18, 23], "sprout": [272, 102, 12, 15]},
+'stoneberry': {"mature": [306, 102, 26, 30], "ripe": [340, 102, 20, 23], "sprout": [374, 102, 13, 15]},
+'orebud': {"mature": [408, 102, 23, 30], "ripe": [442, 102, 17, 23], "sprout": [476, 102, 12, 15]},
+'ferric-crystal': {"mature": [510, 102, 18, 30], "ripe": [544, 102, 14, 23], "sprout": [578, 102, 10, 15]},
+'gravelpod': {"mature": [612, 102, 30, 28], "ripe": [646, 102, 23, 21], "sprout": [680, 102, 15, 14]},
+'ammonite-coil': {"mature": [714, 102, 30, 27], "ripe": [748, 102, 23, 21], "sprout": [782, 102, 15, 14]},
+'emberheart-geode': {"mature": [816, 102, 18, 30], "ripe": [850, 102, 14, 23], "sprout": [884, 102, 10, 15]},
+'titan-root': {"mature": [918, 102, 23, 30], "ripe": [952, 102, 18, 23], "sprout": [986, 102, 12, 12]},
+'nethercap': {"mature": [0, 136, 28, 30], "ripe": [34, 136, 22, 23], "sprout": [68, 136, 14, 15]},
+'gloommoss': {"mature": [102, 136, 30, 30], "ripe": [136, 136, 23, 23], "sprout": [170, 136, 15, 15]},
+'umbrabell': {"mature": [204, 136, 25, 30], "ripe": [238, 136, 19, 23], "sprout": [272, 136, 13, 15]},
+'shadefruit': {"mature": [306, 136, 30, 29], "ripe": [340, 136, 23, 23], "sprout": [374, 136, 15, 15]},
+'sporelantern': {"mature": [408, 136, 24, 30], "ripe": [442, 136, 18, 23], "sprout": [476, 136, 12, 14]},
+'wraithvine': {"mature": [510, 136, 26, 30], "ripe": [544, 136, 20, 23], "sprout": [578, 136, 13, 13]},
+'nightbloom-lotus': {"mature": [612, 136, 30, 28], "ripe": [646, 136, 23, 21], "sprout": [680, 136, 14, 13]},
+'umbral-amethyst': {"mature": [714, 136, 28, 30], "ripe": [748, 136, 21, 23], "sprout": [782, 136, 14, 15]},
+'thornhalo': {"mature": [816, 136, 30, 29], "ripe": [850, 136, 23, 22], "sprout": [884, 136, 15, 14]},
+'venomlily': {"mature": [918, 136, 29, 30], "ripe": [952, 136, 22, 23], "sprout": [986, 136, 14, 15]},
+'emberleaf': {"mature": [0, 170, 28, 30], "ripe": [34, 170, 22, 23], "sprout": [68, 170, 14, 15]},
+'cindershroom': {"mature": [102, 170, 30, 28], "ripe": [136, 170, 23, 22], "sprout": [170, 170, 15, 14]},
+'firebramble': {"mature": [204, 170, 30, 26], "ripe": [238, 170, 23, 20], "sprout": [272, 170, 15, 13]},
+'sulfurvine': {"mature": [306, 170, 26, 30], "ripe": [340, 170, 20, 23], "sprout": [374, 170, 13, 14]},
+'flamecrest': {"mature": [408, 170, 27, 30], "ripe": [442, 170, 21, 23], "sprout": [476, 170, 14, 15]},
+'blazestone': {"mature": [510, 170, 18, 30], "ripe": [544, 170, 14, 23], "sprout": [578, 170, 10, 15]},
+'phoenix-heartseed': {"mature": [612, 170, 26, 30], "ripe": [646, 170, 20, 23], "sprout": [680, 170, 13, 15]},
+'ashcactus': {"mature": [714, 170, 30, 29], "ripe": [748, 170, 23, 23], "sprout": [782, 170, 15, 15]},
+'everburning-sunheart': {"mature": [816, 170, 24, 30], "ripe": [850, 170, 18, 23], "sprout": [884, 170, 12, 15]},
+'cinderpod': {"mature": [918, 170, 30, 28], "ripe": [952, 170, 23, 21], "sprout": [986, 170, 15, 14]},
+'moonreed': {"mature": [0, 204, 30, 29], "ripe": [34, 204, 23, 23], "sprout": [68, 204, 15, 15]},
+'fenmilk-cap': {"mature": [102, 204, 29, 30], "ripe": [136, 204, 22, 23], "sprout": [170, 204, 14, 15]},
+'duskbell': {"mature": [204, 204, 25, 30], "ripe": [238, 204, 19, 23], "sprout": [272, 204, 13, 15]},
+'dreamberry': {"mature": [306, 204, 30, 29], "ripe": [340, 204, 23, 23], "sprout": [374, 204, 15, 15]},
+'moonlotus': {"mature": [408, 204, 30, 28], "ripe": [442, 204, 23, 21], "sprout": [476, 204, 14, 13]},
+'sleepglass': {"mature": [510, 204, 28, 30], "ripe": [544, 204, 21, 23], "sprout": [578, 204, 14, 15]},
+'moonveil-bloom': {"mature": [612, 204, 29, 30], "ripe": [646, 204, 22, 23], "sprout": [680, 204, 14, 15]},
+'mirepod-shell': {"mature": [714, 204, 30, 27], "ripe": [748, 204, 23, 21], "sprout": [782, 204, 15, 14]},
+'wisp-reliquary': {"mature": [816, 204, 26, 30], "ripe": [850, 204, 20, 23], "sprout": [884, 204, 13, 15]},
+'starfall-lotus': {"mature": [918, 204, 30, 28], "ripe": [952, 204, 23, 21], "sprout": [986, 204, 14, 13]},
+'skyspray': {"mature": [0, 238, 20, 30], "ripe": [34, 238, 16, 23], "sprout": [68, 238, 10, 14]},
+'cloudcap': {"mature": [102, 238, 28, 30], "ripe": [136, 238, 22, 23], "sprout": [170, 238, 14, 15]},
+'airstar': {"mature": [204, 238, 27, 30], "ripe": [238, 238, 21, 23], "sprout": [272, 238, 14, 15]},
+'skyberry': {"mature": [306, 238, 26, 30], "ripe": [340, 238, 20, 23], "sprout": [374, 238, 13, 15]},
+'updraft-seedwing': {"mature": [408, 238, 30, 29], "ripe": [442, 238, 23, 22], "sprout": [476, 238, 15, 14]},
+'zephyr-starbloom': {"mature": [510, 238, 27, 30], "ripe": [544, 238, 21, 23], "sprout": [578, 238, 14, 15]},
+'featherpetal': {"mature": [612, 238, 30, 29], "ripe": [646, 238, 23, 22], "sprout": [680, 238, 15, 14]},
+'skyshard-geode': {"mature": [714, 238, 30, 29], "ripe": [748, 238, 23, 22], "sprout": [782, 238, 15, 14]},
+'windfern': {"mature": [816, 238, 21, 30], "ripe": [850, 238, 16, 23], "sprout": [884, 238, 11, 15]},
+'cloudprism': {"mature": [918, 238, 28, 30], "ripe": [952, 238, 21, 23], "sprout": [986, 238, 14, 15]},
+'morphleaf': {"mature": [0, 272, 28, 30], "ripe": [34, 272, 22, 23], "sprout": [68, 272, 14, 15]},
+'shapecap': {"mature": [102, 272, 28, 30], "ripe": [136, 272, 22, 23], "sprout": [170, 272, 14, 15]},
+'twinsprout': {"mature": [204, 272, 28, 30], "ripe": [238, 272, 22, 23], "sprout": [272, 272, 14, 15]},
+'graftberry': {"mature": [306, 272, 21, 30], "ripe": [340, 272, 16, 23], "sprout": [374, 272, 11, 15]},
+'formblossom': {"mature": [408, 272, 29, 30], "ripe": [442, 272, 22, 23], "sprout": [476, 272, 14, 15]},
+'mimic-eye': {"mature": [510, 272, 30, 18], "ripe": [544, 272, 23, 14], "sprout": [578, 272, 15, 9]},
+'crownbloom': {"mature": [612, 272, 30, 25], "ripe": [646, 272, 23, 19], "sprout": [680, 272, 15, 13]},
+'shifting-root': {"mature": [714, 272, 21, 30], "ripe": [748, 272, 16, 23], "sprout": [782, 272, 11, 15]},
+'splice-bud': {"mature": [816, 272, 25, 30], "ripe": [850, 272, 19, 23], "sprout": [884, 272, 13, 15]},
+'polymorph-lotus': {"mature": [918, 272, 30, 28], "ripe": [952, 272, 23, 21], "sprout": [986, 272, 14, 13]},
+'veilfern': {"mature": [0, 306, 21, 30], "ripe": [34, 306, 16, 23], "sprout": [68, 306, 11, 15]},
+'hollowcap': {"mature": [102, 306, 28, 30], "ripe": [136, 306, 22, 23], "sprout": [170, 306, 14, 15]},
+'ghostbud': {"mature": [204, 306, 25, 30], "ripe": [238, 306, 19, 23], "sprout": [272, 306, 13, 15]},
+'veilberry': {"mature": [306, 306, 30, 29], "ripe": [340, 306, 23, 23], "sprout": [374, 306, 15, 15]},
+'hollowbloom': {"mature": [408, 306, 29, 30], "ripe": [442, 306, 22, 23], "sprout": [476, 306, 14, 15]},
+'veilglass': {"mature": [510, 306, 28, 30], "ripe": [544, 306, 21, 23], "sprout": [578, 306, 14, 15]},
+'shroud-orchid': {"mature": [612, 306, 27, 30], "ripe": [646, 306, 21, 23], "sprout": [680, 306, 14, 15]},
+'mistpebble': {"mature": [714, 306, 30, 24], "ripe": [748, 306, 23, 18], "sprout": [782, 306, 15, 12]},
+'eclipse-eye': {"mature": [816, 306, 30, 16], "ripe": [850, 306, 23, 12], "sprout": [884, 306, 14, 8]},
+'veil-circlet': {"mature": [918, 306, 28, 30], "ripe": [952, 306, 21, 23], "sprout": [986, 306, 14, 15]},
+'reefmoss': {"mature": [0, 340, 22, 30], "ripe": [34, 340, 17, 23], "sprout": [68, 340, 11, 15]},
+'glasscap': {"mature": [102, 340, 30, 29], "ripe": [136, 340, 23, 22], "sprout": [170, 340, 15, 14]},
+'coralberry': {"mature": [204, 340, 26, 30], "ripe": [238, 340, 20, 23], "sprout": [272, 340, 13, 15]},
+'reefbud': {"mature": [306, 340, 25, 30], "ripe": [340, 340, 19, 23], "sprout": [374, 340, 13, 15]},
+'ghostglass-coral': {"mature": [408, 340, 22, 30], "ripe": [442, 340, 17, 23], "sprout": [476, 340, 11, 15]},
+'pearlshell': {"mature": [510, 340, 24, 24], "ripe": [544, 340, 23, 23], "sprout": [578, 340, 15, 15]},
+'spectral-anemone': {"mature": [612, 340, 25, 30], "ripe": [646, 340, 19, 23], "sprout": [680, 340, 13, 15]},
+'shellfern': {"mature": [714, 340, 28, 30], "ripe": [748, 340, 22, 23], "sprout": [782, 340, 14, 15]},
+'phantom-pearl': {"mature": [816, 340, 24, 24], "ripe": [850, 340, 23, 23], "sprout": [884, 340, 15, 15]},
+'ghostcrown-coral': {"mature": [918, 340, 25, 30], "ripe": [952, 340, 19, 23], "sprout": [986, 340, 13, 15]},
+'timeweed': {"mature": [0, 374, 20, 30], "ripe": [34, 374, 16, 23], "sprout": [68, 374, 10, 14]},
+'sandskirt-cap': {"mature": [102, 374, 30, 29], "ripe": [136, 374, 23, 22], "sprout": [170, 374, 15, 14]},
+'hourberry': {"mature": [204, 374, 26, 30], "ripe": [238, 374, 20, 23], "sprout": [272, 374, 13, 15]},
+'chronovine': {"mature": [306, 374, 24, 30], "ripe": [340, 374, 18, 22], "sprout": [374, 374, 11, 14]},
+'epochbloom': {"mature": [408, 374, 27, 30], "ripe": [442, 374, 21, 23], "sprout": [476, 374, 14, 15]},
+'chronoglass-shard': {"mature": [510, 374, 24, 30], "ripe": [544, 374, 18, 23], "sprout": [578, 374, 12, 15]},
+'pendulum-pods': {"mature": [612, 374, 26, 30], "ripe": [646, 374, 20, 23], "sprout": [680, 374, 13, 14]},
+'sundial-stone': {"mature": [714, 374, 30, 28], "ripe": [748, 374, 23, 21], "sprout": [782, 374, 15, 14]},
+'aeon-circlet': {"mature": [816, 374, 30, 28], "ripe": [850, 374, 23, 22], "sprout": [884, 374, 15, 14]},
+'hourglass-of-ages': {"mature": [918, 374, 22, 30], "ripe": [952, 374, 17, 23], "sprout": [986, 374, 11, 15]},
+};
+return { ICON_SHEET, ICON_BOXES, PLANT_SHEET, PLANT_BOXES };
+})();
 // src/visual/atlas.js
 const __m51 = (() => {
 const { ATLASES, SPECIES_ASSETS, FRAMES } = __m52;
 const { Pixels } = __m47;
+const { PLANT_SHEET, PLANT_BOXES } = __m53;
+ATLASES.push(/** @type {any} */ ({ id: 'ingredient-plants', image: PLANT_SHEET, width: 0, height: 0, eager: true, biomes: [] }));
+for (const [key, st] of Object.entries(PLANT_BOXES)) {
+for (const [stage, [x, y, w, h]] of Object.entries(st)) FRAMES[`${key}@plant-${stage}`] = /** @type {any} */ (['ingredient-plants', x, y, w, h, w >> 1, h - 1]);
+}
+const plantAsset = (key, stage) => (PLANT_BOXES[key] ? `${key}@plant-${stage}` : null);
 const loaded = new Map();
 const pending = new Map();
 const cut = new Map();
@@ -5480,28 +5736,42 @@ function loadNodeSync(file) {
 const fs = NODE.getBuiltinModule('node:fs'), zlib = NODE.getBuiltinModule('node:zlib'), url = NODE.getBuiltinModule('node:url'), buffer = NODE.getBuiltinModule('node:buffer');
 const path = url.fileURLToPath(new URL(`../../assets/atlases/${file}`, import.meta.url));
 const buf = fs.readFileSync(path);
-let o = 8, w = 0, h = 0;
+let o = 8, w = 0, h = 0, type = 6;
 const idat = [];
+/** @type {Uint8Array|null} */ let plte = null;
+/** @type {Uint8Array|null} */ let trns = null;
 while (o < buf.length) {
 const len = buf.readUInt32BE(o), kind = buf.toString('latin1', o + 4, o + 8);
-if (kind === 'IHDR') { w = buf.readUInt32BE(o + 8); h = buf.readUInt32BE(o + 12); if (buf[o + 16] !== 8 || buf[o + 17] !== 6) throw new Error('atlas PNGs are 8-bit RGBA'); }
+if (kind === 'IHDR') {
+w = buf.readUInt32BE(o + 8); h = buf.readUInt32BE(o + 12); type = buf[o + 17];
+if (buf[o + 16] !== 8 || (type !== 6 && type !== 3)) throw new Error('atlas PNGs are 8-bit RGBA or 8-bit palette');
+} else if (kind === 'PLTE') plte = buf.subarray(o + 8, o + 8 + len);
+else if (kind === 'tRNS') trns = buf.subarray(o + 8, o + 8 + len);
 else if (kind === 'IDAT') idat.push(buf.subarray(o + 8, o + 8 + len));
 else if (kind === 'IEND') break;
 o += 12 + len;
 }
 const raw = zlib.inflateSync(buffer.Buffer.concat(idat));
-const pix = new Pixels(w, h), d = pix.data, stride = w * 4;
+const bpp = type === 6 ? 4 : 1;
+const pix = new Pixels(w, h), d = pix.data, stride = w * bpp;
 let prev = new Uint8Array(stride), cur = new Uint8Array(stride);
 for (let y = 0; y < h; y++) {
 const f = raw[y * (stride + 1)], line = raw.subarray(y * (stride + 1) + 1, (y + 1) * (stride + 1));
 for (let i = 0; i < stride; i++) {
-const a = i >= 4 ? cur[i - 4] : 0, b = prev[i], c = i >= 4 ? prev[i - 4] : 0;
+const a = i >= bpp ? cur[i - bpp] : 0, b = prev[i], c = i >= bpp ? prev[i - bpp] : 0;
 let v = line[i];
 if (f === 1) v += a; else if (f === 2) v += b; else if (f === 3) v += (a + b) >> 1;
 else if (f === 4) { const p = a + b - c, pa = Math.abs(p - a), pb = Math.abs(p - b), pc = Math.abs(p - c); v += pa <= pb && pa <= pc ? a : pb <= pc ? b : c; }
 cur[i] = v & 255;
 }
-d.set(cur, y * stride);
+if (bpp === 4) d.set(cur, y * stride);
+else {
+const P = /** @type {Uint8Array} */ (plte);
+for (let x = 0; x < w; x++) {
+const k = cur[x], q = (y * w + x) * 4;
+d[q] = P[k * 3]; d[q + 1] = P[k * 3 + 1]; d[q + 2] = P[k * 3 + 2]; d[q + 3] = trns && k < trns.length ? trns[k] : 255;
+}
+}
 [prev, cur] = [cur, prev];
 }
 return pix;
@@ -5576,7 +5846,7 @@ for (const id of [s.sprite, s.arcane, s.seed]) { const at = atlasOf(id); if (at)
 return [...need];
 }
 function forgetAtlasFrames() { cut.clear(); }
-return { onAtlasLoaded, atlasLoaded, atlasOf, assetsOf, spriteAsset, seedAsset, stageAsset, atlasFrame, loadAtlases, neededAtlases, forgetAtlasFrames, ATLASES, SPECIES_ASSETS, FRAMES };
+return { plantAsset, onAtlasLoaded, atlasLoaded, atlasOf, assetsOf, spriteAsset, seedAsset, stageAsset, atlasFrame, loadAtlases, neededAtlases, forgetAtlasFrames, ATLASES, SPECIES_ASSETS, FRAMES };
 })();
 // src/visual/pieces.js
 const __m27 = (() => {
@@ -6149,7 +6419,7 @@ return [0, 1, 2].map((k) => -Math.log(Math.max(0.003, srgbToLinear(def.color[k])
 return { MAX_SPECIES, NO_BOIL, SpeciesTable, absorbance };
 })();
 // src/reactions/mixture.js
-const __m53 = (() => {
+const __m54 = (() => {
 const { MAX_SPECIES, NO_BOIL } = __m25;
 const { rgbToOklab, linearToSrgb } = __m11;
 function granularFraction(sp, comp, off, T) {
@@ -6250,7 +6520,7 @@ return { granularFraction, suspensionLnMult, mixtureProps, zeroComposition };
 // src/game/predict.js
 const __m24 = (() => {
 const { SpeciesTable, MAX_SPECIES } = __m25;
-const { mixtureProps } = __m53;
+const { mixtureProps } = __m54;
 const { compositionEffects, extractedEffects, NE } = __m20;
 const { isMagical, awakenedId, thresholdToCelsius } = __m22;
 const { extractOver, extractIdOf, SOLVENT_CAPACITY, EMULSION_FACTOR, emulsionStability } = __m8;
@@ -6454,7 +6724,7 @@ return c;
 return { ACTIVATION_MARGIN, stirSeconds, predictExtraction, predictPlan, reduceTemp, arcaneRegime, activationMargin, planCost };
 })();
 // src/game/customers.js
-const __m54 = (() => {
+const __m55 = (() => {
 const { Rng } = __m6;
 const ARCHETYPES = [
 {
@@ -6583,7 +6853,7 @@ return ARCHETYPES.find((a) => a.key === key) || ARCHETYPES[0];
 return { ARCHETYPES, shortName, makeCustomer, archetypeOf, Rng };
 })();
 // src/game/evaluate.js
-const __m55 = (() => {
+const __m56 = (() => {
 const { EFFECTS, EFFECT_INDEX, EFFECT_KEYS, NE } = __m20;
 const PROPERTY_LABELS = {
 temperature: 'Temperature', quantity: 'Quantity', purity: 'Purity', ...Object.fromEntries(EFFECTS.map((e) => [e.key, e.label])),
@@ -6680,7 +6950,7 @@ return { rows, quality, stars, perfect, payment, repDelta };
 return { PROPERTY_LABELS, strongestUnwanted, isEffectKey, scoreRequirement, describeValue, evaluatePotion };
 })();
 // src/simulation/constants.js
-const __m56 = (() => {
+const __m57 = (() => {
 const PHASE = Object.freeze({ LIQUID: 0, POWDER: 1, PASTE: 2, SOLID: 3, GAS: 4 });
 const PHASE_NAMES = ['liquid', 'powder', 'paste', 'solid', 'gas'];
 const SIM = Object.freeze({
@@ -6721,7 +6991,7 @@ return PHASE.LIQUID;
 return { PHASE, PHASE_NAMES, SIM, TUNE, formPhase };
 })();
 // src/game/requests.js
-const __m57 = (() => {
+const __m58 = (() => {
 const REQUESTS = [
 { id: 'healing', title: 'Healing Draught', fx: [{ key: 'vitality' }], who: ['healer', 'farmer', 'innkeeper', 'knight', 'hunter'], minTier: 0,
 story: ['My patients are wasting with fever. I need something that truly heals — and nothing else in it.', 'The goats are poorly and so is my back. A healing draught, plain and honest.', 'A traveller collapsed in my common room. Something to bring the colour back to his face.'] },
@@ -6790,13 +7060,13 @@ const __m23 = (() => {
 const { Rng } = __m6;
 const { describeColor } = __m11;
 const { predictPlan, planCost, arcaneRegime, ACTIVATION_MARGIN } = __m24;
-const { ARCHETYPES, makeCustomer, archetypeOf } = __m54;
-const { evaluatePotion } = __m55;
-const { SIM } = __m56;
+const { ARCHETYPES, makeCustomer, archetypeOf } = __m55;
+const { evaluatePotion } = __m56;
+const { SIM } = __m57;
 const { EFFECT_INDEX, EFFECT_BY_KEY, EFFECT_KEYS, NE, interact } = __m20;
 const { thresholdToCelsius, isMagical } = __m22;
 const { compatFactor } = __m21;
-const { REQUESTS, TIER_TARGET, PURITY_LIMIT, requestById, purityLimitFor } = __m57;
+const { REQUESTS, TIER_TARGET, PURITY_LIMIT, requestById, purityLimitFor } = __m58;
 const { rateAt } = __m8;
 const WARM_HOLD = 90;
 const ALCOHOL_FREE_LIMIT = 3;
@@ -7480,7 +7750,7 @@ return /^[aeiou]/i.test(w) ? 'an' : 'a';
 return { ALCOHOL_FREE_LIMIT, purityRequirement, coldFloor, TEST_MARGIN, checkSupply, TECHNIQUES, techniqueById, migrateTechniques, generateCommission, TUTORIAL_HERBS, tutorialCommission, unwantedMax };
 })();
 // src/game/equipment.js
-const __m58 = (() => {
+const __m59 = (() => {
 const EQUIPMENT = [
 { id: 'hearth', name: 'Stone Hearth', category: 'heat', price: 0, rank: 0, icon: 'fire', mechanics: ['steeping', 'concentration', 'awakening'], desc: 'A wood fire under the cauldron. It brings a pot to the boil in seconds and takes oil past 200°C — hot enough to burn any herb left undissolved in it.', effect: { maxFlame: 340, heatPower: 3.5 } },
 { id: 'basin', name: 'Cold-Water Basin', category: 'cold', price: 0, rank: 0, icon: 'basin', mechanics: ['cold-extraction'], desc: 'Cool well water under the cauldron: chills a brew to about 9°C — a little more comes out of most herbs than at room heat, but never everything.', effect: { minCool: 4, coolPower: 4 } },
@@ -7496,11 +7766,10 @@ const EQUIPMENT = [
 { id: 'frostrune', name: 'Frost Rune Plate', category: 'cold', price: 150, rank: 1, icon: 'rune', requires: ['basin'], mechanics: ['cold-extraction', 'awakening'], desc: 'A carved rune that draws a brew down to about -14°C: cold enough for a spirit or oil steep to draw out everything, and for the cold awakenings of Moonfen magic. Mind the dial: water freezes long before, and a frozen solvent extracts nothing.', effect: { minCool: -30, coolPower: 6 } },
 { id: 'glacial', name: 'Glacial Sigil', category: 'cold', price: 750, rank: 3, icon: 'snow', requires: ['frostrune'], mechanics: ['awakening', 'cold-extraction'], desc: 'Deep cold, fast: a brew falls to about -48°C, past the thresholds of the Moonfen’s deepest magic.', effect: { minCool: -70, coolPower: 9 } },
 { id: 'condenser', name: 'Alembic & Condenser', category: 'tool', price: 170, rank: 1, icon: 'alembic', mechanics: ['distillation'], desc: 'A copper still head that sits on the cauldron like a lid, with a cooled coil and a receiving flask. Vapour that rises into it is condensed into the receiver instead of raining back: heat a tincture between spirit’s and water’s boiling points and the spirit leaves while the magic stays. The spirit collected goes back on your shelf.' },
-{ id: 'cellar', name: 'Aging Cellar', category: 'vessel', price: 240, rank: 1, icon: 'shelf2', mechanics: ['aging'], desc: 'A vaulted cellar with two sealed aging vessels. A brew laid down in one goes on extracting for hours, even while the shop is closed — warmed by a Fire potion or chilled by a Frost potion, and held at the heat you choose by a temperature rune.', effect: { vessels: 2 } },
-{ id: 'cellar2', name: 'Deep Cellar', category: 'vessel', price: 520, rank: 2, icon: 'shelf2', requires: ['cellar'], mechanics: ['aging'], desc: 'Two more aging vessels, deeper under the shop (four in all).', effect: { vessels: 4 } },
-{ id: 'stirrer', name: 'Clockwork Stirrer', category: 'tool', price: 110, rank: 1, icon: 'gear', mechanics: ['mixing'], desc: 'A wind-up paddle that keeps stirring on its own — through the whole depth of the brew — while you gather, test or serve. It evens a brew about three times as fast as the hand spoon, so every bottle of a batch matches the one you tested.' },
+{ id: 'cellar', name: 'Aging Cellar', category: 'vessel', price: 240, rank: 1, icon: 'shelf2', mechanics: ['aging'], desc: 'Two bottles at a time can age on the potion shelves: one goes on extracting for hours, even while the shop is closed — warmed or chilled by a Fire or Frost potion in its slot, and held at the heat you choose by a temperature rune in the other.', effect: { vessels: 2 } },
+{ id: 'cellar2', name: 'Deep Cellar', category: 'vessel', price: 520, rank: 2, icon: 'shelf2', requires: ['cellar'], mechanics: ['aging'], desc: 'Four bottles can age at once.', effect: { vessels: 4 } },
 { id: 'homunculus', name: 'Brass Homunculus', category: 'tool', price: 1100, rank: 3, icon: 'homunculus', mechanics: ['automation'], desc: 'A clockwork assistant that follows a saved recipe’s recorded procedure step by step — every pour, grinding, stir, heat, chill, hold, boil-down and the lid — in the real cauldron, at full ingredient cost.' },
-{ id: 'arcanometer', name: 'Arcanometer', category: 'instrument', price: 200, rank: 1, icon: 'awaken', mechanics: ['awakening', 'experimentation'], desc: 'A lodestone needle in a glass of wisp-light. The Inspect probe shows the aura of strong magic in the matter under it (which kinds, never how strong) and reads its arcane threshold to the nearest 50, and how much has awakened.' },
+{ id: 'arcanometer', name: 'Arcanometer', category: 'instrument', price: 200, rank: 1, icon: 'awaken', mechanics: ['awakening', 'experimentation'], desc: 'A lodestone needle in a glass of wisp-light. A Sample’s analysis shows the aura of strong magic in the brew (which kinds, never how strong), reads its arcane threshold to the nearest 50, and how much has awakened.' },
 { id: 'kennel', name: 'Subject Kennel', category: 'trials', price: 60, rank: 1, icon: 'rabbit', mechanics: ['experimentation'], desc: 'Spare cages and pots: the hutch holds six rabbits, and new test subjects cost half — corroborate a reading on more animals.', effect: { hutch: 6 } },
 { id: 'warren', name: 'Rabbit Warren', category: 'trials', price: 180, rank: 2, icon: 'nest', requires: ['kennel'], mechanics: ['experimentation'], desc: 'A walled run with burrows and a nest box: room for ten rabbits.', effect: { hutch: 10 } },
 { id: 'still', name: 'Purging Still', category: 'trials', price: 150, rank: 1, icon: 'alembic', mechanics: ['experimentation'], desc: 'The guild’s recipe for the purging draught and a little still to brew it: a draught costs 1 coin of salts and a short wait instead of 8 coins at the apothecary. A purge washes every potion effect out of a rabbit and stops any degeneration.' },
@@ -7517,7 +7786,7 @@ hydrometer: { name: 'Glass Hydrometer', price: 45, sandbox: true, why: 'customer
 viscometer: { name: 'Falling-Ball Viscometer', price: 70, sandbox: true, why: 'natural brews stay watery: viscosity is never asked for' },
 assay: { name: 'Assay Kit', price: 90, sandbox: true, why: 'customers no longer ask for stability or volatility; the cauldron tells you when a brew is uneven' },
 galvanometer: { name: 'Galvanometer', price: 120, sandbox: true, why: 'charge is never asked for' },
-thermal: { name: 'Thermal Monocle', price: 80, sandbox: true, why: 'the heat map is now a Free Experiment view' },
+thermal: { name: 'Thermal Monocle', price: 80, sandbox: true, why: 'the heat map was retired' },
 skimmer: { name: 'Brass Skimmer', price: 60, sandbox: true, why: 'natural extracts all mix with water, so there is no layer worth skimming; the tap already draws from the bottom' },
 alembic: { name: 'Copper Alembic', price: 360, into: 'condenser', why: 'the Alembic & Condenser took over: its receiver now jars the spirit it recovers' },
 bellows: { name: 'Bellows & Coal', price: 120, why: 'the hearth already reaches every steep and boil; hotter fires only set lamp oil alight' },
@@ -7529,6 +7798,7 @@ brush: { name: 'Badger Brush', price: 15, into: 'kit', why: 'the Forager’s Kit
 sickle: { name: 'Silver Sickle', price: 45, into: 'kit', why: 'the Forager’s Kit holds every gathering tool' },
 shelf1: { name: 'Oak Shelves', price: 90, why: 'every shop now stores 2.5 L of each reagent' },
 shelf2: { name: 'Cellar Racks', price: 260, why: 'every shop now stores 2.5 L of each reagent' },
+stirrer: { name: 'Clockwork Stirrer', price: 110, why: 'the brew is stirred by hand: automatic stirring was retired' },
 };
 function equipmentById(id) {
 return EQUIPMENT.find((e) => e.id === id);
@@ -7567,14 +7837,14 @@ return cap;
 return { EQUIPMENT, STARTING_EQUIPMENT, BASE_STORAGE, BASE_BOTTLES, BASE_HUTCH, RETIRED_EQUIPMENT, equipmentById, RANKS, rankIndex, capabilities };
 })();
 // src/game/animal-variants.js
-const __m62 = (() => {
+const __m63 = (() => {
 const VARIANT_COATS = {"rabbit": [[0.815, 0.807, 0.798], [0.735, 0.611, 0.462], [0.486, 0.351, 0.272], [0.37, 0.357, 0.406]], "cat": [[0.804, 0.725, 0.664], [0.496, 0.487, 0.534], [0.764, 0.483, 0.327], [0.377, 0.341, 0.387]], "toad": [[0.493, 0.613, 0.327], [0.552, 0.416, 0.303], [0.383, 0.434, 0.567], [0.765, 0.721, 0.649]], "salamander": [[0.791, 0.592, 0.33], [0.782, 0.454, 0.322], [0.583, 0.544, 0.799], [0.426, 0.652, 0.56]], "deer": [[0.653, 0.487, 0.364], [0.746, 0.576, 0.425], [0.621, 0.563, 0.528], [0.82, 0.733, 0.658]], "badger": [[0.465, 0.437, 0.437], [0.683, 0.548, 0.4], [0.805, 0.737, 0.636], [0.533, 0.516, 0.553]], "dove": [[0.643, 0.631, 0.685], [0.812, 0.79, 0.759], [0.704, 0.56, 0.624], [0.463, 0.5, 0.606]], "fox": [[0.774, 0.508, 0.319], [0.702, 0.393, 0.298], [0.418, 0.408, 0.45], [0.751, 0.735, 0.743]], "ermine": [[0.878, 0.827, 0.761], [0.561, 0.419, 0.306], [0.79, 0.69, 0.513], [0.424, 0.406, 0.441]], "snail": [[0.688, 0.525, 0.325], [0.726, 0.538, 0.566], [0.538, 0.597, 0.717], [0.55, 0.631, 0.446]], "rat": [[0.585, 0.454, 0.405], [0.494, 0.455, 0.504], [0.356, 0.308, 0.349], [0.817, 0.751, 0.692]], "hare": [[0.65, 0.473, 0.317], [0.581, 0.433, 0.317], [0.688, 0.592, 0.491], [0.735, 0.712, 0.681]], "otter": [[0.475, 0.322, 0.221], [0.578, 0.423, 0.299], [0.733, 0.571, 0.346], [0.382, 0.348, 0.316]], "beetle": [[0.34, 0.395, 0.517], [0.342, 0.457, 0.305], [0.594, 0.405, 0.259], [0.38, 0.369, 0.419]], "cavemoth": [[0.76, 0.667, 0.505], [0.796, 0.725, 0.65], [0.698, 0.589, 0.739], [0.791, 0.65, 0.521]], "wisp": [[0.437, 0.832, 0.903], [0.898, 0.791, 0.48], [0.87, 0.582, 0.788], [0.548, 0.884, 0.727]], "cloudray": [[0.448, 0.764, 0.91], [0.673, 0.61, 0.863], [0.869, 0.661, 0.647], [0.551, 0.784, 0.728]], "mimic": [[0.491, 0.614, 0.321], [0.361, 0.63, 0.574], [0.683, 0.6, 0.44], [0.427, 0.528, 0.678]], "shroudmoth": [[0.673, 0.608, 0.732], [0.728, 0.712, 0.739], [0.748, 0.622, 0.678], [0.582, 0.541, 0.645]], "axolotl": [[0.793, 0.559, 0.635], [0.759, 0.706, 0.716], [0.647, 0.541, 0.706], [0.475, 0.66, 0.714]], "scarab": [[0.182, 0.362, 0.527], [0.221, 0.455, 0.401], [0.562, 0.309, 0.366], [0.44, 0.332, 0.581]]};
 return { VARIANT_COATS };
 })();
 // src/game/kinds.js
-const __m61 = (() => {
+const __m62 = (() => {
 const { Rng } = __m6;
-const { VARIANT_COATS } = __m62;
+const { VARIANT_COATS } = __m63;
 const RABBIT_SPREAD = 0.1;
 const STEADY_SPREAD = 0.012;
 const STEADY_NOISE = 0.3;
@@ -7811,10 +8081,10 @@ return { kind: 'salamander', coat: [0.14, 0.12, 0.13], coat2: spot, pattern: 'bl
 return { RABBIT_SPREAD, STEADY_SPREAD, STEADY_NOISE, KINDS, BODY, bodyOf, KIND_IDS, kindOf, kindDef, biasSpread, noiseFactor, aNoun, HABITAT, habitatOf, pickKind, kindLook };
 })();
 // src/game/colony.js
-const __m60 = (() => {
+const __m61 = (() => {
 const { EFFECT_INDEX } = __m20;
 const { Rng, hashString } = __m6;
-const { kindOf, biasSpread, kindLook, RABBIT_SPREAD } = __m61;
+const { kindOf, biasSpread, kindLook, RABBIT_SPREAD } = __m62;
 const RABBIT_MARKS = ['vitality', 'strength', 'love', 'arcana', 'transformation', 'fire', 'frost', 'acid', 'alkali', 'toxicity', 'death', 'swiftness', 'levitation', 'invisibility', 'phasing', 'temporal'];
 const PRE_EXOTIC_MARKS = 11;
 const MARK_INDEX = Object.fromEntries(RABBIT_MARKS.map((k, i) => [k, i]));
@@ -8631,11 +8901,11 @@ return trials;
 return { RABBIT_MARKS, MARK_INDEX, KIT_DAYS, ADULT_DAYS, ELDER_DAYS, LIFESPAN_DAYS, FOUNDER_BORN, GESTATION_DAYS, DOSE_LIMIT, MEMORIAL_LIMIT, LEVEL_AT, TRAIT_AT, DEGEN_AT, MARK_MAX, LETHAL, AGGRO, FERAL, AGGRO_AT, LOVE_MATE, MATE_EVERY, MARK_TAU, BURNS, BURN_RATE, MAX_BONUS, DEGEN_RISE, ATTACK_EVERY, TRAITS, TRAIT_EXCLUSIVE, TRAIT_WORDS, COATS, rollLook, inheritLook, lookFromSeed, visibleLevel, stageOf, maxHealthOf, degenOf, degenAt, degenRate, aggroAt, aggroOf, isFeral, burnRate, mateEvery, mateCost, RABBIT_BIAS, rabbitSensitivity, rabbitSnap, encodeSnap, defaultSnap, decodeSnap, NAMES, createColony, findRabbit, PEN_MAX, penCount, livingOf, penHasRoom, livingRabbits, bodies, focusRabbit, pickName, makeRabbit, addBoughtRabbit, addWildRabbit, recordDose, related, STAGE_ERR, MARK_DECAY, rabbitResponse, colonyTick, purgeRabbit, cullRabbit, colonyDay, retireRabbit, trimMemorial, remainsSource, causeWord, rabbitCondition, normalizeRabbit, normalizeColony, installRabbitAlias };
 })();
 // src/game/experiments.js
-const __m59 = (() => {
+const __m60 = (() => {
 const { EFFECTS, EFFECT_KEYS, EFFECT_INDEX, NE, potencyWord } = __m20;
 const { Rng, hashString } = __m6;
-const { createColony, normalizeColony, installRabbitAlias, rabbitResponse, findRabbit, focusRabbit, recordDose, rabbitSnap, encodeSnap, stageOf, addBoughtRabbit, STAGE_ERR, rabbitSensitivity, RABBIT_BIAS, maxHealthOf } = __m60;
-const { biasSpread, noiseFactor, kindOf } = __m61;
+const { createColony, normalizeColony, installRabbitAlias, rabbitResponse, findRabbit, focusRabbit, recordDose, rabbitSnap, encodeSnap, stageOf, addBoughtRabbit, STAGE_ERR, rabbitSensitivity, RABBIT_BIAS, maxHealthOf } = __m61;
+const { biasSpread, noiseFactor, kindOf } = __m62;
 function readingSteadiness(rabbit, day) {
 const stage = STAGE_ERR[stageOf(rabbit, day)] || 1;
 const max = Math.max(1, maxHealthOf(rabbit, day ?? 1));
@@ -8901,7 +9171,7 @@ return `${e.label} ${Math.round(v)} (${potencyWord(v, key)})`;
 return { readingSteadiness, SUBJECTS, SUBJECT_BY_ID, RECORD_LIMIT, DOSES, DOSE_NOISE, READ_NOISE, driftTolerance, createTrials, normalizeTrials, rabbitReading, doseErr, EVIDENCE_LEVELS, EVIDENCE_TEXT, evidenceRank, summarize, effectEvidence, requirementEvidence, EVIDENCE_STATE_TEXT, addSamples, runTrial, resetSubject, certification, requiredEffects, missingEffects, suggestSubjects, knownLaws, describeReading };
 })();
 // src/game/regen.js
-const __m64 = (() => {
+const __m65 = (() => {
 const { Rng } = __m6;
 const { RARITY, ARCANE } = __m17;
 const { SPECIES } = __m15;
@@ -8996,11 +9266,11 @@ const specimenCount = (pop) => pop.reduce((a, p) => a + p.ordinary + p.arcane, 0
 return { COIN_RULES, createRegen, normalizeRegen, accrue, nextCoinIn, generationOf, regenerate, maybeGift, unlockBiomes, populationOf, specimenCount };
 })();
 // src/game/gathering.js
-const __m63 = (() => {
+const __m64 = (() => {
 const { Rng, hashString } = __m6;
 const { familyOf, habitatOf } = __m29;
 const { BIOMES } = __m18;
-const { populationOf } = __m64;
+const { populationOf } = __m65;
 const { RARITY } = __m17;
 const { materialIdOf } = __m15;
 const REGIONS = BIOMES.map((b) => ({ id: b.id, name: b.name, rank: b.unlock.rank || 0, magical: b.category === 'exotic', desc: b.desc, sky: b.sky }));
@@ -9394,9 +9664,9 @@ return out;
 return { REGIONS, REGION_BY_ID, STAGES, SPROUT_SHARE, TAKE_BY_RARITY, generateDeposits, thirstOf, createGathering, GATHER_VERSION, normalizeGathering, GROW_FLOOR, GROW_MAX, WATER_DOSE, moistureEnv, growthOf, matureIn, checkpoint, standOf, plantStage, depositStatus, water, setSky, migrateGathering, SCAR_SLOWDOWN, METHODS, methodOf, dayPart, DAY_PART_NAME, DAY_PART_HINT, WEATHERS, weatherOn, gatherPlan, harvestable, weatherRegrowth, harvest, newDayRegrowth, SANDBOX_PACE, sandboxWilds, formatWait, RUNE_CACHES, runeCaches };
 })();
 // src/simulation/particles.js
-const __m67 = (() => {
+const __m68 = (() => {
 const { MAX_SPECIES } = __m25;
-const { PHASE } = __m56;
+const { PHASE } = __m57;
 const { NE } = __m20;
 const STATE_FIELDS_F32 = ['x', 'y', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet', 'q', 'skinU', 'skinV'];
 const STATE_FIELDS_I32 = ['group'];
@@ -9519,7 +9789,7 @@ return this.phase[i] !== PHASE.GAS;
 return { STATE_FIELDS_F32, STATE_FIELDS_I32, STATE_FIELDS_U8, STATE_FIELDS_U16, STATE_FIELDS_U32, DERIVED_FIELDS, ARC_NONE, Particles };
 })();
 // src/simulation/grid.js
-const __m68 = (() => {
+const __m69 = (() => {
 class NeighborGrid {
 constructor(minX, minY, maxX, maxY, cell, capacity) {
 this.minX = minX;
@@ -9619,8 +9889,8 @@ for (let a = cellStart[c]; a < cellStart[c + 1]; a++) fn(sorted[a]);
 return { NeighborGrid };
 })();
 // src/simulation/cauldron.js
-const __m69 = (() => {
-const { SIM } = __m56;
+const __m70 = (() => {
+const { SIM } = __m57;
 const CAULDRON_SIZES = {
 pot: { key: 'pot', label: 'Iron Pot', mouth: 0.8, belly: 1.0, neck: 0.5, depth: 1.55, capacity: 310 },
 copper: { key: 'copper', label: 'Copper Cauldron', mouth: 0.95, belly: 1.2, neck: 0.6, depth: 1.8, capacity: 440 },
@@ -9856,13 +10126,13 @@ return s / this.lidCells;
 return { CAULDRON_SIZES, COLUMN, Cauldron };
 })();
 // src/simulation/derived.js
-const __m70 = (() => {
+const __m71 = (() => {
 const { MAX_SPECIES, NO_BOIL } = __m25;
-const { granularFraction, suspensionLnMult } = __m53;
+const { granularFraction, suspensionLnMult } = __m54;
 const { rgbToOklabInto, linearToSrgb } = __m11;
-const { PHASE } = __m56;
+const { PHASE } = __m57;
 const { compositionEffects, EFFECTS, NE } = __m20;
-const { ARC_NONE } = __m67;
+const { ARC_NONE } = __m68;
 const AURA_W = EFFECTS.map((e) => (e.kind === 'magic' ? 1 : 0.55));
 const AURA_COL = EFFECTS.map((e) => e.color);
 const auraFx = new Float64Array(NE);
@@ -10010,8 +10280,8 @@ p.auraI[i] = I / 100;
 return { STAIN, GAS_MASS, refreshParticle, refreshAura };
 })();
 // src/simulation/rigid.js
-const __m71 = (() => {
-const { PHASE } = __m56;
+const __m72 = (() => {
+const { PHASE } = __m57;
 const MAX_GROUPS = 2048;
 const BOND = 0.135;
 const FRESH = -2;
@@ -10204,8 +10474,8 @@ return this.active.length;
 return { FRESH, RigidBodies };
 })();
 // src/simulation/thermal.js
-const __m72 = (() => {
-const { PHASE, SIM } = __m56;
+const __m73 = (() => {
+const { PHASE, SIM } = __m57;
 const KPP = 34; // particle–particle conductance (game-scaled)
 const KW = 24; // particle–wall conductance
 const KA = 0.35; // free-surface loss to air
@@ -10321,11 +10591,11 @@ for (let k = 0; k < M + L; k++) Tw[k] += flow[k] / Cw[k];
 return { thermalStep, wallStep };
 })();
 // src/simulation/phase.js
-const __m73 = (() => {
-const { PHASE, PHASE_NAMES } = __m56;
+const __m74 = (() => {
+const { PHASE, PHASE_NAMES } = __m57;
 const { MAX_SPECIES, NO_BOIL } = __m25;
-const { refreshParticle } = __m70;
-const { FRESH } = __m71;
+const { refreshParticle } = __m71;
+const { FRESH } = __m72;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const BOIL_VOLATILE = 0.8;
 const DRY_MIN = 0.12;
@@ -10676,8 +10946,8 @@ classifyFluid(sim, j);
 return { classifyFluid, isFrozenGrain, dominantId, phaseStep, enrichVolatile };
 })();
 // src/reactions/diffusion.js
-const __m74 = (() => {
-const { PHASE } = __m56;
+const __m75 = (() => {
+const { PHASE } = __m57;
 const { MAX_SPECIES } = __m25;
 const { compatFactor } = __m21;
 const { emulsionStability } = __m8;
@@ -10893,10 +11163,10 @@ if (sim.compChange[j] > 0.004) { sim.compChange[j] = 0; p.dirty[j] = 1; }
 return { diffusionStep };
 })();
 // src/simulation/arcane.js
-const __m76 = (() => {
+const __m77 = (() => {
 const { MAX_SPECIES } = __m25;
 const { ARCANE_SCALE, ARCANE_ZERO, awakenedId } = __m22;
-const { ARC_NONE } = __m67;
+const { ARC_NONE } = __m68;
 const RATE = 0.55;
 const HEAT = 24;
 const TAIL = 0.002;
@@ -10975,11 +11245,11 @@ return a;
 return { arcaneStep, awakeSlot };
 })();
 // src/reactions/reactions.js
-const __m75 = (() => {
+const __m76 = (() => {
 const { MAX_SPECIES } = __m25;
-const { PHASE } = __m56;
+const { PHASE } = __m57;
 const { awakenedId } = __m22;
-const { awakeSlot } = __m76;
+const { awakeSlot } = __m77;
 const { GAS, SOLID } = PHASE;
 class ReactionSystem {
 constructor(sim, rules) {
@@ -11254,8 +11524,8 @@ return best;
 return { ReactionSystem };
 })();
 // src/simulation/tools.js
-const __m77 = (() => {
-const { PHASE, SIM } = __m56;
+const __m78 = (() => {
+const { PHASE, SIM } = __m57;
 const { MAX_SPECIES } = __m25;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const TOOL_SPECS = {
@@ -11511,9 +11781,9 @@ if (victims.length) sim.emit({ type: 'skim', count: victims.length, x: t.x, y: t
 return { TOOL_SPECS, ToolState, clampToInterior, toolForces, toolConstraints, LIQUID };
 })();
 // src/simulation/emitter.js
-const __m78 = (() => {
-const { PHASE, SIM, formPhase } = __m56;
-const { COLUMN } = __m69;
+const __m79 = (() => {
+const { PHASE, SIM, formPhase } = __m57;
+const { COLUMN } = __m70;
 const { chunkTemplate, chunkSize, hasPieces, skinOf, grainSkinOf, piece } = __m26;
 const { registerSpecies } = __m27;
 class Emitter {
@@ -11682,8 +11952,8 @@ return true;
 return { Emitter };
 })();
 // src/simulation/electric.js
-const __m79 = (() => {
-const { PHASE } = __m56;
+const __m80 = (() => {
+const { PHASE } = __m57;
 const KQ = 26; // conduction rate (game scaled)
 const RE = 0.16; // contact distance
 const JOULE = 140; // heat per unit of charge moved per unit of potential difference
@@ -11730,11 +12000,11 @@ return s;
 return { electricStep, totalCharge };
 })();
 // src/reactions/extraction.js
-const __m80 = (() => {
+const __m81 = (() => {
 const { MAX_SPECIES } = __m25;
-const { PHASE } = __m56;
+const { PHASE } = __m57;
 const { SOLVENT_CAPACITY, WHOLE_FACTOR, EMULSION_FACTOR, extractIdOf, ceilingAt, yieldAt } = __m8;
-const { isFrozenGrain } = __m73;
+const { isFrozenGrain } = __m74;
 const { SOLID, GAS } = PHASE;
 const S = MAX_SPECIES;
 const CHAR_RATE = 0.35;
@@ -11991,23 +12261,23 @@ alcohol: cond ? alcohol / cond : 0,
 return { agitFactor, ExtractionSystem, extractionReport };
 })();
 // src/simulation/world.js
-const __m66 = (() => {
-const { PHASE, SIM, TUNE, formPhase } = __m56;
-const { Particles } = __m67;
-const { NeighborGrid } = __m68;
-const { Cauldron, COLUMN } = __m69;
+const __m67 = (() => {
+const { PHASE, SIM, TUNE, formPhase } = __m57;
+const { Particles } = __m68;
+const { NeighborGrid } = __m69;
+const { Cauldron, COLUMN } = __m70;
 const { SpeciesTable, MAX_SPECIES } = __m25;
-const { refreshParticle } = __m70;
-const { RigidBodies } = __m71;
-const { thermalStep } = __m72;
-const { phaseStep, classifyFluid } = __m73;
-const { diffusionStep } = __m74;
-const { ReactionSystem } = __m75;
-const { ToolState, toolForces, toolConstraints } = __m77;
-const { Emitter } = __m78;
-const { electricStep } = __m79;
-const { arcaneStep } = __m76;
-const { ExtractionSystem } = __m80;
+const { refreshParticle } = __m71;
+const { RigidBodies } = __m72;
+const { thermalStep } = __m73;
+const { phaseStep, classifyFluid } = __m74;
+const { diffusionStep } = __m75;
+const { ReactionSystem } = __m76;
+const { ToolState, toolForces, toolConstraints } = __m78;
+const { Emitter } = __m79;
+const { electricStep } = __m80;
+const { arcaneStep } = __m77;
+const { ExtractionSystem } = __m81;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const MODE = Object.freeze({ PBF: 0, GRAN: 1, COH: 2, RIGID: 3, GAS: 4 });
 const M_PBF = 0, M_GRAN = 1, M_COH = 2, M_RIGID = 3, M_GAS = 4;
@@ -12845,9 +13115,9 @@ if (p.sleep[i] >= SLEEP_STEPS) p.sleep[i] = 0;
 return { MODE, SLEEP_STEPS, Simulation, formPhase };
 })();
 // src/game/measure.js
-const __m81 = (() => {
+const __m82 = (() => {
 const { MAX_SPECIES } = __m25;
-const { PHASE, SIM } = __m56;
+const { PHASE, SIM } = __m57;
 const { compatFactor } = __m21;
 const { oklabToRgb } = __m11;
 const { sampleEffects } = __m20;
@@ -12974,12 +13244,12 @@ return stability >= 90 ? 'evenly mixed' : stability >= 70 ? 'a little uneven' : 
 return { measureParticles, tapSelection, probeSelection, viscosityClass, densityWord, evennessWord };
 })();
 // src/game/vial.js
-const __m65 = (() => {
-const { Simulation } = __m66;
-const { PHASE, SIM } = __m56;
+const __m66 = (() => {
+const { Simulation } = __m67;
+const { PHASE, SIM } = __m57;
 const { MAX_SPECIES } = __m25;
-const { measureParticles } = __m81;
-const { refreshParticle } = __m70;
+const { measureParticles } = __m82;
+const { refreshParticle } = __m71;
 const ROOM = SIM.AMBIENT;
 const COOL_TAU = 480;
 function makeVial(sim, indices, meta) {
@@ -13173,7 +13443,7 @@ return { ...v, species, particles, ml: n * SIM.ML_PER_PARTICLE, bottledMl: v.bot
 return { makeVial, makeVialFromComposition, appendParticles, measureVial, updateVial, takeDose, pourBack, pourBackParts, relaxVial, vialInventory, migrateVial };
 })();
 // src/game/bench.js
-const __m82 = (() => {
+const __m83 = (() => {
 const { EFFECTS, EFFECT_BY_KEY } = __m20;
 const { RARITY, RARITIES } = __m17;
 function normalizeBench(raw) {
@@ -13259,12 +13529,12 @@ return out;
 return { normalizeBench, benchIds, setOnBench, mainEffect, rarityRank, inventoryGroups };
 })();
 // src/game/commerce.js
-const __m83 = (() => {
+const __m84 = (() => {
 const { Rng, hashString } = __m6;
 const { EFFECT_KEYS, EFFECT_INDEX, NE, EFFECT_BY_KEY } = __m20;
-const { evaluatePotion, strongestUnwanted, PROPERTY_LABELS } = __m55;
-const { PURITY_LIMIT } = __m57;
-const { summarize, evidenceRank, EVIDENCE_TEXT } = __m59;
+const { evaluatePotion, strongestUnwanted, PROPERTY_LABELS } = __m56;
+const { PURITY_LIMIT } = __m58;
+const { summarize, evidenceRank, EVIDENCE_TEXT } = __m60;
 function draftLabel(vial, theory, day) {
 const claims = {};
 const cert = vial.cert || {}, recs = vial.certRecords || {};
@@ -13582,7 +13852,7 @@ return (Math.round(v * 10) / 10).toLocaleString('en-US', { maximumFractionDigits
 return { draftLabel, applyTrials, evidenceOf, STAR_STEPS, MAX_STARS, accuracyStars, claimSigma, claimStars, labelStars, trialClaim, sameClaim, editClaim, claimedEffects, relevantEffects, EVIDENCE_WEIGHT, trustReport, labelTrust, unprovenWanted, proofGaps, claimedMeasurement, openNegotiation, proposePrice, acceptOffer, recordSale, resolveFollowUp, EVIDENCE_TEXT };
 })();
 // src/game/garden.js
-const __m84 = (() => {
+const __m85 = (() => {
 const { Rng } = __m6;
 const { RARITY, ARCANE, seedChance } = __m17;
 const { SPECIES_BY_KEY, materialIdOf } = __m15;
@@ -13764,7 +14034,7 @@ return Object.entries(g.seeds).filter(([, n]) => n > 0).map(([id, n]) => ({ id, 
 return { GARDEN_STAGES, BEDS, GRADES, GARDEN_UPGRADES, OFFLINE_CAP_MS, TUTORIAL_PACE, createGarden, seedId, parseSeed, normalizeGarden, bedOf, gradeNeeded, growHours, cropState, rollSeed, giveSeed, plant, waterPlots, cropYield, harvestPlot, boughtCount, upgrade, gardenStatus, seedList, ARCANE };
 })();
 // src/materials/remains.js
-const __m85 = (() => {
+const __m86 = (() => {
 const { completeMaterial } = __m12;
 const { arcaneProfile, jitter } = __m14;
 function remainsId(rabbitId, part) {
@@ -13863,7 +14133,7 @@ return m;
 return { remainsId, isRemains, remainsPlan, remainsMaterials };
 })();
 // src/game/patrons.js
-const __m86 = (() => {
+const __m87 = (() => {
 const RETURN_CHANCE = 0.3;
 const BANNED_TRUST = -0.75;
 const clamp1 = (v) => Math.max(-1, Math.min(1, v));
@@ -13931,7 +14201,7 @@ return Math.round(v * 100) / 100;
 return { RETURN_CHANCE, BANNED_TRUST, notePatron, patronVerdict, returningPatron, welcomePatron, recentStyles, noveltyFactor };
 })();
 // src/game/recipes.js
-const __m87 = (() => {
+const __m88 = (() => {
 const TRACE_DT = 1;
 const TRACE_MAX = 1200;
 const HOLD_MIN = 6, HOLD_BAND = 4, ROOM = 20;
@@ -14164,7 +14434,7 @@ return Math.round(v * 10) / 10;
 return { TRACE_DT, TRACE_MAX, SAME, traceSample, buildProcedure, procedureLimits, approximateSteps, migrateRecipe, holds, procedureShape, compareRecipe, matchRecipe, recipeConfidence, CONFIDENCE_TEXT, checkReproduction, describeStep };
 })();
 // src/game/cellar.js
-const __m88 = (() => {
+const __m89 = (() => {
 const { rateAt, yieldAt, extractIdOf, SOLVENT_CAPACITY, CELLAR_FACTOR, EMULSION_FACTOR, emulsionStability } = __m8;
 const { isMagical, awakenedId, thresholdToCelsius } = __m22;
 const { CHAR_ID } = __m15;
@@ -14182,6 +14452,9 @@ const CHAR_RATE = 0.002;
 const T_MIN = -90, T_MAX = 450;
 function createCellar() {
 return { vessels: /** @type {Vessel[]} */ ([]), runes: 0 };
+}
+function newVessel(now = Date.now()) {
+return emptyVessel(0, now);
 }
 function emptyVessel(id, now) {
 return /** @type {Vessel} */ ({ id, comp: {}, T: CELLAR_T, charge: null, rune: null, t: now, carry: 0, log: [] });
@@ -14429,7 +14702,7 @@ freezing: tf, frozen: tf !== null && v.T <= tf, items, alcohol: total > 0 ? (alc
 emulsion: Lh > 0 && Ll > 0 ? emulsionStability(Lh, Ll, em) : null, char: v.comp[CHAR_ID] || 0,
 };
 }
-return { CELLAR_STEP, CELLAR_T, MAX_OFFLINE, DEG_PER_POINT, MIN_POINTS, CHARGE_TAU, HOLD_COST, RUNE_LIFE, RUNE_PRICE, createCellar, normalizeCellar, vesselVolume, fillVessel, emptyVesselContents, potionNet, chargeLimit, potionDrive, chargeVessel, activateVessel, setRune, runeHolds, freezingPoint, advanceVessel, advanceCellar, vesselReport };
+return { CELLAR_STEP, CELLAR_T, MAX_OFFLINE, DEG_PER_POINT, MIN_POINTS, CHARGE_TAU, HOLD_COST, RUNE_LIFE, RUNE_PRICE, createCellar, newVessel, normalizeCellar, vesselVolume, fillVessel, emptyVesselContents, potionNet, chargeLimit, potionDrive, chargeVessel, activateVessel, setRune, runeHolds, freezingPoint, advanceVessel, advanceCellar, vesselReport };
 })();
 // src/game/state.js
 const __m5 = (() => {
@@ -14437,29 +14710,29 @@ const { Rng, hashString } = __m6;
 const { generateWorld, makeLookup, addAlchemy, LAB_ROLES } = __m7;
 const { serializeMaterial, deserializeMaterial } = __m12;
 const { generateCommission, tutorialCommission } = __m23;
-const { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById, RETIRED_EQUIPMENT } = __m58;
-const { SIM } = __m56;
-const { createTrials, normalizeTrials, runTrial, SUBJECT_BY_ID, knownLaws, certification, summarize } = __m59;
-const { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth, depositStatus, migrateGathering, setSky, water, runeCaches: runeCachesOf } = __m63;
+const { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById, RETIRED_EQUIPMENT } = __m59;
+const { SIM } = __m57;
+const { createTrials, normalizeTrials, runTrial, SUBJECT_BY_ID, knownLaws, certification, summarize } = __m60;
+const { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth, depositStatus, migrateGathering, setSky, water, runeCaches: runeCachesOf } = __m64;
 const { predictPlan } = __m24;
 const { EFFECT_INDEX, EFFECT_KEYS } = __m20;
-const { migrateVial } = __m65;
-const { normalizeBench } = __m82;
-const { recordSale, resolveFollowUp, applyTrials, evidenceOf } = __m83;
-const { colonyDay, colonyTick, livingRabbits, livingOf, findRabbit, addBoughtRabbit, addWildRabbit, penHasRoom, PEN_MAX, retireRabbit, remainsSource, purgeRabbit, cullRabbit, maxHealthOf, FOUNDER_BORN } = __m60;
-const { kindOf } = __m61;
-const { normalizeRegen, accrue, regenerate: regenerateBiome, maybeGift, unlockBiomes, generationOf, nextCoinIn, COIN_RULES } = __m64;
-const { normalizeGarden, plant: gardenPlant, waterPlots, harvestPlot, upgrade: gardenUpgrade, rollSeed, giveSeed, GARDEN_UPGRADES, gardenStatus } = __m84;
+const { migrateVial } = __m66;
+const { normalizeBench } = __m83;
+const { recordSale, resolveFollowUp, applyTrials, evidenceOf } = __m84;
+const { colonyDay, colonyTick, livingRabbits, livingOf, findRabbit, addBoughtRabbit, addWildRabbit, penHasRoom, PEN_MAX, retireRabbit, remainsSource, purgeRabbit, cullRabbit, maxHealthOf, FOUNDER_BORN } = __m61;
+const { kindOf } = __m62;
+const { normalizeRegen, accrue, regenerate: regenerateBiome, maybeGift, unlockBiomes, generationOf, nextCoinIn, COIN_RULES } = __m65;
+const { normalizeGarden, plant: gardenPlant, waterPlots, harvestPlot, upgrade: gardenUpgrade, rollSeed, giveSeed, GARDEN_UPGRADES, gardenStatus } = __m85;
 const { BIOME_BY_ID } = __m18;
 const { materialIdOf } = __m15;
 const { legacyReplacement } = __m19;
-const { remainsMaterials, remainsPlan, isRemains } = __m85;
-const { returningPatron, welcomePatron, recentStyles, notePatron, patronVerdict, noveltyFactor } = __m86;
+const { remainsMaterials, remainsPlan, isRemains } = __m86;
+const { returningPatron, welcomePatron, recentStyles, notePatron, patronVerdict, noveltyFactor } = __m87;
 const { techniqueById, migrateTechniques } = __m23;
-const { migrateRecipe } = __m87;
-const { createCellar, normalizeCellar, advanceCellar, fillVessel, emptyVesselContents, chargeVessel, setRune, vesselVolume, RUNE_PRICE } = __m88;
-const { makeVialFromComposition, takeDose } = __m65;
-const SAVE_VERSION = 8;
+const { migrateRecipe } = __m88;
+const { createCellar, normalizeCellar, advanceCellar, advanceVessel, fillVessel, emptyVesselContents, chargeVessel, setRune, vesselVolume, newVessel, potionNet, RUNE_PRICE } = __m89;
+const { makeVialFromComposition, takeDose } = __m66;
+const SAVE_VERSION = 9;
 const PURGE_PRICE = 8;
 const PURGE_BREW_COST = 1;
 const PURGE_BREW_TIME = 40;
@@ -14561,7 +14834,7 @@ this.lookup = makeLookup(this.world);
 this.regen = normalizeRegen(data.regen);
 accrue(this.regen);
 this.garden = normalizeGarden(data.garden);
-this.cellar = normalizeCellar(data.cellar, capabilities(data.equipment || []).vessels);
+this.cellar = normalizeCellar(data.cellar, 0);
 this._deposits = null;
 migrateGathering(this.gathering, this.deposits);
 setSky(this.gathering, this.deposits, weatherOn(this.seed, this.day).id);
@@ -14737,8 +15010,77 @@ this.stats.runes = (this.stats.runes || 0) + 1;
 return { ok: true };
 }
 tickCellar(now = Date.now()) {
-if (this.cellar.vessels.length < this.cap.vessels) normalizeCellar(this.cellar, this.cap.vessels, now);
-return advanceCellar(this.cellar, this.lookup, now);
+const events = advanceCellar(this.cellar, this.lookup, now) || [];
+for (const b of this.bottles) {
+if (!b.aging) continue;
+for (const text of advanceVessel(b.aging, this.lookup, now, this.cellar.pace || 1)) events.push({ bottle: b.id, text });
+}
+return events;
+}
+get agingSlots() {
+return this.cap.vessels;
+}
+get agingCount() {
+return this.bottles.filter((b) => b.aging).length;
+}
+bottleComposition(b) {
+const comp = {};
+for (const vp of b.particles) vp.c.forEach((f, j) => { if (f > 0) comp[b.species[j]] = (comp[b.species[j]] || 0) + f * SIM.ML_PER_PARTICLE; });
+const T = b.particles.length ? b.particles.reduce((a, q) => a + q.t, 0) / b.particles.length : 20;
+return { comp, T };
+}
+startAging(bottleId, now = Date.now()) {
+const b = this.bottles.find((x) => x.id === bottleId);
+if (!b) return { ok: false, reason: 'That bottle is not on the shelf.' };
+if (b.aging) return { ok: true, vessel: b.aging };
+if (this.agingSlots <= 0) return { ok: false, reason: 'Bottles age with the Aging Cellar, sold by the guild in the Shop.' };
+if (this.agingCount >= this.agingSlots) return { ok: false, reason: `Every aging place is taken (${this.agingSlots}). Unseal an aging bottle first, or buy a larger cellar.` };
+const { comp, T } = this.bottleComposition(b);
+const v = newVessel(now);
+const r = fillVessel(v, comp, T, now, { name: (b.label && b.label.name) || 'A shelved brew', batchId: b.batchId, parts: b.parts });
+if (!r.ok) return r;
+b.aging = v;
+return { ok: true, vessel: v };
+}
+chargeBottle(bottleId, chargeId, ml, now = Date.now()) {
+this.tickCellar(now);
+const b = this.bottles.find((x) => x.id === bottleId);
+const cb = this.bottles.find((x) => x.id === chargeId);
+if (!b || !cb || !cb.m || cb === b) return { ok: false, reason: 'Choose another shelved bottle: a Fire or Frost potion.' };
+if (cb.aging) return { ok: false, reason: 'An aging bottle cannot warm another: unseal it first.' };
+const want = Math.min(cb.ml, ml ?? cb.ml);
+if (!potionNet(cb.m.effects)) return { ok: false, reason: 'Only a potion with Fire or Frost (at least 3 % more of one than the other) warms or chills a bottle.' };
+const started = this.startAging(bottleId, now);
+if (!started.ok) return started;
+const v = /** @type {any} */ (b.aging);
+const dose = takeDose(cb, want, this.lookup, this.world.laws || [], this.day);
+if (!dose || !dose.dose) return { ok: false, reason: 'That bottle is empty.' };
+const r = chargeVessel(v, dose.dose.effects, dose.ml, now);
+if (!cb.particles.length) this.removeBottle(cb.id);
+return { ...r, ml: dose.ml };
+}
+runeBottle(bottleId, target, now = Date.now()) {
+this.tickCellar(now);
+const b = this.bottles.find((x) => x.id === bottleId);
+if (!b) return { ok: false, reason: 'That bottle is not on the shelf.' };
+const fresh = !(b.aging && b.aging.rune && b.aging.rune.life > 0);
+if (fresh && this.cellar.runes <= 0) return { ok: false, reason: 'You have no temperature rune. Buy one at the market, or look underground in the Wilds.' };
+const started = this.startAging(bottleId, now);
+if (!started.ok) return started;
+const r = setRune(/** @type {any} */ (b.aging), target, now);
+if (r.ok && r.fresh) this.cellar.runes--;
+return r;
+}
+finishAging(bottleId, now = Date.now()) {
+const k = this.bottles.findIndex((x) => x.id === bottleId);
+const b = this.bottles[k];
+if (!b || !b.aging) return { ok: false, reason: 'That bottle is not aging.' };
+this.tickCellar(now);
+const v = b.aging;
+const vial = makeVialFromComposition(v.comp, v.T, { batchId: 'b' + now.toString(36) + 'a' + k, day: this.day, parts: v.parts || b.parts }, this.lookup, this.world.laws || []);
+if (!vial) { this.bottles.splice(k, 1); return { ok: true, vial: null }; }
+this.bottles[k] = vial;
+return { ok: true, vial };
 }
 buyRune() {
 const price = Math.round(RUNE_PRICE * (1 - this.cap.discount) * 10) / 10;
@@ -14750,68 +15092,14 @@ this.daySpending += price;
 this.cellar.runes++;
 return { ok: true, cost: price };
 }
-layDown(vessel, src, now = Date.now()) {
-this.tickCellar(now);
-const v = this.cellar.vessels[vessel];
-if (!v) return { ok: false, reason: 'There is no such vessel.' };
-if (src.bottleId) {
-const b = this.bottles.find((x) => x.id === src.bottleId);
-if (!b) return { ok: false, reason: 'That bottle is not on the shelf.' };
-const comp = {};
-for (const vp of b.particles) vp.c.forEach((f, j) => { if (f > 0) comp[b.species[j]] = (comp[b.species[j]] || 0) + f * SIM.ML_PER_PARTICLE; });
-const T = b.particles.length ? b.particles.reduce((a, q) => a + q.t, 0) / b.particles.length : 20;
-const r = fillVessel(v, comp, T, now, { name: (b.label && b.label.name) || 'A shelved brew', batchId: b.batchId, parts: b.parts });
-if (r.ok) this.removeBottle(b.id);
-return r;
+cellarToShelves(now = Date.now()) {
+for (const v of this.cellar.vessels) {
+if (vesselVolume(v) > 0) {
+const vial = makeVialFromComposition(v.comp, v.T, { batchId: 'b' + now.toString(36) + 'm' + v.id, day: this.day, parts: v.parts || [] }, this.lookup, this.world.laws || []);
+if (vial) { vial.aging = { ...v, id: 0 }; this.bottles.push(vial); }
+} else if (v.rune && v.rune.life > 0 && Number.isFinite(this.cellar.runes)) this.cellar.runes++;
 }
-return fillVessel(v, src.comp || {}, src.T ?? 20, now, { name: src.name, batchId: this.batch.id, parts: src.parts });
-}
-activateVessel(vessel, bottleId, ml, now = Date.now()) {
-this.tickCellar(now);
-const v = this.cellar.vessels[vessel];
-const b = this.bottles.find((x) => x.id === bottleId);
-if (!v || !b || !b.m) return { ok: false, reason: 'Choose a vessel and a bottle.' };
-const want = Math.min(b.ml, ml ?? b.ml);
-const test = chargeVessel(/** @type {any} */ ({ ...v, comp: { ...v.comp }, charge: v.charge && { ...v.charge }, log: [] }), b.m.effects, want, now);
-if (!test.ok) return test;
-const dose = takeDose(b, want, this.lookup, this.world.laws || [], this.day);
-if (!dose || !dose.dose) return { ok: false, reason: 'The bottle is empty.' };
-const r = chargeVessel(v, dose.dose.effects, dose.ml, now);
-if (!b.particles.length) this.removeBottle(b.id);
-return { ...r, ml: dose.ml };
-}
-chargeVessel(vessel, effects, ml, now = Date.now()) {
-this.tickCellar(now);
-const v = this.cellar.vessels[vessel];
-if (!v) return { ok: false, reason: 'There is no such vessel.' };
-return chargeVessel(v, effects, ml, now);
-}
-runeVessel(vessel, target, now = Date.now()) {
-this.tickCellar(now);
-const v = this.cellar.vessels[vessel];
-if (!v) return { ok: false, reason: 'There is no such vessel.' };
-const fresh = !(v.rune && v.rune.life > 0);
-if (fresh && this.cellar.runes <= 0) return { ok: false, reason: 'You have no temperature rune. Buy one at the market, or look underground in the Wilds.' };
-const r = setRune(v, target, now);
-if (r.ok && r.fresh) this.cellar.runes--;
-return r;
-}
-bottleVessel(vessel, now = Date.now()) {
-this.tickCellar(now);
-const v = this.cellar.vessels[vessel];
-if (!v || vesselVolume(v) <= 0) return { ok: false, reason: 'The vessel is empty.' };
-if (this.bottles.length >= this.cap.bottles && this.vial) return { ok: false, reason: 'No room on the potion shelves, and a vial is already on the counter.' };
-const out = emptyVesselContents(v, now);
-const vial = makeVialFromComposition(out.comp, out.T, { batchId: 'b' + now.toString(36) + 'c' + v.id, day: this.day, parts: out.parts }, this.lookup, this.world.laws || []);
-if (!vial) return { ok: false, reason: 'Nothing could be bottled.' };
-if (this.bottles.length < this.cap.bottles) this.bottles.push(vial); else this.vial = vial;
-return { ok: true, vial };
-}
-takeVessel(vessel, now = Date.now()) {
-this.tickCellar(now);
-const v = this.cellar.vessels[vessel];
-if (!v || vesselVolume(v) <= 0) return { ok: false, reason: 'The vessel is empty.' };
-return { ok: true, ...emptyVesselContents(v, now) };
+this.cellar.vessels = [];
 }
 collectDistillate(collected) {
 const got = {};
@@ -15149,6 +15437,8 @@ if (fromCounter) this.vial = null;
 return { ok: true, bottle: b };
 }
 takeBottle(id) {
+const ag = this.bottles.find((b) => b.id === id && b.aging);
+if (ag) { const r = this.finishAging(id); if (!r.ok || !r.vial) return { ok: false, reason: 'Nothing was left in the bottle.' }; id = r.vial.id; }
 const k = this.bottles.findIndex((b) => b.id === id);
 if (k < 0) return { ok: false, reason: 'No such bottle.' };
 const b = this.bottles[k];
@@ -15545,6 +15835,7 @@ for (const [k, v] of Object.entries(inventory)) if (!Number.isFinite(v) && v !==
 const st = new GameState({ ...data, world, inventory });
 if (data._migratedFrom !== undefined && data._migratedFrom < 3) st.genVersion = WORLD_GEN_VERSION;
 if (data._migratedFrom !== undefined && data._migratedFrom < 7) st.migrateToCatalog();
+if (data._migratedFrom !== undefined && data._migratedFrom < 9) st.cellarToShelves();
 st.buyBackPrepared();
 if (st.current) migrateCommission(st.current, st.world, st.lookup);
 if (st.current) retireRequirements(st.current);
@@ -15637,6 +15928,16 @@ d.journal = { ...(d.journal || {}), 'note:extraction': { key: 'note:extraction',
 text: 'Herbs give up their magic gradually, at any temperature: faster when hot, but more of it when cool. Some dissolve only in oil. Cold spirit draws out everything. Herbs left undissolved burn when too hot. The market now sells a neutral emulsifier, the guild an alembic and aging cellars.' } };
 d.version = 8;
 }
+if (d.version < 9) {
+const refit = retireEquipment(d.equipment);
+d.equipment = refit.equipment;
+d.coins = round1((Number(d.coins) || 0) + refit.refund);
+if (refit.lines.length) {
+d.journal = { ...(d.journal || {}), 'note:refit9': { key: 'note:refit9', kind: 'note', title: 'The guild refitted your workshop', day: d.day | 0,
+text: `The guild has taken back what no longer serves the trade: ${refit.lines.join('; ')}.${refit.refund > 0 ? ` ${refit.refund} coins were paid back.` : ''}` } };
+}
+d.version = 9;
+}
 for (const id of STARTING_EQUIPMENT) if (!d.equipment.includes(id)) d.equipment = [...d.equipment, id];
 d.equipment = d.equipment.filter((id) => id !== 'mortar');
 if (d.world && Array.isArray(d.world.materials) && d.world.materials.length === 0) throw new Error('The save has no reagents');
@@ -15691,7 +15992,7 @@ return Math.round(v * 10) / 10;
 return { SAVE_VERSION, PURGE_PRICE, PURGE_BREW_COST, PURGE_BREW_TIME, WORLD_GEN_VERSION, STARTER_HERBS, MARKET_EVENTS, ACHIEVEMENTS, GameState, migrateCommission, migrate, retireEquipment, retireRequirements, runeFind, EQUIPMENT, SIM };
 })();
 // src/game/persistence.js
-const __m89 = (() => {
+const __m90 = (() => {
 const { GameState } = __m5;
 const KEYS = {
 save: 'alchemist-shop.save',
@@ -15815,11 +16116,11 @@ if (s) s.removeItem(key);
 return { KEYS, storageAvailable, saveGame, loadGame, hasSave, deleteSave, exportSave, parseImport, loadJSON, saveJSON, removeKey };
 })();
 // src/simulation/snapshot.js
-const __m91 = (() => {
+const __m92 = (() => {
 const { MAX_SPECIES } = __m25;
-const { refreshParticle } = __m70;
-const { Simulation } = __m66;
-const { CAULDRON_SIZES } = __m69;
+const { refreshParticle } = __m71;
+const { Simulation } = __m67;
+const { CAULDRON_SIZES } = __m70;
 const F32_FIELDS_V1 = ['x', 'y', 'vx', 'vy', 'temp', 'lat', 'eph', 'restX', 'restY', 'agit', 'burn', 'wet'];
 const F32_FIELDS = [...F32_FIELDS_V1, 'q'];
 const SNAPSHOT_VERSION = 2;
@@ -15950,7 +16251,7 @@ for (let i = 0; i < n; i++) if (p.group[i] >= 0) sim.rigid.used[p.group[i]] = 1;
 return { SNAPSHOT_VERSION, toBase64, fromBase64, snapshotSim, restoreSim, applySnapshot };
 })();
 // src/rendering/art.js
-const __m93 = (() => {
+const __m94 = (() => {
 const { Rng } = __m6;
 const PAL = {
 night0: '#0d0a10', night1: '#17121c', night2: '#221a28',
@@ -16552,7 +16853,7 @@ for (let k = 0; k < 14; k++) R(ctx, Math.round(v.ox + rng.range(-0.6, 0.6) * c.b
 return { PAL, hex2rgb, rgbStr, mixHex, paintBackground, drawJar, renderCauldron, renderLid, renderLidAside, makeCanvas, paintHearth, rect: R };
 })();
 // src/rendering/potion-fx.js
-const __m95 = (() => {
+const __m96 = (() => {
 const { EFFECTS, NE } = __m20;
 const K = Object.fromEntries(EFFECTS.map((e, k) => [e.key, k]));
 const MAX = 2400;
@@ -17010,12 +17311,12 @@ break;
 return { PotionParticles };
 })();
 // src/rendering/brew-palette.js
-const __m96 = (() => {
+const __m97 = (() => {
 const { MAX_SPECIES } = __m25;
 const { srgbToLinear, linearToSrgb } = __m11;
 const { PIECE_ART, piecePalette, registerSpecies, onPiecesChanged } = __m27;
 const { grainSkinOf } = __m26;
-const { STAIN } = __m70;
+const { STAIN } = __m71;
 const bySpecies = new WeakMap();
 const bySkin = new Map();
 onPiecesChanged(() => bySkin.clear());
@@ -17134,14 +17435,14 @@ return true;
 return { dominantColour, preparePalettes, pc, paletteColour };
 })();
 // src/rendering/fluid.js
-const __m94 = (() => {
-const { PHASE, SIM } = __m56;
+const __m95 = (() => {
+const { PHASE, SIM } = __m57;
 const { LOOK, piece } = __m26;
 const { PIECE_ART, PIECE_CELL, piecePalette, pieceSprite } = __m27;
 const { NE } = __m20;
 const { MAX_SPECIES } = __m25;
-const { PotionParticles } = __m95;
-const { preparePalettes, paletteColour, pc: palCol } = __m96;
+const { PotionParticles } = __m96;
+const { preparePalettes, paletteColour, pc: palCol } = __m97;
 const { LIQUID, POWDER, PASTE, SOLID, GAS } = PHASE;
 const LS = 9;
 const LC = 6;
@@ -18109,8 +18410,8 @@ return v < 0 ? 0 : v > 255 ? 255 : v | 0;
 return { dropletCell, drawnGlow, drawnGlowTable, FluidRenderer };
 })();
 // src/rendering/effects.js
-const __m97 = (() => {
-const { PAL, hex2rgb } = __m93;
+const __m98 = (() => {
+const { PAL, hex2rgb } = __m94;
 const MAX = 900;
 const FIRE_RAMP = [PAL.fire5, PAL.fire4, PAL.fire3, PAL.fire2, PAL.fire1, PAL.fire0].map(hex2rgb);
 class Effects {
@@ -18223,12 +18524,12 @@ ctx.globalAlpha = 1;
 return { Effects };
 })();
 // src/rendering/renderer.js
-const __m92 = (() => {
-const { PAL, paintBackground, renderCauldron, renderLid, renderLidAside, paintHearth, makeCanvas, rgbStr, hex2rgb, drawJar, rect } = __m93;
-const { FluidRenderer, drawnGlow, drawnGlowTable } = __m94;
-const { Effects } = __m97;
-const { COLUMN } = __m69;
-const { PHASE } = __m56;
+const __m93 = (() => {
+const { PAL, paintBackground, renderCauldron, renderLid, renderLidAside, paintHearth, makeCanvas, rgbStr, hex2rgb, drawJar, rect } = __m94;
+const { FluidRenderer, drawnGlow, drawnGlowTable } = __m95;
+const { Effects } = __m98;
+const { COLUMN } = __m70;
+const { PHASE } = __m57;
 const { compositionEffects, dominantEffect, EFFECTS, NE } = __m20;
 const auraScratch = new Float64Array(NE);
 const VIEW_TOP = -1.25;
@@ -18325,7 +18626,6 @@ const ca = this.cauldronArt;
 ctx.drawImage(ca.canvas, ca.x, ca.y);
 if (this.frame % 4 === 0) this._updateHeat(c);
 ctx.drawImage(this.heatCanvas, ca.x, ca.y);
-this.fluid.thermal = !!st.thermal;
 this.fluid.halo = this.quality !== 'low';
 const fr = this.fluid.render(sim, view, st.time);
 if (fr) {
@@ -18342,7 +18642,6 @@ this._drawTap(c, st);
 if (st.pour && st.pour.active) this._drawPour(c, st);
 const tool = st.tool;
 if (tool && (tool.active || st.toolHover) && tool.type !== 'none') this._drawTool(c, tool, st);
-if (st.stirrer) this._drawStirrer(c, st);
 const p = sim.p;
 for (let i = 0; i < p.count; i++) {
 const b = p.burn[i];
@@ -18367,17 +18666,6 @@ this.fx.add(4, ax, ay - 1, 0, -s * 0.15, 0.6, 1, [col[0] * 255, col[1] * 255, co
 }
 this.fx.update(st.dt);
 this.fx.draw(ctx);
-if (st.probe) {
-const [px, py] = this.toScreen(st.probe.x, st.probe.y);
-const r = Math.round(st.probe.r * s);
-ctx.strokeStyle = PAL.brassHi;
-ctx.lineWidth = 1;
-ctx.beginPath();
-ctx.arc(Math.round(px) + 0.5, Math.round(py) + 0.5, r, 0, Math.PI * 2);
-ctx.stroke();
-rect(ctx, px - 3, py, 7, 1, PAL.brassHi);
-rect(ctx, px, py - 3, 1, 7, PAL.brassHi);
-}
 if (this.quality !== 'low') this._lighting(c, st);
 }
 _updateHeat(c) {
@@ -18515,16 +18803,6 @@ ctx.beginPath();
 ctx.arc(Math.round(tx) + 0.5, Math.round(ty) + 0.5, Math.round(0.42 * s), 0, Math.PI * 2);
 ctx.stroke();
 }
-}
-_drawStirrer(c, st) {
-const { ctx, view } = this;
-const s = view.scale;
-const x = Math.round(view.ox - (c.mouth + 0.45) * s), y = Math.round(view.oy - 0.45 * s);
-const w = Math.round(0.42 * s), h = Math.round(0.32 * s);
-rect(ctx, x, y, w, h, PAL.copper1);
-rect(ctx, x, y, w, 1, PAL.copper3);
-const a = st.time * 4;
-rect(ctx, x + w / 2 + Math.cos(a) * w * 0.25 - 1, y + h / 2 + Math.sin(a) * h * 0.25 - 1, 3, 3, PAL.brassHi);
 }
 _drawAlembic(c, st) {
 const { ctx, view } = this;
@@ -18671,7 +18949,7 @@ if (W >= 9) px(gx + 1, g0 + 1, GLASS_HI);
 return { Renderer, drawBottle, PHASE };
 })();
 // src/rendering/portraits.js
-const __m98 = (() => {
+const __m99 = (() => {
 const { Rng } = __m6;
 const S = 32;
 const shade = (c, f) => `rgb(${Math.round(Math.min(255, c[0] * 255 * f))},${Math.round(Math.min(255, c[1] * 255 * f))},${Math.round(Math.min(255, c[2] * 255 * f))})`;
@@ -18789,7 +19067,7 @@ if (rng.chance(0.5)) P(hx - 1, 8, 2, 10, hc);
 return { drawPortrait };
 })();
 // src/rendering/scenes.js
-const __m100 = (() => {
+const __m101 = (() => {
 function R(ctx, x, y, w, h, c) {
 ctx.fillStyle = c;
 ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
@@ -18840,148 +19118,21 @@ return cv;
 }
 return { drawRaw, rawSprite };
 })();
-// src/visual/ingredient-icons.js
-const __m101 = (() => {
-const ICON_SHEET = 'assets/ingredients/icons.png';
-const ICON_BOXES = {
-'silverleaf': [11, 9, 42, 45],
-'honeycap': [73, 10, 45, 43],
-'dawnblossom': [138, 9, 43, 45],
-'dewpear': [210, 9, 28, 45],
-'heartwood-mandrake': [270, 9, 36, 45],
-'mossback-bark': [330, 10, 44, 43],
-'stagthorn-vine': [399, 8, 33, 46],
-'hearthnut': [458, 10, 44, 44],
-'heartberry': [521, 12, 45, 39],
-'everbloom-chalice': [585, 11, 45, 41],
-'meadow-daisy': [15, 73, 33, 45],
-'goldenrush': [81, 73, 29, 45],
-'brightberry': [141, 73, 38, 45],
-'honeyclover': [203, 73, 42, 45],
-'suncrown': [268, 73, 40, 45],
-'meadowcrystal': [334, 73, 35, 45],
-'prism-petal': [393, 74, 45, 43],
-'lovelace-orchid': [461, 73, 37, 45],
-'radiant-sunbloom': [524, 73, 40, 45],
-'eternal-rose': [586, 73, 43, 45],
-'willowleaf': [12, 138, 40, 43],
-'reedcap': [73, 138, 45, 43],
-'riverlotus': [137, 139, 45, 42],
-'bubbleberry': [204, 137, 38, 45],
-'tidebloom': [265, 139, 45, 41],
-'streampearl': [341, 137, 22, 22],
-'frostlotus': [393, 139, 45, 42],
-'rimefeather': [459, 137, 42, 45],
-'nixie-torc': [528, 141, 32, 33],
-'everfrost-pearlbloom': [585, 139, 45, 42],
-'stonewort': [11, 203, 43, 42],
-'quarrycap': [73, 202, 45, 43],
-'ironbloom': [143, 202, 33, 44],
-'stoneberry': [204, 201, 38, 45],
-'orebud': [271, 201, 33, 45],
-'ferric-crystal': [339, 201, 26, 45],
-'gravelpod': [393, 204, 45, 41],
-'ammonite-coil': [457, 204, 45, 40],
-'emberheart-geode': [531, 201, 26, 45],
-'titan-root': [591, 201, 33, 44],
-'nethercap': [11, 265, 42, 45],
-'gloommoss': [73, 265, 45, 45],
-'umbrabell': [141, 265, 37, 45],
-'shadefruit': [201, 266, 45, 44],
-'sporelantern': [270, 265, 35, 45],
-'wraithvine': [332, 265, 39, 45],
-'nightbloom-lotus': [393, 267, 45, 42],
-'umbral-amethyst': [459, 265, 41, 45],
-'thornhalo': [525, 266, 38, 36],
-'venomlily': [586, 265, 43, 45],
-'emberleaf': [11, 329, 42, 45],
-'cindershroom': [73, 331, 45, 42],
-'firebramble': [137, 332, 45, 39],
-'sulfurvine': [204, 329, 39, 45],
-'flamecrest': [268, 329, 40, 45],
-'blazestone': [339, 329, 26, 45],
-'phoenix-heartseed': [396, 329, 39, 45],
-'ashcactus': [459, 331, 43, 42],
-'everburning-sunheart': [526, 329, 35, 45],
-'cinderpod': [585, 332, 45, 41],
-'moonreed': [9, 395, 43, 42],
-'fenmilk-cap': [75, 393, 42, 44],
-'duskbell': [141, 393, 37, 45],
-'dreamberry': [201, 394, 45, 44],
-'moonlotus': [265, 395, 45, 42],
-'sleepglass': [331, 393, 41, 45],
-'moonveil-bloom': [394, 393, 43, 45],
-'mirepod-shell': [457, 396, 45, 40],
-'wisp-reliquary': [530, 399, 28, 32],
-'starfall-lotus': [585, 395, 45, 42],
-'skyspray': [17, 457, 29, 45],
-'cloudcap': [75, 457, 42, 45],
-'airstar': [140, 457, 40, 45],
-'skyberry': [205, 457, 38, 45],
-'updraft-seedwing': [265, 458, 45, 43],
-'zephyr-starbloom': [332, 457, 40, 45],
-'featherpetal': [393, 458, 45, 43],
-'skyshard-geode': [457, 458, 45, 43],
-'windfern': [529, 457, 30, 45],
-'cloudprism': [587, 457, 41, 45],
-'morphleaf': [12, 522, 40, 43],
-'shapecap': [75, 521, 42, 45],
-'twinsprout': [139, 521, 42, 45],
-'graftberry': [208, 521, 31, 45],
-'formblossom': [266, 521, 43, 45],
-'mimic-eye': [331, 532, 43, 24],
-'crownbloom': [393, 525, 45, 37],
-'shifting-root': [464, 521, 31, 45],
-'splice-bud': [525, 521, 37, 45],
-'polymorph-lotus': [585, 523, 45, 42],
-'veilfern': [17, 585, 30, 45],
-'hollowcap': [75, 585, 42, 45],
-'ghostbud': [141, 585, 37, 45],
-'veilberry': [201, 586, 45, 44],
-'hollowbloom': [266, 585, 43, 45],
-'veilglass': [331, 585, 41, 45],
-'shroud-orchid': [396, 585, 40, 45],
-'mistpebble': [458, 591, 44, 34],
-'eclipse-eye': [523, 598, 43, 21],
-'veil-circlet': [593, 588, 31, 34],
-'reefmoss': [16, 649, 32, 45],
-'glasscap': [73, 650, 45, 43],
-'coralberry': [140, 649, 38, 45],
-'reefbud': [205, 649, 37, 45],
-'ghostglass-coral': [272, 649, 32, 45],
-'pearlshell': [341, 649, 22, 22],
-'spectral-anemone': [397, 649, 37, 45],
-'shellfern': [459, 649, 42, 45],
-'phantom-pearl': [533, 649, 22, 22],
-'ghostcrown-coral': [589, 649, 37, 45],
-'timeweed': [17, 713, 29, 45],
-'sandskirt-cap': [73, 714, 45, 43],
-'hourberry': [141, 713, 38, 45],
-'chronovine': [206, 712, 36, 46],
-'epochbloom': [268, 713, 40, 45],
-'chronoglass-shard': [334, 713, 35, 45],
-'pendulum-pods': [396, 713, 39, 45],
-'sundial-stone': [463, 722, 34, 31],
-'aeon-circlet': [529, 721, 31, 29],
-'hourglass-of-ages': [596, 719, 25, 35],
-};
-return { ICON_SHEET, ICON_BOXES };
-})();
 // src/rendering/species-sprites.js
-const __m99 = (() => {
+const __m100 = (() => {
 const { describe } = __m28;
 const { plantFrame, iconFrame, ICON_PX } = __m45;
 const { identityKey, validIdentity } = __m10;
 const { archetypeIdentity } = __m27;
 const { Pixels } = __m47;
 const { isBotanical } = __m29;
-const { rawSprite } = __m100;
+const { rawSprite } = __m101;
 const { mountsOfForm, frameMount, growthParams } = __m50;
 const { hashString } = __m6;
 const { INK } = __m49;
-const { atlasFrame, spriteAsset, stageAsset } = __m51;
+const { atlasFrame, spriteAsset, stageAsset, plantAsset } = __m51;
 const { SPECIES_COLORS } = __m16;
-const { ICON_SHEET, ICON_BOXES } = __m101;
+const { ICON_SHEET, ICON_BOXES } = __m53;
 const isAtlasMaterial = (m) => !!(m && m.wild && m.wild.catalog);
 const ATLAS_K = 2;
 const ARCANE_GLOW = 'rgb(186,150,255)';
@@ -18997,11 +19148,21 @@ out.px[y * w + x] = best;
 }
 return { pix: out, ax: Math.round(f.ax / 2), ay: Math.ceil(f.ay / 2), glints: [], glows: [] };
 }
+function arcaneRim(f) {
+const W = f.pix.w + 2, H = f.pix.h + 2, out = new Pixels(W, H), src = f.pix;
+const rim = 0xffff96ba; // (ABGR) rgb(186,150,255)
+for (let y = 0; y < src.h; y++) for (let x = 0; x < src.w; x++) { const c = src.px[y * src.w + x]; if (c >>> 24) out.px[(y + 1) * W + x + 1] = c; }
+const solid = (x, y) => x >= 0 && y >= 0 && x < W && y < H && (out.px[y * W + x] >>> 24) !== 0 && out.px[y * W + x] !== rim;
+const add = [];
+for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (!(out.px[y * W + x] >>> 24) && (solid(x - 1, y) || solid(x + 1, y) || solid(x, y - 1) || solid(x, y + 1))) add.push(y * W + x);
+for (const i of add) out.px[i] = rim;
+return { pix: out, ax: f.ax + 1, ay: f.ay + 1, glints: [], glows: [] };
+}
 function atlasPlant(m, stage, def) {
-const w = m.wild, st = stage === 'mature' ? 4 : stage === 'ripe' ? 3 : 2;
-const f = atlasFrame(st >= 4 ? spriteAsset(w.key, !!w.arcane) : stageAsset(w.key, !!w.arcane, st));
+const w = m.wild, sz = stage === 'mature' ? 'mature' : stage === 'ripe' ? 'ripe' : 'sprout';
+const f = atlasFrame(plantAsset(w.key, sz)) || atlasFrame(sz === 'mature' ? spriteAsset(w.key, !!w.arcane) : stageAsset(w.key, !!w.arcane, sz === 'ripe' ? 3 : 2));
 if (!f) return null;
-const full = { pix: f.pix, ax: f.ax, ay: f.ay, glints: [], glows: [] };
+const full = w.arcane && f.id.includes('@plant-') ? cached(`arc|${f.id}`, () => arcaneRim(f)) : { pix: f.pix, ax: f.ax, ay: f.ay, glints: [], glows: [] };
 return def >= ATLAS_K ? full : cached(`half|${f.id}`, () => halved(full));
 }
 const MIN_HIT = 26;
@@ -19137,6 +19298,26 @@ for (const f of frames) for (let y = 0; y < f.pix.h; y++) for (let x = 0; x < f.
 return { w, h, ax: -x0, ay: -y0, m: mask };
 });
 }
+const iconCache = new Map();
+const iconUrls = new Map();
+function ingredientIconUrl(m) {
+if (!isAtlasMaterial(m)) return null;
+const key = m.wild.key + (m.wild.arcane ? '+a' : '');
+const url = iconUrls.get(key);
+if (url) return url;
+let src = iconCache.get(key);
+const box = ICON_BOXES[m.wild.key];
+if (!src && box && iconSheet && iconSheet.complete && iconSheet.naturalWidth) {
+src = /** @type {HTMLCanvasElement} */ (document.createElement('canvas'));
+src.width = src.height = Math.max(box[2], box[3]) + 4;
+drawIcon(src, iconSheet, box, !!m.wild.arcane);
+iconCache.set(key, src);
+}
+if (!src) { whenIconSheet(() => {}); return null; }
+const u = src.toDataURL();
+iconUrls.set(key, u);
+return u;
+}
 let iconSheet = null;
 let iconWaiting = null;
 function whenIconSheet(fn) {
@@ -19172,7 +19353,7 @@ ctx.putImageData(d, 0, 0);
 }
 function iconFrameOf(m) {
 if (isAtlasMaterial(m)) {
-const f = atlasFrame(spriteAsset(m.wild.key, !!m.wild.arcane));
+const f = atlasPlant(m, 'mature', ATLAS_K);
 return f ? { pix: f.pix, ax: f.ax, ay: f.ay, glints: [] } : null;
 }
 const id = identityOfMaterial(m);
@@ -19189,7 +19370,14 @@ cv.dataset.rarity = m.wild.rarity || 'common';
 if (!box) { cv.width = cv.height = 16; return cv; }
 const S = Math.max(box[2], box[3]) + 4;
 cv.width = S; cv.height = S;
-whenIconSheet((img) => drawIcon(cv, img, box, !!m.wild.arcane));
+const key = m.wild.key + (m.wild.arcane ? '+a' : '');
+const ready = iconCache.get(key);
+if (ready) /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')).drawImage(ready, 0, 0);
+else whenIconSheet((img) => {
+let src = iconCache.get(key);
+if (!src) { src = /** @type {HTMLCanvasElement} */ (document.createElement('canvas')); src.width = src.height = S; drawIcon(src, img, box, !!m.wild.arcane); iconCache.set(key, src); }
+/** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')).drawImage(src, 0, 0);
+});
 return cv;
 }
 const f = m && m.wild ? iconFrameOf(m) : null;
@@ -19205,7 +19393,7 @@ const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
 ctx.drawImage(sp.cv, Math.round((S - sp.w) / 2), frameMount(mount) === 'hang' ? 1 : S - 1 - sp.h);
 return cv;
 }
-return { isAtlasMaterial, ATLAS_K, MIN_HIT, identityOfMaterial, speciesOf, variantOf, mountsOf, plantFrameOf, plantCanvas, plantGlow, emitColour, silhouetteOf, iconFrameOf, ingredientSprite, ICON_PX };
+return { isAtlasMaterial, ATLAS_K, MIN_HIT, identityOfMaterial, speciesOf, variantOf, mountsOf, plantFrameOf, plantCanvas, plantGlow, emitColour, silhouetteOf, ingredientIconUrl, iconFrameOf, ingredientSprite, ICON_PX };
 })();
 // src/game/journal.js
 const __m102 = (() => {
@@ -19322,7 +19510,7 @@ return { processEvent };
 })();
 // src/game/autobrew.js
 const __m103 = (() => {
-const { PHASE, SIM } = __m56;
+const { PHASE, SIM } = __m57;
 const { MAX_SPECIES } = __m25;
 function condensedCount(sim) {
 const p = sim.p;
@@ -19658,15 +19846,15 @@ return { condensedCount, stageGoal, AutoBrewer, spiritShare, runPlanHeadless, sp
 // src/game/sandbox.js
 const __m104 = (() => {
 const { sandboxIngredients } = __m7;
-const { EQUIPMENT } = __m58;
+const { EQUIPMENT } = __m59;
 const { BIOMES } = __m18;
-const { sandboxWilds } = __m63;
-const { normalizeTrials } = __m59;
-const { normalizeCellar } = __m88;
-const { normalizeGarden, seedId, TUTORIAL_PACE } = __m84;
+const { sandboxWilds } = __m64;
+const { normalizeTrials } = __m60;
+const { normalizeCellar } = __m89;
+const { normalizeGarden, seedId, TUTORIAL_PACE } = __m85;
 const { SPECIES_BY_KEY, materialIdOf } = __m15;
-const { migrateVial } = __m65;
-const { normalizeBench } = __m82;
+const { migrateVial } = __m66;
+const { normalizeBench } = __m83;
 const SANDBOX_CELLAR_PACE = 60;
 const SANDBOX_GARDEN_PACE = TUTORIAL_PACE;
 const SANDBOX_BEDS = /** @type {const} */ ([['soil', 4], ['fungal', 3], ['crystal', 3], ['tide', 2]]);
@@ -19685,7 +19873,8 @@ st.colony.seed = st.colony.seed || String(st.seed);
 st.restoreRemains();
 }
 if (same && Array.isArray(saved.bottles)) st.bottles = saved.bottles.map(migrateVial).filter(Boolean).slice(0, st.cap.bottles);
-st.cellar = normalizeCellar(same && saved.cellar ? saved.cellar : null, st.cap.vessels, now);
+st.cellar = normalizeCellar(same && saved.cellar ? saved.cellar : null, 0, now);
+st.cellarToShelves(now);
 sandboxCellar(st.cellar);
 st.garden = sandboxGarden(same && saved.garden ? normalizeGarden(saved.garden, now) : null, st);
 if (same && saved.bench) st.bench = normalizeBench(saved.bench);
@@ -19769,11 +19958,11 @@ decision: 'Bind a watery extract and an oily one with an emulsifier, in the righ
 consequence: 'With enough emulsifier (about 6 % of the smaller phase) and the smaller phase under two fifths of the liquid, oil and water become one potion; otherwise they part again. An emulsion extracts badly, so extract first, then emulsify.',
 objective: 'Potions that need magic from both oil- and water-soluble herbs.',
 feedback: 'The brew panel’s emulsion reading, layers that part or stay mixed, trials.' },
-{ id: 'aging', name: 'Aging cellars', role: 'production', stage: 'production', rank: 1,
-decision: 'Lay a brew down in a cellar vessel, load it with as much of a Fire or Frost potion you brewed as you choose, and lock its temperature with a rune.',
-consequence: 'Extraction goes on for hours, even while the shop is closed. The stronger the potion’s Fire (or Frost), the hotter (or colder) the vessel goes, by itself; the potion is used up as it works, and when it is spent the vessel returns to cellar temperature. A rune stops the rise or fall where you choose, and wears out with use.',
+{ id: 'aging', name: 'Aging on the shelves', role: 'production', stage: 'production', rank: 1,
+decision: 'Choose a bottle on the potion shelves, put as much of another shelved Fire or Frost potion as you choose in its Fire/Frost slot, and a rune in its rune slot to hold the temperature.',
+consequence: 'Extraction goes on for hours, even while the shop is closed. The stronger the potion’s Fire (or Frost), the hotter (or colder) the bottle goes, by itself; the potion is used up as it works, and when it is spent the bottle returns to cellar temperature. Unsealed, it is a new, untested batch. A rune stops the rise or fall where you choose, and wears out with use.',
 objective: 'Full, slow extraction without standing at the cauldron.',
-feedback: 'The cellar: each vessel’s temperature, the potion left in its charge and how far it can go, extraction, and the rune.' },
+feedback: 'The selected bottle on the shelves: its temperature, the potion left in its slot and how far it can go, extraction, and the rune.' },
 { id: 'mixing', name: 'Mixing', role: 'supporting', stage: 'balancing', rank: 0,
 decision: 'Stir, and how thoroughly, after every addition.',
 consequence: 'Powders dissolve faster when stirred (about 40 % more in a cold brew), neutralisers meet what they cancel, and every bottle of the batch comes out the same.',
@@ -19837,12 +20026,12 @@ const DAY = [
 const SECTIONS = [
 ['Orders and selling', 'stall', ['Customers ask for an effect — healing, strength, love, fire… — at a strength in percent (everyday orders want about 8–15 %).', 'Most orders forbid side effects: “no other effect above 1.2 %”. Every other kind of magic in the bottle must stay that faint.', 'Before a sale you write the label — tested values, the guild theory’s estimates, “none” or unknown — and bargain over the price. The customer comes back the next day: pleased, or with a complaint. Refund them, dispute it with your trial records, or turn them away.', 'Bottle onto the potion shelves whenever there is room (3 bottles; more with a Bottle Shelf, Potion Cabinet or Bottle Cellar). Bottles of one batch share its trials.', 'Honest, well-tested potions earn reputation. Reputation raises your rank, which opens regions, ingredients, equipment and harder orders.'], true],
 ['Ingredients and side effects', 'leaf', ['The Shop sells no prepared reagents — only free well water and two plain solvents, oil and spirit. Every effect comes from what you gather.', 'Nothing that grows is pure: each herb or mineral brings side effects. Cancel them with their opposites — fire and frost, life and death (life also mends poison, two parts to one), acid and alkali.', 'Long-press (or right-click) a jar to see what it does and what cancels its side effects.', 'You know what each plain ingredient does. You do NOT know what a mixture does: extraction, heat, reactions and hidden laws change it.']],
-['Brewing', 'cauldron', ['Pour: tap a jar, then a dose button (25–250 ml) — or hold your finger in the cauldron, or drag a jar onto it.', 'Crush: whole roots, leaves and stones go into the pot whole and give up almost nothing until you break them up with Crush (the pestle).', 'Extraction: an herb’s magic dissolves only in its own solvent — water-soluble herbs in water or spirit, oil-soluble ones only in oil (see the herb’s card). At room temperature only about 60 % of it comes out, and slowly (minutes). Heat makes it much quicker, but less can come out hot (about 45 % at 60 °C); cool it again and more comes out. Everything comes out only well below freezing — in spirit (water freezes) or chilled oil — and very slowly: that is work for the aging cellar. A frozen solvent extracts nothing. Watch the brew panel’s Extracted bars.', 'Burning: every herb has its own burning point, above water’s boil, found only by trying. Undissolved matter above it chars and its magic is lost; what is already dissolved is safe. Water boils first, so it is hot oil that burns herbs.', 'Emulsions: oil and water extracts stay apart unless an emulsifier binds them — the neutral gum from the Shop, about 6 % of the smaller phase, with the smaller phase under two fifths of the liquid. An emulsion extracts badly: extract each in its own solvent first, then bind them.', 'Distillation (Alembic & Condenser): put the still head on and heat between spirit’s and water’s boiling points; the spirit goes into the receiver and the magic stays. Jar the distillate to use the spirit again.', 'The Aging Cellar: lay a brew down to go on extracting for hours, even while the game is closed. Load a vessel with a Fire or Frost potion you brewed — from the cauldron or a shelved bottle, as much as you choose: the stronger its Fire (or Frost), the hotter (or colder) the vessel goes by itself, and the potion is used up as it works. A temperature rune locks the temperature where you choose on the way, and wears out with use.', 'Stir after every addition: an unstirred brew pours unevenly, so later bottles may not match the tested dose. Auto stirs for you (the Clockwork Stirrer about three times as fast).', 'The fire control: right heats, left cools; the gentle half of the slider is spread out for fine control, and − / + (or the arrow keys) move the flame two degrees at a time. The readout shows the flame (or the cold plate) and the cauldron floor. Tap Off beside it (or press 0) to put it out at once. The lid keeps steam in; boiling with the lid off makes a brew smaller and stronger — side effects too. Add water to weaken it.', 'Tap the ml · °C readout over the cauldron to see what is in it; Inspect reads one spot; Sample measures what a bottle would hold.']],
+['Brewing', 'cauldron', ['Pour: tap a jar, then a dose button (25–250 ml) — or hold your finger in the cauldron, or drag a jar onto it.', 'Crush: whole roots, leaves and stones go into the pot whole and give up almost nothing until you break them up with Crush (the pestle).', 'Extraction: an herb’s magic dissolves only in its own solvent — water-soluble herbs in water or spirit, oil-soluble ones only in oil (see the herb’s card). At room temperature only about 60 % of it comes out, and slowly (minutes). Heat makes it much quicker, but less can come out hot (about 45 % at 60 °C); cool it again and more comes out. Everything comes out only well below freezing — in spirit (water freezes) or chilled oil — and very slowly: that is work for aging (Counter → potion shelves). A frozen solvent extracts nothing. Watch the brew panel’s Extracted bars.', 'Burning: every herb has its own burning point, above water’s boil, found only by trying. Undissolved matter above it chars and its magic is lost; what is already dissolved is safe. Water boils first, so it is hot oil that burns herbs.', 'Emulsions: oil and water extracts stay apart unless an emulsifier binds them — the neutral gum from the Shop, about 6 % of the smaller phase, with the smaller phase under two fifths of the liquid. An emulsion extracts badly: extract each in its own solvent first, then bind them.', 'Distillation (Alembic & Condenser): put the still head on and heat between spirit’s and water’s boiling points; the spirit goes into the receiver and the magic stays. Jar the distillate to use the spirit again.', 'Aging (with the Aging Cellar): select a bottle on the potion shelves (Counter). It has two slots: put a shelved Fire or Frost potion in the first — as much as you choose, by tapping the slot or dragging the bottle onto it — and the bottle warms or chills by itself, the stronger the potion the further, using it up as it works; a temperature rune in the second holds the temperature where you choose on the way, and wears out with use. The bottle goes on extracting for hours, even while the game is closed. Unseal it when it is ready: it becomes a new, untested batch.', 'Stir after every addition: an unstirred brew pours unevenly, so later bottles may not match the tested dose.', 'The fire control: right heats, left cools; the gentle half of the slider is spread out for fine control, and − / + (or the arrow keys) move the flame two degrees at a time. The readout shows the flame (or the cold plate) and the cauldron floor. Tap Off beside it (or press 0) to put it out at once. The lid keeps steam in; boiling with the lid off makes a brew smaller and stronger — side effects too. Add water to weaken it.', 'Tap the ml · °C readout over the cauldron to see what is in it; Sample measures what a bottle drawn from the tap would hold (its composition, and with the Arcanometer its aura and arcane threshold).']],
 ['Arcane awakening', 'awaken', ['Magical ingredients carry a hidden arcane threshold. Heat the brew past it (or, for cold magic, chill it below) and the magic awakens: it glows and acts two to three times stronger — side effects too.', 'In a blend the threshold is the mix of its magical ingredients’ thresholds, by volume. Mix first at room temperature, then heat or chill; a half-mixed brew awakens unevenly.', 'Awakened magic stays awake when it cools, is bottled or kept. Only dilution and reactions undo it. The Arcanometer reads a brew’s threshold.']],
 ['Trials and rabbits', 'rabbit', ['Choose a rabbit and give it a dose (5, 10 or 25 ml) from the cauldron tap or the sealed vial. One trial reads every effect at once.', 'Each reading is uncertain: the ± margin is how far the truth may lie. One reading is a rough guess; repeating it on the same rabbit helps a little; other rabbits help most (detected once → repeated → corroborated).', '“Not detected” is not proof of absence: a faint effect can hide below the noise. Cautious customers want readings repeated or corroborated, and every customer pays more for a well-tested label.', 'Effects pile up in a rabbit and fade slowly. Past its own hidden limit an effect runs out of control and can kill it; fire and acid burn; strength and vitality can make it attack; love makes it mate. A purging draught washes everything out. Rabbits can be fed, bred, bought and put down; a body’s remains can be recovered once as an ingredient.', 'When a trial surprises you, a hidden law may be at work. Confirm it twice and your theory learns it.']],
 ['Wilds', 'tree', ['Tap a mature plant in the picture, or its button, to gather. Every plant grows from sprout to ripe to mature, and only a mature one can be harvested. A harvest leaves a mark on the ground that fades; new sprouts come up at random spots until the region is full again, even while the game is closed.', 'Thorough digs the plant out for twice as much, but its kind then sprouts at half pace. Roots, seams, mosses and dust need the Forager’s Kit for a full harvest.', 'Twilight plants open only at dawn (before you open the shop) or at dusk (after the last customer). The weather changes daily. New regions open with rank.']],
 ['Recipes and the Book', 'book', ['After a sale you can save the brew as a recipe: what went in, and every step in order. Prepare pours it again; the Brass Homunculus replays every step.', 'The Book also keeps every trial, the laws you discovered, all ingredients, your journal, awards and sales.']],
-['Keys and tips', 'bulb', ['Keys: 1 pour · 2 stir · 3 crush · 5 inspect · L lid · B bottle · F speed · A auto-stir · arrows fire · 0 fire off · S shop · R recipes · C/V/W/T/J rooms · Esc menu.', 'Advice at the Counter buys a hint for a hard order.', 'Orders far below your rank earn little reputation; a technique sold well for the first time earns a bonus.', 'Out of money? The guild helps a struggling apprentice once a day — and well water is always free.', 'The Free Experiment has every tool, the skimmer, the alembic, a heat map and exact physical readings.']],
+['Keys and tips', 'bulb', ['Keys: 1 pour · 2 stir · 3 crush · I inventory · L lid · B bottle · arrows fire · 0 fire off · S shop · R recipes · C/V/W/T/J rooms · Esc menu.', 'Advice at the Counter buys a hint for a hard order.', 'Orders far below your rank earn little reputation; a technique sold well for the first time earns a bonus.', 'Out of money? The guild helps a struggling apprentice once a day — and well water is always free.', 'The Free Experiment has every tool, the skimmer, the alembic and exact physical readings.']],
 ['The Counter', 'stall', [
 'At dawn the shop is still closed: dawn flowers are open in the Wilds only until you open the door. Brew ahead for the shelves, or open up when you are ready.',
 'At dusk, after the last customer, the twilight plants are open in the Wilds until you close for the night.',
@@ -19920,32 +20109,32 @@ return { CREATURE_NAMES, rarityOf, rarityTag, effectChips };
 })();
 // src/ui/panels.js
 const __m105 = (() => {
-const { recipeConfidence, CONFIDENCE_TEXT, describeStep } = __m87;
+const { recipeConfidence, CONFIDENCE_TEXT, describeStep } = __m88;
 const { MECHANIC_BY_ID } = __m106;
-const { evidenceRank } = __m59;
+const { evidenceRank } = __m60;
 const { h, btn, modal, toast, coins, starsText, confirmDialog, clear, keepScroll } = __m2;
 const { renderGuide } = __m107;
 const { icon } = __m3;
-const { drawPortrait } = __m98;
-const { drawJar } = __m93;
-const { drawBottle } = __m92;
-const { EQUIPMENT, RANKS } = __m58;
+const { drawPortrait } = __m99;
+const { drawJar } = __m94;
+const { drawBottle } = __m93;
+const { EQUIPMENT, RANKS } = __m59;
 const { ACHIEVEMENTS } = __m5;
-const { viscosityClass, densityWord, evennessWord } = __m81;
+const { viscosityClass, densityWord, evennessWord } = __m82;
 const { EFFECTS, EFFECT_BY_KEY, EFFECT_KEYS, dominantEffect } = __m20;
-const { ingredientSprite } = __m99;
+const { ingredientSprite } = __m100;
 const { compatFactor } = __m21;
 const { describeColor, rgbToHex } = __m11;
-const { SIM } = __m56;
-const { exportSave, parseImport, saveGame } = __m89;
+const { SIM } = __m57;
+const { exportSave, parseImport, saveGame } = __m90;
 const { audio } = __m4;
 const { isMagical } = __m22;
-const { causeWord } = __m60;
+const { causeWord } = __m61;
 const { rarityTag } = __m108;
 const { BIOME_BY_ID } = __m18;
 const { seedChance } = __m17;
 const { classWords, groupExtracts, groupLine } = __m8;
-const { vesselReport, vesselVolume, potionNet, RUNE_PRICE, CELLAR_T } = __m88;
+const { RUNE_PRICE } = __m89;
 const CAT_LABEL = { heat: 'Fire', cold: 'Cooling', vessel: 'Cauldrons', tool: 'Tools', instrument: 'Instruments', trials: 'Trials room', gathering: 'Foraging', storage: 'Potion storage', guild: 'Guild' };
 function jarCanvas(m, w = 22, hh = 30) {
 if ((m.wild || m.remains) && m.form === 'solid') {
@@ -20033,13 +20222,13 @@ const price = Math.round(RUNE_PRICE * (1 - st.cap.discount) * 10) / 10;
 const locked = st.rank < 1;
 const b = btn('Buy', () => {
 const r = st.buyRune();
-if (r.ok) { audio.play('purchase'); toast('A temperature rune', 'Set it on a charged cellar vessel: it locks the temperature where you choose until it wears out.', 'rune'); } else { audio.play('error'); toast('Cannot buy', r.reason, 'lock'); }
+if (r.ok) { audio.play('purchase'); toast('A temperature rune', 'Put it in an aging bottle’s rune slot (Counter → potion shelves): it holds the temperature where you choose until it wears out.', 'rune'); } else { audio.play('error'); toast('Cannot buy', r.reason, 'lock'); }
 rerender();
 }, { cls: 'small', disabled: locked || st.coins < price, act: 'buy-rune', title: `Buy a temperature rune for ${coins(price)} coins` });
 b.appendChild(h('span', { class: 'price' }, icon('coin'), coins(price)));
 list.appendChild(h('div', { class: 'item parch' + (locked ? ' locked' : '') }, icon('rune'),
 h('div', {}, h('div', { class: 'title', text: 'Temperature rune' }),
-h('div', { class: 'meta', text: locked ? 'The runesmith sells to a Journeyman or above. Old runes also turn up underground in the Wilds.' : 'Holds a cellar vessel at the temperature you choose, against the heat or cold of its potion, until it wears out. Also found underground in the Wilds.' }),
+h('div', { class: 'meta', text: locked ? 'The runesmith sells to a Journeyman or above. Old runes also turn up underground in the Wilds.' : 'Holds an aging bottle at the temperature you choose, against the heat or cold of its potion, until it wears out. Also found underground in the Wilds.' }),
 h('div', { class: 'meta', text: `owned: ${st.cellar.runes}` })),
 locked ? icon('lock') : b));
 }
@@ -20307,6 +20496,7 @@ h('span', { class: 'k', text: 'Colour' }), h('span', {}, swatch(m.color), ' ' + 
 ...(sand ? [...kv('Volatility', String(Math.round(m.volatility))), ...kv('Charge', `${m.charge >= 0 ? '+' : ''}${m.charge.toFixed(2)}`)] : []),
 ...kv('Effects', 'unknown — test a dose in Trials'),
 ...(aura ? kv('Aura', aura) : []),
+...(m.arcane ? kv('Arcane', m.arcane) : []),
 )),
 h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Composition' }), ...comp.map((g) => h('div', { class: 'small', text: groupLine(g, 1, 1) }))),
 lab.sandbox ? null : h('div', { class: 'row' }, btn('Save as recipe', () => { const ev = st.addRecipe({ ...recipe, name: 'Experiment ' + (st.recipes.length + 1) }); for (const e of ev) lab.announce(e); toast('Recipe saved', '', 'book'); }, { icon: 'book' })),
@@ -20525,162 +20715,18 @@ h('div', { class: 'small muted credits', text: 'The Alchemist’s Shop — all a
 ],
 });
 }
-function openCellar(lab) {
-const st = lab.state;
-let m = null;
-const vals = {};
-let sel = /** @type {string|null} */ (null);
-let drag = null;
-const rerender = () => {
-if (!m || (drag && drag.on)) return;
-const keep = [m.body, m.el].map((e) => e.scrollTop);
-clear(m.body); m.body.append(...render());
-[m.body, m.el].forEach((e, i) => { e.scrollTop = keep[i]; });
-};
-const potName = (net) => (net > 0 ? 'Fire' : 'Frost');
-const valOf = (k) => vals[k] || (vals[k] = { ml: 50, target: 40 });
-const useBottle = (k, bottleId) => {
-const b = st.bottles.find((x) => x.id === bottleId);
-const v = st.cellar.vessels[k];
-if (!b || !v) return;
-const net = b.m ? potionNet(b.m.effects) : 0;
-let r;
-if (net) {
-r = st.activateVessel(k, b.id, valOf(k).ml);
-if (r.ok) toast(`Vessel ${k + 1} charged`, `${Math.round(r.ml)} ml of the ${potName(net)} potion loaded: it can take the vessel to ${r.limit}°C.`, net > 0 ? 'flame' : 'snow', 3200);
-} else if (vesselVolume(v) <= 0) {
-r = st.layDown(k, { bottleId: b.id });
-if (r.ok) toast('Laid down', `The bottle is in vessel ${k + 1}.`, 'shelf2');
-} else r = { ok: false, reason: 'Only a Fire or Frost potion charges a vessel; another brew goes into an empty vessel.' };
-if (!r.ok) { toast('Cannot', r.reason, 'lock'); audio.play('error'); } else { audio.play('glass'); lab.save(); }
-if (!st.bottles.some((x) => x.id === sel)) sel = null;
-rerender();
-};
-const shelves = () => {
-const row = h('div', { class: 'cellar-shelf', role: 'listbox', 'aria-label': 'Potion shelves' });
-if (!st.bottles.length) row.append(h('div', { class: 'small muted', text: 'The potion shelves are empty. Bottle a Fire or Frost potion onto them (Bottle → To the potion shelves) to charge a vessel.' }));
-for (const b of st.bottles) {
-const net = b.m ? potionNet(b.m.effects) : 0;
-const cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: '16', height: '22', class: 'vial-art' }));
-drawBottle(/** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')), 2, 2, 12, 19, b.m ? b.m.color : [0.5, 0.5, 0.5], Math.min(1, b.ml / Math.max(1, b.bottledMl || b.ml)));
-const tag = net ? h('span', { class: 'cs-fx ' + (net > 0 ? 'fire' : 'frost') }, icon(net > 0 ? 'flame' : 'snow', 'sm')) : null;
-const tile = h('button', { class: 'cellar-bottle' + (sel === b.id ? ' active' : '') + (net ? ' charger' : ''), role: 'option', 'aria-selected': sel === b.id ? 'true' : 'false', 'data-act': 'cellar-shelf-bottle', 'data-id': b.id,
-title: `${b.label && b.label.name ? b.label.name : 'Bottle'}, ${Math.round(b.ml)} ml${net ? ` — ${potName(net)} ${Math.abs(net)}%: drag it onto a vessel to charge it` : ' — drag it onto an empty vessel to lay it down'}` },
-cv, h('span', { class: 'bml', text: `${Math.round(b.ml)}` }), tag);
-tile.addEventListener('pointerdown', (e) => {
-drag = { id: b.id, pid: e.pointerId, x: e.clientX, y: e.clientY, on: false, ghost: null, over: null };
-try { tile.setPointerCapture(e.pointerId); } catch { /* ignore */ }
-});
-tile.addEventListener('pointermove', (e) => {
-if (!drag || drag.pid !== e.pointerId) return;
-if (!drag.on && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 8) {
-drag.on = true;
-drag.ghost = h('div', { class: 'drag-ghost bottle-ghost' }, cv.cloneNode(true));
-const c2 = /** @type {HTMLCanvasElement} */ (drag.ghost.firstChild);
-/** @type {CanvasRenderingContext2D} */ (c2.getContext('2d')).drawImage(cv, 0, 0);
-document.body.appendChild(drag.ghost);
-}
-if (!drag.on || !drag.ghost) return;
-drag.ghost.style.transform = `translate(${e.clientX - 16}px, ${e.clientY - 40}px)`;
-const br = m.body.getBoundingClientRect(), edge = 48;
-if (e.clientY > br.bottom - edge) m.body.scrollTop += Math.ceil((e.clientY - (br.bottom - edge)) / 3);
-else if (e.clientY < br.top + edge + 70) m.body.scrollTop -= Math.ceil((br.top + edge + 70 - e.clientY) / 3);
-const over = document.elementFromPoint(e.clientX, e.clientY);
-const card = over ? over.closest('.cellar-vessel') : null;
-if (drag.over !== card) { if (drag.over) drag.over.classList.remove('drop-over'); if (card) card.classList.add('drop-over'); drag.over = card; }
-});
-const end = (e) => {
-if (!drag || drag.pid !== e.pointerId) return;
-const d = drag;
-drag = null;
-if (d.ghost) d.ghost.remove();
-if (d.over) d.over.classList.remove('drop-over');
-if (!d.on) { if (e.type === 'pointerup') { sel = sel === b.id ? null : b.id; audio.play('click'); rerender(); } return; }
-const card = d.over;
-if (e.type === 'pointerup' && card) useBottle(Number(card.getAttribute('data-vessel')), b.id);
-else rerender();
-};
-tile.addEventListener('pointerup', end);
-tile.addEventListener('pointercancel', end);
-tile.addEventListener('lostpointercapture', end);
-row.append(tile);
-}
-return h('div', { class: 'card parch cellar-shelves' },
-h('div', { class: 'row' }, icon('bottle', 'sm'), h('b', { text: 'Potion shelves' }), h('span', { class: 'spacer' }),
-h('span', { class: 'small muted', text: sel ? 'Now tap “Use the picked bottle” on a vessel' : 'Drag a bottle onto a vessel, or tap it to pick it' })),
-row);
-};
-const render = () => {
-lab.tickCellar();
-const out = [h('div', { class: 'small muted', text: `Runes in hand: ${Number.isFinite(st.cellar.runes) ? st.cellar.runes : 'unlimited'}.${lab.sandbox ? ` In the Free Experiment the cellar runs ${st.cellar.pace || 1} times faster.` : ''} A vessel extracts slowly but for hours, even while the shop is closed. Load it with a Fire or Frost potion you brewed: the stronger its Fire (or Frost), the hotter (or colder) the vessel goes, and the potion is used up as it works. A rune locks the temperature on the way, where you choose; it wears out with use.` }), shelves()];
-const picked = sel ? st.bottles.find((x) => x.id === sel) : null;
-st.cellar.vessels.forEach((v, k) => {
-const rep = vesselReport(v, st.lookup);
-const empty = vesselVolume(v) <= 0;
-const val = vals[k] || (vals[k] = { ml: 50, target: v.rune ? v.rune.target : rep.charge ? Math.round((rep.charge.limit + CELLAR_T) / 2) : 40 });
-const card = h('div', { class: 'card parch cellar-vessel', 'data-vessel': String(k) },
-h('div', { class: 'row' }, icon('shelf2'), h('b', { text: `Vessel ${k + 1}` }), h('span', { class: 'spacer' }), h('span', { class: 'small muted', 'data-temp': String(Math.round(rep.T * 10) / 10), text: empty ? 'empty' : `${Math.round(rep.ml)} ml · ${rep.T.toFixed(1)}°C` })));
-if (!empty) card.append(h('div', { class: 'small', text: v.name || 'A laid-down brew' }));
-const c = rep.charge;
-const heat = c
-? `${potName(c.net)} charge: ${c.ml.toFixed(1)} ml left (${c.net > 0 ? 'Fire' : 'Frost'} ${Math.abs(c.net)}%) — can take it to ${c.limit}°C${empty ? ' (it works once the vessel holds a brew)' : ''}`
-: empty ? 'no charge' : Math.abs(rep.T - CELLAR_T) > 0.5 ? `no charge: returning to cellar temperature (${CELLAR_T}°C)` : `no charge: at cellar temperature (${CELLAR_T}°C)`;
-card.append(h('div', { class: 'small ' + (c ? 'know' : 'muted'), 'data-charge': c ? String(c.ml) : '0', text: heat }));
-if (rep.rune) {
-const r = rep.rune, left = `${Math.round((1 - r.wear) * 100)}% left`;
-const state = r.locked ? `locked at ${r.target}°C` : r.holds ? `will lock at ${r.target}°C` : c ? `set at ${r.target}°C, beyond this charge's reach (${c.limit}°C): it cannot lock` : `set at ${r.target}°C: it holds only while the vessel is charged`;
-card.append(h('div', { class: 'small ' + (r.holds ? 'know' : 'warn'), text: `Rune ${state} (${left})` }));
-}
-if (!empty) {
-if (rep.frozen || rep.char > 0.5 || rep.alcohol > 0.5) card.append(h('div', { class: 'small ' + (rep.frozen ? 'warn' : 'muted'), text: [rep.frozen ? 'frozen: extraction stopped' : '', rep.char > 0.5 ? `${Math.round(rep.char)} ml burnt to char` : '', rep.alcohol > 0.5 ? `${rep.alcohol.toFixed(0)}% spirit` : ''].filter(Boolean).join(' · ') }));
-for (const it of rep.items) {
-const k2 = st.knowledge[it.id] || {};
-card.append(h('div', { class: 'row small extract-row' }, h('span', { text: it.name }), h('span', { class: 'spacer' }),
-h('span', { class: 'xbar' }, h('i', { class: 'xbar-fill', style: { width: (it.share * 100).toFixed(1) + '%' } }), h('i', { class: 'xbar-cap', style: { left: Math.round(it.ceiling * 100) + '%' } })),
-h('span', { class: 'muted', text: ` ${(it.share * 100).toFixed(1)}% / ${Math.round(it.ceiling * 100)}%${k2.burnsAt !== undefined ? ` · burns by ${Math.round(k2.burnsAt)}°C` : ''}` })));
-}
-}
-const acts = h('div', { class: 'row', style: { flexWrap: 'wrap', gap: '6px' } });
-if (picked) acts.append(btn(`Use the picked ${Math.round(picked.ml)} ml bottle`, () => useBottle(k, picked.id), { icon: 'bottle', cls: 'small gold', act: `cellar-use-picked-${k}` }));
-if (empty) acts.append(btn('Lay down the brew', () => { lab.layDownCauldron(k); rerender(); }, { icon: 'cauldron', act: `cellar-fill-${k}`, disabled: !lab.sim.p.count, title: 'Pour everything in the cauldron into this vessel' }));
-const mlIn = /** @type {HTMLInputElement} */ (h('input', { type: 'number', value: String(val.ml), min: '5', max: '1000', step: '5', style: { width: '4.5em' }, 'aria-label': 'Potion to load (ml)', 'data-act': `cellar-ml-${k}` }));
-mlIn.addEventListener('input', () => { val.ml = Math.max(5, Number(mlIn.value) || 5); });
-acts.append(h('div', { class: 'row', style: { flexWrap: 'wrap', gap: '6px', alignItems: 'center' } }, h('span', { class: 'small', text: 'Load' }), mlIn, h('span', { class: 'small', text: 'ml' }),
-btn('From the pot', () => { const r = lab.chargeFromCauldron(k, val.ml); if (r && r.ok) audio.play('pour'); rerender(); }, { icon: 'cauldron', cls: 'small', act: `cellar-charge-pot-${k}`, disabled: lab.tapAvailable() < 5, title: 'Draw this much potion from the cauldron’s tap into the vessel’s heating jacket' })));
-const input = /** @type {HTMLInputElement} */ (h('input', { type: 'number', value: String(val.target), min: '-60', max: '300', step: '1', style: { width: '4.5em' }, 'aria-label': 'Rune temperature (°C)', 'data-act': `cellar-target-${k}` }));
-input.addEventListener('input', () => { val.target = Number(input.value); });
-const has = !!(v.rune && v.rune.life > 0);
-acts.append(h('div', { class: 'row', style: { flexWrap: 'wrap', gap: '6px', alignItems: 'center' } }, h('span', { class: 'small', text: 'Lock at' }), input, h('span', { class: 'small', text: '°C' }),
-btn(has ? 'Move the rune' : 'Set a rune', () => { const r = st.runeVessel(k, Number(val.target)); if (!r.ok) toast('Cannot', r.reason, 'lock'); else { audio.play('select'); lab.save(); } rerender(); }, { icon: 'rune', cls: 'small', act: `cellar-rune-${k}`, disabled: !has && st.cellar.runes <= 0 })));
-if (!empty) {
-acts.append(btn('Pour into the pot', () => { const r = lab.pourVesselBack(k); if (r && r.ok) rerender(); }, { icon: 'pour', cls: 'small', act: `cellar-pour-back-${k}`, title: 'Pour this brew back into the cauldron to keep working on it' }));
-acts.append(btn('Bottle it', () => { const r = st.bottleVessel(k); if (!r.ok) toast('Cannot', r.reason, 'lock'); else { toast('Bottled from the cellar', `${Math.round(r.vial.ml)} ml onto the potion shelves. Test it before you sell it.`, 'bottle'); audio.play('glass'); } rerender(); }, { icon: 'bottle', cls: 'small primary', act: `cellar-bottle-out-${k}` }));
-}
-card.append(acts);
-out.push(card);
-});
-return out;
-};
-const timer = setInterval(() => {
-if (!m || !document.body.contains(m.el)) { clearInterval(timer); return; }
-const a = document.activeElement;
-if (a && a.tagName === 'INPUT' && m.el.contains(a)) return;
-rerender();
-}, 1000);
-m = modal({ title: 'Aging cellar', wide: true, body: render(), onClose: () => { clearInterval(timer); for (const g of document.querySelectorAll('.bottle-ghost')) g.remove(); } });
-}
-return { jarCanvas, fxChips, openShop, openIngredient, openHint, openBottleSize, showDaySummary, showAnalysis, openRecipes, renderRecipes, openJournal, renderJournal, openPause, openReceiver, openHelp, openSettings, openCellar };
+return { jarCanvas, fxChips, openShop, openIngredient, openHint, openBottleSize, showDaySummary, showAnalysis, openRecipes, renderRecipes, openJournal, renderJournal, openPause, openReceiver, openHelp, openSettings };
 })();
 // src/ui/trade.js
 const __m109 = (() => {
 const { h, btn, modal, toast, coins, clear, starsText } = __m2;
 const { icon } = __m3;
-const { drawPortrait } = __m98;
+const { drawPortrait } = __m99;
 const { audio } = __m4;
 const { EFFECTS, EFFECT_BY_KEY } = __m20;
-const { draftLabel, openNegotiation: beginNegotiation, proposePrice, acceptOffer, relevantEffects, trustReport, editClaim, proofGaps, claimSigma, claimStars, labelStars, MAX_STARS } = __m83;
-const { PURITY_LIMIT } = __m57;
-const { shortName } = __m54;
+const { draftLabel, openNegotiation: beginNegotiation, proposePrice, acceptOffer, relevantEffects, trustReport, editClaim, proofGaps, claimSigma, claimStars, labelStars, MAX_STARS } = __m84;
+const { PURITY_LIMIT } = __m58;
+const { shortName } = __m55;
 function openIdentify(lab, vial, onDone) {
 const st = lab.state;
 const draft = vial.label ? JSON.parse(JSON.stringify(vial.label)) : draftLabel(vial, lab.vialTheory(vial), st.day);
@@ -20896,10 +20942,10 @@ return { openIdentify, openNegotiation, showDeal, followUpCard, claimSummary, ac
 // src/ui/tutorial.js
 const __m110 = (() => {
 const { h, btn, placeToasts } = __m2;
-const { PHASE } = __m56;
+const { PHASE } = __m57;
 const { TUTORIAL_HERBS } = __m23;
 const { thresholdToCelsius } = __m22;
-const { shortName } = __m54;
+const { shortName } = __m55;
 class Tutorial {
 constructor(lab) {
 this.lab = lab;
@@ -21047,15 +21093,16 @@ return { Tutorial };
 })();
 // src/ui/inventory.js
 const __m111 = (() => {
-const { h, btn, clear, keepScroll } = __m2;
+const { h, btn, clear } = __m2;
 const { icon } = __m3;
 const { jarCanvas, openIngredient } = __m105;
-const { inventoryGroups } = __m82;
+const { ingredientIconUrl } = __m100;
+const { inventoryGroups } = __m83;
 const { EFFECTS, EFFECT_BY_KEY } = __m20;
 const { RARITY } = __m17;
 const { audio } = __m4;
 const RAR_SHORT = { common: 'COM', uncommon: 'UNC', rare: 'RARE', unique: 'UNIQ', legendary: 'LEG' };
-const LIFT_MS = 220, INSPECT_MS = 600;
+const LIFT_MS = 160, INSPECT_MS = 600;
 function amount(s) {
 return !isFinite(s) ? '∞' : s >= 1000 ? (s / 1000).toFixed(1) + 'L' : String(Math.round(s));
 }
@@ -21118,7 +21165,8 @@ btn(this.showEmpty ? 'Hide empty' : 'Empty too', () => { this.showEmpty = !this.
 emptyOn.length ? btn('', () => { for (const id of emptyOn) lab.setOnShelf(id, false); this.render(); }, { icon: 'trash', cls: 'icon', title: 'Take the jars you have run out of off the shelf', act: 'inv-tidy' }) : null,
 onShelf.length ? btn('', () => { for (const id of onShelf) lab.setOnShelf(id, false); this.render(); }, { icon: 'minus', cls: 'icon', title: 'Clear the shelf: every jar back in the storeroom', act: 'inv-clear' }) : null,
 ].filter(Boolean));
-keepScroll(this.tabs, () => {
+const left = this.tabs.scrollLeft;
+{
 clear(this.tabs);
 const tab = (key, label, ic, n) => {
 const b = h('button', { class: 'inv-tab' + (this.section === key ? ' active' : ''), role: 'tab', 'aria-selected': String(this.section === key), 'data-act': 'inv-sec-' + key, title: label },
@@ -21130,8 +21178,10 @@ this.tabs.appendChild(b);
 };
 tab('all', 'All', 'satchel', shown.length);
 for (const g of groups) tab(g.key, g.label, g.icon, g.ids.length);
-});
-keepScroll(this.grid, () => {
+}
+this.tabs.scrollLeft = left;
+const top = this.grid.scrollTop;
+{
 clear(this.grid);
 if (!shown.length) { this.grid.appendChild(h('div', { class: 'inv-empty-note small', text: 'The storeroom is empty. Gather in the Wilds, harvest the Garden or buy from the Shop.' })); return; }
 for (const g of groups) {
@@ -21139,7 +21189,8 @@ if (this.section !== 'all' && g.key !== this.section) continue;
 if (this.section === 'all') this.grid.appendChild(h('div', { class: 'inv-head', 'data-group': g.key }, icon(g.icon, 'sm'), ` ${g.label}`));
 for (const id of g.ids) this.grid.appendChild(this.tile(id, g.key));
 }
-});
+}
+this.grid.scrollTop = top;
 }
 tile(id, group) {
 const m = this.lab.state.lookup(id);
@@ -21154,12 +21205,32 @@ title: describeTile(m, s) + (on ? ' · on the shelf (tap to take it off)' : ' ·
 },
 w ? h('span', { class: `inv-rar r-${w.rarity}`, text: RAR_SHORT[w.rarity] || '' }) : null,
 h('span', { class: 'inv-stock', text: amount(s) }),
-jarCanvas(m, 18, 24),
+this.picture(m),
 h('span', { class: 'inv-name', text: m.remains ? m.remains.short : m.name }),
 effectStripe(m),
 on ? h('span', { class: 'inv-on' }, icon('check', 'sm')) : null);
 this.bindTile(el, id);
 return el;
+}
+syncTile(el, id) {
+const on = this.lab.onShelf(id);
+el.classList.toggle('on', on);
+el.setAttribute('aria-pressed', String(on));
+const mark = el.querySelector('.inv-on');
+if (on && !mark) el.appendChild(h('span', { class: 'inv-on' }, icon('check', 'sm')));
+else if (!on && mark) mark.remove();
+const pool = this.lab.shelfPool();
+this.count.textContent = `${pool.filter((x) => this.stock(x) > 0).length} held · ${this.lab.state.bench.ids.filter((x) => pool.includes(x)).length} on the shelf`;
+}
+picture(m) {
+const url = ingredientIconUrl(m);
+if (!url) return jarCanvas(m, 18, 24);
+const img = /** @type {HTMLImageElement} */ (h('img', { class: 'inv-pic', src: url, alt: '', draggable: 'false' }));
+return img;
+}
+syncId(id) {
+const t = /** @type {HTMLElement|null} */ (this.grid.querySelector(`.inv-tile[data-id="${CSS.escape(id)}"]`));
+if (t) this.syncTile(t, id);
 }
 bindTile(el, id) {
 let pid = -1, sx = 0, sy = 0, timer = 0, inspect = 0, mode = /** @type {'idle'|'press'|'lifted'|'drag'|'done'|'tap'} */ ('idle'), mouse = false;
@@ -21197,15 +21268,16 @@ mode = 'idle';
 if (!tap) return;
 this.lab.setOnShelf(id, !this.lab.onShelf(id));
 audio.play('select');
-this.render();
+this.syncTile(el, id);
 });
 el.addEventListener('contextmenu', (e) => { e.preventDefault(); clearTimers(); mode = 'done'; openIngredient(this.lab, id, () => this.refresh()); });
 }
 startDrag(el, id, e) {
 this.endDrag();
-const pic = /** @type {HTMLCanvasElement|null} */ (el.querySelector('canvas'));
+const pic = /** @type {HTMLCanvasElement|HTMLImageElement|null} */ (el.querySelector('canvas, img'));
 const ghost = h('div', { class: 'inv-ghost' });
-if (pic) { const c = /** @type {HTMLCanvasElement} */ (pic.cloneNode()); /** @type {CanvasRenderingContext2D} */ (c.getContext('2d')).drawImage(pic, 0, 0); ghost.appendChild(c); }
+if (pic instanceof HTMLImageElement) ghost.appendChild(pic.cloneNode());
+else if (pic) { const c = /** @type {HTMLCanvasElement} */ (pic.cloneNode()); /** @type {CanvasRenderingContext2D} */ (c.getContext('2d')).drawImage(pic, 0, 0); ghost.appendChild(c); }
 document.body.appendChild(ghost);
 this.drag = { id, ghost, pid: e.pointerId };
 el.classList.add('dragging');
@@ -21227,7 +21299,7 @@ this.lab.setOnShelf(d.id, true, this.insertAt(e));
 audio.play('select');
 }
 this.endDrag();
-this.render();
+this.syncId(d.id);
 }
 endDrag() {
 const d = this.drag;
@@ -21262,27 +21334,150 @@ jars.forEach((j, k) => { j.classList.toggle('ins-before', k === at); j.classList
 }
 return { InventoryDrawer };
 })();
+// src/ui/aging.js
+const __m113 = (() => {
+const { h, btn, toast } = __m2;
+const { icon } = __m3;
+const { drawBottle } = __m93;
+const { potionNet, vesselReport, chargeLimit, CELLAR_T } = __m89;
+const { audio } = __m4;
+const potName = (net) => (net > 0 ? 'Fire' : 'Frost');
+function bottleArt(b) {
+const cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: '16', height: '22', class: 'vial-art' }));
+drawBottle(/** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')), 2, 2, 12, 19, b.m ? b.m.color : [0.5, 0.5, 0.5], Math.min(1, b.ml / Math.max(1, b.bottledMl || b.ml)));
+return cv;
+}
+function chargers(st, b) {
+return st.bottles.filter((x) => x !== b && !x.aging && x.m && potionNet(x.m.effects));
+}
+function loadCharge(lab, bottleId, chargeId, ml) {
+const st = lab.state;
+const cb = st.bottles.find((x) => x.id === chargeId);
+const net = cb && cb.m ? potionNet(cb.m.effects) : 0;
+const r = st.chargeBottle(bottleId, chargeId, ml);
+if (!r.ok) { toast('Cannot', r.reason, 'lock'); audio.play('error'); return r; }
+toast(`${potName(net)} potion loaded`, `${Math.round(r.ml)} ml in the slot: it can take the bottle to ${r.limit}°C.`, net > 0 ? 'flame' : 'snow', 3200);
+audio.play('glass');
+lab.save();
+return r;
+}
+function agingBlock(view, b, rerender) {
+const lab = view.lab, st = lab.state;
+const box = h('div', { class: 'aging', 'data-aging': b.aging ? 'on' : 'off' });
+const head = h('div', { class: 'row aging-head' }, icon('shelf2', 'sm'), h('b', { text: 'Aging' }), h('span', { class: 'spacer' }),
+h('span', { class: 'small muted', text: st.agingSlots > 0 ? `${st.agingCount}/${st.agingSlots} aging · runes in hand: ${Number.isFinite(st.cellar.runes) ? st.cellar.runes : '∞'}` : '' }));
+box.append(head);
+if (st.agingSlots <= 0) {
+box.append(h('div', { class: 'small muted', text: 'A bottle can age on the shelf — it goes on extracting for hours, even while the shop is closed — once you own the Aging Cellar (the guild sells it in the Shop).' }));
+return box;
+}
+const v = b.aging;
+const rep = v ? vesselReport(v, st.lookup) : null;
+const c = rep && rep.charge;
+const chargeSlot = h('button', { class: 'age-slot charge' + (c ? ' full ' + (c.net > 0 ? 'fire' : 'frost') : '') + (view.agePick === 'charge' ? ' open' : ''), 'data-slot': 'charge', 'data-act': 'age-slot-charge',
+title: 'The Fire or Frost slot: tap to choose a potion from the shelves, or drag a bottle here' },
+c ? icon(c.net > 0 ? 'flame' : 'snow') : h('span', { class: 'age-plus', text: '+' }),
+h('span', { class: 'age-slot-txt' },
+h('b', { text: c ? `${potName(c.net)} ${Math.abs(c.net)}%` : 'Fire / Frost' }),
+h('span', { class: 'small', text: c ? `${c.ml.toFixed(0)} ml left · to ${c.limit}°C` : 'a potion to warm or chill it' })));
+chargeSlot.addEventListener('click', () => { view.agePick = view.agePick === 'charge' ? null : 'charge'; audio.play('click'); rerender(); });
+const r = rep && rep.rune;
+const runeSlot = h('button', { class: 'age-slot rune' + (r ? ' full' : '') + (view.agePick === 'rune' ? ' open' : ''), 'data-slot': 'rune', 'data-act': 'age-slot-rune',
+title: 'The rune slot: a temperature rune holds the bottle where you choose, on the way to its potion’s limit' },
+r ? icon('rune') : h('span', { class: 'age-plus', text: '+' }),
+h('span', { class: 'age-slot-txt' },
+h('b', { text: r ? `Rune ${r.target}°C` : 'Rune' }),
+h('span', { class: 'small', text: r ? `${r.locked ? 'locked' : r.holds ? 'will lock' : 'cannot lock'} · ${Math.round((1 - r.wear) * 100)}% left` : 'hold a temperature' })));
+runeSlot.addEventListener('click', () => { view.agePick = view.agePick === 'rune' ? null : 'rune'; audio.play('click'); rerender(); });
+box.append(h('div', { class: 'age-slots' }, chargeSlot, runeSlot));
+if (view.agePick === 'charge') {
+const list = chargers(st, b);
+const ml = /** @type {HTMLInputElement} */ (h('input', { type: 'number', value: String(view.ageMl || 50), min: '5', max: '1000', step: '5', style: { width: '4.5em' }, 'aria-label': 'Potion to load (ml)', 'data-act': 'age-ml' }));
+ml.addEventListener('input', () => { view.ageMl = Math.max(5, Number(ml.value) || 5); });
+const pick = h('div', { class: 'age-pick' }, h('div', { class: 'row small' }, h('span', { text: 'Load' }), ml, h('span', { text: 'ml of:' })));
+if (!list.length) pick.append(h('div', { class: 'small muted', text: 'No Fire or Frost potion on the shelves. Brew one, bottle it onto the shelves, then load it here.' }));
+const row = h('div', { class: 'age-pick-list' });
+for (const x of list) {
+const net = potionNet(x.m.effects);
+const o = h('button', { class: 'age-pick-bottle ' + (net > 0 ? 'fire' : 'frost'), 'data-act': 'age-load-' + x.id, title: `${potName(net)} ${Math.abs(net)}% · ${Math.round(x.ml)} ml · can take a bottle to ${chargeLimit(net)}°C` },
+bottleArt(x), icon(net > 0 ? 'flame' : 'snow', 'sm'), h('span', { class: 'small', text: `${Math.abs(net)}% · ${Math.round(x.ml)} ml` }));
+o.addEventListener('click', () => { if (loadCharge(lab, b.id, x.id, view.ageMl || 50).ok) view.agePick = null; rerender(); });
+row.append(o);
+}
+pick.append(row);
+box.append(pick);
+} else if (view.agePick === 'rune') {
+const has = !!(v && v.rune && v.rune.life > 0);
+const target = view.ageTarget ?? (v && v.rune ? v.rune.target : c ? Math.round((c.limit + CELLAR_T) / 2) : 40);
+const input = /** @type {HTMLInputElement} */ (h('input', { type: 'number', value: String(target), min: '-60', max: '300', step: '1', style: { width: '4.5em' }, 'aria-label': 'Rune temperature (°C)', 'data-act': 'age-target' }));
+input.addEventListener('input', () => { view.ageTarget = Number(input.value); });
+box.append(h('div', { class: 'age-pick' }, h('div', { class: 'row small' }, h('span', { text: 'Hold at' }), input, h('span', { text: '°C' }),
+btn(has ? 'Move the rune' : 'Set a rune', () => {
+const res = st.runeBottle(b.id, Number(input.value));
+if (!res.ok) { toast('Cannot', res.reason, 'lock'); audio.play('error'); } else { audio.play('select'); view.agePick = null; lab.save(); }
+rerender();
+}, { icon: 'rune', cls: 'small', act: 'age-rune', disabled: !has && st.cellar.runes <= 0 })),
+h('div', { class: 'small muted', text: has ? 'Moving the rune uses no new one.' : st.cellar.runes > 0 ? 'A rune wears out with the hours it holds the bottle.' : 'No rune in hand: buy one at the market, or find one underground in the Wilds.' })));
+}
+if (rep) {
+const where = c ? `${rep.T.toFixed(1)}°C, heading for ${r && r.holds ? r.target : c.limit}°C` : Math.abs(rep.T - CELLAR_T) > 0.5 ? `${rep.T.toFixed(1)}°C, returning to the cellar's ${CELLAR_T}°C` : `${rep.T.toFixed(1)}°C (the cellar's own)`;
+box.append(h('div', { class: 'small know', 'data-temp': String(Math.round(rep.T * 10) / 10), text: `Aging: ${where}` }));
+if (rep.frozen || rep.char > 0.5 || rep.alcohol > 0.5) box.append(h('div', { class: 'small ' + (rep.frozen ? 'warn' : 'muted'), text: [rep.frozen ? 'frozen: extraction stopped' : '', rep.char > 0.5 ? `${Math.round(rep.char)} ml burnt to char` : '', rep.alcohol > 0.5 ? `${rep.alcohol.toFixed(0)}% spirit` : ''].filter(Boolean).join(' · ') }));
+for (const it of rep.items) {
+const k2 = st.knowledge[it.id] || {};
+box.append(h('div', { class: 'row small extract-row' }, h('span', { text: it.name }), h('span', { class: 'spacer' }),
+h('span', { class: 'xbar' }, h('i', { class: 'xbar-fill', style: { width: (it.share * 100).toFixed(1) + '%' } }), h('i', { class: 'xbar-cap', style: { left: Math.round(it.ceiling * 100) + '%' } })),
+h('span', { class: 'muted', text: ` ${(it.share * 100).toFixed(1)}% / ${Math.round(it.ceiling * 100)}%${k2.burnsAt !== undefined ? ` · burns by ${Math.round(k2.burnsAt)}°C` : ''}` })));
+}
+box.append(h('div', { class: 'row wrap' },
+btn('Unseal', () => {
+const res = st.finishAging(b.id);
+if (res.ok && res.vial) { view.sel = res.vial.id; toast('Unsealed', `${Math.round(res.vial.ml)} ml of what it has become — a new batch: test it before you sell it.`, 'bottle', 3600); audio.play('glass'); }
+view.agePick = null; lab.save(); rerender();
+}, { icon: 'bottle', cls: 'gold', act: 'age-unseal', title: 'Stop aging: it becomes a fresh, untested bottle of what it has turned into' })));
+} else {
+const full = st.agingCount >= st.agingSlots;
+box.append(h('div', { class: 'small muted', text: full ? `Every aging place is taken (${st.agingSlots}): unseal a bottle first.` : 'Load a Fire or Frost potion (and a rune) to age it warm or cold — or age it as it is, at the cellar’s own temperature.' }),
+h('div', { class: 'row wrap' }, btn(`Age at ${CELLAR_T}°C`, () => {
+const res = st.startAging(b.id);
+if (!res.ok) { toast('Cannot', res.reason, 'lock'); audio.play('error'); } else { audio.play('select'); lab.save(); }
+rerender();
+}, { icon: 'shelf2', act: 'age-start', disabled: full })));
+}
+return box;
+}
+return { bottleArt, chargers, loadCharge, agingBlock };
+})();
 // src/ui/views/counter.js
 const __m112 = (() => {
 const { h, btn, clear, coins, confirmDialog, starsText, roomHead } = __m2;
 const { icon } = __m3;
-const { drawPortrait } = __m98;
-const { drawBottle } = __m92;
-const { PROPERTY_LABELS, scoreRequirement } = __m55;
+const { drawPortrait } = __m99;
+const { PROPERTY_LABELS, scoreRequirement } = __m56;
 const { techniqueById } = __m23;
 const { EFFECT_INDEX, NE } = __m20;
 const { EFFECT_BY_KEY } = __m20;
-const { missingEffects, summarize, requirementEvidence } = __m59;
-const { labelStars, MAX_STARS } = __m83;
+const { missingEffects, summarize, requirementEvidence } = __m60;
+const { labelStars, MAX_STARS } = __m84;
 const trade = __m109;
 const { describeColor, rgbToHex } = __m11;
-const { viscosityClass } = __m81;
+const { viscosityClass } = __m82;
 const panels = __m105;
-const { shortName } = __m54;
+const { shortName } = __m55;
+const { agingBlock, bottleArt, loadCharge } = __m113;
+const { drawBottle } = __m93;
+const { potionNet } = __m89;
 class CounterView {
 constructor(lab) {
 this.lab = lab;
 this.el = h('section', { class: 'view view-counter', 'data-view': 'counter' });
+/** @type {string|null} */ this.sel = null;
+/** @type {'charge'|'rune'|null} */ this.agePick = null;
+this.ageMl = 50;
+/** @type {number|undefined} */ this.ageTarget = undefined;
+this._bottleDrag = false;
+/** @type {any} */ this._ageTimer = 0;
+/** @type {HTMLElement|null} */ this.detailHost = null;
 }
 build() {
 this.refresh();
@@ -21408,42 +21603,108 @@ h('div', { class: 'row wrap' }, serve, labelB, testB, store, back, discard)));
 shelfCard(el) {
 const lab = this.lab, st = lab.state;
 lab.freshBottles();
+lab.tickCellar();
 const cap = st.cap.bottles;
-if (this.sel && !st.bottles.some((b) => b.id === this.sel)) this.sel = null;
+if (this.sel && !st.bottles.some((b) => b.id === this.sel)) { this.sel = null; this.agePick = null; }
 const grid = h('div', { class: 'bottle-shelf', role: 'listbox', 'aria-label': 'Potion shelves' });
-const rows = Math.ceil(cap / 6);
+const rows = Math.ceil(Math.max(cap, st.bottles.length) / 6);
 for (let i = 0; i < rows * 6; i++) {
 const b = st.bottles[i];
 if (!b) {
 grid.appendChild(h('div', { class: 'bottle-slot' + (i < cap ? ' empty' : ' locked'), 'aria-hidden': 'true' }));
 continue;
 }
-const cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: '16', height: '22', class: 'vial-art' }));
-drawBottle(/** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')), 2, 2, 12, 19, b.m ? b.m.color : [0.5, 0.5, 0.5], Math.min(1, b.ml / Math.max(1, b.bottledMl || b.ml)));
-const fxText = b.label ? trade.labelLine(b.label) : '';
-const acc = b.label ? labelStars(b.label) : null;
-const slot = h('button', { class: 'bottle-slot' + (this.sel === b.id ? ' active' : '') + (b.label ? ' labelled' : ''), role: 'option', 'aria-selected': this.sel === b.id ? 'true' : 'false', 'aria-label': `${b.label && b.label.name ? b.label.name : 'Bottle'}, ${Math.round(b.ml)} ml${fxText ? `: ${fxText}` : ''}`, ...(fxText ? { title: fxText } : {}), 'data-act': 'bottle-slot', 'data-id': b.id },
-cv, h('span', { class: 'bml', text: `${Math.round(b.ml)}` }), b.label ? h('span', { class: 'btag' }, icon('tag', 'sm')) : null,
+const cv = bottleArt(b);
+const fxText = b.aging ? 'Aging' : b.label ? trade.labelLine(b.label) : '';
+const acc = b.label && !b.aging ? labelStars(b.label) : null;
+const net = b.m && !b.aging ? potionNet(b.m.effects) : 0;
+const slot = h('button', { class: 'bottle-slot' + (this.sel === b.id ? ' active' : '') + (b.label ? ' labelled' : '') + (b.aging ? ' aging' : ''), role: 'option', 'aria-selected': this.sel === b.id ? 'true' : 'false', 'aria-label': `${b.label && b.label.name ? b.label.name : 'Bottle'}, ${Math.round(b.ml)} ml${fxText ? `: ${fxText}` : ''}`, ...(fxText ? { title: fxText } : {}), 'data-act': 'bottle-slot', 'data-id': b.id },
+cv, h('span', { class: 'bml', text: `${Math.round(b.ml)}` }), b.label && !b.aging ? h('span', { class: 'btag' }, icon('tag', 'sm')) : null,
+b.aging ? h('span', { class: 'bage' }, icon('clock', 'sm')) : net ? h('span', { class: 'bfx ' + (net > 0 ? 'fire' : 'frost') }, icon(net > 0 ? 'flame' : 'snow', 'sm')) : null,
 acc === null ? null : h('span', { class: 'bstars', 'data-stars': String(acc), text: starsText(acc, MAX_STARS) }));
-slot.addEventListener('click', () => { this.sel = this.sel === b.id ? null : b.id; this.refresh(); });
+this.bindBottle(slot, b);
 grid.appendChild(slot);
 }
-const b = this.sel ? st.bottles.find((x) => x.id === this.sel) : null;
-let detail = null;
-if (b) {
-const m = b.m || {};
-detail = h('div', { class: 'bottle-detail' },
-h('div', { class: 'small' }, h('span', { class: 'swatch', style: { background: rgbToHex(m.color || [0.5, 0.5, 0.5]) } }), ` ${describeColor(m.color || [0.5, 0.5, 0.5])} · ${Math.round(b.ml)} ml · ${Math.round(m.temperature ?? 20)}°C · bottled on day ${b.day || st.day}`),
-verifiedLine(b.cert),
-b.label ? h('div', { class: 'small label-line' }, icon('tag', 'sm'), ` ${trade.labelLine(b.label)}`) : null,
-h('div', { class: 'row wrap' },
-btn(st.vial ? 'Swap with the vial' : 'To the counter', () => lab.takeBottle(b.id), { icon: 'deal', cls: 'primary', act: 'take-bottle', title: 'Put this bottle on the counter to sell or test it' }),
-btn('Pour back', () => lab.pourBackBottle(b.id), { icon: 'pour', act: 'pour-back-bottle' }),
-btn('Discard', async () => { if (await confirmDialog('Discard the bottle?', 'The potion is poured away. Ingredients are not refunded.', 'Discard', 'danger')) lab.discardBottle(b.id); }, { icon: 'trash', cls: 'danger', act: 'discard-bottle' })));
-}
+this.detailHost = h('div', { class: 'bottle-detail-host' });
+this.renderDetail();
 el.append(h('div', { class: 'card parch shelf-card' },
 h('div', { class: 'row' }, icon('shelf2'), h('b', { text: `Potion shelves · ${st.bottles.length}/${cap}` })),
-grid, detail));
+grid, this.detailHost));
+}
+renderDetail() {
+const lab = this.lab, st = lab.state, host = this.detailHost;
+if (!host) return;
+clearInterval(this._ageTimer);
+const b = this.sel ? st.bottles.find((x) => x.id === this.sel) : null;
+clear(host);
+if (!b) return;
+const m = b.m || {};
+const rerender = () => this.refresh();
+host.append(h('div', { class: 'bottle-detail' },
+b.aging
+? h('div', { class: 'small' }, `${b.aging.name || 'A shelved brew'} · ${Math.round(b.ml)} ml · aging since day ${b.day || st.day}`)
+: h('div', { class: 'small' }, h('span', { class: 'swatch', style: { background: rgbToHex(m.color || [0.5, 0.5, 0.5]) } }), ` ${describeColor(m.color || [0.5, 0.5, 0.5])} · ${Math.round(b.ml)} ml · ${Math.round(m.temperature ?? 20)}°C · bottled on day ${b.day || st.day}`),
+b.aging ? null : verifiedLine(b.cert),
+b.label && !b.aging ? h('div', { class: 'small label-line' }, icon('tag', 'sm'), ` ${trade.labelLine(b.label)}`) : null,
+h('div', { class: 'row wrap' },
+btn(st.vial ? 'Swap with the vial' : 'To the counter', () => lab.takeBottle(b.id), { icon: 'deal', cls: 'primary', act: 'take-bottle', title: b.aging ? 'Unseal it and put it on the counter' : 'Put this bottle on the counter to sell or test it' }),
+btn('Pour back', () => lab.pourBackBottle(b.id), { icon: 'pour', act: 'pour-back-bottle' }),
+btn('Discard', async () => { if (await confirmDialog('Discard the bottle?', 'The potion is poured away. Ingredients are not refunded.', 'Discard', 'danger')) lab.discardBottle(b.id); }, { icon: 'trash', cls: 'danger', act: 'discard-bottle' })),
+agingBlock(this, b, rerender)));
+if (b.aging) this._ageTimer = /** @type {any} */ (setInterval(() => {
+if (!document.body.contains(host) || this.lab.view !== 'counter' || this.sel !== b.id) { clearInterval(this._ageTimer); return; }
+const a = document.activeElement;
+if (this._bottleDrag || (a && a.tagName === 'INPUT' && host.contains(a))) return;
+lab.tickCellar();
+this.renderDetail();
+}, 1000));
+}
+bindBottle(slot, b) {
+let pid = -1, sx = 0, sy = 0, lifted = false, timer = 0, dragged = false;
+/** @type {HTMLElement|null} */ let ghost = null;
+/** @type {Element|null} */ let over = null;
+const stop = () => { clearTimeout(timer); timer = 0; if (ghost) ghost.remove(); ghost = null; if (over) over.classList.remove('drop-over'); over = null; this._bottleDrag = false; };
+slot.addEventListener('pointerdown', (e) => {
+if (e.button > 0) return;
+pid = e.pointerId; sx = e.clientX; sy = e.clientY; dragged = false;
+lifted = e.pointerType === 'mouse';
+if (lifted) { try { slot.setPointerCapture(pid); } catch { /* ignore */ } }
+else timer = /** @type {any} */ (setTimeout(() => { lifted = true; try { slot.setPointerCapture(pid); } catch { /* ignore */ } }, 180));
+});
+slot.addEventListener('pointermove', (e) => {
+if (e.pointerId !== pid) return;
+const d = Math.hypot(e.clientX - sx, e.clientY - sy);
+if (!lifted) { if (d > 8) { clearTimeout(timer); pid = -1; } return; }
+if (!dragged && d > 8 && this.sel && this.sel !== b.id && !b.aging) {
+dragged = true; this._bottleDrag = true;
+ghost = h('div', { class: 'drag-ghost bottle-ghost' }, bottleArt(b));
+document.body.appendChild(ghost);
+}
+if (!dragged || !ghost) return;
+e.preventDefault();
+ghost.style.transform = `translate(${e.clientX - 16}px, ${e.clientY - 40}px)`;
+const el = document.elementFromPoint(e.clientX, e.clientY);
+const target = el ? el.closest('.age-slot.charge') : null;
+if (over !== target) { if (over) over.classList.remove('drop-over'); if (target) target.classList.add('drop-over'); over = target; }
+});
+const end = (e) => {
+if (e.pointerId !== pid) return;
+pid = -1;
+const target = over, was = dragged;
+stop();
+if (!was) return;
+if (e.type === 'pointerup' && target && this.sel) { loadCharge(this.lab, this.sel, b.id, this.ageMl || 50); this.agePick = null; }
+this.refresh();
+};
+slot.addEventListener('pointerup', end);
+slot.addEventListener('pointercancel', end);
+slot.addEventListener('touchmove', (e) => { if (dragged) e.preventDefault(); }, { passive: false });
+slot.addEventListener('click', () => {
+if (dragged) { dragged = false; return; }
+this.sel = this.sel === b.id ? null : b.id;
+this.agePick = null;
+this.refresh();
+});
 }
 }
 function seedSamples(v) {
@@ -21466,7 +21727,7 @@ unseen ? h('span', { class: 'muted', text: ` ${seen.length ? '· ' : ''}${unseen
 return { CounterView };
 })();
 // src/rendering/crisp.js
-const __m114 = (() => {
+const __m115 = (() => {
 const RESOLUTIONS = /** @type {const} */ ([1, 2, 3, 4]);
 const VERT = `#version 300 es
 in vec2 p;
@@ -21664,7 +21925,7 @@ this.src.style.opacity = '0';
 return { RESOLUTIONS, UpscaledCanvas };
 })();
 // src/visual/env/paint.js
-const __m117 = (() => {
+const __m118 = (() => {
 const { Pixels } = __m47;
 const { rasterize } = __m46;
 const { Model } = __m34;
@@ -21954,7 +22215,7 @@ cv.set(x, y, pack([c[0] + d, c[1] + d, c[2] + d]));
 return { SCENE_W, SCENE_H, CELL, Canvas, sky, ramp, hex, mixPacked, pack, unpack };
 })();
 // src/visual/env/stone.js
-const __m120 = (() => {
+const __m121 = (() => {
 const { hash2, noise2 } = __m48;
 const { mixPacked } = __m30;
 function cobble(x, y, o) {
@@ -22038,11 +22299,11 @@ return e > 0.98 ? null : { bx, by, r, id, e };
 return { cobble, pebble };
 })();
 // src/visual/env/side.js
-const __m119 = (() => {
+const __m120 = (() => {
 const { fbm1, fbm2, hash2, noise2 } = __m48;
 const { mixPacked, pack, hex } = __m30;
-const { CELL } = __m117;
-const { cobble } = __m120;
+const { CELL } = __m118;
+const { cobble } = __m121;
 const snap = (v) => v - (((v % CELL) + CELL) % CELL);
 const col = (h) => pack(hex(h));
 function far(c, x, y, seed) {
@@ -22507,11 +22768,11 @@ return out.filter((_, i) => i % Math.max(1, Math.floor(out.length / n)) === 0).s
 return { col, far, heights, dip, raise, fillSolid, blob, paintTerrain, STRATA, hanging, pool, markOpen, ledges, surfaceAt, silhouette, mountains, rockFace, treeShape, glow, drips };
 })();
 // src/visual/env/cave.js
-const __m118 = (() => {
+const __m119 = (() => {
 const { fbm1, fbm2, hash2 } = __m48;
 const { mixPacked } = __m30;
-const { col, far } = __m119;
-const { cobble } = __m120;
+const { col, far } = __m120;
+const { cobble } = __m121;
 function farPillars(cv, o) {
 const fill = col(o.fill), rim = o.rim ? col(o.rim) : fill, W = cv.W;
 for (let i = 0; i < o.n; i++) {
@@ -22852,7 +23113,7 @@ const LAVA_VEINS = (seed) => ({ from: ['#ffd060', '#ffb040', '#ff8a2a', '#e05a18
 return { farPillars, fog, caveFrame, vines, moss, glowShrooms, torch, fall, ruins, finish, ledgeTops, veins, WATER_VEINS, LAVA_VEINS };
 })();
 // src/visual/env/legible.js
-const __m121 = (() => {
+const __m122 = (() => {
 const { hash2, fbm2, noise2 } = __m48;
 const { mixPacked } = __m30;
 const { Rng } = __m6;
@@ -23020,9 +23281,9 @@ if (f !== 1 || add) L[k] = saturate(scale(c, f, add), f > 1 ? 1.05 : 1);
 return { legible };
 })();
 // src/visual/env/flourish.js
-const __m122 = (() => {
+const __m123 = (() => {
 const { hash2 } = __m48;
-const { col } = __m119;
+const { col } = __m120;
 const FLORA = {
 meadow: {
 kinds: [['tuft', 4], ['daisy', 3], ['spike', 1.6], ['bloom', 2], ['fern', 0.8]], rate: 0.3,
@@ -23301,7 +23562,7 @@ else if (berry && h > 0.95 && free(cx + side, yy)) cv.set(cx + side, yy, berry);
 return { flourish };
 })();
 // src/visual/env/grade.js
-const __m123 = (() => {
+const __m124 = (() => {
 const GRADE_FULL = {
 meadow: [0.42, 1.32, 0.5], forest: [0.4, 1.28, 0.5], netherwood: [0.34, 1.3, 0.46], river: [0.42, 1.3, 0.5],
 quarry: [0.38, 1.26, 0.48], moonfen: [0.34, 1.3, 0.44], crags: [0.36, 1.25, 0.48],
@@ -23349,8 +23610,8 @@ return ((c & 0xff000000) | (Math.round(((c >>> 16) & 255) * f) << 16) | (Math.ro
 return { grade };
 })();
 // src/visual/env/kit.js
-const __m125 = (() => {
-const { ramp, hex } = __m117;
+const __m126 = (() => {
+const { ramp, hex } = __m118;
 const { Rng, hashString } = __m6;
 const { shift } = __m30;
 function palette(spec) {
@@ -23372,7 +23633,7 @@ const streamOf = (seed, region, part) => new Rng(hashString(`env:${seed}:${regio
 return { palette, vary, streamOf };
 })();
 // src/visual/env/foliage.js
-const __m127 = (() => {
+const __m128 = (() => {
 const { Model, bezier } = __m34;
 let groups = 0;
 const swayGroup = () => ++groups;
@@ -23527,9 +23788,9 @@ return m;
 return { swayGroup, leaf, cluster, strand, grove };
 })();
 // src/visual/env/objects.js
-const __m126 = (() => {
+const __m127 = (() => {
 const { Model, blade, PROFILES, bezier, lumpy, ellipse, polygon } = __m34;
-const { cluster, strand, grove, swayGroup } = __m127;
+const { cluster, strand, grove, swayGroup } = __m128;
 const R = (rng) => () => rng.next();
 function leafBlock(x, y, hw, hh, rnd) {
 const c = Math.max(1, Math.round(Math.min(hw, hh) * 0.4)), j = () => Math.round((rnd() - 0.5) * 2);
@@ -23886,8 +24147,8 @@ return m;
 return { leafBlock, crown, pad, branchTree, tree, branch, bush, boulder, reeds, fern, tuft, log, stump, mushroom, cloud, beam, crane, ladder, cart, crate, fence, skep, basalt, spire, cairn, scaffold, wheel };
 })();
 // src/visual/env/trees.js
-const __m128 = (() => {
-const { branchTree, tree } = __m126;
+const __m129 = (() => {
+const { branchTree, tree } = __m127;
 const { Rng } = __m6;
 const { pack, hex } = __m30;
 function treeRow(cv, rng, pal, o) {
@@ -23947,13 +24208,13 @@ return out;
 return { treeRow, terrainTrees };
 })();
 // src/visual/env/meadow.js
-const __m124 = (() => {
-const { sky } = __m117;
-const { palette, vary, streamOf } = __m125;
-const { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, silhouette, mountains, treeShape, glow, drips, ledges } = __m119;
-const { caveFrame, fog, vines, moss, veins, WATER_VEINS } = __m118;
-const { cloud, fence, skep, boulder } = __m126;
-const { terrainTrees } = __m128;
+const __m125 = (() => {
+const { sky } = __m118;
+const { palette, vary, streamOf } = __m126;
+const { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, silhouette, mountains, treeShape, glow, drips, ledges } = __m120;
+const { caveFrame, fog, vines, moss, veins, WATER_VEINS } = __m119;
+const { cloud, fence, skep, boulder } = __m127;
+const { terrainTrees } = __m129;
 const { Model, lumpy } = __m34;
 const { pack } = __m30;
 function compose(cv, seed) {
@@ -24051,13 +24312,13 @@ cv.meta.horizon = 120;
 return { compose };
 })();
 // src/visual/env/forest.js
-const __m129 = (() => {
-const { sky } = __m117;
-const { palette, vary, streamOf } = __m125;
-const { heights, raise, fillSolid, blob, paintTerrain, markOpen, surfaceAt, col, drips, ledges, hanging } = __m119;
-const { fog, moss, glowShrooms } = __m118;
-const { fern, log, stump } = __m126;
-const { treeRow, terrainTrees } = __m128;
+const __m130 = (() => {
+const { sky } = __m118;
+const { palette, vary, streamOf } = __m126;
+const { heights, raise, fillSolid, blob, paintTerrain, markOpen, surfaceAt, col, drips, ledges, hanging } = __m120;
+const { fog, moss, glowShrooms } = __m119;
+const { fern, log, stump } = __m127;
+const { treeRow, terrainTrees } = __m129;
 const { hash2 } = __m48;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'forest', p);
@@ -24136,13 +24397,13 @@ for (let i = 0, n = 0; i < 14 && n < 6; i++) if (cv.place(fern(fr, fr.int(8, 13)
 return { compose, roots, litter, ferns };
 })();
 // src/visual/env/river.js
-const __m130 = (() => {
-const { sky } = __m117;
-const { palette, vary, streamOf } = __m125;
-const { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, silhouette, mountains, treeShape } = __m119;
-const { caveFrame, farPillars, fog, vines, moss, glowShrooms, ledgeTops, veins, WATER_VEINS } = __m118;
-const { reeds, beam, cloud } = __m126;
-const { terrainTrees } = __m128;
+const __m131 = (() => {
+const { sky } = __m118;
+const { palette, vary, streamOf } = __m126;
+const { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, silhouette, mountains, treeShape } = __m120;
+const { caveFrame, farPillars, fog, vines, moss, glowShrooms, ledgeTops, veins, WATER_VEINS } = __m119;
+const { reeds, beam, cloud } = __m127;
+const { terrainTrees } = __m129;
 const { Model } = __m34;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'river', p);
@@ -24221,13 +24482,13 @@ cv.meta.horizon = 116;
 return { compose };
 })();
 // src/visual/env/quarry.js
-const __m131 = (() => {
-const { sky } = __m117;
-const { palette, vary, streamOf } = __m125;
-const { fillSolid, blob, ledges, paintTerrain, markOpen, glow, drips, silhouette, mountains } = __m119;
-const { caveFrame, farPillars, fog, moss, torch, ledgeTops } = __m118;
-const { crane, ladder, cart, crate, beam, boulder, scaffold, wheel, cloud } = __m126;
-const { terrainTrees } = __m128;
+const __m132 = (() => {
+const { sky } = __m118;
+const { palette, vary, streamOf } = __m126;
+const { fillSolid, blob, ledges, paintTerrain, markOpen, glow, drips, silhouette, mountains } = __m120;
+const { caveFrame, farPillars, fog, moss, torch, ledgeTops } = __m119;
+const { crane, ladder, cart, crate, beam, boulder, scaffold, wheel, cloud } = __m127;
+const { terrainTrees } = __m129;
 const { Model } = __m34;
 const { Rng } = __m6;
 function compose(cv, seed) {
@@ -24341,13 +24602,13 @@ cv.meta.horizon = 100;
 return { compose };
 })();
 // src/visual/env/moonfen.js
-const __m132 = (() => {
-const { sky } = __m117;
-const { palette, vary, streamOf } = __m125;
-const { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, glow, silhouette, treeShape } = __m119;
-const { caveFrame, farPillars, fog, vines, moss, ruins, glowShrooms, veins, WATER_VEINS } = __m118;
-const { reeds, spire, cairn } = __m126;
-const { terrainTrees } = __m128;
+const __m133 = (() => {
+const { sky } = __m118;
+const { palette, vary, streamOf } = __m126;
+const { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, glow, silhouette, treeShape } = __m120;
+const { caveFrame, farPillars, fog, vines, moss, ruins, glowShrooms, veins, WATER_VEINS } = __m119;
+const { reeds, spire, cairn } = __m127;
+const { terrainTrees } = __m129;
 const { fbm2 } = __m48;
 const { pack } = __m30;
 function compose(cv, seed) {
@@ -24447,13 +24708,13 @@ cv.meta.horizon = 124;
 return { compose };
 })();
 // src/visual/env/crags.js
-const __m133 = (() => {
-const { sky } = __m117;
-const { palette, vary, streamOf } = __m125;
-const { heights, dip, raise, fillSolid, blob, ledges, paintTerrain, pool, markOpen, glow, drips, silhouette, col, rockFace } = __m119;
-const { caveFrame, farPillars, fog, moss, fall, veins, LAVA_VEINS } = __m118;
-const { basalt, spire, cloud } = __m126;
-const { terrainTrees } = __m128;
+const __m134 = (() => {
+const { sky } = __m118;
+const { palette, vary, streamOf } = __m126;
+const { heights, dip, raise, fillSolid, blob, ledges, paintTerrain, pool, markOpen, glow, drips, silhouette, col, rockFace } = __m120;
+const { caveFrame, farPillars, fog, moss, fall, veins, LAVA_VEINS } = __m119;
+const { basalt, spire, cloud } = __m127;
+const { terrainTrees } = __m129;
 const { fbm1, hash2 } = __m48;
 const { mixPacked } = __m30;
 const { Model, lumpy } = __m34;
@@ -24613,14 +24874,14 @@ cv.set(x, y, c);
 return { compose };
 })();
 // src/visual/env/netherwood.js
-const __m134 = (() => {
-const { sky } = __m117;
-const { palette, vary, streamOf } = __m125;
-const { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, drips, ledges, glow } = __m119;
-const { caveFrame, farPillars, fog, vines, moss, glowShrooms, veins, WATER_VEINS } = __m118;
-const { mushroom } = __m126;
-const { treeRow, terrainTrees } = __m128;
-const { roots, litter, ferns } = __m129;
+const __m135 = (() => {
+const { sky } = __m118;
+const { palette, vary, streamOf } = __m126;
+const { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, drips, ledges, glow } = __m120;
+const { caveFrame, farPillars, fog, vines, moss, glowShrooms, veins, WATER_VEINS } = __m119;
+const { mushroom } = __m127;
+const { treeRow, terrainTrees } = __m129;
+const { roots, litter, ferns } = __m130;
 function compose(cv, seed) {
 const W = cv.W, H = cv.H, s = (p) => streamOf(seed, 'netherwood', p);
 const pal = vary(palette({
@@ -24698,15 +24959,15 @@ cv.meta.horizon = 120;
 return { compose };
 })();
 // src/visual/env/exotic.js
-const __m135 = (() => {
-const { sky } = __m117;
-const { palette, vary, streamOf } = __m125;
-const { heights, raise, dip, fillSolid, blob, paintTerrain, pool, markOpen, silhouette, mountains, glow, ledges, treeShape } = __m119;
-const { fog, vines, glowShrooms, ruins, fall, moss } = __m118;
-const { cloud, spire, boulder } = __m126;
-const { terrainTrees } = __m128;
+const __m136 = (() => {
+const { sky } = __m118;
+const { palette, vary, streamOf } = __m126;
+const { heights, raise, dip, fillSolid, blob, paintTerrain, pool, markOpen, silhouette, mountains, glow, ledges, treeShape } = __m120;
+const { fog, vines, glowShrooms, ruins, fall, moss } = __m119;
+const { cloud, spire, boulder } = __m127;
+const { terrainTrees } = __m129;
 const { fbm1, fbm2 } = __m48;
-const { pack, Canvas } = __m117;
+const { pack, Canvas } = __m118;
 function sprite(w, h) { return { w, h, px: new Uint32Array(w * h), x: 0, y: 0 }; }
 function isleSprite(rng, w, h, ground) {
 const M = 6, H = h + M, icv = new Canvas(rng.int(0, 1e9), w, H), seed = rng.int(0, 1e9);
@@ -25047,21 +25308,21 @@ cv.meta.horizon = 122;
 return { skyshard, morphgrove, veilhollow, ghostglass, chronoglass };
 })();
 // src/visual/env/scene.js
-const __m116 = (() => {
-const { Canvas, SCENE_W, SCENE_H } = __m117;
+const __m117 = (() => {
+const { Canvas, SCENE_W, SCENE_H } = __m118;
 const { hashString } = __m6;
-const { finish } = __m118;
-const { legible } = __m121;
-const { flourish } = __m122;
-const { grade } = __m123;
-const meadow = __m124;
-const forest = __m129;
-const river = __m130;
-const quarry = __m131;
-const moonfen = __m132;
-const crags = __m133;
-const netherwood = __m134;
-const { skyshard, morphgrove, veilhollow, ghostglass, chronoglass } = __m135;
+const { finish } = __m119;
+const { legible } = __m122;
+const { flourish } = __m123;
+const { grade } = __m124;
+const meadow = __m125;
+const forest = __m130;
+const river = __m131;
+const quarry = __m132;
+const moonfen = __m133;
+const crags = __m134;
+const netherwood = __m135;
+const { skyshard, morphgrove, veilhollow, ghostglass, chronoglass } = __m136;
 const ENV_VERSION = 14;
 const COMPOSERS = { meadow, forest, netherwood, river, quarry, moonfen, crags, skyshard, morphgrove, veilhollow, ghostglass, chronoglass };
 const cache = new Map();
@@ -25095,9 +25356,9 @@ return s;
 return { ENV_VERSION, composeScene, sceneOf, SCENE_W, SCENE_H };
 })();
 // src/rendering/wild-scene.js
-const __m115 = (() => {
-const { sceneOf, SCENE_W, SCENE_H } = __m116;
-const { MIN_HIT } = __m99;
+const __m116 = (() => {
+const { sceneOf, SCENE_W, SCENE_H } = __m117;
+const { MIN_HIT } = __m100;
 const { hashString } = __m6;
 const { frameMount } = __m50;
 const canvases = new Map();
@@ -25645,7 +25906,7 @@ trickles(ctx, meta.trickles || [], t, '#5a4e4c', '#3e3438');
 return { sceneCanvas, forgetSceneCanvases, windAt, crosses, SceneTouch, sceneTouch, swayPixels, sceneFrame, findAnchors, PlantGround, mountOrder, plantBox, hitPlant, animateRegion, SCENE_W, SCENE_H };
 })();
 // src/rendering/ragdoll.js
-const __m136 = (() => {
+const __m137 = (() => {
 const GRAVITY = 640;
 const STEP = 1 / 120;
 const FRICTION = 380;
@@ -25899,8 +26160,8 @@ ctx.imageSmoothingEnabled = smooth;
 return { GRAVITY, STEP, FRICTION, Ragdoll };
 })();
 // src/rendering/exotic-fx.js
-const __m137 = (() => {
-const { sceneOf, SCENE_W, SCENE_H } = __m116;
+const __m138 = (() => {
+const { sceneOf, SCENE_W, SCENE_H } = __m117;
 const states = new Map();
 function canvasOf(s) {
 if (s.cv) return s.cv;
@@ -26090,10 +26351,10 @@ for (let i = 0; i < 12; i++) { const dir = i % 4 === 0 ? -1 : 1, age = ((t * 0.1
 return { isleAt, isleShift, hasExotic, exoticPush, exoticStep, exoticDraw };
 })();
 // src/game/wild-rabbits.js
-const __m138 = (() => {
+const __m139 = (() => {
 const { Rng, hashString } = __m6;
-const { rollLook } = __m60;
-const { pickKind, kindLook, bodyOf } = __m61;
+const { rollLook } = __m61;
+const { pickKind, kindLook, bodyOf } = __m62;
 const HOP_GRAVITY = 300, BLOOD_GRAVITY = 260;
 const WILD_HP = 3;
 const BLEED_OUT = 4;
@@ -26553,7 +26814,7 @@ return out;
 return { HOP_GRAVITY, WILD_HP, BLEED_OUT, NEAR_MISS, WARREN_SIZE, RESPAWN, BLOOD, wildLook, GAITS, WildRabbit, WILD_SCALE, Warren, warrenSpots };
 })();
 // src/rendering/punch.js
-const __m140 = (() => {
+const __m141 = (() => {
 const CONTRAST = 1.4, SATURATE = 1.3;
 const INK = [20, 12, 16, 235], HALO = [255, 244, 220, 70];
 function punchSprite(d, w, h, o = {}) {
@@ -26591,19 +26852,19 @@ for (const i of halo) d.set(HALO, i * 4);
 return { punchSprite };
 })();
 // src/rendering/animal-sprites.js
-const __m141 = (() => {
+const __m142 = (() => {
 const ANIMAL_SPRITES = {"rabbit":{"variants":[{"w":17,"h":15,"pal":["#140c18","#2b282a","#4c484a","#7f7b7a","#b1acaa","#d3d1d0","#e9e8e5"],"px":"........00000..../.......0621630.../.......0642650.../.......0561650.../........0556650../.......035665660./....0000456616640/...04555455666430/..04666555566600./.0466336555300.../.056664266660..../.066666166660..../.066664246540..../..066666166340.../...0000000000....","eye":[12,6]},{"w":16,"h":15,"pal":["#140c18","#2e1d16","#503d32","#9c7f62","#c19f75","#d2b188","#e5caa1","#fcecd5"],"px":".......0000...../......051250..../......0442440.../......0342440.../.......0444430../.......04445530./....00004451750./..0044434455540./.0444444445550../0344334444300.../034454245650..../034445345640..../034444236500..../0134455166130.../.00000000000....","eye":[9,2]},{"w":16,"h":16,"pal":["#140c18","#221213","#341f1b","#482f26","#6b4d3e","#815c46","#a88568","#ccb79f"],"px":"................/.......0..0...../......040040..../......0540450.../.......050450.../.......0455540../.......04555550./....000045517550/..00544455556540/.04555555555550./.0554355554000../.055563555540.../.05555545650..../.05554335600..../..0444524600..../...0000000......","eye":[9,3]},{"w":16,"h":15,"pal":["#140c18","#2f2b38","#4e4a57","#5a5764","#66626e","#7e7d89","#bebac5"],"px":".......0..0...../......040030..../......0440230.../......0240220.../.......0233320../.......02344430./....000034416230/..00332234444440/.02443333334420./.0453223332000../.044450344430.../.03334024540..../.0333300350...../..022230250...../...0000.00......","eye":[9,2]}],"frames":[[{"w":15,"h":12,"pal":["#140c18","#2b282a","#7f7b7a","#b1acaa","#d3d1d0","#e9e8e5"],"px":"........0....../.......030.00../.......0400430./.......0430430./........055530./....00003552440/..0045555555540/.0245555553200./.04555555550.../025554155430.../.025555145440../..0000000000...","eye":[10,3]},{"w":16,"h":15,"pal":["#140c18","#7f7b7a","#b1acaa","#d3d1d0","#e9e8e5"],"px":".........0..0.../........020020../........0420410./........0330410./.........034440./.....00000431430/...0014444444430/..0144444444000./..03444444442220/.003433333444320/0444400000000030/02430.........0./0220............/030............./.0..............","eye":[11,2]},{"w":16,"h":13,"pal":["#140c18","#7f7b7a","#b1acaa","#d3d1d0","#e9e8e5"],"px":"..........0.0.../.........01010../........0340320./.........020320./......0000043310/....003334440340/...0444444444430/..0144444444000./.03444444444220./0244300000034420/04300......00230/020..........010/.0............0.","eye":[11,2]},{"w":15,"h":11,"pal":["#140c18","#2b282a","#4c484a","#7f7b7a","#b1acaa","#d3d1d0","#e9e8e5"],"px":".........0..0../........040040./........060060./........045550./....00000561640/...066666665640/.0066666666300./035666666660.../0356653456040../.005555216040../...0000000.0...","eye":[11,2]}],[{"w":15,"h":12,"pal":["#140c18","#2e1d16","#503d32","#9c7f62","#c19f75","#d2b188","#e5caa1","#fcecd5"],"px":"........0....../.......030.00../.......0400430./.......0430430./........054530./....00003542440/..0044444554440/.0344444554300./.04555555540.../034664167440.../.034444144440../..0000000000...","eye":[10,3]},{"w":16,"h":15,"pal":["#140c18","#9c7f62","#c19f75","#d2b188","#e5caa1","#fcecd5"],"px":".........0..0.../........010020../........022020../........0220210./.........022220./.....00000221220/...0012222222320/..0133333333000./..02333333441110/.002422222222210/0245200000000020/01220.........0./0110............/020............./.0..............","eye":[11,2]},{"w":16,"h":13,"pal":["#140c18","#9c7f62","#c19f75","#d2b188","#e5caa1","#fcecd5"],"px":"..........0.0.../.........01010../........0220210./.........010210./......0000022210/....002222220220/...0222333333320/..0133333333000./.02444222225110./0122200000022210/02200......00220/020..........00./.0..............","eye":[11,2]},{"w":15,"h":11,"pal":["#140c18","#2e1d16","#503d32","#9c7f62","#c19f75","#d2b188","#e5caa1","#fcecd5"],"px":".........0..0../........030040./........040040./........044440./....00000441430/...044444444430/.0044455555000./034555555560.../0346643347030../.004444214030../...0000000.0...","eye":[11,2]}],[{"w":15,"h":12,"pal":["#140c18","#341f1b","#482f26","#6b4d3e","#815c46","#a88568","#ccb79f"],"px":"........0....../.......030.00../.......0400330./.......0430430./.......0344430./....00003443440/..0044444444440/.0344444443300./.04444444540.../034554156430.../.034444234340../..0000000000...","eye":[10,3]},{"w":16,"h":15,"pal":["#140c18","#6b4d3e","#815c46","#a88568","#ccb79f"],"px":".........0..0.../........010010../........0210210./........0220210./.........022220./.....00001211220/...0012222222210/..0122222222000./..02222222331110/.012322222222110/0234200000000020/01220.........0./0110............/020............./.0..............","eye":[11,2]},{"w":16,"h":13,"pal":["#140c18","#6b4d3e","#815c46","#a88568","#ccb79f"],"px":"..........0.0.../.........01010../........0120210./.........010110./......0000022210/....002222220120/...0222222222220/..0122222223000./.02333222224110./0122200000022210/02210......00120/0100.........010/.0............0.","eye":[11,2]},{"w":15,"h":11,"pal":["#140c18","#221213","#482f26","#6b4d3e","#815c46","#a88568","#ccb79f"],"px":".........0..0../........030030./........040040./........033340./....00000442430/...044444444430/.0044444444300./034444444450.../0345543346030../.004444314030../...0000000.0...","eye":[11,2]}],[{"w":15,"h":12,"pal":["#140c18","#4e4a57","#5a5764","#66626e","#7e7d89","#bebac5"],"px":"........0..0.../.......010010../.......0200210./.......0211210./.......0132310./....00001321220/..0022222332220/.0122333332100./.02333333430.../013442145220.../.013333123220../..0000000000...","eye":[10,2]},{"w":16,"h":15,"pal":["#140c18","#2f2b38","#4e4a57","#5a5764","#66626e","#7e7d89","#bebac5"],"px":".........0..00../........0300320./........0330320./........0332320./.........033440./.....00002432430/...0024444444430/..0244444444120./..03444444552220/.023533333333320/0356300000000030/02330.........0./0220............/0320............/.00.............","eye":[11,2]},{"w":16,"h":13,"pal":["#140c18","#4e4a57","#5a5764","#66626e","#7e7d89","#bebac5"],"px":"..........0.0.../.........01010../........0230210./.........011210./......0000032210/....002222230220/...0233333333320/.00133333334100./012444222225110./0133210000023320/032100.....00220/0200.........010/.0............0.","eye":[11,2]},{"w":15,"h":11,"pal":["#140c18","#2f2b38","#4e4a57","#5a5764","#66626e","#7e7d89","#bebac5"],"px":".........0..0../........020030./........030030./........033330./...000000332320/..0233344443420/.0044444444200./023444444450.../0235532236220../.003333213020../...0000000.0...","eye":[11,2]}]]},"cat":{"variants":[{"w":18,"h":18,"pal":["#140c18","#241a1b","#473734","#73615c","#a58e81","#cfb5a6","#e7cfbc","#f6e8d5"],"px":"..00............../.0640.....0....0../04640....04000050./0550.....06633650./0550.....06666650./0660.....06766650./036400000667266230/.05345776567753630/..047677755665350./..07777777644000../..0776777777730.../..0676466477530.../..0673000072630.../..07240..072630.../..07160..071730.../..074440.074650.../...0000...0000..../..................","eye":[15,6]},{"w":18,"h":17,"pal":["#140c18","#2e2734","#6e6d7a","#807c88","#b0adb6","#d7d2d9"],"px":"...0............../..020......0...0../.0230.....020.020./.020.....0230000../.020.....02322220./.020.....02332220./..00.0000033323130/...002222033444150/...022222323553420/...03322233320000./...033322233440.../...02203432330..../...022000002020.../...0200...02020.../...02020.022020.../...0500...040430../....0......0.00...","eye":[14,3]},{"w":18,"h":18,"pal":["#140c18","#361614","#5c3124","#8b4e34","#c67246","#c7a189","#e1915e","#f6cca3"],"px":".00.............../0160......0......./04630....030.000../0430.....0630340../0430.....0644440../0430....034644430./.0400000046736240./.0333667444675470./..046464644575550./..04644664444000../..044446666770..../..034466636730..../..034000004130..../..04130..04130..../..04130..04140..../..055030.055440.../...00.0...0000..../..................","eye":[14,6]},{"w":17,"h":17,"pal":["#140c18","#423b48","#544c59","#6f626d","#95888f","#afa2aa","#cec2c7"],"px":"..0............../.030.....00...0../030.....01100020./010.....02211120./010......0222220./010.....024322410/.0100000123243230/.0102243112364450/..02222311156660./..0222222222100../..022223222310.../..01203501210..../..01100001100..../..010...011010.../..0000..011010.../.026140..040630../..0000....0.00...","eye":[13,9]}],"frames":[[{"w":21,"h":14,"pal":["#140c18","#473734","#73615c","#a58e81","#cfb5a6","#e7cfbc","#f6e8d5"],"px":".0................0../040............00040./0520..........022050./03600........0355660./.03620000000025436330/..0056326655555566450/....0056555555553220./.....03666665565000../.....046646666640..../.....066000006040..../.....05240..060420.../....0250440.063350.../....0350050.064140.../.....00..0...0000....","eye":[17,2]},{"w":18,"h":15,"pal":["#140c18","#473734","#73615c","#a58e81","#cfb5a6","#e7cfbc","#f6e8d5"],"px":"..00............../.0520..........0../.0240.......0.020./.020.......030040./.040.......055550./.03600000006416330/..0036666446666440/...06555555666550./...0655555566000../..006503556630..../.0265200006330..../.036030..052350.../.0460240.0452440../.0260050..060060../..00..0....0..0...","eye":[14,3]},{"w":20,"h":14,"pal":["#140c18","#473734","#73615c","#a58e81","#cfb5a6","#e7cfbc","#f6e8d5"],"px":".0...............0../020...........00040./050..........032350./0350.........055540./.05500.000000553540./..036303444445665430/...0045555555566520./....02666666666000../.....06656666630..../....056500006250..../....06230..061630.../....062230.062250.../....040040.050040.../.....0..0...0..0....","eye":[15,7]},{"w":19,"h":14,"pal":["#140c18","#473734","#73615c","#a58e81","#cfb5a6","#e7cfbc","#f6e8d5"],"px":".0................./030.............0../040..........00040./.050........033350./.0540......0345650./..04000000036536130/...055355555566650./....0565566665020../....036666666500.../.....0634666640..../....05520026220..../...026040.052240.../....060440045250.../.....0.00..0000....","eye":[16,5]}],[{"w":21,"h":14,"pal":["#140c18","#6e6d7a","#807c88","#b0adb6","#d7d2d9"],"px":".0................0../010............00010./0110..........011010./01200........0111220./.01210000000011112110/..0012112222222223110/....0013222222221110./.....01333332221000../.....013213324210..../.....022100004010..../.....01110..041110.../....0111110.041110.../....0110010.021110.../.....00..0...0000....","eye":[17,2]},{"w":18,"h":15,"pal":["#140c18","#6e6d7a","#807c88","#b0adb6","#d7d2d9"],"px":"..00............../.0210..........0../.0110.......0.010./.010.......010010./.010.......022220./.01200000002113110/..0112222112334110/...03111111222110./...0311112222000../..003211222310..../.0142100002110..../.014010..021120.../.0140110.0121110../.0120020..030030../..00..0....0..0...","eye":[14,3]},{"w":20,"h":14,"pal":["#140c18","#6e6d7a","#807c88","#b0adb6","#d7d2d9"],"px":".0...............0../010...........00010./010..........011110./0110.........011110./.02200.000000221210./..013101111112332110/...0012222222222110./....01342222222000../.....04412222210..../....014110012110..../....03110..031310.../....031110.031110.../....010010.010010.../.....0..0...0..0....","eye":[15,7]},{"w":19,"h":14,"pal":["#140c18","#6e6d7a","#807c88","#b0adb6","#d7d2d9"],"px":".0................./010.............0../010..........00010./.010........011120./.0210......0112320./..01000000013113110/...0111222222333210/....01422222211100./....014222222100.../.....0411222210..../....01110013110..../...014010.011110.../....030110011110.../.....0.00..0000....","eye":[14,8]}],[{"w":21,"h":14,"pal":["#140c18","#5c3124","#8b4e34","#c67246","#c7a189","#e1915e","#f6cca3"],"px":".0................0../030............00030./0320..........022030./02500........0233550./.02520000000023325220/..0035325533333344330/....0034333355553220./.....03444445553000../.....036536656530..../.....055000006030..../.....03230..060320.../....0230330.062230.../....0230030.053130.../.....00..0...0000....","eye":[17,2]},{"w":18,"h":15,"pal":["#140c18","#361614","#8b4e34","#c67246","#c7a189","#e1915e","#f6cca3"],"px":"..00............../.0520..........0../.0230.......0.020./.020.......020030./.030.......055550./.02500000005314220/..0025555335446330/...04333333555330./...0633333355000../...06302335620..../..063200005220..../.036030..032330.../.0360230.0332330../.0240030..040040../..00..0....0..0...","eye":[14,3]},{"w":20,"h":14,"pal":["#140c18","#361614","#8b4e34","#c67246","#c7a189","#e1915e","#f6cca3"],"px":".0...............0../020...........0.030./030..........020230./0230.........033330./.03300.000000332330./..024202333333663320/...0033355555555320./....02665555555000../.....06635555520..../....036300004230..../....04230..041430.../....042230.042230.../....030030.030030.../.....0..0...0..0....","eye":[15,7]},{"w":19,"h":14,"pal":["#140c18","#361614","#8b4e34","#c67246","#c7a189","#e1915e","#f6cca3"],"px":".0................./020.............0../030..........00030./.030........022230./.0330......0233430./..03000000024324120/...033333335546650./....0365555553020../....036555555300.../.....0633555430..../....03320024220..../...026030.032230.../....040330033230.../.....0.00..0000....","eye":[16,5]}],[{"w":21,"h":14,"pal":["#140c18","#423b48","#544c59","#6f626d","#95888f","#afa2aa","#cec2c7"],"px":".0.............0..0../020...........010020./0210..........011020./01310........0122330./.01310000000012213110/..0023114422222244220/....0024222222221110./.....01444552222000../.....015316636310..../.....033100006010..../.....02120..061210.../....0121220.061120.../....0120020.032120.../.....00..0...0000....","eye":[17,2]},{"w":18,"h":15,"pal":["#140c18","#423b48","#544c59","#6f626d","#95888f","#afa2aa","#cec2c7"],"px":".000............../01210..........0../.0120.......0.010./.010.......010020./.020......0022220./.01200000013214110/..0113333223446220/...05222222333220./...0522222233000../..005211223610..../.0162100004110..../.016010..021120.../.0160110.0121120../.0140020..040040../..00..0....0..0...","eye":[14,3]},{"w":20,"h":14,"pal":["#140c18","#423b48","#544c59","#6f626d","#95888f","#afa2aa","#cec2c7"],"px":".0...............0../010...........00010./020..........011120./01200.......0122220./.02210.000000221220./..015101222222562210/...0022222222223210./....01663333333000../.....06623334410..../....026210014120..../....04110..041410.../....041110.041120.../....010010.020010.../.....0..0...0..0....","eye":[15,4]},{"w":19,"h":14,"pal":["#140c18","#423b48","#544c59","#6f626d","#95888f","#afa2aa","#cec2c7"],"px":".................../.0..............0../020............020./.020.........00020./.0220.......022420./..0200.00000421500./...022022222255620./....0262223332000../.....0633333320..../.....060033440...../....0220.00400...../....06000.02100..../....040220022120.../.....0.00..0000....","eye":[15,3]}]]},"toad":{"variants":[{"w":16,"h":14,"pal":["#140c18","#1a2314","#354721","#546d37","#749847","#8eb15e","#a1bf72","#c7dd91"],"px":"................/........00000.../.......0555550../....00052655660./...0350527453450/..03553445556550/..05444455555550/.03332443223300./.05456246777730./.0444625667740../.0444113463200../..0445600563330./...0000..00000../................","eye":[13,7]},{"w":17,"h":13,"pal":["#140c18","#251512","#4c3326","#795941","#926e4f","#a57d5a","#a69b93","#d1a97c"],"px":"........00000..../.......0545540.../....00052355740../...0340516342330./...0442344554440./..03333355555440./..0332333222200../.04445245777730../.0334514557730.../.0333110343000.../..033450004000.../...0000...0....../.................","eye":[12,3]},{"w":16,"h":12,"pal":["#10142a","#140c18","#262c46","#434b67","#58668b","#6f7ea1","#9eaecb","#c3cae2"],"px":"........11111.../.......1555551../....11152355651./...1351527455351/..14543445555541/..14444445555441/.13333344221111./.14445044566541./.1444504447741../.13443234442031./..13345114540331/...1111..111111.","eye":[13,3]},{"w":17,"h":13,"pal":["#140c18","#281e1e","#443a35","#685d5a","#857969","#b4a99b","#d8cab3","#f2e8d2"],"px":"................./.......000000..../......03667760.../....00074377770../...0570725475370./..05775677777770./..06675677777770./.06451654444440../04666726777770.../04666726777740.../036661246742230../.005665005651530./...0000..000000..","eye":[8,4]}],"frames":[[{"w":15,"h":10,"pal":["#140c18","#1a2314","#354721","#546d37","#749847","#8eb15e","#a1bf72","#c7dd91"],"px":".......00000.../.....00445550../....0406126430./..0055456666630/.0330045445440./.056750554440../057753355550.../.077550035050../.033330.04040../..0000...0.0...","eye":[8,2]},{"w":15,"h":10,"pal":["#140c18","#1a2314","#354721","#546d37","#749847","#8eb15e","#a1bf72","#c7dd91"],"px":"........0000.../.......044440../.....004535530./....0435535540./...045566666540/..0321464445530/.0365625555500./.056531775730../.0377530453440./..00000.00000..","eye":[12,6]},{"w":15,"h":10,"pal":["#140c18","#1a2314","#354721","#546d37","#749847","#8eb15e","#a1bf72","#c7dd91"],"px":"........0000.../......0055650../....0043416540./...034545566650/..034245554440./.007773555650../03677400362340./.03555400553440/..00000..000030/.............0.","eye":[9,2]},{"w":14,"h":11,"pal":["#140c18","#354721","#546d37","#749847","#8eb15e","#a1bf72","#c7dd91"],"px":"............../.......00000../.....00333440./....0324114430/...04434444550/..000255545450/.034424543330./.045613664220./0236622343230./.024440034230./..0000..0000..","eye":[9,3]}],[{"w":15,"h":10,"pal":["#140c18","#251512","#4c3326","#795941","#926e4f","#a57d5a","#a69b93","#d1a97c"],"px":".......00000.../.....00344540../....040512540../...04434555550./..030034334330./.046750543330../047743355450.../.077550034040../.033330.03030../..0000...0.0...","eye":[8,2]},{"w":15,"h":10,"pal":["#140c18","#251512","#4c3326","#795941","#926e4f","#a57d5a","#d1a97c"],"px":"........0000.../.......033330../.....00342550../....0334435530./...035455555430/..0321354444430/.0354524444400./.046531664630../.0366530352330./..00000.00000..","eye":[12,6]},{"w":15,"h":10,"pal":["#140c18","#251512","#4c3326","#795941","#926e4f","#a57d5a","#a69b93","#d1a97c"],"px":"........0000.../......0044540../....0033315440./...034445555640/..033235543330./..07770555540../.0577300351330./.03444300443330/..00000..000030/.............0.","eye":[9,2]},{"w":14,"h":11,"pal":["#140c18","#251512","#4c3326","#795941","#926e4f","#a57d5a","#a69b93","#d1a97c"],"px":"............../.......00000../.....00344550./....0435125430/...04535555550/..000355545450/.034434643330./.04772377430../.037730343330./.034440034330./..0000..0000..","eye":[8,3]}],[{"w":15,"h":10,"pal":["#10142a","#140c18","#262c46","#434b67","#58668b","#6f7ea1","#9eaecb","#c3cae2"],"px":".......11111.../.....11444541../....1415025431./..1145455555531/.1331145444441./.155551544441../146643355451.../.177551134141../.133331.14141../..1111...1.1...","eye":[8,2]},{"w":15,"h":10,"pal":["#10142a","#140c18","#262c46","#434b67","#58668b","#6f7ea1","#9eaecb","#c3cae2"],"px":"........1111.../.......144441../.....114435531./....1434435541./...145455555541/..1320454444431/.1355525444411./.155530564631../.1377531353441./..11111.11111..","eye":[12,6]},{"w":15,"h":10,"pal":["#10142a","#140c18","#262c46","#58668b","#6f7ea1","#9eaecb","#c3cae2"],"px":"........1111.../......1133441../.....131304431./....13434444431/...11234433331./..14551444431../.1466311140131./..1333311331331/...1111..11.11./...............","eye":[9,2]},{"w":14,"h":11,"pal":["#10142a","#140c18","#262c46","#434b67","#58668b","#6f7ea1","#9eaecb","#c3cae2"],"px":"............../.......11111../.....11444551./....1435025441/...14545555551/..111355545451/.144434544441./.145624664331./1347733344341./.135551145341./..1111..1111..","eye":[8,3]}],[{"w":15,"h":10,"pal":["#140c18","#281e1e","#685d5a","#857969","#b4a99b","#d8cab3","#f2e8d2"],"px":".......00000.../.....00555650../....0506126520./..0066466666620/.0230046445440./.066660654550../056653366560.../.066660035050../.033330.03040../..0000...0.0...","eye":[8,2]},{"w":15,"h":10,"pal":["#140c18","#281e1e","#443a35","#685d5a","#857969","#b4a99b","#d8cab3","#f2e8d2"],"px":"........0000.../.......055550../.....005637730./....0546647750./...067777777760/..0421676666640/.0477727666600./0377741776740../.0477740473550./..00000.00000..","eye":[12,6]},{"w":15,"h":10,"pal":["#140c18","#281e1e","#443a35","#685d5a","#857969","#b4a99b","#d8cab3","#f2e8d2"],"px":"........0000.../......0077770../....0064617760./...046767777760/..044257765550./.037773777760../03777500471450./.04666500664560/..00000..000040/.............0.","eye":[9,2]},{"w":14,"h":11,"pal":["#140c18","#443a35","#685d5a","#857969","#b4a99b","#d8cab3","#f2e8d2"],"px":"............../.......00000../.....00555660./....0536116540/...05646666660/..000366656560/.045535654440./0256624665320./0256632365340./.036660046350./..0000..0000..","eye":[9,3]}]]},"salamander":{"variants":[{"w":20,"h":11,"pal":["#140c18","#311c15","#543929","#896848","#b47a42","#bea476","#e29d48","#f3cf7a"],"px":"............000...../...........06660..../......00000666460.0./....004444366546700./..0046666646777770../.0466666666465550.../0421473777770000..../06115500005500....../042110030035030...../01344300..00.0....../.00000..............","eye":[13,6]},{"w":19,"h":11,"pal":["#140c18","#311111","#7b362b","#995543","#ce5f3e","#d4946a","#eacb99"],"px":"............000..../...........04440.../......00000454540../.....0344304535440./...004444404566660./.0044444444456550../0300055354450000.../040.0620005500...../.0300103003500...../..033300..00......./...000.............","eye":[13,6]},{"w":19,"h":11,"pal":["#140c18","#1b1436","#342c55","#5c5288","#8078af","#9386e3","#a49dc4","#bbb1e9"],"px":".............000.../............05550../...........0766470./.....00000005341740/...0045555435777760/..0555555555476660./.0400672755540000../.06006400007340..../.06000000.04600..../..04440....00....../...000.............","eye":[15,3]},{"w":18,"h":12,"pal":["#140c18","#162725","#2a463e","#4c796b","#5eaf8f","#829d8b","#86bfa6","#bfe7d5"],"px":"................../...........00000../..........0366430./.....0000004726550/...003446604665560/..0334444444677760/.0643443444440000./06000662554600..../060.06130036030.../.0400200..0000..../..00200.........../....0.............","eye":[13,3]}],"frames":[[{"w":17,"h":8,"pal":["#140c18","#311c15","#896848","#b47a42","#bea476","#e29d48","#f3cf7a"],"px":"...........0000../.........0035520./....0000023561620/..003565555566640/.055564555550000./0330361444530..../.00.0330024030.../.....00..00.0....","eye":[13,2]},{"w":19,"h":9,"pal":["#140c18","#311c15","#896848","#b47a42","#bea476","#e29d48","#f3cf7a"],"px":"............0000.../...........034440../.......00005513340./.....0043335544350./...0025555555555520/..0565666666620000./.0530063255620...../..00.0330003000..../......00...0.......","eye":[13,2]},{"w":18,"h":8,"pal":["#140c18","#311c15","#896848","#b47a42","#bea476","#e29d48","#f3cf7a"],"px":"...........00000../.......0000265630./.....0034555615620/.00003555555666630/06333554455550000./02400240003500..../.00..0320.04030.../......00...0.0....","eye":[13,2]},{"w":18,"h":8,"pal":["#140c18","#311c15","#896848","#b47a42","#bea476","#e29d48","#f3cf7a"],"px":"............0000../...........033430./.......0000351450./......044545555550/.00000555555556620/03336263366620000./.00000650003240.../......00...000....","eye":[13,2]}],[{"w":17,"h":8,"pal":["#140c18","#7b362b","#995543","#ce5f3e","#d4946a","#eacb99"],"px":"...........0000../.........0034320./....0000023341420/..002343333355530/.034453444442000./0330352333430..../02002330023030.../.0..000..00.0....","eye":[13,2]},{"w":19,"h":9,"pal":["#140c18","#995543","#ce5f3e","#d4946a","#eacb99"],"px":"............0000.../...........012220../.......00002312220./....000222233222310/...0112333333222210/..0232333444410000./.02200421234100..../..00.02200020110.../......00...0.00....","eye":[14,5]},{"w":18,"h":8,"pal":["#140c18","#7b362b","#995543","#ce5f3e","#d4946a","#eacb99"],"px":"...........00000../.......0000244430./.....0033333514520/.00003433333455530/04333343344440000./02300232023420..../.00.02320003030.../.....000...0.0....","eye":[13,2]},{"w":18,"h":8,"pal":["#140c18","#995543","#ce5f3e","#d4946a","#eacb99"],"px":"............0000../...........012220./.......00002212210/.....0022222223230/.00001333333323310/02223142244410000./.00000420012120.../......00..0000....","eye":[14,5]}],[{"w":17,"h":8,"pal":["#140c18","#342c55","#5c5288","#8078af","#9386e3","#a49dc4","#bbb1e9"],"px":"...........0000../.........0046430./....0000034461630/..003464444466640/.055564555550000./0330362444530..../03003340034040.../.0..000..00.0....","eye":[13,2]},{"w":19,"h":9,"pal":["#140c18","#5c5288","#8078af","#9386e3","#a49dc4","#bbb1e9"],"px":"............0000.../...........023330../.......00003412230./....000322244332420/...0223444445333320/..0353555555520000./.0330053244520...../..00.0330003000..../......00...0.......","eye":[15,3]},{"w":18,"h":8,"pal":["#140c18","#342c55","#8078af","#9386e3","#a49dc4","#bbb1e9"],"px":"...........00000../.......0000254520./.....0023333514520/.00002533333555530/05333443344440000./02300230002420..../.00.02220.03020.../.....000...0.0....","eye":[13,2]},{"w":18,"h":8,"pal":["#140c18","#5c5288","#8078af","#9386e3","#a49dc4","#bbb1e9"],"px":"............0000../...........022320./.......00002313320/.....0033333434340/.00002444444535520/02235253355520000./.00000530003230.../......00...000....","eye":[14,5]}],[{"w":17,"h":8,"pal":["#140c18","#2a463e","#4c796b","#5eaf8f","#829d8b","#86bfa6","#bfe7d5"],"px":"...........0000../.........0035320./....0000023351520/..002353333355630/.055563555550000./0240461333540..../02002440023030.../.0..000..00.0....","eye":[13,2]},{"w":19,"h":9,"pal":["#140c18","#2a463e","#4c796b","#5eaf8f","#829d8b","#86bfa6","#bfe7d5"],"px":"............0000.../...........023330../.......00003512430./....000344455334520/...0223555555333320/..0353555556620000./.0340063235620...../..00.0330003000..../......00...0.......","eye":[13,2]},{"w":18,"h":8,"pal":["#140c18","#2a463e","#4c796b","#5eaf8f","#829d8b","#86bfa6","#bfe7d5"],"px":"...........00000../.......0000255540./.....0043333515520/.00004533333566630/05333353355550000./02300230002520..../.00.02220.03040.../.....000...0.0....","eye":[13,2]},{"w":18,"h":8,"pal":["#140c18","#2a463e","#4c796b","#5eaf8f","#829d8b","#86bfa6","#bfe7d5"],"px":"............0000../...........022340./.......00004313320/.....0033333535350/.00002555555535520/04445253356620000./.00000630003230.../......00...000....","eye":[13,2]}]]},"deer":{"variants":[{"w":19,"h":20,"pal":["#140c18","#4c342b","#73513e","#9c6e4e","#ad8362","#e0be98","#f8e3c8"],"px":".................../..........0..0...../..........0000000../...........001000../...........0434430./............032140./............0344550/............0366640/..0..000000.035000./.040044444303360.../.030333333333360.../..00333333333560.../...033333333350..../...033033333330..../...03300000030...../..0300.....0330..../..0300.....0330..../..0300.....0340..../..03000....0340..../...0........00.....","eye":[15,3]},{"w":19,"h":20,"pal":["#140c18","#2a1919","#6d4b38","#8e6f55","#b47e52","#c09874","#e1b78e","#f3dfbe"],"px":".................../..........0.00.0.../.........03000.0.../..........000000.../..........0524540../...........0041340./............0445670/..0.........0477730/.03000000000043000./.060476756534450.../.053654464544550.../..00544645444750.../...044444444570..../...044066665540..../...044000005440..../..0530.....0050..../..0500.....0050..../..0500.....0060..../..05130....0050..../...000.......0.....","eye":[13,3]},{"w":19,"h":19,"pal":["#140c18","#35292a","#80736d","#95867d","#b3a297","#d0c1b6","#f4eadf"],"px":".................../..........000....../..........000000.../..........0534430../...........0231320./...........0332550./...........0345650./.00.0000000024000../024035444523350..../.02244334333350..../..0233333333560..../..0233333333520..../...03304542320...../...03300000320...../..0320....020....../..0300....0220...../..0300....0220...../..03020...02250..../...0.0.....000.....","eye":[14,4]},{"w":19,"h":20,"pal":["#140c18","#271b1b","#6e5d54","#998270","#cab3a0","#eed3bc","#f4e4d1"],"px":"............0....../.........000200..../........02303020.../.........0222040.../..........0446640../...........0433520./...........0444660./..0........0456640./.0200000000046000../066246666644560..../062565555555660..../.00555555555660..../..0566455555620..../..026535554540...../...05500000550...../..05330...0340...../..05140...0440...../..05140...0440...../..04140...02340..../...000.....000.....","eye":[13,2]}],"frames":[[{"w":17,"h":19,"pal":["#140c18","#9c6e4e","#ad8362","#e0be98","#f8e3c8"],"px":".........0....0../........010..010./........01100110./.........011110../.........0111100./..........0211210/..........0222210/.........0121000./.000000001110..../0212222231110..../.033333111110..../.011441111110..../.011114111110..../.014114111110..../01111000010110.../010110..0400210../010010..0200210../0200120.0400210../.0..00...0..00...","eye":[14,4]},{"w":17,"h":19,"pal":["#140c18","#4c342b","#9c6e4e","#ad8362","#e0be98","#f8e3c8"],"px":"..........00000../.........0212220./..........020020./..........022220./..........022220./...........052520/...........035520/..0......0025200./.0200000022230.../.0223333532320.../..032333222320.../..03222222230..../..02323344240..../..022222222220.../.04222000220220../022020..02200420./04200200220.0240./0520020020...020./.00..0..0.....0..","eye":[13,2]},{"w":16,"h":19,"pal":["#140c18","#9c6e4e","#ad8362","#e0be98","#f8e3c8"],"px":".........0....../........010.00../........0100110./........0110110./........0113110./.........0111110/.........0133310/.........013110./.0000000011100../0111444411110.../0111444111110.../.01111111220..../.02221222220..../.012112111100.../01211100020210../020110..010020../0100110010.0210./010.030110..010./.0...0.00....0..","eye":[11,3]},{"w":17,"h":19,"pal":["#140c18","#9c6e4e","#ad8362","#e0be98","#f8e3c8"],"px":".........0..000../........01001110./.........010010../.........0111100./.........01211110/..........0212210/..........022110./.0.000000013000../0101111111310..../0111111111110..../.013111112210..../.03322222230...../.01411444210...../.012110014010..../0141110.01010..../040010..01010..../020.020010110..../010.01001010...../.0...0..0.0......","eye":[14,3]}],[{"w":17,"h":19,"pal":["#140c18","#8e6f55","#b47e52","#c09874","#e1b78e","#f3dfbe"],"px":".........0....0../........010.0010./........02201210./.........021120../.........0222200./..........0312320/..........0344410/.........0242000./.000000001220..../0424444442220..../.044455222220..../.022552233320..../.033335333310..../.035215333220..../03322000030230.../030220..0500320../020020..0300320../0300230.0500320../.0..00...0..00...","eye":[14,4]},{"w":17,"h":19,"pal":["#140c18","#2a1919","#8e6f55","#b47e52","#c09874","#e1b78e","#f3dfbe"],"px":"..........00000../.........0413230./..........030040./..........033330./..........034340./...........062640/...........046630/..0....0.0026200./.0300002022340.../.0334444643430.../..043555333530.../..05333344450..../..04535555450..../..044223334340.../.05333000340340../034030..03400520./06300400340.0360./0620030030...040./.00..0..0.....0..","eye":[13,2]},{"w":16,"h":19,"pal":["#140c18","#8e6f55","#b47e52","#c09874","#e1b78e","#f3dfbe"],"px":".........0....../........010.00../........0200220./........0120220./........0224220./.........0221220/.........0244520/.........025110./.0000000012300../0323555533330.../0133555333320.../.03333333330..../.03332333440..../.024214222200.../01422200040420../040120..020040../0200220020.0420./020.040220..020./.0...0.00....0..","eye":[11,3]},{"w":17,"h":19,"pal":["#140c18","#8e6f55","#b47e52","#c09874","#e1b78e","#f3dfbe"],"px":".........0.0000../........02012120./.........020020../.........0222200./.........01412210/..........0434420/..........044320./.0.000000024000../0201222222430..../0222333333320..../.034333333320..../.04533333350...../.02521555420...../.024210015010..../0252220.02020..../050020..03030..../040.040030120..../030.02002020...../.0...0..0.0......","eye":[14,3]}],[{"w":17,"h":19,"pal":["#140c18","#80736d","#95867d","#b3a297","#d0c1b6","#f4eadf"],"px":".........0....0../........01000010./........01211210./.........021120../.........0222200./..........0312310/..........0333310/.........0131000./.000000001220..../0323444442220..../.044444222220..../.022442222210..../.022224222210..../.024114222120..../02221000020120.../021110..0500310../020020..0300310../0300130.0500320../.0..00...0..00...","eye":[14,4]},{"w":17,"h":19,"pal":["#140c18","#35292a","#80736d","#95867d","#b3a297","#d0c1b6","#f4eadf"],"px":"..........00000../.........0312220./.........0230030./..........032220./..........023330./...........052540/...........045530/..0...00.0026200./.0300022022340.../.0334444643430.../..043444333430.../..04333333340..../..03535555350..../..033222233330.../.05222000230330../023030..03300520./05200300330.0350./0520030030...030./.00..0..0.....0..","eye":[13,2]},{"w":16,"h":19,"pal":["#140c18","#35292a","#80736d","#95867d","#b3a297","#d0c1b6","#f4eadf"],"px":".........0...0../........0200020./........0302220./........0231320./........0225220./.........0332330/.........0355530/.........035220./.0000000023300../0323555533330.../0233566333320.../.03333334440..../.04443444440..../.034324333200.../02423200040520../050230..030050../0300330030.0530./030.050320..030./.0...0.00....0..","eye":[11,3]},{"w":17,"h":19,"pal":["#140c18","#80736d","#95867d","#b3a297","#d0c1b6","#f4eadf"],"px":".........0.0000../........01011110./.........020020../.........0122200./.........01311210/..........0324420/..........044210./.0.000000024000../0101111112420..../0222222222220..../.024222233320..../.04433333340...../.02421444320...../.023210014110..../0252220.02020..../050020..02120..../030.030020120..../020.02002010...../.0...0..0.0......","eye":[14,3]}],[{"w":17,"h":19,"pal":["#140c18","#6e5d54","#998270","#cab3a0","#eed3bc","#f4e4d1"],"px":".........0....0../........010.0010./........03301310./.........031130../.........0333300./..........0413410/..........0555510/.........0252000./.000000001330..../0535555553330..../.055555444430..../.044554444420..../.044445444410..../.045215444230..../04432000040240.../040220..0500430../030030..0400430../0400340.0500430../.0..00...0..00...","eye":[14,4]},{"w":17,"h":19,"pal":["#140c18","#271b1b","#6e5d54","#998270","#cab3a0","#eed3bc","#f4e4d1"],"px":"..........00000../.........0513230./..........040050./..........044440./..........045450./...........062650/...........056640/..0....0.0026200./.0400002022450.../.0445555654540.../..064666455650.../..06555555560..../..05646666560..../..055222345450.../.06333000350450../035040..04500620./06300500450.0460./0620040040...050./.00..0..0.....0..","eye":[13,2]},{"w":16,"h":19,"pal":["#140c18","#6e5d54","#998270","#cab3a0","#eed3bc","#f4e4d1"],"px":".........0....../........010.00../........0400220./........0140430./........0135330./.........0341430/.........0355530/.........035110./.0000000014400../0414555544440.../0144555444420.../.04444444440..../.04443444550..../.035315333200.../01523200050520../050130..030050../0300330030.0530./030.050320..040./.0...0.00....0..","eye":[11,3]},{"w":17,"h":19,"pal":["#140c18","#6e5d54","#998270","#cab3a0","#eed3bc","#f4e4d1"],"px":".........0.0000../........02012120./.........030030../.........0233300./.........01512310/..........0545530/..........055420./.0.000000035000../0201233333540..../0334444444440..../.045444444440..../.05544444450...../.04541555540...../.035310015010..../0353330.04040..../050030..04040..../050.050040130..../040.03003010...../.0...0..0.0......","eye":[14,3]}]]},"badger":{"variants":[{"w":17,"h":11,"pal":["#140c18","#494043","#666064","#857874","#b7ad9f","#dbd9c3","#f3efd9"],"px":"...........0...../.....0000.0300.../...002222002640../..02222220121420./..02222221131240./.022222221463140./02222222220566430/0222022200000000./0220.000....0..../.00............../.................","eye":[12,3]},{"w":18,"h":12,"pal":["#140c18","#5d4434","#937051","#b8a691","#bd9261","#e0cfad","#f1e1c4"],"px":"................../...........000..../....00000002620.../...0244440223540../..04444441222450../.0444444414611220./.0224444424566500./.0222444421255530./0122044440000000../01200000000000..../.00........0....../..................","eye":[15,6]},{"w":19,"h":11,"pal":["#140c18","#1f1418","#615248","#917b69","#cab69a","#efdfbe","#f4e9d8"],"px":".......00000000..../.....00333235630.../...0045555334650.../..045555543343650../.0355555543542260../.04555555436665430./.0444465553355550../.044346660310000.../.040000000000030.../..0.......00..0..../...................","eye":[14,7]},{"w":17,"h":11,"pal":["#140c18","#504b56","#615c67","#898590","#b0abae","#f0eceb"],"px":"...........0...../.....0000.03000../...0033330225320./..03333330222430./.023333331212340./.033333332453240./02332333332555430/0333044322000000./0320.000020.0..../.020.....000...../..0..............","eye":[12,7]}],"frames":[[{"w":17,"h":9,"pal":["#140c18","#666064","#857874","#b7ad9f","#dbd9c3","#f3efd9"],"px":".............0.../....000000.0010../..0011111101110../.011111111110110./01222233311311310/0133145551011110./015101111100000../011000000100110../.00......0..00...","eye":[12,3]},{"w":17,"h":10,"pal":["#140c18","#494043","#666064","#857874","#b7ad9f","#dbd9c3","#f3efd9"],"px":"...........0.00../.....00000020220./...0022222022420./..02242222222220./.0244422212222220/02444522222266630/0266233321022220./02320222200000220/0220.000000..000./.00..............","eye":[10,2]},{"w":17,"h":10,"pal":["#140c18","#494043","#666064","#857874","#b7ad9f","#dbd9c3","#f3efd9"],"px":".............00../....000000.00220./...0222222022220./..022222202221220/.0223333322442440/02444456222222220/0266226622000200./02221222020.0220./02202000020.0220./.00.0....0...00..","eye":[13,3]},{"w":15,"h":9,"pal":["#140c18","#494043","#666064","#857874","#b7ad9f","#dbd9c3","#f3efd9"],"px":"............00./....00000.00220/..0022222022220/.02222222022220/.02222222222220/023333442124440/04522666220000./06200000020020./.00......0..0..","eye":[9,3]}],[{"w":17,"h":9,"pal":["#140c18","#937051","#b8a691","#bd9261","#e0cfad","#f1e1c4"],"px":".............0.../....00000000010../..0013333111330../.013333331110130./01333322411433430/0144345551033330./035303333100000../013000000100110../.00......0..00...","eye":[12,3]},{"w":17,"h":10,"pal":["#140c18","#5d4434","#937051","#b8a691","#bd9261","#e0cfad","#f1e1c4"],"px":"...........0.00../.....00000020220./...0044442024320./..02434442222440./.0455544412442420/02555544422456640/0266444441024440./02340444200000440/0240.000000..020./.00...........0..","eye":[10,2]},{"w":17,"h":10,"pal":["#140c18","#5d4434","#937051","#b8a691","#bd9261","#e0cfad","#f1e1c4"],"px":".............00../....000000.00420./...0244442024420./..044444402421420/.0444444324354550/04555556422444440/0466446642000200./0442122202002440./02402000020.0220./.00.0....0...00..","eye":[13,3]},{"w":15,"h":9,"pal":["#140c18","#5d4434","#937051","#b8a691","#bd9261","#e0cfad","#f1e1c4"],"px":"..........0.00./....00000020220/..0022222022440/.02444444044240/.04444444244240/044444354125550/05544666220000./06200000020040./.00......0..0..","eye":[9,2]}],[{"w":17,"h":9,"pal":["#140c18","#615248","#917b69","#cab69a","#efdfbe","#f4e9d8"],"px":"...........000.../....00000002230../..0034444323440../.024444442320240./02444444423533530/0355455552034440./035414443200000../023120002200230../.0000...00..00...","eye":[12,3]},{"w":17,"h":10,"pal":["#140c18","#1f1418","#615248","#917b69","#cab69a","#efdfbe","#f4e9d8"],"px":"...........0.00../.....00000030330./...0055553034530./..03555553344450./.0456655514554540/03666655544566650/0466555552234440./03550455323000440/0340.00003300330./.00......00..00..","eye":[10,2]},{"w":17,"h":10,"pal":["#140c18","#615248","#917b69","#cab69a","#efdfbe","#f4e9d8"],"px":".............00../....000000.00420./...0344443034430./..044444403431420/.0444444424444450/03555555422344430/0355345532022220./0342222202002330./03403000020.0230./.00.0....0...00..","eye":[9,3]},{"w":15,"h":9,"pal":["#140c18","#917b69","#cab69a","#efdfbe","#f4e9d8"],"px":"..........0.00./....00000010220/..0012222012320/.01233333122120/.03333333133130/033333332114440/04423444110010./04100000010030./.00......0..0..","eye":[9,2]}],[{"w":17,"h":9,"pal":["#140c18","#504b56","#615c67","#898590","#b0abae","#f0eceb"],"px":"...........000.../....00000002230../..0033333323330../.023333332320230./02333344423433430/0344355552033330./035313333200000../023220002200220../.0000...00..00...","eye":[12,3]},{"w":17,"h":10,"pal":["#140c18","#504b56","#615c67","#898590","#b0abae","#f0eceb"],"px":"...........0.00../.....00000020220./...0033332023420./..02343332223330./.0344433313333330/02444533333355530/0355333331223330./02330333222000330/0230.00002200220./.00......00..00..","eye":[10,2]},{"w":17,"h":10,"pal":["#140c18","#615c67","#898590","#b0abae","#f0eceb"],"px":".............00../....000000.00210./...0222222022220./..022222202221210/.0222222212332330/02333344211222220/0244224421111110./0221111101001220./01202000010.0120./.00.0....0...00..","eye":[9,3]},{"w":15,"h":9,"pal":["#140c18","#615c67","#898590","#b0abae","#f0eceb"],"px":"..........0.00./....00000010120/..0012222112220/.01222222122120/.02222222122120/022222332113330/03422444110010./04100000010020./.00......0..0..","eye":[12,3]}]]},"dove":{"variants":[{"w":18,"h":14,"pal":["#140c18","#5b5762","#756971","#8b8998","#aaa6b3","#bebbc9"],"px":"...........000..../..........03440.../.........0444440../........045553530./....0000045553400./...03554435555400./.00355333135550.../02455333335000..../.045533333540...../..04553333520...../...000034500....../....030000......../.....00.........../..................","eye":[15,4]},{"w":18,"h":14,"pal":["#140c18","#6f6663","#9e9b95","#c6bfb7","#ebe6dd","#f5f1e8"],"px":"...........000..../..........04440.../.........0444530../........035552510./....000003555430../...02555235544300./.00255333125540.../01355333333000..../.045533333530...../..03543333510...../...001133320....../....0300000......./....010.........../.....0............","eye":[12,7]},{"w":18,"h":14,"pal":["#140c18","#28151c","#775d6b","#a17a8b","#bf98a9","#d2afbe"],"px":"...........000..../..........03550.../.........0244450../.........04445250./....0000004444400./...02455403444400./.000554333144420../032553333330000.../.035543333350...../..03554333450...../...000004440....../....0420000......./....020.........../.....0............","eye":[15,4]},{"w":18,"h":13,"pal":["#140c18","#313446","#656d88","#77634e","#808ba9","#94a0b7"],"px":"............00..../...........0440.../..........044440../.........04445250./.....0000054454030/....0244402444400./...0454222144420../.00442222220000.../..04422222250...../..02442222450...../...000002240....../....020.000......./.....0............","eye":[15,4]}],"frames":[[{"w":16,"h":12,"pal":["#140c18","#756971","#8b8998","#aaa6b3","#bebbc9"],"px":"....000........./...01320...000../...024420.02430./...023342034340./.000233331433320/022233344222420./.0002444442200../....024444420.../.....02244420.../.....0244420..../......04230...../.......000......","eye":[12,6]},{"w":19,"h":16,"pal":["#140c18","#756971","#8b8998","#aaa6b3","#bebbc9"],"px":".................0./.0..............020/020............0230/0420..........02440/044200000....00220./.043124420..033210./..0012234300443200./....023444424442320/.....0244440244300./.....02333432200.../.....0233333330..../......022334420..../.......0244440...../......02444420...../.......0020220...../.........0.00......","eye":[16,6]},{"w":16,"h":11,"pal":["#140c18","#756971","#8b8998","#aaa6b3","#bebbc9"],"px":"............00../.....0000.00110./....02222022420./....033440342330/...0233332344430/...023333322220./.0003444444400../0244224444440.../022000044440..../.00...0222220.../.......00000....","eye":[12,6]},{"w":16,"h":11,"pal":["#140c18","#756971","#8b8998","#aaa6b3","#bebbc9"],"px":"......0....000../.....0100.02440./.000033320244230/0232233332244320/022223333223320./.0002444442220../....044444440.../.....00224440.../.....0244440..../......024130..../.......0000.....","eye":[13,3]}],[{"w":16,"h":12,"pal":["#140c18","#6f6663","#9e9b95","#c6bfb7","#ebe6dd","#f5f1e8"],"px":"....000........./...01310..0000../...035510013530./...013352035350./.000333331544430/033244444323430./.0003445553300../....035555530.../.....02355520.../.....0355520..../......05330...../.......000......","eye":[12,6]},{"w":19,"h":16,"pal":["#140c18","#6f6663","#9e9b95","#c6bfb7","#ebe6dd","#f5f1e8"],"px":".................0./.0..............020/030............0240/0530..........03550/055200000....003310/.054135530..044310./..0012345400554300./....024444415543320/.....0344550355300./.....03333533300.../.....0133333330..../......013335530..../.......0355550...../......03555510...../.......0030230...../.........0.00......","eye":[16,6]},{"w":16,"h":11,"pal":["#140c18","#6f6663","#9e9b95","#c6bfb7","#ebe6dd","#f5f1e8"],"px":"............00../.....0000.00110./....01331023530./....033550353330/...0333332355530/...034444433330./.0004444445510../0255135555550.../023000055550..../.00...0323230.../.......00000....","eye":[9,3]},{"w":16,"h":11,"pal":["#140c18","#6f6663","#9e9b95","#c6bfb7","#ebe6dd","#f5f1e8"],"px":"......0....000../....00100.03550./.000133320355130/0332333331355330/013234444334430./.0002444443320../....055555550.../.....00235550.../.....0355550..../......035130..../.......0000.....","eye":[13,3]}],[{"w":16,"h":12,"pal":["#140c18","#775d6b","#a17a8b","#bf98a9","#d2afbe"],"px":"....000........./...01310...000../...024410.02430./...013341034340./.000233331433320/022133333222320./.0002333332200../....023344420.../.....02244420.../.....0244420..../......04230...../.......000......","eye":[12,6]},{"w":19,"h":16,"pal":["#140c18","#775d6b","#a17a8b","#bf98a9","#d2afbe"],"px":".................0./.0..............010/020............0230/0420..........02440/044200000....00220./.043124420..033210./..0012234300443200./....023333314432220/.....0233330244300./.....02333332200.../.....0133333330..../......012333320..../.......0233440...../......02444410...../.......0020120...../.........0.00......","eye":[16,6]},{"w":16,"h":11,"pal":["#140c18","#775d6b","#a17a8b","#bf98a9","#d2afbe"],"px":"............00../.....0000.00110./....01221022420./....033440342330/...0233332344430/...023333322220./.0003333334300../0234123334440.../022000044440..../.00...0212120.../.......00000....","eye":[12,6]},{"w":16,"h":11,"pal":["#140c18","#775d6b","#a17a8b","#bf98a9","#d2afbe"],"px":"......0....000../.....0100.02440./.000033320244130/0232233331244320/012123333223320./.0001333332220../....033333440.../.....00224440.../.....0244440..../......024130..../.......0000.....","eye":[13,3]}],[{"w":16,"h":12,"pal":["#140c18","#656d88","#77634e","#808ba9","#94a0b7"],"px":"....000........./...01110...000../...013310.01430./...013341034340./.000133332433310/011133333111310./.0001333331100../....013333310.../.....01133410.../.....0133310..../......04110...../.......000......","eye":[12,6]},{"w":19,"h":16,"pal":["#140c18","#656d88","#77634e","#808ba9","#94a0b7"],"px":".................0./.0..............010/010............0130/0310..........01330/033100000....00110./.033213310..033120./..0011133300443100./....013333314431110/.....0133330144100./.....01133331100.../.....0133333330..../......011333310..../.......0133340...../......01444310...../.......0010110...../.........0.00......","eye":[16,6]},{"w":16,"h":11,"pal":["#140c18","#656d88","#77634e","#808ba9","#94a0b7"],"px":"............00../.....0000.00210./....01111011310./....011330331330/...0133331333430/...013333311110./.0003333334300../0134113333430.../011000034440..../.00...0111110.../.......00000....","eye":[12,6]},{"w":16,"h":11,"pal":["#140c18","#656d88","#77634e","#808ba9","#94a0b7"],"px":"......0....000../.....0100.01330./.000013310144130/0131133331144310/011113333113310./.0001333331110../....033333340.../.....00113440.../.....0133330..../......013210..../.......0000.....","eye":[13,3]}]]},"fox":{"variants":[{"w":20,"h":15,"pal":["#140c18","#381b14","#7b452a","#a96b47","#ca9466","#cf7a3f","#e8c59c"],"px":"..................../.00.........00.00.../0660.......0430330../.060.......043050.../.0630......0555530../.045300000035526550./..030045555555555530/...00555555556666640/...0355555555460000./...0355355555660..../....053144035440..../...0431000032130..../...04100..032130..../...041130.032130..../....0000...0000.....","eye":[14,3]},{"w":20,"h":16,"pal":["#140c18","#2e1211","#552822","#7e5f56","#894335","#bd5a3e","#d8a282","#f5e2ce"],"px":"..................../.00.........00..0.../0730.......0660060../0360.......0650460../.0640......05555540./.035400000005555550./..004045555555555550/....0555555556666660/...0455555555663330./...045555555567000../....055255525660..../...0454000004140..../...040040..04040..../...040040..03040..../....00.0....0.0...../....................","eye":[14,3]},{"w":20,"h":15,"pal":["#140c18","#4d4854","#605f6a","#817c87","#a19fa9","#cdc8d0","#dedbdf"],"px":".00.............0.../0220........00.010../.0520......03300410./..030......0121220../..0420.....01222220./..04100000002215110./...02112222122221230/....0222222224566620/....022222222241110./....02222221236000../....022023301430..../....010000001010..../....01010..01010..../....020010.050010.../.....0..0...0..0....","eye":[15,2]},{"w":19,"h":15,"pal":["#140c18","#625a5f","#979094","#bfbabd","#d8d6d8","#e9e6e4"],"px":".0.........0......./020.......010.00.../0540......0500120../.0320.....0532320../.020......0444430../.03000000024415420./.03225555434545520./..02544444345555310/..0554444444321000./..0444344345530..../..0342244032420..../..0431100031120..../..040210.030020..../..040040.030030..../...0..0...0..0.....","eye":[12,2]}],"frames":[[{"w":20,"h":14,"pal":["#140c18","#7b452a","#a96b47","#ca9466","#cf7a3f","#e8c59c"],"px":"..............0..0../.00..........020040./0240.........042240./.0440........044440./..0240.0000004421440/...00402444444444440/.....04433333332000./.....033333555520.../.....05545555540..../.....04200025420..../....04200..042220.../....040020.042240.../....040020.042040.../.....0..0...00.0....","eye":[16,6]},{"w":18,"h":15,"pal":["#140c18","#a96b47","#ca9466","#cf7a3f","#e8c59c"],"px":"............0..0../...........010010./...........030020./.00........033330./0130......0131120./033100000001323230/.01113333333344440/..003333333341000./...033333334410.../...03212222430..../..022100003100..../..040010.031010.../..040020.031040.../...0..0...00.0..../..................","eye":[14,2]},{"w":17,"h":14,"pal":["#140c18","#a96b47","#ca9466","#cf7a3f","#e8c59c"],"px":".00........0..0../0330......010030./.0130.....010030./.010......013330./.010.000000313130/..010111111333330/..03333332333100./..032222223230.../..032224444430.../..03431333430..../.0340000003040.../.030010..030140../.030.010.040040../..0...0...0..0...","eye":[13,2]},{"w":20,"h":14,"pal":["#140c18","#7b452a","#a96b47","#ca9466","#cf7a3f","#e8c59c"],"px":"..............0..0../.000.........040020./.0220........042440./..040........044440./..0240.0000004441440/...02402444444444440/....004333333332000./.....043335555520.../.....04544555540..../....0254200025420.../....024040.024040.../....020020.024040.../.....0..0...02020.../.............0.0....","eye":[16,6]}],[{"w":20,"h":14,"pal":["#140c18","#7e5f56","#894335","#bd5a3e","#d8a282","#f5e2ce"],"px":"..............0..0../.00..........010030./0130.........031130./.03300.......033330./..013200000003332330/...02323333333333330/....003333333343000./.....044444444430.../.....04434444530..../....023302225320..../....0322000032220.../....030020.032230.../....030010.031030.../.....0..0...00.0....","eye":[16,6]},{"w":18,"h":15,"pal":["#140c18","#7e5f56","#894335","#bd5a3e","#d8a282","#f5e2ce"],"px":"............0..0../...........030030./...........032040./.00........033330./0330..000002332420/033200222223343430/022223333333344440/.0003333333342000./...033333334410.../...03313333430..../..044200003100..../..040020.031010.../..050040.031050.../...0..0...00.0..../..................","eye":[14,2]},{"w":17,"h":14,"pal":["#140c18","#7e5f56","#894335","#bd5a3e","#d8a282","#f5e2ce"],"px":".00........0..0../0330......010030./.0130.....032230./.030......033330./.0300000000323230/.0222222223333330/..033333333332220/..03333344343000./..034444444430.../..034313334320.../.0340200003040.../.030010..030140../.030.010.050050../..0...0...0..0...","eye":[13,7]},{"w":20,"h":14,"pal":["#140c18","#7e5f56","#894335","#bd5a3e","#d8a282","#f5e2ce"],"px":"..0...........0..0../.020.........030030./.0230........033330./.02320.......033330./..023000000003332330/...02322333333333330/....003333334441200./.....034444444410.../.....03433444430..../....0253202215320.../....0130300013030.../....010030.033030.../.....0..0...02020.../.............0.0....","eye":[9,9]}],[{"w":20,"h":14,"pal":["#140c18","#4d4854","#605f6a","#817c87","#a19fa9","#cdc8d0","#dedbdf"],"px":"..............00.0../.00..........011020./0120.........021120./.02200.......022220./..022100000002221220/...01212222222222220/....002222233332100./.....033334444420.../.....05525566620..../....012201116210..../....0211000021110.../....020110.021120.../....020010.021020.../.....0..0...00.0....","eye":[15,2]},{"w":18,"h":15,"pal":["#140c18","#4d4854","#605f6a","#817c87","#a19fa9","#cdc8d0","#dedbdf"],"px":"............0..0../...........020020./..........0121030./.00........022220./0220..000001221310/022100111112242420/011112222222244440/.0002222222251000./...022222225510.../...02212233620..../..033100012100..../..060010.021010.../..060030.022060.../...0..0...00010.../.............0....","eye":[14,2]},{"w":17,"h":14,"pal":["#140c18","#4d4854","#605f6a","#817c87","#a19fa9","#cdc8d0","#dedbdf"],"px":".00........0..0../0220......010020./.0220.....021120./.020......022220./.0210000001212120/.0111111112222220/..022222222221110/..02233333232000./..023344444420.../..025212225210.../.0250100002060.../.020010..020160../.020.010.061060../..0...0...00.0...","eye":[14,4]},{"w":20,"h":14,"pal":["#140c18","#4d4854","#605f6a","#817c87","#a19fa9","#cdc8d0","#dedbdf"],"px":"..............0..0../.000.........020020./..020........022220./..020........022220./...020..000002221220/....0200222222222220/.....02223333330000./.....02334444440..../.....02522556620..../.....06200000620..../.....02020..02020.../....020020.022020.../.....0..0...00.0..../....................","eye":[16,4]}],[{"w":20,"h":14,"pal":["#140c18","#625a5f","#979094","#bfbabd","#d8d6d8","#e9e6e4"],"px":"..............00.0../.00..........021030./0230.........032230./.03300.......044340./..023100000003431440/...01413444444444440/....004444444453100./.....055555555530.../.....05545555540..../....014302225420..../....0421000042220.../....040120.042230.../....030020.032030.../.....0..0...00.0....","eye":[16,4]},{"w":18,"h":15,"pal":["#140c18","#625a5f","#979094","#bfbabd","#d8d6d8","#e9e6e4"],"px":"............0..0../...........030030./..........0131050./.00........033330./0330..000002332510/033200111123454540/022224444444455550/.0004444444452000./...044444445520.../...04424444530..../..045200013200..../..050020.032020.../..050050.032050.../...0..0...00010.../.............0....","eye":[14,2]},{"w":17,"h":14,"pal":["#140c18","#625a5f","#979094","#bfbabd","#d8d6d8","#e9e6e4"],"px":".00........0..0../0330......020030./.0230.....032230./.030......033440./.0310000001424240/.0121222223444440/..034444444442110/..04444455454000./..045555555530.../..035324445310.../.0350100004050.../.030020..040250../.040.020.051050../..0...0...00.0...","eye":[13,7]},{"w":20,"h":14,"pal":["#140c18","#625a5f","#979094","#bfbabd","#d8d6d8","#e9e6e4"],"px":".00...........0.00../0110.........030130./.0230........043330./.01410.......044340./..024100000004442430/...02422444444444430/....004444445552100./.....045555555520.../.....04534555540..../....0253201125320.../....0230300023030.../....020030.034040.../.....0..0...02020.../.............0.0....","eye":[9,9]}]]},"ermine":{"variants":[{"w":19,"h":11,"pal":["#140c18","#827269","#b1a69a","#dbcbbc","#f4e5ce","#f8efe0"],"px":"..............0..../...........000300../.....0000003321310./....02555505531410./...025545534555410./...05444444335530../..00553444443000.../.0005414442400...../...05100000400...../....00.....00....../...................","eye":[13,6]},{"w":18,"h":12,"pal":["#140c18","#553c30","#7d5a40","#90684a","#c3a076","#e7cea7"],"px":"................../.............0..../...........00300../.....000000221220./....0333302331330./...02333312345440./..03333322235550../.00222332223000.../.002303332200...../..02000000000...../...0......00....../..................","eye":[13,3]},{"w":18,"h":11,"pal":["#120a0b","#140c18","#3b2a20","#574637","#7b614b","#a38c66","#dabd89","#f0deb0"],"px":"............11..../..........110611../....1111116566641./...15677717734661./..166666656777641./..16666666677771../.14666666665111.../.116636665611...../..163111116241..../..1511...15311..../...1......11......","eye":[12,1]},{"w":17,"h":11,"pal":["#140c18","#27212a","#4d4853","#5f5a64","#7b777f","#9a97a0","#bab7bb","#dedbdb"],"px":"...........0.0.../..........03030../...0000000252220./..02453323341340./.0034433324677330/0233333333277730./020332333330000../.00330333030...../..030.000030...../...0......0....../.................","eye":[13,2]}],"frames":[[{"w":14,"h":10,"pal":["#140c18","#827269","#b1a69a","#dbcbbc","#f4e5ce","#f8efe0"],"px":".........0000./........033310/.......0340430/...00000343440/..014455443210/.045555444100./055555555220../04555430000.../0144100......./.0000.........","eye":[10,2]},{"w":16,"h":11,"pal":["#140c18","#827269","#b1a69a","#dbcbbc","#f4e5ce","#f8efe0"],"px":"...........000../..........04340./.........0341430/....000000444430/...013444445200./..015555555510../.00355555444230./01345554400000../033355420......./.0001100......../....00..........","eye":[13,4]},{"w":16,"h":10,"pal":["#140c18","#827269","#b1a69a","#dbcbbc","#f4e5ce","#f8efe0"],"px":"..........0000../.........023340./.....00001431440/....013444444430/...014445554230./..035555555300../..0455555554410./.01455420000030./02104300.....0../.00.00..........","eye":[12,5]},{"w":16,"h":11,"pal":["#140c18","#827269","#b1a69a","#dbcbbc","#f4e5ce","#f8efe0"],"px":"..........0000../.........044430./........03433430/.....00004444430/...004445554100./..01555555410.../.0245555552230../0134554430000.../.00355310......./...01100......../....00..........","eye":[8,3]}],[{"w":14,"h":10,"pal":["#140c18","#553c30","#7d5a40","#90684a","#c3a076","#e7cea7"],"px":".........0000./........022210/.......0230320/...00000232330/..02233322220./.03333333300../033333445220../03555320000.../0233200......./.0000.........","eye":[10,2]},{"w":16,"h":11,"pal":["#140c18","#7d5a40","#90684a","#c3a076","#e7cea7"],"px":"...........000../..........02120./.........0121210/....000000222210/...011222222100./..012222222200../.00122233111110./01123442200000../011144210......./.0000000......../................","eye":[13,4]},{"w":16,"h":10,"pal":["#140c18","#7d5a40","#90684a","#c3a076","#e7cea7"],"px":"..........0000../.........011120./......0000111210/....001112222210/...012222222110./..012222222100../..0222333442210./.01244210000010./01002100.....0../.0..00..........","eye":[12,5]},{"w":16,"h":11,"pal":["#140c18","#7d5a40","#90684a","#c3a076","#e7cea7"],"px":"..........0000../.........011210./........01211210/.....00002222210/...001222222100./..01222222210.../.0122223331110../.012442210000.../..0144110......./...00000......../................","eye":[8,3]}],[{"w":14,"h":10,"pal":["#140c18","#3b2a20","#574637","#7b614b","#a38c66","#dabd89","#f0deb0"],"px":".........0000./........044510/.......0550550/...00000555550/..03555555430./.05555555500../055666666340../05666540000.../0255000......./.000..........","eye":[10,2]},{"w":16,"h":11,"pal":["#140c18","#574637","#7b614b","#a38c66","#dabd89","#f0deb0"],"px":"...........000../..........04440./.........0441440/.....00000444440/...003444444200./..024444444400../.00455555444330./02345554400000../043355420......./.0000000......../................","eye":[12,2]},{"w":16,"h":10,"pal":["#140c18","#574637","#7b614b","#a38c66","#dabd89","#f0deb0"],"px":"..........0000../.........024440./......0000431440/.....03444444440/...004444444330./..034444455400../..0455555554420./.02455420000040./02004300.....0../.0..00..........","eye":[12,2]},{"w":16,"h":11,"pal":["#140c18","#7b614b","#a38c66","#dabd89","#f0deb0"],"px":"..........0000../.........033330./........03333330/.....00003333330/...003333333000./..01333333310.../.0134444441220../.023443320000.../..0244200......./...0000........./................","eye":[12,4]}],[{"w":14,"h":10,"pal":["#140c18","#4d4853","#5f5a64","#7b777f","#9a97a0","#bab7bb","#dedbdb"],"px":".........0000./........021210/.......0220220/...00000222220/..012222222110/.022223222000./033334456110../02666220000.../0122100......./.0000.........","eye":[10,2]},{"w":16,"h":11,"pal":["#140c18","#4d4853","#5f5a64","#7b777f","#9a97a0","#bab7bb","#dedbdb"],"px":"...........000../..........02220./.........0221220/....000000222220/...012222222100./..012222233300../.00233445222120./01126662200000../022266210......./.0001100......../....00..........","eye":[12,2]},{"w":16,"h":10,"pal":["#140c18","#4d4853","#5f5a64","#7b777f","#9a97a0","#bab7bb","#dedbdb"],"px":"..........0000../.........012220./.....00000221220/....012222222220/...012222222110./..022233333200../..0234456662210./.01266210000020./01102200.....0../.00.00..........","eye":[12,2]},{"w":16,"h":11,"pal":["#140c18","#4d4853","#5f5a64","#7b777f","#9a97a0","#bab7bb","#dedbdb"],"px":"..........0000../.........022220./........02222220/.....00002222220/...002222222100./..01222333210.../.0123344561110../.022662220000.../..0266210......./...01100......../....00..........","eye":[8,3]}]]},"snail":{"variants":[{"w":18,"h":15,"pal":["#140c18","#23110c","#3c2416","#5b3c25","#7b5533","#a57849","#c0965d","#ebc37d"],"px":"......00000......./.....0666660....0./....067777760..050/...05776666760060./..045755645765060./..045736455765160./..045746664765260./..045674436765260./...05677777664360./...00555665543540./..045255555335540./.055551112255550../.0555555555664000./..000000001000..../..........0.......","eye":[14,4]},{"w":17,"h":14,"pal":["#140c18","#311724","#4a2a37","#714554","#966d77","#bd8691","#ddaead","#f4cbc5"],"px":"......00000....../....00666650...0./...0477777660.060/...06765557750520/..057655545750420/..057655454753410/..057656554753410/..057753347653410/..045777766643520/...05555555434310/.0042555552355540/04555211114555510/01555555555552140/.000000000000000.","eye":[15,5]},{"w":17,"h":15,"pal":["#140c18","#292f4b","#434d6d","#606c8a","#7e8daf","#98a9c7","#c3d3ea"],"px":".....00000......./....04555500...0./...0566666530.040/..05664445650040./.045634444654040./.045625242654140./.045625442654140./.045662226654140./..04566666542140./..03445555522300./.0031444441344330/0544411111544400./0344444444444000./.000000000000..../.................","eye":[13,4]},{"w":17,"h":15,"pal":["#140c18","#25311d","#4b5b3c","#798e62","#90a672","#b1c78f","#d1e4b1"],"px":".....00000......./....0455550....0./...045555560..030/..04654444650030./.034633423553030./.034625242653130./.034625542653130./.034562215544130./..03456665442140./..00344444422200./.000133434123320./0333211111333300./0343333333333000./.000000000000..../.................","eye":[13,4]}],"frames":[[{"w":16,"h":11,"pal":["#140c18","#3c2416","#5b3c25","#7b5533","#a57849","#c0965d","#ebc37d"],"px":".....0000......./....035550....../...04455540.00../..045444454030../..055444465050../..066465465040../..066544565040../..0056666414240./.04033333345430./0466554445530430/.00000000000.00.","eye":[11,4]},{"w":16,"h":11,"pal":["#140c18","#23110c","#5b3c25","#7b5533","#a57849","#c0965d","#ebc37d"],"px":".....0000......./...00355500..0../..0355445530030./.0366444464040../.0365466465050../.0366444466050../..056555564040../..0345555324230./.05434444445440./056654444554140./.0000000000000..","eye":[11,3]},{"w":16,"h":11,"pal":["#140c18","#23110c","#5b3c25","#7b5533","#a57849","#c0965d","#ebc37d"],"px":"......000......./....005660....../...03566650.00../..046544465030../..066445356040../..066444455040../..0665444550400./..00455554042430/.04433333145530./0455554444540430/.00000000000.00.","eye":[13,6]},{"w":14,"h":11,"pal":["#140c18","#3c2416","#7b5533","#a57849","#c0965d","#ebc37d"],"px":".....000....../...005540...0./..04544550.040/.035433354030./.045354344030./.045333344030./..044455310230/.0233333223320/03533222353320/03444444320030/.000000000..0.","eye":[10,4]}],[{"w":16,"h":11,"pal":["#140c18","#311724","#4a2a37","#714554","#966d77","#bd8691","#ddaead","#f4cbc5"],"px":".....0000......./....045660....../...05566650.00../..056555565040../..066555465050../..077575575050../..077545575050../..0057777514240./.04023333345500./0577555555540440/.00000000000.00.","eye":[11,4]},{"w":16,"h":11,"pal":["#140c18","#311724","#4a2a37","#966d77","#bd8691","#ddaead","#f4cbc5"],"px":"......000......./....005550....../...05544550.000./..056444464040../..064466464040../.0366444466040../..046444464040../..0344444324230./.04433333344330./056654444554130./.0000000000000..","eye":[11,4]},{"w":16,"h":11,"pal":["#140c18","#311724","#4a2a37","#714554","#966d77","#bd8691","#ddaead","#f4cbc5"],"px":"......000......./....006670....../...04577750.00../..057555575040../..077555457050../..077555455050../..077545555050../..0055556504250./.04533333146600./0466665555640540/.00000000000.00.","eye":[11,4]},{"w":14,"h":11,"pal":["#140c18","#311724","#714554","#966d77","#bd8691","#ddaead","#f4cbc5"],"px":".....000....../...006640...0./..04644660.040/.046444464040./.056365355040./.056344455040./..055556410230/.0034444224320/03644233464430/04444444430040/.000000000..0.","eye":[10,4]}],[{"w":16,"h":11,"pal":["#140c18","#292f4b","#434d6d","#606c8a","#7e8daf","#98a9c7","#c3d3ea"],"px":".....0000......./....035550....../...04455540.00../..045444454040../..056444464040../..066464464040../..066544565040../..0056666414240./.04022223345430./0466554445530430/.00000000000.00.","eye":[11,4]},{"w":16,"h":11,"pal":["#140c18","#292f4b","#434d6d","#606c8a","#7e8daf","#98a9c7","#c3d3ea"],"px":"......000......./....005550....../..005544560.000./.0366444464040../.0364466464040../.0366444466040../..046555564040../..0345555324230./.05444444445440./056654444554140./.0000000000000..","eye":[11,4]},{"w":16,"h":11,"pal":["#140c18","#292f4b","#434d6d","#606c8a","#7e8daf","#98a9c7","#c3d3ea"],"px":"......000......./....006660....../...03466640.00../..046444464030../..066445456040../..066444455040../..066544455040../..0045555404240./.04422233145530./0455554444540430/.00000000000.00.","eye":[11,4]},{"w":14,"h":11,"pal":["#140c18","#292f4b","#434d6d","#606c8a","#7e8daf","#98a9c7","#c3d3ea"],"px":".....000....../...006650...0./..05655660.050/.046544465040./.056465455040./.056444455040./..055666410240/.0044444224430/04644333464430/04444455440040/.000000000..0.","eye":[10,4]}],[{"w":16,"h":11,"pal":["#140c18","#25311d","#4b5b3c","#798e62","#90a672","#b1c78f","#d1e4b1"],"px":".....0000......./....034550....../...03355540.00../..045433453030../..055344354040../..055354354030../..056433464030../..0046666313130./.03022222234300./0366443334400330/.0000000000..00.","eye":[11,4]},{"w":16,"h":11,"pal":["#140c18","#25311d","#4b5b3c","#798e62","#90a672","#b1c78f","#d1e4b1"],"px":"......000......./....005550....../...05544550.000./..055433354040../..054355364040../..066333366040../..046444463030../..0034444313230./.04333333334330./056653333554130./.0000000000000..","eye":[11,4]},{"w":16,"h":11,"pal":["#140c18","#25311d","#4b5b3c","#798e62","#90a672","#b1c78f","#d1e4b1"],"px":"......000......./....005550....../...03455540.00../..035433364030../..066334346030../..066333344030../..066433344030../..0034445303240./.0342222213550../035555444453030./.00000000000.0..","eye":[11,4]},{"w":14,"h":11,"pal":["#140c18","#25311d","#4b5b3c","#798e62","#90a672","#b1c78f","#d1e4b1"],"px":".....000....../...005540...0./..04544660.040/.036433364030./.056365355030./.056333355030./..055555310230/.0033344224320/03643223354330/04444444330030/.000000000..0.","eye":[10,4]}]]},"rat":{"variants":[{"w":19,"h":13,"pal":["#140c18","#2c161b","#4c3534","#89695a","#a27e70","#bd9b89","#d2a8ae","#e3b9b7"],"px":"..............0..../...........00030.../..........0340730../........0006434430./......0033324331430/.....03333333333440/...0033333333335530/..0562333333300000./.0630033033330...../0600.030000300...../0700.0403003000..../.0660.0.0..0......./..00...............","eye":[15,4]},{"w":20,"h":13,"pal":["#140c18","#261724","#332a35","#675e6b","#77737f","#aa8f9d","#cda4b1"],"px":"..................../............0.00..../...........0604500../........00006344330./.......0444424313430/......04444444444630/...0003444443444540./..0360443444430000../.04600440444400...../.050.0330000300...../.05000340..05040..../..063000....0.0...../...00...............","eye":[15,4]},{"w":19,"h":13,"pal":["#140c18","#201722","#46404a","#5f4f5a","#8b6674","#b48a96","#b9b4bd","#e7bac3"],"px":"..............0..../...........00040.../........000752720../......002225233220./.....02222313222620/.....02222222223220/..0002222222223330./.0372222222222000../03520020022200...../0500..0..0020....../0520.......0......./.0430............../..00...............","eye":[15,3]},{"w":19,"h":13,"pal":["#140c18","#271518","#604e4f","#8e7374","#ae9996","#d3c0b0","#eaddc7"],"px":"..............0..../...........00040.../..........0430600../.......00005336650./......0666616523660/.....06666656666660/..00066666665666630/.04636666666530000./034000654666430..../040.04400006040..../050005604006060..../0343000.0..0.0...../.000...............","eye":[15,2]}],"frames":[[{"w":19,"h":12,"pal":["#140c18","#89695a","#a27e70","#bd9b89","#d2a8ae","#e3b9b7"],"px":"................0../.............00030./.........000031110./.......00111011110./......0111111111410/...0001111111144540/..0151111112222000./.02410021121220..../.0400.0110002110.../.011001111003110.../..00100000..000..../....0..............","eye":[12,3]},{"w":19,"h":12,"pal":["#140c18","#89695a","#a27e70","#bd9b89","#d2a8ae","#e3b9b7"],"px":"................0../.............0.010./............010020./.........000121110./......0001101111110/...0001111111212330/..01311111111355410/.04400111111110000./0410..021111210..../.040.02120004120.../..01001010.01010.../...0..0.0...0.0....","eye":[15,2]},{"w":18,"h":12,"pal":["#140c18","#89695a","#a27e70","#bd9b89","#d2a8ae","#e3b9b7"],"px":"...........00..0../..........0110040./........000111110./.......0110111110./......011111121340/...000111111244550/..024021111112220./.044002111111000../0110.0110011010.../012000310.011110../.0131000...0000.../..000.............","eye":[14,7]},{"w":17,"h":12,"pal":["#140c18","#89695a","#a27e70","#bd9b89","#d2a8ae","#e3b9b7"],"px":"...........0..0../..........010010./.......000111110./.....001121211210/....0122221223330/..000144441141110/.011114155110000./0110011000110..../01000111001110.../01110101001010.../.01100.0..0.0..../..00.............","eye":[12,6]}],[{"w":19,"h":12,"pal":["#140c18","#675e6b","#77737f","#aa8f9d","#cda4b1"],"px":"................0../.............00030./.........000031120./.......00111122120./......0122221222320/...0001222222244430/..0242222222222000./.02410022222220..../.0400.0210002120.../.022001111003120.../..00200000..000..../....0..............","eye":[15,4]},{"w":19,"h":12,"pal":["#140c18","#675e6b","#77737f","#aa8f9d","#cda4b1"],"px":"................0../.............0.010./............020020./.........000221210./......0002212222210/...0001222222222330/..02312222222344310/.03400122222210000./0410..021112210..../.040.02220004120.../..02001010.02020.../...0..0.0...0.0....","eye":[15,2]},{"w":18,"h":12,"pal":["#140c18","#675e6b","#77737f","#aa8f9d","#cda4b1"],"px":"...........00..0../..........0110040./........000221220./.......0110222220./......022222221330/...000222222233440/..024122222222220./.044002212221000../0220.0210011010.../012000310.021120../.0132000...0000.../..000.............","eye":[14,7]},{"w":17,"h":12,"pal":["#140c18","#675e6b","#77737f","#aa8f9d","#cda4b1"],"px":"...........0.00../..........020120./.......000222210./.....002221211220/....0122221223330/..000233442242210/.022114244220000./0220012000210..../02000222002120.../02210101001020.../.02200.0..0.0..../..00.............","eye":[12,6]}],[{"w":19,"h":12,"pal":["#140c18","#46404a","#5f4f5a","#8b6674","#b48a96","#b9b4bd","#e7bac3"],"px":"................0../.............00030./.........000041110./.......00111111110./......0111111111410/...0001111111156640/..0161111122222000./.02410021121220..../.0400.0111002110.../.011001111003110.../..00100000..000..../....0..............","eye":[15,3]},{"w":19,"h":12,"pal":["#140c18","#46404a","#5f4f5a","#8b6674","#b48a96","#b9b4bd","#e7bac3"],"px":"................0../.............0.010./............010020./........0000121110./......0011111111110/...0001111111212230/..01311111111466410/.04400111111210000./0410..021111210..../.050.02120006120.../..01001010.01010.../...0..0.0...0.0....","eye":[15,2]},{"w":18,"h":12,"pal":["#140c18","#46404a","#5f4f5a","#8b6674","#b48a96","#b9b4bd","#e7bac3"],"px":"...........00..0../..........0110060./........000111110./......00110111120./.....0111111221340/...000111111244660/..024121111112220./.045002111111000../0110.0110011010.../012000210.011110../.0131000...0000.../..000.............","eye":[14,3]},{"w":17,"h":12,"pal":["#140c18","#46404a","#5f4f5a","#8b6674","#b48a96","#b9b4bd","#e7bac3"],"px":"..........00.00../.........0110110./.......000111110./.....001221211210/....0122221223340/..000144441151110/.011116166110000./0110011000110..../01000111001110.../01110101001010.../.01100.0..0.0..../..00.............","eye":[13,2]}],[{"w":19,"h":12,"pal":["#140c18","#8e7374","#ae9996","#d3c0b0","#eaddc7"],"px":"................0../.............00040./.........000042240./.......00222144240./......0144442442440/...0001444444444440/..0442244444444000./.04410043343440..../.0400.0310004130.../.033001111004230.../..00300000..000..../....0..............","eye":[15,4]},{"w":19,"h":12,"pal":["#140c18","#8e7374","#ae9996","#d3c0b0","#eaddc7"],"px":"................0../.............0.010./............030040./.........000342320./......0003313344410/...0002444444444440/..04424444444444420/.04400244444410000./0410..042122410..../.040.04240004140.../..02001010.03030.../...0..0.0...0.0....","eye":[15,2]},{"w":18,"h":12,"pal":["#140c18","#8e7374","#ae9996","#d3c0b0","#eaddc7"],"px":"...........00..0../..........0110040./........000241420./.......0120244340./......033333442440/...000334444444440/..044144444444440./.044004424442000../0440.0420012010.../024000410.041220../.0144000...0000.../..000.............","eye":[14,7]},{"w":17,"h":12,"pal":["#140c18","#8e7374","#ae9996","#d3c0b0","#eaddc7"],"px":"...........0.00../..........030130./.......000444420./.....004441422440/....0244442444440/..000444444444420/.044124244440000./0420014000410..../04000423004140.../03310101001030.../.03300.0..0.0..../..00.............","eye":[12,6]}]]},"hare":{"variants":[{"w":18,"h":16,"pal":["#140c18","#2f1a14","#472f23","#624534","#825c3f","#9e7453","#b38152","#c09369"],"px":"................../.........0..00..../........0400440.../........0000040.../.........000240.../..........002500../...........076640./.....000000567560./....06777766776660/...066666666676640/..066436666556650./..05667466666600../.00566616666550.../.00566417635240.../..05667721157150../...000000000000...","eye":[14,5]},{"w":18,"h":16,"pal":["#140c18","#251514","#3e2823","#573f32","#7c5b43","#987050","#a27c5d","#b48d6e"],"px":"........00..00..../.......04700440.../........0440040.../.........040240.../..........04240.../...........04540../..........0456760./....00000005562770/...065555554555660/..055565555455660./..05545455555000../.00555726646650.../.00555416605340.../..06555500056040../...00100...00.0.../.....0............","eye":[12,2]},{"w":18,"h":16,"pal":["#140c18","#241717","#4b3a31","#7e695c","#9c8672","#b99e81","#c7ae8f","#e1c8a7"],"px":"........00..00..../.......05400730.../.......04640660.../........0554360.../.........044150.../..........034540../.....000000566650./....04444446643730/...065555556666530/..045565555466650./.005533455555400../030656625556750.../040665425547250.../.006665400075340../...00100...0000.../.....0............","eye":[11,2]},{"w":18,"h":16,"pal":["#140c18","#221b1e","#3d3835","#655e5d","#948d8a","#b2aba6","#d4cfc3","#e7e2da"],"px":"........00..00..../.......05400730.../.......046407630../........07654730../.........056270.../..........035650../.....000000566670./....05444436654650/...066666656666640/..066676666566660./.006654666666400../030666737676740.../040666337747240.../.007665400075430../...00100...0000.../.....0............","eye":[11,2]}],"frames":[[{"w":16,"h":15,"pal":["#140c18","#2f1a14","#624534","#825c3f","#9e7453","#b38152","#c09369"],"px":"................/...........0..../........00050.../.......03540500./........00054430/.......000351450/.....00555555530/....04555555400./...055555555240./.000666665555540/0365665430000340/060365000....00./.04500........../.050............/..0.............","eye":[11,3]},{"w":17,"h":15,"pal":["#140c18","#2f1a14","#825c3f","#9e7453","#b38152","#c09369"],"px":".........00.00.../........0420420../........0440440../.........0044420./.........00441340/.......0023444430/.....00444444000./....044444444430./..004555550000340/.022455520....00./.04355200......../0314300........../.0330............/.030............./..0..............","eye":[13,4]},{"w":17,"h":12,"pal":["#140c18","#2f1a14","#825c3f","#9e7453","#b38152","#c09369"],"px":".........00000.../........0442240../.........0024430./......00000341430/.....044444444440/....045544444000./..00455555544000./.0334543333334440/.0225400000004420/.04400.......0020/0240...........0./.00..............","eye":[13,3]},{"w":17,"h":11,"pal":["#140c18","#2f1a14","#472f23","#825c3f","#9e7453","#b38152","#c09369"],"px":".........00000.../........0341250../.........044450../..........045540./......00000452550/....0055555555550/..00355555555000./.055455556665340./03315666666653430/.046530000000350./..0000.......00..","eye":[13,4]}],[{"w":16,"h":15,"pal":["#140c18","#251514","#7c5b43","#987050","#a27c5d","#b48d6e"],"px":"................/...........0..../........00030.../.......02330300./........00033320/.......000231330/.....00333333320/....02333334220./...034444444220./.000444443333320/0243553220000220/050253000....00./.03300........../.030............/..0.............","eye":[11,3]},{"w":17,"h":15,"pal":["#140c18","#251514","#3e2823","#7c5b43","#987050","#a27c5d","#b48d6e"],"px":".........00.00.../........0430430../........0440440../.........0044430./.........00442340/.......0033444430/.....00444444300./....044555555530./..004555553000340/.0334566300...00./.04366300......../0414400........../.0440............/.040............./..0..............","eye":[13,4]},{"w":17,"h":12,"pal":["#140c18","#251514","#573f32","#7c5b43","#987050","#a27c5d","#b48d6e"],"px":".........00000.../........0443340../.........0034530./......00000341530/.....044444444540/....055544554000./..00455556654230./.0335643444444440/03336400000004430/.04400.......0030/0340...........0./.00..............","eye":[13,3]},{"w":17,"h":11,"pal":["#140c18","#251514","#573f32","#7c5b43","#987050","#a27c5d","#b48d6e"],"px":".........00000.../........0341240../.........044340../..........034430./......00000343440/...00044444444440/..03344444554000./.045355555554330./03314555566643430/.046430000000340./..0000.......00..","eye":[14,6]}],[{"w":16,"h":15,"pal":["#140c18","#241717","#7e695c","#9c8672","#b99e81","#c7ae8f","#e1c8a7"],"px":"................/...........00.../........000420../.......03430400./........00243330/.......000341440/.....00444444430/....03455555320./...045555555230./.000555554444430/0254664320000330/060364000....00./.03400........../.040............/..0.............","eye":[13,3]},{"w":17,"h":15,"pal":["#140c18","#4b3a31","#7e695c","#9c8672","#b99e81","#c7ae8f","#e1c8a7"],"px":".........00.00.../........0430430../........0440440../.........0044430./........000442340/......00233444430/.....02444555200./....045555555530./..004555552000340/.0224556300...00./.04366300......../0314300........../.0330............/.040............./..0..............","eye":[14,6]},{"w":17,"h":12,"pal":["#140c18","#241717","#4b3a31","#7e695c","#9c8672","#b99e81","#c7ae8f","#e1c8a7"],"px":".........00000.../........0554450../.........0045640./......00000451640/.....055565565650/....066666665230./..00566667765330./.0446754444455550/03337500000005540/.05500.......0040/0450...........0./.00..............","eye":[13,3]},{"w":17,"h":11,"pal":["#140c18","#241717","#7e695c","#9c8672","#b99e81","#c7ae8f","#e1c8a7"],"px":".........00000.../........0331240../.........034340../..........034430./......00000342440/...00044444444440/..02245555554200./.045355555554230./03314555566643330/.036430000000340./..0000.......00..","eye":[14,6]}],[{"w":16,"h":15,"pal":["#140c18","#3d3835","#655e5d","#948d8a","#b2aba6","#d4cfc3","#e7e2da"],"px":"................/.........0000.../........022520../.......03540500./........00254430/.......000351440/.....00445555530/....03555555320./...055555556230./.000666665555530/0265665330000340/060365000....00./.04500........../.050............/..0.............","eye":[13,3]},{"w":17,"h":15,"pal":["#140c18","#3d3835","#655e5d","#948d8a","#b2aba6","#d4cfc3","#e7e2da"],"px":".........00.00.../........0530530../........04405500./.........00555320/........000552350/......00233555540/.....02555555200./....055555555630./..005666662000450/.0235666300...00./.05366300......../0415400........../.0440............/.040............./..0..............","eye":[14,2]},{"w":17,"h":12,"pal":["#140c18","#3d3835","#655e5d","#948d8a","#b2aba6","#d4cfc3","#e7e2da"],"px":".........00000.../........0553350../.........0035530./......00000351530/....0055555555550/...0266655555220./..00566666655220./.0335654444445540/02236500000004530/.04500.......0030/0350...........0./.00..............","eye":[13,3]},{"w":17,"h":11,"pal":["#140c18","#221b1e","#3d3835","#655e5d","#948d8a","#b2aba6","#d4cfc3","#e7e2da"],"px":".........00000.../........0452360../........0355450../.........0045640./.....000000463660/...00366666666660/..03366666666300./.066566667776450./04416777777764540/.057640000000460./..0000.......00..","eye":[14,6]}]]},"otter":{"variants":[{"w":21,"h":11,"pal":["#140c18","#2a1715","#462c23","#61402e","#7b5034","#a7886d","#c79a61","#d6ac7d"],"px":"...................../.............0.00..../........000.0303300../.......0333004343030./......04444334433540./....0044444434476740./..00444444444377740../.03330314444440000.../.03300313440430....../..00.03130004230...../......000...000......","eye":[17,3]},{"w":21,"h":11,"pal":["#140c18","#271816","#493027","#674635","#815e43","#986b49","#cea77c","#e7c99d"],"px":"...................../.............0.0...../........000.050500.../.......044400505040../......05555445553440./....0055555445677740./...0555555554466600../.0000043555555500..../.00400423440440....../..00.04150004400...../......000...00.......","eye":[16,3]},{"w":20,"h":11,"pal":["#140c18","#331e14","#68492f","#8c6b44","#b08753","#d09f59","#efc97e","#efd69e"],"px":"...............0..../.............0030.../........000.030500../......0043305405040./.....045555345516330/...0055555544667750./.00355555555457770../04040343555555000.../.04303314440400...../..00032400004230..../.....000....000.....","eye":[16,2]},{"w":20,"h":11,"pal":["#140c18","#1c1315","#332b2a","#49413f","#615950","#73685e","#8b826e","#aea28b"],"px":".............0000.../............031330../......0000004423340./.....034444044324350/....0444444444776540/.0.0444444444445550./030333334444455000../034300306663540...../.000..0.00005030..../............0.0...../....................","eye":[17,3]}],"frames":[[{"w":17,"h":9,"pal":["#140c18","#61402e","#7b5034","#a7886d","#c79a61","#d6ac7d"],"px":"...........000.../......0000021100./....0012221211210/...0122222222220./..0222222234000../.011015122510..../0510.0100010...../010...0...0....../.0...............","eye":[13,2]},{"w":18,"h":10,"pal":["#140c18","#61402e","#7b5034","#a7886d","#d6ac7d"],"px":"............0..0../..........0010010./.......00011211210/.....0012221211120/...001222222222220/..012122234241000./.0220022100400..../01410.000..0....../0200............../.0................","eye":[15,3]},{"w":18,"h":9,"pal":["#140c18","#462c23","#61402e","#7b5034","#c79a61","#d6ac7d"],"px":"............0000../.......0000032320./.....002332231330./...002233333323320/..023333333332220./.033023233452000../0250025200220...../050..000..00....../.0................","eye":[13,2]},{"w":18,"h":9,"pal":["#140c18","#61402e","#7b5034","#a7886d","#d6ac7d"],"px":"............0000../.......0000012110./......011110111210/.....0122222211210/...00122222222220./..02212342444000../.022002100020...../0120..00...0....../.00...............","eye":[14,2]}],[{"w":17,"h":9,"pal":["#140c18","#674635","#815e43","#986b49","#cea77c","#e7c99d"],"px":"...........000.../......0000032200./....0023332321320/...0233333333330./..0333333344000../.022024223520..../0520.0200020...../020...0...0....../.0...............","eye":[12,4]},{"w":18,"h":10,"pal":["#140c18","#815e43","#986b49","#cea77c","#e7c99d"],"px":"............0..0../...........010010./.......00001211210/.....0012221211120/...001222222222310/..012122233241000./.0220022100400..../01410.000..0....../0200............../.0................","eye":[14,3]},{"w":18,"h":9,"pal":["#140c18","#674635","#815e43","#986b49","#cea77c","#e7c99d"],"px":"............0000../.......0000031320./.....002332231330./...002233333323320/..023333333332220./.033023234442000../0250025200220...../050..000..00....../.0................","eye":[14,3]},{"w":18,"h":9,"pal":["#140c18","#815e43","#986b49","#cea77c","#e7c99d"],"px":"............0000../.......0000012110./......011110111210/.....0122222211210/...00122222222120./..02203332444000../.022002100020...../0120..00...0....../.00...............","eye":[11,2]}],[{"w":17,"h":9,"pal":["#140c18","#8c6b44","#b08753","#d09f59","#efc97e","#efd69e"],"px":"...........000.../......0000022200./....0012332321310/...0133333333330./..0333333344000../.021025222510..../0510.0100010...../010...0...0....../.0...............","eye":[12,4]},{"w":18,"h":10,"pal":["#140c18","#8c6b44","#b08753","#d09f59","#efc97e","#efd69e"],"px":"............0..0../..........0010010./.......00011321310/.....0023332322230/...001333333333420/..022232345351000./.0220033100500..../01510.000..0....../0300............../.0................","eye":[14,3]},{"w":18,"h":9,"pal":["#140c18","#68492f","#8c6b44","#b08753","#d09f59","#efc97e","#efd69e"],"px":"............0000../.......0000042420./.....003443341440./...002344444434420/..023444444432220./.033024245562000../0360026300330...../060..000..00....../.0................","eye":[14,3]},{"w":18,"h":9,"pal":["#140c18","#8c6b44","#b08753","#d09f59","#efc97e","#efd69e"],"px":"............0000../.......0000013220./......011110221310/.....0233333322310/...00233333333230./..02214452555000../.023003100030...../0130..00...0....../.00...............","eye":[11,2]}],[{"w":17,"h":9,"pal":["#140c18","#49413f","#615950","#73685e","#8b826e","#aea28b"],"px":"...........0000../......0000021110./....0012222221210/...0122222222220./..0223333334000../.021024222410..../0510.0100010...../010...0...0....../.0...............","eye":[13,2]},{"w":18,"h":10,"pal":["#140c18","#49413f","#615950","#73685e","#8b826e","#aea28b"],"px":"............0..0../.........00010010./.......00111221210/.....0023232221220/...001322222233320/..012222244241000./.0220022100500..../01510.000..0....../0200............../.0................","eye":[14,3]},{"w":18,"h":9,"pal":["#140c18","#49413f","#615950","#73685e","#8b826e","#aea28b"],"px":"............0000../.......0000021210./.....002222221220./...001222222222210/..012223333321110./.022012133441000../0140015100220...../050..000..00....../.0................","eye":[13,2]},{"w":18,"h":9,"pal":["#140c18","#49413f","#615950","#73685e","#8b826e","#aea28b"],"px":"............0000../.......0000012110./.....0011110221210/....01222222222210/...00222223333230./..02213442455000../.022002100020...../0120..00...0....../.00...............","eye":[14,2]}]]},"beetle":{"variants":[{"w":17,"h":13,"pal":["#140c18","#242b44","#383c53","#4b5a7a","#5c6c8f","#7385a7","#a9b9d3"],"px":".....000000....../....02333330...../..00465145540..../.0245551454650.../.03455524555430../023355525555430../0333345255432240./03333331333315620/.0333331333325540/.003333333320340./022000000000.00../.0002222220....../....000000.......","eye":[13,6]},{"w":18,"h":13,"pal":["#140c18","#192418","#344231","#4d6945","#5f7e52","#6e9460","#8cac82","#c7debc"],"px":".......0000......./.....00333300...../....0365245550..../...055552454560.../..03455524544530../.033355524544430../.0333335245441330./.0333333233334670./..0333332333334530/..003333333300330./..0.00111100..00../.0..00222200....../......0000........","eye":[13,6]},{"w":17,"h":14,"pal":["#140c18","#3e2721","#5e3c28","#865939","#a66e43","#be8755","#d7ae82"],"px":"......0000......./.....0333300...../...0064245430..../..045652454650.../.03455524544530../033345524445430../033334524544330../0333333244432450./.0333332333336630/..03333333330440./.0.001111000.00../...00333300....../.....0000......../.................","eye":[12,7]},{"w":16,"h":13,"pal":["#140c18","#34303c","#4b4754","#5b5865","#757380","#9c9ba7","#f0effa"],"px":".....00000....../....0333320...../..00453244400.../.0344432444520../03344432444430../03344433444430../033334324332130./033333222230360./0333332222303420/.02333222320230./..000000000.00../...002220......./.....000........","eye":[12,6]}],"frames":[[{"w":18,"h":12,"pal":["#140c18","#383c53","#4b5a7a","#5c6c8f","#7385a7","#a9b9d3"],"px":".......0000......./.....00444400...../....0244124420..../...024441343320.../..0233441343320.../..02223413421220../..022233133213420./.0022222122202440./05000222222204220./024000000000.020../.0005440.05200420./....000...00..00..","eye":[12,5]},{"w":18,"h":13,"pal":["#140c18","#383c53","#4b5a7a","#5c6c8f","#7385a7","#a9b9d3"],"px":"................../.......0000......./.....00444500...../....0344024430..../...033440244330.../..0223440243230.../..02223402322140../.0022222002202530./04002222022202440./02420000.0020020../.0002220..040040../...04220.0530020../....000...00..0...","eye":[13,6]},{"w":17,"h":12,"pal":["#140c18","#383c53","#4b5a7a","#5c6c8f","#7385a7","#a9b9d3"],"px":".......0000....../.....0044430...../....0224244200.../....03441333220../...023441344420../..0222441442220../..02222412331140./.0023332122204450/04200222222002420/.022200000230000./..005040.0520..../....0.0...00.....","eye":[13,6]},{"w":17,"h":12,"pal":["#140c18","#242b44","#383c53","#4b5a7a","#5c6c8f","#7385a7","#a9b9d3"],"px":".......0000....../.....00333200..../....0245144430.0./...03555144443050/..023455155553020/..03333515332330./.0033333233335550/05323333043225550/03660000.0222200./.0030030.04200.../...0.050.0520..../......0...00.....","eye":[14,4]}],[{"w":18,"h":12,"pal":["#140c18","#192418","#344231","#4d6945","#5f7e52","#6e9460","#8cac82","#c7debc"],"px":".......0000......./.....00555500...../....0355235530..../...035552354430.../..0344552454430.../..03334524532330../..033344244334530./.03333333333336530/06133333333304330./035000000000.030../.0006450.07300530./....000...00..00..","eye":[12,5]},{"w":18,"h":13,"pal":["#140c18","#344231","#4d6945","#5f7e52","#6e9460","#8cac82","#c7debc"],"px":"................../.......0000......./.....00444500...../....0344024430..../...033440244330.../..02234402432300../..022234023221420./.00222220222226320/03022222222202530./0242000000020020../.0002220..040040../...04220.0520020../....000...00..0...","eye":[14,5]},{"w":17,"h":12,"pal":["#140c18","#192418","#344231","#4d6945","#5f7e52","#6e9460","#8cac82","#c7debc"],"px":".......0000....../.....0055540...../....0335355300.../....04552444330../...034552455430../..03334534533300./..033335333431530/.0034443233335660/05303333333003530/.033300000340000./..006050.0730..../....0.0...00.....","eye":[14,5]},{"w":17,"h":12,"pal":["#140c18","#192418","#344231","#4d6945","#5f7e52","#6e9460","#8cac82","#c7debc"],"px":".......0000....../......0333300..../....0045144430.0./...03555144443050/...0345514445300./..03333505332330./.0033333033335550/05323333043335650/03670000.0300000./.0030030.0430..../...0.050.0530..../......0...00.....","eye":[14,4]}],[{"w":18,"h":12,"pal":["#140c18","#3e2721","#5e3c28","#865939","#a66e43","#be8755","#d7ae82"],"px":".......0000......./.....00444400...../....0355245540..../...045552454430.../..0344552454430.../..03334534533330../.0333344344334630./.03333333333336530/06133333333304330./035000000000.030../.0006440.06300530./....000...00..00..","eye":[14,4]},{"w":18,"h":13,"pal":["#140c18","#865939","#a66e43","#be8755","#d7ae82"],"px":"................../.......00000....../....000233410...../...01233013320..../..0122330133220.../..01123301321200../..011123012111410./.00111110111114210/02011111111102420./0121000000010010../.0002110..020020../...02220.0420010../....000...00..0...","eye":[14,5]},{"w":17,"h":12,"pal":["#140c18","#5e3c28","#865939","#a66e43","#be8755","#d7ae82"],"px":".......0000....../.....00444300..../....0224244220.../...023442333220../...023442344320../..02223423322200./..022333233321520/.0023332122223550/03202222222002420/.022200000230000./..005040.0520..../....0.0...00.....","eye":[14,5]},{"w":17,"h":12,"pal":["#140c18","#3e2721","#5e3c28","#865939","#a66e43","#be8755","#d7ae82"],"px":".......0000....../......0333300..../....0045144430.0./...03555144443050/..033455144443030/..03333404333330./.0033333034335450/06323443043335650/03660000.0300000./.0030030.0430..../...0.050.0530..../......0...00.....","eye":[14,4]}],[{"w":18,"h":12,"pal":["#140c18","#34303c","#4b4754","#5b5865","#757380","#9c9ba7","#f0effa"],"px":"......000000....../....002444420...../...02344234430..../..0234442343320.../.02233442343320.../.023333423432330../.0233334244324430./.02333332333234420/05122333233324320./0340000000000030../.0005442006300430./....0000..00..00..","eye":[12,5]},{"w":18,"h":13,"pal":["#140c18","#4b4754","#5b5865","#757380","#9c9ba7","#f0effa"],"px":"........000......./......001110....../....001333410...../...01233023320..../..0122330233220.../..02223302322310../..022233023221310./.00222220122125310/030122221121123310/01310110000100200./.0012220..030030../...03220.0420020../....000...00..0...","eye":[13,6]},{"w":17,"h":12,"pal":["#140c18","#4b4754","#5b5865","#757380","#9c9ba7","#f0effa"],"px":"......00000....../.....01333200..../....0123133210.../...012331223220../..0123331333320../..02223313322210./.0122223122211310/.0122222122213340/03201222222112320/.022100000120000./..004130.0510..../....000...00.....","eye":[13,6]},{"w":17,"h":12,"pal":["#140c18","#34303c","#4b4754","#5b5865","#757380","#9c9ba7","#f0effa"],"px":".......0000....../.....00333200..../....0234133320.0./...02444233443040/..023444244442020/..02333424332330./.0033333233334440/04323333033224540/03560000.0222200./.0030030.03200.../...0.040.0420..../......0...00.....","eye":[14,4]}]]},"cavemoth":{"variants":[{"w":18,"h":13,"pal":["#140c18","#584533","#876b4a","#b7915d","#d2c4a2","#dbab5c","#f8eac0"],"px":"..0.............../.020..0...00.000../.023000000200230../.033440064004430../03246636664466320./.0366644661666400./.026664121466640../..0464130314660.../...00123023200..../....035202530...../...05520.03530..../....020...020...../.....0.....0......","eye":[15,5]},{"w":18,"h":13,"pal":["#140c18","#2b201d","#544640","#806f66","#ad9a8a","#cbb49f","#e4cfb9","#f8e9d1"],"px":"..00...0.......0../.0330.0300.00.050./.03500.03500.0650./.04477005770077530/.03477706774577650/..077770477277760./..047776111777760./...0674260525740../....00056054300.../.....0563035540.../....03640.03640.../.....030...000..../......0...........","eye":[11,3]},{"w":18,"h":13,"pal":["#140c18","#47384f","#6e587d","#987aaf","#c2a4ce","#e9c5ec","#f3def1"],"px":".00...........00../0220..0.0..0.0220./.0220..030000230../.02460.0660244320./03355506665365520./.0455542661565520./.045555000455550../..0564130223650.../...00033023200..../...02330.03320..../...0430..02430..../....020...020...../.....0.....0......","eye":[11,2]},{"w":18,"h":13,"pal":["#140c18","#32201d","#65483d","#a4745a","#baa189","#c28e6b","#f6d5a6","#f7eedc"],"px":"................0./..00..00.0.00..030/..0300.00300.00320/..0056004770044320/.05566627774566430/..066662277266660./..066666101666660./...0665250314660../....00035033200.../.....033003550..../....0550..03550.../.....00....030..../............0.....","eye":[11,3]}],"frames":[[{"w":15,"h":12,"pal":["#140c18","#876b4a","#b7915d","#d2c4a2","#dbab5c","#f8eac0"],"px":"..0..0......00./.020010.0..0120/.05200102002420/.04540000054330/015551150533330/02555305053510./.0355310155510./.013112202520../..0002323000.../....0330550..../....0220410..../.....00.00.....","eye":[9,3]},{"w":15,"h":12,"pal":["#140c18","#876b4a","#b7915d","#d2c4a2","#dbab5c","#f8eac0"],"px":"..0...0..0..00./.04000100200220/.03310101015320/.03321010035320/013553051155520/025553050255320/.0555500035520./..05422221340../...000303100.../...01350450..../....0140020..../.....00..0.....","eye":[9,2]},{"w":14,"h":12,"pal":["#140c18","#584533","#876b4a","#b7915d","#d2c4a2","#dbab5c","#f8eac0"],"px":"..0..0..0..00./.0300200200440/.0430222126440/04665000346460/04666060264630/0366623034640./.046400034650./.02323252330../..000606300.../...06605630.../....030220..../.....0.00.....","eye":[8,2]},{"w":14,"h":12,"pal":["#140c18","#876b4a","#b7915d","#d2c4a2","#dbab5c","#f8eac0"],"px":".00........00./0110.0.00.0140/02320202104340/01331020043540/03555050255520/0555515025550./0155500035530./.02312111220../..001513200.../...03303520.../...0310230..../....00.00.....","eye":[8,3]}],[{"w":15,"h":12,"pal":["#140c18","#806f66","#ad9a8a","#cbb49f","#e4cfb9","#f8e9d1"],"px":"..0..0......00./.020010.0..0130/.05300103003330/.03530000053440/015551150544440/03555405054520./.0455410155520./.014212203520../..0002525000.../....0550550..../....0230310..../.....00.00.....","eye":[9,3]},{"w":15,"h":12,"pal":["#140c18","#806f66","#ad9a8a","#cbb49f","#e4cfb9","#f8e9d1"],"px":"..0...0..0..00./.03000100200230/.04410101015430/.04431010045430/024554052255530/035554050355420/.0555510055530./..05322221530../...000505100.../...01550350..../....0130020..../.....00..0.....","eye":[9,2]},{"w":14,"h":12,"pal":["#140c18","#2b201d","#806f66","#ad9a8a","#cbb49f","#e4cfb9","#f8e9d1"],"px":"..0..0..0..00./.0400200300450/.0540232136550/05664000356560/05666060265630/0366623035660./.066600036640./.02324242440../..000606400.../...06604640.../....040220..../.....0.00.....","eye":[8,2]},{"w":14,"h":12,"pal":["#140c18","#806f66","#ad9a8a","#cbb49f","#e4cfb9","#f8e9d1"],"px":".00........00./0210.0.00.0230/02420202103530/01551020035530/04555050255520/0555515035550./0155500045540./.03413111330../..001514300.../...04404530.../...0420340..../....00.00.....","eye":[8,3]}],[{"w":15,"h":12,"pal":["#140c18","#6e587d","#987aaf","#c2a4ce","#e9c5ec","#f3def1"],"px":"..0..0......00./.020010.0..0120/.04201102002220/.02430000043330/014441140433330/02455305054510./.0455410155510./.014111102520../..0002424100.../....0441440..../....0220210..../.....00.00.....","eye":[9,3]},{"w":15,"h":12,"pal":["#140c18","#47384f","#6e587d","#987aaf","#c2a4ce","#e9c5ec","#f3def1"],"px":"..0...0..0..00./.04000200300330/.04420202025430/.04432022045430/025555052255530/035565060366520/.0666621256630./..06322332530../...000505200.../...02552350..../....0240030..../.....00..0.....","eye":[9,2]},{"w":14,"h":12,"pal":["#140c18","#47384f","#6e587d","#987aaf","#c2a4ce","#e9c5ec","#f3def1"],"px":"..0..0..0..00./.0300200200440/.0430222125440/04553000245550/05556260265620/0366623035650./.056500035630./.02323242330../..002505300.../...05524630.../....030220..../.....0.00.....","eye":[8,2]},{"w":14,"h":12,"pal":["#140c18","#6e587d","#987aaf","#c2a4ce","#e9c5ec","#f3def1"],"px":".00........00./0110.0.00.0120/01410202102420/01441020134430/03444141244420/0444415025550./0155500035530./.02312111220../..001513200.../...03304520.../...0410240..../....00.00.....","eye":[7,3]}],[{"w":15,"h":12,"pal":["#140c18","#65483d","#a4745a","#baa189","#c28e6b","#f6d5a6","#f7eedc"],"px":"..0..0......00./.040020.0..0240/.05400204004440/.04530000053330/025552250533550/04555505055620./.0566500066620./..05212204620../...002525000.../....0550550..../....024040...../.....00.0......","eye":[9,3]},{"w":15,"h":12,"pal":["#140c18","#a4745a","#baa189","#c28e6b","#f6d5a6","#f7eedc"],"px":"..0......0..00./.0200.0.0300330/.02210101014230/.02431010044430/014444041144430/034444040344410/.0555500045530./..05311110430../...000404000.../....0440340..../.....020010..../......0..0.....","eye":[9,2]},{"w":14,"h":12,"pal":["#140c18","#a4745a","#baa189","#c28e6b","#f6d5a6","#f7eedc"],"px":"..0..0..0..00./.0300100100220/.0230010014240/04443000144440/04444040044410/0155501014540./.045400034530./..0313131330../...00404300.../...04402530.../....030110..../.....0.00.....","eye":[8,2]},{"w":14,"h":12,"pal":["#140c18","#a4745a","#baa189","#c28e6b","#f6d5a6","#f7eedc"],"px":".0.........00./0100.0.0..0130/01410101003430/01441010024420/02444040344430/0444404034440./0155500025520./.03213011330../..000504300.../...04404530.../...0410340..../....00.00.....","eye":[8,3]}]]},"wisp":{"variants":[{"w":13,"h":15,"pal":["#140c18","#4c8a99","#60dcf3","#68bccc","#96ecf7","#defbfd"],"px":".....0......./....010....../....020...0../...02230.030./..0422210330./..02222113310/..0222212220./.02222422220./032224554210./03224555420../03222444420../.0222444230../..02222220.../...033330..../....0000.....","eye":[10,4]},{"w":13,"h":15,"pal":["#140c18","#55412c","#a39268","#d4b768","#f6d575","#f9e49c","#fdf5cc"],"px":".....0......./....020....../....0320..0../...04430.020./..05444004220/..0344413410./.02444444440./024445654430./03445666440../03445666440../03444554440../.034444440.../..0344430..../...00100...../.....0.......","eye":[7,4]},{"w":13,"h":14,"pal":["#140c18","#351731","#996b8f","#c282b1","#e78fcd","#f3b1e0","#fce7f7"],"px":"......0....../.....040...../....0440..0../...034430030./..03444303520/..0344413440./.02444544440./034455665430./034455665420./034445555420./.03445554420./.0244444420../..00444400.../....0000.....","eye":[8,4]},{"w":13,"h":16,"pal":["#140c18","#558a75","#80b8a1","#89edbe","#dafae8"],"px":"............./.....0......./....020....../....0310..0../...03330.030./..03333103220/..0333311300./.01333323330./023333443330./03333444330../03333444330../03333333330../.0233333310../..02333310.../...000000..../.............","eye":[10,6]}],"frames":[[{"w":9,"h":11,"pal":["#140c18","#4c8a99","#60dcf3","#68bccc","#96ecf7","#defbfd"],"px":"...00..../..0330.../..02230../.0322210./.0222220./022222230/022222430/024444410/01455530./.0322210./..00000..","eye":[7,3]},{"w":9,"h":13,"pal":["#140c18","#4c8a99","#60dcf3","#68bccc","#96ecf7","#defbfd"],"px":"....0..../...030.../..0120.../..02230../..032200./.02222210/032222220/022222220/022444440/012444530/.0125530./..00330../....00...","eye":[6,4]},{"w":9,"h":12,"pal":["#140c18","#4c8a99","#60dcf3","#68bccc","#96ecf7","#defbfd"],"px":"...000.../..01310../..03230../..022210./.0122230./.02222230/022222220/022224440/024444420/.0255520./..03330../...000...","eye":[7,4]},{"w":9,"h":11,"pal":["#140c18","#4c8a99","#60dcf3","#68bccc","#96ecf7","#defbfd"],"px":"....0..../...020.../..03230../.0122230./012222210/022222220/022224420/024444430/01255520./.003330../...000...","eye":[7,3]}],[{"w":9,"h":11,"pal":["#140c18","#a39268","#d4b768","#f6d575","#f9e49c","#fdf5cc"],"px":"...00..../..0120.../..03320../.023330../.0333330./033333320/033333320/033444410/01555520./.013330../..0000...","eye":[7,3]},{"w":9,"h":13,"pal":["#140c18","#a39268","#d4b768","#f6d575","#f9e49c","#fdf5cc"],"px":"....0..../...010.../...030.../..03320../..02330../.0233330./023333330/033333330/033334440/013445510/.0135520./..00220../....00...","eye":[7,4]},{"w":9,"h":12,"pal":["#140c18","#a39268","#d4b768","#f6d575","#f9e49c","#fdf5cc"],"px":"....0..../...010.../..02220../..033310./.0133320./.03333310/033333330/033333340/034444530/.0355530./..02220../...000...","eye":[7,4]},{"w":9,"h":11,"pal":["#140c18","#a39268","#d4b768","#f6d575","#f9e49c","#fdf5cc"],"px":"....0..../...030.../..02320../.0133310./.0333330./023333330/033333330/034444510/01355530./.002220../...000...","eye":[7,3]}],[{"w":9,"h":11,"pal":["#140c18","#996b8f","#c282b1","#e78fcd","#f3b1e0","#fce7f7"],"px":"...00..../..0220.../..03320../.0233310./.0333330./033333320/033334420/034444410/01445520./.013330../..0000...","eye":[7,3]},{"w":9,"h":13,"pal":["#140c18","#996b8f","#c282b1","#e78fcd","#f3b1e0","#fce7f7"],"px":"....0..../...010.../...030.../..03320../..023300./.02333310/023333330/033333330/033444440/013444520/.0135520./..00220../....00...","eye":[6,4]},{"w":9,"h":12,"pal":["#140c18","#996b8f","#c282b1","#e78fcd","#f3b1e0","#fce7f7"],"px":"....00.../...0210../..02220../..033310./.0133320./.03333310/033333330/033334440/034444430/.0355530./..02220../...000...","eye":[7,4]},{"w":9,"h":11,"pal":["#140c18","#996b8f","#c282b1","#e78fcd","#f3b1e0","#fce7f7"],"px":"....0..../...030.../..02320../.0133310./.03333310/023333330/033344430/034444420/01345530./.002220../...000...","eye":[7,3]}],[{"w":9,"h":11,"pal":["#140c18","#558a75","#80b8a1","#89edbe","#dafae8"],"px":"...00..../..0220.../..03320../.0333310./.0333330./033333330/033333330/033333410/01444430./.0233310./..00000..","eye":[7,3]},{"w":9,"h":13,"pal":["#140c18","#558a75","#80b8a1","#89edbe","#dafae8"],"px":"....0..../...020.../..0130.../..03330../..033300./.03333310/033333330/033333330/033333330/013344420/.0134420./..00220../....00...","eye":[6,4]},{"w":9,"h":12,"pal":["#140c18","#558a75","#80b8a1","#89edbe","#dafae8"],"px":"...000.../..01210../..03320../..033310./.0133320./.03333320/033333330/033333330/033334430/.0344430./..02330../...000...","eye":[7,4]},{"w":9,"h":11,"pal":["#140c18","#558a75","#80b8a1","#89edbe","#dafae8"],"px":"....0..../...030.../..03330../.0133320./013333310/033333330/033333330/033334420/01344430./.002230../...000...","eye":[7,3]}]]},"cloudray":{"variants":[{"w":19,"h":15,"pal":["#140c18","#5b8cab","#63c2ef","#6baaca","#7bcaec","#91d3ef"],"px":".........000......./........04240....../.......02222400..../.....002222223300../..0001255555555530./.022222555555542240/012222224555542240./.0000322224424400../.....0003224000..../........0220......./........0230......./.......0120......../.......030........./......010........../.......0...........","eye":[15,4]},{"w":19,"h":15,"pal":["#140c18","#796c9a","#9b8cce","#ad9be8","#b4a6db","#c5b5ee"],"px":".........000......./.......003320....../......01333340...../...00002333332000../.00111355555554520./0253223555555553350/0233222355555333310/.00002233353344000./.....0002331000..../........0220......./........0220......./.......0040......../......01410......../.......000........./...................","eye":[15,4]},{"w":20,"h":14,"pal":["#140c18","#886568","#ab7f83","#c2999a","#e4aaa6","#f1bab4"],"px":".........00000....../........0145410...../.......044444510..../....00034455555400../..00234555555554450./.0554455555555554530/..00354544454445510./....00034444451000../.......00044000...../.........0330......./.........0410......./........0240......../.......0230........./........00..........","eye":[12,8]},{"w":20,"h":15,"pal":["#140c18","#557272","#6f9c97","#8acfc2","#9fdeca","#c0e9d8"],"px":".........000......../........01110......./.......04333400...../.....003334444100.../..0001244444444310../.024433444444443330./0334333344444443420./.00034333444355420../....0003233310000.../.......002400......./........0130......../........030........./.......0410........./......0210........../.......00...........","eye":[11,9]}],"frames":[[{"w":19,"h":12,"pal":["#140c18","#5b8cab","#63c2ef","#6baaca","#7bcaec","#91d3ef"],"px":"............000..../..........002230.../......000022444200./..00001222444444230/.012332445555555520/032222252555552210./02001022255222000../.0..0.00025300...../........0220......./........040......../.......0220......../........00.........","eye":[15,4]},{"w":19,"h":12,"pal":["#140c18","#5b8cab","#63c2ef","#6baaca","#7bcaec","#91d3ef"],"px":"............0.0..../...........01030.../.........00022230../......000122222230./...0003222224444220/.002222222255555540/052000254455555410./.00...00025330000../........04200....../.......0250......../.......040........./........0..........","eye":[11,2]},{"w":18,"h":12,"pal":["#140c18","#5b8cab","#63c2ef","#6baaca","#7bcaec","#91d3ef"],"px":"............000.../..........002220../......00001222220./.....0122222244530/...002554244444440/.00222554555555220/02200025555533200./.00...001220000.../.......00230....../......03230......./......0220......../.......00.........","eye":[11,7]},{"w":17,"h":12,"pal":["#140c18","#5b8cab","#63c2ef","#6baaca","#7bcaec","#91d3ef"],"px":".........00000.../.......00112220../....000332224420./...01324222445520/.0025555222555520/0333222544455520./.00000024552200../.......024200..../.......0220....../......0420......./.....0220......../......00.........","eye":[14,4]}],[{"w":19,"h":12,"pal":["#140c18","#796c9a","#9b8cce","#ad9be8","#b4a6db","#c5b5ee"],"px":"............000..../..........002210.../......000023333200./..00001333444445310/.013223555555555530/022333353555553310./03001023355322000../.0..0.00035100...../........0320......./........030......../.......0220......../........00.........","eye":[15,4]},{"w":19,"h":12,"pal":["#140c18","#796c9a","#9b8cce","#ad9be8","#b4a6db","#c5b5ee"],"px":"............0.0..../...........01010.../.........00022210../......000133333310./...0002333334555320/.002333333355555530/052000253355555410./.00...00025220000../........04200....../.......0250......../.......040........./........0..........","eye":[11,2]},{"w":18,"h":12,"pal":["#140c18","#796c9a","#9b8cce","#ad9be8","#b4a6db","#c5b5ee"],"px":"............000.../..........002220../......00001233320./.....0123333333510/...002553334444550/.00333555555555320/03300025555511200./.00...001330000.../.......00320....../......02320......./......0320......../.......00.........","eye":[11,7]},{"w":17,"h":12,"pal":["#140c18","#796c9a","#9b8cce","#ad9be8","#b4a6db","#c5b5ee"],"px":".........00000.../.......00112320../....000113334430./...01135333555530/.0025555333555530/0222223533355530./.00000033552200../.......024300..../.......0220....../......0430......./.....0320......../......00.........","eye":[14,4]}],[{"w":19,"h":12,"pal":["#140c18","#886568","#ab7f83","#c2999a","#e4aaa6","#f1bab4"],"px":"............000..../..........004420.../......000044555400./..00001444555555420/.014234555555555540/033444454555554410./04001034455433000../.0..0.00045100...../........0540......./........050......../.......0440......../........00.........","eye":[15,4]},{"w":19,"h":12,"pal":["#140c18","#886568","#ab7f83","#c2999a","#e4aaa6","#f1bab4"],"px":"............0.0..../...........01010.../.........00044410../......000144444420./...0002444445555430/.003444444555555550/053000455555555510./.00...00045330000../........05400....../.......0350......../.......050........./........0..........","eye":[11,2]},{"w":18,"h":12,"pal":["#140c18","#886568","#ab7f83","#c2999a","#e4aaa6","#f1bab4"],"px":"............000.../..........003440../......00001344430./.....0134444555510/...004555455555550/.00444555555555440/04400045555512400./.00...001440000.../.......00420....../......03430......./......0430......../.......00.........","eye":[11,7]},{"w":17,"h":12,"pal":["#140c18","#886568","#ab7f83","#c2999a","#e4aaa6","#f1bab4"],"px":".........00000.../.......00114440../....000124445540./...01145444555540/.0045555444555540/0233345555555540./.00000045553300../.......035400..../.......0340....../......0540......./.....0440......../......00.........","eye":[14,4]}],[{"w":19,"h":12,"pal":["#140c18","#557272","#6f9c97","#8acfc2","#9fdeca","#c0e9d8"],"px":"............000..../..........003310.../......000033444300./..00001333444444310/.013123444444444430/022333344444443310./03001023445422000../.0..0.00045100...../........0430......./........040......../.......0330......../........00.........","eye":[15,4]},{"w":19,"h":12,"pal":["#140c18","#557272","#6f9c97","#8acfc2","#9fdeca","#c0e9d8"],"px":"............0.0..../...........01010.../.........00033310../......000133333310./...0001333334444320/.002334444444444440/043000344444444410./.00...00035220000../........04300....../.......0250......../.......040........./........0..........","eye":[11,2]},{"w":18,"h":12,"pal":["#140c18","#557272","#6f9c97","#8acfc2","#9fdeca","#c0e9d8"],"px":"............000.../..........002330../......00001244420./.....0133334444410/...003444344444440/.00333444444444330/03300034544511300./.00...001330000.../.......00310....../......01320......./......0320......../.......00.........","eye":[11,7]},{"w":17,"h":12,"pal":["#140c18","#557272","#6f9c97","#8acfc2","#9fdeca","#c0e9d8"],"px":".........00000.../.......00113330../....000113334430./...01134333444430/.0034444444444440/0112234444444430./.00000034552200../.......024300..../.......0330....../......0430......./.....0330......../......00.........","eye":[14,4]}]]},"mimic":{"variants":[{"w":20,"h":10,"pal":["#140c18","#1c2214","#374920","#54683c","#6f894a","#86b154","#a5ca6e","#cada89"],"px":"........0000.00...../.....000743306600.../.0..03727646077440../0300466666665225460./0500555555552665660./0550555555552666650./045241213522334440../.0040042340430000.../...0.0030004250...../.......0...000......","eye":[14,3]},{"w":20,"h":10,"pal":["#122729","#140c18","#2e4c4a","#447f76","#56b3a0","#83cbb9","#869086","#efead7"],"px":"........11.1..1...../......113516115111../.....15545153676331./.11.1555555552235331/.1314444444423425451/.141444444444345451./.14330020441223331../..131134133131111.../...1.1311111311...../......1.....1.......","eye":[15,4]},{"w":20,"h":10,"pal":["#140c18","#2d1f15","#4c3d2d","#7b6a53","#ab9771","#c6ac78","#d6be8a","#e4d6a6"],"px":"......00000..00...../.....031723006600.../.0..03737347077330../0300476666665215340./0503555555541556560./0562555555562566540./045341214502235540../.0340050340430000.../..00.0300004130...../......0....000......","eye":[14,3]},{"w":21,"h":10,"pal":["#140c18","#192036","#38405a","#53698b","#6988b3","#7fa0cd","#aab5cc","#d4d5df"],"px":"..........000..00..../.......000614006600../...0..05446255077030./.00300655555550134240/..0404555544432425550/..0504455444442455440/..043331203411334430./...0400340330430000../....0.03300003130..../.......00....000.....","eye":[18,3]}],"frames":[[{"w":16,"h":10,"pal":["#140c18","#1c2214","#54683c","#6f894a","#86b154","#a5ca6e","#cada89"],"px":"................/......000..000../....00423004330./...023444424240./..02555555452550/.004555554456660/022463344441000./.040400003330.../.030430..03040../..0.00....0.0...","eye":[12,6]},{"w":17,"h":10,"pal":["#140c18","#374920","#54683c","#6f894a","#86b154","#a5ca6e","#cada89"],"px":".......0........./......0300.0000../....004443044440./...03445555531540/...05555555555540/..03453666344440./.04406002233200../034206400042320../02203320.043040../.00.000...00.0...","eye":[13,3]},{"w":16,"h":10,"pal":["#140c18","#1c2214","#374920","#54683c","#6f894a","#86b154","#a5ca6e","#cada89"],"px":"......0...0...../.....030004000../...004555055640./..03666665661440/.036666664666750/034554775245550./05305344050000../0500570005050.../050430..030040../.0.00....0..0...","eye":[12,3]},{"w":16,"h":9,"pal":["#140c18","#374920","#54683c","#6f894a","#86b154","#a5ca6e","#cada89"],"px":"...........0.0../....00000002020./...023434234330./..03455554431430/.005455554455530/023355666650000./0320440004040.../0414420.040040../.00000...0..0...","eye":[12,3]}],[{"w":16,"h":10,"pal":["#122729","#140c18","#447f76","#56b3a0","#83cbb9","#869086","#efead7"],"px":"...........1..../......111.1211../....11322113551./...125333323231./..12334444342441/.113444443344441/122362233330111./.131311112221.../.121321..12131../..1.11....1.1...","eye":[10,2]},{"w":17,"h":10,"pal":["#140c18","#2e4c4a","#447f76","#56b3a0","#83cbb9","#869086","#efead7"],"px":".......0........./......0200.0000../....003332033330./...02333334421430/...04444444444430/..02342444233330./.03304222222200../023206300032520../02205520.032030../.00.000...00.0...","eye":[13,3]},{"w":16,"h":10,"pal":["#122729","#140c18","#2e4c4a","#447f76","#56b3a0","#83cbb9","#869086","#efead7"],"px":"......1...1...../.....131113111../...113444144431./..13445554550331/.135555553555541/1364465542644431/143343331411111./1411471114141.../141331..131131../.1.11....1..1...","eye":[12,3]},{"w":16,"h":9,"pal":["#122729","#140c18","#2e4c4a","#447f76","#56b3a0","#83cbb9","#869086","#efead7"],"px":"........1.11.1../....11113133131./...133434334331./..13455554432431/.115455554455531/136644555741111./1631441114141.../1404431.141141../.11111...1..1...","eye":[12,3]}],[{"w":16,"h":10,"pal":["#140c18","#2d1f15","#7b6a53","#ab9771","#c6ac78","#d6be8a","#e4d6a6"],"px":"................/......000..000../....00423004330./...023444324240./..02444555352550/.003555554466660/022462244441000./.040400002220.../.030430..03040../..0.00....0.0...","eye":[12,6]},{"w":17,"h":10,"pal":["#140c18","#4c3d2d","#7b6a53","#ab9771","#c6ac78","#d6be8a","#e4d6a6"],"px":".......0........./......0200.0000../....003432034440./...02444444521540/...05555555555540/..03463666344440./.04406122233200../034206400042320../02203320.042040../.00.000...00.0...","eye":[13,3]},{"w":16,"h":10,"pal":["#140c18","#2d1f15","#4c3d2d","#7b6a53","#ab9771","#c6ac78","#d6be8a","#e4d6a6"],"px":"......0...0...../.....030003000../...004555055540./..03555665661440/.036666664677750/034554775244440./05305333050000../0500570005050.../050330..030030../.0.00....0..0...","eye":[12,3]},{"w":16,"h":9,"pal":["#140c18","#2d1f15","#4c3d2d","#7b6a53","#ab9771","#c6ac78","#d6be8a","#e4d6a6"],"px":"...........0.0../....00000003030./...033535335330./..04556665542540/.006566665566740/034455777750000./0430440005050.../0515530.050050../.00000...0..0...","eye":[12,3]}],[{"w":16,"h":10,"pal":["#140c18","#192036","#53698b","#6988b3","#7fa0cd","#aab5cc","#d4d5df"],"px":"................/......000..000../....00323003330./...023344324240./..02444444342440/.003444453355560/022362233331000./.030300002220.../.020320..03030../..0.00....0.0...","eye":[12,6]},{"w":17,"h":10,"pal":["#140c18","#38405a","#53698b","#6988b3","#7fa0cd","#aab5cc","#d4d5df"],"px":".......0........./......0200.0000../....003432034330./...02444444421430/...04444444444430/..02352555233330./.03306122233200../033206300032320../02203320.032030../.00.000...00.0...","eye":[13,3]},{"w":16,"h":10,"pal":["#140c18","#192036","#38405a","#53698b","#6988b3","#7fa0cd","#aab5cc","#d4d5df"],"px":"......0...0...../.....030003000../...003544045530./..03555554551440/.035555554566640/034444674244440./04334333040000../0400470004050.../040330..030030../.0.00....0..0...","eye":[12,3]},{"w":16,"h":9,"pal":["#140c18","#192036","#53698b","#6988b3","#7fa0cd","#aab5cc","#d4d5df"],"px":"..........00.0../....00000022020./...022323223220./..02344443321330/.004444444444530/023344556640000./0320330003030.../0313320.030030../.00000...0..0...","eye":[12,3]}]]},"shroudmoth":{"variants":[{"w":19,"h":13,"pal":["#140c18","#392e43","#594c64","#796b87","#9a8aab","#cab8dc","#e5d2ed"],"px":".00..............0./0330.....0000...040/.03000..0660.000030/032456006666035550./0445556066660555540/.055555406613555540/.05555530000555550./..055500033224550../...0004303333000.../...0443003303440.../..04440.033004430../...040..030..040.../....0....0....0....","eye":[16,2]},{"w":19,"h":14,"pal":["#120e17","#140c18","#2b2730","#5d5961","#807b85","#b0abb3","#d6d1d7","#eae7eb"],"px":".................../..11...1........1../.1541.14111....151./.14511114761.11551./.14577417777157641./1446777177764677561/.14777753772677771./.14777750204677771./..147744243337771../...1113524445111.../....165414415651.../...16651144146641../....161.141.1541.../.....1...1...11....","eye":[14,9]},{"w":19,"h":14,"pal":["#140c18","#24161f","#48323f","#785767","#a17a8d","#c298ab","#e6c6d4","#f7e0e8"],"px":".................../..00...0....0...00./.0430.04000040.0340/.04400003770000040./0435675077770577430/0436677077773777660/.04677742771677770./.04777751223677760./..047644254036760../...0003405404230.../...0454305405550.../...05540044035530../...0430.030.0450.../....00...0...00....","eye":[15,3]},{"w":20,"h":13,"pal":["#140c18","#766e88","#988da8","#cbbfd6"],"px":"..................../..00...0000.0...00../...000..0220..0000../..00120022220022000./.0022220322302222020/..02222102200222200./..0222210000222220../...02220.00.022220../....0000.00.00000.../....0000.0000000..../...01110.00.01110.../....000......000..../....................","eye":[17,3]}],"frames":[[{"w":15,"h":13,"pal":["#140c18","#796b87","#9a8aab","#cab8dc","#e5d2ed"],"px":"...........000./..000.....01210/.02110...013320/013320.00223330/033333031333310/01444403133320./.044441004320../..0221101000.../...0013030...../....0220320..../...02310240..../....010.00...../.....0.........","eye":[9,7]},{"w":15,"h":12,"pal":["#140c18","#796b87","#9a8aab","#cab8dc","#e5d2ed"],"px":"..0........000./.0100.....02310/.02310...033320/033322000333310/03333303033420./.044430014420../.01331001210.../..000110100..../....022040...../...02420430..../...01200110..../....00..00.....","eye":[8,4]},{"w":15,"h":12,"pal":["#140c18","#796b87","#9a8aab","#cab8dc","#e5d2ed"],"px":"..00.......000./.0110.....02320/.01320...023330/013332000333320/013333111333210/.0233301134420./.014420014420../..0000201000.../....023040...../...01421430..../....0400130..../.....0..00.....","eye":[9,7]},{"w":15,"h":13,"pal":["#140c18","#796b87","#9a8aab","#cab8dc","#e5d2ed"],"px":".............0./...........0010/..000.....01330/.01310...023330/013332000233330/023333131233310/.0334412144410./.024420012210../..0000214000.../....014040...../...01220230..../...0130.030..../....00...0.....","eye":[9,8]}],[{"w":15,"h":13,"pal":["#140c18","#807b85","#b0abb3","#d6d1d7","#eae7eb"],"px":"...........000./..00......01210/.0210....014420/014420.00124420/034444030333310/01444403033310./.044440004410../..0111101000.../...0014040...../....0120420..../...02410240..../....010.00...../.....0.........","eye":[8,4]},{"w":15,"h":12,"pal":["#140c18","#807b85","#b0abb3","#d6d1d7","#eae7eb"],"px":"..0........000./.0100.....02310/.02310...044410/044421000444410/02444203043410./.044430004410../.013310.0110.../..000010100..../....022040...../...02420430..../...0120.010..../....00...0.....","eye":[8,4]},{"w":15,"h":12,"pal":["#140c18","#807b85","#b0abb3","#d6d1d7","#eae7eb"],"px":"..00.......000./.0110.....01320/.01310...023330/013331000444420/01444401044420./.0244401144410./.014420014420../..0000101000.../....022040...../...01420420..../....0400130..../.....0..00.....","eye":[8,4]},{"w":15,"h":13,"pal":["#140c18","#5d5961","#807b85","#b0abb3","#d6d1d7","#eae7eb"],"px":".............../...........000./..000.....02440/.02420...024440/024453000255550/025555052355520/.0555502155520./.035520023320../..0000325000.../....025050...../...02330330..../...0230.040..../....00...0.....","eye":[9,8]}],[{"w":15,"h":13,"pal":["#140c18","#785767","#a17a8d","#c298ab","#e6c6d4","#f7e0e8"],"px":"...........000./..00......02210/.0220....025530/015530.00235530/035555031333410/01555504144420./.055551005420../..0221101000.../...0024040...../....0220520..../...02520250..../....020.00...../.....0.........","eye":[9,7]},{"w":15,"h":12,"pal":["#140c18","#785767","#a17a8d","#c298ab","#e6c6d4","#f7e0e8"],"px":"..0........000./.0200.....03410/.03410...044420/055532000555510/03555303053520./.055530005520../.01341001210.../..000120200..../....022050...../...02520540..../...02200120..../....00..00.....","eye":[8,4]},{"w":15,"h":12,"pal":["#140c18","#785767","#a17a8d","#c298ab","#e6c6d4","#f7e0e8"],"px":"..00.......000./.0120.....02320/.01320...023340/014442000444520/015555111555210/.0355501255520./.025530015530../..0000202000.../....023050...../...02520530..../....0500230..../.....0..00.....","eye":[9,7]},{"w":15,"h":13,"pal":["#140c18","#785767","#a17a8d","#c298ab","#e6c6d4","#f7e0e8"],"px":".............../...........000./..000.....01330/.02310...023440/014442000244550/025555152255520/.0555512155520./.025520012220../..0000215000.../....025050...../...01330330..../...0130.030..../....00...0.....","eye":[9,8]}],[{"w":15,"h":13,"pal":["#140c18","#766e88","#988da8","#cbbfd6"],"px":"...........000./..000.....02210/.02210...022220/012221000222220/022222021222210/01222202122220./.022221003220../..0222212000.../...0022120...../....0220220..../...02220230..../....020.00...../.....0.........","eye":[9,7]},{"w":15,"h":12,"pal":["#140c18","#766e88","#988da8","#cbbfd6"],"px":"..00.......000./.0210.....02210/012210..0022220/022222001222210/02222202022220./.022220012220../.02222001220.../..000120200..../....022020...../...02320320..../...02200120..../....00..00.....","eye":[8,4]},{"w":15,"h":12,"pal":["#140c18","#766e88","#988da8","#cbbfd6"],"px":"..00.......000./.0120....002220/.01220..0122220/012222000222220/022222121222210/.0222212222220./.022220012220../..0000202000.../....022120...../...02221320..../....0300220..../.....0..00.....","eye":[8,3]},{"w":15,"h":13,"pal":["#140c18","#766e88","#988da8","#cbbfd6"],"px":"............00./...........0110/..000.....02220/.02220...022220/022222000222220/022222122222220/.0222212122220./.022220012220../..0000212000.../....023130...../...01221220..../...01200020..../....00...0.....","eye":[9,8]}]]},"axolotl":{"variants":[{"w":21,"h":11,"pal":["#140c18","#391427","#592f43","#90566d","#b87e92","#dd9bb0","#edabbe","#f8c7d4"],"px":".............0000000./............051442320/............06154350./........000006121360./.....00066664156650../....0356666656777270./...04555666654777660./.000532245521267750../064440550552550000.../03540053000040......./.000..00....0........","eye":[16,3]},{"w":20,"h":11,"pal":["#140c18","#3a1f2c","#58404c","#6e5862","#968b8f","#cab3bb","#ddd2d3","#f2ebe5"],"px":"............0000000./...........035172350/............06172560/........000005131460/......0056664267740./.0..0066666666777170/07004666666666777560/0743533246531177740./066440560550540000../.04400640000430...../..00..00....00......","eye":[16,3]},{"w":20,"h":11,"pal":["#140c18","#39213e","#684a66","#8b789f","#a38cc0","#bc6084","#c3a8cf","#eac3e0"],"px":".............000000./............06162220/............07262570/........000006121570/......0034443144430./.0...034444446667370/060.0444444434466670/0630421124421146640./066030340440430000../.0330040000030....../..00..0.....0.......","eye":[16,3]},{"w":20,"h":12,"pal":["#0f1f29","#140c18","#31535f","#5b95a4","#66394e","#77cbd6","#cd839d","#e7c7d5"],"px":".............1.1111./............16174441/............17174671/........111116164671/......1133331455531./.1..1155555535555371/15113555555555555551/1511322235520255531./153131551551531111../.13311511111311...../..11..11....11....../....................","eye":[16,2]}],"frames":[[{"w":19,"h":10,"pal":["#140c18","#391427","#592f43","#90566d","#b87e92","#dd9bb0","#edabbe","#f8c7d4"],"px":"............0.0000./...........05044250/........00005001250/.......033335555310/......0566665666650/.....05666655677750/.00.00000775676730./04606006400450000../.05600440.0440...../..00..00...00......","eye":[17,3]},{"w":18,"h":11,"pal":["#140c18","#391427","#90566d","#b87e92","#dd9bb0","#edabbe","#f8c7d4"],"px":"............000.0./...........0214030/...........0315040/......00000032030./.....0444445556640/.0..03555555666660/04000000554555540./0533404300040000../.04400420.0320..../.020..00...00...../..0...............","eye":[15,2]},{"w":18,"h":10,"pal":["#140c18","#90566d","#b87e92","#dd9bb0","#edabbe","#f8c7d4"],"px":"............0.0.0./...........0203020/........0000200020/......00333223330./.....0443444444550/....02344454555530/.0000003030443110./0131103400032000../.0340020...00...../..00..0...........","eye":[15,2]},{"w":17,"h":11,"pal":["#140c18","#391427","#90566d","#b87e92","#dd9bb0","#edabbe","#f8c7d4"],"px":"...........0.000./..........0302140/..........0402040/......0000002300./.....035555455540/....0455554555660/.0.0.00464446650./050300600043000../0442034020430..../0300.00.0.00...../.0...............","eye":[14,1]}],[{"w":19,"h":10,"pal":["#140c18","#3a1f2c","#6e5862","#968b8f","#cab3bb","#ddd2d3","#f2ebe5"],"px":"............0.0000./...........05034240/........00004021240/.......022234544310/......0455555555640/.....05666655666650/.00.00000665565630./03505005300350000../.05500330.0330...../..00..00...00......","eye":[15,2]},{"w":18,"h":11,"pal":["#140c18","#3a1f2c","#6e5862","#968b8f","#cab3bb","#ddd2d3","#f2ebe5"],"px":"............000.0./...........0315030/...........0316050/......00000043030./.....0455555666640/.0..03555555666660/04002000554555640./0633404300042000../025500520.0320..../.020..00...00...../..0...............","eye":[15,2]},{"w":18,"h":10,"pal":["#140c18","#6e5862","#968b8f","#cab3bb","#ddd2d3","#f2ebe5"],"px":"............0.0.0./...........0204020/........0000200020/......00444224440./.....0444545555550/....03344454555530/.0001003131443110./0132203400042000../.0440020...00...../..00..0...........","eye":[15,2]},{"w":17,"h":11,"pal":["#140c18","#3a1f2c","#6e5862","#968b8f","#cab3bb","#ddd2d3","#f2ebe5"],"px":"...........0.000./..........0402140/..........0503040/......0000003300./.....035555555540/....0555665666660/.000.00465446650./052302600043000../0552035020530..../0300.00.0.00...../.0...............","eye":[14,2]}],[{"w":19,"h":10,"pal":["#140c18","#39213e","#684a66","#8b789f","#a38cc0","#bc6084","#c3a8cf","#eac3e0"],"px":"............0.0000./...........04033240/..........004001240/.......000554444310/......0444664666640/.....04666644666740/.00.00000774474730./03404004300340000../.04400330.0330...../..00..00...00......","eye":[14,2]},{"w":18,"h":11,"pal":["#140c18","#39213e","#8b789f","#a38cc0","#bc6084","#c3a8cf","#eac3e0"],"px":"............000.0./...........0413020/...........0215030/......00000022020./.....0333333555530/.0..02333333666660/03000000553555530./0522303200030000../.0330030..020...../.040..0....0....../..0...............","eye":[15,2]},{"w":18,"h":10,"pal":["#140c18","#8b789f","#a38cc0","#bc6084","#c3a8cf","#eac3e0"],"px":"............0.0.0./...........0102010/........0000100010/......00222112220./.....0442424444440/....02222252555520/.0000002020242000./03231024000210..../.0240010...00...../..00..0...........","eye":[15,2]},{"w":17,"h":11,"pal":["#140c18","#39213e","#8b789f","#a38cc0","#bc6084","#c3a8cf","#eac3e0"],"px":"...........0.000./..........0204130/..........0304030/......0000002200./.....023333355530/....0355553555550/.0.0.00363336630./030200600032000../0330023000320..../020..00...00...../.0...............","eye":[14,2]}],[{"w":19,"h":10,"pal":["#0f1f29","#140c18","#31535f","#5b95a4","#66394e","#77cbd6","#cd839d","#e7c7d5"],"px":"............1.1111./...........15166261/........11116114361/.......133335555301/......1555555555551/.....15555555555751/.11.11111775575731./13515115311351111../.15511331.1331...../..11..11...11......","eye":[17,3]},{"w":18,"h":11,"pal":["#0f1f29","#140c18","#5b95a4","#66394e","#77cbd6","#cd839d","#e7c7d5"],"px":"............111.1./...........1204121/...........1234141/......11111152121./.....1544444444451/.1..12444444666661/15111111444444441./1422414211141111../124411421.1221..../.121..11...11...../..1...............","eye":[15,2]},{"w":18,"h":10,"pal":["#140c18","#5b95a4","#77cbd6","#cd839d","#e7c7d5"],"px":"............0.0.0./...........0102010/........0000100010/......00222132220./.....0222222222220/....03322242444430/.0000002021222110./0121102200021000../.0220010...00...../..00..0...........","eye":[15,2]},{"w":17,"h":11,"pal":["#0f1f29","#140c18","#5b95a4","#77cbd6","#cd839d","#e7c7d5"],"px":"...........1.111./..........1412041/..........1312141/......1111112211./.....123333333341/....1333333333351/.1.1.11353335531./131212511132111../1332123121321..../1211.11.1.11...../.1...............","eye":[14,1]}]]},"scarab":{"variants":[{"w":18,"h":14,"pal":["#121f33","#140c18","#1e568d","#253d59","#2c6ea9","#94825c","#cff1fc","#e6cc7b"],"px":"................../.....1111111....../....1324444211..../...124443444431.../..1222000004421.../.132225775344421../.122220370244421../.1222230734422241./.12222033022326231/.13222222222324431/..132222222311331./.13130000011..11../..1.1133331......./......1111........","eye":[14,7]},{"w":17,"h":13,"pal":["#140c18","#223e3b","#2b6c61","#388f7e","#777358","#99916a","#ccfcee","#e0cf96"],"px":"......00000....../....003333300..../...02332233320.../..0222111223320../.02221777423330../.022221412333300./.0222215133322320/.0222215512203620/.0222222222202320/..0022222220.000./..000211100....../....0022220....../......0000.......","eye":[14,5]},{"w":17,"h":13,"pal":["#140c18","#46222e","#6a3646","#8c4457","#ab5b6e","#b8a587","#eedeb8","#ffe4e5"],"px":"......000000...../....004444420..../...02443244430.../..0331112234430../.03331666513340../.033331532333320./.033331414333330./.0333325513314720/.0233332233324420/..02333333320020./.02002211220..0../..0.0033220....../......0000.......","eye":[12,7]},{"w":17,"h":13,"pal":["#140c18","#332040","#5a417b","#7152a1","#9577ab","#ccb0e6","#d2c5a9","#f5e9d4"],"px":"......00000....../....00333320...../..002333333300.../.02331111133320../.03332676133330../023330070133330../0222220403332250./02222000023325440/.0222222223324430/.002332233220000./020001111000...../.0.02222120....../....000000.......","eye":[9,3]}],"frames":[[{"w":16,"h":9,"pal":["#121f33","#140c18","#1e568d","#253d59","#2c6ea9","#94825c","#cff1fc","#e6cc7b"],"px":"......11111111../....11322022231./...1222240423231/..14444443444421/..12522221127231/.17103111211111./1221222116331321/.11131311311.11./....1.1..1......","eye":[12,2]},{"w":17,"h":9,"pal":["#121f33","#140c18","#1e568d","#253d59","#2c6ea9","#94825c","#cff1fc","#e6cc7b"],"px":"...........1...../....11111.1311.../...133222122231../..13222221220231./..122244404444431/..12424440345731./.171121113311321./16312221121211221/.11.111..1.1..11.","eye":[12,3]},{"w":16,"h":9,"pal":["#121f33","#140c18","#1e568d","#253d59","#2c6ea9","#94825c","#cff1fc","#e6cc7b"],"px":"..........1...../.....11111311.../...11344413441../..1342222144041./..14222221577621/.112232231122331/132133111211121./1211221.12341121/.1..11...111..1.","eye":[12,3]},{"w":16,"h":9,"pal":["#121f33","#140c18","#1e568d","#253d59","#2c6ea9","#94825c","#cff1fc","#e6cc7b"],"px":"................/......111.111.../....1122312231../...122223343341./..12444422442441/..12457721326231/.12203111211131./1330221.12121121/.11111...1.1..1.","eye":[12,3]}],[{"w":16,"h":9,"pal":["#140c18","#223e3b","#2b6c61","#388f7e","#777358","#99916a","#ccfcee","#e0cf96"],"px":"......00000000../....00222124220./...0233331322220/..03333332333320/..02522220027420/.07012000200000./0220222006220220/.00020200200.00./....0.0..0......","eye":[13,5]},{"w":17,"h":9,"pal":["#140c18","#223e3b","#2b6c61","#388f7e","#777358","#99916a","#ccfcee","#e0cf96"],"px":"...........0...../....00000.0200.../...022222022220../..02222220431220./..033333313333320/..02323331255720./.070020002200220./06202220020200220/.00.000..0.0..00.","eye":[12,3]},{"w":16,"h":9,"pal":["#140c18","#223e3b","#2b6c61","#388f7e","#777358","#99916a","#ccfcee","#e0cf96"],"px":"..........0...../.....00000200.../...00233302330../..0232222033130./..03222220557620/.002222220022220/024022000200030./0300320.02230020/.0..00...000..0.","eye":[12,3]},{"w":16,"h":9,"pal":["#140c18","#223e3b","#2b6c61","#388f7e","#777358","#99916a","#ccfcee","#e0cf96"],"px":"................/......000.000.../....0022202220../...043332232230./..02333322332330/..02355720226220/.02212000200020./0221220.02020020/.00000...0.0..0.","eye":[9,5]}],[{"w":16,"h":9,"pal":["#140c18","#46222e","#6a3646","#8c4457","#ab5b6e","#b8a587","#eedeb8","#ffe4e5"],"px":"......00000000../....00333133320./...0333331432320/..04444442444530/..03533330035320/.06012000320000./0330333007220230/.00020200200.00./....0.0..0......","eye":[12,2]},{"w":17,"h":9,"pal":["#140c18","#46222e","#6a3646","#8c4457","#ab5b6e","#b8a587","#eedeb8","#ffe4e5"],"px":"..........00...../....0000002200.../...022333033320../..02333330331320./..033334414444420/..03434441255620./.060230003200230./07203330030300330/.00.000..0.0..00.","eye":[12,3]},{"w":16,"h":9,"pal":["#140c18","#46222e","#6a3646","#8c4457","#ab5b6e","#b8a587","#eedeb8","#ffe4e5"],"px":"..........0...../.....00000200.../...00234402440../..0243333044140./..04333330556730/.023323320033220/023022000300030./0300330.03230030/.0..00...000..0.","eye":[12,3]},{"w":16,"h":9,"pal":["#140c18","#46222e","#6a3646","#8c4457","#ab5b6e","#b8a587","#eedeb8","#ffe4e5"],"px":"..........0...../.....00000200.../....0233203320../...033332233240./..03444433443440/..03455630237320/.03312000300020./0221330.03030030/.00000...0.0..0.","eye":[12,3]}],[{"w":16,"h":9,"pal":["#140c18","#332040","#5a417b","#7152a1","#9577ab","#ccb0e6","#d2c5a9","#f5e9d4"],"px":"......00000000../....00222123320./...0333331322320/..03333332344420/..03533330036320/.06012000220000./0220223007220230/.00020200200.00./....0.0..0......","eye":[13,5]},{"w":17,"h":9,"pal":["#140c18","#332040","#5a417b","#7152a1","#9577ab","#ccb0e6","#d2c5a9","#f5e9d4"],"px":"..........00...../....0000002200.../...022333023220../..02333330331220./..033333313333320/..02323441245620./.060020002200220./07202230030200230/.00.000..0.0..00.","eye":[12,3]},{"w":16,"h":9,"pal":["#140c18","#332040","#5a417b","#7152a1","#9577ab","#ccb0e6","#d2c5a9","#f5e9d4"],"px":"..........0...../.....00000200.../...00233302330../..0232222033140./..04233330556730/.003323320033220/023022000200030./0300320.02230020/.0..00...000..0.","eye":[12,3]},{"w":16,"h":9,"pal":["#140c18","#332040","#5a417b","#7152a1","#9577ab","#ccb0e6","#d2c5a9","#f5e9d4"],"px":"................/.....0000.000.../....0233202220../...033332232230./..03333322333340/..03455630237320/.03212000200020./0221220.03020030/.00000...0.0..0.","eye":[9,5]}]]}};
 return { ANIMAL_SPRITES };
 })();
 // src/rendering/rabbit.js
-const __m139 = (() => {
+const __m140 = (() => {
 const { Rng, hashString } = __m6;
-const { PAL, makeCanvas } = __m93;
-const { RABBIT_MARKS } = __m60;
-const { KINDS, bodyOf } = __m61;
-const { punchSprite } = __m140;
-const { ANIMAL_SPRITES } = __m141;
-const { VARIANT_COATS } = __m62;
+const { PAL, makeCanvas } = __m94;
+const { RABBIT_MARKS } = __m61;
+const { KINDS, bodyOf } = __m62;
+const { punchSprite } = __m141;
+const { ANIMAL_SPRITES } = __m142;
+const { VARIANT_COATS } = __m63;
 const RABBIT_W = 48;
 const RABBIT_H = 40;
 const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
@@ -28517,27 +28778,27 @@ ctx.fillRect(fx, fy, RABBIT_W, RABBIT_H);
 return { RABBIT_W, RABBIT_H, rabbitLevels, rabbitPose, rabbitPace, rabbitAnchors, variantOf, rabbitSpriteKey, drawRabbitSprite, clearRabbitSprites, drawRabbit };
 })();
 // src/ui/views/wilds.js
-const __m113 = (() => {
-const { UpscaledCanvas } = __m114;
+const __m114 = (() => {
+const { UpscaledCanvas } = __m115;
 const { BIOME_BY_ID, unlockText } = __m18;
 const { CREATURE_NAMES, rarityTag } = __m108;
 const { h, btn, clear, toast, keepScroll, confirmDialog } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, moistureEnv, DAY_PART_NAME, runeCaches: runeCachesOf } = __m63;
-const { equipmentById } = __m58;
-const { RANKS } = __m58;
-const { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, sceneTouch, crosses, forgetSceneCanvases, SCENE_W, SCENE_H } = __m115;
-const { Ragdoll } = __m136;
-const { exoticPush, exoticStep, exoticDraw, isleAt, isleShift } = __m137;
-const { sceneOf } = __m116;
-const { plantCanvas, plantFrameOf, plantGlow, emitColour, silhouetteOf, ingredientSprite, speciesOf, mountsOf, variantOf, MIN_HIT } = __m99;
+const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, moistureEnv, DAY_PART_NAME, runeCaches: runeCachesOf } = __m64;
+const { equipmentById } = __m59;
+const { RANKS } = __m59;
+const { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, sceneTouch, crosses, forgetSceneCanvases, SCENE_W, SCENE_H } = __m116;
+const { Ragdoll } = __m137;
+const { exoticPush, exoticStep, exoticDraw, isleAt, isleShift } = __m138;
+const { sceneOf } = __m117;
+const { plantCanvas, plantFrameOf, plantGlow, emitColour, silhouetteOf, ingredientSprite, speciesOf, mountsOf, variantOf, MIN_HIT } = __m100;
 const { EFFECT_BY_KEY } = __m20;
 const { hashString } = __m6;
-const { Warren, warrenSpots, BLOOD, WILD_HP, WILD_SCALE } = __m138;
-const { drawRabbit, rabbitSpriteKey, RABBIT_W, RABBIT_H } = __m139;
-const { defaultSnap, penHasRoom, PEN_MAX } = __m60;
-const { KINDS } = __m61;
+const { Warren, warrenSpots, BLOOD, WILD_HP, WILD_SCALE } = __m139;
+const { drawRabbit, rabbitSpriteKey, RABBIT_W, RABBIT_H } = __m140;
+const { defaultSnap, penHasRoom, PEN_MAX } = __m61;
+const { KINDS } = __m62;
 const SHADOW = { forest: 'rgba(8,16,10,0.32)', netherwood: 'rgba(6,4,16,0.4)', meadow: 'rgba(24,30,10,0.26)', river: 'rgba(4,14,16,0.34)', quarry: 'rgba(26,18,10,0.3)', moonfen: 'rgba(2,6,18,0.42)', crags: 'rgba(30,6,4,0.4)', skyshard: 'rgba(20,40,70,0.26)', morphgrove: 'rgba(30,8,30,0.34)', veilhollow: 'rgba(10,10,20,0.38)', ghostglass: 'rgba(2,10,24,0.42)', chronoglass: 'rgba(40,20,10,0.32)' };
 function litSprite(d, light) {
 const dark = light.length >= 6 ? [light[3] * 255, light[4] * 255, light[5] * 255] : null;
@@ -29417,7 +29678,7 @@ this.chips(c.x, c.y - 3, 1, 12, this.rockColour(), '#8fe8ff', true);
 for (let i = 0; i < 3; i++) this.flashes.push({ x: c.x + (Math.random() - 0.5) * 10, y: c.y - 6 - Math.random() * 8, t: -i * 0.12 });
 this.floaters.push({ x: c.x, y: c.y - 6, t: 0, color: [0.56, 0.91, 1], text: '+1 rune' });
 audio.play('discover');
-toast('An old temperature rune!', `Dug out of the ground: ${Number.isFinite(this.lab.state.cellar.runes) ? `${this.lab.state.cellar.runes} in hand` : 'the cellar has it'}. Set it on a cellar vessel to lock its temperature.`, 'rune', 4200);
+toast('An old temperature rune!', `Dug out of the ground: ${Number.isFinite(this.lab.state.cellar.runes) ? `${this.lab.state.cellar.runes} in hand` : 'the cellar has it'}. Put it in an aging bottle’s rune slot to hold its temperature.`, 'rune', 4200);
 this.lab.save();
 this.refresh();
 }
@@ -29818,12 +30079,12 @@ this.grow();
 return { WildsView };
 })();
 // src/visual/env/pens.js
-const __m145 = (() => {
-const { Canvas } = __m117;
-const { col, silhouette, treeShape } = __m119;
-const { finish } = __m118;
-const { grade } = __m123;
-const { cobble } = __m120;
+const __m146 = (() => {
+const { Canvas } = __m118;
+const { col, silhouette, treeShape } = __m120;
+const { finish } = __m119;
+const { grade } = __m124;
+const { cobble } = __m121;
 const { fbm1, fbm2, hash2, noise2 } = __m48;
 const { mixPacked } = __m30;
 const { Rng, hashString } = __m6;
@@ -31246,7 +31507,7 @@ return p;
 return { PEN_W, PEN_H, BACK, GROUND_Y0, PENS_VERSION, PEN_KINDS, penTitle, penOf };
 })();
 // src/rendering/pen-anim.js
-const __m146 = (() => {
+const __m147 = (() => {
 function hash(a, b = 0) {
 let n = Math.imul(a | 0, 0x27d4eb2d) ^ Math.imul(b | 0, 0x165667b1);
 n = Math.imul(n ^ (n >>> 15), 0x2c1b3c6d);
@@ -31369,13 +31630,13 @@ if (f) f(ctx, a, t);
 return { drawPenAnim };
 })();
 // src/rendering/hutch-scene.js
-const __m144 = (() => {
+const __m145 = (() => {
 const { Rng, hashString } = __m6;
-const { PAL, makeCanvas } = __m93;
-const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m139;
-const { kindOf, bodyOf } = __m61;
-const { penOf } = __m145;
-const { drawPenAnim } = __m146;
+const { PAL, makeCanvas } = __m94;
+const { drawRabbit, rabbitAnchors, rabbitLevels, rabbitPace, RABBIT_W } = __m140;
+const { kindOf, bodyOf } = __m62;
+const { penOf } = __m146;
+const { drawPenAnim } = __m147;
 const WALKERS = { cat: 12, salamander: 5, deer: 10, badger: 8, dove: 8, fox: 14, snail: 1.5, rat: 16 };
 const HUTCH_W = 224;
 const HUTCH_H = 92;
@@ -31805,19 +32066,19 @@ ctx.drawImage(this.bg, 0, 0);
 return { HUTCH_W, HUTCH_H, HUTCH_BODIES, penFor, paintHutch, paintHutchFront, onGround, HutchScene };
 })();
 // src/ui/views/hutch.js
-const __m143 = (() => {
-const { readingSteadiness } = __m59;
-const { kindDef, kindOf, KINDS, KIND_IDS, habitatOf } = __m61;
+const __m144 = (() => {
+const { readingSteadiness } = __m60;
+const { kindDef, kindOf, KINDS, KIND_IDS, habitatOf } = __m62;
 const { BIOMES } = __m18;
 const { h, btn, clear, toast, modal, confirmDialog, keepScroll } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { drawRabbit, RABBIT_W, RABBIT_H } = __m139;
-const { HutchScene, HUTCH_W, HUTCH_H } = __m144;
-const { penTitle } = __m145;
-const { UpscaledCanvas } = __m114;
+const { drawRabbit, RABBIT_W, RABBIT_H } = __m140;
+const { HutchScene, HUTCH_W, HUTCH_H } = __m145;
+const { penTitle } = __m146;
+const { UpscaledCanvas } = __m115;
 const { EFFECT_BY_KEY } = __m20;
-const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral, RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE, BURNS, PEN_MAX, penHasRoom, livingOf } = __m60;
+const { livingRabbits, bodies, rabbitSnap, rabbitCondition, stageOf, findRabbit, colonyDay, maxHealthOf, degenOf, isFeral, RABBIT_MARKS, LETHAL, TRAIT_WORDS, LOVE_MATE, BURNS, PEN_MAX, penHasRoom, livingOf } = __m61;
 const { PURGE_BREW_TIME } = __m5;
 const STAGE_WORD = { kit: 'kit', young: 'youngster', adult: 'adult', elder: 'elder' };
 const CHANNELS = RABBIT_MARKS.map((k) => {
@@ -32190,21 +32451,21 @@ if (this._live >= 0.25) { this._live = 0; this.live(); }
 return { CHANNELS, HutchPanel };
 })();
 // src/ui/views/trials.js
-const __m142 = (() => {
+const __m143 = (() => {
 const { h, btn, clear, toast, roomHead } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { SUBJECT_BY_ID, DOSES, missingEffects } = __m59;
+const { SUBJECT_BY_ID, DOSES, missingEffects } = __m60;
 const { EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, EFFECT_KEYS, potencyWord } = __m20;
-const { SIM } = __m56;
-const { applyTrials } = __m83;
-const { summarize, addSamples, EVIDENCE_TEXT, evidenceRank, requirementEvidence } = __m59;
-const { evidenceOf } = __m83;
-const { shortName } = __m54;
+const { SIM } = __m57;
+const { applyTrials } = __m84;
+const { summarize, addSamples, EVIDENCE_TEXT, evidenceRank, requirementEvidence } = __m60;
+const { evidenceOf } = __m84;
+const { shortName } = __m55;
 const LEVEL_SHORT = { preliminary: '1 reading', repeated: 'repeated', corroborated: 'corroborated', certified: 'certified' };
-const { drawRabbit } = __m139;
-const { focusRabbit, findRabbit, rabbitSnap, decodeSnap, lookFromSeed, RABBIT_MARKS } = __m60;
-const { HutchPanel } = __m143;
+const { drawRabbit } = __m140;
+const { focusRabbit, findRabbit, rabbitSnap, decodeSnap, lookFromSeed, RABBIT_MARKS } = __m61;
+const { HutchPanel } = __m144;
 const REPLAY_T = 3.2;
 class TrialsView {
 constructor(lab) {
@@ -32578,15 +32839,15 @@ return `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2
 return { TrialsView, EFFECTS, EFFECT_INDEX };
 })();
 // src/ui/views/garden.js
-const __m147 = (() => {
+const __m148 = (() => {
 const { h, btn, clear, toast, roomHead } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
-const { BEDS, GRADES, GARDEN_UPGRADES, seedList, gradeNeeded, bedOf, boughtCount, cropYield, growHours, seedId } = __m84;
+const { BEDS, GRADES, GARDEN_UPGRADES, seedList, gradeNeeded, bedOf, boughtCount, cropYield, growHours, seedId } = __m85;
 const { SPECIES_BY_KEY, materialIdOf } = __m15;
 const { RARITY } = __m17;
 const { atlasFrame, seedAsset, stageAsset, loadAtlases, onAtlasLoaded } = __m51;
-const { formatWait } = __m63;
+const { formatWait } = __m64;
 const { rarityTag } = __m108;
 const { hashString, Rng } = __m6;
 const ART = {
@@ -32955,13 +33216,13 @@ if (this.t % 5 < 0.5) this.refreshLive();
 return { GardenView, materialIdOf, RARITY, seedId, icon };
 })();
 // src/ui/views/book.js
-const __m148 = (() => {
-const { KINDS } = __m61;
+const __m149 = (() => {
+const { KINDS } = __m62;
 const { h, btn, clear, roomHead } = __m2;
 const { icon } = __m3;
 const { audio } = __m4;
 const panels = __m105;
-const { SUBJECT_BY_ID } = __m59;
+const { SUBJECT_BY_ID } = __m60;
 const { EFFECTS, EFFECT_BY_KEY, EFFECT_KEYS } = __m20;
 const { rgbToHex } = __m11;
 const { renderGuide } = __m107;
@@ -33061,34 +33322,34 @@ body.appendChild(list);
 return { BookView };
 })();
 // src/ui/lab.js
-const __m90 = (() => {
-const { Simulation } = __m66;
-const { PHASE, SIM } = __m56;
-const { snapshotSim, applySnapshot } = __m91;
-const { clampToInterior } = __m77;
+const __m91 = (() => {
+const { Simulation } = __m67;
+const { PHASE, SIM } = __m57;
+const { snapshotSim, applySnapshot } = __m92;
+const { clampToInterior } = __m78;
 const { MAX_SPECIES } = __m25;
 const { compatFactor } = __m21;
-const { Renderer } = __m92;
-const { drawPortrait } = __m98;
-const { drawJar } = __m93;
-const { ingredientSprite } = __m99;
+const { Renderer } = __m93;
+const { drawPortrait } = __m99;
+const { drawJar } = __m94;
+const { ingredientSprite } = __m100;
 const { RARITY } = __m17;
-const { measureParticles, tapSelection, probeSelection, viscosityClass, densityWord } = __m81;
-const { scoreRequirement, PROPERTY_LABELS } = __m55;
+const { measureParticles, tapSelection } = __m82;
+const { scoreRequirement, PROPERTY_LABELS } = __m56;
 const { processEvent } = __m102;
-const { saveGame, saveJSON, KEYS } = __m89;
+const { saveGame, saveJSON, KEYS } = __m90;
 const { AutoBrewer, condensedCount } = __m103;
-const { traceSample, buildProcedure, procedureLimits, matchRecipe, compareRecipe, checkReproduction, TRACE_DT } = __m87;
-const { proofGaps, draftLabel, applyTrials, evidenceOf } = __m83;
-const { RANKS } = __m58;
-const { certification, missingEffects, requirementEvidence } = __m59;
+const { traceSample, buildProcedure, procedureLimits, matchRecipe, compareRecipe, checkReproduction, TRACE_DT } = __m88;
+const { proofGaps, draftLabel, applyTrials, evidenceOf } = __m84;
+const { RANKS } = __m59;
+const { certification, missingEffects, requirementEvidence } = __m60;
 const { sandboxIngredients } = __m7;
 const { sandboxSave } = __m104;
-const { makeVial, makeVialFromComposition, appendParticles, updateVial, takeDose, pourBack, pourBackParts, relaxVial } = __m65;
+const { makeVial, appendParticles, updateVial, takeDose, pourBack, pourBackParts, relaxVial } = __m66;
 const { theoryOf, EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, dominantEffect, NE } = __m20;
 const { awakenParts, describeThreshold } = __m22;
-const { ARC_NONE } = __m67;
-const { extractionReport } = __m80;
+const { ARC_NONE } = __m68;
+const { extractionReport } = __m81;
 const { classWords, extractedParts, groupExtracts, groupLine } = __m8;
 const { describeColor, rgbToHex } = __m11;
 const { h, btn, clear, keepScroll, toast, coins, confirmDialog, modal, setNoteDock, recentNotes } = __m2;
@@ -33098,19 +33359,18 @@ const panels = __m105;
 const trade = __m109;
 const { Tutorial } = __m110;
 const { InventoryDrawer } = __m111;
-const { benchIds, setOnBench } = __m82;
+const { benchIds, setOnBench } = __m83;
 const { CounterView } = __m112;
-const { WildsView } = __m113;
-const { TrialsView } = __m142;
-const { GardenView } = __m147;
-const { BookView } = __m148;
-const { shortName } = __m54;
+const { WildsView } = __m114;
+const { TrialsView } = __m143;
+const { GardenView } = __m148;
+const { BookView } = __m149;
+const { shortName } = __m55;
 const REQ_ICON = { temperature: 'thermo', quantity: 'flask', purity: 'pure' };
 const TOOL_DEFS = [
 { id: 'spoon', label: 'Stir', icon: 'spoon', key: '2', title: 'Spoon: drag in the brew to stir' },
 { id: 'pestle', label: 'Crush', icon: 'pestle', key: '3', needs: 'pestle', title: 'Pestle: drag over whole herbs, stones or ice to crush them' },
 { id: 'skimmer', label: 'Skim', icon: 'ladle', key: '4', sandbox: true, title: 'Skimmer: lift off the top layer' },
-{ id: 'probe', label: 'Inspect', icon: 'lens', key: '5', title: 'Inspect: tap a spot to read its colour, heat and contents' },
 { id: 'pour', label: 'Pour', icon: 'pour', key: '1' },
 ];
 const VIEWS = [
@@ -33133,9 +33393,6 @@ this.pointer = { down: false, x: 0, y: 0, id: -1, wx: 0, wy: 0 };
 this.pourX = 0.3;
 this.lastPoured = {};
 this.bottling = null;
-this.probe = null;
-this.thermal = false;
-this.autoStir = false;
 this._autoScroll = null;
 this.alembicOpen = false;
 this.receiver = null;
@@ -33292,7 +33549,6 @@ this.dayEl, h('div', { class: 'stat rankbox' }, this.rankName, h('div', { class:
 this.strip = h('div', { class: 'order-strip parch', role: 'button', tabindex: '0', 'aria-label': 'Order: open the counter' });
 this.strip.addEventListener('click', (e) => { if (!(/** @type {HTMLElement} */ (e.target)).closest('.btn')) this.showView('counter'); });
 this.canvas = /** @type {HTMLCanvasElement} */ (h('canvas', { class: 'view-canvas', 'aria-label': 'Cauldron: drag to stir, hold to pour the selected reagent' }));
-this.readout = h('div', { class: 'readout parch hidden' });
 this.infoText = h('span');
 this.infoBtn = h('button', { class: 'chip chip-btn info-chip', 'data-act': 'brew-info', title: 'What is in the cauldron', 'aria-label': 'What is in the cauldron' }, icon('scroll', 'sm'), this.infoText);
 this.infoBtn.addEventListener('click', () => { audio.play('click'); this.toggleBrewInfo(); });
@@ -33301,7 +33557,7 @@ this.chips = h('div', { class: 'hud-chips' }, this.infoBtn, this.chipList);
 this.pourHint = h('div', { class: 'pour-hint chip hidden' });
 this.bottleFab = btn('Bottle', () => this.startBottling(), { icon: 'bottle', cls: 'fab primary', title: 'Bottle the potion from the tap (B)', act: 'bottle' });
 this.brewPanel = h('div', { class: 'brew-panel parch hidden' });
-this.stageEl = h('main', { class: 'stage' }, this.canvas, this.readout, this.chips, this.pourHint, this.brewPanel, this.bottleFab);
+this.stageEl = h('main', { class: 'stage' }, this.canvas, this.chips, this.pourHint, this.brewPanel, this.bottleFab);
 this.furnaceInput = /** @type {HTMLInputElement} */ (h('input', { type: 'range', min: '-100', max: '100', step: '0.1', value: '0', 'aria-label': 'Fire and frost control' }));
 this.furnaceInput.addEventListener('input', () => {
 const u = Number(this.furnaceInput.value) / 100;
@@ -33390,55 +33646,10 @@ const a = this.actionsEl;
 if (!a) return;
 clear(a);
 const set = {};
-set.stir = btn('Auto', () => {}, { icon: 'swirl', title: this.state.has('stirrer') ? 'Clockwork stirrer on/off (A)' : 'Hold to stir automatically (A)', act: 'autostir' });
-const press = { id: -1, x: 0, y: 0, timer: 0, moved: false };
-const SLOP = 8, HOLD_MS = 180;
-const cancelPress = () => { clearTimeout(press.timer); press.timer = 0; press.id = -1; };
-const startAuto = (e) => {
-if (e.button > 0) return;
-cancelPress();
-press.id = e.pointerId; press.x = e.clientX; press.y = e.clientY; press.moved = false;
-if (!this.state.has('stirrer')) press.timer = setTimeout(() => { press.timer = 0; if (press.id >= 0 && !press.moved) this.setAutoStir(true); }, e.pointerType === 'mouse' ? 0 : HOLD_MS);
-};
-const moveAuto = (e) => {
-if (e.pointerId !== press.id || press.moved) return;
-if (Math.hypot(e.clientX - press.x, e.clientY - press.y) > SLOP) {
-press.moved = true;
-clearTimeout(press.timer); press.timer = 0;
-if (!this.state.has('stirrer')) this.setAutoStir(false);
-}
-};
-const endAuto = (e) => {
-if (e.pointerId !== press.id) return;
-const tap = !press.moved;
-cancelPress();
-if (this.state.has('stirrer')) { if (tap) this.setAutoStir(!this.autoStir); } else this.setAutoStir(false);
-};
-const abortAuto = (e) => {
-if (e.pointerId !== press.id) return;
-cancelPress();
-if (!this.state.has('stirrer')) this.setAutoStir(false);
-};
-set.stir.addEventListener('pointerdown', startAuto);
-set.stir.addEventListener('pointermove', moveAuto);
-set.stir.addEventListener('pointerup', endAuto);
-set.stir.addEventListener('pointerleave', abortAuto);
-set.stir.addEventListener('pointercancel', abortAuto);
-set.stir.addEventListener('contextmenu', (e) => e.preventDefault());
-if (this._autoScroll) this.toolsEl.removeEventListener('scroll', this._autoScroll);
-this._autoScroll = () => { if (press.id >= 0) { press.moved = true; clearTimeout(press.timer); press.timer = 0; if (!this.state.has('stirrer')) this.setAutoStir(false); } };
-this.toolsEl.addEventListener('scroll', this._autoScroll, { passive: true });
-set.speed = btn('1×', () => this.cycleSpeed(), { icon: 'speed', title: 'Time speed: 1×, 2×, 4× (F)', act: 'speed' });
-a.append(set.stir, set.speed);
-if (this.sandbox) {
-set.thermal = btn('Heat', () => this.toggleThermal(), { icon: 'monocle', title: 'Heat map (H)', act: 'thermal' });
-a.append(set.thermal);
-}
 if (this.sandbox || this.state.has('condenser')) {
 set.alembic = btn('Still', () => this.toggleAlembic(), { icon: 'alembic', title: 'Still head on/off: vapour rising into it is condensed into the receiver', act: 'alembic' });
 a.append(set.alembic);
 }
-if (this.state.cap.vessels > 0) a.append(btn('Cellar', () => panels.openCellar(this), { icon: 'shelf2', title: 'The aging cellar: lay brews down to go on extracting', act: 'cellar' }));
 a.append(btn('Empty', () => this.emptyCauldron(), { icon: 'trash', cls: 'danger', title: 'Empty the cauldron', act: 'empty' }));
 this.actionSet = set;
 this.syncActions();
@@ -33451,16 +33662,7 @@ const ll = this.lidBtn.querySelector('.lbl');
 if (ll) ll.textContent = lidOpen ? 'Lid off' : 'Lid on';
 const set = this.actionSet;
 if (!set) return;
-set.stir.classList.toggle('active', this.autoStir);
-set.speed.classList.toggle('active', this.speed > 1);
-const l = set.speed.querySelector('.lbl');
-if (l) l.textContent = this.speed + '×';
-if (set.thermal) set.thermal.classList.toggle('active', this.thermal);
 if (set.alembic) set.alembic.classList.toggle('active', this.alembicOpen);
-}
-toggleThermal() {
-this.thermal = !this.thermal;
-this.syncActions();
 }
 buildTools() {
 keepScroll(this.toolsEl, () => this.fillTools());
@@ -33500,7 +33702,11 @@ const st = this.state;
 const ids = benchIds(st.bench, this.shelfPool(), (id) => (this.sandbox ? Infinity : st.stock(id)));
 sh.appendChild(btn(ids.length ? '' : 'Fill the shelf', () => this.openInventory(), { icon: 'satchel', cls: 'shelf-inv', title: 'Inventory: every ingredient you hold, by effect — tap or drag one onto this shelf (I)', act: 'inventory' }));
 const labels = shelfLabels(ids.map((id) => st.lookup(id).name));
-for (const [n, id] of ids.entries()) {
+for (const [n, id] of ids.entries()) sh.appendChild(this.makeJar(id, labels[n]));
+this.updateShelf();
+}
+makeJar(id, label) {
+const st = this.state;
 const m = st.lookup(id);
 let cv;
 if ((m.wild || m.remains) && m.form === 'solid') {
@@ -33515,12 +33721,10 @@ const w = m.wild && m.wild.catalog ? m.wild : null;
 const held = w ? (st.garden.seeds[w.key + (w.arcane ? '+arcane' : '')] || 0) : 0;
 const seeds = Number.isFinite(held) ? held : 0;
 const badge = w ? h('span', { class: `jrar r-${w.rarity}${w.arcane ? ' arcane' : ''}`, title: `${RARITY[w.rarity].label}${w.arcane ? ', Arcane' : ''}${seeds ? ` · ${seeds} seed${seeds > 1 ? 's' : ''}` : ''}` }, seeds ? h('span', { class: 'jseed', text: String(seeds) }) : null) : null;
-const el = h('button', { class: 'jar' + (m.wild ? ' wild' : '') + (m.remains ? ' remains' : '') + (w && w.arcane ? ' arcane' : ''), title: m.name, 'aria-label': m.name + (w ? `, ${RARITY[w.rarity].label}${w.arcane ? ', Arcane' : ''}` : ''), 'data-id': id, role: 'option' }, stock, cv, badge, h('span', { class: 'jname', text: m.remains ? m.remains.short : labels[n] }));
+const el = h('button', { class: 'jar' + (m.wild ? ' wild' : '') + (m.remains ? ' remains' : '') + (w && w.arcane ? ' arcane' : '') + (id === this.selected ? ' selected' : ''), title: m.name, 'aria-label': m.name + (w ? `, ${RARITY[w.rarity].label}${w.arcane ? ', Arcane' : ''}` : ''), 'data-id': id, role: 'option' }, stock, cv, badge, h('span', { class: 'jname', text: m.remains ? m.remains.short : label }));
 this.bindJar(el, id);
 this.jarEls[id] = { el, stock };
-sh.appendChild(el);
-}
-this.updateShelf();
+return el;
 }
 shelfPool() {
 const st = this.state;
@@ -33530,7 +33734,8 @@ onShelf(id) {
 return this.state.bench.ids.includes(id);
 }
 setOnShelf(id, on, at = -1) {
-setOnBench(this.state.bench, id, on, at, Object.keys(this.jarEls || {}));
+const shown = Object.keys(this.jarEls || {});
+setOnBench(this.state.bench, id, on, at, shown);
 if (!on && this.selected === id) {
 this.selected = null;
 if (this.sim.emitter.pouring && !(this.sim.emitter.active && this.sim.emitter.active.dose)) this.sim.emitter.stop();
@@ -33538,9 +33743,22 @@ this.syncSelName();
 this.updatePourHint();
 this.placeDose();
 }
-this.buildShelf();
-if (this.selected) for (const [k, j] of Object.entries(this.jarEls)) j.el.classList.toggle('selected', k === this.selected);
-this.save();
+const j = this.jarEls && this.jarEls[id];
+if (j) { j.el.remove(); delete this.jarEls[id]; }
+if (on && this.jarEls && this.shelfEl.isConnected !== false) {
+const ids = this.state.bench.ids.filter((x) => x === id || this.jarEls[x]);
+const label = shelfLabels(ids.map((x) => this.state.lookup(x).name))[ids.indexOf(id)];
+const el = this.makeJar(id, label);
+const next = ids.slice(ids.indexOf(id) + 1).find((x) => this.jarEls[x]);
+this.shelfEl.insertBefore(el, next ? this.jarEls[next].el : null);
+this.updateShelf();
+}
+if (Object.keys(this.jarEls).length === 0 || (on && Object.keys(this.jarEls).length === 1)) this.buildShelf();
+this.saveSoon();
+}
+saveSoon() {
+clearTimeout(this._saveSoon);
+this._saveSoon = /** @type {any} */ (setTimeout(() => this.save(), 600));
 }
 openInventory(on) {
 audio.play('click');
@@ -33591,7 +33809,7 @@ dragging = false;
 if (this.sim.emitter.pouring && !this.sim.emitter.active.dose) this.sim.emitter.stop();
 pressTimer = -2;
 this.inventory.el.classList.remove('drop-over');
-if (e.type === 'pointerup' && this.inventory.contains(e)) { this.setOnShelf(id, false); this.inventory.refresh(); audio.play('select'); }
+if (e.type === 'pointerup' && this.inventory.contains(e)) { this.setOnShelf(id, false); this.inventory.syncId(id); audio.play('select'); }
 }
 };
 el.addEventListener('pointerup', end);
@@ -33694,11 +33912,7 @@ const { wx, wy } = this.pointer;
 if (this.tool === 'pour') {
 if (!this.selected) { toast('Choose a reagent', 'Tap a jar on the shelf first, or drag one onto the cauldron.', 'jar'); return; }
 this.startPour(wx);
-} else if (this.tool === 'probe') {
-this.probe = { x: wx, y: wy, r: 0.22 };
-this.updateProbe();
 } else {
-this.setAutoStir(false);
 const [x, y] = clampToInterior(this.sim, wx, wy, 0.1);
 this.sim.tool.type = /** @type {any} */ (this.tool);
 this.sim.tool.setTarget(x, y, true);
@@ -33709,8 +33923,6 @@ const { wx, wy } = this.pointer;
 if (this.tool === 'pour') {
 this.pourX = this.clampPourX(wx);
 this.sim.emitter.setX(this.pourX);
-} else if (this.tool === 'probe') {
-this.probe = { x: wx, y: wy, r: 0.22 };
 } else {
 const [x, y] = clampToInterior(this.sim, wx, wy, 0.1);
 this.sim.tool.setTarget(x, y, true);
@@ -33725,7 +33937,6 @@ if (!this.sim.tool.active) { this.sim.tool.x = x; this.sim.tool.y = y; this.sim.
 onPointerEnd() {
 if (this.tool === 'pour') {
 if (this.sim.emitter.pouring && !this.sim.emitter.active.dose) this.sim.emitter.stop();
-} else if (this.tool === 'probe') {
 } else {
 const t = this.sim.tool;
 t.setTarget(t.x, t.y, false);
@@ -33744,14 +33955,11 @@ if (view && this.tabEls[view.id]) { this.showView(view.id); return; }
 const def = TOOL_DEFS.find((d) => d.key === k);
 if (def && (this.toolBtns[def.id] || def.id === 'pour')) { if (def.id === 'pour' && !this.selected) return; this.selectTool(def.id); return; }
 if (k === 'l') this.toggleLid();
-else if (k === 'f') this.cycleSpeed();
 else if (k === 'b') this.startBottling();
 else if (k === 's' && !this.sandbox) panels.openShop(this);
 else if (k === 'r' && !this.sandbox) { this.showView('book'); this.views.book.open('recipes'); }
-else if (k === 'a') this.setAutoStir(!this.autoStir);
 else if (k === 'n') this.openNotes();
 else if (k === 'i') this.openInventory();
-else if (k === 'h' && this.sandbox) this.toggleThermal();
 else if (k === 'escape') panels.openPause(this);
 else if (k === 'arrowup' || k === 'arrowright') this.nudgeFurnace(1);
 else if (k === 'arrowdown' || k === 'arrowleft') this.nudgeFurnace(-1);
@@ -33760,7 +33968,6 @@ else if (k === '0') this.setFurnace(0);
 selectTool(id, silent = false) {
 this.tool = id;
 for (const [k, b] of Object.entries(this.toolBtns || {})) b.classList.toggle('active', k === id);
-if (id !== 'probe') { this.probe = null; this.readout.classList.add('hidden'); }
 if (id === 'spoon' || id === 'pestle' || id === 'skimmer') this.sim.tool.type = /** @type {any} */ (id);
 if (id !== 'pour') {
 if (this.sim.emitter.pouring && !(this.sim.emitter.active && this.sim.emitter.active.dose)) this.sim.emitter.stop();
@@ -33886,38 +34093,6 @@ if (this.alembicOpen && !c.lidClosed) { c.lidClosed = true; this.state.brewLog.p
 this.syncActions();
 toast(this.alembicOpen ? 'Still head on' : 'Still head off', this.alembicOpen ? 'Vapour rising into the head is condensed into the receiver. Heat between spirit’s and water’s boiling points to draw the spirit off.' : '', 'alembic', 2600);
 }
-cycleSpeed() {
-this.speed = this.speed === 1 ? 2 : this.speed === 2 ? 4 : 1;
-this.syncActions();
-}
-setAutoStir(on) {
-if (this.autoStir === on) return;
-this.autoStir = on;
-const t = this.sim.tool;
-const upgraded = this.state.has('stirrer');
-t.auto = on;
-if (on) {
-t.type = 'spoon';
-const c = this.sim.cauldron;
-t.autoCenterX = 0;
-t.autoCenterY = c.depth - Math.min(0.75, c.depth * 0.3);
-t.autoRadius = upgraded ? c.belly * 0.55 : c.belly * 0.32;
-t.autoPhase = 0;
-t.autoSpan = 0;
-if (upgraded) this.aimStirrer();
-} else {
-t.setTarget(t.x, t.y, false);
-}
-this.syncActions();
-}
-aimStirrer() {
-const t = this.sim.tool, c = this.sim.cauldron, p = this.sim.p;
-if (!t.auto || !this.state.has('stirrer') && !this.sandbox) return;
-let top = c.depth;
-for (let i = 0; i < p.count; i += 3) if (p.phase[i] !== PHASE.GAS) top = Math.min(top, p.y[i]);
-t.autoCenterY = (top + c.depth) / 2;
-t.autoSpan = Math.max(0, (c.depth - top) / 2 - 0.2);
-}
 async emptyCauldron() {
 if (this.sim.p.count === 0) return;
 const ok = await confirmDialog('Empty the cauldron?', 'Everything in the cauldron will be poured away. Ingredients are not refunded.', 'Empty it', 'danger');
@@ -33928,63 +34103,6 @@ this.state.newBatch();
 this.lastPoured = {};
 audio.play('splash');
 this.save();
-}
-layDownCauldron(vessel) {
-const sim = this.sim, p = sim.p, sp = sim.species, st = this.state;
-if (!p.count) return;
-const comp = {};
-let T = 0, n = 0;
-for (let i = 0; i < p.count; i++) {
-if (p.phase[i] === PHASE.GAS) continue;
-T += p.temp[i]; n++;
-for (let s = 0; s < sp.count; s++) {
-const f = p.comp[i * MAX_SPECIES + s];
-if (f > 0 && sp.defs[s]) comp[sp.defs[s].id] = (comp[sp.defs[s].id] || 0) + f * SIM.ML_PER_PARTICLE;
-}
-}
-const parts = Object.entries(this.lastPoured || {}).map(([id, n]) => ({ id, ml: Number(n) * SIM.ML_PER_PARTICLE }));
-const r = st.layDown(vessel, { comp, T: n ? T / n : 20, name: st.current ? st.current.potionName : 'A laid-down brew', parts });
-if (!r.ok) { toast('Cannot lay it down', r.reason, 'lock'); return; }
-sim.clear();
-this.receiver = null;
-st.brewLog = [];
-st.newBatch();
-this.lastPoured = {};
-audio.play('splash');
-toast('Laid down', `The brew is in vessel ${vessel + 1}. It goes on extracting while you work — and while you are away.`, 'shelf2');
-this.save();
-}
-pourVesselBack(vessel) {
-const st = this.state, sim = this.sim;
-st.tickCellar();
-const v = st.cellar.vessels[vessel];
-if (!v || !Object.keys(v.comp).length) return { ok: false };
-const vial = makeVialFromComposition(v.comp, v.T, { batchId: st.batch.id, day: st.day, parts: v.parts || [] }, st.lookup, st.world.laws || []);
-if (!vial) { toast('Nothing to pour', 'There is too little in the vessel.', 'shelf2'); return { ok: false }; }
-if (sim.p.count + vial.particles.length > sim.maxParticles) { toast('The cauldron is too full', `It has no room for ${Math.round(vial.ml)} ml more: bottle or empty some first.`, 'cauldron', 4000); audio.play('error'); return { ok: false }; }
-const r = st.takeVessel(vessel);
-if (!r.ok) return r;
-vial.batchId = '';
-if (!this.pourVialIntoCauldron(vial)) return { ok: false };
-const n = vial.particles.length;
-this.save();
-return { ok: true, ml: n * SIM.ML_PER_PARTICLE };
-}
-chargeFromCauldron(vessel, ml) {
-const st = this.state, sim = this.sim;
-const n = Math.max(1, Math.round(ml / SIM.ML_PER_PARTICLE));
-const sel = tapSelection(sim, n);
-if (!sel.length) { toast('Nothing to draw', 'There is no liquid at the cauldron’s tap.', 'cauldron'); return { ok: false }; }
-const meas = measureParticles(sim, sel);
-const got = sel.length * SIM.ML_PER_PARTICLE;
-const r = st.chargeVessel(vessel, meas.effects, got);
-if (!r.ok) { toast('Cannot load it', r.reason, 'lock'); audio.play('error'); return r; }
-for (const i of sel.sort((a, b) => b - a)) sim.removeParticle(i);
-st.touchBatch();
-if (sim.p.count === 0) { st.brewLog = []; st.newBatch(); this.lastPoured = {}; }
-toast(`Vessel ${vessel + 1} charged`, `${got} ml of potion loaded: it can take the vessel to ${r.limit}°C.`, r.limit > 12 ? 'flame' : 'snow', 3200);
-this.save();
-return r;
 }
 bringCustomer(withSound = true) {
 const st = this.state;
@@ -34083,7 +34201,6 @@ const sel = tapSelection(this.sim, n);
 if (sel.length < 1) return;
 const m = measureParticles(this.sim, sel);
 this.sim.emitter.stop();
-this.setAutoStir(false);
 const cert = certification(st.trials, st.batch, m.effects);
 const vial = makeVial(this.sim, [], {
 batchId: st.batch.id, rev: st.batch.rev, cert: cert.values, certRecords: cert.records, samples: cert.samples, parts: this.batchParts(),
@@ -34166,6 +34283,7 @@ this.save();
 this.views.counter.refresh();
 }
 pourBackBottle(id) {
+if (this.state.bottles.some((x) => x.id === id && x.aging)) { const r = this.state.finishAging(id); if (!r.vial) return; id = r.vial.id; }
 const b = this.state.bottles.find((x) => x.id === id);
 if (!b) return;
 if (!this.pourVialIntoCauldron(b)) return;
@@ -34318,7 +34436,7 @@ s.maxT = Math.max(s.maxT, T);
 s.minT = Math.min(s.minT, T);
 }
 const t = this.sim.tool;
-const stirring = t.active && t.type === 'spoon' && (t.speed > 0.2 || this.autoStir);
+const stirring = t.active && t.type === 'spoon' && t.speed > 0.2;
 if (stirring) s.stir += dt;
 if (t.active && t.type === 'pestle') s.crushed = true;
 this._tr = this._tr || { t: 0, stir: false, crush: false };
@@ -34331,8 +34449,10 @@ this._tr = { t: this.sim.time, stir: false, crush: false };
 }
 sampleVial() {
 const n = this.state.current ? this.state.current.bottleN : 20;
-const m = measureParticles(this.sim, tapSelection(this.sim, n));
+const sel = tapSelection(this.sim, n);
+const m = measureParticles(this.sim, sel);
 if (!m) { toast('Nothing to sample', 'The cauldron is empty.', 'flask'); return; }
+if (this.sandbox || this.state.has('arcanometer')) /** @type {any} */ (m).arcane = this.arcaneReading(sel, m);
 audio.play('glass');
 panels.showAnalysis(this, m, this.recipeDraft(m, null, null), `Measuring vial · ${m.ml} ml from the tap`);
 }
@@ -34417,7 +34537,7 @@ const hot = rep.items.find((it) => it.raw > 0.5 && st.knowledge[it.id] && st.kno
 if (hot) out.push({ key: 'burn', text: `${hot.name} burnt at about ${Math.round(st.knowledge[hot.id].burnsAt)}°C before: undissolved, it will char again.` });
 if (rep.phases.hydro > 2 && rep.phases.lipo > 2 && rep.emulsified < 0.2 && rep.items.some((it) => it.cls === 'lipo') && rep.items.some((it) => it.cls === 'hydro')) out.push({ key: 'emulsion', text: 'Oil and water extracts stand apart: a little emulsifier binds them into one potion — after extraction, since an emulsion extracts badly.' });
 if (gas >= 3 && !sim.cauldron.lidClosed) out.push({ key: 'steam', text: 'Boiling with the lid off: steam is leaving, so the brew grows smaller and stronger — side effects too.' });
-else if (this.assay && this.assay.stability < 70 && !sim.emitter.pouring && !this.autoStir) out.push({ key: 'stir', text: 'The brew is uneven — pockets and layers. Stir it through before you test or bottle.' });
+else if (this.assay && this.assay.stability < 70 && !sim.emitter.pouring) out.push({ key: 'stir', text: 'The brew is uneven — pockets and layers. Stir it through before you test or bottle.' });
 return out.slice(0, 3);
 }
 similarRecipe() {
@@ -34592,39 +34712,6 @@ if (ph.hydro > 0.5 && ph.lipo > 0.5) rows.push(h('div', { class: 'small ' + (r.e
 if (r.alcohol > 0.001) rows.push(h('div', { class: 'small muted', text: `Spirit: ${(r.alcohol * 100).toFixed(1)}% of the brew` }));
 return rows;
 }
-updateProbe() {
-if (!this.probe) return;
-const sel = probeSelection(this.sim, this.probe.x, this.probe.y, this.probe.r);
-const el = clear(this.readout);
-el.classList.remove('hidden');
-if (!sel.length) {
-const c = this.sim.cauldron;
-const wall = c.wallCellAt(this.probe.x, this.probe.y);
-el.append(h('div', { text: wall >= 0 ? `Iron wall: ${Math.round(c.cellT[wall])}°C` : 'Empty space' }));
-return;
-}
-const m = measureParticles(this.sim, sel);
-const st = this.state;
-const comp = groupExtracts(m.composition, st.lookup).filter((g) => g.f >= 0.005).slice(0, 4);
-const here = new Set(groupExtracts(m.composition, st.lookup).map((g) => g.id));
-const pot = this.sim.inventory();
-const potTot = Object.values(pot).reduce((a, b) => a + b, 0) || 1;
-const elsewhere = groupExtracts(pot, st.lookup).filter((g) => !here.has(g.id) && g.f / potTot >= 0.005).slice(0, 4);
-const phase = Object.entries(m.phases).sort((a, b) => b[1] - a[1])[0][0];
-const arc = this.sandbox || st.has('arcanometer');
-const aura = arc ? EFFECTS.filter((e, k) => Math.abs(m.effects[k]) >= 3) : [];
-el.append(
-h('div', { class: 'rrow' }, h('span', { class: 'swatch', style: { background: rgbToHex(m.color) } }), h('b', { text: `${describeColor(m.color)} ${phase}` })),
-this.sandbox
-? h('div', { text: `${Math.round(m.temperature)}°C · ${m.viscosity < 100 ? m.viscosity.toFixed(1) : Math.round(m.viscosity)} cP · ${m.density.toFixed(2)} g/ml · charge ${m.charge.toFixed(2)}` })
-: h('div', { text: `${Math.round(m.temperature)}°C · ${viscosityClass(m.viscosity)} · ${densityWord(m.density)}` }),
-h('div', { class: 'muted small', text: 'At this spot:' }),
-...comp.map((g) => h('div', { text: groupLine(g, 1) })),
-elsewhere.length ? h('div', { class: 'muted small', 'data-probe': 'elsewhere', text: `Elsewhere in the pot: ${elsewhere.map((g) => groupLine(g, potTot)).join('; ')}` }) : null,
-arc ? h('div', { class: 'aura' }, h('span', { text: 'Aura: ' }), aura.length ? aura.map((e) => icon(e.icon, 'sm')) : h('span', { text: 'none' })) : h('div', { class: 'muted', text: 'Effects: unknown (test in Trials)' }),
-);
-if (arc) el.append(this.arcaneReading(sel, m));
-}
 arcaneReading(sel, m) {
 const p = this.sim.p;
 let w = 0, t = 0;
@@ -34635,10 +34722,10 @@ const d = this.state.lookup(id);
 if (!d) continue;
 if (d.awakened) { awake += f; magic += f; } else if (d.arcane && Number.isFinite(d.arcane.thr)) magic += f;
 }
-if (!magic) return h('div', { class: 'muted', text: 'Arcanometer: no magic here' });
+if (!magic) return 'no magic to awaken';
 const share = Math.round((awake / magic) * 100);
 const thr = w ? Math.round(t / w / 50) * 50 : null;
-return h('div', { class: 'arcane-read' }, icon('awaken', 'sm'), ` ${thr === null ? 'all awakened' : 'threshold ' + describeThreshold(thr)}${share ? ` · ${share}% awake` : ''}`);
+return `${thr === null ? 'all awakened' : 'threshold ' + describeThreshold(thr)}${share ? ` · ${share}% awake` : ''}`;
 }
 refreshHud(full = false) {
 const st = this.state;
@@ -34750,7 +34837,7 @@ this.hudTimer += dt;
 this.assayTimer += dt;
 this.saveTimer += dt;
 this.layerTimer += dt;
-if (this.hudTimer > 0.25) { this.hudTimer = 0; if (this.autoStir) this.aimStirrer(); this.refreshHud(); this.updateShelf(); if (this.probe) this.updateProbe(); this.updateBrewPanel(); this.checkAway(); }
+if (this.hudTimer > 0.25) { this.hudTimer = 0; this.refreshHud(); this.updateShelf(); this.updateBrewPanel(); this.checkAway(); }
 if (this.assayTimer > 0.4 && !this.bottling) { this.assayTimer = 0; this.updateAssay(); }
 if (this.layerTimer > 2) { this.layerTimer = 0; this.detectLayers(); }
 if (this.saveTimer > 15) { this.saveTimer = 0; this.save(); }
@@ -34774,11 +34861,8 @@ tool: { type: tool.type, x: tool.x, y: tool.y, active: tool.active },
 toolHover: this.hover && (this.tool === 'spoon' || this.tool === 'pestle' || this.tool === 'skimmer'),
 bottling: this.bottling ? { progress: this.bottling.progress, color: this.bottling.color } : null,
 showBottle: true,
-probe: this.tool === 'probe' ? this.probe : null,
-thermal: this.thermal,
 alembic: this.sandbox,
 receiver: this.receiver,
-stirrer: this.state.has('stirrer') && this.autoStir,
 aura: this.sandbox || this.state.has('arcanometer'),
 });
 } else if (this.views[this.view] && this.views[this.view].frame) {
@@ -34815,8 +34899,9 @@ if (att.length && this.time - (this._feralWarned || -99) > 20) { this._feralWarn
 tickCellar() {
 const st = this.state;
 for (const e of st.tickCellar()) {
-const v = st.cellar.vessels[e.vessel];
-toast(`Cellar vessel ${e.vessel + 1}${v && v.name ? ` (${v.name})` : ''}`, e.text, 'shelf2', 4500);
+const b = e.bottle ? st.bottles.find((x) => x.id === e.bottle) : null;
+const name = b && b.aging && b.aging.name;
+toast(`Aging bottle${name ? ` (${name})` : ''}`, e.text, 'shelf2', 4500);
 }
 const ex = this.sim.extraction;
 for (const e of st.noteBurning(ex.safeSeen, ex.charSeen)) {
@@ -34826,7 +34911,7 @@ toast('Something is burning!', `${m ? m.name : 'An ingredient'} chars at about $
 }
 stepVial(dt) {
 const st = this.state;
-for (const b of st.bottles) this._shelfDrift = (this._shelfDrift || 0) + relaxVial(b, dt * this.speed);
+for (const b of st.bottles) if (!b.aging) this._shelfDrift = (this._shelfDrift || 0) + relaxVial(b, dt * this.speed);
 const v = st.vial;
 if (!v) return;
 this._vialDrift = (this._vialDrift || 0) + relaxVial(v, dt * this.speed);
@@ -34854,7 +34939,7 @@ v.label.auto = true;
 freshBottles() {
 if ((this._shelfDrift || 0) < 0.5) return;
 this._shelfDrift = 0;
-for (const b of this.state.bottles) updateVial(b, this.state.lookup, this.state.world.laws);
+for (const b of this.state.bottles) if (!b.aging) updateVial(b, this.state.lookup, this.state.world.laws);
 }
 checkAway() {
 if (this.view === 'brew') return;
@@ -35038,7 +35123,7 @@ void dominantEffect;
 return { VIEWS, LabScreen, sliderToSetting, settingToSlider };
 })();
 // src/materials/reference.js
-const __m150 = (() => {
+const __m151 = (() => {
 const { completeMaterial } = __m12;
 const REF = {};
 const add = (d) => (REF[d.id] = completeMaterial(d));
@@ -35076,12 +35161,12 @@ const refLookup = (id) => REF[id];
 return { REF, refLookup };
 })();
 // src/ui/menu.js
-const __m149 = (() => {
+const __m150 = (() => {
 const { h, btn } = __m2;
-const { Renderer } = __m92;
-const { Simulation } = __m66;
-const { REF, refLookup } = __m150;
-const { hasSave, loadGame } = __m89;
+const { Renderer } = __m93;
+const { Simulation } = __m67;
+const { REF, refLookup } = __m151;
+const { hasSave, loadGame } = __m90;
 const { audio } = __m4;
 class MenuScreen {
 constructor(app) {
@@ -35164,9 +35249,9 @@ const { h, btn, modal, toast, setOverlayRoot, setToastRoot, confirmDialog, clear
 const { icon } = __m3;
 const { audio } = __m4;
 const { GameState } = __m5;
-const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m89;
-const { LabScreen } = __m90;
-const { MenuScreen } = __m149;
+const { loadGame, saveGame, hasSave, deleteSave, loadJSON, saveJSON, KEYS, storageAvailable } = __m90;
+const { LabScreen } = __m91;
+const { MenuScreen } = __m150;
 const { openSettings, openHelp } = __m105;
 const { Rng } = __m6;
 const { prepareSandbox } = __m104;

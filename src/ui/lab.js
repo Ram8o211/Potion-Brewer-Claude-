@@ -23,7 +23,7 @@ import { drawPortrait } from '../rendering/portraits.js';
 import { drawJar } from '../rendering/art.js';
 import { ingredientSprite } from '../rendering/species-sprites.js';
 import { RARITY } from '../materials/rarity.js';
-import { measureParticles, tapSelection, probeSelection, viscosityClass, densityWord } from '../game/measure.js';
+import { measureParticles, tapSelection } from '../game/measure.js';
 import { scoreRequirement, PROPERTY_LABELS } from '../game/evaluate.js';
 import { processEvent } from '../game/journal.js';
 import { saveGame, saveJSON, KEYS } from '../game/persistence.js';
@@ -34,7 +34,7 @@ import { RANKS } from '../game/equipment.js';
 import { certification, missingEffects, requirementEvidence } from '../game/experiments.js';
 import { sandboxIngredients } from '../materials/generator.js';
 import { sandboxSave } from '../game/sandbox.js';
-import { makeVial, makeVialFromComposition, appendParticles, updateVial, takeDose, pourBack, pourBackParts, relaxVial } from '../game/vial.js';
+import { makeVial, appendParticles, updateVial, takeDose, pourBack, pourBackParts, relaxVial } from '../game/vial.js';
 import { theoryOf, EFFECTS, EFFECT_BY_KEY, EFFECT_INDEX, dominantEffect, NE } from '../alchemy/effects.js';
 import { awakenParts, describeThreshold } from '../alchemy/arcane.js';
 import { ARC_NONE } from '../simulation/particles.js';
@@ -62,7 +62,6 @@ const TOOL_DEFS = [
   { id: 'pestle', label: 'Crush', icon: 'pestle', key: '3', needs: 'pestle', title: 'Pestle: drag over whole herbs, stones or ice to crush them' },
   // the skimmer only demonstrates layering in the Free Experiment
   { id: 'skimmer', label: 'Skim', icon: 'ladle', key: '4', sandbox: true, title: 'Skimmer: lift off the top layer' },
-  { id: 'probe', label: 'Inspect', icon: 'lens', key: '5', title: 'Inspect: tap a spot to read its colour, heat and contents' },
   { id: 'pour', label: 'Pour', icon: 'pour', key: '1' },
 ];
 export const VIEWS = [
@@ -91,9 +90,6 @@ export class LabScreen {
     this.pourX = 0.3;
     this.lastPoured = {};
     this.bottling = null;
-    this.probe = null;
-    this.thermal = false;
-    this.autoStir = false;
     /** @type {(() => void) | null} */
     this._autoScroll = null;
     this.alembicOpen = false;
@@ -280,7 +276,6 @@ export class LabScreen {
     this.strip = h('div', { class: 'order-strip parch', role: 'button', tabindex: '0', 'aria-label': 'Order: open the counter' });
     this.strip.addEventListener('click', (e) => { if (!(/** @type {HTMLElement} */ (e.target)).closest('.btn')) this.showView('counter'); });
     this.canvas = /** @type {HTMLCanvasElement} */ (h('canvas', { class: 'view-canvas', 'aria-label': 'Cauldron: drag to stir, hold to pour the selected reagent' }));
-    this.readout = h('div', { class: 'readout parch hidden' });
     // the cauldron's volume and temperature: tap it to see what is inside
     this.infoText = h('span');
     this.infoBtn = h('button', { class: 'chip chip-btn info-chip', 'data-act': 'brew-info', title: 'What is in the cauldron', 'aria-label': 'What is in the cauldron' }, icon('scroll', 'sm'), this.infoText);
@@ -290,7 +285,7 @@ export class LabScreen {
     this.pourHint = h('div', { class: 'pour-hint chip hidden' });
     this.bottleFab = btn('Bottle', () => this.startBottling(), { icon: 'bottle', cls: 'fab primary', title: 'Bottle the potion from the tap (B)', act: 'bottle' });
     this.brewPanel = h('div', { class: 'brew-panel parch hidden' });
-    this.stageEl = h('main', { class: 'stage' }, this.canvas, this.readout, this.chips, this.pourHint, this.brewPanel, this.bottleFab);
+    this.stageEl = h('main', { class: 'stage' }, this.canvas, this.chips, this.pourHint, this.brewPanel, this.bottleFab);
     // a fine control: the slider's travel is squared, so its gentle half spreads the low flames
     // (and the mild chill) over most of its length; a narrow notch at the middle is "off"
     this.furnaceInput = /** @type {HTMLInputElement} */ (h('input', { type: 'range', min: '-100', max: '100', step: '0.1', value: '0', 'aria-label': 'Fire and frost control' }));
@@ -395,62 +390,12 @@ export class LabScreen {
     if (!a) return;
     clear(a);
     const set = {};
-    set.stir = btn('Auto', () => {}, { icon: 'swirl', title: this.state.has('stirrer') ? 'Clockwork stirrer on/off (A)' : 'Hold to stir automatically (A)', act: 'autostir' });
-    // The tool row scrolls sideways under a finger: a swipe that starts on
-    // Auto must not switch it on. Holding starts only once the finger has
-    // stayed put for a moment; the clockwork stirrer toggles on a clean tap.
-    const press = { id: -1, x: 0, y: 0, timer: 0, moved: false };
-    const SLOP = 8, HOLD_MS = 180;
-    const cancelPress = () => { clearTimeout(press.timer); press.timer = 0; press.id = -1; };
-    const startAuto = (e) => {
-      if (e.button > 0) return;
-      cancelPress();
-      press.id = e.pointerId; press.x = e.clientX; press.y = e.clientY; press.moved = false;
-      if (!this.state.has('stirrer')) press.timer = setTimeout(() => { press.timer = 0; if (press.id >= 0 && !press.moved) this.setAutoStir(true); }, e.pointerType === 'mouse' ? 0 : HOLD_MS);
-    };
-    const moveAuto = (e) => {
-      if (e.pointerId !== press.id || press.moved) return;
-      if (Math.hypot(e.clientX - press.x, e.clientY - press.y) > SLOP) {
-        press.moved = true;
-        clearTimeout(press.timer); press.timer = 0;
-        if (!this.state.has('stirrer')) this.setAutoStir(false);
-      }
-    };
-    const endAuto = (e) => {
-      if (e.pointerId !== press.id) return;
-      const tap = !press.moved;
-      cancelPress();
-      if (this.state.has('stirrer')) { if (tap) this.setAutoStir(!this.autoStir); } else this.setAutoStir(false);
-    };
-    const abortAuto = (e) => {
-      if (e.pointerId !== press.id) return;
-      cancelPress();
-      if (!this.state.has('stirrer')) this.setAutoStir(false);
-    };
-    set.stir.addEventListener('pointerdown', startAuto);
-    set.stir.addEventListener('pointermove', moveAuto);
-    set.stir.addEventListener('pointerup', endAuto);
-    set.stir.addEventListener('pointerleave', abortAuto);
-    // the browser takes the pointer over when the row starts scrolling
-    set.stir.addEventListener('pointercancel', abortAuto);
-    set.stir.addEventListener('contextmenu', (e) => e.preventDefault());
-    if (this._autoScroll) this.toolsEl.removeEventListener('scroll', this._autoScroll);
-    this._autoScroll = () => { if (press.id >= 0) { press.moved = true; clearTimeout(press.timer); press.timer = 0; if (!this.state.has('stirrer')) this.setAutoStir(false); } };
-    this.toolsEl.addEventListener('scroll', this._autoScroll, { passive: true });
-    set.speed = btn('1×', () => this.cycleSpeed(), { icon: 'speed', title: 'Time speed: 1×, 2×, 4× (F)', act: 'speed' });
-    a.append(set.stir, set.speed);
-    // physics demonstrations of the Free Experiment: the heat map
-    if (this.sandbox) {
-      set.thermal = btn('Heat', () => this.toggleThermal(), { icon: 'monocle', title: 'Heat map (H)', act: 'thermal' });
-      a.append(set.thermal);
-    }
     // the still head and condenser (the Free Experiment always has one)
     if (this.sandbox || this.state.has('condenser')) {
       set.alembic = btn('Still', () => this.toggleAlembic(), { icon: 'alembic', title: 'Still head on/off: vapour rising into it is condensed into the receiver', act: 'alembic' });
       a.append(set.alembic);
     }
     // the aging cellar
-    if (this.state.cap.vessels > 0) a.append(btn('Cellar', () => panels.openCellar(this), { icon: 'shelf2', title: 'The aging cellar: lay brews down to go on extracting', act: 'cellar' }));
     a.append(btn('Empty', () => this.emptyCauldron(), { icon: 'trash', cls: 'danger', title: 'Empty the cauldron', act: 'empty' }));
     this.actionSet = set;
     this.syncActions();
@@ -465,17 +410,7 @@ export class LabScreen {
     if (ll) ll.textContent = lidOpen ? 'Lid off' : 'Lid on';
     const set = this.actionSet;
     if (!set) return;
-    set.stir.classList.toggle('active', this.autoStir);
-    set.speed.classList.toggle('active', this.speed > 1);
-    const l = set.speed.querySelector('.lbl');
-    if (l) l.textContent = this.speed + '×';
-    if (set.thermal) set.thermal.classList.toggle('active', this.thermal);
     if (set.alembic) set.alembic.classList.toggle('active', this.alembicOpen);
-  }
-
-  toggleThermal() {
-    this.thermal = !this.thermal;
-    this.syncActions();
   }
 
   buildTools() {
@@ -527,29 +462,33 @@ export class LabScreen {
     const ids = benchIds(st.bench, this.shelfPool(), (id) => (this.sandbox ? Infinity : st.stock(id)));
     sh.appendChild(btn(ids.length ? '' : 'Fill the shelf', () => this.openInventory(), { icon: 'satchel', cls: 'shelf-inv', title: 'Inventory: every ingredient you hold, by effect — tap or drag one onto this shelf (I)', act: 'inventory' }));
     const labels = shelfLabels(ids.map((id) => st.lookup(id).name));
-    for (const [n, id] of ids.entries()) {
-      const m = st.lookup(id);
-      let cv;
-      if ((m.wild || m.remains) && m.form === 'solid') {
-        cv = ingredientSprite(m);
-        cv.classList.add('raw');
-      } else {
-        cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: '15', height: '20' }));
-        drawJar(cv.getContext('2d'), 1, 0, 13, 20, m.look || m.color, m.form);
-      }
-      const stock = h('span', { class: 'jstock' });
-      // a catalog species shows its rarity (a coloured corner) and its Arcane form; seeds in hand are counted
-      const w = m.wild && m.wild.catalog ? m.wild : null;
-      // (the Free Experiment's seeds are endless: no count to show)
-      const held = w ? (st.garden.seeds[w.key + (w.arcane ? '+arcane' : '')] || 0) : 0;
-      const seeds = Number.isFinite(held) ? held : 0;
-      const badge = w ? h('span', { class: `jrar r-${w.rarity}${w.arcane ? ' arcane' : ''}`, title: `${RARITY[w.rarity].label}${w.arcane ? ', Arcane' : ''}${seeds ? ` · ${seeds} seed${seeds > 1 ? 's' : ''}` : ''}` }, seeds ? h('span', { class: 'jseed', text: String(seeds) }) : null) : null;
-      const el = h('button', { class: 'jar' + (m.wild ? ' wild' : '') + (m.remains ? ' remains' : '') + (w && w.arcane ? ' arcane' : ''), title: m.name, 'aria-label': m.name + (w ? `, ${RARITY[w.rarity].label}${w.arcane ? ', Arcane' : ''}` : ''), 'data-id': id, role: 'option' }, stock, cv, badge, h('span', { class: 'jname', text: m.remains ? m.remains.short : labels[n] }));
-      this.bindJar(el, id);
-      this.jarEls[id] = { el, stock };
-      sh.appendChild(el);
-    }
+    for (const [n, id] of ids.entries()) sh.appendChild(this.makeJar(id, labels[n]));
     this.updateShelf();
+  }
+
+  /** One jar of the quick shelf (registered in jarEls). @param {string} id @param {string} label */
+  makeJar(id, label) {
+    const st = this.state;
+    const m = st.lookup(id);
+    let cv;
+    if ((m.wild || m.remains) && m.form === 'solid') {
+      cv = ingredientSprite(m);
+      cv.classList.add('raw');
+    } else {
+      cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: '15', height: '20' }));
+      drawJar(cv.getContext('2d'), 1, 0, 13, 20, m.look || m.color, m.form);
+    }
+    const stock = h('span', { class: 'jstock' });
+    // a catalog species shows its rarity (a coloured corner) and its Arcane form; seeds in hand are counted
+    const w = m.wild && m.wild.catalog ? m.wild : null;
+    // (the Free Experiment's seeds are endless: no count to show)
+    const held = w ? (st.garden.seeds[w.key + (w.arcane ? '+arcane' : '')] || 0) : 0;
+    const seeds = Number.isFinite(held) ? held : 0;
+    const badge = w ? h('span', { class: `jrar r-${w.rarity}${w.arcane ? ' arcane' : ''}`, title: `${RARITY[w.rarity].label}${w.arcane ? ', Arcane' : ''}${seeds ? ` · ${seeds} seed${seeds > 1 ? 's' : ''}` : ''}` }, seeds ? h('span', { class: 'jseed', text: String(seeds) }) : null) : null;
+    const el = h('button', { class: 'jar' + (m.wild ? ' wild' : '') + (m.remains ? ' remains' : '') + (w && w.arcane ? ' arcane' : '') + (id === this.selected ? ' selected' : ''), title: m.name, 'aria-label': m.name + (w ? `, ${RARITY[w.rarity].label}${w.arcane ? ', Arcane' : ''}` : ''), 'data-id': id, role: 'option' }, stock, cv, badge, h('span', { class: 'jname', text: m.remains ? m.remains.short : label }));
+    this.bindJar(el, id);
+    this.jarEls[id] = { el, stock };
+    return el;
   }
 
   /** The ingredients the storeroom can show: everything held, and the shop's reagents of this rank. */
@@ -565,7 +504,8 @@ export class LabScreen {
 
   /** Put a jar on the quick shelf (at the end, or before the jar shown at `at`), or take it back to the storeroom. @param {string} id @param {boolean} on @param {number} [at] */
   setOnShelf(id, on, at = -1) {
-    setOnBench(this.state.bench, id, on, at, Object.keys(this.jarEls || {}));
+    const shown = Object.keys(this.jarEls || {});
+    setOnBench(this.state.bench, id, on, at, shown);
     if (!on && this.selected === id) {
       this.selected = null;
       if (this.sim.emitter.pouring && !(this.sim.emitter.active && this.sim.emitter.active.dose)) this.sim.emitter.stop();
@@ -573,9 +513,26 @@ export class LabScreen {
       this.updatePourHint();
       this.placeDose();
     }
-    this.buildShelf();
-    if (this.selected) for (const [k, j] of Object.entries(this.jarEls)) j.el.classList.toggle('selected', k === this.selected);
-    this.save();
+    // only the jar that moved changes (a whole new shelf takes far longer)
+    const j = this.jarEls && this.jarEls[id];
+    if (j) { j.el.remove(); delete this.jarEls[id]; }
+    if (on && this.jarEls && this.shelfEl.isConnected !== false) {
+      const ids = this.state.bench.ids.filter((x) => x === id || this.jarEls[x]);
+      const label = shelfLabels(ids.map((x) => this.state.lookup(x).name))[ids.indexOf(id)];
+      const el = this.makeJar(id, label);
+      const next = ids.slice(ids.indexOf(id) + 1).find((x) => this.jarEls[x]);
+      this.shelfEl.insertBefore(el, next ? this.jarEls[next].el : null);
+      this.updateShelf();
+    }
+    // (an emptied shelf, or the first jar on one, changes the Inventory button's hint)
+    if (Object.keys(this.jarEls).length === 0 || (on && Object.keys(this.jarEls).length === 1)) this.buildShelf();
+    this.saveSoon();
+  }
+
+  /** Save shortly (a burst of shelf changes is saved once, and never blocks the tap). */
+  saveSoon() {
+    clearTimeout(this._saveSoon);
+    this._saveSoon = /** @type {any} */ (setTimeout(() => this.save(), 600));
   }
 
   /** Open or close the inventory drawer (over the cauldron, the shelf in reach). @param {boolean} [on] */
@@ -644,7 +601,7 @@ export class LabScreen {
         pressTimer = -2;
         this.inventory.el.classList.remove('drop-over');
         // dropped into the open inventory: back to the storeroom
-        if (e.type === 'pointerup' && this.inventory.contains(e)) { this.setOnShelf(id, false); this.inventory.refresh(); audio.play('select'); }
+        if (e.type === 'pointerup' && this.inventory.contains(e)) { this.setOnShelf(id, false); this.inventory.syncId(id); audio.play('select'); }
       }
     };
     el.addEventListener('pointerup', end);
@@ -768,11 +725,7 @@ export class LabScreen {
     if (this.tool === 'pour') {
       if (!this.selected) { toast('Choose a reagent', 'Tap a jar on the shelf first, or drag one onto the cauldron.', 'jar'); return; }
       this.startPour(wx);
-    } else if (this.tool === 'probe') {
-      this.probe = { x: wx, y: wy, r: 0.22 };
-      this.updateProbe();
     } else {
-      this.setAutoStir(false);
       const [x, y] = clampToInterior(this.sim, wx, wy, 0.1);
       this.sim.tool.type = /** @type {any} */ (this.tool);
       this.sim.tool.setTarget(x, y, true);
@@ -784,8 +737,6 @@ export class LabScreen {
     if (this.tool === 'pour') {
       this.pourX = this.clampPourX(wx);
       this.sim.emitter.setX(this.pourX);
-    } else if (this.tool === 'probe') {
-      this.probe = { x: wx, y: wy, r: 0.22 };
     } else {
       const [x, y] = clampToInterior(this.sim, wx, wy, 0.1);
       this.sim.tool.setTarget(x, y, true);
@@ -802,8 +753,6 @@ export class LabScreen {
   onPointerEnd() {
     if (this.tool === 'pour') {
       if (this.sim.emitter.pouring && !this.sim.emitter.active.dose) this.sim.emitter.stop();
-    } else if (this.tool === 'probe') {
-      // keep the last reading visible
     } else {
       const t = this.sim.tool;
       t.setTarget(t.x, t.y, false);
@@ -823,14 +772,11 @@ export class LabScreen {
     const def = TOOL_DEFS.find((d) => d.key === k);
     if (def && (this.toolBtns[def.id] || def.id === 'pour')) { if (def.id === 'pour' && !this.selected) return; this.selectTool(def.id); return; }
     if (k === 'l') this.toggleLid();
-    else if (k === 'f') this.cycleSpeed();
     else if (k === 'b') this.startBottling();
     else if (k === 's' && !this.sandbox) panels.openShop(this);
     else if (k === 'r' && !this.sandbox) { this.showView('book'); this.views.book.open('recipes'); }
-    else if (k === 'a') this.setAutoStir(!this.autoStir);
     else if (k === 'n') this.openNotes();
     else if (k === 'i') this.openInventory();
-    else if (k === 'h' && this.sandbox) this.toggleThermal();
     else if (k === 'escape') panels.openPause(this);
     else if (k === 'arrowup' || k === 'arrowright') this.nudgeFurnace(1);
     else if (k === 'arrowdown' || k === 'arrowleft') this.nudgeFurnace(-1);
@@ -841,7 +787,6 @@ export class LabScreen {
   selectTool(id, silent = false) {
     this.tool = id;
     for (const [k, b] of Object.entries(this.toolBtns || {})) b.classList.toggle('active', k === id);
-    if (id !== 'probe') { this.probe = null; this.readout.classList.add('hidden'); }
     if (id === 'spoon' || id === 'pestle' || id === 'skimmer') this.sim.tool.type = /** @type {any} */ (id);
     if (id !== 'pour') {
       if (this.sim.emitter.pouring && !(this.sim.emitter.active && this.sim.emitter.active.dose)) this.sim.emitter.stop();
@@ -989,46 +934,6 @@ export class LabScreen {
     toast(this.alembicOpen ? 'Still head on' : 'Still head off', this.alembicOpen ? 'Vapour rising into the head is condensed into the receiver. Heat between spirit’s and water’s boiling points to draw the spirit off.' : '', 'alembic', 2600);
   }
 
-  cycleSpeed() {
-    this.speed = this.speed === 1 ? 2 : this.speed === 2 ? 4 : 1;
-    this.syncActions();
-  }
-
-  setAutoStir(on) {
-    if (this.autoStir === on) return;
-    this.autoStir = on;
-    const t = this.sim.tool;
-    const upgraded = this.state.has('stirrer');
-    t.auto = on;
-    if (on) {
-      t.type = 'spoon';
-      const c = this.sim.cauldron;
-      t.autoCenterX = 0;
-      t.autoCenterY = c.depth - Math.min(0.75, c.depth * 0.3);
-      t.autoRadius = upgraded ? c.belly * 0.55 : c.belly * 0.32;
-      t.autoPhase = 0;
-      t.autoSpan = 0;
-      if (upgraded) this.aimStirrer();
-    } else {
-      t.setTarget(t.x, t.y, false);
-    }
-    this.syncActions();
-  }
-
-  /**
-   * The clockwork paddle works the whole brew: centred on the contents and
-   * travelling up and down through them, so layers and pockets mix
-   * throughout (the hand-held stir only circles near the bottom).
-   */
-  aimStirrer() {
-    const t = this.sim.tool, c = this.sim.cauldron, p = this.sim.p;
-    if (!t.auto || !this.state.has('stirrer') && !this.sandbox) return;
-    let top = c.depth;
-    for (let i = 0; i < p.count; i += 3) if (p.phase[i] !== PHASE.GAS) top = Math.min(top, p.y[i]);
-    t.autoCenterY = (top + c.depth) / 2;
-    t.autoSpan = Math.max(0, (c.depth - top) / 2 - 0.2);
-  }
-
   async emptyCauldron() {
     if (this.sim.p.count === 0) return;
     const ok = await confirmDialog('Empty the cauldron?', 'Everything in the cauldron will be poured away. Ingredients are not refunded.', 'Empty it', 'danger');
@@ -1039,83 +944,6 @@ export class LabScreen {
     this.lastPoured = {};
     audio.play('splash');
     this.save();
-  }
-
-  /**
-   * Lay the whole brew down in a cellar vessel: every condensed particle's
-   * matter goes into the vessel (vapour is let go), the cauldron is left empty.
-   * @param {number} vessel
-   */
-  layDownCauldron(vessel) {
-    const sim = this.sim, p = sim.p, sp = sim.species, st = this.state;
-    if (!p.count) return;
-    /** @type {Record<string, number>} */
-    const comp = {};
-    let T = 0, n = 0;
-    for (let i = 0; i < p.count; i++) {
-      if (p.phase[i] === PHASE.GAS) continue;
-      T += p.temp[i]; n++;
-      for (let s = 0; s < sp.count; s++) {
-        const f = p.comp[i * MAX_SPECIES + s];
-        if (f > 0 && sp.defs[s]) comp[sp.defs[s].id] = (comp[sp.defs[s].id] || 0) + f * SIM.ML_PER_PARTICLE;
-      }
-    }
-    const parts = Object.entries(this.lastPoured || {}).map(([id, n]) => ({ id, ml: Number(n) * SIM.ML_PER_PARTICLE }));
-    const r = st.layDown(vessel, { comp, T: n ? T / n : 20, name: st.current ? st.current.potionName : 'A laid-down brew', parts });
-    if (!r.ok) { toast('Cannot lay it down', r.reason, 'lock'); return; }
-    sim.clear();
-    this.receiver = null;
-    st.brewLog = [];
-    st.newBatch();
-    this.lastPoured = {};
-    audio.play('splash');
-    toast('Laid down', `The brew is in vessel ${vessel + 1}. It goes on extracting while you work — and while you are away.`, 'shelf2');
-    this.save();
-  }
-
-  /**
-   * Pour a cellar vessel's brew back into the cauldron (as liquid, at its
-   * temperature): the vessel is left empty, with its charge and rune.
-   * @param {number} vessel
-   */
-  pourVesselBack(vessel) {
-    const st = this.state, sim = this.sim;
-    st.tickCellar();
-    const v = st.cellar.vessels[vessel];
-    if (!v || !Object.keys(v.comp).length) return { ok: false };
-    const vial = makeVialFromComposition(v.comp, v.T, { batchId: st.batch.id, day: st.day, parts: v.parts || [] }, st.lookup, st.world.laws || []);
-    if (!vial) { toast('Nothing to pour', 'There is too little in the vessel.', 'shelf2'); return { ok: false }; }
-    if (sim.p.count + vial.particles.length > sim.maxParticles) { toast('The cauldron is too full', `It has no room for ${Math.round(vial.ml)} ml more: bottle or empty some first.`, 'cauldron', 4000); audio.play('error'); return { ok: false }; }
-    const r = st.takeVessel(vessel);
-    if (!r.ok) return r;
-    // (a cellar brew is a new batch: it has aged since anything was tested)
-    vial.batchId = '';
-    if (!this.pourVialIntoCauldron(vial)) return { ok: false };
-    const n = vial.particles.length;
-    this.save();
-    return { ok: true, ml: n * SIM.ML_PER_PARTICLE };
-  }
-
-  /**
-   * Charge a cellar vessel with potion drawn from the cauldron's tap: the
-   * chosen ml (or what the tap can give), measured, then taken out of the pot.
-   * @param {number} vessel @param {number} ml
-   */
-  chargeFromCauldron(vessel, ml) {
-    const st = this.state, sim = this.sim;
-    const n = Math.max(1, Math.round(ml / SIM.ML_PER_PARTICLE));
-    const sel = tapSelection(sim, n);
-    if (!sel.length) { toast('Nothing to draw', 'There is no liquid at the cauldron’s tap.', 'cauldron'); return { ok: false }; }
-    const meas = measureParticles(sim, sel);
-    const got = sel.length * SIM.ML_PER_PARTICLE;
-    const r = st.chargeVessel(vessel, meas.effects, got);
-    if (!r.ok) { toast('Cannot load it', r.reason, 'lock'); audio.play('error'); return r; }
-    for (const i of sel.sort((a, b) => b - a)) sim.removeParticle(i);
-    st.touchBatch();
-    if (sim.p.count === 0) { st.brewLog = []; st.newBatch(); this.lastPoured = {}; }
-    toast(`Vessel ${vessel + 1} charged`, `${got} ml of potion loaded: it can take the vessel to ${r.limit}°C.`, r.limit > 12 ? 'flame' : 'snow', 3200);
-    this.save();
-    return r;
   }
 
   // ------------------------------------------------------------------ customers
@@ -1233,7 +1061,6 @@ export class LabScreen {
     if (sel.length < 1) return;
     const m = measureParticles(this.sim, sel);
     this.sim.emitter.stop();
-    this.setAutoStir(false);
     // the trials of this batch that still describe exactly what is bottled
     const cert = certification(st.trials, st.batch, m.effects);
     const vial = makeVial(this.sim, [], {
@@ -1329,6 +1156,8 @@ export class LabScreen {
 
   /** Pour a shelved bottle back into the cauldron. @param {string} id */
   pourBackBottle(id) {
+    // an aging bottle is unsealed first: what goes back is what it has become
+    if (this.state.bottles.some((x) => x.id === id && x.aging)) { const r = this.state.finishAging(id); if (!r.vial) return; id = r.vial.id; }
     const b = this.state.bottles.find((x) => x.id === id);
     if (!b) return;
     if (!this.pourVialIntoCauldron(b)) return;
@@ -1506,7 +1335,7 @@ export class LabScreen {
       s.minT = Math.min(s.minT, T);
     }
     const t = this.sim.tool;
-    const stirring = t.active && t.type === 'spoon' && (t.speed > 0.2 || this.autoStir);
+    const stirring = t.active && t.type === 'spoon' && t.speed > 0.2;
     if (stirring) s.stir += dt;
     if (t.active && t.type === 'pestle') s.crushed = true;
     // the procedure trace (recipes.js): one sample a second of brewing time
@@ -1522,8 +1351,11 @@ export class LabScreen {
   /** Measuring vial: exactly what bottling would draw from the tap right now. */
   sampleVial() {
     const n = this.state.current ? this.state.current.bottleN : 20;
-    const m = measureParticles(this.sim, tapSelection(this.sim, n));
+    const sel = tapSelection(this.sim, n);
+    const m = measureParticles(this.sim, sel);
     if (!m) { toast('Nothing to sample', 'The cauldron is empty.', 'flask'); return; }
+    // the arcanometer reads the sample's arcane threshold
+    if (this.sandbox || this.state.has('arcanometer')) /** @type {any} */ (m).arcane = this.arcaneReading(sel, m);
     audio.play('glass');
     panels.showAnalysis(this, m, this.recipeDraft(m, null, null), `Measuring vial · ${m.ml} ml from the tap`);
   }
@@ -1635,7 +1467,7 @@ export class LabScreen {
     if (hot) out.push({ key: 'burn', text: `${hot.name} burnt at about ${Math.round(st.knowledge[hot.id].burnsAt)}°C before: undissolved, it will char again.` });
     if (rep.phases.hydro > 2 && rep.phases.lipo > 2 && rep.emulsified < 0.2 && rep.items.some((it) => it.cls === 'lipo') && rep.items.some((it) => it.cls === 'hydro')) out.push({ key: 'emulsion', text: 'Oil and water extracts stand apart: a little emulsifier binds them into one potion — after extraction, since an emulsion extracts badly.' });
     if (gas >= 3 && !sim.cauldron.lidClosed) out.push({ key: 'steam', text: 'Boiling with the lid off: steam is leaving, so the brew grows smaller and stronger — side effects too.' });
-    else if (this.assay && this.assay.stability < 70 && !sim.emitter.pouring && !this.autoStir) out.push({ key: 'stir', text: 'The brew is uneven — pockets and layers. Stir it through before you test or bottle.' });
+    else if (this.assay && this.assay.stability < 70 && !sim.emitter.pouring) out.push({ key: 'stir', text: 'The brew is uneven — pockets and layers. Stir it through before you test or bottle.' });
     return out.slice(0, 3);
   }
 
@@ -1850,48 +1682,10 @@ export class LabScreen {
     return rows;
   }
 
-  updateProbe() {
-    if (!this.probe) return;
-    const sel = probeSelection(this.sim, this.probe.x, this.probe.y, this.probe.r);
-    const el = clear(this.readout);
-    el.classList.remove('hidden');
-    if (!sel.length) {
-      const c = this.sim.cauldron;
-      const wall = c.wallCellAt(this.probe.x, this.probe.y);
-      el.append(h('div', { text: wall >= 0 ? `Iron wall: ${Math.round(c.cellT[wall])}°C` : 'Empty space' }));
-      return;
-    }
-    const m = measureParticles(this.sim, sel);
-    const st = this.state;
-    // each ingredient once, with its dissolved share (not the herb and its extract as two lines)
-    const comp = groupExtracts(m.composition, st.lookup).filter((g) => g.f >= 0.005).slice(0, 4);
-    // what the brew holds that is not at this spot (grains of each herb are their own particles until dissolved)
-    const here = new Set(groupExtracts(m.composition, st.lookup).map((g) => g.id));
-    const pot = this.sim.inventory();
-    const potTot = Object.values(pot).reduce((a, b) => a + b, 0) || 1;
-    const elsewhere = groupExtracts(pot, st.lookup).filter((g) => !here.has(g.id) && g.f / potTot >= 0.005).slice(0, 4);
-    const phase = Object.entries(m.phases).sort((a, b) => b[1] - a[1])[0][0];
-    // the arcanometer shows the aura of strong magic and reads the threshold
-    const arc = this.sandbox || st.has('arcanometer');
-    const aura = arc ? EFFECTS.filter((e, k) => Math.abs(m.effects[k]) >= 3) : [];
-    el.append(
-      h('div', { class: 'rrow' }, h('span', { class: 'swatch', style: { background: rgbToHex(m.color) } }), h('b', { text: `${describeColor(m.color)} ${phase}` })),
-      // what the eye tells in the shop; the simulation's numbers in the Free Experiment
-      this.sandbox
-        ? h('div', { text: `${Math.round(m.temperature)}°C · ${m.viscosity < 100 ? m.viscosity.toFixed(1) : Math.round(m.viscosity)} cP · ${m.density.toFixed(2)} g/ml · charge ${m.charge.toFixed(2)}` })
-        : h('div', { text: `${Math.round(m.temperature)}°C · ${viscosityClass(m.viscosity)} · ${densityWord(m.density)}` }),
-      h('div', { class: 'muted small', text: 'At this spot:' }),
-      ...comp.map((g) => h('div', { text: groupLine(g, 1) })),
-      elsewhere.length ? h('div', { class: 'muted small', 'data-probe': 'elsewhere', text: `Elsewhere in the pot: ${elsewhere.map((g) => groupLine(g, potTot)).join('; ')}` }) : null,
-      arc ? h('div', { class: 'aura' }, h('span', { text: 'Aura: ' }), aura.length ? aura.map((e) => icon(e.icon, 'sm')) : h('span', { text: 'none' })) : h('div', { class: 'muted', text: 'Effects: unknown (test in Trials)' }),
-    );
-    if (arc) el.append(this.arcaneReading(sel, m));
-  }
-
   /**
-   * The arcanometer: the mean arcane threshold of the probed matter, read to
-   * the nearest 50, and how much of its magic has awakened.
-   * @param {number[]} sel @param {any} m
+   * The arcanometer: the mean arcane threshold of a sample, read to the
+   * nearest 50, and how much of its magic has awakened (Sample's analysis).
+   * @param {number[]} sel @param {any} m @returns {string}
    */
   arcaneReading(sel, m) {
     const p = this.sim.p;
@@ -1903,10 +1697,10 @@ export class LabScreen {
       if (!d) continue;
       if (d.awakened) { awake += f; magic += f; } else if (d.arcane && Number.isFinite(d.arcane.thr)) magic += f;
     }
-    if (!magic) return h('div', { class: 'muted', text: 'Arcanometer: no magic here' });
+    if (!magic) return 'no magic to awaken';
     const share = Math.round((awake / magic) * 100);
     const thr = w ? Math.round(t / w / 50) * 50 : null;
-    return h('div', { class: 'arcane-read' }, icon('awaken', 'sm'), ` ${thr === null ? 'all awakened' : 'threshold ' + describeThreshold(thr)}${share ? ` · ${share}% awake` : ''}`);
+    return `${thr === null ? 'all awakened' : 'threshold ' + describeThreshold(thr)}${share ? ` · ${share}% awake` : ''}`;
   }
 
   // ------------------------------------------------------------------ HUD
@@ -2035,7 +1829,7 @@ export class LabScreen {
     this.assayTimer += dt;
     this.saveTimer += dt;
     this.layerTimer += dt;
-    if (this.hudTimer > 0.25) { this.hudTimer = 0; if (this.autoStir) this.aimStirrer(); this.refreshHud(); this.updateShelf(); if (this.probe) this.updateProbe(); this.updateBrewPanel(); this.checkAway(); }
+    if (this.hudTimer > 0.25) { this.hudTimer = 0; this.refreshHud(); this.updateShelf(); this.updateBrewPanel(); this.checkAway(); }
     if (this.assayTimer > 0.4 && !this.bottling) { this.assayTimer = 0; this.updateAssay(); }
     if (this.layerTimer > 2) { this.layerTimer = 0; this.detectLayers(); }
     if (this.saveTimer > 15) { this.saveTimer = 0; this.save(); }
@@ -2061,11 +1855,8 @@ export class LabScreen {
         toolHover: this.hover && (this.tool === 'spoon' || this.tool === 'pestle' || this.tool === 'skimmer'),
         bottling: this.bottling ? { progress: this.bottling.progress, color: this.bottling.color } : null,
         showBottle: true,
-        probe: this.tool === 'probe' ? this.probe : null,
-        thermal: this.thermal,
         alembic: this.sandbox,
         receiver: this.receiver,
-        stirrer: this.state.has('stirrer') && this.autoStir,
         aura: this.sandbox || this.state.has('arcanometer'),
       });
     } else if (this.views[this.view] && this.views[this.view].frame) {
@@ -2114,8 +1905,9 @@ export class LabScreen {
   tickCellar() {
     const st = this.state;
     for (const e of st.tickCellar()) {
-      const v = st.cellar.vessels[e.vessel];
-      toast(`Cellar vessel ${e.vessel + 1}${v && v.name ? ` (${v.name})` : ''}`, e.text, 'shelf2', 4500);
+      const b = e.bottle ? st.bottles.find((x) => x.id === e.bottle) : null;
+      const name = b && b.aging && b.aging.name;
+      toast(`Aging bottle${name ? ` (${name})` : ''}`, e.text, 'shelf2', 4500);
     }
     const ex = this.sim.extraction;
     for (const e of st.noteBurning(ex.safeSeen, ex.charSeen)) {
@@ -2128,7 +1920,7 @@ export class LabScreen {
   stepVial(dt) {
     const st = this.state;
     // shelved bottles cool too; they are re-measured when the shelves are shown
-    for (const b of st.bottles) this._shelfDrift = (this._shelfDrift || 0) + relaxVial(b, dt * this.speed);
+    for (const b of st.bottles) if (!b.aging) this._shelfDrift = (this._shelfDrift || 0) + relaxVial(b, dt * this.speed);
     const v = st.vial;
     if (!v) return;
     this._vialDrift = (this._vialDrift || 0) + relaxVial(v, dt * this.speed);
@@ -2174,7 +1966,7 @@ export class LabScreen {
   freshBottles() {
     if ((this._shelfDrift || 0) < 0.5) return;
     this._shelfDrift = 0;
-    for (const b of this.state.bottles) updateVial(b, this.state.lookup, this.state.world.laws);
+    for (const b of this.state.bottles) if (!b.aging) updateVial(b, this.state.lookup, this.state.world.laws);
   }
 
   /** Warn when the brew boils or burns while the player is in another room. */

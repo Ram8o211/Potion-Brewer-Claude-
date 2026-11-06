@@ -26,10 +26,10 @@ import { remainsMaterials, remainsPlan, isRemains } from '../materials/remains.j
 import { returningPatron, welcomePatron, recentStyles, notePatron, patronVerdict, noveltyFactor } from './patrons.js';
 import { techniqueById, migrateTechniques } from './commissions.js';
 import { migrateRecipe } from './recipes.js';
-import { createCellar, normalizeCellar, advanceCellar, fillVessel, emptyVesselContents, chargeVessel, setRune, vesselVolume, RUNE_PRICE } from './cellar.js';
+import { createCellar, normalizeCellar, advanceCellar, advanceVessel, fillVessel, emptyVesselContents, chargeVessel, setRune, vesselVolume, newVessel, potionNet, RUNE_PRICE } from './cellar.js';
 import { makeVialFromComposition, takeDose } from './vial.js';
 
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
 /** A purging draught at the apothecary, and brewed in the still. */
 export const PURGE_PRICE = 8;
 export const PURGE_BREW_COST = 1;
@@ -166,7 +166,7 @@ export class GameState {
     /** the personal garden (garden.js) */
     this.garden = normalizeGarden(data.garden);
     /** the aging cellar (cellar.js): vessels and temperature runes */
-    this.cellar = normalizeCellar(data.cellar, capabilities(data.equipment || []).vessels);
+    this.cellar = normalizeCellar(data.cellar, 0);
     /** @type {import('./gathering.js').Deposit[]|null} */
     this._deposits = null;
     // plants that drink: an older save's plants keep their growth, and grow under today's weather
@@ -417,10 +417,114 @@ export class GameState {
   }
 
   // ------------------------------------------------------------ cellar, still and burning
-  /** Advance the aging vessels to now (also after a break). @param {number} [now] */
+  /** Advance the aging bottles (and any old vessels) to now (also after a break). @param {number} [now] */
   tickCellar(now = Date.now()) {
-    if (this.cellar.vessels.length < this.cap.vessels) normalizeCellar(this.cellar, this.cap.vessels, now);
-    return advanceCellar(this.cellar, this.lookup, now);
+    /** @type {{vessel?:number, bottle?:string, text:string}[]} */
+    const events = advanceCellar(this.cellar, this.lookup, now) || [];
+    for (const b of this.bottles) {
+      if (!b.aging) continue;
+      for (const text of advanceVessel(b.aging, this.lookup, now, this.cellar.pace || 1)) events.push({ bottle: b.id, text });
+    }
+    return events;
+  }
+
+  // ------------------------------------------------------------ aging on the potion shelves
+  // A shelved bottle ages where it stands: its brew goes on extracting for
+  // hours, even while the game is closed (the cellar engine, cellar.js).
+  // Its two slots: a Fire or Frost potion (another shelved bottle) that warms
+  // or chills it, and a temperature rune that holds it on the way. As many
+  // bottles age at once as the Aging Cellar has vessels (cap.vessels).
+  // Unsealed (or taken down, poured back), it becomes a fresh, untested
+  // bottle of what it has turned into.
+
+  /** How many bottles can age at once. */
+  get agingSlots() {
+    return this.cap.vessels;
+  }
+
+  /** How many shelved bottles are aging. */
+  get agingCount() {
+    return this.bottles.filter((b) => b.aging).length;
+  }
+
+  /** What a bottle holds, in ml per material id, and its mean temperature. @param {any} b */
+  bottleComposition(b) {
+    /** @type {Record<string, number>} */
+    const comp = {};
+    for (const vp of b.particles) vp.c.forEach((f, j) => { if (f > 0) comp[b.species[j]] = (comp[b.species[j]] || 0) + f * SIM.ML_PER_PARTICLE; });
+    const T = b.particles.length ? b.particles.reduce((a, q) => a + q.t, 0) / b.particles.length : 20;
+    return { comp, T };
+  }
+
+  /** Begin aging a shelved bottle (it keeps its place on the shelf). @param {string} bottleId @param {number} [now] */
+  startAging(bottleId, now = Date.now()) {
+    const b = this.bottles.find((x) => x.id === bottleId);
+    if (!b) return { ok: false, reason: 'That bottle is not on the shelf.' };
+    if (b.aging) return { ok: true, vessel: b.aging };
+    if (this.agingSlots <= 0) return { ok: false, reason: 'Bottles age with the Aging Cellar, sold by the guild in the Shop.' };
+    if (this.agingCount >= this.agingSlots) return { ok: false, reason: `Every aging place is taken (${this.agingSlots}). Unseal an aging bottle first, or buy a larger cellar.` };
+    const { comp, T } = this.bottleComposition(b);
+    const v = newVessel(now);
+    const r = fillVessel(v, comp, T, now, { name: (b.label && b.label.name) || 'A shelved brew', batchId: b.batchId, parts: b.parts });
+    if (!r.ok) return r;
+    b.aging = v;
+    return { ok: true, vessel: v };
+  }
+
+  /**
+   * Load a bottle's Fire/Frost slot with `ml` of another shelved bottle
+   * (a Fire or Frost potion; an emptied one leaves the shelf). Starts the
+   * aging if it had not begun.
+   * @param {string} bottleId @param {string} chargeId @param {number} [ml] @param {number} [now]
+   */
+  chargeBottle(bottleId, chargeId, ml, now = Date.now()) {
+    this.tickCellar(now);
+    const b = this.bottles.find((x) => x.id === bottleId);
+    const cb = this.bottles.find((x) => x.id === chargeId);
+    if (!b || !cb || !cb.m || cb === b) return { ok: false, reason: 'Choose another shelved bottle: a Fire or Frost potion.' };
+    if (cb.aging) return { ok: false, reason: 'An aging bottle cannot warm another: unseal it first.' };
+    const want = Math.min(cb.ml, ml ?? cb.ml);
+    if (!potionNet(cb.m.effects)) return { ok: false, reason: 'Only a potion with Fire or Frost (at least 3 % more of one than the other) warms or chills a bottle.' };
+    const started = this.startAging(bottleId, now);
+    if (!started.ok) return started;
+    const v = /** @type {any} */ (b.aging);
+    const dose = takeDose(cb, want, this.lookup, this.world.laws || [], this.day);
+    if (!dose || !dose.dose) return { ok: false, reason: 'That bottle is empty.' };
+    const r = chargeVessel(v, dose.dose.effects, dose.ml, now);
+    if (!cb.particles.length) this.removeBottle(cb.id);
+    return { ...r, ml: dose.ml };
+  }
+
+  /** Set (or move) the temperature rune in a bottle's rune slot. @param {string} bottleId @param {number} target @param {number} [now] */
+  runeBottle(bottleId, target, now = Date.now()) {
+    this.tickCellar(now);
+    const b = this.bottles.find((x) => x.id === bottleId);
+    if (!b) return { ok: false, reason: 'That bottle is not on the shelf.' };
+    const fresh = !(b.aging && b.aging.rune && b.aging.rune.life > 0);
+    if (fresh && this.cellar.runes <= 0) return { ok: false, reason: 'You have no temperature rune. Buy one at the market, or look underground in the Wilds.' };
+    const started = this.startAging(bottleId, now);
+    if (!started.ok) return started;
+    const r = setRune(/** @type {any} */ (b.aging), target, now);
+    if (r.ok && r.fresh) this.cellar.runes--;
+    return r;
+  }
+
+  /**
+   * Unseal an aging bottle: it becomes a fresh bottle of what it has turned
+   * into (a new, untested batch), in the same place on the shelf. What is
+   * left of its charge is spent; its rune is used up.
+   * @param {string} bottleId @param {number} [now]
+   */
+  finishAging(bottleId, now = Date.now()) {
+    const k = this.bottles.findIndex((x) => x.id === bottleId);
+    const b = this.bottles[k];
+    if (!b || !b.aging) return { ok: false, reason: 'That bottle is not aging.' };
+    this.tickCellar(now);
+    const v = b.aging;
+    const vial = makeVialFromComposition(v.comp, v.T, { batchId: 'b' + now.toString(36) + 'a' + k, day: this.day, parts: v.parts || b.parts }, this.lookup, this.world.laws || []);
+    if (!vial) { this.bottles.splice(k, 1); return { ok: true, vial: null }; }
+    this.bottles[k] = vial;
+    return { ok: true, vial };
   }
 
   /** Buy a temperature rune at the market. */
@@ -436,102 +540,19 @@ export class GameState {
   }
 
   /**
-   * Lay a brew down in an empty vessel: a shelved bottle, or matter taken
-   * from the cauldron (ml per id).
-   * @param {number} vessel @param {{bottleId?:string, comp?:Record<string, number>, T?:number, name?:string, parts?:{id:string, ml:number}[]}} src @param {number} [now]
+   * v9: the aging cellar moved onto the potion shelves. A vessel's brew
+   * becomes a shelved bottle that goes on aging with the vessel's charge,
+   * rune and clock; an empty vessel's rune goes back into the hand.
+   * @param {number} [now]
    */
-  layDown(vessel, src, now = Date.now()) {
-    this.tickCellar(now);
-    const v = this.cellar.vessels[vessel];
-    if (!v) return { ok: false, reason: 'There is no such vessel.' };
-    if (src.bottleId) {
-      const b = this.bottles.find((x) => x.id === src.bottleId);
-      if (!b) return { ok: false, reason: 'That bottle is not on the shelf.' };
-      /** @type {Record<string, number>} */
-      const comp = {};
-      for (const vp of b.particles) vp.c.forEach((f, j) => { if (f > 0) comp[b.species[j]] = (comp[b.species[j]] || 0) + f * SIM.ML_PER_PARTICLE; });
-      const T = b.particles.length ? b.particles.reduce((a, q) => a + q.t, 0) / b.particles.length : 20;
-      const r = fillVessel(v, comp, T, now, { name: (b.label && b.label.name) || 'A shelved brew', batchId: b.batchId, parts: b.parts });
-      if (r.ok) this.removeBottle(b.id);
-      return r;
+  cellarToShelves(now = Date.now()) {
+    for (const v of this.cellar.vessels) {
+      if (vesselVolume(v) > 0) {
+        const vial = makeVialFromComposition(v.comp, v.T, { batchId: 'b' + now.toString(36) + 'm' + v.id, day: this.day, parts: v.parts || [] }, this.lookup, this.world.laws || []);
+        if (vial) { vial.aging = { ...v, id: 0 }; this.bottles.push(vial); }
+      } else if (v.rune && v.rune.life > 0 && Number.isFinite(this.cellar.runes)) this.cellar.runes++;
     }
-    return fillVessel(v, src.comp || {}, src.T ?? 20, now, { name: src.name, batchId: this.batch.id, parts: src.parts });
-  }
-
-  /**
-   * Charge a vessel with `ml` of a shelved Fire or Frost potion (taken out
-   * of the bottle; an emptied bottle leaves the shelf). Without `ml`, the
-   * whole bottle.
-   * @param {number} vessel @param {string} bottleId @param {number} [ml] @param {number} [now]
-   */
-  activateVessel(vessel, bottleId, ml, now = Date.now()) {
-    this.tickCellar(now);
-    const v = this.cellar.vessels[vessel];
-    const b = this.bottles.find((x) => x.id === bottleId);
-    if (!v || !b || !b.m) return { ok: false, reason: 'Choose a vessel and a bottle.' };
-    const want = Math.min(b.ml, ml ?? b.ml);
-    // check the potion first: a weak one is not poured away for nothing
-    const test = chargeVessel(/** @type {any} */ ({ ...v, comp: { ...v.comp }, charge: v.charge && { ...v.charge }, log: [] }), b.m.effects, want, now);
-    if (!test.ok) return test;
-    const dose = takeDose(b, want, this.lookup, this.world.laws || [], this.day);
-    if (!dose || !dose.dose) return { ok: false, reason: 'The bottle is empty.' };
-    const r = chargeVessel(v, dose.dose.effects, dose.ml, now);
-    if (!b.particles.length) this.removeBottle(b.id);
-    return { ...r, ml: dose.ml };
-  }
-
-  /**
-   * Charge a vessel with potion drawn from the cauldron (its measured effects
-   * and volume; the caller removes the particles).
-   * @param {number} vessel @param {ArrayLike<number>} effects @param {number} ml @param {number} [now]
-   */
-  chargeVessel(vessel, effects, ml, now = Date.now()) {
-    this.tickCellar(now);
-    const v = this.cellar.vessels[vessel];
-    if (!v) return { ok: false, reason: 'There is no such vessel.' };
-    return chargeVessel(v, effects, ml, now);
-  }
-
-  /** Set a rune on a vessel at a temperature. @param {number} vessel @param {number} target @param {number} [now] */
-  runeVessel(vessel, target, now = Date.now()) {
-    this.tickCellar(now);
-    const v = this.cellar.vessels[vessel];
-    if (!v) return { ok: false, reason: 'There is no such vessel.' };
-    // moving the target of the vessel's own rune uses no new one
-    const fresh = !(v.rune && v.rune.life > 0);
-    if (fresh && this.cellar.runes <= 0) return { ok: false, reason: 'You have no temperature rune. Buy one at the market, or look underground in the Wilds.' };
-    const r = setRune(v, target, now);
-    if (r.ok && r.fresh) this.cellar.runes--;
-    return r;
-  }
-
-  /**
-   * Draw a vessel off into a sealed bottle on the potion shelves (or the
-   * counter's vial when the shelves are full). Returns the vial.
-   * @param {number} vessel @param {number} [now]
-   */
-  bottleVessel(vessel, now = Date.now()) {
-    this.tickCellar(now);
-    const v = this.cellar.vessels[vessel];
-    if (!v || vesselVolume(v) <= 0) return { ok: false, reason: 'The vessel is empty.' };
-    if (this.bottles.length >= this.cap.bottles && this.vial) return { ok: false, reason: 'No room on the potion shelves, and a vial is already on the counter.' };
-    const out = emptyVesselContents(v, now);
-    const vial = makeVialFromComposition(out.comp, out.T, { batchId: 'b' + now.toString(36) + 'c' + v.id, day: this.day, parts: out.parts }, this.lookup, this.world.laws || []);
-    if (!vial) return { ok: false, reason: 'Nothing could be bottled.' };
-    if (this.bottles.length < this.cap.bottles) this.bottles.push(vial); else this.vial = vial;
-    return { ok: true, vial };
-  }
-
-  /**
-   * Take a vessel's brew out to pour it back into the cauldron: its contents
-   * (ml per id), temperature and parts; the vessel keeps its charge and rune.
-   * @param {number} vessel @param {number} [now]
-   */
-  takeVessel(vessel, now = Date.now()) {
-    this.tickCellar(now);
-    const v = this.cellar.vessels[vessel];
-    if (!v || vesselVolume(v) <= 0) return { ok: false, reason: 'The vessel is empty.' };
-    return { ok: true, ...emptyVesselContents(v, now) };
+    this.cellar.vessels = [];
   }
 
   /**
@@ -1027,6 +1048,9 @@ export class GameState {
    * @param {string} id
    */
   takeBottle(id) {
+    // an aging bottle is unsealed first: what goes down is what it has become
+    const ag = this.bottles.find((b) => b.id === id && b.aging);
+    if (ag) { const r = this.finishAging(id); if (!r.ok || !r.vial) return { ok: false, reason: 'Nothing was left in the bottle.' }; id = r.vial.id; }
     const k = this.bottles.findIndex((b) => b.id === id);
     if (k < 0) return { ok: false, reason: 'No such bottle.' };
     const b = this.bottles[k];
@@ -1556,6 +1580,7 @@ export class GameState {
     const st = new GameState({ ...data, world, inventory });
     if (data._migratedFrom !== undefined && data._migratedFrom < 3) st.genVersion = WORLD_GEN_VERSION;
     if (data._migratedFrom !== undefined && data._migratedFrom < 7) st.migrateToCatalog();
+    if (data._migratedFrom !== undefined && data._migratedFrom < 9) st.cellarToShelves();
     st.buyBackPrepared();
     if (st.current) migrateCommission(st.current, st.world, st.lookup);
     // customers no longer ask for a serving temperature: an order taken before keeps the rest
@@ -1686,6 +1711,18 @@ export function migrate(raw) {
     d.journal = { ...(d.journal || {}), 'note:extraction': { key: 'note:extraction', kind: 'note', title: 'The guild revises its steeping lore', day: d.day || 1,
       text: 'Herbs give up their magic gradually, at any temperature: faster when hot, but more of it when cool. Some dissolve only in oil. Cold spirit draws out everything. Herbs left undissolved burn when too hot. The market now sells a neutral emulsifier, the guild an alembic and aging cellars.' } };
     d.version = 8;
+  }
+  if (d.version < 9) {
+    // v9: the Brew room loses automatic stirring (the Clockwork Stirrer is
+    // refunded), the time-speed control, the heat map and the Inspect probe.
+    const refit = retireEquipment(d.equipment);
+    d.equipment = refit.equipment;
+    d.coins = round1((Number(d.coins) || 0) + refit.refund);
+    if (refit.lines.length) {
+      d.journal = { ...(d.journal || {}), 'note:refit9': { key: 'note:refit9', kind: 'note', title: 'The guild refitted your workshop', day: d.day | 0,
+        text: `The guild has taken back what no longer serves the trade: ${refit.lines.join('; ')}.${refit.refund > 0 ? ` ${refit.refund} coins were paid back.` : ''}` } };
+    }
+    d.version = 9;
   }
   // every shop owns the starting kit (the pestle joined it in v6)
   for (const id of STARTING_EQUIPMENT) if (!d.equipment.includes(id)) d.equipment = [...d.equipment, id];

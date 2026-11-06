@@ -182,9 +182,6 @@ img.ico.spr { object-fit: contain; image-rendering: auto; }
 
 .stage { grid-area: stage; position: relative; overflow: hidden; touch-action: none; min-height: 0; }
 .stage canvas.view-canvas { position: absolute; left: 0; top: 0; touch-action: none; }
-.stage .readout { position: absolute; left: 6px; bottom: 6px; padding: 6px 8px; font-size: var(--fs-s); max-width: 70%; pointer-events: none; line-height: 1.3; z-index: 2; }
-.stage .readout .rrow { display: flex; gap: 6px; align-items: center; }
-.stage .readout .aura img.ico { width: 14px; height: 14px; margin-right: 2px; }
 .stage .hud-chips { position: absolute; right: 6px; top: 6px; display: flex; flex-direction: column; gap: 4px; align-items: flex-end; pointer-events: none; z-index: 3; }
 .hud-chips .chip-list { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
 .stage.info-open .hud-chips .chip-list { display: none; }
@@ -856,17 +853,31 @@ canvas.ing-sprite { image-rendering: pixelated; }
 .seed:disabled { opacity: 0.45; }
 .garden-ups { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 6px; }
 
-/* the potion shelves inside the cellar: bottles to drag onto a vessel */
-.cellar-shelves { position: sticky; top: -4px; z-index: 3; }
-.cellar-shelf { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
-.cellar-bottle { position: relative; display: flex; flex-direction: column; align-items: center; min-width: 44px; min-height: 52px; padding: 2px 4px; touch-action: none; }
-.cellar-bottle canvas { width: 24px; height: 33px; image-rendering: pixelated; }
-.cellar-bottle .bml { font-size: 12px; line-height: 1; }
-.cellar-bottle .cs-fx { position: absolute; top: 1px; right: 1px; }
-.cellar-bottle .cs-fx img.ico.sm { width: 12px; height: 12px; }
-.cellar-bottle.active { box-shadow: 0 0 0 2px var(--brass); }
-.cellar-bottle:not(.charger) { opacity: 0.8; }
-.cellar-vessel.drop-over { box-shadow: 0 0 0 3px var(--brass), 0 0 10px var(--brassHi); }
+/* aging on the potion shelves: a selected bottle's two slots */
+.bottle-slot { touch-action: pan-y; }
+.bottle-slot .bage, .bottle-slot .bfx { position: absolute; top: 2px; right: 2px; line-height: 0; }
+.bottle-slot .bage img.ico.sm, .bottle-slot .bfx img.ico.sm { width: 12px; height: 12px; }
+.bottle-slot.aging canvas { filter: drop-shadow(0 0 3px var(--arcane)); }
+.aging { margin-top: 8px; padding-top: 6px; box-shadow: 0 -1px 0 rgba(43, 29, 20, 0.25); display: flex; flex-direction: column; gap: 4px; }
+.aging-head { align-items: center; gap: 6px; }
+.age-slots { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.age-slot { display: flex; align-items: center; gap: 6px; min-height: 56px; padding: 6px 8px; border: 2px dashed rgba(43, 29, 20, 0.45); border-radius: 10px; background: rgba(43, 29, 20, 0.08); font-family: inherit; color: inherit; text-align: left; cursor: pointer; }
+.age-slot.full { border-style: solid; background: rgba(43, 29, 20, 0.14); }
+.age-slot.fire { border-color: #d0662e; }
+.age-slot.frost { border-color: #4c9ad0; }
+.age-slot.rune.full { border-color: var(--arcane); }
+.age-slot.open { box-shadow: 0 0 0 2px var(--brass); }
+.age-slot.drop-over { box-shadow: 0 0 0 3px var(--brass), 0 0 10px var(--brassHi); background: rgba(232, 192, 96, 0.25); }
+.age-slot .age-plus { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 22px; border-radius: 50%; background: rgba(43, 29, 20, 0.15); flex: none; }
+.age-slot img.ico { width: 28px; height: 28px; flex: none; }
+.age-slot-txt { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; }
+.age-pick { display: flex; flex-direction: column; gap: 4px; padding: 6px; border-radius: 8px; background: rgba(43, 29, 20, 0.08); }
+.age-pick .row { align-items: center; gap: 6px; flex-wrap: wrap; }
+.age-pick-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.age-pick-bottle { display: flex; align-items: center; gap: 4px; min-height: 44px; padding: 2px 8px; border: 2px solid rgba(43, 29, 20, 0.3); border-radius: 8px; background: rgba(255, 255, 255, 0.15); font-family: inherit; color: inherit; cursor: pointer; }
+.age-pick-bottle.fire { border-color: #d0662e; }
+.age-pick-bottle.frost { border-color: #4c9ad0; }
+.age-pick-bottle canvas { width: 20px; height: 28px; image-rendering: pixelated; }
 .bottle-ghost canvas { width: 32px; height: 44px; }
 
 /* ------------------------------------------------------------------ sprite skin: components */
@@ -1036,9 +1047,9 @@ input[type=checkbox]:checked { background-image: url('../assets/ui/form/checkbox
 .inv-grid { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); grid-auto-rows: min-content; gap: 6px; padding: 4px 8px 10px; align-content: start; touch-action: pan-y; }
 .inv-head { grid-column: 1 / -1; display: flex; align-items: center; gap: 4px; font-size: var(--fs-s); color: var(--brassHi); margin-top: 4px; }
 .inv-empty-note { grid-column: 1 / -1; color: var(--parch1); padding: 12px; }
-.inv-tile { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px; height: 86px; padding: 14px 3px 4px; border: none; cursor: grab; font-family: inherit; color: var(--parch1); touch-action: pan-y; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+.inv-tile { content-visibility: auto; contain-intrinsic-size: auto 86px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px; height: 86px; padding: 14px 3px 4px; border: none; cursor: grab; font-family: inherit; color: var(--parch1); touch-action: pan-y; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
   background: var(--wood2); box-shadow: 0 0 0 var(--px) var(--wood0), inset 0 var(--px) 0 var(--wood4); }
-.inv-tile canvas { width: 40px !important; height: 40px !important; image-rendering: pixelated; flex: none; pointer-events: none; }
+.inv-tile canvas, .inv-tile img { width: 40px !important; height: 40px !important; image-rendering: pixelated; flex: none; pointer-events: none; object-fit: contain; }
 .inv-tile.arcane { box-shadow: 0 0 0 var(--px) var(--wood0), inset 0 var(--px) 0 var(--arcane), inset 0 0 8px rgba(180, 140, 255, 0.35); }
 .inv-tile.on { background: #4a3466; box-shadow: 0 0 0 var(--px) #1a0f26, 0 0 0 calc(var(--px) * 2) var(--brass); }
 .inv-tile.empty { opacity: 0.5; }
@@ -1061,8 +1072,17 @@ input[type=checkbox]:checked { background-image: url('../assets/ui/form/checkbox
 .inv-stripe.unknown { background: repeating-linear-gradient(90deg, #6a5a50 0 3px, #3a2e28 3px 6px); }
 /* the tile under a dragging finger */
 .inv-ghost { position: fixed; left: 0; top: 0; z-index: 1000; pointer-events: none; margin: -28px 0 0 -28px; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; background: rgba(43, 29, 20, 0.85); box-shadow: 0 0 0 2px var(--brass); }
-.inv-ghost canvas { width: 44px; height: 44px; image-rendering: pixelated; }
+.inv-ghost canvas, .inv-ghost img { width: 44px; height: 44px; image-rendering: pixelated; }
 .shelf-wrap.drop-target { box-shadow: inset 0 0 0 2px rgba(232, 192, 96, 0.5); }
 .shelf-wrap.drop-over { box-shadow: inset 0 0 0 3px var(--brass); }
 .jar.ins-before { box-shadow: -4px 0 0 var(--brass), 0 0 0 var(--px) var(--wood0); }
 .jar.ins-after { box-shadow: 4px 0 0 var(--brass), 0 0 0 var(--px) var(--wood0); }
+
+/* ------------------------------------------------------------------ rounder buttons, everywhere
+   Every pressable thing has rounded corners: its outline (box-shadow) follows the radius, and its
+   sprite skin (the nine-slice ::before) is clipped to the same rounded rectangle. */
+:root { --btn-r: 12px; --btn-r-s: 9px; }
+.btn, .tab, .jar, .chip, .dropper, .plot, .seed, .bottle-slot, .inv-tile, .inv-tab, .age-pick-bottle, .tabbar .tab { border-radius: var(--btn-r); }
+.btn::before, .tab::before, .jar::before, .chip::before, .dropper::before, .plot::before { clip-path: inset(0 round var(--btn-r)); }
+.btn.icon, .btn.small, .chip, .dose .btn, .inv-tools .btn, .inv-tab, .fstep, .foff { --btn-r: var(--btn-r-s); }
+.btn:focus-visible, .jar:focus-visible, .inv-tile:focus-visible, .tab:focus-visible { outline-offset: 2px; }

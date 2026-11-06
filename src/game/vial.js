@@ -43,6 +43,7 @@ import { refreshParticle } from '../simulation/derived.js';
  * @property {string|null} [commissionId]
  * @property {any} [recipe]
  * @property {any} [label]            the player's identification (commerce.js)
+ * @property {import('./cellar.js').Vessel} [aging]  a shelved bottle aging where it stands (state.js startAging)
  * @property {{type:string, ml:number, day:number}[]} log
  */
 
