@@ -54,3 +54,16 @@ test('the inventory groups by strongest effect or by rarity, rarest and stronges
   const ranks = byRar.map((g) => (g.ids.length ? rarityRank(st.lookup(g.ids[0])) : -1));
   for (let i = 1; i < ranks.length; i++) assert.ok(ranks[i - 1] >= ranks[i], 'Legendary first');
 });
+
+test('a jar can be put out between two others, and moved along the shelf', () => {
+  const b = normalizeBench({ ids: ['a', 'b', 'c'] });
+  setOnBench(b, 'x', true, 1, ['a', 'b', 'c']);
+  assert.deepEqual(b.ids, ['a', 'x', 'b', 'c']);
+  setOnBench(b, 'c', true, 0, ['a', 'x', 'b', 'c']);
+  assert.deepEqual(b.ids, ['c', 'a', 'x', 'b'], 'one already out moves');
+  setOnBench(b, 'a', true, 9, ['c', 'a', 'x', 'b']);
+  assert.deepEqual(b.ids, ['c', 'a', 'x', 'b'], 'past the end: stays where it is');
+  b.seen = {};
+  benchIds(b, ['a', 'b', 'c', 'x'], () => 5);
+  assert.deepEqual(b.ids, ['c', 'a', 'x', 'b'], 'never twice, even when what was seen is lost');
+});

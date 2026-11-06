@@ -86,7 +86,7 @@ test('free experiment layout', async ({ page }, info) => {
 test('panels open, fit and close', async ({ page }, info) => {
   const errors = watchErrors(page);
   await newGame(page, { tutorial: false });
-  for (const [act, name] of [['shop', 'shop-panel'], ['menu', 'pause-panel'], ['inventory', 'inventory-panel']]) {
+  for (const [act, name] of [['shop', 'shop-panel'], ['menu', 'pause-panel']]) {
     await page.click(`[data-act=${act}]`);
     const modal = page.locator('.overlay .modal');
     await expect(modal).toBeVisible();

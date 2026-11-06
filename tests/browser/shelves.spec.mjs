@@ -114,29 +114,69 @@ test('a tested batch labels its bottles by itself: shelved bottles show their ef
   expect(errors).toEqual([]);
 });
 
-test('the inventory groups the storeroom and fills the quick shelf', async ({ page }, info) => {
+test('the inventory: sections by effect, a grid of tiles, dragged onto the quick shelf', async ({ page }, info) => {
   const errors = watchErrors(page);
   await newGame(page, { tutorial: false, seed: 'inventory-1' });
   const silver = 'wild-sp-silverleaf';
+  // a few more herbs in the storeroom, not on the shelf
+  const extra = await lab(page, (l) => {
+    const ids = l.state.world.wild.filter((id) => !l.state.stock(id)).slice(0, 12);
+    for (const id of ids) { l.state.inventory[id] = 80; l.state.bench.seen[id] = 1; }
+    l.buildShelf();
+    return ids;
+  });
   await expect(page.locator(`.jar[data-id="${silver}"]`)).toBeVisible();
+  await expect(page.locator(`.jar[data-id="${extra[0]}"]`)).toHaveCount(0);
   await page.click('[data-act=inventory]');
-  await expect(page.locator('.inv-group[data-group=vitality]')).toContainText('Silverleaf');
-  // off the shelf: it stays in the storeroom, even after a reload
-  await page.click(`[data-act="shelf-${silver}"]`);
+  const drawer = page.locator('.inv-drawer');
+  await expect(drawer).toBeVisible();
+  // the drawer fits the screen, and the shelf stays in view beside or below it
+  const vw = page.viewportSize(), db = await drawer.boundingBox();
+  if (!vw || !db) throw new Error('no box');
+  expect(db.x + db.width).toBeLessThanOrEqual(vw.width + 1);
+  expect(db.y + db.height).toBeLessThanOrEqual(vw.height + 1);
+  await expect(page.locator('.shelf-wrap')).toBeInViewport();
+  // a grid: tiles side by side, each with a rarity label and a stripe of its effects
+  const boxes = await page.locator('.inv-tile').evaluateAll((els) => els.slice(0, 6).map((e) => e.getBoundingClientRect().top));
+  expect(new Set(boxes.map(Math.round)).size, 'several tiles on one row').toBeLessThan(boxes.length);
+  const tile = page.locator(`.inv-tile[data-id="${silver}"]`);
+  await expect(tile.locator('.inv-rar')).toHaveText('COM');
+  expect(await tile.locator('.inv-stripe i').count()).toBeGreaterThan(0);
+  // a section shows its effect only
+  await page.click('[data-act=inv-sec-vitality]');
+  const groups = await page.locator('.inv-tile').evaluateAll((els) => [...new Set(els.map((e) => e.getAttribute('data-group')))]);
+  expect(groups).toEqual(['vitality']);
+  await shot(page, info, 'inventory-drawer');
+  await page.click('[data-act=inv-sec-all]');
+  // tap: off the shelf (and it stays off after a reload)
+  await tile.click();
   await expect(page.locator(`.jar[data-id="${silver}"]`)).toHaveCount(0);
-  await page.click('[data-act=inv-by-rarity]');
-  await expect(page.locator('.inv-group[data-group=common]')).toContainText('Silverleaf');
-  await shot(page, info, 'inventory-rarity');
-  await page.locator('.overlay .modal-head .btn').first().click();
+  // drag a tile onto the shelf, before its second jar
+  const id = extra[0];
+  const t = await page.locator(`.inv-tile[data-id="${id}"]`).boundingBox();
+  const jar = await page.locator('.shelf .jar').nth(1).boundingBox();
+  if (!t || !jar) throw new Error('no boxes');
+  if (info.project.use.hasTouch) {
+    const cdp = await page.context().newCDPSession(page);
+    const touch = (type, x, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y }] });
+    await touch('touchStart', t.x + t.width / 2, t.y + t.height / 2);
+    await page.waitForTimeout(320);
+    for (let k = 1; k <= 20; k++) { await touch('touchMove', t.x + t.width / 2 + (jar.x + 4 - t.x - t.width / 2) * k / 20, t.y + t.height / 2 + (jar.y + jar.height / 2 - t.y - t.height / 2) * k / 20); await page.waitForTimeout(16); }
+    await touch('touchEnd');
+  } else {
+    await page.mouse.move(t.x + t.width / 2, t.y + t.height / 2);
+    await page.mouse.down();
+    for (let k = 1; k <= 20; k++) await page.mouse.move(t.x + t.width / 2 + (jar.x + 4 - t.x - t.width / 2) * k / 20, t.y + t.height / 2 + (jar.y + jar.height / 2 - t.y - t.height / 2) * k / 20);
+    await page.mouse.up();
+  }
+  await expect(page.locator(`.shelf .jar`).nth(1)).toHaveAttribute('data-id', id);
+  await page.click('[data-act=inv-close]');
+  await expect(drawer).toBeHidden();
   await lab(page, (l) => l.save());
   await page.reload();
   await page.click('[data-act=continue]');
   await page.waitForSelector('canvas.view-canvas');
   await expect(page.locator(`.jar[data-id="${silver}"]`)).toHaveCount(0);
-  // and back on it, from the inventory (I)
-  await page.keyboard.press('i');
-  await page.click(`[data-act="shelf-${silver}"]`);
-  await page.locator('.overlay .modal-head .btn').first().click();
-  await expect(page.locator(`.jar[data-id="${silver}"]`)).toBeVisible();
+  await expect(page.locator(`.shelf .jar`).nth(1)).toHaveAttribute('data-id', id);
   expect(errors).toEqual([]);
 });

@@ -498,12 +498,14 @@ Browser screenshots from the test run land in `test-results/screenshots/`.
    The readout shows the flame's temperature and the pot's.
    The shelf under the cauldron is a **quick shelf**: it holds only the
    jars you have put out for the brew at hand. Its first button (or `I`)
-   opens the **Inventory** — everything you hold, grouped by effect (each
-   ingredient under its strongest one) or by rarity, rarest and strongest
-   first — where **Shelf** puts a jar out and **On shelf** takes it back.
-   A first find goes on the shelf by itself; once taken off it stays in
-   the storeroom until you put it back (the ingredient sheet, opened with
-   a long-press, has the same switch).
+   opens the **Inventory** over the cauldron: everything you hold as a grid
+   of tiles, in sections by effect (tabs; each ingredient under its
+   strongest effect, rarest first). Each tile shows a rarity label and a
+   stripe of its effects' colours. Tap a tile, or drag it onto the shelf
+   between two jars, to put it out; tap it again, or drag a jar from the
+   shelf into the inventory, to put it away. Long-press a tile to inspect
+   it. A first find goes on the shelf by itself; once put away it stays in
+   the storeroom until you put it back.
 4. **Trials.** Tap a rabbit in the hutch and press **Give**, or drag the
    dropper onto it. Test several different rabbits before you trust the
    estimate, and watch their status bars: purge or rest a rabbit before an
