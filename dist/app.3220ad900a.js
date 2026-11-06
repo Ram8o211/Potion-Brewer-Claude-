@@ -32946,7 +32946,11 @@ return;
 }
 const m = measureParticles(this.sim, sel);
 const st = this.state;
-const comp = groupExtracts(m.composition, st.lookup).slice(0, 3);
+const comp = groupExtracts(m.composition, st.lookup).filter((g) => g.f >= 0.005).slice(0, 4);
+const here = new Set(groupExtracts(m.composition, st.lookup).map((g) => g.id));
+const pot = this.sim.inventory();
+const potTot = Object.values(pot).reduce((a, b) => a + b, 0) || 1;
+const elsewhere = groupExtracts(pot, st.lookup).filter((g) => !here.has(g.id) && g.f / potTot >= 0.005).slice(0, 4);
 const phase = Object.entries(m.phases).sort((a, b) => b[1] - a[1])[0][0];
 const arc = this.sandbox || st.has('arcanometer');
 const aura = arc ? EFFECTS.filter((e, k) => Math.abs(m.effects[k]) >= 3) : [];
@@ -32955,7 +32959,9 @@ h('div', { class: 'rrow' }, h('span', { class: 'swatch', style: { background: rg
 this.sandbox
 ? h('div', { text: `${Math.round(m.temperature)}°C · ${m.viscosity < 100 ? m.viscosity.toFixed(1) : Math.round(m.viscosity)} cP · ${m.density.toFixed(2)} g/ml · charge ${m.charge.toFixed(2)}` })
 : h('div', { text: `${Math.round(m.temperature)}°C · ${viscosityClass(m.viscosity)} · ${densityWord(m.density)}` }),
+h('div', { class: 'muted small', text: 'At this spot:' }),
 ...comp.map((g) => h('div', { text: groupLine(g, 1) })),
+elsewhere.length ? h('div', { class: 'muted small', 'data-probe': 'elsewhere', text: `Elsewhere in the pot: ${elsewhere.map((g) => groupLine(g, potTot)).join('; ')}` }) : null,
 arc ? h('div', { class: 'aura' }, h('span', { text: 'Aura: ' }), aura.length ? aura.map((e) => icon(e.icon, 'sm')) : h('span', { text: 'none' })) : h('div', { class: 'muted', text: 'Effects: unknown (test in Trials)' }),
 );
 if (arc) el.append(this.arcaneReading(sel, m));
