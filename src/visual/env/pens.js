@@ -32,7 +32,7 @@ export const GROUND_Y0 = 69;
 const GROUND_Y1 = 86;
 
 /** Version of the pens' painting (names caches only). */
-export const PENS_VERSION = 7;
+export const PENS_VERSION = 8;
 
 /**
  * @typedef {Object} Pen

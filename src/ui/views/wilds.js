@@ -46,7 +46,7 @@ import { CREATURE_NAMES, rarityTag } from '../rarity-ui.js';
 import { h, btn, clear, toast, keepScroll, confirmDialog } from '../dom.js';
 import { icon } from '../icons.js';
 import { audio } from '../../audio/audio.js';
-import { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, moistureEnv, DAY_PART_NAME } from '../../game/gathering.js';
+import { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, moistureEnv, DAY_PART_NAME, runeCaches as runeCachesOf } from '../../game/gathering.js';
 import { equipmentById } from '../../game/equipment.js';
 import { RANKS } from '../../game/equipment.js';
 import { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, sceneTouch, crosses, SCENE_W, SCENE_H } from '../../rendering/wild-scene.js';
@@ -172,6 +172,8 @@ export class WildsView {
     this.energy = {};
     /** crystal id → the blows it has taken and when the last one landed (scene time) @type {Record<string, {n:number, t:number}>} */
     this.hits = {};
+    /** blows struck on each buried rune stone @type {Record<string, number>} */
+    this.runeHits = {};
     /** the ground fringe over each plant's foot, by region, plant and spot @type {Map<string, any[]>} */
     this.soilCache = new Map();
     /** bits of leaf and pulp in flight @type {{x:number, y:number, vx:number, vy:number, t:number, c:string}[]} */
@@ -381,6 +383,7 @@ export class WildsView {
       h('span', { class: 'fx-chip', title: `Dominant effect: ${eff.label}` }, icon(eff.icon, 'sm'), ' ' + eff.label),
       h('span', { class: 'fx-chip', title: 'Native creature' }, icon('rabbit', 'sm'), ' ' + CREATURE_NAMES[biome.creature]),
       h('span', { class: 'fx-chip', title: 'Specimens left in this generation' }, icon('leaf', 'sm'), ` ${left}/${total}`),
+      ...(() => { const cs = st.runeCaches(this.region); const n = cs.filter((c) => !c.dug).length; return cs.length ? [h('span', { class: 'fx-chip rune-chip', 'data-runes-left': String(n), title: n ? 'Old temperature runes lie buried here: look for the glowing stones and tap one a few times to dig it up' : 'Every buried rune of this generation has been dug up: regenerating the biome buries new ones' }, icon('rune', 'sm'), ` ${n}/${cs.length} buried`)] : []; })(),
       lab.sandbox ? null : h('span', { class: 'fx-chip coins', title: coins.nextIn ? `Next coin in ${formatWait(coins.nextIn)}` : 'Your purse is full' }, icon('coin', 'sm'), ` ${coins.coins}/${coins.max}`),
       regen));
     const list = clear(this.list);
@@ -1215,9 +1218,108 @@ export class WildsView {
     return this.region === 'crags' ? '#4a3c40' : stone ? '#8c8072' : this.region === 'moonfen' || this.region === 'netherwood' ? '#4c4a58' : '#7c7c78';
   }
 
+  /**
+   * The buried rune caches of the region shown, placed in the scene: on the
+   * floor of open ground (scanned up from the bottom, so a cavern's ceiling
+   * is never taken for ground), never under water. Cached per scene.
+   * @returns {{id:string, x:number, y:number, dug:boolean}[]}
+   */
+  caches() {
+    const st = this.lab.state, seed = st.sceneSeed(this.region), key = `${this.region}:${seed}`;
+    if (!this._caches || this._caches.key !== key) {
+      const sc = sceneOf(this.region, seed);
+      const air = (x, y) => !this.solidAt(x, y);
+      const place = [];
+      for (const c of runeCachesOf(this.region, seed)) {
+        let x0 = Math.round(c.fx * SCENE_W), spot = null;
+        // the nearest column, either side, with a floor under open air
+        for (let d = 0; d < SCENE_W / 2 && !spot; d += 3) {
+          for (const x of [x0 + d, x0 - d]) {
+            if (x < 8 || x > SCENE_W - 8) continue;
+            let y = SCENE_H - 1;
+            while (y > 0 && this.solidAt(x, y)) y--;
+            if (y < 14 || y > SCENE_H - 3) continue;
+            let open = true;
+            for (let k = 1; k <= 12 && open; k++) if (!air(x, y - k) || !air(x - 4, y - k) || !air(x + 4, y - k)) open = false;
+            if (!open || sc.liquid[(y + 1) * SCENE_W + x] || sc.liquid[y * SCENE_W + x]) continue;
+            spot = { x, y: y + 1 };
+            break;
+          }
+        }
+        if (spot) place.push({ id: c.id, ...spot });
+      }
+      this._caches = { key, place };
+    }
+    const dug = new Set(st.runeCaches(this.region).filter((c) => c.dug).map((c) => c.id));
+    return this._caches.place.map((c) => ({ ...c, dug: dug.has(c.id) }));
+  }
+
+  /** A buried rune under (x, y), if one is still there. @param {number} x @param {number} y */
+  cacheAt(x, y) {
+    return this.caches().find((c) => !c.dug && Math.abs(x - c.x) <= 8 && y >= c.y - 12 && y <= c.y + 4) || null;
+  }
+
+  /** A blow on a buried rune stone: dirt flies; the third frees it into the cellar's stock. @param {{id:string, x:number, y:number}} c */
+  digCache(c) {
+    const n = ((this.runeHits || (this.runeHits = {}))[c.id] || 0) + 1;
+    this.runeHits[c.id] = n;
+    this.chips(c.x, c.y - 2, Math.random() < 0.5 ? 1 : -1, 6, this.rockColour(), '#8fe8ff', false);
+    audio.play('crush');
+    if (n < 3) return;
+    const r = this.lab.state.digRune(c.id);
+    if (!r.ok) return;
+    this.chips(c.x, c.y - 3, 1, 12, this.rockColour(), '#8fe8ff', true);
+    for (let i = 0; i < 3; i++) this.flashes.push({ x: c.x + (Math.random() - 0.5) * 10, y: c.y - 6 - Math.random() * 8, t: -i * 0.12 });
+    this.floaters.push({ x: c.x, y: c.y - 6, t: 0, color: [0.56, 0.91, 1], text: '+1 rune' });
+    audio.play('discover');
+    toast('An old temperature rune!', `Dug out of the ground: ${Number.isFinite(this.lab.state.cellar.runes) ? `${this.lab.state.cellar.runes} in hand` : 'the cellar has it'}. Set it on a cellar vessel to lock its temperature.`, 'rune', 4200);
+    this.lab.save();
+    this.refresh();
+  }
+
+  /**
+   * The buried rune stones: a weathered slab half sunk in the ground, its
+   * carved rune glowing and pulsing; a dug one leaves a little pit of loose
+   * earth.
+   * @param {CanvasRenderingContext2D} ctx
+   */
+  drawCaches(ctx) {
+    for (const c of this.caches()) {
+      const x = c.x, y = c.y;
+      if (c.dug) {
+        ctx.fillStyle = 'rgba(30,20,14,0.75)'; ctx.fillRect(x - 4, y - 1, 9, 2);
+        ctx.fillStyle = 'rgba(90,70,50,0.8)'; ctx.fillRect(x - 6, y - 2, 2, 1); ctx.fillRect(x + 5, y - 2, 2, 1);
+        continue;
+      }
+      const rise = (this.runeHits && this.runeHits[c.id]) || 0; // each blow loosens it a little
+      const glow = 0.55 + 0.45 * Math.sin(this.time * 2.4 + x * 0.1);
+      // the halo
+      ctx.fillStyle = `rgba(120,220,255,${(0.10 + 0.12 * glow).toFixed(3)})`;
+      ctx.fillRect(x - 6, y - 11 - rise, 13, 11);
+      // the slab: dark outline, stone body, lit top edge
+      ctx.fillStyle = '#1c1820'; ctx.fillRect(x - 4, y - 9 - rise, 9, 10 + rise);
+      ctx.fillStyle = '#6a6470'; ctx.fillRect(x - 3, y - 8 - rise, 7, 9 + rise);
+      ctx.fillStyle = '#8a8490'; ctx.fillRect(x - 3, y - 8 - rise, 7, 1);
+      ctx.fillStyle = '#4a4450'; ctx.fillRect(x + 3, y - 7 - rise, 1, 8 + rise);
+      // the carved rune
+      const g = Math.round(150 + 105 * glow);
+      ctx.fillStyle = `rgb(${Math.round(g * 0.55)},${g},255)`;
+      ctx.fillRect(x, y - 7 - rise, 1, 6);
+      ctx.fillRect(x - 2, y - 6 - rise, 2, 1); ctx.fillRect(x + 1, y - 4 - rise, 2, 1);
+      // the earth over its foot
+      ctx.fillStyle = '#3a2a1e'; ctx.fillRect(x - 5, y - 1, 11, 2);
+      ctx.fillStyle = '#5a4430'; ctx.fillRect(x - 5, y - 1, 11, 1);
+      // a spark now and then
+      if (Math.sin(this.time * 3.1 + x) > 0.97) { ctx.fillStyle = '#e8fbff'; ctx.fillRect(x + ((this.time * 7) % 7) - 3, y - 12 - rise, 1, 1); }
+    }
+  }
+
   /** @param {{clientX:number, clientY:number}} e where the tap came down */
   tapScene(e) {
     const q = this.scenePoint(e);
+    // a rune stone half buried in the ground: a few blows dig it up (it lies still, so it comes before a passing animal)
+    const cache = this.cacheAt(q.x, q.y);
+    if (cache) { this.digCache(cache); return; }
     // a rabbit is struck (or, once it is down, caught; its body carried home); one close by bolts
     const warren = this.warren(), rb = warren ? warren.at(q.x, q.y) : null;
     if (rb) { this.hunt(warren, rb, q.x, q.y); return; }
@@ -1341,6 +1443,7 @@ export class WildsView {
     }
     // the plants, the far ones first
     for (const p of this.field.slice().sort((a, b) => a.y - b.y)) if (p.key && !this.fallen[p.id]) this.drawPlant(ctx, p, dc);
+    this.drawCaches(ctx);
     this.drawFallen(ctx, dt);
     if (dc && warren) this.drawWarren(dc, warren, true);
     else if (warren) this.drawWarren(ctx, warren);

@@ -68,27 +68,11 @@ function oval(x, y, rx, ry, rnd) {
 const pick = (rnd, mats) => (mats.length < 2 || rnd() < 0.6 ? mats[0] : mats[1 + Math.floor(rnd() * (mats.length - 1))]);
 
 /**
- * A puff of leaves: a disc whose edge is scalloped into leafy lobes.
- * @param {number} x @param {number} y @param {number} r @param {() => number} rnd @param {number} [sy] vertical squash
- */
-function puff(x, y, r, rnd, sy = 0.86) {
-  const n = Math.max(12, Math.round(r * 5)), lobes = Math.round(r * 0.9) + 3, ph = rnd() * 6;
-  /** @type {[number, number][]} */
-  const pts = [];
-  for (let i = 0; i < n; i++) {
-    const a = (i / n) * Math.PI * 2, q = 1 + 0.14 * Math.abs(Math.sin(a * lobes * 0.5 + ph)) - 0.07 + (rnd() - 0.5) * 0.08;
-    pts.push([x + Math.cos(a) * r * q, y + Math.sin(a) * r * q * sy]);
-  }
-  return pts;
-}
-
-/**
- * A cluster of leaves round (x, y), rx × ry, after the pixel artist's
- * clumps: a dark mass in shade, then rounded puffs of leaves laid over it
- * lower ones first, each in flat tones — its body, a lit cap toward the
- * upper left and a bright highlight on the cap — so every clump reads as a
- * rounded mass of leaves; leaf tufts break its outline, a few lit flecks
- * and loose leaves at the fringe, the region's blossoms dotted over it.
+ * A cluster of leaves round (x, y), rx × ry, built pixel by pixel: a dark
+ * mass in shade with a lit body over it, then the leaves as small marks of
+ * one to three pixels, each lit by where it sits (brighter up and to the
+ * left) in a few flat steps; leaf tufts break its outline, a few loose
+ * leaves at the fringe, the region's blossoms dotted over it.
  * Returns its sway group.
  * @param {Model} m @param {any} rng @param {number} x @param {number} y @param {number} rx @param {number} ry
  * @param {Look & {amp?:number, tone?:number, leaf?:number, dense?:number, flat?:boolean}} [o]
@@ -101,31 +85,30 @@ export function cluster(m, rng, x, y, rx, ry, o = {}) {
   const leafy = { shade: /** @type {'flat'} */ ('flat'), noOutline: true, ...sw };
   // the shade at its heart and underside, showing between the clumps
   m.poly(oval(x + rx * 0.04, y + ry * 0.12, rx * 0.9, ry * (o.flat ? 0.68 : 0.84), rnd), mats[0], { ...leafy, step: st(0.2) });
-  // round clumps, the lower ones first, each drawn as the reference sheets draw them: a dark rim
-  // on its lower right (where it overlaps the clump below, so every clump reads apart), its body,
-  // a lit crescent on its upper left and a bright highlight there — four clean tones, no speckle
-  const pr = Math.max(2.2, Math.min(4.2, Math.min(rx, ry) * 0.45)), n = Math.max(3, Math.round(((rx * ry) / (pr * pr)) * 1.05 * (o.dense ?? 1)));
-  /** @type {[number, number, number][]} */
+  // the lit body of the mass, toward the upper left, over the shade (two flat tones, no round clumps)
+  m.poly(oval(x - rx * 0.1, y - ry * (o.flat ? 0.12 : 0.16), rx * 0.74, ry * (o.flat ? 0.52 : 0.66), rnd), mats[0], { ...leafy, step: st(0.34) });
+  // then the leaves themselves, pixel by pixel: small marks of one to three pixels (a pair, a stalk,
+  // an elbow, a diagonal), each lit by where it sits — brighter up and to the left — in a few flat
+  // steps, the brightest with a single highlight pixel; the shade shows between them
+  const n = Math.max(6, Math.round(rx * ry * 1.45 * (o.dense ?? 1)));
+  /** @type {[number, number][][]} */
+  const MARKS = [[[0, 0], [1, 0]], [[0, 0], [0, 1]], [[0, 0], [1, 0], [1, 1]], [[0, 0], [1, 1]], [[0, 0]], [[0, 0], [1, 0], [0, 1]], [[1, 0], [0, 1]]];
+  /** @type {[number, number][]} */
   const at = [];
   for (let i = 0; i < n; i++) {
-    const a = rnd() * Math.PI * 2, q = Math.sqrt(rnd()) * 0.86;
-    let py = y + Math.sin(a) * (ry - pr * 0.6) * q - ry * 0.05;
-    if (o.flat) py = Math.min(py, y + ry * 0.22);
-    at.push([x + Math.cos(a) * (rx - pr * 0.5) * q, py, pr * (0.8 + rnd() * 0.4)]);
+    const a = rnd() * Math.PI * 2, q = Math.sqrt(rnd()) * 0.96;
+    let py = y + Math.sin(a) * ry * q - ry * 0.04;
+    if (o.flat) py = Math.min(py, y + ry * 0.3);
+    at.push([x + Math.cos(a) * rx * q, py]);
   }
+  // (the lower ones first: the lit leaves above lie over them)
   at.sort((p, q) => q[1] - p[1]);
-  for (const [px, py, r] of at) {
-    // the higher and further left, the more of it in the light
-    const up = (y - py) / ry, left = (x - px) / rx, mat = pick(rnd, mats), b = 0.36 + up * 0.14 + left * 0.06 + (rnd() - 0.5) * 0.06;
-    m.poly(puff(px + r * 0.12, py + r * 0.18, r + 0.8, rnd, 0.82), mat, { ...leafy, step: st(b - 0.34) });
-    m.poly(puff(px, py, r, rnd), mat, { ...leafy, step: st(b) });
-    m.poly(puff(px - r * 0.22, py - r * 0.26, r * 0.66, rnd, 0.8), mat, { ...leafy, step: st(b + 0.2) });
-    m.poly(puff(px - r * 0.36, py - r * 0.42, Math.max(0.9, r * 0.3), rnd, 0.6), mat, { ...leafy, step: st(b + 0.42) });
-    // a leaf or two standing out of its top edge
-    for (let j = 0; j < Math.max(1, Math.round(r * 0.35)); j++) {
-      const a = Math.PI * (1.15 + rnd() * 0.6);
-      m.poly(leaf(rnd, px + Math.cos(a) * r * 0.95, py + Math.sin(a) * r * 0.9, 0.7 + rnd() * 0.4), mat, { ...leafy, step: st(b + 0.3) });
-    }
+  for (const [px, py] of at) {
+    const up = (y - py) / ry, left = (x - px) / rx, mat = pick(rnd, mats);
+    const lvl = Math.max(0, Math.min(4, Math.round((0.42 + up * 0.3 + left * 0.16 + (rnd() - 0.5) * 0.28) * 4)));
+    const step = st(0.12 + lvl * 0.13), mk = MARKS[Math.floor(rnd() * MARKS.length)], bx = Math.round(px), by = Math.round(py);
+    for (const [dx, dy] of mk) m.dot(bx + dx, by + dy, mat, { clip: false, step, ...sw });
+    if (lvl >= 3 && rnd() < 0.35) m.dot(bx - 1, by - 1, mat, { clip: false, step: st(0.12 + Math.min(4, lvl + 1) * 0.13 + 0.06), ...sw });
   }
   // leaf tufts breaking the outline: small leaves round the edge, lit above, dark below
   const tufts = Math.round((rx + ry) * 0.6);

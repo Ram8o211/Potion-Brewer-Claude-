@@ -363,6 +363,8 @@ canvas.portrait.big { width: 88px; height: 88px; box-shadow: 0 0 0 var(--px) var
 .hutch-scene-wrap .crisp-overlay { box-shadow: 0 0 0 var(--px) var(--ink2); }
 .pen-tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px 0 4px; }
 .pen-tabs::-webkit-scrollbar { display: none; }
+.pen-tabs .btn.empty-pen:not(.active) { opacity: 0.7; }
+.pen-empty { margin: 4px 0 6px; }
 .pen-tabs .btn { flex: none; min-height: 44px; font-size: var(--fs-s); padding-left: 10px; padding-right: 12px; }
 .pen-title { text-align: center; margin-top: -2px; }
 canvas.hutch-scene { display: block; width: 100%; height: auto; aspect-ratio: 224 / 92; image-rendering: pixelated; box-shadow: 0 0 0 var(--px) var(--ink2); touch-action: manipulation; cursor: pointer; }
@@ -854,3 +856,16 @@ canvas.ing-sprite { image-rendering: pixelated; }
 .seed.selected { box-shadow: 0 0 0 var(--px) #1a0f26, 0 0 0 calc(var(--px) * 2) var(--brass, #e8c060); }
 .seed:disabled { opacity: 0.45; }
 .garden-ups { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 6px; }
+
+/* the potion shelves inside the cellar: bottles to drag onto a vessel */
+.cellar-shelves { position: sticky; top: -4px; z-index: 3; }
+.cellar-shelf { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.cellar-bottle { position: relative; display: flex; flex-direction: column; align-items: center; min-width: 44px; min-height: 52px; padding: 2px 4px; touch-action: none; }
+.cellar-bottle canvas { width: 24px; height: 33px; image-rendering: pixelated; }
+.cellar-bottle .bml { font-size: 12px; line-height: 1; }
+.cellar-bottle .cs-fx { position: absolute; top: 1px; right: 1px; }
+.cellar-bottle .cs-fx img.ico.sm { width: 12px; height: 12px; }
+.cellar-bottle.active { box-shadow: 0 0 0 2px var(--brass); }
+.cellar-bottle:not(.charger) { opacity: 0.8; }
+.cellar-vessel.drop-over { box-shadow: 0 0 0 3px var(--brass), 0 0 10px var(--brassHi); }
+.bottle-ghost canvas { width: 32px; height: 44px; }

@@ -132,7 +132,8 @@ export function fillVessel(v, comp, T, now, meta = {}) {
   if (vesselVolume(v) > 0) return { ok: false, reason: 'The vessel is not empty.' };
   const c = Object.fromEntries(Object.entries(comp).filter(([, ml]) => ml > 1e-6));
   if (!Object.keys(c).length) return { ok: false, reason: 'There is nothing to lay down.' };
-  Object.assign(v, emptyVessel(v.id, now), { comp: c, T, name: meta.name || 'A laid-down brew', batchId: meta.batchId, parts: meta.parts || [] });
+  // (the vessel's jacket keeps its potion charge and its rune: they belong to the vessel, not the brew)
+  Object.assign(v, emptyVessel(v.id, now), { comp: c, T, name: meta.name || 'A laid-down brew', batchId: meta.batchId, parts: meta.parts || [], charge: v.charge || null, rune: v.rune || null });
   note(v, now, `Laid down at ${Math.round(T)}°C.`);
   return { ok: true };
 }
@@ -140,7 +141,8 @@ export function fillVessel(v, comp, T, now, meta = {}) {
 /** Empty a vessel; returns what it held. @param {Vessel} v @param {number} now */
 export function emptyVesselContents(v, now) {
   const out = { comp: { ...v.comp }, T: v.T, name: v.name, parts: v.parts || [] };
-  Object.assign(v, emptyVessel(v.id, now));
+  // the charge and the rune stay with the vessel for the next brew
+  Object.assign(v, emptyVessel(v.id, now), { charge: v.charge || null, rune: v.rune || null });
   return out;
 }
 
@@ -171,7 +173,6 @@ export function potionDrive(effects) {
  * @param {Vessel} v @param {ArrayLike<number>} effects @param {number} ml @param {number} now
  */
 export function chargeVessel(v, effects, ml, now) {
-  if (vesselVolume(v) <= 0) return { ok: false, reason: 'Fill the vessel first.' };
   if (!(ml > 0)) return { ok: false, reason: 'Choose how much potion to load.' };
   const net = potionNet(effects);
   if (!net) return { ok: false, reason: `Only a potion with Fire or Frost (at least ${MIN_POINTS} % more of one than the other) warms or chills a vessel.` };

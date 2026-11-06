@@ -9,7 +9,7 @@ import { generateCommission, tutorialCommission } from './commissions.js';
 import { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById, RETIRED_EQUIPMENT } from './equipment.js';
 import { SIM } from '../simulation/constants.js';
 import { createTrials, normalizeTrials, runTrial, SUBJECT_BY_ID, knownLaws, certification, summarize } from './experiments.js';
-import { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth, depositStatus, migrateGathering, setSky, water } from './gathering.js';
+import { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth, depositStatus, migrateGathering, setSky, water, runeCaches as runeCachesOf } from './gathering.js';
 import { predictPlan } from './predict.js';
 import { EFFECT_INDEX, EFFECT_KEYS } from '../alchemy/effects.js';
 import { migrateVial } from './vial.js';
@@ -397,6 +397,22 @@ export class GameState {
     return r;
   }
 
+  /** The buried rune caches of a region now, and whether each is still there. @param {string} region */
+  runeCaches(region) {
+    return runeCachesOf(region, this.sceneSeed(region)).map((c) => ({ ...c, dug: !!this.gathering.runes[c.id] }));
+  }
+
+  /** Dig up a buried rune cache: one temperature rune for the cellar. @param {string} id */
+  digRune(id) {
+    const region = id.split(':')[0];
+    if (!this.runeCaches(region).some((c) => c.id === id)) return { ok: false, reason: 'There is nothing buried there.' };
+    if (this.gathering.runes[id]) return { ok: false, reason: 'It has already been dug up.' };
+    this.gathering.runes[id] = 1;
+    this.cellar.runes++;
+    this.stats.runes = (this.stats.runes || 0) + 1;
+    return { ok: true };
+  }
+
   // ------------------------------------------------------------ cellar, still and burning
   /** Advance the aging vessels to now (also after a break). @param {number} [now] */
   tickCellar(now = Date.now()) {
@@ -477,7 +493,7 @@ export class GameState {
   runeVessel(vessel, target, now = Date.now()) {
     this.tickCellar(now);
     const v = this.cellar.vessels[vessel];
-    if (!v || vesselVolume(v) <= 0) return { ok: false, reason: 'Fill the vessel first.' };
+    if (!v) return { ok: false, reason: 'There is no such vessel.' };
     // moving the target of the vessel's own rune uses no new one
     const fresh = !(v.rune && v.rune.life > 0);
     if (fresh && this.cellar.runes <= 0) return { ok: false, reason: 'You have no temperature rune. Buy one at the market, or look underground in the Wilds.' };
@@ -501,6 +517,18 @@ export class GameState {
     if (!vial) return { ok: false, reason: 'Nothing could be bottled.' };
     if (this.bottles.length < this.cap.bottles) this.bottles.push(vial); else this.vial = vial;
     return { ok: true, vial };
+  }
+
+  /**
+   * Take a vessel's brew out to pour it back into the cauldron: its contents
+   * (ml per id), temperature and parts; the vessel keeps its charge and rune.
+   * @param {number} vessel @param {number} [now]
+   */
+  takeVessel(vessel, now = Date.now()) {
+    this.tickCellar(now);
+    const v = this.cellar.vessels[vessel];
+    if (!v || vesselVolume(v) <= 0) return { ok: false, reason: 'The vessel is empty.' };
+    return { ok: true, ...emptyVesselContents(v, now) };
   }
 
   /**

@@ -148,6 +148,11 @@ export const HABITAT = {
   chronoglass: [['rabbit', 1]],       // native: hourglass scarab (stand-in)
 };
 
+/** The regions where a kind lives in the wild (HABITAT). @param {AnimalKind} kind @returns {string[]} */
+export function habitatOf(kind) {
+  return Object.entries(HABITAT).filter(([, h]) => h.some((x) => x[0] === kind)).map(([r]) => r);
+}
+
 /** Pick a kind for a newcomer to a region. @param {string} region @param {Rng} rng @returns {AnimalKind} */
 export function pickKind(region, rng) {
   const h = HABITAT[region] || [['rabbit', 1]];

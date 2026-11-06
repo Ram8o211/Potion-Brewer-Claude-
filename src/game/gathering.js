@@ -203,7 +203,7 @@ export function thirstOf(shape, region) {
 
 /** Fresh gathering state: every stand saturated, some of it already mature. */
 export function createGathering(now = Date.now()) {
-  return { v: GATHER_VERSION, nodes: /** @type {Record<string, Stand>} */ ({}), total: 0, trips: 0, created: now, sky: 'clear', watered: 0 };
+  return { v: GATHER_VERSION, nodes: /** @type {Record<string, Stand>} */ ({}), total: 0, trips: 0, created: now, sky: 'clear', watered: 0, runes: /** @type {Record<string, number>} */ ({}) };
 }
 
 /** Version of the gathering state: 2 adds the moisture and growth checkpoints of living plants. */
@@ -233,6 +233,8 @@ export function normalizeGathering(g, now = Date.now()) {
   // a save from before plants drank (v1) is brought up to date by migrateGathering, which knows the deposits
   out.v = Number.isFinite(g.v) ? g.v : 1;
   if (typeof g.sky === 'string') out.sky = g.sky;
+  // the buried rune caches already dug up (by cache id: region, generation, place)
+  if (g.runes && typeof g.runes === 'object') for (const [k, v] of Object.entries(g.runes)) if (v) out.runes[k] = 1;
   return out;
 }
 
@@ -715,4 +717,32 @@ export function formatWait(ms) {
   const m = Math.ceil(s / 60);
   if (m < 60) return `${m} min`;
   return `${Math.floor(m / 60)} h ${m % 60} min`;
+}
+
+// ------------------------------------------------------------------ buried runes
+
+/**
+ * How many old temperature runes lie buried in each underground region's
+ * generation: the Netherwood's caverns, the quarry's seams, the crags' ash
+ * and the buried relics of the Chronoglass Wastes. A cache is dug up once;
+ * regenerating the biome buries new ones.
+ */
+export const RUNE_CACHES = { netherwood: 2, quarry: 2, crags: 1, chronoglass: 1 };
+
+/**
+ * The rune caches of a region's generation: an id and where along the
+ * scene they lie (fx, 0..1). Deterministic from the scene's seed.
+ * @param {string} region @param {string} sceneSeed
+ * @returns {{id:string, fx:number}[]}
+ */
+export function runeCaches(region, sceneSeed) {
+  const n = /** @type {Record<string, number>} */ (RUNE_CACHES)[region] || 0;
+  const out = [];
+  for (let k = 0; k < n; k++) {
+    const r = new Rng(`rune-cache:${sceneSeed}:${region}:${k}`);
+    // spread over the scene: each in its own stretch of it
+    const fx = (k + 0.2 + 0.6 * r.next()) / n * 0.8 + 0.1;
+    out.push({ id: `${region}:${sceneSeed}:${k}`, fx: Math.round(fx * 1000) / 1000 });
+  }
+  return out;
 }
