@@ -32,7 +32,7 @@ export const GROUND_Y0 = 69;
 const GROUND_Y1 = 86;
 
 /** Version of the pens' painting (names caches only). */
-export const PENS_VERSION = 9;
+export const PENS_VERSION = 10;
 
 /**
  * @typedef {Object} Pen
@@ -1400,7 +1400,7 @@ const PENS = {
       lantern(cv, 186, 7, 18);
       railFence(cv, 122, 222, BACK, 15, P.oak, { gap: 24, rails: 2 });
       barrel(cv, 168, BACK - 3, 10, 13);
-      ground(cv, BACK, 'cobble', seed + 2);
+      ground(cv, BACK, 'flags', seed + 2, { R: P.sand, joint: '#8a6c4a' }); // pale sandstone: black salamanders stand out
       return { rack: { x: 40, y: GROUND_Y0 + 1 }, nest: [196, BACK - 3, 216, BACK], anim: [{ type: 'fire', cx, base: BACK - 5, w: 17, h: 12 }, { type: 'lantern', x: 186, y: 18 }] };
     },
   },
@@ -1461,7 +1461,7 @@ const PENS = {
       planter(cv, 4, 16, BACK, 6, seed + 9);
       hay(cv, 150, BACK, 28, 8, seed + 7);
       crate(cv, 176, BACK, 13);
-      ground(cv, BACK, 'flags', seed + 8, { joint: '#3a3638' });
+      ground(cv, BACK, 'dirt', seed + 8, { straw: true }); // a straw-strewn floor under grey doves
       flowers(cv, 196, 220, BACK, ['#b070d0', '#d0a0f0', '#8a50b0'], seed + 10, 9);
       return { rack: { x: 58, y: GROUND_Y0 + 1 }, nest: [140, BACK - 3, 160, BACK], anim: [{ type: 'butterflies', n: 1, x0: 180, x1: 220, y0: 46, y1: 62, colors: ['#d0a0f0'] }] };
     },
@@ -1491,7 +1491,7 @@ const PENS = {
       grove(cv, 27, haze(P.leaf, '#4a5a78', 0.5), seed, { h: [11, 19], bottom: 34, pines: 0.9, snow: '#e4ecf6' });
       rocks(cv, 0, 30, cv.W, BACK, P.stone, seed + 1, { h: 9 });
       snowcap(cv, 0, cv.W, 29, seed + 2);
-      ground(cv, BACK - 2, 'snow', seed + 3);
+      ground(cv, BACK - 2, 'snow', seed + 3, { R: P.snow.map((c) => mixPacked(c, col('#5a6c90'), 0.32)) }); // trodden, shaded snow: white ermines show
       doghouse(cv, 160, BACK + 2, 30, 18, { snow: true });
       crate(cv, 30, BACK + 1, 13);
       hay(cv, 36, BACK - 3, 9, 3, seed + 7);
@@ -1519,7 +1519,7 @@ const PENS = {
       crate(cv, 4, 58, 14);
       wateringCan(cv, 8, 44);
       railFence(cv, 0, cv.W, BACK + 1, 14, P.wood, { gap: 36, rails: 2 });
-      ground(cv, BACK + 1, 'dirt', seed + 3);
+      ground(cv, BACK + 1, 'grass', seed + 3); // a lawn under the brown snails
       tufts(cv, 0, cv.W, BACK + 2, seed + 4, 0.3);
       return { rack: { x: 40, y: GROUND_Y0 + 1 }, nest: [160, BACK - 2, 186, BACK], anim: [{ type: 'butterflies', n: 3, x0: 20, x1: 200, y0: 30, y1: 60, colors: ['#ffffff', '#f6d26a', '#f0a0c0'] }] };
     },
@@ -1536,7 +1536,7 @@ const PENS = {
       crate(cv, 190, BACK, 12); hay(cv, 160, BACK, 26, 6, seed + 2);
       lantern(cv, 114, 0, 14);
       overgrowth(cv, 98, 132, 0, P.moss, seed + 3, { rate: 0.3, len: [4, 12] });
-      ground(cv, BACK, 'cobble', seed + 4);
+      ground(cv, BACK, 'dirt', seed + 4, { straw: true }); // straw on earth under grey rats
       return { rack: { x: 44, y: GROUND_Y0 + 1 }, nest: [54, BACK - 3, 70, BACK], anim: [{ type: 'lantern', x: 114, y: 14 }, { type: 'motes', n: 8, x: 114, y: 28, r: 18 }, { type: 'drip', x: 104, y0: 10, y1: BACK + 2, every: 3.2 }, { type: 'drip', x: 126, y0: 8, y1: BACK + 2, every: 4.5 }] };
     },
   },
@@ -1581,7 +1581,7 @@ const PENS = {
       rect(cv, 74, 28, 86, 31, P.stone[4]);
       for (const [x, w] of [[30, 6], [62, 7], [98, 5]]) stone(cv, x, BACK - 3, w, seed + x);
       block(4, GROUND_Y0 - 4, 114, GROUND_Y0 + 2);
-      ground(cv, BACK, 'dirt', seed + 7);
+      ground(cv, BACK, 'dirt', seed + 7, { R: P.sand }); // pale river sand under dark otters
       pebbles(cv, 112, cv.W, BACK + 1, GROUND_Y1, seed + 8, 14);
       tufts(cv, 112, cv.W, BACK + 1, seed + 10, 0.3);
       return { rack: { x: 130, y: GROUND_Y0 + 1 }, nest: [164, BACK - 3, 190, BACK], anim: [{ type: 'waterfall', x0: 76, x1: 84, y0: 31, y1: BACK - 7 }, { type: 'shimmer', n: 8, x0: 10, x1: 108, y0: BACK - 7, y1: BACK + 1 }] };
@@ -1600,7 +1600,7 @@ const PENS = {
       for (const [x, y] of [[122, BACK - 13], [127, BACK - 14], [131, BACK - 12]]) { rect(cv, x, y, x + 3, y + 2, col('#b06a3a')); cv.set(x + 1, y, col('#e8a060')); }
       lantern(cv, 92, 10, 22);
       woodpile(cv, 196, BACK, 4, 2);
-      ground(cv, BACK, 'cobble', seed + 3);
+      ground(cv, BACK, 'dirt', seed + 3, { R: P.sand.map((c) => mixPacked(c, 0xffffffff, 0.15)) }); // pale grit under dark beetles
       pebbles(cv, 0, cv.W, BACK + 1, GROUND_Y1, seed + 4, 22);
       return { rack: { x: 44, y: GROUND_Y0 + 1 }, nest: [176, BACK - 3, 200, BACK], anim: [{ type: 'lantern', x: 92, y: 22 }, { type: 'motes', n: 6, x: 92, y: 30, r: 16 }] };
     },
@@ -1620,7 +1620,7 @@ const PENS = {
       crystals(cv, 186, BACK, '#6ab8ff', seed + 4);
       crystals(cv, 44, BACK, '#c070e0', seed + 5);
       crate(cv, 132, BACK, 10);
-      ground(cv, BACK, 'cobble', seed + 3, { R: P.stone.map((c) => mixPacked(c, 0xff000000, 0.3)) });
+      ground(cv, BACK, 'flags', seed + 3, { R: P.stone.map((c) => mixPacked(c, col('#8aa0bc'), 0.35)), joint: '#2a3040' }); // cool pale stone under brown moths
       return { rack: { x: 60, y: GROUND_Y0 + 1 }, nest: [182, BACK - 3, 202, BACK], anim: [{ type: 'lantern', x: 120, y: 16 }, { type: 'motes', n: 12, x: 120, y: 34, r: 30 }, { type: 'drip', x: 70, y0: 12, y1: BACK + 2, every: 3.6 }, { type: 'drip', x: 140, y0: 10, y1: BACK + 2, every: 5.1 }] };
     },
   },
@@ -1652,7 +1652,7 @@ const PENS = {
       // the balustrade
       for (let x = 4; x < cv.W - 4; x += 12) { rect(cv, x, BACK - 12, x + 3, BACK, P.lime[3]); rect(cv, x, BACK - 12, x + 1, BACK, P.lime[5]); }
       rect(cv, 0, BACK - 14, cv.W, BACK - 12, P.lime[4]); rect(cv, 0, BACK - 14, cv.W, BACK - 13, P.lime[5]);
-      ground(cv, BACK, 'flags', seed + 4, { R: P.lime, joint: '#9a948a' });
+      ground(cv, BACK, 'flags', seed + 4, { R: P.tile, joint: '#3a1810' }); // terracotta under the pale-blue rays
       planter(cv, 18, 34, BACK, 7, seed + 5);
       planter(cv, 190, 206, BACK, 7, seed + 6);
       return { rack: { x: 60, y: GROUND_Y0 + 1 }, nest: [150, BACK - 3, 176, BACK], anim: [{ type: 'butterflies', n: 2, x0: 20, x1: 210, y0: 10, y1: 40, colors: ['#ffffff', '#e0f0ff'] }] };
@@ -1688,7 +1688,7 @@ const PENS = {
         return mixPacked(col(fold < 2 ? '#8a849a' : fold < 4 ? '#a8a2b8' : '#6e687e'), 0xff000000, clampI(y / BACK, 0, 1) * 0.25);
       });
       for (const x of [62, 150]) { table(cv, x - 10, x + 10, BACK - 8, BACK, P.oak); bottle(cv, x - 4, BACK - 8, '#e0d8c8', 'tall'); cv.glow(x - 4, BACK - 18, 20, [1, 0.8, 0.5], 0.5); }
-      ground(cv, BACK, 'flags', seed + 2, { joint: '#2a2430' });
+      ground(cv, BACK, 'flags', seed + 2, { R: P.oak, joint: '#120a10' }); // dark oak under grey-violet moths
       return { rack: { x: 30, y: GROUND_Y0 + 1 }, nest: [186, BACK - 3, 210, BACK], anim: [{ type: 'motes', n: 10, x: 62, y: 40, r: 24 }, { type: 'motes', n: 10, x: 150, y: 40, r: 24 }] };
     },
   },
@@ -1738,6 +1738,44 @@ const PENS = {
   },
 };
 
+/**
+ * Quiet a pen's painting so its animals stand out: each pixel drawn toward
+ * the mean of its neighbourhood (much more on the floor, where the animals
+ * walk, than on the walls and sky), the contrast eased round mid-grey and
+ * the colour a little paler.
+ * @param {Canvas} cv @param {number} floorY the first row of the floor
+ */
+function calm(cv, floorY) {
+  const W = cv.W, H = cv.H, px = cv.pix.px, src = px.slice();
+  for (let y = 0; y < H; y++) {
+    const floor = y >= floorY, r = floor ? 2 : 1, keep = floor ? 0.38 : 0.52;
+    for (let x = 0; x < W; x++) {
+      const k = y * W + x, c = src[k];
+      if (!(c >>> 24)) continue;
+      let sr = 0, sg = 0, sb = 0, n = 0;
+      for (let dy = -r; dy <= r; dy++) {
+        const yy = y + dy;
+        if (yy < 0 || yy >= H || (yy >= floorY) !== floor) continue;
+        for (let dx = -r; dx <= r; dx++) {
+          const xx = x + dx;
+          if (xx < 0 || xx >= W) continue;
+          const q = src[yy * W + xx];
+          if (!(q >>> 24)) continue;
+          sr += q & 255; sg += (q >>> 8) & 255; sb += (q >>> 16) & 255; n++;
+        }
+      }
+      const ch = (v, m) => m + (v - m) * keep;
+      let R = ch(c & 255, sr / n), G = ch((c >>> 8) & 255, sg / n), B = ch((c >>> 16) & 255, sb / n);
+      // softer contrast round mid-grey, a little less colour
+      const con = floor ? 0.82 : 0.84, l = 0.3 * R + 0.59 * G + 0.11 * B;
+      R = l + (R - l) * 0.86; G = l + (G - l) * 0.86; B = l + (B - l) * 0.86;
+      R = 128 + (R - 128) * con; G = 128 + (G - 128) * con; B = 128 + (B - 128) * con;
+      const cl = (v) => (v < 0 ? 0 : v > 255 ? 255 : Math.round(v));
+      px[k] = ((c & 0xff000000) | (cl(B) << 16) | (cl(G) << 8) | cl(R)) >>> 0;
+    }
+  }
+}
+
 /** Kinds with a pen of their own. */
 export const PEN_KINDS = Object.keys(PENS);
 
@@ -1774,6 +1812,8 @@ export function penOf(kind) {
   // the wilds' grade, so a pen looks like the same world as the wilds: deeper shadows, brighter lights, richer colour
   grade(cv, 'pen');
   grade(fg, 'pen');
+  // calmer than the wilds: less fine texture, softer contrast, less colour, most of all on the floor the animals walk on
+  calm(cv, BACK);
   /** @type {number[][][]} */
   const ground = [];
   for (let y = GROUND_Y0; y <= GROUND_Y1; y++) {

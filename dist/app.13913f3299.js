@@ -26401,27 +26401,13 @@ head = E(Math.min(RABBIT_W - 3 - hrx2 - (QUAD[kind]?.sn[0] ? 3 : 0), Math.max(ox
 if (Q && Q.sn[0]) snout = E(Math.min(head.cx + Q.sn[0] * hs, RABBIT_W - 2 - Q.sn[1] * hs), head.cy + 1, Q.sn[1] * hs, Q.sn[2] * hs);
 if (kind === 'dove') snout = E(head.cx + head.rx + 0.5, head.cy + 0.5, 1.2, 1);
 const ll = Math.max(2, Math.round(D.leg * g)), lw = kind === 'deer' ? 1 : 2;
-if (pose === 'dead' && kind !== 'dove' && kind !== 'snail' && kind !== 'salamander') {
-const up = Math.max(4, Math.round(ll * 0.75)) + 1;
-const leg = (/** @type {number} */ x, /** @type {number} */ base, /** @type {number} */ len, /** @type {number} */ lean) => {
-for (let i = 0; i < len; i++) {
-const lx = Math.round(x + (lean * i) / len), last = legs[legs.length - 1];
-if (i && last && last.x === lx) { last.y--; last.h++; } else legs.push({ x: lx, y: base - i, w: lw, h: 1, seg: true });
-}
-};
-const ht = haunch.cy - haunch.ry + 2, ct = chest.cy - chest.ry + 2;
-leg(haunch.cx - Math.round(haunch.rx * 0.2), ht, up + 1, -2);
-leg(haunch.cx + Math.round(haunch.rx * 0.25), ht, up, -1);
-leg(chest.cx - 1, ct, up, 1);
-leg(chest.cx + Math.round(chest.rx * 0.5), ct, up + 1, 2);
-} else {
-legs.push({ x: haunch.cx - haunch.rx - Math.round(ll * 0.55), y: oy - 3, w: Math.round(ll * 0.55) + 3, h: lw });
-if (kind !== 'dove' && kind !== 'snail') legs.push({ x: haunch.cx - haunch.rx - Math.round(ll * 0.35), y: oy - 3 - lw - 1, w: Math.round(ll * 0.35) + 3, h: lw });
+const limp = pose === 'dead' ? 1 : 0, reach = limp ? 0.42 : 0.55;
+legs.push({ x: haunch.cx - haunch.rx - Math.round(ll * reach), y: oy - 3 + limp, w: Math.round(ll * reach) + 3, h: lw });
+if (kind !== 'dove' && kind !== 'snail') legs.push({ x: haunch.cx - haunch.rx - Math.round(ll * reach * 0.6) + limp, y: oy - 3 - lw - 1 + limp * 2, w: Math.round(ll * reach * 0.6) + 3, h: lw });
 if (kind !== 'dove' && kind !== 'snail' && kind !== 'rabbit') {
-const fx = chest.cx + Math.round(chest.rx * 0.3), fw = Math.min(RABBIT_W - 2 - fx, Math.round(chest.rx * 0.7 + ll));
-legs.push({ x: fx, y: oy - 2, w: fw, h: lw });
-legs.push({ x: fx - 1, y: oy - 2 - lw - 1, w: Math.max(2, fw - 2), h: lw });
-}
+const fx = chest.cx + Math.round(chest.rx * 0.3), fw = Math.min(RABBIT_W - 2 - fx, Math.round(chest.rx * 0.7 + ll * (limp ? 0.5 : 1)));
+legs.push({ x: fx, y: oy - 2 + limp, w: fw, h: lw });
+legs.push({ x: fx - 1 - limp, y: oy - 2 - lw - 1 + limp, w: Math.max(2, fw - 2 - limp * 2), h: lw });
 }
 } else if (pose === 'hop') {
 haunch = E(ox + 10 * g, oy - 9 * g, 8 * g, 6 * g + preg);
@@ -26674,11 +26660,14 @@ return A.variants[v];
 }
 function spriteBody(S, look, snap, low) {
 const { P, L, sc, dead, cause, tr } = S, a0 = S.a, pose = a0.pose;
-const d = decodeSprite(atlasSprite(a0.creature, variantOf(look), pose));
+let d = decodeSprite(atlasSprite(a0.creature, variantOf(look), pose));
+const side = pose === 'dead' ? sideLying(d) : null;
+if (side) d = side.body;
 const kitS = clamp(((snap && STAGE_G[snap.stage]) || 1) * (tr.has('giant') ? 1.18 : tr.has('tiny') ? 0.8 : 1), 0.5, 1.3);
-const sx = kitS, sy = kitS * (pose === 'flop' || pose === 'collapse' ? 0.7 : pose === 'loaf' || pose === 'sick' ? 0.85 : pose === 'dead' ? 0.8 : 1);
+const slump = side && side.legLen === 0;
+const sx = kitS * (slump ? 1.12 : 1), sy = kitS * (pose === 'flop' || pose === 'collapse' ? 0.7 : pose === 'loaf' || pose === 'sick' ? 0.85 : pose === 'dead' ? (slump ? 0.68 : side ? 0.92 : 0.8) : 1);
 const w = Math.max(3, Math.round(d.w * sx)), h = Math.max(3, Math.round(d.h * sy));
-const flip = pose === 'dead';
+const flip = false;
 const at = (/** @type {number} */ x, /** @type {number} */ y) => {
 const X = Math.min(d.w - 1, Math.floor((x * d.w) / w)), Y0 = Math.min(d.h - 1, Math.floor((y * d.h) / h));
 return d.px[(flip ? d.h - 1 - Y0 : Y0) * d.w + X];
@@ -26687,6 +26676,7 @@ const air = pose === 'hop' || pose === 'fly1' || pose === 'fly2';
 let bottom = a0.feetY;
 if (air) bottom = Math.min(a0.feetY - 2, Math.round(Math.max(...a0.parts.map((e) => e.cy + e.ry))));
 if (a0.creature === 'wisp' && !a0.lying) bottom = a0.feetY - 7;
+if (side) bottom = a0.feetY - 1;
 const x0 = clamp(Math.round(a0.cx - w / 2), 1, RABBIT_W - 1 - w), y0 = clamp(bottom - h + 1, 1, RABBIT_H - 1 - h);
 const ex = x0 + Math.round(((d.eye[0] + 0.5) * w) / d.w - 0.5), eyRaw = Math.round(((d.eye[1] + 0.5) * h) / d.h - 0.5);
 const ey = y0 + (flip ? h - 1 - eyRaw : eyRaw);
@@ -26712,6 +26702,22 @@ if (!col) { col = lum(c) < 0.14 ? css(c) : css(tintCoat(c, L, sc, dead, cause));
 P(x0 + x, y0 + y, 1, 1, col);
 if (lum(c) >= 0.14) mask[(y0 + y) * RABBIT_W + x0 + x] = 1;
 }
+if (side && side.legLen > 0) {
+const legCol = css(tintCoat(side.leg, L, sc, dead, cause)), len = Math.max(3, Math.round(side.legLen * sx * 0.9)), gy = a0.feetY;
+const back = x0 + Math.round(w * 0.3), front = x0 + Math.round(w * 0.6);
+const limb = (/** @type {number} */ x, /** @type {number} */ dir, /** @type {number} */ n, /** @type {number} */ y) => {
+for (let i = 0; i < n; i++) {
+const X = x + dir * i, Y = y - (i > n - 2 ? 1 : 0); // the paw turned up a little at its end
+if (X < 1 || X > RABBIT_W - 2) break;
+P(X, Y + 1, 1, 1, K);
+P(X, Y, 1, 1, i === n - 1 ? K : legCol);
+}
+};
+limb(back, -1, len + 1, gy - 1);
+limb(back + 2, -1, len, gy - 2);
+limb(front, 1, len, gy - 1);
+limb(front - 2, 1, len - 1, gy - 2);
+}
 const body = /** @type {Pen} */ ((x, y, ww, hh, col) => {
 const X0 = Math.round(x), Y0 = Math.round(y), W = Math.max(1, Math.round(ww)), H = Math.max(1, Math.round(hh));
 for (let yy = Math.max(0, Y0); yy < Math.min(RABBIT_H, Y0 + H); yy++) for (let xx = Math.max(0, X0); xx < Math.min(RABBIT_W, X0 + W); xx++) if (mask[yy * RABBIT_W + xx]) P(xx, yy, 1, 1, col);
@@ -26733,6 +26739,54 @@ else if (L.arcana >= 2 || sc[4] >= 2) { P(e.x, e.y, 1, 1, C_RUNE_HI); P(e.x - 1,
 else if (L.arcana === 1) P(e.x, e.y - 2, 1, 1, C_RUNE);
 if (pose === 'eat' && !a.bare && !AIRBORNE.has(a.creature)) grassTuft(P, a.nose.x - 1, a.feetY);
 if (dead) causeLayer(S);
+}
+function sideLying(d) {
+const runs = (/** @type {number} */ y) => { let n = 0, on = false; for (let x = 0; x < d.w; x++) { const c = !!d.px[y * d.w + x]; if (c && !on) n++; on = c; } return n; };
+let last = d.h - 1;
+while (last > 0 && runs(last) === 0) last--;
+let bodyBottom = last;
+while (bodyBottom > 0 && runs(bodyBottom) >= 2) bodyBottom--;
+let legLen = last - bodyBottom;
+if (legLen < 2 || bodyBottom < 3) { bodyBottom = last; legLen = 0; }
+const tally = new Map();
+for (let y = bodyBottom + 1; y < d.h; y++) for (let x = 0; x < d.w; x++) {
+const c = d.px[y * d.w + x];
+if (!c || lum(c) < 0.14) continue;
+const k = c.join(',');
+const t = tally.get(k) || { c, n: 0 };
+t.n++; tally.set(k, t);
+}
+const best = [...tally.values()].sort((p, q) => q.n - p.n)[0];
+const bh = bodyBottom + 1, W = d.w;
+const tops = [];
+for (let x = 0; x < W; x++) { let t = -1; for (let y = 0; y < bh; y++) if (d.px[y * W + x]) { t = y; break; } tops.push(t); }
+const mid = tops.slice(Math.floor(W * 0.25), Math.ceil(W * 0.6)).filter((t) => t >= 0).sort((p, q) => p - q);
+const backTop = mid.length ? mid[Math.floor(mid.length / 2)] : 0;
+const px = new Array(W * bh).fill(null);
+const mapY = (/** @type {number} */ x, /** @type {number} */ y) => {
+const t = tops[x];
+if (t < 0 || t >= backTop || y >= backTop) return y;
+const band = Math.min(4, Math.max(2, Math.round((backTop - t) * 0.4)));
+return backTop - band + Math.floor(((y - t) * band) / (backTop - t));
+};
+for (let x = 0; x < W; x++) {
+const t = tops[x];
+for (let y = Math.max(0, t < backTop ? backTop : 0); y < bh; y++) px[y * W + x] = d.px[y * W + x];
+if (t < 0 || t >= backTop) continue;
+const band = Math.min(4, Math.max(2, Math.round((backTop - t) * 0.4))), span = backTop - t;
+for (let j = 0; j < band; j++) {
+const y0 = t + Math.floor((j * span) / band), y1 = Math.max(y0 + 1, t + Math.floor(((j + 1) * span) / band));
+let body = null, ink = null;
+for (let y = y0; y < y1; y++) { const c = d.px[y * W + x]; if (!c) continue; if (lum(c) < 0.14) ink = ink || c; else body = body || c; }
+px[(backTop - band + j) * W + x] = j === 0 && ink ? ink : body || ink;
+}
+}
+let first = 0;
+while (first < bh - 1 && !px.slice(first * W, (first + 1) * W).some(Boolean)) first++;
+const ey = Math.min(bodyBottom, d.eye[1]);
+const eye = [d.eye[0], Math.max(0, mapY(Math.min(W - 1, d.eye[0]), ey) - first)];
+const body = { w: W, h: bh - first, px: px.slice(first * W), eye };
+return { body, legLen, leg: best ? best.c : [0.4, 0.3, 0.25] };
 }
 const AIRBORNE = new Set(['wisp', 'cloudray', 'cavemoth', 'shroudmoth']);
 function creatureLayer(S) {
@@ -26800,12 +26854,12 @@ if (cr === 'beetle' || cr === 'scarab') {
 const x0 = a.haunch.cx - a.haunch.rx, x1 = a.chest.cx + a.chest.rx;
 const cx = Math.round((x0 + x1) / 2) - 1, rx = Math.max(4, Math.round((x1 - x0) / 2) - 1), ry = Math.max(3, Math.round(4.2 * g));
 const back = a.lying && a.pose === 'dead';
-const cy = feet - ry - (back ? 0 : 2);
+const cy = feet - ry - (back ? 1 : 2);
 const shell = E(cx, cy, rx, ry), head = E(cx + rx + 1, cy + Math.round(ry * 0.45), Math.max(2, Math.round(2.2 * g)), Math.max(1, Math.round(1.8 * g)));
 const beat = walkBeat(a.pose);
 for (let i = 0; i < 3; i++) {
 const lx = cx - rx + 2 + Math.round(((2 * rx - 3) * i) / 2), up = beat >= 0 && ((i + beat) & 1) ? 1 : 0, sw = beat >= 0 ? ((i + beat) & 1 ? 1 : -1) : 0;
-if (back) { P(lx, cy - ry - 2, 1, 3, K); P(lx + 1, cy - ry - 3, 1, 1, K); continue; }
+if (back) { P(lx, cy + ry, 2, 1, K); continue; } // dead: the legs folded in under it
 P(lx + sw - 1, cy + ry - 1, 1, feet - (cy + ry) + 1 - up, K);
 P(lx + sw, cy + ry, 1, feet - (cy + ry) + 1 - up, K);
 P(lx + sw + 1, feet - up, 1, 1, K);
@@ -29192,7 +29246,7 @@ const PEN_H = 92;
 const BACK = 67;
 const GROUND_Y0 = 69;
 const GROUND_Y1 = 86;
-const PENS_VERSION = 9;
+const PENS_VERSION = 10;
 const P = {
 wood: ['#1e1018', '#40241a', '#68401f', '#8e5c2c', '#b88242', '#e0b070'].map(col),
 oak: ['#160c14', '#2e1c1a', '#4a3020', '#684828', '#8c6a3c', '#b4945c'].map(col),
@@ -30248,7 +30302,7 @@ woodpile(cv, 98, BACK, 4, 3);
 lantern(cv, 186, 7, 18);
 railFence(cv, 122, 222, BACK, 15, P.oak, { gap: 24, rails: 2 });
 barrel(cv, 168, BACK - 3, 10, 13);
-ground(cv, BACK, 'cobble', seed + 2);
+ground(cv, BACK, 'flags', seed + 2, { R: P.sand, joint: '#8a6c4a' }); // pale sandstone: black salamanders stand out
 return { rack: { x: 40, y: GROUND_Y0 + 1 }, nest: [196, BACK - 3, 216, BACK], anim: [{ type: 'fire', cx, base: BACK - 5, w: 17, h: 12 }, { type: 'lantern', x: 186, y: 18 }] };
 },
 },
@@ -30308,7 +30362,7 @@ table(cv, 18, 52, BACK - 10, BACK, P.pine); bottle(cv, 28, BACK - 10, '#8a5a2c',
 planter(cv, 4, 16, BACK, 6, seed + 9);
 hay(cv, 150, BACK, 28, 8, seed + 7);
 crate(cv, 176, BACK, 13);
-ground(cv, BACK, 'flags', seed + 8, { joint: '#3a3638' });
+ground(cv, BACK, 'dirt', seed + 8, { straw: true }); // a straw-strewn floor under grey doves
 flowers(cv, 196, 220, BACK, ['#b070d0', '#d0a0f0', '#8a50b0'], seed + 10, 9);
 return { rack: { x: 58, y: GROUND_Y0 + 1 }, nest: [140, BACK - 3, 160, BACK], anim: [{ type: 'butterflies', n: 1, x0: 180, x1: 220, y0: 46, y1: 62, colors: ['#d0a0f0'] }] };
 },
@@ -30338,7 +30392,7 @@ sky(cv, 34, rgb('#2e3e6a'), rgb('#8a9ec0'));
 grove(cv, 27, haze(P.leaf, '#4a5a78', 0.5), seed, { h: [11, 19], bottom: 34, pines: 0.9, snow: '#e4ecf6' });
 rocks(cv, 0, 30, cv.W, BACK, P.stone, seed + 1, { h: 9 });
 snowcap(cv, 0, cv.W, 29, seed + 2);
-ground(cv, BACK - 2, 'snow', seed + 3);
+ground(cv, BACK - 2, 'snow', seed + 3, { R: P.snow.map((c) => mixPacked(c, col('#5a6c90'), 0.32)) }); // trodden, shaded snow: white ermines show
 doghouse(cv, 160, BACK + 2, 30, 18, { snow: true });
 crate(cv, 30, BACK + 1, 13);
 hay(cv, 36, BACK - 3, 9, 3, seed + 7);
@@ -30364,7 +30418,7 @@ for (let x = 34; x < 140; x += 18) cabbage(cv, x, BACK - 1, 4);
 crate(cv, 4, 58, 14);
 wateringCan(cv, 8, 44);
 railFence(cv, 0, cv.W, BACK + 1, 14, P.wood, { gap: 36, rails: 2 });
-ground(cv, BACK + 1, 'dirt', seed + 3);
+ground(cv, BACK + 1, 'grass', seed + 3); // a lawn under the brown snails
 tufts(cv, 0, cv.W, BACK + 2, seed + 4, 0.3);
 return { rack: { x: 40, y: GROUND_Y0 + 1 }, nest: [160, BACK - 2, 186, BACK], anim: [{ type: 'butterflies', n: 3, x0: 20, x1: 200, y0: 30, y1: 60, colors: ['#ffffff', '#f6d26a', '#f0a0c0'] }] };
 },
@@ -30380,7 +30434,7 @@ railFence(cv, 140, 190, BACK, 11, P.oak, { gap: 16, rails: 2 });
 crate(cv, 190, BACK, 12); hay(cv, 160, BACK, 26, 6, seed + 2);
 lantern(cv, 114, 0, 14);
 overgrowth(cv, 98, 132, 0, P.moss, seed + 3, { rate: 0.3, len: [4, 12] });
-ground(cv, BACK, 'cobble', seed + 4);
+ground(cv, BACK, 'dirt', seed + 4, { straw: true }); // straw on earth under grey rats
 return { rack: { x: 44, y: GROUND_Y0 + 1 }, nest: [54, BACK - 3, 70, BACK], anim: [{ type: 'lantern', x: 114, y: 14 }, { type: 'motes', n: 8, x: 114, y: 28, r: 18 }, { type: 'drip', x: 104, y0: 10, y1: BACK + 2, every: 3.2 }, { type: 'drip', x: 126, y0: 8, y1: BACK + 2, every: 4.5 }] };
 },
 },
@@ -30420,7 +30474,7 @@ fill(cv, 76, 30, 84, BACK - 7, (x, y) => P.water[(x + y * 2 + (y >> 1)) % 4 === 
 rect(cv, 74, 28, 86, 31, P.stone[4]);
 for (const [x, w] of [[30, 6], [62, 7], [98, 5]]) stone(cv, x, BACK - 3, w, seed + x);
 block(4, GROUND_Y0 - 4, 114, GROUND_Y0 + 2);
-ground(cv, BACK, 'dirt', seed + 7);
+ground(cv, BACK, 'dirt', seed + 7, { R: P.sand }); // pale river sand under dark otters
 pebbles(cv, 112, cv.W, BACK + 1, GROUND_Y1, seed + 8, 14);
 tufts(cv, 112, cv.W, BACK + 1, seed + 10, 0.3);
 return { rack: { x: 130, y: GROUND_Y0 + 1 }, nest: [164, BACK - 3, 190, BACK], anim: [{ type: 'waterfall', x0: 76, x1: 84, y0: 31, y1: BACK - 7 }, { type: 'shimmer', n: 8, x0: 10, x1: 108, y0: BACK - 7, y1: BACK + 1 }] };
@@ -30438,7 +30492,7 @@ crate(cv, 120, BACK, 13); crate(cv, 133, BACK, 10);
 for (const [x, y] of [[122, BACK - 13], [127, BACK - 14], [131, BACK - 12]]) { rect(cv, x, y, x + 3, y + 2, col('#b06a3a')); cv.set(x + 1, y, col('#e8a060')); }
 lantern(cv, 92, 10, 22);
 woodpile(cv, 196, BACK, 4, 2);
-ground(cv, BACK, 'cobble', seed + 3);
+ground(cv, BACK, 'dirt', seed + 3, { R: P.sand.map((c) => mixPacked(c, 0xffffffff, 0.15)) }); // pale grit under dark beetles
 pebbles(cv, 0, cv.W, BACK + 1, GROUND_Y1, seed + 4, 22);
 return { rack: { x: 44, y: GROUND_Y0 + 1 }, nest: [176, BACK - 3, 200, BACK], anim: [{ type: 'lantern', x: 92, y: 22 }, { type: 'motes', n: 6, x: 92, y: 30, r: 16 }] };
 },
@@ -30457,7 +30511,7 @@ lantern(cv, 120, 0, 16);
 crystals(cv, 186, BACK, '#6ab8ff', seed + 4);
 crystals(cv, 44, BACK, '#c070e0', seed + 5);
 crate(cv, 132, BACK, 10);
-ground(cv, BACK, 'cobble', seed + 3, { R: P.stone.map((c) => mixPacked(c, 0xff000000, 0.3)) });
+ground(cv, BACK, 'flags', seed + 3, { R: P.stone.map((c) => mixPacked(c, col('#8aa0bc'), 0.35)), joint: '#2a3040' }); // cool pale stone under brown moths
 return { rack: { x: 60, y: GROUND_Y0 + 1 }, nest: [182, BACK - 3, 202, BACK], anim: [{ type: 'lantern', x: 120, y: 16 }, { type: 'motes', n: 12, x: 120, y: 34, r: 30 }, { type: 'drip', x: 70, y0: 12, y1: BACK + 2, every: 3.6 }, { type: 'drip', x: 140, y0: 10, y1: BACK + 2, every: 5.1 }] };
 },
 },
@@ -30486,7 +30540,7 @@ clouds(cv, 30, 46, seed + 2, 6, { lit: '#ffffff', mid: '#e0ecf8', dark: '#a8c0de
 clouds(cv, 48, 58, seed + 3, 5, { lit: '#ffffff', mid: '#e6f0fa', dark: '#b4cae4' });
 for (let x = 4; x < cv.W - 4; x += 12) { rect(cv, x, BACK - 12, x + 3, BACK, P.lime[3]); rect(cv, x, BACK - 12, x + 1, BACK, P.lime[5]); }
 rect(cv, 0, BACK - 14, cv.W, BACK - 12, P.lime[4]); rect(cv, 0, BACK - 14, cv.W, BACK - 13, P.lime[5]);
-ground(cv, BACK, 'flags', seed + 4, { R: P.lime, joint: '#9a948a' });
+ground(cv, BACK, 'flags', seed + 4, { R: P.tile, joint: '#3a1810' }); // terracotta under the pale-blue rays
 planter(cv, 18, 34, BACK, 7, seed + 5);
 planter(cv, 190, 206, BACK, 7, seed + 6);
 return { rack: { x: 60, y: GROUND_Y0 + 1 }, nest: [150, BACK - 3, 176, BACK], anim: [{ type: 'butterflies', n: 2, x0: 20, x1: 210, y0: 10, y1: 40, colors: ['#ffffff', '#e0f0ff'] }] };
@@ -30519,7 +30573,7 @@ const fold = (x - x0) % 6;
 return mixPacked(col(fold < 2 ? '#8a849a' : fold < 4 ? '#a8a2b8' : '#6e687e'), 0xff000000, clampI(y / BACK, 0, 1) * 0.25);
 });
 for (const x of [62, 150]) { table(cv, x - 10, x + 10, BACK - 8, BACK, P.oak); bottle(cv, x - 4, BACK - 8, '#e0d8c8', 'tall'); cv.glow(x - 4, BACK - 18, 20, [1, 0.8, 0.5], 0.5); }
-ground(cv, BACK, 'flags', seed + 2, { joint: '#2a2430' });
+ground(cv, BACK, 'flags', seed + 2, { R: P.oak, joint: '#120a10' }); // dark oak under grey-violet moths
 return { rack: { x: 30, y: GROUND_Y0 + 1 }, nest: [186, BACK - 3, 210, BACK], anim: [{ type: 'motes', n: 10, x: 62, y: 40, r: 24 }, { type: 'motes', n: 10, x: 150, y: 40, r: 24 }] };
 },
 },
@@ -30564,6 +30618,35 @@ return { rack: { x: 50, y: GROUND_Y0 + 1 }, nest: [160, BACK - 3, 184, BACK], an
 },
 },
 };
+function calm(cv, floorY) {
+const W = cv.W, H = cv.H, px = cv.pix.px, src = px.slice();
+for (let y = 0; y < H; y++) {
+const floor = y >= floorY, r = floor ? 2 : 1, keep = floor ? 0.38 : 0.52;
+for (let x = 0; x < W; x++) {
+const k = y * W + x, c = src[k];
+if (!(c >>> 24)) continue;
+let sr = 0, sg = 0, sb = 0, n = 0;
+for (let dy = -r; dy <= r; dy++) {
+const yy = y + dy;
+if (yy < 0 || yy >= H || (yy >= floorY) !== floor) continue;
+for (let dx = -r; dx <= r; dx++) {
+const xx = x + dx;
+if (xx < 0 || xx >= W) continue;
+const q = src[yy * W + xx];
+if (!(q >>> 24)) continue;
+sr += q & 255; sg += (q >>> 8) & 255; sb += (q >>> 16) & 255; n++;
+}
+}
+const ch = (v, m) => m + (v - m) * keep;
+let R = ch(c & 255, sr / n), G = ch((c >>> 8) & 255, sg / n), B = ch((c >>> 16) & 255, sb / n);
+const con = floor ? 0.82 : 0.84, l = 0.3 * R + 0.59 * G + 0.11 * B;
+R = l + (R - l) * 0.86; G = l + (G - l) * 0.86; B = l + (B - l) * 0.86;
+R = 128 + (R - 128) * con; G = 128 + (G - 128) * con; B = 128 + (B - 128) * con;
+const cl = (v) => (v < 0 ? 0 : v > 255 ? 255 : Math.round(v));
+px[k] = ((c & 0xff000000) | (cl(B) << 16) | (cl(G) << 8) | cl(R)) >>> 0;
+}
+}
+}
 const PEN_KINDS = Object.keys(PENS);
 const penTitle = (kind) => (PENS[kind] || PENS.rabbit).title;
 const cache = new Map();
@@ -30588,6 +30671,7 @@ finish(cv, 0.3);
 fringe(fg, def.fringe || '', seed + 9);
 grade(cv, 'pen');
 grade(fg, 'pen');
+calm(cv, BACK);
 const ground = [];
 for (let y = GROUND_Y0; y <= GROUND_Y1; y++) {
 const runs = [];
