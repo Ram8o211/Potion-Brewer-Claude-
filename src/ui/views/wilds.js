@@ -586,8 +586,8 @@ export class WildsView {
     this.floaters.push({ x: c.x, y: Math.max(20, c.y), t: 0, text: `+${r.amount}`, color: m.look || m.color });
     for (const e of r.events || []) lab.announce(e);
     if (lab.tutorial) lab.tutorial.notify('gather', d.materialId);
-    // a first find gets its own place on the shelf
-    if (!lab.jarEls[d.materialId]) lab.buildShelf(); else lab.updateShelf();
+    // a first find gets its own place on the quick shelf (once: taken off, it stays in the storeroom)
+    if (!lab.jarEls[d.materialId] && !lab.state.bench.seen[d.materialId]) lab.buildShelf(); else lab.updateShelf();
     if (r.plant) { delete this.fallen[r.plant]; delete this.shakes[r.plant]; delete this.energy[r.plant]; delete this.hits[r.plant]; }
     lab.save();
     this.refresh();
