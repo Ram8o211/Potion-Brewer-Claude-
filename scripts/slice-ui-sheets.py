@@ -89,7 +89,7 @@ def key(img, inset, tol=38, outline=48):
 
 ALL = '--all' in sys.argv
 OUT = sys.argv[sys.argv.index('--all') + 1] if ALL else tempfile.mkdtemp(prefix='ui-sprites-')
-S = {n: Image.open(os.path.join(SRC, n + '.png')).convert('RGBA') for n in ('sheet1', 'sheet2')}
+S = {n: Image.open(os.path.join(SRC, n + '.png')).convert('RGBA') for n in ('sheet1', 'sheet2', 'garden1', 'garden2')}
 B = {n: segment(im) for n, im in S.items()}
 
 
@@ -248,6 +248,42 @@ save('icon/bag', Image.open(os.path.join(OUT, 'deco/sack.png')))
 b = Image.open(os.path.join(OUT, 'header/brand.png')).copy()
 arr = np.array(b); arr[78:, 30:428] = 0
 save('header/brand', clean(Image.fromarray(arr)))
+
+
+# ---- the garden sheets: the scene (sky, treeline, fence, lawn, beds by state)
+# and the plot furniture (bed thumbnails, markers, moisture, seed frames)
+G1 = {
+    'sky': 6, 'treeline': 1, 'hedge-white': 7, 'hedge-pink': 9,
+    'bush-white': 2, 'bush-pink': 3, 'bush-yellow': 4, 'bush': 5, 'fern': 10, 'fern-2': 11, 'fern-3': 12, 'fern-4': 13,
+    'fence': 15, 'fence-2': 16, 'fence-vine': 27, 'fence-vine-2': 28, 'gate': 21,
+    'grass': 33, 'grass-stones': 34, 'grass-flowers': 35, 'grass-flower': 36, 'grass-2': 37, 'grass-tufts': 49, 'grass-flowers-2': 50,
+    'tuft': 40, 'tuft-2': 41, 'tuft-3': 42, 'clover': 43, 'clover-2': 44, 'flowers-white': 45, 'flowers-pink': 46, 'lavender': 47, 'flowers-yellow': 48,
+    'rock-moss': 56, 'rock': 57, 'pebble': 58,
+    'barrel': 62, 'barrel-open': 63, 'barrel-plant': 64, 'crate': 74, 'sacks': 75, 'trough': 76, 'pump': 66, 'well-trough': 67, 'bucket': 77, 'lantern-post': 68,
+    'shadow': 92, 'shadow-small': 103,
+}
+for n, i in G1.items(): save('garden/' + n, clean(box('garden1', i), 40))
+# beds: a row per bed kind; columns plain, dry, watered, greenhouse, Arcane chamber, ripe
+for bed, row in {'soil': 84, 'fungal': 94, 'crystal': 104, 'tide': 113}.items():
+    for c in range(6): save(f'garden/bed-{bed}-{c}', clean(box('garden1', row + c), 40))
+G2 = {'thumb-soil': 0, 'thumb-fungal': 1, 'thumb-crystal': 2, 'thumb-tide': 3, 'plus': 15,
+      'drop-s': 30, 'drop': 31, 'drop-l': 32, 'splash': 33,
+      'moist-0': 43, 'moist-1': 44, 'moist-2': 45, 'moist-3': 46, 'tick': 35, 'tick-round': 36, 'sparkle': 38,
+      'icon-grid': 112, 'icon-potted': 113, 'icon-check': 114}
+for n, i in G2.items(): save('garden/' + n, clean(box('garden2', i), 40))
+# the corner markers are drawn in pieces: take each as one sprite
+save('garden/mark-select', clean(S['garden2'].crop((716, 32, 864, 156)), 40))
+save('garden/mark-ripe', clean(S['garden2'].crop((891, 32, 1039, 156)), 40))
+# a blank seed frame: the seed painted over with the frame's own parchment
+sf = clean(box('garden2', 106), 40); arr = np.array(sf); h, w = arr.shape[:2]
+inner = arr[int(h * 0.3):int(h * 0.7), int(w * 0.3):int(w * 0.7), :3].reshape(-1, 3)
+paper = np.array([c for c in inner if c.mean() > 150]) if (inner.mean(axis=1) > 150).any() else inner
+tan = np.median(paper, axis=0).astype(np.uint8)
+lum = arr[:, :, :3].mean(axis=2)
+yy, xx = np.mgrid[0:h, 0:w]
+core = (yy > h * 0.2) & (yy < h * 0.8) & (xx > w * 0.2) & (xx < w * 0.8)
+arr[core & (np.abs(arr[:, :, :3].astype(int) - tan.astype(int)).sum(axis=2) > 40), :3] = tan
+save('garden/seed-frame', Image.fromarray(arr))
 
 
 # ---- ship: only the sprites the game references, palette-quantized

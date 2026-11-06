@@ -6,10 +6,12 @@
 // all"); a mature one is harvested. No confirmation dialogs: everything a
 // tap does is shown on the plot it is about to do it to.
 //
-// Crops are drawn from the ingredient atlases' growth stages (seed in its
-// bed, sprout, young, developing, mature), the same sprites the species
-// has in the wilds and on the shelf; the garden's ground is painted
-// procedurally in the wilds' pixel style.
+// The scene and the beds are drawn from the garden sprite sheets
+// (art/ui/source/garden1.png, garden2.png): sky, treeline, fence, lawn, and
+// a bed per plot in its state (plain, dry, watered, greenhouse, Arcane
+// chamber). The crops on them are the ingredient atlases' growth stages
+// (seed in its bed, sprout, young, developing, mature), the same sprites
+// the species has in the wilds and on the shelf.
 
 import { h, btn, clear, toast, roomHead } from '../dom.js';
 import { icon } from '../icons.js';
@@ -22,22 +24,70 @@ import { formatWait } from '../../game/gathering.js';
 import { rarityTag } from '../rarity-ui.js';
 import { hashString, Rng } from '../../core/rng.js';
 
-/** The garden scene (art pixels: twice the wilds' scene pixel, the atlas sprites' native size). */
-const GW = 384, GH = 176;
-
-/** Plot colours by bed kind: rim stones, soil dry → wet, and the bed's own detail. */
-const BED_LOOK = {
-  soil: { rim: ['#6a6460', '#8a847c', '#4a4440'], dry: [0.42, 0.29, 0.18], wet: [0.2, 0.13, 0.08], speck: '#8a6a44' },
-  fungal: { rim: ['#5a3a22', '#7a5232', '#3a2416'], dry: [0.24, 0.2, 0.17], wet: [0.12, 0.1, 0.09], speck: '#d8c8a8' },
-  crystal: { rim: ['#5a5a66', '#8a8a96', '#3a3a44'], dry: [0.5, 0.5, 0.55], wet: [0.34, 0.34, 0.4], speck: '#c8c8d8' },
-  tide: { rim: ['#b09a6a', '#e0cc96', '#7a6a4a'], dry: [0.25, 0.48, 0.62], wet: [0.14, 0.32, 0.5], speck: '#d8f0ff' },
+/**
+ * The garden's art, sliced from the garden sprite sheets (art/ui/source,
+ * scripts/slice-ui-sheets.py). The paths are written out in full: the
+ * slicer ships only the sprites the code names.
+ */
+const ART = {
+  sky: 'assets/ui/garden/sky.png', treeline: 'assets/ui/garden/treeline.png',
+  fence: 'assets/ui/garden/fence.png', fenceVine: 'assets/ui/garden/fence-vine.png',
+  grass: 'assets/ui/garden/grass.png', grassFlowers: 'assets/ui/garden/grass-flowers.png', grassFlower: 'assets/ui/garden/grass-flower.png', grassTufts: 'assets/ui/garden/grass-tufts.png',
+  bushPink: 'assets/ui/garden/bush-pink.png', bushWhite: 'assets/ui/garden/bush-white.png', bush: 'assets/ui/garden/bush.png', fern: 'assets/ui/garden/fern.png',
+  barrel: 'assets/ui/garden/barrel.png', pump: 'assets/ui/garden/pump.png', bucket: 'assets/ui/garden/bucket.png', sacks: 'assets/ui/garden/sacks.png',
+  tuft: 'assets/ui/garden/tuft.png', tuft2: 'assets/ui/garden/tuft-2.png', flowersPink: 'assets/ui/garden/flowers-pink.png', flowersWhite: 'assets/ui/garden/flowers-white.png',
+  flowersYellow: 'assets/ui/garden/flowers-yellow.png', lavender: 'assets/ui/garden/lavender.png', clover: 'assets/ui/garden/clover.png', pebble: 'assets/ui/garden/pebble.png', rock: 'assets/ui/garden/rock-moss.png',
+  shadow: 'assets/ui/garden/shadow.png', markSelect: 'assets/ui/garden/mark-select.png', markRipe: 'assets/ui/garden/mark-ripe.png',
+  plus: 'assets/ui/garden/plus.png', drop: 'assets/ui/garden/drop.png', sparkle: 'assets/ui/garden/sparkle.png',
 };
+/** Beds by kind, in the sheet's columns: plain, dry, watered, greenhouse, Arcane chamber (and ripe, unused). */
+const BED_ART = {
+  soil: ['assets/ui/garden/bed-soil-0.png', 'assets/ui/garden/bed-soil-1.png', 'assets/ui/garden/bed-soil-2.png', 'assets/ui/garden/bed-soil-3.png', 'assets/ui/garden/bed-soil-4.png'],
+  fungal: ['assets/ui/garden/bed-fungal-0.png', 'assets/ui/garden/bed-fungal-1.png', 'assets/ui/garden/bed-fungal-2.png', 'assets/ui/garden/bed-fungal-3.png', 'assets/ui/garden/bed-fungal-4.png'],
+  crystal: ['assets/ui/garden/bed-crystal-0.png', 'assets/ui/garden/bed-crystal-1.png', 'assets/ui/garden/bed-crystal-2.png', 'assets/ui/garden/bed-crystal-3.png', 'assets/ui/garden/bed-crystal-4.png'],
+  tide: ['assets/ui/garden/bed-tide-0.png', 'assets/ui/garden/bed-tide-1.png', 'assets/ui/garden/bed-tide-2.png', 'assets/ui/garden/bed-tide-3.png', 'assets/ui/garden/bed-tide-4.png'],
+};
+/** Soil moisture, as the sheet's four-cell gauge (empty → full). */
+const MOIST_ART = ['assets/ui/garden/moist-0.png', 'assets/ui/garden/moist-1.png', 'assets/ui/garden/moist-2.png', 'assets/ui/garden/moist-3.png'];
+/** The counts' icons. */
+const STAT_ART = { plots: 'assets/ui/garden/icon-grid.png', growing: 'assets/ui/garden/icon-potted.png', ready: 'assets/ui/garden/icon-check.png', thirsty: 'assets/ui/garden/drop.png' };
+
+/** @type {Map<string, HTMLImageElement>} */
+const IMAGES = new Map();
+/** called when any garden sprite finishes loading @type {Set<() => void>} */
+const ON_IMAGE = new Set();
+/** A garden sprite, loaded once (null until it has loaded). @param {string} src */
+function art(src) {
+  let im = IMAGES.get(src);
+  if (!im) {
+    im = new Image();
+    im.onload = () => { for (const f of ON_IMAGE) f(); };
+    im.src = src;
+    IMAGES.set(src, im);
+  }
+  return im.complete && im.naturalWidth ? im : null;
+}
+
+/**
+ * The scene's geometry, in the sheet's own pixels: beds are drawn at their
+ * size in the sheet, four to a row (six once there are more than eight),
+ * and the crops at three times the atlas sprites' size (less for a wide one).
+ */
+const BW = 124, BH = 94, GAP = 22, MARGIN = 46, TOP = 214, PITCH = 154, CROP_SCALE = 3;
+
+/** The bed's column in the sheet for a plot: its grade's frame, else how wet it is. @param {any} p plot @param {any} pv its view */
+function bedColumn(p, pv) {
+  if (p.grade >= 2) return 4;
+  if (p.grade >= 1) return 3;
+  if (!pv || !pv.state) return 0;
+  return pv.state.w < 0.35 ? 1 : pv.state.w > 0.7 ? 2 : 0;
+}
+
+/** The moisture gauge cell count for a soil moisture (0..1). @param {number} w */
+const moistCells = (w) => w < 0.3 ? 0 : w < 0.55 ? 1 : w < 0.8 ? 2 : 3;
 
 /** A growing time, in hours or minutes. @param {number} hours */
 const growText = (hours) => hours >= 1 ? `${Math.round(hours * 10) / 10} h` : `${Math.max(1, Math.round(hours * 60))} min`;
-
-const hex = (rgb) => '#' + rgb.map((v) => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
-const mixc = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
 
 export class GardenView {
   /** @param {import('../lab.js').LabScreen} lab */
@@ -51,12 +101,14 @@ export class GardenView {
     this.t = 0;
     this.redrawIn = 0;
     onAtlasLoaded((a) => { if (a.startsWith('growth') || a === 'seeds') this.refresh(); });
+    // the sheet's sprites arrive one by one: repaint the ground and the plots as they do
+    ON_IMAGE.add(() => { this.bg = null; this.paint(); });
   }
 
   build() {
     const el = clear(this.el);
     this.hintEl = null;
-    this.canvas = /** @type {HTMLCanvasElement} */ (h('canvas', { width: String(GW), height: String(GH), class: 'garden-scene', 'aria-label': 'Your garden: tap a plot' }));
+    this.canvas = /** @type {HTMLCanvasElement} */ (h('canvas', { width: '1', height: '1', class: 'garden-scene', 'aria-label': 'Your garden: tap a plot' }));
     this.canvas.addEventListener('pointerdown', (e) => this.tapScene(e));
     this.status = h('div', { class: 'small garden-status' });
     this.plotsEl = h('div', { class: 'plots', role: 'listbox', 'aria-label': 'Garden plots' });
@@ -73,19 +125,23 @@ export class GardenView {
     this.refresh();
   }
 
-  /** Where the plots lie in the scene (up to six per row, two rows). */
+  /** The scene's size and where the plots lie in it: rows of four (six past eight plots), each row centred. */
   layout() {
-    const plots = this.lab.state.garden.plots, n = plots.length, per = Math.min(6, Math.max(3, Math.ceil(n / 2))), pw = Math.floor((GW - 24) / per);
-    return plots.map((p, i) => {
-      const row = Math.floor(i / per), col = i % per;
-      return { p, x: 12 + col * pw + 4, y: row === 0 ? 150 : 110, w: pw - 8, h: 18 };
+    const plots = this.lab.state.garden.plots, n = plots.length, per = n > 8 ? 6 : 4, rows = Math.max(1, Math.ceil(n / per));
+    const w = MARGIN * 2 + per * BW + (per - 1) * GAP, hgt = TOP + rows * PITCH - (PITCH - BH) + 34;
+    const cells = plots.map((p, i) => {
+      const row = Math.floor(i / per), col = i % per, inRow = Math.min(per, n - row * per);
+      const x0 = (w - (inRow * BW + (inRow - 1) * GAP)) / 2;
+      return { p, x: Math.round(x0 + col * (BW + GAP)), y: TOP + row * PITCH, w: BW, h: BH };
     });
+    return { w, h: hgt, per, rows, cells };
   }
 
   /** @param {PointerEvent} e */
   tapScene(e) {
-    const r = this.canvas.getBoundingClientRect(), x = ((e.clientX - r.left) / r.width) * GW, y = ((e.clientY - r.top) / r.height) * GH;
-    const hit = this.layout().find((q) => x >= q.x - 2 && x <= q.x + q.w + 2 && y >= q.y - 44 && y <= q.y + q.h);
+    const lay = this.layout(), r = this.canvas.getBoundingClientRect(), x = ((e.clientX - r.left) / r.width) * lay.w, y = ((e.clientY - r.top) / r.height) * lay.h;
+    // the bed, or the crop standing on it
+    const hit = lay.cells.find((q) => x >= q.x - 6 && x <= q.x + q.w + 6 && y >= q.y - 40 && y <= q.y + q.h + 6);
     if (hit) this.act(hit.p.id);
   }
 
@@ -125,11 +181,9 @@ export class GardenView {
     const view = st.gardenView(now);
     // ---- status and actions
     const growing = view.filter((p) => p.crop).length, ready = view.filter((p) => p.state && p.state.stage === 'mature').length, thirsty = view.filter((p) => p.state && p.state.thirsty).length;
-    clear(this.status).append(
-      h('span', { class: 'gstat', title: 'Plots' }, icon('grid', 'sm'), ` ${g.plots.length}`),
-      h('span', { class: 'gstat', title: 'Growing' }, icon('seedling', 'sm'), ` ${growing}`),
-      h('span', { class: 'gstat', title: 'Ready to harvest' }, icon('check', 'sm'), ` ${ready}`),
-      thirsty ? h('span', { class: 'gstat warn', title: 'Thirsty' }, icon('drop', 'sm'), ` ${thirsty}`) : '');
+    const stat = (/** @type {keyof STAT_ART} */ k, title, n, cls = '') => h('span', { class: 'gstat' + cls, title }, h('img', { src: STAT_ART[k], alt: '', draggable: 'false' }), h('span', { text: String(n) }));
+    clear(this.status).append(stat('plots', 'Plots', g.plots.length), stat('growing', 'Growing', growing), stat('ready', 'Ready to harvest', ready),
+      thirsty ? stat('thirsty', 'Thirsty', thirsty, ' warn') : '');
     // (a null child would be appended as the text "null")
     const hint = this.seed ? h('div', { class: 'muted small garden-hint', text: `Sowing ${this.seedName(this.seed)}: tap an empty ${BEDS[bedOf(this.seed.replace(/\+arcane$/, ''))].name.toLowerCase()}.` }) : h('div', { class: 'muted small garden-hint', text: 'Choose a seed, then tap an empty plot to sow it.' });
     clear(this.actsEl).append(...[
@@ -144,13 +198,13 @@ export class GardenView {
       const sp = p.crop ? SPECIES_BY_KEY[p.crop.species] : null;
       const stageIx = p.state ? p.state.stageIx : -1;
       const asset = sp && p.crop ? stageAsset(sp.key, p.crop.arcane, stageIx) : null;
-      const cv = this.spriteCanvas(asset, 64);
+      const cv = this.spriteCanvas(asset, 36);
       const what = !p.crop ? `Empty ${BEDS[p.bed].name.toLowerCase()}` : `${p.crop.arcane ? 'Arcane ' : ''}${sp ? sp.name : p.crop.species}`;
       const state = !p.crop ? '' : p.state.stage === 'mature' ? `ready · ${cropYield(p.crop.species)} ml` : `${p.state.stage} · ${formatWait(p.state.readyIn)}${p.state.thirsty ? ' · thirsty' : ''}`;
       const el = h('button', { class: `plot g${p.grade}${this.plot === p.id ? ' selected' : ''}${p.crop && p.state.stage === 'mature' ? ' ripe' : ''}`, 'data-bed': p.bed, 'data-act': 'plot-' + p.id, role: 'option', 'aria-label': `${what}${state ? ': ' + state : ''}`, title: `${BEDS[p.bed].name} · ${GRADES[p.grade]}` },
         h('span', { class: 'plot-thumb', 'data-bed': p.bed }, p.crop ? cv : null),
-        h('span', { class: 'plot-text' }, h('span', { class: 'pname', text: what }), state ? h('span', { class: 'pstate', text: state }) : null),
-        p.crop && p.state.g < 1 ? h('span', { class: 'moist', title: 'Soil moisture' }, h('i', { style: { width: Math.round(p.state.w * 100) + '%' } })) : null);
+        h('span', { class: 'plot-text' }, h('span', { class: 'pname', text: what }), state ? h('span', { class: 'pstate', text: state }) : null,
+          p.crop && p.state.g < 1 ? h('img', { class: 'moist', src: MOIST_ART[moistCells(p.state.w)], alt: '', title: `Soil moisture ${Math.round(p.state.w * 100)} %`, draggable: 'false' }) : null));
       el.addEventListener('click', () => this.act(p.id));
       plots.appendChild(el);
     }
@@ -214,94 +268,119 @@ export class GardenView {
     return cv;
   }
 
-  /** Paint the garden: sky, hedge, fence, the plots with their crops, the well and the can. */
+  /** Paint the garden: the ground (once), then each plot's bed, crop and markers. */
   paint() {
     const cv = this.canvas;
     if (!cv) return;
+    const lay = this.layout();
+    if (cv.width !== lay.w || cv.height !== lay.h) { cv.width = lay.w; cv.height = lay.h; this.bg = null; }
     const ctx = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
     ctx.imageSmoothingEnabled = false;
-    if (!this.bg) this.bg = this.paintGround();
+    if (!this.bg || this.bgKey !== `${lay.w}x${lay.h}`) { this.bg = this.paintGround(lay); this.bgKey = `${lay.w}x${lay.h}`; }
     ctx.drawImage(this.bg, 0, 0);
-    const st = this.lab.state, view = st.gardenView(Date.now()), lay = this.layout();
-    for (const q of lay) {
-      const pv = view.find((x) => x.id === q.p.id);
-      this.paintPlot(ctx, q, pv);
-    }
+    const st = this.lab.state, view = st.gardenView(Date.now());
+    const sel = this.seed;
+    for (const q of lay.cells) this.paintPlot(ctx, q, view.find((x) => x.id === q.p.id), sel);
   }
 
-  /** The ground behind the plots, painted once. */
-  paintGround() {
+  /**
+   * The ground behind the plots, painted once per size: sky, the far
+   * treeline, the fence, the lawn with its flowers, the water barrel and
+   * pump, and a shadow under every bed.
+   * @param {{w:number, h:number, cells:{x:number, y:number, w:number, h:number}[]}} lay
+   */
+  paintGround(lay) {
+    const W = lay.w, H = lay.h;
     const c = /** @type {HTMLCanvasElement} */ (document.createElement('canvas'));
-    c.width = GW; c.height = GH;
+    c.width = W; c.height = H;
     const g = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d'));
+    g.imageSmoothingEnabled = false;
     const rng = new Rng(hashString('garden:' + this.lab.state.seed));
-    // sky: a warm morning in flat bands
-    const sky = ['#9ad0e8', '#a8d8e8', '#b8e0e4', '#c8e4dc', '#d8e8d0'];
-    sky.forEach((col, i) => { g.fillStyle = col; g.fillRect(0, i * 12, GW, 12); });
-    // the far treeline: clumps of dark and mid green, lit from the upper left
-    for (let x = -10; x < GW + 10; x += rng.int(10, 18)) {
-      const r = rng.int(10, 18), cy = 64 - rng.int(0, 12);
-      for (let y = -r; y <= r; y++) for (let dx = -r; dx <= r; dx++) {
-        if (dx * dx + y * y > r * r) continue;
-        g.fillStyle = dx + y < -r * 0.4 ? '#4a8a4a' : dx + y > r * 0.5 ? '#1e4a2a' : '#2e6a3a';
-        g.fillRect(x + dx, cy + y, 1, 1);
+    /** @param {string} src @param {number} x @param {number} y (bottom-centre anchor when anchor is set) @param {number} [s] @param {boolean} [anchor] @param {boolean} [flip] */
+    const put = (src, x, y, s = 1, anchor = true, flip = false) => {
+      const im = art(src);
+      if (!im) return;
+      const w = Math.round(im.naturalWidth * s), h = Math.round(im.naturalHeight * s);
+      const dx = anchor ? Math.round(x - w / 2) : x, dy = anchor ? Math.round(y - h) : y;
+      if (!flip) { g.drawImage(im, dx, dy, w, h); return; }
+      g.save(); g.translate(dx + w, dy); g.scale(-1, 1); g.drawImage(im, 0, 0, w, h); g.restore();
+    };
+    // the sky (a fallback colour first, in case the sheet is still loading)
+    g.fillStyle = '#7cc0ec'; g.fillRect(0, 0, W, 140);
+    const sky = art(ART.sky);
+    if (sky) { const s = W / sky.naturalWidth; g.drawImage(sky, 0, 0, W, Math.round(sky.naturalHeight * s)); const sh = Math.round(sky.naturalHeight * s); if (sh < 140) g.drawImage(sky, 0, sky.naturalHeight - 2, sky.naturalWidth, 2, 0, sh, W, 140 - sh); }
+    // the far treeline, across the whole width
+    const tl = art(ART.treeline);
+    if (tl) { const s = Math.max(1, W / tl.naturalWidth); g.drawImage(tl, 0, 150 - Math.round(tl.naturalHeight * s), Math.round(tl.naturalWidth * s), Math.round(tl.naturalHeight * s)); }
+    // the lawn: grass tiles, a few with flowers or tufts
+    g.fillStyle = '#5c9a34'; g.fillRect(0, 140, W, H - 140);
+    const tiles = [ART.grass, ART.grass, ART.grass, ART.grass, ART.grassTufts, ART.grassFlower, ART.grassFlowers];
+    const t0 = art(ART.grass);
+    if (t0) {
+      // the tiles' shaded rims would draw a grid: lay only their middles, some mirrored
+      const I = 9, tw = t0.naturalWidth - 2 * I, th = t0.naturalHeight - 2 * I;
+      for (let y = 140; y < H; y += th) for (let x = 0; x < W; x += tw) {
+        const im = art(rng.pick(tiles)) || t0, fx = rng.chance(0.5), fy = rng.chance(0.3);
+        g.save(); g.translate(x + (fx ? tw : 0), y + (fy ? th : 0)); g.scale(fx ? -1 : 1, fy ? -1 : 1);
+        g.drawImage(im, I, I, tw, th, 0, 0, tw, th);
+        g.restore();
       }
     }
-    g.fillStyle = '#2e6a3a'; g.fillRect(0, 64, GW, 18);
-    // the lawn, with darker tufts and a few flowers
-    for (let y = 80; y < GH; y++) { g.fillStyle = y < 84 ? '#5aa04a' : (y & 1) ? '#4a8a3c' : '#4e9040'; g.fillRect(0, y, GW, 1); }
-    for (let i = 0; i < 260; i++) { const x = rng.int(0, GW - 1), y = rng.int(84, GH - 1); g.fillStyle = rng.chance(0.5) ? '#3a7030' : '#6ab45a'; g.fillRect(x, y, 1, 2); }
-    for (let i = 0; i < 18; i++) { const x = rng.int(0, GW - 1), y = rng.int(86, GH - 4); g.fillStyle = rng.pick(['#f0e0f0', '#ffe070', '#f08aa8']); g.fillRect(x, y, 1, 1); }
-    // the wooden fence along the back
-    g.fillStyle = '#5a3a22'; g.fillRect(0, 72, GW, 2); g.fillRect(0, 79, GW, 2);
-    g.fillStyle = '#8a5a32'; g.fillRect(0, 72, GW, 1); g.fillRect(0, 79, GW, 1);
-    for (let x = 4; x < GW; x += 16) { g.fillStyle = '#3a2416'; g.fillRect(x, 66, 4, 20); g.fillStyle = '#7a5232'; g.fillRect(x + 1, 66, 2, 19); g.fillStyle = '#a8784a'; g.fillRect(x + 1, 66, 1, 1); }
-    // a water barrel and a watering can by the fence
-    g.fillStyle = '#3a2416'; g.fillRect(GW - 30, 70, 18, 22); g.fillStyle = '#7a5232'; g.fillRect(GW - 29, 71, 16, 20);
-    g.fillStyle = '#4a4440'; g.fillRect(GW - 30, 75, 18, 2); g.fillRect(GW - 30, 86, 18, 2); g.fillStyle = '#5ab0f0'; g.fillRect(GW - 28, 71, 12, 2);
-    g.fillStyle = '#5a6a7a'; g.fillRect(GW - 46, 84, 10, 7); g.fillStyle = '#8a9aaa'; g.fillRect(GW - 46, 84, 10, 1); g.fillRect(GW - 52, 82, 6, 1); g.fillRect(GW - 36, 85, 3, 1);
+    // the fence along the back, with vines here and there
+    const fe = art(ART.fence), fv = art(ART.fenceVine);
+    if (fe) for (let x = -8, i = 0; x < W; x += fe.naturalWidth - 6, i++) g.drawImage(fv && i % 3 === 1 ? fv : fe, x, 178 - fe.naturalHeight);
+    // bushes at the fence's ends, the barrel and the pump by the water
+    put(ART.bushPink, 30, 194, 0.9);
+    put(ART.fern, 80, 192, 0.7);
+    put(ART.bushWhite, W - 150, 190, 0.8);
+    put(ART.pump, W - 96, 196, 0.85);
+    put(ART.barrel, W - 40, 198, 0.9);
+    // flowers and tufts on the lawn, clear of the beds
+    const deco = [ART.tuft, ART.tuft2, ART.flowersPink, ART.flowersWhite, ART.flowersYellow, ART.lavender, ART.clover, ART.pebble, ART.tuft];
+    const free = (x, y) => lay.cells.every((q) => x < q.x - 26 || x > q.x + q.w + 26 || y < q.y - 4 || y > q.y + q.h + 34);
+    for (let i = 0, placed = 0; i < 400 && placed < Math.round(W * H / 14000); i++) {
+      const x = rng.int(14, W - 14), y = rng.int(214, H - 4);
+      if (!free(x, y)) continue;
+      put(rng.pick(deco), x, y, 0.75, true, rng.chance(0.5));
+      placed++;
+    }
+    // a soft shadow under every bed
+    const sh = art(ART.shadow);
+    if (sh) for (const q of lay.cells) { g.globalAlpha = 0.7; g.drawImage(sh, q.x - 4, q.y + q.h - 14, q.w + 8, 26); g.globalAlpha = 1; }
     return c;
   }
 
   /**
-   * One plot: its stone (or wood, gravel, sand) rim, its bed darkening as
-   * it is watered, its grade (a greenhouse frame, an Arcane chamber's
-   * runes), and its crop at its stage.
-   * @param {CanvasRenderingContext2D} g @param {{p:any, x:number, y:number, w:number, h:number}} q @param {any} pv
+   * One plot: its bed in its state (dry, watered, its grade's frame), its
+   * crop at its stage, and its markers (chosen, ripe, thirsty, sowable).
+   * @param {CanvasRenderingContext2D} g @param {{p:any, x:number, y:number, w:number, h:number}} q @param {any} pv @param {string|null} seed the seed in hand
    */
-  paintPlot(g, q, pv) {
-    const L = BED_LOOK[/** @type {'soil'} */ (q.p.bed)] || BED_LOOK.soil;
-    const w = pv && pv.state ? pv.state.w : 0.25, wet = Math.max(0, Math.min(1, (w - 0.25) / 0.6));
-    const rng = new Rng(hashString('plot:' + q.p.id));
-    // the rim: a ring of small stones (or boards), lit from the upper left
-    for (let x = q.x - 2; x < q.x + q.w + 2; x += 3) for (const y of [q.y - 2, q.y + q.h]) {
-      g.fillStyle = L.rim[2]; g.fillRect(x, y, 3, 2); g.fillStyle = L.rim[rng.int(0, 1)]; g.fillRect(x, y, 2, 1);
+  paintPlot(g, q, pv, seed) {
+    const now = Date.now();
+    const bed = art((BED_ART[/** @type {'soil'} */ (q.p.bed)] || BED_ART.soil)[bedColumn(q.p, pv)]);
+    if (bed) g.drawImage(bed, q.x + Math.round((q.w - bed.naturalWidth) / 2), q.y + Math.round((q.h - bed.naturalHeight) / 2));
+    const ripe = pv && pv.crop && pv.state.stage === 'mature';
+    // the markers' frame around the bed
+    const mark = (src) => { const m = art(src); if (m) g.drawImage(m, q.x - 10, q.y - 12, q.w + 20, q.h + 22); };
+    if (this.plot === q.p.id) mark(ART.markSelect);
+    else if (ripe) mark(ART.markRipe);
+    // the crop, standing on the bed's soil
+    if (pv && pv.crop) {
+      const f = atlasFrame(stageAsset(pv.crop.species, pv.crop.arcane, pv.state.stageIx));
+      if (f) {
+        const base = q.y + Math.round(q.h * 0.74), k = Math.max(1, Math.min(CROP_SCALE, Math.floor((q.w + 12) / f.pix.w)));
+        g.drawImage(f.pix.toCanvas(), Math.round(q.x + q.w / 2 - f.ax * k), Math.round(base - f.ay * k), f.pix.w * k, f.pix.h * k);
+      }
+      if (ripe) {
+        const sp = art(ART.sparkle);
+        if (sp && Math.sin(now / 300 + q.x) > 0.2) g.drawImage(sp, q.x + q.w - 30, q.y - 22, 26, 30);
+      }
+      if (pv.state.thirsty) { const d = art(ART.drop); if (d) g.drawImage(d, q.x + q.w - 22, q.y - 8 + Math.round(Math.sin(now / 250) * 2), 22, 28); }
+    } else if (seed && q.p.bed === bedOf(seed.replace(/\+arcane$/, '')) && q.p.grade >= gradeNeeded(seed.replace(/\+arcane$/, ''), seed.endsWith('+arcane'))) {
+      // the seed in hand would grow here
+      const pl = art(ART.plus);
+      if (pl) g.drawImage(pl, q.x + Math.round(q.w / 2 - 18), q.y + Math.round(q.h / 2 - 18) + Math.round(Math.sin(now / 300) * 2), 36, 36);
     }
-    for (let y = q.y; y < q.y + q.h; y += 3) for (const x of [q.x - 2, q.x + q.w]) {
-      g.fillStyle = L.rim[2]; g.fillRect(x, y, 2, 3); g.fillStyle = L.rim[0]; g.fillRect(x, y, 1, 2);
-    }
-    // the bed itself: its colour between dry and wet, speckled
-    g.fillStyle = hex(mixc(L.dry, L.wet, wet)); g.fillRect(q.x, q.y, q.w, q.h);
-    for (let i = 0; i < q.w * q.h * 0.06; i++) { g.fillStyle = L.speck; g.fillRect(q.x + rng.int(0, q.w - 1), q.y + rng.int(0, q.h - 1), 1, 1); }
-    for (let x = q.x; x < q.x + q.w; x += 4) { g.fillStyle = hex(mixc(L.dry, [0, 0, 0], 0.25 + wet * 0.2)); g.fillRect(x, q.y + 4 + ((x >> 2) & 1) * 6, 3, 1); }
-    // its grade: a greenhouse's glass panes, an Arcane chamber's violet runes
-    if (q.p.grade >= 1) {
-      g.fillStyle = 'rgba(210,240,255,0.18)'; g.fillRect(q.x - 2, q.y - 46, q.w + 4, 44);
-      g.fillStyle = '#8a9aa8'; for (const x of [q.x - 2, q.x + q.w + 1, q.x + (q.w >> 1)]) g.fillRect(x, q.y - 46, 1, 46);
-      g.fillRect(q.x - 2, q.y - 46, q.w + 4, 1); g.fillRect(q.x - 2, q.y - 24, q.w + 4, 1);
-    }
-    if (q.p.grade >= 2) {
-      const t = Date.now() / 600;
-      for (let i = 0; i < 4; i++) { g.fillStyle = Math.sin(t + i) > 0 ? '#c8a4ff' : '#8e5cf0'; g.fillRect(q.x + 3 + i * Math.floor((q.w - 6) / 3), q.y + q.h + 3, 2, 1); }
-    }
-    if (this.plot === q.p.id) { g.fillStyle = '#ffe070'; g.fillRect(q.x - 3, q.y + q.h + 3, q.w + 6, 1); }
-    // the crop
-    if (!pv || !pv.crop) return;
-    const f = atlasFrame(stageAsset(pv.crop.species, pv.crop.arcane, pv.state.stageIx));
-    if (!f) return;
-    g.drawImage(f.pix.toCanvas(), Math.round(q.x + q.w / 2 - f.ax), Math.round(q.y + q.h * 0.75 - f.ay));
-    if (pv.state.stage === 'mature' && Math.sin(Date.now() / 300 + q.x) > 0.6) { g.fillStyle = '#fff6c0'; g.fillRect(Math.round(q.x + q.w / 2 + 6), q.y - 18, 1, 1); }
-    if (pv.state.thirsty) { g.fillStyle = '#1a2a48'; g.fillRect(q.x + q.w - 6, q.y - 10, 4, 5); g.fillStyle = '#6ab8f0'; g.fillRect(q.x + q.w - 5, q.y - 9, 2, 3); }
   }
 
   /** Called every frame while the garden is shown: a gentle redraw (growth, sparkles) about twice a second. @param {number} dt */
