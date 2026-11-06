@@ -44,50 +44,41 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 .small { font-size: var(--fs-s); }
 .tiny { font-size: var(--fs-s); line-height: 1.2; }
 
-/* ---------- pixel frames ---------- */
-.frame {
-  background: var(--wood1);
-  box-shadow:
-    0 0 0 var(--px) var(--wood0),
-    inset 0 0 0 var(--px) var(--wood3),
-    inset calc(var(--px) * 2) calc(var(--px) * 2) 0 0 rgba(255, 220, 160, 0.06);
+/* ---------- the sprite skin ----------
+   Every frame, card, button and tab is drawn from the interface sprite sheet
+   (assets/ui, sliced by scripts/slice-ui-sheets.py) as a nine-slice border
+   image on a ::before layer, so the sprites never change an element's size. */
+img.ico.spr { object-fit: contain; image-rendering: auto; }
+.btn, .tab, .frame, .jar, .dropper, .parch, .slot-skin { position: relative; isolation: isolate; }
+.frame::before, .parch::before, .btn::before, .tab::before, .jar::before, .dropper::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; box-sizing: border-box;
+  border-style: solid; border-color: transparent;
 }
-.parch {
-  background: var(--parch2); color: var(--ink);
-  box-shadow: 0 0 0 var(--px) var(--ink2), inset 0 0 0 var(--px) var(--parch3), inset 0 calc(var(--px) * -3) 0 0 rgba(120, 90, 50, 0.18);
-}
+.frame { background: none; }
+.frame::before { border-image: url('../assets/ui/panel/dark.png') 18 fill / 9px stretch; }
+.parch { background: none; color: var(--ink); }
+.parch::before { border-image: url('../assets/ui/panel/parch.png') 22 fill / 11px stretch; }
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  min-height: 44px; min-width: 44px; padding: 6px 12px; border: none; cursor: pointer;
-  background: var(--wood3); color: var(--parch3);
-  box-shadow: 0 0 0 var(--px) var(--wood0), inset 0 var(--px) 0 0 var(--wood5), inset 0 calc(var(--px) * -2) 0 0 var(--wood1);
-  text-shadow: var(--px) var(--px) 0 var(--wood0);
+  min-height: 44px; min-width: 44px; padding: 6px 12px 8px; border: none; cursor: pointer;
+  background: none; color: var(--parch3); text-shadow: 1px 1px 0 rgba(20, 10, 4, 0.8);
   touch-action: manipulation;
 }
-.btn:hover { background: var(--wood4); }
-.btn:active, .btn.pressed { transform: translateY(var(--px)); box-shadow: 0 0 0 var(--px) var(--wood0), inset 0 calc(var(--px) * 2) 0 0 var(--wood1); }
-.btn:disabled { opacity: 0.45; cursor: default; transform: none; }
-.btn.primary { background: #3f6e2a; box-shadow: 0 0 0 var(--px) #142410, inset 0 var(--px) 0 0 #6da84a, inset 0 calc(var(--px) * -2) 0 0 #24401a; }
-.btn.primary:hover { background: #4c8233; }
-.btn.danger { background: #7a2a22; box-shadow: 0 0 0 var(--px) #2a0e0b, inset 0 var(--px) 0 0 #b0473a, inset 0 calc(var(--px) * -2) 0 0 #4a1610; }
-.btn.gold { background: #8a5f1c; box-shadow: 0 0 0 var(--px) #2e1e08, inset 0 var(--px) 0 0 var(--brass), inset 0 calc(var(--px) * -2) 0 0 #4a3210; }
+.btn::before { border-image: url('../assets/ui/button/wood.png') 16 fill / 8px stretch; }
+.btn:hover::before { filter: brightness(1.12); }
+.btn:active, .btn.pressed { transform: translateY(1px); }
+.btn:active::before, .btn.pressed::before { filter: brightness(0.85); }
+.btn:disabled { cursor: default; transform: none; color: #d8d4dc; }
+.btn:disabled::before { border-image-source: url('../assets/ui/button/gray.png'); filter: none; }
+.btn.primary::before { border-image-source: url('../assets/ui/button/green.png'); }
+.btn.primary:active::before { border-image-source: url('../assets/ui/button/green-dark.png'); filter: none; }
+.btn.danger::before { border-image-source: url('../assets/ui/button/red.png'); }
+.btn.gold::before { border-image-source: url('../assets/ui/button/wood-gold.png'); }
+.btn.active::before { border-image-source: url('../assets/ui/button/purple.png'); }
+.btn.active { color: var(--brassHi); }
 .btn.icon { padding: 6px; }
-.btn.active { background: #5a3a7a; box-shadow: 0 0 0 var(--px) #1a0f26, inset 0 var(--px) 0 0 #9a6ad0, inset 0 calc(var(--px) * -2) 0 0 #2e1a44; }
 .btn .lbl { font-size: var(--fs-s); }
-
-/* wood grain, parchment fibre and corner nails (textures.js) */
-.btn, .tab, .frame, .jar, .dropper, .parch { position: relative; isolation: isolate; }
-.btn::before, .tab::before, .frame::before, .jar::before, .dropper::before {
-  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; image-rendering: pixelated;
-  background: var(--nail) no-repeat left 3px top 3px, var(--nail) no-repeat right 3px top 3px, var(--nail) no-repeat left 3px bottom 4px, var(--nail) no-repeat right 3px bottom 4px, var(--tex-wood) repeat;
-  background-size: 4px 4px, 4px 4px, 4px 4px, 4px 4px, 128px 64px;
-}
-.tools .btn::before, .btn.icon::before, .jar::before { background: var(--tex-wood) repeat; background-size: 128px 64px; }
-.parch::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; image-rendering: pixelated; background: var(--tex-parch) repeat; background-size: 128px 128px; }
-.card.parch::before { background: var(--nail) no-repeat left 4px top 4px, var(--nail) no-repeat right 4px top 4px, var(--nail) no-repeat left 4px bottom 5px, var(--nail) no-repeat right 4px bottom 5px, var(--tex-parch) repeat; background-size: 4px 4px, 4px 4px, 4px 4px, 4px 4px, 128px 128px; }
-.btn:disabled::before { opacity: .6; }
-
 /* ---------- screens ---------- */
 .screen { position: absolute; inset: 0; overflow: hidden; }
 
@@ -109,24 +100,36 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
   padding-top: var(--safe-top); padding-left: var(--safe-left); padding-right: var(--safe-right);
   background: var(--night1);
 }
-.topbar { grid-area: top; display: flex; align-items: center; gap: 6px; padding: 3px 6px; z-index: 3; min-width: 0; }
+.topbar { grid-area: top; display: flex; align-items: center; gap: 6px; padding: 5px 8px 6px; z-index: 3; min-width: 0; position: relative; isolation: isolate; }
+.topbar::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; box-sizing: border-box; border-style: solid; border-color: transparent; border-image: url('../assets/ui/header/wood-2.png') 16 fill / 8px stretch; }
 .topbar .btn { min-height: 44px; min-width: 44px; padding: 4px; }
+.topbar img.brand { flex: 0 1 auto; min-width: 0; height: 42px; max-width: 220px; object-fit: contain; object-position: left center; image-rendering: auto; margin-right: auto; }
 .topbar .stat { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
-.topbar .rankbox { display: flex; flex-direction: column; align-items: stretch; gap: 3px; min-width: 0; flex: 1 1 auto; max-width: 140px; }
-.topbar .rankname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-s); color: var(--brassHi); }
+/* the purse: the sprite sheet's coin chip, its coin drawn on the left */
+.topbar .purse { position: relative; isolation: isolate; flex: none; min-height: 36px; min-width: 72px; padding: 2px 12px 2px 38px; color: var(--ink); text-shadow: none; font-size: 20px; }
+.topbar .purse::before { content: ''; position: absolute; inset: 0; z-index: -1; box-sizing: border-box; border-style: solid; border-color: transparent; border-image: url('../assets/ui/chip/coin.png') 14 18 14 52 fill / 9px 9px 9px 33px stretch; }
+.topbar .purse.sandbox { padding-left: 10px; }
+.topbar .purse.sandbox::before { border-image: url('../assets/ui/chip/gold.png') 14 18 fill / 9px 9px stretch; }
+.topbar .purse.sandbox { color: var(--brassHi); }
 .topbar .coins-val { min-width: 2ch; }
-/* coins never shrink; rank and day shrink and clip inside their own boxes
-   (Android's text scaling enlarges the font without widening the bar) */
-.topbar > .stat { flex: none; }
-.topbar .rankrow { display: flex; align-items: center; gap: 4px; min-width: 0; flex: 0 1 auto; max-width: 220px; overflow: hidden; }
-.topbar .rankname { max-width: 100%; text-align: left; }
-.topbar .shop-btn { padding: 4px 10px; gap: 4px; margin-left: auto; }
+.topbar .shop-btn img.ico { width: 30px; height: 30px; }
 .bar { height: 6px; background: var(--wood0); box-shadow: 0 0 0 1px #000; position: relative; overflow: hidden; }
 .bar > i { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(var(--brassHi), var(--brass)); }
-.topbar .day { font-size: var(--fs-s); display: flex; flex-direction: column; line-height: 1.2; white-space: nowrap; min-width: 0; flex: 0 1 auto; overflow: hidden; padding-left: 6px; border-left: 2px solid rgba(26, 18, 24, 0.45); }
-.topbar .day > * { overflow: hidden; text-overflow: ellipsis; }
-.topbar .day .event { color: var(--frost); }
-.topbar .day .guests { color: var(--parch1); }
+
+/* a room's title plate (dom.js roomHead) */
+.room-head { position: relative; isolation: isolate; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; margin: 2px auto 8px; padding: 4px 44px 6px; }
+.room-head::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; box-sizing: border-box; border-style: solid; border-color: transparent; border-image: url('../assets/ui/header/vine.png') 20 66 20 66 fill / 15px 46px 15px 46px stretch; }
+.room-head .room-title { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.room-head .room-title img.ico { width: 30px; height: 30px; }
+.room-head h2 { margin: 0; font-size: 24px; font-weight: normal; color: var(--parch3); text-shadow: 2px 2px 0 var(--wood0); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* the day, its customers and the rank (top of the Counter) */
+.shop-status { display: flex; align-items: center; gap: 10px; margin: 0 2px 6px; padding: 0 4px; font-size: var(--fs-s); color: var(--parch2); }
+.shop-status .day { display: flex; gap: 10px; flex-wrap: wrap; min-width: 0; }
+.shop-status .day .event { color: var(--frost); }
+.shop-status .day .guests { color: var(--parch1); }
+.shop-status .rankbox { display: flex; flex-direction: column; gap: 3px; margin-left: auto; min-width: 90px; max-width: 160px; }
+.shop-status .rankname { color: var(--brassHi); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .views { grid-area: views; position: relative; min-height: 0; min-width: 0; overflow: hidden; }
 .view { position: absolute; inset: 0; display: none; overflow-y: auto; overflow-x: hidden; padding: 6px 8px 10px; -webkit-overflow-scrolling: touch; touch-action: pan-y; overscroll-behavior: contain; }
@@ -138,13 +141,15 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 .view-counter > *, .view-wilds > *, .view-garden > *, .view-trials > *, .view-book > * { max-width: 760px; margin-left: auto; margin-right: auto; }
 
 /* bottom tab bar */
-.tabbar { grid-area: tabs; display: flex; align-items: stretch; gap: 2px; padding: 3px 4px calc(3px + var(--safe-bottom)); z-index: 4; }
-.tab { position: relative; flex: 1 1 0; min-width: 0; min-height: 52px; border: none; background: var(--wood2); color: var(--parch2); font-family: inherit; font-size: var(--fs-s); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer; touch-action: manipulation;
-  box-shadow: 0 0 0 var(--px) var(--wood0), inset 0 var(--px) 0 var(--wood4); }
+.tabbar { grid-area: tabs; display: flex; align-items: stretch; gap: 3px; padding: 4px 5px calc(5px + var(--safe-bottom)); z-index: 4; background: var(--night0); }
+.tabbar.frame::before { display: none; }
+.tab { position: relative; flex: 1 1 0; min-width: 0; min-height: 56px; border: none; background: none; color: var(--parch2); font-family: inherit; font-size: var(--fs-s); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 4px 2px 6px; cursor: pointer; touch-action: manipulation; text-shadow: 1px 1px 0 var(--wood0); }
+.tab::before { border-image: url('../assets/ui/tab/blank.png') 18 fill / 9px stretch; }
 .tab img.ico { width: 30px; height: 30px; }
-.tab.active { background: #5a3a7a; color: var(--brassHi); box-shadow: 0 0 0 var(--px) #1a0f26, inset 0 var(--px) 0 #9a6ad0, inset 0 calc(var(--px) * -2) 0 var(--brass); }
+.tab.active { color: var(--brassHi); }
+.tab.active::before { border-image: url('../assets/ui/tab/blank-on.png') 20 fill / 10px stretch; }
 .tab .tab-lbl { line-height: 1; white-space: nowrap; }
-.tab .badge { position: absolute; top: 3px; right: calc(50% - 22px); min-width: 16px; height: 16px; padding: 0 3px; background: var(--bad); color: #fff; font-size: 13px; line-height: 16px; text-align: center; box-shadow: 0 0 0 1px #000; }
+.tab .badge { position: absolute; top: 3px; right: calc(50% - 24px); min-width: 16px; height: 16px; padding: 0 3px; background: var(--bad); color: #fff; font-size: 13px; line-height: 16px; text-align: center; box-shadow: 0 0 0 1px #000; }
 
 /* ---------- the brew room ---------- */
 .view-brew {
@@ -503,14 +508,8 @@ canvas.scene { display: block; flex: none; max-width: none; aspect-ratio: 16 / 9
 .book-body .item { margin-bottom: 6px; }
 .book-body > .small.muted { margin: 4px 2px 8px; color: var(--parch1); }
 
-@media (max-width: 959px), (max-aspect-ratio: 1/1) {
-  .topbar .rankname { font-size: 13px; }
-  .topbar .rankbox { max-width: 96px; }
-  .topbar .day { font-size: 13px; }
-  .topbar .day .event { display: none; }
-}
 @media (max-width: 359px) {
-  .topbar .shop-btn .lbl { display: none; }
+  .topbar img.brand { height: 34px; }
 }
 
 /* ---------- wide screens: tab rail on the left, three-column brew room ---------- */
@@ -519,7 +518,6 @@ canvas.scene { display: block; flex: none; max-width: none; aspect-ratio: 16 / 9
   .tabbar { flex-direction: column; justify-content: flex-start; padding: 8px 6px; gap: 6px; }
   .tab { flex: none; min-height: 72px; }
   .tab img.ico { width: 30px; height: 30px; }
-  .topbar .rankbox { max-width: 200px; }
   .view { padding: 12px 16px; }
   .view-brew {
     padding: 8px 10px 8px 4px; gap: 8px 10px;
@@ -698,8 +696,8 @@ input[type=checkbox] { width: 22px; height: 22px; accent-color: #6a4b9a; }
 .note-log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .note-log li { display: flex; gap: 8px; align-items: flex-start; padding: 6px 8px; font-size: var(--fs-s); line-height: 1.35; }
 .note-log li b { font-weight: normal; display: block; }
-@media (max-width: 959px), (max-aspect-ratio: 1/1) {
-  /* narrow screens: the notes take a slim line of their own under the top bar's buttons, always there (nothing jumps
+@media (max-aspect-ratio: 1/1) {
+  /* portrait screens: the notes take a slim line of their own under the top bar's buttons, always there (nothing jumps
      when a note comes), one line high; a longer note scrolls through slowly */
   .topbar { flex-wrap: wrap; row-gap: 0; }
   .topbar .note-dock { order: 10; flex: 1 0 100%; height: 24px; margin: 1px 0 0; }
@@ -869,3 +867,123 @@ canvas.ing-sprite { image-rendering: pixelated; }
 .cellar-bottle:not(.charger) { opacity: 0.8; }
 .cellar-vessel.drop-over { box-shadow: 0 0 0 3px var(--brass), 0 0 10px var(--brassHi); }
 .bottle-ghost canvas { width: 32px; height: 44px; }
+
+/* ------------------------------------------------------------------ sprite skin: components */
+.lab { background: var(--night1); }
+.view-counter > .room-head, .view-garden > .room-head, .view-trials > .room-head, .view-book > .room-head { max-width: 560px; }
+.sub-head { display: flex; align-items: center; gap: 6px; font-size: var(--fs-s); color: var(--parch2); margin-top: 2px; }
+.sub-head img.ico.sm { width: 18px; height: 18px; }
+
+/* dialogs: the vine-crowned dark frame */
+.modal.frame::before { border-image: url('../assets/ui/panel/frame-dark.png') 60 40 24 40 fill / 30px 20px 12px 20px stretch; }
+.modal-head { padding: 12px 14px 8px; }
+.modal-body { padding: 4px 14px 12px; }
+.modal-foot { padding: 8px 14px 14px; }
+.menu .menu-panel.frame::before { border-image: url('../assets/ui/panel/wood-vine.png') 40 34 30 34 fill / 20px 17px 15px 17px stretch; }
+.menu .menu-panel { padding: 26px 22px 20px; }
+.menu h1.brand-title { margin: 0 auto 2px; }
+.menu h1.brand-title img { display: block; width: min(300px, 100%); height: auto; image-rendering: auto; }
+
+/* toggles: the sheet's checkbox */
+input[type=checkbox] { -webkit-appearance: none; appearance: none; width: 30px; height: 30px; margin: 0; flex: none; cursor: pointer; background: url('../assets/ui/form/checkbox.png') center / contain no-repeat; }
+input[type=checkbox]:checked { background-image: url('../assets/ui/form/checkbox-on.png'); }
+
+/* the brew room's shelf: wooden slots, a gold one for the jar in hand */
+.jar { background: none; box-shadow: none; }
+.jar::before { border-image: url('../assets/ui/slot/wood.png') 14 fill / 7px stretch; }
+.jar.wild::before, .jar.remains::before { border-image-source: url('../assets/ui/slot/dark.png'); }
+.jar.arcane::before { border-image-source: url('../assets/ui/slot/purple.png'); }
+.jar.selected { background: none; box-shadow: none; }
+.jar.selected::before { border-image-source: url('../assets/ui/slot/gold.png'); }
+.jar.wild, .jar.arcane, .jar.remains { box-shadow: none; background: none; }
+.jar .jstock { color: var(--parch2); top: 3px; right: 5px; }
+.jar .jname { margin-bottom: 2px; }
+.shelf-wrap.frame::before, .toolbar.frame::before, .controls.frame::before { border-image-source: url('../assets/ui/panel/dark.png'); }
+.order-strip { margin: 6px 6px 2px; padding: 6px 10px; }
+.stage .pour-hint { background: none; box-shadow: none; padding: 6px 12px; color: var(--parch2); }
+.stage .pour-hint::before { content: ''; position: absolute; inset: 0; z-index: -1; box-sizing: border-box; border-style: solid; border-color: transparent; border-image: url('../assets/ui/panel/dark-wide.png') 16 fill / 8px stretch; }
+.stage .pour-hint { isolation: isolate; }
+.chip { background: none; box-shadow: none; position: relative; isolation: isolate; }
+.chip::before { content: ''; position: absolute; inset: 0; z-index: -1; box-sizing: border-box; border-style: solid; border-color: transparent; border-image: url('../assets/ui/chip/gold.png') 16 fill / 8px stretch; }
+.hud-chips .info-chip { box-shadow: none; padding: 2px 12px; }
+.hud-chips .info-chip.active::before { filter: hue-rotate(220deg) saturate(1.3); }
+.furnace .foff.hot::before { border-image-source: url('../assets/ui/button/red.png'); }
+.furnace .foff.cold::before { border-image-source: url('../assets/ui/button/purple.png'); }
+.furnace .foff.hot, .furnace .foff.cold { background: none; }
+.furnace input[type=range]::-webkit-slider-runnable-track { height: 14px; background: linear-gradient(90deg, #3a6ad8, #8fc7f2 35%, #4a3a3a 50%, #ffb444 65%, #ff7a1a); box-shadow: 0 0 0 2px var(--wood0); border-radius: 6px; }
+.furnace input[type=range]::-moz-range-track { height: 14px; background: linear-gradient(90deg, #3a6ad8, #8fc7f2 35%, #4a3a3a 50%, #ffb444 65%, #ff7a1a); box-shadow: 0 0 0 2px var(--wood0); border-radius: 6px; }
+.furnace input[type=range]::-webkit-slider-thumb { width: 20px; height: 34px; margin-top: -10px; background: linear-gradient(90deg, #c48a2c, #ffd75a 40%, #e8b45c 60%, #8a5f1c); box-shadow: 0 0 0 2px var(--wood0); border-radius: 3px; }
+.furnace input[type=range]::-moz-range-thumb { width: 20px; height: 34px; background: linear-gradient(90deg, #c48a2c, #ffd75a 40%, #e8b45c 60%, #8a5f1c); box-shadow: 0 0 0 2px var(--wood0); border-radius: 3px; }
+
+/* counter: the potion shelves, wooden planks with an outline where a bottle can stand */
+.bottle-shelf { background: none; gap: 0; padding: 0; margin: 8px 0 4px; }
+.bottle-slot { height: 70px; padding-bottom: 14px; background: url('../assets/ui/header/wood.png') left bottom / 100% 14px no-repeat; }
+.bottle-slot.empty::before { content: ''; width: 24px; height: 36px; border: 0; border-radius: 0; background: url('../assets/ui/slot/bottle-outline.png') center / contain no-repeat; opacity: 0.75; }
+.bottle-slot.locked::before { content: ''; width: 24px; height: 36px; background: url('../assets/ui/slot/bottle-outline.png') center / contain no-repeat; opacity: 0.25; }
+.bottle-slot.locked { opacity: 0.5; }
+.shop-status + .card, .room-head + .card { margin-top: 0; }
+
+/* garden: plots drawn as the sheet's framed beds */
+.garden { padding: 0; }
+.garden-scene { box-shadow: 0 0 0 2px var(--wood0), 0 0 0 4px var(--wood3); }
+.garden-bar { justify-content: space-between; flex-wrap: wrap; }
+.garden-status { display: flex; gap: 12px; align-items: center; font-size: 18px; }
+.gstat { display: inline-flex; align-items: center; gap: 2px; }
+.gstat img.ico.sm { width: 20px; height: 20px; }
+.garden-hint { text-align: center; color: var(--parch1); }
+.plots { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+.plot { background: none; box-shadow: none; isolation: isolate; min-height: 104px; padding: 10px 8px 12px; color: var(--parch3); text-shadow: 1px 1px 0 #000, -1px -1px 0 rgba(0,0,0,.6); }
+.plot::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; box-sizing: border-box; border-style: solid; border-color: transparent; border-image: url('../assets/ui/plot/brown.png') 22 fill / 11px stretch; }
+.plot[data-bed=fungal]::before { border-image-source: url('../assets/ui/plot/fungal.png'); }
+.plot[data-bed=crystal]::before { border-image-source: url('../assets/ui/plot/stone.png'); }
+.plot[data-bed=tide]::before { border-image-source: url('../assets/ui/plot/water.png'); }
+.plot.g1::before { filter: saturate(1.2) brightness(1.08); }
+.plot.g2::before { filter: hue-rotate(220deg) saturate(1.3); }
+.plot.g1, .plot.g2 { background: none; box-shadow: none; }
+.plot.selected { box-shadow: none; outline: 3px solid var(--brassHi); outline-offset: -2px; }
+.plot .moist { left: 12px; right: 12px; bottom: 6px; }
+.seed { background: none; box-shadow: none; isolation: isolate; position: relative; padding: 6px 4px; }
+.seed::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; box-sizing: border-box; border-style: solid; border-color: transparent; border-image: url('../assets/ui/slot/wood.png') 14 fill / 7px stretch; }
+.seed.selected { box-shadow: none; }
+.seed.selected::before { border-image-source: url('../assets/ui/slot/gold.png'); }
+
+/* trials and the hutch */
+.estimate-card h3, .estimate-card b { color: var(--ink); }
+.hutch.parch, .hutch { background: none; }
+.rabbit-tile { background: none; box-shadow: none; position: relative; isolation: isolate; color: var(--ink); }
+.rabbit-tile::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; box-sizing: border-box; border-style: solid; border-color: transparent; border-image: url('../assets/ui/button/tan.png') 14 fill / 7px stretch; }
+.rabbit-tile.selected { outline: none; background: none; }
+.rabbit-tile.selected::before { border-image: url('../assets/ui/slot/gold.png') 14 fill / 7px stretch; }
+.rabbit-tile.selected { color: var(--parch3); }
+.rabbit-tile.dead::before { filter: grayscale(0.8); }
+.rabbit-tile.dead, .rabbit-tile.feral, .rabbit-tile.degen { background: none; }
+.rabbit-tile.feral::before { filter: hue-rotate(-30deg) saturate(1.6); }
+.dropper { background: none; box-shadow: none; }
+.dropper::before { border-image: url('../assets/ui/button/wood.png') 16 fill / 8px stretch; }
+
+/* the book's tabs */
+.book-tabs { gap: 6px; }
+.book-tabs .btn { flex: 1 1 30%; }
+.book-body .help-sec summary { font-size: 19px; }
+
+/* the wilds */
+.region-tabs .btn.exotic:not(.locked) { box-shadow: none; }
+.region-tabs .btn.exotic:not(.locked)::before { border-image-source: url('../assets/ui/button/purple-dark.png'); }
+.scene-wrap { box-shadow: 0 0 0 2px var(--wood0), 0 0 0 4px var(--wood3), 0 0 0 6px var(--wood0); }
+.zoom-ctl button.btn::before { border-image-source: url('../assets/ui/slot/wood.png'); }
+.wilds-foot { text-align: right; }
+
+/* toasts and inline chips */
+.toast { padding: 10px 14px; }
+.tag { box-shadow: none; position: relative; }
+.empty-list { text-align: center; margin: 10px 0; }
+.book-empty { text-align: center; }
+
+/* phones in landscape: lower room plates, so the rooms keep their height */
+@media (max-height: 560px) and (min-aspect-ratio: 1/1) {
+  .room-head { min-height: 38px; margin-bottom: 4px; padding-top: 2px; padding-bottom: 4px; }
+  .room-head h2 { font-size: 20px; }
+  .room-head .room-title img.ico { width: 24px; height: 24px; }
+  .topbar img.brand { height: 36px; }
+  .jar { height: 62px; }
+}

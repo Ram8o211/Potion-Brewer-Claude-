@@ -393,13 +393,10 @@ export class WildsView {
     const mode = (t, on, act) => btn(t, () => { this.thorough = on; audio.play('click'); this.refresh(); }, { cls: 'small' + (this.thorough === on ? ' active' : ''), act });
     clear(this.sky).append(...[
       h('div', { class: 'row wrap sky-row' },
-        icon(part === 'dawn' ? 'sun' : part === 'dusk' ? 'wisp' : 'sun', 'sm'), h('b', { text: lab.sandbox ? 'Any hour' : DAY_PART_NAME[part] }),
-        lab.sandbox ? null : h('span', { class: 'muted', text: part === 'dawn' ? '(until you open the shop)' : part === 'dusk' ? '(after the last customer, until you close)' : '(the shop is open)' }),
-        h('span', { class: 'spacer' }), icon(weather.icon, 'sm'), h('b', { text: lab.sandbox ? '' : weather.name })),
-      lab.sandbox || weather.id === 'clear' ? null : h('div', { class: 'muted', text: weather.desc }),
+        icon(part === 'dawn' ? 'sun' : part === 'dusk' ? 'wisp' : 'sun', 'sm'), h('b', { text: lab.sandbox ? 'Any hour' : DAY_PART_NAME[part], 'data-part': part, title: lab.sandbox ? null : part === 'dawn' ? 'Until you open the shop' : part === 'dusk' ? 'After the last customer, until you close' : 'The shop is open' }),
+        h('span', { class: 'spacer' }), icon(weather.icon, 'sm'), h('b', { text: lab.sandbox ? '' : weather.name, title: weather.desc })),
       // (the wilds are no longer watered: only the garden's plants are)
-      !lab.sandbox ? h('div', { class: 'row wrap seg harvest-mode' }, h('span', { text: 'Harvest:' }), mode('Careful', false, 'harvest-careful'), mode('Thorough ×2', true, 'harvest-thorough'),
-        this.thorough ? h('span', { class: 'muted', text: 'takes the whole specimen, roots and all, for twice as much' }) : null) : null].filter(Boolean));
+      !lab.sandbox ? h('div', { class: 'row wrap seg harvest-mode' }, h('span', { text: 'Harvest:' }), mode('Careful', false, 'harvest-careful'), mode('Thorough ×2', true, 'harvest-thorough')) : null].filter(Boolean));
     this.mode = 'harvest';
     this.rows = {};
     for (const d of this.deposits()) {
@@ -445,8 +442,8 @@ export class WildsView {
       card.addEventListener('pointerleave', () => { if (this.hover === d.id) this.setHover(null); });
       list.appendChild(card);
     }
-    if (!list.childElementCount) list.appendChild(h('div', { class: 'muted small empty-list', text: 'Nothing gathered here yet. Slide a finger across a ripe plant to shake its fruit loose, then tap what falls. Each ingredient is listed here once you have gathered it for the first time.' }));
-    clear(this.foot).append(lab.sandbox ? 'The Free Experiment’s stores are bottomless, and its wilds grow back within minutes of every harvest.' : `Room for ${st.cap.storage} ml of each ingredient. ${st.has('satchel') ? 'Your satchel carries half as much again. ' : ''}A harvest takes its specimen for good, and may drop a seed for your garden. The wilds do not grow back by themselves: spend a Traveller Coin to regenerate a biome — new scenery, new species, new specimens. Coins recharge with time, and delighted customers sometimes give one.`);
+    if (!list.childElementCount) list.appendChild(h('div', { class: 'muted small empty-list', text: 'Nothing gathered here yet.' }));
+    clear(this.foot).append(lab.sandbox ? 'Bottomless stores' : `Stores: ${st.cap.storage} ml each`);
     this.paintBg();
     this.grow();
     this.prewarm();
