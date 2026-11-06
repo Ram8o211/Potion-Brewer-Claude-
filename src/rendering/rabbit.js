@@ -630,30 +630,16 @@ export function rabbitAnchors(look, snap, want) {
     if (Q && Q.sn[0]) snout = E(Math.min(head.cx + Q.sn[0] * hs, RABBIT_W - 2 - Q.sn[1] * hs), head.cy + 1, Q.sn[1] * hs, Q.sn[2] * hs);
     if (kind === 'dove') snout = E(head.cx + head.rx + 0.5, head.cy + 0.5, 1.2, 1);
     const ll = Math.max(2, Math.round(D.leg * g)), lw = kind === 'deer' ? 1 : 2;
-    if (pose === 'dead' && kind !== 'dove' && kind !== 'snail' && kind !== 'salamander') {
-      // dead: rolled onto its back, its legs stiff in the air, splayed a little
-      const up = Math.max(4, Math.round(ll * 0.75)) + 1;
-      const leg = (/** @type {number} */ x, /** @type {number} */ base, /** @type {number} */ len, /** @type {number} */ lean) => {
-        for (let i = 0; i < len; i++) {
-          const lx = Math.round(x + (lean * i) / len), last = legs[legs.length - 1];
-          if (i && last && last.x === lx) { last.y--; last.h++; } else legs.push({ x: lx, y: base - i, w: lw, h: 1, seg: true });
-        }
-      };
-      const ht = haunch.cy - haunch.ry + 2, ct = chest.cy - chest.ry + 2;
-      leg(haunch.cx - Math.round(haunch.rx * 0.2), ht, up + 1, -2);
-      leg(haunch.cx + Math.round(haunch.rx * 0.25), ht, up, -1);
-      leg(chest.cx - 1, ct, up, 1);
-      leg(chest.cx + Math.round(chest.rx * 0.5), ct, up + 1, 2);
-    } else {
-    // the hind legs kicked out behind, one over the other
-    legs.push({ x: haunch.cx - haunch.rx - Math.round(ll * 0.55), y: oy - 3, w: Math.round(ll * 0.55) + 3, h: lw });
-    if (kind !== 'dove' && kind !== 'snail') legs.push({ x: haunch.cx - haunch.rx - Math.round(ll * 0.35), y: oy - 3 - lw - 1, w: Math.round(ll * 0.35) + 3, h: lw });
-    // the forelegs reaching out ahead of the chest (the long-legged kinds' past the muzzle)
+    // lying on its side; dead, its legs lie limp on the ground, a little bent, rather than stretched out
+    const limp = pose === 'dead' ? 1 : 0, reach = limp ? 0.42 : 0.55;
+    // the hind legs out behind, one over the other
+    legs.push({ x: haunch.cx - haunch.rx - Math.round(ll * reach), y: oy - 3 + limp, w: Math.round(ll * reach) + 3, h: lw });
+    if (kind !== 'dove' && kind !== 'snail') legs.push({ x: haunch.cx - haunch.rx - Math.round(ll * reach * 0.6) + limp, y: oy - 3 - lw - 1 + limp * 2, w: Math.round(ll * reach * 0.6) + 3, h: lw });
+    // the forelegs ahead of the chest (the long-legged kinds' past the muzzle); dead, folded in toward the chest
     if (kind !== 'dove' && kind !== 'snail' && kind !== 'rabbit') {
-      const fx = chest.cx + Math.round(chest.rx * 0.3), fw = Math.min(RABBIT_W - 2 - fx, Math.round(chest.rx * 0.7 + ll));
-      legs.push({ x: fx, y: oy - 2, w: fw, h: lw });
-      legs.push({ x: fx - 1, y: oy - 2 - lw - 1, w: Math.max(2, fw - 2), h: lw });
-    }
+      const fx = chest.cx + Math.round(chest.rx * 0.3), fw = Math.min(RABBIT_W - 2 - fx, Math.round(chest.rx * 0.7 + ll * (limp ? 0.5 : 1)));
+      legs.push({ x: fx, y: oy - 2 + limp, w: fw, h: lw });
+      legs.push({ x: fx - 1 - limp, y: oy - 2 - lw - 1 + limp, w: Math.max(2, fw - 2 - limp * 2), h: lw });
     }
   } else if (pose === 'hop') {
     // mid-leap: the back arched, the haunch round and lifted, hind legs thrown back, forepaws reaching
@@ -991,7 +977,7 @@ function atlasSprite(kind, v, pose) {
 
 /**
  * Draw an animal from its atlas sprite: chosen by its variant and pose,
- * smaller as a kit, squashed lying down, on its back in death; coloured by
+ * smaller as a kit, squashed lying down, lying on its side in death; coloured by
  * its visible state (the coat's tint, never its outline or eye); then the
  * marks its state leaves on it (kept to its body), its traits, its eyes'
  * moods and how it died — placed on the sprite's own head and eye.
@@ -999,12 +985,17 @@ function atlasSprite(kind, v, pose) {
  */
 function spriteBody(S, look, snap, low) {
   const { P, L, sc, dead, cause, tr } = S, a0 = S.a, pose = a0.pose;
-  const d = decodeSprite(atlasSprite(a0.creature, variantOf(look), pose));
+  let d = decodeSprite(atlasSprite(a0.creature, variantOf(look), pose));
+  // dead, it lies on its side: the body down on the ground, its legs laid out flat before and behind it
+  const side = pose === 'dead' ? sideLying(d) : null;
+  if (side) d = side.body;
   // its size: a kit or a young animal is smaller, a giant larger (nearest pixels, never blended)
   const kitS = clamp(((snap && STAGE_G[snap.stage]) || 1) * (tr.has('giant') ? 1.18 : tr.has('tiny') ? 0.8 : 1), 0.5, 1.3);
-  const sx = kitS, sy = kitS * (pose === 'flop' || pose === 'collapse' ? 0.7 : pose === 'loaf' || pose === 'sick' ? 0.85 : pose === 'dead' ? 0.8 : 1);
+  // (dead without legs to lay out — a rabbit on its haunches, a toad, a snail — it slumps: lower and a little wider)
+  const slump = side && side.legLen === 0;
+  const sx = kitS * (slump ? 1.12 : 1), sy = kitS * (pose === 'flop' || pose === 'collapse' ? 0.7 : pose === 'loaf' || pose === 'sick' ? 0.85 : pose === 'dead' ? (slump ? 0.68 : side ? 0.92 : 0.8) : 1);
   const w = Math.max(3, Math.round(d.w * sx)), h = Math.max(3, Math.round(d.h * sy));
-  const flip = pose === 'dead';
+  const flip = false;
   const at = (/** @type {number} */ x, /** @type {number} */ y) => {
     const X = Math.min(d.w - 1, Math.floor((x * d.w) / w)), Y0 = Math.min(d.h - 1, Math.floor((y * d.h) / h));
     return d.px[(flip ? d.h - 1 - Y0 : Y0) * d.w + X];
@@ -1014,6 +1005,7 @@ function spriteBody(S, look, snap, low) {
   let bottom = a0.feetY;
   if (air) bottom = Math.min(a0.feetY - 2, Math.round(Math.max(...a0.parts.map((e) => e.cy + e.ry))));
   if (a0.creature === 'wisp' && !a0.lying) bottom = a0.feetY - 7;
+  if (side) bottom = a0.feetY - 1;
   const x0 = clamp(Math.round(a0.cx - w / 2), 1, RABBIT_W - 1 - w), y0 = clamp(bottom - h + 1, 1, RABBIT_H - 1 - h);
   // the anchors every overlay is laid on, from the sprite itself
   const ex = x0 + Math.round(((d.eye[0] + 0.5) * w) / d.w - 0.5), eyRaw = Math.round(((d.eye[1] + 0.5) * h) / d.h - 0.5);
@@ -1041,6 +1033,24 @@ function spriteBody(S, look, snap, low) {
     P(x0 + x, y0 + y, 1, 1, col);
     if (lum(c) >= 0.14) mask[(y0 + y) * RABBIT_W + x0 + x] = 1;
   }
+  // its legs, laid out flat on the ground: the hind ones out behind, the fore ones ahead
+  if (side && side.legLen > 0) {
+    // thin limbs lying along the ground, stretched out a little apart, under the body's edge (drawn behind it)
+    const legCol = css(tintCoat(side.leg, L, sc, dead, cause)), len = Math.max(3, Math.round(side.legLen * sx * 0.9)), gy = a0.feetY;
+    const back = x0 + Math.round(w * 0.3), front = x0 + Math.round(w * 0.6);
+    const limb = (/** @type {number} */ x, /** @type {number} */ dir, /** @type {number} */ n, /** @type {number} */ y) => {
+      for (let i = 0; i < n; i++) {
+        const X = x + dir * i, Y = y - (i > n - 2 ? 1 : 0); // the paw turned up a little at its end
+        if (X < 1 || X > RABBIT_W - 2) break;
+        P(X, Y + 1, 1, 1, K);
+        P(X, Y, 1, 1, i === n - 1 ? K : legCol);
+      }
+    };
+    limb(back, -1, len + 1, gy - 1);
+    limb(back + 2, -1, len, gy - 2);
+    limb(front, 1, len, gy - 1);
+    limb(front - 2, 1, len - 1, gy - 2);
+  }
   // the marks its state leaves, kept to its body
   const body = /** @type {Pen} */ ((x, y, ww, hh, col) => {
     const X0 = Math.round(x), Y0 = Math.round(y), W = Math.max(1, Math.round(ww)), H = Math.max(1, Math.round(hh));
@@ -1065,6 +1075,76 @@ function spriteBody(S, look, snap, low) {
   else if (L.arcana === 1) P(e.x, e.y - 2, 1, 1, C_RUNE);
   if (pose === 'eat' && !a.bare && !AIRBORNE.has(a.creature)) grassTuft(P, a.nose.x - 1, a.feetY);
   if (dead) causeLayer(S);
+}
+
+/**
+ * A sprite seen lying on its side: the rows below its body (its legs: the
+ * rows that break into separate runs) are taken off, so the body
+ * can rest on the ground, lying flat (what rises above its back pressed
+ * down), and the legs be laid out flat beside it. Returns
+ * the body, how long the legs were (pixels) and their colour (the most
+ * common colour of the leg rows that is not ink); an animal without legs to
+ * lay out (a rabbit on its haunches, a snail) is only laid flat (legLen 0).
+ * @param {{w:number, h:number, px:any[], eye:number[]}} d
+ */
+function sideLying(d) {
+  // a row of legs breaks into separate runs (the gaps between the legs); the belly above them is one
+  const runs = (/** @type {number} */ y) => { let n = 0, on = false; for (let x = 0; x < d.w; x++) { const c = !!d.px[y * d.w + x]; if (c && !on) n++; on = c; } return n; };
+  let last = d.h - 1;
+  while (last > 0 && runs(last) === 0) last--;
+  let bodyBottom = last;
+  while (bodyBottom > 0 && runs(bodyBottom) >= 2) bodyBottom--;
+  let legLen = last - bodyBottom;
+  // no legs to lay out (a rabbit sitting on its haunches, a snail, a beetle seen low): it is only laid flat
+  if (legLen < 2 || bodyBottom < 3) { bodyBottom = last; legLen = 0; }
+  /** @type {Map<string, {c:any, n:number}>} */
+  const tally = new Map();
+  for (let y = bodyBottom + 1; y < d.h; y++) for (let x = 0; x < d.w; x++) {
+    const c = d.px[y * d.w + x];
+    if (!c || lum(c) < 0.14) continue;
+    const k = c.join(',');
+    const t = tally.get(k) || { c, n: 0 };
+    t.n++; tally.set(k, t);
+  }
+  const best = [...tally.values()].sort((p, q) => q.n - p.n)[0];
+  // the body without its legs, lying flat: whatever rises above the line of its back (the neck,
+  // the head, the ears, a raised tail) is pressed down to just above it, so the head lies low
+  const bh = bodyBottom + 1, W = d.w;
+  const tops = [];
+  for (let x = 0; x < W; x++) { let t = -1; for (let y = 0; y < bh; y++) if (d.px[y * W + x]) { t = y; break; } tops.push(t); }
+  const mid = tops.slice(Math.floor(W * 0.25), Math.ceil(W * 0.6)).filter((t) => t >= 0).sort((p, q) => p - q);
+  const backTop = mid.length ? mid[Math.floor(mid.length / 2)] : 0;
+  const px = new Array(W * bh).fill(null);
+  /** where each source row of each column went (for the eye) */
+  const mapY = (/** @type {number} */ x, /** @type {number} */ y) => {
+    const t = tops[x];
+    if (t < 0 || t >= backTop || y >= backTop) return y;
+    // the part above the back, [t, backTop), squeezed into a band a few pixels high just above it
+    const band = Math.min(4, Math.max(2, Math.round((backTop - t) * 0.4)));
+    return backTop - band + Math.floor(((y - t) * band) / (backTop - t));
+  };
+  for (let x = 0; x < W; x++) {
+    const t = tops[x];
+    // below the back (and every column that does not rise above it): as it was
+    for (let y = Math.max(0, t < backTop ? backTop : 0); y < bh; y++) px[y * W + x] = d.px[y * W + x];
+    if (t < 0 || t >= backTop) continue;
+    // above it: each pressed row takes the colour of the rows folded into it (ink only where nothing else is),
+    // so an ear or a neck stays a solid, outlined shape rather than scattered pixels
+    const band = Math.min(4, Math.max(2, Math.round((backTop - t) * 0.4))), span = backTop - t;
+    for (let j = 0; j < band; j++) {
+      const y0 = t + Math.floor((j * span) / band), y1 = Math.max(y0 + 1, t + Math.floor(((j + 1) * span) / band));
+      let body = null, ink = null;
+      for (let y = y0; y < y1; y++) { const c = d.px[y * W + x]; if (!c) continue; if (lum(c) < 0.14) ink = ink || c; else body = body || c; }
+      px[(backTop - band + j) * W + x] = j === 0 && ink ? ink : body || ink;
+    }
+  }
+  // trim the empty rows above
+  let first = 0;
+  while (first < bh - 1 && !px.slice(first * W, (first + 1) * W).some(Boolean)) first++;
+  const ey = Math.min(bodyBottom, d.eye[1]);
+  const eye = [d.eye[0], Math.max(0, mapY(Math.min(W - 1, d.eye[0]), ey) - first)];
+  const body = { w: W, h: bh - first, px: px.slice(first * W), eye };
+  return { body, legLen, leg: best ? best.c : [0.4, 0.3, 0.25] };
 }
 
 /** Kinds that never graze from the ground. */
@@ -1160,13 +1240,13 @@ function ownBody(S) {
     const x0 = a.haunch.cx - a.haunch.rx, x1 = a.chest.cx + a.chest.rx;
     const cx = Math.round((x0 + x1) / 2) - 1, rx = Math.max(4, Math.round((x1 - x0) / 2) - 1), ry = Math.max(3, Math.round(4.2 * g));
     const back = a.lying && a.pose === 'dead';
-    const cy = feet - ry - (back ? 0 : 2);
+    const cy = feet - ry - (back ? 1 : 2);
     const shell = E(cx, cy, rx, ry), head = E(cx + rx + 1, cy + Math.round(ry * 0.45), Math.max(2, Math.round(2.2 * g)), Math.max(1, Math.round(1.8 * g)));
     const beat = walkBeat(a.pose);
     // six thin legs, three a side, stepping in alternating tripods (on its back: stiff in the air)
     for (let i = 0; i < 3; i++) {
       const lx = cx - rx + 2 + Math.round(((2 * rx - 3) * i) / 2), up = beat >= 0 && ((i + beat) & 1) ? 1 : 0, sw = beat >= 0 ? ((i + beat) & 1 ? 1 : -1) : 0;
-      if (back) { P(lx, cy - ry - 2, 1, 3, K); P(lx + 1, cy - ry - 3, 1, 1, K); continue; }
+      if (back) { P(lx, cy + ry, 2, 1, K); continue; } // dead: the legs folded in under it
       P(lx + sw - 1, cy + ry - 1, 1, feet - (cy + ry) + 1 - up, K);
       P(lx + sw, cy + ry, 1, feet - (cy + ry) + 1 - up, K);
       P(lx + sw + 1, feet - up, 1, 1, K);
