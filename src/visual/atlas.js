@@ -30,6 +30,47 @@ export const plantAsset = (key, stage) => (PLANT_BOXES[key] ? `${key}@plant-${st
 
 export { ATLASES, SPECIES_ASSETS, FRAMES };
 
+/** Arcane plant frames (with their violet rim), made once @type {Map<string, AtlasFrame>} */
+const rimmedPlants = new Map();
+
+/**
+ * A species' plant from its new icon art at a size (sprout, ripe, mature),
+ * an Arcane specimen with a violet rim one pixel outside it — the picture
+ * it has in the wilds, the garden and, broken in shards, in the cauldron.
+ * Null while the atlas loads or for a species without one.
+ * @param {string} key @param {'sprout'|'ripe'|'mature'} stage @param {boolean} arcane @returns {AtlasFrame|null}
+ */
+export function plantFrame(key, stage, arcane) {
+  const f = atlasFrame(plantAsset(key, stage));
+  if (!f || !arcane) return f;
+  let r = rimmedPlants.get(f.id);
+  if (r) return r;
+  const W = f.pix.w + 2, H = f.pix.h + 2, out = new Pixels(W, H), src = f.pix;
+  const rim = 0xffff96ba; // (ABGR) rgb(186,150,255)
+  for (let y = 0; y < src.h; y++) for (let x = 0; x < src.w; x++) { const c = src.px[y * src.w + x]; if (c >>> 24) out.px[(y + 1) * W + x + 1] = c; }
+  const solid = (x, y) => x >= 0 && y >= 0 && x < W && y < H && (out.px[y * W + x] >>> 24) !== 0 && out.px[y * W + x] !== rim;
+  const add = [];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (!(out.px[y * W + x] >>> 24) && (solid(x - 1, y) || solid(x + 1, y) || solid(x, y - 1) || solid(x, y + 1))) add.push(y * W + x);
+  for (const i of add) out.px[i] = rim;
+  r = { pix: out, ax: f.ax + 1, ay: f.ay + 1, id: f.id + '+arcane', atlas: f.atlas };
+  rimmedPlants.set(f.id, r);
+  return r;
+}
+
+/**
+ * A garden crop's frame at its growth stage (0 seed in its bed … 4 mature):
+ * the seed in its bed from the seed atlas, then the species' plant from its
+ * icon art as it grows (sprout, ripe, mature) — the same plant as in the wilds.
+ * @param {string} key @param {boolean} arcane @param {number} stageIx
+ */
+export function cropFrame(key, arcane, stageIx) {
+  if (stageIx > 0 && PLANT_BOXES[key]) {
+    const f = plantFrame(key, stageIx >= 4 ? 'mature' : stageIx >= 3 ? 'ripe' : 'sprout', arcane);
+    if (f) return f;
+  }
+  return atlasFrame(stageAsset(key, arcane, stageIx));
+}
+
 /** atlas id → its pixels @type {Map<string, Pixels>} */
 const loaded = new Map();
 /** atlas id → its pending load @type {Map<string, Promise<void>>} */

@@ -5708,6 +5708,30 @@ for (const [key, st] of Object.entries(PLANT_BOXES)) {
 for (const [stage, [x, y, w, h]] of Object.entries(st)) FRAMES[`${key}@plant-${stage}`] = /** @type {any} */ (['ingredient-plants', x, y, w, h, w >> 1, h - 1]);
 }
 const plantAsset = (key, stage) => (PLANT_BOXES[key] ? `${key}@plant-${stage}` : null);
+const rimmedPlants = new Map();
+function plantFrame(key, stage, arcane) {
+const f = atlasFrame(plantAsset(key, stage));
+if (!f || !arcane) return f;
+let r = rimmedPlants.get(f.id);
+if (r) return r;
+const W = f.pix.w + 2, H = f.pix.h + 2, out = new Pixels(W, H), src = f.pix;
+const rim = 0xffff96ba; // (ABGR) rgb(186,150,255)
+for (let y = 0; y < src.h; y++) for (let x = 0; x < src.w; x++) { const c = src.px[y * src.w + x]; if (c >>> 24) out.px[(y + 1) * W + x + 1] = c; }
+const solid = (x, y) => x >= 0 && y >= 0 && x < W && y < H && (out.px[y * W + x] >>> 24) !== 0 && out.px[y * W + x] !== rim;
+const add = [];
+for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (!(out.px[y * W + x] >>> 24) && (solid(x - 1, y) || solid(x + 1, y) || solid(x, y - 1) || solid(x, y + 1))) add.push(y * W + x);
+for (const i of add) out.px[i] = rim;
+r = { pix: out, ax: f.ax + 1, ay: f.ay + 1, id: f.id + '+arcane', atlas: f.atlas };
+rimmedPlants.set(f.id, r);
+return r;
+}
+function cropFrame(key, arcane, stageIx) {
+if (stageIx > 0 && PLANT_BOXES[key]) {
+const f = plantFrame(key, stageIx >= 4 ? 'mature' : stageIx >= 3 ? 'ripe' : 'sprout', arcane);
+if (f) return f;
+}
+return atlasFrame(stageAsset(key, arcane, stageIx));
+}
 const loaded = new Map();
 const pending = new Map();
 const cut = new Map();
@@ -5846,7 +5870,7 @@ for (const id of [s.sprite, s.arcane, s.seed]) { const at = atlasOf(id); if (at)
 return [...need];
 }
 function forgetAtlasFrames() { cut.clear(); }
-return { plantAsset, onAtlasLoaded, atlasLoaded, atlasOf, assetsOf, spriteAsset, seedAsset, stageAsset, atlasFrame, loadAtlases, neededAtlases, forgetAtlasFrames, ATLASES, SPECIES_ASSETS, FRAMES };
+return { plantAsset, plantFrame, cropFrame, onAtlasLoaded, atlasLoaded, atlasOf, assetsOf, spriteAsset, seedAsset, stageAsset, atlasFrame, loadAtlases, neededAtlases, forgetAtlasFrames, ATLASES, SPECIES_ASSETS, FRAMES };
 })();
 // src/visual/pieces.js
 const __m27 = (() => {
@@ -5856,7 +5880,7 @@ const { identityOf, identityKey, validIdentity } = __m10;
 const { describe } = __m28;
 const { pieceFrame, pieceArt, PIECE_PX, PIECE_GRID } = __m45;
 const { SPECIES } = __m15;
-const { atlasFrame, spriteAsset } = __m51;
+const { atlasFrame, spriteAsset, plantFrame, plantAsset } = __m51;
 const { Pixels } = __m47;
 const PIECE_CELL = PIECE_PX;
 const PIECE_MASK = PIECE_GRID;
@@ -5983,7 +6007,7 @@ const cp = catalogPiece(key);
 if (cp) {
 let cells = atlasCells.get(key);
 if (!cells) {
-const fr = atlasFrame(spriteAsset(cp.species, cp.arcane));
+const fr = plantAsset(cp.species, 'mature') ? plantFrame(cp.species, 'mature', cp.arcane) : atlasFrame(spriteAsset(cp.species, cp.arcane));
 if (!fr) return null;
 cells = atlasShards(fr.pix);
 atlasCells.set(key, cells);
@@ -19130,7 +19154,7 @@ const { rawSprite } = __m101;
 const { mountsOfForm, frameMount, growthParams } = __m50;
 const { hashString } = __m6;
 const { INK } = __m49;
-const { atlasFrame, spriteAsset, stageAsset, plantAsset } = __m51;
+const { atlasFrame, spriteAsset, stageAsset, plantFrame: atlasPlantFrame } = __m51;
 const { SPECIES_COLORS } = __m16;
 const { ICON_SHEET, ICON_BOXES } = __m53;
 const isAtlasMaterial = (m) => !!(m && m.wild && m.wild.catalog);
@@ -19148,21 +19172,11 @@ out.px[y * w + x] = best;
 }
 return { pix: out, ax: Math.round(f.ax / 2), ay: Math.ceil(f.ay / 2), glints: [], glows: [] };
 }
-function arcaneRim(f) {
-const W = f.pix.w + 2, H = f.pix.h + 2, out = new Pixels(W, H), src = f.pix;
-const rim = 0xffff96ba; // (ABGR) rgb(186,150,255)
-for (let y = 0; y < src.h; y++) for (let x = 0; x < src.w; x++) { const c = src.px[y * src.w + x]; if (c >>> 24) out.px[(y + 1) * W + x + 1] = c; }
-const solid = (x, y) => x >= 0 && y >= 0 && x < W && y < H && (out.px[y * W + x] >>> 24) !== 0 && out.px[y * W + x] !== rim;
-const add = [];
-for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (!(out.px[y * W + x] >>> 24) && (solid(x - 1, y) || solid(x + 1, y) || solid(x, y - 1) || solid(x, y + 1))) add.push(y * W + x);
-for (const i of add) out.px[i] = rim;
-return { pix: out, ax: f.ax + 1, ay: f.ay + 1, glints: [], glows: [] };
-}
 function atlasPlant(m, stage, def) {
 const w = m.wild, sz = stage === 'mature' ? 'mature' : stage === 'ripe' ? 'ripe' : 'sprout';
-const f = atlasFrame(plantAsset(w.key, sz)) || atlasFrame(sz === 'mature' ? spriteAsset(w.key, !!w.arcane) : stageAsset(w.key, !!w.arcane, sz === 'ripe' ? 3 : 2));
+const f = atlasPlantFrame(w.key, sz, !!w.arcane) || atlasFrame(sz === 'mature' ? spriteAsset(w.key, !!w.arcane) : stageAsset(w.key, !!w.arcane, sz === 'ripe' ? 3 : 2));
 if (!f) return null;
-const full = w.arcane && f.id.includes('@plant-') ? cached(`arc|${f.id}`, () => arcaneRim(f)) : { pix: f.pix, ax: f.ax, ay: f.ay, glints: [], glows: [] };
+const full = { pix: f.pix, ax: f.ax, ay: f.ay, glints: [], glows: [] };
 return def >= ATLAS_K ? full : cached(`half|${f.id}`, () => halved(full));
 }
 const MIN_HIT = 26;
@@ -32846,7 +32860,7 @@ const { audio } = __m4;
 const { BEDS, GRADES, GARDEN_UPGRADES, seedList, gradeNeeded, bedOf, boughtCount, cropYield, growHours, seedId } = __m85;
 const { SPECIES_BY_KEY, materialIdOf } = __m15;
 const { RARITY } = __m17;
-const { atlasFrame, seedAsset, stageAsset, loadAtlases, onAtlasLoaded } = __m51;
+const { atlasFrame, seedAsset, cropFrame, loadAtlases, onAtlasLoaded } = __m51;
 const { formatWait } = __m64;
 const { rarityTag } = __m108;
 const { hashString, Rng } = __m6;
@@ -32902,6 +32916,19 @@ u = cv.toDataURL();
 SPRITE_URL.set(asset, u);
 return u;
 }
+function cropURL(key, arcane, stageIx) {
+const f = cropFrame(key, arcane, stageIx);
+if (!f) return null;
+let u = SPRITE_URL.get(f.id);
+if (u) return u;
+const S = Math.max(f.pix.w, f.pix.h, 16) + 2;
+const cv = document.createElement('canvas');
+cv.width = S; cv.height = S;
+/** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')).drawImage(pixCanvas(f.pix), Math.round((S - f.pix.w) / 2), S - 1 - f.pix.h);
+u = cv.toDataURL();
+SPRITE_URL.set(f.id, u);
+return u;
+}
 const BW = 124, BH = 94, GAP = 22, MARGIN = 46, TOP = 214, PITCH = 154, CROP_SCALE = 3;
 function bedColumn(p, pv) {
 if (p.grade >= 2) return 4;
@@ -32943,7 +32970,7 @@ this.canvas, h('div', { class: 'row garden-bar' }, this.status, this.actsEl),
 this.plotsEl,
 this.seedBar = h('div', { class: 'seed-bar' }), this.seedsEl,
 h('details', { class: 'card parch' }, h('summary', { text: 'Garden upgrades' }), this.upsEl)));
-loadAtlases((a) => a.id.startsWith('growth') || a.id === 'seeds').then(() => this.refresh());
+loadAtlases((a) => a.id.startsWith('growth') || a.id === 'seeds' || a.id === 'ingredient-plants').then(() => this.refresh());
 this.refresh();
 }
 layout() {
@@ -33036,8 +33063,7 @@ const plots = clear(this.plotsEl);
 for (const p of view) {
 const sp = p.crop ? SPECIES_BY_KEY[p.crop.species] : null;
 const stageIx = p.state ? p.state.stageIx : -1;
-const asset = sp && p.crop ? stageAsset(sp.key, p.crop.arcane, stageIx) : null;
-const url = spriteURL(asset);
+const url = sp && p.crop ? cropURL(sp.key, p.crop.arcane, stageIx) : null;
 const what = !p.crop ? `Empty ${BEDS[p.bed].name.toLowerCase()}` : `${p.crop.arcane ? 'Arcane ' : ''}${sp ? sp.name : p.crop.species}`;
 const state = !p.crop ? '' : p.state.stage === 'mature' ? `ready · ${cropYield(p.crop.species)} ml` : `${p.state.stage} · ${formatWait(p.state.readyIn)}${p.state.thirsty ? ' · thirsty' : ''}`;
 const el = h('button', { class: `plot g${p.grade}${this.plot === p.id ? ' selected' : ''}${p.crop && p.state.stage === 'mature' ? ' ripe' : ''}`, 'data-bed': p.bed, 'data-act': 'plot-' + p.id, role: 'option', 'aria-label': `${what}${state ? ': ' + state : ''}`, title: `${BEDS[p.bed].name} · ${GRADES[p.grade]}` },
@@ -33189,7 +33215,7 @@ const mark = (src) => { const m = art(src); if (m) g.drawImage(m, q.x - 10, q.y 
 if (this.plot === q.p.id) mark(ART.markSelect);
 else if (ripe) mark(ART.markRipe);
 if (pv && pv.crop) {
-const f = atlasFrame(stageAsset(pv.crop.species, pv.crop.arcane, pv.state.stageIx));
+const f = cropFrame(pv.crop.species, pv.crop.arcane, pv.state.stageIx);
 if (f) {
 const base = q.y + Math.round(q.h * 0.74), k = Math.max(1, Math.min(CROP_SCALE, Math.floor((q.w + 12) / f.pix.w)));
 g.drawImage(pixCanvas(f.pix), Math.round(q.x + q.w / 2 - f.ax * k), Math.round(base - f.ay * k), f.pix.w * k, f.pix.h * k);

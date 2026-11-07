@@ -149,7 +149,9 @@ img.ico.spr { object-fit: contain; image-rendering: auto; }
 .tab img.ico { width: 30px; height: 30px; }
 .tab.active { color: var(--brassHi); }
 .tab.active::before { border-image: url('../assets/ui/tab/blank-on.png') 20 fill / 10px stretch; }
-.tab .tab-lbl { line-height: 1; white-space: nowrap; }
+/* the label stays inside the tab's frame (9 px of sprite border): it shrinks with the tab, never spills over the rim */
+.tab { container-type: inline-size; padding-left: 7px; padding-right: 7px; }
+.tab .tab-lbl { line-height: 1; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: clip; font-size: min(var(--fs-s), 24cqi); }
 .tab .badge { position: absolute; top: 3px; right: calc(50% - 24px); min-width: 16px; height: 16px; padding: 0 3px; background: var(--bad); color: #fff; font-size: 13px; line-height: 16px; text-align: center; box-shadow: 0 0 0 1px #000; }
 
 /* ---------- the brew room ---------- */
@@ -226,7 +228,9 @@ img.ico.spr { object-fit: contain; image-rendering: auto; }
 .tools .btn { flex: none; min-width: 46px; min-height: 48px; padding: 3px 4px 2px; flex-direction: column; gap: 1px; }
 .tools .btn .lbl { display: block; font-size: 12px; line-height: 1; white-space: nowrap; }
 .tools .sep { flex: none; width: 2px; background: var(--wood0); margin: 4px 2px; }
-.tools .acts { display: flex; gap: 4px; }
+.tools .acts { display: contents; }
+/* the tools share the whole bar: each grows from its own width (the bar scrolls only when they cannot fit) */
+.tools > .btn, .tools .acts > .btn { flex: 1 0 auto; }
 .tools .btn[data-act=autostir] { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 
 .shelf-wrap { grid-area: shelf; min-width: 0; padding-bottom: 2px; }
@@ -918,6 +922,8 @@ input[type=checkbox]:checked { background-image: url('../assets/ui/form/checkbox
 .chip { background: none; box-shadow: none; position: relative; isolation: isolate; }
 .chip::before { content: ''; position: absolute; inset: 0; z-index: -1; box-sizing: border-box; border-style: solid; border-color: transparent; border-image: url('../assets/ui/chip/gold.png') 16 fill / 8px stretch; }
 .hud-chips .info-chip { box-shadow: none; padding: 2px 12px; }
+/* a chip's text stays inside its gold rim (8 px of sprite border): never under it, never past it */
+.hud-chips .chip { padding: 4px 14px; white-space: nowrap; max-width: min(64vw, 320px); overflow: hidden; text-overflow: ellipsis; line-height: 1.15; }
 .hud-chips .info-chip.active::before { filter: hue-rotate(220deg) saturate(1.3); }
 .furnace .foff.hot::before { border-image-source: url('../assets/ui/button/red.png'); }
 .furnace .foff.cold::before { border-image-source: url('../assets/ui/button/purple.png'); }
@@ -946,7 +952,7 @@ input[type=checkbox]:checked { background-image: url('../assets/ui/form/checkbox
 .garden-hint { text-align: center; color: var(--parch1); }
 .garden-hint.sowing { display: flex; align-items: center; justify-content: center; gap: 8px; }
 .garden-hint.sowing .btn { min-height: 36px; flex: none; }
-.plots { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; }
+.plots { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
 .plot { flex-direction: row; align-items: center; gap: 6px; min-height: 76px; padding: 8px 8px 10px; background: none; box-shadow: none; isolation: isolate; color: var(--parch3); text-align: left; text-shadow: 1px 1px 0 var(--wood0); }
 .plot::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; box-sizing: border-box; border-style: solid; border-color: transparent; border-image: url('../assets/ui/panel/purple.png') 18 fill / 9px stretch; }
 .plot.g1, .plot.g2 { background: none; box-shadow: none; }
@@ -957,8 +963,10 @@ input[type=checkbox]:checked { background-image: url('../assets/ui/form/checkbox
 .plot-thumb[data-bed=crystal] { background-image: url('../assets/ui/garden/thumb-crystal.png'); }
 .plot-thumb[data-bed=tide] { background-image: url('../assets/ui/garden/thumb-tide.png'); }
 .plot-thumb img.crop { width: 36px; height: 36px; margin-top: -8px; image-rendering: pixelated; }
-.plot-text { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
-.plot .pname { font-size: var(--fs-s); line-height: 1.05; text-align: left; }
+.plot { container-type: inline-size; }
+.plot-text { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; gap: 1px; overflow: hidden; }
+/* a long name shrinks with its card and, at worst, breaks, rather than running past the card's rim */
+.plot .pname { font-size: clamp(12px, 9cqi, 15px); line-height: 1.05; text-align: left; overflow-wrap: anywhere; }
 .plot .pstate { font-size: 12px; opacity: 0.85; color: var(--brassHi); }
 .plot img.moist { position: static; display: block; width: 46px; height: 13px; margin-top: 2px; background: none; image-rendering: auto; }
 .seed-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
@@ -1049,7 +1057,7 @@ input[type=checkbox]:checked { background-image: url('../assets/ui/form/checkbox
 .inv-empty-note { grid-column: 1 / -1; color: var(--parch1); padding: 12px; }
 .inv-tile { content-visibility: auto; contain-intrinsic-size: auto 86px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px; height: 86px; padding: 14px 3px 4px; border: none; cursor: grab; font-family: inherit; color: var(--parch1); touch-action: pan-y; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
   background: var(--wood2); box-shadow: 0 0 0 var(--px) var(--wood0), inset 0 var(--px) 0 var(--wood4); }
-.inv-tile canvas, .inv-tile img { width: 40px !important; height: 40px !important; image-rendering: pixelated; flex: none; pointer-events: none; object-fit: contain; }
+.inv-tile > canvas, .inv-tile > img { width: 40px !important; height: 40px !important; image-rendering: pixelated; flex: none; pointer-events: none; object-fit: contain; }
 .inv-tile.arcane { box-shadow: 0 0 0 var(--px) var(--wood0), inset 0 var(--px) 0 var(--arcane), inset 0 0 8px rgba(180, 140, 255, 0.35); }
 .inv-tile.on { background: #4a3466; box-shadow: 0 0 0 var(--px) #1a0f26, 0 0 0 calc(var(--px) * 2) var(--brass); }
 .inv-tile.empty { opacity: 0.5; }
@@ -1064,8 +1072,8 @@ input[type=checkbox]:checked { background-image: url('../assets/ui/form/checkbox
 .inv-rar.r-legendary { background: var(--r-legendary); }
 .inv-tile.arcane .inv-rar { box-shadow: 0 0 0 1px #1a1218, 0 0 0 2px var(--arcane); }
 .inv-stock { position: absolute; top: 2px; right: 3px; font-size: 11px; line-height: 1; color: var(--parch1); }
-.inv-on { position: absolute; top: 14px; right: 2px; }
-.inv-on .ico { width: 14px; height: 14px; }
+.inv-on { position: absolute; top: 14px; right: 2px; line-height: 0; pointer-events: none; }
+.inv-on .ico { width: 16px; height: 16px; image-rendering: pixelated; }
 /* the effects: one coloured segment each, as wide as its share */
 .inv-stripe { display: flex; width: 100%; height: 5px; flex: none; box-shadow: 0 0 0 1px rgba(26, 18, 24, 0.7); background: rgba(0, 0, 0, 0.3); }
 .inv-stripe i { display: block; height: 100%; min-width: 2px; }
@@ -1079,10 +1087,35 @@ input[type=checkbox]:checked { background-image: url('../assets/ui/form/checkbox
 .jar.ins-after { box-shadow: 4px 0 0 var(--brass), 0 0 0 var(--px) var(--wood0); }
 
 /* ------------------------------------------------------------------ rounder buttons, everywhere
-   Every pressable thing has rounded corners: its outline (box-shadow) follows the radius, and its
-   sprite skin (the nine-slice ::before) is clipped to the same rounded rectangle. */
+   Every pressable thing has rounded corners: its outline (box-shadow) follows the radius. A sprite
+   skin (the nine-slice ::before) is never clipped: its own pixel corners (studs, gold rims) stay whole. */
 :root { --btn-r: 12px; --btn-r-s: 9px; }
 .btn, .tab, .jar, .chip, .dropper, .plot, .seed, .bottle-slot, .inv-tile, .inv-tab, .age-pick-bottle, .tabbar .tab { border-radius: var(--btn-r); }
-.btn::before, .tab::before, .jar::before, .chip::before, .dropper::before, .plot::before { clip-path: inset(0 round var(--btn-r)); }
 .btn.icon, .btn.small, .chip, .dose .btn, .inv-tools .btn, .inv-tab, .fstep, .foff { --btn-r: var(--btn-r-s); }
 .btn:focus-visible, .jar:focus-visible, .inv-tile:focus-visible, .tab:focus-visible { outline-offset: 2px; }
+
+/* ------------------------------------------------------------------ text inside sprite frames
+   A label never runs under the nine-slice rim of its frame (7–9 px of sprite border): the frame's
+   padding clears the rim and the label is at most as wide as what is left (ellipsis beyond). */
+.jar { padding-left: 6px; padding-right: 6px; }
+.jar .jname, .jar .jname { max-width: 100%; }
+.seed { padding-left: 8px; padding-right: 8px; }
+.seed .sn { max-width: 100%; }
+/* the Book's tabs: three to a row while their labels fit, fewer (wider) when they do not */
+.book-tabs .btn { min-width: fit-content; padding-left: 10px; padding-right: 10px; white-space: nowrap; }
+/* rows of choices fill their row, as the tools fill their bar (each grows from its own width) */
+.inv-tab { flex: 1 0 auto; justify-content: center; }
+.bottle-sizes .btn, .cust-actions .btn { flex: 1 0 auto; }
+/* the pour amounts keep their height in the side shelf (a scrolling flex item would otherwise shrink to
+   nothing and slide its buttons under the jars), and on a wrapped row the amounts fill it */
+.shelf-wrap > .dose { flex: none; }
+@media (min-width: 960px) and (min-aspect-ratio: 1/1) { .dose .btn { flex: 1 0 auto; } }
+/* a pixel icon keeps its proportions in any box */
+img.ico { object-fit: contain; }
+/* the side shelf (wide screens): its jars fill the shelf's width, column for column */
+@media (min-width: 960px) and (min-aspect-ratio: 1/1) {
+  .shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); }
+  .shelf .jar, .shelf .shelf-inv { width: auto; }
+}
+/* the counter's and the dialogs' rows of actions fill their row too (no ragged gap after the last one) */
+.view-counter .card .row.wrap > .btn, .modal .row.wrap > .btn { flex: 1 0 auto; }
