@@ -8,7 +8,7 @@
 // ferns, and fungi glowing violet in the dark.
 
 import { sky } from './paint.js';
-import { palette, vary, streamOf } from './kit.js';
+import { palette, vary, streamOf, lx } from './kit.js';
 import { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, drips, ledges, glow } from './side.js';
 import { caveFrame, farPillars, fog, vines, moss, glowShrooms, veins, WATER_VEINS } from './cave.js';
 import { mushroom } from './objects.js';
@@ -46,7 +46,7 @@ export function compose(cv, seed) {
   raise(top, kx, kx + ts.int(30, 60), Math.min(...top) - ts.int(8, 14), 3);
   let still = null;
   if (ts.next() < 0.5) {
-    const px = kx < W / 2 ? ts.int(230, 320) : ts.int(60, 140), hw = ts.int(22, 32);
+    const px = kx < W / 2 ? ts.int(lx(cv, 230), lx(cv, 320)) : ts.int(lx(cv, 60), lx(cv, 140)), hw = ts.int(lx(cv, 22), lx(cv, 32));
     still = { x: px, hw, level: Math.round(top[px]) + 2 };
     dip(top, px, hw, 14);
   }

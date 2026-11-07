@@ -27,6 +27,16 @@
 // charge lasts. A rune wears out with the time it is set on a filled vessel
 // (RUNE_LIFE); its target can be moved without a new rune.
 //
+// A biome rune (one for each biome: the rune of its effect — the Vitality
+// Rune of the Whisperwood, the Frost Rune-stone of the Willow Bank…) set in
+// a vessel's third slot hastens the drawing-out of every ingredient that
+// carries its effect: WARD_BOOST times quicker, and as quick in the cold as
+// at room temperature (the cold no longer slows it). It never touches the
+// ceiling — what can come out at the vessel's temperature stays what it was
+// — so a cold steep, which draws out the most, no longer takes days. It
+// wears out with the hours it is set on a filled vessel (WARD_LIFE). They
+// lie underground in the Wilds (gathering.js wardStones).
+//
 // Determinism: time advances in fixed steps of CELLAR_STEP seconds from the
 // vessel's own clock, so the state after an hour is the same whether it was
 // reached in one jump (the game was closed) or in a thousand ticks.
@@ -35,7 +45,8 @@
 import { rateAt, yieldAt, extractIdOf, SOLVENT_CAPACITY, CELLAR_FACTOR, EMULSION_FACTOR, emulsionStability } from '../alchemy/extraction.js';
 import { isMagical, awakenedId, thresholdToCelsius } from '../alchemy/arcane.js';
 import { CHAR_ID } from '../materials/catalog.js';
-import { EFFECT_INDEX } from '../alchemy/effects.js';
+import { EFFECT_INDEX, EFFECT_BY_KEY } from '../alchemy/effects.js';
+import { BIOMES } from './biomes.js';
 
 /** seconds of cellar time per step */
 export const CELLAR_STEP = 10;
@@ -55,6 +66,32 @@ export const HOLD_COST = 320;
 export const RUNE_LIFE = 8 * 3600;
 /** coins for a rune at the market */
 export const RUNE_PRICE = 28;
+/** how much quicker a biome rune draws out the ingredients carrying its effect (and the cold no longer slows them) */
+export const WARD_BOOST = 4;
+/** seconds of use in a fresh biome rune */
+export const WARD_LIFE = 12 * 3600;
+/** the least of a rune's effect (potency per volume) an ingredient must carry for the rune to hasten it */
+export const WARD_MIN = 1;
+
+/**
+ * The biome runes: one for each biome, of its dominant effect.
+ * @type {{effect:string, biome:string, name:string, biomeName:string, color:number[], icon:string}[]}
+ */
+export const BIOME_RUNES = BIOMES.map((b) => {
+  const e = EFFECT_BY_KEY[b.effect];
+  return { effect: b.effect, biome: b.id, name: `${e ? e.label : b.effect} Rune`, biomeName: b.name, color: e ? e.color : [0.6, 0.8, 1], icon: e ? e.icon : 'rune' };
+});
+/** @type {Record<string, typeof BIOME_RUNES[number]>} */
+export const BIOME_RUNE_BY_EFFECT = Object.fromEntries(BIOME_RUNES.map((r) => [r.effect, r]));
+
+/** Does a material carry this effect strongly enough for its rune to hasten it? @param {any} d @param {string} effect */
+export function wardHastens(d, effect) {
+  const fx = d && d.effects;
+  if (!fx) return false;
+  const v = Array.isArray(fx) || ArrayBuffer.isView(fx) ? fx[EFFECT_INDEX[effect]] : fx[effect];
+  return Math.abs(Number(v) || 0) >= WARD_MIN;
+}
+
 /** char rate (1/s) of unextracted matter just past its threshold */
 const CHAR_RATE = 0.002;
 /** coldest and hottest a vessel can be driven (°C) */
@@ -67,6 +104,7 @@ const T_MIN = -90, T_MAX = 450;
  * @property {number} T                      °C
  * @property {{ml:number, net:number}|null} charge  the loaded Fire/Frost potion: ml left and net Fire (percent; negative: Frost)
  * @property {{target:number, life:number}|null} rune
+ * @property {{effect:string, life:number}|null} [ward]  the biome rune in its third slot
  * @property {number} t                      the vessel's clock (ms since epoch) it has been advanced to
  * @property {number} carry                  seconds not yet worth a step
  * @property {string} [name]                 what the brew was
@@ -78,7 +116,7 @@ const T_MIN = -90, T_MAX = 450;
 
 /** An empty cellar. */
 export function createCellar() {
-  return { vessels: /** @type {Vessel[]} */ ([]), runes: 0 };
+  return { vessels: /** @type {Vessel[]} */ ([]), runes: 0, wards: /** @type {Record<string, number>} */ ({}) };
 }
 
 /** A new, empty vessel (a shelved bottle's aging, state.js startAging). @param {number} [now] */
@@ -88,7 +126,7 @@ export function newVessel(now = Date.now()) {
 
 /** @param {number} id @param {number} now */
 function emptyVessel(id, now) {
-  return /** @type {Vessel} */ ({ id, comp: {}, T: CELLAR_T, charge: null, rune: null, t: now, carry: 0, log: [] });
+  return /** @type {Vessel} */ ({ id, comp: {}, T: CELLAR_T, charge: null, rune: null, ward: null, t: now, carry: 0, log: [] });
 }
 
 /**
@@ -99,6 +137,10 @@ export function normalizeCellar(data, count, now = Date.now()) {
   const c = data && typeof data === 'object' ? data : createCellar();
   if (!Array.isArray(c.vessels)) c.vessels = [];
   c.runes = Math.max(0, Number(c.runes) | 0);
+  // the biome runes in hand, by effect
+  const wards = c.wards && typeof c.wards === 'object' ? c.wards : {};
+  c.wards = {};
+  for (const r of BIOME_RUNES) { const n = Math.max(0, Number(wards[r.effect]) | 0); if (n) c.wards[r.effect] = n; }
   // (vessels are repaired in place: the objects others hold stay the live ones)
   c.vessels = c.vessels.filter((v) => v && typeof v === 'object').map((v, k) => (Object.assign(v, {
     ...emptyVessel(k, now), ...v, id: k,
@@ -108,11 +150,17 @@ export function normalizeCellar(data, count, now = Date.now()) {
     charge: v.charge && v.charge.ml > 0 && Number.isFinite(v.charge.net) ? { ml: Number(v.charge.ml), net: Number(v.charge.net) }
       : Number.isFinite(v.drive) && Math.abs(v.drive) > 0 ? { ml: 100, net: v.drive / 2.5 } : null,
     rune: v.rune && Number.isFinite(v.rune.target) && v.rune.life > 0 ? { target: v.rune.target, life: Math.min(RUNE_LIFE, v.rune.life) } : null,
+    ward: normalWard(v.ward),
     t: Number.isFinite(v.t) ? v.t : now, carry: Number.isFinite(v.carry) ? v.carry : 0, log: Array.isArray(v.log) ? v.log.slice(-20) : [],
   })));
   for (const v of c.vessels) delete /** @type {any} */ (v).drive;
   while (c.vessels.length < count) c.vessels.push(emptyVessel(c.vessels.length, now));
   return c;
+}
+
+/** A saved biome rune in a vessel's slot, repaired (or null). @param {any} w */
+export function normalWard(w) {
+  return w && BIOME_RUNE_BY_EFFECT[w.effect] && w.life > 0 ? { effect: String(w.effect), life: Math.min(WARD_LIFE, Number(w.life)) } : null;
 }
 
 /** Total ml in a vessel. @param {Vessel} v */
@@ -138,7 +186,7 @@ export function fillVessel(v, comp, T, now, meta = {}) {
   const c = Object.fromEntries(Object.entries(comp).filter(([, ml]) => ml > 1e-6));
   if (!Object.keys(c).length) return { ok: false, reason: 'There is nothing to lay down.' };
   // (the vessel's jacket keeps its potion charge and its rune: they belong to the vessel, not the brew)
-  Object.assign(v, emptyVessel(v.id, now), { comp: c, T, name: meta.name || 'A laid-down brew', batchId: meta.batchId, parts: meta.parts || [], charge: v.charge || null, rune: v.rune || null });
+  Object.assign(v, emptyVessel(v.id, now), { comp: c, T, name: meta.name || 'A laid-down brew', batchId: meta.batchId, parts: meta.parts || [], charge: v.charge || null, rune: v.rune || null, ward: v.ward || null });
   note(v, now, `Laid down at ${Math.round(T)}°C.`);
   return { ok: true };
 }
@@ -147,7 +195,7 @@ export function fillVessel(v, comp, T, now, meta = {}) {
 export function emptyVesselContents(v, now) {
   const out = { comp: { ...v.comp }, T: v.T, name: v.name, parts: v.parts || [] };
   // the charge and the rune stay with the vessel for the next brew
-  Object.assign(v, emptyVessel(v.id, now), { charge: v.charge || null, rune: v.rune || null });
+  Object.assign(v, emptyVessel(v.id, now), { charge: v.charge || null, rune: v.rune || null, ward: v.ward || null });
   return out;
 }
 
@@ -206,6 +254,19 @@ export function setRune(v, target, now) {
   v.rune = { target: t, life: fresh ? RUNE_LIFE : /** @type {any} */ (v.rune).life };
   note(v, now, `A rune locks it at ${t}°C.`);
   return { ok: true, fresh };
+}
+
+/**
+ * Set a biome rune in a vessel's third slot (a fresh one: whatever rune was
+ * there before is spent).
+ * @param {Vessel} v @param {string} effect @param {number} now
+ */
+export function setWard(v, effect, now) {
+  const r = BIOME_RUNE_BY_EFFECT[effect];
+  if (!r) return { ok: false, reason: 'There is no such rune.' };
+  v.ward = { effect, life: WARD_LIFE };
+  note(v, now, `The ${r.name} hastens what carries ${EFFECT_BY_KEY[effect] ? EFFECT_BY_KEY[effect].label : effect}.`);
+  return { ok: true };
 }
 
 /** Can this rune lock this vessel now (charged, and the target on the way to the charge's limit)? @param {Vessel} v */
@@ -310,10 +371,16 @@ function stepVessel(v, get, dt) {
     v.rune.life -= dt;
     if (v.rune.life <= 0) { v.rune = null; events.push('The rune has worn out: the vessel is no longer held.'); }
   }
+  /** the biome rune in its third slot (wearing as it works) */
+  const ward = v.ward && v.ward.life > 0 ? v.ward : null;
+  if (v.ward) {
+    v.ward.life -= dt;
+    if (v.ward.life <= 0) { const wr = BIOME_RUNE_BY_EFFECT[v.ward.effect]; v.ward = null; events.push(`The ${wr ? wr.name : 'biome rune'} has worn out.`); }
+  }
   const T = v.T;
   // ---- what the vessel holds
   let Lh = 0, Ll = 0, Xh = 0, Xl = 0, em = 0;
-  /** @type {{id:string, ml:number, pr:any, x:string, base:string}[]} */
+  /** @type {{id:string, ml:number, pr:any, x:string, base:string, fast:boolean}[]} */
   const raws = [];
   for (const [id, ml] of Object.entries(v.comp)) {
     if (ml <= 0) continue;
@@ -322,7 +389,7 @@ function stepVessel(v, get, dt) {
     if (d.solvent === 'hydro') Lh += ml; else if (d.solvent === 'lipo') Ll += ml;
     if (d.extractClass === 'hydro') Xh += ml; else if (d.extractClass === 'lipo') Xl += ml;
     em += ml * (Number(d.emulsifier) || 0);
-    if (d.extraction) raws.push({ id, ml, pr: d.extraction, x: extractIdOf(id), base: d.base || d.id });
+    if (d.extraction) raws.push({ id, ml, pr: d.extraction, x: extractIdOf(id), base: d.base || d.id, fast: !!ward && wardHastens(d, ward.effect) });
   }
   const tf = freezingPoint(v, get);
   const frozen = tf !== null && T <= tf;
@@ -360,7 +427,9 @@ function stepVessel(v, get, dt) {
     const phi = all > 0 ? g.ext / all : 0;
     const drive = yieldAt(r.pr, T) - phi;
     if (drive <= 1e-6) continue;
-    let dv = (r.ml * (1 - Math.exp(-rateAt(r.pr, T) * m * dt)) * drive) / Math.max(0.02, 1 - phi);
+    // a biome rune: quicker, and as quick in the cold as at room temperature (the ceiling is untouched)
+    const k = r.fast ? rateAt(r.pr, Math.max(T, 20)) * WARD_BOOST : rateAt(r.pr, T);
+    let dv = (r.ml * (1 - Math.exp(-k * m * dt)) * drive) / Math.max(0.02, 1 - phi);
     dv = Math.min(dv, r.ml, cap, drive * all);
     if (dv <= 1e-9) continue;
     v.comp[r.id] -= dv;
@@ -403,8 +472,9 @@ function stepVessel(v, get, dt) {
  * @param {Vessel} v @param {(id:string)=>any} lookup
  */
 export function vesselReport(v, lookup) {
-  /** @type {Map<string, {id:string, name:string, cls:string, raw:number, ext:number, ceiling:number}>} */
+  /** @type {Map<string, {id:string, name:string, cls:string, raw:number, ext:number, ceiling:number, fast:boolean}>} */
   const by = new Map();
+  const ward = v.ward && v.ward.life > 0 ? v.ward : null;
   let alcohol = 0, total = 0, Lh = 0, Ll = 0, em = 0;
   for (const [id, ml] of Object.entries(v.comp)) {
     total += ml;
@@ -417,7 +487,8 @@ export function vesselReport(v, lookup) {
     let key = null, raw = 0, ext = 0, pr = null;
     if (d.extraction) { key = d.base || d.id; raw = ml; pr = d.extraction; } else if (d.extractOf) { key = d.extractOf; ext = ml; pr = lookup(d.extractOf)?.extraction; }
     if (!key) continue;
-    const g = by.get(key) || { id: key, name: lookup(key)?.name || key, cls: pr ? pr.cls : 'hydro', raw: 0, ext: 0, ceiling: pr ? yieldAt(pr, v.T) : 1 };
+    const g = by.get(key) || { id: key, name: lookup(key)?.name || key, cls: pr ? pr.cls : 'hydro', raw: 0, ext: 0, ceiling: pr ? yieldAt(pr, v.T) : 1, fast: false };
+    if (ward && d.extraction && wardHastens(d, ward.effect)) g.fast = true;
     g.raw += raw; g.ext += ext;
     by.set(key, g);
   }
@@ -426,6 +497,7 @@ export function vesselReport(v, lookup) {
   return {
     ml: total, T: v.T, charge: v.charge ? { ml: v.charge.ml, net: v.charge.net, limit: chargeLimit(v.charge.net) } : null,
     rune: v.rune ? { target: v.rune.target, wear: 1 - v.rune.life / RUNE_LIFE, holds: runeHolds(v), locked: runeHolds(v) && Math.abs(v.T - v.rune.target) < 0.5 } : null,
+    ward: ward ? { ...BIOME_RUNE_BY_EFFECT[ward.effect], wear: 1 - ward.life / WARD_LIFE } : null,
     freezing: tf, frozen: tf !== null && v.T <= tf, items, alcohol: total > 0 ? (alcohol / total) * 100 : 0,
     emulsion: Lh > 0 && Ll > 0 ? emulsionStability(Lh, Ll, em) : null, char: v.comp[CHAR_ID] || 0,
   };

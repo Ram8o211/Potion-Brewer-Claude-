@@ -459,7 +459,7 @@ if (v === undefined || v === null || v === false) continue;
 if (k === 'class') el.className = v;
 else if (k === 'text') el.textContent = v;
 else if (k === 'html') el.innerHTML = v;
-else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+else if (k === 'style' && typeof v === 'object') { for (const [p, val] of Object.entries(v)) { if (p.startsWith('--')) el.style.setProperty(p, String(val)); else /** @type {any} */ (el.style)[p] = val; } }
 else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2).toLowerCase(), v);
 else el.setAttribute(k, v === true ? '' : String(v));
 }
@@ -824,7 +824,7 @@ const __m8 = (() => {
 const { SPECIES_DATA } = __m9;
 const SPECIES_BY_KEY = Object.fromEntries(SPECIES_DATA.map((s) => [s.key, s]));
 const SOLVENT_CAPACITY = 0.5;
-const WHOLE_FACTOR = 0.03;
+const WHOLE_FACTOR = 0.08;
 const EMULSION_FACTOR = 0.1;
 const CELLAR_FACTOR = 0.12;
 const COMBUST_RANGE = /** @type {[number, number]} */ ([115, 300]);
@@ -9685,7 +9685,19 @@ out.push({ id: `${region}:${sceneSeed}:${k}`, fx: Math.round(fx * 1000) / 1000 }
 }
 return out;
 }
-return { REGIONS, REGION_BY_ID, STAGES, SPROUT_SHARE, TAKE_BY_RARITY, generateDeposits, thirstOf, createGathering, GATHER_VERSION, normalizeGathering, GROW_FLOOR, GROW_MAX, WATER_DOSE, moistureEnv, growthOf, matureIn, checkpoint, standOf, plantStage, depositStatus, water, setSky, migrateGathering, SCAR_SLOWDOWN, METHODS, methodOf, dayPart, DAY_PART_NAME, DAY_PART_HINT, WEATHERS, weatherOn, gatherPlan, harvestable, weatherRegrowth, harvest, newDayRegrowth, SANDBOX_PACE, sandboxWilds, formatWait, RUNE_CACHES, runeCaches };
+const WARD_STONES_PER_DAY = 1;
+function wardStones(region, sceneSeed, day) {
+const b = BIOMES.find((x) => x.id === region);
+if (!b) return [];
+const out = [];
+for (let k = 0; k < WARD_STONES_PER_DAY; k++) {
+const r = new Rng(`ward-stone:${sceneSeed}:${region}:${day}:${k}`);
+const fx = 0.12 + 0.76 * r.next();
+out.push({ id: `ward:${region}:${sceneSeed}:${day}:${k}`, effect: b.effect, fx: Math.round(fx * 1000) / 1000 });
+}
+return out;
+}
+return { REGIONS, REGION_BY_ID, STAGES, SPROUT_SHARE, TAKE_BY_RARITY, generateDeposits, thirstOf, createGathering, GATHER_VERSION, normalizeGathering, GROW_FLOOR, GROW_MAX, WATER_DOSE, moistureEnv, growthOf, matureIn, checkpoint, standOf, plantStage, depositStatus, water, setSky, migrateGathering, SCAR_SLOWDOWN, METHODS, methodOf, dayPart, DAY_PART_NAME, DAY_PART_HINT, WEATHERS, weatherOn, gatherPlan, harvestable, weatherRegrowth, harvest, newDayRegrowth, SANDBOX_PACE, sandboxWilds, formatWait, RUNE_CACHES, runeCaches, WARD_STONES_PER_DAY, wardStones };
 })();
 // src/simulation/particles.js
 const __m68 = (() => {
@@ -12243,6 +12255,7 @@ if (p.phase[i] === GAS) continue;
 cond++;
 const off = i * S;
 const isFrozen = p.phase[i] === SOLID && p.whole[i] < 0.3;
+const isWhole = p.phase[i] === SOLID && p.whole[i] >= 0.3;
 if (isFrozen) frozen++;
 else { liquidT += p.temp[i]; liquidN++; }
 let h = 0, l = 0, e = 0;
@@ -12259,8 +12272,9 @@ if (!d) continue;
 if (sp.exCls[s]) { key = d.base || d.id; raw = f; } else if (sp.extCls[s] && d.extractOf) { key = d.extractOf; ext = f; }
 if (!key) continue;
 let g = by.get(key);
-if (!g) { g = { id: key, raw: 0, ext: 0, T: 0, w: 0, frozen: 0, cls: sp.exCls[s] || sp.extCls[s] }; by.set(key, g); }
+if (!g) { g = { id: key, raw: 0, ext: 0, T: 0, w: 0, frozen: 0, cls: sp.exCls[s] || sp.extCls[s], whole: 0 }; by.set(key, g); }
 g.raw += raw; g.ext += ext; g.T += p.temp[i] * f; g.w += f;
+if (isWhole) g.whole += raw;
 if (isFrozen) g.frozen += f;
 }
 hyd += h; lip += l; emul += e;
@@ -12273,7 +12287,7 @@ const pr = def && def.extraction;
 const share = g.raw + g.ext > 0 ? g.ext / (g.raw + g.ext) : 0;
 const T = g.w > 0 ? g.T / g.w : meanT;
 const ceiling = pr ? yieldAt(pr, T) : 1;
-return { id: g.id, name: def ? def.name : g.id, cls: g.cls === 2 ? 'lipo' : 'hydro', raw: g.raw, ext: g.ext, share, ceiling, frozen: g.raw > 0 && g.frozen >= g.raw * 0.8 };
+return { id: g.id, name: def ? def.name : g.id, cls: g.cls === 2 ? 'lipo' : 'hydro', raw: g.raw, ext: g.ext, share, ceiling, frozen: g.raw > 0 && g.frozen >= g.raw * 0.8, whole: g.whole };
 });
 return {
 items, meanT, frozen: cond ? frozen / cond : 0,
@@ -14462,7 +14476,8 @@ const __m89 = (() => {
 const { rateAt, yieldAt, extractIdOf, SOLVENT_CAPACITY, CELLAR_FACTOR, EMULSION_FACTOR, emulsionStability } = __m8;
 const { isMagical, awakenedId, thresholdToCelsius } = __m22;
 const { CHAR_ID } = __m15;
-const { EFFECT_INDEX } = __m20;
+const { EFFECT_INDEX, EFFECT_BY_KEY } = __m20;
+const { BIOMES } = __m18;
 const CELLAR_STEP = 10;
 const CELLAR_T = 12;
 const MAX_OFFLINE = 30 * 86400;
@@ -14472,21 +14487,38 @@ const CHARGE_TAU = 1800;
 const HOLD_COST = 320;
 const RUNE_LIFE = 8 * 3600;
 const RUNE_PRICE = 28;
+const WARD_BOOST = 4;
+const WARD_LIFE = 12 * 3600;
+const WARD_MIN = 1;
+const BIOME_RUNES = BIOMES.map((b) => {
+const e = EFFECT_BY_KEY[b.effect];
+return { effect: b.effect, biome: b.id, name: `${e ? e.label : b.effect} Rune`, biomeName: b.name, color: e ? e.color : [0.6, 0.8, 1], icon: e ? e.icon : 'rune' };
+});
+const BIOME_RUNE_BY_EFFECT = Object.fromEntries(BIOME_RUNES.map((r) => [r.effect, r]));
+function wardHastens(d, effect) {
+const fx = d && d.effects;
+if (!fx) return false;
+const v = Array.isArray(fx) || ArrayBuffer.isView(fx) ? fx[EFFECT_INDEX[effect]] : fx[effect];
+return Math.abs(Number(v) || 0) >= WARD_MIN;
+}
 const CHAR_RATE = 0.002;
 const T_MIN = -90, T_MAX = 450;
 function createCellar() {
-return { vessels: /** @type {Vessel[]} */ ([]), runes: 0 };
+return { vessels: /** @type {Vessel[]} */ ([]), runes: 0, wards: /** @type {Record<string, number>} */ ({}) };
 }
 function newVessel(now = Date.now()) {
 return emptyVessel(0, now);
 }
 function emptyVessel(id, now) {
-return /** @type {Vessel} */ ({ id, comp: {}, T: CELLAR_T, charge: null, rune: null, t: now, carry: 0, log: [] });
+return /** @type {Vessel} */ ({ id, comp: {}, T: CELLAR_T, charge: null, rune: null, ward: null, t: now, carry: 0, log: [] });
 }
 function normalizeCellar(data, count, now = Date.now()) {
 const c = data && typeof data === 'object' ? data : createCellar();
 if (!Array.isArray(c.vessels)) c.vessels = [];
 c.runes = Math.max(0, Number(c.runes) | 0);
+const wards = c.wards && typeof c.wards === 'object' ? c.wards : {};
+c.wards = {};
+for (const r of BIOME_RUNES) { const n = Math.max(0, Number(wards[r.effect]) | 0); if (n) c.wards[r.effect] = n; }
 c.vessels = c.vessels.filter((v) => v && typeof v === 'object').map((v, k) => (Object.assign(v, {
 ...emptyVessel(k, now), ...v, id: k,
 comp: v.comp && typeof v.comp === 'object' ? Object.fromEntries(Object.entries(v.comp).filter(([, ml]) => Number(ml) > 1e-6).map(([id, ml]) => [id, Number(ml)])) : {},
@@ -14494,11 +14526,15 @@ T: Number.isFinite(v.T) ? v.T : CELLAR_T,
 charge: v.charge && v.charge.ml > 0 && Number.isFinite(v.charge.net) ? { ml: Number(v.charge.ml), net: Number(v.charge.net) }
 : Number.isFinite(v.drive) && Math.abs(v.drive) > 0 ? { ml: 100, net: v.drive / 2.5 } : null,
 rune: v.rune && Number.isFinite(v.rune.target) && v.rune.life > 0 ? { target: v.rune.target, life: Math.min(RUNE_LIFE, v.rune.life) } : null,
+ward: normalWard(v.ward),
 t: Number.isFinite(v.t) ? v.t : now, carry: Number.isFinite(v.carry) ? v.carry : 0, log: Array.isArray(v.log) ? v.log.slice(-20) : [],
 })));
 for (const v of c.vessels) delete /** @type {any} */ (v).drive;
 while (c.vessels.length < count) c.vessels.push(emptyVessel(c.vessels.length, now));
 return c;
+}
+function normalWard(w) {
+return w && BIOME_RUNE_BY_EFFECT[w.effect] && w.life > 0 ? { effect: String(w.effect), life: Math.min(WARD_LIFE, Number(w.life)) } : null;
 }
 function vesselVolume(v) {
 let s = 0;
@@ -14513,13 +14549,13 @@ function fillVessel(v, comp, T, now, meta = {}) {
 if (vesselVolume(v) > 0) return { ok: false, reason: 'The vessel is not empty.' };
 const c = Object.fromEntries(Object.entries(comp).filter(([, ml]) => ml > 1e-6));
 if (!Object.keys(c).length) return { ok: false, reason: 'There is nothing to lay down.' };
-Object.assign(v, emptyVessel(v.id, now), { comp: c, T, name: meta.name || 'A laid-down brew', batchId: meta.batchId, parts: meta.parts || [], charge: v.charge || null, rune: v.rune || null });
+Object.assign(v, emptyVessel(v.id, now), { comp: c, T, name: meta.name || 'A laid-down brew', batchId: meta.batchId, parts: meta.parts || [], charge: v.charge || null, rune: v.rune || null, ward: v.ward || null });
 note(v, now, `Laid down at ${Math.round(T)}°C.`);
 return { ok: true };
 }
 function emptyVesselContents(v, now) {
 const out = { comp: { ...v.comp }, T: v.T, name: v.name, parts: v.parts || [] };
-Object.assign(v, emptyVessel(v.id, now), { charge: v.charge || null, rune: v.rune || null });
+Object.assign(v, emptyVessel(v.id, now), { charge: v.charge || null, rune: v.rune || null, ward: v.ward || null });
 return out;
 }
 function potionNet(effects) {
@@ -14553,6 +14589,13 @@ const fresh = !(v.rune && v.rune.life > 0);
 v.rune = { target: t, life: fresh ? RUNE_LIFE : /** @type {any} */ (v.rune).life };
 note(v, now, `A rune locks it at ${t}°C.`);
 return { ok: true, fresh };
+}
+function setWard(v, effect, now) {
+const r = BIOME_RUNE_BY_EFFECT[effect];
+if (!r) return { ok: false, reason: 'There is no such rune.' };
+v.ward = { effect, life: WARD_LIFE };
+note(v, now, `The ${r.name} hastens what carries ${EFFECT_BY_KEY[effect] ? EFFECT_BY_KEY[effect].label : effect}.`);
+return { ok: true };
 }
 function runeHolds(v) {
 if (!v.rune || !(v.rune.life > 0) || !v.charge || !(v.charge.ml > 0)) return false;
@@ -14620,6 +14663,11 @@ if (v.rune) {
 v.rune.life -= dt;
 if (v.rune.life <= 0) { v.rune = null; events.push('The rune has worn out: the vessel is no longer held.'); }
 }
+const ward = v.ward && v.ward.life > 0 ? v.ward : null;
+if (v.ward) {
+v.ward.life -= dt;
+if (v.ward.life <= 0) { const wr = BIOME_RUNE_BY_EFFECT[v.ward.effect]; v.ward = null; events.push(`The ${wr ? wr.name : 'biome rune'} has worn out.`); }
+}
 const T = v.T;
 let Lh = 0, Ll = 0, Xh = 0, Xl = 0, em = 0;
 const raws = [];
@@ -14630,7 +14678,7 @@ if (!d) continue;
 if (d.solvent === 'hydro') Lh += ml; else if (d.solvent === 'lipo') Ll += ml;
 if (d.extractClass === 'hydro') Xh += ml; else if (d.extractClass === 'lipo') Xl += ml;
 em += ml * (Number(d.emulsifier) || 0);
-if (d.extraction) raws.push({ id, ml, pr: d.extraction, x: extractIdOf(id), base: d.base || d.id });
+if (d.extraction) raws.push({ id, ml, pr: d.extraction, x: extractIdOf(id), base: d.base || d.id, fast: !!ward && wardHastens(d, ward.effect) });
 }
 const tf = freezingPoint(v, get);
 const frozen = tf !== null && T <= tf;
@@ -14665,7 +14713,8 @@ const all = g.raw + g.ext;
 const phi = all > 0 ? g.ext / all : 0;
 const drive = yieldAt(r.pr, T) - phi;
 if (drive <= 1e-6) continue;
-let dv = (r.ml * (1 - Math.exp(-rateAt(r.pr, T) * m * dt)) * drive) / Math.max(0.02, 1 - phi);
+const k = r.fast ? rateAt(r.pr, Math.max(T, 20)) * WARD_BOOST : rateAt(r.pr, T);
+let dv = (r.ml * (1 - Math.exp(-k * m * dt)) * drive) / Math.max(0.02, 1 - phi);
 dv = Math.min(dv, r.ml, cap, drive * all);
 if (dv <= 1e-9) continue;
 v.comp[r.id] -= dv;
@@ -14701,6 +14750,7 @@ return events;
 }
 function vesselReport(v, lookup) {
 const by = new Map();
+const ward = v.ward && v.ward.life > 0 ? v.ward : null;
 let alcohol = 0, total = 0, Lh = 0, Ll = 0, em = 0;
 for (const [id, ml] of Object.entries(v.comp)) {
 total += ml;
@@ -14713,7 +14763,8 @@ em += ml * (Number(d.emulsifier) || 0);
 let key = null, raw = 0, ext = 0, pr = null;
 if (d.extraction) { key = d.base || d.id; raw = ml; pr = d.extraction; } else if (d.extractOf) { key = d.extractOf; ext = ml; pr = lookup(d.extractOf)?.extraction; }
 if (!key) continue;
-const g = by.get(key) || { id: key, name: lookup(key)?.name || key, cls: pr ? pr.cls : 'hydro', raw: 0, ext: 0, ceiling: pr ? yieldAt(pr, v.T) : 1 };
+const g = by.get(key) || { id: key, name: lookup(key)?.name || key, cls: pr ? pr.cls : 'hydro', raw: 0, ext: 0, ceiling: pr ? yieldAt(pr, v.T) : 1, fast: false };
+if (ward && d.extraction && wardHastens(d, ward.effect)) g.fast = true;
 g.raw += raw; g.ext += ext;
 by.set(key, g);
 }
@@ -14722,11 +14773,12 @@ const tf = freezingPoint(v, lookup);
 return {
 ml: total, T: v.T, charge: v.charge ? { ml: v.charge.ml, net: v.charge.net, limit: chargeLimit(v.charge.net) } : null,
 rune: v.rune ? { target: v.rune.target, wear: 1 - v.rune.life / RUNE_LIFE, holds: runeHolds(v), locked: runeHolds(v) && Math.abs(v.T - v.rune.target) < 0.5 } : null,
+ward: ward ? { ...BIOME_RUNE_BY_EFFECT[ward.effect], wear: 1 - ward.life / WARD_LIFE } : null,
 freezing: tf, frozen: tf !== null && v.T <= tf, items, alcohol: total > 0 ? (alcohol / total) * 100 : 0,
 emulsion: Lh > 0 && Ll > 0 ? emulsionStability(Lh, Ll, em) : null, char: v.comp[CHAR_ID] || 0,
 };
 }
-return { CELLAR_STEP, CELLAR_T, MAX_OFFLINE, DEG_PER_POINT, MIN_POINTS, CHARGE_TAU, HOLD_COST, RUNE_LIFE, RUNE_PRICE, createCellar, newVessel, normalizeCellar, vesselVolume, fillVessel, emptyVesselContents, potionNet, chargeLimit, potionDrive, chargeVessel, activateVessel, setRune, runeHolds, freezingPoint, advanceVessel, advanceCellar, vesselReport };
+return { CELLAR_STEP, CELLAR_T, MAX_OFFLINE, DEG_PER_POINT, MIN_POINTS, CHARGE_TAU, HOLD_COST, RUNE_LIFE, RUNE_PRICE, WARD_BOOST, WARD_LIFE, WARD_MIN, BIOME_RUNES, BIOME_RUNE_BY_EFFECT, wardHastens, createCellar, newVessel, normalizeCellar, normalWard, vesselVolume, fillVessel, emptyVesselContents, potionNet, chargeLimit, potionDrive, chargeVessel, activateVessel, setRune, setWard, runeHolds, freezingPoint, advanceVessel, advanceCellar, vesselReport };
 })();
 // src/game/state.js
 const __m5 = (() => {
@@ -14737,7 +14789,7 @@ const { generateCommission, tutorialCommission } = __m23;
 const { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById, RETIRED_EQUIPMENT } = __m59;
 const { SIM } = __m57;
 const { createTrials, normalizeTrials, runTrial, SUBJECT_BY_ID, knownLaws, certification, summarize } = __m60;
-const { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth, depositStatus, migrateGathering, setSky, water, runeCaches: runeCachesOf } = __m64;
+const { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth, depositStatus, migrateGathering, setSky, water, runeCaches: runeCachesOf, wardStones: wardStonesOf } = __m64;
 const { predictPlan } = __m24;
 const { EFFECT_INDEX, EFFECT_KEYS } = __m20;
 const { migrateVial } = __m66;
@@ -14754,7 +14806,7 @@ const { remainsMaterials, remainsPlan, isRemains } = __m86;
 const { returningPatron, welcomePatron, recentStyles, notePatron, patronVerdict, noveltyFactor } = __m87;
 const { techniqueById, migrateTechniques } = __m23;
 const { migrateRecipe } = __m88;
-const { createCellar, normalizeCellar, advanceCellar, advanceVessel, fillVessel, emptyVesselContents, chargeVessel, setRune, vesselVolume, newVessel, potionNet, RUNE_PRICE } = __m89;
+const { createCellar, normalizeCellar, advanceCellar, advanceVessel, fillVessel, emptyVesselContents, chargeVessel, setRune, setWard, vesselVolume, newVessel, potionNet, RUNE_PRICE, BIOME_RUNE_BY_EFFECT } = __m89;
 const { makeVialFromComposition, takeDose } = __m66;
 const SAVE_VERSION = 9;
 const PURGE_PRICE = 8;
@@ -15033,6 +15085,25 @@ this.cellar.runes++;
 this.stats.runes = (this.stats.runes || 0) + 1;
 return { ok: true };
 }
+wardStones(region) {
+return wardStonesOf(region, this.sceneSeed(region), this.day).map((c) => ({ ...c, dug: !!this.gathering.runes[c.id] }));
+}
+wardsOf(effect) {
+const w = /** @type {Record<string, number>} */ (this.cellar.wards || {});
+return w[effect] || 0;
+}
+digWard(id) {
+const region = id.split(':')[1];
+const stone = this.wardStones(region).find((c) => c.id === id);
+if (!stone) return { ok: false, reason: 'There is nothing buried there.' };
+if (stone.dug) return { ok: false, reason: 'It has already been dug out.' };
+this.gathering.runes[id] = 1;
+for (const k of Object.keys(this.gathering.runes)) if (k.startsWith('ward:') && Number(k.split(':')[3]) < this.day - 1) delete this.gathering.runes[k];
+const w = this.cellar.wards || (this.cellar.wards = {});
+if (Number.isFinite(w[stone.effect] ?? 0)) w[stone.effect] = (w[stone.effect] || 0) + 1;
+this.stats.wards = (this.stats.wards || 0) + 1;
+return { ok: true, effect: stone.effect, rune: BIOME_RUNE_BY_EFFECT[stone.effect] };
+}
 tickCellar(now = Date.now()) {
 const events = advanceCellar(this.cellar, this.lookup, now) || [];
 for (const b of this.bottles) {
@@ -15094,6 +15165,19 @@ if (!started.ok) return started;
 const r = setRune(/** @type {any} */ (b.aging), target, now);
 if (r.ok && r.fresh) this.cellar.runes--;
 return r;
+}
+wardBottle(bottleId, effect, now = Date.now()) {
+this.tickCellar(now);
+const b = this.bottles.find((x) => x.id === bottleId);
+if (!b) return { ok: false, reason: 'That bottle is not on the shelf.' };
+const r = BIOME_RUNE_BY_EFFECT[effect];
+if (!r) return { ok: false, reason: 'There is no such rune.' };
+if (this.wardsOf(effect) <= 0) return { ok: false, reason: `You have no ${r.name}. It lies underground in the ${r.biomeName}: look for its glow in the earth.` };
+const started = this.startAging(bottleId, now);
+if (!started.ok) return started;
+const res = setWard(/** @type {any} */ (b.aging), effect, now);
+if (res.ok && Number.isFinite(this.cellar.wards[effect])) this.cellar.wards[effect]--;
+return res;
 }
 finishAging(bottleId, now = Date.now()) {
 const k = this.bottles.findIndex((x) => x.id === bottleId);
@@ -19864,7 +19948,7 @@ const { EQUIPMENT } = __m59;
 const { BIOMES } = __m18;
 const { sandboxWilds } = __m64;
 const { normalizeTrials } = __m60;
-const { normalizeCellar } = __m89;
+const { normalizeCellar, BIOME_RUNES } = __m89;
 const { normalizeGarden, seedId, TUTORIAL_PACE } = __m85;
 const { SPECIES_BY_KEY, materialIdOf } = __m15;
 const { migrateVial } = __m66;
@@ -19897,6 +19981,7 @@ return st;
 }
 function sandboxCellar(cellar) {
 cellar.runes = Infinity;
+cellar.wards = Object.fromEntries(BIOME_RUNES.map((r) => [r.effect, Infinity]));
 cellar.pace = SANDBOX_CELLAR_PACE;
 return cellar;
 }
@@ -19918,7 +20003,7 @@ out.seen = true;
 return out;
 }
 function sandboxSave(st, cauldron) {
-const { pace: _p, runes: _r, ...cellar } = /** @type {any} */ (st.cellar);
+const { pace: _p, runes: _r, wards: _w, ...cellar } = /** @type {any} */ (st.cellar);
 const { pace: _g, seeds: _s, ...garden } = /** @type {any} */ (st.garden);
 return { seed: st.seed, cauldron, trials: st.trials, bottles: st.bottles, cellar, garden, bench: st.bench };
 }
@@ -20040,7 +20125,7 @@ const DAY = [
 const SECTIONS = [
 ['Orders and selling', 'stall', ['Customers ask for an effect — healing, strength, love, fire… — at a strength in percent (everyday orders want about 8–15 %).', 'Most orders forbid side effects: “no other effect above 1.2 %”. Every other kind of magic in the bottle must stay that faint.', 'Before a sale you write the label — tested values, the guild theory’s estimates, “none” or unknown — and bargain over the price. The customer comes back the next day: pleased, or with a complaint. Refund them, dispute it with your trial records, or turn them away.', 'Bottle onto the potion shelves whenever there is room (3 bottles; more with a Bottle Shelf, Potion Cabinet or Bottle Cellar). Bottles of one batch share its trials.', 'Honest, well-tested potions earn reputation. Reputation raises your rank, which opens regions, ingredients, equipment and harder orders.'], true],
 ['Ingredients and side effects', 'leaf', ['The Shop sells no prepared reagents — only free well water and two plain solvents, oil and spirit. Every effect comes from what you gather.', 'Nothing that grows is pure: each herb or mineral brings side effects. Cancel them with their opposites — fire and frost, life and death (life also mends poison, two parts to one), acid and alkali.', 'Long-press (or right-click) a jar to see what it does and what cancels its side effects.', 'You know what each plain ingredient does. You do NOT know what a mixture does: extraction, heat, reactions and hidden laws change it.']],
-['Brewing', 'cauldron', ['Pour: tap a jar, then a dose button (25–250 ml) — or hold your finger in the cauldron, or drag a jar onto it.', 'Crush: whole roots, leaves and stones go into the pot whole and give up almost nothing until you break them up with Crush (the pestle).', 'Extraction: an herb’s magic dissolves only in its own solvent — water-soluble herbs in water or spirit, oil-soluble ones only in oil (see the herb’s card). At room temperature only about 60 % of it comes out, and slowly (minutes). Heat makes it much quicker, but less can come out hot (about 45 % at 60 °C); cool it again and more comes out. Everything comes out only well below freezing — in spirit (water freezes) or chilled oil — and very slowly: that is work for aging (Counter → potion shelves). A frozen solvent extracts nothing. Watch the brew panel’s Extracted bars.', 'Burning: every herb has its own burning point, above water’s boil, found only by trying. Undissolved matter above it chars and its magic is lost; what is already dissolved is safe. Water boils first, so it is hot oil that burns herbs.', 'Emulsions: oil and water extracts stay apart unless an emulsifier binds them — the neutral gum from the Shop, about 6 % of the smaller phase, with the smaller phase under two fifths of the liquid. An emulsion extracts badly: extract each in its own solvent first, then bind them.', 'Distillation (Alembic & Condenser): put the still head on and heat between spirit’s and water’s boiling points; the spirit goes into the receiver and the magic stays. Jar the distillate to use the spirit again.', 'Aging (with the Aging Cellar): select a bottle on the potion shelves (Counter). It has two slots: put a shelved Fire or Frost potion in the first — as much as you choose, by tapping the slot or dragging the bottle onto it — and the bottle warms or chills by itself, the stronger the potion the further, using it up as it works; a temperature rune in the second holds the temperature where you choose on the way, and wears out with use. The bottle goes on extracting for hours, even while the game is closed. Unseal it when it is ready: it becomes a new, untested batch.', 'Stir after every addition: an unstirred brew pours unevenly, so later bottles may not match the tested dose.', 'The fire control: right heats, left cools; the gentle half of the slider is spread out for fine control, and − / + (or the arrow keys) move the flame two degrees at a time. The readout shows the flame (or the cold plate) and the cauldron floor. Tap Off beside it (or press 0) to put it out at once. The lid keeps steam in; boiling with the lid off makes a brew smaller and stronger — side effects too. Add water to weaken it.', 'Tap the ml · °C readout over the cauldron to see what is in it; Sample measures what a bottle drawn from the tap would hold (its composition, and with the Arcanometer its aura and arcane threshold).']],
+['Brewing', 'cauldron', ['Pour: tap a jar, then a dose button (25–250 ml) — or hold your finger in the cauldron, or drag a jar onto it.', 'Crush: whole roots, leaves and stones go into the pot whole and give up little until you break them up with Crush (the pestle). Add more of an herb after it has reached its ceiling and its extracted share falls (the new leaves are not yet drawn out), then climbs back to the ceiling as they steep — and the brew grows stronger. Sample shows both: what is drawn out in the sample from the tap, and over the whole cauldron, whole pieces included.', 'Extraction: an herb’s magic dissolves only in its own solvent — water-soluble herbs in water or spirit, oil-soluble ones only in oil (see the herb’s card). At room temperature only about 60 % of it comes out, and slowly (minutes). Heat makes it much quicker, but less can come out hot (about 45 % at 60 °C); cool it again and more comes out. Everything comes out only well below freezing — in spirit (water freezes) or chilled oil — and very slowly: that is work for aging (Counter → potion shelves). A frozen solvent extracts nothing. Watch the brew panel’s Extracted bars.', 'Burning: every herb has its own burning point, above water’s boil, found only by trying. Undissolved matter above it chars and its magic is lost; what is already dissolved is safe. Water boils first, so it is hot oil that burns herbs.', 'Emulsions: oil and water extracts stay apart unless an emulsifier binds them — the neutral gum from the Shop, about 6 % of the smaller phase, with the smaller phase under two fifths of the liquid. An emulsion extracts badly: extract each in its own solvent first, then bind them.', 'Distillation (Alembic & Condenser): put the still head on and heat between spirit’s and water’s boiling points; the spirit goes into the receiver and the magic stays. Jar the distillate to use the spirit again.', 'Aging (with the Aging Cellar): select a bottle on the potion shelves (Counter). It has two slots: put a shelved Fire or Frost potion in the first — as much as you choose, by tapping the slot or dragging the bottle onto it — and the bottle warms or chills by itself, the stronger the potion the further, using it up as it works; a temperature rune in the second holds the temperature where you choose on the way, and wears out with use. A biome rune in the third — one of each biome’s effect (the Whisperwood’s Vitality Rune, the Willow Bank’s Frost Rune…), dug out of the earth in the Wilds, where it glows under the ground (a new one every day) — draws out ×4 quicker whatever carries its effect, as quickly in the cold as at room temperature, without lowering how much can come out. The bottle goes on extracting for hours, even while the game is closed. Unseal it when it is ready: it becomes a new, untested batch.', 'Stir after every addition: an unstirred brew pours unevenly, so later bottles may not match the tested dose.', 'The fire control: right heats, left cools; the gentle half of the slider is spread out for fine control, and − / + (or the arrow keys) move the flame two degrees at a time. The readout shows the flame (or the cold plate) and the cauldron floor. Tap Off beside it (or press 0) to put it out at once. The lid keeps steam in; boiling with the lid off makes a brew smaller and stronger — side effects too. Add water to weaken it.', 'Tap the ml · °C readout over the cauldron to see what is in it; Sample measures what a bottle drawn from the tap would hold (its composition, and with the Arcanometer its aura and arcane threshold).']],
 ['Arcane awakening', 'awaken', ['Magical ingredients carry a hidden arcane threshold. Heat the brew past it (or, for cold magic, chill it below) and the magic awakens: it glows and acts two to three times stronger — side effects too.', 'In a blend the threshold is the mix of its magical ingredients’ thresholds, by volume. Mix first at room temperature, then heat or chill; a half-mixed brew awakens unevenly.', 'Awakened magic stays awake when it cools, is bottled or kept. Only dilution and reactions undo it. The Arcanometer reads a brew’s threshold.']],
 ['Trials and rabbits', 'rabbit', ['Choose a rabbit and give it a dose (5, 10 or 25 ml) from the cauldron tap or the sealed vial. One trial reads every effect at once.', 'Each reading is uncertain: the ± margin is how far the truth may lie. One reading is a rough guess; repeating it on the same rabbit helps a little; other rabbits help most (detected once → repeated → corroborated).', '“Not detected” is not proof of absence: a faint effect can hide below the noise. Cautious customers want readings repeated or corroborated, and every customer pays more for a well-tested label.', 'Effects pile up in a rabbit and fade slowly. Past its own hidden limit an effect runs out of control and can kill it; fire and acid burn; strength and vitality can make it attack; love makes it mate. A purging draught washes everything out. Rabbits can be fed, bred, bought and put down; a body’s remains can be recovered once as an ingredient.', 'When a trial surprises you, a hidden law may be at work. Confirm it twice and your theory learns it.']],
 ['Wilds', 'tree', ['Tap a mature plant in the picture, or its button, to gather. Every plant grows from sprout to ripe to mature, and only a mature one can be harvested. A harvest leaves a mark on the ground that fades; new sprouts come up at random spots until the region is full again, even while the game is closed.', 'Thorough digs the plant out for twice as much, but its kind then sprouts at half pace. Roots, seams, mosses and dust need the Forager’s Kit for a full harvest.', 'Twilight plants open only at dawn (before you open the shop) or at dusk (after the last customer). The weather changes daily. New regions open with rank.']],
@@ -20491,7 +20576,7 @@ h('div', { class: 'row' }, icon('rabbit'), h('b', { text: 'The hutch' })),
 h('div', { class: 'kv' }, ...rows),
 col.lost ? h('div', { class: 'small muted', text: `The hutch was too full for ${col.lost} more kit${col.lost > 1 ? 's' : ''}; the breeder took them.` }) : null);
 }
-function showAnalysis(lab, m, recipe, title = 'Analysis of the brew') {
+function showAnalysis(lab, m, recipe, title = 'Analysis of the brew', batch) {
 const st = lab.state;
 const comp = groupExtracts(m.composition, st.lookup);
 const sand = lab.sandbox;
@@ -20512,10 +20597,19 @@ h('span', { class: 'k', text: 'Colour' }), h('span', {}, swatch(m.color), ' ' + 
 ...(aura ? kv('Aura', aura) : []),
 ...(m.arcane ? kv('Arcane', m.arcane) : []),
 )),
-h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Composition' }), ...comp.map((g) => h('div', { class: 'small', text: groupLine(g, 1, 1) }))),
+h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Composition' }), ...comp.map((g) => compositionLine(g, batch))),
 lab.sandbox ? null : h('div', { class: 'row' }, btn('Save as recipe', () => { const ev = st.addRecipe({ ...recipe, name: 'Experiment ' + (st.recipes.length + 1) }); for (const e of ev) lab.announce(e); toast('Recipe saved', '', 'book'); }, { icon: 'book' })),
 ],
 });
+}
+function compositionLine(g, batch) {
+const line = h('div', { class: 'small', text: groupLine(g, 1, 1) });
+const it = batch && g.extractable ? batch.items.find((x) => x.id === g.id || x.id === g.id.replace(/~a$/, '')) : null;
+if (!it || !(it.raw + it.ext > 0)) return line;
+const ml = (v) => Math.round(v * SIM.ML_PER_PARTICLE);
+const parts = [`in the cauldron ${Math.round(it.share * 100)}% of ${ml(it.raw + it.ext)} ml drawn out, up to ${Math.round(it.ceiling * 100)}% at this heat`];
+if (it.whole * SIM.ML_PER_PARTICLE >= 1) parts.push(`${ml(it.whole)} ml still whole: crush it`);
+return h('div', { class: 'comp-line' }, line, h('div', { class: 'small muted', 'data-batch-share': String(Math.round(it.share * 1000) / 1000), text: '↳ ' + parts.join(' · ') }));
 }
 function openRecipes(lab) {
 if (lab.showView) { lab.showView('book'); lab.views.book.open('recipes'); return; }
@@ -21353,8 +21447,9 @@ const __m113 = (() => {
 const { h, btn, toast } = __m2;
 const { icon } = __m3;
 const { drawBottle } = __m93;
-const { potionNet, vesselReport, chargeLimit, CELLAR_T } = __m89;
+const { potionNet, vesselReport, chargeLimit, CELLAR_T, BIOME_RUNES, WARD_BOOST } = __m89;
 const { audio } = __m4;
+const rgb = (c) => `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2] * 255)})`;
 const potName = (net) => (net > 0 ? 'Fire' : 'Frost');
 function bottleArt(b) {
 const cv = /** @type {HTMLCanvasElement} */ (h('canvas', { width: '16', height: '22', class: 'vial-art' }));
@@ -21403,7 +21498,16 @@ h('span', { class: 'age-slot-txt' },
 h('b', { text: r ? `Rune ${r.target}°C` : 'Rune' }),
 h('span', { class: 'small', text: r ? `${r.locked ? 'locked' : r.holds ? 'will lock' : 'cannot lock'} · ${Math.round((1 - r.wear) * 100)}% left` : 'hold a temperature' })));
 runeSlot.addEventListener('click', () => { view.agePick = view.agePick === 'rune' ? null : 'rune'; audio.play('click'); rerender(); });
-box.append(h('div', { class: 'age-slots' }, chargeSlot, runeSlot));
+const w = rep && rep.ward;
+const wardSlot = h('button', { class: 'age-slot ward' + (w ? ' full' : '') + (view.agePick === 'ward' ? ' open' : ''), 'data-slot': 'ward', 'data-act': 'age-slot-ward',
+style: w ? { '--rune': rgb(w.color) } : {},
+title: 'The biome-rune slot: a rune dug out of a biome’s earth hastens the extraction of what carries its effect, even in the cold, without lowering how much can come out' },
+w ? icon(w.icon) : h('span', { class: 'age-plus', text: '+' }),
+h('span', { class: 'age-slot-txt' },
+h('b', { text: w ? w.name : 'Biome rune' }),
+h('span', { class: 'small', text: w ? `×${WARD_BOOST} · ${Math.round((1 - w.wear) * 100)}% left` : 'hasten extraction' })));
+wardSlot.addEventListener('click', () => { view.agePick = view.agePick === 'ward' ? null : 'ward'; audio.play('click'); rerender(); });
+box.append(h('div', { class: 'age-slots' }, chargeSlot, runeSlot, wardSlot));
 if (view.agePick === 'charge') {
 const list = chargers(st, b);
 const ml = /** @type {HTMLInputElement} */ (h('input', { type: 'number', value: String(view.ageMl || 50), min: '5', max: '1000', step: '5', style: { width: '4.5em' }, 'aria-label': 'Potion to load (ml)', 'data-act': 'age-ml' }));
@@ -21433,6 +21537,25 @@ rerender();
 }, { icon: 'rune', cls: 'small', act: 'age-rune', disabled: !has && st.cellar.runes <= 0 })),
 h('div', { class: 'small muted', text: has ? 'Moving the rune uses no new one.' : st.cellar.runes > 0 ? 'A rune wears out with the hours it holds the bottle.' : 'No rune in hand: buy one at the market, or find one underground in the Wilds.' })));
 }
+else if (view.agePick === 'ward') {
+const pick = h('div', { class: 'age-pick' },
+h('div', { class: 'small', text: `A biome rune draws out ×${WARD_BOOST} quicker every ingredient that carries its effect — as quickly in the cold as at room temperature — and never lowers how much can come out. It wears out with the hours it works.` }));
+const row = h('div', { class: 'age-pick-list ward-list' });
+for (const r of BIOME_RUNES) {
+const n = st.wardsOf(r.effect);
+const o = h('button', { class: 'age-pick-ward', 'data-act': 'age-ward-' + r.effect, disabled: !(n > 0), style: { '--rune': rgb(r.color) }, title: n > 0 ? `${r.name}: hastens what carries ${r.effect}` : `No ${r.name} in hand: it lies underground in the ${r.biomeName}` },
+icon(r.icon, 'sm'), h('span', { class: 'small', text: `${r.name} · ${Number.isFinite(n) ? n : '∞'}` }));
+o.addEventListener('click', () => {
+const res = st.wardBottle(b.id, r.effect);
+if (!res.ok) { toast('Cannot', res.reason, 'lock'); audio.play('error'); } else { audio.play('select'); view.agePick = null; toast(`${r.name} set`, `What carries ${r.effect} is drawn out ×${WARD_BOOST} quicker, even in the cold.`, r.icon, 3200); lab.save(); }
+rerender();
+});
+row.append(o);
+}
+pick.append(row);
+if (!BIOME_RUNES.some((r) => st.wardsOf(r.effect) > 0)) pick.append(h('div', { class: 'small muted', text: 'No biome rune in hand. Each biome keeps one underground every day: look for its glow in the earth of the Wilds and tap it a few times.' }));
+box.append(pick);
+}
 if (rep) {
 const where = c ? `${rep.T.toFixed(1)}°C, heading for ${r && r.holds ? r.target : c.limit}°C` : Math.abs(rep.T - CELLAR_T) > 0.5 ? `${rep.T.toFixed(1)}°C, returning to the cellar's ${CELLAR_T}°C` : `${rep.T.toFixed(1)}°C (the cellar's own)`;
 box.append(h('div', { class: 'small know', 'data-temp': String(Math.round(rep.T * 10) / 10), text: `Aging: ${where}` }));
@@ -21441,7 +21564,7 @@ for (const it of rep.items) {
 const k2 = st.knowledge[it.id] || {};
 box.append(h('div', { class: 'row small extract-row' }, h('span', { text: it.name }), h('span', { class: 'spacer' }),
 h('span', { class: 'xbar' }, h('i', { class: 'xbar-fill', style: { width: (it.share * 100).toFixed(1) + '%' } }), h('i', { class: 'xbar-cap', style: { left: Math.round(it.ceiling * 100) + '%' } })),
-h('span', { class: 'muted', text: ` ${(it.share * 100).toFixed(1)}% / ${Math.round(it.ceiling * 100)}%${k2.burnsAt !== undefined ? ` · burns by ${Math.round(k2.burnsAt)}°C` : ''}` })));
+h('span', { class: 'muted', text: ` ${(it.share * 100).toFixed(1)}% / ${Math.round(it.ceiling * 100)}%${it.fast ? ` · ×${WARD_BOOST}` : ''}${k2.burnsAt !== undefined ? ` · burns by ${Math.round(k2.burnsAt)}°C` : ''}` })));
 }
 box.append(h('div', { class: 'row wrap' },
 btn('Unseal', () => {
@@ -21486,7 +21609,7 @@ constructor(lab) {
 this.lab = lab;
 this.el = h('section', { class: 'view view-counter', 'data-view': 'counter' });
 /** @type {string|null} */ this.sel = null;
-/** @type {'charge'|'rune'|null} */ this.agePick = null;
+/** @type {'charge'|'rune'|'ward'|null} */ this.agePick = null;
 this.ageMl = 50;
 /** @type {number|undefined} */ this.ageTarget = undefined;
 this._bottleDrag = false;
@@ -21944,8 +22067,8 @@ const { Pixels } = __m47;
 const { rasterize } = __m46;
 const { Model } = __m34;
 const { ramp, hex, mixPacked, pack, unpack } = __m30;
-const SCENE_W = 384;
-const SCENE_H = 216;
+const SCENE_W = 256;
+const SCENE_H = 192;
 const CELL = 1;
 class Canvas {
 constructor(seed, w = SCENE_W, h = SCENE_H) {
@@ -23644,7 +23767,9 @@ return ((255 << 24) | (Math.round(s[2] * 255) << 16) | (Math.round(s[1] * 255) <
 return out;
 }
 const streamOf = (seed, region, part) => new Rng(hashString(`env:${seed}:${region}:${part}`));
-return { palette, vary, streamOf };
+const LAYOUT_W = 384;
+const lx = (cv, v) => Math.round((v * cv.W) / LAYOUT_W);
+return { palette, vary, streamOf, LAYOUT_W, lx };
 })();
 // src/visual/env/foliage.js
 const __m128 = (() => {
@@ -24224,7 +24349,7 @@ return { treeRow, terrainTrees };
 // src/visual/env/meadow.js
 const __m125 = (() => {
 const { sky } = __m118;
-const { palette, vary, streamOf } = __m126;
+const { palette, vary, streamOf, lx } = __m126;
 const { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, silhouette, mountains, treeShape, glow, drips, ledges } = __m120;
 const { caveFrame, fog, vines, moss, veins, WATER_VEINS } = __m119;
 const { cloud, fence, skep, boulder } = __m127;
@@ -24238,7 +24363,7 @@ leaf: ['#5aa62a', { spread: 0.85, warm: 0.6 }], leaf2: ['#7ab42c', { spread: 0.8
 timber: '#6a4a2e', straw: ['#c8a050', { spread: 0.45 }], moss: '#5a8a34',
 }), s('pal'), 1);
 sky(cv, 0, 160, ['#2a5aa0', '#4a82c4', '#86b4dc', '#cfe2e8'], 10);
-const sx = 230 + s('sun').int(-50, 50), sy = 34;
+const sx = lx(cv, 230) + s('sun').int(-50, 50), sy = 34;
 for (let y = sy - 10; y <= sy + 10; y++) for (let x = sx - 10; x <= sx + 10; x++) if (Math.hypot(x - sx, y - sy) <= 9.5) cv.set(x, y, Math.hypot(x - sx, y - sy) < 7.5 ? pack([1, 0.98, 0.86]) : pack([1, 0.92, 0.66]));
 glow(cv, sx, sy, 70, [1, 0.92, 0.7], 0.35);
 const cr = s('clouds');
@@ -24267,7 +24392,7 @@ raise(top, kx, kx + ts.int(40, 70), Math.min(...top) - ts.int(10, 18), 3);
 const fr = s('feature'), feature = fr.weighted(['hives', 'stones', 'pond'], [1.2, 0.8, 0.8]);
 let pond = null;
 if (feature === 'pond') {
-const px = kx < W / 2 ? fr.int(220, 320) : fr.int(70, 150), hw = fr.int(26, 40);
+const px = kx < W / 2 ? fr.int(lx(cv, 220), lx(cv, 320)) : fr.int(lx(cv, 70), lx(cv, 150)), hw = fr.int(lx(cv, 26), lx(cv, 40));
 pond = { x: px, hw, level: Math.round(top[px]) + 2 };
 dip(top, px, hw, 16);
 }
@@ -24291,7 +24416,7 @@ veins(cv, cv.meta.pond, WATER_VEINS(ss + 4, ['#7aa8d8', '#3a6a98', '#2e5a86', '#
 }
 markOpen(cv);
 if (feature === 'hives') {
-const fx = fr.int(70, 300), len = fr.int(36, 60);
+const fx = fr.int(lx(cv, 70), lx(cv, 300)), len = fr.int(36, 60);
 cv.place(fence(len, 14), pal, fx, { foot: [len * 0.6, 2], range: 240, x: [6, W - len - 6] });
 let bx = fr.int(20, W - 60), hives = null;
 for (let i = 0; i < 2 + fr.int(0, 1); i++) {
@@ -24302,7 +24427,7 @@ bx = at.fx + 13;
 }
 if (hives) cv.meta.hives = hives;
 } else if (feature === 'stones') {
-let x = fr.int(80, 300);
+let x = fr.int(lx(cv, 80), lx(cv, 300));
 const ring = ++cv.nprops;
 for (let i = 0; i < 4; i++) {
 const m = new Model(), hh = fr.int(10, 18);
@@ -24328,7 +24453,7 @@ return { compose };
 // src/visual/env/forest.js
 const __m130 = (() => {
 const { sky } = __m118;
-const { palette, vary, streamOf } = __m126;
+const { palette, vary, streamOf, lx } = __m126;
 const { heights, raise, fillSolid, blob, paintTerrain, markOpen, surfaceAt, col, drips, ledges, hanging } = __m120;
 const { fog, moss, glowShrooms } = __m119;
 const { fern, log, stump } = __m127;
@@ -24373,7 +24498,7 @@ markOpen(cv);
 litter(cv, s, pal);
 terrainTrees(cv, s('oaks'), pal, { n: 8, kinds: ['oak', 'gnarl', 'gnarl', 'tiers'], shapes: ['tall', 'spread', 'lean'], h: [44, 116], gap: 22, ledges: true, look });
 ferns(cv, s, pal);
-const shafts = s('shafts'), sx0 = shafts.int(110, 230);
+const shafts = s('shafts'), sx0 = shafts.int(lx(cv, 110), lx(cv, 230));
 cv.light([1, 0.95, 0.7], (x, y) => {
 const u = x - sx0 - y * 0.35, c = 14 + (y / H) * 10;
 let t = 0;
@@ -24401,8 +24526,8 @@ x += dx; if (hash2(x, y, i) < 0.45) y++;
 }
 function litter(cv, s, pal) {
 const lr = s('logs');
-cv.place(log(lr, lr.int(36, 48), lr.int(5, 7), { moss: 'moss', bark: pal.logbark ? 'logbark' : 'bark' }), pal, lr.int(90, 290), { sink: 2, foot: [22, 3], range: 200 });
-cv.place(stump(lr, lr.int(9, 12), lr.int(6, 9)), pal, lr.int(60, 320), { foot: [7, 2], range: 120 });
+cv.place(log(lr, lr.int(36, 48), lr.int(5, 7), { moss: 'moss', bark: pal.logbark ? 'logbark' : 'bark' }), pal, lr.int(lx(cv, 90), lx(cv, 290)), { sink: 2, foot: [22, 3], range: lx(cv, 200) });
+cv.place(stump(lr, lr.int(9, 12), lr.int(6, 9)), pal, lr.int(lx(cv, 60), lx(cv, 320)), { foot: [7, 2], range: lx(cv, 120) });
 }
 function ferns(cv, s, pal) {
 const W = cv.W, fr = s('ferns');
@@ -24413,7 +24538,7 @@ return { compose, roots, litter, ferns };
 // src/visual/env/river.js
 const __m131 = (() => {
 const { sky } = __m118;
-const { palette, vary, streamOf } = __m126;
+const { palette, vary, streamOf, lx } = __m126;
 const { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, silhouette, mountains, treeShape } = __m120;
 const { caveFrame, farPillars, fog, vines, moss, glowShrooms, ledgeTops, veins, WATER_VEINS } = __m119;
 const { reeds, beam, cloud } = __m127;
@@ -24448,9 +24573,9 @@ const pr = s('pines');
 for (let x = 2; x < W; x += pr.int(5, 11)) treeShape(cv, x, pines[x] + 2, pr.int(12, 22), 'pine', '#3e6a5a', pr.int(0, 1e9));
 }
 const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 168, amp: 8, freq: 0.012 });
-const rx = ts.int(150, 240), hw = ts.int(30, 38);
+const rx = ts.int(lx(cv, 150), lx(cv, 240)), hw = ts.int(lx(cv, 30), lx(cv, 38));
 dip(top, rx, hw, 28, 0.45);
-const bank = ts.next() < 0.5 ? ts.int(20, 90) : ts.int(300, 360);
+const bank = ts.next() < 0.5 ? ts.int(lx(cv, 20), lx(cv, 90)) : ts.int(lx(cv, 300), lx(cv, 360));
 raise(top, bank, bank + ts.int(20, 40), Math.min(...top) - ts.int(6, 12), 3);
 fillSolid(cv, top);
 ledges(cv, top, ts, 8, { keep: [[rx - hw - 6, rx + hw + 6]], high: 1 });
@@ -24498,7 +24623,7 @@ return { compose };
 // src/visual/env/quarry.js
 const __m132 = (() => {
 const { sky } = __m118;
-const { palette, vary, streamOf } = __m126;
+const { palette, vary, streamOf, lx } = __m126;
 const { fillSolid, blob, ledges, paintTerrain, markOpen, glow, drips, silhouette, mountains } = __m120;
 const { caveFrame, farPillars, fog, moss, torch, ledgeTops } = __m119;
 const { crane, ladder, cart, crate, beam, boulder, scaffold, wheel, cloud } = __m127;
@@ -24586,7 +24711,7 @@ const cm = crane(new Rng(cseed), h);
 if (right) cm.transform(-1, 0, 0, 1, 0, 0, 1);
 if (cv.place(cm, pal, cx, { roots: [6, 2], range: 50, x: right ? [edges[0] + 4, W - 3] : [2, edges[0] - 4] })) break;
 }
-const wx = right ? tm.int(40, 120) : tm.int(W - 120, W - 40);
+const wx = right ? tm.int(lx(cv, 40), lx(cv, 120)) : tm.int(W - lx(cv, 120), W - lx(cv, 40));
 cv.place(wheel(tm, tm.int(10, 14), tm.int(30, 40)), pal, wx, { roots: [8, 2], range: 80 });
 for (let i = 0; i < 2; i++) cv.place(scaffold(tm, tm.int(16, 26), tm.int(16, 30)), pal, tm.int(60, W - 60), { foot: [12, 2], range: 100 });
 for (let i = 0; i < 2; i++) cv.place(crate(tm.int(8, 11)), pal, tm.int(30, W - 30), { foot: [6, 2] });
@@ -24618,7 +24743,7 @@ return { compose };
 // src/visual/env/moonfen.js
 const __m133 = (() => {
 const { sky } = __m118;
-const { palette, vary, streamOf } = __m126;
+const { palette, vary, streamOf, lx } = __m126;
 const { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, glow, silhouette, treeShape } = __m120;
 const { caveFrame, farPillars, fog, vines, moss, ruins, glowShrooms, veins, WATER_VEINS } = __m119;
 const { reeds, spire, cairn } = __m127;
@@ -24635,7 +24760,7 @@ sky(cv, 0, H, ['#04050e', '#0a0f2a', '#121a40', '#1a2250']);
 const st = s('stars');
 for (let i = 0; i < 140; i++) { const x = st.int(0, W - 1), y = st.int(0, 110), b = st.next(); cv.set(x, y, pack(b > 0.8 ? [0.95, 0.95, 1] : b > 0.4 ? [0.7, 0.72, 0.95] : [0.45, 0.48, 0.75])); }
 for (let i = 0; i < 5; i++) { const x = st.int(4, W - 4), y = st.int(4, 70), c = pack([0.85, 0.9, 1]); for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [0, 0]]) cv.set(x + dx, y + dy, c); }
-const fs = s('frame'), cave = fs.next() < 0.4, o0 = fs.int(70, 150), o1 = o0 + fs.int(140, 200);
+const fs = s('frame'), cave = fs.next() < 0.4, o0 = fs.int(lx(cv, 70), lx(cv, 150)), o1 = o0 + fs.int(lx(cv, 140), lx(cv, 200));
 const mx = Math.round((o0 + o1) / 2) + s('moon').int(-30, 30), my = s('moon2').int(30, 44), mr = 12;
 glow(cv, mx, my, 80, [0.45, 0.5, 0.8], 0.4);
 const ms = s('craters').int(0, 1e9), crescent = s('phase').next() < 0.5;
@@ -24724,7 +24849,7 @@ return { compose };
 // src/visual/env/crags.js
 const __m134 = (() => {
 const { sky } = __m118;
-const { palette, vary, streamOf } = __m126;
+const { palette, vary, streamOf, lx } = __m126;
 const { heights, dip, raise, fillSolid, blob, ledges, paintTerrain, pool, markOpen, glow, drips, silhouette, col, rockFace } = __m120;
 const { caveFrame, farPillars, fog, moss, fall, veins, LAVA_VEINS } = __m119;
 const { basalt, spire, cloud } = __m127;
@@ -24756,7 +24881,7 @@ for (const [x, y] of cv.meta.tips) glow(cv, x, y, 10, [1, 0.4, 0.12], 0.4);
 sky(cv, 0, H, ['#1a080a', '#3a1010', '#7a2a18', '#c8582a', '#e88a40']);
 const cr = s('clouds');
 for (let i = 0; i < 4; i++) cv.stamp(cloud(cr, cr.int(40, 90), cr.int(8, 16)), pal, cr.int(0, W), cr.int(10, 50), { outline: false, texture: 0 });
-const cs = s('cone'), vx = cs.int(110, 270), cseed = cs.int(0, 1e9);
+const cs = s('cone'), vx = cs.int(lx(cv, 110), lx(cv, 270)), cseed = cs.int(0, 1e9);
 const cone = volcano(cv, vx, cseed);
 const top = cone[vx];
 glow(cv, vx, top - 2, 60, [1, 0.45, 0.15], 0.5);
@@ -24766,10 +24891,10 @@ silhouette(cv, { base: 124, amp: 10, freq: 0.02, seed: s('r1').int(0, 1e9), fill
 fog(cv, '#8a3a1a', 100, 170, 0.25, s('haze').int(0, 1e9));
 }
 const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 168, amp: 10, freq: 0.014 });
-const px = ts.int(90, W - 90), hw = ts.int(30, 46);
+const px = ts.int(lx(cv, 90), W - lx(cv, 90)), hw = ts.int(lx(cv, 30), lx(cv, 46));
 dip(top, px, hw, 22, 0.3);
-const kx = px < W / 2 ? ts.int(230, 300) : ts.int(30, 90);
-raise(top, kx, kx + ts.int(30, 50), Math.min(...top) - ts.int(10, 16), 2);
+const kx = px < W / 2 ? ts.int(lx(cv, 230), lx(cv, 300)) : ts.int(lx(cv, 30), lx(cv, 90));
+raise(top, kx, kx + ts.int(lx(cv, 30), lx(cv, 50)), Math.min(...top) - ts.int(10, 16), 2);
 fillSolid(cv, top);
 ledges(cv, top, ts, 6, { keep: [[px - hw - 6, px + hw + 6]] });
 blob(cv, kx + 20, Math.round(top[kx + 20]) + 22, ts.int(16, 24), 7, ts.int(0, 1e9), 0);
@@ -24890,7 +25015,7 @@ return { compose };
 // src/visual/env/netherwood.js
 const __m135 = (() => {
 const { sky } = __m118;
-const { palette, vary, streamOf } = __m126;
+const { palette, vary, streamOf, lx } = __m126;
 const { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, drips, ledges, glow } = __m120;
 const { caveFrame, farPillars, fog, vines, moss, glowShrooms, veins, WATER_VEINS } = __m119;
 const { mushroom } = __m127;
@@ -24924,7 +25049,7 @@ const kx = ts.int(60, W - 140);
 raise(top, kx, kx + ts.int(30, 60), Math.min(...top) - ts.int(8, 14), 3);
 let still = null;
 if (ts.next() < 0.5) {
-const px = kx < W / 2 ? ts.int(230, 320) : ts.int(60, 140), hw = ts.int(22, 32);
+const px = kx < W / 2 ? ts.int(lx(cv, 230), lx(cv, 320)) : ts.int(lx(cv, 60), lx(cv, 140)), hw = ts.int(lx(cv, 22), lx(cv, 32));
 still = { x: px, hw, level: Math.round(top[px]) + 2 };
 dip(top, px, hw, 14);
 }
@@ -24975,7 +25100,7 @@ return { compose };
 // src/visual/env/exotic.js
 const __m136 = (() => {
 const { sky } = __m118;
-const { palette, vary, streamOf } = __m126;
+const { palette, vary, streamOf, lx } = __m126;
 const { heights, raise, dip, fillSolid, blob, paintTerrain, pool, markOpen, silhouette, mountains, glow, ledges, treeShape } = __m120;
 const { fog, vines, glowShrooms, ruins, fall, moss } = __m119;
 const { cloud, spire, boulder } = __m127;
@@ -25111,7 +25236,7 @@ const line = silhouette(cv, { base: 132, amp: 7, freq: 0.03, seed: s('tl').int(0
 const tl = s('tl2');
 for (let x = 4; x < W; x += tl.int(9, 16)) treeShape(cv, x, line[x] + 2, tl.int(14, 26), 'oak', '#3a2a4a', tl.int(0, 1e9));
 const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 164, amp: 8, freq: 0.016 });
-const rx = ts.int(140, 240);
+const rx = ts.int(lx(cv, 140), lx(cv, 240));
 raise(top, rx - 30, rx + 30, Math.min(...top) - 10, 4);
 fillSolid(cv, top);
 ledges(cv, top, ts, 6, { keep: [[rx - 34, rx + 34]] });
@@ -25155,7 +25280,7 @@ for (let x = 2; x < W; x += tr.int(8, 16)) treeShape(cv, x, line[x] + 2, tr.int(
 fog(cv, '#9a9ab0', -60, 170, 0.28, s('fog' + L).int(0, 1e9));
 }
 const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 166, amp: 10, freq: 0.018 });
-const px = ts.int(120, 260), hw = ts.int(20, 30);
+const px = ts.int(lx(cv, 120), lx(cv, 260)), hw = ts.int(lx(cv, 20), lx(cv, 30));
 dip(top, px, hw, 14);
 fillSolid(cv, top);
 ledges(cv, top, ts, 7, { keep: [[px - hw - 4, px + hw + 4]], high: 1 });
@@ -25171,7 +25296,7 @@ const pd = pool(cv, px - hw, px + hw, Math.round(top[px]) - 2, { surface: '#c8c8
 cv.meta.pools = [pd];
 markOpen(cv);
 fall(cv, px - 6, 0, { cols: ['#e8e8ff', '#b8b8e8', '#8a8ac8'], w: 2, seed: ss + 3, rgb: [0.75, 0.75, 1] });
-const gx = ts.int(40, 100), gy = Math.round(top[gx]);
+const gx = ts.int(lx(cv, 40), lx(cv, 100)), gy = Math.round(top[gx]);
 const post = pack([0.16, 0.1, 0.12]), lint = pack([0.3, 0.14, 0.16]), lit = pack([0.5, 0.24, 0.26]);
 for (const ox of [-14, 14]) for (let y = gy - 40; y < gy; y++) for (let x = gx + ox - 2; x <= gx + ox + 1; x++) cv.set(x, y, x === gx + ox - 2 ? lit : post);
 for (let x = gx - 22; x <= gx + 22; x++) { const bend = Math.round(((x - gx) / 22) ** 2 * 3); for (let t = 0; t < 4; t++) cv.set(x, gy - 44 - bend + t, t === 0 ? lit : lint); }
@@ -25272,7 +25397,7 @@ const pal = vary(palette({
 leaf: ['#e8a030', { spread: 0.35 }], leaf2: ['#f4c048', { spread: 0.35 }], bloom: ['#ffe080', { spread: 0.2 }], bark: '#4a3020', rock: '#8a6a4a', gem: ['#b48cff', { spread: 0.5 }],
 }), s('pal'), 0.8);
 sky(cv, 0, H, ['#3e2766', '#56307e', '#7e4290', '#b0609c', '#d88498']);
-const cx = s('clock').int(110, W - 70), cy = 54, R = 30, ring = pack([0.86, 0.58, 0.72]);
+const cx = s('clock').int(lx(cv, 110), W - lx(cv, 70)), cy = 54, R = 30, ring = pack([0.86, 0.58, 0.72]);
 for (let a = 0; a < 720; a++) { const r = (a * Math.PI) / 360; cv.set(Math.round(cx + Math.cos(r) * R), Math.round(cy + Math.sin(r) * R), ring); }
 for (let hr = 0; hr < 12; hr++) { const r = (hr * Math.PI) / 6, n = hr % 3 ? 2 : 3; for (let t = 0; t < n; t++) cv.set(Math.round(cx + Math.cos(r) * (R - 3 - t)), Math.round(cy + Math.sin(r) * (R - 3 - t)), ring); }
 for (let t = 0; t < 18; t++) cv.set(cx + Math.round(t * 0.55), cy - Math.round(t * 0.85), ring);
@@ -25337,7 +25462,7 @@ const moonfen = __m133;
 const crags = __m134;
 const netherwood = __m135;
 const { skyshard, morphgrove, veilhollow, ghostglass, chronoglass } = __m136;
-const ENV_VERSION = 14;
+const ENV_VERSION = 15;
 const COMPOSERS = { meadow, forest, netherwood, river, quarry, moonfen, crags, skyshard, morphgrove, veilhollow, ghostglass, chronoglass };
 const cache = new Map();
 function composeScene(region, seed) {
@@ -28797,9 +28922,9 @@ const { UpscaledCanvas } = __m115;
 const { BIOME_BY_ID, unlockText } = __m18;
 const { CREATURE_NAMES, rarityTag } = __m108;
 const { h, btn, clear, toast, keepScroll, confirmDialog } = __m2;
-const { icon } = __m3;
+const { icon, ICONS } = __m3;
 const { audio } = __m4;
-const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, moistureEnv, DAY_PART_NAME, runeCaches: runeCachesOf } = __m64;
+const { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, moistureEnv, DAY_PART_NAME, runeCaches: runeCachesOf, wardStones: wardStonesOf } = __m64;
 const { equipmentById } = __m59;
 const { RANKS } = __m59;
 const { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, sceneTouch, crosses, forgetSceneCanvases, SCENE_W, SCENE_H } = __m116;
@@ -28813,6 +28938,7 @@ const { Warren, warrenSpots, BLOOD, WILD_HP, WILD_SCALE } = __m139;
 const { drawRabbit, rabbitSpriteKey, RABBIT_W, RABBIT_H } = __m140;
 const { defaultSnap, penHasRoom, PEN_MAX } = __m61;
 const { KINDS } = __m62;
+const { BIOME_RUNE_BY_EFFECT } = __m89;
 const SHADOW = { forest: 'rgba(8,16,10,0.32)', netherwood: 'rgba(6,4,16,0.4)', meadow: 'rgba(24,30,10,0.26)', river: 'rgba(4,14,16,0.34)', quarry: 'rgba(26,18,10,0.3)', moonfen: 'rgba(2,6,18,0.42)', crags: 'rgba(30,6,4,0.4)', skyshard: 'rgba(20,40,70,0.26)', morphgrove: 'rgba(30,8,30,0.34)', veilhollow: 'rgba(10,10,20,0.38)', ghostglass: 'rgba(2,10,24,0.42)', chronoglass: 'rgba(40,20,10,0.32)' };
 function litSprite(d, light) {
 const dark = light.length >= 6 ? [light[3] * 255, light[4] * 255, light[5] * 255] : null;
@@ -28826,8 +28952,8 @@ d[p] = r * light[0]; d[p + 1] = g * light[1]; d[p + 2] = b * light[2];
 }
 }
 const TAP_SLOP = { mouse: 6, pen: 8, touch: 14 };
-const ZOOM_MIN = 1, ZOOM_MAX = 3, ZOOM_START = 1.35, ZOOM_STEP = 1.25;
-const ZOOM_KEY = 'alchemist.wildsZoom';
+const ZOOM_MIN = 1, ZOOM_MAX = 2.5, ZOOM_START = 1, ZOOM_STEP = 1.25;
+const ZOOM_KEY = 'alchemist.wildsZoom.v2';
 const WATER_STEP = 12;
 const STIFF = new Set(['crystal', 'shard', 'stone', 'nugget', 'shell', 'icicle', 'scale']);
 const STRIKES = [4, 5, 6];
@@ -28847,6 +28973,9 @@ ctx.fillRect(cx, cy, q, q);
 function colourOf(m) {
 const c = m ? m.look || m.color : null;
 return c ? `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2] * 255)})` : '#cde';
+}
+function rgbCss(c) {
+return `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2] * 255)})`;
 }
 function shade(hex, k) {
 const n = parseInt(hex.slice(1), 16), ch = (/** @type {number} */ v) => Math.round(k > 0 ? v + (255 - v) * k : v * (1 + k));
@@ -29033,6 +29162,7 @@ h('span', { class: 'fx-chip', title: `Dominant effect: ${eff.label}` }, icon(eff
 h('span', { class: 'fx-chip', title: 'Native creature' }, icon('rabbit', 'sm'), ' ' + CREATURE_NAMES[biome.creature]),
 h('span', { class: 'fx-chip', title: 'Specimens left in this generation' }, icon('leaf', 'sm'), ` ${left}/${total}`),
 ...(() => { const cs = st.runeCaches(this.region); const n = cs.filter((c) => !c.dug).length; return cs.length ? [h('span', { class: 'fx-chip rune-chip', 'data-runes-left': String(n), title: n ? 'Old temperature runes lie buried here: look for the glowing stones and tap one a few times to dig it up' : 'Every buried rune of this generation has been dug up: regenerating the biome buries new ones' }, icon('rune', 'sm'), ` ${n}/${cs.length} buried`)] : []; })(),
+...st.wardStones(this.region).map((c) => { const r = BIOME_RUNE_BY_EFFECT[c.effect]; return h('span', { class: 'fx-chip rune-chip ward-chip', 'data-ward': c.effect, 'data-dug': c.dug ? '1' : '0', style: { '--rune': rgbCss(r.color) }, title: c.dug ? `Today’s ${r.name} has been dug out: another lies here tomorrow` : `The ${r.name} lies underground here: look for its glow in the earth and tap it a few times to dig it out. In an aging bottle it hastens what carries ${eff.label}, even in the cold.` }, icon(r.icon, 'sm'), c.dug ? ` ${r.name} ✓` : ` ${r.name} underground`); }),
 lab.sandbox ? null : h('span', { class: 'fx-chip coins', title: coins.nextIn ? `Next coin in ${formatWait(coins.nextIn)}` : 'Your purse is full' }, icon('coin', 'sm'), ` ${coins.coins}/${coins.max}`),
 regen));
 const list = clear(this.list);
@@ -29721,10 +29851,104 @@ ctx.fillStyle = '#5a4430'; ctx.fillRect(x - 5, y - 1, 11, 1);
 if (Math.sin(this.time * 3.1 + x) > 0.97) { ctx.fillStyle = '#e8fbff'; ctx.fillRect(x + ((this.time * 7) % 7) - 3, y - 12 - rise, 1, 1); }
 }
 }
+wards() {
+const st = this.lab.state, seed = st.sceneSeed(this.region), key = `${this.region}:${seed}:${st.day}`;
+if (!this._wards || this._wards.key !== key) {
+const sc = sceneOf(this.region, seed);
+const earth = (x, y) => x >= 0 && x < SCENE_W && y >= 0 && y < SCENE_H && !!sc.solid[y * SCENE_W + x] && !sc.liquid[y * SCENE_W + x];
+const place = [];
+for (const c of wardStonesOf(this.region, seed, st.day)) {
+const x0 = Math.round(c.fx * SCENE_W);
+let spot = null;
+for (let d = 0; d < SCENE_W / 2 && !spot; d += 3) {
+for (const x of [x0 + d, x0 - d]) {
+if (x < 12 || x > SCENE_W - 12) continue;
+let y = SCENE_H - 1;
+while (y > 0 && this.solidAt(x, y)) y--;
+const surf = y + 1;
+if (surf < 14 || surf > SCENE_H - 14) continue;
+if (sc.liquid[surf * SCENE_W + x] || sc.liquid[(surf - 1) * SCENE_W + x]) continue;
+for (const depth of [12, 10, 14, 8]) {
+const cy = surf + depth;
+let ok = cy + 8 < SCENE_H;
+for (let j = -7; j <= 7 && ok; j += 2) for (let i = -7; i <= 7 && ok; i += 2) if (!earth(x + i, cy + j)) ok = false;
+if (ok) { spot = { x, y: cy, top: surf }; break; }
+}
+if (spot) break;
+}
+}
+if (spot) place.push({ id: c.id, effect: c.effect, ...spot });
+}
+this._wards = { key, place };
+}
+const dug = new Set(st.wardStones(this.region).filter((c) => c.dug).map((c) => c.id));
+return this._wards.place.map((c) => ({ ...c, dug: dug.has(c.id) }));
+}
+wardAt(x, y) {
+return this.wards().find((c) => !c.dug && Math.abs(x - c.x) <= 11 && y >= c.top - 10 && y <= c.y + 10) || null;
+}
+digWard(c) {
+const r = BIOME_RUNE_BY_EFFECT[c.effect], col = rgbCss(r.color);
+const n = ((this.runeHits || (this.runeHits = {}))[c.id] || 0) + 1;
+this.runeHits[c.id] = n;
+this.chips(c.x, c.top, Math.random() < 0.5 ? 1 : -1, 8, this.rockColour(), col, false);
+audio.play('crush');
+if (n < 3) return;
+const res = this.lab.state.digWard(c.id);
+if (!res.ok) return;
+this.chips(c.x, c.top - 1, 1, 14, this.rockColour(), col, true);
+for (let i = 0; i < 4; i++) this.flashes.push({ x: c.x + (Math.random() - 0.5) * 12, y: c.top - 4 - Math.random() * 10, t: -i * 0.12 });
+this.floaters.push({ x: c.x, y: c.top - 6, t: 0, color: r.color, text: `+1 ${r.name}` });
+audio.play('discover');
+const held = this.lab.state.wardsOf(c.effect);
+toast(`The ${r.name}!`, `Dug out of the ${r.biomeName}’s earth${Number.isFinite(held) ? ` (${held} in hand)` : ''}. Set it in an aging bottle’s third slot (Counter → potion shelves): it hastens what carries ${(EFFECT_BY_KEY[c.effect] || { label: c.effect }).label}, even in the cold, and never lowers how much can come out.`, r.icon, 5200);
+this.lab.save();
+this.refresh();
+}
+drawWards(ctx) {
+for (const c of this.wards()) {
+const x = c.x, y = c.y;
+const r = BIOME_RUNE_BY_EFFECT[c.effect];
+const [cr, cg, cb] = r.color.map((v) => Math.round(v * 255));
+if (c.dug) {
+ctx.fillStyle = 'rgba(24,16,10,0.7)'; ctx.fillRect(x - 3, c.top, 7, y - c.top + 4);
+ctx.fillStyle = 'rgba(70,52,36,0.8)'; ctx.fillRect(x - 5, c.top - 1, 3, 1); ctx.fillRect(x + 3, c.top - 1, 3, 1);
+continue;
+}
+const rise = Math.min(6, ((this.runeHits && this.runeHits[c.id]) || 0) * 3); // each blow brings it up a little
+const glow = 0.55 + 0.45 * Math.sin(this.time * 2.2 + x * 0.13);
+const yy = y - rise;
+for (const [rad, a] of [[13, 0.10], [10, 0.12], [8, 0.16]]) {
+ctx.fillStyle = `rgba(${cr},${cg},${cb},${(a * (0.6 + 0.6 * glow)).toFixed(3)})`;
+ctx.fillRect(x - rad, yy - rad, rad * 2 + 1, rad * 2 + 1);
+}
+ctx.fillStyle = `rgba(${cr},${cg},${cb},${(0.25 + 0.3 * glow).toFixed(3)})`;
+ctx.fillRect(x, c.top, 1, Math.max(0, yy - 8 - c.top));
+ctx.fillStyle = '#120c0a'; ctx.fillRect(x - 8, yy - 8, 17, 17);
+ctx.fillStyle = '#3c3640'; ctx.fillRect(x - 7, yy - 7, 15, 15);
+ctx.fillStyle = '#58525c'; ctx.fillRect(x - 7, yy - 7, 15, 1); ctx.fillRect(x - 7, yy - 7, 1, 15);
+ctx.fillStyle = '#26222a'; ctx.fillRect(x + 7, yy - 6, 1, 14); ctx.fillRect(x - 6, yy + 7, 14, 1);
+const grid = ICONS[r.icon] || ICONS.rune;
+const lit = `rgb(${Math.min(255, Math.round(cr * (0.7 + 0.3 * glow) + 60 * glow))},${Math.min(255, Math.round(cg * (0.7 + 0.3 * glow) + 60 * glow))},${Math.min(255, Math.round(cb * (0.7 + 0.3 * glow) + 60 * glow))})`;
+for (let j = 0; j < 12; j++) {
+const row = grid[j] || '';
+for (let i = 0; i < 12; i++) {
+const ch = row[i];
+if (!ch || ch === '.') continue;
+ctx.fillStyle = ch === 'k' ? '#0e0a0c' : ch === 'w' || ch === 'l' ? '#fffaf0' : lit;
+ctx.fillRect(x - 6 + i, yy - 6 + j, 1, 1);
+}
+}
+const u = (this.time * 0.8 + x * 0.37) % 1;
+if (u < 0.6) { ctx.fillStyle = `rgba(${Math.min(255, cr + 80)},${Math.min(255, cg + 80)},${Math.min(255, cb + 80)},${(1 - u / 0.6).toFixed(2)})`; ctx.fillRect(x + Math.round(Math.sin(this.time * 3 + x) * 2), Math.round(c.top - 2 - u * 10), 1, 1); }
+}
+}
 tapScene(e) {
 const q = this.scenePoint(e);
 const cache = this.cacheAt(q.x, q.y);
 if (cache) { this.digCache(cache); return; }
+const ward = this.wardAt(q.x, q.y);
+if (ward) { this.digWard(ward); return; }
 const warren = this.warren(), rb = warren ? warren.at(q.x, q.y) : null;
 if (rb) { this.hunt(warren, rb, q.x, q.y); return; }
 if (warren) for (const r of warren.near(q.x, q.y)) warren.scare(r, q.x);
@@ -29817,6 +30041,7 @@ dc.setTransform(2, 0, 0, 2, 0, 0);
 }
 for (const p of this.field.slice().sort((a, b) => a.y - b.y)) if (p.key && !this.fallen[p.id]) this.drawPlant(ctx, p, dc);
 this.drawCaches(ctx);
+this.drawWards(ctx);
 this.drawFallen(ctx, dt);
 if (dc && warren) this.drawWarren(dc, warren, true);
 else if (warren) this.drawWarren(ctx, warren);
@@ -34480,7 +34705,7 @@ const m = measureParticles(this.sim, sel);
 if (!m) { toast('Nothing to sample', 'The cauldron is empty.', 'flask'); return; }
 if (this.sandbox || this.state.has('arcanometer')) /** @type {any} */ (m).arcane = this.arcaneReading(sel, m);
 audio.play('glass');
-panels.showAnalysis(this, m, this.recipeDraft(m, null, null), `Measuring vial · ${m.ml} ml from the tap`);
+panels.showAnalysis(this, m, this.recipeDraft(m, null, null), `Measuring vial · ${m.ml} ml from the tap`, extractionReport(this.sim));
 }
 announce(e) {
 if (e.type === 'achievement') {

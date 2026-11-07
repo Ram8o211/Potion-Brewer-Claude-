@@ -7,7 +7,7 @@
 // glowing cold in the dark and banks of mist.
 
 import { sky } from './paint.js';
-import { palette, vary, streamOf } from './kit.js';
+import { palette, vary, streamOf, lx } from './kit.js';
 import { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, glow, silhouette, treeShape } from './side.js';
 import { caveFrame, farPillars, fog, vines, moss, ruins, glowShrooms, veins, WATER_VEINS } from './cave.js';
 import { reeds, spire, cairn } from './objects.js';
@@ -27,7 +27,7 @@ export function compose(cv, seed) {
   for (let i = 0; i < 140; i++) { const x = st.int(0, W - 1), y = st.int(0, 110), b = st.next(); cv.set(x, y, pack(b > 0.8 ? [0.95, 0.95, 1] : b > 0.4 ? [0.7, 0.72, 0.95] : [0.45, 0.48, 0.75])); }
   for (let i = 0; i < 5; i++) { const x = st.int(4, W - 4), y = st.int(4, 70), c = pack([0.85, 0.9, 1]); for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [0, 0]]) cv.set(x + dx, y + dy, c); }
   // the moon and its halo, in the rent of the roof
-  const fs = s('frame'), cave = fs.next() < 0.4, o0 = fs.int(70, 150), o1 = o0 + fs.int(140, 200);
+  const fs = s('frame'), cave = fs.next() < 0.4, o0 = fs.int(lx(cv, 70), lx(cv, 150)), o1 = o0 + fs.int(lx(cv, 140), lx(cv, 200));
   const mx = Math.round((o0 + o1) / 2) + s('moon').int(-30, 30), my = s('moon2').int(30, 44), mr = 12;
   glow(cv, mx, my, 80, [0.45, 0.5, 0.8], 0.4);
   const ms = s('craters').int(0, 1e9), crescent = s('phase').next() < 0.5;

@@ -409,7 +409,11 @@ function hutchSummary(col) {
     col.lost ? h('div', { class: 'small muted', text: `The hutch was too full for ${col.lost} more kit${col.lost > 1 ? 's' : ''}; the breeder took them.` }) : null);
 }
 
-export function showAnalysis(lab, m, recipe, title = 'Analysis of the brew') {
+/**
+ * @param {any} lab @param {any} m @param {any} recipe @param {string} [title]
+ * @param {ReturnType<typeof import('../reactions/extraction.js').extractionReport>} [batch] the whole cauldron's extraction (a sample from the tap)
+ */
+export function showAnalysis(lab, m, recipe, title = 'Analysis of the brew', batch) {
   const st = lab.state;
   // each ingredient once, with how much of it is dissolved
   const comp = groupExtracts(m.composition, st.lookup);
@@ -433,10 +437,27 @@ export function showAnalysis(lab, m, recipe, title = 'Analysis of the brew') {
         ...(aura ? kv('Aura', aura) : []),
         ...(m.arcane ? kv('Arcane', m.arcane) : []),
       )),
-      h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Composition' }), ...comp.map((g) => h('div', { class: 'small', text: groupLine(g, 1, 1) }))),
+      h('div', { class: 'card parch' }, h('div', { class: 'small muted', text: 'Composition' }), ...comp.map((g) => compositionLine(g, batch))),
       lab.sandbox ? null : h('div', { class: 'row' }, btn('Save as recipe', () => { const ev = st.addRecipe({ ...recipe, name: 'Experiment ' + (st.recipes.length + 1) }); for (const e of ev) lab.announce(e); toast('Recipe saved', '', 'book'); }, { icon: 'book' })),
     ],
   });
+}
+
+/**
+ * One ingredient of an analysis: its share and how much of it is drawn out
+ * in the sample, and — for a sample from the tap — over the whole cauldron,
+ * whole pieces included (the tap leaves them behind, so a handful of fresh
+ * leaves shows here, not in the sample, until it is crushed and steeped).
+ * @param {{id:string, name:string, f:number, ext:number, extractable:boolean}} g @param {any} [batch]
+ */
+function compositionLine(g, batch) {
+  const line = h('div', { class: 'small', text: groupLine(g, 1, 1) });
+  const it = batch && g.extractable ? batch.items.find((x) => x.id === g.id || x.id === g.id.replace(/~a$/, '')) : null;
+  if (!it || !(it.raw + it.ext > 0)) return line;
+  const ml = (v) => Math.round(v * SIM.ML_PER_PARTICLE);
+  const parts = [`in the cauldron ${Math.round(it.share * 100)}% of ${ml(it.raw + it.ext)} ml drawn out, up to ${Math.round(it.ceiling * 100)}% at this heat`];
+  if (it.whole * SIM.ML_PER_PARTICLE >= 1) parts.push(`${ml(it.whole)} ml still whole: crush it`);
+  return h('div', { class: 'comp-line' }, line, h('div', { class: 'small muted', 'data-batch-share': String(Math.round(it.share * 1000) / 1000), text: '↳ ' + parts.join(' · ') }));
 }
 
 // ------------------------------------------------------------------ recipes

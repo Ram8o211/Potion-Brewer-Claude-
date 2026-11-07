@@ -23,7 +23,7 @@
 // Pure and deterministic like every region (streamOf(seed, region, part)).
 
 import { sky } from './paint.js';
-import { palette, vary, streamOf } from './kit.js';
+import { palette, vary, streamOf, lx } from './kit.js';
 import { heights, raise, dip, fillSolid, blob, paintTerrain, pool, markOpen, silhouette, mountains, glow, ledges, treeShape } from './side.js';
 import { fog, vines, glowShrooms, ruins, fall, moss } from './cave.js';
 import { cloud, spire, boulder } from './objects.js';
@@ -194,7 +194,7 @@ export const morphgrove = {
     const tl = s('tl2');
     for (let x = 4; x < W; x += tl.int(9, 16)) treeShape(cv, x, line[x] + 2, tl.int(14, 26), 'oak', '#3a2a4a', tl.int(0, 1e9));
     const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 164, amp: 8, freq: 0.016 });
-    const rx = ts.int(140, 240);
+    const rx = ts.int(lx(cv, 140), lx(cv, 240));
     raise(top, rx - 30, rx + 30, Math.min(...top) - 10, 4);
     fillSolid(cv, top);
     ledges(cv, top, ts, 6, { keep: [[rx - 34, rx + 34]] });
@@ -242,7 +242,7 @@ export const veilhollow = {
       fog(cv, '#9a9ab0', -60, 170, 0.28, s('fog' + L).int(0, 1e9));
     }
     const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 166, amp: 10, freq: 0.018 });
-    const px = ts.int(120, 260), hw = ts.int(20, 30);
+    const px = ts.int(lx(cv, 120), lx(cv, 260)), hw = ts.int(lx(cv, 20), lx(cv, 30));
     dip(top, px, hw, 14);
     fillSolid(cv, top);
     ledges(cv, top, ts, 7, { keep: [[px - hw - 4, px + hw + 4]], high: 1 });
@@ -260,7 +260,7 @@ export const veilhollow = {
     // veil falls into the pool, from the cliff of the ledge above
     fall(cv, px - 6, 0, { cols: ['#e8e8ff', '#b8b8e8', '#8a8ac8'], w: 2, seed: ss + 3, rgb: [0.75, 0.75, 1] });
     // the shrine gate: two dark posts and a curved lintel; stone lanterns with a warm light
-    const gx = ts.int(40, 100), gy = Math.round(top[gx]);
+    const gx = ts.int(lx(cv, 40), lx(cv, 100)), gy = Math.round(top[gx]);
     const post = pack([0.16, 0.1, 0.12]), lint = pack([0.3, 0.14, 0.16]), lit = pack([0.5, 0.24, 0.26]);
     for (const ox of [-14, 14]) for (let y = gy - 40; y < gy; y++) for (let x = gx + ox - 2; x <= gx + ox + 1; x++) cv.set(x, y, x === gx + ox - 2 ? lit : post);
     for (let x = gx - 22; x <= gx + 22; x++) { const bend = Math.round(((x - gx) / 22) ** 2 * 3); for (let t = 0; t < 4; t++) cv.set(x, gy - 44 - bend + t, t === 0 ? lit : lint); }
@@ -380,7 +380,7 @@ export const chronoglass = {
     // a violet evening sky warming to rose at the horizon
     sky(cv, 0, H, ['#3e2766', '#56307e', '#7e4290', '#b0609c', '#d88498']);
     // the ghost of a clock face in the sky: a thin rose ring, twelve short hour marks, two hands
-    const cx = s('clock').int(110, W - 70), cy = 54, R = 30, ring = pack([0.86, 0.58, 0.72]);
+    const cx = s('clock').int(lx(cv, 110), W - lx(cv, 70)), cy = 54, R = 30, ring = pack([0.86, 0.58, 0.72]);
     for (let a = 0; a < 720; a++) { const r = (a * Math.PI) / 360; cv.set(Math.round(cx + Math.cos(r) * R), Math.round(cy + Math.sin(r) * R), ring); }
     for (let hr = 0; hr < 12; hr++) { const r = (hr * Math.PI) / 6, n = hr % 3 ? 2 : 3; for (let t = 0; t < n; t++) cv.set(Math.round(cx + Math.cos(r) * (R - 3 - t)), Math.round(cy + Math.sin(r) * (R - 3 - t)), ring); }
     for (let t = 0; t < 18; t++) cv.set(cx + Math.round(t * 0.55), cy - Math.round(t * 0.85), ring);

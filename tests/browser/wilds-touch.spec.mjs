@@ -24,11 +24,11 @@ test('sandbox wilds: shake, gather by tap, regrow at random spots; nothing to wa
   await page.locator('.view-wilds canvas.scene').scrollIntoViewIfNeeded();
   const cv = await page.locator('.view-wilds canvas.scene').boundingBox();
   if (!cv) throw new Error('no scene');
-  const H = 216, W = await page.evaluate(() => /** @type {HTMLCanvasElement} */ (document.querySelector('.view-wilds canvas.scene')).width);
+  const H = 192, W = await page.evaluate(() => /** @type {HTMLCanvasElement} */ (document.querySelector('.view-wilds canvas.scene')).width);
   const at = (x, y) => ({ x: cv.x + x / W * cv.width, y: cv.y + y / H * cv.height });
   // a ripe plant on the ground, shaken by a single fast swipe across it
   const ripe = field.find((p) => p.mount === 'ground' && !p.fused) || field.find((p) => !p.fused) || field[0];
-  const mid = await lab(page, (l, id) => { const w = l.views.wilds, p = w.field.find((q) => q.id === id), f = w.frameOf(p); return { x: p.x * 384 - f.ax + f.w / 2, y: p.y * 216 - f.ay + f.h / 2 }; }, ripe.id);
+  const mid = await lab(page, (l, id) => { const w = l.views.wilds, p = w.field.find((q) => q.id === id), f = w.frameOf(p); return { x: p.x * 256 - f.ax + f.w / 2, y: p.y * 192 - f.ay + f.h / 2 }; }, ripe.id);
   // (a stroke across it and back, kept within the scene where it grows by an edge)
   const sx = Math.max(32, Math.min(W - 32, mid.x)), pts = [];
   for (let k = 0; k <= 8; k++) pts.push(at(sx - 30 + k * 7.5, mid.y));
@@ -138,8 +138,8 @@ test('sandbox wilds: a crystal fused into its rock breaks free only after severa
   const out = await lab(page, (l) => {
     const w = l.views.wilds, r = w.canvas.getBoundingClientRect();
     // (a tap on the middle of a crystal no other plant stands in front of)
-    const p = w.field.filter((q) => w.fused(q)).find((q) => { const f = w.frameOf(q); return w.plantAt({ clientX: r.left + (q.x * 384 - f.ax + f.w / 2) / 384 * r.width, clientY: r.top + (q.y * 216 - f.ay + f.h / 2) / 216 * r.height }) === q; });
-    const f = w.frameOf(p), e = { clientX: r.left + (p.x * 384 - f.ax + f.w / 2) / 384 * r.width, clientY: r.top + (p.y * 216 - f.ay + f.h / 2) / 216 * r.height };
+    const p = w.field.filter((q) => w.fused(q)).find((q) => { const f = w.frameOf(q); return w.plantAt({ clientX: r.left + (q.x * 256 - f.ax + f.w / 2) / 256 * r.width, clientY: r.top + (q.y * 192 - f.ay + f.h / 2) / 192 * r.height }) === q; });
+    const f = w.frameOf(p), e = { clientX: r.left + (p.x * 256 - f.ax + f.w / 2) / 256 * r.width, clientY: r.top + (p.y * 192 - f.ay + f.h / 2) / 192 * r.height };
     const loose = [];
     for (let k = 0; k < w.strikesFor(p); k++) { w.time += 1; w.tapScene(e); loose.push(!!w.fallen[p.id]); }
     return { need: w.strikesFor(p), loose };
@@ -150,17 +150,17 @@ test('sandbox wilds: a crystal fused into its rock breaks free only after severa
   expect(errors).toEqual([]);
 });
 
-test('sandbox wilds: the scene zooms in and out, starting a little closer, and a tap still finds the plant under it', async ({ page }) => {
+test('sandbox wilds: the scene zooms in and out, starting with the whole (compact) region in view, and a tap still finds the plant under it', async ({ page }) => {
   const errors = watchErrors(page);
   // (a first visit: no zoom kept from before — only on the first load, not the reload below)
-  await page.addInitScript(() => { try { if (!sessionStorage.getItem('zoomed')) { localStorage.removeItem('alchemist.wildsZoom'); sessionStorage.setItem('zoomed', '1'); } } catch { /* none */ } });
+  await page.addInitScript(() => { try { if (!sessionStorage.getItem('zoomed')) { localStorage.removeItem('alchemist.wildsZoom.v2'); sessionStorage.setItem('zoomed', '1'); } } catch { /* none */ } });
   await startSandbox(page);
   await page.click('[data-act=tab-wilds]');
   // (no wild rabbits hopping in front of the plants these taps are aimed at)
   await lab(page, (l) => { l.views.wilds.wildlife = false; });
   await page.waitForFunction(() => !!window.__alchemist.screen.views.wilds.bg);
   const z0 = await lab(page, (l) => l.views.wilds.zoom);
-  expect(z0, 'it starts closer than the whole region').toBeGreaterThan(1);
+  expect(z0, 'it starts with the whole region in view').toBe(1);
   await page.click('[data-act=zoom-in]');
   const z1 = await lab(page, (l) => l.views.wilds.zoom);
   expect(z1).toBeGreaterThan(z0);
@@ -172,7 +172,7 @@ test('sandbox wilds: the scene zooms in and out, starting a little closer, and a
   const probe = await lab(page, (l) => {
     const w = l.views.wilds, v = w.view.getBoundingClientRect(), c = w.canvas.getBoundingClientRect();
     const p = w.scenePoint({ clientX: v.left + v.width / 2, clientY: v.top + v.height / 2 });
-    const want = { x: (v.left + v.width / 2 - c.left) / c.width * 384, y: (v.top + v.height / 2 - c.top) / c.height * 216 };
+    const want = { x: (v.left + v.width / 2 - c.left) / c.width * 256, y: (v.top + v.height / 2 - c.top) / c.height * 192 };
     return { wider: c.width > v.width * 1.4, dx: Math.abs(p.x - want.x), dy: Math.abs(p.y - want.y) };
   });
   expect(probe.wider).toBe(true);
@@ -201,7 +201,7 @@ test('wild rabbits: tapped, one bleeds over the ground and bolts faster; brought
     const pt = await lab(page, (l) => {
       const w = l.views.wilds, wr = w.warren(), r = wr.rabbits.find((q) => !q.dead) || wr.rabbits[0], c = w.canvas.getBoundingClientRect();
       wr.held = wr.step; wr.step = () => {};
-      return { x: c.left + r.x / 384 * c.width, y: c.top + (r.y - 4) / 216 * c.height, id: r.id };
+      return { x: c.left + r.x / 256 * c.width, y: c.top + (r.y - 4) / 192 * c.height, id: r.id };
     });
     await page.mouse.click(pt.x, pt.y);
     await lab(page, (l) => { const wr = l.views.wilds.warren(); wr.step = wr.held; });

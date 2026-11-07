@@ -44,9 +44,9 @@ import { UpscaledCanvas } from '../../rendering/crisp.js';
 import { BIOME_BY_ID, unlockText } from '../../game/biomes.js';
 import { CREATURE_NAMES, rarityTag } from '../rarity-ui.js';
 import { h, btn, clear, toast, keepScroll, confirmDialog } from '../dom.js';
-import { icon } from '../icons.js';
+import { icon, ICONS } from '../icons.js';
 import { audio } from '../../audio/audio.js';
-import { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, moistureEnv, DAY_PART_NAME, runeCaches as runeCachesOf } from '../../game/gathering.js';
+import { REGIONS, depositStatus, formatWait, gatherPlan, harvestable, dayPart, weatherOn, moistureEnv, DAY_PART_NAME, runeCaches as runeCachesOf, wardStones as wardStonesOf } from '../../game/gathering.js';
 import { equipmentById } from '../../game/equipment.js';
 import { RANKS } from '../../game/equipment.js';
 import { sceneCanvas, sceneFrame, animateRegion, PlantGround, hitPlant, windAt, sceneTouch, crosses, forgetSceneCanvases, SCENE_W, SCENE_H } from '../../rendering/wild-scene.js';
@@ -60,6 +60,7 @@ import { Warren, warrenSpots, BLOOD, WILD_HP, WILD_SCALE } from '../../game/wild
 import { drawRabbit, rabbitSpriteKey, RABBIT_W, RABBIT_H } from '../../rendering/rabbit.js';
 import { defaultSnap, penHasRoom, PEN_MAX } from '../../game/colony.js';
 import { KINDS } from '../../game/kinds.js';
+import { BIOME_RUNE_BY_EFFECT } from '../../game/cellar.js';
 
 /** The shadow a plant casts on its ground, by region (the crags' is warm and deep, the fens' cold). */
 const SHADOW = { forest: 'rgba(8,16,10,0.32)', netherwood: 'rgba(6,4,16,0.4)', meadow: 'rgba(24,30,10,0.26)', river: 'rgba(4,14,16,0.34)', quarry: 'rgba(26,18,10,0.3)', moonfen: 'rgba(2,6,18,0.42)', crags: 'rgba(30,6,4,0.4)', skyshard: 'rgba(20,40,70,0.26)', morphgrove: 'rgba(30,8,30,0.34)', veilhollow: 'rgba(10,10,20,0.38)', ghostglass: 'rgba(2,10,24,0.42)', chronoglass: 'rgba(40,20,10,0.32)' };
@@ -87,9 +88,9 @@ function litSprite(d, light) {
 /** How far (CSS pixels) a press may wander and still be a tap: a finger rolls further than a mouse. */
 const TAP_SLOP = { mouse: 6, pen: 8, touch: 14 };
 
-/** How far the scene can be zoomed in, and how close it starts (a little closer than the whole region). */
-const ZOOM_MIN = 1, ZOOM_MAX = 3, ZOOM_START = 1.35, ZOOM_STEP = 1.25;
-const ZOOM_KEY = 'alchemist.wildsZoom';
+/** How far the scene can be zoomed in, and how close it starts (the whole region: it is compact enough to read on a phone). */
+const ZOOM_MIN = 1, ZOOM_MAX = 2.5, ZOOM_START = 1, ZOOM_STEP = 1.25;
+const ZOOM_KEY = 'alchemist.wildsZoom.v2';
 
 /** How far apart (scene pixels) a finger dragged in watering mode waters along its path. */
 const WATER_STEP = 12;
@@ -127,6 +128,11 @@ function sparkle(ctx, x, y, u) {
 function colourOf(m) {
   const c = m ? m.look || m.color : null;
   return c ? `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2] * 255)})` : '#cde';
+}
+
+/** An sRGB 0..1 colour as CSS. @param {number[]} c */
+function rgbCss(c) {
+  return `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2] * 255)})`;
 }
 
 /** A #rrggbb colour lightened (k > 0) or darkened (k < 0). @param {string} hex @param {number} k */
@@ -387,6 +393,7 @@ export class WildsView {
       h('span', { class: 'fx-chip', title: 'Native creature' }, icon('rabbit', 'sm'), ' ' + CREATURE_NAMES[biome.creature]),
       h('span', { class: 'fx-chip', title: 'Specimens left in this generation' }, icon('leaf', 'sm'), ` ${left}/${total}`),
       ...(() => { const cs = st.runeCaches(this.region); const n = cs.filter((c) => !c.dug).length; return cs.length ? [h('span', { class: 'fx-chip rune-chip', 'data-runes-left': String(n), title: n ? 'Old temperature runes lie buried here: look for the glowing stones and tap one a few times to dig it up' : 'Every buried rune of this generation has been dug up: regenerating the biome buries new ones' }, icon('rune', 'sm'), ` ${n}/${cs.length} buried`)] : []; })(),
+      ...st.wardStones(this.region).map((c) => { const r = BIOME_RUNE_BY_EFFECT[c.effect]; return h('span', { class: 'fx-chip rune-chip ward-chip', 'data-ward': c.effect, 'data-dug': c.dug ? '1' : '0', style: { '--rune': rgbCss(r.color) }, title: c.dug ? `Today’s ${r.name} has been dug out: another lies here tomorrow` : `The ${r.name} lies underground here: look for its glow in the earth and tap it a few times to dig it out. In an aging bottle it hastens what carries ${eff.label}, even in the cold.` }, icon(r.icon, 'sm'), c.dug ? ` ${r.name} ✓` : ` ${r.name} underground`); }),
       lab.sandbox ? null : h('span', { class: 'fx-chip coins', title: coins.nextIn ? `Next coin in ${formatWait(coins.nextIn)}` : 'Your purse is full' }, icon('coin', 'sm'), ` ${coins.coins}/${coins.max}`),
       regen));
     const list = clear(this.list);
@@ -1321,12 +1328,134 @@ export class WildsView {
     }
   }
 
+  /**
+   * The biome's rune stones, placed in the scene: in the earth a little under
+   * open ground (scanned up from the bottom, so a cavern's roof is never taken
+   * for ground), never in water, wholly inside the soil. Cached per scene and
+   * day.
+   * @returns {{id:string, effect:string, x:number, y:number, top:number, dug:boolean}[]}
+   */
+  wards() {
+    const st = this.lab.state, seed = st.sceneSeed(this.region), key = `${this.region}:${seed}:${st.day}`;
+    if (!this._wards || this._wards.key !== key) {
+      const sc = sceneOf(this.region, seed);
+      const earth = (x, y) => x >= 0 && x < SCENE_W && y >= 0 && y < SCENE_H && !!sc.solid[y * SCENE_W + x] && !sc.liquid[y * SCENE_W + x];
+      const place = [];
+      for (const c of wardStonesOf(this.region, seed, st.day)) {
+        const x0 = Math.round(c.fx * SCENE_W);
+        let spot = null;
+        for (let d = 0; d < SCENE_W / 2 && !spot; d += 3) {
+          for (const x of [x0 + d, x0 - d]) {
+            if (x < 12 || x > SCENE_W - 12) continue;
+            // the floor of open ground in this column
+            let y = SCENE_H - 1;
+            while (y > 0 && this.solidAt(x, y)) y--;
+            const surf = y + 1;
+            if (surf < 14 || surf > SCENE_H - 14) continue;
+            if (sc.liquid[surf * SCENE_W + x] || sc.liquid[(surf - 1) * SCENE_W + x]) continue;
+            // as deep as the earth allows (8 to 14 pixels under the surface), the whole stone in soil
+            for (const depth of [12, 10, 14, 8]) {
+              const cy = surf + depth;
+              let ok = cy + 8 < SCENE_H;
+              for (let j = -7; j <= 7 && ok; j += 2) for (let i = -7; i <= 7 && ok; i += 2) if (!earth(x + i, cy + j)) ok = false;
+              if (ok) { spot = { x, y: cy, top: surf }; break; }
+            }
+            if (spot) break;
+          }
+        }
+        if (spot) place.push({ id: c.id, effect: c.effect, ...spot });
+      }
+      this._wards = { key, place };
+    }
+    const dug = new Set(st.wardStones(this.region).filter((c) => c.dug).map((c) => c.id));
+    return this._wards.place.map((c) => ({ ...c, dug: dug.has(c.id) }));
+  }
+
+  /** A biome rune stone under (x, y) — on it, or on the ground right over it. @param {number} x @param {number} y */
+  wardAt(x, y) {
+    return this.wards().find((c) => !c.dug && Math.abs(x - c.x) <= 11 && y >= c.top - 10 && y <= c.y + 10) || null;
+  }
+
+  /** A blow on a biome rune stone: earth flies; the third frees it into the cellar's stock. @param {{id:string, effect:string, x:number, y:number, top:number}} c */
+  digWard(c) {
+    const r = BIOME_RUNE_BY_EFFECT[c.effect], col = rgbCss(r.color);
+    const n = ((this.runeHits || (this.runeHits = {}))[c.id] || 0) + 1;
+    this.runeHits[c.id] = n;
+    this.chips(c.x, c.top, Math.random() < 0.5 ? 1 : -1, 8, this.rockColour(), col, false);
+    audio.play('crush');
+    if (n < 3) return;
+    const res = this.lab.state.digWard(c.id);
+    if (!res.ok) return;
+    this.chips(c.x, c.top - 1, 1, 14, this.rockColour(), col, true);
+    for (let i = 0; i < 4; i++) this.flashes.push({ x: c.x + (Math.random() - 0.5) * 12, y: c.top - 4 - Math.random() * 10, t: -i * 0.12 });
+    this.floaters.push({ x: c.x, y: c.top - 6, t: 0, color: r.color, text: `+1 ${r.name}` });
+    audio.play('discover');
+    const held = this.lab.state.wardsOf(c.effect);
+    toast(`The ${r.name}!`, `Dug out of the ${r.biomeName}’s earth${Number.isFinite(held) ? ` (${held} in hand)` : ''}. Set it in an aging bottle’s third slot (Counter → potion shelves): it hastens what carries ${(EFFECT_BY_KEY[c.effect] || { label: c.effect }).label}, even in the cold, and never lowers how much can come out.`, r.icon, 5200);
+    this.lab.save();
+    this.refresh();
+  }
+
+  /**
+   * The biome rune stones in the earth: a carved slab bedded in the soil, the
+   * glyph of its effect glowing through the ground in the effect's colour,
+   * a seam of light rising to the surface over it; a dug one leaves a dark
+   * shaft of loose earth.
+   * @param {CanvasRenderingContext2D} ctx
+   */
+  drawWards(ctx) {
+    for (const c of this.wards()) {
+      const x = c.x, y = c.y;
+      const r = BIOME_RUNE_BY_EFFECT[c.effect];
+      const [cr, cg, cb] = r.color.map((v) => Math.round(v * 255));
+      if (c.dug) {
+        ctx.fillStyle = 'rgba(24,16,10,0.7)'; ctx.fillRect(x - 3, c.top, 7, y - c.top + 4);
+        ctx.fillStyle = 'rgba(70,52,36,0.8)'; ctx.fillRect(x - 5, c.top - 1, 3, 1); ctx.fillRect(x + 3, c.top - 1, 3, 1);
+        continue;
+      }
+      const rise = Math.min(6, ((this.runeHits && this.runeHits[c.id]) || 0) * 3); // each blow brings it up a little
+      const glow = 0.55 + 0.45 * Math.sin(this.time * 2.2 + x * 0.13);
+      const yy = y - rise;
+      // the glow through the earth round it
+      for (const [rad, a] of [[13, 0.10], [10, 0.12], [8, 0.16]]) {
+        ctx.fillStyle = `rgba(${cr},${cg},${cb},${(a * (0.6 + 0.6 * glow)).toFixed(3)})`;
+        ctx.fillRect(x - rad, yy - rad, rad * 2 + 1, rad * 2 + 1);
+      }
+      // a seam of light up through the soil to the surface over it
+      ctx.fillStyle = `rgba(${cr},${cg},${cb},${(0.25 + 0.3 * glow).toFixed(3)})`;
+      ctx.fillRect(x, c.top, 1, Math.max(0, yy - 8 - c.top));
+      // the pocket in the earth, then the slab: dark outline, stone body, lit top edge
+      ctx.fillStyle = '#120c0a'; ctx.fillRect(x - 8, yy - 8, 17, 17);
+      ctx.fillStyle = '#3c3640'; ctx.fillRect(x - 7, yy - 7, 15, 15);
+      ctx.fillStyle = '#58525c'; ctx.fillRect(x - 7, yy - 7, 15, 1); ctx.fillRect(x - 7, yy - 7, 1, 15);
+      ctx.fillStyle = '#26222a'; ctx.fillRect(x + 7, yy - 6, 1, 14); ctx.fillRect(x - 6, yy + 7, 14, 1);
+      // the carved glyph of its effect, glowing
+      const grid = ICONS[r.icon] || ICONS.rune;
+      const lit = `rgb(${Math.min(255, Math.round(cr * (0.7 + 0.3 * glow) + 60 * glow))},${Math.min(255, Math.round(cg * (0.7 + 0.3 * glow) + 60 * glow))},${Math.min(255, Math.round(cb * (0.7 + 0.3 * glow) + 60 * glow))})`;
+      for (let j = 0; j < 12; j++) {
+        const row = grid[j] || '';
+        for (let i = 0; i < 12; i++) {
+          const ch = row[i];
+          if (!ch || ch === '.') continue;
+          ctx.fillStyle = ch === 'k' ? '#0e0a0c' : ch === 'w' || ch === 'l' ? '#fffaf0' : lit;
+          ctx.fillRect(x - 6 + i, yy - 6 + j, 1, 1);
+        }
+      }
+      // a spark rising now and then
+      const u = (this.time * 0.8 + x * 0.37) % 1;
+      if (u < 0.6) { ctx.fillStyle = `rgba(${Math.min(255, cr + 80)},${Math.min(255, cg + 80)},${Math.min(255, cb + 80)},${(1 - u / 0.6).toFixed(2)})`; ctx.fillRect(x + Math.round(Math.sin(this.time * 3 + x) * 2), Math.round(c.top - 2 - u * 10), 1, 1); }
+    }
+  }
+
   /** @param {{clientX:number, clientY:number}} e where the tap came down */
   tapScene(e) {
     const q = this.scenePoint(e);
     // a rune stone half buried in the ground: a few blows dig it up (it lies still, so it comes before a passing animal)
     const cache = this.cacheAt(q.x, q.y);
     if (cache) { this.digCache(cache); return; }
+    // the biome's rune glowing in the earth: a few blows dig it out
+    const ward = this.wardAt(q.x, q.y);
+    if (ward) { this.digWard(ward); return; }
     // a rabbit is struck (or, once it is down, caught; its body carried home); one close by bolts
     const warren = this.warren(), rb = warren ? warren.at(q.x, q.y) : null;
     if (rb) { this.hunt(warren, rb, q.x, q.y); return; }
@@ -1456,6 +1585,7 @@ export class WildsView {
     // the plants, the far ones first
     for (const p of this.field.slice().sort((a, b) => a.y - b.y)) if (p.key && !this.fallen[p.id]) this.drawPlant(ctx, p, dc);
     this.drawCaches(ctx);
+    this.drawWards(ctx);
     this.drawFallen(ctx, dt);
     if (dc && warren) this.drawWarren(dc, warren, true);
     else if (warren) this.drawWarren(ctx, warren);

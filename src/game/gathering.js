@@ -746,3 +746,33 @@ export function runeCaches(region, sceneSeed) {
   }
   return out;
 }
+
+// ------------------------------------------------------------------ biome runes
+
+/**
+ * Each biome keeps its own rune underground — the rune of its effect (the
+ * Whisperwood's Vitality Rune, the Willow Bank's Frost Rune…; cellar.js
+ * BIOME_RUNES): one rune stone lies in the earth under each biome every
+ * day, glowing through the soil in the colour of its effect, until it is
+ * dug out. In the aging cellar it hastens whatever carries its effect.
+ */
+export const WARD_STONES_PER_DAY = 1;
+
+/**
+ * The biome rune stones of a region on a day: an id, the rune's effect and
+ * where along the scene it lies (fx, 0..1). Deterministic from the scene's
+ * seed and the day.
+ * @param {string} region @param {string} sceneSeed @param {number} day
+ * @returns {{id:string, effect:string, fx:number}[]}
+ */
+export function wardStones(region, sceneSeed, day) {
+  const b = BIOMES.find((x) => x.id === region);
+  if (!b) return [];
+  const out = [];
+  for (let k = 0; k < WARD_STONES_PER_DAY; k++) {
+    const r = new Rng(`ward-stone:${sceneSeed}:${region}:${day}:${k}`);
+    const fx = 0.12 + 0.76 * r.next();
+    out.push({ id: `ward:${region}:${sceneSeed}:${day}:${k}`, effect: b.effect, fx: Math.round(fx * 1000) / 1000 });
+  }
+  return out;
+}
