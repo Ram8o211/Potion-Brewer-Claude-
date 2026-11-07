@@ -28,7 +28,7 @@ export class CounterView {
     this.el = h('section', { class: 'view view-counter', 'data-view': 'counter' });
     /** the selected shelved bottle, its aging slot being filled, the ml to load, the rune's target */
     /** @type {string|null} */ this.sel = null;
-    /** @type {'charge'|'rune'|null} */ this.agePick = null;
+    /** @type {'charge'|'rune'|'ward'|null} */ this.agePick = null;
     this.ageMl = 50;
     /** @type {number|undefined} */ this.ageTarget = undefined;
     this._bottleDrag = false;

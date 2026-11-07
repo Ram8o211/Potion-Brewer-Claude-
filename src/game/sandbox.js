@@ -18,7 +18,7 @@ import { EQUIPMENT } from './equipment.js';
 import { BIOMES } from './biomes.js';
 import { sandboxWilds } from './gathering.js';
 import { normalizeTrials } from './experiments.js';
-import { normalizeCellar } from './cellar.js';
+import { normalizeCellar, BIOME_RUNES } from './cellar.js';
 import { normalizeGarden, seedId, TUTORIAL_PACE } from './garden.js';
 import { SPECIES_BY_KEY, materialIdOf } from '../materials/catalog.js';
 import { migrateVial } from './vial.js';
@@ -78,6 +78,7 @@ export function prepareSandbox(st, saved = null, now = Date.now()) {
 /** Make a cellar the Free Experiment's: unlimited runes, a quicker clock. @param {any} cellar */
 export function sandboxCellar(cellar) {
   cellar.runes = Infinity;
+  cellar.wards = Object.fromEntries(BIOME_RUNES.map((r) => [r.effect, Infinity]));
   cellar.pace = SANDBOX_CELLAR_PACE;
   return cellar;
 }
@@ -109,7 +110,7 @@ export function sandboxGarden(g, st) {
 
 /** What the Free Experiment saves of a state (its own key, never the shop's). @param {import('./state.js').GameState} st @param {any} cauldron */
 export function sandboxSave(st, cauldron) {
-  const { pace: _p, runes: _r, ...cellar } = /** @type {any} */ (st.cellar);
+  const { pace: _p, runes: _r, wards: _w, ...cellar } = /** @type {any} */ (st.cellar);
   const { pace: _g, seeds: _s, ...garden } = /** @type {any} */ (st.garden);
   return { seed: st.seed, cauldron, trials: st.trials, bottles: st.bottles, cellar, garden, bench: st.bench };
 }

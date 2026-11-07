@@ -9,7 +9,7 @@ import { generateCommission, tutorialCommission } from './commissions.js';
 import { EQUIPMENT, STARTING_EQUIPMENT, RANKS, rankIndex, capabilities, equipmentById, RETIRED_EQUIPMENT } from './equipment.js';
 import { SIM } from '../simulation/constants.js';
 import { createTrials, normalizeTrials, runTrial, SUBJECT_BY_ID, knownLaws, certification, summarize } from './experiments.js';
-import { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth, depositStatus, migrateGathering, setSky, water, runeCaches as runeCachesOf } from './gathering.js';
+import { createGathering, normalizeGathering, generateDeposits, harvest, gatherPlan, weatherOn, weatherRegrowth, newDayRegrowth, depositStatus, migrateGathering, setSky, water, runeCaches as runeCachesOf, wardStones as wardStonesOf } from './gathering.js';
 import { predictPlan } from './predict.js';
 import { EFFECT_INDEX, EFFECT_KEYS } from '../alchemy/effects.js';
 import { migrateVial } from './vial.js';
@@ -26,7 +26,7 @@ import { remainsMaterials, remainsPlan, isRemains } from '../materials/remains.j
 import { returningPatron, welcomePatron, recentStyles, notePatron, patronVerdict, noveltyFactor } from './patrons.js';
 import { techniqueById, migrateTechniques } from './commissions.js';
 import { migrateRecipe } from './recipes.js';
-import { createCellar, normalizeCellar, advanceCellar, advanceVessel, fillVessel, emptyVesselContents, chargeVessel, setRune, vesselVolume, newVessel, potionNet, RUNE_PRICE } from './cellar.js';
+import { createCellar, normalizeCellar, advanceCellar, advanceVessel, fillVessel, emptyVesselContents, chargeVessel, setRune, setWard, vesselVolume, newVessel, potionNet, RUNE_PRICE, BIOME_RUNE_BY_EFFECT } from './cellar.js';
 import { makeVialFromComposition, takeDose } from './vial.js';
 
 export const SAVE_VERSION = 9;
@@ -416,6 +416,32 @@ export class GameState {
     return { ok: true };
   }
 
+  /** The biome rune stones under a region today, and whether each has been dug out. @param {string} region */
+  wardStones(region) {
+    return wardStonesOf(region, this.sceneSeed(region), this.day).map((c) => ({ ...c, dug: !!this.gathering.runes[c.id] }));
+  }
+
+  /** Biome runes in hand of an effect. @param {string} effect */
+  wardsOf(effect) {
+    const w = /** @type {Record<string, number>} */ (this.cellar.wards || {});
+    return w[effect] || 0;
+  }
+
+  /** Dig a biome rune stone out of the ground: one rune of its effect for the cellar. @param {string} id */
+  digWard(id) {
+    const region = id.split(':')[1];
+    const stone = this.wardStones(region).find((c) => c.id === id);
+    if (!stone) return { ok: false, reason: 'There is nothing buried there.' };
+    if (stone.dug) return { ok: false, reason: 'It has already been dug out.' };
+    this.gathering.runes[id] = 1;
+    // (forget the stones of days long gone)
+    for (const k of Object.keys(this.gathering.runes)) if (k.startsWith('ward:') && Number(k.split(':')[3]) < this.day - 1) delete this.gathering.runes[k];
+    const w = this.cellar.wards || (this.cellar.wards = {});
+    if (Number.isFinite(w[stone.effect] ?? 0)) w[stone.effect] = (w[stone.effect] || 0) + 1;
+    this.stats.wards = (this.stats.wards || 0) + 1;
+    return { ok: true, effect: stone.effect, rune: BIOME_RUNE_BY_EFFECT[stone.effect] };
+  }
+
   // ------------------------------------------------------------ cellar, still and burning
   /** Advance the aging bottles (and any old vessels) to now (also after a break). @param {number} [now] */
   tickCellar(now = Date.now()) {
@@ -507,6 +533,21 @@ export class GameState {
     const r = setRune(/** @type {any} */ (b.aging), target, now);
     if (r.ok && r.fresh) this.cellar.runes--;
     return r;
+  }
+
+  /** Set a biome rune (of an effect) in a bottle's third slot. @param {string} bottleId @param {string} effect @param {number} [now] */
+  wardBottle(bottleId, effect, now = Date.now()) {
+    this.tickCellar(now);
+    const b = this.bottles.find((x) => x.id === bottleId);
+    if (!b) return { ok: false, reason: 'That bottle is not on the shelf.' };
+    const r = BIOME_RUNE_BY_EFFECT[effect];
+    if (!r) return { ok: false, reason: 'There is no such rune.' };
+    if (this.wardsOf(effect) <= 0) return { ok: false, reason: `You have no ${r.name}. It lies underground in the ${r.biomeName}: look for its glow in the earth.` };
+    const started = this.startAging(bottleId, now);
+    if (!started.ok) return started;
+    const res = setWard(/** @type {any} */ (b.aging), effect, now);
+    if (res.ok && Number.isFinite(this.cellar.wards[effect])) this.cellar.wards[effect]--;
+    return res;
   }
 
   /**

@@ -273,7 +273,7 @@ function yieldOf(sp, s, T) {
  */
 export function extractionReport(sim) {
   const sp = sim.species, p = sim.p, n = p.count, ns = sp.count;
-  /** @type {Map<string, {id:string, raw:number, ext:number, T:number, w:number, frozen:number, cls:number}>} */
+  /** @type {Map<string, {id:string, raw:number, ext:number, T:number, w:number, frozen:number, cls:number, whole:number}>} */
   const by = new Map();
   let liquidT = 0, liquidN = 0, frozen = 0, cond = 0, emulsified = 0, hyd = 0, lip = 0, alcohol = 0, emul = 0;
   for (let i = 0; i < n; i++) {
@@ -281,6 +281,7 @@ export function extractionReport(sim) {
     cond++;
     const off = i * S;
     const isFrozen = p.phase[i] === SOLID && p.whole[i] < 0.3;
+    const isWhole = p.phase[i] === SOLID && p.whole[i] >= 0.3;
     if (isFrozen) frozen++;
     else { liquidT += p.temp[i]; liquidN++; }
     let h = 0, l = 0, e = 0;
@@ -297,8 +298,9 @@ export function extractionReport(sim) {
       if (sp.exCls[s]) { key = d.base || d.id; raw = f; } else if (sp.extCls[s] && d.extractOf) { key = d.extractOf; ext = f; }
       if (!key) continue;
       let g = by.get(key);
-      if (!g) { g = { id: key, raw: 0, ext: 0, T: 0, w: 0, frozen: 0, cls: sp.exCls[s] || sp.extCls[s] }; by.set(key, g); }
+      if (!g) { g = { id: key, raw: 0, ext: 0, T: 0, w: 0, frozen: 0, cls: sp.exCls[s] || sp.extCls[s], whole: 0 }; by.set(key, g); }
       g.raw += raw; g.ext += ext; g.T += p.temp[i] * f; g.w += f;
+      if (isWhole) g.whole += raw;
       if (isFrozen) g.frozen += f;
     }
     hyd += h; lip += l; emul += e;
@@ -311,7 +313,7 @@ export function extractionReport(sim) {
     const share = g.raw + g.ext > 0 ? g.ext / (g.raw + g.ext) : 0;
     const T = g.w > 0 ? g.T / g.w : meanT;
     const ceiling = pr ? yieldAt(pr, T) : 1;
-    return { id: g.id, name: def ? def.name : g.id, cls: g.cls === 2 ? 'lipo' : 'hydro', raw: g.raw, ext: g.ext, share, ceiling, frozen: g.raw > 0 && g.frozen >= g.raw * 0.8 };
+    return { id: g.id, name: def ? def.name : g.id, cls: g.cls === 2 ? 'lipo' : 'hydro', raw: g.raw, ext: g.ext, share, ceiling, frozen: g.raw > 0 && g.frozen >= g.raw * 0.8, whole: g.whole };
   });
   return {
     items, meanT, frozen: cond ? frozen / cond : 0,

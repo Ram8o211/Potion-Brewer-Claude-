@@ -55,7 +55,7 @@ const SPECIES_BY_KEY = Object.fromEntries(SPECIES_DATA.map((s) => [s.key, s]));
 /** Extract volume a solvent can hold, as a share of (solvent + extract). */
 export const SOLVENT_CAPACITY = 0.5;
 /** Rate factor of a whole piece (only its surface touches the solvent). */
-export const WHOLE_FACTOR = 0.03;
+export const WHOLE_FACTOR = 0.08;
 /** Rate factor in a solution that is already emulsified. */
 export const EMULSION_FACTOR = 0.1;
 /** Rate factor of an aging-cellar vessel (unstirred, but given hours). */

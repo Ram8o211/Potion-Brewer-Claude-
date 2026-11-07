@@ -30,3 +30,8 @@ export function vary(pal, rng, amt = 1) {
 
 /** A random stream for one part of a region's composition. */
 export const streamOf = (seed, region, part) => new Rng(hashString(`env:${seed}:${region}:${part}`));
+
+/** The width the compositions' fixed x positions were laid out for (scenes are narrower now: they are scaled to the canvas). */
+export const LAYOUT_W = 384;
+/** A fixed x position (laid out on a LAYOUT_W-wide scene) on this canvas. @param {{W:number}} cv @param {number} v */
+export const lx = (cv, v) => Math.round((v * cv.W) / LAYOUT_W);

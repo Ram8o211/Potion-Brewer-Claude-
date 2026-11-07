@@ -6,7 +6,7 @@
 // crosses the stream.
 
 import { sky } from './paint.js';
-import { palette, vary, streamOf } from './kit.js';
+import { palette, vary, streamOf, lx } from './kit.js';
 import { heights, dip, raise, fillSolid, ledges, paintTerrain, pool, markOpen, surfaceAt, silhouette, mountains, treeShape } from './side.js';
 import { caveFrame, farPillars, fog, vines, moss, glowShrooms, ledgeTops, veins, WATER_VEINS } from './cave.js';
 import { reeds, beam, cloud } from './objects.js';
@@ -44,9 +44,9 @@ export function compose(cv, seed) {
   }
   // the banks, the river bed between them, pillars rising from both
   const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 168, amp: 8, freq: 0.012 });
-  const rx = ts.int(150, 240), hw = ts.int(30, 38);
+  const rx = ts.int(lx(cv, 150), lx(cv, 240)), hw = ts.int(lx(cv, 30), lx(cv, 38));
   dip(top, rx, hw, 28, 0.45);
-  const bank = ts.next() < 0.5 ? ts.int(20, 90) : ts.int(300, 360);
+  const bank = ts.next() < 0.5 ? ts.int(lx(cv, 20), lx(cv, 90)) : ts.int(lx(cv, 300), lx(cv, 360));
   raise(top, bank, bank + ts.int(20, 40), Math.min(...top) - ts.int(6, 12), 3);
   fillSolid(cv, top);
   ledges(cv, top, ts, 8, { keep: [[rx - hw - 6, rx + hw + 6]], high: 1 });

@@ -1,6 +1,7 @@
-// Aging on the potion shelves: a selected bottle shows two slots — a Fire or
-// Frost potion (another shelved bottle) that warms or chills it, and a
-// temperature rune that holds it on the way — and how its aging goes. The
+// Aging on the potion shelves: a selected bottle shows three slots — a Fire
+// or Frost potion (another shelved bottle) that warms or chills it, a
+// temperature rune that holds it on the way, and a biome rune that hastens
+// the extraction of what carries its effect — and how its aging goes. The
 // cellar engine is game/cellar.js; the bottle's state is state.js
 // (startAging, chargeBottle, runeBottle, finishAging).
 //
@@ -10,8 +11,11 @@
 import { h, btn, toast } from './dom.js';
 import { icon } from './icons.js';
 import { drawBottle } from '../rendering/renderer.js';
-import { potionNet, vesselReport, chargeLimit, CELLAR_T } from '../game/cellar.js';
+import { potionNet, vesselReport, chargeLimit, CELLAR_T, BIOME_RUNES, WARD_BOOST } from '../game/cellar.js';
 import { audio } from '../audio/audio.js';
+
+/** An sRGB 0..1 colour as CSS. @param {number[]} c */
+const rgb = (c) => `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2] * 255)})`;
 
 /** @param {number} net */
 const potName = (net) => (net > 0 ? 'Fire' : 'Frost');
@@ -79,7 +83,16 @@ export function agingBlock(view, b, rerender) {
     h('b', { text: r ? `Rune ${r.target}°C` : 'Rune' }),
     h('span', { class: 'small', text: r ? `${r.locked ? 'locked' : r.holds ? 'will lock' : 'cannot lock'} · ${Math.round((1 - r.wear) * 100)}% left` : 'hold a temperature' })));
   runeSlot.addEventListener('click', () => { view.agePick = view.agePick === 'rune' ? null : 'rune'; audio.play('click'); rerender(); });
-  box.append(h('div', { class: 'age-slots' }, chargeSlot, runeSlot));
+  const w = rep && rep.ward;
+  const wardSlot = h('button', { class: 'age-slot ward' + (w ? ' full' : '') + (view.agePick === 'ward' ? ' open' : ''), 'data-slot': 'ward', 'data-act': 'age-slot-ward',
+    style: w ? { '--rune': rgb(w.color) } : {},
+    title: 'The biome-rune slot: a rune dug out of a biome’s earth hastens the extraction of what carries its effect, even in the cold, without lowering how much can come out' },
+  w ? icon(w.icon) : h('span', { class: 'age-plus', text: '+' }),
+  h('span', { class: 'age-slot-txt' },
+    h('b', { text: w ? w.name : 'Biome rune' }),
+    h('span', { class: 'small', text: w ? `×${WARD_BOOST} · ${Math.round((1 - w.wear) * 100)}% left` : 'hasten extraction' })));
+  wardSlot.addEventListener('click', () => { view.agePick = view.agePick === 'ward' ? null : 'ward'; audio.play('click'); rerender(); });
+  box.append(h('div', { class: 'age-slots' }, chargeSlot, runeSlot, wardSlot));
   // ---- choosing what goes in a slot
   if (view.agePick === 'charge') {
     const list = chargers(st, b);
@@ -110,6 +123,25 @@ export function agingBlock(view, b, rerender) {
       }, { icon: 'rune', cls: 'small', act: 'age-rune', disabled: !has && st.cellar.runes <= 0 })),
     h('div', { class: 'small muted', text: has ? 'Moving the rune uses no new one.' : st.cellar.runes > 0 ? 'A rune wears out with the hours it holds the bottle.' : 'No rune in hand: buy one at the market, or find one underground in the Wilds.' })));
   }
+  else if (view.agePick === 'ward') {
+    const pick = h('div', { class: 'age-pick' },
+      h('div', { class: 'small', text: `A biome rune draws out ×${WARD_BOOST} quicker every ingredient that carries its effect — as quickly in the cold as at room temperature — and never lowers how much can come out. It wears out with the hours it works.` }));
+    const row = h('div', { class: 'age-pick-list ward-list' });
+    for (const r of BIOME_RUNES) {
+      const n = st.wardsOf(r.effect);
+      const o = h('button', { class: 'age-pick-ward', 'data-act': 'age-ward-' + r.effect, disabled: !(n > 0), style: { '--rune': rgb(r.color) }, title: n > 0 ? `${r.name}: hastens what carries ${r.effect}` : `No ${r.name} in hand: it lies underground in the ${r.biomeName}` },
+        icon(r.icon, 'sm'), h('span', { class: 'small', text: `${r.name} · ${Number.isFinite(n) ? n : '∞'}` }));
+      o.addEventListener('click', () => {
+        const res = st.wardBottle(b.id, r.effect);
+        if (!res.ok) { toast('Cannot', res.reason, 'lock'); audio.play('error'); } else { audio.play('select'); view.agePick = null; toast(`${r.name} set`, `What carries ${r.effect} is drawn out ×${WARD_BOOST} quicker, even in the cold.`, r.icon, 3200); lab.save(); }
+        rerender();
+      });
+      row.append(o);
+    }
+    pick.append(row);
+    if (!BIOME_RUNES.some((r) => st.wardsOf(r.effect) > 0)) pick.append(h('div', { class: 'small muted', text: 'No biome rune in hand. Each biome keeps one underground every day: look for its glow in the earth of the Wilds and tap it a few times.' }));
+    box.append(pick);
+  }
   // ---- how it goes
   if (rep) {
     const where = c ? `${rep.T.toFixed(1)}°C, heading for ${r && r.holds ? r.target : c.limit}°C` : Math.abs(rep.T - CELLAR_T) > 0.5 ? `${rep.T.toFixed(1)}°C, returning to the cellar's ${CELLAR_T}°C` : `${rep.T.toFixed(1)}°C (the cellar's own)`;
@@ -119,7 +151,7 @@ export function agingBlock(view, b, rerender) {
       const k2 = st.knowledge[it.id] || {};
       box.append(h('div', { class: 'row small extract-row' }, h('span', { text: it.name }), h('span', { class: 'spacer' }),
         h('span', { class: 'xbar' }, h('i', { class: 'xbar-fill', style: { width: (it.share * 100).toFixed(1) + '%' } }), h('i', { class: 'xbar-cap', style: { left: Math.round(it.ceiling * 100) + '%' } })),
-        h('span', { class: 'muted', text: ` ${(it.share * 100).toFixed(1)}% / ${Math.round(it.ceiling * 100)}%${k2.burnsAt !== undefined ? ` · burns by ${Math.round(k2.burnsAt)}°C` : ''}` })));
+        h('span', { class: 'muted', text: ` ${(it.share * 100).toFixed(1)}% / ${Math.round(it.ceiling * 100)}%${it.fast ? ` · ×${WARD_BOOST}` : ''}${k2.burnsAt !== undefined ? ` · burns by ${Math.round(k2.burnsAt)}°C` : ''}` })));
     }
     box.append(h('div', { class: 'row wrap' },
       btn('Unseal', () => {

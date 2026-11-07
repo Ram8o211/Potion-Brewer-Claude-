@@ -113,6 +113,33 @@ with a condenser, emulsification and alcohol-free commissions. Save version
   skip ahead), so one jump equals any sequence of ticks (tested), and the
   state is saved with the game.
 
+## 5b. Biome runes, re-extraction, compact wilds (follow-up)
+
+* **Biome runes** (`cellar.js` `BIOME_RUNES`, `setWard`, `wardHastens`):
+  one per biome, named after its effect (Vitality, Love, Frost, Strength,
+  Toxicity, Fire, Arcana, Levitation, Transformation, Invisibility,
+  Phasing, Temporal Distortion). Set in an aging bottle's third slot, it
+  draws out every ingredient carrying at least 1 of its effect
+  `WARD_BOOST` (×4) quicker, at the rate of room temperature even when the
+  vessel is colder; the ceiling `Y(T)` is untouched. Wears out after 12 h
+  of work (`WARD_LIFE`). Runes in hand: `cellar.wards` (by effect).
+* **Found underground** (`gathering.js wardStones`, `state.js
+  wardStones/digWard/wardBottle`): one stone per biome per day, bedded in
+  the soil 8–14 px under open ground, its effect's glyph glowing through
+  the earth; three taps dig it out. A chip under the scene says whether
+  today's rune is still there.
+* **Re-extraction is visible**: φ was always the batch-wide share, so
+  adding more of an herb lowers it and extraction resumes to the ceiling.
+  The tap Sample showed only the liquid's own share (whole pieces stay in
+  the pot), so it looked unchanged; it now also shows the cauldron-wide
+  share, the ceiling and the ml still whole. Whole pieces extract at
+  ×0.08 of the ground rate (was ×0.03), so new leaves do catch up.
+* **Compact wilds**: scenes are 256×192 (were 384×216); fixed x positions
+  in the composers scale with the canvas (`kit.js lx`). On a 390 px phone
+  the whole region is shown at about 1.46 CSS px per scene pixel, so
+  plants, animals and runes are about 1.5× larger than the old
+  whole-region view, with nothing hidden off-screen.
+
 ## 6. Integration
 
 * Mechanics (`mechanics.js`): extraction, steeping, heat-damage and

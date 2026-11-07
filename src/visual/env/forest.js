@@ -7,7 +7,7 @@
 // the Netherwood, netherwood.js.)
 
 import { sky } from './paint.js';
-import { palette, vary, streamOf } from './kit.js';
+import { palette, vary, streamOf, lx } from './kit.js';
 import { heights, raise, fillSolid, blob, paintTerrain, markOpen, surfaceAt, col, drips, ledges, hanging } from './side.js';
 import { fog, moss, glowShrooms } from './cave.js';
 import { fern, log, stump } from './objects.js';
@@ -61,7 +61,7 @@ export function compose(cv, seed) {
   terrainTrees(cv, s('oaks'), pal, { n: 8, kinds: ['oak', 'gnarl', 'gnarl', 'tiers'], shapes: ['tall', 'spread', 'lean'], h: [44, 116], gap: 22, ledges: true, look });
   ferns(cv, s, pal);
   // soft shafts of light through the leaves, and mushrooms glowing in the shade
-  const shafts = s('shafts'), sx0 = shafts.int(110, 230);
+  const shafts = s('shafts'), sx0 = shafts.int(lx(cv, 110), lx(cv, 230));
   cv.light([1, 0.95, 0.7], (x, y) => {
     const u = x - sx0 - y * 0.35, c = 14 + (y / H) * 10;
     let t = 0;
@@ -97,8 +97,8 @@ export function roots(cv, rt, dark, lit) {
  */
 export function litter(cv, s, pal) {
   const lr = s('logs');
-  cv.place(log(lr, lr.int(36, 48), lr.int(5, 7), { moss: 'moss', bark: pal.logbark ? 'logbark' : 'bark' }), pal, lr.int(90, 290), { sink: 2, foot: [22, 3], range: 200 });
-  cv.place(stump(lr, lr.int(9, 12), lr.int(6, 9)), pal, lr.int(60, 320), { foot: [7, 2], range: 120 });
+  cv.place(log(lr, lr.int(36, 48), lr.int(5, 7), { moss: 'moss', bark: pal.logbark ? 'logbark' : 'bark' }), pal, lr.int(lx(cv, 90), lx(cv, 290)), { sink: 2, foot: [22, 3], range: lx(cv, 200) });
+  cv.place(stump(lr, lr.int(9, 12), lr.int(6, 9)), pal, lr.int(lx(cv, 60), lx(cv, 320)), { foot: [7, 2], range: lx(cv, 120) });
 }
 
 /**

@@ -6,7 +6,7 @@
 // fence with straw beehives, a ring of standing stones, or a pond.
 
 import { sky } from './paint.js';
-import { palette, vary, streamOf } from './kit.js';
+import { palette, vary, streamOf, lx } from './kit.js';
 import { heights, dip, raise, fillSolid, blob, paintTerrain, pool, markOpen, silhouette, mountains, treeShape, glow, drips, ledges } from './side.js';
 import { caveFrame, fog, vines, moss, veins, WATER_VEINS } from './cave.js';
 import { cloud, fence, skep, boulder } from './objects.js';
@@ -21,7 +21,7 @@ export function compose(cv, seed) {
     timber: '#6a4a2e', straw: ['#c8a050', { spread: 0.45 }], moss: '#5a8a34',
   }), s('pal'), 1);
   sky(cv, 0, 160, ['#2a5aa0', '#4a82c4', '#86b4dc', '#cfe2e8'], 10);
-  const sx = 230 + s('sun').int(-50, 50), sy = 34;
+  const sx = lx(cv, 230) + s('sun').int(-50, 50), sy = 34;
   for (let y = sy - 10; y <= sy + 10; y++) for (let x = sx - 10; x <= sx + 10; x++) if (Math.hypot(x - sx, y - sy) <= 9.5) cv.set(x, y, Math.hypot(x - sx, y - sy) < 7.5 ? pack([1, 0.98, 0.86]) : pack([1, 0.92, 0.66]));
   glow(cv, sx, sy, 70, [1, 0.92, 0.7], 0.35);
   const cr = s('clouds');
@@ -54,7 +54,7 @@ export function compose(cv, seed) {
   const fr = s('feature'), feature = fr.weighted(['hives', 'stones', 'pond'], [1.2, 0.8, 0.8]);
   let pond = null;
   if (feature === 'pond') {
-    const px = kx < W / 2 ? fr.int(220, 320) : fr.int(70, 150), hw = fr.int(26, 40);
+    const px = kx < W / 2 ? fr.int(lx(cv, 220), lx(cv, 320)) : fr.int(lx(cv, 70), lx(cv, 150)), hw = fr.int(lx(cv, 26), lx(cv, 40));
     pond = { x: px, hw, level: Math.round(top[px]) + 2 };
     dip(top, px, hw, 16);
   }
@@ -80,7 +80,7 @@ export function compose(cv, seed) {
   markOpen(cv);
   // each piece set down where it fits, clear of the pillars, the trees and the pond
   if (feature === 'hives') {
-    const fx = fr.int(70, 300), len = fr.int(36, 60);
+    const fx = fr.int(lx(cv, 70), lx(cv, 300)), len = fr.int(36, 60);
     cv.place(fence(len, 14), pal, fx, { foot: [len * 0.6, 2], range: 240, x: [6, W - len - 6] });
     let bx = fr.int(20, W - 60), hives = null;
     for (let i = 0; i < 2 + fr.int(0, 1); i++) {
@@ -92,7 +92,7 @@ export function compose(cv, seed) {
     }
     if (hives) cv.meta.hives = hives;
   } else if (feature === 'stones') {
-    let x = fr.int(80, 300);
+    let x = fr.int(lx(cv, 80), lx(cv, 300));
     const ring = ++cv.nprops;
     for (let i = 0; i < 4; i++) {
       const m = new Model(), hh = fr.int(10, 18);

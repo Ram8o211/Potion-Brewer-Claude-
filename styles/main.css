@@ -465,7 +465,7 @@ canvas.hutch-scene { display: block; width: 100%; height: auto; aspect-ratio: 22
 .region-tabs .btn.locked { opacity: 0.55; }
 .scene-wrap { position: relative; box-shadow: 0 0 0 var(--px) var(--wood0), 0 0 0 calc(var(--px) * 2) var(--wood3); }
 /* the window onto the scene: zoomed in, the scene is wider than it and scrolls */
-.scene-view { width: 100%; aspect-ratio: 16 / 9; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--wood3) transparent; }
+.scene-view { width: 100%; aspect-ratio: 4 / 3; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--wood3) transparent; }
 /* under the scene, beside its caption (never over a plant) */
 .scene-bar { display: flex; align-items: flex-start; gap: calc(var(--px) * 2); }
 .scene-bar .region-info { flex: 1; min-width: 0; }
@@ -473,7 +473,7 @@ canvas.hutch-scene { display: block; width: 100%; height: auto; aspect-ratio: 22
 .zoom-ctl button { min-width: 32px; min-height: 32px; padding: calc(var(--px) * 1); }
 /* (fingers need bigger targets) */
 @media (pointer: coarse) { .zoom-ctl button { min-width: 44px; min-height: 44px; } }
-canvas.scene { display: block; flex: none; max-width: none; aspect-ratio: 16 / 9; height: auto; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; cursor: pointer; }
+canvas.scene { display: block; flex: none; max-width: none; aspect-ratio: 4 / 3; height: auto; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; cursor: pointer; }
 .region-info { margin: 6px 2px; color: var(--parch2); line-height: 1.35; }
 .deposits { display: flex; flex-direction: column; gap: 6px; }
 .deposit { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 8px 10px; }
@@ -865,6 +865,16 @@ canvas.ing-sprite { image-rendering: pixelated; }
 .aging { margin-top: 8px; padding-top: 6px; box-shadow: 0 -1px 0 rgba(43, 29, 20, 0.25); display: flex; flex-direction: column; gap: 4px; }
 .aging-head { align-items: center; gap: 6px; }
 .age-slots { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+/* the third slot (the biome rune) spans the row under the other two */
+.age-slots .age-slot.ward { grid-column: 1 / -1; }
+.age-slot.ward.full { border-color: var(--rune, var(--arcane)); box-shadow: inset 0 0 12px color-mix(in srgb, var(--rune, #8fe0ff) 35%, transparent); }
+.age-pick-list.ward-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.age-pick-ward { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 2px 8px; border: 2px solid var(--rune, rgba(43, 29, 20, 0.3)); border-radius: var(--btn-r, 8px); background: rgba(255, 255, 255, 0.15); font-family: inherit; color: inherit; cursor: pointer; }
+.age-pick-ward:disabled { opacity: 0.4; cursor: default; }
+.age-pick-ward img.ico { width: 22px; height: 22px; flex: none; }
+.age-pick-ward .small { min-width: 0; overflow-wrap: anywhere; text-align: left; line-height: 1.1; }
+.ward-chip { box-shadow: inset 0 0 0 1px var(--rune, #8fe0ff); }
+.ward-chip[data-dug="1"] { opacity: 0.65; }
 .age-slot { display: flex; align-items: center; gap: 6px; min-height: 56px; padding: 6px 8px; border: 2px dashed rgba(43, 29, 20, 0.45); border-radius: 10px; background: rgba(43, 29, 20, 0.08); font-family: inherit; color: inherit; text-align: left; cursor: pointer; }
 .age-slot.full { border-style: solid; background: rgba(43, 29, 20, 0.14); }
 .age-slot.fire { border-color: #d0662e; }

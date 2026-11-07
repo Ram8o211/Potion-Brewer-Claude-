@@ -7,7 +7,7 @@
 // cart on its rails, crates, and torches and a lantern burning in the dark.
 
 import { sky } from './paint.js';
-import { palette, vary, streamOf } from './kit.js';
+import { palette, vary, streamOf, lx } from './kit.js';
 import { fillSolid, blob, ledges, paintTerrain, markOpen, glow, drips, silhouette, mountains } from './side.js';
 import { caveFrame, farPillars, fog, moss, torch, ledgeTops } from './cave.js';
 import { crane, ladder, cart, crate, beam, boulder, scaffold, wheel, cloud } from './objects.js';
@@ -108,7 +108,7 @@ export function compose(cv, seed) {
     if (right) cm.transform(-1, 0, 0, 1, 0, 0, 1);
     if (cv.place(cm, pal, cx, { roots: [6, 2], range: 50, x: right ? [edges[0] + 4, W - 3] : [2, edges[0] - 4] })) break;
   }
-  const wx = right ? tm.int(40, 120) : tm.int(W - 120, W - 40);
+  const wx = right ? tm.int(lx(cv, 40), lx(cv, 120)) : tm.int(W - lx(cv, 120), W - lx(cv, 40));
   cv.place(wheel(tm, tm.int(10, 14), tm.int(30, 40)), pal, wx, { roots: [8, 2], range: 80 });
   for (let i = 0; i < 2; i++) cv.place(scaffold(tm, tm.int(16, 26), tm.int(16, 30)), pal, tm.int(60, W - 60), { foot: [12, 2], range: 100 });
   for (let i = 0; i < 2; i++) cv.place(crate(tm.int(8, 11)), pal, tm.int(30, W - 30), { foot: [6, 2] });

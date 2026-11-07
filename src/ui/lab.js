@@ -1357,7 +1357,8 @@ export class LabScreen {
     // the arcanometer reads the sample's arcane threshold
     if (this.sandbox || this.state.has('arcanometer')) /** @type {any} */ (m).arcane = this.arcaneReading(sel, m);
     audio.play('glass');
-    panels.showAnalysis(this, m, this.recipeDraft(m, null, null), `Measuring vial · ${m.ml} ml from the tap`);
+    // (and each ingredient's share drawn out over the whole cauldron — whole pieces too, which the tap leaves behind)
+    panels.showAnalysis(this, m, this.recipeDraft(m, null, null), `Measuring vial · ${m.ml} ml from the tap`, extractionReport(this.sim));
   }
 
   announce(e) {

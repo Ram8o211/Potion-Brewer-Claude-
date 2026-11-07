@@ -8,7 +8,7 @@
 // the lava in the ground is the pool's: no seams of it elsewhere.
 
 import { sky } from './paint.js';
-import { palette, vary, streamOf } from './kit.js';
+import { palette, vary, streamOf, lx } from './kit.js';
 import { heights, dip, raise, fillSolid, blob, ledges, paintTerrain, pool, markOpen, glow, drips, silhouette, col, rockFace } from './side.js';
 import { caveFrame, farPillars, fog, moss, fall, veins, LAVA_VEINS } from './cave.js';
 import { basalt, spire, cloud } from './objects.js';
@@ -44,7 +44,7 @@ export function compose(cv, seed) {
     const cr = s('clouds');
     for (let i = 0; i < 4; i++) cv.stamp(cloud(cr, cr.int(40, 90), cr.int(8, 16)), pal, cr.int(0, W), cr.int(10, 50), { outline: false, texture: 0 });
     // the cone: a dark silhouette, its crater glowing, lava running down its flanks
-    const cs = s('cone'), vx = cs.int(110, 270), cseed = cs.int(0, 1e9);
+    const cs = s('cone'), vx = cs.int(lx(cv, 110), lx(cv, 270)), cseed = cs.int(0, 1e9);
     const cone = volcano(cv, vx, cseed);
     const top = cone[vx];
     glow(cv, vx, top - 2, 60, [1, 0.45, 0.15], 0.5);
@@ -55,10 +55,10 @@ export function compose(cv, seed) {
   }
   // the ground: ash slopes, a lava tube, lava in a hollow, pillars of basalt
   const ts = s('terrain'), top = heights(W, ts.int(0, 1e9), { base: 168, amp: 10, freq: 0.014 });
-  const px = ts.int(90, W - 90), hw = ts.int(30, 46);
+  const px = ts.int(lx(cv, 90), W - lx(cv, 90)), hw = ts.int(lx(cv, 30), lx(cv, 46));
   dip(top, px, hw, 22, 0.3);
-  const kx = px < W / 2 ? ts.int(230, 300) : ts.int(30, 90);
-  raise(top, kx, kx + ts.int(30, 50), Math.min(...top) - ts.int(10, 16), 2);
+  const kx = px < W / 2 ? ts.int(lx(cv, 230), lx(cv, 300)) : ts.int(lx(cv, 30), lx(cv, 90));
+  raise(top, kx, kx + ts.int(lx(cv, 30), lx(cv, 50)), Math.min(...top) - ts.int(10, 16), 2);
   fillSolid(cv, top);
   ledges(cv, top, ts, 6, { keep: [[px - hw - 6, px + hw + 6]] });
   blob(cv, kx + 20, Math.round(top[kx + 20]) + 22, ts.int(16, 24), 7, ts.int(0, 1e9), 0);

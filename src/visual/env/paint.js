@@ -11,8 +11,8 @@ import { Model } from '../geometry.js';
 import { ramp, hex, mixPacked, pack, unpack } from '../color.js';
 
 /** Scene size in art pixels. */
-export const SCENE_W = 384;
-export const SCENE_H = 216;
+export const SCENE_W = 256;
+export const SCENE_H = 192;
 
 /**
  * The scenery's pixel, in art pixels: trees, rocks, timberwork and the
